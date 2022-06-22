@@ -36,8 +36,6 @@ struct i2c_nrfx_twim_config {
 #endif
 };
 
-static int init_twim(const struct device *dev);
-
 static int i2c_nrfx_twim_recover_bus(const struct device *dev);
 
 static int i2c_nrfx_twim_transfer(const struct device *dev,
@@ -232,21 +230,6 @@ static void event_handler(nrfx_twim_evt_t const *p_event, void *p_context)
 	k_sem_give(&dev_data->completion_sync);
 }
 
-static int init_twim(const struct device *dev)
-{
-	const struct i2c_nrfx_twim_config *dev_config = dev->config;
-	struct i2c_nrfx_twim_data *dev_data = dev->data;
-	nrfx_err_t result = nrfx_twim_init(&dev_config->twim,
-					   &dev_data->twim_config,
-					   event_handler, dev_data);
-	if (result != NRFX_SUCCESS) {
-		LOG_ERR("Failed to initialize device: %s", dev->name);
-		return -EIO;
-	}
-
-	return 0;
-}
-
 static int i2c_nrfx_twim_configure(const struct device *dev,
 				   uint32_t i2c_config)
 {
@@ -351,6 +334,7 @@ static int twim_nrfx_pm_action(const struct device *dev,
 static int i2c_nrfx_twim_init(const struct device *dev)
 {
 	const struct i2c_nrfx_twim_config *dev_config = dev->config;
+	struct i2c_nrfx_twim_data *dev_data = dev->data;
 
 	dev_config->irq_connect();
 
@@ -361,7 +345,13 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 	}
 #endif
 
-	return init_twim(dev);
+	if (nrfx_twim_init(&dev_config->twim, &dev_data->twim_config,
+			   event_handler, dev_data) != NRFX_SUCCESS) {
+		LOG_ERR("Failed to initialize device: %s", dev->name);
+		return -EIO;
+	}
+
+	return 0;
 }
 
 #define I2C_NRFX_TWIM_INVALID_FREQUENCY  ((nrf_twim_frequency_t)-1)
