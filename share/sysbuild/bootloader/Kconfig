@@ -1,0 +1,29 @@
+# Copyright (c) 2022 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SUPPORT_BOOTLOADER
+	bool
+	default y
+
+config SUPPORT_BOOTLOADER_MCUBOOT_ZEPHYR
+	bool
+	default y
+
+choice BOOTLOADER
+	prompt "Bootloader support"
+	default BOOTLOADER_NONE
+	depends on SUPPORT_BOOTLOADER
+
+config BOOTLOADER_NONE
+	bool "None"
+	help
+	  Do not Include a bootloader in the build
+
+config BOOTLOADER_MCUBOOT
+	bool "MCUboot"
+	depends on SUPPORT_BOOTLOADER_MCUBOOT_ZEPHYR
+	help
+	  Include MCUboot (Zephyr port) as the bootloader to use
+
+endchoice
