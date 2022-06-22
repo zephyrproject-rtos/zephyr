@@ -168,6 +168,7 @@ Bluetooth:
     maintainers:
         - jhedberg
     collaborators:
+        - hermabe
         - jori-nordic
         - alwa-nordic
         - Vudentz
