@@ -32,3 +32,5 @@ config WARN_DEPRECATED
 	help
 	  Print a warning when the Kconfig tree is parsed if any deprecated
 	  features are enabled.
+
+rsource "bootloader/Kconfig"
