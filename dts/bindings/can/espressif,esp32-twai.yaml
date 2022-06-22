@@ -1,0 +1,39 @@
+# Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Espressif ESP32 Two-Wire Automotive Interface (TWAI)
+
+compatible: "espressif,esp32-twai"
+
+include: [can-controller.yaml, pinctrl-device.yaml]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    clocks:
+      required: true
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
+
+    clkout-divider:
+      type: int
+      required: false
+      enum:
+        - 1
+        - 2
+        - 4
+        - 6
+        - 8
+        - 10
+        - 12
+        - 14
+      description: |
+        Clock divider for the CLKOUT signal. If not set, the CLKOUT signal is turned off.
