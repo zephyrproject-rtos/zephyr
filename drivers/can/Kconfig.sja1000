@@ -1,0 +1,18 @@
+# NXP SJA1000 configuration options
+
+# Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_SJA1000
+	bool
+	help
+	  This enables support for the shared NXP SJA1000 CAN driver.
+
+config CAN_MAX_FILTER
+	int "Maximum number of concurrent active RX filters"
+	depends on CAN_SJA1000
+	default 5
+	range 1 32
+	help
+	  As the NXP SJA1000 only supports one full-width RX filter, filtering of received CAN
+	  frames are done in software.
