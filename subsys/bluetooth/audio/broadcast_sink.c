@@ -41,6 +41,27 @@ static sys_slist_t sink_cbs = SYS_SLIST_STATIC_INIT(&sink_cbs);
 
 static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink);
 
+static void broadcast_sink_clear_big(struct bt_audio_broadcast_sink *sink)
+{
+	sink->big = NULL;
+	sink->stream_count = 0;
+	sink->streams = NULL;
+}
+
+static struct bt_audio_broadcast_sink *broadcast_sink_lookup_iso_chan(
+	const struct bt_iso_chan *chan)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sinks); i++) {
+		for (uint8_t j = 0U; j < broadcast_sinks[i].stream_count; j++) {
+			if (broadcast_sinks[i].bis[j] == chan) {
+				return &broadcast_sinks[i];
+			}
+		}
+	}
+
+	return NULL;
+}
+
 static void broadcast_sink_set_ep_state(struct bt_audio_ep *ep, uint8_t state)
 {
 	uint8_t old_state;
@@ -148,6 +169,7 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 						      iso_chan);
 	struct bt_audio_ep *ep = audio_iso->sink_ep;
 	const struct bt_audio_stream_ops *ops;
+	struct bt_audio_broadcast_sink *sink;
 	struct bt_audio_stream *stream;
 
 	if (ep == NULL) {
@@ -166,6 +188,20 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 		ops->stopped(stream);
 	} else {
 		BT_WARN("No callback for stopped set");
+	}
+
+	sink = broadcast_sink_lookup_iso_chan(chan);
+	if (sink == NULL) {
+		BT_ERR("Could not lookup sink by iso %p", chan);
+		return;
+	}
+
+	/* Clear sink->big if not already cleared */
+	if (sink->big) {
+		/* When a BIS disconnects, it means that all BIS disconnected,
+		 * and we can do the clearing on the first
+		 */
+		broadcast_sink_clear_big(sink);
 	}
 }
 
@@ -562,6 +598,11 @@ static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 	sink = broadcast_sink_get_by_pa(sync);
 	if (sink == NULL) {
 		/* Not ours */
+		return;
+	}
+
+	if (sink->big != NULL) {
+		/* Already synced - ignore */
 		return;
 	}
 
@@ -1082,9 +1123,7 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 		return err;
 	}
 
-	sink->big = NULL;
-	sink->stream_count = 0;
-	sink->streams = NULL;
+	broadcast_sink_clear_big(sink);
 	/* Channel states will be updated in the ep_iso_disconnected function */
 
 	return 0;
