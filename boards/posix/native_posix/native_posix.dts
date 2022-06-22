@@ -185,8 +185,9 @@
 	};
 
 	zephyr_udc0: udc0 {
-		compatible = "zephyr,native-posix-udc";
+		compatible = "zephyr,usbip-udc";
 		label = "USBD";
+		status = "okay";
 	};
 
 	sdl_dc: sdl_dc {
