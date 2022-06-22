@@ -2313,8 +2313,18 @@ static uint8_t att_error_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 	BT_DBG("request 0x%02x handle 0x%04x error 0x%02x", rsp->request,
 	       sys_le16_to_cpu(rsp->handle), rsp->error);
 
-	/* Don't retry if there is no req pending or it has been cancelled */
-	if (!chan->req || chan->req == &cancel) {
+	/* Don't retry if there is no req pending or it has been cancelled.
+	 *
+	 * BLUETOOTH SPECIFICATION Version 5.2 [Vol 3, Part F]
+	 * page 1423:
+	 *
+	 * If an error code is received in the ATT_ERROR_RSP PDU that is not
+	 * understood by the client, for example an error code that was reserved
+	 * for future use that is now being used in a future version of the
+	 * specification, then the ATT_ERROR_RSP PDU shall still be considered to
+	 * state that the given request cannot be performed for an unknown reason.
+	 */
+	if (!chan->req || chan->req == &cancel || !rsp->error) {
 		err = BT_ATT_ERR_UNLIKELY;
 		goto done;
 	}
