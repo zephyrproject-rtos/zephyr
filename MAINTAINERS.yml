@@ -1519,8 +1519,6 @@ Shields:
 
 SPARC arch:
     status: odd fixes
-    collaborators:
-        - martin-aberg
     files:
         - arch/sparc/
         - include/zephyr/arch/sparc/
