@@ -2795,6 +2795,11 @@ class ProjectBuilder(FilterBuilder):
             'build.log',
             'device.log',
             'recording.csv',
+            # below ones are needed to make --test-only work as well
+            'Makefile',
+            'CMakeCache.txt',
+            'build.ninja',
+            'CMakeFiles/rules.ninja'
             ]
 
         allow += additional_keep
