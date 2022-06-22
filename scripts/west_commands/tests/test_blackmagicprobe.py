@@ -22,6 +22,7 @@ EXPECTED_COMMANDS = {
       '-ex', "set confirm off",
       '-ex', "target extended-remote {}".format(TEST_GDB_SERIAL),
       '-ex', "monitor swdp_scan",
+      '-ex', "monitor frequency 50000",
       '-ex', "attach 1",
       '-ex', "file {}".format(RC_KERNEL_ELF)],),
     'debug':
@@ -29,6 +30,7 @@ EXPECTED_COMMANDS = {
       '-ex', "set confirm off",
       '-ex', "target extended-remote {}".format(TEST_GDB_SERIAL),
       '-ex', "monitor swdp_scan",
+      '-ex', "monitor frequency 50000",
       '-ex', "attach 1",
       '-ex', "file {}".format(RC_KERNEL_ELF),
       '-ex', "load {}".format(RC_KERNEL_ELF)],),
@@ -37,6 +39,7 @@ EXPECTED_COMMANDS = {
       '-ex', "set confirm off",
       '-ex', "target extended-remote {}".format(TEST_GDB_SERIAL),
       '-ex', "monitor swdp_scan",
+      '-ex', "monitor frequency 50000",
       '-ex', "attach 1",
       '-ex', "load {}".format(RC_KERNEL_ELF),
       '-ex', "kill",
