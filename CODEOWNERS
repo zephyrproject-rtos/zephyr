@@ -67,6 +67,7 @@
 /soc/arm64/nxp_imx/                       @MrVan
 /soc/arm64/arm/                           @povergoing
 /soc/arm64/arm/fvp_aemv8a/                @carlocaione
+/soc/arm64/intel_socfpga/*                @siclim
 /submanifests/*                           @mbolivar-nordic
 /arch/x86/                                @jhedberg @nashif @jenmwms @aasthagr
 /arch/nios2/                              @nashif
@@ -462,6 +463,7 @@
 /dts/arm/infineon/                        @parthitce
 /dts/arm64/                               @carlocaione
 /dts/arm64/armv8-r.dtsi                   @povergoing
+/dts/arm64/intel/*intel_socfpga*          @siclim
 /dts/arm64/nxp/                           @JiafeiPan
 /dts/arm/quicklogic/                      @wtatarski @kowalewskijan @kgugala
 /dts/arm/seeed/                           @str4t0m
