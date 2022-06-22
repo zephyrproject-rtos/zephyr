@@ -294,6 +294,7 @@ C library:
          - nashif
          - enjiamai
          - KangJianX
+         - keith-packard
     files:
          - lib/libc/
          - tests/lib/c_lib/
