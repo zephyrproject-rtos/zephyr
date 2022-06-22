@@ -324,11 +324,11 @@ static int twim_nrfx_pm_action(const struct device *dev,
 			return ret;
 		}
 #endif
-		ret = init_twim(dev);
+		nrfx_twim_enable(&dev_config->twim);
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
-		nrfx_twim_uninit(&dev_config->twim);
+		nrfx_twim_disable(&dev_config->twim);
 
 #ifdef CONFIG_PINCTRL
 		ret = pinctrl_apply_state(dev_config->pcfg,
