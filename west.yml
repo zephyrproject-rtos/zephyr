@@ -198,7 +198,7 @@ manifest:
       path: modules/lib/openthread
     - name: picolibc
       path: modules/lib/picolibc
-      revision: 4f8076520240192be284843a114c92853e29bbbc
+      revision: e87b2fc37345a62361478f0a6efd140e14180ba5
     - name: segger
       revision: 3a52ab222133193802d3c3b4d21730b9b1f1d2f6
       path: modules/debug/segger
