@@ -83,6 +83,15 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	 */
 	msr	tpidr_el0, x2
 #endif
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_HW_STACK_PROTECTION)
+	/* switch to irq stack to do the mpu region switch */
+	get_cpu	x2
+	ldr	x4, [x2, #___cpu_t_irq_stack_OFFSET]
+	mov	sp, x4
+	stp	x0, x1, [sp, -16]!
+	bl      z_arm64_swap_mem_domains
+	ldp	x0, x1, [sp], #16
+#endif
 
 	ldp	x19, x20, [x0, #_thread_offset_to_callee_saved_x19_x20]
 	ldp	x21, x22, [x0, #_thread_offset_to_callee_saved_x21_x22]
@@ -98,11 +107,11 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldp	x4, lr, [x0, #_thread_offset_to_callee_saved_sp_elx_lr]
 	mov	sp, x4
 
-#ifdef CONFIG_USERSPACE
-	str     lr, [sp, #-16]!
+/*if defined(CONFIG_USERSPACE) || defined(CONFIG_HW_STACK_PROTECTION)
+	str     lr, [sp, -16]!
 	bl      z_arm64_swap_mem_domains
-	ldr     lr, [sp], #16
-#endif
+	ldr     lr, [sp], 16
+endif*/
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 	str	lr, [sp, #-16]!

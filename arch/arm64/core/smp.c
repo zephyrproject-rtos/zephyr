@@ -131,7 +131,7 @@ void z_arm64_secondary_start(void)
 	arm_gic_secondary_init();
 
 	irq_enable(SGI_SCHED_IPI);
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_HW_STACK_PROTECTION)
 	irq_enable(SGI_MMCFG_IPI);
 #endif
 #ifdef CONFIG_FPU_SHARING
@@ -182,7 +182,7 @@ void arch_sched_ipi(void)
 	broadcast_ipi(SGI_SCHED_IPI);
 }
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_HW_STACK_PROTECTION)
 void mem_cfg_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
@@ -232,7 +232,7 @@ static int arm64_smp_init(const struct device *dev)
 	IRQ_CONNECT(SGI_SCHED_IPI, IRQ_DEFAULT_PRIORITY, sched_ipi_handler, NULL, 0);
 	irq_enable(SGI_SCHED_IPI);
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_HW_STACK_PROTECTION)
 	IRQ_CONNECT(SGI_MMCFG_IPI, IRQ_DEFAULT_PRIORITY,
 			mem_cfg_ipi_handler, NULL, 0);
 	irq_enable(SGI_MMCFG_IPI);

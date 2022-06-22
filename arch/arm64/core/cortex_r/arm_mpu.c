@@ -16,18 +16,39 @@
 
 LOG_MODULE_REGISTER(mpu, CONFIG_MPU_LOG_LEVEL);
 
-#define MPU_DYNAMIC_REGION_AREAS_NUM	1
+#define MPU_DYNAMIC_REGION_AREAS_NUM	10
 
-#define _MAX_DYNAMIC_MPU_REGIONS_NUM                                                               \
-	((IS_ENABLED(CONFIG_USERSPACE) ? (CONFIG_MAX_DOMAIN_PARTITIONS + 1) : 0) +                 \
-	 (IS_ENABLED(CONFIG_MPU_STACK_GUARD) ? 1 : 0))
+#ifdef CONFIG_MAX_DOMAIN_PARTITIONS
+#define _MAX_DOMAIN_PARTITIONS		CONFIG_MAX_DOMAIN_PARTITIONS
+#else
+#define _MAX_DOMAIN_PARTITIONS		0
+#endif
+
+#define _MAX_DYNAMIC_MPU_REGIONS_NUM	MPU_DYNAMIC_REGION_AREAS_NUM       +                       \
+	((IS_ENABLED(CONFIG_USERSPACE) ? (_MAX_DOMAIN_PARTITIONS + 1) : 0) +                       \
+	 (IS_ENABLED(CONFIG_HW_STACK_PROTECTION) ? 1 : 0))
+
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_HW_STACK_PROTECTION)
+
+struct dynamic_region_info {
+	int index;
+	struct arm_mpu_region region_conf;
+};
+
+static struct dynamic_region_info sys_dyn_regions[MPU_DYNAMIC_REGION_AREAS_NUM];
+static int sys_dyn_regions_num;
+
+static int dynamic_areas_init(uintptr_t start, size_t size);
+static int flush_dynamic_regions_to_mpu(struct dynamic_region_info *dyn_regions,
+					uint8_t region_num);
+#endif
 
 #ifdef CONFIG_USERSPACE
-static int dynamic_areas_init(uintptr_t start, size_t size);
 #define MPU_DYNAMIC_REGIONS_AREA_START ((uintptr_t)&_app_smem_start)
 #else
 #define MPU_DYNAMIC_REGIONS_AREA_START ((uintptr_t)&__kernel_ram_start)
 #endif
+
 #define MPU_DYNAMIC_REGIONS_AREA_SIZE                                                             \
 	((size_t)((uintptr_t)&__kernel_ram_end - MPU_DYNAMIC_REGIONS_AREA_START))
 
@@ -198,10 +219,18 @@ void z_arm64_mm_init(bool is_primary_core)
 	arm_core_mpu_enable();
 
 	if (!is_primary_core) {
+#ifdef CONFIG_HW_STACK_PROTECTION
+		/*
+		 * Secondary cores flush the sys_dyn_regions, in case the
+		 * primary core has reprogramed them. For example: primary core
+		 * called z_arm64_set_stack_guard, then reprogram the sys regions.
+		 */
+		(void) flush_dynamic_regions_to_mpu(sys_dyn_regions, sys_dyn_regions_num);
+#endif /* CONFIG_HW_STACK_PROTECTION */
 		return;
 	}
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_HW_STACK_PROTECTION)
 	/* Only primary core do the dynamic_areas_init. */
 	int rc = dynamic_areas_init(MPU_DYNAMIC_REGIONS_AREA_START,
 				    MPU_DYNAMIC_REGIONS_AREA_SIZE);
@@ -209,19 +238,11 @@ void z_arm64_mm_init(bool is_primary_core)
 		__ASSERT(0, "Dynamic areas init fail");
 		return;
 	}
-#endif
+#endif /* defined(CONFIG_USERSPACE) || defined(CONFIG_HW_STACK_PROTECTION) */
 
 }
 
-#ifdef CONFIG_USERSPACE
-
-struct dynamic_region_info {
-	int index;
-	struct arm_mpu_region region_conf;
-};
-
-static struct dynamic_region_info sys_dyn_regions[MPU_DYNAMIC_REGION_AREAS_NUM];
-static int sys_dyn_regions_num;
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_HW_STACK_PROTECTION)
 
 static int dynamic_areas_init(uintptr_t start, size_t size)
 {
@@ -254,7 +275,7 @@ static int dup_dynamic_regions(struct dynamic_region_info *dst, int len)
 	int ret = sys_dyn_regions_num;
 
 	CHECKIF(!(sys_dyn_regions_num < len)) {
-		LOG_ERR("system dynamic region nums too large.");
+		LOG_ERR("system dynamic region nums too large. %d %d\n", sys_dyn_regions_num, len);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -342,18 +363,22 @@ static int insert_region(struct dynamic_region_info *dyn_regions,
 		set_region(u_region, base, limit, attr);
 	} else if (base == u_base) {
 		set_region(curr_region, base, limit, attr);
+		dyn_regions[region_idx].index = -1;
 		set_region(u_region, limit, u_limit, u_attr);
 		region_idx++;
 	} else if (limit == u_limit) {
 		set_region(u_region, u_base, base, u_attr);
 		set_region(curr_region, base, limit, attr);
+		dyn_regions[region_idx].index = -1;
 		region_idx++;
 	} else {
 		set_region(u_region, u_base, base, u_attr);
 		set_region(curr_region, base, limit, attr);
+		dyn_regions[region_idx].index = -1;
 		region_idx++;
 		curr_region = &(dyn_regions[region_idx].region_conf);
 		set_region(curr_region, limit, u_limit, u_attr);
+		dyn_regions[region_idx].index = -1;
 		region_idx++;
 	}
 
@@ -361,6 +386,23 @@ static int insert_region(struct dynamic_region_info *dyn_regions,
 
 out:
 	return ret;
+}
+
+static int configure_stack_guard(struct dynamic_region_info *dyn_regions,
+				 uint8_t region_num, uint8_t max_region_num,
+				 uintptr_t stack)
+{
+	int ret;
+
+	ret = insert_region(dyn_regions,
+			    region_num,
+			    max_region_num,
+			    stack,
+			    Z_ARM64_STACK_GUARD_SIZE,
+			    &K_MEM_PARTITION_P_RO_U_NA);
+
+	return ret;
+
 }
 
 static int flush_dynamic_regions_to_mpu(struct dynamic_region_info *dyn_regions,
@@ -427,6 +469,7 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 
 	region_num = (uint8_t)ret2;
 
+#if defined(CONFIG_USERSPACE)
 	struct k_mem_domain *mem_domain = thread->mem_domain_info.mem_domain;
 
 	if (mem_domain) {
@@ -472,6 +515,22 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 
 		region_num = (uint8_t)ret2;
 	}
+#endif /* CONFIG_USERSPACE */
+
+#if defined(CONFIG_HW_STACK_PROTECTION)
+	uintptr_t guard_start = thread->stack_info.start - Z_ARM64_STACK_GUARD_SIZE;
+
+	if ((thread->base.user_options & K_USER) != 0) {
+		guard_start -= CONFIG_PRIVILEGED_STACK_SIZE;
+	}
+	ret2 = configure_stack_guard(dyn_regions, region_num, max_region_num,
+				     guard_start);
+	CHECKIF(ret2 != 0) {
+		ret = ret2;
+	}
+
+	region_num = (uint8_t)ret2;
+#endif /* CONFIG_HW_STACK_PROTECTION */
 
 	arm_core_mpu_disable();
 	ret = flush_dynamic_regions_to_mpu(dyn_regions, region_num);
@@ -480,6 +539,10 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 out:
 	return ret;
 }
+
+#endif /*defined(CONFIG_USERSPACE) || defined(CONFIG_HW_STACK_PROTECTION) */
+
+#if defined(CONFIG_USERSPACE)
 
 int arch_mem_domain_max_partitions_get(void)
 {
@@ -542,14 +605,39 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 	return ret;
 }
 
+
 void z_arm64_thread_mem_domains_init(struct k_thread *thread)
 {
 	configure_dynamic_mpu_regions(thread);
 }
+#endif /* CONFIG_USERSPACE */
 
+
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_HW_STACK_PROTECTION)
 void z_arm64_swap_mem_domains(struct k_thread *thread)
 {
 	configure_dynamic_mpu_regions(thread);
 }
+#endif
 
-#endif /* CONFIG_USERSPACE */
+#if defined(CONFIG_HW_STACK_PROTECTION)
+void z_arm64_set_stack_guard(k_thread_stack_t *stack)
+{
+	/* add spin lock */
+	int ret;
+	int region_num = sys_dyn_regions_num;
+
+	region_num = configure_stack_guard(sys_dyn_regions, region_num,
+					   MPU_DYNAMIC_REGION_AREAS_NUM,
+					   (uintptr_t)stack);
+
+	sys_dyn_regions_num = region_num;
+
+	arm_core_mpu_disable();
+	ret = flush_dynamic_regions_to_mpu(sys_dyn_regions, region_num);
+	CHECKIF(ret != 0) {
+		__ASSERT(0, "MPU flush error: %d!\n", ret);
+	}
+	arm_core_mpu_enable();
+}
+#endif /* CONFIG_HW_STACK_PROTECTION */

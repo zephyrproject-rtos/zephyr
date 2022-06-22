@@ -7,6 +7,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm64/thread_stack.h>
 #include "boot.h"
 #include "macro_priv.inc"
 
@@ -136,7 +137,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 primary_core:
 #endif
 	/* load primary stack and entry point */
-	ldr	x24, =(z_interrupt_stacks + CONFIG_ISR_STACK_SIZE)
+	ldr	x24, =(z_interrupt_stacks + ARCH_KERNEL_STACK_RESERVED + CONFIG_ISR_STACK_SIZE)
 	ldr	x25, =z_arm64_prep_c
 2:
 	/* Prepare for calling C code */

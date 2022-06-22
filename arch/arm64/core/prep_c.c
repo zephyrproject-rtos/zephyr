@@ -18,8 +18,10 @@
 #include <zephyr/linker/linker-defs.h>
 
 __weak void z_arm64_mm_init(bool is_primary_core) { }
+__weak  void z_arm64_set_stack_guard(k_thread_stack_t *stack) { }
 
 extern void z_arm64_mm_init(bool is_primary_core);
+extern void z_arm64_set_stack_guard(k_thread_stack_t *stack);
 
 /*
  * These simple memset/memcpy alternatives are necessary as the optimized
@@ -59,6 +61,13 @@ void z_arm64_prep_c(void)
 	z_bss_zero();
 	z_data_copy();
 	z_arm64_mm_init(true);
+
+#ifdef CONFIG_HW_STACK_PROTECTION
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		z_arm64_set_stack_guard(z_interrupt_stacks[i]);
+	}
+#endif /* CONFIG_HW_STACK_PROTECTION */
+
 	z_arm64_interrupt_init();
 	z_cstart();
 

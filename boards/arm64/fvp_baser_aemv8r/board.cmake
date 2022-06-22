@@ -6,6 +6,7 @@ set(ARMFVP_BIN_NAME FVP_BaseR_AEMv8R)
 set(ARMFVP_MIN_VERSION 11.16.16)
 
 set(ARMFVP_FLAGS
+	#  -I -A --iris-port 7100
   -C cluster0.has_aarch64=1
   -C cluster0.VMSA_supported=0
   -C cluster0.NUM_CORES=${CONFIG_MP_NUM_CPUS}

@@ -18,6 +18,7 @@ config CPU_AARCH64_CORTEX_R
 	bool
 	select CPU_CORTEX
 	select HAS_FLASH_LOAD_OFFSET
+	select ARCH_HAS_STACK_PROTECTION
 	help
 	  This option signifies the use of a CPU of the Cortex-R 64-bit family.
 

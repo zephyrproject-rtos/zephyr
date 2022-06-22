@@ -70,6 +70,16 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	extern void z_arm64_exit_exc(void);
 	z_arch_esf_t *pInitCtx;
 
+//#if defined(CONFIG_HW_STACK_PROTECTION) && !defined(CONFIG_USERSPACE)
+#if 0
+	/*
+	 * Set guard if and only if no USERSPACE. It is no need to set it when
+	 * USERSPACE enabled, because USERSPACE will re-program the regions
+	 * during the context switch.
+	 */
+	z_arm64_set_stack_guard(stack);
+#endif
+
 	/*
 	 * The ESF is now hosted at the top of the stack. For user threads this
 	 * is also fine because at this stage they are still running in EL1.

@@ -16,6 +16,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/exc_handle.h>
+#include <kernel_internal.h>
+#include <exc.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -26,6 +28,8 @@ static const struct z_exc_handle exceptions[] = {
 	Z_EXC_HANDLE(z_arm64_user_string_nlen),
 };
 #endif /* CONFIG_USERSPACE */
+
+K_KERNEL_STACK_DEFINE(z_arm64_err_stack, 4096);
 
 #ifdef CONFIG_EXCEPTION_DEBUG
 static void dump_esr(uint64_t esr, bool *dump_far)
@@ -171,6 +175,61 @@ static void esf_dump(const z_arch_esf_t *esf)
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
+#ifdef CONFIG_HW_STACK_PROTECTION
+static bool z_arm64_stack_corruption_check(uint64_t esr, uint64_t far)
+{
+	uint64_t guard_start, guard_size;
+	bool is_sp_invalid = true;
+
+	if (GET_ESR_EC(esr) != 0x24 && GET_ESR_EC(esr) != 0x25) {
+		return false;
+	}
+
+	guard_size = Z_ARM64_STACK_GUARD_SIZE;
+
+	if (_current == NULL || arch_is_in_isr()) {
+		/* We were servicing an interrupt or in early boot environment
+		 * and are supposed to be on the interrupt stack */
+		int cpu_id;
+
+		cpu_id = 0;
+#ifdef CONFIG_SMP
+		cpu_id = arch_curr_cpu()->id;
+#endif
+
+		guard_start = (uint64_t)&z_interrupt_stacks[cpu_id];
+
+#ifdef CONFIG_THREAD_STACK_INFO
+#ifdef CONFIG_USERSPACE
+	} else if ((_current->base.user_options & K_USER) != 0) {
+		/*
+		 * If exception happens in User mode and if it's from lower EL,
+		 * check the user stack bounds.
+		 *
+		 * The GET_ESR_EC(esr) == 0x24 means "Data Abort from a lower
+		 * Exception level"
+		 */
+		guard_start = (uint64_t)_current->stack_info.start - ARCH_THREAD_STACK_RESERVED;
+
+		if (GET_ESR_EC(esr) == 0x24) {
+			guard_size = ARCH_THREAD_STACK_RESERVED;
+			is_sp_invalid = (read_sp_el0() <= (uint64_t)_current->stack_info.start);
+		} else {
+			is_sp_invalid = (read_sp_el1() <= (guard_start + guard_size));
+		}
+		LOG_ERR("guard_start %llx, guard_end %llx, sp_el0 %llx, stack_start %llx", guard_start, guard_start + guard_size, read_sp_el0(), (uint64_t)_current->stack_info.start);
+#endif /* CONFIG_USERSPACE */
+	} else {
+		/* Normal thread operation, check its stack buffer */
+		guard_start = (uint64_t)_current->stack_info.start - guard_size;
+	}
+#endif
+
+	/* if far is in guard range, then return true */
+	return far >= guard_start && far < (guard_start + guard_size) && is_sp_invalid;
+}
+#endif
+
 static bool is_recoverable(z_arch_esf_t *esf, uint64_t esr, uint64_t far,
 			   uint64_t elr)
 {
@@ -230,8 +289,10 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 			LOG_ERR("TPIDRRO: 0x%016llx", read_tpidrro_el0());
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
+
 			if (is_recoverable(esf, esr, far, elr))
 				return;
+
 		}
 	}
 
@@ -240,6 +301,13 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 		esf_dump(esf);
 	}
 #endif /* CONFIG_EXCEPTION_DEBUG */
+
+#ifdef CONFIG_HW_STACK_PROTECTION
+	if (z_arm64_stack_corruption_check(esr, far)) {
+		LOG_ERR("STACK CORRUPT");
+		reason = K_ERR_STACK_CHK_FAIL;
+	}
+#endif
 
 	z_fatal_error(reason, esf);
 
