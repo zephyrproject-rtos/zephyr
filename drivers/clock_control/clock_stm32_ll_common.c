@@ -19,6 +19,9 @@
 #include "stm32_hsem.h"
 
 /* Macros to fill up prescaler values */
+#define z_hsi_divider(v) LL_RCC_HSI_DIV_ ## v
+#define hsi_divider(v) z_hsi_divider(v)
+
 #define fn_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
 #define ahb_prescaler(v) fn_ahb_prescaler(v)
 
@@ -447,6 +450,9 @@ static void set_up_fixed_clock_sources(void)
 			/* Wait for HSI ready */
 			}
 		}
+#if STM32_HSI_DIV_ENABLED
+		LL_RCC_SetHSIDiv(hsi_divider(STM32_HSI_DIVISOR));
+#endif
 	}
 
 #if defined(STM32_MSI_ENABLED)
