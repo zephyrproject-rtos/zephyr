@@ -148,7 +148,6 @@ static void broadcast_source_iso_connected(struct bt_iso_chan *chan)
 	BT_DBG("stream %p ep %p", chan, ep);
 
 	broadcast_source_set_ep_state(ep, BT_AUDIO_EP_STATE_STREAMING);
-	ep->seq_num = 0U;
 
 	if (ops != NULL && ops->started != NULL) {
 		ops->started(ep->stream);
