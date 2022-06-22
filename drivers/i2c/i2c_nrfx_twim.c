@@ -8,6 +8,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <nrfx_twim.h>
@@ -57,7 +58,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 	/* Dummy take on completion_sync sem to be sure that it is empty */
 	k_sem_take(&dev_data->completion_sync, K_NO_WAIT);
 
-	nrfx_twim_enable(&dev_config->twim);
+	(void)pm_device_runtime_get(dev);
 
 	for (size_t i = 0; i < num_msgs; i++) {
 		if (I2C_MSG_ADDR_10_BITS & msgs[i].flags) {
@@ -202,7 +203,8 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		msg_buf_used = 0;
 	}
 
-	nrfx_twim_disable(&dev_config->twim);
+	(void)pm_device_runtime_put(dev);
+
 	k_sem_give(&dev_data->transfer_sync);
 
 	return ret;
@@ -339,7 +341,10 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 	dev_config->irq_connect();
 
 #ifdef CONFIG_PINCTRL
-	int err = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
+	int err = pinctrl_apply_state(dev_config->pcfg,
+				      COND_CODE_1(CONFIG_PM_DEVICE_RUNTIME,
+						  (PINCTRL_STATE_SLEEP),
+						  (PINCTRL_STATE_DEFAULT)));
 	if (err < 0) {
 		return err;
 	}
@@ -350,6 +355,13 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 		LOG_ERR("Failed to initialize device: %s", dev->name);
 		return -EIO;
 	}
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	pm_device_init_suspended(dev);
+	pm_device_runtime_enable(dev);
+#else
+	nrfx_twim_enable(&dev_config->twim);
+#endif
 
 	return 0;
 }
