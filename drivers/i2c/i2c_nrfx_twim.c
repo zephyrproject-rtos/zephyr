@@ -246,13 +246,6 @@ static int init_twim(const struct device *dev)
 	return 0;
 }
 
-static void deinit_twim(const struct device *dev)
-{
-	const struct i2c_nrfx_twim_config *dev_config = dev->config;
-
-	nrfx_twim_uninit(&dev_config->twim);
-}
-
 static int i2c_nrfx_twim_configure(const struct device *dev,
 				   uint32_t i2c_config)
 {
@@ -335,7 +328,7 @@ static int twim_nrfx_pm_action(const struct device *dev,
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
-		deinit_twim(dev);
+		nrfx_twim_uninit(&dev_config->twim);
 
 #ifdef CONFIG_PINCTRL
 		ret = pinctrl_apply_state(dev_config->pcfg,
