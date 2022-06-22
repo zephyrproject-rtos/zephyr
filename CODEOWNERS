@@ -83,8 +83,6 @@
 /soc/x86/                                 @dcpleung @nashif @jenmwms @aasthagr
 /arch/xtensa/                             @dcpleung @andyross @nashif
 /soc/xtensa/                              @dcpleung @andyross @nashif
-/arch/sparc/                              @martin-aberg
-/soc/sparc/                               @martin-aberg
 /boards/arc/                              @abrodkin @ruuddw @evgeniy-paltsev
 /boards/arm/                              @MaureenHelm @galak
 /boards/arm/96b_argonkey/                 @avisconti
@@ -179,7 +177,6 @@
 /boards/xtensa/                           @nashif @dcpleung
 /boards/xtensa/odroid_go/                 @ydamigos
 /boards/xtensa/nxp_adsp_imx8/             @iuliana-prodan @dbaluta
-/boards/sparc/                            @martin-aberg
 /boards/arm64/qemu_cortex_a53/            @carlocaione
 /boards/arm64/bcm958402m2_a72/            @abhishek-brcm
 /boards/arm64/imx8mm_evk/                 @MrVan
@@ -379,7 +376,6 @@
 /drivers/serial/uart_xlnx_uartlite.c      @henrikbrixandersen
 /drivers/serial/*xmc4xxx*                 @parthitce
 /drivers/serial/*numicro*                 @ssekar15
-/drivers/serial/*apbuart*                 @martin-aberg
 /drivers/serial/*rcar*                    @aaillet
 /drivers/serial/Kconfig.test              @str4t0m
 /drivers/serial/serial_test.c             @str4t0m
@@ -411,7 +407,6 @@
 /drivers/timer/*cc13x2_cc26x2_rtc*        @vanti
 /drivers/timer/*cavs*                     @dcpleung
 /drivers/timer/*stm32_lptim*              @FRASTM
-/drivers/timer/*leon_gptimer*             @martin-aberg
 /drivers/timer/*mips_cp0*                 @frantony
 /drivers/timer/*rcar_cmt*                 @aaillet
 /drivers/timer/*esp32c3_sys*              @uLipe
@@ -503,7 +498,6 @@
 /dts/xtensa/intel/                        @dcpleung
 /dts/xtensa/espressif/                    @glaubermaroto
 /dts/xtensa/nxp/                          @iuliana-prodan @dbaluta
-/dts/sparc/                               @martin-aberg
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter @henrikbrixandersen
 /dts/bindings/i2c/zephyr*i2c-emul*.yaml   @sjg20
@@ -574,7 +568,6 @@
 /include/zephyr/arch/x86/                        @jhedberg @dcpleung
 /include/zephyr/arch/common/                     @andyross @nashif
 /include/zephyr/arch/xtensa/                     @andyross @dcpleung
-/include/zephyr/arch/sparc/                      @martin-aberg
 /include/zephyr/sys/atomic.h                     @andyross
 /include/zephyr/bluetooth/                       @alwa-nordic @jhedberg @Vudentz @sjanc
 /include/zephyr/bluetooth/audio/                 @alwa-nordic @jhedberg @Vudentz @Thalley @asbjornsabo
