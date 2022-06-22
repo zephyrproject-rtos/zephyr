@@ -1519,6 +1519,8 @@ Shields:
 
 SPARC arch:
     status: odd fixes
+    collaborators:
+        - julius-barendt
     files:
         - arch/sparc/
         - include/zephyr/arch/sparc/
