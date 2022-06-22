@@ -176,17 +176,17 @@ static void eem_read_cb(uint8_t ep, int size, void *priv)
 			break;
 		}
 
-		pkt = net_pkt_alloc_with_buffer(netusb_net_iface(),
-						eem_size - sizeof(sentinel),
-						AF_UNSPEC, 0, K_FOREVER);
+		pkt = net_pkt_rx_alloc_with_buffer(netusb_net_iface(),
+						   eem_size - sizeof(sentinel),
+						   AF_UNSPEC, 0, K_FOREVER);
 		if (!pkt) {
-			LOG_ERR("Unable to alloc pkt\n");
+			LOG_ERR("Unable to alloc pkt");
 			break;
 		}
 
 		/* copy payload and discard 32-bit sentinel */
 		if (net_pkt_write(pkt, ptr, eem_size - sizeof(sentinel))) {
-			LOG_ERR("Unable to write into pkt\n");
+			LOG_ERR("Unable to write into pkt");
 			net_pkt_unref(pkt);
 			break;
 		}
