@@ -1240,5 +1240,19 @@
 			kso16-gpios = <&gpioc 3 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 			kso17-gpios = <&gpioc 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 		};
+
+		usbpd0: usbpd@f03700 {
+			compatible = "ite,it8xxx2-usbpd";
+			reg = <0x00f03700 0x100>;
+			label = "USB_PD_PORT0";
+			status = "disabled";
+		};
+
+		usbpd1: usbpd@f03800 {
+			compatible = "ite,it8xxx2-usbpd";
+			reg = <0x00f03800 0x100>;
+			label = "USB_PD_PORT1";
+			status = "disabled";
+		};
 	};
 };
