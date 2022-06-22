@@ -5,7 +5,7 @@ common:
   arch_exclude: mips nios2 posix sparc
   filter: not CONFIG_64BIT
 tests:
-  logger.syst.v2.deferred:
+  logging.log_switch_format.deferred:
     integration_platforms:
       - mps2_an385
       - qemu_x86
@@ -21,7 +21,7 @@ tests:
         - "hello sys-t on board"
         - "SYS-T RAW DATA: "
         - "SYST Sample Execution Completed"
-  logger.syst.v2.immediate:
+  logging.log_switch_format.immediate:
     extra_args: OVERLAY_CONFIG=overlay_immediate.conf
     integration_platforms:
       - mps2_an385
@@ -37,3 +37,4 @@ tests:
         - "hello sys-t on board"
         - "SYS-T RAW DATA: "
         - "SYST Sample Execution Completed"
+        - "PROJECT EXECUTION SUCCESSFUL"
