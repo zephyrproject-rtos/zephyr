@@ -2361,6 +2361,16 @@ West:
     labels:
         - manifest-openthread
 
+"West project: picolibc":
+    status: maintained
+    maintainers:
+        - keith-packard
+    collaborators:
+        - stephanosio
+    files: []
+    labels:
+        - manifest-picolibc
+
 "West project: segger":
     status: odd fixes
     collaborators:
