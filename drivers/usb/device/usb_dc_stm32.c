@@ -306,8 +306,10 @@ static int usb_dc_stm32_clock_enable(void)
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
 #else
-	/* Disable ULPI interface (for external high-speed PHY) clock */
-	LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+	/* Disable ULPI interface (for external high-speed PHY) clock in low
+	 * power mode. It is disabled by default in run power mode, no need to
+	 * disable it.
+	 */
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 #endif
 #endif
@@ -396,7 +398,6 @@ static int usb_dc_stm32_init(void)
 	 * enable the FS clock. Need to make this dependent on HS or FS config.
 	 */
 
-	LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_USB2OTGHSULPI);
 	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB2OTGHSULPI);
 
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_USB2OTGHS);
