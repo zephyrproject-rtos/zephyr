@@ -110,8 +110,6 @@ static inline void trigger_irq(int irq)
 #define LOAPIC_ICR_IPI_TEST  0x00004000U
 #endif
 
-#define TRIGGER_IRQ_INT(vector) __asm__ volatile("int %0" : : "i" (vector) : "memory")
-
 /*
  * We can emulate the interrupt by sending the IPI to
  * core itself by the LOAPIC for x86 platform.
