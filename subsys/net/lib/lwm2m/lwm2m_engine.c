@@ -5135,7 +5135,6 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 	struct coap_packet response;
 	int r;
 	uint8_t token[8];
-	uint8_t tkl;
 
 	r = coap_packet_parse(&response, buf, buf_len, NULL, 0);
 	if (r < 0) {
@@ -5143,7 +5142,7 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 		return;
 	}
 
-	tkl = coap_header_get_token(&response, token);
+	(void)coap_header_get_token(&response, token);
 	pending = coap_pending_received(&response, client_ctx->pendings,
 					ARRAY_SIZE(client_ctx->pendings));
 	if (pending && coap_header_get_type(&response) == COAP_TYPE_ACK) {
