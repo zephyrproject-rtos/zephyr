@@ -1339,8 +1339,10 @@ int bt_setup_public_id_addr(void)
 
 	bt_read_identity_root(ir);
 
-	if (!bt_smp_irk_get(ir, ir_irk)) {
-		irk = ir_irk;
+	if (!IS_ENABLED(CONFIG_BT_PRIVACY_RANDOMIZE_IR)) {
+		if (!bt_smp_irk_get(ir, ir_irk)) {
+			irk = ir_irk;
+		}
 	}
 #endif /* defined(CONFIG_BT_PRIVACY) */
 
@@ -1427,8 +1429,10 @@ int bt_setup_random_id_addr(void)
 #if defined(CONFIG_BT_PRIVACY)
 				uint8_t ir_irk[16];
 
-				if (!bt_smp_irk_get(addrs[i].ir, ir_irk)) {
-					irk = ir_irk;
+				if (!IS_ENABLED(CONFIG_BT_PRIVACY_RANDOMIZE_IR)) {
+					if (!bt_smp_irk_get(addrs[i].ir, ir_irk)) {
+						irk = ir_irk;
+					}
 				}
 #endif /* CONFIG_BT_PRIVACY */
 
