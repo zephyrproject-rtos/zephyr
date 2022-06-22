@@ -250,63 +250,135 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 }
 
 /* Shift a SPI frame as master. */
-static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
+static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data, bool half_duplex)
 {
-	uint16_t tx_frame = SPI_STM32_TX_NOP;
-	uint16_t rx_frame;
-
-	while (!ll_func_tx_is_empty(spi)) {
-		/* NOP */
-	}
-
+	if (half_duplex) {
 #if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+    defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 	/* With the STM32MP1, STM32U5 and the STM32H7,
 	 * if the device is the SPI master,
 	 * we need to enable the start of the transfer with
 	 * LL_SPI_StartMasterTransfer(spi)
 	 */
-	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
-		LL_SPI_StartMasterTransfer(spi);
-		while (!LL_SPI_IsActiveMasterTransfer(spi)) {
-			/* NOP */
+		if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+			LL_SPI_StartMasterTransfer(spi);
+			while (!LL_SPI_IsActiveMasterTransfer(spi)) {
+				/* NOP */
+			}
 		}
-	}
 #endif
 
-	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
-		if (spi_context_tx_buf_on(&data->ctx)) {
-			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
+		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+			if (spi_context_tx_buf_on(&data->ctx)) {
+				uint8_t tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
+				LL_SPI_TransmitData8(spi, tx_frame);
+				while (!ll_func_tx_is_empty(spi)) {
+					/* NOP */
+				}
+				/* Wait for transmit to finish */
+				while (ll_func_spi_is_busy(spi)) {
+					/* NOP */
+				}
+			}
+			spi_context_update_tx(&data->ctx, 1, 1);
+		} else {
+			if (spi_context_tx_buf_on(&data->ctx)) {
+				uint16_t tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
+				LL_SPI_TransmitData16(spi, tx_frame);
+				while (!ll_func_tx_is_empty(spi)) {
+					/* NOP */
+				}
+				/* Wait for transmit to finish */
+				while (ll_func_spi_is_busy(spi)) {
+					/* NOP */
+				}
+			}
+			spi_context_update_tx(&data->ctx, 2, 1);
 		}
-		LL_SPI_TransmitData8(spi, tx_frame);
-		/* The update is ignored if TX is off. */
-		spi_context_update_tx(&data->ctx, 1, 1);
-	} else {
-		if (spi_context_tx_buf_on(&data->ctx)) {
-			tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
-		}
-		LL_SPI_TransmitData16(spi, tx_frame);
-		/* The update is ignored if TX is off. */
-		spi_context_update_tx(&data->ctx, 2, 1);
-	}
 
-	while (!ll_func_rx_is_not_empty(spi)) {
-		/* NOP */
-	}
-
-	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
-		rx_frame = LL_SPI_ReceiveData8(spi);
-		if (spi_context_rx_buf_on(&data->ctx)) {
-			UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
+		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+			if (spi_context_rx_buf_on(&data->ctx)) {
+				LL_SPI_SetTransferDirection(spi, LL_SPI_HALF_DUPLEX_RX);
+				while (!ll_func_rx_is_not_empty(spi)) {
+					/* NOP */
+				}
+				/* Disable SCK */
+				LL_SPI_SetTransferDirection(spi, LL_SPI_HALF_DUPLEX_TX);
+				uint8_t rx_frame = LL_SPI_ReceiveData8(spi);
+				UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
+			}
+			spi_context_update_rx(&data->ctx, 1, 1);
+		} else {
+			if (spi_context_rx_buf_on(&data->ctx)) {
+				LL_SPI_SetTransferDirection(spi, LL_SPI_HALF_DUPLEX_RX);
+				while (!ll_func_rx_is_not_empty(spi)) {
+					/* NOP */
+				}
+				/* Disable SCK */
+				LL_SPI_SetTransferDirection(spi, LL_SPI_HALF_DUPLEX_TX);
+				uint16_t rx_frame = LL_SPI_ReceiveData16(spi);
+				UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
+			}
+			spi_context_update_rx(&data->ctx, 2, 1);
 		}
-		spi_context_update_rx(&data->ctx, 1, 1);
 	} else {
-		rx_frame = LL_SPI_ReceiveData16(spi);
-		if (spi_context_rx_buf_on(&data->ctx)) {
-			UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
+		uint16_t tx_frame = SPI_STM32_TX_NOP;
+		uint16_t rx_frame;
+
+		while (!ll_func_tx_is_empty(spi)) {
+			/* NOP */
 		}
-		spi_context_update_rx(&data->ctx, 2, 1);
+
+#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
+		/* With the STM32MP1, STM32U5 and the STM32H7,
+		* if the device is the SPI master,
+		* we need to enable the start of the transfer with
+		* LL_SPI_StartMasterTransfer(spi)
+		*/
+		if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+			LL_SPI_StartMasterTransfer(spi);
+			while (!LL_SPI_IsActiveMasterTransfer(spi)) {
+				/* NOP */
+			}
+		}
+#endif
+
+		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+			if (spi_context_tx_buf_on(&data->ctx)) {
+				tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
+			}
+			LL_SPI_TransmitData8(spi, tx_frame);
+			/* The update is ignored if TX is off. */
+			spi_context_update_tx(&data->ctx, 1, 1);
+		} else {
+			if (spi_context_tx_buf_on(&data->ctx)) {
+				tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
+			}
+			LL_SPI_TransmitData16(spi, tx_frame);
+			/* The update is ignored if TX is off. */
+			spi_context_update_tx(&data->ctx, 2, 1);
+		}
+
+		while (!ll_func_rx_is_not_empty(spi)) {
+			/* NOP */
+		}
+
+		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+			rx_frame = LL_SPI_ReceiveData8(spi);
+			if (spi_context_rx_buf_on(&data->ctx)) {
+				UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
+			}
+			spi_context_update_rx(&data->ctx, 1, 1);
+		} else {
+			rx_frame = LL_SPI_ReceiveData16(spi);
+			if (spi_context_rx_buf_on(&data->ctx)) {
+				UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
+			}
+			spi_context_update_rx(&data->ctx, 2, 1);
+		}
 	}
 }
 
@@ -348,15 +420,13 @@ static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 /*
  * Without a FIFO, we can only shift out one frame's worth of SPI
  * data, and read the response back.
- *
- * TODO: support 16-bit data frames.
  */
 static int spi_stm32_shift_frames(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
 	uint16_t operation = data->ctx.config->operation;
 
 	if (SPI_OP_MODE_GET(operation) == SPI_OP_MODE_MASTER) {
-		spi_stm32_shift_m(spi, data);
+		spi_stm32_shift_m(spi, data, operation & SPI_HALF_DUPLEX);
 	} else {
 		spi_stm32_shift_s(spi, data);
 	}
@@ -474,6 +544,12 @@ static int spi_stm32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if ((config->operation & SPI_HALF_DUPLEX)
+		&& SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) {
+		LOG_ERR("Half-Duplex slave not supported");
+		return -ENOTSUP;
+	}
+
 	/* configure the frame format Motorola (default) or TI */
 	if ((config->operation & SPI_FRAME_FORMAT_TI) == SPI_FRAME_FORMAT_TI) {
 #ifdef LL_SPI_PROTOCOL_TI
@@ -526,7 +602,11 @@ static int spi_stm32_configure(const struct device *dev,
 		LL_SPI_SetClockPhase(spi, LL_SPI_PHASE_1EDGE);
 	}
 
-	LL_SPI_SetTransferDirection(spi, LL_SPI_FULL_DUPLEX);
+	if (config->operation & SPI_HALF_DUPLEX) {
+		LL_SPI_SetTransferDirection(spi, LL_SPI_HALF_DUPLEX_TX);
+	} else {
+		LL_SPI_SetTransferDirection(spi, LL_SPI_FULL_DUPLEX);
+	}
 
 	if (config->operation & SPI_TRANSFER_LSB) {
 		LL_SPI_SetTransferBitOrder(spi, LL_SPI_LSB_FIRST);
