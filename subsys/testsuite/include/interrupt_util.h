@@ -133,6 +133,8 @@ static inline void trigger_irq(int irq)
  */
 static inline void trigger_irq(int vector)
 {
+	uint8_t i;
+
 #ifdef CONFIG_X2APIC
 	x86_write_x2apic(LOAPIC_SELF_IPI, ((VECTOR_MASK & vector)));
 #else
@@ -144,6 +146,14 @@ static inline void trigger_irq(int vector)
 #endif
 	z_loapic_ipi(cpu_id, LOAPIC_ICR_IPI_TEST, vector);
 #endif /* CONFIG_X2APIC */
+
+	/*
+	 * add some nop operations here to cost some cycles to make sure
+	 * the IPI interrupt is handled before do our check.
+	 */
+	for (i = 0; i < 10; i++) {
+		arch_nop();
+	}
 }
 
 #elif defined(CONFIG_ARCH_POSIX)
