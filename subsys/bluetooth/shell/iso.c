@@ -110,11 +110,11 @@ static struct bt_iso_chan_ops iso_ops = {
 }
 
 static struct bt_iso_chan_io_qos iso_tx_qos = DEFAULT_IO_QOS;
-static struct bt_iso_chan_io_qos iso_rx_qos = DEFAULT_IO_QOS;
-
 
 #if defined(CONFIG_BT_ISO_UNICAST)
 static uint32_t cis_sdu_interval_us;
+
+static struct bt_iso_chan_io_qos iso_rx_qos = DEFAULT_IO_QOS;
 
 static struct bt_iso_chan_qos cis_iso_qos = {
 	.tx = &iso_tx_qos,
