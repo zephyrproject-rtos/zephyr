@@ -21,7 +21,10 @@ static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
 static struct bt_audio_unicast_group *unicast_group;
 static struct bt_codec *remote_codec_capabilities[CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
-static struct bt_audio_ep *sinks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
+static struct bt_audio_sink {
+	struct bt_audio_ep *ep;
+	uint32_t seq_num;
+} sinks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
 static struct bt_audio_ep *sources[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT];
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT,
 			  CONFIG_BT_ISO_TX_MTU + BT_ISO_CHAN_SEND_RESERVE,
@@ -49,6 +52,19 @@ static K_SEM_DEFINE(sem_stream_configured, 0, 1);
 static K_SEM_DEFINE(sem_stream_qos, 0, 1);
 static K_SEM_DEFINE(sem_stream_enabled, 0, 1);
 static K_SEM_DEFINE(sem_stream_started, 0, 1);
+
+static uint32_t get_and_incr_seq_num(const struct bt_audio_stream *stream)
+{
+	for (size_t i = 0U; i < configured_sink_stream_count; i++) {
+		if (stream->ep == sinks[i].ep) {
+			return sinks[i].seq_num++;
+		}
+	}
+
+	printk("Could not find endpoint from stream %p\n", stream);
+
+	return 0;
+}
 
 #if defined(CONFIG_LIBLC3CODEC)
 
@@ -160,6 +176,7 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 		}
 
 		for (size_t i = 0U; i < configured_sink_stream_count; i++) {
+			struct bt_audio_stream *stream = &streams[i];
 			struct net_buf *buf_to_send;
 			int ret;
 
@@ -170,7 +187,9 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 				buf_to_send = net_buf_clone(buf, K_FOREVER);
 			}
 
-			ret = bt_audio_stream_send(&streams[i], buf_to_send);
+			ret = bt_audio_stream_send(stream, buf_to_send,
+						   get_and_incr_seq_num(stream),
+						   BT_ISO_TIMESTAMP_NONE);
 			if (ret < 0) {
 				printk("  Failed to send LC3 audio data on streams[%zu] (%d)\n",
 				       i, ret);
@@ -274,6 +293,7 @@ static void audio_timer_timeout(struct k_work *work)
 	 * data going to the server)
 	 */
 	for (size_t i = 0U; i < configured_sink_stream_count; i++) {
+		struct bt_audio_stream *stream = &streams[i];
 		struct net_buf *buf_to_send;
 		int ret;
 
@@ -284,7 +304,9 @@ static void audio_timer_timeout(struct k_work *work)
 			buf_to_send = net_buf_clone(buf, K_FOREVER);
 		}
 
-		ret = bt_audio_stream_send(&streams[i], buf_to_send);
+		ret = bt_audio_stream_send(stream, buf_to_send,
+					   get_and_incr_seq_num(stream),
+					   BT_ISO_TIMESTAMP_NONE);
 		if (ret < 0) {
 			printk("Failed to send audio data on streams[%zu]: (%d)\n",
 			       i, ret);
@@ -456,6 +478,14 @@ static void stream_started(struct bt_audio_stream *stream)
 {
 	printk("Audio Stream %p started\n", stream);
 
+	/* Reset sequence number for sinks */
+	for (size_t i = 0U; i < configured_sink_stream_count; i++) {
+		if (stream->ep == sinks[i].ep) {
+			sinks[i].seq_num = 0U;
+			break;
+		}
+	}
+
 	k_sem_give(&sem_stream_started);
 }
 
@@ -522,7 +552,7 @@ static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
 		return;
 	}
 
-	sinks[index] = ep;
+	sinks[index].ep = ep;
 }
 
 static void add_remote_codec(struct bt_codec *codec_capabilities, int index,
@@ -772,7 +802,7 @@ static int configure_streams(void)
 	int err;
 
 	for (size_t i = 0; i < ARRAY_SIZE(sinks); i++) {
-		struct bt_audio_ep *ep = sinks[i];
+		struct bt_audio_ep *ep = sinks[i].ep;
 		struct bt_audio_stream *stream = &streams[i];
 
 		if (ep == NULL) {
