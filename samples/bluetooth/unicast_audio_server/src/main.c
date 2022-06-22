@@ -39,7 +39,10 @@ static struct bt_codec lc3_codec =
 static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
 static struct bt_audio_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
-static struct bt_audio_stream *source_streams[CONFIG_BT_ASCS_ASE_SRC_COUNT];
+static struct bt_audio_source {
+	struct bt_audio_stream *stream;
+	uint32_t seq_num;
+} source_streams[CONFIG_BT_ASCS_ASE_SRC_COUNT];
 static size_t configured_source_stream_count;
 
 static K_SEM_DEFINE(sem_disconnected, 0, 1);
@@ -60,6 +63,19 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL)),
 	BT_DATA(BT_DATA_SVC_DATA16, unicast_server_addata, ARRAY_SIZE(unicast_server_addata)),
 };
+
+static uint32_t get_and_incr_seq_num(const struct bt_audio_stream *stream)
+{
+	for (size_t i = 0U; i < configured_source_stream_count; i++) {
+		if (stream == source_streams[i].stream) {
+			return source_streams[i].seq_num++;
+		}
+	}
+
+	printk("Could not find endpoint from stream %p\n", stream);
+
+	return 0;
+}
 
 #if defined(CONFIG_LIBLC3CODEC)
 
@@ -170,14 +186,16 @@ static void audio_timer_timeout(struct k_work *work)
 	 * data going to the server)
 	 */
 	for (size_t i = 0; i < configured_source_stream_count; i++) {
-		struct bt_audio_stream *stream = source_streams[i];
+		struct bt_audio_stream *stream = source_streams[i].stream;
 
 		buf = net_buf_alloc(&tx_pool, K_FOREVER);
 		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
 		net_buf_add_mem(buf, buf_data, len_to_send);
 
-		ret = bt_audio_stream_send(stream, buf);
+		ret = bt_audio_stream_send(stream, buf,
+					   get_and_incr_seq_num(stream),
+					   BT_ISO_TIMESTAMP_NONE);
 		if (ret < 0) {
 			printk("Failed to send audio data on streams[%zu] (%p): (%d)\n",
 			       i, stream, ret);
@@ -213,7 +231,7 @@ static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 		if (!stream->conn) {
 			printk("ASE Codec Config stream %p\n", stream);
 			if (dir == BT_AUDIO_DIR_SOURCE) {
-				source_streams[configured_source_stream_count++] = stream;
+				source_streams[configured_source_stream_count++].stream = stream;
 			}
 
 			return stream;
@@ -297,6 +315,13 @@ static int lc3_enable(struct bt_audio_stream *stream,
 static int lc3_start(struct bt_audio_stream *stream)
 {
 	printk("Start: stream %p\n", stream);
+
+	for (size_t i = 0U; i < configured_source_stream_count; i++) {
+		if (source_streams[i].stream == stream) {
+			source_streams[i].seq_num = 0U;
+			break;
+		}
+	}
 
 	if (configured_source_stream_count > 0 &&
 	    !k_work_delayable_is_pending(&audio_send_work)) {
