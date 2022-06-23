@@ -227,12 +227,12 @@ static void events_isr(void *data)
 	while (pos_selector) {
 		/* Find first position, clear it in selector and process */
 		pos_index = __builtin_ffsl(pos_selector) - 1;
-		pos_selector &= ~(1 << pos_index);
+		pos_selector &= ~(((xen_ulong_t) 1) << pos_index);
 
 		/* Find all active evtchn on selected position */
 		while ((events_pending = get_pending_events(pos_index)) != 0) {
 			event_index =  __builtin_ffsl(events_pending) - 1;
-			events_pending &= (1 << event_index);
+			events_pending &= (((xen_ulong_t) 1) << event_index);
 
 			port = (pos_index * 8 * sizeof(xen_ulong_t))
 					+ event_index;
