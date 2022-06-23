@@ -22,7 +22,7 @@ Pillow
 imgtool>=1.7.1
 
 # used by nanopb module to generate sources from .proto files
-protobuf
+grpcio-tools
 
 # used by scripts/release/bug_bash.py for generating top ten bug squashers
 PyGithub
