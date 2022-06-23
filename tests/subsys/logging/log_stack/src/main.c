@@ -117,9 +117,9 @@ ZTEST_SUITE(test_log_stack, NULL, NULL, NULL, NULL, after);
 #define HEXDUMP_USAGE 240
 #define MORE_ARGS_USAGE 272
 #elif defined(CONFIG_LOG_MODE_IMMEDIATE) && defined(CONFIG_NO_OPTIMIZATIONS)
-#define SIMPLE_USAGE 876
-#define HEXDUMP_USAGE 860
-#define MORE_ARGS_USAGE 908
+#define SIMPLE_USAGE 956
+#define HEXDUMP_USAGE 940
+#define MORE_ARGS_USAGE 988
 #endif
 
 #elif defined(CONFIG_X86_64)
