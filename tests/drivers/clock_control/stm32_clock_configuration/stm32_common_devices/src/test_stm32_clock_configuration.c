@@ -41,7 +41,7 @@ static void test_sysclk_freq(void)
 
 static void test_i2c_clk_config(void)
 {
-	static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(i2c1);
+	static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(DT_NODELABEL(i2c1));
 
 	uint32_t dev_dt_clk_freq, dev_actual_clk_freq;
 	uint32_t dev_actual_clk_src;
@@ -136,7 +136,7 @@ static void test_i2c_clk_config(void) {}
 
 static void test_lptim_clk_config(void)
 {
-	static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(lptim1);
+	static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(DT_NODELABEL(lptim1));
 
 	uint32_t dev_dt_clk_freq, dev_actual_clk_freq;
 	uint32_t dev_actual_clk_src;
