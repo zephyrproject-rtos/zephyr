@@ -17,11 +17,8 @@ import traceback
 from colorama import Fore
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
-
-from numpy import trace
-
-from twister.cmakecache import CMakeCache
-from twister.enviornment import canonical_zephyr_base
+from twisterlib.cmakecache import CMakeCache
+from twisterlib.enviornment import canonical_zephyr_base
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -881,4 +878,3 @@ class TwisterRunner:
             logger.info("Execution interrupted")
             for p in processes:
                 p.terminate()
-

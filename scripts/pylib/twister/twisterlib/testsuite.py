@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
-import sys
 from pathlib import Path
 import re
 import logging
@@ -12,9 +11,9 @@ import contextlib
 import mmap
 import glob
 from typing import List
-from twister.mixins import DisablePyTestCollectionMixin
-from twister.enviornment import canonical_zephyr_base
-from twister.error import TwisterException, TwisterRuntimeError
+from twisterlib.mixins import DisablePyTestCollectionMixin
+from twisterlib.enviornment import canonical_zephyr_base
+from twisterlib.error import TwisterException, TwisterRuntimeError
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -422,4 +421,3 @@ Tests should reference the category and subsystem with a dot as a separator.
                     """
                     )
         return unique
-

@@ -15,7 +15,8 @@ import shlex
 import subprocess
 import threading
 import select
-from twister.enviornment import ZEPHYR_BASE
+import re
+from twisterlib.enviornment import ZEPHYR_BASE
 
 try:
     import serial

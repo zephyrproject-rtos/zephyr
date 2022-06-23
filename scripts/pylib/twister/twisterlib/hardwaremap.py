@@ -14,7 +14,7 @@ import scl
 import logging
 from pathlib import Path
 
-from twister.enviornment import ZEPHYR_BASE
+from twisterlib.enviornment import ZEPHYR_BASE
 
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
@@ -153,7 +153,6 @@ class HardwareMap:
         if not self.options.device_testing and self.options.hardware_map:
             self.load(self.options.hardware_map)
             logger.info("Available devices:")
-            table = []
             self.dump(connected_only=True)
             return 0
 

@@ -10,12 +10,9 @@ import subprocess
 import glob
 import json
 import collections
-from typing import List
 from collections import OrderedDict
 from itertools import islice
 import logging
-
-
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -25,22 +22,14 @@ try:
 except ImportError:
     print("Install the anytree module to use the --test-tree option")
 
-from twister.testsuite import TestSuite, scan_testsuite_path
-from twister.error import TwisterRuntimeError
-from twister.platform import Platform
-from twister.config_parser import TwisterConfigParser
-from twister.testinstance import TestInstance
+from twisterlib.testsuite import TestSuite, scan_testsuite_path
+from twisterlib.error import TwisterRuntimeError
+from twisterlib.platform import Platform
+from twisterlib.config_parser import TwisterConfigParser
+from twisterlib.testinstance import TestInstance
 
 
 from zephyr_module import west_projects, parse_modules
-
-try:
-    # Use the C LibYAML parser if available, rather than the Python parser.
-    # It's much faster.
-    from yaml import CSafeLoader as SafeLoader
-    from yaml import CDumper as Dumper
-except ImportError:
-    from yaml import SafeLoader, Dumper
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -50,8 +39,6 @@ if not ZEPHYR_BASE:
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
                                 "python-devicetree", "src"))
 from devicetree import edtlib  # pylint: disable=unused-import
-
-from twister.enviornment import TwisterEnv, canonical_zephyr_base
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
 
@@ -208,7 +195,7 @@ class TestPlan:
             s =  self.options.subset
             try:
                 subset, sets = (int(x) for x in s.split("/"))
-            except ValueError as e:
+            except ValueError:
                 raise TwisterRuntimeError("Bad subset value.")
 
             if subset > sets:
@@ -325,7 +312,7 @@ class TestPlan:
                 if not area:
                     area = Node(sec[1], parent=samples)
 
-                t = Node(test, parent=area)
+                Node(test, parent=area)
             else:
                 sec = test.split(".")
                 area = find(tests, lambda node: node.name == sec[0] and node.parent == tests)
@@ -336,7 +323,7 @@ class TestPlan:
                     subarea = find(area, lambda node: node.name == sec[1] and node.parent == area)
                     if not subarea:
                         subarea = Node(sec[1], parent=area)
-                    t = Node(test, parent=subarea)
+                    Node(test, parent=subarea)
 
         for pre, _, node in RenderTree(testsuite):
             print("%s%s" % (pre, node.name))
@@ -355,14 +342,13 @@ class TestPlan:
     def report_excluded_tests(self):
         all_tests = self.get_all_tests()
         to_be_run = set()
-        for i, p in self.instances.items():
+        for _, p in self.instances.items():
             to_be_run.update(p.testsuite.cases)
 
         if all_tests - to_be_run:
             print("Tests that never build or run:")
             for not_run in all_tests - to_be_run:
                 print("- {}".format(not_run))
-        return
 
     def report_platform_tests(self, platforms=[]):
         if len(platforms) > 1:
@@ -377,8 +363,6 @@ class TestPlan:
                     print(f"- {c}")
                     count += 1
             print(f"Tests found: {count}")
-
-        return
 
     def get_platform_instances(self, platform):
         filtered_dict = {k:v for k,v in self.instances.items() if k.startswith(platform + os.sep)}

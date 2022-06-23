@@ -17,7 +17,7 @@ import argparse
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
-from twister.error import TwisterRuntimeError
+from twisterlib.error import TwisterRuntimeError
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -627,7 +627,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         sys.exit(1)
 
     if options.size:
-        from twister.size_calc import SizeCalculator
+        from twisterlib.size_calc import SizeCalculator
         for fn in options.size:
             sc = SizeCalculator(fn, [])
             sc.size_report()
