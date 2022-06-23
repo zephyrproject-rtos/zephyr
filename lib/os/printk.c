@@ -79,7 +79,6 @@ void *__printk_get_hook(void)
 }
 
 struct buf_out_context {
-	int count;
 	unsigned int buf_count;
 	char buf[CONFIG_PRINTK_BUFFER_SIZE];
 };
@@ -94,7 +93,6 @@ static int buf_char_out(int c, void *ctx_p)
 {
 	struct buf_out_context *ctx = ctx_p;
 
-	ctx->count++;
 	ctx->buf[ctx->buf_count++] = c;
 	if (ctx->buf_count == CONFIG_PRINTK_BUFFER_SIZE) {
 		buf_flush(ctx);
@@ -103,15 +101,9 @@ static int buf_char_out(int c, void *ctx_p)
 	return c;
 }
 
-struct out_context {
-	int count;
-};
-
 static int char_out(int c, void *ctx_p)
 {
-	struct out_context *ctx = ctx_p;
-
-	ctx->count++;
+	(void) ctx_p;
 	return _char_out(c);
 }
 
@@ -131,12 +123,11 @@ void vprintk(const char *fmt, va_list ap)
 			buf_flush(&ctx);
 		}
 	} else {
-		struct out_context ctx = { 0 };
 #ifdef CONFIG_PRINTK_SYNC
 		k_spinlock_key_t key = k_spin_lock(&lock);
 #endif
 
-		cbvprintf(char_out, &ctx, fmt, ap);
+		cbvprintf(char_out, NULL, fmt, ap);
 
 #ifdef CONFIG_PRINTK_SYNC
 		k_spin_unlock(&lock, key);
