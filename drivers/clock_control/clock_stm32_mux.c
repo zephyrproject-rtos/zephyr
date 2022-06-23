@@ -37,7 +37,7 @@ static int stm32_clk_mux_init(const struct device *dev)
 #define STM32_MUX_CLK_INIT(id)						\
 									\
 static const struct stm32_clk_mux_config stm32_clk_mux_cfg_##id = {	\
-	.pclken = STM32_INST_CLOCK_INFO(id, 0)				\
+	.pclken = STM32_CLOCK_INFO(0, DT_DRV_INST(id))			\
 };									\
 									\
 DEVICE_DT_INST_DEFINE(id, &stm32_clk_mux_init, NULL,			\

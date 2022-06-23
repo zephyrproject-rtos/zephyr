@@ -281,27 +281,19 @@ struct stm32_pclken {
 
 /** Device tree clocks helpers  */
 
-#define STM32_CLOCK_INFO(clk_index, id)					\
+#define STM32_CLOCK_INFO(clk_index, node_id)				\
 	{								\
-	.enr = DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(id), clk_index, bits),\
-	.bus = DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(id), clk_index, bus)	\
+	.enr = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bits),		\
+	.bus = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bus)		\
 	}
-#define STM32_DT_CLOCKS(id)						\
+#define STM32_DT_CLOCKS(node_id)					\
 	{								\
-		LISTIFY(DT_NUM_CLOCKS(DT_NODELABEL(id)),		\
-			STM32_CLOCK_INFO, (,), id)			\
+		LISTIFY(DT_NUM_CLOCKS(node_id),				\
+			STM32_CLOCK_INFO, (,), node_id)			\
 	}
 
-#define STM32_INST_CLOCK_INFO(clk_index, inst)				\
-	{								\
-	.enr = DT_INST_CLOCKS_CELL_BY_IDX(inst, clk_index, bits),	\
-	.bus = DT_INST_CLOCKS_CELL_BY_IDX(inst, clk_index, bus)		\
-	}
 #define STM32_DT_INST_CLOCKS(inst)					\
-	{								\
-		LISTIFY(DT_INST_NUM_CLOCKS(inst),			\
-			STM32_INST_CLOCK_INFO, (,), inst)		\
-	}
+	STM32_DT_CLOCKS(DT_DRV_INST(inst))
 
 #define STM32_OPT_CLOCK_INST_SUPPORT(inst) DT_INST_CLOCKS_HAS_IDX(inst, 1) ||
 #define STM32_DT_INST_DEV_OPT_CLOCK_SUPPORT				\
