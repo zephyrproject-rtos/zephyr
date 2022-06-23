@@ -22,13 +22,11 @@ LOG_MODULE_REGISTER(LPS22HB, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int lps22hb_set_odr_raw(const struct device *dev, uint8_t odr)
 {
-	struct lps22hb_data *data = dev->data;
 	const struct lps22hb_config *config = dev->config;
 
-	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				   LPS22HB_REG_CTRL_REG1,
-				   LPS22HB_MASK_CTRL_REG1_ODR,
-				   odr << LPS22HB_SHIFT_CTRL_REG1_ODR);
+	return i2c_reg_update_byte_dt(&config->i2c, LPS22HB_REG_CTRL_REG1,
+				      LPS22HB_MASK_CTRL_REG1_ODR,
+				      odr << LPS22HB_SHIFT_CTRL_REG1_ODR);
 }
 
 static int lps22hb_sample_fetch(const struct device *dev,
@@ -40,8 +38,8 @@ static int lps22hb_sample_fetch(const struct device *dev,
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	if (i2c_burst_read(data->i2c_master, config->i2c_slave_addr,
-			   LPS22HB_REG_PRESS_OUT_XL, out, 5) < 0) {
+	if (i2c_burst_read_dt(&config->i2c, LPS22HB_REG_PRESS_OUT_XL,
+			      out, 5) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
@@ -97,12 +95,11 @@ static const struct sensor_driver_api lps22hb_api_funcs = {
 
 static int lps22hb_init_chip(const struct device *dev)
 {
-	struct lps22hb_data *data = dev->data;
 	const struct lps22hb_config *config = dev->config;
 	uint8_t chip_id;
 
-	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-			      LPS22HB_REG_WHO_AM_I, &chip_id) < 0) {
+	if (i2c_reg_read_byte_dt(&config->i2c, LPS22HB_REG_WHO_AM_I,
+				 &chip_id) < 0) {
 		LOG_DBG("Failed reading chip id");
 		goto err_poweroff;
 	}
@@ -117,10 +114,9 @@ static int lps22hb_init_chip(const struct device *dev)
 		goto err_poweroff;
 	}
 
-	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				LPS22HB_REG_CTRL_REG1,
-				LPS22HB_MASK_CTRL_REG1_BDU,
-				(1 << LPS22HB_SHIFT_CTRL_REG1_BDU)) < 0) {
+	if (i2c_reg_update_byte_dt(&config->i2c, LPS22HB_REG_CTRL_REG1,
+				   LPS22HB_MASK_CTRL_REG1_BDU,
+				   (1 << LPS22HB_SHIFT_CTRL_REG1_BDU)) < 0) {
 		LOG_DBG("Failed to set BDU");
 		goto err_poweroff;
 	}
@@ -134,14 +130,10 @@ err_poweroff:
 static int lps22hb_init(const struct device *dev)
 {
 	const struct lps22hb_config * const config = dev->config;
-	struct lps22hb_data *data = dev->data;
 
-	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
-
-	if (!data->i2c_master) {
-		LOG_DBG("I2c master not found: %s",
-			    config->i2c_master_dev_name);
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("I2C bus device not ready");
+		return -ENODEV;
 	}
 
 	if (lps22hb_init_chip(dev) < 0) {
@@ -153,8 +145,7 @@ static int lps22hb_init(const struct device *dev)
 }
 
 static const struct lps22hb_config lps22hb_config = {
-	.i2c_master_dev_name = DT_INST_BUS_LABEL(0),
-	.i2c_slave_addr = DT_INST_REG_ADDR(0),
+	.i2c = I2C_DT_SPEC_INST_GET(0),
 };
 
 static struct lps22hb_data lps22hb_data;
