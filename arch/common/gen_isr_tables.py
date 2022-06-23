@@ -133,12 +133,6 @@ source_header = """
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/arch/cpu.h>
 
-#if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_GEN_IRQ_VECTOR_TABLE)
-#define ISR_WRAPPER ((uintptr_t)&_isr_wrapper)
-#else
-#define ISR_WRAPPER NULL
-#endif
-
 typedef void (* ISR)(const void *);
 """
 
@@ -230,8 +224,8 @@ def main():
     if nvec > pow(2, 15):
         raise ValueError('nvec is too large, check endianness.')
 
-    spurious_handler = "&z_irq_spurious"
-    sw_irq_handler   = "ISR_WRAPPER"
+    spurious_handler = "((uintptr_t)&z_irq_spurious)"
+    sw_irq_handler   = "((uintptr_t)&_isr_wrapper)"
 
     debug('offset is ' + str(offset))
     debug('num_vectors is ' + str(nvec))
