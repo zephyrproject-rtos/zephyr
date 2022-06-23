@@ -115,6 +115,26 @@
 	status = "okay";
 };
 
+&timers4 {
+	status = "okay";
+	st,prescaler = <1>;
+	pwm4: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim4_ch1_pb6>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers3 {
+	status = "okay";
+	st,prescaler = <255>;
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch2_pe4>;
+		pinctrl-names = "default";
+	};
+};
+
 &octospi2 {
 	pinctrl-0 = <&octospim_p2_clk_pf4 &octospim_p2_ncs_pi5
 		     &octospim_p2_io0_pf0 &octospim_p2_io1_pf1
