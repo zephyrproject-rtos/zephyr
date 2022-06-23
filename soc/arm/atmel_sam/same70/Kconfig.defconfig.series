@@ -66,6 +66,7 @@ config SPI_SAM
 	depends on SPI
 
 config USB_DC_SAM_USBHS
+	default n if USB_DC_USBIP
 	default y
 	depends on USB_DEVICE_DRIVER
 
