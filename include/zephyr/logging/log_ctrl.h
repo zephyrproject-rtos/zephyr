@@ -121,6 +121,15 @@ const char *log_source_name_get(uint32_t domain_id, uint32_t source_id);
 const char *log_domain_name_get(uint32_t domain_id);
 
 /**
+ * @brief Function for finding source ID based on source name.
+ *
+ * @param name Source name
+ *
+ * @return Source ID or negative number when source ID is not found.
+ */
+int log_source_id_get(const char *name);
+
+/**
  * @brief Get source filter for the provided backend.
  *
  * @param backend	Backend instance.
