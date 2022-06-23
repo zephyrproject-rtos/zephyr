@@ -1853,12 +1853,59 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 			break;
 		}
+
+#if defined(CONFIG_NET_TCP_KEEPALIVE)
 	case IPPROTO_TCP:
 		switch (optname) {
 		case TCP_NODELAY:
 			ret = net_tcp_get_option(ctx, TCP_OPT_NODELAY, optval, optlen);
 			return ret;
+		case TCP_KEEPALIVE:
+			/* set conn->keep_alive
+			 * use seconds for get/setsockopt
+			 */
+			ret = net_tcp_get_option(ctx, TCP_OPT_KEEPALIVE, optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+		case TCP_KEEPIDLE:
+			/* set conn->keep_idle
+			 * use seconds for get/setsockopt
+			 */
+			ret = net_tcp_get_option(ctx, TCP_OPT_KEEPIDLE, optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+		case TCP_KEEPINTVL:
+			/* set conn->keep_intvl
+			 * use seconds for get/setsockopt
+			 */
+			ret = net_tcp_get_option(ctx, TCP_OPT_KEEPINTVL, optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+		case TCP_KEEPCNT:
+			/* set conn->keep_cnt
+			 * use seconds for get/setsockopt
+			 */
+			ret = net_tcp_get_option(ctx, TCP_OPT_KEEPCNT, optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
 		}
+#endif /* CONFIG_NET_TCP_KEEPALIVE */
 	}
 
 	errno = ENOPROTOOPT;
@@ -2109,6 +2156,56 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			ret = net_tcp_set_option(ctx,
 						 TCP_OPT_NODELAY, optval, optlen);
 			return ret;
+#if defined(CONFIG_NET_TCP_KEEPALIVE)
+		case TCP_KEEPALIVE:
+			/* set conn->keep_alive
+			 * Use seconds for get/setsockopt
+			 */
+			ret = net_tcp_set_option(ctx,
+						     TCP_OPT_KEEPALIVE, optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+		case TCP_KEEPIDLE:
+			/* set conn->keep_idle
+			 * Use seconds for get/setsockopt
+			 */
+			ret = net_tcp_set_option(ctx,
+						     TCP_OPT_KEEPIDLE, optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+		case TCP_KEEPINTVL:
+			/* set conn->keep_intvl
+			 * Use seconds for get/setsockopt
+			 */
+			ret = net_tcp_set_option(ctx,
+						     TCP_OPT_KEEPINTVL, optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+		case TCP_KEEPCNT:
+			/* set conn->keep_cnt
+			 * Use number of probes sent for get/setsockopt
+			 */
+			ret = net_tcp_set_option(ctx,
+						     TCP_OPT_KEEPCNT, optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+#endif /* CONFIG_NET_TCP_KEEPALIVE */
 		}
 		break;
 

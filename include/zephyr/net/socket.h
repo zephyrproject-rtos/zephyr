@@ -901,8 +901,6 @@ struct ifreq {
 /** sockopt: Size of socket recv buffer */
 #define SO_RCVBUF 8
 
-/** sockopt: Enable sending keep-alive messages on connections (ignored, for compatibility) */
-#define SO_KEEPALIVE 9
 /** sockopt: Place out-of-band data into receive stream (ignored, for compatibility) */
 #define SO_OOBINLINE 10
 /** sockopt: Allow multiple sockets to reuse a single port (ignored, for compatibility) */
@@ -935,6 +933,14 @@ struct ifreq {
 /* Socket options for IPPROTO_TCP level */
 /** sockopt: Disable TCP buffering (ignored, for compatibility) */
 #define TCP_NODELAY 1
+/** sockopt: Enable sending keep-alive messages on connections (ignored, for compatibility) */
+#define TCP_KEEPALIVE 2
+/** sockopt: Use seconds for get/setsockopt */
+#define TCP_KEEPIDLE 3
+/** sockopt: Use seconds for get/setsockopt */
+#define TCP_KEEPINTVL 4
+/** sockopt: Use number of probes sent for get/setsockopt */
+#define TCP_KEEPCNT 5
 
 /* Socket options for IPPROTO_IPV6 level */
 /** sockopt: Don't support IPv4 access (ignored, for compatibility) */

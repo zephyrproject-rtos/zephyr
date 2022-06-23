@@ -158,7 +158,37 @@ static int start_tcp_proto(struct data *data, struct sockaddr *addr,
 		ret = -errno;
 	}
 #endif
+#if defined(CONFIG_NET_TCP_KEEPALIVE)
+	/* enable keep alive probe */
+	int keep_alive = true;
+	/* 5 Seconds */
+	int keep_idle = 5;
+	/* 5 Seconds */
+	int keep_intvl = 5;
+	/* probe 3 times */
+	int keep_cnt = 3;
 
+	ret = setsockopt(data->tcp.sock, IPPROTO_TCP, TCP_KEEPALIVE,
+			(void *)&keep_alive, sizeof(keep_alive));
+	if (ret < 0) {
+		return ret;
+	}
+	ret = setsockopt(data->tcp.sock, IPPROTO_TCP, TCP_KEEPIDLE,
+			(void *)&keep_idle, sizeof(keep_idle));
+	if (ret < 0) {
+		return ret;
+	}
+	ret = setsockopt(data->tcp.sock, IPPROTO_TCP, TCP_KEEPINTVL,
+			(void *)&keep_intvl, sizeof(keep_intvl));
+	if (ret < 0) {
+		return ret;
+	}
+	ret = setsockopt(data->tcp.sock, IPPROTO_TCP, TCP_KEEPCNT,
+			(void *)&keep_cnt, sizeof(keep_cnt));
+	if (ret < 0) {
+		return ret;
+	}
+#endif
 	ret = connect(data->tcp.sock, addr, addrlen);
 	if (ret < 0) {
 		LOG_ERR("Cannot connect to TCP remote (%s): %d", data->proto,

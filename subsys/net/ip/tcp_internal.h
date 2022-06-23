@@ -32,6 +32,12 @@ extern "C" {
 
 enum tcp_conn_option {
 	TCP_OPT_NODELAY	= 1,
+#if defined(CONFIG_NET_TCP_KEEPALIVE)
+	TCP_OPT_KEEPALIVE   = 2,
+	TCP_OPT_KEEPIDLE    = 3,
+	TCP_OPT_KEEPINTVL   = 4,
+	TCP_OPT_KEEPCNT     = 5,
+#endif /* CONFIG_NET_TCP_KEEPALIVE */
 };
 
 /**

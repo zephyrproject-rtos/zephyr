@@ -451,6 +451,40 @@ config NET_TCP_RECV_QUEUE_TIMEOUT
 	  SEQ 2. But if we receive SEQs 5,4,3,7 then the SEQ 7 is discarded
 	  because the list would not be sequential as number 6 is be missing.
 
+config NET_TCP_KEEPALIVE
+	bool "TCP keep-alive support"
+	depends on NET_TCP
+	default y
+	help
+	  TCP Keep-Alives
+	  Enable TCP_KEEPIDLE, TCP_KEEPINTVL and TCP_KEEPCNT
+	  options processing. Note that TCP_KEEPIDLE and TCP_KEEPINTVL have to be
+	  set in seconds.
+
+config NET_TCP_KEEPIDLE_DEFAULT
+	int "TCP_KEEPIDLE value"
+	depends on NET_TCP_KEEPALIVE
+	default 5
+	help
+	  The time (in seconds) the connection needs to remain idle before TCP starts
+	  sending keepalive probes, if the socket option SO_KEEPALIVE has been set on
+	  this socket.
+
+config NET_TCP_KEEPINTVL_DEFAULT
+	int "KEEPINTVL value"
+	depends on NET_TCP_KEEPALIVE
+	default 5
+	help
+	  The time (in seconds) between individual keepalive probes.
+
+config NET_TCP_KEEPCNT_DEFAULT
+	int "KEEPCNT value"
+	depends on NET_TCP_KEEPALIVE
+	default 3
+	help
+	  The maximum number of keepalive probes TCP should send before dropping the
+	  connection.
+
 config NET_TCP_WORKQ_STACK_SIZE
 	int "TCP work queue thread stack size"
 	default 1024

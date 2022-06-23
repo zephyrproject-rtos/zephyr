@@ -99,7 +99,16 @@ static int start_tcp_proto(struct data *data,
 		ret = -errno;
 	}
 #endif
+#if defined(CONFIG_NET_TCP_KEEPALIVE)
+	/* enable keep alive probe */
+	int keep_alive = true;
 
+	ret = setsockopt(data->tcp.sock, IPPROTO_TCP, TCP_KEEPALIVE,
+			(void *)&keep_alive, sizeof(keep_alive));
+	if (ret < 0) {
+		return ret;
+	}
+#endif
 	ret = bind(data->tcp.sock, bind_addr, bind_addrlen);
 	if (ret < 0) {
 		LOG_ERR("Failed to bind TCP socket (%s): %d", data->proto,
@@ -224,7 +233,31 @@ static int process_tcp(struct data *data)
 		LOG_ERR("%s accept error (%d)", data->proto, -errno);
 		return 0;
 	}
+#if defined(CONFIG_NET_TCP_KEEPALIVE)
+	/* 5 Seconds */
+	int keep_idle = 5;
+	/* 5 Seconds */
+	int keep_intvl = 5;
+	/* probe 3 times */
+	int keep_cnt = 3;
+	int ret;
 
+	ret = setsockopt(client, IPPROTO_TCP, TCP_KEEPIDLE,
+			(void *)&keep_idle, sizeof(keep_idle));
+	if (ret < 0) {
+		return ret;
+	}
+	ret = setsockopt(client, IPPROTO_TCP, TCP_KEEPINTVL,
+			(void *)&keep_intvl, sizeof(keep_intvl));
+	if (ret < 0) {
+		return ret;
+	}
+	ret = setsockopt(client, IPPROTO_TCP, TCP_KEEPCNT,
+			(void *)&keep_cnt, sizeof(keep_cnt));
+	if (ret < 0) {
+		return ret;
+	}
+#endif
 	slot = get_free_slot(data);
 	if (slot < 0) {
 		LOG_ERR("Cannot accept more connections");
