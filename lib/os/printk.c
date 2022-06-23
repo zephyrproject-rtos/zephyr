@@ -79,6 +79,9 @@ void *__printk_get_hook(void)
 }
 
 struct buf_out_context {
+#ifdef CONFIG_PICOLIBC
+	FILE file;
+#endif
 	unsigned int buf_count;
 	char buf[CONFIG_PRINTK_BUFFER_SIZE];
 };
@@ -115,10 +118,20 @@ void vprintk(const char *fmt, va_list ap)
 	}
 
 	if (k_is_user_context()) {
-		struct buf_out_context ctx = { 0 };
+		struct buf_out_context ctx = {
+#ifdef CONFIG_PICOLIBC
+			.file = FDEV_SETUP_STREAM((int(*)(char, FILE *))buf_char_out,
+						  NULL, NULL, _FDEV_SETUP_WRITE),
+#else
+			0
+#endif
+		};
 
+#ifdef CONFIG_PICOLIBC
+		(void) vfprintf(&ctx.file, fmt, ap);
+#else
 		cbvprintf(buf_char_out, &ctx, fmt, ap);
-
+#endif
 		if (ctx.buf_count) {
 			buf_flush(&ctx);
 		}
@@ -127,7 +140,13 @@ void vprintk(const char *fmt, va_list ap)
 		k_spinlock_key_t key = k_spin_lock(&lock);
 #endif
 
+#ifdef CONFIG_PICOLIBC
+		FILE console = FDEV_SETUP_STREAM((int(*)(char, FILE *))char_out,
+						 NULL, NULL, _FDEV_SETUP_WRITE);
+		(void) vfprintf(&console, fmt, ap);
+#else
 		cbvprintf(char_out, NULL, fmt, ap);
+#endif
 
 #ifdef CONFIG_PRINTK_SYNC
 		k_spin_unlock(&lock, key);
