@@ -190,6 +190,8 @@ The Zephyr b_u585i_iot02a board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | usb_device                          |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -255,6 +257,8 @@ Default Zephyr Peripheral Mapping:
 - DAC1 CH1 : PA4 (STMOD+1)
 - ADC1_IN15 : PB0
 - USB OTG : PA11/PA12
+- PWM4 : CN14 PB6
+- PWM3 : CN4 PE4
 
 System Clock
 ------------
