@@ -7,11 +7,14 @@ import os
 import hashlib
 import random
 import logging
-from twister.testsuite import TestCase
-from twister.error import BuildError
-from twister.handlers import BinaryHandler, QEMUHandler, DeviceHandler
 import shutil
 import glob
+
+from twisterlib.testsuite import TestCase
+from twisterlib.error import BuildError
+from twisterlib.size_calc import SizeCalculator
+from twisterlib.handlers import BinaryHandler, QEMUHandler, DeviceHandler
+
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)

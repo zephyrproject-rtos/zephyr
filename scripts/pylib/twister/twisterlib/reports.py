@@ -497,4 +497,3 @@ class Reporting:
             else:
                 filename = os.path.join(outdir,"{}.xml".format(platform))
             self.xunit_report(json_file, filename, platform, full_report=True)
-

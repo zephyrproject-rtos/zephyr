@@ -2,7 +2,6 @@
 # Copyright (c) 2020 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
-# pylint: disable=line-too-long
 """
 Tests for testinstance class
 """
@@ -14,7 +13,7 @@ import pytest
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
-from twister.testsuite import scan_file, ScanPathResult
+from twisterlib.testsuite import scan_file, ScanPathResult
 
 TESTDATA_5 = [
     ("testsuites/tests/test_ztest.c",
@@ -59,4 +58,3 @@ def test_scan_file(test_data, test_file, class_env, expected: ScanPathResult):
 
     result: ScanPathResult = scan_file(os.path.join(test_data, test_file))
     assert result == expected
-

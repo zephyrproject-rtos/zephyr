@@ -5,4 +5,3 @@
 
 class DisablePyTestCollectionMixin(object):
     __test__ = False
-
