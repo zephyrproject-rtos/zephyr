@@ -23,7 +23,7 @@
 #include <zephyr/bluetooth/services/ots.h>
 #include "../services/ots/ots_client_internal.h"
 
-/* TODO: Temporarily copied here from media_proxy_internal.h - clean up */
+/* TODO: Temporarily copied here from media_control_internal.h - clean up */
 /* Debug output of 48 bit Object ID value */
 /* (Zephyr does not yet support debug output of more than 32 bit values.) */
 /* Takes a text and a 64-bit integer as input */

@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MEDIA_PROXY_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MEDIA_PROXY_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MEDIA_CONTROL_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MEDIA_CONTROL_H_
 
-/** @brief Media proxy module
+/** @brief Media Control module
  *
- * @defgroup bt_media_proxy Media Proxy
+ * @defgroup bt_media_control Media Control
  *
  * @ingroup bluetooth
  * @{
  *
- * The media proxy module is the connection point between media players
+ * The Media Control module is the connection point between media players
  * and media controllers.
  *
  * A media player has (access to) media content and knows how to
@@ -22,11 +22,11 @@
  * information from a player and controls the player by setting player
  * parameters and giving the player commands.
  *
- * The media proxy module allows media player implementations to make
+ * The Media Control module allows media player implementations to make
  * themselves available to media controllers. And it allows
  * controllers to access, and get updates from, any player.
  *
- * The media proxy module allows both local and remote control of
+ * The Media Control module allows both local and remote control of
  * local player instances: A media controller may be a local
  * application, or it may be a Media Control Service relaying requests
  * from a remote Media Control Client. There may be either local or
@@ -70,7 +70,7 @@ struct mpl_cmd_ntf {
  */
 struct mpl_sci {
 	uint8_t len;                     /**< Length of type and parameter */
-	uint8_t type;                    /**< MEDIA_PROXY_SEARCH_TYPE_<...> */
+	uint8_t type;                    /**< MEDIA_CONTROL_SEARCH_TYPE_<...> */
 	char    param[SEARCH_PARAM_MAX]; /**< Search parameter */
 };
 
@@ -87,12 +87,12 @@ struct mpl_search {
  *
  * All values from -128 to 127 allowed, only some defined
  */
-#define MEDIA_PROXY_PLAYBACK_SPEED_MIN     -128
-#define MEDIA_PROXY_PLAYBACK_SPEED_QUARTER -128
-#define MEDIA_PROXY_PLAYBACK_SPEED_HALF     -64
-#define MEDIA_PROXY_PLAYBACK_SPEED_UNITY      0
-#define MEDIA_PROXY_PLAYBACK_SPEED_DOUBLE    64
-#define MEDIA_PROXY_PLAYBACK_SPEED_MAX      127
+#define MEDIA_CONTROL_PLAYBACK_SPEED_MIN     -128
+#define MEDIA_CONTROL_PLAYBACK_SPEED_QUARTER -128
+#define MEDIA_CONTROL_PLAYBACK_SPEED_HALF     -64
+#define MEDIA_CONTROL_PLAYBACK_SPEED_UNITY      0
+#define MEDIA_CONTROL_PLAYBACK_SPEED_DOUBLE    64
+#define MEDIA_CONTROL_PLAYBACK_SPEED_MAX      127
 
 /**
  * @brief Seeking speed factors
@@ -101,23 +101,23 @@ struct mpl_search {
  * (endpoints included), the value 0, and the range 4 to 64
  * (endpoints included).
  */
-#define MEDIA_PROXY_SEEKING_SPEED_FACTOR_MAX  64
-#define MEDIA_PROXY_SEEKING_SPEED_FACTOR_MIN   4
-#define MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO  0
+#define MEDIA_CONTROL_SEEKING_SPEED_FACTOR_MAX  64
+#define MEDIA_CONTROL_SEEKING_SPEED_FACTOR_MIN   4
+#define MEDIA_CONTROL_SEEKING_SPEED_FACTOR_ZERO  0
 
 /**
  * @brief Playing orders
  */
-#define MEDIA_PROXY_PLAYING_ORDER_SINGLE_ONCE    0x01
-#define MEDIA_PROXY_PLAYING_ORDER_SINGLE_REPEAT  0x02
-#define MEDIA_PROXY_PLAYING_ORDER_INORDER_ONCE   0x03
-#define MEDIA_PROXY_PLAYING_ORDER_INORDER_REPEAT 0x04
-#define MEDIA_PROXY_PLAYING_ORDER_OLDEST_ONCE    0x05
-#define MEDIA_PROXY_PLAYING_ORDER_OLDEST_REPEAT  0x06
-#define MEDIA_PROXY_PLAYING_ORDER_NEWEST_ONCE    0x07
-#define MEDIA_PROXY_PLAYING_ORDER_NEWEST_REPEAT  0x08
-#define MEDIA_PROXY_PLAYING_ORDER_SHUFFLE_ONCE   0x09
-#define MEDIA_PROXY_PLAYING_ORDER_SHUFFLE_REPEAT 0x0a
+#define MEDIA_CONTROL_PLAYING_ORDER_SINGLE_ONCE    0x01
+#define MEDIA_CONTROL_PLAYING_ORDER_SINGLE_REPEAT  0x02
+#define MEDIA_CONTROL_PLAYING_ORDER_INORDER_ONCE   0x03
+#define MEDIA_CONTROL_PLAYING_ORDER_INORDER_REPEAT 0x04
+#define MEDIA_CONTROL_PLAYING_ORDER_OLDEST_ONCE    0x05
+#define MEDIA_CONTROL_PLAYING_ORDER_OLDEST_REPEAT  0x06
+#define MEDIA_CONTROL_PLAYING_ORDER_NEWEST_ONCE    0x07
+#define MEDIA_CONTROL_PLAYING_ORDER_NEWEST_REPEAT  0x08
+#define MEDIA_CONTROL_PLAYING_ORDER_SHUFFLE_ONCE   0x09
+#define MEDIA_CONTROL_PLAYING_ORDER_SHUFFLE_REPEAT 0x0a
 
 /**
  * @brief Playing orders supported
@@ -125,115 +125,115 @@ struct mpl_search {
  * A bitmap, in the same order as the playing orders above.
  * Note that playing order 1 corresponds to bit 0, and so on.
  */
-#define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_SINGLE_ONCE    BIT(0)
-#define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_SINGLE_REPEAT  BIT(1)
-#define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_INORDER_ONCE   BIT(2)
-#define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_INORDER_REPEAT BIT(3)
-#define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_OLDEST_ONCE    BIT(4)
-#define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_OLDEST_REPEAT  BIT(5)
-#define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_NEWEST_ONCE    BIT(6)
-#define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_NEWEST_REPEAT  BIT(7)
-#define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_SHUFFLE_ONCE   BIT(8)
-#define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_SHUFFLE_REPEAT BIT(9)
+#define MEDIA_CONTROL_PLAYING_ORDERS_SUPPORTED_SINGLE_ONCE    BIT(0)
+#define MEDIA_CONTROL_PLAYING_ORDERS_SUPPORTED_SINGLE_REPEAT  BIT(1)
+#define MEDIA_CONTROL_PLAYING_ORDERS_SUPPORTED_INORDER_ONCE   BIT(2)
+#define MEDIA_CONTROL_PLAYING_ORDERS_SUPPORTED_INORDER_REPEAT BIT(3)
+#define MEDIA_CONTROL_PLAYING_ORDERS_SUPPORTED_OLDEST_ONCE    BIT(4)
+#define MEDIA_CONTROL_PLAYING_ORDERS_SUPPORTED_OLDEST_REPEAT  BIT(5)
+#define MEDIA_CONTROL_PLAYING_ORDERS_SUPPORTED_NEWEST_ONCE    BIT(6)
+#define MEDIA_CONTROL_PLAYING_ORDERS_SUPPORTED_NEWEST_REPEAT  BIT(7)
+#define MEDIA_CONTROL_PLAYING_ORDERS_SUPPORTED_SHUFFLE_ONCE   BIT(8)
+#define MEDIA_CONTROL_PLAYING_ORDERS_SUPPORTED_SHUFFLE_REPEAT BIT(9)
 
 /**
  * @brief Media player states
  */
-#define MEDIA_PROXY_STATE_INACTIVE 0x00
-#define MEDIA_PROXY_STATE_PLAYING  0x01
-#define MEDIA_PROXY_STATE_PAUSED   0x02
-#define MEDIA_PROXY_STATE_SEEKING  0x03
-#define MEDIA_PROXY_STATE_LAST     0x04
+#define MEDIA_CONTROL_STATE_INACTIVE 0x00
+#define MEDIA_CONTROL_STATE_PLAYING  0x01
+#define MEDIA_CONTROL_STATE_PAUSED   0x02
+#define MEDIA_CONTROL_STATE_SEEKING  0x03
+#define MEDIA_CONTROL_STATE_LAST     0x04
 
 /**
  * @brief Media player command opcodes
  */
-#define MEDIA_PROXY_OP_PLAY          0x01
-#define MEDIA_PROXY_OP_PAUSE         0x02
-#define MEDIA_PROXY_OP_FAST_REWIND   0x03
-#define MEDIA_PROXY_OP_FAST_FORWARD  0x04
-#define MEDIA_PROXY_OP_STOP          0x05
+#define MEDIA_CONTROL_OP_PLAY          0x01
+#define MEDIA_CONTROL_OP_PAUSE         0x02
+#define MEDIA_CONTROL_OP_FAST_REWIND   0x03
+#define MEDIA_CONTROL_OP_FAST_FORWARD  0x04
+#define MEDIA_CONTROL_OP_STOP          0x05
 
-#define MEDIA_PROXY_OP_MOVE_RELATIVE 0x10
+#define MEDIA_CONTROL_OP_MOVE_RELATIVE 0x10
 
-#define MEDIA_PROXY_OP_PREV_SEGMENT  0x20
-#define MEDIA_PROXY_OP_NEXT_SEGMENT  0x21
-#define MEDIA_PROXY_OP_FIRST_SEGMENT 0x22
-#define MEDIA_PROXY_OP_LAST_SEGMENT  0x23
-#define MEDIA_PROXY_OP_GOTO_SEGMENT  0x24
+#define MEDIA_CONTROL_OP_PREV_SEGMENT  0x20
+#define MEDIA_CONTROL_OP_NEXT_SEGMENT  0x21
+#define MEDIA_CONTROL_OP_FIRST_SEGMENT 0x22
+#define MEDIA_CONTROL_OP_LAST_SEGMENT  0x23
+#define MEDIA_CONTROL_OP_GOTO_SEGMENT  0x24
 
-#define MEDIA_PROXY_OP_PREV_TRACK    0x30
-#define MEDIA_PROXY_OP_NEXT_TRACK    0x31
-#define MEDIA_PROXY_OP_FIRST_TRACK   0x32
-#define MEDIA_PROXY_OP_LAST_TRACK    0x33
-#define MEDIA_PROXY_OP_GOTO_TRACK    0x34
+#define MEDIA_CONTROL_OP_PREV_TRACK    0x30
+#define MEDIA_CONTROL_OP_NEXT_TRACK    0x31
+#define MEDIA_CONTROL_OP_FIRST_TRACK   0x32
+#define MEDIA_CONTROL_OP_LAST_TRACK    0x33
+#define MEDIA_CONTROL_OP_GOTO_TRACK    0x34
 
-#define MEDIA_PROXY_OP_PREV_GROUP    0x40
-#define MEDIA_PROXY_OP_NEXT_GROUP    0x41
-#define MEDIA_PROXY_OP_FIRST_GROUP   0x42
-#define MEDIA_PROXY_OP_LAST_GROUP    0x43
-#define MEDIA_PROXY_OP_GOTO_GROUP    0x44
+#define MEDIA_CONTROL_OP_PREV_GROUP    0x40
+#define MEDIA_CONTROL_OP_NEXT_GROUP    0x41
+#define MEDIA_CONTROL_OP_FIRST_GROUP   0x42
+#define MEDIA_CONTROL_OP_LAST_GROUP    0x43
+#define MEDIA_CONTROL_OP_GOTO_GROUP    0x44
 
 /**
  * @brief Media player supported opcodes length
  */
-#define MEDIA_PROXY_OPCODES_SUPPORTED_LEN 4
+#define MEDIA_CONTROL_OPCODES_SUPPORTED_LEN 4
 
 /**
  * @brief Media player supported command opcodes
  */
-#define MEDIA_PROXY_OP_SUP_PLAY          BIT(0)
-#define MEDIA_PROXY_OP_SUP_PAUSE         BIT(1)
-#define MEDIA_PROXY_OP_SUP_FAST_REWIND   BIT(2)
-#define MEDIA_PROXY_OP_SUP_FAST_FORWARD  BIT(3)
-#define MEDIA_PROXY_OP_SUP_STOP          BIT(4)
+#define MEDIA_CONTROL_OP_SUP_PLAY          BIT(0)
+#define MEDIA_CONTROL_OP_SUP_PAUSE         BIT(1)
+#define MEDIA_CONTROL_OP_SUP_FAST_REWIND   BIT(2)
+#define MEDIA_CONTROL_OP_SUP_FAST_FORWARD  BIT(3)
+#define MEDIA_CONTROL_OP_SUP_STOP          BIT(4)
 
-#define MEDIA_PROXY_OP_SUP_MOVE_RELATIVE BIT(5)
+#define MEDIA_CONTROL_OP_SUP_MOVE_RELATIVE BIT(5)
 
-#define MEDIA_PROXY_OP_SUP_PREV_SEGMENT  BIT(6)
-#define MEDIA_PROXY_OP_SUP_NEXT_SEGMENT  BIT(7)
-#define MEDIA_PROXY_OP_SUP_FIRST_SEGMENT BIT(8)
-#define MEDIA_PROXY_OP_SUP_LAST_SEGMENT  BIT(9)
-#define MEDIA_PROXY_OP_SUP_GOTO_SEGMENT  BIT(10)
+#define MEDIA_CONTROL_OP_SUP_PREV_SEGMENT  BIT(6)
+#define MEDIA_CONTROL_OP_SUP_NEXT_SEGMENT  BIT(7)
+#define MEDIA_CONTROL_OP_SUP_FIRST_SEGMENT BIT(8)
+#define MEDIA_CONTROL_OP_SUP_LAST_SEGMENT  BIT(9)
+#define MEDIA_CONTROL_OP_SUP_GOTO_SEGMENT  BIT(10)
 
-#define MEDIA_PROXY_OP_SUP_PREV_TRACK    BIT(11)
-#define MEDIA_PROXY_OP_SUP_NEXT_TRACK    BIT(12)
-#define MEDIA_PROXY_OP_SUP_FIRST_TRACK   BIT(13)
-#define MEDIA_PROXY_OP_SUP_LAST_TRACK    BIT(14)
-#define MEDIA_PROXY_OP_SUP_GOTO_TRACK    BIT(15)
+#define MEDIA_CONTROL_OP_SUP_PREV_TRACK    BIT(11)
+#define MEDIA_CONTROL_OP_SUP_NEXT_TRACK    BIT(12)
+#define MEDIA_CONTROL_OP_SUP_FIRST_TRACK   BIT(13)
+#define MEDIA_CONTROL_OP_SUP_LAST_TRACK    BIT(14)
+#define MEDIA_CONTROL_OP_SUP_GOTO_TRACK    BIT(15)
 
-#define MEDIA_PROXY_OP_SUP_PREV_GROUP    BIT(16)
-#define MEDIA_PROXY_OP_SUP_NEXT_GROUP    BIT(17)
-#define MEDIA_PROXY_OP_SUP_FIRST_GROUP   BIT(18)
-#define MEDIA_PROXY_OP_SUP_LAST_GROUP    BIT(19)
-#define MEDIA_PROXY_OP_SUP_GOTO_GROUP    BIT(20)
+#define MEDIA_CONTROL_OP_SUP_PREV_GROUP    BIT(16)
+#define MEDIA_CONTROL_OP_SUP_NEXT_GROUP    BIT(17)
+#define MEDIA_CONTROL_OP_SUP_FIRST_GROUP   BIT(18)
+#define MEDIA_CONTROL_OP_SUP_LAST_GROUP    BIT(19)
+#define MEDIA_CONTROL_OP_SUP_GOTO_GROUP    BIT(20)
 
 /**
  * @brief Media player command result codes
  */
-#define MEDIA_PROXY_CMD_SUCCESS             0x01
-#define MEDIA_PROXY_CMD_NOT_SUPPORTED       0x02
-#define MEDIA_PROXY_CMD_PLAYER_INACTIVE     0x03
-#define MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED 0x04
+#define MEDIA_CONTROL_CMD_SUCCESS             0x01
+#define MEDIA_CONTROL_CMD_NOT_SUPPORTED       0x02
+#define MEDIA_CONTROL_CMD_PLAYER_INACTIVE     0x03
+#define MEDIA_CONTROL_CMD_CANNOT_BE_COMPLETED 0x04
 
 /**
  * @brief Search operation type values
  */
-#define MEDIA_PROXY_SEARCH_TYPE_TRACK_NAME    0x01
-#define MEDIA_PROXY_SEARCH_TYPE_ARTIST_NAME   0x02
-#define MEDIA_PROXY_SEARCH_TYPE_ALBUM_NAME    0x03
-#define MEDIA_PROXY_SEARCH_TYPE_GROUP_NAME    0x04
-#define MEDIA_PROXY_SEARCH_TYPE_EARLIEST_YEAR 0x05
-#define MEDIA_PROXY_SEARCH_TYPE_LATEST_YEAR   0x06
-#define MEDIA_PROXY_SEARCH_TYPE_GENRE         0x07
-#define MEDIA_PROXY_SEARCH_TYPE_ONLY_TRACKS   0x08
-#define MEDIA_PROXY_SEARCH_TYPE_ONLY_GROUPS   0x09
+#define MEDIA_CONTROL_SEARCH_TYPE_TRACK_NAME    0x01
+#define MEDIA_CONTROL_SEARCH_TYPE_ARTIST_NAME   0x02
+#define MEDIA_CONTROL_SEARCH_TYPE_ALBUM_NAME    0x03
+#define MEDIA_CONTROL_SEARCH_TYPE_GROUP_NAME    0x04
+#define MEDIA_CONTROL_SEARCH_TYPE_EARLIEST_YEAR 0x05
+#define MEDIA_CONTROL_SEARCH_TYPE_LATEST_YEAR   0x06
+#define MEDIA_CONTROL_SEARCH_TYPE_GENRE         0x07
+#define MEDIA_CONTROL_SEARCH_TYPE_ONLY_TRACKS   0x08
+#define MEDIA_CONTROL_SEARCH_TYPE_ONLY_GROUPS   0x09
 
 /**
  * @brief Search operation result codes
  */
-#define MEDIA_PROXY_SEARCH_SUCCESS  0x01
-#define MEDIA_PROXY_SEARCH_FAILURE  0x02
+#define MEDIA_CONTROL_SEARCH_SUCCESS  0x01
+#define MEDIA_CONTROL_SEARCH_FAILURE  0x02
 
 
 /**
@@ -243,11 +243,11 @@ struct media_player;
 
 /* PUBLIC API FOR CONTROLLERS */
 
-/** @brief Callbacks to a controller, from the media proxy
+/** @brief Callbacks to a controller, from the Media Control
  *
  *  Given by a controller when registering
  */
-struct media_proxy_ctrl_cbs {
+struct media_ctrl_cbs {
 
 	/**
 	 * @brief Media Player Instance callback
@@ -281,7 +281,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Media Player Name receive callback
 	 *
 	 * Called when the Media Player Name is read or changed
-	 * See also media_proxy_ctrl_name_get()
+	 * See also media_ctrl_name_get()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -294,7 +294,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Media Player Icon Object ID receive callback
 	 *
 	 * Called when the Media Player Icon Object ID is read
-	 * See also media_proxy_ctrl_get_icon_id()
+	 * See also media_ctrl_get_icon_id()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -307,7 +307,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Media Player Icon URL receive callback
 	 *
 	 * Called when the Media Player Icon URL is read
-	 * See also media_proxy_ctrl_get_icon_url()
+	 * See also media_ctrl_get_icon_url()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -331,7 +331,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Track Title receive callback
 	 *
 	 * Called when the Track Title is read or changed
-	 * See also media_proxy_ctrl_get_track_title()
+	 * See also media_ctrl_get_track_title()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -344,7 +344,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Track Duration receive callback
 	 *
 	 * Called when the Track Duration is read or changed
-	 * See also media_proxy_ctrl_get_track_duration()
+	 * See also media_ctrl_get_track_duration()
 	 *
 	 * @param player     Media player instance pointer
 	 * @param err        Error value. 0 on success, GATT error on positive value
@@ -357,8 +357,8 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Track Position receive callback
 	 *
 	 * Called when the Track Position is read or changed
-	 * See also media_proxy_ctrl_get_track_position() and
-	 * media_proxy_ctrl_set_track_position()
+	 * See also media_ctrl_get_track_position() and
+	 * media_ctrl_set_track_position()
 	 *
 	 * @param player     Media player instance pointer
 	 * @param err        Error value. 0 on success, GATT error on positive value
@@ -371,7 +371,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Track Position write callback
 	 *
 	 * Called when the Track Position is written
-	 * See also media_proxy_ctrl_set_track_position().
+	 * See also media_ctrl_set_track_position().
 	 *
 	 * @param player     Media player instance pointer
 	 * @param err        Error value. 0 on success, GATT error on positive value
@@ -384,8 +384,8 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Playback Speed receive callback
 	 *
 	 * Called when the Playback Speed is read or changed
-	 * See also media_proxy_ctrl_get_playback_speed() and
-	 * media_proxy_ctrl_set_playback_speed()
+	 * See also media_ctrl_get_playback_speed() and
+	 * media_ctrl_set_playback_speed()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -398,7 +398,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Playback Speed write callback
 	 *
 	 * Called when the Playback Speed is written
-	 * See also media_proxy_ctrl_set_playback_speed()
+	 * See also media_ctrl_set_playback_speed()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -411,7 +411,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Seeking Speed receive callback
 	 *
 	 * Called when the Seeking Speed is read or changed
-	 * See also media_proxy_ctrl_get_seeking_speed()
+	 * See also media_ctrl_get_seeking_speed()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -424,7 +424,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Track Segments Object ID receive callback
 	 *
 	 * Called when the Track Segments Object ID is read
-	 * See also media_proxy_ctrl_get_track_segments_id()
+	 * See also media_ctrl_get_track_segments_id()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -437,8 +437,8 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Current Track Object ID receive callback
 	 *
 	 * Called when the Current Track Object ID is read or changed
-	 * See also media_proxy_ctrl_get_current_track_id() and
-	 * media_proxy_ctrl_set_current_track_id()
+	 * See also media_ctrl_get_current_track_id() and
+	 * media_ctrl_set_current_track_id()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -451,7 +451,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Current Track Object ID write callback
 	 *
 	 * Called when the Current Track Object ID is written
-	 * See also media_proxy_ctrl_set_current_track_id()
+	 * See also media_ctrl_set_current_track_id()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -464,8 +464,8 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Next Track Object ID receive callback
 	 *
 	 * Called when the Next Track Object ID is read or changed
-	 * See also media_proxy_ctrl_get_next_track_id() and
-	 * media_proxy_ctrl_set_next_track_id()
+	 * See also media_ctrl_get_next_track_id() and
+	 * media_ctrl_set_next_track_id()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -478,7 +478,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Next Track Object ID write callback
 	 *
 	 * Called when the Next Track Object ID is written
-	 * See also media_proxy_ctrl_set_next_track_id()
+	 * See also media_ctrl_set_next_track_id()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -491,7 +491,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Parent Group Object ID receive callback
 	 *
 	 * Called when the Parent Group Object ID is read or changed
-	 * See also media_proxy_ctrl_get_parent_group_id()
+	 * See also media_ctrl_get_parent_group_id()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -504,8 +504,8 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Current Group Object ID receive callback
 	 *
 	 * Called when the Current Group Object ID is read or changed
-	 * See also media_proxy_ctrl_get_current_group_id() and
-	 * media_proxy_ctrl_set_current_group_id()
+	 * See also media_ctrl_get_current_group_id() and
+	 * media_ctrl_set_current_group_id()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -518,7 +518,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Current Group Object ID write callback
 	 *
 	 * Called when the Current Group Object ID is written
-	 * See also media_proxy_ctrl_set_current_group_id()
+	 * See also media_ctrl_set_current_group_id()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -531,8 +531,8 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Playing Order receive callback
 	 *
 	 * Called when the Playing Order is read or changed
-	 * See also media_proxy_ctrl_get_playing_order() and
-	 * media_proxy_ctrl_set_playing_order()
+	 * See also media_ctrl_get_playing_order() and
+	 * media_ctrl_set_playing_order()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -545,7 +545,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Playing Order write callback
 	 *
 	 * Called when the Playing Order is written
-	 * See also media_proxy_ctrl_set_playing_order()
+	 * See also media_ctrl_set_playing_order()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -558,7 +558,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Playing Orders Supported receive callback
 	 *
 	 * Called when the Playing Orders Supported is read
-	 * See also media_proxy_ctrl_get_playing_orders_supported()
+	 * See also media_ctrl_get_playing_orders_supported()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -572,8 +572,8 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Media State receive callback
 	 *
 	 * Called when the Media State is read or changed
-	 * See also media_proxy_ctrl_get_media_state() and
-	 * media_proxy_ctrl_send_command()
+	 * See also media_ctrl_get_media_state() and
+	 * media_ctrl_send_command()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -586,7 +586,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Command send callback
 	 *
 	 * Called when a command has been sent
-	 * See also media_proxy_ctrl_send_command()
+	 * See also media_ctrl_send_command()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -599,7 +599,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Command result receive callback
 	 *
 	 * Called when a command result has been received
-	 * See also media_proxy_ctrl_send_command()
+	 * See also media_ctrl_send_command()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -613,7 +613,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Commands supported receive callback
 	 *
 	 * Called when the Commands Supported is read or changed
-	 * See also media_proxy_ctrl_get_commands_supported()
+	 * See also media_ctrl_get_commands_supported()
 	 *
 	 * @param player       Media player instance pointer
 	 * @param err          Error value. 0 on success, GATT error on positive value
@@ -626,7 +626,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Search send callback
 	 *
 	 * Called when a search has been sent
-	 * See also media_proxy_ctrl_send_search()
+	 * See also media_ctrl_send_search()
 	 *
 	 * @param player        Media player instance pointer
 	 * @param err           Error value. 0 on success, GATT error on positive value
@@ -639,7 +639,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Search result code receive callback
 	 *
 	 * Called when a search result code has been received
-	 * See also media_proxy_ctrl_send_search()
+	 * See also media_ctrl_send_search()
 	 *
 	 * The search result code tells whether the search was successful or not.
 	 * For a successful search, the actual results of the search (i.e. what was found
@@ -655,7 +655,7 @@ struct media_proxy_ctrl_cbs {
 
 	/**
 	 * @brief Search Results Object ID receive callback
-	 * See also media_proxy_ctrl_get_search_results_id()
+	 * See also media_ctrl_get_search_results_id()
 	 *
 	 * Called when the Search Results Object ID is read or changed
 	 *
@@ -670,7 +670,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Content Control ID receive callback
 	 *
 	 * Called when the Content Control ID is read
-	 * See also media_proxy_ctrl_get_content_ctrl_id()
+	 * See also media_ctrl_get_content_ctrl_id()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -681,13 +681,13 @@ struct media_proxy_ctrl_cbs {
 };
 
 /**
- * @brief Register a controller with the media_proxy
+ * @brief Register a controller with the media_ctl
  *
  * @param ctrl_cbs   Callbacks to the controller
  *
  * @return 0 if success, errno on failure
  */
-int media_proxy_ctrl_register(struct media_proxy_ctrl_cbs *ctrl_cbs);
+int media_ctrl_register(struct media_ctrl_cbs *ctrl_cbs);
 
 /**
  * @brief Discover a remote media player
@@ -706,7 +706,7 @@ int media_proxy_ctrl_register(struct media_proxy_ctrl_cbs *ctrl_cbs);
  *
  * @return 0 if success, errno on failure
  */
-int media_proxy_ctrl_discover_player(struct bt_conn *conn);
+int media_ctrl_discover_player(struct bt_conn *conn);
 
 /**
  * @brief Read Media Player Name
@@ -715,7 +715,7 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_get_player_name(struct media_player *player);
+int media_ctrl_get_player_name(struct media_player *player);
 
 /**
  * @brief Read Icon Object ID
@@ -732,7 +732,7 @@ int media_proxy_ctrl_get_player_name(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_get_icon_id(struct media_player *player);
+int media_ctrl_get_icon_id(struct media_player *player);
 
 /**
  * @brief Read Icon URL
@@ -741,7 +741,7 @@ int media_proxy_ctrl_get_icon_id(struct media_player *player);
  *
  * @param player   Media player instance pointer
  */
-int media_proxy_ctrl_get_icon_url(struct media_player *player);
+int media_ctrl_get_icon_url(struct media_player *player);
 
 /**
  * @brief Read Track Title
@@ -750,7 +750,7 @@ int media_proxy_ctrl_get_icon_url(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_get_track_title(struct media_player *player);
+int media_ctrl_get_track_title(struct media_player *player);
 
 /**
  * @brief Read Track Duration
@@ -762,7 +762,7 @@ int media_proxy_ctrl_get_track_title(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_get_track_duration(struct media_player *player);
+int media_ctrl_get_track_duration(struct media_player *player);
 
 /**
  * @brief Read Track Position
@@ -775,7 +775,7 @@ int media_proxy_ctrl_get_track_duration(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_get_track_position(struct media_player *player);
+int media_ctrl_get_track_position(struct media_player *player);
 
 /**
  * @brief Set Track Position
@@ -791,7 +791,7 @@ int media_proxy_ctrl_get_track_position(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_set_track_position(struct media_player *player, int32_t position);
+int media_ctrl_set_track_position(struct media_player *player, int32_t position);
 
 /**
  * @brief Get Playback Speed
@@ -810,7 +810,7 @@ int media_proxy_ctrl_set_track_position(struct media_player *player, int32_t pos
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_get_playback_speed(struct media_player *player);
+int media_ctrl_get_playback_speed(struct media_player *player);
 
 /**
  * @brief Set Playback Speed
@@ -831,7 +831,7 @@ int media_proxy_ctrl_get_playback_speed(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_set_playback_speed(struct media_player *player, int8_t speed);
+int media_ctrl_set_playback_speed(struct media_player *player, int8_t speed);
 
 /**
  * @brief Get Seeking Speed
@@ -849,7 +849,7 @@ int media_proxy_ctrl_set_playback_speed(struct media_player *player, int8_t spee
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_get_seeking_speed(struct media_player *player);
+int media_ctrl_get_seeking_speed(struct media_player *player);
 
 /**
  * @brief Read Current Track Segments Object ID
@@ -866,7 +866,7 @@ int media_proxy_ctrl_get_seeking_speed(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_get_track_segments_id(struct media_player *player);
+int media_ctrl_get_track_segments_id(struct media_player *player);
 
 /**
  * @brief Read Current Track Object ID
@@ -883,7 +883,7 @@ int media_proxy_ctrl_get_track_segments_id(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_get_current_track_id(struct media_player *player);
+int media_ctrl_get_current_track_id(struct media_player *player);
 
 /**
  * @brief Set Current Track Object ID
@@ -898,7 +898,7 @@ int media_proxy_ctrl_get_current_track_id(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_set_current_track_id(struct media_player *player, uint64_t id);
+int media_ctrl_set_current_track_id(struct media_player *player, uint64_t id);
 
 /**
  * @brief Read Next Track Object ID
@@ -912,7 +912,7 @@ int media_proxy_ctrl_set_current_track_id(struct media_player *player, uint64_t 
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_get_next_track_id(struct media_player *player);
+int media_ctrl_get_next_track_id(struct media_player *player);
 
 /**
  * @brief Set Next Track Object ID
@@ -926,7 +926,7 @@ int media_proxy_ctrl_get_next_track_id(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_set_next_track_id(struct media_player *player, uint64_t id);
+int media_ctrl_set_next_track_id(struct media_player *player, uint64_t id);
 
 /**
  * @brief Read Parent Group Object ID
@@ -945,7 +945,7 @@ int media_proxy_ctrl_set_next_track_id(struct media_player *player, uint64_t id)
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_get_parent_group_id(struct media_player *player);
+int media_ctrl_get_parent_group_id(struct media_player *player);
 
 /**
  * @brief Read Current Group Object ID
@@ -962,7 +962,7 @@ int media_proxy_ctrl_get_parent_group_id(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_get_current_group_id(struct media_player *player);
+int media_ctrl_get_current_group_id(struct media_player *player);
 
 /**
  * @brief Set Current Group Object ID
@@ -977,7 +977,7 @@ int media_proxy_ctrl_get_current_group_id(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_set_current_group_id(struct media_player *player, uint64_t id);
+int media_ctrl_set_current_group_id(struct media_player *player, uint64_t id);
 
 /**
  * @brief Read Playing Order
@@ -986,7 +986,7 @@ int media_proxy_ctrl_set_current_group_id(struct media_player *player, uint64_t 
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_get_playing_order(struct media_player *player);
+int media_ctrl_get_playing_order(struct media_player *player);
 
 /**
  * @brief Set Playing Order
@@ -998,7 +998,7 @@ int media_proxy_ctrl_get_playing_order(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_set_playing_order(struct media_player *player, uint8_t order);
+int media_ctrl_set_playing_order(struct media_player *player, uint8_t order);
 
 /**
  * @brief Read Playing Orders Supported
@@ -1010,7 +1010,7 @@ int media_proxy_ctrl_set_playing_order(struct media_player *player, uint8_t orde
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_get_playing_orders_supported(struct media_player *player);
+int media_ctrl_get_playing_orders_supported(struct media_player *player);
 
 /**
  * @brief Read Media State
@@ -1021,7 +1021,7 @@ int media_proxy_ctrl_get_playing_orders_supported(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_get_media_state(struct media_player *player);
+int media_ctrl_get_media_state(struct media_player *player);
 
 /**
  * @brief Send Command
@@ -1036,7 +1036,7 @@ int media_proxy_ctrl_get_media_state(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_send_command(struct media_player *player, const struct mpl_cmd *command);
+int media_ctrl_send_command(struct media_player *player, const struct mpl_cmd *command);
 
 /**
  * @brief Read Commands Supported
@@ -1048,7 +1048,7 @@ int media_proxy_ctrl_send_command(struct media_player *player, const struct mpl_
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_get_commands_supported(struct media_player *player);
+int media_ctrl_get_commands_supported(struct media_player *player);
 
 /**
  * @brief Set Search
@@ -1069,7 +1069,7 @@ int media_proxy_ctrl_get_commands_supported(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_send_search(struct media_player *player, const struct mpl_search *search);
+int media_ctrl_send_search(struct media_player *player, const struct mpl_search *search);
 
 /**
  * @brief Read Search Results Object ID
@@ -1087,7 +1087,7 @@ int media_proxy_ctrl_send_search(struct media_player *player, const struct mpl_s
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_get_search_results_id(struct media_player *player);
+int media_ctrl_get_search_results_id(struct media_player *player);
 
 /**
  * @brief Read Content Control ID
@@ -1100,16 +1100,16 @@ int media_proxy_ctrl_get_search_results_id(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-uint8_t media_proxy_ctrl_get_content_ctrl_id(struct media_player *player);
+uint8_t media_ctrl_get_content_ctrl_id(struct media_player *player);
 
 
 /* PUBLIC API FOR PLAYERS */
 
-/** @brief Available calls in a player, that the media proxy can call
+/** @brief Available calls in a player, that the Media Control can call
  *
  * Given by a player when registering.
  */
-struct media_proxy_pl_calls {
+struct media_ctl_pl_calls {
 
 	/**
 	 * @brief Read Media Player Name
@@ -1429,34 +1429,34 @@ struct media_proxy_pl_calls {
 };
 
 /**
- * @brief Register a player with the media proxy
+ * @brief Register a player with the Media Control
  *
- * Register a player with the media proxy module, for use by media
+ * Register a player with the Media Control module, for use by media
  * controllers.
  *
- * The media proxy may call any non-NULL function pointers in the
- * supplied media_proxy_pl_calls structure.
+ * The Media Control may call any non-NULL function pointers in the
+ * supplied media_ctl_pl_calls structure.
  *
  * @param pl_calls	Function pointers to the media player's calls
  *
  * @return 0 if success, errno on failure
  */
-int media_proxy_pl_register(struct media_proxy_pl_calls *pl_calls);
+int media_ctl_pl_register(struct media_ctl_pl_calls *pl_calls);
 
 /* Initialize player - TODO: Move to player header file */
-int media_proxy_pl_init(void);
+int media_ctl_pl_init(void);
 
 /* TODO: Find best location for this call, and move this one also */
 struct bt_ots *bt_mcs_get_ots(void);
 
-/* Callbacks from the player to the media proxy */
+/* Callbacks from the player to the Media Control */
 
 /**
  * @brief Track changed callback
  *
  * To be called when the player's current track is changed
  */
-void media_proxy_pl_track_changed_cb(void);
+void media_ctl_pl_track_changed_cb(void);
 
 /**
  * @brief Track title callback
@@ -1465,7 +1465,7 @@ void media_proxy_pl_track_changed_cb(void);
  *
  * @param title	The title of the track
  */
-void media_proxy_pl_track_title_cb(char *title);
+void media_ctl_pl_track_title_cb(char *title);
 
 /**
  * @brief Track duration callback
@@ -1477,7 +1477,7 @@ void media_proxy_pl_track_title_cb(char *title);
  *
  * @param duration	The track duration
  */
-void media_proxy_pl_track_duration_cb(int32_t duration);
+void media_ctl_pl_track_duration_cb(int32_t duration);
 
 /**
  * @brief Track position callback
@@ -1494,7 +1494,7 @@ void media_proxy_pl_track_duration_cb(int32_t duration);
  *
  *  @param position	The media player's position in the track
  */
-void media_proxy_pl_track_position_cb(int32_t position);
+void media_ctl_pl_track_position_cb(int32_t position);
 
 /**
  * @brief Playback speed callback
@@ -1503,7 +1503,7 @@ void media_proxy_pl_track_position_cb(int32_t position);
  *
  * @param speed	The playback speed parameter
  */
-void media_proxy_pl_playback_speed_cb(int8_t speed);
+void media_ctl_pl_playback_speed_cb(int8_t speed);
 
 /**
  * @brief Seeking speed callback
@@ -1512,7 +1512,7 @@ void media_proxy_pl_playback_speed_cb(int8_t speed);
  *
  * @param speed	The seeking speed factor
  */
-void media_proxy_pl_seeking_speed_cb(int8_t speed);
+void media_ctl_pl_seeking_speed_cb(int8_t speed);
 
 /**
  * @brief Current track object ID callback
@@ -1522,7 +1522,7 @@ void media_proxy_pl_seeking_speed_cb(int8_t speed);
  *
  * @param id The ID of the current track object in the OTS
  */
-void media_proxy_pl_current_track_id_cb(uint64_t id);
+void media_ctl_pl_current_track_id_cb(uint64_t id);
 
 /**
  * @brief Next track object ID callback
@@ -1531,7 +1531,7 @@ void media_proxy_pl_current_track_id_cb(uint64_t id);
  *
  * @param id The ID of the next track object in the OTS
  */
-void media_proxy_pl_next_track_id_cb(uint64_t id);
+void media_ctl_pl_next_track_id_cb(uint64_t id);
 
 /**
  * @brief Parent group object ID callback
@@ -1540,7 +1540,7 @@ void media_proxy_pl_next_track_id_cb(uint64_t id);
  *
  * @param id The ID of the parent group object in the OTS
  */
-void media_proxy_pl_parent_group_id_cb(uint64_t id);
+void media_ctl_pl_parent_group_id_cb(uint64_t id);
 
 /**
  * @brief Current group object ID callback
@@ -1549,7 +1549,7 @@ void media_proxy_pl_parent_group_id_cb(uint64_t id);
  *
  * @param id The ID of the current group object in the OTS
  */
-void media_proxy_pl_current_group_id_cb(uint64_t id);
+void media_ctl_pl_current_group_id_cb(uint64_t id);
 
 /**
  * @brief Playing order callback
@@ -1558,7 +1558,7 @@ void media_proxy_pl_current_group_id_cb(uint64_t id);
  *
  * @param order	The playing order
  */
-void media_proxy_pl_playing_order_cb(uint8_t order);
+void media_ctl_pl_playing_order_cb(uint8_t order);
 
 /**
  * @brief Media state callback
@@ -1567,7 +1567,7 @@ void media_proxy_pl_playing_order_cb(uint8_t order);
  *
  * @param state	The media player's state
  */
-void media_proxy_pl_media_state_cb(uint8_t state);
+void media_ctl_pl_media_state_cb(uint8_t state);
 
 /**
  * @brief Command callback
@@ -1579,7 +1579,7 @@ void media_proxy_pl_media_state_cb(uint8_t state);
  *
  * @param cmd_ntf	The result of the command
  */
-void media_proxy_pl_command_cb(const struct mpl_cmd_ntf *cmd_ntf);
+void media_ctl_pl_command_cb(const struct mpl_cmd_ntf *cmd_ntf);
 
 /**
  * @brief Commands supported callback
@@ -1588,7 +1588,7 @@ void media_proxy_pl_command_cb(const struct mpl_cmd_ntf *cmd_ntf);
  *
  * @param opcodes   The supported commands opcodes
  */
-void media_proxy_pl_commands_supported_cb(uint32_t opcodes);
+void media_ctl_pl_commands_supported_cb(uint32_t opcodes);
 
 /**
  * @brief Search callback
@@ -1603,7 +1603,7 @@ void media_proxy_pl_commands_supported_cb(uint32_t opcodes);
  *
  * @param result_code	The result (success or failure) of the search
  */
-void media_proxy_pl_search_cb(uint8_t result_code);
+void media_ctl_pl_search_cb(uint8_t result_code);
 
 /**
  * @brief Search Results object ID callback
@@ -1613,12 +1613,12 @@ void media_proxy_pl_search_cb(uint8_t result_code);
  *
  * @param id    The ID of the search results object in the OTS
  */
-void media_proxy_pl_search_results_id_cb(uint64_t id);
+void media_ctl_pl_search_results_id_cb(uint64_t id);
 
 #ifdef __cplusplus
 }
 #endif
 
-/** @} */ /* End of group bt_media_proxy */
+/** @} */ /* End of group bt_media_control */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MEDIA_PROXY_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MEDIA_CONTROL_H_ */

@@ -117,7 +117,7 @@ The CCP implementation is not yet implemented in Zephyr.
 
 The MCP implementation supports the following roles
 
-* Media Control Service (MCS) Server via the Media Proxy module
+* Media Control Service (MCS) Server via the Media Control module
 * Media Control Client (MCC)
 
 The API reference for media control can be found in

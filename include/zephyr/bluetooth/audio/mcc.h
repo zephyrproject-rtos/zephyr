@@ -24,7 +24,7 @@
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/net/buf.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/audio/media_control.h>
 
 #ifdef __cplusplus
 extern "C" {

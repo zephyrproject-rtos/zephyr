@@ -7,7 +7,7 @@
 #ifdef CONFIG_BT_MCS
 
 #include <zephyr/bluetooth/audio/mcc.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/audio/media_control.h>
 #include <zephyr/bluetooth/services/ots.h>
 
 #include "common.h"
@@ -59,7 +59,7 @@ CREATE_FLAG(search_sent_flag);
 CREATE_FLAG(search_result_code_flag);
 
 
-static struct media_proxy_ctrl_cbs cbs;
+static struct media_ctrl_cbs cbs;
 static struct media_player *local_player;
 static struct media_player *remote_player;
 static struct media_player *current_player;
@@ -496,7 +496,7 @@ static void content_ctrl_id_cb(struct media_player *plr, int err, uint8_t ccid)
 
 void initialize_media(void)
 {
-	int err = media_proxy_pl_init();  /* TODO: Fix direct call to player */
+	int err = media_ctl_pl_init();  /* TODO: Fix direct call to player */
 
 	if (err) {
 		FAIL("Could not init mpl: %d", err);
@@ -539,7 +539,7 @@ void initialize_media(void)
 
 	UNSET_FLAG(local_player_instance);
 
-	err = media_proxy_ctrl_register(&cbs);
+	err = media_ctrl_register(&cbs);
 	if (err) {
 		FAIL("Could not init mpl: %d", err);
 		return;
@@ -587,7 +587,7 @@ static bool test_verify_media_state_wait_flags(uint8_t expected_state)
 	int err;
 
 	UNSET_FLAG(media_state_read);
-	err = media_proxy_ctrl_get_media_state(current_player);
+	err = media_ctrl_get_media_state(current_player);
 	if (err) {
 		FAIL("Failed to read media state: %d", err);
 		return false;
@@ -614,7 +614,7 @@ static void test_send_cmd_wait_flags(struct mpl_cmd *cmd)
 
 	UNSET_FLAG(command_sent_flag);
 	UNSET_FLAG(command_results_flag);
-	err = media_proxy_ctrl_send_command(current_player, cmd);
+	err = media_ctrl_send_command(current_player, cmd);
 	if (err) {
 		FAIL("Failed to send command: %d, opcode: %u",
 		     err, cmd->opcode);
@@ -629,17 +629,17 @@ static void test_cp_play(void)
 {
 	struct mpl_cmd cmd;
 
-	cmd.opcode = MEDIA_PROXY_OP_PLAY;
+	cmd.opcode = MEDIA_CONTROL_OP_PLAY;
 	cmd.use_param = false;
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("PLAY command failed\n");
 		return;
 	}
 
-	if (test_verify_media_state_wait_flags(MEDIA_PROXY_STATE_PLAYING)) {
+	if (test_verify_media_state_wait_flags(MEDIA_CONTROL_STATE_PLAYING)) {
 		printk("PLAY command succeeded\n");
 	}
 }
@@ -648,17 +648,17 @@ static void test_cp_pause(void)
 {
 	struct mpl_cmd cmd;
 
-	cmd.opcode = MEDIA_PROXY_OP_PAUSE;
+	cmd.opcode = MEDIA_CONTROL_OP_PAUSE;
 	cmd.use_param = false;
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("PAUSE command failed\n");
 		return;
 	}
 
-	if (test_verify_media_state_wait_flags(MEDIA_PROXY_STATE_PAUSED)) {
+	if (test_verify_media_state_wait_flags(MEDIA_CONTROL_STATE_PAUSED)) {
 		printk("PAUSE command succeeded\n");
 	}
 }
@@ -667,17 +667,17 @@ static void test_cp_fast_rewind(void)
 {
 	struct mpl_cmd cmd;
 
-	cmd.opcode = MEDIA_PROXY_OP_FAST_REWIND;
+	cmd.opcode = MEDIA_CONTROL_OP_FAST_REWIND;
 	cmd.use_param = false;
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("FAST REWIND command failed\n");
 		return;
 	}
 
-	if (test_verify_media_state_wait_flags(MEDIA_PROXY_STATE_SEEKING)) {
+	if (test_verify_media_state_wait_flags(MEDIA_CONTROL_STATE_SEEKING)) {
 		printk("FAST REWIND command succeeded\n");
 	}
 }
@@ -686,17 +686,17 @@ static void test_cp_fast_forward(void)
 {
 	struct mpl_cmd cmd;
 
-	cmd.opcode = MEDIA_PROXY_OP_FAST_FORWARD;
+	cmd.opcode = MEDIA_CONTROL_OP_FAST_FORWARD;
 	cmd.use_param = false;
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("FAST FORWARD command failed\n");
 		return;
 	}
 
-	if (test_verify_media_state_wait_flags(MEDIA_PROXY_STATE_SEEKING)) {
+	if (test_verify_media_state_wait_flags(MEDIA_CONTROL_STATE_SEEKING)) {
 		printk("FAST FORWARD command succeeded\n");
 	}
 }
@@ -705,18 +705,18 @@ static void test_cp_stop(void)
 {
 	struct mpl_cmd cmd;
 
-	cmd.opcode = MEDIA_PROXY_OP_STOP;
+	cmd.opcode = MEDIA_CONTROL_OP_STOP;
 	cmd.use_param = false;
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("STOP command failed\n");
 		return;
 	}
 
 	/* There is no "STOPPED" state in the spec - STOP goes to PAUSED */
-	if (test_verify_media_state_wait_flags(MEDIA_PROXY_STATE_PAUSED)) {
+	if (test_verify_media_state_wait_flags(MEDIA_CONTROL_STATE_PAUSED)) {
 		printk("STOP command succeeded\n");
 	}
 }
@@ -732,7 +732,7 @@ static void test_cp_move_relative(void)
 	 * if the player is playing.
 	 */
 	UNSET_FLAG(track_position);
-	err = media_proxy_ctrl_get_track_position(current_player);
+	err = media_ctrl_get_track_position(current_player);
 	if (err) {
 		FAIL("Failed to read track position: %d\n", err);
 		return;
@@ -741,19 +741,19 @@ static void test_cp_move_relative(void)
 	WAIT_FOR_FLAG(track_position);
 	uint32_t tmp_pos = g_pos;
 
-	cmd.opcode = MEDIA_PROXY_OP_MOVE_RELATIVE;
+	cmd.opcode = MEDIA_CONTROL_OP_MOVE_RELATIVE;
 	cmd.use_param = true;
 	cmd.param = 1000;  /* Position change, measured in 1/100 of a second */
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("MOVE RELATIVE command failed\n");
 		return;
 	}
 
 	UNSET_FLAG(track_position);
-	err = media_proxy_ctrl_get_track_position(current_player);
+	err = media_ctrl_get_track_position(current_player);
 	if (err) {
 		FAIL("Failed to read track position: %d\n", err);
 		return;
@@ -786,12 +786,12 @@ static void test_cp_prev_segment(void)
 	 * For now, we will settle for seeing that the opcodes are accepted.
 	 */
 
-	cmd.opcode = MEDIA_PROXY_OP_PREV_SEGMENT;
+	cmd.opcode = MEDIA_CONTROL_OP_PREV_SEGMENT;
 	cmd.use_param = false;
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("PREV SEGMENT command failed\n");
 		return;
 	}
@@ -803,12 +803,12 @@ static void test_cp_next_segment(void)
 {
 	struct mpl_cmd cmd;
 
-	cmd.opcode = MEDIA_PROXY_OP_NEXT_SEGMENT;
+	cmd.opcode = MEDIA_CONTROL_OP_NEXT_SEGMENT;
 	cmd.use_param = false;
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("NEXT SEGMENT command failed\n");
 		return;
 	}
@@ -820,12 +820,12 @@ static void test_cp_first_segment(void)
 {
 	struct mpl_cmd cmd;
 
-	cmd.opcode = MEDIA_PROXY_OP_FIRST_SEGMENT;
+	cmd.opcode = MEDIA_CONTROL_OP_FIRST_SEGMENT;
 	cmd.use_param = false;
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("FIRST SEGMENT command failed\n");
 		return;
 	}
@@ -837,12 +837,12 @@ static void test_cp_last_segment(void)
 {
 	struct mpl_cmd cmd;
 
-	cmd.opcode = MEDIA_PROXY_OP_LAST_SEGMENT;
+	cmd.opcode = MEDIA_CONTROL_OP_LAST_SEGMENT;
 	cmd.use_param = false;
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("LAST SEGMENT command failed\n");
 		return;
 	}
@@ -854,13 +854,13 @@ static void test_cp_goto_segment(void)
 {
 	struct mpl_cmd cmd;
 
-	cmd.opcode = MEDIA_PROXY_OP_GOTO_SEGMENT;
+	cmd.opcode = MEDIA_CONTROL_OP_GOTO_SEGMENT;
 	cmd.use_param = true;
 	cmd.param = 2;    /* Second segment - not the first, maybe not last */
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("GOTO SEGMENT command failed\n");
 		return;
 	}
@@ -877,7 +877,7 @@ static void test_read_current_track_object_id_wait_flags(void)
 	int err;
 
 	UNSET_FLAG(current_track_object_id_read);
-	err = media_proxy_ctrl_get_current_track_id(current_player);
+	err = media_ctrl_get_current_track_id(current_player);
 	if (err) {
 		FAIL("Failed to read current track object ID: %d", err);
 		return;
@@ -899,7 +899,7 @@ static void test_cp_prev_track(void)
 	 * current track object ID has changed.
 	 */
 
-	cmd.opcode = MEDIA_PROXY_OP_PREV_TRACK;
+	cmd.opcode = MEDIA_CONTROL_OP_PREV_TRACK;
 	cmd.use_param = false;
 
 	test_read_current_track_object_id_wait_flags();
@@ -907,7 +907,7 @@ static void test_cp_prev_track(void)
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("PREV TRACK command failed\n");
 		return;
 	}
@@ -928,7 +928,7 @@ static void test_cp_next_track(void)
 	uint64_t object_id;
 	struct mpl_cmd cmd;
 
-	cmd.opcode = MEDIA_PROXY_OP_NEXT_TRACK;
+	cmd.opcode = MEDIA_CONTROL_OP_NEXT_TRACK;
 	cmd.use_param = false;
 
 	test_read_current_track_object_id_wait_flags();
@@ -936,7 +936,7 @@ static void test_cp_next_track(void)
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("NEXT TRACK command failed\n");
 		return;
 	}
@@ -956,7 +956,7 @@ static void test_cp_first_track(void)
 	uint64_t object_id;
 	struct mpl_cmd cmd;
 
-	cmd.opcode = MEDIA_PROXY_OP_FIRST_TRACK;
+	cmd.opcode = MEDIA_CONTROL_OP_FIRST_TRACK;
 	cmd.use_param = false;
 
 	test_read_current_track_object_id_wait_flags();
@@ -964,7 +964,7 @@ static void test_cp_first_track(void)
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("FIRST TRACK command failed\n");
 		return;
 	}
@@ -984,7 +984,7 @@ static void test_cp_last_track(void)
 	uint64_t object_id;
 	struct mpl_cmd cmd;
 
-	cmd.opcode = MEDIA_PROXY_OP_LAST_TRACK;
+	cmd.opcode = MEDIA_CONTROL_OP_LAST_TRACK;
 	cmd.use_param = false;
 
 	test_read_current_track_object_id_wait_flags();
@@ -992,7 +992,7 @@ static void test_cp_last_track(void)
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("LAST TRACK command failed\n");
 		return;
 	}
@@ -1012,7 +1012,7 @@ static void test_cp_goto_track(void)
 	uint64_t object_id;
 	struct mpl_cmd cmd;
 
-	cmd.opcode = MEDIA_PROXY_OP_GOTO_TRACK;
+	cmd.opcode = MEDIA_CONTROL_OP_GOTO_TRACK;
 	cmd.use_param = true;
 	cmd.param = 2; /* Second track, not the first, maybe not the last */
 
@@ -1021,7 +1021,7 @@ static void test_cp_goto_track(void)
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("GOTO TRACK command failed\n");
 		return;
 	}
@@ -1045,7 +1045,7 @@ static void test_read_current_group_object_id_wait_flags(void)
 	int err;
 
 	UNSET_FLAG(current_group_object_id_read);
-	err = media_proxy_ctrl_get_current_group_id(current_player);
+	err = media_ctrl_get_current_group_id(current_player);
 	if (err) {
 		FAIL("Failed to read current group object ID: %d", err);
 		return;
@@ -1067,7 +1067,7 @@ static void test_cp_prev_group(void)
 	 * current group object ID has changed.
 	 */
 
-	cmd.opcode = MEDIA_PROXY_OP_PREV_GROUP;
+	cmd.opcode = MEDIA_CONTROL_OP_PREV_GROUP;
 	cmd.use_param = false;
 
 	test_read_current_group_object_id_wait_flags();
@@ -1075,7 +1075,7 @@ static void test_cp_prev_group(void)
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("PREV GROUP command failed\n");
 		return;
 	}
@@ -1096,7 +1096,7 @@ static void test_cp_next_group(void)
 	uint64_t object_id;
 	struct mpl_cmd cmd;
 
-	cmd.opcode = MEDIA_PROXY_OP_NEXT_GROUP;
+	cmd.opcode = MEDIA_CONTROL_OP_NEXT_GROUP;
 	cmd.use_param = false;
 
 	test_read_current_group_object_id_wait_flags();
@@ -1104,7 +1104,7 @@ static void test_cp_next_group(void)
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("NEXT GROUP command failed\n");
 		return;
 	}
@@ -1124,7 +1124,7 @@ static void test_cp_first_group(void)
 	uint64_t object_id;
 	struct mpl_cmd cmd;
 
-	cmd.opcode = MEDIA_PROXY_OP_FIRST_GROUP;
+	cmd.opcode = MEDIA_CONTROL_OP_FIRST_GROUP;
 	cmd.use_param = false;
 
 	test_read_current_group_object_id_wait_flags();
@@ -1132,7 +1132,7 @@ static void test_cp_first_group(void)
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("FIRST GROUP command failed\n");
 		return;
 	}
@@ -1152,7 +1152,7 @@ static void test_cp_last_group(void)
 	uint64_t object_id;
 	struct mpl_cmd cmd;
 
-	cmd.opcode = MEDIA_PROXY_OP_LAST_GROUP;
+	cmd.opcode = MEDIA_CONTROL_OP_LAST_GROUP;
 	cmd.use_param = false;
 
 	test_read_current_group_object_id_wait_flags();
@@ -1160,7 +1160,7 @@ static void test_cp_last_group(void)
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("LAST GROUP command failed\n");
 		return;
 	}
@@ -1180,7 +1180,7 @@ static void test_cp_goto_group(void)
 	uint64_t object_id;
 	struct mpl_cmd cmd;
 
-	cmd.opcode = MEDIA_PROXY_OP_GOTO_GROUP;
+	cmd.opcode = MEDIA_CONTROL_OP_GOTO_GROUP;
 	cmd.use_param = true;
 	cmd.param = 2; /* Second group, not the first, maybe not the last */
 
@@ -1189,7 +1189,7 @@ static void test_cp_goto_group(void)
 
 	test_send_cmd_wait_flags(&cmd);
 
-	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+	if (g_command_result != MEDIA_CONTROL_CMD_SUCCESS) {
 		FAIL("GOTO GROUP command failed\n");
 		return;
 	}
@@ -1218,7 +1218,7 @@ static void test_scp(void)
 	 */
 
 	UNSET_FLAG(search_results_object_id_read);
-	err = media_proxy_ctrl_get_search_results_id(current_player);
+	err = media_ctrl_get_search_results_id(current_player);
 
 	if (err) {
 		FAIL("Failed to read search results object ID: %d", err);
@@ -1237,7 +1237,7 @@ static void test_scp(void)
 	 * so it makes no difference what we search for.  The result is the
 	 * same anyway.
 	 */
-	sci.type = MEDIA_PROXY_SEARCH_TYPE_TRACK_NAME;
+	sci.type = MEDIA_CONTROL_SEARCH_TYPE_TRACK_NAME;
 	strcpy(sci.param, "Some track name");
 	/* Length is length of type, plus length of param w/o termination */
 	sci.len = sizeof(sci.type) + strlen(sci.param);
@@ -1256,7 +1256,7 @@ static void test_scp(void)
 	UNSET_FLAG(search_result_code_flag);
 	UNSET_FLAG(search_results_object_id_read);
 
-	err = media_proxy_ctrl_send_search(current_player, &search);
+	err = media_ctrl_send_search(current_player, &search);
 	if (err) {
 		FAIL("Failed to write to search control point\n");
 		return;
@@ -1265,7 +1265,7 @@ static void test_scp(void)
 	WAIT_FOR_FLAG(search_sent_flag);
 	WAIT_FOR_FLAG(search_result_code_flag);
 
-	if (g_search_control_point_result_code != MEDIA_PROXY_SEARCH_SUCCESS) {
+	if (g_search_control_point_result_code != MEDIA_CONTROL_SEARCH_SUCCESS) {
 		FAIL("SEARCH operation failed\n");
 		return;
 	}
@@ -1294,7 +1294,7 @@ void test_media_controller_player(struct media_player *player)
 	int err;
 
 	UNSET_FLAG(player_name_read);
-	err = media_proxy_ctrl_get_player_name(current_player);
+	err = media_ctrl_get_player_name(current_player);
 	if (err) {
 		FAIL("Failed to read media player name ID: %d", err);
 		return;
@@ -1305,7 +1305,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read icon object id  ******************************************/
 	UNSET_FLAG(icon_object_id_read);
-	err = media_proxy_ctrl_get_icon_id(current_player);
+	err = media_ctrl_get_icon_id(current_player);
 	if (err) {
 		FAIL("Failed to read icon object ID: %d", err);
 		return;
@@ -1316,7 +1316,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read icon url *************************************************/
 	UNSET_FLAG(icon_url_read);
-	err =  media_proxy_ctrl_get_icon_url(current_player);
+	err =  media_ctrl_get_icon_url(current_player);
 	if (err) {
 		FAIL("Failed to read icon url: %d", err);
 		return;
@@ -1327,7 +1327,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read track_title ******************************************/
 	UNSET_FLAG(track_title_read);
-	err = media_proxy_ctrl_get_track_title(current_player);
+	err = media_ctrl_get_track_title(current_player);
 	if (err) {
 		FAIL("Failed to read track_title: %d", err);
 		return;
@@ -1338,7 +1338,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read track_duration ******************************************/
 	UNSET_FLAG(track_duration_read);
-	err = media_proxy_ctrl_get_track_duration(current_player);
+	err = media_ctrl_get_track_duration(current_player);
 	if (err) {
 		FAIL("Failed to read track_duration: %d", err);
 		return;
@@ -1349,7 +1349,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read and set track_position *************************************/
 	UNSET_FLAG(track_position);
-	err = media_proxy_ctrl_get_track_position(current_player);
+	err = media_ctrl_get_track_position(current_player);
 	if (err) {
 		FAIL("Failed to read track position: %d", err);
 		return;
@@ -1361,7 +1361,7 @@ void test_media_controller_player(struct media_player *player)
 	int32_t pos = g_pos + 1200; /*12 seconds further into the track */
 
 	UNSET_FLAG(track_position);
-	err = media_proxy_ctrl_set_track_position(current_player, pos);
+	err = media_ctrl_set_track_position(current_player, pos);
 	if (err) {
 		FAIL("Failed to set track position: %d", err);
 		return;
@@ -1377,7 +1377,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read and set playback speed *************************************/
 	UNSET_FLAG(playback_speed);
-	err = media_proxy_ctrl_get_playback_speed(current_player);
+	err = media_ctrl_get_playback_speed(current_player);
 	if (err) {
 		FAIL("Failed to read playback speed: %d", err);
 		return;
@@ -1389,7 +1389,7 @@ void test_media_controller_player(struct media_player *player)
 	int8_t pb_speed = g_pb_speed + 8; /* 2^(8/64) faster than current speed */
 
 	UNSET_FLAG(playback_speed);
-	err = media_proxy_ctrl_set_playback_speed(current_player, pb_speed);
+	err = media_ctrl_set_playback_speed(current_player, pb_speed);
 	if (err) {
 		FAIL("Failed to set playback speed: %d", err);
 		return;
@@ -1403,7 +1403,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read seeking speed *************************************/
 	UNSET_FLAG(seeking_speed_read);
-	err = media_proxy_ctrl_get_seeking_speed(current_player);
+	err = media_ctrl_get_seeking_speed(current_player);
 	if (err) {
 		FAIL("Failed to read seeking speed: %d", err);
 		return;
@@ -1414,7 +1414,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read track segments object *****************************************/
 	UNSET_FLAG(track_segments_object_id_read);
-	err = media_proxy_ctrl_get_track_segments_id(current_player);
+	err = media_ctrl_get_track_segments_id(current_player);
 	if (err) {
 		FAIL("Failed to read track segments object ID: %d", err);
 		return;
@@ -1425,7 +1425,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read current track object ******************************************/
 	UNSET_FLAG(current_track_object_id_read);
-	err = media_proxy_ctrl_get_current_track_id(current_player);
+	err = media_ctrl_get_current_track_id(current_player);
 	if (err) {
 		FAIL("Failed to read current track object ID: %d", err);
 		return;
@@ -1436,7 +1436,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read next track object ******************************************/
 	UNSET_FLAG(next_track_object_id_read);
-	err = media_proxy_ctrl_get_next_track_id(current_player);
+	err = media_ctrl_get_next_track_id(current_player);
 	if (err) {
 		FAIL("Failed to read next track object ID: %d", err);
 		return;
@@ -1447,7 +1447,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read parent group object ******************************************/
 	UNSET_FLAG(parent_group_object_id_read);
-	err = media_proxy_ctrl_get_parent_group_id(current_player);
+	err = media_ctrl_get_parent_group_id(current_player);
 	if (err) {
 		FAIL("Failed to read parent group object ID: %d", err);
 		return;
@@ -1458,7 +1458,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read current group object ******************************************/
 	UNSET_FLAG(current_group_object_id_read);
-	err = media_proxy_ctrl_get_current_group_id(current_player);
+	err = media_ctrl_get_current_group_id(current_player);
 	if (err) {
 		FAIL("Failed to read current group object ID: %d", err);
 		return;
@@ -1469,7 +1469,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read and set playing order *************************************/
 	UNSET_FLAG(playing_order_flag);
-	err = media_proxy_ctrl_get_playing_order(current_player);
+	err = media_ctrl_get_playing_order(current_player);
 	if (err) {
 		FAIL("Failed to read playing order: %d", err);
 		return;
@@ -1480,14 +1480,14 @@ void test_media_controller_player(struct media_player *player)
 
 	uint8_t playing_order;
 
-	if (g_playing_order != MEDIA_PROXY_PLAYING_ORDER_INORDER_ONCE) {
-		playing_order = MEDIA_PROXY_PLAYING_ORDER_INORDER_ONCE;
+	if (g_playing_order != MEDIA_CONTROL_PLAYING_ORDER_INORDER_ONCE) {
+		playing_order = MEDIA_CONTROL_PLAYING_ORDER_INORDER_ONCE;
 	} else {
-		playing_order = MEDIA_PROXY_PLAYING_ORDER_INORDER_REPEAT;
+		playing_order = MEDIA_CONTROL_PLAYING_ORDER_INORDER_REPEAT;
 	}
 
 	UNSET_FLAG(playing_order_flag);
-	err = media_proxy_ctrl_set_playing_order(current_player, playing_order);
+	err = media_ctrl_set_playing_order(current_player, playing_order);
 	if (err) {
 		FAIL("Failed to set playing_order: %d", err);
 		return;
@@ -1501,7 +1501,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read playing orders supported  *************************************/
 	UNSET_FLAG(playing_orders_supported_read);
-	err = media_proxy_ctrl_get_playing_orders_supported(current_player);
+	err = media_ctrl_get_playing_orders_supported(current_player);
 	if (err) {
 		FAIL("Failed to read playing orders supported: %d", err);
 		return;
@@ -1512,7 +1512,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read media state  ***************************************************/
 	UNSET_FLAG(media_state_read);
-	err = media_proxy_ctrl_get_media_state(current_player);
+	err = media_ctrl_get_media_state(current_player);
 	if (err) {
 		FAIL("Failed to read media state: %d", err);
 		return;
@@ -1523,7 +1523,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read content control ID  *******************************************/
 	UNSET_FLAG(ccid_read);
-	err = media_proxy_ctrl_get_content_ctrl_id(current_player);
+	err = media_ctrl_get_content_ctrl_id(current_player);
 	if (err) {
 		FAIL("Failed to read content control ID: %d", err);
 		return;
@@ -1543,7 +1543,7 @@ void test_media_controller_player(struct media_player *player)
 	 */
 
 	/* It is assumed that the server starts the test in the paused state */
-	test_verify_media_state_wait_flags(MEDIA_PROXY_STATE_PAUSED);
+	test_verify_media_state_wait_flags(MEDIA_CONTROL_STATE_PAUSED);
 
 	/* The tests are ordered to ensure that each command changes state */
 	test_cp_play();
@@ -1629,7 +1629,7 @@ void discover_remote_player(void)
 	int err;
 
 	UNSET_FLAG(remote_player_instance);
-	err = media_proxy_ctrl_discover_player(default_conn);
+	err = media_ctrl_discover_player(default_conn);
 	if (err) {
 		FAIL("Remote player discovery failed (err %d)\n", err);
 		return;

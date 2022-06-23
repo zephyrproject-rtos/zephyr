@@ -82,7 +82,7 @@ struct mpl_mediaplayer   {
 	uint64_t            search_results_id;
 #endif /* CONFIG_BT_MPL_OBJECTS || CONFIG_BT_OTS_CLIENT */
 	uint8_t             content_ctrl_id;
-	struct media_proxy_pl_calls calls;
+	struct media_ctl_pl_calls calls;
 
 	bool                        next_track_set; /* If next track explicitly set */
 	struct {

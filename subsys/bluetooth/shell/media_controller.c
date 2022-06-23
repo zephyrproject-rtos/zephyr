@@ -17,14 +17,14 @@
 #include "bt.h"
 #include <zephyr/bluetooth/services/ots.h>
 
-#include <zephyr/bluetooth/audio/media_proxy.h>
-#include "../audio/media_proxy_internal.h" /* For MPL_NO_TRACK_ID - TODO: Fix */
+#include <zephyr/bluetooth/audio/media_control.h>
+#include "../audio/media_control_internal.h" /* For MPL_NO_TRACK_ID - TODO: Fix */
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
 #define LOG_MODULE_NAME bt_media_controller_shell
 #include "common/log.h"
 
-static struct media_proxy_ctrl_cbs cbs;
+static struct media_ctrl_cbs cbs;
 
 /* Media player instances - the local player, the remote player and
  * the current player (pointing to either the local or the remote)
@@ -382,7 +382,7 @@ int cmd_media_init(const struct shell *sh, size_t argc, char *argv[])
 		ctx_shell = sh;
 	}
 
-	err = media_proxy_pl_init();  /* TODO: Fix direct call to player */
+	err = media_ctl_pl_init();  /* TODO: Fix direct call to player */
 	if (err) {
 		shell_error(ctx_shell, "Could not init mpl");
 	}
@@ -424,7 +424,7 @@ int cmd_media_init(const struct shell *sh, size_t argc, char *argv[])
 #endif /* CONFIG_BT_OTS */
 	cbs.content_ctrl_id_recv          = content_ctrl_id_cb;
 
-	err = media_proxy_ctrl_register(&cbs);
+	err = media_ctrl_register(&cbs);
 	if (err) {
 		shell_error(ctx_shell, "Could not register media shell as controller");
 	}
@@ -485,7 +485,7 @@ static int cmd_media_show_players(const struct shell *sh, size_t argc, char *arg
 #ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL
 static int cmd_media_discover_player(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_discover_player(default_conn);
+	int err = media_ctrl_discover_player(default_conn);
 
 	if (err) {
 		shell_error(ctx_shell, "Discover player failed (%d)", err);
@@ -497,7 +497,7 @@ static int cmd_media_discover_player(const struct shell *sh, size_t argc, char *
 
 static int cmd_media_read_player_name(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_get_player_name(current_player);
+	int err = media_ctrl_get_player_name(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Player name get failed (%d)", err);
@@ -509,7 +509,7 @@ static int cmd_media_read_player_name(const struct shell *sh, size_t argc, char 
 #ifdef CONFIG_BT_OTS
 static int cmd_media_read_icon_obj_id(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_get_icon_id(current_player);
+	int err = media_ctrl_get_icon_id(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Icon ID get failed (%d)", err);
@@ -521,7 +521,7 @@ static int cmd_media_read_icon_obj_id(const struct shell *sh, size_t argc, char 
 
 static int cmd_media_read_icon_url(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_get_icon_url(current_player);
+	int err = media_ctrl_get_icon_url(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Icon URL get failed (%d)", err);
@@ -532,7 +532,7 @@ static int cmd_media_read_icon_url(const struct shell *sh, size_t argc, char *ar
 
 static int cmd_media_read_track_title(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_get_track_title(current_player);
+	int err = media_ctrl_get_track_title(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Track title get failed (%d)", err);
@@ -543,7 +543,7 @@ static int cmd_media_read_track_title(const struct shell *sh, size_t argc, char 
 
 static int cmd_media_read_track_duration(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_get_track_duration(current_player);
+	int err = media_ctrl_get_track_duration(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Track duration get failed (%d)", err);
@@ -554,7 +554,7 @@ static int cmd_media_read_track_duration(const struct shell *sh, size_t argc, ch
 
 static int cmd_media_read_track_position(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_get_track_position(current_player);
+	int err = media_ctrl_get_track_position(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Track position get failed (%d)", err);
@@ -569,7 +569,7 @@ static int cmd_media_set_track_position(const struct shell *sh, size_t argc,
 	/* Todo: Check input "pos" for validity, or for errors in conversion? */
 	int32_t position = strtol(argv[1], NULL, 0);
 
-	int err = media_proxy_ctrl_set_track_position(current_player, position);
+	int err = media_ctrl_set_track_position(current_player, position);
 
 	if (err) {
 		shell_error(ctx_shell, "Track position set failed (%d)", err);
@@ -580,7 +580,7 @@ static int cmd_media_set_track_position(const struct shell *sh, size_t argc,
 
 static int cmd_media_read_playback_speed(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_get_playback_speed(current_player);
+	int err = media_ctrl_get_playback_speed(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Playback speed get get failed (%d)", err);
@@ -593,7 +593,7 @@ static int cmd_media_read_playback_speed(const struct shell *sh, size_t argc, ch
 static int cmd_media_set_playback_speed(const struct shell *sh, size_t argc, char *argv[])
 {
 	int8_t speed = strtol(argv[1], NULL, 0);
-	int err = media_proxy_ctrl_set_playback_speed(current_player, speed);
+	int err = media_ctrl_set_playback_speed(current_player, speed);
 
 	if (err) {
 		shell_error(ctx_shell, "Playback speed set failed (%d)", err);
@@ -604,7 +604,7 @@ static int cmd_media_set_playback_speed(const struct shell *sh, size_t argc, cha
 
 static int cmd_media_read_seeking_speed(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_get_seeking_speed(current_player);
+	int err = media_ctrl_get_seeking_speed(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Seeking speed get failed (%d)", err);
@@ -616,7 +616,7 @@ static int cmd_media_read_seeking_speed(const struct shell *sh, size_t argc, cha
 #ifdef CONFIG_BT_OTS
 static int cmd_media_read_track_segments_obj_id(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_get_track_segments_id(current_player);
+	int err = media_ctrl_get_track_segments_id(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Track segments ID get failed (%d)", err);
@@ -627,7 +627,7 @@ static int cmd_media_read_track_segments_obj_id(const struct shell *sh, size_t a
 
 static int cmd_media_read_current_track_obj_id(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_get_current_track_id(current_player);
+	int err = media_ctrl_get_current_track_id(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Current track ID get failed (%d)", err);
@@ -640,7 +640,7 @@ static int cmd_media_read_current_track_obj_id(const struct shell *sh, size_t ar
 
 static int cmd_media_read_next_track_obj_id(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_get_next_track_id(current_player);
+	int err = media_ctrl_get_next_track_id(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Nect track ID get failed (%d)", err);
@@ -651,7 +651,7 @@ static int cmd_media_read_next_track_obj_id(const struct shell *sh, size_t argc,
 
 static int cmd_media_read_current_group_obj_id(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_get_current_group_id(current_player);
+	int err = media_ctrl_get_current_group_id(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Current group ID get failed (%d)", err);
@@ -663,7 +663,7 @@ static int cmd_media_read_current_group_obj_id(const struct shell *sh, size_t ar
 
 static int cmd_media_read_parent_group_obj_id(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_get_parent_group_id(current_player);
+	int err = media_ctrl_get_parent_group_id(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Parent group ID get failed (%d)", err);
@@ -675,7 +675,7 @@ static int cmd_media_read_parent_group_obj_id(const struct shell *sh, size_t arg
 
 static int cmd_media_read_playing_order(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_get_playing_order(current_player);
+	int err = media_ctrl_get_playing_order(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Playing order get failed (%d)", err);
@@ -688,7 +688,7 @@ static int cmd_media_set_playing_order(const struct shell *sh, size_t argc, char
 {
 	uint8_t order = strtol(argv[1], NULL, 0);
 
-	int err = media_proxy_ctrl_set_playing_order(current_player, order);
+	int err = media_ctrl_set_playing_order(current_player, order);
 
 	if (err) {
 		shell_error(ctx_shell, "Playing order set failed (%d)", err);
@@ -700,7 +700,7 @@ static int cmd_media_set_playing_order(const struct shell *sh, size_t argc, char
 static int cmd_media_read_playing_orders_supported(const struct shell *sh, size_t argc,
 						   char *argv[])
 {
-	int err = media_proxy_ctrl_get_playing_orders_supported(current_player);
+	int err = media_ctrl_get_playing_orders_supported(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Icon URL get failed (%d)", err);
@@ -711,7 +711,7 @@ static int cmd_media_read_playing_orders_supported(const struct shell *sh, size_
 
 static int cmd_media_read_media_state(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_get_media_state(current_player);
+	int err = media_ctrl_get_media_state(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Icon URL get failed (%d)", err);
@@ -735,7 +735,7 @@ static int cmd_media_send_command(const struct shell *sh, size_t argc, char *arg
 		cmd.param = 0;
 	}
 
-	err = media_proxy_ctrl_send_command(current_player, &cmd);
+	err = media_ctrl_send_command(current_player, &cmd);
 
 	if (err) {
 		shell_error(ctx_shell, "Command send failed (%d)", err);
@@ -746,7 +746,7 @@ static int cmd_media_send_command(const struct shell *sh, size_t argc, char *arg
 
 static int cmd_media_read_commands_supported(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_get_commands_supported(current_player);
+	int err = media_ctrl_get_commands_supported(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Commands supported read failed (%d)", err);
@@ -769,7 +769,7 @@ int cmd_media_set_search(const struct shell *sh, size_t argc, char *argv[])
 	memcpy(search.search, argv[1], search.len);
 	BT_DBG("Search string: %s", argv[1]);
 
-	err = media_proxy_ctrl_send_search(current_player, &search);
+	err = media_ctrl_send_search(current_player, &search);
 	if (err) {
 		shell_error(ctx_shell, "Search send failed (%d)", err);
 	}
@@ -780,7 +780,7 @@ int cmd_media_set_search(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_media_read_search_results_obj_id(const struct shell *sh, size_t argc,
 						char *argv[])
 {
-	int err = media_proxy_ctrl_get_search_results_id(current_player);
+	int err = media_ctrl_get_search_results_id(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Search results ID get failed (%d)", err);
@@ -793,7 +793,7 @@ static int cmd_media_read_search_results_obj_id(const struct shell *sh, size_t a
 static int cmd_media_read_content_control_id(const struct shell *sh, size_t argc,
 					     char *argv[])
 {
-	int err = media_proxy_ctrl_get_content_ctrl_id(current_player);
+	int err = media_ctrl_get_content_ctrl_id(current_player);
 
 	if (err) {
 		shell_error(ctx_shell, "Content control ID get failed (%d)", err);

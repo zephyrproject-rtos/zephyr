@@ -16,7 +16,7 @@
 
 #include "bt.h"
 
-#include <zephyr/bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/audio/media_control.h>
 #include "../audio/mpl_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MPL)
@@ -57,13 +57,13 @@ int cmd_mpl_debug_dump_state(const struct shell *sh, size_t argc,
 }
 #endif /* CONFIG_BT_DEBUG_MPL */
 
-int cmd_media_proxy_pl_init(const struct shell *sh, size_t argc, char *argv[])
+int cmd_media_ctl_pl_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	if (!ctx_shell) {
 		ctx_shell = sh;
 	}
 
-	int err = media_proxy_pl_init();
+	int err = media_ctl_pl_init();
 
 	if (err) {
 		shell_error(sh, "Could not init mpl");
@@ -200,7 +200,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
 #endif /* CONFIG_BT_DEBUG_MPL */
 	SHELL_CMD_ARG(init, NULL,
 		      "Initialize media player",
-		      cmd_media_proxy_pl_init, 1, 0),
+		      cmd_media_ctl_pl_init, 1, 0),
 	SHELL_CMD_ARG(track_changed_cb, NULL,
 		      "Trigger Track Changed callback (test)",
 		      cmd_mpl_test_track_changed_cb, 1, 0),

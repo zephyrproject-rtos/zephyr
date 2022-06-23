@@ -6,7 +6,7 @@
 
 #ifdef CONFIG_BT_MCS
 
-#include <zephyr/bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/audio/media_control.h>
 
 #include "common.h"
 
@@ -62,7 +62,7 @@ static void test_main(void)
 	bt_conn_cb_register(&conn_callbacks);
 
 	/* Initialize media player */
-	err = media_proxy_pl_init();
+	err = media_ctl_pl_init();
 	if (err) {
 		FAIL("Initializing MPL failed (err %d)", err);
 		return;

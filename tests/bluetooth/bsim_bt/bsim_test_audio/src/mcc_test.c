@@ -7,7 +7,7 @@
 #ifdef CONFIG_BT_MCC
 
 #include <zephyr/bluetooth/audio/mcc.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/audio/media_control.h>
 #include <zephyr/bluetooth/services/ots.h>
 
 #include "common.h"
