@@ -218,7 +218,7 @@ static void events_isr(void *data)
 	 */
 	vcpu->evtchn_upcall_pending = 0;
 
-	compiler_barrier();
+	dmb();
 
 	/* Can not use system atomic_t/atomic_set() due to 32-bit casting */
 	pos_selector = __atomic_exchange_n(&vcpu->evtchn_pending_sel,
