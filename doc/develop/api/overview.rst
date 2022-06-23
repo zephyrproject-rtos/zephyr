@@ -287,6 +287,11 @@ current :ref:`stability level <api_lifecycle>`.
      - 3.1
      - 3.1
 
+   * - :ref:`rtio_api`
+     - Experimental
+     - 3.2
+     - 3.2
+
    * - :ref:`spi_api`
      - Stable
      - 1.0
