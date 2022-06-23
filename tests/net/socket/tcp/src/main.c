@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #define MAX_CONNS 5
 
-#define TCP_TEARDOWN_TIMEOUT K_SECONDS(1)
+#define TCP_TEARDOWN_TIMEOUT K_SECONDS(2)
 #define THREAD_SLEEP 50 /* ms */
 
 static void test_bind(int sock, struct sockaddr *addr, socklen_t addrlen)
