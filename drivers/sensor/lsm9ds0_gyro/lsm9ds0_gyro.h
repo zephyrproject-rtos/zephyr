@@ -11,6 +11,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/util.h>
 
 #define DEG2RAD					0.017453292519943295769236907684
@@ -213,9 +214,7 @@ struct lsm9ds0_gyro_config {
 	struct i2c_dt_spec i2c;
 
 #if CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY
-	char *gpio_drdy_dev_name;
-	gpio_pin_t gpio_drdy_int_pin;
-	gpio_dt_flags_t gpio_drdy_int_flags;
+	struct gpio_dt_spec int_gpio;
 #endif
 };
 
@@ -230,7 +229,6 @@ struct lsm9ds0_gyro_data {
 	struct k_thread thread;
 	const struct device *dev;
 
-	const struct device *gpio_drdy;
 	struct gpio_callback gpio_cb;
 	struct sensor_trigger trigger_drdy;
 	sensor_trigger_handler_t handler_drdy;
