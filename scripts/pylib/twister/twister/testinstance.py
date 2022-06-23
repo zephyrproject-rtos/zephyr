@@ -7,10 +7,11 @@ import os
 import hashlib
 import random
 import logging
-from twister.testsuite import TestCase, TestSuite
+from twister.testsuite import TestCase
+from twister.error import BuildError
 from twister.handlers import BinaryHandler, QEMUHandler, DeviceHandler
-from distutils.spawn import find_executable
-
+import shutil
+import glob
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -149,7 +150,7 @@ class TestInstance:
             handler.call_make_run = False
             handler.binary = os.path.join(self.build_dir, "zephyr", "zephyr.exe")
         elif self.platform.simulation == "renode":
-            if find_executable("renode"):
+            if shutil.which("renode"):
                 handler = BinaryHandler(self, "renode")
                 handler.pid_fn = os.path.join(self.build_dir, "renode.pid")
         elif self.platform.simulation == "tsim":
@@ -158,10 +159,10 @@ class TestInstance:
             handler = DeviceHandler(self, "device")
             handler.call_make_run = False
         elif self.platform.simulation == "nsim":
-            if find_executable("nsimdrv"):
+            if shutil.which("nsimdrv"):
                 handler = BinaryHandler(self, "nsim")
         elif self.platform.simulation == "mdb-nsim":
-            if find_executable("mdb"):
+            if shutil.which("mdb"):
                 handler = BinaryHandler(self, "nsim")
         elif self.platform.simulation == "armfvp":
             handler = BinaryHandler(self, "armfvp")
@@ -199,19 +200,19 @@ class TestInstance:
                         filter == 'runnable')
 
         if self.platform.simulation == "nsim":
-            if not find_executable("nsimdrv"):
+            if not shutil.which("nsimdrv"):
                 target_ready = False
 
         if self.platform.simulation == "mdb-nsim":
-            if not find_executable("mdb"):
+            if not shutil.which("mdb"):
                 target_ready = False
 
         if self.platform.simulation == "renode":
-            if not find_executable("renode"):
+            if not shutil.which("renode"):
                 target_ready = False
 
         if self.platform.simulation == "tsim":
-            if not find_executable("tsim-leon3"):
+            if not shutil.which("tsim-leon3"):
                 target_ready = False
 
         testsuite_runnable = self.testsuite_runnable(self.testsuite, fixtures)

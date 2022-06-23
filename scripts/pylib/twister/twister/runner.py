@@ -21,6 +21,7 @@ from multiprocessing.managers import BaseManager
 from numpy import trace
 
 from twister.cmakecache import CMakeCache
+from twister.enviornment import canonical_zephyr_base
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
