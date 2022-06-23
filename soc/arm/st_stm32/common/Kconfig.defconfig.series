@@ -57,6 +57,7 @@ config I2S_STM32
 	depends on I2S
 
 config USB_DC_STM32
+	default n if USB_DC_USBIP
 	default y
 	depends on USB_DEVICE_DRIVER
 
