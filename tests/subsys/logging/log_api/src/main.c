@@ -218,7 +218,7 @@ ZTEST(test_log_api, test_log_various_messages)
 				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_ERR,
 				exp_timestamp++, "err");
 
-	LOG_WRN("wrn %s", (char *)dstr);
+	LOG_WRN("wrn %s", dstr);
 	dstr[0] = '\0';
 
 	LOG_ERR("err");
