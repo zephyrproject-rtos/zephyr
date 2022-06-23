@@ -100,10 +100,10 @@ void main(void)
 	int cnt = 0;
 	char out_str[64];
 	struct sensor_value odr_attr;
-	const struct device *lsm6dsl_dev = device_get_binding(DT_LABEL(DT_INST(0, st_lsm6dsl)));
+	const struct device *lsm6dsl_dev = DEVICE_DT_GET_ONE(st_lsm6dsl);
 
-	if (lsm6dsl_dev == NULL) {
-		printk("Could not get LSM6DSL device\n");
+	if (!device_is_ready(lsm6dsl_dev)) {
+		printk("sensor: device not ready.\n");
 		return;
 	}
 
