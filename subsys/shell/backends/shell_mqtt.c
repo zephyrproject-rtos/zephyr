@@ -548,10 +548,9 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 
 	case MQTT_EVT_PUBLISH: {
 		const struct mqtt_publish_param *pub = &evt->param.publish;
-		uint32_t size, payload_left, rb_free_space;
+		uint32_t size, payload_left;
 
 		payload_left = pub->message.payload.len;
-		rb_free_space = ring_buf_space_get(&sh_mqtt->rx_rb);
 
 		LOG_DBG("MQTT publish received %d, %d bytes", evt->result, payload_left);
 		LOG_DBG("   id: %d, qos: %d", pub->message_id, pub->message.topic.qos);
