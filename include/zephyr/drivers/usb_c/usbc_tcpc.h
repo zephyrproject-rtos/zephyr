@@ -115,8 +115,6 @@ struct tcpc_chip_info {
 	};
 };
 
-typedef	int (*tcpc_vbus_cb_t)(const struct device *dev, int *vbus_meas);
-typedef	int (*tcpc_discharge_vbus_cb_t)(const struct device *dev, bool enable);
 typedef	int (*tcpc_vconn_control_cb_t)(const struct device *dev, bool enable);
 typedef void (*tcpc_alert_handler_cb_t)(const struct device *dev, void *data,
 		enum tcpc_alert alert);
@@ -125,11 +123,6 @@ __subsystem struct tcpc_driver_api {
 	int (*init)(const struct device *dev);
 	int (*get_cc)(const struct device *dev, enum tc_cc_voltage_state *cc1,
 			enum tc_cc_voltage_state *cc2);
-	void (*set_vbus_measure_cb)(const struct device *dev, tcpc_vbus_cb_t vbus_cb);
-	void (*set_discharge_vbus_cb)(const struct device *dev,
-			tcpc_discharge_vbus_cb_t discharge_vbus_cb);
-	bool (*check_vbus_level)(const struct device *dev, enum tc_vbus_level level);
-	int (*get_vbus)(const struct device *dev, int *vbus_meas);
 	int (*select_rp_value)(const struct device *dev, enum tc_rp_value rp);
 	int (*get_rp_value)(const struct device *dev, enum tc_rp_value *rp);
 	int (*set_cc)(const struct device *dev, enum tc_cc_pull pull);
@@ -150,8 +143,6 @@ __subsystem struct tcpc_driver_api {
 			uint32_t mask);
 	int (*mask_status_register)(const struct device *dev, enum tcpc_status_reg reg,
 			uint32_t mask);
-	int (*set_discharge_vbus)(const struct device *dev, bool enable);
-	int (*enable_auto_discharge_disconnect)(const struct device *dev, bool enable);
 	int (*set_debug_accessory)(const struct device *dev, bool enable);
 	int (*set_debug_detach)(const struct device *dev);
 	int (*set_drp_toggle)(const struct device *dev, bool enable);
@@ -270,99 +261,6 @@ static inline int tcpc_get_cc(const struct device *dev,
 	}
 
 	return api->get_cc(dev, cc1, cc2);
-}
-
-/**
- * @brief Sets a callback that can measure the value of VBUS if the TCPC is
- *	  unable to or the system is configured in a way that does not use
- *	  the VBUS measurement and detection capabilities of the TCPC.
- *
- * The callback is called in tcpc_check_vbus_level and tcpc_get_vbus
- * functions if vbus_cb isn't NULL.
- *
- * @param dev      Runtime device structure
- * @param vbus_cb  pointer to callback function that returns a voltage
- *                 measurement
- */
-static inline void tcpc_set_vbus_measure_cb(const struct device *dev,
-					    tcpc_vbus_cb_t vbus_cb)
-{
-	const struct tcpc_driver_api *api =
-		(const struct tcpc_driver_api *)dev->api;
-
-	__ASSERT(api->set_vbus_measure_cb != NULL,
-		 "Callback pointer should not be NULL");
-
-	api->set_vbus_measure_cb(dev, vbus_cb);
-}
-
-/**
- * @brief Sets a callback that can discharge VBUS if the TCPC is
- *	  unable to or the system is configured in a way that does not use
- *	  the discharge VBUS capabilities of the TCPC.
- *
- * The callback is called in tcpc_set_discharge_vbus functions if
- * discharge_vbus_cb isn't NULL.
- *
- * @param dev                Runtime device structure
- * @param discharge_vbus_cb  pointer to callback function that discharges VBUS
- */
-static inline void tcpc_set_discharge_vbus_cb(const struct device *dev,
-					      tcpc_discharge_vbus_cb_t discharge_vbus_cb)
-{
-	const struct tcpc_driver_api *api =
-		(const struct tcpc_driver_api *)dev->api;
-
-	__ASSERT(api->set_discharge_vbus_cb != NULL,
-		 "Callback pointer should not be NULL");
-
-	api->set_discharge_vbus_cb(dev, discharge_vbus_cb);
-}
-
-/**
- * @brief Checks if VBUS is at a particular level
- *
- * @param dev    Runtime device structure
- * @param level  The level voltage to check against
- *
- * @return true if VBUS is at the level voltage
- * @return false if VBUS is not at that level voltage
- */
-static inline bool tcpc_check_vbus_level(const struct device *dev,
-					 enum tc_vbus_level level)
-{
-	const struct tcpc_driver_api *api =
-		(const struct tcpc_driver_api *)dev->api;
-
-	__ASSERT(api->check_vbus_level != NULL,
-		 "Callback pointer should not be NULL");
-
-	return api->check_vbus_level(dev, level);
-}
-
-/**
- * @brief Reads and returns VBUS measured in mV
- *
- * This function uses the TCPC to measure VBUS if possible or calls the
- * callback function set by tcpc_set_vbus_measure_callback. In the event that
- * the TCPC can measure VBUS and the VBUS callback measuring function is
- * set, this function uses the callback function.
- *
- * @param dev        Runtime device structure
- * @param vbus_meas  pointer where the measured VBUS voltage is stored
- *
- * @return 0 on success
- * @return -EIO on failure
- */
-static inline int tcpc_get_vbus(const struct device *dev, int *vbus_meas)
-{
-	const struct tcpc_driver_api *api =
-		(const struct tcpc_driver_api *)dev->api;
-
-	__ASSERT(api->get_vbus != NULL,
-		 "Callback pointer should not be NULL");
-
-	return api->get_vbus(dev, vbus_meas);
 }
 
 /**
@@ -739,55 +637,6 @@ static inline int tcpc_mask_status_register(const struct device *dev,
 	}
 
 	return api->mask_status_register(dev, reg, mask);
-}
-
-/**
- * @brief Enables discharge TypeC VBUS on Source / Sink disconnect
- *	  and power role swap
- *
- * @param dev     Runtime device structure
- * @param enable  The TypeC VBUS is discharged on disconnect or power
- *                role swap when true
- *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
- */
-static inline int tcpc_set_discharge_vbus(const struct device *dev, bool enable)
-{
-	const struct tcpc_driver_api *api =
-		(const struct tcpc_driver_api *)dev->api;
-
-	if (api->set_discharge_vbus == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_discharge_vbus(dev, enable);
-}
-
-/**
- * @brief TCPC automatically discharge TypeC VBUS on Source / Sink disconnect
- *	  an power role swap
- *
- * @param dev     Runtime device structure
- * @param enable  The TCPC automatically discharges VBUS on disconnect or
- *                power role swap
- *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
- */
-static inline int tcpc_enable_auto_discharge_disconnect(
-	const struct device *dev, bool enable)
-{
-	const struct tcpc_driver_api *api =
-		(const struct tcpc_driver_api *)dev->api;
-
-	if (api->enable_auto_discharge_disconnect == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->enable_auto_discharge_disconnect(dev, enable);
 }
 
 /**
