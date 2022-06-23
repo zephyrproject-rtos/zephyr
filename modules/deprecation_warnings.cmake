@@ -5,7 +5,7 @@
 # they are using. To create a warning, follow the pattern:
 #
 #     if(CONFIG_FOO)
-#       message(WARNING "The foo module is deprecated. <More information>")
+#       message(DEPRECATION "The foo module is deprecated. <More information>")
 #     endif()
 #
 # This is done in a separate CMake file because the modules.cmake file
