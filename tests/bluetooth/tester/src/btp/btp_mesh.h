@@ -971,6 +971,44 @@ struct btp_mmdl_blob_transfer_start_cmd {
 #define BTP_MMDL_DFU_FIRMWARE_UPDATE_APPLY	0x6A
 #define BTP_MMDL_DFU_SRV_APPLY			0x6B
 
+#define BTP_MESH_PRIV_BEACON_GET		0x6c
+struct btp_priv_beacon_get_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_PRIV_BEACON_SET		0x6d
+struct btp_priv_beacon_set_cmd {
+	uint16_t dst;
+	uint8_t enabled;
+	uint8_t rand_interval;
+} __packed;
+
+#define BTP_MESH_PRIV_GATT_PROXY_GET		0x6e
+struct btp_priv_gatt_proxy_get_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_PRIV_GATT_PROXY_SET		0x6f
+struct btp_priv_gatt_proxy_set_cmd {
+	uint16_t dst;
+	uint8_t state;
+} __packed;
+
+#define BTP_MESH_PRIV_NODE_ID_GET		0x70
+struct btp_priv_node_id_get_cmd {
+	uint16_t dst;
+	uint16_t key_net_idx;
+} __packed;
+
+#define BTP_MESH_PRIV_NODE_ID_SET		0x71
+struct btp_priv_node_id_set_cmd {
+	uint16_t dst;
+	uint16_t net_idx;
+	uint8_t state;
+} __packed;
+
+#define BTP_MESH_PROXY_PRIVATE_IDENTITY		0x72
+
 /* events */
 #define BTP_MESH_EV_OUT_NUMBER_ACTION		0x80
 struct btp_mesh_out_number_action_ev {
