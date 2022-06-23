@@ -482,7 +482,7 @@ static int cmd_broadcast(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	len = MIN(iso_chan.qos->tx->sdu, CONFIG_BT_ISO_TX_MTU);
+	len = MIN(bis_iso_chan.qos->tx->sdu, CONFIG_BT_ISO_TX_MTU);
 
 	bis_sn_last = get_next_sn(bis_sn_last, &bis_sn_last_updated_ticks,
 				  bis_sdu_interval_us);
