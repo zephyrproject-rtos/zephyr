@@ -264,10 +264,6 @@ struct tcpc_config {
  * @brief Driver data
  */
 struct tcpc_data {
-	/* VBUS callback function */
-	tcpc_vbus_cb_t vbus_cb;
-	/* Discharge VBUS callback function */
-	tcpc_discharge_vbus_cb_t discharge_vbus_cb;
 	/* VCONN callback function */
 	tcpc_vconn_control_cb_t vconn_cb;
 	/* Alert information */

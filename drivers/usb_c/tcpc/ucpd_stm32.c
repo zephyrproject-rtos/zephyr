@@ -1224,116 +1224,6 @@ static void ucpd_set_vconn_cb(const struct device *dev,
 	data->vconn_cb = vconn_cb;
 }
 
-
-/**
- * @brief Sets a callback that can measure the value of VBUS if the TCPC is
- *        unable to or the system is configured in a way that does not use
- *        the VBUS measurement and detection capabilities of the TCPC.
- *
- */
-static void ucpd_set_vbus_measure_cb(const struct device *dev,
-				     tcpc_vbus_cb_t vbus_cb)
-{
-	struct tcpc_data *data = dev->data;
-
-	data->vbus_cb = vbus_cb;
-}
-
-/**
- * @brief Sets a callback that can discharge VBUS if the TCPC is
- *        unable to or the system is configured in a way that does not use
- *        the discharge VBUS capabilities of the TCPC.
- *
- */
-static void ucpd_set_discharge_vbus_cb(const struct device *dev,
-				       tcpc_discharge_vbus_cb_t discharge_vbus_cb)
-{
-	struct tcpc_data *data = dev->data;
-
-	data->discharge_vbus_cb = discharge_vbus_cb;
-}
-
-/**
- * @brief Checks if VBUS is at a particular level
- *
- * @return true if VBUS is at the level voltage, else false
- */
-static bool ucpd_check_vbus_level(const struct device *dev,
-				  enum tc_vbus_level level)
-{
-	struct tcpc_data *data = dev->data;
-	int vbus_meas;
-	int ret;
-
-	if (data->vbus_cb == NULL) {
-		return false;
-	}
-
-	/* Call user supplied callback to measure VBUS */
-	ret = data->vbus_cb(dev, &vbus_meas);
-	if (ret) {
-		return false;
-	}
-
-	switch (level) {
-	case TC_VBUS_SAFE0V:
-		return (vbus_meas < PD_V_SAFE_0V_MAX_MV);
-	case TC_VBUS_PRESENT:
-		return (vbus_meas >= PD_V_SAFE_5V_MIN_MV);
-	case TC_VBUS_REMOVED:
-		return (vbus_meas < TC_V_SINK_DISCONNECT_MAX_MV);
-	}
-
-	return false;
-}
-
-/**
- * @brief Reads and returns VBUS measured in mV
- *
- * @return 0 on success
- * @return -EIO on failure
- * @return -EFAULT on buf being NULL
- */
-static int ucpd_get_vbus(const struct device *dev, int *vbus_meas)
-{
-	struct tcpc_data *data = dev->data;
-	int ret;
-
-	if (vbus_meas == NULL) {
-		return -EFAULT;
-	}
-
-	if (data->vbus_cb == NULL) {
-		return -EIO;
-	}
-
-	/* Call user supplied callback to measure VBUS */
-	ret = data->vbus_cb(dev, vbus_meas);
-
-	return ret;
-}
-
-/**
- * @brief Enable or Disable Discharging of VBUS
- *
- * @return 0 on success
- * @return -EIO on failure
- */
-static int ucpd_set_discharge_vbus(const struct device *dev, bool enable)
-{
-	struct tcpc_data *data = dev->data;
-	int ret;
-
-	if (data->discharge_vbus_cb == NULL) {
-		return -EIO;
-	}
-
-	/* Call user supplied callback to discharge VBUS */
-	ret = data->discharge_vbus_cb(dev, enable);
-
-	return ret;
-}
-
 /**
  * @brief UCPD interrupt init
  */
@@ -1431,14 +1321,9 @@ static const struct tcpc_driver_api driver_api = {
 	.set_alert_handler_cb = ucpd_set_alert_handler_cb,
 	.get_cc = ucpd_get_cc,
 	.set_rx_enable = ucpd_set_rx_enable,
-	.set_vbus_measure_cb = ucpd_set_vbus_measure_cb,
-	.set_discharge_vbus_cb = ucpd_set_discharge_vbus_cb,
-	.check_vbus_level = ucpd_check_vbus_level,
 	.is_rx_pending_msg = ucpd_is_rx_pending_msg,
 	.receive_data = ucpd_receive_data,
 	.transmit_data = ucpd_transmit_data,
-	.get_vbus = ucpd_get_vbus,
-	.set_discharge_vbus = ucpd_set_discharge_vbus,
 	.select_rp_value = ucpd_select_rp_value,
 	.get_rp_value = ucpd_get_rp_value,
 	.set_cc = ucpd_set_cc,
