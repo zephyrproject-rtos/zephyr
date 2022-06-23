@@ -19,14 +19,13 @@ LOG_MODULE_DECLARE(LSM6DSL, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline void setup_irq(const struct device *dev, bool enable)
 {
-	struct lsm6dsl_data *drv_data = dev->data;
 	const struct lsm6dsl_config *config = dev->config;
 
 	unsigned int flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
 
-	gpio_pin_interrupt_configure(drv_data->gpio, config->irq_pin, flags);
+	gpio_pin_interrupt_configure_dt(&config->int_gpio, flags);
 }
 
 static inline void handle_irq(const struct device *dev)
@@ -52,7 +51,7 @@ int lsm6dsl_trigger_set(const struct device *dev,
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
 	/* If irq_gpio is not configured in DT just return error */
-	if (!drv_data->gpio) {
+	if (!config->int_gpio.port) {
 		LOG_ERR("triggers not supported");
 		return -ENOTSUP;
 	}
@@ -67,7 +66,7 @@ int lsm6dsl_trigger_set(const struct device *dev,
 	drv_data->data_ready_trigger = *trig;
 
 	setup_irq(dev, true);
-	if (gpio_pin_get(drv_data->gpio, config->irq_pin) > 0) {
+	if (gpio_pin_get_dt(&config->int_gpio) > 0) {
 		handle_irq(dev);
 	}
 
@@ -124,20 +123,17 @@ int lsm6dsl_init_interrupt(const struct device *dev)
 	const struct lsm6dsl_config *config = dev->config;
 	struct lsm6dsl_data *drv_data = dev->data;
 
-	/* setup data ready gpio interrupt */
-	drv_data->gpio = device_get_binding(config->irq_dev_name);
-	if (drv_data->gpio == NULL) {
-		LOG_INF("Cannot get pointer for irq_dev_name");
-		goto end;
+	if (!device_is_ready(config->int_gpio.port)) {
+		LOG_ERR("GPIO device not ready");
+		return -ENODEV;
 	}
 
-	gpio_pin_configure(drv_data->gpio, config->irq_pin,
-			   GPIO_INPUT | config->irq_flags);
+	gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 
 	gpio_init_callback(&drv_data->gpio_cb,
-			   lsm6dsl_gpio_callback, BIT(config->irq_pin));
+			   lsm6dsl_gpio_callback, BIT(config->int_gpio.pin));
 
-	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
+	if (gpio_add_callback(config->int_gpio.port, &drv_data->gpio_cb) < 0) {
 		LOG_ERR("Could not set gpio callback.");
 		return -EIO;
 	}

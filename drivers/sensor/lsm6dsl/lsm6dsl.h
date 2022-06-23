@@ -625,9 +625,7 @@ struct lsm6dsl_config {
 	int (*bus_init)(const struct device *dev);
 	const union lsm6dsl_bus_cfg bus_cfg;
 #ifdef CONFIG_LSM6DSL_TRIGGER
-	char *irq_dev_name;
-	uint32_t irq_pin;
-	int irq_flags;
+	struct gpio_dt_spec int_gpio;
 #endif
 };
 
@@ -674,7 +672,6 @@ struct lsm6dsl_data {
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
 	const struct device *dev;
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
