@@ -58,6 +58,8 @@ syncronization to clone, checkout and pull the submodules:
 
    It is recommended running the command above after :file:`west update`.
 
+.. _build_run_esp32:
+
 Building & Flashing
 -------------------
 
@@ -91,6 +93,46 @@ message in the monitor:
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
    Hello World! esp32
+
+Building Blinky
+--------------------------
+
+Blinky is a sample application that simply makes the built-in led on your board
+blink (see :ref:`blinky-sample`). It is a great starting point but it requires two
+tweaks in order to work on your ESP32 board:
+
+First, your prj.conf file should have the following Kconfig options:
+
+.. code-block:: none
+
+    CONFIG_GPIO=y
+    CONFIG_GPIO_ESP32=y
+
+Then, create a new file called esp32.overlay inside blinky's folder (samples/basic/blinky)
+with this content:
+
+.. code-block:: devicetree
+
+    / {
+	    aliases {
+		    led0 = &led0;
+	    };
+
+	    leds {
+		    compatible = "gpio-leds";
+		    led0: led_0 {
+			    gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+			    label = "LED 0";
+		    };
+	    };
+    };
+
+In line "gpios" the literal number (in this case '2') indicates the GPIO to which the LED is wired
+(in this case GPIO2).
+If you board has a built-in LED you should check the pinout in order to get this number,
+or if you wired an LED you should take note of its GPIO and modify the number accordingly.
+
+Now you are ready to build and flash as explained in the previous section :ref:`build_run_esp32`
 
 Debugging
 ---------
