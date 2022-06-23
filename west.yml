@@ -180,7 +180,7 @@ manifest:
         - debug
       revision: a5163c1800a5243f8b05d84c942da008df4cb666
     - name: nanopb
-      revision: d148bd26718e4c10414f07a7eb1bd24c62e56c5d
+      revision: dc4deed54fd4c7e1935e3b6387eedf21bb45dc38
       path: modules/lib/nanopb
     - name: net-tools
       revision: e0828aa9629b533644dc96ff6d1295c939bd713c
