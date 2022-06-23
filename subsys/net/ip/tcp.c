@@ -28,8 +28,11 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 
 #define ACK_TIMEOUT_MS CONFIG_NET_TCP_ACK_TIMEOUT
 #define ACK_TIMEOUT K_MSEC(ACK_TIMEOUT_MS)
-/* Allow for (tcp_retries + 1) transmissions */
-#define FIN_TIMEOUT_MS (tcp_rto * (tcp_retries + 1))
+/* Allow for (tcp_retries + 1) transmissions
+ * 1 + 2... + 2^n < 2^(n+1)
+ * The last retransmission cycle takes only 1 tcp_rto
+ */
+#define FIN_TIMEOUT_MS (tcp_rto * (1 + (1 << (tcp_retries + 1))))
 #define FIN_TIMEOUT K_MSEC(FIN_TIMEOUT_MS)
 #define ACK_DELAY K_MSEC(100)
 
@@ -1208,6 +1211,7 @@ static void tcp_resend_data(struct k_work *work)
 	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, send_data_timer);
 	bool conn_unref = false;
 	int ret;
+	int exp_tcp_rto;
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
@@ -1251,8 +1255,15 @@ static void tcp_resend_data(struct k_work *work)
 		NET_ERR("TCP failed to allocate buffer in retransmission");
 	}
 
+	/* Every retransmit, the retransmission timeout increases by a factor 2 */
+	exp_tcp_rto = tcp_rto << conn->send_data_retries;
+	/* The last retransmit does not need to wait that long */
+	if (conn->send_data_retries >= tcp_retries) {
+		exp_tcp_rto = tcp_rto;
+	}
+
 	k_work_reschedule_for_queue(&tcp_work_q, &conn->send_data_timer,
-				    K_MSEC(tcp_rto));
+				    K_MSEC(exp_tcp_rto));
 
  out:
 	k_mutex_unlock(&conn->lock);
