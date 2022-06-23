@@ -86,7 +86,6 @@ static void lsm6dsl_gpio_callback(const struct device *dev,
 
 static void lsm6dsl_thread_cb(const struct device *dev)
 {
-	const struct lsm6dsl_config *config = dev->config;
 	struct lsm6dsl_data *drv_data = dev->data;
 
 	if (drv_data->data_ready_handler != NULL) {
@@ -167,6 +166,5 @@ int lsm6dsl_init_interrupt(const struct device *dev)
 
 	setup_irq(drv_data, config->irq_pin, true);
 
-end:
 	return 0;
 }
