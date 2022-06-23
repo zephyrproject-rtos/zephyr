@@ -183,7 +183,7 @@ def _find_regular_ztest_testcases(search_area, suite_regex_matches, is_registere
         re.MULTILINE)
 
     search_start, search_end = \
-        TestSuite._get_search_area_boundary(search_area, suite_regex_matches, is_registered_test_suite)
+        _get_search_area_boundary(search_area, suite_regex_matches, is_registered_test_suite)
     limited_search_area = search_area[search_start:search_end]
     testcase_names, warnings = \
         _find_ztest_testcases(limited_search_area, testcase_regex)

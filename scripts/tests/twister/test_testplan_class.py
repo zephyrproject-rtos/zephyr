@@ -13,9 +13,8 @@ import pytest
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
-from twister.testplan import TestPlan, ScanPathResult
+from twister.testplan import TestPlan
 from twister.testinstance import TestInstance
-from twister.error import BuildError, TwisterException
 from twister.testsuite import TestSuite
 from twister.platform import Platform
 
@@ -256,3 +255,4 @@ def test_add_instances(test_data, class_env, all_testsuites_dict, platforms_list
 		   [platform.name + '/' + s for s in list(all_testsuites_dict.keys())]
     assert all(isinstance(n, TestInstance) for n in list(plan.instances.values()))
     assert list(plan.instances.values()) == instance_list
+
