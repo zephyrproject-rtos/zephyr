@@ -17,21 +17,23 @@
 
 LOG_MODULE_DECLARE(LSM6DSL, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline void setup_irq(struct lsm6dsl_data *drv_data,
-			     uint32_t irq_pin, bool enable)
+static inline void setup_irq(const struct device *dev, bool enable)
 {
+	struct lsm6dsl_data *drv_data = dev->data;
+	const struct lsm6dsl_config *config = dev->config;
+
 	unsigned int flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
 
-	gpio_pin_interrupt_configure(drv_data->gpio,
-				     irq_pin, flags);
+	gpio_pin_interrupt_configure(drv_data->gpio, config->irq_pin, flags);
 }
 
-static inline void handle_irq(struct lsm6dsl_data *drv_data,
-			      uint32_t irq_pin)
+static inline void handle_irq(const struct device *dev)
 {
-	setup_irq(drv_data, irq_pin, false);
+	struct lsm6dsl_data *drv_data = dev->data;
+
+	setup_irq(dev, false);
 
 #if defined(CONFIG_LSM6DSL_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -55,7 +57,7 @@ int lsm6dsl_trigger_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	setup_irq(drv_data, config->irq_pin, false);
+	setup_irq(dev, false);
 
 	drv_data->data_ready_handler = handler;
 	if (handler == NULL) {
@@ -64,9 +66,9 @@ int lsm6dsl_trigger_set(const struct device *dev,
 
 	drv_data->data_ready_trigger = *trig;
 
-	setup_irq(drv_data, config->irq_pin, true);
+	setup_irq(dev, true);
 	if (gpio_pin_get(drv_data->gpio, config->irq_pin) > 0) {
-		handle_irq(drv_data, config->irq_pin);
+		handle_irq(dev);
 	}
 
 	return 0;
@@ -77,11 +79,10 @@ static void lsm6dsl_gpio_callback(const struct device *dev,
 {
 	struct lsm6dsl_data *drv_data =
 		CONTAINER_OF(cb, struct lsm6dsl_data, gpio_cb);
-	const struct lsm6dsl_config *config = drv_data->dev->config;
 
 	ARG_UNUSED(pins);
 
-	handle_irq(drv_data, config->irq_pin);
+	handle_irq(drv_data->dev);
 }
 
 static void lsm6dsl_thread_cb(const struct device *dev)
@@ -93,15 +94,17 @@ static void lsm6dsl_thread_cb(const struct device *dev)
 					     &drv_data->data_ready_trigger);
 	}
 
-	setup_irq(drv_data, config->irq_pin, true);
+	setup_irq(dev, true);
 }
 
 #ifdef CONFIG_LSM6DSL_TRIGGER_OWN_THREAD
-static void lsm6dsl_thread(struct lsm6dsl_data *drv_data)
+static void lsm6dsl_thread(const struct device *dev)
 {
+	struct lsm6dsl_data *drv_data = dev->data;
+
 	while (1) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		lsm6dsl_thread_cb(drv_data->dev);
+		lsm6dsl_thread_cb(dev);
 	}
 }
 #endif
@@ -157,14 +160,14 @@ int lsm6dsl_init_interrupt(const struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_LSM6DSL_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lsm6dsl_thread, drv_data,
+			(k_thread_entry_t)lsm6dsl_thread, (void *)dev,
 			NULL, NULL, K_PRIO_COOP(CONFIG_LSM6DSL_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_LSM6DSL_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = lsm6dsl_work_cb;
 #endif
 
-	setup_irq(drv_data, config->irq_pin, true);
+	setup_irq(dev, true);
 
 	return 0;
 }
