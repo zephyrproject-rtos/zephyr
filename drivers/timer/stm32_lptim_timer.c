@@ -43,6 +43,10 @@
  * This is for example about of 65000 x 2000ms when clocked by LSI
  */
 static uint32_t accumulated_lptim_cnt;
+/* Next autoreload value to set */
+static uint32_t autoreload_next;
+/* Indicate if the autoreload register is ready for a write */
+static bool autoreload_ready = true;
 
 static struct k_spinlock lock;
 
@@ -50,6 +54,20 @@ static void lptim_irq_handler(const struct device *unused)
 {
 
 	ARG_UNUSED(unused);
+
+	uint32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM1);
+
+	if ((LL_LPTIM_IsActiveFlag_ARROK(LPTIM1) != 0)
+		&& LL_LPTIM_IsEnabledIT_ARROK(LPTIM1) != 0) {
+		LL_LPTIM_ClearFlag_ARROK(LPTIM1);
+		if ((autoreload_next > 0) && (autoreload_next != autoreload)) {
+			/* the new autoreload value change, we set it */
+			autoreload_ready = false;
+			LL_LPTIM_SetAutoReload(LPTIM1, autoreload_next);
+		} else {
+			autoreload_ready = true;
+		}
+	}
 
 	if ((LL_LPTIM_IsActiveFlag_ARRM(LPTIM1) != 0)
 		&& LL_LPTIM_IsEnabledIT_ARRM(LPTIM1) != 0) {
@@ -61,9 +79,8 @@ static void lptim_irq_handler(const struct device *unused)
 
 		/* increase the total nb of autoreload count
 		 * used in the sys_clock_cycle_get_32() function.
-		 * Reading the CNT register gives a reliable value
 		 */
-		uint32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM1) + 1;
+		autoreload++;
 
 		accumulated_lptim_cnt += autoreload;
 
@@ -76,6 +93,23 @@ static void lptim_irq_handler(const struct device *unused)
 
 		sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 				? dticks : (dticks > 0));
+	}
+}
+
+static void lptim_set_autoreload(uint32_t arr)
+{
+	/* Update autoreload register */
+	autoreload_next = arr;
+
+	if (!autoreload_ready)
+		return;
+
+	/* The ARR register ready, we could set it directly */
+	if ((arr > 0) && (arr != LL_LPTIM_GetAutoReload(LPTIM1))) {
+		/* The new autoreload value change, we set it */
+		autoreload_ready = false;
+		LL_LPTIM_ClearFlag_ARROK(LPTIM1);
+		LL_LPTIM_SetAutoReload(LPTIM1, arr);
 	}
 }
 
@@ -175,13 +209,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		next_arr = lp_time + LPTIM_GUARD_VALUE;
 	}
 
-	/* ARROK bit validates previous write operation to ARR register */
-	while (LL_LPTIM_IsActiveFlag_ARROK(LPTIM1) == 0) {
-	}
-	LL_LPTIM_ClearFlag_ARROK(LPTIM1);
-
-	/* run timer and wait for the reload match */
-	LL_LPTIM_SetAutoReload(LPTIM1, next_arr);
+	/* Update autoreload register */
+	lptim_set_autoreload(next_arr);
 
 	k_spin_unlock(&lock, key);
 }
@@ -345,6 +374,7 @@ static int sys_clock_driver_init(const struct device *dev)
 #endif
 	LL_LPTIM_ClearFLAG_ARRM(LPTIM1);
 	/* ARROK bit validates the write operation to ARR register */
+	LL_LPTIM_EnableIT_ARROK(LPTIM1);
 	LL_LPTIM_ClearFlag_ARROK(LPTIM1);
 
 	accumulated_lptim_cnt = 0;
@@ -357,11 +387,10 @@ static int sys_clock_driver_init(const struct device *dev)
 	/* Set the Autoreload value once the timer is enabled */
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* LPTIM1 is triggered on a LPTIM_TIMEBASE period */
-		LL_LPTIM_SetAutoReload(LPTIM1, LPTIM_TIMEBASE);
-
+		lptim_set_autoreload(LPTIM_TIMEBASE);
 	} else {
 		/* LPTIM1 is triggered on a Tick period */
-		LL_LPTIM_SetAutoReload(LPTIM1, COUNT_PER_TICK - 1);
+		lptim_set_autoreload(COUNT_PER_TICK - 1);
 	}
 
 	/* Start the LPTIM counter in continuous mode */
