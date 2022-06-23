@@ -202,6 +202,8 @@ void printk(const char *fmt, ...)
 }
 #endif /* defined(CONFIG_PRINTK) */
 
+#ifndef CONFIG_PICOLIBC
+
 struct str_context {
 	char *str;
 	int max;
@@ -248,3 +250,5 @@ int vsnprintk(char *str, size_t size, const char *fmt, va_list ap)
 
 	return ctx.count;
 }
+
+#endif
