@@ -617,6 +617,139 @@ static uint8_t dfu_srv_apply(const void *cmd, uint16_t cmd_len,
 }
 #endif
 
+#ifdef CONFIG_BT_MESH_PRIV_BEACON_CLI
+static struct bt_mesh_priv_beacon_cli priv_beacon_cli;
+
+static uint8_t priv_beacon_get(const void *cmd, uint16_t cmd_len,
+			       void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_priv_beacon_get_cmd *cp = cmd;
+
+	struct bt_mesh_priv_beacon val;
+	int err;
+
+	err = bt_mesh_priv_beacon_cli_get(net.net_idx, cp->dst, &val);
+	if (err) {
+		LOG_ERR("Failed to send Private Beacon Get (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	LOG_DBG("Private Beacon state: %u, %u", val.enabled, val.rand_interval);
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t priv_beacon_set(const void *cmd, uint16_t cmd_len,
+			       void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_priv_beacon_set_cmd *cp = cmd;
+	struct bt_mesh_priv_beacon val;
+	int err;
+
+	val.enabled = cp->enabled;
+	val.rand_interval = cp->rand_interval;
+
+	err = bt_mesh_priv_beacon_cli_set(net.net_idx, cp->dst, &val);
+	if (err) {
+		LOG_ERR("Failed to send Private Beacon Set (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t priv_gatt_proxy_get(const void *cmd, uint16_t cmd_len,
+				   void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_priv_gatt_proxy_get_cmd *cp = cmd;
+
+	uint8_t state;
+	int err;
+
+	err = bt_mesh_priv_beacon_cli_gatt_proxy_get(net.net_idx, cp->dst, &state);
+	if (err) {
+		LOG_ERR("Failed to send Private GATT Proxy Get (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	LOG_DBG("Private GATT Proxy state: %u", state);
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t priv_gatt_proxy_set(const void *cmd, uint16_t cmd_len,
+				   void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_priv_gatt_proxy_set_cmd *cp = cmd;
+
+	uint8_t state;
+	int err;
+
+	state = cp->state;
+
+	err = bt_mesh_priv_beacon_cli_gatt_proxy_set(net.net_idx, cp->dst, &state);
+	if (err) {
+		LOG_ERR("Failed to send Private GATT Proxy Set (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t priv_node_id_get(const void *cmd, uint16_t cmd_len,
+				void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_priv_node_id_get_cmd *cp = cmd;
+	struct bt_mesh_priv_node_id val;
+	uint16_t key_net_idx;
+	int err;
+
+	key_net_idx = cp->key_net_idx;
+
+	err = bt_mesh_priv_beacon_cli_node_id_get(net.net_idx, cp->dst, key_net_idx, &val);
+	if (err) {
+		LOG_ERR("Failed to send Private Node Identity Get (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	LOG_DBG("Private Node Identity state: %u %u %u", val.net_idx, val.state, val.status);
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t priv_node_id_set(const void *cmd, uint16_t cmd_len,
+				void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_priv_node_id_set_cmd *cp = cmd;
+	struct bt_mesh_priv_node_id val;
+	int err;
+
+	val.net_idx = cp->net_idx;
+	val.state = cp->state;
+
+	err = bt_mesh_priv_beacon_cli_node_id_set(net.net_idx, cp->dst, &val);
+	if (err) {
+		LOG_ERR("Failed to send Private Node Identity Set (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t proxy_private_identity_enable(const void *cmd, uint16_t cmd_len,
+					     void *rsp, uint16_t *rsp_len)
+{
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_proxy_private_identity_enable();
+	if (err) {
+		LOG_ERR("Failed to enable proxy private identity (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif
+
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -654,6 +787,12 @@ static struct bt_mesh_model root_models[] = {
 #endif
 #if defined(CONFIG_BT_MESH_BLOB_CLI) && !defined(CONFIG_BT_MESH_DFD_SRV)
 	BT_MESH_MODEL_BLOB_CLI(&blob_cli),
+#endif
+#if defined(CONFIG_BT_MESH_PRIV_BEACON_SRV)
+	BT_MESH_MODEL_PRIV_BEACON_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_PRIV_BEACON_CLI)
+	BT_MESH_MODEL_PRIV_BEACON_CLI(&priv_beacon_cli),
 #endif
 };
 struct model_data *lookup_model_bound(uint16_t id)
@@ -4576,6 +4715,44 @@ static const struct btp_handler handlers[] = {
 		.expect_len = sizeof(struct btp_rpr_reprov_remote_cmd),
 		.func = rpr_reprov_remote
 	},
+#endif
+#if defined(CONFIG_BT_MESH_PRIV_BEACON_CLI)
+	{
+		.opcode = BTP_MESH_PRIV_BEACON_GET,
+		.expect_len = sizeof(struct btp_priv_beacon_get_cmd),
+		.func = priv_beacon_get
+	},
+	{
+		.opcode = BTP_MESH_PRIV_BEACON_SET,
+		.expect_len = sizeof(struct btp_priv_beacon_set_cmd),
+		.func = priv_beacon_set
+	},
+	{
+		.opcode = BTP_MESH_PRIV_GATT_PROXY_GET,
+		.expect_len = sizeof(struct btp_priv_gatt_proxy_get_cmd),
+		.func = priv_gatt_proxy_get
+	},
+	{
+		.opcode = BTP_MESH_PRIV_GATT_PROXY_SET,
+		.expect_len = sizeof(struct btp_priv_gatt_proxy_set_cmd),
+		.func = priv_gatt_proxy_set
+	},
+	{
+		.opcode = BTP_MESH_PRIV_NODE_ID_GET,
+		.expect_len = sizeof(struct btp_priv_node_id_get_cmd),
+		.func = priv_node_id_get
+	},
+	{
+		.opcode = BTP_MESH_PRIV_NODE_ID_SET,
+		.expect_len = sizeof(struct btp_priv_node_id_set_cmd),
+		.func = priv_node_id_set
+	},
+	{
+		.opcode = BTP_MESH_PROXY_PRIVATE_IDENTITY,
+		.expect_len = 0,
+		.func = proxy_private_identity_enable
+	},
+#endif
 };
 
 
