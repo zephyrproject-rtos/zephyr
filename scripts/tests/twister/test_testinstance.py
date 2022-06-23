@@ -13,9 +13,9 @@ import pytest
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
-from twister.testinstance import TestInstance
-from twister.error import BuildError, TwisterException
-from twister.testsuite import TestSuite
+from twisterlib.testinstance import TestInstance
+from twisterlib.error import BuildError, TwisterException
+from twisterlib.testsuite import TestSuite
 
 
 TESTDATA_1 = [

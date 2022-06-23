@@ -187,20 +187,14 @@ if not ZEPHYR_BASE:
 
     print(f'ZEPHYR_BASE unset, using "{ZEPHYR_BASE}"')
 
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister/"))
 
-try:
-    from tabulate import tabulate
-except ImportError:
-    print("Install tabulate python module with pip to use --device-testing option.")
-
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
-
-from twister.testplan import TestPlan
-from twister.enviornment import TwisterEnv, parse_arguments
-from twister.reports import Reporting
-from twister.hardwaremap import HardwareMap
-from twister.coverage import run_coverage
-from twister.runner import TwisterRunner
+from twisterlib.testplan import TestPlan
+from twisterlib.enviornment import TwisterEnv, parse_arguments
+from twisterlib.reports import Reporting
+from twisterlib.hardwaremap import HardwareMap
+from twisterlib.coverage import run_coverage
+from twisterlib.runner import TwisterRunner
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)

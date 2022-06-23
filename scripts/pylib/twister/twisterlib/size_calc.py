@@ -5,7 +5,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import subprocess
-from twister.error import TwisterRuntimeError
+import sys
+from twisterlib.error import TwisterRuntimeError
 
 
 class SizeCalculator:
@@ -224,4 +225,3 @@ class SizeCalculator:
             self.sections.append({"name": name, "load_addr": load_addr,
                                   "size": size, "virt_addr": virt_addr,
                                   "type": stype, "recognized": recognized})
-

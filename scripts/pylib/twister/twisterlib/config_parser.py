@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import scl
+from twisterlib.error import ConfigurationError
 
 class TwisterConfigParser:
     """Class to read testsuite yaml files with semantic checking
