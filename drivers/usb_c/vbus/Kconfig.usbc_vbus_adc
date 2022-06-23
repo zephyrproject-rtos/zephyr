@@ -1,0 +1,11 @@
+# USB-C VBUS device configuration options
+
+# Copyright 2022 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+config USBC_VBUS_ADC
+	bool "USB-C VBUS ADC"
+	default y
+	depends on DT_HAS_ZEPHYR_USB_C_VBUS_ADC_ENABLED
+	help
+	  Measure VBUS with an ADC through a voltage divider
