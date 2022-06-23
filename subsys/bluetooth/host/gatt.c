@@ -2442,6 +2442,7 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 		if (bt_gatt_check_perm(conn, attr,
 				       BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_READ_AUTHEN)) {
 			BT_WARN("Link is not encrypted");
+			bt_conn_unref(conn);
 			continue;
 		}
 
