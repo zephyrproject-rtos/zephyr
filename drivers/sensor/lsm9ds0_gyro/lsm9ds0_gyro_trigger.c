@@ -53,12 +53,10 @@ int lsm9ds0_gyro_trigger_set(const struct device *dev,
 		data->handler_drdy = handler;
 		data->trigger_drdy = *trig;
 
-		if (i2c_reg_update_byte(data->i2c_master,
-					config->i2c_slave_addr,
-					LSM9DS0_GYRO_REG_CTRL_REG3_G,
-					LSM9DS0_GYRO_MASK_CTRL_REG3_G_I2_DRDY,
-					state << LSM9DS0_GYRO_SHIFT_CTRL_REG3_G_I2_DRDY)
-					< 0) {
+		if (i2c_reg_update_byte_dt(&config->i2c, LSM9DS0_GYRO_REG_CTRL_REG3_G,
+					   LSM9DS0_GYRO_MASK_CTRL_REG3_G_I2_DRDY,
+					   state << LSM9DS0_GYRO_SHIFT_CTRL_REG3_G_I2_DRDY)
+					   < 0) {
 			LOG_DBG("failed to set DRDY interrupt");
 			return -EIO;
 		}

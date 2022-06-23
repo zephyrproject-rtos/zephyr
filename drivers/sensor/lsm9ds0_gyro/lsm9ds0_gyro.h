@@ -210,8 +210,7 @@
 #endif
 
 struct lsm9ds0_gyro_config {
-	char *i2c_master_dev_name;
-	uint16_t i2c_slave_addr;
+	struct i2c_dt_spec i2c;
 
 #if CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY
 	char *gpio_drdy_dev_name;
@@ -221,8 +220,6 @@ struct lsm9ds0_gyro_config {
 };
 
 struct lsm9ds0_gyro_data {
-	const struct device *i2c_master;
-
 #if defined(CONFIG_LSM9DS0_GYRO_TRIGGERS)
 	struct k_sem sem;
 #endif
