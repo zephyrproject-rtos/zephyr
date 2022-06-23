@@ -22,3 +22,11 @@ if (CONFIG_FS_MGMT_CHECKSUM_HASH AND CONFIG_FS_MGMT_HASH_SHA256)
         zephyr_link_libraries(mbedTLS)
     endif()
 endif()
+
+if (CONFIG_BOOT_IMAGE_ACCESS_HOOKS)
+    zephyr_include_directories(
+        ${ZEPHYR_MCUBOOT_MODULE_DIR}/boot/bootutil/include
+        ${ZEPHYR_MCUBOOT_MODULE_DIR}/boot/zephyr/include
+    )
+    zephyr_library_sources(bootutil_hooks/nrf53_hooks.c)
+endif()
