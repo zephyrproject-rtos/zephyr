@@ -211,6 +211,16 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn_lll->nesn = 0;
 	conn_lll->empty = 0;
 
+#if defined(CONFIG_BT_CTLR_PHY)
+	/* Use the default 1M PHY, extended connection initiation in LLL will
+	 * update this with the correct PHY.
+	 */
+	conn_lll->phy_tx = PHY_1M;
+	conn_lll->phy_flags = 0;
+	conn_lll->phy_tx_time = PHY_1M;
+	conn_lll->phy_rx = PHY_1M;
+#endif /* CONFIG_BT_CTLR_PHY */
+
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	conn_lll->max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
@@ -229,16 +239,6 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	ull_dle_init(conn, PHY_1M);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-
-#if defined(CONFIG_BT_CTLR_PHY)
-	/* Use the default 1M PHY, extended connection initiation in LLL will
-	 * update this with the correct PHY.
-	 */
-	conn_lll->phy_tx = PHY_1M;
-	conn_lll->phy_flags = 0;
-	conn_lll->phy_tx_time = PHY_1M;
-	conn_lll->phy_rx = PHY_1M;
-#endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 	conn_lll->rssi_latest = BT_HCI_LE_RSSI_NOT_AVAILABLE;
