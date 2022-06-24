@@ -1035,8 +1035,10 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		} else {
 			/* Invalid behaviour
 			 * A procedure already sent a LL_VERSION_IND and received a LL_VERSION_IND.
-			 * For now we chose to ignore the 'out of order' PDU
+			 * Ignore and complete the procedure.
 			 */
+			llcp_rr_complete(conn);
+			ctx->state = RP_COMMON_STATE_IDLE;
 		}
 
 		break;
