@@ -9,6 +9,11 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     log_output.c
   )
 
+  zephyr_sources_ifdef(
+    CONFIG_LOG_OUTPUT
+    log_output.c
+  )
+
   # Determine if __auto_type is supported. If not then runtime approach must always
   # be used.
   # Supported by:

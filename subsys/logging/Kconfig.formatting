@@ -21,6 +21,12 @@ config LOG_FUNC_NAME_PREFIX_DBG
 
 endmenu
 
+config LOG_OUTPUT
+	bool "Formatter helper"
+	help
+	  Module which provides formatting of log messages to a human-readable
+	  strings.
+
 menuconfig LOG_MIPI_SYST_ENABLE
 	bool "MIPI SyS-T format output"
 	select MIPI_SYST_LIB
