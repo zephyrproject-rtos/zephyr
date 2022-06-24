@@ -46,12 +46,6 @@
 #define LOG_MODULE_NAME bt_csis
 #include "common/log.h"
 
-#if defined(CONFIG_BT_RPA) && !defined(CONFIG_BT_BONDABLE)
-#define SIRK_READ_PERM	(BT_GATT_PERM_READ_AUTHEN | BT_GATT_PERM_READ_ENCRYPT)
-#else
-#define SIRK_READ_PERM	(BT_GATT_PERM_READ_ENCRYPT)
-#endif
-
 static struct bt_csis csis_insts[CONFIG_BT_CSIS_MAX_INSTANCE_COUNT];
 static bt_addr_le_t server_dummy_addr; /* 0'ed address */
 
@@ -800,7 +794,7 @@ static void adv_connected(struct bt_le_ext_adv *adv,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_CSIS), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_CSIS_SET_SIRK, \
 			BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			SIRK_READ_PERM, \
+			BT_GATT_PERM_READ_ENCRYPT, \
 			read_set_sirk, NULL, &_csis), \
 	BT_GATT_CCC(set_sirk_cfg_changed, \
 			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
