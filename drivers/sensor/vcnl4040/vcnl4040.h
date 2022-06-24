@@ -92,9 +92,7 @@ enum interrupt_type {
 struct vcnl4040_config {
 	struct i2c_dt_spec i2c;
 #ifdef CONFIG_VCNL4040_TRIGGER
-	const char *gpio_name;
-	gpio_pin_t gpio_pin;
-	gpio_dt_flags_t gpio_flags;
+	struct gpio_dt_spec int_gpio;
 #endif
 	enum led_current led_i;
 	enum led_duty_cycle led_dc;
@@ -107,8 +105,6 @@ struct vcnl4040_data {
 	struct k_sem sem;
 #ifdef CONFIG_VCNL4040_TRIGGER
 	const struct device *dev;
-	const struct device *gpio;
-	uint8_t gpio_pin;
 	struct gpio_callback gpio_cb;
 	enum interrupt_type int_type;
 	sensor_trigger_handler_t proxy_handler;

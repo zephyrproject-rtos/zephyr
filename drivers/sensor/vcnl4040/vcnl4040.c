@@ -341,15 +341,7 @@ static const struct sensor_driver_api vcnl4040_driver_api = {
 static const struct vcnl4040_config vcnl4040_config = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
 #ifdef CONFIG_VCNL4040_TRIGGER
-#if DT_INST_NODE_HAS_PROP(0, int_gpios)
-	.gpio_name = DT_INST_GPIO_LABEL(0, int_gpios),
-	.gpio_pin = DT_INST_GPIO_PIN(0, int_gpios),
-	.gpio_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
-#else
-	.gpio_name = NULL,
-	.gpio_pin = 0,
-	.gpio_flags = 0,
-#endif
+	.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),
 #endif
 	.led_i = DT_INST_ENUM_IDX(0, led_current),
 	.led_dc = DT_INST_ENUM_IDX(0, led_duty_cycle),
