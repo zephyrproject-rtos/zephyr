@@ -9,6 +9,7 @@
 #define LWM2M_ENGINE_H
 
 #include "lwm2m_object.h"
+#include "lwm2m_registry.h"
 
 #define LWM2M_PROTOCOL_VERSION_MAJOR 1
 #if CONFIG_LWM2M_VERSION_1_1
@@ -39,7 +40,6 @@
 /* 65000 ~ 65535 inclusive are reserved for experiments */
 #define LWM2M_FORMAT_NONE		65535
 
-
 #define COAP_RESPONSE_CODE_CLASS(x)	(x >> 5)
 #define COAP_RESPONSE_CODE_DETAIL(x)	(x & 0x1F)
 
@@ -62,7 +62,6 @@ struct lwm2m_obj_path_list {
 	sys_snode_t node;
 	struct lwm2m_obj_path path;
 };
-
 /* Establish a request handler callback type */
 typedef int (*udp_request_handler_cb_t)(struct coap_packet *request,
 					struct lwm2m_message *msg);
@@ -71,35 +70,11 @@ char *lwm2m_sprint_ip_addr(const struct sockaddr *addr);
 
 int lwm2m_notify_observer(uint16_t obj_id, uint16_t obj_inst_id, uint16_t res_id);
 int lwm2m_notify_observer_path(struct lwm2m_obj_path *path);
-
-void lwm2m_register_obj(struct lwm2m_engine_obj *obj);
-void lwm2m_unregister_obj(struct lwm2m_engine_obj *obj);
-struct lwm2m_engine_obj_field *
-lwm2m_get_engine_obj_field(struct lwm2m_engine_obj *obj, int res_id);
-int  lwm2m_create_obj_inst(uint16_t obj_id, uint16_t obj_inst_id,
-			   struct lwm2m_engine_obj_inst **obj_inst);
-int  lwm2m_delete_obj_inst(uint16_t obj_id, uint16_t obj_inst_id);
-int  lwm2m_get_or_create_engine_obj(struct lwm2m_message *msg,
-				    struct lwm2m_engine_obj_inst **obj_inst,
-				    uint8_t *created);
+void engine_remove_observer_by_id(uint16_t obj_id, int32_t obj_inst_id);
 /* Validate write access to object. */
 int lwm2m_engine_validate_write_access(struct lwm2m_message *msg,
 				       struct lwm2m_engine_obj_inst *obj_inst,
 				       struct lwm2m_engine_obj_field **obj_field);
-/* Create or Allocate resource instance. */
-int lwm2m_engine_get_create_res_inst(struct lwm2m_obj_path *path, struct lwm2m_engine_res **res,
-				     struct lwm2m_engine_res_inst **res_inst);
-
-struct lwm2m_engine_obj *lwm2m_engine_get_obj(
-					const struct lwm2m_obj_path *path);
-struct lwm2m_engine_obj_inst *lwm2m_engine_get_obj_inst(
-					const struct lwm2m_obj_path *path);
-struct lwm2m_engine_res *lwm2m_engine_get_res(
-					const struct lwm2m_obj_path *path);
-struct lwm2m_engine_res_inst *lwm2m_engine_get_res_inst(
-					const struct lwm2m_obj_path *path);
-
-bool lwm2m_engine_shall_report_obj_version(const struct lwm2m_engine_obj *obj);
 
 /* LwM2M context functions */
 int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx);
@@ -153,17 +128,6 @@ enum coap_block_size lwm2m_default_block_size(void);
 
 int lwm2m_engine_add_service(k_work_handler_t service, uint32_t period_ms);
 
-int lwm2m_engine_get_resource(const char *pathstr,
-			      struct lwm2m_engine_res **res);
-
-void lwm2m_engine_get_binding(char *binding);
-void lwm2m_engine_get_queue_mode(char *queue);
-
-size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in,
-				    uint8_t *buf, size_t buflen,
-				    struct lwm2m_opaque_context *opaque,
-				    bool *last_block);
-
 int lwm2m_security_inst_id_to_index(uint16_t obj_inst_id);
 int lwm2m_security_index_to_inst_id(int index);
 
@@ -192,6 +156,7 @@ struct lwm2m_attr *lwm2m_engine_get_next_attr(const void *ref,
 					      struct lwm2m_attr *prev);
 const char *lwm2m_engine_get_attr_name(const struct lwm2m_attr *attr);
 
+void clear_attrs(void *ref);
 /* Network Layer */
 int  lwm2m_socket_add(struct lwm2m_ctx *ctx);
 void lwm2m_socket_del(struct lwm2m_ctx *ctx);
