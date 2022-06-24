@@ -15,9 +15,12 @@
 void main(void)
 {
 	printk("Running on %s!\n", CONFIG_ARCH);
-	const struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, ti_hdc)));
+	const struct device *dev = DEVICE_DT_GET_ONE(ti_hdc);
 
-	__ASSERT(dev != NULL, "Failed to get device binding");
+	if (!device_is_ready(dev)) {
+		printk("sensor: device not ready.\n");
+		return;
+	}
 
 	printk("Dev %p name %s is ready!\n", dev, dev->name);
 
