@@ -11,3 +11,4 @@ tests:
   net.socket.tcp.preempt:
     extra_configs:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+      - CONFIG_NET_TCP_RANDOMIZED_RTO=n
