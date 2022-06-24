@@ -59,7 +59,7 @@ config I2S_SAM_SSC
 	depends on I2S
 
 config USB_DC_SAM_USBHS
-	default n if USB_DC_USBIP
+	default n if USB_DEVICE_SOFTWARE_DRIVER
 	default y
 	depends on USB_DEVICE_DRIVER
 

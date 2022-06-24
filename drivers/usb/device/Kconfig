@@ -22,6 +22,12 @@ config USB_DEVICE_REMOTE_WAKEUP
 	help
 	  USB device controller supports remote wakeup feature.
 
+config USB_DEVICE_SOFTWARE_DRIVER
+	bool "software USB device controller drivers"
+	default n
+	help
+	  Use software USB device controller drivers instead of hardware
+
 config USB_DW
 	bool "Designware USB Device Controller Driver"
 	help
@@ -52,7 +58,7 @@ config USB_DC_STM32
 
 config USB_DC_SAM0
 	bool "SAM0 series USB Device Controller driver"
-	default n if USB_DC_USBIP
+	default n if USB_DEVICE_SOFTWARE_DRIVER
 	default y
 	depends on SOC_FAMILY_SAM0
 	help
@@ -80,7 +86,7 @@ config USB_DC_SAM_USBHS
 
 config USB_NRFX
 	bool "Nordic Semiconductor USB Device Controller Driver"
-	default n if USB_DC_USBIP
+	default n if USB_DEVICE_SOFTWARE_DRIVER
 	default y
 	depends on HAS_HW_NRF_USBD
 	select NRFX_USBD

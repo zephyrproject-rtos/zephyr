@@ -36,7 +36,7 @@ config UART_SAM0
 	default SERIAL
 
 config USB_DC_SAM0
-	default n if USB_DC_USBIP
+	default n if USB_DEVICE_SOFTWARE_DRIVER
 	default USB_DEVICE_DRIVER
 
 config WDT_SAM0
