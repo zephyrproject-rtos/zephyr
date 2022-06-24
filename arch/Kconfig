@@ -410,7 +410,7 @@ config GEN_IRQ_VECTOR_TABLE
 
 config ARCH_IRQ_VECTOR_TABLE_ALIGN
 	int "Alignment size of the interrupt vector table"
-	default 0
+	default 4
 	depends on GEN_IRQ_VECTOR_TABLE
 	help
 	  This option controls alignment size of generated
@@ -430,7 +430,7 @@ config GEN_SW_ISR_TABLE
 
 config ARCH_SW_ISR_TABLE_ALIGN
 	int "Alignment size of a software ISR table"
-	default 0
+	default 4
 	depends on GEN_SW_ISR_TABLE
 	help
 	  This option controls alignment size of generated
