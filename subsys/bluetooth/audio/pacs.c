@@ -562,8 +562,8 @@ static void pac_notify_loc(struct k_work *work)
 	err = bt_gatt_notify_uuid(NULL, uuid, pacs_svc.attrs,
 				  &sys_cpu_to_le32(location),
 				  sizeof(location));
-	if (err != 0) {
-		BT_WARN("PACS notify failed: %d", err);
+	if (err != 0 && err != -ENOTCONN) {
+		BT_WARN("PACS notify_loc failed: %d", err);
 	}
 }
 #endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
@@ -588,12 +588,9 @@ static void pac_notify(struct k_work *work)
 	}
 #endif /* CONFIG_BT_PAC_SRC */
 
-	/* TODO: We can skip this if we are not connected to any devices */
-	get_pac_records(NULL, dir, &read_buf);
-
 	err = bt_gatt_notify_uuid(NULL, uuid, pacs_svc.attrs, read_buf.data,
 				  read_buf.len);
-	if (err != 0) {
+	if (err != 0 && err != -ENOTCONN) {
 		BT_WARN("PACS notify failed: %d", err);
 	}
 }
@@ -662,7 +659,7 @@ static void available_contexts_notify(struct k_work *work)
 
 	err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_AVAILABLE_CONTEXT, pacs_svc.attrs,
 				  &context, sizeof(context));
-	if (err) {
+	if (err != 0 && err != -ENOTCONN) {
 		BT_WARN("Available Audio Contexts notify failed: %d", err);
 	}
 }
