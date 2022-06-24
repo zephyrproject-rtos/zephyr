@@ -129,6 +129,10 @@ static void process_and_validate(bool backend2_enable, bool panic)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {
+		return;
+	}
+
 	mock_log_backend_validate(&backend1, panic);
 
 	if (backend2_enable) {
