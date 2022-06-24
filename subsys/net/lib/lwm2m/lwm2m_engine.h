@@ -10,6 +10,7 @@
 
 #include "lwm2m_object.h"
 #include "lwm2m_registry.h"
+#include "lwm2m_observation.h"
 
 #define LWM2M_PROTOCOL_VERSION_MAJOR 1
 #if CONFIG_LWM2M_VERSION_1_1
@@ -67,10 +68,6 @@ typedef int (*udp_request_handler_cb_t)(struct coap_packet *request,
 					struct lwm2m_message *msg);
 
 char *lwm2m_sprint_ip_addr(const struct sockaddr *addr);
-
-int lwm2m_notify_observer(uint16_t obj_id, uint16_t obj_inst_id, uint16_t res_id);
-int lwm2m_notify_observer_path(struct lwm2m_obj_path *path);
-void engine_remove_observer_by_id(uint16_t obj_id, int32_t obj_inst_id);
 /* Validate write access to object. */
 int lwm2m_engine_validate_write_access(struct lwm2m_message *msg,
 				       struct lwm2m_engine_obj_inst *obj_inst,
@@ -94,6 +91,8 @@ int lwm2m_engine_add_path_to_list(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm
 /* Remove paths when parent already exist in the list. */
 void lwm2m_engine_clear_duplicate_path(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list);
 
+int lwm2m_get_path_reference_ptr(struct lwm2m_engine_obj *obj, struct lwm2m_obj_path *path,
+				      void **ref);
 /* LwM2M message functions */
 struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx);
 void lwm2m_reset_message(struct lwm2m_message *msg, bool release);
@@ -150,13 +149,7 @@ uint8_t lwm2m_firmware_get_update_result_inst(uint16_t obj_inst_id);
 uint8_t lwm2m_firmware_get_update_result(void);
 #endif
 
-/* Attribute handling. */
 
-struct lwm2m_attr *lwm2m_engine_get_next_attr(const void *ref,
-					      struct lwm2m_attr *prev);
-const char *lwm2m_engine_get_attr_name(const struct lwm2m_attr *attr);
-
-void clear_attrs(void *ref);
 /* Network Layer */
 int  lwm2m_socket_add(struct lwm2m_ctx *ctx);
 void lwm2m_socket_del(struct lwm2m_ctx *ctx);
@@ -167,5 +160,7 @@ int lwm2m_engine_connection_resume(struct lwm2m_ctx *client_ctx);
 int lwm2m_push_queued_buffers(struct lwm2m_ctx *client_ctx);
 #endif
 int  lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmware_uri);
-
+/* Resources */
+struct lwm2m_ctx **lwm2m_sock_ctx(void);
+int lwm2m_sock_nfds(void);
 #endif /* LWM2M_ENGINE_H */
