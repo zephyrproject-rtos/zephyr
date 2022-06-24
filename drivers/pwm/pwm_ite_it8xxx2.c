@@ -141,8 +141,11 @@ static int pwm_it8xxx2_set_cycles(const struct device *dev,
 	 * <=324Hz in board dts. Now change prescaler clock source from 8MHz to
 	 * 32.768KHz to support pwm output in mode.
 	 */
-	if ((target_freq <= 324) && (inst->PCFSR & BIT(prs_sel))) {
-		inst->PCFSR &= ~BIT(prs_sel);
+	if (target_freq <= 324) {
+		if (inst->PCFSR & BIT(prs_sel)) {
+			inst->PCFSR &= ~BIT(prs_sel);
+		}
+
 		pwm_clk_src = (uint64_t) 32768;
 	}
 
