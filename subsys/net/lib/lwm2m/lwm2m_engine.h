@@ -8,9 +8,10 @@
 #ifndef LWM2M_ENGINE_H
 #define LWM2M_ENGINE_H
 
+#include "lwm2m_message_handling.h"
 #include "lwm2m_object.h"
-#include "lwm2m_registry.h"
 #include "lwm2m_observation.h"
+#include "lwm2m_registry.h"
 
 #define LWM2M_PROTOCOL_VERSION_MAJOR 1
 #if CONFIG_LWM2M_VERSION_1_1
@@ -19,34 +20,13 @@
 #define LWM2M_PROTOCOL_VERSION_MINOR 0
 #endif
 
-#define LWM2M_PROTOCOL_VERSION_STRING STRINGIFY(LWM2M_PROTOCOL_VERSION_MAJOR) \
-				      "." \
-				      STRINGIFY(LWM2M_PROTOCOL_VERSION_MINOR)
-
-/* LWM2M / CoAP Content-Formats */
-#define LWM2M_FORMAT_PLAIN_TEXT		0
-#define LWM2M_FORMAT_APP_LINK_FORMAT	40
-#define LWM2M_FORMAT_APP_OCTET_STREAM	42
-#define LWM2M_FORMAT_APP_EXI		47
-#define LWM2M_FORMAT_APP_JSON		50
-#define LWM2M_FORMAT_APP_CBOR		60
-#define LWM2M_FORMAT_APP_SEML_JSON	110
-#define LWM2M_FORMAT_APP_SENML_CBOR	112
-#define LWM2M_FORMAT_OMA_PLAIN_TEXT	1541
-#define LWM2M_FORMAT_OMA_OLD_TLV	1542
-#define LWM2M_FORMAT_OMA_OLD_JSON	1543
-#define LWM2M_FORMAT_OMA_OLD_OPAQUE	1544
-#define LWM2M_FORMAT_OMA_TLV		11542
-#define LWM2M_FORMAT_OMA_JSON		11543
-/* 65000 ~ 65535 inclusive are reserved for experiments */
-#define LWM2M_FORMAT_NONE		65535
-
-#define COAP_RESPONSE_CODE_CLASS(x)	(x >> 5)
-#define COAP_RESPONSE_CODE_DETAIL(x)	(x & 0x1F)
+#define LWM2M_PROTOCOL_VERSION_STRING                                                              \
+	STRINGIFY(LWM2M_PROTOCOL_VERSION_MAJOR)                                                    \
+	"." STRINGIFY(LWM2M_PROTOCOL_VERSION_MINOR)
 
 /* TODO: */
-#define NOTIFY_OBSERVER(o, i, r)	lwm2m_notify_observer(o, i, r)
-#define NOTIFY_OBSERVER_PATH(path)	lwm2m_notify_observer_path(path)
+#define NOTIFY_OBSERVER(o, i, r)   lwm2m_notify_observer(o, i, r)
+#define NOTIFY_OBSERVER_PATH(path) lwm2m_notify_observer_path(path)
 
 /* Use this value to generate new token */
 #define LWM2M_MSG_TOKEN_GENERATE_NEW 0xFFU
@@ -54,20 +34,8 @@
 /* length of time in milliseconds to wait for buffer allocations */
 #define BUF_ALLOC_TIMEOUT K_SECONDS(1)
 
-/* coap reply status */
-#define COAP_REPLY_STATUS_NONE		0
-#define COAP_REPLY_STATUS_ERROR		1
-
-/* path object list */
-struct lwm2m_obj_path_list {
-	sys_snode_t node;
-	struct lwm2m_obj_path path;
-};
-/* Establish a request handler callback type */
-typedef int (*udp_request_handler_cb_t)(struct coap_packet *request,
-					struct lwm2m_message *msg);
-
 char *lwm2m_sprint_ip_addr(const struct sockaddr *addr);
+char *sprint_token(const uint8_t *token, uint8_t tkl);
 /* Validate write access to object. */
 int lwm2m_engine_validate_write_access(struct lwm2m_message *msg,
 				       struct lwm2m_engine_obj_inst *obj_inst,
@@ -81,49 +49,14 @@ void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx);
 uint8_t *lwm2m_get_message_buf(void);
 int lwm2m_put_message_buf(uint8_t *buf);
 
-/* Initialize path list */
-void lwm2m_engine_path_list_init(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list,
-				 struct lwm2m_obj_path_list path_object_buf[],
-				 uint8_t path_object_size);
-/* Add new Path to the list */
-int lwm2m_engine_add_path_to_list(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list,
-				  struct lwm2m_obj_path *path);
-/* Remove paths when parent already exist in the list. */
-void lwm2m_engine_clear_duplicate_path(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list);
-
 int lwm2m_get_path_reference_ptr(struct lwm2m_engine_obj *obj, struct lwm2m_obj_path *path,
-				      void **ref);
-/* LwM2M message functions */
-struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx);
-void lwm2m_reset_message(struct lwm2m_message *msg, bool release);
-void lm2m_message_clear_allocations(struct lwm2m_message *msg);
-int lwm2m_init_message(struct lwm2m_message *msg);
-int lwm2m_send_message_async(struct lwm2m_message *msg);
-/* Notification and Send operation */
-int lwm2m_information_interface_send(struct lwm2m_message *msg);
-int lwm2m_send_empty_ack(struct lwm2m_ctx *client_ctx, uint16_t mid);
-
-int lwm2m_register_payload_handler(struct lwm2m_message *msg);
-
-int lwm2m_perform_read_op(struct lwm2m_message *msg, uint16_t content_format);
-
-int lwm2m_perform_composite_read_op(struct lwm2m_message *msg, uint16_t content_format,
-				    sys_slist_t *lwm2m_path_list);
+				 void **ref);
 
 int lwm2m_perform_composite_observation_op(struct lwm2m_message *msg, uint8_t *token,
 					   uint8_t token_length, sys_slist_t *lwm2m_path_list);
 
-int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
-			struct lwm2m_engine_res *res,
-			struct lwm2m_engine_res_inst *res_inst,
-			struct lwm2m_engine_obj_field *obj_field,
-			struct lwm2m_message *msg);
-
 bool lwm2m_engine_bootstrap_override(struct lwm2m_ctx *client_ctx, struct lwm2m_obj_path *path);
-
-int lwm2m_discover_handler(struct lwm2m_message *msg, bool is_bootstrap);
-
-enum coap_block_size lwm2m_default_block_size(void);
+int bootstrap_delete(struct lwm2m_message *msg);
 
 int lwm2m_engine_add_service(k_work_handler_t service, uint32_t period_ms);
 
@@ -149,17 +82,16 @@ uint8_t lwm2m_firmware_get_update_result_inst(uint16_t obj_inst_id);
 uint8_t lwm2m_firmware_get_update_result(void);
 #endif
 
-
 /* Network Layer */
-int  lwm2m_socket_add(struct lwm2m_ctx *ctx);
+int lwm2m_socket_add(struct lwm2m_ctx *ctx);
 void lwm2m_socket_del(struct lwm2m_ctx *ctx);
-int  lwm2m_socket_start(struct lwm2m_ctx *client_ctx);
+int lwm2m_socket_start(struct lwm2m_ctx *client_ctx);
 #if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 int lwm2m_engine_close_socket_connection(struct lwm2m_ctx *client_ctx);
 int lwm2m_engine_connection_resume(struct lwm2m_ctx *client_ctx);
 int lwm2m_push_queued_buffers(struct lwm2m_ctx *client_ctx);
 #endif
-int  lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmware_uri);
+
 /* Resources */
 struct lwm2m_ctx **lwm2m_sock_ctx(void);
 int lwm2m_sock_nfds(void);
