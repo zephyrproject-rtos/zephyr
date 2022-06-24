@@ -534,21 +534,18 @@ static struct k_work_delayable *bt_pacs_get_loc_work(enum bt_audio_dir dir)
 static void pac_notify_loc(struct k_work *work)
 {
 	uint32_t location;
-	struct bt_uuid *uuid;
 	enum bt_audio_dir dir;
 	int err;
 
 #if defined(CONFIG_BT_PAC_SNK)
 	if (work == &snks_loc_work.work) {
 		dir = BT_AUDIO_DIR_SINK;
-		uuid = BT_UUID_PACS_SNK_LOC;
 	}
 #endif /* CONFIG_BT_PAC_SNK */
 
 #if defined(CONFIG_BT_PAC_SRC)
 	if (work == &srcs_loc_work.work) {
 		dir = BT_AUDIO_DIR_SOURCE;
-		uuid = BT_UUID_PACS_SRC_LOC;
 	}
 #endif /* CONFIG_BT_PAC_SRC */
 
@@ -559,9 +556,18 @@ static void pac_notify_loc(struct k_work *work)
 		return;
 	}
 
-	err = bt_gatt_notify_uuid(NULL, uuid, pacs_svc.attrs,
-				  &sys_cpu_to_le32(location),
-				  sizeof(location));
+	if (dir == BT_AUDIO_DIR_SINK) {
+		err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SNK_LOC,
+					  pacs_svc.attrs,
+					  &sys_cpu_to_le32(location),
+					  sizeof(location));
+	} else {
+		err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SRC_LOC,
+					  pacs_svc.attrs,
+					  &sys_cpu_to_le32(location),
+					  sizeof(location));
+	}
+
 	if (err != 0 && err != -ENOTCONN) {
 		BT_WARN("PACS notify_loc failed: %d", err);
 	}
@@ -570,26 +576,24 @@ static void pac_notify_loc(struct k_work *work)
 
 static void pac_notify(struct k_work *work)
 {
-	struct bt_uuid *uuid;
-	enum bt_audio_dir dir;
-	int err;
+	int err = 0;
 
 #if defined(CONFIG_BT_PAC_SNK)
 	if (work == &snks_work.work) {
-		dir = BT_AUDIO_DIR_SINK;
-		uuid = BT_UUID_PACS_SNK;
+		err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SNK,
+					  pacs_svc.attrs, read_buf.data,
+					  read_buf.len);
 	}
 #endif /* CONFIG_BT_PAC_SNK */
 
 #if defined(CONFIG_BT_PAC_SRC)
 	if (work == &srcs_work.work) {
-		dir = BT_AUDIO_DIR_SOURCE;
-		uuid = BT_UUID_PACS_SRC;
+		err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_SRC,
+					  pacs_svc.attrs, read_buf.data,
+					  read_buf.len);
 	}
 #endif /* CONFIG_BT_PAC_SRC */
 
-	err = bt_gatt_notify_uuid(NULL, uuid, pacs_svc.attrs, read_buf.data,
-				  read_buf.len);
 	if (err != 0 && err != -ENOTCONN) {
 		BT_WARN("PACS notify failed: %d", err);
 	}
