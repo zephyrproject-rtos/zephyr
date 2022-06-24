@@ -15,6 +15,18 @@ zephyr_library_sources(
   vector_table.S
 )
 
+# Use large code model for addresses larger than 32 bits,
+# This is 10 characters long (0x12345678). We can't use a
+# simple numeric comparison because these values may be
+# beyond the numeric range of integers for cmake.
+
+string(LENGTH "x${CONFIG_SRAM_BASE_ADDRESS}" SRAM_LENGTH)
+string(LENGTH "x${CONFIG_KERNEL_VM_BASE}" KERNEL_VM_LENGTH)
+
+if(${SRAM_LENGTH} GREATER 11 OR ${KERNEL_VM_LENGTH} GREATER 11)
+  zephyr_cc_option(-mcmodel=large)
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_FPU_SHARING fpu.c fpu.S)
 zephyr_library_sources_ifdef(CONFIG_ARM_MMU mmu.c mmu.S)
 zephyr_library_sources_ifdef(CONFIG_ARM_MPU cortex_r/arm_mpu.c)
