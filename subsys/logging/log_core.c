@@ -197,6 +197,13 @@ void log_core_init(void)
 	panic_mode = false;
 	dropped_cnt = 0;
 
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
+		log_frontend_init();
+		if (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {
+			return;
+		}
+	}
+
 	/* Set default timestamp. */
 	if (sys_clock_hw_cycles_per_sec() > 1000000) {
 		_timestamp_func = default_lf_get_timestamp;
@@ -214,10 +221,6 @@ void log_core_init(void)
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
 		z_log_runtime_filters_init();
-	}
-
-	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
-		log_frontend_init();
 	}
 }
 
@@ -244,6 +247,10 @@ static uint32_t activate_foreach_backend(uint32_t mask)
 static uint32_t z_log_init(bool blocking, bool can_sleep)
 {
 	uint32_t mask = 0;
+
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {
+		return 0;
+	}
 
 	__ASSERT_NO_MSG(log_backend_count_get() < LOG_FILTERS_NUM_OF_SLOTS);
 	int i;
@@ -341,6 +348,9 @@ void z_impl_log_panic(void)
 
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
 		log_frontend_panic();
+		if (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {
+			goto out;
+		}
 	}
 
 	for (int i = 0; i < log_backend_count_get(); i++) {
@@ -357,6 +367,7 @@ void z_impl_log_panic(void)
 		}
 	}
 
+out:
 	panic_mode = true;
 }
 
