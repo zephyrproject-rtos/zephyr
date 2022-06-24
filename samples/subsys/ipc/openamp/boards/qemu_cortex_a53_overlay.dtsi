@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2022 openEuler Embedded
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/*
+		 * shared memory reserved for the inter-processor communication
+		 */
+		zephyr,ipc_shm = &ipc_shm0;
+		zephyr,ipc = &ipm_gic_sgi0;
+	};
+
+	ipm_gic_sgi0: ipm{
+		compatible = "arm,gic-sgi";
+		label = "gic_sgi0";
+	};
+
+	soc {
+		/* reserve 3 MB for inter-processor communication */
+		ipc_shm0: memory@70000000 {
+			compatible = "mmio-sram";
+			reg = <0 0x70000000 0 0x30000>;
+		};
+		/* memory used by openamp client */
+		sram1: memory@7a000000 {
+			compatible = "mmio-sram";
+			reg = <0x0 0x7a000000 0x0 DT_SIZE_M(10)>;
+		};
+	};
+};

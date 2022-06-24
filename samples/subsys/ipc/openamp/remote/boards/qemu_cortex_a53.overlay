@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2022 openEuler Embedded
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../../boards/qemu_cortex_a53_overlay.dtsi"
+
+/ {
+	chosen {
+		zephyr,sram = &sram1;
+	};
+
+};
+
+&uart0 {
+	status = "disabled";
+};

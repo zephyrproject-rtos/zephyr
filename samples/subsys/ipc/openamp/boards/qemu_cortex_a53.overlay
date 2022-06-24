@@ -1,0 +1,6 @@
+/*
+ * Copyright (c) 2022 openEuler Embedded
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "qemu_cortex_a53_overlay.dtsi"

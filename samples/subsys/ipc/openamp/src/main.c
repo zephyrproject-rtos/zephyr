@@ -20,6 +20,17 @@
 
 #include "common.h"
 
+#if defined(CONFIG_SOC_QEMU_CORTEX_A53)
+#include <zephyr/drivers/pm_cpu_ops.h>
+#endif
+
+/*
+ * 32 bit: -1 == 0xffffffff
+ * 64 bit: -1 == 0xffffffffffffffff
+ */
+#define DEFAULT_PAGE_SHIFT (-1UL)
+#define DEFAULT_PAGE_MASK  (-1UL)
+
 #define APP_TASK_STACK_SIZE (1024)
 K_THREAD_STACK_DEFINE(thread_stack, APP_TASK_STACK_SIZE);
 static struct k_thread thread_data;
@@ -36,8 +47,8 @@ static struct metal_device shm_device = {
 			.virt       = (void *) SHM_START_ADDR,
 			.physmap    = shm_physmap,
 			.size       = SHM_SIZE,
-			.page_shift = 0xffffffff,
-			.page_mask  = 0xffffffff,
+			.page_shift = DEFAULT_PAGE_SHIFT,
+			.page_mask  = DEFAULT_PAGE_MASK,
 			.mem_flags  = 0,
 			.ops        = { NULL },
 		},
@@ -292,6 +303,12 @@ void main(void)
 	defined(CONFIG_SOC_V2M_MUSCA_B1)
 	wakeup_cpu1();
 	k_msleep(500);
+#elif defined(CONFIG_SOC_QEMU_CORTEX_A53)
+	/* start the secondary cpu by psci in qemu*/
+	if (pm_cpu_on(1, DT_REG_ADDR(DT_NODELABEL(sram1)))) {
+		printk("Failed to boot secondary CPU core\n");
+		return;
+	}
 #endif /* #if defined(CONFIG_SOC_MPS2_AN521) */
 }
 

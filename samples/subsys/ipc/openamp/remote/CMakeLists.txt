@@ -8,10 +8,16 @@ cmake_minimum_required(VERSION 3.20.0)
 if(("${BOARD}" STREQUAL "lpcxpresso54114_m0")
 	OR "${BOARD}" STREQUAL "lpcxpresso55s69_cpu1"
 	OR "${BOARD}" STREQUAL "mps2_an521_remote"
-	OR "${BOARD}" STREQUAL "v2m_musca_b1_ns")
+	OR "${BOARD}" STREQUAL "v2m_musca_b1_ns"
+	OR "${BOARD}" STREQUAL "qemu_cortex_a53")
 	message(STATUS "${BOARD} compiles as remote in this sample")
 else()
 	message(FATAL_ERROR "${BOARD} was not supported for this sample")
+endif()
+
+if("${BOARD}" STREQUAL "qemu_cortex_a53")
+	set(CONF_FILE "prj_qemu_cortex_a53.conf")
+	set(DTC_OVERLAY_FILE "boards/qemu_cortex_a53.overlay")
 endif()
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})

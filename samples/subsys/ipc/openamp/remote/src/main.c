@@ -19,6 +19,13 @@
 
 #include "common.h"
 
+/*
+ * 32 bit: -1 == 0xffffffff
+ * 64 bit: -1 == 0xffffffffffffffff
+ */
+#define DEFAULT_PAGE_SHIFT (-1UL)
+#define DEFAULT_PAGE_MASK  (-1UL)
+
 #define APP_TASK_STACK_SIZE (1024)
 K_THREAD_STACK_DEFINE(thread_stack, APP_TASK_STACK_SIZE);
 static struct k_thread thread_data;
@@ -35,8 +42,8 @@ static struct metal_device shm_device = {
 			.virt       = (void *) SHM_START_ADDR,
 			.physmap    = shm_physmap,
 			.size       = SHM_SIZE,
-			.page_shift = 0xffffffff,
-			.page_mask  = 0xffffffff,
+			.page_shift = DEFAULT_PAGE_SHIFT,
+			.page_mask  = DEFAULT_PAGE_MASK,
 			.mem_flags  = 0,
 			.ops        = { NULL },
 		},
