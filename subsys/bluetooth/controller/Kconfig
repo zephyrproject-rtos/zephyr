@@ -374,11 +374,10 @@ config BT_CTLR_DATA_LENGTH
 	# Update procedure in the Controller.
 	bool
 	depends on BT_DATA_LEN_UPDATE && BT_CTLR_DATA_LEN_UPDATE_SUPPORT
-	default y
+	default y if BT_CTLR_DATA_LENGTH_MAX > 27
 
 config BT_CTLR_DATA_LENGTH_MAX
 	int "Maximum data length supported"
-	depends on BT_CTLR_DATA_LENGTH
 	default 27
 	range 27 BT_BUF_ACL_RX_SIZE if BT_BUF_ACL_RX_SIZE < 251
 	range 27 251
