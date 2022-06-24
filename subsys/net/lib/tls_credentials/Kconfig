@@ -8,6 +8,33 @@ menuconfig TLS_CREDENTIALS
 
 if TLS_CREDENTIALS
 
+module = TLS_CREDENTIALS
+module-str = tls_credentials
+source "subsys/logging/Kconfig.template.log_config"
+
+choice TLS_CREDENTIALS_BACKEND
+	prompt "TLS credentials management backend"
+	depends on TLS_CREDENTIALS
+	default TLS_CREDENTIALS_BACKEND_VOLATILE
+	help
+	  TLS credentials management backend implementation.
+
+config TLS_CREDENTIALS_BACKEND_VOLATILE
+	bool "TLS credentials management volatile backend"
+	help
+	  TLS credentials management volatile backend implementation,
+	  storing credentials in system runtime memory.
+
+config TLS_CREDENTIALS_BACKEND_PROTECTED_STORAGE
+	bool "TLS credentials management protected storage backend"
+	depends on BUILD_WITH_TFM
+	help
+	  TLS credentials management backend using the Protected Storage
+	  API to store credentials with integrity check against physical
+	  attacks and keeps entries across system reboot.
+
+endchoice
+
 config TLS_MAX_CREDENTIALS_NUMBER
 	int "Maximum number of TLS credentials"
 	default 4
