@@ -952,7 +952,7 @@ static void test_client_syn_resend(void)
 	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
 				  sizeof(struct sockaddr_in),
 				  NULL,
-				  K_MSEC(300), NULL);
+				  K_MSEC(300 + 50), NULL);
 
 	zassert_true(ret < 0, "Connect on no response from peer");
 
