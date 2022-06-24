@@ -407,10 +407,17 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	scan->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+		ticks_slot_overhead = MAX(scan->ull.ticks_active_to_start,
+					  scan->ull.ticks_prepare_to_start);
+	} else {
+		ticks_slot_overhead = 0U;
+	}
+
 	if ((lll->ticks_window +
 	     HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US)) <
-	    (ticks_interval -
-	     HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US))) {
+	    (ticks_interval - ticks_slot_overhead)) {
 		scan->ull.ticks_slot =
 			(lll->ticks_window +
 			 HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US));
@@ -419,17 +426,119 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 			scan->ull.ticks_slot = 0U;
 		} else {
 			scan->ull.ticks_slot = ticks_interval -
-				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+					       ticks_slot_overhead;
 		}
 
 		lll->ticks_window = 0U;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead = MAX(scan->ull.ticks_active_to_start,
-					  scan->ull.ticks_prepare_to_start);
+	handle = ull_scan_handle_get(scan);
+
+	if (false) {
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CTLR_PHY_CODED)
+	} else if (handle == SCAN_HANDLE_1M) {
+		const struct ll_scan_set *scan_coded;
+
+		scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
+		if (IS_PHY_ENABLED(scan_coded, PHY_CODED) &&
+		    (lll->ticks_window != 0U)) {
+			const struct lll_scan *lll_coded;
+			uint32_t ticks_interval_coded;
+
+			lll_coded = &scan_coded->lll;
+			ticks_interval_coded = HAL_TICKER_US_TO_TICKS(
+						(uint64_t)lll_coded->interval *
+						SCAN_INT_UNIT_US);
+			/* Check if 1M and Coded PHY scanning use same interval
+			 * and the sum of the scan window duration equals their
+			 * interval then use continuous scanning and avoid time
+			 * reservation from overlapping.
+			 */
+			if ((ticks_interval == ticks_interval_coded) &&
+			    (ticks_interval == (lll->ticks_window +
+						lll_coded->ticks_window))) {
+				if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_UNRESERVED)) {
+					scan->ull.ticks_slot = 0U;
+				} else {
+					scan->ull.ticks_slot =
+						lll->ticks_window -
+						ticks_slot_overhead -
+						HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US) -
+						HAL_TICKER_US_TO_TICKS(EVENT_TICKER_RES_MARGIN_US);
+				}
+
+				/* Continuous scanning, no scan window stop
+				 * ticker to be started but we will zero the
+				 * ticks_window value when coded PHY scan is
+				 * enabled (the next following else clause).
+				 * Due to this the first scan window will have
+				 * the stop ticker started but consecutive
+				 * scan window will not have the stop ticker
+				 * started once coded PHY scan window has been
+				 * enabled.
+				 */
+			}
+		}
+
+		/* 1M scan window starts without any offset */
+		ticks_offset = 0U;
+
+	} else if (handle == SCAN_HANDLE_PHY_CODED) {
+		struct ll_scan_set *scan_1m;
+
+		scan_1m = ull_scan_set_get(SCAN_HANDLE_1M);
+		if (IS_PHY_ENABLED(scan_1m, PHY_1M) &&
+		    (lll->ticks_window != 0U)) {
+			uint32_t ticks_interval_1m;
+			struct lll_scan *lll_1m;
+
+			lll_1m = &scan_1m->lll;
+			ticks_interval_1m = HAL_TICKER_US_TO_TICKS(
+						(uint64_t)lll_1m->interval *
+						SCAN_INT_UNIT_US);
+			/* Check if 1M and Coded PHY scanning use same interval
+			 * and the sum of the scan window duration equals their
+			 * interval then use continuous scanning and avoid time
+			 * reservation from overlapping.
+			 */
+			if ((ticks_interval == ticks_interval_1m) &&
+			    (ticks_interval == (lll->ticks_window +
+						lll_1m->ticks_window))) {
+				if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_UNRESERVED)) {
+					scan->ull.ticks_slot = 0U;
+				} else {
+					scan->ull.ticks_slot =
+						lll->ticks_window -
+						ticks_slot_overhead -
+						HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US) -
+						HAL_TICKER_US_TO_TICKS(EVENT_TICKER_RES_MARGIN_US);
+				}
+				/* Offset the coded PHY scan window, place
+				 * after 1M scan window.
+				 * Have some margin for jitter due to ticker
+				 * resolution.
+				 */
+				ticks_offset = lll_1m->ticks_window;
+				ticks_offset += HAL_TICKER_US_TO_TICKS(
+					EVENT_TICKER_RES_MARGIN_US << 1);
+
+				/* Continuous scanning, no scan window stop
+				 * ticker started for both 1M and coded PHY.
+				 */
+				lll->ticks_window = 0U;
+				lll_1m->ticks_window = 0U;
+
+			} else {
+				ticks_offset = 0U;
+			}
+		} else {
+			ticks_offset = 0U;
+		}
+#endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_CTLR_PHY_CODED */
+
 	} else {
-		ticks_slot_overhead = 0U;
+		ticks_offset = 0U;
 	}
 
 	ticks_anchor = ticker_ticks_now_get();
@@ -455,27 +564,6 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 		}
 	}
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
-
-	handle = ull_scan_handle_get(scan);
-
-	if (false) {
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CTLR_PHY_CODED)
-	} else if (handle == SCAN_HANDLE_PHY_CODED) {
-		const struct ll_scan_set *scan_1m;
-
-		scan_1m = ull_scan_set_get(SCAN_HANDLE_1M);
-		if (IS_PHY_ENABLED(scan_1m, PHY_1M)) {
-			ticks_offset = scan_1m->lll.ticks_window +
-				       (EVENT_TICKER_RES_MARGIN_US << 1);
-		} else {
-			ticks_offset = 0U;
-		}
-#endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_CTLR_PHY_CODED */
-
-	} else {
-		ticks_offset = 0U;
-	}
 
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
