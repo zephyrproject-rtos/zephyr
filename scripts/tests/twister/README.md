@@ -31,7 +31,7 @@ coverage run -m pytest $ZEPHYR_BASE/scripts/tests/twister/
 Then we can generate the coverage report for just twister script using
 
 ```bash
-coverage report -m $ZEPHYR_BASE/scripts/pylib/twister/twisterlib.py
+coverage report -m $ZEPHYR_BASE/scripts/pylib/twister/
 ```
 
 To generate the coverage report for twister script use below command
