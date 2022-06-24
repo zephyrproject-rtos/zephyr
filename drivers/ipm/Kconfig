@@ -179,6 +179,24 @@ config IPM_CAVS_HOST_REGWORD
 
 endif # IPM_CAVS_HOST
 
+config IPM_GIC_SGI
+	bool "ARM GIC SGI driver"
+	depends on GIC
+	help
+	  use ARM GIC SGI interrupt as IPM
+
+if IPM_GIC_SGI
+
+config IPM_GIC_SGI_INTNO
+	int "Intno of SGI used for IPM"
+	range 6 7
+	default 7
+	help
+	  The intno of SGI used for IPM. For arm64, SGI can be used to
+	  work as IPM
+
+endif # IPM_GIC_SGI
+
 module = IPM
 module-str = ipm
 source "subsys/logging/Kconfig.template.log_config"

@@ -1,0 +1,12 @@
+# Copyright (c) 2022 openEuler
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARM SGI (IPM by software generated int)
+
+compatible: "arm,gic-sgi"
+
+include: base.yaml
+
+properties:
+    label:
+      required: true
