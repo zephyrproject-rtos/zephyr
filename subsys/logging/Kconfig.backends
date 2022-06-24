@@ -7,6 +7,7 @@ config LOG_BACKEND_UART
 	bool "UART backend"
 	depends on UART_CONSOLE
 	default y if !SHELL_BACKEND_SERIAL
+	select LOG_OUTPUT
 	help
 	  When enabled backend is using UART to output logs.
 
@@ -54,6 +55,7 @@ endif # LOG_BACKEND_UART
 config LOG_BACKEND_SWO
 	bool "Serial Wire Output (SWO) backend"
 	depends on HAS_SWO
+	select LOG_OUTPUT
 	help
 	  When enabled, backend will use SWO for logging.
 
@@ -85,6 +87,7 @@ config LOG_BACKEND_RTT
 	depends on USE_SEGGER_RTT
 	default y if !SHELL_BACKEND_RTT
 	select SEGGER_RTT_CUSTOM_LOCKING
+	select LOG_OUTPUT
 	help
 	  When enabled, backend will use RTT for logging. This backend works on a per
 	  message basis. Only a whole message (terminated with a carriage return: '\r')
@@ -189,6 +192,7 @@ config LOG_BACKEND_SPINEL
 	bool "OpenThread dedicated Spinel protocol backend"
 	depends on !LOG_BACKEND_UART
 	depends on NET_L2_OPENTHREAD
+	select LOG_OUTPUT
 	help
 	  When enabled, backend will use OpenThread dedicated SPINEL protocol for logging.
 	  This protocol is byte oriented and wraps given messages into serial frames.
@@ -213,6 +217,7 @@ config LOG_BACKEND_NATIVE_POSIX
 	bool "Native backend"
 	depends on ARCH_POSIX
 	default y if !SERIAL
+	select LOG_OUTPUT
 	help
 	  Enable backend in native_posix
 
@@ -228,6 +233,7 @@ config LOG_BACKEND_XTENSA_SIM
 	bool "Xtensa simulator backend"
 	depends on SOC_XTENSA_SAMPLE_CONTROLLER || SOC_FAMILY_INTEL_ADSP
 	default y if SOC_XTENSA_SAMPLE_CONTROLLER
+	select LOG_OUTPUT
 	help
 	  Enable backend in xtensa simulator
 
@@ -253,6 +259,7 @@ config LOG_BACKEND_NET
 	bool "Networking backend"
 	depends on NETWORKING && NET_UDP && !LOG_MODE_IMMEDIATE
 	select NET_CONTEXT_NET_PKT_POOL
+	select LOG_OUTPUT
 	help
 	  Send syslog messages to network server.
 	  See RFC 5424 (syslog protocol) and RFC 5426 (syslog over UDP)
@@ -313,6 +320,7 @@ endif # LOG_BACKEND_NET
 config LOG_BACKEND_ADSP
 	bool "Intel ADSP buffer backend"
 	depends on SOC_FAMILY_INTEL_ADSP
+	select LOG_OUTPUT
 	help
 	  Enable backend for the host trace protocol of the Intel ADSP
 	  family of audio processors
@@ -328,6 +336,7 @@ endif # LOG_BACKEND_ADSP
 config LOG_BACKEND_CAVS_HDA
 	bool "cAVS HDA backend"
 	depends on SOC_FAMILY_INTEL_ADSP && DMA && DMA_CAVS_HDA
+	select LOG_OUTPUT
 	help
 	  Provide a logging backend which writes to a buffer and
 	  periodically flushes to hardware using ringbuffer like
@@ -363,6 +372,7 @@ endif # LOG_BACKEND_CAVS_HDA
 config LOG_BACKEND_FS
 	bool "File system backend"
 	depends on FILE_SYSTEM
+	select LOG_OUTPUT
 	help
 	  When enabled, backend is using the configured file system to output logs.
 	  As the file system must be mounted for the logging to work, it must be
