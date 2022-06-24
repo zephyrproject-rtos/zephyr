@@ -25,12 +25,11 @@ static void ti_hdc_gpio_callback(const struct device *dev,
 {
 	struct ti_hdc_data *drv_data =
 		CONTAINER_OF(cb, struct ti_hdc_data, gpio_cb);
+	const struct ti_hdc_config *cfg = drv_data->dev->config;
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_interrupt_configure(drv_data->gpio,
-				     DT_INST_GPIO_PIN(0, drdy_gpios),
-				     GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure_dt(&cfg->drdy, GPIO_INT_DISABLE);
 	k_sem_give(&drv_data->data_sem);
 }
 #endif
@@ -45,9 +44,7 @@ static int ti_hdc_sample_fetch(const struct device *dev,
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 #if DT_INST_NODE_HAS_PROP(0, drdy_gpios)
-	gpio_pin_interrupt_configure(drv_data->gpio,
-				     DT_INST_GPIO_PIN(0, drdy_gpios),
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->drdy, GPIO_INT_EDGE_TO_ACTIVE);
 #endif
 
 	buf[0] = TI_HDC_REG_TEMP;
@@ -142,32 +139,29 @@ static int ti_hdc_init(const struct device *dev)
 #if DT_INST_NODE_HAS_PROP(0, drdy_gpios)
 	struct ti_hdc_data *drv_data = dev->data;
 
+	drv_data->dev = dev;
+
 	k_sem_init(&drv_data->data_sem, 0, K_SEM_MAX_LIMIT);
 
 	/* setup data ready gpio interrupt */
-	drv_data->gpio = device_get_binding(
-				DT_INST_GPIO_LABEL(0, drdy_gpios));
-	if (drv_data->gpio == NULL) {
-		LOG_DBG("Failed to get pointer to %s device",
-			 DT_INST_GPIO_LABEL(0, drdy_gpios));
-		return -EINVAL;
+	if (!device_is_ready(cfg->drdy.port)) {
+		LOG_ERR("%s: device %s is not ready", dev->name,
+				cfg->drdy.port->name);
+		return -ENODEV;
 	}
 
-	gpio_pin_configure(drv_data->gpio, DT_INST_GPIO_PIN(0, drdy_gpios),
-			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, drdy_gpios));
+	gpio_pin_configure_dt(&cfg->drdy, GPIO_INPUT);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   ti_hdc_gpio_callback,
-			   BIT(DT_INST_GPIO_PIN(0, drdy_gpios)));
+			   BIT(cfg->drdy.pin));
 
-	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
+	if (gpio_add_callback(cfg->drdy.port, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Failed to set GPIO callback");
 		return -EIO;
 	}
 
-	gpio_pin_interrupt_configure(drv_data->gpio,
-				     DT_INST_GPIO_PIN(0, drdy_gpios),
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->drdy, GPIO_INT_EDGE_TO_ACTIVE);
 #endif
 
 	LOG_INF("Initialized device successfully");
@@ -177,6 +171,9 @@ static int ti_hdc_init(const struct device *dev)
 
 static const struct ti_hdc_config ti_hdc_config = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
+#if DT_INST_NODE_HAS_PROP(0, drdy_gpios)
+	.drdy = GPIO_DT_SPEC_INST_GET(0, drdy_gpios),
+#endif
 };
 
 static struct ti_hdc_data ti_hdc_data;

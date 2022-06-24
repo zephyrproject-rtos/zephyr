@@ -23,6 +23,9 @@
 
 struct ti_hdc_config {
 	struct i2c_dt_spec i2c;
+#if DT_INST_NODE_HAS_PROP(0, drdy_gpios)
+	struct gpio_dt_spec drdy;
+#endif
 };
 
 struct ti_hdc_data {
@@ -30,9 +33,9 @@ struct ti_hdc_data {
 	uint16_t rh_sample;
 
 #if DT_INST_NODE_HAS_PROP(0, drdy_gpios)
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 	struct k_sem data_sem;
+	const struct device *dev;
 #endif  /* DT_INST_NODE_HAS_PROP(0, drdy_gpios) */
 };
 
