@@ -11,8 +11,9 @@ LOG_MODULE_DECLARE(vcnl4040, CONFIG_SENSOR_LOG_LEVEL);
 
 static void vcnl4040_handle_cb(struct vcnl4040_data *data)
 {
-	gpio_pin_interrupt_configure(data->gpio, data->gpio_pin,
-				     GPIO_INT_DISABLE);
+	const struct vcnl4040_config *config = data->dev->config;
+
+	gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_DISABLE);
 
 #if defined(CONFIG_VCNL4040_TRIGGER_OWN_THREAD)
 	k_sem_give(&data->trig_sem);
@@ -27,8 +28,9 @@ static void vcnl4040_gpio_callback(const struct device *dev,
 {
 	struct vcnl4040_data *data =
 		CONTAINER_OF(cb, struct vcnl4040_data, gpio_cb);
+	const struct vcnl4040_config *config = data->dev->config;
 
-	if ((pin_mask & BIT(data->gpio_pin)) == 0U) {
+	if ((pin_mask & BIT(config->int_gpio.pin)) == 0U) {
 		return;
 	}
 
@@ -92,8 +94,7 @@ static void vcnl4040_handle_int(const struct device *dev)
 		LOG_ERR("Unknown interrupt source %d", data->int_type);
 	}
 
-	gpio_pin_interrupt_configure(data->gpio, config->gpio_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 #ifdef CONFIG_VCNL4040_TRIGGER_OWN_THREAD
@@ -188,6 +189,10 @@ int vcnl4040_trigger_set(const struct device *dev,
 	uint16_t conf;
 	int ret = 0;
 
+	if (!config->int_gpio.port) {
+		return -ENOTSUP;
+	}
+
 	k_sem_take(&data->sem, K_FOREVER);
 
 	switch (trig->type) {
@@ -250,6 +255,20 @@ int vcnl4040_trigger_init(const struct device *dev)
 
 	data->dev = dev;
 
+	/* dts doesn't have GPIO int pin set, so we dont support
+	 * trigger mode for this instance
+	 */
+	if (!config->int_gpio.port) {
+		return 0;
+	}
+
+	/* Get the GPIO device */
+	if (!device_is_ready(config->int_gpio.port)) {
+		LOG_ERR("%s: device %s is not ready", dev->name,
+				config->int_gpio.port->name);
+		return -ENODEV;
+	}
+
 #if defined(CONFIG_VCNL4040_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->trig_sem, 0, K_SEM_MAX_LIMIT);
 	k_thread_create(&data->thread, data->thread_stack,
@@ -263,30 +282,19 @@ int vcnl4040_trigger_init(const struct device *dev)
 	data->work.handler = vcnl4040_work_handler;
 #endif
 
-	/* Get the GPIO device */
-	data->gpio = device_get_binding(config->gpio_name);
-	if (data->gpio == NULL) {
-		LOG_ERR("Could not find GPIO device");
-		return -EINVAL;
-	}
-
-	data->gpio_pin = config->gpio_pin;
-
-	gpio_pin_configure(data->gpio, config->gpio_pin,
-			   GPIO_INPUT | config->gpio_flags);
+	gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 
 	gpio_init_callback(&data->gpio_cb, vcnl4040_gpio_callback,
-			   BIT(config->gpio_pin));
+			   BIT(config->int_gpio.pin));
 
-	if (gpio_add_callback(data->gpio, &data->gpio_cb) < 0) {
+	if (gpio_add_callback(config->int_gpio.port, &data->gpio_cb) < 0) {
 		LOG_DBG("Failed to set gpio callback!");
 		return -EIO;
 	}
 
-	gpio_pin_interrupt_configure(data->gpio, config->gpio_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
-	if (gpio_pin_get(data->gpio, config->gpio_pin) > 0) {
+	if (gpio_pin_get_dt(&config->int_gpio) > 0) {
 		vcnl4040_handle_cb(data);
 	}
 
