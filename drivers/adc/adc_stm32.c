@@ -76,6 +76,7 @@ LOG_MODULE_REGISTER(adc_stm32);
 	!defined(CONFIG_SOC_SERIES_STM32F0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32G0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32L0X) && \
+	!defined(CONFIG_SOC_SERIES_STM32WBAX) && \
 	!defined(CONFIG_SOC_SERIES_STM32WLX)
 #define RANK(n)		LL_ADC_REG_RANK_##n
 static const uint32_t table_rank[] = {
@@ -376,7 +377,8 @@ static void adc_stm32_calib(const struct device *dev)
 	DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX)
+	defined(CONFIG_SOC_SERIES_STM32WLX) || \
+	defined(CONFIG_SOC_SERIES_STM32WBAX)
 	LL_ADC_StartCalibration(adc);
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET);
@@ -420,6 +422,7 @@ static void adc_stm32_disable(ADC_TypeDef *adc)
 	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc) && \
 	!defined(CONFIG_SOC_SERIES_STM32G0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32L0X) && \
+	!defined(CONFIG_SOC_SERIES_STM32WBAX) && \
 	!defined(CONFIG_SOC_SERIES_STM32WLX)
 	if (LL_ADC_INJ_IsConversionOngoing(adc)) {
 		LL_ADC_INJ_StopConversion(adc);
@@ -845,6 +848,7 @@ static int start_read(const struct device *dev,
 	!defined(CONFIG_SOC_SERIES_STM32F0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32G0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32L0X) && \
+	!defined(CONFIG_SOC_SERIES_STM32WBAX) && \
 	!defined(CONFIG_SOC_SERIES_STM32WLX)
 	if (data->channel_count > ARRAY_SIZE(table_seq_len)) {
 		LOG_ERR("Too many channels for sequencer. Max: %d", ARRAY_SIZE(table_seq_len));
@@ -917,6 +921,12 @@ static int start_read(const struct device *dev,
 		while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
 		}
 		LL_ADC_ClearFlag_CCRDY(adc);
+#elif defined(CONFIG_SOC_SERIES_STM32WBAX)
+		LL_ADC_REG_StopConversion(adc);
+		while (LL_ADC_REG_IsStopConversionOngoing(adc) != 0) {
+		}
+		LL_ADC_REG_SetSequencerChannels(adc, channel);
+		LL_ADC_REG_SetSequencerConfigurable(adc, LL_ADC_REG_SEQ_FIXED);
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 		if (adc != ADC4) {
 			LL_ADC_REG_SetSequencerRanks(adc, table_rank[channel_index], channel);
@@ -1313,7 +1323,8 @@ static int adc_stm32_init(const struct device *dev)
 	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
 			      LL_ADC_CLOCK_SYNC_PCLK_DIV2);
 #elif defined(CONFIG_SOC_SERIES_STM32L1X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+	defined(CONFIG_SOC_SERIES_STM32U5X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBAX)
 	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
 			LL_ADC_CLOCK_ASYNC_DIV4);
 #endif
