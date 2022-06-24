@@ -90,8 +90,7 @@ enum interrupt_type {
 };
 
 struct vcnl4040_config {
-	char *i2c_name;
-	uint8_t i2c_address;
+	struct i2c_dt_spec i2c;
 #ifdef CONFIG_VCNL4040_TRIGGER
 	const char *gpio_name;
 	gpio_pin_t gpio_pin;
@@ -105,7 +104,6 @@ struct vcnl4040_config {
 };
 
 struct vcnl4040_data {
-	const struct device *i2c;
 	struct k_sem sem;
 #ifdef CONFIG_VCNL4040_TRIGGER
 	const struct device *dev;
