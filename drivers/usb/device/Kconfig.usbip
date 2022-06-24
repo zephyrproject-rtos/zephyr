@@ -1,0 +1,39 @@
+# USB device configuration options
+
+# Copyright (c) 2022 YuLong Yao <feilongphone@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_USBIP_USBC := zephyr,usbip-udc
+config USB_DC_USBIP
+	bool "USB Device Controller Driver based on usbip protocol"
+	default $(dt_compat_enabled,$(DT_COMPAT_USBIP_USBC))
+	help
+	  USB Device Controller Driver based on usbip protocol.
+
+if USB_DC_USBIP
+
+config USB_NATIVE_POSIX
+	bool "Native Posix USB Device Controller Driver"
+	help
+	  Native Posix USB Device Controller Driver.
+
+config USBIP_MAX_PACKET_SIZE
+	int
+	default 64
+	help
+	  Maximum number of messages USB device controller interrupt can queue
+	  for callback thread
+
+config USBIP_STACK_SIZE
+	int
+	default 2048
+	help
+	  usbip thread stack size.
+
+config USBIP_PORT
+	int
+	default 3240
+	help
+	  tcp port to listen.
+
+endif # USB_DC_USBIP

@@ -1,42 +1,18 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
+ * Copyright (c) 2022 YuLong Yao<feilongphone@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-/* For accept4() */
-#define _GNU_SOURCE 1
-
-#define __packed __attribute__((__packed__))
-
-#include <stdio.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <errno.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdlib.h>
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
 /* Zephyr headers */
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/usb/usb_device.h>
+LOG_MODULE_REGISTER(usbdc_usbiplib, LOG_LEVEL_DBG);
 
-#include <posix_board_if.h>
-#include "usb_dc_native_posix_adapt.h"
+#include "usb_dc_usbip_adapt.h"
 
-#define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
-LOG_MODULE_REGISTER(native_posix_adapt);
-
-#define USBIP_PORT	3240
-#define USBIP_VERSION	273
-
-#define VERBOSE_DEBUG
+#define USBIP_VERSION 273
 
 int connfd_global;
 int seqnum_global;
@@ -44,7 +20,7 @@ int devid_global;
 
 /* Helpers */
 
-#ifdef VERBOSE_DEBUG
+#if LOG_LEVEL >= LOG_LEVEL_DBG
 static void usbip_header_dump(struct usbip_header *hdr)
 {
 	LOG_DBG("cmd %x seq %u dir %u ep %x", ntohl(hdr->common.command),
@@ -88,7 +64,7 @@ static int send_interfaces(const uint8_t *descriptors, int connfd)
 		uint8_t bInterfaceClass;
 		uint8_t bInterfaceSubClass;
 		uint8_t bInterfaceProtocol;
-		uint8_t padding;	/* alignment */
+		uint8_t padding; /* alignment */
 	} __packed iface;
 
 	while (descriptors[0]) {
@@ -100,9 +76,9 @@ static int send_interfaces(const uint8_t *descriptors, int connfd)
 			iface.bInterfaceProtocol = desc->bInterfaceProtocol;
 			iface.padding = 0U;
 
-			if (send(connfd, &iface, sizeof(iface), 0) !=
-			    sizeof(iface)) {
-				LOG_ERR("send() failed: %s", strerror(errno));
+			if (usbipsocket_send(connfd, &iface, sizeof(iface),
+					     0) != sizeof(iface)) {
+				LOG_ERR("send() failed: %d", errno);
 				return errno;
 			}
 		}
@@ -147,8 +123,8 @@ static int send_device(const uint8_t *desc, int connfd)
 
 	fill_device(&dev, desc);
 
-	if (send(connfd, &dev, sizeof(dev), 0) != sizeof(dev)) {
-		LOG_ERR("send() device failed: %s", strerror(errno));
+	if (usbipsocket_send(connfd, &dev, sizeof(dev), 0) != sizeof(dev)) {
+		LOG_ERR("send() device failed: %d", errno);
 		return errno;
 	}
 
@@ -165,16 +141,17 @@ static int handle_device_list(const uint8_t *desc, int connfd)
 
 	LOG_DBG("desc %p", desc);
 
-	if (send(connfd, &header, sizeof(header), 0) != sizeof(header)) {
-		LOG_ERR("send() header failed: %s", strerror(errno));
+	if (usbipsocket_send(connfd, &header, sizeof(header), 0) !=
+	    sizeof(header)) {
+		LOG_ERR("send() header failed: %d", errno);
 		return errno;
 	}
 
 	/* Send number of devices */
 	uint32_t ndev = htonl(1);
 
-	if (send(connfd, &ndev, sizeof(ndev), 0) != sizeof(ndev)) {
-		LOG_ERR("send() ndev failed: %s", strerror(errno));
+	if (usbipsocket_send(connfd, &ndev, sizeof(ndev), 0) != sizeof(ndev)) {
+		LOG_ERR("send() ndev failed: %d", errno);
 		return errno;
 	}
 
@@ -192,9 +169,9 @@ static void handle_usbip_submit(int connfd, struct usbip_header *hdr)
 
 	LOG_DBG("");
 
-	read = recv(connfd, req, sizeof(*req), 0);
+	read = usbipsocket_recv(connfd, req, sizeof(*req), 0);
 	if (read != sizeof(*req)) {
-		LOG_ERR("recv() failed: %s", strerror(errno));
+		LOG_ERR("send() failed: %d", errno);
 		return;
 	}
 
@@ -214,9 +191,9 @@ static void handle_usbip_unlink(int connfd, struct usbip_header *hdr)
 	LOG_DBG("");
 
 	/* Need to read the whole structure */
-	read = recv(connfd, &hdr->u, sizeof(hdr->u), 0);
+	read = usbipsocket_recv(connfd, &hdr->u, sizeof(hdr->u), 0);
 	if (read != sizeof(hdr->u)) {
-		LOG_ERR("recv() failed: %s", strerror(errno));
+		LOG_ERR("send() failed: %d", errno);
 		return;
 	}
 
@@ -236,13 +213,14 @@ static int handle_import(const uint8_t *desc, int connfd)
 
 	LOG_DBG("attach device");
 
-	if (recv(connfd, busid, 32, 0) != sizeof(busid)) {
-		LOG_ERR("recv() failed: %s", strerror(errno));
+	if (usbipsocket_recv(connfd, busid, 32, 0) != sizeof(busid)) {
+		LOG_ERR("send() failed: %d", errno);
 		return errno;
 	}
 
-	if (send(connfd, &header, sizeof(header), 0) != sizeof(header)) {
-		LOG_ERR("send() header failed: %s", strerror(errno));
+	if (usbipsocket_send(connfd, &header, sizeof(header), 0) !=
+	    sizeof(header)) {
+		LOG_ERR("send() header failed: %d", errno);
 		return errno;
 	}
 
@@ -255,7 +233,6 @@ extern struct usb_desc_header __usb_descriptor_start[];
 
 void usbip_start(void)
 {
-	struct sockaddr_in srv;
 	unsigned char attached;
 	int listenfd, connfd;
 	const uint8_t *desc;
@@ -270,41 +247,37 @@ void usbip_start(void)
 	desc = (const uint8_t *)__usb_descriptor_start;
 	if (!desc) {
 		LOG_ERR("Descriptors are not set");
-		posix_exit(EXIT_FAILURE);
+		k_fatal_halt(K_ERR_KERNEL_PANIC);
 	}
 
-	listenfd = socket(PF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+	listenfd = usbipsocket_socket();
 	if (listenfd < 0) {
-		LOG_ERR("socket() failed: %s", strerror(errno));
-		posix_exit(EXIT_FAILURE);
+		LOG_ERR("socket() failed: %d", errno);
+		k_fatal_halt(K_ERR_KERNEL_PANIC);
 	}
 
-	if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,
-		       (const char *)&reuse, sizeof(reuse)) < 0) {
-		LOG_WRN("setsockopt() failed: %s", strerror(errno));
+	if (usbipsocket_setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,
+				   (const char *)&reuse, sizeof(reuse)) < 0) {
+		LOG_WRN("setsockopt() failed: %d", errno);
 	}
 
-	memset(&srv, 0, sizeof(srv));
-	srv.sin_family = AF_INET;
-	srv.sin_addr.s_addr = htonl(INADDR_ANY);
-	srv.sin_port = htons(USBIP_PORT);
-
-	if (bind(listenfd, (struct sockaddr *)&srv, sizeof(srv)) < 0) {
-		LOG_ERR("bind() failed: %s", strerror(errno));
-		posix_exit(EXIT_FAILURE);
+	if (usbipsocket_bind(listenfd) < 0) {
+		LOG_ERR("bind() failed: %d", errno);
+		k_fatal_halt(K_ERR_KERNEL_PANIC);
 	}
 
-	if (listen(listenfd, SOMAXCONN) < 0) {
-		LOG_ERR("listen() failed: %s", strerror(errno));
-		posix_exit(EXIT_FAILURE);
+	if (usbipsocket_listen(listenfd) < 0) {
+		LOG_ERR("listen() failed: %d", errno);
+		k_fatal_halt(K_ERR_KERNEL_PANIC);
 	}
 
 	while (true) {
 		struct sockaddr_in client_addr;
 		socklen_t client_addr_len = sizeof(client_addr);
 
-		connfd = accept4(listenfd, (struct sockaddr *)&client_addr,
-				 &client_addr_len, SOCK_NONBLOCK);
+		connfd = usbipsocket_accept(listenfd,
+					    (struct sockaddr *)&client_addr,
+					    &client_addr_len);
 		if (connfd < 0) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				/* Non-blocking accept */
@@ -313,13 +286,13 @@ void usbip_start(void)
 				continue;
 			}
 
-			LOG_ERR("accept() failed: %s", strerror(errno));
-			posix_exit(EXIT_FAILURE);
+			LOG_ERR("accept() failed: %d", errno);
+			k_fatal_halt(K_ERR_KERNEL_PANIC);
 		}
 
 		connfd_global = connfd;
 
-		LOG_DBG("Connection: %s", inet_ntoa(client_addr.sin_addr));
+		LOG_DBG("Connected");
 
 		/* Set attached 0 */
 		attached = 0U;
@@ -332,7 +305,8 @@ void usbip_start(void)
 			if (!attached) {
 				struct op_common req;
 
-				read = recv(connfd, &req, sizeof(req), 0);
+				read = usbipsocket_recv(connfd, &req,
+							sizeof(req), 0);
 				if (read < 0) {
 					if (errno == EAGAIN ||
 					    errno == EWOULDBLOCK) {
@@ -375,7 +349,7 @@ void usbip_start(void)
 
 			/* Handle attached case */
 
-			read = recv(connfd, hdr, sizeof(*hdr), 0);
+			read = usbipsocket_recv(connfd, hdr, sizeof(*hdr), 0);
 			if (read < 0) {
 				if (errno == EAGAIN || errno == EWOULDBLOCK) {
 					/* Non-blocking accept */
@@ -407,24 +381,24 @@ void usbip_start(void)
 			default:
 				LOG_ERR("Unknown command: 0x%x",
 					ntohl(hdr->command));
-				close(connfd);
+				usbipsocket_close(connfd);
 				return;
 			}
 		}
 
 		LOG_DBG("Closing connection");
-		close(connfd);
+		usbipsocket_close(connfd);
 	}
 }
 
 int usbip_recv(uint8_t *buf, size_t len)
 {
-	return recv(connfd_global, buf, len, 0);
+	return usbipsocket_recv(connfd_global, buf, len, 0);
 }
 
 int usbip_send(uint8_t ep, const uint8_t *data, size_t len)
 {
-	return send(connfd_global, data, len, 0);
+	return usbipsocket_send(connfd_global, data, len, 0);
 }
 
 bool usbip_send_common(uint8_t ep, uint32_t data_len)
