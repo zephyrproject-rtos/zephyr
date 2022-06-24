@@ -21,8 +21,11 @@
 /* For 14bit conversion RH needs 6.5ms and Temp 6.35ms */
 #define HDC_CONVERSION_TIME     13
 
+struct ti_hdc_config {
+	struct i2c_dt_spec i2c;
+};
+
 struct ti_hdc_data {
-	const struct device *i2c;
 	uint16_t t_sample;
 	uint16_t rh_sample;
 
