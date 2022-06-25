@@ -28,11 +28,11 @@ LOG_MODULE_REGISTER(max17055, CONFIG_SENSOR_LOG_LEVEL);
 static int max17055_reg_read(const struct device *dev, int reg_addr,
 			     int16_t *valp)
 {
-	struct max17055_data *priv = dev->data;
+	const struct max17055_config *config = dev->config;
 	uint8_t i2c_data[2];
 	int rc;
 
-	rc = i2c_burst_read(priv->i2c, DT_INST_REG_ADDR(0), reg_addr, i2c_data, 2);
+	rc = i2c_burst_read_dt(&config->i2c, reg_addr, i2c_data, 2);
 	if (rc < 0) {
 		LOG_ERR("Unable to read register");
 		return rc;
@@ -45,13 +45,13 @@ static int max17055_reg_read(const struct device *dev, int reg_addr,
 static int max17055_reg_write(const struct device *dev, int reg_addr,
 			      uint16_t val)
 {
-	struct max17055_data *priv = dev->data;
+	const struct max17055_config *config = dev->config;
 	uint8_t buf[3];
 
 	buf[0] = (uint8_t)reg_addr;
 	sys_put_le16(val, &buf[1]);
 
-	return i2c_write(priv->i2c, buf, sizeof(buf), DT_INST_REG_ADDR(0));
+	return i2c_write_dt(&config->i2c, buf, sizeof(buf));
 }
 
 /**
@@ -347,13 +347,11 @@ static int max17055_init_config(const struct device *dev)
 static int max17055_gauge_init(const struct device *dev)
 {
 	int16_t tmp;
-	struct max17055_data *priv = dev->data;
 	const struct max17055_config *const config = dev->config;
 
-	priv->i2c = device_get_binding(config->bus_name);
-	if (!priv->i2c) {
-		LOG_ERR("Could not get pointer to %s device", config->bus_name);
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
 	if (max17055_reg_read(dev, STATUS, &tmp)) {
@@ -393,7 +391,7 @@ static const struct sensor_driver_api max17055_battery_driver_api = {
 	static struct max17055_data max17055_driver_##index;				   \
 											   \
 	static const struct max17055_config max17055_config_##index = {			   \
-		.bus_name = DT_INST_BUS_LABEL(index),					   \
+		.i2c = I2C_DT_SPEC_INST_GET(index),					   \
 		.design_capacity = DT_INST_PROP(index, design_capacity),		   \
 		.design_voltage = DT_INST_PROP(index, design_voltage),			   \
 		.desired_charging_current = DT_INST_PROP(index, desired_charging_current), \
