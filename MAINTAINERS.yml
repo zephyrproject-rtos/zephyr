@@ -295,6 +295,7 @@ C library:
          - enjiamai
          - KangJianX
          - keith-packard
+         - cfriedt
     files:
          - lib/libc/
          - tests/lib/c_lib/
