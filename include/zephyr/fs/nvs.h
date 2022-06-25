@@ -138,6 +138,24 @@ int nvs_delete(struct nvs_fs *fs, uint16_t id);
 ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len);
 
 /**
+ * @brief nvs_read_offset
+ *
+ * Read an entry from the file system with offset parameter.
+ *
+ * @param fs Pointer to file system
+ * @param id Id of the entry to be read
+ * @param data Pointer to data buffer
+ * @param len Number of bytes to be read
+ * @param offset Offset of bytes to be read
+ *
+ * @return Number of bytes read. On success, it will be equal to the number of bytes requested
+ * to be read. When the return value is larger than the number of bytes requested to read this
+ * indicates not all bytes were read, and more data is available. On error, returns negative
+ * value of errno.h defined error codes.
+ */
+ssize_t nvs_read_offset(struct nvs_fs *fs, uint16_t id, void *data, size_t len, size_t offset);
+
+/**
  * @brief nvs_read_hist
  *
  * Read a history entry from the file system.
@@ -154,6 +172,26 @@ ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len);
  * value of errno.h defined error codes.
  */
 ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len, uint16_t cnt);
+
+/**
+ * @brief nvs_read_hist_offset
+ *
+ * Read a history entry from the file system.
+ *
+ * @param fs Pointer to file system
+ * @param id Id of the entry to be read
+ * @param data Pointer to data buffer
+ * @param len Number of bytes to be read
+ * @param offset Offset of bytes to be read
+ * @param cnt History counter: 0: latest entry, 1: one before latest ...
+ *
+ * @return Number of bytes read. On success, it will be equal to the number of bytes requested
+ * to be read. When the return value is larger than the number of bytes requested to read this
+ * indicates not all bytes were read, and more data is available. On error, returns negative
+ * value of errno.h defined error codes.
+ */
+ssize_t nvs_read_hist_offset(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
+			     size_t offset, uint16_t cnt);
 
 /**
  * @brief nvs_calc_free_space

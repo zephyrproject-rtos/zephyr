@@ -1110,8 +1110,8 @@ int nvs_delete(struct nvs_fs *fs, uint16_t id)
 	return nvs_write(fs, id, NULL, 0);
 }
 
-ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
-		      uint16_t cnt)
+ssize_t nvs_read_hist_offset(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
+			     size_t offset, uint16_t cnt)
 {
 	int rc;
 	uint32_t wlk_addr, rd_addr;
@@ -1165,7 +1165,8 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
 
 	rd_addr &= ADDR_SECT_MASK;
 	rd_addr += wlk_ate.offset;
-	rc = nvs_flash_rd(fs, rd_addr, data, MIN(len, wlk_ate.len));
+	rd_addr += offset;
+	rc = nvs_flash_rd(fs, rd_addr, data, MIN(len, wlk_ate.len - offset));
 	if (rc) {
 		goto err;
 	}
@@ -1176,11 +1177,24 @@ err:
 	return rc;
 }
 
+ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len, uint16_t cnt)
+{
+	return nvs_read_hist_offset(fs, id, data, len, 0, cnt);
+}
+
 ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len)
 {
 	int rc;
 
 	rc = nvs_read_hist(fs, id, data, len, 0);
+	return rc;
+}
+
+ssize_t nvs_read_offset(struct nvs_fs *fs, uint16_t id, void *data, size_t len, size_t offset)
+{
+	int rc;
+
+	rc = nvs_read_hist_offset(fs, id, data, len, offset, 0);
 	return rc;
 }
 
