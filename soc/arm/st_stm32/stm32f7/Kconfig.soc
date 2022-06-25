@@ -1,6 +1,7 @@
 # ST Microelectronics STM32F7 MCU line
 
 # Copyright (c) 2018 Yurii Hamann
+# Copyright (c) 2022, Rtone.
 # SPDX-License-Identifier: Apache-2.0
 
 choice
@@ -18,6 +19,9 @@ config SOC_STM32F746XX
 
 config SOC_STM32F756XX
 	bool "STM32F756XX"
+
+config SOC_STM32F750XX
+	bool "STM32F750XX"
 
 config SOC_STM32F767XX
 	bool "STM32F767XX"
