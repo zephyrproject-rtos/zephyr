@@ -127,6 +127,8 @@ void ull_adv_aux_offset_get(struct ll_adv_set *adv);
 /* helper defined for field offsets in the hdr_set_clear interfaces */
 #define ULL_ADV_HDR_DATA_LEN_OFFSET         0
 #define ULL_ADV_HDR_DATA_LEN_SIZE           1
+#define ULL_ADV_HDR_DATA_ADI_PTR_OFFSET     1
+#define ULL_ADV_HDR_DATA_ADI_PTR_SIZE       (sizeof(uint8_t *))
 #define ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET 1
 #define ULL_ADV_HDR_DATA_AUX_PTR_PTR_SIZE   (sizeof(uint8_t *))
 #define ULL_ADV_HDR_DATA_ACAD_PTR_OFFSET    1
