@@ -86,8 +86,7 @@ enum max30101_pw {
 };
 
 struct max30101_config {
-	const char *i2c_label;
-	uint16_t i2c_addr;
+	struct i2c_dt_spec i2c;
 	uint8_t fifo;
 	uint8_t spo2;
 	uint8_t led_pa[MAX30101_MAX_NUM_CHANNELS];
@@ -96,7 +95,6 @@ struct max30101_config {
 };
 
 struct max30101_data {
-	const struct device *i2c;
 	uint32_t raw[MAX30101_MAX_NUM_CHANNELS];
 	uint8_t map[MAX30101_MAX_NUM_CHANNELS];
 	uint8_t num_channels;
