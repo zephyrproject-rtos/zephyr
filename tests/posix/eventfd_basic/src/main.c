@@ -15,7 +15,9 @@
 #include <zephyr/posix/sys/eventfd.h>
 #endif
 
-static void test_eventfd(void)
+ZTEST_SUITE(test_eventfd_basic, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(test_eventfd_basic, test_eventfd)
 {
 	int fd = eventfd(0, 0);
 
@@ -24,7 +26,7 @@ static void test_eventfd(void)
 	zsock_close(fd);
 }
 
-static void test_eventfd_write_then_read(void)
+ZTEST(test_eventfd_basic, test_eventfd_write_then_read)
 {
 	eventfd_t val;
 	int fd, ret;
@@ -60,13 +62,4 @@ static void test_eventfd_write_then_read(void)
 	zassert_true(val == 1, "val == %d", val);
 
 	zsock_close(fd);
-}
-
-void test_main(void)
-{
-	ztest_test_suite(test_eventfd_basic,
-				ztest_unit_test(test_eventfd),
-				ztest_unit_test(test_eventfd_write_then_read)
-				);
-	ztest_run_test_suite(test_eventfd_basic);
 }

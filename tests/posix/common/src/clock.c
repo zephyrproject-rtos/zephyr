@@ -11,7 +11,7 @@
 #define SLEEP_SECONDS 1
 #define CLOCK_INVALID -1
 
-void test_posix_clock(void)
+ZTEST(posix_apis, test_posix_clock)
 {
 	int64_t nsecs_elapsed, secs_elapsed;
 	struct timespec ts, te;
@@ -44,7 +44,7 @@ void test_posix_clock(void)
 	printk("POSIX clock APIs test done\n");
 }
 
-void test_posix_realtime(void)
+ZTEST(posix_apis, test_posix_realtime)
 {
 	int ret;
 	struct timespec rts, mts;

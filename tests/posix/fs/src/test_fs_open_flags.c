@@ -280,7 +280,7 @@ static int test_file_open_flags(void)
  * @details Test attempts to open file with different combinations of open
  * flags and checks if operations on files are permitted according to flags.
  */
-void test_fs_open_flags(void)
+ZTEST(posix_fs_test, test_fs_open_flags)
 {
 	zassert_true(test_file_open_flags() == TC_PASS, NULL);
 }
