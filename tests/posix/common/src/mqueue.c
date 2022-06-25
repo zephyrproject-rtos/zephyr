@@ -60,7 +60,7 @@ void *receiver_thread(void *p1)
 	return NULL;
 }
 
-void test_posix_mqueue(void)
+ZTEST(posix_apis, test_posix_mqueue)
 {
 	mqd_t mqd;
 	struct mq_attr attrs;
