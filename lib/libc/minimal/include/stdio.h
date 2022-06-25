@@ -49,6 +49,7 @@ int __printf_like(2, 0) vfprintf(FILE *ZRESTRICT stream,
 				 const char *ZRESTRICT format,
 				 va_list ap);
 
+void perror(const char *s);
 int puts(const char *s);
 
 int fputc(int c, FILE *stream);
