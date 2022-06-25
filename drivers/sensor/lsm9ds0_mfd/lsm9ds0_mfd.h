@@ -13,6 +13,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/drivers/i2c.h>
 
 #define LSM9DS0_MFD_REG_OUT_TEMP_L_XM		0x05
 #define LSM9DS0_MFD_REG_OUT_TEMP_H_XM		0x06
@@ -523,13 +524,10 @@
 #endif
 
 struct lsm9ds0_mfd_config {
-	char *i2c_master_dev_name;
-	uint16_t i2c_slave_addr;
+	struct i2c_dt_spec i2c;
 };
 
 struct lsm9ds0_mfd_data {
-	const struct device *i2c_master;
-
 #if !defined(LSM9DS0_MFD_ACCEL_DISABLED)
 	int sample_accel_x, sample_accel_y, sample_accel_z;
 #endif
