@@ -21,22 +21,21 @@ LOG_MODULE_REGISTER(MS5837, CONFIG_SENSOR_LOG_LEVEL);
 static int ms5837_get_measurement(const struct device *dev, uint32_t *val,
 				  uint8_t cmd, const uint8_t delay)
 {
-	struct ms5837_data *data = dev->data;
 	const struct ms5837_config *cfg = dev->config;
 	uint8_t adc_read_cmd = MS5837_CMD_CONV_READ_ADC;
 	int err;
 
 	*val = 0U;
 
-	err = i2c_write(data->i2c_master, &cmd, 1, cfg->i2c_address);
+	err = i2c_write_dt(&cfg->i2c, &cmd, 1);
 	if (err < 0) {
 		return err;
 	}
 
 	k_msleep(delay);
 
-	err = i2c_burst_read(data->i2c_master, cfg->i2c_address, adc_read_cmd,
-			     ((uint8_t *)val) + 1, 3);
+	err = i2c_burst_read_dt(&cfg->i2c, adc_read_cmd, ((uint8_t *)val) + 1,
+				3);
 	if (err < 0) {
 		return err;
 	}
@@ -231,11 +230,10 @@ static const struct sensor_driver_api ms5837_api_funcs = {
 static int ms5837_read_prom(const struct device *dev, const uint8_t cmd,
 			    uint16_t *val)
 {
-	struct ms5837_data *data = dev->data;
 	const struct ms5837_config *cfg = dev->config;
 	int err;
 
-	err = i2c_burst_read(data->i2c_master, cfg->i2c_address, cmd, (uint8_t *)val, 2);
+	err = i2c_burst_read_dt(&cfg->i2c, cmd, (uint8_t *)val, 2);
 	if (err < 0) {
 		return err;
 	}
@@ -260,15 +258,13 @@ static int ms5837_init(const struct device *dev)
 	data->temperature_conv_cmd = MS5837_CMD_CONV_T_256;
 	data->temperature_conv_delay = 1U;
 
-	data->i2c_master = device_get_binding(cfg->i2c_name);
-	if (data->i2c_master == NULL) {
-		LOG_ERR("i2c master %s not found",
-			    DT_INST_BUS_LABEL(0));
-		return -EINVAL;
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
 	cmd = MS5837_CMD_RESET;
-	err = i2c_write(data->i2c_master, &cmd, 1, cfg->i2c_address);
+	err = i2c_write_dt(&cfg->i2c, &cmd, 1);
 	if (err < 0) {
 		return err;
 	}
@@ -311,8 +307,7 @@ static int ms5837_init(const struct device *dev)
 static struct ms5837_data ms5837_data;
 
 static const struct ms5837_config ms5837_config = {
-	.i2c_name = DT_INST_BUS_LABEL(0),
-	.i2c_address = DT_INST_REG_ADDR(0)
+	.i2c = I2C_DT_SPEC_INST_GET(0),
 };
 
 DEVICE_DT_INST_DEFINE(0, ms5837_init, NULL, &ms5837_data,
