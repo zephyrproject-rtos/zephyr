@@ -73,7 +73,7 @@ static int shtcx_write_command(const struct device *dev, uint16_t cmd)
 	uint8_t tx_buf[2];
 
 	sys_put_be16(cmd, tx_buf);
-	return i2c_write(cfg->bus, tx_buf, sizeof(tx_buf), cfg->base_address);
+	return i2c_write_dt(&cfg->i2c, tx_buf, sizeof(tx_buf));
 }
 
 static int shtcx_read_words(const struct device *dev, uint16_t cmd, uint16_t *data,
@@ -96,7 +96,7 @@ static int shtcx_read_words(const struct device *dev, uint16_t cmd, uint16_t *da
 		k_sleep(K_USEC(max_duration_us));
 	}
 
-	status = i2c_read(cfg->bus, rx_buf, raw_len, cfg->base_address);
+	status = i2c_read_dt(&cfg->i2c, rx_buf, raw_len);
 	if (status != 0) {
 		LOG_DBG("Failed to read data");
 		return -EIO;
@@ -193,8 +193,8 @@ static int shtcx_init(const struct device *dev)
 	const struct shtcx_config *cfg = dev->config;
 	uint16_t product_id;
 
-	if (device_is_ready(cfg->bus) ==  0) {
-		LOG_DBG("i2c bus is not ready");
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
 		return -ENODEV;
 	}
 
@@ -239,8 +239,7 @@ static int shtcx_init(const struct device *dev)
 
 #define SHTCX_CONFIG(inst)						       \
 	{								       \
-		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		       \
-		.base_address = DT_INST_REG_ADDR(inst),			       \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),			       \
 		.chip = DT_INST_ENUM_IDX(inst, chip),			       \
 		.measure_mode = DT_INST_ENUM_IDX(inst, measure_mode),	       \
 		.clock_stretching = DT_INST_PROP(inst, clock_stretching)       \
