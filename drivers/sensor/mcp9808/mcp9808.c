@@ -127,9 +127,7 @@ static const struct mcp9808_config mcp9808_cfg = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
 	.resolution = DT_INST_PROP(0, resolution),
 #ifdef CONFIG_MCP9808_TRIGGER
-	.alert_pin = DT_INST_GPIO_PIN(0, int_gpios),
-	.alert_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
-	.alert_controller = DT_INST_GPIO_LABEL(0, int_gpios),
+	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 #endif /* CONFIG_MCP9808_TRIGGER */
 };
 
