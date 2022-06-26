@@ -10,6 +10,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 
 /* common cmds */
@@ -54,8 +55,7 @@ struct shtcx_sample {
 } __packed __aligned(2);
 
 struct shtcx_config {
-	const struct device *bus;
-	uint8_t base_address;
+	struct i2c_dt_spec i2c;
 	enum shtcx_chip chip;
 	enum shtcx_measure_mode measure_mode;
 	bool clock_stretching;
