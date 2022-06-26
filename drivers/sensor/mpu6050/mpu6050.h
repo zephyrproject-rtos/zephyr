@@ -51,7 +51,6 @@ struct mpu6050_data {
 
 #ifdef CONFIG_MPU6050_TRIGGER
 	const struct device *dev;
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
@@ -71,9 +70,7 @@ struct mpu6050_data {
 struct mpu6050_config {
 	struct i2c_dt_spec i2c;
 #ifdef CONFIG_MPU6050_TRIGGER
-	uint8_t int_pin;
-	uint8_t int_flags;
-	const char *int_label;
+	struct gpio_dt_spec int_gpio;
 #endif /* CONFIG_MPU6050_TRIGGER */
 };
 
