@@ -33,13 +33,13 @@ struct si7006_data {
  *
  * @return int 0 on success
  */
-static int si7006_get_humidity(const struct device *i2c_dev,
-			       struct si7006_data *si_data)
+static int si7006_get_humidity(const struct device *dev)
 {
+	struct si7006_data *si_data = dev->data;
 	int retval;
 	uint8_t hum[2];
 
-	retval = i2c_burst_read(i2c_dev, DT_INST_REG_ADDR(0),
+	retval = i2c_burst_read(si_data->i2c_dev, DT_INST_REG_ADDR(0),
 		SI7006_MEAS_REL_HUMIDITY_MASTER_MODE, hum, sizeof(hum));
 
 	if (retval == 0) {
@@ -60,13 +60,13 @@ static int si7006_get_humidity(const struct device *i2c_dev,
  * @return int 0 on success
  */
 
-static int si7006_get_old_temperature(const struct device *i2c_dev,
-				      struct si7006_data *si_data)
+static int si7006_get_old_temperature(const struct device *dev)
 {
+	struct si7006_data *si_data = dev->data;
 	uint8_t temp[2];
 	int retval;
 
-	retval = i2c_burst_read(i2c_dev, DT_INST_REG_ADDR(0),
+	retval = i2c_burst_read(si_data->i2c_dev, DT_INST_REG_ADDR(0),
 		SI7006_READ_OLD_TEMP, temp, sizeof(temp));
 
 	if (retval == 0) {
@@ -87,11 +87,10 @@ static int si7006_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
 	int retval;
-	struct si7006_data *si_data = dev->data;
 
-	retval = si7006_get_humidity(si_data->i2c_dev, si_data);
+	retval = si7006_get_humidity(dev);
 	if (retval == 0) {
-		retval = si7006_get_old_temperature(si_data->i2c_dev, si_data);
+		retval = si7006_get_old_temperature(dev);
 	}
 
 	return retval;
