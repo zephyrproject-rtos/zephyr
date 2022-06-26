@@ -33,3 +33,4 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_ANDES_ATCPIT100     counter_andes_at
 zephyr_library_sources_ifdef(CONFIG_ACE_V1X_ART_COUNTER         counter_ace_v1x_art.c)
 zephyr_library_sources_ifdef(CONFIG_ACE_V1X_RTC_COUNTER         counter_ace_v1x_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NXP_S32_SYS_TIMER   counter_nxp_s32_sys_timer.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_TIMER_GD32		counter_gd32_timer.c)
