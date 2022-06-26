@@ -9,4 +9,11 @@ config BUILD_OUTPUT_BIN
 config BOARD
 	default "qemu_cortex_a53"
 
+if IPM
+
+config IPM_GIC_SGI
+	default y
+
+endif # IPM
+
 endif # BOARD_QEMU_CORTEX_A53
