@@ -27,13 +27,6 @@
 	clock-frequency = <120000000>;
 };
 
-&usic1ch0 {
-	compatible = "infineon,xmc4xxx-uart";
-	current-speed = <115200>;
-	label = "UART_4";
-	status = "okay";
-};
-
 &usic1ch1 {
 	compatible = "infineon,xmc4xxx-uart";
 	current-speed = <115200>;
