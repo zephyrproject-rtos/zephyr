@@ -19,11 +19,10 @@ LOG_MODULE_REGISTER(opt3001, CONFIG_SENSOR_LOG_LEVEL);
 static int opt3001_reg_read(const struct device *dev, uint8_t reg,
 			    uint16_t *val)
 {
-	struct opt3001_data *drv_data = dev->data;
+	const struct opt3001_config *config = dev->config;
 	uint8_t value[2];
 
-	if (i2c_burst_read(drv_data->i2c, DT_INST_REG_ADDR(0),
-		reg, value, 2) != 0) {
+	if (i2c_burst_read_dt(&config->i2c, reg, value, 2) != 0) {
 		return -EIO;
 	}
 
@@ -35,7 +34,7 @@ static int opt3001_reg_read(const struct device *dev, uint8_t reg,
 static int opt3001_reg_write(const struct device *dev, uint8_t reg,
 			     uint16_t val)
 {
-	struct opt3001_data *drv_data = dev->data;
+	const struct opt3001_config *config = dev->config;
 	uint8_t new_value[2];
 
 	new_value[0] = val >> 8;
@@ -43,8 +42,7 @@ static int opt3001_reg_write(const struct device *dev, uint8_t reg,
 
 	uint8_t tx_buf[3] = { reg, new_value[0], new_value[1] };
 
-	return i2c_write(drv_data->i2c, tx_buf, sizeof(tx_buf),
-			 DT_INST_REG_ADDR(0));
+	return i2c_write_dt(&config->i2c, tx_buf, sizeof(tx_buf));
 }
 
 static int opt3001_reg_update(const struct device *dev, uint8_t reg,
@@ -116,14 +114,12 @@ static const struct sensor_driver_api opt3001_driver_api = {
 
 static int opt3001_chip_init(const struct device *dev)
 {
-	struct opt3001_data *drv_data = dev->data;
+	const struct opt3001_config *config = dev->config;
 	uint16_t value;
 
-	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (drv_data->i2c == NULL) {
-		LOG_ERR("Failed to get pointer to %s device!",
-			DT_INST_BUS_LABEL(0));
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
 	if (opt3001_reg_read(dev, OPT3001_REG_MANUFACTURER_ID, &value) != 0) {
@@ -165,6 +161,10 @@ int opt3001_init(const struct device *dev)
 
 static struct opt3001_data opt3001_drv_data;
 
-DEVICE_DT_INST_DEFINE(0, opt3001_init, NULL,
-		    &opt3001_drv_data, NULL, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &opt3001_driver_api);
+static const struct opt3001_config opt3001_config_inst = {
+	.i2c = I2C_DT_SPEC_INST_GET(0),
+};
+
+DEVICE_DT_INST_DEFINE(0, opt3001_init, NULL, &opt3001_drv_data,
+		      &opt3001_config_inst, POST_KERNEL,
+		      CONFIG_SENSOR_INIT_PRIORITY, &opt3001_driver_api);
