@@ -224,9 +224,7 @@ static struct mpu6050_data mpu6050_driver;
 static const struct mpu6050_config mpu6050_cfg = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
 #ifdef CONFIG_MPU6050_TRIGGER
-	.int_pin = DT_INST_GPIO_PIN(0, int_gpios),
-	.int_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
-	.int_label = DT_INST_GPIO_LABEL(0, int_gpios),
+	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 #endif /* CONFIG_MPU6050_TRIGGER */
 };
 
