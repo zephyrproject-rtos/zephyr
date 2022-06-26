@@ -123,8 +123,8 @@ int mpu6050_init_interrupt(const struct device *dev)
 	}
 
 	/* enable data ready interrupt */
-	if (i2c_reg_write_byte(drv_data->i2c, cfg->i2c_addr,
-			       MPU6050_REG_INT_EN, MPU6050_DRDY_EN) < 0) {
+	if (i2c_reg_write_byte_dt(&cfg->i2c, MPU6050_REG_INT_EN,
+				  MPU6050_DRDY_EN) < 0) {
 		LOG_ERR("Failed to enable data ready interrupt.");
 		return -EIO;
 	}
