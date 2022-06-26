@@ -65,18 +65,4 @@ struct shtcx_data {
 	struct shtcx_sample sample;
 };
 
-static inline uint8_t shtcx_i2c_address(const struct device *dev)
-{
-	const struct shtcx_config *dcp = dev->config;
-
-	return dcp->base_address;
-}
-
-static inline const struct device *shtcx_i2c_bus(const struct device *dev)
-{
-	const struct shtcx_config *dcp = dev->config;
-
-	return dcp->bus;
-}
-
 #endif /* ZEPHYR_DRIVERS_SENSOR_SHTCX_SHTCX_H_ */
