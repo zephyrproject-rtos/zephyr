@@ -1416,12 +1416,13 @@ nRF52 BSIM:
         - "platform: nRF52 BSIM"
 
 POSIX API layer:
-    status: odd fixes
+    status: maintained
+    maintainers:
+        - cfriedt
     collaborators:
         - pfalcon
         - enjiamai
         - KangJianX
-        - cfriedt
     files:
         - include/zephyr/posix/
         - lib/posix/
