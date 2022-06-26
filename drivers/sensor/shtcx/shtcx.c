@@ -69,11 +69,11 @@ static void shtcx_humidity_from_raw(uint16_t raw, struct sensor_value *val)
 
 static int shtcx_write_command(const struct device *dev, uint16_t cmd)
 {
+	const struct shtcx_config *cfg = dev->config;
 	uint8_t tx_buf[2];
 
 	sys_put_be16(cmd, tx_buf);
-	return i2c_write(shtcx_i2c_bus(dev), tx_buf, sizeof(tx_buf),
-			 shtcx_i2c_address(dev));
+	return i2c_write(cfg->bus, tx_buf, sizeof(tx_buf), cfg->base_address);
 }
 
 static int shtcx_read_words(const struct device *dev, uint16_t cmd, uint16_t *data,
@@ -96,8 +96,7 @@ static int shtcx_read_words(const struct device *dev, uint16_t cmd, uint16_t *da
 		k_sleep(K_USEC(max_duration_us));
 	}
 
-	status = i2c_read(shtcx_i2c_bus(dev), rx_buf, raw_len,
-			  shtcx_i2c_address(dev));
+	status = i2c_read(cfg->bus, rx_buf, raw_len, cfg->base_address);
 	if (status != 0) {
 		LOG_DBG("Failed to read data");
 		return -EIO;
