@@ -47,13 +47,12 @@ int mcp9808_attr_set(const struct device *dev, enum sensor_channel chan,
 static inline void setup_int(const struct device *dev,
 			     bool enable)
 {
-	const struct mcp9808_data *data = dev->data;
 	const struct mcp9808_config *cfg = dev->config;
 	unsigned int flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
 
-	gpio_pin_interrupt_configure(data->alert_gpio, cfg->alert_pin, flags);
+	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, flags);
 }
 
 static void handle_int(const struct device *dev)
@@ -98,7 +97,7 @@ int mcp9808_trigger_set(const struct device *dev,
 	if (handler != NULL) {
 		setup_int(dev, true);
 
-		rv = gpio_pin_get(data->alert_gpio, cfg->alert_pin);
+		rv = gpio_pin_get_dt(&cfg->int_gpio);
 		if (rv > 0) {
 			handle_int(dev);
 			rv = 0;
@@ -147,7 +146,6 @@ int mcp9808_setup_interrupt(const struct device *dev)
 {
 	struct mcp9808_data *data = dev->data;
 	const struct mcp9808_config *cfg = dev->config;
-	const struct device *gpio;
 	int rc = mcp9808_reg_write_16bit(dev, MCP9808_REG_CRITICAL,
 				   MCP9808_TEMP_ABS_MASK);
 	if (rc == 0) {
@@ -169,22 +167,19 @@ int mcp9808_setup_interrupt(const struct device *dev)
 	data->work.handler = mcp9808_gpio_thread_cb;
 #endif /* trigger type */
 
-	gpio = device_get_binding(cfg->alert_controller);
-	if (gpio != NULL) {
-		data->alert_gpio = gpio;
-	} else {
-		rc = -ENOENT;
+	if (!device_is_ready(cfg->int_gpio.port)) {
+		LOG_ERR("GPIO device not ready");
+		return -ENODEV;
 	}
 
 	if (rc == 0) {
-		rc = gpio_pin_configure(gpio, cfg->alert_pin,
-					GPIO_INPUT | cfg->alert_flags);
+		rc = gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INPUT);
 	}
 
 	if (rc == 0) {
-		gpio_init_callback(&data->alert_cb, alert_cb, BIT(cfg->alert_pin));
+		gpio_init_callback(&data->alert_cb, alert_cb, BIT(cfg->int_gpio.pin));
 
-		rc = gpio_add_callback(gpio, &data->alert_cb);
+		rc = gpio_add_callback(cfg->int_gpio.port, &data->alert_cb);
 	}
 
 	return rc;
