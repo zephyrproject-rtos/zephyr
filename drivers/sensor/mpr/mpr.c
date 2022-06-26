@@ -23,14 +23,13 @@ LOG_MODULE_REGISTER(MPR, CONFIG_SENSOR_LOG_LEVEL);
 
 static int mpr_init(const struct device *dev)
 {
-	struct mpr_data *data = dev->data;
 	const struct mpr_config *cfg = dev->config;
 
-	data->i2c_master = device_get_binding(cfg->i2c_bus);
-	if (!data->i2c_master) {
-		LOG_ERR("mpr: i2c master not found: %s", cfg->i2c_bus);
-		return -EINVAL;
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
+
 	return 0;
 }
 
@@ -42,8 +41,7 @@ static int mpr_read_reg(const struct device *dev)
 	uint8_t write_buf[] = { MPR_OUTPUT_MEASUREMENT_COMMAND, 0x00, 0x00 };
 	uint8_t read_buf[4] = { 0x0 };
 
-	int rc = i2c_write(data->i2c_master, write_buf, sizeof(write_buf),
-			   cfg->i2c_addr);
+	int rc = i2c_write_dt(&cfg->i2c, write_buf, sizeof(write_buf));
 
 	if (rc < 0) {
 		return rc;
@@ -54,8 +52,7 @@ static int mpr_read_reg(const struct device *dev)
 	for (; retries > 0; retries--) {
 		k_sleep(K_MSEC(MPR_REG_READ_DATA_CONV_DELAY_MS));
 
-		rc = i2c_read(data->i2c_master, read_buf, sizeof(read_buf),
-				  cfg->i2c_addr);
+		rc = i2c_read_dt(&cfg->i2c, read_buf, sizeof(read_buf));
 		if (rc < 0) {
 			return rc;
 		}
@@ -133,8 +130,7 @@ static const struct sensor_driver_api mpr_api_funcs = {
 
 static struct mpr_data mpr_data;
 static const struct mpr_config mpr_cfg = {
-	.i2c_bus = DT_INST_BUS_LABEL(0),
-	.i2c_addr = DT_INST_REG_ADDR(0),
+	.i2c = I2C_DT_SPEC_INST_GET(0),
 };
 
 DEVICE_DT_INST_DEFINE(0, mpr_init, NULL, &mpr_data,
