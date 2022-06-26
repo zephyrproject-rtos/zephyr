@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/__assert.h>
@@ -207,9 +208,7 @@ static int sht3xd_init(const struct device *dev)
 
 #ifdef CONFIG_SHT3XD_TRIGGER
 #define SHT3XD_TRIGGER_INIT(inst)						\
-	.alert_gpio_name = DT_INST_GPIO_LABEL(inst, alert_gpios),		\
-	.alert_pin = DT_INST_GPIO_PIN(inst, alert_gpios),			\
-	.alert_flags = DT_INST_GPIO_FLAGS(inst, alert_gpios),
+	.alert_gpio = GPIO_DT_SPEC_INST_GET(inst, alert_gpios),
 #else
 #define SHT3XD_TRIGGER_INIT(inst)
 #endif
