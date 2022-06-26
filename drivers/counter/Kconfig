@@ -76,4 +76,6 @@ source "drivers/counter/Kconfig.andes_atcpit100"
 
 source "drivers/counter/Kconfig.nxp_s32"
 
+source "drivers/counter/Kconfig.gd32"
+
 endif # COUNTER
