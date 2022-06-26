@@ -62,7 +62,6 @@ struct mcp9808_data {
 	uint16_t reg_val;
 
 #ifdef CONFIG_MCP9808_TRIGGER
-	const struct device *alert_gpio;
 	struct gpio_callback alert_cb;
 
 	const struct device *dev;
@@ -84,9 +83,7 @@ struct mcp9808_config {
 	struct i2c_dt_spec i2c;
 	uint8_t resolution;
 #ifdef CONFIG_MCP9808_TRIGGER
-	uint8_t alert_pin;
-	uint8_t alert_flags;
-	const char *alert_controller;
+	struct gpio_dt_spec int_gpio;
 #endif /* CONFIG_MCP9808_TRIGGER */
 };
 
