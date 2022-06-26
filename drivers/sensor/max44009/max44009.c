@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(MAX44009, CONFIG_SENSOR_LOG_LEVEL);
 static int max44009_reg_read(const struct device *dev, uint8_t reg,
 			     uint8_t *val, bool send_stop)
 {
-	struct max44009_data *drv_data = dev->data;
+	const struct max44009_config *config = dev->config;
 	struct i2c_msg msgs[2] = {
 		{
 			.buf = &reg,
@@ -37,7 +37,7 @@ static int max44009_reg_read(const struct device *dev, uint8_t reg,
 		msgs[1].flags |= I2C_MSG_STOP;
 	}
 
-	if (i2c_transfer(drv_data->i2c, msgs, 2, MAX44009_I2C_ADDRESS) != 0) {
+	if (i2c_transfer_dt(&config->i2c, msgs, 2) != 0) {
 		return -EIO;
 	}
 
@@ -47,11 +47,10 @@ static int max44009_reg_read(const struct device *dev, uint8_t reg,
 static int max44009_reg_write(const struct device *dev, uint8_t reg,
 			      uint8_t val)
 {
-	struct max44009_data *drv_data = dev->data;
+	const struct max44009_config *config = dev->config;
 	uint8_t tx_buf[2] = {reg, val};
 
-	return i2c_write(drv_data->i2c, tx_buf, sizeof(tx_buf),
-			 MAX44009_I2C_ADDRESS);
+	return i2c_write_dt(&config->i2c, tx_buf, sizeof(tx_buf));
 }
 
 static int max44009_reg_update(const struct device *dev, uint8_t reg,
@@ -174,13 +173,11 @@ static const struct sensor_driver_api max44009_driver_api = {
 
 int max44009_init(const struct device *dev)
 {
-	struct max44009_data *drv_data = dev->data;
+	const struct max44009_config *config = dev->config;
 
-	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (drv_data->i2c == NULL) {
-		LOG_DBG("Failed to get pointer to %s device!",
-			    DT_INST_BUS_LABEL(0));
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
 	return 0;
@@ -188,6 +185,10 @@ int max44009_init(const struct device *dev)
 
 static struct max44009_data max44009_drv_data;
 
-DEVICE_DT_INST_DEFINE(0, max44009_init, NULL,
-	    &max44009_drv_data, NULL, POST_KERNEL,
-	    CONFIG_SENSOR_INIT_PRIORITY, &max44009_driver_api);
+static const struct max44009_config mac44009_config_inst = {
+	.i2c = I2C_DT_SPEC_INST_GET(0),
+};
+
+DEVICE_DT_INST_DEFINE(0, max44009_init, NULL, &max44009_drv_data,
+		      &mac44009_config_inst, POST_KERNEL,
+		      CONFIG_SENSOR_INIT_PRIORITY, &max44009_driver_api);
