@@ -16,9 +16,10 @@
 
 LOG_MODULE_REGISTER(opt3001, CONFIG_SENSOR_LOG_LEVEL);
 
-static int opt3001_reg_read(struct opt3001_data *drv_data, uint8_t reg,
+static int opt3001_reg_read(const struct device *dev, uint8_t reg,
 			    uint16_t *val)
 {
+	struct opt3001_data *drv_data = dev->data;
 	uint8_t value[2];
 
 	if (i2c_burst_read(drv_data->i2c, DT_INST_REG_ADDR(0),
@@ -31,9 +32,10 @@ static int opt3001_reg_read(struct opt3001_data *drv_data, uint8_t reg,
 	return 0;
 }
 
-static int opt3001_reg_write(struct opt3001_data *drv_data, uint8_t reg,
+static int opt3001_reg_write(const struct device *dev, uint8_t reg,
 			     uint16_t val)
 {
+	struct opt3001_data *drv_data = dev->data;
 	uint8_t new_value[2];
 
 	new_value[0] = val >> 8;
@@ -45,20 +47,20 @@ static int opt3001_reg_write(struct opt3001_data *drv_data, uint8_t reg,
 			 DT_INST_REG_ADDR(0));
 }
 
-static int opt3001_reg_update(struct opt3001_data *drv_data, uint8_t reg,
+static int opt3001_reg_update(const struct device *dev, uint8_t reg,
 			      uint16_t mask, uint16_t val)
 {
 	uint16_t old_val;
 	uint16_t new_val;
 
-	if (opt3001_reg_read(drv_data, reg, &old_val) != 0) {
+	if (opt3001_reg_read(dev, reg, &old_val) != 0) {
 		return -EIO;
 	}
 
 	new_val = old_val & ~mask;
 	new_val |= val & mask;
 
-	return opt3001_reg_write(drv_data, reg, new_val);
+	return opt3001_reg_write(dev, reg, new_val);
 }
 
 static int opt3001_sample_fetch(const struct device *dev,
@@ -71,7 +73,7 @@ static int opt3001_sample_fetch(const struct device *dev,
 
 	drv_data->sample = 0U;
 
-	if (opt3001_reg_read(drv_data, OPT3001_REG_RESULT, &value) != 0) {
+	if (opt3001_reg_read(dev, OPT3001_REG_RESULT, &value) != 0) {
 		return -EIO;
 	}
 
@@ -124,8 +126,7 @@ static int opt3001_chip_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (opt3001_reg_read(drv_data, OPT3001_REG_MANUFACTURER_ID,
-		&value) != 0) {
+	if (opt3001_reg_read(dev, OPT3001_REG_MANUFACTURER_ID, &value) != 0) {
 		return -EIO;
 	}
 
@@ -134,8 +135,7 @@ static int opt3001_chip_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	if (opt3001_reg_read(drv_data, OPT3001_REG_DEVICE_ID,
-		&value) != 0) {
+	if (opt3001_reg_read(dev, OPT3001_REG_DEVICE_ID, &value) != 0) {
 		return -EIO;
 	}
 
@@ -144,7 +144,7 @@ static int opt3001_chip_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	if (opt3001_reg_update(drv_data, OPT3001_REG_CONFIG,
+	if (opt3001_reg_update(dev, OPT3001_REG_CONFIG,
 			       OPT3001_CONVERSION_MODE_MASK,
 			       OPT3001_CONVERSION_MODE_CONTINUOUS) != 0) {
 		LOG_ERR("Failed to set mode to continuous conversion");
