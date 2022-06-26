@@ -16,10 +16,10 @@
 
 LOG_MODULE_REGISTER(MAX44009, CONFIG_SENSOR_LOG_LEVEL);
 
-static int max44009_reg_read(struct max44009_data *drv_data, uint8_t reg,
-
+static int max44009_reg_read(const struct device *dev, uint8_t reg,
 			     uint8_t *val, bool send_stop)
 {
+	struct max44009_data *drv_data = dev->data;
 	struct i2c_msg msgs[2] = {
 		{
 			.buf = &reg,
@@ -44,29 +44,30 @@ static int max44009_reg_read(struct max44009_data *drv_data, uint8_t reg,
 	return 0;
 }
 
-static int max44009_reg_write(struct max44009_data *drv_data, uint8_t reg,
+static int max44009_reg_write(const struct device *dev, uint8_t reg,
 			      uint8_t val)
 {
+	struct max44009_data *drv_data = dev->data;
 	uint8_t tx_buf[2] = {reg, val};
 
 	return i2c_write(drv_data->i2c, tx_buf, sizeof(tx_buf),
 			 MAX44009_I2C_ADDRESS);
 }
 
-static int max44009_reg_update(struct max44009_data *drv_data, uint8_t reg,
+static int max44009_reg_update(const struct device *dev, uint8_t reg,
 			       uint8_t mask, uint8_t val)
 {
 	uint8_t old_val = 0U;
 	uint8_t new_val = 0U;
 
-	if (max44009_reg_read(drv_data, reg, &old_val, true) != 0) {
+	if (max44009_reg_read(dev, reg, &old_val, true) != 0) {
 		return -EIO;
 	}
 
 	new_val = old_val & ~mask;
 	new_val |= val & mask;
 
-	return max44009_reg_write(drv_data, reg, new_val);
+	return max44009_reg_write(dev, reg, new_val);
 }
 
 static int max44009_attr_set(const struct device *dev,
@@ -74,7 +75,6 @@ static int max44009_attr_set(const struct device *dev,
 			     enum sensor_attribute attr,
 			     const struct sensor_value *val)
 {
-	struct max44009_data *drv_data = dev->data;
 	uint8_t value;
 	uint32_t cr;
 
@@ -96,7 +96,7 @@ static int max44009_attr_set(const struct device *dev,
 			value = MAX44009_CONTINUOUS_SAMPLING;
 		}
 
-		if (max44009_reg_update(drv_data, MAX44009_REG_CONFIG,
+		if (max44009_reg_update(dev, MAX44009_REG_CONFIG,
 					MAX44009_SAMPLING_CONTROL_BIT,
 					value) != 0) {
 			LOG_DBG("Failed to set attribute!");
@@ -122,12 +122,12 @@ static int max44009_sample_fetch(const struct device *dev,
 
 	drv_data->sample = 0U;
 
-	if (max44009_reg_read(drv_data, MAX44009_REG_LUX_HIGH_BYTE, &val_h,
+	if (max44009_reg_read(dev, MAX44009_REG_LUX_HIGH_BYTE, &val_h,
 			      false) != 0) {
 		return -EIO;
 	}
 
-	if (max44009_reg_read(drv_data, MAX44009_REG_LUX_LOW_BYTE, &val_l,
+	if (max44009_reg_read(dev, MAX44009_REG_LUX_LOW_BYTE, &val_l,
 			      true) != 0) {
 		return -EIO;
 	}
