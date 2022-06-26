@@ -45,8 +45,8 @@ struct counter_gd32_config {
 	struct reset_dt_spec reset;
 	uint16_t prescaler;
 	void (*irq_config)(const struct device *dev);
-	void (*set_irq_pending)();
-	uint32_t (*get_irq_pending)();
+	void (*set_irq_pending)(void);
+	uint32_t (*get_irq_pending)(void);
 };
 
 static uint32_t get_autoreload_value(const struct device *dev)
@@ -92,22 +92,22 @@ static void set_prescaler(const struct device *dev, uint16_t prescaler)
 }
 
 static void set_compare_value(const struct device *dev, uint16_t chan,
-			      uint32_t now)
+			      uint32_t compare_value)
 {
 	const struct counter_gd32_config *config = dev->config;
 
 	switch (chan) {
 	case 0:
-		TIMER_CH0CV(config->reg) = now;
+		TIMER_CH0CV(config->reg) = compare_value;
 		break;
 	case 1:
-		TIMER_CH1CV(config->reg) = now;
+		TIMER_CH1CV(config->reg) = compare_value;
 		break;
 	case 2:
-		TIMER_CH2CV(config->reg) = now;
+		TIMER_CH2CV(config->reg) = compare_value;
 		break;
 	case 3:
-		TIMER_CH3CV(config->reg) = now;
+		TIMER_CH3CV(config->reg) = compare_value;
 		break;
 	}
 }
