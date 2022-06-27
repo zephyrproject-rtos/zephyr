@@ -15,9 +15,10 @@ import argparse
 from pathlib import Path
 import re
 import sys
+import os
 
 
-ZEPHYR_BASE = Path(__file__).parents[2]
+ZEPHYR_BASE = Path(os.path.abspath(__file__)).parents[2]
 
 EXTENSIONS = ("c", "cpp", "h", "dts", "dtsi", "rst", "S", "overlay", "ld")
 
