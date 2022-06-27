@@ -202,7 +202,7 @@ class HDAStream:
 
 
 def map_regs():
-    p = runx(f"grep -iPl 'PCI_CLASS=40(10|38)0' /sys/bus/pci/devices/*/uevent")
+    p = runx(f"grep -iEl 'PCI_CLASS=40(10|38)0' /sys/bus/pci/devices/*/uevent")
     pcidir = os.path.dirname(p)
 
     # Platform/quirk detection.  ID lists cribbed from the SOF kernel driver
