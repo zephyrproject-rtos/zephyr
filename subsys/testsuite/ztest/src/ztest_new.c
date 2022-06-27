@@ -328,7 +328,14 @@ out:
 #endif
 
 K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
-static ZTEST_BMEM int test_result;
+
+enum ztest_result {
+	ZTEST_RESULT_PENDING,
+	ZTEST_RESULT_PASS,
+	ZTEST_RESULT_FAIL,
+	ZTEST_RESULT_SKIP
+};
+static ZTEST_BMEM enum ztest_result test_result;
 
 static void test_finalize(void)
 {
@@ -340,19 +347,19 @@ static void test_finalize(void)
 
 void ztest_test_fail(void)
 {
-	test_result = -1;
+	test_result = ZTEST_RESULT_FAIL;
 	test_finalize();
 }
 
 void ztest_test_pass(void)
 {
-	test_result = 0;
+	test_result = ZTEST_RESULT_PASS;
 	test_finalize();
 }
 
 void ztest_test_skip(void)
 {
-	test_result = -2;
+	test_result = ZTEST_RESULT_SKIP;
 	test_finalize();
 }
 
@@ -378,13 +385,13 @@ static void test_cb(void *a, void *b, void *c)
 	struct ztest_suite_node *suite = a;
 	struct ztest_unit_test *test = b;
 
-	test_result = 1;
+	test_result = ZTEST_RESULT_PENDING;
 	run_test_rules(/*is_before=*/true, test, /*data=*/c);
 	if (suite->before) {
 		suite->before(/*data=*/c);
 	}
 	run_test_functions(suite, test, c);
-	test_result = 0;
+	test_result = ZTEST_RESULT_PASS;
 }
 
 static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test, void *data)
@@ -409,7 +416,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 		k_thread_start(&ztest_thread);
 		k_thread_join(&ztest_thread, K_FOREVER);
 	} else {
-		test_result = 1;
+		test_result = ZTEST_RESULT_PENDING;
 		run_test_rules(/*is_before=*/true, test, data);
 		if (suite->before) {
 			suite->before(data);
@@ -430,15 +437,15 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 		k_msleep(100);
 	}
 
-	if (test_result == -1) {
+	if (test_result == ZTEST_RESULT_FAIL) {
 		ret = TC_FAIL;
 	}
 
-	if (!test_result || !FAIL_FAST) {
+	if (test_result == ZTEST_RESULT_PASS || !FAIL_FAST) {
 		ret |= cleanup_test(test);
 	}
 
-	if (test_result == -2) {
+	if (test_result == ZTEST_RESULT_SKIP) {
 		Z_TC_END_RESULT(TC_SKIP, test->name);
 	} else {
 		Z_TC_END_RESULT(ret, test->name);
