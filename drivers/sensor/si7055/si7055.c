@@ -30,9 +30,9 @@ struct si7055_data {
  * @return int 0 on success
  *         -EIO for I/O and checksum errors
  */
-static int si7055_get_temperature(const struct device *i2c_dev,
-				  struct si7055_data *si_data)
+static int si7055_get_temperature(const struct device *dev)
 {
+	struct si7055_data *si_data = dev->data;
 	int retval;
 	#if CONFIG_SI7055_ENABLE_CHECKSUM
 	uint8_t temp[SI7055_TEMPERATURE_READ_WITH_CHECKSUM_SIZE];
@@ -40,7 +40,7 @@ static int si7055_get_temperature(const struct device *i2c_dev,
 	uint8_t temp[SI7055_TEMPERATURE_READ_NO_CHECKSUM_SIZE];
 	#endif
 
-	retval = i2c_burst_read(i2c_dev, DT_INST_REG_ADDR(0),
+	retval = i2c_burst_read(si_data->i2c_dev, DT_INST_REG_ADDR(0),
 				SI7055_MEAS_TEMP_MASTER_MODE,
 				temp, sizeof(temp));
 
@@ -75,9 +75,8 @@ static int si7055_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
 	int retval;
-	struct si7055_data *si_data = dev->data;
 
-	retval = si7055_get_temperature(si_data->i2c_dev, si_data);
+	retval = si7055_get_temperature(dev);
 
 	return retval;
 }
