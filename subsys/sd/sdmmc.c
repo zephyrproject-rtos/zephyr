@@ -1501,6 +1501,12 @@ int sdmmc_ioctl(struct sd_card *card, uint8_t cmd, void *buf)
 	case DISK_IOCTL_GET_ERASE_BLOCK_SZ:
 		(*(uint32_t *)buf) = card->block_size;
 		break;
+	case DISK_IOCTL_CTRL_SYNC:
+		/* Ensure card is not busy with data write.
+		 * Note that SD stack does not support enabling caching, so
+		 * cache flush is not required here
+		 */
+		return sdmmc_wait_ready(card);
 	default:
 		return -ENOTSUP;
 	}
