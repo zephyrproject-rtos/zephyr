@@ -4,9 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
 #include <zephyr/irq_offload.h>
 #include <zephyr/syscall_handler.h>
+
+#include <ztest.h>
 #include <ztest_error_hook.h>
 
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
@@ -360,3 +361,60 @@ static void *error_hook_tests_setup(void)
 	return NULL;
 }
 ZTEST_SUITE(error_hook_tests, NULL, error_hook_tests_setup, NULL, NULL, NULL);
+
+static void *fail_assume_in_setup_setup(void)
+{
+	/* Fail the assume, will skip all the tests */
+	zassume_true(false, NULL);
+	return NULL;
+}
+
+ZTEST_SUITE(fail_assume_in_setup, NULL, fail_assume_in_setup_setup, NULL, NULL, NULL);
+
+ZTEST(fail_assume_in_setup, test_to_skip0)
+{
+	/* This test should never be run */
+	ztest_test_fail();
+}
+
+ZTEST(fail_assume_in_setup, test_to_skip1)
+{
+	/* This test should never be run */
+	ztest_test_fail();
+}
+
+static void fail_assume_in_before_before(void *unused)
+{
+	ARG_UNUSED(unused);
+	zassume_true(false, NULL);
+}
+
+ZTEST_SUITE(fail_assume_in_before, NULL, NULL, fail_assume_in_before_before, NULL, NULL);
+
+ZTEST(fail_assume_in_before, test_to_skip0)
+{
+	/* This test should never be run */
+	ztest_test_fail();
+}
+
+ZTEST(fail_assume_in_before, test_to_skip1)
+{
+	/* This test should never be run */
+	ztest_test_fail();
+}
+
+ZTEST_SUITE(fail_assume_in_test, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(fail_assume_in_test, test_to_skip)
+{
+	zassume_true(false, NULL);
+	ztest_test_fail();
+}
+
+void test_main(void)
+{
+	ztest_run_test_suites(NULL);
+	/* Can't run ztest_verify_all_test_suites_ran() since some tests are
+	 * skipped by design.
+	 */
+}

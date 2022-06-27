@@ -472,6 +472,26 @@ Example output for a failed macro from
 
 .. doxygengroup:: ztest_assert
 
+Assumptions
+===========
+
+These macros will instantly skip the test or suite if the related assumption fails.
+When an assumption fails, it will print the current file, line, and function,
+alongside a reason for the failure and an optional message. If the config
+option:`CONFIG_ZTEST_ASSERT_VERBOSE` is 0, the assumptions will only print the
+file and line numbers, reducing the binary size of the test.
+
+Example output for a failed macro from
+``zassume_equal(buf->ref, 2, "Invalid refcount")``:
+
+.. code-block::none
+
+    START - test_get_single_buffer
+        Assumption failed at main.c:62: test_get_single_buffer: Invalid refcount (buf->ref not equal to 2)
+     SKIP - test_get_single_buffer in 0.0 seconds
+
+.. doxygengroup:: ztest_assume
+
 Mocking
 =======
 
