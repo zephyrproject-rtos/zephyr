@@ -908,7 +908,7 @@ static void on_cmd_sockread(struct net_buf **buf, uint16_t len)
 /* Handler: @SOCKDATAIND: <socket_id>,<session_status>,<left_bytes> */
 static void on_cmd_sockdataind(struct net_buf **buf, uint16_t len)
 {
-	int socket_id, session_status, left_bytes;
+	int socket_id, left_bytes;
 	size_t out_len;
 	char *delim1, *delim2;
 	char value[sizeof("#,#,#####\r")];
@@ -937,7 +937,6 @@ static void on_cmd_sockdataind(struct net_buf **buf, uint16_t len)
 	}
 
 	*delim2++ = '\0';
-	session_status = atoi(delim1);
 
 	/* Third param is for left_bytes */
 	/* TODO: ignore for now because we ask for max data len
