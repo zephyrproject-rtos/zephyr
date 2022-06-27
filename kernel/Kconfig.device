@@ -13,4 +13,13 @@ config DEVICE_DATA_CONTEXTS
 	  that are generic accross the system, nested in various contexts
 	  which in turn can be transparently accessed relevantly.
 
+config DEVICE_CONCURRENT_ACCESS
+	bool "Concurrent access protection"
+	default y
+	select DEVICE_DATA_CONTEXTS
+	help
+	  If disabled, devices will not be protected over concurrent access.
+	  This can be a valid possibility if you know any your devices will be
+	  accessed by 2+ threads, and thus will reduce the memory footprint.
+
 endmenu

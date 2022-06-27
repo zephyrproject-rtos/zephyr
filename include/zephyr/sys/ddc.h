@@ -9,6 +9,8 @@
 #ifndef ZEPHYR_INCLUDE_SYS_DDC_H
 #define ZEPHYR_INCLUDE_SYS_DDC_H
 
+#include <zephyr/device.h>
+
 struct ddc_config;
 
 /* Macro to use as very first attribute in a custom device config structure */

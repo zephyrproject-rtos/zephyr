@@ -412,6 +412,14 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_INIT_GET(name) (&Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(name)))
 
+/** @brief Runtime control structure that may be used by a device to offer
+ *        generic means to control its access (locking, etc...)
+ */
+struct device_control {
+	/** Pointer to a semaphore controlling device's concurrent access. */
+	struct k_sem lock;
+};
+
 /**
  * @brief Runtime device context (in RAM) per driver instance
  *
@@ -820,6 +828,44 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	return z_device_is_ready(dev);
 }
 
+#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
+
+/**
+ * @brief Lock a device to avoid concurrent access.
+ *
+ * Note: Needs to be the first function called when entering a device API call.
+ * This is a valid call if only device_context's control bit is set and
+ * device's data pointer points to a valid device_control structure.
+ * If not, this will do nothing and return 0.
+ *
+ * @param dev A valid pointer on a struct device instance
+ *
+ * @return 0 if device got locked, a negative errno otherwise.
+ *         (@see struct k_sem)
+ */
+int device_lock(const struct device *dev);
+
+/**
+ * @brief Release a previously locked device
+ *
+ * Note: Needs to be the last funtion called before returning a device API call.
+ * This is a valid call if only device_context's control bit is set and
+ * device's data pointer points to a valid device_control structure.
+ * If not, this will do nothing and return the status.
+ *
+ * @param dev A valid pointer on a struct device instance.
+ * @param status The status to return
+ *
+ * @return status of the device
+ */
+int device_release(const struct device *dev, int status);
+
+#else
+
+#define device_lock(...) (0U)
+#define device_release(_dev, _status) (_status)
+
+#endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */
 /**
  * @}
  */
@@ -956,6 +1002,12 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		     Z_STRINGIFY(DEVICE_NAME_GET(drv_name)) " too long"); \
 	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,		\
 		(&DEVICE_NAME_GET(dev_name)), level, prio)
+
+#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
+
+#else /* CONFIG_DEVICE_CONCURRENT_ACCESS */
+
+#endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */
 
 #ifdef __cplusplus
 }

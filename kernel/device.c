@@ -210,3 +210,31 @@ int device_supported_foreach(const struct device *dev,
 
 	return device_visitor(handles, handle_count, visitor_cb, context);
 }
+
+#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
+
+#include <zephyr/sys/ddc.h>
+
+int device_lock(const struct device *dev)
+{
+	struct device_control *dev_ctrl = ddc_get_control(dev);
+
+	if (dev_ctrl != NULL) {
+		return k_sem_take(&dev_ctrl->lock, K_FOREVER);
+	}
+
+	return 0;
+}
+
+int device_release(const struct device *dev, int status)
+{
+	struct device_control *dev_ctrl = ddc_get_control(dev);
+
+	if (dev_ctrl != NULL) {
+		k_sem_give(&dev_ctrl->lock);
+	}
+
+	return status;
+}
+
+#endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */

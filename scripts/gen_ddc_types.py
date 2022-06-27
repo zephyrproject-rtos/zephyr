@@ -33,6 +33,9 @@ ddc_prefix = "ddc"
 
 # List of dicts of attributes to combine
 ddc_attributes = [
+    { "type" : "struct device_control",
+      "var"  : "control",
+      "init" : ".control.lock = Z_SEM_INITIALIZER(_data.ctx.control.lock, 1, 1)," },
 ]
 
 def parse_args():
