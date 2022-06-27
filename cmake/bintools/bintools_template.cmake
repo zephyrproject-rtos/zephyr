@@ -11,6 +11,7 @@
 # - elfconvert  : Tool for converting from elf into another format.
 # - readelf     : Tool for elf file processing
 # - strip       : Tool for symbol stripping
+# - symbols     : Tool for listing symbols in a binary
 #
 # Each tool will have the following minimum properties:
 # - <tool>_command : Name of executable to call
@@ -108,6 +109,13 @@
 #   strip_flag_dwo     : Flag for removing dwarf sections
 #   strip_flag_infile  : Flag for specifying the input file
 #   strip_flag_outfile : Flag for specifying the output file
+#
+# - symbols : Name of command for printing out symbols
+#             For GNU binary utilities this is nm
+#   symbols_command         : empty
+#   symbols_final   : empty
+#   symbols_infile  : ELF file name
+#   symbols_outfile : output file
 
 set(COMMAND_NOT_SUPPORTED "command not supported on bintools: ")
 
@@ -156,3 +164,10 @@ set_property(TARGET bintools PROPERTY strip_flag_debug "")
 set_property(TARGET bintools PROPERTY strip_flag_dwo "")
 set_property(TARGET bintools PROPERTY strip_flag_infile "")
 set_property(TARGET bintools PROPERTY strip_flag_outfile "")
+
+# list symbols in a binary
+set_property(TARGET bintools PROPERTY symbols_command ${CMAKE_NM})
+set_property(TARGET bintools PROPERTY symbols_flag "")
+set_property(TARGET bintools PROPERTY symbols_final "")
+set_property(TARGET bintools PROPERTY symbols_infile "")
+set_property(TARGET bintools PROPERTY symbols_outfile ">;" )

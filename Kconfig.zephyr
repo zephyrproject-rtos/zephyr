@@ -377,6 +377,11 @@ config OUTPUT_STAT
 	help
 	  Create a stat file using readelf -e <elf>
 
+config OUTPUT_SYMBOLS
+	bool "Create a symbol file"
+	help
+	  Create a symbol file using nm <elf>
+
 config OUTPUT_DISASSEMBLY
 	bool "Create a disassembly file"
 	default y
