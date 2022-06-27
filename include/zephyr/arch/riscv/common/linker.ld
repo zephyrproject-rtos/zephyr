@@ -383,6 +383,9 @@ GROUP_END(DTCM)
 	KEEP(*(.gnu.attributes))
 	}
 
+    /* Sections generated from 'zephyr,memory-region' nodes */
+    LINKER_DT_SECTIONS()
+
 /* Because ROMABLE_REGION != RAMABLE_REGION in XIP-system, it is valid
  * to set __rom_region_end symbol at the end of linker script and
  * doesn't mistakenly contain the RAMABLE_REGION in it.
