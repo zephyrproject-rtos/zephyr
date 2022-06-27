@@ -6,8 +6,8 @@
  * heavily modified for Zephyr
  */
 
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
 	#address-cells = <1>;
@@ -115,7 +115,6 @@
 				IRQ_DEFAULT_PRIORITY>;
 			 reg = <0xfffec200 0x1C>;
 			 clocks = <&osc1>;
-			 label = "arch_timer";
 		};
 
 		uart0: serial0@ffc02000 {

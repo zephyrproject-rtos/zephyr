@@ -22,7 +22,7 @@
 #include <zephyr/usb/usb_device.h>
 #include "usb_dw_registers.h"
 #include <soc.h>
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_dw);

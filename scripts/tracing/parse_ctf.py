@@ -20,6 +20,7 @@ Generate trace using samples/subsys/tracing for example:
 
 import sys
 import datetime
+import colorama
 from colorama import Fore
 import argparse
 try:
@@ -38,6 +39,8 @@ def parse_args():
     return args
 
 def main():
+    colorama.init()
+
     args = parse_args()
 
     msg_it = bt2.TraceCollectionMessageIterator(args.trace)

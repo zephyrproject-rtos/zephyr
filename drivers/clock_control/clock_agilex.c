@@ -9,7 +9,6 @@
 #include <zephyr/drivers/clock_control/clock_agilex_ll.h>
 #include <zephyr/dt-bindings/clock/intel_socfpga_clock.h>
 #include <zephyr/logging/log.h>
-#include <soc.h>
 
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 

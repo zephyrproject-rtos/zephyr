@@ -15,6 +15,37 @@ void __printk_hook_install(int (*fn)(int));
 void *__printk_get_hook(void);
 int (*_old_char_out)(int);
 
+#if defined(CONFIG_PICOLIBC)
+char expected_32[] = "22 113 10000 32768 40000 22\n"
+	"p 112 -10000 -32768 -40000 -22\n"
+	"0x1 0x01 0x0001 0x00000001 0x0000000000000001\n"
+	"0x1 0x 1 0x   1 0x       1\n"
+	"42 42 0042 00000042\n"
+	"-42 -42 -042 -0000042\n"
+	"42 42   42       42\n"
+	"42 42 0042 00000042\n"
+	"255     42    abcdef        42\n"
+#if defined(CONFIG_PICOLIBC_IO_LONG_LONG) || defined(CONFIG_PICOLIBC_IO_FLOAT)
+	"68719476735 -1 18446744073709551615 ffffffffffffffff\n"
+#else
+	"-1 -1 4294967295 ffffffff\n"
+#endif
+	"0xcafebabe 0xbeef 0x2a\n"
+;
+char expected_64[] = "22 113 10000 32768 40000 22\n"
+	"p 112 -10000 -32768 -40000 -22\n"
+	"0x1 0x01 0x0001 0x00000001 0x0000000000000001\n"
+	"0x1 0x 1 0x   1 0x       1\n"
+	"42 42 0042 00000042\n"
+	"-42 -42 -042 -0000042\n"
+	"42 42   42       42\n"
+	"42 42 0042 00000042\n"
+	"255     42    abcdef        42\n"
+	"68719476735 -1 18446744073709551615 ffffffffffffffff\n"
+	"0xcafebabe 0xbeef 0x2a\n"
+;
+char *expected = (sizeof(long) == sizeof(long long)) ? expected_64 : expected_32;
+#else
 #if defined(CONFIG_CBPRINTF_FULL_INTEGRAL)
 char *expected = "22 113 10000 32768 40000 22\n"
 		 "p 112 -10000 -32768 -40000 -22\n"
@@ -54,6 +85,7 @@ char *expected = "22 113 10000 32768 40000 22\n"
 		 "ERR -1 ERR ERR\n"
 		 "0xcafebabe 0xbeef 0x2a\n"
 ;
+#endif
 #endif
 
 size_t stv = 22;

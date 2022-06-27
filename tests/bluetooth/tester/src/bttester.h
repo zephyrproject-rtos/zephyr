@@ -723,6 +723,13 @@ struct gatt_change_db_cmd {
 	uint8_t visibility;
 } __packed;
 
+#define GATT_EATT_CONNECT		0x1f
+struct gatt_eatt_connect_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint8_t num_channels;
+} __packed;
+
 #define GATT_READ_MULTIPLE_VAR		0x20
 
 /* GATT events */

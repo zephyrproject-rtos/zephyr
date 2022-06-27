@@ -12,6 +12,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/policy.h>
 #include <soc.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
@@ -117,12 +118,32 @@ struct adc_npcx_data {
 	uint16_t *buf_end;
 	/* Threshold comparator data pointer */
 	struct adc_npcx_threshold_data *threshold_data;
+#ifdef CONFIG_PM
+	atomic_t current_pm_lock;
+#endif
 };
 
 /* Driver convenience defines */
 #define HAL_INSTANCE(dev) ((struct adc_reg *)((const struct adc_npcx_config *)(dev)->config)->base)
 
 /* ADC local functions */
+
+#ifdef CONFIG_PM
+static void adc_npcx_pm_policy_state_lock_get(struct adc_npcx_data *data)
+{
+	if (atomic_test_and_set_bit(&data->current_pm_lock, 0) == 0) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+
+static void adc_npcx_pm_policy_state_lock_put(struct adc_npcx_data *data)
+{
+	if (atomic_test_and_clear_bit(&data->current_pm_lock, 0) == 1) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+#endif
+
 static inline uint32_t npcx_thrctl_reg(const struct device *dev,
 				       uint32_t ctl_no)
 {
@@ -179,6 +200,10 @@ static void adc_npcx_isr(const struct device *dev)
 			inst->ADCCS = 0;
 			/* Turn off ADC */
 			inst->ADCCNF &= ~(BIT(NPCX_ADCCNF_ADCEN));
+
+#ifdef CONFIG_PM
+			adc_npcx_pm_policy_state_lock_put(data);
+#endif
 		}
 		/* Inform sampling is done */
 		adc_context_on_sampling_done(&data->ctx, data->adc_dev);
@@ -240,6 +265,9 @@ static void adc_npcx_start_scan(const struct device *dev)
 	struct adc_npcx_data *const data = dev->data;
 	struct adc_reg *const inst = HAL_INSTANCE(dev);
 
+#ifdef CONFIG_PM
+	adc_npcx_pm_policy_state_lock_get(data);
+#endif
 	/* Turn on ADC first */
 	inst->ADCCNF |= BIT(NPCX_ADCCNF_ADCEN);
 
@@ -399,6 +427,9 @@ static void adc_npcx_set_repetitive(const struct device *dev, int chnsel,
 	inst->ADCCNF |= BIT(NPCX_ADCCNF_STOP);
 
 	if (enable) {
+#ifdef CONFIG_PM
+		adc_npcx_pm_policy_state_lock_get(data);
+#endif
 		/* Turn on ADC */
 		inst->ADCCNF |= BIT(NPCX_ADCCNF_ADCEN);
 		/* Set ADC conversion code to SW conversion mode */
@@ -421,6 +452,9 @@ static void adc_npcx_set_repetitive(const struct device *dev, int chnsel,
 			inst->ADCCNF &= ~BIT(NPCX_ADCCNF_ADCRPTC);
 			/* Turn off ADC */
 			inst->ADCCNF &= ~BIT(NPCX_ADCCNF_ADCEN);
+#ifdef CONFIG_PM
+			adc_npcx_pm_policy_state_lock_put(data);
+#endif
 		} else {
 			/* Start conversion again */
 			inst->ADCCNF |= BIT(NPCX_ADCCNF_START);

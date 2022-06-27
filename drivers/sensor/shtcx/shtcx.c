@@ -30,7 +30,7 @@ static const uint16_t measure_wait_us[2][2] = {
 	/* shtc1: 14.4ms, 0.94ms */
 	{ 14400, 940 }, /* shtc1 */
 	/* shtc3: 12.1ms, 0.8ms */
-	{ 1210, 800 }, /* shtc3 */
+	{ 12100, 800 }, /* shtc3 */
 };
 
 /*

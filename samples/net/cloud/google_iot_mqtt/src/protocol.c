@@ -161,7 +161,7 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 			pub->message_id,
 			pub->message.topic.qos);
 		LOG_INF("   item: %s",
-			log_strdup(pub->message.topic.topic.utf8));
+			pub->message.topic.topic.utf8);
 
 		/* assuming the config message is textual */
 		while (len) {
@@ -174,7 +174,7 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 			}
 
 			d[bytes_read] = '\0';
-			LOG_INF("   payload: %s", log_strdup(d));
+			LOG_INF("   payload: %s", d);
 			len -= bytes_read;
 		}
 

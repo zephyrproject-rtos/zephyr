@@ -1793,6 +1793,7 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 	}
 
 #if defined(CONFIG_IEEE802154)
+	/* ieee802154_rssi and ieee802154_txpwr form a union, copying one of them is enough */
 	net_pkt_set_ieee802154_rssi(clone_pkt, net_pkt_ieee802154_rssi(pkt));
 	net_pkt_set_ieee802154_lqi(clone_pkt, net_pkt_ieee802154_lqi(pkt));
 	net_pkt_set_ieee802154_arb(clone_pkt, net_pkt_ieee802154_arb(pkt));
@@ -1890,10 +1891,7 @@ struct net_pkt *net_pkt_shallow_clone(struct net_pkt *pkt, k_timeout_t timeout)
 	clone_pkt->buffer = pkt->buffer;
 	buf = pkt->buffer;
 
-	while (buf) {
-		net_pkt_frag_ref(buf);
-		buf = buf->frags;
-	}
+	net_pkt_frag_ref(buf);
 
 	if (pkt->buffer) {
 		/* The link header pointers are only usable if there is

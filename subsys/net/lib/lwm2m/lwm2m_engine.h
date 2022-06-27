@@ -122,6 +122,7 @@ void lwm2m_engine_clear_duplicate_path(sys_slist_t *lwm2m_path_list, sys_slist_t
 /* LwM2M message functions */
 struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx);
 void lwm2m_reset_message(struct lwm2m_message *msg, bool release);
+void lm2m_message_clear_allocations(struct lwm2m_message *msg);
 int lwm2m_init_message(struct lwm2m_message *msg);
 int lwm2m_send_message_async(struct lwm2m_message *msg);
 /* Notification and Send operation */

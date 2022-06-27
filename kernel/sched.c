@@ -1712,6 +1712,13 @@ void z_thread_abort(struct k_thread *thread)
 {
 	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
 
+	if ((thread->base.user_options & K_ESSENTIAL) != 0) {
+		k_spin_unlock(&sched_spinlock, key);
+		__ASSERT(false, "aborting essential thread %p", thread);
+		k_panic();
+		return;
+	}
+
 	if ((thread->base.thread_state & _THREAD_DEAD) != 0U) {
 		k_spin_unlock(&sched_spinlock, key);
 		return;

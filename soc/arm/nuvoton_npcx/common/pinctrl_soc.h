@@ -102,9 +102,9 @@ typedef struct npcx_pinctrl pinctrl_soc_pin_t;
 	UTIL_OR(DT_PROP(node_id, bias_pull_down),	\
 		DT_PROP(node_id, bias_pull_up))
 
-#define Z_PINCTRL_NPCX_HAS_DRIVE_PROP(node_id)		\
-	UTIL_AND(DT_PROP(node_id, drive_open_drain),	\
-		DT_PROP(node_id, drive_supported))
+#define Z_PINCTRL_NPCX_HAS_DRIVE_PROP(node_id, node_periph)	\
+	UTIL_AND(DT_PROP(node_id, drive_open_drain),		\
+		DT_NODE_HAS_PROP(node_periph, pwm_channel))
 
 /**
  * @brief Utility macro to initialize a periphral pinmux configuration.
@@ -142,12 +142,14 @@ typedef struct npcx_pinctrl pinctrl_soc_pin_t;
  * @brief Utility macro to initialize a periphral drive mode configuration.
  *
  * @param node_id Node identifier.
+ * @param node_periph Peripheral node identifier.
  */
-#define Z_PINCTRL_NPCX_PERIPH_DRIVE_INIT(node_id)				\
+#define Z_PINCTRL_NPCX_PERIPH_DRIVE_INIT(node_id, node_periph)			\
 	{									\
 		.flags.type = NPCX_PINCTRL_TYPE_PERIPH,				\
 		.flags.io_drive_type = Z_PINCTRL_NPCX_DRIVE_TYPE(node_id),	\
 		.cfg.periph.type = NPCX_PINCTRL_TYPE_PERIPH_DRIVE,		\
+		.cfg.periph.group = DT_PROP(node_periph, pwm_channel),		\
 	},
 
 /**
@@ -158,9 +160,10 @@ typedef struct npcx_pinctrl pinctrl_soc_pin_t;
  * @param idx Property entry index.
  */
 #define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)					\
-	COND_CODE_1(Z_PINCTRL_NPCX_HAS_DRIVE_PROP(DT_PROP_BY_IDX(node_id, prop, idx)),	\
+	COND_CODE_1(Z_PINCTRL_NPCX_HAS_DRIVE_PROP(					\
+			DT_PROP_BY_IDX(node_id, prop, idx), node_id),			\
 		(Z_PINCTRL_NPCX_PERIPH_DRIVE_INIT(					\
-			DT_PROP_BY_IDX(node_id, prop, idx))), ())			\
+			DT_PROP_BY_IDX(node_id, prop, idx), node_id)), ())		\
 	COND_CODE_1(Z_PINCTRL_NPCX_HAS_PUPD_PROP(DT_PROP_BY_IDX(node_id, prop, idx)),	\
 		(Z_PINCTRL_NPCX_PERIPH_PUPD_INIT(					\
 			DT_PROP_BY_IDX(node_id, prop, idx), periph_pupd)), ())		\

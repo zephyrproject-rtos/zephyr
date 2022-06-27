@@ -10,7 +10,7 @@
 #include <offsets_short.h>
 #include <x86_mmu.h>
 
-extern void x86_sse_init(struct k_thread *); /* in locore.S */
+extern void x86_sse_init(struct k_thread *thread); /* in locore.S */
 
 /* FIXME: This exists to make space for a "return address" at the top
  * of the stack.  Obviously this is unused at runtime, but is required

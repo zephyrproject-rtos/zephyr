@@ -418,7 +418,7 @@ static int lc3_release(struct bt_audio_stream *stream)
 
 static struct bt_codec lc3_codec = BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY,
 						BT_CODEC_LC3_DURATION_ANY,
-						0x03, 30, 240, 2,
+						BT_CODEC_LC3_CHAN_COUNT_SUPPORT(1, 2), 30, 240, 2,
 						(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |
 						BT_AUDIO_CONTEXT_TYPE_MEDIA),
 						BT_AUDIO_CONTEXT_TYPE_ANY);
@@ -1356,6 +1356,12 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	for (i = 0; i < ARRAY_SIZE(caps); i++) {
 		bt_audio_capability_register(&caps[i]);
 	}
+
+	/* Mark all supported contexts as available */
+	bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SINK,
+						   BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+	bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SOURCE,
+						   BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 	for (i = 0; i < ARRAY_SIZE(streams); i++) {
 		bt_audio_stream_cb_register(&streams[i], &stream_ops);

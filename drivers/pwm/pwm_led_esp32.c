@@ -78,33 +78,6 @@ struct pwm_led_esp32_config {
 	struct pwm_led_esp32_timer timer_cfg[2][4];
 };
 
-/* TODO: Remove these functions after this PR:
- * https://github.com/zephyrproject-rtos/zephyr/pull/5113
- */
-static inline void set_mask32(uint32_t v, uint32_t mem_addr)
-{
-	sys_write32(sys_read32(mem_addr) | v, mem_addr);
-}
-
-static inline void clear_mask32(uint32_t v, uint32_t mem_addr)
-{
-	sys_write32(sys_read32(mem_addr) & ~v, mem_addr);
-}
-/* end Remove after PR 5113 */
-
-static uint8_t pwm_led_esp32_get_gpio_config(uint8_t pin,
-		const struct pwm_led_esp32_channel *ch_cfg)
-{
-	uint8_t i;
-
-	for (i = 0U; i < 16; i++) {
-		if (ch_cfg[i].gpio == pin) {
-			return i;
-		}
-	}
-	return -EINVAL;
-}
-
 static void pwm_led_esp32_low_speed_update(int speed_mode, int channel)
 {
 	uint32_t reg_addr;
@@ -185,7 +158,7 @@ static void pwm_led_esp32_bind_channel_timer(int speed_mode,
 		timer_addr = PWM_ESP32_LSCH_CONF0(channel);
 	}
 
-	set_mask32(timer, timer_addr);
+	esp32_set_mask32(timer, timer_addr);
 
 	pwm_led_esp32_low_speed_update(speed_mode, channel);
 }
@@ -277,9 +250,9 @@ static int pwm_led_esp32_timer_set(int speed_mode, int timer,
 		timer_addr = PWM_ESP32_LSTIMER(timer);
 	}
 
-	set_mask32(div_num << LEDC_DIV_NUM_LSTIMER0_S, timer_addr);
-	set_mask32(tick_sel << LEDC_TICK_SEL_LSTIMER0_S, timer_addr);
-	set_mask32(bit_num & LEDC_LSTIMER0_LIM_M, timer_addr);
+	esp32_set_mask32(div_num << LEDC_DIV_NUM_LSTIMER0_S, timer_addr);
+	esp32_set_mask32(tick_sel << LEDC_TICK_SEL_LSTIMER0_S, timer_addr);
+	esp32_set_mask32(bit_num & LEDC_LSTIMER0_LIM_M, timer_addr);
 
 	if (speed_mode) {
 		/* update div_num and bit_num */
@@ -299,8 +272,8 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel,
 				    uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	int speed_mode;
-	int channel;
 	int timer;
+	int gpio;
 	int ret;
 	const struct pwm_led_esp32_config * const config =
 		(const struct pwm_led_esp32_config *) dev->config;
@@ -312,22 +285,20 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel,
 		return -ENOTSUP;
 	}
 
-	channel = pwm_led_esp32_get_gpio_config(channel, config->ch_cfg);
-	if (channel < 0) {
-		return -EINVAL;
-	}
 	speed_mode = channel < 8 ? PWM_LED_ESP32_HIGH_SPEED :
 				   PWM_LED_ESP32_LOW_SPEED;
 
 	timer = config->ch_cfg[channel].timer;
+	gpio = config->ch_cfg[channel].gpio;
+
 	/* Now we know which speed_mode and timer is set, then we will convert
 	 * the channel number from (0 - 15) to (0 - 7).
 	 */
 	channel %= 8;
 
 	/* Enable peripheral */
-	set_mask32(DPORT_LEDC_CLK_EN, DPORT_PERIP_CLK_EN_REG);
-	clear_mask32(DPORT_LEDC_RST, DPORT_PERIP_RST_EN_REG);
+	esp32_set_mask32(DPORT_LEDC_CLK_EN, DPORT_PERIP_CLK_EN_REG);
+	esp32_clear_mask32(DPORT_LEDC_RST, DPORT_PERIP_RST_EN_REG);
 
 	/* Set timer */
 	ret = pwm_led_esp32_timer_set(speed_mode, timer,
@@ -338,10 +309,11 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel,
 	}
 
 	/* Set channel */
-	ret = pwm_led_esp32_channel_set(channel, speed_mode, channel, 0, timer);
+	ret = pwm_led_esp32_channel_set(gpio, speed_mode, channel, 0, timer);
 	if (ret < 0) {
 		return ret;
 	}
+
 	pwm_led_esp32_duty_set(speed_mode, channel, pulse_cycles);
 	pwm_led_esp32_update_duty(speed_mode, channel);
 
@@ -352,16 +324,11 @@ static int pwm_led_esp32_get_cycles_per_sec(const struct device *dev,
 					    uint32_t channel, uint64_t *cycles)
 {
 	const struct pwm_led_esp32_config *config;
-	int channel;
 	int timer;
 	int speed_mode;
 
 	config = (const struct pwm_led_esp32_config *) dev->config;
 
-	channel = pwm_led_esp32_get_gpio_config(channel, config->ch_cfg);
-	if (channel < 0) {
-		return -EINVAL;
-	}
 	speed_mode = channel < 8 ? PWM_LED_ESP32_HIGH_SPEED :
 				   PWM_LED_ESP32_LOW_SPEED;
 

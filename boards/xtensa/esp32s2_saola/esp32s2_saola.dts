@@ -129,7 +129,6 @@
 
 		storage_partition: partition@250000 {
 			label = "storage";
-			reg = <0x00009000 0x00006000>;
 			reg = <0x00250000 0x00006000>;
 		};
 	};

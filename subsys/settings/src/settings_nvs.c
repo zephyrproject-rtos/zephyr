@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <string.h>
 
-#include "settings/settings.h"
+#include <zephyr/settings/settings.h>
 #include "settings/settings_nvs.h"
 #include "settings_priv.h"
 #include <zephyr/storage/flash_map.h>

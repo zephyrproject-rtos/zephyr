@@ -9,14 +9,14 @@
  * @brief Test log message
  */
 
-#include <zephyr.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log.h>
 #include "mock_backend.h"
-#include <sys/printk.h>
-#include <logging/log_backend.h>
-#include <logging/log_backend_std.h>
-#include <logging/log_ctrl.h>
-#include <logging/log_output.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_backend_std.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log_output.h>
 #include <tc_util.h>
 #include <stdbool.h>
 #include <ztest.h>
@@ -46,17 +46,17 @@ void test_log_syst_format_table_selection(void)
 
 	log_format_func_t test_log_output_func = log_format_func_t_get(test_log_type_syst);
 
-	zassert_equal_ptr(test_log_output_func, log_output_msg2_syst_process,
+	zassert_equal_ptr(test_log_output_func, log_output_msg_syst_process,
 					"Correct Function pointer for SYST log\n"
 					"format was not selected %p vs %p",
-					test_log_output_func, log_output_msg2_syst_process);
+					test_log_output_func, log_output_msg_syst_process);
 
 #elif CONFIG_LOG_BACKEND_MOCK_OUTPUT_DEFAULT == LOG_OUTPUT_TEXT
 
 	uint32_t test_log_type_text = LOG_OUTPUT_TEXT;
 	log_format_func_t test_log_output_func = log_format_func_t_get(test_log_type_text);
 
-	zassert_equal_ptr(test_log_output_func, log_output_msg2_process,
+	zassert_equal_ptr(test_log_output_func, log_output_msg_process,
 						"Function pointer for TEXT log format was not selected");
 
 #endif

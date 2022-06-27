@@ -1468,7 +1468,7 @@ static void tcp_cb(struct tcp *conn, void *user_data)
 	struct net_shell_user_data *data = user_data;
 	const struct shell *shell = data->shell;
 	int *count = data->user_data;
-	uint16_t recv_mss = net_tcp_get_recv_mss(conn);
+	uint16_t recv_mss = net_tcp_get_supported_mss(conn);
 
 	PR("%p %p   %5u    %5u %10u %10u %5u   %s\n",
 	   conn, conn->context,

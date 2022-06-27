@@ -8,6 +8,7 @@
 #include <limits.h>
 #include <assert.h>
 #include <string.h>
+#include <zephyr/toolchain.h>
 
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
@@ -27,6 +28,16 @@ static img_mgmt_upload_fn img_mgmt_upload_cb;
 const struct img_mgmt_dfu_callbacks_t *img_mgmt_dfu_callbacks_fn;
 
 struct img_mgmt_state g_img_mgmt_state;
+
+#if SIZE_MAX == UINT32_MAX
+#define zcbor_size_decode	zcbor_uint32_decode
+#define zcbor_size_put		zcbor_uint32_put
+#elif SIZE_MAX == UINT64_MAX
+#define zcbor_size_decode	zcbor_uint64_decode
+#define zcbor_size_put		zcbor_uint64_put
+#else
+#error "Unsupported size_t encoding"
+#endif
 
 #if CONFIG_IMG_MGMT_VERBOSE_ERR
 const char *img_mgmt_err_str_app_reject = "app reject";
@@ -265,14 +276,14 @@ img_mgmt_erase(struct mgmt_ctxt *ctxt)
 
 	rc = img_mgmt_impl_erase_slot();
 
-	if (!rc) {
+	if (rc != 0) {
 		img_mgmt_dfu_stopped();
 	}
 
 	ok = zcbor_tstr_put_lit(zse, "rc")	&&
 	     zcbor_int32_put(zse, rc);
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 static int
@@ -284,9 +295,9 @@ img_mgmt_upload_good_rsp(struct mgmt_ctxt *ctxt)
 	ok = zcbor_tstr_put_lit(zse, "rc")			&&
 	     zcbor_int32_put(zse, MGMT_ERR_EOK)			&&
 	     zcbor_tstr_put_lit(zse, "off")			&&
-	     zcbor_int32_put(zse,  g_img_mgmt_state.off);
+	     zcbor_size_put(zse, g_img_mgmt_state.off);
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 /**
@@ -336,8 +347,8 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 	bool ok;
 	size_t decoded = 0;
 	struct img_mgmt_upload_req req = {
-		.off = -1,
-		.size = -1,
+		.off = SIZE_MAX,
+		.size = SIZE_MAX,
 		.img_data = { 0 },
 		.data_sha = { 0 },
 		.upgrade = false,
@@ -348,10 +359,10 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 	bool last = false;
 
 	struct zcbor_map_decode_key_val image_upload_decode[] = {
-		ZCBOR_MAP_DECODE_KEY_VAL(image, zcbor_int64_decode, &req.image),
+		ZCBOR_MAP_DECODE_KEY_VAL(image, zcbor_uint32_decode, &req.image),
 		ZCBOR_MAP_DECODE_KEY_VAL(data, zcbor_bstr_decode, &req.img_data),
-		ZCBOR_MAP_DECODE_KEY_VAL(len, zcbor_uint64_decode, &req.size),
-		ZCBOR_MAP_DECODE_KEY_VAL(off, zcbor_uint64_decode, &req.off),
+		ZCBOR_MAP_DECODE_KEY_VAL(len, zcbor_size_decode, &req.size),
+		ZCBOR_MAP_DECODE_KEY_VAL(off, zcbor_size_decode, &req.off),
 		ZCBOR_MAP_DECODE_KEY_VAL(sha, zcbor_bstr_decode, &req.data_sha),
 		ZCBOR_MAP_DECODE_KEY_VAL(upgrade, zcbor_bool_decode, &req.upgrade)
 	};
@@ -415,16 +426,11 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 		memset(&g_img_mgmt_state.data_sha[req.data_sha.len], 0,
 			   IMG_MGMT_DATA_SHA_LEN - req.data_sha.len);
 
-#if CONFIG_IMG_ERASE_PROGRESSIVELY
-		/* setup for lazy sector by sector erase */
-		g_img_mgmt_state.sector_id = -1;
-		g_img_mgmt_state.sector_end = 0;
-#else
+#ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
 		/* erase the entire req.size all at once */
 		if (action.erase) {
 			rc = img_mgmt_impl_erase_image_data(0, req.size);
 			if (rc != 0) {
-				rc = MGMT_ERR_EUNKNOWN;
 				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
 					img_mgmt_err_str_flash_erase_failed);
 				goto end;
@@ -437,15 +443,6 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 
 	/* Write the image data to flash. */
 	if (req.img_data.len != 0) {
-#if CONFIG_IMG_ERASE_PROGRESSIVELY
-		/* erase as we cross sector boundaries */
-		if (img_mgmt_impl_erase_if_needed(req.off, action.write_bytes) != 0) {
-			rc = MGMT_ERR_EUNKNOWN;
-			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
-				img_mgmt_err_str_flash_erase_failed);
-			goto end;
-		}
-#endif
 		/* If this is the last chunk */
 		if (g_img_mgmt_state.off + req.img_data.len == g_img_mgmt_state.size) {
 			last = true;
@@ -453,19 +450,22 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 
 		rc = img_mgmt_impl_write_image_data(req.off, req.img_data.value, action.write_bytes,
 						    last);
-		if (rc != 0) {
-			rc = MGMT_ERR_EUNKNOWN;
+		if (rc == 0) {
+			g_img_mgmt_state.off += action.write_bytes;
+		} else {
+			/* Write failed, currently not able to recover from this */
+			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
+			g_img_mgmt_state.area_id = -1;
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
 				img_mgmt_err_str_flash_write_failed);
 			goto end;
-		} else {
-			g_img_mgmt_state.off += action.write_bytes;
-			if (g_img_mgmt_state.off == g_img_mgmt_state.size) {
-				/* Done */
-				img_mgmt_dfu_pending();
-				cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
-				g_img_mgmt_state.area_id = -1;
-			}
+		}
+
+		if (g_img_mgmt_state.off == g_img_mgmt_state.size) {
+			/* Done */
+			img_mgmt_dfu_pending();
+			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
+			g_img_mgmt_state.area_id = -1;
 		}
 	}
 end:

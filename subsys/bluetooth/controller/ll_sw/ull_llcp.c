@@ -542,20 +542,40 @@ static int prt_elapse(uint16_t *expire, uint16_t elapsed_event)
 	return 0;
 }
 
-int ull_cp_prt_elapse(struct ll_conn *conn, uint16_t elapsed_event)
+int ull_cp_prt_elapse(struct ll_conn *conn, uint16_t elapsed_event, uint8_t *error_code)
 {
 	int loc_ret;
 	int rem_ret;
 
 	loc_ret = prt_elapse(&conn->llcp.local.prt_expire, elapsed_event);
-	rem_ret = prt_elapse(&conn->llcp.remote.prt_expire, elapsed_event);
+	if (loc_ret == -ETIMEDOUT) {
+		/* Local Request Machine timed out */
 
-	if (loc_ret == -ETIMEDOUT || rem_ret == -ETIMEDOUT) {
-		/* One of the timers expired */
+		struct proc_ctx *ctx;
+
+		ctx = llcp_lr_peek(conn);
+		LL_ASSERT(ctx);
+
+		if (ctx->proc == PROC_TERMINATE) {
+			/* Active procedure is ACL Termination */
+			*error_code = ctx->data.term.error_code;
+		} else {
+			*error_code = BT_HCI_ERR_LL_RESP_TIMEOUT;
+		}
+
+		return -ETIMEDOUT;
+	}
+
+	rem_ret = prt_elapse(&conn->llcp.remote.prt_expire, elapsed_event);
+	if (rem_ret == -ETIMEDOUT) {
+		/* Remote Request Machine timed out */
+
+		*error_code = BT_HCI_ERR_LL_RESP_TIMEOUT;
 		return -ETIMEDOUT;
 	}
 
 	/* Both timers are still running */
+	*error_code = BT_HCI_ERR_SUCCESS;
 	return 0;
 }
 
@@ -971,6 +991,19 @@ uint8_t ull_cp_cte_req(struct ll_conn *conn, uint8_t min_cte_len, uint8_t cte_ty
 {
 	struct proc_ctx *ctx;
 
+	/* If Controller gained, awareness:
+	 * - by Feature Exchange control procedure that peer device does not support CTE response,
+	 * - by reception LL_UNKNOWN_RSP with unknown type LL_CTE_REQ that peer device does not
+	 *   recognize CTE request,
+	 * then response to Host that CTE request enable command is not possible due to unsupported
+	 * remote feature.
+	 */
+	if ((conn->llcp.fex.valid &&
+	     (!(conn->llcp.fex.features_peer & BIT64(BT_LE_FEAT_BIT_CONN_CTE_RESP)))) ||
+	    (!conn->llcp.fex.valid && !feature_cte_req(conn))) {
+		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
+	}
+
 	/* The request may be started by periodic CTE request procedure, so it skips earlier
 	 * verification of PHY. In case the PHY has changed to CODE the request should be stopped.
 	 */
@@ -1018,9 +1051,18 @@ static bool pdu_is_reject(struct pdu_data *pdu, struct proc_ctx *ctx)
 	/* For LL_REJECT_IND there is no simple way of confirming protocol validity of the PDU
 	 * for the given procedure, so simply pass it on and let procedure engine deal with it
 	 */
-	return (((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND) &&
-		 (ctx->tx_opcode == pdu->llctrl.reject_ext_ind.reject_opcode)) ||
-		(pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND));
+	return (pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND);
+}
+
+static bool pdu_is_reject_ext(struct pdu_data *pdu, struct proc_ctx *ctx)
+{
+	return ((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND) &&
+		(ctx->tx_opcode == pdu->llctrl.reject_ext_ind.reject_opcode));
+}
+
+static bool pdu_is_any_reject(struct pdu_data *pdu, struct proc_ctx *ctx)
+{
+	return (pdu_is_reject_ext(pdu, ctx) || pdu_is_reject(pdu, ctx));
 }
 
 static bool pdu_is_terminate(struct pdu_data *pdu)
@@ -1467,14 +1509,13 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 			/* Local active procedure
 			 * Remote active procedure
 			 */
-
 			unexpected_l = !(pdu_is_expected(pdu, ctx_l) ||
 					 pdu_is_unknown(pdu, ctx_l) ||
-					 pdu_is_reject(pdu, ctx_l));
+					 pdu_is_any_reject(pdu, ctx_l));
 
 			unexpected_r = !(pdu_is_expected(pdu, ctx_r) ||
 					 pdu_is_unknown(pdu, ctx_r) ||
-					 pdu_is_reject(pdu, ctx_r));
+					 pdu_is_reject_ext(pdu, ctx_r));
 
 			if (unexpected_l && unexpected_r) {
 				/* Local active procedure
@@ -1520,7 +1561,7 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 
 			unexpected_l = !(pdu_is_expected(pdu, ctx_l) ||
 					 pdu_is_unknown(pdu, ctx_l) ||
-					 pdu_is_reject(pdu, ctx_l));
+					 pdu_is_any_reject(pdu, ctx_l));
 
 			if (unexpected_l) {
 				/* Local active procedure

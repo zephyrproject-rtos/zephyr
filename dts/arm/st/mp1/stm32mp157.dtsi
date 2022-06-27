@@ -156,9 +156,9 @@
 			};
 		};
 
-		wwdg1: watchdog@4000a000 {
+		wwdg: wwdg1: watchdog@4000a000 {
 			compatible = "st,stm32-window-watchdog";
-			reg = <0x4000A000 0x400>;
+			reg = <0x4000a000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000800>;
 			label = "WWDG_1";
 			interrupts = <0 7>;
@@ -311,7 +311,7 @@
 			reg = <0x5A001000 0x200>;
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
-			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x000000001>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00000001>;
 			label = "LTDC";
 			status = "disabled";
 		};

@@ -6,8 +6,9 @@
 import os
 import pickle
 import sys
+from pathlib import Path
 
-ZEPHYR_BASE = os.environ["ZEPHYR_BASE"]
+ZEPHYR_BASE = str(Path(__file__).resolve().parents[2])
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
                                 "python-devicetree", "src"))
 

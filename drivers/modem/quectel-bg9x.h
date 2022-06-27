@@ -10,7 +10,6 @@
 #include <zephyr/kernel.h>
 #include <ctype.h>
 #include <errno.h>
-#include <zephyr/zephyr.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -120,32 +119,6 @@ struct socket_read_data {
 	size_t		 recv_buf_len;
 	struct sockaddr	 *recv_addr;
 	uint16_t	 recv_read_len;
-};
-
-/* Modem pins - Power, Reset & others. */
-static struct modem_pin modem_pins[] = {
-	/* MDM_POWER */
-	MODEM_PIN(DT_INST_GPIO_LABEL(0, mdm_power_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_power_gpios),
-		  DT_INST_GPIO_FLAGS(0, mdm_power_gpios) | GPIO_OUTPUT_LOW),
-
-	/* MDM_RESET */
-	MODEM_PIN(DT_INST_GPIO_LABEL(0, mdm_reset_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_reset_gpios),
-		  DT_INST_GPIO_FLAGS(0, mdm_reset_gpios) | GPIO_OUTPUT_LOW),
-
-#if DT_INST_NODE_HAS_PROP(0, mdm_dtr_gpios)
-	/* MDM_DTR */
-	MODEM_PIN(DT_INST_GPIO_LABEL(0, mdm_dtr_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_dtr_gpios),
-		  DT_INST_GPIO_FLAGS(0, mdm_dtr_gpios) | GPIO_OUTPUT_LOW),
-#endif
-#if DT_INST_NODE_HAS_PROP(0, mdm_wdisable_gpios)
-	/* MDM_WDISABLE */
-	MODEM_PIN(DT_INST_GPIO_LABEL(0, mdm_wdisable_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_wdisable_gpios),
-		  DT_INST_GPIO_FLAGS(0, mdm_wdisable_gpios) | GPIO_OUTPUT_LOW),
-#endif
 };
 
 #endif /* QUECTEL_BG9X_H */

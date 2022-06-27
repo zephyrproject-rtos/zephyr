@@ -19,13 +19,6 @@
 /* default system clock */
 #define SYSCLK_DEFAULT_IOSC_HZ			MHZ(16)
 
-/*
- * UART: use lr and sr to access subsystem uart IP
- */
-#define UART_NS16550_ACCESS_IOPORT
-#define UART_REG_ADDR_INTERVAL 4
-
-
 /* ARC EM Core IRQs */
 #define IRQ_TIMER0				16
 #define IRQ_TIMER1				17

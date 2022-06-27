@@ -4,10 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "arch/xtensa/cache.h"
+#include <zephyr/arch/xtensa/cache.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_core.h>
-#include <zephyr/logging/log_msg.h>
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_backend_std.h>
 #include <zephyr/logging/log_backend_cavs_hda.h>
@@ -21,7 +20,8 @@ static uint32_t hda_log_chan;
 /*
  * HDA requires 128 byte aligned data and 128 byte aligned transfers.
  */
-static __aligned(128) uint8_t hda_log_buf[CONFIG_LOG_BACKEND_CAVS_HDA_SIZE];
+#define ALIGNMENT DMA_BUF_ALIGNMENT(DT_NODELABEL(hda_host_in))
+static __aligned(ALIGNMENT) uint8_t hda_log_buf[CONFIG_LOG_BACKEND_CAVS_HDA_SIZE];
 static volatile uint32_t hda_log_buffered;
 static struct k_spinlock hda_log_lock;
 static struct k_timer hda_log_timer;
@@ -217,7 +217,7 @@ static uint32_t format_flags(void)
 static volatile uint32_t counter;
 
 static void process(const struct log_backend *const backend,
-		union log_msg2_generic *msg)
+		union log_msg_generic *msg)
 {
 	ARG_UNUSED(backend);
 

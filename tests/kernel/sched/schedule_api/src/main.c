@@ -11,7 +11,7 @@ K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 K_THREAD_STACK_ARRAY_DEFINE(tstacks, MAX_NUM_THREAD, STACK_SIZE);
 
 /* Not in header file intentionally, see #16760 */
-K_THREAD_STACK_EXTERN(ustack);
+K_THREAD_STACK_DECLARE(ustack, STACK_SIZE);
 
 void spin_for_ms(int ms)
 {

@@ -359,6 +359,7 @@ void llcp_tx_resume_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask re
  * LLCP Procedure Response Timeout
  */
 void llcp_lr_prt_restart(struct ll_conn *conn);
+void llcp_lr_prt_restart_with_value(struct ll_conn *conn, uint16_t value);
 void llcp_lr_prt_stop(struct ll_conn *conn);
 void llcp_rr_prt_restart(struct ll_conn *conn);
 void llcp_rr_prt_stop(struct ll_conn *conn);

@@ -487,12 +487,12 @@ static inline int z_impl_dma_request_channel(const struct device *dev,
 
 	for (i = 0; i < dma_ctx->dma_channels; i++) {
 		if (!atomic_test_and_set_bit(dma_ctx->atomic, i)) {
-			channel = i;
 			if (api->chan_filter &&
-			    !api->chan_filter(dev, channel, filter_param)) {
-				atomic_clear_bit(dma_ctx->atomic, channel);
+			    !api->chan_filter(dev, i, filter_param)) {
+				atomic_clear_bit(dma_ctx->atomic, i);
 				continue;
 			}
+			channel = i;
 			break;
 		}
 	}
@@ -639,6 +639,17 @@ static inline uint32_t dma_burst_index(uint32_t burst)
 	/* Convert to bit pattern for writing to a register */
 	return find_msb_set(burst);
 }
+
+/**
+ * Get the device tree property describing the buffer alignment
+ *
+ * Useful when statically defining or allocating buffers for DMA usage where
+ * memory alignment often matters.
+ *
+ * @param node Node identifier, e.g. DT_NODELABEL(dma_0)
+ * @return alignment Memory byte alignment required for DMA buffers
+ */
+#define DMA_BUF_ALIGNMENT(node) DT_PROP(node, dma_buf_alignment)
 
 /**
  * @}

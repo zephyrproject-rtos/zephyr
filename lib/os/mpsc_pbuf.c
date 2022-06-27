@@ -44,6 +44,7 @@ void mpsc_pbuf_init(struct mpsc_pbuf_buffer *buffer,
 
 	err = k_sem_init(&buffer->sem, 0, 1);
 	__ASSERT_NO_MSG(err == 0);
+	ARG_UNUSED(err);
 }
 
 static inline bool free_space(struct mpsc_pbuf_buffer *buffer, uint32_t *res)
@@ -425,11 +426,10 @@ const union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer)
 	do {
 		uint32_t a;
 		k_spinlock_key_t key;
-		bool wrap;
 
 		cont = false;
 		key = k_spin_lock(&buffer->lock);
-		wrap = available(buffer, &a);
+		(void)available(buffer, &a);
 		item = (union mpsc_pbuf_generic *)
 			&buffer->buf[buffer->tmp_rd_idx];
 

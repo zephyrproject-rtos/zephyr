@@ -306,6 +306,17 @@
 		#size-cells = <0>;
 	};
 
+	hs_lspi1: spi@128000 {
+		compatible = "nxp,lpc-spi";
+		reg = <0x128000 0x1000>;
+		interrupts = <66 0>;
+		label = "HS_LSPI_1";
+		clocks = <&clkctl1 MCUX_HS_SPI1_CLK>;
+		status = "disabled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
 	dma0: dma-controller@104000 {
 		compatible = "nxp,lpc-dma";
 		reg = <0x104000 0x1000>;

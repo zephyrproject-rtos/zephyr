@@ -20,7 +20,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/uart.h>
 #include <uart_imx.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #define UART_STRUCT(dev) \
 	((UART_Type *)((const struct imx_uart_config *const)(dev)->config)->base)
@@ -113,16 +113,18 @@ static void uart_imx_poll_out(const struct device *dev, unsigned char c)
 static int uart_imx_poll_in(const struct device *dev, unsigned char *c)
 {
 	UART_Type *uart = UART_STRUCT(dev);
+	int ret = -1;
 
-	while (!UART_GetStatusFlag(uart, uartStatusRxDataReady)) {
+	if (UART_GetStatusFlag(uart, uartStatusRxDataReady)) {
+		*c = UART_Getchar(uart);
+
+		if (UART_GetStatusFlag(uart, uartStatusRxOverrun)) {
+			UART_ClearStatusFlag(uart, uartStatusRxOverrun);
+		}
+		ret = 0;
 	}
-	*c = UART_Getchar(uart);
 
-	if (UART_GetStatusFlag(uart, uartStatusRxOverrun)) {
-		UART_ClearStatusFlag(uart, uartStatusRxOverrun);
-	}
-
-	return 0;
+	return ret;
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

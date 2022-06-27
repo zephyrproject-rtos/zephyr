@@ -82,6 +82,8 @@
 		red-pwm-led = &red_pwm_led;
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &led0_green;
 	};
 };
 

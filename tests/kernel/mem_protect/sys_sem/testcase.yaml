@@ -1,5 +1,6 @@
 tests:
   kernel.memory_protection.sys_sem:
+    filter: CONFIG_ARCH_HAS_USERSPACE
     tags: kernel userspace
     testcases:
     - sem_take_no_wait

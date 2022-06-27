@@ -178,21 +178,15 @@
 /* end of default settings */
 
 struct bmg160_device_config {
-	const char *i2c_port;
-	uint16_t i2c_addr;
-	uint8_t i2c_speed;
+	struct i2c_dt_spec i2c;
 #ifdef CONFIG_BMG160_TRIGGER
-	gpio_pin_t int_pin;
-	gpio_dt_flags_t int_flags;
-	const char *gpio_port;
+	struct gpio_dt_spec int_gpio;
 #endif
 };
 
 struct bmg160_device_data {
-	const struct device *i2c;
 #ifdef CONFIG_BMG160_TRIGGER
 	const struct device *dev;
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 #endif
 #ifdef CONFIG_BMG160_TRIGGER_OWN_THREAD

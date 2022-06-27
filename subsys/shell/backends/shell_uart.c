@@ -124,17 +124,19 @@ static void uart_tx_handle(const struct device *dev,
 			   const struct shell_uart *sh_uart)
 {
 	uint32_t len;
-	int err;
 	const uint8_t *data;
 
 	len = ring_buf_get_claim(sh_uart->tx_ringbuf, (uint8_t **)&data,
 				 sh_uart->tx_ringbuf->size);
 	if (len) {
+		int err;
+
 		/* Wait for DTR signal before sending anything to output. */
 		uart_dtr_wait(dev);
 		len = uart_fifo_fill(dev, data, len);
 		err = ring_buf_get_finish(sh_uart->tx_ringbuf, len);
 		__ASSERT_NO_MSG(err == 0);
+		ARG_UNUSED(err);
 	} else {
 		uart_irq_tx_disable(dev);
 		sh_uart->ctrl_blk->tx_busy = 0;

@@ -24,13 +24,13 @@ static void buffer_write(log_output_func_t outf, uint8_t *buf, size_t len,
 	} while (len != 0);
 }
 
-void log_dict_output_msg2_process(const struct log_output *output,
-				  struct log_msg2 *msg, uint32_t flags)
+void log_dict_output_msg_process(const struct log_output *output,
+				 struct log_msg *msg, uint32_t flags)
 {
 	struct log_dict_output_normal_msg_hdr_t output_hdr;
-	void *source = (void *)log_msg2_get_source(msg);
+	void *source = (void *)log_msg_get_source(msg);
 
-	/* Keep sync with header in struct log_msg2 */
+	/* Keep sync with header in struct log_msg */
 	output_hdr.type = MSG_NORMAL;
 	output_hdr.domain = msg->hdr.desc.domain;
 	output_hdr.level = msg->hdr.desc.level;
@@ -48,13 +48,13 @@ void log_dict_output_msg2_process(const struct log_output *output,
 		     (void *)output);
 
 	size_t len;
-	uint8_t *data = log_msg2_get_package(msg, &len);
+	uint8_t *data = log_msg_get_package(msg, &len);
 
 	if (len > 0U) {
 		buffer_write(output->func, data, len, (void *)output);
 	}
 
-	data = log_msg2_get_data(msg, &len);
+	data = log_msg_get_data(msg, &len);
 	if (len > 0U) {
 		buffer_write(output->func, data, len, (void *)output);
 	}

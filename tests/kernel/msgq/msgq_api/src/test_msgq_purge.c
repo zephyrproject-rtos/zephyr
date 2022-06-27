@@ -6,7 +6,7 @@
 
 #include "test_msgq.h"
 
-K_THREAD_STACK_EXTERN(tstack);
+K_THREAD_STACK_DECLARE(tstack, STACK_SIZE);
 extern struct k_thread tdata;
 extern struct k_msgq msgq;
 static ZTEST_BMEM char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];

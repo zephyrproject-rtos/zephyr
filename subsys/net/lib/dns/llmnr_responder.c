@@ -427,10 +427,8 @@ static int send_response(struct net_context *ctx, struct net_pkt *pkt,
 	if (ret < 0) {
 		NET_DBG("Cannot send LLMNR reply to %s (%d)",
 			net_pkt_family(pkt) == AF_INET ?
-			log_strdup(net_sprint_ipv4_addr(
-					   &net_sin(&dst)->sin_addr)) :
-			log_strdup(net_sprint_ipv6_addr(
-					   &net_sin6(&dst)->sin6_addr)),
+			net_sprint_ipv4_addr(&net_sin(&dst)->sin_addr) :
+			net_sprint_ipv6_addr(&net_sin6(&dst)->sin6_addr),
 			ret);
 	}
 
@@ -485,8 +483,8 @@ static int dns_read(struct net_context *ctx,
 	NET_DBG("Received %d %s from %s (id 0x%04x)", queries,
 		queries > 1 ? "queries" : "query",
 		net_pkt_family(pkt) == AF_INET ?
-		log_strdup(net_sprint_ipv4_addr(&ip_hdr->ipv4->src)) :
-		log_strdup(net_sprint_ipv6_addr(&ip_hdr->ipv6->src)),
+		net_sprint_ipv4_addr(&ip_hdr->ipv4->src) :
+		net_sprint_ipv6_addr(&ip_hdr->ipv6->src),
 		dns_id);
 
 	do {
@@ -503,13 +501,13 @@ static int dns_read(struct net_context *ctx,
 
 		NET_DBG("[%d] query %s/%s label %s (%d bytes)", queries,
 			qtype == DNS_RR_TYPE_A ? "A" : "AAAA", "IN",
-			log_strdup(result->data), ret);
+			result->data, ret);
 
 		/* If the query matches to our hostname, then send reply */
 		if (!strncasecmp(hostname, result->data + 1, hostname_len) &&
 		    (result->len - 1) >= hostname_len) {
 			NET_DBG("LLMNR query to our hostname %s",
-				log_strdup(hostname));
+				hostname);
 			ret = send_response(ctx, pkt, ip_hdr, result, qtype,
 					    dns_id);
 			if (ret < 0) {
@@ -576,7 +574,7 @@ static void iface_ipv6_cb(struct net_if *iface, void *user_data)
 	ret = net_ipv6_mld_join(iface, addr);
 	if (ret < 0) {
 		NET_DBG("Cannot join %s IPv6 multicast group (%d)",
-			log_strdup(net_sprint_ipv6_addr(addr)), ret);
+			net_sprint_ipv6_addr(addr), ret);
 	}
 }
 

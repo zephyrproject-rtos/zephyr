@@ -9,10 +9,28 @@ config SOC_IT8XXX2
 	bool "ITE IT8XXX2 system implementation"
 	select RISCV
 	select ATOMIC_OPERATIONS_BUILTIN
+	select RISCV_ISA_RV32I
+	# Workaround mul instruction bug, see:
+	# https://www.ite.com.tw/uploads/product_download/it81202-bx-chip-errata.pdf
+	#select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
 
 endchoice
 
 if SOC_IT8XXX2
+
+choice IT8XXX2_SERIES
+	prompt "IT8XXX2 Series"
+	default SOC_IT81302_BX
+
+config SOC_IT81302_BX
+	bool "IT81302 BX version"
+
+config SOC_IT81202_BX
+	bool "IT81202 BX version"
+
+endchoice
 
 config SOC_IT8XXX2_PLL_FLASH_48M
 	bool "Flash frequency is 48MHz"

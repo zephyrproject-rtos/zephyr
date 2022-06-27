@@ -139,6 +139,11 @@ static inline int stm32_clock_control_on(const struct device *dev,
 
 	ARG_UNUSED(dev);
 
+	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
+		/* Attemp to change a wrong periph clock bit */
+		return -ENOTSUP;
+	}
+
 	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
 	reg_val = *reg;
 	reg_val |= pclken->enr;
@@ -391,7 +396,7 @@ static void set_up_plls(void)
 	}
 #endif
 
-#if STM32_PLL_Q_DIVISOR
+#if STM32_PLL_Q_ENABLED
 	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLQ,
 		   STM32_PLL_Q_DIVISOR
 		   << RCC_PLLCFGR_PLLQ_Pos);

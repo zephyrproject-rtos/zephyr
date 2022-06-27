@@ -12,3 +12,17 @@ config ENTROPY_ESP32_RNG
 
 config SPI
 	default y if DISPLAY
+
+if BT
+
+config HEAP_MEM_POOL_SIZE
+	default 16384
+
+config ENTROPY_GENERATOR
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32
+endchoice
+
+endif # BT

@@ -17,8 +17,11 @@ struct iaq_registers {
 	uint16_t voc;
 } __packed;
 
+struct iaq_core_config {
+	struct i2c_dt_spec i2c;
+};
+
 struct iaq_core_data {
-	const struct device *i2c;
 	uint16_t co2;
 	uint16_t voc;
 	uint8_t status;

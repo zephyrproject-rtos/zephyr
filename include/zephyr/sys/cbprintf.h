@@ -30,6 +30,72 @@
 #endif
 #endif
 
+/**
+ * @brief cbprintf package descriptor.
+ */
+struct cbprintf_package_desc {
+	/** Package length (in 32 bit words) */
+	uint8_t len;
+
+	/** Number of appended strings in the package. */
+	uint8_t str_cnt;
+
+	/** Number of read-only strings, indexes appended to the package */
+	uint8_t ro_str_cnt;
+
+	/** Number of read-write strings, indexes appended to the package */
+	uint8_t rw_str_cnt;
+
+#ifdef CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
+	/** Flags used to create the package */
+	uint32_t pkg_flags;
+#endif
+} __packed;
+
+/** @brief cbprintf package header
+ *
+ * cbprintf package header, without the format string pointer.
+ */
+union cbprintf_package_hdr {
+	/** Header description */
+	struct cbprintf_package_desc desc;
+
+	void *raw;
+
+#if defined(CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS) && !defined(CONFIG_64BIT)
+	void *raw2[2];
+#endif
+} __packed;
+
+/** @brief cbprintf package header with format string pointer.
+ *
+ * cbprintf package header with format string pointer.
+ */
+struct cbprintf_package_hdr_ext {
+	/** Header of package */
+	union cbprintf_package_hdr hdr;
+
+#ifdef CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
+#ifdef __xtensa__
+	/*
+	 * On Xtensa, the first argument needs to be aligned to 8-byte.
+	 * With 32-bit pointers, we need another 4 bytes padding so
+	 * that whole struct cbprintf_package_hdr_ext is of multiple of
+	 * 8 bytes.
+	 */
+	uint32_t xtensa_padding;
+#endif
+#endif
+
+	/** Pointer to format string */
+	char *fmt;
+
+	/*
+	 * When extending this struct, make sure this align
+	 * to pointer size.
+	 */
+} __packed;
+
 /* Z_C_GENERIC is used there */
 #include <zephyr/sys/cbprintf_internal.h>
 
@@ -102,6 +168,13 @@ BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
 #define CBPRINTF_PACKAGE_ADD_STRING_IDXS \
 	(CBPRINTF_PACKAGE_ADD_RO_STR_POS | CBPRINTF_PACKAGE_CONST_CHAR_RO)
 
+/** @brief Indicate the incoming arguments are tagged.
+ *
+ * When set, this indicates that the incoming arguments are tagged, and
+ * need to be processed accordingly.
+ */
+#define CBPRINTF_PACKAGE_ARGS_ARE_TAGGED BIT(6)
+
 /**@} */
 
 /**@defgroup CBPRINTF_PACKAGE_COPY_FLAGS Package flags.
@@ -138,6 +211,21 @@ BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
 #define CBPRINTF_PACKAGE_COPY_KEEP_RO_STR BIT(2)
 
 /**@} */
+
+/**@defgroup Z_CBVPRINTF_PROCESS_FLAGS cbvprintf processing flags.
+ * @{
+ */
+
+/** @brief Indicates the arguments are tagged.
+ *
+ * This tells z_cbvprintf_impl() that the incoming arguments are
+ * tagged, and should be processed accordingly.
+ */
+#define Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS BIT(0)
+
+/**@} */
+
+#include <zephyr/sys/cbprintf_enums.h>
 
 /** @brief Signature for a cbprintf callback function.
  *
@@ -562,10 +650,84 @@ int cbprintf(cbprintf_cb out, void *ctx, const char *format, ...);
  *
  * @param ap a reference to the values to be converted.
  *
+ * @param flags flags on how to process the inputs.
+ *              @see Z_CBVPRINTF_PROCESS_FLAGS.
+ *
  * @return the number of characters generated, or a negative error value
  * returned from invoking @p out.
  */
+int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *format,
+		     va_list ap, uint32_t flags);
+
+/** @brief varargs-aware *printf-like output through a callback.
+ *
+ * This is essentially vsprintf() except the output is generated
+ * character-by-character using the provided @p out function.  This allows
+ * formatting text of unbounded length without incurring the cost of a
+ * temporary buffer.
+ *
+ * @note This function is available only when
+ * @kconfig{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
+ *
+ * @note The functionality of this function is significantly reduced when
+ * @kconfig{CONFIG_CBPRINTF_NANO} is selected.
+ *
+ * @param out the function used to emit each generated character.
+ *
+ * @param ctx context provided when invoking out
+ *
+ * @param format a standard ISO C format string with characters and conversion
+ * specifications.
+ *
+ * @param ap a reference to the values to be converted.
+ *
+ * @return the number of characters generated, or a negative error value
+ * returned from invoking @p out.
+ */
+#ifdef CONFIG_PICOLIBC
 int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap);
+#else
+static inline
+int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap)
+{
+	return z_cbvprintf_impl(out, ctx, format, ap, 0);
+}
+#endif
+
+/** @brief varargs-aware *printf-like output through a callback with tagged arguments.
+ *
+ * This is essentially vsprintf() except the output is generated
+ * character-by-character using the provided @p out function.  This allows
+ * formatting text of unbounded length without incurring the cost of a
+ * temporary buffer.
+ *
+ * Note that the argument list @p ap are tagged.
+ *
+ * @note This function is available only when
+ * @kconfig{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
+ *
+ * @note The functionality of this function is significantly reduced when
+ * @kconfig{CONFIG_CBPRINTF_NANO} is selected.
+ *
+ * @param out the function used to emit each generated character.
+ *
+ * @param ctx context provided when invoking out
+ *
+ * @param format a standard ISO C format string with characters and conversion
+ * specifications.
+ *
+ * @param ap a reference to the values to be converted.
+ *
+ * @return the number of characters generated, or a negative error value
+ * returned from invoking @p out.
+ */
+static inline
+int cbvprintf_tagged_args(cbprintf_cb out, void *ctx,
+			  const char *format, va_list ap)
+{
+	return z_cbvprintf_impl(out, ctx, format, ap,
+				Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS);
+}
 
 /** @brief Generate the output for a previously captured format
  * operation.
@@ -587,10 +749,32 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap);
 static inline
 int cbpprintf(cbprintf_cb out, void *ctx, void *packaged)
 {
+#if defined(CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS)
+	union cbprintf_package_hdr *hdr =
+		(union cbprintf_package_hdr *)packaged;
+
+	if ((hdr->desc.pkg_flags & CBPRINTF_PACKAGE_ARGS_ARE_TAGGED)
+	    == CBPRINTF_PACKAGE_ARGS_ARE_TAGGED) {
+		return cbpprintf_external(out, cbvprintf_tagged_args,
+					  ctx, packaged);
+	}
+#endif
+
 	return cbpprintf_external(out, cbvprintf, ctx, packaged);
 }
 
 #ifdef CONFIG_CBPRINTF_LIBC_SUBSTS
+
+#ifdef CONFIG_PICOLIBC
+
+#define fprintfcb(stream, ...) fprintf(stream, __VA_ARGS__)
+#define vfprintfcb(stream, format, ap) (stream, format, ap)
+#define printfcb(format, ...) printf(format, __VA_ARGS__)
+#define vprintfcb(format, ap) vfprintf(format, ap)
+#define snprintfcb(str, size, ...) snprintf(str, size, __VA_ARGS__)
+#define vsnprintfcb(str, size, format, ap) vsnprintf(str, size, format, ap)
+
+#else
 
 /** @brief fprintf using Zephyrs cbprintf infrastructure.
  *
@@ -718,6 +902,7 @@ int snprintfcb(char *str, size_t size, const char *format, ...);
  */
 int vsnprintfcb(char *str, size_t size, const char *format, va_list ap);
 
+#endif /* CONFIG_PICOLIBC */
 #endif /* CONFIG_CBPRINTF_LIBC_SUBSTS */
 
 /**

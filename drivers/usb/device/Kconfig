@@ -50,13 +50,6 @@ config USB_DC_STM32
 	  Enable USB support on the STM32 F0, F1, F2, F3, F4, F7, L0, L4, G4, U5 family of
 	  processors.
 
-config USB_DC_STM32_DISCONN_ENABLE
-	bool
-	depends on USB_DC_STM32
-	help
-	  Say Y if your board uses USB DISCONNECT pin to enable the
-	  pull-up resistor on USB DP.
-
 config USB_DC_SAM0
 	bool "SAM0 series USB Device Controller driver"
 	default y

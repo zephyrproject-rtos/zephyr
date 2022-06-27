@@ -51,6 +51,12 @@ set(DOCS_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
 set(DOCS_HTML_DIR ${CMAKE_CURRENT_BINARY_DIR}/html)
 set(DOCS_LATEX_DIR ${CMAKE_CURRENT_BINARY_DIR}/latex)
 
+if(WIN32)
+  set(SEP $<SEMICOLON>)
+else()
+  set(SEP :)
+endif()
+
 #-------------------------------------------------------------------------------
 # Functions
 

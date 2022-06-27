@@ -7,7 +7,6 @@
 #include "eswifi_log.h"
 LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
-#include <zephyr/zephyr.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <string.h>
@@ -223,6 +222,25 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 		return -EIO;
 	}
 	net_context_set_state(socket->context, NET_CONTEXT_CONNECTED);
+
+	return 0;
+}
+
+int __eswifi_listen(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket, int backlog)
+{
+	int err;
+
+	__select_socket(eswifi, socket->index);
+
+	/* Set backlog */
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P8=%d\r", backlog);
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
+	if (err < 0) {
+		LOG_ERR("Unable to start set listen backlog");
+		err = -EIO;
+	}
+
+	socket->is_server = true;
 
 	return 0;
 }

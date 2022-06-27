@@ -353,6 +353,44 @@ static void gpio_eos_s3_isr(const struct device *dev)
 	}
 }
 
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_eos_s3_port_get_direction(const struct device *port, gpio_port_pins_t map,
+					  gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
+{
+	uint32_t pin;
+	PadConfig pad_config;
+	gpio_port_pins_t ip = 0;
+	gpio_port_pins_t op = 0;
+	const struct gpio_eos_s3_config *config = dev->config;
+
+	map &= config->common.port_pin_mask;
+
+	if (inputs != NULL) {
+		for (pin = find_lsb_set(pins) - 1; pins;
+		     pins &= ~BIT(pin), pin = find_lsb_set(pins) - 1) {
+			pad_config = gpio_eos_s3_pad_select(port, pin);
+			ip |= (pad_config.ucMode == PAD_MODE_INPUT_EN &&
+			       pad_config.ucSmtTrg == PAD_SMT_TRIG_EN) *
+			      BIT(pin);
+		}
+
+		*inputs = ip;
+	}
+
+	if (outputs != NULL) {
+		for (pin = find_lsb_set(pins) - 1; pins;
+		     pins &= ~BIT(pin), pin = find_lsb_set(pins) - 1) {
+			pad_config = gpio_eos_s3_pad_select(port, pin);
+			op |= (pad_config.ucMode == PAD_MODE_OUTPUT_EN) * BIT(pin);
+		}
+
+		*outputs = op;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_DIRECTION */
+
 static const struct gpio_driver_api gpio_eos_s3_driver_api = {
 	.pin_configure = gpio_eos_s3_configure,
 	.port_get_raw = gpio_eos_s3_port_get_raw,
@@ -362,6 +400,9 @@ static const struct gpio_driver_api gpio_eos_s3_driver_api = {
 	.port_toggle_bits = gpio_eos_s3_port_toggle_bits,
 	.pin_interrupt_configure = gpio_eos_s3_pin_interrupt_configure,
 	.manage_callback = gpio_eos_s3_manage_callback,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_eos_s3_port_get_direction,
+#endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
 static int gpio_eos_s3_init(const struct device *dev)
