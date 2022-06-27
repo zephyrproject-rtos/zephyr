@@ -590,9 +590,21 @@ static void discover_all(struct bt_conn *conn, struct bt_codec *codec,
 	}
 }
 
+static void unicast_client_location_cb(struct bt_conn *conn,
+				      enum bt_audio_dir dir,
+				      enum bt_audio_location loc)
+{
+	shell_print(ctx_shell, "dir %u loc %X\n", dir, loc);
+}
+
+const struct bt_audio_unicast_client_cb unicast_client_cbs = {
+	.location = unicast_client_location_cb
+};
+
 static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 {
 	static struct bt_audio_discover_params params;
+	static bool cbs_registered;
 
 	if (!default_conn) {
 		shell_error(sh, "Not connected");
@@ -602,6 +614,17 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 	if (params.func) {
 		shell_error(sh, "Discover in progress");
 		return -ENOEXEC;
+	}
+
+	if (!cbs_registered) {
+		int err = bt_audio_unicast_client_register_cb(&unicast_client_cbs);
+
+		if (err != 0) {
+			shell_error(sh, "Failed to register unicast client callbacks: %d", err);
+			return err;
+		}
+
+		cbs_registered = true;
 	}
 
 	params.func = discover_all;
