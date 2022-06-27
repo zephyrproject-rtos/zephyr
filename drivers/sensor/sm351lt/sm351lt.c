@@ -192,7 +192,6 @@ static const struct sensor_driver_api sm351lt_api_funcs = {
 static int sm351lt_init(const struct device *dev)
 {
 	const struct sm351lt_config *const config = dev->config;
-	struct sm351lt_data *data = dev->data;
 	uint32_t ret;
 
 	data->bus = device_get_binding(config->bus_name);
@@ -209,6 +208,7 @@ static int sm351lt_init(const struct device *dev)
 	}
 
 #if defined(CONFIG_SM351LT_TRIGGER)
+	struct sm351lt_data *data = dev->data;
 #if defined(CONFIG_SM351LT_TRIGGER_OWN_THREAD)
 	data->dev = dev;
 
