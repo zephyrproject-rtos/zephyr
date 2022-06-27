@@ -489,6 +489,7 @@ config X86_EFI
 config X86_EFI_CONSOLE
 	bool
 	depends on X86_EFI && X86_64 && !X86_VERY_EARLY_CONSOLE
+	select EFI_CONSOLE
 	default y
 	help
 	  This enables the use of the UEFI console device as the
