@@ -699,6 +699,12 @@ int ll_init(struct k_sem *sem_rx)
 	return  0;
 }
 
+int ll_deinit(void)
+{
+	ll_reset();
+	return lll_deinit();
+}
+
 void ll_reset(void)
 {
 	int err;
@@ -849,6 +855,9 @@ void ll_reset(void)
 	err = ull_df_reset();
 	LL_ASSERT(!err);
 #endif
+
+	/* clear static random address */
+	(void)ll_addr_set(1U, NULL);
 }
 
 /**
@@ -1947,13 +1956,19 @@ void *ull_prepare_dequeue_iter(uint8_t *idx)
 
 void ull_prepare_dequeue(uint8_t caller_id)
 {
+	void *param_resume_head = NULL;
+	void *param_resume_next = NULL;
 	struct lll_event *next;
 
 	next = ull_prepare_dequeue_get();
 	while (next) {
+		void *param = next->prepare_param.param;
 		uint8_t is_aborted = next->is_aborted;
 		uint8_t is_resume = next->is_resume;
 
+		/* Let LLL invoke the `prepare` interface if radio not in active
+		 * use. Otherwise, enqueue at end of the prepare pipeline queue.
+		 */
 		if (!is_aborted) {
 			static memq_link_t link;
 			static struct mayfly mfy = {0, 0, &link, NULL,
@@ -1968,10 +1983,46 @@ void ull_prepare_dequeue(uint8_t caller_id)
 
 		MFIFO_DEQUEUE(prep);
 
+		/* Check for anymore more prepare elements in queue */
 		next = ull_prepare_dequeue_get();
-
-		if (!next || (!is_aborted && (!is_resume || next->is_resume))) {
+		if (!next) {
 			break;
+		}
+
+		/* A valid prepare element has its `prepare` invoked or was
+		 * enqueued back into prepare pipeline.
+		 */
+		if (!is_aborted) {
+			/* The prepare element was not a resume event, it would
+			 * use the radio or was enqueued back into prepare
+			 * pipeline with a preempt timeout being set.
+			 */
+			if (!is_resume) {
+				break;
+			}
+
+			/* Remember the first encountered resume and the next
+			 * resume element in the prepare pipeline so that we do
+			 * not infinitely loop through the resume events in
+			 * prepare pipeline.
+			 */
+			if (!param_resume_head) {
+				param_resume_head = param;
+			} else if (!param_resume_next) {
+				param_resume_next = param;
+			}
+
+			/* Stop traversing the prepare pipeline when we reach
+			 * back to the first or next resume event where we
+			 * initially started processing the prepare pipeline.
+			 */
+			if (next->is_resume &&
+			    ((next->prepare_param.param ==
+			      param_resume_head) ||
+			     (next->prepare_param.param ==
+			      param_resume_next))) {
+				break;
+			}
 		}
 	}
 }
@@ -2412,29 +2463,22 @@ static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 			   IS_ADV_ISO_HANDLE(tx->handle)) {
 			struct node_tx_iso *tx_node_iso;
 			struct pdu_data *p;
-			uint8_t fragments;
 
 			tx_node_iso = tx->node;
 			p = (void *)tx_node_iso->pdu;
-			/* TODO: We may need something more advanced for framed */
-			if (p->ll_id == PDU_CIS_LLID_COMPLETE_END ||
-			    p->ll_id == PDU_BIS_LLID_COMPLETE_END) {
-				/* We must count each SDU HCI fragment */
-				fragments = tx_node_iso->sdu_fragments;
-				if (fragments == 0) {
-					/* FIXME: If ISOAL is not used for TX,
-					 * sdu_fragments is not incremented. In
-					 * that case we assume unfragmented for
-					 * now.
-					 */
-					fragments = 1;
-				}
-				cmplt += fragments;
+
+			if (IS_ADV_ISO_HANDLE(tx->handle)) {
+				/* FIXME: ADV_ISO shall be updated to use ISOAL for
+				 * TX. Until then, assume 1 node equals 1 fragment.
+				 */
+				cmplt += 1;
+			} else {
+				/* We count each SDU fragment completed by this PDU */
+				cmplt += tx_node_iso->sdu_fragments;
 			}
 
 			ll_iso_link_tx_release(tx_node_iso->link);
 			ll_iso_tx_mem_release(tx_node_iso);
-
 			goto next_ack;
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
@@ -2877,3 +2921,19 @@ void *ull_rxfifo_release(uint8_t s, uint8_t n, uint8_t f, uint8_t *l, uint8_t *m
 
 	return rx;
 }
+
+#if defined(CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO)
+/* Contains vendor specific argument, function to be implemented by vendors */
+__weak uint8_t ll_configure_data_path(uint8_t data_path_dir,
+				      uint8_t data_path_id,
+				      uint8_t vs_config_len,
+				      uint8_t *vs_config)
+{
+	ARG_UNUSED(data_path_dir);
+	ARG_UNUSED(data_path_id);
+	ARG_UNUSED(vs_config_len);
+	ARG_UNUSED(vs_config);
+
+	return BT_HCI_ERR_CMD_DISALLOWED;
+}
+#endif /* CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO */

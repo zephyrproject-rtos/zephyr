@@ -8,6 +8,8 @@ The following contains various topics regarding memory management.
 .. toctree::
    :maxdepth: 1
 
-   demand_paging.rst
+   heap.rst
    shared_multi_heap.rst
+   slabs.rst
    sys_mem_blocks.rst
+   demand_paging.rst

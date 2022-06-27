@@ -159,7 +159,7 @@ fcb_init(int f_area_id, struct fcb *fcb)
 	fcb->f_align = align;
 	fcb->f_oldest = oldest_sector;
 	fcb->f_active.fe_sector = newest_sector;
-	fcb->f_active.fe_elem_off = sizeof(struct fcb_disk_area);
+	fcb->f_active.fe_elem_off = fcb_len_in_flash(fcb, sizeof(struct fcb_disk_area));
 	fcb->f_active_id = newest;
 
 	while (1) {
@@ -196,12 +196,12 @@ int
 fcb_is_empty(struct fcb *fcb)
 {
 	return (fcb->f_active.fe_sector == fcb->f_oldest &&
-	  fcb->f_active.fe_elem_off == sizeof(struct fcb_disk_area));
+	  fcb->f_active.fe_elem_off == fcb_len_in_flash(fcb, sizeof(struct fcb_disk_area)));
 }
 
 /**
  * Length of an element is encoded in 1 or 2 bytes.
- * 1 byte for lengths < 128 bytes, and 2 bytes for < 16384.
+ * 1 byte for lengths < 128 bytes, 2 bytes for < 16384.
  *
  * The storage of length has been originally designed to work with 0xff erasable
  * flash devices and gives length 0xffff special meaning: that there is no value
@@ -239,7 +239,6 @@ int
 fcb_get_len(const struct fcb *fcb, uint8_t *buf, uint16_t *len)
 {
 	int rc;
-
 	if ((buf[0] ^ ~fcb->f_erase_value) & 0x80) {
 		if ((buf[0] == fcb->f_erase_value) &&
 		    (buf[1] == fcb->f_erase_value)) {

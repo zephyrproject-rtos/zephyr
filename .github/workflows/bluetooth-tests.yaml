@@ -23,11 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: bluetooth-test-prep
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.23.0
+      image: ghcr.io/zephyrproject-rtos/ci:v0.23.3
       options: '--entrypoint /bin/bash'
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.1
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.2
       CLANG_ROOT_DIR: /usr/lib/llvm-12
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components

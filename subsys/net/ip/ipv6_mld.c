@@ -289,8 +289,8 @@ drop:
 #define dbg_addr(action, pkt_str, src, dst)				\
 	do {								\
 		NET_DBG("%s %s from %s to %s", action, pkt_str,         \
-			log_strdup(net_sprint_ipv6_addr(src)),		\
-			log_strdup(net_sprint_ipv6_addr(dst)));		\
+			net_sprint_ipv6_addr(src),		\
+			net_sprint_ipv6_addr(dst));		\
 	} while (0)
 
 #define dbg_addr_recv(pkt_str, src, dst)	\

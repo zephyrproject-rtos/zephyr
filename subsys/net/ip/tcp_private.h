@@ -112,7 +112,8 @@
 
 #define conn_mss(_conn)					\
 	((_conn)->recv_options.mss_found ?		\
-	 (_conn)->recv_options.mss : (uint16_t)NET_IPV6_MTU)
+	 MIN((_conn)->recv_options.mss, \
+	 net_tcp_get_supported_mss(_conn)) : net_tcp_get_supported_mss(_conn))
 
 #define conn_state(_conn, _s)						\
 ({									\
@@ -234,6 +235,7 @@ struct tcp { /* TCP connection */
 	};
 	struct k_mutex lock;
 	struct k_sem connect_sem; /* semaphore for blocking connect */
+	struct k_sem tx_sem; /* Semaphore indicating if transfers are blocked . */
 	struct k_fifo recv_data;  /* temp queue before passing data to app */
 	struct tcp_options recv_options;
 	struct tcp_options send_options;
@@ -241,6 +243,9 @@ struct tcp { /* TCP connection */
 	struct k_work_delayable recv_queue_timer;
 	struct k_work_delayable send_data_timer;
 	struct k_work_delayable timewait_timer;
+	struct k_work_delayable persist_timer;
+	struct k_work_delayable ack_timer;
+
 	union {
 		/* Because FIN and establish timers are never happening
 		 * at the same time, share the timer between them to
@@ -259,12 +264,14 @@ struct tcp { /* TCP connection */
 	enum tcp_data_mode data_mode;
 	uint32_t seq;
 	uint32_t ack;
+	uint16_t recv_win_max;
 	uint16_t recv_win;
 	uint16_t send_win;
 	uint8_t send_data_retries;
 	bool in_retransmission : 1;
 	bool in_connect : 1;
 	bool in_close : 1;
+	bool tcp_nodelay : 1;
 };
 
 #define _flags(_fl, _op, _mask, _cond)					\

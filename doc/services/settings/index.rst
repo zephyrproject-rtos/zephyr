@@ -68,7 +68,7 @@ backend.
     ``settings_load()``.
 
 **csi_save**
-    This gets called when a saving a single setting to persistent storage using
+    This gets called when saving a single setting to persistent storage using
     ``settings_save_one()``.
 
 **csi_save_start**

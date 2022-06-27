@@ -24,7 +24,7 @@ config SOC_NEORV32_VERSION
 
 config SOC_NEORV32_ISA_C
 	bool "RISC-V ISA Extension \"C\""
-	select COMPRESSED_ISA
+	select RISCV_ISA_EXT_C
 	help
 	  Enable this if the NEORV32 CPU implementation supports the RISC-V ISA
 	  "C" extension (Compressed Instructions).

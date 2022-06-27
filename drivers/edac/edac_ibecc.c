@@ -13,10 +13,6 @@
 #include <zephyr/drivers/edac.h>
 #include "ibecc.h"
 
-/**
- * In the driver 64 bit registers are used and not all of then at the
- * moment may be correctly logged.
- */
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(edac_ibecc, CONFIG_EDAC_LOG_LEVEL);
 
@@ -340,7 +336,7 @@ static int edac_ibecc_init(const struct device *dev)
 	/* Enable Host Bridge generated SERR event */
 	ibecc_errcmd_setup(bdf, true);
 
-	LOG_INF("IBECC driver initialized");
+	LOG_INF("IBECC driver initialized"); /* LCOV_EXCL_BR_LINE */
 
 	return 0;
 }

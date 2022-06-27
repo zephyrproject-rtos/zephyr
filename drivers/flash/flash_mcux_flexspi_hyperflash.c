@@ -38,7 +38,6 @@ LOG_MODULE_REGISTER(flexspi_hyperflash, CONFIG_FLASH_LOG_LEVEL);
 #define SPI_HYPERFLASH_SECTOR_SIZE              (0x40000U)
 #define SPI_HYPERFLASH_PAGE_SIZE                (512U)
 
-#define HYPERFLASH_WRITE_SIZE                   (16)
 #define HYPERFLASH_ERASE_VALUE                  (0xFF)
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
@@ -667,7 +666,7 @@ static const struct flash_driver_api flash_flexspi_hyperflash_api = {
 			.pages_size = SPI_HYPERFLASH_SECTOR_SIZE,	\
 		},							\
 		.flash_parameters = {					\
-			.write_block_size = HYPERFLASH_WRITE_SIZE,	\
+			.write_block_size = DT_INST_PROP(n, write_block_size), \
 			.erase_value = HYPERFLASH_ERASE_VALUE,		\
 		},							\
 	};								\

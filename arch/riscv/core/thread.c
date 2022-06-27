@@ -11,12 +11,11 @@
 #include <stdio.h>
 #include <pmp.h>
 
-#if defined(CONFIG_USERSPACE) && !defined(CONFIG_SMP)
+#ifdef CONFIG_USERSPACE
 /*
- * Glogal variable used to know the current mode running.
- * Is not boolean because it must match the PMP granularity of the arch.
+ * Per-thread (TLS) variable indicating whether execution is in user mode.
  */
-uint32_t is_user_mode;
+__thread uint8_t is_user_mode;
 #endif
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
@@ -40,10 +39,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_init->a1 = (ulong_t)p1;
 	stack_init->a2 = (ulong_t)p2;
 	stack_init->a3 = (ulong_t)p3;
-
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
-	thread->callee_saved.tp = (ulong_t)thread->tls;
-#endif
 
 	/*
 	 * Following the RISC-V architecture,
@@ -89,11 +84,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* the unwound stack pointer upon exiting exception */
 	stack_init->sp = (ulong_t)(stack_init + 1);
 #endif /* CONFIG_USERSPACE */
-
-#if defined(CONFIG_THREAD_LOCAL_STORAGE)
-	stack_init->tp = thread->tls;
-	thread->callee_saved.tp = thread->tls;
-#endif
 
 	/* Assign thread entry point and mstatus.MPRV mode. */
 	if (IS_ENABLED(CONFIG_USERSPACE)
@@ -216,13 +206,15 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 #ifdef CONFIG_GEN_PRIV_STACKS
 	_current->arch.priv_stack_start =
 			(ulong_t)z_priv_stack_find(_current->stack_obj);
+	/* remove the stack guard from the main stack */
+	_current->stack_info.start -= K_THREAD_STACK_RESERVED;
+	_current->stack_info.size += K_THREAD_STACK_RESERVED;
 #else
-	_current->arch.priv_stack_start =
-			(ulong_t)(_current->stack_obj) +
-			Z_RISCV_STACK_GUARD_SIZE;
+	_current->arch.priv_stack_start = (ulong_t)_current->stack_obj;
 #endif /* CONFIG_GEN_PRIV_STACKS */
-	top_of_priv_stack = Z_STACK_PTR_ALIGN(_current->arch.priv_stack_start
-					      + CONFIG_PRIVILEGED_STACK_SIZE);
+	top_of_priv_stack = Z_STACK_PTR_ALIGN(_current->arch.priv_stack_start +
+					      K_KERNEL_STACK_RESERVED +
+					      CONFIG_PRIVILEGED_STACK_SIZE);
 
 	top_of_user_stack = Z_STACK_PTR_ALIGN(
 				_current->stack_info.start +
@@ -253,9 +245,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	/* exception stack has to be in mscratch */
 	csr_write(mscratch, top_of_priv_stack);
 
-#if !defined(CONFIG_SMP)
 	is_user_mode = true;
-#endif
 
 	register void *a0 __asm__("a0") = user_entry;
 	register void *a1 __asm__("a1") = p1;

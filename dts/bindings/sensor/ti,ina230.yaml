@@ -7,9 +7,9 @@
 
 description: |
     TI INA230 and INA231 Bidirectional Current and Power Monitor.
-    The <include/dt-bindings/sensor/ina230.h> file should be included
-    in the DeviceTree and it provides macro that can be used for
-    initializing the configuration register.
+    The <zephyr/dt-bindings/sensor/ina230.h> file should be included in the
+    DeviceTree and it provides macro that can be used for initializing the
+    configuration register.
 
 compatible: "ti,ina230"
 

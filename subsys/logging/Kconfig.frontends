@@ -6,6 +6,7 @@ menu "Frontends"
 config LOG_FRONTEND_DICT_UART
 	bool "UART dictionary frontend"
 	select LOG_DICTIONARY_DB
+	select MPSC_PBUF
 	depends on UART_ASYNC_API || UART_INTERRUPT_DRIVEN
 	help
 	  Frontend sends data in binary dictionary mode.

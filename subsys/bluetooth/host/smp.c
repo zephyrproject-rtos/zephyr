@@ -845,16 +845,20 @@ static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
 #endif
 
 #if defined(CONFIG_BT_PRIVACY)
-static void smp_id_sent(struct bt_conn *conn, void *user_data)
+static void smp_id_sent(struct bt_conn *conn, void *user_data, int err)
 {
-	smp_check_complete(conn, BT_SMP_DIST_ID_KEY);
+	if (!err) {
+		smp_check_complete(conn, BT_SMP_DIST_ID_KEY);
+	}
 }
 #endif /* CONFIG_BT_PRIVACY */
 
 #if defined(CONFIG_BT_SIGNING)
-static void smp_sign_info_sent(struct bt_conn *conn, void *user_data)
+static void smp_sign_info_sent(struct bt_conn *conn, void *user_data, int err)
 {
-	smp_check_complete(conn, BT_SMP_DIST_SIGN);
+	if (!err) {
+		smp_check_complete(conn, BT_SMP_DIST_SIGN);
+	}
 }
 #endif /* CONFIG_BT_SIGNING */
 
@@ -2109,9 +2113,11 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 }
 
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
-static void smp_ident_sent(struct bt_conn *conn, void *user_data)
+static void smp_ident_sent(struct bt_conn *conn, void *user_data, int err)
 {
-	smp_check_complete(conn, BT_SMP_DIST_ENC_KEY);
+	if (!err) {
+		smp_check_complete(conn, BT_SMP_DIST_ENC_KEY);
+	}
 }
 
 static void legacy_distribute_keys(struct bt_smp *smp)

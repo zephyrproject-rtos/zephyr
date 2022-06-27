@@ -255,7 +255,7 @@ __imr void hp_sram_init(uint32_t memory_size)
 
 __imr void lp_sram_init(void)
 {
-#ifdef PLATFORM_INIT_LPRSRAM
+#ifdef PLATFORM_INIT_LPSRAM
 	uint32_t timeout_counter, delay_count = 256;
 
 	timeout_counter = delay_count;

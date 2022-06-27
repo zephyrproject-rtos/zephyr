@@ -43,3 +43,9 @@ tests:
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
       - CONFIG_TEST_HW_STACK_PROTECTION=n
+  portability.posix.common.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+      - CONFIG_PICOLIBC_ALIGNED_HEAP_SIZE=8192

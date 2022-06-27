@@ -152,6 +152,7 @@ ARM64 arch:
     collaborators:
         - npitre
         - povergoing
+        - sgrrzhf
     files:
         - arch/arm64/
         - include/zephyr/arch/arm64/
@@ -167,11 +168,13 @@ Bluetooth:
     maintainers:
         - jhedberg
     collaborators:
+        - hermabe
         - jori-nordic
         - alwa-nordic
         - Vudentz
         - Thalley
         - asbjornsabo
+        - sjanc
     files:
         - doc/connectivity/bluetooth/
         - drivers/bluetooth/
@@ -244,6 +247,7 @@ Bluetooth Audio:
         - Casper-Bonde-Bose
         - MariuszSkamra
         - rymanluk
+        - sjanc
     files:
         - subsys/bluetooth/audio/
         - include/zephyr/bluetooth/audio/
@@ -290,6 +294,7 @@ C library:
          - nashif
          - enjiamai
          - KangJianX
+         - keith-packard
     files:
          - lib/libc/
          - tests/lib/c_lib/
@@ -363,6 +368,7 @@ Debug:
     collaborators:
         - dcpleung
         - chen-png
+        - mrkhldn
     files:
         - include/zephyr/debug/
         - subsys/debug/
@@ -545,6 +551,18 @@ Documentation:
     labels:
         - "area: Console"
 
+"Drivers: Coredump":
+    status: maintained
+    maintainers:
+        - mrkhldn
+    files:
+        - drivers/coredump/
+        - dts/bindings/coredump/
+        - include/zephyr/drivers/coredump.h
+        - tests/drivers/coredump/
+    labels:
+        - "area: Coredump"
+
 "Drivers: Counter":
     status: maintained
     maintainers:
@@ -670,6 +688,9 @@ Documentation:
     status: maintained
     maintainers:
         - mnkp
+    collaborators:
+        - henrikbrixandersen
+        - cfriedt
     files:
         - doc/hardware/peripherals/gpio.rst
         - drivers/gpio/
@@ -1015,6 +1036,24 @@ Documentation:
     labels:
         - "area: Wifi"
 
+Xen Platform:
+    status: maintained
+    maintainers:
+        - povergoing
+    collaborators:
+        - SgrrZhf
+        - lorc
+        - firscity
+        - luca-fancellu
+    files:
+        - include/zephyr/xen/
+        - drivers/xen/
+        - arch/arm64/core/xen/
+        - soc/arm64/xenvm/
+        - boards/arm64/xenvm/
+    labels:
+        - "area: Xen Platform"
+
 Filesystems:
     status: maintained
     maintainers:
@@ -1035,6 +1074,8 @@ Formatted Output:
     status: maintained
     maintainers:
       - nordic-krch
+    collaborators:
+      - dcpleung
     files:
       - include/zephyr/sys/cbprintf*
       - tests/unit/cbprintf/
@@ -1121,6 +1162,21 @@ Base OS:
     labels:
         - "area: Base OS"
 
+Laird Connectivity platforms:
+    status: maintained
+    maintainers:
+        - rerickson1
+    collaborators:
+        - greg-leach
+    files:
+        - boards/arm/bl5340_dvk/
+        - boards/arm/bl65*/
+        - boards/arm/bt510/
+        - boards/arm/bt610/
+        - boards/arm/pinnacle_100_dvk/
+    labels:
+        - "platform: Laird Connectivity"
+
 Little FS:
     status: odd fixes
     files:
@@ -1139,6 +1195,7 @@ Logging:
     collaborators:
         - chen-png
         - aasthagr
+        - dcpleung
     files:
         - include/zephyr/logging/
         - samples/subsys/logging/
@@ -1608,7 +1665,6 @@ Intel Platforms (Xtensa):
     files:
         - boards/xtensa/intel_*/
         - soc/xtensa/intel_*/
-        - samples/boards/intel_s1000_crb/
     labels:
         - "platform: Intel CAVS"
 
@@ -1786,6 +1842,20 @@ TI Platforms:
     labels:
         - "platform: TI"
 
+Xilinx Platforms:
+  status: odd fixes
+  collaborators:
+    - henrikbrixandersen
+    - ibirnbaum
+  files:
+    - drivers/*/*xlnx*
+    - dts/*/xilinx/
+    - dts/bindings/*/*xlnx*
+    - include/zephyr/*/*/*xlnx*
+    - soc/arm/xilinx*/
+  labels:
+    - "platform: Xilinx"
+
 Storage:
     status: maintained
     maintainers:
@@ -1925,16 +1995,6 @@ West:
     labels:
         - manifest-canopennode
         - "area: CAN"
-
-"West project: civetweb":
-    status: obsolete
-    files:
-        - samples/net/civetweb/
-        - modules/Kconfig.civetweb
-    labels:
-        - manifest-civetweb
-        - "area: Networking"
-        - "area: civetweb"
 
 "West project: cmsis":
     status: maintained
@@ -2304,6 +2364,16 @@ West:
     files: []
     labels:
         - manifest-openthread
+
+"West project: picolibc":
+    status: maintained
+    maintainers:
+        - keith-packard
+    collaborators:
+        - stephanosio
+    files: []
+    labels:
+        - manifest-picolibc
 
 "West project: segger":
     status: odd fixes

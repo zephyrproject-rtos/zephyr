@@ -256,7 +256,7 @@ static void tls_debug(void *ctx, int level, const char *file,
 	}
 
 	NET_DBG("%s:%04d: |%d| %s", basename, line, level,
-		log_strdup(str));
+		str);
 }
 #endif /* defined(MBEDTLS_DEBUG_C) && (CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG) */
 
@@ -2055,6 +2055,19 @@ ssize_t ztls_sendmsg_ctx(struct tls_context *ctx, const struct msghdr *msg,
 	ssize_t len;
 	ssize_t ret;
 	int i;
+
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_ENABLE_DTLS) &&
+	    ctx->type == SOCK_DGRAM) {
+		/*
+		 * Current mbedTLS API (i.e. mbedtls_ssl_write()) allows only to send a single
+		 * contiguous buffer. This means that gather write using sendmsg() can only be
+		 * handled correctly if there is a single non-empty buffer in msg->msg_iov.
+		 */
+		if (msghdr_non_empty_iov_count(msg) > 1) {
+			errno = EMSGSIZE;
+			return -1;
+		}
+	}
 
 	len = 0;
 	if (msg) {

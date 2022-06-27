@@ -61,9 +61,42 @@ static void print_pmp_entries(unsigned int start, unsigned int end,
 
 	LOG_DBG("PMP %s:", banner);
 	for (index = start; index < end; index++) {
-		LOG_DBG("%3d: "PR_ADDR" 0x%02x", index,
-			pmp_addr[index],
-			pmp_n_cfg[index]);
+		ulong_t start, end, tmp;
+
+		switch (pmp_n_cfg[index] & PMP_A) {
+		case PMP_TOR:
+			start = (index == 0) ? 0 : (pmp_addr[index - 1] << 2);
+			end = (pmp_addr[index] << 2) - 1;
+			break;
+		case PMP_NA4:
+			start = pmp_addr[index] << 2;
+			end = start + 3;
+			break;
+		case PMP_NAPOT:
+			tmp = (pmp_addr[index] << 2) | 0x3;
+			start = tmp & (tmp + 1);
+			end   = tmp | (tmp + 1);
+			break;
+		default:
+			start = 0;
+			end = 0;
+			break;
+		}
+
+		if (end == 0) {
+			LOG_DBG("%3d: "PR_ADDR" 0x%02x", index,
+				pmp_addr[index],
+				pmp_n_cfg[index]);
+		} else {
+			LOG_DBG("%3d: "PR_ADDR" 0x%02x --> "
+				PR_ADDR"-"PR_ADDR" %c%c%c%s",
+				index, pmp_addr[index], pmp_n_cfg[index],
+				start, end,
+				(pmp_n_cfg[index] & PMP_R) ? 'R' : '-',
+				(pmp_n_cfg[index] & PMP_W) ? 'W' : '-',
+				(pmp_n_cfg[index] & PMP_X) ? 'X' : '-',
+				(pmp_n_cfg[index] & PMP_L) ? " LOCKED" : "");
+		}
 	}
 }
 
@@ -174,7 +207,8 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
  */
 extern void z_riscv_write_pmp_entries(unsigned int start, unsigned int end,
 				      bool clear_trailing_entries,
-				      ulong_t *pmp_addr, ulong_t *pmp_cfg);
+				      const ulong_t *pmp_addr,
+				      const ulong_t *pmp_cfg);
 
 /**
  * @brief Write a range of PMP entries to corresponding PMP registers
@@ -219,6 +253,21 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
 
 	print_pmp_entries(start, end, pmp_addr, pmp_cfg, "register write");
 
+#ifdef CONFIG_QEMU_TARGET
+	/*
+	 * A QEMU bug may create bad transient PMP representations causing
+	 * false access faults to be reported. Work around it by setting
+	 * pmp registers to zero from the update start point to the end
+	 * before updating them with new values.
+	 * The QEMU fix is here with more details about this bug:
+	 * https://lists.gnu.org/archive/html/qemu-devel/2022-06/msg02800.html
+	 */
+	static const ulong_t pmp_zero[CONFIG_PMP_SLOTS] = { 0, };
+
+	z_riscv_write_pmp_entries(start, CONFIG_PMP_SLOTS, false,
+				  pmp_zero, pmp_zero);
+#endif
+
 	z_riscv_write_pmp_entries(start, end, clear_trailing_entries,
 				  pmp_addr, pmp_cfg);
 }
@@ -247,6 +296,7 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
  * we could have non-locked entries here too.
  */
 static ulong_t global_pmp_cfg[1];
+static ulong_t global_pmp_last_addr;
 
 /* End of global PMP entry range */
 static unsigned int global_pmp_end_index;
@@ -272,7 +322,7 @@ void z_riscv_pmp_init(void)
 	 * addresses inaccessible. This will never change so we do it here.
 	 */
 	set_pmp_entry(&index, PMP_NONE,
-		      (uintptr_t)_current_cpu->irq_stack - CONFIG_ISR_STACK_SIZE,
+		      (uintptr_t)z_interrupt_stacks[_current_cpu->id],
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #endif
@@ -284,15 +334,40 @@ void z_riscv_pmp_init(void)
 	if (global_pmp_end_index != 0) {
 		__ASSERT(global_pmp_end_index == index, "");
 		__ASSERT(global_pmp_cfg[0] == pmp_cfg[0], "");
+		__ASSERT(global_pmp_last_addr == pmp_addr[index - 1]);
 	}
 #endif
 
 	global_pmp_cfg[0] = pmp_cfg[0];
+	global_pmp_last_addr = pmp_addr[index - 1];
 	global_pmp_end_index = index;
 
 	if (PMP_DEBUG_DUMP) {
 		dump_pmp_regs("initial register dump");
 	}
+}
+
+/**
+ * @Brief Initialize the per-thread PMP register copy with global values.
+ */
+static inline unsigned int z_riscv_pmp_thread_init(ulong_t *pmp_addr,
+						   ulong_t *pmp_cfg,
+						   unsigned int index_limit)
+{
+	ARG_UNUSED(index_limit);
+
+	/*
+	 * Retrieve pmpcfg0 partial content from global entries.
+	 */
+	pmp_cfg[0] = global_pmp_cfg[0];
+
+	/*
+	 * Retrieve the pmpaddr value matching the last global PMP slot.
+	 * This is so that set_pmp_entry() can safely attempt TOR with it.
+	 */
+	pmp_addr[global_pmp_end_index - 1] = global_pmp_last_addr;
+
+	return global_pmp_end_index;
 }
 
 #ifdef CONFIG_PMP_STACK_GUARD
@@ -304,16 +379,16 @@ void z_riscv_pmp_init(void)
  */
 void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
 {
-	unsigned int index = global_pmp_end_index;
-	uintptr_t stack_bottom = thread->stack_info.start;
-
-	/* Retrieve pmpcfg0 partial content from global entries */
-	thread->arch.m_mode_pmpcfg_regs[0] = global_pmp_cfg[0];
+	unsigned int index = z_riscv_pmp_thread_init(PMP_M_MODE(thread));
+	uintptr_t stack_bottom;
 
 	/* make the bottom addresses of our stack inaccessible */
+	stack_bottom = thread->stack_info.start - K_KERNEL_STACK_RESERVED;
 #ifdef CONFIG_USERSPACE
 	if (thread->arch.priv_stack_start != 0) {
 		stack_bottom = thread->arch.priv_stack_start;
+	} else if (z_stack_is_user_capable(thread->stack_obj)) {
+		stack_bottom = thread->stack_info.start - K_THREAD_STACK_RESERVED;
 	}
 #endif
 	set_pmp_entry(&index, PMP_NONE,
@@ -349,6 +424,8 @@ void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
  */
 void z_riscv_pmp_stackguard_enable(struct k_thread *thread)
 {
+	LOG_DBG("pmp_stackguard_enable for thread %p", thread);
+
 	/*
 	 * Disable (non-locked) PMP entries for m-mode while we update them.
 	 * While at it, also clear MSTATUS_MPP as it must be cleared for
@@ -391,19 +468,7 @@ void z_riscv_pmp_usermode_init(struct k_thread *thread)
  */
 void z_riscv_pmp_usermode_prepare(struct k_thread *thread)
 {
-	unsigned int index = global_pmp_end_index;
-
-	/* Retrieve pmpcfg0 partial content from global entries */
-	thread->arch.u_mode_pmpcfg_regs[0] = global_pmp_cfg[0];
-
-#if !defined(CONFIG_SMP)
-	/* Map the is_user_mode variable */
-	extern uint32_t is_user_mode;
-
-	set_pmp_entry(&index, PMP_R,
-		      (uintptr_t) &is_user_mode, sizeof(is_user_mode),
-		      PMP_U_MODE(thread));
-#endif
+	unsigned int index = z_riscv_pmp_thread_init(PMP_U_MODE(thread));
 
 	/* Map the usermode stack */
 	set_pmp_entry(&index, PMP_R | PMP_W,
@@ -467,6 +532,8 @@ void z_riscv_pmp_usermode_enable(struct k_thread *thread)
 {
 	struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;
 
+	LOG_DBG("pmp_usermode_enable for thread %p with domain %p", thread, domain);
+
 	if (thread->arch.u_mode_pmp_end_index == 0) {
 		/* z_riscv_pmp_usermode_prepare() has not been called yet */
 		return;
@@ -501,11 +568,6 @@ int arch_mem_domain_max_partitions_get(void)
 
 	/* remove those slots dedicated to global entries */
 	available_pmp_slots -= global_pmp_end_index;
-
-#if !defined(CONFIG_SMP)
-	/* One slot needed to map the is_user_mode variable */
-	available_pmp_slots -= 1;
-#endif
 
 	/* At least one slot to map the user thread's stack */
 	available_pmp_slots -= 1;

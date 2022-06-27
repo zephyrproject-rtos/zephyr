@@ -234,6 +234,12 @@ reason it is suggested to use `Python virtual environments`_.
 
          .. group-tab:: Install within virtual environment
 
+            #. Use ``apt`` to install Python ``venv`` package:
+
+               .. code-block:: bash
+
+                  sudo apt install python3-venv
+
             #. Create a new virtual environment:
 
                .. code-block:: bash
@@ -465,15 +471,16 @@ reason it is suggested to use `Python virtual environments`_.
 
 .. rst-class:: numbered-step
 
-Install a Toolchain
-*******************
+Install Zephyr SDK
+******************
 
-A toolchain provides a compiler, assembler, linker, and other programs required
-to build Zephyr applications.
+The :ref:`Zephyr Software Development Kit (SDK) <toolchain_zephyr_sdk>`
+contains toolchains for each of Zephyr's supported architectures, which
+include a compiler, assembler, linker and other programs required to build
+Zephyr applications.
 
-The Zephyr Software Development Kit (SDK) contains toolchains for each of
-Zephyr's supported architectures. It also includes additional host tools, such
-as custom QEMU and OpenOCD builds.
+It also contains additional host tools, such as custom QEMU and OpenOCD builds
+that are used to emulate, flash and debug Zephyr applications.
 
 .. tabs::
 
@@ -485,8 +492,8 @@ as custom QEMU and OpenOCD builds.
          .. code-block:: bash
 
             cd ~
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.1/zephyr-sdk-0.14.1_linux-x86_64.tar.gz
-            wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.1/sha256.sum | shasum --check --ignore-missing
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.2/zephyr-sdk-0.14.2_linux-x86_64.tar.gz
+            wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.2/sha256.sum | shasum --check --ignore-missing
 
          If your host architecture is 64-bit ARM (for example, Raspberry Pi), replace ``x86_64``
          with ``aarch64`` in order to download the 64-bit ARM Linux SDK.
@@ -495,7 +502,7 @@ as custom QEMU and OpenOCD builds.
 
          .. code-block:: bash
 
-            tar xvf zephyr-sdk-0.14.1_linux-x86_64.tar.gz
+            tar xvf zephyr-sdk-0.14.2_linux-x86_64.tar.gz
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:
@@ -507,15 +514,15 @@ as custom QEMU and OpenOCD builds.
             * ``/opt``
             * ``/usr/local``
 
-            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.14.1`` directory and, when
+            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.14.2`` directory and, when
             extracted under ``$HOME``, the resulting installation path will be
-            ``$HOME/zephyr-sdk-0.14.1``.
+            ``$HOME/zephyr-sdk-0.14.2``.
 
       #. Run the Zephyr SDK bundle setup script:
 
          .. code-block:: bash
 
-            cd zephyr-sdk-0.14.1
+            cd zephyr-sdk-0.14.2
             ./setup.sh
 
          .. note::
@@ -529,7 +536,7 @@ as custom QEMU and OpenOCD builds.
 
          .. code-block:: bash
 
-            sudo cp ~/zephyr-sdk-0.14.1/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
+            sudo cp ~/zephyr-sdk-0.14.2/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
             sudo udevadm control --reload
 
    .. group-tab:: macOS
@@ -540,8 +547,8 @@ as custom QEMU and OpenOCD builds.
          .. code-block:: bash
 
             cd ~
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.1/zephyr-sdk-0.14.1_macos-x86_64.tar.gz
-            wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.1/sha256.sum | shasum --check --ignore-missing
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.2/zephyr-sdk-0.14.2_macos-x86_64.tar.gz
+            wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.2/sha256.sum | shasum --check --ignore-missing
 
          If your host architecture is 64-bit ARM (Apple Silicon, also known as M1), replace
          ``x86_64`` with ``aarch64`` in order to download the 64-bit ARM macOS SDK.
@@ -550,7 +557,7 @@ as custom QEMU and OpenOCD builds.
 
          .. code-block:: bash
 
-            tar xvf zephyr-sdk-0.14.1_macos-x86_64.tar.gz
+            tar xvf zephyr-sdk-0.14.2_macos-x86_64.tar.gz
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:
@@ -562,15 +569,15 @@ as custom QEMU and OpenOCD builds.
             * ``/opt``
             * ``/usr/local``
 
-            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.14.1`` directory and, when
+            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.14.2`` directory and, when
             extracted under ``$HOME``, the resulting installation path will be
-            ``$HOME/zephyr-sdk-0.14.1``.
+            ``$HOME/zephyr-sdk-0.14.2``.
 
       #. Run the Zephyr SDK bundle setup script:
 
          .. code-block:: bash
 
-            cd zephyr-sdk-0.14.1
+            cd zephyr-sdk-0.14.2
             ./setup.sh
 
          .. note::
@@ -589,13 +596,13 @@ as custom QEMU and OpenOCD builds.
          .. code-block:: console
 
             cd %HOMEPATH%
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.1/zephyr-sdk-0.14.1_windows-x86_64.zip
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.2/zephyr-sdk-0.14.2_windows-x86_64.zip
 
       #. Extract the Zephyr SDK bundle archive:
 
          .. code-block:: console
 
-            unzip zephyr-sdk-0.14.1_windows-x86_64.zip
+            unzip zephyr-sdk-0.14.2_windows-x86_64.zip
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:
@@ -603,15 +610,15 @@ as custom QEMU and OpenOCD builds.
             * ``%HOMEPATH%``
             * ``%PROGRAMFILES%``
 
-            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.14.1`` directory and, when
+            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.14.2`` directory and, when
             extracted under ``%HOMEPATH%``, the resulting installation path will be
-            ``%HOMEPATH%\zephyr-sdk-0.14.1``.
+            ``%HOMEPATH%\zephyr-sdk-0.14.2``.
 
       #. Run the Zephyr SDK bundle setup script:
 
          .. code-block:: console
 
-            cd zephyr-sdk-0.14.1
+            cd zephyr-sdk-0.14.2
             setup.cmd
 
          .. note::
@@ -619,6 +626,12 @@ as custom QEMU and OpenOCD builds.
 
             You must rerun the setup script if you relocate the Zephyr SDK bundle directory after
             the initial setup.
+
+.. note::
+
+   You might need to set the :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` and
+   :envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variables. See the
+   :ref:`toolchain_zephyr_sdk` section for details.
 
 .. _getting_started_run_sample:
 

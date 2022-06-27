@@ -253,6 +253,8 @@ static int32_t prepare_regulator_voltage_scale(void)
 	/* Make sure to put the CPU in highest Voltage scale during clock configuration */
 	/* Highest voltage is SCALE0 */
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
+	while (LL_PWR_IsActiveFlag_VOS() == 0) {
+	}
 	return 0;
 }
 
@@ -286,6 +288,8 @@ static int32_t optimize_regulator_voltage_scale(uint32_t sysclk_freq)
 	LL_PWR_ConfigSupply(LL_PWR_LDO_SUPPLY);
 #endif
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
+	while (LL_PWR_IsActiveFlag_VOS() == 0) {
+	}
 	return 0;
 }
 

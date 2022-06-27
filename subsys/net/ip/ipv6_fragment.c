@@ -73,7 +73,6 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, uint16_t *next_hdr_off,
 	*next_hdr_off = offsetof(struct net_ipv6_hdr, nexthdr);
 	*last_hdr_off = sizeof(struct net_ipv6_hdr);
 
-	nexthdr = hdr->nexthdr;
 	while (!net_ipv6_is_nexthdr_upper_layer(nexthdr)) {
 		if (net_pkt_read_u8(pkt, &next_nexthdr)) {
 			goto fail;
@@ -206,8 +205,8 @@ static bool reassembly_cancel(uint32_t id,
 static void reassembly_info(char *str, struct net_ipv6_reassembly *reass)
 {
 	NET_DBG("%s id 0x%x src %s dst %s remain %d ms", str, reass->id,
-		log_strdup(net_sprint_ipv6_addr(&reass->src)),
-		log_strdup(net_sprint_ipv6_addr(&reass->dst)),
+		net_sprint_ipv6_addr(&reass->src),
+		net_sprint_ipv6_addr(&reass->dst),
 		k_ticks_to_ms_ceil32(
 			k_work_delayable_remaining_get(&reass->timer)));
 }

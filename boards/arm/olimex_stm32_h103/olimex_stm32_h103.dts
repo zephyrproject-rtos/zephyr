@@ -74,7 +74,7 @@
 };
 
 &usart3 {
-	pinctrl-0 = <&usart3_tx_pc10 &usart3_rx_pc11>;
+	pinctrl-0 = <&usart3_tx_remap1_pc10 &usart3_rx_remap1_pc11>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 };
@@ -129,7 +129,7 @@
 	status = "okay";
 };
 
-&usb {
+zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
 	disconnect-gpios = <&gpioc 11 GPIO_ACTIVE_LOW>;

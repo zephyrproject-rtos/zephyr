@@ -43,17 +43,8 @@ static ZTEST_BMEM int test_status;
  * @param file Filename to check
  * @returns Shortened filename, or @file if it could not be shortened
  */
-const char *ztest_relative_filename(const char *file)
+const char *__weak ztest_relative_filename(const char *file)
 {
-#ifdef CONFIG_ARCH_POSIX
-	const char *cwd;
-	char buf[200];
-
-	cwd = getcwd(buf, sizeof(buf));
-	if (cwd && strlen(file) > strlen(cwd) &&
-	    !strncmp(file, cwd, strlen(cwd)))
-		return file + strlen(cwd) + 1; /* move past the trailing '/' */
-#endif
 	return file;
 }
 
@@ -381,6 +372,7 @@ static int run_test(struct unit_test *test)
 				test->thread_options | K_INHERIT_PERMS,
 					K_FOREVER);
 
+		k_thread_access_grant(&ztest_thread, test);
 		if (test->name != NULL) {
 			k_thread_name_set(&ztest_thread, test->name);
 		}
@@ -468,7 +460,7 @@ int ztest_run_registered_test_suites(const void *state)
 	int count = 0;
 
 	for (ptr = _ztest_suite_node_list_start; ptr < _ztest_suite_node_list_end; ++ptr) {
-		struct ztest_suite_stats *stats = &ptr->stats;
+		struct ztest_suite_stats *stats = ptr->stats;
 		bool should_run = true;
 
 		if (ptr->predicate != NULL) {
@@ -498,7 +490,7 @@ void ztest_verify_all_registered_test_suites_ran(void)
 	struct ztest_suite_node *ptr;
 
 	for (ptr = _ztest_suite_node_list_start; ptr < _ztest_suite_node_list_end; ++ptr) {
-		if (ptr->stats.run_count < 1) {
+		if (ptr->stats->run_count < 1) {
 			PRINT("ERROR: Test '%s' did not run.\n", ptr->name);
 			all_tests_run = false;
 		}

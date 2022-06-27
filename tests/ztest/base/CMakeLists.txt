@@ -10,5 +10,12 @@ else()
   find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
   project(base)
 
-  target_sources(app PRIVATE src/main.c)
+  if(CONFIG_CPLUSPLUS)
+    message(STATUS "adding main.cpp")
+    target_sources(app PRIVATE src/main.cpp)
+  else()
+    target_sources(app PRIVATE src/main.c)
+
+    target_sources_ifdef(CONFIG_USERSPACE app PRIVATE src/main_userspace.c)
+  endif()
 endif()

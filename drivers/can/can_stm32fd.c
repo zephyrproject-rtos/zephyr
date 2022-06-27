@@ -6,6 +6,8 @@
  */
 
 #include <zephyr/drivers/can.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
@@ -44,6 +46,7 @@ LOG_MODULE_REGISTER(can_stm32fd, CONFIG_CAN_LOG_LEVEL);
 #define DT_DRV_COMPAT st_stm32_fdcan
 
 struct can_stm32fd_config {
+	struct stm32_pclken pclken;
 	void (*config_irq)(void);
 	const struct pinctrl_dev_config *pcfg;
 };
@@ -64,8 +67,12 @@ static int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
 	return 0;
 }
 
-static void can_stm32fd_clock_enable(void)
+static int can_stm32fd_clock_enable(const struct device *dev)
 {
+	int ret;
+	const struct can_mcan_config *mcan_cfg = dev->config;
+	const struct can_stm32fd_config *stm32fd_cfg = mcan_cfg->custom;
+
 	LL_RCC_SetFDCANClockSource(CAN_STM32FD_CLOCK_SOURCE);
 
 	/* LL_RCC API names do not align with PLL output name but are correct */
@@ -75,13 +82,15 @@ static void can_stm32fd_clock_enable(void)
 	LL_RCC_PLL2_EnableDomain_SAI();
 #endif
 
-#ifdef CONFIG_SOC_SERIES_STM32U5X
-	LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_FDCAN1);
-#else
-	__HAL_RCC_FDCAN_CLK_ENABLE();
-#endif
+	ret = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+			       (clock_control_subsys_t *)&stm32fd_cfg->pclken);
+	if (ret < 0) {
+		return ret;
+	}
 
 	FDCAN_CONFIG->CKDIV = CAN_STM32FD_CLOCK_DIVISOR >> 1;
+
+	return 0;
 }
 
 static int can_stm32fd_init(const struct device *dev)
@@ -97,7 +106,12 @@ static int can_stm32fd_init(const struct device *dev)
 		return ret;
 	}
 
-	can_stm32fd_clock_enable();
+	ret = can_stm32fd_clock_enable(dev);
+	if (ret < 0) {
+		LOG_ERR("Could not turn on CAN clock (%d)", ret);
+		return ret;
+	}
+
 	ret = can_mcan_init(dev);
 	if (ret != 0) {
 		return ret;
@@ -173,6 +187,10 @@ static void config_can_##inst##_irq(void)                                      \
 	PINCTRL_DT_INST_DEFINE(inst);					\
 									\
 	static const struct can_stm32fd_config can_stm32fd_cfg_##inst = { \
+		.pclken = {						\
+			.enr = DT_INST_CLOCKS_CELL(inst, bits),		\
+			.bus = DT_INST_CLOCKS_CELL(inst, bus),		\
+		},							\
 		.config_irq = config_can_##inst##_irq,			\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
 	};								\

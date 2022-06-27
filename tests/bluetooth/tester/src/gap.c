@@ -355,7 +355,7 @@ static void oob_data_request(struct bt_conn *conn,
 	{
 		LOG_DBG("Set %s OOB SC data for %s, ",
 			oob_config_str(oob_info->lesc.oob_config),
-			log_strdup(addr));
+			addr);
 
 		struct bt_le_oob_sc_data *oobd_local =
 			oob_info->lesc.oob_config != BT_CONN_OOB_REMOTE_ONLY ?
@@ -378,7 +378,7 @@ static void oob_data_request(struct bt_conn *conn,
 		    bt_addr_le_cmp(info.le.local, &oob_sc_local.addr)) {
 			bt_addr_le_to_str(info.le.local, addr, sizeof(addr));
 			LOG_DBG("No OOB data available for local %s",
-				log_strdup(addr));
+				addr);
 			bt_conn_auth_cancel(conn);
 			return;
 		}
@@ -394,7 +394,7 @@ static void oob_data_request(struct bt_conn *conn,
 
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 	case BT_CONN_OOB_LE_LEGACY:
-		LOG_DBG("Legacy OOB TK requested from remote %s", log_strdup(addr));
+		LOG_DBG("Legacy OOB TK requested from remote %s", addr);
 
 		err = bt_le_oob_set_legacy_tk(conn, oob_legacy_tk);
 		if (err < 0) {

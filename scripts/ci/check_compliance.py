@@ -192,7 +192,7 @@ class CheckPatch(ComplianceTest):
 
     """
     name = "checkpatch"
-    doc = "See https://docs.zephyrproject.org/latest/contribute/#coding-style for more details."
+    doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#coding-style for more details."
     path_hint = "<git-top>"
 
     def run(self):
@@ -737,7 +737,7 @@ class Nits(ComplianceTest):
     already covered by e.g. checkpatch.pl and pylint.
     """
     name = "Nits"
-    doc = "See https://docs.zephyrproject.org/latest/contribute/#coding-style for more details."
+    doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#coding-style for more details."
     path_hint = "<git-top>"
 
     def run(self):
@@ -835,7 +835,7 @@ class GitLint(ComplianceTest):
 
     """
     name = "Gitlint"
-    doc = "See https://docs.zephyrproject.org/latest/contribute/#commit-guidelines for more details"
+    doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#commit-guidelines for more details"
     path_hint = "<git-top>"
 
     def run(self):
@@ -923,7 +923,7 @@ class Identity(ComplianceTest):
     Checks if Emails of author and signed-off messages are consistent.
     """
     name = "Identity"
-    doc = "See https://docs.zephyrproject.org/latest/contribute/#commit-guidelines for more details"
+    doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#commit-guidelines for more details"
     # git rev-list and git log don't depend on the current (sub)directory
     # unless explicited
     path_hint = "<git-top>"

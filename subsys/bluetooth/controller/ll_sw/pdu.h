@@ -76,10 +76,20 @@
 /* CRC polynomial */
 #define PDU_CRC_POLYNOMIAL     ((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16))
 
-/* Data channel minimum payload size and time */
-#define PDU_DC_PAYLOAD_SIZE_MIN 27
-#define PDU_DC_PAYLOAD_TIME_MIN 328
+/* Data channel minimum payload size and time in us */
+#define PDU_DC_PAYLOAD_SIZE_MIN       27
+#define PDU_DC_PAYLOAD_TIME_MIN       328
 #define PDU_DC_PAYLOAD_TIME_MIN_CODED 2704
+
+/* Data channel maximum payload size and time in us */
+#define PDU_DC_PAYLOAD_SIZE_MAX       251
+#define PDU_DC_PAYLOAD_TIME_MAX_CODED 17040
+
+#if defined(CONFIG_BT_CTLR_DF)
+#define PDU_DC_PAYLOAD_TIME_MAX       2128
+#else /* !CONFIG_BT_CTLR_DF */
+#define PDU_DC_PAYLOAD_TIME_MAX       2120
+#endif /* !CONFIG_BT_CTLR_DF */
 
 /* Link Layer header size of Data PDU. Assumes pdu_data is packed */
 #define PDU_DC_LL_HEADER_SIZE  (offsetof(struct pdu_data, lldata))

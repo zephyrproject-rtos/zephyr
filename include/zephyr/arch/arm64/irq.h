@@ -97,14 +97,6 @@ extern void z_arm64_interrupt_init(void);
 /* Spurious interrupt handler. Throws an error if called */
 extern void z_irq_spurious(const void *unused);
 
-#ifdef CONFIG_GEN_SW_ISR_TABLE
-/* Architecture-specific common entry point for interrupts from the vector
- * table. Most likely implemented in assembly. Looks up the correct handler
- * and parameter from the _sw_isr_table and executes it.
- */
-extern void _isr_wrapper(void);
-#endif
-
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

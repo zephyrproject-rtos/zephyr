@@ -66,17 +66,13 @@
 			reg = <0x90000000 0x50000000>;
 		};
 
-		pinctrl: pinctrl@f0001484 {
-			compatible = "snps,creg-gpio-mux-hsdk";
-			reg = <0xf0001484 0x4>;
-		};
-
 		uart0: uart@f0005000 {
 			compatible = "ns16550";
 			clock-frequency = <33333333>;
 			reg = <0xf0005000 0x1000>;
 			label = "UART_0";
 			interrupts = <30 1>;
+			reg-shift = <2>;
 		};
 
 		uart1: uart@f0026000{
@@ -85,7 +81,7 @@
 			reg = <0xf0026000 0x1000>;
 			label = "UART_1";
 			interrupts = <46 1>;
-
+			reg-shift = <2>;
 			status = "disabled";
 		};
 
@@ -95,7 +91,7 @@
 			reg = <0xf0027000 0x1000>;
 			label = "UART_2";
 			interrupts = <47 1>;
-
+			reg-shift = <2>;
 			status = "disabled";
 		};
 
@@ -105,7 +101,7 @@
 			reg = <0xf0028000 0x1000>;
 			label = "UART_3";
 			interrupts = <48 1>;
-
+			reg-shift = <2>;
 			status = "disabled";
 		};
 

@@ -15,6 +15,11 @@
 	((((val1) * 100) < ((val2) * (100 + (pcnt)))) &&              \
 	 (((val1) * 100) > ((val2) * (100 - (pcnt))))) ? true : false
 
+#if defined(CONFIG_RISCV_MACHINE_TIMER)
+#define IDLE_EVENT_STATS_PRECISION 5
+#else
+#define IDLE_EVENT_STATS_PRECISION 1
+#endif
 
 static struct k_thread helper_thread;
 static K_THREAD_STACK_DEFINE(helper_stack, HELPER_STACK_SIZE);
@@ -162,7 +167,7 @@ void test_all_stats_usage(void)
 	zassert_true(stats5.current_cycles > stats4.current_cycles, NULL);
 
 	zassert_true(TEST_WITHIN_X_PERCENT(stats4.peak_cycles,
-					   stats3.peak_cycles, 1), NULL);
+					   stats3.peak_cycles, IDLE_EVENT_STATS_PRECISION), NULL);
 	zassert_true(stats4.peak_cycles == stats5.peak_cycles, NULL);
 
 	zassert_true(stats4.average_cycles > stats3.average_cycles, NULL);
@@ -526,7 +531,7 @@ void test_thread_stats_usage(void)
 
 	zassert_true(stats4.average_cycles > stats3.average_cycles, NULL);
 	zassert_true(stats4.average_cycles > stats5.average_cycles, NULL);
-	zassert_true(stats5.average_cycles > stats3.average_cycles, NULL);
+	zassert_true(stats5.average_cycles >= stats3.average_cycles, NULL);
 #endif
 
 	/* Abort the helper thread */

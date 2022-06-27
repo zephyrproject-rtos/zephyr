@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <inttypes.h>
 #include <ctype.h>
 #include <zephyr/sys/util.h>
@@ -455,6 +456,7 @@ static int get_opaque(struct lwm2m_input_context *in,
 			 bool *last_block)
 {
 	struct cbor_in_fmt_data *fd;
+	uint8_t *dest = NULL;
 
 	/* Get the CBOR header only on first read. */
 	if (opaque->remaining == 0) {
@@ -464,21 +466,21 @@ static int get_opaque(struct lwm2m_input_context *in,
 			return -EINVAL;
 		}
 
-		/* TODO: get the opaque data and it's length -
-		 * now plain zero
-		 */
-
 		opaque->len = fd->current->_record_union._union_vd.len;
-		opaque->remaining = fd->current->_record_union._union_vd.len;
 
-		fd->current = NULL;
-		goto not_supported;
+		if (buflen < opaque->len) {
+			LOG_DBG("Write opaque failed, no buffer space");
+			return -ENOMEM;
+		}
+
+		dest = memcpy(value, fd->current->_record_union._union_vd.value, opaque->len);
+		*last_block = true;
+	} else {
+		LOG_DBG("Blockwise transfer not supported with SenML CBOR");
+		__ASSERT_NO_MSG(false);
 	}
 
-	return lwm2m_engine_get_opaque_more(in, value, buflen,
-					    opaque, last_block);
-not_supported:
-	return -ENOTSUP;
+	return dest ? opaque->len : -EINVAL;
 }
 
 static int get_s32(struct lwm2m_input_context *in, int32_t *value)
@@ -569,7 +571,7 @@ static int get_objlnk(struct lwm2m_input_context *in,
 		errno = 0;
 		id = strtoul(idp, &end, 10);
 
-		idp = end;
+		idp = end + 1;
 
 		if ((id == 0 && errno == ERANGE) || id > 65535) {
 			LOG_WRN("decoded id %lu out of range[0..65535]", id);
@@ -658,10 +660,25 @@ static int do_write_op_item(struct lwm2m_message *msg, struct record *rec)
 
 	ret = lwm2m_engine_get_create_res_inst(&msg->path, &res, &res_inst);
 	if (ret < 0) {
-		return -ENOENT;
+		/* if OPTIONAL and BOOTSTRAP-WRITE or CREATE use ENOTSUP */
+		if ((msg->ctx->bootstrap_mode ||
+		     msg->operation == LWM2M_OP_CREATE) &&
+		    LWM2M_HAS_PERM(obj_field, BIT(LWM2M_FLAG_OPTIONAL))) {
+			ret = -ENOTSUP;
+			return ret;
+		}
+
+		ret = -ENOENT;
+		return ret;
 	}
 
-	return lwm2m_write_handler(obj_inst, res, res_inst, obj_field, msg);
+	ret = lwm2m_write_handler(obj_inst, res, res_inst, obj_field, msg);
+	if (ret == -EACCES || ret == -ENOENT) {
+		/* if read-only or non-existent data buffer move on */
+		ret = 0;
+	}
+
+	return ret;
 }
 
 const struct lwm2m_writer senml_cbor_writer = {
@@ -784,10 +801,23 @@ out:
 	return paths;
 }
 
+int do_composite_read_op_for_parsed_path_senml_cbor(struct lwm2m_message *msg,
+						    sys_slist_t *lwm_path_list)
+{
+	int ret;
+
+	setup_out_fmt_data(msg);
+
+	ret = lwm2m_perform_composite_read_op(msg, LWM2M_FORMAT_APP_SENML_CBOR, lwm_path_list);
+
+	clear_out_fmt_data(msg);
+
+	return ret;
+}
+
 
 int do_composite_read_op_senml_cbor(struct lwm2m_message *msg)
 {
-	int ret;
 	struct lwm2m_obj_path_list lwm2m_path_list_buf[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
 	sys_slist_t lwm_path_list;
 	sys_slist_t lwm_path_free_list;
@@ -807,13 +837,7 @@ int do_composite_read_op_senml_cbor(struct lwm2m_message *msg)
 
 	lwm2m_engine_clear_duplicate_path(&lwm_path_list, &lwm_path_free_list);
 
-	setup_out_fmt_data(msg);
-
-	ret = lwm2m_perform_composite_read_op(msg, LWM2M_FORMAT_APP_SENML_CBOR, &lwm_path_list);
-
-	clear_out_fmt_data(msg);
-
-	return ret;
+	return do_composite_read_op_for_parsed_path_senml_cbor(msg, &lwm_path_free_list);
 }
 
 
@@ -882,16 +906,23 @@ int do_write_op_senml_cbor(struct lwm2m_message *msg)
 write:
 		ret = do_write_op_item(msg, rec);
 
-		/* Write isn't supposed to fail */
-		if (ret < 0) {
-			break;
+		/*
+		 * ignore errors for CREATE op
+		 * for OP_CREATE and BOOTSTRAP WRITE: errors on
+		 * optional resources are ignored (ENOTSUP)
+		 */
+		if (ret < 0 && !((ret == -ENOTSUP) &&
+				 (msg->ctx->bootstrap_mode || msg->operation == LWM2M_OP_CREATE))) {
+			goto error;
 		}
 	}
+
+	ret = 0;
 
 error:
 	clear_in_fmt_data(msg);
 
-	return ret < 0 ?  ret : decoded_sz;
+	return ret;
 }
 
 int do_composite_observe_parse_path_senml_cbor(struct lwm2m_message *msg,

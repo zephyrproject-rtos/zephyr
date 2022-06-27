@@ -177,6 +177,7 @@ struct adxl362_config {
 	uint8_t int1_config;
 	uint8_t int2_config;
 #endif
+	uint8_t power_ctl;
 };
 
 struct adxl362_data {
@@ -196,8 +197,10 @@ struct adxl362_data {
 	struct gpio_callback gpio_cb;
 	struct k_mutex trigger_mutex;
 
-	sensor_trigger_handler_t th_handler;
-	struct sensor_trigger th_trigger;
+	sensor_trigger_handler_t inact_handler;
+	struct sensor_trigger inact_trigger;
+	sensor_trigger_handler_t act_handler;
+	struct sensor_trigger act_trigger;
 	sensor_trigger_handler_t drdy_handler;
 	struct sensor_trigger drdy_trigger;
 

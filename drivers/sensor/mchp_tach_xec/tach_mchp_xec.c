@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyrigth (c) 2022 Microchip Technology Inc.
+ * Copyright (c) 2022 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */

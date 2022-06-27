@@ -20,6 +20,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,display = &ltdc;
+		zephyr,canbus = &can1;
 	};
 
 	leds {
@@ -49,6 +50,13 @@
 		zephyr,memory-region = "SDRAM2";
 	};
 
+	transceiver0: can-phy0 {
+		compatible = "microchip,mcp2562fd", "can-transceiver-gpio";
+		standby-gpios = <&gpioh 8 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
+
 	aliases {
 		led0 = &blue_led;
 		led1 = &red_led;
@@ -62,17 +70,18 @@
 	status = "okay";
 };
 
+/* PLL1P is used for system clock (280 MHz), PLL1Q is used for FDCAN bit quantum clock (80 MHz) */
 &pll {
 	div-m = <12>;
 	mul-n = <280>;
 	div-p = <2>;
-	div-q = <2>;
+	div-q = <7>;
 	div-r = <2>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
 
-/* PLLR is used for outputting 9 MHz pixel clock for LTDC */
+/* PLL3R is used for outputting 9 MHz pixel clock for LTDC */
 &pll3 {
 	div-m = <8>;
 	mul-n = <60>;
@@ -125,6 +134,18 @@
 &spi2 {
 	pinctrl-0 = <&spi2_sck_pa12 &spi2_miso_pb14 &spi2_mosi_pb15 &spi2_nss_pi0>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* Connect solder bridges SB3, SB4 and SB5 to use CAN connector (CN21) */
+&can1 {
+	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
+	pinctrl-names = "default";
+	phys = <&transceiver0>;
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	sample-point = <875>;
+	sample-point-data = <875>;
 	status = "okay";
 };
 

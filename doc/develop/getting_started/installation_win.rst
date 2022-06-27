@@ -11,7 +11,7 @@ Windows 10 WSL (Windows Subsystem for Linux)
 If you are running a recent version of Windows 10 you can make use of the
 built-in functionality to natively run Ubuntu binaries directly on a standard
 command-prompt. This allows you to use software such as the :ref:`Zephyr SDK
-<zephyr_sdk>` without setting up a virtual machine.
+<toolchain_zephyr_sdk>` without setting up a virtual machine.
 
 .. warning::
       Windows 10 version 1803 has an issue that will cause CMake to not work

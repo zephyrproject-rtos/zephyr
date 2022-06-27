@@ -24,6 +24,7 @@
 #define ADV_INT_UNIT_US      625U
 #define SCAN_INT_UNIT_US     625U
 #define CONN_INT_UNIT_US     1250U
+#define ISO_INT_UNIT_US      CONN_INT_UNIT_US
 #define PERIODIC_INT_UNIT_US 1250U
 
 /* Intervals after which connection or sync establishment is considered lost */
@@ -537,6 +538,7 @@ struct node_tx_iso;
 void lll_done_score(void *param, uint8_t result);
 
 int lll_init(void);
+int lll_deinit(void);
 int lll_reset(void);
 void lll_resume(void *param);
 void lll_disable(void *param);

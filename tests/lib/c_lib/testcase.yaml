@@ -2,3 +2,9 @@ tests:
   libraries.libc:
     tags: clib ignore_faults
     platform_exclude: native_posix native_posix_64 nrf52_bsim
+  libraries.picolibc:
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    tags: clib picolibc ignore_faults
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+      - CONFIG_PICOLIBC_ALIGNED_HEAP_SIZE=8192

@@ -29,7 +29,6 @@
  */
 #include <zephyr/kernel.h>
 #include <cmsis_os.h>
-#include <zephyr/zephyr.h>
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>

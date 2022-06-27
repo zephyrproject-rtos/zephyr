@@ -64,6 +64,7 @@ typedef enum {
 	DebugMonitor_IRQn             =  -4,
 	PendSV_IRQn                   =  -2,
 	SysTick_IRQn                  =  -1,
+	Max_IRQn                      =  CONFIG_NUM_IRQS,
 } IRQn_Type;
 
 #if defined(CONFIG_CPU_CORTEX_M0)

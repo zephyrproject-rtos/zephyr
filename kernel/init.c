@@ -11,7 +11,6 @@
  * This module contains routines that are used to initialize the kernel.
  */
 
-#include <zephyr/zephyr.h>
 #include <offsets_short.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
@@ -216,7 +215,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif
 	boot_banner();
 
-#if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_ARCH_POSIX)
+#if defined(CONFIG_CPLUSPLUS)
 	void z_cpp_init_static(void);
 	z_cpp_init_static();
 #endif

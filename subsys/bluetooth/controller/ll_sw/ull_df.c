@@ -79,6 +79,14 @@ static MFIFO_DEFINE(iq_report_free, sizeof(void *), IQ_REPORT_CNT);
 static uint8_t mem_link_iq_report_quota_pdu;
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTLR_DF_CONN_CTE_RX*/
 
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+/* Make sure the configuration follows BT Core 5.3. Vol 4 Part E section 7.8.82 about
+ * max CTE count sampled in periodic advertising chain.
+ */
+BUILD_ASSERT(CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX <= BT_HCI_LE_SAMPLE_CTE_COUNT_MAX,
+	     "Max advertising CTE count exceed BT_HCI_LE_SAMPLE_CTE_COUNT_MAX");
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
 /* ToDo:
  * - Add release of df_adv_cfg when adv_sync is released.
  *   Open question, should df_adv_cfg be released when Adv. CTE is disabled?
@@ -87,6 +95,12 @@ static uint8_t mem_link_iq_report_quota_pdu;
  */
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+/* Make sure the configuration follows BT Core 5.3. Vol 4 Part E section 7.8.80 about
+ * max CTE count in a periodic advertising chain.
+ */
+BUILD_ASSERT(CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX <= BT_HCI_LE_CTE_COUNT_MAX,
+	     "Max advertising CTE count exceed BT_HCI_LE_CTE_COUNT_MAX");
+
 static struct lll_df_adv_cfg lll_df_adv_cfg_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
 static void *df_adv_cfg_free;
 static uint8_t cte_info_clear(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_cfg,
@@ -221,11 +235,11 @@ uint8_t ll_df_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
 		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
-	/* ToDo: Check if there is a limit of per. adv. pdu that may be
-	 * sent. This affects number of CTE that may be requested.
+	/* Max number of CTE in a single periodic advertising event is limited
+	 * by configuration. It shall not be greater than BT_HCI_LE_CTE_COUNT_MAX.
 	 */
 	if (cte_count < BT_HCI_LE_CTE_COUNT_MIN ||
-	    cte_count > BT_HCI_LE_CTE_COUNT_MAX) {
+	    cte_count > CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX) {
 		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
@@ -429,7 +443,7 @@ uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 		/* max_cte_count equal to 0x0 has special meaning - sample and
 		 * report continuously until there are CTEs received.
 		 */
-		if (max_cte_count > BT_HCI_LE_SAMPLE_CTE_COUNT_MAX) {
+		if (max_cte_count > CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX) {
 			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 		}
 
@@ -1166,50 +1180,42 @@ uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable,
 		ull_cp_cte_req_set_disable(conn);
 
 		return BT_HCI_ERR_SUCCESS;
-	} else {
-		if (!conn->lll.df_rx_cfg.is_initialized) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
+	}
 
-		if (conn->llcp.cte_req.is_enabled) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
+	if (!conn->lll.df_rx_cfg.is_initialized) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	if (conn->llcp.cte_req.is_enabled) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
 
 #if defined(CONFIG_BT_CTLR_PHY)
-		/* CTE request may be enabled only in case the receiver PHY is not CODED */
-		if (conn->lll.phy_rx == PHY_CODED) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
+	/* CTE request may be enabled only in case the receiver PHY is not CODED */
+	if (conn->lll.phy_rx == PHY_CODED) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
 #endif /* CONFIG_BT_CTLR_PHY */
 
-		if (cte_request_interval != 0 && cte_request_interval < conn->lll.latency) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
-
-		if (requested_cte_length < BT_HCI_LE_CTE_LEN_MIN ||
-		    requested_cte_length > BT_HCI_LE_CTE_LEN_MAX) {
-			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
-		}
-
-		if (requested_cte_type != BT_HCI_LE_AOA_CTE &&
-		    requested_cte_type != BT_HCI_LE_AOD_CTE_1US &&
-		    requested_cte_type != BT_HCI_LE_AOD_CTE_2US) {
-			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
-		}
-
-		/* If controller is aware of features supported by peer device then check
-		 * whether required features are enabled.
-		 */
-		if (conn->llcp.fex.valid &&
-		    (!(conn->llcp.fex.features_peer & BIT64(BT_LE_FEAT_BIT_CONN_CTE_RESP)))) {
-			return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
-		}
-
-		conn->llcp.cte_req.is_enabled = 1U;
-		conn->llcp.cte_req.req_interval = cte_request_interval;
-		conn->llcp.cte_req.cte_type = requested_cte_type;
-		conn->llcp.cte_req.min_cte_len = requested_cte_length;
+	if (cte_request_interval != 0 && cte_request_interval < conn->lll.latency) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+
+	if (requested_cte_length < BT_HCI_LE_CTE_LEN_MIN ||
+	    requested_cte_length > BT_HCI_LE_CTE_LEN_MAX) {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+	}
+
+	if (requested_cte_type != BT_HCI_LE_AOA_CTE &&
+	    requested_cte_type != BT_HCI_LE_AOD_CTE_1US &&
+	    requested_cte_type != BT_HCI_LE_AOD_CTE_2US) {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+	}
+
+	conn->llcp.cte_req.is_enabled = 1U;
+	conn->llcp.cte_req.req_interval = cte_request_interval;
+	conn->llcp.cte_req.cte_type = requested_cte_type;
+	conn->llcp.cte_req.min_cte_len = requested_cte_length;
 
 	return ull_cp_cte_req(conn, requested_cte_length, requested_cte_type);
 }

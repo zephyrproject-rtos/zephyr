@@ -133,6 +133,8 @@ arduino_serial: &lpuart3 {
 		ahb-write-wait-unit = <2>;
 		ahb-write-wait-interval = <20>;
 		status = "okay";
+		erase-block-size = <4096>;
+		write-block-size = <16>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -268,7 +270,6 @@ zephyr_udc0: &usb1 {
 	mmc {
 		compatible = "zephyr,sdmmc-disk";
 		status = "okay";
-		label = "SDMMC_0";
 	};
 };
 

@@ -519,6 +519,7 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 	struct bt_l2cap_le_chan *ch;
 	int i;
 	uint8_t ident;
+	uint16_t req_psm;
 
 	if (!chan || !channels) {
 		return -EINVAL;
@@ -539,11 +540,12 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 	req->mtu = sys_cpu_to_le16(ch->rx.mtu);
 	req->mps = sys_cpu_to_le16(ch->rx.mps);
 	req->credits = sys_cpu_to_le16(ch->rx.init_credits);
+	req_psm = ch->psm;
 
 	for (i = 0; i < channels; i++) {
 		ch = BT_L2CAP_LE_CHAN(chan[i]);
 
-		__ASSERT(ch->psm == req->psm,
+		__ASSERT(ch->psm == req_psm,
 			 "The PSM shall be the same for channels in the same request.");
 
 		ch->ident = ident;
@@ -1338,18 +1340,13 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 		chan = bt_l2cap_le_lookup_tx_cid(conn, scid);
 		if (!chan) {
 			result = BT_L2CAP_RECONF_INVALID_CID;
-			continue;
+			goto response;
 		}
 
-		/* If the MTU value is decreased for any of the included
-		 * channels, then the receiver shall disconnect all
-		 * included channels.
-		 */
 		if (BT_L2CAP_LE_CHAN(chan)->tx.mtu > mtu) {
 			BT_ERR("chan %p decreased MTU %u -> %u", chan,
 			       BT_L2CAP_LE_CHAN(chan)->tx.mtu, mtu);
 			result = BT_L2CAP_RECONF_INVALID_MTU;
-			bt_l2cap_chan_disconnect(chan);
 			goto response;
 		}
 
@@ -1408,6 +1405,12 @@ static void le_ecred_reconf_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	result = sys_le16_to_cpu(rsp->result);
 
 	while ((ch = l2cap_lookup_ident(conn, ident))) {
+		/* Stop timer started on REQ send. The timer is only set on one
+		 * of the channels, but we don't want to make assumptions on
+		 * which one it is.
+		 */
+		k_work_cancel_delayable(&ch->rtx_work);
+
 		if (result == BT_L2CAP_LE_SUCCESS) {
 			ch->rx.mtu = ch->pending_rx_mtu;
 		}
@@ -1839,43 +1842,53 @@ static void l2cap_chan_tx_resume(struct bt_l2cap_le_chan *ch)
 	k_work_submit(&ch->tx_work);
 }
 
-static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data)
+static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
 {
 	struct l2cap_tx_meta_data *data = user_data;
 	struct bt_l2cap_chan *chan;
-	bt_conn_tx_cb_t cb;
-	void *cb_user_data;
+	bt_conn_tx_cb_t cb = data->cb;
+	void *cb_user_data = data->user_data;
+	uint16_t cid = data->cid;
 
-	BT_DBG("conn %p CID 0x%04x", conn, data->cid);
+	BT_DBG("conn %p CID 0x%04x err %d", conn, cid, err);
 
-	chan = bt_l2cap_le_lookup_tx_cid(conn, data->cid);
+	free_tx_meta_data(data);
+
+	if (err) {
+		if (cb) {
+			cb(conn, cb_user_data, err);
+		}
+
+		return;
+	}
+
+	chan = bt_l2cap_le_lookup_tx_cid(conn, cid);
 	if (!chan) {
 		/* Received SDU sent callback for disconnected channel */
 		return;
 	}
-
-	cb = data->cb;
-	cb_user_data = data->user_data;
-
-	free_tx_meta_data(data);
 
 	if (chan->ops->sent) {
 		chan->ops->sent(chan);
 	}
 
 	if (cb) {
-		cb(conn, cb_user_data);
+		cb(conn, cb_user_data, 0);
 	}
 
 	l2cap_chan_tx_resume(BT_L2CAP_LE_CHAN(chan));
 }
 
-static void l2cap_chan_seg_sent(struct bt_conn *conn, void *user_data)
+static void l2cap_chan_seg_sent(struct bt_conn *conn, void *user_data, int err)
 {
 	struct l2cap_tx_meta_data *data = user_data;
 	struct bt_l2cap_chan *chan;
 
-	BT_DBG("conn %p CID 0x%04x", conn, data->cid);
+	BT_DBG("conn %p CID 0x%04x err %d", conn, data->cid, err);
+
+	if (err) {
+		return;
+	}
 
 	chan = bt_l2cap_le_lookup_tx_cid(conn, data->cid);
 	if (!chan) {
@@ -1938,10 +1951,8 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 
 	len = seg->len - sdu_hdr_len;
 
-	/* Set a callback if there is no data left in the buffer and sent
-	 * callback has been set.
-	 */
-	if ((buf == seg || !buf->len) && ch->chan.ops->sent) {
+	/* Set a callback if there is no data left in the buffer */
+	if (buf == seg || !buf->len) {
 		err = bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
 				       l2cap_chan_sdu_sent,
 				       l2cap_tx_meta_data(buf));
@@ -2852,7 +2863,10 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
 		net_buf_add_le16(buf, ch->rx.cid);
 	};
 
-	/* we use first channel for sending and timeouting */
+	/* We set the RTX timer on one of the supplied channels, but when the
+	 * request resolves or times out we will act on all the channels in the
+	 * supplied array, using the ident field to find them.
+	 */
 	l2cap_chan_send_req(chans[0], buf, L2CAP_CONN_TIMEOUT);
 
 	return 0;

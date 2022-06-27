@@ -188,11 +188,17 @@ comment "Supported hash"
 config MBEDTLS_HASH_ALL_ENABLED
 	bool "All available hashes"
 	select MBEDTLS_HASH_SHA256_ENABLED
+	select MBEDTLS_HASH_SHA384_ENABLED
 	select MBEDTLS_HASH_SHA512_ENABLED
 
 config MBEDTLS_HASH_SHA256_ENABLED
 	bool "SHA256 hash"
 	default y if !NET_L2_OPENTHREAD
+
+config MBEDTLS_HASH_SHA384_ENABLED
+	bool "SHA384 hash"
+	default y if !NET_L2_OPENTHREAD
+	select MBEDTLS_HASH_SHA512_ENABLED
 
 config MBEDTLS_HASH_SHA512_ENABLED
 	bool "SHA512 hash"
@@ -271,6 +277,7 @@ config MBEDTLS_MAC_ALL_ENABLED
 	select MBEDTLS_MAC_MD5_ENABLED
 	select MBEDTLS_MAC_SHA1_ENABLED
 	select MBEDTLS_MAC_SHA256_ENABLED
+	select MBEDTLS_MAC_SHA384_ENABLED
 	select MBEDTLS_MAC_SHA512_ENABLED
 	select MBEDTLS_MAC_POLY1305_ENABLED
 	select MBEDTLS_MAC_CMAC_ENABLED
@@ -298,8 +305,12 @@ config MBEDTLS_SHA256_SMALLER
 	  Enable an implementation of SHA-256 that has lower ROM footprint but also
 	  lower performance
 
+config MBEDTLS_MAC_SHA384_ENABLED
+	bool "SHA-384 hash algorithm"
+	select MBEDTLS_MAC_SHA512_ENABLED
+
 config MBEDTLS_MAC_SHA512_ENABLED
-	bool "SHA-384 and SHA-512 hash algorithms"
+	bool "SHA-512 hash algorithm"
 
 config MBEDTLS_MAC_POLY1305_ENABLED
 	bool "Poly1305 MAC algorithm"
@@ -348,7 +359,7 @@ config MBEDTLS_HAVE_ASM
 
 config MBEDTLS_ENTROPY_ENABLED
 	bool "MbedTLS generic entropy pool"
-	depends on MBEDTLS_MAC_SHA256_ENABLED || MBEDTLS_MAC_SHA512_ENABLED
+	depends on MBEDTLS_MAC_SHA256_ENABLED || MBEDTLS_MAC_SHA384_ENABLED || MBEDTLS_MAC_SHA512_ENABLED
 
 config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
 	bool "MbedTLS optimizations for OpenThread"
@@ -410,5 +421,13 @@ config MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES
 	int "Maximum number of SSL cache entires"
 	depends on MBEDTLS_SSL_CACHE_C
 	default 5
+
+config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
+	bool "(D)TLS Extended Master Secret extension"
+	depends on MBEDTLS_TLS_VERSION_1_2
+	help
+	  Enable support for the (D)TLS Extended Master Secret extension
+	  which ensures that master secrets are different for every
+	  connection and every session.
 
 endmenu

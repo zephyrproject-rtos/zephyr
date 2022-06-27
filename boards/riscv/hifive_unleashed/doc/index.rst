@@ -9,6 +9,11 @@ Overview
 The HiFive Unleashed is a development board with a SiFive FU540-C000
 multi-core 64bit RISC-V SoC.
 
+.. image:: img/hifive_unleashed.jpg
+   :width: 650px
+   :align: center
+   :alt: SiFive HiFive Unleashed board
+
 Programming and debugging
 *************************
 

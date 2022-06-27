@@ -94,8 +94,8 @@ cprint("")
 
 # Re-include the core-isa header and be sure our definitions match, for sanity
 cprint("#include <xtensa/config/core-isa.h>")
-cprint("#include <sys/util.h>")
-cprint("#include <sw_isr_table.h>")
+cprint("#include <zephyr/sys/util.h>")
+cprint("#include <zephyr/sw_isr_table.h>")
 cprint("")
 for l in ints_by_lvl:
     for i in ints_by_lvl[l]:

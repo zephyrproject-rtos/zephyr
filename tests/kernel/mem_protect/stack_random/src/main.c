@@ -14,6 +14,16 @@
 void *last_sp = (void *)0xFFFFFFFF;
 volatile unsigned int changed;
 
+/*
+ * The `alternate_thread` function deliberately makes use of a dangling pointer
+ * in order to test stack randomisation.
+ */
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wdangling-pointer"
+#endif
+
 void alternate_thread(void)
 {
 	int i;
@@ -32,6 +42,9 @@ void alternate_thread(void)
 	last_sp = sp_val;
 }
 
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 K_THREAD_STACK_DEFINE(alt_thread_stack_area, STACKSIZE);
 static struct k_thread alt_thread_data;

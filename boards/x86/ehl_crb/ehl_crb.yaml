@@ -5,6 +5,8 @@ arch: x86
 toolchain:
   - zephyr
 ram: 2048
+supported:
+  - gpio
 testing:
   ignore_tags:
      - net

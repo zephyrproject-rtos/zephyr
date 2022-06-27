@@ -8,15 +8,14 @@
 #define _FOOTPRINT_H_
 
 #include <zephyr/kernel.h>
-#include <zephyr/zephyr.h>
 #include <zephyr/app_memory/app_memdomain.h>
 
-K_THREAD_STACK_EXTERN(my_stack_area);
-K_THREAD_STACK_EXTERN(my_stack_area_0);
+#define STACK_SIZE	512
+
+K_THREAD_STACK_DECLARE(my_stack_area, STACK_SIZE);
+K_THREAD_STACK_DECLARE(my_stack_area_0, STACK_SIZE);
 extern struct k_thread my_thread;
 extern struct k_thread my_thread_0;
-
-#define STACK_SIZE	512
 
 #ifdef CONFIG_USERSPACE
 #define FP_DMEM		K_APP_DMEM(footprint_mem_partition)

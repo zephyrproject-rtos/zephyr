@@ -313,6 +313,8 @@ config BT_DEBUG_MONITOR_RTT
 	depends on USE_SEGGER_RTT
 	depends on SEGGER_RTT_MAX_NUM_UP_BUFFERS >= 2
 	select BT_DEBUG
+	select LOG
+	select CONSOLE_HAS_DRIVER
 	select BT_MONITOR
 	help
 	  Use a custom logging protocol over the RTT buffer instead of

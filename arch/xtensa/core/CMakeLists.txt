@@ -19,7 +19,7 @@ zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE tls.c)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_ENABLE_BACKTRACE xtensa_backtrace.c)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_ENABLE_BACKTRACE debug_helpers_asm.S)
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
-
+zephyr_library_sources_ifdef(CONFIG_TIMING_FUNCTIONS timing.c)
 zephyr_library_sources_ifdef(CONFIG_GDBSTUB gdbstub.c)
 
 if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xcc")

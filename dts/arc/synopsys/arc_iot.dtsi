@@ -69,6 +69,7 @@
 			interrupts = <86 0>;
 			interrupt-parent = <&intc>;
 			dlf = <0x01>;
+			reg-shift = <2>;
 		};
 
 		uart1: uart@80014100 {
@@ -78,7 +79,7 @@
 			label = "UART_1";
 			interrupts = <87 0>;
 			interrupt-parent = <&intc>;
-
+			reg-shift = <2>;
 			status = "disabled";
 		};
 
@@ -89,7 +90,7 @@
 			label = "UART_2";
 			interrupts = <88 0>;
 			interrupt-parent = <&intc>;
-
+			reg-shift = <2>;
 			status = "disabled";
 		};
 
@@ -100,7 +101,7 @@
 			label = "UART_3";
 			interrupts = <89 0>;
 			interrupt-parent = <&intc>;
-
+			reg-shift = <2>;
 			status = "disabled";
 		};
 

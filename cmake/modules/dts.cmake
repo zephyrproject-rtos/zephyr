@@ -53,6 +53,17 @@ list(APPEND
   ${SHIELD_DIRS}
   ${ZEPHYR_BASE}
   )
+
+# DTS directories can come from multiple places. Some places like a
+# user's CMakeLists.txt can preserve symbolic links. Others like
+# scripts/zephyr_module.py --settings-out resolve them.
+unset(real_dts_root)
+foreach(dts_dir ${DTS_ROOT})
+  file(REAL_PATH ${dts_dir} real_dts_dir)
+  list(APPEND real_dts_root ${real_dts_dir})
+endforeach()
+set(DTS_ROOT ${real_dts_root})
+
 list(REMOVE_DUPLICATES
   DTS_ROOT
   )
@@ -210,6 +221,7 @@ if(SUPPORTS_DTS)
     RESULT_VARIABLE ret
     )
   if(NOT "${ret}" STREQUAL "0")
+    message(STATUS "In: ${PROJECT_BINARY_DIR}, command: ${CMD_EXTRACT}")
     message(FATAL_ERROR "gen_defines.py failed with return code: ${ret}")
   else()
     zephyr_file_copy(${ZEPHYR_DTS}.new ${ZEPHYR_DTS} ONLY_IF_DIFFERENT)

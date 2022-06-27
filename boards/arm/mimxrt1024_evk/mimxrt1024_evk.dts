@@ -20,7 +20,7 @@
 	};
 
 	chosen {
-		zephyr,flash-controller = &flexspi;
+		zephyr,flash-controller = &is25wp032;
 		zephyr,flash = &is25wp032;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &sdram0;
@@ -40,7 +40,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led: led-1 {
-			gpios = <&gpio1 24 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
 	};
@@ -129,6 +129,8 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c4>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpio3 22 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpio3 23 GPIO_ACTIVE_HIGH>;
 
 	fxos8700: fxos8700@1f {
 		compatible = "nxp,fxos8700";
@@ -180,6 +182,5 @@ zephyr_udc0: &usb1 {
 	mmc {
 		compatible = "zephyr,sdmmc-disk";
 		status = "okay";
-		label = "SDMMC_0";
 	};
 };

@@ -25,7 +25,7 @@
 #endif
 
 KEEP(*(.reset.*))
-KEEP(*(".exception.entry.*")) /* contains __irq_wrapper */
+KEEP(*(".exception.entry.*")) /* contains _isr_wrapper */
 *(".exception.other.*")
 
 KEEP(*(.openocd_debug))

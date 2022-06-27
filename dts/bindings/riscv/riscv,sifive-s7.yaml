@@ -1,8 +1,0 @@
-# Copyright (c) 2022 Shawn Nematbakhsh <shawn@rivosinc.com>
-# SPDX-License-Identifier: Apache-2.0
-
-description: SiFive S7 Standard Core CPU
-
-compatible: "riscv,sifive-s7"
-
-include: riscv,sifive.yaml

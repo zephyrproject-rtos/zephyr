@@ -143,6 +143,14 @@ MEMORY
 
 #endif /* CONFIG_NEWLIB_LIBC */
 
+#ifdef CONFIG_PICOLIBC
+/* For Picolibc libc-hook.c. */
+#define LIB_C_IN_SECT(lsect)						\
+	*liblib__libc__picolibc.a:libc-hooks.c.obj(.##lsect)		\
+	*liblib__libc__picolibc.a:libc-hooks.c.obj(.##lsect##.*)
+
+#endif /* CONFIG_PICOLIBC */
+
 /*
  * For drivers that are usually used (e.g. serial)
  */
@@ -735,6 +743,11 @@ SECTIONS
 /* Must be last in RAM */
 #include <zephyr/linker/kobject-data.ld>
 #endif /* !CONFIG_LINKER_USE_PINNED_SECTION */
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-data-sections.ld>
 
 	MMU_PAGE_ALIGN
 	__data_ram_end = .;

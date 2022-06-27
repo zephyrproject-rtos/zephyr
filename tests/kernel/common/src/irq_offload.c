@@ -20,6 +20,9 @@
 volatile uint32_t sentinel;
 #define SENTINEL_VALUE 0xDEADBEEF
 
+K_THREAD_STACK_DEFINE(offload_stack, 384 + CONFIG_TEST_EXTRA_STACK_SIZE);
+struct k_thread offload_thread;
+
 static void offload_function(const void *param)
 {
 	uint32_t x = POINTER_TO_INT(param);
@@ -198,6 +201,9 @@ static bool timer_executed, nested_executed;
 
 void nestoff_offload(const void *parameter)
 {
+	/* Suspend the thread we interrupted so we context switch, see below */
+	k_thread_suspend(&offload_thread);
+
 	nested_executed = true;
 }
 
@@ -214,6 +220,14 @@ static void nestoff_timer_fn(struct k_timer *timer)
 	timer_executed = true;
 }
 
+static void offload_thread_fn(void *p0, void *p1, void *p2)
+{
+	k_timer_start(&nestoff_timer, K_TICKS(1), K_FOREVER);
+
+	while (true) {
+		zassert_false(timer_executed, "should not return to this thread");
+	}
+}
 
 /* Invoke irq_offload() from an interrupt and verify that the
  * resulting nested interrupt doesn't explode
@@ -224,14 +238,27 @@ void test_nested_irq_offload(void)
 		ztest_test_skip();
 	}
 
+	k_thread_priority_set(k_current_get(), 1);
+
 	k_timer_init(&nestoff_timer, nestoff_timer_fn, NULL);
 
 	zassert_false(timer_executed, "timer ran too soon");
 	zassert_false(nested_executed, "nested irq_offload ran too soon");
 
-	k_timer_start(&nestoff_timer, K_TICKS(1), K_FOREVER);
-	k_timer_status_sync(&nestoff_timer);
+	/* Do this in a thread to exercise a regression case: the
+	 * offload handler will suspend the thread it interrupted,
+	 * ensuring that the interrupt returns back to this thread and
+	 * effects a context switch of of the nested interrupt (see
+	 * #45779).  Requires that this be a 1cpu test case,
+	 * obviously.
+	 */
+	k_thread_create(&offload_thread,
+			offload_stack, K_THREAD_STACK_SIZEOF(offload_stack),
+			offload_thread_fn, NULL, NULL, NULL,
+			0, 0, K_NO_WAIT);
 
 	zassert_true(timer_executed, "timer did not run");
 	zassert_true(nested_executed, "nested irq_offload did not run");
+
+	k_thread_abort(&offload_thread);
 }

@@ -52,6 +52,7 @@ struct iso_chan_work {
 	struct bt_iso_chan chan;
 	struct k_work_delayable send_work;
 	struct bt_iso_info info;
+	uint32_t seq_num;
 } iso_chans[CONFIG_BT_ISO_MAX_CHAN];
 
 static enum benchmark_role role;
@@ -171,7 +172,8 @@ static void iso_send(struct bt_iso_chan *chan)
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	net_buf_add_mem(buf, iso_data, iso_tx_qos.sdu);
 
-	ret = bt_iso_chan_send(chan, buf);
+	ret = bt_iso_chan_send(chan, buf, chan_work->seq_num++,
+			       BT_ISO_TIMESTAMP_NONE);
 	if (ret < 0) {
 		LOG_ERR("Unable to send data: %d", ret);
 		net_buf_unref(buf);
@@ -276,6 +278,9 @@ static void iso_connected(struct bt_iso_chan *chan)
 	 */
 	iso_conn_start_time = k_uptime_get();
 
+	chan_work = CONTAINER_OF(chan, struct iso_chan_work, chan);
+	chan_work->seq_num = 0U;
+
 	k_sem_give(&sem_iso_connected);
 }
 
@@ -338,7 +343,9 @@ static int iso_accept(const struct bt_iso_accept_info *info,
 }
 
 static struct bt_iso_server iso_server = {
+#if defined(CONFIG_BT_SMP)
 	.sec_level = DEFAULT_CIS_SEC_LEVEL,
+#endif /* CONFIG_BT_SMP */
 	.accept = iso_accept,
 };
 
@@ -520,7 +527,7 @@ static int parse_interval_arg(void)
 
 	interval = strtoul(buffer, NULL, 0);
 	/* TODO: Replace literal ints with a #define once it has been created */
-	if (interval < BT_ISO_INTERVAL_MIN || interval > BT_ISO_INTERVAL_MAX) {
+	if (interval < BT_ISO_SDU_INTERVAL_MIN || interval > BT_ISO_SDU_INTERVAL_MAX) {
 		printk("Invalid interval %llu", interval);
 		return -EINVAL;
 	}
