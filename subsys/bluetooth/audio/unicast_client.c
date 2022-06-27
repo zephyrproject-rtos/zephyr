@@ -36,7 +36,7 @@ static struct unicast_client_pac {
 	enum bt_audio_dir dir;
 	uint16_t context;
 	struct bt_codec codec;
-} cache[CONFIG_BT_MAX_CONN][CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
+} pac_cache[CONFIG_BT_MAX_CONN][CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
 
 static const struct bt_uuid *snk_uuid = BT_UUID_PACS_SNK;
 static const struct bt_uuid *src_uuid = BT_UUID_PACS_SRC;
@@ -1922,7 +1922,7 @@ static uint8_t unicast_client_pacs_context_read_func(struct bt_conn *conn,
 	index = bt_conn_index(conn);
 
 	for (i = 0; i < CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT; i++) {
-		struct unicast_client_pac *pac = &cache[index][i];
+		struct unicast_client_pac *pac = &pac_cache[index][i];
 
 		if (PAC_DIR_UNUSED(pac->dir)) {
 			continue;
@@ -1976,7 +1976,7 @@ static struct unicast_client_pac *unicast_client_pac_alloc(struct bt_conn *conn,
 	index = bt_conn_index(conn);
 
 	for (i = 0; i < CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT; i++) {
-		struct unicast_client_pac *pac = &cache[index][i];
+		struct unicast_client_pac *pac = &pac_cache[index][i];
 
 		if (PAC_DIR_UNUSED(pac->dir)) {
 			pac->dir = dir;
@@ -2107,7 +2107,7 @@ static void unicast_client_pac_reset(struct bt_conn *conn)
 	int i;
 
 	for (i = 0; i < CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT; i++) {
-		struct unicast_client_pac *pac = &cache[index][i];
+		struct unicast_client_pac *pac = &pac_cache[index][i];
 
 		if (!PAC_DIR_UNUSED(pac->dir)) {
 			(void)memset(pac, 0, sizeof(*pac));
