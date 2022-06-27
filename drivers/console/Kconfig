@@ -384,5 +384,10 @@ config UART_MUX_VERBOSE_DEBUG
 	  As there might be lot of debug output printed, only enable
 	  this if really needed.
 
+config EFI_CONSOLE
+	bool "Use EFI console for console output"
+	select CONSOLE_HAS_DRIVER
+	help
+	  Enable this option to use EFI console output.
 
 endif # CONSOLE
