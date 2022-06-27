@@ -93,7 +93,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 418f2998a2f7552f668ba8872b17e164a0bc52a9
+      revision: 00acb97521c171f4620c21fe5fa2a2c3ef49bdae
       path: modules/hal/nxp
       groups:
         - hal
