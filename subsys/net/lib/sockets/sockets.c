@@ -41,8 +41,13 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 		int ret;				     \
 							     \
 		obj = get_sock_vtable(sock, &vtable, &lock); \
-		if (obj == NULL || vtable->fn == NULL) {     \
+		if (obj == NULL) {			     \
 			errno = EBADF;			     \
+			return -1;			     \
+		}					     \
+							     \
+		if (vtable->fn == NULL) {		     \
+			errno = EOPNOTSUPP;		     \
 			return -1;			     \
 		}					     \
 							     \
