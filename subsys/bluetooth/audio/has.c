@@ -840,6 +840,11 @@ int bt_has_preset_available(uint8_t index)
 		return -EINVAL;
 	}
 
+	preset_foreach(index, index, preset_found, &preset);
+	if (preset == NULL) {
+		return -ENOENT;
+	}
+
 	/* toggle property bit if needed */
 	if (!(preset->properties & BT_HAS_PROP_AVAILABLE)) {
 		NET_BUF_SIMPLE_DEFINE(buf, sizeof(struct bt_has_cp_hdr) +
@@ -863,6 +868,11 @@ int bt_has_preset_unavailable(uint8_t index)
 	CHECKIF(index == BT_HAS_PRESET_INDEX_NONE) {
 		BT_ERR("index is invalid");
 		return -EINVAL;
+	}
+
+	preset_foreach(index, index, preset_found, &preset);
+	if (preset == NULL) {
+		return -ENOENT;
 	}
 
 	/* toggle property bit if needed */
