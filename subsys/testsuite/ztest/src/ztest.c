@@ -538,12 +538,15 @@ void main(void)
 	}
 #ifdef Z_MALLOC_PARTITION_EXISTS
 	/* Allow access to malloc() memory */
-	ret = k_mem_domain_add_partition(&k_mem_domain_default,
-					 &z_malloc_partition);
-	if (ret != 0) {
-		PRINT("ERROR: failed to add z_malloc_partition to mem domain (%d)\n",
-		      ret);
-		k_oops();
+	if (z_malloc_partition.size != 0) {
+		ret = k_mem_domain_add_partition(&k_mem_domain_default,
+						 &z_malloc_partition);
+		if (ret != 0) {
+			PRINT("ERROR: failed to add z_malloc_partition"
+			      " to mem domain (%d)\n",
+			      ret);
+			k_oops();
+		}
 	}
 #endif
 #endif /* CONFIG_USERSPACE */
