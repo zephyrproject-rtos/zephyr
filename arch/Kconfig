@@ -418,6 +418,24 @@ config ARCH_IRQ_VECTOR_TABLE_ALIGN
 	  to be aligned to architecture specific size.  The default
 	  size is 0 for no alignment.
 
+choice IRQ_VECTOR_TABLE_TYPE
+	prompt "IRQ vector table type"
+	depends on GEN_IRQ_VECTOR_TABLE
+	default IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS
+
+config IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS
+	bool "Jump by address"
+	help
+	  The IRQ vector table contains the address of the interrupt handler.
+
+config IRQ_VECTOR_TABLE_JUMP_BY_CODE
+	bool "Jump by code"
+	help
+	  The IRQ vector table contains the opcode of a jump instruction to the
+	  interrupt handler address.
+
+endchoice
+
 config GEN_SW_ISR_TABLE
 	bool "Generate a software ISR table"
 	default y
