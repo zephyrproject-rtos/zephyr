@@ -1642,6 +1642,21 @@ if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
     )
 endif()
 
+if(CONFIG_OUTPUT_SYMBOLS)
+  list(APPEND
+    post_build_commands
+    COMMAND $<TARGET_PROPERTY:bintools,symbols_command>
+            $<TARGET_PROPERTY:bintools,symbols_flag>
+            $<TARGET_PROPERTY:bintools,symbols_infile>${KERNEL_ELF_NAME}
+            $<TARGET_PROPERTY:bintools,symbols_outfile>${KERNEL_SYMBOLS_NAME}
+            $<TARGET_PROPERTY:bintools,symbols_final>
+    )
+  list(APPEND
+    post_build_byproducts
+    ${KERNEL_SYMBOLS_NAME}
+    )
+endif()
+
 if(CONFIG_OUTPUT_STAT)
 #  zephyr_post_build(TOOLS bintools COMMAND readelf FLAGS headers INFILE file OUTFILE outfile)
   list(APPEND
