@@ -27,76 +27,137 @@
 #define LIBC_DATA	K_APP_DMEM(z_libc_partition)
 
 #ifdef CONFIG_MMU
-#ifdef CONFIG_USERSPACE
+
+/* When there is an MMU, allocate the heap at startup time */
+
+# if Z_MALLOC_PARTITION_EXISTS
 struct k_mem_partition z_malloc_partition;
-#endif
+# endif
 
 LIBC_BSS static unsigned char *heap_base;
 LIBC_BSS static size_t max_heap_size;
 
-#define HEAP_BASE		((uintptr_t) heap_base)
-#define MAX_HEAP_SIZE		max_heap_size
-#define USE_MALLOC_PREPARE	1
+# define HEAP_BASE		((uintptr_t) heap_base)
+# define MAX_HEAP_SIZE		max_heap_size
 
-#elif CONFIG_PICOLIBC_ALIGNED_HEAP_SIZE
-K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
-#define MALLOC_BSS	K_APP_BMEM(z_malloc_partition)
+# define USE_MALLOC_PREPARE	1
 
-/* Compiler will throw an error if the provided value isn't a power of two */
-MALLOC_BSS static unsigned char __aligned(CONFIG_PICOLIBC_ALIGNED_HEAP_SIZE)
-	heap_base[CONFIG_PICOLIBC_ALIGNED_HEAP_SIZE];
+#elif CONFIG_PICOLIBC_HEAP_SIZE == 0
 
-#define HEAP_BASE	((uintptr_t) heap_base)
-#define MAX_HEAP_SIZE	CONFIG_PICOLIBC_ALIGNED_HEAP_SIZE
+/* No heap at all */
+# define HEAP_BASE	0
+# define MAX_HEAP_SIZE	0
 
-#else /* Not MMU or CONFIG_PICOLIBC_ALIGNED_HEAP_SIZE */
-/* Heap base and size are determined based on the available unused SRAM,
- * in the interval from a properly aligned address after the linker symbol
- * `_end`, to the end of SRAM
+#else /* CONFIG_PICOLIBC_HEAP_SIZE != 0 */
+
+/* Figure out alignment requirement */
+# ifdef Z_MALLOC_PARTITION_EXISTS
+
+#  if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+#   if CONFIG_PICOLIBC_HEAP_SIZE < 0
+#    error CONFIG_PICOLIBC_HEAP_SIZE must be defined on this target
+#   endif
+#   if (CONFIG_PICOLIBC_HEAP_SIZE & (CONFIG_PICOLIBC_HEAP_SIZE - 1)) != 0
+#    error CONFIG_PICOLIBC_HEAP_SIZE must be power of two on this target
+#   endif
+#   define HEAP_ALIGN	CONFIG_PICOLIBC_HEAP_SIZE
+#  elif defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+#   define HEAP_ALIGN	CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
+#  elif defined(CONFIG_ARC)
+#   define HEAP_ALIGN	Z_ARC_MPU_ALIGN
+#  elif defined(CONFIG_RISCV)
+#   define HEAP_ALIGN	Z_RISCV_STACK_GUARD_SIZE
+#  else
+/*
+ * Default to 64-bytes; we'll get a run-time error if this doesn't work.
  */
-#define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
+#   define HEAP_ALIGN	64
+#  endif /* CONFIG_<arch> */
 
-#ifdef Z_MALLOC_PARTITION_EXISTS
-/* Need to be able to program a memory protection region from HEAP_BASE
- * to the end of RAM so that user threads can get at it.
- * Implies that the base address needs to be suitably aligned since the
- * bounds have to go in a k_mem_partition.
+# else /* Z_MALLOC_PARTITION_EXISTS */
+
+#  define HEAP_ALIGN	sizeof(double)
+
+# endif /* else Z_MALLOC_PARTITION_EXISTS */
+
+# if CONFIG_PICOLIBC_HEAP_SIZE > 0
+
+/* Static allocation of heap in BSS */
+
+#  ifdef Z_MALLOC_PARTITION_EXISTS
+K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
+#   define MALLOC_BSS	K_APP_BMEM(z_malloc_partition)
+#  else
+#   define MALLOC_BSS
+#  endif
+
+MALLOC_BSS static unsigned char __aligned(HEAP_ALIGN)
+	heap_base[CONFIG_PICOLIBC_HEAP_SIZE];
+
+#  define HEAP_BASE	((uintptr_t) heap_base)
+#  define MAX_HEAP_SIZE	CONFIG_PICOLIBC_HEAP_SIZE
+
+# else /* CONFIG_PICOLIBC_HEAP_SIZE > 0 */
+
+/*
+ * Heap base and size are determined based on the available unused SRAM, in the
+ * interval from a properly aligned address after the linker symbol `_end`, to
+ * the end of SRAM
+ */
+
+#  ifdef Z_MALLOC_PARTITION_EXISTS
+/*
+ * Need to be able to program a memory protection region from HEAP_BASE to the
+ * end of RAM so that user threads can get at it.  Implies that the base address
+ * needs to be suitably aligned since the bounds have to go in a
+ * k_mem_partition.
  */
 struct k_mem_partition z_malloc_partition;
-/* TODO: Need a generic Kconfig for the MPU region granularity */
-#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
-#define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, \
-				 CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
-#elif defined(CONFIG_ARC)
-#define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, Z_ARC_MPU_ALIGN)
-#elif defined(CONFIG_RISCV)
-#define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, Z_RISCV_STACK_GUARD_SIZE)
-#else
-#error "Unsupported platform"
-#endif /* CONFIG_<arch> */
-#else /* !Z_MALLOC_PARTITION_EXISTS */
-/* No partition, heap can just start wherever _end is */
-#define HEAP_BASE	USED_RAM_END_ADDR
-#endif /* Z_MALLOC_PARTITION_EXISTS */
 
-#ifdef CONFIG_XTENSA
+#   define USE_MALLOC_PREPARE	1
+
+#  endif /* Z_MALLOC_PARTITION_EXISTS */
+
+#  define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
+
+/*
+ * No partition, heap can just start wherever _end is, with
+ * suitable alignment
+ */
+
+#  define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, HEAP_ALIGN)
+
+#  ifdef CONFIG_XTENSA
 extern char _heap_sentry[];
-#define MAX_HEAP_SIZE  (POINTER_TO_UINT(_heap_sentry) - HEAP_BASE)
-#else
-#define MAX_HEAP_SIZE	(KB(CONFIG_SRAM_SIZE) - \
+#   define MAX_HEAP_SIZE  (POINTER_TO_UINT(_heap_sentry) - HEAP_BASE)
+#  else
+#   define MAX_HEAP_SIZE	(KB(CONFIG_SRAM_SIZE) - \
 			 (HEAP_BASE - CONFIG_SRAM_BASE_ADDRESS))
-#endif
+#  endif /* CONFIG_XTENSA */
 
-#endif /* CONFIG_PICOLIBC_ALIGNED_HEAP_SIZE */
+# endif /* CONFIG_PICOLIBC_HEAP_SIZE < 0 */
 
+#endif /* CONFIG_PICOLIBC_HEAP_SIZE == 0 */
+
+#ifdef USE_MALLOC_PREPARE
 
 static int malloc_prepare(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
 #ifdef CONFIG_MMU
-	max_heap_size = MIN(CONFIG_PICOLIBC_LIBC_MAX_MAPPED_REGION_SIZE,
+
+	/* With an MMU, the heap is allocated at runtime */
+
+# if CONFIG_PICOLIBC_HEAP_SIZE < 0
+#  define MMU_MAX_HEAP_SIZE PTRDIFF_MAX
+# else
+#  define MMU_MAX_HEAP_SIZE CONFIG_PICOLIBC_HEAP_SIZE
+# endif
+	max_heap_size = MIN(MMU_MAX_HEAP_SIZE,
 			    k_mem_free_get());
+
+	max_heap_size &= ~(CONFIG_MMU_PAGE_SIZE-1);
 
 	if (max_heap_size != 0) {
 		heap_base = k_mem_map(max_heap_size, K_MEM_PERM_RW);
@@ -115,6 +176,8 @@ static int malloc_prepare(const struct device *unused)
 }
 
 SYS_INIT(malloc_prepare, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+#endif /* USE_MALLOC_PREPARE */
 
 LIBC_BSS static uintptr_t heap_sz;
 
