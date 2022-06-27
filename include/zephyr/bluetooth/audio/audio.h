@@ -1299,6 +1299,34 @@ struct bt_audio_stream {
 	void *user_data;
 };
 
+/** Unicast Client callback structure */
+struct bt_audio_unicast_client_cb {
+	/** @brief Remote Unicast Server Audio Locations
+	 *
+	 *  This callback is called whenever the audio locations is read from
+	 *  the server or otherwise notified to the client.
+	 *
+	 *  @param conn  Connection to the remote unicast server.
+	 *  @param dir   Direction of the location.
+	 *  @param loc   The location bitfield value.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	void (*location)(struct bt_conn *conn, enum bt_audio_dir dir,
+			 enum bt_audio_location loc);
+};
+
+/** @brief Register unicast client callbacks.
+ *
+ *  Only one callback structure can be registered, and attempting to
+ *  registering more than one will result in an error.
+ *
+ *  @param cb  Unicast client callback structure.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_audio_unicast_client_register_cb(const struct bt_audio_unicast_client_cb *cb);
+
 /** Unicast Server callback structure */
 struct bt_audio_unicast_server_cb {
 	/** @brief Endpoint config request callback
