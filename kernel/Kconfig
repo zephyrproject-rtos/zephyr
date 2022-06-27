@@ -166,6 +166,15 @@ config MAIN_STACK_SIZE
 
 	  After initialization is complete, the thread runs main().
 
+config COVERAGE_STACK_SIZE
+	  int "extra size of stack for coverage"
+	  default 8192 if COVERAGE_GCOV
+	  default 0
+	  help
+		When the macro COVERAGE_GCOV is enabled, the test case need more
+		memory to mark the testing code and store the info to the BSS
+		segment.
+
 config IDLE_STACK_SIZE
 	int "Size of stack for idle thread"
 	default 2048 if COVERAGE_GCOV

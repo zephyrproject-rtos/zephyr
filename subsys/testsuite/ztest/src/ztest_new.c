@@ -342,7 +342,8 @@ out:
 #define FAIL_FAST 0
 #endif
 
-K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
+K_THREAD_STACK_DEFINE(ztest_thread_stack,
+	 ADJUST_TEST_STACK_SIZE(CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE));
 
 static void test_finalize(void)
 {

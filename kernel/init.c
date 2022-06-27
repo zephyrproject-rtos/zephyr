@@ -40,7 +40,7 @@ LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 struct z_kernel _kernel;
 
 /* init/main and idle threads */
-K_THREAD_PINNED_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+K_THREAD_PINNED_STACK_DEFINE(z_main_stack, ADJUST_TEST_STACK_SIZE(CONFIG_MAIN_STACK_SIZE));
 struct k_thread z_main_thread;
 
 #ifdef CONFIG_MULTITHREADING
@@ -331,10 +331,10 @@ static char *prepare_multithreading(void)
 	_kernel.ready_q.cache = &z_main_thread;
 #endif
 	stack_ptr = z_setup_new_thread(&z_main_thread, z_main_stack,
-				       CONFIG_MAIN_STACK_SIZE, bg_thread_main,
-				       NULL, NULL, NULL,
-				       CONFIG_MAIN_THREAD_PRIORITY,
-				       K_ESSENTIAL, "main");
+				 ADJUST_TEST_STACK_SIZE(CONFIG_MAIN_STACK_SIZE),
+				 bg_thread_main, NULL, NULL, NULL,
+				 CONFIG_MAIN_THREAD_PRIORITY,
+				 K_ESSENTIAL, "main");
 	z_mark_thread_as_started(&z_main_thread);
 	z_ready_thread(&z_main_thread);
 

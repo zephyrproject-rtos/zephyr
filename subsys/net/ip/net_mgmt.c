@@ -36,7 +36,7 @@ struct mgmt_event_wait {
 static K_SEM_DEFINE(network_event, 0, K_SEM_MAX_LIMIT);
 static K_MUTEX_DEFINE(net_mgmt_lock);
 
-K_KERNEL_STACK_DEFINE(mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(mgmt_stack, ADJUST_TEST_STACK_SIZE(CONFIG_NET_MGMT_EVENT_STACK_SIZE));
 static struct k_thread mgmt_thread_data;
 static struct mgmt_event_entry events[CONFIG_NET_MGMT_EVENT_QUEUE_SIZE];
 static uint32_t global_event_mask;

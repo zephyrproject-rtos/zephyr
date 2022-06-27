@@ -105,7 +105,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     str r0, [r1]
     dsb
 #endif /* CONFIG_CPU_HAS_ARM_MPU */
-    ldr r0, =z_main_stack + CONFIG_MAIN_STACK_SIZE
+    ldr r0, =z_main_stack + CONFIG_MAIN_STACK_SIZE + CONFIG_COVERAGE_STACK_SIZE
     msr msp, r0
 
     /* Initialize core architecture registers and system blocks */

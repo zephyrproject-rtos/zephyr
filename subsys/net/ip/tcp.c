@@ -54,8 +54,8 @@ K_MEM_SLAB_DEFINE_STATIC(tcp_conns_slab, sizeof(struct tcp),
 				CONFIG_NET_MAX_CONTEXTS, 4);
 
 static struct k_work_q tcp_work_q;
-static K_KERNEL_STACK_DEFINE(work_q_stack, CONFIG_NET_TCP_WORKQ_STACK_SIZE);
-
+static K_KERNEL_STACK_DEFINE(work_q_stack,
+			ADJUST_TEST_STACK_SIZE(CONFIG_NET_TCP_WORKQ_STACK_SIZE));
 static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt);
 static bool is_destination_local(struct net_pkt *pkt);
 static void tcp_out(struct tcp *conn, uint8_t flags);

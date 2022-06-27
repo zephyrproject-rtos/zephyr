@@ -35,7 +35,6 @@ config ZTEST_STACK_SIZE
 	default 4096 if ZTEST
 
 if COVERAGE
-
 config MAIN_STACK_SIZE
 	default 4096
 

@@ -30,6 +30,8 @@ extern "C" {
 #define _SYS_INIT_LEVEL_SMP		4
 #endif
 
+#define ADJUST_TEST_STACK_SIZE(x) (x + CONFIG_COVERAGE_STACK_SIZE)
+
 struct device;
 
 /**

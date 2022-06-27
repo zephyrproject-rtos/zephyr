@@ -26,11 +26,11 @@ LOG_MODULE_REGISTER(net_tc, CONFIG_NET_TC_LOG_LEVEL);
 
 /* Stacks for TX work queue */
 K_KERNEL_STACK_ARRAY_DEFINE(tx_stack, NET_TC_TX_COUNT,
-			    CONFIG_NET_TX_STACK_SIZE);
+			    ADJUST_TEST_STACK_SIZE(CONFIG_NET_TX_STACK_SIZE));
 
 /* Stacks for RX work queue */
 K_KERNEL_STACK_ARRAY_DEFINE(rx_stack, NET_TC_RX_COUNT,
-			    CONFIG_NET_RX_STACK_SIZE);
+			    ADJUST_TEST_STACK_SIZE(CONFIG_NET_RX_STACK_SIZE));
 
 #if NET_TC_TX_COUNT > 0
 static struct net_traffic_class tx_classes[NET_TC_TX_COUNT];
