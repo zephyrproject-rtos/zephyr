@@ -48,6 +48,8 @@ LOG_MODULE_REGISTER(lp50xx);
 #define LP50XX_NUM_CHANNELS(chip)	\
 	(LP50XX_LED_COL_CHAN_BASE(chip) + 3 * LP50XX_MAX_LEDS(chip))
 
+#define LP50XX_RESET_VAL			0xff
+
 #define LP50XX_CHIP_VERSION(id)						\
 	(DT_NODE_HAS_COMPAT(DT_DRV_INST(id), ti_lp5036) ? LP5036 :	\
 	(DT_NODE_HAS_COMPAT(DT_DRV_INST(id), ti_lp5030) ? LP5030 :	\
@@ -183,7 +185,7 @@ static int lp50xx_write_channels(const struct device *dev,
 static int lp50xx_init(const struct device *dev)
 {
 	const struct lp50xx_config *config = dev->config;
-	uint8_t buf[3];
+	uint8_t buf[2];
 	int err;
 
 	if (!device_is_ready(config->bus.bus)) {
@@ -198,21 +200,10 @@ static int lp50xx_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	/*
-	 * Since the status of the LP503x controller is unknown when entering
-	 * this function, and since there is no way to reset it, then the whole
-	 * configuration must be applied.
-	 */
-
-	/* Disable bank control for all LEDs. */
-	buf[0] = LP50XX_LED_CONFIG0;
-	buf[1] = 0;
-	buf[2] = 0;
-	if (config->chip == LP5009 || config->chip == LP5012) {
-		err = i2c_write_dt(&config->bus, buf, 2);
-	} else {
-		err = i2c_write_dt(&config->bus, buf, 3);
-	}
+	/* Reset device. */
+	buf[0] = LP50XX_DEVICE_RESET(config->chip);
+	buf[1] = LP50XX_RESET_VAL;
+	err = i2c_write_dt(&config->bus, buf, sizeof(buf));
 	if (err < 0) {
 		return err;
 	}
@@ -220,7 +211,7 @@ static int lp50xx_init(const struct device *dev)
 	/* Enable LED controller. */
 	buf[0] = LP50XX_DEVICE_CONFIG0;
 	buf[1] = CONFIG0_CHIP_EN;
-	err = i2c_write_dt(&config->bus, buf, 2);
+	err = i2c_write_dt(&config->bus, buf, sizeof(buf));
 	if (err < 0) {
 		return err;
 	}
@@ -236,7 +227,7 @@ static int lp50xx_init(const struct device *dev)
 		buf[1] |= CONFIG1_LOG_SCALE_EN;
 	}
 
-	return i2c_write_dt(&config->bus, buf, 2);
+	return i2c_write_dt(&config->bus, buf, sizeof(buf));
 }
 
 static const struct led_driver_api lp50xx_led_api = {
