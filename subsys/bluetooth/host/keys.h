@@ -83,6 +83,8 @@ struct bt_keys *bt_keys_find_irk(uint8_t id, const bt_addr_le_t *addr);
 struct bt_keys *bt_keys_find_addr(uint8_t id, const bt_addr_le_t *addr);
 
 void bt_keys_add_type(struct bt_keys *keys, int type);
+void bt_keys_clear_other_keys_with_identity(uint8_t id, const bt_addr_le_t *id_addr,
+					    const struct bt_keys *keep_these_keys);
 void bt_keys_clear(struct bt_keys *keys);
 
 #if defined(CONFIG_BT_SETTINGS)

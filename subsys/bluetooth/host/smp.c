@@ -3957,6 +3957,15 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 			 * present before ie. due to re-pairing.
 			 */
 			if (!bt_addr_le_is_identity(&conn->le.dst)) {
+				/* Clear all keys with the same identity address, except for
+				 * the currently used key. This is done to make sure there is only
+				 * one entry in the key pool with the identity address in req->addr.
+				 * There might be entries from previous bondings with the same
+				 * identity as req->addr in the key pool since this new bonding
+				 * could be a re-bonding.
+				 */
+				bt_keys_clear_other_keys_with_identity(conn->id, &req->addr, keys);
+
 				bt_addr_le_copy(&keys->addr, &req->addr);
 				bt_addr_le_copy(&conn->le.dst, &req->addr);
 

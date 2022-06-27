@@ -279,6 +279,24 @@ void bt_keys_add_type(struct bt_keys *keys, int type)
 	keys->keys |= type;
 }
 
+void bt_keys_clear_other_keys_with_identity(uint8_t id, const bt_addr_le_t *id_addr,
+					    const struct bt_keys *keep_these_keys)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(key_pool); i++) {
+		if (&key_pool[i] == keep_these_keys) {
+			/* Skip the keep_this_key */
+			continue;
+		}
+
+		if ((key_pool[i].id == id) && (!bt_addr_le_cmp(&key_pool[i].addr, id_addr))) {
+			/* Remove the key from the controller's resolve list */
+			bt_id_del(&key_pool[i]);
+			/* Clear this key, because it has the same id and identity address. */
+			(void)memset(&key_pool[i], 0, sizeof(key_pool[i]));
+		}
+	}
+}
+
 void bt_keys_clear(struct bt_keys *keys)
 {
 	BT_DBG("%s (keys 0x%04x)", bt_addr_le_str(&keys->addr), keys->keys);
