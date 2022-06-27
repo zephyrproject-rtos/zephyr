@@ -498,6 +498,10 @@ static const struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("AT+CREG=0"),
 	/* create PDP context */
 	SETUP_CMD_NOHANDLE("AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_GSM_APN "\""),
+#if IS_ENABLED(DT_PROP(GSM_UART_NODE, hw_flow_control))
+	/* enable hardware flow control */
+	SETUP_CMD_NOHANDLE("AT+IFC=2,2"),
+#endif
 };
 
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_attached)
@@ -1266,6 +1270,8 @@ static int gsm_init(const struct device *dev)
 	gsm->context.is_automatic_oper = false;
 	gsm->gsm_data.rx_rb_buf = &gsm->gsm_rx_rb_buf[0];
 	gsm->gsm_data.rx_rb_buf_len = sizeof(gsm->gsm_rx_rb_buf);
+	gsm->gsm_data.hw_flow_control = DT_PROP(GSM_UART_NODE,
+						hw_flow_control);
 
 	r = modem_iface_uart_init(&gsm->context.iface, &gsm->gsm_data,
 				DEVICE_DT_GET(GSM_UART_NODE));
