@@ -648,6 +648,9 @@ Build the Blinky Sample
    does not meet Blinky's :ref:`blinky-sample-requirements`, then
    :ref:`hello_world` is a good alternative.
 
+   If you are unsure what name west uses for your board, ``west boards``
+   can be used to obtain a list of all boards Zephyr supports.
+
 Build the :ref:`blinky-sample` with :ref:`west build <west-building>`, changing
 ``<your-board-name>`` appropriately for your board:
 
@@ -658,24 +661,26 @@ Build the :ref:`blinky-sample` with :ref:`west build <west-building>`, changing
       .. code-block:: bash
 
          cd ~/zephyrproject/zephyr
-         west build -p auto -b <your-board-name> samples/basic/blinky
+         west build -p always -b <your-board-name> samples/basic/blinky
 
    .. group-tab:: macOS
 
       .. code-block:: bash
 
          cd ~/zephyrproject/zephyr
-         west build -p auto -b <your-board-name> samples/basic/blinky
+         west build -p always -b <your-board-name> samples/basic/blinky
 
    .. group-tab:: Windows
 
       .. code-block:: bat
 
          cd %HOMEPATH%\zephyrproject\zephyr
-         west build -p auto -b <your-board-name> samples\basic\blinky
+         west build -p always -b <your-board-name> samples\basic\blinky
 
-The ``-p auto`` option automatically cleans byproducts from a previous build
-if necessary, which is useful if you try building another sample.
+The ``-p always`` option forces a pristine build, and is recommended for new
+users. Users may also use the ``-p auto`` option, which will use
+heuristics to determine if a pristine build is required, such as when building
+another sample.
 
 .. rst-class:: numbered-step
 
