@@ -17,6 +17,11 @@ properties:
     description: |
       If enabled a logarithmic dimming scale curve is used for LED brightness
       control. A linear dimming scale curve is used else.
+  en-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin connected with LP50XX EN pin. EN pin manages shutdown mode and
+      enables I2C interface.
 
 child-binding:
   properties:

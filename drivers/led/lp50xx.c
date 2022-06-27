@@ -69,6 +69,7 @@ struct lp50xx_config {
 	bool log_scale_en;
 	bool max_curr_opt;
 	const struct led_info *leds_info;
+	const struct gpio_dt_spec en_pin;
 	enum lp50xx_chips chip;
 };
 
@@ -200,6 +201,19 @@ static int lp50xx_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	/* Enable EN pin if given in devicetree. */
+	if (config->en_pin.port != NULL) {
+		if (device_is_ready(config->en_pin.port)) {
+			gpio_pin_configure_dt(&config->en_pin,
+					      GPIO_OUTPUT_ACTIVE);
+			/* Power save mode deglitch time */
+			k_sleep(K_MSEC(40));
+		} else {
+			LOG_ERR("GPIO for EN pin is not ready!");
+			return -ENODEV;
+		}
+	}
+
 	/* Reset device. */
 	buf[0] = LP50XX_DEVICE_RESET(config->chip);
 	buf[1] = LP50XX_RESET_VAL;
@@ -266,6 +280,7 @@ static const struct lp50xx_config lp50xx_config_##id = {		\
 	.max_curr_opt	= DT_INST_PROP(id, max_curr_opt),		\
 	.log_scale_en	= DT_INST_PROP(id, log_scale_en),		\
 	.leds_info	= lp50xx_leds_##id,				\
+	.en_pin		= GPIO_DT_SPEC_INST_GET_OR(id, en_gpios, {0}),	\
 	.chip		= LP50XX_CHIP_VERSION(id)			\
 };									\
 									\
