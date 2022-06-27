@@ -1410,7 +1410,6 @@ restart:
 		retry_count++;
 		if (retry_count > 3) {
 			LOG_ERR("Failed network init.  Too many attempts!");
-			ret = -ENETUNREACH;
 			goto error;
 		}
 
@@ -1430,7 +1429,6 @@ restart:
 	if (ret < 0) {
 		LOG_ERR("SOCKDIAL=1 CHECK ret:%d", ret);
 		/* don't report this as an error, we retry later */
-		ret = 0;
 	}
 
 	/* Set iface up */
