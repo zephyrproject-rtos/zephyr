@@ -149,8 +149,8 @@ manifest:
       path: modules/hal/libmetal
       groups:
         - hal
-    - name: liblc3codec
-      revision: 3951cf1b71ff3be086c9b9b595e473e12301337c
+    - name: liblc3
+      revision: 54c047249bc6b8089e85c1433b5aa6001bbc1ba9
       path: modules/lib/liblc3codec
     - name: littlefs
       path: modules/fs/littlefs
