@@ -22,9 +22,10 @@ struct si7060_data {
 	uint16_t temperature;
 };
 
-static int si7060_reg_read(struct si7060_data *drv_data, uint8_t reg,
-			     uint8_t *val)
+static int si7060_reg_read(const struct device *dev, uint8_t reg, uint8_t *val)
 {
+	struct si7060_data *drv_data = dev->data;
+
 	if (i2c_reg_read_byte(drv_data->i2c_dev,
 		DT_INST_REG_ADDR(0), reg, val)) {
 		return -EIO;
@@ -33,9 +34,10 @@ static int si7060_reg_read(struct si7060_data *drv_data, uint8_t reg,
 	return 0;
 }
 
-static int si7060_reg_write(struct si7060_data *drv_data, uint8_t reg,
-			      uint8_t val)
+static int si7060_reg_write(const struct device *dev, uint8_t reg, uint8_t val)
 {
+	struct si7060_data *drv_data = dev->data;
+
 	return i2c_reg_write_byte(drv_data->i2c_dev,
 		DT_INST_REG_ADDR(0), reg, val);
 }
@@ -45,8 +47,8 @@ static int si7060_sample_fetch(const struct device *dev,
 {
 	struct si7060_data *drv_data = dev->data;
 
-	if (si7060_reg_write(drv_data, SI7060_REG_CONFIG,
-		SI7060_ONE_BURST_VALUE) != 0) {
+	if (si7060_reg_write(dev, SI7060_REG_CONFIG,
+			     SI7060_ONE_BURST_VALUE) != 0) {
 		return -EIO;
 	}
 
@@ -54,10 +56,8 @@ static int si7060_sample_fetch(const struct device *dev,
 	uint8_t dspsigm;
 	uint8_t dspsigl;
 
-	retval = si7060_reg_read(drv_data, SI7060_REG_TEMP_HIGH,
-		&dspsigm);
-	retval += si7060_reg_read(drv_data, SI7060_REG_TEMP_LOW,
-		&dspsigl);
+	retval = si7060_reg_read(dev, SI7060_REG_TEMP_HIGH, &dspsigm);
+	retval += si7060_reg_read(dev, SI7060_REG_TEMP_LOW, &dspsigl);
 
 	if (retval == 0) {
 		drv_data->temperature = (256 * (dspsigm & SIGN_BIT_MASK))
@@ -110,8 +110,7 @@ static int si7060_chip_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (si7060_reg_read(drv_data, SI7060_REG_CHIP_INFO,
-		&value) != 0) {
+	if (si7060_reg_read(dev, SI7060_REG_CHIP_INFO, &value) != 0) {
 		return -EIO;
 	}
 
