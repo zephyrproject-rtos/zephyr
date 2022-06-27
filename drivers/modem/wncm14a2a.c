@@ -1722,7 +1722,6 @@ static int offload_send(struct net_pkt *pkt,
 	struct net_context *context = net_pkt_context(pkt);
 	socklen_t addrlen;
 
-	addrlen = 0;
 #if defined(CONFIG_NET_IPV6)
 	if (net_pkt_family(pkt) == AF_INET6) {
 		addrlen = sizeof(struct sockaddr_in6);
