@@ -345,7 +345,9 @@ void ztest_test_pass(void)
 void ztest_test_skip(void)
 {
 	test_result = ZTEST_RESULT_SKIP;
-	test_finalize();
+	if (phase != TEST_PHASE_SETUP) {
+		test_finalize();
+	}
 }
 
 void ztest_simple_1cpu_before(void *data)
@@ -384,6 +386,9 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 
 	phase = TEST_PHASE_BEFORE;
 
+	/* If the suite's setup function marked us as skipped, don't bother
+	 * running the tests.
+	 */
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		k_thread_create(&ztest_thread, ztest_thread_stack,
 				K_THREAD_STACK_SIZEOF(ztest_thread_stack),
@@ -395,9 +400,12 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 		if (test->name != NULL) {
 			k_thread_name_set(&ztest_thread, test->name);
 		}
-		k_thread_start(&ztest_thread);
-		k_thread_join(&ztest_thread, K_FOREVER);
-	} else {
+		/* Only start the thread if we're not skipping the suite */
+		if (test_result != ZTEST_RESULT_SKIP) {
+			k_thread_start(&ztest_thread);
+			k_thread_join(&ztest_thread, K_FOREVER);
+		}
+	} else if (test_result != ZTEST_RESULT_SKIP) {
 		test_result = ZTEST_RESULT_PENDING;
 		run_test_rules(/*is_before=*/true, test, data);
 		if (suite->before) {
@@ -499,6 +507,7 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 	init_testing();
 
 	TC_SUITE_START(suite->name);
+	test_result = ZTEST_RESULT_PENDING;
 	phase = TEST_PHASE_SETUP;
 	if (suite->setup != NULL) {
 		data = suite->setup();
