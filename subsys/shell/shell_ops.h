@@ -7,7 +7,7 @@
 #define SHELL_OPS_H__
 
 #include <stdbool.h>
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 #include "shell_vt100.h"
 #include "shell_utils.h"
 
@@ -203,16 +203,16 @@ static inline bool z_flag_print_noinit_set(const struct shell *sh, bool val)
 	return ret;
 }
 
-static inline bool z_flag_panic_mode_get(const struct shell *sh)
+static inline bool z_flag_sync_mode_get(const struct shell *sh)
 {
-	return sh->ctx->ctx.flags.panic_mode == 1;
+	return sh->ctx->ctx.flags.sync_mode == 1;
 }
 
-static inline bool z_flag_panic_mode_set(const struct shell *sh, bool val)
+static inline bool z_flag_sync_mode_set(const struct shell *sh, bool val)
 {
 	bool ret;
 
-	Z_SHELL_SET_FLAG_ATOMIC(sh, ctx, panic_mode, val, ret);
+	Z_SHELL_SET_FLAG_ATOMIC(sh, ctx, sync_mode, val, ret);
 	return ret;
 }
 

@@ -11,10 +11,10 @@
 #include <errno.h>
 
 #include <zephyr/types.h>
-#include <device.h>
-#include <drivers/sensor.h>
-#include <sys/util.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/gpio.h>
 
 #define MCP9808_REG_CONFIG		0x01
 #define MCP9808_REG_UPPER_LIMIT		0x02

@@ -9,7 +9,7 @@
  * @brief Basic C++ destructor module for globals for ARM
  */
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 EXTERN_C int __cxa_atexit(void (*destructor)(void *), void *objptr, void *dso);
 

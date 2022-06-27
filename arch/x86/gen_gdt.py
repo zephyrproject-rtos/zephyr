@@ -75,7 +75,7 @@ ACCESS_RW = 1 << 1  # read or write permission
 
 def create_gdt_pseudo_desc(addr, size):
     """Create pseudo GDT descriptor"""
-    debug("create pseudo decriptor: %x %x" % (addr, size))
+    debug("create pseudo descriptor: %x %x" % (addr, size))
     # ...and take back one byte for the Intel god whose Ark this is...
     size = size - 1
     return struct.pack(GDT_PD_FMT, size, addr, 0)

@@ -28,7 +28,7 @@ Be careful:
 The build system includes this generated file early on, so
 devicetree values can be used at CMake processing time.
 
-Accss is not done directly, but with Zephyr CMake extension APIs,
+Access is not done directly, but with Zephyr CMake extension APIs,
 like this:
 
   # sets 'compat' to "vnd,soc" in CMake
@@ -43,9 +43,10 @@ import argparse
 import os
 import pickle
 import sys
+from collections import defaultdict
 
-sys.path.append(os.path.join(os.path.dirname(__file__), 'python-devicetree',
-                             'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree',
+                                'src'))
 
 
 def parse_args():
@@ -83,10 +84,19 @@ def main():
     # macros.bnf for C macros.
 
     cmake_props = []
-    for node in edt.chosen_nodes:
-        path = edt.chosen_nodes[node].path
+    chosen_nodes = edt.chosen_nodes
+    for node in chosen_nodes:
+        path = chosen_nodes[node].path
         cmake_props.append(f'"DT_CHOSEN|{node}" "{path}"')
 
+    # The separate loop over edt.nodes here is meant to keep
+    # all of the alias-related properties in one place.
+    for node in edt.nodes:
+        path = node.path
+        for alias in node.aliases:
+            cmake_props.append(f'"DT_ALIAS|{alias}" "{path}"')
+
+    compatible2paths = defaultdict(list)
     for node in edt.nodes:
         cmake_props.append(f'"DT_NODE|{node.path}" TRUE')
 
@@ -109,6 +119,11 @@ def main():
                 cmake_prop = f'DT_PROP|{node.path}|{item}'
                 cmake_props.append(f'"{cmake_prop}" "{cmake_value}"')
 
+                if item == 'compatible':
+                    # compatibles is always an array
+                    for comp in node.props[item].val:
+                        compatible2paths[comp].append(node.path)
+
         if node.regs is not None:
             cmake_props.append(f'"DT_REG|{node.path}|NUM" "{len(node.regs)}"')
             cmake_addr = ''
@@ -127,6 +142,17 @@ def main():
 
             cmake_props.append(f'"DT_REG|{node.path}|ADDR" "{cmake_addr}"')
             cmake_props.append(f'"DT_REG|{node.path}|SIZE" "{cmake_size}"')
+
+    for comp in compatible2paths.keys():
+        cmake_path = ''
+        for path in compatible2paths[comp]:
+            cmake_path = f'{cmake_path}{path};'
+
+        # Remove the last ';'
+        cmake_path = cmake_path[:-1]
+
+        cmake_comp = f'DT_COMP|{comp}'
+        cmake_props.append(f'"{cmake_comp}" "{cmake_path}"')
 
     with open(args.cmake_out, "w", encoding="utf-8") as cmake_file:
         print('add_custom_target(devicetree_target)', file=cmake_file)

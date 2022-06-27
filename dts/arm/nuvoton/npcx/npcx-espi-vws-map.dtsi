@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/espi/npcx_espi.h>
+#include <zephyr/dt-bindings/espi/npcx_espi.h>
 
 /*
  *                Nuvoton NPCX7 eSPI Virtual Wires Mapping Table

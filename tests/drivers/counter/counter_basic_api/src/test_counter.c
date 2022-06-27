@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/counter.h>
+#include <zephyr/drivers/counter.h>
 #include <ztest.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);
 
 static struct k_sem top_cnt_sem;
@@ -29,12 +29,12 @@ void *exp_user_data = (void *)199;
 struct counter_alarm_cfg alarm_cfg;
 struct counter_alarm_cfg alarm_cfg2;
 
-#define INST_DT_COMPAT_LABEL(n, compat) DT_LABEL(DT_INST(n, compat)),
+#define INST_DT_COMPAT_LABEL(n, compat) DT_LABEL(DT_INST(n, compat))
 /* Generate a list of LABELs for all instances of the "compat" */
 #define LABELS_FOR_DT_COMPAT(compat) \
 	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat), \
-		   (UTIL_LISTIFY(DT_NUM_INST_STATUS_OKAY(compat), \
-				 INST_DT_COMPAT_LABEL, compat)), ())
+		   (LISTIFY(DT_NUM_INST_STATUS_OKAY(compat), \
+			    INST_DT_COMPAT_LABEL, (,), compat),), ())
 
 static const char * const devices[] = {
 #ifdef CONFIG_COUNTER_TIMER0
@@ -61,6 +61,14 @@ static const char * const devices[] = {
 #ifdef CONFIG_COUNTER_RTC2
 	DT_LABEL(DT_NODELABEL(rtc2)),
 #endif
+#ifdef CONFIG_COUNTER_TIMER_STM32
+#define STM32_COUNTER_LABEL(idx) \
+	DT_LABEL(DT_INST(idx, st_stm32_counter)),
+#define DT_DRV_COMPAT st_stm32_counter
+	DT_INST_FOREACH_STATUS_OKAY(STM32_COUNTER_LABEL)
+#undef DT_DRV_COMPAT
+#undef STM32_COUNTER_LABEL
+#endif
 #ifdef CONFIG_COUNTER_NATIVE_POSIX
 	DT_LABEL(DT_NODELABEL(counter0)),
 #endif
@@ -77,6 +85,9 @@ static const char * const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_MCUX_RTC
 	LABELS_FOR_DT_COMPAT(nxp_kinetis_rtc)
+#endif
+#ifdef CONFIG_COUNTER_MCUX_QTMR
+	LABELS_FOR_DT_COMPAT(nxp_imx_tmr)
 #endif
 #ifdef CONFIG_COUNTER_MCUX_LPC_RTC
 	LABELS_FOR_DT_COMPAT(nxp_lpc_rtc)
@@ -207,7 +218,7 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 		counter_period_us = COUNTER_PERIOD_US_VAL;
 	} else {
 		/* if more counter drivers exist other than RTC,
-		   the test vaule set to 20000 by default */
+		   the test value set to 20000 by default */
 		counter_period_us = 20000;
 	}
 	top_cfg.ticks = counter_us_to_ticks(dev, counter_period_us);
@@ -263,7 +274,7 @@ void test_set_top_value_without_alarm_instance(const char *dev_name)
 		counter_period_us = COUNTER_PERIOD_US_VAL;
 	} else {
 		/* if more counter drivers exist other than RTC,
-		   the test vaule set to 20000 by default */
+		   the test value set to 20000 by default */
 		counter_period_us = 20000;
 	}
 	dev = device_get_binding(dev_name);
@@ -362,7 +373,7 @@ void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 		counter_period_us = COUNTER_PERIOD_US_VAL;
 	} else {
 		/* if more counter drivers exist other than RTC,
-		   the test vaule set to 20000 by default */
+		   the test value set to 20000 by default */
 		counter_period_us = 20000;
 	}
 	dev = device_get_binding(dev_name);
@@ -509,12 +520,15 @@ void test_multiple_alarms_instance(const char *dev_name)
 		counter_period_us = COUNTER_PERIOD_US_VAL;
 	} else {
 		/* if more counter drivers exist other than RTC,
-		   the test vaule set to 20000 by default */
+		   the test value set to 20000 by default */
 		counter_period_us = 20000;
 	}
 	dev = device_get_binding(dev_name);
 	ticks = counter_us_to_ticks(dev, counter_period_us);
-	top_cfg.ticks = ticks;
+
+	err = counter_get_value(dev, &(top_cfg.ticks));
+	zassert_equal(0, err, "%s: Counter get value failed", dev_name);
+	top_cfg.ticks += ticks;
 
 	alarm_cfg.flags = COUNTER_ALARM_CFG_ABSOLUTE;
 	alarm_cfg.ticks = counter_us_to_ticks(dev, 2000);
@@ -550,11 +564,7 @@ void test_multiple_alarms_instance(const char *dev_name)
 	err = counter_set_channel_alarm(dev, 1, &alarm_cfg2);
 	zassert_equal(0, err, "%s: Counter set alarm failed", dev_name);
 
-#ifdef CONFIG_COUNTER_MCUX_CTIMER
-	k_busy_wait((uint32_t)counter_ticks_to_us(dev, 0xFFFFFFFF));
-#else
 	k_busy_wait(1.2 * counter_ticks_to_us(dev, ticks * 2U));
-#endif
 
 	cnt = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) ?
 		alarm_cnt : k_sem_count_get(&alarm_cnt_sem);
@@ -675,10 +685,10 @@ void test_late_alarm_instance(const char *dev_name)
 
 	err = counter_set_guard_period(dev, guard,
 					COUNTER_GUARD_PERIOD_LATE_TO_SET);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 	k_busy_wait(2*tick_us);
 
@@ -727,10 +737,10 @@ void test_late_alarm_error_instance(const char *dev_name)
 
 	err = counter_set_guard_period(dev, guard,
 					COUNTER_GUARD_PERIOD_LATE_TO_SET);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 	k_busy_wait(2*tick_us);
 
@@ -762,6 +772,10 @@ static bool late_detection_capable(const char *dev_name)
 		return false;
 	}
 
+	if (single_channel_alarm_capable(dev_name) == false) {
+		return false;
+	}
+
 	return true;
 }
 
@@ -788,8 +802,11 @@ static void test_short_relative_alarm_instance(const char *dev_name)
 		.user_data = NULL
 	};
 
+	/* for timers with very short ticks, counter_ticks_to_us() returns 0 */
+	tick_us = tick_us == 0 ? 1 : tick_us;
+
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 	alarm_cfg.ticks = 1;
 
@@ -891,7 +908,7 @@ static void test_cancelled_alarm_does_not_expire_instance(const char *dev_name)
 	};
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 
 	for (int i = 0; i < us/2; ++i) {
@@ -975,6 +992,11 @@ static bool reliable_cancel_capable(const char *dev_name)
 
 #ifdef CONFIG_COUNTER_TIMER4
 	if (strcmp(dev_name, DT_LABEL(DT_NODELABEL(timer4))) == 0) {
+		return true;
+	}
+#endif
+#ifdef CONFIG_COUNTER_TIMER_STM32
+	if (single_channel_alarm_capable(dev_name)) {
 		return true;
 	}
 #endif

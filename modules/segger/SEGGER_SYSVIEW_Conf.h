@@ -6,7 +6,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <irq.h>
+#include <zephyr/irq.h>
 
 #define SEGGER_SYSVIEW_GET_TIMESTAMP sysview_get_timestamp
 #define SEGGER_SYSVIEW_GET_INTERRUPT_ID sysview_get_interrupt

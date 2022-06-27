@@ -9,6 +9,8 @@
  * @brief Atmel SAM0 MCU family I/O Pin Controller (PORT)
  */
 
+#include <stdbool.h>
+
 #include "soc_port.h"
 
 int soc_port_pinmux_set(PortGroup *pg, uint32_t pin, uint32_t func)

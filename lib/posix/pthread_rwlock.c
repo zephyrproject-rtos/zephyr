@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
-#include <posix/time.h>
-#include <posix/posix_types.h>
+#include <zephyr/posix/time.h>
+#include <zephyr/posix/posix_types.h>
 
 #define INITIALIZED 1
 #define NOT_INITIALIZED 0
@@ -103,7 +103,7 @@ int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
 }
 
 /**
- * @brief Lock a read-write lock object for reading immedately.
+ * @brief Lock a read-write lock object for reading immediately.
  *
  * API behaviour is unpredictable if number of concurrent reader
  * lock held is greater than CONCURRENT_READER_LIMIT.
@@ -165,7 +165,7 @@ int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
 }
 
 /**
- * @brief Lock a read-write lock object for writing immedately.
+ * @brief Lock a read-write lock object for writing immediately.
  *
  * Write lock does not have priority over reader lock,
  * threads get lock based on priority.

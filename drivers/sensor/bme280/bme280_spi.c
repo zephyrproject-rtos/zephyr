@@ -10,7 +10,7 @@
  * Bus-specific functionality for BME280s accessed via SPI.
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include "bme280.h"
 
 #if BME280_BUS_SPI

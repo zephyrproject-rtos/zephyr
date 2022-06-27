@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/led/led.h>
 
 / {
 	led_strip: ws2812 {

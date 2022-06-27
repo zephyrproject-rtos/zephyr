@@ -4,21 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <autoconf.h>
-#include <linker/sections.h>
-#include <devicetree.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/linker/devicetree_regions.h>
 
-#include <linker/linker-defs.h>
-#include <linker/linker-tool.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/linker-tool.h>
 
 MEMORY
 {
-    LINKER_DT_RESERVED_MEM_REGIONS()
+	LINKER_DT_REGIONS()
 }
 
 SECTIONS
 {
-    LINKER_DT_RESERVED_MEM_SECTIONS()
+	LINKER_DT_SECTIONS()
 }
 
-#include <arch/arm64/scripts/linker.ld>
+#include <zephyr/arch/arm64/scripts/linker.ld>

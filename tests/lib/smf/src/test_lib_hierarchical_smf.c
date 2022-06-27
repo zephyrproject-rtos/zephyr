@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <smf.h>
+#include <zephyr/smf.h>
 
 /*
  * Hierarchical Test Transition:
@@ -26,7 +26,7 @@
  */
 
 /*
- * Hierarchical 10 Ancestor State Test Transistion:
+ * Hierarchical 10 Ancestor State Test Transition:
  *
  *	P10_ENTRY --> P09_ENTRY --> ... -- P02_ENTRY --> P01_ENTRY --|
  *                                                                   |

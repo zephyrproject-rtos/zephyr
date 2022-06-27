@@ -2,6 +2,12 @@
 
 if("${ARCH}" STREQUAL "x86")
   set_ifndef(QEMU_binary_suffix i386)
+elseif("${ARCH}" STREQUAL "mips")
+  if(CONFIG_BIG_ENDIAN)
+    set_ifndef(QEMU_binary_suffix mips)
+  else()
+    set_ifndef(QEMU_binary_suffix mipsel)
+  endif()
 elseif(DEFINED QEMU_ARCH)
   set_ifndef(QEMU_binary_suffix ${QEMU_ARCH})
 else()
@@ -64,7 +70,7 @@ endif()
 list(APPEND QEMU_FLAGS -serial chardev:con)
 
 # Connect semihosting console to the console chardev if configured.
-if(CONFIG_SEMIHOST_CONSOLE)
+if(CONFIG_SEMIHOST)
   list(APPEND QEMU_FLAGS
     -semihosting-config enable=on,target=auto,chardev=con
     )

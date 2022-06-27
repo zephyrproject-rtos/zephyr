@@ -7,31 +7,25 @@
 #define DT_DRV_COMPAT st_stm32_spi
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_ll_stm32);
 
-#include <sys/util.h>
-#include <kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <stm32_ll_spi.h>
 #include <errno.h>
-#include <drivers/spi.h>
-#include <toolchain.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/toolchain.h>
 #ifdef CONFIG_SPI_STM32_DMA
-#include <drivers/dma/dma_stm32.h>
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma/dma_stm32.h>
+#include <zephyr/drivers/dma.h>
 #endif
-#include <pinmux/pinmux_stm32.h>
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include "spi_ll_stm32.h"
-
-#define DEV_CFG(dev)						\
-(const struct spi_stm32_config * const)(dev->config)
-
-#define DEV_DATA(dev)					\
-(struct spi_stm32_data * const)(dev->data)
 
 /*
  * Check for SPI_SR_FRE to determine support for TI mode frame format
@@ -92,8 +86,8 @@ static void dma_callback(const struct device *dev, void *arg,
 static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 				 size_t len)
 {
-	const struct spi_stm32_config *cfg = DEV_CFG(dev);
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	const struct spi_stm32_config *cfg = dev->config;
+	struct spi_stm32_data *data = dev->data;
 	struct dma_block_config *blk_cfg;
 	int ret;
 
@@ -121,7 +115,7 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 		}
 	}
 
-	blk_cfg->dest_address = (uint32_t)LL_SPI_DMA_GetRegAddr(cfg->spi);
+	blk_cfg->dest_address = ll_func_dma_get_reg_addr(cfg->spi, SPI_STM32_DMA_TX);
 	/* fifo mode NOT USED there */
 	if (data->dma_tx.dst_addr_increment) {
 		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
@@ -151,8 +145,8 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf,
 				 size_t len)
 {
-	const struct spi_stm32_config *cfg = DEV_CFG(dev);
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	const struct spi_stm32_config *cfg = dev->config;
+	struct spi_stm32_data *data = dev->data;
 	struct dma_block_config *blk_cfg;
 	int ret;
 
@@ -180,7 +174,7 @@ static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf,
 		}
 	}
 
-	blk_cfg->source_address = (uint32_t)LL_SPI_DMA_GetRegAddr(cfg->spi);
+	blk_cfg->source_address = ll_func_dma_get_reg_addr(cfg->spi, SPI_STM32_DMA_RX);
 	if (data->dma_rx.src_addr_increment) {
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 	} else {
@@ -209,7 +203,7 @@ static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf,
 
 static int spi_dma_move_buffers(const struct device *dev, size_t len)
 {
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	struct spi_stm32_data *data = dev->data;
 	int ret;
 	size_t dma_segment_len;
 
@@ -454,8 +448,8 @@ static void spi_stm32_isr(const struct device *dev)
 static int spi_stm32_configure(const struct device *dev,
 			       const struct spi_config *config)
 {
-	const struct spi_stm32_config *cfg = DEV_CFG(dev);
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	const struct spi_stm32_config *cfg = dev->config;
+	struct spi_stm32_data *data = dev->data;
 	const uint32_t scaler[] = {
 		LL_SPI_BAUDRATEPRESCALER_DIV2,
 		LL_SPI_BAUDRATEPRESCALER_DIV4,
@@ -480,10 +474,33 @@ static int spi_stm32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			(clock_control_subsys_t) &cfg->pclken, &clock) < 0) {
-		LOG_ERR("Failed call clock_control_get_rate");
-		return -EIO;
+	/* configure the frame format Motorola (default) or TI */
+	if ((config->operation & SPI_FRAME_FORMAT_TI) == SPI_FRAME_FORMAT_TI) {
+#ifdef LL_SPI_PROTOCOL_TI
+		LL_SPI_SetStandard(spi, LL_SPI_PROTOCOL_TI);
+#else
+		LOG_ERR("Frame Format TI not supported");
+		/* on stm32F1 or some stm32L1 (cat1,2) without SPI_CR2_FRF */
+		return -ENOTSUP;
+#endif
+#if defined(LL_SPI_PROTOCOL_MOTOROLA) && defined(SPI_CR2_FRF)
+	} else {
+		LL_SPI_SetStandard(spi, LL_SPI_PROTOCOL_MOTOROLA);
+#endif
+}
+
+	if (IS_ENABLED(STM32_SPI_OPT_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
+		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					   (clock_control_subsys_t) &cfg->pclken[1], &clock) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclk[1])");
+			return -EIO;
+		}
+	} else {
+		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					   (clock_control_subsys_t) &cfg->pclken[0], &clock) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclk[0])");
+			return -EIO;
+		}
 	}
 
 	for (br = 1 ; br <= ARRAY_SIZE(scaler) ; ++br) {
@@ -561,11 +578,6 @@ static int spi_stm32_configure(const struct device *dev,
 	ll_func_set_fifo_threshold_8bit(spi);
 #endif
 
-#if !defined(CONFIG_SOC_SERIES_STM32F1X) \
-	&& (!defined(CONFIG_SOC_SERIES_STM32L1X) || defined(SPI_CR2_FRF))
-	LL_SPI_SetStandard(spi, LL_SPI_PROTOCOL_MOTOROLA);
-#endif
-
 	/* At this point, it's mandatory to set this on the context! */
 	data->ctx.config = config;
 
@@ -583,7 +595,7 @@ static int spi_stm32_configure(const struct device *dev,
 static int spi_stm32_release(const struct device *dev,
 			     const struct spi_config *config)
 {
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	struct spi_stm32_data *data = dev->data;
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -596,8 +608,8 @@ static int transceive(const struct device *dev,
 		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous, struct k_poll_signal *signal)
 {
-	const struct spi_stm32_config *cfg = DEV_CFG(dev);
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	const struct spi_stm32_config *cfg = dev->config;
+	struct spi_stm32_data *data = dev->data;
 	SPI_TypeDef *spi = cfg->spi;
 	int ret;
 
@@ -668,7 +680,7 @@ end:
 
 static int wait_dma_rx_tx_done(const struct device *dev)
 {
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	struct spi_stm32_data *data = dev->data;
 	int res = -1;
 
 	while (1) {
@@ -695,8 +707,8 @@ static int transceive_dma(const struct device *dev,
 		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous, struct k_poll_signal *signal)
 {
-	const struct spi_stm32_config *cfg = DEV_CFG(dev);
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	const struct spi_stm32_config *cfg = dev->config;
+	struct spi_stm32_data *data = dev->data;
 	SPI_TypeDef *spi = cfg->spi;
 	int ret;
 
@@ -720,10 +732,21 @@ static int transceive_dma(const struct device *dev,
 	/* Set buffers info */
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
-	/* This is turned off in spi_stm32_complete(). */
-	spi_stm32_cs_control(dev, true);
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* set request before enabling (else SPI CFG1 reg is write protected) */
+	LL_SPI_EnableDMAReq_RX(spi);
+	LL_SPI_EnableDMAReq_TX(spi);
 
 	LL_SPI_Enable(spi);
+	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+		LL_SPI_StartMasterTransfer(spi);
+	}
+#else
+	LL_SPI_Enable(spi);
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+
+	/* This is turned off in spi_stm32_complete(). */
+	spi_stm32_cs_control(dev, true);
 
 	while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
 		size_t dma_len;
@@ -743,8 +766,11 @@ static int transceive_dma(const struct device *dev,
 			break;
 		}
 
+#if !defined(CONFIG_SOC_SERIES_STM32H7X)
+		/* toggle the DMA request to restart the transfer */
 		LL_SPI_EnableDMAReq_RX(spi);
 		LL_SPI_EnableDMAReq_TX(spi);
+#endif /* ! CONFIG_SOC_SERIES_STM32H7X */
 
 		ret = wait_dma_rx_tx_done(dev);
 		if (ret != 0) {
@@ -756,29 +782,30 @@ static int transceive_dma(const struct device *dev,
 		}
 #endif
 
-		/* wait until TX buffer is really empty */
-		while (LL_SPI_IsActiveFlag_TXE(spi) == 0) {
+		/* wait until spi is no more busy (spi TX fifo is really empty) */
+		while (ll_func_spi_dma_busy(spi) == 0) {
 		}
 
-		/* wait until hardware is really ready */
-		while (LL_SPI_IsActiveFlag_BSY(spi) == 1) {
-		}
-
+#if !defined(CONFIG_SOC_SERIES_STM32H7X)
+		/* toggle the DMA transfer request */
 		LL_SPI_DisableDMAReq_TX(spi);
 		LL_SPI_DisableDMAReq_RX(spi);
+#endif /* ! CONFIG_SOC_SERIES_STM32H7X */
 
 		spi_context_update_tx(&data->ctx, 1, dma_len);
 		spi_context_update_rx(&data->ctx, 1, dma_len);
 	}
 
+	/* spi complete relies on SPI Status Reg which cannot be disabled */
+	spi_stm32_complete(dev, ret);
+	/* disable spi instance after completion */
 	LL_SPI_Disable(spi);
+	/* The Config. Reg. on some mcus is write un-protected when SPI is disabled */
 	LL_SPI_DisableDMAReq_TX(spi);
 	LL_SPI_DisableDMAReq_RX(spi);
 
 	dma_stop(data->dma_rx.dma_dev, data->dma_rx.channel);
 	dma_stop(data->dma_tx.dma_dev, data->dma_tx.channel);
-
-	spi_stm32_complete(dev, ret);
 
 end:
 	spi_context_release(&data->ctx, ret);
@@ -793,7 +820,7 @@ static int spi_stm32_transceive(const struct device *dev,
 				const struct spi_buf_set *rx_bufs)
 {
 #ifdef CONFIG_SPI_STM32_DMA
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	struct spi_stm32_data *data = dev->data;
 
 	if ((data->dma_tx.dma_dev != NULL)
 	 && (data->dma_rx.dma_dev != NULL)) {
@@ -823,25 +850,48 @@ static const struct spi_driver_api api_funcs = {
 	.release = spi_stm32_release,
 };
 
+static inline bool spi_stm32_is_subghzspi(const struct device *dev)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
+	const struct spi_stm32_config *cfg = dev->config;
+
+	return cfg->use_subghzspi_nss;
+#else
+	ARG_UNUSED(dev);
+	return false;
+#endif
+}
+
 static int spi_stm32_init(const struct device *dev)
 {
 	struct spi_stm32_data *data __attribute__((unused)) = dev->data;
 	const struct spi_stm32_config *cfg = dev->config;
 	int err;
 
-	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			       (clock_control_subsys_t) &cfg->pclken) != 0) {
+	err = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+			       (clock_control_subsys_t) &cfg->pclken[0]);
+	if (err < 0) {
 		LOG_ERR("Could not enable SPI clock");
-		return -EIO;
+		return err;
 	}
 
-	/* Configure dt provided device signals when available */
-	err = stm32_dt_pinctrl_configure(cfg->pinctrl_list,
-					 cfg->pinctrl_list_size,
-					 (uint32_t)cfg->spi);
-	if (err < 0) {
-		LOG_ERR("SPI pinctrl setup failed (%d)", err);
-		return err;
+	if (IS_ENABLED(STM32_SPI_OPT_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
+		err = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					      (clock_control_subsys_t) &cfg->pclken[1],
+					      NULL);
+		if (err < 0) {
+			LOG_ERR("Could not select SPI source clock");
+			return err;
+		}
+	}
+
+	if (!spi_stm32_is_subghzspi(dev)) {
+		/* Configure dt provided device signals when available */
+		err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			LOG_ERR("SPI pinctrl setup failed (%d)", err);
+			return err;
+		}
 	}
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
@@ -940,20 +990,21 @@ static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 #define STM32_SPI_USE_SUBGHZSPI_NSS_CONFIG(id)
 #endif
 
+
+
 #define STM32_SPI_INIT(id)						\
 STM32_SPI_IRQ_HANDLER_DECL(id);						\
 									\
-static const struct soc_gpio_pinctrl spi_pins_##id[] =			\
-				ST_STM32_DT_INST_PINCTRL(id, 0);	\
+PINCTRL_DT_INST_DEFINE(id);						\
+									\
+static const struct stm32_pclken pclken_##id[] =			\
+					       STM32_DT_INST_CLOCKS(id);\
 									\
 static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 	.spi = (SPI_TypeDef *) DT_INST_REG_ADDR(id),			\
-	.pclken = {							\
-		.enr = DT_INST_CLOCKS_CELL(id, bits),			\
-		.bus = DT_INST_CLOCKS_CELL(id, bus)			\
-	},								\
-	.pinctrl_list = spi_pins_##id,					\
-	.pinctrl_list_size = ARRAY_SIZE(spi_pins_##id),			\
+	.pclken = pclken_##id,						\
+	.pclk_len = DT_INST_NUM_CLOCKS(id),				\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
 	STM32_SPI_IRQ_HANDLER_FUNC(id)					\
 	STM32_SPI_USE_SUBGHZSPI_NSS_CONFIG(id)				\
 };									\

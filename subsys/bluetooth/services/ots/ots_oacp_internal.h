@@ -13,8 +13,8 @@ extern "C" {
 
 #include <sys/types.h>
 #include <zephyr/types.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/ots.h>
 
 /* Types of Object Action Control Point Procedures. */
 enum bt_gatt_ots_oacp_proc_type {
@@ -92,14 +92,8 @@ struct bt_gatt_ots_oacp_proc {
 	};
 };
 
-/* Size of Object Action Control Point create procedure with 16-bit UUID object type */
-#define BT_GATT_OTS_OACP_CREATE_UUID16_PARAMS_SIZE 7
-
-/* Size of Object Action Control Point create procedure with 32-bit UUID object type */
-#define BT_GATT_OTS_OACP_CREATE_UUID32_PARAMS_SIZE 9
-
-/* Size of Object Action Control Point create procedure with 128-bit UUID object type */
-#define BT_GATT_OTS_OACP_CREATE_UUID128_PARAMS_SIZE 21
+/* Size of the generic part of the Object Action Control Point create procedure */
+#define BT_GATT_OTS_OACP_CREATE_GENERIC_PARAMS_SIZE 4
 
 /* Size of Object Action Control Point checksum calculation procedure */
 #define BT_GATT_OTS_OACP_CS_CALC_PARAMS_SIZE 8

@@ -7,9 +7,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <soc.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"

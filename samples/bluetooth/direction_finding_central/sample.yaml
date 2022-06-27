@@ -1,0 +1,21 @@
+sample:
+  name: Direction Finding Central
+  description: Sample application showing central role of Direction Finding in connected mode
+tests:
+  sample.bluetooth.direction_finding.central:
+    harness: bluetooth
+    platform_allow: nrf52833dk_nrf52833 nrf52833dk_nrf52820 nrf5340dk_nrf5340_cpuapp
+    tags: bluetooth
+    integration_platforms:
+      - nrf52833dk_nrf52833
+      - nrf52833dk_nrf52820
+      - nrf5340dk_nrf5340_cpuapp
+  sample.bluetooth.direction_finding.central.aod:
+    harness: bluetooth
+    extra_args: OVERLAY_CONFIG="overlay-aod.conf"
+    platform_allow: nrf52833dk_nrf52833 nrf52833dk_nrf52820 nrf5340dk_nrf5340_cpuapp
+    tags: bluetooth
+    integration_platforms:
+      - nrf52833dk_nrf52833
+      - nrf52833dk_nrf52820
+      - nrf5340dk_nrf5340_cpuapp

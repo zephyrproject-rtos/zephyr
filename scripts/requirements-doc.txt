@@ -1,12 +1,13 @@
 # DOC: used to generate docs
 
-breathe~=4.23,!=4.29.0
-sphinx~=3.3
-sphinx_rtd_theme>=0.5.2,<1.0
+breathe>=4.30,<4.33 # 4.33: disabled due to #803 and #805 issues
+sphinx~=4.0
+sphinx_rtd_theme~=1.0
 sphinx-tabs
 sphinxcontrib-svg2pdfconverter
-pygments~=2.9
-sphinx-notfound-page>=0.6
+pygments>=2.9
+sphinx-notfound-page
+sphinx-copybutton
 
 # YAML validation. Used by zephyr_module.
 PyYAML>=5.1

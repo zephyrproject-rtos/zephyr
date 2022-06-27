@@ -8,12 +8,12 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 #include <soc.h>
-#include <device.h>
+#include <zephyr/device.h>
 
-#include <drivers/entropy.h>
+#include <zephyr/drivers/entropy.h>
 
 #include "hal/swi.h"
 #include "hal/ccm.h"
@@ -375,9 +375,14 @@ void lll_done_ull_inc(void)
 }
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
-bool lll_is_done(void *param)
+bool lll_is_done(void *param, bool *is_resume)
 {
-	/* FIXME: use param to check */
+	/* NOTE: Current radio event when preempted could put itself in resume
+	 *       into the prepare pipeline in which case event.curr.param would
+	 *       be set to NULL.
+	 */
+	*is_resume = (param != event.curr.param);
+
 	return !event.curr.abort_cb;
 }
 
@@ -568,6 +573,7 @@ void lll_isr_cleanup(void *param)
 	}
 
 	radio_tmr_stop();
+	radio_stop();
 
 	err = lll_hfclock_off();
 	LL_ASSERT(err >= 0);
@@ -731,6 +737,10 @@ static struct lll_event *resume_enqueue(lll_prepare_cb_t resume_cb)
 {
 	struct lll_prepare_param prepare_param = {0};
 
+	/* Enqueue into prepare pipeline as resume radio event, and remove
+	 * parameter assignment from currently active radio event so that
+	 * done event is not generated.
+	 */
 	prepare_param.param = event.curr.param;
 	event.curr.param = NULL;
 

@@ -5,21 +5,9 @@ description: STM32 family TEMP node
 
 compatible: "st,stm32-temp"
 
-include: base.yaml
+include: [base.yaml, "st,stm32-temp-common.yaml"]
 
 properties:
-    label:
-      required: true
-
-    io-channels:
-      required: true
-      description: ADC channel for temperature sensor
-
-    ts-voltage-mv:
-      type: int
-      default: 3300
-      description: Temperature sensor voltage in millivolts
-
     avgslope:
       type: int
       default: 25

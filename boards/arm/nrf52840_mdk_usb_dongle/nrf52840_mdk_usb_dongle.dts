@@ -1,0 +1,113 @@
+/*
+ * Copyright (c) 2022 Nikola Trifunovic
+ * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include "nrf52840_mdk_usb_dongle-pinctrl.dtsi"
+
+/ {
+	model = "nRF52840 MDK USB Dongle";
+	compatible = "nrf52840_mdk_usb_dongle";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0_red: led_0 {
+			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+			label = "Red LED 0";
+		};
+		led0_green: led_1 {
+			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+			label = "Green LED 0";
+		};
+		led0_blue: led_2 {
+			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+			label = "Blue LED 0";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		red_pwm_led: pwm_led_0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+		green_pwm_led: pwm_led_1 {
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+		blue_pwm_led: pwm_led_2 {
+			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		reset_button: button_0 {
+			gpios = <&gpio0 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "reset button";
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0_red;
+		led1 = &led0_green;
+		led2 = &led0_blue;
+		led0-red   = &led0_red;
+		led0-green = &led0_green;
+		led0-blue  = &led0_blue;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+	};
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+/* Include flash partition table.
+ * Two partition tables are available:
+ * fstab-stock		-compatible with Nordic nRF5 bootloader, default
+ * fstab-debugger	-to use an external debugger, w/o the nRF5 bootloader
+ */
+#include "fstab-stock.dts"
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};

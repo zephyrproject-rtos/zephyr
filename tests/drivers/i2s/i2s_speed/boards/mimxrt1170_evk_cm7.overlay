@@ -1,0 +1,26 @@
+/* i2s_speed with CONFIG_I2S_TEST_SEPARATE_DEVICES=y uses two I2S peripherals:
+ *	I2S_0 is the receiver    - uses SAI1 peripheral on RT1170
+ *	I2S_1 is the transmitter - uses SAI4 peripheral
+ * Therefore, change labels from SoC defaults to SAI4 as I2S_1,
+ * and SAI2 becomes I2S_3
+ */
+&sai2 {
+	label = "I2S_3";
+};
+
+/* Enable SAI4, and set clocks to match SAI1 */
+&sai4 {
+	label = "I2S_1";
+	status = "okay";
+	clocks = < &ccm 0x2003 0x2184 0x6 >;
+	podf = < 0x4 >;
+	pinctrl-0 = <&pinmux_sai4>;
+	pinctrl-names = "default";
+};
+
+/* On MIMXRT1170-EVK, there is a conflict with signal SAI4_TX_BCLK shared with
+ * ENET_RST.  For i2s_speed test, disable ENET peripheral.
+ */
+&enet {
+	status = "disabled";
+};

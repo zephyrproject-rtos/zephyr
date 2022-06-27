@@ -1,6 +1,9 @@
 tests:
   kernel.timer.monotonic:
     tags: kernel timer
+    # FIXME: This test may fail for qemu_arc_hs on certain host systems.
+    #        See foss-for-synopsys-dwc-arc-processors/qemu#67.
+    platform_exclude: qemu_arc_hs
   kernel.timer.monotonic.linker_generator:
     platform_allow: qemu_cortex_m3
     tags: kernel timer linker_generator

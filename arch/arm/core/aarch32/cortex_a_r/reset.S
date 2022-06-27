@@ -12,9 +12,9 @@
  * Reset handler that prepares the system for running C code.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 #include <offsets_short.h>
 #include <aarch32/cortex_a_r/tcm.h>
 #include "vector_table.h"
@@ -43,11 +43,39 @@ GTEXT(z_arm_platform_init)
  * When these steps are completed, jump to z_arm_prep_c(), which will finish
  * setting up the system for running C code.
  *
- * @return N/A
  */
 SECTION_SUBSEC_FUNC(TEXT, _reset_section, z_arm_reset)
 SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
+#if defined(CONFIG_AARCH32_ARMV8_R)
+    /* Check if we are starting in HYP mode */
+    mrs r0, cpsr
+    and r0, r0, #MODE_MASK
+    cmp r0, #MODE_HYP
+    bne EL1_Reset_Handler
 
+    /* Init HSCTLR see Armv8-R AArch32 architecture profile */
+    ldr r0, =(HSCTLR_RES1 | SCTLR_I_BIT | SCTLR_C_BIT)
+    mcr p15, 4, r0, c1, c0, 0
+
+    /* Init HACTLR: Enable EL1 access to all IMP DEF registers */
+    ldr r0, =HACTLR_INIT
+    mcr p15, 4, r0, c1, c0, 1
+
+   /* Go to SVC mode */
+    mrs r0, cpsr
+    bic r0, #MODE_MASK
+    orr r0, #MODE_SVC
+    msr spsr_hyp, r0
+
+    ldr r0, =EL1_Reset_Handler
+    msr elr_hyp, r0
+    dsb
+    isb
+    eret
+
+EL1_Reset_Handler:
+
+#endif
 #if defined(CONFIG_CPU_HAS_DCLS)
     /*
      * Initialise CPU registers to a defined state if the processor is
@@ -112,7 +140,7 @@ SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
     mov r13, #0         /* r13_sys */
     mov r14, #0         /* r14_sys */
 
-#if defined(CONFIG_FPU)
+#if defined(CONFIG_FPU) && defined(CONFIG_CPU_HAS_VFP)
     /*
      * Initialise FPU registers to a defined state.
      */
@@ -124,7 +152,7 @@ SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
 
     /* Enable VFP */
     mov  r0, #FPEXC_EN
-    fmxr fpexc, r0
+    vmsr fpexc, r0
 
     /* Initialise VFP registers */
     fmdrr d0,  r1, r1
@@ -143,7 +171,28 @@ SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
     fmdrr d13, r1, r1
     fmdrr d14, r1, r1
     fmdrr d15, r1, r1
-#endif /* CONFIG_FPU */
+#if defined(CONFIG_VFP_FEATURE_REGS_S64_D32)
+    fmdrr d16, r1, r1
+    fmdrr d17, r1, r1
+    fmdrr d18, r1, r1
+    fmdrr d19, r1, r1
+    fmdrr d20, r1, r1
+    fmdrr d21, r1, r1
+    fmdrr d22, r1, r1
+    fmdrr d23, r1, r1
+    fmdrr d24, r1, r1
+    fmdrr d25, r1, r1
+    fmdrr d26, r1, r1
+    fmdrr d27, r1, r1
+    fmdrr d28, r1, r1
+    fmdrr d29, r1, r1
+    fmdrr d30, r1, r1
+    fmdrr d31, r1, r1
+#endif /* CONFIG_VFP_FEATURE_REGS_S64_D32 */
+
+    vmsr fpscr, r1
+    vmsr fpexc, r1
+#endif /* CONFIG_FPU && CONFIG_CPU_HAS_VFP */
 
 #endif /* CONFIG_CPU_HAS_DCLS */
 

@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #include <kernel_internal.h>
-#include <kernel_structs.h>
-#include <sys/__assert.h>
-#include <arch/cpu.h>
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-#include <fatal.h>
-#include <debug/coredump.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/fatal.h>
+#include <zephyr/debug/coredump.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 

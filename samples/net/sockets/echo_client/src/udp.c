@@ -7,16 +7,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_echo_client_sample, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
 #include <stdio.h>
 
-#include <net/socket.h>
-#include <net/tls_credentials.h>
-#include <random/rand32.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/tls_credentials.h>
+#include <zephyr/random/rand32.h>
 
 #include "common.h"
 #include "ca_certificate.h"
@@ -62,8 +62,9 @@ static int compare_udp_data(struct data *data, const char *buf, uint32_t receive
 
 static void wait_reply(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	/* This means that we did not receive response in time. */
-	struct data *data = CONTAINER_OF(work, struct data, udp.recv);
+	struct data *data = CONTAINER_OF(dwork, struct data, udp.recv);
 
 	LOG_ERR("UDP %s: Data packet not received", data->proto);
 
@@ -73,7 +74,8 @@ static void wait_reply(struct k_work *work)
 
 static void wait_transmit(struct k_work *work)
 {
-	struct data *data = CONTAINER_OF(work, struct data, udp.transmit);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct data *data = CONTAINER_OF(dwork, struct data, udp.transmit);
 
 	send_udp_data(data);
 }

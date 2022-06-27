@@ -10,20 +10,19 @@
  *
  */
 
-#include <sys/__assert.h>
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <drivers/interrupt_controller/ioapic.h>
-#include <drivers/interrupt_controller/loapic.h>
-#include <drivers/interrupt_controller/sysapic.h>
-#include <irq.h>
-#include <linker/sections.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/drivers/interrupt_controller/ioapic.h>
+#include <zephyr/drivers/interrupt_controller/loapic.h>
+#include <zephyr/drivers/interrupt_controller/sysapic.h>
+#include <zephyr/irq.h>
+#include <zephyr/linker/sections.h>
 
 #define IS_IOAPIC_IRQ(irq)  (irq < z_loapic_irq_base())
 #define HARDWARE_IRQ_LIMIT ((z_loapic_irq_base() + LOAPIC_IRQ_COUNT) - 1)
 
 /**
- *
  * @brief Program interrupt controller
  *
  * This routine programs the interrupt controller with the given vector
@@ -42,7 +41,6 @@
  * @param vector the vector number
  * @param irq the virtualized IRQ
  * @param flags interrupt flags
- *
  */
 __boot_func
 void z_irq_controller_irq_config(unsigned int vector, unsigned int irq,
@@ -58,7 +56,6 @@ void z_irq_controller_irq_config(unsigned int vector, unsigned int irq,
 }
 
 /**
- *
  * @brief Enable an individual interrupt (IRQ)
  *
  * The public interface for enabling/disabling a specific IRQ for the IA-32
@@ -71,8 +68,6 @@ void z_irq_controller_irq_config(unsigned int vector, unsigned int irq,
  * to the IRQ virtualization that is performed by this platform.  See the
  * comments in _interrupt_vector_allocate() for more information regarding IRQ
  * virtualization.
- *
- * @return N/A
  */
 __pinned_func
 void arch_irq_enable(unsigned int irq)
@@ -85,15 +80,12 @@ void arch_irq_enable(unsigned int irq)
 }
 
 /**
- *
  * @brief Disable an individual interrupt (IRQ)
  *
  * The irq_disable() routine is provided by the interrupt controller driver due
  * to the IRQ virtualization that is performed by this platform.  See the
  * comments in _interrupt_vector_allocate() for more information regarding IRQ
  * virtualization.
- *
- * @return N/A
  */
 __pinned_func
 void arch_irq_disable(unsigned int irq)

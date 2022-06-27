@@ -7,7 +7,7 @@
 
 #include <mem.h>
 #include <arm64/armv8-a.dtsi>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
 	model = "FVP Base RevC 2xAEMv8A";
@@ -80,9 +80,39 @@
 			compatible = "arm,pl011";
 			reg = <0x1c090000 0x1000>;
 			status = "disabled";
-			interrupts = <GIC_SPI 1 0 IRQ_TYPE_LEVEL>;
-			interrupt-names = "irq_0";
+			interrupts = <GIC_SPI 5 0 IRQ_TYPE_LEVEL>;
+			interrupt-names = "irq_5";
 			label = "UART_0";
+			clocks = <&uartclk>;
+		};
+
+		uart1: uart@1c0a0000 {
+			compatible = "arm,pl011";
+			reg = <0x1c0a0000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 6 0 IRQ_TYPE_LEVEL>;
+			interrupt-names = "irq_6";
+			label = "UART_1";
+			clocks = <&uartclk>;
+		};
+
+		uart2: uart@1c0b0000 {
+			compatible = "arm,pl011";
+			reg = <0x1c0b0000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 7 0 IRQ_TYPE_LEVEL>;
+			interrupt-names = "irq_7";
+			label = "UART_2";
+			clocks = <&uartclk>;
+		};
+
+		uart3: uart@1c0c0000 {
+			compatible = "arm,pl011";
+			reg = <0x1c0c0000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 8 0 IRQ_TYPE_LEVEL>;
+			interrupt-names = "irq_8";
+			label = "UART_3";
 			clocks = <&uartclk>;
 		};
 

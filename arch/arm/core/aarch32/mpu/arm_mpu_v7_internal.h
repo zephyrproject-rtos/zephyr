@@ -9,11 +9,11 @@
 #define ZEPHYR_ARCH_ARM_CORE_AARCH32_MPU_ARM_MPU_V7_INTERNAL_H_
 
 
-#include <sys/math_extras.h>
+#include <zephyr/sys/math_extras.h>
 #include <arm_mpu_internal.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 /* Global MPU configuration at system initialization. */
 static void mpu_init(void)
@@ -33,7 +33,7 @@ static void region_init(const uint32_t index,
 	set_region_number(index);
 
 	/* Configure the region */
-#if defined(CONFIG_CPU_CORTEX_R)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 	/*
 	 * Clear size register, which disables the entry.  It cannot be
 	 * enabled as we reconfigure it.
@@ -119,7 +119,7 @@ static inline void get_region_attr_from_mpu_partition_info(
 	 */
 	(void) base;
 
-#if defined(CONFIG_CPU_CORTEX_R)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 	(void) size;
 
 	p_attr->rasr = attr->rasr_attr;

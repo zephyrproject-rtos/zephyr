@@ -20,12 +20,12 @@
  */
 
 #include <errno.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 #include <soc.h>
-#include <sys/sys_io.h>
-#include <sys/__assert.h>
-#include <sys/slist.h>
-#include <sys/speculation.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/speculation.h>
 
 #include "gpio_utils.h"
 

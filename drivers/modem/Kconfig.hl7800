@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MODEM_HL7800
-	bool "Enable Sierra Wireless HL7800 modem driver"
+	bool "Sierra Wireless HL7800 modem driver"
 	select MODEM_RECEIVER
 	select NET_OFFLOAD
 	imply GPIO
@@ -15,7 +15,7 @@ menuconfig MODEM_HL7800
 if MODEM_HL7800
 
 config MODEM_HL7800_FW_UPDATE
-	bool "Enable firmware update"
+	bool "Firmware update"
 	select FILE_SYSTEM
 	help
 	  Enable the ability to update the HL7800 via XMODEM
@@ -71,124 +71,124 @@ menuconfig MODEM_HL7800_CONFIGURE_BANDS
 	default "y"
 	help
 	  Choose this setting to configure which LTE bands the
-	  HL7800 modem should use.
+	  HL7800 modem should use at boot time.
 
 if MODEM_HL7800_CONFIGURE_BANDS
 
 config MODEM_HL7800_BAND_1
-	bool "Enable Band 1  (2000MHz)"
+	bool "Band 1  (2000MHz)"
 	default "y"
 	help
 	  Enable Band 1 (2000MHz)
 
 config MODEM_HL7800_BAND_2
-	bool "Enable Band 2  (1900MHz)"
+	bool "Band 2  (1900MHz)"
 	default "y"
 	help
 	  Enable Band 2 (1900MHz)
 
 config MODEM_HL7800_BAND_3
-	bool "Enable Band 3  (1800MHz)"
+	bool "Band 3  (1800MHz)"
 	default "y"
 	help
 	  Enable Band 3 (1800MHz)
 
 config MODEM_HL7800_BAND_4
-	bool "Enable Band 4  (1700MHz)"
+	bool "Band 4  (1700MHz)"
 	default "y"
 	help
 	  Enable Band 4 (1700MHz)
 
 config MODEM_HL7800_BAND_5
-	bool "Enable Band 5  (850MHz)"
+	bool "Band 5  (850MHz)"
 	default "y"
 	help
 	  Enable Band 5 (850MHz)
 
 config MODEM_HL7800_BAND_8
-	bool "Enable Band 8  (900MHz)"
+	bool "Band 8  (900MHz)"
 	default "y"
 	help
 	  Enable Band 8 (900MHz)
 
 config MODEM_HL7800_BAND_9
-	bool "Enable Band 9  (1900MHz)"
+	bool "Band 9  (1900MHz)"
 	help
 	  Enable Band 9 (1900MHz)
 
 config MODEM_HL7800_BAND_10
-	bool "Enable Band 10 (2100MHz)"
+	bool "Band 10 (2100MHz)"
 	help
 	  Enable Band 10 (2100MHz)
 
 config MODEM_HL7800_BAND_12
-	bool "Enable Band 12 (700MHz)"
+	bool "Band 12 (700MHz)"
 	default "y"
 	help
 	  Enable Band 12 (700MHz)
 
 config MODEM_HL7800_BAND_13
-	bool "Enable Band 13 (700MHz)"
+	bool "Band 13 (700MHz)"
 	default "y"
 	help
 	  Enable Band 13 (700MHz)
 
 config MODEM_HL7800_BAND_14
-	bool "Enable Band 14 (700MHz)"
+	bool "Band 14 (700MHz)"
 	help
 	  Enable Band 14 (700MHz)
 
 config MODEM_HL7800_BAND_17
-	bool "Enable Band 17 (700MHz)"
+	bool "Band 17 (700MHz)"
 	help
 	  Enable Band 17 (700MHz)
 
 config MODEM_HL7800_BAND_18
-	bool "Enable Band 18 (800MHz)"
+	bool "Band 18 (800MHz)"
 	help
 	  Enable Band 18 (800MHz)
 
 config MODEM_HL7800_BAND_19
-	bool "Enable Band 19 (800MHz)"
+	bool "Band 19 (800MHz)"
 	help
 	  Enable Band 19 (800MHz)
 
 config MODEM_HL7800_BAND_20
-	bool "Enable Band 20 (800MHz)"
+	bool "Band 20 (800MHz)"
 	default "y"
 	help
 	  Enable Band 20 (800MHz)
 
 config MODEM_HL7800_BAND_25
-	bool "Enable Band 25 (1900MHz)"
+	bool "Band 25 (1900MHz)"
 	help
 	  Enable Band 25 (1900MHz)
 
 config MODEM_HL7800_BAND_26
-	bool "Enable Band 26 (800MHz)"
+	bool "Band 26 (800MHz)"
 	help
 	  Enable Band 26 (800MHz)
 
 config MODEM_HL7800_BAND_27
-	bool "Enable Band 27 (800MHz)"
+	bool "Band 27 (800MHz)"
 	help
 	  Enable Band 27 (800MHz)
 
 config MODEM_HL7800_BAND_28
-	bool "Enable Band 28 (700MHz)"
+	bool "Band 28 (700MHz)"
 	default "y"
 	help
 	  Enable Band 28 (700MHz)
 
 config MODEM_HL7800_BAND_66
-	bool "Enable Band 66 (1800MHz)"
+	bool "Band 66 (1800MHz)"
 	help
 	  Enable Band 66 (1800MHz)
 
 endif # MODEM_HL7800_CONFIGURE_BAND
 
 menuconfig MODEM_HL7800_LOW_POWER_MODE
-	bool "Enable low power modes"
+	bool "Low power modes"
 	help
 	  Choose this setting to enable a low power mode for the HL7800 modem
 
@@ -239,6 +239,39 @@ config MODEM_HL7800_PSM_ACTIVE_TIME
 	  One byte in an 8-bit format. Default value is 30 seconds.
 
 endif # MODEM_HL7800_PSM
+
+choice
+	prompt "Default Sleep Level"
+	default MODEM_HL7800_SLEEP_LEVEL_HIBERNATE
+	help
+	  The application can override this setting
+
+config MODEM_HL7800_SLEEP_LEVEL_HIBERNATE
+	bool "Hibernate"
+	help
+	  Lowest power consumption
+	  IO state not retained
+	  Application subsystem OFF
+
+config MODEM_HL7800_SLEEP_LEVEL_LITE_HIBERNATE
+	bool "Lite Hibernate"
+	help
+	  IO state retained
+	  Application subsystem OFF
+
+config MODEM_HL7800_SLEEP_LEVEL_SLEEP
+	bool "Sleep"
+	help
+	  Highest power consumption of modem sleep states
+	  IO state retained
+	  Application subsystem ON
+	  Allows sockets to remain open
+
+endchoice
+
+config MODEM_HL7800_SLEEP_DELAY_AFTER_REBOOT
+	int "Delay in seconds before sleep after reboot"
+	default 10
 
 endif # MODEM_HL7800_LOW_POWER_MODE
 
@@ -294,14 +327,14 @@ config MODEM_HL7800_BOOT_IN_AIRPLANE_MODE
 endchoice
 
 config MODEM_HL7800_GPS
-	bool "Enable GPS command and handlers"
+	bool "GPS command and handlers"
 
 config MODEM_HL7800_USE_GLONASS
 	bool "Use GLONASS in addition to GPS"
 	depends on MODEM_HL7800_GPS
 
 config MODEM_HL7800_POLTE
-	bool "Enable PoLTE commands and handlers"
+	bool "PoLTE commands and handlers"
 
 choice
 	prompt "IP Address family"
@@ -319,5 +352,22 @@ config MODEM_HL7800_ADDRESS_FAMILY_IPV4V6
 	bool "IPv4v6"
 
 endchoice
+
+config MODEM_HL7800_ALLOW_SLEEP_DELAY_MS
+	int "Milliseconds to delay before allowing modem to sleep"
+	default 5000
+
+config MODEM_HL7800_RSSI_RATE_SECONDS
+	int "Rate to automatically query RSSI"
+	default 0 if MODEM_HL7800_LOW_POWER_MODE
+	default 30
+
+config MODEM_HL7800_CTS_FILTER_US
+	int "Duration in microseconds between samples of CTS signal"
+	default 10
+
+config MODEM_HL7800_CTS_FILTER_MAX_ITERATIONS
+	int "Maximum filter loops"
+	default 5
 
 endif # MODEM_HL7800

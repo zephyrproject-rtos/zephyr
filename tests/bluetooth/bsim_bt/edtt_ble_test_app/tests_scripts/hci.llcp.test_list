@@ -25,7 +25,7 @@ HCI/DDI/BV-04-C
 HCI/DSU/BV-02-C
 HCI/DSU/BV-03-C # [Reset Command received in Slave Role]
 HCI/DSU/BV-04-C
-#HCI/DSU/BV-05-C
+HCI/DSU/BV-05-C
 HCI/DSU/BV-06-C # [Reset Command received in Master Role]
-# HCI/GEV/BV-01-C
+HCI/GEV/BV-01-C
 HCI/HFC/BV-04-C # [Events enabled by LE Set Event Mask Command]

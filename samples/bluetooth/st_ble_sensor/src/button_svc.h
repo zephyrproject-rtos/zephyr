@@ -11,7 +11,7 @@
 #ifndef ST_BLE_SENSOR_BUTTON_SVC_H_
 #define ST_BLE_SENSOR_BUTTON_SVC_H_
 
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 #ifdef __cplusplus
 extern "C" {

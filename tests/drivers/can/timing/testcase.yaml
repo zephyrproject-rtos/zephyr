@@ -1,8 +1,5 @@
 tests:
   drivers.can.timing:
-    tags: driver can
+    tags: drivers can
     depends_on: can
-  drivers.can.timing_loopback:
-    tags: driver can
-    platform_allow: native_posix
-    extra_args: CONF_FILE="prj_loopback.conf"
+    filter: dt_chosen_enabled("zephyr,canbus")

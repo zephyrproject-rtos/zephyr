@@ -6,20 +6,20 @@
 
 #define DT_DRV_COMPAT st_stm32_window_watchdog
 
-#include <drivers/watchdog.h>
+#include <zephyr/drivers/watchdog.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_wwdg.h>
 #include <stm32_ll_system.h>
 #include <errno.h>
-#include <sys/__assert.h>
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/clock_control.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include "wdt_wwdg_stm32.h"
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_wwdg_stm32);
 
 #define WWDG_INTERNAL_DIVIDER   4096U
@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(wdt_wwdg_stm32);
 #endif
 
 /*
- * additinally to the internal divider, the clock is divided by a
+ * additionally to the internal divider, the clock is divided by a
  * programmable prescaler.
  */
 #if defined(LL_WWDG_PRESCALER_128)
@@ -66,7 +66,7 @@ LOG_MODULE_REGISTER(wdt_wwdg_stm32);
  * The minimum timeout is calculated with:
  *  - counter = 0x40
  *  - prescaler = 1
- * The maximim timeout is calculated with:
+ * The maximum timeout is calculated with:
  *  - counter = 0x7F
  *  - prescaler = 8
  *
@@ -104,7 +104,7 @@ static uint32_t wwdg_stm32_get_pclk(const struct device *dev)
  * @brief Calculates the timeout in microseconds.
  *
  * @param dev Pointer to device structure.
- * @param prescaler_exp The prescaler exponend value(Base 2).
+ * @param prescaler_exp The prescaler exponent value(Base 2).
  * @param counter The counter value.
  * @return The timeout calculated in microseconds.
  */
@@ -168,8 +168,16 @@ static int wwdg_stm32_setup(const struct device *dev, uint8_t options)
 		LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_DBGMCU);
 #elif defined(CONFIG_SOC_SERIES_STM32L0X)
 		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
 #endif
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+		LL_DBGMCU_APB3_GRP1_FreezePeriph(LL_DBGMCU_APB3_GRP1_WWDG1_STOP);
+#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
+		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_WWDG1_STOP);
+#else
 		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_WWDG_STOP);
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 	}
 
 	if (options & WDT_OPT_PAUSE_IN_SLEEP) {

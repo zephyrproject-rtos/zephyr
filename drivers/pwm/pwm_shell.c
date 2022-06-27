@@ -9,13 +9,13 @@
  * @brief PWM shell commands.
  */
 
-#include <shell/shell.h>
-#include <drivers/pwm.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/pwm.h>
 #include <stdlib.h>
 
 struct args_index {
 	uint8_t device;
-	uint8_t pwm;
+	uint8_t channel;
 	uint8_t period;
 	uint8_t pulse;
 	uint8_t flags;
@@ -23,7 +23,7 @@ struct args_index {
 
 static const struct args_index args_indx = {
 	.device = 1,
-	.pwm = 2,
+	.channel = 2,
 	.period = 3,
 	.pulse = 4,
 	.flags = 5,
@@ -35,7 +35,7 @@ static int cmd_cycles(const struct shell *shell, size_t argc, char **argv)
 	const struct device *dev;
 	uint32_t period;
 	uint32_t pulse;
-	uint32_t pwm;
+	uint32_t channel;
 	int err;
 
 	dev = device_get_binding(argv[args_indx.device]);
@@ -44,7 +44,7 @@ static int cmd_cycles(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	pwm = strtoul(argv[args_indx.pwm], NULL, 0);
+	channel = strtoul(argv[args_indx.channel], NULL, 0);
 	period = strtoul(argv[args_indx.period], NULL, 0);
 	pulse = strtoul(argv[args_indx.pulse], NULL, 0);
 
@@ -52,7 +52,7 @@ static int cmd_cycles(const struct shell *shell, size_t argc, char **argv)
 		flags = strtoul(argv[args_indx.flags], NULL, 0);
 	}
 
-	err = pwm_pin_set_cycles(dev, pwm, period, pulse, flags);
+	err = pwm_set_cycles(dev, channel, period, pulse, flags);
 	if (err) {
 		shell_error(shell, "failed to setup PWM (err %d)",
 			    err);
@@ -68,7 +68,7 @@ static int cmd_usec(const struct shell *shell, size_t argc, char **argv)
 	const struct device *dev;
 	uint32_t period;
 	uint32_t pulse;
-	uint32_t pwm;
+	uint32_t channel;
 	int err;
 
 	dev = device_get_binding(argv[args_indx.device]);
@@ -77,7 +77,7 @@ static int cmd_usec(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	pwm = strtoul(argv[args_indx.pwm], NULL, 0);
+	channel = strtoul(argv[args_indx.channel], NULL, 0);
 	period = strtoul(argv[args_indx.period], NULL, 0);
 	pulse = strtoul(argv[args_indx.pulse], NULL, 0);
 
@@ -85,7 +85,7 @@ static int cmd_usec(const struct shell *shell, size_t argc, char **argv)
 		flags = strtoul(argv[args_indx.flags], NULL, 0);
 	}
 
-	err = pwm_pin_set_usec(dev, pwm, period, pulse, flags);
+	err = pwm_set(dev, channel, PWM_USEC(period), PWM_USEC(pulse), flags);
 	if (err) {
 		shell_error(shell, "failed to setup PWM (err %d)", err);
 		return err;
@@ -100,7 +100,7 @@ static int cmd_nsec(const struct shell *shell, size_t argc, char **argv)
 	const struct device *dev;
 	uint32_t period;
 	uint32_t pulse;
-	uint32_t pwm;
+	uint32_t channel;
 	int err;
 
 	dev = device_get_binding(argv[args_indx.device]);
@@ -109,7 +109,7 @@ static int cmd_nsec(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	pwm = strtoul(argv[args_indx.pwm], NULL, 0);
+	channel = strtoul(argv[args_indx.channel], NULL, 0);
 	period = strtoul(argv[args_indx.period], NULL, 0);
 	pulse = strtoul(argv[args_indx.pulse], NULL, 0);
 
@@ -117,7 +117,7 @@ static int cmd_nsec(const struct shell *shell, size_t argc, char **argv)
 		flags = strtoul(argv[args_indx.flags], NULL, 0);
 	}
 
-	err = pwm_pin_set_nsec(dev, pwm, period, pulse, flags);
+	err = pwm_set(dev, channel, period, pulse, flags);
 	if (err) {
 		shell_error(shell, "failed to setup PWM (err %d)", err);
 		return err;
@@ -127,11 +127,11 @@ static int cmd_nsec(const struct shell *shell, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(pwm_cmds,
-	SHELL_CMD_ARG(cycles, NULL, "<device> <pwm> <period in cycles> "
+	SHELL_CMD_ARG(cycles, NULL, "<device> <channel> <period in cycles> "
 		      "<pulse width in cycles> [flags]", cmd_cycles, 5, 1),
-	SHELL_CMD_ARG(usec, NULL, "<device> <pwm> <period in usec> "
+	SHELL_CMD_ARG(usec, NULL, "<device> <channel> <period in usec> "
 		      "<pulse width in usec> [flags]", cmd_usec, 5, 1),
-	SHELL_CMD_ARG(nsec, NULL, "<device> <pwm> <period in nsec> "
+	SHELL_CMD_ARG(nsec, NULL, "<device> <channel> <period in nsec> "
 		      "<pulse width in nsec> [flags]", cmd_nsec, 5, 1),
 	SHELL_SUBCMD_SET_END
 );

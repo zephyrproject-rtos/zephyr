@@ -12,7 +12,7 @@
  */
 
 #include <ztest.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 
 /* There is no obvious way to pass this to tests, so use a global */
 ZTEST_BMEM static const char *accel_label;

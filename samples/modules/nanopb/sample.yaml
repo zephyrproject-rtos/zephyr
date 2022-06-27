@@ -3,6 +3,8 @@ sample:
     buffer
   name: Simple nanopb
 common:
+  modules:
+    - nanopb
   harness: console
   harness_config:
     type: one_line

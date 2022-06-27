@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ieee802154_security,
 		    CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
-#include <crypto/cipher.h>
-#include <net/net_core.h>
+#include <zephyr/crypto/crypto.h>
+#include <zephyr/net/net_core.h>
 
 #include "ieee802154_frame.h"
 #include "ieee802154_security.h"
@@ -184,8 +184,8 @@ int ieee802154_security_init(struct ieee802154_security_ctx *sec_ctx)
 		return -ENODEV;
 	}
 
-	sec_ctx->enc.flags = cipher_query_hwcaps(dev);
-	sec_ctx->dec.flags = cipher_query_hwcaps(dev);
+	sec_ctx->enc.flags = crypto_query_hwcaps(dev);
+	sec_ctx->dec.flags = crypto_query_hwcaps(dev);
 
 	sec_ctx->enc.mode_params.ccm_info.nonce_len = 13U;
 	sec_ctx->dec.mode_params.ccm_info.nonce_len = 13U;

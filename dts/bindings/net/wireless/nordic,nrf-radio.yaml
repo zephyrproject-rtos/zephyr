@@ -215,3 +215,25 @@ properties:
       required: false
       description: |
         Pin select for DFE pin 7. See description for dfegpio0-gpios.
+
+    ieee802154-supported:
+      type: boolean
+      description: |
+        If set, indicates that the radio hardware supports the IEEE 802.15.4
+        mode.
+
+    ble-2mbps-supported:
+      type: boolean
+      description: |
+        If set, indicates that the radio hardware supports the 2 Mbps BLE mode.
+
+    ble-coded-phy-supported:
+      type: boolean
+      description: |
+        If set, indicates that the radio hardware supports coded BLE PHY.
+
+    tx-high-power-supported:
+      type: boolean
+      description: |
+        If set, indicates that the radio hardware supports high TX power
+        settings.

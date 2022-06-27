@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdio.h>
 
 /* Amount of execution threads to create and run */
@@ -12,13 +12,13 @@
 
 /*
  * Amount of digits of Pi to calculate, must be a multiple of 4,
- * as used algorythm spits 4 digits on every iteration.
+ * as used algorithm spits 4 digits on every iteration.
  */
 #define DIGITS_NUM	240
 
 #define LENGTH		((DIGITS_NUM / 4) * 14)
 #define STACK_SIZE	((LENGTH * sizeof(int) + 512) + \
-			 CONFIG_TEST_EXTRA_STACKSIZE)
+			 CONFIG_TEST_EXTRA_STACK_SIZE)
 
 #ifdef CONFIG_SMP
 #define CORES_NUM	CONFIG_MP_NUM_CPUS

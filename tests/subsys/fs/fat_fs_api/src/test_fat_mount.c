@@ -51,17 +51,30 @@ static int test_mount_rd_only_no_sys(void)
 	return TC_PASS;
 }
 
-static int test_mount(void)
+static int test_mount_use_disk_access(void)
 {
 	int res;
 
+	fatfs_mnt.flags = FS_MOUNT_FLAG_USE_DISK_ACCESS;
 	res = fs_mount(&fatfs_mnt);
 	if (res < 0) {
 		TC_PRINT("Error mounting fs [%d]\n", res);
 		return TC_FAIL;
 	}
+	return ((fatfs_mnt.flags & FS_MOUNT_FLAG_USE_DISK_ACCESS) ? TC_PASS : TC_FAIL);
+}
 
-	return TC_PASS;
+static int test_mount(void)
+{
+	int res;
+
+	fatfs_mnt.flags = 0;
+	res = fs_mount(&fatfs_mnt);
+	if (res < 0) {
+		TC_PRINT("Error mounting fs [%d]\n", res);
+		return TC_FAIL;
+	}
+	return ((fatfs_mnt.flags & FS_MOUNT_FLAG_USE_DISK_ACCESS) ? TC_PASS : TC_FAIL);
 }
 
 static int test_unmount(void)
@@ -79,6 +92,8 @@ void test_fat_mount(void)
 	zassert_false(test_unmount() == TC_PASS, NULL);
 	zassert_true(test_mount_no_format() == TC_PASS, NULL);
 	zassert_true(test_mount_rd_only_no_sys() == TC_PASS, NULL);
+	zassert_true(test_mount_use_disk_access() == TC_PASS, NULL);
+	zassert_true(test_unmount() == TC_PASS, NULL);
 	zassert_true(test_mount() == TC_PASS, NULL);
 	zassert_false(test_mount() == TC_PASS, NULL);
 }

@@ -19,35 +19,74 @@
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 #define RING_ID 0
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <device.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <sys/__assert.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <net/ethernet.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
+#include <zephyr/pm/device.h>
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-#include <drivers/ptp_clock.h>
+#include <zephyr/drivers/ptp_clock.h>
 #endif
 
 #if IS_ENABLED(CONFIG_NET_DSA)
-#include <net/dsa.h>
+#include <zephyr/net/dsa.h>
 #endif
 
 #include "fsl_enet.h"
 #include "fsl_phy.h"
+#include "fsl_phyksz8081.h"
+#include "fsl_enet_mdio.h"
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 #include "fsl_clock.h"
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 #endif
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#if defined(CONFIG_PINCTRL)
+#include <zephyr/drivers/pinctrl.h>
+#endif
 
 #include "eth.h"
+
+#define PHY_OMS_OVERRIDE_REG 0x16U      /* The PHY Operation Mode Strap Override register. */
+#define PHY_OMS_STATUS_REG 0x17U        /* The PHY Operation Mode Strap Status register. */
+
+#define PHY_OMS_NANDTREE_MASK 0x0020U     /* The PHY NAND Tree Strap-In Override/Status mask. */
+#define PHY_OMS_FACTORY_MODE_MASK 0x8000U /* The factory mode Override/Status mask. */
+
+/* Defines the PHY KSZ8081 vendor defined registers. */
+#define PHY_CONTROL1_REG 0x1EU /* The PHY control one register. */
+#define PHY_CONTROL2_REG 0x1FU /* The PHY control two register. */
+
+/* Defines the PHY KSZ8081 ID number. */
+#define PHY_CONTROL_ID1 0x22U /* The PHY ID1 */
+
+/* Defines the mask flag of operation mode in control registers */
+#define PHY_CTL2_REMOTELOOP_MASK    0x0004U /* The PHY remote loopback mask. */
+#define PHY_CTL2_REFCLK_SELECT_MASK 0x0080U /* The PHY RMII reference clock select. */
+#define PHY_CTL1_10HALFDUPLEX_MASK  0x0001U /* The PHY 10M half duplex mask. */
+#define PHY_CTL1_100HALFDUPLEX_MASK 0x0002U /* The PHY 100M half duplex mask. */
+#define PHY_CTL1_10FULLDUPLEX_MASK  0x0005U /* The PHY 10M full duplex mask. */
+#define PHY_CTL1_100FULLDUPLEX_MASK 0x0006U /* The PHY 100M full duplex mask. */
+#define PHY_CTL1_SPEEDUPLX_MASK     0x0007U /* The PHY speed and duplex mask. */
+#define PHY_CTL1_ENERGYDETECT_MASK  0x10U   /* The PHY signal present on rx differential pair. */
+#define PHY_CTL1_LINKUP_MASK        0x100U  /* The PHY link up. */
+#define PHY_LINK_READY_MASK         (PHY_CTL1_ENERGYDETECT_MASK | PHY_CTL1_LINKUP_MASK)
+
+/* Defines the timeout macro. */
+#define PHY_READID_TIMEOUT_COUNT 1000U
+
+/* Define RX and TX thread stack sizes */
+#define ETH_MCUX_RX_THREAD_STACK_SIZE 1600
+#define ETH_MCUX_TX_THREAD_STACK_SIZE 1600
 
 #define FREESCALE_OUI_B0 0x00
 #define FREESCALE_OUI_B1 0x04
@@ -126,21 +165,35 @@ struct eth_context {
 #endif
 	enet_handle_t enet_handle;
 #if defined(CONFIG_PTP_CLOCK_MCUX)
+	struct net_pkt *ts_tx_pkt;
 	const struct device *ptp_clock;
 	enet_ptp_config_t ptp_config;
-	float clk_ratio;
+	double clk_ratio;
+	struct k_mutex ptp_mutex;
 #endif
 	struct k_sem tx_buf_sem;
+	phy_handle_t *phy_handle;
+	struct k_sem rx_thread_sem;
+	struct k_sem tx_thread_sem;
 	enum eth_mcux_phy_state phy_state;
 	bool enabled;
 	bool link_up;
 	uint32_t phy_addr;
+	uint32_t rx_irq_num;
+	uint32_t tx_irq_num;
 	phy_duplex_t phy_duplex;
 	phy_speed_t phy_speed;
 	uint8_t mac_addr[6];
 	void (*generate_mac)(uint8_t *);
 	struct k_work phy_work;
 	struct k_work_delayable delayed_phy_work;
+
+	K_KERNEL_STACK_MEMBER(rx_thread_stack, ETH_MCUX_RX_THREAD_STACK_SIZE);
+	struct k_thread rx_thread;
+
+	K_KERNEL_STACK_MEMBER(tx_thread_stack, ETH_MCUX_TX_THREAD_STACK_SIZE);
+	struct k_thread tx_thread;
+
 	/* TODO: FIXME. This Ethernet frame sized buffer is used for
 	 * interfacing with MCUX. How it works is that hardware uses
 	 * DMA scatter buffers to receive a frame, and then public
@@ -156,14 +209,18 @@ struct eth_context {
 	 * Note that we do not copy FCS into this buffer thus the
 	 * size is 1514 bytes.
 	 */
-	uint8_t frame_buf[NET_ETH_MAX_FRAME_SIZE]; /* Max MTU + ethernet header */
-};
-
-#if defined(CONFIG_PTP_CLOCK_MCUX)
-/* Packets to be timestamped. */
-static struct net_pkt *ts_tx_pkt[CONFIG_ETH_MCUX_TX_BUFFERS];
-static int ts_tx_rd, ts_tx_wr;
+	struct k_mutex tx_frame_buf_mutex;
+	struct k_mutex rx_frame_buf_mutex;
+	uint8_t *tx_frame_buf; /* Max MTU + ethernet header */
+	uint8_t *rx_frame_buf; /* Max MTU + ethernet header */
+#if defined(CONFIG_PINCTRL)
+	const struct pinctrl_dev_config *pincfg;
 #endif
+#if defined(CONFIG_ETH_MCUX_PHY_RESET)
+	const struct gpio_dt_spec int_gpio;
+	const struct gpio_dt_spec reset_gpio;
+#endif
+};
 
 /* Use ENET_FRAME_MAX_VLANFRAMELEN for VLAN frame size
  * Use ENET_FRAME_MAX_FRAMELEN for Ethernet frame size
@@ -186,7 +243,7 @@ void eth_mcux_phy_stop(struct eth_context *context);
 static int eth_mcux_device_pm_action(const struct device *dev,
 				     enum pm_device_action action)
 {
-	struct eth_context *eth_ctx = (struct eth_context *)dev->data;
+	struct eth_context *eth_ctx = dev->data;
 	int ret = 0;
 
 	if (!eth_ctx->clock_dev) {
@@ -317,6 +374,7 @@ static void eth_mcux_phy_start(struct eth_context *context)
 
 	switch (context->phy_state) {
 	case eth_mcux_phy_state_initial:
+		context->phy_handle->phyAddr = context->phy_addr;
 		ENET_ActiveRead(context->base);
 		/* Reset the PHY. */
 #if !defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
@@ -374,7 +432,7 @@ void eth_mcux_phy_stop(struct eth_context *context)
 		break;
 	case eth_mcux_phy_state_wait:
 		k_work_cancel_delayable(&context->delayed_phy_work);
-		/* @todo, actually power downt he PHY ? */
+		/* @todo, actually power down the PHY ? */
 		context->phy_state = eth_mcux_phy_state_initial;
 		break;
 	case eth_mcux_phy_state_closing:
@@ -404,8 +462,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 	case eth_mcux_phy_state_initial:
 #if defined(CONFIG_SOC_SERIES_IMX_RT)
 		ENET_DisableInterrupts(context->base, ENET_EIR_MII_MASK);
-		res = PHY_Read(context->base, context->phy_addr,
-			       PHY_CONTROL2_REG, &ctrl2);
+		res = PHY_Read(context->phy_handle, PHY_CONTROL2_REG, &ctrl2);
 		ENET_EnableInterrupts(context->base, ENET_EIR_MII_MASK);
 		if (res != kStatus_Success) {
 			LOG_WRN("Reading PHY reg failed (status 0x%x)", res);
@@ -418,7 +475,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 					   ctrl2);
 		}
 		context->phy_state = eth_mcux_phy_state_reset;
-#endif
+#endif /* CONFIG_SOC_SERIES_IMX_RT */
 #if defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
 		/*
 		 * When the iface is available proceed with the eth link setup,
@@ -449,7 +506,8 @@ static void eth_mcux_phy_event(struct eth_context *context)
 				   (PHY_100BASETX_FULLDUPLEX_MASK |
 				    PHY_100BASETX_HALFDUPLEX_MASK |
 				    PHY_10BASETX_FULLDUPLEX_MASK |
-				    PHY_10BASETX_HALFDUPLEX_MASK | 0x1U));
+				    PHY_10BASETX_HALFDUPLEX_MASK |
+					PHY_IEEE802_3_SELECTOR_MASK));
 #endif
 		context->phy_state = eth_mcux_phy_state_autoneg;
 #if defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
@@ -579,7 +637,7 @@ static void eth_mcux_phy_setup(struct eth_context *context)
 	/* Disable MII interrupts to prevent triggering PHY events. */
 	ENET_DisableInterrupts(context->base, ENET_EIR_MII_MASK);
 
-	res = PHY_Read(context->base, context->phy_addr,
+	res = PHY_Read(context->phy_handle,
 		       PHY_OMS_OVERRIDE_REG, &oms_override);
 	if (res != kStatus_Success) {
 		LOG_WRN("Reading PHY reg failed (status 0x%x)", res);
@@ -594,7 +652,7 @@ static void eth_mcux_phy_setup(struct eth_context *context)
 			oms_override &= ~PHY_OMS_NANDTREE_MASK;
 		}
 
-		res = PHY_Write(context->base, context->phy_addr,
+		res = PHY_Write(context->phy_handle,
 				PHY_OMS_OVERRIDE_REG, oms_override);
 		if (res != kStatus_Success) {
 			LOG_WRN("Writing PHY reg failed (status 0x%x)", res);
@@ -647,64 +705,58 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	struct eth_context *context = dev->data;
 	uint16_t total_len = net_pkt_get_len(pkt);
 	status_t status;
-	unsigned int imask;
+
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	bool timestamped_frame;
 #endif
 
-	/* As context->frame_buf is shared resource used by both eth_tx
-	 * and eth_rx, we need to protect it with irq_lock.
-	 */
-	imask = irq_lock();
+	k_mutex_lock(&context->tx_frame_buf_mutex, K_FOREVER);
 
-	if (net_pkt_read(pkt, context->frame_buf, total_len)) {
-		irq_unlock(imask);
+	if (net_pkt_read(pkt, context->tx_frame_buf, total_len)) {
+		k_mutex_unlock(&context->tx_frame_buf_mutex);
 		return -EIO;
 	}
+
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	timestamped_frame = eth_get_ptp_data(net_pkt_iface(pkt), pkt);
 	if (timestamped_frame) {
 		status = ENET_SendFrame(context->base, &context->enet_handle,
-					  context->frame_buf, total_len, RING_ID, true, NULL);
-
+					  context->tx_frame_buf, total_len, RING_ID, true, NULL);
 		if (!status) {
-			ts_tx_pkt[ts_tx_wr] = net_pkt_ref(pkt);
+			context->ts_tx_pkt = net_pkt_ref(pkt);
 		} else {
-			ts_tx_pkt[ts_tx_wr] = NULL;
+			context->ts_tx_pkt = NULL;
 		}
 
-		ts_tx_wr++;
-		if (ts_tx_wr >= CONFIG_ETH_MCUX_TX_BUFFERS) {
-			ts_tx_wr = 0;
-		}
 	} else
 #endif
 	{
 		status = ENET_SendFrame(context->base, &context->enet_handle,
-					context->frame_buf, total_len, RING_ID, false, NULL);
+					context->tx_frame_buf, total_len, RING_ID, false, NULL);
 	}
-
-	irq_unlock(imask);
 
 	if (status) {
 		LOG_ERR("ENET_SendFrame error: %d", (int)status);
+		k_mutex_unlock(&context->tx_frame_buf_mutex);
+		ENET_ReclaimTxDescriptor(context->base,
+					&context->enet_handle, RING_ID);
 		return -1;
 	}
 
+	k_mutex_unlock(&context->tx_frame_buf_mutex);
 	k_sem_take(&context->tx_buf_sem, K_FOREVER);
 
 	return 0;
 }
 
-static void eth_rx(struct eth_context *context)
+static int eth_rx(struct eth_context *context)
 {
 	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	uint32_t frame_length = 0U;
 	struct net_if *iface;
 	struct net_pkt *pkt;
 	status_t status;
-	unsigned int imask;
 	uint32_t ts;
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
@@ -713,7 +765,9 @@ static void eth_rx(struct eth_context *context)
 
 	status = ENET_GetRxFrameSize(&context->enet_handle,
 				     (uint32_t *)&frame_length, RING_ID);
-	if (status) {
+	if (status == kStatus_ENET_RxFrameEmpty) {
+		return 0;
+	} else if (status == kStatus_ENET_RxFrameError) {
 		enet_data_error_stats_t error_stats;
 
 		LOG_ERR("ENET_GetRxFrameSize return: %d", (int)status);
@@ -723,7 +777,7 @@ static void eth_rx(struct eth_context *context)
 		goto flush;
 	}
 
-	if (sizeof(context->frame_buf) < frame_length) {
+	if (frame_length > NET_ETH_MAX_FRAME_SIZE) {
 		LOG_ERR("frame too large (%d)", frame_length);
 		goto flush;
 	}
@@ -735,26 +789,29 @@ static void eth_rx(struct eth_context *context)
 		goto flush;
 	}
 
-	/* As context->frame_buf is shared resource used by both eth_tx
-	 * and eth_rx, we need to protect it with irq_lock.
+	/* in case multiply thread access
+	 * we need to protect it with mutex.
 	 */
-	imask = irq_lock();
+	k_mutex_lock(&context->rx_frame_buf_mutex, K_FOREVER);
 
 	status = ENET_ReadFrame(context->base, &context->enet_handle,
-				context->frame_buf, frame_length, RING_ID, &ts);
+				context->rx_frame_buf, frame_length, RING_ID, &ts);
 	if (status) {
-		irq_unlock(imask);
 		LOG_ERR("ENET_ReadFrame failed: %d", (int)status);
 		net_pkt_unref(pkt);
+
+		k_mutex_unlock(&context->rx_frame_buf_mutex);
 		goto error;
 	}
 
-	if (net_pkt_write(pkt, context->frame_buf, frame_length)) {
-		irq_unlock(imask);
+	if (net_pkt_write(pkt, context->rx_frame_buf, frame_length)) {
 		LOG_ERR("Unable to write frame into the pkt");
 		net_pkt_unref(pkt);
+		k_mutex_unlock(&context->rx_frame_buf_mutex);
 		goto error;
 	}
+
+	k_mutex_unlock(&context->rx_frame_buf_mutex);
 
 #if defined(CONFIG_NET_VLAN)
 	{
@@ -780,7 +837,11 @@ static void eth_rx(struct eth_context *context)
 	}
 #endif /* CONFIG_NET_VLAN */
 
+	/*
+	 * Use MAC timestamp
+	 */
 #if defined(CONFIG_PTP_CLOCK_MCUX)
+	k_mutex_lock(&context->ptp_mutex, K_FOREVER);
 	if (eth_get_ptp_data(get_iface(context, vlan_tag), pkt)) {
 		ENET_Ptp1588GetTimer(context->base, &context->enet_handle,
 					&ptpTimeData);
@@ -799,9 +860,8 @@ static void eth_rx(struct eth_context *context)
 		pkt->timestamp.nanosecond = UINT32_MAX;
 		pkt->timestamp.second = UINT64_MAX;
 	}
+	k_mutex_unlock(&context->ptp_mutex);
 #endif /* CONFIG_PTP_CLOCK_MCUX */
-
-	irq_unlock(imask);
 
 	iface = get_iface(context, vlan_tag);
 #if IS_ENABLED(CONFIG_NET_DSA)
@@ -812,7 +872,7 @@ static void eth_rx(struct eth_context *context)
 		goto error;
 	}
 
-	return;
+	return 1;
 flush:
 	/* Flush the current read buffer.  This operation can
 	 * only report failure if there is no frame to flush,
@@ -823,6 +883,7 @@ flush:
 	__ASSERT_NO_MSG(status == kStatus_Success);
 error:
 	eth_stats_update_errors_rx(get_iface(context, vlan_tag));
+	return -EIO;
 }
 
 #if defined(CONFIG_PTP_CLOCK_MCUX) && defined(CONFIG_NET_L2_PTP)
@@ -831,16 +892,19 @@ static inline void ts_register_tx_event(struct eth_context *context,
 {
 	struct net_pkt *pkt;
 
-	pkt = ts_tx_pkt[ts_tx_rd];
+	pkt = context->ts_tx_pkt;
 	if (pkt && atomic_get(&pkt->atomic_ref) > 0) {
 		if (eth_get_ptp_data(net_pkt_iface(pkt), pkt)) {
 			if (frameinfo->isTsAvail) {
+				k_mutex_lock(&context->ptp_mutex, K_FOREVER);
+
 				pkt->timestamp.nanosecond =
 					frameinfo->timeStamp.nanosecond;
 				pkt->timestamp.second =
 					frameinfo->timeStamp.second;
 
 				net_if_add_tx_timestamp(pkt);
+				k_mutex_unlock(&context->ptp_mutex);
 			}
 		}
 
@@ -851,11 +915,7 @@ static inline void ts_register_tx_event(struct eth_context *context,
 		}
 	}
 
-	ts_tx_pkt[ts_tx_rd++] = NULL;
-
-	if (ts_tx_rd >= CONFIG_ETH_MCUX_TX_BUFFERS) {
-		ts_tx_rd = 0;
-	}
+	context->ts_tx_pkt = NULL;
 }
 #endif /* CONFIG_PTP_CLOCK_MCUX && CONFIG_NET_L2_PTP */
 
@@ -869,16 +929,18 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 
 	switch (event) {
 	case kENET_RxEvent:
-		eth_rx(context);
+		k_sem_give(&context->rx_thread_sem);
 		break;
 	case kENET_TxEvent:
+		if (!k_is_in_isr()) {
 #if defined(CONFIG_PTP_CLOCK_MCUX) && defined(CONFIG_NET_L2_PTP)
-		/* Register event */
-		ts_register_tx_event(context, frameinfo);
+			/* Register event */
+			ts_register_tx_event(context, frameinfo);
 #endif /* CONFIG_PTP_CLOCK_MCUX && CONFIG_NET_L2_PTP */
 
-		/* Free the TX buffer. */
-		k_sem_give(&context->tx_buf_sem);
+			/* Free the TX buffer. */
+			k_sem_give(&context->tx_buf_sem);
+		}
 		break;
 	case kENET_ErrEvent:
 		/* Error event: BABR/BABT/EBERR/LC/RL/UN/PLR.  */
@@ -897,6 +959,77 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 	}
 }
 
+static void eth_rx_thread(void *arg1, void *unused1, void *unused2)
+{
+	struct eth_context *context = (struct eth_context *)arg1;
+
+	while (1) {
+		if (k_sem_take(&context->rx_thread_sem, K_FOREVER) == 0) {
+			while (eth_rx(context) == 1) {
+				;
+			}
+			/* enable the IRQ for RX */
+			ENET_EnableInterrupts(context->base,
+			  kENET_RxFrameInterrupt | kENET_RxBufferInterrupt);
+		}
+	}
+}
+
+static void eth_tx_thread(void *arg1, void *unused1, void *unused2)
+{
+	struct eth_context *context = (struct eth_context *)arg1;
+
+	while (1) {
+		if (k_sem_take(&context->tx_thread_sem, K_FOREVER) == 0) {
+			if (context->enet_handle.txReclaimEnable[RING_ID]) {
+				ENET_ReclaimTxDescriptor(context->base,
+					&context->enet_handle, RING_ID);
+			} else {
+				enet_handle_t *handle = &context->enet_handle;
+
+				if (handle->callback != NULL) {
+#if FSL_FEATURE_ENET_QUEUE > 1
+					handle->callback(context->base,
+						handle, 0, kENET_TxEvent,
+						NULL, handle->userData);
+#else
+					handle->callback(context->base,
+						handle, kENET_TxEvent,
+						NULL, handle->userData);
+#endif
+				}
+			}
+			ENET_EnableInterrupts(context->base,
+			  kENET_TxBufferInterrupt | kENET_TxFrameInterrupt);
+		}
+	}
+}
+
+
+#if defined(CONFIG_ETH_MCUX_PHY_RESET)
+static int eth_phy_reset(const struct device *dev)
+{
+	int err;
+	struct eth_context *context = dev->data;
+
+	/* pull up the ENET_INT before RESET. */
+	err =  gpio_pin_configure_dt(&context->int_gpio, GPIO_OUTPUT_ACTIVE);
+	if (err) {
+		return err;
+	}
+	return gpio_pin_configure_dt(&context->reset_gpio, GPIO_OUTPUT_INACTIVE);
+}
+
+static int eth_phy_init(const struct device *dev)
+{
+	struct eth_context *context = dev->data;
+
+	/* RESET PHY chip. */
+	k_busy_wait(USEC_PER_MSEC * 500);
+	return gpio_pin_set_dt(&context->reset_gpio, 1);
+}
+#endif
+
 static void eth_mcux_init(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
@@ -913,11 +1046,13 @@ static void eth_mcux_init(const struct device *dev)
 #endif
 
 	context->phy_state = eth_mcux_phy_state_initial;
+	context->phy_handle->mdioHandle->ops = &enet_ops;
+	context->phy_handle->ops = &phyksz8081_ops;
 
 #if defined(CONFIG_SOC_SERIES_IMX_RT10XX)
 	sys_clock = CLOCK_GetFreq(kCLOCK_IpgClk);
-#elif defined(SOC_SERIES_IMX_RT11XX)
-	sys_clock = CLOCK_GetFreq(kCLOCK_Root_Bus);
+#elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+	sys_clock = CLOCK_GetRootClockFreq(kCLOCK_Root_Bus);
 #else
 	sys_clock = CLOCK_GetFreq(kCLOCK_CoreSysClk);
 #endif
@@ -928,6 +1063,7 @@ static void eth_mcux_init(const struct device *dev)
 #if !defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
 	enet_config.interrupt |= kENET_MiiInterrupt;
 #endif
+	enet_config.miiMode = kENET_RmiiMode;
 
 	if (IS_ENABLED(CONFIG_ETH_MCUX_PROMISCUOUS_MODE)) {
 		enet_config.macSpecialConfig |= kENET_ControlPromiscuousEnable;
@@ -957,11 +1093,14 @@ static void eth_mcux_init(const struct device *dev)
 	ENET_AddMulticastGroup(context->base, ptp_multicast);
 	ENET_AddMulticastGroup(context->base, ptp_peer_multicast);
 
-	context->ptp_config.channel = kENET_PtpTimerChannel1;
+	/* only for ERRATA_2579 */
+	context->ptp_config.channel = kENET_PtpTimerChannel3;
 	context->ptp_config.ptp1588ClockSrc_Hz =
 					CONFIG_ETH_MCUX_PTP_CLOCK_SRC_HZ;
 	context->clk_ratio = 1.0;
 
+	ENET_Ptp1588SetChannelMode(context->base, kENET_PtpTimerChannel3,
+			kENET_PtpChannelPulseHighonCompare, true);
 	ENET_Ptp1588Configure(context->base, &context->enet_handle,
 			      &context->ptp_config);
 #endif
@@ -989,12 +1128,14 @@ static void eth_mcux_init(const struct device *dev)
 static int eth_init(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
+#if defined(CONFIG_PINCTRL)
+	int err;
 
-#if defined(CONFIG_PTP_CLOCK_MCUX)
-	ts_tx_rd = 0;
-	ts_tx_wr = 0;
-	(void)memset(ts_tx_pkt, 0, sizeof(ts_tx_pkt));
-#endif
+	err = pinctrl_apply_state(context->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_PINCTRL */
 
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 	const uint32_t inst = ENET_GetInstance(context->base);
@@ -1002,11 +1143,38 @@ static int eth_init(const struct device *dev)
 	context->clock = enet_clocks[inst];
 #endif
 
+#if defined(CONFIG_ETH_MCUX_PHY_RESET)
+	eth_phy_reset(dev);
+	eth_phy_init(dev);
+#endif
+
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+	k_mutex_init(&context->ptp_mutex);
+#endif
+	k_mutex_init(&context->rx_frame_buf_mutex);
+	k_mutex_init(&context->tx_frame_buf_mutex);
+
+	k_sem_init(&context->rx_thread_sem, 0, CONFIG_ETH_MCUX_RX_BUFFERS);
+	k_sem_init(&context->tx_thread_sem, 0, CONFIG_ETH_MCUX_TX_BUFFERS);
 	k_sem_init(&context->tx_buf_sem,
 		   0, CONFIG_ETH_MCUX_TX_BUFFERS);
 	k_work_init(&context->phy_work, eth_mcux_phy_work);
 	k_work_init_delayable(&context->delayed_phy_work,
 			      eth_mcux_delayed_phy_work);
+
+	/* Start interruption-poll thread */
+	k_thread_create(&context->rx_thread, context->rx_thread_stack,
+			K_KERNEL_STACK_SIZEOF(context->rx_thread_stack),
+			eth_rx_thread, (void *) context, NULL, NULL,
+			K_PRIO_COOP(2),
+			0, K_NO_WAIT);
+	k_thread_name_set(&context->rx_thread, "mcux_eth_rx");
+	k_thread_create(&context->tx_thread, context->tx_thread_stack,
+			K_KERNEL_STACK_SIZEOF(context->tx_thread_stack),
+			eth_tx_thread, (void *) context, NULL, NULL,
+			K_PRIO_COOP(3),
+			0, K_NO_WAIT);
+	k_thread_name_set(&context->tx_thread, "mcux_eth_tx");
 
 	if (context->generate_mac) {
 		context->generate_mac(context->mac_addr);
@@ -1152,8 +1320,17 @@ static const struct ethernet_api api_funcs = {
 static void eth_mcux_ptp_isr(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
+	int irq_lock_key = irq_lock();
+	enet_ptp_timer_channel_t channel;
 
+	/* clear channel */
+	for (channel = kENET_PtpTimerChannel1; channel <= kENET_PtpTimerChannel4; channel++) {
+		if (ENET_Ptp1588GetChannelStatus(context->base, channel)) {
+			ENET_Ptp1588ClearChannelStatus(context->base, channel);
+		}
+	}
 	ENET_TimeStampIRQHandler(context->base, &context->enet_handle);
+	irq_unlock(irq_lock_key);
 }
 #endif
 
@@ -1165,16 +1342,46 @@ static void eth_mcux_common_isr(const struct device *dev)
 	int irq_lock_key = irq_lock();
 
 	if (EIR & (kENET_RxBufferInterrupt | kENET_RxFrameInterrupt)) {
+		/* disable the IRQ for RX */
+		context->rx_irq_num++;
+#if FSL_FEATURE_ENET_QUEUE > 1
+		/* Only use ring 0 in this driver */
+		ENET_ReceiveIRQHandler(context->base, &context->enet_handle, 0);
+#else
 		ENET_ReceiveIRQHandler(context->base, &context->enet_handle);
-	} else if (EIR & (kENET_TxBufferInterrupt | kENET_TxFrameInterrupt)) {
-		ENET_TransmitIRQHandler(context->base, &context->enet_handle);
-	} else if (EIR & ENET_EIR_MII_MASK) {
-		k_work_submit(&context->phy_work);
-		ENET_ClearInterruptStatus(context->base, kENET_MiiInterrupt);
-	} else if (EIR) {
-		ENET_ClearInterruptStatus(context->base, 0xFFFFFFFF);
+#endif
+		ENET_DisableInterrupts(context->base, kENET_RxFrameInterrupt |
+			kENET_RxBufferInterrupt);
 	}
 
+	if (EIR & kENET_TxFrameInterrupt) {
+		context->tx_irq_num++;
+		ENET_ClearInterruptStatus(context->base, kENET_TxFrameInterrupt);
+		ENET_DisableInterrupts(context->base, kENET_TxFrameInterrupt);
+		/* schedule tx thread back */
+		k_sem_give(&context->tx_thread_sem);
+	}
+
+	if (EIR | kENET_TxBufferInterrupt) {
+		ENET_ClearInterruptStatus(context->base, kENET_TxBufferInterrupt);
+		ENET_DisableInterrupts(context->base, kENET_TxBufferInterrupt);
+	}
+
+	if (EIR & ENET_EIR_MII_MASK) {
+		k_work_submit(&context->phy_work);
+		ENET_ClearInterruptStatus(context->base, kENET_MiiInterrupt);
+	}
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+	if (EIR & ENET_TS_INTERRUPT) {
+		ENET_TimeStampIRQHandler(context->base, &context->enet_handle);
+	}
+#endif
+	if (EIR) {
+		ENET_ClearInterruptStatus(context->base,
+		  ~(kENET_TxBufferInterrupt | kENET_TxFrameInterrupt
+		    | kENET_RxBufferInterrupt | kENET_RxFrameInterrupt
+		    | ENET_EIR_MII_MASK | ENET_TS_INTERRUPT));
+	}
 	irq_unlock(irq_lock_key);
 }
 #endif
@@ -1184,6 +1391,7 @@ static void eth_mcux_rx_isr(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
 
+	ENET_DisableInterrupts(context->base, kENET_RxFrameInterrupt | kENET_RxBufferInterrupt);
 	ENET_ReceiveIRQHandler(context->base, &context->enet_handle);
 }
 #endif
@@ -1193,7 +1401,10 @@ static void eth_mcux_tx_isr(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
 
-	ENET_TransmitIRQHandler(context->base, &context->enet_handle);
+	ENET_DisableInterrupts(context->base, kENET_TxBufferInterrupt | kENET_TxFrameInterrupt);
+	ENET_ClearInterruptStatus(context->base, kENET_TxBufferInterrupt | kENET_TxFrameInterrupt);
+	/* schedule tx thread back */
+	k_sem_give(&context->tx_thread_sem);
 }
 #endif
 
@@ -1216,8 +1427,10 @@ static void eth_mcux_err_isr(const struct device *dev)
 #define NOCACHE
 #endif
 
-#if defined(CONFIG_SOC_SERIES_IMX_RT)
+#if defined(CONFIG_SOC_SERIES_IMX_RT10XX)
 #define ETH_MCUX_UNIQUE_ID	(OCOTP->CFG1 ^ OCOTP->CFG2)
+#elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+#define ETH_MCUX_UNIQUE_ID	(OCOTP->FUSEN[40].FUSE)
 #elif defined(CONFIG_SOC_SERIES_KINETIS_K6X)
 #define ETH_MCUX_UNIQUE_ID	(SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL)
 #else
@@ -1341,17 +1554,52 @@ static void eth_mcux_err_isr(const struct device *dev)
 #endif
 #define ETH_MCUX_MAC_ADDR_TO_BOOL(n) ETH_MCUX_MAC_ADDR_TO_BOOL_##n
 
+#if defined(CONFIG_PINCTRL)
+#define ETH_MCUX_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
+#define ETH_MCUX_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#else
+#define ETH_MCUX_PINCTRL_DEFINE(n)
+#define ETH_MCUX_PINCTRL_INIT(n)
+#endif
+
+#if defined(CONFIG_ETH_MCUX_PHY_RESET)
+#define ETH_MCUX_PHY_GPIOS(n)						\
+	.int_gpio = GPIO_DT_SPEC_INST_GET(n, int_gpios),		\
+	.reset_gpio = GPIO_DT_SPEC_INST_GET(n, reset_gpios),
+#else
+#define ETH_MCUX_PHY_GPIOS(n)
+#endif
+
 #define ETH_MCUX_INIT(n)						\
 	ETH_MCUX_GEN_MAC(n)                                             \
 									\
+	ETH_MCUX_PINCTRL_DEFINE(n)					\
+									\
 	static void eth##n##_config_func(void);				\
+	static NOCACHE uint8_t						\
+		tx_enet_frame_##n##_buf[NET_ETH_MAX_FRAME_SIZE];	\
+	static NOCACHE uint8_t						\
+		rx_enet_frame_##n##_buf[NET_ETH_MAX_FRAME_SIZE];	\
+									\
+	static mdio_handle_t eth##n##_mdio_handle = {			\
+		  .resource.base = (ENET_Type *)DT_INST_REG_ADDR(n),	\
+		};							\
+									\
+	static phy_handle_t eth##n##_phy_handle = {			\
+		  .mdioHandle = &eth##n##_mdio_handle,			\
+		};							\
 									\
 	static struct eth_context eth##n##_context = {			\
 		.base = (ENET_Type *)DT_INST_REG_ADDR(n),		\
 		.config_func = eth##n##_config_func,			\
-		.phy_addr = 0U,						\
+		.phy_addr = DT_INST_PROP(n, phy_addr),		\
 		.phy_duplex = kPHY_FullDuplex,				\
 		.phy_speed = kPHY_Speed100M,				\
+		.phy_handle = &eth##n##_phy_handle,			\
+		.tx_frame_buf = tx_enet_frame_##n##_buf,		\
+		.rx_frame_buf = rx_enet_frame_##n##_buf,		\
+		ETH_MCUX_PINCTRL_INIT(n)				\
+		ETH_MCUX_PHY_GPIOS(n)					\
 		ETH_MCUX_MAC_ADDR(n)					\
 		ETH_MCUX_POWER(n)					\
 	};								\
@@ -1392,7 +1640,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 									\
 	ETH_NET_DEVICE_DT_INST_DEFINE(n,				\
 			    eth_init,					\
-			    PM_DEVICE_DT_INST_REF(n),			\
+			    PM_DEVICE_DT_INST_GET(n),			\
 			    &eth##n##_context,				\
 			    &eth##n##_buffer_config,			\
 			    CONFIG_ETH_INIT_PRIORITY,			\
@@ -1413,9 +1661,24 @@ DT_INST_FOREACH_STATUS_OKAY(ETH_MCUX_INIT)
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 struct ptp_context {
 	struct eth_context *eth_context;
+#if defined(CONFIG_PINCTRL)
+	const struct pinctrl_dev_config *pincfg;
+#endif /* CONFIG_PINCTRL */
 };
 
-static struct ptp_context ptp_mcux_0_context;
+#if defined(CONFIG_PINCTRL)
+#define ETH_MCUX_PTP_PINCTRL_DEFINE(n) PINCTRL_DT_DEFINE(n);
+#define ETH_MCUX_PTP_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_DEV_CONFIG_GET(n),
+#else
+#define ETH_MCUX_PTP_PINCTRL_DEFINE(n)
+#define ETH_MCUX_PTP_PINCTRL_INIT(n)
+#endif /* CONFIG_PINCTRL */
+
+ETH_MCUX_PTP_PINCTRL_DEFINE(DT_NODELABEL(ptp))
+
+static struct ptp_context ptp_mcux_0_context = {
+	ETH_MCUX_PTP_PINCTRL_INIT(DT_NODELABEL(ptp))
+};
 
 static int ptp_clock_mcux_set(const struct device *dev,
 			      struct net_ptp_time *tm)
@@ -1473,37 +1736,38 @@ static int ptp_clock_mcux_adjust(const struct device *dev, int increment)
 	return ret;
 }
 
-static int ptp_clock_mcux_rate_adjust(const struct device *dev, float ratio)
+static int ptp_clock_mcux_rate_adjust(const struct device *dev, double ratio)
 {
 	const int hw_inc = NSEC_PER_SEC / CONFIG_ETH_MCUX_PTP_CLOCK_SRC_HZ;
 	struct ptp_context *ptp_context = dev->data;
 	struct eth_context *context = ptp_context->eth_context;
 	int corr;
 	int32_t mul;
-	float val;
+	double val;
 
 	/* No change needed. */
-	if (ratio == 1.0) {
+	if ((ratio > 1.0 && ratio - 1.0 < 0.00000001) ||
+	   (ratio < 1.0 && 1.0 - ratio < 0.00000001)) {
 		return 0;
 	}
 
 	ratio *= context->clk_ratio;
 
 	/* Limit possible ratio. */
-	if ((ratio > 1.0 + 1.0/(2 * hw_inc)) ||
-			(ratio < 1.0 - 1.0/(2 * hw_inc))) {
+	if ((ratio > 1.0f + 1.0f/(2 * hw_inc)) ||
+			(ratio < 1.0f - 1.0f/(2 * hw_inc))) {
 		return -EINVAL;
 	}
 
 	/* Save new ratio. */
 	context->clk_ratio = ratio;
 
-	if (ratio < 1.0) {
+	if (ratio < 1.0f) {
 		corr = hw_inc - 1;
-		val = 1.0 / (hw_inc * (1.0 - ratio));
-	} else if (ratio > 1.0) {
+		val = 1.0f / (hw_inc * (1.0f - ratio));
+	} else if (ratio > 1.0f) {
 		corr = hw_inc + 1;
-		val = 1.0 / (hw_inc * (ratio-1.0));
+		val = 1.0f / (hw_inc * (ratio - 1.0f));
 	} else {
 		val = 0;
 		corr = hw_inc;
@@ -1517,8 +1781,9 @@ static int ptp_clock_mcux_rate_adjust(const struct device *dev, float ratio)
 	} else {
 		mul = val;
 	}
-
+	k_mutex_lock(&context->ptp_mutex, K_FOREVER);
 	ENET_Ptp1588AdjustTimer(context->base, corr, mul);
+	k_mutex_unlock(&context->ptp_mutex);
 
 	return 0;
 }
@@ -1535,6 +1800,14 @@ static int ptp_mcux_init(const struct device *port)
 	const struct device *eth_dev = DEVICE_DT_GET(DT_NODELABEL(enet));
 	struct eth_context *context = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
+#if defined(CONFIG_PINCTRL)
+	int err;
+
+	err = pinctrl_apply_state(ptp_context->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_PINCTRL */
 
 	context->ptp_clock = port;
 	ptp_context->eth_context = context;

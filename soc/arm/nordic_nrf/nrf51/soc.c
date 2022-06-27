@@ -13,11 +13,11 @@
  * for the Nordic Semiconductor nRF51 family processor.
  */
 
-#include <kernel.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <hal/nrf_power.h>
 #include <soc/nrfx_coredep.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #ifdef CONFIG_RUNTIME_NMI
 extern void z_arm_nmi_init(void);

@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2021 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&usart1 {
+	dmas = <&dmamux1 11 18 0x20440
+		&dmamux1 1 17 0x20480>;
+	dma-names = "tx", "rx";
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};

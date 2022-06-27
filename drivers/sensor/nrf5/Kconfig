@@ -13,5 +13,6 @@ config TEMP_NRF5_FORCE_ALT
 config TEMP_NRF5
 	bool "nRF5 Temperature Sensor"
 	depends on HAS_HW_NRF_TEMP
+	depends on MULTITHREADING || TEMP_NRF5_FORCE_ALT
 	help
 	  Enable driver for nRF5 temperature sensor.

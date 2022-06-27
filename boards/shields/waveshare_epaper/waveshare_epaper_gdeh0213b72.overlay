@@ -6,8 +6,14 @@
 
 #include "waveshare_epaper_common.dtsi"
 
+/ {
+	chosen {
+		zephyr,display = &ssd16xx;
+	};
+};
+
 &arduino_spi {
-	ssd16xxfb@0 {
+	ssd16xx: ssd16xxfb@0 {
 		compatible = "solomon,ssd16xxfb", "gooddisplay,gdeh0213b72";
 		label = "SSD16XX";
 		spi-max-frequency = <4000000>;

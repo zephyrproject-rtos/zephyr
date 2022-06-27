@@ -10,7 +10,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <net/ppp.h>
+#include <zephyr/net/ppp.h>
 
 /**
  * FSM flags that control how it operates.

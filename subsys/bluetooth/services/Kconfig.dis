@@ -4,12 +4,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BT_DIS
-	bool "Enable GATT Device Information service"
+	bool "GATT Device Information service"
 
 if BT_DIS
 
 config BT_DIS_SETTINGS
-	bool "Enable Settings usage in Device Information Service"
+	bool "Settings usage in Device Information Service"
 	select SETTINGS
 	help
 	  Enable Settings usage in Device Information Service.
@@ -36,7 +36,7 @@ config BT_DIS_MANUF
 	  The device manufacturer inside Device Information Service.
 
 config BT_DIS_PNP
-	bool "Enable PnP_ID characteristic"
+	bool "PnP_ID characteristic"
 	default y
 	help
 	  Enable PnP_ID characteristic in Device Information Service.
@@ -99,7 +99,7 @@ config BT_DIS_PNP_VER
 endif # BT_DIS_PNP
 
 config BT_DIS_SERIAL_NUMBER
-	bool "Enable DIS Serial number characteristic"
+	bool "DIS Serial number characteristic"
 	help
 	  Enable Serial Number characteristic in Device Information Service.
 
@@ -110,7 +110,7 @@ config BT_DIS_SERIAL_NUMBER_STR
 	  Enable Serial Number characteristic in Device Information Service.
 
 config BT_DIS_FW_REV
-	bool "Enable DIS Firmware Revision characteristic"
+	bool "DIS Firmware Revision characteristic"
 	help
 	  Enable Firmware Revision characteristic in Device Information Service.
 
@@ -121,7 +121,7 @@ config BT_DIS_FW_REV_STR
 	  Enable firmware revision characteristic in Device Information Service.
 
 config BT_DIS_HW_REV
-	bool "Enable DIS Hardware Revision characteristic"
+	bool "DIS Hardware Revision characteristic"
 	help
 	  Enable Hardware Revision characteristic in Device Information Service.
 
@@ -132,7 +132,7 @@ config BT_DIS_HW_REV_STR
 	  Enable hardware revision characteristic in Device Information Service.
 
 config BT_DIS_SW_REV
-	bool "Enable DIS Software Revision characteristic"
+	bool "DIS Software Revision characteristic"
 	help
 	  Enable Software Revision characteristic in Device Information Service.
 

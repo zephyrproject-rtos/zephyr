@@ -14,7 +14,7 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_TLS_H_
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_TLS_H_
 
-#include <linker/linker-defs.h>
+#include <zephyr/linker/linker-defs.h>
 
 /**
  * @brief Return the total size of TLS data/bss areas

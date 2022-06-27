@@ -192,7 +192,7 @@ class MdbHwBinaryRunner(ZephyrBinaryRunner):
     def do_add_parser(cls, parser):
         parser.add_argument('--jtag', default='digilent',
                             help='''choose the jtag interface for hardware
-                                    targets, e.g. --jtat=digilent for digilent
+                                    targets, e.g. --jtag=digilent for digilent
                                     jtag adapter''')
         parser.add_argument('--cores', default=1,
                             help='''choose the number of cores that target has,

@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tftp_client, CONFIG_TFTP_LOG_LEVEL);
 
 #include <stddef.h>
-#include <net/tftp.h>
+#include <zephyr/net/tftp.h>
 #include "tftp_client.h"
 
 #define ADDRLEN(sock) \

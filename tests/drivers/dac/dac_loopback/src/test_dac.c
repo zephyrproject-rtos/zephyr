@@ -12,9 +12,9 @@
  * @}
  */
 
-#include <drivers/dac.h>
-#include <drivers/adc.h>
-#include <zephyr.h>
+#include <zephyr/drivers/dac.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 /*
@@ -31,6 +31,7 @@
 	defined(CONFIG_BOARD_STM32F3_DISCO) || \
 	defined(CONFIG_BOARD_STM32L562E_DK) || \
 	defined(CONFIG_BOARD_NUCLEO_L552ZE_Q) || \
+	defined(CONFIG_BOARD_NUCLEO_WL55JC) || \
 	defined(CONFIG_BOARD_RONOTH_LODEV)
 
 /*

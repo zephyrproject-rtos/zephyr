@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 #include <offsets_short.h>
 
 _ASM_FILE_PROLOGUE

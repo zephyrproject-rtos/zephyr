@@ -11,18 +11,18 @@
  */
 #include <errno.h>
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
 
 #include "gpio_utils.h"
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(stmpe1600);
 
 /* Register definitions */
@@ -71,14 +71,16 @@ struct stmpe1600_drvdata {
 
 static int write_reg16(const struct stmpe1600_config * const config, uint8_t reg, uint16_t value)
 {
-	uint16_t transfer_data = sys_cpu_to_le16(value);
+	uint8_t buf[3];
 	int ret;
 
 	LOG_DBG("STMPE1600[0x%02X]: write REG[0x%02X..0x%02X] = %04x",
 		config->i2c_slave_addr, reg, reg + 1, value);
 
-	ret = i2c_burst_write(config->i2c_bus, config->i2c_slave_addr, reg,
-			      (uint8_t *)&transfer_data, sizeof(transfer_data));
+	buf[0] = reg;
+	sys_put_le16(value, &buf[1]);
+
+	ret = i2c_write(config->i2c_bus, buf, sizeof(buf), config->i2c_slave_addr);
 
 	if (ret != 0) {
 		LOG_ERR("STMPE1600[0x%02X]: write error REG[0x%02X..0x%02X]: %d",
@@ -202,7 +204,7 @@ static int stmpe1600_port_get_raw(const struct device *dev, uint32_t *value)
 static int stmpe1600_port_set_masked_raw(const struct device *dev,
 					 uint32_t mask, uint32_t value)
 {
-	struct stmpe1600_drvdata *const drvdata = (struct stmpe1600_drvdata *const)dev->data;
+	struct stmpe1600_drvdata *const drvdata = dev->data;
 	uint16_t GPSR;
 	int ret;
 
@@ -233,7 +235,7 @@ static int stmpe1600_port_clear_bits_raw(const struct device *dev, uint32_t mask
 
 static int stmpe1600_port_toggle_bits(const struct device *dev, uint32_t mask)
 {
-	struct stmpe1600_drvdata *const drvdata = (struct stmpe1600_drvdata *const)dev->data;
+	struct stmpe1600_drvdata *const drvdata = dev->data;
 	uint16_t GPSR;
 	int ret;
 

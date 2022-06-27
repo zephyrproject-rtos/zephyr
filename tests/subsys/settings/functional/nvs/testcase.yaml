@@ -2,6 +2,10 @@ tests:
   system.settings.functional.nvs:
     platform_allow: qemu_x86 native_posix native_posix_64
     tags: settings_nvs
+  system.settings.functional.nvs.chosen:
+    extra_args: DTC_OVERLAY_FILE=./chosen.overlay
+    platform_allow: native_posix native_posix_64
+    tags: settings_nvs
   system.settings.functional.nvs.dk:
     extra_args: OVERLAY_CONFIG=mpu.conf
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832

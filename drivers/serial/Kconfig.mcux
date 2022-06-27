@@ -8,5 +8,6 @@ config UART_MCUX
 	depends on HAS_MCUX && CLOCK_CONTROL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_SUPPORT_ASYNC
 	help
 	  Enable the MCUX uart driver.

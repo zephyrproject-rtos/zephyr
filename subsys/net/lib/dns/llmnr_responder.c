@@ -10,21 +10,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_llmnr_responder, CONFIG_LLMNR_RESPONDER_LOG_LEVEL);
 
-#include <zephyr.h>
-#include <init.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
 #include <string.h>
 #include <strings.h>
 #include <errno.h>
 #include <stdlib.h>
 
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
-#include <net/dns_resolve.h>
-#include <net/udp.h>
-#include <net/igmp.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/udp.h>
+#include <zephyr/net/igmp.h>
 
 #include "dns_pack.h"
 #include "ipv6.h"
@@ -35,11 +35,16 @@ LOG_MODULE_REGISTER(net_llmnr_responder, CONFIG_LLMNR_RESPONDER_LOG_LEVEL);
 
 #define LLMNR_TTL CONFIG_LLMNR_RESPONDER_TTL /* In seconds */
 
+#if defined(CONFIG_NET_IPV4)
 static struct net_context *ipv4;
+static struct sockaddr_in local_addr4;
+#endif
 
 #if defined(CONFIG_NET_IPV6)
 static struct net_context *ipv6;
 #endif
+
+static struct net_mgmt_event_callback mgmt_cb;
 
 #define BUF_ALLOC_TIMEOUT K_MSEC(100)
 
@@ -76,7 +81,7 @@ static void create_ipv6_dst_addr(struct net_pkt *pkt,
 	addr->sin6_family = AF_INET6;
 	addr->sin6_port = udp_hdr->src_port;
 
-	net_ipaddr_copy(&addr->sin6_addr, &NET_IPV6_HDR(pkt)->src);
+	net_ipv6_addr_copy_raw((uint8_t *)&addr->sin6_addr, NET_IPV6_HDR(pkt)->src);
 }
 #endif
 
@@ -104,9 +109,24 @@ static void create_ipv4_dst_addr(struct net_pkt *pkt,
 	addr->sin_family = AF_INET;
 	addr->sin_port = udp_hdr->src_port;
 
-	net_ipaddr_copy(&addr->sin_addr, &NET_IPV4_HDR(pkt)->src);
+	net_ipv4_addr_copy_raw((uint8_t *)&addr->sin_addr, NET_IPV4_HDR(pkt)->src);
 }
 #endif
+
+static void llmnr_iface_event_handler(struct net_mgmt_event_callback *cb,
+				      uint32_t mgmt_event, struct net_if *iface)
+{
+	if (mgmt_event == NET_EVENT_IF_UP) {
+#if defined(CONFIG_NET_IPV4)
+		int ret = net_ipv4_igmp_join(iface, &local_addr4.sin_addr);
+
+		if (ret < 0) {
+			NET_DBG("Cannot add IPv4 multicast address to iface %p",
+				iface);
+		}
+#endif /* defined(CONFIG_NET_IPV4) */
+	}
+}
 
 static struct net_context *get_ctx(sa_family_t family)
 {
@@ -301,7 +321,7 @@ static int create_ipv4_answer(struct net_context *ctx,
 	} else if (qtype == DNS_RR_TYPE_AAAA) {
 #if defined(CONFIG_NET_IPV6)
 		addr = get_ipv6_src(net_pkt_iface(pkt),
-				    &ip_hdr->ipv6->src);
+				    (struct in6_addr *)ip_hdr->ipv6->src);
 		if (!addr) {
 			return -ENOENT;
 		}
@@ -343,7 +363,7 @@ static int create_ipv6_answer(struct net_context *ctx,
 
 	if (qtype == DNS_RR_TYPE_AAAA) {
 		addr = get_ipv6_src(net_pkt_iface(pkt),
-				    &ip_hdr->ipv6->src);
+				    (struct in6_addr *)ip_hdr->ipv6->src);
 		if (!addr) {
 			return -ENOENT;
 		}
@@ -352,7 +372,7 @@ static int create_ipv6_answer(struct net_context *ctx,
 	} else if (qtype == DNS_RR_TYPE_A) {
 #if defined(CONFIG_NET_IPV4)
 		addr = get_ipv4_src(net_pkt_iface(pkt),
-				    &ip_hdr->ipv4->src);
+				    (struct in_addr *)ip_hdr->ipv4->src);
 		if (!addr) {
 			return -ENOENT;
 		}
@@ -436,7 +456,7 @@ static int dns_read(struct net_context *ctx,
 	data_len = MIN(net_pkt_remaining_data(pkt), DNS_RESOLVER_MAX_BUF_SIZE);
 
 	/* Store the DNS query name into a temporary net_buf, which will be
-	 * enventually used to send a response
+	 * eventually used to send a response
 	 */
 	result = net_buf_alloc(&llmnr_dns_msg_pool, BUF_ALLOC_TIMEOUT);
 	if (!result) {
@@ -621,14 +641,12 @@ ipv6_out:
 
 #if defined(CONFIG_NET_IPV4)
 	{
-		static struct sockaddr_in local_addr;
-
-		setup_ipv4_addr(&local_addr);
+		setup_ipv4_addr(&local_addr4);
 
 		ipv4 = get_ctx(AF_INET);
 
-		ret = bind_ctx(ipv4, (struct sockaddr *)&local_addr,
-			       sizeof(local_addr));
+		ret = bind_ctx(ipv4, (struct sockaddr *)&local_addr4,
+			       sizeof(local_addr4));
 		if (ret < 0) {
 			net_context_put(ipv4);
 			goto ipv4_out;
@@ -655,6 +673,11 @@ ipv4_out:
 static int llmnr_responder_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+
+	net_mgmt_init_event_callback(&mgmt_cb, llmnr_iface_event_handler,
+				     NET_EVENT_IF_UP);
+
+	net_mgmt_add_event_callback(&mgmt_cb);
 
 	return init_listener();
 }

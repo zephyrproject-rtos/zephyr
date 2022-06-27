@@ -8,9 +8,10 @@
 
 #define DT_DRV_COMPAT ti_fdc2x1x
 
-#include <device.h>
-#include <sys/util.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
 #include <math.h>
 
 #include "fdc2x1x.h"
@@ -255,7 +256,7 @@ static int fdc2x1x_set_offset(const struct device *dev,
 /**
  * Set the Auto-Scan Mode.
  * @param dev - The device structure.
- * @param en - Enable/disable auto-acan mode.
+ * @param en - Enable/disable auto-scan mode.
  * @return 0 in case of success, negative error code otherwise.
  */
 static int fdc2x1x_set_autoscan_mode(const struct device *dev, bool en)
@@ -873,7 +874,7 @@ static int fdc2x1x_probe(const struct device *dev)
 	}
 
 	if (man_id != FDC2X1X_MANUFACTURER_ID_VAL) {
-		LOG_ERR("Wrong manufaturer id");
+		LOG_ERR("Wrong manufacturer id");
 		return -ENODEV;
 	}
 
@@ -1029,7 +1030,7 @@ static int fdc2x1x_init(const struct device *dev)
 									   \
 	DEVICE_DT_INST_DEFINE(n,					   \
 			      fdc2x1x_init,				   \
-			      PM_DEVICE_DT_INST_REF(n),			   \
+			      PM_DEVICE_DT_INST_GET(n),			   \
 			      &fdc2x1x_data_##n,			   \
 			      &fdc2x1x_config_##n,			   \
 			      POST_KERNEL,				   \

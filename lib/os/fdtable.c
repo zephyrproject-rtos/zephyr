@@ -15,11 +15,11 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <kernel.h>
-#include <sys/fdtable.h>
-#include <sys/speculation.h>
-#include <syscall_handler.h>
-#include <sys/atomic.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/fdtable.h>
+#include <zephyr/sys/speculation.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/sys/atomic.h>
 
 struct fd_entry {
 	void *obj;
@@ -224,21 +224,37 @@ int z_alloc_fd(void *obj, const struct fd_op_vtable *vtable)
 
 ssize_t read(int fd, void *buf, size_t sz)
 {
+	ssize_t res;
+
 	if (_check_fd(fd) < 0) {
 		return -1;
 	}
 
-	return fdtable[fd].vtable->read(fdtable[fd].obj, buf, sz);
+	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
+
+	res = fdtable[fd].vtable->read(fdtable[fd].obj, buf, sz);
+
+	k_mutex_unlock(&fdtable[fd].lock);
+
+	return res;
 }
 FUNC_ALIAS(read, _read, ssize_t);
 
 ssize_t write(int fd, const void *buf, size_t sz)
 {
+	ssize_t res;
+
 	if (_check_fd(fd) < 0) {
 		return -1;
 	}
 
-	return fdtable[fd].vtable->write(fdtable[fd].obj, buf, sz);
+	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
+
+	res = fdtable[fd].vtable->write(fdtable[fd].obj, buf, sz);
+
+	k_mutex_unlock(&fdtable[fd].lock);
+
+	return res;
 }
 FUNC_ALIAS(write, _write, ssize_t);
 
@@ -250,7 +266,11 @@ int close(int fd)
 		return -1;
 	}
 
+	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
+
 	res = fdtable[fd].vtable->close(fdtable[fd].obj);
+
+	k_mutex_unlock(&fdtable[fd].lock);
 
 	z_free_fd(fd);
 

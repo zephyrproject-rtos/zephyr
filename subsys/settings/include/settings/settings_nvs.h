@@ -8,7 +8,7 @@
 #ifndef __SETTINGS_NVS_H_
 #define __SETTINGS_NVS_H_
 
-#include <fs/nvs.h>
+#include <zephyr/fs/nvs.h>
 #include "settings/settings.h"
 
 #ifdef __cplusplus

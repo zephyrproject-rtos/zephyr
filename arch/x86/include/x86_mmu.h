@@ -12,9 +12,9 @@
 #ifndef ZEPHYR_ARCH_X86_INCLUDE_X86_MMU_H
 #define ZEPHYR_ARCH_X86_INCLUDE_X86_MMU_H
 
-#include <kernel.h>
-#include <arch/x86/mmustructs.h>
-#include <sys/mem_manage.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/x86/mmustructs.h>
+#include <zephyr/sys/mem_manage.h>
 
 #if defined(CONFIG_X86_64) || defined(CONFIG_X86_PAE)
 #define XD_SUPPORTED

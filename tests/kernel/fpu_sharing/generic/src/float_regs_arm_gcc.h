@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief ARM Cortex-M4 GCC specific floating point register macros
+ * @brief ARM GCC specific floating point register macros
  */
 
 /*
@@ -12,11 +12,12 @@
 #ifndef _FLOAT_REGS_ARM_GCC_H
 #define _FLOAT_REGS_ARM_GCC_H
 
-#if !defined(__GNUC__) || !defined(CONFIG_ARMV7_M_ARMV8_M_FP)
-#error __FILE__ goes only with Cortex-M GCC
+#if !defined(__GNUC__) \
+	|| !(defined(CONFIG_ARMV7_M_ARMV8_M_FP) || defined(CONFIG_ARMV7_R_FP))
+#error __FILE__ goes only with ARM GCC
 #endif
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include "float_context.h"
 
 /**
@@ -34,7 +35,6 @@
  * _load_all_float_registers() and _store_all_float_registers() agree
  * on the format.
  *
- * @return N/A
  */
 
 static inline void _load_all_float_registers(struct fp_register_set *regs)
@@ -55,7 +55,6 @@ static inline void _load_all_float_registers(struct fp_register_set *regs)
  * _load_all_float_registers() occurred to load all the floating point
  * registers from a memory buffer.
  *
- * @return N/A
  */
 
 static inline void _store_all_float_registers(struct fp_register_set *regs)
@@ -79,7 +78,6 @@ static inline void _store_all_float_registers(struct fp_register_set *regs)
  * that pends and triggers a co-operative context switch to a low priority
  * thread.
  *
- * @return N/A
  */
 
 static inline void _load_then_store_all_float_registers(struct fp_register_set

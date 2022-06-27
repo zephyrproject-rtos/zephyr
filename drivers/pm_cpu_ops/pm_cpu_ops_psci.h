@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_PSCI_PSCI_H_
 #define ZEPHYR_DRIVERS_PSCI_PSCI_H_
 
-#include <drivers/pm_cpu_ops/psci.h>
+#include <zephyr/drivers/pm_cpu_ops/psci.h>
 
 #ifdef CONFIG_64BIT
 #define PSCI_FN_NATIVE(version, name)		PSCI_##version##_FN64_##name

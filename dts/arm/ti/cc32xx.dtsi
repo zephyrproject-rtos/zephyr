@@ -2,8 +2,8 @@
 
 #include <arm/armv7-m.dtsi>
 
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 #define INT_UARTA0              21          // UART0 Rx and Tx
 #define INT_UARTA1              22          // UART1 Rx and Tx

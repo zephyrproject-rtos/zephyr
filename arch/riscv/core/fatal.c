@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <inttypes.h>
-#include <exc_handle.h>
-#include <logging/log.h>
+#include <zephyr/exc_handle.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_USERSPACE
@@ -39,7 +39,10 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 		LOG_ERR("     a5: " PR_REG "    t5: " PR_REG, esf->a5, esf->t5);
 		LOG_ERR("     a6: " PR_REG "    t6: " PR_REG, esf->a6, esf->t6);
 		LOG_ERR("     a7: " PR_REG, esf->a7);
-		LOG_ERR("         " NO_REG "    tp: " PR_REG, esf->tp);
+#ifdef CONFIG_USERSPACE
+		LOG_ERR("     sp: " PR_REG, esf->sp);
+#endif
+		LOG_ERR("     tp: " PR_REG, esf->tp);
 		LOG_ERR("     ra: " PR_REG, esf->ra);
 		LOG_ERR("   mepc: " PR_REG, esf->mepc);
 		LOG_ERR("mstatus: " PR_REG, esf->mstatus);
@@ -94,11 +97,11 @@ void _Fault(z_arch_esf_t *esf)
 	 * treated as recoverable.
 	 */
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
-		uint32_t start = (uint32_t)exceptions[i].start;
-		uint32_t end = (uint32_t)exceptions[i].end;
+		ulong_t start = (ulong_t)exceptions[i].start;
+		ulong_t end = (ulong_t)exceptions[i].end;
 
 		if (esf->mepc >= start && esf->mepc < end) {
-			esf->mepc = (uint32_t)exceptions[i].fixup;
+			esf->mepc = (ulong_t)exceptions[i].fixup;
 			return;
 		}
 	}

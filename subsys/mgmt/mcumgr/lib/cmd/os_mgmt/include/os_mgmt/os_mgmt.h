@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
+ * Copyright (c) 2022 Laird Connectivity
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,27 +21,33 @@ extern "C" {
 #define OS_MGMT_ID_MPSTAT		3
 #define OS_MGMT_ID_DATETIME_STR		4
 #define OS_MGMT_ID_RESET		5
+#define OS_MGMT_ID_MCUMGR_PARAMS	6
 
-#define OS_MGMT_TASK_NAME_LEN		32
-
-struct os_mgmt_task_info {
-	uint8_t oti_prio;
-	uint8_t oti_taskid;
-	uint8_t oti_state;
-	uint16_t oti_stkusage;
-	uint16_t oti_stksize;
-	uint32_t oti_cswcnt;
-	uint32_t oti_runtime;
-	uint32_t oti_last_checkin;
-	uint32_t oti_next_checkin;
-
-	char oti_name[OS_MGMT_TASK_NAME_LEN];
-};
+#ifdef CONFIG_OS_MGMT_RESET_HOOK
+/** @typedef os_mgmt_on_reset_evt_cb
+ * @brief Function to be called on os mgmt reset event.
+ *
+ * This callback function is used to notify the application about a pending
+ * reset request and to authorise or deny it.
+ *
+ * @return 0 to allow reset, MGMT_ERR_[...] code to disallow reset.
+ */
+typedef int (*os_mgmt_on_reset_evt_cb)(void);
+#endif
 
 /**
  * @brief Registers the OS management command handler group.
  */
 void os_mgmt_register_group(void);
+
+#ifdef CONFIG_OS_MGMT_RESET_HOOK
+/**
+ * @brief Register os reset event callback function.
+ *
+ * @param cb Callback function or NULL to disable.
+ */
+void os_mgmt_register_reset_evt_cb(os_mgmt_on_reset_evt_cb cb);
+#endif
 
 #ifdef __cplusplus
 }

@@ -2,9 +2,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/syscon.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/syscon.h>
 #include <ztest.h>
 
 uint8_t var_in_res0[DT_REG_SIZE(DT_NODELABEL(syscon))] __attribute((__section__(".res0")));

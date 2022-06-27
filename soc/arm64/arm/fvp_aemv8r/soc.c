@@ -2,7 +2,7 @@
  * Copyright (c) 2021 Arm Limited (or its affiliates). All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #ifdef CONFIG_SOC_FVP_AEMV8R_EL2_INIT
 

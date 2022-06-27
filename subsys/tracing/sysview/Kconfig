@@ -13,7 +13,7 @@ config SEGGER_SYSVIEW_RTT_BUFFER_SIZE
 	default 4096
 
 config SEGGER_SYSVIEW_POST_MORTEM_MODE
-	bool "Enable post-mortem mode for SystemView"
+	bool "Post-mortem mode for SystemView"
 	depends on SEGGER_SYSTEMVIEW
 
 choice SEGGER_SYSVIEW_SECTION

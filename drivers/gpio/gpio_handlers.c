@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/gpio.h>
-#include <syscall_handler.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/syscall_handler.h>
 
 static inline int z_vrfy_gpio_pin_configure(const struct device *port,
 					    gpio_pin_t pin,

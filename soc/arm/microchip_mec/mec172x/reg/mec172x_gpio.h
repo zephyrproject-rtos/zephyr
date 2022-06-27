@@ -21,15 +21,15 @@
 
 /* MEC172XH-B0-SZ (144-pin) */
 #define MCHP_GPIO_PORT_A_BITMAP 0x7FFFFF9Du /* GPIO_0000 - 0036  GIRQ11 */
-#define MCHP_GPIO_PORT_B_BITMAP 0x0FFFFFFDu /* GPIO_0040 - 0076  GIRQ10 */
-#define MCHP_GPIO_PORT_C_BITMAP 0x07FF3CF7u /* GPIO_0100 - 0136  GIRQ09 */
+#define MCHP_GPIO_PORT_B_BITMAP 0x7FFFFFFDu /* GPIO_0040 - 0076  GIRQ10 */
+#define MCHP_GPIO_PORT_C_BITMAP 0x07FFFCF7u /* GPIO_0100 - 0136  GIRQ09 */
 #define MCHP_GPIO_PORT_D_BITMAP 0x272EFFFFu /* GPIO_0140 - 0176  GIRQ08 */
 #define MCHP_GPIO_PORT_E_BITMAP 0x00DE00FFu /* GPIO_0200 - 0236  GIRQ12 */
 #define MCHP_GPIO_PORT_F_BITMAP 0x0000397Fu /* GPIO_0240 - 0276  GIRQ26 */
 
 #define MCHP_GPIO_PORT_A_DRVSTR_BITMAP	0x7FFFFF9Du
-#define MCHP_GPIO_PORT_B_DRVSTR_BITMAP	0x0FFFFFFDu
-#define MCHP_GPIO_PORT_C_DRVSTR_BITMAP	0x07FF3CF7u
+#define MCHP_GPIO_PORT_B_DRVSTR_BITMAP	0x7FFFFFFDu
+#define MCHP_GPIO_PORT_C_DRVSTR_BITMAP	0x07FFFCF7u
 #define MCHP_GPIO_PORT_D_DRVSTR_BITMAP	0x272EFFFFu
 #define MCHP_GPIO_PORT_E_DRVSTR_BITMAP	0x00DE00FFu
 #define MCHP_GPIO_PORT_F_DRVSTR_BITMAP	0x0000397Fu
@@ -230,6 +230,9 @@ enum mec_gpio_idx {
 	MCHP_GPIO_0071_ID,
 	MCHP_GPIO_0072_ID,
 	MCHP_GPIO_0073_ID,
+	MCHP_GPIO_0074_ID,
+	MCHP_GPIO_0075_ID,
+	MCHP_GPIO_0076_ID,
 	MCHP_GPIO_0100_ID = 64,
 	MCHP_GPIO_0101_ID,
 	MCHP_GPIO_0102_ID,
@@ -241,6 +244,8 @@ enum mec_gpio_idx {
 	MCHP_GPIO_0113_ID,
 	MCHP_GPIO_0114_ID,
 	MCHP_GPIO_0115_ID,
+	MCHP_GPIO_0116_ID,
+	MCHP_GPIO_0117_ID,
 	MCHP_GPIO_0120_ID = 80,
 	MCHP_GPIO_0121_ID,
 	MCHP_GPIO_0122_ID,
@@ -390,14 +395,15 @@ enum mchp_gpio_drv_str {
 
 /** @brief All GPIO register as arrays of registers */
 struct gpio_regs {
-	volatile uint32_t CTRL[192];
-	volatile uint32_t PARIN[6];
-	uint32_t RSVD1[(0x380 - 0x318) / 4];
-	volatile uint32_t PAROUT[6];
-	uint32_t RSVD2[(0x3ec - 0x398) / 4];
-	volatile uint32_t LOCK[6];
-	uint32_t RSVD3[(0x500 - 0x400) / 4];
-	volatile uint32_t CTRL2[192];
+	volatile uint32_t  CTRL[174];
+	uint32_t  RESERVED[18];
+	volatile uint32_t  PARIN[6];
+	uint32_t  RESERVED1[26];
+	volatile uint32_t  PAROUT[6];
+	uint32_t  RESERVED2[20];
+	volatile uint32_t  LOCK[6];
+	uint32_t  RESERVED3[64];
+	volatile uint32_t  CTRL2[174];
 };
 
 /** @brief GPIO control registers by pin name */
@@ -461,7 +467,10 @@ struct gpio_ctrl_regs {
 	volatile uint32_t CTRL_0071;
 	volatile uint32_t CTRL_0072;
 	volatile uint32_t CTRL_0073;
-	uint32_t RSVD5[4];
+	volatile uint32_t CTRL_0074;
+	volatile uint32_t CTRL_0075;
+	volatile uint32_t CTRL_0076;
+	uint32_t RSVD5[1];
 	volatile uint32_t CTRL_0100;
 	volatile uint32_t CTRL_0101;
 	volatile uint32_t CTRL_0102;
@@ -475,7 +484,8 @@ struct gpio_ctrl_regs {
 	volatile uint32_t CTRL_0113;
 	volatile uint32_t CTRL_0114;
 	volatile uint32_t CTRL_0115;
-	uint32_t RSVD8[2];
+	volatile uint32_t CTRL_0116;
+	volatile uint32_t CTRL_0117;
 	volatile uint32_t CTRL_0120;
 	volatile uint32_t CTRL_0121;
 	volatile uint32_t CTRL_0122;
@@ -605,7 +615,10 @@ struct gpio_ctrl2_regs {
 	volatile uint32_t CTRL2_0071;
 	volatile uint32_t CTRL2_0072;
 	volatile uint32_t CTRL2_0073;
-	uint32_t RSVD5[4];
+	volatile uint32_t CTRL2_0074;
+	volatile uint32_t CTRL2_0075;
+	volatile uint32_t CTRL2_0076;
+	uint32_t RSVD5[1];
 	volatile uint32_t CTRL2_0100;
 	volatile uint32_t CTRL2_0101;
 	volatile uint32_t CTRL2_0102;
@@ -619,7 +632,8 @@ struct gpio_ctrl2_regs {
 	volatile uint32_t CTRL2_0113;
 	volatile uint32_t CTRL2_0114;
 	volatile uint32_t CTRL2_0115;
-	uint32_t RSVD8[2];
+	volatile uint32_t CTRL2_0116;
+	volatile uint32_t CTRL2_0117;
 	volatile uint32_t CTRL2_0120;
 	volatile uint32_t CTRL2_0121;
 	volatile uint32_t CTRL2_0122;

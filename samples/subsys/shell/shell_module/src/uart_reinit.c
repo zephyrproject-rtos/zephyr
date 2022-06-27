@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <shell/shell.h>
-#include <shell/shell_uart.h>
-#include <drivers/uart.h>
-#include <device.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_uart.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/device.h>
 
 void shell_init_from_work(struct k_work *work)
 {
@@ -117,5 +117,5 @@ static int cmd_uart_release(const struct shell *shell, size_t argc, char **argv)
 
 SHELL_CMD_REGISTER(shell_uart_release, NULL,
 		"Uninitialize shell instance and release uart, start loopback "
-		"on uart. Shell instance is renitialized when 'x' is pressed",
+		"on uart. Shell instance is reinitialized when 'x' is pressed",
 		cmd_uart_release);

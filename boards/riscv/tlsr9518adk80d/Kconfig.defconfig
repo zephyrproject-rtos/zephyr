@@ -15,9 +15,6 @@ config GPIO_TELINK_B91
 config UART_TELINK_B91
 	default y if SERIAL
 
-config PINMUX_TELINK_B91
-	default y if PINMUX
-
 config PWM_TELINK_B91
 	default y if PWM
 

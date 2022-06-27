@@ -9,8 +9,8 @@
  * for the IoT Development Kit board.
  *
  */
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include "sysconf.h"
 
 #define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)

@@ -11,13 +11,13 @@
  * @brief LED driver for the PCA9633 I2C LED driver (7-bit slave address 0x62)
  */
 
-#include <drivers/i2c.h>
-#include <drivers/led.h>
-#include <sys/util.h>
-#include <zephyr.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/zephyr.h>
 
 #define LOG_LEVEL CONFIG_LED_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pca9633);
 
 #include "led_context.h"
@@ -103,7 +103,7 @@ static int pca9633_led_blink(const struct device *dev, uint32_t led,
 		return -EIO;
 	}
 
-	/* Select the GRPPWM source to drive the LED outpout */
+	/* Select the GRPPWM source to drive the LED output */
 	if (i2c_reg_update_byte_dt(&config->i2c,
 				PCA9633_LEDOUT,
 				PCA9633_MASK << (led << 1),

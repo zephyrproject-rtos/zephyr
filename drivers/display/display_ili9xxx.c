@@ -8,11 +8,11 @@
 
 #include "display_ili9xxx.h"
 
-#include <dt-bindings/display/ili9xxx.h>
-#include <drivers/display.h>
-#include <sys/byteorder.h>
+#include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/drivers/display.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_ili9xxx, CONFIG_DISPLAY_LOG_LEVEL);
 
 struct ili9xxx_data {
@@ -447,10 +447,10 @@ static const struct display_driver_api ili9xxx_api = {
 	DEVICE_DT_DEFINE(INST_DT_ILI9XXX(n, t), ili9xxx_init,                  \
 			    NULL, &ili9xxx_data_##n,                           \
 			    &ili9xxx_config_##n, POST_KERNEL,                  \
-			    CONFIG_DISPLAY_INIT_PRIORITY, &ili9xxx_api);
+			    CONFIG_DISPLAY_INIT_PRIORITY, &ili9xxx_api)
 
 #define DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(t)                                 \
-	UTIL_LISTIFY(DT_NUM_INST_STATUS_OKAY(ilitek_ili##t), ILI9XXX_INIT, t)
+	LISTIFY(DT_NUM_INST_STATUS_OKAY(ilitek_ili##t), ILI9XXX_INIT, (;), t)
 
 #ifdef CONFIG_ILI9340
 #include "display_ili9340.h"

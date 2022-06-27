@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MICS_INTERNAL_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MICS_INTERNAL_
 #include <zephyr/types.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/gatt.h>
 
 #if defined(CONFIG_BT_MICS)
 struct bt_mics_server {

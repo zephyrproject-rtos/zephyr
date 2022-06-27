@@ -13,18 +13,17 @@
  * See isr_wrapper.S for details.
  */
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <offsets_short.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 #include <swap_macros.h>
 
 GTEXT(_firq_enter)
 GTEXT(_firq_exit)
 
 /**
- *
  * @brief Work to be done before handing control to a FIRQ ISR
  *
  * The processor switches to a second register bank so registers from the
@@ -41,8 +40,6 @@ GTEXT(_firq_exit)
  * interrupt. An exception, however, can be taken.
  *
  * Assumption by _isr_demux: r3 is untouched by _firq_enter.
- *
- * @return N/A
  */
 
 SECTION_FUNC(TEXT, _firq_enter)
@@ -131,10 +128,7 @@ firq_nest:
 
 
 /**
- *
  * @brief Work to be done exiting a FIRQ
- *
- * @return N/A
  */
 
 SECTION_FUNC(TEXT, _firq_exit)

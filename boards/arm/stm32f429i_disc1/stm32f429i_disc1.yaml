@@ -12,3 +12,4 @@ supported:
   - counter
   - i2c
   - spi
+  - display

@@ -12,9 +12,9 @@
 
 #include <errno.h>
 #include <soc.h>
-#include <drivers/watchdog.h>
-#include <sys/printk.h>
-#include <sys/reboot.h>
+#include <zephyr/drivers/watchdog.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/reboot.h>
 
 struct wdog_cmsdk_apb {
 	/* offset: 0x000 (r/w) watchdog load register */

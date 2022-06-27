@@ -9,9 +9,9 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
-#include <sys/cbprintf.h>
+#include <zephyr/sys/cbprintf.h>
 #include <sys/types.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef CONFIG_CBPRINTF_FULL_INTEGRAL
 typedef intmax_t int_value_type;

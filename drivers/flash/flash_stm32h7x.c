@@ -6,12 +6,12 @@
 
 #define DT_DRV_COMPAT st_stm32h7_flash_controller
 
-#include <sys/util.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <string.h>
-#include <drivers/flash.h>
-#include <init.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include <stm32h7xx_ll_bus.h>
 #include <stm32h7xx_ll_utils.h>
@@ -21,7 +21,7 @@
 
 #define LOG_DOMAIN flash_stm32h7
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #define STM32H7_FLASH_MAX_ERASE_TIME    4000
@@ -449,6 +449,11 @@ static void flash_stm32h7_flush_caches(const struct device *dev,
 				       off_t offset, size_t len)
 {
 	ARG_UNUSED(dev);
+
+	if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
+		return; /* Cache not enabled */
+	}
+
 	SCB_InvalidateDCache_by_Addr((uint32_t *)(CONFIG_FLASH_BASE_ADDRESS
 						  + offset), len);
 }
@@ -694,4 +699,4 @@ static int stm32h7_flash_init(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, stm32h7_flash_init, NULL,
 		    &flash_data, NULL, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_stm32h7_api);
+		    CONFIG_FLASH_INIT_PRIORITY, &flash_stm32h7_api);

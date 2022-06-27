@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
 #include <ztest_assert.h>
-#include <sys/sem.h>
-#include <net/socket.h>
-#include <net/dns_resolve.h>
-#include <net/buf.h>
+#include <zephyr/sys/sem.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/buf.h>
 
 #include "../../socket_helpers.h"
 
@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #define ANY_PORT 0
 #define MAX_BUF_SIZE 128
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define THREAD_PRIORITY K_PRIO_COOP(2)
 #define WAIT_TIME K_MSEC(250)
 

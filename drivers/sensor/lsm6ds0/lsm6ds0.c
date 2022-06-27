@@ -10,13 +10,13 @@
 
 #define DT_DRV_COMPAT st_lsm6ds0
 
-#include <drivers/sensor.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 #include "lsm6ds0.h"
 
@@ -251,7 +251,7 @@ static inline void lsm6ds0_accel_convert(struct sensor_value *val, int raw_val,
 {
 	double dval;
 
-	dval = (double)(raw_val) * scale / 32767.0;
+	dval = (double)(raw_val) * (double)scale / 32767.0;
 	val->val1 = (int32_t)dval;
 	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 }
@@ -308,7 +308,7 @@ static inline void lsm6ds0_gyro_convert(struct sensor_value *val, int raw_val,
 {
 	double dval;
 
-	dval = (double)(raw_val) * numerator / 1000.0 * SENSOR_DEG2RAD_DOUBLE;
+	dval = (double)(raw_val) * (double)numerator / 1000.0 * SENSOR_DEG2RAD_DOUBLE;
 	val->val1 = (int32_t)dval;
 	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 }

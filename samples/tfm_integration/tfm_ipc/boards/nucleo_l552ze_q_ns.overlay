@@ -29,18 +29,18 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x00013000>;
+			reg = <0x00000000 DT_SIZE_K(80)>;
 			read-only;
 		};
 		/* Secure image primary slot */
-		slot0_partition: partition@13000 {
+		slot0_partition: partition@14000 {
 			label = "image-0";
-			reg = <0x00013000 0x0002D000>;
+			reg = <0x00014000 DT_SIZE_K(180)>;
 		};
 		/* Non-secure image primary slot */
-		slot1_partition: partition@40000 {
+		slot1_partition: partition@41000 {
 			label = "image-1";
-			reg = <0x00040000 0x00009000>;
+			reg = <0x00041000 DT_SIZE_K(36)>;
 		};
 		/*
 		 * The flash starting at 0x7F000 and ending at
@@ -48,7 +48,7 @@
 		 */
 		storage_partition: partition@7f000 {
 			label = "storage";
-			reg = <0x0007F000 0x00001000>;
+			reg = <0x0007F000 DT_SIZE_K(4)>;
 		};
 	};
 };

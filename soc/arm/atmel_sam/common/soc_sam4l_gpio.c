@@ -8,7 +8,7 @@
  * module HAL driver.
  */
 
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 #include "soc_gpio.h"
 
 static void configure_common_attr(volatile Gpio *gpio,

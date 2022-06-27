@@ -6,7 +6,7 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -15,6 +15,8 @@
 
 #define SNR_ERROR_THRESH	((float32_t)120)
 #define REL_ERROR_THRESH	(7.0e-6)
+
+ZTEST_SUITE(complexmath_f32, NULL, NULL, NULL, NULL, NULL);
 
 static void test_arm_cmplx_conj_f32(
 	const uint32_t *input1, const uint32_t *ref, size_t length)
@@ -47,9 +49,9 @@ static void test_arm_cmplx_conj_f32(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_cmplx_conj_f32, 3, in_com1, ref_conj, 3);
-DEFINE_TEST_VARIANT3(arm_cmplx_conj_f32, 8, in_com1, ref_conj, 8);
-DEFINE_TEST_VARIANT3(arm_cmplx_conj_f32, 11, in_com1, ref_conj, 11);
+DEFINE_TEST_VARIANT3(complexmath_f32, arm_cmplx_conj_f32, 3, in_com1, ref_conj, 3);
+DEFINE_TEST_VARIANT3(complexmath_f32, arm_cmplx_conj_f32, 8, in_com1, ref_conj, 8);
+DEFINE_TEST_VARIANT3(complexmath_f32, arm_cmplx_conj_f32, 11, in_com1, ref_conj, 11);
 
 static void test_arm_cmplx_dot_prod_f32(
 	const uint32_t *input1, const uint32_t *input2, const uint32_t *ref,
@@ -81,9 +83,12 @@ static void test_arm_cmplx_dot_prod_f32(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(arm_cmplx_dot_prod_f32, 3, in_com1, in_com2, ref_dot_prod_3, 3);
-DEFINE_TEST_VARIANT4(arm_cmplx_dot_prod_f32, 8, in_com1, in_com2, ref_dot_prod_4n, 8);
-DEFINE_TEST_VARIANT4(arm_cmplx_dot_prod_f32, 11, in_com1, in_com2, ref_dot_prod_4n1, 11);
+DEFINE_TEST_VARIANT4(complexmath_f32, arm_cmplx_dot_prod_f32, 3, in_com1, in_com2, ref_dot_prod_3,
+		     3);
+DEFINE_TEST_VARIANT4(complexmath_f32, arm_cmplx_dot_prod_f32, 8, in_com1, in_com2, ref_dot_prod_4n,
+		     8);
+DEFINE_TEST_VARIANT4(complexmath_f32, arm_cmplx_dot_prod_f32, 11, in_com1, in_com2,
+		     ref_dot_prod_4n1, 11);
 
 static void test_arm_cmplx_mag_f32(
 	const uint32_t *input1, const uint32_t *ref, size_t length)
@@ -112,9 +117,9 @@ static void test_arm_cmplx_mag_f32(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_cmplx_mag_f32, 3, in_com1, ref_mag, 3);
-DEFINE_TEST_VARIANT3(arm_cmplx_mag_f32, 8, in_com1, ref_mag, 8);
-DEFINE_TEST_VARIANT3(arm_cmplx_mag_f32, 11, in_com1, ref_mag, 11);
+DEFINE_TEST_VARIANT3(complexmath_f32, arm_cmplx_mag_f32, 3, in_com1, ref_mag, 3);
+DEFINE_TEST_VARIANT3(complexmath_f32, arm_cmplx_mag_f32, 8, in_com1, ref_mag, 8);
+DEFINE_TEST_VARIANT3(complexmath_f32, arm_cmplx_mag_f32, 11, in_com1, ref_mag, 11);
 
 static void test_arm_cmplx_mag_squared_f32(
 	const uint32_t *input1, const uint32_t *ref, size_t length)
@@ -143,9 +148,9 @@ static void test_arm_cmplx_mag_squared_f32(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_cmplx_mag_squared_f32, 3, in_com1, ref_mag_squared, 3);
-DEFINE_TEST_VARIANT3(arm_cmplx_mag_squared_f32, 8, in_com1, ref_mag_squared, 8);
-DEFINE_TEST_VARIANT3(arm_cmplx_mag_squared_f32, 11, in_com1, ref_mag_squared, 11);
+DEFINE_TEST_VARIANT3(complexmath_f32, arm_cmplx_mag_squared_f32, 3, in_com1, ref_mag_squared, 3);
+DEFINE_TEST_VARIANT3(complexmath_f32, arm_cmplx_mag_squared_f32, 8, in_com1, ref_mag_squared, 8);
+DEFINE_TEST_VARIANT3(complexmath_f32, arm_cmplx_mag_squared_f32, 11, in_com1, ref_mag_squared, 11);
 
 static void test_arm_cmplx_mult_cmplx_f32(
 	const uint32_t *input1, const uint32_t *input2, const uint32_t *ref,
@@ -180,9 +185,12 @@ static void test_arm_cmplx_mult_cmplx_f32(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(arm_cmplx_mult_cmplx_f32, 3, in_com1, in_com2, ref_mult_cmplx, 3);
-DEFINE_TEST_VARIANT4(arm_cmplx_mult_cmplx_f32, 8, in_com1, in_com2, ref_mult_cmplx, 8);
-DEFINE_TEST_VARIANT4(arm_cmplx_mult_cmplx_f32, 11, in_com1, in_com2, ref_mult_cmplx, 11);
+DEFINE_TEST_VARIANT4(complexmath_f32, arm_cmplx_mult_cmplx_f32, 3, in_com1, in_com2, ref_mult_cmplx,
+		     3);
+DEFINE_TEST_VARIANT4(complexmath_f32, arm_cmplx_mult_cmplx_f32, 8, in_com1, in_com2, ref_mult_cmplx,
+		     8);
+DEFINE_TEST_VARIANT4(complexmath_f32, arm_cmplx_mult_cmplx_f32, 11, in_com1, in_com2,
+		     ref_mult_cmplx, 11);
 
 static void test_arm_cmplx_mult_real_f32(
 	const uint32_t *input1, const uint32_t *input2, const uint32_t *ref,
@@ -219,32 +227,9 @@ static void test_arm_cmplx_mult_real_f32(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(arm_cmplx_mult_real_f32, 3, in_com1, in_com3, ref_mult_real, 3);
-DEFINE_TEST_VARIANT4(arm_cmplx_mult_real_f32, 8, in_com1, in_com3, ref_mult_real, 8);
-DEFINE_TEST_VARIANT4(arm_cmplx_mult_real_f32, 11, in_com1, in_com3, ref_mult_real, 11);
-
-void test_complexmath_f32(void)
-{
-	ztest_test_suite(complexmath_f32,
-		ztest_unit_test(test_arm_cmplx_conj_f32_3),
-		ztest_unit_test(test_arm_cmplx_conj_f32_8),
-		ztest_unit_test(test_arm_cmplx_conj_f32_11),
-		ztest_unit_test(test_arm_cmplx_dot_prod_f32_3),
-		ztest_unit_test(test_arm_cmplx_dot_prod_f32_8),
-		ztest_unit_test(test_arm_cmplx_dot_prod_f32_11),
-		ztest_unit_test(test_arm_cmplx_mag_f32_3),
-		ztest_unit_test(test_arm_cmplx_mag_f32_8),
-		ztest_unit_test(test_arm_cmplx_mag_f32_11),
-		ztest_unit_test(test_arm_cmplx_mag_squared_f32_3),
-		ztest_unit_test(test_arm_cmplx_mag_squared_f32_8),
-		ztest_unit_test(test_arm_cmplx_mag_squared_f32_11),
-		ztest_unit_test(test_arm_cmplx_mult_cmplx_f32_3),
-		ztest_unit_test(test_arm_cmplx_mult_cmplx_f32_8),
-		ztest_unit_test(test_arm_cmplx_mult_cmplx_f32_11),
-		ztest_unit_test(test_arm_cmplx_mult_real_f32_3),
-		ztest_unit_test(test_arm_cmplx_mult_real_f32_8),
-		ztest_unit_test(test_arm_cmplx_mult_real_f32_11)
-		);
-
-	ztest_run_test_suite(complexmath_f32);
-}
+DEFINE_TEST_VARIANT4(complexmath_f32, arm_cmplx_mult_real_f32, 3, in_com1, in_com3, ref_mult_real,
+		     3);
+DEFINE_TEST_VARIANT4(complexmath_f32, arm_cmplx_mult_real_f32, 8, in_com1, in_com3, ref_mult_real,
+		     8);
+DEFINE_TEST_VARIANT4(complexmath_f32, arm_cmplx_mult_real_f32, 11, in_com1, in_com3, ref_mult_real,
+		     11);

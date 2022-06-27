@@ -1,0 +1,28 @@
+# Copyright (c) 2022 Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LWM2M_UCIFI_SUPPORT
+	bool "uCIFI Alliance Object Support"
+	help
+	  This option adds general support for uCIFI objects
+
+if LWM2M_UCIFI_SUPPORT
+
+menuconfig LWM2M_UCIFI_BATTERY
+	bool "uCIFI Battery (3411) Monitor Support"
+	help
+	  The uCIFI battery object provides attributes to monitor battery
+	  level and activity.
+
+if LWM2M_UCIFI_BATTERY
+
+config LWM2M_UCIFI_BATTERY_INSTANCE_COUNT
+	int "Maximum # of uCIFI Battery object instances"
+	default 1
+	help
+	  This setting establishes the total count of uCIFI Battery
+	  instances available to the LWM2M client.
+
+endif # LWM2M_UCIFI_BATTERY
+
+endif # LWM2M_UCIFI_SUPPORT

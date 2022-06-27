@@ -11,8 +11,8 @@
  * context switch.
  */
 
-#include <zephyr.h>
-#include <timing/timing.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/timing/timing.h>
 #include <stdlib.h>
 #include "timestamp.h"
 #include "utils.h" /* PRINT () and other macros */
@@ -22,7 +22,7 @@
 
 static uint32_t helper_thread_iterations;
 
-#define Y_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define Y_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define Y_PRIORITY K_PRIO_PREEMPT(10)
 
 K_THREAD_STACK_DEFINE(y_stack_area, Y_STACK_SIZE);
@@ -30,8 +30,6 @@ static struct k_thread y_thread;
 
 /**
  * @brief Helper thread for measuring thread switch latency using yield
- *
- * @return N/A
  */
 void yielding_thread(void *arg1, void *arg2, void *arg3)
 {
@@ -43,8 +41,6 @@ void yielding_thread(void *arg1, void *arg2, void *arg3)
 
 /**
  * @brief Entry point for thread context switch using yield test
- *
- * @return N/A
  */
 void thread_switch_yield(void)
 {

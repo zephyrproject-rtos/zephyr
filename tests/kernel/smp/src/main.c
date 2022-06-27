@@ -4,24 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <tc_util.h>
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 
 #if CONFIG_MP_NUM_CPUS < 2
 #error SMP test requires at least two CPUs!
 #endif
 
-#define T2_STACK_SIZE (2048 + CONFIG_TEST_EXTRA_STACKSIZE)
-#define STACK_SIZE (384 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define T2_STACK_SIZE (2048 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define STACK_SIZE (384 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define DELAY_US 50000
 #define TIMEOUT 1000
 #define EQUAL_PRIORITY 1
 #define TIME_SLICE_MS 500
 #define THREAD_DELAY 1
+#define SLEEP_MS_LONG 15000
 
 struct k_thread t2;
 K_THREAD_STACK_DEFINE(t2_stack, T2_STACK_SIZE);
@@ -51,6 +52,9 @@ static struct k_thread tthread[THREADS_NUM];
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREADS_NUM, STACK_SIZE);
 
 static volatile int thread_started[THREADS_NUM - 1];
+
+static struct k_poll_signal tsignal[THREADS_NUM];
+static struct k_poll_event tevent[THREADS_NUM];
 
 static int curr_cpu(void)
 {
@@ -494,8 +498,8 @@ static void thread_get_cpu_entry(void *p1, void *p2, void *p3)
  * Test Objective:
  * - To verify architecture layer provides a mechanism to return a pointer to the
  *   current kernel CPU record of the running CPU.
- *   We call arch_curr_cpu() and get it's member, both in main and spwaned thread
- *   speratively, and compare them. They shall be different in SMP enviornment.
+ *   We call arch_curr_cpu() and get its member, both in main and spawned thread
+ *   separately, and compare them. They shall be different in SMP environment.
  *
  * Testing techniques:
  * - Interface testing, function and block box testing,
@@ -752,7 +756,7 @@ static void t2_mutex_lock(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test scenairo that a thread release the global lock
+ * @brief Test scenario that a thread release the global lock
  *
  * @ingroup kernel_smp_tests
  *
@@ -923,11 +927,11 @@ static int run_concurrency(int type, void *func)
  * @ingroup kernel_smp_tests
  *
  * @details Validate the global lock and unlock API of SMP are thread-safe.
- * We make 3 thread to increase the global count in differenet cpu and
+ * We make 3 thread to increase the global count in different cpu and
  * they both do locking then unlocking for LOOP_COUNT times. It shall be no
  * deadlock happened and total global count shall be 3 * LOOP COUNT.
  *
- * We show the 4 kinds of scenairo:
+ * We show the 4 kinds of scenario:
  * - No any lock used
  * - Use global irq lock
  * - Use semaphore
@@ -946,6 +950,65 @@ void test_inc_concurrency(void)
 	/* increasing global var with irq lock */
 	zassert_true(run_concurrency(LOCK_MUTEX, inc_global_cnt),
 			"total count %d is wrong(M)", global_cnt);
+}
+
+/**
+ * @brief Torture test for context switching code
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details Leverage the polling API to stress test the context switching code.
+ *          This test will hammer all the CPUs with thread swapping requests.
+ */
+static void process_events(void *arg0, void *arg1, void *arg2)
+{
+	uintptr_t id = (uintptr_t) arg0;
+
+	while (1) {
+		k_poll(&tevent[id], 1, K_FOREVER);
+
+		if (tevent[id].signal->result != 0x55) {
+			ztest_test_fail();
+		}
+
+		tevent[id].signal->signaled = 0;
+		tevent[id].state = K_POLL_STATE_NOT_READY;
+
+		k_poll_signal_reset(&tsignal[id]);
+	}
+}
+
+static void signal_raise(void *arg0, void *arg1, void *arg2)
+{
+	while (1) {
+		for (uintptr_t i = 0; i < THREADS_NUM; i++) {
+			k_poll_signal_raise(&tsignal[i], 0x55);
+		}
+	}
+}
+
+void test_smp_switch_torture(void)
+{
+	for (uintptr_t i = 0; i < THREADS_NUM; i++) {
+		k_poll_signal_init(&tsignal[i]);
+		k_poll_event_init(&tevent[i], K_POLL_TYPE_SIGNAL,
+				  K_POLL_MODE_NOTIFY_ONLY, &tsignal[i]);
+
+		k_thread_create(&tthread[i], tstack[i], STACK_SIZE,
+				(k_thread_entry_t) process_events,
+				(void *) i, NULL, NULL, K_PRIO_PREEMPT(i + 1),
+				K_INHERIT_PERMS, K_NO_WAIT);
+	}
+
+	k_thread_create(&t2, t2_stack, T2_STACK_SIZE, signal_raise,
+			NULL, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
+
+	k_sleep(K_MSEC(SLEEP_MS_LONG));
+
+	k_thread_abort(&t2);
+	for (uintptr_t i = 0; i < THREADS_NUM; i++) {
+		k_thread_abort(&tthread[i]);
+	}
 }
 
 void test_main(void)
@@ -969,7 +1032,8 @@ void test_main(void)
 			 ztest_unit_test(test_fatal_on_smp),
 			 ztest_unit_test(test_workq_on_smp),
 			 ztest_unit_test(test_smp_release_global_lock),
-			 ztest_unit_test(test_inc_concurrency)
+			 ztest_unit_test(test_inc_concurrency),
+			 ztest_unit_test(test_smp_switch_torture)
 			 );
 	ztest_run_test_suite(smp);
 }

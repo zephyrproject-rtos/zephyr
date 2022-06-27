@@ -9,10 +9,10 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_ISL29035_ISL29035_H_
 #define ZEPHYR_DRIVERS_SENSOR_ISL29035_ISL29035_H_
 
-#include <device.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
 
 #define ISL29035_I2C_ADDRESS		DT_INST_REG_ADDR(0)
 

@@ -15,8 +15,9 @@
 #define __DSP_PRESENT             1U        /* DSP extension present */
 #define __MVE_PRESENT             1U        /* MVE extensions present */
 #define __MVE_FP                  1U        /* MVE floating point present */
+#define __ICACHE_PRESENT          1U        /* ICACHE present */
+#define __DCACHE_PRESENT          1U        /* DCACHE present */
 #endif
 
-#include <devicetree.h>
 
 #endif /* _SOC_H_ */

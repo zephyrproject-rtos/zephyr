@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <soc.h>
-#include <arch/arm/aarch32/mpu/nxp_mpu.h>
+#include <zephyr/arch/arm/aarch32/mpu/nxp_mpu.h>
 
 static const struct nxp_mpu_region mpu_regions[] = {
 	/* Region 0 */

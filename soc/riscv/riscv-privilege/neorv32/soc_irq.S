@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 GTEXT(__soc_handle_irq)
 
@@ -25,4 +25,4 @@ SECTION_FUNC(exception.other, __soc_handle_irq)
 	csrrs t2, mie, t1
 
 	/* Return */
-	jalr x0, ra
+	ret

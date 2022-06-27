@@ -12,7 +12,7 @@
  *
  * Most users will be normally unaware of this file existence, unless they have
  * a link issue in which their POSIX functions calls are reported in errors (as
- * zap_<origian_func_name>).
+ * zap_<original_func_name>).
  * If you do see a link error telling you that zap_something is undefined, it is
  * likely that you forgot to select the corresponding Zephyr POSIX API.
  *

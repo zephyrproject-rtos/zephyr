@@ -49,7 +49,8 @@
 		};
 
 		sram1: memory@21000000 {
-			compatible = "mmio-sram";
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "SRAM1";
 		};
 
 		clock: clock@41005000 {
@@ -73,6 +74,9 @@
 			interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
 			dfe-supported;
+			ieee802154-supported;
+			ble-2mbps-supported;
+			ble-coded-phy-supported;
 		};
 
 		rng: random@41009000 {
@@ -92,7 +96,7 @@
 		};
 
 		wdt: wdt0: watchdog@4100b000 {
-			compatible = "nordic,nrf-watchdog";
+			compatible = "nordic,nrf-wdt";
 			reg = <0x4100b000 0x1000>;
 			interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
@@ -115,6 +119,14 @@
 			interrupts = <13 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
 			label = "ECB";
+		};
+
+		ccm: ccm@4100e000 {
+			compatible = "nordic,nrf-ccm";
+			reg = <0x4100e000 0x1000>;
+			interrupts = <14 NRF_DEFAULT_IRQ_PRIORITY>;
+			length-field-length-8-bits;
+			status = "okay";
 		};
 
 		dppic: dppic@4100f000 {
@@ -141,12 +153,14 @@
 			label = "RTC_0";
 		};
 
-		ipc: ipc@41012000 {
-			compatible = "nordic,nrf-ipc";
+		mbox: ipc: mbox@41012000 {
+			compatible = "nordic,mbox-nrf-ipc", "nordic,nrf-ipc";
 			reg = <0x41012000 0x1000>;
+			tx-mask = <0x0000ffff>;
+			rx-mask = <0x0000ffff>;
 			interrupts = <18 NRF_DEFAULT_IRQ_PRIORITY>;
+			#mbox-cells = <1>;
 			status = "okay";
-			label = "IPC";
 		};
 
 		i2c0: i2c@41013000 {
@@ -156,6 +170,7 @@
 			 * compatible = "nordic,nrf-twim" or
 			 *              "nordic,nrf-twis".
 			 */
+			compatible = "nordic,nrf-twim";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x41013000 0x1000>;
@@ -172,6 +187,7 @@
 			 * compatible = "nordic,nrf-spim" or
 			 *              "nordic,nrf-spis".
 			 */
+			compatible = "nordic,nrf-spim";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x41013000 0x1000>;
@@ -225,9 +241,44 @@
 			label = "TIMER2";
 		};
 
+		swi0: swi@4101a000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x4101a000 0x1000>;
+			interrupts = <26 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		swi1: swi@4101b000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x4101b000 0x1000>;
+			interrupts = <27 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		swi2: swi@4101c000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x4101c000 0x1000>;
+			interrupts = <28 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		swi3: swi@4101d000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x4101d000 0x1000>;
+			interrupts = <29 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		acl: acl@41080000 {
+			compatible = "nordic,nrf-acl";
+			reg = <0x41080000 0x1000>;
+			status = "okay";
+		};
+
 		flash_controller: flash-controller@41080000 {
 			compatible = "nordic,nrf53-flash-controller";
 			reg = <0x41080000 0x1000>;
+			partial-erase;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -267,6 +318,18 @@
 			label = "GPIO_1";
 			status = "disabled";
 			port = <1>;
+		};
+	};
+
+	/* Default IPC description */
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram0_shared>;
+			mboxes = <&mbox 0>, <&mbox 1>;
+			mbox-names = "rx", "tx";
+			role = "remote";
+			status = "okay";
 		};
 	};
 };

@@ -6,7 +6,7 @@
 config SPI_XEC_QMSPI
 	bool "Microchip XEC QMSPI driver"
 	default y
-	depends on SOC_FAMILY_MEC
+	depends on SOC_SERIES_MEC1501X
 	select DMA if SPI_ASYNC
 	help
 	  Enable support for the Microchip XEC QMSPI driver.

@@ -18,19 +18,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 
-#include <linker/linker-defs.h>
-#include <logging/log.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
-#include <sys/mem_manage.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/mem_manage.h>
 
-#include <arch/arm/aarch32/cortex_a_r/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_a_r/cmsis.h>
 
-#include <arch/arm/aarch32/mmu/arm_mmu.h>
+#include <zephyr/arch/arm/aarch32/mmu/arm_mmu.h>
 #include "arm_mmu_priv.h"
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -1090,5 +1090,3 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 	}
 	return rc;
 }
-
-/* EOF */

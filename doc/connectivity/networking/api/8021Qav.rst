@@ -1,0 +1,109 @@
+.. _8021Qav:
+
+IEEE 802.1Qav
+#############
+
+Overview
+********
+
+Credit-based shaping is an alternative scheduling algorithm used in
+network schedulers to achieve fairness when sharing a limited network
+resource.  Zephyr has support for configuring a credit-based shaper
+described in the `IEEE 802.1Qav-2009 standard`_. Zephyr does not
+implement the actual shaper; it only provides a way to configure the
+shaper implemented by the Ethernet device driver.
+
+Enabling 802.1Qav
+*****************
+
+To enable 802.1Qav shaper, the Ethernet device driver must declare
+that it supports credit-based shaping. The Ethernet driver's capability
+function must return ``ETHERNET_QAV`` value for this purpose. Typically
+also priority queues ``ETHERNET_PRIORITY_QUEUES`` need to be supported.
+
+.. code-block:: none
+
+	static enum ethernet_hw_caps eth_get_capabilities(const struct device *dev)
+	{
+		ARG_UNUSED(dev);
+
+		return ETHERNET_QAV | ETHERNET_PRIORITY_QUEUES |
+		       ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE_T |
+		       ETHERNET_LINK_100BASE_T;
+	}
+
+See ``sam-e70-xplained`` board Ethernet driver
+:zephyr_file:`drivers/ethernet/eth_sam_gmac.c` for an example.
+
+Configuring 802.1Qav
+********************
+
+The application can configure the credit-based shaper like this:
+
+.. code-block:: c
+
+	#include <zephyr/net/net_if.h>
+	#include <zephyr/net/ethernet.h>
+	#include <zephyr/net/ethernet_mgmt.h>
+
+	static void qav_set_status(struct net_if *iface,
+	                           int queue_id, bool enable)
+	{
+		struct ethernet_req_params params;
+		int ret;
+
+		memset(&params, 0, sizeof(params));
+
+		params.qav_param.queue_id = queue_id;
+		params.qav_param.enabled = enable;
+		params.qav_param.type = ETHERNET_QAV_PARAM_TYPE_STATUS;
+
+		/* Disable or enable Qav for a queue */
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_PARAM,
+			       iface, &params,
+			       sizeof(struct ethernet_req_params));
+		if (ret) {
+			LOG_ERR("Cannot %s Qav for queue %d for interface %p",
+			        enable ? "enable" : "disable",
+			        queue_id, iface);
+		}
+	}
+
+	static void qav_set_bandwidth_and_slope(struct net_if *iface,
+	                                        int queue_id,
+	                                        unsigned int bandwidth,
+	                                        unsigned int idle_slope)
+	{
+		struct ethernet_req_params params;
+		int ret;
+
+		memset(&params, 0, sizeof(params));
+
+		params.qav_param.queue_id = queue_id;
+		params.qav_param.delta_bandwidth = bandwidth;
+		params.qav_param.type = ETHERNET_QAV_PARAM_TYPE_DELTA_BANDWIDTH;
+
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_PARAM,
+			       iface, &params,
+			       sizeof(struct ethernet_req_params));
+		if (ret) {
+			LOG_ERR("Cannot set Qav delta bandwidth %u for "
+			        "queue %d for interface %p",
+			        bandwidth, queue_id, iface);
+		}
+
+		params.qav_param.idle_slope = idle_slope;
+		params.qav_param.type = ETHERNET_QAV_PARAM_TYPE_IDLE_SLOPE;
+
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_PARAM,
+			       iface, &params,
+			       sizeof(struct ethernet_req_params));
+		if (ret) {
+			LOG_ERR("Cannot set Qav idle slope %u for "
+			        "queue %d for interface %p",
+			        idle_slope, queue_id, iface);
+		}
+	}
+
+.. _IEEE 802.1Qav-2009 standard:
+   https://standards.ieee.org/standard/802_1Qav-2009.html

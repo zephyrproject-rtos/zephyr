@@ -6,8 +6,8 @@
 
 #ifdef CONFIG_BT_MICS_CLIENT
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/audio/mics.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/mics.h>
 
 #include "common.h"
 
@@ -21,7 +21,6 @@ static struct bt_mics *mics;
 static struct bt_mics_included mics_included;
 static volatile bool g_bt_init;
 static volatile bool g_is_connected;
-static volatile bool g_mtu_exchanged;
 static volatile bool g_discovery_complete;
 static volatile bool g_write_complete;
 
@@ -37,7 +36,6 @@ static volatile uint8_t g_aics_gain_min;
 static volatile bool g_aics_active = true;
 static char g_aics_desc[AICS_DESC_SIZE];
 static volatile bool g_cb;
-static struct bt_conn *g_conn;
 
 static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 			  uint8_t mute, uint8_t mode)
@@ -184,17 +182,6 @@ static struct bt_mics_cb mics_cbs = {
 	}
 };
 
-static void mtu_cb(struct bt_conn *conn, uint8_t err,
-		   struct bt_gatt_exchange_params *params)
-{
-	if (err != 0) {
-		FAIL("Failed to exchange MTU (%u)\n", err);
-		return;
-	}
-
-	g_mtu_exchanged = true;
-}
-
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -202,12 +189,13 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0) {
+		bt_conn_unref(default_conn);
+		default_conn = NULL;
 		FAIL("Failed to connect to %s (%u)\n", addr, err);
 		return;
 	}
 
 	printk("Connected to %s\n", addr);
-	g_conn = conn;
 	g_is_connected = true;
 }
 
@@ -242,7 +230,7 @@ static int test_aics(void)
 		FAIL("Could not get AICS client conn (err %d)\n", err);
 		return err;
 	}
-	if (cached_conn != g_conn) {
+	if (cached_conn != default_conn) {
 		FAIL("Cached conn was not the conn used to discover");
 		return -ENOTCONN;
 	}
@@ -254,7 +242,7 @@ static int test_aics(void)
 		FAIL("Could not get AICS state (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("AICS state get\n");
 
 	printk("Getting AICS gain setting\n");
@@ -264,7 +252,7 @@ static int test_aics(void)
 		FAIL("Could not get AICS gain setting (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("AICS gain setting get\n");
 
 	printk("Getting AICS input type\n");
@@ -276,7 +264,7 @@ static int test_aics(void)
 		return err;
 	}
 	/* Expect and wait for input_type from init */
-	WAIT_FOR(g_cb && expected_input_type == g_aics_input_type);
+	WAIT_FOR_COND(g_cb && expected_input_type == g_aics_input_type);
 	printk("AICS input type get\n");
 
 	printk("Getting AICS status\n");
@@ -286,7 +274,7 @@ static int test_aics(void)
 		FAIL("Could not get AICS status (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("AICS status get\n");
 
 	printk("Getting AICS description\n");
@@ -296,7 +284,7 @@ static int test_aics(void)
 		FAIL("Could not get AICS description (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("AICS description get\n");
 
 	printk("Setting AICS mute\n");
@@ -307,7 +295,7 @@ static int test_aics(void)
 		FAIL("Could not set AICS mute (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_aics_input_mute == expected_input_mute &&
+	WAIT_FOR_COND(g_aics_input_mute == expected_input_mute &&
 		 g_cb && g_write_complete);
 	printk("AICS mute set\n");
 
@@ -319,7 +307,7 @@ static int test_aics(void)
 		FAIL("Could not set AICS unmute (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_aics_input_mute == expected_input_mute &&
+	WAIT_FOR_COND(g_aics_input_mute == expected_input_mute &&
 		 g_cb && g_write_complete);
 	printk("AICS unmute set\n");
 
@@ -331,7 +319,7 @@ static int test_aics(void)
 		FAIL("Could not set AICS auto mode (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_aics_mode == expected_mode && g_cb && g_write_complete);
+	WAIT_FOR_COND(g_aics_mode == expected_mode && g_cb && g_write_complete);
 	printk("AICS auto mode set\n");
 
 	printk("Setting AICS manual mode\n");
@@ -342,7 +330,7 @@ static int test_aics(void)
 		FAIL("Could not set AICS manual mode (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_aics_mode == expected_mode && g_cb && g_write_complete);
+	WAIT_FOR_COND(g_aics_mode == expected_mode && g_cb && g_write_complete);
 	printk("AICS manual mode set\n");
 
 	printk("Setting AICS gain\n");
@@ -353,7 +341,7 @@ static int test_aics(void)
 		FAIL("Could not set AICS gain (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_aics_gain == expected_gain && g_cb && g_write_complete);
+	WAIT_FOR_COND(g_aics_gain == expected_gain && g_cb && g_write_complete);
 	printk("AICS gain set\n");
 
 	printk("Setting AICS Description\n");
@@ -367,7 +355,7 @@ static int test_aics(void)
 		FAIL("Could not set AICS Description (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb &&
+	WAIT_FOR_COND(g_cb &&
 		 strncmp(expected_aics_desc, g_aics_desc, sizeof(expected_aics_desc) == 0));
 	printk("AICS Description set\n");
 
@@ -379,7 +367,6 @@ static void test_main(void)
 {
 	int err;
 	uint8_t expected_mute;
-	static struct bt_gatt_exchange_params mtu_params = { .func = mtu_cb };
 	struct bt_conn *cached_conn;
 
 	err = bt_enable(bt_ready);
@@ -391,7 +378,7 @@ static void test_main(void)
 
 	bt_mics_client_cb_register(&mics_cbs);
 
-	WAIT_FOR(g_bt_init);
+	WAIT_FOR_COND(g_bt_init);
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 	if (err != 0) {
@@ -399,19 +386,13 @@ static void test_main(void)
 		return;
 	}
 	printk("Scanning successfully started\n");
-	WAIT_FOR(g_is_connected);
+	WAIT_FOR_COND(g_is_connected);
 
-	err = bt_gatt_exchange_mtu(g_conn, &mtu_params);
-	if (err != 0) {
-		FAIL("Failed to exchange MTU %d", err);
-	}
-	WAIT_FOR(g_mtu_exchanged);
-
-	err = bt_mics_discover(g_conn, &mics);
+	err = bt_mics_discover(default_conn, &mics);
 	if (err != 0) {
 		FAIL("Failed to discover MICS %d", err);
 	}
-	WAIT_FOR(g_discovery_complete);
+	WAIT_FOR_COND(g_discovery_complete);
 
 	err = bt_mics_included_get(mics, &mics_included);
 	if (err != 0) {
@@ -425,7 +406,7 @@ static void test_main(void)
 		FAIL("Failed to get MICS client conn (err %d)\n", err);
 		return;
 	}
-	if (cached_conn != g_conn) {
+	if (cached_conn != default_conn) {
 		FAIL("Cached conn was not the conn used to discover");
 		return;
 	}
@@ -437,7 +418,7 @@ static void test_main(void)
 		FAIL("Could not get MICS mute state (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("MICS mute state received\n");
 
 	printk("Muting MICS\n");
@@ -448,7 +429,7 @@ static void test_main(void)
 		FAIL("Could not mute MICS (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR(g_mute == expected_mute && g_cb && g_write_complete);
+	WAIT_FOR_COND(g_mute == expected_mute && g_cb && g_write_complete);
 	printk("MICS muted\n");
 
 	printk("Unmuting MICS\n");
@@ -459,7 +440,7 @@ static void test_main(void)
 		FAIL("Could not unmute MICS (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR(g_mute == expected_mute && g_cb && g_write_complete);
+	WAIT_FOR_COND(g_mute == expected_mute && g_cb && g_write_complete);
 	printk("MICS unmuted\n");
 
 	if (CONFIG_BT_MICS_CLIENT_MAX_AICS_INST > 0 && g_aics_count > 0) {

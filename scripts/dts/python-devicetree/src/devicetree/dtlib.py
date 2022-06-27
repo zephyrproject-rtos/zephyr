@@ -664,6 +664,10 @@ class _Token(NamedTuple):
     id: int
     val: _TokVal
 
+    def __repr__(self):
+        id_repr = _T(self.id).name
+        return f'Token(id=_T.{id_repr}, val={repr(self.val)})'
+
 class DT:
     """
     Represents a devicetree parsed from a .dts file (or from many files, if the
@@ -1958,9 +1962,9 @@ def _init_tokens():
     # _Token.val is based on the captured string.
     token_spec = {
         _T.INCLUDE: r'(/include/\s*"(?:[^\\"]|\\.)*")',
-        # #line directive
+        # #line directive or GCC linemarker
         _T.LINE:
-        r'^#(?:line)?[ \t]+([0-9]+[ \t]+"(?:[^\\"]|\\.)*")(?:[ \t]+[0-9]+)?',
+        r'^#(?:line)?[ \t]+([0-9]+[ \t]+"(?:[^\\"]|\\.)*")(?:[ \t]+[0-9]+){0,4}',
 
         _T.STRING: r'"((?:[^\\"]|\\.)*)"',
         _T.DTS_V1: r"(/dts-v1/)",

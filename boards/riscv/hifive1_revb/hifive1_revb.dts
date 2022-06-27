@@ -3,8 +3,9 @@
 
 /dts-v1/;
 
-#include <riscv32-fe310.dtsi>
-#include <dt-bindings/i2c/i2c.h>
+#include <sifive/riscv32-fe310.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include "hifive1_revb-pinctrl.dtsi"
 
 / {
 	model = "SiFive HiFive 1 Rev B";
@@ -70,6 +71,11 @@
 	};
 };
 
+&coreclk {
+	clock-frequency = <DT_FREQ_M(16)>;
+	status = "okay";
+};
+
 &gpio0 {
 	status = "okay";
 };
@@ -77,18 +83,17 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	clock-frequency = <16000000>;
+	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
+	pinctrl-names = "default";
 };
 
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
-	clock-frequency = <16000000>;
 };
 
 &spi0 {
 	status = "okay";
-	clock-frequency = <16000000>;
 
 	reg = <0x10014000 0x1000 0x20010000 0x3c0900>;
 	flash0: flash@0 {
@@ -103,32 +108,38 @@
 
 &spi1 {
 	status = "okay";
-	clock-frequency = <16000000>;
+	pinctrl-0 = <&spi1_cs0_default
+		     &spi1_mosi_default
+		     &spi1_miso_default
+		     &spi1_sck_default>;
+	pinctrl-names = "default";
 };
 
 &spi2 {
 	status = "okay";
-	clock-frequency = <16000000>;
+	pinctrl-0 = <&spi1_cs2_default
+		     &spi1_mosi_default
+		     &spi1_miso_default
+		     &spi1_sck_default>;
+	pinctrl-names = "default";
 };
 
 &pwm0 {
 	status = "okay";
-	clock-frequency = <16000000>;
 };
 
 &pwm1 {
 	status = "okay";
-	clock-frequency = <16000000>;
 };
 
 &pwm2 {
 	status = "okay";
-	clock-frequency = <16000000>;
 };
 
 arduino_i2c: &i2c0 {
 	status = "okay";
 	label = "I2C_0";
-	input-frequency = <16000000>;
 	clock-frequency = <100000>;
+	pinctrl-0 = <&i2c0_0_default &i2c0_1_default>;
+	pinctrl-names = "default";
 };

@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 #define DT_DRV_COMPAT	fakedriver
 

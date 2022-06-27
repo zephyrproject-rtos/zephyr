@@ -22,11 +22,11 @@
 	leds {
 		compatible = "gpio-leds";
 		red_led: led_1 {
-			gpios = <&gpioc 2 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};
 		green_led: led_2 {
-			gpios = <&gpioc 3 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
 	};
@@ -48,6 +48,10 @@
 
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&clk_lse {
 	status = "okay";
 };
 
@@ -74,17 +78,20 @@
 
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &uart7 {
 	pinctrl-0 = <&uart7_tx_pf7 &uart7_rx_pf6>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 };
 
 &i2c4 {
 	pinctrl-0 = <&i2c4_scl_pf14 &i2c4_sda_pf15>;
+	pinctrl-names = "default";
 };
 
 &mac {
@@ -97,6 +104,7 @@
 		     &eth_tx_en_pb11
 		     &eth_txd0_pb12
 		     &eth_txd1_pb13>;
+	pinctrl-names = "default";
 };
 
 &sdmmc1 {
@@ -106,5 +114,10 @@
 		     &sdmmc1_d3_pc11
 		     &sdmmc1_ck_pc12
 		     &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
 	cd-gpios = <&gpiof 5 GPIO_ACTIVE_LOW>;
+};
+
+&lptim1 {
+	status = "okay";
 };

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 __weak void *__dso_handle;
 

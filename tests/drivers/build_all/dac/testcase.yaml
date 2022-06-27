@@ -5,7 +5,7 @@ tests:
   drivers.dac.spi.build:
     platform_allow: native_posix
     tags: dac_dacx0508
-    extra_args: "CONFIG_SPI=y CONFIG_DAC_DACX0508=y"
+    extra_args: "CONFIG_GPIO=y CONFIG_SPI=y CONFIG_DAC_DACX0508=y"
   drivers.dac.i2c.build:
     platform_allow: native_posix
     tags: dac_dacx3608 dac_mcp4725

@@ -35,8 +35,6 @@ struct webusb_req_handlers {
  * for handling requests.
  *
  * @param [in] handlers Pointer to WebUSB request handlers structure
- *
- * @return N/A
  */
 void webusb_register_request_handlers(struct webusb_req_handlers *handlers);
 

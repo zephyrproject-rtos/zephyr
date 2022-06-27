@@ -6,7 +6,7 @@
 
 #include <ztest_assert.h>
 
-#include <net/socket.h>
+#include <zephyr/net/socket.h>
 
 #define clear_buf(buf) memset(buf, 0, sizeof(buf))
 

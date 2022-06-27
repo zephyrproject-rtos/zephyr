@@ -12,19 +12,14 @@
 #include <kernel_internal.h>
 
 /**
- *
  * @brief Prepare to and run C code
  *
  * This routine prepares for the execution of and runs C code.
- *
- * @return N/A
  */
 
 void _PrepC(void)
 {
-#ifdef CONFIG_XIP
 	z_data_copy();
-#endif
 	z_cstart();
 	CODE_UNREACHABLE;
 }

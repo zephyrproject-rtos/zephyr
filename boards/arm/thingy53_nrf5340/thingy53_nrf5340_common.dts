@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "thingy53_nrf5340_common-pinctrl.dtsi"
 
 / {
 	chosen {
@@ -11,6 +12,7 @@
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
+		zephyr,bt-hci-rpmsg-ipc = &ipc0;
 	};
 
 	buttons {
@@ -44,19 +46,28 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		red_led_pwm: led_pwm_0 {
-			pwms = <&pwm0 40>;
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "Red PWM LED";
 		};
 
 		green_led_pwm: led_pwm_1 {
-			pwms = <&pwm0 38>;
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "Green PWM LED";
 		};
 
 		blue_led_pwm: led_pwm_2 {
-			pwms = <&pwm0 39>;
+			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "Blue PWM LED";
 		};
+	};
+
+	npm1100_force_pwm_mode: npm1100_force_pwm_mode {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "npm1100_force_pwm_mode";
+		regulator-name = "npm1100_force_pwm_mode";
+		enable-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+		regulator-boot-on;
 	};
 
 	vbatt {
@@ -83,12 +94,15 @@
 		regulator-boot-on;
 	};
 
-	nrf21540fem_ctrl: nrf21540fem-ctrl {
-		compatible = "nordic,nrf21540-fem";
-		rx-en-gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
-		mode-gpios  = <&gpio1 12 GPIO_ACTIVE_HIGH>;
-		pdn-gpios   = <&gpio1 10 GPIO_ACTIVE_HIGH>;
-		tx-en-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+	gpio_fwd: nrf-gpio-forwarder {
+		compatible = "nordic,nrf-gpio-forwarder";
+		status = "okay";
+		fem-gpio-if {
+			gpios = <&gpio1 11 0>,
+				<&gpio1 12 0>,
+				<&gpio1 10 0>,
+				<&gpio0 30 0>;
+		};
 	};
 
 	aliases {
@@ -106,15 +120,17 @@
 /* RGB LED control */
 &pwm0 {
 	status = "okay";
-	ch0-pin = <40>;
-	ch1-pin = <38>;
-	ch2-pin = <39>;
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 /* Buzzer control */
 &pwm1 {
 	status = "okay";
-	ch0-pin = <47>;
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-1 = <&pwm1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &adc {
@@ -136,10 +152,11 @@
 &i2c1 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <34>;
-	scl-pin = <35>;
 	clock-frequency = <I2C_BITRATE_FAST>;
 
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
 	bmm150@10 {
 		compatible = "bosch,bmm150";
 		label = "BMM150";
@@ -157,13 +174,13 @@
 &spi3 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
-	sck-pin = <29>;
-	mosi-pin = <28>;
-	miso-pin = <26>;
 	cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>,
 		   <&gpio1 4  GPIO_ACTIVE_LOW>,
 		   <&gpio0 24 GPIO_ACTIVE_LOW>;
 
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
 	adxl362: spi-dev-adxl362@0 {
 		compatible = "adi,adxl362";
 		label = "ADXL362";
@@ -180,9 +197,9 @@
 		int1-gpios = <&gpio0 23 0>;
 	};
 
-	nrf21540fem: spi-dev-nrf21540fem@2 {
+	nrf_radio_fem_spi: fem_spi@2 {
 		compatible = "nordic,nrf21540-fem-spi";
-		status = "okay";
+		status = "disabled";
 		reg = <2>;
 		label = "FEM_SPI_IF";
 		spi-max-frequency = <8000000>;
@@ -193,17 +210,16 @@
 &uart0 {
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <12>;
-	rx-pin = <11>;
-	rts-pin = <10>;
-	cts-pin = <9>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &qspi {
 	status = "okay";
-	sck-pin = <17>;
-	io-pins = <13>, <14>;
-	csn-pins = <18>;
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
 	mx25r64: mx25r6435f@0 {
 		compatible = "nordic,qspi-nor";
 		reg = <0>;

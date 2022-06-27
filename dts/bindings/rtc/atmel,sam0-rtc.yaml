@@ -5,7 +5,9 @@ description: Atmel SAM0 RTC
 
 compatible: "atmel,sam0-rtc"
 
-include: rtc.yaml
+include:
+    - name: rtc.yaml
+    - name: pinctrl-device.yaml
 
 properties:
     reg:

@@ -1,0 +1,18 @@
+# Copyright (c) 2021 Jimmy Johnson <catch22@fastmail.net>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TMP108 Digital Temperature Sensor.  See more info at
+    https://www.ti.com/product/TMP108
+
+compatible: "ti,tmp108"
+
+include: i2c-device.yaml
+
+properties:
+    alert-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Identifies the ALERT signal, which is active-low open drain when
+        produced by the sensor.

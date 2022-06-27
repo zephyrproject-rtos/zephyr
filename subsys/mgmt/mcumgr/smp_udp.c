@@ -9,17 +9,17 @@
  * @brief UDP transport for the mcumgr SMP protocol.
  */
 
-#include <zephyr.h>
-#include <init.h>
-#include <net/socket.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/net/socket.h>
 #include <errno.h>
 #include <mgmt/mgmt.h>
-#include <mgmt/mcumgr/smp_udp.h>
-#include <mgmt/mcumgr/buf.h>
-#include <mgmt/mcumgr/smp.h>
+#include <zephyr/mgmt/mcumgr/smp_udp.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
+#include <zephyr/mgmt/mcumgr/smp.h>
 
 #define LOG_LEVEL CONFIG_MCUMGR_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smp_udp);
 
 struct config {
@@ -44,11 +44,13 @@ static struct configs configs = {
 #if CONFIG_MCUMGR_SMP_UDP_IPV4
 	.ipv4 = {
 		.proto = "IPv4",
+		.sock  = -1,
 	},
 #endif
 #if CONFIG_MCUMGR_SMP_UDP_IPV6
 	.ipv6 = {
 		.proto = "IPv6",
+		.sock  = -1,
 	},
 #endif
 };
@@ -204,7 +206,7 @@ int smp_udp_open(void)
 	memset(&addr4, 0, sizeof(addr4));
 	addr4.sin_family = AF_INET;
 	addr4.sin_port = htons(CONFIG_MCUMGR_SMP_UDP_PORT);
-	inet_pton(AF_INET, INADDR_ANY, &addr4.sin_addr);
+	addr4.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	conf = &configs.ipv4;
 	conf->sock = create_socket((struct sockaddr *)&addr4, conf->proto);
@@ -240,13 +242,19 @@ int smp_udp_open(void)
 int smp_udp_close(void)
 {
 #if CONFIG_MCUMGR_SMP_UDP_IPV4
-	k_thread_abort(&(configs.ipv4.thread));
-	close(configs.ipv4.sock);
+	if (configs.ipv4.sock >= 0) {
+		k_thread_abort(&(configs.ipv4.thread));
+		close(configs.ipv4.sock);
+		configs.ipv4.sock = -1;
+	}
 #endif
 
 #if CONFIG_MCUMGR_SMP_UDP_IPV6
-	k_thread_abort(&(configs.ipv6.thread));
-	close(configs.ipv6.sock);
+	if (configs.ipv6.sock >= 0) {
+		k_thread_abort(&(configs.ipv6.thread));
+		close(configs.ipv6.sock);
+		configs.ipv6.sock = -1;
+	}
 #endif
 
 	return MGMT_ERR_EOK;

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 
 #include <errno.h>
@@ -13,10 +13,10 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/printk.h>
-#include <kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/kernel.h>
 
-#include <net/coap.h>
+#include <zephyr/net/coap.h>
 
 #include <tc_util.h>
 #include <ztest.h>
@@ -439,7 +439,7 @@ static void test_match_path_uri(void)
 	zassert_false(r, "Matching %s failed", uri);
 }
 
-#define BLOCK_WISE_TRANSFER_SIZE_GET 128
+#define BLOCK_WISE_TRANSFER_SIZE_GET 150
 
 static void prepare_block1_request(struct coap_packet *req,
 				   struct coap_block_context *req_ctx,
@@ -450,6 +450,8 @@ static void prepare_block1_request(struct coap_packet *req,
 	uint8_t *data = data_buf[0];
 	bool first;
 	int r;
+	int block_size = coap_block_size_to_bytes(COAP_BLOCK_32);
+	int payload_len;
 
 	/* Request Context */
 	if (req_ctx->total_size == 0) {
@@ -477,8 +479,12 @@ static void prepare_block1_request(struct coap_packet *req,
 	r = coap_packet_append_payload_marker(req);
 	zassert_equal(r, 0, "Unable to append payload marker");
 
-	r = coap_packet_append_payload(req, payload,
-				       coap_block_size_to_bytes(COAP_BLOCK_32));
+	payload_len = req_ctx->total_size - req_ctx->current;
+	if (payload_len > block_size) {
+		payload_len = block_size;
+	}
+
+	r = coap_packet_append_payload(req, payload, payload_len);
 	zassert_equal(r, 0, "Unable to append payload");
 
 	*more = coap_next_block(req, req_ctx);
@@ -514,22 +520,25 @@ static void prepare_block1_response(struct coap_packet *rsp,
 	zassert_equal(r, 0, "Unable to append block1 option");
 }
 
+#define ITER_COUNT(len, block_len) (((len) + (block_len) - 1) / (block_len))
+
 static void verify_block1_request(struct coap_block_context *req_ctx,
 				  uint8_t iter)
 {
+	int block_size = coap_block_size_to_bytes(COAP_BLOCK_32);
+	int iter_max = ITER_COUNT(BLOCK_WISE_TRANSFER_SIZE_GET, block_size);
+
 	zassert_equal(req_ctx->block_size, COAP_BLOCK_32,
 		      "req:%d,Couldn't get block size", iter);
 
-	/* In last iteration "current" field not updated */
-	if (iter < 4) {
+	/* In last iteration "current" must match "total_size" */
+	if (iter < iter_max) {
 		zassert_equal(
-			req_ctx->current,
-			coap_block_size_to_bytes(COAP_BLOCK_32) * iter,
+			req_ctx->current, block_size * iter,
 			"req:%d,Couldn't get the current block position", iter);
 	} else {
 		zassert_equal(
-			req_ctx->current,
-			coap_block_size_to_bytes(COAP_BLOCK_32) * (iter - 1U),
+			req_ctx->current, req_ctx->total_size,
 			"req:%d,Couldn't get the current block position", iter);
 	}
 
@@ -574,7 +583,7 @@ static void test_block1_size(void)
 	}
 }
 
-#define BLOCK2_WISE_TRANSFER_SIZE_GET 256
+#define BLOCK2_WISE_TRANSFER_SIZE_GET 300
 
 static void prepare_block2_request(struct coap_packet *req,
 				   struct coap_block_context *req_ctx,
@@ -614,6 +623,8 @@ static void prepare_block2_response(struct coap_packet *rsp,
 	uint8_t tkl;
 	bool first;
 	int r;
+	int block_size = coap_block_size_to_bytes(COAP_BLOCK_64);
+	int payload_len;
 
 	if (rsp_ctx->total_size == 0) {
 		first = true;
@@ -642,8 +653,12 @@ static void prepare_block2_response(struct coap_packet *rsp,
 	r = coap_packet_append_payload_marker(rsp);
 	zassert_equal(r, 0, "Unable to append payload marker");
 
-	r = coap_packet_append_payload(rsp, payload,
-				       coap_block_size_to_bytes(COAP_BLOCK_64));
+	payload_len = rsp_ctx->total_size - rsp_ctx->current;
+	if (payload_len > block_size) {
+		payload_len = block_size;
+	}
+
+	r = coap_packet_append_payload(rsp, payload, payload_len);
 	zassert_equal(r, 0, "Unable to append payload");
 
 	*more = coap_next_block(rsp, rsp_ctx);
@@ -664,20 +679,21 @@ static void verify_block2_request(struct coap_block_context *req_ctx,
 static void verify_block2_response(struct coap_block_context *rsp_ctx,
 				  uint8_t iter)
 {
+	int block_size = coap_block_size_to_bytes(COAP_BLOCK_64);
+	int iter_max = ITER_COUNT(BLOCK2_WISE_TRANSFER_SIZE_GET, block_size);
+
 	zassert_equal(rsp_ctx->block_size, COAP_BLOCK_64,
 		      "rsp:%d,Couldn't get block size", iter);
 
-	/* In last iteration "current" field not updated */
-	if (iter < 4) {
+	/* In last iteration "current" must match "total_size" */
+	if (iter < iter_max) {
 		zassert_equal(
-			rsp_ctx->current,
-			coap_block_size_to_bytes(COAP_BLOCK_64) * iter,
+			rsp_ctx->current, block_size * iter,
 			"req:%d,Couldn't get the current block position", iter);
 	} else {
 		zassert_equal(
-			rsp_ctx->current,
-			coap_block_size_to_bytes(COAP_BLOCK_64) * (iter - 1U),
-			"req:%d,Couldn't get the current block position", iter);
+			rsp_ctx->current, rsp_ctx->total_size,
+			"req:%d,Current block position does not match total size", iter);
 	}
 
 	zassert_equal(rsp_ctx->total_size, BLOCK2_WISE_TRANSFER_SIZE_GET,

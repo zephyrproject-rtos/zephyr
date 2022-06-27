@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <string.h>
-#include <drivers/flash.h>
-#include <init.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/init.h>
 #include <soc.h>
 
 #include "flash_stm32.h"
@@ -38,7 +38,7 @@ static inline void flush_cache(FLASH_TypeDef *regs)
 	if (regs->ACR & FLASH_ACR_DCEN) {
 		regs->ACR &= ~FLASH_ACR_DCEN;
 		/* Datasheet: DCRST: Data cache reset
-		 * This bit can be written only when thes data cache is disabled
+		 * This bit can be written only when the data cache is disabled
 		 */
 		regs->ACR |= FLASH_ACR_DCRST;
 		regs->ACR &= ~FLASH_ACR_DCRST;

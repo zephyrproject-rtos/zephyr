@@ -6,17 +6,17 @@
 
 #define DT_DRV_COMPAT adi_adxl372
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <drivers/sensor.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <sys/printk.h>
-#include <sys/__assert.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/__assert.h>
 #include <stdlib.h>
-#include <drivers/spi.h>
-#include <drivers/i2c.h>
-#include <logging/log.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/logging/log.h>
 
 #include "adxl372.h"
 
@@ -275,7 +275,7 @@ static int adxl372_set_bandwidth(const struct device *dev,
 }
 
 /**
- * Select the desired high-pass filter coner.
+ * Select the desired high-pass filter corner.
  * @param dev - The device structure.
  * @param bw - bandwidth.
  *		Accepted values: ADXL372_HPF_CORNER_0

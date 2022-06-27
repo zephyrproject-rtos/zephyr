@@ -66,7 +66,7 @@ configuration files instead of small easily-merged configuration
 elements like kconfig defconfig files or devicetree includes.  You
 have to edit a big XML file to match your Zephyr configuration.
 Choose an ACRN host config that matches your hardware ("ehl-crb-b" in
-this case).  Then find the relavent file in
+this case).  Then find the relevant file in
 ``misc/config_tools/data/<platform>/hybrid.xml``.
 
 First, find the list of ``<vm>`` declarations.  Each has an ``id=``

@@ -6,14 +6,19 @@
 
 #include "mem_protect.h"
 #include <kernel_internal.h> /* For z_main_thread */
+#include <zephyr/sys/libc-hooks.h> /* for z_libc_partition */
 
 static struct k_thread child_thread;
-static K_THREAD_STACK_DEFINE(child_stack, 512 + CONFIG_TEST_EXTRA_STACKSIZE);
+static K_THREAD_STACK_DEFINE(child_stack, 512 + CONFIG_TEST_EXTRA_STACK_SIZE);
 
 /* Special memory domain for test case purposes */
 static struct k_mem_domain test_domain;
 
+#if Z_LIBC_PARTITION_EXISTS
+#define PARTS_USED	3
+#else
 #define PARTS_USED	2
+#endif
 /* Maximum number of allowable memory partitions defined by the build */
 #define NUM_RW_PARTS	(CONFIG_MAX_DOMAIN_PARTITIONS - PARTS_USED)
 
@@ -39,13 +44,18 @@ static void zzz_entry(void *p1, void *p2, void *p3)
 	k_sleep(K_FOREVER);
 }
 
-static K_THREAD_DEFINE(zzz_thread, 256 + CONFIG_TEST_EXTRA_STACKSIZE,
+static K_THREAD_DEFINE(zzz_thread, 256 + CONFIG_TEST_EXTRA_STACK_SIZE,
 		       zzz_entry, NULL, NULL, NULL, 0, 0, 0);
 
 void test_mem_domain_setup(void)
 {
 	int max_parts = arch_mem_domain_max_partitions_get();
-	struct k_mem_partition *parts[] = { &ro_part, &ztest_mem_partition };
+	struct k_mem_partition *parts[] = {
+#if Z_LIBC_PARTITION_EXISTS
+		&z_libc_partition,
+#endif
+		&ro_part, &ztest_mem_partition
+	};
 
 	num_rw_parts = max_parts - PARTS_USED;
 	zassert_true(num_rw_parts <= NUM_RW_PARTS,
@@ -53,7 +63,9 @@ void test_mem_domain_setup(void)
 			CONFIG_MAX_DOMAIN_PARTITIONS, max_parts);
 	zassert_true(num_rw_parts > 0, "no free memory partitions");
 
-	k_mem_domain_init(&test_domain, ARRAY_SIZE(parts), parts);
+	zassert_equal(
+		k_mem_domain_init(&test_domain, ARRAY_SIZE(parts), parts),
+		0, "failed to initialize memory domain");
 
 	for (unsigned int i = 0; i < num_rw_parts; i++) {
 		rw_parts[i].start = (uintptr_t)&rw_bufs[i];
@@ -64,7 +76,9 @@ void test_mem_domain_setup(void)
 			rw_bufs[i][j] = (j % 256U);
 		}
 
-		k_mem_domain_add_partition(&test_domain, &rw_parts[i]);
+		zassert_equal(
+			k_mem_domain_add_partition(&test_domain, &rw_parts[i]),
+			0, "cannot add memory partition");
 	}
 
 	for (unsigned int j = 0; j < MEM_REGION_ALLOC; j++) {
@@ -181,7 +195,9 @@ void test_mem_domain_no_writes_to_ro(void)
  */
 void test_mem_domain_remove_add_partition(void)
 {
-	k_mem_domain_remove_partition(&test_domain, &rw_parts[0]);
+	zassert_equal(
+		k_mem_domain_remove_partition(&test_domain, &rw_parts[0]),
+		0, "failed to remove memory partition");
 
 	/* Should still work, we didn't remove ro_part */
 	spawn_child_thread(ro_part_access, &test_domain, false);
@@ -190,7 +206,9 @@ void test_mem_domain_remove_add_partition(void)
 	spawn_child_thread(rw_part_access, &test_domain, true);
 
 	/* Restore test_domain contents so we don't mess up other tests */
-	k_mem_domain_add_partition(&test_domain, &rw_parts[0]);
+	zassert_equal(
+		k_mem_domain_add_partition(&test_domain, &rw_parts[0]),
+		0, "failed to add memory partition");
 
 	/* Should work again */
 	spawn_child_thread(rw_part_access, &test_domain, false);
@@ -207,17 +225,23 @@ K_MEM_PARTITION_DEFINE(no_access_part, no_access_buf, sizeof(no_access_buf),
 
 static void mem_domain_init_entry(void *p1, void *p2, void *p3)
 {
-	k_mem_domain_init(&no_access_domain, 0, NULL);
+	zassert_equal(
+		k_mem_domain_init(&no_access_domain, 0, NULL),
+		0, "failed to initialize memory domain");
 }
 
 static void mem_domain_add_partition_entry(void *p1, void *p2, void *p3)
 {
-	k_mem_domain_add_partition(&test_domain, &no_access_part);
+	zassert_equal(
+		k_mem_domain_add_partition(&test_domain, &no_access_part),
+		0, "failed to add memory partition");
 }
 
 static void mem_domain_remove_partition_entry(void *p1, void *p2, void *p3)
 {
-	k_mem_domain_remove_partition(&test_domain, &ro_part);
+	zassert_equal(
+		k_mem_domain_remove_partition(&test_domain, &ro_part),
+		0, "failed to remove memory partition");
 }
 
 static void mem_domain_add_thread_entry(void *p1, void *p2, void *p3)
@@ -378,9 +402,11 @@ void test_mem_domain_migration(void)
  */
 void test_mem_part_overlap(void)
 {
-	set_fault_valid(true);
+	set_fault_valid(false);
 
-	k_mem_domain_add_partition(&test_domain, &overlap_part);
+	zassert_not_equal(
+		k_mem_domain_add_partition(&test_domain, &overlap_part),
+		0, "should fail to add memory partition");
 }
 
 extern struct k_spinlock z_mem_domain_lock;
@@ -410,7 +436,7 @@ K_MEM_PARTITION_DEFINE(exceed_part, exceed_buf, sizeof(exceed_buf),
  * @details
  * - Add memory partitions one by one and more than architecture allows to add.
  * - When partitions added more than it is allowed by architecture, test that
- *   system assert for that case works correctly.
+ *   k_mem_domain_add_partition() returns non-zero.
  *
  * @ingroup kernel_memprotect_tests
  */
@@ -425,14 +451,13 @@ void test_mem_part_assert_add_overmax(void)
 			"domain still have room of partitions(%d).",
 			max_parts);
 
-	need_recover_spinlock = true;
-	set_fault_valid(true);
+	need_recover_spinlock = false;
+	set_fault_valid(false);
 
-	/* Add one more partition will trigger assert due to exceeding */
-	k_mem_domain_add_partition(&test_domain, &exceed_part);
-
-	/* should not reach here */
-	ztest_test_fail();
+	/* Add one more partition will fail due to exceeding */
+	zassert_not_equal(
+		k_mem_domain_add_partition(&test_domain, &exceed_part),
+		0, "should fail to add memory partition");
 }
 
 
@@ -444,10 +469,8 @@ K_MEM_PARTITION_DEFINE(find_no_part, misc_buf, sizeof(misc_buf),
 /**
  * @brief Test error case of removing memory partition fail
  *
- * @details Try to remove a partition not in the domain will cause
- * assertion, then triggher an expected fatal error.
- * And while the fatal error happened, the memory domain spinlock
- * is held, we need to release them to make other follow test case.
+ * @details Try to remove a partition not in the domain.
+ * k_mem_domain_remove_partition() should return non-zero.
  *
  * @ingroup kernel_memprotect_tests
  */
@@ -455,9 +478,12 @@ void test_mem_domain_remove_part_fail(void)
 {
 	struct k_mem_partition *no_parts = &find_no_part;
 
-	need_recover_spinlock = true;
-	set_fault_valid(true);
-	k_mem_domain_remove_partition(&test_domain, no_parts);
+	need_recover_spinlock = false;
+	set_fault_valid(false);
+
+	zassert_not_equal(
+		k_mem_domain_remove_partition(&test_domain, no_parts),
+		0, "should fail to remove memory partition");
 }
 #else
 void test_mem_domain_remove_part_fail(void)
@@ -469,10 +495,8 @@ void test_mem_domain_remove_part_fail(void)
 /**
  * @brief Test error case of initializing memory domain fail
  *
- * @details Try to initialize a domain with invalid partition, then see
- * if an expected fatal error happens.
- * And while the fatal error happened, the memory domain spinlock
- * is held, we need to release them to make other follow test case.
+ * @details Try to initialize a domain with invalid partition.
+ * k_mem_domain_init() should return non-zero.
  *
  * @ingroup kernel_memprotect_tests
  */
@@ -480,34 +504,32 @@ void test_mem_domain_init_fail(void)
 {
 	struct k_mem_partition *no_parts[] = {&ro_part, 0};
 
-	/* init another domain fail, expected fault happened */
-	need_recover_spinlock = true;
-	set_fault_valid(true);
-	k_mem_domain_init(&test_domain_fail, ARRAY_SIZE(no_parts),
-			no_parts);
+	/* init another domain fail */
+	need_recover_spinlock = false;
+	set_fault_valid(false);
 
-	/* For acrh which not CONFIG_ARCH_MEM_DOMAIN_DATA, if assert is off,
-	 * it will reach here.
-	 */
-#if !defined(CONFIG_ASSERT) && defined(CONFIG_ARCH_MEM_DOMAIN_DATA)
-	zassert_unreachable("should not be here");
-#endif
+	zassert_not_equal(
+		k_mem_domain_init(&test_domain_fail, ARRAY_SIZE(no_parts),
+				  no_parts),
+		0, "should fail to initialize memory domain");
 }
 
 /**
  * @brief Test error case of adding null memory partition fail
  *
- * @details Try to add a null partition to memory domain, then see
- * if an expected fatal error happens.
+ * @details Try to add a null partition to memory domain.
+ * k_mem_domain_add_partition() should return error.
  *
  * @ingroup kernel_memprotect_tests
  */
 void test_mem_part_add_error_null(void)
 {
-	/* add partition fail, expected fault happened */
-	set_fault_valid(true);
-	k_mem_domain_add_partition(&test_domain_fail, NULL);
-	ztest_test_fail();
+	/* add partition fail */
+	set_fault_valid(false);
+
+	zassert_not_equal(
+		k_mem_domain_add_partition(&test_domain_fail, NULL),
+		0, "should fail to add memory partition");
 }
 
 static volatile uint8_t __aligned(MEM_REGION_ALLOC) nosize_buf[MEM_REGION_ALLOC];
@@ -517,29 +539,30 @@ K_MEM_PARTITION_DEFINE(nonsize_part, nosize_buf, sizeof(nosize_buf),
 /**
  * @brief Test error case of adding zero sized memory partition fail
  *
- * @details Try to add a zero sized partition to memory domain, then see
- * if an expected fatal error happens.
+ * @details Try to add a zero sized partition to memory domain.
+ * k_mem_domain_add_partition() should return error.
  *
  * @ingroup kernel_memprotect_tests
  */
 void test_mem_part_add_error_zerosize(void)
 {
-
 	struct k_mem_partition *nosize_part = &nonsize_part;
 
 	nosize_part->size = 0U;
 
-	/* add partition fail, expected fault happened */
-	set_fault_valid(true);
-	k_mem_domain_add_partition(&test_domain_fail, nosize_part);
-	ztest_test_fail();
+	/* add partition fail */
+	set_fault_valid(false);
+
+	zassert_not_equal(
+		k_mem_domain_add_partition(&test_domain_fail, nosize_part),
+		0, "should fail to add memory partition");
 }
 
 /**
  * @brief Test error case of memory partition address wraparound
  *
- * @details Try to add a partition whose adddress is wraparound will cause
- * assertion, then triggher an expected fatal error.
+ * @details Try to add a partition whose address is wraparound.
+ * k_mem_domain_add_partition() should return error.
  *
  * @ingroup kernel_memprotect_tests
  */
@@ -553,19 +576,19 @@ void test_mem_part_error_wraparound(void)
 		       K_MEM_PARTITION_P_RO_U_RO);
 #endif
 
-	/* add partition fail, expected fault happened */
-	set_fault_valid(true);
-	k_mem_domain_add_partition(&test_domain_fail, &wraparound_part);
-	ztest_test_fail();
+	/* add partition fail */
+	set_fault_valid(false);
+
+	zassert_not_equal(
+		k_mem_domain_add_partition(&test_domain_fail, &wraparound_part),
+		0, "should fail to add memory partition");
 }
 
 /**
  * @brief Test error case of removing memory partition fail
  *
- * @details Try to remove a partition size mismatched will cause
- * assertion, then triggher an expected fatal error.
- * And while the fatal error happened, the memory domain spinlock
- * is held, we need to release them to make other follow test case.
+ * @details Try to remove a partition size mismatched will result
+ * in k_mem_domain_remove_partition() returning error.
  *
  * @ingroup kernel_memprotect_tests
  */
@@ -573,13 +596,21 @@ void test_mem_part_remove_error_zerosize(void)
 {
 	struct k_mem_partition *no_parts = &find_no_part;
 
-	k_mem_domain_remove_partition(&test_domain, &rw_parts[0]);
-	k_mem_domain_add_partition(&test_domain, no_parts);
+	zassert_equal(
+		k_mem_domain_remove_partition(&test_domain, &rw_parts[0]),
+		0, "failed to remove memory partition");
+
+	zassert_equal(
+		k_mem_domain_add_partition(&test_domain, no_parts),
+		0, "failed to add memory partition");
+
 	no_parts->size = 0U;
 
-	/* remove partition fail, expected fault happened */
-	need_recover_spinlock = true;
-	set_fault_valid(true);
-	k_mem_domain_remove_partition(&test_domain, no_parts);
-	ztest_test_fail();
+	/* remove partition fail */
+	need_recover_spinlock = false;
+	set_fault_valid(false);
+
+	zassert_not_equal(
+		k_mem_domain_remove_partition(&test_domain, no_parts),
+		0, "should fail to remove memory partition");
 }

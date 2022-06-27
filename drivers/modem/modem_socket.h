@@ -13,9 +13,9 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_SOCKET_H_
 #define ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_SOCKET_H_
 
-#include <kernel.h>
-#include <net/net_ip.h>
-#include <net/socket.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/socket.h>
 
 #include "sockets_internal.h"
 

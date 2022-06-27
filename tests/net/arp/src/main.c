@@ -6,11 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_ARP_LOG_LEVEL);
 
-#include <zephyr.h>
-#include <linker/sections.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/linker/sections.h>
 
 #include <tc_util.h>
 
@@ -18,14 +18,14 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ARP_LOG_LEVEL);
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <device.h>
-#include <init.h>
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_ip.h>
-#include <net/dummy.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/dummy.h>
 #include <ztest.h>
-#include <random/rand32.h>
+#include <zephyr/random/rand32.h>
 
 #include "arp.h"
 
@@ -210,8 +210,8 @@ static inline struct net_pkt *prepare_arp_reply(struct net_if *iface,
 	memcpy(&hdr->src_hwaddr.addr, addr,
 	       sizeof(struct net_eth_addr));
 
-	net_ipaddr_copy(&hdr->dst_ipaddr, &NET_ARP_HDR(req)->src_ipaddr);
-	net_ipaddr_copy(&hdr->src_ipaddr, &NET_ARP_HDR(req)->dst_ipaddr);
+	net_ipv4_addr_copy_raw(hdr->dst_ipaddr, NET_ARP_HDR(req)->src_ipaddr);
+	net_ipv4_addr_copy_raw(hdr->src_ipaddr, NET_ARP_HDR(req)->dst_ipaddr);
 
 	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
 
@@ -260,8 +260,8 @@ static inline struct net_pkt *prepare_arp_request(struct net_if *iface,
 	(void)memset(&hdr->dst_hwaddr.addr, 0x00, sizeof(struct net_eth_addr));
 	memcpy(&hdr->src_hwaddr.addr, addr, sizeof(struct net_eth_addr));
 
-	net_ipaddr_copy(&hdr->src_ipaddr, &req_hdr->src_ipaddr);
-	net_ipaddr_copy(&hdr->dst_ipaddr, &req_hdr->dst_ipaddr);
+	net_ipv4_addr_copy_raw(hdr->src_ipaddr, req_hdr->src_ipaddr);
+	net_ipv4_addr_copy_raw(hdr->dst_ipaddr, req_hdr->dst_ipaddr);
 
 	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
 
@@ -369,12 +369,12 @@ void test_arp(void)
 
 	ipv4 = (struct net_ipv4_hdr *)net_buf_add(pkt->buffer,
 						  sizeof(struct net_ipv4_hdr));
-	net_ipaddr_copy(&ipv4->src, &src);
-	net_ipaddr_copy(&ipv4->dst, &dst);
+	net_ipv4_addr_copy_raw(ipv4->src, (uint8_t *)&src);
+	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)&dst);
 
 	memcpy(net_buf_add(pkt->buffer, len), app_data, len);
 
-	pkt2 = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
+	pkt2 = net_arp_prepare(pkt, &dst, NULL);
 
 	/* pkt2 is the ARP packet and pkt is the IPv4 packet and it was
 	 * stored in ARP table.
@@ -430,16 +430,16 @@ void test_arp(void)
 		zassert_true(0, "exiting");
 	}
 
-	if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr,
-			       &NET_IPV4_HDR(pkt)->dst)) {
+	if (!net_ipv4_addr_cmp_raw(arp_hdr->dst_ipaddr,
+				   NET_IPV4_HDR(pkt)->dst)) {
 		printk("ARP IP dest invalid %s, should be %s",
 			net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr),
 			net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
 		zassert_true(0, "exiting");
 	}
 
-	if (!net_ipv4_addr_cmp(&arp_hdr->src_ipaddr,
-			       &NET_IPV4_HDR(pkt)->src)) {
+	if (!net_ipv4_addr_cmp_raw(arp_hdr->src_ipaddr,
+				   NET_IPV4_HDR(pkt)->src)) {
 		printk("ARP IP src invalid %s, should be %s",
 			net_sprint_ipv4_addr(&arp_hdr->src_ipaddr),
 			net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src));
@@ -455,9 +455,9 @@ void test_arp(void)
 		"ARP cache should own the original packet");
 
 	/* Then a case where target is not in the same subnet */
-	net_ipaddr_copy(&ipv4->dst, &dst_far);
+	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)&dst_far);
 
-	pkt2 = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
+	pkt2 = net_arp_prepare(pkt, &dst_far, NULL);
 
 	zassert_not_equal((void *)(pkt2), (void *)(pkt),
 		"ARP cache should not find anything");
@@ -468,8 +468,8 @@ void test_arp(void)
 
 	arp_hdr = NET_ARP_HDR(pkt2);
 
-	if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr,
-			       &iface->config.ip.ipv4->gw)) {
+	if (!net_ipv4_addr_cmp_raw(arp_hdr->dst_ipaddr,
+				   (uint8_t *)&iface->config.ip.ipv4->gw)) {
 		printk("ARP IP dst invalid %s, should be %s\n",
 			net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr),
 			net_sprint_ipv4_addr(&iface->config.ip.ipv4->gw));
@@ -481,14 +481,14 @@ void test_arp(void)
 	/* Try to find the same destination again, this should fail as there
 	 * is a pending request in ARP cache.
 	 */
-	net_ipaddr_copy(&ipv4->dst, &dst_far);
+	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)&dst_far);
 
 	/* Make sure prepare will not free the pkt because it will be
 	 * needed in the later test case.
 	 */
 	net_pkt_ref(pkt);
 
-	pkt2 = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
+	pkt2 = net_arp_prepare(pkt, &dst_far, NULL);
 
 	zassert_not_null(pkt2,
 		"ARP cache is not sending the request again");
@@ -498,14 +498,14 @@ void test_arp(void)
 	/* Try to find the different destination, this should fail too
 	 * as the cache table should be full.
 	 */
-	net_ipaddr_copy(&ipv4->dst, &dst_far2);
+	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)&dst_far2);
 
 	/* Make sure prepare will not free the pkt because it will be
 	 * needed in the next test case.
 	 */
 	net_pkt_ref(pkt);
 
-	pkt2 = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
+	pkt2 = net_arp_prepare(pkt, &dst_far2, NULL);
 
 	zassert_not_null(pkt2,
 		"ARP cache did not send a req");
@@ -513,7 +513,7 @@ void test_arp(void)
 	/* Restore the original address so that following test case can
 	 * work properly.
 	 */
-	net_ipaddr_copy(&ipv4->dst, &dst);
+	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)&dst);
 
 	/* The arp request packet is now verified, create an arp reply.
 	 * The previous value of pkt is stored in arp table and is not lost.
@@ -526,8 +526,8 @@ void test_arp(void)
 	arp_hdr = NET_ARP_HDR(pkt);
 	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
 
-	net_ipaddr_copy(&arp_hdr->dst_ipaddr, &dst);
-	net_ipaddr_copy(&arp_hdr->src_ipaddr, &src);
+	net_ipv4_addr_copy_raw(arp_hdr->dst_ipaddr, (uint8_t *)&dst);
+	net_ipv4_addr_copy_raw(arp_hdr->src_ipaddr, (uint8_t *)&src);
 
 	pkt2 = prepare_arp_reply(iface, pkt, &hwaddr, &eth_hdr);
 
@@ -567,8 +567,8 @@ void test_arp(void)
 					 (sizeof(struct net_eth_hdr)));
 	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
 
-	net_ipaddr_copy(&arp_hdr->dst_ipaddr, &src);
-	net_ipaddr_copy(&arp_hdr->src_ipaddr, &dst);
+	net_ipv4_addr_copy_raw(arp_hdr->dst_ipaddr, (uint8_t *)&src);
+	net_ipv4_addr_copy_raw(arp_hdr->src_ipaddr, (uint8_t *)&dst);
 
 	pkt2 = prepare_arp_request(iface, pkt, &hwaddr, &eth_hdr);
 
@@ -627,8 +627,8 @@ void test_arp(void)
 		arp_hdr->opcode = htons(NET_ARP_REQUEST);
 		memcpy(&arp_hdr->src_hwaddr, &new_hwaddr, 6);
 		memcpy(&arp_hdr->dst_hwaddr, net_eth_broadcast_addr(), 6);
-		net_ipaddr_copy(&arp_hdr->dst_ipaddr, &dst);
-		net_ipaddr_copy(&arp_hdr->src_ipaddr, &dst);
+		net_ipv4_addr_copy_raw(arp_hdr->dst_ipaddr, (uint8_t *)&dst);
+		net_ipv4_addr_copy_raw(arp_hdr->src_ipaddr, (uint8_t *)&dst);
 
 		net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
 

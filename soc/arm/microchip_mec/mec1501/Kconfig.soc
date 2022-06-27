@@ -16,9 +16,6 @@ endchoice
 config RTOS_TIMER
 	bool "MEC1501 RTOS timer"
 
-config SOC_POWER_MANAGEMENT
-	bool "MEC1501 Power Management"
-
 config SOC_MEC1501_PROC_CLK_DIV
 	int "PROC_CLK_DIV"
 	default 1
@@ -78,7 +75,7 @@ config SOC_MEC1501_VCI_PINS_AS_GPIOS
 	  design.
 
 config SOC_MEC1501_TEST_CLK_OUT
-	bool "Enable test clock out pin"
+	bool "Test clock out pin"
 	help
 	  Enables a test clock out pin
 

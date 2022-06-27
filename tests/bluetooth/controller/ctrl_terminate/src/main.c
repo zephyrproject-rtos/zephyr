@@ -9,15 +9,16 @@
 #include <ztest.h>
 #include "kconfig.h"
 
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
-#include <sys/slist.h>
-#include <sys/util.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
 #include "hal/ccm.h"
 
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "util/dbuf.h"
 
 #include "pdu.h"
 #include "ll.h"
@@ -68,16 +69,16 @@ static void test_terminate_rem(uint8_t role)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_terminate_mas_rem(void)
+void test_terminate_central_rem(void)
 {
 	test_terminate_rem(BT_HCI_ROLE_CENTRAL);
 }
 
-void test_terminate_sla_rem(void)
+void test_terminate_periph_rem(void)
 {
 	test_terminate_rem(BT_HCI_ROLE_PERIPHERAL);
 }
@@ -120,16 +121,16 @@ void test_terminate_loc(uint8_t role)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_terminate_mas_loc(void)
+void test_terminate_central_loc(void)
 {
 	test_terminate_loc(BT_HCI_ROLE_CENTRAL);
 }
 
-void test_terminate_sla_loc(void)
+void test_terminate_periph_loc(void)
 {
 	test_terminate_loc(BT_HCI_ROLE_PERIPHERAL);
 }
@@ -138,10 +139,10 @@ void test_main(void)
 {
 	ztest_test_suite(
 		term,
-		ztest_unit_test_setup_teardown(test_terminate_mas_rem, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_terminate_sla_rem, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_terminate_mas_loc, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_terminate_sla_loc, setup, unit_test_noop));
+		ztest_unit_test_setup_teardown(test_terminate_central_rem, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_terminate_periph_rem, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_terminate_central_loc, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_terminate_periph_loc, setup, unit_test_noop));
 
 	ztest_run_test_suite(term);
 }

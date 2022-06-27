@@ -4,20 +4,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/shell/shell.h>
 #include <stdlib.h>
-#include <drivers/i2c.h>
 #include <string.h>
-#include <sys/util.h>
-#include <stdlib.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_shell, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define I2C_DEVICE_PREFIX "I2C_"
+#define MAX_BYTES_FOR_REGISTER_INDEX	4
+#define ARGV_DEV	1
+#define ARGV_ADDR	2
+#define ARGV_REG	3
 
 /* Maximum bytes we can write or read at once */
 #define MAX_I2C_BYTES	16
+
+static int get_bytes_count_for_hex(char *arg)
+{
+	int length = (strlen(arg) + 1) / 2;
+
+	if (length > 1 && arg[0] == '0' && (arg[1] == 'x' || arg[1] == 'X')) {
+		length -= 1;
+	}
+
+	return MIN(MAX_BYTES_FOR_REGISTER_INDEX, length);
+}
 
 /*
  * This sends I2C messages without any data (i.e. stop condition after
@@ -32,27 +47,28 @@ LOG_MODULE_REGISTER(i2c_shell, CONFIG_LOG_DEFAULT_LEVEL);
  *
  * https://manpages.debian.org/buster/i2c-tools/i2cdetect.8.en.html
  */
-static int cmd_i2c_scan(const struct shell *shell,
+/* i2c scan <device> */
+static int cmd_i2c_scan(const struct shell *shell_ctx,
 			size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint8_t cnt = 0, first = 0x04, last = 0x77;
 
-	dev = device_get_binding(argv[1]);
+	dev = device_get_binding(argv[ARGV_DEV]);
 
 	if (!dev) {
-		shell_error(shell, "I2C: Device driver %s not found.",
-			    argv[1]);
+		shell_error(shell_ctx, "I2C: Device driver %s not found.",
+			    argv[ARGV_DEV]);
 		return -ENODEV;
 	}
 
-	shell_print(shell,
+	shell_print(shell_ctx,
 		    "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f");
 	for (uint8_t i = 0; i <= last; i += 16) {
-		shell_fprintf(shell, SHELL_NORMAL, "%02x: ", i);
+		shell_fprintf(shell_ctx, SHELL_NORMAL, "%02x: ", i);
 		for (uint8_t j = 0; j < 16; j++) {
 			if (i + j < first || i + j > last) {
-				shell_fprintf(shell, SHELL_NORMAL, "   ");
+				shell_fprintf(shell_ctx, SHELL_NORMAL, "   ");
 				continue;
 			}
 
@@ -64,168 +80,195 @@ static int cmd_i2c_scan(const struct shell *shell,
 			msgs[0].len = 0U;
 			msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 			if (i2c_transfer(dev, &msgs[0], 1, i + j) == 0) {
-				shell_fprintf(shell, SHELL_NORMAL,
+				shell_fprintf(shell_ctx, SHELL_NORMAL,
 					      "%02x ", i + j);
 				++cnt;
 			} else {
-				shell_fprintf(shell, SHELL_NORMAL, "-- ");
+				shell_fprintf(shell_ctx, SHELL_NORMAL, "-- ");
 			}
 		}
-		shell_print(shell, "");
+		shell_print(shell_ctx, "");
 	}
 
-	shell_print(shell, "%u devices found on %s",
-		    cnt, argv[1]);
+	shell_print(shell_ctx, "%u devices found on %s",
+		    cnt, argv[ARGV_DEV]);
 
 	return 0;
 }
 
-static int cmd_i2c_recover(const struct shell *shell,
+/* i2c recover <device> */
+static int cmd_i2c_recover(const struct shell *shell_ctx,
 			   size_t argc, char **argv)
 {
 	const struct device *dev;
 	int err;
 
-	dev = device_get_binding(argv[1]);
+	dev = device_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
-		shell_error(shell, "I2C: Device driver %s not found.", argv[1]);
+		shell_error(shell_ctx, "I2C: Device driver %s not found.",
+			    argv[1]);
 		return -ENODEV;
 	}
 
 	err = i2c_recover_bus(dev);
 	if (err) {
-		shell_error(shell, "I2C: Bus recovery failed (err %d)", err);
+		shell_error(shell_ctx, "I2C: Bus recovery failed (err %d)",
+			    err);
 		return err;
 	}
 
 	return 0;
 }
 
-/* i2c write <device> <dev_addr> [<byte1>, ...] */
-static int cmd_i2c_write(const struct shell *shell, size_t argc, char **argv)
+static int i2c_write_from_buffer(const struct shell *shell_ctx,
+		char *s_dev_name, char *s_dev_addr, char *s_reg_addr,
+		char **data, uint8_t data_length)
 {
-	uint8_t buf[MAX_I2C_BYTES];
+	/* This buffer must preserve 4 bytes for register address, as it is
+	 * filled using put_be32 function and we don't want to lower available
+	 * space when using 1 byte address.
+	 */
+	uint8_t buf[MAX_I2C_BYTES + MAX_BYTES_FOR_REGISTER_INDEX - 1];
 	const struct device *dev;
-	int num_bytes;
+	int reg_addr_bytes;
 	int reg_addr;
 	int dev_addr;
+	int ret;
 	int i;
 
-	dev = device_get_binding(argv[1]);
+	dev = device_get_binding(s_dev_name);
 	if (!dev) {
-		shell_error(shell, "I2C: Device driver %s not found.", argv[1]);
+		shell_error(shell_ctx, "I2C: Device driver %s not found.",
+			    s_dev_name);
 		return -ENODEV;
 	}
 
-	dev_addr = strtol(argv[2], NULL, 16);
-	reg_addr = strtol(argv[3], NULL, 16);
-	num_bytes = argc - 4;
-	if (num_bytes < 0) {
-		return 0;
-	}
-	if (num_bytes > MAX_I2C_BYTES) {
-		num_bytes = MAX_I2C_BYTES;
-	}
-	for (i = 0; i < num_bytes; i++) {
-		buf[i] = (uint8_t)strtol(argv[4 + i], NULL, 16);
+	dev_addr = strtol(s_dev_addr, NULL, 16);
+	reg_addr = strtol(s_reg_addr, NULL, 16);
+
+	reg_addr_bytes = get_bytes_count_for_hex(s_reg_addr);
+	sys_put_be32(reg_addr, buf);
+
+	if (data_length + reg_addr_bytes > MAX_I2C_BYTES) {
+		data_length = MAX_I2C_BYTES - reg_addr_bytes;
+		shell_info(shell_ctx, "Too many bytes provided, limit is %d",
+			   MAX_I2C_BYTES - reg_addr_bytes);
 	}
 
-	if (i2c_burst_write(dev, dev_addr, reg_addr, buf, num_bytes) < 0) {
-		shell_error(shell, "Failed to write to device: %s", argv[1]);
+	for (i = 0; i < data_length; i++) {
+		buf[MAX_BYTES_FOR_REGISTER_INDEX + i] =
+			(uint8_t)strtol(data[i], NULL, 16);
+	}
+
+	ret = i2c_write(dev,
+			buf + MAX_BYTES_FOR_REGISTER_INDEX - reg_addr_bytes,
+			reg_addr_bytes + data_length, dev_addr);
+	if (ret < 0) {
+		shell_error(shell_ctx, "Failed to read from device: %s",
+			    s_dev_addr);
 		return -EIO;
 	}
 
 	return 0;
 }
 
-static int cmd_i2c_write_byte(const struct shell *shell,
+/* i2c write <device> <dev_addr> <reg_addr> [<byte1>, ...] */
+static int cmd_i2c_write(const struct shell *shell_ctx,
+			 size_t argc, char **argv)
+{
+	return i2c_write_from_buffer(shell_ctx, argv[ARGV_DEV],
+				     argv[ARGV_ADDR], argv[ARGV_REG],
+				     &argv[4], argc - 4);
+}
+
+/* i2c write_byte <device> <dev_addr> <reg_addr> <value> */
+static int cmd_i2c_write_byte(const struct shell *shell_ctx,
 			      size_t argc, char **argv)
 {
+	return i2c_write_from_buffer(shell_ctx, argv[ARGV_DEV],
+				     argv[ARGV_ADDR], argv[ARGV_REG],
+				     &argv[4], 1);
+}
+
+static int i2c_read_to_buffer(const struct shell *shell_ctx,
+			      char *s_dev_name,
+			      char *s_dev_addr, char *s_reg_addr,
+			      uint8_t *buf, uint8_t buf_length)
+{
 	const struct device *dev;
+	uint8_t reg_addr_buf[MAX_BYTES_FOR_REGISTER_INDEX];
+	int reg_addr_bytes;
 	int reg_addr;
 	int dev_addr;
-	int out_byte;
+	int ret;
 
-	dev = device_get_binding(argv[1]);
+	dev = device_get_binding(s_dev_name);
 	if (!dev) {
-		shell_error(shell, "I2C: Device driver %s not found.",
-			    argv[1]);
+		shell_error(shell_ctx, "I2C: Device driver %s not found.",
+			    s_dev_name);
 		return -ENODEV;
 	}
 
-	dev_addr = strtol(argv[2], NULL, 16);
-	reg_addr = strtol(argv[3], NULL, 16);
-	out_byte = strtol(argv[4], NULL, 16);
+	dev_addr = strtol(s_dev_addr, NULL, 16);
+	reg_addr = strtol(s_reg_addr, NULL, 16);
 
-	if (i2c_reg_write_byte(dev, dev_addr, reg_addr, out_byte) < 0) {
-		shell_error(shell, "Failed to write to device: %s", argv[1]);
+	reg_addr_bytes = get_bytes_count_for_hex(s_reg_addr);
+	sys_put_be32(reg_addr, reg_addr_buf);
+
+	ret = i2c_write_read(dev, dev_addr,
+			     reg_addr_buf +
+			       MAX_BYTES_FOR_REGISTER_INDEX - reg_addr_bytes,
+			     reg_addr_bytes, buf, buf_length);
+	if (ret < 0) {
+		shell_error(shell_ctx, "Failed to read from device: %s",
+			    s_dev_addr);
 		return -EIO;
 	}
 
 	return 0;
 }
 
-static int cmd_i2c_read_byte(const struct shell *shell,
+/* i2c read_byte <device> <dev_addr> <reg_addr> */
+static int cmd_i2c_read_byte(const struct shell *shell_ctx,
 			     size_t argc, char **argv)
 {
-	const struct device *dev;
-	int reg_addr;
-	int dev_addr;
 	uint8_t out;
+	int ret;
 
-	dev = device_get_binding(argv[1]);
-	if (!dev) {
-		shell_error(shell, "I2C: Device driver %s not found.",
-			    argv[1]);
-		return -ENODEV;
+
+	ret = i2c_read_to_buffer(shell_ctx, argv[ARGV_DEV],
+				 argv[ARGV_ADDR], argv[ARGV_REG], &out, 1);
+	if (ret == 0) {
+		shell_print(shell_ctx, "Output: 0x%x", out);
 	}
 
-	dev_addr = strtol(argv[2], NULL, 16);
-	reg_addr = strtol(argv[3], NULL, 16);
-
-	if (i2c_reg_read_byte(dev, dev_addr, reg_addr, &out) < 0) {
-		shell_error(shell, "Failed to read from device: %s", argv[1]);
-		return -EIO;
-	}
-
-	shell_print(shell, "Output: 0x%x", out);
-
-	return 0;
+	return ret;
 }
 
-/* i2c read <device> <dev_addr> [<numbytes>] */
-static int cmd_i2c_read(const struct shell *shell, size_t argc, char **argv)
+/* i2c read <device> <dev_addr> <reg_addr> [<numbytes>] */
+static int cmd_i2c_read(const struct shell *shell_ctx, size_t argc, char **argv)
 {
 	uint8_t buf[MAX_I2C_BYTES];
-	const struct device *dev;
 	int num_bytes;
-	int reg_addr;
-	int dev_addr;
+	int ret;
 
-	dev = device_get_binding(argv[1]);
-	if (!dev) {
-		shell_error(shell, "I2C: Device driver %s not found.", argv[1]);
-		return -ENODEV;
-	}
-
-	dev_addr = strtol(argv[2], NULL, 16);
-	reg_addr = strtol(argv[3], NULL, 16);
 	if (argc > 4) {
 		num_bytes = strtol(argv[4], NULL, 16);
-		if (num_bytes > MAX_I2C_BYTES)
+		if (num_bytes > MAX_I2C_BYTES) {
 			num_bytes = MAX_I2C_BYTES;
+		}
 	} else {
 		num_bytes = MAX_I2C_BYTES;
 	}
 
-	if (i2c_burst_read(dev, dev_addr, reg_addr, buf, num_bytes) < 0) {
-		shell_error(shell, "Failed to read from device: %s", argv[1]);
-		return -EIO;
+	ret = i2c_read_to_buffer(shell_ctx, argv[ARGV_DEV],
+				 argv[ARGV_ADDR], argv[ARGV_REG],
+				 buf, num_bytes);
+	if (ret == 0) {
+		shell_hexdump(shell_ctx, buf, num_bytes);
 	}
 
-	shell_hexdump(shell, buf, num_bytes);
-
-	return 0;
+	return ret;
 }
 
 static void device_name_get(size_t idx, struct shell_static_entry *entry);
@@ -243,22 +286,24 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
-			       SHELL_CMD(scan, &dsub_device_name,
-					 "Scan I2C devices", cmd_i2c_scan),
-			       SHELL_CMD(recover, &dsub_device_name,
-					 "Recover I2C bus", cmd_i2c_recover),
+			       SHELL_CMD_ARG(scan, &dsub_device_name,
+					     "Scan I2C devices",
+					     cmd_i2c_scan, 2, 0),
+			       SHELL_CMD_ARG(recover, &dsub_device_name,
+					     "Recover I2C bus",
+					     cmd_i2c_recover, 2, 0),
 			       SHELL_CMD_ARG(read, &dsub_device_name,
 					     "Read bytes from an I2C device",
-					     cmd_i2c_read, 3, MAX_I2C_BYTES),
+					     cmd_i2c_read, 4, MAX_I2C_BYTES),
 			       SHELL_CMD_ARG(read_byte, &dsub_device_name,
 					     "Read a byte from an I2C device",
-					     cmd_i2c_read_byte, 3, 1),
+					     cmd_i2c_read_byte, 4, 1),
 			       SHELL_CMD_ARG(write, &dsub_device_name,
 					     "Write bytes to an I2C device",
-					     cmd_i2c_write, 3, MAX_I2C_BYTES),
+					     cmd_i2c_write, 4, MAX_I2C_BYTES),
 			       SHELL_CMD_ARG(write_byte, &dsub_device_name,
 					     "Write a byte to an I2C device",
-					     cmd_i2c_write_byte, 4, 1),
+					     cmd_i2c_write_byte, 5, 0),
 			       SHELL_SUBCMD_SET_END     /* Array terminated. */
 			       );
 

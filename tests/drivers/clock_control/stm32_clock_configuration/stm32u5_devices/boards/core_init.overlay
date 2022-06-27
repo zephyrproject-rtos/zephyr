@@ -1,0 +1,98 @@
+/*
+ * Copyright (c) 2021 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay clears clocks back to a state equivalent to what could
+ * be found in stm32h7.dtsi
+ */
+
+
+/* Clocks clean up config
+ * Aim is to avoid conflict with specific default board configuration
+ */
+
+&clk_hse {
+	status = "disabled";
+	/delete-property/ clock-frequency;
+	/delete-property/ hse-bypass;
+};
+
+&clk_hsi {
+	status = "disabled";
+};
+
+&clk_lse {
+	status = "disabled";
+};
+
+&clk_msis {
+	status = "disabled";
+	/delete-property/ msi-range;
+	/delete-property/ msi-pll-mode;
+};
+
+&clk_msik {
+	status = "disabled";
+	/delete-property/ msi-range;
+	/delete-property/ msi-pll-mode;
+};
+
+&pll1 {
+	/delete-property/ div-m;
+	/delete-property/ mul-n;
+	/delete-property/ div-q;
+	/delete-property/ div-r;
+	/delete-property/ clocks;
+	status = "disabled";
+};
+
+&rcc {
+	/delete-property/ clocks;
+	/delete-property/ clock-frequency;
+	/delete-property/ ahb-prescaler;
+	/delete-property/ apb1-prescaler;
+	/delete-property/ apb2-prescaler;
+	/delete-property/ apb3-prescaler;
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pe12 &spi1_sck_pe13
+		     &spi1_miso_pe14 &spi1_mosi_pe15>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+/* Core set up
+ * Aim of this part is to provide a base working clock config
+ */
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_msis {
+	status = "okay";
+	msi-range = <4>;
+	msi-pll-mode;
+};
+
+&pll1 {
+	div-m = <1>;
+	mul-n = <80>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_msis>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll1>;
+	clock-frequency = <DT_FREQ_M(160)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};

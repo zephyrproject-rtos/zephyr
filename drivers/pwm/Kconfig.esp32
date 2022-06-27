@@ -24,7 +24,7 @@ menuconfig PWM_LED_ESP32_HS_CH
 if PWM_LED_ESP32_HS_CH
 
 menuconfig PWM_LED_ESP32_HS_CH0
-	bool "Enable channel 0"
+	bool "Channel 0"
 	default y
 
 if PWM_LED_ESP32_HS_CH0
@@ -46,7 +46,7 @@ config PWM_LED_ESP32_HS_CH0_TIMER
 endif # PWM_LED_ESP32_HS_CH0
 
 menuconfig PWM_LED_ESP32_HS_CH1
-	bool "Enable channel 1"
+	bool "Channel 1"
 	default y
 
 if PWM_LED_ESP32_HS_CH1
@@ -68,7 +68,7 @@ config PWM_LED_ESP32_HS_CH1_TIMER
 endif # PWM_LED_ESP32_HS_CH1
 
 menuconfig PWM_LED_ESP32_HS_CH2
-	bool "Enable channel 2"
+	bool "Channel 2"
 	default y
 
 if PWM_LED_ESP32_HS_CH2
@@ -90,7 +90,7 @@ config PWM_LED_ESP32_HS_CH2_TIMER
 endif # PWM_LED_ESP32_HS_CH2
 
 menuconfig PWM_LED_ESP32_HS_CH3
-	bool "Enable channel 3"
+	bool "Channel 3"
 	default y
 
 if PWM_LED_ESP32_HS_CH3
@@ -112,7 +112,7 @@ config PWM_LED_ESP32_HS_CH3_TIMER
 endif # PWM_LED_ESP32_HS_CH3
 
 menuconfig PWM_LED_ESP32_HS_CH4
-	bool "Enable channel 4"
+	bool "Channel 4"
 	default y
 
 if PWM_LED_ESP32_HS_CH4
@@ -134,7 +134,7 @@ config PWM_LED_ESP32_HS_CH4_TIMER
 endif # PWM_LED_ESP32_HS_CH4
 
 menuconfig PWM_LED_ESP32_HS_CH5
-	bool "Enable channel 5"
+	bool "Channel 5"
 	default y
 
 if PWM_LED_ESP32_HS_CH5
@@ -156,7 +156,7 @@ config PWM_LED_ESP32_HS_CH5_TIMER
 endif # PWM_LED_ESP32_HS_CH5
 
 menuconfig PWM_LED_ESP32_HS_CH6
-	bool "Enable channel 6"
+	bool "Channel 6"
 	default y
 
 if PWM_LED_ESP32_HS_CH6
@@ -178,7 +178,7 @@ config PWM_LED_ESP32_HS_CH6_TIMER
 endif # PWM_LED_ESP32_HS_CH6
 
 menuconfig PWM_LED_ESP32_HS_CH7
-	bool "Enable channel 7"
+	bool "Channel 7"
 	default y
 
 if PWM_LED_ESP32_HS_CH7
@@ -208,7 +208,7 @@ menuconfig PWM_LED_ESP32_LS_CH
 if PWM_LED_ESP32_LS_CH
 
 menuconfig PWM_LED_ESP32_LS_CH0
-	bool "Enable channel 0"
+	bool "Channel 0"
 	default y
 
 if PWM_LED_ESP32_LS_CH0
@@ -230,7 +230,7 @@ config PWM_LED_ESP32_LS_CH0_TIMER
 endif # PWM_LED_ESP32_LS_CH0
 
 menuconfig PWM_LED_ESP32_LS_CH1
-	bool "Enable channel 1"
+	bool "Channel 1"
 	default y
 
 if PWM_LED_ESP32_LS_CH1
@@ -252,7 +252,7 @@ config PWM_LED_ESP32_LS_CH1_TIMER
 endif # PWM_LED_ESP32_LS_CH1
 
 menuconfig PWM_LED_ESP32_LS_CH2
-	bool "Enable channel 2"
+	bool "Channel 2"
 	default y
 
 if PWM_LED_ESP32_LS_CH2
@@ -274,7 +274,7 @@ config PWM_LED_ESP32_LS_CH2_TIMER
 endif # PWM_LED_ESP32_LS_CH2
 
 menuconfig PWM_LED_ESP32_LS_CH3
-	bool "Enable channel 3"
+	bool "Channel 3"
 	default y
 
 if PWM_LED_ESP32_LS_CH3
@@ -296,7 +296,7 @@ config PWM_LED_ESP32_LS_CH3_TIMER
 endif # PWM_LED_ESP32_LS_CH3
 
 menuconfig PWM_LED_ESP32_LS_CH4
-	bool "Enable channel 4"
+	bool "Channel 4"
 	default y
 
 if PWM_LED_ESP32_LS_CH4
@@ -318,7 +318,7 @@ config PWM_LED_ESP32_LS_CH4_TIMER
 endif # PWM_LED_ESP32_LS_CH4
 
 menuconfig PWM_LED_ESP32_LS_CH5
-	bool "Enable channel 5"
+	bool "Channel 5"
 	default y
 
 if PWM_LED_ESP32_LS_CH5
@@ -340,7 +340,7 @@ config PWM_LED_ESP32_LS_CH5_TIMER
 endif # PWM_LED_ESP32_LS_CH5
 
 menuconfig PWM_LED_ESP32_LS_CH6
-	bool "Enable channel 6"
+	bool "Channel 6"
 	default y
 
 if PWM_LED_ESP32_LS_CH6
@@ -362,7 +362,7 @@ config PWM_LED_ESP32_LS_CH6_TIMER
 endif # PWM_LED_ESP32_LS_CH6
 
 menuconfig PWM_LED_ESP32_LS_CH7
-	bool "Enable channel 7"
+	bool "Channel 7"
 	default y
 
 if PWM_LED_ESP32_LS_CH7

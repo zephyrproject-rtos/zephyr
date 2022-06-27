@@ -19,13 +19,13 @@ config ETH_NIC_MODEL
 	  a parameter to -nic qemu command line option.
 
 config ETH_E1000_VERBOSE_DEBUG
-	bool "Enable hexdump of the received and sent frames"
+	bool "Hexdump of the received and sent frames"
 	help
 	  Enabling this will turn on the hexdump of the received and sent
 	  frames. Do not leave on for production.
 
 config ETH_E1000_PTP_CLOCK
-	bool "Enable PTP clock driver support [EXPERIMENTAL]"
+	bool "PTP clock driver support [EXPERIMENTAL]"
 	depends on PTP_CLOCK
 	select EXPERIMENTAL
 	default y

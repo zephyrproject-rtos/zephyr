@@ -7,8 +7,9 @@
 /dts-v1/;
 
 #include <mem.h>
-#include <nxp/MK82FN256VLL15.dtsi>
-#include <dt-bindings/pwm/pwm.h>
+#include <nxp/nxp_k82fn256vxx15.dtsi>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "frdm_k82f-pinctrl.dtsi"
 
 / {
 	model = "NXP Kinetis K82 Freedom Board";
@@ -26,6 +27,12 @@
 	};
 
 	chosen {
+		/*
+		 * Note: when using DMA, the SRAM region must be set to
+		 * a memory region that is not cached by the chip. If the chosen
+		 * sram region is changed and DMA is in use, you will
+		 * encounter issues!
+		 */
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -113,7 +120,7 @@
 
 &adc0 {
 	status = "okay";
-	pinctrl-0 = <&ADC0_SE15_PTC1>;
+	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
 };
 
@@ -169,7 +176,7 @@
 
 &i2c3 {
 	status = "okay";
-	pinctrl-0 = <&I2C3_SDA_PTA1 &I2C3_SCL_PTA2>;
+	pinctrl-0 = <&i2c3_default>;
 	pinctrl-names = "default";
 
 	fxos8700@1c {
@@ -180,34 +187,30 @@
 	};
 };
 
-&I2C3_SDA_PTA1 {
-	drive-open-drain;
-};
-
-&I2C3_SCL_PTA2 {
-	drive-open-drain;
-};
-
 &lpuart4 {
 	status = "okay";
-	pinctrl-0 = <&LPUART4_RX_PTC14 &LPUART4_TX_PTC15>;
+	pinctrl-0 = <&lpuart4_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+};
+
+&lpuart0 {
+	pinctrl-0 = <&lpuart0_default>;
+	pinctrl-names = "default";
 };
 
 &ftm3 {
 	status = "okay";
 	compatible = "nxp,kinetis-ftm-pwm";
 	#pwm-cells = <3>;
-	pinctrl-0 = <&FTM3_CH4_PTC8 &FTM3_CH5_PTC9 &FTM3_CH6_PTC10>;
+	pinctrl-0 = <&ftm3_default>;
 	pinctrl-names = "default";
 };
 
 &spi1 {
 	status = "okay";
 
-	pinctrl-0 = <&SPI1_SCK_PTE1 &SPI1_SOUT_PTE2
-		     &SPI1_SIN_PTE4 &SPI1_PCS0_PTE5>;
+	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
 
 	mx25u32: mx25u3235f@0 {
@@ -240,20 +243,12 @@ zephyr_udc0: &usbotg {
 
 arduino_i2c: &i2c0 {
 	status = "okay";
-	pinctrl-0 = <&I2C0_SDA_PTB3 &I2C0_SCL_PTB2>;
+	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
-};
-
-&I2C0_SDA_PTB3 {
-	drive-open-drain;
-};
-
-&I2C0_SCL_PTB2 {
-	drive-open-drain;
 };
 
 arduino_spi: &spi0 {
 	status = "okay";
-	pinctrl-0 = <&SPI0_SCK_PTD1 &SPI0_SOUT_PTD2 &SPI0_SIN_PTD3 &SPI0_PCS1_PTD4>;
+	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 };

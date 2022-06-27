@@ -16,6 +16,7 @@
 #define B91_PAYLOAD_MIN                     (5)
 #define B91_PAYLOAD_MAX                     (127)
 #define B91_FRAME_TYPE_OFFSET               (0)
+#define B91_FRAME_TYPE_MASK                 (0x07)
 #define B91_DEST_ADDR_TYPE_OFFSET           (1)
 #define B91_DEST_ADDR_TYPE_MASK             (0x0c)
 #define B91_DEST_ADDR_TYPE_SHORT            (8)
@@ -100,6 +101,7 @@ struct b91_data {
 	uint8_t filter_ieee_addr[B91_IEEE_ADDRESS_SIZE];
 	bool is_started;
 	bool ack_handler_en;
+	uint16_t current_channel;
 };
 
 #endif

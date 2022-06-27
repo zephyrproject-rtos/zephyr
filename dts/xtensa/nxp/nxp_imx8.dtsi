@@ -5,7 +5,7 @@
  */
 
 #include <xtensa/xtensa.dtsi>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <mem.h>
 
 / {

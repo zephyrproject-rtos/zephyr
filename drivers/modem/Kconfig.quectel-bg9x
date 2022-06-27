@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config MODEM_QUECTEL_BG9X
-	bool "Enable quectel modem driver"
+	bool "Quectel modem driver"
 	select MODEM_CONTEXT
 	select MODEM_CMD_HANDLER
 	select MODEM_IFACE_UART

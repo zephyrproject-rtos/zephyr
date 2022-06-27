@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <errno.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"

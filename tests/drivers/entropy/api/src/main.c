@@ -3,7 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <drivers/entropy.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/drivers/entropy.h>
 #include <ztest.h>
 
 /*
@@ -21,8 +22,8 @@
  * @}
  */
 
-#define BUFFER_LENGTH 10
-#define RECHECK_RANDOM_ENTROPY 0x10
+#define BUFFER_LENGTH           10
+#define RECHECK_RANDOM_ENTROPY  0x10
 
 static int random_entropy(const struct device *dev, char *buffer, char num)
 {
@@ -67,13 +68,12 @@ static int random_entropy(const struct device *dev, char *buffer, char num)
  */
 static int get_entropy(void)
 {
-	const struct device *dev;
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 	uint8_t buffer[BUFFER_LENGTH] = { 0 };
 	int ret;
 
-	dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
-	if (!dev) {
-		TC_PRINT("error: no random device\n");
+	if (!device_is_ready(dev)) {
+		TC_PRINT("error: random device not ready\n");
 		return TC_FAIL;
 	}
 
@@ -105,6 +105,10 @@ static void test_entropy_get_entropy(void)
 
 void test_main(void)
 {
+#ifdef CONFIG_BT
+	bt_enable(NULL);
+#endif /* CONFIG_BT */
+
 	ztest_test_suite(entropy_api,
 			 ztest_unit_test(test_entropy_get_entropy));
 	ztest_run_test_suite(entropy_api);

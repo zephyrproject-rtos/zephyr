@@ -8,7 +8,7 @@
 #include "ext_log_system.h"
 
 #define LOG_MODULE_NAME ext_log_system
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(ext_log_system);
 

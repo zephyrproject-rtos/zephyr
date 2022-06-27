@@ -66,7 +66,7 @@
 		usart6: serial@40011400 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40011400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000020>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>;
 			interrupts = <29 0>;
 			status = "disabled";
 			label = "UART_6";

@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <sys/fdtable.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/fdtable.h>
 
 #include "modem_socket.h"
 

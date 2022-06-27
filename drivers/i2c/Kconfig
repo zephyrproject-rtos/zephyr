@@ -14,13 +14,19 @@ menuconfig I2C
 if I2C
 
 config I2C_SHELL
-	bool "Enable I2C Shell"
+	bool "I2C Shell"
 	default y
 	depends on SHELL
 	help
 	  Enable I2C Shell.
 
 	  The I2C shell currently support scanning and bus recovery.
+
+config I2C_STATS
+	bool "I2C device Stats"
+	depends on STATS
+	help
+	  Enable I2C Stats.
 
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
@@ -43,11 +49,12 @@ source "drivers/i2c/Kconfig.lpc11u6x"
 source "drivers/i2c/Kconfig.npcx"
 source "drivers/i2c/Kconfig.test"
 source "drivers/i2c/Kconfig.rcar"
-source "drivers/i2c/Kconfig.tca9546a"
+source "drivers/i2c/Kconfig.tca954x"
+source "drivers/i2c/Kconfig.gd32"
 
 config I2C_INIT_PRIORITY
 	int "Init priority"
-	default 60
+	default KERNEL_INIT_PRIORITY_DEVICE
 	help
 	  I2C device driver initialization priority.
 
@@ -84,6 +91,7 @@ config I2C_SAM_TWI
 config I2C_MCUX
 	bool "MCUX I2C driver"
 	depends on HAS_MCUX
+	select PINCTRL
 	help
 	  Enable the mcux I2C driver.
 

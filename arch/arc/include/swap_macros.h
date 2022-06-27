@@ -9,12 +9,12 @@
 #ifndef ZEPHYR_ARCH_ARC_INCLUDE_SWAP_MACROS_H_
 #define ZEPHYR_ARCH_ARC_INCLUDE_SWAP_MACROS_H_
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <offsets_short.h>
-#include <toolchain.h>
-#include <arch/cpu.h>
-#include <arch/arc/tool-compat.h>
-#include <arch/arc/asm-compat/assembler.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arc/tool-compat.h>
+#include <zephyr/arch/arc/asm-compat/assembler.h>
 
 #ifdef _ASMLANGUAGE
 

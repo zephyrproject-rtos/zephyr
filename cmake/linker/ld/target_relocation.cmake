@@ -26,5 +26,7 @@ macro(toolchain_ld_relocation)
     )
 
   add_library(code_relocation_source_lib  STATIC ${MEM_RELOCATION_CODE})
+  target_include_directories(code_relocation_source_lib PRIVATE
+	${ZEPHYR_BASE}/kernel/include ${ARCH_DIR}/${ARCH}/include)
   target_link_libraries(code_relocation_source_lib zephyr_interface)
 endmacro()

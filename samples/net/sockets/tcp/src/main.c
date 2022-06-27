@@ -10,9 +10,9 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include <net/socket.h>
+#include <zephyr/net/socket.h>
 
-#include <data/json.h>
+#include <zephyr/data/json.h>
 #include <tp.h>
 
 #define UDP_PORT 4242

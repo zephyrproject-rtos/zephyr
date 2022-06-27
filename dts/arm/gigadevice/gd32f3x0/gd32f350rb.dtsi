@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2021 BrainCo Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <gigadevice/gd32f3x0/gd32f350.dtsi>
+
+/ {
+	soc {
+		flash-controller@40022000{
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(128)>;
+			};
+		};
+
+		sram0: memory@20000000 {
+			reg = <0x20000000 DT_SIZE_K(16)>;
+		};
+	};
+};

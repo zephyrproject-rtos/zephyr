@@ -7,8 +7,8 @@
 #ifndef __USB_DC_MCUX_H__
 #define __USB_DC_MCUX_H__
 
-#include <drivers/usb/usb_dc.h>
-#include <sys/byteorder.h>
+#include <zephyr/drivers/usb/usb_dc.h>
+#include <zephyr/sys/byteorder.h>
 #include "usb_spec.h"
 #include "usb.h"
 #include "usb_device_dci.h"
@@ -107,6 +107,8 @@ struct usb_ep_ctrl_data {
 	uint8_t ep_occupied : 1;
 };
 
+#define USBD_MCUX_THREAD_STACK_SIZE		1024
+
 struct usb_device_struct {
 #if ((defined(USB_DEVICE_CONFIG_REMOTE_WAKEUP)) && \
 		(USB_DEVICE_CONFIG_REMOTE_WAKEUP > 0U)) || \
@@ -135,6 +137,8 @@ struct usb_device_struct {
 	/* Is doing device reset or not */
 	uint8_t isResetting;
 	uint8_t setupDataStage;
+	K_KERNEL_STACK_MEMBER(thread_stack, USBD_MCUX_THREAD_STACK_SIZE);
+	struct k_thread thread;
 };
 
 #endif /* __USB_DC_MCUX_H__ */

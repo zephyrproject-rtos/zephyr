@@ -30,7 +30,7 @@ Listing the IT81302 hardware features as following:
 - 60KB SDRAM in total
 - Built-in 32.768 kHz clock generator
 - PWM, eSPI, LPC, FLASH, UART, GPIO, Timer, Watchdog, ADC, JTAG
-- 6 SMBus channels, with 3 DMA controllers, compatiable with I2C
+- 6 SMBus channels, with 3 DMA controllers, compatible with I2C
 - SPI master/slave
 - USB Type-c CC Logic
 - USB Power Delivery

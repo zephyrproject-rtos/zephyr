@@ -6,24 +6,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 
-#include <zephyr.h>
-#include <init.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
 
-#include <logging/log_backend.h>
-#include <net/net_core.h>
-#include <net/net_ip.h>
-#include <net/net_if.h>
-#include <net/dhcpv4.h>
-#include <net/net_mgmt.h>
-#include <net/dns_resolve.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/dhcpv4.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/dns_resolve.h>
 
-#include <net/net_config.h>
+#include <zephyr/net/net_config.h>
 
 #include "ieee802154_settings.h"
 #include "bt_settings.h"

@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ztest.h>
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 #include <ztest_error_hook.h>
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define THREAD_TEST_PRIORITY 5
 
 /* use to pass case type to threads */
@@ -52,7 +52,7 @@ static void tThread_entry_negative(void *p1, void *p2, void *p3)
 	TC_PRINT("current case is %d\n", choice);
 
 	/* Set up the fault or assert are expected before we call
-	 * the target tested funciton.
+	 * the target tested function.
 	 */
 	switch (choice) {
 	case MUTEX_INIT_NULL:

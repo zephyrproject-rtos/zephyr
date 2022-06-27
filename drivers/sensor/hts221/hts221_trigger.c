@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT st_hts221
 
-#include <device.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 
 #include "hts221.h"
 

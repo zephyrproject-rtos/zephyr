@@ -14,15 +14,15 @@
  * global variable.)
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <kernel_structs.h>
-#include <sys/__assert.h>
-#include <sys/printk.h>
-#include <irq.h>
-#include <tracing/tracing.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/irq.h>
+#include <zephyr/tracing/tracing.h>
 #include <kswap.h>
-#include <arch/x86/ia32/segmentation.h>
+#include <zephyr/arch/x86/ia32/segmentation.h>
 
 extern void z_SpuriousIntHandler(void *handler);
 extern void z_SpuriousIntNoErrCodeHandler(void *handler);

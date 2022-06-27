@@ -16,8 +16,8 @@
  */
 
 #include <tc_util.h>
-#include <zephyr.h>
-#include <sys/mutex.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/mutex.h>
 
 static int tc_rc = TC_PASS;         /* test case return code */
 
@@ -27,7 +27,6 @@ extern struct sys_mutex private_mutex;
  *
  * thread_12 - thread that participates in recursive locking tests
  *
- * @return  N/A
  */
 
 void thread_12(void)

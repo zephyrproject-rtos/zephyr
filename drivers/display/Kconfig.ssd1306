@@ -28,7 +28,7 @@ config SSD1306_DEFAULT
 	bool "Default SSD1306 controller"
 
 config SSD1306_SH1106_COMPATIBLE
-	bool "Enable SH1106 compatible mode"
+	bool "SH1106 compatible mode"
 
 endchoice
 

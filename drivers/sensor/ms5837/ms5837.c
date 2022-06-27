@@ -7,12 +7,12 @@
 
 #define DT_DRV_COMPAT meas_ms5837
 
-#include <init.h>
-#include <kernel.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 #include "ms5837.h"
 

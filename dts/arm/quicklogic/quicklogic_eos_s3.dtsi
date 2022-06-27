@@ -6,7 +6,7 @@
 
 #include <mem.h>
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {

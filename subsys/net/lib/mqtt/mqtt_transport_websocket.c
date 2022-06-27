@@ -10,13 +10,13 @@
  * @brief Internal functions to handle transport over Websocket.
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_mqtt_websocket, CONFIG_MQTT_LOG_LEVEL);
 
 #include <errno.h>
-#include <net/socket.h>
-#include <net/mqtt.h>
-#include <net/websocket.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/mqtt.h>
+#include <zephyr/net/websocket.h>
 
 #include "mqtt_os.h"
 #include "mqtt_transport.h"
@@ -74,14 +74,14 @@ int mqtt_client_websocket_connect(struct mqtt_client *client)
 			client->transport.websocket.timeout,
 			NULL);
 	if (client->transport.websocket.sock < 0) {
-		MQTT_TRC("Websocket connect failed (%d)",
+		NET_ERR("Websocket connect failed (%d)",
 			 client->transport.websocket.sock);
 
 		(void)close(transport_sock);
 		return client->transport.websocket.sock;
 	}
 
-	MQTT_TRC("Connect completed");
+	NET_DBG("Connect completed");
 
 	return 0;
 }
@@ -165,7 +165,7 @@ int mqtt_client_websocket_read(struct mqtt_client *client, uint8_t *data,
 
 int mqtt_client_websocket_disconnect(struct mqtt_client *client)
 {
-	MQTT_TRC("Closing socket %d", client->transport.websocket.sock);
+	NET_INFO("Closing socket %d", client->transport.websocket.sock);
 
 	return websocket_disconnect(client->transport.websocket.sock);
 }

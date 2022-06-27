@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 #include <ff.h>
 #include "test_fs.h"
 

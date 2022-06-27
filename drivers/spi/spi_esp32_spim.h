@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_DRIVERS_SPI_ESP32_SPIM_H_
 #define ZEPHYR_DRIVERS_SPI_ESP32_SPIM_H_
 
+#include <zephyr/drivers/pinctrl.h>
+
 #define SPI_MASTER_FREQ_8M      (APB_CLK_FREQ/10)
 #define SPI_MASTER_FREQ_9M      (APB_CLK_FREQ/9)    /* 8.89MHz */
 #define SPI_MASTER_FREQ_10M     (APB_CLK_FREQ/8)    /* 10MHz */
@@ -24,23 +26,8 @@ struct spi_esp32_config {
 	int duty_cycle;
 	int input_delay_ns;
 	int irq_source;
-	bool use_iomux;
-
+	const struct pinctrl_dev_config *pcfg;
 	clock_control_subsys_t clock_subsys;
-
-	struct {
-		int miso_s;
-		int mosi_s;
-		int sclk_s;
-		int csel_s;
-	} signals;
-
-	struct {
-		int miso;
-		int mosi;
-		int sclk;
-		int csel;
-	} pins;
 };
 
 struct spi_esp32_data {

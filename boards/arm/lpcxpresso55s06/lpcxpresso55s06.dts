@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2022 metraTec
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_lpc55S06_ns.dtsi>
+#include "lpcxpresso55s06_common.dtsi"
+
+/ {
+	model = "NXP LPCXpresso55S06 board";
+	compatible = "nxp,lpc55xxx", "nxp,lpc";
+};

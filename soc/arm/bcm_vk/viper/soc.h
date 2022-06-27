@@ -7,12 +7,11 @@
 #ifndef SOC_H
 #define SOC_H
 
-#include <sys/util.h>
-#include <toolchain.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #ifndef _ASMLANGUAGE
 
-#include <devicetree.h>
 
 /* Interrupt Number Definition */
 typedef enum IRQn {

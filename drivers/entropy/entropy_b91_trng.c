@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT telink_b91_trng
 
 #include <trng.h>
-#include <drivers/entropy.h>
+#include <zephyr/drivers/entropy.h>
 #include <string.h>
 
 

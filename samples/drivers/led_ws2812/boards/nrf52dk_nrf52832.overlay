@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/led/led.h>
 
 #include "../nrf52-bindings.h"
 

@@ -15,7 +15,6 @@ struct k_sem sem2;
  *
  * @brief Initialize semaphores for the test
  *
- * @return N/A
  */
 void sema_test_init(void)
 {
@@ -32,7 +31,6 @@ void sema_test_init(void)
  * @param par2   Number of test loops.
  * @param par3   Unused
  *
- * @return N/A
  */
 void sema_thread1(void *par1, void *par2, void *par3)
 {
@@ -57,7 +55,6 @@ void sema_thread1(void *par1, void *par2, void *par3)
  * @param par2   Number of test cycles.
  * @param par3   Unused
  *
- * @return N/A
  */
 void sema_thread2(void *par1, void *par2, void *par3)
 {
@@ -82,7 +79,6 @@ void sema_thread2(void *par1, void *par2, void *par3)
  * @param par2   Number of test cycles.
  * @param par3   Unused
  *
- * @return N/A
  */
 void sema_thread3(void *par1, void *par2, void *par3)
 {

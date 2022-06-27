@@ -8,10 +8,10 @@
 
 #include <stddef.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <sys/printk.h>
-#include <sys/util.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
@@ -81,7 +81,7 @@ exit:
 
 static void test_multiple_init(void)
 {
-	bst_ticker_set_next_tick_absolute(600e6);
+	bst_ticker_set_next_tick_absolute(4500e6);
 	bst_result = In_progress;
 }
 

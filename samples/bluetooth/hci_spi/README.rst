@@ -33,7 +33,7 @@ flashing information.
 You will also need a separate chip acting as BT HCI SPI master. This
 application is compatible with the HCI SPI master driver provided by
 Zephyr's Bluetooth HCI driver core; see the help associated with the
-:kconfig:`CONFIG_BT_SPI` configuration option for more information.
+:kconfig:option:`CONFIG_BT_SPI` configuration option for more information.
 
 Refer to :ref:`bluetooth-samples` for general Bluetooth information, and
 to :ref:`96b_carbon_nrf51_bluetooth` for instructions specific to the

@@ -33,4 +33,6 @@ source "drivers/led_strip/Kconfig.ws2812"
 
 source "drivers/led_strip/Kconfig.apa102"
 
+source "drivers/led_strip/Kconfig.tlc5971"
+
 endif # LED_STRIP

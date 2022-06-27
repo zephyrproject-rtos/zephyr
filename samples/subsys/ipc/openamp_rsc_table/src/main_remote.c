@@ -1,25 +1,25 @@
 /*
- * Copyright (c) 2020, STMICROLECTRONICS
+ * Copyright (c) 2020, STMICROELECTRONICS
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <drivers/ipm.h>
+#include <zephyr/drivers/ipm.h>
 
 #include <openamp/open_amp.h>
 #include <metal/device.h>
 #include <resource_table.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_DBG);
 
-#define RPMSG_CHAN_NAME	"rpmsg-client-sample"
 #define SHM_DEVICE_NAME	"shm"
 
 #if !DT_HAS_CHOSEN(zephyr_ipc_shm)
@@ -32,8 +32,17 @@ LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_DBG);
 #define SHM_SIZE		DT_REG_SIZE(SHM_NODE)
 
 #define APP_TASK_STACK_SIZE (512)
-K_THREAD_STACK_DEFINE(thread_stack, APP_TASK_STACK_SIZE);
-static struct k_thread thread_data;
+
+/* Add 512 extra bytes for the TTY task stack for the "tx_buff" buffer. */
+#define APP_TTY_TASK_STACK_SIZE (1024)
+
+K_THREAD_STACK_DEFINE(thread_mng_stack, APP_TASK_STACK_SIZE);
+K_THREAD_STACK_DEFINE(thread_rp__client_stack, APP_TASK_STACK_SIZE);
+K_THREAD_STACK_DEFINE(thread_tty_stack, APP_TTY_TASK_STACK_SIZE);
+
+static struct k_thread thread_mng_data;
+static struct k_thread thread_rp__client_data;
+static struct k_thread thread_tty_data;
 
 static const struct device *ipm_handle;
 
@@ -51,6 +60,11 @@ struct metal_device shm_device = {
 	.irq_info = NULL
 };
 
+struct rpmsg_rcv_msg {
+	void *data;
+	size_t len;
+};
+
 static struct metal_io_region *shm_io;
 static struct rpmsg_virtio_shm_pool shpool;
 
@@ -58,13 +72,18 @@ static struct metal_io_region *rsc_io;
 static struct rpmsg_virtio_device rvdev;
 
 static void *rsc_table;
+static struct rpmsg_device *rpdev;
 
-static char rcv_msg[20];  /* should receive "Hello world!" */
-static unsigned int rcv_len;
-static struct rpmsg_endpoint rcv_ept;
+static char rx_sc_msg[20];  /* should receive "Hello world!" */
+static struct rpmsg_endpoint sc_ept;
+static struct rpmsg_rcv_msg sc_msg = {.data = rx_sc_msg};
+
+static struct rpmsg_endpoint tty_ept;
+static struct rpmsg_rcv_msg tty_msg;
 
 static K_SEM_DEFINE(data_sem, 0, 1);
-static K_SEM_DEFINE(data_rx_sem, 0, 1);
+static K_SEM_DEFINE(data_sc_sem, 0, 1);
+static K_SEM_DEFINE(data_tty_sem, 0, 1);
 
 static void platform_ipm_callback(const struct device *dev, void *context,
 				  uint32_t id, volatile void *data)
@@ -73,27 +92,36 @@ static void platform_ipm_callback(const struct device *dev, void *context,
 	k_sem_give(&data_sem);
 }
 
-static int rpmsg_recv_callback(struct rpmsg_endpoint *ept, void *data,
-			       size_t len, uint32_t src, void *priv)
+static int rpmsg_recv_cs_callback(struct rpmsg_endpoint *ept, void *data,
+				  size_t len, uint32_t src, void *priv)
 {
-	memcpy(rcv_msg, data, len);
-	rcv_len = len;
-	k_sem_give(&data_rx_sem);
+	memcpy(sc_msg.data, data, len);
+	sc_msg.len = len;
+	k_sem_give(&data_sc_sem);
+
+	return RPMSG_SUCCESS;
+}
+
+static int rpmsg_recv_tty_callback(struct rpmsg_endpoint *ept, void *data,
+				   size_t len, uint32_t src, void *priv)
+{
+	struct rpmsg_rcv_msg *tty_msg = priv;
+
+	rpmsg_hold_rx_buffer(ept, data);
+	tty_msg->data = data;
+	tty_msg->len = len;
+	k_sem_give(&data_tty_sem);
 
 	return RPMSG_SUCCESS;
 }
 
 static void receive_message(unsigned char **msg, unsigned int *len)
 {
-	while (k_sem_take(&data_rx_sem, K_NO_WAIT) != 0) {
-		int status = k_sem_take(&data_sem, K_FOREVER);
+	int status = k_sem_take(&data_sem, K_FOREVER);
 
-		if (status == 0) {
-			rproc_virtio_notified(rvdev.vdev, VRING1_ID);
-		}
+	if (status == 0) {
+		rproc_virtio_notified(rvdev.vdev, VRING1_ID);
 	}
-	*len = rcv_len;
-	*msg = rcv_msg;
 }
 
 static void new_service_cb(struct rpmsg_device *rdev, const char *name,
@@ -197,7 +225,7 @@ platform_create_rpmsg_vdev(unsigned int vdev_index,
 	struct virtio_device *vdev;
 	int ret;
 
-	vdev = rproc_virtio_create_vdev(VIRTIO_DEV_SLAVE, VDEV_ID,
+	vdev = rproc_virtio_create_vdev(VIRTIO_DEV_DEVICE, VDEV_ID,
 					rsc_table_to_vdev(rsc_table),
 					rsc_io, NULL, mailbox_notify, NULL);
 
@@ -243,14 +271,72 @@ failed:
 	return NULL;
 }
 
-void app_task(void *arg1, void *arg2, void *arg3)
+void app_rpmsg_client_sample(void *arg1, void *arg2, void *arg3)
 {
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
-	struct rpmsg_device *rpdev;
+	unsigned int msg_cnt = 0;
+	int ret = 0;
+
+	k_sem_take(&data_sc_sem,  K_FOREVER);
+
+	printk("\r\nOpenAMP[remote] Linux sample client responder started\r\n");
+
+	ret = rpmsg_create_ept(&sc_ept, rpdev, "rpmsg-client-sample",
+			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
+			       rpmsg_recv_cs_callback, NULL);
+
+	while (msg_cnt < 100) {
+		k_sem_take(&data_sc_sem,  K_FOREVER);
+		msg_cnt++;
+		rpmsg_send(&sc_ept, sc_msg.data, sc_msg.len);
+	}
+	rpmsg_destroy_ept(&sc_ept);
+
+	printk("OpenAMP Linux sample client responder ended\n");
+}
+
+void app_rpmsg_tty(void *arg1, void *arg2, void *arg3)
+{
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+	unsigned char tx_buff[512];
+	int ret = 0;
+
+	k_sem_take(&data_tty_sem,  K_FOREVER);
+
+	printk("\r\nOpenAMP[remote] Linux tty responder started\r\n");
+
+	tty_ept.priv = &tty_msg;
+	ret = rpmsg_create_ept(&tty_ept, rpdev, "rpmsg-tty",
+			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
+			       rpmsg_recv_tty_callback, NULL);
+
+	while (tty_ept.addr !=  RPMSG_ADDR_ANY) {
+		k_sem_take(&data_tty_sem,  K_FOREVER);
+		if (tty_msg.len) {
+			snprintf(tx_buff, 13, "TTY 0x%04x: ", tty_ept.addr);
+			memcpy(&tx_buff[12], tty_msg.data, tty_msg.len);
+			rpmsg_send(&tty_ept, tx_buff, tty_msg.len + 13);
+			rpmsg_release_rx_buffer(&tty_ept, tty_msg.data);
+		}
+		tty_msg.len = 0;
+		tty_msg.data = NULL;
+	}
+	rpmsg_destroy_ept(&tty_ept);
+
+	printk("OpenAMP Linux TTY responder ended\n");
+}
+
+void rpmsg_mng_task(void *arg1, void *arg2, void *arg3)
+{
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
 	unsigned char *msg;
-	unsigned int len, msg_cnt = 0;
+	unsigned int len;
 	int ret = 0;
 
 	printk("\r\nOpenAMP[remote]  linux responder demo started\r\n");
@@ -263,7 +349,7 @@ void app_task(void *arg1, void *arg2, void *arg3)
 		goto task_end;
 	}
 
-	rpdev = platform_create_rpmsg_vdev(0, VIRTIO_DEV_SLAVE, NULL,
+	rpdev = platform_create_rpmsg_vdev(0, VIRTIO_DEV_DEVICE, NULL,
 					   new_service_cb);
 	if (!rpdev) {
 		LOG_ERR("Failed to create rpmsg virtio device\n");
@@ -271,18 +357,13 @@ void app_task(void *arg1, void *arg2, void *arg3)
 		goto task_end;
 	}
 
-	ret = rpmsg_create_ept(&rcv_ept, rpdev, RPMSG_CHAN_NAME,
-			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
-			       rpmsg_recv_callback, NULL);
-	if (ret != 0)
-		LOG_ERR("error while creating endpoint(%d)\n", ret);
+	/* start the rpmsg clients */
+	k_sem_give(&data_sc_sem);
+	k_sem_give(&data_tty_sem);
 
-	while (msg_cnt < 100) {
+	while (1) {
 		receive_message(&msg, &len);
-		msg_cnt++;
-		rpmsg_send(&rcv_ept, msg, len);
 	}
-	rpmsg_destroy_ept(&rcv_ept);
 
 task_end:
 	cleanup_system();
@@ -292,8 +373,14 @@ task_end:
 
 void main(void)
 {
-	printk("Starting application thread!\n");
-	k_thread_create(&thread_data, thread_stack, APP_TASK_STACK_SIZE,
-			(k_thread_entry_t)app_task,
+	printk("Starting application threads!\n");
+	k_thread_create(&thread_mng_data, thread_mng_stack, APP_TASK_STACK_SIZE,
+			(k_thread_entry_t)rpmsg_mng_task,
+			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
+	k_thread_create(&thread_rp__client_data, thread_rp__client_stack, APP_TASK_STACK_SIZE,
+			(k_thread_entry_t)app_rpmsg_client_sample,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_create(&thread_tty_data, thread_tty_stack, APP_TTY_TASK_STACK_SIZE,
+			(k_thread_entry_t)app_rpmsg_tty,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 }

@@ -6,13 +6,14 @@
 
 #define DT_DRV_COMPAT ti_bq274xx
 
-#include <drivers/i2c.h>
-#include <init.h>
-#include <drivers/sensor.h>
-#include <sys/__assert.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/__assert.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <drivers/gpio.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/gpio.h>
 
 #include "bq274xx.h"
 
@@ -168,8 +169,8 @@ static int bq274xx_channel_get(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_TEMP:
-		int_temp = (bq274xx->internal_temperature * 0.1);
-		int_temp = int_temp - 273.15;
+		int_temp = (bq274xx->internal_temperature * 0.1f);
+		int_temp = int_temp - 273.15f;
 		val->val1 = (int32_t)int_temp;
 		val->val2 = (int_temp - (int32_t)int_temp) * 1000000;
 		break;
@@ -529,7 +530,7 @@ static int bq274xx_gauge_configure(const struct device *dev)
 				    BQ274XX_EXTENDED_BLOCKDATA_DESIGN_CAP_LOW,
 				    designcap_lsb);
 	if (status < 0) {
-		LOG_ERR("Failed to erite designCAP LSB");
+		LOG_ERR("Failed to write designCAP LSB");
 		return -EIO;
 	}
 
@@ -545,7 +546,7 @@ static int bq274xx_gauge_configure(const struct device *dev)
 				    BQ274XX_EXTENDED_BLOCKDATA_DESIGN_ENR_LOW,
 				    designenergy_lsb);
 	if (status < 0) {
-		LOG_ERR("Failed to erite designEnergy LSB");
+		LOG_ERR("Failed to write designEnergy LSB");
 		return -EIO;
 	}
 
@@ -579,7 +580,7 @@ static int bq274xx_gauge_configure(const struct device *dev)
 				    BQ274XX_EXTENDED_BLOCKDATA_TAPERRATE_LOW,
 				    taperrate_lsb);
 	if (status < 0) {
-		LOG_ERR("Failed to erite taperRate LSB");
+		LOG_ERR("Failed to write taperRate LSB");
 		return -EIO;
 	}
 
@@ -776,7 +777,7 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 	PM_DEVICE_DT_INST_DEFINE(index, bq274xx_pm_action);		       \
 									       \
 	DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init,		       \
-			    PM_DEVICE_DT_INST_REF(index),		       \
+			    PM_DEVICE_DT_INST_GET(index),		       \
 			    &bq274xx_driver_##index,                           \
 			    &bq274xx_config_##index, POST_KERNEL,              \
 			    CONFIG_SENSOR_INIT_PRIORITY,                       \

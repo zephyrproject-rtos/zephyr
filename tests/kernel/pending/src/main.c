@@ -5,10 +5,10 @@
  */
 
 #include <tc_util.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <stdbool.h>
 
 #define  NUM_SECONDS(x)      ((x) * 1000)
@@ -16,8 +16,8 @@
 #define  THIRD_SECOND               (333)
 #define  FOURTH_SECOND              (250)
 
-#define COOP_STACKSIZE   (512 + CONFIG_TEST_EXTRA_STACKSIZE)
-#define PREEM_STACKSIZE  (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define COOP_STACKSIZE   (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define PREEM_STACKSIZE  (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 #define FIFO_TEST_START       10
 #define FIFO_TEST_END         20
@@ -310,7 +310,7 @@ void test_pending_fifo(void)
 	k_work_submit_to_queue(&offload_work_q, &offload1.work_item);
 
 	/*
-	 * Verify that preemiptible threads 'task_high' and 'task_low' do not
+	 * Verify that preemptible threads 'task_high' and 'task_low' do not
 	 * busy-wait. If they are not busy-waiting, then they must be pending.
 	 */
 

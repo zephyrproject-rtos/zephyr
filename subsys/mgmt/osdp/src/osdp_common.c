@@ -6,13 +6,13 @@
 
 #include <ctype.h>
 
-#include <device.h>
-#include <sys/crc.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/crc.h>
+#include <zephyr/logging/log.h>
 
 #ifdef CONFIG_OSDP_SC_ENABLED
-#include <crypto/cipher.h>
-#include <random/rand32.h>
+#include <zephyr/crypto/crypto.h>
+#include <zephyr/random/rand32.h>
 #endif
 
 #include "osdp_common.h"

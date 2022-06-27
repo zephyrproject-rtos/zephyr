@@ -238,7 +238,7 @@ revision (0.0.0) allows use of default connections.  The use of Arduino headers
 are only possible after rework the board and using the revision 1.0.0.
 
 #. Build the Zephyr kernel and the :ref:`hello_world` sample application for
-board revision 1.0.0:
+   board revision 1.0.0:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -246,10 +246,10 @@ board revision 1.0.0:
       :goals: build
       :compact:
 
-#. The diferences from version 0.0.0 to 1.0.0:
+#. The differences from version 0.0.0 to 1.0.0:
 
 +-------------+------------+------------+
-| Connecion   | 0.0.0      | 1.0.0      |
+| Connection  | 0.0.0      | 1.0.0      |
 +=============+============+============+
 | CDC-COM RX  | P5_0       | P9_0       |
 +-------------+------------+------------+

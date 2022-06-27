@@ -13,24 +13,24 @@
  * Hooks into the printk and fputc (for printf) modules. Poll driven.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #include <stdio.h>
 #include <zephyr/types.h>
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 #include <errno.h>
 #include <ctype.h>
 
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
-#include <drivers/uart.h>
-#include <drivers/console/console.h>
-#include <drivers/console/uart_console.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <sys/atomic.h>
-#include <sys/printk.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/console/console.h>
+#include <zephyr/drivers/console/uart_console.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/printk.h>
 #ifdef CONFIG_UART_CONSOLE_MCUMGR
 #include "mgmt/mcumgr/serial.h"
 #endif
@@ -566,10 +566,7 @@ void uart_register_input(struct k_fifo *avail, struct k_fifo *lines,
 #endif
 
 /**
- *
  * @brief Install printk/stdout hook for UART console output
- *
- * @return N/A
  */
 
 static void uart_console_hook_install(void)
@@ -583,7 +580,6 @@ static void uart_console_hook_install(void)
 }
 
 /**
- *
  * @brief Initialize one UART as the console/debug port
  *
  * @return 0 if successful, otherwise failed.

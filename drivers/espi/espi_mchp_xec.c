@@ -6,18 +6,18 @@
 
 #define DT_DRV_COMPAT microchip_xec_espi
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <errno.h>
-#include <drivers/espi.h>
-#include <logging/log.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/logging/log.h>
 #include "espi_utils.h"
 
 /* Minimum delay before acknowledging a virtual wire */
 #define ESPI_XEC_VWIRE_ACK_DELAY    10ul
 
 /* Maximum timeout to transmit a virtual wire packet.
- * 10 ms expresed in multiples of 100us
+ * 10 ms expressed in multiples of 100us
  */
 #define ESPI_XEC_VWIRE_SEND_TIMEOUT 100ul
 
@@ -109,7 +109,7 @@ enum mchp_smvw_regs {
 	MCHP_SMVW08,
 };
 
-/* Microchip cannonical virtual wire mapping
+/* Microchip canonical virtual wire mapping
  * ------------------------------------------------------------------------|
  * VW Idx | VW reg | SRC_ID3      | SRC_ID2      | SRC_ID1   | SRC_ID0     |
  * ------------------------------------------------------------------------|
@@ -255,7 +255,7 @@ static int espi_xec_configure(const struct device *dev, struct espi_cfg *cfg)
 		cap1 |= (iomode << MCHP_ESPI_GBL_CAP1_IO_MODE_POS);
 	}
 
-	/* Validdate and translate eSPI API channels to MEC capabilities */
+	/* Validate and translate eSPI API channels to MEC capabilities */
 	cap0 &= ~MCHP_ESPI_GBL_CAP0_MASK;
 	if (cfg->channel_caps & ESPI_CHANNEL_PERIPHERAL) {
 		if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_CHANNEL)) {
@@ -1209,7 +1209,7 @@ static void ibf_kbc_isr(const struct device *dev)
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
 
 	/* The high byte contains information from the host,
-	 * and the lower byte speficies if the host sent
+	 * and the lower byte specifies if the host sent
 	 * a command or data. 1 = Command.
 	 */
 	uint32_t isr_data = ((KBC_REGS->EC_DATA & 0xFF) << E8042_ISR_DATA_POS) |

@@ -5,23 +5,23 @@
  */
 
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <sys/math_extras.h>
-#include <sys/rb.h>
-#include <kernel_structs.h>
-#include <sys/sys_io.h>
+#include <zephyr/sys/math_extras.h>
+#include <zephyr/sys/rb.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/sys/sys_io.h>
 #include <ksched.h>
-#include <syscall.h>
-#include <syscall_handler.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/syscall.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <stdbool.h>
-#include <app_memory/app_memdomain.h>
-#include <sys/libc-hooks.h>
-#include <sys/mutex.h>
+#include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/sys/libc-hooks.h>
+#include <zephyr/sys/mutex.h>
 #include <inttypes.h>
-#include <linker/linker-defs.h>
+#include <zephyr/linker/linker-defs.h>
 
 #ifdef Z_LIBC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_libc_partition);
@@ -35,7 +35,7 @@ K_APPMEM_PARTITION_DEFINE(z_libc_partition);
 K_APPMEM_PARTITION_DEFINE(k_mbedtls_partition);
 #endif
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* The originally synchronization strategy made heavy use of recursive
@@ -124,8 +124,8 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
  * the maximum alignment needed for all kernel objects
  * (hence the following DYN_OBJ_DATA_ALIGN).
  */
-#ifdef ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT
-#define DYN_OBJ_DATA_ALIGN_K_THREAD	(ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT)
+#ifdef ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT
+#define DYN_OBJ_DATA_ALIGN_K_THREAD	(ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT)
 #else
 #define DYN_OBJ_DATA_ALIGN_K_THREAD	(sizeof(void *))
 #endif
@@ -187,14 +187,14 @@ static size_t obj_align_get(enum k_objects otype)
 
 	switch (otype) {
 	case K_OBJ_THREAD:
-#ifdef ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT
-		ret = ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT;
+#ifdef ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT
+		ret = ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT;
 #else
-		ret = sizeof(void *);
+		ret = __alignof(struct dyn_obj);
 #endif
 		break;
 	default:
-		ret = sizeof(void *);
+		ret = __alignof(struct dyn_obj);
 		break;
 	}
 
@@ -361,6 +361,9 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 	zo = z_dynamic_object_aligned_create(obj_align_get(otype),
 					     obj_size_get(otype));
 	if (zo == NULL) {
+		if (otype == K_OBJ_THREAD) {
+			thread_idx_free(tidx);
+		}
 		return NULL;
 	}
 	zo->type = otype;
@@ -466,12 +469,16 @@ static void unref_check(struct z_object *ko, uintptr_t index)
 	sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
-	struct dyn_obj *dyn =
-			CONTAINER_OF(ko, struct dyn_obj, kobj);
-
 	if ((ko->flags & K_OBJ_FLAG_ALLOC) == 0U) {
+		/* skip unref check for static kernel object */
 		goto out;
 	}
+
+	void *vko = ko;
+
+	struct dyn_obj *dyn = CONTAINER_OF(vko, struct dyn_obj, kobj);
+
+	__ASSERT(IS_PTR_ALIGNED(dyn, struct dyn_obj), "unaligned z_object");
 
 	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
 		if (ko->perms[i] != 0U) {

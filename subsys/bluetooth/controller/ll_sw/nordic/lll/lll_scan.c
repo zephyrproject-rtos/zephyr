@@ -6,12 +6,12 @@
 
 #include <stdint.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 #include <soc.h>
 
-#include <sys/byteorder.h>
-#include <bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/bluetooth/hci.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -20,6 +20,7 @@
 
 #include "util/util.h"
 #include "util/memq.h"
+#include "util/dbuf.h"
 #include "util/mayfly.h"
 
 #include "ticker/ticker.h"
@@ -50,6 +51,12 @@
 /* Maximum primary Advertising Radio Channels to scan */
 #define ADV_CHAN_MAX 3U
 
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
+#define CONN_SPACING CONFIG_BT_CTLR_SCHED_ADVANCED_CENTRAL_CONN_SPACING
+#else
+#define CONN_SPACING 0U
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
+
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 static int resume_prepare_cb(struct lll_prepare_param *p);
@@ -72,7 +79,6 @@ static void isr_abort(void *param);
 	* (EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 	*/
 static void isr_done_cleanup(void *param);
-static void isr_cleanup(void *param);
 
 static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			     uint8_t devmatch_ok, uint8_t devmatch_id,
@@ -94,9 +100,10 @@ static inline bool isr_scan_tgta_rpa_check(const struct lll_scan *lll,
 					   const uint8_t *addr,
 					   bool *const dir_report);
 static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp);
-static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
-			      uint8_t phy_flags_rx, uint8_t irkmatch_ok,
-			      uint8_t rl_idx, bool dir_report);
+static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
+			      uint8_t irkmatch_ok, uint8_t rl_idx,
+			      uint8_t rssi_ready, uint8_t phy_flags_rx,
+			      bool dir_report);
 
 int lll_scan_init(void)
 {
@@ -287,7 +294,8 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 		*conn_space_us = conn_offset_us;
 		pdu_tx->connect_ind.win_offset = sys_cpu_to_le16(0);
 	} else {
-		uint32_t win_offset_us = lll->conn_win_offset_us;
+		uint32_t win_offset_us = lll->conn_win_offset_us +
+					 CONN_SPACING;
 
 		while ((win_offset_us & ((uint32_t)1 << 31)) ||
 		       (win_offset_us < conn_offset_us)) {
@@ -374,14 +382,16 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	/* TODO: if coded we use S8? */
-	radio_phy_set(lll->phy, 1);
-	radio_pkt_configure(8, PDU_AC_LEG_PAYLOAD_SIZE_MAX, (lll->phy << 1));
+	radio_phy_set(lll->phy, PHY_FLAGS_S8);
+	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, PDU_AC_LEG_PAYLOAD_SIZE_MAX,
+			    RADIO_PKT_CONF_PHY(lll->phy));
 
 	lll->is_adv_ind = 0U;
 	lll->is_aux_sched = 0U;
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 	radio_phy_set(0, 0);
-	radio_pkt_configure(8, PDU_AC_LEG_PAYLOAD_SIZE_MAX, 0);
+	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, PDU_AC_LEG_PAYLOAD_SIZE_MAX,
+			    RADIO_PKT_CONF_PHY(RADIO_PKT_CONF_PHY_LEGACY));
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
@@ -505,16 +515,16 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 		 */
 		if (lll->conn) {
 			static memq_link_t link;
-			static struct mayfly mfy_after_mstr_offset_get = {
+			static struct mayfly mfy_after_cen_offset_get = {
 				0, 0, &link, NULL,
-				ull_sched_mfy_after_mstr_offset_get};
+				ull_sched_mfy_after_cen_offset_get};
 			uint32_t retval;
 
-			mfy_after_mstr_offset_get.param = p;
+			mfy_after_cen_offset_get.param = p;
 
 			retval = mayfly_enqueue(TICKER_USER_ID_LLL,
 						TICKER_USER_ID_ULL_LOW, 1,
-						&mfy_after_mstr_offset_get);
+						&mfy_after_cen_offset_get);
 			LL_ASSERT(!retval);
 		}
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
@@ -575,8 +585,10 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 		 * done event.
 		 */
 		radio_isr_set(isr_done_cleanup, lll);
-	} else if (lll->is_aux_sched) {
-		/* Do not abort LLL scheduled auxiliary PDU scan */
+	} else if (lll->state || lll->is_aux_sched) {
+		/* Do not abort scan response reception or LLL scheduled
+		 * auxiliary PDU scan.
+		 */
 		return 0;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	} else {
@@ -610,11 +622,8 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 				cpu_sleep();
 			}
 #endif /* CONFIG_BT_CENTRAL */
-		} else if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-			radio_isr_set(isr_done_cleanup, param);
-			radio_disable();
 		} else {
-			radio_isr_set(isr_cleanup, param);
+			radio_isr_set(isr_done_cleanup, param);
 			radio_disable();
 		}
 		return;
@@ -630,10 +639,17 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 }
 
 static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
-			   uint32_t remainder, uint16_t lazy, uint8_t force, void *param)
+			   uint32_t remainder, uint16_t lazy, uint8_t force,
+			   void *param)
 {
-	radio_isr_set(isr_done_cleanup, param);
-	radio_disable();
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
+	uint32_t ret;
+
+	mfy.param = param;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0,
+			     &mfy);
+	LL_ASSERT(!ret);
 }
 
 static void ticker_op_start_cb(uint32_t status, void *param)
@@ -719,9 +735,20 @@ static void isr_rx(void *param)
 	rl_idx = FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	if (has_adva &&
-	    !lll_scan_isr_rx_check(lll, irkmatch_ok, devmatch_ok, rl_idx)) {
-		goto isr_rx_do_close;
+	if (has_adva) {
+		bool allow;
+
+		allow = lll_scan_isr_rx_check(lll, irkmatch_ok, devmatch_ok,
+					      rl_idx);
+		if (false) {
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
+	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+		} else if (allow || lll->is_sync) {
+			devmatch_ok = allow ? 1U : 0U;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
+		} else if (!allow) {
+			goto isr_rx_do_close;
+		}
 	}
 
 	err = isr_rx_pdu(lll, pdu, devmatch_ok, devmatch_id, irkmatch_ok,
@@ -972,6 +999,7 @@ static void isr_abort(void *param)
 static void isr_done_cleanup(void *param)
 {
 	struct lll_scan *lll;
+	bool is_resume;
 
 	/* Clear radio status and events */
 	lll_isr_status_reset();
@@ -979,7 +1007,7 @@ static void isr_done_cleanup(void *param)
 	/* Under race between duration expire, is_stop is set in this function,
 	 * and event preemption, prevent generating duplicate scan done events.
 	 */
-	if (lll_is_done(param)) {
+	if (lll_is_done(param, &is_resume)) {
 		return;
 	}
 
@@ -999,76 +1027,16 @@ static void isr_done_cleanup(void *param)
 	ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL,
 		    TICKER_ID_SCAN_STOP, NULL, NULL);
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-	struct event_done_extra *extra;
-
-	if (lll->is_aux_sched) {
-		struct node_rx_pdu *node_rx;
-
-		node_rx = ull_pdu_rx_alloc();
-		LL_ASSERT(node_rx);
-
-		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
-
-		node_rx->hdr.rx_ftr.param = lll;
-
-		ull_rx_put(node_rx->hdr.link, node_rx);
-		ull_rx_sched();
-	}
-
-	/* Generate Scan done events so that duration and max expiry is
-	 * detected in ULL.
-	 */
-	extra = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN);
-	LL_ASSERT(extra);
-
-	/* Prevent scan events in pipeline from being scheduled if duration has
-	 * expired.
-	 */
-	if (unlikely(lll->duration_reload && !lll->duration_expire)) {
-		lll->is_stop = 1U;
-	}
-#endif  /* CONFIG_BT_CTLR_ADV_EXT */
-
-	lll_isr_cleanup(param);
-}
-
-static void isr_cleanup(void *param)
-{
-	/* Clear radio status and events */
-	lll_isr_status_reset();
-
-	/* Do not generate done event for connection initiation, ULL will
-	 * disable the event when establishing/setting up the connection.
-	 * Also, do not generate done event when duration expire, as ULL
-	 * will disable the event.
-	 * As it was transmission of CONNECT_IND, there is not filters to
-	 * disable either.
-	 */
-	if (lll_is_done(param)) {
-		return;
-	}
-
-	/* Disable Rx filters, if cleanup after being in Rx state */
-	radio_filter_disable();
-
-	/* Scanner stop can expire while here in this ISR.
-	 * Deferred attempt to stop can fail as it would have
-	 * expired, hence ignore failure.
-	 */
-	ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL,
-		    TICKER_ID_SCAN_STOP, NULL, NULL);
-
-#if defined(CONFIG_BT_HCI_MESH_EXT)
-	if (_radio.advertiser.is_enabled && _radio.advertiser.is_mesh &&
-	    !_radio.advertiser.retry) {
-		mayfly_mesh_stop(NULL);
-	}
-#endif /* CONFIG_BT_HCI_MESH_EXT */
-
 #if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
-	struct node_rx_hdr *node_rx = ull_pdu_rx_alloc_peek(3);
+	struct node_rx_hdr *node_rx;
 
+	/* Check if there are enough free node rx available:
+	 * 1. For generating this scan indication
+	 * 2. Keep one available free for reception of ACL connection Rx data
+	 * 3. Keep one available free for reception on ACL connection to NACK
+	 *    the PDU
+	 */
+	node_rx = ull_pdu_rx_alloc_peek(3);
 	if (node_rx) {
 		ull_pdu_rx_alloc();
 
@@ -1080,10 +1048,49 @@ static void isr_cleanup(void *param)
 	}
 #endif /* CONFIG_BT_CTLR_SCAN_INDICATION */
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-	struct lll_scan *lll = param;
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	if (_radio.advertiser.is_enabled && _radio.advertiser.is_mesh &&
+	    !_radio.advertiser.retry) {
+		mayfly_mesh_stop(NULL);
+	}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 
-	lll->is_aux_sched = 0U;
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	/* If continuous scan then do not generate scan done when radio event
+	 * has been placed into prepare pipeline as a resume radio event.
+	 */
+	if (!is_resume) {
+		struct event_done_extra *extra;
+
+		/* Generate Scan done events so that duration and max expiry is
+		 * detected in ULL.
+		 */
+		extra = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN);
+		LL_ASSERT(extra);
+	}
+
+	/* Prevent scan events in pipeline from being scheduled if duration has
+	 * expired.
+	 */
+	if (unlikely(lll->duration_reload && !lll->duration_expire)) {
+		lll->is_stop = 1U;
+	}
+
+	if (lll->is_aux_sched) {
+		struct node_rx_pdu *node_rx;
+
+		lll->is_aux_sched = 0U;
+
+		node_rx = ull_pdu_rx_alloc();
+		LL_ASSERT(node_rx);
+
+		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
+
+		node_rx->hdr.rx_ftr.param = lll;
+
+		ull_rx_put(node_rx->hdr.link, node_rx);
+		ull_rx_sched();
+	}
 #endif  /* CONFIG_BT_CTLR_ADV_EXT */
 
 	lll_isr_cleanup(param);
@@ -1179,7 +1186,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			lll_prof_cputime_capture();
 		}
 
-		radio_isr_set(isr_cleanup, lll);
+		radio_isr_set(isr_done_cleanup, lll);
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -1275,8 +1282,8 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		radio_switch_complete_and_rx(0);
 
 		/* save the adv packet */
-		err = isr_rx_scan_report(lll, rssi_ready, phy_flags_rx,
-					 irkmatch_ok, rl_idx, false);
+		err = isr_rx_scan_report(lll, devmatch_ok, irkmatch_ok, rl_idx,
+					 rssi_ready, phy_flags_rx, false);
 		if (err) {
 			return err;
 		}
@@ -1379,8 +1386,8 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		uint32_t err;
 
 		/* save the scan response packet */
-		err = isr_rx_scan_report(lll, rssi_ready, phy_flags_rx,
-					 irkmatch_ok, rl_idx, dir_report);
+		err = isr_rx_scan_report(lll, devmatch_ok, irkmatch_ok, rl_idx,
+					 rssi_ready, phy_flags_rx, dir_report);
 		if (err) {
 			/* Auxiliary PDU LLL scanning has been setup */
 			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
@@ -1469,9 +1476,10 @@ static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp)
 			&srsp->scan_rsp.addr[0], BDADDR_SIZE) == 0));
 }
 
-static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
-			      uint8_t phy_flags_rx, uint8_t irkmatch_ok,
-			      uint8_t rl_idx, bool dir_report)
+static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
+			      uint8_t irkmatch_ok, uint8_t rl_idx,
+			      uint8_t rssi_ready, uint8_t phy_flags_rx,
+			      bool dir_report)
 {
 	struct node_rx_pdu *node_rx;
 	int err = 0;
@@ -1563,6 +1571,11 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
 	/* save the directed adv report flag */
 	node_rx->hdr.rx_ftr.direct = dir_report;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
+	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+	node_rx->hdr.rx_ftr.devmatch = devmatch_ok;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	if (node_rx->hdr.type == NODE_RX_TYPE_MESH_REPORT) {

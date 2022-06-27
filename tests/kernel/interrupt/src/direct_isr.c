@@ -20,25 +20,13 @@
 #define TEST_DIRECT_IRQ_LINE_1	3
 #define TEST_DIRECT_IRQ_LINE_2	4
 
-/* the vector got would be different when enable code coverage */
-#if defined(CONFIG_COVERAGE)
-#define TRIGGER_DIRECT_IRQ_LINE_1	34
-#define TRIGGER_DIRECT_IRQ_LINE_2	35
-#else
-#define TRIGGER_DIRECT_IRQ_LINE_1	35
-#define TRIGGER_DIRECT_IRQ_LINE_2	34
-#endif
-
 #define TEST_DIRECT_IRQ_PRIO	0
 
 #elif defined(CONFIG_ARCH_POSIX)
 #define TEST_DIRECT_IRQ_LINE_1	5
 #define TEST_DIRECT_IRQ_LINE_2	6
 
-#define TRIGGER_DIRECT_IRQ_LINE_1	TEST_DIRECT_IRQ_LINE_1
-#define TRIGGER_DIRECT_IRQ_LINE_2	TEST_DIRECT_IRQ_LINE_2
-
-#define TEST_DIRECT_IRQ_PRIO	1
+#define TEST_DIRECT_IRQ_PRIO	5
 
 #endif
 
@@ -81,20 +69,11 @@ void test_direct_interrupt(void)
 	trig_vec1 = Z_IRQ_TO_INTERRUPT_VECTOR(TEST_DIRECT_IRQ_LINE_1);
 	trig_vec2 = Z_IRQ_TO_INTERRUPT_VECTOR(TEST_DIRECT_IRQ_LINE_2);
 #elif defined(CONFIG_ARCH_POSIX)
-	trig_vec1 = TRIGGER_DIRECT_IRQ_LINE_1;
-	trig_vec2 = TRIGGER_DIRECT_IRQ_LINE_2;
+	trig_vec1 = TEST_DIRECT_IRQ_LINE_1;
+	trig_vec2 = TEST_DIRECT_IRQ_LINE_2;
 #endif
 	TC_PRINT("irq(%d)=vector(%d)\n", TEST_DIRECT_IRQ_LINE_1, trig_vec1);
 	TC_PRINT("irq(%d)=vector(%d)\n", TEST_DIRECT_IRQ_LINE_2, trig_vec2);
-
-	/* verify the target triggering vector is correct */
-	zassert_equal(trig_vec1, TRIGGER_DIRECT_IRQ_LINE_1,
-			"vector %d mismatch we specified to trigger %d",
-			trig_vec1, TRIGGER_DIRECT_IRQ_LINE_1);
-
-	zassert_equal(trig_vec2, TRIGGER_DIRECT_IRQ_LINE_2,
-			"vector %d mismatch we specified to trigger %d",
-			trig_vec2, TRIGGER_DIRECT_IRQ_LINE_2);
 
 	irq_enable(TEST_DIRECT_IRQ_LINE_1);
 	irq_enable(TEST_DIRECT_IRQ_LINE_2);
@@ -103,33 +82,44 @@ void test_direct_interrupt(void)
 			direct_int_executed[1] == 0,
 			"Both ISR should not execute");
 
-	trigger_irq(TRIGGER_DIRECT_IRQ_LINE_1);
+	trigger_irq(trig_vec1);
 
 	zassert_true(direct_int_executed[0] == 1 &&
 			direct_int_executed[1] == 0,
 			"ISR1 should execute");
 
-	trigger_irq(TRIGGER_DIRECT_IRQ_LINE_2);
+	trigger_irq(trig_vec2);
 
 	zassert_true(direct_int_executed[0] == 1 &&
 			direct_int_executed[1] == 1,
 			"Both ISR should execute");
 
-	irq_disable(TEST_DIRECT_IRQ_LINE_1);
-	irq_disable(TEST_DIRECT_IRQ_LINE_2);
+	unsigned int key = irq_lock();
 
-	trigger_irq(TRIGGER_DIRECT_IRQ_LINE_1);
-	trigger_irq(TRIGGER_DIRECT_IRQ_LINE_2);
+	/* trigger under irq locked */
+	trigger_irq(trig_vec1);
+	trigger_irq(trig_vec2);
 
-	/*
-	 * irq_enable()/irq_disable() does not work here,
-	 * see #33901.
-	 */
-#if !defined(CONFIG_X86)
 	zassert_true(direct_int_executed[0] == 1 &&
 			direct_int_executed[1] == 1,
 			"Both ISR should not execute again");
-#endif
+
+	irq_unlock(key);
+
+	/* interrupt serve after irq unlocked */
+	zassert_true(direct_int_executed[0] == 2 &&
+			direct_int_executed[1] == 2,
+			"Both ISR should execute again(%d)(%d)",
+			direct_int_executed[0], direct_int_executed[1]);
+
+	/* trigger after irq unlocked */
+	trigger_irq(trig_vec1);
+	trigger_irq(trig_vec2);
+
+	zassert_true(direct_int_executed[0] == 3 &&
+			direct_int_executed[1] == 3,
+			"Both ISR should execute again(%d)(%d)",
+			direct_int_executed[0], direct_int_executed[1]);
 }
 #else
 void test_direct_interrupt(void)

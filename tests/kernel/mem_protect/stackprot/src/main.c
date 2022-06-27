@@ -6,11 +6,11 @@
  */
 
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 
-#define STACKSIZE       (2048 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE       (2048 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 ZTEST_BMEM static int count;
 ZTEST_BMEM static int ret = TC_PASS;
@@ -34,7 +34,6 @@ void check_input(const char *name, const char *input);
  *
  * @param name    caller identification string
  *
- * @return N/A
  */
 
 void print_loop(const char *name)
@@ -59,7 +58,6 @@ void print_loop(const char *name)
  * When stack protection feature is not enabled, the system crashes with
  * error like: Trying to execute code outside RAM or ROM.
  *
- * @return N/A
  */
 
 void check_input(const char *name, const char *input)
@@ -78,7 +76,6 @@ void check_input(const char *name, const char *input)
  * feature is enabled.  Hence it will not execute the print_loop function
  * and will not set ret to TC_FAIL.
  *
- * @return N/A
  */
 void alternate_thread(void)
 {

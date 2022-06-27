@@ -29,7 +29,7 @@
  */
 #ifdef CONFIG_BT_CTLR_DEBUG_PINS
 
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 extern const struct device *vega_debug_portb;
 extern const struct device *vega_debug_portc;

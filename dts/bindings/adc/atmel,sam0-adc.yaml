@@ -5,7 +5,9 @@ description: Atmel SAM0 family ADC
 
 compatible: "atmel,sam0-adc"
 
-include: adc-controller.yaml
+include:
+    - name: adc-controller.yaml
+    - name: pinctrl-device.yaml
 
 properties:
     reg:

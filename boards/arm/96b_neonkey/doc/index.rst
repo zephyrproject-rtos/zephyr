@@ -37,7 +37,7 @@ Hardware
   - Pressure: BMP280
   - ALS/Proximity: RPR-0521RS
   - Geomagnetic: BMM150
-  - Acclerometer/Gyroscope: BMI160
+  - Accelerometer/Gyroscope: BMI160
   - AMR Hall sensor: MRMS501A
   - Microphone: SPK0415HM4H-B
 

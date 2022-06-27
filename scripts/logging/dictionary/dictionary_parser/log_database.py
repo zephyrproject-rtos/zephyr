@@ -12,7 +12,9 @@ import base64
 import copy
 import json
 
-from .utils import extract_string_from_section
+from .mipi_syst import gen_syst_xml_file
+from .utils import extract_one_string_in_section
+from .utils import find_string_in_mappings
 
 
 ARCHS = {
@@ -24,6 +26,9 @@ ARCHS = {
     },
     "arm64" : {
         "kconfig": "CONFIG_ARM64",
+    },
+    "mips" : {
+        "kconfig": "CONFIG_MIPS",
     },
     "sparc" : {
         "kconfig": "CONFIG_SPARC",
@@ -52,24 +57,23 @@ ARCHS = {
 
 class LogDatabase():
     """Class of log database"""
-    # Update this if binary format of dictionary based logging
+    # Update this if database format of dictionary based logging
     # has changed
-    ZEPHYR_DICT_LOG_VER = 1
+    ZEPHYR_DICT_LOG_VER = 2
 
     LITTLE_ENDIAN = True
     BIG_ENDIAN = False
 
     def __init__(self):
-        new_db = dict()
+        new_db = {}
 
         new_db['version'] = self.ZEPHYR_DICT_LOG_VER
-        new_db['target'] = dict()
-        new_db['sections'] = dict()
-        new_db['log_subsys'] = dict()
-        new_db['log_subsys']['log_instances'] = dict()
+        new_db['target'] = {}
+        new_db['log_subsys'] = {}
+        new_db['log_subsys']['log_instances'] = {}
         new_db['build_id'] = None
         new_db['arch'] = None
-        new_db['kconfigs'] = dict()
+        new_db['kconfigs'] = {}
 
         self.database = new_db
 
@@ -156,26 +160,66 @@ class LogDatabase():
         return self.database['target']['little_endianness'] == self.LITTLE_ENDIAN
 
 
-    def add_string_section(self, name, sect_dict):
-        """Add a static string section to the collection"""
-        self.database['sections'][name] = sect_dict
+    def get_string_mappings(self):
+        """Get string mappings to database"""
+        return self.database['string_mappings']
+
+
+    def set_string_mappings(self, database):
+        """Add string mappings to database"""
+        self.database['string_mappings'] = database
+
+
+    def has_string_mappings(self):
+        """Return True if there are string mappings in database"""
+        if 'string_mappings' in self.database:
+            return True
+
+        return False
 
 
     def has_string_sections(self):
         """Return True if there are any static string sections"""
+        if 'sections' not in self.database:
+            return False
+
         return len(self.database['sections']) != 0
 
 
-    def find_string(self, string_ptr):
-        """Find string pointed by string_ptr from any static string section.
-        Return None if not found."""
+    def __find_string_in_mappings(self, string_ptr):
+        """
+        Find string pointed by string_ptr in the string mapping
+        list. Return None if not found.
+        """
+        return find_string_in_mappings(self.database['string_mappings'], string_ptr)
+
+
+    def __find_string_in_sections(self, string_ptr):
+        """
+        Find string pointed by string_ptr in the binary data
+        sections. Return None if not found.
+        """
         for _, sect in self.database['sections'].items():
-            one_str = extract_string_from_section(sect, string_ptr)
+            one_str = extract_one_string_in_section(sect, string_ptr)
 
             if one_str is not None:
                 return one_str
 
         return None
+
+
+    def find_string(self, string_ptr):
+        """Find string pointed by string_ptr in the database.
+        Return None if not found."""
+        one_str = None
+
+        if self.has_string_mappings():
+            one_str = self.__find_string_in_mappings(string_ptr)
+
+        if one_str is None and self.has_string_sections():
+            one_str = self.__find_string_in_sections(string_ptr)
+
+        return one_str
 
 
     def add_log_instance(self, source_id, name, level, address):
@@ -213,17 +257,29 @@ class LogDatabase():
     def read_json_database(db_file_name):
         """Read database from file and return a LogDatabase object"""
         try:
-            with open(db_file_name, "r") as db_fd:
+            with open(db_file_name, "r", encoding="iso-8859-1") as db_fd:
                 json_db = json.load(db_fd)
         except (OSError, json.JSONDecodeError):
             return None
 
         # Decode data in JSON back into binary data
-        for _, sect in json_db['sections'].items():
-            sect['data'] = base64.b64decode(sect['data_b64'])
+        if 'sections' in json_db:
+            for _, sect in json_db['sections'].items():
+                sect['data'] = base64.b64decode(sect['data_b64'])
 
         database = LogDatabase()
         database.database = json_db
+
+        # JSON encodes the addresses in string mappings as literal strings.
+        # So convert them back to integers, as this is needed for partial
+        # matchings.
+        if database.has_string_mappings():
+            new_str_map = {}
+
+            for addr, one_str in database.get_string_mappings().items():
+                new_str_map[int(addr)] = one_str
+
+            database.set_string_mappings(new_str_map)
 
         return database
 
@@ -234,14 +290,30 @@ class LogDatabase():
         json_db = copy.deepcopy(database.database)
 
         # Make database object into something JSON can dump
-        for _, sect in json_db['sections'].items():
-            encoded = base64.b64encode(sect['data'])
-            sect['data_b64'] = encoded.decode('ascii')
-            del sect['data']
+        if 'sections' in json_db:
+            for _, sect in json_db['sections'].items():
+                encoded = base64.b64encode(sect['data'])
+                sect['data_b64'] = encoded.decode('ascii')
+                del sect['data']
 
         try:
-            with open(db_file_name, "w") as db_fd:
+            with open(db_file_name, "w", encoding="iso-8859-1") as db_fd:
                 db_fd.write(json.dumps(json_db))
+        except OSError:
+            return False
+
+        return True
+
+    @staticmethod
+    def write_syst_database(db_file_name, database):
+        """
+        Write the database into MIPI Sys-T Collateral XML file
+        """
+
+        try:
+            with open(db_file_name, "w", encoding="iso-8859-1") as db_fd:
+                xml = gen_syst_xml_file(database)
+                db_fd.write(xml)
         except OSError:
             return False
 

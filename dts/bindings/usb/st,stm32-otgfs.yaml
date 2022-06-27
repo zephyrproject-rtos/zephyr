@@ -5,13 +5,19 @@ description: STM32 OTGFS controller
 
 compatible: "st,stm32-otgfs"
 
-include: usb-ep.yaml
+include: [usb-ep.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
       required: true
 
     interrupts:
+      required: true
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
       required: true
 
     ram-size:
@@ -28,13 +34,3 @@ properties:
 
     clocks:
       required: true
-
-    pinctrl-0:
-      type: phandles
-      required: false
-      description: |
-        Pin configuration for USB OTG FS signals (DM/DP/SOF/ID/VBUS).
-        We expect that the phandles will reference pinctrl nodes.
-
-        For example:
-           <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;

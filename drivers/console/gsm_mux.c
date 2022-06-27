@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gsm_mux, CONFIG_GSM_MUX_LOG_LEVEL);
 
-#include <kernel.h>
-#include <sys/util.h>
-#include <sys/crc.h>
-#include <net/buf.h>
-#include <net/ppp.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/crc.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/ppp.h>
 
 #include "uart_mux_internal.h"
 #include "gsm_mux.h"
@@ -28,9 +28,9 @@ LOG_MODULE_REGISTER(gsm_mux, CONFIG_GSM_MUX_LOG_LEVEL);
 #define FCS_INIT_VALUE 0xFF
 #define FCS_GOOD_VALUE 0xCF
 
-#define EA 0x01  /* Extension bit      */
-#define CR 0x02  /* Command / Response */
-#define PF 0x10  /* Poll / Final       */
+#define GSM_EA 0x01  /* Extension bit      */
+#define GSM_CR 0x02  /* Command / Response */
+#define GSM_PF 0x10  /* Poll / Final       */
 
 /* Frame types */
 #define FT_RR      0x01  /* Receive Ready                            */
@@ -218,11 +218,11 @@ static void hexdump_packet(const char *header, uint8_t address, bool cmd_rsp,
 	ret = snprintk(out, sizeof(out), "%s: DLCI %d %s ",
 		       header, address, cmd_rsp ? "cmd" : "resp");
 	if (ret >= sizeof(out)) {
-		LOG_DBG("%d: Too long msg (%d)", __LINE__, ret - sizeof(out));
+		LOG_DBG("%d: Too long msg (%ld)", __LINE__, (long)(ret - sizeof(out)));
 		goto print;
 	}
 
-	frame_type = get_frame_type_str(control & ~PF);
+	frame_type = get_frame_type_str(control & ~GSM_PF);
 	if (frame_type) {
 		ret += snprintk(out + ret, sizeof(out) - ret, "%s ",
 				frame_type);
@@ -244,14 +244,13 @@ static void hexdump_packet(const char *header, uint8_t address, bool cmd_rsp,
 	}
 
 	if (ret >= sizeof(out)) {
-		LOG_DBG("%d: Too long msg (%d)", __LINE__, ret - sizeof(out));
+		LOG_DBG("%d: Too long msg (%ld)", __LINE__, (long)(ret - sizeof(out)));
 		goto print;
 	}
 
-	ret += snprintk(out + ret, sizeof(out) - ret, "%s",
-			(control & PF) ? "(P)" : "(F)");
+	ret += snprintk(out + ret, sizeof(out) - ret, "%s", (control & GSM_PF) ? "(P)" : "(F)");
 	if (ret >= sizeof(out)) {
-		LOG_DBG("%d: Too long msg (%d)", __LINE__, ret - sizeof(out));
+		LOG_DBG("%d: Too long msg (%ld)", __LINE__, (long)(ret - sizeof(out)));
 		goto print;
 	}
 
@@ -286,7 +285,7 @@ static bool gsm_mux_read_ea(int *value, uint8_t recv_byte)
 	*value |= recv_byte >> 1;
 
 	/* When the address has been read fully, the EA bit is 1 */
-	return recv_byte & EA;
+	return recv_byte & GSM_EA;
 }
 
 static bool gsm_mux_read_msg_len(struct gsm_mux *mux, uint8_t recv_byte)
@@ -380,15 +379,15 @@ static int gsm_mux_send_data_msg(struct gsm_mux *mux, bool cmd,
 	int ret;
 
 	hdr[0] = SOF_MARKER;
-	hdr[1] = (dlci->num << 2) | ((uint8_t)cmd << 1) | EA;
+	hdr[1] = (dlci->num << 2) | ((uint8_t)cmd << 1) | GSM_EA;
 	hdr[2] = frame_type;
 
 	if (size < 128) {
-		hdr[3] = (size << 1) | EA;
+		hdr[3] = (size << 1) | GSM_EA;
 		pos = 4;
 	} else {
-		hdr[3] = (size >> 7);
-		hdr[4] = (size & 127) << 1;
+		hdr[3] = (size & 127) << 1;
+		hdr[4] = (size >> 7);
 		pos = 5;
 	}
 
@@ -406,7 +405,7 @@ static int gsm_mux_send_data_msg(struct gsm_mux *mux, bool cmd,
 	 */
 	hdr[pos] = 0xFF - gsm_mux_fcs_add_buf(FCS_INIT_VALUE, &hdr[1],
 					      pos - 1);
-	if ((frame_type & ~PF) != FT_UIH) {
+	if ((frame_type & ~GSM_PF) != FT_UIH) {
 		hdr[pos] = gsm_mux_fcs_add_buf(hdr[pos], buf, size);
 	}
 
@@ -425,9 +424,9 @@ static int gsm_mux_send_control_msg(struct gsm_mux *mux, bool cmd,
 	uint8_t buf[6];
 
 	buf[0] = SOF_MARKER;
-	buf[1] = (dlci_address << 2) | ((uint8_t)cmd << 1) | EA;
+	buf[1] = (dlci_address << 2) | ((uint8_t)cmd << 1) | GSM_EA;
 	buf[2] = frame_type;
-	buf[3] = EA;
+	buf[3] = GSM_EA;
 	buf[4] = 0xFF - gsm_mux_fcs_add_buf(FCS_INIT_VALUE, buf + 1, 3);
 	buf[5] = SOF_MARKER;
 
@@ -512,8 +511,7 @@ static bool handle_t1_timeout(struct gsm_dlci *dlci)
 		dlci->retries--;
 		if (dlci->retries) {
 			dlci->req_start = k_uptime_get_32();
-			(void)gsm_mux_send_command(dlci->mux, dlci->num,
-						   FT_SABM | PF);
+			(void)gsm_mux_send_command(dlci->mux, dlci->num, FT_SABM | GSM_PF);
 			return true;
 		}
 
@@ -521,7 +519,7 @@ static bool handle_t1_timeout(struct gsm_dlci *dlci)
 			dlci->command_cb(dlci, false);
 		}
 
-		if (dlci->num == 0 && dlci->mux->control == (FT_DM | PF)) {
+		if (dlci->num == 0 && dlci->mux->control == (FT_DM | GSM_PF)) {
 			LOG_DBG("DLCI %d -> ADM mode", dlci->num);
 			dlci->mode = GSM_DLCI_MODE_ADM;
 			gsm_dlci_open(dlci);
@@ -531,8 +529,7 @@ static bool handle_t1_timeout(struct gsm_dlci *dlci)
 	} else if (dlci->state == GSM_DLCI_CLOSING) {
 		dlci->retries--;
 		if (dlci->retries) {
-			(void)gsm_mux_send_command(dlci->mux, dlci->num,
-						   FT_DISC | PF);
+			(void)gsm_mux_send_command(dlci->mux, dlci->num, FT_DISC | GSM_PF);
 			return true;
 		}
 
@@ -610,7 +607,8 @@ static void ctrl_msg_cleanup(struct gsm_control_msg *entry, bool pending)
 /* T2 timeout is for control message retransmits */
 static void gsm_mux_t2_timeout(struct k_work *work)
 {
-	struct gsm_mux *mux = CONTAINER_OF(work, struct gsm_mux, t2_timer);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct gsm_mux *mux = CONTAINER_OF(dwork, struct gsm_mux, t2_timer);
 	uint32_t current_time = k_uptime_get_32();
 	struct gsm_control_msg *entry, *next;
 
@@ -697,7 +695,7 @@ static int gsm_dlci_opening_or_closing(struct gsm_dlci *dlci,
 
 	sys_slist_append(&dlci_active_t1_timers, &dlci->node);
 
-	return gsm_mux_send_command(dlci->mux, dlci->num, command | PF);
+	return gsm_mux_send_command(dlci->mux, dlci->num, command | GSM_PF);
 }
 
 static int gsm_dlci_closing(struct gsm_dlci *dlci, dlci_command_cb_t cb)
@@ -752,8 +750,7 @@ static int gsm_mux_control_reply(struct gsm_dlci *dlci, bool sub_cr,
 	 */
 	bool cmd = !dlci->mux->is_initiator;
 
-	return gsm_mux_send_data_msg(dlci->mux, cmd, dlci, FT_UIH | PF,
-				     buf, len);
+	return gsm_mux_send_data_msg(dlci->mux, cmd, dlci, FT_UIH | GSM_PF, buf, len);
 }
 
 static bool get_field(struct net_buf *buf, int *ret_value)
@@ -817,8 +814,8 @@ static int gsm_mux_control_message(struct gsm_dlci *dlci, struct net_buf *buf)
 	__ASSERT_NO_MSG(dlci != NULL);
 
 	/* Remove the C/R bit from sub-command */
-	cr = buf->data[0] & CR;
-	buf->data[0] &= ~CR;
+	cr = buf->data[0] & GSM_CR;
+	buf->data[0] &= ~GSM_CR;
 
 	ret = get_field(buf, &command);
 	if (!ret) {
@@ -885,7 +882,7 @@ static int gsm_mux_control_message(struct gsm_dlci *dlci, struct net_buf *buf)
 	case CMD_SNC:	/* Service negotiation command */
 	default:
 		/* Reply to bad commands with an NSC */
-		buf->data[0] = command | (cr ? CR : 0);
+		buf->data[0] = command | (cr ? GSM_CR : 0);
 		buf->len = 1;
 		ret = gsm_mux_control_reply(dlci, cr, CMD_NSC, buf->data, len);
 		break;
@@ -1029,7 +1026,7 @@ static int gsm_mux_process_pkt(struct gsm_mux *mux)
 
 	/* What to do next */
 	switch (mux->control) {
-	case FT_SABM | PF:
+	case FT_SABM | GSM_PF:
 		if (cmd == false) {
 			ret = -ENOENT;
 			goto fail;
@@ -1061,7 +1058,7 @@ static int gsm_mux_process_pkt(struct gsm_mux *mux)
 
 		break;
 
-	case FT_DISC | PF:
+	case FT_DISC | GSM_PF:
 		if (cmd == false) {
 			ret = -ENOENT;
 			goto fail;
@@ -1077,7 +1074,7 @@ static int gsm_mux_process_pkt(struct gsm_mux *mux)
 		gsm_dlci_close(dlci);
 		break;
 
-	case FT_UA | PF:
+	case FT_UA | GSM_PF:
 	case FT_UA:
 		if (cmd == true || dlci == NULL) {
 			ret = -ENOENT;
@@ -1097,7 +1094,7 @@ static int gsm_mux_process_pkt(struct gsm_mux *mux)
 
 		break;
 
-	case FT_DM | PF:
+	case FT_DM | GSM_PF:
 	case FT_DM:
 		if (cmd == true || dlci == NULL) {
 			ret = -ENOENT;
@@ -1107,13 +1104,12 @@ static int gsm_mux_process_pkt(struct gsm_mux *mux)
 		gsm_dlci_close(dlci);
 		break;
 
-	case FT_UI | PF:
+	case FT_UI | GSM_PF:
 	case FT_UI:
-	case FT_UIH | PF:
+	case FT_UIH | GSM_PF:
 	case FT_UIH:
 		if (dlci == NULL || dlci->state != GSM_DLCI_OPEN) {
-			(void)gsm_mux_send_command(mux, dlci_address,
-						   FT_DM | PF);
+			(void)gsm_mux_send_command(mux, dlci_address, FT_DM | GSM_PF);
 			ret = -ENOENT;
 			goto out;
 		}
@@ -1142,13 +1138,12 @@ fail:
 
 static bool is_UI(struct gsm_mux *mux)
 {
-	return (mux->control & ~PF) == FT_UI;
+	return (mux->control & ~GSM_PF) == FT_UI;
 }
 
-const char *gsm_mux_state_str(enum gsm_mux_state state)
+static const char *gsm_mux_state_str(enum gsm_mux_state state)
 {
-#if (CONFIG_GSM_MUX_LOG_LEVEL >= LOG_LEVEL_DBG) || \
-					defined(CONFIG_NET_SHELL)
+#if (CONFIG_GSM_MUX_LOG_LEVEL >= LOG_LEVEL_DBG) || defined(CONFIG_NET_SHELL)
 	switch (state) {
 	case GSM_MUX_SOF:
 		return "Start-Of-Frame";
@@ -1262,7 +1257,7 @@ static void gsm_mux_process_data(struct gsm_mux *mux, uint8_t recv_byte)
 		 */
 		mux->address = recv_byte;
 		LOG_DBG("[%p] recv %d address %d C/R %d", mux, recv_byte,
-			mux->address >> 2, !!(mux->address & CR));
+			mux->address >> 2, !!(mux->address & GSM_CR));
 		gsm_mux_change_state(mux, GSM_MUX_CONTROL);
 		mux->fcs = gsm_mux_fcs_add(mux->fcs, recv_byte);
 		break;
@@ -1270,8 +1265,8 @@ static void gsm_mux_process_data(struct gsm_mux *mux, uint8_t recv_byte)
 	case GSM_MUX_CONTROL:
 		mux->control = recv_byte;
 		LOG_DBG("[%p] recv %s (0x%02x) control 0x%02x P/F %d", mux,
-			get_frame_type_str(recv_byte & ~PF), recv_byte,
-			mux->control & ~PF, !!(mux->control & PF));
+			get_frame_type_str(recv_byte & ~GSM_PF), recv_byte,
+			mux->control & ~GSM_PF, !!(mux->control & GSM_PF));
 		gsm_mux_change_state(mux, GSM_MUX_LEN_0);
 		mux->fcs = gsm_mux_fcs_add(mux->fcs, recv_byte);
 		break;

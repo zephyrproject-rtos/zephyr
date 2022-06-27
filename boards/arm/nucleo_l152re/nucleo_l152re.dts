@@ -64,12 +64,14 @@
 
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -87,12 +89,14 @@
 
 &adc1 {
 	pinctrl-0 = <&adc_in0_pa0>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &dac1 {
 	status = "okay";
 	pinctrl-0 = <&dac_out1_pa4>;
+	pinctrl-names = "default";
 };
 
 &flash0 {
@@ -104,7 +108,7 @@
 		/* Set 2KB of storage at the end of 512KB flash */
 		storage_partition: partition@7f800 {
 			label = "storage";
-			reg = <0x0007f800 0x00000800>;
+			reg = <0x0007f800 DT_SIZE_K(2)>;
 		};
 	};
 };
@@ -115,6 +119,7 @@
 	pwm3: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pa6>;
+		pinctrl-names = "default";
 	};
 };
 

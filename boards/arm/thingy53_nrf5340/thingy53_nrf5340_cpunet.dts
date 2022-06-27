@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf5340_cpunet_qkaa.dtsi>
+#include "thingy53_nrf5340_cpunet-pinctrl.dtsi"
 
 / {
 	model = "Nordic Thingy53 NRF5340 Network";
@@ -17,6 +18,7 @@
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
+		zephyr,bt-hci-rpmsg-ipc = &ipc0;
 		zephyr,sram = &sram1;
 		zephyr,flash = &flash1;
 		zephyr,code-partition = &slot0_partition;
@@ -50,12 +52,12 @@
 		};
 	};
 
-	nrf_radio_fem: nrf21540_fem {
+	nrf_radio_fem: fem {
 		compatible = "nordic,nrf21540-fem";
-		rx-en-gpios = <&gpio1 11 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
-		mode-gpios = <&gpio1 12 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
-		pdn-gpios = <&gpio1 10 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
-		tx-en-gpios = <&gpio0 30 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		rx-en-gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+		mode-gpios  = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+		pdn-gpios   = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+		tx-en-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
 	};
 
 	aliases {
@@ -79,22 +81,13 @@
 	status = "okay";
 };
 
-&i2c0 {
-	status = "disabled";
-};
-
-&spi0 {
-	status = "disabled";
-};
-
 &uart0 {
 	compatible = "nordic,nrf-uarte";
 	status = "disabled";
 	current-speed = <115200>;
-	tx-pin = <12>;
-	rx-pin = <11>;
-	rts-pin = <10>;
-	cts-pin = <9>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &timer0 {

@@ -17,8 +17,8 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_ARCH_INTERFACE_H_
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_ARCH_INTERFACE_H_
 
-#include <kernel.h>
-#include <sys/arch_interface.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/arch_interface.h>
 
 #ifndef _ASMLANGUAGE
 
@@ -245,7 +245,6 @@ static inline bool arch_is_in_isr(void);
  * @{
  */
 
-#ifdef CONFIG_MMU
 /**
  * Map physical memory into the virtual address space
  *
@@ -335,21 +334,18 @@ void arch_mem_unmap(void *addr, size_t size);
  */
 int arch_page_phys_get(void *virt, uintptr_t *phys);
 
-#ifdef CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES
 /**
  * Update page frame database with reserved pages
  *
  * Some page frames within system RAM may not be available for use. A good
  * example of this is reserved regions in the first megabyte on PC-like systems.
  *
- * Implementations of this function should mark all relavent entries in
+ * Implementations of this function should mark all relevant entries in
  * z_page_frames with K_PAGE_FRAME_RESERVED. This function is called at
  * early system initialization with mm_lock held.
  */
 void arch_reserved_pages_update(void);
-#endif /* ARCH_HAS_RESERVED_PAGE_FRAMES */
 
-#ifdef CONFIG_DEMAND_PAGING
 /**
  * Update all page tables for a paged-out data page
  *
@@ -526,8 +522,7 @@ enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location);
  */
 uintptr_t arch_page_info_get(void *addr, uintptr_t *location,
 			     bool clear_accessed);
-#endif /* CONFIG_DEMAND_PAGING */
-#endif /* CONFIG_MMU */
+
 /** @} */
 
 /**

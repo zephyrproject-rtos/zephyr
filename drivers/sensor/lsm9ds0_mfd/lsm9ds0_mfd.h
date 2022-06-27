@@ -12,7 +12,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_LSM9DS0_MFD_LSM9DS0_MFD_H_
 
 #include <zephyr/types.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define LSM9DS0_MFD_REG_OUT_TEMP_L_XM		0x05
 #define LSM9DS0_MFD_REG_OUT_TEMP_H_XM		0x06

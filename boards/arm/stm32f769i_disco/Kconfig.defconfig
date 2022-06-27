@@ -12,6 +12,12 @@ config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
 
+config I2C
+	default y if KSCAN
+
+config KSCAN_FT5336
+	default y if KSCAN
+
 if NETWORKING
 
 config NET_L2_ETHERNET

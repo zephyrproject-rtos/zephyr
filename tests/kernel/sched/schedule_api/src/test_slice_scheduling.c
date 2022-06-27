@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2022 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,9 +20,12 @@
 #endif
 #define BASE_PRIORITY 0
 #define ITRERATION_COUNT 5
+
 BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
 /* slice size in millisecond */
 #define SLICE_SIZE 200
+#define PERTHREAD_SLICE_TICKS 64
+#define TICK_SLOP 4
 /* busy for more than one slice */
 #define BUSY_MS (SLICE_SIZE + 20)
 static struct k_thread t[NUM_THREAD];
@@ -136,8 +139,74 @@ void test_slice_scheduling(void)
 	k_thread_priority_set(k_current_get(), old_prio);
 }
 
+static volatile int32_t perthread_count;
+static volatile uint32_t last_cyc;
+static volatile bool perthread_running;
+static K_SEM_DEFINE(perthread_sem, 0, 1);
+
+static void slice_expired(struct k_thread *thread, void *data)
+{
+	zassert_equal(thread, data, "wrong callback data pointer");
+
+	uint32_t now = k_cycle_get_32();
+	uint32_t dt = k_cyc_to_ticks_near32(now - last_cyc);
+
+	zassert_true(perthread_running, "thread didn't start");
+	zassert_true(dt >= (PERTHREAD_SLICE_TICKS - TICK_SLOP),
+		     "slice expired >%d ticks too soon (dt=%d)", TICK_SLOP, dt);
+	zassert_true((dt - PERTHREAD_SLICE_TICKS) <= TICK_SLOP,
+		     "slice expired >%d ticks late (dt=%d)", TICK_SLOP, dt);
+
+	last_cyc = now;
+
+	/* First time through, just let the slice expire and keep
+	 * running.  Second time, abort the thread and wake up the
+	 * main test function.
+	 */
+	if (perthread_count++ != 0) {
+		k_thread_abort(thread);
+		perthread_running = false;
+		k_sem_give(&perthread_sem);
+	}
+}
+
+static void slice_perthread_fn(void *a, void *b, void *c)
+{
+	ARG_UNUSED(a); ARG_UNUSED(b); ARG_UNUSED(c);
+	while (true) {
+		perthread_running = true;
+		k_busy_wait(10);
+	}
+}
+
+void test_slice_perthread(void)
+{
+	if (!IS_ENABLED(CONFIG_TIMESLICE_PER_THREAD)) {
+		ztest_test_skip();
+		return;
+	}
+
+	/* Create the thread but don't start it */
+	k_thread_create(&t[0], tstacks[0], STACK_SIZE,
+			slice_perthread_fn, NULL, NULL, NULL,
+			1, 0, K_FOREVER);
+	k_thread_time_slice_set(&t[0], PERTHREAD_SLICE_TICKS, slice_expired, &t[0]);
+
+	/* Tick align, set up, then start */
+	k_usleep(1);
+	last_cyc = k_cycle_get_32();
+	k_thread_start(&t[0]);
+
+	k_sem_take(&perthread_sem, K_FOREVER);
+	zassert_false(perthread_running, "thread failed to suspend");
+}
+
 #else /* CONFIG_TIMESLICING */
 void test_slice_scheduling(void)
+{
+	ztest_test_skip();
+}
+void test_slice_perthread(void)
 {
 	ztest_test_skip();
 }

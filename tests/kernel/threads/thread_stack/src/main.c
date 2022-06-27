@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <syscall_handler.h>
+#include <zephyr/syscall_handler.h>
 #include <kernel_internal.h>
 
 #include "test_syscall.h"
@@ -16,7 +16,7 @@
  */
 struct k_thread test_thread;
 #define NUM_STACKS	3
-#define STEST_STACKSIZE	(512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STEST_STACKSIZE	(512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 K_THREAD_STACK_DEFINE(user_stack, STEST_STACKSIZE);
 K_THREAD_STACK_ARRAY_DEFINE(user_stack_array, NUM_STACKS, STEST_STACKSIZE);
 K_KERNEL_STACK_DEFINE(kern_stack, STEST_STACKSIZE);

@@ -3,21 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <spinlock.h>
-#include <kernel/sched_priq.h>
-#include <wait_q.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/kernel/sched_priq.h>
+#include <zephyr/wait_q.h>
 #include <kswap.h>
 #include <kernel_arch_func.h>
-#include <syscall_handler.h>
-#include <drivers/timer/system_timer.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/drivers/timer/system_timer.h>
 #include <stdbool.h>
 #include <kernel_internal.h>
-#include <logging/log.h>
-#include <sys/atomic.h>
-#include <sys/math_extras.h>
-#include <timing/timing.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/math_extras.h>
+#include <zephyr/timing/timing.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -37,6 +37,10 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #define _priq_run_add		z_priq_mq_add
 #define _priq_run_remove	z_priq_mq_remove
 #define _priq_run_best		z_priq_mq_best
+static ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq,
+					struct k_thread *thread);
+static ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq,
+					   struct k_thread *thread);
 #endif
 
 #if defined(CONFIG_WAITQ_SCALABLE)
@@ -53,6 +57,7 @@ struct k_spinlock sched_spinlock;
 
 static void update_cache(int preempt_ok);
 static void end_thread(struct k_thread *thread);
+
 
 static inline int is_preempt(struct k_thread *thread)
 {
@@ -173,7 +178,8 @@ static ALWAYS_INLINE struct k_thread *_priq_dumb_mask_best(sys_dlist_t *pq)
 }
 #endif
 
-ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
+static ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq,
+					  struct k_thread *thread)
 {
 	struct k_thread *t;
 
@@ -263,6 +269,25 @@ static ALWAYS_INLINE void dequeue_thread(struct k_thread *thread)
 	}
 }
 
+static void signal_pending_ipi(void)
+{
+	/* Synchronization note: you might think we need to lock these
+	 * two steps, but an IPI is idempotent.  It's OK if we do it
+	 * twice.  All we require is that if a CPU sees the flag true,
+	 * it is guaranteed to send the IPI, and if a core sets
+	 * pending_ipi, the IPI will be sent the next time through
+	 * this code.
+	 */
+#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
+	if (CONFIG_MP_NUM_CPUS > 1) {
+		if (_kernel.pending_ipi) {
+			_kernel.pending_ipi = false;
+			arch_sched_ipi();
+		}
+	}
+#endif
+}
+
 #ifdef CONFIG_SMP
 /* Called out of z_swap() when CONFIG_SMP.  The current thread can
  * never live in the run queue until we are inexorably on the context
@@ -275,13 +300,14 @@ void z_requeue_current(struct k_thread *curr)
 	if (z_is_thread_queued(curr)) {
 		runq_add(curr);
 	}
+	signal_pending_ipi();
 }
-#endif
 
 static inline bool is_aborting(struct k_thread *thread)
 {
 	return (thread->base.thread_state & _THREAD_ABORTING) != 0U;
 }
+#endif
 
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
@@ -375,8 +401,20 @@ static void move_thread_to_end_of_prio_q(struct k_thread *thread)
 
 #ifdef CONFIG_TIMESLICING
 
-static int slice_time;
+static int slice_ticks;
 static int slice_max_prio;
+
+static inline int slice_time(struct k_thread *curr)
+{
+	int ret = slice_ticks;
+
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	if (curr->base.slice_ticks != 0) {
+		ret = curr->base.slice_ticks;
+	}
+#endif
+	return ret;
+}
 
 #ifdef CONFIG_SWAP_NONATOMIC
 /* If z_swap() isn't atomic, then it's possible for a timer interrupt
@@ -387,15 +425,15 @@ static int slice_max_prio;
 static struct k_thread *pending_current;
 #endif
 
-void z_reset_time_slice(void)
+void z_reset_time_slice(struct k_thread *curr)
 {
 	/* Add the elapsed time since the last announced tick to the
 	 * slice count, as we'll see those "expired" ticks arrive in a
 	 * FUTURE z_time_slice() call.
 	 */
-	if (slice_time != 0) {
-		_current_cpu->slice_ticks = slice_time + sys_clock_elapsed();
-		z_set_timeout_expiry(slice_time, false);
+	if (slice_time(curr) != 0) {
+		_current_cpu->slice_ticks = slice_time(curr) + sys_clock_elapsed();
+		z_set_timeout_expiry(slice_time(curr), false);
 	}
 }
 
@@ -403,24 +441,61 @@ void k_sched_time_slice_set(int32_t slice, int prio)
 {
 	LOCKED(&sched_spinlock) {
 		_current_cpu->slice_ticks = 0;
-		slice_time = k_ms_to_ticks_ceil32(slice);
+		slice_ticks = k_ms_to_ticks_ceil32(slice);
 		if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && slice > 0) {
 			/* It's not possible to reliably set a 1-tick
 			 * timeout if ticks aren't regular.
 			 */
-			slice_time = MAX(2, slice_time);
+			slice_ticks = MAX(2, slice_ticks);
 		}
 		slice_max_prio = prio;
-		z_reset_time_slice();
+		z_reset_time_slice(_current);
 	}
 }
 
-static inline int sliceable(struct k_thread *thread)
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+void k_thread_time_slice_set(struct k_thread *th, int32_t slice_ticks,
+			     k_thread_timeslice_fn_t expired, void *data)
 {
-	return is_preempt(thread)
+	LOCKED(&sched_spinlock) {
+		th->base.slice_ticks = slice_ticks;
+		th->base.slice_expired = expired;
+		th->base.slice_data = data;
+	}
+}
+#endif
+
+static inline bool sliceable(struct k_thread *thread)
+{
+	bool ret = is_preempt(thread)
 		&& !z_is_thread_prevented_from_running(thread)
 		&& !z_is_prio_higher(thread->base.prio, slice_max_prio)
 		&& !z_is_idle_thread_object(thread);
+
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	ret |= thread->base.slice_ticks != 0;
+#endif
+
+	return ret;
+}
+
+static k_spinlock_key_t slice_expired_locked(k_spinlock_key_t sched_lock_key)
+{
+	struct k_thread *curr = _current;
+
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	if (curr->base.slice_expired) {
+		k_spin_unlock(&sched_spinlock, sched_lock_key);
+		curr->base.slice_expired(curr, curr->base.slice_data);
+		sched_lock_key = k_spin_lock(&sched_spinlock);
+	}
+#endif
+	if (!z_is_thread_prevented_from_running(curr)) {
+		move_thread_to_end_of_prio_q(curr);
+	}
+	z_reset_time_slice(curr);
+
+	return sched_lock_key;
 }
 
 /* Called out of each timer interrupt */
@@ -437,17 +512,22 @@ void z_time_slice(int ticks)
 
 #ifdef CONFIG_SWAP_NONATOMIC
 	if (pending_current == _current) {
-		z_reset_time_slice();
+		z_reset_time_slice(_current);
 		k_spin_unlock(&sched_spinlock, key);
 		return;
 	}
 	pending_current = NULL;
 #endif
 
-	if (slice_time && sliceable(_current)) {
+	if (slice_time(_current) && sliceable(_current)) {
 		if (ticks >= _current_cpu->slice_ticks) {
-			move_thread_to_end_of_prio_q(_current);
-			z_reset_time_slice();
+			/* Note: this will (if so enabled) internally
+			 * drop and reacquire the scheduler lock
+			 * around the callback!  Don't put anything
+			 * after this line that requires
+			 * synchronization.
+			 */
+			key = slice_expired_locked(key);
 		} else {
 			_current_cpu->slice_ticks -= ticks;
 		}
@@ -484,7 +564,7 @@ static void update_cache(int preempt_ok)
 	if (should_preempt(thread, preempt_ok)) {
 #ifdef CONFIG_TIMESLICING
 		if (thread != _current) {
-			z_reset_time_slice();
+			z_reset_time_slice(thread);
 		}
 #endif
 		update_metairq_preempt(thread);
@@ -523,6 +603,15 @@ static bool thread_active_elsewhere(struct k_thread *thread)
 	return false;
 }
 
+static void flag_ipi(void)
+{
+#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
+	if (CONFIG_MP_NUM_CPUS > 1) {
+		_kernel.pending_ipi = true;
+	}
+#endif
+}
+
 static void ready_thread(struct k_thread *thread)
 {
 #ifdef CONFIG_KERNEL_COHERENCE
@@ -537,9 +626,7 @@ static void ready_thread(struct k_thread *thread)
 
 		queue_thread(thread);
 		update_cache(0);
-#if defined(CONFIG_SMP) &&  defined(CONFIG_SCHED_IPI_SUPPORTED)
-		arch_sched_ipi();
-#endif
+		flag_ipi();
 	}
 }
 
@@ -826,9 +913,7 @@ void z_thread_priority_set(struct k_thread *thread, int prio)
 {
 	bool need_sched = z_set_prio(thread, prio);
 
-#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-	arch_sched_ipi();
-#endif
+	flag_ipi();
 
 	if (need_sched && _current->base.sched_locked == 0U) {
 		z_reschedule_unlocked();
@@ -868,6 +953,7 @@ void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 		z_swap(lock, key);
 	} else {
 		k_spin_unlock(lock, key);
+		signal_pending_ipi();
 	}
 }
 
@@ -877,6 +963,7 @@ void z_reschedule_irqlock(uint32_t key)
 		z_swap_irqlock(key);
 	} else {
 		irq_unlock(key);
+		signal_pending_ipi();
 	}
 }
 
@@ -910,12 +997,22 @@ void k_sched_unlock(void)
 struct k_thread *z_swap_next_thread(void)
 {
 #ifdef CONFIG_SMP
-	return next_up();
+	struct k_thread *ret = next_up();
+
+	if (ret == _current) {
+		/* When not swapping, have to signal IPIs here.  In
+		 * the context switch case it must happen later, after
+		 * _current gets requeued.
+		 */
+		signal_pending_ipi();
+	}
+	return ret;
 #else
 	return _kernel.ready_q.cache;
 #endif
 }
 
+#ifdef CONFIG_USE_SWITCH
 /* Just a wrapper around _current = xxx with tracing */
 static inline void set_current(struct k_thread *new_thread)
 {
@@ -923,7 +1020,37 @@ static inline void set_current(struct k_thread *new_thread)
 	_current_cpu->current = new_thread;
 }
 
-#ifdef CONFIG_USE_SWITCH
+/**
+ * @brief Determine next thread to execute upon completion of an interrupt
+ *
+ * Thread preemption is performed by context switching after the completion
+ * of a non-recursed interrupt. This function determines which thread to
+ * switch to if any. This function accepts as @p interrupted either:
+ *
+ * - The handle for the interrupted thread in which case the thread's context
+ *   must already be fully saved and ready to be picked up by a different CPU.
+ *
+ * - NULL if more work is required to fully save the thread's state after
+ *   it is known that a new thread is to be scheduled. It is up to the caller
+ *   to store the handle resulting from the thread that is being switched out
+ *   in that thread's "switch_handle" field after its
+ *   context has fully been saved, following the same requirements as with
+ *   the @ref arch_switch() function.
+ *
+ * If a new thread needs to be scheduled then its handle is returned.
+ * Otherwise the same value provided as @p interrupted is returned back.
+ * Those handles are the same opaque types used by the @ref arch_switch()
+ * function.
+ *
+ * @warning
+ * The @ref _current value may have changed after this call and not refer
+ * to the interrupted thread anymore. It might be necessary to make a local
+ * copy before calling this function.
+ *
+ * @param interrupted Handle for the thread that was interrupted or NULL.
+ * @retval Handle for the next thread to execute, or @p interrupted when
+ *         no new thread is to be scheduled.
+ */
 void *z_get_next_switch_handle(void *interrupted)
 {
 	z_check_stack_sentinel();
@@ -946,11 +1073,12 @@ void *z_get_next_switch_handle(void *interrupted)
 			wait_for_switch(new_thread);
 			arch_cohere_stacks(old_thread, interrupted, new_thread);
 
-#ifdef CONFIG_TIMESLICING
-			z_reset_time_slice();
-#endif
 			_current_cpu->swap_ok = 0;
 			set_current(new_thread);
+
+#ifdef CONFIG_TIMESLICING
+			z_reset_time_slice(new_thread);
+#endif
 
 #ifdef CONFIG_SPIN_VALIDATE
 			/* Changed _current!  Update the spinlock
@@ -978,6 +1106,7 @@ void *z_get_next_switch_handle(void *interrupted)
 			new_thread->switch_handle = NULL;
 		}
 	}
+	signal_pending_ipi();
 	return ret;
 #else
 	z_sched_usage_switch(_kernel.ready_q.cache);
@@ -1075,9 +1204,9 @@ struct k_thread *z_priq_rb_best(struct _priq_rb *pq)
 # if (K_LOWEST_THREAD_PRIO - K_HIGHEST_THREAD_PRIO) > 31
 # error Too many priorities for multiqueue scheduler (max 32)
 # endif
-#endif
 
-ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq, struct k_thread *thread)
+static ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq,
+					struct k_thread *thread)
 {
 	int priority_bit = thread->base.prio - K_HIGHEST_THREAD_PRIO;
 
@@ -1085,7 +1214,8 @@ ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq, struct k_thread *thread)
 	pq->bitmask |= BIT(priority_bit);
 }
 
-ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq, struct k_thread *thread)
+static ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq,
+					   struct k_thread *thread)
 {
 	int priority_bit = thread->base.prio - K_HIGHEST_THREAD_PRIO;
 
@@ -1094,6 +1224,7 @@ ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq, struct k_thread *thread
 		pq->bitmask &= ~BIT(priority_bit);
 	}
 }
+#endif
 
 struct k_thread *z_priq_mq_best(struct _priq_mq *pq)
 {
@@ -1230,6 +1361,12 @@ static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
 #include <syscalls/k_thread_deadline_set_mrsh.c>
 #endif
 #endif
+
+bool k_can_yield(void)
+{
+	return !(k_is_pre_kernel() || k_is_in_isr() ||
+		 z_is_idle_thread_object(_current));
+}
 
 void z_impl_k_yield(void)
 {
@@ -1381,9 +1518,7 @@ void z_impl_k_wakeup(k_tid_t thread)
 	z_mark_thread_as_not_suspended(thread);
 	z_ready_thread(thread);
 
-#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-	arch_sched_ipi();
-#endif
+	flag_ipi();
 
 	if (!arch_is_in_isr()) {
 		z_reschedule_unlocked();
@@ -1465,6 +1600,11 @@ static int cpu_mask_mod(k_tid_t thread, uint32_t enable_mask, uint32_t disable_m
 {
 	int ret = 0;
 
+#ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
+	__ASSERT((thread->base.thread_state != _THREAD_PRESTART),
+		 "Only PRESTARTED threads can change CPU pin");
+#endif
+
 	LOCKED(&sched_spinlock) {
 		if (z_is_thread_prevented_from_running(thread)) {
 			thread->base.cpu_mask |= enable_mask;
@@ -1502,6 +1642,17 @@ int k_thread_cpu_mask_enable(k_tid_t thread, int cpu)
 int k_thread_cpu_mask_disable(k_tid_t thread, int cpu)
 {
 	return cpu_mask_mod(thread, 0, BIT(cpu));
+}
+
+int k_thread_cpu_pin(k_tid_t thread, int cpu)
+{
+	int ret;
+
+	ret = k_thread_cpu_mask_clear(thread);
+	if (ret == 0) {
+		return k_thread_cpu_mask_enable(thread, cpu);
+	}
+	return ret;
 }
 
 #endif /* CONFIG_SCHED_CPU_MASK */
@@ -1578,6 +1729,9 @@ void z_thread_abort(struct k_thread *thread)
 		/* It's running somewhere else, flag and poke */
 		thread->base.thread_state |= _THREAD_ABORTING;
 
+		/* We're going to spin, so need a true synchronous IPI
+		 * here, not deferred!
+		 */
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
 		arch_sched_ipi();
 #endif
@@ -1736,85 +1890,3 @@ int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
 	}
 	return ret;
 }
-
-#ifdef CONFIG_SCHED_THREAD_USAGE
-
-/* Need one of these for this to work */
-#if !defined(CONFIG_USE_SWITCH) && !defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
-#error "No data backend configured for CONFIG_SCHED_THREAD_USAGE"
-#endif
-
-static struct k_spinlock usage_lock;
-
-static uint32_t usage_now(void)
-{
-	uint32_t now;
-
-#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
-	now = (uint32_t)timing_counter_get();
-#else
-	now = k_cycle_get_32();
-#endif
-
-	/* Edge case: we use a zero as a null ("stop() already called") */
-	return (now == 0) ? 1 : now;
-}
-
-void z_sched_usage_start(struct k_thread *thread)
-{
-	/* One write through a volatile pointer doesn't require
-	 * synchronization as long as _usage() treats it as volatile
-	 * (we can't race with _stop() by design).
-	 */
-	_current_cpu->usage0 = usage_now();
-}
-
-void z_sched_usage_stop(void)
-{
-	k_spinlock_key_t k = k_spin_lock(&usage_lock);
-	uint32_t u0 = _current_cpu->usage0;
-
-	if (u0 != 0) {
-		uint32_t dt = usage_now() - u0;
-
-#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-		if (z_is_idle_thread_object(_current)) {
-			_kernel.idle_thread_usage += dt;
-		} else {
-			_kernel.all_thread_usage += dt;
-		}
-#endif
-		_current->base.usage += dt;
-	}
-
-	_current_cpu->usage0 = 0;
-	k_spin_unlock(&usage_lock, k);
-}
-
-uint64_t z_sched_thread_usage(struct k_thread *thread)
-{
-	k_spinlock_key_t k = k_spin_lock(&usage_lock);
-	uint32_t u0 = _current_cpu->usage0, now = usage_now();
-	uint64_t ret = thread->base.usage;
-
-	if (u0 != 0) {
-		uint32_t dt = now - u0;
-
-#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-		if (z_is_idle_thread_object(thread)) {
-			_kernel.idle_thread_usage += dt;
-		} else {
-			_kernel.all_thread_usage += dt;
-		}
-#endif
-
-		ret += dt;
-		thread->base.usage = ret;
-		_current_cpu->usage0 = now;
-	}
-
-	k_spin_unlock(&usage_lock, k);
-	return ret;
-}
-
-#endif /* CONFIG_SCHED_THREAD_USAGE */

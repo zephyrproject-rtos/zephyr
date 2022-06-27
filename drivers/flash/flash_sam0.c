@@ -7,13 +7,13 @@
 #define DT_DRV_COMPAT atmel_sam0_nvmctrl
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_sam0);
 
-#include <device.h>
-#include <drivers/flash.h>
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <string.h>
 
@@ -51,7 +51,9 @@ struct flash_sam0_data {
 	off_t offset;
 #endif
 
+#if defined(CONFIG_MULTITHREADING)
 	struct k_sem sem;
+#endif
 };
 
 #if CONFIG_FLASH_PAGE_LAYOUT
@@ -74,16 +76,20 @@ static int flash_sam0_write_protection(const struct device *dev, bool enable);
 
 static inline void flash_sam0_sem_take(const struct device *dev)
 {
+#if defined(CONFIG_MULTITHREADING)
 	struct flash_sam0_data *ctx = dev->data;
 
 	k_sem_take(&ctx->sem, K_FOREVER);
+#endif
 }
 
 static inline void flash_sam0_sem_give(const struct device *dev)
 {
+#if defined(CONFIG_MULTITHREADING)
 	struct flash_sam0_data *ctx = dev->data;
 
 	k_sem_give(&ctx->sem);
+#endif
 }
 
 static int flash_sam0_valid_range(off_t offset, size_t len)
@@ -285,7 +291,7 @@ static int flash_sam0_write(const struct device *dev, off_t offset,
 	}
 
 	if ((offset % FLASH_PAGE_SIZE) != 0) {
-		LOG_WRN("0x%lx: not on a write block boundrary", (long)offset);
+		LOG_WRN("0x%lx: not on a write block boundary", (long)offset);
 		return -EINVAL;
 	}
 
@@ -346,7 +352,7 @@ static int flash_sam0_erase(const struct device *dev, off_t offset,
 	}
 
 	if ((offset % ROW_SIZE) != 0) {
-		LOG_WRN("0x%lx: not on a page boundrary", (long)offset);
+		LOG_WRN("0x%lx: not on a page boundary", (long)offset);
 		return -EINVAL;
 	}
 
@@ -435,9 +441,11 @@ flash_sam0_get_parameters(const struct device *dev)
 
 static int flash_sam0_init(const struct device *dev)
 {
+#if defined(CONFIG_MULTITHREADING)
 	struct flash_sam0_data *ctx = dev->data;
 
 	k_sem_init(&ctx->sem, 1, 1);
+#endif
 
 #ifdef PM_APBBMASK_NVMCTRL
 	/* Ensure the clock is on. */
@@ -468,4 +476,4 @@ static struct flash_sam0_data flash_sam0_data_0;
 
 DEVICE_DT_INST_DEFINE(0, flash_sam0_init, NULL,
 		    &flash_sam0_data_0, NULL, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_sam0_api);
+		    CONFIG_FLASH_INIT_PRIORITY, &flash_sam0_api);

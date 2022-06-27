@@ -10,14 +10,14 @@
 #define NET_LOG_LEVEL CONFIG_NET_STATISTICS_LOG_LEVEL
 #endif
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_stats, NET_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <net/net_core.h>
+#include <zephyr/net/net_core.h>
 
 #include "net_stats.h"
 #include "net_private.h"

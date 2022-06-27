@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 
-#include <linker/sections.h>
-#include <toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/toolchain.h>
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/udp.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/udp.h>
 
 #include "zperf.h"
 #include "zperf_internal.h"
@@ -37,15 +37,15 @@ static inline void set_dst_addr(const struct shell *shell,
 				struct sockaddr *dst_addr)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
-		net_ipaddr_copy(&net_sin6(dst_addr)->sin6_addr,
-				&ip_hdr->ipv6->src);
+		net_ipv6_addr_copy_raw((uint8_t *)&net_sin6(dst_addr)->sin6_addr,
+				       ip_hdr->ipv6->src);
 		net_sin6(dst_addr)->sin6_family = AF_INET6;
 		net_sin6(dst_addr)->sin6_port = udp_hdr->src_port;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
-		net_ipaddr_copy(&net_sin(dst_addr)->sin_addr,
-				&ip_hdr->ipv4->src);
+		net_ipv4_addr_copy_raw((uint8_t *)&net_sin(dst_addr)->sin_addr,
+				       ip_hdr->ipv4->src);
 		net_sin(dst_addr)->sin_family = AF_INET;
 		net_sin(dst_addr)->sin_port = udp_hdr->src_port;
 	}

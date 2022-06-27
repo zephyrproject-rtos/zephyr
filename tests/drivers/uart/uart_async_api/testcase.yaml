@@ -4,17 +4,30 @@ common:
     arduino_nano_33_iot arduino_zero atsamd21_xpro adafruit_feather_m0_basic_proto
 
 tests:
-  drivers.uart.uart_async_api:
+  drivers.uart.async_api:
     tags: drivers
-    filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC
+    filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and not CONFIG_UART_MCUX_LPUART
     harness: ztest
     harness_config:
       fixture: gpio_loopback
-  drivers.uart.uart_async_api.rtt:
+  drivers.uart.async_api.nrf_uart:
     tags: drivers
-    filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_HAS_SEGGER_RTT
+    filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC
+    harness: ztest
+    platform_allow: nrf52840dk_nrf52840
+    harness_config:
+      fixture: gpio_loopback
+    extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;boards/nrf_uart.overlay"
+  drivers.uart.async_api.rtt:
+    tags: drivers
+    filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_HAS_SEGGER_RTT and not CONFIG_UART_MCUX_LPUART
     extra_args: DTC_OVERLAY_FILE=boards/segger_rtt.overlay
     extra_configs:
       - CONFIG_USE_SEGGER_RTT=y
       - CONFIG_UART_RTT=y
     build_only: true
+  drivers.uart.async_api.lpuart:
+    tags: drivers
+    filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_UART_MCUX_LPUART
+    harness: ztest
+    depends_on: dma

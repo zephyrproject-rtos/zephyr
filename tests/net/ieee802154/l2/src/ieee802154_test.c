@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ieee802154_test, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
-#include <net/net_core.h>
+#include <zephyr/net/net_core.h>
 #include "net_private.h"
 
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
 
 #include <ieee802154_frame.h>
 #include <ipv6.h>

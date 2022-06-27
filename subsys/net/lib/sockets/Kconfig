@@ -65,7 +65,7 @@ config NET_SOCKETS_DNS_TIMEOUT
 	  maximum timeout is 5 min.
 
 config NET_SOCKETS_SOCKOPT_TLS
-	bool "Enable TCP TLS socket option support [EXPERIMENTAL]"
+	bool "TCP TLS socket option support [EXPERIMENTAL]"
 	imply TLS_CREDENTIALS
 	select MBEDTLS if NET_NATIVE
 	select EXPERIMENTAL
@@ -97,7 +97,7 @@ config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 	  the maximum supported receive record length.
 
 config NET_SOCKETS_ENABLE_DTLS
-	bool "Enable DTLS socket support [EXPERIMENTAL]"
+	bool "DTLS socket support [EXPERIMENTAL]"
 	depends on NET_SOCKETS_SOCKOPT_TLS
 	select MBEDTLS_DTLS if NET_NATIVE
 	select EXPERIMENTAL
@@ -152,9 +152,16 @@ config NET_SOCKETS_TLS_MAX_APP_PROTOCOLS
 	  protocols over TLS/DTL that can be set explicitly by a socket option.
 	  By default, no supported application layer protocol is set.
 
+config NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT
+	  int "Maximum number of stored client TLS/DTLS sessions"
+	  default 1
+	  depends on NET_SOCKETS_SOCKOPT_TLS
+	  help
+	    This variable specifies maximum number of stored TLS/DTLS sessions,
+	    used for TLS/DTLS session resumption.
+
 config NET_SOCKETS_OFFLOAD
-	bool "Offload Socket APIs [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Offload Socket APIs"
 	help
 	  Enables direct offloading of socket operations to dedicated TCP/IP
 	  hardware.
@@ -166,17 +173,40 @@ config NET_SOCKETS_OFFLOAD
 	  See NET_OFFLOAD for a more deeply integrated approach which offloads
 	  from the net_context() API within the Zephyr IP stack.
 
-config NET_SOCKETS_OFFLOAD_TLS
-	bool "Offload TLS socket calls to the offloaded sockets"
-	depends on NET_SOCKETS_OFFLOAD
-	default y
+config NET_SOCKETS_OFFLOAD_PRIORITY
+	int "Default processing priority for offloaded sockets"
+	default 40
 	help
-	  If enabled, the offloading engine is expected to handle TLS/DTLS
-	  socket calls. Othwerwise, Zephyrs native TLS socket implementation
-	  will be used, and only TCP/UDP socket calls will be offloaded.
+	  Processing priority for offloaded sockets.
+
+	  If native TLS is enabled, lower value than NET_SOCKETS_TLS_PRIORITY
+	  means that TLS will be offloaded as well (if supported by offloaded
+	  socket implementation). Higher value than NET_SOCKETS_TLS_PRIORITY
+	  means that native TLS will be used.
+
+config NET_SOCKETS_OFFLOAD_DISPATCHER
+	bool "Intermediate socket offloading layer"
+	depends on NET_SOCKETS_OFFLOAD
+	help
+	  If enabled, an intermediate socket offloading layer is included
+	  (called socket dispatcher), allowing to select an offloaded network
+	  interface and thus socket implementation with SO_BINDTODEVICE socket
+	  option. This can be useful, when multiple offloaded sockets
+	  implementations are available in the system, allowing to easily bind
+	  a socket to a particular implementation.
+
+config NET_SOCKETS_OFFLOAD_DISPATCHER_CONTEXT_MAX
+	int "Maximum number of dispatcher sockets created"
+	default 4
+	depends on NET_SOCKETS_OFFLOAD_DISPATCHER
+	help
+	  Maximum number of dispatcher sockets created at a time. Note, that
+	  only sockets that has not been dispatched yet count into the limit.
+	  After a proper socket has been created for a given file descriptor,
+	  the dispatcher context is released and can be reused.
 
 config NET_SOCKETS_PACKET
-	bool "Enable packet socket support"
+	bool "Packet socket support"
 	help
 	  This is an initial version of packet socket support (special type
 	  raw socket). Packets are passed to and from the device driver
@@ -186,7 +216,7 @@ config NET_SOCKETS_PACKET
 	  will be feed to sockets as it as from the driver.
 
 config NET_SOCKETS_PACKET_DGRAM
-	bool "Enable packet socket SOCK_DGRAM support"
+	bool "Packet socket SOCK_DGRAM support"
 	depends on NET_SOCKETS_PACKET
 	default y
 	help
@@ -197,7 +227,7 @@ config NET_SOCKETS_PACKET_DGRAM
 	  they are queued.
 
 config NET_SOCKETS_CAN
-	bool "Enable socket CAN support [EXPERIMENTAL]"
+	bool "Socket CAN support [EXPERIMENTAL]"
 	select NET_L2_CANBUS_RAW
 	select EXPERIMENTAL
 	help
@@ -228,7 +258,7 @@ config NET_SOCKETPAIR_BUFFER_SIZE
 	  Buffer size for socketpair(2)
 
 config NET_SOCKETS_NET_MGMT
-	bool "Enable network management socket support [EXPERIMENTAL]"
+	bool "Network management socket support [EXPERIMENTAL]"
 	depends on NET_MGMT_EVENT
 	select NET_MGMT_EVENT_INFO
 	select EXPERIMENTAL

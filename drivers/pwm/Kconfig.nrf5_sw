@@ -6,7 +6,9 @@
 config PWM_NRF5_SW
 	bool "Nordic Semiconductor nRF5x series S/W PWM"
 	default y if !PWM_NRFX
-	depends on SOC_FAMILY_NRF
+	depends on HAS_HW_NRF_PPI
+	select NRFX_GPIOTE
+	select NRFX_PPI
 	help
 	  Enable driver to utilize PWM on the Nordic Semiconductor nRF5x series.
 

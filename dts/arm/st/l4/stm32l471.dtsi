@@ -212,19 +212,14 @@
 
 		can1: can@40006400 {
 			compatible = "st,stm32-can";
-			#address-cells = <1>;
-			#size-cells = <0>;
 			reg = <0x40006400 0x400>;
 			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>; //RCC_APB1ENR1_CAN1EN
 			status = "disabled";
 			label = "CAN_1";
-			bus-speed = <125000>;
 			sjw = <1>;
-			prop-seg = <0>;
-			phase-seg1 = <4>;
-			phase-seg2 = <5>;
+			sample-point = <875>;
 		};
 
 		sdmmc1: sdmmc@40012800 {
@@ -245,6 +240,11 @@
 			#io-channel-cells = <1>;
 		};
 
+		adc1: adc@50040000 {
+			has-temp-channel;
+			has-vref-channel;
+		};
+
 		adc3: adc@50040200 {
 			compatible = "st,stm32-adc";
 			reg = <0x50040200 0x100>;
@@ -253,6 +253,7 @@
 			status = "disabled";
 			label = "ADC_3";
 			#io-channel-cells = <1>;
+			has-temp-channel;
 		};
 	};
 };

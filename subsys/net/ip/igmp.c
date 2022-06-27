@@ -8,16 +8,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 
 #include <errno.h>
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_stats.h>
-#include <net/net_context.h>
-#include <net/net_mgmt.h>
-#include <net/igmp.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_stats.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/igmp.h>
 #include "net_private.h"
 #include "connection.h"
 #include "ipv4.h"
@@ -189,7 +189,7 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt,
 	/* TODO: receive from arbitrary group address instead of
 	 * all_systems
 	 */
-	if (!net_ipv4_addr_cmp(&ip_hdr->dst, &all_systems)) {
+	if (!net_ipv4_addr_cmp_raw(ip_hdr->dst, (uint8_t *)&all_systems)) {
 		NET_DBG("DROP: Invalid dst address");
 		return NET_DROP;
 	}

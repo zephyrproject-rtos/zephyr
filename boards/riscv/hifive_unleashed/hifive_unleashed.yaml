@@ -10,4 +10,5 @@ testing:
     - net
     - bluetooth
 supported:
+  - gpio
   - spi

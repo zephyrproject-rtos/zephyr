@@ -6,7 +6,7 @@
 
 #include <string.h>
 #include <errno.h>
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 #include <ztest.h>
 #include "testfs_util.h"
 

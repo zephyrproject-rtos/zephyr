@@ -11,10 +11,10 @@
  * @brief Keyscan driver for the HT16K33 I2C LED driver
  */
 
-#include <zephyr.h>
-#include <drivers/kscan.h>
-#include <drivers/led/ht16k33.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/kscan.h>
+#include <zephyr/drivers/led/ht16k33.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(kscan_ht16k33, CONFIG_KSCAN_LOG_LEVEL);
 

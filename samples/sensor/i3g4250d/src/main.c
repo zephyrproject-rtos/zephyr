@@ -5,9 +5,9 @@
  */
 
 #include <stdio.h>
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 
 #define SAMPLING_INTERVAL_MS 10
 #define DISPLAY_INTERVAL_MS 50
@@ -16,7 +16,7 @@ static int set_sampling_frequency(const struct device *sensor, double sampling_f
 {
 	struct sensor_value setting;
 
-	sensor_value_from_double(&setting, sampling_frequency);
+	(void)sensor_value_from_double(&setting, sampling_frequency);
 
 	return sensor_attr_set(sensor,
 			       SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY, &setting);

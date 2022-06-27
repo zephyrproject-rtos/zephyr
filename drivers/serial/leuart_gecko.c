@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT silabs_gecko_leuart
 
 #include <errno.h>
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 #include <em_leuart.h>
 #include <em_gpio.h>
 #include <em_cmu.h>
@@ -18,12 +18,9 @@
 #define CLOCK_ID_PRFX(prefix, suffix) CLOCK_ID_PRFX2(prefix, suffix)
 #define CLOCK_LEUART(id) CLOCK_ID_PRFX(LEUART_PREFIX, id)
 
-#define DEV_CFG(dev) \
-	((const struct leuart_gecko_config * const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct leuart_gecko_data * const)(dev)->data)
 #define DEV_BASE(dev) \
-	((LEUART_TypeDef *)(DEV_CFG(dev))->base)
+	((LEUART_TypeDef *) \
+	 ((const struct leuart_gecko_config * const)(dev)->config)->base)
 
 struct leuart_gecko_config {
 	LEUART_TypeDef *base;
@@ -244,7 +241,7 @@ static void leuart_gecko_isr(const struct device *dev)
 
 static void leuart_gecko_init_pins(const struct device *dev)
 {
-	const struct leuart_gecko_config *config = DEV_CFG(dev);
+	const struct leuart_gecko_config *config = dev->config;
 	LEUART_TypeDef *base = DEV_BASE(dev);
 
 	soc_gpio_configure(&config->pin_rx);
@@ -263,7 +260,7 @@ static void leuart_gecko_init_pins(const struct device *dev)
 
 static int leuart_gecko_init(const struct device *dev)
 {
-	const struct leuart_gecko_config *config = DEV_CFG(dev);
+	const struct leuart_gecko_config *config = dev->config;
 	LEUART_TypeDef *base = DEV_BASE(dev);
 	LEUART_Init_TypeDef leuartInit = LEUART_INIT_DEFAULT;
 

@@ -11,15 +11,19 @@
 #define DT_DRV_COMPAT nxp_lpc_lpadc
 
 #include <errno.h>
-#include <drivers/adc.h>
+#include <zephyr/drivers/adc.h>
 #include <fsl_lpadc.h>
+
+#if CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
 
 #if !defined(CONFIG_SOC_SERIES_IMX_RT11XX)
 #include <fsl_power.h>
 #endif
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(nxp_mcux_lpadc);
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
@@ -41,6 +45,9 @@ struct mcux_lpadc_config {
 	uint32_t offset_a;
 	uint32_t offset_b;
 	void (*irq_config_func)(const struct device *dev);
+#if CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pincfg;
+#endif
 };
 
 struct mcux_lpadc_data {
@@ -271,6 +278,14 @@ static int mcux_lpadc_init(const struct device *dev)
 	struct mcux_lpadc_data *data = dev->data;
 	ADC_Type *base = config->base;
 	lpadc_config_t adc_config;
+#ifdef CONFIG_PINCTRL
+	int err;
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+#endif
 
 #if !defined(CONFIG_SOC_SERIES_IMX_RT11XX)
 #if	defined(CONFIG_SOC_SERIES_IMX_RT6XX)
@@ -390,6 +405,14 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 #define TO_LPADC_POWER_LEVEL(val) \
 	_DO_CONCAT(kLPADC_PowerLevelAlt, val)
 
+#if CONFIG_PINCTRL
+#define PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
+#define PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#else
+#define PINCTRL_DEFINE(n)
+#define PINCTRL_INIT(n)
+#endif /* CONFIG_PINCTRL */
+
 #define LPADC_MCUX_INIT(n)						\
 	static void mcux_lpadc_config_func_##n(const struct device *dev);	\
 									\
@@ -401,9 +424,10 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 		"Invalid voltage reference source");	\
 	ASSERT_LPADC_CALIBRATION_AVERAGE_VALID(		\
 		DT_INST_PROP(n, calibration_average),	\
-		"Invalid converion average number for auto-calibration time");	\
+		"Invalid conversion average number for auto-calibration time");	\
 	ASSERT_WITHIN_RANGE(DT_INST_PROP(n, power_level), 1, 4,		\
 		"Invalid power level");					\
+	PINCTRL_DEFINE(n)						\
 	static const struct mcux_lpadc_config mcux_lpadc_config_##n = {	\
 		.base = (ADC_Type *)DT_INST_REG_ADDR(n),	\
 		.clock_source = TO_LPADC_CLOCK_SOURCE(DT_INST_PROP(n, clk_source)),	\
@@ -416,6 +440,7 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 		.offset_a = DT_INST_PROP(n, offset_value_a),	\
 		.offset_a = DT_INST_PROP(n, offset_value_b),	\
 		.irq_config_func = mcux_lpadc_config_func_##n,				\
+		PINCTRL_INIT(n)					\
 	};									\
 										\
 	static struct mcux_lpadc_data mcux_lpadc_data_##n = {	\

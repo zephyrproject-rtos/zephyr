@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_TESTS_DRIVERS_PINCTRL_COMMON_TEST_DEVICE_H_
 #define ZEPHYR_TESTS_DRIVERS_PINCTRL_COMMON_TEST_DEVICE_H_
 
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 /** Custom pinctrl state "mystate". */
 #define PINCTRL_STATE_MYSTATE PINCTRL_STATE_PRIV_START

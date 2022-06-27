@@ -6,11 +6,11 @@
 
 #include <errno.h>
 
-#include <zephyr.h>
-#include <settings/settings.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/settings/settings.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_SETTINGS)
 #define LOG_MODULE_NAME bt_settings
@@ -119,6 +119,16 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	ssize_t len;
 	const char *next;
 
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+		/* The Bluetooth settings loader needs to communicate with the Bluetooth
+		 * controller to setup identities. This will not work before
+		 * bt_enable(). The doc on @ref bt_enable requires the "bt/" settings
+		 * tree to be loaded after @ref bt_enable is completed, so this handler
+		 * will be called again later.
+		 */
+		return 0;
+	}
+
 	if (!name) {
 		BT_ERR("Insufficient number of arguments");
 		return -ENOENT;
@@ -170,6 +180,22 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 			BT_DBG("Name set to %s", log_strdup(bt_dev.name));
 		}
+		return 0;
+	}
+#endif
+
+#if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
+	if (!strncmp(name, "appearance", len)) {
+		if (len != sizeof(bt_dev.appearance)) {
+			BT_ERR("Ignoring settings entry 'bt/appearance'. Wrong length.");
+			return -EINVAL;
+		}
+
+		len = read_cb(cb_arg, &bt_dev.appearance, sizeof(bt_dev.appearance));
+		if (len < 0) {
+			return len;
+		}
+
 		return 0;
 	}
 #endif
@@ -234,6 +260,16 @@ static int commit(void)
 	int err;
 
 	BT_DBG("");
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+		/* The Bluetooth settings loader needs to communicate with the Bluetooth
+		 * controller to setup identities. This will not work before
+		 * bt_enable(). The doc on @ref bt_enable requires the "bt/" settings
+		 * tree to be loaded after @ref bt_enable is completed, so this handler
+		 * will be called again later.
+		 */
+		return 0;
+	}
 
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 	if (bt_dev.name[0] == '\0') {

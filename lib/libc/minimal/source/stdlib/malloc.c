@@ -5,18 +5,18 @@
  */
 
 #include <stdlib.h>
-#include <zephyr.h>
-#include <init.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
 #include <errno.h>
-#include <sys/math_extras.h>
+#include <zephyr/sys/math_extras.h>
 #include <string.h>
-#include <app_memory/app_memdomain.h>
-#include <sys/mutex.h>
-#include <sys/sys_heap.h>
+#include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/sys/mutex.h>
+#include <zephyr/sys/sys_heap.h>
 #include <zephyr/types.h>
 
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_MINIMAL_LIBC_MALLOC

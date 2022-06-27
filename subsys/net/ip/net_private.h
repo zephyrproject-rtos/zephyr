@@ -11,13 +11,13 @@
  */
 
 #include <errno.h>
-#include <sys/printk.h>
-#include <net/net_context.h>
-#include <net/net_pkt.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_pkt.h>
 
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 
-#include <net/net_event.h>
+#include <zephyr/net/net_event.h>
 
 /* Maximum size of "struct net_event_ipv6_addr" or
  * "struct net_event_ipv6_nbr" or "struct net_event_ipv6_route".
@@ -26,7 +26,7 @@
 
 #ifdef CONFIG_NET_L2_WIFI_MGMT
 
-#include <net/wifi_mgmt.h>
+#include <zephyr/net/wifi_mgmt.h>
 #define NET_EVENT_INFO_MAX_SIZE sizeof(struct wifi_scan_result)
 
 #else

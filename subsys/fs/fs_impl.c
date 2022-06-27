@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <fs/fs.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/fs/fs.h>
 #include "fs_impl.h"
 
 const char *fs_impl_strip_prefix(const char *path,

@@ -2,6 +2,10 @@ tests:
   kernel.work.api:
     min_flash: 34
     tags: kernel
+    # this platform fails to run due to #40376, all
+    # the related CI checks got blocked, so exclude it.
+    platform_exclude: hifive1
+    timeout: 80
   kernel.work.api.linker_generator:
     platform_allow: qemu_cortex_m3
     min_flash: 34

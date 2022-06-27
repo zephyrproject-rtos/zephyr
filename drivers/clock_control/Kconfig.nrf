@@ -55,7 +55,7 @@ config CLOCK_CONTROL_NRF_K32SRC_EXT_FULL_SWING
 endchoice
 
 config CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
-	bool "Enable LF clock calibration"
+	bool "LF clock calibration"
 	depends on !SOC_SERIES_NRF91X && CLOCK_CONTROL_NRF_K32SRC_RC
 	default y
 	help
@@ -68,9 +68,10 @@ if CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 config CLOCK_CONTROL_NRF_DRIVER_CALIBRATION
 	bool
 	depends on !CLOCK_CONTROL_NRF_FORCE_ALT
+	depends on MULTITHREADING
 	default y
 	help
-	  Enabling indicates that calibration is perfomed by the clock control driver.
+	  Enabling indicates that calibration is performed by the clock control driver.
 
 config CLOCK_CONTROL_NRF_CALIBRATION_LF_ALWAYS_ON
 	bool "LF clock is always on"

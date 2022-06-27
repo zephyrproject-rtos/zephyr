@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_NBR_CACHE_LOG_LEVEL);
 
 #include <ztest.h>
@@ -15,13 +15,13 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_NBR_CACHE_LOG_LEVEL);
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
-#include <device.h>
-#include <init.h>
-#include <sys/printk.h>
-#include <net/net_core.h>
-#include <net/net_ip.h>
-#include <net/ethernet.h>
-#include <linker/sections.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/linker/sections.h>
 
 #include "nbr.h"
 

@@ -20,10 +20,10 @@
  */
 
 #include <string.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 #include <modbus_internal.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modbus_c, CONFIG_MODBUS_LOG_LEVEL);
 
 static int mbc_validate_response_fc(struct modbus_context *ctx,

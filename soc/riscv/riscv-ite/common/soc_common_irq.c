@@ -9,7 +9,7 @@
  * @brief interrupt management code for riscv SOCs supporting the riscv
 	  privileged architecture specification
  */
-#include <irq.h>
+#include <zephyr/irq.h>
 
 void arch_irq_enable(unsigned int irq)
 {

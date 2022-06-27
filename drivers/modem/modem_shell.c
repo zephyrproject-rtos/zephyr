@@ -12,14 +12,14 @@
 
 #define LOG_MODULE_NAME modem_shell
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdlib.h>
 #include <string.h>
-#include <device.h>
-#include <shell/shell.h>
-#include <drivers/console/uart_mux.h>
+#include <zephyr/device.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/console/uart_mux.h>
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 struct modem_shell_user_data {
 	const struct shell *shell;

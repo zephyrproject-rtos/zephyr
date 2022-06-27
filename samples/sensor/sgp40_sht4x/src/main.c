@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 #include <stdio.h>
 
-#include <drivers/sensor/sgp40.h>
-#include <drivers/sensor/sht4x.h>
+#include <zephyr/drivers/sensor/sgp40.h>
+#include <zephyr/drivers/sensor/sht4x.h>
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(sensirion_sgp40)
 #error "No sensirion,sgp40 compatible node found in the device tree"

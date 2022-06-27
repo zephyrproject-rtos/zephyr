@@ -4,34 +4,51 @@ sample:
 common:
     harness: bluetooth
     tags: bluetooth
-    integration_platforms:
-        - nrf52840dk_nrf52840
 tests:
-  sample.mcumg.smp_svr.bt_tiny:
-    extra_args: OVERLAY_CONFIG="overlay-bt-tiny.conf"
-    platform_allow: nrf51dk_nrf51422
   sample.mcumg.smp_svr.bt:
     extra_args: OVERLAY_CONFIG="overlay-bt.conf"
-    platform_allow: nrf52dk_nrf52832 nrf52840dk_nrf52840
+    platform_allow: nrf52dk_nrf52832 nrf52840dk_nrf52840 pinnacle_100_dvk
+    integration_platforms:
+      - nrf52dk_nrf52832
+      - nrf52840dk_nrf52840
   sample.mcumg.smp_svr.udp:
     extra_args: OVERLAY_CONFIG="overlay-udp.conf"
     platform_allow: frdm_k64f
+    integration_platforms:
+        - frdm_k64f
   sample.mcumg.smp_svr.cdc:
     extra_args: OVERLAY_CONFIG="overlay-cdc.conf"
                 DTC_OVERLAY_FILE="usb.overlay"
-    platform_allow: nrf52833dk_nrf52820 nrf52833dk_nrf52833 nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp
+    platform_allow: nrf52833dk_nrf52820 nrf52833dk_nrf52833 nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp pinnacle_100_dvk
+    integration_platforms:
+      - nrf52833dk_nrf52820
+      - nrf52833dk_nrf52833
+      - nrf52840dk_nrf52840
+      - nrf5340dk_nrf5340_cpuapp
   sample.mcumg.smp_svr.serial:
     extra_args: OVERLAY_CONFIG="overlay-serial.conf"
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840 pinnacle_100_dvk
+    integration_platforms:
+      - nrf52840dk_nrf52840
   sample.mcumg.smp_svr.serial:
     extra_args: OVERLAY_CONFIG="overlay-serial-console.conf"
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840 pinnacle_100_dvk
+    integration_platforms:
+      - nrf52840dk_nrf52840
   sample.mcumg.smp_svr.shell:
     extra_args: OVERLAY_CONFIG="overlay-shell.conf"
-    platform_allow: nrf52840dk_nrf52840 mimxrt1060_evk mimxrt1064_evk
+    platform_allow: nrf52840dk_nrf52840 mimxrt1060_evk mimxrt1064_evk pinnacle_100_dvk
+    integration_platforms:
+      - nrf52840dk_nrf52840
+      - mimxrt1060_evk
+      - mimxrt1064_evk
   sample.mcumg.smp_svr.shell_mgmt:
     extra_args: OVERLAY_CONFIG="overlay-shell-mgmt.conf"
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840 pinnacle_100_dvk
+    integration_platforms:
+      - nrf52840dk_nrf52840
   sample.mcumg.smp_svr.fs:
     extra_args: OVERLAY_CONFIG="overlay-fs.conf"
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840 pinnacle_100_dvk
+    integration_platforms:
+      - nrf52840dk_nrf52840

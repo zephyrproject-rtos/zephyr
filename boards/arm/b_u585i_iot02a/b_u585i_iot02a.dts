@@ -16,6 +16,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	aliases {
@@ -25,63 +26,37 @@
 	};
 };
 
-&cpu0 {
-	cpu-power-states = <&stop0 &stop1 &stop2>;
-};
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-&lptim1 {
-	status = "okay";
-};
+		/*
+		 * Following flash partition is dedicated to the use of b_u585i_iot02a
+		 * with TZEN=0 (so w/o TFM).
+		 * Set the partitions with first MB to make use of the whole Bank1
+		 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(416)>;
+		};
+		slot1_partition: partition@78000 {
+			label = "image-1";
+			reg = <0x00078000 DT_SIZE_K(416)>;
+		};
+		scratch_partition: partition@e0000 {
+			label = "image-scratch";
+			reg = <0x000e0000 DT_SIZE_K(64)>;
+		};
+		storage_partition: partition@f0000 {
+			label = "storage";
+			reg = <0x000f0000 DT_SIZE_K(64)>;
+		};
 
-&usart1 {
-	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
-	current-speed = <115200>;
-	status = "okay";
-};
-
-&spi1 {
-	pinctrl-0 = <&spi1_nss_pe12 &spi1_sck_pe13
-		     &spi1_miso_pe14 &spi1_mosi_pe15>;
-	status = "okay";
-};
-
-&i2c1 {
-	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
-	status = "okay";
-	clock-frequency = <I2C_BITRATE_FAST>;
-};
-
-&i2c2 {
-	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_ph5>;
-	status = "okay";
-	clock-frequency = <I2C_BITRATE_FAST>;
-
-	hts221@5f {
-		compatible = "st,hts221";
-		reg = <0x5f>;
-		label = "HTS221";
 	};
-};
-
-&rng {
-	status = "okay";
-};
-
-zephyr_udc0: &usbotg_fs {
-	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
-	status = "okay";
-};
-
-&adc1 {
-	pinctrl-0 = <&adc1_in15_pb0>;
-	status = "okay";
-};
-
-&dac1 {
-	pinctrl-0 = <&dac1_out1_pa4>;
-	status = "okay";
-};
-
-&iwdg1 {
-	status = "okay";
 };

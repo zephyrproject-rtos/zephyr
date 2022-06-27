@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include "pinnacle_100_dvk-pinctrl.dtsi"
 
 / {
 	model = "Pinnacle 100 Dev Kit";
@@ -94,20 +95,18 @@
 	compatible = "nordic,nrf-uart";
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <6>;
-	rx-pin = <8>;
-	rts-pin = <5>;
-	cts-pin = <7>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &uart1 {
 	compatible = "nordic,nrf-uarte";
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <14>;
-	rx-pin = <16>;
-	rts-pin = <13>;
-	cts-pin = <15>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
 	hl7800 {
 		compatible = "swir,hl7800";
 		status = "okay";
@@ -126,9 +125,10 @@
 &i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-pin = <26>;
-	scl-pin = <27>;
 
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 	bme680@76 {
 		compatible = "bosch,bme680";
 		status = "okay";
@@ -141,24 +141,24 @@
 	compatible = "nordic,nrf-spi";
 	/* Cannot be used together with i2c0. */
 	/* status = "okay"; */
-	sck-pin = <27>;
-	mosi-pin = <26>;
-	miso-pin = <29>;
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <11>;
-	mosi-pin = <32>;
-	miso-pin = <12>;
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &qspi {
 	status = "okay";
-	sck-pin = <19>;
-	io-pins = <20>, <21>, <22>, <23>;
-	csn-pins = <17>;
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
 	mx25r64: mx25r6435f@0 {
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
@@ -175,10 +175,6 @@
 };
 
 &flash0 {
-	/*
-	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
-	 */
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

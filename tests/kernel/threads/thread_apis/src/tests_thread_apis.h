@@ -7,13 +7,13 @@
 #ifndef ZEPHYR_TESTS_KERNEL_THREADS_THREAD_APIS_SRC_TEST_THREAD_APIS_H_
 #define ZEPHYR_TESTS_KERNEL_THREADS_THREAD_APIS_SRC_TEST_THREAD_APIS_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 K_THREAD_STACK_EXTERN(tstack);
 extern size_t tstack_size;
 extern struct k_thread tdata;

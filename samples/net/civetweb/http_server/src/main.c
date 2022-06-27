@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <posix/pthread.h>
-#include <data/json.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/posix/pthread.h>
+#include <zephyr/data/json.h>
 
 #include "civetweb.h"
 
@@ -15,7 +15,7 @@
 
 #define CIVETWEB_MAIN_THREAD_STACK_SIZE		CONFIG_MAIN_STACK_SIZE
 
-/* Use samllest possible value of 1024 (see the line 18619 of civetweb.c) */
+/* Use smallest possible value of 1024 (see the line 18619 of civetweb.c) */
 #define MAX_REQUEST_SIZE_BYTES			1024
 
 K_THREAD_STACK_DEFINE(civetweb_stack, CIVETWEB_MAIN_THREAD_STACK_SIZE);

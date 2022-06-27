@@ -64,10 +64,10 @@
  *	--------------------
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <sys/printk.h>
-#include <drivers/gpio.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/gpio.h>
 #include <string.h>
 
 
@@ -312,7 +312,7 @@ void pi_lcd_home(const struct device *gpio_dev)
 	k_sleep(K_MSEC(2));			/* wait for 2ms */
 }
 
-/** Set curson position */
+/** Set cursor position */
 void pi_lcd_set_cursor(const struct device *gpio_dev, uint8_t col,
 		       uint8_t row)
 {

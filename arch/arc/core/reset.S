@@ -11,11 +11,11 @@
  * Reset handler that prepares the system for running C code.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 #include <swap_macros.h>
-#include <arch/arc/asm-compat/assembler.h>
+#include <zephyr/arch/arc/asm-compat/assembler.h>
 
 GDATA(z_interrupt_stacks)
 GDATA(z_main_stack)
@@ -31,7 +31,6 @@ GTEXT(__reset)
 GTEXT(__start)
 
 /**
- *
  * @brief Reset vector
  *
  * Ran when the system comes out of reset. The processor is at supervisor level.
@@ -40,8 +39,6 @@ GTEXT(__start)
  *
  * When these steps are completed, jump to _PrepC(), which will finish setting
  * up the system for running C code.
- *
- * @return N/A
  */
 
 SECTION_SUBSEC_FUNC(TEXT,_reset_and__start,__reset)

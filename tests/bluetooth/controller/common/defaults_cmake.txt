@@ -6,7 +6,7 @@ include_directories(
   src
   ${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/include
   ${ZEPHYR_BASE}/tests/bluetooth/controller/common/include
-  ${ZEPHYR_BASE}/include/bluetooth
+  ${ZEPHYR_BASE}/include/zephyr/bluetooth
   ${ZEPHYR_BASE}/subsys/bluetooth
   ${ZEPHYR_BASE}/subsys/bluetooth/controller
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/util

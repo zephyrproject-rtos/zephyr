@@ -10,10 +10,14 @@
 
 #define DT_DRV_COMPAT openisa_rv32m1_lpi2c
 
-#include <drivers/i2c.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/clock_control.h>
 #include <fsl_lpi2c.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
+
 LOG_MODULE_REGISTER(rv32m1_lpi2c);
 
 #include "i2c-priv.h"
@@ -26,6 +30,9 @@ struct rv32m1_lpi2c_config {
 	uint32_t clock_ip_src;
 	uint32_t bitrate;
 	void (*irq_config_func)(const struct device *dev);
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pincfg;
+#endif
 };
 
 struct rv32m1_lpi2c_data {
@@ -235,6 +242,12 @@ static int rv32m1_lpi2c_init(const struct device *dev)
 		return err;
 	}
 
+#ifdef CONFIG_PINCTRL
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err != 0) {
+		return err;
+	}
+#endif
 	config->irq_config_func(dev);
 
 	return 0;
@@ -245,7 +258,16 @@ static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 	.transfer  = rv32m1_lpi2c_transfer,
 };
 
+#ifdef CONFIG_PINCTRL
+#define PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#define PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
+#else
+#define PINCTRL_DEFINE(n)
+#define PINCTRL_INIT(n)
+#endif
+
 #define RV32M1_LPI2C_DEVICE(id)                                                \
+	PINCTRL_DEFINE(id)                                                     \
 	static void rv32m1_lpi2c_irq_config_func_##id(const struct device *dev);     \
 	static const struct rv32m1_lpi2c_config rv32m1_lpi2c_##id##_config = { \
 		.base =                                                        \
@@ -257,6 +279,7 @@ static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 		.clock_ip_src  = kCLOCK_IpSrcFircAsync,                        \
 		.bitrate = DT_INST_PROP(id, clock_frequency),                  \
 		.irq_config_func = rv32m1_lpi2c_irq_config_func_##id,          \
+		PINCTRL_INIT(id)                                               \
 	};                                                                     \
 	static struct rv32m1_lpi2c_data rv32m1_lpi2c_##id##_data = {           \
 		.transfer_sync = Z_SEM_INITIALIZER(                            \
@@ -264,8 +287,8 @@ static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 		.completion_sync = Z_SEM_INITIALIZER(                          \
 			rv32m1_lpi2c_##id##_data.completion_sync, 0, 1),       \
 	};                                                                     \
-	DEVICE_DT_INST_DEFINE(id,                                              \
-			    &rv32m1_lpi2c_init,                                \
+	I2C_DEVICE_DT_INST_DEFINE(id,                                          \
+			    rv32m1_lpi2c_init,                                 \
 			    NULL,                                              \
 			    &rv32m1_lpi2c_##id##_data,                         \
 			    &rv32m1_lpi2c_##id##_config,                       \

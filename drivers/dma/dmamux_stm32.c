@@ -13,14 +13,14 @@
 
 #include <soc.h>
 #include <stm32_ll_dmamux.h>
-#include <init.h>
-#include <drivers/dma.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 #include "dma_stm32.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dmamux_stm32, CONFIG_DMA_LOG_LEVEL);
 
 #define DT_DRV_COMPAT st_stm32_dmamux
@@ -53,33 +53,33 @@ struct dmamux_stm32_config {
 };
 
 /*
- * UTIL_LISTIFY is used to generate arrays with function pointers to check
+ * LISTIFY is used to generate arrays with function pointers to check
  * and clear interrupt flags using LL functions
  */
-#define DMAMUX_CHANNEL(i, _)		LL_DMAMUX_CHANNEL_ ## i,
-#define IS_ACTIVE_FLAG_SOX(i, _)	LL_DMAMUX_IsActiveFlag_SO  ## i,
-#define CLEAR_FLAG_SOX(i, _)		LL_DMAMUX_ClearFlag_SO ## i,
-#define IS_ACTIVE_FLAG_RGOX(i, _)	LL_DMAMUX_IsActiveFlag_RGO  ## i,
-#define CLEAR_FLAG_RGOX(i, _)		LL_DMAMUX_ClearFlag_RGO ## i,
+#define DMAMUX_CHANNEL(i, _)		LL_DMAMUX_CHANNEL_ ## i
+#define IS_ACTIVE_FLAG_SOX(i, _)	LL_DMAMUX_IsActiveFlag_SO  ## i
+#define CLEAR_FLAG_SOX(i, _)		LL_DMAMUX_ClearFlag_SO ## i
+#define IS_ACTIVE_FLAG_RGOX(i, _)	LL_DMAMUX_IsActiveFlag_RGO  ## i
+#define CLEAR_FLAG_RGOX(i, _)		LL_DMAMUX_ClearFlag_RGO ## i
 
 uint32_t table_ll_channel[] = {
-	UTIL_LISTIFY(DT_INST_PROP(0, dma_channels), DMAMUX_CHANNEL)
+	LISTIFY(DT_INST_PROP(0, dma_channels), DMAMUX_CHANNEL, (,))
 };
 
 uint32_t (*func_ll_is_active_so[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
-	UTIL_LISTIFY(DT_INST_PROP(0, dma_channels), IS_ACTIVE_FLAG_SOX)
+	LISTIFY(DT_INST_PROP(0, dma_channels), IS_ACTIVE_FLAG_SOX, (,))
 };
 
 void (*func_ll_clear_so[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
-	UTIL_LISTIFY(DT_INST_PROP(0, dma_channels), CLEAR_FLAG_SOX)
+	LISTIFY(DT_INST_PROP(0, dma_channels), CLEAR_FLAG_SOX, (,))
 };
 
 uint32_t (*func_ll_is_active_rgo[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
-	UTIL_LISTIFY(DT_INST_PROP(0, dma_generators), IS_ACTIVE_FLAG_RGOX)
+	LISTIFY(DT_INST_PROP(0, dma_generators), IS_ACTIVE_FLAG_RGOX, (,))
 };
 
 void (*func_ll_clear_rgo[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
-	UTIL_LISTIFY(DT_INST_PROP(0, dma_generators), CLEAR_FLAG_RGOX)
+	LISTIFY(DT_INST_PROP(0, dma_generators), CLEAR_FLAG_RGOX, (,))
 };
 
 int dmamux_stm32_configure(const struct device *dev, uint32_t id,
@@ -247,7 +247,7 @@ static const struct dma_driver_api dma_funcs = {
 };
 
 /*
- * Each dmamux channel is hardwired to one dma controlers dma channel.
+ * Each dmamux channel is hardwired to one dma controllers dma channel.
  * DMAMUX_CHANNEL_INIT_X macros resolve this mapping at build time for each
  * dmamux channel using the dma dt properties dma_offset and dma_requests,
  * such that it can be stored in dmamux_stm32_channels_X configuration.
@@ -279,14 +279,14 @@ static const struct dma_driver_api dma_funcs = {
  * future extension.
  */
 #define INIT_DMAMUX_0_CHANNEL(x, ...) \
-	{ .dev_dma = DEV_DMA_BINDING(x), .dma_id = DMA_CHANNEL(x), },
+	{ .dev_dma = DEV_DMA_BINDING(x), .dma_id = DMA_CHANNEL(x), }
 #define INIT_DMAMUX_1_CHANNEL(x, ...) \
-	{ .dev_dma = 0, .dma_id = 0, },
+	{ .dev_dma = 0, .dma_id = 0, }
 
 #define DMAMUX_CHANNELS_INIT_0(count) \
-	UTIL_LISTIFY(count, INIT_DMAMUX_0_CHANNEL)
+	LISTIFY(count, INIT_DMAMUX_0_CHANNEL, (,))
 #define DMAMUX_CHANNELS_INIT_1(count) \
-	UTIL_LISTIFY(count, INIT_DMAMUX_1_CHANNEL)
+	LISTIFY(count, INIT_DMAMUX_1_CHANNEL, (,))
 
 
 #define DMAMUX_CLOCK_INIT(index) \

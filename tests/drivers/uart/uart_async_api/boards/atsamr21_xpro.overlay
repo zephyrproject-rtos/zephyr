@@ -1,5 +1,13 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+&pinctrl {
+	sercom3_loopback: sercom3_loopback {
+		group1 {
+			pinmux = <PA16D_SERCOM3_PAD0>;
+		};
+	};
+};
+
 &dmac {
 	status = "okay";
 };
@@ -20,7 +28,8 @@
 	txpo = <0>;
 
 	/* PAD0 must be configured to allow working loop-back */
-	pinctrl-0 = <&pa16d_sercom3_pad0>;
+	pinctrl-0 = <&sercom3_loopback>;
+	pinctrl-names = "default";
 
 	/* Configure DMA channels for async operation */
 	dmas = <&dmac 10 7>, <&dmac 11 8>;

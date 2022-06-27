@@ -27,7 +27,7 @@
  * LFCLK - Low-Frequency Clock. Its frequency is fixed to 32kHz.
  * HFCLK - High-Frequency (PLL) Clock. Its frequency is configured to OFMCLK.
  *
- * Based on the follwoing criteria:
+ * Based on the following criteria:
  *
  * - A delay of 'Instant' wake-up from 'Deep Sleep' is 20 us.
  * - A delay of 'Standard' wake-up from 'Deep Sleep' is 3.43 ms.
@@ -45,16 +45,16 @@
  * INCLUDE FILES: soc_clock.h
  */
 
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <zephyr.h>
-#include <drivers/espi.h>
-#include <pm/pm.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/pm/pm.h>
 #include <soc.h>
 
 #include "soc_host.h"
 #include "soc_power.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /* The steps that npcx ec enters sleep/deep mode and leaves it. */
@@ -83,27 +83,6 @@ enum {
 	NPCX_INSTANT_WAKE_UP,
 	NPCX_STANDARD_WAKE_UP,
 };
-
-#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
-static int64_t expired_timeout = CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT;
-static int64_t console_expired_time = CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT;
-
-/* Platform specific power control functions */
-bool npcx_power_console_is_in_use(void)
-{
-	return (k_uptime_get() < console_expired_time);
-}
-
-void npcx_power_console_is_in_use_refresh(void)
-{
-	console_expired_time = k_uptime_get() + expired_timeout;
-}
-
-void npcx_power_set_console_in_use_timeout(int64_t timeout)
-{
-	expired_timeout = timeout;
-}
-#endif
 
 static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 {
@@ -145,7 +124,7 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 	NPCX_ENTER_SYSTEM_SLEEP();
 
 	/*
-	 * Compensate system timer by the elasped time of low-freq timer during
+	 * Compensate system timer by the elapsed time of low-freq timer during
 	 * system sleep mode.
 	 */
 	npcx_clock_compensate_system_timer();
@@ -165,41 +144,41 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 }
 
 /* Invoke when enter "Suspend/Low Power" mode. */
-__weak void pm_power_state_set(struct pm_state_info info)
+__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
-	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
-		LOG_DBG("Unsupported power state %u", info.state);
+	if (state != PM_STATE_SUSPEND_TO_IDLE) {
+		LOG_DBG("Unsupported power state %u", state);
 	} else {
-		switch (info.substate_id) {
+		switch (substate_id) {
 		case 0:	/* Sub-state 0: Deep sleep with instant wake-up */
 			npcx_power_enter_system_sleep(NPCX_DEEP_SLEEP,
 							NPCX_INSTANT_WAKE_UP);
-			if (IS_ENABLED(CONFIG_SOC_POWER_MANAGEMENT_TRACE)) {
+			if (IS_ENABLED(CONFIG_NPCX_PM_TRACE)) {
 				cnt_sleep0++;
 			}
 			break;
 		case 1:	/* Sub-state 1: Deep sleep with standard wake-up */
 			npcx_power_enter_system_sleep(NPCX_DEEP_SLEEP,
 							NPCX_STANDARD_WAKE_UP);
-			if (IS_ENABLED(CONFIG_SOC_POWER_MANAGEMENT_TRACE)) {
+			if (IS_ENABLED(CONFIG_NPCX_PM_TRACE)) {
 				cnt_sleep1++;
 			}
 			break;
 		default:
 			LOG_DBG("Unsupported power substate-id %u",
-				info.substate_id);
+				substate_id);
 			break;
 		}
 	}
 }
 
 /* Handle soc specific activity after exiting "Suspend/Low Power" mode. */
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
-		LOG_DBG("Unsupported power state %u", info.state);
+	if (state != PM_STATE_SUSPEND_TO_IDLE) {
+		LOG_DBG("Unsupported power state %u", state);
 	} else {
-		switch (info.substate_id) {
+		switch (substate_id) {
 		case 0:	/* Sub-state 0: Deep sleep with instant wake-up */
 			/* Restore interrupts */
 			__enable_irq();
@@ -210,12 +189,12 @@ __weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 			break;
 		default:
 			LOG_DBG("Unsupported power substate-id %u",
-				info.substate_id);
+				substate_id);
 			break;
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_SOC_POWER_MANAGEMENT_TRACE)) {
+	if (IS_ENABLED(CONFIG_NPCX_PM_TRACE)) {
 		LOG_DBG("sleep: %d, deep sleep: %d", cnt_sleep0, cnt_sleep1);
 		LOG_INF("total ticks in sleep: %lld",
 			npcx_clock_get_sleep_ticks());

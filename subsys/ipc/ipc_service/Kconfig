@@ -15,6 +15,6 @@ rsource "backends/Kconfig"
 
 module = IPC_SERVICE
 module-str = IPC service and backend
-source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+source "subsys/logging/Kconfig.template.log_config"
 
 endif # IPC_SERVICE

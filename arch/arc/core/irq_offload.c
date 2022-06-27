@@ -8,8 +8,8 @@
  * @file Software interrupts utility code - ARC implementation
  */
 
-#include <kernel.h>
-#include <irq_offload.h>
+#include <zephyr/kernel.h>
+#include <zephyr/irq_offload.h>
 
 static irq_offload_routine_t offload_routine;
 static const void *offload_param;

@@ -29,7 +29,7 @@ below.
 
 Normally one needs extra privileges to create and configure the TAP device in
 the host system. If the user has set the
-:kconfig:`CONFIG_ETH_NATIVE_POSIX_STARTUP_AUTOMATIC` option (this is disabled
+:kconfig:option:`CONFIG_ETH_NATIVE_POSIX_STARTUP_AUTOMATIC` option (this is disabled
 by default), then the user needs to use ``sudo`` to execute the Zephyr process
 with admin privileges, like this:
 
@@ -40,7 +40,7 @@ with admin privileges, like this:
 If the ``sudo --preserve-env=ZEPHYR_BASE`` gives an error,
 just use ``sudo --preserve-env`` instead.
 
-If the :kconfig:`CONFIG_ETH_NATIVE_POSIX_STARTUP_AUTOMATIC` option
+If the :kconfig:option:`CONFIG_ETH_NATIVE_POSIX_STARTUP_AUTOMATIC` option
 is not enabled (this is the default), then the user should
 execute the ``net-setup.sh`` script from Zephyr `net-tools`_ repository.
 The script should be run before executing the Zephyr process. The script

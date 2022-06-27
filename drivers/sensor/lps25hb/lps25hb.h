@@ -12,8 +12,8 @@
 #define ZEPHYR_DRIVERS_SENSOR_LPS25HB_LPS25HB_H_
 
 #include <zephyr/types.h>
-#include <drivers/i2c.h>
-#include <sys/util.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/util.h>
 
 #define LPS25HB_REG_WHO_AM_I                    0x0F
 #define LPS25HB_VAL_WHO_AM_I                    0xBD

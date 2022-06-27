@@ -6,17 +6,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include "dhcp.h"
 #include "protocol.h"
 
-#include <net/sntp.h>
-#include <net/net_config.h>
-#include <net/net_event.h>
+#include <zephyr/net/sntp.h>
+#include <zephyr/net/net_config.h>
+#include <zephyr/net/net_event.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(net_google_iot_mqtt, LOG_LEVEL_INF);
 
@@ -62,8 +62,6 @@ int do_sntp(void)
  */
 void main(void)
 {
-	int res;
-
 	LOG_INF("Main entered");
 
 	app_dhcpv4_startup();

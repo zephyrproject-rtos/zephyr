@@ -93,7 +93,7 @@ Here are official IOs figures from eLinux for Kingfisher Infotainment board:
 GPIO
 ----
 
-By running Zephyr on H3ULCB, the software readable push button 'SW3' can be used as input, and the software contollable LED 'LED5' can be used as output.
+By running Zephyr on H3ULCB, the software readable push button 'SW3' can be used as input, and the software controllable LED 'LED5' can be used as output.
 
 UART
 ----

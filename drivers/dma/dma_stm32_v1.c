@@ -11,7 +11,7 @@
 #include "dma_stm32.h"
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_stm32_v1);
 
 /* DMA burst length */
@@ -399,7 +399,7 @@ uint32_t stm32_dma_get_pburst(struct dma_config *config, bool source_periph)
 
 /*
  * This function checks if the msize, mburst and fifo level is
- * compitable. If they are not compitable, refer to the 'FIFO'
+ * compatible. If they are not compatible, refer to the 'FIFO'
  * section in the 'DMA' chapter in the Reference Manual for more
  * information.
  * break is emitted since every path of the code has 'return'.

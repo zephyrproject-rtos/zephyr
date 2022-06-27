@@ -6,12 +6,12 @@
 #include "mesh_test.h"
 #include "mesh/net.h"
 #include "mesh/transport.h"
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 #include "argparse.h"
 
 #define LOG_MODULE_NAME test_friendship
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /*
@@ -357,6 +357,23 @@ static void test_friend_group(void)
 		  "Failed to send to LPN");
 
 	evt_wait(FRIEND_POLLED, K_SECONDS(10));
+
+	PASS();
+}
+
+
+/* Friend no-establish test functions */
+
+/** Initialize as a friend and no friendships to be established.
+ */
+static void test_friend_no_est(void)
+{
+	bt_mesh_test_setup();
+	bt_mesh_friend_set(BT_MESH_FEATURE_ENABLED);
+
+	if (!evt_wait(FRIEND_ESTABLISHED, K_SECONDS(30))) {
+		FAIL("Friendship established unexpectedly");
+	}
 
 	PASS();
 }
@@ -815,33 +832,74 @@ static void test_other_group(void)
 	PASS();
 }
 
-#define TEST_CASE(role, name, description)                                     \
-	{                                                                      \
-		.test_id = "friendship_" #role "_" #name,                      \
-		.test_descr = description,                                     \
-		.test_post_init_f = test_##role##_init,                        \
-		.test_tick_f = bt_mesh_test_timeout,                           \
-		.test_main_f = test_##role##_##name,                           \
+/** LPN disable test.
+ *
+ * Check that toggling lpn_set() results in correct disabled state
+ */
+static void test_lpn_disable(void)
+{
+	bt_mesh_test_setup();
+
+	bt_mesh_lpn_set(true);
+	bt_mesh_lpn_set(false);
+
+	if (!evt_wait(LPN_POLLED, K_SECONDS(30))) {
+		FAIL("LPN connection polled unexpectedly");
+	}
+
+	PASS();
+}
+
+/** LPN terminate cb test.
+ *
+ * Check that terminate cb is not triggered when there is no established
+ * connection.
+ */
+static void test_lpn_term_cb_check(void)
+{
+	bt_mesh_test_setup();
+
+	bt_mesh_lpn_set(true);
+	ASSERT_OK(evt_wait(LPN_POLLED, K_MSEC(1000)), "Friend never polled");
+	bt_mesh_lpn_set(false);
+
+	if (!evt_wait(LPN_TERMINATED, K_SECONDS(30))) {
+		FAIL("LPN terminate CB triggered unexpectedly");
+	}
+
+	PASS();
+}
+
+#define TEST_CASE(role, name, description)                  \
+	{                                                   \
+		.test_id = "friendship_" #role "_" #name,   \
+		.test_descr = description,                  \
+		.test_post_init_f = test_##role##_init,     \
+		.test_tick_f = bt_mesh_test_timeout,        \
+		.test_main_f = test_##role##_##name,        \
 	}
 
 static const struct bst_test_instance test_connect[] = {
-	TEST_CASE(friend, est,       "Friend: establish friendship"),
-	TEST_CASE(friend, est_multi, "Friend: establish multiple friendships"),
-	TEST_CASE(friend, msg,       "Friend: message exchange"),
-	TEST_CASE(friend, overflow,  "Friend: message queue overflow"),
-	TEST_CASE(friend, group,     "Friend: send to group addrs"),
+	TEST_CASE(friend, est,              "Friend: establish friendship"),
+	TEST_CASE(friend, est_multi,        "Friend: establish multiple friendships"),
+	TEST_CASE(friend, msg,              "Friend: message exchange"),
+	TEST_CASE(friend, overflow,         "Friend: message queue overflow"),
+	TEST_CASE(friend, group,            "Friend: send to group addrs"),
+	TEST_CASE(friend, no_est,           "Friend: do not establish friendship"),
 
-	TEST_CASE(lpn,    est,       "LPN: establish friendship"),
-	TEST_CASE(lpn,    msg_frnd,  "LPN: message exchange with friend"),
-	TEST_CASE(lpn,    msg_mesh,  "LPN: message exchange with mesh"),
-	TEST_CASE(lpn,    re_est,    "LPN: re-establish friendship"),
-	TEST_CASE(lpn,    poll,      "LPN: poll before timeout"),
-	TEST_CASE(lpn,    overflow,  "LPN: message queue overflow"),
-	TEST_CASE(lpn,    group,     "LPN: receive on group addrs"),
-	TEST_CASE(lpn,    loopback,  "LPN: send to loopback addrs"),
+	TEST_CASE(lpn,    est,              "LPN: establish friendship"),
+	TEST_CASE(lpn,    msg_frnd,         "LPN: message exchange with friend"),
+	TEST_CASE(lpn,    msg_mesh,         "LPN: message exchange with mesh"),
+	TEST_CASE(lpn,    re_est,           "LPN: re-establish friendship"),
+	TEST_CASE(lpn,    poll,             "LPN: poll before timeout"),
+	TEST_CASE(lpn,    overflow,         "LPN: message queue overflow"),
+	TEST_CASE(lpn,    group,            "LPN: receive on group addrs"),
+	TEST_CASE(lpn,    loopback,         "LPN: send to loopback addrs"),
+	TEST_CASE(lpn,    disable,          "LPN: disable LPN"),
+	TEST_CASE(lpn,    term_cb_check,    "LPN: no terminate cb trigger"),
 
-	TEST_CASE(other,  msg,       "Other mesh device: message exchange"),
-	TEST_CASE(other,  group,     "Other mesh device: send to group addrs"),
+	TEST_CASE(other,  msg,              "Other mesh device: message exchange"),
+	TEST_CASE(other,  group,            "Other mesh device: send to group addrs"),
 	BSTEST_END_MARKER
 };
 

@@ -1,0 +1,120 @@
+# Bluetooth Audio - Hearing Access Service options
+#
+# Copyright (c) 2022 Codecoup
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_HAS
+	bool "Hearing Access Service support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select UTF8
+	depends on BT_SMP_SC_PAIR_ONLY
+	depends on BT_SMP_MIN_ENC_KEY_SIZE = 16
+	help
+	  This option enables support for Hearing Access Service.
+
+if BT_HAS
+
+choice BT_HAS_HEARING_AID_TYPE_CHOICE
+	prompt "Hearing Aid Type selection"
+	help
+	  Select the Hearing Aid Type to compile.
+
+config BT_HAS_HEARING_AID_MONAURAL
+	bool "Monaural Hearing Aid"
+
+config BT_HAS_HEARING_AID_BINAURAL
+	depends on BT_CSIS
+	bool "Binaural Hearing Aid"
+
+config BT_HAS_HEARING_AID_BANDED
+	bool "Banded Hearing Aid"
+
+endchoice # BT_HAS_HEARING_AID_TYPE_CHOICE
+
+if BT_HAS_HEARING_AID_MONAURAL || BT_HAS_HEARING_AID_BINAURAL
+
+choice BT_HAS_HEARING_AID_LOCATION
+	prompt "Hearing Aid Device Location"
+	help
+	  Select the Hearing Aid Device location.
+
+config BT_HAS_HEARING_AID_LEFT
+	bool "Left Ear"
+
+config BT_HAS_HEARING_AID_RIGHT
+	bool "Right Ear"
+
+endchoice # BT_HAS_HEARING_AID_LOCATION
+
+endif # BT_HAS_HEARING_AID_MONAURAL || BT_HAS_HEARING_AID_BINAURAL
+
+config BT_HAS_HEARING_AID_TYPE
+	int # hidden
+	range 0 2
+	default 0 if BT_HAS_HEARING_AID_BINAURAL
+	default 1 if BT_HAS_HEARING_AID_MONAURAL
+	default 2 if BT_HAS_HEARING_AID_BANDED
+	help
+	  The value shall be one of 3 defined by the HAS 1.0 specification table 3.2
+
+config BT_HAS_PRESET_COUNT
+	int "Preset record list size"
+	default 2
+	range 0 255
+	help
+	  This option sets the number of Hearing Access Service Presets
+	  that can be registered. Setting this value to 0 disables Presets support.
+
+config BT_HAS_PRESET_SUPPORT
+	def_bool BT_HAS_PRESET_COUNT > 0
+
+if BT_HAS_PRESET_SUPPORT
+
+if BT_HAS_HEARING_AID_BINAURAL
+
+config BT_HAS_IDENTICAL_PRESET_RECORDS
+	bool "Identical preset records in Binaural Hearing Aid Set"
+	help
+	  Set if the list of preset records is identical to the list of preset records
+	  on the other member in the Binaural Hearing Aid Set.
+	  This option sets Independent Presets field in Hearing Aid Features to 0b0.
+
+config BT_HAS_PRESET_SYNC_SUPPORT
+	bool "Preset synchronization support"
+	depends on BT_HAS_IDENTICAL_PRESET_RECORDS
+	help
+	  Set if the hearing aid has support for relaying active preset changes to the other
+	  member in the Binaural Hearing Aid Set.
+
+endif # BT_HAS_HEARING_AID_BINAURAL
+
+config BT_HAS_PRESET_NAME_DYNAMIC
+	bool "Allow to set preset name on runtime"
+	help
+	  Enabling this option allows for runtime configuration of preset name.
+
+endif # BT_HAS_PRESET_SUPPORT
+
+config BT_DEBUG_HAS
+	bool "Hearing Access Service debug"
+	help
+	  This option enables enables Hearing Access Service debug logs.
+
+endif # BT_HAS
+
+config BT_HAS_CLIENT
+	bool "Hearing Access Service Client support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
+	select BT_GATT_AUTO_UPDATE_MTU
+	select UTF8
+	help
+	  This option enables support for Hearing Access Service Client.
+
+config BT_DEBUG_HAS_CLIENT
+	bool "Hearing Access Service Client debug"
+	depends on BT_HAS_CLIENT
+	help
+	  This option enables enables Hearing Access Service Client debug logs.

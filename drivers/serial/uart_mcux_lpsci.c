@@ -7,9 +7,10 @@
 #define DT_DRV_COMPAT nxp_kinetis_lpsci
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/uart.h>
-#include <drivers/clock_control.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <fsl_lpsci.h>
 #include <soc.h>
 
@@ -21,6 +22,7 @@ struct mcux_lpsci_config {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
 #endif
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct mcux_lpsci_data {
@@ -237,6 +239,7 @@ static int mcux_lpsci_init(const struct device *dev)
 	const struct mcux_lpsci_config *config = dev->config;
 	lpsci_config_t uart_config;
 	uint32_t clock_freq;
+	int err;
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
@@ -249,6 +252,11 @@ static int mcux_lpsci_init(const struct device *dev)
 	uart_config.baudRate_Bps = config->baud_rate;
 
 	LPSCI_Init(config->base, &uart_config, clock_freq);
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		return err;
+	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
@@ -306,10 +314,12 @@ static const struct mcux_lpsci_config mcux_lpsci_##n##_config = {	\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 	.baud_rate = DT_INST_PROP(n, current_speed),			\
+	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	IRQ_FUNC_INIT							\
 }
 
 #define MCUX_LPSCI_INIT(n)						\
+	PINCTRL_DT_INST_DEFINE(n);					\
 									\
 	static struct mcux_lpsci_data mcux_lpsci_##n##_data;		\
 									\

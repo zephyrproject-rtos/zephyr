@@ -67,7 +67,7 @@ Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 Debug Threads
 *************
 
-The philosophers sample by default enables :kconfig:`CONFIG_DEBUG_THREAD_INFO`.
+The philosophers sample by default enables :kconfig:option:`CONFIG_DEBUG_THREAD_INFO`.
 This allows tools like OpenOCD and J-link to inspect thread data using
 ``info threads``.
 

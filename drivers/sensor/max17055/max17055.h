@@ -66,7 +66,7 @@ struct max17055_data {
 
 struct max17055_config {
 	char *bus_name;
-	/* Value of Rsense resistor in milliohms (typicallly 5 or 10) */
+	/* Value of Rsense resistor in milliohms (typically 5 or 10) */
 	uint16_t rsense_mohms;
 	/* The design capacity (aka label capacity) of the cell in mAh */
 	uint16_t design_capacity;

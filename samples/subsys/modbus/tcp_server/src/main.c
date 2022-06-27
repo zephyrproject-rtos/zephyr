@@ -5,14 +5,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/util.h>
-#include <drivers/gpio.h>
-#include <modbus/modbus.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/modbus/modbus.h>
 
-#include <net/socket.h>
+#include <zephyr/net/socket.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tcp_modbus, LOG_LEVEL_INF);
 
 #define MODBUS_TCP_PORT 502

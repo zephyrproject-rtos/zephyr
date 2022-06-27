@@ -13,16 +13,16 @@
  * This module contains functions for manipulation of the d-cache.
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <sys/util.h>
-#include <toolchain.h>
-#include <cache.h>
-#include <linker/linker-defs.h>
-#include <arch/arc/v2/aux_regs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/cache.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/arch/arc/v2/aux_regs.h>
 #include <kernel_internal.h>
-#include <sys/__assert.h>
-#include <init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/init.h>
 #include <stdbool.h>
 
 #if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)

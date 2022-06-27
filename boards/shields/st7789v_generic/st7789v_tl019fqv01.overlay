@@ -4,11 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	chosen {
+		zephyr,display = &st7789v;
+	};
+};
+
 &arduino_spi {
 	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
 
-	st7789v@0 {
+	st7789v: st7789v@0 {
 		compatible = "sitronix,st7789v";
 		label = "ST7789V";
 		spi-max-frequency = <20000000>;

@@ -12,7 +12,7 @@
  * The i2s_cavs driver is being used.
  *
  * In this test app, I2S transmission and reception are tested as follows:
- * I2S port #3 of Intel S1000 is configured for birectional mode
+ * I2S port #3 of Intel S1000 is configured for bidirectional mode
  *     i.e., I2S_DIR_TX and I2S_DIR_RX
  * After each frame is received, it is sent/looped back on the same I2S
  * The transmit direction is started after 2 frames are queued. This is done to
@@ -20,11 +20,11 @@
  * start operation is triggered
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
-#include <device.h>
-#include <drivers/i2s.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2s.h>
 
 #define I2S_DEV_NAME "I2S_3"
 #define NUM_I2S_BUFFERS 4

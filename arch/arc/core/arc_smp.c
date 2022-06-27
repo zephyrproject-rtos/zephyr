@@ -9,12 +9,12 @@
  * @brief codes required for ARC multicore and Zephyr smp support
  *
  */
-#include <device.h>
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <ksched.h>
 #include <soc.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 
 #ifndef IRQ_ICI
@@ -22,6 +22,8 @@
 #endif
 
 #define ARCV2_ICI_IRQ_PRIORITY 1
+
+#define MP_PRIMARY_CPU_ID 0
 
 volatile struct {
 	arch_cpustart_t fn;
@@ -71,7 +73,14 @@ static void arc_connect_debug_mask_update(int cpu_num)
 {
 	uint32_t core_mask = 1 << cpu_num;
 
-	core_mask |= z_arc_connect_debug_select_read();
+	/*
+	 * MDB debugger may modify debug_select and debug_mask registers on start, so we can't
+	 * rely on debug_select reset value.
+	 */
+	if (cpu_num != MP_PRIMARY_CPU_ID) {
+		core_mask |= z_arc_connect_debug_select_read();
+	}
+
 	z_arc_connect_debug_select_set(core_mask);
 	/* Debugger halts cores at all conditions:
 	 * ARC_CONNECT_CMD_DEBUG_MASK_H: Core global halt.
@@ -147,7 +156,7 @@ static int arc_smp_init(const struct device *dev)
 
 	if (bcr.dbg) {
 		/* configure inter-core debug unit if available */
-		arc_connect_debug_mask_update(0);
+		arc_connect_debug_mask_update(MP_PRIMARY_CPU_ID);
 	}
 
 	if (bcr.ipi) {

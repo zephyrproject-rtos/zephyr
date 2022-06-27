@@ -552,11 +552,9 @@ class ZephyrBinaryRunner(abc.ABC):
     @property
     def thread_info_enabled(self) -> bool:
         '''Returns True if self.build_conf has
-        CONFIG_DEBUG_THREAD_INFO enabled. This supports the
-        CONFIG_OPENOCD_SUPPORT fallback as well for now.
+        CONFIG_DEBUG_THREAD_INFO enabled.
         '''
-        return (self.build_conf.getboolean('CONFIG_DEBUG_THREAD_INFO') or
-                self.build_conf.getboolean('CONFIG_OPENOCD_SUPPORT'))
+        return self.build_conf.getboolean('CONFIG_DEBUG_THREAD_INFO')
 
     @classmethod
     def dev_id_help(cls) -> str:

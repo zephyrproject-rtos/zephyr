@@ -10,14 +10,14 @@
 #include <string.h>
 #include <zephyr/types.h>
 #include <errno.h>
-#include <init.h>
-#include <fs/fs.h>
-#include <fs/fs_sys.h>
-#include <sys/check.h>
+#include <zephyr/init.h>
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/fs_sys.h>
+#include <zephyr/sys/check.h>
 
 
 #define LOG_LEVEL CONFIG_FS_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(fs);
 
 /* list of mounted file systems */

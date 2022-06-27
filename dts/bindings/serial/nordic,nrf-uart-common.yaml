@@ -1,4 +1,4 @@
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -7,42 +7,11 @@ properties:
     interrupts:
       required: true
 
-    tx-pin:
-      type: int
-      required: true
+    disable-rx:
+      type: boolean
       description: |
-        The TX pin to use.
-
-        For pins P0.0 through P0.31, use the pin number. For example,
-        to use P0.16 for TX, set:
-
-            tx-pin = <16>;
-
-        For pins P1.0 through P1.31, add 32 to the pin number. For
-        example, to use P1.2 for TX, set:
-
-            tx-pin = <34>;  /* 32 + 2 */
-
-    rx-pin:
-      type: int
-      required: false
-      description: |
-        The RX pin to use. The pin numbering scheme is the same as the
-        tx-pin property's.
-
-    rts-pin:
-      type: int
-      required: false
-      description: |
-        The RTS pin to use. The pin numbering scheme is the same as the
-        tx-pin property's.
-
-    cts-pin:
-      type: int
-      required: false
-      description: |
-        The CTS pin to use. The pin numbering scheme is the same as the
-        tx-pin property's.
+        Disable UART reception capabilities (only required to disable reception
+        if CONFIG_PINCTRL is enabled).
 
     current-speed:
       description: |
@@ -68,12 +37,63 @@ properties:
         - 921600
         - 1000000
 
+    tx-pin:
+      type: int
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
+        The TX pin to use.
+
+        For pins P0.0 through P0.31, use the pin number. For example,
+        to use P0.16 for TX, set:
+
+          tx-pin = <16>;
+
+        For pins P1.0 through P1.31, add 32 to the pin number. For
+        example, to use P1.2 for TX, set:
+
+          tx-pin = <34>;  /* 32 + 2 */
+
+    rx-pin:
+      type: int
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
+        The RX pin to use. The pin numbering scheme is the same as the
+        tx-pin property's.
+
+    rts-pin:
+      type: int
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
+        The RTS pin to use. The pin numbering scheme is the same as the
+        tx-pin property's.
+
+    cts-pin:
+      type: int
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
+        The CTS pin to use. The pin numbering scheme is the same as the
+        tx-pin property's.
+
     rx-pull-up:
       type: boolean
-      required: false
-      description: Enable pull-up resistor on the RX pin.
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
+        Enable pull-up resistor on the RX pin.
 
     cts-pull-up:
       type: boolean
-      required: false
-      description: Enable pull-up resistor on the CTS pin.
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
+        Enable pull-up resistor on the CTS pin.

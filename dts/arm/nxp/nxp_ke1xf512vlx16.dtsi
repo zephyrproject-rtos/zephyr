@@ -18,8 +18,9 @@
 	 * https://sourceware.org/ml/binutils/2017-02/msg00250.html
 	 */
 	sram_l: memory@1fff8000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x1fff8000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "SRAML";
 	};
 
 	sram0: memory@20000000 {

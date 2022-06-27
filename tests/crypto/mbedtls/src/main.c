@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <app_memory/partitions.h>
+#include <zephyr/app_memory/partitions.h>
 
 extern void test_mbedtls(void);
 
@@ -13,7 +13,12 @@ extern void test_mbedtls(void);
 void test_main(void)
 {
 #ifdef CONFIG_USERSPACE
-	k_mem_domain_add_partition(&k_mem_domain_default, &k_mbedtls_partition);
+	int ret = k_mem_domain_add_partition(&k_mem_domain_default,
+					     &k_mbedtls_partition);
+	if (ret != 0) {
+		printk("Failed to add memory partition (%d)\n", ret);
+		k_oops();
+	}
 #endif
 	ztest_test_suite(test_mbedtls_fn,
 		ztest_user_unit_test(test_mbedtls));

@@ -7,10 +7,10 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_SHT3XD_SHT3XD_H_
 #define ZEPHYR_DRIVERS_SENSOR_SHT3XD_SHT3XD_H_
 
-#include <device.h>
-#include <kernel.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
 
 #define SHT3XD_CMD_FETCH                0xE000
 #define SHT3XD_CMD_ART                  0x2B32

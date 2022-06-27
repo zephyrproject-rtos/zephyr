@@ -7,9 +7,9 @@
 #ifndef ZEPHYR_DRIVERS_IPM_IPM_MHU_H_
 #define ZEPHYR_DRIVERS_IPM_IPM_MHU_H_
 
-#include <kernel.h>
-#include <drivers/ipm.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/device.h>
 
 #ifdef __cplusplus
 extern "C" {

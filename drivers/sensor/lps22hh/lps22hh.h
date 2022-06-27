@@ -12,55 +12,43 @@
 #define ZEPHYR_DRIVERS_SENSOR_LPS22HH_LPS22HH_H_
 
 #include <stdint.h>
-#include <drivers/i2c.h>
-#include <drivers/spi.h>
-#include <drivers/gpio.h>
-#include <drivers/sensor.h>
-#include <zephyr/types.h>
-#include <sys/util.h>
+#include <stmemsc.h>
 #include "lps22hh_reg.h"
 
-struct lps22hh_config {
-	char *master_dev_name;
-	int (*bus_init)(const struct device *dev);
-#ifdef CONFIG_LPS22HH_TRIGGER
-	const char *drdy_port;
-	uint8_t drdy_pin;
-	uint8_t drdy_flags;
-#endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#include <zephyr/drivers/spi.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	uint16_t i2c_slv_addr;
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	struct spi_config spi_conf;
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	const char *gpio_cs_port;
-	uint8_t cs_gpio;
-	uint8_t cs_gpio_flags;
+#include <zephyr/drivers/i2c.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
+
+struct lps22hh_config {
+	stmdev_ctx_t ctx;
+	union {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+		const struct i2c_dt_spec i2c;
 #endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+		const struct spi_dt_spec spi;
+#endif
+	} stmemsc_cfg;
+	uint8_t odr;
+#ifdef CONFIG_LPS22HH_TRIGGER
+	struct gpio_dt_spec gpio_int;
 #endif
 };
 
 struct lps22hh_data {
-	const struct device *dev;
-	const struct device *bus;
 	int32_t sample_press;
 	int16_t sample_temp;
 
-	stmdev_ctx_t *ctx;
-
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	stmdev_ctx_t ctx_i2c;
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	stmdev_ctx_t ctx_spi;
-#endif
-
 #ifdef CONFIG_LPS22HH_TRIGGER
-	const struct device *gpio;
-	uint32_t pin;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
 	sensor_trigger_handler_t handler_drdy;
+	const struct device *dev;
 
 #if defined(CONFIG_LPS22HH_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LPS22HH_THREAD_STACK_SIZE);
@@ -71,13 +59,7 @@ struct lps22hh_data {
 #endif
 
 #endif /* CONFIG_LPS22HH_TRIGGER */
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	struct spi_cs_control cs_ctrl;
-#endif
 };
-
-int lps22hh_i2c_init(const struct device *dev);
-int lps22hh_spi_init(const struct device *dev);
 
 #ifdef CONFIG_LPS22HH_TRIGGER
 int lps22hh_trigger_set(const struct device *dev,

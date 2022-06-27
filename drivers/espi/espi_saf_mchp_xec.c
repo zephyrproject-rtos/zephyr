@@ -7,12 +7,12 @@
 
 #define DT_DRV_COMPAT microchip_xec_espi_saf
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <errno.h>
-#include <drivers/espi.h>
-#include <drivers/espi_saf.h>
-#include <logging/log.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/espi_saf.h>
+#include <zephyr/logging/log.h>
 
 #include "espi_utils.h"
 LOG_MODULE_REGISTER(espi_saf, CONFIG_ESPI_LOG_LEVEL);
@@ -61,10 +61,6 @@ struct espi_saf_xec_data {
 	struct k_sem ecp_lock;
 	uint32_t hwstatus;
 };
-
-/* convenience defines */
-#define DEV_CFG(dev) ((const struct espi_saf_xec_config *const)(dev)->config)
-#define DEV_DATA(dev) ((struct espi_saf_xec_data *const)(dev)->data)
 
 /* EC portal local flash r/w buffer */
 static uint32_t slave_mem[MAX_SAF_ECP_BUFFER_SIZE];
@@ -397,7 +393,7 @@ static void saf_flash_cfg(const struct device *dev,
 			  const struct espi_saf_flash_cfg *fcfg, uint8_t cs)
 {
 	uint32_t d, did;
-	const struct espi_saf_xec_config *xcfg = DEV_CFG(dev);
+	const struct espi_saf_xec_config *xcfg = dev->config;
 	MCHP_SAF_HW_REGS *regs = (MCHP_SAF_HW_REGS *)xcfg->saf_base_addr;
 	QMSPI_Type *qregs = (QMSPI_Type *)xcfg->qmspi_base_addr;
 
@@ -467,7 +463,7 @@ static int espi_saf_xec_configuration(const struct device *dev,
 		return -EINVAL;
 	}
 
-	const struct espi_saf_xec_config *xcfg = DEV_CFG(dev);
+	const struct espi_saf_xec_config *xcfg = dev->config;
 	MCHP_SAF_HW_REGS *regs = (MCHP_SAF_HW_REGS *)xcfg->saf_base_addr;
 	const struct espi_saf_flash_cfg *fcfg = cfg->flash_cfgs;
 
@@ -557,7 +553,7 @@ static int espi_saf_xec_set_pr(const struct device *dev,
 		return -EINVAL;
 	}
 
-	const struct espi_saf_xec_config *xcfg = DEV_CFG(dev);
+	const struct espi_saf_xec_config *xcfg = dev->config;
 	MCHP_SAF_HW_REGS *regs = (MCHP_SAF_HW_REGS *)xcfg->saf_base_addr;
 
 	if (regs->SAF_FL_CFG_MISC & MCHP_SAF_FL_CFG_MISC_SAF_EN) {
@@ -600,7 +596,7 @@ static int espi_saf_xec_set_pr(const struct device *dev,
 
 static bool espi_saf_xec_channel_ready(const struct device *dev)
 {
-	const struct espi_saf_xec_config *cfg = DEV_CFG(dev);
+	const struct espi_saf_xec_config *cfg = dev->config;
 	MCHP_SAF_HW_REGS *regs = (MCHP_SAF_HW_REGS *)cfg->saf_base_addr;
 
 	if (regs->SAF_FL_CFG_MISC & MCHP_SAF_FL_CFG_MISC_SAF_EN) {
@@ -663,7 +659,7 @@ static int check_ecp_access_size(uint32_t reqlen)
 }
 
 /*
- * EC access (read/erase/write) to SAF atttached flash array
+ * EC access (read/erase/write) to SAF attached flash array
  * cmd  0 = read
  *	1 = write
  *	2 = erase
@@ -673,8 +669,8 @@ static int saf_ecp_access(const struct device *dev,
 {
 	uint32_t err_mask, n;
 	int rc, counter;
-	struct espi_saf_xec_data *xdat = DEV_DATA(dev);
-	const struct espi_saf_xec_config *cfg = DEV_CFG(dev);
+	struct espi_saf_xec_data *xdat = dev->data;
+	const struct espi_saf_xec_config *cfg = dev->config;
 	MCHP_SAF_HW_REGS *regs = (MCHP_SAF_HW_REGS *)cfg->saf_base_addr;
 
 	counter = 0;
@@ -798,7 +794,7 @@ static int espi_saf_xec_manage_callback(const struct device *dev,
 					struct espi_callback *callback,
 					bool set)
 {
-	struct espi_saf_xec_data *data = DEV_DATA(dev);
+	struct espi_saf_xec_data *data = dev->data;
 
 	return espi_manage_callback(&data->callbacks, callback, set);
 }
@@ -812,7 +808,7 @@ static int espi_saf_xec_activate(const struct device *dev)
 		return -EINVAL;
 	}
 
-	cfg = DEV_CFG(dev);
+	cfg = dev->config;
 	regs = (MCHP_SAF_HW_REGS *)cfg->saf_base_addr;
 
 	regs->SAF_FL_CFG_MISC |= MCHP_SAF_FL_CFG_MISC_SAF_EN;
@@ -857,7 +853,7 @@ DEVICE_DT_INST_DEFINE(0, &espi_saf_xec_init, NULL,
 
 static int espi_saf_xec_init(const struct device *dev)
 {
-	struct espi_saf_xec_data *data = DEV_DATA(dev);
+	struct espi_saf_xec_data *data = dev->data;
 
 	/* ungate SAF clocks by disabling PCR sleep enable */
 	mchp_pcr_periph_slp_ctrl(PCR_ESPI_SAF, MCHP_PCR_SLEEP_DIS);

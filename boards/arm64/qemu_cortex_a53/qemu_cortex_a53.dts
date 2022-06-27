@@ -6,7 +6,7 @@
  */
 
 /dts-v1/;
-#include <arm64/qemu-virt/qemu-virt-a53.dtsi>
+#include <arm64/qemu/qemu-virt-a53.dtsi>
 
 / {
 	model = "QEMU Cortex-A53";
@@ -28,7 +28,7 @@
 	soc {
 		sram0: memory@40000000 {
 			compatible = "mmio-sram";
-			reg = <0x40000000 DT_SIZE_M(128)>;
+			reg = <0x0 0x40000000 0x0 DT_SIZE_M(128)>;
 		};
 
 	};

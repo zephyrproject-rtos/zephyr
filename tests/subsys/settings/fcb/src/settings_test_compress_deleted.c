@@ -6,7 +6,7 @@
 
 #include "settings_test.h"
 #include "settings/settings_fcb.h"
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 #define NAME_DELETABLE "4/deletable"
 
@@ -118,7 +118,7 @@ void test_config_compress_deleted(void)
 
 		if (cf.cf_fcb.f_active.fe_sector == &fcb_small_sectors[1]) {
 			/*
-			 * The commpresion should happened while the active
+			 * The compression should happened while the active
 			 * sector was changing.
 			 */
 			break;

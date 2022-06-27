@@ -17,3 +17,5 @@ flash: 128
 supported:
   - gpio
   - i2c
+  - pwm
+  - dma

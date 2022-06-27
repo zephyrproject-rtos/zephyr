@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <ztest.h>
 #include <tc_util.h>
 
-#include <drivers/edac.h>
+#include <zephyr/drivers/edac.h>
 #include <ibecc.h>
 
 #define DEVICE_NAME		DT_LABEL(DT_NODELABEL(ibecc))
@@ -22,10 +22,10 @@
 #define DURATION		100
 #endif
 
-const struct device *dev;
-
 static void test_ibecc_initialized(void)
 {
+	const struct device *dev;
+
 	dev = device_get_binding(DEVICE_NAME);
 	zassert_not_null(dev, "Device not found");
 
@@ -52,10 +52,14 @@ static void callback(const struct device *d, void *data)
 
 static void test_ibecc_api(void)
 {
+	const struct device *dev;
 	uint64_t value;
 	int ret;
 
 	/* Error log API */
+
+	dev = device_get_binding(DEVICE_NAME);
+	zassert_not_null(dev, "Device not found");
 
 	ret = edac_ecc_error_log_get(dev, &value);
 	zassert_equal(ret, -ENODATA, "edac_ecc_error_log_get failed");
@@ -86,9 +90,13 @@ static void test_ibecc_api(void)
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 static void test_ibecc_error_inject_api(void)
 {
+	const struct device *dev;
 	uint32_t test_value;
 	uint64_t val;
 	int ret;
+
+	dev = device_get_binding(DEVICE_NAME);
+	zassert_not_null(dev, "Device not found");
 
 	/* Verify default parameters */
 
@@ -154,7 +162,8 @@ static void test_ibecc_error_inject_api(void)
 #endif
 
 #if defined(CONFIG_EDAC_ERROR_INJECT)
-static void test_inject(uint64_t addr, uint64_t mask, uint8_t type)
+static void test_inject(const struct device *dev, uint64_t addr, uint64_t mask,
+			uint8_t type)
 {
 	unsigned int errors_cor, errors_uc;
 	uint64_t test_addr;
@@ -256,48 +265,42 @@ static int check_values(void *p1, void *p2, void *p3)
 	return 0;
 }
 
-static void test_ibecc_error_inject_test_cor(void)
+static void ibecc_error_inject_test(uint64_t addr, uint64_t mask, uint64_t type)
 {
+	const struct device *dev;
 	int ret;
+
+	dev = device_get_binding(DEVICE_NAME);
+	zassert_not_null(dev, "Device not found");
 
 	ret = edac_notify_callback_set(dev, callback);
 	zassert_equal(ret, 0, "Error setting notification callback");
 
 	/* Test injecting correctable error at address TEST_ADDRESS1 */
-	test_inject(TEST_ADDRESS1, TEST_ADDRESS_MASK, EDAC_ERROR_TYPE_DRAM_COR);
+	test_inject(dev, addr, mask, type);
 
 #if defined(CONFIG_USERSPACE)
 	k_thread_user_mode_enter((k_thread_entry_t)check_values,
-				 (void *)TEST_ADDRESS1,
-				 (void *)EDAC_ERROR_TYPE_DRAM_COR,
+				 (void *)addr,
+				 (void *)type,
 				 NULL);
 #else
-	check_values((void *)TEST_ADDRESS1, (void *)EDAC_ERROR_TYPE_DRAM_COR,
-		     NULL);
+	check_values((void *)addr, (void *)type, NULL);
 #endif
+}
+
+static void test_ibecc_error_inject_test_cor(void)
+{
+	ibecc_error_inject_test(TEST_ADDRESS1, TEST_ADDRESS_MASK,
+				EDAC_ERROR_TYPE_DRAM_COR);
 }
 
 static void test_ibecc_error_inject_test_uc(void)
 {
-	int ret;
-
-	ret = edac_notify_callback_set(dev, callback);
-	zassert_equal(ret, 0, "Error setting notification callback");
-
-	/* Test injecting uncorrectable error at address TEST_ADDRESS2 */
-	test_inject(TEST_ADDRESS2, TEST_ADDRESS_MASK, EDAC_ERROR_TYPE_DRAM_UC);
-
-#if defined(CONFIG_USERSPACE)
-	k_thread_user_mode_enter((k_thread_entry_t)check_values,
-				 (void *)TEST_ADDRESS2,
-				 (void *)EDAC_ERROR_TYPE_DRAM_UC,
-				 NULL);
-#else
-	check_values((void *)TEST_ADDRESS2, (void *)EDAC_ERROR_TYPE_DRAM_UC,
-		     NULL);
-#endif
+	ibecc_error_inject_test(TEST_ADDRESS2, TEST_ADDRESS_MASK,
+				EDAC_ERROR_TYPE_DRAM_UC);
 }
-#else
+#else /* CONFIG_EDAC_ERROR_INJECT */
 static void test_ibecc_error_inject_test_cor(void)
 {
 	ztest_test_skip();
@@ -326,7 +329,12 @@ void test_edac_dummy_api(void);
 void test_main(void)
 {
 #if defined(CONFIG_USERSPACE)
-	k_mem_domain_add_partition(&k_mem_domain_default, &default_part);
+	int ret = k_mem_domain_add_partition(&k_mem_domain_default,
+					     &default_part);
+	if (ret != 0) {
+		TC_PRINT("Failed to add to mem domain (%d)", ret);
+		k_oops();
+	}
 #endif
 
 	ztest_test_suite(ibecc,

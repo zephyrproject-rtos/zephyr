@@ -12,28 +12,3 @@ properties:
 
     clocks:
       required: true
-
-child-binding:
-    description: |
-      NXP Kinetis Pin data.  A series of child nodes that describe each pin
-      configuration supported by the SoC.  Each node is expected to named as
-      follows - <periph>_<signal>_pt<port><pin>
-
-      The node will have a matching node label that board dtsi files can
-      utilized to reference in pinctrl-<N> properties.
-
-      The following is an example for UART0 CTS signal on pin 0, with mux
-      value of 2.
-
-      uart0_cts_pta0: uart0_cts_pta0 {
-           nxp,kinetis-port-pins = < 0 2 >;
-      };
-
-    properties:
-      "nxp,kinetis-port-pins":
-        description: |
-          The array is expected to have two elements. The first element is the
-          pin number and the second element is the mux value (i.e. PCR[MUX]).
-
-        type: array
-        required: true

@@ -82,29 +82,34 @@
 
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
 	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pg9>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &spi2 {
 	pinctrl-0 = <&spi2_sck_pd3 &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
 	cs-gpios = <&gpioh 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
 
 zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 

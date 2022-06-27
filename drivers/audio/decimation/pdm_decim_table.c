@@ -10,7 +10,7 @@
 
 /* PDM decimation FIR filters */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include "pdm_decim_fir.h"
 

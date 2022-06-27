@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <string.h>
-#include <drivers/flash.h>
+#include <zephyr/drivers/flash.h>
 #include <errno.h>
-#include <init.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include "flash_priv.h"
 
@@ -21,7 +21,7 @@
 #endif
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_mcux);
 
 
@@ -284,4 +284,4 @@ static int flash_mcux_init(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, flash_mcux_init, NULL,
 			&flash_data, NULL, POST_KERNEL,
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_mcux_api);
+			CONFIG_FLASH_INIT_PRIORITY, &flash_mcux_api);

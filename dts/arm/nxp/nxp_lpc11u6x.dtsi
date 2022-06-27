@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <arm/armv6-m.dtsi>
-#include <dt-bindings/clock/lpc11u6x_clock.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/lpc11u6x_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <mem.h>
 
 / {
@@ -24,13 +24,15 @@
 	};
 
 	sram1:memory@20000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20000000 0x800>;
+		zephyr,memory-region = "SRAM1";
 	};
 
 	sram2:memory@20004000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20004000 0x800>;
+		zephyr,memory-region = "SRAM2";
 	};
 
 	soc {
@@ -50,6 +52,32 @@
 			status = "okay";
 		};
 
+		iocon: iocon@40044000 {
+			compatible = "nxp,lpc-iocon";
+			reg = <0x40044000 0x150>;
+			label = "IOCON";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40044000 0x150>;
+			pinctrl: pinctrl {
+				compatible = "nxp,lpc11u6x-pinctrl";
+			};
+			/* PIO0_0 to PIO0_23 */
+			pio0: pio0@0 {
+				compatible = "nxp,lpc-iocon-pio";
+				reg = <0x0 0x60>;
+			};
+			/* PIO1_0 to PIO1_31. */
+			pio1: pio1@60 {
+				compatible = "nxp,lpc-iocon-pio";
+				reg = <0x60 0x7C>;
+			};
+			/* PIO2_0 to PIO2_23. */
+			pio2: pio2@f0 {
+				compatible = "nxp,lpc-iocon-pio";
+				reg = <0xf0 0x60>;
+			};
+		};
 		/* PIO0_0 to PIO0_23. */
 		pinmux0: pinmux@40044000 {
 			compatible = "nxp,lpc11u6x-pinmux";
@@ -90,7 +118,7 @@
 			ngpios = <24>;
 
 			clocks = <&syscon LPC11U6X_CLOCK_GPIO>;
-			pinmux-port = <&pinmux0>;
+			iocon = <&pio0>;
 
 			status = "disabled";
 		};
@@ -107,7 +135,7 @@
 			#gpio-cells = <2>;
 
 			clocks = <&syscon LPC11U6X_CLOCK_GPIO>;
-			pinmux-port = <&pinmux1>;
+			iocon = <&pio1>;
 
 			status = "disabled";
 		};
@@ -126,7 +154,7 @@
 			ngpios = <22>;
 
 			clocks = <&syscon LPC11U6X_CLOCK_GPIO>;
-			pinmux-port = <&pinmux2>;
+			iocon = <&pio2>;
 
 			status = "disabled";
 		};
@@ -136,8 +164,6 @@
 			#clock-cells = <1>;
 			reg = <0x40048000 0x400>;
 			label = "SYSCON";
-			pinmuxs = <&pinmux2 0 1>, <&pinmux2 1 1>;
-			pinmux-names = "XTALIN", "XTALOUT";
 		};
 
 		uart0: serial@40008000 {

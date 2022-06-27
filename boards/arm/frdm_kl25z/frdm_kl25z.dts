@@ -2,7 +2,8 @@
 
 /dts-v1/;
 
-#include <nxp/MKL25Z128VLK4.dtsi>
+#include <nxp/nxp_kl25z.dtsi>
+#include "frdm_kl25z-pinctrl.dtsi"
 
 / {
 	model = "NXP Freedom KL25Z board";
@@ -92,13 +93,13 @@
 
 &adc0 {
 	status = "okay";
-	pinctrl-0 = <&ADC0_SE12_PTB2>;
+	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
 };
 
 &i2c0 {
 	status = "okay";
-	pinctrl-0 = <&I2C0_SCL_PTE24 &I2C0_SDA_PTE25>;
+	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 
 	mma8451q@1d {
@@ -110,18 +111,10 @@
 	};
 };
 
-&I2C0_SCL_PTE24 {
-	bias-pull-up;
-};
-
-&I2C0_SDA_PTE25 {
-	bias-pull-up;
-};
-
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	pinctrl-0 = <&UART0_RX_PTA1 &UART0_TX_PTA2>;
+	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 };
 

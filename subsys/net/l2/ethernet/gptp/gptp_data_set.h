@@ -16,7 +16,7 @@
 
 #if defined(CONFIG_NET_GPTP)
 
-#include <net/gptp.h>
+#include <zephyr/net/gptp.h>
 #include "gptp_state.h"
 
 #ifdef __cplusplus

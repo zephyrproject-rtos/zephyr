@@ -14,7 +14,7 @@ menuconfig UART_SIFIVE
 # ---------- Port 0 ----------
 
 menuconfig UART_SIFIVE_PORT_0
-	bool "Enable SIFIVE Port 0"
+	bool "SIFIVE Port 0"
 	depends on UART_SIFIVE
 	help
 	  This tells the driver to configure the UART port at boot, depending on
@@ -37,7 +37,7 @@ config UART_SIFIVE_PORT_0_TXCNT_IRQ
 # ---------- Port 1 ----------
 
 menuconfig UART_SIFIVE_PORT_1
-	bool "Enable SIFIVE Port 1"
+	bool "SIFIVE Port 1"
 	depends on UART_SIFIVE
 	help
 	  This tells the driver to configure the UART port at boot, depending on
@@ -52,7 +52,7 @@ config UART_SIFIVE_PORT_1_RXCNT_IRQ
 
 config UART_SIFIVE_PORT_1_TXCNT_IRQ
 	int "Port 1 TX Interrupt Threshold Count"
-	default 0
+	default 1
 	depends on UART_SIFIVE_PORT_1
 	help
 	  Port 1 TX Threshold at which the TX FIFO interrupt triggers.

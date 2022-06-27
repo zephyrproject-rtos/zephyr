@@ -6,7 +6,7 @@
 
 #include "mock_backend.h"
 #include <ztest.h>
-#include <logging/log_core.h>
+#include <zephyr/logging/log_core.h>
 
 void mock_log_backend_reset(const struct log_backend *backend)
 {
@@ -61,6 +61,14 @@ void mock_log_backend_generic_record(const struct log_backend *backend,
 				     uint8_t *data,
 				     uint32_t data_len)
 {
+	if (backend->cb == NULL) {
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY) && timestamp != (log_timestamp_t)UINT32_MAX) {
+		return;
+	}
+
 	struct mock_log_backend *mock = backend->cb->ctx;
 	struct mock_log_backend_msg *exp = &mock->exp_msgs[mock->msg_rec_idx];
 
@@ -91,7 +99,8 @@ void mock_log_backend_validate(const struct log_backend *backend, bool panic)
 
 	zassert_equal(mock->exp_drop_cnt, mock->drop_cnt,
 		      "Got: %u, Expected: %u", mock->drop_cnt, mock->exp_drop_cnt);
-	zassert_equal(mock->msg_rec_idx, mock->msg_proc_idx, NULL);
+	zassert_equal(mock->msg_rec_idx, mock->msg_proc_idx,
+			"%p Recored:%d, Got: %d", mock, mock->msg_rec_idx, mock->msg_proc_idx);
 	zassert_equal(mock->panic, panic, NULL);
 }
 
@@ -221,6 +230,10 @@ static void put(const struct log_backend *const backend,
 	struct mock_log_backend *mock = backend->cb->ctx;
 	struct mock_log_backend_msg *exp = &mock->exp_msgs[mock->msg_proc_idx];
 
+	if (!mock->do_check) {
+		return;
+	}
+
 	mock->msg_proc_idx++;
 
 	if (!exp->check) {
@@ -264,6 +277,10 @@ static void process(const struct log_backend *const backend,
 	struct mock_log_backend *mock = backend->cb->ctx;
 	struct mock_log_backend_msg *exp = &mock->exp_msgs[mock->msg_proc_idx];
 
+	if (!mock->do_check) {
+		return;
+	}
+
 	mock->msg_proc_idx++;
 
 	if (!exp->check) {
@@ -280,11 +297,19 @@ static void process(const struct log_backend *const backend,
 	zassert_equal(msg->log.hdr.desc.level, exp->level, NULL);
 	zassert_equal(msg->log.hdr.desc.domain, exp->domain_id, NULL);
 
-	uint32_t source_id = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
-		log_dynamic_source_id((struct log_source_dynamic_data *)msg->log.hdr.source) :
-		log_const_source_id((const struct log_source_const_data *)msg->log.hdr.source);
+	uint32_t source_id;
+	const void *source = msg->log.hdr.source;
 
-	zassert_equal(source_id, exp->source_id, NULL);
+	if (source == NULL) {
+		source_id = 0;
+	} else {
+		source_id = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
+		    log_dynamic_source_id((struct log_source_dynamic_data *)source) :
+		    log_const_source_id((const struct log_source_const_data *)source);
+	}
+
+	zassert_equal(source_id, exp->source_id, "source_id:%p (exp: %d)",
+		      source_id, exp->source_id);
 
 	size_t len;
 	uint8_t *data;
@@ -334,6 +359,10 @@ static void sync_string(const struct log_backend *const backend,
 	struct mock_log_backend *mock = backend->cb->ctx;
 	struct mock_log_backend_msg *exp = &mock->exp_msgs[mock->msg_proc_idx];
 
+	if (!mock->do_check) {
+		return;
+	}
+
 	mock->msg_proc_idx++;
 
 	if (!exp->check) {
@@ -360,6 +389,10 @@ static void sync_hexdump(const struct log_backend *const backend,
 	struct mock_log_backend *mock = backend->cb->ctx;
 	struct mock_log_backend_msg *exp = &mock->exp_msgs[mock->msg_proc_idx];
 
+	if (!mock->do_check) {
+		return;
+	}
+
 	mock->msg_proc_idx++;
 
 	if (!exp->check) {
@@ -381,12 +414,12 @@ static void sync_hexdump(const struct log_backend *const backend,
 
 const struct log_backend_api mock_log_backend_api = {
 	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
-	.put = IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? put : NULL,
-	.put_sync_string = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
+	.put = IS_ENABLED(CONFIG_LOG1_DEFERRED) ? put : NULL,
+	.put_sync_string = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
 			sync_string : NULL,
-	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
+	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
 			sync_hexdump : NULL,
 	.panic = panic,
 	.init = mock_init,
-	.dropped = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : dropped,
+	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
 };

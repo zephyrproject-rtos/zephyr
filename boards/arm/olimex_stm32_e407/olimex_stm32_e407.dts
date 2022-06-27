@@ -66,18 +66,21 @@
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
 	pinctrl-0 = <&usart6_tx_pc6 &usart6_rx_pc7>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -93,11 +96,13 @@
 /* Only one interface should be enabled at a time: usbotg_fs or usbotg_hs */
 usb_otg1: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
 	status = "disabled";
 };
 
 zephyr_udc0: &usbotg_hs {
 	pinctrl-0 = <&usb_otg_hs_dm_pb14 &usb_otg_hs_dp_pb15>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -113,4 +118,5 @@ zephyr_udc0: &usbotg_hs {
 		     &eth_tx_en_pg11
 		     &eth_txd0_pg13
 		     &eth_txd1_pg14>;
+	pinctrl-names = "default";
 };

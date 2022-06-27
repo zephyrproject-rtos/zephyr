@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <ipc/rpmsg_service.h>
-#include <device.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/ipc/ipc_service.h>
+#include <zephyr/device.h>
+#include <zephyr/logging/log.h>
 
 #include "nrf_802154_spinel_backend_callouts.h"
 #include "nrf_802154_serialization_error.h"
@@ -18,53 +18,56 @@
 #define LOG_MODULE_NAME spinel_ipc_backend
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#define IPC_MASTER IS_ENABLED(CONFIG_RPMSG_SERVICE_MODE_MASTER)
+#define IPC_BOUND_TIMEOUT_IN_MS K_MSEC(1000)
 
-static K_SEM_DEFINE(ready_sem, 0, 1);
-static int endpoint_id;
+static K_SEM_DEFINE(edp_bound_sem, 0, 1);
+static struct ipc_ept ept;
 
-static int endpoint_cb(struct rpmsg_endpoint *ept,
-		       void                  *data,
-		       size_t                 len,
-		       uint32_t               src,
-		       void                  *priv)
+static void endpoint_bound(void *priv)
+{
+	k_sem_give(&edp_bound_sem);
+}
+
+static void endpoint_received(const void *data, size_t len, void *priv)
 {
 	LOG_DBG("Received message of %u bytes.", len);
 
-	if (len) {
-		nrf_802154_spinel_encoded_packet_received(data, len);
-	}
-
-	return RPMSG_SUCCESS;
+	nrf_802154_spinel_encoded_packet_received(data, len);
 }
+
+static struct ipc_ept_cfg ept_cfg = {
+	.name = "nrf_802154_spinel",
+	.cb = {
+		.bound = endpoint_bound,
+		.received = endpoint_received
+	},
+};
 
 nrf_802154_ser_err_t nrf_802154_backend_init(void)
 {
-#if IPC_MASTER
-	while (!rpmsg_service_endpoint_is_bound(endpoint_id)) {
-		k_sleep(K_MSEC(1));
+	const struct device *ipc_instance = DEVICE_DT_GET(DT_NODELABEL(ipc0));
+	int err;
+
+	err = ipc_service_open_instance(ipc_instance);
+	if (err < 0 && err != -EALREADY) {
+		LOG_ERR("Failed to open IPC instance: %d", err);
+		return NRF_802154_SERIALIZATION_ERROR_INIT_FAILED;
 	}
-#endif
+
+	err = ipc_service_register_endpoint(ipc_instance, &ept, &ept_cfg);
+	if (err < 0) {
+		LOG_ERR("Failed to register IPC endpoint: %d", err);
+		return NRF_802154_SERIALIZATION_ERROR_INIT_FAILED;
+	}
+
+	err = k_sem_take(&edp_bound_sem, IPC_BOUND_TIMEOUT_IN_MS);
+	if (err < 0) {
+		LOG_ERR("IPC endpoint bind timed out");
+		return NRF_802154_SERIALIZATION_ERROR_INIT_FAILED;
+	}
+
 	return NRF_802154_SERIALIZATION_ERROR_OK;
 }
-
-/* Make sure we register endpoint before RPMsg Service is initialized. */
-static int register_endpoint(const struct device *arg)
-{
-	int status;
-
-	status = rpmsg_service_register_endpoint("nrf_spinel", endpoint_cb);
-
-	if (status < 0) {
-		LOG_ERR("Registering endpoint failed with %d", status);
-		return status;
-	}
-
-	endpoint_id = status;
-	return 0;
-}
-
-SYS_INIT(register_endpoint, POST_KERNEL, CONFIG_RPMSG_SERVICE_EP_REG_PRIORITY);
 
 /* Send packet thread details */
 #define RING_BUFFER_LEN 16
@@ -116,7 +119,7 @@ static void spinel_packet_send_thread_fn(void *arg1, void *arg2, void *arg3)
 		uint32_t expected_ret = buf->len;
 
 		LOG_DBG("Sending %u bytes from send thread", buf->len);
-		int ret = rpmsg_service_send(endpoint_id, buf->data, buf->len);
+		int ret = ipc_service_send(&ept, buf->data, buf->len);
 
 		rd_idx = get_rb_idx_plus_1(rd_idx);
 
@@ -141,7 +144,7 @@ nrf_802154_ser_err_t nrf_802154_spinel_encoded_packet_send(const void *p_data,
 	}
 
 	LOG_DBG("Sending %u bytes directly", data_len);
-	int ret = rpmsg_service_send(endpoint_id, p_data, data_len);
+	int ret = ipc_service_send(&ept, p_data, data_len);
 
 	return ((ret < 0) ? NRF_802154_SERIALIZATION_ERROR_BACKEND_FAILURE
 			  : (nrf_802154_ser_err_t) ret);

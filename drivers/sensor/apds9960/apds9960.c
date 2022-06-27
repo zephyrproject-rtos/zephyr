@@ -11,15 +11,16 @@
  * @brief driver for APDS9960 ALS/RGB/gesture/proximity sensor
  */
 
-#include <device.h>
-#include <drivers/sensor.h>
-#include <drivers/i2c.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "apds9960.h"
 
@@ -537,5 +538,5 @@ static struct apds9960_data apds9960_data;
 PM_DEVICE_DT_INST_DEFINE(0, apds9960_pm_action);
 
 DEVICE_DT_INST_DEFINE(0, apds9960_init,
-	      PM_DEVICE_DT_INST_REF(0), &apds9960_data, &apds9960_config,
+	      PM_DEVICE_DT_INST_GET(0), &apds9960_data, &apds9960_config,
 	      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);

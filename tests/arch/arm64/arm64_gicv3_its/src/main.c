@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <device.h>
-#include <drivers/interrupt_controller/gicv3_its.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/interrupt_controller/gicv3_its.h>
 
 #define DT_DRV_COMPAT   arm_gic_v3_its
 

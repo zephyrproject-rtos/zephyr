@@ -6,7 +6,7 @@
 #include "mesh_test.h"
 #include "mesh/net.h"
 #include "mesh/transport.h"
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 /*
  * Transport layer tests:
@@ -293,7 +293,7 @@ static void test_tx_seg_concurrent(void)
  *  Send another message, then end the IV update state before it's finished.
  *  The IV index should change when this message finishes.
  *
- *  The IV update should not interfer with the segmented message, and the
+ *  The IV update should not interfere with the segmented message, and the
  */
 static void test_tx_seg_ivu(void)
 {

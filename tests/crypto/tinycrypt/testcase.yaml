@@ -1,7 +1,8 @@
 tests:
   crypto.tinycrypt:
     tags: tinycrypt crypto aes ccm
-    platform_exclude: qemu_arc_em qemu_arc_hs intel_adsp_cavs15
+    platform_exclude: qemu_arc_em qemu_arc_hs intel_adsp_cavs15 m2gl025_miv
     timeout: 300
     integration_platforms:
       - native_posix
+    toolchain_exclude: xcc

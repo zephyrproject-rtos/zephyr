@@ -5,7 +5,7 @@ description: NXP i.MX LPSPI controller
 
 compatible: "nxp,imx-lpspi"
 
-include: spi-controller.yaml
+include: ["spi-controller.yaml", "pinctrl-device.yaml"]
 
 properties:
     reg:

@@ -11,34 +11,34 @@
 #define LOG_MODULE_NAME ieee802154_cc2520
 #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <debug/stack.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/debug/stack.h>
 
-#include <device.h>
-#include <init.h>
-#include <net/net_if.h>
-#include <net/net_pkt.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 #include <string.h>
-#include <random/rand32.h>
+#include <zephyr/random/rand32.h>
 
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 #ifdef CONFIG_IEEE802154_CC2520_CRYPTO
 
-#include <crypto/cipher.h>
-#include <crypto/cipher_structs.h>
+#include <zephyr/crypto/crypto.h>
+#include <zephyr/crypto/cipher.h>
 
 #endif /* CONFIG_IEEE802154_CC2520_CRYPTO */
 
-#include <net/ieee802154_radio.h>
+#include <zephyr/net/ieee802154_radio.h>
 
 #include "ieee802154_cc2520.h"
 
@@ -1383,9 +1383,9 @@ static int cc2520_crypto_init(const struct device *dev)
 
 struct crypto_driver_api cc2520_crypto_api = {
 	.query_hw_caps			= cc2520_crypto_hw_caps,
-	.begin_session			= cc2520_crypto_begin_session,
-	.free_session			= cc2520_crypto_free_session,
-	.crypto_async_callback_set	= NULL
+	.cipher_begin_session			= cc2520_crypto_begin_session,
+	.cipher_free_session			= cc2520_crypto_free_session,
+	.cipher_async_callback_set	= NULL
 };
 
 DEVICE_DEFINE(cc2520_crypto, CONFIG_IEEE802154_CC2520_CRYPTO_DRV_NAME,

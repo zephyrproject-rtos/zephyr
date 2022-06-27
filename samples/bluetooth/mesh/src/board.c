@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/mesh.h>
-#include <drivers/gpio.h>
+#include <zephyr/bluetooth/mesh.h>
+#include <zephyr/drivers/gpio.h>
 #include "board.h"
 
 /* Locate led0 as alias or label by that name */

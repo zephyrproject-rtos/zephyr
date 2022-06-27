@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <nordic/nrf5340_cpuapp_qkaa.dtsi>
 #include "nrf5340_cpuapp_common.dts"
+#include "nrf5340dk_nrf5340_cpuapp-pinctrl.dtsi"
 
 / {
 	model = "Nordic NRF5340 DK NRF5340 Application";
@@ -24,9 +25,9 @@
 &spi2 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
-	sck-pin = <47>;
-	miso-pin = <46>;
-	mosi-pin = <45>;
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-1 = <&spi2_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 zephyr_udc0: &usbd {

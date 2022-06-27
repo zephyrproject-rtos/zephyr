@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT zephyr_sim_flash
 
-#include <device.h>
-#include <drivers/flash.h>
-#include <init.h>
-#include <kernel.h>
-#include <sys/util.h>
-#include <random/rand32.h>
-#include <stats/stats.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/stats/stats.h>
 #include <string.h>
 
 #ifdef CONFIG_ARCH_POSIX
@@ -72,7 +72,7 @@
 	} while (0)
 
 #if (CONFIG_FLASH_SIMULATOR_STAT_PAGE_COUNT > STATS_PAGE_COUNT_THRESHOLD)
-       /* Limitation above is caused by used UTIL_REPEAT                    */
+       /* Limitation above is caused by used LISTIFY                        */
        /* Using FLASH_SIMULATOR_FLASH_PAGE_COUNT allows to avoid terrible   */
        /* error logg at the output and work with the stats module partially */
        #define FLASH_SIMULATOR_FLASH_PAGE_COUNT STATS_PAGE_COUNT_THRESHOLD
@@ -93,9 +93,9 @@ STATS_SECT_ENTRY32(flash_erase_calls)   /* calls to flash_erase() */
 STATS_SECT_ENTRY32(flash_erase_time_us) /* time spent in flash_erase() */
 /* -- per-unit statistics -- */
 /* erase cycle count for unit */
-UTIL_EVAL(UTIL_REPEAT(FLASH_SIMULATOR_FLASH_PAGE_COUNT, STATS_SECT_EC))
+LISTIFY(FLASH_SIMULATOR_FLASH_PAGE_COUNT, STATS_SECT_EC, ())
 /* number of read operations on worn out erase units */
-UTIL_EVAL(UTIL_REPEAT(FLASH_SIMULATOR_FLASH_PAGE_COUNT, STATS_SECT_DIRTYR))
+LISTIFY(FLASH_SIMULATOR_FLASH_PAGE_COUNT, STATS_SECT_DIRTYR, ())
 STATS_SECT_END;
 
 STATS_SECT_DECL(flash_sim_stats) flash_sim_stats;
@@ -109,8 +109,8 @@ STATS_NAME(flash_sim_stats, flash_write_calls)
 STATS_NAME(flash_sim_stats, flash_write_time_us)
 STATS_NAME(flash_sim_stats, flash_erase_calls)
 STATS_NAME(flash_sim_stats, flash_erase_time_us)
-UTIL_EVAL(UTIL_REPEAT(FLASH_SIMULATOR_FLASH_PAGE_COUNT, STATS_NAME_EC))
-UTIL_EVAL(UTIL_REPEAT(FLASH_SIMULATOR_FLASH_PAGE_COUNT, STATS_NAME_DIRTYR))
+LISTIFY(FLASH_SIMULATOR_FLASH_PAGE_COUNT, STATS_NAME_EC, ())
+LISTIFY(FLASH_SIMULATOR_FLASH_PAGE_COUNT, STATS_NAME_DIRTYR, ())
 STATS_NAME_END(flash_sim_stats);
 
 /* simulator dynamic thresholds */
@@ -436,7 +436,7 @@ static int flash_init(const struct device *dev)
 }
 
 DEVICE_DT_INST_DEFINE(0, flash_init, NULL,
-		    NULL, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    NULL, NULL, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
 		    &flash_sim_api);
 
 #ifdef CONFIG_ARCH_POSIX
@@ -488,7 +488,7 @@ void *z_impl_flash_simulator_get_memory(const struct device *dev,
 
 #ifdef CONFIG_USERSPACE
 
-#include <syscall_handler.h>
+#include <zephyr/syscall_handler.h>
 
 void *z_vrfy_flash_simulator_get_memory(const struct device *dev,
 				      size_t *mock_size)

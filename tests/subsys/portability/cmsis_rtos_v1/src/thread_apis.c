@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <cmsis_os.h>
 
 #define STACKSZ CONFIG_CMSIS_THREAD_MAX_STACK_SIZE

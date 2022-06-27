@@ -10,11 +10,11 @@
 #define DT_DRV_COMPAT jedec_spi_nor
 
 #include <errno.h>
-#include <drivers/flash.h>
-#include <drivers/spi.h>
-#include <init.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/init.h>
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "spi_nor.h"
 #include "jesd216.h"
@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
  * * Some devices support a Deep Power-Down mode which reduces current
  *   to as little as 0.1% of standby.
  *
- * The power reduction from DPD is sufficent to warrant allowing its
+ * The power reduction from DPD is sufficient to warrant allowing its
  * use even in cases where Zephyr's device power management is not
  * available.  This is selected through the SPI_NOR_IDLE_IN_DPD
  * Kconfig option.
@@ -57,9 +57,9 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define T_RES1_MS ceiling_fraction(DT_INST_PROP(0, t_exit_dpd), NSEC_PER_MSEC)
 #endif /* T_EXIT_DPD */
 #if DT_INST_NODE_HAS_PROP(0, dpd_wakeup_sequence)
-#define T_DPDD_MS ceiling_fraction(DT_PROP_BY_IDX(DT_DRV_INST(0), dpd_wakeup_sequence, 0), NSEC_PER_MSEC)
-#define T_CRDP_MS ceiling_fraction(DT_PROP_BY_IDX(DT_DRV_INST(0), dpd_wakeup_sequence, 1), NSEC_PER_MSEC)
-#define T_RDP_MS ceiling_fraction(DT_PROP_BY_IDX(DT_DRV_INST(0), dpd_wakeup_sequence, 2), NSEC_PER_MSEC)
+#define T_DPDD_MS ceiling_fraction(DT_INST_PROP_BY_IDX(0, dpd_wakeup_sequence, 0), NSEC_PER_MSEC)
+#define T_CRDP_MS ceiling_fraction(DT_INST_PROP_BY_IDX(0, dpd_wakeup_sequence, 1), NSEC_PER_MSEC)
+#define T_RDP_MS ceiling_fraction(DT_INST_PROP_BY_IDX(0, dpd_wakeup_sequence, 2), NSEC_PER_MSEC)
 #else /* DPD_WAKEUP_SEQUENCE */
 #define T_DPDD_MS 0
 #endif /* DPD_WAKEUP_SEQUENCE */

@@ -10,7 +10,7 @@
 #define ZEPHYR_DRIVERS_SPI_SPI_DW_H_
 
 #include <string.h>
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 
 #include "spi_context.h"
 

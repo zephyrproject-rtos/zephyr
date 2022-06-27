@@ -65,7 +65,7 @@ config UPDATEHUB_SERVER
 	  other address, must be set on the UpdateHub shell
 
 config UPDATEHUB_SHELL
-	bool "Enable UpdateHub shell utilities"
+	bool "UpdateHub shell utilities"
 	depends on SHELL
 	select KERNEL_SHELL
 	help

@@ -6,8 +6,8 @@
 
 #include <ztest.h>
 #include <cmsis_os2.h>
-#include <irq_offload.h>
-#include <kernel.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/kernel.h>
 
 uint32_t tick;
 osStatus_t status_val;

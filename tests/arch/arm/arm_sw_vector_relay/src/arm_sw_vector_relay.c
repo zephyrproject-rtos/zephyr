@@ -5,11 +5,11 @@
  */
 
 #include <ztest.h>
-#include <linker/linker-defs.h>
-#include <syscall_handler.h>
-#include <toolchain.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/toolchain.h>
 
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 extern uint32_t _vector_table;
 extern uint32_t __vector_relay_handler;

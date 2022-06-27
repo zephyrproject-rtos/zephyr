@@ -42,14 +42,6 @@ check_set_compiler_property(APPEND PROPERTY warning_base -Wpointer-arith)
 # not portable
 check_set_compiler_property(APPEND PROPERTY warning_base -Wexpansion-to-defined)
 
-if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "9.1.0")
-  set_compiler_property(APPEND PROPERTY warning_base
-                        # FIXME: Remove once #16587 is fixed
-                        -Wno-address-of-packed-member
-  )
-endif()
-
-
 # GCC options for warning levels 1, 2, 3, when using `-DW=[1|2|3]`
 set_compiler_property(PROPERTY warning_dw_1
                       -Waggregate-return
@@ -114,7 +106,7 @@ set_compiler_property(PROPERTY cstd -std=)
 
 if (NOT CONFIG_NEWLIB_LIBC AND
     NOT COMPILER STREQUAL "xcc" AND
-    NOT ZEPHYR_TOOLCHAIN_VARIANT STREQUAL "espressif" AND
+    NOT CONFIG_HAS_ESPRESSIF_HAL AND
     NOT CONFIG_NATIVE_APPLICATION)
   set_compiler_property(PROPERTY nostdinc -nostdinc)
   set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
@@ -137,7 +129,7 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "-std=c++20"
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "-std=c++2b"
   "-Wno-register" "-Wno-volatile")
 
-# Disable exeptions flag in C++
+# Disable exceptions flag in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions "-fno-exceptions")
 
 # Disable rtti in C++
@@ -167,7 +159,7 @@ endif()
 # gcc flag for a hosted (no-freestanding) application
 check_set_compiler_property(APPEND PROPERTY hosted -fno-freestanding)
 
-# gcc flag for a freestandingapplication
+# gcc flag for a freestanding application
 set_compiler_property(PROPERTY freestanding -ffreestanding)
 
 # Flag to enable debugging
@@ -185,6 +177,8 @@ set_compiler_property(PROPERTY imacros -imacros)
 # GCC compiler flags for sanitizing.
 set_compiler_property(PROPERTY sanitize_address -fsanitize=address)
 
+set_compiler_property(PROPERTY gprof -pg)
+
 set_compiler_property(PROPERTY sanitize_undefined -fsanitize=undefined)
 
 # GCC compiler flag for turning off thread-safe initialization of local statics
@@ -197,3 +191,6 @@ set_property(TARGET asm PROPERTY required "-xassembler-with-cpp")
 if (NOT COMPILER STREQUAL "xcc")
 set_compiler_property(PROPERTY diagnostic -fdiagnostics-color=always)
 endif()
+
+# Compiler flag for disabling pointer arithmetic warnings
+set_compiler_property(PROPERTY warning_no_pointer_arithmetic "-Wno-pointer-arith")

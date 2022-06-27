@@ -1,0 +1,11 @@
+tests:
+  drivers.disk.usdhc:
+    harness: ztest
+    harness_config:
+      fixture: fixture_sdhc
+    filter: CONFIG_SDHC
+    tags: disk mcux
+    integration_platforms:
+      - mimxrt1060_evk
+      - mimxrt1050_evk
+      - mimxrt1064_evk

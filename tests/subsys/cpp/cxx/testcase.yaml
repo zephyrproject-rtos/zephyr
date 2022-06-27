@@ -3,3 +3,4 @@ tests:
     integration_platforms:
       - mps2_an385
     tags: cpp
+    toolchain_exclude: xcc

@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include <poll.h>
 
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 #include "cmdline.h" /* native_posix command line options header */
 #include "soc.h"
 
@@ -310,7 +310,7 @@ static int np_uart_stdin_poll_in(const struct device *dev,
 	if (disconnected || feof(stdin)) {
 		/*
 		 * The stdinput is fed from a file which finished or the user
-		 * pressed Crtl+D
+		 * pressed Ctrl+D
 		 */
 		disconnected = true;
 		return -1;

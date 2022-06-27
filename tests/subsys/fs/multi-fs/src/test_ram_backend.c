@@ -6,21 +6,15 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <device.h>
-#include <drivers/flash.h>
-#include <storage/flash_map.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
 #include <zephyr/types.h>
 #include <ztest_assert.h>
 
 static uint8_t rambuf[FLASH_AREA_SIZE(storage)];
 
 static int test_ram_flash_init(const struct device *dev)
-{
-	return 0;
-}
-
-static int test_flash_ram_write_protection(const struct device *dev,
-					   bool enable)
 {
 	return 0;
 }
@@ -85,7 +79,6 @@ static void test_flash_ram_pages_layout(const struct device *dev,
 }
 
 static const struct flash_driver_api flash_ram_api = {
-	.write_protection = test_flash_ram_write_protection,
 	.erase = test_flash_ram_erase,
 	.write = test_flash_ram_write,
 	.read = test_flash_ram_read,

@@ -6,21 +6,25 @@
 
 #include <errno.h>
 #include <kernel_internal.h>
-#include <toolchain.h>
-#include <debug/coredump.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/debug/coredump.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include "coredump_internal.h"
 
 #if defined(CONFIG_DEBUG_COREDUMP_BACKEND_LOGGING)
-extern struct z_coredump_backend_api z_coredump_backend_logging;
-static struct z_coredump_backend_api
-	*backend_api = &z_coredump_backend_logging;
+extern struct coredump_backend_api coredump_backend_logging;
+static struct coredump_backend_api
+	*backend_api = &coredump_backend_logging;
 #elif defined(CONFIG_DEBUG_COREDUMP_BACKEND_FLASH_PARTITION)
-extern struct z_coredump_backend_api z_coredump_backend_flash_partition;
-static struct z_coredump_backend_api
-	*backend_api = &z_coredump_backend_flash_partition;
+extern struct coredump_backend_api coredump_backend_flash_partition;
+static struct coredump_backend_api
+	*backend_api = &coredump_backend_flash_partition;
+#elif defined(CONFIG_DEBUG_COREDUMP_BACKEND_OTHER)
+extern struct coredump_backend_api coredump_backend_other;
+static struct coredump_backend_api
+	*backend_api = &coredump_backend_other;
 #else
 #error "Need to select a coredump backend"
 #endif

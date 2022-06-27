@@ -9,12 +9,12 @@
  * @brief Test log message
  */
 
-#include <logging/log.h>
-#include <logging/log_output.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_output.h>
 
 #include <tc_util.h>
 #include <stdbool.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #define LOG_MODULE_NAME test
@@ -57,7 +57,7 @@ static void validate_output_string(const char *exp)
 
 	zassert_equal(len, mock_len, "Unexpected string length");
 	zassert_equal(0, memcmp(exp, mock_buffer, mock_len),
-			"Unxpected string");
+			"Unexpected string");
 }
 
 static void log_output_string_varg(const struct log_output *log_output,
@@ -108,7 +108,7 @@ void test_log_output_string(void)
 	struct log_msg_ids src_level = {
 		.level = LOG_LEVEL_DBG,
 		.source_id = log_const_source_id(
-				&LOG_ITEM_CONST_DATA(LOG_MODULE_NAME)),
+				&Z_LOG_ITEM_CONST_DATA(LOG_MODULE_NAME)),
 		.domain_id = CONFIG_LOG_DOMAIN_ID,
 	};
 

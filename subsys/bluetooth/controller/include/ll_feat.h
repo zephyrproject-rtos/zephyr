@@ -37,7 +37,7 @@
 #define LL_FEAT_BIT_PING 0
 #endif /* !CONFIG_BT_CTLR_LE_PING */
 
-/* Maximum supported ACL Tx fragement size is limited by uint8_t len field in
+/* Maximum supported ACL Tx fragment size is limited by uint8_t len field in
  * the PDU structure of the Controller implementation. 4 octets reserved for
  * MIC in encrypted ACL PDUs, hence ACL Tx fragment maximum size of 251 octets.
  */
@@ -195,20 +195,31 @@
 #define LL_BIS_OCTETS_RX_MAX 0
 #endif /* !CONFIG_BT_CTLR_SYNC_ISO */
 
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) || \
+	defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
+#define LL_FEAT_BIT_PERIODIC_ADI_SUPPORT BIT64(BT_LE_FEAT_BIT_PER_ADV_ADI_SUPP)
+#else  /* !CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT &&
+	* !CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
+	*/
+#define LL_FEAT_BIT_PERIODIC_ADI_SUPPORT 0U
+#endif /* !CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT &&
+	* !CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
+	*/
+
 /* All defined feature bits */
-#define LL_FEAT_BIT_MASK         0xFFFFFFFFFULL
+#define LL_FEAT_BIT_MASK         0xFFFFFFFFFFULL
 
 /*
  * LL_FEAT_BIT_MASK_VALID is defined as per
- * Core Spec V5.2 Volume 6, Part B, chapter 4.6
+ * Core Spec V5.3 Volume 6, Part B, chapter 4.6
  */
-#define LL_FEAT_BIT_MASK_VALID   0xFF787CF2FULL
+#define LL_FEAT_BIT_MASK_VALID   0xEFF787CF2FULL
 
 /* Mask to filter away octet 0 for feature exchange */
 #define LL_FEAT_FILTER_OCTET0    (LL_FEAT_BIT_MASK & ~0xFFULL)
 
 /* Mask for host controlled features */
-#define LL_FEAT_HOST_BIT_MASK    0x100000000ULL
+#define LL_FEAT_HOST_BIT_MASK    0x4100000000ULL
 
 /* Feature bits of this controller */
 #define LL_FEAT                  (LL_FEAT_BIT_ENC | \
@@ -237,4 +248,5 @@
 				  LL_FEAT_BIT_CIS_CENTRAL | \
 				  LL_FEAT_BIT_CIS_PERIPHERAL | \
 				  LL_FEAT_BIT_ISO_BROADCASTER | \
-				  LL_FEAT_BIT_SYNC_RECEIVER)
+				  LL_FEAT_BIT_SYNC_RECEIVER | \
+				  LL_FEAT_BIT_PERIODIC_ADI_SUPPORT)

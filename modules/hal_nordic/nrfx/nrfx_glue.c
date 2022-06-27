@@ -5,7 +5,7 @@
  */
 
 #include <nrfx.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 void nrfx_isr(const void *irq_handler)
 {

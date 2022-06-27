@@ -2,3 +2,7 @@ tests:
   kernel.memory_protection.syscalls:
     filter: CONFIG_ARCH_HAS_USERSPACE
     tags: kernel security userspace ignore_faults
+    # FIXME: This test may fail for qemu_arc_em on certain host systems.
+    #        See foss-for-synopsys-dwc-arc-processors/qemu#66.
+    platform_exclude: qemu_arc_em
+    timeout: 180

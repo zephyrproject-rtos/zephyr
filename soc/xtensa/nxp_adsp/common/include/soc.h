@@ -7,7 +7,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <sys/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 
 #include <adsp/cache.h>
 

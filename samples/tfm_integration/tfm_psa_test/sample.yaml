@@ -15,6 +15,6 @@ sample:
 tests:
   sample.tfm.psa_protected_storage_test:
     extra_args: "CONFIG_TFM_PSA_TEST_PROTECTED_STORAGE=y"
-    timeout: 100
+    timeout: 120
   sample.tfm.psa_internal_trusted_storage_test:
     extra_args: "CONFIG_TFM_PSA_TEST_INTERNAL_TRUSTED_STORAGE=y"

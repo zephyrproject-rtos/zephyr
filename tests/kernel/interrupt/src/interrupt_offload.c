@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 #include <interrupt_util.h>
 
 #define STACK_SIZE	1024
@@ -71,10 +71,10 @@ void isr_handler(const void *param)
 
 	orig_t_keep_run = 0;
 
-	/* If the work is busy, we don't sumbit it. */
+	/* If the work is busy, we don't submit it. */
 	if (!k_work_busy_get(work)) {
 		zassert_equal(k_work_submit_to_queue(&wq_queue, work),
-				1, "kwork not sumbmitted or queued");
+				1, "kwork not submitted or queued");
 
 		atomic_inc(&submit_success);
 	}
@@ -86,17 +86,13 @@ void isr_handler(const void *param)
  * Other arch will be add later.
  */
 #if defined(CONFIG_X86)
-#define IV_IRQS 32
 #define TEST_IRQ_DYN_LINE 17
-#define TRIGGER_IRQ_DYN_LINE (TEST_IRQ_DYN_LINE + IV_IRQS)
 
 #elif defined(CONFIG_ARCH_POSIX)
 #define TEST_IRQ_DYN_LINE 5
-#define TRIGGER_IRQ_DYN_LINE 5
 
 #else
 #define TEST_IRQ_DYN_LINE 0
-#define TRIGGER_IRQ_DYN_LINE 0
 #endif
 
 #endif
@@ -108,13 +104,13 @@ static void init_dyn_interrupt(void)
 		ztest_test_skip();
 	}
 
-	/* We just initialize dynamic interrput once, then reuse them */
+	/* We just initialize dynamic interrupt once, then reuse them */
 	if (!vector_num) {
 		vector_num = irq_connect_dynamic(TEST_IRQ_DYN_LINE, 1,
 					isr_handler, (void *)&irq_param, 0);
 	}
 
-	TC_PRINT("irq(%d)\n", vector_num);
+	TC_PRINT("vector(%d)\n", vector_num);
 	zassert_true(vector_num > 0, "no vector can be used");
 	irq_enable(TEST_IRQ_DYN_LINE);
 }
@@ -124,7 +120,7 @@ static void trigger_offload_interrupt(const bool real_irq, void *work)
 	irq_param.work = work;
 
 	if (real_irq) {
-		trigger_irq(TRIGGER_IRQ_DYN_LINE);
+		trigger_irq(vector_num);
 	} else {
 		irq_offload((irq_offload_routine_t)&isr_handler, &irq_param);
 	}

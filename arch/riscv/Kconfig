@@ -13,15 +13,23 @@ config COMPRESSED_ISA
 	bool
 	default y if 64BIT
 
+config RISCV_ATOMICS_ISA
+	bool "RISC-V atomics 'a' extension"
+	default y
+
+config RISCV_MUL_ISA
+	bool "RISC-V HW multiply 'm' extension"
+	default y
+
 config FLOAT_HARD
-	bool "Enable hard-float calling convention"
+	bool "Hard-float calling convention"
 	default y
 	depends on FPU
 	help
 	  This option enables the hard-float calling convention.
 
 config RISCV_GP
-	bool "Enable RISC-V global pointer relative addressing"
+	bool "RISC-V global pointer relative addressing"
 	default n
 	help
 	  Use global pointer relative addressing for small globals declared
@@ -50,7 +58,7 @@ config INCLUDE_RESET_VECTOR
 	  prepares for running C code.
 
 config RISCV_SOC_CONTEXT_SAVE
-	bool "Enable SOC-based context saving in IRQ handlers"
+	bool "SOC-based context saving in IRQ handlers"
 	select RISCV_SOC_OFFSETS
 	help
 	  Enable low-level SOC-specific context management, for SOCs
@@ -85,7 +93,7 @@ config RISCV_SOC_CONTEXT_SAVE
 	  pointer address is in a0, and ra contains the return address.
 
 config RISCV_SOC_OFFSETS
-	bool "Enable SOC-based offsets"
+	bool "SOC-based offsets"
 	help
 	  Enabling this option requires that the SoC provide a soc_offsets.h
 	  header which defines the following macros:
@@ -97,10 +105,17 @@ config RISCV_SOC_OFFSETS
 	    See gen_offset.h for more details.
 
 config RISCV_SOC_INTERRUPT_INIT
-	bool "Enable SOC-based interrupt initialization"
+	bool "SOC-based interrupt initialization"
 	help
 	  Enable SOC-based interrupt initialization
 	  (call soc_interrupt_init, within _IntLibInit when enabled)
+
+config RISCV_SOC_MCAUSE_EXCEPTION_MASK
+	hex
+	default 0x7FFFFFFFFFFFFFFF if 64BIT
+	default 0x7FFFFFFF
+	help
+	  Specify the bits to use for exception code in mcause register.
 
 config RISCV_GENERIC_TOOLCHAIN
 	bool "Compile using generic riscv32 toolchain"
@@ -132,14 +147,43 @@ menuconfig RISCV_PMP
 	select MPU
 	select SRAM_REGION_PERMISSIONS
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
-	select PMP_POWER_OF_TWO_ALIGNMENT if USERSPACE
+	select ARCH_MEM_DOMAIN_DATA if USERSPACE
 	help
 	  MCU implements Physical Memory Protection.
-	  Memory protection against read-only area writing
-	  is natively supported on real HW.
 
 if RISCV_PMP
-source "arch/riscv/core/pmp/Kconfig"
+
+config PMP_SLOTS
+	int "Number of PMP slots"
+	default 8
+	help
+	  This is the number of PMP entries implemented by the hardware.
+	  Typical values are 8 or 16.
+
+config PMP_STACK_GUARD
+	bool "Thread Stack Guard"
+	help
+	  This implements a trap using the PMP to catch stack overflows
+	  by marking the bottom stack area as not accessible.
+
+config PMP_STACK_GUARD_MIN_SIZE
+	int "Guard size"
+	depends on PMP_STACK_GUARD
+	default 64
+	help
+	  Size of the stack guard area. This should be large enough to
+	  accommodate the stack overflow exception stack usage.
+
+config PMP_POWER_OF_TWO_ALIGNMENT
+	bool "Enforce power-of-two alignment on PMP memory areas"
+	default y if TEST_USERSPACE
+	default y if (PMP_SLOTS = 8)
+	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	select GEN_PRIV_STACKS
+	help
+	  This option reduces the PMP slot usage but increases
+	  memory consumption.
+
 endif #RISCV_PMP
 
 endmenu
@@ -147,7 +191,7 @@ endmenu
 config MAIN_STACK_SIZE
 	default 4096 if 64BIT
 
-config TEST_EXTRA_STACKSIZE
+config TEST_EXTRA_STACK_SIZE
 	default 1024
 
 config CMSIS_THREAD_MAX_STACK_SIZE

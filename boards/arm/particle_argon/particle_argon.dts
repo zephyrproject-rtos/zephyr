@@ -8,6 +8,7 @@
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
 #include "mesh_feather.dtsi"
+#include "particle_argon-pinctrl.dtsi"
 
 / {
 	model = "Particle Argon";
@@ -31,8 +32,7 @@
 	compatible = "nordic,nrf-uarte";
 	current-speed = <921600>;
 	status = "okay";
-	tx-pin = <37>;
-	rx-pin = <36>;
-	rts-pin = <39>;
-	cts-pin = <38>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
 };

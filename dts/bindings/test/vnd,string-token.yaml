@@ -1,0 +1,15 @@
+# Copyright (c) 2022 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test string token property container
+
+compatible: "vnd,string-token"
+
+properties:
+  val:
+    type: string
+    required: false
+    enum:
+      - token_zero
+      - token_one
+      - token_two

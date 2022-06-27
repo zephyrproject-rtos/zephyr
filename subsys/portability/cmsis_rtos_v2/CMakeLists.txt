@@ -3,7 +3,7 @@
 
 add_library(CMSIS INTERFACE)
 
-target_include_directories(CMSIS INTERFACE ${PROJECT_SOURCE_DIR}/include/portability)
+target_include_directories(CMSIS INTERFACE ${PROJECT_SOURCE_DIR}/include/zephyr/portability)
 
 zephyr_library()
 zephyr_library_sources_ifdef(

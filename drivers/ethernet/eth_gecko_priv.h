@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_DRIVERS_ETHERNET_ETH_GECKO_PRIV_H_
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_GECKO_PRIV_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
 #define ETH_GECKO_MTU         NET_ETH_MTU
@@ -93,12 +93,6 @@ struct eth_gecko_dev_data {
 	struct k_thread rx_thread;
 	bool link_up;
 };
-
-#define DEV_NAME(dev) ((dev)->name)
-#define DEV_CFG(dev) \
-	((const struct eth_gecko_dev_cfg *)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct eth_gecko_dev_data *)(dev)->data)
 
 /* PHY Management pins */
 #define PIN_PHY_MDC {DT_INST_PROP_BY_IDX(0, location_phy_mdc, 1), \

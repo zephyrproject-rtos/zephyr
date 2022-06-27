@@ -133,7 +133,6 @@ config ESPI_FLASH_BUFFER_SIZE
 config ESPI_SAF
 	bool "XEC Microchip ESPI SAF driver"
 	depends on ESPI_FLASH_CHANNEL
-	default n
 	help
 	  Enable Slave Attached Flash eSPI driver. SAF depends upon ESPI XEC driver
 	  and flash channel.
@@ -145,4 +144,26 @@ config ESPI_SAF_INIT_PRIORITY
 	help
 	  Driver initialization priority for eSPI SAF driver.
 
+config ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA
+	bool "Read ACPI EC Event Data in IBF ISR"
+	depends on ESPI_PERIPHERAL_CHANNEL
+	help
+	  Enable reading event data in ACPI EC IBF ISR. This is used in OS
+	  environment where application expects IBF ISR to read data and pass
+	  to callback.
+
 endif #ESPI_XEC_V2
+
+if ESPI_PERIPHERAL_8042_KBC
+
+config ESPI_PERIPHERAL_KBC_IBF_EVT_DATA
+	bool "KBC event data format in IBF"
+	help
+	  Enable espi_evt_data_kbc format for encoding event in KBC IBF ISR
+
+config ESPI_PERIPHERAL_KBC_OBE_CBK
+	bool "KBC OBE Callback"
+	help
+	  Enable KBC OBE callback from OBE ISR
+
+endif #ESPI_PERIPHERAL_8042_KBC

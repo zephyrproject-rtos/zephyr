@@ -6,7 +6,7 @@
 
 #ifndef _TEST_SYSCALLS_H_
 #define _TEST_SYSCALLS_H_
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 __syscall void blow_up_priv_stack(void);
 

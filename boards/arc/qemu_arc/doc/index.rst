@@ -80,7 +80,7 @@ QEMU, and display the following console output:
 
         *** Booting Zephyr OS build zephyr-v2.2.0-2486-g7dbfcf4bab57  ***
         threadA: Hello World from qemu_arc!
-        threudB: Hello World from qemu_arc!
+        threadB: Hello World from qemu_arc!
         threadA: Hello World from qemu_arc!
         threadB: Hello World from qemu_arc!
 

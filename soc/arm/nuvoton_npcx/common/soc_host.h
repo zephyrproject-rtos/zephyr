@@ -7,6 +7,12 @@
 #ifndef _NUVOTON_NPCX_SOC_HOST_H_
 #define _NUVOTON_NPCX_SOC_HOST_H_
 
+#include <stdint.h>
+
+#include <zephyr/device.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/sys/slist.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,7 +20,7 @@ extern "C" {
 /**
  * @brief Initializes all host sub-modules in Core domain.
  *
- * This routine initalizes all host sub-modules which HW blocks belong to
+ * This routine initializes all host sub-modules which HW blocks belong to
  * Core domain. And it also saves the pointer of eSPI callback list to report
  * any peripheral events application layer.
  *
@@ -30,8 +36,8 @@ int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 /**
  * @brief Initializes all host sub-modules in Host domain.
  *
- * This routine initalizes all host sub-modules which HW blocks belong to
- * Host domain. Please notcie it must be executed after receiving PLT_RST
+ * This routine initializes all host sub-modules which HW blocks belong to
+ * Host domain. Please notice it must be executed after receiving PLT_RST
  * de-asserted signal and eSPI peripheral channel is enabled and ready.
  */
 void npcx_host_init_subs_host_domain(void);

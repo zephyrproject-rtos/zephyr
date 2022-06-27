@@ -159,9 +159,9 @@ unsigned int test_1(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(1, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -221,9 +221,9 @@ unsigned int test_2(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(2, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -283,9 +283,9 @@ unsigned int test_3(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(3, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -345,9 +345,9 @@ unsigned int test_4(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(4, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -407,9 +407,9 @@ unsigned int test_5(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(5, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -469,9 +469,9 @@ unsigned int test_6(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(6, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -531,9 +531,9 @@ unsigned int test_7(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(7, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -593,9 +593,9 @@ unsigned int test_8(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(8, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -655,9 +655,9 @@ unsigned int test_9(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(9, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -717,9 +717,9 @@ unsigned int test_10(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(10, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -779,9 +779,9 @@ unsigned int test_11(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(11, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -841,9 +841,9 @@ unsigned int test_12(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(12, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -903,9 +903,9 @@ unsigned int test_13(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(13, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -965,9 +965,9 @@ unsigned int test_14(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(14, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -1027,9 +1027,9 @@ unsigned int test_15(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(15, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -1089,9 +1089,9 @@ unsigned int test_16(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(16, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -1151,9 +1151,9 @@ unsigned int test_17(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(17, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -1213,9 +1213,9 @@ unsigned int test_18(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(18, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -1275,9 +1275,9 @@ unsigned int test_19(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(19, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -1337,9 +1337,9 @@ unsigned int test_20(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(20, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -1399,9 +1399,9 @@ unsigned int test_21(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(21, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -1461,9 +1461,9 @@ unsigned int test_22(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(22, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -1523,9 +1523,9 @@ unsigned int test_23(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(23, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -1585,9 +1585,9 @@ unsigned int test_24(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(24, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -1647,9 +1647,9 @@ unsigned int test_25(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(25, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -1709,9 +1709,9 @@ unsigned int test_26(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(26, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -1771,9 +1771,9 @@ unsigned int test_27(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(27, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -1833,9 +1833,9 @@ unsigned int test_28(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(28, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -1895,9 +1895,9 @@ unsigned int test_29(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(29, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -1957,9 +1957,9 @@ unsigned int test_30(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(30, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -2019,9 +2019,9 @@ unsigned int test_31(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(31, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -2081,9 +2081,9 @@ unsigned int test_32(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(32, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -2143,9 +2143,9 @@ unsigned int test_33(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(33, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -2205,9 +2205,9 @@ unsigned int test_34(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(34, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -2267,9 +2267,9 @@ unsigned int test_35(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(35, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -2329,9 +2329,9 @@ unsigned int test_36(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(36, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -2391,9 +2391,9 @@ unsigned int test_37(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(37, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -2453,9 +2453,9 @@ unsigned int test_38(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(38, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -2515,9 +2515,9 @@ unsigned int test_39(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(39, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -2577,9 +2577,9 @@ unsigned int test_40(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(40, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -2639,9 +2639,9 @@ unsigned int test_41(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(41, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -2701,9 +2701,9 @@ unsigned int test_42(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(42, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -2763,9 +2763,9 @@ unsigned int test_43(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(43, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -2825,9 +2825,9 @@ unsigned int test_44(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(44, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -2887,9 +2887,9 @@ unsigned int test_45(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(45, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -2949,9 +2949,9 @@ unsigned int test_46(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(46, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -3011,9 +3011,9 @@ unsigned int test_47(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(47, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -3073,9 +3073,9 @@ unsigned int test_48(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(48, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -3135,9 +3135,9 @@ unsigned int test_49(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(49, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -3197,9 +3197,9 @@ unsigned int test_50(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(50, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -3259,9 +3259,9 @@ unsigned int test_51(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(51, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -3321,9 +3321,9 @@ unsigned int test_52(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(52, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -3383,9 +3383,9 @@ unsigned int test_53(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(53, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -3445,9 +3445,9 @@ unsigned int test_54(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(54, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -3507,9 +3507,9 @@ unsigned int test_55(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(55, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -3569,9 +3569,9 @@ unsigned int test_56(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(56, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -3631,9 +3631,9 @@ unsigned int test_57(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(57, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -3693,9 +3693,9 @@ unsigned int test_58(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(58, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -3755,9 +3755,9 @@ unsigned int test_59(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(59, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -3817,9 +3817,9 @@ unsigned int test_60(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(60, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -3879,9 +3879,9 @@ unsigned int test_61(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(61, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -3941,9 +3941,9 @@ unsigned int test_62(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(62, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -4003,9 +4003,9 @@ unsigned int test_63(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(63, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -4065,9 +4065,9 @@ unsigned int test_64(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(64, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -4127,9 +4127,9 @@ unsigned int test_65(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(65, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -4189,9 +4189,9 @@ unsigned int test_66(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(66, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -4251,9 +4251,9 @@ unsigned int test_67(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(67, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -4313,9 +4313,9 @@ unsigned int test_68(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(68, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -4375,9 +4375,9 @@ unsigned int test_69(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(69, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -4437,9 +4437,9 @@ unsigned int test_70(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(70, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -4499,9 +4499,9 @@ unsigned int test_71(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(71, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -4561,9 +4561,9 @@ unsigned int test_72(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(72, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -4623,9 +4623,9 @@ unsigned int test_73(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(73, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -4685,9 +4685,9 @@ unsigned int test_74(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(74, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -4747,9 +4747,9 @@ unsigned int test_75(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(75, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -4809,9 +4809,9 @@ unsigned int test_76(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(76, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -4871,9 +4871,9 @@ unsigned int test_77(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(77, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -4933,9 +4933,9 @@ unsigned int test_78(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(78, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -4995,9 +4995,9 @@ unsigned int test_79(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(79, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -5057,9 +5057,9 @@ unsigned int test_80(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(80, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -5119,9 +5119,9 @@ unsigned int test_81(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(81, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -5181,9 +5181,9 @@ unsigned int test_82(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(82, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -5243,9 +5243,9 @@ unsigned int test_83(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(83, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -5305,9 +5305,9 @@ unsigned int test_84(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(84, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -5367,9 +5367,9 @@ unsigned int test_85(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(85, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -5429,9 +5429,9 @@ unsigned int test_86(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(86, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -5491,9 +5491,9 @@ unsigned int test_87(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(87, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -5553,9 +5553,9 @@ unsigned int test_88(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(88, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -5615,9 +5615,9 @@ unsigned int test_89(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(89, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -5677,9 +5677,9 @@ unsigned int test_90(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(90, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -5739,9 +5739,9 @@ unsigned int test_91(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(91, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -5801,9 +5801,9 @@ unsigned int test_92(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(92, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -5863,9 +5863,9 @@ unsigned int test_93(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(93, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -5925,9 +5925,9 @@ unsigned int test_94(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(94, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -5987,9 +5987,9 @@ unsigned int test_95(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(95, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -6049,9 +6049,9 @@ unsigned int test_96(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(96, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -6111,9 +6111,9 @@ unsigned int test_97(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(97, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -6173,9 +6173,9 @@ unsigned int test_98(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(98, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -6235,9 +6235,9 @@ unsigned int test_99(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(99, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -6297,9 +6297,9 @@ unsigned int test_100(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(100, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -6359,9 +6359,9 @@ unsigned int test_101(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(101, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -6421,9 +6421,9 @@ unsigned int test_102(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(102, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -6483,9 +6483,9 @@ unsigned int test_103(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(103, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -6545,9 +6545,9 @@ unsigned int test_104(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(104, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -6607,9 +6607,9 @@ unsigned int test_105(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(105, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -6669,9 +6669,9 @@ unsigned int test_106(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(106, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -6731,9 +6731,9 @@ unsigned int test_107(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(107, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -6793,9 +6793,9 @@ unsigned int test_108(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(108, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -6855,9 +6855,9 @@ unsigned int test_109(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(109, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -6917,9 +6917,9 @@ unsigned int test_110(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(110, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -6979,9 +6979,9 @@ unsigned int test_111(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(111, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -7041,9 +7041,9 @@ unsigned int test_112(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(112, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -7103,9 +7103,9 @@ unsigned int test_113(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(113, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -7165,9 +7165,9 @@ unsigned int test_114(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(114, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -7227,9 +7227,9 @@ unsigned int test_115(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(115, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -7289,9 +7289,9 @@ unsigned int test_116(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(116, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -7351,9 +7351,9 @@ unsigned int test_117(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(117, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -7413,9 +7413,9 @@ unsigned int test_118(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(118, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -7475,9 +7475,9 @@ unsigned int test_119(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(119, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -7537,9 +7537,9 @@ unsigned int test_120(void)
 		}
 	};
 
-	TC_PRINT("HMAC-PRNG %s:\n", __func__);
+	TC_PRINT(".");
 	result = do_hmac_prng_pr_false_test(120, &vec);
-	TC_END_RESULT(result);
+
 	return result;
 }
 
@@ -7910,5 +7910,6 @@ void test_hmac_prng(void)
 	result = test_120();
 	zassert_false(result == TC_FAIL, "HMAC test 120 failed");
 
+	TC_PRINT("\n");
 	TC_PRINT("All HMAC-PRNG tests succeeded!\n");
 }

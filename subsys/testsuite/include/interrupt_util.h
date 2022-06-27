@@ -10,7 +10,7 @@
 #define MS_TO_US(ms)  (ms * USEC_PER_MSEC)
 
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 static inline uint32_t get_available_nvic_line(uint32_t initial_offset)
 {
@@ -71,8 +71,8 @@ static inline void trigger_irq(int irq)
 }
 
 #elif defined(CONFIG_GIC)
-#include <drivers/interrupt_controller/gic.h>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 static inline void trigger_irq(int irq)
 {
@@ -102,7 +102,49 @@ static inline void trigger_irq(int irq)
 
 #elif defined(CONFIG_X86)
 
-#define trigger_irq(irq) __asm__ volatile("int %0" : : "i" (irq) : "memory")
+#ifdef CONFIG_X2APIC
+#include <zephyr/drivers/interrupt_controller/loapic.h>
+#define VECTOR_MASK 0xFF
+#else
+#include <zephyr/sys/arch_interface.h>
+#define LOAPIC_ICR_IPI_TEST  0x00004000U
+#endif
+
+#define TRIGGER_IRQ_INT(vector) __asm__ volatile("int %0" : : "i" (vector) : "memory")
+
+/*
+ * We can emulate the interrupt by sending the IPI to
+ * core itself by the LOAPIC for x86 platform.
+ *
+ * In APIC mode, Write LOAPIC's ICR to trigger IPI,
+ * the LOAPIC_ICR_IPI_TEST  0x00004000U means:
+ * Delivery Mode: Fixed
+ * Destination Mode: Physical
+ * Level: Assert
+ * Trigger Mode: Edge
+ * Destination Shorthand: No Shorthand
+ * Destination: depends on cpu_id
+ *
+ * In X2APIC mode, this no longer works. We emulate the
+ * interrupt by writing the IA32_X2APIC_SELF_IPI MSR
+ * to send IPI to the core itself via LOAPIC also.
+ * According to SDM vol.3 chapter 10.12.11, the bit[7:0]
+ * for setting the vector is only needed.
+ */
+static inline void trigger_irq(int vector)
+{
+#ifdef CONFIG_X2APIC
+	x86_write_x2apic(LOAPIC_SELF_IPI, ((VECTOR_MASK & vector)));
+#else
+
+#ifdef CONFIG_SMP
+	int cpu_id = arch_curr_cpu()->id;
+#else
+	int cpu_id = 0;
+#endif
+	z_loapic_ipi(cpu_id, LOAPIC_ICR_IPI_TEST, vector);
+#endif /* CONFIG_X2APIC */
+}
 
 #elif defined(CONFIG_ARCH_POSIX)
 #include "irq_ctrl.h"
@@ -134,6 +176,14 @@ extern void z_sparc_enter_irq(int);
 static inline void trigger_irq(int irq)
 {
 	z_sparc_enter_irq(irq);
+}
+
+#elif defined(CONFIG_MIPS)
+extern void z_mips_enter_irq(int);
+
+static inline void trigger_irq(int irq)
+{
+	z_mips_enter_irq(irq);
 }
 
 #else

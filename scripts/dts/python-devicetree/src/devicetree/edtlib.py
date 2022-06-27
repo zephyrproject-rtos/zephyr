@@ -201,7 +201,10 @@ class EDT:
         self.dts_path = dts
         self.bindings_dirs = bindings_dirs
 
-        self._dt = DT(dts)
+        try:
+            self._dt = DT(dts)
+        except DTError as e:
+            raise EDTError(e) from e
         _check_dt(self._dt)
 
         self._init_compat2binding()
@@ -720,6 +723,21 @@ class Node:
         # would need to be kept in mind.
         return OrderedDict((name, self.edt._node2enode[node])
                            for name, node in self._node.nodes.items())
+
+    def child_index(self, node):
+        """Get the index of *node* in self.children.
+        Raises KeyError if the argument is not a child of this node.
+        """
+        if not hasattr(self, '_child2index'):
+            # Defer initialization of this lookup table until this
+            # method is callable to handle parents needing to be
+            # initialized before their chidlren. By the time we
+            # return from __init__, 'self.children' is callable.
+            self._child2index = OrderedDict()
+            for index, child in enumerate(self.children.values()):
+                self._child2index[child] = index
+
+        return self._child2index[node]
 
     @property
     def required_by(self):

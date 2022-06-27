@@ -25,7 +25,7 @@ menuconfig ENTROPY_NRF5_RNG
 if ENTROPY_NRF5_RNG
 
 config ENTROPY_NRF5_BIAS_CORRECTION
-	bool "Enable bias correction (uniform distribution)"
+	bool "Bias correction (uniform distribution)"
 	help
 	  This option enables the RNG bias correction, which guarantees a
 	  uniform distribution of 0 and 1. When this option is enabled, the time

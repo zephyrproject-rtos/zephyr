@@ -15,4 +15,9 @@ config NET_L2_ETHERNET
 
 endif # NETWORKING
 
+choice STM32_LPTIM_CLOCK
+	default STM32_LPTIM_CLOCK_LSE
+	depends on STM32_LPTIM_TIMER
+endchoice
+
 endif # BOARD_NUCLEO_H723ZG

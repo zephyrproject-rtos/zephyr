@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
-#include <sys/mutex.h>
+#include <zephyr/sys/mutex.h>
 #include <ztest_assert.h>
 
 #include <fcntl.h>
-#include <net/socket.h>
-#include <net/ethernet.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/ethernet.h>
 
 #if defined(CONFIG_NET_SOCKETS_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) NET_DBG(fmt, ##__VA_ARGS__)

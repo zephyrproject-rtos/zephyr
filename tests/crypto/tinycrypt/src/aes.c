@@ -53,7 +53,7 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #include <ztest.h>
 
 #define NUM_OF_NIST_KEYS 16

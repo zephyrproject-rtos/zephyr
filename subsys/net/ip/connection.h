@@ -15,12 +15,12 @@
 
 #include <zephyr/types.h>
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <net/net_context.h>
-#include <net/net_core.h>
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
 
 #ifdef __cplusplus
 extern "C" {

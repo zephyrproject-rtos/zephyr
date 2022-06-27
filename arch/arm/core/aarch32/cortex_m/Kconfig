@@ -7,7 +7,7 @@
 # if CPU_CORTEX_M block so that SoCs can select which core they are using
 # without having to select all the options related to that core.  Everything
 # else is captured inside the if CPU_CORTEX_M block so they are not exposed
-# if one select a differnet ARM Cortex Family (Cortex-A or Cortex-R)
+# if one select a different ARM Cortex Family (Cortex-A or Cortex-R)
 
 config CPU_CORTEX_M0
 	bool
@@ -85,6 +85,13 @@ config CPU_CORTEX_M_HAS_SYSTICK
 	bool
 	help
 	  This option is enabled when the CPU implements the SysTick timer.
+
+config CPU_CORTEX_M_HAS_CACHE
+	bool
+	depends on CPU_CORTEX_M7 || CPU_CORTEX_M55
+	help
+	  This option signifies that the CPU implements Data and Instruction
+	  Cache
 
 config CPU_CORTEX_M_HAS_DWT
 	bool
@@ -280,7 +287,7 @@ config GEN_ISR_TABLES
 	default y
 
 config ZERO_LATENCY_IRQS
-	bool "Enable zero-latency interrupts"
+	bool "Zero-latency interrupts"
 	depends on CPU_CORTEX_M_HAS_BASEPRI
 	help
 	  The kernel may reserve some of the highest interrupts priorities in
@@ -295,8 +302,17 @@ config ZERO_LATENCY_IRQS
 	  higher priority than the rest of the kernel they cannot use any
 	  kernel functionality.
 
+config ZERO_LATENCY_LEVELS
+	int "Number of interrupt priority levels reserved for zero latency"
+	depends on ZERO_LATENCY_IRQS
+	range 1 255
+	help
+	  The amount of interrupt priority levels reserved for zero latency
+	  interrupts. Increase this value to reserve more than one priority
+	  level for zero latency interrupts.
+
 config DYNAMIC_DIRECT_INTERRUPTS
-	bool "Enable support for dynamic direct interrupts"
+	bool "Support for dynamic direct interrupts"
 	depends on DYNAMIC_INTERRUPTS
 	help
 	  Direct interrupts are designed for performance-critical interrupt
@@ -307,7 +323,7 @@ config DYNAMIC_DIRECT_INTERRUPTS
 	  kernel.
 
 config SW_VECTOR_RELAY
-	bool "Enable Software Vector Relay"
+	bool "Software Vector Relay"
 	help
 	  When building a bootloader firmware this option adds a
 	  vector table relay handler and a vector relay table, to
@@ -316,7 +332,7 @@ config SW_VECTOR_RELAY
 	  with no hardware vector table relocation mechanisms (e.g. VTOR).
 
 config SW_VECTOR_RELAY_CLIENT
-	bool "Enable Software Vector Relay (client)"
+	bool "Software Vector Relay (client)"
 	default y if BOOTLOADER_MCUBOOT && !CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
 	depends on !CPU_CORTEX_M_HAS_VTOR
 	help
@@ -326,7 +342,7 @@ config SW_VECTOR_RELAY_CLIENT
 	  initialization.
 
 config CORTEX_M_DWT
-	bool "Enable and use the DWT"
+	bool "Data Watchpoint and Trace (DWT)"
 	depends on CPU_CORTEX_M_HAS_DWT
 	default y if TIMING_FUNCTIONS
 	help
@@ -336,8 +352,15 @@ config CORTEX_M_DWT
 # Additional stack for tests when building with FPU_SHARING
 # enabled, which may increase ESF stacking requirements for
 # threads.
-config TEST_EXTRA_STACKSIZE
+config TEST_EXTRA_STACK_SIZE
 	default 512 if TEST_ARM_CORTEX_M && FPU_SHARING
+
+config TRAP_UNALIGNED_ACCESS
+	bool "Unaligned access trap"
+	depends on !ARMV6_M_ARMV8_M_BASELINE
+	help
+	  If enabled, the CPU generates a UsageFault exception when executing a
+	  halfword or word access.
 
 endmenu
 
@@ -345,7 +368,7 @@ endmenu
 # Trace Unit and the Debug Monitor Exception, or the Memory Protection Unit.
 
 choice NULL_POINTER_EXCEPTION_DETECTION
-	bool "Enable and use null-pointer exception"
+	bool "Null-pointer exception"
 	# Disable this until https://github.com/zephyrproject-rtos/zephyr/issues/32984 is fixed
 	# default NULL_POINTER_EXCEPTION_DETECTION_DWT if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE && CPU_CORTEX_M_HAS_DWT
 	default NULL_POINTER_EXCEPTION_DETECTION_MPU if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE && ARM_MPU && !CPU_CORTEX_M_HAS_DWT
@@ -358,7 +381,7 @@ choice NULL_POINTER_EXCEPTION_DETECTION
 	  is enabled and the DWT-based solution is preferred.
 
 config NULL_POINTER_EXCEPTION_DETECTION_NONE
-	bool "Do not enable null pointer exception detection"
+	bool "No null pointer exception detection"
 	help
 	  Null pointer exception detection feature is not
 	  enabled.
@@ -402,7 +425,7 @@ config NULL_POINTER_EXCEPTION_DETECTION_MPU
 	  CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE)
 	  is not unmapped (covered by an MPU region already).
 	  If it is unmapped null-pointer dereferencing may
-	  still be idirectly detected (e.g. via a precise
+	  still be indirectly detected (e.g. via a precise
 	  Bus access fault), but this is not guaranteed. A
 	  build-time message warns the user of this scenario.
 

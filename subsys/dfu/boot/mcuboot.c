@@ -8,16 +8,16 @@
 #include <stddef.h>
 #include <errno.h>
 #include <string.h>
-#include <drivers/flash.h>
-#include <storage/flash_map.h>
-#include <zephyr.h>
-#include <init.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
 
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "bootutil/bootutil_public.h"
-#include <dfu/mcuboot.h>
+#include <zephyr/dfu/mcuboot.h>
 
 #include "mcuboot_priv.h"
 

@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include "tfm_platform_api.h"
 
@@ -22,8 +22,6 @@
  * the weak implementation of sys_arch_reboot() in scb.c.
  *
  * \pre The implementation requires the TFM_PARTITION_PLATFORM be defined.
- *
- * @return N/A
  */
 
 #if defined(CONFIG_TFM_PARTITION_PLATFORM)

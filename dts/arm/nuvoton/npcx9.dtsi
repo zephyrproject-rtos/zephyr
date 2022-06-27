@@ -25,10 +25,11 @@
 		pinctrl-0 = <&alt0_gpio_no_spip
 			   &alt0_gpio_no_fpip
 			   &alt1_no_pwrgd
-			   &alt1_no_lpc_espi
 			   &alta_no_peci_en
 			   &altd_npsl_in1_sl
 			   &altd_npsl_in2_sl
+			   &altd_psl_in3_sl
+			   &altd_psl_in4_sl
 			   &alt7_no_ksi0_sl
 			   &alt7_no_ksi1_sl
 			   &alt7_no_ksi2_sl
@@ -67,7 +68,7 @@
 			reg-names = "evt_itim", "sys_itim";
 			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL4 0
 				  &pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 5>;
-			interrupts = <28 2>; /* Event timer interrupt */
+			interrupts = <28 1>; /* Event timer interrupt */
 			label = "ITIM";
 		};
 
@@ -76,7 +77,6 @@
 			reg = <0x400E0000 0x2000>;
 			interrupts = <33 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL1 4>;
-			pinctrl-0 = <&altj_cr_sin1_sl1 &altj_cr_sout1_sl1>; /* PIN10.11 */
 			uart-rx = <&wui_cr_sin1>;
 			status = "disabled";
 			label = "UART_1";
@@ -87,7 +87,6 @@
 			reg = <0x400E2000 0x2000>;
 			interrupts = <32 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 6>;
-			pinctrl-0 = <&altj_cr_sin2_sl &altj_cr_sout2_sl>; /* PIN75.86 */
 			uart-rx = <&wui_cr_sin2>;
 			status = "disabled";
 			label = "UART_2";
@@ -98,7 +97,6 @@
 			reg = <0x400E4000 0x2000>;
 			interrupts = <38 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 4>;
-			pinctrl-0 = <&altj_cr_sin3_sl &altj_cr_sout3_sl>; /* PIND3.D6 */
 			uart-rx = <&wui_cr_sin3>;
 			status = "disabled";
 			label = "UART_3";
@@ -109,7 +107,6 @@
 			reg = <0x400E6000 0x2000>;
 			interrupts = <39 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 3>;
-			pinctrl-0 = <&alte_cr_sin4_sl &alte_cr_sout4_sl>; /* PIN17.35 */
 			uart-rx = <&wui_cr_sin4>;
 			status = "disabled";
 			label = "UART_4";
@@ -207,20 +204,11 @@
 				    &wui_iof4 &wui_iof5 &wui_none &wui_none>;
 		};
 
-		/* Supported channels for ADC0 in npcx9 series */
+		/* ADC0 comparator configuration in npcx9 series */
 		adc0: adc@400d1000 {
-			pinctrl-0 = <&alt6_adc0_sl    /* ADC0 - PIN45 */
-				     &alt6_adc1_sl    /* ADC1 - PIN44 */
-				     &alt6_adc2_sl    /* ADC2 - PIN43 */
-				     &alt6_adc3_sl    /* ADC3 - PIN42 */
-				     &alt6_adc4_sl    /* ADC4 - PIN41 */
-				     &altf_adc5_sl    /* ADC5 - PIN37 */
-				     &altf_adc6_sl    /* ADC6 - PIN34 */
-				     &altf_adc7_sl    /* ADC7 - PINE1 */
-				     &altf_adc8_sl    /* ADC8 - PINF1 */
-				     &altf_adc9_sl    /* ADC9 - PINF0 */
-				     &altf_adc10_sl   /* ADC10 - PINE0 */
-				     &altf_adc11_sl>; /* ADC11 - PINC7 */
+			channel-count = <12>;
+			threshold-reg-offset = <0x60>;
+			threshold-count = <6>;
 		};
 	};
 

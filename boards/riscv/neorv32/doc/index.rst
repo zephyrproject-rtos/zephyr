@@ -164,7 +164,7 @@ revert to the application stored in the block RAM within the FPGA bitstream
 the next time the FPGA is configured.
 
 The steps to persist the application within the FPGA bitstream are covered by
-the NEORV32 user guide. If the :kconfig:`CONFIG_BUILD_OUTPUT_BIN` is enabled and
+the NEORV32 user guide. If the :kconfig:option:`CONFIG_BUILD_OUTPUT_BIN` is enabled and
 the NEORV32 ``image_gen`` binary is available, the build system will
 automatically generate a :file:`zephyr.vhd` file suitable for initialising the
 internal instruction memory of the NEORV32.
@@ -182,7 +182,7 @@ can be passed at build time:
 Uploading via UART
 ==================
 
-If the :kconfig:`CONFIG_BUILD_OUTPUT_BIN` is enabled and the NEORV32
+If the :kconfig:option:`CONFIG_BUILD_OUTPUT_BIN` is enabled and the NEORV32
 ``image_gen`` binary is available, the build system will automatically generate
 a :file:`zephyr_exe.bin` file suitable for uploading to the NEORV32 via the
 built-in bootloader as described in the NEORV32 user guide.

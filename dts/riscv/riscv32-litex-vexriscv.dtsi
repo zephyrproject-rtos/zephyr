@@ -45,8 +45,23 @@
 			compatible = "litex,uart0";
 			interrupt-parent = <&intc0>;
 			interrupts = <2 10>;
-			reg = <0xe0001800 0x18>;
-			reg-names = "control";
+			reg = <0xe0001800 0x4
+				0xe0001804 0x4
+				0xe0001808 0x4
+				0xe000180c 0x4
+				0xe0001810 0x4
+				0xe0001814 0x4
+				0xe0001818 0x4
+				0xe000181c 0x4>;
+			reg-names =
+				"rxtx",
+				"txfull",
+				"rxempty",
+				"ev_status",
+				"ev_pending",
+				"ev_enable",
+				"txempty",
+				"rxfull";
 			label = "uart0";
 			status = "disabled";
 		};
@@ -65,8 +80,27 @@
 			compatible = "litex,timer0";
 			interrupt-parent = <&intc0>;
 			interrupts = <1 0>;
-			reg = <0xe0002800 0x40>;
-			reg-names = "control";
+			reg = <0xe0002800 0x10
+				0xe0002810 0x10
+				0xe0002820 0x4
+				0xe0002824 0x4
+				0xe0002828 0x10
+				0xe0002838 0x4
+				0xe000283c 0x4
+				0xe0002840 0x4
+				0xe0002844 0x4
+				0xe0002848 0x20>;
+			reg-names =
+				"load",
+				"reload",
+				"en",
+				"update_value",
+				"value",
+				"ev_status",
+				"ev_pending",
+				"ev_enable",
+				"uptime_latch",
+				"uptime_cycles";
 			label = "timer0";
 			status = "disabled";
 		};
@@ -74,9 +108,28 @@
 			compatible = "litex,eth0";
 			interrupt-parent = <&intc0>;
 			interrupts = <3 0>;
-			reg = <0xe0009800 0x6b 0xb0000000 0x2000>;
+			reg = <0xe0009800 0x4
+				0xe0009804 0x8
+				0xe0009828 0x4
+				0xe000982c 0x4
+				0xe0009830 0x4
+				0xe0009834 0x4
+				0xe000983c 0x4
+				0xe0009840 0x8
+				0xe000984c 0x4
+				0xb0000000 0x2000>;
 			local-mac-address = [10 e2 d5 00 00 02];
-			reg-names = "control", "buffers";
+			reg-names =
+				"rx_slot",
+				"rx_length",
+				"rx_ev_pending",
+				"rx_ev_enable",
+				"tx_start",
+				"tx_ready",
+				"tx_slot",
+				"tx_length",
+				"tx_ev_pending",
+				"buffers";
 			label = "eth0";
 			status = "disabled";
 		};
@@ -115,10 +168,10 @@
 		gpio_in: gpio@e0006000 {
 			compatible = "litex,gpio";
 			reg = <0xe0006000 0x4
-				0xe0006004 0x1
-				0xe0006008 0x1
-				0xe0006010 0x1
-				0xe0006014 0x1>;
+				0xe0006004 0x4
+				0xe0006008 0x4
+				0xe0006010 0x4
+				0xe0006014 0x4>;
 			interrupt-parent = <&intc0>;
 			interrupts = <4 2>;
 			reg-names = "base",
@@ -204,14 +257,14 @@
 		clock0: clock@82005000 {
 			compatible = "litex,clk";
 			label = "clock0";
-			reg = <0x82005000 0x1
-			       0x82005004 0x1
-			       0x82005008 0x1
-			       0x8200500c 0x1
-			       0x82005010 0x1
-			       0x82005014 0x1
-			       0x82005018 0x2
-			       0x82005020 0x2>;
+			reg = <0x82005000 0x4
+			       0x82005004 0x4
+			       0x82005008 0x4
+			       0x8200500c 0x4
+			       0x82005010 0x4
+			       0x82005014 0x4
+			       0x82005018 0x8
+			       0x82005020 0x8>;
 			reg-names = "drp_reset",
 				    "drp_locked",
 				    "drp_read",

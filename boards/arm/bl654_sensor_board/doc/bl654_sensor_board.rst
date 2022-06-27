@@ -86,7 +86,7 @@ The BL654 Sensor Board configuration supports the following hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See the `BL654 website`_ for a complete list of BL654 module hardware features.
 
 Connections and IOs
@@ -121,7 +121,7 @@ The sensor can be powered directly from a coin cell or from a voltage supplied
 on the UART pins, the board accepts voltage from 1.8v-3.3v. Note that if using a
 battery with a UART/debugger connected, the voltage of the UART/debugger (if it
 does not automatically sense/adjust) must be within 0.3v of the voltage of the
-coin cell to prevent supression diodes in the nRF52840 silicon being activated
+coin cell to prevent suppression diodes in the nRF52840 silicon being activated
 or possible back-powering of the battery.
 
 To power the board from an external source via UART, the solder bridge SB1 must

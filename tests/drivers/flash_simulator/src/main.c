@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <drivers/flash.h>
-#include <device.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/device.h>
 
 /* configuration derived from DT */
 #ifdef CONFIG_ARCH_POSIX
@@ -32,7 +32,7 @@
 		(((((((0xff & pat) << 8) | (0xff & pat)) << 8) | \
 		   (0xff & pat)) << 8) | (0xff & pat))
 
-static const struct device *flash_dev;
+static const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 static uint8_t test_read_buf[TEST_SIM_FLASH_SIZE];
 
 static uint32_t p32_inc;
@@ -76,10 +76,8 @@ static void test_init(void)
 {
 	int rc;
 
-	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-
-	zassert_true(flash_dev != NULL,
-		     "Simulated flash driver was not found!");
+	zassert_true(device_is_ready(flash_dev),
+		     "Simulated flash device not ready");
 
 	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 			 FLASH_SIMULATOR_FLASH_SIZE);
@@ -263,7 +261,7 @@ static void test_double_write(void)
 
 	rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 				 &data, sizeof(data));
-	zassert_equal(0, rc, "flash_write should succedd");
+	zassert_equal(0, rc, "flash_write should succeed");
 
 	rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 				 &data, sizeof(data));
@@ -279,7 +277,7 @@ static void test_get_erase_value(void)
 		      FLASH_SIMULATOR_ERASE_VALUE);
 }
 
-#include <drivers/flash/flash_simulator.h>
+#include <zephyr/drivers/flash/flash_simulator.h>
 
 static void test_get_mock(void)
 {

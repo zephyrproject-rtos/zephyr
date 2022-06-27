@@ -6,16 +6,17 @@
 
 #include <zephyr/types.h>
 
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
-#include <sys/slist.h>
-#include <sys/util.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
 
 #include "hal/ccm.h"
 
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "util/dbuf.h"
 
 #include "pdu.h"
 #include "ll.h"
@@ -74,10 +75,6 @@ static void lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 
 		lr_dequeue(conn);
 
-		if ((ctx->proc != PROC_CHAN_MAP_UPDATE) && (ctx->proc != PROC_CONN_UPDATE)) {
-			ull_conn_prt_clear(conn);
-		}
-
 		llcp_proc_ctx_release(ctx);
 	}
 }
@@ -109,6 +106,31 @@ struct proc_ctx *llcp_lr_peek(struct ll_conn *conn)
 
 	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.local.pend_proc_list);
 	return ctx;
+}
+
+bool llcp_lr_ispaused(struct ll_conn *conn)
+{
+	return conn->llcp.local.pause == 1U;
+}
+
+void llcp_lr_pause(struct ll_conn *conn)
+{
+	conn->llcp.local.pause = 1U;
+}
+
+void llcp_lr_resume(struct ll_conn *conn)
+{
+	conn->llcp.local.pause = 0U;
+}
+
+void llcp_lr_prt_restart(struct ll_conn *conn)
+{
+	conn->llcp.local.prt_expire = conn->llcp.prt_reload;
+}
+
+void llcp_lr_prt_stop(struct ll_conn *conn)
+{
+	conn->llcp.local.prt_expire = 0U;
 }
 
 void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
@@ -148,6 +170,11 @@ void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *
 	case PROC_TERMINATE:
 		llcp_lp_comm_rx(conn, ctx, rx);
 		break;
+#if defined(CONFIG_BT_CENTRAL)
+	case PROC_CHAN_MAP_UPDATE:
+		llcp_lp_chmu_rx(conn, ctx, rx);
+		break;
+#endif /* CONFIG_BT_CENTRAL */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		llcp_lp_comm_rx(conn, ctx, rx);
@@ -266,13 +293,18 @@ static void lr_act_complete(struct ll_conn *conn)
 	struct proc_ctx *ctx;
 
 	ctx = llcp_lr_peek(conn);
+	LL_ASSERT(ctx != NULL);
 
+	/* Stop procedure response timeout timer */
+	llcp_lr_prt_stop(conn);
+
+	/* Mark the procedure as safe to delete */
 	ctx->done = 1U;
 }
 
 static void lr_act_connect(struct ll_conn *conn)
 {
-	/* TODO */
+	/* Empty on purpose */
 }
 
 static void lr_act_disconnect(struct ll_conn *conn)
@@ -324,6 +356,12 @@ static void lr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 	case LR_EVT_DISCONNECT:
 		lr_act_disconnect(conn);
 		lr_set_state(conn, LR_STATE_DISCONNECT);
+		break;
+	case LR_EVT_COMPLETE:
+		/* Some procedures like CTE request may be completed without actual run due to
+		 * change in conditions while the procedure was waiting in a queue.
+		 */
+		lr_act_complete(conn);
 		break;
 	default:
 		/* Ignore other evts */
@@ -399,6 +437,7 @@ static void lr_execute_fsm(struct ll_conn *conn, uint8_t evt, void *param)
 void llcp_lr_init(struct ll_conn *conn)
 {
 	lr_set_state(conn, LR_STATE_DISCONNECT);
+	conn->llcp.local.prt_expire = 0U;
 }
 
 void llcp_lr_run(struct ll_conn *conn)
@@ -432,8 +471,7 @@ void llcp_lr_abort(struct ll_conn *conn)
 		ctx = lr_dequeue(conn);
 	}
 
-	/* TODO(thoh): Whats missing here ??? */
-	ull_conn_prt_clear(conn);
+	llcp_lr_prt_stop(conn);
 	llcp_rr_set_incompat(conn, 0U);
 	lr_set_state(conn, LR_STATE_IDLE);
 }

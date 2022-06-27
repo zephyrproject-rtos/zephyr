@@ -29,7 +29,7 @@ description: |
 
 compatible: "st,stm32-fmc"
 
-include: base.yaml
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -42,10 +42,7 @@ properties:
       required: true
 
     pinctrl-0:
-      type: phandles
-      required: false
-      description: |
-        GPIO pin configuration for FMC signals. We expect that the phandles
-        will reference pinctrl nodes, e.g.
+      required: true
 
-           pinctrl-0 = <&fmc_a0_pf0 &fmc_a1_pf1...>;
+    pinctrl-names:
+      required: true

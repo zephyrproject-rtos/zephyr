@@ -8,7 +8,7 @@ tests:
     min_ram: 16
   kernel.fpu_sharing.generic.arm:
     extra_args: PI_NUM_ITERATIONS=70000
-    filter: CONFIG_ARMV7_M_ARMV8_M_FP
+    filter: CONFIG_ARMV7_M_ARMV8_M_FP or CONFIG_ARMV7_R_FP
     slow: true
     tags: fpu kernel
     timeout: 600

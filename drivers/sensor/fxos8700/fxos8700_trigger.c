@@ -6,7 +6,7 @@
  */
 
 #include "fxos8700.h"
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(FXOS8700, CONFIG_SENSOR_LOG_LEVEL);
 

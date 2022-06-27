@@ -8,7 +8,7 @@
 #ifndef ENC_H
 #define ENC_H
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 #define WHEEL_SIZE 26
 #define IMOD(a, b) ((a + b) % WHEEL_SIZE)

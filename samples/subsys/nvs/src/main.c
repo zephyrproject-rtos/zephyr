@@ -38,13 +38,13 @@
  */
 
 
-#include <zephyr.h>
-#include <sys/reboot.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/device.h>
 #include <string.h>
-#include <drivers/flash.h>
-#include <storage/flash_map.h>
-#include <fs/nvs.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/fs/nvs.h>
 
 static struct nvs_fs fs;
 
@@ -70,20 +70,19 @@ void main(void)
 	uint8_t key[8], longarray[128];
 	uint32_t reboot_counter = 0U, reboot_counter_his;
 	struct flash_pages_info info;
-	const struct device *flash_dev;
 
 	/* define the nvs file system by settings with:
 	 *	sector_size equal to the pagesize,
 	 *	3 sectors
 	 *	starting at FLASH_AREA_OFFSET(storage)
 	 */
-	flash_dev = FLASH_AREA_DEVICE(STORAGE_NODE_LABEL);
-	if (!device_is_ready(flash_dev)) {
-		printk("Flash device %s is not ready\n", flash_dev->name);
+	fs.flash_device = FLASH_AREA_DEVICE(STORAGE_NODE_LABEL);
+	if (!device_is_ready(fs.flash_device)) {
+		printk("Flash device %s is not ready\n", fs.flash_device->name);
 		return;
 	}
 	fs.offset = FLASH_AREA_OFFSET(storage);
-	rc = flash_get_page_info_by_offs(flash_dev, fs.offset, &info);
+	rc = flash_get_page_info_by_offs(fs.flash_device, fs.offset, &info);
 	if (rc) {
 		printk("Unable to get page info\n");
 		return;
@@ -91,7 +90,7 @@ void main(void)
 	fs.sector_size = info.size;
 	fs.sector_count = 3U;
 
-	rc = nvs_init(&fs, flash_dev->name);
+	rc = nvs_mount(&fs);
 	if (rc) {
 		printk("Flash Init failed\n");
 		return;

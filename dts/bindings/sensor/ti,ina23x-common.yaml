@@ -1,0 +1,33 @@
+#
+# Copyright 2021 Grinn
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+include: i2c-device.yaml
+
+properties:
+    config:
+      type: int
+      required: true
+      description: |
+        Value of the configuration register
+        e.g shunt voltage and bus voltage ADC conversion
+        times and averaging, operating mode for INA230 or
+        delay for initial ADC conversion, shunt full scale range
+        for INA237.
+
+    current-lsb:
+      type: int
+      required: true
+      description: |
+        Value of Current LSB in milliamps. When set to 1mA,
+        Current is read in A, Bus Voltage in V, Shunt
+        Voltage in V, and Power in mW. Any other value
+        results in Current, Voltage, and Power registers
+        being read in counts.
+
+    rshunt:
+      type: int
+      required: true
+      description: Shunt resistor value in milliohms

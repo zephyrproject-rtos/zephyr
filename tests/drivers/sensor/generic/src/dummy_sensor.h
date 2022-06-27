@@ -7,9 +7,9 @@
 #ifndef __TEST_DUMMY_SENSOR_H__
 #define __TEST_DUMMY_SENSOR_H__
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 #define DUMMY_SENSOR_NAME	"dummy_sensor"
 #define DUMMY_SENSOR_NAME_NO_TRIG	"dummy_sensor_no_trig"
 #define SENSOR_CHANNEL_NUM	5

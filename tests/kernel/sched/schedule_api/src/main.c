@@ -73,7 +73,8 @@ void test_main(void)
 			 ztest_user_unit_test(test_k_thread_priority_set_init_null),
 			 ztest_user_unit_test(test_k_thread_priority_set_overmax),
 			 ztest_user_unit_test(test_k_thread_priority_set_upgrade),
-			 ztest_user_unit_test(test_k_wakeup_init_null)
+			 ztest_user_unit_test(test_k_wakeup_init_null),
+			 ztest_unit_test(test_slice_perthread)
 			 );
 	ztest_run_test_suite(threads_scheduling);
 }

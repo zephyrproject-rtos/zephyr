@@ -8,10 +8,12 @@
 #include <mem.h>
 #include <freq.h>
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/clock/stm32_clock.h>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/stm32_clock.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/stm32_pwm.h>
+#include <zephyr/dt-bindings/display/stm32_ltdc.h>
 
 / {
 	cpus {
@@ -171,6 +173,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x100>;
 			interrupts = <35 5>;
 			label = "SPI_1";
+			status = "disabled";
 		};
 
 		spi2: spi@4000b000 {
@@ -181,6 +184,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x800>;
 			interrupts = <36 5>;
 			label = "SPI_2";
+			status = "disabled";
 		};
 
 		spi3: spi@4000c000 {
@@ -191,6 +195,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x1000>;
 			interrupts = <51 5>;
 			label = "SPI_3";
+			status = "disabled";
 		};
 
 		spi4: spi@44005000 {
@@ -201,6 +206,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x200>;
 			interrupts = <84 5>;
 			label = "SPI_4";
+			status = "disabled";
 		};
 
 		spi5: spi@44009000 {
@@ -211,6 +217,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x400>;
 			interrupts = <85 5>;
 			label = "SPI_5";
+			status = "disabled";
 		};
 
 		usart2: serial@4000e000 {
@@ -297,6 +304,16 @@
 			interrupt-names = "rxo", "txf";
 			status = "disabled";
 			label = "MAILBOX_0";
+		};
+
+		ltdc: display-controller@5A001000 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x5A001000 0x200>;
+			interrupts = <88 0>, <89 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x000000001>;
+			label = "LTDC";
+			status = "disabled";
 		};
 	};
 };

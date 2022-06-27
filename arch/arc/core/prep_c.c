@@ -17,23 +17,20 @@
  */
 
 #include <zephyr/types.h>
-#include <toolchain.h>
-#include <linker/linker-defs.h>
-#include <arch/arc/v2/aux_regs.h>
-#include <kernel_structs.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/arch/arc/v2/aux_regs.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 
 
 /* XXX - keep for future use in full-featured cache APIs */
 #if 0
 /**
- *
  * @brief Disable the i-cache if present
  *
  * For those ARC CPUs that have a i-cache present,
  * invalidate the i-cache and then disable it.
- *
- * @return N/A
  */
 
 static void disable_icache(void)
@@ -51,13 +48,10 @@ static void disable_icache(void)
 }
 
 /**
- *
  * @brief Invalidate the data cache if present
  *
  * For those ARC CPUs that have a data cache present,
  * invalidate the data cache.
- *
- * @return N/A
  */
 
 static void invalidate_dcache(void)
@@ -75,12 +69,9 @@ static void invalidate_dcache(void)
 
 extern FUNC_NORETURN void z_cstart(void);
 /**
- *
  * @brief Prepare to and run C code
  *
  * This routine prepares for the execution of and runs C code.
- *
- * @return N/A
  */
 
 void _PrepC(void)

@@ -1,0 +1,24 @@
+# Space Cubics OBC module 1
+
+# Copyright (c) 2021 Space Cubics <yashi@spacecubics.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SCOBC_MODULE1
+
+config BOARD
+	default "scobc_module1"
+
+config CPU_CORTEX_M_HAS_SYSTICK
+	default y
+
+config CPU_HAS_ARM_MPU
+	default y
+
+config NUM_IRQS
+	default 7
+
+config UART_XLNX_UARTLITE
+	depends on SERIAL
+	default y
+
+endif # BOARD_SCOBC_MODULE1

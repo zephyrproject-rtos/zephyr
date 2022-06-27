@@ -1,4 +1,8 @@
 tests:
   drivers.entropy:
     filter: CONFIG_ENTROPY_HAS_DRIVER
-    tags: driver entropy
+    tags: drivers entropy
+  drivers.entropy.bt_hci:
+    platform_allow: nrf52_bsim
+    extra_args: DTC_OVERLAY_FILE=./entropy_bt_hci.overlay OVERLAY_CONFIG=./entropy_bt_hci.conf
+    tags: driver entropy bluetooth

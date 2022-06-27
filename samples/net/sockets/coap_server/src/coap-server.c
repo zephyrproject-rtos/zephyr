@@ -4,20 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_coap_server_sample, LOG_LEVEL_DBG);
 
 #include <errno.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
-#include <net/socket.h>
-#include <net/net_mgmt.h>
-#include <net/net_ip.h>
-#include <net/udp.h>
-#include <net/coap.h>
-#include <net/coap_link_format.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/udp.h>
+#include <zephyr/net/coap.h>
+#include <zephyr/net/coap_link_format.h>
 
 #include "net_private.h"
 #if defined(CONFIG_NET_IPV6)
@@ -957,7 +957,7 @@ static void schedule_next_retransmission(void)
 	int32_t remaining;
 	uint32_t now = k_uptime_get_32();
 
-	/* Get the first pending retansmission to expire after cycling. */
+	/* Get the first pending retransmission to expire after cycling. */
 	pending = coap_pending_next_to_expire(pendings, NUM_PENDINGS);
 	if (!pending) {
 		return;
@@ -1110,7 +1110,7 @@ static int send_notification_packet(const struct sockaddr *addr,
 
 	r = send_coap_reply(&response, addr, addr_len);
 
-	/* On succesfull creation of pending request, do not free memory */
+	/* On successful creation of pending request, do not free memory */
 	if (type == COAP_TYPE_CON) {
 		return r;
 	}
@@ -1134,6 +1134,9 @@ static int obs_get(struct coap_resource *resource,
 	bool observe = true;
 
 	if (!coap_request_is_observe(request)) {
+		if (coap_get_option_int(request, COAP_OPTION_OBSERVE) == 1) {
+			remove_observer(addr);
+		}
 		observe = false;
 		goto done;
 	}
@@ -1382,20 +1385,18 @@ static void process_coap_request(uint8_t *data, uint16_t data_len,
 	}
 
 	/* Clear CoAP pending request */
-	if (type == COAP_TYPE_ACK) {
+	if (type == COAP_TYPE_ACK || type == COAP_TYPE_RESET) {
 		k_free(pending->data);
 		coap_pending_clear(pending);
+
+		if (type == COAP_TYPE_RESET) {
+			remove_observer(client_addr);
+		}
 	}
 
 	return;
 
 not_found:
-
-	if (type == COAP_TYPE_RESET) {
-		remove_observer(client_addr);
-		return;
-	}
-
 	r = coap_handle_request(&request, resources, options, opt_num,
 				client_addr, client_addr_len);
 	if (r < 0) {

@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT litex_i2c
 
-#include <device.h>
-#include <drivers/i2c.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
 #include "i2c_bitbang.h"
 
 #define SCL_BIT_POS                0
@@ -124,7 +124,7 @@ static const struct i2c_driver_api i2c_litex_driver_api = {
 									       \
 	static struct i2c_bitbang i2c_bitbang_##n;			       \
 									       \
-	DEVICE_DT_INST_DEFINE(n,					       \
+	I2C_DEVICE_DT_INST_DEFINE(n,					       \
 			   i2c_litex_init,				       \
 			   NULL,					       \
 			   &i2c_bitbang_##n,	                               \

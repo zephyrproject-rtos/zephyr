@@ -7,9 +7,9 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-#include <shell/shell.h>
-#include <init.h>
-#include <fs/fs.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/init.h>
+#include <zephyr/fs/fs.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -29,8 +29,8 @@ static struct fs_mount_t fatfs_mnt = {
 #endif
 /* LITTLEFS */
 #ifdef CONFIG_FILE_SYSTEM_LITTLEFS
-#include <fs/littlefs.h>
-#include <storage/flash_map.h>
+#include <zephyr/fs/littlefs.h>
+#include <zephyr/storage/flash_map.h>
 
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(lfs_data);
 static struct fs_mount_t littlefs_mnt = {

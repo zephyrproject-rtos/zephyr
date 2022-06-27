@@ -5,12 +5,12 @@
  */
 
 #include <stdint.h>
-#include <zephyr.h>
-#include <sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_FRIEND)
 #define LOG_MODULE_NAME bt_mesh_friend
@@ -50,7 +50,7 @@ struct friend_pdu_info {
 };
 
 NET_BUF_POOL_FIXED_DEFINE(friend_buf_pool, FRIEND_BUF_COUNT,
-			  BT_MESH_ADV_DATA_SIZE, NULL);
+			  BT_MESH_ADV_DATA_SIZE, 8, NULL);
 
 static struct friend_adv {
 	uint16_t app_idx;
@@ -1261,7 +1261,8 @@ static void friend_timeout(struct k_work *work)
 	frnd->queue_size--;
 
 send_last:
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, FRIEND_XMIT, K_NO_WAIT);
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+				 FRIEND_XMIT, K_NO_WAIT);
 	if (!buf) {
 		BT_ERR("Unable to allocate friend adv buffer");
 		return;

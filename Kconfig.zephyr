@@ -221,7 +221,7 @@ config SRAM_OFFSET
 menu "Linker Sections"
 
 config LINKER_USE_BOOT_SECTION
-	bool "Enable Usage of Boot Linker Section"
+	bool "Use Boot Linker Section"
 	help
 	  If enabled, the symbols which are needed for the boot process
 	  will be put into another linker section reserved for these
@@ -231,7 +231,7 @@ config LINKER_USE_BOOT_SECTION
 	  board or custom linker script.
 
 config LINKER_USE_PINNED_SECTION
-	bool "Enable Usage of Pinned Linker Section"
+	bool "Use Pinned Linker Section"
 	help
 	  If enabled, the symbols which need to be pinned in memory
 	  will be put into another linker section reserved for pinned
@@ -309,7 +309,7 @@ config NO_OPTIMIZATIONS
 endchoice
 
 config COMPILER_COLOR_DIAGNOSTICS
-	bool "Enable colored diagnostics"
+	bool "Colored diagnostics"
 	default y
 	help
 	  Compiler diagnostic messages are colorized.
@@ -349,7 +349,7 @@ config NO_RUNTIME_CHECKS
 	  Do not do any runtime checks or asserts when using the CHECK macro.
 
 config RUNTIME_ERROR_CHECKS
-	bool "Enable runtime error checks"
+	bool "Runtime error checks"
 	help
 	  Always perform runtime checks covered with the CHECK macro. This
 	  option is the default and the only option used during testing.
@@ -459,9 +459,11 @@ if BUILD_OUTPUT_UF2
 config BUILD_OUTPUT_UF2_FAMILY_ID
 	string "UF2 device family ID"
 	default "0x1c5f21b0" if SOC_ESP32
+	default "0x621e937a" if SOC_NRF52833_QIAA
 	default "0xada52840" if SOC_NRF52840_QIAA
 	default "0x4fb2d5bd" if SOC_SERIES_IMX_RT
 	default "0x2abc77ec" if SOC_SERIES_LPC55XXX
+	default "0xe48bff56" if SOC_SERIES_RP2XXX
 	default "0x68ed2b88" if SOC_SERIES_SAMD21
 	default "0x55114460" if SOC_SERIES_SAMD51
 	default "0x647824b6" if SOC_SERIES_STM32F0X
@@ -486,6 +488,14 @@ config BUILD_OUTPUT_UF2_FAMILY_ID
 	  name string. If the SoC in use is known by UF2, the Family ID will
 	  be pre-filled with the known value.
 
+config BUILD_OUTPUT_UF2_USE_FLASH_BASE
+	bool
+	default n
+
+config BUILD_OUTPUT_UF2_USE_FLASH_OFFSET
+	bool
+	default n
+
 endif # BUILD_OUTPUT_UF2
 
 config BUILD_OUTPUT_STRIPPED
@@ -493,6 +503,41 @@ config BUILD_OUTPUT_STRIPPED
 	help
 	  Build a stripped binary zephyr/zephyr.strip in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_ADJUST_LMA
+	string
+	help
+	  This will adjust the LMA address in the final ELF and hex files with
+	  the value provided.
+	  This will not affect the internal address symbols inside the image but
+	  can be useful when adjusting the LMA address for flash tools or multi
+	  stage loaders where a pre-loader may copy image to a second location
+	  before booting a second core.
+	  The value will be evaluated as a math expression, this means that
+	  following are valid expression
+	  - 1024
+	  - 0x1000
+	  - -0x1000
+	  - 0x20000000 - 0x10000000
+	  Note: negative numbers are valid.
+	  To adjust according to a chosen flash partition one can specify a
+	  default as:
+	  DT_CHOSEN_IMAGE_<name> := <name>,<name>-partition
+	  DT_CHOSEN_Z_FLASH := zephyr,flash
+	  config BUILD_OUTPUT_ADJUST_LMA
+	    default "$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M4))-\
+	             $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))"
+
+config BUILD_OUTPUT_INFO_HEADER
+	bool "Create a image information header"
+	help
+	  Create an image information header which will contain image
+	  information from the Zephyr binary.
+	  Example of information contained in the header file:
+	  - Number of segments in the image
+	  - LMA address of each segment
+	  - VMA address of each segment
+	  - Size of each segment
 
 config APPLICATION_DEFINED_SYSCALL
 	bool "Scan application folder for any syscall definition"
@@ -512,8 +557,34 @@ config BUILD_OUTPUT_META
 	  Create a build meta file in the build directory containing lists of:
 	  - Zephyr: path and revision (if git repo)
 	  - Zephyr modules: name, path, and revision (if git repo)
-	  - West projects: path and revision
+	  - West:
+	    - manifest: path and revision
+	    - projects: path and revision
+	  - Workspace:
+	    - dirty: one or more repositories are marked dirty
+	    - extra: extra Zephyr modules are manually included in the build
+	    - off:   the SHA of one or more west projects are not what the manifest
+	             defined when `west update` was run the last time (`manifest-rev`).
+	             The off state is only present if a west workspace is found.
 	  File extension is .meta
+
+config BUILD_OUTPUT_META_STATE_PROPAGATE
+	bool "Propagate module and project state"
+	depends on BUILD_OUTPUT_META
+	help
+	  Propagate to state of each module to the Zephyr revision field.
+	  If west is used the state of each west project is also propagated to
+	  the Zephyr revision field.
+	  West manifest repo revision field will also
+	  be marked with the same state as the Zephyr revision.
+	  The final revision will become: <SHA>-<state1>-<state2>-<state3>...
+	  If no states are appended to the SHA it means the build is of a clean
+	  tree.
+	  - dirty: one or more repositories are marked dirty
+	  - extra: extra Zephyr modules are manually included in the build
+	  - off:   the SHA of one or more west projects are not what the manifest
+	           defined when `west update` was run the last time (`manifest-rev`).
+	           The off state is only present if a west workspace is found.
 
 endmenu
 
@@ -588,6 +659,7 @@ if BOOTLOADER_MCUBOOT
 config MCUBOOT_SIGNATURE_KEY_FILE
 	string "Path to the mcuboot signing key file"
 	default ""
+	depends on !MCUBOOT_GENERATE_UNSIGNED_IMAGE
 	help
 	  The file contains a key pair whose public half is verified
 	  by your target's MCUboot image. The file is in PEM format.
@@ -646,6 +718,13 @@ config MCUBOOT_EXTRA_IMGTOOL_ARGS
 	  you can use this option to pass extra options to imgtool.
 	  For example, you could set this to "--version 1.2".
 
+config MCUBOOT_GENERATE_UNSIGNED_IMAGE
+	bool "Generate unsigned binary image bootable with MCUboot"
+	help
+	  Enabling this configuration allows automatic unsigned binary image
+	  generation when MCUboot signing key is not provided,
+	  i.e., MCUBOOT_SIGNATURE_KEY_FILE is left empty.
+
 config MCUBOOT_GENERATE_CONFIRMED_IMAGE
 	bool "Also generate a padded, confirmed image"
 	help
@@ -661,7 +740,8 @@ endif # BOOTLOADER_MCUBOOT
 
 config BOOTLOADER_ESP_IDF
 	bool "ESP-IDF bootloader support"
-	depends on SOC_ESP32 || SOC_ESP32S2
+	depends on (SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3) && !BOOTLOADER_MCUBOOT
+	default y
 	help
 	  This option will trigger the compilation of the ESP-IDF bootloader
 	  inside the build folder.
@@ -720,3 +800,15 @@ config COMPAT_INCLUDES
 	  deprecated header files.
 
 endmenu
+
+config LEGACY_INCLUDE_PATH
+	bool "Allow for the legacy include paths (without the zephyr/ prefix)"
+	default y
+	help
+	  Allow applications and libraries to use the Zephyr legacy include
+	  path which does not use the zephyr/ prefix. For example, the
+	  preferred way to include a Zephyr header is to use <zephyr/kernel.h>,
+	  but enabling CONFIG_LEGACY_INCLUDE_PATH will allow developers to
+	  use <kernel.h> instead. This (without the zephyr/ prefix) is
+	  deprecated and should be avoided. Eventually, it will not be
+	  supported.

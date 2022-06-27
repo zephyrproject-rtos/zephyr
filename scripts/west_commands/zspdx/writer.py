@@ -54,14 +54,17 @@ SPDXID: {pkg.cfg.spdxID}
 PackageDownloadLocation: NOASSERTION
 PackageLicenseConcluded: {pkg.concludedLicense}
 """)
-    for licFromFiles in pkg.licenseInfoFromFiles:
-        f.write(f"PackageLicenseInfoFromFiles: {licFromFiles}\n")
     f.write(f"""PackageLicenseDeclared: {pkg.cfg.declaredLicense}
 PackageCopyrightText: {pkg.cfg.copyrightText}
 """)
 
     # flag whether files analyzed / any files present
     if len(pkg.files) > 0:
+        if len(pkg.licenseInfoFromFiles) > 0:
+            for licFromFiles in pkg.licenseInfoFromFiles:
+                f.write(f"PackageLicenseInfoFromFiles: {licFromFiles}\n")
+        else:
+            f.write(f"PackageLicenseInfoFromFiles: NOASSERTION\n")
         f.write(f"FilesAnalyzed: true\nPackageVerificationCode: {pkg.verificationCode}\n\n")
     else:
         f.write(f"FilesAnalyzed: false\nPackageComment: Utility target; no files\n\n")

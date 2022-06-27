@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
-#include <sys/printk.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
-#include <drivers/gpio.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/gpio.h>
 
 void main(void)
 {

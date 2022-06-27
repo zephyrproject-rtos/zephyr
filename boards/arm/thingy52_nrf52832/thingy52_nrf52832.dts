@@ -8,6 +8,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
+#include "thingy52_nrf52832-pinctrl.dtsi"
 
 / {
 	model = "Nordic Thingy52 NRF52832";
@@ -26,6 +27,8 @@
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
 		sw0 = &button0;
 	};
 
@@ -119,17 +122,19 @@
 	compatible = "nordic,nrf-uarte";
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <3>;
-	rx-pin = <2>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <7>;
-	scl-pin = <8>;
 
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 	sx1509b: sx1509b@3e {
 		compatible = "semtech,sx1509b";
 		reg = <0x3e>;
@@ -173,9 +178,10 @@
 	compatible = "nordic,nrf-twim";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <14>;
-	scl-pin = <15>;
 
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
 	lis2dh12: lis2dh12@19 {
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x19>;

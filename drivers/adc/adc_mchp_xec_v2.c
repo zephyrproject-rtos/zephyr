@@ -7,11 +7,12 @@
 #define DT_DRV_COMPAT microchip_xec_adc_v2
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_mchp_xec);
 
-#include <drivers/adc.h>
-#include <drivers/interrupt_controller/intc_mchp_xec_ecia.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <errno.h>
 
@@ -37,6 +38,7 @@ struct adc_xec_config {
 	uint8_t girq_repeat_pos;
 	uint8_t pcr_regidx;
 	uint8_t pcr_bitpos;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct adc_xec_data {
@@ -304,6 +306,13 @@ static int adc_xec_init(const struct device *dev)
 	const struct adc_xec_config *const cfg = ADC_XEC_CONFIG(dev);
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE(dev);
 	struct adc_xec_data *data = ADC_XEC_DATA(dev);
+	int ret;
+
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret != 0) {
+		LOG_ERR("XEC ADC V2 pinctrl setup failed (%d)", ret);
+		return ret;
+	}
 
 	adc_regs->control_reg =  XEC_ADC_CTRL_ACTIVATE
 		| XEC_ADC_CTRL_POWER_SAVER_DIS
@@ -326,6 +335,8 @@ static int adc_xec_init(const struct device *dev)
 	return 0;
 }
 
+PINCTRL_DT_INST_DEFINE(0);
+
 static struct adc_xec_config adc_xec_dev_cfg_0 = {
 	.base_addr = (uintptr_t)(DT_INST_REG_ADDR(0)),
 	.girq_single = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 0)),
@@ -334,6 +345,7 @@ static struct adc_xec_config adc_xec_dev_cfg_0 = {
 	.girq_repeat_pos = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 3)),
 	.pcr_regidx = (uint8_t)(DT_INST_PROP_BY_IDX(0, pcrs, 0)),
 	.pcr_bitpos = (uint8_t)(DT_INST_PROP_BY_IDX(0, pcrs, 1)),
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
 static struct adc_xec_data adc_xec_dev_data_0 = {

@@ -223,24 +223,6 @@ Here is an example for the :ref:`hello_world` application.
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: stm32h747i_disco_m7
-   :goals: build
-
-Use the following commands to flash either m7 or m4 target:
-
-.. code-block:: console
-
-   $ ./STM32_Programmer_CLI -c port=SWD mode=UR -w <path_to_m7_binary>  0x8000000
-   $ ./STM32_Programmer_CLI -c port=SWD mode=UR -w <path_to_m4_binary>  0x8100000
-
-Alternatively it is possible to flash with OpenOcd but with some restrictions:
-Sometimes, flashing is not working. It is necessary to erase the flash
-(with STM32CubeProgrammer for example) to make it work again.
-Debugging with OpenOCD is currently working for this board only with Cortex M7,
-not Cortex M4.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: stm32h747i_disco_m7
    :goals: build flash
 
 Run a serial host program to connect with your board:
@@ -255,6 +237,20 @@ You should see the following message on the console:
 
    Hello World! stm32h747i_disco_m7
 
+.. note::
+  Sometimes, flashing is not working. It is necessary to erase the flash
+  (with STM32CubeProgrammer for example) to make it work again.
+
+Similarly, you can build and flash samples on the M4 target. For this, please
+take care of the resource sharing (UART port used for console for instance).
+
+Here is an example for the :ref:`blinky-sample` application on M4 core.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: stm32h747i_disco_m4
+   :goals: build flash
+
 Debugging
 =========
 
@@ -266,6 +262,9 @@ You can debug an application in the usual way.  Here is an example for the
    :board: stm32h747i_disco_m7
    :goals: debug
 
+Debugging with west is currently not available on Cortex M4 side.
+In order to debug a Zephyr application on Cortex M4 side, you can use
+`STM32CubeIDE`_.
 
 .. _STM32H747I-DISCO website:
    http://www.st.com/en/evaluation-tools/stm32h747i-disco.html
@@ -284,3 +283,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _DISCO_H747I modifications for Ethernet:
    https://os.mbed.com/teams/ST/wiki/DISCO_H747I-modifications-for-Ethernet
+
+.. _STM32CubeIDE:
+   https://www.st.com/en/development-tools/stm32cubeide.html

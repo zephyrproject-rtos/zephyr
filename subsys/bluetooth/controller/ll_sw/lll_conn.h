@@ -148,9 +148,12 @@ struct lll_conn {
 	int8_t tx_pwr_lvl;
 #endif
 
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
-	struct lll_df_conn_rx_params df_rx_params;
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+	struct lll_df_conn_rx_cfg df_rx_cfg;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
+	struct lll_df_conn_tx_cfg df_tx_cfg;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 };
 
 int lll_conn_init(void);
@@ -166,5 +169,6 @@ void lll_conn_tx_pkt_set(struct lll_conn *lll, struct pdu_data *pdu_data_tx);
 void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx);
 uint8_t lll_conn_force_md_cnt_set(uint8_t force_md_cnt);
 
+extern void ull_conn_lll_tx_demux_sched(struct lll_conn *lll);
 extern void ull_conn_lll_ack_enqueue(uint16_t handle, struct node_tx *tx);
 extern uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll);

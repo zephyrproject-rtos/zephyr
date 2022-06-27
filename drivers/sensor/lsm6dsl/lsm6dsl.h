@@ -11,17 +11,17 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_LSM6DSL_LSM6DSL_H_
 #define ZEPHYR_DRIVERS_SENSOR_LSM6DSL_LSM6DSL_H_
 
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/types.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
 #define LSM6DSL_REG_FUNC_CFG_ACCESS			0x01
@@ -183,7 +183,7 @@
 #define LSM6DSL_SHIFT_CTRL4_C_LPF1_SEL_G		1
 
 #define LSM6DSL_REG_CTRL5_C				0x14
-#define LSM6DSL_MASK_CTRL5_C_ROUNDING			(BIT(7) | BIT(6) \
+#define LSM6DSL_MASK_CTRL5_C_ROUNDING			(BIT(7) | BIT(6) | \
 							 BIT(5))
 #define LSM6DSL_SHIFT_CTRL5_C_ROUNDING			5
 #define LSM6DSL_MASK_CTRL5_C_DEN_LH			BIT(4)
@@ -373,10 +373,10 @@
 #define LSM6DSL_SHIFT_FIFO_STATUS2_DIFF_FIFO		0
 
 #define LSM6DSL_REG_FIFO_STATUS3			0x3C
-#define LSM6DSL_MASK_FIFO_STATUS3_FIFO_PATTERN		0x0F
+#define LSM6DSL_MASK_FIFO_STATUS3_FIFO_PATTERN		0xFF
 #define LSM6DSL_SHIFT_FIFO_STATUS3_FIFO_PATTERN		0
 
-#define LSM6DSL_REG_FIFO_STATUS4			0x3C
+#define LSM6DSL_REG_FIFO_STATUS4			0x3D
 #define LSM6DSL_MASK_FIFO_STATUS4_FIFO_PATTERN		(BIT(1) | BIT(0))
 #define LSM6DSL_SHIFT_FIFO_STATUS4_FIFO_PATTERN		0
 

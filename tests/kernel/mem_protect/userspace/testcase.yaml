@@ -1,6 +1,7 @@
 tests:
   kernel.memory_protection.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_args: CONFIG_TEST_HW_STACK_PROTECTION=n
     tags: kernel security userspace ignore_faults
   kernel.memory_protection.userspace.gap_filling.arc:
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS

@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <fs/fcb.h>
+#include <zephyr/fs/fcb.h>
 #include "fcb_priv.h"
 
 static struct flash_sector *

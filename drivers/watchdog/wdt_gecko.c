@@ -8,11 +8,11 @@
 #define DT_DRV_COMPAT silabs_gecko_wdog
 
 #include <soc.h>
-#include <drivers/watchdog.h>
+#include <zephyr/drivers/watchdog.h>
 #include <em_wdog.h>
 #include <em_cmu.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_gecko, CONFIG_WDT_LOG_LEVEL);
 
 #ifdef cmuClock_CORELE
@@ -39,12 +39,6 @@ struct wdt_gecko_data {
 	WDOG_Init_TypeDef wdog_config;
 	bool timeout_installed;
 };
-
-#define DEV_NAME(dev) ((dev)->name)
-#define DEV_DATA(dev) \
-	((struct wdt_gecko_data *)(dev)->data)
-#define DEV_CFG(dev) \
-	((const struct wdt_gecko_cfg *)(dev)->config)
 
 static uint32_t wdt_gecko_get_timeout_from_persel(int perSel)
 {
@@ -93,8 +87,8 @@ static int wdt_gecko_convert_window(uint32_t window, uint32_t period)
 
 static int wdt_gecko_setup(const struct device *dev, uint8_t options)
 {
-	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
-	struct wdt_gecko_data *data = DEV_DATA(dev);
+	const struct wdt_gecko_cfg *config = dev->config;
+	struct wdt_gecko_data *data = dev->data;
 	WDOG_TypeDef *wdog = config->base;
 
 	if (!data->timeout_installed) {
@@ -130,8 +124,8 @@ static int wdt_gecko_setup(const struct device *dev, uint8_t options)
 
 static int wdt_gecko_disable(const struct device *dev)
 {
-	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
-	struct wdt_gecko_data *data = DEV_DATA(dev);
+	const struct wdt_gecko_cfg *config = dev->config;
+	struct wdt_gecko_data *data = dev->data;
 	WDOG_TypeDef *wdog = config->base;
 
 	WDOGn_Enable(wdog, false);
@@ -144,7 +138,7 @@ static int wdt_gecko_disable(const struct device *dev)
 static int wdt_gecko_install_timeout(const struct device *dev,
 				     const struct wdt_timeout_cfg *cfg)
 {
-	struct wdt_gecko_data *data = DEV_DATA(dev);
+	struct wdt_gecko_data *data = dev->data;
 	data->wdog_config = (WDOG_Init_TypeDef)WDOG_INIT_DEFAULT;
 	uint32_t installed_timeout;
 
@@ -216,7 +210,7 @@ static int wdt_gecko_install_timeout(const struct device *dev,
 
 static int wdt_gecko_feed(const struct device *dev, int channel_id)
 {
-	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
+	const struct wdt_gecko_cfg *config = dev->config;
 	WDOG_TypeDef *wdog = config->base;
 
 	if (channel_id != 0) {
@@ -232,8 +226,8 @@ static int wdt_gecko_feed(const struct device *dev, int channel_id)
 
 static void wdt_gecko_isr(const struct device *dev)
 {
-	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
-	struct wdt_gecko_data *data = DEV_DATA(dev);
+	const struct wdt_gecko_cfg *config = dev->config;
+	struct wdt_gecko_data *data = dev->data;
 	WDOG_TypeDef *wdog = config->base;
 	uint32_t flags;
 
@@ -248,7 +242,7 @@ static void wdt_gecko_isr(const struct device *dev)
 
 static int wdt_gecko_init(const struct device *dev)
 {
-	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
+	const struct wdt_gecko_cfg *config = dev->config;
 
 #ifdef CONFIG_WDT_DISABLE_AT_BOOT
 	/* Ignore any errors */
@@ -268,7 +262,7 @@ static int wdt_gecko_init(const struct device *dev)
 	/* Enable IRQs */
 	config->irq_cfg_func();
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }

@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <tc_util.h>
 
 #include "syskernel.h"
@@ -38,7 +38,6 @@ uint32_t number_of_loops;
  *
  * Routine does necessary preparations for the test to start
  *
- * @return N/A
  */
 void begin_test(void)
 {
@@ -94,7 +93,6 @@ int check_result(int i, uint32_t t)
  *
  * @param continuously   Run test till the user presses the key.
  *
- * @return N/A
  */
 
 void init_output(int *continuously)
@@ -112,7 +110,6 @@ void init_output(int *continuously)
  *
  * @brief Close output for the test
  *
- * @return N/A
  */
 void output_close(void)
 {
@@ -122,7 +119,6 @@ void output_close(void)
  *
  * @brief Perform all selected benchmarks
  *
- * @return N/A
  */
 void main(void)
 {
@@ -131,7 +127,7 @@ void main(void)
 
 	number_of_loops = NUMBER_OF_LOOPS;
 
-	/* The following code is needed to make the benchmakring run on
+	/* The following code is needed to make the benchmarking run on
 	 * slower platforms.
 	 */
 	uint64_t time_stamp = sys_clock_tick_get();

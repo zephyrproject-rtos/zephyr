@@ -27,8 +27,8 @@ import pickle
 import re
 import sys
 
-sys.path.append(os.path.join(os.path.dirname(__file__), 'python-devicetree',
-                             'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree',
+                                'src'))
 
 from devicetree import edtlib
 
@@ -107,6 +107,16 @@ def main():
         for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
             node.z_path_id = node_z_path_id(node)
 
+        # Check to see if we have duplicate "zephyr,memory-region" property values.
+        regions = dict()
+        for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
+            if 'zephyr,memory-region' in node.props:
+                region = node.props['zephyr,memory-region'].val
+                if region in regions:
+                    sys.exit(f"ERROR: Duplicate 'zephyr,memory-region' ({region}) properties "
+                             f"between {regions[region].path} and {node.path}")
+                regions[region] = node
+
         for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
             write_node_comment(node)
 
@@ -122,8 +132,11 @@ def main():
                 out_dt_define(f"{node.z_path_id}_PARENT",
                               f"DT_{node.parent.z_path_id}")
 
-            write_child_functions(node)
-            write_child_functions_status_okay(node)
+                out_comment(f"Node's index in its parent's list of children:")
+                out_dt_define(f"{node.z_path_id}_CHILD_IDX",
+                              node.parent.child_index(node))
+
+            write_children(node)
             write_dep_info(node)
             write_idents_and_existence(node)
             write_bus(node)
@@ -521,9 +534,8 @@ def write_compatibles(node):
             f"{node.z_path_id}_COMPAT_MATCHES_{str2ident(compat)}", 1)
 
 
-def write_child_functions(node):
-    # Writes macro that are helpers that will call a macro/function
-    # for each child node.
+def write_children(node):
+    # Writes helper macros for dealing with node's children.
 
     out_dt_define(f"{node.z_path_id}_FOREACH_CHILD(fn)",
             " ".join(f"fn(DT_{child.z_path_id})" for child in
@@ -532,10 +544,6 @@ def write_child_functions(node):
     out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_VARGS(fn, ...)",
             " ".join(f"fn(DT_{child.z_path_id}, __VA_ARGS__)" for child in
                 node.children.values()))
-
-def write_child_functions_status_okay(node):
-    # Writes macros that are helpers that will call a macro/function
-    # for each child node with status "okay".
 
     functions = ''
     functions_args = ''

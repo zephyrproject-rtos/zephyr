@@ -5,10 +5,10 @@
  */
 
 #include <ztest.h>
-#include <smf.h>
+#include <zephyr/smf.h>
 
 /*
- * Flat Test Transtion:
+ * Flat Test Transition:
  *
  *	A_ENTRY --> A_RUN --> A_EXIT --> B_ENTRY --> B_RUN --|
  *	                                                     |
@@ -221,7 +221,7 @@ static const struct smf_state test_states[] = {
 
 void test_smf_flat(void)
 {
-	/* A) Test transtions */
+	/* A) Test transitions */
 
 	test_obj.transition_bits = 0;
 	test_obj.terminate = NONE;

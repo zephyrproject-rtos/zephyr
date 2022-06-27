@@ -7,10 +7,10 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_BMA280_BMA280_H_
 #define ZEPHYR_DRIVERS_SENSOR_BMA280_BMA280_H_
 
-#include <device.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 #define BMA280_I2C_ADDRESS		DT_INST_REG_ADDR(0)
 
@@ -41,7 +41,7 @@
 #endif
 
 /*
- * BMA280_PMU_FULL_RANGE measured in mili-m/s^2 instead
+ * BMA280_PMU_FULL_RANGE measured in milli-m/s^2 instead
  * of m/s^2 to avoid using struct sensor_value for it
  */
 #define BMA280_REG_PMU_RANGE		0x0F

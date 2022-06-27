@@ -10,14 +10,14 @@
 
 #define DT_DRV_COMPAT st_lsm6dsl
 
-#include <drivers/sensor.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 #include "lsm6dsl.h"
 
@@ -473,7 +473,7 @@ static inline void lsm6dsl_accel_convert(struct sensor_value *val, int raw_val,
 
 	/* Sensitivity is exposed in mg/LSB */
 	/* Convert to m/s^2 */
-	dval = (double)(raw_val) * sensitivity * SENSOR_G_DOUBLE / 1000;
+	dval = (double)(raw_val) * (double)sensitivity * SENSOR_G_DOUBLE / 1000;
 	val->val1 = (int32_t)dval;
 	val->val2 = (((int32_t)(dval * 1000)) % 1000) * 1000;
 
@@ -523,7 +523,7 @@ static inline void lsm6dsl_gyro_convert(struct sensor_value *val, int raw_val,
 
 	/* Sensitivity is exposed in mdps/LSB */
 	/* Convert to rad/s */
-	dval = (double)(raw_val * sensitivity * SENSOR_DEG2RAD_DOUBLE / 1000);
+	dval = (double)(raw_val * (double)sensitivity * SENSOR_DEG2RAD_DOUBLE / 1000);
 	val->val1 = (int32_t)dval;
 	val->val2 = (((int32_t)(dval * 1000)) % 1000) * 1000;
 }

@@ -6,12 +6,13 @@
 
 #define DT_DRV_COMPAT lm77
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
-#include <sys/byteorder.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/byteorder.h>
 
 LOG_MODULE_REGISTER(lm77, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -414,7 +415,7 @@ static int lm77_pm_action(const struct device *dev,
 	PM_DEVICE_DT_INST_DEFINE(n, lm77_pm_action);			\
 									\
 	DEVICE_DT_INST_DEFINE(n, lm77_init,				\
-			      PM_DEVICE_DT_INST_REF(n),			\
+			      PM_DEVICE_DT_INST_GET(n),			\
 			      &lm77_data_##n,				\
 			      &lm77_config_##n, POST_KERNEL,		\
 			      CONFIG_SENSOR_INIT_PRIORITY,		\

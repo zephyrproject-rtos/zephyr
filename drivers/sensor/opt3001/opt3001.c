@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT ti_opt3001
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
-#include <sys/__assert.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
 
 #include "opt3001.h"
 
@@ -97,7 +97,7 @@ static int opt3001_channel_get(const struct device *dev,
 	 * bits 11 to 0 are the mantissa bits
 	 *
 	 * lux is the integer obtained using the following formula:
-	 * (2^(exponent value)) * 0.01 * mantisa value
+	 * (2^(exponent value)) * 0.01 * mantissa value
 	 */
 	uval = (1 << (drv_data->sample >> OPT3001_SAMPLE_EXPONENT_SHIFT))
 		* (drv_data->sample & OPT3001_MANTISSA_MASK);

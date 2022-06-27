@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <sys/printk.h>
-#include <sys/__assert.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 #if !defined(CONFIG_CPU_CORTEX_M)
   #error test can only run on Cortex-M MCUs

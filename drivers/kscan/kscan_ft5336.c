@@ -8,11 +8,11 @@
 
 #define DT_DRV_COMPAT focaltech_ft5336
 
-#include <drivers/kscan.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/kscan.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ft5336, CONFIG_KSCAN_LOG_LEVEL);
 
 /* FT5336 used registers */
@@ -35,25 +35,13 @@ LOG_MODULE_REGISTER(ft5336, CONFIG_KSCAN_LOG_LEVEL);
 /* REG_Pn_XH: Position */
 #define POSITION_H_MSK		0x0FU
 
-/** GPIO DT information. */
-struct gpio_dt_info {
-	/** Port. */
-	const char *port;
-	/** Pin. */
-	gpio_pin_t pin;
-	/** Flags. */
-	gpio_dt_flags_t flags;
-};
-
 /** FT5336 configuration (DT). */
 struct ft5336_config {
-	/** I2C controller device name. */
-	char *i2c_name;
-	/** I2C chip address. */
-	uint8_t i2c_address;
+	/** I2C bus. */
+	struct i2c_dt_spec bus;
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
 	/** Interrupt GPIO information. */
-	struct gpio_dt_info int_gpio;
+	struct gpio_dt_spec int_gpio;
 #endif
 };
 
@@ -61,15 +49,11 @@ struct ft5336_config {
 struct ft5336_data {
 	/** Device pointer. */
 	const struct device *dev;
-	/** I2C controller device. */
-	const struct device *i2c;
 	/** KSCAN Callback. */
 	kscan_callback_t callback;
 	/** Work queue (for deferred read). */
 	struct k_work work;
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
-	/** Interrupt GPIO controller. */
-	const struct device *int_gpio;
 	/** Interrupt GPIO callback. */
 	struct gpio_callback int_gpio_cb;
 #else
@@ -91,8 +75,7 @@ static int ft5336_process(const struct device *dev)
 	bool pressed;
 
 	/* obtain number of touch points (NOTE: multi-touch ignored) */
-	r = i2c_reg_read_byte(data->i2c, config->i2c_address, REG_TD_STATUS,
-			      &points);
+	r = i2c_reg_read_byte_dt(&config->bus, REG_TD_STATUS, &points);
 	if (r < 0) {
 		return r;
 	}
@@ -105,8 +88,7 @@ static int ft5336_process(const struct device *dev)
 	/* obtain first point X, Y coordinates and event from:
 	 * REG_P1_XH, REG_P1_XL, REG_P1_YH, REG_P1_YL.
 	 */
-	r = i2c_burst_read(data->i2c, config->i2c_address, REG_P1_XH, coords,
-			   sizeof(coords));
+	r = i2c_burst_read_dt(&config->bus, REG_P1_XH, coords, sizeof(coords));
 	if (r < 0) {
 		return r;
 	}
@@ -167,7 +149,9 @@ static int ft5336_enable_callback(const struct device *dev)
 	struct ft5336_data *data = dev->data;
 
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
-	gpio_add_callback(data->int_gpio, &data->int_gpio_cb);
+	const struct ft5336_config *config = dev->config;
+
+	gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
 #else
 	k_timer_start(&data->timer, K_MSEC(CONFIG_KSCAN_FT5336_PERIOD),
 		      K_MSEC(CONFIG_KSCAN_FT5336_PERIOD));
@@ -181,7 +165,9 @@ static int ft5336_disable_callback(const struct device *dev)
 	struct ft5336_data *data = dev->data;
 
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
-	gpio_remove_callback(data->int_gpio, &data->int_gpio_cb);
+	const struct ft5336_config *config = dev->config;
+
+	gpio_remove_callback(config->int_gpio.port, &data->int_gpio_cb);
 #else
 	k_timer_stop(&data->timer);
 #endif
@@ -194,9 +180,8 @@ static int ft5336_init(const struct device *dev)
 	const struct ft5336_config *config = dev->config;
 	struct ft5336_data *data = dev->data;
 
-	data->i2c = device_get_binding(config->i2c_name);
-	if (!data->i2c) {
-		LOG_ERR("Could not find I2C controller");
+	if (!device_is_ready(config->bus.bus)) {
+		LOG_ERR("I2C controller device not ready");
 		return -ENODEV;
 	}
 
@@ -207,21 +192,19 @@ static int ft5336_init(const struct device *dev)
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
 	int r;
 
-	data->int_gpio = device_get_binding(config->int_gpio.port);
-	if (!data->int_gpio) {
-		LOG_ERR("Could not find interrupt GPIO controller");
+	if (!device_is_ready(config->int_gpio.port)) {
+		LOG_ERR("Interrupt GPIO controller device not ready");
 		return -ENODEV;
 	}
 
-	r = gpio_pin_configure(data->int_gpio, config->int_gpio.pin,
-			       config->int_gpio.flags | GPIO_INPUT);
+	r = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (r < 0) {
 		LOG_ERR("Could not configure interrupt GPIO pin");
 		return r;
 	}
 
-	r = gpio_pin_interrupt_configure(data->int_gpio, config->int_gpio.pin,
-					 GPIO_INT_EDGE_TO_ACTIVE);
+	r = gpio_pin_interrupt_configure_dt(&config->int_gpio,
+					    GPIO_INT_EDGE_TO_ACTIVE);
 	if (r < 0) {
 		LOG_ERR("Could not configure interrupt GPIO interrupt.");
 		return r;
@@ -242,30 +225,12 @@ static const struct kscan_driver_api ft5336_driver_api = {
 	.disable_callback = ft5336_disable_callback,
 };
 
-#define DT_INST_GPIO(index, gpio_pha)					       \
-	{								       \
-		DT_INST_GPIO_LABEL(index, gpio_pha),			       \
-		DT_INST_GPIO_PIN(index, gpio_pha),			       \
-		DT_INST_GPIO_FLAGS(index, gpio_pha),			       \
-	}
-
-#ifdef CONFIG_KSCAN_FT5336_INTERRUPT
-#define FT5336_DEFINE_CONFIG(index)					       \
-	static const struct ft5336_config ft5336_config_##index = {	       \
-		.i2c_name = DT_INST_BUS_LABEL(index),			       \
-		.i2c_address = DT_INST_REG_ADDR(index),			       \
-		.int_gpio = DT_INST_GPIO(index, int_gpios)		       \
-	}
-#else
-#define FT5336_DEFINE_CONFIG(index)					       \
-	static const struct ft5336_config ft5336_config_##index = {	       \
-		.i2c_name = DT_INST_BUS_LABEL(index),			       \
-		.i2c_address = DT_INST_REG_ADDR(index)			       \
-	}
-#endif
-
 #define FT5336_INIT(index)                                                     \
-	FT5336_DEFINE_CONFIG(index);					       \
+	static const struct ft5336_config ft5336_config_##index = {	       \
+		.bus = I2C_DT_SPEC_INST_GET(index),			       \
+		IF_ENABLED(CONFIG_KSCAN_FT5336_INTERRUPT,		       \
+		(.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),))	       \
+	};								       \
 	static struct ft5336_data ft5336_data_##index;			       \
 	DEVICE_DT_INST_DEFINE(index, ft5336_init, NULL,			       \
 			    &ft5336_data_##index, &ft5336_config_##index,      \

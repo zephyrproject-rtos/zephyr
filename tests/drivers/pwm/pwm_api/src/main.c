@@ -5,12 +5,11 @@
  */
 
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 const struct device *get_pwm_device(void);
-void test_pwm_usec(void);
 void test_pwm_cycle(void);
 void test_pwm_nsec(void);
 
@@ -22,7 +21,6 @@ void test_main(void)
 	k_object_access_grant(dev, k_current_get());
 
 	ztest_test_suite(pwm_basic_test,
-			 ztest_user_unit_test(test_pwm_usec),
 			 ztest_user_unit_test(test_pwm_nsec),
 			 ztest_user_unit_test(test_pwm_cycle));
 	ztest_run_test_suite(pwm_basic_test);

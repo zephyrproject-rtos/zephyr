@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(intc_gicv3_its, LOG_LEVEL_ERR);
 
-#include <kernel.h>
-#include <device.h>
-#include <drivers/interrupt_controller/gicv3_its.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/interrupt_controller/gicv3_its.h>
 
 #include "intc_gic_common_priv.h"
 #include "intc_gicv3_priv.h"
@@ -423,7 +423,7 @@ static int its_send_invall_cmd(struct gicv3_its_data *data, uint32_t icid)
 
 static int gicv3_its_send_int(const struct device *dev, uint32_t device_id, uint32_t event_id)
 {
-	struct gicv3_its_data *data = (struct gicv3_its_data *)dev->data;
+	struct gicv3_its_data *data = dev->data;
 
 	/* TOFIX check device_id & event_id bounds */
 
@@ -432,8 +432,8 @@ static int gicv3_its_send_int(const struct device *dev, uint32_t device_id, uint
 
 static void its_setup_cmd_queue(const struct device *dev)
 {
-	const struct gicv3_its_config *cfg = (const struct gicv3_its_config *)dev->config;
-	struct gicv3_its_data *data = (struct gicv3_its_data *)dev->data;
+	const struct gicv3_its_config *cfg = dev->config;
+	struct gicv3_its_data *data = dev->data;
 	uint64_t reg = 0;
 
 	/* Zero out cmd table */
@@ -458,7 +458,7 @@ static void its_setup_cmd_queue(const struct device *dev)
 
 static uintptr_t gicv3_rdist_get_rdbase(const struct device *dev, unsigned int cpuid)
 {
-	struct gicv3_its_data *data = (struct gicv3_its_data *)dev->data;
+	struct gicv3_its_data *data = dev->data;
 	uint64_t typer = sys_read64(data->base + GITS_TYPER);
 
 	if (GITS_TYPER_PTA_GET(typer)) {
@@ -471,7 +471,7 @@ static uintptr_t gicv3_rdist_get_rdbase(const struct device *dev, unsigned int c
 static int gicv3_its_map_intid(const struct device *dev, uint32_t device_id, uint32_t event_id,
 			       unsigned int intid)
 {
-	struct gicv3_its_data *data = (struct gicv3_its_data *)dev->data;
+	struct gicv3_its_data *data = dev->data;
 	int ret;
 
 	/* TOFIX check device_id, event_id & intid bounds */
@@ -480,7 +480,7 @@ static int gicv3_its_map_intid(const struct device *dev, uint32_t device_id, uin
 		return -EINVAL;
 	}
 
-	/* The CPU id directly maps as ICID for the currect CPU redistributor */
+	/* The CPU id directly maps as ICID for the current CPU redistributor */
 	ret = its_send_mapti_cmd(data, device_id, event_id, intid, arch_curr_cpu()->id);
 	if (ret) {
 		LOG_ERR("Failed to map eventid %d to intid %d for deviceid %x",
@@ -494,7 +494,7 @@ static int gicv3_its_map_intid(const struct device *dev, uint32_t device_id, uin
 static int gicv3_its_init_device_id(const struct device *dev, uint32_t device_id,
 				    unsigned int nites)
 {
-	struct gicv3_its_data *data = (struct gicv3_its_data *)dev->data;
+	struct gicv3_its_data *data = dev->data;
 	size_t entry_size, alloc_size;
 	int nr_ites;
 	void *itt;
@@ -561,6 +561,13 @@ static unsigned int gicv3_its_alloc_intid(const struct device *dev)
 	return atomic_inc(&nlpi_intid);
 }
 
+static uint32_t gicv3_its_get_msi_addr(const struct device *dev)
+{
+	const struct gicv3_its_config *cfg = (const struct gicv3_its_config *)dev->config;
+
+	return cfg->base_addr + GITS_TRANSLATER;
+}
+
 #define ITS_RDIST_MAP(n)									  \
 	{											  \
 		const struct device *dev = DEVICE_DT_INST_GET(n);				  \
@@ -610,8 +617,8 @@ void its_rdist_invall(void)
 
 static int gicv3_its_init(const struct device *dev)
 {
-	const struct gicv3_its_config *cfg = (const struct gicv3_its_config *)dev->config;
-	struct gicv3_its_data *data = (struct gicv3_its_data *)dev->data;
+	const struct gicv3_its_config *cfg = dev->config;
+	struct gicv3_its_data *data = dev->data;
 	uint32_t reg;
 	int ret;
 
@@ -651,6 +658,7 @@ struct its_driver_api gicv3_its_api = {
 	.setup_deviceid = gicv3_its_init_device_id,
 	.map_intid = gicv3_its_map_intid,
 	.send_int = gicv3_its_send_int,
+	.get_msi_addr = gicv3_its_get_msi_addr,
 };
 
 #define GICV3_ITS_INIT(n)						       \
@@ -667,7 +675,7 @@ struct its_driver_api gicv3_its_api = {
 			      &gicv3_its_data##n,			       \
 			      &gicv3_its_config##n,			       \
 			      POST_KERNEL,				       \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
+			      CONFIG_INTC_INIT_PRIORITY,		       \
 			      &gicv3_its_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GICV3_ITS_INIT)

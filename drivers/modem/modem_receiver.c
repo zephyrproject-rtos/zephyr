@@ -11,11 +11,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <init.h>
-#include <drivers/uart.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/pm/device.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(mdm_receiver, CONFIG_MODEM_LOG_LEVEL);
 
@@ -199,7 +200,7 @@ int mdm_receiver_sleep(struct mdm_receiver_context *ctx)
 {
 	uart_irq_rx_disable(ctx->uart_dev);
 #ifdef CONFIG_PM_DEVICE
-	pm_device_state_set(ctx->uart_dev, PM_DEVICE_STATE_SUSPENDED);
+	pm_device_action_run(ctx->uart_dev, PM_DEVICE_ACTION_SUSPEND);
 #endif
 	return 0;
 }
@@ -207,7 +208,7 @@ int mdm_receiver_sleep(struct mdm_receiver_context *ctx)
 int mdm_receiver_wake(struct mdm_receiver_context *ctx)
 {
 #ifdef CONFIG_PM_DEVICE
-	pm_device_state_set(ctx->uart_dev, PM_DEVICE_STATE_ACTIVE);
+	pm_device_action_run(ctx->uart_dev, PM_DEVICE_ACTION_SUSPEND);
 #endif
 	uart_irq_rx_enable(ctx->uart_dev);
 

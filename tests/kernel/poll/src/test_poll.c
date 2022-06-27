@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 /* global values and data structures */
 struct fifo_msg {
@@ -18,7 +18,7 @@ struct fifo_msg {
 #define MSGQ_MSG_SIZE 4
 #define MSGQ_MAX_MSGS 16
 #define MSGQ_MSG_VALUE {'a', 'b', 'c', 'd'}
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 /* verify k_poll() without waiting */
 static struct k_sem no_wait_sem;
@@ -714,7 +714,7 @@ static void threadstate(void *p1, void *p2, void *p3)
  * - manipulating thread state to consider case where no polling thread
  * is available during event signalling.
  * - defined a signal poll as waitable events in poll and
- * verify the result after siganl raised
+ * verify the result after signal raised
  *
  * @ingroup kernel_poll_tests
  *

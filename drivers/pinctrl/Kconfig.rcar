@@ -1,0 +1,9 @@
+# Copyright (c) 2021 IoT.bzh
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_RCAR_PFC
+	bool "Pin controller driver for Renesas RCar SoC"
+	depends on SOC_FAMILY_RCAR
+	default y
+	help
+	  Enable pin controller driver for Renesas RCar SoC

@@ -9,7 +9,7 @@
 #ifndef __PLATFORM_LIB_SHIM_H__
 #define __PLATFORM_LIB_SHIM_H__
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <memory.h>
 
 #ifndef ASSEMBLY
@@ -17,8 +17,8 @@
 #endif
 
 #if !defined(__ASSEMBLER__) && !defined(LINKER)
-#include <sys/sys_io.h>
-#include <arch/common/sys_io.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/arch/common/sys_io.h>
 #endif
 
 #ifndef BIT

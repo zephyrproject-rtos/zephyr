@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <audio/dmic.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/audio/dmic.h>
 
 #define LOG_LEVEL LOG_LEVEL_INF
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dmic_sample);
 
 #define AUDIO_SAMPLE_FREQ	48000

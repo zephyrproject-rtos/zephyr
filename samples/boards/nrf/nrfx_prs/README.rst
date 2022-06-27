@@ -6,7 +6,7 @@ nrfx peripheral resource sharing example
 Overview
 ********
 
-This sample shows how to use in Zephyr nRF perpipherals that share the same ID
+This sample shows how to use in Zephyr nRF peripherals that share the same ID
 and base address. Such peripherals cannot be used simultaneously because they
 share certain hardware resources, but it is possible to switch between them and
 use one or the other alternately. Because of the current driver model in Zephyr

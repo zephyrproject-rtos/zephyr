@@ -1,9 +1,0 @@
-/*
- * Copyright (c) 2021 Vestas Wind Systems A/S
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
-#include <nxp/nxp_ke18f256vlx16.dtsi>
-
-#include <nxp/kinetis/MKE18F256VLH16-pinctrl.dtsi>

@@ -7,7 +7,8 @@
 /* Periodic advertisements synchronization status. */
 enum sync_status {
 	SYNC_STAT_ALLOWED,
-	SYNC_STAT_READY_OR_CONT_SCAN,
+	SYNC_STAT_READY,
+	SYNC_STAT_CONT_SCAN,
 	SYNC_STAT_TERM
 };
 
@@ -18,13 +19,13 @@ struct lll_sync {
 	uint8_t crc_init[3];
 
 	uint8_t phy:3;
-	uint8_t is_rx_enabled:1;
 	/* Bitmask providing not allowed types of CTE. */
 	uint8_t cte_type:5;
 	/* The member is required for filtering by CTE type. If filtering policy is disabled then
 	 * synchronization is terminated for periodic advertisements with wrong CTE type.
 	 */
 	uint8_t filter_policy:1;
+	uint8_t is_rx_enabled:1;
 	uint8_t is_aux_sched:1;
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
@@ -51,7 +52,7 @@ struct lll_sync {
 	uint32_t window_size_event_us;
 
 	/* used to store lll_aux when chain is being scanned */
-	struct lll_scan_aux *lll_aux;
+	struct lll_scan_aux *volatile lll_aux;
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	struct lll_df_sync df_cfg;

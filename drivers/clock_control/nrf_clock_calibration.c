@@ -3,15 +3,18 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <drivers/sensor.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/clock_control.h>
 #include "nrf_clock_calibration.h"
-#include <drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <nrfx_clock.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include <stdlib.h>
 
 LOG_MODULE_DECLARE(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
+
+/** Temperature sensor DT node */
+#define TEMP_NODE DT_INST(0, nordic_nrf_temp)
 
 /**
  * Terms:
@@ -104,11 +107,6 @@ static void cal_lf_callback(struct onoff_manager *mgr,
 /* Start actual HW calibration assuming that HFCLK XTAL is on. */
 static void start_hw_cal(void)
 {
-	/* Workaround for Errata 192 */
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NRF52X)) {
-		*(volatile uint32_t *)0x40000C34 = 0x00000002;
-	}
-
 	nrfx_clock_calibration_start();
 	calib_skip_cnt = CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP;
 }
@@ -223,17 +221,6 @@ static void measure_temperature(struct k_work *work)
 			started ? "started" : "skipped", diff);
 }
 
-#define TEMP_NODE DT_INST(0, nordic_nrf_temp)
-
-#if DT_NODE_HAS_STATUS(TEMP_NODE, okay)
-static inline const struct device *temp_device(void)
-{
-	return device_get_binding(DT_LABEL(TEMP_NODE));
-}
-#else
-#define temp_device() NULL
-#endif
-
 void z_nrf_clock_calibration_init(struct onoff_manager *onoff_mgrs)
 {
 	mgrs = onoff_mgrs;
@@ -244,7 +231,11 @@ void z_nrf_clock_calibration_init(struct onoff_manager *onoff_mgrs)
 #if CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP
 static int temp_sensor_init(const struct device *arg)
 {
-	temp_sensor = temp_device();
+	temp_sensor = DEVICE_DT_GET_OR_NULL(TEMP_NODE);
+	if ((temp_sensor != NULL) && !device_is_ready(temp_sensor)) {
+		LOG_ERR("Temperature sensor not ready");
+		return -ENODEV;
+	}
 
 	return 0;
 }

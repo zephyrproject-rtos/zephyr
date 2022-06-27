@@ -16,7 +16,7 @@ via a queue from the device ISR (really just a timer interrupt).
 
 Each message has a random (and non-trivial) amount of processing that
 must happen in the worker thread.  This implements a "bursty load"
-environment where occassional spikes in load require preemption of
+environment where occasional spikes in load require preemption of
 running threads and delay scheduling of lower priority threads.
 Messages are accompanied by a timestamp that allows per-message
 latencies to be computed at several points:
@@ -36,7 +36,7 @@ Aspects to note in the results:
   latencies and lower processing delays, as expected.
 
 * Cooperatively scheduled threads have significantly better processing
-  delay behavior than preemtible ones, as they can only be preempted
+  delay behavior than preemptible ones, as they can only be preempted
   by the MetaIRQ thread.
 
 * Because of queueing and the bursty load, all worker threads of any

@@ -11,9 +11,9 @@
 
 #include <stdlib.h>
 
-#include <net/net_ip.h>
-#include <net/net_stats.h>
-#include <net/net_if.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_stats.h>
+#include <zephyr/net/net_if.h>
 
 extern struct net_stats net_stats;
 

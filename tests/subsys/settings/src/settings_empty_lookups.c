@@ -7,7 +7,7 @@
 
 #include "settings_test.h"
 
-void config_empty_lookups(void)
+void test_config_empty_lookups(void)
 {
 	int rc;
 	char name[80];

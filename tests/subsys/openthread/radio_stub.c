@@ -11,7 +11,7 @@
 #define DISABLE_SYSCALL_TRACING
 
 /* needed here so the static device_get_binding does not get renamed */
-#include <device.h>
+#include <zephyr/device.h>
 
 /* OpenThread not enabled here */
 #define CONFIG_OPENTHREAD_L2_LOG_LEVEL LOG_LEVEL_DBG

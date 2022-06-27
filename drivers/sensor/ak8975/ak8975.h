@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_AK8975_AK8975_H_
 #define ZEPHYR_DRIVERS_SENSOR_AK8975_AK8975_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 #define AK8975_REG_CHIP_ID		0x00
 #define AK8975_CHIP_ID			0x48

@@ -29,6 +29,7 @@ enum {
 /* bt_dev flags: the flags defined here represent BT controller state */
 enum {
 	BT_DEV_ENABLE,
+	BT_DEV_DISABLE,
 	BT_DEV_READY,
 	BT_DEV_PRESET_ID,
 	BT_DEV_HAS_PUB_KEY,
@@ -198,9 +199,26 @@ struct bt_le_per_adv_sync {
 	uint8_t phy;
 
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
-	/** Accepted CTE type */
-	uint8_t cte_type;
+	/**
+	 * @brief Bitfield with allowed CTE types.
+	 *
+	 *  Allowed values are defined by @ref bt_df_cte_type, except BT_DF_CTE_TYPE_NONE.
+	 */
+	uint8_t cte_types;
 #endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
+
+#if CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0
+	/** Reassembly buffer for advertising reports */
+	struct net_buf_simple reassembly;
+
+	/** Storage for the reassembly buffer */
+	uint8_t reassembly_data[CONFIG_BT_PER_ADV_SYNC_BUF_SIZE];
+#endif /* CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0 */
+
+	/** True if the following periodic adv reports up to and
+	 * including the next complete one should be dropped
+	 */
+	bool report_truncated;
 
 	/** Flags */
 	ATOMIC_DEFINE(flags, BT_PER_ADV_SYNC_NUM_FLAGS);
@@ -323,9 +341,9 @@ struct bt_dev {
 	/* Last sent HCI command */
 	struct net_buf		*sent_cmd;
 
-#if !defined(CONFIG_BT_RECV_IS_RX_THREAD)
+#if !defined(CONFIG_BT_RECV_BLOCKING)
 	/* Queue for incoming HCI events & ACL data */
-	struct k_fifo		rx_queue;
+	sys_slist_t rx_queue;
 #endif
 
 	/* Queue for outgoing HCI commands */
@@ -346,12 +364,16 @@ struct bt_dev {
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 	char			name[CONFIG_BT_DEVICE_NAME_MAX + 1];
 #endif
+#if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
+	/* Appearance Value */
+	uint16_t		appearance;
+#endif
 };
 
 extern struct bt_dev bt_dev;
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 extern const struct bt_conn_auth_cb *bt_auth;
-
+extern sys_slist_t bt_auth_info_cbs;
 enum bt_security_err bt_security_err_get(uint8_t hci_err);
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
@@ -450,3 +472,6 @@ void bt_hci_read_remote_features_complete(struct net_buf *buf);
 void bt_hci_read_remote_ext_features_complete(struct net_buf *buf);
 void bt_hci_role_change(struct net_buf *buf);
 void bt_hci_synchronous_conn_complete(struct net_buf *buf);
+
+void bt_hci_le_df_connection_iq_report(struct net_buf *buf);
+void bt_hci_le_df_cte_req_failed(struct net_buf *buf);

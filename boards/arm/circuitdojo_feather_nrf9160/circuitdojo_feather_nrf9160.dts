@@ -23,6 +23,4 @@
 &uart0 {
 	status = "okay";
 	current-speed = <1000000>;
-	tx-pin = <6>;
-	rx-pin = <5>;
 };

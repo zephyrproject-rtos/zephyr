@@ -6,7 +6,7 @@
 
 #include "test_sched.h"
 #include <ztest.h>
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 #include <kernel_internal.h>
 #include <ztest_error_hook.h>
 

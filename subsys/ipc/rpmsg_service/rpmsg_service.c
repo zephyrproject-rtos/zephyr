@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ipc/rpmsg_service.h>
+#include <zephyr/ipc/rpmsg_service.h>
 
 #include "rpmsg_backend.h"
 
-#include <zephyr.h>
-#include <device.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/logging/log.h>
 
 #include <openamp/open_amp.h>
 

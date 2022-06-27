@@ -6,13 +6,15 @@
 
 #define DT_DRV_COMPAT sifive_pwm0
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(pwm_sifive, CONFIG_PWM_LOG_LEVEL);
 
-#include <sys/sys_io.h>
-#include <device.h>
-#include <drivers/pwm.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/pwm.h>
+#include <soc.h>
 
 /* Macros */
 
@@ -52,6 +54,7 @@ struct pwm_sifive_cfg {
 	uint32_t base;
 	uint32_t f_sys;
 	uint32_t cmpwidth;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 /* Helper Functions */
@@ -71,6 +74,14 @@ static inline void sys_set_mask(mem_addr_t addr, uint32_t mask, uint32_t value)
 static int pwm_sifive_init(const struct device *dev)
 {
 	const struct pwm_sifive_cfg *config = dev->config;
+#ifdef CONFIG_PINCTRL
+	int ret;
+
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+#endif
 
 	/* When pwms == pwmcmp0, reset the counter */
 	sys_set_bit(PWM_REG(config, REG_PWMCFG), SF_PWMZEROCMP);
@@ -95,40 +106,27 @@ static int pwm_sifive_init(const struct device *dev)
 	return 0;
 }
 
-static int pwm_sifive_pin_set(const struct device *dev,
-			      uint32_t pwm,
-			      uint32_t period_cycles,
-			      uint32_t pulse_cycles,
-			      pwm_flags_t flags)
+static int pwm_sifive_set_cycles(const struct device *dev, uint32_t channel,
+				 uint32_t period_cycles, uint32_t pulse_cycles,
+				 pwm_flags_t flags)
 {
-	const struct pwm_sifive_cfg *config = NULL;
+	const struct pwm_sifive_cfg *config = dev->config;
 	uint32_t count_max = 0U;
 	uint32_t max_cmp_val = 0U;
 	uint32_t pwmscale = 0U;
-
-	if (dev == NULL) {
-		LOG_ERR("The device instance pointer was NULL\n");
-		return -EFAULT;
-	}
 
 	if (flags) {
 		/* PWM polarity not supported (yet?) */
 		return -ENOTSUP;
 	}
 
-	config = dev->config;
-	if (config == NULL) {
-		LOG_ERR("The device configuration is NULL\n");
-		return -EFAULT;
-	}
-
-	if (pwm >= SF_NUMCHANNELS) {
-		LOG_ERR("The requested PWM channel %d is invalid\n", pwm);
+	if (channel >= SF_NUMCHANNELS) {
+		LOG_ERR("The requested PWM channel %d is invalid\n", channel);
 		return -EINVAL;
 	}
 
 	/* Channel 0 sets the period, we can't output PWM with it */
-	if ((pwm == 0U)) {
+	if (channel == 0U) {
 		LOG_ERR("PWM channel 0 cannot be configured\n");
 		return -ENOTSUP;
 	}
@@ -160,12 +158,6 @@ static int pwm_sifive_pin_set(const struct device *dev,
 		return -EIO;
 	}
 
-	if (pulse_cycles > period_cycles) {
-		LOG_ERR("Requested pulse %d is longer than period %d\n",
-			pulse_cycles, period_cycles);
-		return -EIO;
-	}
-
 	/* Set the pwmscale field */
 	sys_set_mask(PWM_REG(config, REG_PWMCFG),
 		     SF_PWMSCALEMASK,
@@ -176,21 +168,20 @@ static int pwm_sifive_pin_set(const struct device *dev,
 
 	/* Set the duty cycle by setting pwmcmpX */
 	sys_write32((pulse_cycles >> pwmscale),
-		    PWM_REG(config, REG_PWMCMP(pwm)));
+		    PWM_REG(config, REG_PWMCMP(channel)));
 
 	LOG_DBG("channel: %d, pwmscale: %d, pwmcmp0: %d, pwmcmp%d: %d",
-		pwm,
+		channel,
 		pwmscale,
 		(period_cycles >> pwmscale),
-		pwm,
+		channel,
 		(pulse_cycles >> pwmscale));
 
 	return 0;
 }
 
 static int pwm_sifive_get_cycles_per_sec(const struct device *dev,
-					 uint32_t pwm,
-					 uint64_t *cycles)
+					 uint32_t channel, uint64_t *cycles)
 {
 	const struct pwm_sifive_cfg *config;
 
@@ -206,7 +197,7 @@ static int pwm_sifive_get_cycles_per_sec(const struct device *dev,
 	}
 
 	/* Fail if we don't have that channel */
-	if (pwm >= SF_NUMCHANNELS) {
+	if (channel >= SF_NUMCHANNELS) {
 		return -EINVAL;
 	}
 
@@ -218,16 +209,18 @@ static int pwm_sifive_get_cycles_per_sec(const struct device *dev,
 /* Device Instantiation */
 
 static const struct pwm_driver_api pwm_sifive_api = {
-	.pin_set = pwm_sifive_pin_set,
+	.set_cycles = pwm_sifive_set_cycles,
 	.get_cycles_per_sec = pwm_sifive_get_cycles_per_sec,
 };
 
 #define PWM_SIFIVE_INIT(n)	\
+	PINCTRL_DT_INST_DEFINE(n);	\
 	static struct pwm_sifive_data pwm_sifive_data_##n;	\
 	static const struct pwm_sifive_cfg pwm_sifive_cfg_##n = {	\
 			.base = DT_INST_REG_ADDR(n),	\
-			.f_sys = DT_INST_PROP(n, clock_frequency),  \
+			.f_sys = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY,  \
 			.cmpwidth = DT_INST_PROP(n, sifive_compare_width), \
+			.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),	\
 		};	\
 	DEVICE_DT_INST_DEFINE(n,	\
 			    pwm_sifive_init,	\

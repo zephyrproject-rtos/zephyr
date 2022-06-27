@@ -12,25 +12,25 @@
  * hardware for the nxp_lpc54114 platform.
  */
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <drivers/uart.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 #include <aarch32/cortex_m/exc.h>
 #include <fsl_power.h>
 #include <fsl_clock.h>
 #include <fsl_common.h>
 #include <fsl_device_registers.h>
+#ifdef CONFIG_GPIO_MCUX_LPC
 #include <fsl_pint.h>
+#endif
 
 /**
  *
  * @brief Initialize the system clock
- *
- * @return N/A
  *
  */
 #define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
@@ -142,7 +142,9 @@ static const char core_m0[] = {
  * @brief Slave Init
  *
  * This routine boots the secondary core
- * @return N/A
+ *
+ * @retval 0 on success.
+ *
  */
 /* This function is also called at deep sleep resume. */
 int _slave_init(const struct device *arg)
@@ -163,7 +165,7 @@ int _slave_init(const struct device *arg)
 	 * and then detects its identity (Cortex-M0, slave) and checks
 	 * registers CPBOOT and CPSTACK and use them to continue the
 	 * boot process.
-	 * Make sure the startup code for current core (Cortex-M4) is
+	 * Make sure the startup code for the current core (Cortex-M4) is
 	 * appropriate and shareable with the Cortex-M0 core!
 	 */
 	SYSCON->CPBOOT = SYSCON_CPBOOT_BOOTADDR(

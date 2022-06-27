@@ -5,13 +5,13 @@
  */
 
 #define LOG_LEVEL LOG_LEVEL_INF
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_transport);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <usb/usb_device.h>
-#include <usb/class/usb_hid.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/usb/class/usb_hid.h>
 
 #include "usb_transport.h"
 

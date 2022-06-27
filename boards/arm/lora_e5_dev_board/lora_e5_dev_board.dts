@@ -75,21 +75,40 @@
 		regulator-boot-on;
 		status = "okay";
 	};
+
+	power-states {
+		stop0: state0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <1>;
+			min-residency-us = <100>;
+		};
+		stop1: state1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <2>;
+			min-residency-us = <500>;
+		};
+		stop2: state2 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <3>;
+			min-residency-us = <900>;
+		};
+	};
+};
+
+&cpu0 {
+	cpu-power-states = <&stop0 &stop1 &stop2>;
+};
+
+&lptim1 {
+	status = "okay";
 };
 
 &clk_msi {
 	status = "okay";
 	msi-range = <11>;
-};
-
-&pll {
-	clocks = <&clk_msi>;
-	div-m = <3>;
-	mul-n = <6>;
-	div-r = <2>;
-	div-q = <2>;
-	div-p = <2>;
-	status = "okay";
 };
 
 &rcc {
@@ -103,18 +122,21 @@
 
 &lpuart1 {
 	pinctrl-0 = <&lpuart1_tx_pc1 &lpuart1_rx_pc0>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 	/* PB4 can select RS-485 TX, when J17 (A4) is closed */
@@ -122,16 +144,18 @@
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb15 &i2c2_sda_pa15>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
 	/* LM75ADP temperature sensor on addr 0x48 */
 };
 
-/* Attention!: the spi-sck pin is in confict with the boot_button on pb13 */
+/* Attention!: the spi-sck pin is in conflict with the boot_button on pb13 */
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pb9 &spi2_sck_pb13
 		     &spi2_miso_pb14 &spi2_mosi_pa10>;
+	pinctrl-names = "default";
 	status = "okay";
 
 	/* unpopulated footprint for spi flash */
@@ -147,6 +171,7 @@
 
 &adc1 {
 	pinctrl-0 = <&adc_in2_pb3>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -167,7 +192,7 @@ grove_i2c: &i2c2 {};
 		/* 16KB (8x2kB pages) of storage at the end of the flash */
 		storage_partition: partition@3c000 {
 			label = "storage";
-			reg = <0x0003c000 0x00004000>;
+			reg = <0x0003c000 DT_SIZE_K(16)>;
 		};
 	};
 };

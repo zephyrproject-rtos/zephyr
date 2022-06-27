@@ -22,14 +22,14 @@
  * associated IRQ numbers to work with this driver.
  */
 
-#include <kernel.h>
-#include <drivers/clock_control.h>
-#include <init.h>
-#include <irq.h>
-#include <irq_nextlevel.h>
-#include <sw_isr_table.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/init.h>
+#include <zephyr/irq.h>
+#include <zephyr/irq_nextlevel.h>
+#include <zephyr/sw_isr_table.h>
 #include <soc.h>
-#include <dt-bindings/interrupt-controller/openisa-intmux.h>
+#include <zephyr/dt-bindings/interrupt-controller/openisa-intmux.h>
 
 /*
  * CHn_VEC registers are offset by a value that is convenient if
@@ -45,10 +45,7 @@ struct rv32m1_intmux_config {
 	struct _isr_table_entry *isr_base;
 };
 
-#define DEV_CFG(dev) \
-	((struct rv32m1_intmux_config *)(dev->config))
-
-#define DEV_REGS(dev) (DEV_CFG(dev)->regs)
+#define DEV_REGS(dev) (((const struct rv32m1_intmux_config *)(dev->config))->regs)
 
 /*
  * <irq_nextlevel.h> API
@@ -110,10 +107,11 @@ static int rv32m1_intmux_get_line_state(const struct device *dev,
 static void rv32m1_intmux_isr(const void *arg)
 {
 	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct rv32m1_intmux_config *config = dev->config;
 	INTMUX_Type *regs = DEV_REGS(dev);
 	uint32_t channel = POINTER_TO_UINT(arg);
 	uint32_t line = (regs->CHANNEL[channel].CHn_VEC >> 2);
-	struct _isr_table_entry *isr_base = DEV_CFG(dev)->isr_base;
+	struct _isr_table_entry *isr_base = config->isr_base;
 	struct _isr_table_entry *entry;
 
 	/*
@@ -152,7 +150,7 @@ static const struct rv32m1_intmux_config rv32m1_intmux_cfg = {
 
 static int rv32m1_intmux_init(const struct device *dev)
 {
-	const struct rv32m1_intmux_config *config = DEV_CFG(dev);
+	const struct rv32m1_intmux_config *config = dev->config;
 	INTMUX_Type *regs = DEV_REGS(dev);
 	size_t i;
 

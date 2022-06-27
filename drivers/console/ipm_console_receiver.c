@@ -8,13 +8,13 @@
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <sys/ring_buffer.h>
-#include <sys/printk.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/printk.h>
 #include <stdio.h>
-#include <drivers/ipm.h>
-#include <drivers/console/ipm_console.h>
-#include <sys/__assert.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/drivers/console/ipm_console.h>
+#include <zephyr/sys/__assert.h>
 
 static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 {
@@ -73,7 +73,7 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 		 * clearing the channel_disabled flag.
 		 */
 		if (driver_data->channel_disabled &&
-		    ring_buf_space_get(&driver_data->rb)) {
+		    ring_buf_item_space_get(&driver_data->rb)) {
 			key = irq_lock();
 			ipm_set_enabled(driver_data->ipm_device, 1);
 			driver_data->channel_disabled = 0;
@@ -104,7 +104,7 @@ static void ipm_console_receive_callback(const struct device *ipm_dev,
 	 * call with the wait flag enabled.  It blocks until the receiver side
 	 * re-enables the channel and consumes the data.
 	 */
-	if (ring_buf_space_get(&driver_data->rb) == 0) {
+	if (ring_buf_item_space_get(&driver_data->rb) == 0) {
 		ipm_set_enabled(ipm_dev, 0);
 		driver_data->channel_disabled = 1;
 	}
@@ -135,8 +135,8 @@ int ipm_console_receiver_init(const struct device *d)
 	driver_data->ipm_device = ipm;
 	driver_data->channel_disabled = 0;
 	k_sem_init(&driver_data->sem, 0, K_SEM_MAX_LIMIT);
-	ring_buf_init(&driver_data->rb, config_info->rb_size32,
-		      config_info->ring_buf_data);
+	ring_buf_item_init(&driver_data->rb, config_info->rb_size32,
+			   config_info->ring_buf_data);
 
 	ipm_register_callback(ipm, ipm_console_receive_callback, driver_data);
 

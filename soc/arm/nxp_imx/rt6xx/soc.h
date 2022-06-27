@@ -16,11 +16,11 @@
 #define _SOC__H_
 
 #ifndef _ASMLANGUAGE
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <fsl_common.h>
 
 /* Add include for DTS generated information */
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 #endif /* !_ASMLANGUAGE */
 
@@ -79,12 +79,13 @@
 extern "C" {
 #endif
 
-#if CONFIG_DISK_DRIVER_SDMMC &&					\
+#if CONFIG_IMX_USDHC &&					\
 	(DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) ||	\
 	 DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc2), okay))
 
 void imxrt_usdhc_pinmux(uint16_t nusdhc,
 	bool init, uint32_t speed, uint32_t strength);
+void imxrt_usdhc_dat3_pull(bool pullup);
 
 #endif
 

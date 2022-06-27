@@ -24,7 +24,7 @@ config TFTPC_REQUEST_TIMEOUT
 	default 5000
 	help
 	  Maximum amount of time (in msec) that the TFTP Client will wait for
-	  data from the TFTP Server. Once this time has elasped, the TFTP Client
+	  data from the TFTP Server. Once this time has elapsed, the TFTP Client
 	  will assume that the Server failed and close the connection.
 
 config TFTPC_REQUEST_RETRANSMITS

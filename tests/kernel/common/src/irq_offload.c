@@ -12,10 +12,10 @@
  * context, on the IRQ stack.
  *
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <kernel_structs.h>
-#include <irq_offload.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/irq_offload.h>
 
 volatile uint32_t sentinel;
 #define SENTINEL_VALUE 0xDEADBEEF
@@ -121,13 +121,27 @@ __no_optimization void test_nop(void)
 	/* do 2 nop instructions more to cost cycles */
 	arch_nop();
 	arch_nop();
-#elif defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
-	defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	/* do 4 nop instructions more to cost cycles */
-	arch_nop();
-	arch_nop();
-	arch_nop();
-	arch_nop();
+#if defined(CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER)
+	/* When the case machine timer clock uses the divided system clock,
+	 * k_cycle_get_32() can't measure accurately how many cycles elapsed.
+	 *
+	 * For example, use the value as timer clock obtained by dividing
+	 * the system clock by 4.
+	 * In this case, measuring a duration with k_cycle_get32() has up to 3
+	 * (4-1) cycles systematic error.
+	 *
+	 * To run this test, we need to insert an appropriate of nops
+	 * with consideration for the errors.
+	 * 'nop' can not repeat with for loop.
+	 * Must insert as separated statement.
+	 * But we don't have a convenient function such as
+	 * BOOST_PP_REPEAT in C++.
+	 *
+	 * At this time, Implementing a generic test is a bit difficult.
+	 * Skipping this test in the case.
+	 */
+	ztest_test_skip();
+#endif
 #elif defined(CONFIG_ARC)
 	/* do 7 nop instructions more to cost cycles */
 	arch_nop();
@@ -148,10 +162,10 @@ __no_optimization void test_nop(void)
 	arch_nop();
 	arch_nop();
 	arch_nop();
-
-#elif defined(CONFIG_ARMV8_A) || defined(CONFIG_BOARD_EHL_CRB)	\
-	|| (CONFIG_BOARD_UP_SQUARED) || (CONFIG_SOC_FAMILY_INTEL_ADSP)
-	/* the ARMv8-A ARM states the following:
+#elif defined(CONFIG_ARM) || defined(CONFIG_ARM64)			\
+	|| defined(CONFIG_BOARD_EHL_CRB) || (CONFIG_BOARD_UP_SQUARED)	\
+	|| (CONFIG_SOC_FAMILY_INTEL_ADSP)
+	/* ARM states the following:
 	 * No Operation does nothing, other than advance the value of
 	 * the program counter by 4. This instruction can be used for
 	 * instruction alignment purposes.
@@ -177,4 +191,47 @@ __no_optimization void test_nop(void)
 	/* An arch_nop() call should spend actual cpu cycles */
 	zassert_true(diff > 0,
 			"arch_nop() takes %d cpu cycles", diff);
+}
+
+static struct k_timer nestoff_timer;
+static bool timer_executed, nested_executed;
+
+void nestoff_offload(const void *parameter)
+{
+	nested_executed = true;
+}
+
+
+static void nestoff_timer_fn(struct k_timer *timer)
+{
+	zassert_false(nested_executed, "nested irq_offload ran too soon");
+	irq_offload(nestoff_offload, NULL);
+	zassert_true(nested_executed, "nested irq_offload did not run");
+
+	/* Set this last, to be sure we return to this context and not
+	 * the enclosing interrupt
+	 */
+	timer_executed = true;
+}
+
+
+/* Invoke irq_offload() from an interrupt and verify that the
+ * resulting nested interrupt doesn't explode
+ */
+void test_nested_irq_offload(void)
+{
+	if (!IS_ENABLED(CONFIG_IRQ_OFFLOAD_NESTED)) {
+		ztest_test_skip();
+	}
+
+	k_timer_init(&nestoff_timer, nestoff_timer_fn, NULL);
+
+	zassert_false(timer_executed, "timer ran too soon");
+	zassert_false(nested_executed, "nested irq_offload ran too soon");
+
+	k_timer_start(&nestoff_timer, K_TICKS(1), K_FOREVER);
+	k_timer_status_sync(&nestoff_timer);
+
+	zassert_true(timer_executed, "timer did not run");
+	zassert_true(nested_executed, "nested irq_offload did not run");
 }

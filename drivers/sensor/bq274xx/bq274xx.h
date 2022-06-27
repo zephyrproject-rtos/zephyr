@@ -7,8 +7,8 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_BATTERY_BQ274XX_H_
 #define ZEPHYR_DRIVERS_SENSOR_BATTERY_BQ274XX_H_
 
-#include <logging/log.h>
-#include <drivers/gpio.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/gpio.h>
 LOG_MODULE_REGISTER(bq274xx, CONFIG_SENSOR_LOG_LEVEL);
 
 /*** General Constant ***/

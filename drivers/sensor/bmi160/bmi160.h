@@ -8,11 +8,13 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_
 #define ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_
 
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
-#include <drivers/sensor.h>
-#include <drivers/spi.h>
-#include <sys/util.h>
+#define DT_DRV_COMPAT bosch_bmi160
+
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/util.h>
 
 /* registers */
 #define BMI160_REG_CHIPID		0x00
@@ -471,7 +473,7 @@ union bmi160_sample {
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
 		uint16_t acc[BMI160_AXES];
 #endif
-	} __packed;
+	};
 };
 
 struct bmi160_scale {
@@ -508,16 +510,6 @@ struct bmi160_data {
 #endif
 #endif /* CONFIG_BMI160_TRIGGER */
 };
-
-static inline struct bmi160_data *to_data(const struct device *dev)
-{
-	return dev->data;
-}
-
-static inline const struct bmi160_cfg *to_config(const struct device *dev)
-{
-	return dev->config;
-}
 
 int bmi160_read(const struct device *dev, uint8_t reg_addr,
 		void *data, uint8_t len);

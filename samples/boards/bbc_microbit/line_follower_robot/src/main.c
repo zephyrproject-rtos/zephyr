@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/device.h>
 
 #define I2C_SLV_ADDR 0x10
 #define I2C0_LABEL DT_LABEL(DT_NODELABEL(i2c0))

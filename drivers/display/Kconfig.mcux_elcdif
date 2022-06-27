@@ -33,13 +33,4 @@ config MCUX_ELCDIF_POOL_BLOCK_ALIGN
 	help
 	  Byte alignment in the frame buffer memory pool.
 
-choice MCUX_ELCDIF_PANEL
-	prompt "Panel selection"
-	default MCUX_ELCDIF_PANEL_RK043FN02H
-
-config MCUX_ELCDIF_PANEL_RK043FN02H
-	bool "Rocktech rk043fn02h-ct"
-
-endchoice
-
 endif # DISPLAY_MCUX_ELCDIF

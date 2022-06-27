@@ -6,15 +6,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 #include <fsl_common.h>
 #include <fsl_clock.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 #define PLLFLLSEL_MCGFLLCLK	(0)
 #define PLLFLLSEL_MCGPLLCLK	(1)
@@ -80,8 +80,6 @@ static const sim_clock_config_t simConfig = {
  * depends on the state of GPIO5 during transceiver reset. The frequency
  * will be 4 MHz if the GPIO5 pin is low, otherwise it will be 32.78689 kHz.
  *
- * @return N/A
- *
  */
 static void set_modem_clock(void)
 {
@@ -117,8 +115,6 @@ static void set_modem_clock(void)
  * PLL Bypassed External (PBE) modes to get to the desired
  * PLL Engaged External (PEE) mode and generate the maximum 48 MHz system
  * clock.
- *
- * @return N/A
  *
  */
 static ALWAYS_INLINE void clock_init(void)

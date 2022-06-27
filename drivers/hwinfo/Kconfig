@@ -15,7 +15,7 @@ module-str = HWINFO
 source "subsys/logging/Kconfig.template.log_config"
 
 config HWINFO_SHELL
-	bool "Enable HWINFO Shell"
+	bool "HWINFO Shell"
 	default y
 	depends on SHELL
 	help
@@ -31,7 +31,8 @@ config HWINFO_STM32
 config HWINFO_NRF
 	bool "NRF device ID"
 	default y
-	depends on SOC_FAMILY_NRF && !TRUSTED_EXECUTION_NONSECURE
+	depends on SOC_FAMILY_NRF
+	depends on NRF_SOC_SECURE_SUPPORTED
 	help
 	  Enable Nordic NRF hwinfo driver.
 
@@ -56,6 +57,13 @@ config HWINFO_MCUX_SRC
 	help
 	  Enable NXP i.MX mcux SRC hwinfo driver.
 
+config HWINFO_MCUX_SRC_V2
+	bool "NXP SRC reset cause (multicore devices)"
+	default y
+	depends on HAS_MCUX_SRC_V2
+	help
+	  Enable version 2 multicore NXP i.MX mcux SRC hwinfo driver.
+
 config HWINFO_MCUX_SYSCON
 	bool "NXP LPC device ID"
 	default y
@@ -70,12 +78,28 @@ config HWINFO_IMXRT
 	help
 	  Enable NXP i.mx RT hwinfo driver.
 
+config HWINFO_RPI_PICO
+	bool "Raspberry Pi Pico hwinfo driver"
+	default y
+	depends on SOC_SERIES_RP2XXX
+	select PICOSDK_USE_FLASH
+	help
+	  Enable Raspberry Pi Pico hwinfo driver.
+
+config HWINFO_SAM_RSTC
+	bool "Atmel SAM reset cause"
+	default y
+	depends on SOC_SERIES_SAM4S || SOC_SERIES_SAME70 || \
+		   SOC_SERIES_SAMV71
+	help
+	  Enable Atmel SAM reset cause hwinfo driver.
+
 config HWINFO_SAM
 	bool "Atmel SAM device ID"
 	default y
 	depends on SOC_FAMILY_SAM && !SOC_SERIES_SAM4L
 	help
-	  Enable Atmel SAM hwinfo driver.
+	  Enable Atmel SAM device ID hwinfo driver.
 
 config HWINFO_SAM4L
 	bool "Atmel SAM4L device ID"

@@ -7,7 +7,7 @@
 /*
  * This test is designed to be run using flash-simulator which provide
  * functionality for flash property customization and emulating errors in
- * flash opperation in parallel to regular flash API.
+ * flash operation in parallel to regular flash API.
  * Test should be run on qemu_x86 target.
  */
 
@@ -19,17 +19,18 @@
 #include <string.h>
 #include <ztest.h>
 
-#include <drivers/flash.h>
-#include <storage/flash_map.h>
-#include <stats/stats.h>
-#include <sys/crc.h>
-#include <fs/nvs.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/stats/stats.h>
+#include <zephyr/sys/crc.h>
+#include <zephyr/fs/nvs.h>
 #include "nvs_priv.h"
 
 #define TEST_FLASH_AREA_STORAGE_OFFSET	FLASH_AREA_OFFSET(storage)
 #define TEST_DATA_ID			1
 #define TEST_SECTOR_COUNT		5U
 
+static const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 static struct nvs_fs fs;
 struct stats_hdr *sim_stats;
 struct stats_hdr *sim_thresholds;
@@ -58,7 +59,7 @@ void teardown(void)
 	}
 }
 
-void test_nvs_init(void)
+void test_nvs_mount(void)
 {
 	int err;
 	const struct flash_area *fa;
@@ -74,9 +75,10 @@ void test_nvs_init(void)
 
 	fs.sector_size = info.size;
 	fs.sector_count = TEST_SECTOR_COUNT;
+	fs.flash_device = flash_area_get_device(fa);
 
-	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	err = nvs_mount(&fs);
+	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 }
 
 static void execute_long_pattern_write(uint16_t id)
@@ -108,8 +110,8 @@ void test_nvs_write(void)
 {
 	int err;
 
-	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	err = nvs_mount(&fs);
+	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 
 	execute_long_pattern_write(TEST_DATA_ID);
 }
@@ -148,8 +150,8 @@ void test_nvs_corrupted_write(void)
 	uint32_t *flash_write_stat;
 	uint32_t *flash_max_write_calls;
 
-	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	err = nvs_mount(&fs);
+	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 
 	err = nvs_read(&fs, TEST_DATA_ID, rd_buf, sizeof(rd_buf));
 	zassert_true(err == -ENOENT,  "nvs_read unexpected failure: %d", err);
@@ -192,7 +194,7 @@ void test_nvs_corrupted_write(void)
 
 	/* Reinitialize the NVS. */
 	memset(&fs, 0, sizeof(fs));
-	test_nvs_init();
+	test_nvs_mount();
 
 	len = nvs_read(&fs, TEST_DATA_ID, rd_buf, sizeof(rd_buf));
 	zassert_true(len == sizeof(rd_buf),  "nvs_read unexpected failure: %d",
@@ -218,8 +220,8 @@ void test_nvs_gc(void)
 
 	fs.sector_count = 2;
 
-	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	err = nvs_mount(&fs);
+	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 
 	for (uint16_t i = 0; i < max_writes; i++) {
 		uint8_t id = (i % max_id);
@@ -245,8 +247,8 @@ void test_nvs_gc(void)
 
 	}
 
-	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	err = nvs_mount(&fs);
+	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 
 	for (uint16_t id = 0; id < max_id; id++) {
 		len = nvs_read(&fs, id, rd_buf, sizeof(buf));
@@ -320,8 +322,8 @@ void test_nvs_gc_3sectors(void)
 
 	fs.sector_count = 3;
 
-	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	err = nvs_mount(&fs);
+	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 0,
 		     "unexpected write sector");
 
@@ -333,8 +335,8 @@ void test_nvs_gc_3sectors(void)
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
-	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	err = nvs_mount(&fs);
+	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 
 	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 2,
 		     "unexpected write sector");
@@ -348,8 +350,8 @@ void test_nvs_gc_3sectors(void)
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
-	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	err = nvs_mount(&fs);
+	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 
 	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 0,
 		     "unexpected write sector");
@@ -363,8 +365,8 @@ void test_nvs_gc_3sectors(void)
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
-	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	err = nvs_mount(&fs);
+	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 
 	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 1,
 		     "unexpected write sector");
@@ -378,8 +380,8 @@ void test_nvs_gc_3sectors(void)
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
-	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	err = nvs_mount(&fs);
+	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 
 	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 2,
 		     "unexpected write sector");
@@ -444,8 +446,8 @@ void test_nvs_corrupted_sector_close_operation(void)
 	stats_walk(sim_stats, flash_sim_write_calls_find, &flash_write_stat);
 	stats_walk(sim_stats, flash_sim_erase_calls_find, &flash_erase_stat);
 
-	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	err = nvs_mount(&fs);
+	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 
 	for (uint16_t i = 0; i < max_writes; i++) {
 		uint8_t id = (i % max_id);
@@ -476,8 +478,8 @@ void test_nvs_corrupted_sector_close_operation(void)
 	*flash_max_erase_calls = 0;
 	*flash_max_len = 0;
 
-	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	err = nvs_mount(&fs);
+	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 
 	check_content(max_id, &fs);
 
@@ -497,8 +499,8 @@ void test_nvs_full_sector(void)
 
 	fs.sector_count = 3;
 
-	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	err = nvs_mount(&fs);
+	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 
 	while (1) {
 		len = nvs_write(&fs, filling_id, &filling_id,
@@ -516,8 +518,8 @@ void test_nvs_full_sector(void)
 	zassert_true(err == 0,  "nvs_delete call failure: %d", err);
 
 	/* the last sector is full now, test re-initialization */
-	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	err = nvs_mount(&fs);
+	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 
 	len = nvs_write(&fs, filling_id, &filling_id, sizeof(filling_id));
 	zassert_true(len == sizeof(filling_id), "nvs_write failed: %d", len);
@@ -548,8 +550,8 @@ void test_delete(void)
 
 	fs.sector_count = 3;
 
-	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	err = nvs_mount(&fs);
+	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 
 	for (filling_id = 0; filling_id < 10; filling_id++) {
 		len = nvs_write(&fs, filling_id, &filling_id,
@@ -607,13 +609,9 @@ void test_delete(void)
 void test_nvs_gc_corrupt_close_ate(void)
 {
 	struct nvs_ate ate, close_ate;
-	const struct device *flash_dev;
 	uint32_t data;
 	ssize_t len;
 	int err;
-
-	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(flash_dev != NULL,  "device_get_binding failure");
 
 	close_ate.id = 0xffff;
 	close_ate.offset = fs.sector_size - sizeof(struct nvs_ate) * 5;
@@ -650,8 +648,8 @@ void test_nvs_gc_corrupt_close_ate(void)
 
 	fs.sector_count = 3;
 
-	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	err = nvs_mount(&fs);
+	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 
 	data = 0;
 	len = nvs_read(&fs, 1, &data, sizeof(data));
@@ -666,11 +664,7 @@ void test_nvs_gc_corrupt_close_ate(void)
 void test_nvs_gc_corrupt_ate(void)
 {
 	struct nvs_ate corrupt_ate, close_ate;
-	const struct device *flash_dev;
 	int err;
-
-	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(flash_dev != NULL,  "device_get_binding failure");
 
 	close_ate.id = 0xffff;
 	close_ate.offset = fs.sector_size / 2;
@@ -702,14 +696,16 @@ void test_nvs_gc_corrupt_ate(void)
 
 	fs.sector_count = 3;
 
-	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	err = nvs_mount(&fs);
+	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 }
 
 void test_main(void)
 {
+	__ASSERT_NO_MSG(device_is_ready(flash_dev));
+
 	ztest_test_suite(test_nvs,
-			 ztest_unit_test_setup_teardown(test_nvs_init, setup,
+			 ztest_unit_test_setup_teardown(test_nvs_mount, setup,
 				 teardown),
 			 ztest_unit_test_setup_teardown(test_nvs_write, setup,
 				 teardown),

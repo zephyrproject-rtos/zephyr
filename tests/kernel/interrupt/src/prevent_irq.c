@@ -10,6 +10,9 @@
 #define DURATION	5
 #define HANDLER_TOKEN	0xDEADBEEF
 
+/* Long enough to be guaranteed a tick "should have fired" */
+#define TIMER_DELAY_US (128 * 1000000 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+
 static struct k_timer irqlock_timer;
 volatile uint32_t handler_result;
 
@@ -46,14 +49,14 @@ void test_prevent_interruption(void)
 	 * locked -- but since they are, check_lock_new isn't updated.
 	 */
 	k_timer_start(&irqlock_timer, K_MSEC(DURATION), K_NO_WAIT);
-	k_busy_wait(MS_TO_US(1000));
+	k_busy_wait(TIMER_DELAY_US);
 	zassert_not_equal(handler_result, HANDLER_TOKEN,
 		"timer interrupt was serviced while interrupts are locked");
 
 	printk("unlocking interrupts\n");
 	irq_unlock(key);
 
-	k_busy_wait(MS_TO_US(1000));
+	k_busy_wait(TIMER_DELAY_US);
 
 	zassert_equal(handler_result, HANDLER_TOKEN,
 		"timer should have fired");

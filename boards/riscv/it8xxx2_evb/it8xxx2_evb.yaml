@@ -9,3 +9,10 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+supported:
+  - gpio
+  - adc
+  - i2c
+  - kscan
+  - pwm
+  - watchdog

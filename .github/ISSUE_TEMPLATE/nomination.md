@@ -37,5 +37,5 @@ reviewed by the GitHub user that demonstrate the user's dedication to the
 Zephyr project.
 
 
-[TSC Project Roles]: <https://docs.zephyrproject.org/latest/development_process/project_roles.html#tsc-project-roles>
+[TSC Project Roles]: <https://docs.zephyrproject.org/latest/project/project_roles.html>
 [GitHub Permission Level]: <https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-permission-levels-for-an-organization>

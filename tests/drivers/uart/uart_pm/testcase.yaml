@@ -3,7 +3,7 @@ common:
   harness_config:
     fixture: gpio_loopback
 tests:
-  drivers.uart:
+  drivers.uart.pm:
     tags: drivers
     platform_allow: nrf52840dk_nrf52840
     extra_configs:
@@ -11,16 +11,16 @@ tests:
       - CONFIG_UART_ASYNC_API=n
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
 
-  drivers.uart_no_rxpin:
+  drivers.uart.pm.no_rxpin:
     tags: drivers
     platform_allow: nrf52840dk_nrf52840
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=n
       - CONFIG_UART_ASYNC_API=n
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
-    extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;nrf_no_rx_pin.overlay"
+    extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;nrf_rx_disable.overlay"
 
-  drivers.uart_enhanced_poll:
+  drivers.uart.pm.enhanced_poll:
     tags: drivers
     platform_allow: nrf52840dk_nrf52840
     extra_configs:
@@ -28,7 +28,7 @@ tests:
       - CONFIG_UART_ASYNC_API=n
       - CONFIG_UART_0_ENHANCED_POLL_OUT=y
 
-  drivers.uart_int_driven:
+  drivers.uart.pm.int_driven:
     tags: drivers
     platform_allow: nrf52840dk_nrf52840
     extra_configs:
@@ -37,7 +37,7 @@ tests:
       - CONFIG_UART_ASYNC_API=n
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
 
-  drivers.uart_int_driven_enhanced_poll:
+  drivers.uart.pm.int_driven.enhanced_poll:
     tags: drivers
     platform_allow: nrf52840dk_nrf52840
     extra_configs:
@@ -46,7 +46,7 @@ tests:
       - CONFIG_UART_ASYNC_API=n
       - CONFIG_UART_0_ENHANCED_POLL_OUT=y
 
-  drivers.uart_async:
+  drivers.uart.pm.async:
     tags: drivers
     platform_allow: nrf52840dk_nrf52840
     extra_configs:
@@ -58,7 +58,7 @@ tests:
       - CONFIG_NRFX_TIMER2=y
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
 
-  drivers.uart_async_enhanced_poll:
+  drivers.uart.pm.async.enhanced_poll:
     tags: drivers
     platform_allow: nrf52840dk_nrf52840
     extra_configs:

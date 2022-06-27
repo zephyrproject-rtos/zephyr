@@ -5,14 +5,15 @@
  */
 #define DT_DRV_COMPAT nxp_lpc_ctimer
 
-#include <drivers/counter.h>
+#include <zephyr/drivers/counter.h>
 #include <fsl_ctimer.h>
-#include <logging/log.h>
-#include <drivers/clock_control.h>
-#include <dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 LOG_MODULE_REGISTER(mcux_ctimer, CONFIG_COUNTER_LOG_LEVEL);
 
-#define NUM_CHANNELS 4
+/* One of the CTimer channels is reserved to implement set_top_value API */
+#define NUM_CHANNELS 3
 
 struct mcux_lpc_ctimer_channel_data {
 	counter_alarm_callback_t alarm_callback;
@@ -21,6 +22,8 @@ struct mcux_lpc_ctimer_channel_data {
 
 struct mcux_lpc_ctimer_data {
 	struct mcux_lpc_ctimer_channel_data channels[NUM_CHANNELS];
+	counter_top_callback_t top_callback;
+	void *top_user_data;
 };
 
 struct mcux_lpc_ctimer_config {
@@ -64,6 +67,19 @@ static int mcux_lpc_ctimer_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
+static uint32_t mcux_lpc_ctimer_get_top_value(const struct device *dev)
+{
+	const struct mcux_lpc_ctimer_config *config = dev->config;
+	CTIMER_Type *base = config->base;
+
+	/* Return the top value if it has been set, else return the max top value */
+	if (base->MR[NUM_CHANNELS] != 0) {
+		return base->MR[NUM_CHANNELS];
+	} else {
+		return config->info.max_top_value;
+	}
+}
+
 static int mcux_lpc_ctimer_set_alarm(const struct device *dev, uint8_t chan_id,
 				     const struct counter_alarm_cfg *alarm_cfg)
 {
@@ -72,6 +88,10 @@ static int mcux_lpc_ctimer_set_alarm(const struct device *dev, uint8_t chan_id,
 
 	uint32_t ticks = alarm_cfg->ticks;
 	uint32_t current = mcux_lpc_ctimer_read(config->base);
+
+	if (alarm_cfg->ticks > mcux_lpc_ctimer_get_top_value(dev)) {
+		return -EINVAL;
+	}
 
 	if (data->channels[chan_id].alarm_callback != NULL) {
 		LOG_ERR("channel already in use");
@@ -113,9 +133,31 @@ static int mcux_lpc_ctimer_cancel_alarm(const struct device *dev, uint8_t chan_i
 static int mcux_lpc_ctimer_set_top_value(const struct device *dev,
 					 const struct counter_top_cfg *cfg)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(cfg);
-	return -ENOTSUP;
+	const struct mcux_lpc_ctimer_config *config = dev->config;
+	struct mcux_lpc_ctimer_data *data = dev->data;
+
+	data->top_callback = cfg->callback;
+	data->top_user_data = cfg->user_data;
+
+	if (!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
+		CTIMER_Reset(config->base);
+	} else if (mcux_lpc_ctimer_read(config->base) >= cfg->ticks) {
+		if (cfg->flags & COUNTER_TOP_CFG_RESET_WHEN_LATE) {
+			CTIMER_Reset(config->base);
+		}
+		return -ETIME;
+	}
+
+	ctimer_match_config_t match_config = { .matchValue = cfg->ticks,
+					       .enableCounterReset = true,
+					       .enableCounterStop = false,
+					       .outControl = kCTIMER_Output_NoAction,
+					       .outPinInitState = false,
+					       .enableInterrupt = true };
+
+	CTIMER_SetupMatch(config->base, NUM_CHANNELS, &match_config);
+
+	return 0;
 }
 
 static uint32_t mcux_lpc_ctimer_get_pending_int(const struct device *dev)
@@ -125,11 +167,27 @@ static uint32_t mcux_lpc_ctimer_get_pending_int(const struct device *dev)
 	return (CTIMER_GetStatusFlags(config->base) & 0xF) != 0;
 }
 
-static uint32_t mcux_lpc_ctimer_get_top_value(const struct device *dev)
+static uint32_t mcux_lpc_ctimer_get_freq(const struct device *dev)
 {
+	/*
+	 * The frequency of the timer is not known at compile time so we need to
+	 * calculate at runtime when the frequency is known.
+	 */
 	const struct mcux_lpc_ctimer_config *config = dev->config;
 
-	return config->info.max_top_value;
+	uint32_t clk_freq = 0;
+
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
+					&clk_freq)) {
+		LOG_ERR("unable to get clock frequency");
+		return 0;
+	}
+
+	/* prescale increments when the prescale counter is 0 so if prescale is 1
+	 * the counter is incremented every 2 cycles of the clock so will actually
+	 * divide by 2 hence the addition of 1 to the value here.
+	 */
+	return (clk_freq / (config->prescale + 1));
 }
 
 static void mcux_lpc_ctimer_isr(const struct device *dev)
@@ -157,35 +215,18 @@ static void mcux_lpc_ctimer_isr(const struct device *dev)
 			alarm_callback(dev, chan, ticks, alarm_user_data);
 		}
 	}
+
+	if (((interrupt_stat & (0x01 << NUM_CHANNELS)) != 0) && data->top_callback) {
+		data->top_callback(dev, data->top_user_data);
+	}
 }
 
 static int mcux_lpc_ctimer_init(const struct device *dev)
 {
-	/*
-	 * The frequency of the timer is not known at compile time so we need to
-	 * modify the timer's config in the init function at runtime when the
-	 * frequency is known.
-	 */
-	struct mcux_lpc_ctimer_config *config = (struct mcux_lpc_ctimer_config *)dev->config;
+	const struct mcux_lpc_ctimer_config *config = dev->config;
 	struct mcux_lpc_ctimer_data *data = dev->data;
 
 	ctimer_config_t ctimer_config;
-
-	uint32_t clk_freq = 0;
-
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-					&clk_freq)) {
-		LOG_ERR("unable to get clock frequency");
-		return -EINVAL;
-	}
-
-	/* prescale increments when the prescale counter is 0 so if prescale is 1
-	 * the counter is incremented every 2 cycles of the clock so will actually
-	 * divide by 2 hence the addition of 1 to the value here.
-	 */
-	uint32_t freq = clk_freq / (config->prescale + 1);
-
-	config->info.freq = freq;
 
 	for (uint8_t chan = 0; chan < NUM_CHANNELS; chan++) {
 		data->channels[chan].alarm_callback = NULL;
@@ -214,6 +255,7 @@ static const struct counter_driver_api mcux_ctimer_driver_api = {
 	.set_top_value = mcux_lpc_ctimer_set_top_value,
 	.get_pending_int = mcux_lpc_ctimer_get_pending_int,
 	.get_top_value = mcux_lpc_ctimer_get_top_value,
+	.get_freq = mcux_lpc_ctimer_get_freq,
 };
 
 #define COUNTER_LPC_CTIMER_DEVICE(id)                                                              \
@@ -221,7 +263,6 @@ static const struct counter_driver_api mcux_ctimer_driver_api = {
 	static struct mcux_lpc_ctimer_config mcux_lpc_ctimer_config_##id = { \
 		.info = {						\
 			.max_top_value = UINT32_MAX,			\
-			.freq = 1,					\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
 			.channels = NUM_CHANNELS,					\
 		},\

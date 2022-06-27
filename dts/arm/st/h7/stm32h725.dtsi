@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2021 Esco Medical ApS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7/stm32h723.dtsi>

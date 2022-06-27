@@ -102,3 +102,7 @@ endif()
 #	_static_kernel_objects_end = .;
 #endif()
 #
+
+if(CONFIG_ZTEST)
+  zephyr_iterable_section(NAME ztest_suite_node GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+endif()

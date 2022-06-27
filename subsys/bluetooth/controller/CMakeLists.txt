@@ -5,6 +5,7 @@ zephyr_library_sources(
   util/mem.c
   util/memq.c
   util/mayfly.c
+  util/dbuf.c
   util/util.c
   ticker/ticker.c
   ll_sw/ll_addr.c
@@ -110,11 +111,12 @@ if(CONFIG_BT_LL_SW_SPLIT)
         ll_sw/ull_central_iso.c
       )
     endif()
-    if(CONFIG_BT_CTLR_SCHED_ADVANCED)
-      zephyr_library_sources(
-        ll_sw/ull_sched.c
-      )
-    endif()
+  endif()
+  if(CONFIG_BT_CTLR_SCHED_ADVANCED AND
+     (CONFIG_BT_CONN OR CONFIG_BT_CTLR_ADV_ISO))
+    zephyr_library_sources(
+      ll_sw/ull_sched.c
+    )
   endif()
   if(CONFIG_BT_CTLR_DF)
     zephyr_library_sources(

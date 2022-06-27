@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <atmel/samd5xx19.dtsi>
+#include "adafruit_itsybitsy_m4_express-pinctrl.dtsi"
 
 / {
 	model = "Adafruit ItsyBitsy M4 Express";
@@ -37,7 +38,7 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		pwm_led0: pwm_led_0 {
-			pwms = <&tcc0 2>;
+			pwms = <&tcc0 2 PWM_MSEC(20)>;
 		};
 	};
 };
@@ -53,7 +54,8 @@
 	rxpo = <1>;
 	txpo = <0>;
 
-	pinctrl-0 = <&pa16d_sercom3_pad1 &pa17d_sercom3_pad0>;
+	pinctrl-0 = <&sercom3_uart_default>;
+	pinctrl-names = "default";
 };
 
 &sercom1 {
@@ -64,18 +66,26 @@
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom1_spi_default>;
+	pinctrl-names = "default";
 };
 
 &tcc0 {
 	status = "okay";
 	compatible = "atmel,sam0-tcc-pwm";
 	prescaler = <8>;
+	#pwm-cells = <2>;
 
-	#pwm-cells = <1>;
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-names = "default";
 };
 
 zephyr_udc0: &usb0 {
 	status = "okay";
+
+	pinctrl-0 = <&usb_dc_default>;
+	pinctrl-names = "default";
 };
 
 &dmac {

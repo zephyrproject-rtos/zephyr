@@ -10,10 +10,10 @@
 
 #define DT_DRV_COMPAT st_iis3dhhc
 
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <drivers/gpio.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
 
 #include "iis3dhhc.h"
 

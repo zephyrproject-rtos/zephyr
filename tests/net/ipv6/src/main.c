@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #include <zephyr/types.h>
@@ -14,20 +14,21 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <linker/sections.h>
-#include <random/rand32.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/random/rand32.h>
 
 #include <ztest.h>
 
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_ip.h>
-#include <net/ethernet.h>
-#include <net/dummy.h>
-#include <net/udp.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/dummy.h>
+#include <zephyr/net/udp.h>
 
 #include "icmpv6.h"
 #include "ipv6.h"
+#include "route.h"
 
 #include "udp_internal.h"
 
@@ -84,13 +85,13 @@ static const unsigned char icmpv6_ns_no_sllao[] = {
 /* */
 static const unsigned char icmpv6_ra[] = {
 /* IPv6 header starts here */
-	0x60, 0x00, 0x00, 0x00, 0x00, 0x40, 0x3a, 0xff,
+	0x60, 0x00, 0x00, 0x00, 0x00, 0x58, 0x3a, 0xff,
 	0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x02, 0x60, 0x97, 0xff, 0xfe, 0x07, 0x69, 0xea,
 	0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
 /* ICMPv6 RA header starts here */
-	0x86, 0x00, 0x8b, 0xaa, 0x40, 0x00, 0x07, 0x08,
+	0x86, 0x00, 0x05, 0xd7, 0x40, 0x00, 0x07, 0x08,
 	0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01,
 /* SLLAO */
 	0x01, 0x01, 0x00, 0x60, 0x97, 0x07, 0x69, 0xea,
@@ -100,6 +101,10 @@ static const unsigned char icmpv6_ra[] = {
 	0x03, 0x04, 0x40, 0xc0, 0xFF, 0xFF, 0xFF, 0xFF,
 	0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00,
 	0x3f, 0xfe, 0x05, 0x07, 0x00, 0x00, 0x00, 0x01,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+/* Route info */
+	0x18, 0x03, 0x30, 0x08, 0xff, 0xff, 0xff, 0xff,
+	0x20, 0x01, 0x0d, 0xb0, 0x0f, 0xff, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
@@ -240,7 +245,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 
 	icmp = get_icmp_hdr(pkt);
 
-	/* Reply with RA messge */
+	/* Reply with RA message */
 	if (icmp->type == NET_ICMPV6_RS) {
 		if (expecting_ra) {
 			prepare_ra_message(pkt);
@@ -291,7 +296,7 @@ NET_DEVICE_INIT(eth_ipv6_net, "eth_ipv6_net",
 		net_test_dev_init, NULL, &net_test_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_test_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE,
-		127);
+		NET_ETH_MTU);
 
 /* dummy interface for multi-interface tests */
 static int dummy_send(const struct device *dev, struct net_pkt *pkt)
@@ -621,6 +626,8 @@ static void test_ra_message(void)
 				     0x97, 0xff, 0xfe, 0x07, 0x69, 0xea } } };
 	struct in6_addr prefix = { { { 0x3f, 0xfe, 0x05, 0x07, 0, 0, 0, 1,
 				       0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct in6_addr route_prefix = { { { 0x20, 0x01, 0x0d, 0xb0, 0x0f, 0xff } } };
+	struct net_route_entry *route;
 
 	/* We received RA message earlier, make sure that the information
 	 * in that message is placed to proper prefix and lookup info.
@@ -635,6 +642,16 @@ static void test_ra_message(void)
 	zassert_false(!net_if_ipv6_router_lookup(TEST_NET_IF, &addr),
 		      "Router %s should be here\n",
 		      net_sprint_ipv6_addr(&addr));
+
+	/* Check if route was added correctly. */
+	route = net_route_lookup(TEST_NET_IF, &route_prefix);
+	zassert_not_null(route, "Route not found");
+	zassert_equal(route->prefix_len, 48, "Wrong prefix length set");
+	zassert_mem_equal(&route->addr, &route_prefix, sizeof(route_prefix),
+			  "Wrong prefix set");
+	zassert_true(route->is_infinite, "Wrong lifetime set");
+	zassert_equal(route->preference, NET_ROUTE_PREFERENCE_HIGH,
+		      "Wrong preference set");
 }
 
 /**
@@ -1089,14 +1106,9 @@ static void test_dad_timeout(void)
 
 	k_sleep(K_MSEC(200));
 
-	/* We should have received three DAD queries, make sure they are in
-	 * proper order.
-	 */
-	zassert_true(dad_time[0] < dad_time[1], "DAD timer 1+2 failure");
-	zassert_true(dad_time[1] < dad_time[2], "DAD timer 2+3 failure");
-	zassert_true((dad_time[2] - dad_time[0]) < 100,
-		     "DAD timers took too long time [%u] [%u] [%u]",
-		     dad_time[0], dad_time[1], dad_time[2]);
+	/* Check we have received three DAD queries */
+	zassert_true((dad_time[0] != 0U) && (dad_time[1] != 0U) &&
+			(dad_time[2] != 0U), "Did not get DAD reply");
 #endif
 }
 

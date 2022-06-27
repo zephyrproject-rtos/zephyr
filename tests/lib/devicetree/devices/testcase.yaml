@@ -1,8 +1,8 @@
 tests:
-  libraries.devicetree:
+  libraries.devicetree.devices:
     tags: devicetree
     # We only need this to run on one platform so use native_posix as it
     # will mostly likely be the fastest.
     integration_platforms:
       - native_posix
-    platform_exclude: hsdk hsdk_2cores
+    platform_exclude: hsdk hsdk_2cores thingy52_nrf52832

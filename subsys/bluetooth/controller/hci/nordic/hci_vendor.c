@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <bluetooth/addr.h>
-#include <bluetooth/hci_vs.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/hci_vs.h>
 
 #include <soc.h>
 

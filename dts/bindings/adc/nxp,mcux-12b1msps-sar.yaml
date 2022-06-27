@@ -5,7 +5,7 @@ description: NXP MCUA 12B1MSPS SAR ADC
 
 compatible: "nxp,mcux-12b1msps-sar"
 
-include: adc-controller.yaml
+include: [adc-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:

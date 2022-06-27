@@ -24,6 +24,10 @@ zephyr_compile_options($<TARGET_PROPERTY:compiler,hosted>)
 
 zephyr_include_directories(${BOARD_DIR})
 
+if (CONFIG_GPROF)
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,gprof>)
+  zephyr_link_libraries($<TARGET_PROPERTY:linker,gprof>)
+endif()
 if (CONFIG_ASAN)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,sanitize_address>)
   zephyr_link_libraries($<TARGET_PROPERTY:linker,sanitize_address>)

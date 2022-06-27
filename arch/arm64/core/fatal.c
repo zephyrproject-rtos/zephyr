@@ -13,9 +13,9 @@
  * exceptions
  */
 
-#include <kernel.h>
-#include <logging/log.h>
-#include <exc_handle.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/exc_handle.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -167,7 +167,7 @@ static void esf_dump(const z_arch_esf_t *esf)
 	LOG_ERR("x12: 0x%016llx  x13: 0x%016llx", esf->x12, esf->x13);
 	LOG_ERR("x14: 0x%016llx  x15: 0x%016llx", esf->x14, esf->x15);
 	LOG_ERR("x16: 0x%016llx  x17: 0x%016llx", esf->x16, esf->x17);
-	LOG_ERR("x18: 0x%016llx  x30: 0x%016llx", esf->x18, esf->x30);
+	LOG_ERR("x18: 0x%016llx  lr:  0x%016llx", esf->x18, esf->lr);
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
 

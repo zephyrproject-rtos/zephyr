@@ -2,7 +2,9 @@ description: SAM family UART
 
 compatible: "atmel,sam-uart"
 
-include: uart-controller.yaml
+include:
+    - name: uart-controller.yaml
+    - name: pinctrl-device.yaml
 
 properties:
     reg:
@@ -14,17 +16,4 @@ properties:
     peripheral-id:
       type: int
       description: peripheral ID
-      required: true
-
-    pinctrl-0:
-      type: phandles
-      description: |
-        PIO pin configuration for URXD & UTRD signals.  We expect that
-        the phandles will reference pinctrl nodes.  These nodes will
-        have a nodelabel that matches the Atmel SoC HAL defines and
-        be of the form p<port><pin><periph>_<inst>_<signal>.
-
-        For example the UART on SAM3x would be
-           pinctrl-0 = <&pa8a_uart_urxd &pa9a_uart_utxd>;
-
       required: true

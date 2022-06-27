@@ -9,12 +9,12 @@
 #define DT_DRV_COMPAT openisa_rv32m1_gpio
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <soc.h>
 #include <fsl_common.h>
 #include <fsl_port.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include "gpio_utils.h"
 
@@ -125,6 +125,10 @@ static int gpio_rv32m1_configure(const struct device *dev,
 	default:
 		return -ENOTSUP;
 	}
+
+	/* Set PCR mux to GPIO for the pin we are configuring */
+	mask |= PORT_PCR_MUX_MASK;
+	pcr |= PORT_PCR_MUX(kPORT_MuxAsGpio);
 
 	/* Now do the PORT module. Figure out the pullup/pulldown
 	 * configuration, but don't write it to the PCR register yet.
@@ -317,7 +321,7 @@ static const struct gpio_driver_api gpio_rv32m1_driver_api = {
 			    NULL,					\
 			    &gpio_rv32m1_##n##_data,			\
 			    &gpio_rv32m1_##n##_config,			\
-			    POST_KERNEL,				\
+			    PRE_KERNEL_1,				\
 			    CONFIG_GPIO_INIT_PRIORITY,			\
 			    &gpio_rv32m1_driver_api);			\
 									\

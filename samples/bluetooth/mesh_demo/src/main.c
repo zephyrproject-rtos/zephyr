@@ -6,12 +6,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
-#include <settings/settings.h>
+#include <zephyr/settings/settings.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #include "board.h"
 
@@ -199,7 +199,7 @@ static void bt_ready(int err)
 	}
 
 #if NODE_ADDR != PUBLISHER_ADDR
-	/* Heartbeat subcscription is a temporary state (due to there
+	/* Heartbeat subscription is a temporary state (due to there
 	 * not being an "indefinite" value for the period, so it never
 	 * gets stored persistently. Therefore, we always have to configure
 	 * it explicitly.

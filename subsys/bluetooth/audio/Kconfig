@@ -2,6 +2,7 @@
 
 #
 # Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2022 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -24,45 +25,17 @@ config BT_CCID
 	  This hidden option is enabled when any of the content control
 	  features are enabled.
 
-if BT_CONN
-
-config BT_AUDIO_UNICAST
-	bool "Bluetooth Unicast Audio Support"
-	select BT_SMP
-	select BT_L2CAP_DYNAMIC_CHANNEL
-	select BT_ISO_UNICAST
-	select BT_GATT_DYNAMIC_DB
-	select BT_GATT_CACHING
-	select BT_L2CAP_ECRED
-	select BT_EATT
-	help
-	  This option enables support for Bluetooth Unicast Audio using
-	  Isochronous channels.
-
-# TODO: Make BT_AUDIO_BROADCAST not depend on BT_CONN
-config BT_AUDIO_BROADCAST
-	bool "Bluetooth Broadcast Audio Support"
-	select BT_ISO_BROADCASTER
-	select BT_ISO_SYNC_RECEIVER
-	help
-	  This option enables support for Bluetooth Broadcast Audio using
-	  Isochronous channels.
-
-endif # BT_CONN
-
-config BT_AUDIO_DEBUG
-	bool "Enable debug logs"
-	depends on BT_DEBUG
-	help
-	  Use this option to enable debug logs for the Bluetooth
-	  Audio functionality.
-
+rsource "Kconfig.baps"
 rsource "Kconfig.vocs"
 rsource "Kconfig.aics"
 rsource "Kconfig.vcs"
 rsource "Kconfig.mics"
 rsource "Kconfig.csis"
-rsource "Kconfig.otc"
+rsource "Kconfig.tbs"
 rsource "Kconfig.mcs"
+rsource "Kconfig.bass"
+rsource "Kconfig.has"
+rsource "Kconfig.mpl"
+rsource "Kconfig.mctl"
 
 endif # BT_AUDIO

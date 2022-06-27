@@ -6,7 +6,7 @@
  */
 
 #include <mem.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 #include "psoc6-pinctrl.dtsi"
 
@@ -57,13 +57,15 @@
 	};
 
 	sram1: memory@8023000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x08023000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "SRAM1";
 	};
 
 	sram2: memory@8024000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x08024000 DT_SIZE_K(112)>;
+		zephyr,memory-region = "SRAM2";
 	};
 
 	soc {

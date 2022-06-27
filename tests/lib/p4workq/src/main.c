@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <random/rand32.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/random/rand32.h>
 #include <ztest.h>
-#include <sys/p4wq.h>
+#include <zephyr/sys/p4wq.h>
 
 #define NUM_THREADS (CONFIG_MP_NUM_CPUS * 2)
 #define MAX_ITEMS (NUM_THREADS * 8)
@@ -244,7 +244,7 @@ void simple_handler(struct k_p4wq_work *work)
 	has_run = true;
 }
 
-/* Simple test that submited items run, and at the correct priority */
+/* Simple test that submitted items run, and at the correct priority */
 static void test_p4wq_simple(void)
 {
 	int prio = 2;

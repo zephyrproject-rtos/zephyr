@@ -259,7 +259,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         if self.erase:
             lines.append('erase') # Erase all flash sectors
 
-        # Get the build artifact to flash, prefering .hex over .bin
+        # Get the build artifact to flash, preferring .hex over .bin
         if self.hex_name is not None and os.path.isfile(self.hex_name):
             flash_file = self.hex_name
             flash_cmd = f'loadfile {self.hex_name}'

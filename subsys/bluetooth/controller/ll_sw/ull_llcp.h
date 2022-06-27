@@ -36,6 +36,15 @@ void ull_cp_release_tx(struct ll_conn *conn, struct node_tx *tx);
 void ull_cp_release_ntf(struct node_rx_pdu *ntf);
 
 /**
+ * @brief Procedure Response Timeout Check
+ * @param elapsed_event The number of elapsed events.
+ * @return 0 on success, -ETIMEDOUT if timer expired.
+ */
+int ull_cp_prt_elapse(struct ll_conn *conn, uint16_t elapsed_event);
+
+void ull_cp_prt_reload_set(struct ll_conn *conn, uint32_t conn_intv);
+
+/**
  * @brief Run pending LL Control Procedures.
  */
 void ull_cp_run(struct ll_conn *conn);
@@ -93,11 +102,11 @@ uint8_t ull_cp_encryption_paused(struct ll_conn *conn);
 
 /**
  */
-void ull_cp_ltk_req_reply(struct ll_conn *conn, const uint8_t ltk[16]);
+uint8_t ull_cp_ltk_req_reply(struct ll_conn *conn, const uint8_t ltk[16]);
 
 /**
  */
-void ull_cp_ltk_req_neq_reply(struct ll_conn *conn);
+uint8_t ull_cp_ltk_req_neq_reply(struct ll_conn *conn);
 
 /**
  * @brief Initiate a PHY Update Procedure.
@@ -127,6 +136,12 @@ void ull_cp_conn_param_req_neg_reply(struct ll_conn *conn, uint8_t error_code);
 uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn);
 
 /**
+ * @brief Check if a remote connection param reg is in the
+ *        works.
+ */
+uint8_t ull_cp_remote_cpr_pending(struct ll_conn *conn);
+
+/**
  * @brief Initiate a Termination Procedure.
  */
 uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code);
@@ -152,6 +167,11 @@ uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets,
  * @brief Initiate a CTE Request Procedure.
  */
 uint8_t ull_cp_cte_req(struct ll_conn *conn, uint8_t min_cte_len, uint8_t cte_type);
+
+/**
+ * @brief Set a CTE Request Procedure disabled.
+ */
+void ull_cp_cte_req_set_disable(struct ll_conn *conn);
 
 /**
  * @brief Enable or disable response to CTE Request Procedure.

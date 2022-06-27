@@ -12,8 +12,8 @@
  * context switching.
  */
 
-#include <kernel.h>
-#include <syscall_handler.h>
+#include <zephyr/kernel.h>
+#include <zephyr/syscall_handler.h>
 
 /*
  * Define _k_neg_eagain for use in assembly files as errno.h is
@@ -24,7 +24,9 @@ const int _k_neg_eagain = -EAGAIN;
 
 #ifdef CONFIG_ERRNO
 
-#ifdef CONFIG_ERRNO_IN_TLS
+#if defined(CONFIG_LIBC_ERRNO)
+/* nothing needed here */
+#elif defined(CONFIG_ERRNO_IN_TLS)
 __thread int z_errno_var;
 #else
 

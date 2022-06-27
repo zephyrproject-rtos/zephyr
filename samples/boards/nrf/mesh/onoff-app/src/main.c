@@ -36,16 +36,16 @@
  *
  */
 
-#include <sys/printk.h>
-#include <settings/settings.h>
-#include <sys/byteorder.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/l2cap.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/mesh.h>
 #include <stdio.h>
 
 /* Model Operation Codes */
@@ -223,7 +223,7 @@ struct bt_mesh_model *mod_cli_sw[] = {
 };
 
 /*
- * LED to Server Model Assigmnents
+ * LED to Server Model Assignments
  */
 
 struct bt_mesh_model *mod_srv_sw[] = {

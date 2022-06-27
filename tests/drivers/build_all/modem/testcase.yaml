@@ -1,13 +1,40 @@
 common:
   build_only: true
-  tags: drivers
+  tags: drivers net
 tests:
   drivers.modem.build:
     extra_args: CONF_FILE=modem.conf
-    platform_exclude: serpente particle_boron rak5010_nrf52840 litex_vexriscv
+    platform_exclude: serpente particle_boron rak5010_nrf52840 litex_vexriscv ip_k66f
+    min_ram: 68
   drivers.modem.ublox_sara.build:
     extra_args: CONF_FILE=modem_ublox_sara.conf
-    platform_exclude: serpente pinnacle_100_dvk litex_vexriscv
+    platform_exclude: serpente pinnacle_100_dvk litex_vexriscv ip_k66f
+  drivers.modem.simcom_sim7080.build:
+    extra_args: CONF_FILE=modem_simcom_sim7080.conf
+    platform_exclude: serpente pinnacle_100_dvk litex_vexriscv ip_k66f
   drivers.modem.quectel_bg9x.build:
     extra_args: CONF_FILE=modem_quectel_bg9x.conf
-    platform_exclude: serpente pinnacle_100_dvk litex_vexriscv
+    platform_exclude: serpente pinnacle_100_dvk litex_vexriscv ip_k66f
+    min_ram: 36
+  drivers.modem.gsm.build:
+    extra_args: CONF_FILE=modem_gsm.conf
+    platform_exclude: serpente particle_boron rak5010_nrf52840 litex_vexriscv ip_k66f
+    min_ram: 36
+  drivers.modem.gsm_mux.build:
+    extra_args: CONF_FILE=modem_gsm.conf
+    platform_exclude: serpente particle_boron rak5010_nrf52840 litex_vexriscv ip_k66f
+    min_ram: 36
+    extra_configs:
+      - CONFIG_GSM_MUX=y
+      - CONFIG_UART_MUX=y
+  drivers.modem.esp_at.build:
+    extra_args: CONF_FILE=modem_esp_at.conf
+    platform_exclude: ip_k66f
+    filter: CONFIG_SERIAL
+    min_ram: 36
+  drivers.modem.esp_at.async.build:
+    extra_args: CONF_FILE=modem_esp_at.conf
+    filter: CONFIG_SERIAL and CONFIG_QEMU_TARGET
+    min_ram: 36
+    extra_configs:
+      - CONFIG_MODEM_IFACE_UART_ASYNC=y

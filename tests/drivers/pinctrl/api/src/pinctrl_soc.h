@@ -12,7 +12,7 @@
 #ifndef ZEPHYR_TESTS_DRIVERS_PINCTRL_API_SRC_PINCTRL_SOC_H_
 #define ZEPHYR_TESTS_DRIVERS_PINCTRL_API_SRC_PINCTRL_SOC_H_
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/types.h>
 
 /**

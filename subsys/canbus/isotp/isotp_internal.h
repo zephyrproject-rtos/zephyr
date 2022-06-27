@@ -8,8 +8,8 @@
 #define ZEPHYR_SUBSYS_NET_CAN_ISOTP_INTERNAL_H_
 
 
-#include <canbus/isotp.h>
-#include <sys/slist.h>
+#include <zephyr/canbus/isotp.h>
+#include <zephyr/sys/slist.h>
 
 /*
  * Abbreviations

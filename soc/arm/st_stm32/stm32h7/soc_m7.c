@@ -9,16 +9,16 @@
  * @brief System/hardware module for STM32H7 CM7 processor
  */
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_system.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include "stm32_hsem.h"
 
 #if defined(CONFIG_STM32H7_DUAL_CORE)
@@ -80,10 +80,32 @@ static int stm32h7_init(const struct device *arg)
 	SystemCoreClock = 64000000;
 
 	/* Power Configuration */
-#if defined(SMPS) && defined(CONFIG_POWER_SUPPLY_SMPS)
-	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
-#elif defined(CONFIG_POWER_SUPPLY_SMPS)
+#if !defined(SMPS) && \
+		(defined(CONFIG_POWER_SUPPLY_DIRECT_SMPS) || \
+		defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO) || \
+		defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO) || \
+		defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO) || \
+		defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO) || \
+		defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT) || \
+		defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT))
 #error Unsupported configuration: Selected SoC do not support SMPS
+#endif
+#if defined(CONFIG_POWER_SUPPLY_DIRECT_SMPS)
+	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
+#elif defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO)
+	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_LDO);
+#elif defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO)
+	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_LDO);
+#elif defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO)
+	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_EXT_AND_LDO);
+#elif defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO)
+	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_EXT_AND_LDO);
+#elif defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT)
+	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_EXT);
+#elif defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT)
+	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_EXT);
+#elif defined(CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE)
+	LL_PWR_ConfigSupply(LL_PWR_EXTERNAL_SOURCE_SUPPLY);
 #else
 	LL_PWR_ConfigSupply(LL_PWR_LDO_SUPPLY);
 #endif

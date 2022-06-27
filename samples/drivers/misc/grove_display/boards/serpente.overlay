@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2020 Alexander Falb <fal3xx@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,console = &sercom0;
+		zephyr,shell-uart = &sercom0;
+	};
+};
+
+&sercom0 {
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
+
+	pinctrl-0 = <&sercom0_uart_default>;
+	pinctrl-names = "default";
+};
+
+&sercom2 {
+	compatible = "atmel,sam0-i2c";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	/delete-property/ current-speed;
+	/delete-property/ rxpo;
+	/delete-property/ txpo;
+
+	glcd: glcd@3e {
+		compatible = "seeed,grove-lcd-rgb";
+		label = "GLCD";
+		reg = <0x3e>;
+	};
+};

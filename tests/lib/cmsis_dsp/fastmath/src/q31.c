@@ -6,7 +6,7 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -16,7 +16,9 @@
 #define SNR_ERROR_THRESH	((float32_t)100)
 #define ABS_ERROR_THRESH	((q31_t)2200)
 
-static void test_arm_cos_q31(void)
+ZTEST_SUITE(fastmath_q31, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(fastmath_q31, test_arm_cos_q31)
 {
 	size_t index;
 	size_t length = ARRAY_SIZE(in_angles);
@@ -44,7 +46,7 @@ static void test_arm_cos_q31(void)
 	free(output);
 }
 
-static void test_arm_sin_q31(void)
+ZTEST(fastmath_q31, test_arm_sin_q31)
 {
 	size_t index;
 	size_t length = ARRAY_SIZE(in_angles);
@@ -72,7 +74,7 @@ static void test_arm_sin_q31(void)
 	free(output);
 }
 
-static void test_arm_sqrt_q31(void)
+ZTEST(fastmath_q31, test_arm_sqrt_q31)
 {
 	size_t index;
 	size_t length = ARRAY_SIZE(in_sqrt);
@@ -110,15 +112,4 @@ static void test_arm_sqrt_q31(void)
 
 	/* Free output buffer */
 	free(output);
-}
-
-void test_fastmath_q31(void)
-{
-	ztest_test_suite(fastmath_q31,
-		ztest_unit_test(test_arm_cos_q31),
-		ztest_unit_test(test_arm_sin_q31),
-		ztest_unit_test(test_arm_sqrt_q31)
-		);
-
-	ztest_run_test_suite(fastmath_q31);
 }

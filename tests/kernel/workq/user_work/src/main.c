@@ -13,9 +13,9 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define NUM_OF_WORK 2
 #define SYNC_SEM_INIT_VAL (0U)
 
@@ -32,8 +32,6 @@ static struct k_thread *main_thread;
  *
  * @param unused of type k_work to make handler function accepted
  * by k_work_init
- *
- * @return N/A
  */
 static void common_work_handler(struct k_work_user *unused)
 {

@@ -5,7 +5,10 @@ description: Atmel SAM PWM
 
 compatible: "atmel,sam-pwm"
 
-include: [pwm-controller.yaml, base.yaml]
+include:
+    - name: base.yaml
+    - name: pwm-controller.yaml
+    - name: pinctrl-device.yaml
 
 properties:
     reg:

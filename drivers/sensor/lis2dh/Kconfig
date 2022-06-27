@@ -142,7 +142,7 @@ config LIS2DH_BLOCK_DATA_UPDATE
 	bool "Output registers not updated until MSB and LSB read"
 
 config LIS2DH_MEASURE_TEMPERATURE
-	bool "Enable temperature measurements"
+	bool "Temperature measurements"
 	select LIS2DH_BLOCK_DATA_UPDATE
 	help
 	  The temperature sensor is most suitable for measuring

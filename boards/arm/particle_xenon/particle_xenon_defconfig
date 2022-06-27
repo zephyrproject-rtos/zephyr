@@ -22,3 +22,5 @@ CONFIG_UART_CONSOLE=y
 
 # additional board options
 CONFIG_GPIO_AS_PINRESET=y
+
+CONFIG_PINCTRL=y

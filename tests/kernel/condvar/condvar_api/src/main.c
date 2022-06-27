@@ -6,13 +6,13 @@
 
 
 #include <ztest.h>
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 #include <ztest_error_hook.h>
 
-#define STACK_SIZE     (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE     (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
-#define PRIO_WAIT (CONFIG_ZTEST_THREAD_PRIORITY + 2)
-#define PRIO_WAKE (CONFIG_ZTEST_THREAD_PRIORITY + 1)
+#define PRIO_WAIT (CONFIG_ZTEST_THREAD_PRIORITY)
+#define PRIO_WAKE (CONFIG_ZTEST_THREAD_PRIORITY)
 
 K_THREAD_STACK_DEFINE(stack_1, STACK_SIZE);
 K_THREAD_STACK_DEFINE(condvar_wake_stack, STACK_SIZE);
@@ -70,17 +70,17 @@ void condvar_wait_task(void *p1, void *p2, void *p3)
 	switch (time_val) {
 	case K_TICKS_FOREVER:
 		zassert_true(ret_value == 0,
-		     "k_condvar_wait failed when it shouldn't have");
+		     "k_condvar_wait failed.");
 		zassert_false(ret_value == 0,
-		     "condvar wait task wakeup when it shouldn't have");
+		     "condvar wait task wakeup.");
 		break;
 	case 0:
 		zassert_true(ret_value == -EAGAIN,
-		     "k_condvar_wait failed when it shouldn't have");
+		     "k_condvar_wait failed.");
 		break;
 	default:
 		zassert_true(ret_value == -EAGAIN,
-		     "k_condvar_wait failed when it shouldn't have: %d", ret_value);
+		     "k_condvar_wait failed.: %d", ret_value);
 		break;
 	}
 
@@ -94,7 +94,7 @@ void condvar_wake_task(void *p1, void *p2, void *p3)
 
 	ret_value = k_condvar_signal(&simple_condvar);
 	zassert_equal(ret_value, 0,
-		"k_condvar_wake failed when it shouldn't have (%d!=%d)", ret_value, 0);
+		"k_condvar_wake failed. (%d!=%d)", ret_value, 0);
 }
 
 void condvar_wake_multiple(void *p1, void *p2, void *p3)
@@ -104,7 +104,7 @@ void condvar_wake_multiple(void *p1, void *p2, void *p3)
 
 	ret_value = k_condvar_broadcast(&simple_condvar);
 	zassert_true(ret_value == woken_num,
-		"k_condvar_wake failed when it shouldn't have (%d!=%d)", ret_value, woken_num);
+		"k_condvar_wake failed. (%d!=%d)", ret_value, woken_num);
 }
 
 void condvar_wait_wake_task(void *p1, void *p2, void *p3)
@@ -113,22 +113,21 @@ void condvar_wait_wake_task(void *p1, void *p2, void *p3)
 	int time_val = *(int *)p1;
 
 	zassert_true(time_val >= (int)K_TICKS_FOREVER, "invalid timeout parameter");
-	k_condvar_init(&simple_condvar);
 	k_mutex_lock(&test_mutex, K_FOREVER);
 	ret_value = k_condvar_wait(&simple_condvar, &test_mutex, K_TICKS(time_val));
 
 	switch (time_val) {
 	case K_TICKS_FOREVER:
 		zassert_true(ret_value == 0,
-		     "k_condvar_wait failed when it shouldn't have");
+		     "k_condvar_wait failed.");
 		break;
 	case 0:
 		zassert_true(ret_value == -EAGAIN,
-		     "k_condvar_wait failed when it shouldn't have");
+		     "k_condvar_wait failed.");
 		break;
 	default:
 		zassert_true(ret_value == 0,
-		     "k_condvar_wait failed when it shouldn't have");
+		     "k_condvar_wait failed.");
 		break;
 	}
 
@@ -143,7 +142,7 @@ void test_condvar_wait_forever_wake(void)
 	woken = 1;
 	timeout = K_TICKS_FOREVER;
 
-
+	k_condvar_init(&simple_condvar);
 	k_thread_create(&condvar_tid, stack_1, STACK_SIZE,
 			condvar_wait_wake_task, &timeout, NULL, NULL,
 			PRIO_WAIT, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
@@ -291,6 +290,7 @@ void test_condvar_multiple_threads_wait_wake(void)
 	timeout = K_TICKS_FOREVER;
 	woken = TOTAL_THREADS_WAITING;
 
+	k_condvar_init(&simple_condvar);
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
 
 		k_thread_create(&multiple_tid[i], multiple_stack[i],
@@ -330,8 +330,7 @@ void condvar_multiple_wait_wake_task(void *p1, void *p2, void *p3)
 
 	ret_value = k_condvar_wait(&multiple_condvar[idx],
 		&test_mutex, K_TICKS(time_val));
-	zassert_true(ret_value == 0,
-	     "k_condvar_wait failed when it shouldn't have");
+	zassert_true(ret_value == 0, "k_condvar_wait failed.");
 
 	k_mutex_unlock(&test_mutex);
 }
@@ -350,8 +349,8 @@ void condvar_multiple_wake_task(void *p1, void *p2, void *p3)
 		ret_value = k_condvar_broadcast(&multiple_condvar[idx]);
 	}
 
-	zassert_true(ret_value == woken_num,
-		"k_condvar_wake failed when it shouldn't have");
+	zassert_true(ret_value == woken_num, "k_condvar_wake failed. (%d!=%d)",
+		     ret_value, woken_num);
 }
 
 void test_multiple_condvar_wait_wake(void)
@@ -573,6 +572,7 @@ void test_condvar_usecase_broadcast(void)
 /*test case main entry*/
 void test_main(void)
 {
+#ifdef CONFIG_USERSPACE
 	k_thread_access_grant(k_current_get(), &test_mutex, &condvar_tid, &condvar_wake_tid,
 				&simple_condvar, &stack_1, &condvar_wake_stack);
 
@@ -584,6 +584,8 @@ void test_main(void)
 				      &multiple_condvar[i],
 				      &multiple_wake_stack[i]);
 	}
+#endif
+
 	ztest_test_suite(test_condvar,
 			 ztest_user_unit_test(test_condvar_wait_forever_wake),
 			 ztest_user_unit_test(test_condvar_wait_timeout_wake),

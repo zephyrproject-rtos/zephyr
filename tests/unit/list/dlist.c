@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <sys/dlist.h>
+#include <zephyr/sys/dlist.h>
 
 static sys_dlist_t test_list;
 
@@ -167,7 +167,7 @@ static inline bool verify_tail_head(sys_dlist_t *list,
  */
 
 /**
- * @brief Verify doubly linked list funtionalities
+ * @brief Verify doubly linked list functionalities
  *
  * @see sys_dlist_append(), sys_dlist_remove(), sys_dlist_prepend(),
  * sys_dlist_remove(), sys_dlist_insert(), sys_dlist_peek_next()
@@ -332,7 +332,7 @@ int cond(sys_dnode_t *node, void *data)
 	return (node == data) ? 1 : 0;
 }
 /**
- * @brief Verify doubly linked list funtionalities
+ * @brief Verify doubly linked list functionalities
  *
  * @see sys_dlist_is_head(),sys_dlist_is_tail(),
  * sys_dlist_has_multiple_nodes(),sys_dlist_get()

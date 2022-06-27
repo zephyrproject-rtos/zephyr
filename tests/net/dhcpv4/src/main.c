@@ -6,26 +6,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_DHCPV4_LOG_LEVEL);
 
-#include <zephyr.h>
-#include <linker/sections.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/linker/sections.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
-#include <device.h>
-#include <init.h>
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_ip.h>
-#include <net/dhcpv4.h>
-#include <net/ethernet.h>
-#include <net/net_mgmt.h>
-#include <net/dummy.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/dhcpv4.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/dummy.h>
 
 #include "ipv4.h"
 #include "udp_internal.h"

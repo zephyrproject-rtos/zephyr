@@ -10,11 +10,11 @@
 
 #include <errno.h>
 #include <sys/types.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
 
-#include <bluetooth/buf.h>
-#include <bluetooth/sdp.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/sdp.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_SDP)
 #define LOG_MODULE_NAME bt_sdp
@@ -28,8 +28,6 @@
 #define SDP_PSM 0x0001
 
 #define SDP_CHAN(_ch) CONTAINER_OF(_ch, struct bt_sdp, chan.chan)
-
-#define IN_RANGE(val, min, max) (val >= min && val <= max)
 
 #define SDP_DATA_MTU 200
 
@@ -70,7 +68,7 @@ static struct bt_sdp bt_sdp_pool[CONFIG_BT_MAX_CONN];
 
 /* Pool for outgoing SDP packets */
 NET_BUF_POOL_FIXED_DEFINE(sdp_pool, CONFIG_BT_MAX_CONN,
-			  BT_L2CAP_BUF_SIZE(SDP_MTU), NULL);
+			  BT_L2CAP_BUF_SIZE(SDP_MTU), 8, NULL);
 
 #define SDP_CLIENT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_sdp_client, chan.chan)
 
@@ -1696,7 +1694,7 @@ static void sdp_client_notify_result(struct bt_sdp_client *session,
 		/*
 		 * Set user internal result buffer length as same as record
 		 * length to fake user. User will see the individual record
-		 * length as rec_len insted of whole session rec_buf length.
+		 * length as rec_len instead of whole session rec_buf length.
 		 */
 		result.resp_buf->len = rec_len;
 

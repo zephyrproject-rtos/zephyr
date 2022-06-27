@@ -9,7 +9,7 @@ function Execute(){
  compile it?)\e[39m"
     exit 1
   fi
-  timeout 20 $@ & process_ids="$process_ids $!"
+  timeout 300 $@ & process_ids="$process_ids $!"
 }
 
 function Skip(){

@@ -34,11 +34,13 @@ found, into data and BSS for each partition.
 
 import sys
 import argparse
+import json
 import os
 import re
 from collections import OrderedDict
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
+import elftools.common.exceptions
 
 SZ = 'size'
 SRC = 'sources'
@@ -109,7 +111,11 @@ elf_part_size_regex = re.compile(r'z_data_smem_(.*)_part_size')
 
 def find_obj_file_partitions(filename, partitions):
     with open(filename, 'rb') as f:
-        full_lib = ELFFile(f)
+        try:
+            full_lib = ELFFile(f)
+        except elftools.common.exceptions.ELFError as e:
+            exit(f"Error: {filename}: {e}")
+
         if not full_lib:
             sys.exit("Error parsing file: " + filename)
 
@@ -139,12 +145,37 @@ def parse_obj_files(partitions):
         for filename in files:
             if re.match(r".*\.obj$", filename):
                 fullname = os.path.join(dirpath, filename)
-                find_obj_file_partitions(fullname, partitions)
+                fsize = os.path.getsize(fullname)
+                if fsize != 0:
+                    find_obj_file_partitions(fullname, partitions)
+
+
+def parse_compile_command_file(partitions):
+    # Iterate over all entries to find object files.
+    # Thereafter process each object file to find partitions
+    object_pattern = re.compile(r'-o\s+(\S*)')
+    with open(args.compile_commands_file, 'rb') as f:
+        commands = json.load(f)
+        for command in commands:
+            build_dir = command.get('directory')
+            compile_command = command.get('command')
+            compile_arg = object_pattern.search(compile_command)
+            obj_file = None if compile_arg is None else compile_arg.group(1)
+            if obj_file:
+                fullname = os.path.join(build_dir, obj_file)
+                # Because of issue #40635, then not all objects referenced by
+                # the compile_commands.json file may be available, therefore
+                # only include existing files.
+                if os.path.exists(fullname):
+                    find_obj_file_partitions(fullname, partitions)
 
 
 def parse_elf_file(partitions):
     with open(args.elf, 'rb') as f:
-        elffile = ELFFile(f)
+        try:
+            elffile = ELFFile(f)
+        except elftools.common.exceptions.ELFError as e:
+            exit(f"Error: {args.elf}: {e}")
 
         symbol_tbls = [s for s in elffile.iter_sections()
                        if isinstance(s, SymbolTableSection)]
@@ -206,6 +237,8 @@ def parse_args():
                         help="Root build directory")
     parser.add_argument("-e", "--elf", required=False, default=None,
                         help="ELF file")
+    parser.add_argument("-f", "--compile-commands-file", required=False,
+                        default=None, help="CMake compile commands file")
     parser.add_argument("-o", "--output", required=False,
                         help="Output ld file")
     parser.add_argument("-v", "--verbose", action="count", default=0,
@@ -227,6 +260,8 @@ def main():
 
     if args.directory is not None:
         parse_obj_files(partitions)
+    if args.compile_commands_file is not None:
+        parse_compile_command_file(partitions)
     elif args.elf is not None:
         parse_elf_file(partitions)
     else:

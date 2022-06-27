@@ -23,9 +23,9 @@
 #ifndef ZEPHYR_INCLUDE_MODBUS_INTERNAL_H_
 #define ZEPHYR_INCLUDE_MODBUS_INTERNAL_H_
 
-#include <zephyr.h>
-#include <drivers/gpio.h>
-#include <modbus/modbus.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/modbus/modbus.h>
 
 #ifdef CONFIG_MODBUS_FP_EXTENSIONS
 #define MODBUS_FP_EXTENSIONS_ADDR		5000

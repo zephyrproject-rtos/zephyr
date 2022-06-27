@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
+#include "ruuvi_ruuvitag-pinctrl.dtsi"
 
 / {
 	model = "Ruuvi RuuviTag";
@@ -66,20 +67,19 @@
 	status = "okay";
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
-	tx-pin = <5>;
-	rx-pin = <4>;
-	cts-pin = <31>;
-	rts-pin = <30>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi0 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <29>;
-	mosi-pin = <25>;
-	miso-pin = <28>;
 	cs-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>, <&gpio0 8 GPIO_ACTIVE_LOW>;
 
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-names = "default", "sleep";
 	bme280@0 {
 		compatible = "bosch,bme280";
 		reg = <0>;

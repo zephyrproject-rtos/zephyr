@@ -42,16 +42,16 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		green_pwm_led: green_pwm_led {
-			pwms = <&pwm4 1 0 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm4 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 		orange_pwm_led: orange_pwm_led {
-			pwms = <&pwm4 2 0 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm4 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 		red_pwm_led: red_pwm_led {
-			pwms = <&pwm4 3 0 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm4 3 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 		blue_pwm_led: blue_pwm_led {
-			pwms = <&pwm4 4 0 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm4 4 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 
@@ -108,11 +108,13 @@
 			     &tim4_ch2_pd13
 			     &tim4_ch3_pd14
 			     &tim4_ch4_pd15>;
+		pinctrl-names = "default";
 	};
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -136,6 +138,7 @@
 
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -146,5 +149,6 @@
 
 zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 };

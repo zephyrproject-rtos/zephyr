@@ -1,0 +1,58 @@
+# MPU9250 Nine-Axis Motion Tracking device configuration options
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MPU9250
+	bool "MPU9250 Nine-Axis Motion Tracking Device"
+	depends on I2C
+	help
+	  Enable driver for MPU9250 I2C-based nine-axis motion tracking device.
+
+if MPU9250
+
+choice
+	prompt "Trigger mode"
+	default MPU9250_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config MPU9250_TRIGGER_NONE
+	bool "No trigger"
+
+config MPU9250_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select MPU9250_TRIGGER
+
+config MPU9250_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select MPU9250_TRIGGER
+
+endchoice
+
+config MPU9250_TRIGGER
+	bool
+
+config MPU9250_THREAD_PRIORITY
+	int "Thread priority"
+	depends on MPU9250_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config MPU9250_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on MPU9250_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config MPU9250_MAGN_EN
+	bool "Magnetometer enable"
+	default y
+	help
+	  Enable AK8963 builtin magnetometer.
+
+endif # MPU9250

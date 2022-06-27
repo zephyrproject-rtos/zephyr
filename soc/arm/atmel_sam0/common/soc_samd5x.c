@@ -9,10 +9,10 @@
  * @brief Atmel SAMD MCU series initialization code
  */
 
-#include <arch/cpu.h>
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 
 #define SAM0_DFLL_FREQ_HZ		(48000000U)

@@ -19,17 +19,17 @@ following pattern:
 Building and Running
 ********************
 
-Build the application for the :ref:`stm32373c_eval_board` board, and connect
-a PCA9633 LED driver on the bus I2C-1 at the address 0x62.
+Build the application for the :ref:`nucleo_f334r8_board` board, and connect
+a PCA9633 LED driver on the bus I2C Arduino.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/led_pca9633
-   :board: stm32373c_eval
+   :board: nucleo_f334r8_board
    :goals: build
    :compact:
 
 For flashing the application, refer to the Flashing section of the
-:ref:`stm32373c_eval_board` board documentation.
+:ref:`nucleo_f334r8_board` board documentation.
 
 References
 **********

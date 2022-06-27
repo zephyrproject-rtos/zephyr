@@ -9,3 +9,4 @@ include:
   - name: st,stm32-timers.yaml
     property-blocklist:
         - st,prescaler
+        - st,countermode

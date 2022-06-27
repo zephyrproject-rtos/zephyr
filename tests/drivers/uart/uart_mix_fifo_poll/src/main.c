@@ -11,10 +11,10 @@
  * @}
  */
 
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 #include <ztest.h>
-#include <drivers/counter.h>
-#include <random/rand32.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/random/rand32.h>
 /* RX and TX pins have to be connected together*/
 
 #if defined(CONFIG_BOARD_NRF52840DK_NRF52840)
@@ -36,16 +36,29 @@ struct rx_source {
 	uint8_t prev;
 };
 
+#define BUF_SIZE 16
+
+/* Buffer used for polling. */
+static uint8_t txbuf[3][BUF_SIZE];
+
+/* Buffer used for async or interrupt driven apis.
+ * One of test configurations checks if RO buffer works with the driver.
+ */
+static IF_ENABLED(TEST_CONST_BUFFER, (const)) uint8_t txbuf3[16] = {
+	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+	0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f
+};
+
 struct test_data {
-	uint8_t buf[16];
+	const uint8_t *buf;
 	volatile int cnt;
 	int max;
 	struct k_sem sem;
 };
 
 static struct rx_source source[4];
-static struct test_data test_data[4];
-static struct test_data *int_async_data;
+static struct test_data test_data[3];
+static struct test_data int_async_data;
 
 static const struct device *counter_dev;
 static const struct device *uart_dev;
@@ -152,7 +165,7 @@ static void rx_isr(void)
 	int len;
 
 	do {
-		len = uart_fifo_read(uart_dev, buf, sizeof(buf));
+		len = uart_fifo_read(uart_dev, buf, BUF_SIZE);
 		for (int i = 0; i < len; i++) {
 			process_byte(buf[i]);
 		}
@@ -161,10 +174,10 @@ static void rx_isr(void)
 
 static void tx_isr(void)
 {
-	uint8_t *buf = &int_async_data->buf[int_async_data->cnt & 0xF];
+	const uint8_t *buf = &int_async_data.buf[int_async_data.cnt & 0xF];
 	int len = uart_fifo_fill(uart_dev, buf, 1);
 
-	int_async_data->cnt += len;
+	int_async_data.cnt += len;
 
 	k_busy_wait(len ? 4 : 2);
 	uart_irq_tx_disable(uart_dev);
@@ -208,7 +221,7 @@ static void bulk_poll_out(struct test_data *data, int wait_base, int wait_range)
 	for (int i = 0; i < data->max; i++) {
 
 		data->cnt++;
-		uart_poll_out(uart_dev, data->buf[i % sizeof(data->buf)]);
+		uart_poll_out(uart_dev, data->buf[i % BUF_SIZE]);
 		if (wait_base) {
 			int r = sys_rand32_get();
 
@@ -240,15 +253,17 @@ static void int_async_thread_func(void *p_data, void *base, void *range)
 
 	while (data->cnt < data->max) {
 		if (async) {
-			uint8_t *buf;
 			int err;
 
 			err = k_sem_take(&async_tx_sem, K_MSEC(1000));
 			zassert_true(err >= 0, NULL);
 
-			buf = &int_async_data->buf[data->cnt & 0xF];
-			data->cnt++;
-			err = uart_tx(uart_dev, buf, 1, 1000 * USEC_PER_MSEC);
+			int idx = data->cnt & 0xF;
+			size_t len = (idx < BUF_SIZE / 2) ? 5 : 1; /* Try various lengths */
+
+			data->cnt += len;
+			err = uart_tx(uart_dev, &int_async_data.buf[idx],
+				      len, 1000 * USEC_PER_MSEC);
 			zassert_true(err >= 0,
 					"Unexpected err:%d", err);
 		} else {
@@ -267,7 +282,7 @@ static void poll_out_timer_handler(struct k_timer *timer)
 {
 	struct test_data *data = k_timer_user_data_get(timer);
 
-	uart_poll_out(uart_dev, data->buf[data->cnt % sizeof(data->buf)]);
+	uart_poll_out(uart_dev, data->buf[data->cnt % BUF_SIZE]);
 
 	data->cnt++;
 	if (data->cnt == data->max) {
@@ -288,10 +303,10 @@ static void init_buf(uint8_t *buf, int len, int idx)
 	}
 }
 
-static void init_test_data(struct test_data *data, int id, int repeat)
+static void init_test_data(struct test_data *data, const uint8_t *buf, int repeat)
 {
 	k_sem_init(&data->sem, 0, 1);
-	init_buf(data->buf, sizeof(data->buf), id);
+	data->buf = buf;
 	data->cnt = 0;
 	data->max = repeat;
 }
@@ -303,7 +318,8 @@ static void test_mixed_uart_access(void)
 	int num_of_contexts = ARRAY_SIZE(test_data);
 
 	for (int i = 0; i < ARRAY_SIZE(test_data); i++) {
-		init_test_data(&test_data[i], i, repeat);
+		init_buf(txbuf[i], sizeof(txbuf[i]), i);
+		init_test_data(&test_data[i], txbuf[i], repeat);
 	}
 	(void)k_thread_create(&high_poll_out_thread,
 			      high_poll_out_thread_stack, 1024,
@@ -312,15 +328,12 @@ static void test_mixed_uart_access(void)
 
 
 	if (async || int_driven) {
-		int_async_data = &test_data[3];
+		init_test_data(&int_async_data, txbuf3, repeat);
 		(void)k_thread_create(&int_async_thread,
 				int_async_thread_stack, 1024,
 				int_async_thread_func,
-				int_async_data, (void *)300, (void *)400,
+				&int_async_data, (void *)300, (void *)400,
 				2, 0, K_NO_WAIT);
-	} else {
-		/* async/int driven context not used. */
-		num_of_contexts--;
 	}
 
 	k_timer_user_data_set(&poll_out_timer, &test_data[1]);
@@ -333,18 +346,20 @@ static void test_mixed_uart_access(void)
 	for (int i = 0; i < num_of_contexts; i++) {
 		err = k_sem_take(&test_data[i].sem, K_MSEC(10000));
 		zassert_equal(err, 0, NULL);
+	}
 
+	if (async || int_driven) {
+		err = k_sem_take(&int_async_data.sem, K_MSEC(10000));
+		zassert_equal(err, 0, NULL);
 	}
 
 	k_msleep(10);
 
-	for (int i = 0; i < num_of_contexts; i++) {
+	for (int i = 0; i < (num_of_contexts + (async || int_driven ? 1 : 0)); i++) {
 		zassert_equal(source[i].cnt, repeat,
 				"%d: Unexpected rx bytes count (%d/%d)",
 				i, source[i].cnt, repeat);
-
 	}
-
 }
 
 void test_main(void)

@@ -5,9 +5,9 @@
  */
 
 #include <soc.h>
-#include <drivers/uart/cdc_acm.h>
-#include <drivers/usb/usb_dc.h>
-#include <usb/class/usb_cdc.h>
+#include <zephyr/drivers/uart/cdc_acm.h>
+#include <zephyr/drivers/usb/usb_dc.h>
+#include <zephyr/usb/class/usb_cdc.h>
 
 /*
  * Magic value that causes the bootloader to stay in bootloader mode instead of

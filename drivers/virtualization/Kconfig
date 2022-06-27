@@ -17,7 +17,7 @@ config IVSHMEM
 	depends on PCIE
 	help
 	  This will enable support of qemu's ivshmem device, which is also
-	  present in ACRN hypervizor, and lets VM sharing memory with each
+	  present in ACRN hypervisor, and lets VM sharing memory with each
 	  other.
 
 if IVSHMEM
@@ -55,7 +55,7 @@ config IVSHMEM_INT_PRIORITY
 	  Interrupt priority used for the MSI-X generated interrupts.
 
 config IVSHMEM_SHELL
-	bool "Enable IVshmem shell module"
+	bool "IVshmem shell module"
 	depends on SHELL
 	help
 	  This is mostly a module to help getting info the ivshmem and/or

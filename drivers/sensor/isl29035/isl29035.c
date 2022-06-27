@@ -8,12 +8,12 @@
 
 #define DT_DRV_COMPAT isil_isl29035
 
-#include <kernel.h>
-#include <init.h>
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 #include "isl29035.h"
 

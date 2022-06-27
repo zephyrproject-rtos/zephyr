@@ -190,6 +190,7 @@ config CMSIS_DSP_TRANSFORM
 
 config CMSIS_DSP_SVM
 	bool "Support Vector Machine Functions"
+	select CMSIS_DSP_TABLES
 	help
 	  This option enables the Support Vector Machine Functions, which
 	  support the following algorithms:

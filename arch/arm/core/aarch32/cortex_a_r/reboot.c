@@ -9,9 +9,9 @@
  * @brief ARM Cortex-A and Cortex-R System Control Block interface
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/util.h>
 
 /**
  *
@@ -19,7 +19,6 @@
  *
  * This routine resets the processor.
  *
- * @return N/A
  */
 
 void __weak sys_arch_reboot(int type)

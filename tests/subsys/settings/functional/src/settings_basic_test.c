@@ -9,19 +9,19 @@
  *
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include <errno.h>
-#include <settings/settings.h>
-#include <logging/log.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(settings_basic_test);
 
 #if defined(CONFIG_SETTINGS_FCB) || defined(CONFIG_SETTINGS_NVS)
-#include <storage/flash_map.h>
+#include <zephyr/storage/flash_map.h>
 #endif
 #if IS_ENABLED(CONFIG_SETTINGS_FS)
-#include <fs/fs.h>
-#include <fs/littlefs.h>
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/littlefs.h>
 #endif
 
 /* The standard test expects a cleared flash area.  Make sure it has
@@ -31,7 +31,13 @@ static void test_clear_settings(void)
 {
 #if IS_ENABLED(CONFIG_SETTINGS_FCB) || IS_ENABLED(CONFIG_SETTINGS_NVS)
 	const struct flash_area *fap;
-	int rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
+	int rc;
+
+#if DT_HAS_CHOSEN(zephyr_settings_partition)
+	rc = flash_area_open(FLASH_AREA_ID(chosen_partition), &fap);
+#else
+	rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
+#endif
 
 	if (rc == 0) {
 		rc = flash_area_erase(fap, 0, fap->fa_size);
@@ -335,7 +341,7 @@ static void test_register_and_loading(void)
 	err = (!data.en1) && (data.en2) && (!data.en3);
 	zassert_true(err, "wrong data enable found");
 
-	/* clean up by deregisterring settings_handler */
+	/* clean up by deregistering settings_handler */
 	rc = settings_deregister(&val1_settings);
 	zassert_true(rc, "deregistering val1_settings failed");
 

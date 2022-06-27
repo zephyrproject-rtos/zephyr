@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 /*
  * Test that meta-IRQs return to the cooperative thread they preempted.

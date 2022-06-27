@@ -6,7 +6,7 @@
 
 #define NET_LOG_LEVEL CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #include <zephyr/types.h>
@@ -14,13 +14,13 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 #include <ztest.h>
 
-#include <net/net_if.h>
-#include <net/ethernet.h>
-#include <net/ethernet_bridge.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/ethernet_bridge.h>
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)

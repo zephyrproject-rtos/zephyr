@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/entropy.h>
-#include <syscall_handler.h>
+#include <zephyr/drivers/entropy.h>
+#include <zephyr/syscall_handler.h>
 
 static inline int z_vrfy_entropy_get_entropy(const struct device *dev,
 					     uint8_t *buffer,

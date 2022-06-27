@@ -8,16 +8,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ieee802154_fragment,
 		    CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 #include <errno.h>
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <net/net_stats.h>
-#include <net/udp.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_stats.h>
+#include <zephyr/net/udp.h>
 
 #include "ieee802154_fragment.h"
 
@@ -287,7 +287,8 @@ static inline void clear_reass_cache(uint16_t size, uint16_t tag)
  */
 static void reass_timeout(struct k_work *work)
 {
-	struct frag_cache *cache = CONTAINER_OF(work, struct frag_cache, timer);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct frag_cache *cache = CONTAINER_OF(dwork, struct frag_cache, timer);
 
 	if (cache->pkt) {
 		net_pkt_unref(cache->pkt);

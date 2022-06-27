@@ -17,11 +17,11 @@
 
 #else
 
-#include <net/socket.h>
-#include <kernel.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/kernel.h>
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-#include <net/tls_credentials.h>
+#include <zephyr/net/tls_credentials.h>
 #include "ca_certificate.h"
 #endif
 

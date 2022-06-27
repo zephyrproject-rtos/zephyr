@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <ztest.h>
-#include <linker/sections.h>
+#include <zephyr/linker/sections.h>
 
 
 /**
@@ -36,13 +36,13 @@
 #define PRIORITY_4	4
 
 
-/* this is for storing sequence during initializtion */
+/* this is for storing sequence during initialization */
 __pinned_bss int init_level_sequence[4] = {0};
 __pinned_bss int init_priority_sequence[4] = {0};
 __pinned_bss unsigned int seq_level_cnt;
 __pinned_bss unsigned int seq_priority_cnt;
 
-/* define driver type 1: for testing initialize levels and priorites */
+/* define driver type 1: for testing initialize levels and priorities */
 typedef int (*my_api_configure_t)(const struct device *dev, int dev_config);
 
 struct my_driver_api {
@@ -130,7 +130,7 @@ static int my_driver_pri_4_init(const struct device *dev)
  * @brief Test providing control device driver initialization order
  *
  * @details Test that kernel shall provide control over device driver
- * initalization order, using initialization level and priority for each
+ * initialization order, using initialization level and priority for each
  * instance. We use DEVICE_DEFINE to define device instances and set
  * it's level and priority here, then we run check function later after
  * all of this instance finish their initialization.
@@ -154,7 +154,7 @@ DEVICE_DEFINE(my_driver_level_4, MY_DRIVER_LV_4, &my_driver_lv_4_init,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs_my_drivers);
 
 /* We use priority value of 20 to create a possible sorting conflict with
- * priority value of 2.  So if the linker sorting isn't woring correctly
+ * priority value of 2.  So if the linker sorting isn't working correctly
  * we'll find out.
  */
 DEVICE_DEFINE(my_driver_priority_4, MY_DRIVER_PRI_4,

@@ -1,0 +1,32 @@
+# Bluetooth Audio - Audio Stream Control configuration options
+#
+# Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2022 Nordic Semiconductor ASA
+
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BT_ASCS
+	bool "Audio Stream Control Service Support"
+	depends on BT_PACS
+	select BT_SMP_SC_PAIR_ONLY
+	help
+	  This option enables support for Audio Stream Control Service.
+
+if BT_ASCS
+config BT_ASCS_ASE_SNK_COUNT
+	int "Number of Audio Stream Endpoint Sink Characteristics"
+	default 2
+	range 0 2
+	help
+	  An ASE Sink characteristic represents the state of an ASE, which is
+	  coupled to a single direction of a unicast Audio Stream.
+
+config BT_ASCS_ASE_SRC_COUNT
+	int "Number of Audio Stream Endpoint Source Characteristics"
+	default 2
+	range 0 2
+	help
+	  An ASE Source characteristic represents the state of an ASE, which is
+	  coupled to a single direction of a unicast Audio Stream.
+endif # BT_ASCS

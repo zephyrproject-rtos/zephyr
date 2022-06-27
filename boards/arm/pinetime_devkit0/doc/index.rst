@@ -30,20 +30,22 @@ Hardware
 
 The PineTime is based on a Nordic NRF52832 chip and features:
 
-- 64 MHz Cortex-M4 with FPU
-- 64KB SRAM
-- 512KB on board Flash
-- 1.3 inches (33mm), 240x240 pixels display with ST7789 driver
-- 170-180mAh LiPo battery
-- XT25F32B 32Mb (4MB) SPI NOR Flash
-- CST816S Capacitive Touch
+- CPU: 64 MHz Cortex-M4 with FPU
+- RAM: 64KB SRAM
+- Flash: 512KB on board flash with additional 4MB SPI NOR XT25F32B
+- Display: 1.3 inches (33mm), 240x240 pixels display with ST7789 driver
+- Touchscreen: CST816S Capacitive Touch
+- Battery: 170-180mAh 3.8V LiPo
 - BMA421 Triaxial Acceleration Sensor
 - HRS3300 PPG Heart Rate Sensor
+- Vibration motor
 
-PineTime Port Assignment
+PineTime schematics
 ========================
 
-See `PineTime schematics`_
+The `PineTime schematics`_ are available on the pine64 website. Below
+is an overview of the NRF52 port assignment.
+
 +----------------------+---------------------------------+-----------+
 | NRF52 pins           | Function                        | Direction |
 +======================+=================================+===========+
@@ -162,6 +164,8 @@ Unlocking the device is a one-time action that is needed to enable to debug
 port and provide full access to the device. This will erase all existing
 software from the internal flash.
 
+**Note: PineTime watches shipped after 20 Sep 2020 do not require unlocking. They are shipped unlocked.**
+
 .. code-block:: console
 
    $ nrfjprog -f NRF52 --recover
@@ -181,7 +185,7 @@ Debugging
 Using Segger Ozone debugger, debugging and flashing is made easy.
 
 Simply load the .elf file containing the final firmware and
-setup the debbuger to use SWD over USB for the chip nRF52832_xxAA.
+setup the debugger to use SWD over USB for the chip nRF52832_xxAA.
 This setup can be done using the menu Tools/J-Link Settings. or by directly
 typing the following in the debugger console:
 

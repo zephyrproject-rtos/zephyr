@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_TI_HDC_TI_HDC_H_
 #define ZEPHYR_DRIVERS_SENSOR_TI_HDC_TI_HDC_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #define TI_HDC_REG_TEMP	0x0
 #define TI_HDC_REG_HUMIDITY	0x1

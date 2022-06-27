@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Internal Header for Bluetooth Volumen Control Service (VCS).
+ * @brief Internal Header for Bluetooth Volume Control Service (VCS).
  *
  * Copyright (c) 2020 Bose Corporation
  * Copyright (c) 2020-2021 Nordic Semiconductor ASA

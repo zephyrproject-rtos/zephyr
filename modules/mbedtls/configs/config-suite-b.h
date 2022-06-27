@@ -132,7 +132,7 @@
 
 /*
  * Save RAM at the expense of interoperability: do this only if you control
- * both ends of the connection!  (See coments in "mbedtls/ssl.h".)
+ * both ends of the connection!  (See comments in "mbedtls/ssl.h".)
  * The minimum size here depends on the certificate chain used as well as the
  * typical size of records.
  */

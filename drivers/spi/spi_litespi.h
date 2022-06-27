@@ -9,9 +9,9 @@
 
 #include "spi_context.h"
 
-#include <sys/sys_io.h>
-#include <device.h>
-#include <drivers/spi.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/spi.h>
 
 #define SPI_BASE_ADDR DT_INST_REG_ADDR(0)
 #define SPI_CONTROL_REG SPI_BASE_ADDR

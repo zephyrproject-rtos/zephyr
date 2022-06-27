@@ -1,5 +1,5 @@
 // Copyright (c) 2019-2020 Nordic Semiconductor ASA
-// SPDX-License-Identifer: Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 // Replace use of K_NO_WAIT and K_FOREVER in API that requires
 // timeouts be specified as integral milliseconds.
@@ -17,7 +17,7 @@ virtual report
 
 // ** Handle millisecond timeout as the last parameter
 
-// Match identifer passed as timeout
+// Match identifier passed as timeout
 @match_fn_l1@
 identifier fn =~ "(?x)^
 (dmic_read
@@ -80,7 +80,7 @@ identifier K_FOREVER =~ "^K_FOREVER$";
 
 // ** Handle millisecond timeout as second from last parameter
 
-// Match identifer passed as timeout
+// Match identifier passed as timeout
 @match_fn_l2@
 identifier fn =~ "(?x)^
 (http_client_req
@@ -138,7 +138,7 @@ expression X1;
 
 // ** Handle millisecond timeout as third from last parameter
 
-// Match identifer passed as timeout
+// Match identifier passed as timeout
 @match_fn_l3@
 identifier fn =~ "(?x)^
 (can_send

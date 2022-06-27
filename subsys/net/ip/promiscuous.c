@@ -12,15 +12,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_promisc, CONFIG_NET_PROMISC_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
 
-#include <net/net_if.h>
-#include <net/net_core.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
 
 static K_FIFO_DEFINE(promiscuous_queue);
 static atomic_t enabled = ATOMIC_INIT(0);

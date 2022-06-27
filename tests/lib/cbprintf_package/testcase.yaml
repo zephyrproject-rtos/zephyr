@@ -1,10 +1,13 @@
 common:
-  filter: CONFIG_QEMU_TARGET or CONFIG_BOARD_NATIVE_POSIX
+  platform_type:
+    - qemu
+    - native
   tags: cbprintf
   # FIXME: qemu_arc_hs6x excluded, see #38041
   platform_exclude: qemu_arc_hs6x
   integration_platforms:
     - native_posix
+  min_flash: 48
 tests:
   libraries.cbprintf_package:
     extra_configs:
@@ -32,7 +35,6 @@ tests:
 
   libraries.cbprintf_package_long_double:
     filter: CONFIG_CPU_HAS_FPU
-    platform_exclude: qemu_riscv32
     extra_configs:
       - CONFIG_CBPRINTF_FP_SUPPORT=y
       - CONFIG_CBPRINTF_COMPLETE=y
@@ -41,7 +43,6 @@ tests:
 
   libraries.cbprintf_package_long_double_align_offset:
     filter: CONFIG_CPU_HAS_FPU
-    platform_exclude: qemu_riscv32
     extra_configs:
       - CONFIG_CBPRINTF_FP_SUPPORT=y
       - CONFIG_CBPRINTF_COMPLETE=y
@@ -51,4 +52,57 @@ tests:
 
   libraries.cbprintf_package_nano:
     extra_configs:
+      - CONFIG_CBPRINTF_NANO=y
+
+  # Same test but with test compiled as C++
+  libraries.cbprintf_package_cpp:
+    extra_configs:
+      - CONFIG_CPLUSPLUS=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+
+  libraries.cbprintf_package_no_generic_cpp:
+    extra_configs:
+      - CONFIG_CPLUSPLUS=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_COMPILER_OPT="-DZ_C_GENERIC=0"
+
+  libraries.cbprintf_package_fp_cpp:
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_CPLUSPLUS=y
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_FPU=y
+
+  libraries.cbprintf_package_fp_align_offset_cpp:
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_CPLUSPLUS=y
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_COMPILER_OPT="-DCBPRINTF_PACKAGE_ALIGN_OFFSET=1"
+      - CONFIG_FPU=y
+
+  libraries.cbprintf_package_long_double_cpp:
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_CPLUSPLUS=y
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
+      - CONFIG_FPU=y
+
+  libraries.cbprintf_package_long_double_align_offset_cpp:
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_CPLUSPLUS=y
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
+      - CONFIG_COMPILER_OPT="-DCBPRINTF_PACKAGE_ALIGN_OFFSET=1"
+      - CONFIG_FPU=y
+
+  libraries.cbprintf_package_nano_cpp:
+    extra_configs:
+      - CONFIG_CPLUSPLUS=y
       - CONFIG_CBPRINTF_NANO=y

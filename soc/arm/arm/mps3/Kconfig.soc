@@ -8,6 +8,7 @@ choice
 config SOC_MPS3_AN547
 	bool "Arm Cortex-M55 SSE-300 on MPS3 (AN547)"
 	select CPU_CORTEX_M55
+	select CPU_CORTEX_M_HAS_CACHE
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU

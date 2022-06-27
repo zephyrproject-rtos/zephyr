@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 
 static int soc_init(const struct device *dev)
@@ -25,8 +25,8 @@ static int soc_init(const struct device *dev)
 	for (girc_enable_set = (uint32_t *)&INTS_INST->GIRQ08_EN_SET;
 	     girc_enable_set <= &INTS_INST->GIRQ15_EN_SET;
 	     girc_enable_set += 5) {
-	/* This probably will require tunning, but drawing 8.2 also
-	illustrates how to diasable spurious interrupts */
+	/* This probably will require tuning, but drawing 8.2 also
+	illustrates how to disable spurious interrupts */
 		*girc_enable_set = 0xFFFFFFFF;
 	}
 

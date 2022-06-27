@@ -18,10 +18,10 @@
 extern "C" {
 #endif
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <zephyr/types.h>
-#include <device.h>
-#include <toolchain.h>
+#include <zephyr/device.h>
+#include <zephyr/toolchain.h>
 
 /* Use static variables instead of calloc() */
 #define CO_USE_GLOBALS

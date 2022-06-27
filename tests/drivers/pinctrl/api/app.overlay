@@ -10,11 +10,11 @@
 
 		/* default state for device 0 */
 		test_device0_default: test_device0_default {
-			pins1 {
+			group1 {
 				pins = <0>;
 				bias-pull-up;
 			};
-			pins2 {
+			group2 {
 				pins = <1>;
 				bias-pull-down;
 			};
@@ -22,18 +22,18 @@
 
 		/* sleep state for device 0 */
 		test_device0_sleep: test_device0_sleep {
-			pins1 {
+			group1 {
 				pins = <0>, <1>;
 			};
 		};
 
 		/* alternative default state for device 0 */
 		test_device0_alt_default: test_device0_alt_default {
-			pins1 {
+			group1 {
 				pins = <2>;
 				bias-pull-down;
 			};
-			pins2 {
+			group2 {
 				pins = <3>;
 				bias-pull-up;
 			};
@@ -41,28 +41,28 @@
 
 		/* alternative sleep state for device 0 */
 		test_device0_alt_sleep: test_device0_alt_sleep {
-			pins1 {
+			group1 {
 				pins = <2>, <3>;
 			};
 		};
 
 		/* default state for device 1 */
 		test_device1_default: test_device1_default {
-			pins1 {
+			group1 {
 				pins = <10>, <11>, <12>;
 			};
 		};
 
 		/* custom state "mystate" for device 1 */
 		test_device1_mystate: test_device1_mystate {
-			pins1 {
+			group1 {
 				pins = <10>;
 			};
-			pins2 {
+			group2 {
 				pins = <11>;
 				bias-pull-up;
 			};
-			pins3 {
+			group3 {
 				pins = <12>;
 				bias-pull-down;
 			};

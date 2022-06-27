@@ -17,18 +17,18 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
-#include <usb/usb_device.h>
-#include <drivers/uart.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/drivers/uart.h>
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/services/hrs.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/services/hrs.h>
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 

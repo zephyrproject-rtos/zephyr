@@ -30,7 +30,7 @@ config FXOS8700_MODE_HYBRID
 endchoice
 
 config FXOS8700_TEMP
-	bool "Enable temperature"
+	bool "Temperature"
 	depends on FXOS8700_MODE_MAGN || FXOS8700_MODE_HYBRID
 	help
 	  Enable the temperature sensor. Note that the temperature sensor is

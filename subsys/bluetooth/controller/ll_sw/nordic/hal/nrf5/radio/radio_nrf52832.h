@@ -190,8 +190,6 @@
 #define SW_SWITCH_TIMER NRF_TIMER1
 #define SW_SWITCH_TIMER_EVTS_COMP_BASE 0
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-
-#define SW_SWITCH_TIMER_TASK_GROUP_BASE 0
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 static inline void hal_radio_reset(void)
@@ -199,6 +197,12 @@ static inline void hal_radio_reset(void)
 	/* Anomalies 102, 106 and 107 */
 	*(volatile uint32_t *)0x40001774 = ((*(volatile uint32_t *)0x40001774) &
 					 0xfffffffe) | 0x01000000;
+}
+
+static inline void hal_radio_stop(void)
+{
+	/* TODO: Add any required cleanup of actions taken in hal_radio_reset()
+	 */
 }
 
 static inline void hal_radio_ram_prio_setup(void)

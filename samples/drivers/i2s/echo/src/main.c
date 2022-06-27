@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include "codec.h"
-#include <sys/printk.h>
-#include <drivers/i2s.h>
-#include <drivers/gpio.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/i2s.h>
+#include <zephyr/drivers/gpio.h>
 #include <string.h>
 
 

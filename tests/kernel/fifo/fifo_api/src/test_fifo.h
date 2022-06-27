@@ -8,7 +8,7 @@
 #define __TEST_FIFO_H__
 
 #include <ztest.h>
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 
 typedef struct fdata {
 	sys_snode_t snode;

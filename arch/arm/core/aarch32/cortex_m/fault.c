@@ -12,11 +12,11 @@
  * Common fault handler for ARM Cortex-M processors.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <inttypes.h>
-#include <exc_handle.h>
-#include <logging/log.h>
+#include <zephyr/exc_handle.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
@@ -338,6 +338,17 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 #endif /* CONFIG_MPU_STACK_GUARD || CONFIG_USERSPACE */
 	}
 
+	/* When we were handling this fault, we may have triggered a fp
+	 * lazy stacking Memory Manage fault. At the time of writing, this
+	 * can happen when printing.  If that's true, we should clear the
+	 * pending flag in addition to the clearing the reason for the fault
+	 */
+#if defined(CONFIG_ARMV7_M_ARMV8_M_FP)
+	if ((SCB->CFSR & SCB_CFSR_MLSPERR_Msk) != 0) {
+		SCB->SHCSR &= ~SCB_SHCSR_MEMFAULTPENDED_Msk;
+	}
+#endif /* CONFIG_ARMV7_M_ARMV8_M_FP */
+
 	/* clear MMFSR sticky bits */
 	SCB->CFSR |= SCB_CFSR_MEMFAULTSR_Msk;
 
@@ -353,7 +364,8 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
  *
  * See z_arm_fault_dump() for example.
  *
- * @return N/A
+ * @return error code to identify the fatal error reason.
+ *
  */
 static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
 {
@@ -565,7 +577,6 @@ static uint32_t usage_fault(const z_arch_esf_t *esf)
  *
  * See z_arm_fault_dump() for example.
  *
- * @return N/A
  */
 static void secure_fault(const z_arch_esf_t *esf)
 {
@@ -604,7 +615,6 @@ static void secure_fault(const z_arch_esf_t *esf)
  *
  * See z_arm_fault_dump() for example.
  *
- * @return N/A
  */
 static void debug_monitor(z_arch_esf_t *esf, bool *recoverable)
 {
@@ -725,7 +735,6 @@ static uint32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
  *
  * See z_arm_fault_dump() for example.
  *
- * @return N/A
  */
 static void reserved_exception(const z_arch_esf_t *esf, int fault)
 {
@@ -1057,7 +1066,6 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
  *
  * Turns on the desired hardware faults.
  *
- * @return N/A
  */
 void z_arm_fault_init(void)
 {
@@ -1085,4 +1093,7 @@ void z_arm_fault_init(void)
 	 */
 	SCB->CCR |= SCB_CCR_STKOFHFNMIGN_Msk;
 #endif /* CONFIG_BUILTIN_STACK_GUARD */
+#ifdef CONFIG_TRAP_UNALIGNED_ACCESS
+	SCB->CCR |= SCB_CCR_UNALIGN_TRP_Msk;
+#endif /* CONFIG_TRAP_UNALIGNED_ACCESS */
 }

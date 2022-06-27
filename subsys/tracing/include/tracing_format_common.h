@@ -8,8 +8,8 @@
 #define _TRACE_FORMAT_COMMON_H
 
 #include <stdarg.h>
-#include <sys/printk.h>
-#include <tracing/tracing_format.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/tracing/tracing_format.h>
 
 #ifdef __cplusplus
 extern "C" {

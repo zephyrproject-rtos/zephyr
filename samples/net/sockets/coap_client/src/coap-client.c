@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_coap_client_sample, LOG_LEVEL_DBG);
 
 #include <errno.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
-#include <net/socket.h>
-#include <net/net_mgmt.h>
-#include <net/net_ip.h>
-#include <net/udp.h>
-#include <net/coap.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/udp.h>
+#include <zephyr/net/coap.h>
 
 #include "net_private.h"
 
@@ -388,7 +388,7 @@ static int get_large_coap_msgs(void)
 	return 0;
 }
 
-static int send_obs_reply_ack(uint16_t id, uint8_t *token, uint8_t tkl)
+static void send_obs_reply_ack(uint16_t id)
 {
 	struct coap_packet request;
 	uint8_t *data;
@@ -396,33 +396,52 @@ static int send_obs_reply_ack(uint16_t id, uint8_t *token, uint8_t tkl)
 
 	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
-		return -ENOMEM;
+		return;
 	}
 
 	r = coap_packet_init(&request, data, MAX_COAP_MSG_LEN,
-			     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token, 0, id);
+			     COAP_VERSION_1, COAP_TYPE_ACK, 0, NULL, 0, id);
 	if (r < 0) {
 		LOG_ERR("Failed to init CoAP message");
 		goto end;
 	}
 
-	net_hexdump("Request", request.data, request.offset);
+	net_hexdump("ACK", request.data, request.offset);
 
 	r = send(sock, request.data, request.offset, 0);
+	if (r < 0) {
+		LOG_ERR("Failed to send CoAP ACK");
+	}
 end:
 	k_free(data);
-
-	return r;
 }
 
-static int process_obs_coap_reply(void)
+
+static int obs_notification_cb(const struct coap_packet *response,
+			       struct coap_reply *reply,
+			       const struct sockaddr *from)
 {
-	struct coap_packet reply;
-	uint16_t id;
-	uint8_t token[COAP_TOKEN_MAX_LEN];
+	uint16_t id = coap_header_get_id(response);
+	uint8_t type = coap_header_get_type(response);
+	uint8_t *counter = (uint8_t *)reply->user_data;
+
+	ARG_UNUSED(from);
+
+	printk("\nCoAP OBS Notification\n");
+
+	(*counter)++;
+
+	if (type == COAP_TYPE_CON) {
+		send_obs_reply_ack(id);
+	}
+
+	return 0;
+}
+
+static int process_obs_coap_reply(struct coap_reply *reply)
+{
+	struct coap_packet reply_msg;
 	uint8_t *data;
-	uint8_t type;
-	uint8_t tkl;
 	int rcvd;
 	int ret;
 
@@ -451,28 +470,23 @@ static int process_obs_coap_reply(void)
 
 	net_hexdump("Response", data, rcvd);
 
-	ret = coap_packet_parse(&reply, data, rcvd, NULL, 0);
+	ret = coap_packet_parse(&reply_msg, data, rcvd, NULL, 0);
 	if (ret < 0) {
 		LOG_ERR("Invalid data received");
 		goto end;
 	}
 
-	tkl = coap_header_get_token(&reply, token);
-	id = coap_header_get_id(&reply);
-
-	type = coap_header_get_type(&reply);
-	if (type == COAP_TYPE_ACK) {
-		ret = 0;
-	} else if (type == COAP_TYPE_CON) {
-		ret = send_obs_reply_ack(id, token, tkl);
+	if (coap_response_received(&reply_msg, NULL, reply, 1) == NULL) {
+		printk("\nOther response received\n");
 	}
+
 end:
 	k_free(data);
 
 	return ret;
 }
 
-static int send_obs_coap_request(void)
+static int send_obs_coap_request(struct coap_reply *reply, void *user_data)
 {
 	struct coap_packet request;
 	const char * const *p;
@@ -510,6 +524,10 @@ static int send_obs_coap_request(void)
 
 	net_hexdump("Request", request.data, request.offset);
 
+	coap_reply_init(reply, &request);
+	reply->reply = obs_notification_cb;
+	reply->user_data = user_data;
+
 	r = send(sock, request.data, request.offset, 0);
 
 end:
@@ -518,7 +536,7 @@ end:
 	return r;
 }
 
-static int send_obs_reset_coap_request(void)
+static int send_obs_reset_coap_request(struct coap_reply *reply)
 {
 	struct coap_packet request;
 	const char * const *p;
@@ -531,15 +549,15 @@ static int send_obs_reset_coap_request(void)
 	}
 
 	r = coap_packet_init(&request, data, MAX_COAP_MSG_LEN,
-			     COAP_VERSION_1, COAP_TYPE_RESET,
-			     COAP_TOKEN_MAX_LEN, coap_next_token(),
-			     0, coap_next_id());
+			     COAP_VERSION_1, COAP_TYPE_CON,
+			     reply->tkl, reply->token,
+			     COAP_METHOD_GET, coap_next_id());
 	if (r < 0) {
 		LOG_ERR("Failed to init CoAP message");
 		goto end;
 	}
 
-	r = coap_append_option_int(&request, COAP_OPTION_OBSERVE, 0);
+	r = coap_append_option_int(&request, COAP_OPTION_OBSERVE, 1);
 	if (r < 0) {
 		LOG_ERR("Failed to append Observe option");
 		goto end;
@@ -566,36 +584,40 @@ end:
 
 static int register_observer(void)
 {
-	uint8_t counter = 0U;
+	struct coap_reply reply;
+	uint8_t counter = 0;
 	int r;
 
-	while (1) {
-		/* Test CoAP OBS GET method */
-		if (!counter) {
-			printk("\nCoAP client OBS GET\n");
-			r = send_obs_coap_request();
-			if (r < 0) {
-				return r;
-			}
-		} else {
-			printk("\nCoAP OBS Notification\n");
-		}
+	printk("\nCoAP client OBS GET\n");
+	r = send_obs_coap_request(&reply, &counter);
+	if (r < 0) {
+		return r;
+	}
 
-		r = process_obs_coap_reply();
+	while (1) {
+		r = process_obs_coap_reply(&reply);
 		if (r < 0) {
 			return r;
 		}
 
-		counter++;
-
-		/* Unregister */
-		if (counter == 5U) {
+		if (counter >= 5) {
 			/* TODO: Functionality can be verified byt waiting for
 			 * some time and make sure client shouldn't receive
 			 * any notifications. If client still receives
 			 * notifications means, Observer is not removed.
 			 */
-			return send_obs_reset_coap_request();
+			r = send_obs_reset_coap_request(&reply);
+			if (r < 0) {
+				return r;
+			}
+
+			/* Wait for the final ACK */
+			r = process_obs_coap_reply(&reply);
+			if (r < 0) {
+				return r;
+			}
+
+			break;
 		}
 	}
 

@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 #include <stdio.h>
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 
 #define DELAY_WITH_TRIGGER K_SECONDS(5)
 #define DELAY_WITHOUT_TRIGGER K_SECONDS(1)
@@ -104,7 +104,7 @@ static void process(const struct device *dev)
 	int ret;
 	bool reset_window = false;
 
-	/* Set upddate rate to 240 mHz */
+	/* Set update rate to 240 mHz */
 	sensor_set_attribute(dev, SENSOR_CHAN_AMBIENT_TEMP,
 			     SENSOR_ATTR_SAMPLING_FREQUENCY, 240 * 1000);
 

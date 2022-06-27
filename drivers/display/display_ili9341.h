@@ -1,16 +1,18 @@
 /*
  * Copyright (c) 2020 Teslabs Engineering S.L.
  * Copyright (c) 2021 Krivorot Oleg <krivorot.oleg@gmail.com>
+ * Copyright (c) 2022 Konstantinos Papadopoulos <kostas.papadopulos@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifndef ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9341_H_
 #define ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9341_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 /* Commands/registers. */
 #define ILI9341_GAMSET 0x26
+#define ILI9341_IFMODE 0xB0
 #define ILI9341_FRMCTR1 0xB1
 #define ILI9341_DISCTRL 0xB6
 #define ILI9341_ETMOD 0xB7
@@ -26,10 +28,12 @@
 #define ILI9341_TIMCTRLB 0xEA
 #define ILI9341_PWSEQCTRL 0xED
 #define ILI9341_ENABLE3G 0xF2
+#define ILI9341_IFCTL 0xF6
 #define ILI9341_PUMPRATIOCTRL 0xF7
 
 /* Commands/registers length. */
 #define ILI9341_GAMSET_LEN 1U
+#define ILI9341_IFMODE_LEN 1U
 #define ILI9341_FRMCTR1_LEN 2U
 #define ILI9341_DISCTRL_LEN 3U
 #define ILI9341_PWCTRL1_LEN 1U
@@ -45,6 +49,7 @@
 #define ILI9341_TIMCTRLB_LEN 2U
 #define ILI9341_PUMPRATIOCTRL_LEN 1U
 #define ILI9341_ENABLE3G_LEN 1U
+#define ILI9341_IFCTL_LEN 3U
 #define ILI9341_ETMOD_LEN 1U
 
 /** X resolution (pixels). */
@@ -55,6 +60,7 @@
 /** ILI9341 registers to be initialized. */
 struct ili9341_regs {
 	uint8_t gamset[ILI9341_GAMSET_LEN];
+	uint8_t ifmode[ILI9341_IFMODE_LEN];
 	uint8_t frmctr1[ILI9341_FRMCTR1_LEN];
 	uint8_t disctrl[ILI9341_DISCTRL_LEN];
 	uint8_t pwctrl1[ILI9341_PWCTRL1_LEN];
@@ -70,6 +76,7 @@ struct ili9341_regs {
 	uint8_t timctrlb[ILI9341_TIMCTRLB_LEN];
 	uint8_t pumpratioctrl[ILI9341_PUMPRATIOCTRL_LEN];
 	uint8_t enable3g[ILI9341_ENABLE3G_LEN];
+	uint8_t ifctl[ILI9341_IFCTL_LEN];
 	uint8_t etmod[ILI9341_ETMOD_LEN];
 };
 
@@ -77,6 +84,8 @@ struct ili9341_regs {
 #define ILI9341_REGS_INIT(n)                                                                       \
 	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), gamset) == ILI9341_GAMSET_LEN,        \
 		     "ili9341: Error length gamma set (GAMSET) register");                         \
+	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), ifmode) == ILI9341_IFMODE_LEN,        \
+		     "ili9341: Error length frame rate control (IFMODE) register");                \
 	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), frmctr1) == ILI9341_FRMCTR1_LEN,      \
 		     "ili9341: Error length frame rate control (FRMCTR1) register");               \
 	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), disctrl) == ILI9341_DISCTRL_LEN,      \
@@ -108,10 +117,13 @@ struct ili9341_regs {
 		     "ili9341: Error length Pump ratio control (PUMPRATIOCTRL) register");         \
 	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), enable3g) == ILI9341_ENABLE3G_LEN,    \
 		     "ili9341: Error length enable 3G (ENABLE3G) register");                       \
+	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), ifctl) == ILI9341_IFCTL_LEN,          \
+		     "ili9341: Error length frame rate control (IFCTL) register");                 \
 	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), etmod) == ILI9341_ETMOD_LEN,          \
 		     "ili9341: Error length entry Mode Set (ETMOD) register");                     \
 	static const struct ili9341_regs ili9xxx_regs_##n = {                                      \
 		.gamset = DT_PROP(DT_INST(n, ilitek_ili9341), gamset),                             \
+		.ifmode = DT_PROP(DT_INST(n, ilitek_ili9341), ifmode),                             \
 		.frmctr1 = DT_PROP(DT_INST(n, ilitek_ili9341), frmctr1),                           \
 		.disctrl = DT_PROP(DT_INST(n, ilitek_ili9341), disctrl),                           \
 		.pwctrl1 = DT_PROP(DT_INST(n, ilitek_ili9341), pwctrl1),                           \
@@ -127,6 +139,7 @@ struct ili9341_regs {
 		.timctrlb = DT_PROP(DT_INST(n, ilitek_ili9341), timctrlb),                         \
 		.pumpratioctrl = DT_PROP(DT_INST(n, ilitek_ili9341), pumpratioctrl),               \
 		.enable3g = DT_PROP(DT_INST(n, ilitek_ili9341), enable3g),                         \
+		.ifctl = DT_PROP(DT_INST(n, ilitek_ili9341), ifctl),                               \
 		.etmod = DT_PROP(DT_INST(n, ilitek_ili9341), etmod),                               \
 	}
 

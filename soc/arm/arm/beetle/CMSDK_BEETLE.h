@@ -48,7 +48,7 @@ typedef enum IRQn
   UARTOVF_IRQn                  = 12,      /* UART 0,1,2 Overflow Interrupt         */
   SPI1_IRQn                     = 13,      /* SPI 1 Interrupt                       */
   QSPI_IRQn                     = 14,      /* QUAD SPI Interrupt                    */
-  DMA_IRQn                      = 15,      /* Reserved for DMA Interrup		    */
+  DMA_IRQn                      = 15,      /* Reserved for DMA Interrupt	    */
   PORT0_0_IRQn                  = 16,      /* All P0 I/O pins used as irq source    */
   PORT0_1_IRQn                  = 17,      /* There are 16 pins in total            */
   PORT0_2_IRQn                  = 18,

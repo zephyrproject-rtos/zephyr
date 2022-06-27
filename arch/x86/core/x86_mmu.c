@@ -5,22 +5,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <arch/x86/mmustructs.h>
-#include <sys/mem_manage.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/x86/mmustructs.h>
+#include <zephyr/sys/mem_manage.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/logging/log.h>
 #include <errno.h>
 #include <ctype.h>
-#include <spinlock.h>
+#include <zephyr/spinlock.h>
 #include <kernel_arch_func.h>
 #include <x86_mmu.h>
-#include <init.h>
+#include <zephyr/init.h>
 #include <kernel_internal.h>
 #include <mmu.h>
-#include <drivers/interrupt_controller/loapic.h>
+#include <zephyr/drivers/interrupt_controller/loapic.h>
 #include <mmu.h>
-#include <arch/x86/memmap.h>
+#include <zephyr/arch/x86/memmap.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -453,19 +454,61 @@ static inline void assert_addr_aligned(uintptr_t addr)
 }
 
 __pinned_func
+static inline bool is_addr_aligned(uintptr_t addr)
+{
+	if ((addr & (CONFIG_MMU_PAGE_SIZE - 1)) == 0U) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+__pinned_func
 static inline void assert_virt_addr_aligned(void *addr)
 {
 	assert_addr_aligned((uintptr_t)addr);
 }
 
 __pinned_func
-static inline void assert_region_page_aligned(void *addr, size_t size)
+static inline bool is_virt_addr_aligned(void *addr)
 {
-	assert_virt_addr_aligned(addr);
+	return is_addr_aligned((uintptr_t)addr);
+}
+
+__pinned_func
+static inline void assert_size_aligned(size_t size)
+{
 #if __ASSERT_ON
 	__ASSERT((size & (CONFIG_MMU_PAGE_SIZE - 1)) == 0U,
 		 "unaligned size %zu", size);
 #endif
+}
+
+__pinned_func
+static inline bool is_size_aligned(size_t size)
+{
+	if ((size & (CONFIG_MMU_PAGE_SIZE - 1)) == 0U) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+__pinned_func
+static inline void assert_region_page_aligned(void *addr, size_t size)
+{
+	assert_virt_addr_aligned(addr);
+	assert_size_aligned(size);
+}
+
+__pinned_func
+static inline bool is_region_page_aligned(void *addr, size_t size)
+{
+	if (!is_virt_addr_aligned(addr)) {
+		return false;
+	}
+
+	return is_size_aligned(size);
 }
 
 /*
@@ -934,7 +977,7 @@ static inline pentry_t pte_atomic_update(pentry_t *pte, pentry_t update_val,
  * bits and return the previous PTE value.
  *
  * Common mask values:
- *  MASK_ALL  - Update all PTE bits. Exitsing state totally discarded.
+ *  MASK_ALL  - Update all PTE bits. Existing state totally discarded.
  *  MASK_PERM - Only update permission bits. All other bits and physical
  *              mapping preserved.
  *
@@ -946,13 +989,17 @@ static inline pentry_t pte_atomic_update(pentry_t *pte, pentry_t update_val,
  * @param mask What bits to update in the PTE (ignored if OPTION_RESET or
  *        OPTION_CLEAR)
  * @param options Control options, described above
+ *
+ * @retval 0 if successful
+ * @retval -EFAULT if large page encountered or missing page table level
  */
 __pinned_func
-static void page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
-			 pentry_t *old_val_ptr, pentry_t mask, uint32_t options)
+static int page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
+			pentry_t *old_val_ptr, pentry_t mask, uint32_t options)
 {
 	pentry_t *table = ptables;
 	bool flush = (options & OPTION_FLUSH) != 0U;
+	int ret = 0;
 
 	for (int level = 0; level < NUM_LEVELS; level++) {
 		int index;
@@ -971,20 +1018,40 @@ static void page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
 			break;
 		}
 
-		/* We fail an assertion here due to no support for
+		/* We bail out early here due to no support for
 		 * splitting existing bigpage mappings.
 		 * If the PS bit is not supported at some level (like
 		 * in a PML4 entry) it is always reserved and must be 0
 		 */
-		__ASSERT((*entryp & MMU_PS) == 0U, "large page encountered");
+		CHECKIF(!((*entryp & MMU_PS) == 0U)) {
+			/* Cannot continue since we cannot split
+			 * bigpage mappings.
+			 */
+			LOG_ERR("large page encountered");
+			ret = -EFAULT;
+			goto out;
+		}
+
 		table = next_table(*entryp, level);
-		__ASSERT(table != NULL,
-			 "missing page table level %d when trying to map %p",
-			 level + 1, virt);
+
+		CHECKIF(!(table != NULL)) {
+			/* Cannot continue since table is NULL,
+			 * and it cannot be dereferenced in next loop
+			 * iteration.
+			 */
+			LOG_ERR("missing page table level %d when trying to map %p",
+				level + 1, virt);
+			ret = -EFAULT;
+			goto out;
+		}
 	}
+
+out:
 	if (flush) {
 		tlb_flush_page(virt);
 	}
+
+	return ret;
 }
 
 /**
@@ -1012,20 +1079,30 @@ static void page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
  * @param mask What bits to update in each PTE. Un-set bits will never be
  *        modified. Ignored if OPTION_RESET or OPTION_CLEAR.
  * @param options Control options, described above
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameters are supplied
+ * @retval -EFAULT if errors encountered when updating page tables
  */
 __pinned_func
-static void range_map_ptables(pentry_t *ptables, void *virt, uintptr_t phys,
-			      size_t size, pentry_t entry_flags, pentry_t mask,
-			      uint32_t options)
+static int range_map_ptables(pentry_t *ptables, void *virt, uintptr_t phys,
+			     size_t size, pentry_t entry_flags, pentry_t mask,
+			     uint32_t options)
 {
 	bool zero_entry = (options & (OPTION_RESET | OPTION_CLEAR)) != 0U;
+	int ret = 0, ret2;
 
-	assert_addr_aligned(phys);
-	__ASSERT((size & (CONFIG_MMU_PAGE_SIZE - 1)) == 0U,
-		 "unaligned size %zu", size);
-	__ASSERT((entry_flags & paging_levels[0].mask) == 0U,
-		 "entry_flags " PRI_ENTRY " overlaps address area",
-		 entry_flags);
+	CHECKIF(!is_addr_aligned(phys) || !is_size_aligned(size)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	CHECKIF(!((entry_flags & paging_levels[0].mask) == 0U)) {
+		LOG_ERR("entry_flags " PRI_ENTRY " overlaps address area",
+			entry_flags);
+		ret = -EINVAL;
+		goto out;
+	}
 
 	/* This implementation is stack-efficient but not particularly fast.
 	 * We do a full page table walk for every page we are updating.
@@ -1041,9 +1118,16 @@ static void range_map_ptables(pentry_t *ptables, void *virt, uintptr_t phys,
 			entry_val = (pentry_t)(phys + offset) | entry_flags;
 		}
 
-		page_map_set(ptables, dest_virt, entry_val, NULL, mask,
-			     options);
+		ret2 = page_map_set(ptables, dest_virt, entry_val, NULL, mask,
+				   options);
+		ARG_UNUSED(ret2);
+		CHECKIF(ret2 != 0) {
+			ret = ret2;
+		}
 	}
+
+out:
+	return ret;
 }
 
 /**
@@ -1063,15 +1147,21 @@ static void range_map_ptables(pentry_t *ptables, void *virt, uintptr_t phys,
  * @param size Size of the physical region to map
  * @param entry_flags Desired state of non-address PTE bits covered by mask,
  *                    ignored if OPTION_RESET
- * @param mask What bits in the PTE to actually modifiy; unset bits will
+ * @param mask What bits in the PTE to actually modify; unset bits will
  *             be preserved. Ignored if OPTION_RESET.
  * @param options Control options. Do not set OPTION_USER here. OPTION_FLUSH
  *                will trigger a TLB shootdown after all tables are updated.
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameters are supplied
+ * @retval -EFAULT if errors encountered when updating page tables
  */
 __pinned_func
-static void range_map(void *virt, uintptr_t phys, size_t size,
-		      pentry_t entry_flags, pentry_t mask, uint32_t options)
+static int range_map(void *virt, uintptr_t phys, size_t size,
+		     pentry_t entry_flags, pentry_t mask, uint32_t options)
 {
+	int ret = 0, ret2;
+
 	LOG_DBG("%s: %p -> %p (%zu) flags " PRI_ENTRY " mask "
 		PRI_ENTRY " opt 0x%x", __func__, (void *)phys, virt, size,
 		entry_flags, mask, options);
@@ -1086,7 +1176,11 @@ static void range_map(void *virt, uintptr_t phys, size_t size,
 		 virt, size);
 #endif /* CONFIG_X86_64 */
 
-	__ASSERT((options & OPTION_USER) == 0U, "invalid option for function");
+	CHECKIF(!((options & OPTION_USER) == 0U)) {
+		LOG_ERR("invalid option for mapping");
+		ret = -EINVAL;
+		goto out;
+	}
 
 	/* All virtual-to-physical mappings are the same in all page tables.
 	 * What can differ is only access permissions, defined by the memory
@@ -1102,30 +1196,46 @@ static void range_map(void *virt, uintptr_t phys, size_t size,
 		struct arch_mem_domain *domain =
 			CONTAINER_OF(node, struct arch_mem_domain, node);
 
-		range_map_ptables(domain->ptables, virt, phys, size,
-				  entry_flags, mask, options | OPTION_USER);
+		ret2 = range_map_ptables(domain->ptables, virt, phys, size,
+					 entry_flags, mask,
+					 options | OPTION_USER);
+		ARG_UNUSED(ret2);
+		CHECKIF(ret2 != 0) {
+			ret = ret2;
+		}
 	}
 #endif /* CONFIG_USERSPACE */
-	range_map_ptables(z_x86_kernel_ptables, virt, phys, size, entry_flags,
-			  mask, options);
 
+	ret2 = range_map_ptables(z_x86_kernel_ptables, virt, phys, size,
+				 entry_flags, mask, options);
+	ARG_UNUSED(ret2);
+	CHECKIF(ret2 != 0) {
+		ret = ret2;
+	}
+
+out:
 #ifdef CONFIG_SMP
 	if ((options & OPTION_FLUSH) != 0U) {
 		tlb_shootdown();
 	}
 #endif /* CONFIG_SMP */
+
+	return ret;
 }
 
 __pinned_func
-static inline void range_map_unlocked(void *virt, uintptr_t phys, size_t size,
-				      pentry_t entry_flags, pentry_t mask,
-				      uint32_t options)
+static inline int range_map_unlocked(void *virt, uintptr_t phys, size_t size,
+				     pentry_t entry_flags, pentry_t mask,
+				     uint32_t options)
 {
 	k_spinlock_key_t key;
+	int ret;
 
 	key = k_spin_lock(&x86_mmu_lock);
-	range_map(virt, phys, size, entry_flags, mask, options);
+	ret = range_map(virt, phys, size, entry_flags, mask, options);
 	k_spin_unlock(&x86_mmu_lock, key);
+
+	return ret;
 }
 
 __pinned_func
@@ -1171,15 +1281,23 @@ static pentry_t flags_to_entry(uint32_t flags)
 __pinned_func
 void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
-	range_map_unlocked(virt, phys, size, flags_to_entry(flags),
-			   MASK_ALL, 0);
+	int ret;
+
+	ret = range_map_unlocked(virt, phys, size, flags_to_entry(flags),
+				 MASK_ALL, 0);
+	__ASSERT_NO_MSG(ret == 0);
+	ARG_UNUSED(ret);
 }
 
 /* unmap region addr..addr+size, reset entries and flush TLB */
 void arch_mem_unmap(void *addr, size_t size)
 {
-	range_map_unlocked((void *)addr, 0, size, 0, 0,
-			   OPTION_FLUSH | OPTION_CLEAR);
+	int ret;
+
+	ret = range_map_unlocked((void *)addr, 0, size, 0, 0,
+				 OPTION_FLUSH | OPTION_CLEAR);
+	__ASSERT_NO_MSG(ret == 0);
+	ARG_UNUSED(ret);
 }
 
 #ifdef Z_VM_KERNEL
@@ -1216,7 +1334,7 @@ static void identity_map_remove(uint32_t level)
 #endif
 
 /* Invoked to remove the identity mappings in the page tables,
- * they were only needed to tranisition the instruction pointer at early boot
+ * they were only needed to transition the instruction pointer at early boot
  */
 __boot_func
 void z_x86_mmu_init(void)
@@ -1241,6 +1359,8 @@ void z_x86_mmu_init(void)
 __pinned_func
 void z_x86_set_stack_guard(k_thread_stack_t *stack)
 {
+	int ret;
+
 	/* Applied to all page tables as this affects supervisor mode.
 	 * XXX: This never gets reset when the thread exits, which can
 	 * cause problems if the memory is later used for something else.
@@ -1249,8 +1369,10 @@ void z_x86_set_stack_guard(k_thread_stack_t *stack)
 	 * Guard page is always the first page of the stack object for both
 	 * kernel and thread stacks.
 	 */
-	range_map_unlocked(stack, 0, CONFIG_MMU_PAGE_SIZE,
-			   MMU_P | ENTRY_XD, MASK_PERM, OPTION_FLUSH);
+	ret = range_map_unlocked(stack, 0, CONFIG_MMU_PAGE_SIZE,
+				 MMU_P | ENTRY_XD, MASK_PERM, OPTION_FLUSH);
+	__ASSERT_NO_MSG(ret == 0);
+	ARG_UNUSED(ret);
 }
 #endif /* CONFIG_X86_STACK_PROTECTION */
 
@@ -1354,17 +1476,17 @@ int arch_buffer_validate(void *addr, size_t size, int write)
  */
 
 __pinned_func
-static inline void reset_region(uintptr_t start, size_t size)
+static inline int reset_region(uintptr_t start, size_t size)
 {
-	range_map_unlocked((void *)start, 0, size, 0, 0,
-			   OPTION_FLUSH | OPTION_RESET);
+	return range_map_unlocked((void *)start, 0, size, 0, 0,
+				  OPTION_FLUSH | OPTION_RESET);
 }
 
 __pinned_func
-static inline void apply_region(uintptr_t start, size_t size, pentry_t attr)
+static inline int apply_region(uintptr_t start, size_t size, pentry_t attr)
 {
-	range_map_unlocked((void *)start, 0, size, attr, MASK_PERM,
-			   OPTION_FLUSH);
+	return range_map_unlocked((void *)start, 0, size, attr, MASK_PERM,
+				  OPTION_FLUSH);
 }
 
 /* Cache of the current memory domain applied to the common page tables and
@@ -1448,44 +1570,46 @@ out_unlock:
  * page tables.
  */
 __pinned_func
-void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 				      uint32_t partition_id)
 {
 	struct k_mem_partition *ptn;
 
 	if (domain != current_domain) {
-		return;
+		return 0;
 	}
 
 	ptn = &domain->partitions[partition_id];
-	reset_region(ptn->start, ptn->size);
+
+	return reset_region(ptn->start, ptn->size);
 }
 
 __pinned_func
-void arch_mem_domain_partition_add(struct k_mem_domain *domain,
+int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				   uint32_t partition_id)
 {
 	struct k_mem_partition *ptn;
 
 	if (domain != current_domain) {
-		return;
+		return 0;
 	}
 
 	ptn = &domain->partitions[partition_id];
-	apply_region(ptn->start, ptn->size, ptn->attr);
+
+	return apply_region(ptn->start, ptn->size, ptn->attr);
 }
 
 /* Rest of the APIs don't need to do anything */
 __pinned_func
-void arch_mem_domain_thread_add(struct k_thread *thread)
+int arch_mem_domain_thread_add(struct k_thread *thread)
 {
-
+	return 0;
 }
 
 __pinned_func
-void arch_mem_domain_thread_remove(struct k_thread *thread)
+int arch_mem_domain_thread_remove(struct k_thread *thread)
 {
-
+	return 0;
 }
 #else
 /* Memory domains each have a set of page tables assigned to them */
@@ -1605,10 +1729,11 @@ static int copy_page_table(pentry_t *dst, pentry_t *src, int level)
 }
 
 __pinned_func
-static void region_map_update(pentry_t *ptables, void *start,
+static int region_map_update(pentry_t *ptables, void *start,
 			      size_t size, pentry_t flags, bool reset)
 {
 	uint32_t options = OPTION_USER;
+	int ret;
 	k_spinlock_key_t key;
 
 	if (reset) {
@@ -1619,29 +1744,31 @@ static void region_map_update(pentry_t *ptables, void *start,
 	}
 
 	key = k_spin_lock(&x86_mmu_lock);
-	(void)range_map_ptables(ptables, start, 0, size, flags, MASK_PERM,
+	ret = range_map_ptables(ptables, start, 0, size, flags, MASK_PERM,
 				options);
 	k_spin_unlock(&x86_mmu_lock, key);
 
 #ifdef CONFIG_SMP
 	tlb_shootdown();
 #endif
+
+	return ret;
 }
 
 __pinned_func
-static inline void reset_region(pentry_t *ptables, void *start, size_t size)
+static inline int reset_region(pentry_t *ptables, void *start, size_t size)
 {
 	LOG_DBG("%s(%p, %p, %zu)", __func__, ptables, start, size);
-	region_map_update(ptables, start, size, 0, true);
+	return region_map_update(ptables, start, size, 0, true);
 }
 
 __pinned_func
-static inline void apply_region(pentry_t *ptables, void *start,
+static inline int apply_region(pentry_t *ptables, void *start,
 				size_t size, pentry_t attr)
 {
 	LOG_DBG("%s(%p, %p, %zu, " PRI_ENTRY ")", __func__, ptables, start,
 		size, attr);
-	region_map_update(ptables, start, size, attr, false);
+	return region_map_update(ptables, start, size, attr, false);
 }
 
 __pinned_func
@@ -1720,23 +1847,23 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	return ret;
 }
 
-void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				      uint32_t partition_id)
+int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+				     uint32_t partition_id)
 {
 	struct k_mem_partition *partition = &domain->partitions[partition_id];
 
 	/* Reset the partition's region back to defaults */
-	reset_region(domain->arch.ptables, (void *)partition->start,
-		     partition->size);
+	return reset_region(domain->arch.ptables, (void *)partition->start,
+			    partition->size);
 }
 
 /* Called on thread exit or when moving it to a different memory domain */
-void arch_mem_domain_thread_remove(struct k_thread *thread)
+int arch_mem_domain_thread_remove(struct k_thread *thread)
 {
 	struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;
 
 	if ((thread->base.user_options & K_USER) == 0) {
-		return;
+		return 0;
 	}
 
 	if ((thread->base.thread_state & _THREAD_DEAD) == 0) {
@@ -1745,31 +1872,34 @@ void arch_mem_domain_thread_remove(struct k_thread *thread)
 		 * z_thread_abort().  Resetting the stack region will
 		 * take place in the forthcoming thread_add() call.
 		 */
-		return;
+		return 0;
 	}
 
 	/* Restore permissions on the thread's stack area since it is no
 	 * longer a member of the domain.
 	 */
-	reset_region(domain->arch.ptables, (void *)thread->stack_info.start,
-		     thread->stack_info.size);
+	return reset_region(domain->arch.ptables,
+			    (void *)thread->stack_info.start,
+			    thread->stack_info.size);
 }
 
 __pinned_func
-void arch_mem_domain_partition_add(struct k_mem_domain *domain,
+int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				   uint32_t partition_id)
 {
 	struct k_mem_partition *partition = &domain->partitions[partition_id];
 
 	/* Update the page tables with the partition info */
-	apply_region(domain->arch.ptables, (void *)partition->start,
-		     partition->size, partition->attr | MMU_P);
+	return apply_region(domain->arch.ptables, (void *)partition->start,
+			    partition->size, partition->attr | MMU_P);
 }
 
 /* Invoked from memory domain API calls, as well as during thread creation */
 __pinned_func
-void arch_mem_domain_thread_add(struct k_thread *thread)
+int arch_mem_domain_thread_add(struct k_thread *thread)
 {
+	int ret = 0;
+
 	/* New memory domain we are being added to */
 	struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;
 	/* This is only set for threads that were migrating from some other
@@ -1804,8 +1934,9 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 	 * See #29601
 	 */
 	if (is_migration) {
-		reset_region(old_ptables, (void *)thread->stack_info.start,
-			     thread->stack_info.size);
+		ret = reset_region(old_ptables,
+				   (void *)thread->stack_info.start,
+				   thread->stack_info.size);
 	}
 
 #if !defined(CONFIG_X86_KPTI) && !defined(CONFIG_X86_COMMON_PAGE_TABLE)
@@ -1818,6 +1949,8 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 		z_x86_cr3_set(thread->arch.ptables);
 	}
 #endif /* CONFIG_X86_KPTI */
+
+	return ret;
 }
 #endif /* !CONFIG_X86_COMMON_PAGE_TABLE */
 
@@ -1947,22 +2080,28 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 __pinned_func
 void arch_mem_page_out(void *addr, uintptr_t location)
 {
+	int ret;
 	pentry_t mask = PTE_MASK | MMU_P | MMU_A;
 
 	/* Accessed bit set to guarantee the entry is not completely 0 in
 	 * case of location value 0. A totally 0 PTE is un-mapped.
 	 */
-	range_map(addr, location, CONFIG_MMU_PAGE_SIZE,	MMU_A, mask,
-		  OPTION_FLUSH);
+	ret = range_map(addr, location, CONFIG_MMU_PAGE_SIZE, MMU_A, mask,
+			OPTION_FLUSH);
+	__ASSERT_NO_MSG(ret == 0);
+	ARG_UNUSED(ret);
 }
 
 __pinned_func
 void arch_mem_page_in(void *addr, uintptr_t phys)
 {
+	int ret;
 	pentry_t mask = PTE_MASK | MMU_P | MMU_D | MMU_A;
 
-	range_map(addr, phys, CONFIG_MMU_PAGE_SIZE,	MMU_P, mask,
-		  OPTION_FLUSH);
+	ret = range_map(addr, phys, CONFIG_MMU_PAGE_SIZE, MMU_P, mask,
+			OPTION_FLUSH);
+	__ASSERT_NO_MSG(ret == 0);
+	ARG_UNUSED(ret);
 }
 
 __pinned_func

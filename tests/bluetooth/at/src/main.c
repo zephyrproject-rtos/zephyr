@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
 #include "subsys/bluetooth/host/at.h"
 
@@ -43,8 +43,9 @@ int at_resp(struct at_client *hf_at, struct net_buf *buf)
 	return 0;
 }
 
+ZTEST_SUITE(at_tests, NULL, NULL, NULL, NULL, NULL);
 
-static void test_at(void)
+ZTEST(at_tests, test_at)
 {
 	struct net_buf *buf;
 	int len;
@@ -64,13 +65,4 @@ static void test_at(void)
 	net_buf_add(buf, len);
 
 	zassert_equal(at_parse_input(&at, buf), 0, "Parsing failed");
-}
-
-void test_main(void)
-{
-	ztest_test_suite(at_tests,
-		ztest_unit_test(test_at)
-	);
-
-	ztest_run_test_suite(at_tests);
 }

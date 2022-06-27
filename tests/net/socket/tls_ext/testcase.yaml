@@ -1,6 +1,6 @@
 common:
   tags: net socket tls
 tests:
-  net.socket.tls:
+  net.socket.tls.ext:
     min_ram: 65536
     platform_allow: qemu_cortex_m3 qemu_x86

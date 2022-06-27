@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <linker/linker-defs.h>
-#include <syscall_handler.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/syscall_handler.h>
 
 static volatile int test_flag;
 

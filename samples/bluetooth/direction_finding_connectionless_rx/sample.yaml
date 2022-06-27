@@ -3,8 +3,17 @@ sample:
 tests:
   sample.bluetooth.direction_finding_connectionless_rx:
     harness: bluetooth
-    platform_allow: nrf52833dk_nrf52833
+    platform_allow: nrf52833dk_nrf52833 nrf52833dk_nrf52820 nrf5340dk_nrf5340_cpuapp
     tags: bluetooth
+    integration_platforms:
+      - nrf52833dk_nrf52833
+      - nrf52833dk_nrf52820
+      - nrf5340dk_nrf5340_cpuapp
   sample.bluetooth.direction_finding_connectionless_rx.aod:
+    harness: bluetooth
     extra_args: OVERLAY_CONFIG="overlay-aod.conf"
-    platform_allow: nrf52833dk_nrf52833
+    platform_allow: nrf52833dk_nrf52833 nrf52833dk_nrf52820 nrf5340dk_nrf5340_cpuapp
+    integration_platforms:
+      - nrf52833dk_nrf52833
+      - nrf52833dk_nrf52820
+      - nrf5340dk_nrf5340_cpuapp

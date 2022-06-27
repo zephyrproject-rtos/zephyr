@@ -9,30 +9,18 @@
  * @file Sample app to demonstrate PWM.
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <device.h>
-#include <drivers/pwm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pwm.h>
 
-#define PWM_LED0_NODE	DT_ALIAS(pwm_led0)
+static const struct pwm_dt_spec pwm_led0 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led0));
 
-#if DT_NODE_HAS_STATUS(PWM_LED0_NODE, okay)
-#define PWM_CTLR	DT_PWMS_CTLR(PWM_LED0_NODE)
-#define PWM_CHANNEL	DT_PWMS_CHANNEL(PWM_LED0_NODE)
-#define PWM_FLAGS	DT_PWMS_FLAGS(PWM_LED0_NODE)
-#else
-#error "Unsupported board: pwm-led0 devicetree alias is not defined"
-#define PWM_CTLR	DT_INVALID_NODE
-#define PWM_CHANNEL	0
-#define PWM_FLAGS	0
-#endif
-
-#define MIN_PERIOD_USEC	(USEC_PER_SEC / 64U)
-#define MAX_PERIOD_USEC	USEC_PER_SEC
+#define MIN_PERIOD PWM_SEC(1U) / 128U
+#define MAX_PERIOD PWM_SEC(1U)
 
 void main(void)
 {
-	const struct device *pwm;
 	uint32_t max_period;
 	uint32_t period;
 	uint8_t dir = 0U;
@@ -40,39 +28,37 @@ void main(void)
 
 	printk("PWM-based blinky\n");
 
-	pwm = DEVICE_DT_GET(PWM_CTLR);
-	if (!device_is_ready(pwm)) {
-		printk("Error: PWM device %s is not ready\n", pwm->name);
+	if (!device_is_ready(pwm_led0.dev)) {
+		printk("Error: PWM device %s is not ready\n",
+		       pwm_led0.dev->name);
 		return;
 	}
 
 	/*
-	 * In case the default MAX_PERIOD_USEC value cannot be set for
+	 * In case the default MAX_PERIOD value cannot be set for
 	 * some PWM hardware, decrease its value until it can.
 	 *
-	 * Keep its value at least MIN_PERIOD_USEC * 4 to make sure
+	 * Keep its value at least MIN_PERIOD * 4 to make sure
 	 * the sample changes frequency at least once.
 	 */
-	printk("Calibrating for channel %d...\n", PWM_CHANNEL);
-	max_period = MAX_PERIOD_USEC;
-	while (pwm_pin_set_usec(pwm, PWM_CHANNEL,
-				max_period, max_period / 2U, PWM_FLAGS)) {
+	printk("Calibrating for channel %d...\n", pwm_led0.channel);
+	max_period = MAX_PERIOD;
+	while (pwm_set_dt(&pwm_led0, max_period, max_period / 2U)) {
 		max_period /= 2U;
-		if (max_period < (4U * MIN_PERIOD_USEC)) {
+		if (max_period < (4U * MIN_PERIOD)) {
 			printk("Error: PWM device "
-			       "does not support a period at least %u\n",
-			       4U * MIN_PERIOD_USEC);
+			       "does not support a period at least %lu\n",
+			       4U * MIN_PERIOD);
 			return;
 		}
 	}
 
-	printk("Done calibrating; maximum/minimum periods %u/%u usec\n",
-	       max_period, MIN_PERIOD_USEC);
+	printk("Done calibrating; maximum/minimum periods %u/%lu usec\n",
+	       max_period, MIN_PERIOD);
 
 	period = max_period;
 	while (1) {
-		ret = pwm_pin_set_usec(pwm, PWM_CHANNEL,
-				       period, period / 2U, PWM_FLAGS);
+		ret = pwm_set_dt(&pwm_led0, period, period / 2U);
 		if (ret) {
 			printk("Error %d: failed to set pulse width\n", ret);
 			return;
@@ -82,8 +68,8 @@ void main(void)
 		if (period > max_period) {
 			period = max_period / 2U;
 			dir = 0U;
-		} else if (period < MIN_PERIOD_USEC) {
-			period = MIN_PERIOD_USEC * 2U;
+		} else if (period < MIN_PERIOD) {
+			period = MIN_PERIOD * 2U;
 			dir = 1U;
 		}
 

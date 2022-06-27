@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_mqtt_publisher_sample, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
-#include <net/socket.h>
-#include <net/mqtt.h>
-#include <random/rand32.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/mqtt.h>
+#include <zephyr/random/rand32.h>
 
 #include <string.h>
 #include <errno.h>
@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(net_mqtt_publisher_sample, LOG_LEVEL_DBG);
 #include "config.h"
 
 #if defined(CONFIG_USERSPACE)
-#include <app_memory/app_memdomain.h>
+#include <zephyr/app_memory/app_memdomain.h>
 K_APPMEM_PARTITION_DEFINE(app_partition);
 struct k_mem_domain app_domain;
 #define APP_BMEM K_APP_BMEM(app_partition)
@@ -524,6 +524,8 @@ void main(void)
 #endif
 
 #if defined(CONFIG_USERSPACE)
+	int ret;
+
 	struct k_mem_partition *parts[] = {
 #if Z_LIBC_PARTITION_EXISTS
 		&z_libc_partition,
@@ -531,7 +533,10 @@ void main(void)
 		&app_partition
 	};
 
-	k_mem_domain_init(&app_domain, ARRAY_SIZE(parts), parts);
+	ret = k_mem_domain_init(&app_domain, ARRAY_SIZE(parts), parts);
+	__ASSERT(ret == 0, "k_mem_domain_init() failed %d", ret);
+	ARG_UNUSED(ret);
+
 	k_mem_domain_add_thread(&app_domain, app_thread);
 	k_thread_heap_assign(app_thread, &app_mem_pool);
 

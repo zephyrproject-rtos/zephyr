@@ -1,4 +1,4 @@
 tests:
   pm-device-wakeup-api.dts:
-    tags: power
+    tags: pm
     platform_allow: native_posix

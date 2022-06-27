@@ -7,7 +7,9 @@ description: |
 
 compatible: "atmel,sam-usbc"
 
-include: usb-ep.yaml
+include:
+    - name: usb-ep.yaml
+    - name: pinctrl-device.yaml
 
 properties:
     reg:
@@ -20,15 +22,3 @@ properties:
       type: int
       required: true
       description: peripheral ID
-
-    pinctrl-0:
-      type: phandles
-      required: true
-      description: |
-        GPIO pin configuration for DM & DP signals. We expect that
-        the phandles will reference pinctrl nodes. These nodes will
-        have a nodelabel that matches the Atmel SoC HAL defines and
-        be of the form p<port><pin><periph>_<inst>_<signal>.
-
-        For example the USBC on SAM4L would be
-          pinctrl-0 = <&pa25a_usbc_dm &pa26a_usbc_dp>;

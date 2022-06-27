@@ -4,24 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gdbstub);
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <zephyr/toolchain.h>
 #include <sys/types.h>
+#include <zephyr/sys/util.h>
 
+#include <zephyr/debug/gdbstub.h>
 #include "gdbstub_backend.h"
 
-#define GDB_PACKET_SIZE 256
+/* +1 is for the NULL character added during receive */
+#define GDB_PACKET_SIZE     (CONFIG_GDBSTUB_BUF_SZ + 1)
 
 /* GDB remote serial protocol does not define errors value properly
  * and handle all error packets as the same the code error is not
@@ -31,6 +35,142 @@ LOG_MODULE_REGISTER(gdbstub);
 #define GDB_ERROR_GENERAL   "E01"
 #define GDB_ERROR_MEMORY    "E14"
 #define GDB_ERROR_OVERFLOW  "E22"
+
+static bool not_first_start;
+
+/* Empty memory region array */
+__weak const struct gdb_mem_region gdb_mem_region_array[0];
+
+/* Number of memory regions, default to 0 */
+__weak const size_t gdb_mem_num_regions;
+
+/**
+ * Given a starting address and length of a memory block, find a memory
+ * region descriptor from the memory region array where the memory block
+ * fits inside the memory region.
+ *
+ * @param addr Starting address of the memory block
+ * @param len  Length of the memory block
+ *
+ * @return Pointer to the memory region description if found.
+ *         NULL if not found.
+ */
+static inline const
+struct gdb_mem_region *find_memory_region(const uintptr_t addr, const size_t len)
+{
+	const struct gdb_mem_region *r, *ret = NULL;
+	unsigned int idx;
+
+	for (idx = 0; idx < gdb_mem_num_regions; idx++) {
+		r = &gdb_mem_region_array[idx];
+
+		if ((addr >= r->start) &&
+		    (addr < r->end) &&
+		    ((addr + len) >= r->start) &&
+		    ((addr + len) < r->end)) {
+			ret = r;
+			break;
+		}
+	}
+
+	return ret;
+}
+
+bool gdb_mem_can_read(const uintptr_t addr, const size_t len, uint8_t *align)
+{
+	bool ret = false;
+	const struct gdb_mem_region *r;
+
+	if (gdb_mem_num_regions == 0) {
+		/*
+		 * No region is defined.
+		 * Assume memory access is not restricted, and there is
+		 * no alignment requirement.
+		 */
+		*align = 1;
+		ret = true;
+	} else {
+		r = find_memory_region(addr, len);
+		if (r != NULL) {
+			if ((r->attributes & GDB_MEM_REGION_READ) ==
+			    GDB_MEM_REGION_READ) {
+				if (r->alignment > 0) {
+					*align = r->alignment;
+				} else {
+					*align = 1;
+				}
+				ret = true;
+			}
+		}
+	}
+
+	return ret;
+}
+
+bool gdb_mem_can_write(const uintptr_t addr, const size_t len, uint8_t *align)
+{
+	bool ret = false;
+	const struct gdb_mem_region *r;
+
+	if (gdb_mem_num_regions == 0) {
+		/*
+		 * No region is defined.
+		 * Assume memory access is not restricted, and there is
+		 * no alignment requirement.
+		 */
+		*align = 1;
+		ret = true;
+	} else {
+		r = find_memory_region(addr, len);
+		if (r != NULL) {
+			if ((r->attributes & GDB_MEM_REGION_WRITE) ==
+			    GDB_MEM_REGION_WRITE) {
+				if (r->alignment > 0) {
+					*align = r->alignment;
+				} else {
+					*align = 1;
+				}
+
+				ret = true;
+			}
+		}
+	}
+
+	return ret;
+}
+
+size_t gdb_bin2hex(const uint8_t *buf, size_t buflen, char *hex, size_t hexlen)
+{
+	if ((hexlen + 1) < buflen * 2) {
+		return 0;
+	}
+
+	for (size_t i = 0; i < buflen; i++) {
+		if (hex2char(buf[i] >> 4, &hex[2 * i]) < 0) {
+			return 0;
+		}
+		if (hex2char(buf[i] & 0xf, &hex[2 * i + 1]) < 0) {
+			return 0;
+		}
+	}
+
+	return 2 * buflen;
+}
+
+__weak
+int arch_gdb_add_breakpoint(struct gdb_ctx *ctx, uint8_t type,
+			    uintptr_t addr, uint32_t kind)
+{
+	return -2;
+}
+
+__weak
+int arch_gdb_remove_breakpoint(struct gdb_ctx *ctx, uint8_t type,
+			       uintptr_t addr, uint32_t kind)
+{
+	return -2;
+}
+
 
 /**
  * Add preamble and termination to the given data.
@@ -54,7 +194,7 @@ static int gdb_send_packet(const uint8_t *data, size_t len)
 	/* Send the checksum */
 	z_gdb_putchar('#');
 
-	if (bin2hex(&checksum, 1, buf, sizeof(buf)) == 0) {
+	if (gdb_bin2hex(&checksum, 1, buf, sizeof(buf)) == 0) {
 		return -1;
 	}
 
@@ -70,9 +210,11 @@ static int gdb_send_packet(const uint8_t *data, size_t len)
 }
 
 /**
- * Receives a packet
+ * Receives one whole GDB packet.
  *
- * Return 0 in case of success, otherwise -1
+ * @retval  0 Success
+ * @retval -1 Checksum error
+ * @retval -2 Incoming packet too large
  */
 static int gdb_get_packet(uint8_t *buf, size_t buf_len, size_t *len)
 {
@@ -89,16 +231,20 @@ static int gdb_get_packet(uint8_t *buf, size_t buf_len, size_t *len)
 	}
 
 	*len = 0;
-	/* Read until receive # or the end of the buffer */
-	while (*len < (buf_len - 1)) {
+	/* Read until receive '#' */
+	while (true) {
 		ch = z_gdb_getchar();
 
 		if (ch == '#') {
 			break;
 		}
 
+		/* Only put into buffer if not full */
+		if (*len < (buf_len - 1)) {
+			buf[*len] = ch;
+		}
+
 		checksum += ch;
-		buf[*len] = ch;
 		(*len)++;
 	}
 
@@ -124,58 +270,286 @@ static int gdb_get_packet(uint8_t *buf, size_t buf_len, size_t *len)
 	/* ACK packet */
 	z_gdb_putchar('+');
 
-	return 0;
+	if (*len >= (buf_len - 1)) {
+		return -2;
+	} else {
+		return 0;
+	}
 }
 
-/**
- * Read data from a given memory.
- *
- * Return 0 in case of success, otherwise -1
- */
-static int gdb_mem_read(uint8_t *buf, size_t buf_len,
-			uintptr_t addr, size_t len)
+/* Read memory byte-by-byte */
+static inline int gdb_mem_read_unaligned(uint8_t *buf, size_t buf_len,
+					 uintptr_t addr, size_t len)
 {
 	uint8_t data;
 	size_t pos, count = 0;
 
-	if (len > buf_len) {
-		return -1;
-	}
-
 	/* Read from system memory */
 	for (pos = 0; pos < len; pos++) {
 		data = *(uint8_t *)(addr + pos);
-		count += bin2hex(&data, 1, buf + count, buf_len - count);
+		count += gdb_bin2hex(&data, 1, buf + count, buf_len - count);
 	}
 
 	return count;
 }
 
+/* Read memory with alignment constraint */
+static inline int gdb_mem_read_aligned(uint8_t *buf, size_t buf_len,
+				       uintptr_t addr, size_t len,
+				       uint8_t align)
+{
+	/*
+	 * Memory bus cannot do byte-by-byte access and
+	 * each access must be aligned.
+	 */
+	size_t read_sz, pos;
+	size_t remaining = len;
+	uint8_t *mem_ptr;
+	size_t count = 0;
+	int ret;
+
+	union {
+		uint32_t u32;
+		uint8_t b8[4];
+	} data;
+
+	/* Max alignment */
+	if (align > 4) {
+		ret = -1;
+		goto out;
+	}
+
+	/* Round down according to alignment. */
+	mem_ptr = UINT_TO_POINTER(ROUND_DOWN(addr, align));
+
+	/*
+	 * Figure out how many bytes to skip (pos) and how many
+	 * bytes to read at the beginning of aligned memory access.
+	 */
+	pos = addr & (align - 1);
+	read_sz = MIN(len, align - pos);
+
+	/* Loop till there is nothing more to read. */
+	while (remaining > 0) {
+		data.u32 = *(uint32_t *)mem_ptr;
+
+		/*
+		 * Read read_sz bytes from memory and
+		 * convert the binary data into hexadecimal.
+		 */
+		count += gdb_bin2hex(&data.b8[pos], read_sz,
+				     buf + count, buf_len - count);
+
+		remaining -= read_sz;
+		if (remaining > align) {
+			read_sz = align;
+		} else {
+			read_sz = remaining;
+		}
+
+		/* Read the next aligned datum. */
+		mem_ptr += align;
+
+		/*
+		 * Any memory accesses after the first one are
+		 * aligned by design. So there is no need to skip
+		 * any bytes.
+		 */
+		pos = 0;
+	};
+
+	ret = count;
+
+out:
+	return ret;
+}
+
 /**
- * Write data in a given memory.
+ * Read data from a given memory address and length.
  *
- * Return 0 in case of success, otherwise -1
+ * @return Number of bytes read from memory, or -1 if error
  */
-static int gdb_mem_write(const uint8_t *buf, uintptr_t addr,
-			 size_t len)
+static int gdb_mem_read(uint8_t *buf, size_t buf_len,
+			uintptr_t addr, size_t len)
+{
+	uint8_t align;
+	int ret;
+
+	/*
+	 * Make sure there is enough space in the output
+	 * buffer for hexadecimal representation.
+	 */
+	if ((len * 2) > buf_len) {
+		ret = -1;
+		goto out;
+	}
+
+	if (!gdb_mem_can_read(addr, len, &align)) {
+		ret = -1;
+		goto out;
+	}
+
+	if (align > 1) {
+		ret = gdb_mem_read_aligned(buf, buf_len,
+					   addr, len,
+					   align);
+	} else {
+		ret = gdb_mem_read_unaligned(buf, buf_len,
+					     addr, len);
+	}
+
+out:
+	return ret;
+}
+
+/* Write memory byte-by-byte */
+static int gdb_mem_write_unaligned(const uint8_t *buf, uintptr_t addr,
+				   size_t len)
 {
 	uint8_t data;
+	int ret;
+	size_t count = 0;
 
 	while (len > 0) {
-		size_t ret = hex2bin(buf, 2, &data, sizeof(data));
+		size_t cnt = hex2bin(buf, 2, &data, sizeof(data));
 
-		if (ret == 0) {
-			return -1;
+		if (cnt == 0) {
+			ret = -1;
+			goto out;
 		}
 
 		*(uint8_t *)addr = data;
 
+		count += cnt;
 		addr++;
 		buf += 2;
 		len--;
 	}
 
-	return 0;
+	ret = count;
+
+out:
+	return ret;
+}
+
+/* Write memory with alignment constraint */
+static int gdb_mem_write_aligned(const uint8_t *buf, uintptr_t addr,
+				 size_t len, uint8_t align)
+{
+	size_t pos, write_sz;
+	uint8_t *mem_ptr;
+	size_t count = 0;
+	int ret;
+
+	/*
+	 * Incoming buf is of hexadecimal characters,
+	 * so binary data size is half of that.
+	 */
+	size_t remaining = len;
+
+	union {
+		uint32_t u32;
+		uint8_t b8[4];
+	} data;
+
+	/* Max alignment */
+	if (align > 4) {
+		ret = -1;
+		goto out;
+	}
+
+	/*
+	 * Round down according to alignment.
+	 * Read the data (of aligned size) first
+	 * as we need to do read-modify-write.
+	 */
+	mem_ptr = UINT_TO_POINTER(ROUND_DOWN(addr, align));
+	data.u32 = *(uint32_t *)mem_ptr;
+
+	/*
+	 * Figure out how many bytes to skip (pos) and how many
+	 * bytes to write at the beginning of aligned memory access.
+	 */
+	pos = addr & (align - 1);
+	write_sz = MIN(len, align - pos);
+
+	/* Loop till there is nothing more to write. */
+	while (remaining > 0) {
+		/*
+		 * Write write_sz bytes from memory and
+		 * convert the binary data into hexadecimal.
+		 */
+		size_t cnt = hex2bin(buf, write_sz * 2,
+				     &data.b8[pos], write_sz);
+
+		if (cnt == 0) {
+			ret = -1;
+			goto out;
+		}
+
+		count += cnt;
+		buf += write_sz * 2;
+
+		remaining -= write_sz;
+		if (remaining > align) {
+			write_sz = align;
+		} else {
+			write_sz = remaining;
+		}
+
+		/* Write data to memory */
+		*(uint32_t *)mem_ptr = data.u32;
+
+		/* Point to the next aligned datum. */
+		mem_ptr += align;
+
+		if (write_sz != align) {
+			/*
+			 * Since we are not writing a full aligned datum,
+			 * we need to do read-modify-write. Hence reading
+			 * it here before the next hex2bin() call.
+			 */
+			data.u32 = *(uint32_t *)mem_ptr;
+		}
+
+		/*
+		 * Any memory accesses after the first one are
+		 * aligned by design. So there is no need to skip
+		 * any bytes.
+		 */
+		pos = 0;
+	};
+
+	ret = count;
+
+out:
+	return ret;
+}
+
+/**
+ * Write data to a given memory address and length.
+ *
+ * @return Number of bytes written to memory, or -1 if error
+ */
+static int gdb_mem_write(const uint8_t *buf, uintptr_t addr,
+			 size_t len)
+{
+	uint8_t align;
+	int ret;
+
+	if (!gdb_mem_can_write(addr, len, &align)) {
+		ret = -1;
+		goto out;
+	}
+
+	if (align > 1) {
+		ret = gdb_mem_write_aligned(buf, addr, len, align);
+	} else {
+		ret = gdb_mem_write_unaligned(buf, addr, len);
+	}
+
+out:
+	return ret;
 }
 
 /**
@@ -186,7 +560,7 @@ static int gdb_send_exception(uint8_t *buf, size_t len, uint8_t exception)
 	size_t size;
 
 	*buf = 'T';
-	size = bin2hex(&exception, 1, buf + 1, len - 1);
+	size = gdb_bin2hex(&exception, 1, buf + 1, len - 1);
 	if (size == 0) {
 		return -1;
 	}
@@ -200,49 +574,69 @@ static int gdb_send_exception(uint8_t *buf, size_t len, uint8_t exception)
 /**
  * Synchronously communicate with gdb on the host
  */
-int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
+int z_gdb_main_loop(struct gdb_ctx *ctx)
 {
-	uint8_t buf[GDB_PACKET_SIZE];
+	/* 'static' modifier is intentional so the buffer
+	 * is not declared inside running stack, which may
+	 * not have enough space.
+	 */
+	static uint8_t buf[GDB_PACKET_SIZE];
+
 	enum loop_state {
 		RECEIVING,
 		CONTINUE,
-		FAILED
+		ERROR,
 	} state;
 
 	state = RECEIVING;
 
-	if (start == false) {
+	/* Only send exception if this is not the first
+	 * GDB break.
+	 */
+	if (not_first_start) {
 		gdb_send_exception(buf, sizeof(buf), ctx->exception);
+	} else {
+		not_first_start = true;
 	}
 
-#define CHECK_FAILURE(condition)		\
+#define CHECK_ERROR(condition)			\
 	{					\
 		if ((condition)) {		\
-			state = FAILED;	\
+			state = ERROR;		\
 			break;			\
 		}				\
 	}
 
 #define CHECK_SYMBOL(c)					\
 	{							\
-		CHECK_FAILURE(ptr == NULL || *ptr != (c));	\
+		CHECK_ERROR(ptr == NULL || *ptr != (c));	\
 		ptr++;						\
 	}
 
 #define CHECK_INT(arg)							\
 	{								\
 		arg = strtol((const char *)ptr, (char **)&ptr, 16);	\
-		CHECK_FAILURE(ptr == NULL);				\
+		CHECK_ERROR(ptr == NULL);				\
 	}
 
 	while (state == RECEIVING) {
 		uint8_t *ptr;
 		size_t data_len, pkt_len;
 		uintptr_t addr;
+		uint32_t type;
 		int ret;
 
 		ret = gdb_get_packet(buf, sizeof(buf), &pkt_len);
-		CHECK_FAILURE(ret == -1);
+		if ((ret == -1) || (ret == -2)) {
+			/*
+			 * Send error and wait for next packet.
+			 *
+			 * -1: Checksum error.
+			 * -2: Packet too big.
+			 */
+			gdb_send_packet(GDB_ERROR_GENERAL, 3);
+			continue;
+		}
 
 		if (pkt_len == 0) {
 			continue;
@@ -275,7 +669,7 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 				break;
 			}
 			ret = gdb_mem_read(buf, sizeof(buf), addr, data_len);
-			CHECK_FAILURE(ret == -1);
+			CHECK_ERROR(ret == -1);
 			gdb_send_packet(buf, ret);
 			break;
 
@@ -296,7 +690,7 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 
 			/* Write Memory */
 			pkt_len = gdb_mem_write(ptr, addr, data_len);
-			CHECK_FAILURE(pkt_len == -1);
+			CHECK_ERROR(pkt_len == -1);
 			gdb_send_packet("OK", 2);
 			break;
 
@@ -323,21 +717,18 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 		 * Format: g
 		 */
 		case 'g':
-			pkt_len = bin2hex((const uint8_t *)&(ctx->registers),
-				  sizeof(ctx->registers), buf, sizeof(buf));
-			CHECK_FAILURE(pkt_len == 0);
+			pkt_len = arch_gdb_reg_readall(ctx, buf, sizeof(buf));
+			CHECK_ERROR(pkt_len == 0);
 			gdb_send_packet(buf, pkt_len);
 			break;
 
 		/**
 		 * Write the value of the CPU registers
-		 * Fromat: G XX...
+		 * Format: G XX...
 		 */
 		case 'G':
-			pkt_len = hex2bin(ptr, pkt_len - 1,
-					 (uint8_t *)&(ctx->registers),
-					 sizeof(ctx->registers));
-			CHECK_FAILURE(pkt_len == 0);
+			pkt_len = arch_gdb_reg_writeall(ctx, ptr, pkt_len - 1);
+			CHECK_ERROR(pkt_len == 0);
 			gdb_send_packet("OK", 2);
 			break;
 
@@ -347,14 +738,10 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 		 */
 		case 'p':
 			CHECK_INT(addr);
-			CHECK_FAILURE(addr >= ARCH_GDB_NUM_REGISTERS);
 
 			/* Read Register */
-			pkt_len = bin2hex(
-				(const uint8_t *)&(ctx->registers[addr]),
-				sizeof(ctx->registers[addr]),
-				buf, sizeof(buf));
-			CHECK_FAILURE(pkt_len == 0);
+			pkt_len = arch_gdb_reg_readone(ctx, buf, sizeof(buf), addr);
+			CHECK_ERROR(pkt_len == 0);
 			gdb_send_packet(buf, pkt_len);
 			break;
 
@@ -366,19 +753,40 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 			CHECK_INT(addr);
 			CHECK_SYMBOL('=');
 
-			/*
-			 * GDB requires orig_eax that seems to be
-			 * Linux specific. Unfortunately if we just
-			 * return "E01" gdb will stop.  So, we just
-			 * send "OK" and ignore it.
-			 */
-			if (addr < ARCH_GDB_NUM_REGISTERS) {
-				pkt_len = hex2bin(ptr, strlen(ptr),
-					  (uint8_t *)&(ctx->registers[addr]),
-					  sizeof(ctx->registers[addr]));
-				CHECK_FAILURE(pkt_len == 0);
-			}
+			pkt_len = arch_gdb_reg_writeone(ctx, ptr, strlen(ptr), addr);
+			CHECK_ERROR(pkt_len == 0);
 			gdb_send_packet("OK", 2);
+			break;
+
+		/*
+		 * Breakpoints and Watchpoints
+		 */
+		case 'z':
+			__fallthrough;
+		case 'Z':
+			CHECK_INT(type);
+			CHECK_SYMBOL(',');
+			CHECK_INT(addr);
+			CHECK_SYMBOL(',');
+			CHECK_INT(data_len);
+
+			if (buf[0] == 'Z') {
+				ret = arch_gdb_add_breakpoint(ctx, type,
+							      addr, data_len);
+			} else if (buf[0] == 'z') {
+				ret = arch_gdb_remove_breakpoint(ctx, type,
+								 addr, data_len);
+			}
+
+			if (ret == -2) {
+				/* breakpoint/watchpoint not supported */
+				gdb_send_packet(NULL, 0);
+			} else if (ret == -1) {
+				state = ERROR;
+			} else {
+				gdb_send_packet("OK", 2);
+			}
+
 			break;
 
 
@@ -395,14 +803,18 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 			gdb_send_packet(NULL, 0);
 			break;
 		}
+
+		/*
+		 * If this is an recoverable error, send an error message to
+		 * GDB and continue the debugging session.
+		 */
+		if (state == ERROR) {
+			gdb_send_packet(GDB_ERROR_GENERAL, 3);
+			state = RECEIVING;
+		}
 	}
 
-	if (state == FAILED) {
-		gdb_send_packet(GDB_ERROR_GENERAL, 3);
-		return -1;
-	}
-
-#undef CHECK_FAILURE
+#undef CHECK_ERROR
 #undef CHECK_INT
 #undef CHECK_SYMBOL
 
@@ -422,4 +834,16 @@ int gdb_init(const struct device *arg)
 	return 0;
 }
 
+#ifdef CONFIG_XTENSA
+/*
+ * Interrupt stacks are being setup during init and are not
+ * available before POST_KERNEL. Xtensa needs to trigger
+ * interrupts to get into GDB stub. So this can only be
+ * initialized in POST_KERNEL, or else the interrupt would not be
+ * using the correct interrupt stack and will result in
+ * double exception.
+ */
+SYS_INIT(gdb_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#else
 SYS_INIT(gdb_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif

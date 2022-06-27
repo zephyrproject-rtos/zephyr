@@ -1,6 +1,6 @@
 # BL654 USB adapter board configuration
 
-# Copyright (c) 2021 Laird Connectivity
+# Copyright (c) 2021-2022 Laird Connectivity
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_BL654_USB
@@ -13,22 +13,36 @@ config BOARD
 
 # Nordic nRF5 bootloader exists outside of the partitions specified in the
 # DTS file, so we manually override FLASH_LOAD_OFFSET to link the application
-# correctly, after Nordic MBR.
+# correctly, after Nordic MBR, and limit the maximum size to not protude into
+# the bootloader at the end of flash.
 
 # When building MCUBoot, MCUBoot itself will select USE_DT_CODE_PARTITION
 # which will make it link into the correct partition specified in DTS file,
-# so no override is necessary.
+# so no override or limit is necessary.
 
 config FLASH_LOAD_OFFSET
 	default 0x1000
 	depends on !USE_DT_CODE_PARTITION
 
-if USB_DEVICE_STACK
+config FLASH_LOAD_SIZE
+	default 0xdf000
+	depends on !USE_DT_CODE_PARTITION
 
-config UART_LINE_CTRL
+config USB_CDC_ACM
+	default n if USB_DEVICE_BLUETOOTH
+
+if BL654_USB_SERIAL_BACKEND_CDCACM
+
+config UART_CONSOLE
+	default CONSOLE
+
+config USB_DEVICE_INITIALIZE_AT_BOOT
 	default y
 
-endif # USB_DEVICE_STACK
+config SHELL_BACKEND_SERIAL_CHECK_DTR
+	default SHELL
+
+endif #BL654_USB_SERIAL_BACKEND_CDCACM
 
 if IEEE802154
 

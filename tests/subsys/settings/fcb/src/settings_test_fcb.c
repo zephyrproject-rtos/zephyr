@@ -9,7 +9,7 @@
 
 #include "settings_test.h"
 #include "settings_priv.h"
-#include <storage/flash_map.h>
+#include <zephyr/storage/flash_map.h>
 
 uint8_t val8;
 uint8_t val8_un;
@@ -223,7 +223,7 @@ char *c2_var_find(char *name)
 	idx = strtoul(&name[6], &eptr, 10);
 	zassert_true(*eptr == '\0', "EOF");
 	zassert_true(idx < c2_var_count,
-		     "var index greather than any exporter");
+		     "var index greater than any exporter");
 
 	return val_string[idx];
 }
@@ -341,7 +341,7 @@ int c3_handle_export(int (*cb)(const char *name,
 	return 0;
 }
 
-void tests_settings_check_target(void)
+void test_settings_check_target(void)
 {
 	const struct flash_area *fap;
 	int rc;
@@ -356,7 +356,7 @@ void tests_settings_check_target(void)
 }
 
 void test_settings_encode(void);
-void config_empty_lookups(void);
+void test_config_empty_lookups(void);
 void test_config_insert(void);
 void test_config_getset_unknown(void);
 void test_config_getset_int(void);
@@ -381,14 +381,14 @@ void test_main(void)
 {
 	ztest_test_suite(test_config_fcb,
 			 /* Config tests */
-			 ztest_unit_test(config_empty_lookups),
+			 ztest_unit_test(test_config_empty_lookups),
 			 ztest_unit_test(test_config_insert),
 			 ztest_unit_test(test_config_getset_unknown),
 			 ztest_unit_test(test_config_getset_int),
 			 ztest_unit_test(test_config_getset_int64),
 			 ztest_unit_test(test_config_commit),
 			 /* FCB as backing storage*/
-			 ztest_unit_test(tests_settings_check_target),
+			 ztest_unit_test(test_settings_check_target),
 			 ztest_unit_test(test_config_save_fcb_unaligned),
 			 ztest_unit_test(test_config_empty_fcb),
 			 ztest_unit_test(test_config_save_1_fcb),

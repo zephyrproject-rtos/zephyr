@@ -3,7 +3,7 @@
 
 # Common fields for Nordic nRF family SPI peripherals
 
-include: spi-controller.yaml
+include: [spi-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -14,8 +14,11 @@ properties:
 
     sck-pin:
       type: int
-      required: true
+      required: false
       description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
         The SCK pin to use.
 
         For pins P0.0 through P0.31, use the pin number. For example,
@@ -30,14 +33,20 @@ properties:
 
     mosi-pin:
       type: int
-      required: true
+      required: false
       description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
         The MOSI pin to use. The pin numbering scheme is the same as
         the sck-pin property's.
 
     miso-pin:
       type: int
-      required: true
+      required: false
       description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
         The MISO pin to use. The pin numbering scheme is the same as
         the sck-pin property's.

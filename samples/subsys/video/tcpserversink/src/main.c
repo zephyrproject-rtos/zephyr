@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 
-#include <net/socket.h>
+#include <zephyr/net/socket.h>
 
-#include <drivers/video.h>
+#include <zephyr/drivers/video.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
 #if defined(CONFIG_VIDEO_MCUX_CSI)

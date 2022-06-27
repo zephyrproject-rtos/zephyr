@@ -6,15 +6,15 @@
 
 #define DT_DRV_COMPAT nuvoton_nct38xx_gpio_alert
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/gpio/gpio_nct38xx.h>
-#include <kernel.h>
-#include <sys/util_macro.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_nct38xx.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "gpio_nct38xx.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(gpio_ntc38xx, CONFIG_GPIO_LOG_LEVEL);
 
 /* Driver config */
@@ -37,10 +37,6 @@ struct nct38xx_alert_data {
 	struct k_work alert_worker;
 };
 
-/* Driver convenience defines */
-#define DRV_CONFIG(dev) ((const struct nct38xx_alert_config *)(dev)->config)
-#define DRV_DATA(dev) ((struct nct38xx_alert_data *)(dev)->data)
-
 static void nct38xx_alert_callback(const struct device *dev, struct gpio_callback *cb,
 				   uint32_t pins)
 {
@@ -54,7 +50,7 @@ static void nct38xx_alert_worker(struct k_work *work)
 {
 	struct nct38xx_alert_data *const data =
 		CONTAINER_OF(work, struct nct38xx_alert_data, alert_worker);
-	const struct nct38xx_alert_config *const config = DRV_CONFIG(data->alert_dev);
+	const struct nct38xx_alert_config *const config = data->alert_dev->config;
 	uint16_t alert, mask;
 
 	do {
@@ -91,8 +87,8 @@ static void nct38xx_alert_worker(struct k_work *work)
 
 static int nct38xx_alert_init(const struct device *dev)
 {
-	const struct nct38xx_alert_config *const config = DRV_CONFIG(dev);
-	struct nct38xx_alert_data *const data = DRV_DATA(dev);
+	const struct nct38xx_alert_config *const config = dev->config;
+	struct nct38xx_alert_data *const data = dev->data;
 	int ret;
 
 	/* Check NCT38XX devices are all ready. */
@@ -140,7 +136,7 @@ BUILD_ASSERT(CONFIG_GPIO_NCT38XX_ALERT_INIT_PRIORITY > CONFIG_GPIO_NCT38XX_INIT_
 		.nct38xx_num = DT_INST_PROP_LEN(inst, nct38xx_dev),                                \
 	};                                                                                         \
 	static struct nct38xx_alert_data nct38xx_alert_data_##inst = {                             \
-		.alert_dev = DEVICE_DT_GET(DT_DRV_INST(inst)),                                     \
+		.alert_dev = DEVICE_DT_INST_GET(inst),                                             \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, nct38xx_alert_init, NULL, &nct38xx_alert_data_##inst,          \
 			      &nct38xx_alert_cfg_##inst, POST_KERNEL,                              \

@@ -6,12 +6,24 @@
 
 #define DT_DRV_COMPAT   nxp_imx_flexspi_hyperram
 
-#include <logging/log.h>
-#include <sys/util.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 #include "memc_mcux_flexspi.h"
 
-LOG_MODULE_DECLARE(memc_flexspi, CONFIG_MEMC_LOG_LEVEL);
+
+/*
+ * NOTE: If CONFIG_FLASH_MCUX_FLEXSPI_XIP is selected, Any external functions
+ * called while interacting with the flexspi MUST be relocated to SRAM or ITCM
+ * at runtime, so that the chip does not access the flexspi to read program
+ * instructions while it is being written to
+ */
+#if defined(CONFIG_FLASH_MCUX_FLEXSPI_XIP) && (CONFIG_MEMC_LOG_LEVEL > 0)
+#warning "Enabling memc driver logging and XIP mode simultaneously can cause \
+	read-while-write hazards. This configuration is not recommended."
+#endif
+
+LOG_MODULE_REGISTER(memc_flexspi, CONFIG_MEMC_LOG_LEVEL);
 
 enum {
 	READ_DATA,
@@ -21,11 +33,11 @@ enum {
 };
 
 struct memc_flexspi_hyperram_config {
-	char *controller_label;
 	flexspi_port_t port;
 	flexspi_device_config_t config;
 };
 
+/* Device variables used in critical sections should be in this structure */
 struct memc_flexspi_hyperram_data {
 	const struct device *controller;
 };
@@ -104,10 +116,9 @@ static int memc_flexspi_hyperram_init(const struct device *dev)
 	struct memc_flexspi_hyperram_data *data = dev->data;
 	uint16_t vendor_id;
 
-	data->controller = device_get_binding(config->controller_label);
-	if (data->controller == NULL) {
-		LOG_ERR("Could not find controller");
-		return -EINVAL;
+	if (!device_is_ready(data->controller)) {
+		LOG_ERR("Controller device not ready");
+		return -ENODEV;
 	}
 
 	if (memc_flexspi_set_device_config(data->controller, &config->config,
@@ -171,18 +182,19 @@ static int memc_flexspi_hyperram_init(const struct device *dev)
 #define MEMC_FLEXSPI_HYPERRAM(n)				  \
 	static const struct memc_flexspi_hyperram_config	  \
 		memc_flexspi_hyperram_config_##n = {		  \
-		.controller_label = DT_INST_BUS_LABEL(n),	  \
 		.port = DT_INST_REG_ADDR(n),			  \
 		.config = MEMC_FLEXSPI_DEVICE_CONFIG(n),	  \
 	};							  \
 								  \
 	static struct memc_flexspi_hyperram_data		  \
-		memc_flexspi_hyperram_data_##n;			  \
+		memc_flexspi_hyperram_data_##n = {		  \
+		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),	  \
+	};							  \
 								  \
 	DEVICE_DT_INST_DEFINE(n,				  \
 			      memc_flexspi_hyperram_init,	  \
 			      NULL,				  \
-			      &memc_flexspi_hyperram_data_##n,	  \
+			      &memc_flexspi_hyperram_data_##n,  \
 			      &memc_flexspi_hyperram_config_##n,  \
 			      POST_KERNEL,			  \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \

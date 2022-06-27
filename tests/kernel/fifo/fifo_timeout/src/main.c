@@ -5,9 +5,9 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 
 /*
  * @file
@@ -75,7 +75,7 @@ struct timeout_order_data timeout_order_data_mult_fifo[] = {
 };
 
 #define TIMEOUT_ORDER_NUM_THREADS	ARRAY_SIZE(timeout_order_data_mult_fifo)
-#define TSTACK_SIZE			(512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define TSTACK_SIZE			(512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define FIFO_THREAD_PRIO		-5
 
 static K_THREAD_STACK_ARRAY_DEFINE(ttstack,

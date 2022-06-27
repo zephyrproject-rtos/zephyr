@@ -7,13 +7,13 @@
 #define DT_DRV_COMPAT silabs_gecko_spi_usart
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_gecko);
 #include "spi_context.h"
 
-#include <sys/sys_io.h>
-#include <device.h>
-#include <drivers/spi.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/spi.h>
 #include <soc.h>
 
 #include "em_cmu.h"
@@ -28,8 +28,6 @@ LOG_MODULE_REGISTER(spi_gecko);
 #define CLOCK_USART(id) _CONCAT(cmuClock_USART, id)
 
 #define SPI_WORD_SIZE 8
-
-#define DEV_DATA(dev) ((struct spi_gecko_data *) ((dev)->data))
 
 /* Structure Declarations */
 
@@ -55,7 +53,7 @@ static int spi_config(const struct device *dev,
 		      uint16_t *control)
 {
 	const struct spi_gecko_config *gecko_config = dev->config;
-	struct spi_gecko_data *data = DEV_DATA(dev);
+	struct spi_gecko_data *data = dev->data;
 
 	if (config->operation & SPI_HALF_DUPLEX) {
 		LOG_ERR("Half-duplex not supported");
@@ -172,9 +170,9 @@ static void spi_gecko_xfer(const struct device *dev,
 			   const struct spi_config *config)
 {
 	int ret;
-	struct spi_context *ctx = &DEV_DATA(dev)->ctx;
+	struct spi_gecko_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
 	const struct spi_gecko_config *gecko_config = dev->config;
-	struct spi_gecko_data *data = DEV_DATA(dev);
 
 	spi_context_cs_control(ctx, true);
 
@@ -259,10 +257,11 @@ static int spi_gecko_transceive(const struct device *dev,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs)
 {
+	struct spi_gecko_data *data = dev->data;
 	uint16_t control = 0;
 
 	spi_config(dev, config, &control);
-	spi_context_buffers_setup(&DEV_DATA(dev)->ctx, tx_bufs, rx_bufs, 1);
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 	spi_gecko_xfer(dev, config);
 	return 0;
 }

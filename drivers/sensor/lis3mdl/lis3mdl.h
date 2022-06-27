@@ -7,10 +7,10 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_LIS3MDL_LIS3MDL_H_
 #define ZEPHYR_DRIVERS_SENSOR_LIS3MDL_LIS3MDL_H_
 
-#include <device.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 #define LIS3MDL_I2C_ADDR_BASE           0x1C
 #define LIS3MDL_I2C_ADDR_MASK           (~BIT(1))

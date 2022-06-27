@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <errno.h>
 #include "coverage.h"
 
 
-#ifdef CONFIG_X86
+#if defined(CONFIG_X86) || defined(CONFIG_SOC_SERIES_MPS2)
 #define MALLOC_MAX_HEAP_SIZE 32768
 #define MALLOC_MIN_BLOCK_SIZE 128
 #else

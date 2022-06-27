@@ -12,6 +12,7 @@ set(TFM_VALID_PARTITIONS
   TFM_PARTITION_INITIAL_ATTESTATION
   TFM_PARTITION_PLATFORM
   TFM_PARTITION_AUDIT_LOG
+  TFM_PARTITION_FIRMWARE_UPDATE
   )
 
 # List of all crypto modules that can be enabled/disabled
@@ -31,9 +32,11 @@ set(TFM_CRYPTO_MODULES
 
 if (CONFIG_BUILD_WITH_TFM)
   if (CONFIG_TFM_IPC)
-    list(APPEND TFM_CMAKE_ARGS -DTFM_PSA_API=ON)
+    list(APPEND TFM_CMAKE_ARGS -DTFM_LIB_MODEL=OFF)
     # PSA API awareness for the Non-Secure application
     target_compile_definitions(app PRIVATE "TFM_PSA_API")
+  else()
+    list(APPEND TFM_CMAKE_ARGS -DTFM_LIB_MODEL=ON)
   endif()
   if (CONFIG_TFM_REGRESSION_S)
     list(APPEND TFM_CMAKE_ARGS -DTEST_S=ON)
@@ -48,6 +51,12 @@ if (CONFIG_BUILD_WITH_TFM)
   endif()
   if (CONFIG_TFM_ISOLATION_LEVEL)
     list(APPEND TFM_CMAKE_ARGS -DTFM_ISOLATION_LEVEL=${CONFIG_TFM_ISOLATION_LEVEL})
+  endif()
+  if (CONFIG_TFM_ITS_NUM_ASSETS_OVERRIDE)
+    list(APPEND TFM_CMAKE_ARGS -DITS_NUM_ASSETS=${CONFIG_TFM_ITS_NUM_ASSETS})
+  endif()
+  if (CONFIG_TFM_ITS_MAX_ASSET_SIZE_OVERRIDE)
+    list(APPEND TFM_CMAKE_ARGS -DITS_MAX_ASSET_SIZE=${CONFIG_TFM_ITS_MAX_ASSET_SIZE})
   endif()
   if (CONFIG_TFM_PROFILE)
     list(APPEND TFM_CMAKE_ARGS -DTFM_PROFILE=${CONFIG_TFM_PROFILE})
@@ -91,7 +100,7 @@ if (CONFIG_BUILD_WITH_TFM)
     set(TFM_PARTITION_LOG_LEVEL "TFM_PARTITION_LOG_LEVEL_INFO")
   elseif (CONFIG_TFM_PARTITION_LOG_LEVEL_ERROR)
     set(TFM_PARTITION_LOG_LEVEL "TFM_PARTITION_LOG_LEVEL_ERROR")
-  elseif (CONFIG_TFM_PARTITION_LOG_LEVEL_SILENCE)
+  elseif (CONFIG_TFM_PARTITION_LOG_LEVEL_SILENCE OR CONFIG_TFM_LOG_LEVEL_SILENCE)
     set(TFM_PARTITION_LOG_LEVEL "TFM_PARTITION_LOG_LEVEL_SILENCE")
   endif()
 
@@ -105,8 +114,8 @@ if (CONFIG_BUILD_WITH_TFM)
     set(TFM_SPM_LOG_LEVEL "TFM_SPM_LOG_LEVEL_INFO")
   elseif (CONFIG_TFM_SPM_LOG_LEVEL_ERROR)
     set(TFM_SPM_LOG_LEVEL "TFM_SPM_LOG_LEVEL_ERROR")
-  elseif (CONFIG_TFM_SPM_LOG_LEVEL_SILENCE)
-    set(TFM_SPM_LOG_LEVEL "TFM_PARTITION_LOG_LEVEL_SILENCE")
+  elseif (CONFIG_TFM_SPM_LOG_LEVEL_SILENCE OR CONFIG_TFM_LOG_LEVEL_SILENCE)
+    set(TFM_SPM_LOG_LEVEL "TFM_SPM_LOG_LEVEL_SILENCE")
   endif()
 
   if (DEFINED TFM_SPM_LOG_LEVEL)
@@ -138,25 +147,27 @@ if (CONFIG_BUILD_WITH_TFM)
   set(TFM_BINARY_DIR ${CMAKE_BINARY_DIR}/tfm)
 
   set(VENEERS_FILE ${TFM_BINARY_DIR}/secure_fw/s_veneers.o)
-  set(TFM_API_NS_PATH ${TFM_BINARY_DIR}/app/libtfm_api_ns.a)
+  set(TFM_API_NS_PATH ${TFM_BINARY_DIR}/tf-m-tests/app/libtfm_api_ns.a)
   set(TFM_GENERATED_INCLUDES ${TFM_BINARY_DIR}/generated/interface/include)
   set(PLATFORM_NS_FILE ${TFM_BINARY_DIR}/platform/libplatform_ns.a)
 
   if (TFM_PSA_TEST_SUITE)
-    set(PSA_TEST_VAL_FILE ${TFM_BINARY_DIR}/app/psa_api_tests/val/val_nspe.a)
-    set(PSA_TEST_PAL_FILE ${TFM_BINARY_DIR}/app/psa_api_tests/platform/pal_nspe.a)
+    set(PSA_TEST_VAL_FILE ${TFM_BINARY_DIR}/tf-m-tests/app/psa_api_tests/val/val_nspe.a)
+    set(PSA_TEST_PAL_FILE ${TFM_BINARY_DIR}/tf-m-tests/app/psa_api_tests/platform/pal_nspe.a)
     set(COMBINE_DIR_STORAGE storage)
     set(COMBINE_DIR_PROTECTED_STORAGE storage)
     set(COMBINE_DIR_INTERNAL_TRUSTED_STORAGE storage)
     set(COMBINE_DIR_CRYPTO crypto)
     set(COMBINE_DIR_INITIAL_ATTESTATION initial_attestation)
-    set(PSA_TEST_COMBINE_FILE ${TFM_BINARY_DIR}/app/psa_api_tests/dev_apis/${COMBINE_DIR_${TFM_PSA_TEST_SUITE}}/test_combine.a)
+    set(PSA_TEST_COMBINE_FILE ${TFM_BINARY_DIR}/tf-m-tests/app/psa_api_tests/dev_apis/${COMBINE_DIR_${TFM_PSA_TEST_SUITE}}/test_combine.a)
   endif()
 
   if(CONFIG_TFM_BL2)
+    set(BL2_ELF_FILE ${TFM_BINARY_DIR}/bin/bl2.elf)
     set(BL2_BIN_FILE ${TFM_BINARY_DIR}/bin/bl2.bin)
     set(BL2_HEX_FILE ${TFM_BINARY_DIR}/bin/bl2.hex)
   endif()
+  set(TFM_S_ELF_FILE ${TFM_BINARY_DIR}/bin/tfm_s.elf)
   set(TFM_S_BIN_FILE ${TFM_BINARY_DIR}/bin/tfm_s.bin)
   set(TFM_S_HEX_FILE ${TFM_BINARY_DIR}/bin/tfm_s.hex)
   set(TFM_NS_BIN_FILE ${TFM_BINARY_DIR}/bin/tfm_ns.bin)
@@ -173,8 +184,10 @@ if (CONFIG_BUILD_WITH_TFM)
     ${PSA_TEST_PAL_FILE}
     ${PSA_TEST_COMBINE_FILE}
     ${PLATFORM_NS_FILE}
+    ${BL2_ELF_FILE}
     ${BL2_BIN_FILE}
     ${BL2_HEX_FILE}
+    ${TFM_S_ELF_FILE}
     ${TFM_S_BIN_FILE}
     ${TFM_S_HEX_FILE}
     ${TFM_NS_BIN_FILE}
@@ -214,6 +227,10 @@ if (CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_PATH=${ZEPHYR_MCUBOOT_MODULE_DIR})
   endif()
 
+  if(CONFIG_TFM_MCUBOOT_DATA_SHARING)
+    list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_DATA_SHARING=ON)
+  endif()
+
   if(TFM_PSA_TEST_SUITE)
     list(APPEND TFM_CMAKE_ARGS
       -DPSA_TOOLCHAIN_FILE=${CMAKE_CURRENT_LIST_DIR}/psa/GNUARM.cmake
@@ -233,6 +250,7 @@ if (CONFIG_BUILD_WITH_TFM)
       -DCROSS_COMPILE=${TFM_TOOLCHAIN_PATH}/${TFM_TOOLCHAIN_PREFIX}
       -DCMAKE_BUILD_TYPE=${TFM_CMAKE_BUILD_TYPE}
       -DTFM_PLATFORM=${CONFIG_TFM_BOARD}
+      -DCONFIG_TFM_BUILD_LOG_QUIET=ON
       ${TFM_CMAKE_ARGS}
       $<GENEX_EVAL:$<TARGET_PROPERTY:zephyr_property_target,TFM_CMAKE_OPTIONS>>
       -DTFM_TEST_REPO_PATH=${ZEPHYR_TF_M_TESTS_MODULE_DIR}
@@ -271,10 +289,15 @@ if (CONFIG_BUILD_WITH_TFM)
     BUILD_BYPRODUCTS ${BUILD_BYPRODUCTS}
   )
 
+  # Set TFM binary directory as target property on 'tfm'
+  # This is the root of all TFM build artifacts.
+  set_target_properties(tfm PROPERTIES TFM_BINARY_DIR ${TFM_BINARY_DIR})
+
   # Set BL2 (MCUboot) executable file paths as target properties on 'tfm'
   # These files are produced by the TFM build system.
   if(CONFIG_TFM_BL2)
     set_target_properties(tfm PROPERTIES
+      BL2_ELF_FILE ${BL2_ELF_FILE}
       BL2_BIN_FILE ${BL2_BIN_FILE}
       BL2_HEX_FILE ${BL2_HEX_FILE}
       )
@@ -285,6 +308,7 @@ if (CONFIG_BUILD_WITH_TFM)
   # Note that the Nonsecure FW is replaced by the Zephyr app in regular Zephyr
   # builds.
   set_target_properties(tfm PROPERTIES
+    TFM_S_ELF_FILE ${TFM_S_ELF_FILE}
     TFM_S_BIN_FILE ${TFM_S_BIN_FILE} # TFM Secure FW (unsigned)
     TFM_S_HEX_FILE ${TFM_S_HEX_FILE} # TFM Secure FW (unsigned)
     TFM_NS_BIN_FILE ${TFM_NS_BIN_FILE} # TFM Nonsecure FW (unsigned)
@@ -309,7 +333,7 @@ if (CONFIG_BUILD_WITH_TFM)
     )
 
   target_include_directories(tfm_api PRIVATE
-    ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/interface/include
+    ${TFM_BINARY_DIR}/install/interface/include
     )
 
   zephyr_library_link_libraries(
@@ -324,18 +348,9 @@ if (CONFIG_BUILD_WITH_TFM)
   # To ensure that generated include files are created before they are used.
   add_dependencies(zephyr_interface tfm)
 
-  # Set default image versions if not defined elsewhere
-  if (NOT DEFINED TFM_IMAGE_VERSION_S)
-    set(TFM_IMAGE_VERSION_S 0.0.0+0)
-  endif()
-
-  if (NOT DEFINED TFM_IMAGE_VERSION_NS)
-    set(TFM_IMAGE_VERSION_NS 0.0.0+0)
-  endif()
-
   if (CONFIG_TFM_BL2)
-    set(PREPROCESSED_FILE_S "${CMAKE_BINARY_DIR}/tfm/bl2/ext/mcuboot/CMakeFiles/signing_layout_s.dir/signing_layout_s.o")
-    set(PREPROCESSED_FILE_NS "${CMAKE_BINARY_DIR}/tfm/bl2/ext/mcuboot/CMakeFiles/signing_layout_ns.dir/signing_layout_ns.o")
+    set(PREPROCESSED_FILE_S "${TFM_BINARY_DIR}/bl2/ext/mcuboot/CMakeFiles/signing_layout_s.dir/signing_layout_s.o")
+    set(PREPROCESSED_FILE_NS "${TFM_BINARY_DIR}/bl2/ext/mcuboot/CMakeFiles/signing_layout_ns.dir/signing_layout_ns.o")
     set(TFM_MCUBOOT_DIR "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot")
   endif()
 
@@ -367,7 +382,7 @@ if (CONFIG_BUILD_WITH_TFM)
       -k ${CONFIG_TFM_KEY_FILE_${SUFFIX}}
       --public-key-format ${TFM_PUBLIC_KEY_FORMAT}
       --align 1
-      -v ${TFM_IMAGE_VERSION_${SUFFIX}}
+      -v ${CONFIG_TFM_IMAGE_VERSION_${SUFFIX}}
       ${pad_args}
       ${HEX_ADDR_ARGS_${SUFFIX}}
       ${ADD_${SUFFIX}_IMAGE_MIN_VER}

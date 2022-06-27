@@ -13,7 +13,7 @@ def verbose(msg):
     if args.verbose:
         print(msg)
 
-def build_elf(elf_file):
+def build_elf(elf_file, include_dirs):
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
     cfile = os.path.join(base_dir, "zefi.c")
@@ -106,9 +106,12 @@ def build_elf(elf_file):
     #  + We need pic to enforce that the linker adds no relocations
     #  + UEFI can take interrupts on our stack, so no red zone
     #  + UEFI API assumes 16-bit wchar_t
-    cmd = [args.compiler, "-shared", "-Wall", "-Werror", "-I.",
-        "-fno-stack-protector", "-fpic", "-mno-red-zone", "-fshort-wchar",
-        "-Wl,-nostdlib", "-T", ldscript, "-o", "zefi.elf", cfile]
+    includes = []
+    for include_dir in include_dirs:
+        includes.extend(["-I", include_dir])
+    cmd = ([args.compiler, "-shared", "-Wall", "-Werror", "-I."] + includes +
+           ["-fno-stack-protector", "-fpic", "-mno-red-zone", "-fshort-wchar",
+            "-Wl,-nostdlib", "-T", ldscript, "-o", "zefi.elf", cfile])
     verbose(" ".join(cmd))
     subprocess.run(cmd, check = True)
 
@@ -145,11 +148,13 @@ def parse_args():
     parser.add_argument("-o", "--objcopy", required=True, help="objcopy to be used")
     parser.add_argument("-f", "--elf-file", required=True, help="Input file")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    parser.add_argument("-i", "--includes", required=True, nargs="+",
+                        help="Zephyr base include directories")
 
     return parser.parse_args()
 
 if __name__ == "__main__":
 
     args = parse_args()
-    verbose(f"Working on {args.elf_file}...")
-    build_elf(args.elf_file)
+    verbose(f"Working on {args.elf_file} with {args.includes}...")
+    build_elf(args.elf_file, args.includes)

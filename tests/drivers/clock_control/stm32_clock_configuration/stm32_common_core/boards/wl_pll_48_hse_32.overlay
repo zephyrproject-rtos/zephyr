@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay performs configuration from clean sheet.
+ * It is assumed that it is applied after clear_clocks.overlay file.
+ * It applies to the stm32wl where the hse prescaler is 2 and by-passed
+ */
+
+&clk_hse {
+	hse-tcxo;
+	hse-div2;
+	clock-frequency = <DT_FREQ_M(32)>; /* STLink 32MHz clock */
+	status = "okay";
+};
+
+&pll {
+	div-m = <2>;
+	mul-n = <12>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(48)>;
+};

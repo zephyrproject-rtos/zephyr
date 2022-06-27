@@ -1,6 +1,6 @@
 # FPGA driver configuration options
 
-# Copyright (c) 2021 Antmicro <www.antmicro.com>
+# Copyright (c) 2021-2022 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig FPGA
@@ -15,11 +15,12 @@ module-str = fpga
 source "subsys/logging/Kconfig.template.log_config"
 
 config FPGA_SHELL
-	bool "Enable FPGA Shell"
+	bool "FPGA Shell"
 	depends on SHELL && FPGA
 	help
 	  Enable FPGA Shell support.
 
 source "drivers/fpga/Kconfig.eos_s3"
+source "drivers/fpga/Kconfig.zynqmp"
 
 endif # FPGA

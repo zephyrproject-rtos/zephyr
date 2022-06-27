@@ -15,8 +15,9 @@
 	};
 
 	dtcm: memory@20000000 {
-		compatible = "arm,dtcm";
+		compatible = "zephyr,memory-region", "arm,dtcm";
 		reg = <0x20000000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "DTCM";
 	};
 
 	soc {
@@ -68,14 +69,14 @@
 
 		can2: can@40006800 {
 			compatible = "st,stm32-can";
-			#address-cells = <1>;
-			#size-cells = <0>;
 			reg = <0x40006800 0x400>;
 			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
 			status = "disabled";
 			label = "CAN_2";
+			sjw = <1>;
+			sample-point = <875>;
 		};
 
 		mac: ethernet@40028000 {

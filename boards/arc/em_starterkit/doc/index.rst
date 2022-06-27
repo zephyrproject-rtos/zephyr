@@ -68,16 +68,16 @@ In Zephyr, only firmware versions 2.2 and 2.3 are supported.
 
 * For EM Starter Kit 2.2, EM7D, EM9D and EM11D core configurations are supported.
 
-  * Use :kconfig:`CONFIG_BOARD_EM_STARTERKIT_R22` to select 2.2 version.
-  * Use :kconfig:`CONFIG_SOC_EMSK_EM7D`, :kconfig:`CONFIG_SOC_EMSK_EM9D` or
-    :kconfig:`CONFIG_SOC_EMSK_EM11D` to select EM7D or EM9D or EM11D.
+  * Use :kconfig:option:`CONFIG_BOARD_EM_STARTERKIT_R22` to select 2.2 version.
+  * Use :kconfig:option:`CONFIG_SOC_EMSK_EM7D`, :kconfig:option:`CONFIG_SOC_EMSK_EM9D` or
+    :kconfig:option:`CONFIG_SOC_EMSK_EM11D` to select EM7D or EM9D or EM11D.
 
 * For EM Starter Kit 2.3, EM7D, EM9D and EM11D core configurations are
   supported.
 
-  * Use :kconfig:`CONFIG_BOARD_EM_STARTERKIT_R23` to select 2.3 version.
-  * Use :kconfig:`CONFIG_SOC_EMSK_EM7D`, :kconfig:`CONFIG_SOC_EMSK_EM9D` or
-    :kconfig:`CONFIG_SOC_EMSK_EM11D` to select EM7D or EM9D or EM11D.
+  * Use :kconfig:option:`CONFIG_BOARD_EM_STARTERKIT_R23` to select 2.3 version.
+  * Use :kconfig:option:`CONFIG_SOC_EMSK_EM7D`, :kconfig:option:`CONFIG_SOC_EMSK_EM9D` or
+    :kconfig:option:`CONFIG_SOC_EMSK_EM11D` to select EM7D or EM9D or EM11D.
 
 Supported Features
 ==================

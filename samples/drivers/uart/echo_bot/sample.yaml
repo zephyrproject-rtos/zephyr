@@ -1,0 +1,9 @@
+sample:
+  name: UART driver sample
+tests:
+  sample.drivers.uart:
+    tags: serial uart
+    filter: CONFIG_SERIAL and
+            CONFIG_UART_INTERRUPT_DRIVEN and
+            dt_chosen_enabled("zephyr,shell-uart")
+    harness: keyboard

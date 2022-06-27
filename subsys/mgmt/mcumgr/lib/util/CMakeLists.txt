@@ -9,5 +9,5 @@ target_include_directories(MCUMGR INTERFACE
 )
 
 zephyr_library_sources(
-    src/mcumgr_util.c
+    src/zcbor_bulk.c
 )

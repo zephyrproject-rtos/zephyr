@@ -7,9 +7,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -19,6 +19,7 @@
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mfifo.h"
+#include "util/dbuf.h"
 
 #include "pdu.h"
 

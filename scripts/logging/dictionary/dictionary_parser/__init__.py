@@ -15,7 +15,8 @@ def get_parser(database):
     """Get the parser object based on database"""
     db_ver = int(database.get_version())
 
-    if db_ver == 1:
+    # DB version 1 and 2 correspond to v1 parser
+    if db_ver in [1, 2]:
         return LogParserV1(database)
 
     return None

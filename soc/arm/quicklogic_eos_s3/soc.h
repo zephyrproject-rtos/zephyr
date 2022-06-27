@@ -7,9 +7,8 @@
 #ifndef _SOC__H_
 #define _SOC__H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <eoss3_dev.h>
-#include <devicetree.h>
 
 /* Available frequencies */
 #define HSOSC_1MHZ	1024000

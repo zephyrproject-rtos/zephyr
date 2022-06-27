@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT nxp_kinetis_lptmr
 
-#include <drivers/counter.h>
+#include <zephyr/drivers/counter.h>
 #include <fsl_lptmr.h>
 
 struct mcux_lptmr_config {

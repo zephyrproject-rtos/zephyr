@@ -11,8 +11,8 @@
  * System workqueue.
  */
 
-#include <kernel.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 
 static K_KERNEL_STACK_DEFINE(sys_work_q_stack,
 			     CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE);

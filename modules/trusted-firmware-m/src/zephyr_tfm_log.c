@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 int tfm_log_printf(const char *fmt, ...)
 {

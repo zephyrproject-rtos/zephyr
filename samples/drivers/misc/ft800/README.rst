@@ -36,7 +36,7 @@ described below:
    :goals: flash
    :compact:
 
-To build the sample for `VM800C board`_ the shild must be defined as described
+To build the sample for `VM800C board`_ the shield must be defined as described
 below:
 
 .. zephyr-app-commands::

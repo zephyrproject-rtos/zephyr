@@ -44,6 +44,7 @@ Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=csis \
   -RealEncryption=1 -rs=4 -argstest rank 3
 
+# Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
   -D=4 -sim_length=60e6 $@
 
@@ -71,6 +72,7 @@ Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=csis_release \
   -RealEncryption=1 -rs=4 -argstest rank 3
 
+# Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
   -D=4 -sim_length=60e6 $@
 
@@ -96,6 +98,7 @@ Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=csis_enc \
   -RealEncryption=1 -rs=4 -argstest rank 3
 
+# Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
   -D=4 -sim_length=60e6 $@
 

@@ -14,7 +14,7 @@ the TX power variation of the advertiser is a repeatedly descending staircase
 pattern ranging from -4 dBm to -30 dBm where the Tx power levels decrease every
 5s.
 
-Upon sucessful connection, the connection RSSI strength is being monitored and
+Upon successful connection, the connection RSSI strength is being monitored and
 the Tx power of the peripheral device is modulated per connection accordingly
 such that energy is being saved depending on how powerful the RSSI of the
 connection is. The peripheral implements a simple GATT profile exposing the

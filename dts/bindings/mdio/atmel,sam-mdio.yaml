@@ -5,14 +5,6 @@ description: Atmel SAM Family MDIO Driver node
 
 compatible: "atmel,sam-mdio"
 
-include: mdio-controller.yaml
-
-properties:
-    pinctrl-0:
-      type: phandles
-      required: false
-      description: |
-        PIO pin configuration for MDC, and MDIO signals.
-
-        For example the GMAC on SAME7x would be
-          pinctrl-0 = <&pd8a_gmac_gmdc &pd9a_gmac_gmdio>;
+include:
+    - name: mdio-controller.yaml
+    - name: pinctrl-device.yaml

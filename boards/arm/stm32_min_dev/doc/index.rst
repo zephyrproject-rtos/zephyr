@@ -119,7 +119,7 @@ The stm32_min_dev board configuration supports the following hardware features:
 | ADC       | on-chip    | adc                  |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 
 Connections and IOs
 ===================

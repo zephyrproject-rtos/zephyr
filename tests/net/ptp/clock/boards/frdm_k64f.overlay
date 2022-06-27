@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2021 Esco Medical Aps
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&enet {
+
+	ptp {
+		status = "ok";
+	};
+};

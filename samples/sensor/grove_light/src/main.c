@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <init.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
 #include <stdio.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 
 #define SLEEP_TIME	K_MSEC(1000)
 

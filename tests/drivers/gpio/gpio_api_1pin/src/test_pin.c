@@ -6,7 +6,7 @@
 
 
 #include <limits.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include "test_gpio_api.h"
 
 static void pin_get_raw_and_verify(const struct device *port,

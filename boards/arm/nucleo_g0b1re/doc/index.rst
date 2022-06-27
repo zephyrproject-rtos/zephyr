@@ -63,7 +63,7 @@ Nucleo G0B1RE provides the following hardware components:
 - Tamper Pins(3)
 - 12-bit ADC with 16 channels
 - 12-bit DAC with 2 channels(2)
-- Analog Comperator(3)
+- Analog Comparator(3)
 - 12-channel DMA
 
 

@@ -2,3 +2,6 @@ _cpu_arch_t
 k_mem_partition_attr_t
 mbedtls_pk_context
 z_arch_esf_t
+pinctrl_soc_pin_t
+io_rw_32
+\b[a-zA-Z_][a-zA-Z0-9_]*TypeDef

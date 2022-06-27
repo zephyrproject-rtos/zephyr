@@ -6,13 +6,13 @@
 
 #include <string.h>
 #include <zephyr/types.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
-#include <drivers/disk.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/disk.h>
 #include <errno.h>
-#include <init.h>
-#include <device.h>
-#include <drivers/flash.h>
+#include <zephyr/init.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/flash.h>
 
 #define SECTOR_SIZE CONFIG_DISK_FLASH_SECTOR_SIZE
 

@@ -6,9 +6,9 @@
  */
 
 #include <stdlib.h>
-#include <device.h>
-#include <shell/shell.h>
-#include <sys/byteorder.h>
+#include <zephyr/device.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/byteorder.h>
 
 static inline bool is_ascii(uint8_t data)
 {

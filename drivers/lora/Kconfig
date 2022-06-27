@@ -21,7 +21,7 @@ module-str = lora
 source "subsys/logging/Kconfig.template.log_config"
 
 config LORA_SHELL
-	bool "Enable LoRa Shell"
+	bool "LoRa Shell"
 	default y
 	depends on SHELL
 	help

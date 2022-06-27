@@ -4,18 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stddef.h>
 #include <ztest.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
 #include <host/hci_core.h>
 
 #include "util/util.h"
 #include "util/memq.h"
 #include "util/mem.h"
+#include "util/dbuf.h"
 
 #include "pdu.h"
 
@@ -60,7 +61,7 @@ void test_remove_cte_from_chain_extended_to_tx_all_cte(void)
 
 	err = ll_df_set_cl_cte_tx_enable(handle, false);
 	zassert_equal(err, 0,
-		      "Unexpected error while disabling CTE for periodic avertising chain, err: %d",
+		      "Unexpected error while disabling CTE for periodic advertising chain, err: %d",
 		      err);
 	/* Validate result */
 	common_validate_per_adv_chain(adv, TEST_PER_ADV_SINGLE_PDU);
@@ -84,12 +85,12 @@ void test_remove_cte_from_chain_where_each_pdu_includes_cte(void)
 
 	err = ll_df_set_cl_cte_tx_enable(handle, true);
 	zassert_equal(err, 0,
-		      "Unexpected error while enabling CTE for periodic avertising chain, err: %d",
+		      "Unexpected error while enabling CTE for periodic advertising chain, err: %d",
 		      err);
 
 	err = ll_df_set_cl_cte_tx_enable(handle, false);
 	zassert_equal(err, 0,
-		      "Unexpected error while disabling CTE for periodic avertising chain, err: %d",
+		      "Unexpected error while disabling CTE for periodic advertising chain, err: %d",
 		      err);
 	/* Validate result */
 	common_validate_per_adv_chain(adv, TEST_CTE_COUNT);
@@ -115,7 +116,7 @@ void test_remove_cte_from_chain_with_more_pdu_than_cte(void)
 
 	err = ll_df_set_cl_cte_tx_enable(handle, false);
 	zassert_equal(err, 0,
-		      "Unexpected error while disabling CTE for periodic avertising chain, err: %d",
+		      "Unexpected error while disabling CTE for periodic advertising chain, err: %d",
 		      err);
 	/* Validate result */
 	common_validate_per_adv_chain(adv, TEST_PER_ADV_CHAIN_LENGTH);
@@ -141,7 +142,7 @@ void test_remove_cte_from_single_pdu_chain(void)
 
 	err = ll_df_set_cl_cte_tx_enable(handle, false);
 	zassert_equal(err, 0,
-		      "Unexpected error while disabling CTE for periodic avertising chain, err: %d",
+		      "Unexpected error while disabling CTE for periodic advertising chain, err: %d",
 		      err);
 	/* Validate result */
 	common_validate_per_adv_chain(adv, TEST_PER_ADV_SINGLE_PDU);
@@ -179,7 +180,7 @@ void remove_cte_from_chain_after_enqueue_to_lll(uint8_t cte_count, uint8_t init_
 
 	err = ll_df_set_cl_cte_tx_enable(handle, true);
 	zassert_equal(err, 0,
-		      "Unexpected error while enabling CTE for periodic avertising chain, err: %d",
+		      "Unexpected error while enabling CTE for periodic advertising chain, err: %d",
 		      err);
 
 	/* Swap PDU double buffer and get new latest PDU data */
@@ -214,7 +215,7 @@ void remove_cte_from_chain_after_enqueue_to_lll(uint8_t cte_count, uint8_t init_
 
 	err = ll_df_set_cl_cte_tx_enable(handle, false);
 	zassert_equal(err, 0,
-		      "Unexpected error while disabling CTE for periodic avertising chain, err: %d",
+		      "Unexpected error while disabling CTE for periodic advertising chain, err: %d",
 		      err);
 	/* Validate result */
 	common_validate_per_adv_chain(adv, expected_pdu_in_chain_after_cte_disable);

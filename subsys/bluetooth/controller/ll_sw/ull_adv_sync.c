@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -17,6 +17,7 @@
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mayfly.h"
+#include "util/dbuf.h"
 
 #include "ticker/ticker.h"
 
@@ -53,8 +54,6 @@ static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync);
 static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
 				  struct ll_adv_set *adv, uint8_t enable);
 static uint8_t sync_chm_update(uint8_t handle);
-static uint32_t sync_time_get(struct ll_adv_sync_set *sync,
-			      struct pdu_adv *pdu);
 
 static void mfy_sync_offset_get(void *param);
 static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu);
@@ -65,6 +64,8 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
 static void ticker_op_cb(uint32_t status, void *param);
+static void adv_sync_pdu_chain_check_and_duplicate(struct pdu_adv *new_pdu,
+						   struct pdu_adv *prev_pdu);
 
 static struct ll_adv_sync_set ll_adv_sync_pool[CONFIG_BT_CTLR_ADV_SYNC_SET];
 static void *adv_sync_free;
@@ -415,7 +416,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	if (extra_data) {
 		ull_adv_sync_extra_data_set_clear(extra_data_prev, extra_data,
-						  0, 0, NULL);
+						  0U, 0U, NULL);
 	}
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
@@ -472,7 +473,7 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	if (extra_data) {
 		ull_adv_sync_extra_data_set_clear(extra_data_prev, extra_data,
-						  ULL_ADV_PDU_HDR_FIELD_AD_DATA, 0, NULL);
+						  0U, 0U, NULL);
 	}
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
@@ -482,23 +483,12 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 		return err;
 	}
 
-#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
 	/* alloc() will return the same PDU as peek() in case there was PDU
 	 * queued but not switched to current before alloc() - no need to deal
 	 * with chain as it's already there. In other case we need to duplicate
 	 * chain from current PDU and append it to new PDU.
 	 */
-	if (pdu != pdu_prev) {
-		struct pdu_adv *next, *next_dup;
-
-		LL_ASSERT(lll_adv_pdu_linked_next_get(pdu) == NULL);
-
-		next = lll_adv_pdu_linked_next_get(pdu_prev);
-		next_dup = adv_sync_pdu_duplicate_chain(next);
-
-		lll_adv_pdu_linked_append(next_dup, pdu);
-	}
-#endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
+	adv_sync_pdu_chain_check_and_duplicate(pdu, pdu_prev);
 
 	sync = HDR_LLL2ULL(lll_sync);
 	if (sync->is_started) {
@@ -515,11 +505,14 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 
 uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 {
+	void *extra_data_prev, *extra_data;
+	struct pdu_adv *pdu_prev, *pdu;
 	struct lll_adv_sync *lll_sync;
 	struct ll_adv_sync_set *sync;
 	uint8_t sync_got_enabled;
 	struct ll_adv_set *adv;
 	uint8_t pri_idx;
+	uint8_t ter_idx;
 	uint8_t err;
 
 	adv = ull_adv_is_created_get(handle);
@@ -532,14 +525,16 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* TODO: Add Periodic Advertising ADI Support feature */
-	if (enable > 1U) {
+	if ((enable > (BT_HCI_LE_SET_PER_ADV_ENABLE_ENABLE |
+		       BT_HCI_LE_SET_PER_ADV_ENABLE_ADI)) ||
+	    (!IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) &&
+	     (enable > BT_HCI_LE_SET_PER_ADV_ENABLE_ENABLE))) {
 		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
 	sync = HDR_LLL2ULL(lll_sync);
 
-	if (!enable) {
+	if (!(enable & BT_HCI_LE_SET_PER_ADV_ENABLE_ENABLE)) {
 		if (!sync->is_enabled) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
@@ -565,6 +560,49 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		 */
 	} else {
 		sync_got_enabled = 1U;
+	}
+
+	/* Add/Remove ADI */
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
+		uint16_t hdr_add_fields;
+		uint16_t hdr_rem_fields;
+
+		if (enable & BT_HCI_LE_SET_PER_ADV_ENABLE_ADI) {
+			hdr_add_fields = ULL_ADV_PDU_HDR_FIELD_ADI;
+			hdr_rem_fields = 0U;
+		} else {
+			hdr_add_fields = 0U;
+			hdr_rem_fields = ULL_ADV_PDU_HDR_FIELD_ADI;
+		}
+
+		err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
+					     &pdu_prev, &pdu, &extra_data_prev,
+					     &extra_data, &ter_idx);
+		if (err) {
+			return err;
+		}
+
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+		if (extra_data) {
+			ull_adv_sync_extra_data_set_clear(extra_data_prev,
+							  extra_data, 0U, 0U,
+							  NULL);
+		}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
+						 hdr_add_fields, hdr_rem_fields,
+						 NULL);
+		if (err) {
+			return err;
+		}
+
+		/* alloc() will return the same PDU as peek() in case there was PDU
+		 * queued but not switched to current before alloc() - no need to deal
+		 * with chain as it's already there. In other case we need to duplicate
+		 * chain from current PDU and append it to new PDU.
+		 */
+		adv_sync_pdu_chain_check_and_duplicate(pdu, pdu_prev);
 	}
 
 	if (adv->is_enabled && !sync->is_started) {
@@ -595,14 +633,24 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		ull_adv_sync_info_fill(sync, sync_info);
 
 		if (lll_aux) {
-			/* FIXME: Find absolute ticks until after auxiliary PDU
-			 *        on air to place the periodic advertising PDU.
+			/* Auxiliary set already active (due to other fields
+			 * being already present or being started prior).
 			 */
+			aux = NULL;
 			ticks_anchor_aux = 0U; /* unused in this path */
 			ticks_slot_overhead_aux = 0U; /* unused in this path */
+
+			/* TODO: Find the anchor after the group of active
+			 *       auxiliary sets such that Periodic Advertising
+			 *       events are placed in non-overlapping timeline
+			 *       when auxiliary and Periodic Advertising have
+			 *       similar event interval.
+			 */
 			ticks_anchor_sync = ticker_ticks_now_get();
-			aux = NULL;
 		} else {
+			/* Auxiliary set will be started due to inclusion of
+			 * sync info field.
+			 */
 			lll_aux = adv->lll.aux;
 			aux = HDR_LLL2ULL(lll_aux);
 			ticks_anchor_aux = ticker_ticks_now_get();
@@ -643,6 +691,10 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 
 			aux->is_started = 1U;
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
+		lll_adv_sync_data_enqueue(lll_sync, ter_idx);
 	}
 
 	if (sync_got_enabled) {
@@ -712,6 +764,15 @@ int ull_adv_sync_reset_finalize(void)
 	return 0;
 }
 
+struct ll_adv_sync_set *ull_adv_sync_get(uint8_t handle)
+{
+	if (handle >= CONFIG_BT_CTLR_ADV_SYNC_SET) {
+		return NULL;
+	}
+
+	return &ll_adv_sync_pool[handle];
+}
+
 uint16_t ull_adv_sync_lll_handle_get(struct lll_adv_sync *lll)
 {
 	return sync_handle_get((void *)lll->hdr.parent);
@@ -723,12 +784,42 @@ void ull_adv_sync_release(struct ll_adv_sync_set *sync)
 	sync_release(sync);
 }
 
+uint32_t ull_adv_sync_time_get(const struct ll_adv_sync_set *sync,
+			       uint8_t pdu_len)
+{
+	const struct lll_adv_sync *lll_sync = &sync->lll;
+	const struct lll_adv *lll = lll_sync->adv;
+	uint32_t time_us;
+
+	/* NOTE: 16-bit values are sufficient for minimum radio event time
+	 *       reservation, 32-bit are used here so that reservations for
+	 *       whole back-to-back chaining of PDUs can be accommodated where
+	 *       the required microseconds could overflow 16-bits, example,
+	 *       back-to-back chained Coded PHY PDUs.
+	 */
+
+	time_us = PDU_AC_US(pdu_len, lll->phy_s, lll->phy_flags) +
+		  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	struct ll_adv_set *adv = HDR_LLL2ULL(lll);
+	struct lll_df_adv_cfg *df_cfg = adv->df_cfg;
+
+	if (df_cfg && df_cfg->is_enabled) {
+		time_us += CTE_LEN_US(df_cfg->cte_length);
+	}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+	return time_us;
+}
+
 uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 			    struct ll_adv_sync_set *sync,
 			    uint32_t ticks_anchor)
 {
 	struct lll_adv_sync *lll_sync;
 	uint32_t ticks_slot_overhead;
+	uint32_t ticks_slot_offset;
 	uint32_t volatile ret_cb;
 	struct pdu_adv *ter_pdu;
 	uint32_t interval_us;
@@ -742,31 +833,32 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 	ter_pdu = lll_adv_sync_data_peek(lll_sync, NULL);
 
 	/* Calculate the PDU Tx Time and hence the radio event length */
-	time_us = sync_time_get(sync, ter_pdu);
+	time_us = ull_adv_sync_time_get(sync, ter_pdu->len);
 
 	/* TODO: active_to_start feature port */
-	sync->ull.ticks_active_to_start = 0;
+	sync->ull.ticks_active_to_start = 0U;
 	sync->ull.ticks_prepare_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	sync->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	sync->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
 
+	ticks_slot_offset = MAX(sync->ull.ticks_active_to_start,
+				sync->ull.ticks_prepare_to_start);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead = MAX(sync->ull.ticks_active_to_start,
-					  sync->ull.ticks_prepare_to_start);
+		ticks_slot_overhead = ticks_slot_offset;
 	} else {
-		ticks_slot_overhead = 0;
+		ticks_slot_overhead = 0U;
 	}
 
-	interval_us = (uint32_t)sync->interval * CONN_INT_UNIT_US;
+	interval_us = (uint32_t)sync->interval * PERIODIC_INT_UNIT_US;
 
 	sync_handle = sync_handle_get(sync);
 
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_SYNC_BASE + sync_handle),
-			   ticks_anchor, 0,
+			   ticks_anchor, 0U,
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us), TICKER_NULL_LAZY,
 			   (sync->ull.ticks_slot + ticks_slot_overhead),
@@ -787,7 +879,7 @@ uint8_t ull_adv_sync_time_update(struct ll_adv_sync_set *sync,
 	uint32_t time_us;
 	uint32_t ret;
 
-	time_us = sync_time_get(sync, pdu);
+	time_us = ull_adv_sync_time_get(sync, pdu->len);
 	time_ticks = HAL_TICKER_US_TO_TICKS(time_us);
 	if (sync->ull.ticks_slot > time_ticks) {
 		ticks_minus = sync->ull.ticks_slot - time_ticks;
@@ -891,11 +983,12 @@ void ull_adv_sync_chm_complete(struct node_rx_hdr *rx)
 
 		ad_len += 1U;
 
-		LL_ASSERT(ad_len < len);
+		LL_ASSERT(ad_len <= len);
 
 		ad += ad_len;
 		len -= ad_len;
 	} while (len);
+	LL_ASSERT(len);
 
 	/* Remove Channel Map Update Indication by moving other AD types that
 	 * are after it.
@@ -1017,7 +1110,7 @@ uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
  *
  * @param[in]  lll_sync         Reference to periodic advertising sync.
  * @param[in]  ter_pdu_prev     Pointer to previous PDU.
- * @param[in]  ter_pdu_         Pointer to PDU to fill fileds.
+ * @param[in]  ter_pdu_         Pointer to PDU to fill fields.
  * @param[in]  hdr_add_fields   Flag with information which fields add.
  * @param[in]  hdr_rem_fields   Flag with information which fields remove.
  * @param[in]  hdr_data         Pointer to data to be added to header. Content
@@ -1078,7 +1171,7 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 	ter_pdu->rx_addr = ter_pdu_prev->rx_addr;
 
 	/* Get common pointers from current tertiary PDU data.
-	 * It is possbile that the current tertiary is the same as
+	 * It is possible that the current tertiary is the same as
 	 * previous one. It may happen if update periodic advertising
 	 * chain in place.
 	 */
@@ -1100,7 +1193,10 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) &&
 		   ter_hdr_prev.cte_info) {
 		ter_hdr.cte_info = 1;
+		cte_info = 0U; /* value not used, will be read from prev PDU */
 		ter_dptr += sizeof(struct pdu_cte_info);
+	} else {
+		cte_info = 0U; /* value not used */
 	}
 
 	/* If CTEInfo exists in prev PDU */
@@ -1110,11 +1206,17 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
+		if ((hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ADI) ||
+		    (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_ADI) &&
+		     ter_hdr_prev.adi)) {
+			ter_hdr.adi = 1U;
+		}
+		if (ter_hdr.adi) {
+			ter_dptr += sizeof(struct pdu_adv_adi);
+		}
 		if (ter_hdr_prev.adi) {
 			ter_dptr_prev += sizeof(struct pdu_adv_adi);
 		}
-		ter_hdr.adi = 1U;
-		ter_dptr += sizeof(struct pdu_adv_adi);
 	}
 
 	/* AuxPtr - will be added if AUX_CHAIN_IND is required */
@@ -1174,6 +1276,12 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 	/* Add/Retain/Remove ACAD */
 	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ACAD) {
 		acad_len = *(uint8_t *)hdr_data;
+		/* If zero length ACAD then do not reduce ACAD but return
+		 * return previous ACAD length.
+		 */
+		if (!acad_len) {
+			acad_len = acad_len_prev;
+		}
 		/* return prev ACAD length */
 		*(uint8_t *)hdr_data = acad_len_prev;
 		hdr_data = (uint8_t *)hdr_data + 1;
@@ -1194,11 +1302,10 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 
 	/* Get Adv data from function parameters */
 	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA) {
-		ad_data = hdr_data;
-		ad_len = *ad_data;
-		++ad_data;
+		ad_len = *(uint8_t *)hdr_data;
+		hdr_data = (uint8_t *)hdr_data + sizeof(ad_len);
 
-		ad_data = (void *)sys_get_le32(ad_data);
+		(void)memcpy(&ad_data, hdr_data, sizeof(ad_data));
 	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA)) {
 		ad_len = ter_pdu_prev->len - ter_len_prev;
 		ad_data = ter_dptr_prev;
@@ -1207,16 +1314,21 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 		ad_data = NULL;
 	}
 
-	/* Add AD len to tertiary PDU length */
-	ter_len += ad_len;
+	/* Check Max Advertising Data Length */
+	if (ad_len > CONFIG_BT_CTLR_ADV_DATA_LEN_MAX) {
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	}
 
 	/* Check AdvData overflow */
-	if (ter_len > PDU_AC_PAYLOAD_SIZE_MAX) {
+	if ((ter_len + ad_len) > PDU_AC_PAYLOAD_SIZE_MAX) {
+		/* Will use packet too long error to determine fragmenting
+		 * long data
+		 */
 		return BT_HCI_ERR_PACKET_TOO_LONG;
 	}
 
 	/* set the tertiary PDU len */
-	ter_pdu->len = ter_len;
+	ter_pdu->len = ter_len + ad_len;
 
 	/* Start filling tertiary PDU payload based on flags from here
 	 * ==============================================================
@@ -1260,25 +1372,27 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
-		struct pdu_adv_adi *adi;
-		struct ll_adv_set *adv;
-		uint16_t did;
-
 		if (ter_hdr_prev.adi) {
 			ter_dptr_prev -= sizeof(struct pdu_adv_adi);
 		}
 
-		ter_dptr -= sizeof(struct pdu_adv_adi);
-		adi = (void *)ter_dptr;
+		if (ter_hdr.adi) {
+			struct pdu_adv_adi *adi;
+			struct ll_adv_set *adv;
+			uint16_t did;
 
-		adv = HDR_LLL2ULL(lll_sync->adv);
+			ter_dptr -= sizeof(struct pdu_adv_adi);
+			adi = (void *)ter_dptr;
 
-		adi->sid = adv->sid;
+			adv = HDR_LLL2ULL(lll_sync->adv);
 
-		/* The DID for a specific SID shall be unique.
-		 */
-		did = ull_adv_aux_did_next_unique_get(adv->sid);
-		adi->did = sys_cpu_to_le16(did);
+			adi->sid = adv->sid;
+
+			/* The DID for a specific SID shall be unique.
+			 */
+			did = ull_adv_aux_did_next_unique_get(adv->sid);
+			adi->did = sys_cpu_to_le16(did);
+		}
 	}
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
@@ -1516,37 +1630,6 @@ static uint8_t sync_chm_update(uint8_t handle)
 	return 0;
 }
 
-static uint32_t sync_time_get(struct ll_adv_sync_set *sync,
-			      struct pdu_adv *pdu)
-{
-	struct lll_adv_sync *lll_sync;
-	struct lll_adv *lll;
-	uint32_t time_us;
-
-	/* NOTE: 16-bit values are sufficient for minimum radio event time
-	 *       reservation, 32-bit are used here so that reservations for
-	 *       whole back-to-back chaining of PDUs can be accomodated where
-	 *       the required microseconds could overflow 16-bits, example,
-	 *       back-to-back chained Coded PHY PDUs.
-	 */
-
-	lll_sync = &sync->lll;
-	lll = lll_sync->adv;
-	time_us = PDU_AC_US(pdu->len, lll->phy_s, lll->phy_flags) +
-		  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
-
-#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-	struct ll_adv_set *adv = HDR_LLL2ULL(lll);
-	struct lll_df_adv_cfg *df_cfg = adv->df_cfg;
-
-	if (df_cfg && df_cfg->is_enabled) {
-		time_us += CTE_LEN_US(df_cfg->cte_length);
-	}
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-
-	return time_us;
-}
-
 static void mfy_sync_offset_get(void *param)
 {
 	struct ll_adv_set *adv = param;
@@ -1678,6 +1761,12 @@ static inline void sync_info_offset_fill(struct pdu_adv_sync_info *si,
 	uint32_t offs;
 
 	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us;
+
+	if (offs >= OFFS_ADJUST_US) {
+		offs -= OFFS_ADJUST_US;
+		si->offs_adjust = 1U;
+	}
+
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> OFFS_UNIT_BITS)) {
 		si->offs = sys_cpu_to_le16(offs / (OFFS_UNIT_300_US /
@@ -1734,4 +1823,28 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 static void ticker_op_cb(uint32_t status, void *param)
 {
 	*((uint32_t volatile *)param) = status;
+}
+
+/**
+ * @brief Set a periodic advertising chained PDUs in a new periodic advertising data if there are
+ *        chained PDUs in former periodic advertising data.
+ *
+ * @param pdu_new  Pointer to new pdu_adv where to add chained pdu_adv.
+ * @param pdu_prev Pointer to former pdu_adv where to add chained pdu_adv.
+ */
+static void adv_sync_pdu_chain_check_and_duplicate(struct pdu_adv *pdu_new,
+						   struct pdu_adv *pdu_prev)
+{
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+	if (pdu_new != pdu_prev) {
+		struct pdu_adv *next, *next_dup;
+
+		LL_ASSERT(lll_adv_pdu_linked_next_get(pdu_new) == NULL);
+
+		next = lll_adv_pdu_linked_next_get(pdu_prev);
+		next_dup = adv_sync_pdu_duplicate_chain(next);
+
+		lll_adv_pdu_linked_append(next_dup, pdu_new);
+	}
+#endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
 }

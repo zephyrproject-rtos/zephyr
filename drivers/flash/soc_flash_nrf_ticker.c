@@ -6,15 +6,15 @@
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
 
 #include "soc_flash_nrf.h"
 
-#include <sys/__assert.h>
-#include <bluetooth/hci.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/bluetooth/hci.h>
 #include "controller/hal/ticker.h"
 #include "controller/ticker/ticker.h"
 #include "controller/include/ll.h"
@@ -160,7 +160,7 @@ int nrf_flash_sync_init(void)
 void nrf_flash_sync_set_context(uint32_t duration)
 {
 
-	/* FLASH_SYNC_SWITCHING_TIME is delay which is allways added by
+	/* FLASH_SYNC_SWITCHING_TIME is delay which is always added by
 	 * the slot calling mechanism
 	 */
 	_ticker_sync_context.interval = duration - FLASH_SYNC_SWITCHING_TIME;

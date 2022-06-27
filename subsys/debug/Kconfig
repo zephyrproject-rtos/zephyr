@@ -7,7 +7,7 @@
 menu "System Monitoring Options"
 
 menuconfig THREAD_ANALYZER
-	bool "Enable Thread analyzer"
+	bool "Thread analyzer"
 	select INIT_STACKS
 	select THREAD_MONITOR
 	select THREAD_STACK_INFO
@@ -21,7 +21,7 @@ menuconfig THREAD_ANALYZER
 if THREAD_ANALYZER
 module = THREAD_ANALYZER
 module-str = thread analyzer
-source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+source "subsys/logging/Kconfig.template.log_config"
 
 choice
 	prompt "Thread analysis print mode"
@@ -38,6 +38,10 @@ config THREAD_ANALYZER_USE_PRINTK
 	  Use kernel printk function to print thread information.
 
 endchoice
+
+config THREAD_ANALYZER_ISR_STACK_USAGE
+	bool "Analyze interrupt stacks usage"
+	default y
 
 config THREAD_ANALYZER_RUN_UNLOCKED
 	bool "Run analysis with interrupts unlocked"
@@ -76,6 +80,7 @@ config THREAD_ANALYZER_AUTO_INTERVAL
 
 config THREAD_ANALYZER_AUTO_STACK_SIZE
 	int "Stack size for the periodic thread analysis thread"
+	default 2048 if THREAD_ANALYZER_USE_LOG && LOG_MODE_IMMEDIATE && NO_OPTIMIZATIONS
 	default 1024
 
 endif # THREAD_ANALYZER_AUTO
@@ -93,6 +98,13 @@ config DEBUG
 	  Build a kernel suitable for debugging.  Right now, this option
 	  only disables optimization, more debugging variants can be selected
 	  from here to allow more debugging.
+
+config GPROF
+	bool "Generate profiling information"
+	depends on ARCH_POSIX
+	help
+	  Generate call graph profile data for the application that can be
+	  analyzed with gprof
 
 config ASAN
 	bool "Build with address sanitizer"
@@ -137,7 +149,7 @@ config STACK_USAGE
 	  on a per-function basis.
 
 config STACK_SENTINEL
-	bool "Enable stack sentinel"
+	bool "Stack sentinel"
 	select THREAD_STACK_INFO
 	depends on MULTITHREADING
 	depends on !USERSPACE
@@ -190,7 +202,7 @@ config EARLY_CONSOLE
 	  sent through the console at the earliest stage possible.
 
 config ASSERT
-	bool "Enable __ASSERT() macro"
+	bool "__ASSERT() macro"
 	default y if TEST
 	help
 	  This enables the __ASSERT() macro in the kernel code. If an assertion
@@ -201,11 +213,12 @@ config ASSERT
 	  Disabling this option will cause assertions to compile to nothing,
 	  improving performance and system footprint.
 
+if ASSERT
+
 config ASSERT_LEVEL
 	int "__ASSERT() level"
 	default 2
 	range 0 2
-	depends on ASSERT
 	help
 	  This option specifies the assertion level used by the __ASSERT()
 	  macro. It can be set to one of three possible values:
@@ -215,8 +228,7 @@ config ASSERT_LEVEL
 	  Level 2: on + no warning
 
 config SPIN_VALIDATE
-	bool "Enable spinlock validation"
-	depends on ASSERT
+	bool "Spinlock validation"
 	depends on MULTITHREADING
 	depends on MP_NUM_CPUS <= 4
 	default y if !FLASH || FLASH_SIZE > 32
@@ -224,6 +236,8 @@ config SPIN_VALIDATE
 	  There's a spinlock validation framework available when asserts are
 	  enabled. It adds a relatively hefty overhead (about 3k or so) to
 	  kernel code size, don't use on platforms known to be small.
+
+endif # ASSERT
 
 config FORCE_NO_ASSERT
 	bool "Force-disable no assertions"
@@ -234,7 +248,7 @@ config FORCE_NO_ASSERT
 	  around compiler bugs for specific tests.
 
 config ASSERT_VERBOSE
-	bool "Enable verbose assertions"
+	bool "Verbose assertions"
 	default y
 	help
 	  This option enables printing an assert message with information about
@@ -288,7 +302,7 @@ config OMIT_FRAME_POINTER
 	depends on OVERRIDE_FRAME_POINTER_DEFAULT
 	help
 	  Choose Y for best performance. On some architectures (including x86)
-	  this will favor code size and performance over debugability.
+	  this will favor code size and performance over debuggability.
 
 	  Choose N in you wish to retain the frame pointer. This option may
 	  be useful if your application uses runtime backtracing and does not
@@ -302,7 +316,7 @@ config OMIT_FRAME_POINTER
 # Generic Debugging Options
 #
 config DEBUG_INFO
-	bool "Enable system debugging information"
+	bool "System debugging information"
 	help
 	  This option enables the addition of various information that can be
 	  used by debuggers in debugging the system, or enable additional
@@ -322,12 +336,6 @@ config EXCEPTION_STACK_TRACE
 #
 # Miscellaneous debugging options
 #
-config OPENOCD_SUPPORT
-	bool "OpenOCD support (DEPRECATED)"
-	select DEBUG_THREAD_INFO
-	help
-	  This is deprecated, please use DEBUG_THREAD_INFO instead.
-
 config DEBUG_THREAD_INFO
 	bool "Thread awareness support"
 	depends on !SMP
@@ -357,7 +365,7 @@ config GDBSTUB_SERIAL_BACKEND
 	bool "Use serial backend"
 	depends on SERIAL
 	help
-	  Use serial as backenf for GDB
+	  Use serial as backend for GDB
 
 endchoice
 
@@ -366,7 +374,14 @@ config GDBSTUB_SERIAL_BACKEND_NAME
 	depends on GDBSTUB_SERIAL_BACKEND
 	default "UART_0"
 	help
-	  Use serial as backenf for GDB
+	  Use serial as backend for GDB
 
+config GDBSTUB_BUF_SZ
+	int "GDB backend send/receive buffer size (in bytes)"
+	default 256
+	help
+	  This specifies the size (in bytes) of the send/receive buffer
+	  for GDB backend. This needs to be big enough to hold one
+	  full GDB packet at a time.
 
 endif

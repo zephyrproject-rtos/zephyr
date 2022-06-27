@@ -8,12 +8,12 @@
 #define ZEPHYR_BENCHMARK_CMSIS_DSP_COMMON_BENCHMARK_COMMON_H_
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #if defined(CONFIG_CPU_CORTEX_M_HAS_DWT)
 /* Use cycle counting on the Cortex-M devices that support DWT */
 
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 static ALWAYS_INLINE void benchmark_begin(uint32_t *irq_key, uint32_t *timestamp)
 {

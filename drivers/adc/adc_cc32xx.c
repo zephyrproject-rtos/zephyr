@@ -8,10 +8,10 @@
 
 #include <errno.h>
 
-#include <drivers/adc.h>
-#include <device.h>
-#include <kernel.h>
-#include <init.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <soc.h>
 
 /* Driverlib includes */
@@ -28,7 +28,7 @@
 #include "adc_context.h"
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_cc32xx);
 
 #define ISR_MASK (ADC_DMA_DONE | ADC_FIFO_OVERFLOW | ADC_FIFO_UNDERFLOW	\
@@ -229,7 +229,7 @@ static int adc_cc32xx_read_async(const struct device *dev,
 static void adc_cc32xx_isr(const struct device *dev, int no)
 {
 	const struct adc_cc32xx_cfg *config = dev->config;
-	struct adc_cc32xx_data *data = (struct adc_cc32xx_data *)dev->data;
+	struct adc_cc32xx_data *data = dev->data;
 	const int chan = s_channel[no];
 	unsigned long mask = MAP_ADCIntStatus(config->base, chan);
 	int cnt = 0;

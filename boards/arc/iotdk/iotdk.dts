@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <arc_iot.dtsi>
+#include <synopsys/arc_iot.dtsi>
 #include "board.dtsi"
 
 / {

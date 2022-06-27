@@ -22,7 +22,7 @@ extern "C" {
  * @brief Execute `line` as a shell command
  *
  * @param line : shell command to be executed
- * @return int : 0 on success, -errno otherwire
+ * @return int : 0 on success, -errno otherwise
  */
 int
 shell_mgmt_impl_exec(const char *line);

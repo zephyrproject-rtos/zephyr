@@ -10,7 +10,7 @@
 
 #define LOG_MODULE_NAME test_rpc
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 
 #define WAIT_TIME 60 /*seconds*/

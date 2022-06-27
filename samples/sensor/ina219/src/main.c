@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdio.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 
 
 void main(void)

@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	aliases {
+		pwm-0 = &ledc0;
+		pwm-led0 = &pwm_led_blue;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led_blue: pwm_led_gpio0_2 {
+		   label = "PWM LED0";
+		   pwms = <&ledc0 2 1000 PWM_POLARITY_NORMAL>;
+		};
+	};
+};
+
+&ledc0 {
+	status = "okay";
+};

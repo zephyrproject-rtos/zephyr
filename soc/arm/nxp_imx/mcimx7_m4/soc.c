@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <dt-bindings/rdc/imx_rdc.h>
+#include <zephyr/dt-bindings/rdc/imx_rdc.h>
 #include "wdog_imx.h"
 
 /* Initialize clock. */

@@ -5,10 +5,10 @@
  */
 
 #include <ztest.h>
-#include <sys/mem_manage.h>
-#include <timing/timing.h>
+#include <zephyr/sys/mem_manage.h>
+#include <zephyr/timing/timing.h>
 #include <mmu.h>
-#include <linker/sections.h>
+#include <zephyr/linker/sections.h>
 
 #ifdef CONFIG_BACKING_STORE_RAM_PAGES
 #define EXTRA_PAGES	(CONFIG_BACKING_STORE_RAM_PAGES - 1)

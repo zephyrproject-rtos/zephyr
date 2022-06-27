@@ -7,14 +7,14 @@
 #ifndef __TEST_MSGQ_H__
 #define __TEST_MSGQ_H__
 
-#include <zephyr.h>
-#include <irq_offload.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/irq_offload.h>
 #include <ztest.h>
 #include <limits.h>
 
 #define TIMEOUT_MS 100
 #define TIMEOUT K_MSEC(TIMEOUT_MS)
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define MSG_SIZE 4
 #define MSGQ_LEN 2
 #define MSG0 0xABCD

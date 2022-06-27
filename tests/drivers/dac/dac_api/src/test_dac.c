@@ -5,18 +5,26 @@
  */
 
 
-#include <drivers/dac.h>
-#include <zephyr.h>
+#include <zephyr/drivers/dac.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
-#if defined(CONFIG_BOARD_NUCLEO_L073RZ) || \
-	defined(CONFIG_BOARD_NUCLEO_L152RE) || \
+#if defined(CONFIG_BOARD_NUCLEO_F091RC) || \
+	defined(CONFIG_BOARD_NUCLEO_F207ZG) || \
 	defined(CONFIG_BOARD_STM32F3_DISCO) || \
 	defined(CONFIG_BOARD_NUCLEO_F429ZI) || \
+	defined(CONFIG_BOARD_NUCLEO_F746ZG) || \
 	defined(CONFIG_BOARD_NUCLEO_F767ZI) || \
-	defined(CONFIG_BOARD_STM32L562E_DK) || \
+	defined(CONFIG_BOARD_NUCLEO_G071RB) || \
+	defined(CONFIG_BOARD_NUCLEO_G474RE) || \
+	defined(CONFIG_BOARD_NUCLEO_H743ZI) || \
+	defined(CONFIG_BOARD_NUCLEO_L073RZ) || \
+	defined(CONFIG_BOARD_NUCLEO_L152RE) || \
+	defined(CONFIG_BOARD_DISCO_L475_IOT1) || \
 	defined(CONFIG_BOARD_NUCLEO_L552ZE_Q) || \
+	defined(CONFIG_BOARD_STM32L562E_DK) || \
 	defined(CONFIG_BOARD_B_U585I_IOT02A) || \
+	defined(CONFIG_BOARD_NUCLEO_WL55JC) || \
 	defined(CONFIG_BOARD_RONOTH_LODEV)
 
 #define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac1))

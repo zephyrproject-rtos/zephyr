@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # GATT regression tests based on the EDTTool
-SIMULATION_ID="edtt_gatt"
+SIMULATION_ID="edtt_gatt_llcp"
 VERBOSITY_LEVEL=2
 PROCESS_IDS=""; EXIT_CODE=0
 CWD="$(cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P)"
@@ -26,7 +26,7 @@ BOARD="${BOARD:-nrf52_bsim}"
 cd ${EDTT_PATH}
 
 Execute ./src/edttool.py -s=${SIMULATION_ID} -d=0 --transport bsim \
-  -T gatt_verification -C "${CWD}/gatt.test_list" -v=${VERBOSITY_LEVEL}
+  -T gatt_verification -C "${CWD}/gatt.llcp.test_list" -v=${VERBOSITY_LEVEL}
 
 cd ${BSIM_OUT_PATH}/bin
 

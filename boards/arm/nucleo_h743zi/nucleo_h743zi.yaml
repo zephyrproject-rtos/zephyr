@@ -22,3 +22,6 @@ supported:
   - backup_sram
   - watchdog
   - usb_device
+  - can
+  - canfd
+  - dac

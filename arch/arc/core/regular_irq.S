@@ -14,13 +14,13 @@
  * See isr_wrapper.S for details.
  */
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <offsets_short.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 #include <swap_macros.h>
-#include <arch/arc/asm-compat/assembler.h>
+#include <zephyr/arch/arc/asm-compat/assembler.h>
 
 GTEXT(_rirq_enter)
 GTEXT(_rirq_exit)
@@ -190,7 +190,6 @@ will be corrupted.
 */
 
 /**
- *
  * @brief Work to be done before handing control to an IRQ ISR
  *
  * The processor pushes automatically all registers that need to be saved.
@@ -198,8 +197,6 @@ will be corrupted.
  * automatic switch to the IRQ stack: this must be done in software.
  *
  * Assumption by _isr_demux: r3 is untouched by _rirq_enter.
- *
- * @return N/A
  */
 
 SECTION_FUNC(TEXT, _rirq_enter)
@@ -228,10 +225,7 @@ rirq_nest:
 
 
 /**
- *
  * @brief Work to be done exiting an IRQ
- *
- * @return N/A
  */
 
 SECTION_FUNC(TEXT, _rirq_exit)

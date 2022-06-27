@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arch/x86/arch.h>
-#include <kernel.h>
-#include <sys_clock.h>
-#include <timing/timing.h>
-#include <app_memory/app_memdomain.h>
+#include <zephyr/arch/x86/arch.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/timing/timing.h>
+#include <zephyr/app_memory/app_memdomain.h>
 
 K_APP_BMEM(z_libc_partition) static uint64_t tsc_freq;
 
@@ -30,7 +30,7 @@ void arch_timing_x86_init(void)
 
 		/*
 		 * cycles are in 32-bit, and delta must be
-		 * calculated in 32-bit percision. Or it would
+		 * calculated in 32-bit precision. Or it would be
 		 * wrapping around in 64-bit.
 		 */
 		dcyc = (uint32_t)cyc_end - (uint32_t)cyc_start;

@@ -6,7 +6,7 @@
 
 #include <errno.h>
 #include <zephyr/types.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 #include "util/mem.h"
 #include "util/memq.h"

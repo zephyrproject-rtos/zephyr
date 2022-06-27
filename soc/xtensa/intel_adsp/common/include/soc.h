@@ -3,18 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#ifndef __INC_SOC_H
+#define __INC_SOC_H
 
 #include <string.h>
 #include <errno.h>
-
-#include <cavs/version.h>
-
-#include <sys/sys_io.h>
-
-#include <adsp/cache.h>
-
-#ifndef __INC_SOC_H
-#define __INC_SOC_H
+#include <zephyr/arch/xtensa/cache.h>
 
 /* macros related to interrupt handling */
 #define XTENSA_IRQ_NUM_SHIFT			0
@@ -65,13 +59,6 @@
 
 #define PDM_BASE				DMIC_BASE
 
-/* SOC DSP SHIM Registers */
-#if CAVS_VERSION == CAVS_VERSION_1_5
-#define SOC_DSP_SHIM_REG_BASE			0x00001000
-#else
-#define SOC_DSP_SHIM_REG_BASE			0x00071f00
-#endif
-
 /* DSP Wall Clock Timers (0 and 1) */
 #define DSP_WCT_IRQ(x) \
 	SOC_AGGREGATE_IRQ((22 + x), CAVS_L2_AGG_INT_LEVEL2)
@@ -79,46 +66,73 @@
 #define DSP_WCT_CS_TA(x)			BIT(x)
 #define DSP_WCT_CS_TT(x)			BIT(4 + x)
 
-struct soc_dsp_shim_regs {
-	uint32_t	reserved[8];
-	union {
-		struct {
-			uint32_t walclk32_lo;
-			uint32_t walclk32_hi;
-		};
-		uint64_t	walclk;
-	};
-	uint32_t	dspwctcs;
-	uint32_t	reserved1[1];
-	union {
-		struct {
-			uint32_t dspwct0c32_lo;
-			uint32_t dspwct0c32_hi;
-		};
-		uint64_t	dspwct0c;
-	};
-	union {
-		struct {
-			uint32_t dspwct1c32_lo;
-			uint32_t dspwct1c32_hi;
-		};
-		uint64_t	dspwct1c;
-	};
-	uint32_t	reserved2[14];
-	uint32_t	clkctl;
-	uint32_t	clksts;
-	uint32_t	reserved3[4];
-	uint16_t	pwrctl;
-	uint16_t	pwrsts;
-	uint32_t	lpsctl;
-	uint32_t	lpsdmas0;
-	uint32_t	lpsdmas1;
-	uint32_t	reserved4[22];
-};
+/* Attribute macros to place code and data into IMR memory */
+#define __imr __in_section_unique(imr)
+#define __imrdata __in_section_unique(imrdata)
 
+extern char _text_start[];
+extern char _text_end[];
+extern char _imr_start[];
+extern char _imr_end[];
+extern char _end[];
+extern char _heap_sentry[];
+extern char _cached_start[];
+extern char _cached_end[];
+
+extern void soc_trace_init(void);
+extern void z_soc_irq_init(void);
 extern void z_soc_irq_enable(uint32_t irq);
 extern void z_soc_irq_disable(uint32_t irq);
 extern int z_soc_irq_is_enabled(unsigned int irq);
 
+extern void z_soc_mp_asm_entry(void);
+extern void soc_mp_startup(uint32_t cpu);
+extern void soc_start_core(int cpu_num);
+
+extern bool soc_cpus_active[CONFIG_MP_NUM_CPUS];
+
+/* Legacy cache APIs still used in a few places */
+#define SOC_DCACHE_FLUSH(addr, size)		\
+	z_xtensa_cache_flush((addr), (size))
+#define SOC_DCACHE_INVALIDATE(addr, size)	\
+	z_xtensa_cache_inv((addr), (size))
+#define z_soc_cached_ptr(p) arch_xtensa_cached_ptr(p)
+#define z_soc_uncached_ptr(p) arch_xtensa_uncached_ptr(p)
+
+/**
+ * @brief Halts and offlines a running CPU
+ *
+ * Enables power gating on the specified CPU, which cannot be the
+ * current CPU or CPU 0.  The CPU must be idle; no application threads
+ * may be runnable on it when this function is called (or at least the
+ * CPU must be guaranteed to reach idle in finite time without
+ * deadlock).  Actual CPU shutdown can only happen in the context of
+ * the idle thread, and synchronization is an application
+ * responsibility.  This function will hang if the other CPU fails to
+ * reach idle.
+ *
+ * @note On older cAVS hardware, core power is controlled by the host.
+ * This function must still be called for OS bookkeeping, but it is
+ * insufficient without application coordination (and careful
+ * synchronization!) with the host x86 environment.
+ *
+ * @param id CPU to halt, not current cpu or cpu 0
+ * @return 0 on success, -EINVAL on error
+ */
+int soc_adsp_halt_cpu(int id);
+
+static inline bool intel_adsp_ptr_executable(const void *p)
+{
+	return (p >= (void *)_text_start && p <= (void *)_text_end) ||
+		(p >= (void *)_imr_start && p <= (void *)_imr_end);
+}
+
+static inline bool intel_adsp_ptr_is_sane(uint32_t sp)
+{
+	return ((char *)sp >= _end && (char *)sp <= _heap_sentry) ||
+		((char *)sp >= _cached_start && (char *)sp <= _cached_end) ||
+		(sp >= (CONFIG_IMR_MANIFEST_ADDR - CONFIG_ISR_STACK_SIZE)
+		 && sp <= CONFIG_IMR_MANIFEST_ADDR);
+}
 
 #endif /* __INC_SOC_H */

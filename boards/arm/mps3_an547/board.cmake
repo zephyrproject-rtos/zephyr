@@ -4,10 +4,10 @@
 # The AN547 FVP must be used to enable Ethos-U55 NPU support, but QEMU also
 # supports the AN547 without the NPU.
 #
-# To use QEMU instead of the FVP as an emulation platform, set 'EMU_PLATFORM'
-# to 'qemu' instead of 'armfvp', for example:
+# For emulation, QEMU is used by default. To use AN547 FVP as an emulation
+# use the 'run_armfvp' target, for example:
 #
-# $ west build -b mps3_an547 samples/hello°world -DEMU_PLATFORM=qemu -t run
+# $ west build -b mps3_an547 samples/hello_world -t run_armfvp
 
 set(SUPPORTED_EMU_PLATFORMS qemu armfvp)
 
@@ -20,6 +20,13 @@ set(QEMU_FLAGS_${ARCH}
   -vga none
   )
 board_set_debugger_ifnset(qemu)
+
+if (CONFIG_BUILD_WITH_TFM)
+  # Override the binary used by qemu, to use the combined
+  # TF-M (Secure) & Zephyr (Non Secure) image (when running
+  # in-tree tests).
+  set(QEMU_KERNEL_OPTION "-device;loader,file=${CMAKE_BINARY_DIR}/tfm_merged.hex")
+endif()
 
 # FVP settings
 set(ARMFVP_BIN_NAME FVP_Corstone_SSE-300_Ethos-U55)

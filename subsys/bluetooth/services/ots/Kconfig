@@ -1,6 +1,6 @@
 # Bluetooth Object Transfer service
 
-# Copyright (c) 2020 Nordic Semiconductor ASA
+# Copyright (c) 2020-2022 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 config BT_OTS
@@ -15,7 +15,7 @@ config BT_OTS
 if BT_OTS
 
 config BT_OTS_DIR_LIST_OBJ
-	bool "Enables the Directory Listing Object"
+	bool "The Directory Listing Object"
 	help
 	  Enables the Directory Listing Object, which is an object that contains all the metadata
 	  from all other objects, for easy exposure to a client. Enabling this will use one of the
@@ -33,18 +33,16 @@ config BT_OTS_MAX_INST_CNT
 	default 1
 	range 1 1 if !BT_OTS_SECONDARY_SVC
 
-config BT_OTS_MAX_OBJ_CNT
-	hex "Maximum number of objects that each service instance can store"
-	default 0x05
-	# Given the maximum size of a directory listing record (172) and the maximum size of an
-	# object using the net_buf implementation is 2^16-1, the maximum number of objects is given
-	# by 2^16-1 / 172 = 381 == 0x17D)
-	range 0x02 0x17D if BT_OTS_DIR_LIST_OBJ
-	# Max obj count is otherwise the non-RFU IDs available
-	range 0x01 0xFFFFFFFFFFFFFEFF
-
 config BT_OTS_SECONDARY_SVC
 	bool "Register OTS as Secondary Service"
+
+config BT_OTS_OACP_CREATE_SUPPORT
+	bool "Support OACP Create Operation"
+	depends on BT_OTS_OACP_WRITE_SUPPORT
+	depends on BT_OTS_OBJ_NAME_WRITE_SUPPORT
+
+config BT_OTS_OACP_DELETE_SUPPORT
+	bool "Support OACP Delete Operation"
 
 config BT_OTS_OACP_READ_SUPPORT
 	bool "Support OACP Read Operation"
@@ -61,6 +59,45 @@ config BT_OTS_OLCP_GO_TO_SUPPORT
 	bool "Support OLCP Go To Operation"
 	default y
 
+config BT_OTS_OBJ_NAME_WRITE_SUPPORT
+	bool "Support object name write"
+
+endif # BT_OTS
+
+#### Object Transfer Service Client ################################
+
+config BT_OTS_CLIENT
+	bool "Object Transfer Service Client [Experimental]"
+	select BT_L2CAP_DYNAMIC_CHANNEL
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
+	select EXPERIMENTAL
+	help
+	  This option enables support for the Object Transfer Service Client.
+
+if BT_OTS_CLIENT
+
+# TODO: Unify logging for OTS server and client - the client uses
+# "BT" debugging, the server does not.
+config BT_DEBUG_OTS_CLIENT
+	bool "Object Transfer Service Client debug"
+	help
+	  Use this option to enable Object Transfer Client debug logs
+
+endif # BT_OTS_CLIENT
+
+if BT_OTS || BT_OTS_CLIENT
+
+config BT_OTS_MAX_OBJ_CNT
+	hex "Maximum number of objects that each service instance can store"
+	default 0x05
+	# Given the maximum size of a directory listing record (172) and the maximum size of an
+	# object using the net_buf implementation is 2^16-1, the maximum number of objects is given
+	# by 2^16-1 / 172 = 381 == 0x17D)
+	range 0x02 0x17D if BT_OTS_DIR_LIST_OBJ
+	# Max obj count is otherwise the non-RFU IDs available
+	range 0x01 0xFFFFFFFFFFFFFEFF
+
 config BT_OTS_L2CAP_CHAN_TX_MTU
 	int "Size of TX MTU for Object Transfer Channel"
 	default 256
@@ -74,14 +111,14 @@ config BT_OTS_L2CAP_CHAN_RX_MTU
 
 config BT_OTS_OBJ_MAX_NAME_LEN
 	int "Maximum object name length"
+	# Max name length allowed by OTS spec is 120 octets
+	# TODO: Set separate max name length for client, as other
+	# servers may use the full 120 octets.
 	default 120
 	range 1 120
-
-config BT_OTS_OBJ_NAME_WRITE_SUPPORT
-	bool "Support object name write"
 
 module = BT_OTS
 module-str = BT_OTS
 source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
 
-endif # BT_OTS
+endif # BT_OTS || BT_OTS_CLIENT

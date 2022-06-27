@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_ACCESS)
 #define LOG_MODULE_NAME bt_mesh_access
@@ -114,16 +114,32 @@ int32_t bt_mesh_model_pub_period_get(struct bt_mesh_model *mod)
 static int32_t next_period(struct bt_mesh_model *mod)
 {
 	struct bt_mesh_model_pub *pub = mod->pub;
-	uint32_t elapsed, period;
-
-	period = bt_mesh_model_pub_period_get(mod);
-	if (!period) {
-		return 0;
-	}
+	uint32_t period = 0;
+	uint32_t elapsed;
 
 	elapsed = k_uptime_get_32() - pub->period_start;
-
 	BT_DBG("Publishing took %ums", elapsed);
+
+	if (mod->pub->count) {
+		/* If a message is to be retransmitted, period should include time since the first
+		 * publication until the last publication.
+		 */
+		period = BT_MESH_PUB_TRANSMIT_INT(mod->pub->retransmit);
+		period *= BT_MESH_PUB_MSG_NUM(mod->pub);
+
+		if (period && elapsed >= period) {
+			BT_WARN("Retransmission interval is too short");
+			/* Return smallest positive number since 0 means disabled */
+			return 1;
+		}
+	}
+
+	if (!period) {
+		period = bt_mesh_model_pub_period_get(mod);
+		if (!period) {
+			return 0;
+		}
+	}
 
 	if (elapsed >= period) {
 		BT_WARN("Publication sending took longer than the period");
@@ -139,13 +155,9 @@ static void publish_sent(int err, void *user_data)
 	struct bt_mesh_model *mod = user_data;
 	int32_t delay;
 
-	BT_DBG("err %d", err);
+	BT_DBG("err %d, time %u", err, k_uptime_get_32());
 
-	if (mod->pub->count) {
-		delay = BT_MESH_PUB_TRANSMIT_INT(mod->pub->retransmit);
-	} else {
-		delay = next_period(mod);
-	}
+	delay = next_period(mod);
 
 	if (delay) {
 		BT_DBG("Publishing next time in %dms", delay);
@@ -158,18 +170,10 @@ static void publish_sent(int err, void *user_data)
 
 static void publish_start(uint16_t duration, int err, void *user_data)
 {
-	struct bt_mesh_model *mod = user_data;
-	struct bt_mesh_model_pub *pub = mod->pub;
-
 	if (err) {
 		BT_ERR("Failed to publish: err %d", err);
 		publish_sent(err, user_data);
 		return;
-	}
-
-	/* Initialize the timestamp for the beginning of a new period */
-	if (pub->count == BT_MESH_PUB_TRANSMIT_COUNT(pub->retransmit)) {
-		pub->period_start = k_uptime_get_32();
 	}
 }
 
@@ -209,11 +213,13 @@ static int pub_period_start(struct bt_mesh_model_pub *pub)
 	}
 
 	err = pub->update(pub->mod);
+
+	pub->period_start = k_uptime_get_32();
+
 	if (err) {
 		/* Skip this publish attempt. */
 		BT_DBG("Update failed, skipping publish (err: %d)", err);
 		pub->count = 0;
-		pub->period_start = k_uptime_get_32();
 		publish_sent(err, pub->mod);
 		return err;
 	}
@@ -237,7 +243,7 @@ static void mod_publish(struct k_work *work)
 		return;
 	}
 
-	BT_DBG("");
+	BT_DBG("%u", k_uptime_get_32());
 
 	if (pub->count) {
 		pub->count--;
@@ -261,10 +267,6 @@ static void mod_publish(struct k_work *work)
 	err = publish_transmit(pub->mod);
 	if (err) {
 		BT_ERR("Failed to publish (err %d)", err);
-		if (pub->count == BT_MESH_PUB_TRANSMIT_COUNT(pub->retransmit)) {
-			pub->period_start = k_uptime_get_32();
-		}
-
 		publish_sent(err, pub->mod);
 	}
 }
@@ -581,7 +583,8 @@ static bool model_has_dst(struct bt_mesh_model *mod, uint16_t dst)
 {
 	if (BT_MESH_ADDR_IS_UNICAST(dst)) {
 		return (dev_comp->elem[mod->elem_idx].addr == dst);
-	} else if (BT_MESH_ADDR_IS_GROUP(dst) || BT_MESH_ADDR_IS_VIRTUAL(dst)) {
+	} else if (BT_MESH_ADDR_IS_GROUP(dst) || BT_MESH_ADDR_IS_VIRTUAL(dst) ||
+		  (BT_MESH_ADDR_IS_FIXED_GROUP(dst) &&  mod->elem_idx != 0)) {
 		return !!bt_mesh_model_find_group(&mod, dst);
 	}
 
@@ -776,6 +779,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 
 	/* Account for initial transmission */
 	pub->count = BT_MESH_PUB_MSG_TOTAL(pub);
+	pub->period_start = k_uptime_get_32();
 
 	BT_DBG("Publish Retransmit Count %u Interval %ums", pub->count,
 	       BT_MESH_PUB_TRANSMIT_INT(pub->retransmit));

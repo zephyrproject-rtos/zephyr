@@ -5,7 +5,7 @@ config ZEPHYR_LZ4_MODULE
 	bool
 
 config LZ4
-	bool "Enable lz4 data compression and decompression"
+	bool "Lz4 data compression and decompression"
 	help
 	  This option enables lz4 compression & decompression library
 	  support.

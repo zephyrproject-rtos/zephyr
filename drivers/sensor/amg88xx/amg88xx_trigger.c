@@ -5,17 +5,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
 #include "amg88xx.h"
 
 extern struct amg88xx_data amg88xx_driver;
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(AMG88XX, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline void amg88xx_setup_int(struct amg88xx_data *drv_data,

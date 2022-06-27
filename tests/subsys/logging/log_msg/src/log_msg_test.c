@@ -9,11 +9,11 @@
  * @brief Test log message
  */
 
-#include <logging/log_msg.h>
+#include <zephyr/logging/log_msg.h>
 
 #include <tc_util.h>
 #include <stdbool.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 extern struct k_mem_slab log_msg_pool;

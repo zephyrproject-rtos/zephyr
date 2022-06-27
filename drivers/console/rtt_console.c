@@ -9,10 +9,10 @@
  */
 
 
-#include <kernel.h>
-#include <sys/printk.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <SEGGER_RTT.h>
 
 extern void __printk_hook_install(int (*fn)(int));

@@ -6,10 +6,10 @@
 
 #define DISABLE_SYSCALL_TRACING
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <tracing_test.h>
 #include <tracing_test_syscall.h>
-#include <tracing/tracing_format.h>
+#include <zephyr/tracing/tracing_format.h>
 
 void sys_trace_k_thread_switched_out(void)
 {
@@ -511,4 +511,14 @@ void sys_trace_syscall_enter(uint32_t syscall_id, const char *syscall_name)
 void sys_trace_syscall_exit(uint32_t syscall_id, const char *syscall_name)
 {
 	TRACING_STRING("%s: %s (%u) exit\n", __func__, syscall_name, syscall_id);
+}
+
+void sys_trace_k_thread_foreach_unlocked_enter(k_thread_user_cb_t user_cb, void *data)
+{
+	TRACING_STRING("%s: %p (%p) enter\n", __func__, user_cb, data);
+}
+
+void sys_trace_k_thread_foreach_unlocked_exit(k_thread_user_cb_t user_cb, void *data)
+{
+	TRACING_STRING("%s: %p (%p) exit\n", __func__, user_cb, data);
 }

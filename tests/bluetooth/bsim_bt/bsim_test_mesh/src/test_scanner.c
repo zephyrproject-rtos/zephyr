@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include "mesh_test.h"
 #include "mesh/net.h"
 #include "mesh/adv.h"
@@ -12,7 +12,7 @@
 
 #define LOG_MODULE_NAME test_scanner
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define WAIT_TIME 60 /*seconds*/

@@ -50,13 +50,10 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     set(template_script_defines ${linker_pass_define})
     list(TRANSFORM template_script_defines PREPEND "-D")
 
-    # Different generators deal with depfiles differently.
-    if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
-      # Note that the IMPLICIT_DEPENDS option is currently supported only
-      # for Makefile generators and will be ignored by other generators.
-      set(linker_script_dep IMPLICIT_DEPENDS C ${LINKER_SCRIPT})
-    elseif(CMAKE_GENERATOR STREQUAL "Ninja")
-      # Using DEPFILE with other generators than Ninja is an error.
+    # Only Ninja and Makefile generators support DEPFILE.
+    if((CMAKE_GENERATOR STREQUAL "Ninja")
+       OR (CMAKE_GENERATOR MATCHES "Makefiles")
+    )
       set(linker_script_dep DEPFILE ${PROJECT_BINARY_DIR}/${linker_script_gen}.dep)
     else()
       # TODO: How would the linker script dependencies work for non-linker
@@ -67,8 +64,13 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     endif()
 
     zephyr_get_include_directories_for_lang(C current_includes)
-    get_filename_component(base_name ${CMAKE_CURRENT_BINARY_DIR} NAME)
     get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
+
+    if("${SPARSE}" STREQUAL "y")
+      set(ld_command ${REAL_CC})
+    else()
+      set(ld_command ${CMAKE_C_COMPILER})
+    endif()
 
     add_custom_command(
       OUTPUT ${linker_script_gen}
@@ -78,10 +80,10 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
       ${extra_dependencies}
       # NB: 'linker_script_dep' will use a keyword that ends 'DEPENDS'
       ${linker_script_dep}
-      COMMAND ${CMAKE_C_COMPILER}
+      COMMAND ${ld_command}
       -x assembler-with-cpp
       ${NOSYSDEF_CFLAG}
-      -MD -MF ${linker_script_gen}.dep -MT ${base_name}/${linker_script_gen}
+      -MD -MF ${linker_script_gen}.dep -MT ${linker_script_gen}
       -D_LINKER
       -D_ASMLANGUAGE
       -imacros ${AUTOCONF_H}

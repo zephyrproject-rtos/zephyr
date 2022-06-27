@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 
 #include <stdlib.h>
@@ -12,17 +12,17 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <random/rand32.h>
-#include <sys/atomic.h>
-#include <sys/util.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/types.h>
-#include <sys/byteorder.h>
-#include <sys/math_extras.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/math_extras.h>
 
-#include <net/net_ip.h>
-#include <net/net_core.h>
-#include <net/coap.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/coap.h>
 
 /* Values as per RFC 7252, section-3.1.
  *
@@ -1082,6 +1082,7 @@ int coap_next_block_for_option(const struct coap_packet *cpkt,
 			       enum coap_option_num option)
 {
 	int block;
+	uint16_t block_len;
 
 	if (option != COAP_OPTION_BLOCK1 && option != COAP_OPTION_BLOCK2) {
 		return -EINVAL;
@@ -1093,11 +1094,17 @@ int coap_next_block_for_option(const struct coap_packet *cpkt,
 		return block;
 	}
 
+	coap_packet_get_payload(cpkt, &block_len);
+	/* Check that the package does not exceed the expected size ONLY */
+	if ((ctx->total_size > 0) &&
+	    (ctx->total_size < (ctx->current + block_len))) {
+		return -EMSGSIZE;
+	}
+	ctx->current += block_len;
+
 	if (!GET_MORE(block)) {
 		return 0;
 	}
-
-	ctx->current += coap_block_size_to_bytes(ctx->block_size);
 
 	return (int)ctx->current;
 }
@@ -1140,7 +1147,7 @@ struct coap_pending *coap_pending_next_unused(
 	size_t i;
 
 	for (i = 0, p = pendings; i < len; i++, p++) {
-		if (p->timeout == 0) {
+		if (p->data == 0) {
 			return p;
 		}
 	}
@@ -1490,8 +1497,6 @@ struct coap_observer *coap_find_observer_by_addr(
  *
  * @note This function is not exposed in a public header, as it's for internal
  * use and should therefore not be exposed to applications.
- *
- * @return N/A
  */
 void net_coap_init(void)
 {

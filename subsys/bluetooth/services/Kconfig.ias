@@ -1,0 +1,33 @@
+# Bluetooth GATT Immediate Alert Service
+
+# Copyright (c) 2022 Codecoup
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_IAS
+	bool "Support for GATT Immediate Alert Service [EXPERIMENTAL]"
+	select EXPERIMENTAL
+
+if BT_IAS
+
+choice BT_IAS_SEC_CHOICE
+	prompt "Default permissions used for IAS characteristics"
+	default BT_IAS_SEC_NONE
+	help
+	  Default write permissions for IAS characteristic attributes
+
+config BT_IAS_SEC_NONE
+	bool "No security required"
+
+config BT_IAS_SEC_ENC
+	bool "Require encryption for write access"
+
+config BT_IAS_SEC_AUTH
+	bool "Require encryption and authentication for write access"
+
+endchoice #BT_IAS_SEC_CHOICE
+
+module = BT_IAS
+module-str = IAS
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+endif # BT_IAS

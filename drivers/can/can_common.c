@@ -4,145 +4,41 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/can.h>
-#include <kernel.h>
-#include <sys/util.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
 
-#define LOG_LEVEL CONFIG_CAN_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(can_driver);
+LOG_MODULE_REGISTER(can_common, CONFIG_CAN_LOG_LEVEL);
 
+/* Maximum acceptable deviation in sample point location (permille) */
+#define SAMPLE_POINT_MARGIN 50
+
+/* CAN sync segment is always one time quantum */
 #define CAN_SYNC_SEG 1
 
-#define WORK_BUF_COUNT_IS_POWER_OF_2 !(CONFIG_CAN_WORKQ_FRAMES_BUF_CNT & \
-					(CONFIG_CAN_WORKQ_FRAMES_BUF_CNT - 1))
-
-#define WORK_BUF_MOD_MASK (CONFIG_CAN_WORKQ_FRAMES_BUF_CNT - 1)
-
-#if WORK_BUF_COUNT_IS_POWER_OF_2
-#define WORK_BUF_MOD_SIZE(x) ((x) & WORK_BUF_MOD_MASK)
-#else
-#define WORK_BUF_MOD_SIZE(x) ((x) % CONFIG_CAN_WORKQ_FRAMES_BUF_CNT)
-#endif
-
-#define WORK_BUF_FULL 0xFFFF
-
-static void can_msgq_put(struct zcan_frame *frame, void *arg)
+static void can_msgq_put(const struct device *dev, struct zcan_frame *frame, void *user_data)
 {
-	struct k_msgq *msgq = (struct k_msgq *)arg;
+	struct k_msgq *msgq = (struct k_msgq *)user_data;
 	int ret;
+
+	ARG_UNUSED(dev);
 
 	__ASSERT_NO_MSG(msgq);
 
 	ret = k_msgq_put(msgq, frame, K_NO_WAIT);
 	if (ret) {
-		LOG_ERR("Msgq %p overflowed. Frame ID: 0x%x", arg, frame->id);
+		LOG_ERR("Msgq %p overflowed. Frame ID: 0x%x", msgq, frame->id);
 	}
 }
 
-int z_impl_can_attach_msgq(const struct device *dev, struct k_msgq *msg_q,
-			   const struct zcan_filter *filter)
+int z_impl_can_add_rx_filter_msgq(const struct device *dev, struct k_msgq *msgq,
+				  const struct zcan_filter *filter)
 {
 	const struct can_driver_api *api = dev->api;
 
-	return api->attach_isr(dev, can_msgq_put, msg_q, filter);
+	return api->add_rx_filter(dev, can_msgq_put, msgq, filter);
 }
-
-static inline void can_work_buffer_init(struct can_frame_buffer *buffer)
-{
-	buffer->head = 0;
-	buffer->tail = 0;
-}
-
-static inline int can_work_buffer_put(struct zcan_frame *frame,
-				      struct can_frame_buffer *buffer)
-{
-	uint16_t next_head = WORK_BUF_MOD_SIZE(buffer->head + 1);
-
-	if (buffer->head == WORK_BUF_FULL) {
-		return -1;
-	}
-
-	buffer->buf[buffer->head] = *frame;
-
-	/* Buffer is almost full */
-	if (next_head == buffer->tail) {
-		buffer->head = WORK_BUF_FULL;
-	} else {
-		buffer->head = next_head;
-	}
-
-	return 0;
-}
-
-static inline
-struct zcan_frame *can_work_buffer_get_next(struct can_frame_buffer *buffer)
-{
-	/* Buffer empty */
-	if (buffer->head == buffer->tail) {
-		return NULL;
-	} else {
-		return &buffer->buf[buffer->tail];
-	}
-}
-
-static inline void can_work_buffer_free_next(struct can_frame_buffer *buffer)
-{
-	uint16_t next_tail = WORK_BUF_MOD_SIZE(buffer->tail + 1);
-
-	if (buffer->head == buffer->tail) {
-		return;
-	}
-
-	if (buffer->head == WORK_BUF_FULL) {
-		buffer->head = buffer->tail;
-	}
-
-	buffer->tail = next_tail;
-}
-
-static void can_work_handler(struct k_work *work)
-{
-	struct zcan_work *can_work = CONTAINER_OF(work, struct zcan_work,
-						  work_item);
-	struct zcan_frame *frame;
-
-	while ((frame = can_work_buffer_get_next(&can_work->buf))) {
-		can_work->cb(frame, can_work->cb_arg);
-		can_work_buffer_free_next(&can_work->buf);
-	}
-}
-
-static void can_work_isr_put(struct zcan_frame *frame, void *arg)
-{
-	struct zcan_work *work = (struct zcan_work *)arg;
-	int ret;
-
-	ret = can_work_buffer_put(frame, &work->buf);
-	if (ret) {
-		LOG_ERR("Workq buffer overflow. Msg ID: 0x%x", frame->id);
-		return;
-	}
-
-	k_work_submit_to_queue(work->work_queue, &work->work_item);
-}
-
-int can_attach_workq(const struct device *dev, struct k_work_q *work_q,
-			    struct zcan_work *work,
-			    can_rx_callback_t callback, void *callback_arg,
-			    const struct zcan_filter *filter)
-{
-	const struct can_driver_api *api = dev->api;
-
-	k_work_init(&work->work_item, can_work_handler);
-	work->work_queue = work_q;
-	work->cb = callback;
-	work->cb_arg = callback_arg;
-	can_work_buffer_init(&work->buf);
-
-	return api->attach_isr(dev, can_work_isr_put, work, filter);
-}
-
 
 static int update_sampling_pnt(uint32_t ts, uint32_t sp, struct can_timing *res,
 			       const struct can_timing *max,
@@ -192,7 +88,7 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 	int sp_err;
 	struct can_timing tmp_res;
 
-	if (sp >= 1000 ||
+	if (bitrate == 0 || sp >= 1000 ||
 	    (!IS_ENABLED(CONFIG_CAN_FD_MODE) && bitrate > 1000000) ||
 	     (IS_ENABLED(CONFIG_CAN_FD_MODE) && bitrate > 8000000)) {
 		return -EINVAL;
@@ -234,10 +130,12 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 	return sp_err_min == UINT16_MAX ? -EINVAL : (int)sp_err_min;
 }
 
-int can_calc_timing(const struct device *dev, struct can_timing *res,
-		    uint32_t bitrate, uint16_t sample_pnt)
+
+int z_impl_can_calc_timing(const struct device *dev, struct can_timing *res,
+			   uint32_t bitrate, uint16_t sample_pnt)
 {
-	const struct can_driver_api *api = dev->api;
+	const struct can_timing *min = can_get_timing_min(dev);
+	const struct can_timing *max = can_get_timing_max(dev);
 	uint32_t core_clock;
 	int ret;
 
@@ -246,15 +144,15 @@ int can_calc_timing(const struct device *dev, struct can_timing *res,
 		return ret;
 	}
 
-	return can_calc_timing_int(core_clock, res, &api->timing_min,
-				   &api->timing_max, bitrate, sample_pnt);
+	return can_calc_timing_int(core_clock, res, min, max, bitrate, sample_pnt);
 }
 
 #ifdef CONFIG_CAN_FD_MODE
-int can_calc_timing_data(const struct device *dev, struct can_timing *res,
-			 uint32_t bitrate, uint16_t sample_pnt)
+int z_impl_can_calc_timing_data(const struct device *dev, struct can_timing *res,
+				uint32_t bitrate, uint16_t sample_pnt)
 {
-	const struct can_driver_api *api = dev->api;
+	const struct can_timing *min = can_get_timing_data_min(dev);
+	const struct can_timing *max = can_get_timing_data_max(dev);
 	uint32_t core_clock;
 	int ret;
 
@@ -263,10 +161,9 @@ int can_calc_timing_data(const struct device *dev, struct can_timing *res,
 		return ret;
 	}
 
-	return can_calc_timing_int(core_clock, res, &api->timing_min_data,
-				   &api->timing_max_data, bitrate, sample_pnt);
+	return can_calc_timing_int(core_clock, res, min, max, bitrate, sample_pnt);
 }
-#endif
+#endif /* CONFIG_CAN_FD_MODE */
 
 int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
 		       uint32_t bitrate)
@@ -285,3 +182,97 @@ int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
 
 	return core_clock % (ts * timing->prescaler);
 }
+
+/**
+ * @brief Get the sample point location for a given bitrate
+ *
+ * @param  bitrate The bitrate in bits/second.
+ * @return The sample point in permille.
+ */
+uint16_t sample_point_for_bitrate(uint32_t bitrate)
+{
+	uint16_t sample_pnt;
+
+	if (bitrate > 800000) {
+		/* 75.0% */
+		sample_pnt = 750;
+	} else if (bitrate > 500000) {
+		/* 80.0% */
+		sample_pnt = 800;
+	} else {
+		/* 87.5% */
+		sample_pnt = 875;
+	}
+
+	return sample_pnt;
+}
+
+int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate)
+{
+	struct can_timing timing;
+	uint32_t max_bitrate;
+	uint16_t sample_pnt;
+	int ret;
+
+	ret = can_get_max_bitrate(dev, &max_bitrate);
+	if (ret == -ENOSYS) {
+		/* Maximum bitrate unknown */
+		max_bitrate = 0;
+	} else if (ret < 0) {
+		return ret;
+	}
+
+	if ((max_bitrate > 0) && (bitrate > max_bitrate)) {
+		return -ENOTSUP;
+	}
+
+	sample_pnt = sample_point_for_bitrate(bitrate);
+	ret = can_calc_timing(dev, &timing, bitrate, sample_pnt);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	if (ret > SAMPLE_POINT_MARGIN) {
+		return -EINVAL;
+	}
+
+	timing.sjw = CAN_SJW_NO_CHANGE;
+
+	return can_set_timing(dev, &timing);
+}
+
+#ifdef CONFIG_CAN_FD_MODE
+int z_impl_can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data)
+{
+	struct can_timing timing_data;
+	uint32_t max_bitrate;
+	uint16_t sample_pnt;
+	int ret;
+
+	ret = can_get_max_bitrate(dev, &max_bitrate);
+	if (ret == -ENOSYS) {
+		/* Maximum bitrate unknown */
+		max_bitrate = 0;
+	} else if (ret < 0) {
+		return ret;
+	}
+
+	if ((max_bitrate > 0) && (bitrate_data > max_bitrate)) {
+		return -ENOTSUP;
+	}
+
+	sample_pnt = sample_point_for_bitrate(bitrate_data);
+	ret = can_calc_timing_data(dev, &timing_data, bitrate_data, sample_pnt);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	if (ret > SAMPLE_POINT_MARGIN) {
+		return -EINVAL;
+	}
+
+	timing_data.sjw = CAN_SJW_NO_CHANGE;
+
+	return can_set_timing_data(dev, &timing_data);
+}
+#endif /* CONFIG_CAN_FD_MODE */

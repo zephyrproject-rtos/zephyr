@@ -7,4 +7,3 @@ project(sound)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
-zephyr_include_directories(${ZEPHYR_BASE}/boards/arm/bbc_microbit)

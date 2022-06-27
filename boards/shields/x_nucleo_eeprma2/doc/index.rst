@@ -54,7 +54,7 @@ Samples
 The :ref:`samples_eeprom` can be used to demonstrate the expansion boards
 functionality.
 Per default the shield sets an ``eeprom-0`` alias for the M24C02-FMC6TG EEPROM,
-which can be overwritten to use the other EEPROM deivces instead.
+which can be overwritten to use the other EEPROM devices instead.
 
 Programming
 ***********

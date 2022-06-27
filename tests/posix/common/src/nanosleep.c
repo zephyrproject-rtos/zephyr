@@ -6,9 +6,9 @@
 
 #include <ztest.h>
 #include <errno.h>
-#include <posix/time.h>
+#include <zephyr/posix/time.h>
 #include <stdint.h>
-#include <sys_clock.h>
+#include <zephyr/sys_clock.h>
 
 /** req and rem are both NULL */
 void test_nanosleep_NULL_NULL(void)

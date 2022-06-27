@@ -8,14 +8,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_icmpv4, CONFIG_NET_ICMPV4_LOG_LEVEL);
 
 #include <errno.h>
-#include <sys/slist.h>
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
 #include "net_private.h"
 #include "ipv4.h"
 #include "icmpv4.h"
@@ -418,7 +418,7 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 	/* If interface can not select src address based on dst addr
 	 * and src address is unspecified, drop the echo request.
 	 */
-	if (net_ipv4_is_addr_unspecified(&ip_hdr->src)) {
+	if (net_ipv4_is_addr_unspecified((struct in_addr *)ip_hdr->src)) {
 		NET_DBG("DROP: src addr is unspecified");
 		goto drop;
 	}
@@ -445,15 +445,16 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	if (net_ipv4_is_addr_mcast(&ip_hdr->dst) ||
-	    net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &ip_hdr->dst)) {
+	if (net_ipv4_is_addr_mcast((struct in_addr *)ip_hdr->dst) ||
+	    net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
+				   (struct in_addr *)ip_hdr->dst)) {
 		src = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
-						  &ip_hdr->dst);
+						  (struct in_addr *)ip_hdr->dst);
 	} else {
-		src = &ip_hdr->dst;
+		src = (struct in_addr *)ip_hdr->dst;
 	}
 
-	if (net_ipv4_create(reply, src, &ip_hdr->src)) {
+	if (net_ipv4_create(reply, src, (struct in_addr *)ip_hdr->src)) {
 		goto drop;
 	}
 
@@ -599,6 +600,17 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 		}
 	}
 
+	if (net_ipv4_is_addr_bcast(net_pkt_iface(orig),
+				   (struct in_addr *)ip_hdr->dst)) {
+		/* We should not send an error to packet that
+		 * were sent to broadcast
+		 */
+		NET_DBG("Not sending error to bcast pkt from %s on proto %s",
+			log_strdup(net_sprint_ipv4_addr(&ip_hdr->src)),
+			net_proto2str(AF_INET, ip_hdr->proto));
+		goto drop_no_pkt;
+	}
+
 	if (ip_hdr->proto == IPPROTO_UDP) {
 		copy_len = sizeof(struct net_ipv4_hdr) +
 			sizeof(struct net_udp_hdr);
@@ -618,7 +630,8 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 		goto drop_no_pkt;
 	}
 
-	if (net_ipv4_create(pkt, &ip_hdr->dst, &ip_hdr->src) ||
+	if (net_ipv4_create(pkt, (struct in_addr *)ip_hdr->dst,
+			    (struct in_addr *)ip_hdr->src) ||
 	    icmpv4_create(pkt, type, code) ||
 	    net_pkt_memset(pkt, 0, NET_ICMPV4_UNUSED_LEN) ||
 	    net_pkt_copy(pkt, orig, copy_len)) {
@@ -633,8 +646,8 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 
 	NET_DBG("Sending ICMPv4 Error Message type %d code %d from %s to %s",
 		type, code,
-		log_strdup(net_sprint_ipv4_addr(&ip_hdr->src)),
-		log_strdup(net_sprint_ipv4_addr(&ip_hdr->dst)));
+		log_strdup(net_sprint_ipv4_addr(&ip_hdr->dst)),
+		log_strdup(net_sprint_ipv4_addr(&ip_hdr->src)));
 
 	if (net_send_data(pkt) >= 0) {
 		net_stats_update_icmp_sent(net_pkt_iface(orig));
@@ -680,7 +693,8 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &ip_hdr->dst) &&
+	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
+				   (struct in_addr *)ip_hdr->dst) &&
 	    (!IS_ENABLED(CONFIG_NET_ICMPV4_ACCEPT_BROADCAST) ||
 	     icmp_hdr->type != NET_ICMPV4_ECHO_REQUEST)) {
 		NET_DBG("DROP: broadcast pkt");

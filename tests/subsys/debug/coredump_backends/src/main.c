@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
 #include <ztest.h>
 #include <assert.h>
 #include <tc_util.h>
 
-#include <debug/coredump.h>
+#include <zephyr/debug/coredump.h>
 
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static struct k_thread dump_thread;
 static K_THREAD_STACK_DEFINE(dump_stack, STACK_SIZE);

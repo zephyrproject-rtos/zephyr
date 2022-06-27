@@ -14,10 +14,12 @@
 
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <arch/xtensa/arch.h>
+#include <zephyr/arch/xtensa/arch.h>
 
 #include <xtensa/core-macros.h>
 #include <esp32/clk.h>
+
+void __esp_platform_start(void);
 
 static inline void esp32_set_mask32(uint32_t v, uint32_t mem_addr)
 {

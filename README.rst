@@ -2,15 +2,16 @@
 
    <a href="https://www.zephyrproject.org">
      <p align="center">
-       <img src="doc/_static/images/logo-readme.png">
+       <img src="doc/_static/images/logo-readme.svg">
      </p>
    </a>
 
    <a href="https://bestpractices.coreinfrastructure.org/projects/74"><img
    src="https://bestpractices.coreinfrastructure.org/projects/74/badge"></a>
-   <a href="https://buildkite.com/zephyr/zephyr">
+   <a
+   href="https://github.com/zephyrproject-rtos/zephyr/actions/workflows/twister.yaml?query=branch%3Amain">
    <img
-   src="https://badge.buildkite.com/f5bd0dc88306cee17c9b38e78d11bb74a6291e3f40e7d13f31.svg?branch=main"></a>
+   src="https://github.com/zephyrproject-rtos/zephyr/actions/workflows/twister.yaml/badge.svg?event=push"></a>
 
 
 The Zephyr Project is a scalable real-time operating system (RTOS) supporting
@@ -21,9 +22,9 @@ The Zephyr OS is based on a small-footprint kernel designed for use on
 resource-constrained systems: from simple embedded environmental sensors and
 LED wearables to sophisticated smart watches and IoT wireless gateways.
 
-The Zephyr kernel supports multiple architectures, including ARM Cortex-M,
-Intel x86, ARC, Nios II, Tensilica Xtensa, and RISC-V, and a large number of
-`supported boards`_.
+The Zephyr kernel supports multiple architectures, including ARM (Cortex-A,
+Cortex-R, Cortex-M), Intel x86, ARC, Nios II, Tensilica Xtensa, and RISC-V,
+SPARC, MIPS, and a large number of `supported boards`_.
 
 .. below included in doc/introduction/introduction.rst
 
@@ -62,8 +63,7 @@ Here's a quick summary of resources to help you find your way around:
   `Zephyr Development mailing list`_. The other `Zephyr mailing list
   subgroups`_ have their own archives and sign-up pages.
 * **Nightly CI Build Status**: https://lists.zephyrproject.org/g/builds
-  The builds@lists.zephyrproject.org mailing list archives the CI
-  (buildkite) nightly build results.
+  The builds@lists.zephyrproject.org mailing list archives the CI nightly build results.
 * **Chat**: Real-time chat happens in Zephyr's Discord Server. Use
   this `Discord Invite`_ to register.
 * **Contributing**: see the `Contribution Guide`_

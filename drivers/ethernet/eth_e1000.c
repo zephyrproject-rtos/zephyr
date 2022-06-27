@@ -8,18 +8,18 @@
 
 #define LOG_MODULE_NAME eth_e1000
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <sys/types.h>
-#include <zephyr.h>
-#include <net/ethernet.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
-#include <drivers/pcie/pcie.h>
+#include <zephyr/drivers/pcie/pcie.h>
 #include "eth_e1000_priv.h"
 
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
-#include <ptp_clock.h>
+#include <zephyr/drivers/ptp_clock.h>
 
 #define PTP_INST_NODEID(n) DT_CHILD(DT_DRV_INST(n), ptp)
 #endif
@@ -380,7 +380,7 @@ static int ptp_clock_e1000_adjust(const struct device *dev, int increment)
 	return 0;
 }
 
-static int ptp_clock_e1000_rate_adjust(const struct device *dev, float ratio)
+static int ptp_clock_e1000_rate_adjust(const struct device *dev, double ratio)
 {
 	const int hw_inc = NSEC_PER_SEC / CONFIG_ETH_E1000_PTP_CLOCK_SRC_HZ;
 	struct ptp_context *ptp_context = dev->data;
@@ -390,27 +390,27 @@ static int ptp_clock_e1000_rate_adjust(const struct device *dev, float ratio)
 	float val;
 
 	/* No change needed. */
-	if (ratio == 1.0) {
+	if (ratio == 1.0f) {
 		return 0;
 	}
 
 	ratio *= context->clk_ratio;
 
 	/* Limit possible ratio. */
-	if ((ratio > 1.0 + 1.0/(2 * hw_inc)) ||
-			(ratio < 1.0 - 1.0/(2 * hw_inc))) {
+	if ((ratio > 1.0f + 1.0f/(2 * hw_inc)) ||
+			(ratio < 1.0f - 1.0f/(2 * hw_inc))) {
 		return -EINVAL;
 	}
 
 	/* Save new ratio. */
 	context->clk_ratio = ratio;
 
-	if (ratio < 1.0) {
+	if (ratio < 1.0f) {
 		corr = hw_inc - 1;
-		val = 1.0 / (hw_inc * (1.0 - ratio));
-	} else if (ratio > 1.0) {
+		val = 1.0f / (hw_inc * (1.0f - ratio));
+	} else if (ratio > 1.0f) {
 		corr = hw_inc + 1;
-		val = 1.0 / (hw_inc * (ratio-1.0));
+		val = 1.0f / (hw_inc * (ratio - 1.0f));
 	} else {
 		val = 0;
 		corr = hw_inc;

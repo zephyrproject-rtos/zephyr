@@ -5,7 +5,7 @@ description: Kinetis FTM PWM
 
 compatible: "nxp,kinetis-ftm-pwm"
 
-include: [pwm-controller.yaml, "nxp,kinetis-ftm.yaml"]
+include: [pwm-controller.yaml, "nxp,kinetis-ftm.yaml", "pinctrl-device.yaml"]
 
 properties:
     "#pwm-cells":

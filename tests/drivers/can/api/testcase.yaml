@@ -1,4 +1,10 @@
 tests:
-  drivers.can:
-    tags: driver can
+  drivers.can.api:
+    tags: drivers can
     depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus")
+  drivers.can.api.mcp2515:
+    tags: drivers can
+    depends_on: arduino_spi arduino_gpio
+    extra_args: SHIELD=dfrobot_can_bus_v2_0
+    build_only: true

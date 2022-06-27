@@ -10,11 +10,11 @@
 
 #define DT_DRV_COMPAT st_i3g4250d
 
-#include <init.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
 
 #include "i3g4250d.h"
 
@@ -181,7 +181,7 @@ static int i3g4250d_init(const struct device *dev)
 	}
 
 	if (wai != I3G4250D_ID) {
-		LOG_ERR("Inavild chip ID: %02x", wai);
+		LOG_ERR("Invalid chip ID: %02x", wai);
 		return -EIO;
 	}
 

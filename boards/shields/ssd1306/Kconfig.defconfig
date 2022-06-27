@@ -28,28 +28,18 @@ endchoice
 
 if LVGL
 
-config LVGL_DISPLAY_DEV_NAME
-	default "SSD1306"
-
-config LVGL_HOR_RES_MAX
-	default 128
-
-config LVGL_VER_RES_MAX
-	default 32 if SHIELD_SSD1306_128X32
+config LV_Z_VDB_SIZE
 	default 64
 
-config LVGL_VDB_SIZE
-	default 64
-
-config LVGL_DPI
+config LV_Z_DPI
 	default 116 if SHIELD_SH1106_128X64
 	default 148
 
-config LVGL_BITS_PER_PIXEL
+config LV_Z_BITS_PER_PIXEL
 	default 1
 
-choice LVGL_COLOR_DEPTH
-	default LVGL_COLOR_DEPTH_1
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_1
 endchoice
 
 endif # LVGL

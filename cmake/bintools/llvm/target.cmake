@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# Configures binary toos as llvm binary tool set
+# Configures binary tools as llvm binary tool set
 
 if(DEFINED TOOLCHAIN_HOME)
   set(find_program_clang_args PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)

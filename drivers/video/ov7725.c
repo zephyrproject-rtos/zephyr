@@ -5,17 +5,17 @@
  */
 
 #define DT_DRV_COMPAT ovti_ov7725
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <drivers/video.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/video.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ov7725);
 
 #define OV7725_REVISION  0x7721U
@@ -269,7 +269,7 @@ static const struct ov7725_reg ov7725_init_reg_tb[] = {
 	{ OV7725_AWB_CTRL3,      0xaa },
 	{ OV7725_COM8,           0xff },
 
-	/*matrix shapness brightness contrast*/
+	/*matrix sharpness brightness contrast*/
 	{ OV7725_EDGE1,          0x08 },
 	{ OV7725_DNSOFF,         0x01 },
 	{ OV7725_EDGE2,          0x03 },

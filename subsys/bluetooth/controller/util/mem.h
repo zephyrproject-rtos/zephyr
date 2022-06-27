@@ -37,6 +37,22 @@
 #define MROUND(x) (((uint32_t)(x)+3) & (~((uint32_t)3)))
 #endif
 
+/* When memory is free in the mem_pool, first few bytes are reserved for
+ * maintaining the next pointer and free count.
+ */
+#define MEM_FREE_MEMBER_NEXT_SIZE  (sizeof(void *))
+#define MEM_FREE_MEMBER_COUNT_SIZE (sizeof(uint16_t))
+#define MEM_FREE_RESERVED_SIZE     ((MEM_FREE_MEMBER_NEXT_SIZE) + \
+				    (MEM_FREE_MEMBER_COUNT_SIZE))
+
+/* Define to check if a structure member is safe to be accessed when the memory
+ * is in the mem_pool free list. I.e. whether a structure member be safely
+ * accessed after the mem being freed.
+ */
+#define MEM_FREE_MEMBER_ACCESS_BUILD_ASSERT(type, member) \
+	BUILD_ASSERT(offsetof(type, member) >= MEM_FREE_RESERVED_SIZE, \
+		     "Possible unsafe member access inside free mem pool")
+
 void mem_init(void *mem_pool, uint16_t mem_size, uint16_t mem_count, void **mem_head);
 void *mem_acquire(void **mem_head);
 void mem_release(void *mem, void **mem_head);

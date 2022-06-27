@@ -29,8 +29,9 @@ printf "\n\n======== Running VCS standalone (API) test =========\n\n"
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=vcs_standalone -rs=23
 
+# Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
-  -D=1 -sim_length=20e6 $@
+  -D=1 -sim_length=60e6 $@
 
 for PROCESS_ID in $PROCESS_IDS; do
   wait $PROCESS_ID || let "EXIT_CODE=$?"
@@ -44,8 +45,9 @@ Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=vcs_client -rs=46
 
+# Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
-  -D=2 -sim_length=20e6 $@
+  -D=2 -sim_length=60e6 $@
 
 for PROCESS_ID in $PROCESS_IDS; do
   wait $PROCESS_ID || let "EXIT_CODE=$?"

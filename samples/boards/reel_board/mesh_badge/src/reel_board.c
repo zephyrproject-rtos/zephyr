@@ -5,20 +5,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <display/cfb.h>
-#include <sys/printk.h>
-#include <drivers/flash.h>
-#include <storage/flash_map.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/display/cfb.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/drivers/sensor.h>
 
 #include <string.h>
 #include <stdio.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/mesh/access.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/mesh/access.h>
 
 #include "mesh.h"
 #include "board.h"
@@ -577,9 +578,12 @@ static int configure_leds(void)
 
 static int erase_storage(void)
 {
-	const struct device *dev;
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 
-	dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
+	if (!device_is_ready(dev)) {
+		printk("Flash device not ready\n");
+		return -ENODEV;
+	}
 
 	return flash_erase(dev, FLASH_AREA_OFFSET(storage),
 			   FLASH_AREA_SIZE(storage));

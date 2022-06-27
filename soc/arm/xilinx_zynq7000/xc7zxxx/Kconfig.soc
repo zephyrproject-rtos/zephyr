@@ -1,0 +1,60 @@
+#
+# Copyright (c) 2021 Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+# Device data: comp.
+# https://www.xilinx.com/products/silicon-devices/soc/zynq-7000.html#productTable
+#
+
+choice
+	prompt "XC7Zxxx SoC Selection"
+	depends on SOC_SERIES_XILINX_XC7ZXXX
+
+config SOC_XILINX_XC7Z010
+	bool "XC7Z010"
+	help
+	  2 ARM Cortex-A9 cores up to 866 MHz, Artix-7 programmable logic,
+	  28k logic cells, 2.1Mb block RAM, 800 DSP slices, up to 100 I/O pins.
+
+config SOC_XILINX_XC7Z015
+	bool "XC7Z015"
+	help
+	  2 ARM Cortex-A9 cores up to 866 MHz, Artix-7 programmable logic,
+	  74k logic cells, 3.3Mb block RAM, 160 DSP slices, up to 150 I/O pins,
+	  up to 4 transceivers.
+
+config SOC_XILINX_XC7Z020
+	bool "XC7Z020"
+	help
+	  2 ARM Cortex-A9 cores up to 866 MHz, Artix-7 programmable logic,
+	  85k logic cells, 4.9Mb block RAM, 220 DSP slices, up to 200 I/O pins.
+
+config SOC_XILINX_XC7Z030
+	bool "XC7Z030"
+	help
+	  2 ARM Cortex-A9 cores up to 1 GHz, Kintex-7 programmable logic,
+	  125k logic cells, 9.3Mb block RAM, 400 DSP slices, up to 250 I/O pins,
+	  up to 4 transceivers.
+
+config SOC_XILINX_XC7Z035
+	bool "XC7Z035"
+	help
+	  2 ARM Cortex-A9 cores up to 1 GHz, Kintex-7 programmable logic,
+	  275k logic cells, 17.6Mb block RAM, 900 DSP slices, up to 362 I/O pins,
+	  up to 16 transceivers.
+
+config SOC_XILINX_XC7Z045
+	bool "XC7Z045"
+	help
+	  2 ARM Cortex-A9 cores up to 1 GHz, Kintex-7 programmable logic,
+	  350k logic cells, 19.1Mb block RAM, 900 DSP slices, up to 362 I/O pins,
+	  up to 16 transceivers.
+
+config SOC_XILINX_XC7Z100
+	bool "XC7Z100"
+	help
+	  2 ARM Cortex-A9 cores up to 1 GHz, Kintex-7 programmable logic,
+	  444k logic cells, 26.5Mb block RAM, 2020 DSP slices, up to 400 I/O pins,
+	  up to 16 transceivers.
+
+endchoice

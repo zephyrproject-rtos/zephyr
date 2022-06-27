@@ -1,0 +1,7 @@
+# Copyright 2021 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_IMX8MP_EVK_A53
+	bool "NXP i.MX8M Plus EVK A53"
+	depends on SOC_SERIES_IMX8M_A53
+	select ARM64

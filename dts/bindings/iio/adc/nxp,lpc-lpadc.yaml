@@ -5,7 +5,7 @@ description: LPC LPADC
 
 compatible: "nxp,lpc-lpadc"
 
-include: adc-controller.yaml
+include: [adc-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:

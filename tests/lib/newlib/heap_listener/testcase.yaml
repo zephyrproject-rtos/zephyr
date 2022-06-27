@@ -1,0 +1,4 @@
+tests:
+  libraries.libc.newlib.heap_listener:
+    tags: clib newlib
+    filter: TOOLCHAIN_HAS_NEWLIB == 1

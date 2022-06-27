@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nordic/nrf51822_qfaa.dtsi>
+#include "qemu_cortex_m0-pinctrl.dtsi"
 
 / {
 	model = "QEMU Cortex-M0";
@@ -34,8 +35,9 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <24>;
-	rx-pin = <25>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &flash0 {

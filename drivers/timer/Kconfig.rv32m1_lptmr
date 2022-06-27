@@ -1,0 +1,14 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config RV32M1_LPTMR_TIMER
+	bool "RV32M1 LPTMR system timer driver"
+	default y
+	depends on SOC_OPENISA_RV32M1_RISCV32
+	depends on RV32M1_INTMUX
+	help
+	  This module implements a kernel device driver for using the LPTMR
+	  peripheral as the system clock. It provides the standard "system clock
+	  driver" interfaces.

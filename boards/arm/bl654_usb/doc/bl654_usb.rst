@@ -75,7 +75,7 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See `BL654 website`_
 for a complete list of BL654 USB adapter hardware features.
 
@@ -121,7 +121,7 @@ bootloader and flash them to the device. Make sure ``nrfutil`` is installed
 before proceeding. These instructions were tested with version 6.1.0.
 
 #. With the adapter plugged in, reset the board into the bootloader by pressing
-the RESET button.
+   the RESET button.
 
    The push button is in a pin-hole on the logo side of the USB adapter.
 

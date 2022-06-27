@@ -2,8 +2,9 @@ sample:
   name: CAN driver sample
 tests:
   sample.drivers.can:
-    tags: CAN
+    tags: can
     depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus")
     harness: console
     harness_config:
       type: one_line

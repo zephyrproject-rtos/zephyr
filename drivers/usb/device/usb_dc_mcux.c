@@ -9,10 +9,10 @@
 
 #include <soc.h>
 #include <string.h>
-#include <drivers/usb/usb_dc.h>
-#include <usb/usb_device.h>
+#include <zephyr/drivers/usb/usb_dc.h>
+#include <zephyr/usb/usb_device.h>
 #include <soc.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include "usb_dc_mcux.h"
 #ifdef CONFIG_USB_DC_NXP_EHCI
 #include "usb_device_ehci.h"
@@ -25,10 +25,11 @@
 #endif
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_mcux);
 
 static void usb_isr_handler(void);
+static void usb_mcux_thread_main(void *arg1, void *arg2, void *arg3);
 
 /* the setup transfer state */
 #define SETUP_DATA_STAGE_DONE	(0)
@@ -41,7 +42,7 @@ static void usb_isr_handler(void);
  * MCUX EHCI USB device controller supports a specific
  * number of bidirectional endpoints. Bidirectional means
  * that an endpoint object is represented to the outside
- * as an OUT and an IN Eindpoint with its own buffers
+ * as an OUT and an IN Endpoint with its own buffers
  * and control structures.
  *
  * EP_ABS_IDX refers to the corresponding control
@@ -76,6 +77,10 @@ K_HEAP_DEFINE(ep_buf_pool, 1024 * EP_BUF_NUMOF_BLOCKS);
 static struct usb_ep_ctrl_data s_ep_ctrl[NUM_OF_EP_MAX];
 static struct usb_device_struct dev_data;
 
+/* Message queue for the usb thread */
+K_MSGQ_DEFINE(usb_dc_msgq, sizeof(usb_device_callback_message_struct_t),
+	CONFIG_USB_DC_MSG_QUEUE_LEN, 4);
+
 #if defined(CONFIG_USB_DC_NXP_EHCI)
 /* EHCI device driver interface */
 static const usb_device_controller_interface_struct_t mcux_usb_iface = {
@@ -83,7 +88,12 @@ static const usb_device_controller_interface_struct_t mcux_usb_iface = {
 	USB_DeviceEhciRecv, USB_DeviceEhciCancel, USB_DeviceEhciControl
 };
 
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb1), okay) && CONFIG_USB_DC_NXP_EHCI
 #define CONTROLLER_ID kUSB_ControllerEhci0
+#elif DT_NODE_HAS_STATUS(DT_NODELABEL(usb2), okay) && CONFIG_USB_DC_NXP_EHCI
+#define CONTROLLER_ID kUSB_ControllerEhci1
+#endif
 
 extern void USB_DeviceEhciIsrFunction(void *deviceHandle);
 
@@ -128,6 +138,12 @@ int usb_dc_attach(void)
 	if (kStatus_USB_Success != status) {
 		return -EIO;
 	}
+
+	/* Create the usb callback handler thread */
+	k_thread_create(&dev_data.thread, dev_data.thread_stack,
+				USBD_MCUX_THREAD_STACK_SIZE,
+				usb_mcux_thread_main, NULL, NULL, NULL,
+				K_PRIO_COOP(2), 0, K_NO_WAIT);
 
 	/* Connect and enable USB interrupt */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
@@ -390,7 +406,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 		dev_data.eps[ep_abs_idx].ep_occupied = true;
 	} else {
 		/*
-		 * control enpoint just be enabled before enumeration,
+		 * control endpoint just be enabled before enumeration,
 		 * when running here, setup has been primed.
 		 */
 		dev_data.eps[ep_abs_idx].ep_occupied = true;
@@ -768,40 +784,58 @@ static void handle_transfer_msg(usb_device_callback_message_struct_t *cb_msg)
 	}
 }
 
+/**
+ * Similar to the kinetis driver, this thread is used to not run the USB device
+ * stack/endpoint callbacks in the ISR context. This is because callbacks from
+ * the USB stack may use mutexes, or other kernel functions not supported from
+ * an interrupt context.
+ */
+static void usb_mcux_thread_main(void *arg1, void *arg2, void *arg3)
+{
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
+	uint8_t ep_abs_idx;
+	usb_device_callback_message_struct_t msg;
+
+	while (1) {
+		k_msgq_get(&usb_dc_msgq, &msg, K_FOREVER);
+		switch (msg.code) {
+		case kUSB_DeviceNotifyBusReset:
+			handle_bus_reset();
+			dev_data.status_callback(USB_DC_RESET, NULL);
+			break;
+		case kUSB_DeviceNotifyError:
+			dev_data.status_callback(USB_DC_ERROR, NULL);
+			break;
+		case kUSB_DeviceNotifySuspend:
+			dev_data.status_callback(USB_DC_SUSPEND, NULL);
+			break;
+		case kUSB_DeviceNotifyResume:
+			dev_data.status_callback(USB_DC_RESUME, NULL);
+			break;
+		default:
+			ep_abs_idx = EP_ABS_IDX(msg.code);
+
+			if (ep_abs_idx >= NUM_OF_EP_MAX) {
+				LOG_ERR("Wrong endpoint index/address");
+				return;
+			}
+
+			memcpy(&dev_data.eps[ep_abs_idx].transfer_message, &msg,
+			       sizeof(usb_device_callback_message_struct_t));
+			handle_transfer_msg(&dev_data.eps[ep_abs_idx].transfer_message);
+		}
+	}
+}
+
 /* Notify the up layer the KHCI status changed. */
 usb_status_t USB_DeviceNotificationTrigger(void *handle, void *msg)
 {
-	uint8_t ep_abs_idx;
-	usb_device_callback_message_struct_t *cb_msg =
-		(usb_device_callback_message_struct_t *)msg;
-
-	switch (cb_msg->code) {
-	case kUSB_DeviceNotifyBusReset:
-		handle_bus_reset();
-		dev_data.status_callback(USB_DC_RESET, NULL);
-		break;
-	case kUSB_DeviceNotifyError:
-		dev_data.status_callback(USB_DC_ERROR, NULL);
-		break;
-	case kUSB_DeviceNotifySuspend:
-		dev_data.status_callback(USB_DC_SUSPEND, NULL);
-		break;
-	case kUSB_DeviceNotifyResume:
-		dev_data.status_callback(USB_DC_RESUME, NULL);
-		break;
-	default:
-		ep_abs_idx = EP_ABS_IDX(cb_msg->code);
-
-		if (ep_abs_idx >= NUM_OF_EP_MAX) {
-			LOG_ERR("Wrong endpoint index/address");
-			return kStatus_USB_Error;
-		}
-
-		memcpy(&dev_data.eps[ep_abs_idx].transfer_message, cb_msg,
-		       sizeof(usb_device_callback_message_struct_t));
-		handle_transfer_msg(&dev_data.eps[ep_abs_idx].transfer_message);
-	}
-
+	/* Submit to message queue */
+	k_msgq_put(&usb_dc_msgq,
+		(usb_device_callback_message_struct_t *)msg, K_NO_WAIT);
 	return kStatus_USB_Success;
 }
 

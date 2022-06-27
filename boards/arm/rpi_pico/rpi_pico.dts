@@ -1,0 +1,90 @@
+/*
+ * Copyright (c) 2021 Yonatan Schachter
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <rpi_pico/rp2040.dtsi>
+#include "rpi_pico-pinctrl.dtsi"
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,code-partition = &code_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+			label = "LED";
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+	};
+};
+
+&flash0 {
+	reg = <0x10000000 DT_SIZE_M(2)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserved memory for the second stage bootloader */
+		second_stage_bootloader: partition@0 {
+			label = "second_stage_bootloader";
+			reg = <0x00000000 0x100>;
+			read-only;
+		};
+
+		/*
+		 * Usable flash. Starts at 0x100, after the bootloader. The partition
+		 * size is 2MB minus the 0x100 bytes taken by the bootloader.
+		 */
+		code_partition: partition@100 {
+			label = "code-partition";
+			reg = <0x100 (DT_SIZE_M(2) - 0x100)>;
+			read-only;
+		};
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};

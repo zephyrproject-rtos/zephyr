@@ -6,7 +6,7 @@
 
 #include "hello_world_driver.h"
 #include <zephyr/types.h>
-#include <syscall_handler.h>
+#include <zephyr/syscall_handler.h>
 
 /**
  * This is a minimal example of an out-of-tree driver

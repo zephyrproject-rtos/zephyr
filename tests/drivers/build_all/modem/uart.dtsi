@@ -37,6 +37,13 @@ test_sara_r4: sara_r4 {
 	mdm-reset-gpios = <&test_gpio 0 0>;
 };
 
+test_simcom_sim7080: sim7080 {
+	compatible = "simcom,sim7080";
+	label = "simcom,sim7080";
+
+	mdm-power-gpios = <&test_gpio 0 0>;
+};
+
 test_quectel_bg9x: quectel_bg9x {
 	compatible = "quectel,bg9x";
 	label = "quectel,bg9x";
@@ -48,4 +55,9 @@ test_quectel_bg9x: quectel_bg9x {
 test_gsm_ppp: gsm_ppp {
 	compatible = "zephyr,gsm-ppp";
 	label = "gsm_ppp";
+};
+
+test_esp_at: esp_at {
+	compatible = "espressif,esp-at";
+	label = "espressif,esp-at";
 };

@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT st_i3g4250d
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include "i3g4250d.h"
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)

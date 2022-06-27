@@ -10,12 +10,12 @@
 
 #define DT_DRV_COMPAT st_iis2mdc
 
-#include <init.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include "iis2mdc.h"
 
 struct iis2mdc_data iis2mdc_data;
@@ -306,7 +306,7 @@ static int iis2mdc_init(const struct device *dev)
 
 	/* Set device in continuous mode */
 	if (iis2mdc_operating_mode_set(iis2mdc->ctx, IIS2MDC_CONTINUOUS_MODE)) {
-		LOG_DBG("set continuos mode failed\n");
+		LOG_DBG("set continuous mode failed\n");
 		return -EIO;
 	}
 

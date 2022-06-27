@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <gr716a.dtsi>
+#include <gaisler/gr716a.dtsi>
 
 / {
 	chosen {

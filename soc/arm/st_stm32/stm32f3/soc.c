@@ -9,10 +9,10 @@
  * @brief System/hardware module for STM32F3 processor
  */
 
-#include <device.h>
-#include <init.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 /**
  * @brief Perform basic hardware initialization at boot.

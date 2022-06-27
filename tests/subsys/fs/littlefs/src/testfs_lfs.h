@@ -7,7 +7,7 @@
 #ifndef _ZEPHYR_TESTS_SUBSYS_FS_LITTLEFS_TESTFS_LFS_H_
 #define _ZEPHYR_TESTS_SUBSYS_FS_LITTLEFS_TESTFS_LFS_H_
 
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 #include "testfs_util.h"
 
 #define TESTFS_MNT_POINT_SMALL "/sml"

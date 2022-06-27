@@ -12,14 +12,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 
 #include "eth_xlnx_gem_priv.h"
 
 #define LOG_MODULE_NAME phy_xlnx_gem
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* Basic MDIO read / write functions for PHY access */
@@ -192,8 +192,8 @@ static void phy_xlnx_gem_mdio_write(
  */
 static void phy_xlnx_gem_marvell_alaska_reset(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint16_t phy_data;
 	uint32_t retries = 0;
 
@@ -227,8 +227,8 @@ static void phy_xlnx_gem_marvell_alaska_reset(const struct device *dev)
  */
 static void phy_xlnx_gem_marvell_alaska_cfg(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint16_t phy_data;
 	uint16_t phy_data_gbit;
 	uint32_t retries = 0;
@@ -250,7 +250,7 @@ static void phy_xlnx_gem_marvell_alaska_cfg(const struct device *dev)
 	if ((dev_data->phy_id & PHY_MRVL_PHY_ID_MODEL_MASK) ==
 			PHY_MRVL_PHY_ID_MODEL_88E151X) {
 		/*
-		 * 88E151x only: onfigure the system interface and media type
+		 * 88E151x only: configure the system interface and media type
 		 * (i.e. "RGMII to Copper", 0x0). On the 88E1111, this setting
 		 * is configured using I/O pins on the device.
 		 * TODO: Make this value configurable via KConfig or DT?
@@ -482,8 +482,8 @@ static void phy_xlnx_gem_marvell_alaska_cfg(const struct device *dev)
  */
 static uint16_t phy_xlnx_gem_marvell_alaska_poll_sc(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint16_t phy_data;
 	uint16_t phy_status = 0;
 
@@ -530,8 +530,8 @@ static uint16_t phy_xlnx_gem_marvell_alaska_poll_sc(const struct device *dev)
  */
 static uint8_t phy_xlnx_gem_marvell_alaska_poll_lsts(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint16_t phy_data;
 
 	/*
@@ -555,8 +555,8 @@ static uint8_t phy_xlnx_gem_marvell_alaska_poll_lsts(const struct device *dev)
 static enum eth_xlnx_link_speed phy_xlnx_gem_marvell_alaska_poll_lspd(
 	const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data  = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data  = dev->data;
 	enum eth_xlnx_link_speed link_speed;
 	uint16_t phy_data;
 
@@ -610,8 +610,8 @@ static enum eth_xlnx_link_speed phy_xlnx_gem_marvell_alaska_poll_lspd(
  */
 static void phy_xlnx_gem_ti_dp83822_reset(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint16_t phy_data;
 	uint32_t retries = 0;
 
@@ -639,8 +639,8 @@ static void phy_xlnx_gem_ti_dp83822_reset(const struct device *dev)
  */
 static void phy_xlnx_gem_ti_dp83822_cfg(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint16_t phy_data = PHY_TI_ADV_SELECTOR_802_3;
 
 	/* Configure link advertisement */
@@ -721,8 +721,8 @@ static void phy_xlnx_gem_ti_dp83822_cfg(const struct device *dev)
  */
 static uint16_t phy_xlnx_gem_ti_dp83822_poll_sc(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint16_t phy_data;
 	uint16_t phy_status = 0;
 
@@ -761,8 +761,8 @@ static uint16_t phy_xlnx_gem_ti_dp83822_poll_sc(const struct device *dev)
  */
 static uint8_t phy_xlnx_gem_ti_dp83822_poll_lsts(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint16_t phy_data;
 
 	/*
@@ -789,8 +789,8 @@ static uint8_t phy_xlnx_gem_ti_dp83822_poll_lsts(const struct device *dev)
 static enum eth_xlnx_link_speed phy_xlnx_gem_ti_dp83822_poll_lspd(
 	const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	enum eth_xlnx_link_speed link_speed;
 	uint16_t phy_data;
 
@@ -893,8 +893,8 @@ static struct phy_xlnx_gem_supported_dev phy_xlnx_gem_supported_devs[] = {
  */
 int phy_xlnx_gem_detect(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 
 	uint8_t phy_curr_addr;
 	uint8_t phy_first_addr = dev_conf->phy_mdio_addr_fix;
@@ -974,5 +974,3 @@ int phy_xlnx_gem_detect(const struct device *dev)
 	LOG_ERR("%s PHY detection failed", dev->name);
 	return -EIO;
 }
-
-/* EOF */

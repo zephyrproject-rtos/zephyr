@@ -8,7 +8,7 @@
 # end up with a json file in the build directory that can be used as input
 # for this script.
 
-# The output shows which symbols insreased and which decreased in size and
+# The output shows which symbols increased and which decreased in size and
 # also tracked added/remove symbols as well.
 
 # Example:

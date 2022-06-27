@@ -10,8 +10,19 @@ config INA23X
 
 if INA23X
 
-config INA23X_TRIGGER
-	bool "Trigger mode"
+config INA230
+	bool "INA230"
+	help
+	  Enable driver for INA230/INA231.
+
+config INA237
+	bool "INA237"
+	help
+	  Enable driver for INA237.
+
+config INA230_TRIGGER
+	bool "INA230 trigger mode"
+	depends on INA230
 	help
 	  Set to enable trigger mode using gpio interrupt, where
 	  interrupts are configured to line ALERT PIN.

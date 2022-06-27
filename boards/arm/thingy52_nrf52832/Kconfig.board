@@ -5,5 +5,4 @@
 
 config BOARD_THINGY52_NRF52832
 	bool "Thingy52 NRF52832"
-	select GPIO
 	depends on SOC_NRF52832_QFAA

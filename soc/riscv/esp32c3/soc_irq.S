@@ -4,7 +4,7 @@
  */
 
 #include <offsets.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 /* Exports */
 GTEXT(__soc_is_irq)
@@ -20,7 +20,7 @@ SECTION_FUNC(exception.other, __soc_handle_irq)
 	addi sp, sp,-4
 	sw  ra, 0x00(sp)
 	la t1, soc_intr_get_next_source
-	jalr ra, t1
+	jalr ra, t1, 0
 	lw  ra, 0x00(sp)
 	addi sp, sp, 4
 	ret

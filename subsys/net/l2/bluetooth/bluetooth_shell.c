@@ -4,25 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_bt_shell, CONFIG_NET_L2_BT_LOG_LEVEL);
 
-#include <kernel.h>
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <string.h>
 #include <errno.h>
 
-#include <shell/shell.h>
-#include <sys/printk.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/printk.h>
 
-#include <net/net_core.h>
-#include <net/net_l2.h>
-#include <net/net_if.h>
-#include <net/bt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_l2.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/bt.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
 
 static int shell_cmd_connect(const struct shell *shell,
 			     size_t argc, char *argv[])

@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <fsl_clock.h>
 #include <fsl_common.h>
 #include <fsl_rdc.h>
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 
-#include <dt-bindings/rdc/imx_rdc.h>
+#include <zephyr/dt-bindings/rdc/imx_rdc.h>
 
 /* OSC/PLL is already initialized by ROM and Cortex-A53 (u-boot) */
 static void SOC_RdcInit(void)

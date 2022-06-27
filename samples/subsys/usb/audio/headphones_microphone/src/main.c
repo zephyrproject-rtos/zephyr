@@ -9,10 +9,10 @@
  * @brief Sample app for Audio class
  */
 
-#include <zephyr.h>
-#include <logging/log.h>
-#include <usb/usb_device.h>
-#include <usb/class/usb_audio.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/usb/class/usb_audio.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 

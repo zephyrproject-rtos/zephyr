@@ -10,7 +10,7 @@
  *
  */
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 __weak void *__dso_handle;
 
@@ -24,7 +24,7 @@ __weak void *__dso_handle;
  * Function does nothing at the moment, assuming the global objects
  * do not need to be deleted
  *
- * @return N/A
+ * @retval 0 on success.
  */
 int __cxa_atexit(void (*destructor)(void *), void *objptr, void *dso)
 {

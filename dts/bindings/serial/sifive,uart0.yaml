@@ -5,7 +5,7 @@ description: SiFive UART
 
 compatible: "sifive,uart0"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:

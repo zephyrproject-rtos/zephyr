@@ -7,6 +7,7 @@
 config SPI_MCUX_DSPI
 	bool "MCUX SPI driver"
 	depends on HAS_MCUX && CLOCK_CONTROL
+	select PINCTRL
 	help
 	  Enable support for mcux spi driver.
 

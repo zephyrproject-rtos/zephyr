@@ -10,12 +10,12 @@
 
 #define DT_DRV_COMPAT st_iis3dhhc
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 #include "iis3dhhc.h"
 
@@ -235,18 +235,8 @@ static const struct iis3dhhc_config iis3dhhc_config = {
 #endif /* CONFIG_IIS3DHHC_TRIGGER */
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	.bus_init = iis3dhhc_spi_init,
-	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
-	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-			       SPI_MODE_CPHA | SPI_WORD_SET(8)),
-	.spi_conf.slave     = DT_INST_REG_ADDR(0),
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	.gpio_cs_port	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-	.cs_gpio	    = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-
-	.spi_conf.cs        =  &iis3dhhc_data.cs_ctrl,
-#else
-	.spi_conf.cs        = NULL,
-#endif
+	.spi = SPI_DT_SPEC_INST_GET(0, SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
+			       SPI_MODE_CPHA | SPI_WORD_SET(8), 0U),
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"
 #endif

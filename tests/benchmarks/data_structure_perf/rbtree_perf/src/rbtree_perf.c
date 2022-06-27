@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <sys/rb.h>
+#include <zephyr/sys/rb.h>
 
 #define TREE_SIZE 512
 /* zephyr can't do floating-point arithmetic,
@@ -13,7 +13,7 @@
  */
 const static uint32_t dlog_N = 18;
 
-/* rbnode structure is embeddedable in user structure */
+/* rbnode structure is embeddable in user structure */
 struct container_node {
 	struct rbnode node;
 	int value;
@@ -34,7 +34,7 @@ bool node_lessthan(struct rbnode *a, struct rbnode *b)
  * @details
  * Test Objective:
  * - Define and initialize a rbtree, and test two features:
- * first, rbtree node struct can be embeded in any user struct.
+ * first, rbtree node struct can be embedded in any user struct.
  * last, rbtree can be walked though by some macro APIs.
  *
  * Testing techniques:

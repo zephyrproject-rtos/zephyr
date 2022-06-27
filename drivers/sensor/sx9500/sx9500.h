@@ -8,7 +8,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_SX9500_SX9500_H_
 
 #include <zephyr/types.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 #define SX9500_REG_IRQ_SRC		0x00
 #define SX9500_REG_STAT			0x01

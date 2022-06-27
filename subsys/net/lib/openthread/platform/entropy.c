@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <drivers/entropy.h>
-#include <logging/log.h>
+#include <zephyr/drivers/entropy.h>
+#include <zephyr/logging/log.h>
 
 #include <openthread/platform/entropy.h>
 
@@ -19,22 +19,19 @@ LOG_MODULE_REGISTER(net_otPlat_entropy, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #error OpenThread requires an entropy source for a TRNG
 #endif
 
+static const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
+
 otError otPlatEntropyGet(uint8_t *aOutput, uint16_t aOutputLength)
 {
-	/* static to obtain it once in a first call */
-	static const struct device *dev;
 	int err;
 
 	if ((aOutput == NULL) || (aOutputLength == 0)) {
 		return OT_ERROR_INVALID_ARGS;
 	}
 
-	if (dev == NULL) {
-		dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
-		if (dev == NULL) {
-			LOG_ERR("Failed to obtain entropy device");
-			return OT_ERROR_FAILED;
-		}
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Entropy device not ready");
+		return OT_ERROR_FAILED;
 	}
 
 	err = entropy_get_entropy(dev, aOutput, aOutputLength);

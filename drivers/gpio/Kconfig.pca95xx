@@ -18,7 +18,6 @@ config GPIO_PCA95XX_INIT_PRIORITY
 
 config GPIO_PCA95XX_INTERRUPT
 	bool "Interrupt enable"
-	default n
 	depends on GPIO_PCA95XX
 	help
 	  Enable interrupt support in PCA95XX driver.

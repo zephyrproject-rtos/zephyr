@@ -5,6 +5,7 @@ arch: arc
 toolchain:
   - zephyr
   - xtools
+  - arcmwdt
 testing:
   ignore_tags:
     - net

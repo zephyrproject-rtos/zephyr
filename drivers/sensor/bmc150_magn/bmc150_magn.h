@@ -10,8 +10,8 @@
 #define ZEPHYR_DRIVERS_SENSOR_BMC150_MAGN_BMC150_MAGN_H_
 
 #include <zephyr/types.h>
-#include <drivers/i2c.h>
-#include <sys/util.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/util.h>
 
 #define BMC150_MAGN_REG_CHIP_ID		0x40
 #define BMC150_MAGN_CHIP_ID_VAL		0x32

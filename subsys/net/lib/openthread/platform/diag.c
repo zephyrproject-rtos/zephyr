@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <openthread/platform/diag.h>
 
 #include "platform-zephyr.h"
@@ -24,7 +24,7 @@ otError otPlatDiagProcess(otInstance *aInstance,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(aInstance);
 
-	/* Add more plarform specific diagnostics features here. */
+	/* Add more platform specific diagnostics features here. */
 	snprintk(aOutput, aOutputMaxLen,
 		 "diag feature '%s' is not supported\r\n", argv[0]);
 

@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <skeleton.dtsi>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	chosen {

@@ -16,10 +16,12 @@
  * generate an interrupt every tick.
  */
 
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/clock_control.h>
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/sys_clock.h>
 
 /* RTC registers. */
 #define RTC0 ((RtcMode0 *) DT_INST_REG_ADDR(0))
@@ -76,6 +78,9 @@ static volatile uint32_t rtc_counter;
 
 /* Tick value of the next timeout. */
 static volatile uint32_t rtc_timeout;
+
+PINCTRL_DT_INST_DEFINE(0);
+static const struct pinctrl_dev_config *pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
 #endif /* CONFIG_TICKLESS_KERNEL */
 
@@ -175,83 +180,6 @@ static void rtc_isr(const void *arg)
 #endif /* CONFIG_TICKLESS_KERNEL */
 }
 
-int sys_clock_driver_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-#ifdef MCLK
-	MCLK->APBAMASK.reg |= MCLK_APBAMASK_RTC;
-	OSC32KCTRL->RTCCTRL.reg = OSC32KCTRL_RTCCTRL_RTCSEL_ULP32K;
-#else
-	/* Set up bus clock and GCLK generator. */
-	PM->APBAMASK.reg |= PM_APBAMASK_RTC;
-	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID(RTC_GCLK_ID) | GCLK_CLKCTRL_CLKEN
-			    | GCLK_GEN(DT_INST_PROP(0, clock_generator));
-
-	/* Synchronize GCLK. */
-	while (GCLK->STATUS.bit.SYNCBUSY) {
-	}
-#endif
-
-	/* Reset module to hardware defaults. */
-	rtc_reset();
-
-	rtc_last = 0U;
-
-	/* Configure RTC with 32-bit mode, configured prescaler and MATCHCLR. */
-#ifdef RTC_MODE0_CTRL_MODE
-	uint16_t ctrl = RTC_MODE0_CTRL_MODE(0) | RTC_MODE0_CTRL_PRESCALER(0);
-#else
-	uint16_t ctrl = RTC_MODE0_CTRLA_MODE(0) | RTC_MODE0_CTRLA_PRESCALER(0);
-#endif
-
-#ifdef RTC_MODE0_CTRLA_COUNTSYNC
-	ctrl |= RTC_MODE0_CTRLA_COUNTSYNC;
-#endif
-
-#ifndef CONFIG_TICKLESS_KERNEL
-#ifdef RTC_MODE0_CTRL_MATCHCLR
-	ctrl |= RTC_MODE0_CTRL_MATCHCLR;
-#else
-	ctrl |= RTC_MODE0_CTRLA_MATCHCLR;
-#endif
-#endif
-	rtc_sync();
-#ifdef RTC_MODE0_CTRL_MODE
-	RTC0->CTRL.reg = ctrl;
-#else
-	RTC0->CTRLA.reg = ctrl;
-#endif
-
-#ifdef CONFIG_TICKLESS_KERNEL
-	/* Tickless kernel lets RTC count continually and ignores overflows. */
-	RTC0->INTENSET.reg = RTC_MODE0_INTENSET_CMP0;
-#else
-	/* Non-tickless mode uses comparator together with MATCHCLR. */
-	rtc_sync();
-	RTC0->COMP[0].reg = CYCLES_PER_TICK;
-	RTC0->INTENSET.reg = RTC_MODE0_INTENSET_OVF;
-	rtc_counter = 0U;
-	rtc_timeout = 0U;
-#endif
-
-	/* Enable RTC module. */
-	rtc_sync();
-#ifdef RTC_MODE0_CTRL_ENABLE
-	RTC0->CTRL.reg |= RTC_MODE0_CTRL_ENABLE;
-#else
-	RTC0->CTRLA.reg |= RTC_MODE0_CTRLA_ENABLE;
-#endif
-
-	/* Enable RTC interrupt. */
-	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority), rtc_isr, 0, 0);
-	irq_enable(DT_INST_IRQN(0));
-
-	return 0;
-}
-
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -315,3 +243,90 @@ uint32_t sys_clock_cycle_get_32(void)
 	/* Just return the absolute value of RTC cycle counter. */
 	return rtc_count();
 }
+
+static int sys_clock_driver_init(const struct device *dev)
+{
+	int retval;
+
+	ARG_UNUSED(dev);
+
+#ifdef MCLK
+	MCLK->APBAMASK.reg |= MCLK_APBAMASK_RTC;
+	OSC32KCTRL->RTCCTRL.reg = OSC32KCTRL_RTCCTRL_RTCSEL_ULP32K;
+#else
+	/* Set up bus clock and GCLK generator. */
+	PM->APBAMASK.reg |= PM_APBAMASK_RTC;
+	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID(RTC_GCLK_ID) | GCLK_CLKCTRL_CLKEN
+			    | GCLK_GEN(DT_INST_PROP(0, clock_generator));
+
+	/* Synchronize GCLK. */
+	while (GCLK->STATUS.bit.SYNCBUSY) {
+	}
+#endif
+
+	retval = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
+
+	/* Reset module to hardware defaults. */
+	rtc_reset();
+
+	rtc_last = 0U;
+
+	/* Configure RTC with 32-bit mode, configured prescaler and MATCHCLR. */
+#ifdef RTC_MODE0_CTRL_MODE
+	uint16_t ctrl = RTC_MODE0_CTRL_MODE(0) | RTC_MODE0_CTRL_PRESCALER(0);
+#else
+	uint16_t ctrl = RTC_MODE0_CTRLA_MODE(0) | RTC_MODE0_CTRLA_PRESCALER(0);
+#endif
+
+#ifdef RTC_MODE0_CTRLA_COUNTSYNC
+	ctrl |= RTC_MODE0_CTRLA_COUNTSYNC;
+#endif
+
+#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef RTC_MODE0_CTRL_MATCHCLR
+	ctrl |= RTC_MODE0_CTRL_MATCHCLR;
+#else
+	ctrl |= RTC_MODE0_CTRLA_MATCHCLR;
+#endif
+#endif
+	rtc_sync();
+#ifdef RTC_MODE0_CTRL_MODE
+	RTC0->CTRL.reg = ctrl;
+#else
+	RTC0->CTRLA.reg = ctrl;
+#endif
+
+#ifdef CONFIG_TICKLESS_KERNEL
+	/* Tickless kernel lets RTC count continually and ignores overflows. */
+	RTC0->INTENSET.reg = RTC_MODE0_INTENSET_CMP0;
+#else
+	/* Non-tickless mode uses comparator together with MATCHCLR. */
+	rtc_sync();
+	RTC0->COMP[0].reg = CYCLES_PER_TICK;
+	RTC0->INTENSET.reg = RTC_MODE0_INTENSET_OVF;
+	rtc_counter = 0U;
+	rtc_timeout = 0U;
+#endif
+
+	/* Enable RTC module. */
+	rtc_sync();
+#ifdef RTC_MODE0_CTRL_ENABLE
+	RTC0->CTRL.reg |= RTC_MODE0_CTRL_ENABLE;
+#else
+	RTC0->CTRLA.reg |= RTC_MODE0_CTRLA_ENABLE;
+#endif
+
+	/* Enable RTC interrupt. */
+	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority), rtc_isr, 0, 0);
+	irq_enable(DT_INST_IRQN(0));
+
+	return 0;
+}
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

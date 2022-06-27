@@ -20,12 +20,13 @@
  *      Version 2.0 available at www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modbus_serial, CONFIG_MODBUS_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/crc.h>
 #include <modbus_internal.h>
 
 static void modbus_serial_tx_on(struct modbus_context *ctx)
@@ -238,37 +239,6 @@ static void modbus_ascii_tx_adu(struct modbus_context *ctx)
 }
 #endif
 
-static uint16_t modbus_rtu_crc16(uint8_t *src, size_t length)
-{
-	uint16_t crc = 0xFFFF;
-	uint8_t shiftctr;
-	bool flag;
-	uint8_t *pblock = src;
-
-	while (length > 0) {
-		length--;
-		crc ^= (uint16_t)*pblock++;
-		shiftctr = 8;
-		do {
-			/* Determine if the shift out of rightmost bit is 1 */
-			flag = (crc & 0x0001) ? true : false;
-			/* Shift CRC to the right one bit. */
-			crc >>= 1;
-			/*
-			 * If bit shifted out of rightmost bit was a 1
-			 * exclusive OR the CRC with the generating polynomial.
-			 */
-			if (flag == true) {
-				crc ^= MODBUS_CRC16_POLY;
-			}
-
-			shiftctr--;
-		} while (shiftctr > 0);
-	}
-
-	return crc;
-}
-
 /* Copy Modbus RTU frame and check if the CRC is valid. */
 static int modbus_rtu_rx_adu(struct modbus_context *ctx)
 {
@@ -296,8 +266,8 @@ static int modbus_rtu_rx_adu(struct modbus_context *ctx)
 
 	ctx->rx_adu.crc = sys_get_le16(&cfg->uart_buf[crc_idx]);
 	/* Calculate CRC over address, function code, and payload */
-	calc_crc = modbus_rtu_crc16(&cfg->uart_buf[0],
-				    cfg->uart_buf_ctr - sizeof(ctx->rx_adu.crc));
+	calc_crc = crc16_ansi(&cfg->uart_buf[0],
+			      cfg->uart_buf_ctr - sizeof(ctx->rx_adu.crc));
 
 	if (ctx->rx_adu.crc != calc_crc) {
 		LOG_WRN("Calculated CRC does not match received CRC");
@@ -320,8 +290,7 @@ static void rtu_tx_adu(struct modbus_context *ctx)
 
 	memcpy(data_ptr, ctx->tx_adu.data, ctx->tx_adu.length);
 
-	ctx->tx_adu.crc = modbus_rtu_crc16(&cfg->uart_buf[0],
-					     ctx->tx_adu.length + 2);
+	ctx->tx_adu.crc = crc16_ansi(&cfg->uart_buf[0], ctx->tx_adu.length + 2);
 	sys_put_le16(ctx->tx_adu.crc,
 		     &cfg->uart_buf[ctx->tx_adu.length + 2]);
 	tx_bytes += 2;
@@ -393,7 +362,14 @@ static void cb_handler_tx(struct modbus_context *ctx)
 				   cfg->uart_buf_ctr);
 		cfg->uart_buf_ctr -= n;
 		cfg->uart_buf_ptr += n;
-	} else {
+		return;
+	}
+
+	/* Must wait till the transmission is complete or
+	 * RS-485 transceiver could be disabled before all data has
+	 * been transmitted and message will be corrupted.
+	 */
+	if (uart_irq_tx_complete(cfg->dev)) {
 		/* Disable transmission */
 		cfg->uart_buf_ptr = &cfg->uart_buf[0];
 		modbus_serial_tx_off(ctx);
@@ -413,7 +389,7 @@ static void uart_cb_handler(const struct device *dev, void *app_data)
 
 	cfg = ctx->cfg;
 
-	while (uart_irq_update(cfg->dev) && uart_irq_is_pending(cfg->dev)) {
+	if (uart_irq_update(cfg->dev) && uart_irq_is_pending(cfg->dev)) {
 
 		if (uart_irq_rx_ready(cfg->dev)) {
 			cb_handler_rx(ctx);
@@ -569,6 +545,20 @@ int modbus_serial_init(struct modbus_context *ctx,
 		break;
 	default:
 		return -EINVAL;
+	}
+
+	if (ctx->client) {
+		/* Allow custom stop bit settings only in client mode */
+		switch (param.serial.stop_bits_client) {
+		case UART_CFG_STOP_BITS_0_5:
+		case UART_CFG_STOP_BITS_1:
+		case UART_CFG_STOP_BITS_1_5:
+		case UART_CFG_STOP_BITS_2:
+			uart_cfg.stop_bits = param.serial.stop_bits_client;
+			break;
+		default:
+			return -EINVAL;
+		}
 	}
 
 	if (uart_configure(cfg->dev, &uart_cfg) != 0) {

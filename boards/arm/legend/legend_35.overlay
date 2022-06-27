@@ -19,7 +19,7 @@
 
 		pwm_led0: pwm_led_0 {
 			label = "Activity LED";
-			pwms = <&pwm3 3 255 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm3 3 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 };

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
-zephyr_library_sources_ifdef(CONFIG_UART_ALTERA_JTAG uart_altera_jtag_hal.c)
+zephyr_library_sources_ifdef(CONFIG_UART_ALTERA_JTAG uart_altera_jtag.c)
 zephyr_library_sources_ifdef(CONFIG_UART_TELINK_B91 uart_b91.c)
 zephyr_library_sources_ifdef(CONFIG_UART_IMX uart_imx.c)
 zephyr_library_sources_ifdef(CONFIG_UART_ITE_IT8XXX2 uart_ite_it8xxx2.c)
@@ -32,6 +32,7 @@ zephyr_library_sources_ifdef(CONFIG_UART_SAM0 uart_sam0.c)
 zephyr_library_sources_ifdef(CONFIG_UART_PSOC6 uart_psoc6.c)
 zephyr_library_sources_ifdef(CONFIG_UART_PL011 uart_pl011.c)
 zephyr_library_sources_ifdef(CONFIG_UART_RV32M1_LPUART uart_rv32m1_lpuart.c)
+zephyr_library_sources_ifdef(CONFIG_UART_RPI_PICO uart_rpi_pico.c)
 zephyr_library_sources_ifdef(CONFIG_UART_LITEUART uart_liteuart.c)
 zephyr_library_sources_ifdef(CONFIG_UART_RTT_DRIVER uart_rtt.c)
 zephyr_library_sources_ifdef(CONFIG_UART_XLNX_PS uart_xlnx_ps.c)
@@ -45,6 +46,7 @@ zephyr_library_sources_ifdef(CONFIG_UART_XEC uart_mchp_xec.c)
 zephyr_library_sources_ifdef(CONFIG_UART_NEORV32 uart_neorv32.c)
 zephyr_library_sources_ifdef(CONFIG_USART_GD32 usart_gd32.c)
 zephyr_library_sources_ifdef(CONFIG_UART_XEN_HVC uart_hvc_xen.c)
+zephyr_library_sources_ifdef(CONFIG_UART_XEN_HVC_CONSOLEIO uart_hvc_xen_consoleio.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
 

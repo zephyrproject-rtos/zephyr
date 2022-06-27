@@ -196,8 +196,29 @@ tests:
     integration_platforms:
       - nrf52840dk_nrf52840
       - nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_per_adv_no_adi:
+    extra_args: CONF_FILE=prj_ctlr_per_adv_no_adi.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
+    integration_platforms:
+      - nrf52840dk_nrf52840
+      - nrf51dk_nrf51422
   bluetooth.init.test_ctlr_per_sync:
     extra_args: CONF_FILE=prj_ctlr_per_sync.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
+    integration_platforms:
+      - nrf52840dk_nrf52840
+      - nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_per_sync_no_adi:
+    extra_args: CONF_FILE=prj_ctlr_per_sync_no_adi.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
+    integration_platforms:
+      - nrf52840dk_nrf52840
+      - nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_per_sync_no_filter:
+    extra_args: CONF_FILE=prj_ctlr_per_sync_no_filter.conf
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
       nrf51dk_nrf51422
     integration_platforms:

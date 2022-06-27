@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_promisc_sample, LOG_LEVEL_INF);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
-#include <net/net_core.h>
-#include <net/promiscuous.h>
-#include <net/udp.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/promiscuous.h>
+#include <zephyr/net/udp.h>
 
 static void net_pkt_hexdump(struct net_pkt *pkt, const char *str)
 {

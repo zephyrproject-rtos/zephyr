@@ -6,7 +6,7 @@
 
 #include "test_modbus.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(raw_test, LOG_LEVEL_INF);
 
 static struct modbus_adu tmp_adu;

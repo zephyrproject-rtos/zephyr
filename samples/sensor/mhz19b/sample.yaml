@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2021 G-Technologies Sdn. Bhd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: MH-Z19B CO2 sensor
+tests:
+  sample.sensor.mhz19b:
+    build_only: true
+    harness: sensor
+    tags: sensors
+    depends_on: serial
+    filter: dt_compat_enabled("winsen,mhz19b")

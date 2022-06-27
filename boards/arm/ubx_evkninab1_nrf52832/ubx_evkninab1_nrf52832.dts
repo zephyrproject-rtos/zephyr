@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
+#include "ubx_evkninab1_nrf52832-pinctrl.dtsi"
 
 / {
 	model = "u-blox EVK-NINA-B1 NRF52832";
@@ -44,13 +45,13 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		red_pwm_led: red_pwm_led {
-			pwms = <&pwm0 8>;
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 		green_pwm_led: green_pwm_led {
-			pwms = <&pwm0 16>;
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 		blue_pwm_led: blue_pwm_led {
-			pwms = <&pwm0 18>;
+			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 	};
 
@@ -143,55 +144,51 @@
 	compatible = "nordic,nrf-uarte";
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <6>;
-	rx-pin = <5>;
-	rts-pin = <31>;
-	cts-pin = <7>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-pin = <2>;
-	scl-pin = <3>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c1 {
 	compatible = "nordic,nrf-twi";
 	/* Cannot be used together with spi1. */
 	/* status = "okay"; */
-	sda-pin = <30>;
-	scl-pin = <29>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &pwm0 {
 	status = "okay";
-	ch0-pin = <16>;
-	ch0-inverted;
-	status = "okay";
-	ch1-pin = <8>;
-	ch1-inverted;
-	status = "okay";
-	ch2-pin = <18>;
-	ch2-inverted;
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 arduino_spi: &spi0 {
 	compatible = "nordic,nrf-spi";
 	/* Cannot be use simultaneously with i2c0 */
 	/* status = "okay"; */
-	sck-pin = <14>;              /* D13 */
-	mosi-pin = <13>;             /* D11 */
-	miso-pin = <12>;             /* D12 */
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <28>;
-	mosi-pin = <29>;
-	miso-pin = <30>;
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &flash0 {

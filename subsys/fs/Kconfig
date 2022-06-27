@@ -44,7 +44,7 @@ config FILE_SYSTEM_MAX_FILE_NAME
          violations.
 
 config FILE_SYSTEM_SHELL
-	bool "Enable file system shell"
+	bool "File system shell"
 	depends on SHELL
 	depends on HEAP_MEM_POOL_SIZE > 0
 	help
@@ -52,17 +52,17 @@ config FILE_SYSTEM_SHELL
 	  file system.
 
 config FUSE_FS_ACCESS
-	bool "Enable FUSE based access to file system partitions"
+	bool "FUSE based access to file system partitions"
 	depends on ARCH_POSIX
 	help
 	  Expose file system partitions to the host system through FUSE.
 
-source "subsys/fs/Kconfig.fatfs"
-source "subsys/fs/Kconfig.littlefs"
+rsource "Kconfig.fatfs"
+rsource "Kconfig.littlefs"
 
 endif # FILE_SYSTEM
 
-source "subsys/fs/fcb/Kconfig"
-source "subsys/fs/nvs/Kconfig"
+rsource "fcb/Kconfig"
+rsource "nvs/Kconfig"
 
 endmenu

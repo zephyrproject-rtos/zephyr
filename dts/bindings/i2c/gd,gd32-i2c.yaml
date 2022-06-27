@@ -1,0 +1,26 @@
+# Copyright (c) 2021 BrainCo Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: GigiDevice GD32 I2C
+
+compatible: "gd,gd32-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  rcu-periph-clock:
+    type: int
+    description: Reset Control Unit Peripheral Clock ID
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

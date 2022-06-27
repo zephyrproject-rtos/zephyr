@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stddef.h>
 #include <ztest.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
 #include <host/hci_core.h>
 
-#include "common.h"
+#include <bt_conn_common.h>
 #include "test_cte_set_rx_params.h"
 
 static uint16_t g_conn_handle;
@@ -216,12 +216,12 @@ static void connection_setup(void)
 	g_params.switch_pattern_len = ARRAY_SIZE(g_ant_ids);
 	g_params.ant_ids = g_ant_ids;
 
-	g_conn_handle = common_create_connection();
+	g_conn_handle = ut_bt_create_connection();
 }
 
 static void connection_teardown(void)
 {
-	common_destroy_connection(g_conn_handle);
+	ut_bt_destroy_connection(g_conn_handle);
 }
 
 void run_set_cte_rx_params_tests(void)

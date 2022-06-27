@@ -9,16 +9,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ipv4_autoconf, CONFIG_NET_IPV4_AUTO_LOG_LEVEL);
 
 #include "net_private.h"
 #include <errno.h>
 #include "../l2/ethernet/arp.h"
-#include <net/net_pkt.h>
-#include <net/net_core.h>
-#include <net/net_if.h>
-#include <random/rand32.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/random/rand32.h>
 
 #include "ipv4_autoconf_internal.h"
 
@@ -112,14 +112,14 @@ enum net_verdict net_ipv4_autoconf_input(struct net_if *iface,
 
 	arp_hdr = NET_ARP_HDR(pkt);
 
-	if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr,
-			       &cfg->ipv4auto.requested_ip)) {
+	if (!net_ipv4_addr_cmp_raw(arp_hdr->dst_ipaddr,
+				   (uint8_t *)&cfg->ipv4auto.requested_ip)) {
 		/* No conflict */
 		return NET_CONTINUE;
 	}
 
-	if (!net_ipv4_addr_cmp(&arp_hdr->src_ipaddr,
-			       &cfg->ipv4auto.requested_ip)) {
+	if (!net_ipv4_addr_cmp_raw(arp_hdr->src_ipaddr,
+				   (uint8_t *)&cfg->ipv4auto.requested_ip)) {
 		/* No need to defend */
 		return NET_CONTINUE;
 	}

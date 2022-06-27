@@ -6,12 +6,12 @@
 
 #include <ztest.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
 #include <stdio.h>
 
-#include <net/ieee802154_radio.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/ieee802154_radio.h>
+#include <zephyr/net/net_pkt.h>
 
 #include <openthread/platform/radio.h>
 #include <openthread/message.h>
@@ -345,7 +345,7 @@ static void test_energy_scan_immediate_test(void)
 /**
  * @brief Test for delayed energy scan
  * Tests for case when radio returns not being able to start energy scan and
- * the scan should be sheduled for later.
+ * the scan should be scheduled for later.
  *
  */
 static void test_energy_scan_delayed_test(void)
@@ -430,8 +430,7 @@ static void test_tx_test(void)
 	ztest_expect_value(set_channel_mock, channel, chan);
 	ztest_expect_value(set_txpower_mock, dbm, power);
 	ztest_expect_value(start_mock, dev, &radio);
-	zassert_equal(otPlatRadioReceive(ot, chan), OT_ERROR_NONE,
-		      "Failed to receive.");
+	zassert_equal(otPlatRadioReceive(ot, chan), OT_ERROR_NONE, "Failed to receive.");
 
 	/* ACKed frame */
 	frm->mChannel = chan2;
@@ -442,8 +441,7 @@ static void test_tx_test(void)
 	ztest_expect_value(cca_mock, dev, &radio);
 	ztest_expect_value(tx_mock, frag->data, frm->mPsdu);
 	ztest_expect_value(set_txpower_mock, dbm, power);
-	zassert_equal(otPlatRadioTransmit(ot, frm), OT_ERROR_NONE,
-		      "Transmit failed.");
+	zassert_equal(otPlatRadioTransmit(ot, frm), OT_ERROR_NONE, "Transmit failed.");
 
 	create_ack_frame();
 	make_sure_sem_set(Z_TIMEOUT_MS(100));
@@ -460,26 +458,9 @@ static void test_tx_test(void)
 	ztest_expect_value(set_channel_mock, channel, chan2);
 	ztest_expect_value(tx_mock, frag->data, frm->mPsdu);
 	ztest_expect_value(set_txpower_mock, dbm, power);
-	zassert_equal(otPlatRadioTransmit(ot, frm), OT_ERROR_NONE,
-		      "Transmit failed.");
+	zassert_equal(otPlatRadioTransmit(ot, frm), OT_ERROR_NONE, "Transmit failed.");
 	make_sure_sem_set(Z_TIMEOUT_MS(100));
 	ztest_expect_value(otPlatRadioTxDone, aError, OT_ERROR_NONE);
-	platformRadioProcess(ot);
-
-	/* ACKed frame, no ACK */
-	frm->mChannel = --chan2;
-	frm->mInfo.mTxInfo.mCsmaCaEnabled = false;
-	frm->mPsdu[0] = IEEE802154_AR_FLAG_SET;
-
-	ztest_returns_value(set_channel_mock, 0);
-	ztest_expect_value(set_channel_mock, channel, chan2);
-	ztest_expect_value(tx_mock, frag->data, frm->mPsdu);
-	ztest_expect_value(set_txpower_mock, dbm, power);
-	zassert_equal(otPlatRadioTransmit(ot, frm), OT_ERROR_NONE,
-		      "Transmit failed.");
-	make_sure_sem_set(Z_TIMEOUT_MS(100));
-
-	ztest_expect_value(otPlatRadioTxDone, aError, OT_ERROR_NO_ACK);
 	platformRadioProcess(ot);
 }
 
@@ -720,7 +701,7 @@ static void test_get_rssi_test(void)
 
 	ztest_returns_value(rssi_scan_mock, rssi);
 	zassert_equal(otPlatRadioGetRssi(ot), rssi,
-		      "Invalid RSSI value reveiced.");
+		      "Invalid RSSI value received.");
 
 	rapi.ed_scan = scan_mock;
 }
@@ -743,7 +724,7 @@ static void test_radio_state_test(void)
 	zassert_false(otPlatRadioIsEnabled(ot), "Radio reports as enabled.");
 
 	zassert_equal(otPlatRadioSleep(ot), OT_ERROR_INVALID_STATE,
-		      "Changed to sleep regardles being disabled.");
+		      "Changed to sleep regardless being disabled.");
 
 	zassert_equal(otPlatRadioEnable(ot), OT_ERROR_NONE,
 		      "Enabling radio failed.");

@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 
-#include <net/net_pkt.h>
-#include <drivers/ptp_clock.h>
-#include <net/ethernet_mgmt.h>
-#include <random/rand32.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/drivers/ptp_clock.h>
+#include <zephyr/net/ethernet_mgmt.h>
+#include <zephyr/random/rand32.h>
 
-#include <net/gptp.h>
+#include <zephyr/net/gptp.h>
 
 #include "gptp_messages.h"
 #include "gptp_mi.h"
@@ -521,18 +521,23 @@ static void gptp_state_machine(void)
 	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
 		struct gptp_port_ds *port_ds = GPTP_PORT_DS(port);
 
-		switch (GPTP_GLOBAL_DS()->selected_role[port]) {
-		case GPTP_PORT_DISABLED:
-		case GPTP_PORT_MASTER:
-		case GPTP_PORT_PASSIVE:
-		case GPTP_PORT_SLAVE:
-			gptp_md_state_machines(port);
-			gptp_mi_port_sync_state_machines(port);
-			gptp_mi_port_bmca_state_machines(port);
-			break;
-		default:
-			NET_DBG("%s: Unknown port state", __func__);
-			break;
+		/* If interface is down, don't move forward */
+		if (net_if_flag_is_set(GPTP_PORT_IFACE(port), NET_IF_UP)) {
+			switch (GPTP_GLOBAL_DS()->selected_role[port]) {
+			case GPTP_PORT_DISABLED:
+			case GPTP_PORT_MASTER:
+			case GPTP_PORT_PASSIVE:
+			case GPTP_PORT_SLAVE:
+				gptp_md_state_machines(port);
+				gptp_mi_port_sync_state_machines(port);
+				gptp_mi_port_bmca_state_machines(port);
+				break;
+			default:
+				NET_DBG("%s: Unknown port state", __func__);
+				break;
+			}
+		} else {
+			GPTP_GLOBAL_DS()->selected_role[port] = GPTP_PORT_DISABLED;
 		}
 
 		port_ds->prev_ptt_port_enabled = port_ds->ptt_port_enabled;

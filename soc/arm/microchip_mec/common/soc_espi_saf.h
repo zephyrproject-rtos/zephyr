@@ -12,7 +12,7 @@
 #define _SOC_ESPI_SAF_H_
 
 #include <stdint.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <soc.h>
 
 #define MCHP_SAF_MAX_FLASH_DEVICES 2U
@@ -316,7 +316,7 @@ struct espi_saf_hw_cfg {
  * QMSPI descriptors describing SPI opcode transmit and
  * data read.
  * SAF controller Poll2 Mast value specific for this flash device
- * SAF continuous mode prefix register value for those flashes requireing
+ * SAF continuous mode prefix register value for those flashes requiring
  * a prefix byte transmitted before the enter continuous mode command.
  * Start QMSPI descriptor numbers.
  * miscellaneous flags.
@@ -344,7 +344,7 @@ struct espi_saf_flash_cfg {
  * SPI start address. 20-bits = bits[31:12] of SPI address
  * SPI limit address. 20-bits = bits[31:12] of last SPI address
  * 8-bit bit map of eSPI master write-erase permission
- * 8-bit bit map of eSPI maste read permission
+ * 8-bit bit map of eSPI master read permission
  * eSPI master numbers 0 - 7 correspond to bits 0 - 7.
  *
  * Protection region lock:

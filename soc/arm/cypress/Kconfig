@@ -22,7 +22,7 @@ config SOC_PSOC6_M4
 endchoice
 
 config SOC_PSOC6_M0_ENABLES_M4
-	bool "Enable dual-core support [activate Cortex-M4]"
+	bool "Dual-core support [activate Cortex-M4]"
 	depends on SOC_PSOC6_M0
 	help
 	  Cortex-M0 CPU should boot Cortex-M4

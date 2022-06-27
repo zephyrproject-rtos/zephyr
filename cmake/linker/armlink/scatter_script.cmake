@@ -333,7 +333,7 @@ function(section_to_string)
 #      endif()
 
       #if(SETTINGS_KEEP)
-      # armlink has --keep=<section_id>, but is there an scatter equivalant ?
+      # armlink has --keep=<section_id>, but is there an scatter equivalent ?
       #endif()
 
       if(first)
@@ -394,12 +394,12 @@ function(symbol_to_string)
   get_property(subalign GLOBAL PROPERTY ${STRING_SYMBOL}_SUBALIGN)
 
   string(REPLACE "\\" "" expr "${expr}")
-  string(REGEX MATCHALL "%([^%]*)%" match_res ${expr})
+  string(REGEX MATCHALL "@([^@]*)@" match_res ${expr})
 
   foreach(match ${match_res})
-    string(REPLACE "%" "" match ${match})
+    string(REPLACE "@" "" match ${match})
     get_property(symbol_val GLOBAL PROPERTY SYMBOL_TABLE_${match})
-    string(REPLACE "%${match}%" "ImageBase(${symbol_val})" expr ${expr})
+    string(REPLACE "@${match}@" "ImageBase(${symbol_val})" expr ${expr})
   endforeach()
 
   if(DEFINED subalign)

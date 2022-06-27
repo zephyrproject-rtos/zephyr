@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.20.0)
 
 if(("${BOARD}" STREQUAL "lpcxpresso54114_m0")
 	OR "${BOARD}" STREQUAL "lpcxpresso55s69_cpu1")
-	message(INFO " ${BOARD} compiles as remote in this sample")
+	message(STATUS "${BOARD} compiles as remote in this sample")
 else()
 	message(FATAL_ERROR "${BOARD} was not supported for this sample")
 endif()

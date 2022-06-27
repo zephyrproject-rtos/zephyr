@@ -8,7 +8,7 @@ config ZEPHYR_CANOPENNODE_MODULE
 
 config CANOPENNODE
 	bool "CANopenNode support"
-	depends on CAN
+	depends on CAN && !CAN_FD_MODE
 	help
 	  This option enables the CANopenNode library.
 
@@ -33,7 +33,7 @@ config CANOPENNODE_TRACE_BUFFER_SIZE
 
 config CANOPENNODE_TX_WORKQUEUE_STACK_SIZE
 	int "Stack size for the CANopen transmit workqueue"
-	default 320
+	default 512
 	help
 	  Size of the stack used for the internal CANopen transmit
 	  workqueue.
@@ -86,7 +86,7 @@ config CANOPENNODE_SYNC_THREAD
 config CANOPENNODE_SYNC_THREAD_STACK_SIZE
 	int "Stack size for the CANopen SYNC thread"
 	depends on CANOPENNODE_SYNC_THREAD
-	default 256
+	default 512
 	help
 	  Size of the stack used for the internal thread which
 	  processes CANopen SYNC RPDOs and TPDOs.

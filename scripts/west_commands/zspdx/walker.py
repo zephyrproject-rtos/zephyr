@@ -266,8 +266,9 @@ class Walker:
                 # add its build file
                 bf = self.addBuildFile(cfgTarget, pkg)
 
-                # get its source files
-                self.collectPendingSourceFiles(cfgTarget, pkg, bf)
+                # get its source files if build file is found
+                if bf:
+                    self.collectPendingSourceFiles(cfgTarget, pkg, bf)
             else:
                 log.dbg(f"  - target {cfgTarget.name} has no build artifacts")
 
@@ -302,6 +303,11 @@ class Walker:
         log.dbg(f"  - adding File {artifactPath}")
         log.dbg(f"    - relativeBaseDir: {pkg.cfg.relativeBaseDir}")
         log.dbg(f"    - artifacts[0]: {cfgTarget.target.artifacts[0]}")
+
+        # don't create build File if artifact path points to nonexistent file
+        if not os.path.exists(artifactPath):
+            log.dbg(f"  - target {cfgTarget.name} lists build artifact {artifactPath} but file not found after build; skipping")
+            return None
 
         # create build File
         bf = File(self.docBuild, pkg)

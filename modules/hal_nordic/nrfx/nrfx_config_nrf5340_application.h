@@ -419,9 +419,10 @@
 #ifndef NRFX_GPIOTE_ENABLED
 #define NRFX_GPIOTE_ENABLED 0
 #endif
-// <o> NRFX_GPIOTE_CONFIG_NUM_OF_LOW_POWER_EVENTS - Number of lower power input pins.
-#ifndef NRFX_GPIOTE_CONFIG_NUM_OF_LOW_POWER_EVENTS
-#define NRFX_GPIOTE_CONFIG_NUM_OF_LOW_POWER_EVENTS 1
+
+// <o> NRFX_GPIOTE_CONFIG_NUM_OF_EVT_HANDLERS - Number of dedicated handlers
+#ifndef NRFX_GPIOTE_CONFIG_NUM_OF_EVT_HANDLERS
+#define NRFX_GPIOTE_CONFIG_NUM_OF_EVT_HANDLERS 1
 #endif
 
 // <o> NRFX_GPIOTE_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority.
@@ -1511,7 +1512,7 @@
 #define NRFX_SYSTICK_ENABLED 0
 #endif
 
-// <e> NRFX_TIMER_ENABLED - nrfx_timer - TIMER periperal driver.
+// <e> NRFX_TIMER_ENABLED - nrfx_timer - TIMER peripheral driver.
 //==========================================================
 #ifndef NRFX_TIMER_ENABLED
 #define NRFX_TIMER_ENABLED 0

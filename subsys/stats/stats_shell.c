@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
-#include <stats/stats.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/stats/stats.h>
 
 static int stats_cb(struct stats_hdr *hdr, void *arg, const char *name, uint16_t off)
 {

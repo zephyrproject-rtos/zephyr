@@ -26,6 +26,7 @@ include:
     property-blocklist:
       - div-m
       - mul-n
+      - div-p
 
 properties:
 
@@ -42,3 +43,10 @@ properties:
       description: |
           Main PLL multiplication factor for VCO
           Valid range: 8 - 127
+
+    div-p:
+      type: int
+      required: false
+      description: |
+          Main PLL division factor for ADC
+          Valid range: 2 - 31

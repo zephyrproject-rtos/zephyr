@@ -5,11 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/sensor.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/device.h>
 #include <stdio.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 #ifdef CONFIG_APDS9960_TRIGGER
 K_SEM_DEFINE(sem, 0, 1);
@@ -77,14 +77,10 @@ void main(void)
 		       intensity.val1, pdata.val1);
 
 #ifdef CONFIG_PM_DEVICE
-		enum pm_device_state p_state;
-
-		p_state = PM_DEVICE_STATE_SUSPENDED;
-		pm_device_state_set(dev, p_state);
+		pm_device_action_run(dev, PM_DEVICE_ACTION_SUSPEND);
 		printk("set low power state for 2s\n");
 		k_sleep(K_MSEC(2000));
-		p_state = PM_DEVICE_STATE_ACTIVE;
-		pm_device_state_set(dev, p_state);
+		pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
 #endif
 	}
 }

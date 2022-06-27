@@ -26,15 +26,15 @@
 #ifndef ZEPHYR_ARCH_X86_INCLUDE_IA32_KERNEL_ARCH_DATA_H_
 #define ZEPHYR_ARCH_X86_INCLUDE_IA32_KERNEL_ARCH_DATA_H_
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <ia32/exception.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef _ASMLANGUAGE
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
-#include <sys/dlist.h>
+#include <zephyr/sys/dlist.h>
 #endif
 
 /* Some configurations require that the stack/registers be adjusted before
@@ -52,7 +52,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -8,12 +8,12 @@
  * ARM64 Cortex-A ISRs wrapper
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <offsets_short.h>
-#include <arch/cpu.h>
-#include <sw_isr_table.h>
-#include <drivers/interrupt_controller/gic.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sw_isr_table.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
 #include "macro_priv.inc"
 
 _ASM_FILE_PROLOGUE
@@ -32,9 +32,19 @@ GDATA(_sw_isr_table)
 GTEXT(_isr_wrapper)
 SECTION_FUNC(TEXT, _isr_wrapper)
 
-	/* ++(_kernel->nested) to be checked by arch_is_in_isr() */
-	inc_nest_counter x0, x1
+	/* ++_current_cpu->nested to be checked by arch_is_in_isr() */
+	get_cpu	x0
+	ldr	w1, [x0, #___cpu_t_nested_OFFSET]
+	add	w2, w1, #1
+	str	w2, [x0, #___cpu_t_nested_OFFSET]
 
+	/* If not nested: switch to IRQ stack and save current sp on it. */
+	cbnz	w1, 1f
+	ldr	x1, [x0, #___cpu_t_irq_stack_OFFSET]
+	mov	x2, sp
+	mov	sp, x1
+	str	x2, [sp, #-16]!
+1:
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	bl	z_sched_usage_stop
 #endif
@@ -97,32 +107,38 @@ spurious_continue:
 	bl	sys_trace_isr_exit
 #endif
 
-	/* if (--(_kernel->nested) != 0) exit */
-	dec_nest_counter x0, x1
-
+GTEXT(z_arm64_irq_done)
+z_arm64_irq_done:
+	/* if (--_current_cpu->nested != 0) exit */
+	get_cpu	x0
+	ldr	w1, [x0, #___cpu_t_nested_OFFSET]
+	subs	w1, w1, #1
+	str	w1, [x0, #___cpu_t_nested_OFFSET]
 	bne	exit
 
-	/*
-	 * z_arch_get_next_switch_handle() is returning:
-	 *
-	 * - The next thread to schedule in x0
-	 * - The current thread in x1. This value is returned using the
-	 *   **old_thread parameter, so we need to make space on the stack for
-	 *   that.
-	 */
-	sub	sp, sp, #16
-	mov	x0, sp
-	bl	z_arch_get_next_switch_handle
-	ldp	x1, xzr, [sp], #16
+	/* No more nested: retrieve the task's stack. */
+	ldr	x1, [sp]
+	mov	sp, x1
+
+	/* retrieve pointer to the current thread */
+	ldr	x1, [x0, #___cpu_t_current_OFFSET]
 
 	/*
-	 * x0: 1st thread in the ready queue
-	 * x1: _current thread
+	 * Get next thread to schedule with z_get_next_switch_handle().
+	 * We pass it a NULL as we didn't save the whole thread context yet.
+	 * If no scheduling is necessary then NULL will be returned.
 	 */
-	cmp	x0, x1
-	beq	exit
+	str	x1, [sp, #-16]!
+	mov	x0, xzr
+	bl	z_get_next_switch_handle
+	ldr	x1, [sp], #16
+	cbz	x0, exit
 
-	/* Switch thread */
+	/*
+	 * Switch thread
+	 * x0: new thread
+	 * x1: old thread
+	 */
 	bl	z_arm64_context_switch
 
 exit:

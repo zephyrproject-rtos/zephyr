@@ -5,8 +5,8 @@
  */
 #include <errno.h>
 
-#include <net/sntp.h>
-#include <net/socketutils.h>
+#include <zephyr/net/sntp.h>
+#include <zephyr/net/socketutils.h>
 
 int sntp_simple(const char *server, uint32_t timeout, struct sntp_time *time)
 {

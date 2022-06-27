@@ -4,302 +4,301 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config HAS_HW_NRF_ACL
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_ACL))
 
 config HAS_HW_NRF_ADC
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_ADC))
 
 config HAS_HW_NRF_BPROT
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_BPROT))
 
 config HAS_HW_NRF_CC310
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CC310))
 
 config HAS_HW_NRF_CC312
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CC312))
 
 config HAS_HW_NRF_CCM
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CCM))
 
 config HAS_HW_NRF_CCM_LFLEN_8BIT
-	bool
+	def_bool $(dt_nodelabel_bool_prop,ccm,length-field-length-8-bits)
 
 config HAS_HW_NRF_CLOCK
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CLOCK))
 
 config HAS_HW_NRF_COMP
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_COMP))
+
+config HAS_HW_NRF_CTRLAP
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CTRLAPPERI))
 
 config HAS_HW_NRF_DCNF
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_DCNF))
 
 config HAS_HW_NRF_DPPIC
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_DPPIC))
 
 config HAS_HW_NRF_ECB
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_ECB))
 
 config HAS_HW_NRF_EGU0
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,egu0,$(DT_COMPAT_NORDIC_NRF_EGU))
 
 config HAS_HW_NRF_EGU1
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,egu1,$(DT_COMPAT_NORDIC_NRF_EGU))
 
 config HAS_HW_NRF_EGU2
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,egu2,$(DT_COMPAT_NORDIC_NRF_EGU))
 
 config HAS_HW_NRF_EGU3
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,egu3,$(DT_COMPAT_NORDIC_NRF_EGU))
 
 config HAS_HW_NRF_EGU4
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,egu4,$(DT_COMPAT_NORDIC_NRF_EGU))
 
 config HAS_HW_NRF_EGU5
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,egu5,$(DT_COMPAT_NORDIC_NRF_EGU))
 
 config HAS_HW_NRF_GPIO0
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,gpio0,$(DT_COMPAT_NORDIC_NRF_GPIO))
 
 config HAS_HW_NRF_GPIO1
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,gpio1,$(DT_COMPAT_NORDIC_NRF_GPIO))
 
 config HAS_HW_NRF_GPIOTE
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
 
 config HAS_HW_NRF_I2S
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_I2S))
 
 config HAS_HW_NRF_IPC
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_IPC))
 
 config HAS_HW_NRF_KMU
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_KMU))
 
 config HAS_HW_NRF_LPCOMP
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_LPCOMP))
 
 config HAS_HW_NRF_MPU
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_MPU))
 
 config HAS_HW_NRF_MUTEX
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_MUTEX))
 
 config HAS_HW_NRF_MWU
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_MWU))
 
 config HAS_HW_NRF_NFCT
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_NFCT))
 
-# NVMC supports partial erase
 config HAS_HW_NRF_NVMC_PE
-	bool
+	def_bool $(dt_nodelabel_bool_prop,flash_controller,partial-erase)
 
 config HAS_HW_NRF_OSCILLATORS
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_OSCILLATORS))
 
 config HAS_HW_NRF_PDM
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_PDM))
 
 config HAS_HW_NRF_POWER
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_POWER))
 
 config HAS_HW_NRF_PPI
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_PPI))
 
 config HAS_HW_NRF_PWM0
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,pwm0,$(DT_COMPAT_NORDIC_NRF_PWM))
 
 config HAS_HW_NRF_PWM1
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,pwm1,$(DT_COMPAT_NORDIC_NRF_PWM))
 
 config HAS_HW_NRF_PWM2
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,pwm2,$(DT_COMPAT_NORDIC_NRF_PWM))
 
 config HAS_HW_NRF_PWM3
-	bool
-
-config HAS_HW_NRF_QDEC
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,pwm3,$(DT_COMPAT_NORDIC_NRF_PWM))
 
 config HAS_HW_NRF_QDEC0
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,qdec0,$(DT_COMPAT_NORDIC_NRF_QDEC))
 
 config HAS_HW_NRF_QDEC1
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,qdec1,$(DT_COMPAT_NORDIC_NRF_QDEC))
 
 config HAS_HW_NRF_QSPI
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_QSPI))
 
 config HAS_HW_NRF_RADIO_BLE_2M
-	bool
-
-config HAS_HW_NRF_RADIO_TX_PWR_HIGH
-	bool
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-2mbps-supported)
 
 config HAS_HW_NRF_RADIO_BLE_CODED
-	bool
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-coded-phy-supported)
+
+config HAS_HW_NRF_RADIO_DFE
+	def_bool $(dt_nodelabel_bool_prop,radio,dfe-supported)
 
 config HAS_HW_NRF_RADIO_IEEE802154
-	bool
+	def_bool $(dt_nodelabel_bool_prop,radio,ieee802154-supported)
+
+config HAS_HW_NRF_RADIO_TX_PWR_HIGH
+	def_bool $(dt_nodelabel_bool_prop,radio,tx-high-power-supported)
 
 config HAS_HW_NRF_REGULATORS
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_REGULATORS))
 
 config HAS_HW_NRF_RESET
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_RESET))
 
 config HAS_HW_NRF_RNG
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_RNG))
 
 config HAS_HW_NRF_RTC0
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,rtc0,$(DT_COMPAT_NORDIC_NRF_RTC))
 
 config HAS_HW_NRF_RTC1
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,rtc1,$(DT_COMPAT_NORDIC_NRF_RTC))
 
 config HAS_HW_NRF_RTC2
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,rtc2,$(DT_COMPAT_NORDIC_NRF_RTC))
 
 config HAS_HW_NRF_SAADC
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_SAADC))
 
 config HAS_HW_NRF_SPI0
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPI))
 
 config HAS_HW_NRF_SPI1
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPI))
 
 config HAS_HW_NRF_SPI2
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPI))
 
 config HAS_HW_NRF_SPIM0
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPIM))
 
 config HAS_HW_NRF_SPIM1
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPIM))
 
 config HAS_HW_NRF_SPIM2
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPIM))
 
 config HAS_HW_NRF_SPIM3
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,spi3,$(DT_COMPAT_NORDIC_NRF_SPIM))
 
 config HAS_HW_NRF_SPIM4
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,spi4,$(DT_COMPAT_NORDIC_NRF_SPIM))
 
 config HAS_HW_NRF_SPIS0
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPIS))
 
 config HAS_HW_NRF_SPIS1
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPIS))
 
 config HAS_HW_NRF_SPIS2
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPIS))
 
 config HAS_HW_NRF_SPIS3
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,spi3,$(DT_COMPAT_NORDIC_NRF_SPIS))
 
 config HAS_HW_NRF_SPU
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_SPU))
 
 config HAS_HW_NRF_SWI0
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,swi0,$(DT_COMPAT_NORDIC_NRF_SWI))
 
 config HAS_HW_NRF_SWI1
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,swi1,$(DT_COMPAT_NORDIC_NRF_SWI))
 
 config HAS_HW_NRF_SWI2
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,swi2,$(DT_COMPAT_NORDIC_NRF_SWI))
 
 config HAS_HW_NRF_SWI3
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,swi3,$(DT_COMPAT_NORDIC_NRF_SWI))
 
 config HAS_HW_NRF_SWI4
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,swi4,$(DT_COMPAT_NORDIC_NRF_SWI))
 
 config HAS_HW_NRF_SWI5
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,swi5,$(DT_COMPAT_NORDIC_NRF_SWI))
 
 config HAS_HW_NRF_TEMP
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_TEMP))
 
 config HAS_HW_NRF_TIMER0
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,timer0,$(DT_COMPAT_NORDIC_NRF_TIMER))
 
 config HAS_HW_NRF_TIMER1
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,timer1,$(DT_COMPAT_NORDIC_NRF_TIMER))
 
 config HAS_HW_NRF_TIMER2
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,timer2,$(DT_COMPAT_NORDIC_NRF_TIMER))
 
 config HAS_HW_NRF_TIMER3
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,timer3,$(DT_COMPAT_NORDIC_NRF_TIMER))
 
 config HAS_HW_NRF_TIMER4
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,timer4,$(DT_COMPAT_NORDIC_NRF_TIMER))
 
 config HAS_HW_NRF_TWI0
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWI))
 
 config HAS_HW_NRF_TWI1
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c1,$(DT_COMPAT_NORDIC_NRF_TWI))
 
 config HAS_HW_NRF_TWIM0
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWIM))
 
 config HAS_HW_NRF_TWIM1
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c1,$(DT_COMPAT_NORDIC_NRF_TWIM))
 
 config HAS_HW_NRF_TWIM2
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c2,$(DT_COMPAT_NORDIC_NRF_TWIM))
 
 config HAS_HW_NRF_TWIM3
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c3,$(DT_COMPAT_NORDIC_NRF_TWIM))
 
 config HAS_HW_NRF_TWIS0
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWIS))
 
 config HAS_HW_NRF_TWIS1
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c1,$(DT_COMPAT_NORDIC_NRF_TWIS))
 
 config HAS_HW_NRF_TWIS2
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c2,$(DT_COMPAT_NORDIC_NRF_TWIS))
 
 config HAS_HW_NRF_TWIS3
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c3,$(DT_COMPAT_NORDIC_NRF_TWIS))
 
 config HAS_HW_NRF_UART0
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,uart0,$(DT_COMPAT_NORDIC_NRF_UART))
 
 config HAS_HW_NRF_UARTE0
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,uart0,$(DT_COMPAT_NORDIC_NRF_UARTE))
 
 config HAS_HW_NRF_UARTE1
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,uart1,$(DT_COMPAT_NORDIC_NRF_UARTE))
 
 config HAS_HW_NRF_UARTE2
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,uart2,$(DT_COMPAT_NORDIC_NRF_UARTE))
 
 config HAS_HW_NRF_UARTE3
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,uart3,$(DT_COMPAT_NORDIC_NRF_UARTE))
 
 config HAS_HW_NRF_USBD
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_USBD))
 
 config HAS_HW_NRF_USBREG
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_USBREG))
 
 config HAS_HW_NRF_VMC
-	bool
-
-config HAS_HW_NRF_WDT
-	bool
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_VMC))
 
 config HAS_HW_NRF_WDT0
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,wdt0,$(DT_COMPAT_NORDIC_NRF_WDT))
 
 config HAS_HW_NRF_WDT1
-	bool
+	def_bool $(dt_nodelabel_enabled_with_compat,wdt1,$(DT_COMPAT_NORDIC_NRF_WDT))
 
 # Reserved HW peripherals
 config NRF_HW_TIMER0_RESERVED

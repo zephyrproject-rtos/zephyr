@@ -7,10 +7,10 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_BMI270_BMI270_H_
 #define ZEPHYR_DRIVERS_SENSOR_BMI270_BMI270_H_
 
-#include <device.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 
 #define BMI270_REG_CHIP_ID         0x00
 #define BMI270_REG_ERROR           0x02

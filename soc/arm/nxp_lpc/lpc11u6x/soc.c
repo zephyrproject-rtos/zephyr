@@ -12,12 +12,12 @@
  * hardware for the nxp_lpc11u6x platform.
  */
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 #include <aarch32/cortex_m/exc.h>
 
 /**

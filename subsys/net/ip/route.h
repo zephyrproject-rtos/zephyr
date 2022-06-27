@@ -13,10 +13,11 @@
 #ifndef __ROUTE_H
 #define __ROUTE_H
 
-#include <kernel.h>
-#include <sys/slist.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/slist.h>
 
-#include <net/net_ip.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_timeout.h>
 
 #include "nbr.h"
 
@@ -54,12 +55,26 @@ struct net_route_entry {
 	/** Network interface for the route. */
 	struct net_if *iface;
 
+	/** Route lifetime timer. */
+	struct net_timeout lifetime;
+
 	/** IPv6 address/prefix of the route. */
 	struct in6_addr addr;
 
 	/** IPv6 address/prefix length. */
 	uint8_t prefix_len;
+
+	uint8_t preference : 2;
+
+	/** Is the route valid forever */
+	uint8_t is_infinite : 1;
 };
+
+/* Route preference values, as defined in RFC 4191 */
+#define NET_ROUTE_PREFERENCE_HIGH     0x01
+#define NET_ROUTE_PREFERENCE_MEDIUM   0x00
+#define NET_ROUTE_PREFERENCE_LOW      0x03 /* -1 if treated as 2 bit signed int */
+#define NET_ROUTE_PREFERENCE_RESERVED 0x02
 
 /**
  * @brief Lookup route to a given destination.
@@ -91,13 +106,17 @@ static inline struct net_route_entry *net_route_lookup(struct net_if *iface,
  * @param addr IPv6 address.
  * @param prefix_len Length of the IPv6 address/prefix.
  * @param nexthop IPv6 address of the Next hop device.
+ * @param lifetime Route lifetime in seconds.
+ * @param preference Route preference.
  *
  * @return Return created route entry, NULL if could not be created.
  */
 struct net_route_entry *net_route_add(struct net_if *iface,
 				      struct in6_addr *addr,
 				      uint8_t prefix_len,
-				      struct in6_addr *nexthop);
+				      struct in6_addr *nexthop,
+				      uint32_t lifetime,
+				      uint8_t preference);
 
 /**
  * @brief Delete a route from routing table.
@@ -134,6 +153,16 @@ int net_route_del_by_nexthop(struct net_if *iface,
 int net_route_del_by_nexthop_data(struct net_if *iface,
 				  struct in6_addr *nexthop,
 				  void *data);
+
+/**
+ * @brief Update the route lifetime.
+ *
+ * @param route Pointer to routing entry.
+ * @param lifetime Route lifetime in seconds.
+ *
+ * @return 0 if ok, <0 if error
+ */
+void net_route_update_lifetime(struct net_route_entry *route, uint32_t lifetime);
 
 /**
  * @brief Get nexthop IPv6 address tied to this route.

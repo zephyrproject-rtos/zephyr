@@ -8,13 +8,13 @@
 #include <string.h>
 #include <errno.h>
 
-#include <zephyr.h>
-#include <sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/crypto.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/crypto.h>
 
 #include <tinycrypt/constants.h>
 #include <tinycrypt/hmac_prng.h>
@@ -33,22 +33,11 @@ static int prng_reseed(struct tc_hmac_prng_struct *h)
 {
 	uint8_t seed[32];
 	int64_t extra;
-	size_t i;
 	int ret;
 
-	for (i = 0; i < (sizeof(seed) / 8); i++) {
-		struct bt_hci_rp_le_rand *rp;
-		struct net_buf *rsp;
-
-		ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
-		if (ret) {
-			return ret;
-		}
-
-		rp = (void *)rsp->data;
-		memcpy(&seed[i * 8], rp->rand, 8);
-
-		net_buf_unref(rsp);
+	ret = bt_hci_le_rand(seed, sizeof(seed));
+	if (ret) {
+		return ret;
 	}
 
 	extra = k_uptime_get();
@@ -65,26 +54,15 @@ static int prng_reseed(struct tc_hmac_prng_struct *h)
 
 int prng_init(void)
 {
-	struct bt_hci_rp_le_rand *rp;
-	struct net_buf *rsp;
+	uint8_t perso[8];
 	int ret;
 
-	/* Check first that HCI_LE_Rand is supported */
-	if (!BT_CMD_TEST(bt_dev.supported_commands, 27, 7)) {
-		return -ENOTSUP;
-	}
-
-	ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
+	ret = bt_hci_le_rand(perso, sizeof(perso));
 	if (ret) {
 		return ret;
 	}
 
-	rp = (void *)rsp->data;
-
-	ret = tc_hmac_prng_init(&prng, rp->rand, sizeof(rp->rand));
-
-	net_buf_unref(rsp);
-
+	ret = tc_hmac_prng_init(&prng, perso, sizeof(perso));
 	if (ret == TC_CRYPTO_FAIL) {
 		BT_ERR("Failed to initialize PRNG");
 		return -EIO;
@@ -94,6 +72,7 @@ int prng_init(void)
 	return prng_reseed(&prng);
 }
 
+#if defined(CONFIG_BT_HOST_CRYPTO_PRNG)
 int bt_rand(void *buf, size_t len)
 {
 	int ret;
@@ -114,6 +93,12 @@ int bt_rand(void *buf, size_t len)
 
 	return -EIO;
 }
+#else /* !CONFIG_BT_HOST_CRYPTO_PRNG */
+int bt_rand(void *buf, size_t len)
+{
+	return bt_hci_le_rand(buf, len);
+}
+#endif /* CONFIG_BT_HOST_CRYPTO_PRNG */
 
 int bt_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
 		  uint8_t enc_data[16])

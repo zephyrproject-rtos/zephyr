@@ -5,9 +5,9 @@
 
 #include <errno.h>
 #include <string.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <settings/settings.h>
+#include <zephyr/settings/settings.h>
 #include "settings_priv.h"
 
 struct read_cb_arg {

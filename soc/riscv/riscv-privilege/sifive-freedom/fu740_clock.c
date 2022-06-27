@@ -4,12 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
+#include <zephyr/init.h>
 #include "fu740_prci.h"
+
+BUILD_ASSERT(MHZ(1000) == DT_PROP(DT_NODELABEL(coreclk), clock_frequency),
+	"Unsupported CORECLK frequency");
+BUILD_ASSERT(KHZ(125125) == DT_PROP(DT_NODELABEL(pclk), clock_frequency),
+	"Unsupported PCLK frequency");
 
 /*
  * Switch the clock source
- *   - core: to 1GHz PLL (CORE_PLL) from 26MHz oscilator (HFCLK)
+ *   - core: to 1GHz PLL (CORE_PLL) from 26MHz oscillator (HFCLK)
  *   - peri: to 250MHz PLL (HFPCLKPLL) from HFCLK
  * on the HiFive Unmatched board.
  *

@@ -1,0 +1,13 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+# Description:
+# Adding support for Cyclone V SoC FPGA
+
+if SOC_SERIES_CYCLONE5
+
+config SOC_SERIES
+	default "cyclonev"
+
+source "soc/arm/intel_socfpga_std/cyclonev/Kconfig.defconfig.cyclonev*"
+
+endif # SOC_SERIES_CYCLONE5

@@ -10,14 +10,14 @@
 
 #define DT_DRV_COMPAT st_lsm9ds0_mfd
 
-#include <drivers/sensor.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <drivers/i2c.h>
-#include <sys/byteorder.h>
-#include <drivers/gpio.h>
-#include <logging/log.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
 
 #include "lsm9ds0_mfd.h"
 
@@ -398,7 +398,7 @@ static inline void lsm9ds0_mfd_convert_accel(struct sensor_value *val,
 {
 	double dval;
 
-	dval = (double)(raw_val) * scale;
+	dval = (double)(raw_val) * (double)scale;
 	val->val1 = (int32_t)dval;
 	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 }
@@ -484,7 +484,7 @@ static inline void lsm9ds0_mfd_convert_magn(struct sensor_value *val,
 {
 	double dval;
 
-	dval = (double)(raw_val) * scale;
+	dval = (double)(raw_val) * (double)scale;
 	val->val1 = (int32_t)dval;
 	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 }

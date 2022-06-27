@@ -41,7 +41,7 @@ For more information about the EFM32WG SoC and EFM32WG-STK3800 board:
 Supported Features
 ==================
 
-The efm32wg_stk3800oard configuration supports the following hardware features:
+The efm32wg_stk3800 board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

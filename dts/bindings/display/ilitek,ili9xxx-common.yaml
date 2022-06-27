@@ -4,7 +4,7 @@
 
 description: ILI9XXX display controllers common properties.
 
-include: spi-device.yaml
+include: [spi-device.yaml, display-controller.yaml]
 
 properties:
     reset-gpios:

@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
+#include "bl652_dvk-pinctrl.dtsi"
 
 / {
 	model = "Laird BL652 DVK";
@@ -71,18 +72,18 @@
 	status = "okay";
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
-	tx-pin = <6>;
-	rx-pin = <8>;
-	rts-pin = <5>;
-	cts-pin = <7>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-pin = <26>;
-	scl-pin = <27>;
 
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 	dac0: mcp4725@60 {
 		/* MCP4725 not populated at factory */
 		compatible = "microchip,mcp4725";
@@ -95,26 +96,28 @@
 
 &pwm0 {
 	status = "okay";
-	ch0-pin = <17>;
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi0 {
 	compatible = "nordic,nrf-spi";
 	/* Cannot be used together with i2c0. */
 	/* status = "okay"; */
-	sck-pin = <25>;
-	mosi-pin = <23>;
-	miso-pin = <24>;
 	cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <16>;
-	mosi-pin = <20>;
-	miso-pin = <14>;
 	cs-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &flash0 {

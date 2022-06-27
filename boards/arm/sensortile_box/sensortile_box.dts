@@ -72,18 +72,21 @@
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -104,6 +107,7 @@
 
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_pg7 &i2c3_sda_pg8>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -118,6 +122,7 @@
 &spi1 {
 	pinctrl-0 = <&spi1_nss_pe12 &spi1_sck_pe13
 		     &spi1_miso_pe14 &spi1_mosi_pe15>;
+	pinctrl-names = "default";
 	status = "okay";
 
 	cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>, <&gpioe 12 GPIO_ACTIVE_LOW>, <&gpioe 10 GPIO_ACTIVE_LOW>;
@@ -151,6 +156,7 @@
 &spi3 {
 	pinctrl-0 = <&spi3_nss_pa15 &spi3_sck_pb3
 		     &spi3_miso_pb4 &spi3_mosi_pb5>;
+	pinctrl-names = "default";
 	status = "okay";
 
 	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
@@ -166,15 +172,8 @@
 
 zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
-};
-
-&timers2 {
-	status = "okay";
-
-	pwm {
-		status = "okay";
-	};
 };
 
 &rtc {
@@ -190,7 +189,7 @@ zephyr_udc0: &usbotg_fs {
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x00010000>;
+			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
 		};
 
@@ -201,20 +200,20 @@ zephyr_udc0: &usbotg_fs {
 
 		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x00020000 0x0006C000>;
+			reg = <0x00020000 DT_SIZE_K(432)>;
 		};
 		slot1_partition: partition@8c000 {
 			label = "image-1";
-			reg = <0x0008C000 0x0006C000>;
+			reg = <0x0008C000 DT_SIZE_K(432)>;
 		};
 		scratch_partition: partition@f8000 {
 			label = "image-scratch";
-			reg = <0x000F8000 0x00006000>;
+			reg = <0x000F8000 DT_SIZE_K(24)>;
 		};
 
 		storage_partition: partition@fc000 {
 			label = "storage";
-			reg = <0x000fc000 0x00004000>;
+			reg = <0x000fc000 DT_SIZE_K(24)>;
 		};
 	};
 };

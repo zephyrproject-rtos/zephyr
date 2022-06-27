@@ -13,14 +13,13 @@
  */
 
 #include <soc.h>
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
-#include <autoconf.h>
-#include <linker/sections.h>
-#include <linker/devicetree_regions.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/linker/devicetree_regions.h>
 
-#include <linker/linker-defs.h>
-#include <linker/linker-tool.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/linker-tool.h>
 
 #ifdef CONFIG_XIP
 #define ROMABLE_REGION              ROM
@@ -87,9 +86,7 @@ MEMORY
 #endif
     RAM (rwx) : ORIGIN = RAM_BASE, LENGTH = RAM_SIZE
 
-    /* Data & Instruction Tightly Coupled Memory */
-    LINKER_DT_REGION_FROM_NODE(ITCM, rw, DT_CHOSEN(zephyr_itcm))
-    LINKER_DT_REGION_FROM_NODE(DTCM, rw, DT_CHOSEN(zephyr_dtcm))
+    LINKER_DT_REGIONS()
 
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
@@ -100,7 +97,7 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 SECTIONS
     {
 
-#include <linker/rel-sections.ld>
+#include <zephyr/linker/rel-sections.ld>
 
     /*
      * The .plt and .iplt are here according to
@@ -159,7 +156,7 @@ SECTIONS
 		*(.text)
 		*(".text.*")
 		*(.gnu.linkonce.t.*)
-#include <linker/kobject-text.ld>
+#include <zephyr/linker/kobject-text.ld>
 #ifdef CONFIG_SOC_FLASH_RAMCODE_SECTION
 		. = ALIGN(0x1000);
 		_ram_code_start = .;
@@ -173,8 +170,8 @@ SECTIONS
     __text_region_end = .;
 
 	__rodata_region_start = .;
-#include <linker/common-rom.ld>
-#include <linker/thread-local-storage.ld>
+#include <zephyr/linker/common-rom.ld>
+#include <zephyr/linker/thread-local-storage.ld>
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
@@ -190,11 +187,11 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rodata.ld>
-#include <linker/kobject-rom.ld>
+#include <zephyr/linker/kobject-rom.ld>
 	. = ALIGN(4);
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-#include <linker/cplusplus-rom.ld>
+#include <zephyr/linker/cplusplus-rom.ld>
 	__rodata_region_end = .;
 	MPU_ALIGN(__rodata_region_end - __rom_region_start);
     GROUP_END(ROMABLE_REGION)
@@ -235,8 +232,8 @@ SECTIONS
 		  __bss_end = ALIGN(4);
 	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
-#include <linker/common-noinit.ld>
-#include <linker/cplusplus-ram.ld>
+#include <zephyr/linker/common-noinit.ld>
+#include <zephyr/linker/cplusplus-ram.ld>
 
     __data_region_start = .;
 
@@ -279,8 +276,8 @@ SECTIONS
 
 	__data_region_load_start = LOADADDR(_DATA_SECTION_NAME);
 
-#include <linker/common-ram.ld>
-#include <linker/kobject-data.ld>
+#include <zephyr/linker/common-ram.ld>
+#include <zephyr/linker/kobject-data.ld>
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -361,7 +358,7 @@ GROUP_END(DTCM)
 
      GROUP_END(RAMABLE_REGION)
 
-#include <linker/debug-sections.ld>
+#include <zephyr/linker/debug-sections.ld>
 
     /DISCARD/ : { *(.note.GNU-stack) }
 

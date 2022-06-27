@@ -7,10 +7,10 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
 #define ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
-#include <timeout_q.h>
-#include <tracing/tracing.h>
+#include <zephyr/timeout_q.h>
+#include <zephyr/tracing/tracing.h>
 #include <stdbool.h>
 
 BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
@@ -56,7 +56,7 @@ bool z_set_prio(struct k_thread *thread, int prio);
 void *z_get_next_switch_handle(void *interrupted);
 void idle(void *unused1, void *unused2, void *unused3);
 void z_time_slice(int ticks);
-void z_reset_time_slice(void);
+void z_reset_time_slice(struct k_thread *curr);
 void z_sched_abort(struct k_thread *thread);
 void z_sched_ipi(void);
 void z_sched_start(struct k_thread *thread);
@@ -385,7 +385,16 @@ void z_sched_usage_stop(void);
 
 void z_sched_usage_start(struct k_thread *thread);
 
-uint64_t z_sched_thread_usage(struct k_thread *thread);
+/**
+ * @brief Retrieves CPU cycle usage data for specified core
+ */
+void z_sched_cpu_usage(uint8_t core_id, struct k_thread_runtime_stats *stats);
+
+/**
+ * @brief Retrieves thread cycle usage data for specified thread
+ */
+void z_sched_thread_usage(struct k_thread *thread,
+			  struct k_thread_runtime_stats *stats);
 
 static inline void z_sched_usage_switch(struct k_thread *thread)
 {

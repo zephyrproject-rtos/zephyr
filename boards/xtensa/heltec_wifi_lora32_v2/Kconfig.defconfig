@@ -1,0 +1,11 @@
+# HELTEC board configuration
+
+# Copyright (c) 2021 Instituto de Pesquisas Eldorado (eldorado.org.br)
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "heltec_wifi_lora32"
+	depends on BOARD_HELTEC_WIFI_LORA32
+
+config ENTROPY_ESP32_RNG
+	default y if ENTROPY_GENERATOR

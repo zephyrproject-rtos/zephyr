@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
-#include <net/openthread.h>
-#include <sys/printk.h>
-#include <shell/shell.h>
-#include <shell/shell_uart.h>
+#include <zephyr/net/openthread.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_uart.h>
 
 #include <openthread/cli.h>
 #include <openthread/instance.h>
@@ -25,18 +25,7 @@ static bool is_shell_initialized;
 
 static int ot_console_cb(void *context, const char *format, va_list arg)
 {
-	char prompt_check[4];
-
 	ARG_UNUSED(context);
-
-	/* A temporary workaround to avoid printing OT prompt in Zehyr shell.
-	 * Eventually, OT should add an option which would allow to disable
-	 * prompt on the CLI output.
-	 */
-	vsnprintf(prompt_check, sizeof(prompt_check), format, arg);
-	if (strcmp(prompt_check, "> ") == 0) {
-		return 0;
-	}
 
 	if (shell_p == NULL) {
 		return 0;

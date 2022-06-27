@@ -7,14 +7,14 @@
 #define DT_DRV_COMPAT ethernet_phy
 
 #include <errno.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <drivers/mdio.h>
-#include <net/phy.h>
-#include <net/mii.h>
+#include <zephyr/drivers/mdio.h>
+#include <zephyr/net/phy.h>
+#include <zephyr/net/mii.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(phy_mii, CONFIG_PHY_LOG_LEVEL);
 
 struct phy_mii_dev_config {
@@ -34,18 +34,13 @@ struct phy_mii_dev_data {
 	struct k_sem sem;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-#define DEV_DATA(dev) ((struct phy_mii_dev_data *const)(dev)->data)
-#define DEV_CFG(dev) \
-	((const struct phy_mii_dev_config *const)(dev)->config)
-
 static int phy_mii_get_link_state(const struct device *dev,
 				  struct phy_link_state *state);
 
 static inline int reg_read(const struct device *dev, uint16_t reg_addr,
 			   uint16_t *value)
 {
-	const struct phy_mii_dev_config *const cfg = DEV_CFG(dev);
+	const struct phy_mii_dev_config *const cfg = dev->config;
 
 	return mdio_read(cfg->mdio, cfg->phy_addr, reg_addr, value);
 }
@@ -53,7 +48,7 @@ static inline int reg_read(const struct device *dev, uint16_t reg_addr,
 static inline int reg_write(const struct device *dev, uint16_t reg_addr,
 			    uint16_t value)
 {
-	const struct phy_mii_dev_config *const cfg = DEV_CFG(dev);
+	const struct phy_mii_dev_config *const cfg = dev->config;
 
 	return mdio_write(cfg->mdio, cfg->phy_addr, reg_addr, value);
 }
@@ -108,8 +103,8 @@ static int get_id(const struct device *dev, uint32_t *phy_id)
 
 static int update_link_state(const struct device *dev)
 {
-	const struct phy_mii_dev_config *const cfg = DEV_CFG(dev);
-	struct phy_mii_dev_data *const data = DEV_DATA(dev);
+	const struct phy_mii_dev_config *const cfg = dev->config;
+	struct phy_mii_dev_data *const data = dev->data;
 	bool link_up;
 
 	uint16_t anar_reg = 0;
@@ -203,7 +198,7 @@ static int update_link_state(const struct device *dev)
 
 static void invoke_link_cb(const struct device *dev)
 {
-	struct phy_mii_dev_data *const data = DEV_DATA(dev);
+	struct phy_mii_dev_data *const data = dev->data;
 	struct phy_link_state state;
 
 	if (data->cb == NULL) {
@@ -217,8 +212,9 @@ static void invoke_link_cb(const struct device *dev)
 
 static void monitor_work_handler(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct phy_mii_dev_data *const data =
-		CONTAINER_OF(work, struct phy_mii_dev_data, monitor_work);
+		CONTAINER_OF(dwork, struct phy_mii_dev_data, monitor_work);
 	const struct device *dev = data->dev;
 	int rc;
 
@@ -300,7 +296,7 @@ static int phy_mii_cfg_link(const struct device *dev,
 static int phy_mii_get_link_state(const struct device *dev,
 				  struct phy_link_state *state)
 {
-	struct phy_mii_dev_data *const data = DEV_DATA(dev);
+	struct phy_mii_dev_data *const data = dev->data;
 
 	k_sem_take(&data->sem, K_FOREVER);
 
@@ -314,7 +310,7 @@ static int phy_mii_get_link_state(const struct device *dev,
 static int phy_mii_link_cb_set(const struct device *dev, phy_callback_t cb,
 			       void *user_data)
 {
-	struct phy_mii_dev_data *const data = DEV_DATA(dev);
+	struct phy_mii_dev_data *const data = dev->data;
 
 	data->cb = cb;
 	data->cb_data = user_data;
@@ -330,8 +326,8 @@ static int phy_mii_link_cb_set(const struct device *dev, phy_callback_t cb,
 
 static int phy_mii_initialize(const struct device *dev)
 {
-	const struct phy_mii_dev_config *const cfg = DEV_CFG(dev);
-	struct phy_mii_dev_data *const data = DEV_DATA(dev);
+	const struct phy_mii_dev_config *const cfg = dev->config;
+	struct phy_mii_dev_data *const data = dev->data;
 	uint32_t phy_id;
 
 	k_sem_init(&data->sem, 1, 1);
@@ -389,7 +385,7 @@ static int phy_mii_initialize(const struct device *dev)
 	return 0;
 }
 
-#define IS_FIXED_LINK(n)	DT_NODE_HAS_PROP(DT_DRV_INST(n), fixed_link)
+#define IS_FIXED_LINK(n)	DT_INST_NODE_HAS_PROP(n, fixed_link)
 
 static const struct ethphy_driver_api phy_mii_driver_api = {
 	.get_link = phy_mii_get_link_state,
@@ -401,11 +397,11 @@ static const struct ethphy_driver_api phy_mii_driver_api = {
 
 #define PHY_MII_CONFIG(n)						 \
 static const struct phy_mii_dev_config phy_mii_dev_config_##n = {	 \
-	.phy_addr = DT_PROP(DT_DRV_INST(n), address),			 \
+	.phy_addr = DT_INST_PROP(n, address),				 \
 	.fixed = IS_FIXED_LINK(n),					 \
 	.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0),		 \
 	.mdio = UTIL_AND(UTIL_NOT(IS_FIXED_LINK(n)),			 \
-			 DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n), mdio)))\
+			 DEVICE_DT_GET(DT_INST_PHANDLE(n, mdio)))	 \
 };
 
 #define PHY_MII_DEVICE(n)						\

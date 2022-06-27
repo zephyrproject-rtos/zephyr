@@ -10,6 +10,10 @@ if(CONFIG_FILE_SYSTEM)
   zephyr_library_sources_ifdef(CONFIG_FILE_SYSTEM_LITTLEFS littlefs_fs.c)
   zephyr_library_sources_ifdef(CONFIG_FILE_SYSTEM_SHELL    shell.c)
 
+  zephyr_library_compile_definitions_ifdef(CONFIG_FILE_SYSTEM_LITTLEFS
+                                           LFS_CONFIG=zephyr_lfs_config.h
+  )
+
   zephyr_library_link_libraries(FS)
 
   target_link_libraries_ifdef(CONFIG_FAT_FILESYSTEM_ELM   FS INTERFACE ELMFAT)

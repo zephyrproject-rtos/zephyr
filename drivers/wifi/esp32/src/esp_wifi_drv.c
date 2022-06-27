@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT espressif_esp32_wifi
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 
-#include <net/ethernet.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <device.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <ethernet/eth_stats.h>
 #include "esp_networking_priv.h"
@@ -21,9 +21,6 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include "esp_timer.h"
 #include "esp_system.h"
 #include "esp_wpa.h"
-
-#define DEV_DATA(dev) \
-	((struct esp32_wifi_runtime *)(dev)->data)
 
 /* use global iface pointer to support any ethernet driver */
 /* necessary for wifi callback functions */
@@ -71,15 +68,16 @@ esp_err_t esp_event_send_internal(esp_event_base_t event_base,
 
 static int eth_esp32_send(const struct device *dev, struct net_pkt *pkt)
 {
+	struct esp32_wifi_runtime *data = dev->data;
 	const int pkt_len = net_pkt_get_len(pkt);
 
 	/* Read the packet payload */
-	if (net_pkt_read(pkt, DEV_DATA(dev)->frame_buf, pkt_len) < 0) {
+	if (net_pkt_read(pkt, data->frame_buf, pkt_len) < 0) {
 		return -EIO;
 	}
 
 	/* Enqueue packet for transmission */
-	esp_wifi_internal_tx(ESP_IF_WIFI_STA, (void *)DEV_DATA(dev)->frame_buf, pkt_len);
+	esp_wifi_internal_tx(ESP_IF_WIFI_STA, (void *)data->frame_buf, pkt_len);
 
 	LOG_DBG("pkt sent %p len %d", pkt, pkt_len);
 
@@ -157,7 +155,7 @@ static void esp_wifi_event_task(void)
 static void eth_esp32_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	struct esp32_wifi_runtime *dev_data = DEV_DATA(dev);
+	struct esp32_wifi_runtime *dev_data = dev->data;
 
 	dev_data->iface = iface;
 	esp32_wifi_iface = iface;
@@ -178,7 +176,9 @@ static void eth_esp32_init(struct net_if *iface)
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 static struct net_stats_eth *eth_esp32_stats(const struct device *dev)
 {
-	return &(DEV_DATA(dev)->stats);
+	struct esp32_wifi_runtime *data = dev->data;
+
+	return &(data->stats);
 }
 #endif
 

@@ -10,8 +10,8 @@
  *
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 
 _ASM_FILE_PROLOGUE
 
@@ -34,8 +34,6 @@ GTEXT(arch_cpu_atomic_idle)
  *
  * Only called by arch_kernel_init(). Sets SEVONPEND bit once for the system's
  * duration.
- *
- * @return N/A
  *
  * C function prototype:
  *
@@ -136,6 +134,7 @@ SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
 	|| defined(CONFIG_ARMV7_R) \
+	|| defined(CONFIG_AARCH32_ARMV8_R) \
 	|| defined(CONFIG_ARMV7_A)
 	/* No BASEPRI, call wfe directly
 	 * (SEVONPEND is set in z_arm_cpu_idle_init())

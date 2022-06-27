@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2022 Huawei Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	arduino_nano_header: connector {
+		compatible = "arduino-nano-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio1 3 0>,   /* D0 / UART-TX */
+			   <1 0 &gpio1 10 0>,  /* D1 / UART-RX */
+			   <2 0 &gpio1 11 0>,  /* D2 */
+			   <3 0 &gpio1 12 0>,  /* D3 */
+			   <4 0 &gpio1 15 0>,  /* D4 */
+			   <5 0 &gpio1 13 0>,  /* D5 */
+			   <6 0 &gpio1 14 0>,  /* D6 */
+			   <7 0 &gpio0 9 0>,   /* D7 */
+			   <8 0 &gpio0 10 0>,  /* D8 */
+			   <9 0 &gpio0 27 0>,  /* D9 */
+			   <10 0 &gpio1 2 0>,  /* D10 */
+			   <11 0 &gpio1 1 0>,  /* D11 / SPI-MOSI */
+			   <12 0 &gpio1 8 0>,  /* D12 / SPI-MISO */
+			   <13 0 &gpio0 13 0>, /* D13 / SPI-SCK */
+			   <14 0 &gpio0 4 0>,  /* D14 / A0 */
+			   <15 0 &gpio0 5 0>,  /* D15 / A1 */
+			   <16 0 &gpio0 30 0>, /* D16 / A2 */
+			   <17 0 &gpio0 29 0>, /* D17 / A3 */
+			   <18 0 &gpio0 14 0>, /* D18 / A4 / I2C-SDA */
+			   <19 0 &gpio0 15 0>, /* D19 / A5 / I2C-SCL */
+			   <20 0 &gpio0 28 0>, /* D20 / A6 */
+			   <21 0 &gpio1 3 0>;  /* D21 / A7 */
+	};
+};
+
+arduino_nano_i2c: &i2c0 {};
+arduino_nano_spi: &spi2 {};
+arduino_nano_serial: &uart0 {};

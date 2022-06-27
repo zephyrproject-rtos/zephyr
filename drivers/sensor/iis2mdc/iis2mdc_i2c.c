@@ -11,7 +11,7 @@
 #define DT_DRV_COMPAT st_iis2mdc
 
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "iis2mdc.h"
 

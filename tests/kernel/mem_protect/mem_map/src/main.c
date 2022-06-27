@@ -5,10 +5,10 @@
  */
 
 #include <ztest.h>
-#include <sys/mem_manage.h>
-#include <toolchain.h>
+#include <zephyr/sys/mem_manage.h>
+#include <zephyr/toolchain.h>
 #include <mmu.h>
-#include <linker/sections.h>
+#include <zephyr/linker/sections.h>
 
 /* 32-bit IA32 page tables have no mechanism to restrict execution */
 #if defined(CONFIG_X86) && !defined(CONFIG_X86_64) && !defined(CONFIG_X86_PAE)
@@ -92,7 +92,7 @@ static void transplanted_function(bool *executed)
 }
 
 /**
- * Show that mapping with/withour K_MEM_PERM_EXEC works as expected
+ * Show that mapping with/without K_MEM_PERM_EXEC works as expected
  *
  * @ingroup kernel_memprotect_tests
  */

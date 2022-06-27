@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <drivers/console/uart_mux.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/console/uart_mux.h>
 
 #ifdef __cplusplus
 extern "C" {

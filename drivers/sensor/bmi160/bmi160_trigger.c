@@ -5,18 +5,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
 
 #include "bmi160.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(BMI160, CONFIG_SENSOR_LOG_LEVEL);
 
 static void bmi160_handle_anymotion(const struct device *dev)
 {
-	struct bmi160_data *data = to_data(dev);
+	struct bmi160_data *data = dev->data;
 	struct sensor_trigger anym_trigger = {
 		.type = SENSOR_TRIG_DELTA,
 		.chan = SENSOR_CHAN_ACCEL_XYZ,
@@ -29,7 +29,7 @@ static void bmi160_handle_anymotion(const struct device *dev)
 
 static void bmi160_handle_drdy(const struct device *dev, uint8_t status)
 {
-	struct bmi160_data *data = to_data(dev);
+	struct bmi160_data *data = dev->data;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
 	};
@@ -121,7 +121,7 @@ static int bmi160_trigger_drdy_set(const struct device *dev,
 				   enum sensor_channel chan,
 				   sensor_trigger_handler_t handler)
 {
-	struct bmi160_data *data = to_data(dev);
+	struct bmi160_data *data = dev->data;
 	uint8_t drdy_en = 0U;
 
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
@@ -156,7 +156,7 @@ static int bmi160_trigger_drdy_set(const struct device *dev,
 static int bmi160_trigger_anym_set(const struct device *dev,
 				   sensor_trigger_handler_t handler)
 {
-	struct bmi160_data *data = to_data(dev);
+	struct bmi160_data *data = dev->data;
 	uint8_t anym_en = 0U;
 
 	data->handler_anymotion = handler;
@@ -265,8 +265,8 @@ int bmi160_trigger_set(const struct device *dev,
 
 int bmi160_trigger_mode_init(const struct device *dev)
 {
-	struct bmi160_data *data = to_data(dev);
-	const struct bmi160_cfg *cfg = to_config(dev);
+	struct bmi160_data *data = dev->data;
+	const struct bmi160_cfg *cfg = dev->config;
 	int ret;
 
 	if (!device_is_ready(cfg->interrupt.port)) {

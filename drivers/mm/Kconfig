@@ -1,0 +1,30 @@
+# Copyright (c) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MM_DRV
+	bool "Memory Management Drivers [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select KERNEL_VM_SUPPORT
+	help
+	  Include Memory Management drivers in system config
+
+if MM_DRV
+
+config MM_DRV_PAGE_SIZE
+	hex "Memory Page Size"
+	default 0x1000
+	help
+	  Size of memory pages.
+
+DT_COMPAT_MM_INTEL_ADSP_TLB := intel,adsp-tlb
+
+config MM_DRV_INTEL_ADSP_TLB
+	bool "Intel Audio DSP TLB Driver"
+	default $(dt_compat_enabled,$(DT_COMPAT_MM_INTEL_ADSP_TLB))
+	depends on SOC_FAMILY_INTEL_ADSP
+	help
+	  Driver for the translation lookup buffer on
+	  Intel Audio DSP hardware.
+
+endif # MM_DRV

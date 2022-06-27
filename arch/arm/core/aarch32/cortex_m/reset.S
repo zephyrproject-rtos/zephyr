@@ -11,9 +11,9 @@
  * Reset handler that prepares the system for running C code.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 #include "vector_table.h"
 
 _ASM_FILE_PROLOGUE
@@ -21,6 +21,9 @@ _ASM_FILE_PROLOGUE
 GTEXT(z_arm_reset)
 GTEXT(memset)
 GDATA(z_interrupt_stacks)
+#if defined(CONFIG_DEBUG_THREAD_INFO)
+GDATA(z_sys_post_kernel)
+#endif
 #if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
 GTEXT(z_arm_platform_init)
 #endif
@@ -51,7 +54,6 @@ GDATA(z_main_stack)
  * When these steps are completed, jump to z_arm_prep_c(), which will finish
  * setting up the system for running C code.
  *
- * @return N/A
  */
 
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,z_arm_reset)
@@ -63,6 +65,13 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,z_arm_reset)
  * search for a __start symbol instead, so create that alias here.
  */
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
+
+#if defined(CONFIG_DEBUG_THREAD_INFO)
+    /* Clear z_sys_post_kernel flag for RTOS aware debuggers */
+    movs.n r0, #0
+    ldr r1, =z_sys_post_kernel
+    strb r0, [r1]
+#endif /* CONFIG_DEBUG_THREAD_INFO */
 
 #if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
     /* Reset CONTROL register */

@@ -15,3 +15,4 @@ tests:
   sample.smp.pktqueue:
     tags: introduction
     filter: (CONFIG_MP_NUM_CPUS > 1)
+    platform_exclude: esp32 esp_wrover_kit heltec_wifi_lora32_v2 odroid_go olimex_esp32_evb

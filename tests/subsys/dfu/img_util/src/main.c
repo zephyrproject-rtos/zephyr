@@ -6,8 +6,8 @@
  */
 
 #include <ztest.h>
-#include <storage/flash_map.h>
-#include <dfu/flash_img.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/dfu/flash_img.h>
 
 void test_init_id(void)
 {
@@ -78,7 +78,7 @@ void test_collecting(void)
 			data[j] = k++;
 		}
 		ret = flash_img_buffered_write(&ctx, data, sizeof(data), false);
-		zassert_true(ret == 0, "image colletion fail: %d\n", ret);
+		zassert_true(ret == 0, "image collection fail: %d\n", ret);
 	}
 
 	zassert(flash_img_buffered_write(&ctx, data, 0, true) == 0, "pass",

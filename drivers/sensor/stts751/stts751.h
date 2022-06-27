@@ -12,11 +12,11 @@
 #define ZEPHYR_DRIVERS_SENSOR_STTS751_STTS751_H_
 
 #include <stdint.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/types.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include "stts751_reg.h"
 
 struct stts751_config {

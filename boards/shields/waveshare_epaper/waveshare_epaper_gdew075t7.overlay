@@ -6,8 +6,14 @@
 
 #include "waveshare_epaper_common.dtsi"
 
+/ {
+	chosen {
+		zephyr,display = &gd7965;
+	};
+};
+
 &arduino_spi {
-	gd7965@0 {
+	gd7965: gd7965@0 {
 		compatible = "gooddisplay,gd7965";
 		label = "GD7965";
 		spi-max-frequency = <4000000>;

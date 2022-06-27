@@ -14,12 +14,12 @@
 #define __TCP_INTERNAL_H
 
 #include <zephyr/types.h>
-#include <random/rand32.h>
+#include <zephyr/random/rand32.h>
 
-#include <net/net_core.h>
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
-#include <net/net_context.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_context.h>
 
 #include "connection.h"
 
@@ -238,7 +238,7 @@ static inline int net_tcp_send_data(struct net_context *context,
  * @param cb TCP receive callback function
  * @param user_data TCP receive callback user data
  *
- * @return 0 if no erro, < 0 in case of error
+ * @return 0 if no error, < 0 in case of error
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
@@ -343,7 +343,7 @@ static inline int net_tcp_update_recv_wnd(struct net_context *context,
  *
  * @param context Network context
  *
- * @return 0 on success where a TCP FIN packet has been queueed, -ENOTCONN
+ * @return 0 on success where a TCP FIN packet has been queued, -ENOTCONN
  *         in case the socket was not connected or listening, -EOPNOTSUPP
  *         in case it was not a TCP socket or -EPROTONOSUPPORT if TCP is not
  *         supported

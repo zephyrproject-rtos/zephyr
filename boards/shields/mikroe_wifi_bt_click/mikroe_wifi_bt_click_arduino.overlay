@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2022 Linaro Limited.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_serial {
+	status = "okay";
+	current-speed = <115200>;
+
+	mikroe_wifi_bt_click {
+		compatible = "espressif,esp-at";
+		label = "mikroe_wifi_bt_click_arduino";
+		status = "okay";
+	};
+};

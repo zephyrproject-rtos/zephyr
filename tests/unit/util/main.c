@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
 
 #include "test.inc"

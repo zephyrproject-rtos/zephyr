@@ -247,7 +247,7 @@ Then build and flash an application. Here is an example for the
 
 Run a serial host program to connect with your board:
 Per default the console on ``usart1`` is available on the USB Type C connector
-via the build-in USB to UART converter.
+via the built-in USB to UART converter.
 
 .. code-block:: console
 

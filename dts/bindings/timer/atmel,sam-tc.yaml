@@ -4,7 +4,9 @@ description: Atmel SAM Timer Counter (TC) node
 
 compatible: "atmel,sam-tc"
 
-include: base.yaml
+include:
+    - name: base.yaml
+    - name: pinctrl-device.yaml
 
 properties:
     reg:
@@ -55,14 +57,13 @@ properties:
         the driver to count events generated on the TIOA, TIOB signal connected
         to the external pin.
 
-    pinctrl-0:
-      type: phandles
+    reg-rc:
+      type: int
       required: false
       description: |
-        PIO pin configuration for Timer Counter signals.  We expect that
-        the phandles will reference pinctrl nodes.  These nodes will
-        have a nodelabel that matches the Atmel SoC HAL defines and
-        be of the form p<port><pin><periph>_<inst>_<signal>.
-
-        For example the TC0 on SAME7x would be
-           pinctrl-0 = <&pa0b_tc0_tioa0 &pa1b_tc0_tiob0>;
+        Register C compare/match value. RC can be used as compare/match unit
+        for an specific timer unit. Their use depends on how timer channel
+        is configured,see reg-cmr. It can be used as trigger for both input
+        capture or counter mode, or even as event source. The RC register
+        behavior is SoC dependent. For more information and use cases,
+        check SoC datasheet and application notes.

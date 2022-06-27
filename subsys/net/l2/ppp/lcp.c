@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
-#include <net/net_core.h>
-#include <net/net_l2.h>
-#include <net/net_if.h>
-#include <net/net_pkt.h>
-#include <net/net_mgmt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_l2.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_mgmt.h>
 
-#include <net/ppp.h>
+#include <zephyr/net/ppp.h>
 
 #include "net_private.h"
 
@@ -206,6 +206,11 @@ static void lcp_finished(struct ppp_fsm *fsm)
 					       lcp.fsm);
 
 	ppp_link_terminated(ctx);
+
+	/* take the remainder down */
+	ppp_mgmt_raise_carrier_off_event(ctx->iface);
+
+	net_if_carrier_down(ctx->iface);
 }
 
 #if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
@@ -308,8 +313,9 @@ static void lcp_init(struct ppp_context *ctx)
 
 	ppp_fsm_name_set(&ctx->lcp.fsm, ppp_proto2str(PPP_LCP));
 
-#if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
 	ctx->lcp.my_options.mru = net_if_get_mtu(ctx->iface);
+
+#if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
 	ctx->lcp.fsm.my_options.info = lcp_my_options;
 	ctx->lcp.fsm.my_options.data = ctx->lcp.my_options_data;
 	ctx->lcp.fsm.my_options.count = ARRAY_SIZE(lcp_my_options);

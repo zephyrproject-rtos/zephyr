@@ -9,7 +9,7 @@
 #ifndef __IPSO_FILLING_SENSOR__
 #define __IPSO_FILLING_SENSOR__
 
-#include <net/lwm2m.h>
+#include <zephyr/net/lwm2m.h>
 
 /* Resource IDs for filling sensor */
 /* clang-format off */

@@ -7,14 +7,14 @@
 
 #define DT_DRV_COMPAT silabs_si7055
 
-#include <drivers/sensor.h>
-#include <kernel.h>
-#include <device.h>
-#include <logging/log.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/i2c.h>
 #include "si7055.h"
 #if CONFIG_SI7055_ENABLE_CHECKSUM
-#include <sys/crc.h>
+#include <zephyr/sys/crc.h>
 #endif
 
 LOG_MODULE_REGISTER(si7055, CONFIG_SENSOR_LOG_LEVEL);

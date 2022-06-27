@@ -146,7 +146,7 @@ hardware features:
 |           |            | HDC1010 polling      |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 
 Connections and IOs
 ===================
@@ -328,7 +328,7 @@ Power supply testpoint
 | TP13  | testpoint             | testpoint boost converter input voltage   |
 +-------+-----------------------+-------------------------------------------+
 
-Build-in Debug Adapter
+Built-in Debug Adapter
 ======================
 
 The debug adapter is based on the DAPLink interface firmware and

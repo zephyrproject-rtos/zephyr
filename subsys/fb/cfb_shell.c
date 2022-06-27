@@ -12,15 +12,12 @@
  */
 
 #include <stdlib.h>
-#include <shell/shell.h>
-#include <display/cfb.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/display/cfb.h>
 
 #define HELP_NONE "[none]"
 #define HELP_INIT "call \"cfb init\" first"
 #define HELP_PRINT "<col: pos> <row: pos> \"<text>\""
-
-#define DISPLAY_DRIVER	CONFIG_CHARACTER_FRAMEBUFFER_SHELL_DRIVER_NAME
-
 
 static const struct device *dev;
 static const char * const param_name[] = {
@@ -299,7 +296,7 @@ static int cmd_get_device(const struct shell *shell, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
-	shell_print(shell, "Framebuffer Device: %s", DISPLAY_DRIVER);
+	shell_print(shell, "Framebuffer Device: %s", dev->name);
 
 	return err;
 }
@@ -413,10 +410,9 @@ static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
-	dev = device_get_binding(DISPLAY_DRIVER);
-
-	if (dev == NULL) {
-		shell_error(shell, "Device not found");
+	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+	if (!device_is_ready(dev)) {
+		shell_error(shell, "Display device not ready");
 		return -ENODEV;
 	}
 
@@ -426,8 +422,7 @@ static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 		return err;
 	}
 
-	shell_print(shell, "Framebuffer initialized: %s", DISPLAY_DRIVER);
-
+	shell_print(shell, "Framebuffer initialized: %s", dev->name);
 	cmd_clear(shell, argc, argv);
 
 	return err;

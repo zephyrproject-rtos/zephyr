@@ -15,13 +15,12 @@
 
 #include "clock.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_telink);
 
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #include "spi_context.h"
-#include <drivers/pinmux.h>
-#include <dt-bindings/pinctrl/b91-pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 
 #define CHIP_SELECT_COUNT               3u
@@ -33,8 +32,7 @@ LOG_MODULE_REGISTER(spi_telink);
 struct spi_b91_cfg {
 	uint8_t peripheral_id;
 	gpio_pin_e cs_pin[CHIP_SELECT_COUNT];
-	const uint32_t *pinctrl_list;
-	size_t pinctrl_list_size;
+	const struct pinctrl_dev_config *pcfg;
 };
 #define SPI_CFG(dev)                    ((struct spi_b91_cfg *) ((dev)->config))
 
@@ -234,7 +232,7 @@ static void spi_b91_txrx(const struct device *dev, uint32_t len)
 	while (spi_is_busy(cfg->peripheral_id)) {
 	};
 
-	/* context complate */
+	/* context complete */
 	spi_context_complete(ctx, 0);
 }
 
@@ -265,7 +263,7 @@ static bool spi_b91_is_config_supported(const struct spi_config *config,
 		return false;
 	}
 
-	/* check for CS active hich */
+	/* check for CS active high */
 	if (config->operation & SPI_CS_ACTIVE_HIGH) {
 		LOG_ERR("CS active high not supported for HW flow control");
 		return false;
@@ -297,7 +295,7 @@ static bool spi_b91_is_config_supported(const struct spi_config *config,
 static int spi_b91_config(const struct device *dev,
 			  const struct spi_config *config)
 {
-	const struct device *pinmux;
+	int status = 0;
 	spi_mode_type_e mode = SPI_MODE0;
 	struct spi_b91_cfg *b91_config = SPI_CFG(dev);
 	struct spi_b91_data *b91_data = SPI_DATA(dev);
@@ -349,16 +347,11 @@ static int spi_b91_config(const struct device *dev,
 		}
 	}
 
-	/* get pinmux driver */
-	pinmux = DEVICE_DT_GET(DT_NODELABEL(pinmux));
-	if (!device_is_ready(pinmux)) {
-		return -ENODEV;
-	}
-
-	/* config pins */
-	for (int i = 0; i < b91_config->pinctrl_list_size; i++) {
-		pinmux_pin_set(pinmux, B91_PINMUX_GET_PIN(b91_config->pinctrl_list[i]),
-			       B91_PINMUX_GET_FUNC(b91_config->pinctrl_list[i]));
+	/* configure pins */
+	status = pinctrl_apply_state(b91_config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (status < 0) {
+		LOG_ERR("Failed to configure SPI pins");
+		return status;
 	}
 
 	/* save context config */
@@ -466,32 +459,30 @@ static struct spi_driver_api spi_b91_api = {
 };
 
 /* SPI driver registration */
-#define SPI_B91_INIT(inst)							\
-										\
-	static const uint32_t spi_pins_##inst[] =				\
-		B91_PINMUX_DT_INST_GET_ARRAY(inst, 0);				\
-										\
-	static struct spi_b91_data spi_b91_data_##inst = {			\
-		SPI_CONTEXT_INIT_LOCK(spi_b91_data_##inst, ctx),		\
-		SPI_CONTEXT_INIT_SYNC(spi_b91_data_##inst, ctx),		\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)		\
-	};									\
-										\
-	static struct spi_b91_cfg spi_b91_cfg_##inst = {			\
-		.peripheral_id = DT_INST_ENUM_IDX(inst, peripheral_id),		\
-		.cs_pin[0] = DT_STRING_TOKEN(DT_DRV_INST(inst), cs0_pin),	\
-		.cs_pin[1] = DT_STRING_TOKEN(DT_DRV_INST(inst), cs1_pin),	\
-		.cs_pin[2] = DT_STRING_TOKEN(DT_DRV_INST(inst), cs2_pin),	\
-		.pinctrl_list_size = ARRAY_SIZE(spi_pins_##inst),		\
-		.pinctrl_list = spi_pins_##inst					\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(inst, spi_b91_init,				\
-			      NULL,						\
-			      &spi_b91_data_##inst,				\
-			      &spi_b91_cfg_##inst,				\
-			      POST_KERNEL,					\
-			      CONFIG_SPI_INIT_PRIORITY,				\
+#define SPI_B91_INIT(inst)						  \
+									  \
+	PINCTRL_DT_INST_DEFINE(inst);					  \
+									  \
+	static struct spi_b91_data spi_b91_data_##inst = {		  \
+		SPI_CONTEXT_INIT_LOCK(spi_b91_data_##inst, ctx),	  \
+		SPI_CONTEXT_INIT_SYNC(spi_b91_data_##inst, ctx),	  \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)	  \
+	};								  \
+									  \
+	static struct spi_b91_cfg spi_b91_cfg_##inst = {		  \
+		.peripheral_id = DT_INST_ENUM_IDX(inst, peripheral_id),	  \
+		.cs_pin[0] = DT_INST_STRING_TOKEN(inst, cs0_pin),	  \
+		.cs_pin[1] = DT_INST_STRING_TOKEN(inst, cs1_pin),	  \
+		.cs_pin[2] = DT_INST_STRING_TOKEN(inst, cs2_pin),	  \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		  \
+	};								  \
+									  \
+	DEVICE_DT_INST_DEFINE(inst, spi_b91_init,			  \
+			      NULL,					  \
+			      &spi_b91_data_##inst,			  \
+			      &spi_b91_cfg_##inst,			  \
+			      POST_KERNEL,				  \
+			      CONFIG_SPI_INIT_PRIORITY,			  \
 			      &spi_b91_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_B91_INIT)

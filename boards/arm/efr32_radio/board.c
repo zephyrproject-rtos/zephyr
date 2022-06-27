@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <drivers/gpio.h>
-#include <sys/printk.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/printk.h>
 
 /* This pin is used to enable the serial port using the board controller */
 #ifdef CONFIG_BOARD_EFR32_RADIO_BRD4180A

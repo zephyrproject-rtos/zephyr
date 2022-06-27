@@ -7,13 +7,14 @@
 #define DT_DRV_COMPAT nuvoton_npcx_pwm
 
 #include <assert.h>
-#include <drivers/pwm.h>
-#include <dt-bindings/clock/npcx_clock.h>
-#include <drivers/clock_control.h>
-#include <kernel.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/dt-bindings/clock/npcx_clock.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_npcx, LOG_LEVEL_ERR);
 
 /* 16-bit period cycles/prescaler in NPCX PWM modules */
@@ -38,11 +39,8 @@ struct pwm_npcx_config {
 	uintptr_t base;
 	/* clock configuration */
 	struct npcx_clk_cfg clk_cfg;
-	/* Output buffer - open drain */
-	const bool is_od;
 	/* pinmux configuration */
-	const uint8_t alts_size;
-	const struct npcx_alt *alts_list;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 /* Driver data */
@@ -52,16 +50,11 @@ struct pwm_npcx_data {
 };
 
 /* Driver convenience defines */
-#define DRV_CONFIG(dev) ((const struct pwm_npcx_config *)(dev)->config)
-
-#define DRV_DATA(dev) ((struct pwm_npcx_data *)(dev)->data)
-
-#define HAL_INSTANCE(dev) (struct pwm_reg *)(DRV_CONFIG(dev)->base)
+#define HAL_INSTANCE(dev) ((struct pwm_reg *)((const struct pwm_npcx_config *)(dev)->config)->base)
 
 /* PWM local functions */
 static void pwm_npcx_configure(const struct device *dev, int clk_bus)
 {
-	const struct pwm_npcx_config *const config = DRV_CONFIG(dev);
 	struct pwm_reg *const inst = HAL_INSTANCE(dev);
 
 	/* Disable PWM for module configuration first */
@@ -83,40 +76,38 @@ static void pwm_npcx_configure(const struct device *dev, int clk_bus)
 		inst->PWMCTL |= BIT(NPCX_PWMCTL_CKSEL);
 	else
 		inst->PWMCTL &= ~BIT(NPCX_PWMCTL_CKSEL);
-
-	/* Select output buffer type of io pad */
-	if (config->is_od)
-		inst->PWMCTLEX |= BIT(NPCX_PWMCTLEX_OD_OUT);
-	else
-		inst->PWMCTLEX &= ~BIT(NPCX_PWMCTLEX_OD_OUT);
 }
 
 /* PWM api functions */
-static int pwm_npcx_pin_set(const struct device *dev, uint32_t pwm,
-			   uint32_t period_cycles, uint32_t pulse_cycles,
-			   pwm_flags_t flags)
+static int pwm_npcx_set_cycles(const struct device *dev, uint32_t channel,
+			       uint32_t period_cycles, uint32_t pulse_cycles,
+			       pwm_flags_t flags)
 {
 	/* Single channel for each pwm device */
-	ARG_UNUSED(pwm);
-	struct pwm_npcx_data *const data = DRV_DATA(dev);
+	ARG_UNUSED(channel);
+	struct pwm_npcx_data *const data = dev->data;
 	struct pwm_reg *const inst = HAL_INSTANCE(dev);
 	int prescaler;
+	uint32_t ctl;
+	uint32_t ctr;
+	uint32_t dcr;
+	uint32_t prsc;
 
-	if (pulse_cycles > period_cycles)
-		return -EINVAL;
-
-	/* Disable PWM before configuring */
-	inst->PWMCTL &= ~BIT(NPCX_PWMCTL_PWR);
+	ctl = inst->PWMCTL | BIT(NPCX_PWMCTL_PWR);
 
 	/* Select PWM inverted polarity (ie. active-low pulse). */
-	if (flags & PWM_POLARITY_INVERTED)
-		inst->PWMCTL |= BIT(NPCX_PWMCTL_INVP);
-	else
-		inst->PWMCTL &= ~BIT(NPCX_PWMCTL_INVP);
+	if (flags & PWM_POLARITY_INVERTED) {
+		ctl |= BIT(NPCX_PWMCTL_INVP);
+	} else {
+		ctl &= ~BIT(NPCX_PWMCTL_INVP);
+	}
 
-	/* If pulse_cycles is 0, return directly since PWM is already off */
-	if (pulse_cycles == 0)
+	/* If pulse_cycles is 0, switch PWM off and return. */
+	if (pulse_cycles == 0) {
+		ctl &= ~BIT(NPCX_PWMCTL_PWR);
+		inst->PWMCTL = ctl;
 		return 0;
+	}
 
 	/*
 	 * Calculate PWM prescaler that let period_cycles map to
@@ -124,34 +115,48 @@ static int pwm_npcx_pin_set(const struct device *dev, uint32_t pwm,
 	 * Then prescaler = ceil (period_cycles / pwm_max_period_cycles)
 	 */
 	prescaler = ceiling_fraction(period_cycles, NPCX_PWM_MAX_PERIOD_CYCLES);
-	if (prescaler > NPCX_PWM_MAX_PRESCALER)
+	if (prescaler > NPCX_PWM_MAX_PRESCALER) {
 		return -EINVAL;
+	}
 
-	/* Set PWM prescaler.*/
-	inst->PRSC = prescaler - 1;
+	/* Set PWM prescaler. */
+	prsc = prescaler - 1;
 
-	/* Set PWM period cycles */
-	inst->CTR = (period_cycles / prescaler) - 1;
+	/* Set PWM period cycles. */
+	ctr = (period_cycles / prescaler) - 1;
 
-	/* Set PWM pulse cycles */
-	inst->DCR = (pulse_cycles / prescaler) - 1;
+	/* Set PWM pulse cycles. */
+	dcr = (pulse_cycles / prescaler) - 1;
 
 	LOG_DBG("freq %d, pre %d, period %d, pulse %d",
-			data->cycles_per_sec / period_cycles,
-			inst->PRSC + 1, inst->CTR + 1, inst->DCR + 1);
+		data->cycles_per_sec / period_cycles, prsc, ctr, dcr);
 
-	/* Enable PWM now */
-	inst->PWMCTL |= BIT(NPCX_PWMCTL_PWR);
+	/* Reconfigure only if necessary. */
+	if (inst->PWMCTL != ctl || inst->PRSC != prsc || inst->CTR != ctr) {
+		/* Disable PWM before configuring. */
+		inst->PWMCTL &= ~BIT(NPCX_PWMCTL_PWR);
+
+		inst->PRSC = prsc;
+		inst->CTR = ctr;
+		inst->DCR = dcr;
+
+		/* Enable PWM now. */
+		inst->PWMCTL = ctl;
+
+		return 0;
+	}
+
+	inst->DCR = dcr;
 
 	return 0;
 }
 
-static int pwm_npcx_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
-				      uint64_t *cycles)
+static int pwm_npcx_get_cycles_per_sec(const struct device *dev,
+				       uint32_t channel, uint64_t *cycles)
 {
 	/* Single channel for each pwm device */
-	ARG_UNUSED(pwm);
-	struct pwm_npcx_data *const data = DRV_DATA(dev);
+	ARG_UNUSED(channel);
+	struct pwm_npcx_data *const data = dev->data;
 
 	*cycles = data->cycles_per_sec;
 	return 0;
@@ -159,20 +164,20 @@ static int pwm_npcx_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
 
 /* PWM driver registration */
 static const struct pwm_driver_api pwm_npcx_driver_api = {
-	.pin_set = pwm_npcx_pin_set,
+	.set_cycles = pwm_npcx_set_cycles,
 	.get_cycles_per_sec = pwm_npcx_get_cycles_per_sec
 };
 
 static int pwm_npcx_init(const struct device *dev)
 {
-	const struct pwm_npcx_config *const config = DRV_CONFIG(dev);
-	struct pwm_npcx_data *const data = DRV_DATA(dev);
+	const struct pwm_npcx_config *const config = dev->config;
+	struct pwm_npcx_data *const data = dev->data;
 	struct pwm_reg *const inst = HAL_INSTANCE(dev);
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int ret;
 
 	/*
-	 * NPCX PWM modulee mixes byte and word registers together. Make sure
+	 * NPCX PWM module mixes byte and word registers together. Make sure
 	 * word reg access via structure won't break into two byte reg accesses
 	 * unexpectedly by toolchains options or attributes. If so, stall here.
 	 */
@@ -198,21 +203,22 @@ static int pwm_npcx_init(const struct device *dev)
 	pwm_npcx_configure(dev, config->clk_cfg.bus);
 
 	/* Configure pin-mux for PWM device */
-	npcx_pinctrl_mux_configure(config->alts_list, config->alts_size, 1);
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("PWM pinctrl setup failed (%d)", ret);
+		return ret;
+	}
 
 	return 0;
 }
 
 #define NPCX_PWM_INIT(inst)                                                    \
-	static const struct npcx_alt pwm_alts##inst[] =			       \
-					NPCX_DT_ALT_ITEMS_LIST(inst);          \
+	PINCTRL_DT_INST_DEFINE(inst);					       \
 									       \
 	static const struct pwm_npcx_config pwm_npcx_cfg_##inst = {            \
 		.base = DT_INST_REG_ADDR(inst),                                \
 		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                         \
-		.is_od = DT_INST_PROP(inst, drive_open_drain),                 \
-		.alts_size = ARRAY_SIZE(pwm_alts##inst),                       \
-		.alts_list = pwm_alts##inst,                                   \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                  \
 	};                                                                     \
 									       \
 	static struct pwm_npcx_data pwm_npcx_data_##inst;                      \

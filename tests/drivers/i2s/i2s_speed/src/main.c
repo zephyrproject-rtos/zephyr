@@ -5,7 +5,7 @@
  */
 
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 void test_i2s_tx_transfer_configure(void);

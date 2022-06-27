@@ -7,10 +7,10 @@
 	|| defined(CONFIG_BOARD_NATIVE_POSIX_64BIT) \
 	|| defined(CONFIG_SOC_SERIES_BSIM_NRFXX))
 
-#include <net/socket.h>
-#include <posix/pthread.h>
-#include <sys/util.h>
-#include <posix/unistd.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/posix/pthread.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/posix/unistd.h>
 
 #else
 
@@ -48,7 +48,7 @@ static const char *const names[] = {
 	|| defined(CONFIG_BOARD_NATIVE_POSIX_64BIT) \
 	|| defined(CONFIG_SOC_SERIES_BSIM_NRFXX))
 
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 static pthread_attr_t attr[NUM_SOCKETPAIRS];
 K_THREAD_STACK_ARRAY_DEFINE(stack, NUM_SOCKETPAIRS, STACK_SIZE);
 

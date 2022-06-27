@@ -3,13 +3,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
-#include <spinlock.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/spinlock.h>
 #include <soc.h>
 
-#define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
-			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+#define CYC_PER_TICK ((uint32_t)((uint64_t) (sys_clock_hw_cycles_per_sec()			 \
+					     >> CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER) \
+				 / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 #define MAX_CYC INT_MAX
 #define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1000
@@ -19,12 +21,17 @@
 static struct k_spinlock lock;
 static uint64_t last_count;
 
+static uint64_t get_hart_mtimecmp(void)
+{
+	return RISCV_MTIMECMP_BASE + (_current_cpu->id * 8);
+}
+
 static void set_mtimecmp(uint64_t time)
 {
 #ifdef CONFIG_64BIT
-	*(volatile uint64_t *)RISCV_MTIMECMP_BASE = time;
+	*(volatile uint64_t *)get_hart_mtimecmp() = time;
 #else
-	volatile uint32_t *r = (uint32_t *)RISCV_MTIMECMP_BASE;
+	volatile uint32_t *r = (uint32_t *)(uint32_t)get_hart_mtimecmp();
 
 	/* Per spec, the RISC-V MTIME/MTIMECMP registers are 64 bit,
 	 * but are NOT internally latched for multiword transfers.  So
@@ -77,17 +84,6 @@ static void timer_isr(const void *arg)
 
 	k_spin_unlock(&lock, key);
 	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
-}
-
-int sys_clock_driver_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	IRQ_CONNECT(RISCV_MACHINE_TIMER_IRQ, 0, timer_isr, NULL, 0);
-	last_count = mtime();
-	set_mtimecmp(last_count + CYC_PER_TICK);
-	irq_enable(RISCV_MACHINE_TIMER_IRQ);
-	return 0;
 }
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
@@ -145,10 +141,32 @@ uint32_t sys_clock_elapsed(void)
 
 uint32_t sys_clock_cycle_get_32(void)
 {
-	return (uint32_t)mtime();
+	return (uint32_t)(mtime() << CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER);
 }
 
 uint64_t sys_clock_cycle_get_64(void)
 {
-	return mtime();
+	return (mtime() << CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER);
 }
+
+static int sys_clock_driver_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	IRQ_CONNECT(RISCV_MACHINE_TIMER_IRQ, 0, timer_isr, NULL, 0);
+	last_count = mtime();
+	set_mtimecmp(last_count + CYC_PER_TICK);
+	irq_enable(RISCV_MACHINE_TIMER_IRQ);
+	return 0;
+}
+
+#ifdef CONFIG_SMP
+void smp_timer_init(void)
+{
+	set_mtimecmp(last_count + CYC_PER_TICK);
+	irq_enable(RISCV_MACHINE_TIMER_IRQ);
+}
+#endif
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

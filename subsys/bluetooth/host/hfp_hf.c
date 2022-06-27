@@ -5,21 +5,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
-#include <sys/atomic.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <sys/printk.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/printk.h>
 
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/conn.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HFP_HF)
 #define LOG_MODULE_NAME bt_hfp_hf
 #include "common/log.h"
 
-#include <bluetooth/rfcomm.h>
-#include <bluetooth/hfp_hf.h>
+#include <zephyr/bluetooth/rfcomm.h>
+#include <zephyr/bluetooth/hfp_hf.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"
@@ -33,7 +33,7 @@
 struct bt_hfp_hf_cb *bt_hf;
 
 NET_BUF_POOL_FIXED_DEFINE(hf_pool, CONFIG_BT_MAX_CONN + 1,
-			  BT_RFCOMM_BUF_SIZE(BT_HF_CLIENT_MAX_PDU), NULL);
+			  BT_RFCOMM_BUF_SIZE(BT_HF_CLIENT_MAX_PDU), 8, NULL);
 
 static struct bt_hfp_hf bt_hfp_hf_pool[CONFIG_BT_MAX_CONN];
 
@@ -47,7 +47,7 @@ static const struct {
 	{"call", 0, 1}, /* HF_CALL_IND */
 	{"callsetup", 0, 3}, /* HF_CALL_SETUP_IND */
 	{"callheld", 0, 2}, /* HF_CALL_HELD_IND */
-	{"signal", 0, 5}, /* HF_SINGNAL_IND */
+	{"signal", 0, 5}, /* HF_SIGNAL_IND */
 	{"roam", 0, 1}, /* HF_ROAM_IND */
 	{"battchg", 0, 5} /* HF_BATTERY_IND */
 };
@@ -230,7 +230,7 @@ void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 	BT_DBG("Index :%u, Value :%u", index, value);
 
 	if (index >= ARRAY_SIZE(ag_ind)) {
-		BT_ERR("Max only %lu indicators are supported",
+		BT_ERR("Max only %zu indicators are supported",
 		       ARRAY_SIZE(ag_ind));
 		return;
 	}

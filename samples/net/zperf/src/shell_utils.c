@@ -5,12 +5,12 @@
  */
 
 #include <ctype.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include "shell_utils.h"
 

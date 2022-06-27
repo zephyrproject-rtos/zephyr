@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Andrei-Edward Popa <andrei.popa105@yahoo.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Reset Controller
+
+properties:
+    "#reset-cells":
+      type: int
+      required: true
+      description: Number of cells in reset property

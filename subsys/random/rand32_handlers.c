@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <random/rand32.h>
-#include <syscall_handler.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/syscall_handler.h>
 
 
 static inline uint32_t z_vrfy_sys_rand32_get(void)

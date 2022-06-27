@@ -6,9 +6,10 @@ common:
 tests:
   drivers.spi.loopback:
     harness: ztest
+    filter: not CONFIG_SOC_FAMILY_STM32
     harness_config:
       fixture: spi_loopback
-  driver.spi.loopback.internal:
+  drivers.spi.loopback.internal:
     filter: CONFIG_SPI_LOOPBACK_MODE_LOOP
   drivers.mcux_dspi_dma.loopback:
     tags: dma
@@ -17,3 +18,18 @@ tests:
     harness_config:
       fixture: spi_loopback
     platform_allow: frdm_k64f
+  drivers.stm32_spi.loopback:
+    harness: ztest
+    extra_args: OVERLAY_CONFIG="overlay-stm32-spi.conf"
+    harness_config:
+      fixture: spi_loopback
+    filter: CONFIG_SOC_FAMILY_STM32
+  drivers.stm32_spi_dma.loopback:
+    tags: dma
+    harness: ztest
+    harness_config:
+      fixture: spi_loopback
+    extra_args: OVERLAY_CONFIG="overlay-stm32-spi-dma.conf"
+    filter: CONFIG_SOC_FAMILY_STM32
+    platform_allow: nucleo_g474re nucleo_f207zg nucleo_f429zi nucleo_f746zg nucleo_wb55rg
+        nucleo_wl55jc nucleo_h743zi

@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
 #include <stdlib.h>
 #include <stdio.h>

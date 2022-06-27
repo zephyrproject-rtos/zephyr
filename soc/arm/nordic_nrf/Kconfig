@@ -16,6 +16,14 @@ config SOC_FAMILY
 source "soc/arm/nordic_nrf/Kconfig.peripherals"
 source "soc/arm/nordic_nrf/*/Kconfig.soc"
 
+config NRF_SOC_SECURE_SUPPORTED
+	def_bool !TRUSTED_EXECUTION_NONSECURE || BUILD_WITH_TFM
+	help
+	  Hidden function to indicate that that the soc_secure functions are
+	  available.
+	  The functions are always available when not in non-secure.
+	  For non-secure the functions must redirect to secure services exposed
+	  by the secure firmware.
 
 config NRF_MPU_FLASH_REGION_SIZE
 	hex
@@ -40,7 +48,7 @@ config NRF_ACL_FLASH_REGION_SIZE
 
 config NFCT_PINS_AS_GPIOS
 	bool "NFCT pins as GPIOs"
-	depends on HAS_HW_NRF_NFCT
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_NFCT))
 	help
 	  Two pins are usually reserved for NFC in SoCs that implement the
 	  NFCT peripheral. This option switches them to normal GPIO mode.
@@ -120,7 +128,7 @@ config NRF_SECURE_APPROTECT_USER_HANDLING
 endchoice
 
 config NRF_TRACE_PORT
-	bool "Enable nRF TPIU"
+	bool "nRF TPIU"
 	depends on !SOC_SERIES_NRF51X
 	help
 	  Enable this option to initialize the TPIU (Trace Port Interface

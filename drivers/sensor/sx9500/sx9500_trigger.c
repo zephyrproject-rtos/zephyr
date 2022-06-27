@@ -8,15 +8,15 @@
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
 
 #include "sx9500.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(SX9500, CONFIG_SENSOR_LOG_LEVEL);
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD

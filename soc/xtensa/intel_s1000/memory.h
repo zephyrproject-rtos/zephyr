@@ -6,7 +6,6 @@
 #ifndef __INC_MEMORY_H
 #define __INC_MEMORY_H
 
-#include <autoconf.h>
 
 /* L2 HP SRAM */
 #define L2_VECTOR_SIZE				0x1000
@@ -72,7 +71,7 @@
 #define LPRAM_BASE				(DT_REG_ADDR(DT_NODELABEL(sram1)))
 #define LPRAM_SIZE				(DT_REG_SIZE(DT_NODELABEL(sram1)))
 
-/* Boot vector resideing in LP-SRAM for core #1 */
+/* Boot vector residing in LP-SRAM for core #1 */
 #define LPSRAM_BOOT_VECTOR_ADDR			(LPRAM_BASE + 0x08)
 
 #define IPC_DSP_SIZE                0x00000080

@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <wait_q.h>
-#include <posix/time.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/posix/time.h>
 
 #ifdef CONFIG_POSIX_CLOCK
 int64_t timespec_to_timeoutms(const struct timespec *abstime)

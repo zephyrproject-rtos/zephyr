@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <tc_util.h>
 #include <errno.h>
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 
-#include <net/dummy.h>
-#include <net/net_mgmt.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/dummy.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_pkt.h>
 #include <ztest.h>
 
 #define THREAD_SLEEP 50 /* ms */
@@ -32,7 +32,7 @@ static uint32_t event2throw;
 static uint32_t throw_times;
 static uint32_t throw_sleep;
 static bool with_info;
-static K_THREAD_STACK_DEFINE(thrower_stack, 512 + CONFIG_TEST_EXTRA_STACKSIZE);
+static K_THREAD_STACK_DEFINE(thrower_stack, 512 + CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_thread thrower_thread_data;
 static struct k_sem thrower_lock;
 

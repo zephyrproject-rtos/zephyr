@@ -2,7 +2,9 @@ sample:
   description: Audio with SOF
   name: sof
 common:
-    tags: audio
+  tags: audio
+  modules:
+    - sof
 tests:
   sample.audio.sof:
     tags: sof

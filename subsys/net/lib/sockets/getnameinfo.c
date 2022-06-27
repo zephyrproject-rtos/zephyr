@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <errno.h>
-#include <net/socket.h>
+#include <zephyr/net/socket.h>
 
 int zsock_getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 		      char *host, socklen_t hostlen,

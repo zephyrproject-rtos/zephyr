@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BT_HRS
-	bool "Enable GATT Heart Rate service"
+	bool "GATT Heart Rate service"
 
 if BT_HRS
 
@@ -29,6 +29,6 @@ endchoice
 
 module = BT_HRS
 module-str = HRS
-source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+source "subsys/logging/Kconfig.template.log_config"
 
 endif # BT_HRS

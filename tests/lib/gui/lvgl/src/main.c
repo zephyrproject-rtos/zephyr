@@ -6,10 +6,10 @@
 
 #include "img.h"
 
-#include <zephyr.h>
-#include <device.h>
-#include <fs/fs.h>
-#include <fs/littlefs.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/littlefs.h>
 #include <ztest.h>
 
 #include <lvgl.h>
@@ -36,7 +36,7 @@ void test_add_delete_screen(void)
 
 	zassert_not_null(default_screen, "No default screen");
 
-	lv_obj_t *new_screen = lv_obj_create(NULL, NULL);
+	lv_obj_t *new_screen = lv_obj_create(NULL);
 
 	zassert_not_null(new_screen, "Failed to create new screen");
 
@@ -61,12 +61,12 @@ void test_add_delete_screen(void)
 }
 void test_add_img(void)
 {
-	lv_obj_t *img = lv_img_create(lv_scr_act(), NULL);
+	lv_obj_t *img = lv_img_create(lv_scr_act());
 
 	zassert_not_null(img, "Failed to create image");
 
 	lv_img_set_src(img, IMG_FILE_PATH);
-	lv_obj_align(img, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
 
 	lv_task_handler();
 }

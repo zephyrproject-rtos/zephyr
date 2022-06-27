@@ -14,6 +14,7 @@
 #define CONFIG_BT_CTLR_FILTER_ACCEPT_LIST 1
 #define CONFIG_BT_CTLR_PRIVACY 1
 #define CONFIG_BT_CTLR_RL_SIZE 8
+#define CONFIG_BT_CTLR_FAL_SIZE 8
 #define CONFIG_BT_CTLR_RPA_CACHE_SIZE 4
 #define CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY 1
 #define CONFIG_BT_LOG_LEVEL 1
@@ -74,7 +75,7 @@ void helper_privacy_add(int skew)
 	ex_pos = (1 + skew) % CONFIG_BT_CTLR_RPA_CACHE_SIZE;
 	zassert_equal(pos, ex_pos, "");
 
-	/* check that a1 can no loger be found */
+	/* check that a1 can no longer be found */
 	pos = prpa_cache_find(&a1);
 	zassert_equal(pos, FILTER_IDX_NONE, "");
 }

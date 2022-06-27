@@ -8,5 +8,14 @@ if BOARD_STM32F429I_DISC1
 config BOARD
 	default "stm32f429i_disc1"
 
+config SPI
+	default y if DISPLAY
+
+config MEMC
+	default y if DISPLAY
+
+config LV_Z_DISPLAY_DEV_NAME
+	depends on LVGL
+	default "LTDC" if STM32_LTDC
 
 endif # BOARD_STM32F429I_DISC1

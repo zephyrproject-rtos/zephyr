@@ -5,14 +5,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
-#include <net/net_core.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
 
-#include <net/ppp.h>
-#include <net/dns_resolve.h>
+#include <zephyr/net/ppp.h>
+#include <zephyr/net/dns_resolve.h>
 
 #include "net_private.h"
 

@@ -1,0 +1,63 @@
+# Copyright (c) 2020 Linaro Limited.
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+name: Documentation Publish (Pull Request)
+
+on:
+  workflow_run:
+    workflows: ["Documentation Build"]
+    types:
+    - completed
+
+jobs:
+  doc-publish:
+    name: Publish Documentation
+    runs-on: ubuntu-latest
+    if: |
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.repository == 'zephyrproject-rtos/zephyr'
+
+    steps:
+    - name: Download artifacts
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        workflow: doc-build.yml
+        run_id: ${{ github.event.workflow_run.id }}
+
+    - name: Load PR number
+      run: |
+        echo "PR_NUM=$(<pr_num/pr_num)" >> $GITHUB_ENV
+
+    - name: Check PR number
+      id: check-pr
+      uses: carpentries/actions/check-valid-pr@v0.8
+      with:
+        pr: ${{ env.PR_NUM }}
+        sha: ${{ github.event.workflow_run.head_sha }}
+
+    - name: Validate PR number
+      if: steps.check-pr.outputs.VALID != 'true'
+      run: |
+        echo "ABORT: PR number validation failed!"
+        exit 1
+
+    - name: Uncompress HTML docs
+      run: |
+        tar xf html-output/html-output.tar.xz -C html-output
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_BUILDS_ZEPHYR_PR_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_BUILDS_ZEPHYR_PR_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Upload to AWS S3
+      env:
+        HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      run: |
+        aws s3 sync --quiet html-output/html \
+          s3://builds.zephyrproject.org/${{ github.event.repository.name }}/pr/${PR_NUM}/docs \
+          --delete

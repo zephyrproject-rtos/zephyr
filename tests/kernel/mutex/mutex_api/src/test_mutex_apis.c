@@ -6,7 +6,7 @@
 #include <ztest.h>
 
 #define TIMEOUT 500
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define THREAD_HIGH_PRIORITY 1
 #define THREAD_MID_PRIORITY 3
 #define THREAD_LOW_PRIORITY 5
@@ -111,7 +111,7 @@ static void tThread_T1_priority_inheritance(void *p1, void *p2, void *p3)
 	/* record its original priority */
 	int priority_origin = k_thread_priority_get((k_tid_t)p2);
 
-	/* wait for a time period to see if priority inheritance happended */
+	/* wait for a time period to see if priority inheritance happened */
 	k_sleep(K_MSEC(500));
 
 	int priority = k_thread_priority_get((k_tid_t)p2);
@@ -182,7 +182,7 @@ static void tThread_waiter(void *p1, void *p2, void *p3)
 	zassert_true(k_mutex_lock((struct k_mutex *)p1, K_FOREVER) == 0,
 			"Failed to get the test_mutex");
 
-	/* keep the next waiter waitting for a while */
+	/* keep the next waiter waiting for a while */
 	thread_ret = TC_PASS;
 	k_mutex_unlock((struct k_mutex *)p1);
 }
@@ -285,12 +285,12 @@ void test_mutex_recursive(void)
 
 /**
  * @brief Test mutex's priority inheritance mechanism
- * @details To verify mutex provide priority inheritance to prevent prority
+ * @details To verify mutex provide priority inheritance to prevent priority
  * inversion, and there are 3 cases need to run.
  * The thread T1 hold the mutex first and cases list as below:
- * - case 1. When prority T2 > T1, priority inheritance happened.
- * - case 2. When prority T1 > T2, priority inheritance won't happened.
- * - case 3. When prority T2 > T3 > T1, priority inheritance happened but T2
+ * - case 1. When priority T2 > T1, priority inheritance happened.
+ * - case 2. When priority T1 > T2, priority inheritance won't happened.
+ * - case 3. When priority T2 > T3 > T1, priority inheritance happened but T2
  *   wait for timeout and T3 got the mutex.
  * @ingroup kernel_mutex_tests
  */

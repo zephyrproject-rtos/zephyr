@@ -31,10 +31,6 @@
 	cpu-power-states = <&stop0 &stop1 &stop2>;
 };
 
-&usart1 {
-	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
-};
-
 &lptim1 {
 	status = "okay";
 };
@@ -60,7 +56,7 @@
 		/* 2KB at the end of 512KB flash is set for storage */
 		storage_partition: partition@7f800 {
 			   label = "storage";
-			   reg = <0x0007f800 0x00000800>;
+			   reg = <0x0007f800 DT_SIZE_K(2)>;
 		   };
 	};
 };

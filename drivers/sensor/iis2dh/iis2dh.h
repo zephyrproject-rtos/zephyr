@@ -11,10 +11,10 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_IIS2DH_IIS2DH_H_
 #define ZEPHYR_DRIVERS_SENSOR_IIS2DH_IIS2DH_H_
 
-#include <drivers/spi.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/sensor.h>
 #include "iis2dh_reg.h"
 
 /*
@@ -38,7 +38,7 @@
  * @bus_name: Pointer to bus master identifier.
  * @pm: Power mode (lis2dh_powermode).
  * @int_gpio_port: Pointer to GPIO PORT identifier.
- * @int_gpio_pin: GPIO pin number connecter to sensor int pin.
+ * @int_gpio_pin: GPIO pin number connected to sensor int pin.
  */
 struct iis2dh_device_config {
 	const char *bus_name;

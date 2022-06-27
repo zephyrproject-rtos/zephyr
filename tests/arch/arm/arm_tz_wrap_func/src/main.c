@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include <aarch32/cortex_m/tz_ns.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 static bool expect_preface;
 static bool expect_postface;

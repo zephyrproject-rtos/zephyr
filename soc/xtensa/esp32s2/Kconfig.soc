@@ -8,6 +8,9 @@ config SOC_ESP32S2
 	select DYNAMIC_INTERRUPTS
 	select CLOCK_CONTROL
 	select CLOCK_CONTROL_ESP32
+	select PINCTRL
+	select XIP
+	select HAS_ESPRESSIF_HAL
 
 if SOC_ESP32S2
 
@@ -18,6 +21,14 @@ config IDF_TARGET_ESP32S2
 config ESPTOOLPY_FLASHFREQ_80M
 	bool
 	default y
+
+config FLASH_SIZE
+	int
+	default $(dt_node_reg_size_int,/soc/flash-controller@3f402000/flash@0,0)
+
+config FLASH_BASE_ADDRESS
+	hex
+	default $(dt_node_reg_addr_hex,/soc/flash-controller@3f402000/flash@0)
 
 choice
 	prompt "Instruction cache line size"
@@ -191,16 +202,16 @@ choice ESP32S2_UNIVERSAL_MAC_ADDRESSES
 	  When using a custom universal MAC address range, the correct setting will depend on the
 	  allocation of MAC addresses in this range (either 1 or 2 per device).
 
-	config ESP32S2_UNIVERSAL_MAC_ADDRESSES_ONE
-		bool "Two"
-		select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+config ESP32S2_UNIVERSAL_MAC_ADDRESSES_ONE
+	bool "Two"
+	select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
 
-	config ESP32S2_UNIVERSAL_MAC_ADDRESSES_TWO
-		bool "Two"
-		select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
-		select ESP_MAC_ADDR_UNIVERSE_WIFI_AP
+config ESP32S2_UNIVERSAL_MAC_ADDRESSES_TWO
+	bool "Two"
+	select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+	select ESP_MAC_ADDR_UNIVERSE_WIFI_AP
 
-endchoice
+endchoice # ESP32S2_UNIVERSAL_MAC_ADDRESSES
 
 config ESP_MAC_ADDR_UNIVERSE_WIFI_AP
 	bool

@@ -18,6 +18,25 @@ Building and Running
 
 You must choose a suite via the CONFIG_TFM_PSA_TEST_* configs.
 
+Only one of these suites can be run at a time, with the test suite set via one
+of the following kconfig options:
+
+* ``CONFIG_TFM_PSA_TEST_CRYPTO``
+* ``CONFIG_TFM_PSA_TEST_PROTECTED_STORAGE``
+* ``CONFIG_TFM_PSA_TEST_INTERNAL_TRUSTED_STORAGE``
+* ``CONFIG_TFM_PSA_TEST_STORAGE``
+* ``CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION``
+
+You can indicate the desired test suite at build time via a config flag:
+
+   .. code-block:: bash
+
+     $ west build samples/tfm_integration/tfm_psa_test/ \
+       -p -b mps2_an521_ns -t run -- \
+       -DCONFIG_TFM_PSA_TEST_STORAGE=y
+
+Note that not all test suites are valid on all boards.
+
 On Target
 =========
 

@@ -1,0 +1,135 @@
+# Copyright Runtime.io 2018. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MCUMGR_CMD_OS_MGMT
+	bool "Mcumgr handlers for OS management"
+	select REBOOT
+	help
+	  Enables mcumgr handlers for OS management
+
+if MCUMGR_CMD_OS_MGMT
+config OS_MGMT_RESET_MS
+	int "Delay before executing reset command (ms)"
+	default 250
+	help
+	  When a reset command is received, the system waits this many milliseconds
+	  before performing the reset.  This delay allows time for the mcumgr
+	  response to be delivered.
+
+config OS_MGMT_RESET_HOOK
+	bool "Reset hook"
+	help
+	  Allows applications to control and get notifications of when a reset
+	  command has been issued via an mcumgr command. With this option
+	  disabled, modules will reboot when the command is received without
+	  notification, when this is enabled and a handler is registered, the
+	  application will be notified that a reset command has been received
+	  and will allow the application to perform any required operations
+	  before accepting or declining the reset request.
+
+config OS_MGMT_TASKSTAT
+	bool "Support for taskstat command"
+	depends on THREAD_MONITOR
+
+if OS_MGMT_TASKSTAT
+
+config OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS
+	bool "Send only data gathered by Zephyr"
+	default y
+	help
+	  Response will not include fields the Zephyr does not collect statistic for.
+	  Enable this if your client software is able to process "taskstat" response
+	  that would be missing "runtime", "cswcnt", "last_checkin" and "next_checkin"
+	  map entries for each listed task.
+	  Enabling this option will slightly reduce code size.
+
+choice OS_MGMT_TASKSTAT_THREAD_NAME_CHOICE
+	prompt "Characteristic used as thread name in taskstat"
+	default OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME if THREAD_NAME
+	default OS_MGMT_TASKSTAT_USE_THREAD_PRIO_FOR_NAME
+	help
+	  Select what will serve as thread name in "taskstat" response.
+	  By default taskstat responses use thread priority, when THREAD_NAME is disabled,
+
+	config OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME
+		bool "Thread name"
+		depends on THREAD_NAME
+
+	config OS_MGMT_TASKSTAT_USE_THREAD_IDX_FOR_NAME
+		bool "Thread index"
+
+	config OS_MGMT_TASKSTAT_USE_THREAD_PRIO_FOR_NAME
+		bool "Thread priority"
+
+endchoice
+
+config OS_MGMT_TASKSTAT_MAX_NUM_THREADS
+	int "Predicted maximum number of threads to return on taskstat list"
+	default 50
+	help
+	  This is used for defining CBOR map holding thread info.
+	  The value does not affect memory allocation, it is used by zcbor
+	  to figure out how to encode map depending on its predicted size.
+
+config OS_MGMT_TASKSTAT_THREAD_NAME_LEN
+	int "Length of thread name to return in response"
+	default THREAD_MAX_NAME_LEN if THREAD_NAME
+	default 5 if !THREAD_NAME
+	range 3 THREAD_MAX_NAME_LEN if THREAD_NAME
+	range 3 6 if !THREAD_NAME
+	help
+	  The length of the string that is sent in response to taskstat command,
+	  as a thread name.
+	  When THREAD_NAME is enabled then this defaults to THREAD_MAX_NAME_LEN.
+	  When THREAD_NAME is disabled the name is generated from thread priority,
+	  signed integer, and this number regulates how many digits will be used;
+	  in such case this value should also take into account possible '-'
+	  sign.
+
+config OS_MGMT_TASKSTAT_SIGNED_PRIORITY
+	bool "Signed priorities"
+	help
+	  Zephyr uses int8_t as thread priorities, but in taskstat response it encodes
+	  them as unsigned.  Enabling this option will use signed int for priorities in
+	  responses, which is more natural for Zephyr.
+	  Enable this option only if your client software is able to properly decode
+	  and accept signed integers as priorities.
+
+config OS_MGMT_TASKSTAT_STACK_INFO
+	bool "Include stack info in taskstat responses"
+	depends on THREAD_STACK_INFO
+	help
+	  Enabling this option adds stack information into "taskstat" command
+	  responses, this is default when THREAD_STACK_INFO is selected.
+	  Disable this option only when your client application is able to
+	  process "taskstat" response without the "stksiz" and "stkuse" fields.
+	  It is worth disabling this option when THREAD_STACK_INFO is disabled,
+	  as it will prevent sending zeroed stack information just to fill
+	  all the fields in "taskstat" responses, and it will slightly reduce code size.
+
+endif
+
+config OS_MGMT_ECHO
+	bool "Support for echo command"
+	default y
+	select MGMT_MIN_DECODING_LEVEL_2
+
+if OS_MGMT_ECHO
+
+config OS_MGMT_ECHO_LENGTH
+	int "Echo buffer (DEPRECATED)"
+	default 128
+	help
+	  DEPRECATED: The echo sentence is no longer copied into intermediate
+	  buffer, instead a transport buffer is used to directly copy echo
+	  sentence to response. Echo may still respond with not enough
+	  memory error, in case when it would not be possible to fit source
+	  sentence into response buffer limited by MCUMGR_BUF_SIZE.
+
+endif
+
+config OS_MGMT_MCUMGR_PARAMS
+	bool "MCUMGR Parameters retrieval command"
+
+endif

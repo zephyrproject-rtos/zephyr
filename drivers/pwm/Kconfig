@@ -15,7 +15,7 @@ module-str = pwm
 source "subsys/logging/Kconfig.template.log_config"
 
 config PWM_SHELL
-	bool "Enable PWM shell"
+	bool "PWM shell"
 	default y
 	depends on SHELL
 	help
@@ -68,5 +68,9 @@ source "drivers/pwm/Kconfig.xlnx"
 source "drivers/pwm/Kconfig.mcux_pwt"
 
 source "drivers/pwm/Kconfig.gecko"
+
+source "drivers/pwm/Kconfig.gd32"
+
+source "drivers/pwm/Kconfig.test"
 
 endif # PWM

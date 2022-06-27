@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2021, Teslabs Engineering S.L.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/gd32vf103v(b-8)xx-pinctrl.h>
+
+&pinctrl {
+	usart0_default: usart0_default {
+		group1 {
+			pinmux = <USART0_RX_PA10_NORMP>, <USART0_TX_PA9_NORMP>;
+		};
+	};
+
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <USART1_RX_PA3_NORMP>, <USART1_TX_PA2_NORMP>;
+		};
+	};
+
+	pwm0_default: pwm0_default {
+		group1 {
+			pinmux = <TIMER0_CH0_PA8_OUT_NORMP>;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <SPI0_SCK_PA5_OUT_NORMP>, <SPI0_MOSI_PA7_OUT_NORMP>,
+				 <SPI0_MISO_PA6_OUT_NORMP>;
+		};
+	};
+};

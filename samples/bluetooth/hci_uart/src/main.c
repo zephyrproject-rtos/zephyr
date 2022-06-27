@@ -10,22 +10,22 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <zephyr.h>
-#include <arch/cpu.h>
-#include <sys/byteorder.h>
-#include <logging/log.h>
-#include <sys/util.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
-#include <device.h>
-#include <init.h>
-#include <drivers/uart.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/uart.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/l2cap.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/hci_raw.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/hci_raw.h>
 
 #define LOG_MODULE_NAME hci_uart
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -343,8 +343,7 @@ static int hci_uart_init(const struct device *unused)
 	return 0;
 }
 
-SYS_DEVICE_DEFINE("hci_uart", hci_uart_init,
-		  APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(hci_uart_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 void main(void)
 {

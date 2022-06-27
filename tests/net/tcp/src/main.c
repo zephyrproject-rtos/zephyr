@@ -12,20 +12,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 
 #include <errno.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
-#include <sys/printk.h>
-#include <linker/sections.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/linker/sections.h>
 #include <tc_util.h>
 
-#include <net/ethernet.h>
-#include <net/dummy.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/dummy.h>
+#include <zephyr/net/net_pkt.h>
 
 #include "ipv4.h"
 #include "ipv6.h"
@@ -546,7 +546,7 @@ static void test_client_ipv4(void)
 		zassert_true(false, "Failed to connect to peer");
 	}
 
-	/* Peer will release the semaphone after it receives
+	/* Peer will release the semaphore after it receives
 	 * proper ACK to SYN | ACK
 	 */
 	test_sem_take(K_MSEC(100), __LINE__);
@@ -556,12 +556,12 @@ static void test_client_ipv4(void)
 		zassert_true(false, "Failed to send data to peer");
 	}
 
-	/* Peer will release the semaphone after it sends ACK for data */
+	/* Peer will release the semaphore after it sends ACK for data */
 	test_sem_take(K_MSEC(100), __LINE__);
 
 	net_context_put(ctx);
 
-	/* Peer will release the semaphone after it receives
+	/* Peer will release the semaphore after it receives
 	 * proper ACK to FIN | ACK
 	 */
 	test_sem_take(K_MSEC(100), __LINE__);
@@ -608,7 +608,7 @@ static void test_client_ipv6(void)
 		zassert_true(false, "Failed to connect to peer");
 	}
 
-	/* Peer will release the semaphone after it receives
+	/* Peer will release the semaphore after it receives
 	 * proper ACK to SYN | ACK
 	 */
 	test_sem_take(K_MSEC(100), __LINE__);
@@ -618,12 +618,12 @@ static void test_client_ipv6(void)
 		zassert_true(false, "Failed to send data to peer");
 	}
 
-	/* Peer will release the semaphone after it sends ACK for data */
+	/* Peer will release the semaphore after it sends ACK for data */
 	test_sem_take(K_MSEC(100), __LINE__);
 
 	net_context_put(ctx);
 
-	/* Peer will release the semaphone after it receives
+	/* Peer will release the semaphore after it receives
 	 * proper ACK to FIN | ACK
 	 */
 	test_sem_take(K_MSEC(100), __LINE__);
@@ -773,7 +773,7 @@ static void test_server_ipv4(void)
 		zassert_true(false, "Failed to set accept on net_context");
 	}
 
-	/* test_tcp_accept_cb will release the semaphone after succesfull
+	/* test_tcp_accept_cb will release the semaphore after successful
 	 * connection.
 	 */
 	test_sem_take(K_MSEC(100), __LINE__);
@@ -836,7 +836,7 @@ static void test_server_with_options_ipv4(void)
 		zassert_true(false, "Failed to set accept on net_context");
 	}
 
-	/* test_tcp_accept_cb will release the semaphone after succesfull
+	/* test_tcp_accept_cb will release the semaphore after successful
 	 * connection.
 	 */
 	test_sem_take(K_MSEC(100), __LINE__);
@@ -899,7 +899,7 @@ static void test_server_ipv6(void)
 		zassert_true(false, "Failed to set accept on net_context");
 	}
 
-	/* test_tcp_accept_cb will release the semaphone after succesfull
+	/* test_tcp_accept_cb will release the semaphore after successful
 	 * connection.
 	 */
 	test_sem_take(K_MSEC(100), __LINE__);
@@ -1061,7 +1061,7 @@ static void test_client_fin_wait_2_ipv4(void)
 		zassert_true(false, "Failed to connect to peer");
 	}
 
-	/* Peer will release the semaphone after it receives
+	/* Peer will release the semaphore after it receives
 	 * proper ACK to SYN | ACK
 	 */
 	test_sem_take(K_MSEC(100), __LINE__);
@@ -1071,12 +1071,12 @@ static void test_client_fin_wait_2_ipv4(void)
 		zassert_true(false, "Failed to send data to peer");
 	}
 
-	/* Peer will release the semaphone after it sends ACK for data */
+	/* Peer will release the semaphore after it sends ACK for data */
 	test_sem_take(K_MSEC(100), __LINE__);
 
 	net_tcp_put(ctx);
 
-	/* Peer will release the semaphone after it receives
+	/* Peer will release the semaphore after it receives
 	 * proper ACK to FIN | ACK
 	 */
 	test_sem_take(K_MSEC(300), __LINE__);
@@ -1182,7 +1182,7 @@ static void test_client_closing_ipv6(void)
 		zassert_true(false, "Failed to connect to peer");
 	}
 
-	/* Peer will release the semaphone after it receives
+	/* Peer will release the semaphore after it receives
 	 * proper ACK to SYN | ACK
 	 */
 	test_sem_take(K_MSEC(100), __LINE__);
@@ -1192,12 +1192,12 @@ static void test_client_closing_ipv6(void)
 		zassert_true(false, "Failed to send data to peer");
 	}
 
-	/* Peer will release the semaphone after it sends ACK for data */
+	/* Peer will release the semaphore after it sends ACK for data */
 	test_sem_take(K_MSEC(100), __LINE__);
 
 	net_tcp_put(ctx);
 
-	/* Peer will release the semaphone after it receives
+	/* Peer will release the semaphore after it receives
 	 * proper ACK to FIN | ACK
 	 */
 	test_sem_take(K_MSEC(300), __LINE__);
@@ -1243,7 +1243,7 @@ static struct net_context *create_server_socket(uint32_t my_seq,
 		zassert_true(false, "Failed to set accept on net_context");
 	}
 
-	/* test_tcp_accept_cb will release the semaphone after succesfull
+	/* test_tcp_accept_cb will release the semaphore after successful
 	 * connection.
 	 */
 	test_sem_take(K_MSEC(100), __LINE__);
@@ -1434,7 +1434,7 @@ static void test_server_recv_out_of_order_data(void)
 	ret = net_recv_data(iface, pkt);
 	zassert_true(ret == 0, "recv data failed (%d)", ret);
 
-	/* Peer will release the semaphone after it sends proper ACK to the
+	/* Peer will release the semaphore after it sends proper ACK to the
 	 * queued data.
 	 */
 	test_sem_take(K_MSEC(1000), __LINE__);

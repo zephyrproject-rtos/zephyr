@@ -7,7 +7,7 @@
 #ifndef SHELL_SHELL_WILDCARDS_H__
 #define SHELL_SHELL_WILDCARDS_H__
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 enum shell_wildcard_status {
 	SHELL_WILDCARD_CMD_ADDED,

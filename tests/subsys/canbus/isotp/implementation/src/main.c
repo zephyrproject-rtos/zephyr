@@ -3,20 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <canbus/isotp.h>
+#include <zephyr/canbus/isotp.h>
 #include <ztest.h>
 #include <strings.h>
 #include "random_data.h"
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
 #define NUMBER_OF_REPETITIONS 5
 #define DATA_SIZE_SF          7
-
-#if defined(CONFIG_CAN_LOOPBACK_DEV_NAME)
-#define CAN_DEVICE_NAME CONFIG_CAN_LOOPBACK_DEV_NAME
-#else
-#define CAN_DEVICE_NAME DT_LABEL(DT_CHOSEN(zephyr_canbus))
-#endif
 
 /*
  * @addtogroup t_can
@@ -31,7 +25,7 @@
  * @}
  */
 
-const struct device *can_dev;
+const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 
 const struct isotp_fc_opts fc_opts = {
 	.bs = 8,
@@ -150,7 +144,7 @@ static void receive_test_data_net(struct isotp_recv_ctx *recv_ctx,
 			     remaining_len);
 		received_len += buf->len;
 		zassert_equal(received_len + remaining_len, len,
-			      "Length missmatch");
+			      "Length mismatch");
 
 		data_ptr = check_frag(buf, data_ptr);
 
@@ -250,9 +244,8 @@ static void test_send_receive_net_blocks(void)
 	zassert_equal(ret, 0, "Binding failed (%d)", ret);
 
 	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
-		send_test_data(can_dev, random_data, random_data_len);
-		receive_test_data_net(&recv_ctx, random_data,
-				      random_data_len, 0);
+		send_test_data(can_dev, random_data, sizeof(random_data));
+		receive_test_data_net(&recv_ctx, random_data, sizeof(random_data), 0);
 	}
 
 	isotp_unbind(&recv_ctx);
@@ -350,6 +343,7 @@ static void test_bind_unbind(void)
 				 &fc_opts, K_NO_WAIT);
 		zassert_equal(ret, 0, "Binding failed (%d)", ret);
 		send_sf(can_dev);
+		k_sleep(K_MSEC(100));
 		get_sf_net(&recv_ctx);
 		isotp_unbind(&recv_ctx);
 	}
@@ -359,15 +353,17 @@ static void test_bind_unbind(void)
 				 &fc_opts, K_NO_WAIT);
 		zassert_equal(ret, 0, "Binding failed (%d)", ret);
 		send_sf(can_dev);
+		k_sleep(K_MSEC(100));
 		get_sf(&recv_ctx);
 		isotp_unbind(&recv_ctx);
 	}
 
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
 		ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
 				 &fc_opts, K_NO_WAIT);
 		zassert_equal(ret, 0, "Binding failed (%d)", ret);
 		send_test_data(can_dev, random_data, 60);
+		k_sleep(K_MSEC(100));
 		receive_test_data_net(&recv_ctx, random_data, 60, 0);
 		isotp_unbind(&recv_ctx);
 	}
@@ -377,6 +373,7 @@ static void test_bind_unbind(void)
 				 &fc_opts, K_NO_WAIT);
 		zassert_equal(ret, 0, "Binding failed (%d)", ret);
 		send_test_data(can_dev, random_data, 60);
+		k_sleep(K_MSEC(100));
 		receive_test_data(&recv_ctx, random_data, 60, 0);
 		isotp_unbind(&recv_ctx);
 	}
@@ -421,9 +418,9 @@ void test_main(void)
 	zassert_true(sizeof(random_data) >= sizeof(data_buf) * 2 + 10,
 		     "Test data size to small");
 
-	can_dev = device_get_binding(CAN_DEVICE_NAME);
-	zassert_not_null(can_dev, "CAN device not not found");
-	ret = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
+	zassert_true(device_is_ready(can_dev), "CAN device not ready");
+
+	ret = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
 	zassert_equal(ret, 0, "Configuring loopback mode failed (%d)", ret);
 
 	ztest_test_suite(isotp,

@@ -8,7 +8,7 @@ menuconfig CLOCK_CONTROL_STM32_CUBE
 	bool "STM32 Reset & Clock Control"
 	depends on SOC_FAMILY_STM32
 	select USE_STM32_LL_UTILS
-	select USE_STM32_LL_RCC if SOC_SERIES_STM32MP1X
+	select USE_STM32_LL_RCC if (SOC_SERIES_STM32MP1X || SOC_SERIES_STM32H7X)
 	help
 	  Enable driver for Reset & Clock Control subsystem found
 	  in STM32 family of MCUs
@@ -17,6 +17,7 @@ if CLOCK_CONTROL_STM32_CUBE
 
 DT_STM32_HSE_CLOCK := $(dt_nodelabel_path,clk_hse)
 DT_STM32_HSE_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_HSE_CLOCK),clock-frequency)
+DT_COMPAT_ST_MUX_CLOCK := st,stm32-clock-mux
 
 config CLOCK_STM32_HSE_CLOCK
 	int "HSE clock value"
@@ -32,6 +33,15 @@ config CLOCK_STM32_HSE_CLOCK
 	  };
 	  Note: Device tree configuration is overridden when current symbol is set:
 	  CONFIG_CLOCK_STM32_HSE_CLOCK=32000000
+
+config CLOCK_STM32_MUX
+	bool "STM32 clock mux driver"
+	default $(dt_compat_enabled,$(DT_COMPAT_ST_MUX_CLOCK))
+	help
+	  Enable driver for STM32 clock mux which don't match an
+	  existing clock hardware block but allows to select a clock
+	  for a specific domain. For instance per_ck clock on STM32H7 or
+	  CLK48 clock
 
 # Micro-controller Clock output configuration options
 

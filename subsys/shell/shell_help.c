@@ -119,23 +119,27 @@ static void help_item_print(const struct shell *shell, const char *item_name,
 	if (!IS_ENABLED(CONFIG_NEWLIB_LIBC) &&
 	    !IS_ENABLED(CONFIG_ARCH_POSIX)) {
 		/* print option name */
-		z_shell_fprintf(shell, SHELL_NORMAL, "%s%-*s%s:", tabulator,
-				item_name_width, item_name, tabulator);
+		z_shell_fprintf(shell, SHELL_NORMAL, "%s%-*s", tabulator,
+				item_name_width, item_name);
 	} else {
 		uint16_t tmp = item_name_width - strlen(item_name);
 		char space = ' ';
 
 		z_shell_fprintf(shell, SHELL_NORMAL, "%s%s", tabulator,
 				item_name);
-		for (uint16_t i = 0; i < tmp; i++) {
-			z_shell_write(shell, &space, 1);
+
+		if (item_help) {
+			for (uint16_t i = 0; i < tmp; i++) {
+				z_shell_write(shell, &space, 1);
+			}
 		}
-		z_shell_fprintf(shell, SHELL_NORMAL, "%s:", tabulator);
 	}
 
 	if (item_help == NULL) {
 		z_cursor_next_line_move(shell);
 		return;
+	} else {
+		z_shell_fprintf(shell, SHELL_NORMAL, "%s:", tabulator);
 	}
 	/* print option help */
 	formatted_text_print(shell, item_help, offset, false);

@@ -6,10 +6,10 @@
 
 #define DT_DRV_COMPAT silabs_si7060
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
 
 #include "si7060.h"
 

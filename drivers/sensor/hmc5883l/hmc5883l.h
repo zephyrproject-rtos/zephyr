@@ -7,10 +7,10 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_HMC5883L_HMC5883L_H_
 #define ZEPHYR_DRIVERS_SENSOR_HMC5883L_HMC5883L_H_
 
-#include <device.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 #define HMC5883L_REG_CONFIG_A           0x00
 #define HMC5883L_ODR_SHIFT              2

@@ -8,14 +8,14 @@
 #define LOG_MODULE_NAME net_lwm2m_client_app
 #define LOG_LEVEL LOG_LEVEL_DBG
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <drivers/hwinfo.h>
-#include <zephyr.h>
-#include <drivers/gpio.h>
-#include <drivers/sensor.h>
-#include <net/lwm2m.h>
+#include <zephyr/drivers/hwinfo.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/net/lwm2m.h>
 
 #define APP_BANNER "Run LWM2M client"
 
@@ -77,6 +77,11 @@ static const struct device *led_dev;
 static uint32_t led_state;
 
 static struct lwm2m_ctx client;
+
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
+/* Array with supported PULL firmware update protocols */
+static uint8_t supported_protocol[1];
+#endif
 
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 #define TLS_TAG			1
@@ -369,6 +374,10 @@ static int lwm2m_setup(void)
 	lwm2m_firmware_set_write_cb(firmware_block_received_cb);
 #endif
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
+	lwm2m_engine_create_res_inst("5/0/8/0");
+	lwm2m_engine_set_res_data("5/0/8/0", &supported_protocol[0],
+				  sizeof(supported_protocol[0]), 0);
+
 	lwm2m_firmware_set_update_cb(firmware_update_cb);
 #endif
 
@@ -448,8 +457,36 @@ static void rd_client_event(struct lwm2m_ctx *client,
 		break;
 
 	case LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR:
-		LOG_ERR("LwM2M engine reported a network erorr.");
+		LOG_ERR("LwM2M engine reported a network error.");
 		lwm2m_rd_client_stop(client, rd_client_event, true);
+		break;
+	}
+}
+
+static void observe_cb(enum lwm2m_observe_event event,
+		       struct lwm2m_obj_path *path, void *user_data)
+{
+	char buf[LWM2M_MAX_PATH_STR_LEN];
+
+	switch (event) {
+
+	case LWM2M_OBSERVE_EVENT_OBSERVER_ADDED:
+		LOG_INF("Observer added for %s", lwm2m_path_log_strdup(buf, path));
+		break;
+
+	case LWM2M_OBSERVE_EVENT_OBSERVER_REMOVED:
+		LOG_INF("Observer removed for %s", lwm2m_path_log_strdup(buf, path));
+		break;
+
+	case LWM2M_OBSERVE_EVENT_NOTIFY_ACK:
+		LOG_INF("Notify acknowledged for %s", lwm2m_path_log_strdup(buf, path));
+		break;
+
+	case LWM2M_OBSERVE_EVENT_NOTIFY_TIMEOUT:
+		LOG_INF("Notify timeout for %s, trying registration update",
+			lwm2m_path_log_strdup(buf, path));
+
+		lwm2m_rd_client_update();
 		break;
 	}
 }
@@ -496,10 +533,10 @@ void main(void)
 		sprintf(&dev_str[i*2], "%02x", dev_id[i]);
 	}
 
-	lwm2m_rd_client_start(&client, dev_str, flags, rd_client_event);
+	lwm2m_rd_client_start(&client, dev_str, flags, rd_client_event, observe_cb);
 #else
 	/* client.sec_obj_inst is 0 as a starting point */
-	lwm2m_rd_client_start(&client, CONFIG_BOARD, flags, rd_client_event);
+	lwm2m_rd_client_start(&client, CONFIG_BOARD, flags, rd_client_event, observe_cb);
 #endif
 
 	k_sem_take(&quit_lock, K_FOREVER);

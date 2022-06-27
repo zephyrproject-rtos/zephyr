@@ -36,7 +36,7 @@ config ADC_LMP90XXX_CRC
 	  the data read from the LMP90xxx.
 
 config ADC_LMP90XXX_GPIO
-	bool "Enable GPIO support"
+	bool "GPIO support"
 	depends on GPIO
 	select GPIO_LMP90XXX
 	help

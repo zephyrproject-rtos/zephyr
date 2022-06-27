@@ -44,7 +44,7 @@ config IEEE802154_NRF5_EXT_IRQ_MGMT
 	  a radio arbiter used in dynamic multiprotocol applications.
 
 config IEEE802154_NRF5_UICR_EUI64_ENABLE
-	bool "Enables using EUI64 value stored in UICR registers"
+	bool "Support usage of EUI64 value stored in UICR registers"
 	depends on !IEEE802154_VENDOR_OUI_ENABLE
 	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF53X
 	help
@@ -66,5 +66,31 @@ config IEEE802154_NRF5_UICR_EUI64_REG
 	  section in which custom EUI64 is stored.
 
 endif # IEEE802154_NRF5_UICR_EUI64_ENABLE
+
+config IEEE802154_NRF5_FCS_IN_LENGTH
+	bool "Include FCS field in the overall packet length"
+	default y if IEEE802154_RAW_MODE || NET_L2_OPENTHREAD
+	help
+	  Some 802.15.4 L2 implementations expect that FCS length is included in
+	  the overall packet length while others not. Allow to configure this
+	  behavior, based on the selected upper layer.
+
+config IEEE802154_NRF5_DELAY_TRX_ACC
+	int "Clock accuracy for delayed operations"
+	default CLOCK_CONTROL_NRF_ACCURACY if CLOCK_CONTROL_NRF_ACCURACY < 255
+	default 255
+	help
+	  Accuracy of the clock used for scheduling radio delayed operations (delayed transmission
+	  or delayed reception), in ppm.
+
+config IEEE802154_NRF5_LOG_RX_FAILURES
+	bool "Frame reception failures logging"
+	help
+	  There are few cases where the frame reception failure can happen because of
+	  internal cause. These cases are reported forward by general code error.
+
+	  This options enables logging the reason of frame reception failure.
+	  It can be helpful for the network traffic analyze but it generates also
+	  a lot of log records in a stress environment.
 
 endif

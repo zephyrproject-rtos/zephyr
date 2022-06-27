@@ -9,10 +9,10 @@
  *
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
-#include <shell/shell_history.h>
+#include <zephyr/shell/shell_history.h>
 
 #define HIST_BUF_SIZE 160
 Z_SHELL_HISTORY_DEFINE(history, HIST_BUF_SIZE);

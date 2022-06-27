@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/uart.h>
-#include <sys/printk.h>
-#include <console/tty.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/console/tty.h>
 
 static int tty_irq_input_hook(struct tty_serial *tty, uint8_t c);
 static int tty_putchar(struct tty_serial *tty, uint8_t c);

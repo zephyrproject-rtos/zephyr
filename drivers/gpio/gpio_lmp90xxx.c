@@ -11,14 +11,14 @@
 
 #define DT_DRV_COMPAT ti_lmp90xxx_gpio
 
-#include <drivers/gpio.h>
-#include <zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/zephyr.h>
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_lmp90xxx);
 
-#include <drivers/adc/lmp90xxx.h>
+#include <zephyr/drivers/adc/lmp90xxx.h>
 
 #include "gpio_utils.h"
 
@@ -158,7 +158,7 @@ static const struct gpio_driver_api gpio_lmp90xxx_api = {
 	.port_get_raw = gpio_lmp90xxx_port_get_raw,
 };
 
-BUILD_ASSERT(CONFIG_GPIO_INIT_PRIORITY >
+BUILD_ASSERT(CONFIG_GPIO_LMP90XXX_INIT_PRIORITY >
 	     CONFIG_ADC_INIT_PRIORITY,
 	     "LMP90xxx GPIO driver must be initialized after LMP90xxx ADC "
 	     "driver");
@@ -179,7 +179,7 @@ BUILD_ASSERT(CONFIG_GPIO_INIT_PRIORITY >
 			    NULL,					\
 			    &gpio_lmp90xxx_##id##_data,			\
 			    &gpio_lmp90xxx_##id##_cfg, POST_KERNEL,	\
-			    CONFIG_GPIO_INIT_PRIORITY,			\
+			    CONFIG_GPIO_LMP90XXX_INIT_PRIORITY,		\
 			    &gpio_lmp90xxx_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_LMP90XXX_DEVICE)

@@ -1,6 +1,7 @@
 # ST Microelectronics STM32H7 MCU line
 
 # Copyright (c) 2019 Linaro  Limited
+# Copyright (c) 2022 SILA Embedded Solutions GmbH <office@embedded-solutions.at>
 # SPDX-License-Identifier: Apache-2.0
 
 # Kconfig symbols common to STM32H7 series
@@ -15,6 +16,9 @@ config SOC_SERIES
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 	default 0x0   if !BOOTLOADER_MCUBOOT
+
+config STM32_LPTIM_TIMER
+	default y if PM
 
 if ENTROPY_GENERATOR
 

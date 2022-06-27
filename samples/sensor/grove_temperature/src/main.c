@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <init.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
 #include <stdio.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 
 #ifdef CONFIG_GROVE_LCD_RGB
-#include <display/grove_lcd.h>
+#include <zephyr/drivers/misc/grove_lcd/grove_lcd.h>
 #include <stdio.h>
 #include <string.h>
 #endif

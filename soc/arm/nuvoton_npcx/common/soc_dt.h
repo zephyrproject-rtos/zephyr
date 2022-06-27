@@ -7,6 +7,10 @@
 #ifndef _NUVOTON_NPCX_SOC_DT_H_
 #define _NUVOTON_NPCX_SOC_DT_H_
 
+#include <zephyr/devicetree.h>
+#include <zephyr/irq.h>
+#include <zephyr/sys/util_macro.h>
+
 /**
  * @brief Like DT_PROP(), but expand parameters with
  *        DT_ENUM_UPPER_TOKEN not DT_PROP
@@ -74,7 +78,7 @@
 	  .bus  = DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(inst), i, bus),            \
 	  .ctrl = DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(inst), i, ctl),            \
 	  .bit  = DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(inst), i, bit),            \
-	},
+	}
 
 /**
  * @brief Length of 'clocks' property which type is 'phandle-array'
@@ -115,10 +119,10 @@
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @return an array of npcx_clk_cfg items.
  */
-#define NPCX_DT_CLK_CFG_ITEMS_LIST(inst) {             \
-	UTIL_LISTIFY(NPCX_DT_CLK_CFG_ITEMS_LEN(inst),  \
-		     NPCX_DT_CLK_CFG_ITEMS_FUNC,       \
-		     inst)                             \
+#define NPCX_DT_CLK_CFG_ITEMS_LIST(inst) {        \
+	LISTIFY(NPCX_DT_CLK_CFG_ITEMS_LEN(inst),  \
+		NPCX_DT_CLK_CFG_ITEMS_FUNC, (,),  \
+		inst)                             \
 	}
 
 /**
@@ -133,7 +137,7 @@
 		.group = DT_PHA(DT_INST_PINCTRL_0(inst, i), alts, group),  \
 		.bit = DT_PHA(DT_INST_PINCTRL_0(inst, i), alts, bit),	   \
 		.inverted = DT_PHA(DT_INST_PINCTRL_0(inst, i), alts, inv), \
-	},
+	}
 
 /**
  * @brief Macro function to construct npcx_alt item in UTIL_LISTIFY extension.
@@ -162,10 +166,10 @@
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @return an array of npcx_alt items.
  */
-#define NPCX_DT_ALT_ITEMS_LIST(inst) {				\
-	UTIL_LISTIFY(DT_INST_NUM_PINCTRLS_BY_IDX(inst, 0),	\
-		     NPCX_DT_ALT_ITEMS_FUNC,			\
-		     inst)					\
+#define NPCX_DT_ALT_ITEMS_LIST(inst) {			\
+	LISTIFY(DT_INST_NUM_PINCTRLS_BY_IDX(inst, 0),	\
+		NPCX_DT_ALT_ITEMS_FUNC, (,),		\
+		inst)					\
 	}
 
 /**
@@ -221,7 +225,7 @@
 								alts, bit),    \
 	  .inverted = DT_PHA(NPCX_DT_IO_PHANDLE_FROM_PINCTRL(io_comp, inst, i),\
 								alts, inv),    \
-	},
+	}
 
 /**
  * @brief Length of npcx_alt structures in 'pinctrl-0' property of specific
@@ -270,10 +274,10 @@
  * @param inst instance number for compatible defined in io_comp.
  * @return an array of npcx_alt items.
  */
-#define NPCX_DT_IO_ALT_ITEMS_LIST(io_comp, inst) {             \
-	UTIL_LISTIFY(NPCX_DT_IO_ALT_ITEMS_LEN(io_comp, inst),  \
-		     NPCX_DT_IO_ALT_ITEMS_FUNC,                \
-		     inst, io_comp)                            \
+#define NPCX_DT_IO_ALT_ITEMS_LIST(io_comp, inst) {        \
+	LISTIFY(NPCX_DT_IO_ALT_ITEMS_LEN(io_comp, inst),  \
+		NPCX_DT_IO_ALT_ITEMS_FUNC, (,),           \
+		inst, io_comp)                            \
 	}
 
 /**
@@ -327,7 +331,7 @@
 	  .group = DT_PHA(NPCX_DT_PHANDLE_FROM_WUI_MAPS(inst, i), miwus,       \
 							group),                \
 	  .bit = DT_PHA(NPCX_DT_PHANDLE_FROM_WUI_MAPS(inst, i), miwus, bit),   \
-	},
+	}
 
 /**
  * @brief Length of npcx_wui structures in 'wui-maps' property
@@ -371,10 +375,10 @@
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @return an array of npcx_wui items.
  */
-#define NPCX_DT_WUI_ITEMS_LIST(inst) {             \
-	UTIL_LISTIFY(NPCX_DT_WUI_ITEMS_LEN(inst),  \
-		     NPCX_DT_WUI_ITEMS_FUNC,       \
-		     inst)                         \
+#define NPCX_DT_WUI_ITEMS_LIST(inst) {        \
+	LISTIFY(NPCX_DT_WUI_ITEMS_LEN(inst),  \
+		NPCX_DT_WUI_ITEMS_FUNC, (,),  \
+		inst)                         \
 	}
 
 /**
@@ -528,7 +532,7 @@
 							lvols, ctrl),          \
 	  .bit = DT_PHA(NPCX_DT_PHANDLE_FROM_LVOL_IO_PADS(i),                  \
 							lvols, bit),           \
-	},
+	}
 
 /**
  * @brief Macro function to construct a list of npcx_lvol items by UTIL_LISTIFY
@@ -548,9 +552,9 @@
  *
  * @return an array of npcx_lvol items which configure low-voltage support
  */
-#define NPCX_DT_IO_LVOL_ITEMS_DEF_LIST {                \
-		UTIL_LISTIFY(NPCX_DT_LVOL_ITEMS_LEN,    \
-			NPCX_DT_LVOL_ITEMS_BY_IDX, _)   \
+#define NPCX_DT_IO_LVOL_ITEMS_DEF_LIST {			\
+		LISTIFY(NPCX_DT_LVOL_ITEMS_LEN,			\
+			NPCX_DT_LVOL_ITEMS_BY_IDX, (,), _)	\
 	}
 
 /**
@@ -641,7 +645,7 @@
 		.offset = DT_PROP(NPCX_DT_PHANDLE_FROM_PSL_IN_NODE(i), offset),\
 		.pinctrl = NPCX_DT_PSL_IN_ALT_CONF_BY_IDX(i)                   \
 		.polarity = NPCX_DT_PSL_IN_POL_CONF_BY_IDX(i)                  \
-	},
+	}
 
 /**
  * @brief Macro function to construct a list of npcx_psl_in items by
@@ -662,9 +666,9 @@
  *
  * @return an array of npcx_psl_in items which configures PSL input pads
  */
-#define NPCX_DT_PSL_IN_ITEMS_LIST {                       \
-		UTIL_LISTIFY(NPCX_DT_PSL_IN_ITEMS_LEN,    \
-			NPCX_DT_PSL_IN_ITEMS_BY_IDX, _)   \
+#define NPCX_DT_PSL_IN_ITEMS_LIST {				\
+		LISTIFY(NPCX_DT_PSL_IN_ITEMS_LEN,		\
+			NPCX_DT_PSL_IN_ITEMS_BY_IDX, (,), _)	\
 	}
 
 /**

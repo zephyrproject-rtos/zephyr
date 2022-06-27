@@ -11,7 +11,7 @@
 #include "simplelink_log.h"
 LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdint.h>
 
 #include <ti/drivers/net/wifi/simplelink.h>

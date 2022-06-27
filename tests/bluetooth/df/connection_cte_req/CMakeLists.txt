@@ -9,6 +9,7 @@ project(bluetooth_df_connection_cte_req)
 
 FILE(GLOB app_sources src/*.c)
 SET(common_sources ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/bt_common.c
+		   ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/bt_conn_common.c
 		   ${CMAKE_CURRENT_SOURCE_DIR}/../common/src/radio_df_stub.c)
 
 target_sources(app PRIVATE ${common_sources} ${app_sources})

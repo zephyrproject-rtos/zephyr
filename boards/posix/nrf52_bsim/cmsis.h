@@ -38,6 +38,14 @@ extern "C" {
 #define __NOP()
 #endif
 
+void __enable_irq(void);
+
+void __disable_irq(void);
+
+uint32_t __get_PRIMASK(void);
+
+void __set_PRIMASK(uint32_t primask);
+
 #ifdef __cplusplus
 }
 #endif

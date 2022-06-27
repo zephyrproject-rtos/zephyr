@@ -5,9 +5,10 @@
 
 #include <zephyr/types.h>
 #include <stdio.h>
-#include <arch/xtensa/irq.h>
-#include <sys/__assert.h>
-/*
+#include <zephyr/arch/xtensa/irq.h>
+#include <zephyr/sys/__assert.h>
+
+/**
  * @internal
  *
  * @brief Set an interrupt's priority
@@ -22,10 +23,7 @@
  * Valid values are from 1 to 6. Interrupts of priority 1 are not masked when
  * interrupts are locked system-wide, so care must be taken when using them.
  * ISR installed with priority 0 interrupts cannot make kernel calls.
- *
- * @return N/A
  */
-
 void z_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	__ASSERT(prio < XCHAL_EXCM_LEVEL + 1,

@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/uart.h>
-#include <drivers/console/console.h>
-#include <drivers/console/uart_console.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/console/console.h>
+#include <zephyr/drivers/console/uart_console.h>
 
 /* While app processes one input line, Zephyr will have another line
  * buffer to accumulate more console input.

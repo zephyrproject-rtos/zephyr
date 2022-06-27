@@ -28,6 +28,8 @@ tests:
         - "The device is put in USB mass storage mode."
   sample.usb.mass_flash_fatfs:
     min_ram: 32
+    modules:
+      - fatfs
     depends_on: usb_device
     filter: dt_compat_enabled("nordic,qspi-nor")
     extra_configs:
@@ -41,6 +43,8 @@ tests:
         - "The device is put in USB mass storage mode."
   sample.usb.mass_sdhc_fatfs:
     min_ram: 32
+    modules:
+      - fatfs
     depends_on: usb_device sdhc
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
@@ -53,6 +57,8 @@ tests:
       regex:
         - "The device is put in USB mass storage mode."
   sample.usb.mass_flash_littlefs:
+    modules:
+      - littlefs
     min_ram: 32
     depends_on: usb_device
     filter: dt_compat_enabled("nordic,qspi-nor")

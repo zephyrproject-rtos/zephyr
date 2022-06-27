@@ -1,6 +1,6 @@
 ; Everglades SPI Image Generator configuration file
 [SPI]
-SPISizeMegabits = 128
+SPISizeMegabits = 4
 Flashmap = false
 FlshmapAddr = 0
 

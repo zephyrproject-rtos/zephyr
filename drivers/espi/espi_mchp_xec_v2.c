@@ -7,16 +7,16 @@
 
 #define DT_DRV_COMPAT microchip_xec_espi_v2
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <errno.h>
-#include <drivers/espi.h>
-#include <drivers/clock_control/mchp_xec_clock_control.h>
-#include <drivers/interrupt_controller/intc_mchp_xec_ecia.h>
-#include <dt-bindings/interrupt-controller/mchp-xec-ecia.h>
-#include <logging/log.h>
-#include <sys/sys_io.h>
-#include <sys/util.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
+#include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
+#include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/util.h>
 #include "espi_utils.h"
 #include "espi_mchp_xec_v2.h"
 
@@ -24,7 +24,7 @@
 #define ESPI_XEC_VWIRE_ACK_DELAY	10ul
 
 /* Maximum timeout to transmit a virtual wire packet.
- * 10 ms expresed in multiples of 100us
+ * 10 ms expressed in multiples of 100us
  */
 #define ESPI_XEC_VWIRE_SEND_TIMEOUT	100ul
 
@@ -72,7 +72,7 @@ LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 #define XEC_PCR_REG_BASE						\
 	((struct pcr_regs *)(DT_REG_ADDR(DT_NODELABEL(pcr))))
 
-/* Microchip cannonical virtual wire mapping
+/* Microchip canonical virtual wire mapping
  * ------------------------------------------------------------------------|
  * VW Idx | VW reg | SRC_ID3      | SRC_ID2      | SRC_ID1   | SRC_ID0     |
  * ------------------------------------------------------------------------|
@@ -236,7 +236,7 @@ static int espi_xec_configure(const struct device *dev, struct espi_cfg *cfg)
 		cap1 |= (iomode << MCHP_ESPI_GBL_CAP1_IO_MODE_POS);
 	}
 
-	/* Validdate and translate eSPI API channels to MEC capabilities */
+	/* Validate and translate eSPI API channels to MEC capabilities */
 	cap0 &= ~MCHP_ESPI_GBL_CAP0_MASK;
 	if (cfg->channel_caps & ESPI_CHANNEL_PERIPHERAL) {
 		if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_CHANNEL)) {
@@ -851,6 +851,16 @@ static void espi_pc_isr(const struct device *dev)
 {
 	struct espi_iom_regs *regs = ESPI_XEC_REG_BASE(dev);
 	uint32_t status = regs->PCSTS;
+	struct espi_event evt = { .evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
+				  .evt_details = ESPI_CHANNEL_PERIPHERAL,
+				  .evt_data = 0 };
+	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
+
+	LOG_DBG("%s %x", __func__, status);
+	if (status & MCHP_ESPI_PC_STS_BUS_ERR) {
+		LOG_ERR("%s bus error", __func__);
+		regs->PCSTS = MCHP_ESPI_PC_STS_BUS_ERR;
+	}
 
 	if (status & MCHP_ESPI_PC_STS_EN_CHG) {
 		if (status & MCHP_ESPI_PC_STS_EN) {
@@ -858,6 +868,16 @@ static void espi_pc_isr(const struct device *dev)
 		}
 
 		regs->PCSTS = MCHP_ESPI_PC_STS_EN_CHG;
+	}
+
+	if (status & MCHP_ESPI_PC_STS_BM_EN_CHG) {
+		if (status & MCHP_ESPI_PC_STS_BM_EN) {
+			evt.evt_data = ESPI_PC_EVT_BUS_MASTER_ENABLE;
+			LOG_WRN("%s BM change %x", __func__, status);
+			espi_send_callbacks(&data->callbacks, dev, evt);
+		}
+
+		regs->PCSTS = MCHP_ESPI_PC_STS_BM_EN_CHG;
 	}
 
 	xec_espi_bus_intr_clr(dev, pc_girq_idx);
@@ -910,7 +930,7 @@ static void espi_oob_down_isr(const struct device *dev)
 #ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
 		k_sem_give(&data->rx_lock);
 #else
-		evt.evt_details = ESPI_OOB_REGS->RX_LEN &
+		evt.evt_details = regs->OOBRXL &
 				  MCHP_ESPI_OOB_RX_LEN_MASK;
 		espi_send_callbacks(&data->callbacks, dev, evt);
 #endif
@@ -1207,13 +1227,17 @@ static const struct espi_xec_irq_info espi_xec_irq_info_0[] = {
 	DT_FOREACH_PROP_ELEM(DT_NODELABEL(espi0), girqs, XEC_IRQ_INFO)
 };
 
+/* pin control structure(s) */
+PINCTRL_DT_INST_DEFINE(0);
+
 static const struct espi_xec_config espi_xec_config = {
 	.base_addr = DT_INST_REG_ADDR(0),
 	.vw_base_addr = DT_INST_REG_ADDR_BY_NAME(0, vw),
 	.pcr_idx = DT_INST_PROP_BY_IDX(0, pcrs, 0),
 	.pcr_bitpos = DT_INST_PROP_BY_IDX(0, pcrs, 1),
-	.irq_info_list = espi_xec_irq_info_0,
 	.irq_info_size = ARRAY_SIZE(espi_xec_irq_info_0),
+	.irq_info_list = espi_xec_irq_info_0,
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
 DEVICE_DT_INST_DEFINE(0, &espi_xec_init, NULL,
@@ -1288,6 +1312,8 @@ static void espi_xec_connect_irqs(const struct device *dev)
  * contains the state of 4 virtual wires.
  * The total supported virtual wires is 64 * 4 = 256.
  * MEC172x supports 11 MSVW groups and 11 SMVW groups.
+ * NOTE: While ESPI_nRESET is active most of the eSPI hardware is held
+ * in reset state.
  */
 static int espi_xec_init(const struct device *dev)
 {
@@ -1296,6 +1322,12 @@ static int espi_xec_init(const struct device *dev)
 	struct espi_xec_data *const data = ESPI_XEC_DATA(dev);
 	struct pcr_regs *pcr = XEC_PCR_REG_BASE;
 	int ret;
+
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret != 0) {
+		LOG_ERR("XEC eSPI V2 pinctrl setup failed (%d)", ret);
+		return ret;
+	}
 
 	data->plt_rst_asserted = 0;
 #ifdef ESPI_XEC_V2_DEBUG

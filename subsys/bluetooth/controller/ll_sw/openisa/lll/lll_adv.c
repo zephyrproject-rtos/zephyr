@@ -7,10 +7,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <soc.h>
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"

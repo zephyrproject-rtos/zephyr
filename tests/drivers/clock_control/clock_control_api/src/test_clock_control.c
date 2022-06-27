@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ztest.h>
-#include <drivers/clock_control.h>
-#include <logging/log.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_clock)
-#include <drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #endif
 
 struct device_subsys_data {
@@ -23,24 +23,34 @@ struct device_data {
 	uint32_t subsys_cnt;
 };
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_clock)
+static const struct device_subsys_data subsys_data[] = {
+	{
+		.subsys = CLOCK_CONTROL_NRF_SUBSYS_HF,
+		.startup_us =
+			IS_ENABLED(CONFIG_SOC_SERIES_NRF91X) ?
+				3000 : 500
+	},
+#ifndef CONFIG_SOC_NRF52832
+	/* On nrf52832 LF clock cannot be stopped because it leads
+	 * to RTC COUNTER register reset and that is unexpected by
+	 * system clock which is disrupted and may hang in the test.
+	 */
+	{
+		.subsys = CLOCK_CONTROL_NRF_SUBSYS_LF,
+		.startup_us = (CLOCK_CONTROL_NRF_K32SRC ==
+			NRF_CLOCK_LFCLK_RC) ? 1000 : 500000
+	}
+#endif /* !CONFIG_SOC_NRF52832 */
+};
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_clock) */
+
 static const struct device_data devices[] = {
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_clock)
 	{
 		.name = DT_LABEL(DT_INST(0, nordic_nrf_clock)),
-		.subsys_data =  (const struct device_subsys_data[]){
-			{
-				.subsys = CLOCK_CONTROL_NRF_SUBSYS_HF,
-				.startup_us =
-					IS_ENABLED(CONFIG_SOC_SERIES_NRF91X) ?
-						3000 : 400
-			},
-			{
-				.subsys = CLOCK_CONTROL_NRF_SUBSYS_LF,
-				.startup_us = (CLOCK_CONTROL_NRF_K32SRC ==
-					NRF_CLOCK_LFCLK_RC) ? 1000 : 500000
-			}
-		},
-		.subsys_cnt = CLOCK_CONTROL_NRF_TYPE_COUNT
+		.subsys_data =  subsys_data,
+		.subsys_cnt = ARRAY_SIZE(subsys_data)
 	}
 #endif
 };

@@ -10,15 +10,15 @@
  */
 
 #include <errno.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pca953x, CONFIG_GPIO_LOG_LEVEL);
 
 #include "gpio_utils.h"
@@ -161,7 +161,7 @@ static void gpio_pca953x_work_handler(struct k_work *work)
 }
 
 /**
- * @brief ISR for intterupt pin of PCA953X
+ * @brief ISR for interrupt pin of PCA953X
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param gpio_cb Pointer to callback function struct
@@ -190,21 +190,6 @@ static int gpio_pca953x_config(const struct device *dev, gpio_pin_t pin,
 	/* Can't do I2C bus operations from an ISR */
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
-	}
-
-	/* Zephyr currently defines drive strength support based on
-	 * the behavior and capabilities of the Nordic GPIO
-	 * peripheral: strength defaults to low but can be set high,
-	 * and is controlled independently for output levels.
-	 *
-	 * The PCA953X supports only high strength, and does not
-	 * support different strengths for different levels.
-	 *
-	 * Until something more general is available reject any
-	 * attempt to set a non-default drive strength.
-	 */
-	if ((flags & GPIO_DS_ALT) != 0) {
-		return -ENOTSUP;
 	}
 
 	/* Single Ended lines (Open drain and open source) not supported */

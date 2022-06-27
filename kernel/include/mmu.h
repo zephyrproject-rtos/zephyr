@@ -9,11 +9,11 @@
 #ifdef CONFIG_MMU
 
 #include <stdint.h>
-#include <sys/slist.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
-#include <sys/mem_manage.h>
-#include <linker/linker-defs.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/mem_manage.h>
+#include <zephyr/linker/linker-defs.h>
 
 /*
  * At present, page frame management is only done for main system RAM,

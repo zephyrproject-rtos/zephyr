@@ -40,7 +40,7 @@
 #define MCHP_UART_IER_EMSI	0x08u	/* Modem Status */
 #define MCHP_UART_IER_ALL	0x0fu
 
-/* FIFO Contro Register, Write-Only */
+/* FIFO Control Register, Write-Only */
 #define MCHP_UART_FCR_OFS		2u
 #define MCHP_UART_FCR_MASK		0xcfu
 #define MCHP_UART_FCR_EXRF		0x01u	/* Enable TX & RX FIFO's */

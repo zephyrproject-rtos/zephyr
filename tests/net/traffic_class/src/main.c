@@ -8,7 +8,7 @@
 
 #define NET_LOG_LEVEL CONFIG_NET_TC_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #include <zephyr/types.h>
@@ -16,18 +16,18 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <linker/sections.h>
-#include <random/rand32.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/random/rand32.h>
 
 #include <ztest.h>
 
-#include <net/ethernet.h>
-#include <net/dummy.h>
-#include <net/buf.h>
-#include <net/net_ip.h>
-#include <net/net_l2.h>
-#include <net/udp.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/dummy.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_l2.h>
+#include <zephyr/net/udp.h>
 
 #include "ipv6.h"
 
@@ -172,10 +172,10 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		/* Swap IP src and destination address so that we can receive
 		 * the packet and the stack will not reject it.
 		 */
-		net_ipaddr_copy(&addr, &NET_IPV6_HDR(pkt)->src);
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
-				&NET_IPV6_HDR(pkt)->dst);
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, &addr);
+		net_ipv6_addr_copy_raw((uint8_t *)&addr, NET_IPV6_HDR(pkt)->src);
+		net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->src,
+				       NET_IPV6_HDR(pkt)->dst);
+		net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->dst, (uint8_t *)&addr);
 
 		udp_hdr = net_udp_get_hdr(pkt, &hdr);
 		zassert_not_null(udp_hdr, "UDP header missing");
@@ -288,7 +288,7 @@ static void address_setup(void)
 		zassert_not_null(ifaddr, "addr1");
 	}
 
-	/* For testing purposes we need to set the adddresses preferred */
+	/* For testing purposes we need to set the addresses preferred */
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &ll_addr,

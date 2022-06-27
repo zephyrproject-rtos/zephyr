@@ -8,13 +8,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_hostname, CONFIG_NET_HOSTNAME_LOG_LEVEL);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <net/hostname.h>
-#include <net/net_core.h>
+#include <zephyr/net/hostname.h>
+#include <zephyr/net/net_core.h>
 
 static char hostname[NET_HOSTNAME_MAX_LEN + 1];
 

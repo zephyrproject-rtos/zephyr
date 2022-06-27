@@ -10,7 +10,7 @@
 # - disassembly : Tool for disassemble the target
 # - elfconvert  : Tool for converting from elf into another format.
 # - readelf     : Tool for elf file processing
-# - strip       : Tool for symnbol stripping
+# - strip       : Tool for symbol stripping
 #
 # Each tool will have the following minimum properties:
 # - <tool>_command : Name of executable to call

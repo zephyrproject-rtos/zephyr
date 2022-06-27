@@ -5,8 +5,8 @@
  */
 
 #define LOG_LEVEL LOG_LEVEL_INF
-#include <logging/log.h>
-#include <zephyr.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include <tc_util.h>
 LOG_MODULE_DECLARE(brd_pm_test);

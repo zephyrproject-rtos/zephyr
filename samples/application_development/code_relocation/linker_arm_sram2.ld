@@ -11,12 +11,11 @@
  * Linker script for the Cortex-M platforms.
  */
 
-#include <autoconf.h>
-#include <linker/sections.h>
-#include <devicetree.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/devicetree.h>
 
-#include <linker/linker-defs.h>
-#include <linker/linker-tool.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/linker-tool.h>
 
 /** enable CONFIG_SRAM2 or any other partition in soc Kconfig,
  * this is just an example to show relocation of code/data/bss script
@@ -37,4 +36,4 @@ MEMORY
 #endif
     }
 
-#include <arch/arm/aarch32/cortex_m/scripts/linker.ld>
+#include <zephyr/arch/arm/aarch32/cortex_m/scripts/linker.ld>

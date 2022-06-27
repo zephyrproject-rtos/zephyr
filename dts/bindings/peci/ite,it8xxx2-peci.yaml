@@ -1,0 +1,15 @@
+# Copyright (c) 2022 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE it8xxx2 PECI
+
+compatible: "ite,peci-it8xxx2"
+
+include: [peci.yaml, pinctrl-device.yaml]
+
+properties:
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true

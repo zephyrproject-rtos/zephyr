@@ -13,12 +13,12 @@ menuconfig CLOCK_CONTROL_LPC11U6X
 if CLOCK_CONTROL_LPC11U6X
 
 config CLOCK_CONTROL_LPC11U6X_ENABLE_SRAM1
-	bool "Enable SRAM1"
+	bool "SRAM1"
 	help
 	  Enable SRAM1
 
 config CLOCK_CONTROL_LPC11U6X_ENABLE_USB_RAM
-	bool "Enable USB RAM"
+	bool "USB RAM"
 	help
 	  Enable USB RAM
 

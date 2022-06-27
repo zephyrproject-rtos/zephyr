@@ -6,13 +6,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stddef.h>
 #include <ztest.h>
 
-#include <bluetooth/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
 
 /* Custom Service Variables */
 static struct bt_uuid_128 test_uuid = BT_UUID_INIT_128(

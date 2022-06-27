@@ -5,7 +5,8 @@
  */
 
 #include "mem_protect.h"
-#include <syscall_handler.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/sys/libc-hooks.h> /* for z_libc_partition */
 
 /* function prototypes */
 static inline void dummy_start(struct k_timer *timer)
@@ -38,6 +39,9 @@ K_MEM_PARTITION_DEFINE(inherit_memory_partition,
 		       K_MEM_PARTITION_P_RW_U_RW);
 
 struct k_mem_partition *inherit_memory_partition_array[] = {
+#if Z_LIBC_PARTITION_EXISTS
+	&z_libc_partition,
+#endif
 	&inherit_memory_partition,
 	&ztest_mem_partition
 };
@@ -90,7 +94,7 @@ static void test_thread_1_for_SU(void *p1, void *p2, void *p3)
  * - Then check child thread can't access to the parent thread object using API
  *   command k_thread_priority_get()
  * - At the same moment that test verifies that child thread was granted
- *   permission on a kernel objects. That meanis child user thread caller
+ *   permission on a kernel objects. That means child user thread caller
  *   already has permission on the thread objects being granted.
 
  * @ingroup kernel_memprotect_tests
@@ -100,9 +104,14 @@ static void test_thread_1_for_SU(void *p1, void *p2, void *p3)
  */
 void test_permission_inheritance(void)
 {
-	k_mem_domain_init(&inherit_mem_domain,
-			  ARRAY_SIZE(inherit_memory_partition_array),
-			  inherit_memory_partition_array);
+	int ret;
+
+	ret = k_mem_domain_init(&inherit_mem_domain,
+				ARRAY_SIZE(inherit_memory_partition_array),
+				inherit_memory_partition_array);
+	if (ret != 0) {
+		ztest_test_fail();
+	}
 
 	parent_tid = k_current_get();
 	k_mem_domain_add_thread(&inherit_mem_domain, parent_tid);
