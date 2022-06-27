@@ -43,7 +43,7 @@ required to maintain ...)
 Why is this the right component to solve it (e.g., SQLite is small,
 easy to use, and has a very liberal license.)
 
-# Dependencies
+## Dependencies
 
 What other components does this package depend on?
 
