@@ -1,7 +1,7 @@
 if(CONFIG_LIBLC3CODEC)
 
 zephyr_library_named(liblc3codec)
-zephyr_library_compile_options(-O3 -ffast-math -Wno-array-bounds)
+zephyr_library_compile_options(-O3 -std=c11 -ffast-math -Wno-array-bounds)
 
 zephyr_include_directories(${ZEPHYR_LIBLC3CODEC_MODULE_DIR}/include)
 zephyr_include_directories(${ZEPHYR_LIBLC3CODEC_MODULE_DIR}/src)
