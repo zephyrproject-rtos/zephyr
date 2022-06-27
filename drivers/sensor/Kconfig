@@ -236,7 +236,15 @@ source "drivers/sensor/vl53l0x/Kconfig"
 
 source "drivers/sensor/nxp_kinetis_temp/Kconfig"
 
+source "drivers/sensor/wsen_hids/Kconfig"
+
 source "drivers/sensor/wsen_itds/Kconfig"
+
+source "drivers/sensor/wsen_pads/Kconfig"
+
+source "drivers/sensor/wsen_pdus/Kconfig"
+
+source "drivers/sensor/wsen_tids/Kconfig"
 
 source "drivers/sensor/mcux_acmp/Kconfig"
 

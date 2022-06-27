@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2022 Würth Elektronik eiSos GmbH & Co. KG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	// EV board default address (SAO=1)
+	itds@19 {
+		compatible = "we,wsen-itds";
+		reg = <0x19>;
+		label = "ITDS";
+		int-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+		odr = "12.5";
+		op-mode = "low-power";
+
+		drdy-int = <0>;
+
+		tap-mode = <1>;
+		tap-threshold = <9>, <9>, <9>;
+		tap-shock = <2>;
+		tap-latency = <5>;
+		tap-quiet = <1>;
+
+		freefall-duration = <6>;
+		freefall-threshold = <10>;
+
+		delta-duration = <1>;
+		delta-threshold = <4>;
+		// delta-offsets = <0>, <0>, <0>;
+		// delta-offset-weight = <0>;
+	};
+};
+
+// &spi1 {
+// 	cs-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+
+// 	itds@0 {
+// 		compatible = "we,wsen-itds";
+// 		reg = <0x0>;
+// 		spi-max-frequency = <8000000>;
+// 		label = "ITDS";
+// 		int-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+// 	};
+// };

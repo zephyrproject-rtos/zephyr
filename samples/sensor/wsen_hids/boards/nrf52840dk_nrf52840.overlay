@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2022 Würth Elektronik eiSos GmbH & Co. KG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	hids@5f {
+		compatible = "we,wsen-hids";
+		reg = <0x5f>;
+		label = "HIDS";
+		drdy-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+// &spi1 {
+// 	cs-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+
+// 	hids@0 {
+// 		compatible = "we,wsen-hids";
+// 		reg = <0x0>;
+// 		spi-max-frequency = <4000000>;
+// 		label = "HIDS";
+// 		drdy-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+// 	};
+// };

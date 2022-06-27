@@ -1,0 +1,84 @@
+# Copyright (c) 2022 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_WEPLATFORM
+	bool
+
+menuconfig TIDS
+	bool "WSEN-TIDS temperature sensor"
+	depends on I2C
+	select HAS_WEPLATFORM
+	help
+	  Enable driver for the WSEN-TIDS I2C-based temperature sensor.
+
+if TIDS
+
+choice TIDS_TRIGGER_MODE
+	prompt "Trigger mode"
+	default TIDS_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config TIDS_TRIGGER_NONE
+	bool "No trigger"
+
+config TIDS_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select TIDS_TRIGGER
+
+config TIDS_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select TIDS_TRIGGER
+
+endchoice # TIDS_TRIGGER_MODE
+
+config TIDS_TRIGGER
+	bool
+
+config TIDS_THREAD_PRIORITY
+	int "Thread priority"
+	depends on TIDS_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config TIDS_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on TIDS_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+menu "Attributes"
+
+config TIDS_TEMP_HI_THRESHOLD
+	depends on TIDS_TRIGGER
+	int "High temperature interrupt threshold"
+	default 50
+	help
+	  Threshold for temperature high limit interrupt event
+
+config TIDS_TEMP_LO_THRESHOLD
+	depends on TIDS_TRIGGER
+	int "Low temperature interrupt threshold"
+	default 10
+	help
+	  Threshold for temperature low limit interrupt event
+
+config TIDS_ODR
+	int "Output data rate"
+	range 25 200
+	default 25
+	help
+	  Sensor output data rate expressed in samples per second.
+	  Data rates supported by the chip are:
+	  25 Hz
+	  50 Hz
+	  100 Hz
+	  200 Hz
+
+endmenu
+
+endif # TIDS

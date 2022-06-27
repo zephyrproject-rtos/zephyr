@@ -1,0 +1,61 @@
+# Copyright (c) 2022 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_WEPLATFORM
+	bool
+
+menuconfig HIDS
+	bool "WSEN-HIDS humidity and temperature sensor"
+	depends on I2C || SPI
+	select HAS_WEPLATFORM
+	help
+	  Enable driver for the WSEN-HIDS I2C/SPI-based humidity sensor with integrated temperature sensor.
+
+if HIDS
+
+choice HIDS_TRIGGER_MODE
+	prompt "Trigger mode"
+	default HIDS_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config HIDS_TRIGGER_NONE
+	bool "No trigger"
+
+config HIDS_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select HIDS_TRIGGER
+
+config HIDS_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select HIDS_TRIGGER
+
+endchoice # HIDS_TRIGGER_MODE
+
+config HIDS_TRIGGER
+	bool
+
+config HIDS_THREAD_PRIORITY
+	int "Thread priority"
+	depends on HIDS_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config HIDS_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on HIDS_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config HIDS_ODR
+	string "Output data rate"
+	default "1"
+	help
+	  Sensor output data rate expressed in samples per second.
+	  Data rates supported by the chip are "1", "7" and "12.5".
+
+endif # HIDS

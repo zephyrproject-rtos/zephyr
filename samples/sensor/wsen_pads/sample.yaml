@@ -1,0 +1,8 @@
+sample:
+  name: WSEN-PADS Sensor Sample
+tests:
+  sample.sensor.wsen-pads:
+    harness: sensor
+    tags: sensors
+    depends_on: i2c pads
+    filter: dt_compat_enabled("we,wsen-pads")

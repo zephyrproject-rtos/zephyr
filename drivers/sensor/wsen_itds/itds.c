@@ -1,409 +1,386 @@
 /*
+ * Copyright (c) 2022 Würth Elektronik eiSos GmbH & Co. KG
+ *
  * SPDX-License-Identifier: Apache-2.0
- *
- * Würth Elektronic WSEN-ITDS 3-axis accel sensor driver
- *
- * Copyright (c) 2020 Linumiz
- * Author: Saravanan Sekar <saravanan@linumiz.com>
  */
 
-#include <zephyr/init.h>
-#include <zephyr/drivers/sensor.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/kernel.h>
-#include <zephyr/sys/__assert.h>
-#include <zephyr/logging/log.h>
-#include "itds.h"
-
 #define DT_DRV_COMPAT we_wsen_itds
-#define ITDS_TEMP_CONST 62500
+
+#include <string.h>
+
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/logging/log.h>
+
+#include "itds.h"
 
 LOG_MODULE_REGISTER(ITDS, CONFIG_SENSOR_LOG_LEVEL);
 
-static const struct itds_odr itds_odr_map[ITDS_ODR_MAX] = {
-	{0}, {1, 600}, {12, 500}, {25}, {50}, {100}, {200},
-	{400}, {800}, {1600}
+/*
+ * List of supported output data rates (sensor_value struct, input to
+ * sensor_attr_set()). Index into this list is used as argument for
+ * ITDS_setOutputDataRate().
+ */
+static const struct sensor_value itds_odr_list[] = {
+	{ .val1 = 0, .val2 = 0 },	    { .val1 = 1, .val2 = 6 * 100000 },
+	{ .val1 = 12, .val2 = 5 * 100000 }, { .val1 = 25, .val2 = 0 },
+	{ .val1 = 50, .val2 = 0 },	    { .val1 = 100, .val2 = 0 },
+	{ .val1 = 200, .val2 = 0 },	    { .val1 = 400, .val2 = 0 },
+	{ .val1 = 800, .val2 = 0 },	    { .val1 = 1600, .val2 = 0 }
 };
 
-static const unsigned int itds_sensitivity_scale[][ITDS_ACCL_RANGE_END] = {
-	{976, 1952, 3904, 7808},
+/*
+ * List of supported full scale values (i.e. measurement ranges, in g).
+ * Index into this list is used as input for ITDS_setFullScale().
+ */
+static const int itds_full_scale_list[] = { 2, 4, 8, 16 };
 
-	/* high performance mode */
-	{244, 488, 976, 1952}
-};
-
-static int itds_get_odr_for_index(const struct device *dev,
-				  enum itds_odr_const idx,
-				  uint16_t *freq, uint16_t *mfreq)
+static int itds_sample_fetch(const struct device *dev, enum sensor_channel channel)
 {
-	struct itds_device_data *ddata = dev->data;
-	int start, end;
-	bool hp_mode;
+	struct itds_data *data = dev->data;
+	int16_t temperature;
 
-	hp_mode = !!(ddata->op_mode & ITDS_OP_MODE_HIGH_PERF);
-	if (hp_mode) {
-		start = ITDS_ODR_12_5;
-		end = ITDS_ODR_1600;
-	} else {
-		start = ITDS_ODR_1_6;
-		end = ITDS_ODR_200;
+	__ASSERT_NO_MSG(channel == SENSOR_CHAN_ALL);
+
+	if (WE_SUCCESS != ITDS_getAccelerations_int(&data->sensor_interface, 1,
+						    &data->acceleration_x, &data->acceleration_y,
+						    &data->acceleration_z)) {
+		LOG_ERR("Failed to fetch acceleration sample.");
+		return -EIO;
 	}
 
-	if (idx < start || idx > end) {
-		LOG_ERR("invalid odr for the operating mode");
-		return -EINVAL;
+	if (WE_SUCCESS != ITDS_getRawTemperature12bit(&data->sensor_interface, &temperature)) {
+		LOG_ERR("Failed to fetch temperature sample.");
+		return -EIO;
 	}
-
-	*freq = itds_odr_map[idx].freq;
-	*mfreq = itds_odr_map[idx].mfreq;
+	data->temperature = ((temperature * 100) / 16) + 2500;
 
 	return 0;
 }
 
-static int itds_accl_odr_set(const struct device *dev, uint16_t freq,
-			     uint16_t mfreq)
+/* Convert acceleration value from mg (int16) to m/s^2 (sensor_value). */
+static inline void itds_convert_acceleration(struct sensor_value *val, int16_t raw_val)
 {
-	struct itds_device_data *ddata = dev->data;
-	const struct itds_device_config *cfg = dev->config;
-	int start, end, i;
-	bool hp_mode;
+	int64_t dval;
 
-	hp_mode = !!(ddata->op_mode & ITDS_OP_MODE_HIGH_PERF);
-	if (hp_mode) {
-		start = ITDS_ODR_12_5;
-		end = ITDS_ODR_1600;
+	/* Convert to m/s^2 */
+	dval = (((int64_t)raw_val) * SENSOR_G) / 1000000LL;
+	val->val1 = dval / 1000LL;
+	val->val2 = (dval % 1000LL) * 1000;
+}
+
+static int itds_channel_get(const struct device *dev, enum sensor_channel channel,
+			    struct sensor_value *value)
+{
+	struct itds_data *data = dev->data;
+	int32_t value_converted;
+	int result = -ENOTSUP;
+
+	if (channel == SENSOR_CHAN_AMBIENT_TEMP) {
+		value_converted = (int32_t)data->temperature;
+
+		/* Convert temperature from 0.01 degrees Celsius to degrees Celsius */
+		value->val1 = value_converted / 100;
+		value->val2 = (value_converted % 100) * (1000000 / 100);
+
+		result = 0;
 	} else {
-		start = ITDS_ODR_1_6;
-		end = ITDS_ODR_200;
-	}
-
-	for (i = start; i <= end; i++) {
-		if ((freq == itds_odr_map[i].freq) &&
-		    (mfreq == itds_odr_map[i].mfreq)) {
-
-			return i2c_reg_update_byte(ddata->i2c, cfg->i2c_addr,
-					 ITDS_REG_CTRL1, ITDS_MASK_ODR, i << 4);
+		/* Convert requested acceleration(s) */
+		if (channel == SENSOR_CHAN_ACCEL_X || channel == SENSOR_CHAN_ACCEL_XYZ) {
+			itds_convert_acceleration(value, data->acceleration_x);
+			value++;
+			result = 0;
+		}
+		if (channel == SENSOR_CHAN_ACCEL_Y || channel == SENSOR_CHAN_ACCEL_XYZ) {
+			itds_convert_acceleration(value, data->acceleration_y);
+			value++;
+			result = 0;
+		}
+		if (channel == SENSOR_CHAN_ACCEL_Z || channel == SENSOR_CHAN_ACCEL_XYZ) {
+			itds_convert_acceleration(value, data->acceleration_z);
+			value++;
+			result = 0;
 		}
 	}
 
-	LOG_ERR("invalid odr, not in range");
-	return -EINVAL;
+	return result;
 }
 
-static int itds_accl_range_set(const struct device *dev, int32_t range)
+/* Set output data rate. See itds_odr_list for allowed values. */
+static int itds_odr_set(const struct device *dev, const struct sensor_value *odr)
 {
-	struct itds_device_data *ddata = dev->data;
-	const struct itds_device_config *cfg = dev->config;
-	int i, ret;
-	bool hp_mode;
+	struct itds_data *data = dev->data;
+	int odr_index;
 
-	for (i = 0; i < ITDS_ACCL_RANGE_END; i++) {
-		if (range <= (2 << i)) {
+	for (odr_index = 0; odr_index < ARRAY_SIZE(itds_odr_list); odr_index++) {
+		if (odr->val1 == itds_odr_list[odr_index].val1 &&
+		    odr->val2 == itds_odr_list[odr_index].val2) {
 			break;
 		}
 	}
 
-	if (i == ITDS_ACCL_RANGE_END) {
-		LOG_ERR("Accl out of range");
+	if (odr_index == ARRAY_SIZE(itds_odr_list)) {
+		/* ODR not allowed (was not found in itds_odr_list) */
+		LOG_ERR("Bad sampling frequency %d.%d", odr->val1, odr->val2);
 		return -EINVAL;
 	}
 
-	ret = i2c_reg_update_byte(ddata->i2c, cfg->i2c_addr, ITDS_REG_CTRL6,
-				  ITDS_MASK_SCALE, i << 4);
-	if (ret) {
-		LOG_ERR("Accl set full scale failed %d", ret);
-		return ret;
+	if (WE_SUCCESS !=
+	    ITDS_setOutputDataRate(&data->sensor_interface, (ITDS_outputDataRate_t)odr_index)) {
+		LOG_ERR("Failed to set output data rate");
+		return -EIO;
 	}
-
-	hp_mode = !!(ddata->op_mode & ITDS_OP_MODE_HIGH_PERF);
-	ddata->scale = itds_sensitivity_scale[hp_mode][i];
 
 	return 0;
 }
 
-static int itds_attr_set(const struct device *dev, enum sensor_channel chan,
-			 enum sensor_attribute attr,
-			 const struct sensor_value *val)
+/* Set full scale (measurement range). See itds_full_scale_list for allowed values. */
+int itds_full_scale_set(const struct device *dev, int fs)
 {
-	if (chan != SENSOR_CHAN_ACCEL_X &&
-	    chan != SENSOR_CHAN_ACCEL_Y &&
-	    chan != SENSOR_CHAN_ACCEL_Z &&
-	    chan != SENSOR_CHAN_ACCEL_XYZ) {
-		LOG_ERR("attr_set() not supported on this channel.");
+	struct itds_data *data = dev->data;
+	uint8_t idx;
+
+	for (idx = 0; idx < ARRAY_SIZE(itds_full_scale_list); idx++) {
+		if (itds_full_scale_list[idx] == fs) {
+			if (WE_SUCCESS ==
+			    ITDS_setFullScale(&data->sensor_interface, (ITDS_fullScale_t)idx)) {
+				return 0;
+			}
+			LOG_ERR("Failed to set full scale.");
+			return -EIO;
+		}
+	}
+	return -EINVAL;
+}
+
+static int itds_attr_set(const struct device *dev, enum sensor_channel chan,
+			 enum sensor_attribute attr, const struct sensor_value *val)
+{
+	if (chan != SENSOR_CHAN_ALL) {
+		LOG_WRN("attr_set() not supported on this channel.");
 		return -ENOTSUP;
 	}
 
 	switch (attr) {
-	case SENSOR_ATTR_FULL_SCALE:
-		return itds_accl_range_set(dev, sensor_ms2_to_g(val));
-
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		return itds_accl_odr_set(dev, val->val1, val->val2 / 1000);
+		return itds_odr_set(dev, val);
 
 	default:
-		LOG_ERR("Accel attribute not supported.");
+		LOG_ERR("Operation not supported.");
 		return -ENOTSUP;
 	}
-}
-
-static int itds_fetch_temprature(struct itds_device_data *ddata,
-				 const struct itds_device_config *cfg)
-{
-	uint8_t rval;
-	int16_t temp_raw = 0;
-	int ret;
-
-	ret = i2c_reg_read_byte(ddata->i2c, cfg->i2c_addr,
-				ITDS_REG_STATUS_DETECT, &rval);
-	if (ret) {
-		return ret;
-	}
-
-	if (!(rval & ITDS_EVENT_DRDY_T)) {
-		return -EAGAIN;
-	}
-
-	ret = i2c_burst_read(ddata->i2c, cfg->i2c_addr, ITDS_REG_TEMP_L,
-			     (uint8_t *)&temp_raw, sizeof(uint16_t));
-	if (ret) {
-		return ret;
-	}
-
-	ddata->temprature = sys_le16_to_cpu(temp_raw);
 
 	return 0;
 }
 
-static int itds_fetch_accel(struct itds_device_data *ddata,
-			    const struct itds_device_config *cfg)
+static const struct sensor_driver_api itds_driver_api = { .attr_set = itds_attr_set,
+#if CONFIG_ITDS_TRIGGER
+							  .trigger_set = itds_trigger_set,
+#endif
+							  .sample_fetch = itds_sample_fetch,
+							  .channel_get = itds_channel_get };
+
+int itds_init(const struct device *dev)
 {
-	size_t i, ret;
-	uint8_t rval;
+	const struct itds_config *config = dev->config;
+	struct itds_data *data = dev->data;
+	uint8_t device_id;
+	int8_t status;
+	ITDS_state_t sw_reset;
 
-	ret = i2c_reg_read_byte(ddata->i2c, cfg->i2c_addr,
-				ITDS_REG_STATUS, &rval);
-	if (ret) {
-		return ret;
+	/* Initialize WE sensor interface */
+	WE_sensorInterfaceType_t interface_type = data->sensor_interface.interfaceType;
+	ITDS_getDefaultInterface(&data->sensor_interface);
+	data->sensor_interface.interfaceType = interface_type;
+	if (data->sensor_interface.interfaceType == WE_i2c) {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+		data->sensor_interface.handle = (void *)&config->bus_cfg.i2c;
+#endif
+	} else {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+		data->sensor_interface.handle = (void *)&config->bus_cfg.spi;
+#endif
 	}
 
-	if (!(rval & ITDS_EVENT_DRDY)) {
-		return -EAGAIN;
+	/* First communication test - check device ID */
+	if (WE_SUCCESS != ITDS_getDeviceID(&data->sensor_interface, &device_id)) {
+		LOG_ERR("Failed to read device ID.");
+		return -EIO;
 	}
 
-	ret = i2c_burst_read(ddata->i2c, cfg->i2c_addr, ITDS_REG_X_OUT_L,
-			     (uint8_t *)ddata->samples,
-			     sizeof(uint16_t) * ITDS_SAMPLE_SIZE);
-	if (ret) {
-		return ret;
+	if (device_id != ITDS_DEVICE_ID_VALUE) {
+		LOG_ERR("Invalid device ID 0x%x.", device_id);
+		return -EINVAL;
 	}
 
-	/* convert samples to cpu endianness */
-	for (i = 0; i < ITDS_SAMPLE_SIZE; i += 2) {
-		int16_t *sample =	(int16_t *) &ddata->samples[i];
+	/* Perform soft reset of the sensor */
+	ITDS_softReset(&data->sensor_interface, ITDS_enable);
 
-		*sample = sys_le16_to_cpu(*sample);
-		if (ddata->op_mode & ITDS_OP_MODE_NORMAL ||
-		    ddata->op_mode & ITDS_OP_MODE_HIGH_PERF) {
-			*sample = *sample >> 2;
-		} else {
-			*sample = *sample >> 4;
+	k_sleep(K_USEC(5));
+
+	do {
+		if (WE_SUCCESS != ITDS_getSoftResetState(&data->sensor_interface, &sw_reset)) {
+			LOG_ERR("Failed to get sensor reset state.");
+			return -EIO;
 		}
-		LOG_DBG("itds sample %d %X\n", i, *sample);
+	} while (sw_reset);
+
+	if (WE_SUCCESS != ITDS_setOperatingMode(&data->sensor_interface,
+						config->op_mode == itds_op_mode_high_performance ?
+							ITDS_highPerformance :
+							ITDS_normalOrLowPower)) {
+		LOG_ERR("Failed to set operating mode.");
+		return -EIO;
 	}
 
-	return 0;
-}
-
-static int itds_sample_fetch(const struct device *dev,
-			     enum sensor_channel chan)
-{
-	struct itds_device_data *ddata = dev->data;
-	const struct itds_device_config *cfg = dev->config;
-
-	switch (chan) {
-	case SENSOR_CHAN_ACCEL_XYZ:
-	case SENSOR_CHAN_ACCEL_X:
-	case SENSOR_CHAN_ACCEL_Y:
-	case SENSOR_CHAN_ACCEL_Z:
-		return itds_fetch_accel(ddata, cfg);
-
-	case SENSOR_CHAN_DIE_TEMP:
-		return itds_fetch_temprature(ddata, cfg);
-
-	default:
-		return -EINVAL;
-	}
-}
-
-static inline void itds_accl_channel_get(const struct device *dev,
-					 enum sensor_channel chan,
-					 struct sensor_value *val)
-{
-	int i;
-	struct itds_device_data *ddata = dev->data;
-	uint8_t ofs_start, ofs_stop;
-
-	switch (chan) {
-	case SENSOR_CHAN_ACCEL_X:
-		ofs_start = ofs_stop = 0U;
-		break;
-	case SENSOR_CHAN_ACCEL_Y:
-		ofs_start = ofs_stop = 1U;
-		break;
-	case SENSOR_CHAN_ACCEL_Z:
-		ofs_start = ofs_stop = 2U;
-		break;
-	default:
-		ofs_start = 0U; ofs_stop = 2U;
-		break;
+	if (WE_SUCCESS != ITDS_setOutputDataRate(&data->sensor_interface, config->odr)) {
+		LOG_ERR("Failed to set output data rate.");
+		return -EIO;
 	}
 
-	for (i = ofs_start; i <= ofs_stop ; i++, val++) {
-		int64_t dval;
-
-		/* Sensitivity is exposed in ug/LSB */
-		/* Convert to m/s^2 */
-		dval = (int64_t)((ddata->samples[i] * ddata->scale * SENSOR_G) /
-				1000000LL);
-		val->val1 = (int32_t)(dval / 1000000);
-		val->val2 = (int32_t)(dval % 1000000);
-	}
-}
-
-static int itds_temp_channel_get(const struct device *dev,
-				 struct sensor_value *val)
-{
-	int32_t temp_processed;
-	struct itds_device_data *ddata = dev->data;
-
-	temp_processed = (ddata->temprature >> 4) * ITDS_TEMP_CONST;
-
-	val->val1 = ITDS_TEMP_OFFSET;
-	val->val2 = temp_processed;
-
-	return 0;
-}
-
-static int itds_channel_get(const struct device *dev,
-			    enum sensor_channel chan,
-			    struct sensor_value *val)
-{
-	switch (chan) {
-	case SENSOR_CHAN_ACCEL_X:
-	case SENSOR_CHAN_ACCEL_Y:
-	case SENSOR_CHAN_ACCEL_Z:
-	case SENSOR_CHAN_ACCEL_XYZ:
-		itds_accl_channel_get(dev, chan, val);
-		return 0;
-
-	case SENSOR_CHAN_DIE_TEMP:
-		return itds_temp_channel_get(dev, val);
-
-	default:
-		LOG_ERR("Channel not supported.");
-		return -ENOTSUP;
+	if (config->low_noise) {
+		if (WE_SUCCESS != ITDS_enableLowNoise(&data->sensor_interface, ITDS_enable)) {
+			LOG_ERR("Failed to enable low-noise mode.");
+			return -EIO;
+		}
 	}
 
-	return 0;
-}
-
-static int itds_init(const struct device *dev)
-{
-	struct itds_device_data *ddata = dev->data;
-	const struct itds_device_config *cfg = dev->config;
-	int ret;
-	uint16_t freq, mfreq;
-	uint8_t rval;
-
-	ddata->i2c = device_get_binding(cfg->bus_name);
-	if (!ddata->i2c) {
-		LOG_ERR("I2C controller not found: %s.", cfg->bus_name);
-		return -EINVAL;
+	if (WE_SUCCESS != ITDS_enableBlockDataUpdate(&data->sensor_interface, ITDS_enable)) {
+		LOG_ERR("Failed to enable block data update.");
+		return -EIO;
 	}
 
-	ret = i2c_reg_read_byte(ddata->i2c, cfg->i2c_addr,
-				ITDS_REG_DEV_ID, &rval);
-	if (ret) {
-		LOG_ERR("device init fail: %d", ret);
-		return ret;
+	if (WE_SUCCESS !=
+	    ITDS_setPowerMode(&data->sensor_interface, config->op_mode == itds_op_mode_low_power ?
+							       ITDS_lowPower :
+							       ITDS_normalMode)) {
+		LOG_ERR("Failed to set power mode.");
+		return -EIO;
 	}
 
-	if (rval != ITDS_DEVICE_ID) {
-		LOG_ERR("device ID mismatch: %x", rval);
-		return ret;
+	status = itds_full_scale_set(dev, config->range);
+	if (status < 0) {
+		return status;
 	}
 
-	ret = i2c_reg_update_byte(ddata->i2c, cfg->i2c_addr, ITDS_REG_CTRL2,
-				  ITDS_MASK_BDU_INC_ADD, ITDS_MASK_BDU_INC_ADD);
-	if (ret) {
-		LOG_ERR("unable to set block data update %d", ret);
-		return ret;
-	}
-
-	ret = i2c_reg_write_byte(ddata->i2c, cfg->i2c_addr,
-				 ITDS_REG_WAKEUP_EVENT, 0);
-	if (ret) {
-		LOG_ERR("disable wakeup event fail %d", ret);
-		return ret;
-	}
-
-	ret = i2c_reg_update_byte(ddata->i2c, cfg->i2c_addr, ITDS_REG_CTRL1,
-				  ITDS_MASK_MODE, 1 << cfg->def_op_mode);
-	if (ret) {
-		LOG_ERR("set operating mode fail %d", ret);
-		return ret;
-	}
-
-	ddata->op_mode = 1 << cfg->def_op_mode;
-
-	ret = itds_get_odr_for_index(dev, cfg->def_odr, &freq, &mfreq);
-	if (ret) {
-		LOG_ERR("odr not in range for operating mode %d", ret);
-		return ret;
-	}
-
-	ret = itds_accl_odr_set(dev, freq, mfreq);
-	if (ret) {
-		LOG_ERR("odr not in range for operating mode %d", ret);
-		return ret;
-	}
-
-#ifdef CONFIG_ITDS_TRIGGER
-	ret = itds_trigger_mode_init(dev);
-	if (ret) {
-		LOG_ERR("trigger mode init failed %d", ret);
-		return ret;
+#if CONFIG_ITDS_TRIGGER
+	status = itds_init_interrupt(dev);
+	if (status < 0) {
+		LOG_ERR("Failed to initialize interrupt(s).");
+		return status;
 	}
 #endif
+
 	return 0;
 }
 
-static const struct sensor_driver_api itds_api = {
-	.attr_set = itds_attr_set,
-#ifdef CONFIG_ITDS_TRIGGER
-	.trigger_set = itds_trigger_set,
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
+#warning "ITDS driver enabled without any devices"
 #endif
-	.sample_fetch = itds_sample_fetch,
-	.channel_get = itds_channel_get,
-};
 
-#define WSEN_ITDS_INIT(idx)						\
-									\
-static struct itds_device_data itds_data_##idx;				\
-									\
-static const struct itds_device_config itds_config_##idx = {		\
-	.i2c_addr = DT_INST_REG_ADDR(idx),				\
-	.bus_name = DT_INST_BUS_LABEL(idx),				\
-	.gpio_port = DT_INST_GPIO_LABEL(idx, int_gpios),		\
-	.int_pin = DT_INST_GPIO_PIN(idx, int_gpios),			\
-	.int_flags = DT_INST_GPIO_FLAGS(idx, int_gpios),		\
-	.def_odr = DT_INST_ENUM_IDX(idx, odr),				\
-	.def_op_mode = DT_INST_ENUM_IDX(idx, op_mode),			\
-};									\
-									\
-DEVICE_DT_INST_DEFINE(idx, itds_init, NULL,				\
-		    &itds_data_##idx, &itds_config_##idx,		\
-		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,		\
-		    &itds_api);						\
+/*
+ * Device creation macros
+ */
 
-DT_INST_FOREACH_STATUS_OKAY(WSEN_ITDS_INIT)
+#define ITDS_DEVICE_INIT(inst)                                                                     \
+	DEVICE_DT_INST_DEFINE(inst,					\
+				itds_init,						\
+				NULL,							\
+				&itds_data_##inst,				\
+				&itds_config_##inst,			\
+				POST_KERNEL,					\
+				CONFIG_SENSOR_INIT_PRIORITY,	\
+				&itds_driver_api);
+
+#ifdef CONFIG_ITDS_TRIGGER
+#define ITDS_CFG_IRQ(inst)                                                                         \
+	.gpio_interrupts = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                                 \
+	.drdy_int = DT_INST_PROP(inst, drdy_int)
+#else
+#define ITDS_CFG_IRQ(inst)
+#endif /* CONFIG_ITDS_TRIGGER */
+
+#ifdef CONFIG_ITDS_TAP
+#define ITDS_CONFIG_TAP(inst)                                                                      \
+	.tap_mode = DT_INST_PROP(inst, tap_mode),                                                  \
+	.tap_threshold = DT_INST_PROP(inst, tap_threshold),                                        \
+	.tap_shock = DT_INST_PROP(inst, tap_shock),                                                \
+	.tap_latency = DT_INST_PROP(inst, tap_latency),                                            \
+	.tap_quiet = DT_INST_PROP(inst, tap_quiet),
+#else
+#define ITDS_CONFIG_TAP(inst)
+#endif /* CONFIG_ITDS_TAP */
+
+#ifdef CONFIG_ITDS_FREEFALL
+#define ITDS_CONFIG_FREEFALL(inst)                                                                 \
+	.freefall_duration = DT_INST_PROP(inst, freefall_duration),                                \
+	.freefall_threshold = (ITDS_FreeFallThreshold_t) DT_INST_ENUM_IDX(inst, freefall_threshold),
+#else
+#define ITDS_CONFIG_FREEFALL(inst)
+#endif /* CONFIG_ITDS_FREEFALL */
+
+#ifdef CONFIG_ITDS_DELTA
+#define ITDS_CONFIG_DELTA(inst)                                                                    \
+	.delta_threshold = DT_INST_PROP(inst, delta_threshold),                                    \
+	.delta_duration = DT_INST_PROP(inst, delta_duration),                                      \
+	.delta_offsets = DT_INST_PROP(inst, delta_offsets),                                        \
+	.delta_offset_weight = DT_INST_PROP(inst, delta_offset_weight),
+#else
+#define ITDS_CONFIG_DELTA(inst)
+#endif /* CONFIG_ITDS_DELTA */
+
+#define ITDS_CONFIG_COMMON(inst)                                                                   \
+	.odr = (ITDS_outputDataRate_t)(DT_INST_ENUM_IDX(inst, odr) + 1),                           \
+	.op_mode = (itds_op_mode_t)DT_INST_ENUM_IDX(inst, op_mode),                                \
+	.range = DT_INST_PROP(inst, range),                                                        \
+	.low_noise = DT_INST_PROP(inst, low_noise),                                                \
+	ITDS_CONFIG_TAP(inst)                                                                      \
+	ITDS_CONFIG_FREEFALL(inst)                                                                 \
+	ITDS_CONFIG_DELTA(inst)                                                                    \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int_gpios),                                        \
+		(ITDS_CFG_IRQ(inst)), ())
+
+/*
+ * Instantiation macros used when device is on SPI bus.
+ */
+
+#define ITDS_SPI_OPERATION (SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
+
+#define ITDS_CONFIG_SPI(inst)                                                                      \
+	{                                                                                          \
+		.bus_cfg = {                                                                       \
+			.spi = SPI_DT_SPEC_INST_GET(inst,                                          \
+							ITDS_SPI_OPERATION,                        \
+							0),                                        \
+		},                                                                                 \
+		ITDS_CONFIG_COMMON(inst)                                                           \
+	}
+
+/*
+ * Instantiation macros used when device is on I2C bus.
+ */
+
+#define ITDS_CONFIG_I2C(inst)                                                                      \
+	{                                                                                          \
+		.bus_cfg = {                                                                       \
+			.i2c = I2C_DT_SPEC_INST_GET(inst),                                         \
+		},                                                                                 \
+		ITDS_CONFIG_COMMON(inst)                                                           \
+	}
+
+/*
+ * Main instantiation macro. Use of COND_CODE_1() selects the right
+ * bus-specific macro at preprocessor time.
+ */
+#define ITDS_DEFINE(inst)                                                                          \
+	static struct itds_data itds_data_##inst =                                                 \
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi),                                             \
+			    ({ .sensor_interface = { .interfaceType = WE_spi } }),                 \
+			    ({ .sensor_interface = { .interfaceType = WE_i2c } }));                \
+	static const struct itds_config itds_config_##inst =                                       \
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi),                                             \
+				(ITDS_CONFIG_SPI(inst)),                                           \
+				(ITDS_CONFIG_I2C(inst)));                                          \
+	ITDS_DEVICE_INIT(inst)
+
+DT_INST_FOREACH_STATUS_OKAY(ITDS_DEFINE)

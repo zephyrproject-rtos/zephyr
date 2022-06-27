@@ -595,13 +595,41 @@ test_i2c_iis2iclx: iis2iclx@6a {
 	int-pin = <1>;
 };
 
-test_i2c_itds: itds@18 {
+test_i2c_hids: hids@5f {
+	compatible = "we,wsen-hids";
+	label = "WSEN-HIDS";
+	reg = <0x5f>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_itds: itds@19 {
 	compatible = "we,wsen-itds";
 	label = "WSEN-ITDS";
-	reg = <0x18>;
+	reg = <0x19>;
 	int-gpios = <&test_gpio 0 0>;
 	odr = "800";
 	op-mode = "high-perf";
+};
+
+test_i2c_pads: pads@5d {
+	compatible = "we,wsen-pads";
+	label = "WSEN-PADS";
+	reg = <0x5d>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_pdus: pdus@78 {
+	compatible = "we,wsen-pdus";
+	label = "WSEN-PDUS";
+	reg = <0x78>;
+	sensor-type = <3>;
+};
+
+test_i2c_tids: tids@38 {
+	compatible = "we,wsen-tids";
+	label = "WSEN-TIDS";
+	reg = <0x38>;
+	int-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_max17055: max17055@49 {

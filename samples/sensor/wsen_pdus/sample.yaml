@@ -1,0 +1,8 @@
+sample:
+  name: WSEN-PDUS Sensor Sample
+tests:
+  sample.sensor.wsen-pdus:
+    harness: sensor
+    tags: sensors
+    depends_on: i2c pdus
+    filter: dt_compat_enabled("we,wsen-pdus")

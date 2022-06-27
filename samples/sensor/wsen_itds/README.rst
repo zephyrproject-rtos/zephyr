@@ -1,57 +1,81 @@
 .. _wsen-itds:
 
-WSEN-ITDS: 3-axis acceleration sensor
+WSEN-ITDS: 3-axis Acceleration Sensor
 #####################################
 
 Overview
 ********
- This sample periodically measures acceleration in 3-axis and die temperature for
- 5 sec in the interval of 300msec in polling mode. Then data ready trigger mode
- is enabled with the sample frequency of 400Hz and 3-axis data is fetched based
- on interrupt. The result is displayed on the console.
+
+This sample uses the Zephyr :ref:`sensor_api` API driver to periodically
+read accelerations and temperature from the Würth Elektronik WSEN-ITDS
+3-axis acceleration sensor and displays it on the console.
+
+By default, samples are read in polling mode. If desired, the data-ready
+interrupt of the sensor can be used to trigger reading of samples.
+
+Additionally, the sensor's embedded functions (single/double tap,
+free-fall and wake-up) can be tested by enabling the corresponding
+triggers.
 
 Requirements
 ************
 
- This sample uses the WSEN-ITDS sensor controlled using the I2C interface.
- Connect sensor IN1 for interrupt(data ready trigger) to Disco board D8 pin
- Connect sensor CS pin high to enable I2C communication, SAO to ground for 0x18
- I2C address selection.
+This sample requires a WSEN-ITDS sensor connected via the I2C or SPI interface.
 
 References
 **********
 
- - WSEN-ITDS: https://www.we-online.com/catalog/manual/2533020201601_WSEN-ITDS%202533020201601%20Manual_rev1.pdf
+- WSEN-ITDS: https://www.we-online.com/catalog/en/WSEN-ITDS
 
 Building and Running
 ********************
 
- This project outputs sensor data to the console. It requires a WSEN-ITDS
- sensor, which is present on the disco_l475_iot1 board.
+This sample can be configured to support WSEN-ITDS sensors connected via
+either I2C or SPI. Configuration is done via the :ref:`devicetree <dt-guide>`.
+The devicetree must have an enabled node with ``compatible = "we,wsen-itds";``.
+See :dtcompatible:`we,wsen-itds` for the devicetree binding.
 
- .. zephyr-app-commands::
-    :app: samples/sensor/wsen_itds/
-    :goals: build flash
+By default, the sample reads from the sensor and outputs sensor data to the
+console at regular intervals. If you want to test the sensor's trigger mode,
+specify the trigger configuration in the prj.conf file and connect the
+interrupt output from the sensor to your board.
 
+The data-ready interrupt functionality can be tested by setting
+``CONFIG_ITDS_TRIGGER_GLOBAL_THREAD=y`` or ``CONFIG_ITDS_TRIGGER_OWN_THREAD=y``
+without enabling any additional triggers. When enabling one of the additional
+triggers, output of sensor samples on the console is disabled. Instead, log
+messages are printed when the selected events are triggered.
+
+Additional triggers can be enabled by setting ``CONFIG_ITDS_TAP=y``,
+``CONFIG_ITDS_FREEFALL=y`` or ``CONFIG_ITDS_DELTA=y``.
+Note that the minimum recommended output data rate for tap recognition is
+400 Hz, which can be configured in the devicetree by setting ``odr = "400";``
+and ``op-mode = "high-perf";``.
+
+Also note that the LSB of the sensor's I2C slave address can be modified using
+the SAO pin. The I2C address used by the sensor (0x18 or 0x19) needs to be
+specified in the devicetree. The WSEN-ITDS evaluation board uses 0x19 as its
+default address.
+
+.. zephyr-app-commands::
+   :app: samples/sensor/wsen_itds/
+   :goals: build flash
 
 Sample Output
 =============
 
- .. code-block:: console
+.. code-block:: console
 
-    Testing the polling mode.
-    Accl (m/s): X=2.311466, Y=-39.433716, Z=2.636890
-    Temperature (Celsius): 28.000000
+  [00:00:00.264,007] <inf> MAIN: ITDS device initialized.
+  [00:00:00.265,655] <inf> MAIN: Sample #1
+  [00:00:00.265,686] <inf> MAIN: Acceleration X: -2.89 m/s2
+  [00:00:00.265,716] <inf> MAIN: Acceleration Y: 5.69 m/s2
+  [00:00:00.265,747] <inf> MAIN: Acceleration Z: 4.51 m/s2
+  [00:00:00.265,777] <inf> MAIN: Temperature: 29.8 C
+  [00:00:02.267,517] <inf> MAIN: Sample #2
+  [00:00:02.267,547] <inf> MAIN: Acceleration X: -1.39 m/s2
+  [00:00:02.267,578] <inf> MAIN: Acceleration Y: 0.73 m/s2
+  [00:00:02.267,608] <inf> MAIN: Acceleration Z: 9.59 m/s2
+  [00:00:02.267,639] <inf> MAIN: Temperature: 29.6 C
 
-    <repeats 5sec every 300ms>
-
-    Polling mode test finished.
-    Testing the trigger mode.
-    Testing data ready trigger.
-    any drdy.
-    Accl (m/s): X=8.039883, Y=-1.780260, Z=6.063412
-
-    <repeats 5sec every 300ms>
-
-    Data ready trigger test finished.
-    Trigger mode test finished.
+   <repeats endlessly every 2 seconds>

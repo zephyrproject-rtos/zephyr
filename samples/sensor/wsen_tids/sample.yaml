@@ -1,0 +1,8 @@
+sample:
+  name: WSEN-TIDS Sensor Sample
+tests:
+  sample.sensor.wsen-tids:
+    harness: sensor
+    tags: sensors
+    depends_on: i2c tids
+    filter: dt_compat_enabled("we,wsen-tids")
