@@ -809,6 +809,24 @@ zephyr_get_include_directories_for_lang(C ZEPHYR_INCLUDES)
 
 add_subdirectory(kernel)
 
+if(CONFIG_DEVICE_DATA_CONTEXTS)
+
+  set(DDC_TYPES_H_TARGET ddc_types_h)
+
+  add_dependencies(zephyr_generated_headers
+    ddc_types_h
+    )
+
+  set(DDC_TYPES_H_PATH ${PROJECT_BINARY_DIR}/include/generated/ddc_types.h)
+
+  add_custom_command(
+    OUTPUT ${DDC_TYPES_H_PATH}
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/gen_ddc_types.py
+    -o ${DDC_TYPES_H_PATH}
+    )
+  add_custom_target(${DDC_TYPES_H_TARGET} DEPENDS ${DDC_TYPES_H_PATH})
+endif()
+
 # Read list content
 get_property(ZEPHYR_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_LIBS)
 

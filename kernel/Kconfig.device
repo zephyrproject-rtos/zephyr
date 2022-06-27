@@ -1,0 +1,16 @@
+# Device configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Device driver generic options"
+
+config DEVICE_DATA_CONTEXTS
+	bool "Generated device data contexts"
+	default y
+	help
+	  Devices may use generic objects, part of their respective data,
+	  that are generic accross the system, nested in various contexts
+	  which in turn can be transparently accessed relevantly.
+
+endmenu

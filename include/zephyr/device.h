@@ -432,8 +432,12 @@ struct device_context {
 	 * A value of 0 indicates the initalization succeeded.
 	 */
 	uint32_t init_res    : 8;
+	/** Generic Device Data Context presence in device's data
+	 * If set, this will mean the device's data pointer owns such object.
+	 */
+	uint32_t ddc         : 1;
 
-	uint32_t _reserved   : 23;
+	uint32_t _reserved   : 22;
 };
 
 struct pm_device;
@@ -834,7 +838,19 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
 
 /*
- * Utility macro to define and initialize the device runtime context.
+ * Utility macro to initialize the device runtime context.
+ *
+ * If the device instance has defined 'DDC_INSTANCE_SET', then it will
+ * initialize the ddc attribute to 1.
+ */
+#define Z_DEVICE_CONTEXT_INITIALIZE()				\
+	{							\
+		COND_CODE_1(DDC_INSTANCE_SET, (), (.ddc = 1,))	\
+	}
+
+
+/*
+ * Utility macro to define the device runtime context.
  *
  * @param node_id Devicetree node id of the device.
  * @param dev_name Device name.
@@ -847,7 +863,8 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	static Z_DECL_ALIGN(struct device_context)			\
 		Z_DEVICE_CONTEXT_NAME(dev_name)	__used			\
 	__attribute__(							\
-		(__section__(".z_devcontext_" #level STRINGIFY(prio)"_")));
+		(__section__(".z_devcontext_" #level STRINGIFY(prio)"_"))) = \
+		Z_DEVICE_CONTEXT_INITIALIZE();
 
 /* Construct objects that are referenced from struct device. These
  * include power management and dependency handles.

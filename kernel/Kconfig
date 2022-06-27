@@ -946,3 +946,4 @@ config HAS_DYNAMIC_DEVICE_HANDLES
 endmenu
 
 rsource "Kconfig.vm"
+rsource "Kconfig.device"
