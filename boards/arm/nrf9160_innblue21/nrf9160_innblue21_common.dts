@@ -45,6 +45,24 @@
 		};
 	};
 
+	en_3v3_sensor: enable-3v3-sensor {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "ENABLE_3V3_SENSOR";
+		regulator-name = "en_3v3_sensor";
+		enable-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <10000>;
+		regulator-boot-on;
+	};
+
+	en_5v0_boost: enable-5v0-boost {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "ENABLE_5V0_BOOST";
+		regulator-name = "en_5v0_boost";
+		enable-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <10000>;
+		regulator-boot-on;
+	};
+
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &red_led;
