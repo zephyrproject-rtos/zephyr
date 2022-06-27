@@ -67,34 +67,34 @@ static ssize_t read_description(struct bt_conn *conn,
 	BT_GATT_SECONDARY_SERVICE(BT_UUID_AICS),                               \
 	BT_GATT_CHARACTERISTIC(BT_UUID_AICS_STATE,                             \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,        \
-			       BT_GATT_PERM_READ_ENCRYPT,                      \
+			       BT_GATT_PERM_READ_LESC,                         \
 			       read_aics_state, NULL, &_aics),                 \
 	BT_GATT_CCC(aics_state_cfg_changed,                                    \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),           \
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_LESC),              \
 	BT_GATT_CHARACTERISTIC(BT_UUID_AICS_GAIN_SETTINGS,                     \
 			       BT_GATT_CHRC_READ,                              \
-			       BT_GATT_PERM_READ_ENCRYPT,                      \
+			       BT_GATT_PERM_READ_LESC,                         \
 			       read_aics_gain_settings, NULL, &_aics),         \
 	BT_GATT_CHARACTERISTIC(BT_UUID_AICS_INPUT_TYPE,                        \
 			       BT_GATT_CHRC_READ,                              \
-			       BT_GATT_PERM_READ_ENCRYPT,                      \
+			       BT_GATT_PERM_READ_LESC,                         \
 			       read_type, NULL, &_aics),                       \
 	BT_GATT_CHARACTERISTIC(BT_UUID_AICS_INPUT_STATUS,                      \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,        \
-			       BT_GATT_PERM_READ_ENCRYPT,                      \
+			       BT_GATT_PERM_READ_LESC,                         \
 			       read_input_status, NULL, &_aics),               \
 	BT_GATT_CCC(aics_input_status_cfg_changed,                             \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),           \
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_LESC),              \
 	BT_GATT_CHARACTERISTIC(BT_UUID_AICS_CONTROL,                           \
 			       BT_GATT_CHRC_WRITE,                             \
-			       BT_GATT_PERM_WRITE_ENCRYPT,                     \
+			       BT_GATT_PERM_WRITE_LESC,                        \
 			       NULL, write_aics_control, &_aics),              \
 	BT_GATT_CHARACTERISTIC(BT_UUID_AICS_DESCRIPTION,                       \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,        \
-			       BT_GATT_PERM_READ_ENCRYPT,                      \
+			       BT_GATT_PERM_READ_LESC,                         \
 			       read_description, NULL, &_aics),                \
 	BT_GATT_CCC(aics_description_cfg_changed,                              \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT)            \
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_LESC)               \
 	}
 
 
@@ -456,7 +456,7 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 
 				chrc = aics->srv.service_p->attrs[i - 1].user_data;
 				attr->write = write_description;
-				attr->perm |= BT_GATT_PERM_WRITE_ENCRYPT;
+				attr->perm |= BT_GATT_PERM_WRITE_LESC;
 				chrc->properties |= BT_GATT_CHRC_WRITE_WITHOUT_RESP;
 
 				break;

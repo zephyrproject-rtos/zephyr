@@ -2237,8 +2237,7 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 #endif
 
 	/* Confirm that the connection has the correct level of security */
-	if (bt_gatt_check_perm(conn, params->attr,
-			       BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_READ_AUTHEN)) {
+	if (bt_gatt_check_perm(conn, params->attr, BT_GATT_PERM_READ_ENCRYPT_MASK)) {
 		BT_WARN("Link is not encrypted");
 		return -EPERM;
 	}
@@ -2376,8 +2375,7 @@ static int gatt_indicate(struct bt_conn *conn, uint16_t handle,
 #endif
 
 	/* Confirm that the connection has the correct level of security */
-	if (bt_gatt_check_perm(conn, params->attr,
-			       BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_READ_AUTHEN)) {
+	if (bt_gatt_check_perm(conn, params->attr, BT_GATT_PERM_READ_ENCRYPT_MASK)) {
 		BT_WARN("Link is not encrypted");
 		return -EPERM;
 	}
@@ -2494,8 +2492,7 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 		}
 
 		/* Confirm that the connection has the correct level of security */
-		if (bt_gatt_check_perm(conn, attr,
-				       BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_READ_AUTHEN)) {
+		if (bt_gatt_check_perm(conn, attr, BT_GATT_PERM_READ_ENCRYPT_MASK)) {
 			BT_WARN("Link is not encrypted");
 			bt_conn_unref(conn);
 			continue;
@@ -2861,7 +2858,7 @@ uint16_t bt_gatt_get_mtu(struct bt_conn *conn)
 }
 
 uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			uint8_t mask)
+			uint16_t mask)
 {
 	if ((mask & BT_GATT_PERM_READ) &&
 	    (!(attr->perm & BT_GATT_PERM_READ_MASK) || !attr->read)) {
@@ -2878,6 +2875,14 @@ uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr
 	}
 
 	mask &= attr->perm;
+
+	if (mask & BT_GATT_PERM_LESC_MASK) {
+		if (!IS_ENABLED(CONFIG_BT_SMP) ||
+		    (conn->le.keys->flags & BT_KEYS_SC) == 0) {
+			return BT_ATT_ERR_AUTHENTICATION;
+		}
+	}
+
 	if (mask & BT_GATT_PERM_AUTHEN_MASK) {
 		if (bt_conn_get_security(conn) < BT_SECURITY_L3) {
 			return BT_ATT_ERR_AUTHENTICATION;
