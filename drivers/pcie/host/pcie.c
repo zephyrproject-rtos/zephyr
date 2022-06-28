@@ -181,8 +181,8 @@ bool pcie_get_mbar(pcie_bdf_t bdf,
 	if (!pcie_ctrl_region_translate(dev, bdf, PCIE_CONF_BAR_MEM(phys_addr),
 					PCIE_CONF_BAR_64(phys_addr),
 					PCIE_CONF_BAR_MEM(phys_addr) ?
-						PCIE_CONF_BAR_IO_ADDR(phys_addr)
-						: PCIE_CONF_BAR_ADDR(phys_addr),
+						PCIE_CONF_BAR_ADDR(phys_addr)
+						: PCIE_CONF_BAR_IO_ADDR(phys_addr),
 					&mbar->phys_addr)) {
 		return false;
 	}
