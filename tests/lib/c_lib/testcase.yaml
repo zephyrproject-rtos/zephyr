@@ -7,4 +7,3 @@ tests:
     tags: clib picolibc ignore_faults
     extra_configs:
       - CONFIG_PICOLIBC=y
-      - CONFIG_PICOLIBC_ALIGNED_HEAP_SIZE=8192
