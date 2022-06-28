@@ -372,6 +372,8 @@ static int bt_audio_set_base(const struct bt_audio_broadcast_source *source,
 			     struct bt_codec *codec)
 {
 	struct bt_data base_ad_data;
+	bool adv_started;
+	bool restart_adv;
 	int err;
 
 	/* Broadcast Audio Streaming Endpoint advertising data */
@@ -383,10 +385,47 @@ static int bt_audio_set_base(const struct bt_audio_broadcast_source *source,
 	base_ad_data.data_len = base_buf.len;
 	base_ad_data.data = base_buf.data;
 
+	adv_started = false;
+	if (source->adv != NULL &&
+	    source->streams[0]->ep->status.state != BT_AUDIO_EP_STATE_IDLE) {
+		adv_started = true;
+	}
+
+	if (adv_started &&
+	    base_ad_data.data_len > BT_HCI_LE_PER_ADV_FRAG_MAX_LEN) {
+		/* We can only set BT_HCI_LE_PER_ADV_FRAG_MAX_LEN octets when
+		 * per-adv is started. If setting higher than that we need
+		 * to stop it, set the data and restart it.
+		 */
+		BT_DBG("Stopping periodic advertising to set %zu octets of data",
+		       base_ad_data.data_len);
+
+		err = bt_le_per_adv_stop(source->adv);
+		if (err != 0) {
+			BT_DBG("Failed to stop periodic advertising (err %d)", err);
+			return err;
+		}
+
+		restart_adv = true;
+	} else {
+		restart_adv = false;
+	}
+
 	err = bt_le_per_adv_set_data(source->adv, &base_ad_data, 1);
 	if (err != 0) {
 		BT_DBG("Failed to set extended advertising data (err %d)", err);
 		return err;
+	}
+
+	if (restart_adv) {
+		/* Restart Periodic Advertising */
+		BT_DBG("Restarting periodic advertising");
+
+		err = bt_le_per_adv_start(source->adv);
+		if (err != 0) {
+			BT_DBG("Failed to restart periodic advertising (err %d)", err);
+			return err;
+		}
 	}
 
 	return 0;
@@ -632,6 +671,117 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 	}
 
 	source->qos = qos;
+
+	return 0;
+}
+
+static void broadcast_source_store_metadata(struct bt_codec *codec,
+					    const struct bt_codec_data meta[],
+					    size_t meta_count)
+{
+	size_t old_meta_count;
+
+	old_meta_count = codec->meta_count;
+
+	/* Update metadata */
+	codec->meta_count = meta_count;
+	(void)memcpy(codec->meta, meta, meta_count * sizeof(*meta));
+	if (old_meta_count > meta_count) {
+		size_t meta_count_diff = old_meta_count - meta_count;
+
+		/* If we previously had more metadata entries we reset the
+		 * data that was not overwritten by the new metadata
+		 */
+		(void)memset(&codec->meta[meta_count],
+			     0, meta_count_diff * sizeof(*meta));
+	}
+}
+
+int bt_audio_broadcast_source_metadata(struct bt_audio_broadcast_source *source,
+				       const struct bt_codec_data meta[],
+				       size_t meta_count)
+{
+	struct bt_audio_stream *stream;
+	struct bt_codec *codec;
+	int err;
+
+	CHECKIF(source == NULL) {
+		BT_DBG("source is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF((meta == NULL && meta_count != 0) ||
+		(meta != NULL && meta_count == 0)) {
+		BT_DBG("Invalid metadata combination: %p %zu",
+		       meta, meta_count);
+		return -EINVAL;
+	}
+
+	CHECKIF(meta_count > CONFIG_BT_CODEC_MAX_METADATA_COUNT) {
+		BT_DBG("Invalid meta_count: %zu (max %d)",
+		       meta_count, CONFIG_BT_CODEC_MAX_METADATA_COUNT);
+		return -EINVAL;
+	}
+
+	for (size_t i = 0; i < meta_count; i++) {
+		CHECKIF(meta[i].data.data_len > sizeof(meta[i].value)) {
+			BT_DBG("Invalid meta[%zu] data_len %u",
+			       i, meta[i].data.data_len);
+
+			return -EINVAL;
+		}
+	}
+
+	stream = source->streams[0];
+
+	if (stream == NULL) {
+		BT_DBG("stream is NULL");
+		return -EINVAL;
+	}
+
+	if (stream->ep == NULL) {
+		BT_DBG("stream->ep is NULL");
+		return -EINVAL;
+	}
+
+	if (stream->codec == NULL) {
+		BT_DBG("stream->codec is NULL");
+		return -EINVAL;
+	}
+
+	if (stream->ep->status.state != BT_AUDIO_EP_STATE_STREAMING) {
+		BT_DBG("Broadcast source stream %p invalid state: %u",
+		       stream, stream->ep->status.state);
+		return -EBADMSG;
+	}
+
+	/* All streams share the same codec, so we can just one of the streams */
+	codec = stream->codec;
+
+	/* Verify the assumption above, as the `stream->codec` can be modified
+	 * by the application, even though it shouldn't
+	 */
+	for (size_t i = 1; i < source->stream_count; i++) {
+		BT_ASSERT_MSG(source->streams[i] != NULL && source->streams[i]->codec != NULL,
+			      "Invalid stream %p in source %p",
+			      source->streams[i], source);
+
+		if (source->streams[i]->codec != codec) {
+			BT_ERR("streams[%zu] does have correct codec: %p (expected %p)",
+			       i, source->streams[i]->codec, codec);
+
+			return -EFAULT;
+		}
+	}
+
+	broadcast_source_store_metadata(codec, meta, meta_count);
+
+	/* Update the BASE that is being broadcast */
+	err = bt_audio_set_base(source, codec);
+	if (err != 0) {
+		BT_DBG("Failed to set base data (err %d)", err);
+		return err;
+	}
 
 	return 0;
 }

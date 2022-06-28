@@ -73,6 +73,7 @@ struct bt_audio_unicast_group {
 struct bt_audio_broadcast_source {
 	uint8_t stream_count;
 	uint8_t subgroup_count;
+	bool adv_started;
 	uint32_t pd; /** QoS Presentation Delay */
 	uint32_t broadcast_id; /* 24 bit */
 

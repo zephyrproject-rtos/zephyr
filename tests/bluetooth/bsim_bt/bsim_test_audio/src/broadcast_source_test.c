@@ -98,6 +98,8 @@ static void test_main(void)
 {
 	int err;
 	struct bt_audio_broadcast_source *source;
+	struct bt_codec_data new_metadata[1] =
+		BT_CODEC_LC3_CONFIG_META(BT_AUDIO_CONTEXT_TYPE_ALERTS);
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -154,7 +156,19 @@ static void test_main(void)
 	}
 
 	/* Keeping running for a little while */
-	k_sleep(K_SECONDS(10));
+	k_sleep(K_SECONDS(5));
+
+	/* Update metadata while streaming */
+	printk("Updating metadata\n");
+	err = bt_audio_broadcast_source_metadata(source, new_metadata,
+						 ARRAY_SIZE(new_metadata));
+	if (err != 0) {
+		FAIL("Failed to update metadata broadcast source: %d", err);
+		return;
+	}
+
+	/* Keeping running for a little while */
+	k_sleep(K_SECONDS(5));
 
 	printk("Stopping broadcast source\n");
 	SET_FLAG(flag_stopping);
