@@ -20,6 +20,11 @@
 static struct k_spinlock lock;
 static unsigned int last_count;
 
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = UTIL_CAT(XCHAL_TIMER,
+					 UTIL_CAT(CONFIG_XTENSA_TIMER_ID, _INTERRUPT));
+#endif
+
 static void set_ccompare(uint32_t val)
 {
 	__asm__ volatile ("wsr.CCOMPARE" STRINGIFY(CONFIG_XTENSA_TIMER_ID) " %0"

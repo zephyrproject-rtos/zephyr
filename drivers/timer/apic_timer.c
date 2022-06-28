@@ -48,6 +48,9 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP), "APIC timer doesn't support SMP");
 #define LVT_MODE_MASK		0x00060000	/* timer mode bits */
 #define LVT_MODE		0x00000000	/* one-shot */
 
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = CONFIG_APIC_TIMER_IRQ;
+#endif
 /*
  * CYCLES_PER_TICK must always be at least '2', otherwise MAX_TICKS
  * will overflow int32_t, which is how 'ticks' are currently represented.
