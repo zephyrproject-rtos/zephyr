@@ -435,8 +435,7 @@ struct hl7800_socket {
 	bool reconfig;
 	int socket_id;
 	int rx_size;
-	bool error;
-	int error_val;
+	int error;
 	enum socket_state state;
 
 	/** semaphore */
@@ -845,8 +844,7 @@ static void socket_put(struct hl7800_socket *sock)
 	sock->socket_id = -1;
 	sock->created = false;
 	sock->reconfig = false;
-	sock->error = false;
-	sock->error_val = -1;
+	sock->error = 0;
 	sock->rx_size = 0;
 	sock->state = SOCK_IDLE;
 	(void)memset(&sock->src, 0, sizeof(struct sockaddr));
@@ -1006,6 +1004,7 @@ static int send_at_cmd(struct hl7800_socket *sock, const uint8_t *data,
 			k_sem_reset(&ictx.response_sem);
 			ictx.last_socket_id = 0;
 		} else {
+			sock->error = 0;
 			k_sem_reset(&sock->sock_send_sem);
 			ictx.last_socket_id = sock->socket_id;
 		}
@@ -1030,7 +1029,11 @@ static int send_at_cmd(struct hl7800_socket *sock, const uint8_t *data,
 		}
 
 		if (ret == 0) {
-			ret = ictx.last_error;
+			if (sock) {
+				ret = sock->error;
+			} else {
+				ret = ictx.last_error;
+			}
 		} else if (ret == -EAGAIN) {
 			ret = -ETIMEDOUT;
 		}
@@ -1397,7 +1400,7 @@ static int send_data(struct hl7800_socket *sock, struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
-	ictx.last_error = 0;
+	sock->error = 0;
 	sock->state = SOCK_TX;
 
 	frag = pkt->frags;
@@ -1426,8 +1429,8 @@ static int send_data(struct hl7800_socket *sock, struct net_pkt *pkt)
 		goto done;
 	}
 	/* check for error */
-	if (ictx.last_error != 0) {
-		ret = ictx.last_error;
+	if (sock->error != 0) {
+		ret = sock->error;
 		LOG_ERR("AT+K**PSND (%d)", ret);
 		goto done;
 	}
@@ -1449,13 +1452,15 @@ static int send_data(struct hl7800_socket *sock, struct net_pkt *pkt)
 	mdm_receiver_send(&ictx.mdm_ctx, EOF_PATTERN, strlen(EOF_PATTERN));
 	ret = k_sem_take(&sock->sock_send_sem, MDM_IP_SEND_RX_TIMEOUT);
 	if (ret == 0) {
-		ret = ictx.last_error;
+		ret = sock->error;
 	} else if (ret == -EAGAIN) {
 		ret = -ETIMEDOUT;
 	}
 done:
 	if (sock->type == SOCK_STREAM) {
-		sock->state = SOCK_CONNECTED;
+		if (sock->error == 0) {
+			sock->state = SOCK_CONNECTED;
+		}
 	} else {
 		sock->state = SOCK_IDLE;
 	}
@@ -3632,11 +3637,12 @@ static bool on_cmd_sockok(struct net_buf **buf, uint16_t len)
 {
 	struct hl7800_socket *sock = NULL;
 
-	ictx.last_error = 0;
 	sock = socket_from_id(ictx.last_socket_id);
 	if (!sock) {
+		ictx.last_error = 0;
 		k_sem_give(&ictx.response_sem);
 	} else {
+		sock->error = 0;
 		k_sem_give(&sock->sock_send_sem);
 	}
 	return true;
@@ -3667,9 +3673,8 @@ static bool on_cmd_sock_ind(struct net_buf **buf, uint16_t len, const char *cons
 	LOG_DBG("%s ID: %d", type, id);
 	sock = socket_from_id(id);
 	if (sock) {
+		sock->error = 0;
 		k_sem_give(&sock->sock_send_sem);
-	} else {
-		LOG_ERR("Could not find socket id (%d)", id);
 	}
 
 done:
@@ -3699,11 +3704,12 @@ static bool on_cmd_sockerror(struct net_buf **buf, uint16_t len)
 		LOG_ERR("'%s'", string);
 	}
 
-	ictx.last_error = -EIO;
 	sock = socket_from_id(ictx.last_socket_id);
 	if (!sock) {
+		ictx.last_error = -EIO;
 		k_sem_give(&ictx.response_sem);
 	} else {
+		sock->error = -EIO;
 		k_sem_give(&sock->sock_send_sem);
 	}
 
@@ -3722,11 +3728,12 @@ static bool on_cmd_sock_error_code(struct net_buf **buf, uint16_t len)
 
 	LOG_ERR("Error code: %s", value);
 
-	ictx.last_error = -EIO;
 	sock = socket_from_id(ictx.last_socket_id);
 	if (!sock) {
+		ictx.last_error = -EIO;
 		k_sem_give(&ictx.response_sem);
 	} else {
+		sock->error = -EIO;
 		k_sem_give(&sock->sock_send_sem);
 	}
 
@@ -3752,9 +3759,8 @@ static void sock_notif_cb_work(struct k_work *work)
 	} else {
 		if (sock->type == SOCK_STREAM) {
 			LOG_DBG("Sock %d trigger NULL packet", sock->socket_id);
-			sock->state = SOCK_SERVER_CLOSED;
 			k_work_submit_to_queue(&hl7800_workq, &sock->recv_cb_work);
-			sock->error = false;
+			sock->error = 0;
 		}
 	}
 	hl7800_unlock();
@@ -3782,45 +3788,41 @@ static bool on_cmd_sock_notif(struct net_buf **buf, uint16_t len)
 		goto done;
 	}
 
+	id = strtol(value, NULL, 10);
 	notif_val = strtol(delim + 1, NULL, 10);
+	LOG_DBG("+K**P_NOTIF: %d,%d", id, notif_val);
+	sock = socket_from_id(id);
+	if (!sock) {
+		goto done;
+	}
+
 	switch (notif_val) {
 	case HL7800_TCP_DATA_SND:
 		err = false;
-		ictx.last_error = 0;
+		sock->error = 0;
 		break;
 	case HL7800_TCP_DISCON:
 		trigger_sem = false;
 		err = true;
-		ictx.last_error = -EIO;
+		sock->state = SOCK_SERVER_CLOSED;
+		sock->error = -EIO;
 		break;
 	default:
 		err = true;
-		ictx.last_error = -EIO;
+		sock->error = -EIO;
 		break;
 	}
 
-	id = strtol(value, NULL, 10);
-	LOG_WRN("+K**P_NOTIF: %d,%d", id, notif_val);
-
-	sock = socket_from_id(id);
 	if (err) {
-		if (sock) {
-			/* Send NULL packet to callback to notify upper stack layers
-			 * that the peer closed the connection or there was an error.
-			 * This is so an app will not get stuck in recv() forever.
-			 * Let's do the callback processing in a different work queue
-			 * so RX is not delayed.
-			 */
-			sock->error = true;
-			sock->error_val = notif_val;
-			k_work_reschedule_for_queue(&hl7800_workq,
-						    &sock->notif_work,
-						    MDM_SOCK_NOTIF_DELAY);
-			if (trigger_sem) {
-				k_sem_give(&sock->sock_send_sem);
-			}
-		} else {
-			LOG_ERR("Could not find socket id (%d)", id);
+		/* Send NULL packet to callback to notify upper stack layers
+		 * that the peer closed the connection or there was an error.
+		 * This is so an app will not get stuck in recv() forever.
+		 * Let's do the callback processing in a different work queue
+		 * so RX is not delayed.
+		 */
+		k_work_reschedule_for_queue(&hl7800_workq, &sock->notif_work, MDM_SOCK_NOTIF_DELAY);
+		if (trigger_sem) {
+			k_sem_give(&sock->sock_send_sem);
 		}
 	}
 done:
@@ -3943,7 +3945,7 @@ static void sock_read(struct net_buf **buf, uint16_t len)
 		goto exit;
 	}
 
-	if (sock->error) {
+	if (sock->error != 0) {
 		/* cancel notif work and restart */
 		k_work_reschedule_for_queue(&hl7800_workq, &sock->notif_work,
 					    MDM_SOCK_NOTIF_DELAY);
@@ -4072,7 +4074,9 @@ rx_err:
 	sock->recv_pkt = NULL;
 done:
 	if (sock->type == SOCK_STREAM) {
-		sock->state = SOCK_CONNECTED;
+		if (sock->error == 0) {
+			sock->state = SOCK_CONNECTED;
+		}
 	} else {
 		sock->state = SOCK_IDLE;
 	}
@@ -5523,7 +5527,7 @@ static int connect_TCP_socket(struct hl7800_socket *sock)
 	 */
 	ret = k_sem_take(&sock->sock_send_sem, MDM_CMD_CONN_TIMEOUT);
 	if (ret == 0) {
-		ret = ictx.last_error;
+		ret = sock->error;
 	} else if (ret == -EAGAIN) {
 		ret = -ETIMEDOUT;
 	}
@@ -5608,7 +5612,7 @@ static int configure_UDP_socket(struct hl7800_socket *sock)
 	 */
 	ret = k_sem_take(&sock->sock_send_sem, MDM_CMD_CONN_TIMEOUT);
 	if (ret == 0) {
-		ret = ictx.last_error;
+		ret = sock->error;
 	} else if (ret == -EAGAIN) {
 		ret = -ETIMEDOUT;
 	}
@@ -5971,7 +5975,9 @@ static int offload_put(struct net_context *context)
 
 	wakeup_hl7800();
 
-	send_at_cmd(sock, cmd, MDM_CMD_SEND_TIMEOUT, 0, false);
+	if ((sock->type == SOCK_DGRAM) || (sock->state != SOCK_SERVER_CLOSED)) {
+		send_at_cmd(sock, cmd, MDM_CMD_SEND_TIMEOUT, 0, false);
+	}
 
 	if (sock->type == SOCK_STREAM) {
 		/* delete session */
