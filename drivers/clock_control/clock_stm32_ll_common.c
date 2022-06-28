@@ -50,6 +50,9 @@
 #define GET_CURRENT_FLASH_PRESCALER LL_RCC_GetAHBPrescaler
 #endif
 
+#define RCC_PLLP_ENABLE() SET_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLPEN)
+#define RCC_PLLQ_ENABLE() SET_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLQEN)
+
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 {
 	return clock / prescaler;
@@ -399,8 +402,13 @@ static void set_up_plls(void)
 	}
 #endif
 
-#if STM32_PLL_Q_ENABLED
+#if defined(STM32_SRC_PLL_P) & STM32_PLL_P_ENABLED
+	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLP, pllp(STM32_PLL_P_DIVISOR));
+	RCC_PLLP_ENABLE();
+#endif
+#if defined(STM32_SRC_PLL_Q) & STM32_PLL_Q_ENABLED
 	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLQ, pllq(STM32_PLL_Q_DIVISOR));
+	RCC_PLLQ_ENABLE();
 #endif
 
 	config_pll_sysclock();
