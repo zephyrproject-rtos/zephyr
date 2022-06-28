@@ -22,11 +22,19 @@ K_KERNEL_STACK_MEMBER(eswifi_spi_poll_stack, ESWIFI_SPI_THREAD_STACK_SIZE);
 
 #define SPI_READ_CHUNK_SIZE 32
 
+struct eswifi_spi_config {
+	struct gpio_dt_spec csn;
+	struct gpio_dt_spec dr;
+};
+
 struct eswifi_spi_data {
+	const struct eswifi_spi_config *cfg;
 	struct spi_dt_spec bus;
-	struct eswifi_gpio csn;
-	struct eswifi_gpio dr;
 	struct k_thread poll_thread;
+};
+
+static const struct eswifi_spi_config eswifi_config_spi0 = {
+	.dr = GPIO_DT_SPEC_INST_GET(0, data_gpios),
 };
 
 static struct eswifi_spi_data eswifi_spi0 = { /* Static instance */
@@ -37,7 +45,7 @@ static struct eswifi_spi_data eswifi_spi0 = { /* Static instance */
 
 static bool eswifi_spi_cmddata_ready(struct eswifi_spi_data *spi)
 {
-	return gpio_pin_get(spi->dr.dev, spi->dr.pin) > 0;
+	return gpio_pin_get_dt(&spi->cfg->dr) > 0;
 }
 
 static int eswifi_spi_wait_cmddata_ready(struct eswifi_spi_data *spi)
@@ -226,25 +234,22 @@ static void eswifi_spi_poll_thread(void *p1)
 int eswifi_spi_init(struct eswifi_dev *eswifi)
 {
 	struct eswifi_spi_data *spi = &eswifi_spi0; /* Static instance */
+	const struct eswifi_spi_config *cfg = &eswifi_config_spi0; /* Static instance */
 
 	/* SPI DATA READY PIN */
-	spi->dr.dev = device_get_binding(
-			DT_INST_GPIO_LABEL(0, data_gpios));
-	if (!spi->dr.dev) {
-		LOG_ERR("Failed to initialize GPIO driver: %s",
-			    DT_INST_GPIO_LABEL(0, data_gpios));
+	if (!device_is_ready(cfg->dr.port)) {
+		LOG_ERR("device %s is not ready", cfg->dr.port->name);
 		return -ENODEV;
 	}
-	spi->dr.pin = DT_INST_GPIO_PIN(0, data_gpios);
-	gpio_pin_configure(spi->dr.dev, spi->dr.pin,
-			   DT_INST_GPIO_FLAGS(0, data_gpios) |
-			   GPIO_INPUT);
+	gpio_pin_configure_dt(&cfg->dr, GPIO_INPUT);
 
 	/* SPI BUS */
 	if (!spi_is_ready(&spi->bus)) {
 		LOG_ERR("SPI bus is not ready");
 		return -ENODEV;
 	};
+
+	spi->cfg = cfg;
 
 	eswifi->bus_data = spi;
 
