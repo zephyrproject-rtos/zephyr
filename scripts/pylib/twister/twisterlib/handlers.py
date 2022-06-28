@@ -43,7 +43,7 @@ logger.setLevel(logging.DEBUG)
 class HarnessImporter:
 
     def __init__(self, name):
-        sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
+        sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister/twisterlib"))
         module = __import__("harness")
         if name:
             my_class = getattr(module, name)
