@@ -8,6 +8,7 @@
 
 #include <zephyr/zephyr.h>
 
+#define ST7789V_CMD_NOP				0x00
 #define ST7789V_CMD_SW_RESET			0x01
 
 #define ST7789V_CMD_SLEEP_IN			0x10
@@ -66,5 +67,7 @@
 
 #define ST7789V_CMD_PVGAMCTRL			0xe0
 #define ST7789V_CMD_NVGAMCTRL			0xe1
+
+#define ST7789V_CMD_NONE			0xff
 
 #endif
