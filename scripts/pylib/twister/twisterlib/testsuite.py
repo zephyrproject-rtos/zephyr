@@ -340,7 +340,7 @@ class TestSuite(DisablePyTestCollectionMixin):
     """Class representing a test application
     """
 
-    def __init__(self, testsuite_root, workdir, name):
+    def __init__(self, suite_root, suite_path, name, data=None):
         """TestSuite constructor.
 
         This gets called by TestPlan as it finds and reads test yaml files.
@@ -352,8 +352,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         the test case is <workdir>/<name>.
 
         @param testsuite_root os.path.abspath() of one of the --testsuite-root
-        @param workdir Sub-directory of testsuite_root where the
-            .yaml test configuration file was found
+        @param suite_path path to testsuite
         @param name Name of this test case, corresponding to the entry name
             in the test case configuration file. For many test cases that just
             define one test, can be anything and is usually "test". This is
@@ -361,39 +360,43 @@ class TestSuite(DisablePyTestCollectionMixin):
             the testcase.yaml defines multiple tests
         """
 
-
-        self.source_dir = ""
-        self.yamlfile = ""
-        self.testcases = []
-        self.name = self.get_unique(testsuite_root, workdir, name)
+        workdir = os.path.relpath(suite_path, suite_root)
+        self.name = self.get_unique(os.path.dirname(suite_path), workdir, name)
         self.id = name
 
-        self.type = None
-        self.tags = set()
-        self.extra_args = None
-        self.extra_configs = None
-        self.arch_allow = None
-        self.arch_exclude = None
-        self.skip = False
-        self.platform_exclude = None
-        self.platform_allow = None
-        self.platform_type = []
-        self.toolchain_exclude = None
-        self.toolchain_allow = None
-        self.ts_filter = None
-        self.timeout = 60
-        self.harness = ""
-        self.harness_config = {}
-        self.build_only = True
-        self.build_on_all = False
-        self.slow = False
-        self.min_ram = -1
-        self.depends_on = None
-        self.min_flash = -1
-        self.extra_sections = None
-        self.integration_platforms = []
+        self.source_dir = suite_path
+        self.yamlfile = suite_path
+        self.testcases = []
+
         self.ztest_suite_names = []
 
+        if data:
+            self.load(data)
+
+
+    def load(self, data):
+        for k, v in data.items():
+            if k != "testcases":
+                setattr(self, k, v)
+
+        if self.harness == 'console' and not self.harness_config:
+            raise Exception('Harness config error: console harness defined without a configuration.')
+
+    def add_subcases(self, data, parsed_subcases, suite_names):
+        testcases = data.get("testcases", [])
+        if testcases:
+            for tc in testcases:
+                self.add_testcase(name=f"{self.id}.{tc}")
+        else:
+            # only add each testcase once
+            for sub in set(parsed_subcases):
+                name = "{}.{}".format(self.id, sub)
+                self.add_testcase(name)
+
+            if not parsed_subcases:
+                self.add_testcase(self.id, freeform=True)
+
+        self.ztest_suite_names = suite_names
 
     def add_testcase(self, name, freeform=False):
         tc = TestCase(name=name, testsuite=self)
