@@ -17,6 +17,9 @@
 
 static struct k_spinlock lock;
 static uint64_t last_cycle;
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = ARM_ARCH_TIMER_IRQ;
+#endif
 
 static void arm_arch_timer_compare_isr(const void *arg)
 {

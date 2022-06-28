@@ -25,6 +25,10 @@
 #define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1000
 
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_NODELABEL(systimer0));
+#endif
+
 #define TICKLESS IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 
 static struct k_spinlock lock;
