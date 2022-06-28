@@ -53,6 +53,15 @@
 		#clock-cells = <0>;
 	};
 
+	clkctl: clkctl {
+		compatible = "intel,cavs-shim-clkctl";
+		cavs-clkctl-clk-lpro = <0>;
+		cavs-clkctl-clk-hpro = <2>;
+		cavs-clkctl-freq-enc = <0x3 0x1 0x0>;
+		cavs-clkctl-freq-default = <1>;
+		cavs-clkctl-freq-lowest = <0>;
+	};
+
 	soc {
 		shim: shim@1000 {
 			compatible = "intel,cavs-shim";
@@ -155,6 +164,7 @@
 			#dma-cells = <1>;
 			reg = <0x00002400 0x40>;
 			dma-channels = <6>;
+			dma-buf-alignment = <128>;
 			label = "HDA_LINK_OUT";
 
 			status = "okay";
@@ -165,6 +175,7 @@
 			#dma-cells = <1>;
 			reg = <0x00002600 0x40>;
 			dma-channels = <7>;
+			dma-buf-alignment = <128>;
 			label = "HDA_LINK_IN";
 
 			status = "okay";
@@ -175,6 +186,7 @@
 			#dma-cells = <1>;
 			reg = <0x00002800 0x40>;
 			dma-channels = <6>;
+			dma-buf-alignment = <128>;
 			label = "HDA_HOST_OUT";
 
 			status = "okay";
@@ -185,6 +197,7 @@
 			#dma-cells = <1>;
 			reg = <0x00002c00 0x40>;
 			dma-channels = <7>;
+			dma-buf-alignment = <128>;
 			label = "HDA_HOST_IN";
 
 			status = "okay";

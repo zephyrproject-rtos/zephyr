@@ -172,7 +172,7 @@ static void server_thread_fn(void *arg0, void *arg1, void *arg2)
 	zassert_not_equal(addrstrp, NULL, "inet_ntop() failed (%d)", errno);
 
 	NET_DBG("accepted connection from [%s]:%d as fd %d",
-		log_strdup(addrstr), ntohs(sa.sin_port), client_fd);
+		addrstr, ntohs(sa.sin_port), client_fd);
 
 	NET_DBG("calling recv()");
 	r = recv(client_fd, addrstr, sizeof(addrstr), 0);
@@ -286,7 +286,7 @@ static void test_common(int peer_verify)
 	zassert_not_equal(addrstrp, NULL, "inet_ntop() failed (%d)", errno);
 
 	NET_DBG("listening on [%s]:%d as fd %d",
-		log_strdup(addrstr), ntohs(sa.sin_port), server_fd);
+		addrstr, ntohs(sa.sin_port), server_fd);
 
 	NET_DBG("Creating server thread");
 	server_thread_id = k_thread_create(&server_thread, server_stack,
@@ -360,7 +360,7 @@ static void test_common(int peer_verify)
 	zassert_not_equal(addrstrp, NULL, "inet_ntop() failed (%d)", errno);
 
 	NET_DBG("connecting to [%s]:%d with fd %d",
-		log_strdup(addrstr), ntohs(sa.sin_port), client_fd);
+		addrstr, ntohs(sa.sin_port), client_fd);
 
 	r = connect(client_fd, (struct sockaddr *)&sa, sizeof(sa));
 	zassert_not_equal(r, -1, "failed to connect (%d)", errno);

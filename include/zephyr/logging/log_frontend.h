@@ -29,7 +29,7 @@ void log_frontend_init(void);
  * @param data Hexdump data. Length is in @p desc.
  */
 void log_frontend_msg(const void *source,
-		      const struct log_msg2_desc desc,
+		      const struct log_msg_desc desc,
 		      uint8_t *package, const void *data);
 
 /** @brief Panic state notification. */

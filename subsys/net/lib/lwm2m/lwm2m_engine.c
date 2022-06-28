@@ -703,8 +703,8 @@ static void engine_observe_node_init(struct observe_node *obs, const uint8_t *to
 		}
 	}
 
-	LOG_DBG("token:'%s' addr:%s", log_strdup(sprint_token(token, tkl)),
-		log_strdup(lwm2m_sprint_ip_addr(&ctx->remote_addr)));
+	LOG_DBG("token:'%s' addr:%s", sprint_token(token, tkl),
+		lwm2m_sprint_ip_addr(&ctx->remote_addr));
 }
 
 static void remove_observer_path_from_list(struct lwm2m_ctx *ctx, struct observe_node *obs,
@@ -712,7 +712,7 @@ static void remove_observer_path_from_list(struct lwm2m_ctx *ctx, struct observe
 {
 	char buf[LWM2M_MAX_PATH_STR_LEN];
 
-	LOG_DBG("Removing observer %p for path %s", obs, lwm2m_path_log_strdup(buf, &o_p->path));
+	LOG_DBG("Removing observer %p for path %s", obs, lwm2m_path_log_buf(buf, &o_p->path));
 	if (ctx->observe_cb) {
 		ctx->observe_cb(LWM2M_OBSERVE_EVENT_OBSERVER_REMOVED, &o_p->path, NULL);
 	}
@@ -851,7 +851,7 @@ static int engine_add_observer(struct lwm2m_message *msg,
 
 		LOG_DBG("OBSERVER DUPLICATE %u/%u/%u(%u) [%s]", msg->path.obj_id,
 			msg->path.obj_inst_id, msg->path.res_id, msg->path.level,
-			log_strdup(lwm2m_sprint_ip_addr(&msg->ctx->remote_addr)));
+			lwm2m_sprint_ip_addr(&msg->ctx->remote_addr));
 
 		return 0;
 	}
@@ -912,7 +912,7 @@ static int engine_add_composite_observer(struct lwm2m_message *msg,
 		obs->tkl = tkl;
 
 		LOG_DBG("OBSERVER Composite DUPLICATE [%s]",
-			log_strdup(lwm2m_sprint_ip_addr(&msg->ctx->remote_addr)));
+			lwm2m_sprint_ip_addr(&msg->ctx->remote_addr));
 
 		return do_composite_read_op_for_parsed_list(msg, format, &lwm2m_path_list);
 	}
@@ -960,7 +960,7 @@ static int engine_remove_observer_by_token(struct lwm2m_ctx *ctx, const uint8_t 
 
 	remove_observer_from_list(ctx, prev_node, obs);
 
-	LOG_DBG("observer '%s' removed", log_strdup(sprint_token(token, tkl)));
+	LOG_DBG("observer '%s' removed", sprint_token(token, tkl));
 
 	return 0;
 }
@@ -999,20 +999,20 @@ static int engine_remove_composite_observer(struct lwm2m_message *msg, const uin
 
 	remove_observer_from_list(msg->ctx, prev_node, obs);
 
-	LOG_DBG("observer '%s' removed", log_strdup(sprint_token(token, tkl)));
+	LOG_DBG("observer '%s' removed", sprint_token(token, tkl));
 
 	return do_composite_read_op_for_parsed_list(msg, format, &lwm2m_path_list);
 
 }
 
 #if defined(CONFIG_LOG)
-char *lwm2m_path_log_strdup(char *buf, struct lwm2m_obj_path *path)
+char *lwm2m_path_log_buf(char *buf, struct lwm2m_obj_path *path)
 {
 	size_t cur;
 
 	if (!path) {
 		sprintf(buf, "/");
-		return log_strdup(buf);
+		return buf;
 	}
 
 	cur = sprintf(buf, "%u", path->obj_id);
@@ -1027,7 +1027,7 @@ char *lwm2m_path_log_strdup(char *buf, struct lwm2m_obj_path *path)
 		cur += sprintf(buf + cur, "/%u", path->res_inst_id);
 	}
 
-	return log_strdup(buf);
+	return buf;
 }
 #endif /* CONFIG_LOG */
 
@@ -1052,7 +1052,7 @@ static int engine_remove_observer_by_path(struct lwm2m_ctx *ctx,
 	}
 
 	LOG_INF("Removing observer for path %s",
-		lwm2m_path_log_strdup(buf, path));
+		lwm2m_path_log_buf(buf, path));
 
 	remove_observer_from_list(ctx, prev_node, obs);
 
@@ -1108,8 +1108,8 @@ static struct lwm2m_engine_obj *get_engine_obj(int obj_id)
 	return NULL;
 }
 
-struct lwm2m_engine_obj_field *
-lwm2m_get_engine_obj_field(struct lwm2m_engine_obj *obj, int res_id)
+struct lwm2m_engine_obj_field *lwm2m_get_engine_obj_field(struct lwm2m_engine_obj *obj,
+							  int res_id)
 {
 	int i;
 
@@ -1895,7 +1895,7 @@ int lwm2m_engine_create_obj_inst(const char *pathstr)
 	struct lwm2m_engine_obj_inst *obj_inst;
 	int ret = 0;
 
-	LOG_DBG("path:%s", log_strdup(pathstr));
+	LOG_DBG("path:%s", pathstr);
 
 	/* translate path -> path_obj */
 	ret = lwm2m_string_to_path(pathstr, &path, '/');
@@ -1925,7 +1925,7 @@ int lwm2m_engine_delete_obj_inst(const char *pathstr)
 	struct lwm2m_obj_path path;
 	int ret = 0;
 
-	LOG_DBG("path: %s", log_strdup(pathstr));
+	LOG_DBG("path: %s", pathstr);
 
 	/* translate path -> path_obj */
 	ret = lwm2m_string_to_path(pathstr, &path, '/');
@@ -2006,7 +2006,7 @@ static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
 	int ret = 0;
 	bool changed = false;
 
-	LOG_DBG("path:%s, value:%p, len:%d", log_strdup(pathstr), value, len);
+	LOG_DBG("path:%s, value:%p, len:%d", pathstr, value, len);
 
 	/* translate path -> path_obj */
 	ret = lwm2m_string_to_path(pathstr, &path, '/');
@@ -2299,7 +2299,7 @@ static int lwm2m_engine_get(const char *pathstr, void *buf, uint16_t buflen)
 	void *data_ptr = NULL;
 	size_t data_len = 0;
 
-	LOG_DBG("path:%s, buf:%p, buflen:%d", log_strdup(pathstr), buf, buflen);
+	LOG_DBG("path:%s, buf:%p, buflen:%d", pathstr, buf, buflen);
 
 	/* translate path -> path_obj */
 	ret = lwm2m_string_to_path(pathstr, &path, '/');
@@ -2511,11 +2511,11 @@ static int lwm2m_update_or_allocate_attribute(void *ref, uint8_t type, void *dat
 
 		if (type <= LWM2M_ATTR_PMAX) {
 			attr->int_val = *(int32_t *)data;
-			LOG_DBG("Update %s to %d", log_strdup(LWM2M_ATTR_STR[type]),
+			LOG_DBG("Update %s to %d", LWM2M_ATTR_STR[type],
 				attr->int_val);
 		} else {
 			attr->float_val = *(double *)data;
-			LOG_DBG("Update %s to %f", log_strdup(LWM2M_ATTR_STR[type]),
+			LOG_DBG("Update %s to %f", LWM2M_ATTR_STR[type],
 				attr->float_val);
 		}
 		return 0;
@@ -2539,10 +2539,10 @@ static int lwm2m_update_or_allocate_attribute(void *ref, uint8_t type, void *dat
 
 	if (type <= LWM2M_ATTR_PMAX) {
 		attr->int_val = *(int32_t *)data;
-		LOG_DBG("Add %s to %d", log_strdup(LWM2M_ATTR_STR[type]), attr->int_val);
+		LOG_DBG("Add %s to %d", LWM2M_ATTR_STR[type], attr->int_val);
 	} else {
 		attr->float_val = *(double *)data;
-		LOG_DBG("Add %s to %f", log_strdup(LWM2M_ATTR_STR[type]), attr->float_val);
+		LOG_DBG("Add %s to %f", LWM2M_ATTR_STR[type], attr->float_val);
 	}
 	return 0;
 }
@@ -3661,7 +3661,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 
 		if (ret < 0) {
 			LOG_ERR("invalid attr[%s] value",
-				log_strdup(LWM2M_ATTR_STR[type]));
+				LWM2M_ATTR_STR[type]);
 			/* bad request */
 			return -EEXIST;
 		}
@@ -3709,7 +3709,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 
 		if (!(BIT(type) & nattrs.flags)) {
 			LOG_DBG("Unset attr %s",
-				log_strdup(LWM2M_ATTR_STR[type]));
+				LWM2M_ATTR_STR[type]);
 			(void)memset(attr, 0, sizeof(*attr));
 
 			if (type <= LWM2M_ATTR_PMAX) {
@@ -3729,7 +3729,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			attr->int_val = *(int32_t *)nattr_ptrs[type];
 			update_observe_node = true;
 
-			LOG_DBG("Update %s to %d", log_strdup(LWM2M_ATTR_STR[type]),
+			LOG_DBG("Update %s to %d", LWM2M_ATTR_STR[type],
 				attr->int_val);
 		} else {
 			if (attr->float_val == *(double *)nattr_ptrs[type]) {
@@ -3738,7 +3738,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 
 			attr->float_val = *(double *)nattr_ptrs[type];
 
-			LOG_DBG("Update %s to %f", log_strdup(LWM2M_ATTR_STR[type]),
+			LOG_DBG("Update %s to %f", LWM2M_ATTR_STR[type],
 				attr->float_val);
 		}
 	}
@@ -3768,12 +3768,12 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			attr->int_val = *(int32_t *)nattr_ptrs[type];
 			update_observe_node = true;
 
-			LOG_DBG("Add %s to %d", log_strdup(LWM2M_ATTR_STR[type]),
+			LOG_DBG("Add %s to %d", LWM2M_ATTR_STR[type],
 				attr->int_val);
 		} else {
 			attr->float_val = *(double *)nattr_ptrs[type];
 
-			LOG_DBG("Add %s to %f", log_strdup(LWM2M_ATTR_STR[type]),
+			LOG_DBG("Add %s to %f", LWM2M_ATTR_STR[type],
 				attr->float_val);
 		}
 
@@ -5135,7 +5135,6 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 	struct coap_packet response;
 	int r;
 	uint8_t token[8];
-	uint8_t tkl;
 
 	r = coap_packet_parse(&response, buf, buf_len, NULL, 0);
 	if (r < 0) {
@@ -5143,7 +5142,7 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 		return;
 	}
 
-	tkl = coap_header_get_token(&response, token);
+	(void)coap_header_get_token(&response, token);
 	pending = coap_pending_received(&response, client_ctx->pendings,
 					ARRAY_SIZE(client_ctx->pendings));
 	if (pending && coap_header_get_type(&response) == COAP_TYPE_ACK) {
@@ -5174,7 +5173,7 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 	}
 
 	LOG_DBG("checking for reply from [%s]",
-		log_strdup(lwm2m_sprint_ip_addr(from_addr)));
+		lwm2m_sprint_ip_addr(from_addr));
 	reply = coap_response_received(&response, from_addr,
 				       client_ctx->replies,
 				       ARRAY_SIZE(client_ctx->replies));
@@ -5344,7 +5343,7 @@ static int notify_message_reply_cb(const struct coap_packet *response,
 		type,
 		COAP_RESPONSE_CODE_CLASS(code),
 		COAP_RESPONSE_CODE_DETAIL(code),
-		log_strdup(sprint_token(reply->token, reply->tkl)));
+		sprint_token(reply->token, reply->tkl));
 
 	msg = find_msg(NULL, reply);
 
@@ -5402,8 +5401,8 @@ static int generate_notify_message(struct lwm2m_ctx *ctx,
 		memcpy(&msg->path, path, sizeof(struct lwm2m_obj_path));
 		LOG_DBG("[%s] NOTIFY MSG START: %u/%u/%u(%u) token:'%s' [%s] %lld",
 			obs->resource_update ? "MANUAL" : "AUTO", path->obj_id, path->obj_inst_id,
-			path->res_id, path->level, log_strdup(sprint_token(obs->token, obs->tkl)),
-			log_strdup(lwm2m_sprint_ip_addr(&ctx->remote_addr)),
+			path->res_id, path->level, sprint_token(obs->token, obs->tkl),
+			lwm2m_sprint_ip_addr(&ctx->remote_addr),
 			(long long)k_uptime_get());
 
 		obj_inst = get_engine_obj_inst(path->obj_id, path->obj_inst_id);
@@ -5416,8 +5415,8 @@ static int generate_notify_message(struct lwm2m_ctx *ctx,
 	} else {
 		LOG_DBG("[%s] NOTIFY MSG START: (Composite)) token:'%s' [%s] %lld",
 		obs->resource_update ? "MANUAL" : "AUTO",
-		log_strdup(sprint_token(obs->token, obs->tkl)),
-		log_strdup(lwm2m_sprint_ip_addr(&ctx->remote_addr)),
+		sprint_token(obs->token, obs->tkl),
+		lwm2m_sprint_ip_addr(&ctx->remote_addr),
 		(long long)k_uptime_get());
 	}
 
@@ -5881,7 +5880,7 @@ static int load_tls_credential(struct lwm2m_ctx *client_ctx, uint16_t res_id,
 	ret = lwm2m_engine_get_res_buf(pathstr, &cred, NULL, &cred_len, &cred_flags);
 	if (ret < 0) {
 		LOG_ERR("Unable to get resource data for '%s'",
-			log_strdup(pathstr));
+			pathstr);
 		return ret;
 	}
 
@@ -6043,12 +6042,12 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 	uint16_t off, len;
 	uint8_t tmp;
 
-	LOG_DBG("Parse url: %s", log_strdup(url));
+	LOG_DBG("Parse url: %s", url);
 
 	http_parser_url_init(&parser);
 	ret = http_parser_parse_url(url, strlen(url), 0, &parser);
 	if (ret < 0) {
-		LOG_ERR("Invalid url: %s", log_strdup(url));
+		LOG_ERR("Invalid url: %s", url);
 		return -ENOTSUP;
 	}
 

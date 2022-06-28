@@ -33,3 +33,8 @@ properties:
       type: int
       required: false
       description: Number of DMA request signals supported by the controller.
+
+    dma-buf-alignment:
+      type: int
+      required: false
+      description: Memory alignment requirement for DMA buffers used by the controller.

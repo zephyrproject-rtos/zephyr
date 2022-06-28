@@ -62,7 +62,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: db4a5893e45db100497fbe5262847280fb749dac
+      revision: 0e6ea916fd32a9db21b04c0d913365d736b78d02
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -83,7 +83,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: d9e50d7287fc381792f6f2ee6d37093e036fbd10
+      revision: d892b442b0c74a33ffbbff0ed2a2c2122b4d3925
       path: modules/hal/nordic
       groups:
         - hal
@@ -161,7 +161,7 @@ manifest:
       revision: 12019623bbad9eb54fe51066847a7cbd4b4eac57
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: df717ac87a9fd80246cc8df24554475e59bda21f
+      revision: 07eab463f991f9ea1738a671fa81ad1e54f50ffb
       path: modules/lib/gui/lvgl
     - name: lz4
       revision: 8e303c264fc21c2116dc612658003a22e933124d
@@ -188,13 +188,13 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: b8cea37dbdc8fc58cc14b4e19fa850877a9da520
+      revision: 93406267eca506003bcb86a86927777a32e729d9
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
       revision: 8d53544871e1f300c478224faca6be8384ab0d04
       path: modules/lib/open-amp
     - name: openthread
-      revision: e2a765599aa0379d0f72f0149a9cbafec070c12d
+      revision: dc5fe8d71b613a036e962c0249e0c9100936fe5a
       path: modules/lib/openthread
     - name: picolibc
       path: modules/lib/picolibc

@@ -246,8 +246,8 @@ static int eswifi_connect(struct eswifi_dev *eswifi)
 	char *rsp;
 	int err;
 
-	LOG_DBG("Connecting to %s (pass=%s)", log_strdup(eswifi->sta.ssid),
-		log_strdup(eswifi->sta.pass));
+	LOG_DBG("Connecting to %s (pass=%s)", eswifi->sta.ssid,
+		eswifi->sta.pass);
 
 	eswifi_lock(eswifi);
 

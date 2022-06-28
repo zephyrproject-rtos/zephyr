@@ -8,6 +8,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_MPU6050_MPU6050_H_
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
@@ -36,8 +37,6 @@ static const uint16_t mpu6050_gyro_sensitivity_x10[] = {
 };
 
 struct mpu6050_data {
-	const struct device *i2c;
-
 	int16_t accel_x;
 	int16_t accel_y;
 	int16_t accel_z;
@@ -52,7 +51,6 @@ struct mpu6050_data {
 
 #ifdef CONFIG_MPU6050_TRIGGER
 	const struct device *dev;
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
@@ -70,12 +68,9 @@ struct mpu6050_data {
 };
 
 struct mpu6050_config {
-	const char *i2c_label;
-	uint16_t i2c_addr;
+	struct i2c_dt_spec i2c;
 #ifdef CONFIG_MPU6050_TRIGGER
-	uint8_t int_pin;
-	uint8_t int_flags;
-	const char *int_label;
+	struct gpio_dt_spec int_gpio;
 #endif /* CONFIG_MPU6050_TRIGGER */
 };
 

@@ -46,7 +46,7 @@ LOG_MODULE_REGISTER(log);
 #define CONFIG_LOG_TAG_MAX_LEN 0
 #endif
 
-#ifndef CONFIG_LOG2_ALWAYS_RUNTIME
+#ifndef CONFIG_LOG_ALWAYS_RUNTIME
 BUILD_ASSERT(!IS_ENABLED(CONFIG_NO_OPTIMIZATIONS),
 	     "Option must be enabled when CONFIG_NO_OPTIMIZATIONS is set");
 BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE),
@@ -54,11 +54,11 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE),
 #endif
 
 static const log_format_func_t format_table[] = {
-	[LOG_OUTPUT_TEXT] = log_output_msg2_process,
+	[LOG_OUTPUT_TEXT] = log_output_msg_process,
 	[LOG_OUTPUT_SYST] = IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) ?
-						log_output_msg2_syst_process : NULL,
+						log_output_msg_syst_process : NULL,
 	[LOG_OUTPUT_DICT] = IS_ENABLED(CONFIG_LOG_DICTIONARY_SUPPORT) ?
-						log_dict_output_msg2_process : NULL
+						log_dict_output_msg_process : NULL
 };
 
 log_format_func_t log_format_func_t_get(uint32_t log_type)
@@ -70,12 +70,6 @@ size_t log_format_table_size(void)
 {
 	return ARRAY_SIZE(format_table);
 }
-
-union log_msgs {
-	struct log_msg *msg;
-	union log_msg2_generic *msg2;
-};
-
 
 K_SEM_DEFINE(log_process_thread_sem, 0, 1);
 
@@ -101,7 +95,7 @@ static const struct mpsc_pbuf_buffer_config mpsc_config = {
 	.buf = (uint32_t *)buf32,
 	.size = ARRAY_SIZE(buf32),
 	.notify_drop = notify_drop,
-	.get_wlen = log_msg2_generic_get_wlen,
+	.get_wlen = log_msg_generic_get_wlen,
 	.flags = (IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW) ?
 		  MPSC_PBUF_MODE_OVERWRITE : 0) |
 		 (IS_ENABLED(CONFIG_LOG_MEM_UTILIZATION) ?
@@ -116,7 +110,7 @@ COND_CODE_0(CONFIG_LOG_TAG_MAX_LEN, (),
 static char tag[CONFIG_LOG_TAG_MAX_LEN + 1] =
 	COND_CODE_0(CONFIG_LOG_TAG_MAX_LEN, ({}), (CONFIG_LOG_TAG_DEFAULT));
 
-static void msg_process(union log_msg2_generic *msg);
+static void msg_process(union log_msg_generic *msg);
 
 static log_timestamp_t dummy_timestamp(void)
 {
@@ -178,7 +172,7 @@ void z_log_vprintk(const char *fmt, va_list ap)
 		return;
 	}
 
-	z_log_msg2_runtime_vcreate(CONFIG_LOG_DOMAIN_ID, NULL,
+	z_log_msg_runtime_vcreate(CONFIG_LOG_DOMAIN_ID, NULL,
 				   LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, 0,
 				   fmt, ap);
 }
@@ -215,7 +209,7 @@ void log_core_init(void)
 	log_set_timestamp_func(_timestamp_func, freq);
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
-		z_log_msg2_init();
+		z_log_msg_init();
 	}
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
@@ -375,7 +369,7 @@ void z_vrfy_log_panic(void)
 #endif
 
 static bool msg_filter_check(struct log_backend const *backend,
-			     union log_msg2_generic *msg)
+			     union log_msg_generic *msg)
 {
 	if (!z_log_item_is_msg(msg)) {
 		return true;
@@ -391,9 +385,9 @@ static bool msg_filter_check(struct log_backend const *backend,
 	int16_t source_id;
 	struct log_source_dynamic_data *source;
 
-	source = (struct log_source_dynamic_data *)log_msg2_get_source(&msg->log);
-	level = log_msg2_get_level(&msg->log);
-	domain_id = log_msg2_get_domain(&msg->log);
+	source = (struct log_source_dynamic_data *)log_msg_get_source(&msg->log);
+	level = log_msg_get_level(&msg->log);
+	domain_id = log_msg_get_domain(&msg->log);
 	source_id = source ? log_dynamic_source_id(source) : -1;
 
 	backend_level = log_filter_get(backend, domain_id,
@@ -402,7 +396,7 @@ static bool msg_filter_check(struct log_backend const *backend,
 	return (level <= backend_level);
 }
 
-static void msg_process(union log_msg2_generic *msg)
+static void msg_process(union log_msg_generic *msg)
 {
 	struct log_backend const *backend;
 
@@ -410,7 +404,7 @@ static void msg_process(union log_msg2_generic *msg)
 		backend = log_backend_get(i);
 		if (log_backend_is_active(backend) &&
 		    msg_filter_check(backend, msg)) {
-			log_backend_msg2_process(backend, msg);
+			log_backend_msg_process(backend, msg);
 		}
 	}
 }
@@ -446,24 +440,24 @@ bool z_impl_log_process(void)
 		return false;
 	}
 
-	union log_msg2_generic *msg;
+	union log_msg_generic *msg;
 
 	if (!backend_attached) {
 		return false;
 	}
 
-	msg = z_log_msg2_claim();
+	msg = z_log_msg_claim();
 	if (msg) {
 		atomic_dec(&buffered_cnt);
 		msg_process(msg);
-		z_log_msg2_free(msg);
+		z_log_msg_free(msg);
 	}
 
 	if (z_log_dropped_pending()) {
 		dropped_notify();
 	}
 
-	return z_log_msg2_pending();
+	return z_log_msg_pending();
 }
 
 #ifdef CONFIG_USERSPACE
@@ -514,24 +508,24 @@ static void notify_drop(const struct mpsc_pbuf_buffer *buffer,
 	z_log_dropped(true);
 }
 
-void z_log_msg2_init(void)
+void z_log_msg_init(void)
 {
 	mpsc_pbuf_init(&log_buffer, &mpsc_config);
 }
 
-struct log_msg2 *z_log_msg2_alloc(uint32_t wlen)
+struct log_msg *z_log_msg_alloc(uint32_t wlen)
 {
 	if (!IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
 		return NULL;
 	}
 
-	return (struct log_msg2 *)mpsc_pbuf_alloc(&log_buffer, wlen,
+	return (struct log_msg *)mpsc_pbuf_alloc(&log_buffer, wlen,
 				K_MSEC(CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS));
 }
 
-void z_log_msg2_commit(struct log_msg2 *msg)
+void z_log_msg_commit(struct log_msg *msg)
 {
-	union log_msg2_generic *m = (union log_msg2_generic *)msg;
+	union log_msg_generic *m = (union log_msg_generic *)msg;
 
 	msg->hdr.timestamp = timestamp_func();
 
@@ -545,17 +539,17 @@ void z_log_msg2_commit(struct log_msg2 *msg)
 	z_log_msg_post_finalize();
 }
 
-union log_msg2_generic *z_log_msg2_claim(void)
+union log_msg_generic *z_log_msg_claim(void)
 {
-	return (union log_msg2_generic *)mpsc_pbuf_claim(&log_buffer);
+	return (union log_msg_generic *)mpsc_pbuf_claim(&log_buffer);
 }
 
-void z_log_msg2_free(union log_msg2_generic *msg)
+void z_log_msg_free(union log_msg_generic *msg)
 {
 	mpsc_pbuf_free(&log_buffer, (union mpsc_pbuf_generic *)msg);
 }
 
-bool z_log_msg2_pending(void)
+bool z_log_msg_pending(void)
 {
 	return mpsc_pbuf_is_pending(&log_buffer);
 }

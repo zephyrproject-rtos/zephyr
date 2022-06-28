@@ -178,7 +178,7 @@ static void ot_state_changed_handler(uint32_t flags, void *context)
 
 	NET_INFO("State changed! Flags: 0x%08" PRIx32 " Current role: %s",
 		flags,
-		log_strdup(otThreadDeviceRoleToString(otThreadGetDeviceRole(ot_context->instance)))
+		otThreadDeviceRoleToString(otThreadGetDeviceRole(ot_context->instance))
 		);
 
 	if (flags & OT_CHANGED_IP6_ADDRESS_REMOVED) {
@@ -437,7 +437,7 @@ int openthread_start(struct openthread_context *ot_context)
 	}
 
 	NET_INFO("Network name: %s",
-		 log_strdup(otThreadGetNetworkName(ot_instance)));
+		 otThreadGetNetworkName(ot_instance));
 
 	/* Start the network. */
 	error = otThreadSetEnabled(ot_instance, true);

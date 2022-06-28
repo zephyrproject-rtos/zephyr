@@ -14,29 +14,20 @@
 
 /* Convenience macros for loading/storing register states. */
 
-#if defined(CONFIG_RISCV_ISA_RV32E)
 #define DO_CALLEE_SAVED(op, reg) \
-	op ra, _thread_offset_to_ra(reg)	;\
-	op tp, _thread_offset_to_tp(reg)	;\
-	op s0, _thread_offset_to_s0(reg)	;\
-	op s1, _thread_offset_to_s1(reg)
-#else
-#define DO_CALLEE_SAVED(op, reg) \
-	op ra, _thread_offset_to_ra(reg)	;\
-	op tp, _thread_offset_to_tp(reg)	;\
-	op s0, _thread_offset_to_s0(reg)	;\
-	op s1, _thread_offset_to_s1(reg)	;\
-	op s2, _thread_offset_to_s2(reg)	;\
-	op s3, _thread_offset_to_s3(reg)	;\
-	op s4, _thread_offset_to_s4(reg)	;\
-	op s5, _thread_offset_to_s5(reg)	;\
-	op s6, _thread_offset_to_s6(reg)	;\
-	op s7, _thread_offset_to_s7(reg)	;\
-	op s8, _thread_offset_to_s8(reg)	;\
-	op s9, _thread_offset_to_s9(reg)	;\
-	op s10, _thread_offset_to_s10(reg)	;\
-	op s11, _thread_offset_to_s11(reg)
-#endif /* CONFIG_RISCV_ISA_RV32E */
+	RV_E(	op ra, _thread_offset_to_ra(reg)	);\
+	RV_E(	op s0, _thread_offset_to_s0(reg)	);\
+	RV_E(	op s1, _thread_offset_to_s1(reg)	);\
+	RV_I(	op s2, _thread_offset_to_s2(reg)	);\
+	RV_I(	op s3, _thread_offset_to_s3(reg)	);\
+	RV_I(	op s4, _thread_offset_to_s4(reg)	);\
+	RV_I(	op s5, _thread_offset_to_s5(reg)	);\
+	RV_I(	op s6, _thread_offset_to_s6(reg)	);\
+	RV_I(	op s7, _thread_offset_to_s7(reg)	);\
+	RV_I(	op s8, _thread_offset_to_s8(reg)	);\
+	RV_I(	op s9, _thread_offset_to_s9(reg)	);\
+	RV_I(	op s10, _thread_offset_to_s10(reg)	);\
+	RV_I(	op s11, _thread_offset_to_s11(reg)	)
 
 #define DO_FP_CALLEE_SAVED(op, reg) \
 	op fs0, _thread_offset_to_fs0(reg)	;\
@@ -82,6 +73,11 @@ skip_store_fp_callee_saved:
 
 	/* Get the new thread's stack pointer */
 	lr sp, _thread_offset_to_sp(a0)
+
+#if defined(CONFIG_THREAD_LOCAL_STORAGE)
+	/* Get the new thread's tls pointer */
+	lr tp, _thread_offset_to_tls(a0)
+#endif
 
 #if defined(CONFIG_PMP_STACK_GUARD)
 	/*

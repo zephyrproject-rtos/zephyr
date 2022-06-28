@@ -136,7 +136,7 @@ void test_sckt_raw_packet_raw_ip(void)
 	recv_data_len = recv(sock, receive_buffer, sizeof(receive_buffer), 0);
 	zassert_true(recv_data_len == ARRAY_SIZE(testing_data), "Expected data not received");
 
-	NET_DBG("Received successfully data %s", log_strdup(receive_buffer));
+	NET_DBG("Received successfully data %s", receive_buffer);
 
 	close(sock);
 }

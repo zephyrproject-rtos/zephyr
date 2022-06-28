@@ -305,9 +305,16 @@ static int usb_dc_stm32_clock_enable(void)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc)
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* Disable ULPI interface (for external high-speed PHY) clock in sleep
+	 * mode.
+	 */
+	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
 #else
-	/* Disable ULPI interface (for external high-speed PHY) clock */
-	LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+	/* Disable ULPI interface (for external high-speed PHY) clock in low
+	 * power mode. It is disabled by default in run power mode, no need to
+	 * disable it.
+	 */
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 #endif
 #endif
@@ -392,15 +399,15 @@ static int usb_dc_stm32_init(void)
 #endif /* CONFIG_USB_DEVICE_SOF */
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
-	/* Currently assuming FS mode. Need to disable the ULPI clock on USB2 and
-	 * enable the FS clock. Need to make this dependent on HS or FS config.
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
+	/* The USB2 controller only works in FS mode, but the ULPI clock needs
+	 * to be disabled in sleep mode for it to work. For the USB1
+	 * controller, as it is an HS one, the clock is disabled in the common
+	 * path.
 	 */
 
-	LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_USB2OTGHSULPI);
 	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB2OTGHSULPI);
-
-	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_USB2OTGHS);
-	LL_AHB1_GRP1_EnableClockSleep(LL_AHB1_GRP1_PERIPH_USB2OTGHS);
+#endif
 
 	LL_PWR_EnableUSBVoltageDetector();
 

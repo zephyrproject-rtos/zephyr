@@ -752,7 +752,7 @@ static void dump_entry(int level, void *virt, pentry_t entry)
 	DUMP_BIT(XD);
 
 	LOG_ERR("%sE: %p -> " PRI_ENTRY ": %s", info->name,
-		virtmap, entry & info->mask, log_strdup(buf));
+		virtmap, entry & info->mask, buf);
 
 	#undef DUMP_BIT
 }

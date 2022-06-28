@@ -17,15 +17,14 @@
 
 void main(void)
 {
-	const struct device *dev;
+	const struct device *dev = DEVICE_DT_GET_ONE(maxim_max44009);
 	struct sensor_value val;
 	uint32_t lum = 0U;
 
 	printk("MAX44009 light sensor application\n");
 
-	dev = device_get_binding("MAX44009");
-	if (!dev) {
-		printk("sensor: device not found.\n");
+	if (!device_is_ready(dev)) {
+		printk("Device %s is not ready\n", dev->name);
 		return;
 	}
 

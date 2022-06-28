@@ -79,7 +79,9 @@ void *__printk_get_hook(void)
 }
 
 struct buf_out_context {
-	int count;
+#ifdef CONFIG_PICOLIBC
+	FILE file;
+#endif
 	unsigned int buf_count;
 	char buf[CONFIG_PRINTK_BUFFER_SIZE];
 };
@@ -94,7 +96,6 @@ static int buf_char_out(int c, void *ctx_p)
 {
 	struct buf_out_context *ctx = ctx_p;
 
-	ctx->count++;
 	ctx->buf[ctx->buf_count++] = c;
 	if (ctx->buf_count == CONFIG_PRINTK_BUFFER_SIZE) {
 		buf_flush(ctx);
@@ -103,15 +104,9 @@ static int buf_char_out(int c, void *ctx_p)
 	return c;
 }
 
-struct out_context {
-	int count;
-};
-
 static int char_out(int c, void *ctx_p)
 {
-	struct out_context *ctx = ctx_p;
-
-	ctx->count++;
+	(void) ctx_p;
 	return _char_out(c);
 }
 
@@ -123,20 +118,35 @@ void vprintk(const char *fmt, va_list ap)
 	}
 
 	if (k_is_user_context()) {
-		struct buf_out_context ctx = { 0 };
+		struct buf_out_context ctx = {
+#ifdef CONFIG_PICOLIBC
+			.file = FDEV_SETUP_STREAM((int(*)(char, FILE *))buf_char_out,
+						  NULL, NULL, _FDEV_SETUP_WRITE),
+#else
+			0
+#endif
+		};
 
+#ifdef CONFIG_PICOLIBC
+		(void) vfprintf(&ctx.file, fmt, ap);
+#else
 		cbvprintf(buf_char_out, &ctx, fmt, ap);
-
+#endif
 		if (ctx.buf_count) {
 			buf_flush(&ctx);
 		}
 	} else {
-		struct out_context ctx = { 0 };
 #ifdef CONFIG_PRINTK_SYNC
 		k_spinlock_key_t key = k_spin_lock(&lock);
 #endif
 
-		cbvprintf(char_out, &ctx, fmt, ap);
+#ifdef CONFIG_PICOLIBC
+		FILE console = FDEV_SETUP_STREAM((int(*)(char, FILE *))char_out,
+						 NULL, NULL, _FDEV_SETUP_WRITE);
+		(void) vfprintf(&console, fmt, ap);
+#else
+		cbvprintf(char_out, NULL, fmt, ap);
+#endif
 
 #ifdef CONFIG_PRINTK_SYNC
 		k_spin_unlock(&lock, key);
@@ -202,6 +212,8 @@ void printk(const char *fmt, ...)
 }
 #endif /* defined(CONFIG_PRINTK) */
 
+#ifndef CONFIG_PICOLIBC
+
 struct str_context {
 	char *str;
 	int max;
@@ -248,3 +260,5 @@ int vsnprintk(char *str, size_t size, const char *fmt, va_list ap)
 
 	return ctx.count;
 }
+
+#endif

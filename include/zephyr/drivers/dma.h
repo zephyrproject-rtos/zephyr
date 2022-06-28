@@ -641,6 +641,17 @@ static inline uint32_t dma_burst_index(uint32_t burst)
 }
 
 /**
+ * Get the device tree property describing the buffer alignment
+ *
+ * Useful when statically defining or allocating buffers for DMA usage where
+ * memory alignment often matters.
+ *
+ * @param node Node identifier, e.g. DT_NODELABEL(dma_0)
+ * @return alignment Memory byte alignment required for DMA buffers
+ */
+#define DMA_BUF_ALIGNMENT(node) DT_PROP(node, dma_buf_alignment)
+
+/**
  * @}
  */
 

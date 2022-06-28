@@ -158,8 +158,8 @@ static int modem_atoi(const char *s, const int err_value,
 
 	ret = (int)strtol(s, &endptr, 10);
 	if (!endptr || *endptr != '\0') {
-		LOG_ERR("bad %s '%s' in %s", log_strdup(s),
-			 log_strdup(desc), log_strdup(func));
+		LOG_ERR("bad %s '%s' in %s", s,
+			 desc, func);
 		return err_value;
 	}
 
@@ -258,7 +258,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_manufacturer)
 				    sizeof(gsm.minfo.mdm_manufacturer) - 1,
 				    data->rx_buf, 0, len);
 	gsm.minfo.mdm_manufacturer[out_len] = '\0';
-	LOG_INF("Manufacturer: %s", log_strdup(gsm.minfo.mdm_manufacturer));
+	LOG_INF("Manufacturer: %s", gsm.minfo.mdm_manufacturer);
 
 	return 0;
 }
@@ -272,7 +272,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_model)
 				    sizeof(gsm.minfo.mdm_model) - 1,
 				    data->rx_buf, 0, len);
 	gsm.minfo.mdm_model[out_len] = '\0';
-	LOG_INF("Model: %s", log_strdup(gsm.minfo.mdm_model));
+	LOG_INF("Model: %s", gsm.minfo.mdm_model);
 
 	return 0;
 }
@@ -286,7 +286,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_revision)
 				    sizeof(gsm.minfo.mdm_revision) - 1,
 				    data->rx_buf, 0, len);
 	gsm.minfo.mdm_revision[out_len] = '\0';
-	LOG_INF("Revision: %s", log_strdup(gsm.minfo.mdm_revision));
+	LOG_INF("Revision: %s", gsm.minfo.mdm_revision);
 
 	return 0;
 }
@@ -299,7 +299,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imei)
 	out_len = net_buf_linearize(gsm.minfo.mdm_imei, sizeof(gsm.minfo.mdm_imei) - 1,
 				    data->rx_buf, 0, len);
 	gsm.minfo.mdm_imei[out_len] = '\0';
-	LOG_INF("IMEI: %s", log_strdup(gsm.minfo.mdm_imei));
+	LOG_INF("IMEI: %s", gsm.minfo.mdm_imei);
 
 	return 0;
 }
@@ -313,7 +313,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imsi)
 	out_len = net_buf_linearize(gsm.minfo.mdm_imsi, sizeof(gsm.minfo.mdm_imsi) - 1,
 				    data->rx_buf, 0, len);
 	gsm.minfo.mdm_imsi[out_len] = '\0';
-	LOG_INF("IMSI: %s", log_strdup(gsm.minfo.mdm_imsi));
+	LOG_INF("IMSI: %s", gsm.minfo.mdm_imsi);
 
 	return 0;
 }
@@ -338,7 +338,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_iccid)
 			memmove(gsm.minfo.mdm_iccid, p+1, len+1);
 		}
 	}
-	LOG_INF("ICCID: %s", log_strdup(gsm.minfo.mdm_iccid));
+	LOG_INF("ICCID: %s", gsm.minfo.mdm_iccid);
 
 	return 0;
 }

@@ -194,7 +194,7 @@ static int setup_iface(struct net_if *iface, const char *ipaddr,
 
 	if (!net_ipaddr_parse(ipaddr, strlen(ipaddr), addr)) {
 		NET_ERR("Tunnel local address \"%s\" invalid.",
-			log_strdup(ipaddr));
+			ipaddr);
 		return -EINVAL;
 	}
 
@@ -207,7 +207,7 @@ static int setup_iface(struct net_if *iface, const char *ipaddr,
 					      NET_ADDR_MANUAL, 0);
 		if (!ifaddr) {
 			NET_ERR("Cannot add %s to interface %d",
-				log_strdup(ipaddr), net_if_get_by_iface(iface));
+				ipaddr, net_if_get_by_iface(iface));
 			return -EINVAL;
 		}
 
@@ -223,7 +223,7 @@ static int setup_iface(struct net_if *iface, const char *ipaddr,
 					      NET_ADDR_MANUAL, 0);
 		if (!ifaddr) {
 			NET_ERR("Cannot add %s to interface %d",
-				log_strdup(ipaddr), net_if_get_by_iface(iface));
+				ipaddr, net_if_get_by_iface(iface));
 			return -EINVAL;
 		}
 
@@ -248,8 +248,7 @@ static int cleanup_iface(struct net_if *iface, struct sockaddr *addr)
 		ret = net_if_ipv6_addr_rm(iface, &net_sin6(addr)->sin6_addr);
 		if (!ret) {
 			NET_ERR("Cannot remove %s from interface %d",
-				log_strdup(net_sprint_ipv6_addr(
-						  &net_sin6(addr)->sin6_addr)),
+				net_sprint_ipv6_addr(&net_sin6(addr)->sin6_addr),
 				net_if_get_by_iface(iface));
 			ret = -EINVAL;
 		}
@@ -260,8 +259,7 @@ static int cleanup_iface(struct net_if *iface, struct sockaddr *addr)
 		ret = net_if_ipv4_addr_rm(iface, &net_sin(addr)->sin_addr);
 		if (!ret) {
 			NET_ERR("Cannot remove %s from interface %d",
-				log_strdup(net_sprint_ipv4_addr(
-						  &net_sin(addr)->sin_addr)),
+				net_sprint_ipv4_addr(&net_sin(addr)->sin_addr),
 				net_if_get_by_iface(iface));
 		}
 

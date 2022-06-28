@@ -262,7 +262,7 @@ ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
 			bt_ots_obj_id_to_str(ots->cur_obj->id, id,
 						sizeof(id));
 			LOG_DBG("Selecting a new Current Object with id: %s",
-				log_strdup(id));
+				id);
 
 			if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
 				bt_ots_dir_list_selected(ots->dir_list, ots->obj_manager,

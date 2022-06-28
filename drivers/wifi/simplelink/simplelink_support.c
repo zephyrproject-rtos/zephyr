@@ -292,7 +292,7 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *wlan_event)
 
 		LOG_INF("[WLAN EVENT] STA Connected to the AP: %s, "
 			"BSSID: %x:%x:%x:%x:%x:%x",
-			log_strdup(sl_conn.ssid), sl_conn.bssid[0],
+			sl_conn.ssid, sl_conn.bssid[0],
 			sl_conn.bssid[1], sl_conn.bssid[2],
 			sl_conn.bssid[3], sl_conn.bssid[4],
 			sl_conn.bssid[5]);
@@ -316,7 +316,7 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *wlan_event)
 		    event_data->ReasonCode) {
 			LOG_INF("[WLAN EVENT] "
 				"Device disconnected from the AP: %s",
-				log_strdup(event_data->SsidName));
+				event_data->SsidName);
 			LOG_INF("BSSID: %x:%x:%x:%x:%x:%x on application's"
 				" request", event_data->Bssid[0],
 				event_data->Bssid[1], event_data->Bssid[2],
@@ -326,7 +326,7 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *wlan_event)
 		} else {
 			LOG_ERR("[WLAN ERROR] "
 				"Device disconnected from the AP: %s",
-				log_strdup(event_data->SsidName));
+				event_data->SsidName);
 			LOG_ERR("BSSID: %x:%x:%x:%x:%x:%x on error: %d",
 				event_data->Bssid[0],
 				event_data->Bssid[1], event_data->Bssid[2],

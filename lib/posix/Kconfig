@@ -21,6 +21,7 @@ config POSIX_API
 config PTHREAD_IPC
 	bool "POSIX pthread IPC API"
 	default y if POSIX_API
+	depends on POSIX_CLOCK
 	help
 	  This enables a mostly-standards-compliant implementation of
 	  the pthread mutex, condition variable and barrier IPC

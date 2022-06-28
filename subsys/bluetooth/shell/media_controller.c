@@ -767,7 +767,7 @@ int cmd_media_set_search(const struct shell *sh, size_t argc, char *argv[])
 
 	search.len = strlen(argv[1]);
 	memcpy(search.search, argv[1], search.len);
-	BT_DBG("Search string: %s", log_strdup(argv[1]));
+	BT_DBG("Search string: %s", argv[1]);
 
 	err = media_proxy_ctrl_send_search(current_player, &search);
 	if (err) {
