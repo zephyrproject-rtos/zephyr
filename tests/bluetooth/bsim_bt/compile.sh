@@ -23,7 +23,6 @@ source ${ZEPHYR_BASE}/tests/bluetooth/bsim_bt/compile.source
 app=tests/bluetooth/bsim_bt/bsim_test_notify compile
 app=tests/bluetooth/bsim_bt/bsim_test_eatt_notif conf_file=prj.conf compile
 app=tests/bluetooth/bsim_bt/bsim_test_gatt_caching compile
-app=tests/bluetooth/bsim_bt/bsim_test_eatt conf_file=prj_encryption.conf compile
 app=tests/bluetooth/bsim_bt/bsim_test_eatt conf_file=prj_collision.conf compile
 app=tests/bluetooth/bsim_bt/bsim_test_eatt conf_file=prj_multiple_conn.conf compile
 app=tests/bluetooth/bsim_bt/bsim_test_eatt conf_file=prj_autoconnect.conf compile
