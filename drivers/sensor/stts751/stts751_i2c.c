@@ -20,19 +20,21 @@
 
 LOG_MODULE_DECLARE(STTS751, CONFIG_SENSOR_LOG_LEVEL);
 
-static int stts751_i2c_read(struct stts751_data *data, uint8_t reg_addr,
-			    uint8_t *value, uint16_t len)
+static int stts751_i2c_read(const struct device *dev, uint8_t reg_addr, uint8_t *value,
+			    uint16_t len)
 {
-	const struct stts751_config *cfg = data->dev->config;
+	struct stts751_data *data = dev->data;
+	const struct stts751_config *cfg = dev->config;
 
 	return i2c_burst_read(data->bus, cfg->i2c_slv_addr,
 			      reg_addr, value, len);
 }
 
-static int stts751_i2c_write(struct stts751_data *data, uint8_t reg_addr,
-			     uint8_t *value, uint16_t len)
+static int stts751_i2c_write(const struct device *dev, uint8_t reg_addr, uint8_t *value,
+			     uint16_t len)
 {
-	const struct stts751_config *cfg = data->dev->config;
+	struct stts751_data *data = dev->data;
+	const struct stts751_config *cfg = dev->config;
 
 	return i2c_burst_write(data->bus, cfg->i2c_slv_addr,
 			       reg_addr, value, len);
@@ -46,7 +48,7 @@ int stts751_i2c_init(const struct device *dev)
 	data->ctx_i2c.write_reg = (stmdev_write_ptr) stts751_i2c_write;
 
 	data->ctx = &data->ctx_i2c;
-	data->ctx->handle = data;
+	data->ctx->handle = (void *)dev;
 
 	return 0;
 }
