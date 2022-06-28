@@ -6,7 +6,7 @@ sample:
   name: WiFi sample app
 tests:
   sample.net.wifi:
-    platform_allow: cc3220sf_launchxl disco_l475_iot1
+    platform_allow: cc3220sf_launchxl disco_l475_iot1 reel_board
   sample.net.wifi.mikroe_wifi_bt_click:
     extra_args: SHIELD=mikroe_wifi_bt_click_mikrobus
     platform_allow: lpcxpresso55s69_cpu0
