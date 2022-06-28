@@ -12,3 +12,5 @@ tests:
     min_ram: 32
     harness: none
     tags: samples display gui
+    modules:
+      - lvgl
