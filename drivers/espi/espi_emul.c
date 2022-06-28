@@ -89,7 +89,7 @@ static bool espi_emul_get_channel_status(const struct device *dev, enum espi_cha
 
 static int espi_emul_read_lpc_request(const struct device *dev,
 				      enum lpc_peripheral_opcode op,
-				      uint32_t *data)
+				      unsigned int *data)
 {
 	const struct emul_espi_device_api *api;
 	struct espi_emul *emul;
@@ -113,7 +113,7 @@ static int espi_emul_read_lpc_request(const struct device *dev,
 #ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
 	case EACPI_GET_SHARED_MEMORY:
 		__ASSERT_NO_MSG(api->get_acpi_shm);
-		*data = (uint32_t)api->get_acpi_shm(emul);
+		*data = (unsigned int)api->get_acpi_shm(emul);
 		break;
 #endif
 	default:
@@ -123,7 +123,7 @@ static int espi_emul_read_lpc_request(const struct device *dev,
 }
 
 static int espi_emul_write_lpc_request(const struct device *dev, enum lpc_peripheral_opcode op,
-				       uint32_t *data)
+				       unsigned int *data)
 {
 	ARG_UNUSED(dev);
 
