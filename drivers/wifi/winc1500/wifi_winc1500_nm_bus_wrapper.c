@@ -63,10 +63,6 @@ static int8_t nm_i2c_write_special(uint8_t *wb1, uint16_t sz1,
 
 #ifdef CONF_WINC_USE_SPI
 
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-struct spi_cs_control cs_ctrl;
-#endif
-
 static int8_t spi_rw(uint8_t *mosi, uint8_t *miso, uint16_t size)
 {
 	const struct spi_buf buf_tx = {
@@ -86,7 +82,7 @@ static int8_t spi_rw(uint8_t *mosi, uint8_t *miso, uint16_t size)
 		.count = 1
 	};
 
-	if (spi_transceive(winc1500.spi, &winc1500.spi_cfg, &tx, &rx)) {
+	if (spi_transceive_dt(&winc1500_config.spi, &tx, &rx)) {
 		LOG_ERR("spi_transceive fail");
 		return M2M_ERR_BUS_FAIL;
 	}
@@ -136,34 +132,10 @@ int8_t nm_bus_init(void *pvinit)
 	/* Not implemented */
 #elif defined CONF_WINC_USE_SPI
 	/* setup SPI device */
-	winc1500.spi = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!winc1500.spi) {
+	if (!spi_is_ready(&winc1500_config.spi)) {
 		LOG_ERR("spi device binding");
-		return -1;
-	}
-
-	winc1500.spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB;
-	winc1500.spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
-	winc1500.spi_cfg.slave = DT_INST_REG_ADDR(0);
-
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	cs_ctrl.gpio_dev = device_get_binding(
-		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	if (!cs_ctrl.gpio_dev) {
-		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
-
-	cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
-	cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
-	cs_ctrl.delay = 0U;
-
-	winc1500.spi_cfg.cs = &cs_ctrl;
-
-	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		    DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-		    DT_INST_SPI_DEV_CS_GPIOS_PIN(0));
-#endif
 
 	nm_bsp_reset();
 	nm_bsp_sleep(1);
