@@ -29,6 +29,7 @@
 		i2c-0 = &i2c0_0;
 		/* For watchdog sample */
 		watchdog0 = &twd0;
+		peci-0 = &peci0;
 		/* For samples/drivers/spi_flash */
 		spi-flash0 = &int_flash;
 	};
@@ -118,4 +119,10 @@
 	port = <NPCX_TACH_PORT_A>; /* port-A is selected */
 	sample-clk = <NPCX_TACH_FREQ_LFCLK>; /* Use LFCLK as sampling clock */
 	pulses-per-round = <1>; /* number of pulses per round of encoder */
+};
+
+&peci0 {
+	status = "okay";
+	pinctrl-0 = <&peci_dat_gp81>;
+	pinctrl-names = "default";
 };
