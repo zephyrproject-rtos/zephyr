@@ -53,6 +53,21 @@
 #define RCC_PLLP_ENABLE() SET_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLPEN)
 #define RCC_PLLQ_ENABLE() SET_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLQEN)
 
+/**
+ * @brief Return frequency for pll with 2 dividers and a multiplier
+ */
+__unused
+static uint32_t get_pll_div_frequency(uint32_t pllsrc_freq,
+				      int pllm_div,
+				      int plln_mul,
+				      int pllout_div)
+{
+	__ASSERT_NO_MSG(pllm_div && pllout_div);
+
+	return (pllsrc_freq * plln_mul) /
+		(pllm_div * pllout_div);
+}
+
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 {
 	return clock / prescaler;
@@ -129,6 +144,27 @@ static int enabled_clock(uint32_t src_clk)
 		}
 		break;
 #endif /* STM32_SRC_PLLCLK */
+#if defined(STM32_SRC_PLL_P)
+	case STM32_SRC_PLL_P:
+		if (!IS_ENABLED(STM32_PLL_P_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLL_P */
+#if defined(STM32_SRC_PLL_Q)
+	case STM32_SRC_PLL_Q:
+		if (!IS_ENABLED(STM32_PLL_Q_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLL_Q */
+#if defined(STM32_SRC_PLL_R)
+	case STM32_SRC_PLL_R:
+		if (!IS_ENABLED(STM32_PLL_R_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_PLL_R */
 	default:
 		return -ENOTSUP;
 	}
@@ -297,6 +333,33 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = get_pllout_frequency();
 		break;
 #endif
+#if defined(STM32_SRC_PLL_P) & STM32_PLL_P_ENABLED
+	case STM32_SRC_PLL_P:
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
+					      STM32_PLL_M_DIVISOR,
+					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_P_DIVISOR);
+		break;
+#endif
+#if defined(STM32_SRC_PLL_Q) & STM32_PLL_Q_ENABLED
+	case STM32_SRC_PLL_Q:
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
+					      STM32_PLL_M_DIVISOR,
+					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_Q_DIVISOR);
+		break;
+#endif
+#if defined(STM32_SRC_PLL_R) & STM32_PLL_R_ENABLED
+	case STM32_SRC_PLL_R:
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
+					      STM32_PLL_M_DIVISOR,
+					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_R_DIVISOR);
+		break;
+#endif
+/* PLLSAI1x not supported yet */
+/* PLLSAI2x not supported yet */
+/* PLLI2Sx not supported yet */
 #if defined(STM32_SRC_LSE)
 	case STM32_SRC_LSE:
 		*rate = STM32_LSE_FREQ;

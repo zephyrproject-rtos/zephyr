@@ -18,6 +18,13 @@
 
 #if STM32_SYSCLK_SRC_PLL
 
+#if defined(LL_RCC_MSIRANGESEL_RUN)
+#define CALC_RUN_MSI_FREQ(range) __LL_RCC_CALC_MSI_FREQ(LL_RCC_MSIRANGESEL_RUN, \
+							range << RCC_CR_MSIRANGE_Pos);
+#else
+#define CALC_RUN_MSI_FREQ(range) __LL_RCC_CALC_MSI_FREQ(range << RCC_CR_MSIRANGE_Pos);
+#endif
+
 /**
  * @brief Return PLL source
  */
@@ -31,6 +38,26 @@ static uint32_t get_pll_source(void)
 		return LL_RCC_PLLSOURCE_HSE;
 	} else if (IS_ENABLED(STM32_PLL_SRC_MSI)) {
 		return LL_RCC_PLLSOURCE_MSI;
+	}
+
+	__ASSERT(0, "Invalid source");
+	return 0;
+}
+
+/**
+ * @brief get the pll source frequency
+ */
+__unused
+uint32_t get_pllsrc_frequency(void)
+{
+	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+		return STM32_HSI_FREQ;
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
+		return STM32_HSE_FREQ;
+#if defined(STM32_MSI_ENABLED)
+	} else if (IS_ENABLED(STM32_PLL_SRC_MSI)) {
+		return CALC_RUN_MSI_FREQ(STM32_MSI_RANGE);
+#endif
 	}
 
 	__ASSERT(0, "Invalid source");
