@@ -122,6 +122,12 @@ target_sources_ifdef(
   userspace.c
   )
 
+target_sources_ifdef(
+  CONFIG_DYNAMIC_THREAD
+  kernel PRIVATE
+  dynamic.c
+  )
+
 target_include_directories(kernel PRIVATE
   ${ZEPHYR_BASE}/kernel/include
   ${ARCH_DIR}/${ARCH}/include

@@ -266,6 +266,35 @@ extern void k_thread_foreach_unlocked(
 
 #if !defined(_ASMLANGUAGE)
 /**
+ * @brief Dynamically allocate a thread stack.
+ *
+ * Relevant stack creation flags include:
+ * - @ref K_USER allocate a userspace thread (requires `CONFIG_USERSPACE=y`)
+ *
+ * @param size Stack size in bytes.
+ * @param flags Stack creation flags, or 0.
+ *
+ * @retval the allocated thread stack on success.
+ * @retval NULL on failure.
+ *
+ * @see CONFIG_DYNAMIC_THREAD
+ */
+__syscall k_thread_stack_t *k_thread_stack_alloc(size_t size, int flags);
+
+/**
+ * @brief Free a dynamically allocated thread stack.
+ *
+ * @param stack Pointer to the thread stack.
+ *
+ * @retval 0 on success.
+ * @retval -EBUSY if the thread stack is in use.
+ * @retval -EINVAL if @p stack is invalid.
+ *
+ * @see CONFIG_DYNAMIC_THREAD
+ */
+__syscall int k_thread_stack_free(k_thread_stack_t *stack);
+
+/**
  * @brief Create a thread.
  *
  * This routine initializes a thread, then schedules it for execution.

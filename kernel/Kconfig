@@ -203,6 +203,68 @@ config THREAD_USERSPACE_LOCAL_DATA
 	depends on USERSPACE
 	default y if ERRNO && !ERRNO_IN_TLS
 
+config DYNAMIC_THREAD
+	bool "Support for dynamic threads [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on THREAD_STACK_INFO
+	select DYNAMIC_OBJECTS if USERSPACE
+	help
+	  Enable support for dynamic threads and stacks.
+
+if DYNAMIC_THREAD
+
+config DYNAMIC_THREAD_STACK_SIZE
+	int "Size of each pre-allocated thread stack"
+	default 1024 if !64BIT
+	default 2048 if 64BIT
+	help
+	  Default stack size (in bytes) for dynamic threads.
+
+config DYNAMIC_THREAD_ALLOC
+	bool "Support heap-allocated thread objects and stacks"
+	help
+	  Select this option to enable allocating thread object and
+	  thread stacks from the system heap.
+
+	  Only use this type of allocation in situations
+	  where malloc is permitted.
+
+config DYNAMIC_THREAD_POOL_SIZE
+	int "Number of statically pre-allocated threads"
+	default 0
+	range 0 8192
+	help
+	  Pre-allocate a fixed number of thread objects and
+	  stacks at build time.
+
+	  This type of "dynamic" stack is usually suitable in
+	  situations where malloc is not permitted.
+
+choice DYNAMIC_THREAD_PREFER
+	prompt "Preferred dynamic thread allocator"
+	default DYNAMIC_THREAD_PREFER_POOL
+	help
+	  If both CONFIG_DYNAMIC_THREAD_ALLOC=y and
+	  CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0, then the user may
+	  specify the order in which allocation is attmpted.
+
+config DYNAMIC_THREAD_PREFER_ALLOC
+	bool "Prefer heap-based allocation"
+	depends on DYNAMIC_THREAD_ALLOC
+	help
+	  Select this option to attempt a heap-based allocation
+	  prior to any pool-based allocation.
+
+config DYNAMIC_THREAD_PREFER_POOL
+	bool "Prefer pool-based allocation"
+	help
+	  Select this option to attempt a pool-based allocation
+	  prior to any heap-based allocation.
+
+endchoice # DYNAMIC_THREAD_PREFER
+
+endif # DYNAMIC_THREADS
+
 config LIBC_ERRNO
 	bool
 	help
