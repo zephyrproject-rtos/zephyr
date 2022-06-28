@@ -175,10 +175,9 @@ static int stts751_init(const struct device *dev)
 
 	data->dev = dev;
 
-	data->bus = device_get_binding(config->master_dev_name);
-	if (!data->bus) {
-		LOG_DBG("bus master not found: %s", config->master_dev_name);
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
 	config->bus_init(dev);
@@ -201,7 +200,7 @@ static int stts751_init(const struct device *dev)
 static struct stts751_data stts751_data;
 
 static const struct stts751_config stts751_config = {
-	.master_dev_name = DT_INST_BUS_LABEL(0),
+	COND_CODE_1(DT_INST_ON_BUS(0, i2c), (.i2c = I2C_DT_SPEC_INST_GET(0),), ())
 #ifdef CONFIG_STTS751_TRIGGER
 	.event_port	= DT_INST_GPIO_LABEL(0, drdy_gpios),
 	.event_pin	= DT_INST_GPIO_PIN(0, drdy_gpios),
@@ -209,7 +208,6 @@ static const struct stts751_config stts751_config = {
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	.bus_init = stts751_i2c_init,
-	.i2c_slv_addr = DT_INST_REG_ADDR(0),
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"
 #endif

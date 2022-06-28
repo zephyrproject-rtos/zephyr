@@ -20,21 +20,19 @@
 #include "stts751_reg.h"
 
 struct stts751_config {
-	char *master_dev_name;
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+	struct i2c_dt_spec i2c;
+#endif
 	int (*bus_init)(const struct device *dev);
 #ifdef CONFIG_STTS751_TRIGGER
 	const char *event_port;
 	uint8_t event_pin;
 	uint8_t int_flags;
 #endif
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	uint16_t i2c_slv_addr;
-#endif
 };
 
 struct stts751_data {
 	const struct device *dev;
-	const struct device *bus;
 	int16_t sample_temp;
 
 	stmdev_ctx_t *ctx;
