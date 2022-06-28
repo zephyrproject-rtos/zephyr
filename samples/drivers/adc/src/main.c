@@ -7,6 +7,11 @@
 #include <zephyr.h>
 #include <sys/printk.h>
 #include <drivers/adc.h>
+#include <logging/log.h>
+
+#ifdef CONFIG_ADC_ESP32
+#include <drivers/adc/adc_esp32.h>
+#endif /* #ifdef CONFIG_ADC_ESP32 */
 
 #if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || \
 	!DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
@@ -39,6 +44,9 @@
 #define ADC_INPUT_POS_OFFSET 0
 #endif
 
+#define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
+LOG_MODULE_REGISTER(adc_sample);
+
 /* Get the numbers of up to two channels */
 static uint8_t channel_ids[ADC_NUM_CHANNELS] = {
 	DT_IO_CHANNELS_INPUT_BY_IDX(DT_PATH(zephyr_user), 0),
@@ -47,14 +55,15 @@ static uint8_t channel_ids[ADC_NUM_CHANNELS] = {
 #endif
 };
 
-static int16_t sample_buffer[ADC_NUM_CHANNELS];
+/* static int16_t sample_buffer[ADC_NUM_CHANNELS]; */
+static int16_t sample_buffer[256];
 
 struct adc_channel_cfg channel_cfg = {
 	.gain = ADC_GAIN,
 	.reference = ADC_REFERENCE,
 	.acquisition_time = ADC_ACQUISITION_TIME,
 	/* channel ID will be overwritten below */
-	.channel_id = 0,
+	.channel_id =   0,
 	.differential = 0
 };
 
@@ -72,10 +81,17 @@ void main(void)
 	int err;
 	const struct device *dev_adc = DEVICE_DT_GET(ADC_NODE);
 
+	struct adc_esp32_data *devdata =
+		(struct adc_esp32_data *) dev_adc->data;
+
+	LOG_DBG("starting example application\n");
+
 	if (!device_is_ready(dev_adc)) {
 		printk("ADC device not found\n");
 		return;
 	}
+
+	LOG_DBG("you have chosen %s as your ADC", dev_adc->name);
 
 	/*
 	 * Configure channels individually prior to sampling
@@ -86,12 +102,27 @@ void main(void)
 		channel_cfg.input_positive = ADC_INPUT_POS_OFFSET + channel_ids[i];
 #endif
 
-		adc_channel_setup(dev_adc, &channel_cfg);
+		err = adc_channel_setup(dev_adc, &channel_cfg);
+		if (err != 0) {
+			LOG_ERR("failed setting up channel %d (err: %d)",
+				channel_ids[i], err);
+		} else {
+			LOG_DBG("succeeded setting up channel %d", channel_ids[i]);
+		}
+		adc_esp32_set_atten(dev_adc, channel_ids[i], ADC_ESP32_ATTEN_3);
 
-		sequence.channels |= BIT(channel_ids[i]);
+		/* sequence.channels |= BIT(channel_ids[i]); */
+		sequence.channels = BIT(channel_ids[i]);
 	}
 
 	int32_t adc_vref = adc_ref_internal(dev_adc);
+	adc_esp32_update_meas_ref_internal(dev_adc);
+	adc_esp32_get_meas_ref_internal(dev_adc, (uint16_t *) &adc_vref);
+	adc_esp32_characterize_by_atten(dev_adc,
+					sequence.resolution,
+					ADC_ESP32_ATTEN_3);
+
+	LOG_DBG("detected internal reference voltage: %d mV", adc_vref);
 
 	while (1) {
 		/*
@@ -105,7 +136,7 @@ void main(void)
 
 		printk("ADC reading:");
 		for (uint8_t i = 0; i < ADC_NUM_CHANNELS; i++) {
-			int32_t raw_value = sample_buffer[i];
+			int32_t raw_value = sample_buffer[channel_ids[i]];
 
 			printk(" %d", raw_value);
 			if (adc_vref > 0) {
@@ -117,15 +148,16 @@ void main(void)
 
 				/* adc_raw_to_millivolts(adc_vref, ADC_GAIN, */
 				/* 	ADC_RESOLUTION, &mv_value); */
-				adc_raw_to_millivolts(adc_vref,
-						      channel_cfg.gain,
-						      sequence.resolution,
-						      &mv_value);
+				/* adc_raw_to_millivolts(adc_vref, */
+				/* 		      channel_cfg.gain, */
+				/* 		      sequence.resolution, */
+				/* 		      &mv_value); */
+				adc_esp32_raw_to_millivolts(dev_adc, &mv_value);
 				printk(" = %d mV  ", mv_value);
 			}
 		}
 		printk("\n");
 
-		k_sleep(K_MSEC(1000));
+		k_sleep(K_MSEC(500));
 	}
 }
