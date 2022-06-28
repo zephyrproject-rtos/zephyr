@@ -125,6 +125,9 @@ int tmp007_init(const struct device *dev)
 
 static const struct tmp007_config tmp007_config = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
+#ifdef CONFIG_TMP007_TRIGGER
+	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
+#endif
 };
 
 struct tmp007_data tmp007_driver;
