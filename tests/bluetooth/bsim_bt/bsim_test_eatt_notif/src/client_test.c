@@ -23,6 +23,7 @@
 
 CREATE_FLAG(flag_is_connected);
 CREATE_FLAG(flag_discover_complete);
+CREATE_FLAG(flag_is_encrypted);
 
 static struct bt_conn *g_conn;
 static const struct bt_gatt_attr *local_attr;
@@ -67,9 +68,18 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	UNSET_FLAG(flag_is_connected);
 }
 
+static void security_changed(struct bt_conn *conn, bt_security_t level,
+			     enum bt_security_err security_err)
+{
+	if (security_err == BT_SECURITY_ERR_SUCCESS && level > BT_SECURITY_L1) {
+		SET_FLAG(flag_is_encrypted);
+	}
+}
+
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.security_changed = security_changed,
 };
 
 void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
@@ -174,6 +184,13 @@ static void test_main(void)
 	printk("Scanning successfully started\n");
 
 	WAIT_FOR_FLAG(flag_is_connected);
+
+	err = bt_conn_set_security(g_conn, BT_SECURITY_L2);
+	if (err) {
+		FAIL("Failed to start encryption procedure\n");
+	}
+
+	WAIT_FOR_FLAG(flag_is_encrypted);
 
 	err = bt_eatt_connect(g_conn, CONFIG_BT_EATT_MAX);
 	if (err) {
