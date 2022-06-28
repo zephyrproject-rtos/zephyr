@@ -109,7 +109,7 @@ static void test_dt_extract(void)
 	zassert_equal(GD32_AF_GET(pin), GD32_AF10, NULL);
 	zassert_equal(GD32_PUPD_GET(pin), GD32_PUPD_NONE, NULL);
 	zassert_equal(GD32_OTYPE_GET(pin), GD32_OTYPE_PP, NULL);
-	zassert_equal(GD32_OSPEED_GET(pin), GD32_OSPEED_200MHZ, NULL);
+	zassert_equal(GD32_OSPEED_GET(pin), GD32_OSPEED_MAX, NULL);
 
 	pin = scfg->pins[11];
 	zassert_equal(GD32_PORT_GET(pin), 2, NULL);
