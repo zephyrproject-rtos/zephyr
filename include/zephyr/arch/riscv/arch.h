@@ -237,6 +237,62 @@ void nuclei_eclic_irq_priority_set(unsigned int irq, unsigned int prio, unsigned
 }
 #endif
 
+#define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
+{ \
+	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
+}
+
+#define ARCH_ISR_DIRECT_HEADER() arch_isr_direct_header()
+#define ARCH_ISR_DIRECT_FOOTER(swap) arch_isr_direct_footer(swap)
+
+#ifdef CONFIG_TRACING_ISR
+extern void sys_trace_isr_enter(void);
+extern void sys_trace_isr_exit(void);
+#endif
+
+static inline void arch_isr_direct_header(void)
+{
+#ifdef CONFIG_TRACING_ISR
+	sys_trace_isr_enter();
+#endif
+	/* We need to increment this so that arch_is_in_isr() keeps working */
+	++(arch_curr_cpu()->nested);
+}
+
+extern void __soc_handle_irq(ulong_t mcause);
+
+static inline void arch_isr_direct_footer(int swap)
+{
+	ulong_t mcause;
+
+	/* Get the IRQ number */
+	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
+	mcause &= SOC_MCAUSE_EXP_MASK;
+
+	/* Clear the pending IRQ */
+	__soc_handle_irq(mcause);
+
+	/* We are not in the ISR anymore */
+	--(arch_curr_cpu()->nested);
+
+#ifdef CONFIG_TRACING_ISR
+	sys_trace_isr_exit();
+#endif
+}
+
+/*
+ * TODO: Add support for rescheduling
+ */
+#define ARCH_ISR_DIRECT_DECLARE(name) \
+	static inline int name##_body(void); \
+	__attribute__ ((interrupt)) void name(void) \
+	{ \
+		ISR_DIRECT_HEADER(); \
+		name##_body(); \
+		ISR_DIRECT_FOOTER(0); \
+	} \
+	static inline int name##_body(void)
+
 /*
  * use atomic instruction csrrc to lock global irq
  * csrrc: atomic read and clear bits in CSR register
