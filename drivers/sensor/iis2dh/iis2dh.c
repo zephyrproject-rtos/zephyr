@@ -51,8 +51,9 @@ static const uint32_t iis2dh_gain[3][4] = {
 	},
 };
 
-static int iis2dh_set_fs_raw(struct iis2dh_data *iis2dh, uint8_t fs)
+static int iis2dh_set_fs_raw(const struct device *dev, uint8_t fs)
 {
+	struct iis2dh_data *iis2dh = dev->data;
 	int err;
 
 	err = iis2dh_full_scale_set(iis2dh->ctx, fs);
@@ -74,10 +75,9 @@ static int iis2dh_set_fs_raw(struct iis2dh_data *iis2dh, uint8_t fs)
 static int iis2dh_set_range(const struct device *dev, uint16_t range)
 {
 	int err;
-	struct iis2dh_data *iis2dh = dev->data;
 	uint8_t fs = IIS2DH_FS_TO_REG(range);
 
-	err = iis2dh_set_fs_raw(iis2dh, fs);
+	err = iis2dh_set_fs_raw(dev, fs);
 
 	return err;
 }
@@ -286,7 +286,7 @@ static int iis2dh_init(const struct device *dev)
 #endif
 
 #if (CONFIG_IIS2DH_RANGE != 0)
-	iis2dh_set_fs_raw(iis2dh, CONFIG_IIS2DH_RANGE);
+	iis2dh_set_fs_raw(dev, CONFIG_IIS2DH_RANGE);
 #endif
 
 #ifdef CONFIG_IIS2DH_TRIGGER
