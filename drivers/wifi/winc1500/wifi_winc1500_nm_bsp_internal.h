@@ -33,17 +33,14 @@ enum winc1500_gpio_index {
 	WINC1500_GPIO_IDX_MAX
 };
 
-struct winc1500_gpio_configuration {
-	const struct device *dev;
-	uint32_t pin;
-};
-
 struct winc1500_cfg {
 	struct spi_dt_spec spi;
+	struct gpio_dt_spec chip_en_gpio;
+	struct gpio_dt_spec irq_gpio;
+	struct gpio_dt_spec reset_gpio;
 };
 
 struct winc1500_device {
-	struct winc1500_gpio_configuration	*gpios;
 	struct gpio_callback			gpio_cb;
 };
 
