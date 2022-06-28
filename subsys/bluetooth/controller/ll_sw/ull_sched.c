@@ -833,13 +833,15 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 
 		aux = ull_adv_aux_get(ticker_id - TICKER_ID_ADV_AUX_BASE);
 		if (aux) {
-			uint32_t time_us;
+			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_RESERVE_MAX)) {
+				uint32_t time_us;
 
-			time_us = ull_adv_aux_time_get(aux,
-						       PDU_AC_PAYLOAD_SIZE_MAX,
-						       PDU_AC_PAYLOAD_SIZE_MAX);
-
-			*ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+				time_us = ull_adv_aux_time_get(aux, PDU_AC_PAYLOAD_SIZE_MAX,
+							       PDU_AC_PAYLOAD_SIZE_MAX);
+				*ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+			} else {
+				*ticks_slot = aux->ull.ticks_slot;
+			}
 
 			return &aux->ull;
 		}
@@ -851,12 +853,14 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 
 		sync = ull_adv_sync_get(ticker_id - TICKER_ID_ADV_SYNC_BASE);
 		if (sync) {
-			uint32_t time_us;
+			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_RESERVE_MAX)) {
+				uint32_t time_us;
 
-			time_us = ull_adv_sync_time_get(sync,
-							PDU_AC_PAYLOAD_SIZE_MAX);
-
-			*ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+				time_us = ull_adv_sync_time_get(sync, PDU_AC_PAYLOAD_SIZE_MAX);
+				*ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+			} else {
+				*ticks_slot = sync->ull.ticks_slot;
+			}
 
 			return &sync->ull;
 		}
