@@ -1079,9 +1079,13 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
 	uint32_t ticks_slot;
 	int err;
 
+#if defined(CONFIG_BT_CTLR_ADV_RESERVE_MAX)
 	time_us = ull_adv_aux_time_get(aux, PDU_AC_PAYLOAD_SIZE_MAX,
 				       PDU_AC_PAYLOAD_SIZE_MAX);
 	ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+#else
+	ticks_slot = aux->ull.ticks_slot;
+#endif
 
 	err = ull_sched_adv_aux_sync_free_slot_get(TICKER_USER_ID_THREAD,
 						   (ticks_slot +
@@ -1209,6 +1213,12 @@ uint32_t ull_adv_aux_time_get(const struct ll_adv_aux_set *aux, uint8_t pdu_len,
 
 	lll_aux = &aux->lll;
 	lll = lll_aux->adv;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_RESERVE_MAX) &&
+	    (lll->phy_s == PHY_CODED)) {
+		pdu_len = PDU_AC_EXT_PAYLOAD_OVERHEAD;
+		pdu_scan_len = PDU_AC_EXT_PAYLOAD_OVERHEAD;
+	}
 
 	/* NOTE: 16-bit values are sufficient for minimum radio event time
 	 *       reservation, 32-bit are used here so that reservations for
