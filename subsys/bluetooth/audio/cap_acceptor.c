@@ -10,11 +10,10 @@
 #include <bluetooth/audio/cap.h>
 #include "cap_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CAP)
-#define LOG_MODULE_NAME bt_cap
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CAP_ACCEPTOR)
+#define LOG_MODULE_NAME bt_cap_acceptor
 #include "common/log.h"
 
-#if defined(CONFIG_BT_CAP_ACCEPTOR)
 #if defined(CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER)
 
 static struct bt_gatt_attr svc_attrs[] = {
@@ -48,7 +47,7 @@ int bt_cap_acceptor_register(const struct bt_csis_register_param *param,
 	return 0;
 }
 
-#else
+#else /* CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER */
 
 BT_GATT_SERVICE_DEFINE(cas_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_CAS)
@@ -68,5 +67,3 @@ bool bt_cap_acceptor_ccid_exist(const struct bt_conn *conn, uint8_t ccid)
 
 	return false;
 }
-
-#endif /* BT_CAP_ACCEPTOR */
