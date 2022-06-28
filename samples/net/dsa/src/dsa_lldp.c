@@ -139,7 +139,7 @@ void dsa_lldp_print_info(uint8_t *lldp_p, uint8_t lanid)
 		case LLDP_TLV_SYSTEM_NAME:
 			memset(t, 0, length + 1);
 			memcpy(t, p, length);
-			LOG_INF("\tSYSTEM NAME:\t%s", log_strdup(t));
+			LOG_INF("\tSYSTEM NAME:\t%s", t);
 			break;
 		}
 		lldp_p += length;

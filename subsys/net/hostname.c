@@ -52,7 +52,7 @@ int net_hostname_set_postfix(const uint8_t *hostname_postfix,
 			 2 + 1, "%02x", hostname_postfix[i]);
 	}
 
-	NET_DBG("New hostname %s", log_strdup(hostname));
+	NET_DBG("New hostname %s", hostname);
 
 #if !defined(CONFIG_NET_HOSTNAME_UNIQUE_UPDATE)
 	postfix_set = true;

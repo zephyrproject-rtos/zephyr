@@ -9,7 +9,7 @@
 #include "shell_ops.h"
 #include <zephyr/logging/log_ctrl.h>
 
-static bool process_msg2_from_buffer(const struct shell *shell);
+static bool process_msg_from_buffer(const struct shell *sh);
 
 int z_shell_log_backend_output_func(uint8_t *data, size_t length, void *ctx)
 {
@@ -29,13 +29,13 @@ void z_shell_log_backend_enable(const struct shell_log_backend *backend,
 	int err = 0;
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
-		const struct shell *shell;
+		const struct shell *sh;
 
-		shell = (const struct shell *)ctx;
+		sh = (const struct shell *)ctx;
 
-		z_flag_sync_mode_set(shell, true);
+		z_flag_sync_mode_set(sh, true);
 		/* Reenable transport in blocking mode */
-		err = shell->iface->api->enable(shell->iface, true);
+		err = sh->iface->api->enable(sh->iface, true);
 	}
 
 	if (err == 0) {
@@ -55,81 +55,81 @@ void z_shell_log_backend_disable(const struct shell_log_backend *backend)
 
 bool z_shell_log_backend_process(const struct shell_log_backend *backend)
 {
-	const struct shell *shell =
+	const struct shell *sh =
 			(const struct shell *)backend->backend->cb->ctx;
 	uint32_t dropped;
 	bool colors = IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
-			z_flag_use_colors_get(shell);
+			z_flag_use_colors_get(sh);
 
 	dropped = atomic_set(&backend->control_block->dropped_cnt, 0);
 	if (dropped) {
 		struct shell_vt100_colors col;
 
 		if (colors) {
-			z_shell_vt100_colors_store(shell, &col);
-			z_shell_vt100_color_set(shell, SHELL_VT100_COLOR_RED);
+			z_shell_vt100_colors_store(sh, &col);
+			z_shell_vt100_color_set(sh, SHELL_VT100_COLOR_RED);
 		}
 
 		log_output_dropped_process(backend->log_output, dropped);
 
 		if (colors) {
-			z_shell_vt100_colors_restore(shell, &col);
+			z_shell_vt100_colors_restore(sh, &col);
 		}
 	}
 
-	return process_msg2_from_buffer(shell);
+	return process_msg_from_buffer(sh);
 }
 
 static void panic(const struct log_backend *const backend)
 {
-	const struct shell *shell = (const struct shell *)backend->cb->ctx;
+	const struct shell *sh = (const struct shell *)backend->cb->ctx;
 	int err;
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		return;
 	}
 
-	err = shell->iface->api->enable(shell->iface, true);
+	err = sh->iface->api->enable(sh->iface, true);
 
 	if (err == 0) {
-		shell->log_backend->control_block->state =
+		sh->log_backend->control_block->state =
 						SHELL_LOG_BACKEND_PANIC;
-		z_flag_sync_mode_set(shell, true);
+		z_flag_sync_mode_set(sh, true);
 
 		/* Move to the start of next line. */
-		z_shell_multiline_data_calc(&shell->ctx->vt100_ctx.cons,
-					    shell->ctx->cmd_buff_pos,
-					    shell->ctx->cmd_buff_len);
-		z_shell_op_cursor_vert_move(shell, -1);
-		z_shell_op_cursor_horiz_move(shell,
-					   -shell->ctx->vt100_ctx.cons.cur_x);
+		z_shell_multiline_data_calc(&sh->ctx->vt100_ctx.cons,
+					    sh->ctx->cmd_buff_pos,
+					    sh->ctx->cmd_buff_len);
+		z_shell_op_cursor_vert_move(sh, -1);
+		z_shell_op_cursor_horiz_move(sh,
+					   -sh->ctx->vt100_ctx.cons.cur_x);
 
-		while (process_msg2_from_buffer(shell)) {
+		while (process_msg_from_buffer(sh)) {
 			/* empty */
 		}
 	} else {
-		z_shell_log_backend_disable(shell->log_backend);
+		z_shell_log_backend_disable(sh->log_backend);
 	}
 }
 
 static void dropped(const struct log_backend *const backend, uint32_t cnt)
 {
-	const struct shell *shell = (const struct shell *)backend->cb->ctx;
-	const struct shell_log_backend *log_backend = shell->log_backend;
+	const struct shell *sh = (const struct shell *)backend->cb->ctx;
+	const struct shell_log_backend *log_backend = sh->log_backend;
 
 	if (IS_ENABLED(CONFIG_SHELL_STATS)) {
-		atomic_add(&shell->stats->log_lost_cnt, cnt);
+		atomic_add(&sh->stats->log_lost_cnt, cnt);
 	}
 	atomic_add(&log_backend->control_block->dropped_cnt, cnt);
 }
 
 static void copy_to_pbuffer(struct mpsc_pbuf_buffer *mpsc_buffer,
-			    union log_msg2_generic *msg, uint32_t timeout)
+			    union log_msg_generic *msg, uint32_t timeout)
 {
 	size_t wlen;
 	union mpsc_pbuf_generic *dst;
 
-	wlen = log_msg2_generic_get_wlen((union mpsc_pbuf_generic *)msg);
+	wlen = log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg);
 	dst = mpsc_pbuf_alloc(mpsc_buffer, wlen, K_MSEC(timeout));
 	if (!dst) {
 		/* No space to store the log */
@@ -150,9 +150,9 @@ static void copy_to_pbuffer(struct mpsc_pbuf_buffer *mpsc_buffer,
 	mpsc_pbuf_commit(mpsc_buffer, dst);
 }
 
-static void process_log_msg2(const struct shell *shell,
+static void process_log_msg(const struct shell *sh,
 			     const struct log_output *log_output,
-			     union log_msg2_generic *msg,
+			     union log_msg_generic *msg,
 			     bool locked, bool colors)
 {
 	unsigned int key;
@@ -166,36 +166,36 @@ static void process_log_msg2(const struct shell *shell,
 
 	if (locked) {
 		key = irq_lock();
-		if (!z_flag_cmd_ctx_get(shell)) {
-			z_shell_cmd_line_erase(shell);
+		if (!z_flag_cmd_ctx_get(sh)) {
+			z_shell_cmd_line_erase(sh);
 		}
 	}
 
-	log_output_msg2_process(log_output, &msg->log, flags);
+	log_output_msg_process(log_output, &msg->log, flags);
 
 	if (locked) {
-		if (!z_flag_cmd_ctx_get(shell)) {
-			z_shell_print_prompt_and_cmd(shell);
+		if (!z_flag_cmd_ctx_get(sh)) {
+			z_shell_print_prompt_and_cmd(sh);
 		}
 		irq_unlock(key);
 	}
 }
 
-static bool process_msg2_from_buffer(const struct shell *shell)
+static bool process_msg_from_buffer(const struct shell *sh)
 {
-	const struct shell_log_backend *log_backend = shell->log_backend;
+	const struct shell_log_backend *log_backend = sh->log_backend;
 	struct mpsc_pbuf_buffer *mpsc_buffer = log_backend->mpsc_buffer;
 	const struct log_output *log_output = log_backend->log_output;
-	union log_msg2_generic *msg;
+	union log_msg_generic *msg;
 	bool colors = IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
-			z_flag_use_colors_get(shell);
+			z_flag_use_colors_get(sh);
 
-	msg = (union log_msg2_generic *)mpsc_pbuf_claim(mpsc_buffer);
+	msg = (union log_msg_generic *)mpsc_pbuf_claim(mpsc_buffer);
 	if (!msg) {
 		return false;
 	}
 
-	process_log_msg2(shell, log_output, msg, false, colors);
+	process_log_msg(sh, log_output, msg, false, colors);
 
 	mpsc_pbuf_free(mpsc_buffer, &msg->buf);
 
@@ -203,35 +203,35 @@ static bool process_msg2_from_buffer(const struct shell *shell)
 }
 
 static void process(const struct log_backend *const backend,
-		    union log_msg2_generic *msg)
+		    union log_msg_generic *msg)
 {
-	const struct shell *shell = (const struct shell *)backend->cb->ctx;
-	const struct shell_log_backend *log_backend = shell->log_backend;
+	const struct shell *sh = (const struct shell *)backend->cb->ctx;
+	const struct shell_log_backend *log_backend = sh->log_backend;
 	struct mpsc_pbuf_buffer *mpsc_buffer = log_backend->mpsc_buffer;
 	const struct log_output *log_output = log_backend->log_output;
 	bool colors = IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
-			z_flag_use_colors_get(shell);
+			z_flag_use_colors_get(sh);
 	struct k_poll_signal *signal;
 
-	switch (shell->log_backend->control_block->state) {
+	switch (sh->log_backend->control_block->state) {
 	case SHELL_LOG_BACKEND_ENABLED:
 		if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
-			process_log_msg2(shell, log_output, msg, true, colors);
+			process_log_msg(sh, log_output, msg, true, colors);
 		} else {
 			copy_to_pbuffer(mpsc_buffer, msg,
 					log_backend->timeout);
 
 			if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 				signal =
-				    &shell->ctx->signals[SHELL_SIGNAL_LOG_MSG];
+				    &sh->ctx->signals[SHELL_SIGNAL_LOG_MSG];
 				k_poll_signal_raise(signal, 0);
 			}
 		}
 
 		break;
 	case SHELL_LOG_BACKEND_PANIC:
-		z_shell_cmd_line_erase(shell);
-		process_log_msg2(shell, log_output, msg, true, colors);
+		z_shell_cmd_line_erase(sh);
+		process_log_msg(sh, log_output, msg, true, colors);
 
 		break;
 

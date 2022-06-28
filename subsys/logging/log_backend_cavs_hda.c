@@ -216,7 +216,7 @@ static uint32_t format_flags(void)
 static volatile uint32_t counter;
 
 static void process(const struct log_backend *const backend,
-		union log_msg2_generic *msg)
+		union log_msg_generic *msg)
 {
 	ARG_UNUSED(backend);
 

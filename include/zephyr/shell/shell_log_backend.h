@@ -77,7 +77,7 @@ int z_shell_log_backend_output_func(uint8_t *data, size_t length, void *ctx);
 		.buf = _name##_buf, \
 		.size = ARRAY_SIZE(_name##_buf), \
 		.notify_drop = NULL, \
-		.get_wlen = log_msg2_generic_get_wlen, \
+		.get_wlen = log_msg_generic_get_wlen, \
 		.flags = MPSC_PBUF_MODE_OVERWRITE, \
 	}; \
 	struct mpsc_pbuf_buffer _name##_mpsc_buffer; \

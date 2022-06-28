@@ -693,7 +693,7 @@ int fs_mount(struct fs_mount_t *mp)
 
 	if (fs->unmount == NULL) {
 		LOG_WRN("mount path %s is not unmountable",
-			log_strdup(mp->mnt_point));
+			mp->mnt_point);
 	}
 
 	rc = fs->mount(mp);
@@ -707,7 +707,7 @@ int fs_mount(struct fs_mount_t *mp)
 	mp->fs = fs;
 
 	sys_dlist_append(&fs_mnt_list, &mp->node);
-	LOG_DBG("fs mounted at %s", log_strdup(mp->mnt_point));
+	LOG_DBG("fs mounted at %s", mp->mnt_point);
 
 mount_err:
 	k_mutex_unlock(&mutex);
@@ -747,7 +747,7 @@ int fs_unmount(struct fs_mount_t *mp)
 
 	/* remove mount node from the list */
 	sys_dlist_remove(&mp->node);
-	LOG_DBG("fs unmounted from %s", log_strdup(mp->mnt_point));
+	LOG_DBG("fs unmounted from %s", mp->mnt_point);
 
 unmount_err:
 	k_mutex_unlock(&mutex);

@@ -84,7 +84,7 @@ static int out(int c, void *ctx)
 }
 
 void log_frontend_msg(const void *source,
-		      const struct log_msg2_desc desc,
+		      const struct log_msg_desc desc,
 		      uint8_t *package, const void *data)
 {
 	struct mock_log_backend_msg *exp_msg = &mock.exp_msgs[mock.msg_proc_idx];

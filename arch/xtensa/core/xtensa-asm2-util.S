@@ -181,9 +181,25 @@ _restore_context:
 	rfi ZSR_RFI_LEVEL
 
 /*
+ * void xtensa_arch_except(int reason_p);
+ *
+ * Implements hardware exception for Xtensa ARCH_EXCEPT to save
+ * interrupted stack frame and reason_p for use in exception handler
+ * and coredump
+ */
+.global xtensa_arch_except
+.global xtensa_arch_except_epc
+.align 4
+xtensa_arch_except:
+	entry a1, 16
+xtensa_arch_except_epc:
+	ill
+	retw
+
+/*
  * void xtensa_switch(void *new, void **old_return);
  *
- * Context switches into the prevoiusly-saved "new" handle, placing
+ * Context switches into the previously-saved "new" handle, placing
  * the saved "old" handle into the address provided by old_return.
  */
 .global xtensa_switch

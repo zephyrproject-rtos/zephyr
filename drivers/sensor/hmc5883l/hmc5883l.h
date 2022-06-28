@@ -10,6 +10,7 @@
 #include <zephyr/device.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 
 #define HMC5883L_REG_CONFIG_A           0x00
@@ -41,7 +42,6 @@ static const uint16_t hmc5883l_gain[] = {
 };
 
 struct hmc5883l_data {
-	const struct device *i2c;
 	int16_t x_sample;
 	int16_t y_sample;
 	int16_t z_sample;
@@ -49,7 +49,6 @@ struct hmc5883l_data {
 
 #ifdef CONFIG_HMC5883L_TRIGGER
 	const struct device *dev;
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
@@ -64,6 +63,13 @@ struct hmc5883l_data {
 #endif
 
 #endif /* CONFIG_HMC5883L_TRIGGER */
+};
+
+struct hmc5883l_config {
+	struct i2c_dt_spec i2c;
+#ifdef CONFIG_HMC5883L_TRIGGER
+	struct gpio_dt_spec int_gpio;
+#endif
 };
 
 #ifdef CONFIG_HMC5883L_TRIGGER

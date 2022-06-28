@@ -57,9 +57,6 @@ struct YMD_date {
 	uint32_t day;
 };
 
-extern void log_output_msg2_syst_process(const struct log_output *output,
-				struct log_msg2 *msg, uint32_t flag);
-
 /* The RFC 5424 allows very flexible mapping and suggest the value 0 being the
  * highest severity and 7 to be the lowest (debugging level) severity.
  *
@@ -396,7 +393,7 @@ static void hexdump_line_print(const struct log_output *output,
 	}
 }
 
-static void log_msg2_hexdump(const struct log_output *output,
+static void log_msg_hexdump(const struct log_output *output,
 			     uint8_t *data, uint32_t len,
 			     int prefix_offset, uint32_t flags)
 {
@@ -473,17 +470,17 @@ static void postfix_print(const struct log_output *output,
 	newline_print(output, flags);
 }
 
-void log_output_msg2_process(const struct log_output *output,
-			     struct log_msg2 *msg, uint32_t flags)
+void log_output_msg_process(const struct log_output *output,
+			    struct log_msg *msg, uint32_t flags)
 {
-	log_timestamp_t timestamp = log_msg2_get_timestamp(msg);
-	uint8_t level = log_msg2_get_level(msg);
+	log_timestamp_t timestamp = log_msg_get_timestamp(msg);
+	uint8_t level = log_msg_get_level(msg);
 	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
 	uint32_t prefix_offset;
 
 	if (!raw_string) {
-		void *source = (void *)log_msg2_get_source(msg);
-		uint8_t domain_id = log_msg2_get_domain(msg);
+		void *source = (void *)log_msg_get_source(msg);
+		uint8_t domain_id = log_msg_get_domain(msg);
 		int16_t source_id = source ?
 			(IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
 				log_dynamic_source_id(source) :
@@ -497,7 +494,7 @@ void log_output_msg2_process(const struct log_output *output,
 	}
 
 	size_t len;
-	uint8_t *data = log_msg2_get_package(msg, &len);
+	uint8_t *data = log_msg_get_package(msg, &len);
 
 	if (len) {
 		int err = cbpprintf(raw_string ? cr_out_func :  out_func,
@@ -507,9 +504,9 @@ void log_output_msg2_process(const struct log_output *output,
 		__ASSERT_NO_MSG(err >= 0);
 	}
 
-	data = log_msg2_get_data(msg, &len);
+	data = log_msg_get_data(msg, &len);
 	if (len) {
-		log_msg2_hexdump(output, data, len, prefix_offset, flags);
+		log_msg_hexdump(output, data, len, prefix_offset, flags);
 	}
 
 	if (!raw_string) {
