@@ -218,11 +218,19 @@ spec:
 
                             """
                         } catch (Exception e) {
+			    error 'Test error'
                             exit -1
                         }
                     }
                 }
             }
         }
-	}
+        stage("Regtest") {
+            steps {
+                script {
+                    build job: "Embedded_CI/zephyr-regtest",  parameters: [string(name: 'JOB_NO_BUILD', value: String.valueOf(BUILD_NUMBER)), string(name: 'GIT_BRANCH_NAME', value: env.BRANCH_NAME)], wait: true
+                }
+            }
+        }
+    }
 }

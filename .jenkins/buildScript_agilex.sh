@@ -38,5 +38,11 @@ rm -rf $ZEPHYR_FOLDER
 cp -rf $WORKSPACE $WORK_DIR/zephyrproject/$ZEPHYR_FOLDER
 cd $WORK_DIR/zephyrproject/$ZEPHYR_FOLDER
 west build -b $BOARD $EXAMPLE
+(($? != 0)) && { printf '%s\n' "Command exited with non-zero"; exit -1; }
 
 # Pass The $ZEPHYR_OUTPUT_DIR to the next Job
+cd $ZEPHYR_OUTPUT_DIR/..
+tar cf zephyr.tar zephyr
+ssh ppglswbld001.png.intel.com -- mkdir -p /nfs/site/disks/swbld_regofficiala_pg12/users/sys_gsrd/zephyr-ci/$BRANCH_NAME/$JENKINS_JOB
+scp -r zephyr.tar  ppglswbld001.png.intel.com:/nfs/site/disks/swbld_regofficiala_pg12/users/sys_gsrd/zephyr-ci/$BRANCH_NAME/$JENKINS_JOB
+ssh ppglswbld001.png.intel.com -- "cd /nfs/site/disks/swbld_regofficiala_pg12/users/sys_gsrd/zephyr-ci/$BRANCH_NAME/$JENKINS_JOB && tar xf zephyr.tar && rm -rf zephyr.tar"
