@@ -75,3 +75,7 @@
 			<&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 	status = "okay";
 };
+
+&adc1 {
+	status = "okay";
+};
