@@ -40,6 +40,7 @@
 	/delete-property/ clock-frequency;
 };
 
+
 /* Core set up
  * Aim of this part is to provide a base working clock config
  */
@@ -72,5 +73,9 @@
 	/delete-property/ clocks;
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00200000>,
 			<&rcc STM32_SRC_HSI I2C1_SEL(2)>;
+	status = "okay";
+};
+
+&adc1 {
 	status = "okay";
 };

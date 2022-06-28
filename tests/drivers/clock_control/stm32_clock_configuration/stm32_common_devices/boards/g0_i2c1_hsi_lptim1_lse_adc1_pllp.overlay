@@ -49,7 +49,7 @@
 &pll {
 	div-m = <1>;
 	mul-n = <8>;
-	div-p = <2>;
+	div-p = <20>; /* 6.4 MHz */
 	div-q = <2>;
 	div-r = <2>;
 	clocks = <&clk_hsi>;
@@ -73,5 +73,11 @@
 &lptim1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
 			<&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
+};
+
+&adc1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>,
+			<&rcc STM32_SRC_PLL_P ADC_SEL(1)>;
 	status = "okay";
 };
