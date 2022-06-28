@@ -435,6 +435,21 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 			  (RX_CNT + BT_CTLR_MAX_CONNECTABLE + \
 			   BT_CTLR_ADV_SET + BT_CTLR_SCAN_SYNC_SET))
 
+/* Macros for encoding number of ISO SDU fragments in the enqueued TX node
+ * pointer. This is needed to ensure only a single release of the node and link
+ * in tx_cmplt_get, even when called several times. At all times, the number of
+ * fragments must be available for HCI complete-counting.
+ *
+ * If the pointer is numerically below 0x100, the pointer is treated as a one
+ * byte fragments count.
+ *
+ * NOTE: For any architecture which would map RAM below address 0x100, this will
+ * not work.
+ */
+#define IS_NODE_TX_PTR(_p) ((uint32_t)(_p) & ~0x000000FF)
+#define NODE_TX_FRAGMENTS_GET(_p) ((uint32_t)(_p) & 0xFF)
+#define NODE_TX_FRAGMENTS_SET(_p, _cmplt) ((_p) = (void *)(uint32_t)(_cmplt))
+
 static struct {
 	void *free;
 	uint8_t pool[PDU_RX_POOL_SIZE];
@@ -2499,7 +2514,7 @@ static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 
 			/* We must count each SDU HCI fragment */
 			tx_node = tx->node;
-			if ((uint32_t)tx_node & ~0xFF) {
+			if (IS_NODE_TX_PTR(tx_node)) {
 				if (IS_ADV_ISO_HANDLE(tx->handle)) {
 					/* FIXME: ADV_ISO shall be updated to
 					 * use ISOAL for TX. Until then, assume
@@ -2516,7 +2531,7 @@ static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 				/* Replace node reference with fragments
 				 * count
 				 */
-				tx->node = (void *)(uint32_t)sdu_fragments;
+				NODE_TX_FRAGMENTS_SET(tx->node, sdu_fragments);
 
 				/* Release node as its a reference and not
 				 * fragments count.
@@ -2527,7 +2542,7 @@ static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 				/* Get SDU fragments count from the encoded
 				 * node reference value.
 				 */
-				sdu_fragments = (uint32_t)tx_node;
+				sdu_fragments = NODE_TX_FRAGMENTS_GET(tx_node);
 			}
 
 			/* Accumulate the tx acknowledgements */
