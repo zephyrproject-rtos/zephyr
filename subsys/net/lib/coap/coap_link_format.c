@@ -84,7 +84,6 @@ static bool match_path_uri(const char * const *path,
 
 	p = path;
 	plen = *p ? strlen(*p) : 0;
-	j = 0;
 
 	if (plen == 0) {
 		return false;
