@@ -8,10 +8,9 @@
 #define ZEPHYR_DRIVERS_SENSOR_TMP007_TMP007_H_
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/util.h>
-
-#define TMP007_I2C_ADDRESS		DT_INST_REG_ADDR(0)
 
 #define TMP007_REG_CONFIG		0x02
 #define TMP007_ALERT_EN_BIT		BIT(8)
@@ -33,8 +32,11 @@
 #define TMP007_TEMP_SCALE		31250
 #define TMP007_TEMP_TH_SCALE		500000
 
+struct tmp007_config {
+	struct i2c_dt_spec i2c;
+};
+
 struct tmp007_data {
-	const struct device *i2c;
 	int16_t sample;
 
 #ifdef CONFIG_TMP007_TRIGGER
@@ -60,11 +62,11 @@ struct tmp007_data {
 };
 
 #ifdef CONFIG_TMP007_TRIGGER
-int tmp007_reg_read(struct tmp007_data *drv_data, uint8_t reg, uint16_t *val);
+int tmp007_reg_read(const struct i2c_dt_spec *i2c, uint8_t reg, uint16_t *val);
 
-int tmp007_reg_write(struct tmp007_data *drv_data, uint8_t reg, uint16_t val);
+int tmp007_reg_write(const struct i2c_dt_spec *i2c, uint8_t reg, uint16_t val);
 
-int tmp007_reg_update(struct tmp007_data *drv_data, uint8_t reg,
+int tmp007_reg_update(const struct i2c_dt_spec *i2c, uint8_t reg,
 		      uint16_t mask, uint16_t val);
 
 int tmp007_attr_set(const struct device *dev,
