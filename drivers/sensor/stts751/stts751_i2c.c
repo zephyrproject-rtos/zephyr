@@ -23,21 +23,17 @@ LOG_MODULE_DECLARE(STTS751, CONFIG_SENSOR_LOG_LEVEL);
 static int stts751_i2c_read(const struct device *dev, uint8_t reg_addr, uint8_t *value,
 			    uint16_t len)
 {
-	struct stts751_data *data = dev->data;
 	const struct stts751_config *cfg = dev->config;
 
-	return i2c_burst_read(data->bus, cfg->i2c_slv_addr,
-			      reg_addr, value, len);
+	return i2c_burst_read_dt(&cfg->i2c, reg_addr, value, len);
 }
 
 static int stts751_i2c_write(const struct device *dev, uint8_t reg_addr, uint8_t *value,
 			     uint16_t len)
 {
-	struct stts751_data *data = dev->data;
 	const struct stts751_config *cfg = dev->config;
 
-	return i2c_burst_write(data->bus, cfg->i2c_slv_addr,
-			       reg_addr, value, len);
+	return i2c_burst_write_dt(&cfg->i2c, reg_addr, value, len);
 }
 
 int stts751_i2c_init(const struct device *dev)
