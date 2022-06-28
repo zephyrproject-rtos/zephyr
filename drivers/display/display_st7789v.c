@@ -4,6 +4,7 @@
  * Copyright (c) 2019 Marc Reilly
  * Copyright (c) 2019 PHYTEC Messtechnik GmbH
  * Copyright (c) 2020 Endian Technologies AB
+ * Copyright (c) 2022 Basalte bv
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,29 +68,41 @@ static void st7789v_set_lcd_margins(const struct device *dev,
 	data->y_offset = y_offset;
 }
 
-static void st7789v_set_cmd(const struct device *dev, int is_cmd)
-{
-	const struct st7789v_config *config = dev->config;
-
-	gpio_pin_set_dt(&config->cmd_data_gpio, is_cmd);
-}
-
 static void st7789v_transmit(const struct device *dev, uint8_t cmd,
 			     uint8_t *tx_data, size_t tx_count)
 {
 	const struct st7789v_config *config = dev->config;
+	uint16_t data = cmd;
 
 	struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };
 	struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1 };
 
-	st7789v_set_cmd(dev, 1);
-	spi_write_dt(&config->bus, &tx_bufs);
+	if (config->cmd_data_gpio.port != NULL) {
+		if (cmd != ST7789V_CMD_NONE) {
+			gpio_pin_set_dt(&config->cmd_data_gpio, 1);
+			spi_write_dt(&config->bus, &tx_bufs);
+		}
 
-	if (tx_data != NULL) {
-		tx_buf.buf = tx_data;
-		tx_buf.len = tx_count;
-		st7789v_set_cmd(dev, 0);
-		spi_write_dt(&config->bus, &tx_bufs);
+		if (tx_data != NULL) {
+			tx_buf.buf = tx_data;
+			tx_buf.len = tx_count;
+			gpio_pin_set_dt(&config->cmd_data_gpio, 0);
+			spi_write_dt(&config->bus, &tx_bufs);
+		}
+	} else {
+		tx_buf.buf = &data;
+		tx_buf.len = 2;
+
+		if (cmd != ST7789V_CMD_NONE) {
+			spi_write_dt(&config->bus, &tx_bufs);
+		}
+
+		if (tx_data != NULL) {
+			for (size_t index = 0; index < tx_count; ++index) {
+				data = 0x0100 | tx_data[index];
+				spi_write_dt(&config->bus, &tx_bufs);
+			}
+		}
 	}
 }
 
@@ -161,11 +174,7 @@ static int st7789v_write(const struct device *dev,
 			 const struct display_buffer_descriptor *desc,
 			 const void *buf)
 {
-	const struct st7789v_config *config = dev->config;
 	const uint8_t *write_data_start = (uint8_t *) buf;
-	struct spi_buf tx_buf;
-	struct spi_buf_set tx_bufs;
-	uint16_t write_cnt;
 	uint16_t nbr_of_writes;
 	uint16_t write_h;
 
@@ -185,18 +194,10 @@ static int st7789v_write(const struct device *dev,
 		nbr_of_writes = 1U;
 	}
 
-	st7789v_transmit(dev, ST7789V_CMD_RAMWR,
-			 (void *) write_data_start,
-			 desc->width * ST7789V_PIXEL_SIZE * write_h);
-
-	tx_bufs.buffers = &tx_buf;
-	tx_bufs.count = 1;
-
-	write_data_start += (desc->pitch * ST7789V_PIXEL_SIZE);
-	for (write_cnt = 1U; write_cnt < nbr_of_writes; ++write_cnt) {
-		tx_buf.buf = (void *)write_data_start;
-		tx_buf.len = desc->width * ST7789V_PIXEL_SIZE * write_h;
-		spi_write_dt(&config->bus, &tx_bufs);
+	for (uint16_t write_cnt = 0U; write_cnt < nbr_of_writes; ++write_cnt) {
+		st7789v_transmit(dev, write_cnt == 0U ? ST7789V_CMD_RAMWR : ST7789V_CMD_NONE,
+				(void *) write_data_start,
+				desc->width * ST7789V_PIXEL_SIZE * write_h);
 		write_data_start += (desc->pitch * ST7789V_PIXEL_SIZE);
 	}
 
@@ -363,14 +364,16 @@ static int st7789v_init(const struct device *dev)
 		}
 	}
 
-	if (!device_is_ready(config->cmd_data_gpio.port)) {
-		LOG_ERR("Reset GPIO device not ready");
-		return -ENODEV;
-	}
+	if (config->cmd_data_gpio.port != NULL) {
+		if (!device_is_ready(config->cmd_data_gpio.port)) {
+			LOG_ERR("CMD/DATA GPIO device not ready");
+			return -ENODEV;
+		}
 
-	if (gpio_pin_configure_dt(&config->cmd_data_gpio, GPIO_OUTPUT)) {
-		LOG_ERR("Couldn't configure cmd/DATA pin");
-		return -EIO;
+		if (gpio_pin_configure_dt(&config->cmd_data_gpio, GPIO_OUTPUT)) {
+			LOG_ERR("Couldn't configure CMD/DATA pin");
+			return -EIO;
+		}
 	}
 
 	st7789v_reset_display(dev);
@@ -419,43 +422,46 @@ static const struct display_driver_api st7789v_api = {
 	.set_orientation = st7789v_set_orientation,
 };
 
-#define ST7789V_INIT(inst)							\
-	static const struct st7789v_config st7789v_config_ ## inst = {		\
-		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER |          \
-							  SPI_WORD_SET(8), 0),	\
-		.cmd_data_gpio = GPIO_DT_SPEC_INST_GET(inst, cmd_data_gpios),	\
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),	\
-		.vcom = DT_INST_PROP(inst, vcom),				\
-		.gctrl = DT_INST_PROP(inst, gctrl),				\
-		.vdv_vrh_enable = (DT_INST_NODE_HAS_PROP(inst, vrhs)            \
-					&& DT_INST_NODE_HAS_PROP(inst, vdvs)),	\
-		.vrh_value = DT_INST_PROP_OR(inst, vrhs, 0),			\
-		.vdv_value = DT_INST_PROP_OR(inst, vdvs, 0),			\
-		.mdac = DT_INST_PROP(inst, mdac),				\
-		.gamma = DT_INST_PROP(inst, gamma),				\
-		.colmod = DT_INST_PROP(inst, colmod),				\
-		.lcm = DT_INST_PROP(inst, lcm),					\
-		.porch_param = DT_INST_PROP(inst, porch_param),			\
-		.cmd2en_param = DT_INST_PROP(inst, cmd2en_param),		\
-		.pwctrl1_param = DT_INST_PROP(inst, pwctrl1_param),		\
-		.pvgam_param = DT_INST_PROP(inst, pvgam_param),			\
-		.nvgam_param = DT_INST_PROP(inst, nvgam_param),			\
-		.ram_param = DT_INST_PROP(inst, ram_param),			\
-		.rgb_param = DT_INST_PROP(inst, rgb_param),			\
-		.width = DT_INST_PROP(inst, width),				\
-		.height = DT_INST_PROP(inst, height),				\
-	};									\
-										\
-	static struct st7789v_data st7789v_data_ ## inst = {			\
-		.x_offset = DT_INST_PROP(inst, x_offset),			\
-		.y_offset = DT_INST_PROP(inst, y_offset),			\
-	};									\
-										\
-	PM_DEVICE_DT_INST_DEFINE(inst, st7789v_pm_action);			\
-										\
-	DEVICE_DT_INST_DEFINE(inst, &st7789v_init, PM_DEVICE_DT_INST_GET(inst), \
-			&st7789v_data_ ## inst, &st7789v_config_ ## inst,	\
-			POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,		\
+#define ST7789V_WORD_SIZE(inst)								\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, cmd_data_gpios), (8), (9))
+
+#define ST7789V_INIT(inst)								\
+	static const struct st7789v_config st7789v_config_ ## inst = {			\
+		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER |			\
+					    SPI_WORD_SET(ST7789V_WORD_SIZE(inst)), 0),	\
+		.cmd_data_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, cmd_data_gpios, {}),	\
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),		\
+		.vcom = DT_INST_PROP(inst, vcom),					\
+		.gctrl = DT_INST_PROP(inst, gctrl),					\
+		.vdv_vrh_enable = (DT_INST_NODE_HAS_PROP(inst, vrhs)			\
+					&& DT_INST_NODE_HAS_PROP(inst, vdvs)),		\
+		.vrh_value = DT_INST_PROP_OR(inst, vrhs, 0),				\
+		.vdv_value = DT_INST_PROP_OR(inst, vdvs, 0),				\
+		.mdac = DT_INST_PROP(inst, mdac),					\
+		.gamma = DT_INST_PROP(inst, gamma),					\
+		.colmod = DT_INST_PROP(inst, colmod),					\
+		.lcm = DT_INST_PROP(inst, lcm),						\
+		.porch_param = DT_INST_PROP(inst, porch_param),				\
+		.cmd2en_param = DT_INST_PROP(inst, cmd2en_param),			\
+		.pwctrl1_param = DT_INST_PROP(inst, pwctrl1_param),			\
+		.pvgam_param = DT_INST_PROP(inst, pvgam_param),				\
+		.nvgam_param = DT_INST_PROP(inst, nvgam_param),				\
+		.ram_param = DT_INST_PROP(inst, ram_param),				\
+		.rgb_param = DT_INST_PROP(inst, rgb_param),				\
+		.width = DT_INST_PROP(inst, width),					\
+		.height = DT_INST_PROP(inst, height),					\
+	};										\
+											\
+	static struct st7789v_data st7789v_data_ ## inst = {				\
+		.x_offset = DT_INST_PROP(inst, x_offset),				\
+		.y_offset = DT_INST_PROP(inst, y_offset),				\
+	};										\
+											\
+	PM_DEVICE_DT_INST_DEFINE(inst, st7789v_pm_action);				\
+											\
+	DEVICE_DT_INST_DEFINE(inst, &st7789v_init, PM_DEVICE_DT_INST_GET(inst),		\
+			&st7789v_data_ ## inst, &st7789v_config_ ## inst,		\
+			POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,			\
 			&st7789v_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ST7789V_INIT)
