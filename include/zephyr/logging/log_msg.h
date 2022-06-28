@@ -198,6 +198,17 @@ enum z_log_msg_mode {
 				  Z_LOG_MSG2_ALIGNMENT), \
 			 sizeof(uint32_t))
 
+/*
+ * With Zephyr SDK 0.14.2, aarch64-zephyr-elf-gcc (10.3.0) fails to ensure $sp
+ * is below the active memory during message construction. As a result,
+ * interrupts happening in the middle of that process can end up smashing active
+ * data and causing a logging fault. Work around this by inserting a compiler
+ * barrier after the allocation and before any use to make sure GCC moves the
+ * stack pointer soon enough
+ */
+
+#define Z_LOG_ARM64_VLA_PROTECT() compiler_barrier()
+
 #define Z_LOG_MSG2_STACK_CREATE(_cstr_cnt, _domain_id, _source, _level, _data, _dlen, ...) \
 do { \
 	int _plen; \
@@ -211,6 +222,7 @@ do { \
 	} \
 	struct log_msg *_msg; \
 	Z_LOG_MSG2_ON_STACK_ALLOC(_msg, Z_LOG_MSG2_LEN(_plen, 0)); \
+	Z_LOG_ARM64_VLA_PROTECT(); \
 	if (_plen) { \
 		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, \
 					_plen, Z_LOG_MSG2_ALIGN_OFFSET, flags, \
