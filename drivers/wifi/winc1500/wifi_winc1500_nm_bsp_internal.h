@@ -38,13 +38,16 @@ struct winc1500_gpio_configuration {
 	uint32_t pin;
 };
 
+struct winc1500_cfg {
+	struct spi_dt_spec spi;
+};
+
 struct winc1500_device {
 	struct winc1500_gpio_configuration	*gpios;
 	struct gpio_callback			gpio_cb;
-	const struct device *spi;
-	struct spi_config			spi_cfg;
 };
 
 extern struct winc1500_device winc1500;
+extern const struct winc1500_cfg winc1500_config;
 
 #endif /* ZEPHYR_DRIVERS_WIFI_WINC1500_WIFI_WINC1500_NM_BSP_INTERNAL_H_ */

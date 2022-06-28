@@ -4,12 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_winc1500
+
 #include "wifi_winc1500_nm_bsp_internal.h"
 
 #include <bsp/include/nm_bsp.h>
 #include <common/include/nm_common.h>
 
 #include "wifi_winc1500_config.h"
+
+const struct winc1500_cfg winc1500_config = {
+	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),
+};
 
 struct winc1500_device winc1500;
 
