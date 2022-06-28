@@ -24,13 +24,6 @@ LOG_MODULE_REGISTER(winc1500);
 
 #include "wifi_winc1500_config.h"
 
-static
-struct winc1500_gpio_configuration winc1500_gpios[WINC1500_GPIO_IDX_MAX] = {
-	{ .dev = NULL, .pin = DT_INST_GPIO_PIN(0, enable_gpios) },
-	{ .dev = NULL, .pin = DT_INST_GPIO_PIN(0, irq_gpios) },
-	{ .dev = NULL, .pin = DT_INST_GPIO_PIN(0, reset_gpios) },
-};
-
 #define NM_BUS_MAX_TRX_SZ	256
 
 tstrNmBusCapabilities egstrNmBusCapabilities = {
@@ -92,41 +85,25 @@ static int8_t spi_rw(uint8_t *mosi, uint8_t *miso, uint16_t size)
 
 #endif
 
-struct winc1500_gpio_configuration *winc1500_configure_gpios(void)
-{
-	const struct device *gpio_en, *gpio_irq, *gpio_reset;
-
-	gpio_en = device_get_binding(
-		DT_INST_GPIO_LABEL(0, enable_gpios));
-	gpio_irq = device_get_binding(
-		DT_INST_GPIO_LABEL(0, irq_gpios));
-	gpio_reset = device_get_binding(
-		DT_INST_GPIO_LABEL(0, reset_gpios));
-
-	gpio_pin_configure(gpio_en,
-			   winc1500_gpios[WINC1500_GPIO_IDX_CHIP_EN].pin,
-			   GPIO_OUTPUT_LOW |
-			   DT_INST_GPIO_FLAGS(0, enable_gpios));
-	gpio_pin_configure(gpio_irq,
-			   winc1500_gpios[WINC1500_GPIO_IDX_IRQN].pin,
-			   GPIO_INPUT |
-			   DT_INST_GPIO_FLAGS(0, irq_gpios));
-	gpio_pin_configure(gpio_reset,
-			   winc1500_gpios[WINC1500_GPIO_IDX_RESET_N].pin,
-			   GPIO_OUTPUT_LOW |
-			   DT_INST_GPIO_FLAGS(0, reset_gpios));
-
-	winc1500_gpios[WINC1500_GPIO_IDX_CHIP_EN].dev = gpio_en;
-	winc1500_gpios[WINC1500_GPIO_IDX_IRQN].dev = gpio_irq;
-	winc1500_gpios[WINC1500_GPIO_IDX_RESET_N].dev = gpio_reset;
-
-	return winc1500_gpios;
-}
-
 int8_t nm_bus_init(void *pvinit)
 {
 	/* configure GPIOs */
-	winc1500.gpios = winc1500_configure_gpios();
+	if (!device_is_ready(winc1500_config.chip_en_gpio.port)) {
+		return -ENODEV;
+	}
+	gpio_pin_configure_dt(&winc1500_config.chip_en_gpio, GPIO_OUTPUT_LOW);
+
+
+	if (!device_is_ready(winc1500_config.irq_gpio.port)) {
+		return -ENODEV;
+	}
+	gpio_pin_configure_dt(&winc1500_config.irq_gpio, GPIO_INPUT);
+
+	if (!device_is_ready(winc1500_config.reset_gpio.port)) {
+		return -ENODEV;
+	}
+	gpio_pin_configure_dt(&winc1500_config.reset_gpio, GPIO_OUTPUT_LOW);
+
 
 #ifdef CONF_WINC_USE_I2C
 	/* Not implemented */
