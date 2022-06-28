@@ -2197,18 +2197,13 @@ class TestInstance(DisablePyTestCollectionMixin):
     def testsuite_runnable(testsuite, fixtures):
         can_run = False
         # console harness allows us to run the test and capture data.
-        if testsuite.harness in [ 'console', 'ztest', 'pytest']:
+        if testsuite.harness in [ 'console', 'ztest', 'pytest', 'test']:
             can_run = True
             # if we have a fixture that is also being supplied on the
             # command-line, then we need to run the test, not just build it.
             fixture = testsuite.harness_config.get('fixture')
             if fixture:
                 can_run = (fixture in fixtures)
-
-        elif testsuite.harness:
-            can_run = False
-        else:
-            can_run = True
 
         return can_run
 
@@ -3059,7 +3054,7 @@ class TestPlan(DisablePyTestCollectionMixin):
                        "toolchain_exclude": {"type": "set"},
                        "toolchain_allow": {"type": "set"},
                        "filter": {"type": "str"},
-                       "harness": {"type": "str"},
+                       "harness": {"type": "str", "default": "test"},
                        "harness_config": {"type": "map", "default": {}},
                        "seed": {"type": "int", "default": 0}
                        }
