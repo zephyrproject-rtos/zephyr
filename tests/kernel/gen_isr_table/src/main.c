@@ -17,18 +17,25 @@ extern uint32_t _irq_vector_table[];
 #define HAS_DIRECT_IRQS
 #endif
 
-#define ISR1_OFFSET	0
-#define ISR2_OFFSET	1
-
 #if defined(CONFIG_RISCV)
 /* RISC-V has very few IRQ lines which can be triggered from software */
 #define ISR3_OFFSET	1
+
+/* Since we have so few lines we have to share the same line for two different
+ * tests
+ */
+#ifdef HAS_DIRECT_IRQS
+#define ISR1_OFFSET	5
+#else
 #define ISR5_OFFSET	5
+#endif
 
 #define IRQ_LINE(offset)        offset
 #define TABLE_INDEX(offset)     offset
 #define TRIG_CHECK_SIZE		6
 #else
+#define ISR1_OFFSET	0
+#define ISR2_OFFSET	1
 #define ISR3_OFFSET	2
 #define ISR4_OFFSET	3
 #define ISR5_OFFSET	4
@@ -83,15 +90,17 @@ extern uint32_t _irq_vector_table[];
 
 static volatile int trigger_check[TRIG_CHECK_SIZE];
 
-
 #ifdef HAS_DIRECT_IRQS
+#ifdef ISR1_OFFSET
 ISR_DIRECT_DECLARE(isr1)
 {
 	printk("isr1 ran\n");
 	trigger_check[ISR1_OFFSET]++;
 	return 0;
 }
+#endif
 
+#ifdef ISR2_OFFSET
 ISR_DIRECT_DECLARE(isr2)
 {
 	printk("isr2 ran\n");
@@ -99,12 +108,15 @@ ISR_DIRECT_DECLARE(isr2)
 	return 1;
 }
 #endif
+#endif
 
+#ifdef ISR3_OFFSET
 void isr3(const void *param)
 {
 	printk("%s ran with parameter %p\n", __func__, param);
 	trigger_check[ISR3_OFFSET]++;
 }
+#endif
 
 #ifdef ISR4_OFFSET
 void isr4(const void *param)
@@ -114,11 +126,13 @@ void isr4(const void *param)
 }
 #endif
 
+#ifdef ISR5_OFFSET
 void isr5(const void *param)
 {
 	printk("%s ran with parameter %p\n", __func__, param);
 	trigger_check[ISR5_OFFSET]++;
 }
+#endif
 
 #ifdef ISR6_OFFSET
 void isr6(const void *param)
@@ -166,6 +180,13 @@ int test_irq(int offset)
 #ifdef HAS_DIRECT_IRQS
 static int check_vector(void *isr, int offset)
 {
+/*
+ * The problem with an IRQ table where the entries are jump opcodes is that it
+ * the destination address is encoded in the opcode and strictly depending on
+ * the address of the instruction itself (and very much architecture
+ * dependent). For the sake of simplicity just skip the checks.
+ */
+#ifndef CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE
 	TC_PRINT("Checking _irq_vector_table entry %d for irq %d\n",
 		 TABLE_INDEX(offset), IRQ_LINE(offset));
 
@@ -173,6 +194,7 @@ static int check_vector(void *isr, int offset)
 		TC_PRINT("bad entry %d in vector table\n", TABLE_INDEX(offset));
 		return -1;
 	}
+#endif /* !CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE */
 
 	if (test_irq(offset)) {
 		return -1;
@@ -183,12 +205,9 @@ static int check_vector(void *isr, int offset)
 #endif
 
 #ifdef CONFIG_GEN_SW_ISR_TABLE
-static int check_sw_isr(void *isr, uint32_t arg, int offset)
+static int check_sw_isr(void *isr, uintptr_t arg, int offset)
 {
 	struct _isr_table_entry *e = &_sw_isr_table[TABLE_INDEX(offset)];
-#ifdef CONFIG_GEN_IRQ_VECTOR_TABLE
-	void *v = (void *)_irq_vector_table[TABLE_INDEX(offset)];
-#endif
 
 	TC_PRINT("Checking _sw_isr_table entry %d for irq %d\n",
 		 TABLE_INDEX(offset), IRQ_LINE(offset));
@@ -203,13 +222,14 @@ static int check_sw_isr(void *isr, uint32_t arg, int offset)
 		TC_PRINT("expected %p got %p\n", (void *)isr, e->isr);
 		return -1;
 	}
-#ifdef CONFIG_GEN_IRQ_VECTOR_TABLE
+#if defined(CONFIG_GEN_IRQ_VECTOR_TABLE) && !defined(CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE)
+	void *v = (void *)_irq_vector_table[TABLE_INDEX(offset)];
 	if (v != _isr_wrapper) {
 		TC_PRINT("Vector does not point to _isr_wrapper\n");
 		TC_PRINT("expected %p got %p\n", _isr_wrapper, v);
 		return -1;
 	}
-#endif
+#endif /* CONFIG_GEN_IRQ_VECTOR_TABLE && !CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE */
 
 	if (test_irq(offset)) {
 		return -1;
@@ -238,18 +258,24 @@ void test_build_time_direct_interrupt(void)
 #ifndef HAS_DIRECT_IRQS
 	ztest_test_skip();
 #else
-	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR1_OFFSET), 0, isr1, 0);
-	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR2_OFFSET), 0, isr2, 0);
-	irq_enable(IRQ_LINE(ISR1_OFFSET));
-	irq_enable(IRQ_LINE(ISR2_OFFSET));
-	TC_PRINT("isr1 isr=%p irq=%d\n", isr1, IRQ_LINE(ISR1_OFFSET));
-	TC_PRINT("isr2 isr=%p irq=%d\n", isr2, IRQ_LINE(ISR2_OFFSET));
 
+#ifdef ISR1_OFFSET
+	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR1_OFFSET), 0, isr1, 0);
+	irq_enable(IRQ_LINE(ISR1_OFFSET));
+	TC_PRINT("isr1 isr=%p irq=%d\n", isr1, IRQ_LINE(ISR1_OFFSET));
 	zassert_ok(check_vector(isr1, ISR1_OFFSET),
 			"check direct interrpt isr1 failed");
+#endif
+
+#ifdef ISR2_OFFSET
+	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR2_OFFSET), 0, isr2, 0);
+	irq_enable(IRQ_LINE(ISR2_OFFSET));
+	TC_PRINT("isr2 isr=%p irq=%d\n", isr2, IRQ_LINE(ISR2_OFFSET));
+
 
 	zassert_ok(check_vector(isr2, ISR2_OFFSET),
 			"check direct interrpt isr2 failed");
+#endif
 #endif
 }
 
@@ -276,6 +302,7 @@ void test_build_time_interrupt(void)
 #else
 	TC_PRINT("_sw_isr_table at location %p\n", _sw_isr_table);
 
+#ifdef ISR3_OFFSET
 	IRQ_CONNECT(IRQ_LINE(ISR3_OFFSET), 1, isr3, ISR3_ARG, 0);
 	irq_enable(IRQ_LINE(ISR3_OFFSET));
 	TC_PRINT("isr3 isr=%p irq=%d param=%p\n", isr3, IRQ_LINE(ISR3_OFFSET),
@@ -283,6 +310,7 @@ void test_build_time_interrupt(void)
 
 	zassert_ok(check_sw_isr(isr3, ISR3_ARG, ISR3_OFFSET),
 			"check interrupt isr3 failed");
+#endif
 
 #ifdef ISR4_OFFSET
 	IRQ_CONNECT(IRQ_LINE(ISR4_OFFSET), 1, isr4, ISR4_ARG, 0);
@@ -318,6 +346,8 @@ void test_run_time_interrupt(void)
 #ifndef CONFIG_GEN_SW_ISR_TABLE
 	ztest_test_skip();
 #else
+
+#ifdef ISR5_OFFSET
 	irq_connect_dynamic(IRQ_LINE(ISR5_OFFSET), 1, isr5,
 			    (const void *)ISR5_ARG, 0);
 	irq_enable(IRQ_LINE(ISR5_OFFSET));
@@ -325,6 +355,7 @@ void test_run_time_interrupt(void)
 		 (void *)ISR5_ARG);
 	zassert_ok(check_sw_isr(isr5, ISR5_ARG, ISR5_OFFSET),
 			"test dynamic interrupt isr5 failed");
+#endif
 
 #ifdef ISR6_OFFSET
 	irq_connect_dynamic(IRQ_LINE(ISR6_OFFSET), 1, isr6,
