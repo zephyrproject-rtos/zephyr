@@ -1591,6 +1591,7 @@ static isoal_status_t ll_iso_pdu_release(struct node_tx_iso *node_tx,
 		ll_rx_sched();
 	} else {
 		/* Release back to memory pool */
+		ll_iso_link_tx_release(node_tx->link);
 		ll_iso_tx_mem_release(node_tx);
 	}
 

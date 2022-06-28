@@ -435,6 +435,21 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 			  (RX_CNT + BT_CTLR_MAX_CONNECTABLE + \
 			   BT_CTLR_ADV_SET + BT_CTLR_SCAN_SYNC_SET))
 
+/* Macos for encoding number of ISO SDU fragments in the enqueued TX node
+ * pointer. This is needed to ensure only a single release of the node and link
+ * in tx_cmplt_get, even when called several times. At all times, the number of
+ * fragments must be available for HCI complete-counting.
+ *
+ * If the pointer is numerically below 0x100, the pointer is treated as a one
+ * byte fragment count.
+ *
+ * NOTE: For any architecture which would map RAM below address 0x100, this will
+ * not work.
+ */
+#define IS_NODE_TX_PTR(_p) ((uint32_t)(_p) & ~0x000000FF)
+#define NODE_TX_FRAGMENTS_GET(_p) ((uint32_t)(_p) & 0xFF)
+#define NODE_TX_FRAGMENTS_SET(_p, _cmplt) ((_p) = (void *)(uint32_t)(_cmplt))
+
 static struct {
 	void *free;
 	uint8_t pool[PDU_RX_POOL_SIZE];
@@ -2479,23 +2494,30 @@ static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 		} else if (IS_CIS_HANDLE(tx->handle) ||
 			   IS_ADV_ISO_HANDLE(tx->handle)) {
 			struct node_tx_iso *tx_node_iso;
-			struct pdu_data *p;
+			uint8_t sdu_fragments;
 
-			tx_node_iso = tx->node;
-			p = (void *)tx_node_iso->pdu;
+			if (IS_NODE_TX_PTR(tx->node)) {
+				tx_node_iso = tx->node;
+				if (IS_ADV_ISO_HANDLE(tx->handle)) {
+					/* FIXME: ADV_ISO shall be updated to use ISOAL for
+					 * TX. Until then, assume 1 node equals 1 fragment.
+					 */
+					sdu_fragments = 1;
+				} else {
+					/* We count each SDU fragment completed by this PDU */
+					sdu_fragments = tx_node_iso->sdu_fragments;
+				}
 
-			if (IS_ADV_ISO_HANDLE(tx->handle)) {
-				/* FIXME: ADV_ISO shall be updated to use ISOAL for
-				 * TX. Until then, assume 1 node equals 1 fragment.
-				 */
-				cmplt += 1;
+				ll_iso_link_tx_release(tx_node_iso->link);
+				ll_iso_tx_mem_release(tx_node_iso);
+
+				NODE_TX_FRAGMENTS_SET(tx->node, sdu_fragments);
 			} else {
-				/* We count each SDU fragment completed by this PDU */
-				cmplt += tx_node_iso->sdu_fragments;
+				sdu_fragments = NODE_TX_FRAGMENTS_GET(tx->node);
 			}
 
-			ll_iso_link_tx_release(tx_node_iso->link);
-			ll_iso_tx_mem_release(tx_node_iso);
+			cmplt += sdu_fragments;
+
 			goto next_ack;
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
