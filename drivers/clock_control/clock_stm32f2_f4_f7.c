@@ -15,7 +15,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
 
-#if STM32_SYSCLK_SRC_PLL
+#if defined(STM32_PLL_ENABLED)
 
 /**
  * @brief Return PLL source
@@ -57,7 +57,7 @@ uint32_t get_pllout_frequency(void)
 					 pllp(STM32_PLL_P_DIVISOR));
 }
 
-#endif /* STM32_SYSCLK_SRC_PLL */
+#endif /* defined(STM32_PLL_ENABLED) */
 
 /**
  * @brief Activate default clocks
