@@ -16,10 +16,11 @@ properties:
 
     a-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The A pin to use.
 
@@ -35,20 +36,22 @@ properties:
 
     b-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The B pin to use. The pin numbering scheme is the same as
         the a-pin property's.
 
     led-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The LED pin to use for a light based QDEC device. The pin
         numbering scheme is the same as the a-pin property's.

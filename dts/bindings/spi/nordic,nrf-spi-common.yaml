@@ -14,10 +14,11 @@ properties:
 
     sck-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The SCK pin to use.
 
@@ -33,20 +34,22 @@ properties:
 
     mosi-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The MOSI pin to use. The pin numbering scheme is the same as
         the sck-pin property's.
 
     miso-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The MISO pin to use. The pin numbering scheme is the same as
         the sck-pin property's.

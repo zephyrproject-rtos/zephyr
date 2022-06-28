@@ -15,10 +15,11 @@ properties:
 
     sda-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The SDA pin to use.
 
@@ -34,10 +35,11 @@ properties:
 
     scl-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The SCL pin to use. The pin numbering scheme is the same as
         the sda-pin property's.
