@@ -17,10 +17,16 @@ static void test_disconnect(void)
 	zassert_not_null(port, "device " TEST_DEV " not found");
 
 	rv = gpio_pin_configure(port, pin, flags);
+	if (rv == -ENOTSUP) {
+		/* some drivers / gpio hw do not support disconnect */
+		ztest_test_skip();
+	}
+
 	zassert_equal(0, rv, "gpio_pin_configure() failed: %d", rv);
 
 	rv = gpio_pin_is_input(port, pin);
 	if (rv == -ENOSYS) {
+		/* gpio_pin_direction() is not supported in the driver */
 		ztest_test_skip();
 	}
 
@@ -45,6 +51,7 @@ static void test_input(void)
 
 	rv = gpio_pin_is_input(port, pin);
 	if (rv == -ENOSYS) {
+		/* gpio_pin_direction() is not supported in the driver */
 		ztest_test_skip();
 	}
 
@@ -69,6 +76,7 @@ static void test_output(void)
 
 	rv = gpio_pin_is_input(port, pin);
 	if (rv == -ENOSYS) {
+		/* gpio_pin_direction() is not supported in the driver */
 		ztest_test_skip();
 	}
 
@@ -89,6 +97,11 @@ static void test_input_output(void)
 	zassert_not_null(port, "device " TEST_DEV " not found");
 
 	rv = gpio_pin_configure(port, pin, flags);
+	if (rv == -ENOTSUP) {
+		/* some drivers / gpio hw do not support input-output mode */
+		ztest_test_skip();
+	}
+
 	zassert_equal(0, rv, "gpio_pin_configure() failed: %d", rv);
 
 	rv = gpio_pin_is_input(port, pin);
