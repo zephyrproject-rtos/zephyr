@@ -202,9 +202,7 @@ static struct stts751_data stts751_data;
 static const struct stts751_config stts751_config = {
 	COND_CODE_1(DT_INST_ON_BUS(0, i2c), (.i2c = I2C_DT_SPEC_INST_GET(0),), ())
 #ifdef CONFIG_STTS751_TRIGGER
-	.event_port	= DT_INST_GPIO_LABEL(0, drdy_gpios),
-	.event_pin	= DT_INST_GPIO_PIN(0, drdy_gpios),
-	.int_flags	= DT_INST_GPIO_FLAGS(0, drdy_gpios),
+	.int_gpio = GPIO_DT_SPEC_INST_GET(0, drdy_gpios),
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	.bus_init = stts751_i2c_init,
