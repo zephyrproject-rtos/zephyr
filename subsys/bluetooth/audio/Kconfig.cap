@@ -5,16 +5,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config BT_CAP
-	bool
-	help
-	  Hidden Kconfig to enable cross-role CAP capabilities.
-
 config BT_CAP_ACCEPTOR
 	bool "Common Audio Profile Acceptor Role Support [EXPERIMENTAL]"
 	depends on BT_AUDIO_UNICAST_SERVER || (BT_AUDIO_BROADCAST_SINK && BT_BASS)
 	select EXPERIMENTAL
-	select BT_CAP
 	help
 	  Enabling this will enable the CAP Acceptor role. This instantiates the
 	  common audio service (CAS).
@@ -29,9 +23,9 @@ config BT_CAP_ACCEPTOR_SET_MEMBER
 	  Enabling will take one of the allocated CSIS instances
 	  (BT_CSIS_MAX_INSTANCE_COUNT).
 
-config BT_DEBUG_CAP
+config BT_DEBUG_CAP_ACCEPTOR
 	bool "Common Audio Profile debug"
-	depends on BT_CAP
+	depends on BT_CAP_ACCEPTOR
 	help
 	  Use this option to enable CAP debug logs for the
 	  Bluetooth Audio functionality.
@@ -40,7 +34,6 @@ config BT_CAP_INITIATOR
 	bool "Common Audio Profile Initiator Role Support [EXPERIMENTAL]"
 	depends on (BT_AUDIO_UNICAST_CLIENT && BT_CSIS_CLIENT) || BT_AUDIO_BROADCAST_SOURCE
 	select EXPERIMENTAL
-	select BT_CAP
 	help
 	  Enabling this will enable the CAP Initiator role.
 
