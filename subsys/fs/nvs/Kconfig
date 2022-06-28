@@ -19,7 +19,7 @@ config NVS_LOOKUP_CACHE
 
 config NVS_LOOKUP_CACHE_SIZE
 	int "Non-volatile Storage lookup cache size"
-	default 128
+	default 512
 	range 1 65536
 	depends on NVS_LOOKUP_CACHE
 	help
