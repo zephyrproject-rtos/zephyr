@@ -701,14 +701,24 @@ static uint8_t handle_control_point_op(struct bt_conn *conn, struct net_buf_simp
 		return handle_set_next_preset(false);
 	case BT_HAS_OP_SET_PREV_PRESET:
 		return handle_set_prev_preset(false);
-#if defined(CONFIG_BT_HAS_PRESET_SYNC_SUPPORT)
 	case BT_HAS_OP_SET_ACTIVE_PRESET_SYNC:
-		return handle_set_active_preset(buf, true);
+		if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SYNC_SUPPORT)) {
+			return handle_set_active_preset(buf, true);
+		} else {
+			return BT_HAS_ERR_PRESET_SYNC_NOT_SUPP;
+		}
 	case BT_HAS_OP_SET_NEXT_PRESET_SYNC:
-		return handle_set_next_preset(true);
+		if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SYNC_SUPPORT)) {
+			return handle_set_next_preset(true);
+		} else {
+			return BT_HAS_ERR_PRESET_SYNC_NOT_SUPP;
+		}
 	case BT_HAS_OP_SET_PREV_PRESET_SYNC:
-		return handle_set_prev_preset(true);
-#endif /* CONFIG_BT_HAS_PRESET_SYNC_SUPPORT */
+		if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SYNC_SUPPORT)) {
+			return handle_set_prev_preset(true);
+		} else {
+			return BT_HAS_ERR_PRESET_SYNC_NOT_SUPP;
+		}
 	};
 
 	return BT_HAS_ERR_INVALID_OPCODE;
