@@ -27,6 +27,9 @@
 
 struct sx9500_config {
 	struct i2c_dt_spec i2c;
+#ifdef CONFIG_SX9500_TRIGGER
+	struct gpio_dt_spec int_gpio;
+#endif
 };
 
 struct sx9500_data {
