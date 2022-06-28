@@ -233,8 +233,8 @@ static inline int tcpc_is_cc_only_one_rd(enum tc_cc_voltage_state cc1,
  *
  * @param dev Runtime device structure
  *
- * @return 0 on success
- * @return -EIO on failure
+ * @retval 0 on success
+ * @retval -EIO on failure
  */
 static inline int tcpc_init(const struct device *dev)
 {
@@ -254,9 +254,9 @@ static inline int tcpc_init(const struct device *dev)
  * @param cc1  A pointer where the CC1 status is written
  * @param cc2  A pointer where the CC2 status is written
  *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_get_cc(const struct device *dev,
 			      enum tc_cc_voltage_state *cc1,
@@ -371,9 +371,9 @@ static inline int tcpc_get_vbus(const struct device *dev, int *vbus_meas)
  * @param dev   Runtime device structure
  * @param rp    Value of the Pull-Up Resistor.
  *
- * @return 0 on success
- * @return -ENOSYS
- * @return -EIO on failure
+ * @retval 0 on success
+ * @retval -ENOSYS
+ * @retval -EIO on failure
  */
 static inline int tcpc_select_rp_value(const struct device *dev, enum tc_rp_value rp)
 {
@@ -393,9 +393,9 @@ static inline int tcpc_select_rp_value(const struct device *dev, enum tc_rp_valu
  * @param dev   Runtime device structure
  * @param rp    pointer where the value of the Pull-Up Resistor is stored
  *
- * @return 0 on success
- * @return -ENOSYS
- * @return -EIO on failure
+ * @retval 0 on success
+ * @retval -ENOSYS
+ * @retval -EIO on failure
  */
 static inline int tcpc_get_rp_value(const struct device *dev, enum tc_rp_value *rp)
 {
@@ -415,8 +415,8 @@ static inline int tcpc_get_rp_value(const struct device *dev, enum tc_rp_value *
  * @param dev   Runtime device structure
  * @param pull  The pull resistor to set
  *
- * @return 0 on success
- * @return -EIO on failure
+ * @retval 0 on success
+ * @retval -EIO on failure
  */
 static inline int tcpc_set_cc(const struct device *dev, enum tc_cc_pull pull)
 {
@@ -460,9 +460,9 @@ static inline void tcpc_set_vconn_cb(const struct device *dev,
  * @param dev     Runtime device structure
  * @param enable  VCONN is enabled when true, it's disabled
  *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_set_vconn(const struct device *dev, bool enable)
 {
@@ -485,9 +485,9 @@ static inline int tcpc_set_vconn(const struct device *dev, bool enable)
  * @param power_role  current power role
  * @param data_role   current data role
  *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_set_roles(const struct device *dev,
 				 enum tc_power_role power_role,
@@ -509,9 +509,9 @@ static inline int tcpc_set_roles(const struct device *dev,
  * @param dev  Runtime device structure
  * @param type  pointer to where message type is written. Can be NULL
  *
- * @return true if message is pending, else false
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
+ * @retval true if message is pending, else false
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
  */
 static inline bool tcpc_is_rx_pending_msg(const struct device *dev,
 					  enum pd_packet_type *type)
@@ -532,10 +532,10 @@ static inline bool tcpc_is_rx_pending_msg(const struct device *dev,
  * @param dev  Runtime device structure
  * @param buf  pointer where the pd_buf pointer is written
  *
- * @return Greater or equal to 0 is the number of bytes received
- * @return -EIO on failure
- * @return -EFAULT on buf being NULL
- * @return -ENOSYS if not implemented
+ * @retval Greater or equal to 0 is the number of bytes received
+ * @retval -EIO on failure
+ * @retval -EFAULT on buf being NULL
+ * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_receive_data(const struct device *dev,
 				    struct pd_msg *buf)
@@ -557,9 +557,9 @@ static inline int tcpc_receive_data(const struct device *dev,
  * @param enable  Enable Power Delivery when true, else it's
  *		  disabled
  *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_set_rx_enable(const struct device *dev, bool enable)
 {
@@ -579,8 +579,8 @@ static inline int tcpc_set_rx_enable(const struct device *dev, bool enable)
  * @param dev       Runtime device structure
  * @param polarity  Polarity of the cc line
  *
- * @return 0 on success
- * @return -EIO on failure
+ * @retval 0 on success
+ * @retval -EIO on failure
  */
 static inline int tcpc_set_cc_polarity(const struct device *dev,
 				       enum tc_cc_polarity polarity)
@@ -600,9 +600,9 @@ static inline int tcpc_set_cc_polarity(const struct device *dev,
  * @param dev     Runtime device structure
  * @param msg     Power Delivery message to transmit
  *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_transmit_data(const struct device *dev,
 				     struct pd_msg *msg)
@@ -622,9 +622,9 @@ static inline int tcpc_transmit_data(const struct device *dev,
  *
  * @param dev Runtime device structure
  *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_dump_std_reg(const struct device *dev)
 {
@@ -648,8 +648,8 @@ static inline int tcpc_dump_std_reg(const struct device *dev)
  * @param handler  The callback function called when the bit is set
  * @param data     user data passed to the callback
  *
- * @return 0 on success
- * @return -EINVAL on failure
+ * @retval 0 on success
+ * @retval -EINVAL on failure
  */
 static inline int tcpc_set_alert_handler_cb(const struct device *dev,
 					    tcpc_alert_handler_cb_t handler,
@@ -671,9 +671,9 @@ static inline int tcpc_set_alert_handler_cb(const struct device *dev,
  * @param reg     The status register to read
  * @param status  Pointer where the status is stored
  *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_get_status_register(const struct device *dev,
 					   enum tcpc_status_reg reg,
@@ -697,9 +697,9 @@ static inline int tcpc_get_status_register(const struct device *dev,
  * @param mask  A bit mask of the status register to clear.
  *		A status bit is cleared when it's set to 1.
  *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_clear_status_register(const struct device *dev,
 					     enum tcpc_status_reg reg,
@@ -723,9 +723,9 @@ static inline int tcpc_clear_status_register(const struct device *dev,
  * @param mask  A bit mask of the status register to mask.
  *		The status bit is masked if it's 0, else it's unmasked.
  *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_mask_status_register(const struct device *dev,
 					    enum tcpc_status_reg reg,
@@ -796,9 +796,9 @@ static inline int tcpc_enable_auto_discharge_disconnect(
  * @param dev     Runtime device structure
  * @param enable  Enable Debug Accessory when true, else it's disabled
  *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_set_debug_accessory(const struct device *dev,
 					   bool enable)
@@ -818,9 +818,9 @@ static inline int tcpc_set_debug_accessory(const struct device *dev,
  *
  * @param dev Runtime device structure
  *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_set_debug_detach(const struct device *dev)
 {
@@ -840,9 +840,9 @@ static inline int tcpc_set_debug_detach(const struct device *dev)
  * @param dev     Runtime device structure
  * @param enable  Auto dual role toggle is active when true, else it's disabled
  *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_set_drp_toggle(const struct device *dev, bool enable)
 {
@@ -861,9 +861,9 @@ static inline int tcpc_set_drp_toggle(const struct device *dev, bool enable)
  *
  * @param dev Runtime device structure
  *
- * @return true if sinking power
- * @return false if not sinking power
- * @return -ENOSYS if not implemented
+ * @retval true if sinking power
+ * @retval false if not sinking power
+ * @retval -ENOSYS if not implemented
  */
 static inline bool tcpc_get_snk_ctrl(const struct device *dev)
 {
@@ -882,9 +882,9 @@ static inline bool tcpc_get_snk_ctrl(const struct device *dev)
  *
  * @param dev Runtime device structure
  *
- * @return true if sourcing power
- * @return false if not sourcing power
- * @return -ENOSYS if not implemented
+ * @retval true if sourcing power
+ * @retval false if not sourcing power
+ * @retval -ENOSYS if not implemented
  */
 static inline bool tcpc_get_src_ctrl(const struct device *dev)
 {
@@ -905,9 +905,9 @@ static inline bool tcpc_get_src_ctrl(const struct device *dev)
  * @param dev Runtime device structure
  * @param enable The TCPC enters BIST TEST Mode when true
  *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_set_bist_test_mode(const struct device *dev,
 					  bool enable)
@@ -928,9 +928,9 @@ static inline int tcpc_set_bist_test_mode(const struct device *dev,
  * @param dev        Runtime device structure
  * @param chip_info  Pointer to TCPC chip info where the version is stored
  *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_get_chip_info(const struct device *dev,
 				     struct tcpc_chip_info *chip_info)
@@ -951,9 +951,9 @@ static inline int tcpc_get_chip_info(const struct device *dev,
  * @param dev     Runtime device structure
  * @param enable  The TCPC enters low power mode when true, else it exits it
  *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_set_low_power_mode(const struct device *dev,
 					  bool enable)
@@ -974,9 +974,9 @@ static inline int tcpc_set_low_power_mode(const struct device *dev,
  * @param dev     Runtime device structure
  * @param enable  Can receive SOP Prime messages when true, else it can not
  *
- * @return 0 on success
- * @return -EIO on failure
- * @return -ENOSYS if not implemented
+ * @retval 0 on success
+ * @retval -EIO on failure
+ * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_sop_prime_enable(const struct device *dev,
 					bool enable)
