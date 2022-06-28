@@ -67,14 +67,13 @@ static int32_t elapsed(void)
 static int32_t next_timeout(void)
 {
 	struct _timeout *to = first();
-	int32_t ticks_elapsed = elapsed();
 	int32_t ret;
 
 	if ((to == NULL) ||
-	    ((int64_t)(to->dticks - ticks_elapsed) > (int64_t)INT_MAX)) {
+	    ((int64_t)(to->dticks - elapsed()) > (int64_t)INT_MAX)) {
 		ret = MAX_WAIT;
 	} else {
-		ret = MAX(0, to->dticks - ticks_elapsed);
+		ret = MAX(0, to->dticks - elapsed());
 	}
 
 #ifdef CONFIG_TIMESLICING
