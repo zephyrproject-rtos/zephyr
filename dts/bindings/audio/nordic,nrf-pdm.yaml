@@ -16,10 +16,11 @@ properties:
 
     clk-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The CLK pin to use.
 
@@ -35,10 +36,11 @@ properties:
 
     din-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The DIN pin to use. The pin numbering scheme is the same as
         the clk-pin property's.
