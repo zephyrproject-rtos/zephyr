@@ -128,7 +128,6 @@ static atomic_val_t add_drop_msg(void)
 	struct log_frontend_uart_dropped_pkt *pkt;
 	size_t len = sizeof(struct log_frontend_uart_dropped_pkt);
 	size_t wlen = ceiling_fraction(len, sizeof(uint32_t));
-	bool ret = false;
 
 	if (atomic_cas(&adding_drop, 0, 1) == false) {
 		return 1;
@@ -146,7 +145,6 @@ static atomic_val_t add_drop_msg(void)
 	pkt->data.type = MSG_DROPPED_MSG;
 	pkt->data.num_dropped_messages = atomic_set(&dropped, 0);
 	mpsc_pbuf_commit(&buf, generic_pkt.rw_pkt);
-	ret = true;
 
 	return atomic_inc(&active_cnt);
 }
