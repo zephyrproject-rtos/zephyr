@@ -350,14 +350,14 @@ class FilterBuilder(CMake):
         filter_data.update(self.cmake_cache)
 
         edt_pickle = os.path.join(self.build_dir, "zephyr", "edt.pickle")
-        if self.testsuite and self.testsuite.ts_filter:
+        if self.testsuite and self.testsuite.filter:
             try:
                 if os.path.exists(edt_pickle):
                     with open(edt_pickle, 'rb') as f:
                         edt = pickle.load(f)
                 else:
                     edt = None
-                res = expr_parser.parse(self.testsuite.ts_filter, filter_data, edt)
+                res = expr_parser.parse(self.testsuite.filter, filter_data, edt)
 
             except (ValueError, SyntaxError) as se:
                 sys.stderr.write(
