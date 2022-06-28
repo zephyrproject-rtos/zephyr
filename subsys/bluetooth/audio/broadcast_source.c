@@ -765,6 +765,81 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 	return 0;
 }
 
+static void broadcast_source_store_metadata(struct bt_codec *codec,
+					    const struct bt_codec_data meta[],
+					    size_t meta_count)
+{
+	size_t old_meta_count;
+
+	old_meta_count = codec->meta_count;
+
+	/* Update metadata */
+	codec->meta_count = meta_count;
+	(void)memcpy(codec->meta, meta, meta_count * sizeof(*meta));
+	if (old_meta_count > meta_count) {
+		size_t meta_count_diff = old_meta_count - meta_count;
+
+		/* If we previously had more metadata entries we reset the
+		 * data that was not overwritten by the new metadata
+		 */
+		(void)memset(&codec->meta[meta_count],
+			     0, meta_count_diff * sizeof(*meta));
+	}
+}
+
+int bt_audio_broadcast_source_update_metadata(struct bt_audio_broadcast_source *source,
+					      const struct bt_codec_data meta[],
+					      size_t meta_count)
+{
+	struct bt_audio_broadcast_subgroup *subgroup;
+	enum bt_audio_state broadcast_state;
+
+	CHECKIF(source == NULL) {
+		LOG_DBG("source is NULL");
+
+		return -EINVAL;
+	}
+
+	CHECKIF((meta == NULL && meta_count != 0) ||
+		(meta != NULL && meta_count == 0)) {
+		LOG_DBG("Invalid metadata combination: %p %zu",
+			meta, meta_count);
+
+		return -EINVAL;
+	}
+
+	CHECKIF(meta_count > CONFIG_BT_CODEC_MAX_METADATA_COUNT) {
+		LOG_DBG("Invalid meta_count: %zu (max %d)",
+			meta_count, CONFIG_BT_CODEC_MAX_METADATA_COUNT);
+
+		return -EINVAL;
+	}
+
+	for (size_t i = 0; i < meta_count; i++) {
+		CHECKIF(meta[i].data.data_len > sizeof(meta[i].value)) {
+			LOG_DBG("Invalid meta[%zu] data_len %u",
+				i, meta[i].data.data_len);
+
+			return -EINVAL;
+		}
+	}
+	broadcast_state = broadcast_source_get_state(source);
+	if (broadcast_source_get_state(source) != BT_AUDIO_EP_STATE_STREAMING) {
+		LOG_DBG("Broadcast source invalid state: %u", broadcast_state);
+
+		return -EBADMSG;
+	}
+
+	/* TODO: We should probably find a way to update the metadata
+	 * for each subgroup individually
+	 */
+	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
+		broadcast_source_store_metadata(subgroup->codec, meta, meta_count);
+	}
+
+	return 0;
+}
+
 int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source,
 				    struct bt_le_ext_adv *adv)
 {

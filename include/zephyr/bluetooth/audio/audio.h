@@ -2077,7 +2077,7 @@ int bt_audio_broadcast_source_create(struct bt_audio_broadcast_source_create_par
 /** @brief Reconfigure audio broadcast source.
  *
  *  Reconfigure an audio broadcast source with a new codec and codec quality of
- *  service parameters.
+ *  service parameters. This can only be done when the source is stopped.
  *
  *  @param source      Pointer to the broadcast source
  *  @param codec       Codec configuration.
@@ -2088,6 +2088,22 @@ int bt_audio_broadcast_source_create(struct bt_audio_broadcast_source_create_par
 int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 				       struct bt_codec *codec,
 				       struct bt_codec_qos *qos);
+
+/** @brief Modify the metadata of an audio broadcast source.
+ *
+ *  Modify the metadata an audio broadcast source. This can only be done when
+ *  the source is started. To update the metadata in the stopped state, use
+ *  bt_audio_broadcast_source_reconfig().
+ *
+ *  @param source      Pointer to the broadcast source.
+ *  @param meta        Metadata entries.
+ *  @param meta_count  Number of metadata entries.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_audio_broadcast_source_update_metadata(struct bt_audio_broadcast_source *source,
+					      const struct bt_codec_data meta[],
+					      size_t meta_count);
 
 /** @brief Start audio broadcast source.
  *
