@@ -15,6 +15,7 @@ extern enum bst_result_t bst_result;
 
 CREATE_FLAG(broadcaster_found);
 CREATE_FLAG(base_received);
+CREATE_FLAG(flag_base_metadata_updated);
 CREATE_FLAG(pa_synced);
 CREATE_FLAG(flag_syncable);
 CREATE_FLAG(pa_sync_lost);
@@ -29,6 +30,8 @@ static struct bt_audio_lc3_preset preset_16_2_1 =
 
 static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
 static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
+
+static struct bt_codec_data metadata[CONFIG_BT_CODEC_MAX_METADATA_COUNT];
 
 /* Create a mask for the maximum BIS we can sync to using the number of streams
  * we have. We add an additional 1 since the bis indexes start from 1 and not
@@ -76,6 +79,17 @@ static void base_recv_cb(struct bt_audio_broadcast_sink *sink,
 	uint32_t base_bis_index_bitfield = 0U;
 
 	if (TEST_FLAG(base_received)) {
+
+		if (base->subgroup_count > 0 &&
+		    memcmp(metadata, base->subgroups[0].codec.meta,
+			   sizeof(base->subgroups[0].codec.meta)) != 0) {
+
+			(void)memcpy(metadata, base->subgroups[0].codec.meta,
+				     sizeof(base->subgroups[0].codec.meta));
+
+			SET_FLAG(flag_base_metadata_updated);
+		}
+
 		return;
 	}
 
@@ -235,6 +249,10 @@ static void test_main(void)
 	printk("Waiting for data\n");
 	WAIT_FOR_FLAG(flag_received);
 
+	/* Ensure that we also see the metadata update */
+	printk("Waiting for metadata update\n");
+	WAIT_FOR_FLAG(flag_base_metadata_updated)
+
 	/* The order of PA sync lost and BIG Sync lost is irrelevant
 	 * and depend on timeout parameters. We just wait for PA first, but
 	 * either way will work.
@@ -292,6 +310,10 @@ static void test_sink_disconnect(void)
 
 	printk("Waiting for data\n");
 	WAIT_FOR_FLAG(flag_received);
+
+	/* Ensure that we also see the metadata update */
+	printk("Waiting for metadata update\n");
+	WAIT_FOR_FLAG(flag_base_metadata_updated)
 
 	err = bt_audio_broadcast_sink_stop(g_sink);
 	if (err != 0) {
