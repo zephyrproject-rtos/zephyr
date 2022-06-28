@@ -130,6 +130,9 @@ int sx9500_init(const struct device *dev)
 
 static const struct sx9500_config sx9500_config = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
+#ifdef CONFIG_SX9500_TRIGGER
+	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
+#endif
 };
 
 struct sx9500_data sx9500_data;
