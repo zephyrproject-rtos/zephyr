@@ -16,7 +16,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
 
-#if STM32_SYSCLK_SRC_PLL
+#if defined(STM32_PLL_ENABLED)
 
 #if defined(LL_RCC_MSIRANGESEL_RUN)
 #define CALC_RUN_MSI_FREQ(range) __LL_RCC_CALC_MSI_FREQ(LL_RCC_MSIRANGESEL_RUN, \
@@ -96,7 +96,7 @@ uint32_t get_pllout_frequency(void)
 					 pllr(STM32_PLL_R_DIVISOR));
 }
 
-#endif /* STM32_SYSCLK_SRC_PLL */
+#endif /* defined(STM32_PLL_ENABLED) */
 
 /**
  * @brief Activate default clocks
