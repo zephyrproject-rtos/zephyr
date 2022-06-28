@@ -212,20 +212,12 @@ arduino_i2c: &i2c0 {
 	pinctrl-names = "default", "sleep";
 };
 
-&spi2 {
-	compatible = "nordic,nrf-spi";
-	status = "disabled";
-	pinctrl-0 = <&spi2_default>;
-	pinctrl-1 = <&spi2_sleep>;
-	pinctrl-names = "default", "sleep";
-};
-
-fem_spi: &spi3 {
+fem_spi: &spi2 {
 	status = "okay";
 	cs-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 
-	pinctrl-0 = <&spi3_default>;
-	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
 	nrf_radio_fem_spi: nrf21540_fem_spi@0 {
 		compatible = "nordic,nrf21540-fem-spi";
@@ -236,6 +228,13 @@ fem_spi: &spi3 {
 	};
 };
 
+&spi3 {
+	compatible = "nordic,nrf-spi";
+	status = "disabled";
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
+};
 &radio {
 	fem = <&nrf_radio_fem>;
 };

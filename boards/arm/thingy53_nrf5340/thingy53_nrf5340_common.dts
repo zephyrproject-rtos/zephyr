@@ -171,15 +171,15 @@
 	};
 };
 
-&spi3 {
+&spi2 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
 	cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>,
 		   <&gpio1 4  GPIO_ACTIVE_LOW>,
 		   <&gpio0 24 GPIO_ACTIVE_LOW>;
 
-	pinctrl-0 = <&spi3_default>;
-	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
 	adxl362: spi-dev-adxl362@0 {
 		compatible = "adi,adxl362";
