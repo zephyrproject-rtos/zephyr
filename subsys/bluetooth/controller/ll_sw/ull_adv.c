@@ -1415,9 +1415,20 @@ uint8_t ll_adv_enable(uint8_t enable)
 			 * started.
 			 */
 			if (sync) {
-				const uint32_t ticks_slot_aux =
-					aux->ull.ticks_slot +
+				uint32_t ticks_slot_aux;
+#if defined(CONFIG_BT_CTLR_ADV_RESERVE_MAX)
+				uint32_t us_slot;
+
+				us_slot = ull_adv_aux_time_get(aux,
+						PDU_AC_PAYLOAD_SIZE_MAX,
+						PDU_AC_PAYLOAD_SIZE_MAX);
+				ticks_slot_aux =
+					HAL_TICKER_US_TO_TICKS(us_slot) +
 					ticks_slot_overhead_aux;
+#else
+				ticks_slot_aux = aux->ull.ticks_slot +
+						 ticks_slot_overhead_aux;
+#endif
 
 				/* Schedule periodic advertising PDU after
 				 * auxiliary PDUs.
