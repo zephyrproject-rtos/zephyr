@@ -18,13 +18,6 @@
 
 #if STM32_SYSCLK_SRC_PLL
 
-/* Macros to fill up multiplication and division factors values */
-#define z_pll_div(v) LL_RCC_PLLM_DIV_ ## v
-#define pll_div(v) z_pll_div(v)
-
-#define z_pllr(v) LL_RCC_PLLR_DIV_ ## v
-#define pllr(v) z_pllr(v)
-
 /**
  * @brief Return PLL source
  */
@@ -49,7 +42,7 @@ __unused
 void config_pll_sysclock(void)
 {
 	LL_RCC_PLL_ConfigDomain_SYS(get_pll_source(),
-				    pll_div(STM32_PLL_M_DIVISOR),
+				    pllm(STM32_PLL_M_DIVISOR),
 				    STM32_PLL_N_MULTIPLIER,
 				    pllr(STM32_PLL_R_DIVISOR));
 
@@ -64,7 +57,7 @@ __unused
 uint32_t get_pllout_frequency(void)
 {
 	return __LL_RCC_CALC_PLLCLK_FREQ(get_pll_source(),
-					 pll_div(STM32_PLL_M_DIVISOR),
+					 pllm(STM32_PLL_M_DIVISOR),
 					 STM32_PLL_N_MULTIPLIER,
 					 pllr(STM32_PLL_R_DIVISOR));
 }

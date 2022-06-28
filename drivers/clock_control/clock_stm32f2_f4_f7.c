@@ -17,13 +17,6 @@
 
 #if STM32_SYSCLK_SRC_PLL
 
-/* Macros to fill up division factors values */
-#define z_pllm(v) LL_RCC_PLLM_DIV_ ## v
-#define pllm(v) z_pllm(v)
-
-#define z_pllp(v) LL_RCC_PLLP_DIV_ ## v
-#define pllp(v) z_pllp(v)
-
 /**
  * @brief Return PLL source
  */

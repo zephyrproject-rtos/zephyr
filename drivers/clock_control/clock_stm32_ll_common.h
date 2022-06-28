@@ -32,6 +32,19 @@
 	#define MCO2_SOURCE		LL_RCC_MCO2SOURCE_PLLCLK
 #endif
 
+/* Macros to fill up multiplication and division factors values */
+#define z_pllm(v) LL_RCC_PLLM_DIV_ ## v
+#define pllm(v) z_pllm(v)
+
+#define z_pllp(v) LL_RCC_PLLP_DIV_ ## v
+#define pllp(v) z_pllp(v)
+
+#define z_pllq(v) LL_RCC_PLLQ_DIV_ ## v
+#define pllq(v) z_pllq(v)
+
+#define z_pllr(v) LL_RCC_PLLR_DIV_ ## v
+#define pllr(v) z_pllr(v)
+
 #ifdef STM32_SYSCLK_SRC_PLL
 void config_pll_sysclock(void);
 uint32_t get_pllout_frequency(void);
