@@ -58,41 +58,12 @@ class TestPlan:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
-    ts_schema = scl.yaml_load(
+    suite_schema = scl.yaml_load(
         os.path.join(ZEPHYR_BASE,
                      "scripts", "schemas", "twister", "testsuite-schema.yaml"))
     quarantine_schema = scl.yaml_load(
         os.path.join(ZEPHYR_BASE,
                      "scripts", "schemas", "twister", "quarantine-schema.yaml"))
-
-    testsuite_valid_keys = {"tags": {"type": "set", "required": False},
-                       "type": {"type": "str", "default": "integration"},
-                       "extra_args": {"type": "list"},
-                       "extra_configs": {"type": "list"},
-                       "build_only": {"type": "bool", "default": False},
-                       "build_on_all": {"type": "bool", "default": False},
-                       "skip": {"type": "bool", "default": False},
-                       "slow": {"type": "bool", "default": False},
-                       "timeout": {"type": "int", "default": 60},
-                       "min_ram": {"type": "int", "default": 8},
-                       "modules": {"type": "list", "default": []},
-                       "depends_on": {"type": "set"},
-                       "min_flash": {"type": "int", "default": 32},
-                       "arch_allow": {"type": "set"},
-                       "arch_exclude": {"type": "set"},
-                       "extra_sections": {"type": "list", "default": []},
-                       "integration_platforms": {"type": "list", "default": []},
-                       "testcases": {"type": "list", "default": []},
-                       "platform_type": {"type": "list", "default": []},
-                       "platform_exclude": {"type": "set"},
-                       "platform_allow": {"type": "set"},
-                       "toolchain_exclude": {"type": "set"},
-                       "toolchain_allow": {"type": "set"},
-                       "filter": {"type": "str"},
-                       "harness": {"type": "str", "default": "test"},
-                       "harness_config": {"type": "map", "default": {}},
-                       "seed": {"type": "int", "default": 0}
-                       }
 
     SAMPLE_FILENAME = 'sample.yaml'
     TESTSUITE_FILENAME = 'testcase.yaml'
@@ -424,79 +395,30 @@ class TestPlan:
                 else:
                     continue
 
-                logger.debug("Found possible test case in " + dirpath)
+                logger.debug("Found possible testsuite in " + dirpath)
 
-                ts_path = os.path.join(dirpath, filename)
+                suite_yaml_path = os.path.join(dirpath, filename)
 
                 try:
-                    parsed_data = TwisterConfigParser(ts_path, self.ts_schema)
+                    parsed_data = TwisterConfigParser(suite_yaml_path, self.suite_schema)
                     parsed_data.load()
 
-                    ts_path = os.path.dirname(ts_path)
-                    workdir = os.path.relpath(ts_path, root)
+                    suite_path = os.path.dirname(suite_yaml_path)
 
-                    subcases, ztest_suite_names = scan_testsuite_path(ts_path)
+                    subcases, ztest_suite_names = scan_testsuite_path(suite_path)
 
                     for name in parsed_data.scenarios.keys():
-                        ts = TestSuite(root, workdir, name)
-
-                        ts_dict = parsed_data.get_scenario(name, self.testsuite_valid_keys)
-
-                        ts.source_dir = ts_path
-                        ts.yamlfile = ts_path
-
-                        ts.type = ts_dict["type"]
-                        ts.tags = ts_dict["tags"]
-                        ts.extra_args = ts_dict["extra_args"]
-                        ts.extra_configs = ts_dict["extra_configs"]
-                        ts.arch_allow = ts_dict["arch_allow"]
-                        ts.arch_exclude = ts_dict["arch_exclude"]
-                        ts.skip = ts_dict["skip"]
-                        ts.platform_exclude = ts_dict["platform_exclude"]
-                        ts.platform_allow = ts_dict["platform_allow"]
-                        ts.platform_type = ts_dict["platform_type"]
-                        ts.toolchain_exclude = ts_dict["toolchain_exclude"]
-                        ts.toolchain_allow = ts_dict["toolchain_allow"]
-                        ts.ts_filter = ts_dict["filter"]
-                        ts.timeout = ts_dict["timeout"]
-                        ts.harness = ts_dict["harness"]
-                        ts.harness_config = ts_dict["harness_config"]
-                        if ts.harness == 'console' and not ts.harness_config:
-                            raise Exception('Harness config error: console harness defined without a configuration.')
-                        ts.build_only = ts_dict["build_only"]
-                        ts.build_on_all = ts_dict["build_on_all"]
-                        ts.slow = ts_dict["slow"]
-                        ts.min_ram = ts_dict["min_ram"]
-                        ts.modules = ts_dict["modules"]
-                        ts.depends_on = ts_dict["depends_on"]
-                        ts.min_flash = ts_dict["min_flash"]
-                        ts.extra_sections = ts_dict["extra_sections"]
-                        ts.integration_platforms = ts_dict["integration_platforms"]
-                        ts.seed = ts_dict["seed"]
-
-                        testcases = ts_dict.get("testcases", [])
-                        if testcases:
-                            for tc in testcases:
-                                ts.add_testcase(name=f"{name}.{tc}")
-                        else:
-                            # only add each testcase once
-                            for sub in set(subcases):
-                                name = "{}.{}".format(ts.id, sub)
-                                ts.add_testcase(name)
-
-                            if not subcases:
-                                ts.add_testcase(ts.id, freeform=True)
-
-                        ts.ztest_suite_names = ztest_suite_names
-
+                        suite_dict = parsed_data.get_scenario(name)
+                        suite = TestSuite(root, suite_path, name, data=suite_dict)
+                        suite.add_subcases(suite_dict, subcases, ztest_suite_names)
                         if testsuite_filter:
-                            if ts.name and ts.name in testsuite_filter:
-                                self.testsuites[ts.name] = ts
+                            if suite.name and suite.name in testsuite_filter:
+                                self.testsuites[suite.name] = suite
                         else:
-                            self.testsuites[ts.name] = ts
+                            self.testsuites[suite.name] = suite
 
                 except Exception as e:
-                    logger.error("%s: can't load (skipping): %s" % (ts_path, e))
+                    logger.error("%s: can't load (skipping): %s" % (suite_path, e))
                     self.load_errors += 1
         return len(self.testsuites)
 

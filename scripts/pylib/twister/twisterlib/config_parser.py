@@ -10,6 +10,35 @@ class TwisterConfigParser:
     """Class to read testsuite yaml files with semantic checking
     """
 
+    testsuite_valid_keys = {"tags": {"type": "set", "required": False},
+                       "type": {"type": "str", "default": "integration"},
+                       "extra_args": {"type": "list"},
+                       "extra_configs": {"type": "list"},
+                       "build_only": {"type": "bool", "default": False},
+                       "build_on_all": {"type": "bool", "default": False},
+                       "skip": {"type": "bool", "default": False},
+                       "slow": {"type": "bool", "default": False},
+                       "timeout": {"type": "int", "default": 60},
+                       "min_ram": {"type": "int", "default": 8},
+                       "modules": {"type": "list", "default": []},
+                       "depends_on": {"type": "set"},
+                       "min_flash": {"type": "int", "default": 32},
+                       "arch_allow": {"type": "set"},
+                       "arch_exclude": {"type": "set"},
+                       "extra_sections": {"type": "list", "default": []},
+                       "integration_platforms": {"type": "list", "default": []},
+                       "testcases": {"type": "list", "default": []},
+                       "platform_type": {"type": "list", "default": []},
+                       "platform_exclude": {"type": "set"},
+                       "platform_allow": {"type": "set"},
+                       "toolchain_exclude": {"type": "set"},
+                       "toolchain_allow": {"type": "set"},
+                       "filter": {"type": "str"},
+                       "harness": {"type": "str", "default": "test"},
+                       "harness_config": {"type": "map", "default": {}},
+                       "seed": {"type": "int", "default": 0}
+                       }
+
     def __init__(self, filename, schema):
         """Instantiate a new TwisterConfigParser object
 
@@ -66,27 +95,10 @@ class TwisterConfigParser:
             raise ConfigurationError(
                 self.filename, "unknown type '%s'" % value)
 
-    def get_scenario(self, name, valid_keys):
+    def get_scenario(self, name):
         """Get a dictionary representing the keys/values within a scenario
 
         @param name The scenario in the .yaml file to retrieve data from
-        @param valid_keys A dictionary representing the intended semantics
-            for this scenario. Each key in this dictionary is a key that could
-            be specified, if a key is given in the .yaml file which isn't in
-            here, it will generate an error. Each value in this dictionary
-            is another dictionary containing metadata:
-
-                "default" - Default value if not given
-                "type" - Data type to convert the text value to. Simple types
-                    supported are "str", "float", "int", "bool" which will get
-                    converted to respective Python data types. "set" and "list"
-                    may also be specified which will split the value by
-                    whitespace (but keep the elements as strings). finally,
-                    "list:<type>" and "set:<type>" may be given which will
-                    perform a type conversion after splitting the value up.
-                "required" - If true, raise an error if not defined. If false
-                    and "default" isn't specified, a type conversion will be
-                    done on an empty string
         @return A dictionary containing the scenario key-value pairs with
             type conversion and default values filled in per valid_keys
         """
@@ -109,7 +121,7 @@ class TwisterConfigParser:
             else:
                 d[k] = v
 
-        for k, kinfo in valid_keys.items():
+        for k, kinfo in self.testsuite_valid_keys.items():
             if k not in d:
                 if "required" in kinfo:
                     required = kinfo["required"]
