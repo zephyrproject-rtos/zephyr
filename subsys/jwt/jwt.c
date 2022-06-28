@@ -25,6 +25,7 @@
 #include <tinycrypt/constants.h>
 
 #include <zephyr/random/rand32.h>
+#include <zephyr/init.h>
 #endif
 
 /*
@@ -269,7 +270,7 @@ static int setup_prng(void)
 	return res == TC_CRYPTO_SUCCESS ? 0 : -EINVAL;
 }
 
-int default_CSPRNG(uint8_t *dest, unsigned int size)
+static int jwt_csprng(uint8_t *dest, unsigned int size)
 {
 	int res = tc_ctr_prng_generate(&prng_state, NULL, 0, dest, size);
 	return res;
@@ -292,7 +293,6 @@ int jwt_sign(struct jwt_builder *builder,
 	if (res != 0) {
 		return res;
 	}
-	uECC_set_rng(&default_CSPRNG);
 
 	/* Note that tinycrypt only supports P-256. */
 	res = uECC_sign(der_key, hash, sizeof(hash),
@@ -307,6 +307,15 @@ int jwt_sign(struct jwt_builder *builder,
 
 	return 0;
 }
+
+static int init_csprng(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	uECC_set_rng(&jwt_csprng);
+}
+
+SYS_INIT(init_csprng, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif
 
 int jwt_init_builder(struct jwt_builder *builder,
