@@ -723,7 +723,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 		return -EINVAL;
 	}
 
-	if ((size != SPI_NOR_SECTOR_SIZE) && (size < dev_cfg->flash_size)) {
+	if (((size % SPI_NOR_SECTOR_SIZE) != 0) && (size < dev_cfg->flash_size)) {
 		LOG_ERR("Error: wrong sector size 0x%x", size);
 		return -ENOTSUP;
 	}
