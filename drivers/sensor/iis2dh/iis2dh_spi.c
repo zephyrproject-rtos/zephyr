@@ -29,9 +29,9 @@ static struct spi_config iis2dh_spi_conf = {
 	.cs        = NULL,
 };
 
-static int iis2dh_spi_read(struct iis2dh_data *ctx, uint8_t reg,
-			   uint8_t *data, uint16_t len)
+static int iis2dh_spi_read(const struct device *dev, uint8_t reg, uint8_t *data, uint16_t len)
 {
+	struct iis2dh_data *ctx = dev->data;
 	struct spi_config *spi_cfg = &iis2dh_spi_conf;
 	uint8_t buffer_tx[2] = { reg | IIS2DH_SPI_READM, 0 };
 	const struct spi_buf tx_buf = {
@@ -64,9 +64,9 @@ static int iis2dh_spi_read(struct iis2dh_data *ctx, uint8_t reg,
 	return 0;
 }
 
-static int iis2dh_spi_write(struct iis2dh_data *ctx, uint8_t reg,
-			    uint8_t *data, uint16_t len)
+static int iis2dh_spi_write(const struct device *dev, uint8_t reg, uint8_t *data, uint16_t len)
 {
+	struct iis2dh_data *ctx = dev->data;
 	struct spi_config *spi_cfg = &iis2dh_spi_conf;
 	uint8_t buffer_tx[1] = { reg | IIS2DH_SPI_WRITEM };
 	const struct spi_buf tx_buf[2] = {
@@ -102,7 +102,7 @@ int iis2dh_spi_init(const struct device *dev)
 	struct iis2dh_data *data = dev->data;
 
 	data->ctx = &iis2dh_spi_ctx;
-	data->ctx->handle = data;
+	data->ctx->handle = (void *)dev;
 
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	/* handle SPI CS thru GPIO if it is the case */
