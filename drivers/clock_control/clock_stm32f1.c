@@ -15,7 +15,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
 
-#if STM32_SYSCLK_SRC_PLL
+#if defined(STM32_PLL_ENABLED)
 
 /*
  * Select PLL source for STM32F1 Connectivity line devices (STM32F105xx and
@@ -95,7 +95,7 @@ void config_pll_sysclock(void)
 	LL_RCC_PLL_ConfigDomain_SYS(pll_source, pll_mul);
 }
 
-#endif /* STM32_SYSCLK_SRC_PLL */
+#endif /* defined(STM32_PLL_ENABLED) */
 
 /**
  * @brief Activate default clocks

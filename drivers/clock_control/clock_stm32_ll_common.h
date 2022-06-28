@@ -45,7 +45,7 @@
 #define z_pllr(v) LL_RCC_PLLR_DIV_ ## v
 #define pllr(v) z_pllr(v)
 
-#ifdef STM32_SYSCLK_SRC_PLL
+#if defined(STM32_PLL_ENABLED)
 void config_pll_sysclock(void);
 uint32_t get_pllout_frequency(void);
 uint32_t get_pllsrc_frequency(void);
