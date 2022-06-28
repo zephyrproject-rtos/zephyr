@@ -30,8 +30,10 @@
 #define STM32_SRC_SYSCLK	0x006
 /** Bus clock */
 #define STM32_SRC_PCLK		0x007
-/** PLL clocks */
-#define STM32_SRC_PLLCLK	0x008
+/** PLL clock outputs */
+#define STM32_SRC_PLL_P		0x008
+#define STM32_SRC_PLL_Q		0x009
+#define STM32_SRC_PLL_R		0x00a
 /* TODO: PLLSAI clocks */
 
 /**
