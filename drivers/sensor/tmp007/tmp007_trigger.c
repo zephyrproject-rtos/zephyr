@@ -22,10 +22,9 @@ LOG_MODULE_DECLARE(TMP007, CONFIG_SENSOR_LOG_LEVEL);
 static inline void setup_int(const struct device *dev,
 			     bool enable)
 {
-	struct tmp007_data *data = dev->data;
+	const struct tmp007_config *cfg = dev->config;
 
-	gpio_pin_interrupt_configure(data->gpio,
-				     DT_INST_GPIO_PIN(0, int_gpios),
+	gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
 				     enable
 				     ? GPIO_INT_LEVEL_ACTIVE
 				     : GPIO_INT_DISABLE);
@@ -155,23 +154,19 @@ int tmp007_init_interrupt(const struct device *dev)
 
 	drv_data->dev = dev;
 
-	/* setup gpio interrupt */
-	drv_data->gpio = device_get_binding(DT_INST_GPIO_LABEL(0, int_gpios));
-	if (drv_data->gpio == NULL) {
-		LOG_DBG("Failed to get pointer to %s device!",
-		    DT_INST_GPIO_LABEL(0, int_gpios));
-		return -EINVAL;
+	if (!device_is_ready(cfg->int_gpio.port)) {
+		LOG_ERR("%s: device %s is not ready", dev->name,
+				cfg->int_gpio.port->name);
+		return -ENODEV;
 	}
 
-	gpio_pin_configure(drv_data->gpio, DT_INST_GPIO_PIN(0, int_gpios),
-			   DT_INST_GPIO_FLAGS(0, int_gpios)
-			   | GPIO_INT_LEVEL_ACTIVE);
+	gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INT_LEVEL_ACTIVE);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   tmp007_gpio_callback,
-			   BIT(DT_INST_GPIO_PIN(0, int_gpios)));
+			   BIT(cfg->int_gpio.pin));
 
-	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
+	if (gpio_add_callback(cfg->int_gpio.port, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Failed to set gpio callback!");
 		return -EIO;
 	}

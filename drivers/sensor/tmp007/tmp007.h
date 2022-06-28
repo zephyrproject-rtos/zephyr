@@ -34,13 +34,15 @@
 
 struct tmp007_config {
 	struct i2c_dt_spec i2c;
+#ifdef CONFIG_TMP007_TRIGGER
+	struct gpio_dt_spec int_gpio;
+#endif
 };
 
 struct tmp007_data {
 	int16_t sample;
 
 #ifdef CONFIG_TMP007_TRIGGER
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 	const struct device *dev;
 
