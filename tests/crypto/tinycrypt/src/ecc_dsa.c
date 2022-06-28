@@ -611,7 +611,7 @@ int montecarlo_signverify(int num_tests, bool verbose)
 	return TC_PASS;
 }
 
-int default_CSPRNG(uint8_t *dest, unsigned int size)
+int early_prng(uint8_t *dest, unsigned int size)
 {
 	/* This is not a CSPRNG, but it's the only thing available in the
 	 * system at this point in time.  */
@@ -634,7 +634,7 @@ void test_ecc_dsa(void)
 
 	TC_START("Performing ECC-DSA tests:");
 	/* Setup of the Cryptographically Secure PRNG. */
-	uECC_set_rng(&default_CSPRNG);
+	uECC_set_rng(&early_prng);
 
 	bool verbose = true;
 

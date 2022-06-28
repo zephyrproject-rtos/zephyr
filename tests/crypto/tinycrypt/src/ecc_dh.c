@@ -453,7 +453,7 @@ void test_ecc_dh(void)
 	TC_START("Performing ECC-DH tests:");
 
 	/* Setup of the Cryptographically Secure PRNG. */
-	uECC_set_rng(&default_CSPRNG);
+	uECC_set_rng(&early_prng);
 
 	bool verbose = true;
 

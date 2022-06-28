@@ -347,13 +347,15 @@ void bt_hci_ecc_supported_commands(uint8_t *supported_commands)
 	supported_commands[41] |= BIT(2);
 }
 
-int default_CSPRNG(uint8_t *dst, unsigned int len)
+static int ecc_csprng(uint8_t *dst, unsigned int len)
 {
 	return !bt_rand(dst, len);
 }
 
 void bt_hci_ecc_init(void)
 {
+	uECC_set_rgn(&ecc_csprng);
+
 	k_thread_create(&ecc_thread_data, ecc_thread_stack,
 			K_KERNEL_STACK_SIZEOF(ecc_thread_stack), ecc_thread,
 			NULL, NULL, NULL, K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
