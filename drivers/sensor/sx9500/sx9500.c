@@ -48,12 +48,12 @@ static uint8_t sx9500_reg_defaults[] = {
 static int sx9500_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
-	struct sx9500_data *data = (struct sx9500_data *) dev->data;
+	struct sx9500_data *data = dev->data;
+	const struct sx9500_config *cfg = dev->config;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_PROX);
 
-	return i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
-				 SX9500_REG_STAT, &data->prox_stat);
+	return i2c_reg_read_byte_dt(&cfg->i2c, SX9500_REG_STAT, &data->prox_stat);
 }
 
 static int sx9500_channel_get(const struct device *dev,
@@ -81,11 +81,11 @@ static const struct sensor_driver_api sx9500_api_funcs = {
 
 static int sx9500_init_chip(const struct device *dev)
 {
-	struct sx9500_data *data = (struct sx9500_data *) dev->data;
+	const struct sx9500_config *cfg = dev->config;
 	uint8_t val;
 
-	if (i2c_write(data->i2c_master, sx9500_reg_defaults,
-		      sizeof(sx9500_reg_defaults), data->i2c_slave_addr)
+	if (i2c_write_dt(&cfg->i2c, sx9500_reg_defaults,
+		      sizeof(sx9500_reg_defaults))
 		      < 0) {
 		return -EIO;
 	}
@@ -93,34 +93,27 @@ static int sx9500_init_chip(const struct device *dev)
 	/* No interrupts active.  We only activate them when an
 	 * application registers a trigger.
 	 */
-	if (i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
-			       SX9500_REG_IRQ_MSK, 0) < 0) {
+	if (i2c_reg_write_byte_dt(&cfg->i2c, SX9500_REG_IRQ_MSK, 0) < 0) {
 		return -EIO;
 	}
 
 	/* Read irq source reg to clear reset status. */
-	if (i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
-			      SX9500_REG_IRQ_SRC, &val) < 0) {
+	if (i2c_reg_read_byte_dt(&cfg->i2c, SX9500_REG_IRQ_SRC, &val) < 0) {
 		return -EIO;
 	}
 
-	return i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
-				  SX9500_REG_PROX_CTRL0,
-				  1 << CONFIG_SX9500_PROX_CHANNEL);
+	return i2c_reg_write_byte_dt(&cfg->i2c, SX9500_REG_PROX_CTRL0,
+				     1 << CONFIG_SX9500_PROX_CHANNEL);
 }
 
 int sx9500_init(const struct device *dev)
 {
-	struct sx9500_data *data = dev->data;
+	const struct sx9500_config *cfg = dev->config;
 
-	data->i2c_master = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!data->i2c_master) {
-		LOG_DBG("sx9500: i2c master not found: %s",
-		    DT_INST_BUS_LABEL(0));
-		return -EINVAL;
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
-
-	data->i2c_slave_addr = DT_INST_REG_ADDR(0);
 
 	if (sx9500_init_chip(dev) < 0) {
 		LOG_DBG("sx9500: failed to initialize chip");
@@ -135,8 +128,12 @@ int sx9500_init(const struct device *dev)
 	return 0;
 }
 
+static const struct sx9500_config sx9500_config = {
+	.i2c = I2C_DT_SPEC_INST_GET(0),
+};
+
 struct sx9500_data sx9500_data;
 
 DEVICE_DT_INST_DEFINE(0, sx9500_init, NULL, &sx9500_data,
-		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		    &sx9500_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &sx9500_api_funcs);

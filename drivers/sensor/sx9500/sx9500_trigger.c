@@ -29,14 +29,14 @@ int sx9500_trigger_set(const struct device *dev,
 		       sensor_trigger_handler_t handler)
 {
 	struct sx9500_data *data = dev->data;
+	const struct sx9500_config *cfg = dev->config;
 
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
-		if (i2c_reg_update_byte(data->i2c_master,
-					data->i2c_slave_addr,
-					SX9500_REG_IRQ_MSK,
-					SX9500_CONV_DONE_IRQ,
-					SX9500_CONV_DONE_IRQ) < 0) {
+		if (i2c_reg_update_byte_dt(&cfg->i2c,
+					   SX9500_REG_IRQ_MSK,
+					   SX9500_CONV_DONE_IRQ,
+					   SX9500_CONV_DONE_IRQ) < 0) {
 			return -EIO;
 		}
 		data->handler_drdy = handler;
@@ -44,11 +44,10 @@ int sx9500_trigger_set(const struct device *dev,
 		break;
 
 	case SENSOR_TRIG_NEAR_FAR:
-		if (i2c_reg_update_byte(data->i2c_master,
-					data->i2c_slave_addr,
-					SX9500_REG_IRQ_MSK,
-					SX9500_NEAR_FAR_IRQ,
-					SX9500_NEAR_FAR_IRQ) < 0) {
+		if (i2c_reg_update_byte_dt(&cfg->i2c,
+					   SX9500_REG_IRQ_MSK,
+					   SX9500_NEAR_FAR_IRQ,
+					   SX9500_NEAR_FAR_IRQ) < 0) {
 			return -EIO;
 		}
 		data->handler_near_far = handler;
@@ -65,10 +64,10 @@ int sx9500_trigger_set(const struct device *dev,
 static void sx9500_gpio_thread_cb(const struct device *dev)
 {
 	struct sx9500_data *data = dev->data;
+	const struct sx9500_config *cfg = dev->config;
 	uint8_t reg_val;
 
-	if (i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
-			      SX9500_REG_IRQ_SRC, &reg_val) < 0) {
+	if (i2c_reg_read_byte_dt(&cfg->i2c, SX9500_REG_IRQ_SRC, &reg_val) < 0) {
 		LOG_DBG("sx9500: error reading IRQ source register");
 		return;
 	}
