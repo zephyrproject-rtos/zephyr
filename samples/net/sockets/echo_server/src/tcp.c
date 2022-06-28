@@ -138,13 +138,11 @@ static void handle_data(void *ptr1, void *ptr2, void *ptr3)
 		if (received == 0) {
 			/* Connection closed */
 			LOG_INF("TCP (%s): Connection closed", data->proto);
-			ret = 0;
 			break;
 		} else if (received < 0) {
 			/* Socket error */
 			LOG_ERR("TCP (%s): Connection error %d", data->proto,
 				errno);
-			ret = -errno;
 			break;
 		} else {
 			atomic_add(&data->tcp.bytes_received, received);
@@ -170,7 +168,6 @@ static void handle_data(void *ptr1, void *ptr2, void *ptr3)
 			if (ret < 0) {
 				LOG_ERR("TCP (%s): Failed to send, "
 					"closing socket", data->proto);
-				ret = 0;
 				break;
 			}
 
