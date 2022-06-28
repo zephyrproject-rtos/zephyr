@@ -47,7 +47,7 @@ static int uart_wait_for(const struct device *dev, uint8_t *data, int len,
 			 int timeout)
 {
 	int matched_size = 0;
-	int64_t timeout_time = k_uptime_get() + K_MSEC(timeout);
+	int64_t timeout_time = k_uptime_get() + timeout;
 
 	while (1) {
 		uint8_t c;
@@ -85,7 +85,7 @@ static int uart_read_bytes(const struct device *dev, uint8_t *data, int len,
 			   int timeout)
 {
 	int read_size = 0;
-	int64_t timeout_time = k_uptime_get() + K_MSEC(timeout);
+	int64_t timeout_time = k_uptime_get() + timeout;
 
 	while (1) {
 		uint8_t c;
