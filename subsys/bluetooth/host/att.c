@@ -3334,6 +3334,14 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 	size_t i = 0;
 	int err;
 
+	/* Check the encryption level for EATT */
+	if (bt_conn_get_security(conn) < BT_SECURITY_L2) {
+		/* Vol 3, Part G, Section 5.3.2 Channel Requirements states:
+		 * The channel shall be encrypted.
+		 */
+		return -EPERM;
+	}
+
 	if (num_channels > CONFIG_BT_EATT_MAX || num_channels == 0) {
 		return -EINVAL;
 	}
@@ -3368,11 +3376,12 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 }
 
 #if defined(CONFIG_BT_EATT_AUTO_CONNECT)
-void eatt_auto_connect(struct bt_conn *conn, uint8_t conn_err)
+static void eatt_auto_connect(struct bt_conn *conn, bt_security_t level,
+			      enum bt_security_err err)
 {
 	int eatt_err;
 
-	if (conn_err) {
+	if (err || level < BT_SECURITY_L2 || !bt_att_fixed_chan_only(conn)) {
 		return;
 	}
 
@@ -3385,7 +3394,7 @@ void eatt_auto_connect(struct bt_conn *conn, uint8_t conn_err)
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = eatt_auto_connect,
+	.security_changed = eatt_auto_connect,
 };
 
 #endif /* CONFIG_BT_EATT_AUTO_CONNECT */
@@ -3487,9 +3496,7 @@ static void bt_eatt_init(void)
 	int err;
 	static struct bt_l2cap_server eatt_l2cap = {
 		.psm = BT_EATT_PSM,
-#if defined(CONFIG_BT_EATT_SEC_LEVEL)
-		.sec_level = CONFIG_BT_EATT_SEC_LEVEL,
-#endif
+		.sec_level = BT_SECURITY_L2,
 		.accept = bt_eatt_accept,
 	};
 
