@@ -7,3 +7,33 @@ config DUMMY_DISPLAY
 	bool "Dummy display driver"
 	help
 	  Enable dummy display driver compliant with display driver API.
+
+if DUMMY_DISPLAY
+
+choice DUMMY_DISPLAY_DEFAULT_PIXEL_FORMAT
+	prompt "Default pixel format"
+	default DUMMY_DISPLAY_DEFAULT_PIXEL_FORMAT_ARGB_8888
+	help
+	  Default pixel format to be used by the display
+
+	config DUMMY_DISPLAY_DEFAULT_PIXEL_FORMAT_ARGB_8888
+		bool "ARGB 8888"
+
+	config DUMMY_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_888
+		bool "RGB 888"
+
+	config DUMMY_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01
+		bool "Mono Black=0"
+
+	config DUMMY_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10
+		bool "Mono Black=1"
+
+	config DUMMY_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565
+		bool "RGB 565"
+
+	config DUMMY_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_565
+		bool "BGR 565"
+
+endchoice
+
+endif # DUMMY_DISPLAY

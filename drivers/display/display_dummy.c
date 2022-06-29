@@ -24,7 +24,20 @@ static int dummy_display_init(const struct device *dev)
 {
 	struct dummy_display_data *disp_data = dev->data;
 
-	disp_data->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
+	disp_data->current_pixel_format =
+#if defined(CONFIG_DUMMY_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_888)
+		PIXEL_FORMAT_RGB_888;
+#elif defined(CONFIG_DUMMY_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01)
+		PIXEL_FORMAT_MONO01;
+#elif defined(CONFIG_DUMMY_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10)
+		PIXEL_FORMAT_MONO10;
+#elif defined(CONFIG_DEFAULT_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565)
+		PIXEL_FORMAT_RGB_565;
+#elif defined(CONFIG_DEFAULT_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_565)
+		PIXEL_FORMAT_BGR_565;
+#else /* CONFIG_DUMMY_DISPLAY_DEFAULT_PIXEL_FORMAT */
+		PIXEL_FORMAT_ARGB_8888;
+#endif /* CONFIG_DUMMY_DISPLAY_DEFAULT_PIXEL_FORMAT */
 
 	return 0;
 }
