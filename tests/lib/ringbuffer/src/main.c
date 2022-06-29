@@ -867,13 +867,13 @@ void test_ringbuffer_partial_putting(void)
 		len = ring_buf_put_claim(&ringbuf_raw, &ptr, req_len);
 		zassert_equal(len, req_len, NULL);
 
-		len = ring_buf_put_claim(&ringbuf_raw, &ptr, RINGBUFFER_SIZE);
-		len2 = ring_buf_put_claim(&ringbuf_raw, &ptr, RINGBUFFER_SIZE);
-		zassert_equal(len + len2, RINGBUFFER_SIZE - 2, NULL);
-
-		ring_buf_put_finish(&ringbuf_raw, RINGBUFFER_SIZE);
-
 		req_len = RINGBUFFER_SIZE;
+		len = ring_buf_put_claim(&ringbuf_raw, &ptr, req_len);
+		len2 = ring_buf_put_claim(&ringbuf_raw, &ptr, req_len);
+		zassert_equal(len + len2, req_len - 2, NULL);
+
+		ring_buf_put_finish(&ringbuf_raw, req_len);
+
 		len = ring_buf_get(&ringbuf_raw, indata, req_len);
 		zassert_equal(len, req_len, NULL);
 	}
