@@ -539,6 +539,85 @@ static uint8_t handle_read_preset_req(struct bt_conn *conn, struct net_buf_simpl
 	return 0;
 }
 
+static int set_preset_name(uint8_t index, const char *name, size_t len)
+{
+	struct has_preset *preset = NULL;
+
+	BT_DBG("index %d name_len %zu", index, len);
+
+	if (len < BT_HAS_PRESET_NAME_MIN || len > BT_HAS_PRESET_NAME_MAX) {
+		return -EINVAL;
+	}
+
+	/* Abort if there is no preset in requested index range */
+	preset_foreach(index, BT_HAS_PRESET_INDEX_LAST, preset_found, &preset);
+
+	if (preset == NULL) {
+		return -ENOENT;
+	}
+
+	if (!(preset->properties & BT_HAS_PROP_WRITABLE)) {
+		return -EPERM;
+	}
+
+	IF_ENABLED(CONFIG_BT_HAS_PRESET_NAME_DYNAMIC, (
+		__ASSERT(len < ARRAY_SIZE(preset->name), "No space for name");
+
+		(void)memcpy(preset->name, name, len);
+
+		/* NULL-terminate string */
+		preset->name[len] = '\0';
+
+		/* Properly truncate a NULL-terminated UTF-8 string */
+		utf8_trunc(preset->name);
+	));
+
+	if (preset->ops->name_changed) {
+		preset->ops->name_changed(index, preset->name);
+	}
+
+	return bt_has_cp_generic_update(preset, BT_HAS_IS_LAST);
+}
+
+static uint8_t handle_write_preset_name(struct bt_conn *conn, struct net_buf_simple *buf)
+{
+	const struct bt_has_cp_write_preset_name *req;
+	struct has_client *client;
+	int err;
+
+	if (buf->len < sizeof(*req)) {
+		return BT_HAS_ERR_INVALID_PARAM_LEN;
+	}
+
+	/* As per HAS_v1.0 Client Characteristic Configuration Descriptor Improperly Configured
+	 * shall be returned if client writes Write Preset Name opcode but is not registered for
+	 * indications.
+	 */
+	if (!bt_gatt_is_subscribed(conn, PRESET_CONTROL_POINT_ATTR, BT_GATT_CCC_INDICATE)) {
+		return BT_ATT_ERR_CCC_IMPROPER_CONF;
+	}
+
+	client = client_get(conn);
+	if (!client) {
+		return BT_ATT_ERR_UNLIKELY;
+	}
+
+	req = net_buf_simple_pull_mem(buf, sizeof(*req));
+
+	err = set_preset_name(req->index, req->name, buf->len);
+	if (err == -EINVAL) {
+		return BT_HAS_ERR_INVALID_PARAM_LEN;
+	} else if (err == -ENOENT) {
+		return BT_ATT_ERR_OUT_OF_RANGE;
+	} else if (err == -EPERM) {
+		return BT_HAS_ERR_WRITE_NAME_NOT_ALLOWED;
+	} else if (err) {
+		return BT_ATT_ERR_UNLIKELY;
+	}
+
+	return BT_ATT_ERR_SUCCESS;
+}
+
 static void active_preset_work_process(struct k_work *work)
 {
 	const uint8_t active_index = bt_has_preset_active_get();
@@ -695,6 +774,11 @@ static uint8_t handle_control_point_op(struct bt_conn *conn, struct net_buf_simp
 	switch (hdr->opcode) {
 	case BT_HAS_OP_READ_PRESET_REQ:
 		return handle_read_preset_req(conn, buf);
+	case BT_HAS_OP_WRITE_PRESET_NAME:
+		if (IS_ENABLED(CONFIG_BT_HAS_PRESET_NAME_DYNAMIC)) {
+			return handle_write_preset_name(conn, buf);
+		}
+		break;
 	case BT_HAS_OP_SET_ACTIVE_PRESET:
 		return handle_set_active_preset(buf, false);
 	case BT_HAS_OP_SET_NEXT_PRESET:
@@ -944,6 +1028,19 @@ int bt_has_preset_active_set(uint8_t index)
 uint8_t bt_has_preset_active_get(void)
 {
 	return has.active_index;
+}
+
+int bt_has_preset_name_change(uint8_t index, const char *name)
+{
+	CHECKIF(name == NULL) {
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_HAS_PRESET_NAME_DYNAMIC)) {
+		return set_preset_name(index, name, strlen(name));
+	} else {
+		return -EOPNOTSUPP;
+	}
 }
 #endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 
