@@ -864,8 +864,8 @@ void test_ringbuffer_partial_putting(void)
 		zassert_equal(req_len, len, NULL);
 
 		req_len = 2;
-		len = ring_buf_put_claim(&ringbuf_raw, &ptr, 2);
-		zassert_equal(len, 2, NULL);
+		len = ring_buf_put_claim(&ringbuf_raw, &ptr, req_len);
+		zassert_equal(len, req_len, NULL);
 
 		len = ring_buf_put_claim(&ringbuf_raw, &ptr, RINGBUFFER_SIZE);
 		len2 = ring_buf_put_claim(&ringbuf_raw, &ptr, RINGBUFFER_SIZE);
