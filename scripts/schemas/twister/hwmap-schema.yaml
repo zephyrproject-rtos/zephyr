@@ -41,6 +41,9 @@ sequence:
       "baud":
         type: int
         required: false
+      "flash_before":
+        type: bool
+        required: false
       "post_script":
         type: str
         required: false

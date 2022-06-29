@@ -616,6 +616,11 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         before device handler open serial port and invoke runner.
                         """)
 
+    parser.add_argument("--flash-before", action="store_true", default=False,
+                        help="""perform flash operation before device handler
+                        open serial port and invoke runner.
+                        """)
+
     parser.add_argument("-Q", "--error-on-deprecations", action="store_false",
                         help="Error on deprecation warnings.")
 
@@ -995,6 +1000,7 @@ def main():
                                    options.platform[0],
                                    options.pre_script,
                                    False,
+                                   flash_before=options.flash_before,
                                    baud=options.device_serial_baud
                                    )
                 else:

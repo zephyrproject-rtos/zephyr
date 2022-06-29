@@ -780,6 +780,37 @@ class DeviceHandler(Handler):
                 proc.communicate()
                 logger.error("{} timed out".format(script))
 
+    def run_flash(self, command):
+        _, write_pipe = os.pipe()
+        d_log = "{}/device.log".format(self.instance.build_dir)
+        logger.debug('Flash command: %s', command)
+        try:
+            stdout = stderr = None
+            with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+                try:
+                    (stdout, stderr) = proc.communicate(timeout=10)
+                    # ignore unencodable unicode chars
+                    logger.debug(stdout.decode(errors="ignore"))
+
+                    if proc.returncode != 0:
+                        self.instance.status = "error"
+                        self.instance.reason = "Device issue (Flash error?)"
+                        with open(d_log, "w") as dlog_fp:
+                            dlog_fp.write(stderr.decode())
+                        os.write(write_pipe, b'x')  # halt the thread
+                except subprocess.TimeoutExpired:
+                    logger.warning("Flash operation timed out.")
+                    proc.kill()
+                    (stdout, stderr) = proc.communicate()
+                    self.instance.status = "error"
+                    self.instance.reason = "Device issue (Timeout)"
+
+            with open(d_log, "w") as dlog_fp:
+                dlog_fp.write(stderr.decode())
+
+        except subprocess.CalledProcessError:
+            os.write(write_pipe, b'x')  # halt the thread
+
     def handle(self):
         runner = None
 
@@ -863,12 +894,16 @@ class DeviceHandler(Handler):
         else:
             command = [self.generator_cmd, "-C", self.build_dir, "flash"]
 
+        flash_before = hardware.flash_before
         pre_script = hardware.pre_script
         post_flash_script = hardware.post_flash_script
         post_script = hardware.post_script
 
         if pre_script:
             self.run_custom_script(pre_script, 30)
+
+        if flash_before:
+            self.run_flash(command)
 
         try:
             ser = serial.Serial(
@@ -918,34 +953,8 @@ class DeviceHandler(Handler):
                              args=(ser, read_pipe, harness))
         t.start()
 
-        d_log = "{}/device.log".format(self.instance.build_dir)
-        logger.debug('Flash command: %s', command)
-        try:
-            stdout = stderr = None
-            with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
-                try:
-                    (stdout, stderr) = proc.communicate(timeout=60)
-                    # ignore unencodable unicode chars
-                    logger.debug(stdout.decode(errors = "ignore"))
-
-                    if proc.returncode != 0:
-                        self.instance.status = "error"
-                        self.instance.reason = "Device issue (Flash error?)"
-                        with open(d_log, "w") as dlog_fp:
-                            dlog_fp.write(stderr.decode())
-                        os.write(write_pipe, b'x')  # halt the thread
-                except subprocess.TimeoutExpired:
-                    logger.warning("Flash operation timed out.")
-                    proc.kill()
-                    (stdout, stderr) = proc.communicate()
-                    self.instance.status = "error"
-                    self.instance.reason = "Device issue (Timeout)"
-
-            with open(d_log, "w") as dlog_fp:
-                dlog_fp.write(stderr.decode())
-
-        except subprocess.CalledProcessError:
-            os.write(write_pipe, b'x')  # halt the thread
+        if not flash_before:
+            self.run_flash(command)
 
         if post_flash_script:
             self.run_custom_script(post_flash_script, 30)
@@ -4467,6 +4476,7 @@ class DUT(object):
                  serial_pty=None,
                  connected=False,
                  runner_params=None,
+                 flash_before=False,
                  pre_script=None,
                  post_script=None,
                  post_flash_script=None,
@@ -4479,12 +4489,12 @@ class DUT(object):
         self._counter = Value("i", 0)
         self._available = Value("i", 1)
         self.connected = connected
-        self.pre_script = pre_script
         self.id = id
         self.product = product
         self.runner = runner
         self.runner_params = runner_params
         self.fixtures = []
+        self.flash_before = flash_before
         self.post_flash_script = post_flash_script
         self.post_script = post_script
         self.pre_script = pre_script
@@ -4566,8 +4576,9 @@ class HardwareMap:
         self.detected = []
         self.duts = []
 
-    def add_device(self, serial, platform, pre_script, is_pty, baud=None):
-        device = DUT(platform=platform, connected=True, pre_script=pre_script, serial_baud=baud)
+    def add_device(self, serial, platform, pre_script, is_pty, flash_before=False, baud=None):
+        device = DUT(platform=platform, connected=True, pre_script=pre_script,
+                flash_before=flash_before, serial_baud=baud)
 
         if is_pty:
             device.serial_pty = serial
@@ -4580,6 +4591,7 @@ class HardwareMap:
         hwm_schema = scl.yaml_load(self.schema_path)
         duts = scl.yaml_load_verify(map_file, hwm_schema)
         for dut in duts:
+            flash_before = dut.get('flash_before')
             pre_script = dut.get('pre_script')
             post_script = dut.get('post_script')
             post_flash_script = dut.get('post_flash_script')
@@ -4602,6 +4614,7 @@ class HardwareMap:
                           serial=serial,
                           serial_baud=baud,
                           connected=connected,
+                          flash_before=flash_before,
                           pre_script=pre_script,
                           post_script=post_script,
                           post_flash_script=post_flash_script)
