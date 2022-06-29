@@ -208,7 +208,7 @@ static void test_lptim_clk_config(void)
 				(clock_control_subsys_t) &pclken[0]);
 	zassert_true((r == 0), "Could not disable LPTIM1 gating clk");
 
-	zassert_true(!__HAL_RCC_I2C1_IS_CLK_ENABLED(), "LPTIM1 gating clk should be off");
+	zassert_true(!__HAL_RCC_LPTIM1_IS_CLK_ENABLED(), "LPTIM1 gating clk should be off");
 	TC_PRINT("LPTIM1 gating clk off\n");
 
 	/* Test clock_off(srce) */
