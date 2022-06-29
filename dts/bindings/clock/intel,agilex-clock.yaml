@@ -1,0 +1,21 @@
+# Copyright (c) 2022, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Agilex clock controller node
+
+compatible: "intel,agilex-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true
+
+    "#clock-cells":
+      const: 1
+
+clock-cells:
+  - clkid
