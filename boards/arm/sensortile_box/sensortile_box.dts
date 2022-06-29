@@ -44,6 +44,7 @@
 		led0 = &blue_led;
 		led1 = &green_led;
 		sw0 = &user_button;
+		magn0 = &lis2mdl;
 	};
 };
 
@@ -161,7 +162,7 @@
 
 	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
 
-	lis2mdl@0 {
+	lis2mdl: lis2mdl@0 {
 		compatible = "st,lis2mdl";
 		spi-max-frequency = <1000000>;
 		spi-full-duplex;
