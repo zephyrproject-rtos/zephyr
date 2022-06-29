@@ -508,6 +508,7 @@ Documentation:
         - alexanderwachter
         - karstenkoenig
         - martinjaeger
+        - str4t0m
     files:
         - doc/hardware/peripherals/canbus/
         - drivers/can/
