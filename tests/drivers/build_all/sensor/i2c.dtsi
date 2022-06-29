@@ -192,11 +192,6 @@ test_i2c_fxos8700: fxos8700@1d {
 	int2-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_pca9633: pca9633@1f {
-	compatible = "nxp,pca9633";
-	reg = <0x1f>;
-};
-
 test_i2c_amg88xx: amg88xx@20 {
 	compatible = "panasonic,amg88xx";
 	reg = <0x20>;
@@ -620,10 +615,4 @@ test_i2c_ina237: ina237@52 {
 test_i2c_max31875: max31875@53 {
 	compatible = "maxim,max31875";
 	reg = <0x53>;
-};
-
-test_i2c_pca9634: pca9634@54 {
-	compatible = "nxp,pca9634";
-	label = "PCA9634";
-	reg = <0x54>;
 };

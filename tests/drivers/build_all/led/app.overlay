@@ -29,5 +29,38 @@
 				gpios = <&test_gpio 0 0>;
 			};
 		};
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			test_i2c_pca9633: pca9633@0 {
+				compatible = "nxp,pca9633";
+				label = "PCA9633";
+				reg = <0x00>;
+			};
+
+			test_i2c_pca9634: pca9634@1 {
+				compatible = "nxp,pca9634";
+				label = "PCA9634";
+				reg = <0x01>;
+			};
+
+			test_i2c_tlc59108: tlc59108@2 {
+				compatible = "ti,tlc59108";
+				label = "TLC59108";
+				reg = <0x02>;
+			};
+
+			test_i2c_pca9956: pca9956@3 {
+				compatible = "nxp,pca9956";
+				label = "PCA9956";
+				reg = <0x03>;
+			};
+		};
 	};
 };
