@@ -748,13 +748,9 @@ static const struct ism330dhcx_config ism330dhcx_config = {
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"
 #endif
-#ifdef CONFIG_ISM330DHCX_TRIGGER
-	/* One gpio pin declared in DTS */
-	.int_gpio_port = DT_INST_GPIO_LABEL(0, drdy_gpios),
-	.int_gpio_pin = DT_INST_GPIO_PIN(0, drdy_gpios),
-	.int_gpio_flags = DT_INST_GPIO_FLAGS(0, drdy_gpios),
-	.int_pin = DT_INST_PROP(0, int_pin),
-#endif /* CONFIG_ISM330DHCX_TRIGGER */
+	IF_ENABLED(CONFIG_ISM330DHCX_TRIGGER,
+		   (.drdy_gpio = GPIO_DT_SPEC_INST_GET(0, drdy_gpios),
+		    .int_pin = DT_INST_PROP(0, int_pin),))
 };
 
 static int ism330dhcx_init(const struct device *dev)

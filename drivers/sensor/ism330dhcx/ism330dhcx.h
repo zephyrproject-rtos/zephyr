@@ -39,10 +39,8 @@ struct ism330dhcx_config {
 	uint8_t accel_range;
 	uint16_t gyro_range;
 #ifdef CONFIG_ISM330DHCX_TRIGGER
-	const char *int_gpio_port;
-	uint8_t int_gpio_pin;
-	uint8_t int_gpio_flags;
 	uint8_t int_pin;
+	struct gpio_dt_spec drdy_gpio;
 #endif /* CONFIG_ISM330DHCX_TRIGGER */
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	struct i2c_dt_spec i2c;
@@ -95,7 +93,6 @@ struct ism330dhcx_data {
 	uint8_t gyro_fs;
 
 #ifdef CONFIG_ISM330DHCX_TRIGGER
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t handler_drdy_acc;
 	sensor_trigger_handler_t handler_drdy_gyr;
