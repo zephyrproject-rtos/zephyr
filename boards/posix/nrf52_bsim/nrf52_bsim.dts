@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <arm/nordic/nrf52832.dtsi>
+#include <arm/nordic/nrf52840.dtsi>
 
 / {
 	model = "nrf52 bsim";

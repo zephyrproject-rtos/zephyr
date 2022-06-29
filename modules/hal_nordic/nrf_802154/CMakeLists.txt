@@ -10,7 +10,7 @@ if (CONFIG_NRF_802154_RADIO_DRIVER)
       ${CMAKE_CURRENT_SOURCE_DIR}/radio/platform/nrf_802154_random_zephyr.c
       ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_gpiote_crit_sect.c
       ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_clock_zephyr.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_gpiote_zephyr.c
+      # ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_gpiote_zephyr.c
       ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_irq_zephyr.c
       ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_temperature_zephyr.c
   )
