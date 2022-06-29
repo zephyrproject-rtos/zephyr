@@ -20,7 +20,6 @@
 #include "iis3dhhc_reg.h"
 
 struct iis3dhhc_config {
-	char *master_dev_name;
 	int (*bus_init)(const struct device *dev);
 #ifdef CONFIG_IIS3DHHC_TRIGGER
 	const char *int_port;
@@ -33,10 +32,6 @@ struct iis3dhhc_config {
 };
 
 struct iis3dhhc_data {
-	const struct device *bus;
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	const struct spi_dt_spec *spi;
-#endif
 	int16_t acc[3];
 
 	stmdev_ctx_t *ctx;
