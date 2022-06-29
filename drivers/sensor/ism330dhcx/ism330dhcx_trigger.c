@@ -199,8 +199,7 @@ static void ism330dhcx_handle_interrupt(const struct device *dev)
 #endif
 	}
 
-	gpio_pin_interrupt_configure(ism330dhcx->gpio, cfg->int_gpio_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->drdy_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 static void ism330dhcx_gpio_callback(const struct device *dev,
@@ -212,8 +211,7 @@ static void ism330dhcx_gpio_callback(const struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_interrupt_configure(ism330dhcx->gpio, cfg->int_gpio_pin,
-				     GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure_dt(&cfg->drdy_gpio, GPIO_INT_DISABLE);
 
 #if defined(CONFIG_ISM330DHCX_TRIGGER_OWN_THREAD)
 	k_sem_give(&ism330dhcx->gpio_sem);
@@ -248,11 +246,9 @@ int ism330dhcx_init_interrupt(const struct device *dev)
 	const struct ism330dhcx_config *cfg = dev->config;
 	int ret;
 
-	/* setup data ready gpio interrupt (INT1 or INT2) */
-	ism330dhcx->gpio = device_get_binding(cfg->int_gpio_port);
-	if (ism330dhcx->gpio == NULL) {
-		LOG_ERR("Cannot get pointer to %s device", cfg->int_gpio_port);
-		return -EINVAL;
+	if (!device_is_ready(cfg->drdy_gpio.port)) {
+		LOG_ERR("GPIO device not ready");
+		return -ENODEV;
 	}
 
 #if defined(CONFIG_ISM330DHCX_TRIGGER_OWN_THREAD)
@@ -268,18 +264,15 @@ int ism330dhcx_init_interrupt(const struct device *dev)
 	ism330dhcx->work.handler = ism330dhcx_work_cb;
 #endif /* CONFIG_ISM330DHCX_TRIGGER_OWN_THREAD */
 
-	ret = gpio_pin_configure(ism330dhcx->gpio, cfg->int_gpio_pin,
-				 GPIO_INPUT | cfg->int_gpio_flags);
+	ret = gpio_pin_configure_dt(&cfg->drdy_gpio, GPIO_INPUT);
 	if (ret < 0) {
 		LOG_ERR("Could not configure gpio");
 		return ret;
 	}
 
-	gpio_init_callback(&ism330dhcx->gpio_cb,
-			   ism330dhcx_gpio_callback,
-			   BIT(cfg->int_gpio_pin));
+	gpio_init_callback(&ism330dhcx->gpio_cb, ism330dhcx_gpio_callback, BIT(cfg->drdy_gpio.pin));
 
-	if (gpio_add_callback(ism330dhcx->gpio, &ism330dhcx->gpio_cb) < 0) {
+	if (gpio_add_callback(cfg->drdy_gpio.port, &ism330dhcx->gpio_cb) < 0) {
 		LOG_ERR("Could not set gpio callback");
 		return -EIO;
 	}
@@ -291,6 +284,5 @@ int ism330dhcx_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	return gpio_pin_interrupt_configure(ism330dhcx->gpio, cfg->int_gpio_pin,
-					    GPIO_INT_EDGE_TO_ACTIVE);
+	return gpio_pin_interrupt_configure_dt(&cfg->drdy_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }
