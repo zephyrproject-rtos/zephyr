@@ -1,10 +1,24 @@
 # ESP32 PWM LED configuration options
 
 # Copyright (c) 2017 Vitor Massaru Iha <vitor@massaru.org>
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_ESPRESSIF_ESP32_LEDC := espressif,esp32-ledc
+DT_COMPAT_ESPRESSIF_ESP32_MCPWM := espressif,esp32-mcpwm
 
 config PWM_LED_ESP32
 	bool "ESP32 PWM LED driver"
+	depends on SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3
+	default $(dt_compat_enabled,$(DT_COMPAT_ESPRESSIF_ESP32_LEDC))
 	help
 	  This option enables the PWM LED driver for ESP32 family of
-	  processors. Say y if you wish to use PWM LED port on ESP32.
+	  processors.
+
+config MCPWM_ESP32
+	bool "ESP32 MCPWM driver"
+	depends on SOC_ESP32
+	default $(dt_compat_enabled,$(DT_COMPAT_ESPRESSIF_ESP32_MCPWM))
+	help
+	  This option enables the MCPWM driver for ESP32 family of
+	  processors.
