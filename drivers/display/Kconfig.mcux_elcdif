@@ -1,36 +1,22 @@
 # Copyright (c) 2019, NXP
+# Copyright (c) 2022, Basalte bv
 # SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_NXP_IMX_ELCIF := nxp,imx-elcdif
 
 menuconfig DISPLAY_MCUX_ELCDIF
 	bool "MCUX eLCDIF driver"
 	depends on HAS_MCUX_ELCDIF
+	default $(dt_compat_enabled,$(DT_COMPAT_NXP_IMX_ELCIF))
 	help
 	  Enable support for mcux eLCDIF driver.
 
 if DISPLAY_MCUX_ELCDIF
 
-config MCUX_ELCDIF_POOL_BLOCK_NUM
-	int "Number of memory pool blocks"
-	default 2
+config MCUX_ELCDIF_DOUBLE_FRAMEBUFFER
+	bool "Double framebuffer"
+	default y
 	help
-	  Number of blocks in the frame buffer memory pool.
-
-config MCUX_ELCDIF_POOL_BLOCK_MIN
-	hex "Minimum memory pool block size"
-	default 0x400
-	help
-	  Minimum block size in the frame buffer memory pool.
-
-config MCUX_ELCDIF_POOL_BLOCK_MAX
-	hex "Maximum memory pool block size"
-	default 0x40000
-	help
-	  Maximum block size in the frame buffer memory pool.
-
-config MCUX_ELCDIF_POOL_BLOCK_ALIGN
-	int "Alignment of memory pool blocks"
-	default 64
-	help
-	  Byte alignment in the frame buffer memory pool.
+	  Optionally use two framebuffers and alternate between them.
 
 endif # DISPLAY_MCUX_ELCDIF
