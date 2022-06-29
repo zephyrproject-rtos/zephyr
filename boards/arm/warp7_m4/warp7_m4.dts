@@ -15,6 +15,7 @@
 
 	aliases {
 		sw0    = &user_switch_1;
+		magn0 = &fxos8700;
 	};
 
 	chosen {
@@ -73,7 +74,7 @@
 	pinctrl-0 = <&i2c4_default>;
 	pinctrl-names = "default";
 
-	fxos8700@1e {
+	fxos8700: fxos8700@1e {
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
 		label = "FXOS8700";
