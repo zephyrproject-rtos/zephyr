@@ -5,6 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		magn0 = &lsm303agr_magn;
+	};
+};
+
 &arduino_i2c {
 
 	hts221@5f {
@@ -26,7 +32,7 @@
 		irq-gpios = <&arduino_header 10 GPIO_ACTIVE_HIGH>;	/* D4 */
 	};
 
-	lsm303agr-magn@1e {
+	lsm303agr_magn: lsm303agr-magn@1e {
 		compatible = "st,lis2mdl","st,lsm303agr-magn";
 		reg = <0x1e>;
 		label = "LSM303AGR-MAGN";
