@@ -22,8 +22,14 @@ static int preset_select(uint8_t index, bool sync)
 	return 0;
 }
 
+static void preset_name_changed(uint8_t index, const char *name)
+{
+	shell_print(ctx_shell, "Preset name changed index %u name %s", index, name);
+}
+
 static const struct bt_has_preset_ops preset_ops = {
 	.select = preset_select,
+	.name_changed = preset_name_changed,
 };
 
 static int cmd_preset_reg(const struct shell *sh, size_t argc, char **argv)
@@ -179,6 +185,25 @@ static int cmd_preset_active_clear(const struct shell *sh, size_t argc, char **a
 	return 0;
 }
 
+static int cmd_preset_name_set(const struct shell *sh, size_t argc, char **argv)
+{
+	int err = 0;
+	const uint8_t index = shell_strtoul(argv[1], 16, &err);
+
+	if (err < 0) {
+		shell_print(sh, "Invalid command parameter (err %d)", err);
+		return err;
+	}
+
+	err = bt_has_preset_name_change(index, argv[2]);
+	if (err < 0) {
+		shell_print(sh, "Preset name change failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
 static int cmd_has(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -204,6 +229,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(has_cmds,
 	SHELL_CMD_ARG(preset-active-get, NULL, "Get active preset", cmd_preset_active_get, 1, 0),
 	SHELL_CMD_ARG(preset-active-clear, NULL, "Clear selected preset",
 		      cmd_preset_active_clear, 1, 0),
+	SHELL_CMD_ARG(set-name, NULL, "Set preset name <index> <name>", cmd_preset_name_set, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
