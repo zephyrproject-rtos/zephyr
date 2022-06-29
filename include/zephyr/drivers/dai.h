@@ -160,6 +160,11 @@ enum dai_trigger_cmd {
 	 * state.
 	 */
 	DAI_TRIGGER_RESET,
+	/** @brief Copy
+	 *
+	 * This trigger prepares for data copying.
+	 */
+	DAI_TRIGGER_COPY,
 };
 
 /** @brief Properties of DAI
