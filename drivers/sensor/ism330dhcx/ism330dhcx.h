@@ -15,6 +15,7 @@
 #include <zephyr/types.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/sys/util.h>
 #include "ism330dhcx_reg.h"
 
@@ -32,7 +33,6 @@
 #define SENSOR_G_DOUBLE				(SENSOR_G / 1000000.0)
 
 struct ism330dhcx_config {
-	char *bus_name;
 	int (*bus_init)(const struct device *dev);
 	uint8_t accel_odr;
 	uint16_t gyro_odr;
@@ -45,7 +45,7 @@ struct ism330dhcx_config {
 	uint8_t int_pin;
 #endif /* CONFIG_ISM330DHCX_TRIGGER */
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	uint16_t i2c_slv_addr;
+	struct i2c_dt_spec i2c;
 #elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	struct spi_dt_spec spi;
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
@@ -62,7 +62,6 @@ union samples {
 
 struct ism330dhcx_data {
 	const struct device *dev;
-	const struct device *bus;
 	int16_t acc[3];
 	uint32_t acc_gain;
 	int16_t gyro[3];
