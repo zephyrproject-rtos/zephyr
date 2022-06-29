@@ -58,22 +58,6 @@ union samples {
 	};
 } __aligned(2);
 
-/* sensor data forward declaration (member definition is below) */
-struct ism330dhcx_data;
-
-struct ism330dhcx_tf {
-	int (*read_data)(struct ism330dhcx_data *data, uint8_t reg_addr,
-			 uint8_t *value, uint8_t len);
-	int (*write_data)(struct ism330dhcx_data *data, uint8_t reg_addr,
-			  uint8_t *value, uint8_t len);
-	int (*read_reg)(struct ism330dhcx_data *data, uint8_t reg_addr,
-			uint8_t *value);
-	int (*write_reg)(struct ism330dhcx_data *data, uint8_t reg_addr,
-			uint8_t value);
-	int (*update_reg)(struct ism330dhcx_data *data, uint8_t reg_addr,
-			  uint8_t mask, uint8_t value);
-};
-
 #define ISM330DHCX_SHUB_MAX_NUM_SLVS			2
 
 struct ism330dhcx_data {
