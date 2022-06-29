@@ -742,21 +742,10 @@ static struct sdhc_driver_api sdhc_spi_api = {
 		.spi_max_freq = DT_INST_PROP(n, spi_max_frequency),		\
 	};									\
 										\
-	IF_ENABLED(DT_INST_SPI_DEV_HAS_CS_GPIOS(n),				\
-		(struct spi_cs_control sdhc_spi_cs_##n = {			\
-			.gpio_dev = DEVICE_DT_GET(DT_INST_SPI_DEV_CS_GPIOS_CTLR(n)), \
-			.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(n),		\
-			.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(n),	\
-		};))								\
 	struct sdhc_spi_data sdhc_spi_data_##n = {				\
-		.cfg_a = {							\
-			.operation = (SPI_LOCK_ON |				\
-				SPI_HOLD_ON_CS |				\
-				SPI_WORD_SET(8)),				\
-			COND_CODE_1(DT_INST_SPI_DEV_HAS_CS_GPIOS(n),		\
-			(.cs = &sdhc_spi_cs_##n),				\
-			(.cs = NULL))						\
-		},								\
+		.cfg_a = SPI_CONFIG_DT_INST(n,					\
+				(SPI_LOCK_ON | SPI_HOLD_ON_CS | SPI_WORD_SET(8)),\
+				0),						\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
