@@ -387,11 +387,10 @@ static inline void ism330dhcx_accel_convert(struct sensor_value *val, int raw_va
 
 }
 
-static inline int ism330dhcx_accel_get_channel(enum sensor_channel chan,
-					       struct sensor_value *val,
-					       struct ism330dhcx_data *data,
-					       uint32_t sensitivity)
+static inline int ism330dhcx_accel_get_channel(const struct device *dev, enum sensor_channel chan,
+					       struct sensor_value *val, uint32_t sensitivity)
 {
+	struct ism330dhcx_data *data = dev->data;
 	uint8_t i;
 
 	switch (chan) {
@@ -416,11 +415,12 @@ static inline int ism330dhcx_accel_get_channel(enum sensor_channel chan,
 	return 0;
 }
 
-static int ism330dhcx_accel_channel_get(enum sensor_channel chan,
-					struct sensor_value *val,
-					struct ism330dhcx_data *data)
+static int ism330dhcx_accel_channel_get(const struct device *dev, enum sensor_channel chan,
+					struct sensor_value *val)
 {
-	return ism330dhcx_accel_get_channel(chan, val, data, data->acc_gain);
+	struct ism330dhcx_data *data = dev->data;
+
+	return ism330dhcx_accel_get_channel(dev, chan, val, data->acc_gain);
 }
 
 static inline void ism330dhcx_gyro_convert(struct sensor_value *val, int raw_val,
@@ -435,11 +435,10 @@ static inline void ism330dhcx_gyro_convert(struct sensor_value *val, int raw_val
 	val->val2 = (int32_t)(dval % 1000000);
 }
 
-static inline int ism330dhcx_gyro_get_channel(enum sensor_channel chan,
-					      struct sensor_value *val,
-					      struct ism330dhcx_data *data,
-					      uint32_t sensitivity)
+static inline int ism330dhcx_gyro_get_channel(const struct device *dev, enum sensor_channel chan,
+					      struct sensor_value *val, uint32_t sensitivity)
 {
+	struct ism330dhcx_data *data = dev->data;
 	uint8_t i;
 
 	switch (chan) {
@@ -464,11 +463,12 @@ static inline int ism330dhcx_gyro_get_channel(enum sensor_channel chan,
 	return 0;
 }
 
-static int ism330dhcx_gyro_channel_get(enum sensor_channel chan,
-				       struct sensor_value *val,
-				       struct ism330dhcx_data *data)
+static int ism330dhcx_gyro_channel_get(const struct device *dev, enum sensor_channel chan,
+				       struct sensor_value *val)
 {
-	return ism330dhcx_gyro_get_channel(chan, val, data, data->gyro_gain);
+	struct ism330dhcx_data *data = dev->data;
+
+	return ism330dhcx_gyro_get_channel(dev, chan, val, data->gyro_gain);
 }
 
 #if defined(CONFIG_ISM330DHCX_ENABLE_TEMP)
@@ -493,10 +493,10 @@ static inline void ism330dhcx_magn_convert(struct sensor_value *val, int raw_val
 	val->val2 = (int32_t)dval % 1000000;
 }
 
-static inline int ism330dhcx_magn_get_channel(enum sensor_channel chan,
-					      struct sensor_value *val,
-					      struct ism330dhcx_data *data)
+static inline int ism330dhcx_magn_get_channel(const struct device *dev, enum sensor_channel chan,
+					      struct sensor_value *val)
 {
+	struct ism330dhcx_data *data = dev->data;
 	int16_t sample[3];
 	int idx;
 
@@ -536,9 +536,9 @@ static inline int ism330dhcx_magn_get_channel(enum sensor_channel chan,
 	return 0;
 }
 
-static inline void ism330dhcx_hum_convert(struct sensor_value *val,
-					  struct ism330dhcx_data *data)
+static inline void ism330dhcx_hum_convert(const struct device *dev, struct sensor_value *val)
 {
+	struct ism330dhcx_data *data = dev->data;
 	float rh;
 	int16_t raw_val;
 	struct hts221_data *ht = &data->hts221;
@@ -562,9 +562,9 @@ static inline void ism330dhcx_hum_convert(struct sensor_value *val,
 	val->val2 = rh * 1000000;
 }
 
-static inline void ism330dhcx_press_convert(struct sensor_value *val,
-					    struct ism330dhcx_data *data)
+static inline void ism330dhcx_press_convert(const struct device *dev, struct sensor_value *val)
 {
+	struct ism330dhcx_data *data = dev->data;
 	int32_t raw_val;
 	int idx;
 
@@ -585,9 +585,9 @@ static inline void ism330dhcx_press_convert(struct sensor_value *val,
 		(((int32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
 }
 
-static inline void ism330dhcx_temp_convert(struct sensor_value *val,
-					   struct ism330dhcx_data *data)
+static inline void ism330dhcx_temp_convert(const struct device *dev, struct sensor_value *val)
 {
+	struct ism330dhcx_data *data = dev->data;
 	int16_t raw_val;
 	int idx;
 
@@ -610,24 +610,22 @@ static int ism330dhcx_channel_get(const struct device *dev,
 				  enum sensor_channel chan,
 				  struct sensor_value *val)
 {
-	struct ism330dhcx_data *data = dev->data;
-
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ:
-		ism330dhcx_accel_channel_get(chan, val, data);
+		ism330dhcx_accel_channel_get(dev, chan, val);
 		break;
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
 	case SENSOR_CHAN_GYRO_XYZ:
-		ism330dhcx_gyro_channel_get(chan, val, data);
+		ism330dhcx_gyro_channel_get(dev, chan, val);
 		break;
 #if defined(CONFIG_ISM330DHCX_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP:
-		ism330dhcx_gyro_channel_get_temp(val, data);
+		ism330dhcx_gyro_channel_get_temp(dev, val);
 		break;
 #endif
 #if defined(CONFIG_ISM330DHCX_SENSORHUB)
@@ -635,19 +633,19 @@ static int ism330dhcx_channel_get(const struct device *dev,
 	case SENSOR_CHAN_MAGN_Y:
 	case SENSOR_CHAN_MAGN_Z:
 	case SENSOR_CHAN_MAGN_XYZ:
-		ism330dhcx_magn_get_channel(chan, val, data);
+		ism330dhcx_magn_get_channel(dev, chan, val);
 		break;
 
 	case SENSOR_CHAN_HUMIDITY:
-		ism330dhcx_hum_convert(val, data);
+		ism330dhcx_hum_convert(dev, val);
 		break;
 
 	case SENSOR_CHAN_PRESS:
-		ism330dhcx_press_convert(val, data);
+		ism330dhcx_press_convert(dev, val);
 		break;
 
 	case SENSOR_CHAN_AMBIENT_TEMP:
-		ism330dhcx_temp_convert(val, data);
+		ism330dhcx_temp_convert(dev, val);
 		break;
 #endif
 	default:
