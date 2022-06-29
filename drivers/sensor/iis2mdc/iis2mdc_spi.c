@@ -98,7 +98,7 @@ int iis2mdc_spi_init(const struct device *dev)
 	const struct iis2mdc_dev_config *const cfg = dev->config;
 	const struct spi_cs_control *cs_ctrl = cfg->bus_cfg.spi_cfg.cs;
 
-	if (!device_is_ready(cs_ctrl->gpio_dev)) {
+	if (!device_is_ready(cs_ctrl->gpio.port)) {
 		LOG_ERR("Cannot get pointer to CS gpio device");
 		return -ENODEV;
 	}
