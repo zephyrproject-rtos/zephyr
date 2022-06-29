@@ -123,10 +123,10 @@ static int emul_host_find_index(struct espi_host_emul_data *data,
 	return -1;
 }
 
-static int emul_host_set_vw(const struct emul *emulator,
+static int emul_host_set_vw(const struct emul *target,
 			    enum espi_vwire_signal vw, uint8_t level)
 {
-	struct espi_host_emul_data *data = emulator->data;
+	struct espi_host_emul_data *data = target->data;
 	int idx;
 
 	idx = emul_host_find_index(data, vw);
@@ -141,10 +141,10 @@ static int emul_host_set_vw(const struct emul *emulator,
 	return 0;
 }
 
-static int emul_host_get_vw(const struct emul *emulator,
+static int emul_host_get_vw(const struct emul *target,
 			    enum espi_vwire_signal vw, uint8_t *level)
 {
-	struct espi_host_emul_data *data = emulator->data;
+	struct espi_host_emul_data *data = target->data;
 	int idx;
 
 	idx = emul_host_find_index(data, vw);
@@ -214,9 +214,9 @@ int emul_espi_host_port80_write(const struct device *espi_dev, uint32_t data)
 }
 
 #ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
-static uintptr_t emul_espi_dev_get_acpi_shm(const struct emul *emulator)
+static uintptr_t emul_espi_dev_get_acpi_shm(const struct emul *target)
 {
-	struct espi_host_emul_data *data = emulator->data;
+	struct espi_host_emul_data *data = target->data;
 
 	return (uintptr_t)data->shm_acpi_mmap;
 }
