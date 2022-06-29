@@ -18,6 +18,7 @@
 		sw0 = &user_button;
 		kscan0 = &touch_controller;
 		watchdog0 = &wdog0;
+		magn0 = &fxos8700;
 	};
 
 	chosen {
@@ -193,7 +194,7 @@ arduino_serial: &lpuart3 {
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
 
-	fxos8700@1f {
+	fxos8700: fxos8700@1f {
 		compatible = "nxp,fxos8700";
 		reg = <0x1f>;
 		label = "FXOS8700";
