@@ -545,20 +545,17 @@ void test_ringbuffer_alloc_put(void)
 	uint8_t inputbuf[] = {1, 2, 3, 4};
 	uint32_t read_size;
 	uint32_t allocated;
-	uint32_t sum_allocated;
 	uint8_t *data;
 	int err;
 
 	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE, ringbuf_raw.buffer);
 
 	allocated = ring_buf_put_claim(&ringbuf_raw, &data, 1);
-	sum_allocated = allocated;
 	zassert_true(allocated == 1U, NULL);
 
 
 	allocated = ring_buf_put_claim(&ringbuf_raw, &data,
 					   RINGBUFFER_SIZE - 1);
-	sum_allocated += allocated;
 	zassert_true(allocated == RINGBUFFER_SIZE - 1, NULL);
 
 	/* Putting too much returns error */
