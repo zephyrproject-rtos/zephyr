@@ -17,6 +17,7 @@
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/logging/log.h>
 
 #include "ism330dhcx.h"
@@ -733,7 +734,6 @@ static int ism330dhcx_init_chip(const struct device *dev)
 static struct ism330dhcx_data ism330dhcx_data;
 
 static const struct ism330dhcx_config ism330dhcx_config = {
-	.bus_name = DT_INST_BUS_LABEL(0),
 	.accel_odr = DT_INST_PROP(0, accel_odr),
 	.accel_range = DT_INST_PROP(0, accel_range),
 	.gyro_odr = DT_INST_PROP(0, gyro_odr),
@@ -744,7 +744,7 @@ static const struct ism330dhcx_config ism330dhcx_config = {
 				SPI_MODE_CPHA | SPI_WORD_SET(8), 0),
 #elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	.bus_init = ism330dhcx_i2c_init,
-	.i2c_slv_addr = DT_INST_REG_ADDR(0),
+	COND_CODE_1(DT_INST_ON_BUS(0, i2c), (.i2c = I2C_DT_SPEC_INST_GET(0),), ())
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"
 #endif
@@ -760,14 +760,6 @@ static const struct ism330dhcx_config ism330dhcx_config = {
 static int ism330dhcx_init(const struct device *dev)
 {
 	const struct ism330dhcx_config * const config = dev->config;
-	struct ism330dhcx_data *data = dev->data;
-
-	data->bus = device_get_binding(config->bus_name);
-	if (!data->bus) {
-		LOG_DBG("master not found: %s",
-			    config->bus_name);
-		return -EINVAL;
-	}
 
 	config->bus_init(dev);
 
