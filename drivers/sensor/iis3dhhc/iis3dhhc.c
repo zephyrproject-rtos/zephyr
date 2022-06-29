@@ -221,13 +221,9 @@ static struct iis3dhhc_data iis3dhhc_data;
 static const struct iis3dhhc_config iis3dhhc_config = {
 #ifdef CONFIG_IIS3DHHC_TRIGGER
 #ifdef CONFIG_IIS3DHHC_DRDY_INT1
-	.int_port	= DT_INST_GPIO_LABEL_BY_IDX(0, irq_gpios, 0),
-	.int_pin	= DT_INST_GPIO_PIN_BY_IDX(0, irq_gpios, 0),
-	.int_flags	= DT_INST_GPIO_FLAGS_BY_IDX(0, irq_gpios, 0),
+	.int_gpio = GPIO_DT_SPEC_INST_GET_BY_IDX(0, irq_gpios, 0),
 #else
-	.int_port	= DT_INST_GPIO_LABEL_BY_IDX(0, irq_gpios, 1),
-	.int_pin	= DT_INST_GPIO_PIN_BY_IDX(0, irq_gpios, 1),
-	.int_flags	= DT_INST_GPIO_FLAGS_BY_IDX(0, irq_gpios, 1),
+	.int_gpio = GPIO_DT_SPEC_INST_GET_BY_IDX(0, irq_gpios, 1),
 #endif /* CONFIG_IIS3DHHC_DRDY_INT1 */
 #endif /* CONFIG_IIS3DHHC_TRIGGER */
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)

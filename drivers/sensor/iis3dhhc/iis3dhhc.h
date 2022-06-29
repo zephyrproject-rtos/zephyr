@@ -22,9 +22,7 @@
 struct iis3dhhc_config {
 	int (*bus_init)(const struct device *dev);
 #ifdef CONFIG_IIS3DHHC_TRIGGER
-	const char *int_port;
-	uint8_t int_pin;
-	uint8_t int_flags;
+	struct gpio_dt_spec int_gpio;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	struct spi_dt_spec spi;
@@ -37,8 +35,6 @@ struct iis3dhhc_data {
 	stmdev_ctx_t *ctx;
 
 #ifdef CONFIG_IIS3DHHC_TRIGGER
-	const struct device *gpio;
-	uint32_t pin;
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t handler_drdy;
