@@ -11,6 +11,8 @@ flash: 192
 supported:
   - arduino_gpio
   - arduino_i2c
+  - arduino_serial
+  - arduino_spi
   - i2c
   - pwm
   - watchdog
