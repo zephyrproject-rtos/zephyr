@@ -100,7 +100,9 @@ static void dummy_display_get_capabilities(const struct device *dev,
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 |
+		PIXEL_FORMAT_BGR_565 |
 		PIXEL_FORMAT_RGB_888 |
+		PIXEL_FORMAT_RGB_565 |
 		PIXEL_FORMAT_MONO01 |
 		PIXEL_FORMAT_MONO10;
 	capabilities->current_pixel_format = disp_data->current_pixel_format;
