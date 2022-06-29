@@ -13,6 +13,7 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
 
@@ -230,19 +231,18 @@ static const struct sensor_driver_api iis2dh_driver_api = {
 
 static int iis2dh_init_interface(const struct device *dev)
 {
-	struct iis2dh_data *iis2dh = dev->data;
-	const struct iis2dh_device_config *cfg = dev->config;
-
-	iis2dh->bus = device_get_binding(cfg->bus_name);
-	if (!iis2dh->bus) {
-		LOG_DBG("master bus not found: %s", cfg->bus_name);
-		return -EINVAL;
-	}
+	int res;
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	iis2dh_spi_init(dev);
+	res = iis2dh_spi_init(dev);
+	if (res) {
+		return res;
+	}
 #elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	iis2dh_i2c_init(dev);
+	res = iis2dh_i2c_init(dev);
+	if (res) {
+		return res;
+	}
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"
 #endif
@@ -299,8 +299,15 @@ static int iis2dh_init(const struct device *dev)
 	return 0;
 }
 
+#define IIS2DH_SPI(inst)                                                                           \
+	(.spi = SPI_DT_SPEC_INST_GET(                                                              \
+		 0, SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),)
+
+#define IIS2DH_I2C(inst) (.i2c = I2C_DT_SPEC_INST_GET(inst),)
+
 const struct iis2dh_device_config iis2dh_cfg = {
-	.bus_name = DT_INST_BUS_LABEL(0),
+	COND_CODE_1(DT_INST_ON_BUS(0, i2c), IIS2DH_I2C(0), ())
+	COND_CODE_1(DT_INST_ON_BUS(0, spi), IIS2DH_SPI(0), ())
 	.pm = CONFIG_IIS2DH_POWER_MODE,
 #ifdef CONFIG_IIS2DH_TRIGGER
 	.int_gpio_port = DT_INST_GPIO_LABEL(0, drdy_gpios),
