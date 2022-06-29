@@ -193,12 +193,10 @@ static int iis3dhhc_init_chip(const struct device *dev)
 static int iis3dhhc_init(const struct device *dev)
 {
 	const struct iis3dhhc_config * const config = dev->config;
-	struct iis3dhhc_data *data = dev->data;
 
-	data->bus = device_get_binding(config->master_dev_name);
-	if (!data->bus) {
-		LOG_DBG("bus master not found: %s", config->master_dev_name);
-		return -EINVAL;
+	if (!spi_is_ready(&config->spi)) {
+		LOG_ERR("SPI bus is not ready");
+		return -ENODEV;
 	}
 
 	config->bus_init(dev);
@@ -221,7 +219,6 @@ static int iis3dhhc_init(const struct device *dev)
 static struct iis3dhhc_data iis3dhhc_data;
 
 static const struct iis3dhhc_config iis3dhhc_config = {
-	.master_dev_name = DT_INST_BUS_LABEL(0),
 #ifdef CONFIG_IIS3DHHC_TRIGGER
 #ifdef CONFIG_IIS3DHHC_DRDY_INT1
 	.int_port	= DT_INST_GPIO_LABEL_BY_IDX(0, irq_gpios, 0),
