@@ -65,10 +65,10 @@ static void sample_read(union bmi160_sample *buf)
 	memcpy(buf->raw, raw_data, ARRAY_SIZE(raw_data));
 }
 
-static void reg_write(const struct emul *emulator, int regn, int val)
+static void reg_write(const struct emul *target, int regn, int val)
 {
-	struct bmi160_emul_data *data = emulator->data;
-	const struct bmi160_emul_cfg *cfg = emulator->cfg;
+	struct bmi160_emul_data *data = target->data;
+	const struct bmi160_emul_cfg *cfg = target->cfg;
 
 	LOG_INF("write %x = %x", regn, val);
 	cfg->reg[regn] = val;
@@ -123,10 +123,10 @@ static void reg_write(const struct emul *emulator, int regn, int val)
 	}
 }
 
-static int reg_read(const struct emul *emulator, int regn)
+static int reg_read(const struct emul *target, int regn)
 {
-	struct bmi160_emul_data *data = emulator->data;
-	const struct bmi160_emul_cfg *cfg = emulator->cfg;
+	struct bmi160_emul_data *data = target->data;
+	const struct bmi160_emul_cfg *cfg = target->cfg;
 	int val;
 
 	LOG_INF("read %x =", regn);
@@ -167,7 +167,7 @@ static int reg_read(const struct emul *emulator, int regn)
 }
 
 #if BMI160_BUS_SPI
-static int bmi160_emul_io_spi(const struct emul *emulator, const struct spi_config *config,
+static int bmi160_emul_io_spi(const struct emul *target, const struct spi_config *config,
 			      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	struct bmi160_emul_data *data;
@@ -177,7 +177,7 @@ static int bmi160_emul_io_spi(const struct emul *emulator, const struct spi_conf
 
 	ARG_UNUSED(config);
 
-	data = emulator->data;
+	data = target->data;
 
 	__ASSERT_NO_MSG(tx_bufs || rx_bufs);
 	__ASSERT_NO_MSG(!tx_bufs || !rx_bufs || tx_bufs->count == rx_bufs->count);
@@ -199,11 +199,11 @@ static int bmi160_emul_io_spi(const struct emul *emulator, const struct spi_conf
 			case 1:
 				if (regn & BMI160_REG_READ) {
 					regn &= BMI160_REG_MASK;
-					val = reg_read(emulator, regn);
+					val = reg_read(target, regn);
 					*(uint8_t *)rxd->buf = val;
 				} else {
 					val = *(uint8_t *)txd->buf;
-					reg_write(emulator, regn, val);
+					reg_write(target, regn, val);
 				}
 				break;
 			case BMI160_SAMPLE_SIZE:
@@ -233,13 +233,13 @@ static int bmi160_emul_io_spi(const struct emul *emulator, const struct spi_conf
 #endif
 
 #if BMI160_BUS_I2C
-static int bmi160_emul_transfer_i2c(const struct emul *emulator, struct i2c_msg *msgs, int num_msgs,
+static int bmi160_emul_transfer_i2c(const struct emul *target, struct i2c_msg *msgs, int num_msgs,
 				    int addr)
 {
 	struct bmi160_emul_data *data;
 	unsigned int val;
 
-	data = emulator->data;
+	data = target->data;
 
 	__ASSERT_NO_MSG(msgs && num_msgs);
 
@@ -261,7 +261,7 @@ static int bmi160_emul_transfer_i2c(const struct emul *emulator, struct i2c_msg 
 		if (msgs->flags & I2C_MSG_READ) {
 			switch (msgs->len) {
 			case 1:
-				val = reg_read(emulator, data->cur_reg);
+				val = reg_read(target, data->cur_reg);
 				msgs->buf[0] = val;
 				break;
 			case BMI160_SAMPLE_SIZE:
@@ -275,7 +275,7 @@ static int bmi160_emul_transfer_i2c(const struct emul *emulator, struct i2c_msg 
 			if (msgs->len != 1) {
 				LOG_ERR("Unexpected msg1 length %d", msgs->len);
 			}
-			reg_write(emulator, data->cur_reg, msgs->buf[0]);
+			reg_write(target, data->cur_reg, msgs->buf[0]);
 		}
 		break;
 	default:

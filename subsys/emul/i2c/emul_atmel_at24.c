@@ -52,7 +52,7 @@ struct at24_emul_cfg {
  * @retval 0 If successful
  * @retval -EIO General input / output error
  */
-static int at24_emul_transfer(const struct emul *emulator, struct i2c_msg *msgs,
+static int at24_emul_transfer(const struct emul *target, struct i2c_msg *msgs,
 			      int num_msgs, int addr)
 {
 	struct at24_emul_data *data;
@@ -61,8 +61,8 @@ static int at24_emul_transfer(const struct emul *emulator, struct i2c_msg *msgs,
 	bool too_fast;
 	uint32_t i2c_cfg;
 
-	data = emulator->data;
-	cfg = emulator->cfg;
+	data = target->data;
+	cfg = target->cfg;
 
 	if (cfg->addr != addr) {
 		LOG_ERR("Address mismatch, expected %02x, got %02x", cfg->addr,
@@ -131,18 +131,18 @@ static struct i2c_emul_api bus_api = {
  * This should be called for each AT24 device that needs to be emulated. It
  * registers it with the I2C emulation controller.
  *
- * @param emulator Emulation information
+ * @param target Emulation information
  * @param parent Device to emulate (must use AT24 driver)
  * @return 0 indicating success (always)
  */
-static int emul_atmel_at24_init(const struct emul *emulator, const struct device *parent)
+static int emul_atmel_at24_init(const struct emul *target, const struct device *parent)
 {
-	const struct at24_emul_cfg *cfg = emulator->cfg;
-	struct at24_emul_data *data = emulator->data;
+	const struct at24_emul_cfg *cfg = target->cfg;
+	struct at24_emul_data *data = target->data;
 
 	data->emul.api = &bus_api;
 	data->emul.addr = cfg->addr;
-	data->emul.target = emulator;
+	data->emul.target = target;
 	data->i2c = parent;
 	data->cur_reg = 0;
 
