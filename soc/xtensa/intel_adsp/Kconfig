@@ -47,13 +47,25 @@ config ADSP_WIN0_OFFSET
 	  "firmware status register" at boot) within the reserved
 	  region at the start of HP-SRAM.
 
+config ADSP_WIN2_OFFSET
+	int "Byte offset of host window two"
+	default 32768
+	help
+	  Offset of the second host shared memory window within
+	  the reserved region at the start of HP-SRAM.
+	  Typically used for debug output, but semantics can vary
+	  depending on the host-firmware communication scheme that
+	  is used.
+
 config ADSP_WIN3_OFFSET
 	int "Byte offset of host window three"
 	default 40960
 	help
-	  Offset of the fourth host shared memory window (used for
-	  printk/log output) within the reserved region at the start
-	  of HP-SRAM.
+	  Offset of the second host shared memory window within
+	  the reserved region at the start of HP-SRAM.
+	  Typically used for debug output, but semantics can vary
+	  depending on the host-firmware communication scheme that
+	  is used.
 
 config ADSP_TRACE_SIMCALL
 	bool "Emit SIMCALL output in addition to window tracing"
