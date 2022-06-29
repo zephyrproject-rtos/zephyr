@@ -143,6 +143,28 @@
 			status = "disabled";
 		};
 
+		mcpwm0: mcpwm@3ff5e000 {
+			compatible = "espressif,esp32-mcpwm";
+			reg = <0x3ff5e000 0x1000>;
+			interrupts = <PWM0_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "MCPWM_0";
+			clocks = <&rtc ESP32_PWM0_MODULE>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		mcpwm1: mcpwm@3ff6c000 {
+			compatible = "espressif,esp32-mcpwm";
+			reg = <0x3ff6c000 0x1000>;
+			interrupts = <PWM1_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "MCPWM_1";
+			clocks = <&rtc ESP32_PWM1_MODULE>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
 		gpio: gpio {
 			compatible = "simple-bus";
 			gpio-map-mask = <0xffffffe0 0xffffffc0>;
