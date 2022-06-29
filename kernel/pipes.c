@@ -87,6 +87,8 @@ void z_impl_k_pipe_flush(struct k_pipe *pipe)
 {
 	size_t  bytes_read;
 
+	__ASSERT(!arch_is_in_isr(), "pipes cannot be used inside ISRs");
+
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, flush, pipe);
 
 	k_spinlock_key_t key = k_spin_lock(&pipe->lock);
@@ -401,6 +403,8 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 	sys_dlist_t    xfer_list;
 	size_t         num_bytes_written = 0;
 	size_t         bytes_copied;
+
+	__ASSERT(!arch_is_in_isr(), "pipes cannot be used inside ISRs");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, put, pipe, timeout);
 
@@ -724,6 +728,8 @@ static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 		     size_t *bytes_read, size_t min_xfer, k_timeout_t timeout)
 {
+	__ASSERT(!arch_is_in_isr(), "pipes cannot be used inside ISRs");
+
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, get, pipe, timeout);
 
 	CHECKIF((min_xfer > bytes_to_read) || bytes_read == NULL) {
