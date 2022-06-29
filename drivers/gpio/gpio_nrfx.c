@@ -87,27 +87,6 @@ static nrf_gpio_pin_pull_t get_pull(gpio_flags_t flags)
 	return NRF_GPIO_PIN_NOPULL;
 }
 
-static int pin_uninit(nrfx_gpiote_pin_t pin)
-{
-	uint8_t ch;
-	nrfx_err_t err;
-	bool free_ch;
-
-	err = nrfx_gpiote_channel_get(pin, &ch);
-	free_ch = (err == NRFX_SUCCESS);
-
-	err = nrfx_gpiote_pin_uninit(pin);
-	if (err != NRFX_SUCCESS) {
-		return -EIO;
-	}
-
-	if (free_ch) {
-		err = nrfx_gpiote_channel_free(ch);
-	}
-
-	return (err != NRFX_SUCCESS) ? -EIO : 0;
-}
-
 static int gpio_nrfx_pin_configure(const struct device *port, gpio_pin_t pin,
 				   gpio_flags_t flags)
 {
@@ -117,16 +96,27 @@ static int gpio_nrfx_pin_configure(const struct device *port, gpio_pin_t pin,
 	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
 	nrfx_gpiote_pin_t abs_pin = NRF_GPIO_PIN_MAP(cfg->port_num, pin);
 
-	if (flags == GPIO_DISCONNECTED) {
-		return pin_uninit(abs_pin);
+	/* Get the GPIOTE channel associated with this pin, if any. It needs
+	 * to be freed when the pin is reconfigured or disconnected.
+	 */
+	err = nrfx_gpiote_channel_get(abs_pin, &ch);
+	free_ch = (err == NRFX_SUCCESS);
+
+	if ((flags & (GPIO_INPUT | GPIO_OUTPUT)) == GPIO_DISCONNECTED) {
+		/* Ignore the error code. The pin may not have been used. */
+		(void)nrfx_gpiote_pin_uninit(abs_pin);
+
+		if (free_ch) {
+			err = nrfx_gpiote_channel_free(ch);
+			__ASSERT_NO_MSG(err == NRFX_SUCCESS);
+		}
+
+		return 0;
 	}
 
 	nrfx_gpiote_trigger_config_t trigger_config = {
 		.trigger = NRFX_GPIOTE_TRIGGER_NONE
 	};
-
-	err = nrfx_gpiote_channel_get(abs_pin, &ch);
-	free_ch = (err == NRFX_SUCCESS);
 
 	/* Remove previously configured trigger when pin is reconfigured. */
 	err = nrfx_gpiote_input_configure(abs_pin, NULL, &trigger_config, NULL);
@@ -136,6 +126,7 @@ static int gpio_nrfx_pin_configure(const struct device *port, gpio_pin_t pin,
 
 	if (free_ch) {
 		err = nrfx_gpiote_channel_free(ch);
+		__ASSERT_NO_MSG(err == NRFX_SUCCESS);
 	}
 
 	if (flags & GPIO_OUTPUT) {
@@ -281,7 +272,7 @@ static int gpio_nrfx_pin_interrupt_configure(const struct device *port,
 
 	err = nrfx_gpiote_input_configure(abs_pin, NULL, &trigger_config, NULL);
 	if (err != NRFX_SUCCESS) {
-		return -EIO;
+		return -EINVAL;
 	}
 
 	nrfx_gpiote_trigger_enable(abs_pin, true);
