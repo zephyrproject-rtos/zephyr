@@ -24,6 +24,10 @@ LOG_MODULE_REGISTER(pca_common);
 #define DT_PROP_ANY(compat, prop) \
 	DT_FOREACH_STATUS_OKAY_VARGS(compat, _DT_PROP_ANY_OR, compat, prop) 0
 
+#define _DT_ANY_NODE_HAS_PROP_OR(id, compat, prop) DT_NODE_HAS_PROP(DT_INST(id, compat), prop) ||
+#define DT_ANY_NODE_HAS_PROP(compat, prop) \
+	DT_FOREACH_STATUS_OKAY_VARGS(compat, _DT_ANY_NODE_HAS_PROP_OR, compat, prop) 0
+
 /* PCA963X select registers determine the source that drives LED outputs */
 #define PCA963X_LED_OFF         0x0     /* LED driver off */
 #define PCA963X_LED_ON          0x1     /* LED driver on */
@@ -51,6 +55,10 @@ LOG_MODULE_REGISTER(pca_common);
 #define PCA9956_GRPPWM          0x08
 #define PCA9956_GRPFREQ         0x09
 #define PCA9956_LEDOUT          0x02
+
+/* PCA9956 current control registers */
+#define PCA9956_IREF_BASE	0x22
+#define PCA9956_IREFALL		0x40
 
 /* PCA963X mode register 1 */
 #define PCA963X_MODE1_SLEEP     0x10    /* Sleep Mode */
@@ -85,6 +93,9 @@ struct pca_common_config {
 	uint8_t grppwm;
 	uint8_t grpfreq;
 	uint8_t ledout;
+#if DT_ANY_NODE_HAS_PROP(nxp_pca9956, default_iref)
+	uint8_t default_iref;
+#endif
 #if DT_PROP_ANY(nxp_pca9634, external_driver)
 	bool external_driver;
 #endif
@@ -249,6 +260,18 @@ static int pca_common_led_init(const struct device *dev)
 	}
 #endif
 
+#if DT_ANY_NODE_HAS_PROP(nxp_pca9956, default_iref)
+	/* If there is default output current value, write IREFALL */
+	if (config->default_iref) {
+		if (i2c_reg_update_byte_dt(&config->i2c,
+					PCA9956_IREFALL,
+					config->default_iref)) {
+			LOG_ERR("LED reg update failed");
+			return -EIO;
+		}
+	}
+#endif
+
 	return 0;
 }
 
@@ -274,6 +297,9 @@ static const struct led_driver_api pca_common_led_api = {
 		.ledout = regs ## _LEDOUT,							   \
 COND_CODE_1(DT_PROP_ANY(nxp9634, external_driver), (						   \
 		.external_driver = DT_PROP(node_id, external_driver),				   \
+), ())												   \
+COND_CODE_1(DT_ANY_NODE_HAS_PROP(nxp_pca9956, default_iref), (					   \
+		.default_iref = DT_PROP_OR(node_id, default_iref, 0),				   \
 ), ())												   \
 	};											   \
 												   \

@@ -6,3 +6,11 @@ description: NXP PCA9956 LED
 compatible: "nxp,pca9956"
 
 include: i2c-device.yaml
+
+properties:
+    default-iref:
+        type: int
+        description: |
+          The default output current value for all LED outputs.
+          Valid range 0 - 255 where 0 and 255 are minimum and maximum output current
+          settings respectively.
