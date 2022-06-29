@@ -18,6 +18,7 @@
 		red-pwm-led = &red_pwm_led;
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
+		magn0 = &fxos8700;
 	};
 
 	chosen {
@@ -127,7 +128,7 @@
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 
-	fxos8700@1e {
+	fxos8700: fxos8700@1e {
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
 		label = "FXOS8700";

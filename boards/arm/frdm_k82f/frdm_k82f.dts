@@ -24,6 +24,7 @@
 		pwm-led2 = &blue_pwm_led;
 		sw0 = &user_button_0;
 		sw1 = &user_button_1;
+		magn0 = &fxos8700;
 	};
 
 	chosen {
@@ -179,7 +180,7 @@
 	pinctrl-0 = <&i2c3_default>;
 	pinctrl-names = "default";
 
-	fxos8700@1c {
+	fxos8700: fxos8700@1c {
 		compatible = "nxp,fxos8700";
 		reg = <0x1c>;
 		label = "FXOS8700";

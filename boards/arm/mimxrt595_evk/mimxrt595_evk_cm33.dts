@@ -22,6 +22,7 @@
 		led2 = &red_led;
 		usart-0 = &flexcomm0;
 		watchdog0 = &wwdt0;
+		magn0 = &fxos8700;
 	};
 
 	chosen {
@@ -117,7 +118,7 @@ arduino_i2c: &flexcomm4 {
 	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
 	pinctrl-names = "default";
 
-	fxos8700@1e {
+	fxos8700: fxos8700@1e {
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
 		label = "FXOS8700";
