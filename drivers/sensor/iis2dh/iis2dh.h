@@ -39,8 +39,7 @@
  * @spi: SPI bus spec.
  * @i2c: I2C bus spec.
  * @pm: Power mode (lis2dh_powermode).
- * @int_gpio_port: Pointer to GPIO PORT identifier.
- * @int_gpio_pin: GPIO pin number connected to sensor int pin.
+ * @int_gpio: GPIO spec for sensor pin interrupt.
  */
 struct iis2dh_device_config {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
@@ -51,10 +50,7 @@ struct iis2dh_device_config {
 #endif
 	uint8_t pm;
 #ifdef CONFIG_IIS2DH_TRIGGER
-	const char *int_gpio_port;
-	uint8_t int_gpio_pin;
-	uint8_t int_gpio_flags;
-	uint8_t int_pin;
+	struct gpio_dt_spec int_gpio;
 #endif /* CONFIG_IIS2DH_TRIGGER */
 };
 
@@ -66,8 +62,6 @@ struct iis2dh_data {
 	stmdev_ctx_t *ctx;
 #ifdef CONFIG_IIS2DH_TRIGGER
 	const struct device *dev;
-	const struct device *gpio;
-	uint8_t gpio_pin;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t drdy_handler;
 #if defined(CONFIG_IIS2DH_TRIGGER_OWN_THREAD)

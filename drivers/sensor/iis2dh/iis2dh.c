@@ -309,11 +309,8 @@ const struct iis2dh_device_config iis2dh_cfg = {
 	COND_CODE_1(DT_INST_ON_BUS(0, i2c), IIS2DH_I2C(0), ())
 	COND_CODE_1(DT_INST_ON_BUS(0, spi), IIS2DH_SPI(0), ())
 	.pm = CONFIG_IIS2DH_POWER_MODE,
-#ifdef CONFIG_IIS2DH_TRIGGER
-	.int_gpio_port = DT_INST_GPIO_LABEL(0, drdy_gpios),
-	.int_gpio_pin = DT_INST_GPIO_PIN(0, drdy_gpios),
-	.int_gpio_flags = DT_INST_GPIO_FLAGS(0, drdy_gpios),
-#endif /* CONFIG_IIS2DH_TRIGGER */
+	IF_ENABLED(CONFIG_IIS2DH_TRIGGER,
+		   (.int_gpio = GPIO_DT_SPEC_INST_GET(0, drdy_gpios),))
 };
 
 struct iis2dh_data iis2dh_data;
