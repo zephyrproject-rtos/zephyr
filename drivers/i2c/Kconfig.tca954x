@@ -1,8 +1,13 @@
 # Copyright (c) 2020 Innoseis BV
 # SPDX-License-Identifier: Apache-2.0
 
+DT_COMPAT_TI_TCA9546A := ti,tca9546a
+DT_COMPAT_TI_TCA9548A := ti,tca9548a
+
 menuconfig I2C_TCA954X
 	bool "I2C addressable switch"
+	default $(dt_compat_enabled,$(DT_COMPAT_TI_TCA9546A)) || \
+		$(dt_compat_enabled,$(DT_COMPAT_TI_TCA9548A))
 	help
 	  Enable TCA954x series I2C bus switch
 
