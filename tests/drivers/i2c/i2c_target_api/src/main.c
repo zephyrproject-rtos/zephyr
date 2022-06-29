@@ -134,29 +134,29 @@ static int run_program_read(const struct device *i2c, uint8_t addr,
 
 void test_eeprom_target(void)
 {
-	const char *label_0 = DT_LABEL(NODE_EP0);
-	const struct device *eeprom_0 = device_get_binding(label_0);
-	const struct device *i2c_0 = device_get_binding(DT_BUS_LABEL(NODE_EP0));
+	const struct device *eeprom_0 = DEVICE_DT_GET(NODE_EP0);
+	const struct device *i2c_0 = DEVICE_DT_GET(DT_BUS(NODE_EP0));
 	int addr_0 = DT_REG_ADDR(NODE_EP0);
-	const char *label_1 = DT_LABEL(NODE_EP1);
-	const struct device *eeprom_1 = device_get_binding(label_1);
-	const struct device *i2c_1 = device_get_binding(DT_BUS_LABEL(NODE_EP1));
+	const struct device *eeprom_1 = DEVICE_DT_GET(NODE_EP1);
+	const struct device *i2c_1 = DEVICE_DT_GET(DT_BUS(NODE_EP1));
 	int addr_1 = DT_REG_ADDR(NODE_EP1);
 	int ret, offset;
 
-	zassert_not_null(i2c_0, "EP0 I2C device %s not found",
-			 DT_BUS_LABEL(NODE_EP0));
-	zassert_not_null(eeprom_0, "EEPROM device %s not found", label_0);
+	zassert_not_null(i2c_0, "EEPROM 0 - I2C bus not found");
+	zassert_not_null(eeprom_0, "EEPROM 0 device not found");
 
-	TC_PRINT("Found EP0 %s on I2C Master device %s at addr %02x\n",
-		 label_0, DT_BUS_LABEL(NODE_EP0), addr_0);
+	zassert_true(device_is_ready(i2c_0), "EEPROM 0 - I2C bus not ready");
 
-	zassert_not_null(i2c_1, "I2C device %s not found",
-			 DT_BUS_LABEL(NODE_EP1));
-	zassert_not_null(eeprom_1, "EEPROM device %s not found", label_1);
+	TC_PRINT("Found EEPROM 0 on I2C bus device %s at addr %02x\n",
+		 i2c_0->name, addr_0);
 
-	TC_PRINT("Found EP1 %s on I2C Master device %s at addr %02x\n",
-		 label_1, DT_BUS_LABEL(NODE_EP1), addr_1);
+	zassert_not_null(i2c_1, "EEPROM 1 - I2C device not found");
+	zassert_not_null(eeprom_1, "EEPROM 1 device not found");
+
+	zassert_true(device_is_ready(i2c_1), "EEPROM 1 - I2C bus not ready");
+
+	TC_PRINT("Found EEPROM 1 on I2C bus device %s at addr %02x\n",
+		 i2c_1->name, addr_1);
 
 	if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
 		TC_PRINT("Testing dual-role\n");
@@ -168,20 +168,20 @@ void test_eeprom_target(void)
 	 * that doesn't use I2C.
 	 */
 	ret = eeprom_target_program(eeprom_0, eeprom_0_data, TEST_DATA_SIZE);
-	zassert_equal(ret, 0, "Failed to program EEPROM %s", label_0);
+	zassert_equal(ret, 0, "Failed to program EEPROM 0");
 	if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
 		ret = eeprom_target_program(eeprom_1, eeprom_1_data,
 					   TEST_DATA_SIZE);
-		zassert_equal(ret, 0, "Failed to program EEPROM %s", label_1);
+		zassert_equal(ret, 0, "Failed to program EEPROM 1");
 	}
 
 	/* Attach each EEPROM to its owning bus as a target device. */
 	ret = i2c_target_driver_register(eeprom_0);
-	zassert_equal(ret, 0, "Failed to register EEPROM %s", label_0);
+	zassert_equal(ret, 0, "Failed to register EEPROM 0");
 
 	if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
 		ret = i2c_target_driver_register(eeprom_1);
-		zassert_equal(ret, 0, "Failed to register EEPROM %s", label_1);
+		zassert_equal(ret, 0, "Failed to register EEPROM 1");
 	}
 
 	/* The simulated EP0 is configured to be accessed as a target device
@@ -227,12 +227,11 @@ void test_eeprom_target(void)
 
 	/* Detach EEPROM */
 	ret = i2c_target_driver_unregister(eeprom_0);
-	zassert_equal(ret, 0, "Failed to unregister EEPROM %s", label_0);
+	zassert_equal(ret, 0, "Failed to unregister EEPROM 0");
 
 	if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
 		ret = i2c_target_driver_unregister(eeprom_1);
-		zassert_equal(ret, 0, "Failed to unregister EEPROM %s",
-			      label_1);
+		zassert_equal(ret, 0, "Failed to unregister EEPROM 1");
 	}
 }
 
