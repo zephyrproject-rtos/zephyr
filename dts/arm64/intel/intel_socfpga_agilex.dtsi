@@ -149,6 +149,7 @@
 			      IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_UART>;
+		label = "uart_0";
 		status = "disabled";
 	};
 
