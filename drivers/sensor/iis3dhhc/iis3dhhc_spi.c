@@ -20,9 +20,9 @@
 
 LOG_MODULE_DECLARE(IIS3DHHC, CONFIG_SENSOR_LOG_LEVEL);
 
-static int iis3dhhc_spi_read(struct iis3dhhc_data *ctx, uint8_t reg,
-			    uint8_t *data, uint16_t len)
+static int iis3dhhc_spi_read(const struct device *dev, uint8_t reg, uint8_t *data, uint16_t len)
 {
+	struct iis3dhhc_data *ctx = dev->data;
 	uint8_t buffer_tx[2] = { reg | IIS3DHHC_SPI_READ, 0 };
 	const struct spi_buf tx_buf = {
 			.buf = buffer_tx,
@@ -54,9 +54,9 @@ static int iis3dhhc_spi_read(struct iis3dhhc_data *ctx, uint8_t reg,
 	return 0;
 }
 
-static int iis3dhhc_spi_write(struct iis3dhhc_data *ctx, uint8_t reg,
-			     uint8_t *data, uint16_t len)
+static int iis3dhhc_spi_write(const struct device *dev, uint8_t reg, uint8_t *data, uint16_t len)
 {
+	struct iis3dhhc_data *ctx = dev->data;
 	uint8_t buffer_tx[1] = { reg & ~IIS3DHHC_SPI_READ };
 	const struct spi_buf tx_buf[2] = {
 		{
@@ -97,7 +97,7 @@ int iis3dhhc_spi_init(const struct device *dev)
 	};
 
 	data->ctx = &iis3dhhc_spi_ctx;
-	data->ctx->handle = data;
+	data->ctx->handle = (void *)dev;
 	data->spi = &config->spi;
 
 	return 0;
