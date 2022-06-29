@@ -190,11 +190,11 @@ arduino_i2c: &i2c0 {
 	pinctrl-names = "default", "sleep";
 };
 
-arduino_spi: &spi3 {
+arduino_spi: &spi2 {
 	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
-	pinctrl-0 = <&spi3_default>;
-	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 

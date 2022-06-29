@@ -201,9 +201,9 @@ arduino_i2c: &i2c0 {
 	pinctrl-names = "default", "sleep";
 };
 
-&spi2 {
+arduino_spi: &spi2 {
 	compatible = "nordic,nrf-spi";
-	status = "disabled";
+	status = "okay";
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
@@ -211,6 +211,7 @@ arduino_i2c: &i2c0 {
 
 &qspi {
 	status = "okay";
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
@@ -237,9 +238,8 @@ arduino_i2c: &i2c0 {
 	};
 };
 
-arduino_spi: &spi3 {
-	status = "okay";
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+&spi3 {
+	status = "disabled";
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";

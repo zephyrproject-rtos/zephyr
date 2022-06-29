@@ -122,7 +122,7 @@
 		};
 	};
 
-	spi3_default: spi3_default {
+	spi2_default: spi2_default {
 		group1 {
 			psels = <NRF_PSEL(SPIM_SCK, 0, 23)>,
 				<NRF_PSEL(SPIM_MISO, 0, 22)>,
@@ -130,7 +130,7 @@
 		};
 	};
 
-	spi3_sleep: spi3_sleep {
+	spi2_sleep: spi2_sleep {
 		group1 {
 			psels = <NRF_PSEL(SPIM_SCK, 0, 23)>,
 				<NRF_PSEL(SPIM_MISO, 0, 22)>,
