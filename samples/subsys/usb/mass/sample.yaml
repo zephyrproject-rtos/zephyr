@@ -34,7 +34,7 @@ tests:
     filter: dt_compat_enabled("nordic,qspi-nor")
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
-        - CONFIG_APP_MSC_STORAGE_FLASH_LITTLEFS=y
+        - CONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
     tags: msd usb
     harness: console
     harness_config:
@@ -64,7 +64,7 @@ tests:
     filter: dt_compat_enabled("nordic,qspi-nor")
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
-        - CONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
+        - CONFIG_APP_MSC_STORAGE_FLASH_LITTLEFS=y
     tags: msd usb
     harness: console
     harness_config:
