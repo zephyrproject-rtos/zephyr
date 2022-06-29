@@ -8,7 +8,7 @@
     /delete-node/ lsm303agr-magn@1e;
     /delete-node/ lsm303agr-accel@19;
 
-	lsm303dlhc-magn@1e {
+	lsm303dlhc_magn: lsm303dlhc-magn@1e {
 		compatible = "st,lsm303dlhc-magn";
         status = "okay";
 		reg = <0x1e>;
