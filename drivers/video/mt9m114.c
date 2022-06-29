@@ -48,10 +48,12 @@ LOG_MODULE_REGISTER(mt9m114);
 #define MT9M114_SYS_STATE_STANDBY			0x52
 #define MT9M114_SYS_STATE_LEAVE_STANDBY			0x54
 
+struct mt9m114_config {
+	struct i2c_dt_spec i2c;
+};
+
 struct mt9m114_data {
-	const struct device *i2c;
 	struct video_format fmt;
-	uint8_t i2c_addr;
 };
 
 struct mt9m114_reg {
@@ -101,20 +103,17 @@ static struct mt9m114_reg mt9m114_vga_24mhz_pll[] = {
 	{ /* NULL terminated */ }
 };
 
-static inline int i2c_burst_read16(const struct device *dev,
-				   uint16_t dev_addr,
+static inline int i2c_burst_read16_dt(const struct i2c_dt_spec *spec,
 				   uint16_t start_addr, uint8_t *buf, uint32_t num_bytes)
 {
 	uint8_t addr_buffer[2];
 
 	addr_buffer[1] = start_addr & 0xFF;
 	addr_buffer[0] = start_addr >> 8;
-	return i2c_write_read(dev, dev_addr, addr_buffer, sizeof(addr_buffer),
-			      buf, num_bytes);
+	return i2c_write_read_dt(spec, addr_buffer, sizeof(addr_buffer), buf, num_bytes);
 }
 
-static inline int i2c_burst_write16(const struct device *dev,
-				    uint16_t dev_addr,
+static inline int i2c_burst_write16_dt(const struct i2c_dt_spec *spec,
 				    uint16_t start_addr, const uint8_t *buf,
 				    uint32_t num_bytes)
 {
@@ -131,14 +130,14 @@ static inline int i2c_burst_write16(const struct device *dev,
 	msg[1].len = num_bytes;
 	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
-	return i2c_transfer(dev, msg, 2, dev_addr);
+	return i2c_transfer_dt(spec, msg, 2);
 }
 
 static int mt9m114_write_reg(const struct device *dev, uint16_t reg_addr,
 			     uint8_t reg_size,
 			     void *value)
 {
-	struct mt9m114_data *drv_data = dev->data;
+	const struct mt9m114_config *cfg = dev->config;
 
 	switch (reg_size) {
 	case 2:
@@ -153,23 +152,21 @@ static int mt9m114_write_reg(const struct device *dev, uint16_t reg_addr,
 		return -ENOTSUP;
 	}
 
-	return i2c_burst_write16(drv_data->i2c, drv_data->i2c_addr, reg_addr,
-				 value, reg_size);
+	return i2c_burst_write16_dt(&cfg->i2c, reg_addr, value, reg_size);
 }
 
 static int mt9m114_read_reg(const struct device *dev, uint16_t reg_addr,
 			    uint8_t reg_size,
 			    void *value)
 {
-	struct mt9m114_data *drv_data = dev->data;
+	const struct mt9m114_config *cfg = dev->config;
 	int err;
 
 	if (reg_size > 4) {
 		return -ENOTSUP;
 	}
 
-	err = i2c_burst_read16(drv_data->i2c, drv_data->i2c_addr, reg_addr,
-			       value, reg_size);
+	err = i2c_burst_read16_dt(&cfg->i2c, reg_addr, value, reg_size);
 	if (err) {
 		return err;
 	}
@@ -392,27 +389,26 @@ static int mt9m114_init(const struct device *dev)
 
 #if 1 /* Unique Instance */
 
+static const struct mt9m114_config mt9m114_cfg_0 = {
+	.i2c = I2C_DT_SPEC_INST_GET(0),
+};
+
 static struct mt9m114_data mt9m114_data_0;
 
 static int mt9m114_init_0(const struct device *dev)
 {
-	struct mt9m114_data *drv_data = dev->data;
+	const struct mt9m114_config *cfg = dev->config;
 
-	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (drv_data->i2c == NULL) {
-		LOG_ERR("Failed to get pointer to %s device!",
-			DT_INST_LABEL(0));
-			return -EINVAL;
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
-
-	drv_data->i2c_addr = DT_INST_REG_ADDR(0);
-
 
 	return mt9m114_init(dev);
 }
 
 DEVICE_DT_INST_DEFINE(0, &mt9m114_init_0, NULL,
-		    &mt9m114_data_0, NULL,
+		    &mt9m114_data_0, &mt9m114_cfg_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mt9m114_driver_api);
 #endif
