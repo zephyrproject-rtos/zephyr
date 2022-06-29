@@ -319,6 +319,91 @@ out:
 	return 0;
 }
 
+/* this ramps volume changes over time */
+static void dai_dmic_gain_ramp(struct dai_intel_dmic *dmic)
+{
+	k_spinlock_key_t key;
+	int32_t gval;
+	uint32_t val;
+	int i;
+
+	/* Currently there's no DMIC HW internal mutings and wait times
+	 * applied into this start sequence. It can be implemented here if
+	 * start of audio capture would contain clicks and/or noise and it
+	 * is not suppressed by gain ramp somewhere in the capture pipe.
+	 */
+	LOG_DBG("DMIC gain ramp");
+
+	/*
+	 * At run-time dmic->gain is only changed in this function, and this
+	 * function runs in the pipeline task context, so it cannot run
+	 * concurrently on multiple cores, since there's always only one
+	 * task associated with each DAI, so we don't need to hold the lock to
+	 * read the value here.
+	 */
+	if (dmic->gain == DMIC_HW_FIR_GAIN_MAX << 11)
+		return;
+
+	key = k_spin_lock(&dmic->lock);
+
+	/* Increment gain with logarithmic step.
+	 * Gain is Q2.30 and gain modifier is Q12.20.
+	 */
+	dmic->startcount++;
+	dmic->gain = q_multsr_sat_32x32(dmic->gain, dmic->gain_coef, Q_SHIFT_GAIN_X_GAIN_COEF);
+
+	/* Gain is stored as Q2.30, while HW register is Q1.19 so shift
+	 * the value right by 11.
+	 */
+	gval = dmic->gain >> 11;
+
+	/* Note that DMIC gain value zero has a special purpose. Value zero
+	 * sets gain bypass mode in HW. Zero value will be applied after ramp
+	 * is complete. It is because exact 1.0 gain is not possible with Q1.19.
+	 */
+	if (gval > DMIC_HW_FIR_GAIN_MAX) {
+		gval = 0;
+		dmic->gain = DMIC_HW_FIR_GAIN_MAX << 11;
+	}
+
+	/* Write gain to registers */
+	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
+		if (!dmic->enable[i])
+			continue;
+
+		if (dmic->startcount == DMIC_UNMUTE_CIC)
+			dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
+					     CIC_CONTROL_MIC_MUTE_BIT, 0);
+
+		if (dmic->startcount == DMIC_UNMUTE_FIR) {
+			switch (dmic->dai_config_params.dai_index) {
+			case 0:
+				dai_dmic_update_bits(dmic, base[i] + FIR_CONTROL_A,
+						     FIR_CONTROL_A_MUTE_BIT, 0);
+				break;
+			case 1:
+				dai_dmic_update_bits(dmic, base[i] + FIR_CONTROL_B,
+						     FIR_CONTROL_B_MUTE_BIT, 0);
+				break;
+			}
+		}
+		switch (dmic->dai_config_params.dai_index) {
+		case 0:
+			val = OUT_GAIN_LEFT_A_GAIN(gval);
+			dai_dmic_write(dmic, base[i] + OUT_GAIN_LEFT_A, val);
+			dai_dmic_write(dmic, base[i] + OUT_GAIN_RIGHT_A, val);
+			break;
+		case 1:
+			val = OUT_GAIN_LEFT_B_GAIN(gval);
+			dai_dmic_write(dmic, base[i] + OUT_GAIN_LEFT_B, val);
+			dai_dmic_write(dmic, base[i] + OUT_GAIN_RIGHT_B, val);
+			break;
+		}
+	}
+
+	k_spin_unlock(&dmic->lock, key);
+}
+
 static void dai_dmic_start(struct dai_intel_dmic *dmic)
 {
 	k_spinlock_key_t key;
@@ -331,6 +416,13 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 	/* enable port */
 	key = k_spin_lock(&dmic->lock);
 	LOG_DBG("dmic_start()");
+	dmic->startcount = 0;
+
+	/* Compute unmute ramp gain update coefficient. */
+	dmic->gain_coef = db2lin_fixed(LOGRAMP_CONST_TERM / dmic->unmute_time_ms);
+
+	/* Initial gain value, convert Q12.20 to Q2.30 */
+	dmic->gain = Q_SHIFT_LEFT(db2lin_fixed(LOGRAMP_START_DB), 20, 30);
 
 	dai_dmic_sync_prepare(dmic);
 
@@ -525,6 +617,9 @@ static int dai_dmic_trigger(const struct device *dev, enum dai_dir dir,
 		dai_dmic_stop(dmic, true);
 		dmic->state = DAI_STATE_PAUSED;
 		break;
+	case DAI_TRIGGER_COPY:
+		dai_dmic_gain_ramp(dmic);
+		break;
 	default:
 		break;
 	}
@@ -570,6 +665,8 @@ static int dai_dmic_set_config(const struct device *dev,
 #elif CONFIG_DAI_INTEL_DMIC_NHLT
 	ret = dai_dmic_set_config_nhlt(dmic, bespoke_cfg);
 
+	/* There's no unmute ramp duration in blob, so the default rate dependent is used. */
+	dmic->unmute_time_ms = dmic_get_unmute_ramp_from_samplerate(dmic->dai_config_params.rate);
 #else
 #error No DMIC config selected
 #endif

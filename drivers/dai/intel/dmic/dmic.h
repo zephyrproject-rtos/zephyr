@@ -24,9 +24,15 @@
 #define GET_BITS(b_hi, b_lo, x) \
 	(((x) & MASK(b_hi, b_lo)) >> (b_lo))
 
+/* The microphones create a low frequecy thump sound when clock is enabled.
+ * The unmute linear gain ramp chacteristic is defined here.
+ * NOTE: Do not set any of these to 0.
+ */
+#define DMIC_UNMUTE_RAMP_US	1000	/* 1 ms (in microseconds) */
+#define DMIC_UNMUTE_CIC		1	/* Unmute CIC at 1 ms */
+#define DMIC_UNMUTE_FIR		2	/* Unmute FIR at 2 ms */
+
 /* DMIC timestamping registers */
-
-
 #define TS_DMIC_LOCAL_TSCTRL_OFFSET	0x000
 #define TS_DMIC_LOCAL_OFFS_OFFSET	0x004
 #define TS_DMIC_LOCAL_SAMPLE_OFFSET	0x008
@@ -371,6 +377,9 @@
 /* Used in unmute ramp values calculation */
 #define DMIC_HW_FIR_GAIN_MAX ((1 << (DMIC_HW_BITS_FIR_GAIN - 1)) - 1)
 
+#define DB2LIN_FIXED_INPUT_QY 24
+#define DB2LIN_FIXED_OUTPUT_QY 20
+
 /* Hardwired log ramp parameters. The first value is the initial gain in
  * decibels. The default ramp time is provided by 1st order equation
  * ramp time = coef * samplerate + offset. The default ramp is 200 ms for
@@ -391,6 +400,45 @@
 /* Fractional shift for gain update. Gain format is Q2.30. */
 #define Q_SHIFT_GAIN_X_GAIN_COEF \
 	(Q_SHIFT_BITS_32(30, DB2LIN_FIXED_OUTPUT_QY, 30))
+
+/* Compute the number of shifts
+ * This will result in a compiler overflow error if shift bits are out of
+ * range as INT64_MAX/MIN is greater than 32 bit Q shift parameter
+ */
+#define Q_SHIFT_BITS_64(qx, qy, qz) \
+	((qx + qy - qz) <= 63 ? (((qx + qy - qz) >= 0) ? \
+	 (qx + qy - qz) : INT64_MIN) : INT64_MAX)
+
+#define Q_SHIFT_BITS_32(qx, qy, qz) \
+	((qx + qy - qz) <= 31 ? (((qx + qy - qz) >= 0) ? \
+	 (qx + qy - qz) : INT32_MIN) : INT32_MAX)
+
+/* Fractional multiplication with shift and round
+ * Note that the parameters px and py must be cast to (int64_t) if other type.
+ */
+#define Q_MULTSR_32X32(px, py, qx, qy, qp) \
+	((((px) * (py) >> ((qx)+(qy)-(qp)-1)) + 1) >> 1)
+
+/* A more clever macro for Q-shifts */
+#define Q_SHIFT(x, src_q, dst_q) ((x) >> ((src_q) - (dst_q)))
+#define Q_SHIFT_RND(x, src_q, dst_q) \
+	((((x) >> ((src_q) - (dst_q) - 1)) + 1) >> 1)
+
+/* Alternative version since compiler does not allow (x >> -1) */
+#define Q_SHIFT_LEFT(x, src_q, dst_q) ((x) << ((dst_q) - (src_q)))
+
+/* Convert a float number to fractional Qnx.ny format. Note that there is no
+ * check for nx+ny number of bits to fit the word length of int. The parameter
+ * qy must be 31 or less.
+ */
+#define Q_CONVERT_FLOAT(f, qy) \
+	((int32_t)(((const double)f) * ((int64_t)1 << (const int)qy) + 0.5))
+
+#define TWO_Q27         Q_CONVERT_FLOAT(2.0, 27)     /* Use Q5.27 */
+#define MINUS_TWO_Q27   Q_CONVERT_FLOAT(-2.0, 27)    /* Use Q5.27 */
+#define ONE_Q20         Q_CONVERT_FLOAT(1.0, 20)     /* Use Q12.20 */
+#define ONE_Q23         Q_CONVERT_FLOAT(1.0, 23)     /* Use Q9.23 */
+#define LOG10_DIV20_Q27 Q_CONVERT_FLOAT(0.1151292546, 27) /* Use Q5.27 */
 
 #define DMA_HANDSHAKE_DMIC_CH0	0
 #define DMA_HANDSHAKE_DMIC_CH1	1
@@ -475,6 +523,10 @@ struct dai_intel_dmic {
 	enum dai_state state;				/* Driver component state */
 	uint16_t enable[CONFIG_DAI_DMIC_HW_CONTROLLERS];/* Mic 0 and 1 enable bits array for PDMx */
 	struct dai_dmic_plat_fifo_data fifo;		/* dmic capture fifo stream */
+	int32_t gain_coef;				/* Gain update constant */
+	int32_t gain;					/* Gain value to be applied to HW */
+	int32_t startcount;				/* Counter that controls HW unmute */
+	int32_t unmute_time_ms;				/* Unmute ramp time in milliseconds */
 
 	/* hardware parameters */
 	uint32_t reg_base;
@@ -482,5 +534,112 @@ struct dai_intel_dmic {
 	int irq;
 	uint32_t flags;
 };
+
+/* Exponent function for small values of x. This function calculates
+ * fairly accurately exponent for x in range -2.0 .. +2.0. The iteration
+ * uses first 11 terms of Taylor series approximation for exponent
+ * function. With the current scaling the numerator just remains under
+ * 64 bits with the 11 terms.
+ *
+ * See https://en.wikipedia.org/wiki/Exponential_function#Computation
+ *
+ * The input is Q3.29
+ * The output is Q9.23
+ */
+static int32_t exp_small_fixed(int32_t x)
+{
+	int64_t p;
+	int64_t num = Q_SHIFT_RND(x, 29, 23);
+	int32_t y = (int32_t)num;
+	int32_t den = 1;
+	int32_t inc;
+	int k;
+
+	/* Numerator is x^k, denominator is k! */
+	for (k = 2; k < 12; k++) {
+		p = num * x; /* Q9.23 x Q3.29 -> Q12.52 */
+		num = Q_SHIFT_RND(p, 52, 23);
+		den = den * k;
+		inc = (int32_t)(num / den);
+		y += inc;
+	}
+
+	return y + ONE_Q23;
+}
+
+static int32_t exp_fixed(int32_t x)
+{
+	int32_t xs;
+	int32_t y;
+	int32_t z;
+	int i;
+	int n = 0;
+
+	if (x < Q_CONVERT_FLOAT(-11.5, 27))
+		return 0;
+
+	if (x > Q_CONVERT_FLOAT(7.6245, 27))
+		return INT32_MAX;
+
+	/* x is Q5.27 */
+	xs = x;
+	while (xs >= TWO_Q27 || xs <= MINUS_TWO_Q27) {
+		xs >>= 1;
+		n++;
+	}
+
+	/* exp_small_fixed() input is Q3.29, while x1 is Q5.27
+	 * exp_small_fixed() output is Q9.23, while z is Q12.20
+	 */
+	z = Q_SHIFT_RND(exp_small_fixed(Q_SHIFT_LEFT(xs, 27, 29)), 23, 20);
+	y = ONE_Q20;
+	for (i = 0; i < (1 << n); i++)
+		y = (int32_t)Q_MULTSR_32X32((int64_t)y, z, 20, 20, 20);
+
+	return y;
+}
+
+static int32_t db2lin_fixed(int32_t db)
+{
+	int32_t arg;
+
+	if (db < Q_CONVERT_FLOAT(-100.0, 24))
+		return 0;
+
+	/* Q8.24 x Q5.27, result needs to be Q5.27 */
+	arg = (int32_t)Q_MULTSR_32X32((int64_t)db, LOG10_DIV20_Q27, 24, 27, 27);
+	return exp_fixed(arg);
+}
+
+static inline int32_t sat_int32(int64_t x)
+{
+	if (x > INT32_MAX)
+		return INT32_MAX;
+	else if (x < INT32_MIN)
+		return INT32_MIN;
+	else
+		return (int32_t)x;
+}
+/* Fractional multiplication with shift and saturation */
+static inline int32_t q_multsr_sat_32x32(int32_t x, int32_t y,
+					 const int shift_bits)
+{
+	return sat_int32(((((int64_t)x * y) >> (shift_bits - 1)) + 1) >> 1);
+}
+
+static inline int dmic_get_unmute_ramp_from_samplerate(int rate)
+{
+	int time_ms;
+
+	time_ms = Q_MULTSR_32X32((int32_t)rate, LOGRAMP_TIME_COEF_Q15, 0, 15, 0) +
+		LOGRAMP_TIME_OFFS_Q0;
+	if (time_ms > LOGRAMP_TIME_MAX_MS)
+		return LOGRAMP_TIME_MAX_MS;
+
+	if (time_ms < LOGRAMP_TIME_MIN_MS)
+		return LOGRAMP_TIME_MIN_MS;
+
+	return time_ms;
+}
 
 #endif /* __INTEL_DAI_DRIVER_DMIC_H__ */
