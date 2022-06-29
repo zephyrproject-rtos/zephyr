@@ -4,11 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		magn0 = &lsm303agr_magn;
+	};
+};
+
 &i2c1 {
 	/delete-node/ lsm303dlhc-magn@1e;
 	/delete-node/ lsm303dlhc-accel@19;
 
-	lsm303agr-magn@1e {
+	lsm303agr_magn: lsm303agr-magn@1e {
 		compatible = "st,lis2mdl", "st,lsm303agr-magn";
 		reg = <0x1e>;
 		label = "LSM303AGR-MAGN";

@@ -73,6 +73,7 @@
 		pwm-led1 = &orange_pwm_led;
 		pwm-led2 = &red_pwm_led;
 		pwm-led3 = &blue_pwm_led;
+		magn0 = &lsm303agr_magn;
 	};
 };
 
@@ -118,7 +119,7 @@
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
-	lsm303agr-magn@1e {
+	lsm303agr_magn: lsm303agr-magn@1e {
 		compatible = "st,lis2mdl", "st,lsm303agr-magn";
 		status = "okay";
 		reg = <0x1e>;
