@@ -1050,6 +1050,7 @@ static int has_init(const struct device *dev)
 
 	/* Initialize the supported features characteristic value */
 	has.features = CONFIG_BT_HAS_HEARING_AID_TYPE & BT_HAS_FEAT_HEARING_AID_TYPE_MASK;
+	has.features |= BT_HAS_FEAT_DYNAMIC_PRESETS;
 
 	if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_BINAURAL)) {
 		if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SYNC_SUPPORT)) {
