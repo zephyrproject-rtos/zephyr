@@ -105,7 +105,6 @@ static void tThread_entry_negative(void *p1, void *p2, void *p3)
 
 static void create_negative_test_thread(int choice)
 {
-	int ret;
 	uint32_t perm = K_INHERIT_PERMS;
 
 	if (k_is_user_context()) {
@@ -120,7 +119,7 @@ static void create_negative_test_thread(int choice)
 			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
 			perm, K_NO_WAIT);
 
-	ret = k_thread_join(tid, K_FOREVER);
+	(void)k_thread_join(tid, K_FOREVER);
 }
 
 /* TESTPOINT: Pass a null pointer into the API k_thread_start() */
