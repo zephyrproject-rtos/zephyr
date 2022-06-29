@@ -205,7 +205,7 @@ static int init(void)
 	return 0;
 }
 
-static void test_main(void)
+static void test_common(void)
 {
 	int err;
 
@@ -253,6 +253,12 @@ static void test_main(void)
 	printk("Waiting for metadata update\n");
 	WAIT_FOR_FLAG(flag_base_metadata_updated)
 
+}
+
+static void test_main(void)
+{
+	test_common();
+
 	/* The order of PA sync lost and BIG Sync lost is irrelevant
 	 * and depend on timeout parameters. We just wait for PA first, but
 	 * either way will work.
@@ -272,48 +278,7 @@ static void test_sink_disconnect(void)
 {
 	int err;
 
-	err = init();
-	if (err) {
-		FAIL("Init failed (err %d)\n", err);
-		return;
-	}
-
-	printk("Scanning for broadcast sources\n");
-	err = bt_audio_broadcast_sink_scan_start(BT_LE_SCAN_ACTIVE);
-	if (err != 0) {
-		FAIL("Unable to start scan for broadcast sources: %d", err);
-		return;
-	}
-	WAIT_FOR_FLAG(broadcaster_found);
-	printk("Broadcast source found, waiting for PA sync\n");
-	WAIT_FOR_FLAG(pa_synced);
-	printk("Broadcast source PA synced, waiting for BASE\n");
-	WAIT_FOR_FLAG(base_received);
-	printk("BASE received\n");
-
-	printk("Waiting for BIG syncable\n");
-	WAIT_FOR_FLAG(flag_syncable);
-
-	printk("Syncing the sink\n");
-	/* TODO: Sync to max streams instead of just BIT(1) */
-	err = bt_audio_broadcast_sink_sync(g_sink, BIT(1), streams, NULL);
-	if (err != 0) {
-		FAIL("Unable to sync the sink: %d\n", err);
-		return;
-	}
-
-	/* Wait for all to be started */
-	printk("Waiting for streams to be started\n");
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		k_sem_take(&sem_started, K_FOREVER);
-	}
-
-	printk("Waiting for data\n");
-	WAIT_FOR_FLAG(flag_received);
-
-	/* Ensure that we also see the metadata update */
-	printk("Waiting for metadata update\n");
-	WAIT_FOR_FLAG(flag_base_metadata_updated)
+	test_common();
 
 	err = bt_audio_broadcast_sink_stop(g_sink);
 	if (err != 0) {
@@ -334,7 +299,7 @@ static void test_sink_disconnect(void)
 	/* No "sync lost" event is generated when we initialized the disconnect */
 	g_sink = NULL;
 
-	PASS("Broadcast sink passed\n");
+	PASS("Broadcast sink disconnect passed\n");
 }
 
 static const struct bst_test_instance test_broadcast_sink[] = {
