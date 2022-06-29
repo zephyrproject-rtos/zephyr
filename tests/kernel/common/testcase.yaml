@@ -1,6 +1,7 @@
 common:
   tags: base userspace
   min_flash: 33
+  timeout: 120
 tests:
   kernel.common:
     build_on_all: true
