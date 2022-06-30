@@ -7,8 +7,8 @@
 #include <stdint.h>
 #include <xtensa/config/core-isa.h>
 
-/* Core power and boot control block */
-struct mtl_pwrboot {
+/* Boot / recovery capability function registers */
+struct dfdspbrcp {
 	struct {
 		uint32_t cap;
 		uint32_t ctl;
@@ -26,19 +26,24 @@ struct mtl_pwrboot {
 	} bootctl[3];
 };
 
-#define MTL_PWRBOOT_CTL_SPA			BIT(0)
-#define MTL_PWRBOOT_CTL_CPA			BIT(8)
-#define MTL_PWRBOOT_BCTL_BYPROM		BIT(0)
-#define MTL_PWRBOOT_BCTL_WAITIPCG	BIT(16)
-#define MTL_PWRBOOT_BCTL_WAITIPPG	BIT(17)
+/* These registers are added by Intel outside of the Tensilica Core
+ * for boot / recovery control, such as boot path, watch dog timer etc.
+ */
+#define DFDSPBRCP_REG				0x178d00
 
-#define MTL_PWRBOOT_BATTR_LPSCTL_RESTORE_BOOT		BIT(12)
-#define MTL_PWRBOOT_BATTR_LPSCTL_HP_CLOCK_BOOT		BIT(13)
-#define MTL_PWRBOOT_BATTR_LPSCTL_LP_CLOCK_BOOT		BIT(14)
-#define MTL_PWRBOOT_BATTR_LPSCTL_L1_MIN_WAY			BIT(15)
-#define MTL_PWRBOOT_BATTR_LPSCTL_BATTR_SLAVE_CORE	BIT(16)
+#define DFDSPBRCP_CTL_SPA			BIT(0)
+#define DFDSPBRCP_CTL_CPA			BIT(8)
+#define DFDSPBRCP_BCTL_BYPROM		BIT(0)
+#define DFDSPBRCP_BCTL_WAITIPCG		BIT(16)
+#define DFDSPBRCP_BCTL_WAITIPPG		BIT(17)
 
-#define MTL_PWRBOOT (*(volatile struct mtl_pwrboot *)0x00178d00)
+#define DFDSPBRCP_BATTR_LPSCTL_RESTORE_BOOT		BIT(12)
+#define DFDSPBRCP_BATTR_LPSCTL_HP_CLOCK_BOOT	BIT(13)
+#define DFDSPBRCP_BATTR_LPSCTL_LP_CLOCK_BOOT	BIT(14)
+#define DFDSPBRCP_BATTR_LPSCTL_L1_MIN_WAY		BIT(15)
+#define DFDSPBRCP_BATTR_LPSCTL_BATTR_SLAVE_CORE	BIT(16)
+
+#define DFDSPBRCP (*(volatile struct dfdspbrcp *)DFDSPBRCP_REG)
 
 struct clk64 {
 	uint32_t lo;
@@ -60,8 +65,10 @@ struct mtl_tts {
 	struct			clk64 wctc[2];
 };
 
-/* FIXME: devicetree */
-#define MTL_TTS (*(volatile struct mtl_tts *)0x72000)
+/* These registers are for timers / time stamping usages under DSP FW management. */
+#define DFTTS_REG			0x72000
+
+#define MTL_TTS				(*(volatile struct mtl_tts *)DFTTS_REG)
 
 /* Low priority interrupt indices */
 #define MTL_INTL_HIPC		0
@@ -123,8 +130,12 @@ struct mtl_dint {
 	uint32_t unused[16];
 };
 
-/* FIXME: devicetree */
-#define MTL_DINT ((volatile struct mtl_dint *)0x78840)
+/* This register enables (1) or disable (0) the interrupt of
+ * each host inter-processor communication capability instance in a single register.
+ */
+#define DXHIPCIE_REG 0x78840
+
+#define MTL_DINT ((volatile struct mtl_dint *)DXHIPCIE_REG)
 
 /* Convert between IRQ_CONNECT() numbers and MTL_INTL_* interrupts */
 #define MTL_IRQ_TO_ZEPHYR(n)   (XCHAL_NUM_INTERRUPTS + (n))
@@ -174,6 +185,10 @@ struct ace_intc {
 #define ACE_INTC_IRQ DT_IRQN(DT_NODELABEL(ace_intc))
 
 /* L2 Local Memory Management */
+
+/* These registers are for the L2 memory control and status. */
+#define DFL2MM_REG 0x71d00
+
 struct mtl_l2mm {
 	uint32_t l2mcap;
 	uint32_t l2mpat;
@@ -186,7 +201,7 @@ struct mtl_l2mm {
 	uint32_t l2ucmrpdptr;
 };
 
-#define MTL_L2MM ((volatile struct mtl_l2mm *)0x71d00)
+#define MTL_L2MM ((volatile struct mtl_l2mm *)DFL2MM_REG)
 
 /* DfL2MCAP */
 struct mtl_l2mcap {
@@ -200,7 +215,7 @@ struct mtl_l2mcap {
 	uint32_t rsvd32 : 1;
 };
 
-#define MTL_L2MCAP ((volatile struct mtl_l2mcap *)0x71d00)
+#define MTL_L2MCAP ((volatile struct mtl_l2mcap *)DFL2MM_REG)
 
 static inline uint32_t mtl_hpsram_get_bank_count(void)
 {
@@ -223,6 +238,11 @@ struct mtl_hpsram_regs {
 	uint8_t reserved1[3];
 };
 
-#define HPSRAM_REGS(x) ((volatile struct mtl_hpsram_regs* const)(0x17A800 + 0x0008 * (x)))
+/* These registers are for the L2 HP SRAM bank power management control and status.*/
+#define L2HSBPM_REG					0x17A800
+#define L2HSBPM_REG_SIZE			0x0008
+
+#define HPSRAM_REGS(block_idx)		((volatile struct mtl_hpsram_regs *const) \
+	(L2HSBPM_REG + L2HSBPM_REG_SIZE * (block_idx)))
 
 #endif /* ZEPHYR_SOC_INTEL_ADSP_ACE_v1x_REGS_H_ */
