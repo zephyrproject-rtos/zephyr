@@ -32,6 +32,7 @@ struct cpustart_rec {
 };
 
 static struct cpustart_rec start_rec;
+const uint32_t *z_mp_start_cpu = &start_rec.cpu;
 
 char *z_mp_stack_top;
 
@@ -51,6 +52,9 @@ uint32_t _loader_storage_manifest_start;
  */
 bool soc_cpus_active[CONFIG_MP_NUM_CPUS];
 
+#define NOP4 "nop; nop; nop; nop;"
+#define NOP32 NOP4 NOP4 NOP4 NOP4 NOP4 NOP4 NOP4 NOP4
+#define NOP128 NOP32 NOP32 NOP32 NOP32
 /* Tiny assembly stub for calling z_mp_entry() on the auxiliary CPUs.
  * Mask interrupts, clear the register window state and set the stack
  * pointer.  This represents the minimum work required to run C code
@@ -69,9 +73,27 @@ __asm__(".align 4                   \n\t"
 	"  movi  a0, 1              \n\t"
 	"  wsr   a0, WINDOWSTART    \n\t"
 	"  rsync                    \n\t"
+	"  movi  a1, z_mp_start_cpu \n\t"
+	"  l32i  a1, a1, 0          \n\t"
+	"  l32i  a1, a1, 0          \n\t"
+	"  rsr   a2, PRID           \n\t"
+	"  sub   a2, a2, a1         \n\t"
+	"  bnez  a2, soc_mp_idle    \n\t"
 	"  movi  a1, z_mp_stack_top \n\t"
 	"  l32i  a1, a1, 0          \n\t"
-	"  call4 z_mp_entry         \n\t");
+	"  call4 z_mp_entry         \n\t"
+	"soc_mp_idle:               \n\t"
+#ifdef CONFIG_XTENSA_WAITI_BUG
+	NOP128
+	"  isync                    \n\t"
+	"  extw                     \n\t"
+#endif
+	"  waiti 0                  \n\t" /* Power-gating is allowed, we'll exit via reset */
+	"  j soc_mp_idle            \n\t");
+
+#undef NOP128
+#undef NOP16
+#undef NOP4
 
 __imr void z_mp_entry(void)
 {
