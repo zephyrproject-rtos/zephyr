@@ -11,32 +11,46 @@ description: |
   The mapping between the channel and GPIO is done through pinctrl
 
     &ledc0 {
-      pinctrl-0 = <&ledc0_ch0_gpio0>;
+      pinctrl-0 = <&ledc0_default>;
       pinctrl-names = "default";
     }
 
-  The 'ledc0_ch0_gpio0' node is defined in <board>-pinctrl.dtsi.
+  The 'ledc0_default' node state is defined in <board>-pinctrl.dtsi.
 
-    ledc0_ch0_gpio0: ledc0_ch0_gpio0 {
-      pinmux = <LEDC_CH0_GPIO0>;
-      output-enable;
+    ledc0_default: ledc0_default {
+            group1 {
+                    pinmux = <LEDC_CH0_GPIO0>,
+                             <LEDC_CH1_GPIO2>,
+                             <LEDC_CH2_GPIO4>;
+                    output-enable;
+            };
     };
 
-  If another mapping is desired, just check if the <board>-pinctrl.dtsi already have it defined, or feel free to include a new node.
+  If another GPIO mapping is desired, check if <board>-pinctrl.dtsi already have it defined, otherwise, define the
+  required mapping at your own application folder into a custom <board>.overlay file.
   The 'pinmux' property uses a macro defined in https://github.com/zephyrproject-rtos/hal_espressif/tree/zephyr/include/dt-bindings/pinctrl
   Before including a new node, check if the desired mapping is available according to the SoC.
 
-  It is possible to include multiple channel's mapping in the 'pinmux' property:
+  As an example, the 'ledc0_custom' state below illustrates an alternate mapping using another set of channels and
+  pins in a custom overlay file.
 
-    &ledc0 {
-      pinctrl-0 = <&ledc0_ch0_gpio0 &ledc0_ch9_gpio2 &ledc0_ch10_gpio4>;
-      pinctrl-names = "default";
-    }
+    &pinctrl {
+
+            ledc0_custom:  ledc0_custom {
+                    group1 {
+                            pinmux = <LEDC_CH0_GPIO0>,
+                                     <LEDC_CH9_GPIO2>,
+                                     <LEDC_CH10_GPIO4>;
+                            output-enable;
+                    };
+             };
+
+    };
 
   Use the child bindings to configure the desired channel:
 
     &ledc0 {
-      pinctrl-0 = <&ledc0_ch0_gpio0 &ledc0_ch9_gpio2 &ledc0_ch10_gpio4>;
+      pinctrl-0 = <&ledc0_custom>;
       pinctrl-names = "default";
       status = "okay";
       #address-cells = <1>;
