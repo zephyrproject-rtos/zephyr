@@ -2229,12 +2229,18 @@ next_state:
 			if (th_seq(th) == conn->ack) {
 				verdict = tcp_data_received(conn, pkt, &len);
 			} else if (net_tcp_seq_greater(conn->ack, th_seq(th))) {
-				tcp_out(conn, ACK); /* peer has resent */
+				if ((len > 0) || FL(&fl, &, SYN)) {
+					tcp_out(conn, ACK); /* peer has resent */
+				}
 
 				net_stats_update_tcp_seg_ackerr(conn->iface);
 			} else if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
 				tcp_out_of_order_data(conn, pkt, len,
 						      th_seq(th));
+				/* Send out a duplicated ACK */
+				if ((len > 0) || FL(&fl, &, FIN)) {
+					tcp_out(conn, ACK);
+				}
 			}
 		}
 		break;
