@@ -25,6 +25,7 @@
 
 #include "isoal.h"
 #include "ull_iso_types.h"
+#include "ull_iso_internal.h"
 #include "ull_conn_types.h"
 #include "lll_conn_iso.h"
 #include "ull_conn_iso_types.h"
@@ -109,8 +110,7 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_acquire(void)
 	struct ll_conn_iso_stream *cis = mem_acquire(&cis_free);
 
 	if (cis) {
-		cis->hdr.datapath_in = NULL;
-		cis->hdr.datapath_out = NULL;
+		(void)memset(&cis->hdr, 0U, sizeof(cis->hdr));
 	}
 
 	return cis;
@@ -751,4 +751,62 @@ static void disable(uint16_t handle)
 
 	cig->lll.handle = LLL_HANDLE_INVALID;
 	cig->lll.resume_cis = LLL_HANDLE_INVALID;
+}
+
+/* An ISO interval has elapsed for a Connected Isochronous Group */
+void ull_conn_iso_transmit_test_cig_interval(uint16_t handle, uint32_t ticks_at_expire)
+{
+	struct ll_conn_iso_stream *cis;
+	struct ll_conn_iso_group *cig;
+	uint32_t sdu_interval;
+	uint32_t iso_interval;
+	uint16_t handle_iter;
+	uint64_t sdu_counter;
+	uint8_t tx_sdu_count;
+
+	cig = ll_conn_iso_group_get(handle);
+	LL_ASSERT(cig);
+
+	handle_iter = UINT16_MAX;
+
+	if (cig->lll.role) {
+		/* Peripheral */
+		sdu_interval = cig->p_sdu_interval;
+	} else {
+		/* Central */
+		sdu_interval = cig->c_sdu_interval;
+	}
+
+	iso_interval = cig->iso_interval * PERIODIC_INT_UNIT_US;
+
+	/* Handle ISO Transmit Test for all active CISes in the group */
+	for (uint8_t i = 0; i < cig->lll.num_cis; i++)  {
+		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
+		LL_ASSERT(cis);
+
+		if (!cis->hdr.test_mode.tx_enabled || cis->lll.handle == LLL_HANDLE_INVALID) {
+			continue;
+		}
+
+		/* Calculate number of SDUs to transmit in the next ISO event. Ensure no overflow
+		 * on 64-bit sdu_counter:
+		 *   (39 bits x 22 bits (4x10^6 us) = 61 bits / 8 bits (255 us) = 53 bits)
+		 */
+		sdu_counter = ceiling_fraction((cis->lll.event_count + 1U) * iso_interval,
+					       sdu_interval);
+
+		if (cis->hdr.test_mode.tx_sdu_counter == 0U) {
+			/* First ISO event. Align SDU counter for next event */
+			cis->hdr.test_mode.tx_sdu_counter = sdu_counter;
+			tx_sdu_count = 0U;
+		} else {
+			/* Calculate number of SDUs to produce for next ISO event */
+			tx_sdu_count = sdu_counter - cis->hdr.test_mode.tx_sdu_counter;
+		}
+
+		/* Now process all SDUs due for next ISO event */
+		for (uint8_t sdu = 0; sdu < tx_sdu_count; sdu++) {
+			ll_iso_transmit_test_send_sdu(cis->lll.handle, ticks_at_expire);
+		}
+	}
 }
