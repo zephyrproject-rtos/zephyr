@@ -278,6 +278,15 @@ is_kernel_syscall:
 	beq t0, t1, do_irq_offload
 #endif
 
+#ifdef CONFIG_RISCV_ALWAYS_SWITCH_THROUGH_ECALL
+	li t1, RV_ECALL_SCHEDULE
+	bne t0, t1, skip_schedule
+	lr a0, __z_arch_esf_t_a0_OFFSET(sp)
+	lr a1, __z_arch_esf_t_a1_OFFSET(sp)
+	j reschedule
+skip_schedule:
+#endif
+
 	/* default fault code is K_ERR_KERNEL_OOPS */
 	li a0, 3
 	j 1f
@@ -483,7 +492,7 @@ irq_done:
 	call z_check_stack_sentinel
 #endif
 
-reschedule:
+check_reschedule:
 
 	/* Get pointer to current thread on this CPU */
 	lr a1, ___cpu_t_current_OFFSET(s0)
@@ -500,6 +509,8 @@ reschedule:
 	lr a1, 0(sp)
 	addi sp, sp, 16
 	beqz a0, no_reschedule
+
+reschedule:
 
 	/*
 	 * Perform context switch:
