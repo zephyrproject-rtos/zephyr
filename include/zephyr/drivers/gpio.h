@@ -768,6 +768,7 @@ static inline int gpio_pin_configure_dt(const struct gpio_dt_spec *spec,
  * @param outputs Pointer to a variable where output directions will be stored.
  *
  * @retval 0 If successful.
+ * @retval -ENOSYS if the underlying driver does not support this call.
  * @retval -EIO I/O error when accessing an external GPIO chip.
  * @retval -EWOULDBLOCK if operation would block.
  */
@@ -797,8 +798,9 @@ static inline int z_impl_gpio_port_get_direction(const struct device *port, gpio
  *
  * @retval 1 if @p pin is configured as @ref GPIO_INPUT.
  * @retval 0 if @p pin is not configured as @ref GPIO_INPUT.
- * @retval -ENOTSUP if the underlying driver does not support this call.
- * @return another negative errno code on failure.
+ * @retval -ENOSYS if the underlying driver does not support this call.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 static inline int gpio_pin_is_input(const struct device *port, gpio_pin_t pin)
 {
@@ -825,8 +827,9 @@ static inline int gpio_pin_is_input(const struct device *port, gpio_pin_t pin)
  *
  * @retval 1 if @p pin is configured as @ref GPIO_OUTPUT.
  * @retval 0 if @p pin is not configured as @ref GPIO_OUTPUT.
- * @retval -ENOTSUP if the underlying driver does not support this call.
- * @return another negative errno code on failure.
+ * @retval -ENOSYS if the underlying driver does not support this call.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
  */
 static inline int gpio_pin_is_output(const struct device *port, gpio_pin_t pin)
 {
