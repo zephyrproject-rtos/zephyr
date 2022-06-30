@@ -20,7 +20,9 @@ tests:
     extra_args: "CONFIG_TFM_PSA_TEST_INTERNAL_TRUSTED_STORAGE=y"
   sample.tfm.psa_test_storage:
     extra_args: "CONFIG_TFM_PSA_TEST_STORAGE=y"
+    timeout: 130
   sample.tfm.psa_test_crypto:
+    timeout: 120
     extra_args: "CONFIG_TFM_PSA_TEST_CRYPTO=y"
   sample.tfm.psa_test_initial_attestation:
     extra_args: "CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION=y"
