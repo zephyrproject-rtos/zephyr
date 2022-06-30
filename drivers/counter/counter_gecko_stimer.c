@@ -65,7 +65,7 @@ static void alarm_callback(sl_sleeptimer_timer_handle_t *handle, void *data)
 {
 	struct counter_gecko_alarm_data *alarm_data = (struct counter_gecko_alarm_data *)data;
 	uint32_t count = ((sl_sleeptimer_get_tick_count()) %
-					  (((struct counter_gecko_data *const)(alarm_data->dev)->data)->top_data.ticks));
+		(((struct counter_gecko_data *const)(alarm_data->dev)->data)->top_data.ticks));
 
 	if (alarm_data->callback != NULL) {
 		alarm_data->callback(alarm_data->dev, alarm_data->chan_id, count,
@@ -114,7 +114,8 @@ static int counter_gecko_set_top_value(const struct device *dev,
 	bool is_top_timer_running = false;
 
 #ifdef CONFIG_SOC_GECKO_HAS_ERRATA_RTCC_E201
-	const struct counter_gecko_config *const dev_cfg = (const struct counter_gecko_config *const)(dev)->config;
+	const struct counter_gecko_config *const dev_cfg =
+					(const struct counter_gecko_config *const)(dev)->config;
 
 	if (dev_cfg->prescaler != 1) {
 		LOG_ERR(ERRATA_RTCC_E201_MESSAGE);
@@ -235,7 +236,8 @@ static uint32_t counter_gecko_get_pending_int(const struct device *dev)
 
 static int counter_gecko_init(const struct device *dev)
 {
-	const struct counter_gecko_config *const dev_cfg = (const struct counter_gecko_config *const)(dev)->config;
+	const struct counter_gecko_config *const dev_cfg =
+					 (const struct counter_gecko_config *const)(dev)->config;
 	struct counter_gecko_data *const dev_data = (struct counter_gecko_data *const)(dev)->data;
 
 	sl_sleeptimer_init();

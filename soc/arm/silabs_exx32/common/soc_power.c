@@ -47,7 +47,9 @@ static void sli_schedule_wakeup_timer_expire_handler(sl_sleeptimer_timer_handle_
 
 static void sli_os_schedule_wakeup(uint32_t expected_idletime_in_os_ticks);
 
-__weak struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks);
+#ifndef CONFIG_PM_POLICY_DEFAULT
+struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks);
+#endif /* CONFIG_PM_POLICY_DEFAULT */
 static const struct pm_state_info pm_min_residency[] =
 	PM_STATE_INFO_LIST_FROM_DT_CPU(DT_NODELABEL(cpu0));
 struct pm_state_info pm_state_active = {PM_STATE_ACTIVE, 0, 0, 0};
@@ -258,11 +260,12 @@ bool sl_power_manager_is_ok_to_sleep(void)
 	return (ConfirmSleepModeStatus() != false);
 }
 
+#ifndef CONFIG_PM_POLICY_DEFAULT
 /* CONFIG_PM_POLICY_CUSTOM allows to define application specific power policy
  * checking whether the ticks is meeting the minimum criteria to enter
  * into SOC specific power policy or not
  */
-__weak struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
+struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
 	int i;
 
@@ -285,4 +288,5 @@ __weak struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 	}
 	return (struct pm_state_info *)(&pm_state_active);
 }
+#endif /* CONFIG_PM_POLICY_DEFAULT */
 #endif

@@ -33,7 +33,7 @@ typedef uint32_t pinctrl_soc_pin_t;
  * @param idx Property entry index.
  */
 #define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)			       \
-	(DT_PROP_BY_IDX(node_id, prop, idx) 		       \
+	(DT_PROP_BY_IDX(node_id, prop, idx)				       \
 	),
 
 /**

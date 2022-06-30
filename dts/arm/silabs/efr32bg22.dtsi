@@ -198,13 +198,13 @@
 };
 
 / {
-        pinctrl: pin-controller {
-                /* Pin controller is a "virtual" device since nRF SoCs do pin
-                 * control in a distributed way (GPIO registers and PSEL
-                 * registers on each peripheral).
-                 */
-                compatible = "silabs,gecko-pinctrl";
-        };
+	pinctrl: pin-controller {
+		/* Pin controller is a "virtual" device since nRF SoCs do pin
+		 * control in a distributed way (GPIO registers and PSEL
+		 * registers on each peripheral).
+		 */
+		compatible = "silabs,gecko-pinctrl";
+	};
 };
 
 
