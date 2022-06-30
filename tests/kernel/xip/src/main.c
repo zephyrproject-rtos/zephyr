@@ -44,7 +44,7 @@ uint32_t xip_array[XIP_TEST_ARRAY_SZ] = {
  *
  * @ingroup kernel_xip_tests
  */
-void test_globals(void)
+ZTEST(xip, test_globals)
 {
 	int  i;
 
@@ -57,9 +57,4 @@ void test_globals(void)
 }
 
 /**test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(xip,
-		ztest_unit_test(test_globals));
-	ztest_run_test_suite(xip);
-}
+ZTEST_SUITE(xip, NULL, NULL, NULL, NULL, NULL);
