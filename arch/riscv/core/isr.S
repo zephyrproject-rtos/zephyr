@@ -69,8 +69,6 @@
 	la dst, _kernel + ___kernel_t_cpus_OFFSET
 #endif
 
-#define ASSUME_EQUAL(x, y)	.if x != y; .err; .endif
-
 /* imports */
 GDATA(_sw_isr_table)
 GTEXT(__soc_is_irq)
@@ -272,13 +270,12 @@ is_kernel_syscall:
 	/* Determine what to do. Operation code is in t0. */
 	lr t0, __z_arch_esf_t_t0_OFFSET(sp)
 
-	ASSUME_EQUAL(RV_ECALL_RUNTIME_EXCEPT, 0)
+	.if RV_ECALL_RUNTIME_EXCEPT != 0; .err; .endif
 	beqz t0, do_fault
 
 #if defined(CONFIG_IRQ_OFFLOAD)
-	addi t0, t0, -1
-	ASSUME_EQUAL(RV_ECALL_IRQ_OFFLOAD, 1)
-	beqz t0, do_irq_offload
+	li t1, RV_ECALL_IRQ_OFFLOAD
+	beq t0, t1, do_irq_offload
 #endif
 
 	/* default fault code is K_ERR_KERNEL_OOPS */
