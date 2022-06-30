@@ -40,6 +40,66 @@
 			status = "okay";
 		};
 
+		gpio0: gpio@e6050000 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0xe6050000 0x50>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 4 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 912>;
+			status = "disabled";
+			label = "gpio0";
+		};
+
+		gpio1: gpio@e6051000 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0xe6051000 0x50>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 5 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 911>;
+			status = "disabled";
+			label = "gpio1";
+		};
+
+		gpio2: gpio@e6052000 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0xe6052000 0x50>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 910>;
+			status = "disabled";
+			label = "gpio2";
+		};
+
+		gpio3: gpio@e6053000 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0xe6053000 0x50>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 909>;
+			status = "disabled";
+			label = "gpio3";
+		};
+
+		gpio4: gpio@e6054000 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0xe6054000 0x50>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 908>;
+			status = "disabled";
+			label = "gpio4";
+		};
+
 		gpio5: gpio@e6055000 {
 			compatible = "renesas,rcar-gpio";
 			reg = <0xe6055000 0x50>;
@@ -95,6 +155,46 @@
 			label = "can0";
 		};
 
+		can1: can@e6c38000 {
+			compatible = "renesas,rcar-can";
+			reg = <0xe6c38000 0x1000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 187 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			sjw = <1>;
+			sample-point = <875>;
+			status = "disabled";
+			label = "can1";
+		};
+
+		i2c0: i2c@e6500000 {
+			compatible = "renesas,rcar-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xe6500000 0x40>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 287 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 931>;
+			status = "disabled";
+			label = "i2c0";
+		};
+
+		i2c1: i2c@e6508000 {
+			compatible = "renesas,rcar-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xe6508000 0x40>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 288 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 930>;
+			status = "disabled";
+			label = "i2c1";
+		};
+
 		i2c2: i2c@e6510000 {
 			compatible = "renesas,rcar-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -109,6 +209,20 @@
 			label = "i2c2";
 		};
 
+		i2c3: i2c@e66d0000 {
+			compatible = "renesas,rcar-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xe66d0000 0x40>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 290 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 928>;
+			status = "disabled";
+			label = "i2c3";
+		};
+
 		i2c4: i2c@e66d8000 {
 			compatible = "renesas,rcar-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -121,6 +235,34 @@
 			clocks = <&cpg CPG_MOD 927>;
 			status = "disabled";
 			label = "i2c4";
+		};
+
+		i2c5: i2c@e66e0000 {
+			compatible = "renesas,rcar-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xe66e0000 0x40>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 919>;
+			status = "disabled";
+			label = "i2c5";
+		};
+
+		i2c6: i2c@e66e8000 {
+			compatible = "renesas,rcar-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xe66e8000 0x40>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 918>;
+			status = "disabled";
+			label = "i2c6";
 		};
 
 		scif1: serial@e6e68000 {

@@ -1,0 +1,7 @@
+# Copyright (c) 2022 IoT.bzh
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RCAR_H3_KINGFISHER_CR7
+config BOARD
+	default "rcar_h3_kingfisher_cr7"
+endif # BOARD_RCAR_H3_KINGFISHER_CR7

@@ -21,6 +21,11 @@
 			<&cpg CPG_CORE R8A7795_CLK_CANFD>;
 		};
 
+		can1: can@e6c38000 {
+			clocks = <&cpg CPG_MOD 915>,
+			<&cpg CPG_CORE R8A7795_CLK_CANFD>;
+		};
+
 		scif1: serial@e6e68000 {
 			clocks = <&cpg CPG_MOD 206>,
 			<&cpg CPG_CORE R8A7795_CLK_S3D4>;
