@@ -9,9 +9,17 @@ config BOARD
 	default "lpcxpresso55S69_cpu0" if BOARD_LPCXPRESSO55S69_CPU0
 	default "lpcxpresso55S69_cpu1" if BOARD_LPCXPRESSO55S69_CPU1
 
+if FXOS8700
+
+choice FXOS8700_MODE
+	default FXOS8700_MODE_ACCEL
+endchoice
+
 config FXOS8700_DRDY_INT1
 	default y
 	depends on FXOS8700_TRIGGER
+
+endif # FXOS8700
 
 # For the secure version of the board the firmware is linked at the beginning
 # of the flash, or into the code-partition defined in DT if it is intended to
