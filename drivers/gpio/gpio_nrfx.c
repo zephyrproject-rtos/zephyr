@@ -297,6 +297,41 @@ static int gpio_nrfx_manage_callback(const struct device *port,
 				     callback, set);
 }
 
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_nrfx_port_get_direction(const struct device *port,
+					gpio_port_pins_t map,
+					gpio_port_pins_t *inputs,
+					gpio_port_pins_t *outputs)
+{
+	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
+	NRF_GPIO_Type *reg = cfg->port;
+
+	map &= cfg->common.port_pin_mask;
+
+	if (outputs != NULL) {
+		*outputs = map & nrf_gpio_port_dir_read(cfg->port);
+	}
+
+	if (inputs != NULL) {
+		while (map) {
+			uint32_t pin = __CLZ(__RBIT(map));
+			uint32_t pin_cnf = reg->PIN_CNF[pin];
+
+			/* Check if the pin has its input buffer connected. */
+			if (((pin_cnf & GPIO_PIN_CNF_INPUT_Msk) >>
+			     GPIO_PIN_CNF_INPUT_Pos) ==
+			    GPIO_PIN_CNF_INPUT_Connect) {
+				*inputs |= BIT(pin);
+			}
+
+			map &= ~BIT(pin);
+		}
+	}
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_DIRECTION */
+
 /* Get port device from port id. */
 static const struct device *get_dev(uint32_t port_id)
 {
@@ -366,6 +401,9 @@ static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
 	.port_toggle_bits = gpio_nrfx_port_toggle_bits,
 	.pin_interrupt_configure = gpio_nrfx_pin_interrupt_configure,
 	.manage_callback = gpio_nrfx_manage_callback,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_nrfx_port_get_direction,
+#endif
 };
 
 /* Device instantiation is done with node labels because 'port_num' is
