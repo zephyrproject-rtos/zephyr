@@ -7,6 +7,7 @@ set -e
 # host (e.g. an Up Squared board running Linux). Can be used as the
 # hook for both --device-serial-pty and --west-flash, for example:
 #
+#  export CAVS_OLD_FLASHER=1
 #  export CAVS_HOST=tgl2
 #  export CAVS_KEY=$HOME/otc_private_key_3k.pem
 #  export CAVS_RIMAGE=$HOME/rimage
@@ -14,6 +15,12 @@ set -e
 #  twister -p intel_adsp_cavs25 --device-testing \
 #     --device-serial-pty=$ZEPHYR_BASE/soc/xtensa/intel_adsp/tools/cavstwist.sh \
 #     --west-flash=$ZEPHYR_BASE/soc/xtensa/intel_adsp/tools/cavstwist.sh
+#
+# The CAVS_OLD_FLASHER is necessary because now the client-server-based
+# cavstool works by default. This is to tell the build system to use
+# the misc-flasher as the runner. Please remember to do the command
+# "unset CAVS_OLD_FLASHER" when you are going to switch to the
+# client-server-based intel_adsp runner.
 #
 # The device at CAVS_HOST must be accessible via non-interactive ssh
 # access and the remote account must have password-free sudo ability.
