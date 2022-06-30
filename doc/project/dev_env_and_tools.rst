@@ -287,6 +287,10 @@ A request for a new :ref:`feature <feature-tracking>`.
 
 A :ref:`planned feature<feature-tracking>` with a milestone.
 
+* *Hardware Support*
+
+Covers porting an existing feature (including Zephyr itself) to new hardware.
+
 * *Duplicate*
 
 This issue is a duplicate of another issue (please specify).
@@ -301,8 +305,8 @@ Issues that need to be mentioned in release notes as known issues with
 additional information.
 
 Any issue must be classified and labeled as either *Bug*, *Enhancement*,
-*Feature*, or *Feature Request*. More information on how feature requests are
-handled and become features can be found in :ref:`Feature
+*Feature*, *Feature Request* or *Hardware Support*. More information on how
+feature requests are handled and become features can be found in :ref:`Feature
 Tracking<feature-tracking>`.
 
 Labels applicable to pull requests only
