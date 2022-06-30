@@ -145,9 +145,77 @@ void alive_fn(void *arg)
 	*(bool *)arg = true;
 }
 
-void halt_and_restart(int cpu)
+#define MOSTLY_OFF
+
+#ifdef MOSTLY_OFF
+static void halt_and_keep_off(int cpu)
+{
+	/* On older hardware we need to get the host to turn the core
+	 * off.  Construct an ADSPCS with only this core disabled
+	 */
+	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+		uint32_t all_cpus = BIT(CONFIG_MP_NUM_CPUS) - 1;
+
+		cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_ADSPCS,
+				     (all_cpus & ~BIT(cpu)) << 16);
+	}
+
+	printk("halt cpu %u on cpu %u: %d\n", cpu, arch_proc_id(), soc_adsp_halt_cpu(cpu));
+}
+
+static void start_and_halt(int cpu)
+{
+	printk("start/halt core %d...\n", cpu);
+	/*
+	 * static places the variable in .data which on xtensa makes it uncached
+	 * and therefore coherent across cores
+	 */
+	static bool alive_flag;
+
+	alive_flag = false;
+	run_on_cpu(cpu, alive_fn, &alive_flag, false);
+	k_msleep(100);
+	zassert_false(alive_flag, "cpu didn't halt");
+
+	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+		/* Likewise need to ask the host to turn it back on,
+		 * and give it some time to spin up before we hit it.
+		 * We don't have a return message wired to be notified
+		 * of completion.
+		 */
+		uint32_t all_cpus = BIT(CONFIG_MP_NUM_CPUS) - 1;
+		cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_ADSPCS,
+				     all_cpus << 16);
+		k_msleep(50);
+	}
+
+	z_smp_start_cpu(cpu);
+
+	/* Startup can be slow */
+	k_msleep(50);
+
+	zassert_true(WAIT_FOR(alive_flag == true, 10000, k_msleep(1)), NULL);
+
+	k_thread_abort(&run_on_threads[cpu]);
+
+	halt_and_keep_off(cpu);
+}
+
+static void start_cpu(int cpu)
+{
+	z_smp_start_cpu(cpu);
+
+	/* Startup can be slow */
+	k_msleep(50);
+}
+#else
+static void halt_and_restart(int cpu)
 {
 	printk("halt/restart core %d...\n", cpu);
+	/*
+	 * static places the variable in .data which on xtensa makes it uncached
+	 * and therefore coherent across cores
+	 */
 	static bool alive_flag;
 	uint32_t all_cpus = BIT(CONFIG_MP_NUM_CPUS) - 1;
 
@@ -186,6 +254,7 @@ void halt_and_restart(int cpu)
 
 	k_thread_abort(&run_on_threads[cpu]);
 }
+#endif
 
 void test_cpu_halt(void)
 {
@@ -197,18 +266,29 @@ void test_cpu_halt(void)
 	 * guarantee we re-enter the scheduler (and thus have our mask
 	 * honored) before running further.
 	 */
-	uint32_t key = arch_irq_lock();
-
-	k_thread_cpu_mask_clear(k_current_get());
-	k_thread_cpu_mask_enable(k_current_get(), 1);
-	arch_irq_unlock(key);
-	k_sleep(K_TICKS(0));
-
 	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
 		ztest_test_skip();
+	}
+
+#ifdef MOSTLY_OFF
+	for (int i = 1; i < CONFIG_MP_NUM_CPUS - 1; i++)
+		halt_and_keep_off(i);
+
+	for (int i = 1; i < CONFIG_MP_NUM_CPUS - 1; i++)
+		start_and_halt(i);
+
+	for (int i = 1; i < CONFIG_MP_NUM_CPUS - 1; i++)
+		start_and_halt(i);
+
+	for (int i = 1; i < CONFIG_MP_NUM_CPUS - 1; i++)
+		start_cpu(i);
+#else
+	for (int i = 1; i < CONFIG_MP_NUM_CPUS; i++) {
+		halt_and_restart(i);
 	}
 
 	for (int i = 1; i < CONFIG_MP_NUM_CPUS; i++) {
 		halt_and_restart(i);
 	}
+#endif
 }

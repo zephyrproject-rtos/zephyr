@@ -65,5 +65,7 @@ void test_main(void)
 	 */
 	k_msleep(1000);
 
+	_intel_adsp[1].cpu_mask = 1;
+
 	ztest_run_test_suite(intel_adsp);
 }
