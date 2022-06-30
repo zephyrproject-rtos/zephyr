@@ -333,13 +333,10 @@ int lis2dh_init(const struct device *dev)
 	uint8_t id;
 	uint8_t raw[6];
 
-	lis2dh->bus = device_get_binding(cfg->bus_name);
-	if (!lis2dh->bus) {
-		LOG_ERR("master not found: %s", cfg->bus_name);
-		return -EINVAL;
+	status = cfg->bus_init(dev);
+	if (status < 0) {
+		return status;
 	}
-
-	cfg->bus_init(dev);
 
 	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_WAI, &id);
 	if (status < 0) {
@@ -421,9 +418,8 @@ int lis2dh_init(const struct device *dev)
 	}
 #endif
 
-	LOG_INF("bus=%s fs=%d, odr=0x%x lp_en=0x%x scale=%d",
-		    cfg->bus_name, 1 << (LIS2DH_FS_IDX + 1),
-		    LIS2DH_ODR_IDX, (uint8_t)LIS2DH_LP_EN_BIT, lis2dh->scale);
+	LOG_INF("fs=%d, odr=0x%x lp_en=0x%x scale=%d", 1 << (LIS2DH_FS_IDX + 1), LIS2DH_ODR_IDX,
+		(uint8_t)LIS2DH_LP_EN_BIT, lis2dh->scale);
 
 	/* enable accel measurements and set power mode and data rate */
 	return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
@@ -545,7 +541,6 @@ static int lis2dh_pm_action(const struct device *dev,
 
 #define LIS2DH_CONFIG_SPI(inst)						\
 	{								\
-		.bus_name = DT_INST_BUS_LABEL(inst),			\
 		.bus_init = lis2dh_spi_init,				\
 		.bus_cfg = { .spi = SPI_DT_SPEC_INST_GET(inst,		\
 					SPI_WORD_SET(8) |		\
@@ -572,9 +567,8 @@ static int lis2dh_pm_action(const struct device *dev,
 
 #define LIS2DH_CONFIG_I2C(inst)						\
 	{								\
-		.bus_name = DT_INST_BUS_LABEL(inst),			\
 		.bus_init = lis2dh_i2c_init,				\
-		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), },	\
+		.bus_cfg = { .i2c = I2C_DT_SPEC_INST_GET(inst), },	\
 		.hw = { .is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),		\
 				.disc_pull_up = DISC_PULL_UP(inst),			\
 				.anym_on_int1 = ANYM_ON_INT1(inst), },		\
