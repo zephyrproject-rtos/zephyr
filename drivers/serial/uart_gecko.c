@@ -561,7 +561,7 @@ static const struct uart_driver_api uart_gecko_driver_api = {
 	GECKO_UART_IRQ_HANDLER_DECL(idx);				       \
 									       \
 	static const struct uart_gecko_config uart_gecko_cfg_##idx = {	       \
-		.base = (USART_TypeDef *)DT_INST_REG_ADDR(idx),	       	       \
+		.base = (USART_TypeDef *)DT_INST_REG_ADDR(idx),		       \
 		.clock = CLOCK_UART(DT_INST_PROP(idx, peripheral_id)),	       \
 		.baud_rate = DT_INST_PROP(idx, current_speed),		       \
 		GECKO_UART_HW_FLOW_CONTROL(idx)				       \
