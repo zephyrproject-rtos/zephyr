@@ -18,12 +18,14 @@ struct ll_conn_iso_stream {
 	uint8_t  terminate_reason;
 	uint32_t offset;          /* Offset of CIS from ACL event in us */
 	ll_iso_stream_released_cb_t released_cb; /* CIS release callback */
-	uint8_t  framed:1;
-	uint8_t  established:1;   /* 0 if CIS has not yet been established.
+	uint16_t framed:1;
+	uint16_t established:1;   /* 0 if CIS has not yet been established.
 				   * 1 if CIS has been established and host
 				   * notified.
 				   */
-	uint8_t teardown:1;       /* 1 if CIS teardown has been initiated */
+	uint16_t teardown:1;       /* 1 if CIS teardown has been initiated */
+	uint16_t p_max_sdu:12;     /* Maximum SDU size P_To_C */
+	uint16_t c_max_sdu:12;     /* Maximum SDU size C_To_P */
 };
 
 struct ll_conn_iso_group {

@@ -1060,6 +1060,11 @@ void isoal_source_disable(isoal_source_handle_t hdl)
 	isoal_global.source_state[hdl].pdu_production.mode = ISOAL_PRODUCTION_MODE_DISABLED;
 }
 
+struct isoal_source *isoal_source_get(isoal_source_handle_t hdl)
+{
+	return &isoal_global.source_state[hdl];
+}
+
 /**
  * @brief Disable and deallocate existing source
  * @param hdl[in]  Handle of existing instance
