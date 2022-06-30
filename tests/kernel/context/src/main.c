@@ -20,6 +20,7 @@
  * @}
  */
 
+#include <stdlib.h>
 #include <ztest.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/arch/cpu.h>
@@ -297,36 +298,28 @@ static void idle_timer_expiry_function(struct k_timer *timer_id)
 
 static void _test_kernel_cpu_idle(int atomic)
 {
-	int tms, tms2;
-	int i;
+	uint64_t t0, dt;
+	unsigned int i, key;
+	uint32_t dur = k_ms_to_ticks_ceil32(10);
+	uint32_t slop = 1 + k_ms_to_ticks_ceil32(1);
 
 	/* Set up a time to trigger events to exit idle mode */
 	k_timer_init(&idle_timer, idle_timer_expiry_function, NULL);
 
-	for (i = 0; i < 5; i++) { /* Repeat the test five times */
-		/* Align to ticks before starting the timer.
-		 * (k_timer_start() rounds its duration argument down, not up,
-		 * to a tick boundary)
-		 * This timer operates under the assumption that the interrupt set
-		 * to wake the cpu from idle will be no sooner than 1 millsecond in
-		 * the future. Ensure we are a tick boundary each time, so that the
-		 * system timer does not choose to fire an interrupt sooner.
-		 */
+	for (i = 0; i < 5; i++) {
 		k_usleep(1);
-		k_timer_start(&idle_timer, K_MSEC(1), K_NO_WAIT);
-		tms = k_uptime_get_32();
+		t0 = k_uptime_ticks();
+		k_timer_start(&idle_timer, K_TICKS(dur), K_NO_WAIT);
+		key = irq_lock();
 		if (atomic) {
-			unsigned int key = irq_lock();
-
 			k_cpu_atomic_idle(key);
 		} else {
 			k_cpu_idle();
 		}
-		tms += 1;
-		tms2 = k_uptime_get_32();
-		zassert_false(tms2 < tms, "Bad ms value computed,"
-	      "got %d which is less than %d\n",
-	      tms2, tms);
+		dt = k_uptime_ticks() - t0;
+		zassert_true(abs(dt - dur) <= slop,
+			     "Inaccurate wakeup, idled for %d ticks, expected %d",
+			     dt, dur);
 	}
 }
 
