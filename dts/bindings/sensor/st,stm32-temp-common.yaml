@@ -8,8 +8,3 @@ properties:
     io-channels:
       required: true
       description: ADC channel for temperature sensor
-
-    ts-voltage-mv:
-      type: int
-      default: 3300
-      description: Temperature sensor voltage in millivolts
