@@ -378,6 +378,19 @@ static int run_test(struct unit_test *test)
 		if (test->name != NULL) {
 			k_thread_name_set(&ztest_thread, test->name);
 		}
+#ifdef CONFIG_SCHED_CPU_MASK
+		if (test->cpu_mask) {
+			unsigned int mask = test->cpu_mask;
+			unsigned int bit;
+
+			k_thread_cpu_mask_clear(&ztest_thread);
+
+			while ((bit = find_msb_set(mask))) {
+				k_thread_cpu_mask_enable(&ztest_thread, --bit);
+				mask &= ~BIT(bit);
+			}
+		}
+#endif
 		k_thread_start(&ztest_thread);
 		k_thread_join(&ztest_thread, K_FOREVER);
 

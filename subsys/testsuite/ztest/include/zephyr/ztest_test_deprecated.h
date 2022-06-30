@@ -27,6 +27,7 @@ struct unit_test {
 	void (*setup)(void);
 	void (*teardown)(void);
 	uint32_t thread_options;
+	uint32_t cpu_mask;
 };
 
 /**
