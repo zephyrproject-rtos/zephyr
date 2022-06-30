@@ -28,6 +28,9 @@
 extern "C" {
 #endif
 
+/** @brief Abstract Audio Broadcast Source structure. */
+struct bt_cap_broadcast_source;
+
 /**
  * @brief Register the Common Audio Service.
  *
@@ -244,32 +247,52 @@ int bt_cap_initiator_unicast_audio_update(struct bt_audio_unicast_group *unicast
  */
 int bt_cap_initiator_unicast_audio_stop(struct bt_audio_unicast_group *unicast_group);
 
-struct bt_cap_broadcast_audio_start_param {
+struct bt_cap_initiator_broadcast_stream_param {
+	/** Audio stream */
+	struct bt_cap_stream *stream;
 
-	/** The number of streams in @p streams. */
-	size_t count;
-
-	/** Streams for broadcast source. */
-	struct bt_cap_stream **streams;
-
-	/**
-	 * @brief Codec configuration.
+	/** The number of elements in the %p data array.
 	 *
-	 * The @p codec.meta shall include a list of CCIDs as well as a non-0
-	 * context bitfield.
+	 * The BIS specific data may be omitted and this set to 0.
 	 */
-	const struct bt_codec *codec;
+	size_t data_count;
+
+	/** BIS Codec Specific Configuration */
+	struct bt_codec_data *data;
+};
+
+struct bt_cap_initiator_broadcast_subgroup_param {
+	/** The number of parameters in @p stream_params */
+	size_t stream_count;
+
+	/** Array of stream parameters */
+	struct bt_cap_initiator_broadcast_stream_param *stream_params;
+
+	/** Subgroup Codec configuration. */
+	struct bt_codec *codec;
+};
+
+struct bt_cap_initiator_broadcast_create_param {
+	/** The number of parameters in @p subgroup_params */
+	size_t subgroup_count;
+
+	/** Array of stream parameters */
+	struct bt_cap_initiator_broadcast_subgroup_param *subgroup_params;
 
 	/** Quality of Service configuration. */
-	const struct bt_codec_qos *qos;
+	struct bt_codec_qos *qos;
 
-	/**
-	 * @brief Whether or not to encrypt the streams.
+	/** @brief Broadcast Source packing mode.
 	 *
-	 * If set to true, then the broadcast code in @p broadcast_code
-	 * will be used to encrypt the streams.
+	 *  @ref BT_ISO_PACKING_SEQUENTIAL or @ref BT_ISO_PACKING_INTERLEAVED.
+	 *
+	 *  @note This is a recommendation to the controller, which the
+	 *  controller may ignore.
 	 */
-	bool encrypt;
+	uint8_t packing;
+
+	/** Whether or not to encrypt the streams. */
+	bool encryption;
 
 	/**
 	 * @brief 16-octet broadcast code.
@@ -283,31 +306,36 @@ struct bt_cap_broadcast_audio_start_param {
 	 *   The string "Broadcast Code" shall be
 	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
 	 */
-	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_BAP_BROADCAST_CODE_SIZE];
 };
 
 /**
- * @brief Start broadcast audio.
+ * @brief Create and start Common Audio Profile Common Audio Profile broadcast source.
  *
  * Create a new audio broadcast source with one or more audio streams.
  *
  * The broadcast source will be visible for scanners once this has been called,
  * and the device will advertise audio announcements.
  *
+ * This will allow the streams in the broadcast source to send audio by calling
+ * bt_audio_stream_send().
+ *
  * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
  * @kconfig{CONFIG_BT_AUDIO_BROADCAST_SOURCE} must be enabled for this function
  * to be enabled.
  *
- * @param[in]  param   Parameters to start the audio streams.
- * @param[out] source  Pointer to the broadcast source started.
+ * @param[in]  param             Parameters to start the audio streams.
+ * @param[in]  adv               Pointer to an extended advertising set with
+ *                               periodic advertising configured.
+ * @param[out] broadcast_source  Pointer to the broadcast source created.
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_broadcast_audio_start(const struct bt_cap_broadcast_audio_start_param *param,
-					   struct bt_audio_broadcast_source **source);
-
+int bt_cap_initiator_broadcast_audio_start(struct bt_cap_initiator_broadcast_create_param *param,
+					   struct bt_le_ext_adv *adv,
+					   struct bt_cap_broadcast_source **broadcast_source);
 /**
- * @brief Update broadcast audio streams for a broadcast source.
+ * @brief Update broadcast audio streams for a Common Audio Profile broadcast source.
  *
  * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
  * @kconfig{CONFIG_BT_AUDIO_BROADCAST_SOURCE} must be enabled for this function
@@ -320,12 +348,12 @@ int bt_cap_initiator_broadcast_audio_start(const struct bt_cap_broadcast_audio_s
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_broadcast_audio_update(struct bt_audio_broadcast_source *broadcast_source,
+int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source,
 					    uint8_t meta_count,
 					    const struct bt_codec_data *meta);
 
 /**
- * @brief Stop broadcast audio streams for a broadcast source.
+ * @brief Stop broadcast audio streams for a Common Audio Profile broadcast source.
  *
  * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
  * @kconfig{CONFIG_BT_AUDIO_BROADCAST_SOURCE} must be enabled for this function
@@ -337,8 +365,42 @@ int bt_cap_initiator_broadcast_audio_update(struct bt_audio_broadcast_source *br
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_broadcast_audio_stop(struct bt_audio_broadcast_source *broadcast_source);
+int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source);
 
+/**
+ * @brief Get the broadcast ID of a Common Audio Profile broadcast source
+ *
+ * This will return the 3-octet broadcast ID that should be advertised in the
+ * extended advertising data with @ref BT_UUID_BROADCAST_AUDIO_VAL as
+ * @ref BT_DATA_SVC_DATA16.
+ *
+ * See table 3.14 in the Basic Audio Profile v1.0.1 for the structure.
+ *
+ * @param[in]  source        Pointer to the broadcast source.
+ * @param[out] broadcast_id  Pointer to the 3-octet broadcast ID.
+ *
+ * @return int		0 if on success, errno on error.
+ */
+int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *source,
+				      uint32_t *const broadcast_id);
+
+/**
+ * @brief Get the Broadcast Audio Stream Endpoint of a Common Audio Profile broadcast source
+ *
+ * This will encode the BASE of a broadcast source into a buffer, that can be
+ * used for advertisement. The encoded BASE will thus be encoded as
+ * little-endian. The BASE shall be put into the periodic advertising data
+ * (see bt_le_per_adv_set_data()).
+ *
+ * See table 3.15 in the Basic Audio Profile v1.0.1 for the structure.
+ *
+ * @param source        Pointer to the broadcast source.
+ * @param base_buf      Pointer to a buffer where the BASE will be inserted.
+ *
+ * @return int		0 if on success, errno on error.
+ */
+int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *source,
+					struct net_buf_simple *base_buf);
 
 struct bt_cap_unicast_to_broadcast_param {
 	/** The source unicast group with the streams. */
@@ -384,7 +446,7 @@ struct bt_cap_unicast_to_broadcast_param {
  * @return 0 on success or negative error value on failure.
  */
 int bt_cap_initiator_unicast_to_broadcast(const struct bt_cap_unicast_to_broadcast_param *param,
-					  struct bt_audio_broadcast_source **source);
+					  struct bt_cap_broadcast_source **source);
 
 struct bt_cap_broadcast_to_unicast_param {
 	/**
@@ -392,7 +454,7 @@ struct bt_cap_broadcast_to_unicast_param {
 	 *
 	 * The broadcast source will be stopped and deleted.
 	 */
-	struct bt_audio_broadcast_source *broadcast_source;
+	struct bt_cap_broadcast_source *broadcast_source;
 
 	/** The type of the set. */
 	enum bt_cap_set_type type;
