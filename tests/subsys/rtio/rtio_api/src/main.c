@@ -22,7 +22,7 @@
  *
  * @ingroup rtio_tests
  */
-void test_produce_consume_size1(void)
+ZTEST(rtio_spsc, test_produce_consume_size1)
 {
 	RTIO_SPSC_DEFINE(ezspsc, uint32_t, 1);
 
@@ -79,7 +79,7 @@ void test_produce_consume_size1(void)
  *
  * @ingroup rtio_tests
  */
-void test_produce_consume_wrap_around(void)
+ZTEST(rtio_spsc, test_produce_consume_wrap_around)
 {
 	RTIO_SPSC_DEFINE(ezspsc, uint32_t, 4);
 
@@ -113,7 +113,7 @@ void test_produce_consume_wrap_around(void)
  * Done by setting all values to UINTPTR_MAX - 2 and writing and reading enough
  * to ensure integer wraps occur.
  */
-void test_int_wrap_around(void)
+ZTEST(rtio_spsc, test_int_wrap_around)
 {
 	RTIO_SPSC_DEFINE(ezspsc, uint32_t, 4);
 	ezspsc._spsc.in = ATOMIC_INIT(UINTPTR_MAX - 2);
@@ -211,7 +211,7 @@ static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREADS_NUM, STACK_SIZE);
  * This can and should be validated on SMP machines where incoherent
  * memory could cause issues.
  */
-void test_spsc_threaded(void)
+ZTEST(rtio_spsc, test_spsc_threaded)
 {
 
 	tinfo[0].tid =
@@ -271,7 +271,7 @@ void test_rtio_simple_(struct rtio *r)
 	rtio_spsc_release(r->cq);
 }
 
-void test_rtio_simple(void)
+ZTEST(rtio_api, test_rtio_simple)
 {
 	TC_PRINT("rtio simple simple\n");
 	test_rtio_simple_(&r_simple_simp);
@@ -326,7 +326,7 @@ void test_rtio_chain_(struct rtio *r)
 	}
 }
 
-void test_rtio_chain(void)
+ZTEST(rtio_api, test_rtio_chain)
 {
 	for (int i = 0; i < 2; i++) {
 		rtio_iodev_test_init(&iodev_test_chain[i]);
@@ -402,7 +402,7 @@ void test_rtio_multiple_chains_(struct rtio *r)
 	}
 }
 
-void test_rtio_multiple_chains(void)
+ZTEST(rtio_api, test_rtio_multiple_chains)
 {
 	for (int i = 0; i < 2; i++) {
 		rtio_iodev_test_init(&iodev_test_multi[i]);
@@ -414,18 +414,6 @@ void test_rtio_multiple_chains(void)
 	test_rtio_multiple_chains_(&r_multi_con);
 }
 
-void test_main(void)
-{
-	TC_PRINT("imxrt1010 RTIO\n");
-	ztest_test_suite(rtio_spsc_test,
-			 ztest_1cpu_unit_test(test_produce_consume_size1),
-			 ztest_1cpu_unit_test(test_produce_consume_wrap_around),
-			 ztest_1cpu_unit_test(test_int_wrap_around),
-			 ztest_unit_test(test_spsc_threaded),
-			 ztest_unit_test(test_rtio_simple),
-			 ztest_unit_test(test_rtio_chain),
-			 ztest_unit_test(test_rtio_multiple_chains)
-			 );
 
-	ztest_run_test_suite(rtio_spsc_test);
-}
+ZTEST_SUITE(rtio_spsc, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(rtio_api, NULL, NULL, NULL, NULL, NULL);
