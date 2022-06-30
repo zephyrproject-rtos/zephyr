@@ -424,6 +424,18 @@ config NET_TCP_RANDOMIZED_RTO
 	  a second collision is reduced and it reduces furter the more
 	  retransmissions occur.
 
+config NET_TCP_FAST_RETRANSMIT
+	bool "Fast-retry algorithm based on the number of duplicated ACKs"
+	depends on NET_TCP
+	default y
+	help
+	  When a packet is lost, the receiver will keep acknowledging the
+	  sequence number of the last correctly received byte. Upon reception
+	  of a sequence of acknowledgements for the same sequence number,
+	  this can be deduced as that the packet afterwards must have been lost.
+	  In that case a retransmission is triggerd to avoid having to wait for
+	  the retransmit timer to elapse.
+
 config NET_TCP_MAX_SEND_WINDOW_SIZE
 	int "Maximum sending window size to use"
 	depends on NET_TCP
