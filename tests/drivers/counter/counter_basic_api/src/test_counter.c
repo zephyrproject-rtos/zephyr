@@ -97,6 +97,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_NXP_S32_SYS_TIMER
 	DEVS_FOR_DT_COMPAT(nxp_s32_sys_timer)
 #endif
+#ifdef CONFIG_COUNTER_TIMER_GD32
+	DEVS_FOR_DT_COMPAT(gd_gd32_timer)
+#endif
 };
 
 static const struct device *const period_devs[] = {
@@ -971,6 +974,11 @@ static bool reliable_cancel_capable(const struct device *dev)
 	}
 #endif
 #ifdef CONFIG_COUNTER_TIMER_STM32
+	if (single_channel_alarm_capable(dev)) {
+		return true;
+	}
+#endif
+#ifdef CONFIG_COUNTER_TIMER_GD32
 	if (single_channel_alarm_capable(dev)) {
 		return true;
 	}
