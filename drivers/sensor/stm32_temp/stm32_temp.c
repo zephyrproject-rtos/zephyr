@@ -38,7 +38,6 @@ struct stm32_temp_config {
 	int cal1_temp;
 	int cal2_temp;
 	int cal_vrefanalog;
-	int cal_offset;
 #else
 	int avgslope;
 	int v25_mv;
@@ -91,7 +90,7 @@ static int stm32_temp_channel_get(const struct device *dev, enum sensor_channel 
 	temp -= *cfg->cal1_addr;
 	temp *= (cfg->cal2_temp - cfg->cal1_temp);
 	temp /= (*cfg->cal2_addr - *cfg->cal1_addr);
-	temp += cfg->cal_offset;
+	temp += cfg->cal1_temp;
 #else
 	/* Sensor value in millivolts */
 	int32_t mv = data->raw * adc_ref_internal(data->adc) / 0x0FFF;
@@ -142,7 +141,6 @@ static const struct stm32_temp_config stm32_temp_dev_config = {
 	.cal1_temp = DT_INST_PROP(0, ts_cal1_temp),
 	.cal2_temp = DT_INST_PROP(0, ts_cal2_temp),
 	.cal_vrefanalog = DT_INST_PROP(0, ts_cal_vrefanalog),
-	.cal_offset = DT_INST_PROP(0, ts_cal_offset)
 #else
 	.avgslope = DT_INST_PROP(0, avgslope),
 	.v25_mv = DT_INST_PROP(0, v25),
