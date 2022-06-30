@@ -14,9 +14,9 @@ menuconfig FXOS8700
 
 if FXOS8700
 
-choice
+choice FXOS8700_MODE
 	prompt "Mode"
-	default FXOS8700_MODE_ACCEL
+	default FXOS8700_MODE_HYBRID
 
 config FXOS8700_MODE_ACCEL
 	bool "Accelerometer-only mode"
