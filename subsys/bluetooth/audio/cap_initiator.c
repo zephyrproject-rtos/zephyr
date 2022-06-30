@@ -10,8 +10,14 @@
 #include <zephyr/bluetooth/audio/cap.h>
 #include "cap_internal.h"
 #include "csip_internal.h"
+#include "endpoint.h"
 
 #include <zephyr/logging/log.h>
+
+BUILD_ASSERT(sizeof(struct bt_audio_broadcast_source_create_param) ==
+		sizeof(struct bt_cap_initiator_broadcast_create_param),
+	     "Size of struct bt_audio_broadcast_source_create_param must equal "
+	     "to struct bt_cap_initiator_broadcast_create_param");
 
 LOG_MODULE_REGISTER(bt_cap_initiator, CONFIG_BT_CAP_INITIATOR_LOG_LEVEL);
 
@@ -36,22 +42,120 @@ int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb)
 
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
 
-int bt_cap_initiator_broadcast_audio_start(const struct bt_cap_broadcast_audio_start_param *param,
-					   struct bt_audio_broadcast_source **source)
+static bool cap_initiator_broadcast_audio_start_valid_param(
+	const struct bt_cap_initiator_broadcast_create_param *param)
 {
-	return -ENOSYS;
+	bool stream_context_found;
+
+	for (size_t i = 0U; i < param->subgroup_count; i++) {
+		const struct bt_cap_initiator_broadcast_subgroup_param *subgroup_param;
+
+		subgroup_param = &param->subgroup_params[i];
+
+		/* Streaming Audio Context shall be present in CAP */
+		stream_context_found = false;
+
+		CHECKIF(subgroup_param->codec == NULL) {
+			LOG_DBG("param->streams is NULL");
+			return false;
+		}
+
+		for (size_t j = 0U; j < subgroup_param->codec->meta_count; j++) {
+			const struct bt_data *meta = &subgroup_param->codec->meta[j].data;
+
+			if (meta->type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
+				if (meta->data_len != 2) { /* Stream context size */
+					return false;
+				}
+
+				stream_context_found = true;
+				break;
+			}
+		}
+
+		CHECKIF(!stream_context_found) {
+			LOG_DBG("No streaming context supplied for subgroup[%zu]",
+				i);
+			return false;
+		}
+	}
+
+	return true;
 }
 
-int bt_cap_initiator_broadcast_audio_update(struct bt_audio_broadcast_source *broadcast_source,
+
+int bt_cap_initiator_broadcast_audio_start(struct bt_cap_initiator_broadcast_create_param *param,
+					   struct bt_le_ext_adv *adv,
+					   struct bt_cap_broadcast_source **broadcast_source)
+{
+	/* TODO: For now the create param and broadcast sources are
+	 * identical, so we can just cast them. This need to be updated and
+	 * made resistant to changes in either the CAP or BAP APIs at some point
+	 */
+	struct bt_audio_broadcast_source_create_param *bap_create_param =
+		(struct bt_audio_broadcast_source_create_param *)param;
+	struct bt_audio_broadcast_source **bap_broadcast_source =
+		(struct bt_audio_broadcast_source **)broadcast_source;
+	int err;
+
+	if (!cap_initiator_broadcast_audio_start_valid_param(param)) {
+		return -EINVAL;
+	}
+
+	CHECKIF(broadcast_source == NULL) {
+		LOG_DBG("source is NULL");
+		return -EINVAL;
+	}
+
+	err = bt_audio_broadcast_source_create(bap_create_param,
+					       bap_broadcast_source);
+	if (err != 0) {
+		LOG_DBG("Failed to create broadcast source: %d", err);
+		return err;
+	}
+
+	err = bt_audio_broadcast_source_start(*bap_broadcast_source, adv);
+	if (err != 0) {
+		int del_err;
+
+		LOG_DBG("Failed to start broadcast source: %d\n", err);
+
+		del_err = bt_audio_broadcast_source_delete(*bap_broadcast_source);
+		if (del_err) {
+			LOG_ERR("Failed to delete BAP broadcast source: %d",
+				del_err);
+		}
+	}
+
+	return err;
+}
+
+int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source,
 					    uint8_t meta_count,
 					    const struct bt_codec_data *meta)
 {
 	return -ENOSYS;
 }
 
-int bt_cap_initiator_broadcast_audio_stop(struct bt_audio_broadcast_source *broadcast_source)
+int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source)
 {
 	return -ENOSYS;
+}
+
+int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *source,
+				      uint32_t *const broadcast_id)
+{
+	return bt_audio_broadcast_source_get_id(
+		(struct bt_audio_broadcast_source *)source,
+		broadcast_id);
+}
+
+int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *source,
+					struct net_buf_simple *base_buf)
+{
+	return bt_audio_broadcast_source_get_base(
+		(struct bt_audio_broadcast_source *)source,
+		base_buf);
 }
 
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
@@ -263,7 +367,7 @@ int bt_cap_initiator_unicast_audio_stop(struct bt_audio_unicast_group *unicast_g
 
 int bt_cap_initiator_unicast_to_broadcast(
 	const struct bt_cap_unicast_to_broadcast_param *param,
-	struct bt_audio_broadcast_source **source)
+	struct bt_cap_broadcast_source **source)
 {
 	return -ENOSYS;
 }
