@@ -254,6 +254,7 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_ADC_ETC
 	select HAS_MCUX_SRC
 	select HAS_SWO
+	select HAS_MCUX_XBARA
 
 config SOC_MIMXRT1064
 	bool "SOC_MIMXRT1064"
