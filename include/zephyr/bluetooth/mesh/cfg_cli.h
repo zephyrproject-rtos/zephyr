@@ -40,6 +40,69 @@ struct bt_mesh_cfg_cli_cb {
 			     uint8_t status, uint16_t elem_addr,
 			     uint16_t sub_addr, uint32_t mod_id);
 
+	/** @brief Optional callback for Node Reset Status messages.
+	 *
+	 *  Handles received Node Reset Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 */
+	void (*node_reset_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr);
+
+	/** @brief Optional callback for Beacon Status messages.
+	 *
+	 *  Handles received Beacon Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param status      Status Code for requesting message.
+	 */
+	void (*beacon_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+				uint8_t status);
+
+	/** @brief Optional callback for Default TTL Status messages.
+	 *
+	 *  Handles received Default TTL Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param status      Status Code for requesting message.
+	 */
+	void (*ttl_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+				uint8_t status);
+
+	/** @brief Optional callback for Friend Status messages.
+	 *
+	 *  Handles received Friend Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param status      Status Code for requesting message.
+	 */
+	void (*friend_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+				uint8_t status);
+
+	/** @brief Optional callback for GATT Proxy Status messages.
+	 *
+	 *  Handles received GATT Proxy Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param status      Status Code for requesting message.
+	 */
+	void (*gatt_proxy_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+				uint8_t status);
+
+	/** @brief Optional callback for Network Transmit Status messages.
+	 *
+	 *  Handles received Network Transmit Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param status      Status Code for requesting message.
+	 */
+	void (*network_transmit_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+					uint8_t status);
 };
 
 /** Mesh Configuration Client Model Context */
