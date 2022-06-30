@@ -1833,8 +1833,10 @@ void bt_gatt_cancel(struct bt_conn *conn, void *params);
  * The data will include both primary and secondary service UUIDs.
  * Mandatory services such as the GATT and GAP services will not be included.
  *
- * @param[in] type
- * Type of the UUIDs. Shall be one of following:
+ * @param data
+ * Pointer to the bt_data struct to store the results in.
+ * Must be initialized with a @p data and and a @p type.
+ * The type shall be one of following:
  *  - BT_DATA_UUID16_SOME:  Encode 16-bit UUIDs until @p data_buf is full.
  *  - BT_DATA_UUID16_ALL:   Encode all 16-bit UUIDs, and return error if they
  *                          do not fit in @p data_buf.
@@ -1844,11 +1846,7 @@ void bt_gatt_cancel(struct bt_conn *conn, void *params);
  *  - BT_DATA_UUID128_SOME: Encode 128-bit UUIDs until @p data_buf is full.
  *  - BT_DATA_UUID128_ALL:  Encode all 128-bit UUIDs, and return error if they
  *                          do not fit in @p data_buf.
- * @param[out] data           Pointer to the bt_data struct to store the
- *                            results in.
- * @param[out] data_buf       Pointer to the buffer where the encoded UUID data
- *                            is stored.
- * @param[in] data_buf_size   Size of the @p data_buf
+ * @param data_buf_size   Size of the @p data.data buffer
  *
  * @retval 0 on success.
  *
@@ -1858,8 +1856,7 @@ void bt_gatt_cancel(struct bt_conn *conn, void *params);
  * @retval -ENOMEM if a _ALL type is used and @p data_buf does not fit all the
  *         data. In this case @p data_buf and @p data will be invalid.
  */
-int bt_gatt_get_svc_uuid_data(uint8_t type, struct bt_data *data,
-			      uint8_t data_buf[], size_t data_buf_size);
+int bt_gatt_get_svc_uuid_data(struct bt_data *data, size_t data_buf_size);
 
 /** @} */
 

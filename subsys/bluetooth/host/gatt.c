@@ -5784,7 +5784,6 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 
 struct svc_uuid_data_state {
 	struct bt_data *data;
-	uint8_t *data_buf;
 	const size_t data_buf_size;
 	bool truncated;
 };
@@ -5814,15 +5813,32 @@ static bool is_valid_adv_uuid_type(const uint8_t type)
 	}
 }
 
+static bool is_valid_adv_uuid_length(uint8_t type, size_t len)
+{
+	switch (type) {
+	case BT_DATA_UUID16_SOME:
+	case BT_DATA_UUID16_ALL:
+		return len >= BT_UUID_SIZE_16;
+	case BT_DATA_UUID32_SOME:
+	case BT_DATA_UUID32_ALL:
+		return len >= BT_UUID_SIZE_32;
+	case BT_DATA_UUID128_SOME:
+	case BT_DATA_UUID128_ALL:
+		return len >= BT_UUID_SIZE_128;
+	default:
+		return false;
+	}
+}
+
 static uint8_t encode_svc_uuid_data(const struct bt_gatt_attr *attr,
 				    uint16_t handle, void *user_data)
 {
 	struct svc_uuid_data_state *data_state = (void *)user_data;
 	const size_t data_buf_size = data_state->data_buf_size;
-	uint8_t *data_buf = data_state->data_buf;
 	struct bt_data *data = data_state->data;
 	const uint8_t data_type = data->type;
 	const struct bt_uuid *service_uuid;
+	uint8_t *data_buf = data->data;
 	uint8_t service_uuid_type;
 
 	/* skip if attribute is not a service */
@@ -5889,34 +5905,33 @@ static uint8_t encode_svc_uuid_data(const struct bt_gatt_attr *attr,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-int bt_gatt_get_svc_uuid_data(uint8_t type, struct bt_data *data,
-			      uint8_t data_buf[], size_t data_buf_size)
+int bt_gatt_get_svc_uuid_data(struct bt_data *data, size_t data_buf_size)
 {
 	struct svc_uuid_data_state data_state = {
 		.data = data,
-		.data_buf = data_buf,
 		.data_buf_size = data_buf_size
 	};
-
-	CHECKIF(!is_valid_adv_uuid_type(type)) {
-		BT_DBG("Invalid type: %u", type);
-		return -EINVAL;
-	}
+	uint8_t type;
 
 	CHECKIF(data == NULL) {
 		BT_DBG("data is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(data_buf == NULL) {
-		BT_DBG("data_buf is NULL");
+	type = data->type;
+
+	CHECKIF(!is_valid_adv_uuid_type(type)) {
+		BT_DBG("Invalid type: %u", type);
 		return -EINVAL;
 	}
 
-	data->type = type;
-	data->data_len = 0U;
-	data->data = data_buf;
+	CHECKIF(!is_valid_adv_uuid_length(type, data_buf_size)) {
+		BT_DBG("Invalid data_buf_size %zu for type %u",
+		       data_buf_size, type);
+		return -EINVAL;
+	}
 
+	data->data_len = 0U;
 	bt_gatt_foreach_attr(BT_ATT_FIRST_ATTRIBUTE_HANDLE,
 			     BT_ATT_LAST_ATTRIBUTE_HANDLE,
 			     encode_svc_uuid_data, &data_state);

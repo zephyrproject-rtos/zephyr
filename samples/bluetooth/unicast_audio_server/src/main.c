@@ -484,6 +484,7 @@ void main(void)
 {
 	static uint8_t uuid16_buf[5 * BT_UUID_SIZE_16];
 	struct bt_le_ext_adv *adv;
+	struct bt_data *uuid_data;
 	int err;
 
 	err = bt_enable(NULL);
@@ -495,13 +496,16 @@ void main(void)
 	printk("Bluetooth initialized\n");
 
 	/* Update UUID16 advertising data */
-	err = bt_gatt_get_svc_uuid_data(BT_DATA_UUID16_ALL, &ad[2],
-					uuid16_buf, sizeof(uuid16_buf));
+	uuid_data = &ad[2];
+	uuid_data->type = BT_DATA_UUID16_ALL;
+	uuid_data->data = uuid16_buf;
+
+	err = bt_gatt_get_svc_uuid_data(uuid_data, sizeof(uuid16_buf));
 	if (err != 0) {
 		printk("Could not encode all UUID16 data: %d\n", err);
 
-		err = bt_gatt_get_svc_uuid_data(BT_DATA_UUID16_SOME, &ad[2],
-						uuid16_buf, sizeof(uuid16_buf));
+		uuid_data->type = BT_DATA_UUID16_SOME;
+		err = bt_gatt_get_svc_uuid_data(uuid_data, sizeof(uuid16_buf));
 		if (err != 0) {
 			printk("Could not encode UUID16 data: %d\n", err);
 			return;
