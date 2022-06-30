@@ -213,4 +213,10 @@ config EXTI_STM32_LPTIM1_IRQ_PRI
 	help
 	  IRQ priority of LPTIM1 interrupt
 
+config EXTI_STM32_ONE_IRQ
+	bool "multiple EXTI one IRQ"
+	depends on EXTI_STM32
+	help
+	  multiple EXTI lines trigger one single IRQ
+
 endif # SOC_FAMILY_STM32

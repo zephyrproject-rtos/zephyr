@@ -434,9 +434,11 @@ int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
 	const struct device *dev = DEVICE_DT_GET(EXTI_NODE);
 	struct stm32_exti_data *data = dev->data;
 
+#if !defined(CONFIG_EXTI_STM32_ONE_IRQ)
 	if (data->cb[line].cb) {
 		return -EBUSY;
 	}
+#endif /* ! CONFIG_EXTI_STM32_ONE_IRQ */
 
 	data->cb[line].cb = cb;
 	data->cb[line].data = arg;
