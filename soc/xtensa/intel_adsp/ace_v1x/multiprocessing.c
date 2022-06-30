@@ -73,13 +73,13 @@ void soc_start_core(int cpu_num)
 		z_xtensa_cache_flush(rom_jump_vector, sizeof(*rom_jump_vector));
 
 		/* Tell the ACE ROM that it should use secondary core flow */
-		MTL_PWRBOOT.bootctl[cpu_num].battr |= MTL_PWRBOOT_BATTR_LPSCTL_BATTR_SLAVE_CORE;
+		DFDSPBRCP.bootctl[cpu_num].battr |= DFDSPBRCP_BATTR_LPSCTL_BATTR_SLAVE_CORE;
 	}
 
-	MTL_PWRBOOT.capctl[cpu_num].ctl |= MTL_PWRBOOT_CTL_SPA;
+	DFDSPBRCP.capctl[cpu_num].ctl |= DFDSPBRCP_CTL_SPA;
 
 	/* Waiting for power up */
-	while (~(MTL_PWRBOOT.capctl[cpu_num].ctl & MTL_PWRBOOT_CTL_CPA) && --retry) {
+	while (~(DFDSPBRCP.capctl[cpu_num].ctl & DFDSPBRCP_CTL_CPA) && --retry) {
 		k_busy_wait(CORE_POWER_CHECK_DELAY);
 	}
 
@@ -94,8 +94,8 @@ void soc_mp_startup(uint32_t cpu)
 	z_xtensa_irq_enable(ACE_INTC_IRQ);
 
 	/* Prevent idle from powering us off */
-	MTL_PWRBOOT.bootctl[cpu].bctl |=
-		MTL_PWRBOOT_BCTL_WAITIPCG | MTL_PWRBOOT_BCTL_WAITIPPG;
+	DFDSPBRCP.bootctl[cpu].bctl |=
+		DFDSPBRCP_BCTL_WAITIPCG | DFDSPBRCP_BCTL_WAITIPPG;
 }
 
 void arch_sched_ipi(void)
@@ -126,10 +126,10 @@ int soc_adsp_halt_cpu(int id)
 		return -EINVAL;
 	}
 
-	MTL_PWRBOOT.capctl[id].ctl &= ~MTL_PWRBOOT_CTL_SPA;
+	DFDSPBRCP.capctl[id].ctl &= ~DFDSPBRCP_CTL_SPA;
 
 	/* Waiting for power off */
-	while (MTL_PWRBOOT.capctl[id].ctl & MTL_PWRBOOT_CTL_CPA && --retry)
+	while (DFDSPBRCP.capctl[id].ctl & DFDSPBRCP_CTL_CPA && --retry)
 		k_busy_wait(CORE_POWER_CHECK_DELAY);
 
 	if (!retry) {
@@ -149,7 +149,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 	switch (state) {
 	case PM_STATE_SOFT_OFF:/* D3 */
-		MTL_PWRBOOT.bootctl[cpu].bctl &= ~MTL_PWRBOOT_BCTL_WAITIPCG;
+		DFDSPBRCP.bootctl[cpu].bctl &= ~DFDSPBRCP_BCTL_WAITIPCG;
 		soc_cpus_active[cpu] = false;
 		z_xtensa_cache_flush_inv_all();
 		if (cpu == 0) {
@@ -182,7 +182,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	switch (state) {
 	case PM_STATE_SOFT_OFF:/* D3 */
 		/* TODO: move clock gating prevent to imr restore vector when it will be ready. */
-		MTL_PWRBOOT.bootctl[cpu].bctl |= MTL_PWRBOOT_BCTL_WAITIPCG;
+		DFDSPBRCP.bootctl[cpu].bctl |= DFDSPBRCP_BCTL_WAITIPCG;
 		soc_cpus_active[cpu] = true;
 		z_xtensa_cache_flush_inv_all();
 		__fallthrough;
