@@ -105,13 +105,12 @@ static struct seg_tx {
 	uint8_t               nack_count;    /* Number of unacked segs */
 	uint8_t               attempts;      /* Remaining tx attempts */
 	uint8_t               ttl;           /* Transmitted TTL value */
-	uint8_t               seg_pending;   /* Number of segments pending */
 	uint8_t               blocked:1,     /* Blocked by ongoing tx */
 			      ctl:1,         /* Control packet */
 			      aszmic:1,      /* MIC size */
 			      started:1,     /* Start cb called */
-			      sending:1,     /* Sending is in progress */
-			      friend_cred:1; /* Using Friend credentials */
+			      friend_cred:1, /* Using Friend credentials */
+			      seg_send_started:1; /* Used to check if seg_send_start cb is called */
 	const struct bt_mesh_send_cb *cb;
 	void                  *cb_data;
 	struct k_work_delayable retransmit;    /* Retransmit timer */
@@ -276,6 +275,7 @@ static void seg_tx_reset(struct seg_tx *tx)
 	}
 
 	tx->nack_count = 0;
+	tx->seg_send_started = 0;
 
 	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_IVU_PENDING)) {
 		BT_DBG("Proceeding with pending IV Update");
@@ -306,10 +306,6 @@ static void schedule_retransmit(struct seg_tx *tx)
 		return;
 	}
 
-	if (--tx->seg_pending || tx->sending) {
-		return;
-	}
-
 	BT_DBG("");
 
 	/* If we haven't gone through all the segments for this attempt yet,
@@ -317,9 +313,7 @@ static void schedule_retransmit(struct seg_tx *tx)
 	 * called this from inside bt_mesh_net_send), we should continue the
 	 * retransmit immediately, as we just freed up a tx buffer.
 	 */
-	k_work_reschedule(&tx->retransmit,
-			  tx->seg_o ? K_NO_WAIT :
-			  K_MSEC(SEG_RETRANSMIT_TIMEOUT(tx)));
+	k_work_reschedule(&tx->retransmit, K_NO_WAIT);
 }
 
 static void seg_send_start(uint16_t duration, int err, void *user_data)
@@ -330,6 +324,8 @@ static void seg_send_start(uint16_t duration, int err, void *user_data)
 		tx->cb->start(duration, err, tx->cb_data);
 		tx->started = 1U;
 	}
+
+	tx->seg_send_started = 1U;
 
 	/* If there's an error in transmitting the 'sent' callback will never
 	 * be called. Make sure that we kick the retransmit timer also in this
@@ -343,6 +339,10 @@ static void seg_send_start(uint16_t duration, int err, void *user_data)
 static void seg_sent(int err, void *user_data)
 {
 	struct seg_tx *tx = user_data;
+
+	if (!tx->seg_send_started) {
+		return;
+	}
 
 	schedule_retransmit(tx);
 }
@@ -405,13 +405,13 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 	BT_DBG("SeqZero: 0x%04x Attempts: %u",
 	       (uint16_t)(tx->seq_auth & TRANS_SEQ_ZERO_MASK), tx->attempts);
 
-	tx->sending = 1U;
-
-	for (; tx->seg_o <= tx->seg_n; tx->seg_o++) {
+	while (tx->seg_o <= tx->seg_n) {
 		struct net_buf *seg;
 		int err;
 
 		if (!tx->seg[tx->seg_o]) {
+			/* Move on to the next segment */
+			tx->seg_o++;
 			continue;
 		}
 
@@ -425,16 +425,18 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 		net_buf_reserve(seg, BT_MESH_NET_HDR_LEN);
 		seg_tx_buf_build(tx, tx->seg_o, &seg->b);
 
-		tx->seg_pending++;
-
 		BT_DBG("Sending %u/%u", tx->seg_o, tx->seg_n);
 
 		err = bt_mesh_net_send(&net_tx, seg, &seg_sent_cb, tx);
 		if (err) {
 			BT_DBG("Sending segment failed");
-			tx->seg_pending--;
 			goto end;
 		}
+
+		/* Move on to the next segment */
+		tx->seg_o++;
+
+		return;
 	}
 
 	tx->seg_o = 0U;
@@ -446,12 +448,7 @@ end:
 		bt_mesh_lpn_poll();
 	}
 
-	if (!tx->seg_pending) {
-		k_work_reschedule(&tx->retransmit,
-				  K_MSEC(SEG_RETRANSMIT_TIMEOUT(tx)));
-	}
-
-	tx->sending = 0U;
+	k_work_reschedule(&tx->retransmit, K_MSEC(SEG_RETRANSMIT_TIMEOUT(tx)));
 }
 
 static void seg_retransmit(struct k_work *work)
@@ -508,12 +505,12 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	tx->cb = cb;
 	tx->cb_data = cb_data;
 	tx->attempts = SEG_RETRANSMIT_ATTEMPTS;
-	tx->seg_pending = 0;
 	tx->xmit = net_tx->xmit;
 	tx->aszmic = net_tx->aszmic;
 	tx->friend_cred = net_tx->friend_cred;
 	tx->blocked = blocked;
 	tx->started = 0;
+	tx->seg_send_started = 0;
 	tx->ctl = !!ctl_op;
 	tx->ttl = net_tx->ctx->send_ttl;
 
@@ -874,9 +871,13 @@ static int trans_ack(struct bt_mesh_net_rx *rx, uint8_t hdr,
 	if (tx->nack_count) {
 		/* According to the Bluetooth Mesh Profile specification,
 		 * section 3.5.3.3, we should reset the retransmit timer and
-		 * retransmit immediately when receiving a valid ack message:
+		 * retransmit immediately when receiving a valid ack message.
+		 * Don't reset the retransmit timer if we didn't finish sending
+		 * segments.
 		 */
-		k_work_reschedule(&tx->retransmit, K_NO_WAIT);
+		if (tx->seg_o == 0) {
+			k_work_reschedule(&tx->retransmit, K_NO_WAIT);
+		}
 	} else {
 		BT_DBG("SDU TX complete");
 		seg_tx_complete(tx, 0);
