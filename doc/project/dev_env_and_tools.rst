@@ -304,7 +304,7 @@ Good for a first time contributor to take.
 Issues that need to be mentioned in release notes as known issues with
 additional information.
 
-Any issue must be classified and labeled as either *Bug*, *Enhancement*,
+Any issue must be classified and labeled as either *Bug*, *Enhancement*, *RFC*,
 *Feature*, *Feature Request* or *Hardware Support*. More information on how
 feature requests are handled and become features can be found in :ref:`Feature
 Tracking<feature-tracking>`.
