@@ -286,3 +286,8 @@ zephyr_udc0: &usb1 {
 &iomuxcgpr {
 	status = "okay";
 };
+
+&itm {
+	pinctrl-0 = <&pinmux_swo>;
+	pinctrl-names = "default";
+};

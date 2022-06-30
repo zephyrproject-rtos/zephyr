@@ -1,0 +1,8 @@
+# PAN1770 EVB configuration
+
+# Copyright (c) 2022 Panasonic Industrial Devices Europe GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PAN1770_EVB
+	bool "pan1770-evb"
+	depends on SOC_NRF52840_QIAA

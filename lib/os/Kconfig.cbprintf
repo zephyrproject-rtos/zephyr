@@ -31,6 +31,7 @@ choice CBPRINTF_INTEGRAL_CONV
 # 01: 0% / 0 B (01 / 00)
 config CBPRINTF_FULL_INTEGRAL
 	bool "Convert the full range of integer values"
+	select PICOLIBC_IO_LONG_LONG if PICOLIBC
 	help
 	  Build cbprintf with buffers sized to support converting the full
 	  range of all integral and pointer values.
@@ -64,6 +65,7 @@ config CBPRINTF_FP_SUPPORT
 	bool "Floating point formatting in cbprintf"
 	default y if FPU
 	depends on CBPRINTF_COMPLETE
+	select PICOLIBC_IO_FLOAT if PICOLIBC
 	help
 	  Build the cbprintf utility function with support for floating
 	  point format specifiers.  Selecting this increases stack size
@@ -142,6 +144,7 @@ config CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
 
 config CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS
 	bool
+	depends on !PICOLIBC
 	select CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
 	help
 	  Hidden option to support tagged arguments in cbvprint_package().

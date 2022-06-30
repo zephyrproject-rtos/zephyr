@@ -219,9 +219,9 @@ int eswifi_uart_init(struct eswifi_dev *eswifi)
 {
 	struct eswifi_uart_data *uart = &eswifi_uart0; /* Static instance */
 
-	uart->dev = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!uart->dev) {
-		LOG_ERR("Failed to initialize uart driver");
+	uart->dev = DEVICE_DT_GET(DT_INST_BUS(0));
+	if (!device_is_ready(uart->dev)) {
+		LOG_ERR("Bus device is not ready");
 		return -ENODEV;
 	}
 

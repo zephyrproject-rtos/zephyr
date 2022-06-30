@@ -1,0 +1,29 @@
+# PAN1782 EVB configuration
+
+# Copyright (c) 2022 Panasonic Industrial Devices Europe GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: pan1782_evb
+name: pan1782-evb
+type: mcu
+arch: arm
+ram: 128
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - usb_device
+  - ble
+  - gpio
+  - i2c
+  - spi
+  - ieee802154
+  - pwm
+  - watchdog
+  - counter

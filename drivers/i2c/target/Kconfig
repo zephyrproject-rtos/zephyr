@@ -1,0 +1,24 @@
+# I2C Target configuration options
+
+# Copyright (c) 2017 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# I2C options
+#
+menuconfig I2C_TARGET
+	bool "I2C Target Drivers"
+	help
+	  Enable I2C Target Driver Configuration
+
+if I2C_TARGET
+
+config I2C_TARGET_INIT_PRIORITY
+	int "Init priority"
+	default 60
+	help
+	  I2C Target device driver initialization priority.
+
+source "drivers/i2c/target/Kconfig.eeprom"
+
+endif # I2C_TARGET

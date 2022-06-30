@@ -45,38 +45,9 @@
  * Get the timer type dependent IRQ number. If timer type
  * is not defined in platform, generate an error
  */
-#if defined(CONFIG_HPET_TIMER)
-#define TICK_IRQ DT_IRQN(DT_INST(0, intel_hpet))
-#elif defined(CONFIG_ARM_ARCH_TIMER)
-#define TICK_IRQ ARM_ARCH_TIMER_IRQ
-#elif defined(CONFIG_APIC_TIMER)
-#define TICK_IRQ CONFIG_APIC_TIMER_IRQ
-#elif defined(CONFIG_APIC_TSC_DEADLINE_TIMER)
-#define TICK_IRQ z_loapic_irq_base() /* first LVT interrupt */
-#elif defined(CONFIG_XTENSA_TIMER)
-#define TICK_IRQ UTIL_CAT(XCHAL_TIMER,		\
-			  UTIL_CAT(CONFIG_XTENSA_TIMER_ID, _INTERRUPT))
 
-#elif defined(CONFIG_CAVS_TIMER)
-#define TICK_IRQ DSP_WCT_IRQ(0)
-#elif defined(CONFIG_ALTERA_AVALON_TIMER)
-#define TICK_IRQ TIMER_0_IRQ
-#elif defined(CONFIG_ARCV2_TIMER)
-#define TICK_IRQ IRQ_TIMER0
-#elif defined(CONFIG_RISCV_MACHINE_TIMER)
-#define TICK_IRQ RISCV_MACHINE_TIMER_IRQ
-#elif defined(CONFIG_ITE_IT8XXX2_TIMER)
-#define TICK_IRQ DT_IRQ_BY_IDX(DT_NODELABEL(timer), 5, irq)
-#elif defined(CONFIG_LITEX_TIMER)
-#define TICK_IRQ DT_IRQN(DT_NODELABEL(timer0))
-#elif defined(CONFIG_RV32M1_LPTMR_TIMER)
-#define TICK_IRQ DT_IRQN(DT_ALIAS(system_lptmr))
-#elif defined(CONFIG_XLNX_PSTTC_TIMER)
-#define TICK_IRQ DT_IRQN(DT_INST(0, xlnx_ttcps))
-#elif defined(CONFIG_RCAR_CMT_TIMER)
-#define TICK_IRQ DT_IRQN(DT_INST(0, renesas_rcar_cmt))
-#elif defined(CONFIG_ESP32C3_SYS_TIMER)
-#define TICK_IRQ DT_IRQN(DT_NODELABEL(systimer0))
+#if defined(CONFIG_APIC_TSC_DEADLINE_TIMER)
+#define TICK_IRQ z_loapic_irq_base() /* first LVT interrupt */
 #elif defined(CONFIG_CPU_CORTEX_M)
 /*
  * The Cortex-M use the SYSTICK exception for the system timer, which is
@@ -94,8 +65,10 @@
  */
 #endif /* defined(CONFIG_ARCH_POSIX) */
 #else
-/* generate an error */
-#error Timer type is not defined for this platform
+
+extern const int32_t z_sys_timer_irq_for_test;
+#define TICK_IRQ (z_sys_timer_irq_for_test)
+
 #endif
 
 /* Cortex-M1, Nios II, and RISCV without CONFIG_RISCV_HAS_CPU_IDLE

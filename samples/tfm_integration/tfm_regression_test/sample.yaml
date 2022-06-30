@@ -14,6 +14,9 @@ sample:
   name: "TFM Regression Test"
 
 tests:
-  sample.tfm.tfm_regression:
-    extra_args: ""
+  sample.tfm.regression:
+    timeout: 200
+
+  sample.tfm.regression_ipc:
+    extra_args: CONFIG_TFM_IPC=y
     timeout: 200

@@ -17,22 +17,19 @@ config I2C_STM32_V1
 	bool
 	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_I2C_V1))
 	select USE_STM32_LL_I2C
-	select I2C_STM32_INTERRUPT if I2C_SLAVE
+	select I2C_STM32_INTERRUPT if I2C_TARGET
 	help
-	  Enable I2C support on the STM32 F1 and F4X family of processors. This
-	  driver also supports the F2 and L1 series.
+	  Driver variant matching `st,stm32-i2c-v1` compatible.
 
 config I2C_STM32_V2
 	bool
 	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_I2C_V2))
 	select USE_STM32_LL_I2C
 	select USE_STM32_LL_RCC if SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X
-	select I2C_STM32_INTERRUPT if I2C_SLAVE
+	select I2C_STM32_INTERRUPT if I2C_TARGET
 	help
-	  Enable I2C support on the STM32 F0, F3, F7, L4, WBX, MP1, G0, G4, WL and
-	  H7 family of processors.
-	  This driver also supports the L0 series.
-	  If I2C_SLAVE is enabled it selects I2C_STM32_INTERRUPT, since slave mode
+	  Driver variant matching `st,stm32-i2c-v2` compatible.
+	  If I2C_TARGET is enabled it selects I2C_STM32_INTERRUPT, since target mode
 	  is only supported by this driver with interrupts enabled.
 
 config I2C_STM32_INTERRUPT

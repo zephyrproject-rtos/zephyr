@@ -27,7 +27,7 @@ static inline int bmg160_bus_config(const struct device *dev)
 	const struct bmg160_device_config *dev_cfg = dev->config;
 	uint32_t i2c_cfg;
 
-	i2c_cfg = I2C_MODE_MASTER | I2C_SPEED_SET(BMG160_BUS_SPEED);
+	i2c_cfg = I2C_MODE_CONTROLLER | I2C_SPEED_SET(BMG160_BUS_SPEED);
 
 	return i2c_configure(dev_cfg->i2c.bus, i2c_cfg);
 }

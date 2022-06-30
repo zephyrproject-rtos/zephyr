@@ -1479,32 +1479,33 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-	/* Peripheral received terminate ind or
+	/* Legacy LLCP:
+	 * Peripheral received terminate ind or
 	 * Central received ack for the transmitted terminate ind or
 	 * Central transmitted ack for the received terminate ind or
 	 * there has been MIC failure
+	 * Refactored LLCP:
+	 * reason_final is set exactly under the above conditions
 	 */
 	reason_final = conn->llcp_terminate.reason_final;
 	if (reason_final && (
-#if defined(CONFIG_BT_PERIPHERAL)
-			    lll->role ||
-#else /* CONFIG_BT_PERIPHERAL */
-			    0 ||
-#endif /* CONFIG_BT_PERIPHERAL */
-#if defined(CONFIG_BT_CENTRAL)
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-			    (((conn->llcp_terminate.req -
-			       conn->llcp_terminate.ack) & 0xFF) ==
-			     TERM_ACKED) ||
-			    conn->central.terminate_ack ||
-			    (reason_final == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL)
-#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-			    1
-#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-#else /* CONFIG_BT_CENTRAL */
-			    1
+#if defined(CONFIG_BT_CENTRAL)
+		(((conn->llcp_terminate.req -
+		       conn->llcp_terminate.ack) & 0xFF) ==
+		     TERM_ACKED) ||
+		    conn->central.terminate_ack ||
+		    (reason_final == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL) ||
 #endif /* CONFIG_BT_CENTRAL */
-			    )) {
+#if defined(CONFIG_BT_PERIPHERAL)
+		lll->role
+#else /* CONFIG_BT_PERIPHERAL */
+		false
+#endif /* CONFIG_BT_PERIPHERAL */
+#else /* defined(CONFIG_BT_LL_SW_LLCP_LEGACY) */
+	    true
+#endif /* !defined(CONFIG_BT_LL_SW_LLCP_LEGACY) */
+		)) {
 		conn_cleanup(conn, reason_final);
 
 		return;
@@ -2566,6 +2567,8 @@ static void tx_ull_flush(struct ll_conn *conn)
 	}
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 	struct node_tx *tx;
+
+	ull_tx_q_resume_data(&conn->tx_q);
 
 	tx = tx_ull_dequeue(conn, NULL);
 	while (tx) {
@@ -8194,3 +8197,8 @@ uint8_t ull_conn_lll_phy_active(struct ll_conn *conn, uint8_t phys)
 }
 
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+
+uint8_t ull_is_lll_tx_queue_empty(struct ll_conn *conn)
+{
+	return (memq_peek(conn->lll.memq_tx.head, conn->lll.memq_tx.tail, NULL) == NULL);
+}

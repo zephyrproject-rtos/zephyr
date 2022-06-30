@@ -11,12 +11,11 @@
 
 void main(void)
 {
-	const char *const devname = DT_LABEL(DT_INST(0, honeywell_mpr));
-	const struct device *dev = device_get_binding(devname);
+	const struct device *dev = DEVICE_DT_GET_ONE(honeywell_mpr);
 	int rc;
 
-	if (dev == NULL) {
-		printf("Device %s not found.\n", devname);
+	if (!device_is_ready(dev)) {
+		printf("Device %s is not ready\n", dev->name);
 		return;
 	}
 

@@ -23,10 +23,9 @@
  */
 
 #include <string.h>
-#include <zephyr/types.h>
 #include <stdbool.h>
-#include <ztest.h>
 #include <zephyr/sys/base64.h>
+#include <zephyr/ztest.h>
 
 #include "../../../lib/os/base64.c"
 

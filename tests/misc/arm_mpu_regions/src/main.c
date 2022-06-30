@@ -16,7 +16,7 @@ extern const struct arm_mpu_config mpu_config;
 static arm_mpu_region_attr_t cacheable = REGION_RAM_ATTR(REGION_1M);
 static arm_mpu_region_attr_t noncacheable = REGION_RAM_NOCACHE_ATTR(REGION_1M);
 
-static void test_regions(void)
+ZTEST(test_c_arm_mpu_regions, test_regions)
 {
 	int cnt = 0;
 
@@ -50,11 +50,4 @@ static void test_regions(void)
 	}
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_c_arm_mpu_regions,
-			ztest_unit_test(test_regions)
-			);
-
-	ztest_run_test_suite(test_c_arm_mpu_regions);
-}
+ZTEST_SUITE(test_c_arm_mpu_regions, NULL, NULL, NULL, NULL, NULL);

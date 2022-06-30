@@ -154,10 +154,6 @@ void test_phy_update_central_loc_collision(void)
 	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 9,
 						   .c_to_p_phy = PHY_2M,
 						   .p_to_c_phy = PHY_2M };
-	struct pdu_data_llctrl_length_rsp length_ntf = {
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
-	};
 	uint16_t instant;
 
 	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
@@ -198,14 +194,14 @@ void test_phy_update_central_loc_collision(void)
 	/* TX Ack */
 	event_tx_ack(&conn, tx);
 
-	/* Check that data tx is not paused */
-	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
+	/* Check that data tx is paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is paused");
 
 	/* Done */
 	event_done(&conn);
 
 	/* Check that data tx is not paused */
-	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
 
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
@@ -306,7 +302,6 @@ void test_phy_update_central_loc_collision(void)
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -332,14 +327,6 @@ void test_phy_update_central_rem_collision(void)
 	struct pdu_data_llctrl_phy_upd_ind ind_2 = { .instant = 14,
 						     .c_to_p_phy = PHY_2M,
 						     .p_to_c_phy = 0 };
-	struct pdu_data_llctrl_length_rsp length_ntf_1 = {
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M)
-	};
-	struct pdu_data_llctrl_length_rsp length_ntf_2 = {
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
-	};
 	uint16_t instant;
 
 	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
@@ -427,7 +414,6 @@ void test_phy_update_central_rem_collision(void)
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf_1);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -479,7 +465,6 @@ void test_phy_update_central_rem_collision(void)
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf_2);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -500,10 +485,6 @@ void test_phy_update_periph_loc_collision(void)
 	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7,
 						   .c_to_p_phy = PHY_2M,
 						   .p_to_c_phy = PHY_1M };
-	struct pdu_data_llctrl_length_rsp length_ntf = {
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M)
-	};
 	uint16_t instant;
 
 	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
@@ -608,7 +589,6 @@ void test_phy_update_periph_loc_collision(void)
 	/* There should be one host notification */
 	pu.status = BT_HCI_ERR_SUCCESS;
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -626,10 +606,6 @@ void test_phy_conn_update_central_loc_collision(void)
 	struct pdu_data *pdu;
 	uint16_t instant;
 
-	struct pdu_data_llctrl_length_rsp length_ntf = {
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
-	};
 	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
 		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
 		.error_code = BT_HCI_ERR_DIFF_TRANS_COLLISION
@@ -751,7 +727,6 @@ void test_phy_conn_update_central_loc_collision(void)
 
 	/* (A) There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 
 	ut_rx_q_is_empty();
 

@@ -124,7 +124,7 @@ static void stm32_i2c_master_finish(const struct device *dev)
 	stm32_i2c_disable_transfer_interrupts(dev);
 #endif
 
-#if defined(CONFIG_I2C_SLAVE)
+#if defined(CONFIG_I2C_TARGET)
 	struct i2c_stm32_data *data = dev->data;
 	data->master_active = false;
 	if (!data->slave_attached) {
@@ -161,7 +161,7 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 	data->current.is_err = 0U;
 	data->current.is_nack = 0U;
 	data->current.msg = msg;
-#if defined(CONFIG_I2C_SLAVE)
+#if defined(CONFIG_I2C_TARGET)
 	data->master_active = true;
 #endif
 	data->slave_address = slave;
@@ -420,13 +420,13 @@ static inline void handle_btf(const struct device *dev)
 }
 
 
-#if defined(CONFIG_I2C_SLAVE)
+#if defined(CONFIG_I2C_TARGET)
 static void stm32_i2c_slave_event(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
-	const struct i2c_slave_callbacks *slave_cb =
+	const struct i2c_target_callbacks *slave_cb =
 		data->slave_cfg->callbacks;
 
 	if (LL_I2C_IsActiveFlag_TXE(i2c) && LL_I2C_IsActiveFlag_BTF(i2c)) {
@@ -472,8 +472,7 @@ static void stm32_i2c_slave_event(const struct device *dev)
 }
 
 /* Attach and start I2C as slave */
-int i2c_stm32_slave_register(const struct device *dev,
-			     struct i2c_slave_config *config)
+int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config *config)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -518,8 +517,7 @@ int i2c_stm32_slave_register(const struct device *dev,
 	return 0;
 }
 
-int i2c_stm32_slave_unregister(const struct device *dev,
-			       struct i2c_slave_config *config)
+int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_config *config)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -547,7 +545,7 @@ int i2c_stm32_slave_unregister(const struct device *dev,
 
 	return 0;
 }
-#endif /* defined(CONFIG_I2C_SLAVE) */
+#endif /* defined(CONFIG_I2C_TARGET) */
 
 void stm32_i2c_event_isr(void *arg)
 {
@@ -556,7 +554,7 @@ void stm32_i2c_event_isr(void *arg)
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
-#if defined(CONFIG_I2C_SLAVE)
+#if defined(CONFIG_I2C_TARGET)
 	if (data->slave_attached && !data->master_active) {
 		stm32_i2c_slave_event(dev);
 		return;
@@ -585,7 +583,7 @@ void stm32_i2c_error_isr(void *arg)
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
-#if defined(CONFIG_I2C_SLAVE)
+#if defined(CONFIG_I2C_TARGET)
 	if (data->slave_attached && !data->master_active) {
 		/* No need for a slave error function right now. */
 		return;

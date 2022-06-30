@@ -8,7 +8,7 @@
 #include <soc.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/rcar_clock_control.h>
+#include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
 
 #define DT_DRV_COMPAT renesas_rcar_cmt
 
@@ -21,6 +21,9 @@
 #define CYCLES_PER_SEC         TIMER_CLOCK_FREQUENCY
 #define CYCLES_PER_TICK        (CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_INST(0, renesas_rcar_cmt));
+#endif
 static struct rcar_cpg_clk mod_clk = {
 	.module = DT_INST_CLOCKS_CELL(0, module),
 	.domain = DT_INST_CLOCKS_CELL(0, domain),

@@ -286,8 +286,8 @@ static uint8_t pu_update_eff_times(struct ll_conn *conn, struct proc_ctx *ctx)
 			pu_calc_eff_time(lll->dle.eff.max_rx_octets, lll->phy_rx, max_rx_time);
 	}
 
-	if ((eff_tx_time != lll->dle.eff.max_tx_time) ||
-	    (eff_rx_time != lll->dle.eff.max_rx_time)) {
+	if ((eff_tx_time > lll->dle.eff.max_tx_time) ||
+	    (eff_rx_time > lll->dle.eff.max_rx_time)) {
 		lll->dle.eff.max_tx_time = eff_tx_time;
 		lll->dle.eff.max_rx_time = eff_rx_time;
 		return 1U;
@@ -591,13 +591,14 @@ static void lp_pu_st_wait_tx_ack_phy_req(struct ll_conn *conn, struct proc_ctx *
 				conn, pu_select_phy_timing_restrict(conn, ctx->data.pu.tx));
 			ctx->state = LP_PU_STATE_WAIT_RX_PHY_UPDATE_IND;
 			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
+			llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
 			break;
 #endif /* CONFIG_BT_PERIPHERAL */
 		default:
 			/* Unknown role */
 			LL_ASSERT(0);
 		}
-		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
+
 		break;
 	default:
 		/* Ignore other evts */
@@ -685,6 +686,7 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 			ctx->data.pu.ntf_pu = ctx->data.pu.host_initiated;
 			lp_pu_complete(conn, ctx, evt, param);
 		}
+		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
 		break;
 	case LP_PU_EVT_REJECT:
 		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
@@ -692,6 +694,7 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 		ctx->data.pu.error = ctx->reject_ext_ind.error_code;
 		ctx->data.pu.ntf_pu = 1;
 		lp_pu_complete(conn, ctx, evt, param);
+		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
 	default:
 		/* Ignore other evts */
 		break;
@@ -919,7 +922,8 @@ static void rp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx
 				      void *param)
 {
 	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx) ||
-	(llcp_rr_get_paused_cmd(conn) == PROC_PHY_UPDATE)) {
+	(llcp_rr_get_paused_cmd(conn) == PROC_PHY_UPDATE) ||
+	    !ull_is_lll_tx_queue_empty(conn)) {
 		ctx->state = RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
 		llcp_rr_set_paused_cmd(conn, PROC_CTE_REQ);
@@ -965,6 +969,7 @@ static void rp_pu_st_wait_rx_phy_req(struct ll_conn *conn, struct proc_ctx *ctx,
 	/* Combine with the 'Preferred' the phys in conn->phy_pref_?x */
 	pu_combine_phys(conn, ctx, conn->phy_pref_tx, conn->phy_pref_rx);
 	llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
+
 	switch (evt) {
 	case RP_PU_EVT_PHY_REQ:
 		switch (conn->lll.role) {

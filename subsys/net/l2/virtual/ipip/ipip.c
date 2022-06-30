@@ -262,10 +262,6 @@ out:
 static enum net_verdict interface_recv(struct net_if *iface,
 				       struct net_pkt *pkt)
 {
-	struct ipip_context *ctx = net_if_get_device(iface)->data;
-
-	ARG_UNUSED(ctx);
-
 	if (DEBUG_RX) {
 		char str[sizeof("RX iface xx")];
 

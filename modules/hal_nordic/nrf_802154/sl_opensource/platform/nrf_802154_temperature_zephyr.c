@@ -25,47 +25,41 @@
 #define LOG_MODULE_NAME nrf_802154_temperature
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-/** @brief Structure describing the temperature measurement module. */
-struct temperature {
-	const struct device *dev;	/**< Temperature device pointer. */
-	int8_t value;			/**< Last temperature measurement in degree Celsius. */
+static int8_t value = DEFAULT_TEMPERATURE;
 
-	struct k_work_delayable work;
-};
-
-static struct temperature temperature = {
-	.value = DEFAULT_TEMPERATURE,
-	.dev = DEVICE_DT_GET(DT_NODELABEL(temp))
-};
 
 #if defined(CONFIG_NRF_802154_TEMPERATURE_UPDATE)
+
+static const struct device *device = DEVICE_DT_GET(DT_NODELABEL(temp));
+static struct k_work_delayable dwork;
+
 static void work_handler(struct k_work *work)
 {
 	struct sensor_value val;
 	int err;
 
-	err = sensor_sample_fetch(temperature.dev);
+	err = sensor_sample_fetch(device);
 	if (!err) {
-		err = sensor_channel_get(temperature.dev, SENSOR_CHAN_DIE_TEMP, &val);
+		err = sensor_channel_get(device, SENSOR_CHAN_DIE_TEMP, &val);
 	}
 
-	if (!err && (temperature.value != val.val1)) {
-		temperature.value = val.val1;
+	if (!err && (value != val.val1)) {
+		value = val.val1;
 
 		nrf_802154_temperature_changed();
 	}
 
-	k_work_reschedule(&temperature.work, K_MSEC(CONFIG_NRF_802154_TEMPERATURE_UPDATE_PERIOD));
+	k_work_reschedule(&dwork, K_MSEC(CONFIG_NRF_802154_TEMPERATURE_UPDATE_PERIOD));
 }
 
 static int temperature_update_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	__ASSERT_NO_MSG(device_is_ready(temperature.dev));
+	__ASSERT_NO_MSG(device_is_ready(device));
 
-	k_work_init_delayable(&temperature.work, work_handler);
-	k_work_schedule(&temperature.work, K_NO_WAIT);
+	k_work_init_delayable(&dwork, work_handler);
+	k_work_schedule(&dwork, K_NO_WAIT);
 
 	return 0;
 }
@@ -87,5 +81,5 @@ void nrf_802154_temperature_deinit(void)
 
 int8_t nrf_802154_temperature_get(void)
 {
-	return temperature.value;
+	return value;
 }
