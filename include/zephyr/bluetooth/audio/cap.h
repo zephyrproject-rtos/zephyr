@@ -28,6 +28,9 @@
 extern "C" {
 #endif
 
+/** @brief Abstract Audio Broadcast Source structure. */
+struct bt_cap_broadcast_source;
+
 /**
  * @brief Register the Common Audio Service.
  *
@@ -231,7 +234,7 @@ int bt_cap_initiator_unicast_audio_update(struct bt_audio_unicast_group *unicast
  */
 int bt_cap_initiator_unicast_audio_stop(struct bt_audio_unicast_group *unicast_group);
 
-struct bt_cap_broadcast_audio_start_param {
+struct bt_cap_broadcast_source_create_param {
 
 	/** The number of streams in @p streams. */
 	size_t count;
@@ -242,13 +245,14 @@ struct bt_cap_broadcast_audio_start_param {
 	/**
 	 * @brief Codec configuration.
 	 *
-	 * The @p codec.meta shall include a list of CCIDs as well as a non-0
-	 * context bitfield.
+	 * The @p codec.meta shall include a list of CCIDs
+	 * (@ref BT_AUDIO_METADATA_TYPE_CCID_LIST) as well as a non-0
+	 * stream context (@ref BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) bitfield.
 	 */
-	const struct bt_codec *codec;
+	struct bt_codec *codec;
 
 	/** Quality of Service configuration. */
-	const struct bt_codec_qos *qos;
+	struct bt_codec_qos *qos;
 
 	/**
 	 * @brief Whether or not to encrypt the streams.
@@ -266,7 +270,7 @@ struct bt_cap_broadcast_audio_start_param {
 };
 
 /**
- * @brief Start broadcast audio.
+ * @brief Create Common Audio Profile broadcast source.
  *
  * Create a new audio broadcast source with one or more audio streams.
  *
@@ -277,13 +281,30 @@ struct bt_cap_broadcast_audio_start_param {
  * @kconfig{CONFIG_BT_AUDIO_BROADCAST_SOURCE} must be enabled for this function
  * to be enabled.
  *
- * @param[in]  param   Parameters to start the audio streams.
- * @param[out] source  Pointer to the broadcast source started.
+ * @param[in]  param             Parameters to start the audio streams.
+ * @param[out] broadcast_source  Pointer to the broadcast source created.
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_broadcast_audio_start(const struct bt_cap_broadcast_audio_start_param *param,
-					   struct bt_audio_broadcast_source **source);
+int bt_cap_initiator_broadcast_source_create(
+	const struct bt_cap_broadcast_source_create_param *param,
+	struct bt_cap_broadcast_source **broadcast_source);
+
+/**
+ * @brief Start broadcast source.
+ *
+ * This will allow the streams in the broadcast source to send audio by calling
+ * bt_audio_stream_send().
+ *
+ * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
+ * @kconfig{CONFIG_BT_AUDIO_BROADCAST_SOURCE} must be enabled for this function
+ * to be enabled.
+ *
+ * @param[out] broadcast_source  Pointer to the broadcast source to start.
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broadcast_source);
 
 /**
  * @brief Update broadcast audio streams for a broadcast source.
@@ -299,7 +320,7 @@ int bt_cap_initiator_broadcast_audio_start(const struct bt_cap_broadcast_audio_s
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_broadcast_audio_update(struct bt_audio_broadcast_source *broadcast_source,
+int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source,
 					    uint8_t meta_count,
 					    const struct bt_codec_data *meta);
 
@@ -316,7 +337,7 @@ int bt_cap_initiator_broadcast_audio_update(struct bt_audio_broadcast_source *br
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_broadcast_audio_stop(struct bt_audio_broadcast_source *broadcast_source);
+int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source);
 
 
 struct bt_cap_unicast_to_broadcast_param {
@@ -355,7 +376,7 @@ struct bt_cap_unicast_to_broadcast_param {
  * @return 0 on success or negative error value on failure.
  */
 int bt_cap_initiator_unicast_to_broadcast(const struct bt_cap_unicast_to_broadcast_param *param,
-					  struct bt_audio_broadcast_source **source);
+					  struct bt_cap_broadcast_source **source);
 
 struct bt_cap_broadcast_to_unicast_param {
 	/**
@@ -363,7 +384,7 @@ struct bt_cap_broadcast_to_unicast_param {
 	 *
 	 * The broadcast source will be stopped and deleted.
 	 */
-	struct bt_audio_broadcast_source *broadcast_source;
+	struct bt_cap_broadcast_source *broadcast_source;
 
 	/** The type of the set. */
 	enum bt_cap_set_type type;

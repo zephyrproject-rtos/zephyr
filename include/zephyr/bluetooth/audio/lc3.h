@@ -316,8 +316,8 @@ enum bt_codec_config_type {
 #define BT_CODEC_LC3_CONFIG_META(_stream_context) \
 { \
 	BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT, \
-		      _stream_context, \
-		      _stream_context >> 8), \
+		      (uint8_t)_stream_context, \
+		      (uint8_t)_stream_context >> 8), \
 }
 
 /** @def BT_CODEC_LC3_CONFIG

@@ -10,6 +10,7 @@
 #include <bluetooth/audio/cap.h>
 #include "cap_internal.h"
 #include "csis_internal.h"
+#include "endpoint.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_CAP_INITIATOR)
 #define LOG_MODULE_NAME bt_cap_initiator
@@ -36,20 +37,105 @@ int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb)
 
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
 
-int bt_cap_initiator_broadcast_audio_start(const struct bt_cap_broadcast_audio_start_param *param,
-					   struct bt_audio_broadcast_source **source)
+static bool cap_initiator_broadcast_source_create_valid_param(
+	const struct bt_cap_broadcast_source_create_param *param)
 {
-	return -ENOSYS;
+	bool stream_context_found;
+
+	CHECKIF(param == NULL) {
+		BT_DBG("param is NULL");
+		return false;
+	}
+
+	CHECKIF(!IN_RANGE(param->count, 0,
+			  MIN(BT_ISO_MAX_GROUP_ISO_COUNT,
+			      CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT))) {
+		BT_DBG("Invalid stream count: %zu", param->count);
+		return false;
+	}
+
+	CHECKIF(param->streams == NULL) {
+		BT_DBG("param->streams is NULL");
+		return false;
+	}
+
+	CHECKIF(param->codec == NULL) {
+		BT_DBG("param->streams is NULL");
+		return false;
+	}
+
+	CHECKIF(param->qos == NULL) {
+		BT_DBG("param->streams is NULL");
+		return false;
+	}
+
+	/* Streaming Audio Context shall be present in CAP */
+	stream_context_found = false;
+	for (size_t i = 0U; i < param->codec->meta_count; i++) {
+		const struct bt_data *meta = &param->codec->meta[i].data;
+
+		if (meta->type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
+			if (meta->data_len != 2) { /* Stream context size */
+				return false;
+			}
+
+			stream_context_found = true;
+			break;
+		}
+	}
+
+	if (!stream_context_found) {
+		BT_DBG("No streaming context supplied");
+	}
+
+	return stream_context_found;
 }
 
-int bt_cap_initiator_broadcast_audio_update(struct bt_audio_broadcast_source *broadcast_source,
+int bt_cap_initiator_broadcast_source_create(
+	const struct bt_cap_broadcast_source_create_param *param,
+	struct bt_cap_broadcast_source **broadcast_source)
+{
+	int err;
+
+	if (!cap_initiator_broadcast_source_create_valid_param(param)) {
+		return -EINVAL;
+	}
+
+	CHECKIF(broadcast_source == NULL) {
+		BT_DBG("source is NULL");
+		return -EINVAL;
+	}
+
+	err = bt_audio_broadcast_source_create(
+		param->streams, param->count, param->codec, param->qos,
+		(struct bt_audio_broadcast_source **)broadcast_source);
+	if (err != 0) {
+		BT_DBG("Failed to create broadcast source: %d", err);
+	}
+
+	return err;
+}
+
+int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broadcast_source)
+{
+	int err;
+
+	err = bt_audio_broadcast_source_start((struct bt_audio_broadcast_source *)broadcast_source);
+	if (err != 0) {
+		BT_DBG("Failed to start broadcast source: %d\n", err);
+	}
+
+	return err;
+}
+
+int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source,
 					    uint8_t meta_count,
 					    const struct bt_codec_data *meta)
 {
 	return -ENOSYS;
 }
 
-int bt_cap_initiator_broadcast_audio_stop(struct bt_audio_broadcast_source *broadcast_source)
+int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source)
 {
 	return -ENOSYS;
 }
@@ -259,7 +345,7 @@ int bt_cap_initiator_unicast_audio_stop(struct bt_audio_unicast_group *unicast_g
 
 int bt_cap_initiator_unicast_to_broadcast(
 	const struct bt_cap_unicast_to_broadcast_param *param,
-	struct bt_audio_broadcast_source **source)
+	struct bt_cap_broadcast_source **source)
 {
 	return -ENOSYS;
 }
