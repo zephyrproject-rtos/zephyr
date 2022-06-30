@@ -13,8 +13,14 @@ on:
     types:
     - completed
 
+permissions:
+  contents: read
+
 jobs:
   doc-publish:
+    permissions:
+      actions: read  # for dawidd6/action-download-artifact to query and download artifacts
+      pull-requests: read  # for dawidd6/action-download-artifact to query commit hash
     name: Publish Documentation
     runs-on: ubuntu-latest
     if: |

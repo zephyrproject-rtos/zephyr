@@ -11,6 +11,9 @@ on:
     - main
     - v*-branch
 
+permissions:
+  contents: read
+
 jobs:
   assignment:
     name: Pull Request Assignment

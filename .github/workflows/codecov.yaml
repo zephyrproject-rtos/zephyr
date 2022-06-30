@@ -6,6 +6,8 @@ on:
 
 jobs:
   codecov-prep:
+    permissions:
+      actions: write  # for styfle/cancel-workflow-action to cancel/stop running workflows
     runs-on: ubuntu-latest
     if: github.repository == 'zephyrproject-rtos/zephyr'
     steps:

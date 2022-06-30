@@ -17,6 +17,9 @@ on:
     - 'scripts/tests/twister/**'
     - '.github/workflows/twister_tests.yml'
 
+permissions:
+  contents: read
+
 jobs:
   twister-tests:
     name: Twister Unit Tests

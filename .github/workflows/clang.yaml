@@ -4,6 +4,8 @@ on: pull_request_target
 
 jobs:
   clang-build-prep:
+    permissions:
+      actions: write  # for styfle/cancel-workflow-action to cancel/stop running workflows
     runs-on: ubuntu-latest
     steps:
       - name: Cancel Previous Runs

@@ -13,8 +13,13 @@ on:
       # same commit
       - 'v*'
 
+permissions:
+  contents: read
+
 jobs:
   footprint-tracking-cancel:
+    permissions:
+      actions: write  # for styfle/cancel-workflow-action to cancel/stop running workflows
     runs-on: ubuntu-latest
     if: github.repository == 'zephyrproject-rtos/zephyr'
     steps:

@@ -4,8 +4,13 @@ on:
   pull_request:
     types: [synchronize, opened, reopened, labeled, unlabeled]
 
+permissions:
+  contents: read
+
 jobs:
   do-not-merge:
+    permissions:
+      contents: none
     if: ${{ contains(github.event.*.labels.*.name, 'DNM') }}
     name: Prevent Merging
     runs-on: ubuntu-latest

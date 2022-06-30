@@ -2,8 +2,13 @@ name: Footprint Delta
 
 on: pull_request
 
+permissions:
+  contents: read
+
 jobs:
   footprint-cancel:
+    permissions:
+      actions: write  # for styfle/cancel-workflow-action to cancel/stop running workflows
     runs-on: ubuntu-latest
     if: github.repository == 'zephyrproject-rtos/zephyr'
     steps:
@@ -12,6 +17,9 @@ jobs:
         with:
           access_token: ${{ github.token }}
   footprint-delta:
+    permissions:
+      actions: write  # for styfle/cancel-workflow-action to cancel/stop running workflows
+      contents: read  # for actions/checkout to fetch code
     runs-on: ubuntu-latest
     if: github.repository == 'zephyrproject-rtos/zephyr'
     needs: footprint-cancel

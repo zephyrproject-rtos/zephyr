@@ -2,6 +2,9 @@ name: Compliance Checks
 
 on: pull_request
 
+permissions:
+  contents: read
+
 jobs:
   maintainer_check:
     runs-on: ubuntu-latest

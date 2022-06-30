@@ -32,6 +32,9 @@ env:
   CMAKE_VERSION: 3.20.5
   DOXYGEN_VERSION: 1.9.4
 
+permissions:
+  contents: read
+
 jobs:
   doc-build-html:
     name: "Documentation Build (HTML)"
