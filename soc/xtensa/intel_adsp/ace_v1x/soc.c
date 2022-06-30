@@ -83,7 +83,7 @@ __imr void boot_core0(void)
 
 	prid = arch_proc_id();
 	if (prid != 0) {
-		((void(*)(void))MTL_PWRBOOT.bootctl[prid].baddr)();
+		((void(*)(void))DFDSPBRCP.bootctl[prid].baddr)();
 	}
 
 	cpu_early_init();
@@ -103,7 +103,7 @@ __imr void boot_core0(void)
 static __imr void power_init_mtl(void)
 {
 	/* Disable idle power gating */
-	MTL_PWRBOOT.bootctl[0].bctl |= MTL_PWRBOOT_BCTL_WAITIPCG | MTL_PWRBOOT_BCTL_WAITIPPG;
+	DFDSPBRCP.bootctl[0].bctl |= DFDSPBRCP_BCTL_WAITIPCG | DFDSPBRCP_BCTL_WAITIPPG;
 
 #if CONFIG_DMA_ACE_GPDMA
 	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(0));
