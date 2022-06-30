@@ -15,9 +15,8 @@
 
 	chosen {
 		zephyr,sram = &sram0;
-		zephyr,console = &scif1;
-		zephyr,shell-uart = &scif1;
-		zephyr,canbus = &can0;
+		zephyr,console = &scif2;
+		zephyr,shell-uart = &scif2;
 	};
 
 	leds {
@@ -51,27 +50,8 @@
 	status = "okay";
 };
 
-&can0 {
-	pinctrl-0 = <&can0_data_a_tx_default &can0_data_a_rx_default>;
+&scif2 {
+	pinctrl-0 = <&scif2_data_a_tx_default &scif2_data_a_rx_default>;
 	pinctrl-names = "default";
-	status = "okay";
-	bus-speed = <125000>;
-
-	can-transceiver {
-		max-bitrate = <5000000>;
-	};
-};
-
-&scif1 {
-	pinctrl-0 = <&scif1_data_a_tx_default &scif1_data_a_rx_default>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-
-&i2c2 {
-	status = "okay";
-};
-
-&i2c4 {
 	status = "okay";
 };
