@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #define FIN_TIMEOUT K_MSEC(tcp_fin_timeout_ms)
 #define ACK_DELAY K_MSEC(100)
 #define ZWP_MAX_DELAY_MS 120000
+#define DUPLICATE_ACK_RETRANSMIT_TRHESHOLD 3
 
 static int tcp_rto = CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 static int tcp_retries = CONFIG_NET_TCP_RETRY_COUNT;
@@ -1424,6 +1425,9 @@ static struct tcp *tcp_conn_alloc(struct net_context *context)
 	conn->state = TCP_LISTEN;
 	conn->recv_win_max = tcp_window;
 	conn->tcp_nodelay = false;
+#ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
+	conn->dup_ack_cnt = 0;
+#endif
 
 	/* Set the recv_win with the rcvbuf configured for the socket. */
 	if (IS_ENABLED(CONFIG_NET_CONTEXT_RCVBUF) &&
@@ -2154,7 +2158,43 @@ next_state:
 			break;
 		}
 
-		if (th && net_tcp_seq_cmp(th_ack(th), conn->seq) > 0) {
+#ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
+		if (th && (net_tcp_seq_cmp(th_ack(th), conn->seq) == 0)) {
+			/* Only if there is pending data, increment the duplicate ack count */
+			if (conn->send_data_total > 0) {
+				/* There could be also payload, only without payload account them */
+				if (len == 0) {
+					/* Increment the duplicate acc counter,
+					 * but maximize the value
+					 */
+					conn->dup_ack_cnt = MIN(conn->dup_ack_cnt + 1,
+						DUPLICATE_ACK_RETRANSMIT_TRHESHOLD + 1);
+				}
+			} else {
+				conn->dup_ack_cnt = 0;
+			}
+
+			/* Only do fast retransmit when not already in a resend state */
+			if ((conn->data_mode == TCP_DATA_MODE_SEND) &&
+			    (conn->dup_ack_cnt == DUPLICATE_ACK_RETRANSMIT_TRHESHOLD)) {
+				/* Apply a fast retransmit */
+				int temp_unacked_len = conn->unacked_len;
+
+				conn->unacked_len = 0;
+
+				ret = tcp_send_data(conn);
+				if (ret < 0) {
+					/* Retry at the next duplicate ack */
+					conn->dup_ack_cnt--;
+				}
+
+				/* Restore the current transmission */
+				conn->unacked_len = temp_unacked_len;
+			}
+		}
+#endif
+
+		if (th && (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0)) {
 			uint32_t len_acked = th_ack(th) - conn->seq;
 
 			NET_DBG("conn: %p len_acked=%u", conn, len_acked);
@@ -2171,6 +2211,11 @@ next_state:
 				close_status = -ECONNRESET;
 				break;
 			}
+
+#ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
+			/* New segment, reset duplicate ack counter */
+			conn->dup_ack_cnt = 0;
+#endif
 
 			conn->send_data_total -= len_acked;
 			if (conn->unacked_len < len_acked) {
@@ -2229,9 +2274,14 @@ next_state:
 			if (th_seq(th) == conn->ack) {
 				verdict = tcp_data_received(conn, pkt, &len);
 			} else if (net_tcp_seq_greater(conn->ack, th_seq(th))) {
-				if ((len > 0) || FL(&fl, &, SYN)) {
-					tcp_out(conn, ACK); /* peer has resent */
-				}
+				/* This should handle the acknowledgements of keep alive
+				 * packets and retransmitted data.
+				 * RISK:
+				 * There is a tiny risk of creating a ACK loop this way when
+				 * both ends of the connection are out of order due to packet
+				 * loss is a simulatanious bidirectional data flow.
+				 */
+				tcp_out(conn, ACK); /* peer has resent */
 
 				net_stats_update_tcp_seg_ackerr(conn->iface);
 			} else if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
