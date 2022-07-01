@@ -26,17 +26,17 @@ def parse_args():
     parser.add_argument('-a', '--all', dest='all',
                         help='Show all bugs squashed', action='store_true')
     parser.add_argument('-t', '--token', dest='tokenfile',
-                        help='File containing GitHub token', metavar='FILE')
-    parser.add_argument('-b', '--begin', dest='begin', help='begin date (YYYY-mm-dd)',
-                        metavar='date', type=valid_date_type, required=True)
+                        help='File containing GitHub token (alternatively, use GITHUB_TOKEN env variable)', metavar='FILE')
+    parser.add_argument('-s', '--start', dest='start', help='start date (YYYY-mm-dd)',
+                        metavar='START_DATE', type=valid_date_type, required=True)
     parser.add_argument('-e', '--end', dest='end', help='end date (YYYY-mm-dd)',
-                        metavar='date', type=valid_date_type, required=True)
+                        metavar='END_DATE', type=valid_date_type, required=True)
 
     args = parser.parse_args()
 
-    if args.end < args.begin:
+    if args.end < args.start:
         raise ValueError(
-            'end date {} is before begin date {}'.format(args.end, args.begin))
+            'end date {} is before start date {}'.format(args.end, args.start))
 
     if args.tokenfile:
         with open(args.tokenfile, 'r') as file:
@@ -53,12 +53,12 @@ def parse_args():
 
 
 class BugBashTally(object):
-    def __init__(self, gh, begin_date, end_date):
+    def __init__(self, gh, start_date, end_date):
         """Create a BugBashTally object with the provided Github object,
-        begin datetime object, and end datetime object"""
+        start datetime object, and end datetime object"""
         self._gh = gh
         self._repo = gh.get_repo('zephyrproject-rtos/zephyr')
-        self._begin_date = begin_date
+        self._start_date = start_date
         self._end_date = end_date
 
         self._issues = []
@@ -122,12 +122,12 @@ class BugBashTally(object):
 
         cutoff = self._end_date + timedelta(1)
         issues = self._repo.get_issues(state='closed', labels=[
-            'bug'], since=self._begin_date)
+            'bug'], since=self._start_date)
 
         for i in issues:
             # the PyGithub API and v3 REST API do not facilitate 'until'
             # or 'end date' :-/
-            if i.closed_at < self._begin_date or i.closed_at > cutoff:
+            if i.closed_at < self._start_date or i.closed_at > cutoff:
                 continue
 
             ipr = i.pull_request
@@ -167,7 +167,7 @@ def print_top_ten(top_ten):
 
 def main():
     args = parse_args()
-    bbt = BugBashTally(Github(args.token), args.begin, args.end)
+    bbt = BugBashTally(Github(args.token), args.start, args.end)
     if args.all:
         # print one issue per line
         issues = bbt.get_issues()
