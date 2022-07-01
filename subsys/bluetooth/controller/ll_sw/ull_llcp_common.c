@@ -77,6 +77,7 @@ enum {
 enum {
 	RP_COMMON_STATE_IDLE,
 	RP_COMMON_STATE_WAIT_RX,
+	RP_COMMON_STATE_POSTPONE_TERMINATE,
 	RP_COMMON_STATE_WAIT_TX,
 	RP_COMMON_STATE_WAIT_TX_ACK,
 	RP_COMMON_STATE_WAIT_NTF,
@@ -92,6 +93,7 @@ enum {
 	/* Request received */
 	RP_COMMON_EVT_REQUEST,
 };
+
 
 static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx);
 static void lp_comm_terminate_invalid_pdu(struct ll_conn *conn, struct proc_ctx *ctx);
@@ -781,8 +783,17 @@ void llcp_lp_comm_init_proc(struct proc_ctx *ctx)
 void llcp_lp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RUN, param);
+
 }
 
+static void rp_comm_terminate(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	llcp_rr_complete(conn);
+	ctx->state = RP_COMMON_STATE_IDLE;
+
+	/* Mark the connection for termination */
+	conn->llcp_terminate.reason_final = ctx->data.term.error_code;
+}
 /*
  * LLCP Remote Procedure Common FSM
  */
@@ -821,6 +832,8 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		break;
 	case PDU_DATA_LLCTRL_TYPE_TERMINATE_IND:
 		llcp_pdu_decode_terminate_ind(ctx, pdu);
+		/* Make sure no data is tx'ed after RX of terminate ind */
+		llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_TERMINATE);
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
@@ -1022,8 +1035,10 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		} else {
 			/* Invalid behaviour
 			 * A procedure already sent a LL_VERSION_IND and received a LL_VERSION_IND.
-			 * For now we chose to ignore the 'out of order' PDU
+			 * Ignore and complete the procedure.
 			 */
+			llcp_rr_complete(conn);
+			ctx->state = RP_COMMON_STATE_IDLE;
 		}
 
 		break;
@@ -1051,12 +1066,19 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_CENTRAL */
 	case PROC_TERMINATE:
-		/* No response */
-		llcp_rr_complete(conn);
-		ctx->state = RP_COMMON_STATE_IDLE;
-
-		/* Mark the connection for termination */
-		conn->llcp_terminate.reason_final = ctx->data.term.error_code;
+#if defined(CONFIG_BT_CENTRAL)
+		if (conn->lll.role == BT_HCI_ROLE_CENTRAL) {
+			/* No response, but postpone terminate until next event
+			 * to ensure acking the reception of TERMINATE_IND
+			 */
+			ctx->state = RP_COMMON_STATE_POSTPONE_TERMINATE;
+			break;
+		}
+#endif
+#if defined(CONFIG_BT_PERIPHERAL)
+		/* Terminate right away */
+		rp_comm_terminate(conn, ctx);
+#endif
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
@@ -1095,6 +1117,26 @@ static void rp_comm_st_wait_rx(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 	case RP_COMMON_EVT_REQUEST:
 		rp_comm_rx_decode(conn, ctx, (struct pdu_data *)param);
 		rp_comm_send_rsp(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void rp_comm_st_postpone_terminate(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				   void *param)
+{
+	switch (evt) {
+	case RP_COMMON_EVT_RUN:
+		LL_ASSERT(ctx->proc == PROC_TERMINATE);
+
+		/* Note: now we terminate, mimicking legacy LLCP behaviour
+		 * A check should be added to ensure that the ack of the terminate_ind was
+		 * indeed tx'ed and not scheduled out/postponed by LLL
+		 */
+		rp_comm_terminate(conn, ctx);
+
 		break;
 	default:
 		/* Ignore other evts */
@@ -1180,6 +1222,9 @@ static void rp_comm_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint
 		break;
 	case RP_COMMON_STATE_WAIT_RX:
 		rp_comm_st_wait_rx(conn, ctx, evt, param);
+		break;
+	case RP_COMMON_STATE_POSTPONE_TERMINATE:
+		rp_comm_st_postpone_terminate(conn, ctx, evt, param);
 		break;
 	case RP_COMMON_STATE_WAIT_TX:
 		rp_comm_st_wait_tx(conn, ctx, evt, param);

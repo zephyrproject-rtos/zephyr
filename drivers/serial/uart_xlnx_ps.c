@@ -33,6 +33,10 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/sys_io.h>
 
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
+
 /* For all register offsets and bits / bit masks:
  * Comp. Xilinx Zynq-7000 Technical Reference Manual (ug585), chap. B.33
  */
@@ -137,6 +141,9 @@ struct uart_xlnx_ps_dev_config {
 	uint32_t sys_clk_freq;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t irq_config_func;
+#endif
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pincfg;
 #endif
 	uint32_t baud_rate;
 };
@@ -284,11 +291,20 @@ static int uart_xlnx_ps_init(const struct device *dev)
 	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_val;
 	uint32_t reg_base;
-
+#ifdef CONFIG_PINCTRL
+	int err;
+#endif
 	reg_base = dev_cfg->reg;
 
 	/* Disable RX/TX before changing any configuration data */
 	xlnx_ps_disable_uart(reg_base);
+
+#ifdef CONFIG_PINCTRL
+	err = pinctrl_apply_state(dev_cfg->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		return err;
+	}
+#endif
 
 	/* Set initial character length / start/stop bit / parity configuration */
 	reg_val = sys_read32(reg_base + XUARTPS_MR_OFFSET);
@@ -1170,12 +1186,21 @@ static void uart_xlnx_ps_irq_config_##port(const struct device *dev) \
 #define UART_XLNX_PS_DEV_DATA(port) \
 static struct uart_xlnx_ps_dev_data_t uart_xlnx_ps_dev_data_##port
 
+#if CONFIG_PINCTRL
+#define UART_XLNX_PS_PINCTRL_DEFINE(port) PINCTRL_DT_INST_DEFINE(port);
+#define UART_XLNX_PS_PINCTRL_INIT(port) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(port),
+#else
+#define UART_XLNX_PS_PINCTRL_DEFINE(port)
+#define UART_XLNX_PS_PINCTRL_INIT(port)
+#endif /* CONFIG_PINCTRL */
+
 #define UART_XLNX_PS_DEV_CFG(port) \
 static struct uart_xlnx_ps_dev_config uart_xlnx_ps_dev_cfg_##port = { \
 	.reg = DT_INST_REG_ADDR(port), \
 	.sys_clk_freq = DT_INST_PROP(port, clock_frequency), \
 	.baud_rate = DT_INST_PROP(port, current_speed), \
 	UART_XLNX_PS_IRQ_CONF_FUNC_SET(port) \
+	UART_XLNX_PS_PINCTRL_INIT(port) \
 }
 
 #define UART_XLNX_PS_INIT(port) \
@@ -1188,6 +1213,7 @@ DEVICE_DT_INST_DEFINE(port, \
 	&uart_xlnx_ps_driver_api)
 
 #define UART_XLNX_INSTANTIATE(inst)		\
+	UART_XLNX_PS_PINCTRL_DEFINE(inst)	\
 	UART_XLNX_PS_IRQ_CONF_FUNC(inst);	\
 	UART_XLNX_PS_DEV_DATA(inst);		\
 	UART_XLNX_PS_DEV_CFG(inst);		\

@@ -26,10 +26,16 @@
 #include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_backend_std.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
 /** The stimulus port from which SWO data is received and displayed */
 #define ITM_PORT_LOGGER       0
+
+/* If ITM has pin control properties, apply them for SWO pins */
+#if DT_NODE_HAS_PROP(DT_NODELABEL(itm), pinctrl_0)
+PINCTRL_DT_DEFINE(DT_NODELABEL(itm));
+#endif
 
 /* Set TPIU prescaler for the current debug trace clock frequency. */
 #if CONFIG_LOG_BACKEND_SWO_FREQ_HZ == 0
@@ -37,8 +43,8 @@
 #else
 
 /* Set reference frequency which can be custom or cpu frequency. */
-#if DT_NODE_HAS_PROP(DT_PATH(cpus, cpu_0), swo_ref_frequency)
-#define SWO_REF_FREQ DT_PROP(DT_PATH(cpus, cpu_0), swo_ref_frequency)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(itm), swo_ref_frequency)
+#define SWO_REF_FREQ DT_PROP(DT_NODELABEL(itm), swo_ref_frequency)
 #elif DT_NODE_HAS_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 #define SWO_REF_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 #else
@@ -74,7 +80,7 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 LOG_OUTPUT_DEFINE(log_output_swo, char_out, buf, sizeof(buf));
 
 static void log_backend_swo_process(const struct log_backend *const backend,
-				    union log_msg2_generic *msg)
+				    union log_msg_generic *msg)
 {
 	uint32_t flags = log_backend_std_get_flags();
 
@@ -114,6 +120,14 @@ static void log_backend_swo_init(struct log_backend const *const backend)
 	ITM->TCR  = 0x0001000D;
 	/* Enable stimulus port used by the logger */
 	ITM->TER  = 1 << ITM_PORT_LOGGER;
+
+	/* Initialize pin control settings, if any are defined */
+#if DT_NODE_HAS_PROP(DT_NODELABEL(itm), pinctrl_0)
+	const struct pinctrl_dev_config *pincfg =
+		PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(itm));
+
+	pinctrl_apply_state(pincfg, PINCTRL_STATE_DEFAULT);
+#endif
 }
 
 static void log_backend_swo_panic(struct log_backend const *const backend)

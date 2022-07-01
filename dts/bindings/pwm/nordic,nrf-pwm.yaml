@@ -15,10 +15,11 @@ properties:
 
     ch0-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The channel 0 pin to use.
 
@@ -34,10 +35,11 @@ properties:
 
     ch0-inverted:
       type: boolean
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
         When the pin control driver is enabled, use the "nordic,invert" property
         in the corresponding pin configuration group instead.
 
@@ -45,20 +47,22 @@ properties:
 
     ch1-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The channel 1 pin to use. The pin numbering scheme is the same
         as the ch0-pin property's.
 
     ch1-inverted:
       type: boolean
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
         When the pin control driver is enabled, use the "nordic,invert" property
         in the corresponding pin configuration group instead.
 
@@ -66,20 +70,22 @@ properties:
 
     ch2-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The channel 2 pin to use. The pin numbering scheme is the same
         as the ch0-pin property's.
 
     ch2-inverted:
       type: boolean
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
         When the pin control driver is enabled, use the "nordic,invert" property
         in the corresponding pin configuration group instead.
 
@@ -87,20 +93,22 @@ properties:
 
     ch3-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The channel 3 pin to use. The pin numbering scheme is the same
         as the ch0-pin property's.
 
     ch3-inverted:
       type: boolean
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
         When the pin control driver is enabled, use the "nordic,invert" property
         in the corresponding pin configuration group instead.
 

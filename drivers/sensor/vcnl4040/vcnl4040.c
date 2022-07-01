@@ -19,11 +19,10 @@ LOG_MODULE_REGISTER(vcnl4040, CONFIG_SENSOR_LOG_LEVEL);
 int vcnl4040_read(const struct device *dev, uint8_t reg, uint16_t *out)
 {
 	const struct vcnl4040_config *config = dev->config;
-	struct vcnl4040_data *data = dev->data;
 	uint8_t buff[2] = { 0 };
 	int ret = 0;
 
-	ret = i2c_write_read(data->i2c, config->i2c_address,
+	ret = i2c_write_read_dt(&config->i2c,
 			     &reg, sizeof(reg), buff, sizeof(buff));
 
 	if (!ret)
@@ -35,7 +34,6 @@ int vcnl4040_read(const struct device *dev, uint8_t reg, uint16_t *out)
 int vcnl4040_write(const struct device *dev, uint8_t reg, uint16_t value)
 {
 	const struct vcnl4040_config *config = dev->config;
-	struct vcnl4040_data *data = dev->data;
 	struct i2c_msg msg;
 	int ret;
 	uint8_t buff[3];
@@ -48,7 +46,7 @@ int vcnl4040_write(const struct device *dev, uint8_t reg, uint16_t value)
 	msg.flags = 0;
 	msg.len = sizeof(buff);
 
-	ret = i2c_transfer(data->i2c, &msg, 1, config->i2c_address);
+	ret = i2c_transfer_dt(&config->i2c, &msg, 1);
 
 	if (ret < 0) {
 		LOG_ERR("write block failed");
@@ -287,10 +285,9 @@ static int vcnl4040_init(const struct device *dev)
 	uint16_t id;
 
 	/* Get the I2C device */
-	data->i2c = device_get_binding(config->i2c_name);
-	if (data->i2c == NULL) {
-		LOG_ERR("Could not find I2C device");
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
 	/* Check device id */
@@ -342,18 +339,9 @@ static const struct sensor_driver_api vcnl4040_driver_api = {
 };
 
 static const struct vcnl4040_config vcnl4040_config = {
-	.i2c_name = DT_INST_BUS_LABEL(0),
-	.i2c_address = DT_INST_REG_ADDR(0),
+	.i2c = I2C_DT_SPEC_INST_GET(0),
 #ifdef CONFIG_VCNL4040_TRIGGER
-#if DT_INST_NODE_HAS_PROP(0, int_gpios)
-	.gpio_name = DT_INST_GPIO_LABEL(0, int_gpios),
-	.gpio_pin = DT_INST_GPIO_PIN(0, int_gpios),
-	.gpio_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
-#else
-	.gpio_name = NULL,
-	.gpio_pin = 0,
-	.gpio_flags = 0,
-#endif
+	.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),
 #endif
 	.led_i = DT_INST_ENUM_IDX(0, led_current),
 	.led_dc = DT_INST_ENUM_IDX(0, led_duty_cycle),

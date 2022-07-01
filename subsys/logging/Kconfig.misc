@@ -25,7 +25,7 @@ config LOG_TEST_CLEAR_MESSAGE_SPACE
 	  Used in testing to simplify message comparision if message contains
 	  paddings.
 
-config LOG2_USE_VLA
+config LOG_USE_VLA
 	bool "Using variable length arrays"
 	default y if !MISRA_SANE
 	help
@@ -33,7 +33,7 @@ config LOG2_USE_VLA
 	  supported. Note that VLA are used for arrays which size is resolved at
 	  compile time so at runtime arrays have fixed size.
 
-config LOG2_ALWAYS_RUNTIME
+config LOG_ALWAYS_RUNTIME
 	bool "Always use runtime message creation (v2)"
 	default y if NO_OPTIMIZATIONS
 	default y if LOG_MODE_IMMEDIATE
@@ -48,17 +48,18 @@ config LOG2_ALWAYS_RUNTIME
 	  less stack than static message creation and speed has lower priority
 	  in that mode.
 
-config LOG2_FMT_SECTION
+config LOG_FMT_SECTION
 	bool "Keep log strings in dedicated section"
 	help
 	  When enabled, logs are kept in dedicated memory section. It allows
 	  removing strings from final binary and should be used for dictionary
 	  logging.
 
-config LOG2_USE_TAGGED_ARGUMENTS
+config LOG_USE_TAGGED_ARGUMENTS
 	bool "Using tagged arguments for packaging"
+	depends on !PICOLIBC
 	select CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS
-	select LOG2_ALWAYS_RUNTIME
+	select LOG_ALWAYS_RUNTIME
 	help
 	  If enabled, packaging uses tagged arguments.
 

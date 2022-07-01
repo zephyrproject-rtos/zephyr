@@ -202,7 +202,7 @@ class HDAStream:
 
 
 def map_regs():
-    p = runx(f"grep -iPl 'PCI_CLASS=40(10|38)0' /sys/bus/pci/devices/*/uevent")
+    p = runx(f"grep -iEl 'PCI_CLASS=40(10|38)0' /sys/bus/pci/devices/*/uevent")
     pcidir = os.path.dirname(p)
 
     # Platform/quirk detection.  ID lists cribbed from the SOF kernel driver
@@ -469,7 +469,7 @@ def load_firmware(fw_file):
     # chromebook) putting the two writes next each other also hangs
     # the DSP!
     sd.CTL &= ~2 # clear START
-    time.sleep(1)
+    time.sleep(0.1)
     sd.CTL |= 1
     log.info(f"cAVS firmware load complete")
 
@@ -654,10 +654,10 @@ async def _main(server):
         (last_seq, output) = winstream_read(last_seq)
         if output:
             adsp_log(output, server)
-        if dsp.HIPCTDR & 0x80000000:
-            ipc_command(dsp.HIPCTDR & ~0x80000000, dsp.HIPCTDD)
         if dsp.HIPCIDA & 0x80000000:
             dsp.HIPCIDA = 1<<31 # must ACK any DONE interrupts that arrive!
+        if dsp.HIPCTDR & 0x80000000:
+            ipc_command(dsp.HIPCTDR & ~0x80000000, dsp.HIPCTDD)
 
 class adsp_request_handler(socketserver.BaseRequestHandler):
     """

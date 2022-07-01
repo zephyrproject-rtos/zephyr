@@ -33,3 +33,4 @@ add_subdirectory_ifdef(CONFIG_CPU_AARCH32_CORTEX_R cortex_a_r)
 add_subdirectory_ifdef(CONFIG_CPU_AARCH32_CORTEX_A cortex_a_r)
 
 zephyr_linker_sources(ROM_START SORT_KEY 0x0vectors vector_table.ld)
+zephyr_linker_sources(ROM_START SORT_KEY 0x1vectors cortex_m/vector_table_pad.ld)

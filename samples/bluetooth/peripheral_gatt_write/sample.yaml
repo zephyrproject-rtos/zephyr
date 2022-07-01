@@ -1,0 +1,7 @@
+sample:
+  name: Bluetooth Peripheral GATT Write
+tests:
+  sample.bluetooth.peripheral_gatt_write:
+    harness: bluetooth
+    platform_allow: qemu_cortex_m3 qemu_x86 nrf52_bsim
+    tags: bluetooth

@@ -238,6 +238,13 @@ if (CONFIG_BUILD_WITH_TFM)
       )
   endif()
 
+  if(CONFIG_FPU AND CONFIG_FP_HARDABI)
+    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_FP=hard)
+    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_FP_ARCH=${FPU_FOR_${GCC_M_CPU}})
+  else()
+    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_FP=soft)
+  endif()
+
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
   add_custom_target(tfm_cmake
     DEPENDS ${TFM_BINARY_DIR}/CMakeCache.txt
@@ -325,7 +332,9 @@ if (CONFIG_BUILD_WITH_TFM)
     interface/interface.c
     )
   # Non-Secure interface to request system reboot
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM src/reboot.c)
+  if (CONFIG_TFM_PARTITION_PLATFORM AND NOT CONFIG_TFM_PARTITION_PLATFORM_CUSTOM_REBOOT)
+    zephyr_library_sources(src/reboot.c)
+  endif()
   zephyr_library_sources_ifndef(CONFIG_TFM_PSA_TEST_NONE src/zephyr_tfm_psa_test.c)
 
   zephyr_include_directories(

@@ -31,9 +31,6 @@ manifest:
     - name: chre
       revision: 0edfe2c2ec656afb910cfab8ed59a5ffd59b87c8
       path: modules/lib/chre
-    - name: civetweb
-      revision: 094aeb41bb93e9199d24d665ee43e9e05d6d7b1c
-      path: modules/lib/civetweb
     - name: cmsis
       revision: 5f86244bad4ad5a590e084f0e72ba7a1416c2edf
       path: modules/hal/cmsis
@@ -65,13 +62,13 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: db4a5893e45db100497fbe5262847280fb749dac
+      revision: 7c24ff5651bd6344b3e5ac4bee420f27c7cc591a
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
         - hal
     - name: hal_gigadevice
-      revision: 63a72ca90b7e0d7257211ddc5c79e8c0b940371b
+      revision: cc8bc14c612e5ecfcb0435f6da53f3302e25014a
       path: modules/hal/gigadevice
       groups:
         - hal
@@ -86,7 +83,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: d9e50d7287fc381792f6f2ee6d37093e036fbd10
+      revision: d892b442b0c74a33ffbbff0ed2a2c2122b4d3925
       path: modules/hal/nordic
       groups:
         - hal
@@ -164,7 +161,7 @@ manifest:
       revision: 12019623bbad9eb54fe51066847a7cbd4b4eac57
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: df717ac87a9fd80246cc8df24554475e59bda21f
+      revision: 07eab463f991f9ea1738a671fa81ad1e54f50ffb
       path: modules/lib/gui/lvgl
     - name: lz4
       revision: 8e303c264fc21c2116dc612658003a22e933124d
@@ -175,7 +172,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: e7415b555134e671ba04f036b02f55cbc087d0e9
+      revision: 3b791288bb037f8d64bd93ffac89ab72d62111bd
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -191,14 +188,17 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: b8cea37dbdc8fc58cc14b4e19fa850877a9da520
+      revision: 93406267eca506003bcb86a86927777a32e729d9
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
       revision: 8d53544871e1f300c478224faca6be8384ab0d04
       path: modules/lib/open-amp
     - name: openthread
-      revision: e2a765599aa0379d0f72f0149a9cbafec070c12d
+      revision: dc5fe8d71b613a036e962c0249e0c9100936fe5a
       path: modules/lib/openthread
+    - name: picolibc
+      path: modules/lib/picolibc
+      revision: e87b2fc37345a62361478f0a6efd140e14180ba5
     - name: segger
       revision: 3a52ab222133193802d3c3b4d21730b9b1f1d2f6
       path: modules/debug/segger

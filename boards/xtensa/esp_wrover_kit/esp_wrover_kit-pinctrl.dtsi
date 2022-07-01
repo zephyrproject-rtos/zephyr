@@ -67,4 +67,34 @@
 		output-high;
 	};
 
+	ledc0_ch0_gpio0: ledc0_ch0_gpio0 {
+		pinmux = <LEDC_CH0_GPIO0>;
+		output-enable;
+	};
+
+	ledc0_ch1_gpio2: ledc0_ch1_gpio2 {
+		pinmux = <LEDC_CH1_GPIO2>;
+		output-enable;
+	};
+
+	ledc0_ch2_gpio4: ledc0_ch2_gpio4 {
+		pinmux = <LEDC_CH2_GPIO4>;
+		output-enable;
+	};
+
+	ledc0_ch8_gpio0: ledc0_ch8_gpio0 {
+		pinmux = <LEDC_CH8_GPIO0>;
+		output-enable;
+	};
+
+	ledc0_ch9_gpio2: ledc0_ch9_gpio2 {
+		pinmux = <LEDC_CH9_GPIO2>;
+		output-enable;
+	};
+
+	ledc0_ch10_gpio4: ledc0_ch10_gpio4 {
+		pinmux = <LEDC_CH10_GPIO4>;
+		output-enable;
+	};
+
 };

@@ -91,7 +91,9 @@ static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 
 static void unicast_client_ep_iso_sent(struct bt_iso_chan *chan)
 {
-	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
+	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
+						      iso_chan);
+	struct bt_audio_ep *ep = audio_iso->source_ep;
 	struct bt_audio_stream_ops *ops = ep->stream->ops;
 
 	BT_DBG("stream %p ep %p", chan, ep);
@@ -180,6 +182,8 @@ void bt_unicast_client_ep_unbind_audio_iso(struct bt_audio_ep *ep)
 	struct bt_iso_chan_qos *qos;
 	const uint8_t dir = ep->dir;
 
+	BT_DBG("ep %p dir %u audio_iso %p", ep, ep->dir, audio_iso);
+
 	if (audio_iso == NULL) {
 		return;
 	}
@@ -189,13 +193,13 @@ void bt_unicast_client_ep_unbind_audio_iso(struct bt_audio_ep *ep)
 
 	if (dir == BT_AUDIO_DIR_SOURCE) {
 		/* If the endpoint is a source, then we need to
-		 * configure our RX parameters
+		 * reset our RX parameters
 		 */
 		audio_iso->sink_ep = NULL;
 		qos->rx = NULL;
 	} else if (dir == BT_AUDIO_DIR_SINK) {
 		/* If the endpoint is a sink, then we need to
-		 * configure our TX parameters
+		 * reset our TX parameters
 		 */
 		audio_iso->source_ep = NULL;
 		qos->tx = NULL;
@@ -218,12 +222,14 @@ void bt_unicast_client_ep_bind_audio_iso(struct bt_audio_ep *ep,
 	iso_chan->ops = &unicast_client_iso_ops;
 	qos = iso_chan->qos = &ep->iso->iso_qos;
 
+	BT_DBG("ep %p, audio_iso %p, iso_chan %p, dir %u",
+	       ep, audio_iso, iso_chan, ep->dir);
+
 	if (dir == BT_AUDIO_DIR_SOURCE) {
 		/* If the endpoint is a source, then we need to
 		 * configure our RX parameters
 		 */
 		audio_iso->sink_ep = ep;
-		qos->tx = NULL;
 		qos->rx = &ep->iso_io_qos;
 	} else if (dir == BT_AUDIO_DIR_SINK) {
 		/* If the endpoint is a sink, then we need to
@@ -231,7 +237,6 @@ void bt_unicast_client_ep_bind_audio_iso(struct bt_audio_ep *ep,
 		 */
 		audio_iso->source_ep = ep;
 		qos->tx = &ep->iso_io_qos;
-		qos->rx = NULL;
 	} else {
 		__ASSERT(false, "Invalid dir: %u", dir);
 	}
@@ -398,21 +403,18 @@ static void unicast_client_ep_idle_state(struct bt_audio_ep *ep,
 
 static void unicast_client_ep_qos_reset(struct bt_audio_ep *ep)
 {
-	struct bt_iso_chan_qos *iso_qos = &ep->iso->iso_qos;
+	BT_DBG("ep %p dir %u", ep, ep->dir);
 
-	ep->iso->iso_chan.qos = memset(iso_qos, 0, sizeof(*iso_qos));
 	if (ep->dir == BT_AUDIO_DIR_SOURCE) {
 		/* If the endpoint is a source, then we need to
 		 * configure our RX parameters
 		 */
-		ep->iso->iso_qos.tx = NULL;
 		ep->iso->iso_qos.rx = memset(&ep->iso_io_qos, 0,
 					     sizeof(ep->iso_io_qos));
 	} else if (ep->dir == BT_AUDIO_DIR_SINK) {
 		/* If the endpoint is a sink, then we need to
 		 * configure our TX parameters
 		 */
-		ep->iso->iso_qos.rx = NULL;
 		ep->iso->iso_qos.tx = memset(&ep->iso_io_qos, 0,
 					     sizeof(ep->iso_io_qos));
 	} else {
@@ -1595,8 +1597,10 @@ int bt_unicast_client_start(struct bt_audio_stream *stream)
 	}
 
 	if (err && err != -EALREADY) {
-		BT_ERR("bt_audio_stream_connect: %d", err);
+		BT_DBG("bt_audio_stream_connect failed: %d", err);
 		return err;
+	} else if (err == -EALREADY) {
+		BT_DBG("ISO %p already connected", stream->iso);
 	}
 
 	/* When initiated by the client, valid only if Direction field

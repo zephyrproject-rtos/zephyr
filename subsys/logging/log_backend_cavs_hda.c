@@ -8,6 +8,7 @@
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_output_dict.h>
 #include <zephyr/logging/log_backend_std.h>
 #include <zephyr/logging/log_backend_cavs_hda.h>
 #include <zephyr/drivers/dma.h>
@@ -20,7 +21,8 @@ static uint32_t hda_log_chan;
 /*
  * HDA requires 128 byte aligned data and 128 byte aligned transfers.
  */
-static __aligned(128) uint8_t hda_log_buf[CONFIG_LOG_BACKEND_CAVS_HDA_SIZE];
+#define ALIGNMENT DMA_BUF_ALIGNMENT(DT_NODELABEL(hda_host_in))
+static __aligned(ALIGNMENT) uint8_t hda_log_buf[CONFIG_LOG_BACKEND_CAVS_HDA_SIZE];
 static volatile uint32_t hda_log_buffered;
 static struct k_spinlock hda_log_lock;
 static struct k_timer hda_log_timer;
@@ -179,7 +181,11 @@ static inline void dropped(const struct log_backend *const backend,
 {
 	ARG_UNUSED(backend);
 
-	log_output_dropped_process(&log_output_cavs_hda, cnt);
+	if (IS_ENABLED(CONFIG_LOG_DICTIONARY_SUPPORT)) {
+		log_dict_output_dropped_process(&log_output_cavs_hda, cnt);
+	} else {
+		log_output_dropped_process(&log_output_cavs_hda, cnt);
+	}
 }
 
 static void panic(struct log_backend const *const backend)
@@ -202,27 +208,17 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 	return 0;
 }
 
-static uint32_t format_flags(void)
-{
-	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
-
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)) {
-		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
-	}
-
-	return flags;
-}
-
 static volatile uint32_t counter;
 
 static void process(const struct log_backend *const backend,
-		union log_msg2_generic *msg)
+		union log_msg_generic *msg)
 {
 	ARG_UNUSED(backend);
+	uint32_t flags = log_backend_std_get_flags();
 
 	log_format_func_t log_output_func = log_format_func_t_get(log_format_current);
 
-	log_output_func(&log_output_cavs_hda, &msg->log, format_flags());
+	log_output_func(&log_output_cavs_hda, &msg->log, flags);
 }
 
 /**

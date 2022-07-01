@@ -12,6 +12,7 @@
 #include <zephyr/kernel_structs.h>
 #include <zephyr/arch/arm64/lib_helpers.h>
 #include <zephyr/arch/arm64/tpidrro_el0.h>
+#include <zephyr/sys/__assert.h>
 
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
@@ -25,11 +26,11 @@ static ALWAYS_INLINE int arch_exception_depth(void)
 
 static ALWAYS_INLINE uint32_t arch_proc_id(void)
 {
-	/*
-	 * Placeholder implementation to be replaced with an architecture
-	 * specific call to get processor ID
-	 */
-	return arch_curr_cpu()->id;
+	uint64_t cpu_mpid = read_mpidr_el1();
+
+	__ASSERT(cpu_mpid == (uint32_t)cpu_mpid, "mpid extends past 32 bits");
+
+	return (uint32_t)cpu_mpid;
 }
 
 #endif /* !_ASMLANGUAGE */

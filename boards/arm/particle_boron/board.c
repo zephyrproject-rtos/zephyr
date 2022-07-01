@@ -40,8 +40,8 @@ static int board_particle_boron_init(const struct device *dev)
 	const struct device *gpio_dev;
 
 	/* Enable the serial buffer for SARA-R4 modem */
-	gpio_dev = device_get_binding(SERIAL_BUFFER_ENABLE_GPIO_NAME);
-	if (!gpio_dev) {
+	gpio_dev = DEVICE_DT_GET(SERIAL_BUFFER_ENABLE_GPIO_NODE);
+	if (!device_is_ready(gpio_dev)) {
 		return -ENODEV;
 	}
 

@@ -37,3 +37,8 @@ tests:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
     - CONFIG_NEWLIB_LIBC=y
+  printk.format.picolibc:
+    tags: clib picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+    - CONFIG_PICOLIBC=y

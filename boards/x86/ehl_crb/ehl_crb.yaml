@@ -4,6 +4,7 @@ type: mcu
 arch: x86
 toolchain:
   - zephyr
+  - llvm
 ram: 2048
 supported:
   - gpio

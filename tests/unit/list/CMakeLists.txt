@@ -9,4 +9,4 @@ set(SOURCES
   dlist.c
   sflist.c
   )
-find_package(ZephyrUnittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})

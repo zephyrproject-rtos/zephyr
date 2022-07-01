@@ -130,8 +130,24 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 			return ISOAL_STATUS_OK;
 		}
 #endif /* CONFIG_BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA */
+
 		pb  = sink_ctx->sdu_production.sdu_state;
 		len = sink_ctx->sdu_production.sdu_written;
+		packet_status_flag = valid_sdu->status;
+
+		/* BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
+		 * 5.4.5 HCI ISO Data packets
+		 * If Packet_Status_Flag equals 0b10 then PB_Flag shall equal 0b10.
+		 * When Packet_Status_Flag is set to 0b10 in packets from the Controller to the
+		 * Host, there is no data and ISO_SDU_Length shall be set to zero.
+		 */
+		if (packet_status_flag == ISOAL_SDU_STATUS_LOST_DATA) {
+			if (len > 0 && buf->len >= len) {
+				/* Discard data */
+				net_buf_pull_mem(buf, len);
+			}
+			len = 0;
+		}
 
 		/*
 		 * BLUETOOTH CORE SPECIFICATION Version 5.3 | Vol 4, Part E
@@ -153,16 +169,6 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 
 		if (ts) {
 			data_hdr = net_buf_push(buf, BT_HCI_ISO_TS_DATA_HDR_SIZE);
-			packet_status_flag = valid_sdu->status;
-
-			/* TODO: Validity of length might need to be reconsidered here. Not handled
-			 * in ISO-AL.
-			 * BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
-			 * 5.4.5 HCI ISO Data packets
-			 * If Packet_Status_Flag equals 0b10 then PB_Flag shall equal 0b10.
-			 * When Packet_Status_Flag is set to 0b10 in packets from the Controller to
-			 * the Host, there is no data and ISO_SDU_Length shall be set to zero.
-			 */
 			slen_packed = bt_iso_pkt_len_pack(len, packet_status_flag);
 
 			data_hdr->ts = sys_cpu_to_le32((uint32_t) valid_sdu->timestamp);
@@ -374,9 +380,8 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 		}
 
 		struct ll_iso_datapath *dp = hdr->datapath_out;
-		isoal_sink_handle_t sink = dp->sink_hdl;
 
-		if (dp->path_id == BT_HCI_DATAPATH_ID_HCI) {
+		if (dp && dp->path_id == BT_HCI_DATAPATH_ID_HCI) {
 			/* If HCI datapath pass to ISO AL here */
 			struct isoal_pdu_rx pckt_meta = {
 				.meta = &node_rx->hdr.rx_iso_meta,
@@ -385,7 +390,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 
 			/* Pass the ISO PDU through ISO-AL */
 			isoal_status_t err =
-				isoal_rx_pdu_recombine(sink, &pckt_meta);
+				isoal_rx_pdu_recombine(dp->sink_hdl, &pckt_meta);
 
 			LL_ASSERT(err == ISOAL_STATUS_OK); /* TODO handle err */
 		}

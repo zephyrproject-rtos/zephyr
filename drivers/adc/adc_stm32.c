@@ -344,6 +344,20 @@ static void adc_stm32_calib(const struct device *dev)
 }
 #endif
 
+/*
+ * Disable ADC peripheral, and wait until it is disabled
+ */
+static inline void adc_stm32_disable(ADC_TypeDef *adc)
+{
+	if (LL_ADC_IsEnabled(adc) != 1UL) {
+		return;
+	}
+
+	LL_ADC_Disable(adc);
+	while (LL_ADC_IsEnabled(adc) == 1UL) {
+	}
+}
+
 #if defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
@@ -369,6 +383,48 @@ static void adc_stm32_calib(const struct device *dev)
 	};
 #endif /* ! ADC_VER_V5_V90 */
 
+/*
+ * Function to configure the oversampling scope. It is basically a wrapper over
+ * LL_ADC_SetOverSamplingScope() which in addition stops the ADC if needed.
+ */
+static void adc_stm32_oversampling_scope(ADC_TypeDef *adc, uint32_t ovs_scope)
+{
+#if defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32WLX)
+	/*
+	 * setting OVS bits is conditioned to ADC state: ADC must be disabled
+	 * or enabled without conversion on going : disable it, it will stop
+	 */
+	if (LL_ADC_GetOverSamplingScope(adc) == ovs_scope) {
+		return;
+	}
+	adc_stm32_disable(adc);
+#endif
+	LL_ADC_SetOverSamplingScope(adc, ovs_scope);
+}
+
+/*
+ * Function to configure the oversampling ratio and shift. It is basically a
+ * wrapper over LL_ADC_SetOverSamplingRatioShift() which in addition stops the
+ * ADC if needed.
+ */
+static void adc_stm32_oversampling_ratioshift(ADC_TypeDef *adc, uint32_t ratio, uint32_t shift)
+{
+#if defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32WLX)
+	/*
+	 * setting OVS bits is conditioned to ADC state: ADC must be disabled
+	 * or enabled without conversion on going : disable it, it will stop
+	 */
+	if ((LL_ADC_GetOverSamplingRatio(adc) == ratio)
+	    && (LL_ADC_GetOverSamplingShift(adc) == shift)) {
+		return;
+	}
+	adc_stm32_disable(adc);
+#endif
+	LL_ADC_ConfigOverSamplingRatioShift(adc, ratio, shift);
+}
+
 	/*
 	 * Function to configure the oversampling ratio and shit using stm32 LL
 	 * ratio is directly the sequence->oversampling (a 2^n value)
@@ -376,7 +432,7 @@ static void adc_stm32_calib(const struct device *dev)
 	 */
 static void adc_stm32_oversampling(ADC_TypeDef *adc, uint8_t ratio, uint32_t shift)
 {
-	LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
+	adc_stm32_oversampling_scope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	/*
 	 * Set bits manually to circumvent bug in LL Libraries
@@ -396,13 +452,13 @@ static void adc_stm32_oversampling(ADC_TypeDef *adc, uint8_t ratio, uint32_t shi
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 	if (adc == ADC1) {
 		/* the LL function expects a value from 1 to 1024 */
-		LL_ADC_ConfigOverSamplingRatioShift(adc, (1 << ratio), shift);
+		adc_stm32_oversampling_ratioshift(adc, (1 << ratio), shift);
 	} else {
 		/* the LL function expects a value LL_ADC_OVS_RATIO_x */
-		LL_ADC_ConfigOverSamplingRatioShift(adc, stm32_adc_ratio_table[ratio], shift);
+		adc_stm32_oversampling_ratioshift(adc, stm32_adc_ratio_table[ratio], shift);
 	}
 #else /* CONFIG_SOC_SERIES_STM32H7X */
-	LL_ADC_ConfigOverSamplingRatioShift(adc, stm32_adc_ratio_table[ratio], shift);
+	adc_stm32_oversampling_ratioshift(adc, stm32_adc_ratio_table[ratio], shift);
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 }
 #endif /* CONFIG_SOC_SERIES_STM32xxx */
@@ -546,31 +602,17 @@ static int start_read(const struct device *dev,
 
 #if defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
-	/*
-	 * Writing ADC_CFGR1 register while ADEN bit is set
-	 * resets RES[1:0] bitfield. We need to disable and enable adc.
-	 */
-	if (LL_ADC_IsEnabled(adc) == 1UL) {
-		LL_ADC_Disable(adc);
+	if (LL_ADC_GetResolution(adc) != resolution) {
+		/*
+		 * Writing ADC_CFGR1 register while ADEN bit is set
+		 * resets RES[1:0] bitfield. We need to disable and enable adc.
+		 */
+		adc_stm32_disable(adc);
+		LL_ADC_SetResolution(adc, resolution);
 	}
-	while (LL_ADC_IsEnabled(adc) == 1UL) {
-	}
-	LL_ADC_SetResolution(adc, resolution);
-	adc_stm32_enable(adc);
 #elif !defined(CONFIG_SOC_SERIES_STM32F1X) && \
 	!defined(STM32F3X_ADC_V2_5)
 	LL_ADC_SetResolution(adc, resolution);
-#endif
-
-#if defined(CONFIG_SOC_SERIES_STM32L0X) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX)
-	/*
-	 * setting OVS bits is conditioned to ADC state: ADC must be disabled
-	 * or enabled without conversion on going : disable it, it will stop
-	 */
-	LL_ADC_Disable(adc);
-	while (LL_ADC_IsEnabled(adc) == 1UL) {
-	}
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32G0X) || \
@@ -585,7 +627,7 @@ static int start_read(const struct device *dev,
 
 	switch (sequence->oversampling) {
 	case 0:
-		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_DISABLE);
+		adc_stm32_oversampling_scope(adc, LL_ADC_OVS_DISABLE);
 		break;
 	case 1:
 		adc_stm32_oversampling(adc, 1, LL_ADC_OVS_SHIFT_RIGHT_1);
@@ -625,8 +667,6 @@ static int start_read(const struct device *dev,
 		adc_stm32_enable(adc);
 		return -EINVAL;
 	}
-	/* re-enable ADC after changing the OVS */
-	adc_stm32_enable(adc);
 #else
 	if (sequence->oversampling) {
 		LOG_ERR("Oversampling not supported");
@@ -643,17 +683,20 @@ static int start_read(const struct device *dev,
 	!defined(CONFIG_SOC_SERIES_STM32L1X)
 
 		/* we cannot calibrate the ADC while the ADC is enabled */
-		LL_ADC_Disable(adc);
-		while (LL_ADC_IsEnabled(adc) == 1UL) {
-		}
+		adc_stm32_disable(adc);
 		adc_stm32_calib(dev);
-		/* re-enable ADC after calibration */
-		adc_stm32_enable(adc);
 #else
 		LOG_ERR("Calibration not supported");
 		return -ENOTSUP;
 #endif
 	}
+
+	/*
+	 * Make sure the ADC is enabled as it might have been disabled earlier
+	 * to set the resolution, to set the oversampling or to perform the
+	 * calibration.
+	 */
+	adc_stm32_enable(adc);
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(STM32F3X_ADC_V1_1) || \
@@ -667,10 +710,8 @@ static int start_read(const struct device *dev,
 	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 	LL_ADC_EnableIT_EOC(adc);
-#elif defined(CONFIG_SOC_SERIES_STM32F1X)
-	LL_ADC_EnableIT_EOS(adc);
-#elif defined(STM32F3X_ADC_V2_5)
-	adc_stm32_enable(adc);
+#elif defined(STM32F3X_ADC_V2_5) || \
+	defined(CONFIG_SOC_SERIES_STM32F1X)
 	LL_ADC_EnableIT_EOS(adc);
 #else
 	LL_ADC_EnableIT_EOCS(adc);

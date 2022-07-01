@@ -25,13 +25,14 @@ LOG_MODULE_REGISTER(max17055, CONFIG_SENSOR_LOG_LEVEL);
  * @param valp Place to put the value on success
  * @return 0 if successful, or negative error code from I2C API
  */
-static int max17055_reg_read(struct max17055_data *priv, int reg_addr,
+static int max17055_reg_read(const struct device *dev, int reg_addr,
 			     int16_t *valp)
 {
+	const struct max17055_config *config = dev->config;
 	uint8_t i2c_data[2];
 	int rc;
 
-	rc = i2c_burst_read(priv->i2c, DT_INST_REG_ADDR(0), reg_addr, i2c_data, 2);
+	rc = i2c_burst_read_dt(&config->i2c, reg_addr, i2c_data, 2);
 	if (rc < 0) {
 		LOG_ERR("Unable to read register");
 		return rc;
@@ -41,15 +42,16 @@ static int max17055_reg_read(struct max17055_data *priv, int reg_addr,
 	return 0;
 }
 
-static int max17055_reg_write(struct max17055_data *priv, int reg_addr,
+static int max17055_reg_write(const struct device *dev, int reg_addr,
 			      uint16_t val)
 {
+	const struct max17055_config *config = dev->config;
 	uint8_t buf[3];
 
 	buf[0] = (uint8_t)reg_addr;
 	sys_put_le16(val, &buf[1]);
 
-	return i2c_write(priv->i2c, buf, sizeof(buf), DT_INST_REG_ADDR(0));
+	return i2c_write_dt(&config->i2c, buf, sizeof(buf));
 }
 
 /**
@@ -241,7 +243,7 @@ static int max17055_sample_fetch(const struct device *dev,
 	for (size_t i = 0; i < ARRAY_SIZE(regs); i++) {
 		int rc;
 
-		rc = max17055_reg_read(priv, regs[i].reg_addr, regs[i].dest);
+		rc = max17055_reg_read(dev, regs[i].reg_addr, regs[i].dest);
 		if (rc != 0) {
 			LOG_ERR("Failed to read channel %d", chan);
 			return rc;
@@ -251,26 +253,27 @@ static int max17055_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int max17055_exit_hibernate(struct max17055_data *priv)
+static int max17055_exit_hibernate(const struct device *dev)
 {
 	LOG_DBG("Exit hibernate");
 
-	if (max17055_reg_write(priv, SOFT_WAKEUP, SOFT_WAKEUP_WAKEUP)) {
+	if (max17055_reg_write(dev, SOFT_WAKEUP, SOFT_WAKEUP_WAKEUP)) {
 		return -EIO;
 	}
-	if (max17055_reg_write(priv, HIB_CFG, HIB_CFG_CLEAR)) {
+	if (max17055_reg_write(dev, HIB_CFG, HIB_CFG_CLEAR)) {
 		return -EIO;
 	}
-	if (max17055_reg_write(priv, SOFT_WAKEUP, SOFT_WAKEUP_CLEAR)) {
+	if (max17055_reg_write(dev, SOFT_WAKEUP, SOFT_WAKEUP_CLEAR)) {
 		return -EIO;
 	}
 
 	return 0;
 }
 
-static int max17055_write_config(struct max17055_data *priv,
-				 const struct max17055_config *const config)
+static int max17055_write_config(const struct device *dev)
 {
+	const struct max17055_config *config = dev->config;
+
 	uint16_t design_capacity = capacity_to_max17055(config->rsense_mohms,
 							config->design_capacity);
 	uint16_t d_qacc = design_capacity / 32;
@@ -282,53 +285,52 @@ static int max17055_write_config(struct max17055_data *priv,
 	LOG_DBG("DesignCap: %u, dQAcc: %u, IChgTerm: %u, VEmpty: %u, dPAcc: %u",
 		design_capacity, d_qacc, i_chg_term, v_empty, d_pacc);
 
-	if (max17055_reg_write(priv, DESIGN_CAP, design_capacity)) {
+	if (max17055_reg_write(dev, DESIGN_CAP, design_capacity)) {
 		return -EIO;
 	}
-	if (max17055_reg_write(priv, D_QACC, d_qacc)) {
+	if (max17055_reg_write(dev, D_QACC, d_qacc)) {
 		return -EIO;
 	}
-	if (max17055_reg_write(priv, ICHG_TERM, i_chg_term)) {
+	if (max17055_reg_write(dev, ICHG_TERM, i_chg_term)) {
 		return -EIO;
 	}
-	if (max17055_reg_write(priv, V_EMPTY, v_empty)) {
+	if (max17055_reg_write(dev, V_EMPTY, v_empty)) {
 		return -EIO;
 	}
-	if (max17055_reg_write(priv, D_PACC, d_pacc)) {
+	if (max17055_reg_write(dev, D_PACC, d_pacc)) {
 		return -EIO;
 	}
-	if (max17055_reg_write(priv, MODEL_CFG, MODELCFG_REFRESH)) {
+	if (max17055_reg_write(dev, MODEL_CFG, MODELCFG_REFRESH)) {
 		return -EIO;
 	}
 
 	uint16_t model_cfg = MODELCFG_REFRESH;
 
 	while (model_cfg & MODELCFG_REFRESH) {
-		max17055_reg_read(priv, MODEL_CFG, &model_cfg);
+		max17055_reg_read(dev, MODEL_CFG, &model_cfg);
 		k_sleep(K_MSEC(10));
 	}
 
 	return 0;
 }
 
-static int max17055_init_config(struct max17055_data *priv,
-				const struct max17055_config *const config)
+static int max17055_init_config(const struct device *dev)
 {
 	int16_t hib_cfg;
 
-	if (max17055_reg_read(priv, HIB_CFG, &hib_cfg)) {
+	if (max17055_reg_read(dev, HIB_CFG, &hib_cfg)) {
 		return -EIO;
 	}
 
-	if (max17055_exit_hibernate(priv)) {
+	if (max17055_exit_hibernate(dev)) {
 		return -EIO;
 	}
 
-	if (max17055_write_config(priv, config)) {
+	if (max17055_write_config(dev)) {
 		return -EIO;
 	}
 
-	if (max17055_reg_write(priv, HIB_CFG, hib_cfg)) {
+	if (max17055_reg_write(dev, HIB_CFG, hib_cfg)) {
 		return -EIO;
 	}
 
@@ -345,16 +347,14 @@ static int max17055_init_config(struct max17055_data *priv,
 static int max17055_gauge_init(const struct device *dev)
 {
 	int16_t tmp;
-	struct max17055_data *priv = dev->data;
 	const struct max17055_config *const config = dev->config;
 
-	priv->i2c = device_get_binding(config->bus_name);
-	if (!priv->i2c) {
-		LOG_ERR("Could not get pointer to %s device", config->bus_name);
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
-	if (max17055_reg_read(priv, STATUS, &tmp)) {
+	if (max17055_reg_read(dev, STATUS, &tmp)) {
 		return -EIO;
 	}
 
@@ -366,20 +366,20 @@ static int max17055_gauge_init(const struct device *dev)
 	/* Wait for FSTAT_DNR to be cleared */
 	tmp = FSTAT_DNR;
 	while (tmp & FSTAT_DNR) {
-		max17055_reg_read(priv, FSTAT, &tmp);
+		max17055_reg_read(dev, FSTAT, &tmp);
 	}
 
-	if (max17055_init_config(priv, config)) {
+	if (max17055_init_config(dev)) {
 		return -EIO;
 	}
 
 	/* Clear PowerOnReset bit */
-	if (max17055_reg_read(priv, STATUS, &tmp)) {
+	if (max17055_reg_read(dev, STATUS, &tmp)) {
 		return -EIO;
 	}
 
 	tmp &= ~STATUS_POR;
-	return max17055_reg_write(priv, STATUS, tmp);
+	return max17055_reg_write(dev, STATUS, tmp);
 }
 
 static const struct sensor_driver_api max17055_battery_driver_api = {
@@ -391,7 +391,7 @@ static const struct sensor_driver_api max17055_battery_driver_api = {
 	static struct max17055_data max17055_driver_##index;				   \
 											   \
 	static const struct max17055_config max17055_config_##index = {			   \
-		.bus_name = DT_INST_BUS_LABEL(index),					   \
+		.i2c = I2C_DT_SPEC_INST_GET(index),					   \
 		.design_capacity = DT_INST_PROP(index, design_capacity),		   \
 		.design_voltage = DT_INST_PROP(index, design_voltage),			   \
 		.desired_charging_current = DT_INST_PROP(index, desired_charging_current), \

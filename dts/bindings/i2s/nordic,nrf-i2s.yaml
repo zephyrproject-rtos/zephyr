@@ -16,10 +16,11 @@ properties:
 
     sck-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The SCK pin to use.
 
@@ -35,40 +36,44 @@ properties:
 
     lrck-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The LRCK pin to use. The pin numbering scheme is the same as
         the sck-pin property's.
 
     sdout-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The SDOUT pin to use. The pin numbering scheme is the same as
         the sck-pin property's.
 
     sdin-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The SDIN pin to use. The pin numbering scheme is the same as
         the sck-pin property's.
 
     mck-pin:
       type: int
+      deprecated: true
       required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
-        is not enabled. It will be deprecated in the future.
+        is not enabled.
 
         The MCK pin to use. The pin numbering scheme is the same as
         the sck-pin property's.

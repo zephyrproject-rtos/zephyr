@@ -22,6 +22,12 @@ Describe whether you'd like to integrate this external component in the main tre
 or as a module, and why. If the mode of integration is a module, suggest a
 repository name for the module
 
+## Maintainership
+
+List the person(s) that will be maintaining the integration of this external code
+for the foreseeable future. Please use GitHub IDs to identify them. You can
+choose to identify a single maintainer only or add collaborators as well
+
 ## Pull Request
 
 Pull request (if any) with the actual implementation of the integration, be it
@@ -43,7 +49,7 @@ required to maintain ...)
 Why is this the right component to solve it (e.g., SQLite is small,
 easy to use, and has a very liberal license.)
 
-# Dependencies
+## Dependencies
 
 What other components does this package depend on?
 

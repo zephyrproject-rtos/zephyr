@@ -15,8 +15,12 @@ extern enum bst_result_t bst_result;
 static void test_main(void)
 {
 	int err;
-	struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1;
-	struct bt_audio_lc3_preset preset_16_2_2 = BT_AUDIO_LC3_BROADCAST_PRESET_16_2_2;
+	struct bt_audio_lc3_preset preset_16_2_1 =
+		BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
+						     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+	struct bt_audio_lc3_preset preset_16_2_2 =
+		BT_AUDIO_LC3_BROADCAST_PRESET_16_2_2(BT_AUDIO_LOCATION_FRONT_LEFT,
+						     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 	struct bt_audio_stream broadcast_source_streams[CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT];
 	struct bt_audio_stream *streams[ARRAY_SIZE(broadcast_source_streams)];
 	struct bt_audio_broadcast_source *source;

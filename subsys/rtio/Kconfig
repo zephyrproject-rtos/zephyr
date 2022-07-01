@@ -1,0 +1,46 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RTIO
+	bool "RTIO"
+
+if RTIO
+
+config RTIO_EXECUTOR_SIMPLE
+	bool "A simple executor for RTIO"
+	default y
+	help
+	  An simple RTIO executor that will execute a queue of requested I/O
+	  operations as if they are a single chain of submission queue entries. This
+	  does not support concurrent chains or submissions.
+
+config RTIO_EXECUTOR_CONCURRENT
+	bool "A low cost concurrent executor for RTIO"
+	default y
+	help
+	  A low memory cost RTIO executor that will execute a queue of requested I/O
+	  with a fixed amount of concurrency using minimal memory overhead.
+
+config RTIO_SUBMIT_SEM
+	bool "Use a semaphore when waiting for completions in rtio_submit"
+	help
+	  When calling rtio_submit a semaphore is available to sleep the calling
+	  thread for each completion queue event until the wait count is met. This
+	  adds a small RAM overhead for a single semaphore. By default wait_for will
+	  use polling on the completion queue with a k_yield() in between iterations.
+
+config RTIO_CONSUME_SEM
+	bool "Use a semaphore when waiting for completions in rtio_cqe_consume_block"
+	help
+	  When calling rtio_cqe_consume_block a semaphore is available to sleep the
+	  calling thread for each completion queue event until the wait count is met.
+	  This adds a small RAM overhead for a single semaphore. By default the call
+	  will use polling on the completion queue with a k_yield() in between
+	  iterations.
+
+module = RTIO
+module-str = RTIO
+module-help = Sets log level for RTIO support
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

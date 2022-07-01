@@ -516,10 +516,8 @@ int modbus_serial_init(struct modbus_context *ctx,
 		return -ENOTSUP;
 	}
 
-	cfg->dev = device_get_binding(cfg->dev_name);
-	if (cfg->dev == NULL) {
-		LOG_ERR("Failed to get UART device %s",
-			log_strdup(cfg->dev_name));
+	if (!device_is_ready(cfg->dev)) {
+		LOG_ERR("Bus device %s is not ready", cfg->dev->name);
 		return -ENODEV;
 	}
 

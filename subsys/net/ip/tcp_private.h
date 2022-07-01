@@ -244,6 +244,7 @@ struct tcp { /* TCP connection */
 	struct k_work_delayable send_data_timer;
 	struct k_work_delayable timewait_timer;
 	struct k_work_delayable persist_timer;
+	struct k_work_delayable ack_timer;
 
 	union {
 		/* Because FIN and establish timers are never happening
@@ -263,6 +264,7 @@ struct tcp { /* TCP connection */
 	enum tcp_data_mode data_mode;
 	uint32_t seq;
 	uint32_t ack;
+	uint16_t recv_win_max;
 	uint16_t recv_win;
 	uint16_t send_win;
 	uint8_t send_data_retries;

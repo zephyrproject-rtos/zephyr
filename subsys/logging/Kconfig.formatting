@@ -31,8 +31,9 @@ if LOG_MIPI_SYST_ENABLE
 
 config LOG_MIPI_SYST_USE_CATALOG
 	bool "Use MIPI Sys-T Catalog for logging"
-	select LOG2_FMT_SECTION
-	select LOG2_USE_TAGGED_ARGUMENTS
+	depends on !PICOLIBC
+	select LOG_FMT_SECTION
+	select LOG_USE_TAGGED_ARGUMENTS
 	help
 	  Use MIPI Sys-T Catalog for logging instead of plain text.
 

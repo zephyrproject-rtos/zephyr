@@ -160,8 +160,6 @@ SECTIONS
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
     {
-        KEEP(*(_IRQ_VECTOR_TABLE_SECTION_SYMS))
-
         *(.rodata)
         *(".rodata.*")
         *(.gnu.linkonce.r.*)

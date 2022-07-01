@@ -21,7 +21,7 @@
 		if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) { \
 			char t[BT_OTS_OBJ_ID_STR_LEN]; \
 			(void)bt_ots_obj_id_to_str(id64, t, sizeof(t)); \
-			BT_DBG(text "0x%s", log_strdup(t)); \
+			BT_DBG(text "0x%s", t); \
 		} \
 	} while (0)
 

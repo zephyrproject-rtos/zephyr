@@ -168,6 +168,7 @@ Bluetooth:
     maintainers:
         - jhedberg
     collaborators:
+        - hermabe
         - jori-nordic
         - alwa-nordic
         - Vudentz
@@ -293,6 +294,7 @@ C library:
          - nashif
          - enjiamai
          - KangJianX
+         - keith-packard
     files:
          - lib/libc/
          - tests/lib/c_lib/
@@ -506,6 +508,7 @@ Documentation:
         - alexanderwachter
         - karstenkoenig
         - martinjaeger
+        - str4t0m
     files:
         - doc/hardware/peripherals/canbus/
         - drivers/can/
@@ -686,6 +689,9 @@ Documentation:
     status: maintained
     maintainers:
         - mnkp
+    collaborators:
+        - henrikbrixandersen
+        - cfriedt
     files:
         - doc/hardware/peripherals/gpio.rst
         - drivers/gpio/
@@ -1411,12 +1417,13 @@ nRF52 BSIM:
         - "platform: nRF52 BSIM"
 
 POSIX API layer:
-    status: odd fixes
+    status: maintained
+    maintainers:
+        - cfriedt
     collaborators:
         - pfalcon
         - enjiamai
         - KangJianX
-        - cfriedt
     files:
         - include/zephyr/posix/
         - lib/posix/
@@ -1520,7 +1527,7 @@ Shields:
 SPARC arch:
     status: odd fixes
     collaborators:
-        - martin-aberg
+        - julius-barendt
     files:
         - arch/sparc/
         - include/zephyr/arch/sparc/
@@ -1737,6 +1744,7 @@ Renesas R-Car Platforms:
     files:
         - boards/arm/rcar_*/
         - drivers/*/*rcar*
+        - drivers/clock_control/*cpg_mssr*
         - dts/arm/renesas/
         - dts/bindings/*/*rcar*
         - soc/arm/renesas_rcar/
@@ -1991,16 +1999,6 @@ West:
         - manifest-canopennode
         - "area: CAN"
 
-"West project: civetweb":
-    status: obsolete
-    files:
-        - samples/net/civetweb/
-        - modules/Kconfig.civetweb
-    labels:
-        - manifest-civetweb
-        - "area: Networking"
-        - "area: civetweb"
-
 "West project: cmsis":
     status: maintained
     maintainers:
@@ -2209,7 +2207,7 @@ West:
 "West project: hal_telink":
     status: maintained
     maintainers:
-        - yurvyn
+        - andy-liu-telink
     files:
         - modules/Kconfig.telink
     labels:
@@ -2369,6 +2367,16 @@ West:
     files: []
     labels:
         - manifest-openthread
+
+"West project: picolibc":
+    status: maintained
+    maintainers:
+        - keith-packard
+    collaborators:
+        - stephanosio
+    files: []
+    labels:
+        - manifest-picolibc
 
 "West project: segger":
     status: odd fixes

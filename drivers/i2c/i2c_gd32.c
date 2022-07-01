@@ -11,7 +11,9 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/i2c.h>
-#include <soc.h>
+
+#include <gd32_i2c.h>
+#include <gd32_rcu.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_gd32, CONFIG_I2C_LOG_LEVEL);
@@ -684,7 +686,7 @@ static int i2c_gd32_init(const struct device *dev)
 
 	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
 
-	i2c_gd32_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
+	i2c_gd32_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 
 	return 0;
 }

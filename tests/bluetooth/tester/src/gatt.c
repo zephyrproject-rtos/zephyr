@@ -1966,7 +1966,7 @@ static void get_attrs(uint8_t *data, uint16_t len)
 
 		bt_uuid_to_str(&uuid.uuid, uuid_str, sizeof(uuid_str));
 		LOG_DBG("start 0x%04x end 0x%04x, uuid %s", start_handle,
-			end_handle, log_strdup(uuid_str));
+			end_handle, uuid_str);
 
 		foreach.uuid = &uuid.uuid;
 	} else {

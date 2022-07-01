@@ -1096,6 +1096,7 @@ int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
  * @param addr Advertiser LE address and type.
  * @param rssi Strength of advertiser signal.
  * @param adv_type Type of advertising response from advertiser.
+ *                 Uses the BT_GAP_ADV_TYPE_* values.
  * @param buf Buffer containing advertiser data.
  */
 typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
@@ -1683,7 +1684,13 @@ enum {
 	/** Scan without requesting additional information from advertisers. */
 	BT_LE_SCAN_TYPE_PASSIVE = 0x00,
 
-	/** Scan and request additional information from advertisers. */
+	/**
+	 * @brief Scan and request additional information from advertisers.
+	 *
+	 * Using this scan type will automatically send scan requests to all
+	 * devices. Scan responses are received in the same manner and using the
+	 * same callbacks as advertising reports.
+	 */
 	BT_LE_SCAN_TYPE_ACTIVE = 0x01,
 };
 
@@ -1724,7 +1731,7 @@ struct bt_le_scan_param {
 	uint16_t window_coded;
 };
 
-/** LE advertisement packet information */
+/** LE advertisement and scan response packet information */
 struct bt_le_scan_recv_info {
 	/**
 	 * @brief Advertiser LE address and type.
@@ -1743,10 +1750,24 @@ struct bt_le_scan_recv_info {
 	/** Transmit power of the advertiser. */
 	int8_t tx_power;
 
-	/** Advertising packet type. */
+	/**
+	 * @brief Advertising packet type.
+	 *
+	 * Uses the BT_GAP_ADV_TYPE_* value.
+	 *
+	 * May indicate that this is a scan response if the type is
+	 * @ref BT_GAP_ADV_TYPE_SCAN_RSP.
+	 */
 	uint8_t adv_type;
 
-	/** Advertising packet properties. */
+	/**
+	 * @brief Advertising packet properties bitfield.
+	 *
+	 * Uses the BT_GAP_ADV_PROP_* values.
+	 * May indicate that this is a scan response if the value contains the
+	 * @ref BT_GAP_ADV_PROP_SCAN_RESPONSE bit.
+	 *
+	 */
 	uint16_t adv_props;
 
 	/**
@@ -1767,9 +1788,9 @@ struct bt_le_scan_recv_info {
 struct bt_le_scan_cb {
 
 	/**
-	 * @brief Advertisement packet received callback.
+	 * @brief Advertisement packet and scan response received callback.
 	 *
-	 * @param info Advertiser packet information.
+	 * @param info Advertiser packet and scan response information.
 	 * @param buf  Buffer containing advertiser data.
 	 */
 	void (*recv)(const struct bt_le_scan_recv_info *info,

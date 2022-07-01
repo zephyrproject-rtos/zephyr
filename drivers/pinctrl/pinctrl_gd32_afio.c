@@ -5,7 +5,9 @@
  */
 
 #include <zephyr/drivers/pinctrl.h>
-#include <soc.h>
+
+#include <gd32_gpio.h>
+#include <gd32_rcu.h>
 
 /** AFIO DT node */
 #define AFIO_NODE DT_NODELABEL(afio)

@@ -152,7 +152,7 @@ FULL_PATH_NAMES        = YES
 # will be relative from the directory where doxygen is started.
 # This tag requires that the tag FULL_PATH_NAMES is set to YES.
 
-STRIP_FROM_PATH        = @ZEPHYR_BASE@
+STRIP_FROM_PATH        = @ZEPHYR_BASE@/include
 
 # The STRIP_FROM_INC_PATH tag can be used to strip a user-defined part of the
 # path mentioned in the documentation of a class, which tells the reader which
@@ -2273,6 +2273,7 @@ PREDEFINED             = __DOXYGEN__ \
                          CONFIG_MMU \
                          CONFIG_NET_L2_ETHERNET_MGMT \
                          CONFIG_NET_MGMT_EVENT \
+                         CONFIG_NET_SOCKETS_POSIX_NAMES \
                          CONFIG_NET_TCP \
                          CONFIG_NET_UDP \
                          CONFIG_SCHED_CPU_MASK \

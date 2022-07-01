@@ -12,22 +12,19 @@
 #define CCS_VDD_PWR_CTRL_GPIO_PIN 10
 
 struct pwr_ctrl_cfg {
-	const char *port;
+	const struct device *gpio_dev;
 	uint32_t pin;
 };
 
 static int pwr_ctrl_init(const struct device *dev)
 {
 	const struct pwr_ctrl_cfg *cfg = dev->config;
-	const struct device *gpio;
 
-	gpio = device_get_binding(cfg->port);
-	if (!gpio) {
-		printk("Could not bind device \"%s\"\n", cfg->port);
+	if (!device_is_ready(cfg->gpio_dev)) {
 		return -ENODEV;
 	}
 
-	gpio_pin_configure(gpio, cfg->pin, GPIO_OUTPUT_HIGH);
+	gpio_pin_configure(cfg->gpio_dev, cfg->pin, GPIO_OUTPUT_HIGH);
 
 	k_sleep(K_MSEC(1)); /* Wait for the rail to come up and stabilize */
 
@@ -48,7 +45,7 @@ static int pwr_ctrl_init(const struct device *dev)
 #endif
 
 static const struct pwr_ctrl_cfg vdd_pwr_ctrl_cfg = {
-	.port = DT_LABEL(DT_NODELABEL(gpio0)),
+	.gpio_dev = DEVICE_DT_GET(DT_NODELABEL(gpio0)),
 	.pin = VDD_PWR_CTRL_GPIO_PIN,
 };
 
@@ -68,7 +65,7 @@ DEVICE_DEFINE(vdd_pwr_ctrl_init, "", pwr_ctrl_init, NULL, NULL,
 #endif
 
 static const struct pwr_ctrl_cfg ccs_vdd_pwr_ctrl_cfg = {
-	.port = DT_LABEL(DT_INST(0, semtech_sx1509b)),
+	.gpio_dev = DEVICE_DT_GET(DT_INST(0, semtech_sx1509b)),
 	.pin = CCS_VDD_PWR_CTRL_GPIO_PIN,
 };
 

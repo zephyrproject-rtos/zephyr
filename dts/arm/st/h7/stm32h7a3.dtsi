@@ -24,6 +24,20 @@
 			dma-requests= <111>;
 		};
 
+		usbotg_hs: usb@40040000 {
+			compatible = "st,stm32-otghs";
+			reg = <0x40040000 0x40000>;
+			interrupts = <77 0>, <74 0>, <75 0>;
+			interrupt-names = "otghs", "ep1_out", "ep1_in";
+			num-bidir-endpoints = <9>;
+			ram-size = <4096>;
+			maximum-speed = "full-speed";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x02000000>;
+			phys = <&otghs_fs_phy>;
+			status = "disabled";
+			label= "OTG_HS";
+		};
+
 		ltdc: display-controller@50001000 {
 			compatible = "st,stm32-ltdc";
 			reg = <0x50001000 0x200>;
@@ -82,4 +96,15 @@
 		zephyr,memory-region = "DTCM";
 	};
 
+	itcm: memory@0 {
+		compatible = "zephyr,memory-region", "arm,itcm";
+		reg = <0x00000000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "ITCM";
+	};
+
+	otghs_fs_phy: otghs_fs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		label = "OTGHS_FS_PHY";
+	};
 };

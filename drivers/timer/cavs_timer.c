@@ -41,6 +41,10 @@ BUILD_ASSERT(COMPARATOR_IDX >= 0 && COMPARATOR_IDX <= 1);
 static struct k_spinlock lock;
 static uint64_t last_count;
 
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = TIMER_IRQ; /* See tests/kernel/context */
+#endif
+
 static void set_compare(uint64_t time)
 {
 	/* Disarm the comparator to prevent spurious triggers */

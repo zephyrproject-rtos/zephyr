@@ -69,7 +69,7 @@ struct lpc11u6x_i2c_regs {
 
 struct lpc11u6x_i2c_config {
 	struct lpc11u6x_i2c_regs *base;
-	char *clock_drv;
+	const struct device *clock_dev;
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t clkid;
 	const struct pinctrl_dev_config *pincfg;
@@ -86,7 +86,7 @@ struct lpc11u6x_i2c_current_transfer {
 
 struct lpc11u6x_i2c_data {
 	struct lpc11u6x_i2c_current_transfer transfer;
-	struct i2c_slave_config *slave;
+	struct i2c_target_config *slave;
 	struct k_sem completion;
 	struct k_mutex mutex;
 };

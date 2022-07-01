@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 									\
 	snprintk(_str, STR_SIZE, "%s: " fmt, __func__, ## args);	\
 									\
-	LOG_HEXDUMP_DBG(_buf, _len, log_strdup(_str));			\
+	LOG_HEXDUMP_DBG(_buf, _len, _str);			\
 })
 #else
 #define hexdump(args...)

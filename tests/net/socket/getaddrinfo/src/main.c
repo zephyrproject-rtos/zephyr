@@ -85,7 +85,7 @@ static bool check_dns_query(uint8_t *buf, int buf_len)
 
 	NET_DBG("[%d] query %s/%s label %s (%d bytes)", queries,
 		qtype == DNS_RR_TYPE_A ? "A" : "AAAA", "IN",
-		log_strdup(result->data), ret);
+		result->data, ret);
 
 	/* In this test we are just checking if the query came to us in correct
 	 * form, we are not creating a DNS server implementation here.
@@ -194,13 +194,13 @@ void test_getaddrinfo_setup(void)
 	}
 
 	addr_str = inet_ntop(AF_INET, &addr_v4.sin_addr, str, sizeof(str));
-	NET_DBG("v4: [%s]:%d", log_strdup(addr_str), ntohs(addr_v4.sin_port));
+	NET_DBG("v4: [%s]:%d", addr_str, ntohs(addr_v4.sin_port));
 
 	sock_v4 = prepare_listen_sock_udp_v4(&addr_v4);
 	zassert_true(sock_v4 >= 0, "Invalid IPv4 socket");
 
 	addr_str = inet_ntop(AF_INET6, &addr_v6.sin6_addr, str, sizeof(str));
-	NET_DBG("v6: [%s]:%d", log_strdup(addr_str), ntohs(addr_v6.sin6_port));
+	NET_DBG("v6: [%s]:%d", addr_str, ntohs(addr_v6.sin6_port));
 
 	sock_v6 = prepare_listen_sock_udp_v6(&addr_v6);
 	zassert_true(sock_v6 >= 0, "Invalid IPv6 socket");

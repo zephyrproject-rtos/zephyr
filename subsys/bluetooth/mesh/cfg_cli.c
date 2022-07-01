@@ -634,6 +634,7 @@ static int mod_sub_status(struct bt_mesh_model *model,
 	struct mod_sub_param *param;
 	uint16_t elem_addr, sub_addr, mod_id, cid;
 	uint8_t status;
+	int err = 0;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -662,7 +663,8 @@ static int mod_sub_status(struct bt_mesh_model *model,
 		    (param->expect_sub && *param->expect_sub != sub_addr) ||
 		    param->cid != cid) {
 			BT_WARN("Model Subscription Status parameters did not match");
-			return -ENOENT;
+			err = -ENOENT;
+			goto done;
 		}
 
 		if (param->sub_addr) {
@@ -675,7 +677,14 @@ static int mod_sub_status(struct bt_mesh_model *model,
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
-	return 0;
+
+done:
+	if (cli->cb && cli->cb->mod_sub_status) {
+		cli->cb->mod_sub_status(cli, ctx->addr, status, elem_addr,
+				sub_addr, mod_id);
+	}
+
+	return err;
 }
 
 static int mod_sub_list(struct bt_mesh_model *model,

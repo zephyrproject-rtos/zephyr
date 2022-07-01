@@ -84,9 +84,9 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 					    sizeof(struct net_eth_addr))); \
 									   \
 		NET_DBG("iface %p src %s dst %s type 0x%x len %zu",	   \
-			net_pkt_iface(pkt), log_strdup(out),		   \
-			log_strdup(net_sprint_ll_addr((dst)->addr,	   \
-					    sizeof(struct net_eth_addr))), \
+			net_pkt_iface(pkt), out,		   \
+			net_sprint_ll_addr((dst)->addr,	   \
+					    sizeof(struct net_eth_addr)), \
 			type, (size_t)len);				   \
 	}
 
@@ -101,9 +101,9 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 									   \
 		NET_DBG("iface %p src %s dst %s type 0x%x "		   \
 			"tag %d %spri %d len %zu",			   \
-			net_pkt_iface(pkt), log_strdup(out),		   \
-			log_strdup(net_sprint_ll_addr((dst)->addr,	   \
-				   sizeof(struct net_eth_addr))),	   \
+			net_pkt_iface(pkt), out,		   \
+			net_sprint_ll_addr((dst)->addr,	   \
+				   sizeof(struct net_eth_addr)),	   \
 			type, net_eth_vlan_get_vid(tci),		   \
 			tagstrip ? "(stripped) " : "",			   \
 			net_eth_vlan_get_pcp(tci), (size_t)len);	   \
@@ -303,9 +303,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		 * are different.
 		 */
 		NET_DBG("Dropping frame, not for me [%s]",
-			log_strdup(net_sprint_ll_addr(
-					   net_if_get_link_addr(iface)->addr,
-					   sizeof(struct net_eth_addr))));
+			net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
+					   sizeof(struct net_eth_addr)));
 		goto drop;
 	}
 
@@ -321,9 +320,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	if (IS_ENABLED(CONFIG_NET_ARP) &&
 	    family == AF_INET && type == NET_ETH_PTYPE_ARP) {
 		NET_DBG("ARP packet from %s received",
-			log_strdup(net_sprint_ll_addr(
-					   (uint8_t *)hdr->src.addr,
-					   sizeof(struct net_eth_addr))));
+			net_sprint_ll_addr((uint8_t *)hdr->src.addr,
+					   sizeof(struct net_eth_addr)));
 
 		if (IS_ENABLED(CONFIG_NET_IPV4_AUTO) &&
 		    net_ipv4_autoconf_input(iface, pkt) == NET_DROP) {
@@ -914,7 +912,7 @@ static void setup_ipv6_link_local_addr(struct net_if *iface)
 	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF, 0);
 	if (!ifaddr) {
 		NET_DBG("Cannot add %s address to VLAN interface %p",
-			log_strdup(net_sprint_ipv6_addr(&addr)), iface);
+			net_sprint_ipv6_addr(&addr), iface);
 	}
 }
 

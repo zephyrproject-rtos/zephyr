@@ -104,6 +104,10 @@ DT_COMPAT_TI_TCA9538 := ti,tca9538
 config I2C
 default $(dt_compat_on_bus,$(DT_COMPAT_TI_TCA9538),i2c)
 
+# enable SPI when enabling display drivers (for ILI9341)
+config SPI
+	default y if DISPLAY
+
 endif # BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
 
 config BOARD
