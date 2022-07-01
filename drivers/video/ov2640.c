@@ -432,6 +432,9 @@ static const uint8_t saturation_regs[NUM_SATURATION_LEVELS + 1][5] = {
 
 struct ov2640_config {
 	struct i2c_dt_spec i2c;
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	struct gpio_dt_spec reset_gpio;
+#endif
 };
 
 struct ov2640_data {
@@ -980,26 +983,21 @@ static const struct video_driver_api ov2640_driver_api = {
 static int ov2640_init(const struct device *dev)
 {
 	struct video_format fmt;
-	struct ov2640_data *drv_data = dev->data;
 	int ret = 0;
 
-	if (drv_data->reset_gpio) {
-		ret = gpio_pin_configure(drv_data->reset_gpio,
-					 drv_data->reset_pin,
-					 GPIO_OUTPUT_ACTIVE |
-					 drv_data->reset_pin_flags);
-		if (ret) {
-			return ret;
-		}
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	const struct ov2640_config *cfg = dev->config;
 
-		/* Perform hardware reset */
-		gpio_pin_set(drv_data->reset_gpio,
-				 drv_data->reset_pin, 0);
-		k_msleep(1);
-		gpio_pin_set(drv_data->reset_gpio,
-				 drv_data->reset_pin, 1);
-		k_msleep(1);
+	ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
+	if (ret) {
+		return ret;
 	}
+
+	gpio_pin_set_dt(&cfg->reset_gpio, 0);
+	k_sleep(K_MSEC(1));
+	gpio_pin_set_dt(&cfg->reset_gpio, 1);
+	k_sleep(K_MSEC(1));
+#endif
 
 	ret = ov2640_check_connection(dev);
 
@@ -1032,6 +1030,9 @@ static int ov2640_init(const struct device *dev)
 /* Unique Instance */
 static const struct ov2640_config ov2640_cfg_0 = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
+#endif
 };
 static struct ov2640_data ov2640_data_0;
 
@@ -1044,19 +1045,11 @@ static int ov2640_init_0(const struct device *dev)
 		return -ENODEV;
 	}
 
-#if DT_NODE_EXISTS(reset_gpios)
-	struct ov2640_data *drv_data = dev->data;
-	char *gpio_name = DT_INST_GPIO_LABEL(0, reset_gpios);
-
-	drv_data->reset_pin = DT_INST_GPIO_PIN(0, reset_gpios);
-	drv_data->reset_pin_flags = DT_INST_GPIO_FLAGS(0, reset_gpios);
-
-	if (gpio_name) {
-		drv_data->reset_gpio = device_get_binding(gpio_name);
-		if (drv_data->reset_gpio == NULL) {
-			LOG_ERR("Failed to get pointer to %s device!",
-				gpio_name);
-		}
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	if (!device_is_ready(cfg->reset_gpio.port)) {
+		LOG_ERR("%s: device %s is not ready", dev->name,
+				cfg->reset_gpio.port->name);
+		return -ENODEV;
 	}
 #endif
 
