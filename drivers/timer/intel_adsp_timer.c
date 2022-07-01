@@ -11,13 +11,16 @@
 
 #include <cavs-idc.h>
 #include <cavs-shim.h>
+
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE1X
 #include <ace_v1x-regs.h>
+#endif
 
 /**
  * @file
- * @brief ACE 1.x DSP Wall Clock Timer driver
+ * @brief Intel Audio DSP Wall Clock Timer driver
  *
- * The ACE 1.x DSP on Intel SoC has a timer with one counter and two compare
+ * The Audio DSP on Intel SoC has a timer with one counter and two compare
  * registers that is external to the CPUs. This timer is accessible from
  * all available CPU cores and provides a synchronized timer under SMP.
  */
@@ -36,12 +39,11 @@
 #define MAX_TICKS	((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 100000)
 
-#define WCTCS_TTIE(c) BIT(8 + (c))
-
 BUILD_ASSERT(MIN_DELAY < CYC_PER_TICK);
 BUILD_ASSERT(COMPARATOR_IDX >= 0 && COMPARATOR_IDX <= 1);
 
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE1X
+#define WCTCS_TTIE(c) BIT(8 + (c))
 /* Basically identical register interface, very slightly different layout */
 # define WCTCS      (&MTL_TTS.wctcs)
 # define COUNTER_HI (&MTL_TTS.wc.hi)
