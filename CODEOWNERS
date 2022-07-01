@@ -577,7 +577,7 @@
 /include/zephyr/arch/sparc/                      @julius-barendt
 /include/zephyr/sys/atomic.h                     @andyross
 /include/zephyr/bluetooth/                       @alwa-nordic @jhedberg @Vudentz @sjanc
-/include/zephyr/bluetooth/audio/                 @alwa-nordic @jhedberg @Vudentz @Thalley @asbjornsabo
+/include/zephyr/bluetooth/audio/                 @jhedberg @Vudentz @Thalley @asbjornsabo
 /include/zephyr/cache.h                          @carlocaione @andyross
 /include/zephyr/canbus/                          @alexanderwachter @henrikbrixandersen
 /include/zephyr/tracing/                         @nashif
