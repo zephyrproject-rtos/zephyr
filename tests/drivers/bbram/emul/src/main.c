@@ -11,7 +11,7 @@
 #define BBRAM_NODELABEL DT_NODELABEL(bbram)
 #define BBRAM_SIZE DT_PROP(BBRAM_NODELABEL, size)
 
-static void test_get_size(void)
+ZTEST(bbram, test_get_size)
 {
 	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 	size_t size;
@@ -22,7 +22,7 @@ static void test_get_size(void)
 	zassert_equal(size, BBRAM_SIZE, NULL);
 }
 
-static void test_bbram_out_of_bounds(void)
+ZTEST(bbram, test_bbram_out_of_bounds)
 {
 	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 	uint8_t buffer[BBRAM_SIZE];
@@ -35,7 +35,7 @@ static void test_bbram_out_of_bounds(void)
 	zassert_equal(bbram_write(dev, BBRAM_SIZE - 1, 2, buffer), -EFAULT, NULL);
 }
 
-static void test_read_write(void)
+ZTEST(bbram, test_read_write)
 {
 	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 	uint8_t buffer[BBRAM_SIZE];
@@ -50,7 +50,7 @@ static void test_read_write(void)
 	zassert_mem_equal(buffer, expected, BBRAM_SIZE, NULL);
 }
 
-static void test_set_invalid(void)
+ZTEST(bbram, test_set_invalid)
 {
 	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 
@@ -60,7 +60,7 @@ static void test_set_invalid(void)
 	zassert_equal(bbram_check_invalid(dev), 0, NULL);
 }
 
-static void test_set_standby(void)
+ZTEST(bbram, test_set_standby)
 {
 	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 
@@ -70,7 +70,7 @@ static void test_set_standby(void)
 	zassert_equal(bbram_check_standby_power(dev), 0, NULL);
 }
 
-static void test_set_power(void)
+ZTEST(bbram, test_set_power)
 {
 	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 
@@ -80,7 +80,7 @@ static void test_set_power(void)
 	zassert_equal(bbram_check_power(dev), 0, NULL);
 }
 
-static void test_reset_invalid_on_read(void)
+ZTEST(bbram, test_reset_invalid_on_read)
 {
 	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 	uint8_t buffer[BBRAM_SIZE];
@@ -90,7 +90,7 @@ static void test_reset_invalid_on_read(void)
 	zassert_equal(bbram_check_invalid(dev), 0, NULL);
 }
 
-static void test_reset_invalid_on_write(void)
+ZTEST(bbram, test_reset_invalid_on_write)
 {
 	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 	uint8_t buffer[BBRAM_SIZE];
@@ -100,26 +100,13 @@ static void test_reset_invalid_on_write(void)
 	zassert_equal(bbram_check_invalid(dev), 0, NULL);
 }
 
-static void setup(void)
+static void before(void *data)
 {
+	ARG_UNUSED(data);
 	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 
 	bbram_emul_set_invalid(dev, false);
 	bbram_emul_set_standby_power_state(dev, false);
 	bbram_emul_set_power_state(dev, false);
 }
-
-void test_main(void)
-{
-	ztest_test_suite(
-		bbram,
-		ztest_unit_test_setup_teardown(test_get_size, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_bbram_out_of_bounds, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_read_write, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_set_invalid, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_set_standby, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_set_power, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_reset_invalid_on_read, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_reset_invalid_on_write, setup, unit_test_noop));
-	ztest_run_test_suite(bbram);
-}
+ZTEST_SUITE(bbram, NULL, NULL, before, NULL, NULL);
