@@ -274,6 +274,17 @@
  * @}
  */ /* end of struct_section_apis */
 
+/** @brief Tag a symbol (e.g. function) to be kept in the binary even though it is not used.
+ *
+ * It prevents symbol from being removed by the linker garbage collector. It
+ * is achieved by adding a pointer to that symbol to the kept memory section.
+ *
+ * @param symbol Symbol to keep.
+ */
+#define LINKER_KEEP(symbol) \
+	static const void * const symbol##_ptr  __used \
+	__attribute__((__section__(".symbol_to_keep"))) = (void *)&symbol
+
 #define LOG2CEIL(x) \
 	((((x) <= 4) ? 2 : (((x) <= 8) ? 3 : (((x) <= 16) ? \
 	4 : (((x) <= 32) ? 5 : (((x) <= 64) ? 6 : (((x) <= 128) ? \

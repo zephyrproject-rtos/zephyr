@@ -131,10 +131,7 @@ void main(void)
 	}
 
 	struct spi_cs_control cs_ctrl = (struct spi_cs_control){
-		.gpio_dev = device_get_binding(
-				DT_GPIO_LABEL(SPIBB_NODE, cs_gpios)),
-		.gpio_pin = DT_GPIO_PIN(SPIBB_NODE, cs_gpios),
-		.gpio_dt_flags = DT_GPIO_FLAGS(SPIBB_NODE, cs_gpios),
+		.gpio = GPIO_DT_SPEC_GET(SPIBB_NODE, cs_gpios),
 		.delay = 0u,
 	};
 

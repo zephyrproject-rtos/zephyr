@@ -78,6 +78,23 @@ config SPSC_PBUF_USE_CACHE
 config SPSC_PBUF_NO_CACHE
 	bool
 
+if SPSC_PBUF_CACHE_FLAG || SPSC_PBUF_CACHE_ALWAYS
+
+config SPSC_PBUF_CACHE_LINE
+	int "Maximum cache line"
+	default 32
+	help
+	  If buffer is used by 2 cores then value should be set to the length of
+	  of the longer cache line.
+
+endif # SPSC_PBUF_CACHE_FLAG || SPSC_PBUF_CACHE_ALWAYS
+
+config SPSC_PBUF_UTILIZATION
+	bool "Track maximum utilization"
+	help
+	  When enabled, maximum utilization is tracked which can be used to
+	  determine the size of the packet buffer.
+
 endif # SPSC_PBUF
 
 config SHARED_MULTI_HEAP

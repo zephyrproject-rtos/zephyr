@@ -3676,10 +3676,6 @@ int bt_enable(bt_ready_cb_t cb)
 	k_thread_name_set(&bt_workq.thread, "BT RX");
 #endif
 
-	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
-		bt_hci_ecc_init();
-	}
-
 	err = bt_dev.drv->open();
 	if (err) {
 		BT_ERR("HCI driver open failed (%d)", err);
@@ -3736,10 +3732,6 @@ int bt_disable(void)
 	/* Abort RX thread */
 	k_thread_abort(&bt_workq.thread);
 #endif
-
-	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
-		bt_hci_ecc_deinit();
-	}
 
 	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
 

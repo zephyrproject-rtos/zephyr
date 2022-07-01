@@ -93,7 +93,7 @@ The current minimum required version for the main dependencies are:
             sudo apt install --no-install-recommends git cmake ninja-build gperf \
               ccache dfu-util device-tree-compiler wget \
               python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
-              make gcc gcc-multilib g++-multilib libsdl2-dev
+              make gcc gcc-multilib g++-multilib libsdl2-dev libmagic1
 
       #. Verify the versions of the main dependencies installed on your system by entering::
 
@@ -119,7 +119,7 @@ The current minimum required version for the main dependencies are:
 
          .. code-block:: bash
 
-            brew install cmake ninja gperf python3 ccache qemu dtc wget
+            brew install cmake ninja gperf python3 ccache qemu dtc wget libmagic
 
    .. group-tab:: Windows
 

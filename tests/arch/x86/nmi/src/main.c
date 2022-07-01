@@ -53,7 +53,7 @@ bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf)
 	return true;
 }
 
-void test_nmi_handler(void)
+ZTEST(nmi, test_nmi_handler)
 {
 	TC_PRINT("Testing to see interrupt handler executes properly\n");
 
@@ -66,8 +66,4 @@ void test_nmi_handler(void)
 		      int_handler_executed);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(nmi, ztest_unit_test(test_nmi_handler));
-	ztest_run_test_suite(nmi);
-}
+ZTEST_SUITE(nmi, NULL, NULL, NULL, NULL, NULL);

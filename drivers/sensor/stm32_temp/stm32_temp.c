@@ -32,14 +32,12 @@ struct stm32_temp_data {
 };
 
 struct stm32_temp_config {
-	int tsv_mv;
 #if HAS_CALIBRATION
 	uint16_t *cal1_addr;
 	uint16_t *cal2_addr;
 	int cal1_temp;
 	int cal2_temp;
 	int cal_vrefanalog;
-	int cal_offset;
 #else
 	int avgslope;
 	int v25_mv;
@@ -88,13 +86,14 @@ static int stm32_temp_channel_get(const struct device *dev, enum sensor_channel 
 	}
 
 #if HAS_CALIBRATION
-	temp = ((float)data->raw * cfg->tsv_mv) / cfg->cal_vrefanalog;
+	temp = ((float)data->raw * adc_ref_internal(data->adc)) / cfg->cal_vrefanalog;
 	temp -= *cfg->cal1_addr;
 	temp *= (cfg->cal2_temp - cfg->cal1_temp);
 	temp /= (*cfg->cal2_addr - *cfg->cal1_addr);
-	temp += cfg->cal_offset;
+	temp += cfg->cal1_temp;
 #else
-	int32_t mv = data->raw * cfg->tsv_mv / 0x0FFF; /* Sensor value in millivolts */
+	/* Sensor value in millivolts */
+	int32_t mv = data->raw * adc_ref_internal(data->adc) / 0x0FFF;
 
 	if (cfg->is_ntc) {
 		temp = (float)(cfg->v25_mv - mv);
@@ -136,14 +135,12 @@ static int stm32_temp_init(const struct device *dev)
 }
 
 static const struct stm32_temp_config stm32_temp_dev_config = {
-	.tsv_mv = DT_INST_PROP(0, ts_voltage_mv),
 #if HAS_CALIBRATION
 	.cal1_addr = (uint16_t *)DT_INST_PROP(0, ts_cal1_addr),
 	.cal2_addr = (uint16_t *)DT_INST_PROP(0, ts_cal2_addr),
 	.cal1_temp = DT_INST_PROP(0, ts_cal1_temp),
 	.cal2_temp = DT_INST_PROP(0, ts_cal2_temp),
 	.cal_vrefanalog = DT_INST_PROP(0, ts_cal_vrefanalog),
-	.cal_offset = DT_INST_PROP(0, ts_cal_offset)
 #else
 	.avgslope = DT_INST_PROP(0, avgslope),
 	.v25_mv = DT_INST_PROP(0, v25),

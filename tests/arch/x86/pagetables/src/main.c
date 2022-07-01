@@ -74,7 +74,7 @@ static pentry_t get_entry(pentry_t *flags, void *addr)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_ram_perms(void)
+ZTEST(x86_pagetables, test_ram_perms)
 {
 	uint8_t *pos;
 
@@ -200,7 +200,7 @@ void test_ram_perms(void)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_null_map(void)
+ZTEST(x86_pagetables, test_null_map)
 {
 	int level;
 	pentry_t entry;
@@ -226,14 +226,7 @@ void z_vrfy_dump_my_ptables(void)
 #include <syscalls/dump_my_ptables_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-/**
- * Dump kernel's page tables to console
- *
- * We don't verify any specific output, but this shouldn't crash
- *
- * @ingroup kernel_memprotect_tests
- */
-void test_dump_ptables(void)
+void dump_pagetables(void)
 {
 #if CONFIG_SRAM_SIZE > (32 << 10)
 	/*
@@ -246,13 +239,21 @@ void test_dump_ptables(void)
 #endif
 }
 
-void test_main(void)
+/**
+ * Dump kernel's page tables to console
+ *
+ * We don't verify any specific output, but this shouldn't crash
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+ZTEST_USER(x86_pagetables, test_dump_ptables_user)
 {
-	ztest_test_suite(x86_pagetables,
-			 ztest_unit_test(test_ram_perms),
-			 ztest_unit_test(test_null_map),
-			 ztest_unit_test(test_dump_ptables),
-			 ztest_user_unit_test(test_dump_ptables)
-			 );
-	ztest_run_test_suite(x86_pagetables);
+	dump_pagetables();
 }
+
+ZTEST(x86_pagetables, test_dump_ptables)
+{
+	dump_pagetables();
+}
+
+ZTEST_SUITE(x86_pagetables, NULL, NULL, NULL, NULL, NULL);

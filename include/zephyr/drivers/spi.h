@@ -204,6 +204,18 @@ struct spi_cs_control {
 #define SPI_CS_GPIOS_DT_SPEC_GET(spi_dev) \
 	GPIO_DT_SPEC_GET_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR(spi_dev))
 
+/**
+ * @brief Get a <tt>struct gpio_dt_spec</tt> for a SPI device's chip select pin
+ *
+ * This is equivalent to
+ * <tt>SPI_CS_GPIOS_DT_SPEC_GET(DT_DRV_INST(inst))</tt>.
+ *
+ * @param inst Devicetree instance number
+ * @return #gpio_dt_spec struct corresponding with spi_dev's chip select
+ */
+#define SPI_CS_GPIOS_DT_SPEC_INST_GET(inst) \
+	SPI_CS_GPIOS_DT_SPEC_GET(DT_DRV_INST(inst))
+
 #ifndef __cplusplus
 /**
  * @brief Initialize and get a pointer to a @p spi_cs_control from a

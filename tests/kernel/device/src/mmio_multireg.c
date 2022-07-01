@@ -51,14 +51,14 @@ DEVICE_DEFINE(foo_multireg, "foo_multireg", foo_multireg_init, NULL,
 /**
  * @brief Test DEVICE_MMIO_NAMED_* macros
  *
- * This is the same as the @ref test_mmio_multiple test but in this test the
+ * This is the same as the test_mmio_multiple test but in this test the
  * memory regions are created by the named DT property 'reg'.
  *
  * @see test_mmio_multiple
  *
  * @ingroup kernel_device_tests
  */
-void test_mmio_multireg(void)
+ZTEST(device, test_mmio_multireg)
 {
 	const struct device *dev = device_get_binding("foo_multireg");
 	mm_reg_t regs_chip, regs_dale;

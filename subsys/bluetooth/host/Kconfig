@@ -4,6 +4,26 @@
 # Copyright (c) 2015-2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+config BT_LONG_WQ
+	bool "Dedicated workqueue for long-running tasks."
+	default y if BT_GATT_CACHING
+	help
+	  Adds an API for a workqueue dedicated to long-running tasks.
+
+if BT_LONG_WQ
+config BT_LONG_WQ_STACK_SIZE
+	# Hidden: Long workqueue stack size. Should be derived from system
+	# requirements.
+	int
+	default BT_HCI_ECC_STACK_SIZE if BT_TINYCRYPT_ECC
+	default 1024
+
+config BT_LONG_WQ_PRIO
+	int "Long workqueue priority. Should be pre-emptible."
+	default 10
+	range 0 NUM_PREEMPT_PRIORITIES
+endif # BT_LONG_WQ
+
 config BT_HCI_HOST
 	# Hidden option to make the conditions more intuitive
 	bool
@@ -700,6 +720,7 @@ config BT_TINYCRYPT_ECC
 	bool "Emulate ECDH in the Host using TinyCrypt library"
 	select TINYCRYPT
 	select TINYCRYPT_ECC_DH
+	select BT_LONG_WQ
 	depends on BT_ECC && (BT_HCI_RAW || BT_HCI_HOST)
 	default y if BT_CTLR && !BT_CTLR_ECDH
 	help

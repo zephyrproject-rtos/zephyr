@@ -24,7 +24,6 @@ void z_impl_test_cpu_write_reg(void)
 	/* Part below is made to test that kernel scrubs CPU registers
 	 * after returning from the system call
 	 */
-#if CONFIG_X86
 #ifndef CONFIG_X86_64
 	__asm__ volatile (
 		"movl $0xDEADBEEF, %%eax;\n\t"
@@ -49,7 +48,6 @@ void z_impl_test_cpu_write_reg(void)
 		      "r8",  "r9",  "r10", "r11"
 		);
 #endif
-#endif
 }
 
 static inline void z_vrfy_test_cpu_write_reg(void)
@@ -69,9 +67,8 @@ static inline void z_vrfy_test_cpu_write_reg(void)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_syscall_cpu_scrubs_regs(void)
+ZTEST_USER(x86_cpu_scrubs_regs, test_syscall_cpu_scrubs_regs)
 {
-#if CONFIG_X86
 #ifndef CONFIG_X86_64
 	int x86_reg_val[5];
 
@@ -122,12 +119,6 @@ void test_syscall_cpu_scrubs_regs(void)
 				"not scrubbed after system call.");
 	}
 #endif
-#endif
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_x86_cpu_scrubs_regs,
-		ztest_user_unit_test(test_syscall_cpu_scrubs_regs));
-	ztest_run_test_suite(test_x86_cpu_scrubs_regs);
-}
+ZTEST_SUITE(x86_cpu_scrubs_regs, NULL, NULL, NULL, NULL, NULL);

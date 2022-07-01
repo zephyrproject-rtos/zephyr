@@ -860,7 +860,7 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
         else:
             tname = "unused"
 
-        fp.write("\", {}, %s, %s, { .%s = %s }\n" % (obj_type, flags,
+        fp.write("\", {0}, %s, %s, { .%s = %s }\n" % (obj_type, flags,
 		tname, str(ko.data)))
 
         if obj_type == "K_OBJ_THREAD":
