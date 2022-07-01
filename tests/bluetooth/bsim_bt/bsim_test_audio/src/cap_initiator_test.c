@@ -11,11 +11,96 @@
 #include "common.h"
 #include "unicast_common.h"
 
+
+/* When BROADCAST_ENQUEUE_COUNT > 1 we can enqueue enough buffers to ensure that
+ * the controller is never idle
+ */
+#define BROADCAST_ENQUEUE_COUNT 2U
+#define TOTAL_BUF_NEEDED (BROADCAST_ENQUEUE_COUNT * CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT)
+
+BUILD_ASSERT(CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
+	     "CONFIG_BT_ISO_TX_BUF_COUNT should be at least "
+	     "BROADCAST_ENQUEUE_COUNT * CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT");
+
+NET_BUF_POOL_FIXED_DEFINE(tx_pool,
+			  TOTAL_BUF_NEEDED,
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
+
 extern enum bst_result_t bst_result;
+static struct bt_audio_stream broadcast_source_streams[CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT];
+static struct bt_audio_stream *broadcast_streams[ARRAY_SIZE(broadcast_source_streams)];
+static struct bt_audio_lc3_preset broadcast_preset_16_2_1 =
+	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
+					     BT_AUDIO_CONTEXT_TYPE_MEDIA);
+
+static K_SEM_DEFINE(sem_broadcast_started, 0U, ARRAY_SIZE(broadcast_streams));
+static K_SEM_DEFINE(sem_broadcast_stopped, 0U, ARRAY_SIZE(broadcast_streams));
 
 CREATE_FLAG(flag_connected);
 CREATE_FLAG(flag_discovered);
 CREATE_FLAG(flag_mtu_exchanged);
+CREATE_FLAG(flag_broadcast_stopping);
+
+static void broadcast_started_cb(struct bt_audio_stream *stream)
+{
+	printk("Stream %p started\n", stream);
+	k_sem_give(&sem_broadcast_started);
+}
+
+static void broadcast_stopped_cb(struct bt_audio_stream *stream)
+{
+	printk("Stream %p stopped\n", stream);
+	k_sem_give(&sem_broadcast_stopped);
+}
+
+static void broadcast_sent_cb(struct bt_audio_stream *stream)
+{
+	static uint8_t mock_data[CONFIG_BT_ISO_TX_MTU];
+	static bool mock_data_initialized;
+	struct net_buf *buf;
+	int ret;
+
+	if (broadcast_preset_16_2_1.qos.sdu > CONFIG_BT_ISO_TX_MTU) {
+		FAIL("Invalid SDU %u for the MTU: %d",
+		     broadcast_preset_16_2_1.qos.sdu, CONFIG_BT_ISO_TX_MTU);
+		return;
+	}
+
+	if (TEST_FLAG(flag_broadcast_stopping)) {
+		return;
+	}
+
+	if (!mock_data_initialized) {
+		for (size_t i = 0U; i < ARRAY_SIZE(mock_data); i++) {
+			/* Initialize mock data */
+			mock_data[i] = (uint8_t)i;
+		}
+		mock_data_initialized = true;
+	}
+
+	buf = net_buf_alloc(&tx_pool, K_FOREVER);
+	if (buf == NULL) {
+		printk("Could not allocate buffer when sending on %p\n",
+		       stream);
+		return;
+	}
+
+	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+	net_buf_add_mem(buf, mock_data, broadcast_preset_16_2_1.qos.sdu);
+	ret = bt_audio_stream_send(stream, buf);
+	if (ret < 0) {
+		/* This will end broadcasting on this stream. */
+		printk("Unable to broadcast data on %p: %d\n", stream, ret);
+		net_buf_unref(buf);
+		return;
+	}
+}
+
+static struct bt_audio_stream_ops broadcast_stream_ops = {
+	.started = broadcast_started_cb,
+	.stopped = broadcast_stopped_cb,
+	.sent = broadcast_sent_cb
+};
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 				      const struct bt_csis_client_csis_inst *csis_inst)
@@ -88,12 +173,23 @@ static void init(void)
 		return;
 	}
 
-	bt_gatt_cb_register(&gatt_callbacks);
+	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT)) {
+		bt_gatt_cb_register(&gatt_callbacks);
 
-	err = bt_cap_initiator_register_cb(&cap_cb);
-	if (err != 0) {
-		FAIL("Failed to register CAP callbacks (err %d)\n", err);
-		return;
+		err = bt_cap_initiator_register_cb(&cap_cb);
+		if (err != 0) {
+			FAIL("Failed to register CAP callbacks (err %d)\n", err);
+			return;
+		}
+
+		(void)memset(broadcast_source_streams, 0,
+			     sizeof(broadcast_source_streams));
+
+		for (size_t i = 0; i < ARRAY_SIZE(broadcast_streams); i++) {
+			broadcast_streams[i] = &broadcast_source_streams[i];
+			bt_audio_stream_cb_register(broadcast_streams[i],
+						    &broadcast_stream_ops);
+		}
 	}
 }
 
@@ -126,7 +222,7 @@ static void discover_cas(void)
 	WAIT_FOR_FLAG(flag_discovered);
 }
 
-static void test_main(void)
+static void test_cap_initiator_unicast(void)
 {
 	init();
 
@@ -136,16 +232,76 @@ static void test_main(void)
 
 	discover_cas();
 
-	PASS("CAP initiator passed\n");
+	PASS("CAP initiator unicast passed\n");
+}
+
+static void test_cap_initiator_broadcast(void)
+{
+
+	struct bt_cap_broadcast_audio_start_param start_param = {
+		.count = ARRAY_SIZE(broadcast_streams),
+		.streams = broadcast_streams,
+		.codec = &broadcast_preset_16_2_1.codec,
+		.qos = &broadcast_preset_16_2_1.qos,
+		.encrypt = false
+	};
+	struct bt_cap_broadcast_source *broadcast_source;
+	int err;
+
+	init();
+
+	printk("Creating broadcast source with %zu broadcast_streams\n",
+	       ARRAY_SIZE(broadcast_streams));
+
+	err = bt_cap_initiator_broadcast_source_create(&start_param,
+						       &broadcast_source);
+	if (err != 0) {
+		FAIL("Unable to create broadcast source: %d\n", err);
+		return;
+	}
+
+	err = bt_cap_initiator_broadcast_audio_start(broadcast_source);
+	if (err != 0) {
+		FAIL("Unable to start broadcast source: %d\n", err);
+		return;
+	}
+
+	/* Wait for all to be started */
+	printk("Waiting for broadcast_streams to be started\n");
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_streams); i++) {
+		k_sem_take(&sem_broadcast_started, K_FOREVER);
+	}
+
+	/* Initialize sending */
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_streams); i++) {
+		for (unsigned int j = 0U; j < BROADCAST_ENQUEUE_COUNT; j++) {
+			broadcast_sent_cb(broadcast_streams[i]);
+		}
+	}
+
+	/* Keeping running for a little while */
+	k_sleep(K_SECONDS(10));
+
+	PASS("CAP initiator broadcast passed\n");
 }
 
 static const struct bst_test_instance test_cap_initiator[] = {
+#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 	{
-		.test_id = "cap_initiator",
+		.test_id = "cap_initiator_unicast",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = test_main
+		.test_main_f = test_cap_initiator_unicast
 	},
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+	{
+		.test_id = "cap_initiator_broadcast",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_cap_initiator_broadcast
+	},
+#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
 	BSTEST_END_MARKER
 };
 
