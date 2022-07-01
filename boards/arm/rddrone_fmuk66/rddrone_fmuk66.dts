@@ -84,7 +84,27 @@
 		label = "reg-3v3-s";
 		regulator-name = "reg-3v3-s";
 		enable-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
-		regulator-boot-on;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator enables the 3V3_S line, which powers sensors on-board. */
+	reg-3v3-neth {
+		compatible = "regulator-fixed";
+		label = "reg-3v3-neth";
+		regulator-name = "reg-3v3-neth";
+		enable-gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator enables the 3V3_S line, which powers sensors on-board. */
+	reg-3v3-sd {
+		compatible = "regulator-fixed";
+		label = "reg-3v3-sd";
+		regulator-name = "reg-3v3-sd";
+		enable-gpios = <&gpiod 6 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
 		status = "okay";
 	};
 	
@@ -268,6 +288,12 @@ zephyr_udc0: &usbotg {
 	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+
+	vl53l0x@29 {
+		compatible = "st,vl53l0x";
+		reg = <0x29>;
+		label = "VL53L0X";
+	};
 };
 
 /* magnetometer (bmm150), barometer (bmp280), pressure (mpl3115),
