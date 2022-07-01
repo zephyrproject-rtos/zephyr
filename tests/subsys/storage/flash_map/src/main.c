@@ -13,7 +13,7 @@
 extern int flash_map_entries;
 struct flash_sector fs_sectors[256];
 
-void test_flash_area_disabled_device(void)
+ZTEST(flash_map, test_flash_area_disabled_device)
 {
 	const struct flash_area *fa;
 	int rc;
@@ -28,7 +28,7 @@ void test_flash_area_disabled_device(void)
 /**
  * @brief Test flash_area_get_sectors()
  */
-void test_flash_area_get_sectors(void)
+ZTEST(flash_map, test_flash_area_get_sectors)
 {
 	const struct flash_area *fa;
 	uint32_t sec_cnt;
@@ -108,7 +108,7 @@ void test_flash_area_get_sectors(void)
 	flash_area_close(fa);
 }
 
-void test_flash_area_check_int_sha256(void)
+ZTEST(flash_map, test_flash_area_check_int_sha256)
 {
 	/* echo $'0123456789abcdef\nfedcba98765432' > tst.sha
 	 * hexdump tst.sha
@@ -167,7 +167,7 @@ void test_flash_area_check_int_sha256(void)
 	flash_area_close(fa);
 }
 
-void test_flash_area_erased_val(void)
+ZTEST(flash_map, test_flash_area_erased_val)
 {
 	const struct flash_parameters *param;
 	const struct flash_area *fa;
@@ -187,13 +187,4 @@ void test_flash_area_erased_val(void)
 	flash_area_close(fa);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_flash_map,
-			ztest_unit_test(test_flash_area_disabled_device),
-			 ztest_unit_test(test_flash_area_erased_val),
-			 ztest_unit_test(test_flash_area_get_sectors),
-			 ztest_unit_test(test_flash_area_check_int_sha256)
-			);
-	ztest_run_test_suite(test_flash_map);
-}
+ZTEST_SUITE(flash_map, NULL, NULL, NULL, NULL, NULL);
