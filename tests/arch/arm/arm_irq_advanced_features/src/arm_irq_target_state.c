@@ -15,7 +15,7 @@ extern irq_target_state_t irq_target_state_set(unsigned int irq,
 	irq_target_state_t target_state);
 extern int irq_target_state_is_secure(unsigned int irq);
 
-void test_arm_irq_target_state(void)
+ZTEST(arm_irq_advanced_features, test_arm_irq_target_state)
 {
 	/* Determine an NVIC IRQ line that is implemented
 	 * but not currently in use.
@@ -79,7 +79,7 @@ void test_arm_irq_target_state(void)
 		"Target state not set to Non-Secure\n");
 }
 #else
-void test_arm_irq_target_state(void)
+ZTEST(arm_irq_advanced_features, test_arm_irq_target_state)
 {
 	TC_PRINT("Skipped (TrustZone-M-enabled Cortex-M Mainline only)\n");
 }

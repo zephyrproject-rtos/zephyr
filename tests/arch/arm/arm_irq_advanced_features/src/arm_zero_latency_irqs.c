@@ -17,7 +17,7 @@ void arm_zero_latency_isr_handler(const void *args)
 	test_flag = 1;
 }
 
-void test_arm_zero_latency_irqs(void)
+ZTEST(arm_irq_advanced_features, test_arm_zero_latency_irqs)
 {
 
 	if (!IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
