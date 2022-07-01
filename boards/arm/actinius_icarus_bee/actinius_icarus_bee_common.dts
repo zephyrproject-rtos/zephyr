@@ -73,9 +73,9 @@
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
 		sw0 = &button0;
-		bootloader-led0 = &green_pwm_led;
+		bootloader-led0 = &blue_led;
 		mcuboot-button0 = &button0;
-		mcuboot-led0 = &green_pwm_led;
+		mcuboot-led0 = &blue_led;
 		watchdog0 = &wdt0;
 		spi-flash0 = &w25q64;
 		accel0 = &lis2dh12_accel;
