@@ -101,6 +101,10 @@ int adt7420_trigger_set(const struct device *dev,
 	struct adt7420_data *drv_data = dev->data;
 	const struct adt7420_dev_config *cfg = dev->config;
 
+	if (!cfg->int_gpio.port) {
+		return -ENOTSUP;
+	}
+
 	setup_int(dev, false);
 
 	if (trig->type != SENSOR_TRIG_THRESHOLD) {
