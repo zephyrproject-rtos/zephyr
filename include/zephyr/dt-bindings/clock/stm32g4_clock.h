@@ -34,9 +34,6 @@
 #define STM32_SRC_PLLCLK	0x008
 /* TODO: PLLSAI clocks */
 
-#define STM32_SRC_CLOCK_MIN	STM32_SRC_HSI
-#define STM32_SRC_CLOCK_MAX	STM32_SRC_PLLCLK
-
 /**
  * @brief STM32 clock configuration bit field.
  *
