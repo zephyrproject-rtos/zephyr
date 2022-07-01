@@ -15,7 +15,7 @@ config GPIO_DW_SHARED_IRQ
 
 config GPIO_DW_CLOCK_GATE
 	bool "Clock gating"
-	select CLOCK_CONTROL
+	depends on CLOCK_CONTROL
 
 config GPIO_DW_CLOCK_GATE_DRV_NAME
 	string
