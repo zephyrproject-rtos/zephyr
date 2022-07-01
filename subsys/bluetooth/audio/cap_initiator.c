@@ -42,40 +42,57 @@ int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb)
 
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
 
-static bool cap_initiator_broadcast_audio_start_valid_param(
-	const struct bt_cap_initiator_broadcast_create_param *param)
+static bool cap_initiator_valid_metadata(const struct bt_codec_data meta[],
+					 size_t meta_count)
 {
 	bool stream_context_found;
 
+	/* Streaming Audio Context shall be present in CAP */
+	stream_context_found = false;
+	for (size_t i = 0U; i < meta_count; i++) {
+		const struct bt_data *metadata = &meta[i].data;
+
+		if (metadata->type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
+			if (metadata->data_len != 2) { /* Stream context size */
+				return false;
+			}
+
+			stream_context_found = true;
+			break;
+		}
+	}
+
+	if (!stream_context_found) {
+		LOG_DBG("No streaming context supplied");
+	}
+
+	return stream_context_found;
+}
+
+static bool cap_initiator_broadcast_audio_start_valid_param(
+	const struct bt_cap_initiator_broadcast_create_param *param)
+{
+
 	for (size_t i = 0U; i < param->subgroup_count; i++) {
 		const struct bt_cap_initiator_broadcast_subgroup_param *subgroup_param;
+		const struct bt_codec *codec;
+		bool valid_metadata;
 
 		subgroup_param = &param->subgroup_params[i];
+		codec = subgroup_param->codec;
 
 		/* Streaming Audio Context shall be present in CAP */
-		stream_context_found = false;
 
-		CHECKIF(subgroup_param->codec == NULL) {
-			LOG_DBG("param->streams is NULL");
+		CHECKIF(codec == NULL) {
+			LOG_DBG("subgroup[%zu]->codec is NULL");
 			return false;
 		}
 
-		for (size_t j = 0U; j < subgroup_param->codec->meta_count; j++) {
-			const struct bt_data *meta = &subgroup_param->codec->meta[j].data;
+		valid_metadata = cap_initiator_valid_metadata(codec->meta,
+							      codec->meta_count);
 
-			if (meta->type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
-				if (meta->data_len != 2) { /* Stream context size */
-					return false;
-				}
-
-				stream_context_found = true;
-				break;
-			}
-		}
-
-		CHECKIF(!stream_context_found) {
-			LOG_DBG("No streaming context supplied for subgroup[%zu]",
-				i);
+		CHECKIF(!valid_metadata) {
+			LOG_DBG("Invalid metadata supplied for subgroup[%zu]", i);
 			return false;
 		}
 	}
@@ -131,10 +148,22 @@ int bt_cap_initiator_broadcast_audio_start(struct bt_cap_initiator_broadcast_cre
 }
 
 int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source,
-					    uint8_t meta_count,
-					    const struct bt_codec_data *meta)
+					    const struct bt_codec_data meta[],
+					    size_t meta_count)
 {
-	return -ENOSYS;
+	CHECKIF(meta == NULL) {
+		LOG_DBG("meta is NULL");
+		return -EINVAL;
+	}
+
+	if (!cap_initiator_valid_metadata(meta, meta_count)) {
+		LOG_DBG("Invalid metadata");
+		return -EINVAL;
+	}
+
+	return bt_audio_broadcast_source_update_metadata(
+		(struct bt_audio_broadcast_source *)broadcast_source,
+		meta, meta_count);
 }
 
 int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source)
