@@ -8189,6 +8189,11 @@ void ull_dle_init(struct ll_conn *conn, uint8_t phy)
 	conn->lll.dle.remote.max_rx_time = max_time_min;
 #endif /* CONFIG_BT_CTLR_PHY */
 
+	/*
+	 * ref. Bluetooth Core Specification version 5.3, Vol. 6,
+	 * Part B, section 4.5.10 we can call ull_dle_update_eff
+	 * for initialisation
+	 */
 	ull_dle_update_eff(conn);
 
 	/* Check whether the controller should perform a data length update after
