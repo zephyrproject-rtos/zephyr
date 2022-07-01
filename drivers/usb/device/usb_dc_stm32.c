@@ -293,8 +293,28 @@ static int usb_dc_stm32_clock_enable(void)
 		LOG_ERR("Unable to set USB clock source (not using PLL1)");
 		return -EIO;
 	}
-
-#endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE / RCC_CFGR_OTGFSPRE */
+#elif defined(RCC_CFGR_USBPRE)
+	/* on other STM32F1 family SOCs, we have a simple /1 or /1.5 divider on
+	 * the back of the RCC.  Similar strategy to the above, but we use the
+	 * correct flags
+	 */
+	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
+		switch (sys_clock_hw_cycles_per_sec()) {
+		case 48000000U:
+			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL);
+			break;
+		case 72000000U:
+			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL_DIV_1_5);
+			break;
+		default:
+			LOG_ERR("Unable to set USB clock source (incompatible PLLCLK rate)");
+			return -EIO;
+		}
+	} else {
+		LOG_ERR("Unable to set USB clock source (not using PLL1)");
+		return -EIO;
+	}
+#endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE / RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
 
 	if (clock_control_on(clk, (clock_control_subsys_t *)&pclken) != 0) {
 		LOG_ERR("Unable to enable USB clock");
