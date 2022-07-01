@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/settings/settings.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci_vs.h>
@@ -204,9 +205,47 @@ static void le_rpa_invalidate(void)
 }
 
 #if defined(CONFIG_BT_PRIVACY)
+
+#if defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+static void le_rpa_timeout_update(void)
+{
+	int err = 0;
+
+	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_RPA_TIMEOUT_CHANGED)) {
+		struct net_buf *buf;
+		struct bt_hci_cp_le_set_rpa_timeout *cp;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RPA_TIMEOUT,
+					sizeof(*cp));
+		if (!buf) {
+			BT_ERR("Failed to create HCI RPA timeout command");
+			err = -ENOBUFS;
+			goto submit;
+		}
+
+		cp = net_buf_add(buf, sizeof(*cp));
+		cp->rpa_timeout = sys_cpu_to_le16(bt_dev.rpa_timeout);
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RPA_TIMEOUT, buf, NULL);
+		if (err) {
+			BT_ERR("Failed to send HCI RPA timeout command");
+			goto submit;
+		}
+	}
+
+submit:
+	if (err) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_RPA_TIMEOUT_CHANGED);
+	}
+}
+#endif
+
 static void le_rpa_timeout_submit(void)
 {
-	(void)k_work_schedule(&bt_dev.rpa_update, RPA_TIMEOUT);
+#if defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+	le_rpa_timeout_update();
+#endif
+
+	(void)k_work_schedule(&bt_dev.rpa_update, K_SECONDS(bt_dev.rpa_timeout));
 }
 
 /* this function sets new RPA only if current one is no longer valid */

@@ -2022,6 +2022,26 @@ static inline int bt_le_whitelist_clear(void)
 int bt_le_set_chan_map(uint8_t chan_map[5]);
 
 /**
+ * @brief Set the Resolvable Private Address timeout in runtime
+ *
+ * The new RPA timeout value will be used for the next RPA rotation
+ * and all subsequent rotations until another override is scheduled
+ * with this API.
+ *
+ * Initially, the if @kconfig{CONFIG_BT_RPA_TIMEOUT} is used as the
+ * RPA timeout.
+ *
+ * This symbol is linkable if @kconfig{CONFIG_BT_RPA_TIMEOUT_DYNAMIC}
+ * is enabled.
+ *
+ * @param new_rpa_timeout Resolvable Private Address timeout in seconds
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL RPA timeout value is invalid. Valid range is 1s - 3600s.
+ */
+int bt_le_set_rpa_timeout(uint16_t new_rpa_timeout);
+
+/**
  * @brief Helper for parsing advertising (or EIR or OOB) data.
  *
  * A helper for parsing the basic data types used for Extended Inquiry
