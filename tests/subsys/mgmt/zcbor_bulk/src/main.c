@@ -13,7 +13,7 @@
 
 #define zcbor_true_put(zse) zcbor_bool_put(zse, true)
 
-void test_correct(void)
+ZTEST(zcbor_bulk, test_correct)
 {
 	uint8_t buffer[512];
 	struct zcbor_string world;
@@ -55,7 +55,7 @@ void test_correct(void)
 	zassert_true(bool_val, "Expected bool_val == true");
 }
 
-void test_correct_out_of_order(void)
+ZTEST(zcbor_bulk, test_correct_out_of_order)
 {
 	uint8_t buffer[512];
 	struct zcbor_string world;
@@ -97,7 +97,7 @@ void test_correct_out_of_order(void)
 	zassert_true(bool_val, "Expected bool_val == true");
 }
 
-void test_not_map(void)
+ZTEST(zcbor_bulk, test_not_map)
 {
 	uint8_t buffer[512];
 	struct zcbor_string world;
@@ -130,7 +130,7 @@ void test_not_map(void)
 	zassert_equal(decoded, 1111, "Expected decoded value to be unmodified");
 }
 
-void test_bad_type(void)
+ZTEST(zcbor_bulk, test_bad_type)
 {
 	uint8_t buffer[512];
 	struct zcbor_string world = { 0 };
@@ -169,7 +169,7 @@ void test_bad_type(void)
 	zassert_false(bool_val, "Expected bool_val == false");
 }
 
-void test_bad_type_2(void)
+ZTEST(zcbor_bulk, test_bad_type_2)
 {
 	uint8_t buffer[512];
 	struct zcbor_string world = { 0 };
@@ -210,7 +210,7 @@ void test_bad_type_2(void)
 	zassert_false(bool_val, "Expected bool_val unmodified");
 }
 
-void test_bad_type_encoded(void)
+ZTEST(zcbor_bulk, test_bad_type_encoded)
 {
 	uint8_t buffer[512];
 	struct zcbor_string world = { 0 };
@@ -248,7 +248,7 @@ void test_bad_type_encoded(void)
 	zassert_false(bool_val, "Expected bool_val == false");
 }
 
-void test_duplicate(void)
+ZTEST(zcbor_bulk, test_duplicate)
 {
 	/* Duplicate key is error and should never happen */
 	uint8_t buffer[512];
@@ -288,18 +288,4 @@ void test_duplicate(void)
 	zassert_false(bool_val, "Expected bool_val unmodified");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(
-		zcbor_bulk,
-		ztest_unit_test(test_correct),
-		ztest_unit_test(test_correct_out_of_order),
-		ztest_unit_test(test_not_map),
-		ztest_unit_test(test_bad_type),
-		ztest_unit_test(test_bad_type_2),
-		ztest_unit_test(test_bad_type_encoded),
-		ztest_unit_test(test_duplicate)
-		);
-
-	ztest_run_test_suite(zcbor_bulk);
-}
+ZTEST_SUITE(zcbor_bulk, NULL, NULL, NULL, NULL, NULL);
