@@ -6,6 +6,7 @@
 menuconfig LORAWAN
 	bool "LoRaWAN support [EXPERIMENTAL]"
 	depends on LORA
+	select REQUIRES_FULL_LIBC
 	select HAS_SEMTECH_LORAMAC
 	select HAS_SEMTECH_SOFT_SE
 	select EXPERIMENTAL
