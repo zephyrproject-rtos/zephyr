@@ -25,6 +25,7 @@ def test_testplan_add_testsuites(class_testplan):
     class_testplan.SAMPLE_FILENAME = 'test_sample_app.yaml'
     class_testplan.TESTSUITE_FILENAME = 'test_data.yaml'
     class_testplan.add_testsuites()
+
     tests_rel_dir = 'scripts/tests/twister/test_data/testsuites/tests/'
     expected_testsuites = ['test_b.check_1',
                           'test_b.check_2',
@@ -40,8 +41,8 @@ def test_testplan_add_testsuites(class_testplan):
     assert sorted(testsuite_list) == sorted(expected_testsuites)
 
     # Test 2 : Assert Testcase name is expected & all testsuites values are testcase class objects
-    testcase = class_testplan.testsuites.get(tests_rel_dir + 'test_a/test_a.check_1')
-    assert testcase.name == tests_rel_dir + 'test_a/test_a.check_1'
+    suite = class_testplan.testsuites.get(tests_rel_dir + 'test_a/test_a.check_1')
+    assert suite.name == tests_rel_dir + 'test_a/test_a.check_1'
     assert all(isinstance(n, TestSuite) for n in class_testplan.testsuites.values())
 
 @pytest.mark.parametrize("board_root_dir", [("board_config_file_not_exist"), ("board_config")])

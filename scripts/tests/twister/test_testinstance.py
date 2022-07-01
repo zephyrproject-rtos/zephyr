@@ -14,8 +14,7 @@ import pytest
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 from twisterlib.testinstance import TestInstance
-from twisterlib.error import BuildError, TwisterException
-from twisterlib.testsuite import TestSuite
+from twisterlib.error import BuildError
 
 
 TESTDATA_1 = [
@@ -35,7 +34,7 @@ def test_check_build_or_run(class_testplan, monkeypatch, all_testsuites_dict, pl
 
     class_testplan.testsuites = all_testsuites_dict
     testsuite = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1')
-
+    print(testsuite)
 
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2")
@@ -88,29 +87,3 @@ def test_calculate_sizes(class_testplan, all_testsuites_dict, platforms_list):
 
     with pytest.raises(BuildError):
         assert testinstance.calculate_sizes() == "Missing/multiple output ELF binary"
-
-TESTDATA_3 = [
-    (ZEPHYR_BASE + '/scripts/tests/twister/test_data/testsuites', ZEPHYR_BASE, '/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1', '/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1'),
-    (ZEPHYR_BASE, '.', 'test_a.check_1', 'test_a.check_1'),
-    (ZEPHYR_BASE, '/scripts/tests/twister/test_data/testsuites/test_b', 'test_b.check_1', '/scripts/tests/twister/test_data/testsuites/test_b/test_b.check_1'),
-    (os.path.join(ZEPHYR_BASE, '/scripts/tests'), '.', 'test_b.check_1', 'test_b.check_1'),
-    (os.path.join(ZEPHYR_BASE, '/scripts/tests'), '.', '.', '.'),
-    (ZEPHYR_BASE, '.', 'test_a.check_1.check_2', 'test_a.check_1.check_2'),
-]
-@pytest.mark.parametrize("testcase_root, workdir, name, expected", TESTDATA_3)
-def test_get_unique(testcase_root, workdir, name, expected):
-    '''Test to check if the unique name is given for each testcase root and workdir'''
-    unique = TestSuite(testcase_root, workdir, name)
-    assert unique.name == expected
-
-TESTDATA_4 = [
-    (ZEPHYR_BASE, '.', 'test_c', 'Tests should reference the category and subsystem with a dot as a separator.'),
-    (os.path.join(ZEPHYR_BASE, '/scripts/tests'), '.', '', 'Tests should reference the category and subsystem with a dot as a separator.'),
-]
-@pytest.mark.parametrize("testcase_root, workdir, name, exception", TESTDATA_4)
-def test_get_unique_exception(testcase_root, workdir, name, exception):
-    '''Test to check if tests reference the category and subsystem with a dot as a separator'''
-
-    with pytest.raises(TwisterException):
-        unique = TestSuite(testcase_root, workdir, name)
-        assert unique == exception
