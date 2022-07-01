@@ -482,16 +482,29 @@ def load_firmware(fw_file):
     sd.CTL |= 1
     log.info(f"cAVS firmware load complete")
 
+def fw_is_alive():
+    return dsp.SRAM_FW_STATUS & ((1 << 28) - 1) == 5 # "FW_ENTERED"
 
-def wait_fw_entered():
-    log.info("Waiting for firmware handoff, FW_STATUS = 0x%x", dsp.SRAM_FW_STATUS)
-    for _ in range(200):
-        alive = dsp.SRAM_FW_STATUS & ((1 << 28) - 1) == 5 # "FW_ENTERED"
+def wait_fw_entered(timeout_s=2):
+    log.info("Waiting %s for firmware handoff, FW_STATUS = 0x%x",
+             "forever" if timeout_s is None else f"{timeout_s} seconds",
+             dsp.SRAM_FW_STATUS)
+    hertz = 100
+    attempts = None if timeout_s is None else timeout_s * hertz
+    while True:
+        alive = fw_is_alive()
         if alive:
             break
-        time.sleep(0.01)
+        if attempts is not None:
+            attempts -= 1
+            if attempts < 0:
+                break
+        time.sleep(1 / hertz)
+
     if not alive:
         log.warning("Load failed?  FW_STATUS = 0x%x", dsp.SRAM_FW_STATUS)
+    else:
+        log.info("FW alive, FW_STATUS = 0x%x", dsp.SRAM_FW_STATUS)
 
 
 # This SHOULD be just "mem[start:start+length]", but slicing an mmap
