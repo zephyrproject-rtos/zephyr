@@ -104,10 +104,10 @@ static int test_init(const struct device *dev)
 SYS_INIT(test_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 
 
-ZTEST(cpp_tests, test_new_delete)
+ZTEST(cxx_tests, test_new_delete)
 {
 	foo_class *test_foo = new foo_class(10);
 	zassert_equal(test_foo->get_foo(), 10, NULL);
 	delete test_foo;
 }
-ZTEST_SUITE(cpp_tests, NULL, test_init, NULL, NULL. NULL);
+ZTEST_SUITE(cxx_tests, NULL, NULL, NULL, NULL, NULL);
