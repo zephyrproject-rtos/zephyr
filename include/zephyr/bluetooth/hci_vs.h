@@ -216,9 +216,34 @@ struct bt_hci_evt_vs {
 } __packed;
 
 #define BT_HCI_EVT_VS_FATAL_ERROR              0x02
-struct bt_hci_evt_vs_fatal_error {
+
+#define BT_HCI_EVT_VS_ERROR_DATA_TYPE_STACK_FRAME   0x01
+#define BT_HCI_EVT_VS_ERROR_DATA_TYPE_CTRL_ASSERT   0x02
+#define BT_HCI_EVT_VS_ERROR_DATA_TYPE_TRACE         0x03
+struct bt_hci_vs_fata_error_cpu_data_cortex_m {
+	uint32_t a1;
+	uint32_t a2;
+	uint32_t a3;
+	uint32_t a4;
+	uint32_t ip;
+	uint32_t lr;
+	uint32_t xpsr;
+} __packed;
+#define BT_HCI_EVT_VS_ERROR_CPU_TYPE_CORTEX_M  0x01
+struct bt_hci_vs_fatal_error_stack_frame {
+	uint32_t reason;
+	uint8_t cpu_type;
+	uint8_t cpu_data[0];
+} __packed;
+
+struct bt_hci_evt_vs_fatal_error_trace_data {
 	uint64_t pc;
-	uint8_t  err_info[0];
+	uint8_t err_info[0];
+} __packed;
+
+struct bt_hci_evt_vs_fatal_error {
+	uint8_t type;
+	uint8_t data[0];
 } __packed;
 
 #define BT_HCI_VS_TRACE_LMP_TX                 0x01
@@ -379,6 +404,10 @@ struct bt_hci_evt_mesh_scanning_report {
 	uint8_t num_reports;
 	struct bt_hci_evt_mesh_scan_report reports[0];
 } __packed;
+
+struct net_buf *hci_vs_err_stack_frame(unsigned int reason, const z_arch_esf_t *esf);
+struct net_buf *hci_vs_err_trace(const char *file, uint32_t line, uint64_t pc);
+struct net_buf *hci_vs_err_assert(const char *file, uint32_t line);
 
 #ifdef __cplusplus
 }
