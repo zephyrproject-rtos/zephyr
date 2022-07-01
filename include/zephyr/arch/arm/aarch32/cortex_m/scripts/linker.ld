@@ -357,7 +357,7 @@ SECTIONS
  */
 #include <snippets-noinit.ld>
 
-        } GROUP_LINK_IN(RAMABLE_REGION)
+        } GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 #endif /* CONFIG_USERSPACE */
 
     /* Define linker symbols */
