@@ -10,6 +10,9 @@ config UART_RV32M1_LPUART
 	default y
 	depends on SERIAL
 
+config I2C
+	default y if SENSOR
+
 if BT
 
 config BT_CTLR

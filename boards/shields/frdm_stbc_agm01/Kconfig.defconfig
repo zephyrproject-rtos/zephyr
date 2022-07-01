@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_FRDM_STBC_AGM01
+
+config I2C
+	default y if SENSOR
+
+endif # SHIELD_FRDM_STBC_AGM01
