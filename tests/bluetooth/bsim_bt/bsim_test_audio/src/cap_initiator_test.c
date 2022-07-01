@@ -246,6 +246,14 @@ static void test_cap_initiator_broadcast(void)
 		.encrypt = false
 	};
 	struct bt_cap_broadcast_source *broadcast_source;
+	uint16_t mock_ccid = 0x1234;
+	const struct bt_codec_data new_metadata[2] = {
+		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
+			      (uint8_t)BT_AUDIO_CONTEXT_TYPE_MEDIA,
+			      (uint8_t)BT_AUDIO_CONTEXT_TYPE_MEDIA >> 8),
+		BT_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST,
+			      (uint8_t)mock_ccid, (uint8_t)mock_ccid >> 8),
+	};
 	int err;
 
 	init();
@@ -280,7 +288,18 @@ static void test_cap_initiator_broadcast(void)
 	}
 
 	/* Keeping running for a little while */
-	k_sleep(K_SECONDS(10));
+	k_sleep(K_SECONDS(5));
+
+	err = bt_cap_initiator_broadcast_audio_update(broadcast_source,
+						      new_metadata,
+						      ARRAY_SIZE(new_metadata));
+	if (err != 0) {
+		FAIL("Failed to update broadcast source metadata: %d\n", err);
+		return;
+	}
+
+	/* Keeping running for a little while */
+	k_sleep(K_SECONDS(5));
 
 	PASS("CAP initiator broadcast passed\n");
 }

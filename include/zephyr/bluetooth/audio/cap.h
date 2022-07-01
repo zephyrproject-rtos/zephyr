@@ -321,8 +321,8 @@ int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broad
  * @return 0 on success or negative error value on failure.
  */
 int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source,
-					    uint8_t meta_count,
-					    const struct bt_codec_data *meta);
+					    const struct bt_codec_data meta[],
+					    size_t meta_count);
 
 /**
  * @brief Stop broadcast audio streams for a broadcast source.
