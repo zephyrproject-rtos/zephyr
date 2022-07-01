@@ -69,18 +69,6 @@ void config_pll_sysclock(void)
 	LL_RCC_PLL_EnableDomain_SYS();
 }
 
-/**
- * @brief Return pllout frequency
- */
-__unused
-uint32_t get_pllout_frequency(void)
-{
-	return __LL_RCC_CALC_PLLCLK_FREQ(get_pll_source(),
-					 pllm(STM32_PLL_M_DIVISOR),
-					 STM32_PLL_N_MULTIPLIER,
-					 pllr(STM32_PLL_R_DIVISOR));
-}
-
 #endif /* defined(STM32_PLL_ENABLED) */
 
 /**
