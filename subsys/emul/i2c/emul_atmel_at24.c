@@ -28,8 +28,6 @@ struct at24_emul_data {
 
 /** Static configuration for the emulator */
 struct at24_emul_cfg {
-	/** Label of the I2C bus this emulator connects to */
-	const char *i2c_label;
 	/** EEPROM data contents */
 	uint8_t *buf;
 	/** Size of EEPROM in bytes */
@@ -161,7 +159,6 @@ static int emul_atmel_at24_init(const struct emul *emul,
 	static uint8_t at24_emul_buf_##n[DT_INST_PROP(n, size)];                                   \
 	static struct at24_emul_data at24_emul_data_##n;                                           \
 	static const struct at24_emul_cfg at24_emul_cfg_##n = {                                    \
-		.i2c_label = DT_INST_BUS_LABEL(n),                                                 \
 		.buf = at24_emul_buf_##n,                                                          \
 		.size = DT_INST_PROP(n, size),                                                     \
 		.addr = DT_INST_REG_ADDR(n),                                                       \
