@@ -147,10 +147,10 @@ def parse_args():
 def main():
     parse_args()
 
-    token = os.environ.get('GH_TOKEN', None)
+    token = os.environ.get('GITHUB_TOKEN', None)
     if not token:
         sys.exit("""Github token not set in environment,
-set the env. variable GH_TOKEN please and retry.""")
+set the env. variable GITHUB_TOKEN please and retry.""")
 
     i = Issues(args.org, args.repo, token)
 
@@ -212,6 +212,7 @@ set the env. variable GH_TOKEN please and retry.""")
                         # * :github:`8193` - STM32 config BUILD_OUTPUT_HEX fail
                         f.write("* :github:`{}` - {}\n".format(
                                 item['number'], item['title']))
+
 
 if __name__ == '__main__':
     main()
