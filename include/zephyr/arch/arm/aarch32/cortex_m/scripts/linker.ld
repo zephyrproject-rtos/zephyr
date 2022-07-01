@@ -209,7 +209,7 @@ SECTIONS
 
 	__rodata_region_end = .;
 	MPU_ALIGN(__rodata_region_end - ADDR(rom_start));
-	__rom_region_end = .;
+	__rom_region_end = __rom_region_start + . - ADDR(rom_start);
 
     GROUP_END(ROMABLE_REGION)
 
