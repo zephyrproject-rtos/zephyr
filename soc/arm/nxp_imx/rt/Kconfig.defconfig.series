@@ -195,10 +195,6 @@ choice USB_MCUX_CONTROLLER_TYPE
 	default USB_DC_NXP_EHCI
 endchoice
 
-config VIDEO_MCUX_CSI
-	default y if HAS_MCUX_CSI
-	depends on VIDEO
-
 config DMA_MCUX_EDMA
 	default y if HAS_MCUX_EDMA
 	depends on DMA
