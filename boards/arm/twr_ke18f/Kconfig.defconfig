@@ -12,6 +12,9 @@ config TEMP_KINETIS
 	default y if "$(dt_nodelabel_enabled,adc0)"
 	depends on SENSOR && ADC
 
+config I2C
+	default y if SENSOR
+
 config I2C_MCUX_LPI2C_BUS_RECOVERY
 	default y
 	depends on I2C_MCUX_LPI2C && PINCTRL
