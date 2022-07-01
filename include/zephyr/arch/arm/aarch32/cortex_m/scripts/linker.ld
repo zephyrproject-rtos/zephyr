@@ -208,7 +208,7 @@ SECTIONS
 #include <zephyr/linker/cplusplus-rom.ld>
 
 	__rodata_region_end = .;
-	MPU_ALIGN(__rodata_region_end -__rom_region_start);
+	MPU_ALIGN(__rodata_region_end - ADDR(rom_start));
 	__rom_region_end = .;
 
     GROUP_END(ROMABLE_REGION)
