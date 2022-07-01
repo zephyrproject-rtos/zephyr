@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Actinius
+ * Copyright (c) 2021-2022 Actinius
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -121,8 +121,8 @@
 			/* Secure image memory */
 		};
 
-		sram0_modem: image_modem@20010000 {
-			/* BSD (shared) memory */
+		sram0_modem: image_modem@20016000 {
+			/* Modem (shared) memory */
 		};
 
 		sram0_ns: image_ns@20020000 {
