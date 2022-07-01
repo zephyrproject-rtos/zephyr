@@ -1,0 +1,12 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    PSA (Platform Security Architecture) API Cryptography Random Number
+    Generator service usually implemented in secure world and exposed via the
+    TrustedFirmware-M interface, and can be used as reliable Entropy source
+    from within Zephyr.
+
+compatible: "zephyr,psa-crypto-rng"
+
+include: base.yaml
