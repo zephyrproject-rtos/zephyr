@@ -6,5 +6,7 @@
 config VIDEO_OV7725
 	bool "OV7725 CMOS digital image sensor"
 	depends on I2C
+	depends on DT_HAS_OVTI_OV7725_ENABLED
+	default y
 	help
 	  Enable driver for OV7725 CMOS digital image sensor device.
