@@ -14,6 +14,7 @@
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/dt-bindings/power/power.h>
 
 #define DT_SUB_LOCK_INIT(node_id)				\
 	{ .state = PM_STATE_DT_INIT(node_id),			\
@@ -89,6 +90,11 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 	for (int16_t i = (int16_t)num_cpu_states - 1; i >= 0; i--) {
 		const struct pm_state_info *state = &cpu_states[i];
 		uint32_t min_residency, exit_latency;
+
+		/* skip a state that set min_residency to FOREVER .*/
+		if (state->min_residency_us == FOREVER) {
+			continue;
+		}
 
 		/* check if there is a lock on state + substate */
 		if (pm_policy_state_lock_is_active(state->state, state->substate_id)) {
