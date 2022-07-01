@@ -992,15 +992,6 @@ uint8_t ll_adv_enable(uint8_t enable)
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif
-#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-#if defined(CONFIG_BT_CTLR_PHY) && defined(CONFIG_BT_CTLR_ADV_EXT)
-		const uint8_t phy = lll->phy_s;
-#else
-		const uint8_t phy = PHY_1M;
-#endif
-		ull_dle_init(conn, phy);
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -1138,7 +1129,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 		conn->tx_head = conn->tx_ctrl = conn->tx_ctrl_last =
 		conn->tx_data = conn->tx_data_last = 0;
-#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+#else /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 		/* Re-initialize the control procedure data structures */
 		ull_llcp_init(conn);
 
@@ -1157,9 +1148,22 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->pause_rx_data = 0U;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		uint8_t phy_in_use = PHY_1M;
+
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
+			phy_in_use = lll->phy_s;
+		}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+		ull_dle_init(conn, phy_in_use);
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
 		/* Re-initialize the Tx Q */
 		ull_tx_q_init(&conn->tx_q);
-#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 		/* NOTE: using same link as supplied for terminate ind */
 		adv->link_cc_free = link;
