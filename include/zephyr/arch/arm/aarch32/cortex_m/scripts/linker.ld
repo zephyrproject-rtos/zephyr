@@ -143,6 +143,7 @@ SECTIONS
 	 * after .gnu.linkonce.t.*
 	 */
 	*(.glue_7t) *(.glue_7) *(.vfp11_veneer) *(.v4_bx)
+	. = ALIGN(4);
 
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
