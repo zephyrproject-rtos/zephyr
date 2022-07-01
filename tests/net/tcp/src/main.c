@@ -1335,7 +1335,9 @@ static void test_client_invalid_rst(void)
 }
 
 #define MAX_DATA 100
-static uint32_t expected_ack = MAX_DATA + 1 - 15;
+#define OUT_OF_ORDER_SEQ_INIT -15
+static uint32_t expected_ack;
+static uint32_t expected_ack_sem = MAX_DATA + 1 + OUT_OF_ORDER_SEQ_INIT;
 static struct net_context *ooo_ctx;
 
 static void handle_server_recv_out_of_order(struct net_pkt *pkt)
@@ -1354,7 +1356,9 @@ static void handle_server_recv_out_of_order(struct net_pkt *pkt)
 		      "Expected ACK %u but got %u",
 		      expected_ack, ntohl(th.th_ack));
 
-	test_sem_give();
+	if (expected_ack_sem == ntohl(th.th_ack)) {
+		test_sem_give();
+	}
 
 	return;
 
@@ -1377,12 +1381,15 @@ static void test_server_recv_out_of_order_data(void)
 	/* Start the sequence numbering so that we will wrap it (just for
 	 * testing purposes)
 	 */
-	ooo_ctx = create_server_socket(-15U, -15U);
+	ooo_ctx = create_server_socket(OUT_OF_ORDER_SEQ_INIT, -15U);
 
 	/* This will force the packet to be routed to our checker func
 	 * handle_server_recv_out_of_order()
 	 */
 	test_case_no = 9;
+
+	/* Initial you would expect an ack for the last correctly received byte = SYN flag */
+	expected_ack = OUT_OF_ORDER_SEQ_INIT + 1;
 
 	/* First packet will be out-of-order */
 	seq += MAX_DATA - 20;
@@ -1418,6 +1425,11 @@ static void test_server_recv_out_of_order_data(void)
 					  htons(PEER_PORT),
 					  &data[i], 10);
 		zassert_not_null(pkt, "Cannot create pkt");
+
+		/* When the missing segment is missed, forward the complete sequence */
+		if ((i - 10) <= 0) {
+			expected_ack = OUT_OF_ORDER_SEQ_INIT + MAX_DATA + 1;
+		}
 
 		ret = net_recv_data(iface, pkt);
 		zassert_true(ret == 0, "recv data failed (%d)", ret);
@@ -1460,6 +1472,7 @@ static void test_server_timeout_out_of_order_data(void)
 	 * get a timeout.
 	 */
 	seq = expected_ack + MAX_DATA + 1;
+	expected_ack_sem = seq;
 
 	/* Then special handling to send out-of-order TCP segments */
 	for (i = MAX_DATA; i > 10; i -= 10) {
