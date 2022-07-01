@@ -279,10 +279,10 @@ static int usb_dc_stm32_clock_enable(void)
 	 */
 	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
 		switch (sys_clock_hw_cycles_per_sec()) {
-		case 48000000U:
+		case MHZ(48):
 			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL_DIV_2);
 			break;
-		case 72000000U:
+		case MHZ(72):
 			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL_DIV_3);
 			break;
 		default:
@@ -300,10 +300,10 @@ static int usb_dc_stm32_clock_enable(void)
 	 */
 	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
 		switch (sys_clock_hw_cycles_per_sec()) {
-		case 48000000U:
+		case MHZ(48):
 			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL);
 			break;
-		case 72000000U:
+		case MHZ(72):
 			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL_DIV_1_5);
 			break;
 		default:
