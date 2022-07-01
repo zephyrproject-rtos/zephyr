@@ -2,20 +2,19 @@
  * Copyright (c) 2022 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <device.h>
+#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/irq_nextlevel.h>
+
 #include <xtensa/xtruntime.h>
-#include <irq_nextlevel.h>
 #include <xtensa/hal.h>
-#include <init.h>
 
-
-#include <arch/xtensa/cache.h>
-#include <cavs-shim.h>
-#include <cavs-mem.h>
-
-#include <cpu_init.h>
 #include <ace_v1x-regs.h>
-#include "soc.h"
+#include <cavs-mem.h>
+#include <cavs-shim.h>
+#include <cpu_init.h>
+#include <soc.h>
 
 extern void soc_mp_init(void);
 extern void win_setup(void);
