@@ -1249,7 +1249,8 @@ class QEMUHandler(Handler):
             if is_timeout:
                 self.instance.reason = "Timeout"
             else:
-                self.instance.reason = "Exited with {}".format(self.returncode)
+                if not self.instance.reason:
+                    self.instance.reason = "Exited with {}".format(self.returncode)
             self.instance.add_missing_case_status("blocked")
 
         self._final_handle_actions(harness, 0)
