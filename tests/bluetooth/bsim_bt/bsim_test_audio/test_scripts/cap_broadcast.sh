@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# Copyright (c) 2020-2021 Nordic Semiconductor ASA
+# Copyright (c) 2022 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
-SIMULATION_ID="cap"
+SIMULATION_ID="cap_broadcast"
 VERBOSITY_LEVEL=2
 PROCESS_IDS=""; EXIT_CODE=0
 
@@ -24,13 +24,13 @@ BOARD="${BOARD:-nrf52_bsim}"
 
 cd ${BSIM_OUT_PATH}/bin
 
-printf "\n\n======== Running CAP test =========\n\n"
+printf "\n\n======== Running CAP broadcast test =========\n\n"
 
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=cap_acceptor -rs=23
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=cap_acceptor_broadcast -rs=23
 
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=cap_initiator -rs=46
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=cap_initiator_broadcast -rs=46
 
 # Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
