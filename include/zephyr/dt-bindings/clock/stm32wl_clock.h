@@ -33,9 +33,6 @@
 /** PLL clock */
 #define STM32_SRC_PLLCLK	0x007
 
-#define STM32_SRC_CLOCK_MIN	STM32_SRC_HSI
-#define STM32_SRC_CLOCK_MAX	STM32_SRC_PLLCLK
-
 /**
  * @brief STM32 clock configuration bit field.
  *

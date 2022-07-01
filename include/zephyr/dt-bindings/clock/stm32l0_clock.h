@@ -28,9 +28,6 @@
 /** Bus clock */
 #define STM32_SRC_PCLK		0x006
 
-#define STM32_SRC_CLOCK_MIN	STM32_SRC_HSE
-#define STM32_SRC_CLOCK_MAX	STM32_SRC_PCLK
-
 /**
  * @brief STM32 clock configuration bit field.
  *
