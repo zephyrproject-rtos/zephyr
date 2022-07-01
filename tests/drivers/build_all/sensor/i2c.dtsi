@@ -47,12 +47,6 @@ test_i2c_iaqcore: iaqcore@5 {
 	reg = <0x5>;
 };
 
-test_i2c_mt9m114: mt9m114@6 {
-	compatible = "aptina,mt9m114";
-	label = "MT9M114";
-	reg = <0x6>;
-};
-
 test_i2c_bme280: bme280@7 {
 	compatible = "bosch,bme280";
 	label = "BME280";
