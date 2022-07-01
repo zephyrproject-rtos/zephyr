@@ -27,7 +27,6 @@ struct stm32_vbat_data {
 };
 
 struct stm32_vbat_config {
-	uint16_t vref_mv;
 	int ratio;
 };
 
@@ -72,7 +71,8 @@ static int stm32_vbat_channel_get(const struct device *dev, enum sensor_channel 
 		return -ENOTSUP;
 	}
 
-	voltage = data->raw * cfg->vref_mv / 0x0FFF; /* Sensor value in millivolts */
+	/* Sensor value in millivolts */
+	voltage = data->raw * adc_ref_internal(data->adc) / 0x0FFF;
 	/* considering the vbat input through a resistor bridge */
 	voltage = voltage * cfg->ratio / 1000; /* value of SENSOR_CHAN_VOLTAGE in Volt */
 
@@ -106,10 +106,7 @@ static int stm32_vbat_init(const struct device *dev)
 	return 0;
 }
 
-#define STM32_VBAT DT_PROP(DT_INST_IO_CHANNELS_CTLR(0), vref_mv)
-
 static struct stm32_vbat_config stm32_vbat_dev_config = {
-	.vref_mv = DT_PROP(DT_INST_IO_CHANNELS_CTLR(0), vref_mv),
 	.ratio = DT_INST_PROP(0, ratio),
 };
 
