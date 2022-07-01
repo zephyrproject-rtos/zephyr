@@ -36,6 +36,9 @@ endchoice
 
 endif #FLASH
 
+config I2C
+	default y if SENSOR
+
 if NETWORKING
 
 config NET_L2_ETHERNET
