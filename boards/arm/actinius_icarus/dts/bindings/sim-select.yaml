@@ -4,8 +4,8 @@
 description: |
   The Icarus boards provide the user with 2 options regarding SIM usage for
   LTE-M/NB-IoT communication. Either using the on-board eSIM or using an
-  external nano-SIM. The SIM can be selected using the SIM select pin given by
-  the sim-gpios property by setting it to 0 (eSIM) or to 1 (external nano-SIM).
+  external nano-SIM. The SIM can be selected by changing the `sim` property
+  of the `sim_select` dt node to `esim` or `external`.
 
 compatible: "sim-select"
 
