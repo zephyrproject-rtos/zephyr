@@ -22,9 +22,6 @@
 #define STM32_SRC_LSE		0x002
 #define STM32_SRC_LSI		0x003
 
-#define STM32_SRC_CLOCK_MIN	STM32_SRC_HSE
-#define STM32_SRC_CLOCK_MAX	STM32_SRC_LSI
-
 /**
  * @brief STM32 clock configuration bit field.
  *
