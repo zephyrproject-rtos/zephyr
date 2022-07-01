@@ -879,14 +879,14 @@ static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_i
 		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VREFINT) == channel_id) {
 		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
 	}
-#if defined(CONFIG_STM32_VBAT)
+#if defined(LL_ADC_CHANNEL_VBAT)
 	/* Enable the bridge divider only when needed for ADC conversion. */
 	if (config->has_vbat_channel &&
 		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VBAT) == channel_id) {
 		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VBAT);
 	}
 
-#endif /* CONFIG_STM32_VBAT */
+#endif /* LL_ADC_CHANNEL_VBAT */
 }
 
 static int adc_stm32_channel_setup(const struct device *dev,
