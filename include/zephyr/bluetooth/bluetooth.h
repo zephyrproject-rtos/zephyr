@@ -114,6 +114,22 @@ struct bt_le_ext_adv_cb {
 	 */
 	void (*scanned)(struct bt_le_ext_adv *adv,
 			struct bt_le_ext_adv_scanned_info *info);
+
+#if defined(CONFIG_BT_PRIVACY)
+	/**
+	 * @brief The RPA validity of the advertising set has expired.
+	 *
+	 * This callback notifies the application that the RPA validity of
+	 * the advertising set has expired. The user can use this callback
+	 * to synchronize the advertising payload update with the RPA rotation.
+	 *
+	 * @param adv  The advertising set object.
+	 *
+	 * @return true to rotate the current RPA, or false to use it for the
+	 *         next rotation period.
+	 */
+	bool (*rpa_expired)(struct bt_le_ext_adv *adv);
+#endif /* defined(CONFIG_BT_PRIVACY) */
 };
 
 /**
