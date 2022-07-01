@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/check.h>
+
 #include <soc.h>
 #include <ace_v1x-regs.h>
 #include <ace-ipc-regs.h>
 #include <cavs-mem.h>
-#include <sys/check.h>
 
 #define CORE_POWER_CHECK_NUM 32
 #define CORE_POWER_CHECK_DELAY 256
