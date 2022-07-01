@@ -254,8 +254,7 @@ class Backport(object):
                 self._pulls_without_an_issue.append(p)
                 continue
 
-            # FIXME: when we have upgrade to python3.9+, use "issue_map | issues_for_this_pr"
-            issue_map = {**issue_map, **issues_for_this_pr}
+            issue_map = issue_map | issues_for_this_pr
 
         issues = list(issue_map.values())
 
