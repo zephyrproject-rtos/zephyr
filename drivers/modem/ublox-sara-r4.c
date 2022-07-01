@@ -894,6 +894,7 @@ MODEM_CMD_DEFINE(on_cmd_socknotifyclose)
 				    ATOI(argv[0], 0, "socket_id"));
 	if (sock) {
 		sock->is_connected = false;
+		modem_socket_data_ready(&mdata.socket_config, sock);
 	}
 
 	return 0;
@@ -1618,7 +1619,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 
 	next_packet_size = modem_socket_next_packet_size(&mdata.socket_config,
 							 sock);
-	if (!next_packet_size) {
+	while (!next_packet_size) {
 		if (flags & ZSOCK_MSG_DONTWAIT) {
 			errno = EAGAIN;
 			return -1;
