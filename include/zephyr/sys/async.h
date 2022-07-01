@@ -26,6 +26,16 @@ extern "C" {
  * @{
  */
 
+/** @brief Structure used together with actual callee data. */
+struct async_callee {
+};
+
+/* @brief Structure to be used when user wants to get callee data. */
+struct async_poll_signal {
+	struct k_poll_signal signal;
+	void *callee_data;
+};
+
 /**
  * @brief Async operation callback type
  *
@@ -41,10 +51,11 @@ extern "C" {
  *
  * @note Implementations of this callback should be ISR ok.
  *
+ * @param callee_data Callee data to be given back to the callback.
  * @param result The result of the asynchronous call.
- * @param data Data to be given back to the callback.
+ * @param caller_data Caller data to be given back to the callback.
  */
-typedef void (*async_callback_t)(int result, void *data);
+typedef void (*async_callback_t)(struct async_callee *callee_data, int result, void *caller_data);
 
 /**
  * Signal completion callback
@@ -57,10 +68,28 @@ typedef void (*async_callback_t)(int result, void *data);
  *
  * @funcprops \isr_ok
  *
+ * @param callee_data Callee data to be given back to the callback.
  * @param result Result to assign to @ref k_poll_signal.result
  * @param signal Pointer to a @ref k_poll_signal
  */
-void async_signal_cb(int result, void *signal);
+void async_signal_cb(struct async_callee *callee_data, int result, void *signal);
+
+/**
+ * Signal completion callback and store callee data
+ *
+ * Raises a k_poll_signal with the given result. The context parameter is intentionally
+ * not forwarded in any way to enable maximum compatibility with existing k_poll_signal
+ * uses. The intended use of this callback is to provide a nice way of moving from
+ * k_poll_signal which is a common asynchronous notification mechanism in async calls
+ * to a callback notification mechanism.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param callee_data Callee data to be given back to the callback.
+ * @param result Result to assign to @ref k_poll_signal.result
+ * @param signal Pointer to a @ref async_poll_signal
+ */
+void async_signal_with_data_cb(struct async_callee *callee_data, int result, void *signal);
 
 /**
  * @}
