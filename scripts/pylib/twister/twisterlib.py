@@ -1979,11 +1979,11 @@ Tests should reference the category and subsystem with a dot as a separator.
 
     def _find_new_ztest_testcases(self, search_area):
         """
-        Find regular ztest testcases like "ZTEST" or "ZTEST_F". Return
+        Find regular ztest testcases like "ZTEST", "ZTEST_F", ... Return
         testcases' names and eventually found warnings.
         """
         testcase_regex = re.compile(
-            br"^\s*(?:ZTEST|ZTEST_F)\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,"
+            br"^\s*(?:ZTEST|ZTEST_F|ZTEST_USER|ZTEST_USER_F)\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,"
             br"\s*(?P<testcase_name>[a-zA-Z0-9_]+)\s*",
             re.MULTILINE)
 
