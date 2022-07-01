@@ -16,5 +16,14 @@
 		label = "test-reg-chained";
 		enable-gpios = <&gpio0 2 0>;
 		power-domain = <&test_reg_0>;
+		init-priority = <76>;
+	};
+
+	test_reg_bad_sequence: test_reg_bad_sequence {
+		compatible = "power-domain-gpio";
+		label = "test-reg-bad-sequence";
+		enable-gpios = <&gpio0 3 0>;
+		power-domain = <&test_reg_0>;
+		init-priority = <74>;
 	};
 };

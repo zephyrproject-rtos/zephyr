@@ -14,11 +14,19 @@ static void test_demo(void)
 	const struct device *reg_0 = DEVICE_DT_GET(DT_NODELABEL(test_reg_0));
 	const struct device *reg_1 = DEVICE_DT_GET(DT_NODELABEL(test_reg_1));
 	const struct device *reg_chained = DEVICE_DT_GET(DT_NODELABEL(test_reg_chained));
+	const struct device *reg_bad_sequence = DEVICE_DT_GET(DT_NODELABEL(test_reg_bad_sequence));
+
+	/* Initalization succeeded */
+	zassert_true(device_is_ready(reg_0), "");
+	zassert_true(device_is_ready(reg_1), "");
+	zassert_true(device_is_ready(reg_chained), "");
+	zassert_false(device_is_ready(reg_bad_sequence), "");
 
 	/* Initial power state */
 	zassert_true(pm_device_is_powered(reg_0), "");
 	zassert_true(pm_device_is_powered(reg_1), "");
 	zassert_false(pm_device_is_powered(reg_chained), "");
+	zassert_false(pm_device_is_powered(reg_bad_sequence), "");
 
 	TC_PRINT("Enabling runtime power management on regulators\n");
 
