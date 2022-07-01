@@ -28,7 +28,7 @@ void zephyr_smp_rx_req(struct zephyr_smp_transport *zst, struct net_buf *nb)
 	backup = nb;
 }
 
-void test_first(void)
+ZTEST(smp_reassembly, test_first)
 {
 	zephyr_smp_reassembly_init(&zst);
 	struct mgmt_hdr *mh = (struct mgmt_hdr *)buff;
@@ -77,7 +77,7 @@ void test_first(void)
 
 }
 
-void test_drops(void)
+ZTEST(smp_reassembly, test_drops)
 {
 	struct mgmt_hdr *mh = (struct mgmt_hdr *)buff;
 	int frag_used;
@@ -97,7 +97,7 @@ void test_drops(void)
 		      "Expected %d from drop, got %d", ret, expected);
 }
 
-void test_collection(void)
+ZTEST(smp_reassembly, test_collection)
 {
 	struct mgmt_hdr *mh = (struct mgmt_hdr *)buff;
 	int pkt_used;
@@ -159,7 +159,7 @@ void test_collection(void)
 	mcumgr_buf_free(backup);
 }
 
-void test_no_packet_started(void)
+ZTEST(smp_reassembly, test_no_packet_started)
 {
 	int ret;
 
@@ -177,7 +177,7 @@ void test_no_packet_started(void)
 		      "Expected -EINVAL, there is no packet started yet");
 }
 
-void test_ud(void)
+ZTEST(smp_reassembly, test_ud)
 {
 	struct mgmt_hdr *mh = (struct mgmt_hdr *)buff;
 	int frag_used;
@@ -202,16 +202,4 @@ void test_ud(void)
 	zephyr_smp_reassembly_drop(&zst);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(
-		smp_reassembly_tests,
-		ztest_unit_test(test_first),
-		ztest_unit_test(test_collection),
-		ztest_unit_test(test_no_packet_started),
-		ztest_unit_test(test_drops),
-		ztest_unit_test(test_ud)
-		);
-
-	ztest_run_test_suite(smp_reassembly_tests);
-}
+ZTEST_SUITE(smp_reassembly, NULL, NULL, NULL, NULL, NULL);
