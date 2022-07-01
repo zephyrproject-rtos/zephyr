@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Intel Corporation.
+ * Copyright (c) 2018,2022 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,7 +70,7 @@ void assert_post_action(const char *file, unsigned int line)
  *
  * @see k_spin_lock()
  */
-void test_spinlock_no_recursive(void)
+ZTEST(spinlock, test_spinlock_no_recursive)
 {
 	k_spinlock_key_t re;
 
@@ -91,7 +91,7 @@ void test_spinlock_no_recursive(void)
  *
  * @see k_spin_unlock()
  */
-void test_spinlock_unlock_error(void)
+ZTEST(spinlock, test_spinlock_unlock_error)
 {
 	key = k_spin_lock(&lock);
 
@@ -110,7 +110,7 @@ void test_spinlock_unlock_error(void)
  *
  * @see k_spin_release()
  */
-void test_spinlock_release_error(void)
+ZTEST(spinlock, test_spinlock_release_error)
 {
 	key = k_spin_lock(&lock);
 
