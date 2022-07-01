@@ -181,7 +181,7 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 						clock_control_subsys_t sub_system,
 						void *data)
 {
-#if defined(STM32_SRC_CLOCK_MIN)
+#if defined(STM32_SRC_SYSCLK)
 	/* At least one alt src clock available */
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	volatile uint32_t *reg;
