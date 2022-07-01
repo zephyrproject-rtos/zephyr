@@ -264,7 +264,6 @@ static void pa_term(struct bt_le_per_adv_sync *sync,
 static bool net_buf_decode_codec_ltv(struct net_buf_simple *buf,
 				     struct bt_codec_data *codec_data)
 {
-	size_t value_len;
 	void *value;
 
 	if (buf->len < sizeof(codec_data->data.data_len)) {
@@ -277,17 +276,22 @@ static bool net_buf_decode_codec_ltv(struct net_buf_simple *buf,
 		BT_DBG("Not enough data for LTV type field: %u", buf->len);
 		return false;
 	}
+
+	/* LTV structures include the data.type in the length field,
+	 * but we do not do that for the bt_data struct in Zephyr
+	 */
+	codec_data->data.data_len -= sizeof(codec_data->data.type);
+
 	codec_data->data.type = net_buf_simple_pull_u8(buf);
 	codec_data->data.data = codec_data->value;
 
-	value_len = codec_data->data.data_len - sizeof(codec_data->data.type);
-	if (buf->len < value_len) {
+	if (buf->len < codec_data->data.data_len) {
 		BT_DBG("Not enough data for LTV value field: %u/%zu",
-		       buf->len, value_len);
+		       buf->len, codec_data->data.data_len);
 		return false;
 	}
-	value = net_buf_simple_pull_mem(buf, value_len);
-	memcpy(codec_data->value, value, value_len);
+	value = net_buf_simple_pull_mem(buf, codec_data->data.data_len);
+	(void)memcpy(codec_data->value, value, codec_data->data.data_len);
 
 	return true;
 }
