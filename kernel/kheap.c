@@ -52,13 +52,13 @@ static int statics_init(const struct device *unused)
 	return 0;
 }
 
-SYS_INIT(statics_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+SYS_INIT_NAMED(statics_init_pre, statics_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
 /* Need to wait for paging mechanism to be initialized before
  * heaps that are not in pinned sections can be initialized.
  */
-SYS_INIT(statics_init, POST_KERNEL, 0);
+SYS_INIT_NAMED(statics_init_post, statics_init, POST_KERNEL, 0);
 #endif /* CONFIG_DEMAND_PAGING && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 
 void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
