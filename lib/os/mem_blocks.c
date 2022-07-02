@@ -141,6 +141,23 @@ out:
 	return ret;
 }
 
+int sys_mem_blocks_is_region_free(sys_mem_blocks_t *mem_block, void *in_block, size_t count)
+{
+	bool result;
+	size_t offset;
+
+	__ASSERT_NO_MSG(mem_block != NULL);
+	__ASSERT_NO_MSG(mem_block->bitmap != NULL);
+	__ASSERT_NO_MSG(mem_block->buffer != NULL);
+
+	offset = ((uint8_t *)in_block - mem_block->buffer) >> mem_block->blk_sz_shift;
+
+	__ASSERT_NO_MSG(offset + count <= mem_block->num_blocks);
+
+	result = sys_bitarray_is_region_cleared(mem_block->bitmap, count, offset);
+	return result;
+}
+
 int sys_mem_blocks_get(sys_mem_blocks_t *mem_block, void *in_block, size_t count)
 {
 	int ret = 0;
