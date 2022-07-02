@@ -53,10 +53,14 @@ struct init_entry {
 
 void z_sys_init_run_level(int32_t level);
 
-/* A counter is used to avoid issues when two or more system devices
- * are declared in the same C file with the same init function.
+/**
+ * @def Z_SYS_NAME
+ *
+ * @brief Construct a namespaced identifier for SYS_INIT instance
+ *
+ * @param _name Base unique name
  */
-#define Z_SYS_NAME(_init_fn) _CONCAT(_CONCAT(sys_init_, _init_fn), __COUNTER__)
+#define Z_SYS_NAME(_name) _CONCAT(sys_init_, _name)
 
 /**
  * @def Z_INIT_ENTRY_DEFINE
