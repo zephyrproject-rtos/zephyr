@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.20.0)
 
 set(SORT_TYPE_NAME Lexical)
 
