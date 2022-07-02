@@ -157,7 +157,7 @@ void test_get_flash_erase_value(void)
 	rc = flash_area_open(TEST_FCB_FLASH_AREA_ID, &fa);
 	zassert_equal(rc, 0, "Failed top open flash area");
 
-	dev = device_get_binding(fa->fa_dev_name);
+	dev = fa->fa_dev;
 	flash_area_close(fa);
 
 	zassert_true(dev != NULL, "Failed to obtain device");
