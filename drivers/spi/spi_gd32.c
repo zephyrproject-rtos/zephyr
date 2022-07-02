@@ -42,6 +42,9 @@ struct spi_gd32_config {
 	uint32_t reg;
 	uint32_t rcu_periph_clock;
 	const struct pinctrl_dev_config *pcfg;
+#ifdef CONFIG_SPI_GD32_INTERRUPT
+	void (*irq_configure)();
+#endif
 };
 
 struct spi_gd32_data {
@@ -158,6 +161,10 @@ static int spi_gd32_frame_exchange(const struct device *dev)
 	struct spi_context *ctx = &data->ctx;
 	uint16_t tx_frame = 0U, rx_frame = 0U;
 
+	while ((SPI_STAT(cfg->reg) & SPI_STAT_TBE) == 0) {
+		/* NOP */
+	}
+
 	if (SPI_WORD_SIZE_GET(ctx->config->operation) == 8) {
 		if (spi_context_tx_buf_on(ctx)) {
 			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
@@ -199,16 +206,17 @@ static int spi_gd32_frame_exchange(const struct device *dev)
 	return spi_gd32_get_err(cfg);
 }
 
-static int spi_gd32_transceive(const struct device *dev,
-			       const struct spi_config *config,
-			       const struct spi_buf_set *tx_bufs,
-			       const struct spi_buf_set *rx_bufs)
+static int spi_gd32_transceive_impl(const struct device *dev,
+				    const struct spi_config *config,
+				    const struct spi_buf_set *tx_bufs,
+				    const struct spi_buf_set *rx_bufs,
+				    struct k_poll_signal *poll_sig)
 {
 	struct spi_gd32_data *data = dev->data;
 	const struct spi_gd32_config *cfg = dev->config;
 	int ret;
 
-	spi_context_lock(&data->ctx, false, NULL, config);
+	spi_context_lock(&data->ctx, !!poll_sig, poll_sig, config);
 
 	ret = spi_gd32_configure(dev, config);
 	if (ret < 0) {
@@ -221,12 +229,27 @@ static int spi_gd32_transceive(const struct device *dev,
 
 	spi_context_cs_control(&data->ctx, true);
 
+#ifdef CONFIG_SPI_GD32_INTERRUPT
+	SPI_STAT(cfg->reg) &= ~(SPI_STAT_RBNE | SPI_STAT_TBE | SPI_GD32_ERR_MASK);
+	SPI_CTL1(cfg->reg) |= (SPI_CTL1_RBNEIE | SPI_CTL1_TBEIE | SPI_CTL1_ERRIE);
+	ret = spi_context_wait_for_completion(&data->ctx);
+#else
 	do {
 		ret = spi_gd32_frame_exchange(dev);
 		if (ret < 0) {
 			break;
 		}
 	} while (spi_gd32_transfer_ongoing(data));
+
+#ifdef CONFIG_SPI_ASYNC
+	spi_context_complete(&data->ctx, ret);
+#endif
+#endif
+
+	while (!(SPI_STAT(cfg->reg) & SPI_STAT_TBE) ||
+		(SPI_STAT(cfg->reg) & SPI_STAT_TRANS)) {
+		/* Wait until last frame transfer complete. */
+	}
 
 	spi_context_cs_control(&data->ctx, false);
 
@@ -237,6 +260,58 @@ error:
 
 	return ret;
 }
+
+static int spi_gd32_transceive(const struct device *dev,
+			       const struct spi_config *config,
+			       const struct spi_buf_set *tx_bufs,
+			       const struct spi_buf_set *rx_bufs)
+{
+	return spi_gd32_transceive_impl(dev, config, tx_bufs, rx_bufs, NULL);
+}
+
+#ifdef CONFIG_SPI_ASYNC
+static int spi_gd32_transceive_async(const struct device *dev,
+				     const struct spi_config *config,
+				     const struct spi_buf_set *tx_bufs,
+				     const struct spi_buf_set *rx_bufs,
+				     struct k_poll_signal *async)
+{
+	return spi_gd32_transceive_impl(dev, config, tx_bufs, rx_bufs, async);
+}
+#endif
+
+#ifdef CONFIG_SPI_GD32_INTERRUPT
+
+static void spi_gd32_complete(const struct device *dev, int status)
+{
+	struct spi_gd32_data *data = dev->data;
+	const struct spi_gd32_config *cfg = dev->config;
+
+	SPI_CTL1(cfg->reg) &= ~(SPI_CTL1_RBNEIE | SPI_CTL1_TBEIE | SPI_CTL1_ERRIE);
+
+	spi_context_complete(&data->ctx, status);
+}
+
+static void spi_gd32_isr(struct device *dev)
+{
+	const struct spi_gd32_config *cfg = dev->config;
+	struct spi_gd32_data *data = dev->data;
+	int err = 0;
+
+	if ((SPI_STAT(cfg->reg) & SPI_GD32_ERR_MASK) != 0) {
+		err = spi_gd32_get_err(cfg);
+	} else {
+		err = spi_gd32_frame_exchange(dev);
+	}
+
+	if (err || !spi_gd32_transfer_ongoing(data)) {
+		spi_gd32_complete(dev, err);
+	}
+
+	SPI_STAT(cfg->reg) = 0;
+}
+
+#endif /* INTERRUPT */
 
 static int spi_gd32_release(const struct device *dev,
 			    const struct spi_config *config)
@@ -250,6 +325,9 @@ static int spi_gd32_release(const struct device *dev,
 
 static struct spi_driver_api spi_gd32_driver_api = {
 	.transceive = spi_gd32_transceive,
+#ifdef CONFIG_SPI_ASYNC
+	.transceive_async = spi_gd32_transceive_async,
+#endif
 	.release = spi_gd32_release
 };
 
@@ -272,25 +350,40 @@ int spi_gd32_init(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_SPI_GD32_INTERRUPT
+	cfg->irq_configure(dev);
+#endif
+
 	spi_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
 }
 
-#define GD32_SPI_INIT(idx)							\
-	PINCTRL_DT_INST_DEFINE(idx);						\
-	static struct spi_gd32_data spi_gd32_data_##idx = {			\
-		SPI_CONTEXT_INIT_LOCK(spi_gd32_data_##idx, ctx),		\
-		SPI_CONTEXT_INIT_SYNC(spi_gd32_data_##idx, ctx),		\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)		\
-	};									\
-	static struct spi_gd32_config spi_gd32_config_##idx = {			\
-		.reg = DT_INST_REG_ADDR(idx),					\
-		.rcu_periph_clock = DT_INST_PROP(idx, rcu_periph_clock),	\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),			\
-	};									\
-	DEVICE_DT_INST_DEFINE(idx, &spi_gd32_init, NULL, &spi_gd32_data_##idx,	\
-			      &spi_gd32_config_##idx, POST_KERNEL,		\
-			      CONFIG_SPI_INIT_PRIORITY, &spi_gd32_driver_api);
+#define GD32_IRQ_CONFIGURE(idx)						   \
+	static void spi_gd32_irq_configure_##idx(void)			   \
+	{								   \
+		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), \
+			    spi_gd32_isr,				   \
+			    DEVICE_DT_INST_GET(idx), 0);		   \
+		irq_enable(DT_INST_IRQN(idx));				   \
+	}
+
+#define GD32_SPI_INIT(idx)						       \
+	PINCTRL_DT_INST_DEFINE(idx);					       \
+	IF_ENABLED(CONFIG_SPI_GD32_INTERRUPT, (GD32_IRQ_CONFIGURE(idx)));      \
+	static struct spi_gd32_data spi_gd32_data_##idx = {		       \
+		SPI_CONTEXT_INIT_LOCK(spi_gd32_data_##idx, ctx),	       \
+		SPI_CONTEXT_INIT_SYNC(spi_gd32_data_##idx, ctx),	       \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx) };      \
+	static struct spi_gd32_config spi_gd32_config_##idx = {		       \
+		.reg = DT_INST_REG_ADDR(idx),				       \
+		.rcu_periph_clock = DT_INST_PROP(idx, rcu_periph_clock),       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),		       \
+		IF_ENABLED(CONFIG_SPI_GD32_INTERRUPT,			       \
+			   (.irq_configure = spi_gd32_irq_configure_##idx)) }; \
+	DEVICE_DT_INST_DEFINE(idx, &spi_gd32_init, NULL,		       \
+			      &spi_gd32_data_##idx, &spi_gd32_config_##idx,    \
+			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,	       \
+			      &spi_gd32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GD32_SPI_INIT)
