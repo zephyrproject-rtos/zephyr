@@ -635,7 +635,6 @@
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <110>;
 		ts-cal-vrefanalog = <3000>;
-		ts-cal-offset = <30>;
 		io-channels = <&adc1 17>;
 		status = "disabled";
 		label = "DIE_TEMP";

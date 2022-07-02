@@ -469,7 +469,7 @@ def load_firmware(fw_file):
     # chromebook) putting the two writes next each other also hangs
     # the DSP!
     sd.CTL &= ~2 # clear START
-    time.sleep(1)
+    time.sleep(0.1)
     sd.CTL |= 1
     log.info(f"cAVS firmware load complete")
 

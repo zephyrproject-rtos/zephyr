@@ -12,6 +12,7 @@
 ---
 BasedOnStyle: LLVM
 AlignConsecutiveMacros: AcrossComments
+AllowShortEnumsOnASingleLine: false
 AttributeMacros:
   - __aligned
   - __deprecated

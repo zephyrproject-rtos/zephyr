@@ -24,7 +24,7 @@ repository name for the module
 
 ## Maintainership
 
-List the person(s) that will be maintaing the integration of this external code
+List the person(s) that will be maintaining the integration of this external code
 for the foreseeable future. Please use GitHub IDs to identify them. You can
 choose to identify a single maintainer only or add collaborators as well
 

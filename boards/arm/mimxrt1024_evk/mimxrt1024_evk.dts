@@ -17,6 +17,7 @@
 		led0 = &green_led;
 		sw0 = &user_button;
 		watchdog0 = &wdog0;
+		magn0 = &fxos8700;
 	};
 
 	chosen {

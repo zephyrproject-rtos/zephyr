@@ -10,44 +10,36 @@
 
 &pinctrl {
 
-	uart0_tx_gpio1: uart0_tx_gpio1 {
-		pinmux = <UART0_TX_GPIO1>;
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO1>;
+		};
+		group2 {
+			pinmux = <UART0_RX_GPIO3>;
+			bias-pull-up;
+		};
 	};
 
-	uart0_rx_gpio3: uart0_rx_gpio3 {
-		pinmux = <UART0_RX_GPIO3>;
-		bias-pull-up;
+	spim3_default: spim3_default {
+		group1 {
+			pinmux = <SPIM3_MISO_GPIO19>,
+				 <SPIM3_SCLK_GPIO18>,
+				 <SPIM3_CSEL_GPIO5>;
+		};
+		group2 {
+			pinmux = <SPIM3_MOSI_GPIO23>;
+			output-low;
+		};
 	};
 
-	spim3_miso_gpio19: spim3_miso_gpio19 {
-		pinmux = <SPIM3_MISO_GPIO19>;
-	};
-
-	spim3_mosi_gpio23: spim3_mosi_gpio23 {
-		pinmux = <SPIM3_MOSI_GPIO23>;
-		output-low;
-	};
-
-	spim3_sclk_gpio18: spim3_sclk_gpio18 {
-		pinmux = <SPIM3_SCLK_GPIO18>;
-	};
-
-	spim3_csel_gpio5: spim3_csel_gpio5 {
-		pinmux = <SPIM3_CSEL_GPIO5>;
-	};
-
-	i2c0_sda_gpio4: i2c0_sda_gpio4 {
-		pinmux = <I2C0_SDA_GPIO4>;
-		bias-pull-up;
-		drive-open-drain;
-		output-high;
-	};
-
-	i2c0_scl_gpio15: i2c0_scl_gpio15 {
-		pinmux = <I2C0_SCL_GPIO15>;
-		bias-pull-up;
-		drive-open-drain;
-		output-high;
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO4>,
+				 <I2C0_SCL_GPIO15>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
 	};
 
 };

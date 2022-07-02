@@ -24,7 +24,54 @@ extern "C" {
 /** @brief Flag indicating that cache shall be handled. */
 #define SPSC_PBUF_CACHE BIT(0)
 
+/** @brief Size of the field which stores maximum utilization. */
+#define SPSC_PBUF_UTILIZATION_BITS 24
+
+/** @brief Offset of the field which stores maximum utilization. */
+#define SPSC_PBUF_UTILIZATION_OFFSET 8
+
 /**@} */
+
+#ifndef CONFIG_SPSC_PBUF_CACHE_LINE
+#define CONFIG_SPSC_PBUF_CACHE_LINE 0
+#endif
+
+/** @brief Maximum packet length. */
+#define SPSC_PBUF_MAX_LEN 0xFF00
+
+/** @brief First part of packet buffer control block.
+ *
+ * This part contains only data set during the initialization and data touched
+ * by the reader. If packet is shared between to cores then data changed by
+ * the reader should be on different cache line than the data changed by the
+ * writer.
+ */
+struct spsc_pbuf_common {
+	uint32_t len;		/* Length of data[] in bytes. */
+	uint32_t flags;		/* Flags. See @ref SPSC_PBUF_FLAGS */
+	uint32_t rd_idx;	/* Index of the first valid byte in data[] */
+};
+
+/* Padding to fill cache line. */
+#define Z_SPSC_PBUF_PADDING \
+	MAX(0, CONFIG_SPSC_PBUF_CACHE_LINE - (int)sizeof(struct spsc_pbuf_common))
+
+/** @brief Remaining part of a packet buffer when cache is used.
+ *
+ * It contains data that is only changed by the writer. A gap is added to ensure
+ * that it is in different cache line than the data changed by the reader.
+ */
+struct spsc_pbuf_ext_cache {
+	uint8_t reserved[Z_SPSC_PBUF_PADDING];
+	uint32_t wr_idx;	/* Index of the first free byte in data[] */
+	uint8_t data[];		/* Buffer data. */
+};
+
+/** @brief Remaining part of a packet buffer when cache is not used. */
+struct spsc_pbuf_ext_nocache {
+	uint32_t wr_idx;	/* Index of the first free byte in data[] */
+	uint8_t data[];		/* Buffer data. */
+};
 
 /**
  * @brief Single producer, single consumer packet buffer
@@ -39,20 +86,27 @@ extern "C" {
  *
  */
 struct spsc_pbuf {
-	uint32_t len;		/* Length of data[] in bytes. */
-	uint32_t wr_idx;	/* Index of the first free byte in data[] */
-	uint32_t rd_idx;	/* Index of the first valid byte in data[] */
-	uint32_t flags;		/* Flags. See @ref SPSC_PBUF_FLAGS */
-	uint8_t data[];		/* Buffer data. */
+	struct spsc_pbuf_common common;
+	union {
+		struct spsc_pbuf_ext_cache cache;
+		struct spsc_pbuf_ext_nocache nocache;
+	} ext;
 };
 
 /** @brief Get buffer capacity.
  *
- * @param blen Length of the buffer dedicated for the packet buffer.
+ * This value is the amount of data that is dedicated for storing packets. Since
+ * each packet is prefixed with 2 byte length header, longest possible packet is
+ * less than that.
+ *
+ * @param pb	A buffer.
  *
  * @return Packet buffer capacity.
  */
-#define SPSC_PBUF_CAPACITY(blen) ((blen) - offsetof(struct spsc_pbuf, data))
+static inline uint32_t spsc_pbuf_capacity(struct spsc_pbuf *pb)
+{
+	return pb->common.len - sizeof(uint32_t);
+}
 
 /**
  * @brief Initialize the packet buffer.
@@ -61,7 +115,9 @@ struct spsc_pbuf {
  * memory region.
  *
  * @param buf			Pointer to a memory region on which buffer is
- *				created.
+ *				created. When cache is used it must be aligned to
+ *				CONFIG_SPSC_PBUF_CACHE_LINE, otherwise it must
+ *				be 32 bit word aligned.
  * @param blen			Length of the buffer. Must be large enough to
  *				contain the internal structure and at least two
  *				bytes of data (one is reserved for written
@@ -69,15 +125,19 @@ struct spsc_pbuf {
  * @param flags			Option flags. See @ref SPSC_PBUF_FLAGS.
  * @retval struct spsc_pbuf*	Pointer to the created buffer. The pointer
  *				points to the same address as buf.
+ * @retval NULL			Invalid buffer alignment.
  */
 struct spsc_pbuf *spsc_pbuf_init(void *buf, size_t blen, uint32_t flags);
 
 /**
  * @brief Write specified amount of data to the packet buffer.
  *
+ * It combines @ref spsc_pbuf_alloc and @ref spsc_pbuf_commit into a single call.
+ *
  * @param pb	A buffer to which to write.
  * @param buf	Pointer to the data to be written to the buffer.
- * @param len	Number of bytes to be written to the buffer.
+ * @param len	Number of bytes to be written to the buffer. Must be positive
+ *		but less than @ref SPSC_PBUF_MAX_LEN.
  * @retval int	Number of bytes written, negative error code on fail.
  *		-EINVAL, if len == 0.
  *		-ENOMEM, if len is bigger than the buffer can fit.
@@ -85,12 +145,55 @@ struct spsc_pbuf *spsc_pbuf_init(void *buf, size_t blen, uint32_t flags);
 int spsc_pbuf_write(struct spsc_pbuf *pb, const char *buf, uint16_t len);
 
 /**
+ * @brief Allocate space in the packet buffer.
+ *
+ * This function attempts to allocate @p len bytes of continuous memory within
+ * the packet buffer. An internal padding is added at the end of the buffer, if
+ * wrapping occurred during allocation. Apart from padding, allocation does not
+ * change the state of the buffer so if after allocation packet is not needed
+ * a commit is not needed.
+ *
+ * Allocated buffer must be committed (@ref spsc_pbuf_commit) to make the packet
+ * available for reading.
+ *
+ * Packet buffer ensures that allocated buffers are 32 bit word aligned.
+ *
+ * @note If data cache is used, it is the user responsibility to write back the
+ * new data.
+ *
+ * @param[in]  pb	A buffer to which to write.
+ * @param[in]  len	Allocation length. Must be positive. If less than @ref SPSC_PBUF_MAX_LEN
+ *			then if requested length cannot be allocated, an attempt to allocate
+ *			largest possible is performed (which may include adding wrap padding).
+ *			If @ref SPSC_PBUF_MAX_LEN is used then an attempt to allocate largest
+ *			buffer without applying wrap padding is performed.
+ * @param[out] buf	Location where buffer address is written on successful allocation.
+ *
+ * @retval non-negative Amount of space that got allocated. Can be equal or smaller than %p len.
+ * @retval -EINVAL if @p len is forbidden.
+ */
+int spsc_pbuf_alloc(struct spsc_pbuf *pb, uint16_t len, char **buf);
+
+/**
+ * @brief Commit packet to the buffer.
+ *
+ * Commit a packet which was previously allocated (@ref spsc_pbuf_alloc).
+ * If cache is used, cache writeback is perfromed on the written data.
+ *
+ * @param pb	A buffer to which to write.
+ * @param len	Packet length. Must be equal or less than the length used for allocation.
+ */
+void spsc_pbuf_commit(struct spsc_pbuf *pb, uint16_t len);
+
+/**
  * @brief Read specified amount of data from the packet buffer.
  *
  * Single read allows to read the message send by the single write.
- * The provided buf must be big enough to store the whole message.
+ * The provided %p buf must be big enough to store the whole message.
  *
- * @param pb		A buffer from which data is to be read.
+ * It combines @ref spsc_pbuf_claim and @ref spsc_pbuf_free into a single call.
+ *
+ * @param pb		A buffer from which data will be read.
  * @param buf		Data pointer to which read data will be written.
  *			If NULL, len of stored message is returned.
  * @param len		Number of bytes to be read from the buffer.
@@ -101,7 +204,43 @@ int spsc_pbuf_write(struct spsc_pbuf *pb, const char *buf, uint16_t len);
  */
 int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len);
 
+/**
+ * @brief Claim packet from the buffer.
+ *
+ * Claimed packet must be freed using @ref spsc_pbuf_free.
+ *
+ * @note If data cache is used, cache is invalidate on the packet.
+ *
+ * @param[in] pb	A buffer from which packet will be claimed.
+ * @param[in,out] buf	A location where claimed packet address is written.
+ *
+ * @retval 0 No packets in the buffer.
+ * @retval positive packet length.
+ */
+uint16_t spsc_pbuf_claim(struct spsc_pbuf *pb, char **buf);
 
+/**
+ * @brief Free the packet to the buffer.
+ *
+ * Packet must be claimed (@ref spsc_pbuf_claim) before it can be freed.
+ *
+ * @param pb	A packet buffer from which packet was claimed.
+ * @param len	Claimed packet length.
+ */
+void spsc_pbuf_free(struct spsc_pbuf *pb, uint16_t len);
+
+/**
+ * @brief Get maximum utilization of the packet buffer.
+ *
+ * Function can be used to tune the buffer size. Feature is enabled by
+ * CONFIG_SPSC_PBUF_UTILIZATION. Utilization is updated by the consumer.
+ *
+ * @param pb	A packet buffer.
+ *
+ * @retval -ENOTSUP	Feature not enabled.
+ * @retval non-negative	Maximum utilization.
+ */
+int spsc_pbuf_get_utilization(struct spsc_pbuf *pb);
 /**
  * @}
  */

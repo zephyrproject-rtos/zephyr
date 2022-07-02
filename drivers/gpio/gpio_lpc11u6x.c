@@ -79,7 +79,7 @@ struct lpc11u6x_pint_regs {
  * ports: GPIO and SYSCON registers base addresses, clock name and subsystem.
  */
 struct gpio_lpc11u6x_shared {
-	char *clock_controller_name;
+	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	uint32_t gpio_base;
 	uint32_t syscon_base;
@@ -495,7 +495,7 @@ static const struct gpio_driver_api gpio_lpc11u6x_driver_api = {
  */
 
 static const struct gpio_lpc11u6x_shared gpio_lpc11u6x_shared = {
-	.clock_controller_name = DT_LABEL(DT_INST_PHANDLE(0, clocks)),
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.clock_subsys = (clock_control_subsys_t) DT_INST_PHA(0, clocks, clkid),
 	.gpio_base = DT_INST_REG_ADDR_BY_IDX(0, 0),
 	.syscon_base = DT_INST_REG_ADDR_BY_IDX(0, 1),
@@ -513,7 +513,6 @@ do {							                \
 static int gpio_lpc11u6x_init(const struct device *dev)
 {
 	const struct gpio_lpc11u6x_config *config = dev->config;
-	const struct device *clock_dev;
 	int ret;
 	static bool gpio_ready;
 
@@ -523,12 +522,7 @@ static int gpio_lpc11u6x_init(const struct device *dev)
 	}
 
 	/* Enable GPIO and PINT clocks. */
-	clock_dev = device_get_binding(config->shared->clock_controller_name);
-	if (!clock_dev) {
-		return -ENODEV;
-	}
-
-	ret = clock_control_on(clock_dev, config->shared->clock_subsys);
+	ret = clock_control_on(config->shared->clock_dev, config->shared->clock_subsys);
 	if (ret < 0) {
 		return ret;
 	}

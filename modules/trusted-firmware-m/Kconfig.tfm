@@ -167,6 +167,15 @@ config TFM_ITS_MAX_ASSET_SIZE
 	  Maximum size (in bytes) of a single asset to be stored in Internal Trusted
 	  Storage (ITS).
 
+config TFM_PARTITION_PLATFORM_CUSTOM_REBOOT
+	bool "Use custom reboot handler"
+	depends on TFM_PARTITION_PLATFORM
+	help
+	  Do not include the default zephyr implementation of calling the TF-M
+	  platform reset service.
+	  Instead the application will have to override the weak ARM
+	  implementation of sys_arch_reset().
+
 config TFM_BL2_NOT_SUPPORTED
 	bool
 	help

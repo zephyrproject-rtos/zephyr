@@ -81,9 +81,9 @@ extern const struct device *vega_debug_portd;
  */
 #define DEBUG_INIT() \
 	do { \
-		vega_debug_portb = device_get_binding(DT_LABEL(DT_NODELABEL(gpiob))); \
-		vega_debug_portc = device_get_binding(DT_LABEL(DT_NODELABEL(gpioc))); \
-		vega_debug_portd = device_get_binding(DT_LABEL(DT_NODELABEL(gpiod))); \
+		vega_debug_portb = DEVICE_DT_GET(DT_NODELABEL(gpiob)); \
+		vega_debug_portc = DEVICE_DT_GET(DT_NODELABEL(gpioc)); \
+		vega_debug_portd = DEVICE_DT_GET(DT_NODELABEL(gpiod)); \
 		\
 		gpio_pin_set(DEBUG0_PORT, DEBUG0_PIN, 1); \
 		gpio_pin_set(DEBUG0_PORT, DEBUG0_PIN, 0); \

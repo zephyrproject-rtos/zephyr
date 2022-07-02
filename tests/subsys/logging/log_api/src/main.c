@@ -59,26 +59,6 @@ static log_timestamp_t timestamp_get(void)
 }
 
 /**
- * @brief Function for finding source ID based on source name.
- *
- * @param name Source name
- *
- * @return Source ID.
- */
-static int16_t log_source_id_get(const char *name)
-{
-	int16_t count = (int16_t)log_src_cnt_get(CONFIG_LOG_DOMAIN_ID);
-
-	for (int16_t i = 0; i < count; i++) {
-		if (strcmp(log_source_name_get(CONFIG_LOG_DOMAIN_ID, i), name)
-		    == 0) {
-			return i;
-		}
-	}
-	return -1;
-}
-
-/**
  * @brief Flush logs.
  *
  * If processing thread is enabled keep sleeping until there are no pending messages
@@ -146,6 +126,10 @@ static void process_and_validate(bool backend2_enable, bool panic)
 
 	if (NO_BACKENDS) {
 		zassert_equal(log_backend_count_get(), 0, NULL);
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {
 		return;
 	}
 

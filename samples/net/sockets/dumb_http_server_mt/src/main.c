@@ -205,7 +205,6 @@ static void client_conn_handler(void *ptr1, void *ptr2, void *ptr3)
 		if (received == 0) {
 			/* Connection closed */
 			LOG_DBG("[%d] Connection closed by peer", client);
-			ret = 0;
 			break;
 		} else if (received < 0) {
 			/* Socket error */
