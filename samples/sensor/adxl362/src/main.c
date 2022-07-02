@@ -37,9 +37,10 @@ void main(void)
 {
 	struct sensor_value accel[3];
 
-	const struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, adi_adxl362)));
-	if (dev == NULL) {
-		printf("Device get binding device\n");
+	const struct device *dev = DEVICE_DT_GET_ONE(adi_adxl362);
+
+	if (!device_is_ready(dev)) {
+		printf("Device %s is not ready\n", dev->name);
 		return;
 	}
 
