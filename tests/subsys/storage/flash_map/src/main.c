@@ -93,6 +93,7 @@ void test_flash_area_get_sectors(void)
 		zassert_true(rc == 0, "area not erased");
 	}
 
+	flash_area_close(fa);
 }
 
 void test_flash_area_check_int_sha256(void)
@@ -170,6 +171,8 @@ void test_flash_area_erased_val(void)
 
 	zassert_equal(param->erase_value, val,
 		      "value different than the flash erase value");
+
+	flash_area_close(fa);
 }
 
 void test_main(void)
