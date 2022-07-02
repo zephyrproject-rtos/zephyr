@@ -640,7 +640,7 @@ static int littlefs_flash_init(struct fs_mount_t *mountp)
 	dev = flash_area_get_device(*fap);
 	if (dev == NULL) {
 		LOG_ERR("can't get flash device: %s",
-			(*fap)->fa_dev_name);
+			(*fap)->fa_dev->name);
 		return -ENODEV;
 	}
 
