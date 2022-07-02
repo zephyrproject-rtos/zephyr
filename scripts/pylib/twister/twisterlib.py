@@ -1749,7 +1749,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         a testcase.yaml can define multiple tests, the canonical name for
         the test case is <workdir>/<name>.
 
-        @param testsuite_root os.path.abspath() of one of the --testcase-root
+        @param testsuite_root os.path.abspath() of one of the --testsuite-root
         @param workdir Sub-directory of testsuite_root where the
             .yaml test configuration file was found
         @param name Name of this test case, corresponding to the entry name
