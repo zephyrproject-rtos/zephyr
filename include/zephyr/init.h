@@ -59,6 +59,15 @@ void z_sys_init_run_level(int32_t level);
 #define Z_SYS_NAME(_init_fn) _CONCAT(_CONCAT(sys_init_, _init_fn), __COUNTER__)
 
 /**
+ * @def Z_INIT_ENTRY_NAME
+ *
+ * @brief Construct a namespaced identifier for @ref init_entry instance
+ *
+ * @param _entry_name Base unique name
+ */
+#define Z_INIT_ENTRY_NAME(_entry_name) _CONCAT(__init_, _entry_name)
+
+/**
  * @def Z_INIT_ENTRY_DEFINE
  *
  * @brief Create an init entry object and set it up for boot time initialization
@@ -84,7 +93,7 @@ void z_sys_init_run_level(int32_t level);
  */
 #define Z_INIT_ENTRY_DEFINE(_entry_name, _init_fn, _device, _level, _prio)	\
 	static const Z_DECL_ALIGN(struct init_entry)			\
-		_CONCAT(__init_, _entry_name) __used			\
+		Z_INIT_ENTRY_NAME(_entry_name) __used			\
 	__attribute__((__section__(".z_init_" #_level STRINGIFY(_prio)"_"))) = { \
 		.init = (_init_fn),					\
 		.dev = (_device),					\
