@@ -263,6 +263,18 @@ int sys_mem_blocks_alloc_contiguous(sys_mem_blocks_t *mem_block, size_t count,
 int sys_mem_blocks_get(sys_mem_blocks_t *mem_block, void *in_block, size_t count);
 
 /**
+ * @brief check if the region is free
+ *
+ * @param[in]  mem_block  Pointer to memory block object.
+ * @param[in]  in_block   Address of the first block to check
+ * @param[in]  count      Number of blocks to check.
+ *
+ * @retval 1 All memory blocks are free
+ * @retval 0 At least one of the memory blocks is taken
+ */
+int sys_mem_blocks_is_region_free(sys_mem_blocks_t *mem_block, void *in_block, size_t count);
+
+/**
  * @brief Free multiple memory blocks
  *
  * Free multiple memory blocks according to the array of memory
