@@ -315,7 +315,7 @@ int settings_backend_init(void)
 	default_settings_nvs.cf_nvs.sector_size = nvs_sector_size;
 	default_settings_nvs.cf_nvs.sector_count = cnt;
 	default_settings_nvs.cf_nvs.offset = fa->fa_off;
-	default_settings_nvs.flash_dev_name = fa->fa_dev_name;
+	default_settings_nvs.flash_dev_name = fa->fa_dev->name;
 
 	rc = settings_nvs_backend_init(&default_settings_nvs);
 	if (rc) {
