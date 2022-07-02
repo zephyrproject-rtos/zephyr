@@ -178,7 +178,7 @@ ZTEST_USER(poll_api_1cpu, test_poll_no_wait)
 static struct k_msgq wait_msgq;
 static struct k_msgq *wait_msgq_ptr;
 
-static K_SEM_DEFINE(wait_sem, 0, 1);
+K_SEM_STATIC_DEFINE(wait_sem, 0, 1);
 static K_FIFO_DEFINE(wait_fifo);
 static struct k_poll_signal wait_signal =
 	K_POLL_SIGNAL_INITIALIZER(wait_signal);
@@ -599,7 +599,7 @@ ZTEST(poll_api_1cpu, test_poll_cancel_main_high_prio)
 }
 
 /* verify multiple pollers */
-static K_SEM_DEFINE(multi_sem, 0, 1);
+K_SEM_STATIC_DEFINE(multi_sem, 0, 1);
 
 static void multi_lowprio(void *p1, void *p2, void *p3)
 {
@@ -616,7 +616,7 @@ static void multi_lowprio(void *p1, void *p2, void *p3)
 	zassert_equal(rc, 0, "");
 }
 
-static K_SEM_DEFINE(multi_reply, 0, 1);
+K_SEM_STATIC_DEFINE(multi_reply, 0, 1);
 
 static void multi(void *p1, void *p2, void *p3)
 {
@@ -632,7 +632,7 @@ static void multi(void *p1, void *p2, void *p3)
 	k_sem_give(&multi_reply);
 }
 
-static K_SEM_DEFINE(multi_ready_sem, 1, 1);
+K_SEM_STATIC_DEFINE(multi_ready_sem, 1, 1);
 
 /**
  * @brief Test polling of multiple events

@@ -97,8 +97,8 @@ static const struct gpio_dt_spec irq = GPIO_DT_SPEC_GET(HCI_SPI_NODE, irq_gpios)
 static K_THREAD_STACK_DEFINE(bt_tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread bt_tx_thread_data;
 
-static K_SEM_DEFINE(sem_spi_rx, 0, 1);
-static K_SEM_DEFINE(sem_spi_tx, 0, 1);
+K_SEM_STATIC_DEFINE(sem_spi_rx, 0, 1);
+K_SEM_STATIC_DEFINE(sem_spi_tx, 0, 1);
 
 static inline int spi_send(struct net_buf *buf)
 {

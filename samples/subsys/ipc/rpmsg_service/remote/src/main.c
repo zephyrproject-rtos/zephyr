@@ -22,8 +22,8 @@ static struct k_thread thread_data;
 
 static volatile unsigned int received_data;
 
-static K_SEM_DEFINE(data_sem, 0, 1);
-static K_SEM_DEFINE(data_rx_sem, 0, 1);
+K_SEM_STATIC_DEFINE(data_sem, 0, 1);
+K_SEM_STATIC_DEFINE(data_rx_sem, 0, 1);
 
 int endpoint_cb(struct rpmsg_endpoint *ept, void *data,
 		size_t len, uint32_t src, void *priv)

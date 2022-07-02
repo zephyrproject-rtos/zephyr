@@ -54,7 +54,7 @@ static struct bt_mesh_test_gatt gatt_param;
 static int num_adv_sent;
 static uint8_t previous_checker = 0xff;
 
-static K_SEM_DEFINE(observer_sem, 0, 1);
+K_SEM_STATIC_DEFINE(observer_sem, 0, 1);
 
 static void test_tx_init(void)
 {

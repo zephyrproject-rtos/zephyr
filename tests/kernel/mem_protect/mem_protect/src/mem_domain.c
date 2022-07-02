@@ -294,7 +294,7 @@ ZTEST(mem_protect_domain, test_mem_domain_boot_threads)
 }
 
 static ZTEST_BMEM volatile bool spin_done;
-static K_SEM_DEFINE(spin_sem, 0, 1);
+K_SEM_STATIC_DEFINE(spin_sem, 0, 1);
 
 static void spin_entry(void *p1, void *p2, void *p3)
 {

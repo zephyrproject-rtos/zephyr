@@ -12,8 +12,8 @@
 
 static struct bt_conn *default_conn;
 
-static K_SEM_DEFINE(sem_per_sync, 0, 1);
-static K_SEM_DEFINE(sem_per_sync_lost, 0, 1);
+K_SEM_STATIC_DEFINE(sem_per_sync, 0, 1);
+K_SEM_STATIC_DEFINE(sem_per_sync_lost, 0, 1);
 
 static void sync_cb(struct bt_le_per_adv_sync *sync,
 		    struct bt_le_per_adv_sync_synced_info *info)

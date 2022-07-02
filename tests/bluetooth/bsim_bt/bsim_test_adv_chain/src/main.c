@@ -38,7 +38,7 @@
 				      BT_AD_DATA_MFG_DATA_SIZE), \
 				     CONFIG_BT_CTLR_ADV_DATA_LEN_MAX)
 
-static K_SEM_DEFINE(sem_recv, 0, 1);
+K_SEM_STATIC_DEFINE(sem_recv, 0, 1);
 
 extern enum bst_result_t bst_result;
 

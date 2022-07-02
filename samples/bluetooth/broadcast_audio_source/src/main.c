@@ -30,8 +30,8 @@ static uint8_t mock_data[CONFIG_BT_ISO_TX_MTU];
 static uint16_t seq_num;
 static bool stopping;
 
-static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
-static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
+K_SEM_STATIC_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
+K_SEM_STATIC_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
 
 #define BROADCAST_SOURCE_LIFETIME  30U /* seconds */
 

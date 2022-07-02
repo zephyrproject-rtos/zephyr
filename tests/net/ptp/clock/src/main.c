@@ -70,7 +70,7 @@ static int non_ptp_interface;
 static bool test_failed;
 static bool test_started;
 
-static K_SEM_DEFINE(wait_data, 0, UINT_MAX);
+K_SEM_STATIC_DEFINE(wait_data, 0, UINT_MAX);
 
 #define WAIT_TIME K_SECONDS(1)
 

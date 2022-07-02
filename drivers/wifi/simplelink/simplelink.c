@@ -40,7 +40,7 @@ struct simplelink_data {
 };
 
 static struct simplelink_data simplelink_data;
-static K_SEM_DEFINE(ip_acquired, 0, 1);
+K_SEM_STATIC_DEFINE(ip_acquired, 0, 1);
 
 /* Handle connection events from the SimpleLink Event Handlers: */
 static void simplelink_wifi_cb(uint32_t event, struct sl_connect_state *conn)

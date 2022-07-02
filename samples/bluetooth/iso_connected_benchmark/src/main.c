@@ -72,12 +72,12 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			   8, NULL);
 static uint8_t iso_data[CONFIG_BT_ISO_TX_MTU];
 
-static K_SEM_DEFINE(sem_adv, 0, 1);
-static K_SEM_DEFINE(sem_iso_accept, 0, 1);
-static K_SEM_DEFINE(sem_iso_connected, 0, CONFIG_BT_ISO_MAX_CHAN);
-static K_SEM_DEFINE(sem_iso_disconnected, 0, CONFIG_BT_ISO_MAX_CHAN);
-static K_SEM_DEFINE(sem_connected, 0, 1);
-static K_SEM_DEFINE(sem_disconnected, 0, 1);
+K_SEM_STATIC_DEFINE(sem_adv, 0, 1);
+K_SEM_STATIC_DEFINE(sem_iso_accept, 0, 1);
+K_SEM_STATIC_DEFINE(sem_iso_connected, 0, CONFIG_BT_ISO_MAX_CHAN);
+K_SEM_STATIC_DEFINE(sem_iso_disconnected, 0, CONFIG_BT_ISO_MAX_CHAN);
+K_SEM_STATIC_DEFINE(sem_connected, 0, 1);
+K_SEM_STATIC_DEFINE(sem_disconnected, 0, 1);
 
 static struct bt_iso_chan_io_qos iso_tx_qos = {
 	.sdu = DEFAULT_CIS_SDU_SIZE, /* bytes */

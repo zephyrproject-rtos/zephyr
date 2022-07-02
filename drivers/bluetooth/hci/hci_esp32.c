@@ -23,7 +23,7 @@
 
 #define HCI_BT_ESP32_TIMEOUT K_MSEC(2000)
 
-static K_SEM_DEFINE(hci_send_sem, 1, 1);
+K_SEM_STATIC_DEFINE(hci_send_sem, 1, 1);
 
 static bool is_hci_event_discardable(const uint8_t *evt_data)
 {

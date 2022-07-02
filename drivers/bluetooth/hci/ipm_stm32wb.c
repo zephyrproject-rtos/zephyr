@@ -49,10 +49,10 @@ static void sysevt_received(void *pdata);
 
 #define STM32WB_C2_LOCK_TIMEOUT K_MSEC(500)
 
-static K_SEM_DEFINE(c2_started, 0, 1);
-static K_SEM_DEFINE(ble_sys_wait_cmd_rsp, 0, 1);
-static K_SEM_DEFINE(acl_data_ack, 1, 1);
-static K_SEM_DEFINE(ipm_busy, 1, 1);
+K_SEM_STATIC_DEFINE(c2_started, 0, 1);
+K_SEM_STATIC_DEFINE(ble_sys_wait_cmd_rsp, 0, 1);
+K_SEM_STATIC_DEFINE(acl_data_ack, 1, 1);
+K_SEM_STATIC_DEFINE(ipm_busy, 1, 1);
 
 struct aci_set_tx_power {
 	uint8_t cmd;

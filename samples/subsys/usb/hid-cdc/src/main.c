@@ -130,8 +130,8 @@ static inline struct app_evt_t *app_evt_alloc(void)
 static const uint8_t hid_mouse_report_desc[] = HID_MOUSE_REPORT_DESC(2);
 static const uint8_t hid_kbd_report_desc[] = HID_KEYBOARD_REPORT_DESC();
 
-static K_SEM_DEFINE(evt_sem, 0, 1);	/* starts off "not available" */
-static K_SEM_DEFINE(usb_sem, 1, 1);	/* starts off "available" */
+K_SEM_STATIC_DEFINE(evt_sem, 0, 1);	/* starts off "not available" */
+K_SEM_STATIC_DEFINE(usb_sem, 1, 1);	/* starts off "available" */
 static struct gpio_callback callback[4];
 
 static char data_buf_mouse[64], data_buf_kbd[64];

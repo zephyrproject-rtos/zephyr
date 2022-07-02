@@ -27,8 +27,8 @@ static struct bt_audio_lc3_preset preset_16_2_1 =
 	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
 					     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
-static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
-static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
+K_SEM_STATIC_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
+K_SEM_STATIC_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
 
 /* Create a mask for the maximum BIS we can sync to using the number of streams
  * we have. We add an additional 1 since the bis indexes start from 1 and not

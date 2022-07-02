@@ -10,11 +10,11 @@
 
 #define SEM_TIMEOUT K_SECONDS(10)
 
-static K_SEM_DEFINE(sem_broadcaster_found, 0U, 1U);
-static K_SEM_DEFINE(sem_pa_synced, 0U, 1U);
-static K_SEM_DEFINE(sem_base_received, 0U, 1U);
-static K_SEM_DEFINE(sem_syncable, 0U, 1U);
-static K_SEM_DEFINE(sem_pa_sync_lost, 0U, 1U);
+K_SEM_STATIC_DEFINE(sem_broadcaster_found, 0U, 1U);
+K_SEM_STATIC_DEFINE(sem_pa_synced, 0U, 1U);
+K_SEM_STATIC_DEFINE(sem_base_received, 0U, 1U);
+K_SEM_STATIC_DEFINE(sem_syncable, 0U, 1U);
+K_SEM_STATIC_DEFINE(sem_pa_sync_lost, 0U, 1U);
 
 static struct bt_audio_broadcast_sink *broadcast_sink;
 static struct bt_audio_stream streams[CONFIG_BT_AUDIO_BROADCAST_SNK_STREAM_COUNT];

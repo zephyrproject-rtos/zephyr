@@ -18,7 +18,7 @@ static struct k_thread t[NUM_THREADS];
 K_MUTEX_DEFINE(mutex);
 K_CONDVAR_DEFINE(condvar);
 
-static int done;
+static volatile int done;
 
 void worker_thread(void *p1, void *p2, void *p3)
 {

@@ -39,6 +39,7 @@
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/app_memory/mem_domain.h>
 #include <zephyr/sys/kobject.h>
+#include <zephyr/sys/zync.h>
 #include <zephyr/kernel/thread.h>
 
 #endif /* ZEPHYR_INCLUDE_KERNEL_INCLUDES_H_ */

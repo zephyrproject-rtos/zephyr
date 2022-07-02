@@ -30,12 +30,12 @@ static bt_addr_le_t per_addr;
 static uint8_t      per_sid;
 static uint16_t     per_interval_ms;
 
-static K_SEM_DEFINE(sem_per_adv, 0, 1);
-static K_SEM_DEFINE(sem_per_sync, 0, 1);
-static K_SEM_DEFINE(sem_per_sync_lost, 0, 1);
-static K_SEM_DEFINE(sem_per_big_info, 0, 1);
-static K_SEM_DEFINE(sem_big_sync, 0, BIS_ISO_CHAN_COUNT);
-static K_SEM_DEFINE(sem_big_sync_lost, 0, BIS_ISO_CHAN_COUNT);
+K_SEM_STATIC_DEFINE(sem_per_adv, 0, 1);
+K_SEM_STATIC_DEFINE(sem_per_sync, 0, 1);
+K_SEM_STATIC_DEFINE(sem_per_sync_lost, 0, 1);
+K_SEM_STATIC_DEFINE(sem_per_big_info, 0, 1);
+K_SEM_STATIC_DEFINE(sem_big_sync, 0, BIS_ISO_CHAN_COUNT);
+K_SEM_STATIC_DEFINE(sem_big_sync_lost, 0, BIS_ISO_CHAN_COUNT);
 
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)

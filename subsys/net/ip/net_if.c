@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #define MAX_RANDOM_NUMER (3)
 #define MAX_RANDOM_DENOM (2)
 
-static K_MUTEX_DEFINE(lock);
+K_MUTEX_STATIC_DEFINE(lock);
 
 /* net_if dedicated section limiters */
 extern struct net_if _net_if_list_start[];

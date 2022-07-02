@@ -33,8 +33,8 @@ struct mgmt_event_wait {
 	struct net_if *iface;
 };
 
-static K_SEM_DEFINE(network_event, 0, K_SEM_MAX_LIMIT);
-static K_MUTEX_DEFINE(net_mgmt_lock);
+K_SEM_STATIC_DEFINE(network_event, 0, K_SEM_MAX_LIMIT);
+K_MUTEX_STATIC_DEFINE(net_mgmt_lock);
 
 K_KERNEL_STACK_DEFINE(mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE);
 static struct k_thread mgmt_thread_data;

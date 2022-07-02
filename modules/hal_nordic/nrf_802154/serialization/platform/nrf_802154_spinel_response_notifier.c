@@ -33,7 +33,7 @@ struct spinel_notify_buff_internal {
 	bool                            free;
 };
 
-static K_SEM_DEFINE(notify_sem, 0, 1);
+K_SEM_STATIC_DEFINE(notify_sem, 0, 1);
 static struct k_mutex await_mutex;
 
 static struct spinel_notify_buff_internal notify_buff;

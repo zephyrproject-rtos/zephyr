@@ -74,7 +74,7 @@ static struct net_if_timestamp_cb timestamp_cb;
 static struct net_if_timestamp_cb timestamp_cb_2;
 static struct net_if_timestamp_cb timestamp_cb_3;
 
-static K_SEM_DEFINE(wait_data, 0, UINT_MAX);
+K_SEM_STATIC_DEFINE(wait_data, 0, UINT_MAX);
 
 #define WAIT_TIME K_SECONDS(1)
 

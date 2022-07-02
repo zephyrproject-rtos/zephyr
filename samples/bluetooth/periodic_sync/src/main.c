@@ -16,9 +16,9 @@ static bool         per_adv_found;
 static bt_addr_le_t per_addr;
 static uint8_t      per_sid;
 
-static K_SEM_DEFINE(sem_per_adv, 0, 1);
-static K_SEM_DEFINE(sem_per_sync, 0, 1);
-static K_SEM_DEFINE(sem_per_sync_lost, 0, 1);
+K_SEM_STATIC_DEFINE(sem_per_adv, 0, 1);
+K_SEM_STATIC_DEFINE(sem_per_sync, 0, 1);
+K_SEM_STATIC_DEFINE(sem_per_sync_lost, 0, 1);
 
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)

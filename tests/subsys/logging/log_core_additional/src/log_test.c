@@ -22,7 +22,7 @@
 
 #define LOG_MODULE_NAME log_test
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
-static K_SEM_DEFINE(log_sem, 0, 1);
+K_SEM_STATIC_DEFINE(log_sem, 0, 1);
 
 #define TIMESTAMP_FREC (2000000)
 ZTEST_BMEM uint32_t source_id;

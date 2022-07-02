@@ -110,8 +110,7 @@ static int cleanup_test(struct ztest_unit_test *test)
 #define CPUHOLD_STACK_SZ (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 static struct k_thread cpuhold_threads[MAX_NUM_CPUHOLD];
 K_KERNEL_STACK_ARRAY_DEFINE(cpuhold_stacks, MAX_NUM_CPUHOLD, CPUHOLD_STACK_SZ);
-
-static struct k_sem cpuhold_sem;
+K_SEM_DEFINE(cpuhold_sem, 0, K_SEM_MAX_LIMIT);
 volatile int cpuhold_active;
 
 /* "Holds" a CPU for use with the "1cpu" test cases.  Note that we

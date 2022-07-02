@@ -44,7 +44,7 @@ static sys_slist_t active_route_lifetime_timers;
 /* Timer that manages expired route entries. */
 static struct k_work_delayable route_lifetime_timer;
 
-static K_MUTEX_DEFINE(lock);
+K_MUTEX_STATIC_DEFINE(lock);
 
 static void net_route_nexthop_remove(struct net_nbr *nbr)
 {

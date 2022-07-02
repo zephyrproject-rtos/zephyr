@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 
 #define PKT_WAIT_TIME K_SECONDS(1)
 
-static K_MUTEX_DEFINE(lock);
+K_MUTEX_STATIC_DEFINE(lock);
 
 static sys_slist_t dhcpv4_ifaces;
 static struct k_work_delayable timeout_work;

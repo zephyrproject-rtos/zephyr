@@ -22,7 +22,7 @@ __net_socket struct dispatcher_context {
 static struct dispatcher_context
 	dispatcher_context[CONFIG_NET_SOCKETS_OFFLOAD_DISPATCHER_CONTEXT_MAX];
 
-static K_MUTEX_DEFINE(dispatcher_lock);
+K_MUTEX_STATIC_DEFINE(dispatcher_lock);
 
 static int sock_dispatch_create(int family, int type, int proto);
 

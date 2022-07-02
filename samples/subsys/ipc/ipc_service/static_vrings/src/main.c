@@ -20,13 +20,13 @@ static volatile uint8_t ipc0A_received_data;
 static volatile uint8_t ipc0B_received_data;
 static volatile uint8_t ipc1_received_data;
 
-static K_SEM_DEFINE(ipc0A_bound_sem, 0, 1);
-static K_SEM_DEFINE(ipc0B_bound_sem, 0, 1);
-static K_SEM_DEFINE(ipc1_bound_sem, 0, 1);
+K_SEM_STATIC_DEFINE(ipc0A_bound_sem, 0, 1);
+K_SEM_STATIC_DEFINE(ipc0B_bound_sem, 0, 1);
+K_SEM_STATIC_DEFINE(ipc1_bound_sem, 0, 1);
 
-static K_SEM_DEFINE(ipc0A_data_sem, 0, 1);
-static K_SEM_DEFINE(ipc0B_data_sem, 0, 1);
-static K_SEM_DEFINE(ipc1_data_sem, 0, 1);
+K_SEM_STATIC_DEFINE(ipc0A_data_sem, 0, 1);
+K_SEM_STATIC_DEFINE(ipc0B_data_sem, 0, 1);
+K_SEM_STATIC_DEFINE(ipc1_data_sem, 0, 1);
 
 /*
  * ==> THREAD 0A (IPC instance 0 - endpoint A) <==

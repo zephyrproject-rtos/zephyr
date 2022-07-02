@@ -50,7 +50,7 @@ static size_t configured_source_stream_count;
 static const struct bt_codec_qos_pref qos_pref = BT_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02,
 								   10, 40000, 40000, 40000, 40000);
 
-static K_SEM_DEFINE(sem_disconnected, 0, 1);
+K_SEM_STATIC_DEFINE(sem_disconnected, 0, 1);
 
 static uint8_t unicast_server_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL), /* ASCS UUID */

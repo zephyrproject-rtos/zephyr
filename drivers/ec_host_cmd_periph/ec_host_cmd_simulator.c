@@ -21,8 +21,8 @@ static uint8_t rx_buffer[256];
 static size_t rx_buffer_len;
 
 /* Allow writing to rx buff at startup and block on reading. */
-static K_SEM_DEFINE(handler_owns, 0, 1);
-static K_SEM_DEFINE(dev_owns, 1, 1);
+K_SEM_STATIC_DEFINE(handler_owns, 0, 1);
+K_SEM_STATIC_DEFINE(dev_owns, 1, 1);
 
 static ec_host_cmd_periph_api_send tx;
 

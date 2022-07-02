@@ -41,12 +41,12 @@ static size_t       big_sync_count;
 static struct iso_recv_stats stats_current_sync;
 static struct iso_recv_stats stats_overall;
 
-static K_SEM_DEFINE(sem_per_adv, 0, 1);
-static K_SEM_DEFINE(sem_per_sync, 0, 1);
-static K_SEM_DEFINE(sem_per_sync_lost, 0, 1);
-static K_SEM_DEFINE(sem_per_big_info, 0, 1);
-static K_SEM_DEFINE(sem_big_sync, 0, 1);
-static K_SEM_DEFINE(sem_big_sync_lost, 0, 1);
+K_SEM_STATIC_DEFINE(sem_per_adv, 0, 1);
+K_SEM_STATIC_DEFINE(sem_per_sync, 0, 1);
+K_SEM_STATIC_DEFINE(sem_per_sync_lost, 0, 1);
+K_SEM_STATIC_DEFINE(sem_per_big_info, 0, 1);
+K_SEM_STATIC_DEFINE(sem_big_sync, 0, 1);
+K_SEM_STATIC_DEFINE(sem_big_sync_lost, 0, 1);
 
 static const char *phy2str(uint8_t phy)
 {

@@ -26,7 +26,7 @@
 
 #endif /* CONFIG_MBEDTLS */
 
-static K_SEM_DEFINE(state_sem, 1, 1);
+K_SEM_STATIC_DEFINE(state_sem, 1, 1);
 
 /*
  * entropy_dev is initialized at runtime to allow first time initialization

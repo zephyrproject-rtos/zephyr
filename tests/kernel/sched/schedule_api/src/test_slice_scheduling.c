@@ -30,7 +30,7 @@ BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
 #define BUSY_MS (SLICE_SIZE + 20)
 static struct k_thread t[NUM_THREAD];
 
-static K_SEM_DEFINE(sema1, 0, NUM_THREAD);
+K_SEM_STATIC_DEFINE(sema1, 0, NUM_THREAD);
 /* elapsed_slice taken by last thread */
 static int64_t elapsed_slice;
 
@@ -144,7 +144,7 @@ ZTEST(threads_scheduling, test_slice_scheduling)
 static volatile int32_t perthread_count;
 static volatile uint32_t last_cyc;
 static volatile bool perthread_running;
-static K_SEM_DEFINE(perthread_sem, 0, 1);
+K_SEM_STATIC_DEFINE(perthread_sem, 0, 1);
 
 static void slice_expired(struct k_thread *thread, void *data)
 {

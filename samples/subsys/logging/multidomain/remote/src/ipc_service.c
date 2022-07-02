@@ -14,8 +14,8 @@ LOG_MODULE_DECLARE(app);
 
 K_THREAD_STACK_DEFINE(ipc1_stack, STACKSIZE);
 static volatile uint8_t ipc1_received_data;
-static K_SEM_DEFINE(ipc1_bound_sem, 0, 1);
-static K_SEM_DEFINE(ipc1_data_sem, 0, 1);
+K_SEM_STATIC_DEFINE(ipc1_bound_sem, 0, 1);
+K_SEM_STATIC_DEFINE(ipc1_data_sem, 0, 1);
 
 /*
  * ==> THREAD 1 (IPC instance 1) <==

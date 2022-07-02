@@ -429,7 +429,7 @@ static struct k_poll_event async_evt =
 	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
 				 K_POLL_MODE_NOTIFY_ONLY,
 				 &async_sig);
-static K_SEM_DEFINE(caller, 0, 1);
+K_SEM_STATIC_DEFINE(caller, 0, 1);
 K_THREAD_STACK_DEFINE(spi_async_stack, STACK_SIZE);
 static int result = 1;
 

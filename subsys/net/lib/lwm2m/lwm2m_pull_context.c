@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_pull_context.h"
 #include "lwm2m_engine.h"
 
-static K_SEM_DEFINE(lwm2m_pull_sem, 1, 1);
+K_SEM_STATIC_DEFINE(lwm2m_pull_sem, 1, 1);
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 #define COAP2COAP_PROXY_URI_PATH "coap2coap"

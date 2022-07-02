@@ -98,7 +98,7 @@ static uint8_t test_case_no;
 static uint32_t seq;
 static uint32_t ack;
 
-static K_SEM_DEFINE(test_sem, 0, 1);
+K_SEM_STATIC_DEFINE(test_sem, 0, 1);
 static bool sem;
 
 enum test_state {

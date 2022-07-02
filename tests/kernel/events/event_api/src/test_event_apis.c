@@ -24,8 +24,8 @@ static K_THREAD_STACK_DEFINE(sextra2, STACK_SIZE);
 static K_EVENT_DEFINE(test_event);
 static K_EVENT_DEFINE(sync_event);
 
-static K_SEM_DEFINE(receiver_sem, 0, 1);
-static K_SEM_DEFINE(sync_sem, 0, 1);
+K_SEM_STATIC_DEFINE(receiver_sem, 0, 1);
+K_SEM_STATIC_DEFINE(sync_sem, 0, 1);
 
 volatile static uint32_t test_events;
 

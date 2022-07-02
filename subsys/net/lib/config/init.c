@@ -31,8 +31,8 @@ LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 extern const struct log_backend *log_backend_net_get(void);
 extern int net_init_clock_via_sntp(void);
 
-static K_SEM_DEFINE(waiter, 0, 1);
-static K_SEM_DEFINE(counter, 0, UINT_MAX);
+K_SEM_STATIC_DEFINE(waiter, 0, 1);
+K_SEM_STATIC_DEFINE(counter, 0, UINT_MAX);
 static atomic_t services_flags;
 
 #if defined(CONFIG_NET_NATIVE)

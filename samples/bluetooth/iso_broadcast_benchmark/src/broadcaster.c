@@ -26,8 +26,8 @@ LOG_MODULE_REGISTER(iso_broadcast_broadcaster, LOG_LEVEL_DBG);
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 
-static K_SEM_DEFINE(sem_big_complete, 0, 1);
-static K_SEM_DEFINE(sem_big_term, 0, 1);
+K_SEM_STATIC_DEFINE(sem_big_complete, 0, 1);
+K_SEM_STATIC_DEFINE(sem_big_term, 0, 1);
 static struct k_work_delayable iso_send_work;
 static uint32_t iso_send_count;
 static uint8_t iso_data[CONFIG_BT_ISO_TX_MTU];

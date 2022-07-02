@@ -22,13 +22,13 @@
 BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
 
 /* Semaphore on which Ztest thread wait */
-static K_SEM_DEFINE(sema2, 0, NUM_THREAD);
+K_SEM_STATIC_DEFINE(sema2, 0, NUM_THREAD);
 
 /* Semaphore on which application threads wait */
-static K_SEM_DEFINE(sema3, 0, NUM_THREAD);
+K_SEM_STATIC_DEFINE(sema3, 0, NUM_THREAD);
 
 /* Semaphore to flag the next iteration */
-static K_SEM_DEFINE(sema4, 0, NUM_THREAD);
+K_SEM_STATIC_DEFINE(sema4, 0, NUM_THREAD);
 
 static int thread_idx;
 static struct k_thread t[NUM_THREAD];

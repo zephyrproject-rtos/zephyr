@@ -36,7 +36,7 @@ struct packet_data {
 
 static struct packet_data packet;
 static bool finish;
-static K_SEM_DEFINE(iface_up, 0, 1);
+K_SEM_STATIC_DEFINE(iface_up, 0, 1);
 
 static void recv_packet(void);
 static void send_packet(void);

@@ -48,7 +48,7 @@ static struct tracing_backend *working_backend;
 static k_tid_t tracing_thread_tid;
 static struct k_thread tracing_thread;
 static struct k_timer tracing_thread_timer;
-static K_SEM_DEFINE(tracing_thread_sem, 0, 1);
+K_SEM_STATIC_DEFINE(tracing_thread_sem, 0, 1);
 static K_THREAD_STACK_DEFINE(tracing_thread_stack,
 			CONFIG_TRACING_THREAD_STACK_SIZE);
 

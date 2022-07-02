@@ -285,7 +285,7 @@ static void bt_recv_job_submit(struct net_buf *buf)
 }
 
 /* Semaphore to test if the prop callback was called. */
-static K_SEM_DEFINE(prop_cb_sem, 0, 1);
+K_SEM_STATIC_DEFINE(prop_cb_sem, 0, 1);
 
 static void *adv_report_evt(struct net_buf *buf, uint8_t data_len, uint16_t evt_type,
 			    const bt_addr_le_t *const addr)

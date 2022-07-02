@@ -280,7 +280,7 @@ static bool bondable = IS_ENABLED(CONFIG_BT_BONDABLE);
 static bool oobd_present;
 static bool sc_supported;
 static const uint8_t *sc_public_key;
-static K_SEM_DEFINE(sc_local_pkey_ready, 0, 1);
+K_SEM_STATIC_DEFINE(sc_local_pkey_ready, 0, 1);
 
 /* Pointer to internal data is used to mark that callbacks of given SMP channel are not initialized.
  * Value of NULL represents no authenticaiton capabilities and cannot be used for that purpose.

@@ -50,7 +50,7 @@ static int tcp_window =
 
 static sys_slist_t tcp_conns = SYS_SLIST_STATIC_INIT(&tcp_conns);
 
-static K_MUTEX_DEFINE(tcp_lock);
+K_MUTEX_STATIC_DEFINE(tcp_lock);
 
 K_MEM_SLAB_DEFINE_STATIC(tcp_conns_slab, sizeof(struct tcp),
 				CONFIG_NET_MAX_CONTEXTS, 4);

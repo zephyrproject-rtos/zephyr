@@ -254,7 +254,7 @@ uint16_t board_set_target(void)
 	return target;
 }
 
-static K_SEM_DEFINE(tune_sem, 0, 1);
+K_SEM_STATIC_DEFINE(tune_sem, 0, 1);
 static const char *tune_str;
 
 void board_play(const char *str)

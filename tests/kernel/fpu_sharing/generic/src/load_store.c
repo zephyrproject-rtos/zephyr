@@ -93,7 +93,7 @@ static volatile unsigned int load_store_high_count;
 static volatile bool test_exited;
 
 /* Semaphore for signaling end of test */
-static K_SEM_DEFINE(test_exit_sem, 0, 1);
+K_SEM_STATIC_DEFINE(test_exit_sem, 0, 1);
 
 /**
  * @brief Low priority FPU load/store thread

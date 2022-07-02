@@ -43,7 +43,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define QUEUE_OPT_MAX_LEN   2 /* "Q" */
 
 /* Thread safety */
-static K_MUTEX_DEFINE(registry_lock);
+K_MUTEX_STATIC_DEFINE(registry_lock);
 
 void lwm2m_registry_lock(void)
 {

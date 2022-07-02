@@ -35,8 +35,8 @@ static struct bt_audio_lc3_preset preset_16_2_2 =
 					     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 CREATE_FLAG(flag_stopping);
 
-static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
-static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
+K_SEM_STATIC_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
+K_SEM_STATIC_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
 
 static void started_cb(struct bt_audio_stream *stream)
 {

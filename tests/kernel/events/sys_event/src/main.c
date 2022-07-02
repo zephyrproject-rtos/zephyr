@@ -28,8 +28,8 @@ static K_EVENT_DEFINE(sync_event);
 static struct k_event init_event;
 static struct k_event deliver_event;
 
-static K_SEM_DEFINE(receiver_sem, 0, 1);
-static K_SEM_DEFINE(sync_sem, 0, 1);
+K_SEM_STATIC_DEFINE(receiver_sem, 0, 1);
+K_SEM_STATIC_DEFINE(sync_sem, 0, 1);
 
 volatile static uint32_t test_events;
 

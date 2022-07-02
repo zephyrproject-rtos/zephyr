@@ -425,9 +425,9 @@ static inline void rtio_sqe_prep_write(struct rtio_sqe *sqe,
  */
 #define RTIO_DEFINE(name, exec, sq_sz, cq_sz)	\
 	IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM,							   \
-		   (static K_SEM_DEFINE(_submit_sem_##name, 0, K_SEM_MAX_LIMIT)))		   \
+		   (K_SEM_STATIC_DEFINE(_submit_sem_##name, 0, K_SEM_MAX_LIMIT)))		   \
 	IF_ENABLED(CONFIG_RTIO_CONSUME_SEM,							   \
-		   (static K_SEM_DEFINE(_consume_sem_##name, 0, 1)))				   \
+		   (K_SEM_STATIC_DEFINE(_consume_sem_##name, 0, 1)))				   \
 	static RTIO_SQ_DEFINE(_sq_##name, sq_sz);						   \
 	static RTIO_CQ_DEFINE(_cq_##name, cq_sz);						   \
 	STRUCT_SECTION_ITERABLE(rtio, name) = {							   \

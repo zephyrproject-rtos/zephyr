@@ -92,7 +92,7 @@ static int64_t ended;
 static struct k_work_delayable refresh;
 
 /* Semaphore to indicate that there was an update to the display */
-static K_SEM_DEFINE(disp_update, 0, 1);
+K_SEM_STATIC_DEFINE(disp_update, 0, 1);
 
 /* X coordinate of the left corner of the paddle */
 static volatile int paddle_x = PADDLE_MIN;

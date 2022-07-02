@@ -11,7 +11,7 @@
 #define ID_INBOUND 0xfffffff0
 #define ID_INVALID 0xffffffff
 
-static K_SEM_DEFINE(ipm_sem, 0, 1);
+K_SEM_STATIC_DEFINE(ipm_sem, 0, 1);
 
 static const uint32_t msg[] = { 29, 15, 58, 71, 99 };
 

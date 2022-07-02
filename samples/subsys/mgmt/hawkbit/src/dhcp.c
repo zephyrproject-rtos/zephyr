@@ -16,7 +16,7 @@
 static struct net_mgmt_event_callback mgmt_cb;
 
 /* Semaphore to indicate a lease has been acquired */
-static K_SEM_DEFINE(got_address, 0, 1);
+K_SEM_STATIC_DEFINE(got_address, 0, 1);
 
 static void handler(struct net_mgmt_event_callback *cb,
 		    uint32_t mgmt_event,

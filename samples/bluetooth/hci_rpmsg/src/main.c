@@ -37,7 +37,7 @@ static struct ipc_ept hci_ept;
 static K_THREAD_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread tx_thread_data;
 static K_FIFO_DEFINE(tx_queue);
-static K_SEM_DEFINE(ipc_bound_sem, 0, 1);
+K_SEM_STATIC_DEFINE(ipc_bound_sem, 0, 1);
 #if defined(CONFIG_BT_CTLR_ASSERT_HANDLER) || defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
 /* A flag used to store information if the IPC endpoint has already been bound. The end point can't
  * be used before that happens.

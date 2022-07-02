@@ -11,8 +11,8 @@
 #define STACKSIZE (256 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static K_THREAD_STACK_DEFINE(dyn_thread_stack, STACKSIZE);
-static K_SEM_DEFINE(start_sem, 0, 1);
-static K_SEM_DEFINE(end_sem, 0, 1);
+K_SEM_STATIC_DEFINE(start_sem, 0, 1);
+K_SEM_STATIC_DEFINE(end_sem, 0, 1);
 static ZTEST_BMEM struct k_thread *dyn_thread;
 static struct k_thread *dynamic_threads[CONFIG_MAX_THREAD_BYTES * 8];
 

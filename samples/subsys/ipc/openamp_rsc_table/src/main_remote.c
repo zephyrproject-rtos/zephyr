@@ -82,9 +82,9 @@ static struct rpmsg_rcv_msg sc_msg = {.data = rx_sc_msg};
 static struct rpmsg_endpoint tty_ept;
 static struct rpmsg_rcv_msg tty_msg;
 
-static K_SEM_DEFINE(data_sem, 0, 1);
-static K_SEM_DEFINE(data_sc_sem, 0, 1);
-static K_SEM_DEFINE(data_tty_sem, 0, 1);
+K_SEM_STATIC_DEFINE(data_sem, 0, 1);
+K_SEM_STATIC_DEFINE(data_sc_sem, 0, 1);
+K_SEM_STATIC_DEFINE(data_tty_sem, 0, 1);
 
 static void platform_ipm_callback(const struct device *dev, void *context,
 				  uint32_t id, volatile void *data)

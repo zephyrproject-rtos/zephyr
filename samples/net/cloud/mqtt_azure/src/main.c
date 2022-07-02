@@ -54,7 +54,7 @@ static struct zsock_addrinfo hints;
 static struct zsock_addrinfo *haddr;
 #endif
 
-static K_SEM_DEFINE(mqtt_start, 0, 1);
+K_SEM_STATIC_DEFINE(mqtt_start, 0, 1);
 
 /* Application TLS configuration details */
 #define TLS_SNI_HOSTNAME CONFIG_SAMPLE_CLOUD_AZURE_HOSTNAME

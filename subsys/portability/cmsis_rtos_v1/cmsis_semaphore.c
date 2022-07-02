@@ -88,7 +88,7 @@ osStatus osSemaphoreRelease(osSemaphoreId semaphore_id)
 	}
 
 	/* All tokens have already been released */
-	if (k_sem_count_get(semaphore) == semaphore->limit) {
+	if (k_sem_count_get(semaphore) == Z_PAIR_ZYNC(&semaphore->zp)->cfg.max_val) {
 		return osErrorResource;
 	}
 

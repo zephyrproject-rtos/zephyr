@@ -27,7 +27,7 @@
 #define IPC_BOUND_TIMEOUT_IN_MS K_MSEC(1000)
 
 static struct ipc_ept hci_ept;
-static K_SEM_DEFINE(ipc_bound_sem, 0, 1);
+K_SEM_STATIC_DEFINE(ipc_bound_sem, 0, 1);
 
 static bool is_hci_event_discardable(const uint8_t *evt_data)
 {

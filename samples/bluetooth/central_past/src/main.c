@@ -17,10 +17,10 @@ static bt_addr_le_t per_addr;
 static uint8_t per_sid;
 static struct bt_conn *default_conn;
 
-static K_SEM_DEFINE(sem_conn, 0, 1);
-static K_SEM_DEFINE(sem_conn_lost, 0, 1);
-static K_SEM_DEFINE(sem_per_adv, 0, 1);
-static K_SEM_DEFINE(sem_per_sync, 0, 1);
+K_SEM_STATIC_DEFINE(sem_conn, 0, 1);
+K_SEM_STATIC_DEFINE(sem_conn_lost, 0, 1);
+K_SEM_STATIC_DEFINE(sem_per_adv, 0, 1);
+K_SEM_STATIC_DEFINE(sem_per_sync, 0, 1);
 
 static bool data_cb(struct bt_data *data, void *user_data)
 {

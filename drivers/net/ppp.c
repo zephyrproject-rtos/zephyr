@@ -109,7 +109,7 @@ static bool rx_retry_pending;
 static bool uart_recovery_pending;
 static uint8_t *next_buf;
 
-static K_SEM_DEFINE(uarte_tx_finished, 0, 1);
+K_SEM_STATIC_DEFINE(uarte_tx_finished, 0, 1);
 
 static void uart_callback(const struct device *dev,
 			  struct uart_event *evt,

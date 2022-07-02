@@ -35,7 +35,7 @@ static const uint8_t hid_report_desc[] = HID_MOUSE_REPORT_DESC(2);
 
 static uint32_t def_val[4];
 static volatile uint8_t status[4];
-static K_SEM_DEFINE(sem, 0, 1);	/* starts off "not available" */
+K_SEM_STATIC_DEFINE(sem, 0, 1);	/* starts off "not available" */
 static struct gpio_callback callback[4];
 
 #define MOUSE_BTN_REPORT_POS	0

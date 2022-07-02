@@ -147,12 +147,7 @@ osThreadId_t osMutexGetOwner(osMutexId_t mutex_id)
 		return NULL;
 	}
 
-	/* Mutex was not obtained before */
-	if (mutex->z_mutex.lock_count == 0U) {
-		return NULL;
-	}
-
-	return get_cmsis_thread_id(mutex->z_mutex.owner);
+	return get_cmsis_thread_id(Z_PAIR_ZYNC(&mutex->z_mutex.zp)->owner);
 }
 
 const char *osMutexGetName(osMutexId_t mutex_id)

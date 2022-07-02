@@ -388,7 +388,7 @@ NET_DEVICE_OFFLOAD_INIT(offloaded_2, "offloaded_2", offloaded_2_init, NULL,
 
 static uint8_t lladdr[] = { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
 static struct in_addr in4addr_my = { { { 192, 0, 2, 1 } } };
-static K_SEM_DEFINE(test_native_send_called, 0, 1);
+K_SEM_STATIC_DEFINE(test_native_send_called, 0, 1);
 
 static void dummy_native_iface_init(struct net_if *iface)
 {

@@ -105,8 +105,8 @@ struct virtio_dispatch dispatch = {
 	.notify = virtio_notify,
 };
 
-static K_SEM_DEFINE(data_sem, 0, 1);
-static K_SEM_DEFINE(data_rx_sem, 0, 1);
+K_SEM_STATIC_DEFINE(data_sem, 0, 1);
+K_SEM_STATIC_DEFINE(data_rx_sem, 0, 1);
 
 static void platform_ipm_callback(const struct device *dev, void *context,
 				  uint32_t id, volatile void *data)
@@ -124,7 +124,7 @@ int endpoint_cb(struct rpmsg_endpoint *ept, void *data,
 	return RPMSG_SUCCESS;
 }
 
-static K_SEM_DEFINE(ept_sem, 0, 1);
+K_SEM_STATIC_DEFINE(ept_sem, 0, 1);
 
 struct rpmsg_endpoint my_ept;
 struct rpmsg_endpoint *ep = &my_ept;

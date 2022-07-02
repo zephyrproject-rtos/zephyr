@@ -40,9 +40,9 @@ static bool sync_terminated;
 static uint8_t per_sid;
 static uint32_t sync_create_timeout_ms;
 
-static K_SEM_DEFINE(sem_per_adv, 0, 1);
-static K_SEM_DEFINE(sem_per_sync, 0, 1);
-static K_SEM_DEFINE(sem_per_sync_lost, 0, 1);
+K_SEM_STATIC_DEFINE(sem_per_adv, 0, 1);
+K_SEM_STATIC_DEFINE(sem_per_sync, 0, 1);
+K_SEM_STATIC_DEFINE(sem_per_sync_lost, 0, 1);
 
 #if defined(CONFIG_BT_DF_CTE_RX_AOA)
 const static uint8_t ant_patterns[] = { 0x1, 0x2, 0x3, 0x4, 0x5,

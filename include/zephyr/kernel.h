@@ -2718,34 +2718,14 @@ extern struct k_work_q k_sys_work_q;
  * @ingroup mutex_apis
  */
 struct k_mutex {
-	/** Mutex wait queue */
-	_wait_q_t wait_q;
-	/** Mutex owner */
-	struct k_thread *owner;
-
-	/** Current lock count */
-	uint32_t lock_count;
-
-	/** Original thread priority */
-	int owner_orig_prio;
-
-	SYS_PORT_TRACING_TRACKING_FIELD(k_mutex)
+	struct z_zync_pair zp;
 };
 
-/**
- * @cond INTERNAL_HIDDEN
- */
-#define Z_MUTEX_INITIALIZER(obj) \
-	{ \
-	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
-	.owner = NULL, \
-	.lock_count = 0, \
-	.owner_orig_prio = K_LOWEST_APPLICATION_THREAD_PRIO, \
-	}
+#define K_OBJ_MUTEX K_OBJ_ZYNC
 
-/**
- * INTERNAL_HIDDEN @endcond
- */
+#ifdef Z_ZYNC_INTERNAL_ATOM
+#define Z_MUTEX_INITIALIZER(obj) { Z_ZYNCP_INITIALIZER(1, true, true, true, 1) }
+#endif
 
 /**
  * @brief Statically define and initialize a mutex.
@@ -2756,9 +2736,33 @@ struct k_mutex {
  *
  * @param name Name of the mutex.
  */
-#define K_MUTEX_DEFINE(name) \
-	STRUCT_SECTION_ITERABLE(k_mutex, name) = \
-		Z_MUTEX_INITIALIZER(name)
+#define K_MUTEX_DEFINE(name)						\
+	Z_ZYNCP_DEFINE(_z_##name, 1, true, true, true, 1);		\
+	extern struct k_mutex name ALIAS_OF(_z_##name);
+
+/**
+ * @brief Statically define and initialize a local mutex.
+ *
+ * As for K_MUTEX_DEFINE, but the resulting symbol is static and
+ * cannot be used outside the current translation unit.
+ *
+ * @param name Name of the mutex.
+ */
+#define K_MUTEX_STATIC_DEFINE(name)				\
+	Z_ZYNCP_DEFINE(_z_##name, 1, true, true, true, 1);	\
+	static struct k_mutex name ALIAS_OF(_z_##name);
+
+/** @brief Define a mutex for use from a specific memory domain
+ *
+ * As for K_MUTEX_DEFINE, but places the (fast!) k_zync_atom_t in the
+ * specific app shared memory partition, allowing kernel-free
+ * operation for uncontended use cases.  Note that such a mutex will
+ * still require system call operations if CONFIG_ZYNC_PRIO_BOOST=y or
+ * CONFIG_ZYNC_RECURSIVE=y.
+ */
+#define K_MUTEX_USER_DEFINE(name, part)					    \
+	     Z_ZYNCP_USER_DEFINE(_zm_##name, part, 1, true, true, true, 1); \
+	     extern struct k_mutex name ALIAS_OF(_zm_##name);
 
 /**
  * @brief Initialize a mutex.
@@ -2772,8 +2776,18 @@ struct k_mutex {
  * @retval 0 Mutex object created
  *
  */
-__syscall int k_mutex_init(struct k_mutex *mutex);
+static inline int k_mutex_init(struct k_mutex *mutex)
+{
+	struct k_zync_cfg cfg = {
+		.atom_init = 1,
+		.fair = true,
+		IF_ENABLED(CONFIG_ZYNC_PRIO_BOOST, (.prio_boost = true,))
+		IF_ENABLED(CONFIG_ZYNC_RECURSIVE, (.recursive = true,))
+	};
 
+	z_pzync_init(&mutex->zp, &cfg);
+	return 0;
+}
 
 /**
  * @brief Lock a mutex.
@@ -2782,10 +2796,12 @@ __syscall int k_mutex_init(struct k_mutex *mutex);
  * the calling thread waits until the mutex becomes available or until
  * a timeout occurs.
  *
- * A thread is permitted to lock a mutex it has already locked. The operation
- * completes immediately and the lock count is increased by 1.
+ * If CONFIG_ZYNC_RECURSIVE=y, a thread is permitted to lock a mutex
+ * it has already locked. The operation completes immediately and the
+ * lock count is increased by 1.
  *
- * Mutexes may not be locked in ISRs.
+ * Mutexes may be used in ISRs, though blocking is not possible and
+ * the only valid timeout parameter is K_NO_WAIT.
  *
  * @param mutex Address of the mutex.
  * @param timeout Waiting period to lock the mutex,
@@ -2796,7 +2812,16 @@ __syscall int k_mutex_init(struct k_mutex *mutex);
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-__syscall int k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout);
+static inline int k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
+{
+#if defined(CONFIG_ZYNC_RECURSIVE) && defined(CONFIG_ZYNC_VALIDATE)
+	__ASSERT_NO_MSG(Z_PAIR_ZYNC(&mutex->zp)->cfg.recursive);
+#endif
+#if defined(CONFIG_ZYNC_PRIO_BOOST) && defined(CONFIG_ZYNC_VALIDATE)
+	__ASSERT_NO_MSG(Z_PAIR_ZYNC(&mutex->zp)->cfg.prio_boost);
+#endif
+	return z_pzyncmod(&mutex->zp, -1, timeout);
+}
 
 /**
  * @brief Unlock a mutex.
@@ -2804,12 +2829,9 @@ __syscall int k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout);
  * This routine unlocks @a mutex. The mutex must already be locked by the
  * calling thread.
  *
- * The mutex cannot be claimed by another thread until it has been unlocked by
- * the calling thread as many times as it was previously locked by that
- * thread.
- *
- * Mutexes may not be unlocked in ISRs, as mutexes must only be manipulated
- * in thread context due to ownership and priority inheritance semantics.
+ * The mutex cannot be claimed by another thread until it has been
+ * unlocked by the calling thread (if recursive locking is enabled, as
+ * many times as it was previously locked by that thread).
  *
  * @param mutex Address of the mutex.
  *
@@ -2818,21 +2840,37 @@ __syscall int k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout);
  * @retval -EINVAL The mutex is not locked
  *
  */
-__syscall int k_mutex_unlock(struct k_mutex *mutex);
+static inline int k_mutex_unlock(struct k_mutex *mutex)
+{
+#ifdef CONFIG_ZYNC_VALIDATE
+	__ASSERT(Z_PAIR_ATOM(&mutex->zp)->val == 0, "mutex not locked");
+#endif
+#ifdef Z_ZYNC_ALWAYS_KERNEL
+	/* Synthesize "soft failure" return codes.  Needed by current
+	 * tests, consider wrapping into ZYNC_VALIDATE.
+	 */
+	int32_t ret = z_zync_unlock_ok(Z_PAIR_ZYNC(&mutex->zp));
+
+	if (ret != 0) {
+		return ret;
+	}
+#endif
+	return z_pzyncmod(&mutex->zp, 1, K_NO_WAIT);
+}
 
 /**
  * @}
  */
 
-
 struct k_condvar {
-	_wait_q_t wait_q;
+	struct z_zync_pair zp;
 };
 
-#define Z_CONDVAR_INITIALIZER(obj)                                             \
-	{                                                                      \
-		.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),                          \
-	}
+#define K_OBJ_CONDVAR K_OBJ_ZYNC
+
+#ifdef Z_ZYNC_INTERNAL_ATOM
+#define Z_CONDVAR_INITIALIZER(obj) { Z_ZYNCP_INITIALIZER(0, true, false, false, 0) }
+#endif
 
 /**
  * @defgroup condvar_apis Condition Variables APIs
@@ -2846,24 +2884,38 @@ struct k_condvar {
  * @param condvar pointer to a @p k_condvar structure
  * @retval 0 Condition variable created successfully
  */
-__syscall int k_condvar_init(struct k_condvar *condvar);
+static inline int k_condvar_init(struct k_condvar *condvar)
+{
+	struct k_zync_cfg cfg = { .fair = true };
+
+	z_pzync_init(&condvar->zp, &cfg);
+	return 0;
+}
 
 /**
  * @brief Signals one thread that is pending on the condition variable
  *
- * @param condvar pointer to a @p k_condvar structure
+ * @param cv pointer to a @p k_condvar structure
  * @retval 0 On success
  */
-__syscall int k_condvar_signal(struct k_condvar *condvar);
+static inline int k_condvar_signal(struct k_condvar *cv)
+{
+	k_zync(Z_PAIR_ZYNC(&cv->zp), Z_PAIR_ATOM(&cv->zp), true, 1, K_NO_WAIT);
+	return 0;
+}
 
 /**
  * @brief Unblock all threads that are pending on the condition
  * variable
  *
- * @param condvar pointer to a @p k_condvar structure
+ * @param cv pointer to a @p k_condvar structure
  * @return An integer with number of woken threads on success
  */
-__syscall int k_condvar_broadcast(struct k_condvar *condvar);
+static inline int k_condvar_broadcast(struct k_condvar *cv)
+{
+	return k_zync(Z_PAIR_ZYNC(&cv->zp), Z_PAIR_ATOM(&cv->zp), true,
+		      K_ZYNC_ATOM_VAL_MAX, K_NO_WAIT);
+}
 
 /**
  * @brief Waits on the condition variable releasing the mutex lock
@@ -2882,8 +2934,18 @@ __syscall int k_condvar_broadcast(struct k_condvar *condvar);
  * @retval 0 On success
  * @retval -EAGAIN Waiting period timed out.
  */
-__syscall int k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
-			     k_timeout_t timeout);
+static inline int k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
+				 k_timeout_t timeout)
+{
+	int ret = z_pzync_condwait(&condvar->zp, &mutex->zp, timeout);
+
+	/* K_FOREVER (i.e. ignoring the user timeout) is the way this
+	 * was coded originally, and we actually have a test that
+	 * fails if we pass it K_NO_WAIT here.  Seems surprising...
+	 */
+	(void) k_mutex_lock(mutex, K_FOREVER);
+	return ret;
+}
 
 /**
  * @brief Statically define and initialize a condition variable.
@@ -2895,9 +2957,22 @@ __syscall int k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
  *
  * @param name Name of the condition variable.
  */
-#define K_CONDVAR_DEFINE(name)                                                 \
-	STRUCT_SECTION_ITERABLE(k_condvar, name) =                             \
-		Z_CONDVAR_INITIALIZER(name)
+#define K_CONDVAR_DEFINE(name)					\
+	Z_ZYNCP_DEFINE(_zc_##name, 0, true, false, false, 0);	\
+	extern struct k_condvar name ALIAS_OF(_zc_##name);
+
+/** @brief Define a condition variable for use from a specific memory domain
+ *
+ * As for K_CONDVAR_DEFINE, but places the (fast!) k_zync_atom_t in
+ * the specific app shared memory partition, allowing kernel-free
+ * operation for uncontended use cases.  Note that such a condvar will
+ * still require system call operations if CONFIG_ZYNC_PRIO_BOOST=y or
+ * CONFIG_ZYNC_RECURSIVE=y.
+ */
+#define K_CONDVAR_USER_DEFINE(name, part)				\
+	Z_ZYNCP_USER_DEFINE(_zc_##name, part, 0, true, false, false, 0)	\
+	extern struct k_condvar name ALIAS_OF(_zc_##name);
+
 /**
  * @}
  */
@@ -2907,23 +2982,22 @@ __syscall int k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
  */
 
 struct k_sem {
-	_wait_q_t wait_q;
-	unsigned int count;
-	unsigned int limit;
+	struct z_zync_pair zp;
 
-	_POLL_EVENT;
-
-	SYS_PORT_TRACING_TRACKING_FIELD(k_sem)
-
+	/* Workaround for an whiteboxed field used in upstream
+	 * libmetal, thankfully not in a way exercised by Zephyr.  Can
+	 * be removed when upstream is patched to use proper k_sem
+	 * APIs
+	 */
+	IF_ENABLED(CONFIG_LIBMETAL, (int8_t count;))
 };
 
+#define K_OBJ_SEM K_OBJ_ZYNC
+
+#ifdef Z_ZYNC_INTERNAL_ATOM
 #define Z_SEM_INITIALIZER(obj, initial_count, count_limit) \
-	{ \
-	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
-	.count = initial_count, \
-	.limit = count_limit, \
-	_POLL_EVENT_OBJ_INIT(obj) \
-	}
+	{ Z_ZYNCP_INITIALIZER(initial_count, true, false, false, count_limit) }
+#endif
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -2943,7 +3017,7 @@ struct k_sem {
  * counting purposes.
  *
  */
-#define K_SEM_MAX_LIMIT UINT_MAX
+#define K_SEM_MAX_LIMIT K_ZYNC_ATOM_VAL_MAX
 
 /**
  * @brief Initialize a semaphore.
@@ -2960,8 +3034,25 @@ struct k_sem {
  * @retval -EINVAL Invalid values
  *
  */
-__syscall int k_sem_init(struct k_sem *sem, unsigned int initial_count,
-			  unsigned int limit);
+static inline int k_sem_init(struct k_sem *sem, unsigned int initial_count,
+			     unsigned int limit)
+{
+	limit = limit > K_SEM_MAX_LIMIT ? K_SEM_MAX_LIMIT : limit;
+
+	struct k_zync_cfg cfg = {
+		.atom_init = initial_count,
+		.fair = true,
+		IF_ENABLED(CONFIG_ZYNC_MAX_VAL, (.max_val = limit,))
+	};
+
+	if (limit > K_ZYNC_ATOM_VAL_MAX || limit == 0 || initial_count > limit) {
+		return -EINVAL;
+	}
+
+	z_pzync_init(&sem->zp, &cfg);
+
+	return 0;
+}
 
 /**
  * @brief Take a semaphore.
@@ -2981,7 +3072,10 @@ __syscall int k_sem_init(struct k_sem *sem, unsigned int initial_count,
  * @retval -EAGAIN Waiting period timed out,
  *			or the semaphore was reset during the waiting period.
  */
-__syscall int k_sem_take(struct k_sem *sem, k_timeout_t timeout);
+static inline int k_sem_take(struct k_sem *sem, k_timeout_t timeout)
+{
+	return z_pzyncmod(&sem->zp, -1, timeout);
+}
 
 /**
  * @brief Give a semaphore.
@@ -2993,7 +3087,10 @@ __syscall int k_sem_take(struct k_sem *sem, k_timeout_t timeout);
  *
  * @param sem Address of the semaphore.
  */
-__syscall void k_sem_give(struct k_sem *sem);
+static inline void k_sem_give(struct k_sem *sem)
+{
+	z_pzyncmod(&sem->zp, 1, K_NO_WAIT);
+}
 
 /**
  * @brief Resets a semaphore's count to zero.
@@ -3004,25 +3101,33 @@ __syscall void k_sem_give(struct k_sem *sem);
  *
  * @param sem Address of the semaphore.
  */
-__syscall void k_sem_reset(struct k_sem *sem);
+static inline void k_sem_reset(struct k_sem *sem)
+{
+	k_zync_reset(Z_PAIR_ZYNC(&sem->zp), Z_PAIR_ATOM(&sem->zp));
+}
 
 /**
  * @brief Get a semaphore's count.
  *
  * This routine returns the current count of @a sem.
  *
+ * @note The nature of semaphores is to be used in asynchronous
+ * contexts.  The use of this API is very likely to be subject to
+ * unavoidable race conditions without an exterior layer of locking
+ * provided by the app.  Users tempted by this call should strongly
+ * consider condition variables instead.
+ *
  * @param sem Address of the semaphore.
  *
  * @return Current semaphore count.
  */
-__syscall unsigned int k_sem_count_get(struct k_sem *sem);
-
-/**
- * @internal
- */
-static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
+static inline unsigned int k_sem_count_get(struct k_sem *sem)
 {
-	return sem->count;
+#ifdef Z_ZYNC_INTERNAL_ATOM
+	return z_zync_atom_val(Z_PAIR_ZYNC(&sem->zp));
+#else
+	return sem->zp.atom.val;
+#endif
 }
 
 /**
@@ -3036,12 +3141,28 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
  * @param initial_count Initial semaphore count.
  * @param count_limit Maximum permitted semaphore count.
  */
-#define K_SEM_DEFINE(name, initial_count, count_limit) \
-	STRUCT_SECTION_ITERABLE(k_sem, name) = \
-		Z_SEM_INITIALIZER(name, initial_count, count_limit); \
-	BUILD_ASSERT(((count_limit) != 0) && \
-		     ((initial_count) <= (count_limit)) && \
-			 ((count_limit) <= K_SEM_MAX_LIMIT));
+#define K_SEM_DEFINE(name, initial_count, count_limit)			\
+	Z_ZYNCP_DEFINE(_z_##name, initial_count, true, false, false, count_limit); \
+	extern struct k_sem name ALIAS_OF(_z_##name);
+
+/**
+ * @brief Statically define and initialize a local semaphore.
+ *
+ * As for K_SEM_DEFINE(), but defines the resulting symbol as static,
+ * such that it cannot be used outside the local translation unit.
+ *
+ * @param name Name of the semaphore.
+ * @param initial_count Initial semaphore count.
+ * @param count_limit Maximum permitted semaphore count.
+ */
+#define K_SEM_STATIC_DEFINE(name, initial_count, count_limit)		\
+	Z_ZYNCP_DEFINE(_z_##name, initial_count, true, false, false, count_limit); \
+	static struct k_sem name ALIAS_OF(_z_##name);
+
+#define K_SEM_USER_DEFINE(name, part, initial_count, count_limit)	\
+	Z_ZYNCP_USER_DEFINE(_z_##name, part, initial_count,		\
+			    true, true, true, count_limit);		\
+	extern struct k_sem name ALIAS_OF(_z_##name);
 
 /** @} */
 
@@ -5300,9 +5421,6 @@ enum _poll_types_bits {
 	/* to be signaled by k_poll_signal_raise() */
 	_POLL_TYPE_SIGNAL,
 
-	/* semaphore availability */
-	_POLL_TYPE_SEM_AVAILABLE,
-
 	/* queue/FIFO/LIFO data availability */
 	_POLL_TYPE_DATA_AVAILABLE,
 
@@ -5311,6 +5429,9 @@ enum _poll_types_bits {
 
 	/* pipe data availability */
 	_POLL_TYPE_PIPE_DATA_AVAILABLE,
+
+	/* zync transitions from 0 to any positive value */
+	_POLL_TYPE_ZYNC,
 
 	_POLL_NUM_TYPES
 };
@@ -5325,9 +5446,6 @@ enum _poll_states_bits {
 	/* signaled by k_poll_signal_raise() */
 	_POLL_STATE_SIGNALED,
 
-	/* semaphore is available */
-	_POLL_STATE_SEM_AVAILABLE,
-
 	/* data is available to read on queue/FIFO/LIFO */
 	_POLL_STATE_DATA_AVAILABLE,
 
@@ -5339,6 +5457,9 @@ enum _poll_states_bits {
 
 	/* data is available to read from a pipe */
 	_POLL_STATE_PIPE_DATA_AVAILABLE,
+
+	/* zync has transitioned to positive value */
+	_POLL_STATE_ZYNC,
 
 	_POLL_NUM_STATES
 };
@@ -5367,11 +5488,13 @@ enum _poll_states_bits {
 /* public - values for k_poll_event.type bitfield */
 #define K_POLL_TYPE_IGNORE 0
 #define K_POLL_TYPE_SIGNAL Z_POLL_TYPE_BIT(_POLL_TYPE_SIGNAL)
-#define K_POLL_TYPE_SEM_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_SEM_AVAILABLE)
 #define K_POLL_TYPE_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_DATA_AVAILABLE)
 #define K_POLL_TYPE_FIFO_DATA_AVAILABLE K_POLL_TYPE_DATA_AVAILABLE
 #define K_POLL_TYPE_MSGQ_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_MSGQ_DATA_AVAILABLE)
 #define K_POLL_TYPE_PIPE_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_PIPE_DATA_AVAILABLE)
+#define K_POLL_TYPE_ZYNC Z_POLL_TYPE_BIT(_POLL_TYPE_ZYNC)
+
+#define K_POLL_TYPE_SEM_AVAILABLE K_POLL_TYPE_ZYNC
 
 /* public - polling modes */
 enum k_poll_modes {
@@ -5384,12 +5507,14 @@ enum k_poll_modes {
 /* public - values for k_poll_event.state bitfield */
 #define K_POLL_STATE_NOT_READY 0
 #define K_POLL_STATE_SIGNALED Z_POLL_STATE_BIT(_POLL_STATE_SIGNALED)
-#define K_POLL_STATE_SEM_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_SEM_AVAILABLE)
 #define K_POLL_STATE_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_DATA_AVAILABLE)
 #define K_POLL_STATE_FIFO_DATA_AVAILABLE K_POLL_STATE_DATA_AVAILABLE
 #define K_POLL_STATE_MSGQ_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_MSGQ_DATA_AVAILABLE)
 #define K_POLL_STATE_PIPE_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_PIPE_DATA_AVAILABLE)
 #define K_POLL_STATE_CANCELLED Z_POLL_STATE_BIT(_POLL_STATE_CANCELLED)
+#define K_POLL_STATE_ZYNC Z_POLL_STATE_BIT(_POLL_STATE_ZYNC)
+
+#define K_POLL_STATE_SEM_AVAILABLE K_POLL_STATE_ZYNC
 
 /* public - poll signal object */
 struct k_poll_signal {
@@ -5449,6 +5574,7 @@ struct k_poll_event {
 #ifdef CONFIG_PIPES
 		struct k_pipe *pipe;
 #endif
+		struct k_zync *zync;
 	};
 };
 

@@ -56,7 +56,7 @@ static struct fd_entry fdtable[CONFIG_POSIX_MAX_FDS] = {
 #endif
 };
 
-static K_MUTEX_DEFINE(fdtable_lock);
+K_MUTEX_DEFINE(fdtable_lock);
 
 static int z_fd_ref(int fd)
 {

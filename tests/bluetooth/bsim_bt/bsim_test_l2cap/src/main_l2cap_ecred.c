@@ -59,10 +59,10 @@ CREATE_FLAG(unsequenced_data);
 #define T_PRIORITY 5
 
 static K_THREAD_STACK_ARRAY_DEFINE(stack_area, L2CAP_CHANNELS, T_STACK_SIZE);
-static K_SEM_DEFINE(chan_conn_sem, 0, L2CAP_CHANNELS);
-static K_SEM_DEFINE(all_chan_conn_sem, 0, 1);
-static K_SEM_DEFINE(all_chan_disconn_sem, 0, 1);
-static K_SEM_DEFINE(sent_sem, 0, L2CAP_CHANNELS);
+K_SEM_STATIC_DEFINE(chan_conn_sem, 0, L2CAP_CHANNELS);
+K_SEM_STATIC_DEFINE(all_chan_conn_sem, 0, 1);
+K_SEM_STATIC_DEFINE(all_chan_disconn_sem, 0, 1);
+K_SEM_STATIC_DEFINE(sent_sem, 0, L2CAP_CHANNELS);
 
 static void init_workqs(void)
 {

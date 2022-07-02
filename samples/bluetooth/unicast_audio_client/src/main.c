@@ -44,16 +44,16 @@ static struct bt_audio_lc3_preset codec_configuration =
 	BT_AUDIO_LC3_UNICAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
 					   BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
-static K_SEM_DEFINE(sem_connected, 0, 1);
-static K_SEM_DEFINE(sem_disconnected, 0, 1);
-static K_SEM_DEFINE(sem_mtu_exchanged, 0, 1);
-static K_SEM_DEFINE(sem_security_updated, 0, 1);
-static K_SEM_DEFINE(sem_sinks_discovered, 0, 1);
-static K_SEM_DEFINE(sem_sources_discovered, 0, 1);
-static K_SEM_DEFINE(sem_stream_configured, 0, 1);
-static K_SEM_DEFINE(sem_stream_qos, 0, 1);
-static K_SEM_DEFINE(sem_stream_enabled, 0, 1);
-static K_SEM_DEFINE(sem_stream_started, 0, 1);
+K_SEM_STATIC_DEFINE(sem_connected, 0, 1);
+K_SEM_STATIC_DEFINE(sem_disconnected, 0, 1);
+K_SEM_STATIC_DEFINE(sem_mtu_exchanged, 0, 1);
+K_SEM_STATIC_DEFINE(sem_security_updated, 0, 1);
+K_SEM_STATIC_DEFINE(sem_sinks_discovered, 0, 1);
+K_SEM_STATIC_DEFINE(sem_sources_discovered, 0, 1);
+K_SEM_STATIC_DEFINE(sem_stream_configured, 0, 1);
+K_SEM_STATIC_DEFINE(sem_stream_qos, 0, 1);
+K_SEM_STATIC_DEFINE(sem_stream_enabled, 0, 1);
+K_SEM_STATIC_DEFINE(sem_stream_started, 0, 1);
 
 static uint16_t get_and_incr_seq_num(const struct bt_audio_stream *stream)
 {

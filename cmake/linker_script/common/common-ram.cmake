@@ -57,6 +57,8 @@ zephyr_iterable_section(NAME k_pipe GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SU
 zephyr_iterable_section(NAME k_sem GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 zephyr_iterable_section(NAME k_queue GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 zephyr_iterable_section(NAME k_condvar GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+zephyr_iterable_section(NAME k_zync GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+zephyr_iterable_section(NAME z_zync_pair GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 
 zephyr_linker_section(NAME _net_buf_pool_area GROUP DATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 zephyr_linker_section_configure(SECTION _net_buf_pool_area

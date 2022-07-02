@@ -248,8 +248,11 @@ ZTEST_USER(mutex_api, test_mutex_recursive)
 	k_mutex_init(&mutex);
 
 	/**TESTPOINT: when mutex has no owner, we cannot unlock it */
+#ifndef CONFIG_ZYNC_VALIDATE
+	/* This is now an assertion w/zync that will blow up the test */
 	zassert_true(k_mutex_unlock(&mutex) == -EINVAL,
 			"fail: mutex has no owner");
+#endif
 
 	zassert_true(k_mutex_lock(&mutex, K_NO_WAIT) == 0,
 			"Failed to lock mutex");
@@ -313,9 +316,11 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_priority_inheritance)
 	/* wait for spawn thread t1 to take action */
 	k_msleep(TIMEOUT);
 
+#ifndef CONFIG_ZYNC_VALIDATE
 	/**TESTPOINT: The current thread does not own the mutex.*/
 	zassert_true(k_mutex_unlock(&mutex) == -EPERM,
 			"fail: current thread does not own the mutex");
+#endif
 
 	/* spawn a higher priority thread t2 for holding the mutex */
 	k_thread_create(&tdata2, tstack2, STACK_SIZE,

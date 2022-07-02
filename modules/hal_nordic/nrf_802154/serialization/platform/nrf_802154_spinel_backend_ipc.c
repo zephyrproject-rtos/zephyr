@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define IPC_BOUND_TIMEOUT_IN_MS K_MSEC(1000)
 
-static K_SEM_DEFINE(edp_bound_sem, 0, 1);
+K_SEM_STATIC_DEFINE(edp_bound_sem, 0, 1);
 static struct ipc_ept ept;
 
 static void endpoint_bound(void *priv)
@@ -74,7 +74,7 @@ nrf_802154_ser_err_t nrf_802154_backend_init(void)
 #define RING_BUFFER_LEN 16
 #define SEND_THREAD_STACK_SIZE 1024
 
-static K_SEM_DEFINE(send_sem, 0, RING_BUFFER_LEN);
+K_SEM_STATIC_DEFINE(send_sem, 0, RING_BUFFER_LEN);
 K_THREAD_STACK_DEFINE(send_thread_stack, SEND_THREAD_STACK_SIZE);
 struct k_thread send_thread_data;
 

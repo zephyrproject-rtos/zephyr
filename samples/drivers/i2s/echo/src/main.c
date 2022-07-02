@@ -45,7 +45,7 @@ K_MEM_SLAB_DEFINE_STATIC(mem_slab, BLOCK_SIZE, BLOCK_COUNT, 4);
 
 static int16_t echo_block[SAMPLES_PER_BLOCK];
 static volatile bool echo_enabled = true;
-static K_SEM_DEFINE(toggle_transfer, 1, 1);
+K_SEM_STATIC_DEFINE(toggle_transfer, 1, 1);
 
 #if DT_NODE_HAS_STATUS(SW0_NODE, okay)
 static void sw0_handler(const struct device *dev, struct gpio_callback *cb,

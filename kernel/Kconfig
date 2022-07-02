@@ -311,6 +311,98 @@ config WAITQ_DUMB
 
 endchoice # WAITQ_ALGORITHM
 
+config ZYNC_VALIDATE
+	bool "k_zync validation layer"
+	default n if PICOLIBC
+	default y if ASSERT && !USERSPACE
+	help
+	  The zync facility includes a simple validation layer to
+	  detect circumstances like freeing locks from the wrong
+	  thread, recursively locking (non-recursive) zyncs, failing
+	  to hold the wrapper lock in condition variables, etc...
+	  This has significant performance impact when USERSPACE is
+	  enabled and needs to be enabled manually.  Disabled when
+	  PICOLIBC=y to work around #51827
+
+config ZYNC_USERSPACE_COMPAT
+	bool "Legacy userspace API for defining zyncs"
+	help
+	  When true, k_sem/mutex/condvar objects defined with
+	  K_xxx_DEFINE() macros will be usable as kernel objects from
+	  any userspace thread with access.  This was the traditional
+	  API, but as it requires the atom be stored in kernel space
+	  it has a severe performance pentaly vs. "natural" zync
+	  usage.  All operations on all zyncs need to be system calls!
+	  Only select this as a migration assistant; code should use
+	  xxx_USER_DEFINE() (a trivial API change) to realize the
+	  performance benefits of zync.
+
+config MAX_DYN_ZYNCS
+	int
+	default 0 if DYNAMIC_OBJECTS
+	default 32
+	help
+	  Zync "pairs" used to implement k_sem/mutex/condvar are
+	  userspace structs, and (if not defined using a
+	  xxx_USER_DEFINE() macro) associate themselves with kernel
+	  objects dynamically at initialization time.  This is done
+	  with dynamic kernel objects when enabled, otherwise with a
+	  simple allocate-only pool.
+
+config ZYNC_PRIO_BOOST
+	bool "Zync priority inheritance algorithm"
+	help
+	  When selected, k_zync() will be able to boost the priority
+	  of the "owner" of a Zync to the priority of any of its
+	  waiters.  This has significant performance impact on k_mutex
+	  (especially with userspace, where it forces operations to be
+	  syscalls).  Most apps that don't need PI semantics should
+	  leave it off.
+
+config ZYNC_MAX_VAL
+	bool "Zync maximum value clamping"
+	default y if NETWORKING
+	default y if CMSIS_RTOS_V1
+	default y if CMSIS_RTOS_V2
+	default y if LOG_BACKEND_UART
+	help
+	  When selected, the maximum atom value for a Zync may be
+	  controlled per-object by application code.  Very few apps
+	  need this (historically, it was used to make "semaphores"
+	  behave like "locks"), and it incurs significant performance
+	  overhead with k_sem.  Leave it off.  This is likely to be
+	  deprecated in the future.
+
+config ZYNC_RECURSIVE
+	bool "recursive Zync locks"
+	default y if NETWORKING
+	default y if DISK_ACCESS
+	default y if GPIO
+	default y if ADC
+	default y if NEWLIB_LIBC
+	default y if CMSIS_RTOS_V1
+	default y if CMSIS_RTOS_V2
+	help
+	  When selected, a k_zync can be configured as a recursive
+	  lock, allowing a single thread to take the lock multiple
+	  times.  As with PRIO_BOOST and MAX_VAL, this defeats the
+	  lockless operation of the zync facility and apps should
+	  consider carefully whether to enable it (especially with
+	  userspace enabled, where it forces a syscall).
+
+config ZYNC_LEGACY
+	bool "Force zync to honor all legacy semantics"
+	select ZYNC_USERSPACE_COMPAT
+	select ZYNC_PRIO_BOOST
+	select ZYNC_MAX_VAL
+	select ZYNC_RECURSIVE
+	help
+	  When true, the zync facility in Zephyr will honor all of the
+	  older semantic rules, keeping full compatibility with older
+	  versions of Zephyr but gaining little performance benefit.
+	  Very few applications depend on this older behavior and most
+	  should select the various features individually.
+
 menu "Kernel Debugging and Metrics"
 
 config INIT_STACKS

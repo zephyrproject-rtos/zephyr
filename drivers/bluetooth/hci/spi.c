@@ -64,9 +64,9 @@ static const struct gpio_dt_spec rst_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios
 
 static struct gpio_callback	gpio_cb;
 
-static K_SEM_DEFINE(sem_initialised, 0, 1);
-static K_SEM_DEFINE(sem_request, 0, 1);
-static K_SEM_DEFINE(sem_busy, 1, 1);
+K_SEM_STATIC_DEFINE(sem_initialised, 0, 1);
+K_SEM_STATIC_DEFINE(sem_request, 0, 1);
+K_SEM_STATIC_DEFINE(sem_busy, 1, 1);
 
 static K_KERNEL_STACK_DEFINE(spi_rx_stack, 512);
 static struct k_thread spi_rx_thread_data;

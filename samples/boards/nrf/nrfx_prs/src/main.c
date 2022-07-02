@@ -32,13 +32,13 @@ static nrfx_uarte_t uarte = NRFX_UARTE_INSTANCE(2);
 static bool spim_initialized;
 static bool uarte_initialized;
 static volatile size_t received;
-static K_SEM_DEFINE(transfer_finished, 0, 1);
+K_SEM_STATIC_DEFINE(transfer_finished, 0, 1);
 
 static enum {
 	PERFORM_TRANSFER,
 	SWITCH_PERIPHERAL
 } user_request;
-static K_SEM_DEFINE(button_pressed, 0, 1);
+K_SEM_STATIC_DEFINE(button_pressed, 0, 1);
 
 static void sw0_handler(const struct device *dev, struct gpio_callback *cb,
 			uint32_t pins)
