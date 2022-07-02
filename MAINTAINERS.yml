@@ -790,6 +790,8 @@ Documentation:
     status: maintained
     maintainers:
         - Mani-Sadhasivam
+    collaborators:
+        - simonguinot
     files:
         - drivers/led/
         - include/zephyr/drivers/led/
