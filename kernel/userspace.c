@@ -895,13 +895,15 @@ static int app_shmem_bss_zero(const struct device *unused)
 	return 0;
 }
 
-SYS_INIT(app_shmem_bss_zero, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT_NAMED(app_shmem_bss_zero_pre, app_shmem_bss_zero,
+	       PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
 /* When BSS sections are not present at boot, we need to wait for
  * paging mechanism to be initialized before we can zero out BSS.
  */
-SYS_INIT(app_shmem_bss_zero, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT_NAMED(app_shmem_bss_zero_post, app_shmem_bss_zero,
+	       POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif /* CONFIG_DEMAND_PAGING && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 
 /*
