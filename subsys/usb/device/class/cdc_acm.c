@@ -874,6 +874,72 @@ static int cdc_acm_line_ctrl_get(const struct device *dev,
 
 #endif /* CONFIG_UART_LINE_CTRL */
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+
+static int cdc_acm_config_get(const struct device *dev,
+			      struct uart_config *cfg)
+{
+	struct cdc_acm_dev_data_t * const dev_data = dev->data;
+
+	cfg->baudrate = sys_le32_to_cpu(dev_data->line_coding.dwDTERate);
+
+	switch (dev_data->line_coding.bCharFormat) {
+	case USB_CDC_LINE_CODING_STOP_BITS_1:
+		cfg->stop_bits = UART_CFG_STOP_BITS_1;
+		break;
+	case USB_CDC_LINE_CODING_STOP_BITS_1_5:
+		cfg->stop_bits = UART_CFG_STOP_BITS_1_5;
+		break;
+	case USB_CDC_LINE_CODING_STOP_BITS_2:
+	default:
+		cfg->stop_bits = UART_CFG_STOP_BITS_2;
+		break;
+	};
+
+	switch (dev_data->line_coding.bParityType) {
+	case USB_CDC_LINE_CODING_PARITY_NO:
+	default:
+		cfg->parity = UART_CFG_PARITY_NONE;
+		break;
+	case USB_CDC_LINE_CODING_PARITY_ODD:
+		cfg->parity = UART_CFG_PARITY_ODD;
+		break;
+	case USB_CDC_LINE_CODING_PARITY_EVEN:
+		cfg->parity = UART_CFG_PARITY_EVEN;
+		break;
+	case USB_CDC_LINE_CODING_PARITY_MARK:
+		cfg->parity = UART_CFG_PARITY_MARK;
+		break;
+	case USB_CDC_LINE_CODING_PARITY_SPACE:
+		cfg->parity = UART_CFG_PARITY_SPACE;
+		break;
+	};
+
+	switch (dev_data->line_coding.bDataBits) {
+	case USB_CDC_LINE_CODING_DATA_BITS_5:
+		cfg->data_bits = UART_CFG_DATA_BITS_5;
+		break;
+	case USB_CDC_LINE_CODING_DATA_BITS_6:
+		cfg->data_bits = UART_CFG_DATA_BITS_6;
+		break;
+	case USB_CDC_LINE_CODING_DATA_BITS_7:
+		cfg->data_bits = UART_CFG_DATA_BITS_7;
+		break;
+	case USB_CDC_LINE_CODING_DATA_BITS_8:
+	default:
+		cfg->data_bits = UART_CFG_DATA_BITS_8;
+		break;
+	};
+
+	/* USB CDC has no notion of flow control */
+	cfg->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+
+	return 0;
+}
+
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
+
+
 /*
  * @brief Poll the device for input.
  */
@@ -936,6 +1002,9 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 	.line_ctrl_set = cdc_acm_line_ctrl_set,
 	.line_ctrl_get = cdc_acm_line_ctrl_get,
 #endif /* CONFIG_UART_LINE_CTRL */
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	.config_get = cdc_acm_config_get,
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 };
 
 #if (CONFIG_USB_COMPOSITE_DEVICE || CONFIG_CDC_ACM_IAD)
