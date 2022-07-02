@@ -84,7 +84,7 @@ flash_page_cb cb, struct layout_data *cb_data)
 	cb_data->ret_len = *cnt;
 	cb_data->status = 0;
 
-	flash_dev = device_get_binding(fa->fa_dev_name);
+	flash_dev = fa->fa_dev;
 	flash_area_close(fa);
 	if (flash_dev == NULL) {
 		return -ENODEV;

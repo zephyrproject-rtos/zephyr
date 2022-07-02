@@ -166,7 +166,7 @@ void test_flash_area_erased_val(void)
 
 	val = flash_area_erased_val(fa);
 
-	param = flash_get_parameters(device_get_binding(fa->fa_dev_name));
+	param = flash_get_parameters(fa->fa_dev);
 
 	zassert_equal(param->erase_value, val,
 		      "value different than the flash erase value");

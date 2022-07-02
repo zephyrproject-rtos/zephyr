@@ -60,11 +60,8 @@ struct flash_area {
 	off_t fa_off;
 	/** Total size */
 	size_t fa_size;
-	/**
-	 * Name of the flash device, suitable for passing to
-	 * device_get_binding().
-	 */
-	const char *fa_dev_name;
+	/** Backing flash device */
+	const struct device *fa_dev;
 };
 
 /**
