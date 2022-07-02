@@ -226,6 +226,12 @@ extern bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
 
 #define Z_WAIT_Q_INIT(wait_q) { { { .lessthan_fn = z_priq_rb_lessthan } } }
 
+#define Z_WAIT_Q_LAZY_INIT(wq) do {				\
+	if ((wq)->waitq.tree.lessthan_fn == NULL) {			\
+		(wq)->waitq.tree.lessthan_fn = z_priq_rb_lessthan;	\
+	} } while (false)
+
+
 #else
 
 typedef struct {
@@ -234,6 +240,10 @@ typedef struct {
 
 #define Z_WAIT_Q_INIT(wait_q) { SYS_DLIST_STATIC_INIT(&(wait_q)->waitq) }
 
+#define Z_WAIT_Q_LAZY_INIT(wq) do { \
+	if ((wq)->waitq.head == NULL) { \
+		sys_dlist_init(&(wq)->waitq); } \
+	} while (false)
 #endif
 
 /* kernel timeout record */
