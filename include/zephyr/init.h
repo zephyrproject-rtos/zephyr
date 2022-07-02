@@ -133,7 +133,28 @@ void z_sys_init_run_level(int32_t level);
  * (e.g. CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5).
  */
 #define SYS_INIT(_init_fn, _level, _prio)					\
-	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(_init_fn), _init_fn, NULL, _level, _prio)
+	SYS_INIT_NAMED(_init_fn, _init_fn, _level, _prio)
+
+/**
+ * @def SYS_INIT_NAMED
+ *
+ * @ingroup device_model
+ *
+ * @brief Run an initialization function at boot at specified priority
+ *
+ * @details This macro lets you run a function at system boot.
+ *
+ * @param _name Unique name for SYS_INIT entry. Allows specifying multiple init
+ *              entries that utilise the same function.
+ *
+ * @param _init_fn See @ref SYS_INIT
+ *
+ * @param _level See @ref SYS_INIT
+ *
+ * @param _prio See @ref SYS_INIT
+ */
+#define SYS_INIT_NAMED(_name, _init_fn, _level, _prio)				\
+	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(_name), _init_fn, NULL, _level, _prio)
 
 #ifdef __cplusplus
 }
