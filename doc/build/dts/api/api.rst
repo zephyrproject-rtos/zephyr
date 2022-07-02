@@ -422,6 +422,8 @@ device.
      - Used by the OpenThread to specify UART device for Spinel protocol
    * - zephyr,pcie-controller
      - The node corresponding to the PCIe Controller
+   * - zephyr,ppp-uart
+     - Sets UART device used by PPP
    * - zephyr,settings-partition
      - Fixed partition node. If defined this selects the partition used
        by the NVS and FCB settings backends.
