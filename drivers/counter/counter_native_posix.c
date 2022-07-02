@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT zephyr_native_posix_counter
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/counter.h>
 #include <soc.h>
 #include <hw_counter.h>
 
-#define DT_COUNTER_LABEL counter0
 #define DRIVER_CONFIG_INFO_FLAGS (COUNTER_CONFIG_INFO_COUNT_UP)
 #define DRIVER_CONFIG_INFO_CHANNELS 1
 #define COUNTER_NATIVE_POSIX_IRQ_FLAGS (0)
@@ -148,6 +149,6 @@ static const struct counter_config_info ctr_config = {
 	.flags = DRIVER_CONFIG_INFO_FLAGS
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(DT_COUNTER_LABEL), ctr_init,
+DEVICE_DT_INST_DEFINE(0, ctr_init,
 		    NULL, NULL, &ctr_config, PRE_KERNEL_1,
 		    CONFIG_COUNTER_INIT_PRIORITY, &ctr_api);
