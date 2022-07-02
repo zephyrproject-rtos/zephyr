@@ -1,12 +1,13 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  *
- * Copyright (C) 2021, Intel Corporation
+ * Copyright (C) 2021-2022, Intel Corporation
  *
  */
 
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/clock/intel_socfpga_clock.h>
 
 / {
 	cpus {
@@ -70,7 +71,7 @@
 		interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
-		clock-frequency = <100000000>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_UART>;
 		label = "uart_0";
 		status = "disabled";
 	};
