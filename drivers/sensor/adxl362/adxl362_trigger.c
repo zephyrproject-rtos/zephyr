@@ -84,7 +84,12 @@ int adxl362_trigger_set(const struct device *dev,
 			sensor_trigger_handler_t handler)
 {
 	struct adxl362_data *drv_data = dev->data;
+	const struct adxl362_config *config = dev->config;
 	uint8_t int_mask, int_en, status_buf;
+
+	if (!config->interrupt.port) {
+		return -ENOTSUP;
+	}
 
 	switch (trig->type) {
 	case SENSOR_TRIG_MOTION:

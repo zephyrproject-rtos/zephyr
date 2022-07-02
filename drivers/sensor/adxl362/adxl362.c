@@ -9,6 +9,7 @@
 #define DT_DRV_COMPAT adi_adxl362
 
 #include <zephyr/kernel.h>
+#include <zephyr/devicetree.h>
 #include <string.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/init.h>
@@ -21,8 +22,6 @@
 #include "adxl362.h"
 
 LOG_MODULE_REGISTER(ADXL362, CONFIG_SENSOR_LOG_LEVEL);
-
-static struct adxl362_data adxl362_data;
 
 static int adxl362_reg_access(const struct device *dev, uint8_t cmd,
 			      uint8_t reg_addr, void *data, size_t length)
@@ -728,32 +727,38 @@ static int adxl362_init(const struct device *dev)
 	}
 
 #if defined(CONFIG_ADXL362_TRIGGER)
-	if (adxl362_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupt!");
-		return -EIO;
-	}
+	if (config->interrupt.port) {
+		if (adxl362_init_interrupt(dev) < 0) {
+			LOG_ERR("Failed to initialize interrupt!");
+			return -EIO;
+		}
 
-	if (adxl362_interrupt_config(dev,
-				     config->int1_config,
-				     config->int2_config) < 0) {
-		LOG_ERR("Failed to configure interrupt");
-		return -EIO;
+		if (adxl362_interrupt_config(dev,
+					config->int1_config,
+					config->int2_config) < 0) {
+			LOG_ERR("Failed to configure interrupt");
+			return -EIO;
+		}
 	}
 #endif
 
 	return 0;
 }
 
-static const struct adxl362_config adxl362_config = {
-	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),
-	.power_ctl = ADXL362_POWER_CTL_MEASURE(ADXL362_MEASURE_ON) |
-		(DT_INST_PROP(0, wakeup_mode) * ADXL362_POWER_CTL_WAKEUP) |
-		(DT_INST_PROP(0, autosleep) * ADXL362_POWER_CTL_AUTOSLEEP),
-#if defined(CONFIG_ADXL362_TRIGGER)
-	.interrupt = GPIO_DT_SPEC_INST_GET(0, int1_gpios),
-#endif
-};
+#define ADXL362_DEFINE(inst)									\
+	static struct adxl362_data adxl362_data_##inst;						\
+												\
+	static const struct adxl362_config adxl362_config_##inst = {				\
+		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),	\
+		.power_ctl = ADXL362_POWER_CTL_MEASURE(ADXL362_MEASURE_ON) |			\
+			(DT_INST_PROP(inst, wakeup_mode) * ADXL362_POWER_CTL_WAKEUP) |		\
+			(DT_INST_PROP(inst, autosleep) * ADXL362_POWER_CTL_AUTOSLEEP),		\
+		IF_ENABLED(CONFIG_ADXL362_TRIGGER,						\
+			   (.interrupt = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, { 0 }),))	\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, adxl362_init, NULL, &adxl362_data_##inst,			\
+			&adxl362_config_##inst, POST_KERNEL,					\
+			CONFIG_SENSOR_INIT_PRIORITY, &adxl362_api_funcs);			\
 
-DEVICE_DT_INST_DEFINE(0, adxl362_init, NULL,
-		    &adxl362_data, &adxl362_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &adxl362_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(ADXL362_DEFINE)
