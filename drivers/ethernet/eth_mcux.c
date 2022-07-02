@@ -141,10 +141,10 @@ static const char *eth_name(ENET_Type *base)
 {
 	switch ((int)base) {
 	case DT_INST_REG_ADDR(0):
-		return DT_INST_LABEL(0);
+		return "ETH_0";
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 	case DT_INST_REG_ADDR(1):
-		return DT_INST_LABEL(1);
+		return "ETH_1";
 #endif
 	default:
 		return "unknown";
