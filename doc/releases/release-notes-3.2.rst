@@ -50,6 +50,10 @@ New APIs in this release
 Kernel
 ******
 
+* Source files using multiple :c:macro:`SYS_INIT` macros with the
+  same initialisation function must now use :c:macro:`SYS_INIT_NAMED`
+  with unique names per instance.
+
 Architectures
 *************
 
