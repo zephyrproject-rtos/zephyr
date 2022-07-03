@@ -88,6 +88,11 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     log_backend_cavs_hda.c
   )
 
+  zephyr_sources_ifdef(
+    CONFIG_LOG_BACKEND_EFI_CONSOLE
+    log_backend_efi_console.c
+  )
+
   if(CONFIG_LOG_BACKEND_SPINEL)
     zephyr_library_include_directories(
 	    ${ZEPHYR_BASE}/subsys/net/lib/openthread/platform/
