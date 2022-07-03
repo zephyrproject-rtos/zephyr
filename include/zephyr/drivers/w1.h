@@ -329,6 +329,338 @@ static inline int z_impl_w1_configure(const struct device *dev,
  * @}
  */
 
+/**
+ * @brief 1-Wire network layer
+ * @defgroup w1_network 1-Wire network layer
+ * @ingroup w1_interface
+ * @{
+ */
+
+/**
+ * @name 1-Wire ROM Commands
+ * @{
+ */
+#define W1_CMD_SKIP_ROM			0xCC
+#define W1_CMD_MATCH_ROM		0x55
+#define W1_CMD_RESUME			0xA5
+#define W1_CMD_READ_ROM			0x33
+#define W1_CMD_SEARCH_ROM		0xF0
+#define W1_CMD_SEARCH_ALARM		0xEC
+#define W1_CMD_OVERDRIVE_SKIP_ROM	0x3C
+#define W1_CMD_OVERDRIVE_MATCH_ROM	0x69
+
+/** @} */
+
+/**
+ * @name CRC Defines
+ * @{
+ */
+
+/** Seed value used to calculate the 1-Wire 8-bit crc. */
+#define W1_CRC8_SEED		0x00
+/** Polynomial used to calculate the 1-Wire 8-bit crc. */
+#define W1_CRC8_POLYNOMIAL	0x8C
+/** Seed value used to calculate the 1-Wire 16-bit crc. */
+#define W1_CRC16_SEED		0x0000
+/** Polynomial used to calculate the 1-Wire 16-bit crc. */
+#define W1_CRC16_POLYNOMIAL	0xa001
+
+/** @} */
+
+/** This flag can be passed to searches in order to not filter on family ID. */
+#define W1_SEARCH_ALL_FAMILIES		0x00
+
+/** Intitialize all w1_rom struct members to zero. */
+#define W1_ROM_INIT_ZERO					\
+	{							\
+		.family = 0, .serial = { 0 }, .crc = 0,		\
+	}
+
+/**
+ * @brief w1_rom struct.
+ */
+struct w1_rom {
+	/** @brief The 1-Wire family code identifying the slave device type.
+	 *
+	 * An incomplete list of family codes is available at:
+	 * https://www.maximintegrated.com/en/app-notes/index.mvp/id/155
+	 * others are documented in the respective device data sheet.
+	 */
+	uint8_t family;
+	/** The serial together with the family code composes the unique 56-bit id */
+	uint8_t serial[6];
+	/** 8-bit checksum of the 56-bit unique id. */
+	uint8_t crc;
+};
+
+/**
+ * @brief Node specific 1-wire configuration struct.
+ *
+ * This struct is passed to network functions, such that they can configure
+ * the bus to address the specific slave using the selected speed.
+ */
+struct w1_slave_config {
+	/** Unique 1-Wire ROM. */
+	struct w1_rom rom;
+	/** overdrive speed is used if set to 1. */
+	uint32_t overdrive : 1;
+	/** @cond INTERNAL_HIDDEN */
+	uint32_t res : 31;
+	/** @endcond */
+};
+
+/**
+ * @brief Define the application callback handler function signature
+ *        for searches.
+ *
+ * @param rom found The ROM of the found slave.
+ * @param user_data User data provided to the w1_search_bus() call.
+ */
+typedef void (*w1_search_callback_t)(struct w1_rom rom, void *user_data);
+
+/**
+ * @brief Read Peripheral 64-bit ROM.
+ *
+ * This procedure allows the 1-Wire bus master to read the peripherals’
+ * 64-bit ROM without using the Search ROM procedure.
+ * This command can be used as long as not more than a sigle peripheral is
+ * connected to the bus.
+ * Otherwise data collisons occur and a faulty ROM is read.
+ *
+ * @param[in] dev  Pointer to the device structure for the driver instance.
+ * @param[out] rom Pointer to the ROM structure.
+ *
+ * @retval 0       If successful.
+ * @retval -ENODEV In case no slave responds to reset.
+ * @retval -errno  Other negative error code in case of invalid crc and
+ *         communication errors.
+ */
+int w1_read_rom(const struct device *dev, struct w1_rom *rom);
+
+/**
+ * @brief Select a specific slave by broadcasting a selected ROM.
+ *
+ * This routine allows the 1-Wire bus master to select a slave
+ * identified by its unique ROM, such that the next command will target only
+ * this single selected slave.
+ *
+ * This command is only necessary in multidrop environments, otherwise the
+ * Skip ROM command can be issued.
+ * Once a slave has been selected, to reduce the communication overhead, the
+ * resume command can be used instead of this command to communicate with the
+ * selected slave.
+ *
+ * @param[in] dev    Pointer to the device structure for the driver instance.
+ * @param[in] config Pointer to the slave specific 1-Wire config.
+ *
+ * @retval 0       If successful.
+ * @retval -ENODEV In case no slave responds to reset.
+ * @retval -errno  Other negative error code on error.
+ */
+int w1_match_rom(const struct device *dev, const struct w1_slave_config *config);
+
+/**
+ * @brief Select the slave last addressed with a Match ROM or Search ROM commnad.
+ *
+ * This routine allows the 1-Wire bus master to re-select a slave
+ * device that was already addressed using a Match ROM or Search ROM command.
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ *
+ * @retval 0       If successful.
+ * @retval -ENODEV In case no slave responds to reset.
+ * @retval -errno  Other negative error code on error.
+ */
+int w1_resume_command(const struct device *dev);
+
+/**
+ * @brief Select all slaves regardless of ROM.
+ *
+ * This routine sets up the bus slaves to receive a command.
+ * It is usually used when there is only one peripheral on the bus
+ * to avoid the overhead of the Match ROM command.
+ * But it can also be used to concurrently write to all slave devices.
+ *
+ * @param[in] dev    Pointer to the device structure for the driver instance.
+ * @param[in] config Pointer to the slave specific 1-Wire config.
+ *
+ * @retval 0       If successful.
+ * @retval -ENODEV In case no slave responds to reset.
+ * @retval -errno  Other negative error code on error.
+ */
+int w1_skip_rom(const struct device *dev, const struct w1_slave_config *config);
+
+/**
+ * @brief In single drop configurations use Skip Select command, otherweise use
+ *        Match ROM command.
+ *
+ * @param[in] dev    Pointer to the device structure for the driver instance.
+ * @param[in] config Pointer to the slave specific 1-Wire config.
+ *
+ * @retval 0       If successful.
+ * @retval -ENODEV In case no slave responds to reset.
+ * @retval -errno  Other negative error code on error.
+ */
+int w1_reset_select(const struct device *dev, const struct w1_slave_config *config);
+
+/**
+ * @brief Write then read data from the 1-Wire slave with matching ROM.
+ *
+ * This routine uses w1_reset_select to select the given ROM.
+ * Then writes given data and reads the response back from the slave.
+ *
+ * @param[in] dev       Pointer to the device structure for the driver instance.
+ * @param[in] config    Pointer to the slave specific 1-Wire config.
+ * @param[in] write_buf Pointer to the data to be written.
+ * @param write_len     Number of bytes to write.
+ * @param[out] read_buf Pointer to storage for read data.
+ * @param read_len      Number of bytes to read.
+ *
+ * @retval 0       If successful.
+ * @retval -ENODEV In case no slave responds to reset.
+ * @retval -errno  Other negative error code on error.
+ */
+int w1_write_read(const struct device *dev, const struct w1_slave_config *config,
+		  const uint8_t *write_buf, size_t write_len,
+		  uint8_t *read_buf, size_t read_len);
+
+/**
+ * @brief Search 1-wire slaves on the bus.
+ *
+ * This function searches slaves on the 1-wire bus, with the possibility
+ * to search either all slaves or only slaves that have an active alarm state.
+ * If a callback is passed, the callback is called for each found slave.
+ *
+ * The algorithm mostly follows the suggestions of
+ * https://pdfserv.maximintegrated.com/en/an/AN187.pdf
+ *
+ * Note: Filtering on families is not supported.
+ *
+ * @param[in] dev       Pointer to the device structure for the driver instance.
+ * @param command       Can either be W1_SEARCH_ALARM or W1_SEARCH_ROM.
+ * @param family        W1_SEARCH_ALL_FAMILIES searcheas all families,
+ *                      filtering on a specific family is not yet supported.
+ * @param callback      Application callback handler function to be called
+ *                      for each found slave.
+ * @param[in] user_data User data to pass to the application callback handler
+ *                      function.
+ *
+ * @retval slave_count  Number of slaves found.
+ * @retval -errno       Negative error code on error.
+ */
+__syscall int w1_search_bus(const struct device *dev, uint8_t command,
+			    uint8_t family, w1_search_callback_t callback,
+			    void *user_data);
+
+/**
+ * @brief Search for 1-Wire slave on bus.
+ *
+ * This routine can discover unknown slaves on the bus by scanning for the
+ * unique 64-bit registration number.
+ *
+ * @param[in] dev       Pointer to the device structure for the driver instance.
+ * @param callback      Application callback handler function to be called
+ *                      for each found slave.
+ * @param[in] user_data User data to pass to the application callback handler
+ *                      function.
+ *
+ * @retval slave_count  Number of slaves found.
+ * @retval -errno       Negative error code on error.
+ */
+static inline int w1_search_rom(const struct device *dev,
+				w1_search_callback_t callback, void *user_data)
+{
+	return w1_search_bus(dev, W1_CMD_SEARCH_ROM, W1_SEARCH_ALL_FAMILIES,
+			     callback, user_data);
+}
+
+/**
+ * @brief Search for 1-Wire slaves with an active alarm.
+ *
+ * This routine searches 1-Wire slaves on the bus, which currently have
+ * an active alarm.
+ *
+ * @param[in] dev       Pointer to the device structure for the driver instance.
+ * @param callback      Application callback handler function to be called
+ *                      for each found slave.
+ * @param[in] user_data User data to pass to the application callback handler
+ *                      function.
+ *
+ * @retval slave_count  Number of slaves found.
+ * @retval -errno       Negative error code on error.
+ */
+static inline int w1_search_alarm(const struct device *dev,
+				  w1_search_callback_t callback, void *user_data)
+{
+	return w1_search_bus(dev, W1_CMD_SEARCH_ALARM, W1_SEARCH_ALL_FAMILIES,
+			     callback, user_data);
+}
+
+/**
+ * @brief Function to convert a w1_rom struct to an uint64_t.
+ *
+ * @param[in] rom Pointer to the ROM struct.
+ *
+ * @retval rom64 The ROM converted to an unsigned integer in  endianness.
+ */
+static inline uint64_t w1_rom_to_uint64(const struct w1_rom *rom)
+{
+	return sys_get_be64((uint8_t *)rom);
+}
+
+/**
+ * @brief Function to write an uint64_t to struct w1_rom pointer.
+ *
+ * @param rom64    Unsigned 64 bit integer representing the ROM in host endianness.
+ * @param[out] rom The ROM struct pointer.
+ */
+static inline void w1_uint64_to_rom(const uint64_t rom64, struct w1_rom *rom)
+{
+	sys_put_be64(rom64, (uint8_t *)rom);
+}
+
+/**
+ * @brief Compute CRC-8 chacksum as defined in the 1-Wire specification.
+ *
+ * The 1-Wire of CRC 8 variant is using 0x31 as its polynomial with the initial
+ * value set to 0x00.
+ * This CRC is used to check the correctness of the unique 56-bit ROM.
+ *
+ * @param[in] src Input bytes for the computation.
+ * @param len     Length of the input in bytes.
+ *
+ * @retval crc The computed CRC8 value.
+ */
+static inline uint8_t w1_crc8(const uint8_t *src, size_t len)
+{
+	return crc8(src, len, W1_CRC8_POLYNOMIAL, W1_CRC8_SEED, true);
+}
+
+/**
+ * @brief Compute 1-Wire variant of CRC 16
+ *
+ * The 16-bit 1-Wire crc variant is using the reflected polynomial function
+ * X^16 + X^15 * + X^2 + 1 with the initial value set to 0x0000.
+ * See also APPLICATION NOTE 27:
+ * "UNDERSTANDING AND USING CYCLIC REDUNDANCY CHECKS WITH MAXIM 1-WIRE AND IBUTTON PRODUCTS"
+ * https://www.maximintegrated.com/en/design/technical-documents/app-notes/2/27.html
+ *
+ * @param seed    Init value for the CRC, it is usually set to 0x0000.
+ * @param[in] src Input bytes for the computation.
+ * @param len     Length of the input in bytes.
+ *
+ * @retval crc The computed CRC16 value.
+ */
+static inline uint16_t w1_crc16(const uint16_t seed, const uint8_t *src,
+				const size_t len)
+{
+	return crc16_reflect(W1_CRC16_POLYNOMIAL, seed, src, len);
+}
+
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif
