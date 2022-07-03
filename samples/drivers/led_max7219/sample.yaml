@@ -1,0 +1,7 @@
+sample:
+  description: Demonstration of the MAX7219 LED driver
+  name: MAX7219 sample
+tests:
+  sample.drivers.led.max7219:
+    platform_allow: stm32_min_dev_black
+    tags: LED
