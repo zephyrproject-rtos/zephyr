@@ -886,7 +886,8 @@ static int pd_send_reply(struct osdp_pd *pd)
 
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
 		if (pd->cmd_id != CMD_POLL) {
-			osdp_dump("PD sent", pd->rx_buf, len);
+			osdp_dump(pd->rx_buf, len,
+				  "OSDP: PD[%d]: Sent", pd->address);
 		}
 	}
 
@@ -954,10 +955,17 @@ static int pd_receive_and_process_command(struct osdp_pd *pd)
 		 * A crude way of identifying and not printing poll messages
 		 * when CONFIG_OSDP_PACKET_TRACE is enabled. This is an early
 		 * print to catch errors so keeping it simple.
+		 * OSDP_CMD_ID_OFFSET + 2 is also checked as the CMD_ID can be
+		 * pushed back by 2 bytes if secure channel block is present in
+		 * header.
 		 */
-		if (pd->rx_buf_len > 8 &&
-		    pd->rx_buf[6] != CMD_POLL && pd->rx_buf[8] != CMD_POLL) {
-			osdp_dump("PD received", pd->rx_buf, pd->rx_buf_len);
+		len = OSDP_CMD_ID_OFFSET;
+		if (sc_is_active(pd)) {
+			len += 2;
+		}
+		if (pd->rx_buf_len > len && pd->rx_buf[len] != CMD_POLL) {
+			osdp_dump(pd->rx_buf, pd->rx_buf_len,
+				  "OSDP: PD[%d]: Received", pd->address);
 		}
 	}
 
@@ -1017,8 +1025,8 @@ void osdp_update(struct osdp *ctx)
 		    osdp_millis_since(pd->tstamp) < OSDP_RESP_TOUT_MS) {
 			return;
 		}
-		LOG_DBG("rx_buf: %d", pd->rx_buf_len);
-		osdp_dump("Buf", pd->rx_buf, pd->rx_buf_len);
+		osdp_dump(pd->rx_buf, pd->rx_buf_len,
+			  "rx_buf(len:%d):", pd->rx_buf_len);
 	}
 
 	if (ret != OSDP_PD_ERR_NONE && ret != OSDP_PD_ERR_REPLY) {

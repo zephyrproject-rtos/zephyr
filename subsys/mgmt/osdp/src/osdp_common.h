@@ -22,6 +22,12 @@
 #define OSDP_ONLINE_RETRY_WAIT_MAX_MS  (300 * 1000)
 #define OSDP_PD_MAX                    CONFIG_OSDP_NUM_CONNECTED_PD
 
+#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+#define OSDP_CMD_ID_OFFSET 6
+#else
+#define OSDP_CMD_ID_OFFSET 5
+#endif
+
 #define OSDP_QUEUE_SLAB_SIZE \
 	(sizeof(union osdp_ephemeral_data) * CONFIG_OSDP_PD_COMMAND_QUEUE_SIZE)
 
@@ -525,7 +531,7 @@ uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf);
 /* from osdp_common.c */
 int64_t osdp_millis_now(void);
 int64_t osdp_millis_since(int64_t last);
-void osdp_dump(const char *head, uint8_t *buf, int len);
+void osdp_dump(uint8_t *buf, int len, const char *fmt, ...);
 uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len);
 
 /* from osdp.c */

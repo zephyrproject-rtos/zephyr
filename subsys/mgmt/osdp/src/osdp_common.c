@@ -5,6 +5,7 @@
  */
 
 #include <ctype.h>
+#include <stdio.h>
 
 #include <zephyr/device.h>
 #include <zephyr/sys/crc.h>
@@ -14,8 +15,15 @@
 
 LOG_MODULE_DECLARE(osdp, CONFIG_OSDP_LOG_LEVEL);
 
-void osdp_dump(const char *head, uint8_t *buf, int len)
+void __printf_like(3, 4) osdp_dump(uint8_t *buf, int len, const char *fmt, ...)
 {
+	va_list args;
+	char head[32];
+
+	va_start(args, fmt);
+	vsnprintf(head, sizeof(head), fmt, args);
+	va_end(args);
+
 	LOG_HEXDUMP_DBG(buf, len, head);
 }
 

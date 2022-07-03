@@ -630,8 +630,8 @@ static int cp_send_command(struct osdp_pd *pd)
 
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
 		if (pd->cmd_id != CMD_POLL) {
-			LOG_DBG("bytes sent");
-			osdp_dump(NULL, pd->rx_buf, pd->rx_buf_len);
+			osdp_dump(pd->rx_buf, pd->rx_buf_len,
+				  "OSDP: CP->PD[%d]: Sent", pd->idx);
 		}
 	}
 
@@ -654,8 +654,8 @@ static int cp_process_reply(struct osdp_pd *pd)
 
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
 		if (pd->cmd_id != CMD_POLL) {
-			LOG_DBG("bytes received");
-			osdp_dump(NULL, pd->rx_buf, pd->rx_buf_len);
+			osdp_dump(pd->rx_buf, pd->rx_buf_len,
+				  "OSDP: CP->PD[%d]: Received", pd->idx);
 		}
 	}
 
