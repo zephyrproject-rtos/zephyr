@@ -714,26 +714,15 @@ static const struct sensor_driver_api dps310_api_funcs = {
 	.channel_get = dps310_channel_get,
 };
 
-/* support up to 2 instances */
+#define DPS310_DEFINE(inst)								\
+	static struct dps310_data dps310_data_##inst;					\
+											\
+	static const struct dps310_cfg dps310_cfg_##inst = {				\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+	};										\
+											\
+	DEVICE_DT_INST_DEFINE(inst, dps310_init, NULL,					\
+			      &dps310_data_##inst, &dps310_cfg_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &dps310_api_funcs);		\
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
-static struct dps310_data dps310_data_0;
-static const struct dps310_cfg dps310_cfg_0 = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
-
-DEVICE_DT_INST_DEFINE(0, dps310_init, NULL,
-		    &dps310_data_0, &dps310_cfg_0, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &dps310_api_funcs);
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
-static struct dps310_data dps310_data_1;
-static const struct dps310_cfg dps310_cfg_1 = {
-	.i2c = I2C_DT_SPEC_INST_GET(1),
-};
-
-DEVICE_DT_INST_DEFINE(1, dps310_init, NULL,
-		    &dps310_data_1, &dps310_cfg_1, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &dps310_api_funcs);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(DPS310_DEFINE)
