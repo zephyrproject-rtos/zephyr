@@ -10,6 +10,8 @@
  * (and be extended to test) real hardware.
  */
 
+#include <freq.h>
+
 / {
 	test {
 		#address-cells = <1>;
@@ -29,6 +31,29 @@
 			test_gpio_led0: test_gpio_led_0 {
 				gpios = <&test_gpio 0 0>;
 				label = "Test GPIO LED";
+			};
+		};
+
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			label = "TEST_SPI_CTLR";
+			status = "okay";
+			clock-frequency = <DT_FREQ_M(2)>;
+
+			cs-gpios = <&test_gpio 0 0>;
+
+			test_spi_max7219: max7219@0 {
+				status = "okay";
+				compatible = "maxim,max7219";
+				label = "MAX7219";
+				spi-max-frequency = <DT_FREQ_M(1)>;
+				reg = <0x0>;
+				num-cascading = <1>;
+				scan-limit = <7>;
+				intensity = <0>;
 			};
 		};
 	};
