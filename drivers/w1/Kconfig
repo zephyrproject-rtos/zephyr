@@ -22,4 +22,10 @@ config W1_INIT_PRIORITY
 	help
 	  1-Wire device driver initialization priority.
 
+config W1_NET
+	bool "1-Wire network layer"
+	default y
+	help
+	  Enable 1-wire network layer
+
 endif # W1

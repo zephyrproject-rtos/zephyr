@@ -93,3 +93,24 @@ static inline size_t z_vrfy_w1_get_slave_count(const struct device *dev)
 	return z_impl_w1_get_slave_count((const struct device *)dev);
 }
 #include <syscalls/w1_get_slave_count_mrsh.c>
+
+#if CONFIG_W1_NET
+static inline int z_vrfy_w1_search_bus(const struct device *dev,
+				       uint8_t command, uint8_t family,
+				       w1_search_callback_t callback,
+				       void *user_data)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_W1));
+
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(callback == 0,
+				    "callbacks may not be set from user mode"));
+	/* user_data is not dereferenced, no need to check parameter */
+
+	return z_impl_w1_search_bus((const struct device *)dev,
+				    (uint8_t)command, (uint8_t)family,
+				    (w1_search_callback_t)callback,
+				    (void *)user_data);
+}
+
+#include <syscalls/w1_search_bus_mrsh.c>
+#endif /* CONFIG_W1_NET */
