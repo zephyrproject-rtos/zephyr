@@ -86,12 +86,10 @@ void main(void)
 	}
 
 #ifdef CONFIG_LP3943
-	static const struct device *ledc;
+	static const struct device *ledc = DEVICE_DT_GET_ONE(ti_lp3943);
 
-	ledc = device_get_binding(DT_LABEL(DT_INST(0, ti_lp3943)));
-	if (!ledc) {
-		printk("Could not get pointer to %s sensor\n",
-			DT_LABEL(DT_INST(0, ti_lp3943)));
+	if (!device_is_ready(ledc)) {
+		printk("Device %s is not ready\n", ledc->name);
 		return;
 	}
 
@@ -113,11 +111,10 @@ void main(void)
 
 	int ret;
 
-	const struct device *mic_dev = device_get_binding(DT_LABEL(DT_INST(0, st_mpxxdtyy)));
+	const struct device *mic_dev = DEVICE_DT_GET_ONE(st_mpxxdtyy);
 
-	if (!mic_dev) {
-		printk("Could not get pointer to %s device\n",
-			DT_LABEL(DT_INST(0, st_mpxxdtyy)));
+	if (!device_is_ready(mic_dev)) {
+		printk("Device %s is not ready\n", mic_dev->name);
 		return;
 	}
 
