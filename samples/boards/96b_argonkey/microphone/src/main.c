@@ -46,49 +46,25 @@ struct dmic_cfg cfg = {
 #define NUM_LEDS 12
 #define DELAY_TIME K_MSEC(25)
 
+static const struct gpio_dt_spec led0 = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
+static const struct gpio_dt_spec led1 = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios);
+
 void signal_sampling_started(void)
 {
-	static const struct device *led0, *led1;
-
-	led0 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
-	gpio_pin_configure(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios),
-			   GPIO_OUTPUT_ACTIVE |
-			   DT_GPIO_FLAGS(DT_ALIAS(led0), gpios));
-
-	led1 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led1), gpios));
-	gpio_pin_configure(led1, DT_GPIO_PIN(DT_ALIAS(led1), gpios),
-			   GPIO_OUTPUT_INACTIVE |
-			   DT_GPIO_FLAGS(DT_ALIAS(led1), gpios));
+	gpio_pin_configure_dt(&led0, GPIO_OUTPUT_ACTIVE);
+	gpio_pin_configure_dt(&led1, GPIO_OUTPUT_INACTIVE);
 }
 
 void signal_sampling_stopped(void)
 {
-	static const struct device *led0, *led1;
-
-	led0 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
-	gpio_pin_configure(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios),
-			   GPIO_OUTPUT_ACTIVE |
-			   DT_GPIO_FLAGS(DT_ALIAS(led0), gpios));
-
-	led1 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led1), gpios));
-	gpio_pin_configure(led1, DT_GPIO_PIN(DT_ALIAS(led1), gpios),
-			   GPIO_OUTPUT_ACTIVE |
-			   DT_GPIO_FLAGS(DT_ALIAS(led1), gpios));
+	gpio_pin_configure_dt(&led0, GPIO_OUTPUT_ACTIVE);
+	gpio_pin_configure_dt(&led1, GPIO_OUTPUT_ACTIVE);
 }
 
 void signal_print_stopped(void)
 {
-	static const struct device *led0, *led1;
-
-	led0 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
-	gpio_pin_configure(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios),
-			   GPIO_OUTPUT_INACTIVE |
-			   DT_GPIO_FLAGS(DT_ALIAS(led0), gpios));
-
-	led1 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led1), gpios));
-	gpio_pin_configure(led1, DT_GPIO_PIN(DT_ALIAS(led1), gpios),
-			   GPIO_OUTPUT_ACTIVE |
-			   DT_GPIO_FLAGS(DT_ALIAS(led1), gpios));
+	gpio_pin_configure_dt(&led0, GPIO_OUTPUT_INACTIVE);
+	gpio_pin_configure_dt(&led1, GPIO_OUTPUT_ACTIVE);
 }
 
 void *rx_block[NUM_MS];
@@ -98,6 +74,16 @@ void main(void)
 {
 	int i;
 	uint32_t ms;
+
+	if (!device_is_ready(led0.port)) {
+		printk("LED0 GPIO controller device is not ready\n");
+		return;
+	}
+
+	if (!device_is_ready(led1.port)) {
+		printk("LED1 GPIO controller device is not ready\n");
+		return;
+	}
 
 #ifdef CONFIG_LP3943
 	static const struct device *ledc;
