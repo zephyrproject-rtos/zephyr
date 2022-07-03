@@ -24,6 +24,10 @@ int hmc5883l_trigger_set(const struct device *dev,
 	struct hmc5883l_data *drv_data = dev->data;
 	const struct hmc5883l_config *config = dev->config;
 
+	if (!config->int_gpio.port) {
+		return -ENOTSUP;
+	}
+
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
 	gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_DISABLE);
