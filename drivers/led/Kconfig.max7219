@@ -1,0 +1,20 @@
+# Copyright (c) 2022 Jimmy Ou <yanagiis@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MAX7219
+	bool "MAX7219 LED drivers"
+	depends on SPI
+	help
+	  Enable driver for the Maxim MAX7219 SPI LED controllers.
+	  It is supporting up to 64 individual LEDs.
+
+config MAX7219_INITIALIZATION_DELAY
+	int "MAX7219 initialization delay in milliseconds"
+	depends on MAX7219
+	default 0
+	range 0 2147483647
+	help
+	  This option delays MAX7219 initialization for the specified
+	  amount of milliseconds. This is used to allow MAX7219 get ready
+	  before initialing.
+
