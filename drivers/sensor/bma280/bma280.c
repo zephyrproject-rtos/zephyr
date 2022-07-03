@@ -151,23 +151,28 @@ int bma280_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_BMA280_TRIGGER
-	if (bma280_init_interrupt(dev) < 0) {
-		LOG_DBG("Could not initialize interrupts");
-		return -EIO;
+	if (config->int1_gpio.port) {
+		if (bma280_init_interrupt(dev) < 0) {
+			LOG_DBG("Could not initialize interrupts");
+			return -EIO;
+		}
 	}
 #endif
 
 	return 0;
 }
 
-static struct bma280_data bma280_inst_data;
+#define BMA280_DEFINE(inst)									\
+	static struct bma280_data bma280_data_##inst;						\
+												\
+	static const struct bma280_config bma280_config##inst = {				\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+		IF_ENABLED(CONFIG_BMA280_TRIGGER,						\
+			   (.int1_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, { 0 }),))	\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, bma280_init, NULL, &bma280_data_##inst,			\
+			      &bma280_config##inst, POST_KERNEL,				\
+			      CONFIG_SENSOR_INIT_PRIORITY, &bma280_driver_api);			\
 
-static const struct bma280_config bma280_inst_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-	IF_ENABLED(CONFIG_BMA280_TRIGGER,
-			   (.int1_gpio = GPIO_DT_SPEC_INST_GET(0, int1_gpios),))
-};
-
-DEVICE_DT_INST_DEFINE(0, bma280_init, NULL, &bma280_inst_data,
-		      &bma280_inst_config, POST_KERNEL,
-		      CONFIG_SENSOR_INIT_PRIORITY, &bma280_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(BMA280_DEFINE)
