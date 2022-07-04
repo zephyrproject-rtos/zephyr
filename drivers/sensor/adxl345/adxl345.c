@@ -172,12 +172,15 @@ static int adxl345_init(const struct device *dev)
 	return 0;
 }
 
-static struct adxl345_dev_data adxl345_data;
+#define ADXL345_DEFINE(inst)								\
+	static struct adxl345_dev_data adxl345_data_##inst;				\
+											\
+	static const struct adxl345_dev_config adxl345_config_##inst = {		\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+	};										\
+											\
+	DEVICE_DT_INST_DEFINE(inst, adxl345_init, NULL,					\
+			      &adxl345_data_##inst, &adxl345_config_##inst, POST_KERNEL,\
+			      CONFIG_SENSOR_INIT_PRIORITY, &adxl345_api_funcs);		\
 
-static const struct adxl345_dev_config adxl345_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
-
-DEVICE_DT_INST_DEFINE(0, adxl345_init, NULL,
-		    &adxl345_data, &adxl345_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &adxl345_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(ADXL345_DEFINE)
