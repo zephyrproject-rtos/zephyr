@@ -9,7 +9,7 @@
 #include <zephyr/zephyr.h>
 #include <ztest.h>
 
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, zephyr_adc_emul))
+#define ADC_DEVICE_NODE		DT_INST(0, zephyr_adc_emul)
 #define ADC_REF_INTERNAL_MV	DT_PROP(DT_INST(0, zephyr_adc_emul), ref_internal_mv)
 #define ADC_REF_EXTERNAL1_MV	DT_PROP(DT_INST(0, zephyr_adc_emul), ref_external1_mv)
 #define ADC_RESOLUTION		14
@@ -32,9 +32,9 @@ static ZTEST_BMEM int16_t m_sample_buffer[BUFFER_SIZE];
  */
 const struct device *get_adc_device(void)
 {
-	const struct device *adc_dev = device_get_binding(ADC_DEVICE_NAME);
+	const struct device *adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
-	zassert_not_null(adc_dev, "Cannot get ADC device");
+	zassert_true(device_is_ready(adc_dev), "ADC device is not ready");
 
 	return adc_dev;
 }
