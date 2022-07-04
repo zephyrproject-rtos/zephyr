@@ -185,6 +185,12 @@ static void net_post_init(void)
 #if defined(CONFIG_NET_GPTP)
 	net_gptp_init();
 #endif
+#if defined(CONFIG_NET_PTP_MASTER)
+	net_ptp_master_init();
+#endif
+#if defined(CONFIG_NET_PTP_SLAVE)
+	net_ptp_slave_init();
+#endif
 }
 
 static void init_rx_queues(void)

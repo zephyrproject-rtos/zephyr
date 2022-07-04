@@ -5,18 +5,16 @@
  */
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(ptp_slave, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ptp_slave, CONFIG_NET_PTP_LOG_LEVEL);
 
-#include <drivers/ptp_clock.h>
-#include <net/ethernet.h>
-#include <net/net_if.h>
-#include <net/net_pkt.h>
-#include <net/ptp.h>
+#include <zephyr/drivers/ptp_clock.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/ptp.h>
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr.h>
-
-#include "ptp_slave.h"
 
 static const struct net_eth_addr ptp_mcast_eth_addr = { { 0x01, 0x1b, 0x19, 0x00, 0x00, 0x00 } };
 
@@ -308,26 +306,39 @@ done:
 	net_pkt_unref(pkt);
 }
 
-int ptp_slave_clk_get(struct net_ptp_time *net)
+int ptp_slave_set_delay_req_offset_ms(struct net_if *iface, int value)
 {
-	return ptp_clock_get(state.clk, net);
+	if (state.iface != iface) {
+		return -EINVAL;
+	}
+	state.delay_req_offset_ms = value;
+	return 0;
 }
 
-int ptp_slave_init(struct net_if *iface, int delay_req_offset_ms)
+int ptp_slave_get_delay_req_offset_ms(struct net_if *iface, int *value)
+{
+	if (state.iface != iface) {
+		return -EINVAL;
+	}
+	*value = state.delay_req_offset_ms;
+	return 0;
+}
+
+void net_ptp_slave_init(void)
 {
 	int ret;
+	struct sockaddr_ll dst;
 
-	memset(&state, 0, sizeof(state));
-
-	state.iface = iface;
-
-	state.clk = net_eth_get_ptp_clock(iface);
-	if (!state.clk) {
-		return -ENODEV;
+	state.iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	if (state.iface == NULL) {
+		LOG_ERR("Network interface for PTP not found.");
+		return;
 	}
-	ret = device_is_ready(state.clk);
-	if (ret < 0) {
-		return ret;
+
+	state.clk = net_eth_get_ptp_clock(state.iface);
+	if (!device_is_ready(state.clk)) {
+		LOG_ERR("Network interface for PTP does not support PTP clock.");
+		return;
 	}
 
 	struct net_linkaddr *iface_addr = net_if_get_link_addr(state.iface);
@@ -338,20 +349,10 @@ int ptp_slave_init(struct net_if *iface, int delay_req_offset_ms)
 	state.kp = 0.3;
 	state.kd = 0.7;
 
-	/* delay req offset */
-	state.delay_req_offset_ms = delay_req_offset_ms;
-
-	return 0;
-}
-
-int ptp_slave_start(void)
-{
-	int ret;
-	struct sockaddr_ll dst;
-
 	ret = net_context_get(AF_PACKET, SOCK_RAW, ETH_P_ALL, &state.context);
 	if (ret < 0) {
-		return ret;
+		LOG_ERR("net_context_get() failed: %d", ret);
+		return;
 	}
 
 	dst.sll_ifindex = net_if_get_by_iface(state.iface);
@@ -360,13 +361,13 @@ int ptp_slave_start(void)
 
 	ret = net_context_bind(state.context, (const struct sockaddr *)&dst, sizeof(dst));
 	if (ret < 0) {
-		return ret;
+		LOG_ERR("net_context_bind() failed: %d", ret);
+		return;
 	}
 
 	ret = net_context_recv(state.context, pkt_received, K_NO_WAIT, NULL);
 	if (ret < 0) {
-		return ret;
+		LOG_ERR("net_context_recv() failed: %d", ret);
+		return;
 	}
-
-	return 0;
 }

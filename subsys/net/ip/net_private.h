@@ -133,6 +133,14 @@ enum net_verdict net_gptp_recv(struct net_if *iface, struct net_pkt *pkt);
 #define net_gptp_recv(iface, pkt) NET_DROP
 #endif /* CONFIG_NET_GPTP */
 
+#if defined(CONFIG_NET_PTP_MASTER)
+void net_ptp_master_init(void);
+#endif /* CONFIG_NET_PTP_MASTER */
+
+#if defined(CONFIG_NET_PTP_SLAVE)
+void net_ptp_slave_init(void);
+#endif /* CONFIG_NET_PTP_SLAVE */
+
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 				 uint16_t pkt_len);

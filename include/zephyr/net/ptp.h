@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <net/net_if.h>
-#include <net/ptp_time.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ptp_time.h>
 #include <posix/time.h>
 
 #define PTP_MESSAGE_TYPE_SYNC 0x0
@@ -112,3 +112,13 @@ struct ptp_delay_resp_body {
 	struct ptp_timestamp receive_timestamp;
 	struct ptp_port_identity requesting_port_identity;
 } __packed;
+
+#ifdef CONFIG_NET_PTP_MASTER
+int ptp_master_start(struct net_if *iface);
+int ptp_master_stop(struct net_if *iface);
+#endif /* CONFIG_NET_PTP_MASTER */
+
+#ifdef CONFIG_NET_PTP_SLAVE
+int ptp_slave_set_delay_req_offset_ms(struct net_if *iface, int value);
+int ptp_slave_get_delay_req_offset_ms(struct net_if *iface, int *value);
+#endif /* CONFIG_NET_PTP_SLAVE */
