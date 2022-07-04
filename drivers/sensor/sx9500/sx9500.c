@@ -120,23 +120,27 @@ int sx9500_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (sx9500_setup_interrupt(dev) < 0) {
-		LOG_DBG("sx9500: failed to setup interrupt");
-		return -EINVAL;
+	if (cfg->int_gpio.port) {
+		if (sx9500_setup_interrupt(dev) < 0) {
+			LOG_DBG("sx9500: failed to setup interrupt");
+			return -EINVAL;
+		}
 	}
 
 	return 0;
 }
 
-static const struct sx9500_config sx9500_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-#ifdef CONFIG_SX9500_TRIGGER
-	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
-#endif
-};
+#define SX9500_DEFINE(inst)									\
+	struct sx9500_data sx9500_data_##inst;							\
+												\
+	static const struct sx9500_config sx9500_config_##inst = {				\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+		IF_ENABLED(CONFIG_SX9500_TRIGGER,						\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, sx9500_init, NULL,						\
+			      &sx9500_data_##inst, &sx9500_config_##inst, POST_KERNEL,		\
+			      CONFIG_SENSOR_INIT_PRIORITY, &sx9500_api_funcs);			\
 
-struct sx9500_data sx9500_data;
-
-DEVICE_DT_INST_DEFINE(0, sx9500_init, NULL, &sx9500_data,
-		    &sx9500_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &sx9500_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(SX9500_DEFINE)
