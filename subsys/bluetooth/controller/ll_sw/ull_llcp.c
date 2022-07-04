@@ -251,16 +251,21 @@ void llcp_tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
 
 void llcp_tx_pause_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask pause_mask)
 {
-	if ((conn->llcp.tx_q_pause_data_mask & pause_mask) == 0) {
-		conn->llcp.tx_q_pause_data_mask |= pause_mask;
+	/* Only pause the TX Q if we have not already paused it (by any procedure) */
+	if (conn->llcp.tx_q_pause_data_mask == 0) {
 		ull_tx_q_pause_data(&conn->tx_q);
 	}
+
+	/* Add the procedure that paused data */
+	conn->llcp.tx_q_pause_data_mask |= pause_mask;
 }
 
 void llcp_tx_resume_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask resume_mask)
 {
+	/* Remove the procedure that paused data */
 	conn->llcp.tx_q_pause_data_mask &= ~resume_mask;
 
+	/* Only resume the TX Q if we have removed all procedures that paused data */
 	if (conn->llcp.tx_q_pause_data_mask == 0) {
 		ull_tx_q_resume_data(&conn->tx_q);
 	}
