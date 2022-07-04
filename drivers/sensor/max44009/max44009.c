@@ -183,12 +183,15 @@ int max44009_init(const struct device *dev)
 	return 0;
 }
 
-static struct max44009_data max44009_drv_data;
+#define MAX44009_DEFINE(inst)									\
+	static struct max44009_data max44009_data_##inst;					\
+												\
+	static const struct max44009_config max44009_config_##inst = {				\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, max44009_init, NULL,					\
+			      &max44009_data_##inst, &max44009_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &max44009_driver_api);		\
 
-static const struct max44009_config mac44009_config_inst = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
-
-DEVICE_DT_INST_DEFINE(0, max44009_init, NULL, &max44009_drv_data,
-		      &mac44009_config_inst, POST_KERNEL,
-		      CONFIG_SENSOR_INIT_PRIORITY, &max44009_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(MAX44009_DEFINE)
