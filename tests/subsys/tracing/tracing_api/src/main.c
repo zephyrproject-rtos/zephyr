@@ -23,10 +23,6 @@
  */
 
 /* Check flags */
-static bool data_format_found;
-static bool raw_data_format_found;
-static bool sync_string_format_found;
-#ifdef CONFIG_TRACING_ASYNC
 static bool tracing_api_found;
 static bool tracing_api_not_found;
 static uint8_t *string_tracked[] = {
@@ -56,15 +52,12 @@ static uint8_t *string_tracked[] = {
 	"sys_trace_k_mutex_lock_blocking", "sys_trace_k_mutex_unlock_enter",
 	"sys_trace_k_mutex_unlock_exit", "sys_trace_k_timer_start"
 };
-#endif
 
 #if defined(CONFIG_TRACING_BACKEND_UART)
 static void tracing_backends_output(
 		const struct tracing_backend *backend,
 		uint8_t *data, uint32_t length)
 {
-	/* Check the output data. */
-#ifdef CONFIG_TRACING_ASYNC
 	/* Define static 'i' is for guaranteeing all strings of 0 ~ end
 	 * of the array string_tracked are tested.
 	 */
@@ -78,16 +71,6 @@ static void tracing_backends_output(
 		}
 		i++;
 	}
-#endif
-	if (strstr(data, "tracing_format_data_testing") != NULL) {
-		data_format_found = true;
-	}
-	if (strstr(data, "tracing_format_raw_data_testing") != NULL) {
-		raw_data_format_found = true;
-	}
-	if (strstr(data, "tracing_format_string_testing") != NULL) {
-		sync_string_format_found = true;
-	}
 }
 
 const struct tracing_backend_api tracing_uart_backend_api = {
@@ -98,17 +81,8 @@ const struct tracing_backend_api tracing_uart_backend_api = {
 TRACING_BACKEND_DEFINE(tracing_backend_uart, tracing_uart_backend_api);
 #endif
 
-#ifdef CONFIG_TRACING_ASYNC
-/**
- * @brief Test tracing APIS
- *
- * @details For asynchronous mode, self-designed tracing uart backend
- * firstly, and called tracing APIs one by one directly, check if the
- * output from the backend is equal to the input.
- *
- * @ingroup tracing_api_tests
- */
-void test_tracing_sys_api(void)
+/* Put data to tracing buffer before test suite working */
+static void *tracing_setup(void)
 {
 	int ret = 0, prio = 0;
 	size_t stack = 0;
@@ -179,57 +153,25 @@ void test_tracing_sys_api(void)
 	sys_trace_k_timer_init(&timer, NULL, NULL);
 
 	/* wait for some actions finished */
-	k_sleep(K_MSEC(100));
-	zassert_true(tracing_api_found, "Failded to check output from backend");
-	zassert_true(tracing_api_not_found == false, "Failded to check output from backend");
-}
-#else
-/**
- * @brief Test tracing APIS
- *
- * @details For synchronize mode, self-designed tracing uart backend
- * firstly, called API tracing_format_string to put a string, meanwhile,
- * check the output for the backend.
- *
- * @ingroup tracing_api_tests
- */
-void test_tracing_sys_api(void)
-{
-	tracing_buffer_init();
-	tracing_format_string("tracing_format_string_testing");
-	k_sleep(K_MSEC(100));
+	k_sleep(K_MSEC(500));
 
-	zassert_true(sync_string_format_found == true, "Failed to check output from backend");
+	return NULL;
 }
-#endif /* CONFIG_TRACING_ASYNC */
 
 /**
  * @brief Test tracing APIS
  *
- * @details Packaged the data by different format as the tracing input,
- * check the output for the self-designed uart backend.
+ * @details For asynchronous mode, self-designed tracing uart backend
+ * firstly, and called tracing APIs one by one directly, check if the
+ * output from the backend is equal to the input.
  *
  * @ingroup tracing_api_tests
  */
-void test_tracing_data_format(void)
+ZTEST(tracing, test_tracing_sys_api)
 {
-	tracing_data_t tracing_data, tracing_raw_data;
-	uint8_t data[] = "tracing_format_data_testing";
-	uint8_t raw_data[] = "tracing_format_raw_data_testing";
+	bool all_test_api_found = tracing_api_found && !tracing_api_not_found;
 
-	tracing_buffer_init();
-	tracing_data.data = data;
-	tracing_data.length = sizeof(data);
-	tracing_raw_data.data = raw_data;
-	tracing_raw_data.length = sizeof(raw_data);
-
-	tracing_format_data(&tracing_data, 1);
-	k_sleep(K_MSEC(100));
-	zassert_true(data_format_found == true, "Failed to check output from backend");
-
-	tracing_format_raw_data(tracing_raw_data.data, tracing_raw_data.length);
-	k_sleep(K_MSEC(100));
-	zassert_true(raw_data_format_found == true, "Failed to check output from backend");
+	zassert_true(all_test_api_found, "Failed: some APIs missing");
 }
 
 /**
@@ -240,7 +182,7 @@ void test_tracing_data_format(void)
  *
  * @ingroup tracing_api_tests
  */
-void test_tracing_cmd_manual(void)
+ZTEST(tracing, test_tracing_cmd_manual)
 {
 	uint32_t length = 0;
 	uint8_t *cmd = NULL;
@@ -268,13 +210,4 @@ void test_tracing_cmd_manual(void)
 	zassert_false(is_tracing_enabled(), "Failed to disable tracing");
 }
 
-
-void test_main(void)
-{
-	ztest_test_suite(test_tracing,
-			 ztest_unit_test(test_tracing_sys_api),
-			 ztest_unit_test(test_tracing_data_format),
-			 ztest_unit_test(test_tracing_cmd_manual)
-			 );
-	ztest_run_test_suite(test_tracing);
-}
+ZTEST_SUITE(tracing, NULL, tracing_setup, NULL, NULL, NULL);
