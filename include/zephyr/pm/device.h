@@ -87,8 +87,6 @@ enum pm_device_action {
 	 *     Action triggered only by a power domain.
 	 */
 	PM_DEVICE_ACTION_TURN_ON,
-	/** Force suspend. */
-	PM_DEVICE_ACTION_FORCE_SUSPEND,
 };
 
 /** @cond INTERNAL_HIDDEN */

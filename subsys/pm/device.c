@@ -41,8 +41,6 @@ int pm_device_action_run(const struct device *dev,
 	}
 
 	switch (action) {
-	case PM_DEVICE_ACTION_FORCE_SUSPEND:
-		__fallthrough;
 	case PM_DEVICE_ACTION_SUSPEND:
 		if (pm->state == PM_DEVICE_STATE_SUSPENDED) {
 			return -EALREADY;
