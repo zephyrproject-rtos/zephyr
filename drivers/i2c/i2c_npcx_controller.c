@@ -627,6 +627,10 @@ static int i2c_ctrl_proc_write_msg(const struct device *dev,
 
 	if (data->oper_state == NPCX_I2C_IDLE) {
 		data->oper_state = NPCX_I2C_WAIT_START;
+
+		/* Clear FIFO status before starting a new transaction */
+		i2c_ctrl_fifo_clear_status(dev);
+
 		/* Issue a START, wait for transaction completed */
 		i2c_ctrl_start(dev);
 
@@ -654,6 +658,10 @@ static int i2c_ctrl_proc_read_msg(const struct device *dev, struct i2c_msg *msg)
 
 	if (data->oper_state == NPCX_I2C_IDLE) {
 		data->oper_state = NPCX_I2C_WAIT_START;
+
+		/* Clear FIFO status before starting a new transaction */
+		i2c_ctrl_fifo_clear_status(dev);
+
 		/* Issue a START, wait for transaction completed */
 		i2c_ctrl_start(dev);
 
