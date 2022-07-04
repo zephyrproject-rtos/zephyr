@@ -100,7 +100,8 @@ static int cmsdk_ahb_gpio_config(const struct device *dev, uint32_t mask,
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config;
 
-	if (((flags & GPIO_INPUT) == 0) && ((flags & GPIO_OUTPUT) == 0)) {
+	if (((flags & GPIO_INPUT) == 0) && ((flags & GPIO_OUTPUT) == 0) &&
+	    ((flags & GPIO_ALT_FUNC) == 0)) {
 		return -ENOTSUP;
 	}
 
@@ -112,24 +113,31 @@ static int cmsdk_ahb_gpio_config(const struct device *dev, uint32_t mask,
 		return -ENOTSUP;
 	}
 
-	/*
-	 * Setup the pin direction
-	 * Output Enable:
-	 * 0 - Input
-	 * 1 - Output
-	 */
-	if ((flags & GPIO_OUTPUT) != 0) {
-		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
-			gpio_cmsdk_ahb_port_set_bits_raw(dev, mask);
-		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
-			gpio_cmsdk_ahb_port_clear_bits_raw(dev, mask);
+	if ((flags & (GPIO_OUTPUT | GPIO_INPUT)) != 0) {
+		/*
+		 * Setup the pin direction
+		 * Output Enable:
+		 * 0 - Input
+		 * 1 - Output
+		 */
+		if ((flags & GPIO_OUTPUT) != 0) {
+			if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
+				gpio_cmsdk_ahb_port_set_bits_raw(dev, mask);
+			} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
+				gpio_cmsdk_ahb_port_clear_bits_raw(dev, mask);
+			}
+			cfg->port->outenableset = mask;
+		} else {
+			cfg->port->outenableclr = mask;
 		}
-		cfg->port->outenableset = mask;
-	} else {
-		cfg->port->outenableclr = mask;
-	}
 
-	cfg->port->altfuncclr = mask;
+		cfg->port->altfuncclr = mask;
+	} else {
+		/*
+		 * Set Alt Func of Pin
+		 */
+		cfg->port->altfuncset = mask;
+	}
 
 	return 0;
 }

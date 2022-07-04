@@ -229,6 +229,9 @@ extern "C" {
 #define GPIO_DIR_MASK		(GPIO_INPUT | GPIO_OUTPUT)
 /** @endcond */
 
+/** Enables pin's Alt Func. */
+#define GPIO_ALT_FUNC              (1U << 27)
+
 /**
  * @brief Identifies a set of pins associated with a port.
  *
