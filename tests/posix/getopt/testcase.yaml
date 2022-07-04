@@ -1,13 +1,13 @@
 common:
-  platform_exclude: native_posix native_posix_64
-  tags: getopt
+  arch_exclude: posix
+  tags: posix getopt
 tests:
-  shell.getopt:
+  portability.posix.getopt:
     integration_platforms:
       - qemu_x86
     min_flash: 64
     min_ram: 32
-  shell.getopt.newlib:
+  portability.posix.getopt.newlib:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
