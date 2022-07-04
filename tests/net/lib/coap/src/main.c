@@ -747,7 +747,7 @@ static void test_retransmit_second_round(void)
 	zassert_not_null(pending, "No free pending");
 
 	r = coap_pending_init(pending, &cpkt, (struct sockaddr *) &dummy_addr,
-			      COAP_DEFAULT_MAX_RETRANSMIT);
+			      CONFIG_COAP_MAX_RETRANSMIT);
 	zassert_equal(r, 0, "Could not initialize packet");
 
 	/* We "send" the packet the first time here */
