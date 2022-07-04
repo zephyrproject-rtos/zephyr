@@ -34,6 +34,7 @@ LOG_MODULE_REGISTER(ssd16xx);
 struct ssd16xx_data {
 	uint8_t scan_mode;
 	uint8_t update_cmd;
+	bool blanking_on;
 };
 
 struct ssd16xx_dt_array {
@@ -193,16 +194,6 @@ static inline int ssd16xx_set_ram_ptr(const struct device *dev, uint16_t x,
 	return ssd16xx_write_cmd(dev, SSD16XX_CMD_RAM_YPOS_CNTR, tmp, len);
 }
 
-static int ssd16xx_blanking_off(const struct device *dev)
-{
-	return -ENOTSUP;
-}
-
-static int ssd16xx_blanking_on(const struct device *dev)
-{
-	return -ENOTSUP;
-}
-
 static int ssd16xx_update_display(const struct device *dev)
 {
 	struct ssd16xx_data *data = dev->data;
@@ -215,6 +206,27 @@ static int ssd16xx_update_display(const struct device *dev)
 	}
 
 	return ssd16xx_write_cmd(dev, SSD16XX_CMD_MASTER_ACTIVATION, NULL, 0);
+}
+
+static int ssd16xx_blanking_off(const struct device *dev)
+{
+	struct ssd16xx_data *data = dev->data;
+
+	if (data->blanking_on) {
+		data->blanking_on = false;
+		return ssd16xx_update_display(dev);
+	}
+
+	return 0;
+}
+
+static int ssd16xx_blanking_on(const struct device *dev)
+{
+	struct ssd16xx_data *data = dev->data;
+
+	data->blanking_on = true;
+
+	return 0;
 }
 
 static int ssd16xx_write(const struct device *dev, const uint16_t x,
@@ -314,7 +326,14 @@ static int ssd16xx_write(const struct device *dev, const uint16_t x,
 		return err;
 	}
 
-	return ssd16xx_update_display(dev);
+	if (!data->blanking_on) {
+		err = ssd16xx_update_display(dev);
+		if (err < 0) {
+			return err;
+		}
+	}
+
+	return 0;
 }
 
 static int ssd16xx_read(const struct device *dev, const uint16_t x,
@@ -559,6 +578,8 @@ static int ssd16xx_controller_init(const struct device *dev)
 	size_t len;
 
 	LOG_DBG("");
+
+	data->blanking_on = false;
 
 	err = gpio_pin_set_dt(&config->reset_gpio, 1);
 	if (err < 0) {
