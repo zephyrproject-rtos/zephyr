@@ -16,7 +16,11 @@
 
 #define DELAY_COUNT			256
 #define LPSRAM_MASK(x)		0x00000003
+#if defined(CONFIG_SOC_SERIES_INTEL_ACE1X)
+#define SRAM_BANK_SIZE		(128 * 1024)
+#else
 #define SRAM_BANK_SIZE		(64 * 1024)
+#endif
 #define EBB_SEGMENT_SIZE	32
 #if !defined(CONFIG_SOC_SERIES_INTEL_CAVS_V15)
 #define PLATFORM_INIT_HPSRAM
@@ -26,7 +30,7 @@
 
 #define PLATFORM_HPSRAM_EBB_COUNT (DT_REG_SIZE(DT_NODELABEL(sram0)) / SRAM_BANK_SIZE)
 BUILD_ASSERT((DT_REG_SIZE(DT_NODELABEL(sram0)) % SRAM_BANK_SIZE) == 0,
-		"sram0 must be divisible by 64*1024 bank size.")
+		"sram0 must be divisible by 64*1024 bank size.");
 
 /*
  * Function powers up a number of memory banks provided as an argument
