@@ -304,12 +304,15 @@ static int ms5837_init(const struct device *dev)
 	return 0;
 }
 
-static struct ms5837_data ms5837_data;
+#define MS5837_DEFINE(inst)								\
+	static struct ms5837_data ms5837_data_##inst;					\
+											\
+	static const struct ms5837_config ms5837_config_##inst = {			\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+	};										\
+											\
+	DEVICE_DT_INST_DEFINE(inst, ms5837_init, NULL,					\
+			      &ms5837_data_##inst, &ms5837_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &ms5837_api_funcs);		\
 
-static const struct ms5837_config ms5837_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
-
-DEVICE_DT_INST_DEFINE(0, ms5837_init, NULL, &ms5837_data,
-		    &ms5837_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &ms5837_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(MS5837_DEFINE)
