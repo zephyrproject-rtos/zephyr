@@ -38,7 +38,7 @@ static void put_fail(struct k_pipe *p)
  * @ingroup kernel_pipe_tests
  * @see k_pipe_init(), k_pipe_put()
  */
-void test_pipe_put_fail(void)
+ZTEST(pipe_api_1cpu, test_pipe_put_fail)
 {
 	k_pipe_init(&put_get_pipe, data, PIPE_LEN);
 
@@ -50,7 +50,7 @@ void test_pipe_put_fail(void)
  * @see k_pipe_put()
  */
 #ifdef CONFIG_USERSPACE
-void test_pipe_user_put_fail(void)
+ZTEST_USER(pipe_api_1cpu, test_pipe_user_put_fail)
 {
 	struct k_pipe *p = k_object_alloc(K_OBJ_PIPE);
 
@@ -87,7 +87,7 @@ static void get_fail(struct k_pipe *p)
  * @ingroup kernel_pipe_tests
  * @see k_pipe_init(), k_pipe_get()
  */
-void test_pipe_get_fail(void)
+ZTEST(pipe_api, test_pipe_get_fail)
 {
 	k_pipe_init(&put_get_pipe, data, PIPE_LEN);
 
@@ -103,7 +103,7 @@ static size_t unreach_byte;
  * @ingroup kernel_pipe_tests
  * @see k_pipe_alloc_init()
  */
-void test_pipe_user_get_fail(void)
+ZTEST_USER(pipe_api, test_pipe_user_get_fail)
 {
 	struct k_pipe *p = k_object_alloc(K_OBJ_PIPE);
 
@@ -123,7 +123,7 @@ void test_pipe_user_get_fail(void)
  *
  * @see k_pipe_alloc_init()
  */
-void test_pipe_alloc_not_init(void)
+ZTEST_USER(pipe_api, test_pipe_alloc_not_init)
 {
 	struct k_pipe pipe;
 
@@ -141,7 +141,7 @@ void test_pipe_alloc_not_init(void)
  *
  * @see k_pipe_get()
  */
-void test_pipe_get_null(void)
+ZTEST_USER(pipe_api, test_pipe_get_null)
 {
 	unsigned char rx_data[PIPE_LEN];
 	size_t rd_byte = 0;
@@ -161,7 +161,7 @@ void test_pipe_get_null(void)
  *
  * @see k_pipe_get()
  */
-void test_pipe_get_unreach_data(void)
+ZTEST_USER(pipe_api, test_pipe_get_unreach_data)
 {
 	struct k_pipe *p = k_object_alloc(K_OBJ_PIPE);
 	size_t rd_byte = 0;
@@ -185,7 +185,7 @@ void test_pipe_get_unreach_data(void)
  *
  * @see k_pipe_get()
  */
-void test_pipe_get_unreach_size(void)
+ZTEST_USER(pipe_api, test_pipe_get_unreach_size)
 {
 	struct k_pipe *p = k_object_alloc(K_OBJ_PIPE);
 	unsigned char rx_data[PIPE_LEN];
@@ -209,7 +209,7 @@ void test_pipe_get_unreach_size(void)
  *
  * @see k_pipe_put()
  */
-void test_pipe_put_null(void)
+ZTEST_USER(pipe_api, test_pipe_put_null)
 {
 	unsigned char tx_data = 0xa;
 	size_t to_wt = 0, wt_byte = 0;
@@ -229,7 +229,7 @@ void test_pipe_put_null(void)
  *
  * @see k_pipe_put()
  */
-void test_pipe_put_unreach_data(void)
+ZTEST_USER(pipe_api, test_pipe_put_unreach_data)
 {
 	struct k_pipe *p = k_object_alloc(K_OBJ_PIPE);
 	size_t to_wt = 0, wt_byte = 0;
@@ -253,7 +253,7 @@ void test_pipe_put_unreach_data(void)
  *
  * @see k_pipe_put()
  */
-void test_pipe_put_unreach_size(void)
+ZTEST_USER(pipe_api, test_pipe_put_unreach_size)
 {
 	struct k_pipe *p = k_object_alloc(K_OBJ_PIPE);
 	unsigned char tx_data = 0xa;
@@ -277,7 +277,7 @@ void test_pipe_put_unreach_size(void)
  *
  * @see k_pipe_read_avail()
  */
-void test_pipe_read_avail_null(void)
+ZTEST_USER(pipe_api, test_pipe_read_avail_null)
 {
 	ztest_set_fault_valid(true);
 	k_pipe_read_avail(NULL);
@@ -293,7 +293,7 @@ void test_pipe_read_avail_null(void)
  *
  * @see k_pipe_write_avail()
  */
-void test_pipe_write_avail_null(void)
+ZTEST_USER(pipe_api, test_pipe_write_avail_null)
 {
 	ztest_set_fault_valid(true);
 	k_pipe_write_avail(NULL);
