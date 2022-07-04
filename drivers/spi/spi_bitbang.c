@@ -77,8 +77,6 @@ static int spi_bitbang_configure(const struct spi_bitbang_config *info,
 
 	data->ctx.config = config;
 
-	spi_context_cs_configure_all(&data->ctx);
-
 	return 0;
 }
 
@@ -235,6 +233,7 @@ static struct spi_driver_api spi_bitbang_api = {
 int spi_bitbang_init(const struct device *dev)
 {
 	const struct spi_bitbang_config *config = dev->config;
+	struct spi_bitbang_data *data = dev->data;
 	int rc;
 
 	if (!device_is_ready(config->clk_gpio.port)) {
@@ -272,6 +271,12 @@ int spi_bitbang_init(const struct device *dev)
 			LOG_ERR("Couldn't configure miso pin; (%d)", rc);
 			return rc;
 		}
+	}
+
+	rc = spi_context_cs_configure_all(&data->ctx);
+	if (rc < 0) {
+		LOG_ERR("Failed to configure CS pins: %d", rc);
+		return rc;
 	}
 
 	return 0;
