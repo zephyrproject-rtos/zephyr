@@ -116,21 +116,26 @@ int mcp9808_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_MCP9808_TRIGGER
-	rc = mcp9808_setup_interrupt(dev);
+	if (cfg->int_gpio.port) {
+		rc = mcp9808_setup_interrupt(dev);
+	}
 #endif /* CONFIG_MCP9808_TRIGGER */
 
 	return rc;
 }
 
-static struct mcp9808_data mcp9808_data;
-static const struct mcp9808_config mcp9808_cfg = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-	.resolution = DT_INST_PROP(0, resolution),
-#ifdef CONFIG_MCP9808_TRIGGER
-	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
-#endif /* CONFIG_MCP9808_TRIGGER */
-};
+#define MCP9808_DEFINE(inst)									\
+	static struct mcp9808_data mcp9808_data_##inst;						\
+												\
+	static const struct mcp9808_config mcp9808_config_##inst = {				\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+		.resolution = DT_INST_PROP(inst, resolution),					\
+		IF_ENABLED(CONFIG_MCP9808_TRIGGER,						\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, mcp9808_init, NULL,						\
+			      &mcp9808_data_##inst, &mcp9808_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &mcp9808_api_funcs);			\
 
-DEVICE_DT_INST_DEFINE(0, mcp9808_init, NULL,
-		      &mcp9808_data, &mcp9808_cfg, POST_KERNEL,
-		      CONFIG_SENSOR_INIT_PRIORITY, &mcp9808_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(MCP9808_DEFINE)
