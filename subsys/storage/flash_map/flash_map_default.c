@@ -11,10 +11,10 @@
 #include <zephyr/zephyr.h>
 #include <zephyr/storage/flash_map.h>
 
-#define FLASH_AREA_FOO(part)						\
-	{.fa_id = DT_FIXED_PARTITION_ID(part),				\
-	 .fa_off = DT_REG_ADDR(part),					\
-	 .fa_dev = DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(part)),	\
+#define FLASH_AREA_FOO(part)							\
+	{.fa_id = DT_FIXED_PARTITION_ID(part),					\
+	 .fa_off = DT_REG_ADDR(part),						\
+	 .fa_dev = DEVICE_DT_GET_OR_NULL(DT_MTD_FROM_FIXED_PARTITION(part)),	\
 	 .fa_size = DT_REG_SIZE(part),},
 
 #define FOREACH_PARTITION(n) DT_FOREACH_CHILD(DT_DRV_INST(n), FLASH_AREA_FOO)
