@@ -455,6 +455,8 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 		k_poll_signal_raise(hbuf_signal, 0x0);
 	}
 #endif
+
+	hci_recv_fifo_reset();
 }
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
