@@ -32,6 +32,7 @@ extern atomic_t hci_state_mask;
 
 
 void hci_init(struct k_poll_signal *signal_host_buf);
+void hci_recv_fifo_reset(void);
 struct net_buf *hci_cmd_handle(struct net_buf *cmd, void **node_rx);
 void hci_evt_encode(struct node_rx_pdu *node_rx, struct net_buf *buf);
 uint8_t hci_get_class(struct node_rx_pdu *node_rx);
