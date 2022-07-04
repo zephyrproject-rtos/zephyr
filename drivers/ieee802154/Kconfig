@@ -75,6 +75,8 @@ source "drivers/ieee802154/Kconfig.rf2xx"
 
 source "drivers/ieee802154/Kconfig.dw1000"
 
+source "drivers/ieee802154/Kconfig.ot_spinel"
+
 menuconfig IEEE802154_UPIPE
 	bool "UART PIPE fake radio driver support for QEMU"
 	depends on (BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3) && NETWORKING

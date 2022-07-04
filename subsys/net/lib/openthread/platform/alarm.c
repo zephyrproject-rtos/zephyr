@@ -127,6 +127,13 @@ uint32_t otPlatAlarmMicroGetNow(void)
 	return (uint32_t)(k_ticks_to_us_floor64(k_uptime_ticks()) - time_offset_us);
 }
 
+#ifdef CONFIG_OPENTHREAD_HOSTPROCESSOR
+uint64_t otPlatTimeGet(void)
+{
+	return k_ticks_to_us_floor64(k_uptime_ticks());
+}
+#endif
+
 uint16_t otPlatTimeGetXtalAccuracy(void)
 {
 	return otPlatRadioGetCslAccuracy(NULL);

@@ -248,6 +248,51 @@ config OPENTHREAD_COPROCESSOR_VENDOR_HOOK_SOURCE
 
 endif # OPENTHREAD_COPROCESSOR
 
+config OPENTHREAD_HOSTPROCESSOR
+	bool "OpenThread Host-Processor"
+	depends on !OPENTHREAD_COPROCESSOR
+	select IEEE802154_OPENTHREAD_HOST_SPINEL
+	help
+	  Enable Host-Processor in OpenThread stack.
+
+if OPENTHREAD_HOSTPROCESSOR
+
+choice
+	prompt "OpenThread Host-Processor transport type"
+	default OPENTHREAD_HOSTPROCESSOR_SPI
+	help
+	  This option selects OpenThread network Host-Processor transport type
+
+config OPENTHREAD_HOSTPROCESSOR_SPI
+	bool "SPI"
+	select SPI
+	select GPIO
+
+endchoice
+
+if OPENTHREAD_HOSTPROCESSOR_SPI
+
+config OPENTHREAD_HOSTPROCESSOR_SPI_SMALL_PACKET_SIZE
+	int "Set smallest SPI packet size"
+	default 32
+	help
+	  Smallest SPI packet size we can receive in a single transaction.
+
+config OPENTHREAD_HOSTPROCESSOR_SPI_ALIGN_ALLOWANCE
+	int "Set SPI start alignment allowance"
+	default 16
+	help
+	  Maximum number of 0xFF bytes to clip from start of MISO frame.
+
+endif # OPENTHREAD_HOSTPROCESSOR_SPI
+
+config OPENTHREAD_HOSTPROCESSOR_RESET_RADIO
+	bool "Reset Radio"
+	help
+	  Reset the OpenThread Co-Processor Radio on init.
+
+endif # OPENTHREAD_HOSTPROCESSOR
+
 config OPENTHREAD_PLATFORM_INFO
 	string "Platform information for OpenThread"
 	default "ZEPHYR"

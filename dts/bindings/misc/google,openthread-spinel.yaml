@@ -1,0 +1,42 @@
+# Copyright (c) 2022, Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: Virtual device to communicate with RCP using Spinel
+
+compatible: "google,openthread-spinel"
+
+include: spi-device.yaml
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    required: false
+    description: Interrupt pin
+
+      Optional interript pin asserted by the RCP
+      radio device on data ready.
+
+  reset-gpios:
+    type: phandle-array
+    required: false
+    description: RESET pin
+
+      The RESET pin of the RCP radio device.
+
+  reset-time:
+    type: int
+    required: false
+    default: 1
+    description: The duration (in ms) for the RCP radio reset.
+
+  startup-time:
+    type: int
+    required: false
+    default: 0
+    description: The duration (in ms) for the RCP radio startup.
+
+  cs-delay:
+    type: int
+    required: false
+    default: 0
+    description: The delay (in ms) for the RCP radio chip select.

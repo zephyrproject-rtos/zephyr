@@ -1,0 +1,18 @@
+# OpenThread Host options
+
+# Copyright (c) 2022, Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_OPENTHREAD_HOST_SPINEL
+	bool "OpenThread Spinel driver"
+	depends on NET_L2_OPENTHREAD
+
+if IEEE802154_OPENTHREAD_HOST_SPINEL
+
+config IEEE802154_OPENTHREAD_HOST_SPINEL_DRV_NAME
+	string "OpenThread Spinel Driver's name"
+	default "IEEE802154_ot_spinel"
+	help
+	  This option sets the driver name
+
+endif

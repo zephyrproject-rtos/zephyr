@@ -19,6 +19,7 @@ zephyr_library_sources_ifdef(CONFIG_IEEE802154_NRF5		ieee802154_nrf5.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_RF2XX		ieee802154_rf2xx.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_RF2XX		ieee802154_rf2xx_iface.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_TELINK_B91	ieee802154_b91.c)
+zephyr_library_sources_ifdef(CONFIG_IEEE802154_OPENTHREAD_HOST_SPINEL	  ieee802154_ot_spinel.c)
 
 if(CONFIG_SOC_CC1352R)
      zephyr_library_compile_definitions("DeviceFamily_CC13X2")

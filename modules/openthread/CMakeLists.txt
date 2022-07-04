@@ -457,7 +457,7 @@ if(CONFIG_OPENTHREAD_COPROCESSOR_RCP)
 list(APPEND ot_libs openthread-rcp)
 endif()
 
-if(CONFIG_OPENTHREAD_COPROCESSOR_NCP)
+if(CONFIG_OPENTHREAD_COPROCESSOR_NCP OR CONFIG_OPENTHREAD_HOSTPROCESSOR)
 if(CONFIG_OPENTHREAD_FTD)
 list(APPEND ot_libs openthread-ncp-ftd)
 elseif(CONFIG_OPENTHREAD_MTD)
@@ -479,6 +479,23 @@ if(CONFIG_OPENTHREAD_SETTINGS_RAM)
   add_dependencies(openthread-platform-utils syscall_list_h_target)
 
   list(APPEND ot_libs openthread-platform-utils-static)
+endif()
+
+if(CONFIG_OPENTHREAD_HOSTPROCESSOR)
+  # Inject our platform spinel implementation
+  set(ot_host_sources ${ZEPHYR_BASE}/subsys/net/lib/openthread/platform/radio_spinel.cpp)
+
+  if(CONFIG_OPENTHREAD_HOSTPROCESSOR_SPI)
+    list(APPEND ot_host_sources ${ZEPHYR_BASE}/subsys/net/lib/openthread/platform/spi_interface.cpp)
+  endif()
+
+  if(CONFIG_OPENTHREAD_FTD)
+    target_sources(openthread-ncp-ftd PRIVATE ${ot_host_sources})
+  elseif(CONFIG_OPENTHREAD_MTD)
+    target_sources(openthread-ncp-mtd PRIVATE ${ot_host_sources})
+  endif()
+
+  list(APPEND ot_libs openthread-platform)
 endif()
 
 zephyr_link_libraries(${ot_libs})
