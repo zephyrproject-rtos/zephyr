@@ -374,7 +374,7 @@ static void test_mic_dev_only(void)
 
 	printk("Setting MICP disable\n");
 	expected_mute = BT_MICP_MUTE_DISABLED;
-	err = bt_micp_mic_dev_disable();
+	err = bt_micp_mic_dev_mute_disable();
 	if (err != 0) {
 		FAIL("MICP disable failed (err %d)\n", err);
 		return;

@@ -188,7 +188,7 @@ static int cmd_micp_mic_dev_unmute(const struct shell *sh, size_t argc,
 static int cmd_micp_mic_dev_mute_disable(const struct shell *sh, size_t argc,
 					 char **argv)
 {
-	int result = bt_micp_mic_dev_disable();
+	int result = bt_micp_mic_dev_mute_disable();
 
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
