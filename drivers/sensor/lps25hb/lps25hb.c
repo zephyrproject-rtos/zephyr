@@ -171,12 +171,15 @@ static int lps25hb_init(const struct device *dev)
 	return 0;
 }
 
-static const struct lps25hb_config lps25hb_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
+#define LPS25HB_DEFINE(inst)									\
+	static struct lps25hb_data lps25hb_data_##inst;						\
+												\
+	static const struct lps25hb_config lps25hb_config_##inst = {				\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, lps25hb_init, NULL,						\
+			      &lps25hb_data_##inst, &lps25hb_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &lps25hb_api_funcs);			\
 
-static struct lps25hb_data lps25hb_data;
-
-DEVICE_DT_INST_DEFINE(0, lps25hb_init, NULL,
-		    &lps25hb_data, &lps25hb_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &lps25hb_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(LPS25HB_DEFINE)
