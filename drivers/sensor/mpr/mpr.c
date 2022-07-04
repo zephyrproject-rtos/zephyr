@@ -128,11 +128,15 @@ static const struct sensor_driver_api mpr_api_funcs = {
 	.channel_get = mpr_channel_get,
 };
 
-static struct mpr_data mpr_data;
-static const struct mpr_config mpr_cfg = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
+#define MPR_DEFINE(inst)								\
+	static struct mpr_data mpr_data_##inst;						\
+											\
+	static const struct mpr_config mpr_config_##inst = {				\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+	};										\
+											\
+	DEVICE_DT_INST_DEFINE(inst, mpr_init, NULL,					\
+			      &mpr_data_##inst, &mpr_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &mpr_api_funcs);		\
 
-DEVICE_DT_INST_DEFINE(0, mpr_init, NULL, &mpr_data,
-			&mpr_cfg, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-			&mpr_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(MPR_DEFINE)
