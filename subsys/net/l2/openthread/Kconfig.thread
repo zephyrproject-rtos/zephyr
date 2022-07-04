@@ -105,7 +105,7 @@ config OPENTHREAD_PLATFORM_CSL_UNCERT
 
 config OPENTHREAD_MAC_SOFTWARE_TX_SECURITY_ENABLE
 	bool "Software transmission security logic"
-	default y if OPENTHREAD_THREAD_VERSION_1_2
+	default y if !OPENTHREAD_THREAD_VERSION_1_1
 
 config OPENTHREAD_MLE_INFORM_PREVIOUS_PARENT_ON_REATTACH
 	bool "Inform previous parent on reattach"
