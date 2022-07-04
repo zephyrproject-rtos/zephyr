@@ -62,6 +62,10 @@ int isl29035_attr_set(const struct device *dev,
 	uint8_t lsb_reg, msb_reg;
 	uint16_t raw_val;
 
+	if (!config->int_gpio.port) {
+		return -ENOTSUP;
+	}
+
 	if (attr == SENSOR_ATTR_UPPER_THRESH) {
 		lsb_reg = ISL29035_INT_HT_LSB_REG;
 		msb_reg = ISL29035_INT_HT_MSB_REG;
@@ -144,6 +148,10 @@ int isl29035_trigger_set(const struct device *dev,
 {
 	struct isl29035_driver_data *drv_data = dev->data;
 	const struct isl29035_config *config = dev->config;
+
+	if (!config->int_gpio.port) {
+		return -ENOTSUP;
+	}
 
 	/* disable interrupt callback while changing parameters */
 	setup_int(dev, false);
