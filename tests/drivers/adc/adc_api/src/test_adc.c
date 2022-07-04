@@ -11,7 +11,7 @@
 #include <ztest.h>
 
 #if defined(CONFIG_SHIELD_MIKROE_ADC_CLICK)
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, microchip_mcp3204))
+#define ADC_DEVICE_NODE		DT_INST(0, microchip_mcp3204)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_EXTERNAL0
@@ -22,7 +22,7 @@
 #elif defined(CONFIG_BOARD_NRF51DK_NRF51422)
 
 #include <hal/nrf_adc.h>
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nordic_nrf_adc))
+#define ADC_DEVICE_NODE		DT_INST(0, nordic_nrf_adc)
 #define ADC_RESOLUTION		10
 #define ADC_GAIN		ADC_GAIN_1_3
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -72,7 +72,7 @@
 	defined(CONFIG_BOARD_PAN1770_EVB)
 
 #include <hal/nrf_saadc.h>
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nordic_nrf_saadc))
+#define ADC_DEVICE_NODE		DT_INST(0, nordic_nrf_saadc)
 #define ADC_RESOLUTION		10
 #define ADC_GAIN		ADC_GAIN_1_6
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -84,7 +84,7 @@
 
 #elif defined(CONFIG_BOARD_FRDM_K22F)
 
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nxp_kinetis_adc16))
+#define ADC_DEVICE_NODE		DT_INST(0, nxp_kinetis_adc16)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -94,7 +94,7 @@
 
 #elif defined(CONFIG_BOARD_FRDM_K64F)
 
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nxp_kinetis_adc16))
+#define ADC_DEVICE_NODE		DT_INST(0, nxp_kinetis_adc16)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -103,7 +103,7 @@
 
 #elif defined(CONFIG_BOARD_FRDM_K82F)
 
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nxp_kinetis_adc16))
+#define ADC_DEVICE_NODE		DT_INST(0, nxp_kinetis_adc16)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -112,7 +112,7 @@
 
 #elif defined(CONFIG_BOARD_FRDM_KL25Z)
 
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nxp_kinetis_adc16))
+#define ADC_DEVICE_NODE		DT_INST(0, nxp_kinetis_adc16)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -121,7 +121,7 @@
 
 #elif defined(CONFIG_BOARD_FRDM_KW41Z)
 
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nxp_kinetis_adc16))
+#define ADC_DEVICE_NODE		DT_INST(0, nxp_kinetis_adc16)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -130,7 +130,7 @@
 
 #elif defined(CONFIG_BOARD_HEXIWEAR_K64)
 
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nxp_kinetis_adc16))
+#define ADC_DEVICE_NODE		DT_INST(0, nxp_kinetis_adc16)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -139,7 +139,7 @@
 
 #elif defined(CONFIG_BOARD_FRDM_K82F)
 
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nxp_kinetis_adc16))
+#define ADC_DEVICE_NODE		DT_INST(0, nxp_kinetis_adc16)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -148,7 +148,7 @@
 
 #elif defined(CONFIG_BOARD_HEXIWEAR_KW40Z)
 
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nxp_kinetis_adc16))
+#define ADC_DEVICE_NODE		DT_INST(0, nxp_kinetis_adc16)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -158,7 +158,7 @@
 #elif defined(CONFIG_BOARD_SAM_E70_XPLAINED) || \
 	defined(CONFIG_BOARD_SAM_V71_XULT)
 
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, atmel_sam_afec))
+#define ADC_DEVICE_NODE		DT_INST(0, atmel_sam_afec)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_EXTERNAL0
@@ -167,7 +167,7 @@
 
 #elif defined(CONFIG_SOC_FAMILY_SAM0)
 #include <soc.h>
-#define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, atmel_sam0_adc))
+#define ADC_DEVICE_NODE         DT_INST(0, atmel_sam0_adc)
 #define ADC_RESOLUTION          12
 #define ADC_GAIN                ADC_GAIN_1
 #define ADC_REFERENCE           ADC_REF_INTERNAL
@@ -198,7 +198,7 @@
 	defined(CONFIG_BOARD_RONOTH_LODEV) || \
 	defined(CONFIG_BOARD_STM32L496G_DISCO) || \
 	defined(CONFIG_BOARD_SWAN_R5)
-#define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, st_stm32_adc))
+#define ADC_DEVICE_NODE         DT_INST(0, st_stm32_adc)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -208,7 +208,7 @@
 #elif defined(CONFIG_BOARD_NUCLEO_F302R8) || \
 	defined(CONFIG_BOARD_NUCLEO_G474RE) || \
 	defined(CONFIG_BOARD_NUCLEO_L412RB_P)
-#define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, st_stm32_adc))
+#define ADC_DEVICE_NODE         DT_INST(0, st_stm32_adc)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -222,7 +222,7 @@
 	defined(CONFIG_BOARD_BLACKPILL_F401CE) || \
 	defined(CONFIG_BOARD_NUCLEO_L4R5ZI) || \
 	defined(CONFIG_BOARD_MIKROE_CLICKER_2)
-#define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, st_stm32_adc))
+#define ADC_DEVICE_NODE         DT_INST(0, st_stm32_adc)
 #define ADC_RESOLUTION		10
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -230,7 +230,7 @@
 #define ADC_1ST_CHANNEL_ID	1
 
 #elif defined(CONFIG_BOARD_DISCO_L475_IOT1)
-#define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, st_stm32_adc))
+#define ADC_DEVICE_NODE         DT_INST(0, st_stm32_adc)
 #define ADC_RESOLUTION		10
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -238,7 +238,7 @@
 #define ADC_1ST_CHANNEL_ID	5
 
 #elif defined(CONFIG_BOARD_B_U585I_IOT02A)
-#define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, st_stm32_adc))
+#define ADC_DEVICE_NODE         DT_INST(0, st_stm32_adc)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -248,7 +248,7 @@
 #elif defined(CONFIG_BOARD_NUCLEO_H743ZI) || \
 	defined(CONFIG_BOARD_NUCLEO_H753ZI) || \
 	defined(CONFIG_BOARD_NUCLEO_H7A3ZI_Q)
-#define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, st_stm32_adc))
+#define ADC_DEVICE_NODE         DT_INST(0, st_stm32_adc)
 #define ADC_RESOLUTION		16
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -256,7 +256,7 @@
 #define ADC_1ST_CHANNEL_ID	15
 
 #elif defined(CONFIG_BOARD_TWR_KE18F)
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nxp_kinetis_adc12))
+#define ADC_DEVICE_NODE		DT_INST(0, nxp_kinetis_adc12)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -266,7 +266,7 @@
 
 #elif defined(CONFIG_BOARD_MEC15XXEVB_ASSY6853) || \
 	defined(CONFIG_BOARD_MEC1501MODULAR_ASSY6885)
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, microchip_xec_adc))
+#define ADC_DEVICE_NODE		DT_INST(0, microchip_xec_adc)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -275,7 +275,7 @@
 #define ADC_2ND_CHANNEL_ID	5
 
 #elif defined(CONFIG_BOARD_MEC172XEVB_ASSY6906)
-#define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, microchip_xec_adc_v2))
+#define ADC_DEVICE_NODE         DT_INST(0, microchip_xec_adc_v2)
 #define ADC_RESOLUTION          12
 #define ADC_GAIN                ADC_GAIN_1
 #define ADC_REFERENCE           ADC_REF_INTERNAL
@@ -287,7 +287,7 @@
 	defined(CONFIG_BOARD_LPCXPRESSO55S28) || \
 	defined(CONFIG_BOARD_MIMXRT1170_EVK_CM7) || \
 	defined(CONFIG_BOARD_MIMXRT685_EVK)
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nxp_lpc_lpadc))
+#define ADC_DEVICE_NODE		DT_INST(0, nxp_lpc_lpadc)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_EXTERNAL0
@@ -297,7 +297,7 @@
 
 #elif defined(CONFIG_BOARD_NPCX7M6FB_EVB) || \
 	defined(CONFIG_BOARD_NPCX9M6F_EVB)
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nuvoton_npcx_adc))
+#define ADC_DEVICE_NODE		DT_INST(0, nuvoton_npcx_adc)
 #define ADC_RESOLUTION		10
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -307,7 +307,7 @@
 
 #elif defined(CONFIG_BOARD_CC3220SF_LAUNCHXL) || \
 	defined(CONFIG_BOARD_CC3235SF_LAUNCHXL)
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, ti_cc32xx_adc))
+#define ADC_DEVICE_NODE		DT_INST(0, ti_cc32xx_adc)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -316,7 +316,7 @@
 #define ADC_2ND_CHANNEL_ID      1
 
 #elif defined(CONFIG_BOARD_IT8XXX2_EVB)
-#define ADC_DEVICE_NAME	DT_LABEL(DT_INST(0, ite_it8xxx2_adc))
+#define ADC_DEVICE_NODE	DT_INST(0, ite_it8xxx2_adc)
 #define ADC_RESOLUTION	10
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -333,7 +333,7 @@
 	defined(CONFIG_BOARD_MIMXRT1010_EVK) || \
 	defined(CONFIG_BOARD_MIMXRT1015_EVK) || \
 	defined(CONFIG_BOARD_MIMXRT1020_EVK)
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nxp_mcux_12b1msps_sar))
+#define ADC_DEVICE_NODE		DT_INST(0, nxp_mcux_12b1msps_sar)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -342,7 +342,7 @@
 #define ADC_2ND_CHANNEL_ID  1
 
 #elif defined(CONFIG_BOARD_NATIVE_POSIX)
-#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, zephyr_adc_emul))
+#define ADC_DEVICE_NODE		DT_INST(0, zephyr_adc_emul)
 #define ADC_RESOLUTION		10
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -388,15 +388,22 @@ static const struct adc_channel_cfg m_2nd_channel_cfg = {
 
 const struct device *get_adc_device(void)
 {
-	return device_get_binding(ADC_DEVICE_NAME);
+	const struct device *dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
+
+	if (!device_is_ready(dev)) {
+		printk("ADC device is not ready\n");
+		return NULL;
+	}
+
+	return dev;
 }
 
 static const struct device *init_adc(void)
 {
 	int i, ret;
-	const struct device *adc_dev = device_get_binding(ADC_DEVICE_NAME);
+	const struct device *adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
-	zassert_not_null(adc_dev, "Cannot get ADC device");
+	zassert_true(device_is_ready(adc_dev), "ADC device is not ready");
 
 	ret = adc_channel_setup(adc_dev, &m_1st_channel_cfg);
 	zassert_equal(ret, 0,
