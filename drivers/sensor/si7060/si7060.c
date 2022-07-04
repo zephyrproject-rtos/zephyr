@@ -128,11 +128,15 @@ static int si7060_init(const struct device *dev)
 	return 0;
 }
 
-static struct si7060_data si_data;
+#define SI7060_DEFINE(inst)								\
+	static struct si7060_data si7060_data_##inst;					\
+											\
+	static const struct si7060_config si7060_config_##inst = {			\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+	};										\
+											\
+	DEVICE_DT_INST_DEFINE(inst, si7060_init, NULL,					\
+			      &si7060_data_##inst, &si7060_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &si7060_api);		\
 
-static const struct si7060_config si7060_config_inst = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
-
-DEVICE_DT_INST_DEFINE(0, si7060_init, NULL, &si_data, &si7060_config_inst,
-		      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &si7060_api);
+DT_INST_FOREACH_STATUS_OKAY(SI7060_DEFINE)
