@@ -211,24 +211,29 @@ int mpu6050_init(const struct device *dev)
 	drv_data->gyro_sensitivity_x10 = mpu6050_gyro_sensitivity_x10[i];
 
 #ifdef CONFIG_MPU6050_TRIGGER
-	if (mpu6050_init_interrupt(dev) < 0) {
-		LOG_DBG("Failed to initialize interrupts.");
-		return -EIO;
+	if (cfg->int_gpio.port) {
+		if (mpu6050_init_interrupt(dev) < 0) {
+			LOG_DBG("Failed to initialize interrupts.");
+			return -EIO;
+		}
 	}
 #endif
 
 	return 0;
 }
 
-static struct mpu6050_data mpu6050_driver;
-static const struct mpu6050_config mpu6050_cfg = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-#ifdef CONFIG_MPU6050_TRIGGER
-	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
-#endif /* CONFIG_MPU6050_TRIGGER */
-};
+#define MPU6050_DEFINE(inst)									\
+	static struct mpu6050_data mpu6050_data_##inst;						\
+												\
+	static const struct mpu6050_config mpu6050_config_##inst = {				\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+		IF_ENABLED(CONFIG_MPU6050_TRIGGER,						\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, mpu6050_init, NULL,						\
+			      &mpu6050_data_##inst, &mpu6050_config_##inst,			\
+			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
+			      &mpu6050_driver_api);						\
 
-DEVICE_DT_INST_DEFINE(0, mpu6050_init, NULL,
-		    &mpu6050_driver, &mpu6050_cfg,
-		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &mpu6050_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(MPU6050_DEFINE)
