@@ -13,7 +13,7 @@
 #define LABEL uart0
 #endif
 
-#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(LABEL))
+#define UART_DEVICE_DEV DT_NODELABEL(LABEL)
 #define HAS_RX DT_NODE_HAS_PROP(DT_NODELABEL(LABEL), rx_pin)
 
 static void polling_verify(const struct device *dev, bool is_async, bool active)
@@ -156,8 +156,8 @@ static void test_uart_pm_in_idle(void)
 {
 	const struct device *dev;
 
-	dev = device_get_binding(UART_DEVICE_NAME);
-	zassert_true(dev != NULL, NULL);
+	dev = DEVICE_DT_GET(UART_DEVICE_DEV);
+	zassert_true(device_is_ready(dev), "uart device is not ready");
 
 	state_verify(dev, PM_DEVICE_STATE_ACTIVE);
 	communication_verify(dev, true);
@@ -179,8 +179,8 @@ static void test_uart_pm_poll_tx(void)
 {
 	const struct device *dev;
 
-	dev = device_get_binding(UART_DEVICE_NAME);
-	zassert_true(dev != NULL, NULL);
+	dev = DEVICE_DT_GET(UART_DEVICE_DEV);
+	zassert_true(device_is_ready(dev), "uart device is not ready");
 
 	communication_verify(dev, true);
 
@@ -221,8 +221,8 @@ static void test_uart_pm_poll_tx_interrupted(void)
 	const struct device *dev;
 	char str[] = "test";
 
-	dev = device_get_binding(UART_DEVICE_NAME);
-	zassert_true(dev != NULL, NULL);
+	dev = DEVICE_DT_GET(UART_DEVICE_DEV);
+	zassert_true(device_is_ready(dev), "uart device is not ready");
 
 	k_timer_user_data_set(&pm_timer, (void *)dev);
 
