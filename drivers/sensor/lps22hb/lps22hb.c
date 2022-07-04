@@ -144,12 +144,15 @@ static int lps22hb_init(const struct device *dev)
 	return 0;
 }
 
-static const struct lps22hb_config lps22hb_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
+#define LPS22HB_DEFINE(inst)									\
+	static struct lps22hb_data lps22hb_data_##inst;						\
+												\
+	static const struct lps22hb_config lps22hb_config_##inst = {				\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, lps22hb_init, NULL,						\
+			      &lps22hb_data_##inst, &lps22hb_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &lps22hb_api_funcs);			\
 
-static struct lps22hb_data lps22hb_data;
-
-DEVICE_DT_INST_DEFINE(0, lps22hb_init, NULL,
-		    &lps22hb_data, &lps22hb_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &lps22hb_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(LPS22HB_DEFINE)
