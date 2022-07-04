@@ -31,19 +31,6 @@ struct mock_log_backend {
 static struct mock_log_backend mock_backend;
 static uint32_t log_process_delay = 10;
 
-static int16_t log_source_id_get(const char *name)
-{
-
-	for (int16_t i = 0; i < log_src_cnt_get(CONFIG_LOG_DOMAIN_ID); i++) {
-		if (strcmp(log_source_name_get(CONFIG_LOG_DOMAIN_ID, i), name)
-		    == 0) {
-			return i;
-		}
-	}
-
-	return -1;
-}
-
 static void handle_msg(uint32_t arg0)
 {
 	uint32_t ctx_id = arg0 >> CNT_BITS;
@@ -62,10 +49,10 @@ static void handle_msg(uint32_t arg0)
 }
 
 static void process(const struct log_backend *const backend,
-		union log_msg2_generic *msg)
+		union log_msg_generic *msg)
 {
 	size_t len;
-	uint8_t *package = log_msg2_get_package(&msg->log, &len);
+	uint8_t *package = log_msg_get_package(&msg->log, &len);
 
 	package += 2 * sizeof(void *);
 
@@ -139,12 +126,7 @@ static bool context_handler(void *user_data, uint32_t cnt, bool last, int prio)
 	case 2:
 	{
 		char test_str[] = "test string";
-#ifdef CONFIG_BOARD_NATIVE_POSIX
-		/* native posix has no detection for rodata */
-		LOG_INF("%u %s %s", i, log_strdup("test"), log_strdup(test_str));
-#else
-		LOG_INF("%u %s %s", i, "test", log_strdup(test_str));
-#endif
+		LOG_INF("%u %s %s", i, "test", test_str);
 		break;
 	}
 	default:
