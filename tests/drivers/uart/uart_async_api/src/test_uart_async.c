@@ -21,7 +21,11 @@ K_TIMER_DEFINE(read_abort_timer, read_abort_timeout, NULL);
 
 void init_test(void)
 {
-	uart_dev = device_get_binding(UART_DEVICE_NAME);
+	uart_dev = DEVICE_DT_GET(UART_DEVICE_DEV);
+	if (!device_is_ready(uart_dev)) {
+		printk("UART device is not ready\n");
+		return;
+	}
 }
 
 #ifdef CONFIG_USERSPACE
