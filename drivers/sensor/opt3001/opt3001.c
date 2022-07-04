@@ -159,12 +159,15 @@ int opt3001_init(const struct device *dev)
 	return 0;
 }
 
-static struct opt3001_data opt3001_drv_data;
+#define OPT3001_DEFINE(inst)									\
+	static struct opt3001_data opt3001_data_##inst;						\
+												\
+	static const struct opt3001_config opt3001_config_##inst = {				\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, opt3001_init, NULL,						\
+			      &opt3001_data_##inst, &opt3001_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &opt3001_driver_api);		\
 
-static const struct opt3001_config opt3001_config_inst = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
-
-DEVICE_DT_INST_DEFINE(0, opt3001_init, NULL, &opt3001_drv_data,
-		      &opt3001_config_inst, POST_KERNEL,
-		      CONFIG_SENSOR_INIT_PRIORITY, &opt3001_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(OPT3001_DEFINE)
