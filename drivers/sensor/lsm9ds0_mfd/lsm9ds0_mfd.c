@@ -751,12 +751,15 @@ int lsm9ds0_mfd_init(const struct device *dev)
 	return 0;
 }
 
-static const struct lsm9ds0_mfd_config lsm9ds0_mfd_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
+#define LSM9DS0_MFD_DEFINE(inst)								\
+	static struct lsm9ds0_mfd_data lsm9ds0_mfd_data_##inst;					\
+												\
+	static const struct lsm9ds0_mfd_config lsm9ds0_mfd_config_##inst = {			\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, lsm9ds0_mfd_init, NULL,					\
+			      &lsm9ds0_mfd_data_##inst, &lsm9ds0_mfd_config_##inst, POST_KERNEL,\
+			      CONFIG_SENSOR_INIT_PRIORITY, &lsm9ds0_mfd_api_funcs);		\
 
-static struct lsm9ds0_mfd_data lsm9ds0_mfd_data;
-
-DEVICE_DT_INST_DEFINE(0, lsm9ds0_mfd_init, NULL,
-		    &lsm9ds0_mfd_data, &lsm9ds0_mfd_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &lsm9ds0_mfd_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(LSM9DS0_MFD_DEFINE)
