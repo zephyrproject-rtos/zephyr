@@ -103,7 +103,7 @@ Get state of images response header fields:
 A response will only contain information for valid images, if an image can not
 be identified as valid it is simply skipped.
 
-CBOR data of successful response:
+CBOR data of successful response, when image is ready:
 
 .. code-block:: none
 
@@ -119,6 +119,7 @@ CBOR data of successful response:
                 (str,opt)"confirmed"    : (bool)
                 (str,opt)"active"       : (bool)
                 (str,opt)"permanent"    : (bool)
+                (str,opt)"install_progress" : (int)
             }
             ...
         ]
@@ -178,6 +179,21 @@ where:
     +-----------------------+---------------------------------------------------+
     | "splitStatus"         | states whether loader of split image is compatible|
     |                       | with application part; this is unused by Zephyr   |
+    +-----------------------+---------------------------------------------------+
+    | "install_progress"    | Optional key returned to indicate that image will |
+    |                       | be post processed after upload or that post       |
+    |                       | processing is in progress, taking value of        |
+    |                       | percentage of completeness or negative percentage |
+    |                       | to indicate failure.                              |
+    |                       | When post processing is required this should be,  |
+    |                       | with first successful response, taking value of 0 |
+    |                       | as indication that post processing will be        |
+    |                       | performed, although has not yet started.          |
+    |                       | After upload completes, this will take a value in |
+    |                       | [1,99] range indicating that post processing is   |
+    |                       | in progress; 100 indicate completion.             |
+    |                       | Values in range [-99,-1] indicate percentage      |
+    |                       | where post processing has failed.                 |
     +-----------------------+---------------------------------------------------+
     | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
     +-----------------------+---------------------------------------------------+
@@ -304,6 +320,10 @@ to continue it in case when it gets broken.
 If library gets request with "off" equal zero it checks stored "sha" within its
 state and if it matches it will respond to update client application with
 offset that it should continue with.
+In case when application supports image post processing, and responses return
+"install_progress" value, after receiving final response with "off" equal
+to image size, application can keep sending request with "off" equal to image
+size and no image data to keep getting "install_progress" value.
 
 Image upload response
 =====================
@@ -328,6 +348,7 @@ CBOR data of response:
         (str,opt)"off"  : (uint)
         (str)"rc"       : (int)
         (str,opt)"rsn"  : (str)
+        (str,opt)"install_progress" : (int)
     }
 
 where:
@@ -343,6 +364,23 @@ where:
     | "rsn"                 | Optional string that clarifies reason for an      |
     |                       | error; specifically useful for error code ``1``,  |
     |                       | unknown error                                     |
+    +-----------------------+---------------------------------------------------+
+    | "install_progress"    | Optional key returned to indicate that image will |
+    |                       | be post processed after upload or that post       |
+    |                       | processing is in progress, taking value of        |
+    |                       | percentage of completeness or negative percentage |
+    |                       | to indicate failure.                              |
+    |                       | When post processing is required this should be   |
+    |                       | with first successful response, taking value of 0 |
+    |                       | as indication that post processing will be        |
+    |                       | although has not yet started;                     |
+    |                       | When upload completes, it will take value 1-99    |
+    |                       | indicating that post processing takes place       |
+    |                       | together with "rc" code equal ``10`` (busy);      |
+    |                       | 100 to indicates completion with "rc" equal ``0`` |
+    |                       | values -99 to -1 indicate percentage where the    |
+    |                       | post processing failed, with "rc" error code      |
+    |                       | non-zero.                                         |
     +-----------------------+---------------------------------------------------+
 
 The "off" field is only included in responses to successfully processed requests;
