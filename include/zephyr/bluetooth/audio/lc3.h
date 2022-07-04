@@ -268,25 +268,22 @@ enum bt_codec_config_type {
 /** @def BT_CODEC_LC3_META
  *  @brief Helper to declare LC3 codec metadata
  */
-#define BT_CODEC_LC3_META(_prefer_context, _stream_context) \
+#define BT_CODEC_LC3_META(_prefer_context) \
 { \
 	BT_CODEC_DATA(BT_CODEC_META_PREFER_CONTEXT, \
 		      (_prefer_context) & 0xffu, \
-		      (_prefer_context) >> 8), \
-	BT_CODEC_DATA(BT_CODEC_META_CONTEXT, \
-		      (_stream_context) & 0xffu, \
-		      (_stream_context) >> 8) \
+		      (_prefer_context) >> 8) \
 }
 
 /** @def BT_CODEC_LC3
  *  @brief Helper to declare LC3 codec
  */
 #define BT_CODEC_LC3(_freq, _duration, _chan_count, _len_min, _len_max, \
-		     _max_frames_per_sdu, _prefer_context, _stream_context) \
+		     _max_frames_per_sdu, _prefer_context) \
 	BT_CODEC(BT_CODEC_LC3_ID, 0x0000, 0x0000, \
 		 BT_CODEC_LC3_DATA(_freq, _duration, _chan_count, _len_min, \
 				   _len_max, _max_frames_per_sdu), \
-		 BT_CODEC_LC3_META(_prefer_context, _stream_context))
+		 BT_CODEC_LC3_META(_prefer_context))
 
 /** @def BT_CODEC_LC3_CONFIG_DATA
  *  @brief Helper to declare LC3 codec data configuration
