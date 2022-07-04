@@ -1,0 +1,33 @@
+# Copyright (c) 2022 Carbon Robotics.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_PTP
+	bool "IEEE 1588-2008 (PTPv2) support [EXPERIMENTAL]"
+	select NET_L2_PTP
+	select EXPERIMENTAL
+	help
+      Enable PTP subsystem that provides time master and time
+      slave capabilities. PTP subsystem runs on the first ETHERNET
+      inteface in the system.
+
+if NET_PTP
+
+module = NET_PTP
+module-dep = NET_LOG
+module-str = Log level for PTP
+module-help = Enable logs for the PTP stack.
+source "subsys/net/Kconfig.template.log_config.net"
+
+choice NET_PTP_TYPE
+    prompt "PTP role"
+    default NET_PTP_SLAVE
+
+config NET_PTP_MASTER
+    bool "Master"
+
+config NET_PTP_SLAVE
+    bool "Slave"
+
+endchoice
+
+endif

@@ -25,6 +25,10 @@ if(CONFIG_NET_LLDP)
   add_subdirectory(lldp)
 endif()
 
+if(CONFIG_NET_PTP)
+  add_subdirectory(ptp)
+endif()
+
 if(CONFIG_NET_DSA)
   add_subdirectory(dsa)
 endif()

@@ -75,6 +75,7 @@ endif # NET_ARP
 
 source "subsys/net/l2/ethernet/gptp/Kconfig"
 source "subsys/net/l2/ethernet/lldp/Kconfig"
+source "subsys/net/l2/ethernet/ptp/Kconfig"
 
 config NET_ETHERNET_BRIDGE
 	bool "Ethernet Bridging support"
