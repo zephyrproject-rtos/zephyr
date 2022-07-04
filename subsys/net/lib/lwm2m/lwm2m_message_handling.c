@@ -365,7 +365,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 	}
 
 	r = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr,
-			      COAP_DEFAULT_MAX_RETRANSMIT);
+			      CONFIG_COAP_MAX_RETRANSMIT);
 	if (r < 0) {
 		LOG_ERR("Unable to initialize a pending "
 			"retransmission (err:%d).",
@@ -2122,7 +2122,7 @@ static int lwm2m_response_promote_to_con(struct lwm2m_message *msg)
 	}
 
 	ret = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr,
-				COAP_DEFAULT_MAX_RETRANSMIT);
+				CONFIG_COAP_MAX_RETRANSMIT);
 	if (ret < 0) {
 		LOG_ERR("Unable to initialize a pending "
 			"retransmission (err:%d).",

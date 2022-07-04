@@ -1251,7 +1251,7 @@ static uint32_t init_ack_timeout(void)
 {
 #if defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT)
 	const uint32_t max_ack = CONFIG_COAP_INIT_ACK_TIMEOUT_MS *
-				 COAP_DEFAULT_ACK_RANDOM_FACTOR;
+				 CONFIG_COAP_ACK_RANDOM_PERCENT / 100;
 	const uint32_t min_ack = CONFIG_COAP_INIT_ACK_TIMEOUT_MS;
 
 	/* Randomly generated initial ACK timeout
