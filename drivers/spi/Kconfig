@@ -36,10 +36,16 @@ config SPI_EXTENDED_MODES
 	  it would require more features exposed into the SPI buffer.
 
 config SPI_INIT_PRIORITY
-	int "Init priority"
+	int "Controller init priority"
 	default 70
 	help
-	  Device driver initialization priority.
+	  Controller driver initialization priority.
+
+config SPI_INIT_PRIORITY_DEVICE
+	int "Device init priority"
+	default 71
+	help
+	  Peripheral Device driver initialization priority.
 
 config SPI_COMPLETION_TIMEOUT_TOLERANCE
 	int "Completion timeout tolerance (ms)"
