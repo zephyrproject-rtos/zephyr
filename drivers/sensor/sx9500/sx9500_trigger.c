@@ -31,6 +31,10 @@ int sx9500_trigger_set(const struct device *dev,
 	struct sx9500_data *data = dev->data;
 	const struct sx9500_config *cfg = dev->config;
 
+	if (!cfg->int_gpio.port) {
+		return -ENOTSUP;
+	}
+
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
 		if (i2c_reg_update_byte_dt(&cfg->i2c,
