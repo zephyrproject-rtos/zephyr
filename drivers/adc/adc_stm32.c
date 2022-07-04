@@ -429,11 +429,11 @@ static void adc_stm32_oversampling_ratioshift(ADC_TypeDef *adc, uint32_t ratio, 
 }
 #endif
 
-	/*
-	 * Function to configure the oversampling ratio and shit using stm32 LL
-	 * ratio is directly the sequence->oversampling (a 2^n value)
-	 * shift is the corresponding LL_ADC_OVS_SHIFT_RIGHT_x constant
-	 */
+/*
+ * Function to configure the oversampling ratio and shit using stm32 LL
+ * ratio is directly the sequence->oversampling (a 2^n value)
+ * shift is the corresponding LL_ADC_OVS_SHIFT_RIGHT_x constant
+ */
 static void adc_stm32_oversampling(ADC_TypeDef *adc, uint8_t ratio, uint32_t shift)
 {
 	adc_stm32_oversampling_scope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
