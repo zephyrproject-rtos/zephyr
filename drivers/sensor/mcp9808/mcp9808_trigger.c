@@ -18,10 +18,15 @@ int mcp9808_attr_set(const struct device *dev, enum sensor_channel chan,
 		     enum sensor_attribute attr,
 		     const struct sensor_value *val)
 {
+	const struct mcp9808_config *cfg = dev->config;
 	uint8_t reg_addr;
 	int temp;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_AMBIENT_TEMP);
+
+	if (!cfg->int_gpio.port) {
+		return -ENOTSUP;
+	}
 
 	switch (attr) {
 	case SENSOR_ATTR_LOWER_THRESH:
@@ -88,6 +93,10 @@ int mcp9808_trigger_set(const struct device *dev,
 	struct mcp9808_data *data = dev->data;
 	const struct mcp9808_config *cfg = dev->config;
 	int rv = 0;
+
+	if (!cfg->int_gpio.port) {
+		return -ENOTSUP;
+	}
 
 	setup_int(dev, false);
 
