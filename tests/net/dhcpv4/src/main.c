@@ -408,7 +408,7 @@ static void receiver_cb(struct net_mgmt_event_callback *cb,
 	k_sem_give(&test_lock);
 }
 
-void test_dhcp(void)
+ZTEST(dhcpv4_tests, test_dhcp)
 {
 	struct net_if *iface;
 
@@ -446,9 +446,4 @@ void test_dhcp(void)
 }
 
 /**test case main entry */
-void test_main(void)
-{
-	ztest_test_suite(test_dhcpv4,
-			ztest_unit_test(test_dhcp));
-	ztest_run_test_suite(test_dhcpv4);
-}
+ZTEST_SUITE(dhcpv4_tests, NULL, NULL, NULL, NULL, NULL);
