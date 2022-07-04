@@ -21,6 +21,10 @@ int mpu6050_trigger_set(const struct device *dev,
 	struct mpu6050_data *drv_data = dev->data;
 	const struct mpu6050_config *cfg = dev->config;
 
+	if (!cfg->int_gpio.port) {
+		return -ENOTSUP;
+	}
+
 	if (trig->type != SENSOR_TRIG_DATA_READY) {
 		return -ENOTSUP;
 	}
