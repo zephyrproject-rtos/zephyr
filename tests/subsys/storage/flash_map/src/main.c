@@ -13,6 +13,18 @@
 extern int flash_map_entries;
 struct flash_sector fs_sectors[256];
 
+void test_flash_area_disabled_device(void)
+{
+	const struct flash_area *fa;
+	int rc;
+
+	/* Test that attempting to open a disabled flash area fails */
+	rc = flash_area_open(FLASH_AREA_ID(disabled_a), &fa);
+	zassert_equal(rc, -ENODEV, "Open did not fail");
+	rc = flash_area_open(FLASH_AREA_ID(disabled_b), &fa);
+	zassert_equal(rc, -ENODEV, "Open did not fail");
+}
+
 /**
  * @brief Test flash_area_get_sectors()
  */
@@ -178,6 +190,7 @@ void test_flash_area_erased_val(void)
 void test_main(void)
 {
 	ztest_test_suite(test_flash_map,
+			ztest_unit_test(test_flash_area_disabled_device),
 			 ztest_unit_test(test_flash_area_erased_val),
 			 ztest_unit_test(test_flash_area_get_sectors),
 			 ztest_unit_test(test_flash_area_check_int_sha256)
