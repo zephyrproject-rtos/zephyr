@@ -206,6 +206,21 @@ isoal_status_t sink_sdu_write_hci(void *dbuf,
 }
 #endif
 
+void hci_recv_fifo_reset(void)
+{
+	/* NOTE: As there is no equivalent API to wake up a waiting thread and
+	 * reinitialize the queue so it is empty, we use the cancel wait and
+	 * initialize the queue. As the Tx thread and Rx thread are co-operative
+	 * we should be relatively safe doing the below.
+	 * Added k_sched_lock and k_sched_unlock, as native_posix seems to
+	 * swap to waiting thread on call to k_fifo_cancel_wait!.
+	 */
+	k_sched_lock();
+	k_fifo_cancel_wait(&recv_fifo);
+	k_fifo_init(&recv_fifo);
+	k_sched_unlock();
+}
+
 static struct net_buf *process_prio_evt(struct node_rx_pdu *node_rx,
 					uint8_t *evt_flags)
 {
@@ -591,7 +606,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 		int err;
 
 		err = k_poll(events, 2, K_FOREVER);
-		LL_ASSERT(err == 0);
+		LL_ASSERT(err == 0 || err == -EINTR);
 		if (events[0].state == K_POLL_STATE_SIGNALED) {
 			events[0].signal->signaled = 0U;
 		} else if (events[1].state ==
