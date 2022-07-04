@@ -1337,7 +1337,6 @@ static void test_client_invalid_rst(void)
 #define MAX_DATA 100
 #define OUT_OF_ORDER_SEQ_INIT -15
 static uint32_t expected_ack;
-static uint32_t expected_ack_sem = MAX_DATA + 1 + OUT_OF_ORDER_SEQ_INIT;
 static struct net_context *ooo_ctx;
 
 static void handle_server_recv_out_of_order(struct net_pkt *pkt)
@@ -1356,9 +1355,7 @@ static void handle_server_recv_out_of_order(struct net_pkt *pkt)
 		      "Expected ACK %u but got %u",
 		      expected_ack, ntohl(th.th_ack));
 
-	if (expected_ack_sem == ntohl(th.th_ack)) {
-		test_sem_give();
-	}
+	test_sem_give();
 
 	return;
 
@@ -1367,12 +1364,62 @@ fail:
 	net_pkt_unref(pkt);
 }
 
-static void test_server_recv_out_of_order_data(void)
+struct out_of_order_check_struct {
+	int seq_offset;
+	int length;
+	int ack_offset;
+	int delay_ms;
+};
+
+static struct out_of_order_check_struct out_of_order_check_list[] = {
+	{ 30, 10, 0, 0}, /* First packet will be out-of-order */
+	{ 20, 10, 0, 0},
+	{ 10, 10, 0, 0},
+	{ 0,  10, 40, 0}, /* First sequence complete */
+	{ 60, 10, 40, 0},
+	{ 70, 10, 40, 0},
+	{ 40, 20, 80, 0}, /* Some bigger data */
+};
+
+static void checklist_based_out_of_order_test(struct out_of_order_check_struct *check_list,
+					      int num_checks, int sequence_base)
 {
 	const uint8_t *data = lorem_ipsum + 10;
 	struct net_pkt *pkt;
 	int ret, i;
+	struct out_of_order_check_struct *check_ptr;
 
+	for (i = 0; i < num_checks; i++) {
+		check_ptr = &check_list[i];
+
+		seq = sequence_base + check_ptr->seq_offset;
+		pkt = prepare_data_packet(AF_INET6, htons(MY_PORT), htons(PEER_PORT),
+				  &data[check_ptr->seq_offset], check_ptr->length);
+		zassert_not_null(pkt, "Cannot create pkt");
+
+		/* Initial ack for the last correctly received byte = SYN flag */
+		expected_ack = sequence_base + check_ptr->ack_offset;
+
+		ret = net_recv_data(iface, pkt);
+		zassert_true(ret == 0, "recv data failed (%d)", ret);
+
+		/* Let the IP stack to process the packet properly */
+		k_yield();
+
+		/* Peer will release the semaphore after it sends proper ACK to the
+		 * queued data.
+		 */
+		test_sem_take(K_MSEC(1000), __LINE__);
+
+		/* Optionally wait between transfers */
+		if (check_ptr->delay_ms) {
+			k_sleep(K_MSEC(check_ptr->delay_ms));
+		}
+	}
+}
+
+static void test_server_recv_out_of_order_data(void)
+{
 	/* Only run the tests if queueing is enabled */
 	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT == 0) {
 		return;
@@ -1388,69 +1435,19 @@ static void test_server_recv_out_of_order_data(void)
 	 */
 	test_case_no = 9;
 
-	/* Initial you would expect an ack for the last correctly received byte = SYN flag */
-	expected_ack = OUT_OF_ORDER_SEQ_INIT + 1;
-
-	/* First packet will be out-of-order */
-	seq += MAX_DATA - 20;
-	pkt = prepare_data_packet(AF_INET6, htons(MY_PORT), htons(PEER_PORT),
-				  &data[seq], 10);
-	zassert_not_null(pkt, "Cannot create pkt");
-
-	ret = net_recv_data(iface, pkt);
-	zassert_true(ret == 0, "recv data failed (%d)", ret);
-
-	/* Let the IP stack to process the packet properly */
-	k_yield();
-
-	/* Then we send a packet that is after the previous packet */
-	seq += 10;
-
-	pkt = prepare_data_packet(AF_INET6, htons(MY_PORT), htons(PEER_PORT),
-				  &data[seq], 10);
-	zassert_not_null(pkt, "Cannot create pkt");
-
-	ret = net_recv_data(iface, pkt);
-	zassert_true(ret == 0, "recv data failed (%d)", ret);
-
-	k_yield();
-
-	/* Then send packets that are before the first packet. The final packet
-	 * will flush the receive queue as the seq will be 1
-	 */
-	for (i = MAX_DATA - 10; i > 0; i -= 10) {
-		seq -= 10;
-
-		pkt = prepare_data_packet(AF_INET6, htons(MY_PORT),
-					  htons(PEER_PORT),
-					  &data[i], 10);
-		zassert_not_null(pkt, "Cannot create pkt");
-
-		/* When the missing segment is missed, forward the complete sequence */
-		if ((i - 10) <= 0) {
-			expected_ack = OUT_OF_ORDER_SEQ_INIT + MAX_DATA + 1;
-		}
-
-		ret = net_recv_data(iface, pkt);
-		zassert_true(ret == 0, "recv data failed (%d)", ret);
-
-		k_yield();
-	}
-
-	/* Then the final packet that will flush the receive queue */
-	pkt = prepare_data_packet(AF_INET6, htons(MY_PORT),
-				  htons(PEER_PORT),
-				  &data[i], 10);
-	zassert_not_null(pkt, "Cannot create pkt");
-
-	ret = net_recv_data(iface, pkt);
-	zassert_true(ret == 0, "recv data failed (%d)", ret);
-
-	/* Peer will release the semaphore after it sends proper ACK to the
-	 * queued data.
-	 */
-	test_sem_take(K_MSEC(1000), __LINE__);
+	/* Run over the checklist to complete the test */
+	checklist_based_out_of_order_test(out_of_order_check_list,
+					  ARRAY_SIZE(out_of_order_check_list),
+					  OUT_OF_ORDER_SEQ_INIT + 1);
 }
+
+struct out_of_order_check_struct reorder_timeout_list[] = {
+	/* Wait more then the receive queue timeout */
+	{ 90, 10, 80, CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT * 2},
+	/* First message has been timeout, so only this is acknowledged */
+	{ 80, 10, 90, 0},
+};
+
 
 /* This test expects that the system is in correct state after a call to
  * test_server_recv_out_of_order_data(), so this test must be run after that
@@ -1458,41 +1455,15 @@ static void test_server_recv_out_of_order_data(void)
  */
 static void test_server_timeout_out_of_order_data(void)
 {
-	const uint8_t *data = lorem_ipsum + 10;
-	struct net_pkt *pkt;
-	int ret, i;
-
 	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT == 0) {
 		return;
 	}
 
 	k_sem_reset(&test_sem);
 
-	/* The +1 will cause the seq to be not sequential thus we should
-	 * get a timeout.
-	 */
-	seq = expected_ack + MAX_DATA + 1;
-	expected_ack_sem = seq;
-
-	/* Then special handling to send out-of-order TCP segments */
-	for (i = MAX_DATA; i > 10; i -= 10) {
-		seq -= 10;
-
-		pkt = prepare_data_packet(AF_INET6, htons(MY_PORT),
-					  htons(PEER_PORT),
-					  &data[i], 10);
-		zassert_not_null(pkt, "Cannot create pkt");
-
-		ret = net_recv_data(iface, pkt);
-		zassert_true(ret == 0, "recv data failed (%d)", ret);
-	}
-
-	/* Because the pending seq values are not sequential,
-	 * the recv queue in tcp should timeout.
-	 */
-	ret = k_sem_take(&test_sem,
-			 K_MSEC(CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT + 10));
-	zassert_equal(ret, -EAGAIN, "semaphore did not time out (%d)", ret);
+	checklist_based_out_of_order_test(reorder_timeout_list,
+					  ARRAY_SIZE(reorder_timeout_list),
+					  OUT_OF_ORDER_SEQ_INIT + 1);
 
 	net_tcp_put(ooo_ctx);
 }
