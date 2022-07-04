@@ -14,7 +14,7 @@
 
 #if defined(CONFIG_BOARD_FRDM_K64F)
 
-#define ADC_DEVICE_NAME DT_LABEL(DT_INST(0, nxp_kinetis_adc16))
+#define ADC_DEVICE_NODE DT_INST(0, nxp_kinetis_adc16)
 #define ADC_RESOLUTION 12
 #define ADC_GAIN ADC_GAIN_1
 #define ADC_REFERENCE ADC_REF_INTERNAL
@@ -23,7 +23,7 @@
 
 #elif defined(CONFIG_BOARD_FRDM_K82F)
 
-#define ADC_DEVICE_NAME DT_LABEL(DT_INST(0, nxp_kinetis_adc16))
+#define ADC_DEVICE_NODE DT_INST(0, nxp_kinetis_adc16)
 #define ADC_RESOLUTION 12
 #define ADC_GAIN ADC_GAIN_1
 #define ADC_REFERENCE ADC_REF_INTERNAL
@@ -64,51 +64,59 @@ static const struct adc_channel_cfg m_2nd_channel_cfg = {
 
 const struct device *get_adc_device(void)
 {
-	return device_get_binding(ADC_DEVICE_NAME);
+	const struct device *dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
+
+	if (!device_is_ready(dev)) {
+		printk("ADC device is not ready\n");
+		return NULL;
+	}
+
+	return dev;
 }
 
 const struct device *get_count_device(void)
 {
-	char *dev_name = DT_LABEL(DT_NODELABEL(pit0));
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(pit0));
 
-	return device_get_binding(dev_name);
+	if (!device_is_ready(dev)) {
+		printk("count device is not ready\n");
+		return NULL;
+	}
+
+	return dev;
 }
 
 static void init_pit(void)
 {
-	char *dev_name = DT_LABEL(DT_NODELABEL(pit0));
 	int err;
-	const struct device *dev;
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(pit0));
 	struct counter_top_cfg top_cfg = { .callback = NULL,
 					   .user_data = NULL,
 					   .flags = 0 };
 
-	dev = device_get_binding(dev_name);
-	zassert_not_null(dev, "Unable to get counter device %s", dev_name);
+	zassert_true(device_is_ready(dev), "Counter device is not ready");
 
 	counter_start(dev);
 	top_cfg.ticks = counter_us_to_ticks(dev, HW_TRIGGER_INTERVAL);
 	err = counter_set_top_value(dev, &top_cfg);
 	zassert_equal(0, err, "%s: Counter failed to set top value (err: %d)",
-		      dev_name, err);
+		      dev->name, err);
 }
 
 static void stop_pit(void)
 {
-	char *dev_name = DT_LABEL(DT_NODELABEL(pit0));
-	const struct device *dev;
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(pit0));
 
-	dev = device_get_binding(dev_name);
-	zassert_not_null(dev, "Unable to get counter device %s", dev_name);
+	zassert_true(device_is_ready(dev), "Counter device is not ready");
 	counter_stop(dev);
 }
 
 static const struct device *init_adc(void)
 {
 	int ret;
-	const struct device *adc_dev = device_get_binding(ADC_DEVICE_NAME);
+	const struct device *adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
-	zassert_not_null(adc_dev, "Cannot get ADC device");
+	zassert_true(device_is_ready(adc_dev), "ADC device is not ready");
 
 	ret = adc_channel_setup(adc_dev, &m_1st_channel_cfg);
 	zassert_equal(ret, 0,
