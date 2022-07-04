@@ -166,11 +166,15 @@ static int si7006_init(const struct device *dev)
 	return 0;
 }
 
-static struct si7006_data si_data;
+#define SI7006_DEFINE(inst)								\
+	static struct si7006_data si7006_data_##inst;					\
+											\
+	static const struct si7006_config si7006_config_##inst = {			\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+	};										\
+											\
+	DEVICE_DT_INST_DEFINE(inst, si7006_init, NULL,					\
+			      &si7006_data_##inst, &si7006_config_##inst,		\
+			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &si7006_api);	\
 
-static const struct si7006_config si7006_config_inst = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
-
-DEVICE_DT_INST_DEFINE(0, si7006_init, NULL, &si_data, &si7006_config_inst,
-		      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &si7006_api);
+DT_INST_FOREACH_STATUS_OKAY(SI7006_DEFINE)
