@@ -196,6 +196,145 @@ void test_int_disconnect_rem(void)
 	ut_rx_q_is_empty();
 }
 
+#define SIZE 2
+
+void test_int_pause_resume_data_path(void)
+{
+	struct node_tx *node;
+	struct node_tx nodes[SIZE] = { 0 };
+
+	ull_cp_init();
+	ull_tx_q_init(&conn.tx_q);
+
+	/*** #1: Not paused when initialized ***/
+
+	/* Enqueue data nodes */
+	for (int i = 0U; i < SIZE; i++) {
+		ull_tx_q_enqueue_data(&conn.tx_q, &nodes[i]);
+	}
+
+	/* Dequeue data nodes */
+	for (int i = 0U; i < SIZE; i++) {
+		node = ull_tx_q_dequeue(&conn.tx_q);
+		zassert_equal_ptr(node, &nodes[i], NULL);
+	}
+
+	/* Tx Queue shall be empty */
+	node = ull_tx_q_dequeue(&conn.tx_q);
+	zassert_equal_ptr(node, NULL, "");
+
+
+	/*** #2: Single pause/resume ***/
+
+	/* Pause data path */
+	llcp_tx_pause_data(&conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
+
+	/* Tx Queue shall be empty */
+	node = ull_tx_q_dequeue(&conn.tx_q);
+	zassert_equal_ptr(node, NULL, "");
+
+	/* Enqueue data nodes */
+	for (int i = 0U; i < SIZE; i++) {
+		ull_tx_q_enqueue_data(&conn.tx_q, &nodes[i]);
+	}
+
+	/* Tx Queue shall be empty */
+	node = ull_tx_q_dequeue(&conn.tx_q);
+	zassert_equal_ptr(node, NULL, "");
+
+	/* Resume data path */
+	llcp_tx_resume_data(&conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
+
+	/* Dequeue data nodes */
+	for (int i = 0U; i < SIZE; i++) {
+		node = ull_tx_q_dequeue(&conn.tx_q);
+		zassert_equal_ptr(node, &nodes[i], NULL);
+	}
+
+	/* Tx Queue shall be empty */
+	node = ull_tx_q_dequeue(&conn.tx_q);
+	zassert_equal_ptr(node, NULL, "");
+
+
+	/*** #3: Multiple pause/resume ***/
+
+	/* Pause data path */
+	llcp_tx_pause_data(&conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
+	llcp_tx_pause_data(&conn, LLCP_TX_QUEUE_PAUSE_DATA_DATA_LENGTH);
+
+	/* Tx Queue shall be empty */
+	node = ull_tx_q_dequeue(&conn.tx_q);
+	zassert_equal_ptr(node, NULL, "");
+
+	/* Enqueue data nodes */
+	for (int i = 0U; i < SIZE; i++) {
+		ull_tx_q_enqueue_data(&conn.tx_q, &nodes[i]);
+	}
+
+	/* Tx Queue shall be empty */
+	node = ull_tx_q_dequeue(&conn.tx_q);
+	zassert_equal_ptr(node, NULL, "");
+
+	/* Resume data path */
+	llcp_tx_resume_data(&conn, LLCP_TX_QUEUE_PAUSE_DATA_DATA_LENGTH);
+
+	/* Tx Queue shall be empty */
+	node = ull_tx_q_dequeue(&conn.tx_q);
+	zassert_equal_ptr(node, NULL, "");
+
+	/* Resume data path */
+	llcp_tx_resume_data(&conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
+
+	/* Dequeue data nodes */
+	for (int i = 0U; i < SIZE; i++) {
+		node = ull_tx_q_dequeue(&conn.tx_q);
+		zassert_equal_ptr(node, &nodes[i], NULL);
+	}
+
+	/* Tx Queue shall be empty */
+	node = ull_tx_q_dequeue(&conn.tx_q);
+	zassert_equal_ptr(node, NULL, "");
+
+
+	/*** #4: Asymetric pause/resume ***/
+
+	/* Pause data path */
+	llcp_tx_pause_data(&conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
+
+	/* Tx Queue shall be empty */
+	node = ull_tx_q_dequeue(&conn.tx_q);
+	zassert_equal_ptr(node, NULL, "");
+
+	/* Enqueue data nodes */
+	for (int i = 0U; i < SIZE; i++) {
+		ull_tx_q_enqueue_data(&conn.tx_q, &nodes[i]);
+	}
+
+	/* Tx Queue shall be empty */
+	node = ull_tx_q_dequeue(&conn.tx_q);
+	zassert_equal_ptr(node, NULL, "");
+
+	/* Resume data path (wrong mask) */
+	llcp_tx_resume_data(&conn, LLCP_TX_QUEUE_PAUSE_DATA_DATA_LENGTH);
+
+	/* Tx Queue shall be empty */
+	node = ull_tx_q_dequeue(&conn.tx_q);
+	zassert_equal_ptr(node, NULL, "");
+
+	/* Resume data path */
+	llcp_tx_resume_data(&conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
+
+	/* Dequeue data nodes */
+	for (int i = 0U; i < SIZE; i++) {
+		node = ull_tx_q_dequeue(&conn.tx_q);
+		zassert_equal_ptr(node, &nodes[i], NULL);
+	}
+
+	/* Tx Queue shall be empty */
+	node = ull_tx_q_dequeue(&conn.tx_q);
+	zassert_equal_ptr(node, NULL, "");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(internal,
@@ -206,7 +345,8 @@ void test_main(void)
 			 ztest_unit_test(test_int_local_pending_requests),
 			 ztest_unit_test(test_int_remote_pending_requests),
 			 ztest_unit_test(test_int_disconnect_loc),
-			 ztest_unit_test(test_int_disconnect_rem));
+			 ztest_unit_test(test_int_disconnect_rem),
+			 ztest_unit_test(test_int_pause_resume_data_path));
 
 	ztest_test_suite(public, ztest_unit_test(test_api_init), ztest_unit_test(test_api_connect),
 			 ztest_unit_test(test_api_disconnect));
