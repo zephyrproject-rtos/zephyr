@@ -19,7 +19,6 @@ LOG_MODULE_REGISTER(ssd16xx);
 #include <zephyr/sys/byteorder.h>
 
 #include "ssd16xx_regs.h"
-#include <zephyr/display/cfb.h>
 
 /**
  * SSD1673, SSD1608, SSD1681, ILI3897 compatible EPD controller driver.
