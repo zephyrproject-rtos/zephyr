@@ -262,14 +262,14 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         # Get the build artifact to flash, preferring .hex over .bin
         if self.hex_name is not None and os.path.isfile(self.hex_name):
             flash_file = self.hex_name
-            flash_cmd = f'loadfile {self.hex_name}'
+            flash_cmd = f'loadfile "{self.hex_name}"'
         elif self.bin_name is not None and os.path.isfile(self.bin_name):
             if self.dt_flash:
                 flash_addr = self.flash_address_from_build_conf(self.build_conf)
             else:
                 flash_addr = 0
             flash_file = self.bin_name
-            flash_cmd = f'loadfile {self.bin_name} 0x{flash_addr:x}'
+            flash_cmd = f'loadfile "{self.bin_name}" 0x{flash_addr:x}'
         else:
             err = 'Cannot flash; no hex ({}) or bin ({}) files found.'
             raise ValueError(err.format(self.hex_name, self.bin_name))
