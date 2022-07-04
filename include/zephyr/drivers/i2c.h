@@ -343,7 +343,6 @@ struct i2c_target_config {
 	const struct i2c_target_callbacks *callbacks;
 };
 
-#if defined(CONFIG_I2C_STATS) || defined(__DOXYGEN__)
 
 #include <zephyr/stats/stats.h>
 
@@ -365,14 +364,7 @@ STATS_NAME_END(i2c);
 
 /** @endcond */
 
-
-/**
- * @brief I2C specific device state which allows for i2c device class specific additions
- */
-struct i2c_device_state {
-	struct device_state devstate;
-	struct stats_i2c stats;
-};
+#if defined(CONFIG_I2C_STATS) || defined(__DOXYGEN__)
 
 /**
  * @brief Updates the i2c stats for i2c transfers
@@ -384,13 +376,12 @@ struct i2c_device_state {
 static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs,
 				  uint8_t num_msgs)
 {
-	struct i2c_device_state *state =
-		CONTAINER_OF(dev->state, struct i2c_device_state, devstate);
+	struct stats_i2c *stats =  ddc_get_i2c_stats(dev);
 	uint32_t bytes_read = 0U;
 	uint32_t bytes_written = 0U;
 
-	STATS_INC(state->stats, transfer_call_count);
-	STATS_INCN(state->stats, message_count, num_msgs);
+	STATS_INC(stats, transfer_call_count);
+	STATS_INCN(stats, message_count, num_msgs);
 	for (uint8_t i = 0U; i < num_msgs; i++) {
 		if (msgs[i].flags & I2C_MSG_READ) {
 			bytes_read += msgs[i].len;
@@ -399,18 +390,11 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 			bytes_written += msgs[i].len;
 		}
 	}
-	STATS_INCN(state->stats, bytes_read, bytes_read);
-	STATS_INCN(state->stats, bytes_written, bytes_written);
+	STATS_INCN(stats, bytes_read, bytes_read);
+	STATS_INCN(stats, bytes_written, bytes_written);
 }
 
 /** @cond INTERNAL_HIDDEN */
-
-/**
- * @brief Define a statically allocated and section assigned i2c device state
- */
-#define Z_I2C_DEVICE_STATE_DEFINE(node_id, dev_name)	\
-	static struct i2c_device_state Z_DEVICE_STATE_NAME(dev_name)	\
-	__attribute__((__section__(".z_devstate")));
 
 /**
  * @brief Define an i2c device init wrapper function
@@ -418,14 +402,13 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  * This does device instance specific initialization of common data (such as stats)
  * and calls the given init_fn
  */
-#define Z_I2C_INIT_FN(dev_name, init_fn)					\
+#define Z_I2C_INIT_FN(dev_name, init_fn)				\
 	static inline int UTIL_CAT(dev_name, _init)(const struct device *dev) \
 	{								\
-		struct i2c_device_state *state =			\
-			CONTAINER_OF(dev->state, struct i2c_device_state, devstate); \
-		stats_init(&state->stats.s_hdr, STATS_SIZE_32, 4,	\
+		struct stats_i2c *stats = ddc_get_i2c_stats(dev);	\
+		stats_init(&stats->s_hdr, STATS_SIZE_32, 4,		\
 			   STATS_NAME_INIT_PARMS(i2c));			\
-		stats_register(dev->name, &(state->stats.s_hdr));	\
+		stats_register(dev->name, &(stats->s_hdr));		\
 		return init_fn(dev);					\
 	}
 
@@ -461,7 +444,6 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 #define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
 			     data_ptr, cfg_ptr, level, prio,		\
 			     api_ptr, ...)				\
-	Z_I2C_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id)); \
 	Z_I2C_INIT_FN(Z_DEVICE_DT_DEV_NAME(node_id), init_fn)		\
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
 			DEVICE_DT_NAME(node_id),			\
@@ -469,7 +451,6 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 			pm_device,					\
 			data_ptr, cfg_ptr, level, prio,			\
 			api_ptr,					\
-			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)).devstate), \
 			__VA_ARGS__)
 
 #else /* CONFIG_I2C_STATS */
@@ -486,8 +467,8 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 			     data_ptr, cfg_ptr, level, prio,		\
 			     api_ptr, ...)				\
 	DEVICE_DT_DEFINE(node_id, &init_fn, pm_device,			\
-			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, __VA_ARGS__)
+			 data_ptr, cfg_ptr, level, prio,		\
+			 api_ptr, __VA_ARGS__)
 
 #endif /* CONFIG_I2C_STATS */
 

@@ -10,6 +10,7 @@
 #define ZEPHYR_INCLUDE_SYS_DDC_H
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
 
 struct ddc_config;
 

@@ -36,6 +36,9 @@ ddc_attributes = [
     { "type" : "struct device_control",
       "var"  : "control",
       "init" : ".control.lock = Z_SEM_INITIALIZER(_data.ctx.control.lock, 1, 1)," },
+    { "type" : "struct stats_i2c",
+      "var"  : "i2c_stats",
+      "init" : "" },
 ]
 
 def parse_args():

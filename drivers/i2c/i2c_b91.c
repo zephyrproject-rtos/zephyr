@@ -16,14 +16,19 @@ LOG_MODULE_REGISTER(i2c_telink);
 #include "i2c-priv.h"
 #include <zephyr/drivers/pinctrl.h>
 
+#define DDC_I2C_STATS
+#include <zephyr/sys/ddc.h>
+
 /* I2C configuration structure */
 struct i2c_b91_cfg {
+	DDC_CFG;
 	uint32_t bitrate;
 	const struct pinctrl_dev_config *pcfg;
 };
 
 /* I2C data structure */
 struct i2c_b91_data {
+	DDC;
 	struct k_sem mutex;
 };
 
@@ -160,9 +165,12 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 								      \
 	PINCTRL_DT_INST_DEFINE(inst);				      \
 								      \
-	static struct i2c_b91_data i2c_b91_data_##inst;		      \
+	static struct i2c_b91_data i2c_b91_data_##inst = {	      \
+		DDC_INIT(),					      \
+	};							      \
 								      \
 	static struct i2c_b91_cfg i2c_b91_cfg_##inst = {	      \
+		DDC_CFG_INIT(),					      \
 		.bitrate = DT_INST_PROP(inst, clock_frequency),	      \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),	      \
 	};							      \
