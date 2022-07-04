@@ -26,7 +26,7 @@ set_compiler_property(PROPERTY optimization_size  -Os)
 #######################################################
 
 # GCC Option standard warning base in Zephyr
-set_compiler_property(PROPERTY warning_base
+check_set_compiler_property(PROPERTY warning_base
     -Wall
     -Wformat
     -Wformat-security
@@ -160,7 +160,7 @@ endif()
 check_set_compiler_property(APPEND PROPERTY hosted -fno-freestanding)
 
 # gcc flag for a freestanding application
-set_compiler_property(PROPERTY freestanding -ffreestanding)
+check_set_compiler_property(PROPERTY freestanding -ffreestanding)
 
 # Flag to enable debugging
 set_compiler_property(PROPERTY debug -g)
