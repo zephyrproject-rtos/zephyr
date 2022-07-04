@@ -1378,7 +1378,7 @@ static struct out_of_order_check_struct out_of_order_check_list[] = {
 	{ 0,  10, 40, 0}, /* First sequence complete */
 	{ 60, 10, 40, 0},
 	{ 70, 10, 40, 0},
-	{ 40, 20, 80, 0}, /* Some bigger data */
+	{ 40, 25, 80, 0}, /* Some bigger data */
 };
 
 static void checklist_based_out_of_order_test(struct out_of_order_check_struct *check_list,

@@ -779,13 +779,20 @@ static size_t tcp_check_pending_data(struct tcp *conn, struct net_pkt *pkt,
 		struct tcphdr *th = th_get(pkt);
 		uint32_t expected_seq = th_seq(th) + len;
 		uint32_t pending_seq;
+		uint32_t offset;
 
 		pending_seq = tcp_get_seq(conn->queue_recv_data->buffer);
-		if (pending_seq == expected_seq) {
-			pending_len = net_pkt_get_len(conn->queue_recv_data);
+		offset = expected_seq - pending_seq;
+		pending_len = net_pkt_get_len(conn->queue_recv_data);
+		if (offset < pending_len) {
+			if (offset) {
+				net_buf_pull_mem(conn->queue_recv_data->buffer, offset);
+			}
+			pending_len -= offset;
 
 			NET_DBG("Found pending data seq %u len %zd",
-				pending_seq, pending_len);
+				expected_seq, pending_len);
+
 			net_buf_frag_add(pkt->buffer,
 					 conn->queue_recv_data->buffer);
 			conn->queue_recv_data->buffer = NULL;
