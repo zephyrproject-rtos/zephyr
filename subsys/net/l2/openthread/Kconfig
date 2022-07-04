@@ -291,6 +291,11 @@ config OPENTHREAD_HOSTPROCESSOR_RESET_RADIO
 	help
 	  Reset the OpenThread Co-Processor Radio on init.
 
+config OPENTHREAD_HOSTPROCESSOR_SPINEL_RCP_RESTORATION_MAX_COUNT
+	int "Set RCP max restoration count"
+	help
+	  On RCP failure the maximum amount of restoration attempts.
+
 endif # OPENTHREAD_HOSTPROCESSOR
 
 config OPENTHREAD_PLATFORM_INFO
