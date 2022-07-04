@@ -18,17 +18,17 @@
 /* RX and TX pins have to be connected together*/
 
 #if defined(CONFIG_BOARD_NRF52840DK_NRF52840)
-#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(uart0))
+#define UART_DEVICE_DEV DT_NODELABEL(uart0)
 #elif defined(CONFIG_BOARD_NRF9160DK_NRF9160)
-#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(uart1))
+#define UART_DEVICE_DEV DT_NODELABEL(uart1)
 #elif defined(CONFIG_BOARD_ATSAMD21_XPRO)
-#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(sercom1))
+#define UART_DEVICE_DEV DT_NODELABEL(sercom1)
 #elif defined(CONFIG_BOARD_ATSAMR21_XPRO)
-#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(sercom3))
+#define UART_DEVICE_DEV DT_NODELABEL(sercom3)
 #elif defined(CONFIG_BOARD_ATSAME54_XPRO)
-#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(sercom1))
+#define UART_DEVICE_DEV DT_NODELABEL(sercom1)
 #else
-#define UART_DEVICE_NAME DT_LABEL(DT_CHOSEN(zephyr_console))
+#define UART_DEVICE_DEV DT_CHOSEN(zephyr_console)
 #endif
 
 struct rx_source {
@@ -131,8 +131,8 @@ static void init_test(void)
 		.flags = 0
 	};
 
-	uart_dev = device_get_binding(UART_DEVICE_NAME);
-	zassert_true(uart_dev != NULL, NULL);
+	uart_dev = DEVICE_DT_GET(UART_DEVICE_DEV);
+	zassert_true(device_is_ready(uart_dev), "uart device is not ready");
 
 	if (uart_callback_set(uart_dev, async_callback, NULL) == 0) {
 		async = true;
