@@ -255,7 +255,8 @@ zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${AUTOCONF_H}
 
 if(NOT CONFIG_PICOLIBC)
   # @Intent: Set compiler specific flag for bare metal freestanding option
-  zephyr_compile_options($<TARGET_PROPERTY:compiler,freestanding>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,freestanding>>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:compiler,freestanding>>)
 endif()
 
 # @Intent: Set compiler specific flag for tentative definitions, no-common
