@@ -130,7 +130,7 @@ int bt_micp_mic_dev_mute(void);
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_micp_mic_dev_disable(void);
+int bt_micp_mic_dev_mute_disable(void);
 
 /**
  * @brief Read the mute state on the Microphone Device.

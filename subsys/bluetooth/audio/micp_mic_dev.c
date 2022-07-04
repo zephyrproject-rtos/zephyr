@@ -182,7 +182,7 @@ int bt_micp_mic_dev_register(struct bt_micp_mic_dev_register_param *param)
 	return err;
 }
 
-int bt_micp_mic_dev_disable(void)
+int bt_micp_mic_dev_mute_disable(void)
 {
 	uint8_t val = BT_MICP_MUTE_DISABLED;
 	int err;
