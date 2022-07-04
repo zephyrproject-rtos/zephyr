@@ -1233,26 +1233,20 @@ static int usb_vbus_set(bool on)
 #if DT_NODE_HAS_STATUS(USB_DEV_NODE, okay) && \
     DT_NODE_HAS_PROP(USB_DEV_NODE, vbus_gpios)
 	int ret = 0;
-	const struct device *gpio_dev;
+	struct gpio_dt_spec gpio_dev = GPIO_DT_SPEC_GET(USB_DEV_NODE, vbus_gpios);
 
-	gpio_dev = device_get_binding(DT_LABEL(USB_DEV_NODE));
-	if (!gpio_dev) {
-		LOG_DBG("USB requires GPIO. Cannot find %s!",
-			DT_LABEL(USB_DEV_NODE));
+	if (!device_is_ready(gpio_dev.port)) {
+		LOG_DBG("USB requires GPIO. Device %s is not ready!", gpio_dev.port->name);
 		return -ENODEV;
 	}
 
 	/* Enable USB IO */
-	ret = gpio_pin_configure(gpio_dev,
-				 DT_GPIO_PIN(USB_DEV_NODE, vbus_gpios),
-				 GPIO_OUTPUT |
-				 DT_GPIO_FLAGS(USB_DEV_NODE, vbus_gpios));
+	ret = gpio_pin_configure_dt(&gpio_dev, GPIO_OUTPUT);
 	if (ret) {
 		return ret;
 	}
 
-	ret = gpio_pin_set(gpio_dev, DT_GPIO_PIN(USB_DEV_NODE, vbus_gpios),
-			   on == true ? 1 : 0);
+	ret = gpio_pin_set_dt(&gpio_dev, on == true ? 1 : 0);
 	if (ret) {
 		return ret;
 	}
