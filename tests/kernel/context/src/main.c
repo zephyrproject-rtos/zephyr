@@ -112,84 +112,6 @@ static struct k_thread thread_data3;
 static ISR_INFO isr_info;
 
 /**
- * @brief Test cpu idle function
- *
- * @details
- * Test Objective:
- * - The kernel architecture provide an idle function to be run when the system
- *   has no work for the current CPU
- * - This routine tests the k_cpu_idle() routine
- *
- * Testing techniques
- * - Functional and black box testing
- * - Interface testing
- *
- * Prerequisite Condition:
- * - HAS_POWERSAVE_INSTRUCTION is set
- *
- * Input Specifications:
- * - N/A
- *
- * Test Procedure:
- * -# Record system time before cpu enters idle state
- * -# Enter cpu idle state by k_cpu_idle()
- * -# Record system time after cpu idle state is interrupted
- * -# Compare the two system time values.
- *
- * Expected Test Result:
- * - cpu enters idle state for a given time
- *
- * Pass/Fail criteria:
- * - Success if the cpu enters idle state, failure otherwise.
- *
- * Assumptions and Constraints
- * - N/A
- *
- * @see k_cpu_idle()
- * @ingroup kernel_context_tests
- */
-static void test_kernel_cpu_idle(void);
-
-/**
- * @brief Test cpu idle function
- *
- * @details
- * Test Objective:
- * - The kernel architecture provide an idle function to be run when the system
- *   has no work for the current CPU
- * - This routine tests the k_cpu_atomic_idle() routine
- *
- * Testing techniques
- * - Functional and black box testing
- * - Interface testing
- *
- * Prerequisite Condition:
- * - HAS_POWERSAVE_INSTRUCTION is set
- *
- * Input Specifications:
- * - N/A
- *
- * Test Procedure:
- * -# Record system time before cpu enters idle state
- * -# Enter cpu idle state by k_cpu_atomic_idle()
- * -# Record system time after cpu idle state is interrupted
- * -# Compare the two system time values.
- *
- * Expected Test Result:
- * - cpu enters idle state for a given time
- *
- * Pass/Fail criteria:
- * - Success if the cpu enters idle state, failure otherwise.
- *
- * Assumptions and Constraints
- * - N/A
- *
- * @see k_cpu_atomic_idle()
- * @ingroup kernel_context_tests
- */
-static void test_kernel_cpu_idle_atomic(void);
-
-/**
  * @brief Handler to perform various actions from within an ISR context
  *
  * This routine is the ISR handler for isr_handler_trigger(). It performs
@@ -357,31 +279,89 @@ static void _test_kernel_cpu_idle(int atomic)
 #endif /* CONFIG_TICKLESS_KERNEL */
 
 /**
+ * @brief Test cpu idle function
  *
- * @brief Test the k_cpu_idle() routine
+ * @details
+ * Test Objective:
+ * - The kernel architecture provide an idle function to be run when the system
+ *   has no work for the current CPU
+ * - This routine tests the k_cpu_atomic_idle() routine
  *
+ * Testing techniques
+ * - Functional and black box testing
+ * - Interface testing
+ *
+ * Prerequisite Condition:
+ * - HAS_POWERSAVE_INSTRUCTION is set
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Record system time before cpu enters idle state
+ * -# Enter cpu idle state by k_cpu_atomic_idle()
+ * -# Record system time after cpu idle state is interrupted
+ * -# Compare the two system time values.
+ *
+ * Expected Test Result:
+ * - cpu enters idle state for a given time
+ *
+ * Pass/Fail criteria:
+ * - Success if the cpu enters idle state, failure otherwise.
+ *
+ * Assumptions and Constraints
+ * - N/A
+ *
+ * @see k_cpu_atomic_idle()
  * @ingroup kernel_context_tests
+ */
+ZTEST(context_cpu_idle, test_cpu_idle_atomic)
+{
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+	ztest_test_skip();
+#else
+	_test_kernel_cpu_idle(1);
+#endif
+}
+
+/**
+ * @brief Test cpu idle function
  *
- * This tests the k_cpu_idle() routine. The first thing it does is align to
- * a tick boundary. The only source of interrupts while the test is running is
- * expected to be the tick clock timer which should wake the CPU. Thus after
- * each call to k_cpu_idle(), the tick count should be one higher.
+ * @details
+ * Test Objective:
+ * - The kernel architecture provide an idle function to be run when the system
+ *   has no work for the current CPU
+ * - This routine tests the k_cpu_idle() routine
+ *
+ * Testing techniques
+ * - Functional and black box testing
+ * - Interface testing
+ *
+ * Prerequisite Condition:
+ * - HAS_POWERSAVE_INSTRUCTION is set
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Record system time before cpu enters idle state
+ * -# Enter cpu idle state by k_cpu_idle()
+ * -# Record system time after cpu idle state is interrupted
+ * -# Compare the two system time values.
+ *
+ * Expected Test Result:
+ * - cpu enters idle state for a given time
+ *
+ * Pass/Fail criteria:
+ * - Success if the cpu enters idle state, failure otherwise.
+ *
+ * Assumptions and Constraints
+ * - N/A
  *
  * @see k_cpu_idle()
+ * @ingroup kernel_context_tests
  */
-#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
-static void test_kernel_cpu_idle_atomic(void)
-{
-	ztest_test_skip();
-}
-#else
-static void test_kernel_cpu_idle_atomic(void)
-{
-	_test_kernel_cpu_idle(1);
-}
-#endif
-
-static void test_kernel_cpu_idle(void)
+ZTEST(context_cpu_idle, test_cpu_idle)
 {
 /*
  * Fixme: remove the skip code when sleep instruction in
@@ -394,11 +374,11 @@ static void test_kernel_cpu_idle(void)
 }
 
 #else /* HAS_POWERSAVE_INSTRUCTION */
-static void test_kernel_cpu_idle(void)
+ZTEST(context_cpu_idle, test_cpu_idle)
 {
 	ztest_test_skip();
 }
-static void test_kernel_cpu_idle_atomic(void)
+ZTEST(context_cpu_idle, test_cpu_idle_atomic)
 {
 	ztest_test_skip();
 }
@@ -523,7 +503,7 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
  *
  * @see irq_lock(), irq_unlock()
  */
-static void test_kernel_interrupts(void)
+ZTEST(context, test_interrupts)
 {
 	/* IRQ locks don't prevent ticks from advancing in tickless mode */
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
@@ -588,7 +568,7 @@ static void test_kernel_interrupts(void)
  *
  * @see irq_disable(), irq_enable()
  */
-static void test_kernel_timer_interrupts(void)
+ZTEST(context_one_cpu, test_timer_interrupts)
 {
 #if (defined(TICK_IRQ) && defined(CONFIG_TICKLESS_KERNEL))
 	/* Disable interrupts coming from the timer. */
@@ -638,7 +618,7 @@ static void test_kernel_timer_interrupts(void)
  * @ingroup kernel_context_tests
  * @see k_current_get(), k_is_in_isr()
  */
-static void test_kernel_ctx_thread(void)
+ZTEST(context, test_ctx_thread)
 {
 	k_tid_t self_thread_id;
 
@@ -946,7 +926,7 @@ static void delayed_thread(void *num, void *arg2, void *arg3)
  *
  * @see k_busy_wait(), k_sleep()
  */
-static void test_busy_wait(void)
+ZTEST(context_one_cpu, test_busy_wait)
 {
 	int32_t timeout;
 	int rv;
@@ -970,7 +950,7 @@ static void test_busy_wait(void)
  *
  * @see k_sleep()
  */
-static void test_k_sleep(void)
+ZTEST(context_one_cpu, test_k_sleep)
 {
 	struct timeout_order *data;
 	int32_t timeout;
@@ -1097,7 +1077,7 @@ static void test_k_sleep(void)
  *
  * @see k_yield()
  */
-void test_k_yield(void)
+ZTEST(context_one_cpu, test_k_yield)
 {
 	thread_evidence = 0;
 	k_thread_priority_set(k_current_get(), 0);
@@ -1124,7 +1104,7 @@ void test_k_yield(void)
  * @see k_thread_create
  */
 
-void test_kernel_thread(void)
+ZTEST(context_one_cpu, test_thread)
 {
 
 	k_thread_create(&thread_data3, thread_stack3, THREAD_STACKSIZE,
@@ -1133,24 +1113,16 @@ void test_kernel_thread(void)
 
 }
 
-/*test case main entry*/
-void test_main(void)
+static void *context_setup(void)
 {
-	(void)test_k_sleep;
-
 	kernel_init_objects();
 
-	/* The timer_interrupts test MUST BE LAST, see note above */
-	ztest_test_suite(context,
-			 ztest_unit_test(test_kernel_interrupts),
-			 ztest_unit_test(test_kernel_ctx_thread),
-			 ztest_1cpu_unit_test(test_busy_wait),
-			 ztest_1cpu_unit_test(test_k_sleep),
-			 ztest_unit_test(test_kernel_cpu_idle_atomic),
-			 ztest_unit_test(test_kernel_cpu_idle),
-			 ztest_1cpu_unit_test(test_k_yield),
-			 ztest_1cpu_unit_test(test_kernel_thread),
-			 ztest_1cpu_unit_test(test_kernel_timer_interrupts)
-			 );
-	ztest_run_test_suite(context);
+	return NULL;
 }
+
+ZTEST_SUITE(context_cpu_idle, NULL, context_setup, NULL, NULL, NULL);
+
+ZTEST_SUITE(context, NULL, context_setup, NULL, NULL, NULL);
+
+ZTEST_SUITE(context_one_cpu, NULL, context_setup,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
