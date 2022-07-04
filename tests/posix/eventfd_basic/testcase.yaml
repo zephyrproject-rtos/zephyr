@@ -19,3 +19,13 @@ tests:
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
       - CONFIG_POSIX_API=y
+  portability.posix.eventfd_basic.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+  portability.posix.eventfd_basic.picolibc.posix_api:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y
