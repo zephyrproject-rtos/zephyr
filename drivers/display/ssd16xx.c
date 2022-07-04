@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2022 Andreas Sandberg
  * Copyright (c) 2018-2020 PHYTEC Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -18,6 +19,7 @@ LOG_MODULE_REGISTER(ssd16xx);
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/byteorder.h>
 
+#include <zephyr/display/ssd16xx.h>
 #include "ssd16xx_regs.h"
 
 /**
@@ -32,6 +34,7 @@ LOG_MODULE_REGISTER(ssd16xx);
 #define SSD16XX_TR_SCALE_FACTOR		256U
 
 struct ssd16xx_data {
+	bool read_supported;
 	uint8_t scan_mode;
 	uint8_t update_cmd;
 	bool blanking_on;
@@ -104,6 +107,51 @@ static inline int ssd16xx_write_cmd(const struct device *dev, uint8_t cmd,
 		}
 
 		err = spi_write_dt(&config->bus, &buf_set);
+		if (err < 0) {
+			goto spi_out;
+		}
+	}
+
+spi_out:
+	spi_release_dt(&config->bus);
+	return err;
+}
+
+static inline int ssd16xx_read_cmd(const struct device *dev, uint8_t cmd,
+				    uint8_t *data, size_t len)
+{
+	const struct ssd16xx_config *config = dev->config;
+	const struct ssd16xx_data *dev_data = dev->data;
+	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
+	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
+	int err = 0;
+
+	if (!dev_data->read_supported) {
+		return -ENOTSUP;
+	}
+
+	ssd16xx_busy_wait(dev);
+
+	err = gpio_pin_set_dt(&config->dc_gpio, 1);
+	if (err < 0) {
+		return err;
+	}
+
+	err = spi_write_dt(&config->bus, &buf_set);
+	if (err < 0) {
+		goto spi_out;
+	}
+
+	if (data != NULL) {
+		buf.buf = data;
+		buf.len = len;
+
+		err = gpio_pin_set_dt(&config->dc_gpio, 0);
+		if (err < 0) {
+			goto spi_out;
+		}
+
+		err = spi_read_dt(&config->bus, &buf_set);
 		if (err < 0) {
 			goto spi_out;
 		}
@@ -231,15 +279,13 @@ static int ssd16xx_blanking_on(const struct device *dev)
 	return 0;
 }
 
-static int ssd16xx_write(const struct device *dev, const uint16_t x,
-			 const uint16_t y,
-			 const struct display_buffer_descriptor *desc,
-			 const void *buf)
+static int ssd16xx_set_window(const struct device *dev,
+			      const uint16_t x, const uint16_t y,
+			      const struct display_buffer_descriptor *desc)
 {
 	const struct ssd16xx_config *config = dev->config;
 	struct ssd16xx_data *data = dev->data;
 	int err;
-	size_t buf_len;
 	uint16_t x_start;
 	uint16_t x_end;
 	uint16_t y_start;
@@ -249,12 +295,6 @@ static int ssd16xx_write(const struct device *dev, const uint16_t x,
 
 	if (desc->pitch < desc->width) {
 		LOG_ERR("Pitch is smaller than width");
-		return -EINVAL;
-	}
-
-	buf_len = MIN(desc->buf_size, desc->height * desc->width / 8);
-	if (buf == NULL || buf_len == 0U) {
-		LOG_ERR("Display buffer is not available");
 		return -EINVAL;
 	}
 
@@ -320,6 +360,29 @@ static int ssd16xx_write(const struct device *dev, const uint16_t x,
 		return err;
 	}
 
+	return 0;
+}
+
+static int ssd16xx_write(const struct device *dev, const uint16_t x,
+			 const uint16_t y,
+			 const struct display_buffer_descriptor *desc,
+			 const void *buf)
+{
+	const struct ssd16xx_data *data = dev->data;
+	const size_t buf_len = MIN(desc->buf_size,
+				   desc->height * desc->width / 8);
+	int err;
+
+	if (buf == NULL || buf_len == 0U) {
+		LOG_ERR("Display buffer is not available");
+		return -EINVAL;
+	}
+
+	err = ssd16xx_set_window(dev, x, y, desc);
+	if (err < 0) {
+		return err;
+	}
+
 	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_WRITE_RAM, (uint8_t *)buf,
 				buf_len);
 	if (err < 0) {
@@ -336,13 +399,48 @@ static int ssd16xx_write(const struct device *dev, const uint16_t x,
 	return 0;
 }
 
+static int ssd16xx_set_read_ctrl(const struct device *dev, uint8_t ctrl)
+{
+	return ssd16xx_write_cmd(dev, SSD16XX_CMD_RAM_READ_CTRL,
+				 &ctrl, sizeof(ctrl));
+}
+
 static int ssd16xx_read(const struct device *dev, const uint16_t x,
 			const uint16_t y,
 			const struct display_buffer_descriptor *desc,
 			void *buf)
 {
-	LOG_ERR("not supported");
-	return -ENOTSUP;
+	const struct ssd16xx_data *data = dev->data;
+	const size_t buf_len = MIN(desc->buf_size,
+				   desc->height * desc->width / 8);
+	int err;
+
+	if (!data->read_supported) {
+		return -ENOTSUP;
+	}
+
+	if (buf == NULL || buf_len == 0U) {
+		LOG_ERR("Display buffer is not available");
+		return -EINVAL;
+	}
+
+	err = ssd16xx_set_window(dev, x, y, desc);
+	if (err < 0) {
+		return err;
+	}
+
+	err = ssd16xx_set_read_ctrl(dev, SSD16XX_RAM_READ_CTRL_BLACK);
+	if (err < 0) {
+		return err;
+	}
+
+	err = ssd16xx_read_cmd(dev, SSD16XX_CMD_READ_RAM, (uint8_t *)buf,
+			       buf_len);
+	if (err < 0) {
+		return err;
+	}
+
+	return 0;
 }
 
 static void *ssd16xx_get_framebuffer(const struct device *dev)
@@ -674,6 +772,7 @@ static int ssd16xx_controller_init(const struct device *dev)
 static int ssd16xx_init(const struct device *dev)
 {
 	const struct ssd16xx_config *config = dev->config;
+	struct ssd16xx_data *data = dev->data;
 	int err;
 
 	LOG_DBG("");
@@ -682,6 +781,9 @@ static int ssd16xx_init(const struct device *dev)
 		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
+
+	data->read_supported =
+		(config->bus.config.operation & SPI_HALF_DUPLEX) != 0;
 
 	if (!device_is_ready(config->reset_gpio.port)) {
 		LOG_ERR("Reset GPIO device not ready");
