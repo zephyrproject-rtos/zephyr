@@ -1373,10 +1373,10 @@ struct out_of_order_check_struct {
 
 static struct out_of_order_check_struct out_of_order_check_list[] = {
 	{ 30, 10, 0, 0}, /* First packet will be out-of-order */
-	{ 20, 10, 0, 0},
+	{ 20, 12, 0, 0},
 	{ 10, 10, 0, 0},
 	{ 0,  10, 40, 0}, /* First sequence complete */
-	{ 60, 10, 40, 0},
+	{ 60, 12, 40, 0},
 	{ 70, 10, 40, 0},
 	{ 40, 25, 80, 0}, /* Some bigger data */
 };
