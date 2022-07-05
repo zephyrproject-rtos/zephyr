@@ -2,8 +2,7 @@ description: NXP FlexIO SPI
 
 compatible: "nxp,flexio-spi"
 
-include: spi-controller.yaml
-
+include: ["spi-controller.yaml", "pinctrl-device.yaml"]
 
 properties:
   reg:
