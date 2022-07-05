@@ -27,7 +27,7 @@ void arm_direct_isr_handler_1(const void *args)
 	test_flag = 2;
 }
 
-void test_arm_dynamic_direct_interrupts(void)
+ZTEST(arm_irq_advanced_features, test_arm_dynamic_direct_interrupts)
 {
 	int post_flag = 0;
 
