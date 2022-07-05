@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf51822_qfaa.dtsi>
+#include <nordic/nrf51822_qfac.dtsi>
 #include "nrf51_ble400-pinctrl.dtsi"
 
 / {
