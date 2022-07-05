@@ -17,7 +17,7 @@
  * @brief Test if correct multilib is selected
  *
  */
-void test_multilib(void)
+ZTEST(multilib, test_multilib)
 {
 	volatile long long a = 100;
 	volatile long long b = 3;

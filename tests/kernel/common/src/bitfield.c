@@ -31,7 +31,7 @@
  * sys_bitfield_test_bit(), sys_bitfield_test_and_set_bit(),
  * sys_bitfield_test_and_clear_bit()
  */
-void test_bitfield(void)
+ZTEST(bitfield, test_bitfield)
 {
 	uint32_t b1 = 0U;
 	unsigned char b2[BITFIELD_SIZE >> 3] = { 0 };
