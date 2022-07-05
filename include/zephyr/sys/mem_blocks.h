@@ -23,6 +23,7 @@ extern "C" {
 #include <zephyr/kernel.h>
 #include <zephyr/math/ilog2.h>
 #include <zephyr/sys/bitarray.h>
+#include <zephyr/sys/mem_stats.h>
 
 #define MAX_MULTI_ALLOCATORS 8
 
@@ -92,6 +93,14 @@ struct sys_mem_blocks {
 
 	/* Bitmap of allocated blocks */
 	sys_bitarray_t *bitmap;
+
+#ifdef CONFIG_SYS_MEM_BLOCKS_RUNTIME_STATS
+	/* Spinlock guarding access to memory block internals */
+	struct k_spinlock  lock;
+
+	uint32_t used_blocks;
+	uint32_t max_used_blocks;
+#endif
 
 };
 
@@ -284,6 +293,34 @@ int sys_mem_blocks_free(sys_mem_blocks_t *mem_block, size_t count,
  * @retval -EFAULT Invalid pointer supplied.
  */
 int sys_mem_blocks_free_contiguous(sys_mem_blocks_t *mem_block, void *block, size_t count);
+
+#ifdef CONFIG_SYS_MEM_BLOCKS_RUNTIME_STATS
+/**
+ * @brief Get the runtime statistics of a memory block
+ *
+ * This function retrieves the runtime stats for the specified memory block
+ * @a mem_block and copies it into the memory pointed to by @a stats.
+ *
+ * @param mem_block Pointer to system memory block
+ * @param stats Pointer to struct to copy statistics into
+ *
+ * @return -EINVAL if NULL pointer was passed, otherwise 0
+ */
+int sys_mem_blocks_runtime_stats_get(sys_mem_blocks_t *mem_block,
+				     struct sys_memory_stats *stats);
+
+/**
+ * @brief Reset the maximum memory block usage
+ *
+ * This routine resets the maximum memory usage in the specified memory
+ * block @a mem_block to match that block's current memory usage.
+ *
+ * @param mem_block Pointer to system memory block
+ *
+ * @return -EINVAL if NULL pointer was passed, otherwise 0
+ */
+int sys_mem_blocks_runtime_stats_reset_max(sys_mem_blocks_t *mem_block);
+#endif
 
 /**
  * @brief Initialize multi memory blocks allocator group

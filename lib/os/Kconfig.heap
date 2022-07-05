@@ -125,4 +125,12 @@ config SYS_MEM_BLOCKS_LISTENER
 	  This allows application to listen for memory blocks allocator
 	  events, such as memory allocation and de-allocation.
 
+config SYS_MEM_BLOCKS_RUNTIME_STATS
+	bool "Memory blocks runtime statistics"
+	depends on SYS_MEM_BLOCKS
+	help
+	  This option enables the tracking and reporting of the memory
+	  blocks statistics related to the current and maximum number
+	  of allocations in a given memory block.
+
 endmenu
