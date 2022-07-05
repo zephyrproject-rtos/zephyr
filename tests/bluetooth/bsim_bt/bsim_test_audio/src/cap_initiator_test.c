@@ -329,6 +329,32 @@ static int start_extended_adv(struct bt_le_ext_adv *adv)
 	return 0;
 }
 
+static int stop_and_delete_extended_adv(struct bt_le_ext_adv *adv)
+{
+	int err;
+
+	/* Stop extended advertising */
+	err = bt_le_per_adv_stop(adv);
+	if (err) {
+		printk("Failed to stop periodic advertising: %d\n", err);
+		return err;
+	}
+
+	err = bt_le_ext_adv_stop(adv);
+	if (err) {
+		printk("Failed to stop extended advertising: %d\n", err);
+		return err;
+	}
+
+	err = bt_le_ext_adv_delete(adv);
+	if (err) {
+		printk("Failed to delete extended advertising: %d\n", err);
+		return err;
+	}
+
+	return 0;
+}
+
 static void test_cap_initiator_broadcast(void)
 {
 	struct bt_codec_data bis_codec_data = BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FREQ,
@@ -425,6 +451,32 @@ static void test_cap_initiator_broadcast(void)
 
 	/* Keeping running for a little while */
 	k_sleep(K_SECONDS(5));
+
+	err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
+	if (err != 0) {
+		FAIL("Failed to stop broadcast source: %d\n", err);
+		return;
+	}
+
+	/* Wait for all to be stopped */
+	printk("Waiting for broadcast_streams to be stopped\n");
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_streams); i++) {
+		k_sem_take(&sem_broadcast_stopped, K_FOREVER);
+	}
+
+	err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
+	if (err != 0) {
+		FAIL("Failed to stop broadcast source: %d\n", err);
+		return;
+	}
+	broadcast_source = NULL;
+
+	err = stop_and_delete_extended_adv(adv);
+	if (err != 0) {
+		FAIL("Failed to stop and delete extended advertising: %d\n", err);
+		return;
+	}
+	adv = NULL;
 
 	PASS("CAP initiator broadcast passed\n");
 }
