@@ -362,6 +362,28 @@
 			sampling-times = <2 4 8 13 20 40 80 815>;
 			num-sampling-time-common-channels = <2>;
 		};
+
+		lptim1: timers@46004400 {
+			compatible = "st,stm32-lptim";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x46004400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB7 0x00000800>;
+			interrupts = <49 1>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+		};
+
+		lptim2: timers@40009400 {
+			compatible = "st,stm32-lptim";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40009400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000020>;
+			interrupts = <50 1>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+		};
 	};
 };
 
