@@ -48,7 +48,7 @@ static struct k_thread threads[NUM_TIMEOUTS];
  *
  * @see k_timer_start()
  */
-void test_timeout_order(void)
+ZTEST(common_1cpu, test_timeout_order)
 {
 	int ii, prio = k_thread_priority_get(k_current_get()) + 1;
 

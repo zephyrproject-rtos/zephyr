@@ -128,7 +128,7 @@ static int ram_console_out(int character)
  * __printk_hook_install(), snprintk()
  *
  */
-void test_printk(void)
+ZTEST(printk, test_printk)
 {
 	int count;
 

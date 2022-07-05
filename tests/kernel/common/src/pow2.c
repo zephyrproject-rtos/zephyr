@@ -64,7 +64,7 @@ static void test_pow2_ceil_x(unsigned long test_value,
 		      test_value, result, expected_result);
 }
 
-void test_pow2_ceil(void)
+ZTEST(pow2, test_pow2_ceil)
 {
 	test_pow2_ceil_x(1, 1);
 	test_pow2_ceil_x(2, 2);
