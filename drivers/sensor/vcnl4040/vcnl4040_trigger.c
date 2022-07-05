@@ -123,7 +123,12 @@ int vcnl4040_attr_set(const struct device *dev,
 		      const struct sensor_value *val)
 {
 	struct vcnl4040_data *data = dev->data;
+	const struct vcnl4040_config *config = dev->config;
 	int ret = 0;
+
+	if (!config->int_gpio.port) {
+		return -ENOTSUP;
+	}
 
 	k_sem_take(&data->sem, K_FOREVER);
 
