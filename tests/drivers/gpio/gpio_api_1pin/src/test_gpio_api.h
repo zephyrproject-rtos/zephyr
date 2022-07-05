@@ -12,7 +12,7 @@
 #include <ztest.h>
 
 #if DT_NODE_HAS_PROP(DT_ALIAS(led0), gpios)
-#define TEST_DEV             DT_GPIO_LABEL(DT_ALIAS(led0), gpios)
+#define TEST_NODE            DT_GPIO_CTLR(DT_ALIAS(led0), gpios)
 #define TEST_PIN             DT_GPIO_PIN(DT_ALIAS(led0), gpios)
 #define TEST_PIN_DTS_FLAGS   DT_GPIO_FLAGS(DT_ALIAS(led0), gpios)
 #else

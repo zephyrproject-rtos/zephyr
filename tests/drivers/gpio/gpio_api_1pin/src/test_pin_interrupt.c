@@ -53,10 +53,10 @@ void test_gpio_pin_interrupt_edge(unsigned int cfg_flags,
 	unsigned int cfg_out_flag;
 	int ret;
 
-	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	port = DEVICE_DT_GET(TEST_NODE);
+	zassert_true(device_is_ready(port), "GPIO dev is not ready");
 
-	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
+	TC_PRINT("Running test on port=%s, pin=%d\n", port->name, TEST_PIN);
 
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_INPUT | GPIO_OUTPUT);
 	if (ret == -ENOTSUP) {
@@ -127,10 +127,10 @@ void test_gpio_pin_interrupt_level(unsigned int cfg_flags,
 	int pin_out_val;
 	int ret;
 
-	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	port = DEVICE_DT_GET(TEST_NODE);
+	zassert_true(device_is_ready(port), "GPIO dev is not ready");
 
-	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
+	TC_PRINT("Running test on port=%s, pin=%d\n", port->name, TEST_PIN);
 
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_INPUT | GPIO_OUTPUT);
 	if (ret == -ENOTSUP) {
