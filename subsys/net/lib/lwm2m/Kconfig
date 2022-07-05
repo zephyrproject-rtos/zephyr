@@ -44,9 +44,6 @@ config LWM2M_SHELL
 
 config LWM2M_DTLS_SUPPORT
 	bool "DTLS support in the LwM2M client"
-	select TLS_CREDENTIALS
-	select NET_SOCKETS_SOCKOPT_TLS
-	select NET_SOCKETS_ENABLE_DTLS
 
 choice
 	prompt "LwM2M Security object version"
