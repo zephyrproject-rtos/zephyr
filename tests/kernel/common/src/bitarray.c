@@ -77,7 +77,7 @@ void validate_bitarray_define(sys_bitarray_t *ba, size_t num_bits)
  *
  * @see SYS_BITARRAY_DEFINE()
  */
-void test_bitarray_declare(void)
+ZTEST(bitarray, test_bitarray_declare)
 {
 	SYS_BITARRAY_DEFINE(ba_1_bit, 1);
 	SYS_BITARRAY_DEFINE(ba_32_bit, 32);
@@ -124,7 +124,7 @@ bool bitarray_bundles_is_zero(sys_bitarray_t *ba)
  * @see sys_bitarray_test_and_set_bit()
  * @see sys_bitarray_test_and_clear_bit()
  */
-void test_bitarray_set_clear(void)
+ZTEST(bitarray, test_bitarray_set_clear)
 {
 	int ret;
 	int bit_val;
@@ -481,7 +481,7 @@ void alloc_and_free_interval(void)
  * @see sys_bitarray_alloc()
  * @see sys_bitarray_free()
  */
-void test_bitarray_alloc_free(void)
+ZTEST(bitarray, test_bitarray_alloc_free)
 {
 	int i;
 
@@ -502,7 +502,7 @@ void test_bitarray_alloc_free(void)
 	alloc_and_free_interval();
 }
 
-void test_bitarray_region_set_clear(void)
+ZTEST(bitarray, test_bitarray_region_set_clear)
 {
 	int ret;
 
@@ -623,7 +623,7 @@ void test_bitarray_region_set_clear(void)
  *
  * @see find_msb_set(), find_lsb_set()
  */
-void test_ffs(void)
+ZTEST(bitarray, test_ffs)
 {
 	uint32_t value;
 	unsigned int bit;

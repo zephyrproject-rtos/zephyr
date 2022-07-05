@@ -47,7 +47,7 @@ static ZTEST_BMEM struct timer_data tdata;
  *
  * @see k_uptime_get(), k_uptime_get_32(), k_uptime_delta()
  */
-void test_clock_uptime(void)
+ZTEST_USER(clock, test_clock_uptime)
 {
 	uint64_t t64, t32;
 	int64_t d64 = 0;
@@ -122,7 +122,7 @@ void test_clock_uptime(void)
  * @see k_cycle_get_32(), k_uptime_get_32()
  */
 
-void test_clock_cycle_32(void)
+ZTEST(clock, test_clock_cycle_32)
 {
 	uint32_t c32, c0, c1, t32;
 
@@ -163,7 +163,7 @@ void test_clock_cycle_32(void)
 /**
  * @brief Test 64-bit clock cycle functionality
  */
-void test_clock_cycle_64(void)
+ZTEST(clock, test_clock_cycle_64)
 {
 	uint32_t d32;
 	uint64_t d64;
@@ -224,7 +224,7 @@ static void init_data_count(void)
  *
  */
 
-void test_ms_time_duration(void)
+ZTEST(clock, test_ms_time_duration)
 {
 	init_data_count();
 	k_timer_start(&ktimer, K_MSEC(DURATION), K_NO_WAIT);

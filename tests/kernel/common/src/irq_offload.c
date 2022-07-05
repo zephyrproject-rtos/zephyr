@@ -41,7 +41,7 @@ static void offload_function(const void *param)
  * @details Check whether offloaded running function is in interrupt
  * context, on the IRQ stack or not.
  */
-void test_irq_offload(void)
+ZTEST(irq_offload, test_irq_offload)
 {
 	/* Simple validation of nested locking. */
 	unsigned int key1, key2;
@@ -95,7 +95,7 @@ void test_irq_offload(void)
  *
  * @see arch_nop()
  */
-__no_optimization void test_nop(void)
+__no_optimization void nop(void)
 {
 	uint32_t t_get_time, t_before, t_after, diff;
 
@@ -196,6 +196,11 @@ __no_optimization void test_nop(void)
 			"arch_nop() takes %d cpu cycles", diff);
 }
 
+ZTEST(irq_offload, test_nop)
+{
+	nop();
+}
+
 static struct k_timer nestoff_timer;
 static bool timer_executed, nested_executed;
 
@@ -232,7 +237,7 @@ static void offload_thread_fn(void *p0, void *p1, void *p2)
 /* Invoke irq_offload() from an interrupt and verify that the
  * resulting nested interrupt doesn't explode
  */
-void test_nested_irq_offload(void)
+ZTEST(common_1cpu, test_nested_irq_offload)
 {
 	if (!IS_ENABLED(CONFIG_IRQ_OFFLOAD_NESTED)) {
 		ztest_test_skip();
