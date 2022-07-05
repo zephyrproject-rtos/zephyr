@@ -46,6 +46,10 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_wdog)
 #define WDT_NODE DT_INST(0, nxp_imx_wdog)
 #endif
+#if DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_watchdog)
+#define WDT_MAX_WINDOW  600000U
+#define WDT_ALLOW_CALLBACK 0
+#endif
 
 #ifndef WDT_ALLOW_CALLBACK
 #define WDT_ALLOW_CALLBACK 1
