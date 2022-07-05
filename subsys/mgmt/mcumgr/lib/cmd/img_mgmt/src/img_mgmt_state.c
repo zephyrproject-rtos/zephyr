@@ -160,12 +160,6 @@ done:
 		hashp = hash;
 	}
 
-	if (permanent) {
-		(void) img_mgmt_impl_log_confirm(rc, hashp);
-	} else {
-		(void) img_mgmt_impl_log_pending(rc, hashp);
-	}
-
 	return rc;
 }
 
@@ -191,7 +185,7 @@ img_mgmt_state_confirm(void)
 
 	img_mgmt_dfu_confirmed();
 err:
-	return img_mgmt_impl_log_confirm(rc, NULL);
+	return 0;
 }
 
 /**

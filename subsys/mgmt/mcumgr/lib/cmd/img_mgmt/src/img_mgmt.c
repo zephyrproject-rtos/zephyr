@@ -325,10 +325,6 @@ img_mgmt_upload_log(bool is_first, bool is_last, int status)
 	const uint8_t *hashp;
 	int rc;
 
-	if (is_first) {
-		return img_mgmt_impl_log_upload_start(status);
-	}
-
 	if (is_last || status != 0) {
 		/* Log the image hash if we know it. */
 		rc = img_mgmt_read_info(1, NULL, hash, NULL);
@@ -337,11 +333,8 @@ img_mgmt_upload_log(bool is_first, bool is_last, int status)
 		} else {
 			hashp = hash;
 		}
-
-		return img_mgmt_impl_log_upload_done(status, hashp);
 	}
 
-	/* Nothing to log. */
 	return 0;
 }
 
