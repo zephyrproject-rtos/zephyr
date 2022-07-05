@@ -17,6 +17,9 @@
 	aliases {
 		led0 = &amber_led;
 		led1 = &green_led;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
 		red-pwm-led = &red_pwm_led;
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
@@ -288,12 +291,6 @@ zephyr_udc0: &usbotg {
 	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
-
-	vl53l0x@29 {
-		compatible = "st,vl53l0x";
-		reg = <0x29>;
-		label = "VL53L0X";
-	};
 };
 
 /* magnetometer (bmm150), barometer (bmp280), pressure (mpl3115),
@@ -306,8 +303,7 @@ zephyr_udc0: &usbotg {
 
 	/*
 	 * This board does not have a BME280, it has a BMP280.
-	 * The two parts are incredibly similar, but there 
-	 * should be a BMP280 driver written for this case.
+	 * The two parts are incredibly similar, so the BME280 driver should work.
 	 */
 	bme280@76 {
 		compatible = "bosch,bme280";
