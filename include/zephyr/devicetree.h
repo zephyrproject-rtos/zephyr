@@ -2045,6 +2045,43 @@
 	DT_CAT(node_id, _FOREACH_CHILD)(fn)
 
 /**
+ * @brief Invokes "fn" for each child of "node_id" with a separator
+ *
+ * The macro "fn" must take one parameter, which will be the node
+ * identifier of a child node of "node_id".
+ *
+ * Example devicetree fragment:
+ *
+ *     n: node {
+ *             child-1 {
+ *                     ...
+ *             };
+ *             child-2 {
+ *                     ...
+ *             };
+ *     };
+ *
+ * Example usage:
+ *
+ *     const char *child_names[] = {
+ *         DT_FOREACH_CHILD_SEP(DT_NODELABEL(n), DT_NODE_FULL_NAME, (,))
+ *     };
+ *
+ * This expands to:
+ *
+ *     const char *child_names[] = {
+ *         "child-1", "child-2"
+ *     };
+ *
+ * @param node_id node identifier
+ * @param fn macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ */
+#define DT_FOREACH_CHILD_SEP(node_id, fn, sep) \
+	DT_CAT(node_id, _FOREACH_CHILD_SEP)(fn, sep)
+
+/**
  * @brief Invokes "fn" for each child of "node_id" with multiple arguments
  *
  * The macro "fn" takes multiple arguments. The first should be the node
@@ -2063,6 +2100,24 @@
 	DT_CAT(node_id, _FOREACH_CHILD_VARGS)(fn, __VA_ARGS__)
 
 /**
+ * @brief Invokes "fn" for each child of "node_id" with separator and multiple
+ *        arguments.
+ *
+ * The macro "fn" takes multiple arguments. The first should be the node
+ * identifier for the child node. The remaining are passed-in by the caller.
+ *
+ * @param node_id node identifier
+ * @param fn macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ * @param ... variable number of arguments to pass to fn
+ *
+ * @see DT_FOREACH_CHILD_VARGS
+ */
+#define DT_FOREACH_CHILD_SEP_VARGS(node_id, fn, sep, ...) \
+	DT_CAT(node_id, _FOREACH_CHILD_SEP_VARGS)(fn, sep, __VA_ARGS__)
+
+/**
  * @brief Call "fn" on the child nodes with status "okay"
  *
  * The macro "fn" should take one argument, which is the node
@@ -2079,6 +2134,25 @@
  */
 #define DT_FOREACH_CHILD_STATUS_OKAY(node_id, fn) \
 	DT_CAT(node_id, _FOREACH_CHILD_STATUS_OKAY)(fn)
+
+/**
+ * @brief Call "fn" on the child nodes with status "okay" with separator
+ *
+ * The macro "fn" should take one argument, which is the node
+ * identifier for the child node.
+ *
+ * As usual, both a missing status and an "ok" status are
+ * treated as "okay".
+ *
+ * @param node_id node identifier
+ * @param fn macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ *
+ * @see DT_FOREACH_CHILD_STATUS_OKAY
+ */
+#define DT_FOREACH_CHILD_STATUS_OKAY_SEP(node_id, fn, sep) \
+	DT_CAT(node_id, _FOREACH_CHILD_STATUS_OKAY_SEP)(fn, sep)
 
 /**
  * @brief Call "fn" on the child nodes with status "okay" with multiple
@@ -2101,6 +2175,27 @@
  */
 #define DT_FOREACH_CHILD_STATUS_OKAY_VARGS(node_id, fn, ...) \
 	DT_CAT(node_id, _FOREACH_CHILD_STATUS_OKAY_VARGS)(fn, __VA_ARGS__)
+
+/**
+ * @brief Call "fn" on the child nodes with status "okay" with separator and
+ * multiple arguments
+ *
+ * The macro "fn" takes multiple arguments. The first should be the node
+ * identifier for the child node. The remaining are passed-in by the caller.
+ *
+ * As usual, both a missing status and an "ok" status are
+ * treated as "okay".
+ *
+ * @param node_id node identifier
+ * @param fn macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ * @param ... variable number of arguments to pass to fn
+ *
+ * @see DT_FOREACH_CHILD_SEP_STATUS_OKAY
+ */
+#define DT_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS(node_id, fn, sep, ...) \
+	DT_CAT(node_id, _FOREACH_CHILD_STATUS_OKAY_SEP_VARGS)(fn, sep, __VA_ARGS__)
 
 /**
  * @brief Invokes "fn" for each element in the value of property "prop".
@@ -2546,6 +2641,22 @@
 	DT_FOREACH_CHILD(DT_DRV_INST(inst), fn)
 
 /**
+ * @brief Call "fn" on all child nodes of DT_DRV_INST(inst) with a separator
+ *
+ * The macro "fn" should take one argument, which is the node
+ * identifier for the child node.
+ *
+ * @param inst instance number
+ * @param fn macro to invoke on each child node identifier
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ *
+ * @see DT_FOREACH_CHILD_SEP
+ */
+#define DT_INST_FOREACH_CHILD_SEP(inst, fn, sep) \
+	DT_FOREACH_CHILD_SEP(DT_DRV_INST(inst), fn, sep)
+
+/**
  * @brief Call "fn" on all child nodes of DT_DRV_INST(inst).
  *
  * The macro "fn" takes multiple arguments. The first should be the node
@@ -2562,6 +2673,23 @@
  */
 #define DT_INST_FOREACH_CHILD_VARGS(inst, fn, ...) \
 	DT_FOREACH_CHILD_VARGS(DT_DRV_INST(inst), fn, __VA_ARGS__)
+
+/**
+ * @brief Call "fn" on all child nodes of DT_DRV_INST(inst) with separator.
+ *
+ * The macro "fn" takes multiple arguments. The first should be the node
+ * identifier for the child node. The remaining are passed-in by the caller.
+ *
+ * @param inst instance number
+ * @param fn macro to invoke on each child node identifier
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ * @param ... variable number of arguments to pass to fn
+ *
+ * @see DT_FOREACH_CHILD_SEP_VARGS
+ */
+#define DT_INST_FOREACH_CHILD_SEP_VARGS(inst, fn, sep, ...) \
+	DT_FOREACH_CHILD_SEP_VARGS(DT_DRV_INST(inst), fn, sep, __VA_ARGS__)
 
 /**
  * @brief Get a DT_DRV_COMPAT value's index into its enumeration values
