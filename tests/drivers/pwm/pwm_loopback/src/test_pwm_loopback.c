@@ -214,8 +214,6 @@ static void continuous_capture_callback(const struct device *dev,
 
 void test_continuous_capture(void)
 {
-	static const uint32_t period_usec = 10000;
-	static const uint32_t pulse_usec = 7500;
 	struct test_pwm in;
 	struct test_pwm out;
 	uint32_t buffer[10];
@@ -234,8 +232,8 @@ void test_continuous_capture(void)
 	memset(buffer, 0, sizeof(buffer));
 	k_sem_init(&data.sem, 0, 1);
 
-	err = pwm_set(out.dev, out.pwm, PWM_USEC(period_usec),
-		      PWM_USEC(pulse_usec), out.flags);
+	err = pwm_set(out.dev, out.pwm, PWM_USEC(TEST_PWM_PERIOD_USEC),
+		      PWM_USEC(TEST_PWM_PULSE_USEC), out.flags);
 	zassert_equal(err, 0, "failed to set pwm output (err %d)", err);
 
 	err = pwm_configure_capture(in.dev, in.pwm,
@@ -259,7 +257,7 @@ void test_continuous_capture(void)
 	err = pwm_enable_capture(in.dev, in.pwm);
 	zassert_equal(err, 0, "failed to enable pwm capture (err %d)", err);
 
-	err = k_sem_take(&data.sem, K_USEC(period_usec * data.buffer_len * 10));
+	err = k_sem_take(&data.sem, K_USEC(TEST_PWM_PERIOD_USEC * data.buffer_len * 10));
 	zassert_equal(err, 0, "pwm capture timed out (err %d)", err);
 	zassert_equal(data.status, 0, "pwm capture failed (err %d)", err);
 
@@ -271,10 +269,10 @@ void test_continuous_capture(void)
 		zassert_equal(err, 0, "failed to calculate usec (err %d)", err);
 
 		if (data.pulse_capture) {
-			zassert_within(usec, pulse_usec, pulse_usec / 100,
+			zassert_within(usec, TEST_PWM_PULSE_USEC, TEST_PWM_PULSE_USEC / 100,
 				       "pulse capture off by more than 1%");
 		} else {
-			zassert_within(usec, period_usec, period_usec / 100,
+			zassert_within(usec, TEST_PWM_PERIOD_USEC, TEST_PWM_PERIOD_USEC / 100,
 				       "period capture off by more than 1%");
 		}
 	}
