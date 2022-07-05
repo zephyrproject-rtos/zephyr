@@ -361,7 +361,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         """
 
         workdir = os.path.relpath(suite_path, suite_root)
-        self.name = self.get_unique(os.path.dirname(suite_path), workdir, name)
+        self.name = self.get_unique(suite_root, workdir, name)
         self.id = name
 
         self.source_dir = suite_path
@@ -410,13 +410,13 @@ class TestSuite(DisablePyTestCollectionMixin):
         if Path(canonical_zephyr_base) in Path(canonical_testsuite_root).parents:
             # This is in ZEPHYR_BASE, so include path in name for uniqueness
             # FIXME: We should not depend on path of test for unique names.
-            relative_tc_root = os.path.relpath(canonical_testsuite_root,
+            relative_ts_root = os.path.relpath(canonical_testsuite_root,
                                                start=canonical_zephyr_base)
         else:
-            relative_tc_root = ""
+            relative_ts_root = ""
 
         # workdir can be "."
-        unique = os.path.normpath(os.path.join(relative_tc_root, workdir, name))
+        unique = os.path.normpath(os.path.join(relative_ts_root, workdir, name))
         check = name.split(".")
         if len(check) < 2:
             raise TwisterException(f"""bad test name '{name}' in {testsuite_root}/{workdir}. \
