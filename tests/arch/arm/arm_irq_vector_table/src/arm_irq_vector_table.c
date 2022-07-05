@@ -137,7 +137,7 @@ void isr2(void)
  * @see irq_enable(), z_irq_priority_set(), NVIC_SetPendingIRQ()
  *
  */
-void test_arm_irq_vector_table(void)
+ZTEST(vector_table, test_arm_irq_vector_table)
 {
 	printk("Test Cortex-M IRQs installed directly in the vector table\n");
 
