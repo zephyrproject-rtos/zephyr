@@ -134,7 +134,7 @@ static int malloc_prepare(const struct device *unused)
 	return 0;
 }
 
-SYS_INIT(malloc_prepare, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 /* Current offset from HEAP_BASE of unused memory */
 LIBC_BSS static size_t heap_sz;
