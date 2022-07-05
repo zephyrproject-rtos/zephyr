@@ -4,6 +4,10 @@ common:
 tests:
   portability.posix.eventfd:
     min_ram: 32
+  portability.posix.eventfd.newlib:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
   portability.posix.eventfd.picolibc:
     tags: picolibc
     filter: CONFIG_PICOLIBC_SUPPORTED
