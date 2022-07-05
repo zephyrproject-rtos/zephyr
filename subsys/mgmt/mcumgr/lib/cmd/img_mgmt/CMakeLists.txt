@@ -10,7 +10,6 @@ target_include_directories(MCUMGR INTERFACE
 
 zephyr_library_sources(
     src/zephyr_img_mgmt.c
-    src/zephyr_img_mgmt_log.c
     src/img_mgmt.c
     src/img_mgmt_state.c
     src/img_mgmt_util.c
