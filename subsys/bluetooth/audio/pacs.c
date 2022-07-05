@@ -60,7 +60,7 @@ static void get_pac_records(struct bt_conn *conn, enum bt_audio_dir dir,
 	/* Reset if buffer before using */
 	net_buf_simple_reset(buf);
 
-	rsp = net_buf_simple_add(&read_buf, sizeof(*rsp));
+	rsp = net_buf_simple_add(buf, sizeof(*rsp));
 	rsp->num_pac = 0;
 
 	if (pacs_cb == NULL ||
@@ -80,26 +80,26 @@ static void get_pac_records(struct bt_conn *conn, enum bt_audio_dir dir,
 			break;
 		}
 
-		pac = net_buf_simple_add(&read_buf, sizeof(*pac));
+		pac = net_buf_simple_add(buf, sizeof(*pac));
 
 		pac->codec.id = codec.id;
 		pac->codec.cid = sys_cpu_to_le16(codec.cid);
 		pac->codec.vid = sys_cpu_to_le16(codec.vid);
-		pac->cc_len = read_buf.len;
+		pac->cc_len = buf->len;
 
-		pac_data_add(&read_buf, codec.data_count, codec.data);
+		pac_data_add(buf, codec.data_count, codec.data);
 
 		/* Buffer size shall never be below PAC len since we are just
 		 * append data.
 		 */
-		__ASSERT_NO_MSG(read_buf.len >= pac->cc_len);
+		__ASSERT_NO_MSG(buf->len >= pac->cc_len);
 
-		pac->cc_len = read_buf.len - pac->cc_len;
+		pac->cc_len = buf->len - pac->cc_len;
 
-		meta = net_buf_simple_add(&read_buf, sizeof(*meta));
-		meta->len = read_buf.len;
-		pac_data_add(&read_buf, codec.meta_count, codec.meta);
-		meta->len = read_buf.len - meta->len;
+		meta = net_buf_simple_add(buf, sizeof(*meta));
+		meta->len = buf->len;
+		pac_data_add(buf, codec.meta_count, codec.meta);
+		meta->len = buf->len - meta->len;
 
 		BT_DBG("pac #%u: codec capability len %u metadata len %u",
 		       rsp->num_pac, pac->cc_len, meta->len);
