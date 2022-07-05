@@ -21,7 +21,9 @@ CREATE_FLAG(pa_sync_lost);
 static struct bt_audio_broadcast_sink *g_sink;
 
 /* Mandatory support preset by both source and sink */
-static struct bt_audio_lc3_preset preset = BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1;
+static struct bt_audio_lc3_preset preset =
+	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
+					     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 static bool scan_recv_cb(const struct bt_le_scan_recv_info *info,
 			 uint32_t broadcast_id)
