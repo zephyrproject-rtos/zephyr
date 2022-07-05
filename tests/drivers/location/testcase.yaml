@@ -1,0 +1,4 @@
+tests:
+  location.api:
+    tags: location_driver_api
+    platform_allow: native_posix
