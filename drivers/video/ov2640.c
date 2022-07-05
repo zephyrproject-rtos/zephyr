@@ -438,9 +438,6 @@ struct ov2640_config {
 };
 
 struct ov2640_data {
-	const struct device *reset_gpio;
-	uint8_t reset_pin;
-	gpio_dt_flags_t reset_pin_flags;
 	struct video_format fmt;
 };
 
