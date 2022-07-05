@@ -1032,9 +1032,18 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void discovery_failure(struct bt_conn *conn, int err)
+/* Called when discovery is completed - successfully or with error */
+static void discovery_complete(struct bt_conn *conn, int err)
 {
-	cur_mcs_inst = NULL;
+	BT_DBG("Discovery completed, err: %d", err);
+
+	/* TODO: Handle resets of instance, and re-discovery.
+	 * For now, reset instance on error.
+	 */
+	if (err) {
+		cur_mcs_inst = NULL;
+	}
+
 	if (mcc_cb && mcc_cb->discover_mcs) {
 		mcc_cb->discover_mcs(conn, err);
 	}
@@ -1112,9 +1121,7 @@ static uint8_t discover_otc_char_func(struct bt_conn *conn,
 	BT_DBG("Setup complete for included OTS");
 	(void)memset(params, 0, sizeof(*params));
 
-	if (mcc_cb && mcc_cb->discover_mcs) {
-		mcc_cb->discover_mcs(conn, err);
-	}
+	discovery_complete(conn, err);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -1166,7 +1173,7 @@ static uint8_t discover_include_func(struct bt_conn *conn,
 		err = bt_gatt_discover(conn, &discover_params);
 		if (err) {
 			BT_DBG("Discovery of OTS chars. failed");
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return BT_GATT_ITER_STOP;
 	}
@@ -1175,9 +1182,7 @@ static uint8_t discover_include_func(struct bt_conn *conn,
 	/* This is OK, the server may not support OTS. But in that case,
 	 *  discovery stops here.
 	 */
-	if (mcc_cb && mcc_cb->discover_mcs) {
-		mcc_cb->discover_mcs(conn, err);
-	}
+	discovery_complete(conn, err);
 	return BT_GATT_ITER_STOP;
 }
 
@@ -1195,7 +1200,7 @@ static void discover_included(struct bt_conn *conn)
 	err = bt_gatt_discover(conn, &discover_params);
 	if (err) {
 		BT_DBG("Discovery of included service failed: %d", err);
-		discovery_failure(conn, err);
+		discovery_complete(conn, err);
 	}
 }
 #endif /* CONFIG_BT_MCC_OTS */
@@ -1212,7 +1217,7 @@ static void subscribe_mcs_char_func(struct bt_conn *conn, uint8_t err,
 
 	if (err) {
 		BT_DBG("Subscription callback error: %u", err);
-		discovery_failure(conn, err);
+		discovery_complete(conn, err);
 		return;
 	}
 
@@ -1228,9 +1233,7 @@ static void subscribe_mcs_char_func(struct bt_conn *conn, uint8_t err,
 		discover_included(conn);
 #else
 		/* If OTS is not configured, discovery ends here */
-		if (mcc_cb && mcc_cb->discover_mcs) {
-			mcc_cb->discover_mcs(conn, 0);
-		}
+		discovery_complete(conn, 0);
 #endif /* CONFIG_BT_MCC_OTS */
 	}
 }
@@ -1275,7 +1278,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		err = do_subscribe(conn, cur_mcs_inst->player_name_handle, sub_params);
 		if (err) {
 			BT_DBG("Could not subscribe: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return false;
 	}
@@ -1286,7 +1289,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		err = do_subscribe(conn, cur_mcs_inst->track_changed_handle, sub_params);
 		if (err) {
 			BT_DBG("Could not subscribe: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return false;
 	}
@@ -1296,7 +1299,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		err = do_subscribe(conn, cur_mcs_inst->track_title_handle, sub_params);
 		if (err) {
 			BT_DBG("Could not subscribe: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return false;
 	}
@@ -1307,7 +1310,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		err = do_subscribe(conn, cur_mcs_inst->track_duration_handle, sub_params);
 		if (err) {
 			BT_DBG("Could not subscribe: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return false;
 	}
@@ -1318,7 +1321,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		err = do_subscribe(conn, cur_mcs_inst->track_position_handle, sub_params);
 		if (err) {
 			BT_DBG("Could not subscribe: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return false;
 	}
@@ -1329,7 +1332,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		err = do_subscribe(conn, cur_mcs_inst->playback_speed_handle, sub_params);
 		if (err) {
 			BT_DBG("Could not subscribe: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return false;
 	}
@@ -1340,7 +1343,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		err = do_subscribe(conn, cur_mcs_inst->seeking_speed_handle, sub_params);
 		if (err) {
 			BT_DBG("Could not subscribe: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return false;
 	}
@@ -1352,7 +1355,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		err = do_subscribe(conn, cur_mcs_inst->current_track_obj_id_handle, sub_params);
 		if (err) {
 			BT_DBG("Could not subscribe: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return false;
 	}
@@ -1363,7 +1366,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		err = do_subscribe(conn, cur_mcs_inst->next_track_obj_id_handle, sub_params);
 		if (err) {
 			BT_DBG("Could not subscribe: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return false;
 	}
@@ -1374,7 +1377,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		err = do_subscribe(conn, cur_mcs_inst->parent_group_obj_id_handle, sub_params);
 		if (err) {
 			BT_DBG("Could not subscribe: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return false;
 	}
@@ -1385,7 +1388,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		err = do_subscribe(conn, cur_mcs_inst->current_group_obj_id_handle, sub_params);
 		if (err) {
 			BT_DBG("Could not subscribe: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return false;
 	}
@@ -1398,7 +1401,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		err = do_subscribe(conn, cur_mcs_inst->playing_order_handle, sub_params);
 		if (err) {
 			BT_DBG("Could not subscribe: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return false;
 	}
@@ -1409,7 +1412,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		err = do_subscribe(conn, cur_mcs_inst->media_state_handle, sub_params);
 		if (err) {
 			BT_DBG("Could not subscribe: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return false;
 	}
@@ -1420,7 +1423,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		err = do_subscribe(conn, cur_mcs_inst->cp_handle, sub_params);
 		if (err) {
 			BT_DBG("Could not subscribe: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return false;
 	}
@@ -1431,7 +1434,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		err = do_subscribe(conn, cur_mcs_inst->opcodes_supported_handle, sub_params);
 		if (err) {
 			BT_DBG("Could not subscribe: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return false;
 	}
@@ -1443,7 +1446,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		err = do_subscribe(conn, cur_mcs_inst->scp_handle, sub_params);
 		if (err) {
 			BT_DBG("Could not subscribe: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return false;
 	}
@@ -1454,7 +1457,7 @@ static bool subscribe_next_mcs_char(struct bt_conn *conn)
 		err = do_subscribe(conn, cur_mcs_inst->search_results_obj_id_handle, sub_params);
 		if (err) {
 			BT_DBG("Could not subscribe: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return false;
 	}
@@ -1608,9 +1611,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 		discover_included(conn);
 #else
 		/* If OTS is not configured, discovery ends here */
-		if (mcc_cb && mcc_cb->discover_mcs) {
-			mcc_cb->discover_mcs(conn, 0);
-		}
+		discovery_complete(conn, 0);
 #endif /* CONFIG_BT_MCC_OTS */
 	}
 
@@ -1660,7 +1661,7 @@ static uint8_t discover_primary_func(struct bt_conn *conn,
 		err = bt_gatt_discover(conn, &discover_params);
 		if (err) {
 			BT_DBG("Discovery failed: %d", err);
-			discovery_failure(conn, err);
+			discovery_complete(conn, err);
 		}
 		return BT_GATT_ITER_STOP;
 	}
@@ -1668,9 +1669,7 @@ static uint8_t discover_primary_func(struct bt_conn *conn,
 	/* No attribute of the searched for type found */
 	BT_DBG("Could not find an GMCS instance on the server");
 	cur_mcs_inst = NULL;
-	if (mcc_cb && mcc_cb->discover_mcs) {
-		mcc_cb->discover_mcs(conn, -ENODATA);
-	}
+	discovery_complete(conn, -ENODATA);
 	return BT_GATT_ITER_STOP;
 }
 
