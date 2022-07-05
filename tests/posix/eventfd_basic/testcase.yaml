@@ -9,3 +9,13 @@ tests:
   portability.posix.eventfd_basic.posix_api:
     extra_configs:
       - CONFIG_POSIX_API=y
+  portability.posix.eventfd_basic.newlib:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_POSIX_API=n
+  portability.posix.eventfd_basic.newlib.posix_api:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_POSIX_API=y
