@@ -102,6 +102,8 @@ def main():
     with open(args.header_out, "w", encoding="utf-8") as header_file:
         write_top_comment(edt)
 
+        write_utils()
+
         # populate all z_path_id first so any children references will
         # work correctly.
         for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
@@ -237,6 +239,13 @@ followed by /chosen nodes.
 """
 
     out_comment(s, blank_before=False)
+
+
+def write_utils():
+    # Writes utility macros
+
+    out_comment("Used to remove brackets from around a single argument")
+    out_define("DT_DEBRACKET_INTERNAL(...)", "__VA_ARGS__")
 
 
 def write_node_comment(node):
