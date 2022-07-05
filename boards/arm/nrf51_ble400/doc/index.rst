@@ -6,7 +6,7 @@ Waveshare BLE400
 Overview
 ********
 
-BLE400 is a motherboard designed for BLE Bluetooth 2.4G Wireless Module. Used together with Core board.
+BLE400 is a motherboard designed for BLE Bluetooth 2.4G Wireless Module. Used together with core board -- Core51822.
 
 Supported Features
 ==================
@@ -37,7 +37,7 @@ Features
 - 2.4 GHz multiprotocol RF transceiver
 - ARM® Cortex™-M0 32 bit processor
 - 128 bit AES HW encryption
-- 256kB flash & 16kB RAM
+- 256kB flash & 32kB RAM
 - Programmable Peripheral Interconnect (PPI)
 - Digital interfaces: SPI, I2C, UART
 - 10 bit ADC
@@ -54,7 +54,15 @@ Revision History
 Core board
 ----------
 
-2015.06, Core51822 upgrades the onboard chip to Rev3, features 32kB RAM, supports higher version SDK, and all the demo codes are still compatible with the Rev2 ones.
+In June of 2015, Core51822 and its variant, Core51822 (B), upgraded the onboard chip to Rev3 (nRF51822_QFAC) that features 32kB RAM.
+
+.. image:: img/Core51822-Compare.jpg
+   :width: 500px
+   :align: center
+   :alt: Compare
+
+Top: Core51822
+Bottom: Core51822 (B)
 
 Connections and IOs
 ====================
@@ -212,6 +220,7 @@ References
 .. _nRF51 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF51-DK
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
 .. _Waveshare Wiki BLE400: https://www.waveshare.com/wiki/BLE400
+.. _Waveshare WiKi Core51822: https://www.waveshare.com/wiki/Core51822
 .. _User manual: https://www.waveshare.com/w/upload/b/b7/NRF51822-Eval-Kit-UserManual-EN.pdf
 .. _Schematic: https://www.waveshare.com/w/upload/1/1b/BLE400-Schematic.pdf
 .. _Code samples: https://www.waveshare.com/w/upload/5/53/NRF51822-Code.7z
