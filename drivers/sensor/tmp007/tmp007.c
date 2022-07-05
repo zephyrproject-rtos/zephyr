@@ -114,25 +114,28 @@ int tmp007_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_TMP007_TRIGGER
-	if (tmp007_init_interrupt(dev) < 0) {
-		LOG_DBG("Failed to initialize interrupt!");
-		return -EIO;
+	if (cfg->int_gpio.port) {
+		if (tmp007_init_interrupt(dev) < 0) {
+			LOG_DBG("Failed to initialize interrupt!");
+			return -EIO;
+		}
 	}
 #endif
 
 	return 0;
 }
 
-static const struct tmp007_config tmp007_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-#ifdef CONFIG_TMP007_TRIGGER
-	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
-#endif
-};
+#define TMP007_DEFINE(inst)									\
+	static struct tmp007_data tmp007_data_##inst;						\
+												\
+	static const struct tmp007_config tmp007_config_##inst = {				\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+		IF_ENABLED(CONFIG_TMP007_TRIGGER,						\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, tmp007_init, NULL,						\
+			      &tmp007_data_##inst, &tmp007_config_##inst, POST_KERNEL,		\
+			      CONFIG_SENSOR_INIT_PRIORITY, &tmp007_driver_api);			\
 
-struct tmp007_data tmp007_driver;
-
-DEVICE_DT_INST_DEFINE(0, tmp007_init, NULL,
-		    &tmp007_driver,
-		    &tmp007_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &tmp007_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(TMP007_DEFINE)
