@@ -4,17 +4,22 @@
 
 #define DT_DRV_COMPAT nxp_flexio_spi
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
+#include <errno.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/clock_control.h>
+#include <fsl_flexio_spi.h>
+
+#ifdef CONFIG_PINCTRL
+
+#include <zephyr/drivers/pinctrl.h>
+
+#endif /* CONFIG_PINCTRL */
 
 LOG_MODULE_REGISTER(spi_flexio, CONFIG_SPI_LOG_LEVEL);
 
-#include <errno.h>
-#include <device.h>
-#include <drivers/spi.h>
-#include <soc.h>
 #include "spi_context.h"
-#include <drivers/clock_control.h>
-#include <fsl_flexio_spi.h>
 
 
 /* Device constant configuration parameters */
@@ -31,6 +36,10 @@ struct spi_flexio_config {
      * This irq_config_func hooks the device up to spi_flexio_isr.
      */
     void (*irq_config_func)(const struct device *dev);
+
+#ifdef CONFIG_PINCTRL
+    const struct pinctrl_dev_config *pincfg;
+#endif /* CONFIG_PINCTRL */
 };
 
 /* Device run time data */
@@ -319,6 +328,14 @@ static int spi_flexio_init(const struct device *dev) {
 
     data->dev = dev;
 
+#ifdef CONFIG_PINCTRL
+    err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+    if (err) {
+        return err;
+    }
+#endif /* CONFIG_PINCTRL */
+    spi_context_unlock_unconditionally(&data->ctx);
+
     return 0;
 }
 
@@ -333,27 +350,42 @@ static const struct spi_driver_api spi_flexio_driver_api = {
         .release = spi_flexio_release,
 };
 
+#ifdef CONFIG_PINCTRL
+#define SPI_FLEXIO_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
+#define SPI_FLEXIO_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#else
+#define SPI_FLEXIO_PINCTRL_DEFINE(n)
+#define SPI_FLEXIO_PINCTRL_INIT(n)
+#endif /* CONFIG_PINCTRL */
+
+
 #define SPI_FLEXIO_DEVICE_INIT(n) \
+     SPI_FLEXIO_PINCTRL_DEFINE(n)                              \
     static void spi_flexio_config_func_##n(const struct device *dev); \
+                                  \
     static const struct spi_flexio_config spi_flexio_config_##n = { \
         .flexioBase= (FLEXIO_Type *)DT_INST_REG_ADDR(n), \
         .clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)), \
         .clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name), \
-        .irq_config_func = spi_flexio_config_func_##n, \
+        .irq_config_func = spi_flexio_config_func_##n,      \
+    SPI_FLEXIO_PINCTRL_INIT(n)                              \
     }; \
+                                  \
     static struct spi_flexio_data spi_flexio_dev_data_##n = { \
         SPI_CONTEXT_INIT_LOCK(spi_flexio_dev_data_##n, ctx), \
         SPI_CONTEXT_INIT_SYNC(spi_flexio_dev_data_##n, ctx), \
         SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx) \
-    }; \
+    };                            \
+                                  \
     DEVICE_DT_INST_DEFINE(n, &spi_flexio_init, NULL, \
                 &spi_flexio_dev_data_##n, \
                 &spi_flexio_config_##n, POST_KERNEL, \
                 CONFIG_SPI_INIT_PRIORITY, &spi_flexio_driver_api); \
+                                  \
     static void spi_flexio_config_func_##n(const struct device *dev) { \
             /* Connect the specific IRQ to spi_mcux_isr with the current device pointer as argument */ \
             IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_flexio_isr, DEVICE_DT_INST_GET(n), 0); \
             irq_enable(DT_INST_IRQN(n)); \
-    };
+    }
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_FLEXIO_DEVICE_INIT)
