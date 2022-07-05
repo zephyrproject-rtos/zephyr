@@ -18,7 +18,6 @@ LOG_MODULE_REGISTER(mcumgr_img_mgmt, CONFIG_MCUMGR_IMG_MGMT_LOG_LEVEL);
 #include <zephyr/dfu/flash_img.h>
 #include <zephyr/mgmt/mcumgr/buf.h>
 #include <mgmt/mgmt.h>
-#include <img_mgmt/img_mgmt_impl.h>
 #include <img_mgmt/img_mgmt.h>
 #include <img_mgmt/image.h>
 #include "img_mgmt_priv.h"
@@ -35,7 +34,7 @@ BUILD_ASSERT(CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 1 ||
 	     "Missing partitions?");
 
 static int
-zephyr_img_mgmt_slot_to_image(int slot)
+img_mgmt_slot_to_image(int slot)
 {
 	switch (slot) {
 	case 0:
@@ -128,7 +127,7 @@ static int img_mgmt_flash_check_empty(uint8_t fa_id)
  * slot number starting at 0.
  */
 static int
-zephyr_img_mgmt_flash_area_id(int slot)
+img_mgmt_flash_area_id(int slot)
 {
 	uint8_t fa_id;
 
@@ -189,7 +188,7 @@ img_mgmt_get_unused_slot_area_id(int slot)
 		 */
 		for (slot = 0; slot < 2; slot++) {
 			if (img_mgmt_slot_in_use(slot) == 0) {
-				int area_id = zephyr_img_mgmt_flash_area_id(slot);
+				int area_id = img_mgmt_flash_area_id(slot);
 
 				if (area_id >= 0) {
 					return area_id;
@@ -208,7 +207,7 @@ img_mgmt_get_unused_slot_area_id(int slot)
 	}
 
 	/* Return area ID for the slot or -1 */
-	return slot != -1  ? zephyr_img_mgmt_flash_area_id(slot) : -1;
+	return slot != -1  ? img_mgmt_flash_area_id(slot) : -1;
 #endif
 }
 
@@ -220,10 +219,10 @@ img_mgmt_get_unused_slot_area_id(int image)
 
 	if (image == 0 || image == -1) {
 		if (img_mgmt_slot_in_use(1) == 0) {
-			area_id = zephyr_img_mgmt_flash_area_id(1);
+			area_id = img_mgmt_flash_area_id(1);
 		}
 	} else if (image == 1) {
-		area_id = zephyr_img_mgmt_flash_area_id(3);
+		area_id = img_mgmt_flash_area_id(3);
 	}
 
 	return area_id;
@@ -259,11 +258,11 @@ img_mgmt_vercmp(const struct image_version *a, const struct image_version *b)
 }
 
 int
-img_mgmt_impl_erase_slot(int slot)
+img_mgmt_erase_slot(int slot)
 {
 	const struct flash_area *fa;
 	int rc;
-	int area_id = zephyr_img_mgmt_flash_area_id(slot);
+	int area_id = img_mgmt_flash_area_id(slot);
 
 	if (area_id < 0) {
 		return MGMT_ERR_EUNKNOWN;
@@ -287,7 +286,7 @@ img_mgmt_impl_erase_slot(int slot)
 }
 
 int
-img_mgmt_impl_write_pending(int slot, bool permanent)
+img_mgmt_write_pending(int slot, bool permanent)
 {
 	int rc;
 
@@ -295,7 +294,7 @@ img_mgmt_impl_write_pending(int slot, bool permanent)
 		return MGMT_ERR_EINVAL;
 	}
 
-	rc = boot_request_upgrade_multi(zephyr_img_mgmt_slot_to_image(slot), permanent);
+	rc = boot_request_upgrade_multi(img_mgmt_slot_to_image(slot), permanent);
 	if (rc != 0) {
 		return MGMT_ERR_EUNKNOWN;
 	}
@@ -304,7 +303,7 @@ img_mgmt_impl_write_pending(int slot, bool permanent)
 }
 
 int
-img_mgmt_impl_write_confirmed(void)
+img_mgmt_write_confirmed(void)
 {
 	int rc;
 
@@ -317,12 +316,11 @@ img_mgmt_impl_write_confirmed(void)
 }
 
 int
-img_mgmt_impl_read(int slot, unsigned int offset, void *dst,
-				   unsigned int num_bytes)
+img_mgmt_read(int slot, unsigned int offset, void *dst, unsigned int num_bytes)
 {
 	const struct flash_area *fa;
 	int rc;
-	int area_id = zephyr_img_mgmt_flash_area_id(slot);
+	int area_id = img_mgmt_flash_area_id(slot);
 
 	if (area_id < 0) {
 		return MGMT_ERR_EUNKNOWN;
@@ -345,8 +343,7 @@ img_mgmt_impl_read(int slot, unsigned int offset, void *dst,
 
 #if defined(CONFIG_IMG_MGMT_USE_HEAP_FOR_FLASH_IMG_CONTEXT)
 int
-img_mgmt_impl_write_image_data(unsigned int offset, const void *data, unsigned int num_bytes,
-				   bool last)
+img_mgmt_write_image_data(unsigned int offset, const void *data, unsigned int num_bytes, bool last)
 {
 	/* Even if CONFIG_HEAP_MEM_POOL_SIZE will be able to match size of the structure,
 	 * keep in mind that when application will put the heap under pressure, obtaining
@@ -395,8 +392,7 @@ out:
 
 #else
 int
-img_mgmt_impl_write_image_data(unsigned int offset, const void *data, unsigned int num_bytes,
-				   bool last)
+img_mgmt_write_image_data(unsigned int offset, const void *data, unsigned int num_bytes, bool last)
 {
 	static struct flash_img_context ctx;
 
@@ -415,7 +411,7 @@ img_mgmt_impl_write_image_data(unsigned int offset, const void *data, unsigned i
 #endif
 
 int
-img_mgmt_impl_erase_image_data(unsigned int off, unsigned int num_bytes)
+img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 {
 	const struct flash_area *fa;
 	int rc;
@@ -495,9 +491,9 @@ end:
 }
 
 int
-img_mgmt_impl_swap_type(int slot)
+img_mgmt_swap_type(int slot)
 {
-	int image = zephyr_img_mgmt_slot_to_image(slot);
+	int image = img_mgmt_slot_to_image(slot);
 
 	switch (mcuboot_swap_type_multi(image)) {
 	case BOOT_SWAP_TYPE_NONE:
@@ -527,8 +523,8 @@ img_mgmt_impl_swap_type(int slot)
  *	   instead.
  */
 int
-img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
-				 struct img_mgmt_upload_action *action)
+img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
+			struct img_mgmt_upload_action *action)
 {
 	const struct image_header *hdr;
 	struct image_version cur_ver;
@@ -655,11 +651,11 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 }
 
 int
-img_mgmt_impl_erased_val(int slot, uint8_t *erased_val)
+img_mgmt_erased_val(int slot, uint8_t *erased_val)
 {
 	const struct flash_area *fa;
 	int rc;
-	int area_id = zephyr_img_mgmt_flash_area_id(slot);
+	int area_id = img_mgmt_flash_area_id(slot);
 
 	if (area_id < 0) {
 		return MGMT_ERR_EUNKNOWN;

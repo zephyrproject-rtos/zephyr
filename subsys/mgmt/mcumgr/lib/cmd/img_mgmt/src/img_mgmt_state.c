@@ -54,7 +54,7 @@ img_mgmt_state_flags(int query_slot)
 	/* Determine if this is is pending or confirmed (only applicable for
 	 * unified images and loaders.
 	 */
-	swap_type = img_mgmt_impl_swap_type(query_slot);
+	swap_type = img_mgmt_swap_type(query_slot);
 	switch (swap_type) {
 	case IMG_MGMT_SWAP_TYPE_NONE:
 		if (query_slot == IMG_MGMT_BOOT_CURR_SLOT) {
@@ -147,7 +147,7 @@ img_mgmt_state_set_pending(int slot, int permanent)
 		goto done;
 	}
 
-	rc = img_mgmt_impl_write_pending(slot, permanent);
+	rc = img_mgmt_write_pending(slot, permanent);
 	if (rc != 0) {
 		rc = MGMT_ERR_EUNKNOWN;
 	}
@@ -178,7 +178,7 @@ img_mgmt_state_confirm(void)
 		goto err;
 	}
 
-	rc = img_mgmt_impl_write_confirmed();
+	rc = img_mgmt_write_confirmed();
 	if (rc != 0) {
 		rc = MGMT_ERR_EUNKNOWN;
 	}
