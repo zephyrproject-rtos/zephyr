@@ -1828,9 +1828,17 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 		 * would not be sequential, then drop this packet.
 		 */
 		uint32_t pending_seq;
+		uint32_t offset;
+		size_t pending_len;
 
 		pending_seq = tcp_get_seq(conn->queue_recv_data->buffer);
-		if (pending_seq == seq) {
+		offset = seq - pending_seq;
+		pending_len = net_pkt_get_len(conn->queue_recv_data);
+		if (offset < pending_len) {
+			if (offset) {
+				net_buf_pull_mem(conn->queue_recv_data->buffer, offset);
+			}
+			pending_len -= offset;
 			/* Put new data before the pending data */
 			net_buf_frag_add(pkt->buffer,
 					 conn->queue_recv_data->buffer);
@@ -1841,8 +1849,14 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 
 			last = net_buf_frag_last(conn->queue_recv_data->buffer);
 			pending_seq = tcp_get_seq(last);
+			/* Compute the offset w.r.t. the start point of the new packet */
+			offset = (pending_seq + last->len) - seq_start;
 
-			if ((pending_seq + last->len) == seq_start) {
+			if (offset < len) {
+				if (offset) {
+					net_buf_pull_mem(pkt->buffer, offset);
+				}
+
 				/* Put new data after pending data */
 				last->frags = pkt->buffer;
 				inserted = true;
