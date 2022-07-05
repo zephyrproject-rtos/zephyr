@@ -23,11 +23,11 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT_STATUS(CHECK_NODE, test_regulator_fixed, okay));
 static const struct gpio_dt_spec reg_gpio = GPIO_DT_SPEC_GET(REGULATOR_NODE, enable_gpios);
 static const struct gpio_dt_spec check_gpio = GPIO_DT_SPEC_GET(CHECK_NODE, check_gpios);
 
-static const struct device *reg_dev;
+static const struct device *reg_dev = DEVICE_DT_GET(REGULATOR_NODE);
 
 static enum {
 	PC_UNCHECKED,
-	PC_FAIL_REG_INIT,
+	PC_FAIL_REG_DEV_READY,
 	PC_FAIL_DEVICES_READY,
 	PC_FAIL_CFG_OUTPUT,
 	PC_FAIL_CFG_INPUT,
@@ -38,7 +38,7 @@ static enum {
 } precheck = PC_UNCHECKED;
 static const char *const pc_errstr[] = {
 	[PC_UNCHECKED] = "precheck not verified",
-	[PC_FAIL_REG_INIT] = "regulator already initialized",
+	[PC_FAIL_REG_DEV_READY] = "regulator device not ready",
 	[PC_FAIL_DEVICES_READY] = "GPIO devices not ready",
 	[PC_FAIL_CFG_OUTPUT] = "failed to configure output",
 	[PC_FAIL_CFG_INPUT] = "failed to configure input",
@@ -96,15 +96,10 @@ static int reg_status(void)
 
 static int setup(const struct device *dev)
 {
-#if 0
-	reg_dev = device_get_binding(DT_LABEL(REGULATOR_NODE));
-
-	/* todo: figure out how to verify the device hasn't been initialized. */
-	if (reg_dev != NULL) {
-		precheck = PC_FAIL_REG_INIT;
-		return -EBUSY;
+	if (!device_is_ready(reg_dev)) {
+		precheck = PC_FAIL_REG_DEV_READY;
+		return -ENODEV;
 	}
-#endif
 
 	/* Configure the regulator GPIO as an output inactive, and the check
 	 * GPIO as an input, then start testing whether they track.
@@ -181,9 +176,6 @@ static void test_preconditions(void)
 	zassert_equal(precheck, PC_OK,
 		      "precheck failed: %s",
 		      pc_errstr[precheck]);
-
-	zassert_not_equal(reg_dev, NULL,
-			  "no regulator device");
 }
 
 static void test_basic(void)
@@ -191,9 +183,6 @@ static void test_basic(void)
 	zassert_equal(precheck, PC_OK,
 		      "precheck failed: %s",
 		      pc_errstr[precheck]);
-
-	zassert_not_equal(reg_dev, NULL,
-			  "no regulator device");
 
 	int rs = reg_status();
 
@@ -288,7 +277,6 @@ static void test_basic(void)
 void test_main(void)
 {
 	const char * const compats[] = DT_PROP(REGULATOR_NODE, compatible);
-	reg_dev = device_get_binding(DT_LABEL(REGULATOR_NODE));
 
 	printk("reg %p gpio %p\n", reg_dev, check_gpio.port);
 	TC_PRINT("Regulator: %s%s%s\n", compats[0],
