@@ -301,6 +301,25 @@ static void test_cap_initiator_broadcast(void)
 	/* Keeping running for a little while */
 	k_sleep(K_SECONDS(5));
 
+	err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
+	if (err != 0) {
+		FAIL("Failed to stop broadcast source: %d\n", err);
+		return;
+	}
+
+	/* Wait for all to be stopped */
+	printk("Waiting for broadcast_streams to be stopped\n");
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_streams); i++) {
+		k_sem_take(&sem_broadcast_stopped, K_FOREVER);
+	}
+
+	err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
+	if (err != 0) {
+		FAIL("Failed to stop broadcast source: %d\n", err);
+		return;
+	}
+	broadcast_source = NULL;
+
 	PASS("CAP initiator broadcast passed\n");
 }
 
