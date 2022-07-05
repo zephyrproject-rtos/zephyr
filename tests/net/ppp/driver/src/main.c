@@ -537,22 +537,20 @@ static void test_send_ppp_8(void)
 	}
 }
 
-void test_main(void)
+ZTEST(net_ppp_test_suite, test_net_ppp)
 {
-	ztest_test_suite(net_ppp_test,
-			 ztest_unit_test(test_iface_setup),
-			 ztest_unit_test(test_send_ppp_pkt_with_escapes),
-			 ztest_unit_test(test_send_ppp_pkt_with_full_and_partial),
-			 ztest_unit_test(test_ppp_verify_fcs_1),
-			 ztest_unit_test(test_ppp_calc_fcs_1),
-			 ztest_unit_test(test_ppp_verify_fcs_3),
-			 ztest_unit_test(test_send_ppp_3),
-			 ztest_unit_test(test_send_ppp_4),
-			 ztest_unit_test(test_send_ppp_5),
-			 ztest_unit_test(test_send_ppp_6),
-			 ztest_unit_test(test_send_ppp_7),
-			 ztest_unit_test(test_send_ppp_8)
-		);
-
-	ztest_run_test_suite(net_ppp_test);
+	test_iface_setup();
+	test_send_ppp_pkt_with_escapes();
+	test_send_ppp_pkt_with_full_and_partial();
+	test_ppp_verify_fcs_1();
+	test_ppp_calc_fcs_1();
+	test_ppp_verify_fcs_3();
+	test_send_ppp_3();
+	test_send_ppp_4();
+	test_send_ppp_5();
+	test_send_ppp_6();
+	test_send_ppp_7();
+	test_send_ppp_8();
 }
+
+ZTEST_SUITE(net_ppp_test_suite, NULL, NULL, NULL, NULL, NULL);
