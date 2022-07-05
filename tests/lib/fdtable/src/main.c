@@ -22,7 +22,7 @@ static struct fd_op_vtable fd_vtable = { 0 };
 K_THREAD_STACK_DEFINE(fd_thread_stack, CONFIG_ZTEST_STACK_SIZE +
 		      CONFIG_TEST_EXTRA_STACK_SIZE);
 
-void test_z_reserve_fd(void)
+ZTEST(fdtable, test_z_reserve_fd)
 {
 	int fd = z_reserve_fd(); /* function being tested */
 
@@ -31,7 +31,7 @@ void test_z_reserve_fd(void)
 	z_free_fd(fd);
 }
 
-void test_z_get_fd_obj_and_vtable(void)
+ZTEST(fdtable, test_z_get_fd_obj_and_vtable)
 {
 	const struct fd_op_vtable *vtable;
 
@@ -47,7 +47,7 @@ void test_z_get_fd_obj_and_vtable(void)
 	z_free_fd(fd);
 }
 
-void test_z_get_fd_obj(void)
+ZTEST(fdtable, test_z_get_fd_obj)
 {
 	int fd = z_reserve_fd();
 	zassert_true(fd >= 0, "fd < 0");
@@ -81,7 +81,7 @@ void test_z_get_fd_obj(void)
 	z_free_fd(fd);
 }
 
-void test_z_finalize_fd(void)
+ZTEST(fdtable, test_z_finalize_fd)
 {
 	const struct fd_op_vtable *vtable;
 
@@ -103,7 +103,7 @@ void test_z_finalize_fd(void)
 	z_free_fd(fd);
 }
 
-void test_z_alloc_fd(void)
+ZTEST(fdtable, test_z_alloc_fd)
 {
 	const struct fd_op_vtable *vtable = NULL;
 	int *obj = NULL;
@@ -119,7 +119,7 @@ void test_z_alloc_fd(void)
 	z_free_fd(fd);
 }
 
-void test_z_free_fd(void)
+ZTEST(fdtable, test_z_free_fd)
 {
 	const struct fd_op_vtable *vtable = NULL;
 
@@ -151,7 +151,7 @@ static void test_cb(void *fd_ptr)
 	zassert_equal(errno, EBADF, "fd was found");
 }
 
-void test_z_fd_multiple_access(void)
+ZTEST(fdtable, test_z_fd_multiple_access)
 {
 	const struct fd_op_vtable *vtable = VTABLE_INIT;
 	void *obj = (void *)vtable;
@@ -175,16 +175,4 @@ void test_z_fd_multiple_access(void)
 	zassert_equal(errno, EBADF, "fd was found");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_fdtable,
-			 ztest_unit_test(test_z_reserve_fd),
-			 ztest_unit_test(test_z_get_fd_obj_and_vtable),
-			 ztest_unit_test(test_z_get_fd_obj),
-			 ztest_unit_test(test_z_finalize_fd),
-			 ztest_unit_test(test_z_alloc_fd),
-			 ztest_unit_test(test_z_free_fd),
-			 ztest_unit_test(test_z_fd_multiple_access)
-		);
-	ztest_run_test_suite(test_fdtable);
-}
+ZTEST_SUITE(fdtable, NULL, NULL, NULL, NULL, NULL);
