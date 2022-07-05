@@ -521,21 +521,33 @@ def write_children(node):
             " ".join(f"fn(DT_{child.z_path_id})" for child in
                 node.children.values()))
 
+    out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_SEP(fn, sep)",
+            " DT_DEBRACKET_INTERNAL sep ".join(f"fn(DT_{child.z_path_id})"
+            for child in node.children.values()))
+
     out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_VARGS(fn, ...)",
-            " ".join(f"fn(DT_{child.z_path_id}, __VA_ARGS__)" for child in
-                node.children.values()))
+            " ".join(f"fn(DT_{child.z_path_id}, __VA_ARGS__)"
+            for child in node.children.values()))
 
-    functions = ''
-    functions_args = ''
-    for child in node.children.values():
-        if child.status == "okay":
-            functions = functions + f"fn(DT_{child.z_path_id}) "
-            functions_args = functions_args + f"fn(DT_{child.z_path_id}, " \
-                                                            "__VA_ARGS__) "
+    out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_SEP_VARGS(fn, sep, ...)",
+            " DT_DEBRACKET_INTERNAL sep ".join(f"fn(DT_{child.z_path_id}, __VA_ARGS__)"
+            for child in node.children.values()))
 
-    out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_STATUS_OKAY(fn)", functions)
+    out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_STATUS_OKAY(fn)",
+            " ".join(f"fn(DT_{child.z_path_id})"
+            for child in node.children.values() if child.status == "okay"))
+
+    out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_STATUS_OKAY_SEP(fn, sep)",
+            " DT_DEBRACKET_INTERNAL sep ".join(f"fn(DT_{child.z_path_id})"
+            for child in node.children.values() if child.status == "okay"))
+
     out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_STATUS_OKAY_VARGS(fn, ...)",
-                                                                functions_args)
+            " ".join(f"fn(DT_{child.z_path_id}, __VA_ARGS__)"
+            for child in node.children.values() if child.status == "okay"))
+
+    out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS(fn, sep, ...)",
+            " DT_DEBRACKET_INTERNAL sep ".join(f"fn(DT_{child.z_path_id}, __VA_ARGS__)"
+            for child in node.children.values() if child.status == "okay"))
 
 
 def write_status(node):
