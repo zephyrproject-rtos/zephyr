@@ -54,7 +54,7 @@ static void entry_extra2(void *p1, void *p2, void *p3)
  * the fields of a k_event structure as expected.
  */
 
-void test_k_event_init(void)
+ZTEST(events_api, test_k_event_init)
 {
 	static struct k_event  event;
 	struct k_thread *thread;
@@ -336,7 +336,7 @@ void test_wake_multiple_threads(void)
  * involve waking or receiving events.
  */
 
-void test_event_deliver(void)
+ZTEST(events_api, test_event_deliver)
 {
 	static struct k_event  event;
 	uint32_t  events;
@@ -371,7 +371,7 @@ void test_event_deliver(void)
  *   k_event_post(), k_event_set(), k_event_wait() and k_event_wait_all().
  */
 
-void test_event_receive(void)
+ZTEST(events_api, test_event_receive)
 {
 
 	/* Create helper threads */
