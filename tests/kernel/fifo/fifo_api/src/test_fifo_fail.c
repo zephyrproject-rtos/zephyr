@@ -19,7 +19,7 @@
  * it should returns NULL.
  * @see k_fifo_init(), k_fifo_get()
  */
-void test_fifo_get_fail(void *p1, void *p2, void *p3)
+ZTEST(fifo_api, test_fifo_get_fail)
 {
 	static struct k_fifo fifo;
 
