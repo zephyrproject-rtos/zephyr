@@ -41,6 +41,9 @@ Removed APIs in this release
 * Removed support for enabling passthrough mode on MPU9150 to
   AK8975 sensor.
 
+* Removed deprecated SPI :c:struct:`spi_cs_control` fields for GPIO management
+  that have been replaced with :c:struct:`gpio_dt_spec`.
+
 Deprecated in this release
 ==========================
 

@@ -149,13 +149,8 @@ struct spi_cs_control {
 	 * equivalent to SPI_CS_ACTIVE_HIGH/SPI_CS_ACTIVE_LOW options in struct
 	 * spi_config.
 	 */
-	union {
+	struct {
 		struct gpio_dt_spec gpio;
-		struct {
-			const struct device *gpio_dev __deprecated;
-			gpio_pin_t gpio_pin __deprecated;
-			gpio_dt_flags_t gpio_dt_flags __deprecated;
-		};
 	};
 	/**
 	 * Delay in microseconds to wait before starting the
