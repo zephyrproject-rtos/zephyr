@@ -321,11 +321,9 @@ static int stm32_ospi_mem_ready(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, uin
 		s_command.Instruction = SPI_NOR_OCMD_RDSR;
 	} else {
 		s_command.Instruction = SPI_NOR_CMD_RDSR;
-		s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
-		s_command.DataMode = HAL_OSPI_DATA_1_LINE;
+		s_command.AddressMode = HAL_OSPI_ADDRESS_NONE;
 	}
 	s_command.NbData = ((nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U);
-	s_command.AddressMode = HAL_OSPI_ADDRESS_NONE;
 	s_command.Address = 0U;
 
 	if (nor_mode == OSPI_OPI_MODE) {
@@ -367,7 +365,6 @@ static int stm32_ospi_write_enable(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, 
 		s_command.Instruction = SPI_NOR_OCMD_WREN;
 	} else {
 		s_command.Instruction = SPI_NOR_CMD_WREN;
-		s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
 	}
 	s_command.AddressMode = HAL_OSPI_ADDRESS_NONE;
 	s_command.DataMode    = HAL_OSPI_DATA_NONE;
@@ -381,12 +378,13 @@ static int stm32_ospi_write_enable(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, 
 	/* Configure automatic polling mode to wait for write enabling */
 	if (nor_mode == OSPI_OPI_MODE) {
 		s_command.Instruction = SPI_NOR_OCMD_RDSR;
+  		s_command.AddressMode = HAL_OSPI_ADDRESS_8_LINES;
+  		s_command.DataMode    = HAL_OSPI_DATA_8_LINES;
 		s_command.DummyCycles = (nor_rate == OSPI_DTR_TRANSFER)
 				? SPI_NOR_DUMMY_REG_OCTAL_DTR
 						: SPI_NOR_DUMMY_REG_OCTAL;
 	} else {
 		s_command.Instruction = SPI_NOR_CMD_RDSR;
-		s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE,
 		s_command.DataMode = HAL_OSPI_DATA_1_LINE;
 	}
 	s_command.NbData         = (nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U;
@@ -422,6 +420,7 @@ static int stm32_ospi_write_cfg2reg_dummy(OSPI_HandleTypeDef *hospi,
 				? SPI_NOR_CMD_WR_CFGREG2
 				: SPI_NOR_OCMD_WR_CFGREG2;
 	s_command.Address = SPI_NOR_REG2_ADDR3;
+	s_command.AddressSize = HAL_OSPI_ADDRESS_32_BITS;
 	s_command.DummyCycles = 0U;
 	s_command.NbData = (nor_mode == OSPI_SPI_MODE) ? 1U
 			: ((nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U);
@@ -452,6 +451,7 @@ static int stm32_ospi_write_cfg2reg_io(OSPI_HandleTypeDef *hospi,
 				? SPI_NOR_CMD_WR_CFGREG2
 				: SPI_NOR_OCMD_WR_CFGREG2;
 	s_command.Address = SPI_NOR_REG2_ADDR1;
+	s_command.AddressSize = HAL_OSPI_ADDRESS_32_BITS;
 	s_command.DummyCycles = 0U;
 	s_command.NbData = (nor_mode == OSPI_SPI_MODE) ? 1U
 			: ((nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U);
@@ -482,6 +482,7 @@ static int stm32_ospi_read_cfg2reg(OSPI_HandleTypeDef *hospi,
 				? SPI_NOR_CMD_RD_CFGREG2
 				: SPI_NOR_OCMD_RD_CFGREG2;
 	s_command.Address = SPI_NOR_REG2_ADDR1;
+	s_command.AddressSize = HAL_OSPI_ADDRESS_32_BITS;
 	s_command.DummyCycles = (nor_mode == OSPI_SPI_MODE)
 				? 0U
 				: ((nor_rate == OSPI_DTR_TRANSFER)
@@ -1378,9 +1379,9 @@ static void spi_nor_process_bfp_addrbytes(const struct device *dev,
 
 	if (jesd216_bfp_addrbytes == JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_4B) {
 		data->address_width = 4U;
+	} else {
+		data->address_width = 3U;
 	}
-
-	data->address_width = 3U;
 }
 
 static inline uint8_t spi_nor_convert_read_to_4b(const uint8_t opcode)
