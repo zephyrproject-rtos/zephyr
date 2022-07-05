@@ -127,6 +127,11 @@ int ism330dhcx_trigger_set(const struct device *dev,
 			   sensor_trigger_handler_t handler)
 {
 	struct ism330dhcx_data *ism330dhcx = dev->data;
+	const struct ism330dhcx_config *cfg = dev->config;
+
+	if (!cfg->drdy_gpio.port) {
+		return -ENOTSUP;
+	}
 
 	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
 		ism330dhcx->handler_drdy_acc = handler;
