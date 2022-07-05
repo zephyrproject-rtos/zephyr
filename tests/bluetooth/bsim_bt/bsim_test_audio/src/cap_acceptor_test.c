@@ -19,6 +19,7 @@ CREATE_FLAG(flag_base_received);
 CREATE_FLAG(flag_pa_synced);
 CREATE_FLAG(flag_syncable);
 CREATE_FLAG(flag_received);
+CREATE_FLAG(flag_pa_sync_lost);
 
 static struct bt_audio_broadcast_sink *g_broadcast_sink;
 static struct bt_cap_stream broadcast_sink_streams[CONFIG_BT_AUDIO_BROADCAST_SNK_STREAM_COUNT];
@@ -148,7 +149,9 @@ static void pa_sync_lost_cb(struct bt_audio_broadcast_sink *sink)
 		return;
 	}
 
-	FAIL("Sink %p disconnected\n", sink);
+	printk("Sink %p disconnected\n", sink);
+
+	SET_FLAG(flag_pa_sync_lost);
 
 	g_broadcast_sink = NULL;
 }
@@ -337,6 +340,18 @@ static void test_cap_acceptor_broadcast(void)
 
 	printk("Waiting for data\n");
 	WAIT_FOR_FLAG(flag_received);
+
+	/* The order of PA sync lost and BIG Sync lost is irrelevant
+	 * and depend on timeout parameters. We just wait for PA first, but
+	 * either way will work.
+	 */
+	printk("Waiting for PA disconnected\n");
+	WAIT_FOR_FLAG(flag_pa_sync_lost);
+
+	printk("Waiting for streams to be stopped\n");
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sink_streams); i++) {
+		k_sem_take(&sem_broadcast_stopped, K_FOREVER);
+	}
 
 	PASS("CAP acceptor broadcast passed\n");
 }
