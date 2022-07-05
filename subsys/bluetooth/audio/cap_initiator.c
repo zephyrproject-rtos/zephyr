@@ -168,7 +168,13 @@ int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broa
 
 int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source)
 {
-	return -ENOSYS;
+	return bt_audio_broadcast_source_stop((struct bt_audio_broadcast_source *)broadcast_source);
+}
+
+int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broadcast_source)
+{
+	return bt_audio_broadcast_source_delete(
+		(struct bt_audio_broadcast_source *)broadcast_source);
 }
 
 int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *source,
