@@ -9,10 +9,10 @@ target_include_directories(MCUMGR INTERFACE
 )
 
 zephyr_library_sources(
-    src/zephyr_img_mgmt.c
     src/img_mgmt.c
     src/img_mgmt_state.c
     src/img_mgmt_util.c
+    src/img_mgmt_priv.c
 )
 
 if(CONFIG_MCUBOOT_IMG_MANAGER)
