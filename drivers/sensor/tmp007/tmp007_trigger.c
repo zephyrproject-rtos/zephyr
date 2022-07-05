@@ -39,6 +39,10 @@ int tmp007_attr_set(const struct device *dev,
 	int64_t value;
 	uint8_t reg;
 
+	if (!cfg->int_gpio.port) {
+		return -ENOTSUP;
+	}
+
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
 	}
@@ -125,6 +129,11 @@ int tmp007_trigger_set(const struct device *dev,
 		       sensor_trigger_handler_t handler)
 {
 	struct tmp007_data *drv_data = dev->data;
+	const struct tmp007_config *cfg = dev->config;
+
+	if (!cfg->int_gpio.port) {
+		return -ENOTSUP;
+	}
 
 	setup_int(dev, false);
 
