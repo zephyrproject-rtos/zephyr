@@ -5,4 +5,4 @@
 
 config BOARD_NRF51_BLE400
 	bool "nRF51 BLE400"
-	depends on SOC_NRF51822_QFAA
+	depends on SOC_NRF51822_QFAC
