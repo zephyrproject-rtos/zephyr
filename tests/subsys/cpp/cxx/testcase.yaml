@@ -2,6 +2,7 @@ common:
     tags: cpp
     integration_platforms:
       - mps2_an385
+      - qemu_cortex_a53
 
 tests:
   cpp.main.minimal:
