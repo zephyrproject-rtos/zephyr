@@ -16,3 +16,7 @@ tests:
     filter: CONFIG_ENTROPY_HAS_DRIVER
     tags: crypto entropy random security
     min_ram: 16
+  drivers.rand32.random_psa_crypto:
+    extra_args: CONF_FILE=prj_hw_random_psa_crypto.conf DTC_OVERLAY_FILE=./entropy_psa_crypto.overlay
+    filter: CONFIG_BUILD_WITH_TFM
+    tags: crypto entropy random security psa-crypto
