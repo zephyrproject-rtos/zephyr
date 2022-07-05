@@ -207,34 +207,38 @@ static int iis3dhhc_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_IIS3DHHC_TRIGGER
-	if (iis3dhhc_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupt.");
-		return -EIO;
+	if (config->int_gpio.port) {
+		if (iis3dhhc_init_interrupt(dev) < 0) {
+			LOG_ERR("Failed to initialize interrupt.");
+			return -EIO;
+		}
 	}
 #endif
 
 	return 0;
 }
 
-static struct iis3dhhc_data iis3dhhc_data;
+#define IIS3DHHC_DEFINE(inst)									\
+	static struct iis3dhhc_data iis3dhhc_data_##inst;					\
+												\
+	static const struct iis3dhhc_config iis3dhhc_config_##inst = {				\
+		IF_ENABLED(CONFIG_IIS3DHHC_TRIGGER,						\
+			   (COND_CODE_1(CONFIG_IIS3DHHC_DRDY_INT1,				\
+					(.int_gpio = GPIO_DT_SPEC_INST_GET_BY_IDX(inst,		\
+										  irq_gpios,	\
+										  0),),		\
+					(.int_gpio = GPIO_DT_SPEC_INST_GET_BY_IDX(inst,		\
+										  irq_gpios,	\
+										  1),))))	\
+												\
+		.bus_init = iis3dhhc_spi_init,							\
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER |				\
+					    SPI_MODE_CPOL | SPI_MODE_CPHA |			\
+					    SPI_WORD_SET(8), 0U),				\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, iis3dhhc_init, NULL,					\
+			      &iis3dhhc_data_##inst, &iis3dhhc_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &iis3dhhc_api_funcs);		\
 
-static const struct iis3dhhc_config iis3dhhc_config = {
-#ifdef CONFIG_IIS3DHHC_TRIGGER
-#ifdef CONFIG_IIS3DHHC_DRDY_INT1
-	.int_gpio = GPIO_DT_SPEC_INST_GET_BY_IDX(0, irq_gpios, 0),
-#else
-	.int_gpio = GPIO_DT_SPEC_INST_GET_BY_IDX(0, irq_gpios, 1),
-#endif /* CONFIG_IIS3DHHC_DRDY_INT1 */
-#endif /* CONFIG_IIS3DHHC_TRIGGER */
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	.bus_init = iis3dhhc_spi_init,
-	.spi = SPI_DT_SPEC_INST_GET(0, SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-			       SPI_MODE_CPHA | SPI_WORD_SET(8), 0U),
-#else
-#error "BUS MACRO NOT DEFINED IN DTS"
-#endif
-};
-
-DEVICE_DT_INST_DEFINE(0, iis3dhhc_init, NULL,
-		    &iis3dhhc_data, &iis3dhhc_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &iis3dhhc_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(IIS3DHHC_DEFINE)
