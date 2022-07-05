@@ -1,4 +1,4 @@
 tests:
   location.api:
-    tags: location_api_subsystem
+    tags: location_api
     platform_allow: native_posix
