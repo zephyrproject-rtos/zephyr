@@ -563,7 +563,7 @@ static void test_ptp_clock_get_user(void)
 	test_ptp_clock_get_by_xxx("user");
 }
 
-void test_main(void)
+void *setup(void)
 {
 	const struct device *clk;
 
@@ -571,18 +571,20 @@ void test_main(void)
 	if (clk != NULL) {
 		k_object_access_grant(clk, k_current_get());
 	}
-
-	ztest_test_suite(ptp_clock_test,
-			 ztest_unit_test(test_check_interfaces),
-			 ztest_unit_test(test_address_setup),
-			 ztest_unit_test(test_ptp_clock_interfaces),
-			 ztest_unit_test(test_ptp_clock_iface_1),
-			 ztest_unit_test(test_ptp_clock_iface_2),
-			 ztest_unit_test(test_ptp_clock_get_by_index),
-			 ztest_user_unit_test(test_ptp_clock_get_by_index_user),
-			 ztest_unit_test(test_ptp_clock_get_kernel),
-			 ztest_user_unit_test(test_ptp_clock_get_user)
-			 );
-
-	ztest_run_test_suite(ptp_clock_test);
+	return NULL;
 }
+
+ZTEST(ptp_clock_test_suite, test_ptp_clock)
+{
+	test_check_interfaces();
+	test_address_setup();
+	test_ptp_clock_interfaces();
+	test_ptp_clock_iface_1();
+	test_ptp_clock_iface_2();
+	test_ptp_clock_get_by_index();
+	test_ptp_clock_get_by_index_user();
+	test_ptp_clock_get_kernel();
+	test_ptp_clock_get_user();
+}
+
+ZTEST_SUITE(ptp_clock_test_suite, NULL, setup, NULL, NULL, NULL);
