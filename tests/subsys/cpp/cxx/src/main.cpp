@@ -111,6 +111,17 @@ static void test_global_static_ctor(void)
 	zassert_equal(static_foo.get_foo(), 12345678, NULL);
 }
 
+/*
+ * Check that dynamic memory allocation (usually, the C library heap) is
+ * functional when the global static object constructors are called.
+ */
+foo_class *static_init_dynamic_foo = new foo_class(87654321);
+
+static void test_global_static_ctor_dynmem(void)
+{
+	zassert_equal(static_init_dynamic_foo->get_foo(), 87654321, NULL);
+}
+
 static void test_new_delete(void)
 {
 	foo_class *test_foo = new foo_class(10);
@@ -122,6 +133,7 @@ void test_main(void)
 {
 	ztest_test_suite(cpp_tests,
 			 ztest_unit_test(test_global_static_ctor),
+			 ztest_unit_test(test_global_static_ctor_dynmem),
 			 ztest_unit_test(test_new_delete)
 		);
 
