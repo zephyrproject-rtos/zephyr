@@ -360,12 +360,30 @@ int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broa
  * to be enabled.
  *
  * @param broadcast_source The broadcast source to stop. The audio streams
- *                         in this will be stopped and reset, and the
- *                         @p broadcast_source will be invalidated.
+ *                         in this will be stopped and reset.
  *
  * @return 0 on success or negative error value on failure.
  */
 int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source);
+
+/*
+ * @brief Delete Common Audio Profile broadcast source
+ *
+ * This can only be done after the broadcast source has been stopped by calling
+ * bt_cap_initiator_broadcast_audio_stop() and after the
+ * bt_audio_stream_ops.stopped() callback has been called for all streams in the
+ * broadcast source.
+ *
+ * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
+ * @kconfig{CONFIG_BT_AUDIO_BROADCAST_SOURCE} must be enabled for this function
+ * to be enabled.
+ *
+ * @param broadcast_source The broadcast source to delete.
+ *                         The @p broadcast_source will be invalidated.
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broadcast_source);
 
 /**
  * @brief Get the broadcast ID of a Common Audio Profile broadcast source
@@ -401,6 +419,7 @@ int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *sour
  */
 int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *source,
 					struct net_buf_simple *base_buf);
+
 
 struct bt_cap_unicast_to_broadcast_param {
 	/** The source unicast group with the streams. */
