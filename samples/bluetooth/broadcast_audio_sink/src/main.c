@@ -19,6 +19,9 @@ static K_SEM_DEFINE(sem_pa_sync_lost, 0U, 1U);
 static struct bt_audio_broadcast_sink *broadcast_sink;
 static struct bt_audio_stream streams[CONFIG_BT_AUDIO_BROADCAST_SNK_STREAM_COUNT];
 
+static struct bt_codec codec = BT_CODEC_LC3_CONFIG_16_2(BT_AUDIO_LOCATION_FRONT_LEFT,
+							BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+
 /* Create a mask for the maximum BIS we can sync to using the number of streams
  * we have. We add an additional 1 since the bis indexes start from 1 and not
  * 0.
@@ -146,7 +149,7 @@ static struct bt_audio_broadcast_sink_cb broadcast_sink_cbs = {
 
 static struct bt_audio_capability capabilities = {
 	.dir = BT_AUDIO_DIR_SINK,
-	.codec = &preset_16_2_1.codec,
+	.codec = &codec,
 };
 
 static int init(void)
