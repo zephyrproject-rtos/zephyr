@@ -380,16 +380,15 @@ static void test_verify_data(void)
 	net_pkt_unref(pkt);
 }
 
-void test_main(void)
+ZTEST(net_promisc_test_suite, test_net_promisc)
 {
-	ztest_test_suite(net_promisc_test,
-			 ztest_unit_test(test_iface_setup),
-			 ztest_unit_test(test_set_promisc_mode_on),
-			 ztest_unit_test(test_set_promisc_mode_on_again),
-			 ztest_unit_test(test_recv_data),
-			 ztest_unit_test(test_verify_data),
-			 ztest_unit_test(test_set_promisc_mode_off),
-			 ztest_unit_test(test_set_promisc_mode_off_again));
-
-	ztest_run_test_suite(net_promisc_test);
+	test_iface_setup();
+	test_set_promisc_mode_on();
+	test_set_promisc_mode_on_again();
+	test_recv_data();
+	test_verify_data();
+	test_set_promisc_mode_off();
+	test_set_promisc_mode_off_again();
 }
+
+ZTEST_SUITE(net_promisc_test_suite, NULL, NULL, NULL, NULL, NULL);
