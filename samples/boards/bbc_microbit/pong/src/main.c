@@ -110,7 +110,7 @@ static int64_t b_timestamp;
 #define SOUND_PERIOD_PADDLE  200
 #define SOUND_PERIOD_WALL    1000
 
-static const struct device *pwm;
+static const struct device *pwm = DEVICE_DT_GET(DT_INST(0, nordic_nrf_sw_pwm));
 
 static enum sound_state {
 	SOUND_IDLE,    /* No sound */
@@ -522,7 +522,10 @@ void main(void)
 
 	k_work_init_delayable(&refresh, game_refresh);
 
-	pwm = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_sw_pwm)));
+	if (!device_is_ready(pwm)) {
+		printk("%s: device not ready.\n", pwm->name);
+		return;
+	}
 
 	ble_init();
 
