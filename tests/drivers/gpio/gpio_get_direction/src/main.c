@@ -4,7 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "test_gpio_get_direction.h"
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <ztest.h>
+
+#define TEST_NODE            DT_GPIO_CTLR(DT_ALIAS(led0), gpios)
+#define TEST_PIN             DT_GPIO_PIN(DT_ALIAS(led0), gpios)
+#define TEST_PIN_DTS_FLAGS   DT_GPIO_FLAGS(DT_ALIAS(led0), gpios)
 
 struct gpio_get_direction_fixture {
 	const struct device *port;
@@ -17,7 +23,7 @@ static void *gpio_get_direction_setup(void)
 	static struct gpio_get_direction_fixture fixture;
 
 	fixture.pin = TEST_PIN;
-	fixture.port = device_get_binding(TEST_DEV);
+	fixture.port = DEVICE_DT_GET(TEST_NODE);
 
 	return &fixture;
 }
@@ -26,7 +32,7 @@ static void gpio_get_direction_before(void *arg)
 {
 	struct gpio_get_direction_fixture *fixture = (struct gpio_get_direction_fixture *)arg;
 
-	zassert_not_null(fixture->port, "device " TEST_DEV " not found");
+	zassert_true(device_is_ready(fixture->port), "GPIO device is not ready");
 }
 
 static void common(struct gpio_get_direction_fixture *fixture)
