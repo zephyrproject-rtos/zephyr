@@ -181,7 +181,7 @@ static int max7219_led_init(const struct device *dev)
 	k_msleep(CONFIG_MAX7219_INITIALIZATION_DELAY);
 #endif
 
-	if (!device_is_ready(config->spi.bus)) {
+	if (!spi_is_ready(&config->spi)) {
 		LOG_ERR("SPI device not ready");
 		return -ENODEV;
 	}
