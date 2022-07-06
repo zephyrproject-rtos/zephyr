@@ -120,9 +120,10 @@ static void test_calibration_after_enabling_lfclk(void)
 		ztest_test_skip();
 	}
 
-	const struct device *clk_dev =
-		device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
+	const struct device *clk_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock);
 	struct sensor_value value = { .val1 = 0, .val2 = 0 };
+
+	zassert_true(device_is_ready(clk_dev), "Device is not ready");
 
 	mock_temp_nrf5_value_set(&value);
 
