@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &storage_partition;
+
+&flash0 {
+	partitions {
+		/* Set 48KB of storage at the beginning of bank2 in order to have 3 sectors smaller than 32K
+		 * 	(nvs.h: uint16_t sector_size)
+		 */
+		storage_partition: partition@100000 {
+			label = "storage";
+			reg = <0x000100000 DT_SIZE_K(48)>;
+		};
+	};
+};
