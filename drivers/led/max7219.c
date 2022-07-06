@@ -22,9 +22,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/zephyr.h>
 
-#define LOG_LEVEL CONFIG_LED_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(max7219);
+LOG_MODULE_REGISTER(max7219, CONFIG_LED_LOG_LEVEL);
 
 #define MAX7219_SEGMENTS_PER_DIGIT  8
 #define MAX7219_DIGITS_PER_DEVICE   8
