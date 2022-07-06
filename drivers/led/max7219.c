@@ -18,11 +18,10 @@
 
 #include <zephyr/drivers/led.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/zephyr.h>
-
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(max7219, CONFIG_LED_LOG_LEVEL);
 
 #define MAX7219_SEGMENTS_PER_DIGIT  8

@@ -7,10 +7,9 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/led.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/zephyr.h>
-
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app);
 
 #define NUM_LEDS 64
