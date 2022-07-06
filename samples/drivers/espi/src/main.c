@@ -46,9 +46,7 @@ static const struct gpio_dt_spec pwrgd_gpio = GPIO_DT_SPEC_GET(BRD_PWR_NODE, pwr
 static const struct gpio_dt_spec rsm_gpio = GPIO_DT_SPEC_GET(BRD_PWR_NODE, rsm_gpios);
 #endif
 
-#define ESPI_DEV      DT_LABEL(DT_NODELABEL(espi0))
-
-static const struct device *espi_dev;
+static const struct device *espi_dev = DEVICE_DT_GET(DT_NODELABEL(espi0));
 static struct espi_callback espi_bus_cb;
 static struct espi_callback vw_rdy_cb;
 static struct espi_callback vw_cb;
@@ -64,8 +62,8 @@ static uint8_t flash_read_buf[MAX_TEST_BUF_SIZE];
 #endif
 
 #ifdef CONFIG_ESPI_SAF
-#define ESPI_SAF_DEV      DT_LABEL(DT_NODELABEL(espi_saf0))
-#define SPI_DEV           DT_LABEL(DT_NODELABEL(spi0))
+#define ESPI_SAF_NODE     DT_NODELABEL(espi_saf0)
+#define SPI_NODE          DT_NODELABEL(spi0)
 
 #define SAF_BASE_ADDR     DT_REG_ADDR(DT_INST(0, microchip_xec_espi_saf))
 
@@ -1214,23 +1212,22 @@ int espi_test(void)
 		return -ENODEV;
 	}
 #endif
-	espi_dev = device_get_binding(ESPI_DEV);
-	if (!espi_dev) {
-		LOG_WRN("Fail to find %s", ESPI_DEV);
-		return -1;
+	if (!device_is_ready(espi_dev)) {
+		LOG_ERR("%s: device not ready.", espi_dev->name);
+		return -ENODEV;
 	}
 
 #ifdef CONFIG_ESPI_SAF
-	qspi_dev = device_get_binding(SPI_DEV);
-	if (!qspi_dev) {
-		LOG_WRN("Fail to find %s", SPI_DEV);
-		return -1;
+	qspi_dev = DEVICE_DT_GET(SPI_NODE);
+	if (!device_is_ready(qspi_dev)) {
+		LOG_ERR("%s: device not ready.", qspi_dev->name);
+		return -ENODEV;
 	}
 
-	espi_saf_dev = device_get_binding(ESPI_SAF_DEV);
-	if (!espi_saf_dev) {
-		LOG_WRN("Fail to find %s", ESPI_SAF_DEV);
-		return -1;
+	espi_saf_dev = DEVICE_DT_GET(ESPI_SAF_NODE);
+	if (!device_is_ready(espi_saf_dev)) {
+		LOG_ERR("%s: device not ready.", espi_saf_dev->name);
+		return -ENODEV;
 	}
 #endif
 
@@ -1266,13 +1263,13 @@ int espi_test(void)
 	 */
 	ret = spi_saf_init();
 	if (ret) {
-		LOG_ERR("Unable to configure %d:%s", ret, SPI_DEV);
+		LOG_ERR("Unable to configure %d:%s", ret, qspi_dev->name);
 		return ret;
 	}
 
 	ret = espi_saf_init();
 	if (ret) {
-		LOG_ERR("Unable to configure %d:%s", ret, ESPI_SAF_DEV);
+		LOG_ERR("Unable to configure %d:%s", ret, espi_saf_dev->name);
 		return ret;
 	}
 
