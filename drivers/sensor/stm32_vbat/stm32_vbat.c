@@ -5,6 +5,7 @@
  */
 
 #include <device.h>
+#include <devicetree.h>
 #include <drivers/sensor.h>
 #include <drivers/adc.h>
 #include <logging/log.h>
@@ -106,20 +107,25 @@ static int stm32_vbat_init(const struct device *dev)
 	return 0;
 }
 
-static struct stm32_vbat_config stm32_vbat_dev_config = {
-	.ratio = DT_INST_PROP(0, ratio),
-};
+#define STM32_VBAT_DEFINE(inst)									\
+	static struct stm32_vbat_data stm32_vbat_dev_data_##inst = {				\
+		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),				\
+		.adc_cfg = {									\
+			.gain = ADC_GAIN_1,							\
+			.reference = ADC_REF_INTERNAL,						\
+			.acquisition_time = ADC_ACQ_TIME_MAX,					\
+			.channel_id = DT_INST_IO_CHANNELS_INPUT(inst),				\
+			.differential = 0,							\
+		},										\
+	};											\
+												\
+	static const struct stm32_vbat_config stm32_vbat_dev_config_##inst = {			\
+		.ratio = DT_INST_PROP(inst, ratio),						\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, stm32_vbat_init, NULL,					\
+			      &stm32_vbat_dev_data_##inst, &stm32_vbat_dev_config_##inst,	\
+			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
+			      &stm32_vbat_driver_api);						\
 
-static struct stm32_vbat_data stm32_vbat_dev_data = {
-	.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(0)),
-	.adc_cfg = {
-		.gain = ADC_GAIN_1,
-		.reference = ADC_REF_INTERNAL,
-		.acquisition_time = ADC_ACQ_TIME_MAX,
-		.channel_id = DT_INST_IO_CHANNELS_INPUT(0),
-		.differential = 0,
-	},
-};
-
-DEVICE_DT_INST_DEFINE(0, stm32_vbat_init, NULL, &stm32_vbat_dev_data, &stm32_vbat_dev_config,
-		      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &stm32_vbat_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(STM32_VBAT_DEFINE)
