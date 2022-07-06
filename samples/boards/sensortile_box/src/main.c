@@ -249,7 +249,8 @@ static void iis3dhhc_config(const struct device *iis3dhhc)
 
 void main(void)
 {
-	static const struct device *led0, *led1;
+	static const struct gpio_dt_spec led0_gpio = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
+	static const struct gpio_dt_spec led1_gpio = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios);
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 	int i, on = 1;
 	int cnt = 1;
@@ -265,25 +266,27 @@ void main(void)
 		uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
 	}
 
-	led0 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
-	gpio_pin_configure(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios),
-			   GPIO_OUTPUT_ACTIVE |
-			   DT_GPIO_FLAGS(DT_ALIAS(led0), gpios));
+	if (!device_is_ready(led0_gpio.port)) {
+		printk("%s: device not ready.\n", led0_gpio.port->name);
+		return;
+	}
+	gpio_pin_configure_dt(&led0_gpio, GPIO_OUTPUT_ACTIVE);
 
-	led1 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led1), gpios));
-	gpio_pin_configure(led1, DT_GPIO_PIN(DT_ALIAS(led1), gpios),
-			   GPIO_OUTPUT_INACTIVE |
-			   DT_GPIO_FLAGS(DT_ALIAS(led1), gpios));
+	if (!device_is_ready(led1_gpio.port)) {
+		printk("%s: device not ready.\n", led1_gpio.port->name);
+		return;
+	}
+	gpio_pin_configure_dt(&led1_gpio, GPIO_OUTPUT_INACTIVE);
 
 	for (i = 0; i < 6; i++) {
-		gpio_pin_set(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios), on);
-		gpio_pin_set(led1, DT_GPIO_PIN(DT_ALIAS(led1), gpios), !on);
+		gpio_pin_set_dt(&led0_gpio, on);
+		gpio_pin_set_dt(&led1_gpio, !on);
 		k_sleep(K_MSEC(100));
 		on = (on == 1) ? 0 : 1;
 	}
 
-	gpio_pin_set(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios), 0);
-	gpio_pin_set(led1, DT_GPIO_PIN(DT_ALIAS(led1), gpios), 1);
+	gpio_pin_set_dt(&led0_gpio, 0);
+	gpio_pin_set_dt(&led1_gpio, 1);
 
 	printk("SensorTile.box test!!\n");
 
