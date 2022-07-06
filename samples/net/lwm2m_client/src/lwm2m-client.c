@@ -188,7 +188,12 @@ static void *temperature_get_buf(uint16_t obj_inst_id, uint16_t res_id,
 	const struct device *dev = NULL;
 
 #if defined(CONFIG_FXOS8700_TEMP)
-	dev = device_get_binding(DT_LABEL(DT_INST(0, nxp_fxos8700)));
+	dev = DEVICE_DT_GET_ONE(nxp_fxos8700);
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("%s: device not ready.", dev->name);
+		return;
+	}
 #endif
 
 	if (dev != NULL) {
