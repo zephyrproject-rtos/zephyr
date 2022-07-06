@@ -21,3 +21,4 @@ supported:
   - arduino_i2c
   - arduino_spi
   - usb_device
+  - nvs
