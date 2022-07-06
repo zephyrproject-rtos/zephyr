@@ -147,8 +147,7 @@ static int find_unused_irq(int start)
 	return i;
 }
 
-
-void test_arm_zero_latency_levels(void)
+ZTEST(arm_irq_zero_latency_levels, test_arm_zero_latency_levels)
 {
 	/*
 	 * Confirm that a zero-latency interrupt with lower priority will be
@@ -200,10 +199,4 @@ void test_arm_zero_latency_levels(void)
 	irq_unlock(key);
 }
 
-
-void test_main(void)
-{
-	ztest_test_suite(arm_irq_zero_latency_levels,
-		ztest_unit_test(test_arm_zero_latency_levels));
-	ztest_run_test_suite(arm_irq_zero_latency_levels);
-}
+ZTEST_SUITE(arm_irq_zero_latency_levels, NULL, NULL, NULL, NULL, NULL);
