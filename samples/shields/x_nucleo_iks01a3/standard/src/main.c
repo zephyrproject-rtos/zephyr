@@ -247,36 +247,36 @@ void main(void)
 	struct sensor_value accel1[3], accel2[3];
 	struct sensor_value gyro[3];
 	struct sensor_value magn[3];
-	const struct device *hts221 = device_get_binding(DT_LABEL(DT_INST(0, st_hts221)));
-	const struct device *lps22hh = device_get_binding(DT_LABEL(DT_INST(0, st_lps22hh)));
-	const struct device *stts751 = device_get_binding(DT_LABEL(DT_INST(0, st_stts751)));
-	const struct device *lis2mdl = device_get_binding(DT_LABEL(DT_INST(0, st_lis2mdl)));
-	const struct device *lis2dw12 = device_get_binding(DT_LABEL(DT_INST(0, st_lis2dw12)));
-	const struct device *lsm6dso = device_get_binding(DT_LABEL(DT_INST(0, st_lsm6dso)));
+	const struct device *hts221 = DEVICE_DT_GET_ONE(st_hts221);
+	const struct device *lps22hh = DEVICE_DT_GET_ONE(st_lps22hh);
+	const struct device *stts751 = DEVICE_DT_GET_ONE(st_stts751);
+	const struct device *lis2mdl = DEVICE_DT_GET_ONE(st_lis2mdl);
+	const struct device *lis2dw12 = DEVICE_DT_GET_ONE(st_lis2dw12);
+	const struct device *lsm6dso = DEVICE_DT_GET_ONE(st_lsm6dso);
 	int cnt = 1;
 
-	if (hts221 == NULL) {
-		printf("Could not get HTS221 device\n");
+	if (!device_is_ready(hts221)) {
+		printk("%s: device not ready.\n", hts221->name);
 		return;
 	}
-	if (lps22hh == NULL) {
-		printf("Could not get LPS22HH device\n");
+	if (!device_is_ready(lps22hh)) {
+		printk("%s: device not ready.\n", lps22hh->name);
 		return;
 	}
-	if (stts751 == NULL) {
-		printf("Could not get STTS751 device\n");
+	if (!device_is_ready(stts751)) {
+		printk("%s: device not ready.\n", stts751->name);
 		return;
 	}
-	if (lis2mdl == NULL) {
-		printf("Could not get LIS2MDL Magn device\n");
+	if (!device_is_ready(lis2mdl)) {
+		printk("%s: device not ready.\n", lis2mdl->name);
 		return;
 	}
-	if (lis2dw12 == NULL) {
-		printf("Could not get LIS2DW12 device\n");
+	if (!device_is_ready(lis2dw12)) {
+		printk("%s: device not ready.\n", lis2dw12->name);
 		return;
 	}
-	if (lsm6dso == NULL) {
-		printf("Could not get LSM6DSO device\n");
+	if (!device_is_ready(lsm6dso)) {
+		printk("%s: device not ready.\n", lsm6dso->name);
 		return;
 	}
 
