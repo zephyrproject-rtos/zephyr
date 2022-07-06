@@ -12,9 +12,6 @@
  * so we only test x86 and arch posix here.
  * And x86_64 is also not support this kind of interrupt, we skip it.
  */
-#if (defined(CONFIG_X86) && !defined(CONFIG_X86_64)) ||\
-	defined(CONFIG_ARCH_POSIX)
-
 #if defined(CONFIG_X86)
 
 #define TEST_DIRECT_IRQ_LINE_1	3
@@ -58,7 +55,7 @@ ISR_DIRECT_DECLARE(direct_isr2)
  *
  * @see IRQ_DIRECT_CONNECT(), ISR_DIRECT_DECLARE()
  */
-void test_direct_interrupt(void)
+ZTEST(x86_direct_interrupt, test_direct_interrupt)
 {
 	int trig_vec1, trig_vec2;
 
@@ -121,16 +118,5 @@ void test_direct_interrupt(void)
 			"Both ISR should execute again(%d)(%d)",
 			direct_int_executed[0], direct_int_executed[1]);
 }
-#else
-void test_direct_interrupt(void)
-{
-	ztest_test_skip();
-}
-#endif /* end defined(CONFIG_X86) || defined(CONFIG_ARCH_POSIX) */
 
-void test_main(void)
-{
-	ztest_test_suite(x86_direct_interrupt,
-		ztest_unit_test(test_direct_interrupt));
-	ztest_run_test_suite(x86_direct_interrupt);
-}
+ZTEST_SUITE(x86_direct_interrupt, NULL, NULL, NULL, NULL, NULL);
