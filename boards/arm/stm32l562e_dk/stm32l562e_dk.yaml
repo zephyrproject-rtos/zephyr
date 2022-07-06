@@ -19,5 +19,6 @@ supported:
   - usart
   - arduino_spi
   - usb
+  - nvs
 ram: 192
 flash: 512
