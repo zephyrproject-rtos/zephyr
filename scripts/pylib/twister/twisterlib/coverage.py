@@ -19,6 +19,7 @@ class CoverageTool:
     def __init__(self):
         self.gcov_tool = None
         self.base_dir = None
+        self.output_formats = None
 
     @staticmethod
     def factory(tool):
@@ -174,6 +175,10 @@ class Gcovr(CoverageTool):
         tuple_list = [(prefix, item) for item in list]
         return [item for sublist in tuple_list for item in sublist]
 
+    @staticmethod
+    def _flatten_list(list):
+        return [a for b in list for a in b]
+
     def _generate(self, outdir, coveragelog):
         coveragefile = os.path.join(outdir, "coverage.json")
         ztestfile = os.path.join(outdir, "ztest.json")
@@ -203,9 +208,18 @@ class Gcovr(CoverageTool):
 
         tracefiles = self._interleave_list("--add-tracefile", files)
 
-        return subprocess.call(["gcovr", "-r", self.base_dir, "--html",
-                                "--html-details"] + tracefiles +
-                               ["-o", os.path.join(subdir, "index.html")],
+        # Convert command line argument (comma-separated list) to gcovr flags
+        report_options = {
+            "html": ["--html", os.path.join(subdir, "index.html"), "--html-details"],
+            "xml": ["--xml", os.path.join(subdir, "coverage.xml"), "--xml-pretty"],
+            "csv": ["--csv", os.path.join(subdir, "coverage.csv")],
+            "txt": ["--txt", os.path.join(subdir, "coverage.txt")],
+            "coveralls": ["--coveralls", os.path.join(subdir, "coverage.coveralls.json"), "--coveralls-pretty"],
+            "sonarqube": ["--sonarqube", os.path.join(subdir, "coverage.sonarqube.xml")]
+        }
+        gcovr_options = self._flatten_list([report_options[r] for r in self.output_formats.split(',')])
+
+        return subprocess.call(["gcovr", "-r", self.base_dir] + gcovr_options + tracefiles,
                                stdout=coveragelog)
 
 
@@ -229,6 +243,7 @@ def run_coverage(testplan, options):
     coverage_tool = CoverageTool.factory(options.coverage_tool)
     coverage_tool.gcov_tool = options.gcov_tool
     coverage_tool.base_dir = os.path.abspath(options.coverage_basedir)
+    coverage_tool.output_formats = options.coverage_formats
     coverage_tool.add_ignore_file('generated')
     coverage_tool.add_ignore_directory('tests')
     coverage_tool.add_ignore_directory('samples')
