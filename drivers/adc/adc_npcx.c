@@ -761,8 +761,9 @@ static int adc_npcx_init(const struct device *dev)
 
 	/* Configure the ADC clock */
 	prescaler = ceiling_fraction(data->input_clk, NPCX_ADC_CLK);
-	if (prescaler > 0x40)
+	if (prescaler > 0x40) {
 		prescaler = 0x40;
+	}
 
 	/* Set Core Clock Division Factor in order to obtain the ADC clock */
 	SET_FIELD(inst->ATCTL, NPCX_ATCTL_SCLKDIV_FIELD, prescaler - 1);

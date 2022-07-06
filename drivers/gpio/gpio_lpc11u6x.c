@@ -138,10 +138,11 @@ static int gpio_lpc11u6x_pin_configure(const struct device *port,
 
 	if (flags & GPIO_SINGLE_ENDED) {
 		/* Open source mode is not supported. */
-		if (flags & GPIO_LINE_OPEN_DRAIN)
+		if (flags & GPIO_LINE_OPEN_DRAIN) {
 			func |= IOCON_PIO_OD(1);
-		else
+		} else {
 			return -ENOTSUP;
+		}
 	}
 
 	if (flags & GPIO_PULL_UP) {
@@ -370,23 +371,26 @@ static int gpio_lpc11u6x_pin_interrupt_configure(const struct device *port,
 		/* Select edge interrupt mode. */
 		pint_regs->isel &= ~BIT(irq);
 		/* Enable interrupts on falling and/or rising edges. */
-		if (trig & GPIO_INT_TRIG_LOW)
+		if (trig & GPIO_INT_TRIG_LOW) {
 			pint_regs->sienf |= BIT(irq);
-		else
+		} else {
 			pint_regs->cienf |= BIT(irq);
-		if (trig & GPIO_INT_TRIG_HIGH)
+		}
+		if (trig & GPIO_INT_TRIG_HIGH) {
 			pint_regs->sienr |= BIT(irq);
-		else
+		} else {
 			pint_regs->cienr |= BIT(irq);
+		}
 		break;
 	case GPIO_INT_MODE_LEVEL:
 		/* Select level interrupt mode. */
 		pint_regs->isel |= BIT(irq);
 		/* Set active level. */
-		if (trig & GPIO_INT_TRIG_LOW)
+		if (trig & GPIO_INT_TRIG_LOW) {
 			pint_regs->cienf |= BIT(irq);
-		else
+		} else {
 			pint_regs->sienf |= BIT(irq);
+		}
 		/* Enable level interrupt. */
 		pint_regs->sienr |= BIT(irq);
 		break;

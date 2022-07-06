@@ -49,8 +49,9 @@ struct gpio_npcx_data {
 /* Platform specific GPIO functions */
 const struct device *npcx_get_gpio_dev(int port)
 {
-	if (port >= gpio_devs_count)
+	if (port >= gpio_devs_count) {
 		return NULL;
+	}
 
 	return gpio_devs[port];
 }
@@ -107,8 +108,9 @@ static int gpio_npcx_config(const struct device *dev,
 	 * after setting all other attributes, so as not to create a
 	 * temporary incorrect logic state 0:input 1:output
 	 */
-	if ((flags & GPIO_OUTPUT) == 0)
+	if ((flags & GPIO_OUTPUT) == 0) {
 		inst->PDIR &= ~mask;
+	}
 
 	/*
 	 * If this IO pad is configured for low-voltage power supply, the GPIO
@@ -120,10 +122,11 @@ static int gpio_npcx_config(const struct device *dev,
 	}
 
 	/* Select open drain 0:push-pull 1:open-drain */
-	if ((flags & GPIO_OPEN_DRAIN) != 0)
+	if ((flags & GPIO_OPEN_DRAIN) != 0) {
 		inst->PTYPE |= mask;
-	else
+	} else {
 		inst->PTYPE &= ~mask;
+	}
 
 	/* Select pull-up/down of GPIO 0:pull-up 1:pull-down */
 	if ((flags & GPIO_PULL_UP) != 0) {
@@ -138,14 +141,16 @@ static int gpio_npcx_config(const struct device *dev,
 	}
 
 	/* Set level 0:low 1:high */
-	if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0)
+	if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
 		inst->PDOUT |= mask;
-	else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0)
+	} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
 		inst->PDOUT &= ~mask;
+	}
 
 	/* Configure pin as output, if requested 0:input 1:output */
-	if ((flags & GPIO_OUTPUT) != 0)
+	if ((flags & GPIO_OUTPUT) != 0) {
 		inst->PDIR |= mask;
+	}
 
 	return 0;
 }
@@ -274,8 +279,9 @@ static int gpio_npcx_manage_callback(const struct device *dev,
 	int pin = find_lsb_set(callback->pin_mask) - 1;
 
 	/* pin_mask should not be zero */
-	if (pin < 0)
+	if (pin < 0) {
 		return -EINVAL;
+	}
 
 	/* Has the IO pin valid MIWU input source? */
 	if (config->wui_maps[pin].table == NPCX_MIWU_TABLE_NONE) {

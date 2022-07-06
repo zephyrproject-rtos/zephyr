@@ -824,8 +824,9 @@ static int dma_iproc_pax_do_xfer(const struct device *dev,
 	set_ring_active(pd, idx, true);
 
 	ret = wait_for_pkt_completion(dev, idx, pl_len + 1);
-	if (ret)
+	if (ret) {
 		goto err_ret;
+	}
 
 	ret = poll_on_write_sync(dev, ring);
 	k_mutex_lock(&ring->lock, K_FOREVER);

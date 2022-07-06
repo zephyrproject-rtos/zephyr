@@ -177,8 +177,9 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 			next_msg_flags = &(next->flags);
 		}
 		ret = i2c_stm32_transaction(dev, *current, next_msg_flags, slave);
-		if (ret < 0)
+		if (ret < 0) {
 			break;
+		}
 		current++;
 		num_msgs--;
 	}

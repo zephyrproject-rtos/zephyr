@@ -709,13 +709,15 @@ static int offload_getaddrinfo(const char *node, const char *service,
 
 	if (service) {
 		port = atoi(service);
-		if (port < 1 || port > USHRT_MAX)
+		if (port < 1 || port > USHRT_MAX) {
 			return DNS_EAI_SERVICE;
+		}
 	}
 
 	if (port > 0U) {
-		if (dns_result.ai_family == AF_INET)
+		if (dns_result.ai_family == AF_INET) {
 			net_sin(&dns_result_addr)->sin_port = htons(port);
+		}
 	}
 
 	/* Check if node is an IP address */
@@ -1809,14 +1811,15 @@ int mdm_sim7080_ftp_get_start(const char *server, const char *user, const char *
  */
 static uint8_t mdm_pdu_decode_ascii(char byte)
 {
-	if ((byte >= '0') && (byte <= '9'))
+	if ((byte >= '0') && (byte <= '9')) {
 		return byte - '0';
-	else if ((byte >= 'A') && (byte <= 'F'))
+	} else if ((byte >= 'A') && (byte <= 'F')) {
 		return byte - 'A' + 10;
-	else if ((byte >= 'a') && (byte <= 'f'))
+	} else if ((byte >= 'a') && (byte <= 'f')) {
 		return byte - 'a' + 10;
-	else
+	} else {
 		return 255;
+	}
 }
 
 /**
