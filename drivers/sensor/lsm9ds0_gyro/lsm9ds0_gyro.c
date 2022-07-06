@@ -323,25 +323,29 @@ static int lsm9ds0_gyro_init(const struct device *dev)
 	}
 
 #if defined(CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY)
-	if (lsm9ds0_gyro_init_interrupt(dev) < 0) {
-		LOG_DBG("failed to initialize interrupts");
-		return -EIO;
+	if (config->int_gpio.port) {
+		if (lsm9ds0_gyro_init_interrupt(dev) < 0) {
+			LOG_DBG("failed to initialize interrupts");
+			return -EIO;
+		}
 	}
 #endif
 
 	return 0;
 }
 
-static const struct lsm9ds0_gyro_config lsm9ds0_gyro_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-#if defined(CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY)
-	.int_gpio = GPIO_DT_SPEC_INST_GET(0, irq_gpios),
-#endif
-};
+#define LSM9DS0_GYRO_DEFINE(inst)								\
+	static struct lsm9ds0_gyro_data lsm9ds0_gyro_data_##inst;				\
+												\
+	static const struct lsm9ds0_gyro_config lsm9ds0_gyro_config_##inst = {			\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+		IF_ENABLED(CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY,					\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, irq_gpios, { 0 }),))	\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, lsm9ds0_gyro_init, NULL,					\
+			      &lsm9ds0_gyro_data_##inst, &lsm9ds0_gyro_config_##inst,		\
+			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
+			      &lsm9ds0_gyro_api_funcs);						\
 
-static struct lsm9ds0_gyro_data lsm9ds0_gyro_data;
-
-DEVICE_DT_INST_DEFINE(0, lsm9ds0_gyro_init, NULL,
-		    &lsm9ds0_gyro_data, &lsm9ds0_gyro_config,
-		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &lsm9ds0_gyro_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(LSM9DS0_GYRO_DEFINE)
