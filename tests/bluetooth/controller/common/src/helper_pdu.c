@@ -27,9 +27,14 @@
 
 #include "lll.h"
 #include "lll_df_types.h"
+#include "lll_conn_iso.h"
+
 #include "lll_conn.h"
 #include "ull_tx_queue.h"
+#include "isoal.h"
+#include "ull_iso_types.h"
 #include "ull_conn_types.h"
+#include "ull_conn_iso_types.h"
 
 #include "ull_llcp.h"
 
@@ -400,6 +405,19 @@ void helper_pdu_encode_zero(struct pdu_data *pdu, void *param)
 void helper_node_encode_cte_rsp(struct node_rx_pdu *rx, void *param)
 {
 	rx->hdr.rx_ftr.iq_report = (struct cte_conn_iq_report *)param;
+}
+
+void helper_pdu_encode_cis_terminate_ind(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_cis_terminate_ind *p = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, cis_terminate_ind) +
+		   sizeof(struct pdu_data_llctrl_cis_terminate_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND;
+	pdu->llctrl.cis_terminate_ind.cig_id = p->cig_id;
+	pdu->llctrl.cis_terminate_ind.cis_id = p->cis_id;
+	pdu->llctrl.cis_terminate_ind.error_code = p->error_code;
 }
 
 void helper_pdu_verify_version_ind(const char *file, uint32_t line, struct pdu_data *pdu,
@@ -963,4 +981,25 @@ void helper_pdu_ntf_verify_cte_rsp(const char *file, uint32_t line, struct pdu_d
 		      line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CTE_RSP,
 		      "Not a LL_CTE_RSP. Called at %s:%d\n", file, line);
+}
+
+void helper_pdu_verify_cis_terminate_ind(const char *file, uint32_t line, struct pdu_data *pdu,
+					 void *param)
+{
+	struct pdu_data_llctrl_cis_terminate_ind *p = param;
+
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file,
+		      line);
+	zassert_equal(pdu->len,
+		      offsetof(struct pdu_data_llctrl, cis_terminate_ind) +
+			      sizeof(struct pdu_data_llctrl_cis_terminate_ind),
+		      "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND,
+		      "Not a LL_CIS_TERMINATE_IND.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_terminate_ind.cig_id, p->cig_id,
+		      "CIG ID mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_terminate_ind.cis_id, p->cis_id,
+		      "CIS ID mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_terminate_ind.error_code, p->error_code,
+		      "Error code mismatch.\nCalled at %s:%d\n", file, line);
 }
