@@ -4,4 +4,5 @@ sample:
 tests:
   sample.drivers.led.max7219:
     platform_allow: stm32_min_dev_black
+    filter: dt_compat_enabled("maxim,max7219")
     tags: LED
