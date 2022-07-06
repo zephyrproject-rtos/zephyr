@@ -290,9 +290,11 @@ static int iis2dh_init(const struct device *dev)
 #endif
 
 #ifdef CONFIG_IIS2DH_TRIGGER
-	if (iis2dh_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupts");
-		return -EIO;
+	if (cfg->int_gpio.port) {
+		if (iis2dh_init_interrupt(dev) < 0) {
+			LOG_ERR("Failed to initialize interrupts");
+			return -EIO;
+		}
 	}
 #endif /* CONFIG_IIS2DH_TRIGGER */
 
@@ -305,16 +307,19 @@ static int iis2dh_init(const struct device *dev)
 
 #define IIS2DH_I2C(inst) (.i2c = I2C_DT_SPEC_INST_GET(inst),)
 
-const struct iis2dh_device_config iis2dh_cfg = {
-	COND_CODE_1(DT_INST_ON_BUS(0, i2c), IIS2DH_I2C(0), ())
-	COND_CODE_1(DT_INST_ON_BUS(0, spi), IIS2DH_SPI(0), ())
-	.pm = CONFIG_IIS2DH_POWER_MODE,
-	IF_ENABLED(CONFIG_IIS2DH_TRIGGER,
-		   (.int_gpio = GPIO_DT_SPEC_INST_GET(0, drdy_gpios),))
-};
+#define IIS2DH_DEFINE(inst)									\
+	static struct iis2dh_data iis2dh_data_##inst;						\
+												\
+	static const struct iis2dh_device_config iis2dh_device_config_##inst = {		\
+		COND_CODE_1(DT_INST_ON_BUS(inst, i2c), IIS2DH_I2C(inst), ())			\
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi), IIS2DH_SPI(inst), ())			\
+		.pm = CONFIG_IIS2DH_POWER_MODE,							\
+		IF_ENABLED(CONFIG_IIS2DH_TRIGGER,						\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),))	\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, iis2dh_init, NULL,						\
+			      &iis2dh_data_##inst, &iis2dh_device_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &iis2dh_driver_api);			\
 
-struct iis2dh_data iis2dh_data;
-
-DEVICE_DT_INST_DEFINE(0, iis2dh_init, NULL,
-	     &iis2dh_data, &iis2dh_cfg, POST_KERNEL,
-	     CONFIG_SENSOR_INIT_PRIORITY, &iis2dh_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(IIS2DH_DEFINE)
