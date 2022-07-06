@@ -81,7 +81,8 @@ zephyr_img_mgmt_flash_check_empty(uint8_t fa_id, bool *out_empty)
 		rc = flash_area_read(fa, addr, data, bytes_to_read);
 		if (rc != 0) {
 			flash_area_close(fa);
-			return MGMT_ERR_EUNKNOWN;
+			LOG_ERR("Read Error, Might be Corrupted");
+			return MGMT_ERR_ECORRUPT;
 		}
 
 		for (i = 0; i < bytes_to_read / 4; i++) {
@@ -599,11 +600,13 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 		(void) empty;
 #else
 		rc = zephyr_img_mgmt_flash_check_empty(action->area_id, &empty);
-		if (rc) {
+		if (rc == MGMT_ERR_ECORRUPT) {
+			action->erase = true;
+		} else if (rc != 0) {
 			return MGMT_ERR_EUNKNOWN;
+		} else {
+			action->erase = !empty;
 		}
-
-		action->erase = !empty;
 #endif
 	} else {
 		/* Continuation of upload. */
