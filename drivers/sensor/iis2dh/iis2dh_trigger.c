@@ -42,8 +42,13 @@ int iis2dh_trigger_set(const struct device *dev,
 		       sensor_trigger_handler_t handler)
 {
 	struct iis2dh_data *iis2dh = dev->data;
+	const struct iis2dh_device_config *cfg = dev->config;
 	int16_t raw[3];
 	int state = (handler != NULL) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
+
+	if (!cfg->int_gpio.port) {
+		return -ENOTSUP;
+	}
 
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
