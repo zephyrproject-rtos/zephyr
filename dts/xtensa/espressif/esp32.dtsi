@@ -254,6 +254,8 @@
 		timer0: counter@3ff5f000 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x3ff5f000 DT_SIZE_K(4)>;
+			group = <0>;
+			index = <0>;
 			interrupts = <TG0_T0_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			label = "TIMG0_T0";
@@ -263,6 +265,8 @@
 		timer1: counter@3ff5f024 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x3ff5f024 DT_SIZE_K(4)>;
+			group = <0>;
+			index = <1>;
 			interrupts = <TG0_T1_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			label = "TIMG0_T1";
@@ -272,6 +276,8 @@
 		timer2: counter@3ff60000 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x3ff60000 DT_SIZE_K(4)>;
+			group = <1>;
+			index = <0>;
 			interrupts = <TG1_T0_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			label = "TIMG1_T0";
@@ -281,6 +287,8 @@
 		timer3: counter@3ff60024 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x3ff60024 DT_SIZE_K(4)>;
+			group = <1>;
+			index = <1>;
 			interrupts = <TG1_T1_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			label = "TIMG1_T1";
