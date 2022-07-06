@@ -86,6 +86,7 @@ void sys_multi_heap_free(struct sys_multi_heap *mheap, void *block)
 
 	heap = sys_multi_heap_get_heap(mheap, block);
 
-	if (heap != NULL)
+	if (heap != NULL) {
 		sys_heap_free(heap->heap, block);
+	}
 }

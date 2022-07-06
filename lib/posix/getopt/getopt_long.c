@@ -146,10 +146,11 @@ permute_args(int panonopt_start, int panonopt_end, int opt_end,
 		cstart = panonopt_end+i;
 		pos = cstart;
 		for (j = 0; j < cyclelen; j++) {
-			if (pos >= panonopt_end)
+			if (pos >= panonopt_end) {
 				pos -= nnonopts;
-			else
+			} else {
 				pos += nopts;
+			}
 			swap = nargv[pos];
 			/* LINTED const cast */
 			((char **) nargv)[pos] = nargv[cstart];
@@ -204,14 +205,15 @@ parse_long_options(struct getopt_state *state, char * const *nargv,
 		/* argument found (--option=arg) */
 		current_argv_len = has_equal - current_argv;
 		has_equal++;
-	} else
+	} else {
 		current_argv_len = strlen(current_argv);
+	}
 
 	for (i = 0; long_options[i].name; i++) {
 		/* find matching long option */
-		if (strncmp(current_argv, long_options[i].name,
-		    current_argv_len))
+		if (strncmp(current_argv, long_options[i].name, current_argv_len)) {
 			continue;
+		}
 
 		if (strlen(long_options[i].name) == current_argv_len) {
 			/* exact match */
@@ -223,47 +225,51 @@ parse_long_options(struct getopt_state *state, char * const *nargv,
 		 * If this is a known short option, don't allow
 		 * a partial match of a single character.
 		 */
-		if (short_too && current_argv_len == 1)
+		if (short_too && current_argv_len == 1) {
 			continue;
+		}
 
-		if (match == -1)        /* first partial match */
+		if (match == -1) { /* first partial match */
 			match = i;
-		else if ((flags & FLAG_LONGONLY) ||
-			 long_options[i].has_arg !=
-			     long_options[match].has_arg ||
-			 long_options[i].flag != long_options[match].flag ||
-			 long_options[i].val != long_options[match].val)
+		} else if ((flags & FLAG_LONGONLY) ||
+			   long_options[i].has_arg != long_options[match].has_arg ||
+			   long_options[i].flag != long_options[match].flag ||
+			   long_options[i].val != long_options[match].val) {
 			second_partial_match = 1;
+		}
 	}
 	if (!exact_match && second_partial_match) {
 		/* ambiguous abbreviation */
-		if (PRINT_ERROR)
+		if (PRINT_ERROR) {
 			LOG_WRN(AMBIG,
 #ifdef GNU_COMPATIBLE
 			     current_dash,
 #endif
 			     (int)current_argv_len,
 			     current_argv);
+		}
 		state->optopt = 0;
 		return BADCH;
 	}
 	if (match != -1) {		/* option found */
 		if (long_options[match].has_arg == no_argument
 		    && has_equal) {
-			if (PRINT_ERROR)
+			if (PRINT_ERROR) {
 				LOG_WRN(NOARG,
 #ifdef GNU_COMPATIBLE
 				     current_dash,
 #endif
 				     (int)current_argv_len,
 				     current_argv);
+			}
 			/*
 			 * XXX: GNU sets optopt to val regardless of flag
 			 */
-			if (long_options[match].flag == NULL)
+			if (long_options[match].flag == NULL) {
 				state->optopt = long_options[match].val;
-			else
+			} else {
 				state->optopt = 0;
+			}
 #ifdef GNU_COMPATIBLE
 			return BADCH;
 #else
@@ -272,10 +278,9 @@ parse_long_options(struct getopt_state *state, char * const *nargv,
 		}
 		if (long_options[match].has_arg == required_argument ||
 		    long_options[match].has_arg == optional_argument) {
-			if (has_equal)
+			if (has_equal) {
 				state->optarg = has_equal;
-			else if (long_options[match].has_arg ==
-			    required_argument) {
+			} else if (long_options[match].has_arg == required_argument) {
 				/*
 				 * optional argument doesn't use next nargv
 				 */
@@ -288,19 +293,21 @@ parse_long_options(struct getopt_state *state, char * const *nargv,
 			 * Missing argument; leading ':' indicates no error
 			 * should be generated.
 			 */
-			if (PRINT_ERROR)
+			if (PRINT_ERROR) {
 				LOG_WRN(RECARGSTRING,
 #ifdef GNU_COMPATIBLE
 				    current_dash,
 #endif
 				    current_argv);
+			}
 			/*
 			 * XXX: GNU sets optopt to val regardless of flag
 			 */
-			if (long_options[match].flag == NULL)
+			if (long_options[match].flag == NULL) {
 				state->optopt = long_options[match].val;
-			else
+			} else {
 				state->optopt = 0;
+			}
 			--state->optind;
 			return BADARG;
 		}
@@ -309,22 +316,25 @@ parse_long_options(struct getopt_state *state, char * const *nargv,
 			--state->optind;
 			return -1;
 		}
-		if (PRINT_ERROR)
+		if (PRINT_ERROR) {
 			LOG_WRN(ILLOPTSTRING,
 #ifdef GNU_COMPATIBLE
 			      current_dash,
 #endif
 			      current_argv);
+		}
 		state->optopt = 0;
 		return BADCH;
 	}
-	if (idx)
+	if (idx) {
 		*idx = match;
+	}
 	if (long_options[match].flag) {
 		*long_options[match].flag = long_options[match].val;
 		return 0;
-	} else
+	} else {
 		return long_options[match].val;
+	}
 }
 
 /*
@@ -339,36 +349,41 @@ getopt_internal(struct getopt_state *state, int nargc, char * const *nargv,
 	char *oli;				/* option letter list index */
 	int optchar, short_too;
 
-	if (options == NULL)
+	if (options == NULL) {
 		return -1;
+	}
 
 	/*
 	 * Disable GNU extensions if options string begins with a '+'.
 	 */
 #ifdef GNU_COMPATIBLE
-	if (*options == '-')
+	if (*options == '-') {
 		flags |= FLAG_ALLARGS;
-	else if (*options == '+')
+	} else if (*options == '+') {
 		flags &= ~FLAG_PERMUTE;
+	}
 #else
 	if (*options == '+')
 		flags &= ~FLAG_PERMUTE;
 	else if (*options == '-')
 		flags |= FLAG_ALLARGS;
 #endif
-	if (*options == '+' || *options == '-')
+	if (*options == '+' || *options == '-') {
 		options++;
+	}
 
 	/*
 	 * XXX Some GNU programs (like cvs) set optind to 0 instead of
 	 * XXX using optreset.  Work around this braindamage.
 	 */
-	if (state->optind == 0)
+	if (state->optind == 0) {
 		state->optind = state->optreset = 1;
+	}
 
 	state->optarg = NULL;
-	if (state->optreset)
+	if (state->optreset) {
 		state->nonopt_start = state->nonopt_end = -1;
+	}
 start:
 	if (state->optreset || !*(state->place)) {/* update scanning pointer */
 		state->optreset = 0;
@@ -475,9 +490,9 @@ start:
 #ifdef GNU_COMPATIBLE
 			dash_prefix = DD_PREFIX;
 #endif
-		} else if (*(state->place) != ':' && strchr(options,
-						       *(state->place)) != NULL)
+		} else if (*(state->place) != ':' && strchr(options, *(state->place)) != NULL) {
 			short_too = 1;		/* could be short option too */
+		}
 
 		optchar = parse_long_options(state, nargv, options,
 					     long_options, idx, short_too,
