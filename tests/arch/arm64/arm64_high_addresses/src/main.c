@@ -5,21 +5,11 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <stdio.h>
-#define USER_STACKSIZE	2048
+#include <ztest.h>
 
-struct k_thread user_thread;
-K_THREAD_STACK_DEFINE(user_stack, USER_STACKSIZE);
-
-static void user_function(void *p1, void *p2, void *p3)
+ZTEST_USER(arm64_high_addresses, test_arm64_high_addresses)
 {
-	printf("Hello World from UserSpace! %s\n", CONFIG_BOARD);
+	ztest_test_pass();
 }
 
-
-void main(void)
-{
-	k_thread_create(&user_thread, user_stack, USER_STACKSIZE,
-			user_function, NULL, NULL, NULL,
-			-1, K_USER, K_MSEC(0));
-}
+ZTEST_SUITE(arm64_high_addresses, NULL, NULL, NULL, NULL, NULL);
