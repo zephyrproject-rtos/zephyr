@@ -57,21 +57,10 @@ static struct k_work_delayable epd_work;
 static struct k_work_delayable long_press_work;
 static char str_buf[256];
 
-static struct {
-	const struct device *dev;
-	const char *name;
-	gpio_pin_t pin;
-	gpio_flags_t flags;
-} leds[] = {
-	{ .name = DT_GPIO_LABEL(DT_ALIAS(led0), gpios),
-	  .pin = DT_GPIO_PIN(DT_ALIAS(led0), gpios),
-	  .flags = DT_GPIO_FLAGS(DT_ALIAS(led0), gpios)},
-	{ .name = DT_GPIO_LABEL(DT_ALIAS(led1), gpios),
-	  .pin = DT_GPIO_PIN(DT_ALIAS(led1), gpios),
-	  .flags = DT_GPIO_FLAGS(DT_ALIAS(led1), gpios)},
-	{ .name = DT_GPIO_LABEL(DT_ALIAS(led2), gpios),
-	  .pin = DT_GPIO_PIN(DT_ALIAS(led2), gpios),
-	  .flags = DT_GPIO_FLAGS(DT_ALIAS(led2), gpios)}
+static const struct gpio_dt_spec leds[] = {
+	GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios),
+	GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios),
+	GPIO_DT_SPEC_GET(DT_ALIAS(led2), gpios),
 };
 
 struct k_work_delayable led_timer;
@@ -530,7 +519,7 @@ static int configure_button(void)
 
 int set_led_state(uint8_t id, bool state)
 {
-	return gpio_pin_set(leds[id].dev, leds[id].pin, state);
+	return gpio_pin_set_dt(&leds[id], state);
 }
 
 static void led_timeout(struct k_work *work)
@@ -561,15 +550,12 @@ static int configure_leds(void)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(leds); i++) {
-		leds[i].dev = device_get_binding(leds[i].name);
-		if (!leds[i].dev) {
-			printk("Failed to get %s device\n", leds[i].name);
+		if (!device_is_ready(leds[i].port)) {
+			printk("%s: device not ready.\n", leds[i].port->name);
 			return -ENODEV;
 		}
 
-		gpio_pin_configure(leds[i].dev, leds[i].pin,
-				   leds[i].flags |
-				   GPIO_OUTPUT_INACTIVE);
+		gpio_pin_configure_dt(&leds[i], GPIO_OUTPUT_INACTIVE);
 	}
 
 	k_work_init_delayable(&led_timer, led_timeout);
