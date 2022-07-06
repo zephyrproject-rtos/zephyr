@@ -1658,8 +1658,16 @@ ZTEST(devicetree_api, test_child_nodes_list)
 		DT_FOREACH_CHILD_STATUS_OKAY(TEST_PARENT, TEST_FUNC_AND_COMMA)
 	};
 
+	struct vnd_child_binding vals_status_okay_inst[] = {
+		DT_INST_FOREACH_CHILD_STATUS_OKAY(0, TEST_FUNC_AND_COMMA)
+	};
+
 	struct vnd_child_binding vals_status_okay_sep[] = {
 		DT_FOREACH_CHILD_STATUS_OKAY_SEP(TEST_PARENT, TEST_FUNC, (,))
+	};
+
+	struct vnd_child_binding vals_status_okay_inst_sep[] = {
+		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(0, TEST_FUNC, (,))
 	};
 
 	zassert_equal(ARRAY_SIZE(vals), 3, "");
@@ -1667,7 +1675,9 @@ ZTEST(devicetree_api, test_child_nodes_list)
 	zassert_equal(ARRAY_SIZE(vals_inst), 3, "");
 	zassert_equal(ARRAY_SIZE(vals_inst_sep), 3, "");
 	zassert_equal(ARRAY_SIZE(vals_status_okay), 2, "");
+	zassert_equal(ARRAY_SIZE(vals_status_okay_inst), 2, "");
 	zassert_equal(ARRAY_SIZE(vals_status_okay_sep), 2, "");
+	zassert_equal(ARRAY_SIZE(vals_status_okay_inst_sep), 2, "");
 
 	zassert_equal(vals[0].val, 0, "");
 	zassert_equal(vals[1].val, 1, "");
@@ -1683,8 +1693,12 @@ ZTEST(devicetree_api, test_child_nodes_list)
 	zassert_equal(vals_inst_sep[2].val, 2, "");
 	zassert_equal(vals_status_okay[0].val, 0, "");
 	zassert_equal(vals_status_okay[1].val, 1, "");
+	zassert_equal(vals_status_okay_inst[0].val, 0, "");
+	zassert_equal(vals_status_okay_inst[1].val, 1, "");
 	zassert_equal(vals_status_okay_sep[0].val, 0, "");
 	zassert_equal(vals_status_okay_sep[1].val, 1, "");
+	zassert_equal(vals_status_okay_inst_sep[0].val, 0, "");
+	zassert_equal(vals_status_okay_inst_sep[1].val, 1, "");
 
 	#undef TEST_PARENT
 	#undef TEST_FUNC_AND_COMMA
@@ -1723,8 +1737,16 @@ ZTEST(devicetree_api, test_child_nodes_list_varg)
 		DT_FOREACH_CHILD_STATUS_OKAY_VARGS(TEST_PARENT, TEST_FUNC_AND_COMMA, 1)
 	};
 
+	struct vnd_child_binding vals_status_okay_inst[] = {
+		DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(0, TEST_FUNC_AND_COMMA, 1)
+	};
+
 	struct vnd_child_binding vals_status_okay_sep[] = {
 		DT_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS(TEST_PARENT, TEST_FUNC, (,), 1)
+	};
+
+	struct vnd_child_binding vals_status_okay_inst_sep[] = {
+		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS(0, TEST_FUNC, (,), 1)
 	};
 
 	zassert_equal(ARRAY_SIZE(vals), 3, "");
@@ -1732,7 +1754,9 @@ ZTEST(devicetree_api, test_child_nodes_list_varg)
 	zassert_equal(ARRAY_SIZE(vals_inst), 3, "");
 	zassert_equal(ARRAY_SIZE(vals_inst_sep), 3, "");
 	zassert_equal(ARRAY_SIZE(vals_status_okay), 2, "");
+	zassert_equal(ARRAY_SIZE(vals_status_okay_inst), 2, "");
 	zassert_equal(ARRAY_SIZE(vals_status_okay_sep), 2, "");
+	zassert_equal(ARRAY_SIZE(vals_status_okay_inst_sep), 2, "");
 
 	zassert_equal(vals[0].val, 1, "");
 	zassert_equal(vals[1].val, 2, "");
@@ -1748,8 +1772,12 @@ ZTEST(devicetree_api, test_child_nodes_list_varg)
 	zassert_equal(vals_inst_sep[2].val, 3, "");
 	zassert_equal(vals_status_okay[0].val, 1, "");
 	zassert_equal(vals_status_okay[1].val, 2, "");
+	zassert_equal(vals_status_okay_inst[0].val, 1, "");
+	zassert_equal(vals_status_okay_inst[1].val, 2, "");
 	zassert_equal(vals_status_okay_sep[0].val, 1, "");
 	zassert_equal(vals_status_okay_sep[1].val, 2, "");
+	zassert_equal(vals_status_okay_inst_sep[0].val, 1, "");
+	zassert_equal(vals_status_okay_inst_sep[1].val, 2, "");
 
 	#undef TEST_PARENT
 	#undef TEST_FUNC_AND_COMMA
