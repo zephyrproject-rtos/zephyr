@@ -316,3 +316,20 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_DEVICE_INIT_MCUX)
+
+#ifdef CONFIG_BOARD_RDDRONE_FMUK66
+/* For using I2C interface of BME280/BMP280 barometer
+ * this initialization function needs to be called 
+ * as early as possible at POR */
+
+static int gpio_mcux_init_set(const struct device *arg)
+{
+	ARG_UNUSED(arg);
+
+	const struct device *gpiob = DEVICE_DT_GET(DT_NODELABEL(gpiob));
+
+	gpio_pin_configure(gpiob, 8, GPIO_OUTPUT_HIGH);
+	return 0;
+}
+SYS_INIT(gpio_mcux_init_set, PRE_KERNEL_1, 20);
+#endif
