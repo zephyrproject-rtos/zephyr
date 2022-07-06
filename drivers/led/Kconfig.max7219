@@ -17,4 +17,3 @@ config MAX7219_INITIALIZATION_DELAY
 	  This option delays MAX7219 initialization for the specified
 	  amount of milliseconds. This is used to allow MAX7219 get ready
 	  before initialing.
-
