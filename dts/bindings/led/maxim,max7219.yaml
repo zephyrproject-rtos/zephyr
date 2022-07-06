@@ -11,7 +11,6 @@ properties:
     scan-limit:
       type: int
       required: false
-      default: 7
       enum:
         - 0
         - 1
@@ -28,7 +27,6 @@ properties:
     intensity:
       type: int
       required: false
-      default: 0
       enum:
         - 0
         - 1
@@ -50,5 +48,4 @@ properties:
     num-cascading:
       type: int
       required: false
-      default: 1
       description: Number of cascading MAX7219.
