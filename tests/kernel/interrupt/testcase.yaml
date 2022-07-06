@@ -1,21 +1,9 @@
 tests:
   arch.interrupt:
     # nios2 excluded, see #22956
-    arch_exclude: nios2 x86
+    arch_exclude: nios2
     tags: kernel interrupt
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
-
-  arch.interrupt.x86_64:
-    arch_allow: x86
-    tags: kernel interrupt
-    filter: CONFIG_X86_64
-
-  arch.interrupt.x86:
-    arch_allow: x86
-    tags: kernel interrupt
-    filter: not CONFIG_X86_64
-    extra_configs:
-    - CONFIG_COMPILER_OPT="-mgeneral-regs-only"
 
   arch.interrupt.linker_generator:
     platform_allow: qemu_cortex_m3

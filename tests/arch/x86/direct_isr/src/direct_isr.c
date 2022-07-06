@@ -127,3 +127,10 @@ void test_direct_interrupt(void)
 	ztest_test_skip();
 }
 #endif /* end defined(CONFIG_X86) || defined(CONFIG_ARCH_POSIX) */
+
+void test_main(void)
+{
+	ztest_test_suite(x86_direct_interrupt,
+		ztest_unit_test(test_direct_interrupt));
+	ztest_run_test_suite(x86_direct_interrupt);
+}
