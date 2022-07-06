@@ -131,8 +131,9 @@ static int sys_clock_driver_init(const struct device *dev)
 	sys_write32(0xffffffff, TIMER_BASE_ADDR + CMCOR1_OFFSET);
 
 	/* Reset the counter for first channel, check WRFLG first */
-	while (sys_read32(TIMER_BASE_ADDR + CMCSR0_OFFSET) & CSR_WRITE_FLAG)
+	while (sys_read32(TIMER_BASE_ADDR + CMCSR0_OFFSET) & CSR_WRITE_FLAG) {
 		;
+	}
 	sys_write32(0, TIMER_BASE_ADDR + CMCNT0_OFFSET);
 
 	for (i = 0; i < 1000; i++) {

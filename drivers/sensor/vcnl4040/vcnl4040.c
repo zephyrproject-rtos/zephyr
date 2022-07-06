@@ -25,8 +25,9 @@ int vcnl4040_read(const struct device *dev, uint8_t reg, uint16_t *out)
 	ret = i2c_write_read_dt(&config->i2c,
 			     &reg, sizeof(reg), buff, sizeof(buff));
 
-	if (!ret)
+	if (!ret) {
 		*out = sys_get_le16(buff);
+	}
 
 	return ret;
 }

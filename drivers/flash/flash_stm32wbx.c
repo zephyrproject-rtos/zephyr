@@ -114,8 +114,9 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 		 * However, keeping that code make it compatible with both
 		 * mechanisms.
 		 */
-		while (LL_FLASH_IsActiveFlag_OperationSuspended())
+		while (LL_FLASH_IsActiveFlag_OperationSuspended()) {
 			;
+		}
 
 		/* Enter critical section */
 		key = irq_lock();
@@ -250,8 +251,9 @@ static int erase_page(const struct device *dev, uint32_t page)
 		 * However, keeping that code make it compatible with both
 		 * mechanisms.
 		 */
-		while (LL_FLASH_IsActiveFlag_OperationSuspended())
+		while (LL_FLASH_IsActiveFlag_OperationSuspended()) {
 			;
+		}
 
 		/* Enter critical section */
 		key = irq_lock();

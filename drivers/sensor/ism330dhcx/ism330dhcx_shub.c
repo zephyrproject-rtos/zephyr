@@ -655,8 +655,9 @@ int ism330dhcx_shub_get_idx(enum sensor_channel type)
 	for (n = 0; n < num_ext_dev; n++) {
 		sp = &ism330dhcx_shub_slist[shub_ext[n]];
 
-		if (sp->type == type)
+		if (sp->type == type) {
 			return n;
+		}
 	}
 
 	return -ENOTSUP;
@@ -697,8 +698,9 @@ int ism330dhcx_shub_config(const struct device *dev, enum sensor_channel chan,
 	for (n = 0; n < num_ext_dev; n++) {
 		sp = &ism330dhcx_shub_slist[shub_ext[n]];
 
-		if (sp->type == chan)
+		if (sp->type == chan) {
 			break;
+		}
 	}
 
 	if (n == num_ext_dev) {
@@ -721,8 +723,9 @@ int ism330dhcx_shub_init(const struct device *dev)
 	struct ism330dhcx_shub_slist *sp;
 
 	for (n = 0; n < ARRAY_SIZE(ism330dhcx_shub_slist); n++) {
-		if (num_ext_dev >= ISM330DHCX_SHUB_MAX_NUM_SLVS)
+		if (num_ext_dev >= ISM330DHCX_SHUB_MAX_NUM_SLVS) {
 			break;
+		}
 
 		chip_id = 0;
 		sp = &ism330dhcx_shub_slist[n];

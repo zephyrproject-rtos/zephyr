@@ -135,8 +135,9 @@ static void swerv_pic_irq_handler(const void *arg)
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */
 	ite = (struct _isr_table_entry *)&_sw_isr_table[irq];
-	if (ite->isr)
+	if (ite->isr) {
 		ite->isr(ite->arg);
+	}
 
 	swerv_pic_write(SWERV_PIC_meigwclr(irq), 0);
 }

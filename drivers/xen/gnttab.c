@@ -168,8 +168,9 @@ static void gop_eagain_retry(int cmd, struct gnttab_map_grant_ref *gref)
 
 	do {
 		HYPERVISOR_grant_table_op(cmd, gref, 1);
-		if (*status == GNTST_eagain)
+		if (*status == GNTST_eagain) {
 			k_sleep(K_MSEC(delay));
+		}
 
 		delay += step;
 	} while ((*status == GNTST_eagain) && (delay < GOP_RETRY_DELAY));

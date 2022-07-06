@@ -99,14 +99,15 @@ static void drive_keyboard_column(const struct device *dev, int col)
 	int mask;
 
 	/* Tri-state all outputs */
-	if (col == KEYBOARD_COLUMN_DRIVE_NONE)
+	if (col == KEYBOARD_COLUMN_DRIVE_NONE) {
 		mask = 0x3ffff;
 	/* Assert all outputs */
-	else if (col == KEYBOARD_COLUMN_DRIVE_ALL)
+	} else if (col == KEYBOARD_COLUMN_DRIVE_ALL) {
 		mask = 0;
 	/* Assert a single output */
-	else
+	} else {
 		mask = 0x3ffff ^ BIT(col);
+	}
 
 	/* Set KSO[17:0] output data */
 	inst->KBS_KSOL = (uint8_t) (mask & 0xff);
@@ -241,8 +242,9 @@ static bool check_key_events(const struct device *dev)
 	uint8_t row_changed = 0U;
 	uint8_t deb_col;
 
-	if (++data->scan_cycles_idx >= SCAN_OCURRENCES)
+	if (++data->scan_cycles_idx >= SCAN_OCURRENCES) {
 		data->scan_cycles_idx = 0U;
+	}
 
 	data->scan_clk_cycle[data->scan_cycles_idx] = cycles_now;
 
@@ -398,8 +400,9 @@ void polling_task(const struct device *dev, void *dummy2, void *dummy3)
 				      CLOCK_32K_HW_CYCLES_TO_US(cycles_delta);
 
 			/* Override wait_period in case it's less than 1000 us */
-			if (wait_period < MS_TO_US)
+			if (wait_period < MS_TO_US) {
 				wait_period = MS_TO_US;
+			}
 
 			/*
 			 * Wait period results in a larger number when

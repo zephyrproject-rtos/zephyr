@@ -53,8 +53,9 @@ static struct pwm_ledc_esp32_channel_config *get_channel_config(const struct dev
 		(struct pwm_ledc_esp32_config *) dev->config;
 
 	for (uint8_t i = 0; i < config->channel_len; i++) {
-		if (config->channel_config[i].idx == channel_id)
+		if (config->channel_config[i].idx == channel_id) {
 			return &config->channel_config[i];
+		}
 	}
 	return NULL;
 }
@@ -159,12 +160,14 @@ static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *chan
 	 */
 
 	channel->clock_src = LEDC_APB_CLK;
-	if (!pwm_led_esp32_calculate_max_resolution(channel))
+	if (!pwm_led_esp32_calculate_max_resolution(channel)) {
 		return 0;
+	}
 
 	channel->clock_src = LEDC_REF_TICK;
-	if (!pwm_led_esp32_calculate_max_resolution(channel))
+	if (!pwm_led_esp32_calculate_max_resolution(channel)) {
 		return 0;
+	}
 
 	return -EINVAL;
 }
