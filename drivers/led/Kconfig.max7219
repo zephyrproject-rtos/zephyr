@@ -1,8 +1,11 @@
 # Copyright (c) 2022 Jimmy Ou <yanagiis@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
+DT_COMPAT_MAXIM_MAX7219 := maxim,max7219
+
 menuconfig MAX7219
 	bool "MAX7219 LED drivers"
+	default $(dt_compat_enabled,$(DT_COMPAT_MAXIM_MAX7219))
 	depends on SPI
 	help
 	  Enable driver for the Maxim MAX7219 SPI LED controllers.
