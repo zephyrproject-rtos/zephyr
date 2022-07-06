@@ -34,8 +34,9 @@ static bool decode_repeated_record_bn(zcbor_state_t *state, struct record_bn *re
 	bool tmp_result = ((((zcbor_int32_expect(state, (-2)))) &&
 			    (zcbor_tstr_decode(state, (&(*result)._record_bn)))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace();
+	}
 
 	return tmp_result;
 }
@@ -47,8 +48,9 @@ static bool decode_repeated_record_n(zcbor_state_t *state, struct record_n *resu
 	bool tmp_result = ((((zcbor_uint32_expect(state, (0)))) &&
 			    (zcbor_tstr_decode(state, (&(*result)._record_n)))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace();
+	}
 
 	return tmp_result;
 }
@@ -79,8 +81,9 @@ static bool decode_repeated_record_union(zcbor_state_t *state, struct record_uni
 					  (((*result)._record_union_choice = _union_vd) || 1))),
 			      zcbor_union_end_code(state), int_res))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace();
+	}
 
 	return tmp_result;
 }
@@ -107,8 +110,9 @@ static bool decode_value(zcbor_state_t *state, struct value_ *result)
 				(((*result)._value_choice = _value_bool) || 1))),
 		    zcbor_union_end_code(state), int_res))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace();
+	}
 
 	return tmp_result;
 }
@@ -120,8 +124,9 @@ static bool decode_key_value_pair(zcbor_state_t *state, struct key_value_pair *r
 	bool tmp_result = ((((zcbor_int32_decode(state, (&(*result)._key_value_pair_key)))) &&
 			    (decode_value(state, (&(*result)._key_value_pair)))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace();
+	}
 
 	return tmp_result;
 }
@@ -133,8 +138,9 @@ static bool decode_repeated_record__key_value_pair(zcbor_state_t *state,
 
 	bool tmp_result = (((decode_key_value_pair(state, (&(*result)._record__key_value_pair)))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace();
+	}
 
 	return tmp_result;
 }
@@ -162,8 +168,9 @@ static bool decode_record(zcbor_state_t *state, struct record *result)
 		    (zcbor_list_map_end_force_decode(state), false)) &&
 		   zcbor_map_end_decode(state))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace();
+	}
 
 	return tmp_result;
 }
@@ -181,8 +188,9 @@ static bool decode_lwm2m_senml(zcbor_state_t *state, struct lwm2m_senml *result)
 		  (zcbor_list_map_end_force_decode(state), false)) &&
 		 zcbor_list_end_decode(state))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace();
+	}
 
 	return tmp_result;
 }
