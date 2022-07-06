@@ -2692,6 +2692,71 @@
 	DT_FOREACH_CHILD_SEP_VARGS(DT_DRV_INST(inst), fn, sep, __VA_ARGS__)
 
 /**
+ * @brief Call "fn" on all child nodes of DT_DRV_INST(inst) with status "okay".
+ *
+ * The macro "fn" should take one argument, which is the node
+ * identifier for the child node.
+ *
+ * @param inst instance number
+ * @param fn macro to invoke on each child node identifier
+ *
+ * @see DT_FOREACH_CHILD_STATUS_OKAY
+ */
+#define DT_INST_FOREACH_CHILD_STATUS_OKAY(inst, fn) \
+	DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(inst), fn)
+
+/**
+ * @brief Call "fn" on all child nodes of DT_DRV_INST(inst) with status "okay"
+ * and with separator.
+ *
+ * The macro "fn" should take one argument, which is the node
+ * identifier for the child node.
+ *
+ * @param inst instance number
+ * @param fn macro to invoke on each child node identifier
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ *
+ * @see DT_FOREACH_CHILD_STATUS_OKAY_SEP
+ */
+#define DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(inst, fn, sep) \
+	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_DRV_INST(inst), fn, sep)
+
+/**
+ * @brief Call "fn" on all child nodes of DT_DRV_INST(inst) with status "okay"
+ * and multiple arguments.
+ *
+ * The macro "fn" takes multiple arguments. The first should be the node
+ * identifier for the child node. The remaining are passed-in by the caller.
+ *
+ * @param inst instance number
+ * @param fn macro to invoke on each child node identifier
+ * @param ... variable number of arguments to pass to fn
+ *
+ * @see DT_FOREACH_CHILD_STATUS_OKAY_VARGS
+ */
+#define DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(inst, fn, ...) \
+	DT_FOREACH_CHILD_STATUS_OKAY_VARGS(DT_DRV_INST(inst), fn, __VA_ARGS__)
+
+/**
+ * @brief Call "fn" on all child nodes of DT_DRV_INST(inst) with status "okay"
+ * and with separator and multiple arguments.
+ *
+ * The macro "fn" takes multiple arguments. The first should be the node
+ * identifier for the child node. The remaining are passed-in by the caller.
+ *
+ * @param inst instance number
+ * @param fn macro to invoke on each child node identifier
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ * @param ... variable number of arguments to pass to fn
+ *
+ * @see DT_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS
+ */
+#define DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS(inst, fn, sep, ...) \
+	DT_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS(DT_DRV_INST(inst), fn, sep, __VA_ARGS__)
+
+/**
  * @brief Get a DT_DRV_COMPAT value's index into its enumeration values
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
