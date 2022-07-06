@@ -319,7 +319,13 @@ out:
 
 K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
 
-enum ztest_result { ZTEST_RESULT_PENDING, ZTEST_RESULT_PASS, ZTEST_RESULT_FAIL, ZTEST_RESULT_SKIP };
+enum ztest_result {
+	ZTEST_RESULT_PENDING,
+	ZTEST_RESULT_PASS,
+	ZTEST_RESULT_FAIL,
+	ZTEST_RESULT_SKIP,
+	ZTEST_RESULT_SUITE_SKIP,
+};
 static ZTEST_BMEM enum ztest_result test_result;
 
 static void test_finalize(void)
@@ -344,8 +350,9 @@ void ztest_test_pass(void)
 
 void ztest_test_skip(void)
 {
-	test_result = ZTEST_RESULT_SKIP;
+	test_result = ZTEST_RESULT_SUITE_SKIP;
 	if (phase != TEST_PHASE_SETUP) {
+		test_result = ZTEST_RESULT_SKIP;
 		test_finalize();
 	}
 }
@@ -401,11 +408,11 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 			k_thread_name_set(&ztest_thread, test->name);
 		}
 		/* Only start the thread if we're not skipping the suite */
-		if (test_result != ZTEST_RESULT_SKIP) {
+		if (test_result != ZTEST_RESULT_SUITE_SKIP) {
 			k_thread_start(&ztest_thread);
 			k_thread_join(&ztest_thread, K_FOREVER);
 		}
-	} else if (test_result != ZTEST_RESULT_SKIP) {
+	} else if (test_result != ZTEST_RESULT_SUITE_SKIP) {
 		test_result = ZTEST_RESULT_PENDING;
 		run_test_rules(/*is_before=*/true, test, data);
 		if (suite->before) {
