@@ -103,8 +103,9 @@ static void test_trigger_mode(const struct device *dev)
 #else
 static void test_polling_mode(const struct device *dev)
 {
-	if (set_sampling_freq(dev) != 0)
+	if (set_sampling_freq(dev) != 0) {
 		return;
+	}
 
 	while (1) {
 		fetch_and_display(dev);
