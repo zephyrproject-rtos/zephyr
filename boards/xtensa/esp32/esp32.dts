@@ -86,19 +86,19 @@
 };
 
 &timer0 {
-	status = "okay";
+	status = "disabled";
 };
 
 &timer1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &timer2 {
-	status = "okay";
+	status = "disabled";
 };
 
 &timer3 {
-	status = "okay";
+	status = "disabled";
 };
 
 &trng0 {
