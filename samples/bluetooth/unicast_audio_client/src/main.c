@@ -45,7 +45,9 @@ static struct bt_audio_lc3_preset codec_configuration =
 					   BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 static K_SEM_DEFINE(sem_connected, 0, 1);
+static K_SEM_DEFINE(sem_disconnected, 0, 1);
 static K_SEM_DEFINE(sem_mtu_exchanged, 0, 1);
+static K_SEM_DEFINE(sem_security_updated, 0, 1);
 static K_SEM_DEFINE(sem_sinks_discovered, 0, 1);
 static K_SEM_DEFINE(sem_sources_discovered, 0, 1);
 static K_SEM_DEFINE(sem_stream_configured, 0, 1);
@@ -686,12 +688,23 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
 
-	start_scan();
+	k_sem_give(&sem_disconnected);
+}
+
+static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
+				enum bt_security_err err)
+{
+	if (err == 0) {
+		k_sem_give(&sem_security_updated);
+	} else {
+		printk("Failed to set security level: %u", err);
+	}
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.security_changed = security_changed_cb
 };
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
@@ -744,6 +757,18 @@ static int scan_and_connect(void)
 	err = k_sem_take(&sem_mtu_exchanged, K_FOREVER);
 	if (err != 0) {
 		printk("failed to take sem_mtu_exchanged (err %d)\n", err);
+		return err;
+	}
+
+	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
+	if (err != 0) {
+		printk("failed to set security (err %d)\n", err);
+		return err;
+	}
+
+	err = k_sem_take(&sem_security_updated, K_FOREVER);
+	if (err != 0) {
+		printk("failed to take sem_security_updated (err %d)\n", err);
 		return err;
 	}
 
@@ -883,6 +908,19 @@ static int create_group(void)
 	return 0;
 }
 
+static int delete_group(void)
+{
+	int err;
+
+	err = bt_audio_unicast_group_delete(unicast_group);
+	if (err != 0) {
+		printk("Could not create unicast group (err %d)\n", err);
+		return err;
+	}
+
+	return 0;
+}
+
 static int set_stream_qos(void)
 {
 	int err;
@@ -950,6 +988,23 @@ static int start_streams(void)
 	return 0;
 }
 
+static void reset_data(void)
+{
+	k_sem_reset(&sem_connected);
+	k_sem_reset(&sem_disconnected);
+	k_sem_reset(&sem_mtu_exchanged);
+	k_sem_reset(&sem_security_updated);
+	k_sem_reset(&sem_sinks_discovered);
+	k_sem_reset(&sem_sources_discovered);
+	k_sem_reset(&sem_stream_configured);
+	k_sem_reset(&sem_stream_qos);
+	k_sem_reset(&sem_stream_enabled);
+	k_sem_reset(&sem_stream_started);
+
+	configured_sink_stream_count = 0;
+	configured_stream_count = 0;
+}
+
 void main(void)
 {
 	int err;
@@ -961,62 +1016,80 @@ void main(void)
 	}
 	printk("Initialized\n");
 
-	printk("Waiting for connection\n");
-	err = scan_and_connect();
-	if (err != 0) {
-		return;
-	}
-	printk("Connected\n");
+	while (true) {
+		reset_data();
 
-	printk("Discovering sinks\n");
-	err = discover_sinks();
-	if (err != 0) {
-		return;
-	}
-	printk("Sinks discovered\n");
+		printk("Waiting for connection\n");
+		err = scan_and_connect();
+		if (err != 0) {
+			return;
+		}
+		printk("Connected\n");
 
-	printk("Discovering sources\n");
-	err = discover_sources();
-	if (err != 0) {
-		return;
-	}
-	printk("Sources discovered\n");
+		printk("Discovering sinks\n");
+		err = discover_sinks();
+		if (err != 0) {
+			return;
+		}
+		printk("Sinks discovered\n");
 
-	printk("Configuring streams\n");
-	err = configure_streams();
-	if (err != 0) {
-		return;
-	}
-	printk("Stream configured\n");
+		printk("Discovering sources\n");
+		err = discover_sources();
+		if (err != 0) {
+			return;
+		}
+		printk("Sources discovered\n");
 
-	printk("Creating unicast group\n");
-	err = create_group();
-	if (err != 0) {
-		return;
-	}
-	printk("Unicast group created\n");
+		printk("Configuring streams\n");
+		err = configure_streams();
+		if (err != 0) {
+			return;
+		}
+		printk("Stream configured\n");
 
-	printk("Setting stream QoS\n");
-	err = set_stream_qos();
-	if (err != 0) {
-		return;
-	}
-	printk("Stream QoS Set\n");
+		printk("Creating unicast group\n");
+		err = create_group();
+		if (err != 0) {
+			return;
+		}
+		printk("Unicast group created\n");
 
-	printk("Enabling streams\n");
-	err = enable_streams();
-	if (err != 0) {
-		return;
-	}
-	printk("Streams enabled\n");
+		printk("Setting stream QoS\n");
+		err = set_stream_qos();
+		if (err != 0) {
+			return;
+		}
+		printk("Stream QoS Set\n");
 
-	printk("Starting streams\n");
-	err = start_streams();
-	if (err != 0) {
-		return;
-	}
-	printk("Streams started\n");
+		printk("Enabling streams\n");
+		err = enable_streams();
+		if (err != 0) {
+			return;
+		}
+		printk("Streams enabled\n");
 
-	/* Start send timer */
-	k_work_schedule(&audio_send_work, K_MSEC(0));
+		printk("Starting streams\n");
+		err = start_streams();
+		if (err != 0) {
+			return;
+		}
+		printk("Streams started\n");
+
+		/* Start send timer */
+		k_work_schedule(&audio_send_work, K_MSEC(0));
+
+		/* Wait for disconnect */
+		err = k_sem_take(&sem_disconnected, K_FOREVER);
+		if (err != 0) {
+			printk("failed to take sem_disconnected (err %d)\n", err);
+			return;
+		}
+
+		printk("Deleting group\n");
+		err = delete_group();
+		if (err != 0) {
+			return;
+		}
+		printk("Group deleted\n");
+	}
 }
