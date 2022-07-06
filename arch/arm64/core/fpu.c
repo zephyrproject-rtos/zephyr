@@ -179,8 +179,9 @@ static bool simulate_str_q_insn(z_arch_esf_t *esf)
 		 *
 		 * where 0 <= <n> <= 7 and <pimm> is a 12-bits multiple of 16.
 		 */
-		if ((insn & 0xffc003f8) != 0x3d8003e0)
+		if ((insn & 0xffc003f8) != 0x3d8003e0) {
 			break;
+		}
 
 		uint32_t pimm = (insn >> 10) & 0xfff;
 

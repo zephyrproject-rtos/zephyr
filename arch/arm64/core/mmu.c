@@ -773,8 +773,9 @@ static uint64_t get_tcr(int el)
 		 * that are translated using TTBR1_EL1.
 		 */
 		tcr |= TCR_EPD1_DISABLE;
-	} else
+	} else {
 		tcr = (tcr_ps_bits << TCR_EL3_PS_SHIFT);
+	}
 
 	tcr |= TCR_T0SZ(va_bits);
 
