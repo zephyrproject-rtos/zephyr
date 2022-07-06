@@ -80,11 +80,11 @@
 };
 
 &timer0 {
-	status = "okay";
+	status = "disabled";
 };
 
 &timer1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &flash0 {
