@@ -23,7 +23,6 @@ K_KERNEL_STACK_MEMBER(eswifi_spi_poll_stack, ESWIFI_SPI_THREAD_STACK_SIZE);
 #define SPI_READ_CHUNK_SIZE 32
 
 struct eswifi_spi_config {
-	struct gpio_dt_spec csn;
 	struct gpio_dt_spec dr;
 	struct spi_dt_spec bus;
 };
@@ -116,7 +115,7 @@ static int eswifi_spi_request(struct eswifi_dev *eswifi, char *cmd, size_t clen,
 	/*
 	 * CMD/DATA protocol:
 	 * 1. Module raises data-ready when ready for **command phase**
-	 * 2. Host announces command start by lowering chip-select (csn)
+	 * 2. Host announces command start by lowering chip-select
 	 * 3. Host write the command (possibly several spi transfers)
 	 * 4. Host announces end of command by raising chip-select
 	 * 5. Module lowers data-ready signal
