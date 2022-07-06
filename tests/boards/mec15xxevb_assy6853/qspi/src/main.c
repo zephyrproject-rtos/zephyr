@@ -9,7 +9,7 @@
 
 #define TEST_FREQ_HZ 24000000U
 #define W25Q128_JEDEC_ID 0x001840efU
-#define SPI_DEV DT_LABEL(DT_NODELABEL(spi0))
+#define SPI_NODE DT_NODELABEL(spi0)
 
 #define TEST_BUF_SIZE 4096U
 #define MAX_TX_BUF 2
@@ -66,8 +66,8 @@ void test_spi_device(void)
 	spi_cfg_single.cs = NULL;
 
 	/* find spi device */
-	spi_dev = device_get_binding(SPI_DEV);
-	zassert_true(spi_dev, "Failed to find device %s", SPI_DEV);
+	spi_dev = DEVICE_DT_GET(SPI_NODE);
+	zassert_true(device_is_ready(spi_dev), "SPI controller device is not ready");
 
 	/* read jedec id */
 	memset(safbuf, 0, TEST_BUF_SIZE);
