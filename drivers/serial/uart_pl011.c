@@ -217,9 +217,9 @@ static bool pl011_is_readable(const struct device *dev)
 	struct pl011_data *data = dev->data;
 
 	if (!data->sbsa &&
-	    (!(get_uart(dev)->cr & PL011_CR_UARTEN) ||
-	     !(get_uart(dev)->cr & PL011_CR_RXE)))
+	    (!(get_uart(dev)->cr & PL011_CR_UARTEN) || !(get_uart(dev)->cr & PL011_CR_RXE))) {
 		return false;
+	}
 
 	return (get_uart(dev)->fr & PL011_FR_RXFE) == 0U;
 }
@@ -422,8 +422,9 @@ static int pl011_init(const struct device *dev)
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
 #endif
-	if (!data->sbsa)
+	if (!data->sbsa) {
 		pl011_enable(dev);
+	}
 
 	return 0;
 }

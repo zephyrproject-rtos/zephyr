@@ -371,10 +371,11 @@ static int timer_init(enum ext_timer_idx ext_timer,
 		IT8XXX2_EXT_CTRLX(ext_timer) |= (IT8XXX2_EXT_ETXEN |
 						 IT8XXX2_EXT_ETXRST);
 
-	if (with_int == EXT_WITH_TIMER_INT)
+	if (with_int == EXT_WITH_TIMER_INT) {
 		irq_enable(irq_num);
-	else
+	} else {
 		irq_disable(irq_num);
+	}
 
 	return 0;
 }

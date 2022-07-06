@@ -4990,24 +4990,24 @@ static int compare_versions(char *v1, const char *v2)
 		ver2 = strtoul(v2, &tail2, 10);
 
 		/* if numbers differ, then set the result */
-		if (ver1 < ver2)
+		if (ver1 < ver2) {
 			result = -1;
-		else if (ver1 > ver2)
+		} else if (ver1 > ver2) {
 			result = 1;
-		else {
+		} else {
 			/* if numbers are the same, go to next level */
 			v1 = tail1;
 			v2 = tail2;
 			/* if we reach the end of both, then they are identical */
-			if (*v1 == '\0' && *v2 == '\0')
+			if (*v1 == '\0' && *v2 == '\0') {
 				break;
 			/* if we reach the end of one only, it is the smaller */
-			else if (*v1 == '\0')
+			} else if (*v1 == '\0') {
 				result = -1;
-			else if (*v2 == '\0')
+			} else if (*v2 == '\0') {
 				result = 1;
 			/*  not at end ... so far they match so keep going */
-			else {
+			} else {
 				v1++;
 				v2++;
 			}

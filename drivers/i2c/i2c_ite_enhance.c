@@ -292,8 +292,9 @@ static int enhanced_i2c_error(const struct device *dev)
 		data->err = i2c_str & E_HOSTA_ANY_ERROR;
 	/* device does not respond ACK */
 	} else if ((i2c_str & E_HOSTA_BDS_AND_ACK) == E_HOSTA_BDS) {
-		if (IT8XXX2_I2C_CTR(base) & E_ACK)
+		if (IT8XXX2_I2C_CTR(base) & E_ACK) {
 			data->err = E_HOSTA_ACK;
+		}
 	}
 
 	return data->err;
