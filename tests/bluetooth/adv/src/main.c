@@ -24,7 +24,9 @@ static const struct bt_data sd[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
 };
 
-void test_adv_fast_ad_data_update(void)
+ZTEST_SUITE(adv_tests, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(adv_tests, test_adv_fast_ad_data_update)
 {
 	int err;
 
@@ -48,11 +50,4 @@ void test_adv_fast_ad_data_update(void)
 					    sd, ARRAY_SIZE(sd));
 		zassert_equal(err, 0, "Update adv data failed (err %d)\n", err);
 	}
-}
-
-void test_main(void)
-{
-	ztest_test_suite(test_adv,
-			 ztest_unit_test(test_adv_fast_ad_data_update));
-	ztest_run_test_suite(test_adv);
 }
