@@ -252,6 +252,11 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument("--coverage-tool", choices=['lcov', 'gcovr'], default='lcov',
                         help="Tool to use to generate coverage report.")
 
+    parser.add_argument("--coverage-formats", action="store", default='html',
+                        help="Output formats to use for generated coverage reports, as a comma-separated list. "
+                             "Only used in conjunction with gcovr. "
+                             "Valid options are html, xml, csv, txt, coveralls, sonarqube.")
+
     parser.add_argument(
         "-D", "--all-deltas", action="store_true",
         help="Show all footprint deltas, positive or negative. Implies "
