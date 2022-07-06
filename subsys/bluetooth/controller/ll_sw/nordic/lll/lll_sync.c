@@ -471,10 +471,15 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 
 		lll = ull_scan_lll_is_valid_get(next);
 		if (!lll) {
-			/* Abort current event as next event is not a scan
-			 * event.
-			 */
-			return -ECANCELED;
+			struct lll_scan_aux *lll_aux;
+
+			lll_aux = ull_scan_aux_lll_is_valid_get(next);
+			if (!lll_aux) {
+				/* Abort current event as next event is not a
+				 * scan and not a scan aux event.
+				 */
+				return -ECANCELED;
+			}
 		}
 	}
 
