@@ -225,6 +225,7 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_group(struct ll_conn_iso_gr
 
 void ull_conn_iso_cis_established(struct ll_conn_iso_stream *cis)
 {
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	struct node_rx_conn_iso_estab *est;
 	struct node_rx_pdu *node_rx;
 
@@ -245,6 +246,7 @@ void ull_conn_iso_cis_established(struct ll_conn_iso_stream *cis)
 
 	ll_rx_put(node_rx->hdr.link, node_rx);
 	ll_rx_sched();
+#endif /* defined(CONFIG_BT_LL_SW_LLCP_LEGACY) */
 
 	cis->established = 1;
 }

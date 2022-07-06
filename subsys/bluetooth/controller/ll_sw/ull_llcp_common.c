@@ -885,7 +885,6 @@ static void rp_comm_terminate(struct ll_conn *conn, struct proc_ctx *ctx)
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 static void rp_comm_stop_cis(struct proc_ctx *ctx)
 {
-
 	llcp_cis_stop_by_id(ctx->data.cis_term.cig_id, ctx->data.cis_term.cis_id,
 			    ctx->data.cis_term.error_code);
 }
