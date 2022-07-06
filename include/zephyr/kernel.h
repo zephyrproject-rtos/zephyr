@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/tracing/tracing_macros.h>
+#include <sys/mem_stats.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -5016,6 +5017,33 @@ static inline uint32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
 {
 	return slab->num_blocks - slab->num_used;
 }
+
+/**
+ * @brief Get the memory stats for a memory slab
+ *
+ * This routine gets the runtime memory usage stats for the slab @a slab.
+ *
+ * @param slab Address of the memory slab
+ * @param stats Pointer to memory into which to copy memory usage statistics
+ *
+ * @retval 0 Success
+ * @retval -EINVAL Any parameter points to NULL
+ */
+
+int k_mem_slab_runtime_stats_get(struct k_mem_slab *slab, struct sys_memory_stats *stats);
+
+/**
+ * @brief Reset the maximum memory usage for a slab
+ *
+ * This routine resets the maximum memory usage for the slab @a slab to its
+ * current usage.
+ *
+ * @param slab Address of the memory slab
+ *
+ * @retval 0 Success
+ * @retval -EINVAL Memory slab is NULL
+ */
+int k_mem_slab_runtime_stats_reset_max(struct k_mem_slab *slab);
 
 /** @} */
 
