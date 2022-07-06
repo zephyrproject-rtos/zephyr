@@ -443,64 +443,72 @@ ZTEST(test_c_lib, test_checktype)
 	char *ptr = buf;
 
 	for (int i = 0; i < 128; i++) {
-		if (isalnum(i))
+		if (isalnum(i)) {
 			*ptr++ = i;
+		}
 	}
 	*ptr = '\0';
 	zassert_equal(strcmp(buf, exp_alnum), 0, "isalnum error");
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
-		if (isalpha(i))
+		if (isalpha(i)) {
 			*ptr++ = i;
+		}
 	}
 	*ptr = '\0';
 	zassert_equal(strcmp(buf, exp_alpha), 0, "isalpha error");
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
-		if (isdigit(i))
+		if (isdigit(i)) {
 			*ptr++ = i;
+		}
 	}
 	*ptr = '\0';
 	zassert_equal(strcmp(buf, exp_digit), 0, "isdigit error");
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
-		if (isgraph(i))
+		if (isgraph(i)) {
 			*ptr++ = i;
+		}
 	}
 	*ptr = '\0';
 	zassert_equal(strcmp(buf, exp_graph), 0, "isgraph error");
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
-		if (isprint(i))
+		if (isprint(i)) {
 			*ptr++ = i;
+		}
 	}
 	*ptr = '\0';
 	zassert_equal(strcmp(buf, exp_print), 0, "isprint error");
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
-		if (isupper(i))
+		if (isupper(i)) {
 			*ptr++ = i;
+		}
 	}
 	*ptr = '\0';
 	zassert_equal(strcmp(buf, exp_upper), 0, "isupper error");
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
-		if (isspace(i))
+		if (isspace(i)) {
 			*ptr++ = i;
+		}
 	}
 	*ptr = '\0';
 	zassert_equal(strcmp(buf, exp_space), 0, "isspace error");
 
 	ptr = buf;
 	for (int i = 0; i < 128; i++) {
-		if (isxdigit(i))
+		if (isxdigit(i)) {
 			*ptr++ = i;
+		}
 	}
 	*ptr = '\0';
 	zassert_equal(strcmp(buf, exp_xdigit), 0, "isxdigit error");

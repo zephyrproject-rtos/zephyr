@@ -296,8 +296,9 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	 */
 	if ((iface != net_if_lookup_by_dev(DEVICE_GET(eth3_test))) &&
 	    (iface != net_if_lookup_by_dev(DEVICE_GET(eth2_test))) &&
-	    (iface != net_if_lookup_by_dev(DEVICE_GET(eth1_test))))
+	    (iface != net_if_lookup_by_dev(DEVICE_GET(eth1_test)))) {
 		return;
+	}
 
 	DBG("Interface %p (%s) [%d]\n", iface, iface2str(iface),
 	    net_if_get_by_iface(iface));
