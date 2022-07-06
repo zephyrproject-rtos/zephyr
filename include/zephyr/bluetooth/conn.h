@@ -623,6 +623,11 @@ struct bt_conn_le_create_param {
  *  The application must disable explicit scanning before initiating
  *  a new LE connection.
  *
+ *  When @kconfig{CONFIG_BT_PRIVACY} enabled and @p peer is an identity address
+ *  from a local bond, this API will connect to an advertisement with either:
+ *    - the address being an RPA resolved from the IRK obtained during bonding.
+ *    - the passed identity address, if the local identity is not in Network Privacy Mode.
+ *
  *  @param[in]  peer         Remote address.
  *  @param[in]  create_param Create connection parameters.
  *  @param[in]  conn_param   Initial connection parameters.
