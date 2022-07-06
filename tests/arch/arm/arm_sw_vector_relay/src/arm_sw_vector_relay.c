@@ -15,7 +15,7 @@ extern uint32_t _vector_table;
 extern uint32_t __vector_relay_handler;
 extern uint32_t _vector_table_pointer;
 
-void test_arm_sw_vector_relay(void)
+ZTEST(arm_sw_vector_relay, test_arm_sw_vector_relay)
 {
 	uint32_t vector_relay_table_addr = (uint32_t)&__vector_relay_table;
 	uint32_t vector_relay_handler_func = (uint32_t)&__vector_relay_handler;
