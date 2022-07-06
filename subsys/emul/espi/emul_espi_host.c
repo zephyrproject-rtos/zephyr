@@ -262,7 +262,7 @@ static int emul_host_init(const struct emul *emul, const struct device *bus)
 	data->espi = bus;
 	emul_host_init_vw_state(data);
 
-	return espi_emul_register(bus, emul->dev_label, &data->emul);
+	return espi_emul_register(bus, emul->name, &data->emul);
 }
 
 #define HOST_EMUL(n)                                                                               \

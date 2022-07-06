@@ -347,7 +347,7 @@ static int emul_bosch_bmi160_init_spi(const struct emul *emul,
 	data->emul_spi.chipsel = cfg->chipsel;
 	data->emul_spi.parent = emul;
 
-	int rc = spi_emul_register(parent, emul->dev_label, &data->emul_spi);
+	int rc = spi_emul_register(parent, emul->name, &data->emul_spi);
 
 	return rc;
 }
@@ -375,7 +375,7 @@ static int emul_bosch_bmi160_init_i2c(const struct emul *emul,
 	data->emul_i2c.addr = cfg->addr;
 	data->emul_i2c.parent = emul;
 
-	int rc = i2c_emul_register(parent, emul->dev_label, &data->emul_i2c);
+	int rc = i2c_emul_register(parent, emul->name, &data->emul_i2c);
 
 	return rc;
 }

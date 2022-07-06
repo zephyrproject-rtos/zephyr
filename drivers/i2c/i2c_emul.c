@@ -139,13 +139,13 @@ static struct i2c_driver_api i2c_emul_api = {
 	.transfer = i2c_emul_transfer,
 };
 
-#define EMUL_LINK_AND_COMMA(node_id) {		\
-	.label = DT_LABEL(node_id),		\
-},
+#define EMUL_DT_GET_AND_COMMA(node_id) EMUL_DT_GET(node_id),
+#define EMUL_DT_DECLARE_AND_SEMICOLON(node_id) EMUL_DT_DECLARE(node_id);
 
 #define I2C_EMUL_INIT(n) \
-	static const struct emul_link_for_bus emuls_##n[] = { \
-		DT_FOREACH_CHILD(DT_DRV_INST(n), EMUL_LINK_AND_COMMA) \
+	DT_INST_FOREACH_CHILD(n, EMUL_DT_DECLARE_AND_SEMICOLON) \
+	static const struct emul *emuls_##n[] = { \
+		DT_INST_FOREACH_CHILD(n, EMUL_DT_GET_AND_COMMA) \
 	}; \
 	static struct emul_list_for_bus i2c_emul_cfg_##n = { \
 		.children = emuls_##n, \

@@ -225,14 +225,13 @@ static struct emul_espi_driver_api emul_espi_driver_api = {
 	.find_emul = espi_emul_find,
 };
 
+#define EMUL_DT_GET_AND_COMMA(node_id) EMUL_DT_GET(node_id),
+#define EMUL_DT_DECLARE_AND_SEMICOLON(node_id) EMUL_DT_DECLARE(node_id);
 
-#define EMUL_LINK_AND_COMMA(node_id) {	    \
-		.label = DT_LABEL(node_id), \
-},
-
-#define ESPI_EMUL_INIT(n)					      \
-	static const struct emul_link_for_bus emuls_##n[] = {	      \
-		DT_FOREACH_CHILD(DT_DRV_INST(n), EMUL_LINK_AND_COMMA) \
+#define ESPI_EMUL_INIT(n) \
+	DT_INST_FOREACH_CHILD(n, EMUL_DT_DECLARE_AND_SEMICOLON)	      \
+	static const struct emul *emuls_##n[] = {		      \
+		DT_INST_FOREACH_CHILD(n, EMUL_DT_GET_AND_COMMA)	      \
 	};							      \
 	static struct emul_list_for_bus espi_emul_cfg_##n = {	      \
 		.children = emuls_##n,				      \

@@ -21,19 +21,10 @@ extern "C" {
 struct device;
 struct emul;
 
-/**
- * Structure uniquely identifying a device to be emulated
- *
- * Currently this uses the device node label, but that will go away by 2.5.
- */
-struct emul_link_for_bus {
-	const char *label;
-};
-
 /** List of emulators attached to a bus */
 struct emul_list_for_bus {
-	/** Identifiers for children of the node */
-	const struct emul_link_for_bus *children;
+	/** Children emulators of a node */
+	const struct emul **children;
 	/** Number of children of the node */
 	unsigned int num_children;
 };
@@ -52,8 +43,8 @@ typedef int (*emul_init_t)(const struct emul *emul,
 struct emul {
 	/** function used to initialise the emulator state */
 	emul_init_t init;
-	/** handle to the device for which this provides low-level emulation */
-	const char *dev_label;
+	/** emulator name */
+	const char *name;
 	/** Emulator-specific configuration data */
 	const void *cfg;
 	/** Emulator-specific data */
@@ -70,6 +61,13 @@ extern const struct emul __emul_list_end[];
 /* Use the devicetree node identifier as a unique name. */
 #define EMUL_REG_NAME(node_id) (_CONCAT(__emulreg_, node_id))
 
+/* Obtain emulator instance for the given DT node identifier. */
+#define EMUL_DT_GET(node_id) (&EMUL_REG_NAME(node_id))
+
+/* Declare an emulator instance for the given DT node indentifier. */
+#define EMUL_DT_DECLARE(node_id) \
+	extern const struct emul EMUL_REG_NAME(node_id)
+
 /**
  * Define a new emulator
  *
@@ -83,10 +81,10 @@ extern const struct emul __emul_list_end[];
  * @param data_ptr emulator-specific data
  */
 #define EMUL_DEFINE(init_ptr, node_id, cfg_ptr, data_ptr)                                          \
-	static struct emul EMUL_REG_NAME(node_id) __attribute__((__section__(".emulators")))       \
+	const struct emul EMUL_REG_NAME(node_id) __attribute__((__section__(".emulators")))        \
 	__used = {                                                                                 \
 		.init = (init_ptr),                                                                \
-		.dev_label = DT_LABEL(node_id),                                                    \
+		.name = DT_LABEL(node_id),                                                         \
 		.cfg = (cfg_ptr),                                                                  \
 		.data = (data_ptr),                                                                \
 	};
@@ -101,20 +99,6 @@ extern const struct emul __emul_list_end[];
  */
 int emul_init_for_bus_from_list(const struct device *dev,
 				const struct emul_list_for_bus *list);
-
-/**
- * @brief Retrieve the emul structure for an emulator by name
- *
- * @details Emulator objects are created via the EMUL_DEFINE() macro and placed in memory by the
- * linker. If the emulator structure is needed for custom API calls, it can be retrieved by the name
- * that the emulator exposes to the system (this is the devicetree node's label by default).
- *
- * @param name Emulator name to search for.  A null pointer, or a pointer to an
- * empty string, will cause NULL to be returned.
- *
- * @return pointer to emulator structure; NULL if not found or cannot be used.
- */
-const struct emul *emul_get_binding(const char *name);
 
 #ifdef __cplusplus
 }

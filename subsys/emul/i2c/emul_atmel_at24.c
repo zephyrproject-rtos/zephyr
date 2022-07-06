@@ -150,7 +150,7 @@ static int emul_atmel_at24_init(const struct emul *emul,
 	/* Start with an erased EEPROM, assuming all 0xff */
 	memset(cfg->buf, 0xff, cfg->size);
 
-	int rc = i2c_emul_register(parent, emul->dev_label, &data->emul);
+	int rc = i2c_emul_register(parent, emul->name, &data->emul);
 
 	return rc;
 }
