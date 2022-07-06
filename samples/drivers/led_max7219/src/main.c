@@ -19,13 +19,9 @@ LOG_MODULE_REGISTER(app);
 
 void main(void)
 {
-	const struct device *led_dev = DEVICE_DT_GET_ANY(maxim_max7219);
+	const struct device *led_dev = DEVICE_DT_GET_ONE(maxim_max7219);
 	int i, ret;
 
-	if (led_dev == NULL) {
-		LOG_ERR("No device with compatible maxim,max7219 found");
-		return;
-	}
 	if (!device_is_ready(led_dev)) {
 		LOG_ERR("LED device %s not ready", led_dev->name);
 		return;
