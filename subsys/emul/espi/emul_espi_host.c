@@ -79,8 +79,6 @@ struct espi_host_emul_data {
 
 /** Static configuration for the emulator */
 struct espi_host_emul_cfg {
-	/** Label of the eSPI bus this emulator connects to */
-	const char *espi_label;
 	/** Label of the emulated AP*/
 	const char *label;
 	/* eSPI chip-select of the emulated device */
@@ -268,7 +266,6 @@ static int emul_host_init(const struct emul *emul, const struct device *bus)
 #define HOST_EMUL(n)                                                                               \
 	static struct espi_host_emul_data espi_host_emul_data_##n;                                 \
 	static const struct espi_host_emul_cfg espi_host_emul_cfg_##n = {                          \
-		.espi_label = DT_INST_BUS_LABEL(n),                                                \
 		.chipsel = DT_INST_REG_ADDR(n),                                                    \
 	};                                                                                         \
 	EMUL_DEFINE(emul_host_init, DT_DRV_INST(n), &espi_host_emul_cfg_##n,                       \
