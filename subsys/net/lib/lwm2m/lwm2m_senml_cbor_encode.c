@@ -34,8 +34,9 @@ static bool encode_repeated_record_bn(zcbor_state_t *state, const struct record_
 	bool tmp_result = ((((zcbor_int32_put(state, (-2)))) &&
 			    (zcbor_tstr_encode(state, (&(*input)._record_bn)))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace();
+	}
 
 	return tmp_result;
 }
@@ -47,8 +48,9 @@ static bool encode_repeated_record_n(zcbor_state_t *state, const struct record_n
 	bool tmp_result = ((((zcbor_uint32_put(state, (0)))) &&
 			    (zcbor_tstr_encode(state, (&(*input)._record_n)))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace();
+	}
 
 	return tmp_result;
 }
@@ -83,8 +85,9 @@ static bool encode_repeated_record_union(zcbor_state_t *state, const struct reco
 									(&(*input)._union_vd))))
 								    : false)))))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace();
+	}
 
 	return tmp_result;
 }
@@ -117,8 +120,9 @@ static bool encode_value(zcbor_state_t *state, const struct value_ *input)
 									(&(*input)._value_bool))))
 								    : false)))))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace();
+	}
 
 	return tmp_result;
 }
@@ -130,8 +134,9 @@ static bool encode_key_value_pair(zcbor_state_t *state, const struct key_value_p
 	bool tmp_result = ((((zcbor_int32_encode(state, (&(*input)._key_value_pair_key)))) &&
 			    (encode_value(state, (&(*input)._key_value_pair)))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace();
+	}
 
 	return tmp_result;
 }
@@ -143,8 +148,9 @@ static bool encode_repeated_record__key_value_pair(zcbor_state_t *state,
 
 	bool tmp_result = (((encode_key_value_pair(state, (&(*input)._record__key_value_pair)))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace();
+	}
 
 	return tmp_result;
 }
@@ -173,8 +179,9 @@ static bool encode_record(zcbor_state_t *state, const struct record *input)
 			      (zcbor_list_map_end_force_encode(state), false)) &&
 			     zcbor_map_end_encode(state, max_keys + 3))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace();
+	}
 
 	return tmp_result;
 }
@@ -192,8 +199,9 @@ static bool encode_lwm2m_senml(zcbor_state_t *state, const struct lwm2m_senml *i
 			      (zcbor_list_map_end_force_encode(state), false)) &&
 			     zcbor_list_end_encode(state, max_records))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace();
+	}
 
 	return tmp_result;
 }
