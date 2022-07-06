@@ -218,6 +218,9 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	ull_cp_prt_reload_set(conn, conn_interval_us);
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
+#if (!defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
+	conn->connect_accept_to = DEFAULT_CONNECTION_ACCEPT_TIMEOUT_US;
+#endif /* !defined(CONFIG_BT_LL_SW_LLCP_LEGACY) */
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	/* APTO in no. of connection events */
 	conn->apto_reload = RADIO_CONN_EVENTS((30 * 1000 * 1000),

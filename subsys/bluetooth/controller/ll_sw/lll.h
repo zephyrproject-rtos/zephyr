@@ -27,6 +27,10 @@
 #define ISO_INT_UNIT_US      CONN_INT_UNIT_US
 #define PERIODIC_INT_UNIT_US 1250U
 
+/* Timeout for Host to accept/reject cis create request */
+/* See BTCore5.3, 4.E.6.7 - Default value 0x1f40 * 625us */
+#define DEFAULT_CONNECTION_ACCEPT_TIMEOUT_US (5 * USEC_PER_SEC)
+
 /* Intervals after which connection or sync establishment is considered lost */
 #define CONN_ESTAB_COUNTDOWN 6U
 
