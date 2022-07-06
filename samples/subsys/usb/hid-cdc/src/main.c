@@ -20,38 +20,25 @@ LOG_MODULE_REGISTER(main);
 #define SW0_NODE DT_ALIAS(sw0)
 
 #if DT_NODE_HAS_STATUS(SW0_NODE, okay)
-#define PORT0		DT_GPIO_LABEL(SW0_NODE, gpios)
-#define PIN0		DT_GPIO_PIN(SW0_NODE, gpios)
-#define PIN0_FLAGS	DT_GPIO_FLAGS(SW0_NODE, gpios)
-#else
-#error "Unsupported board: sw0 devicetree alias is not defined"
-#define PORT0		""
-#define PIN0		0
-#define PIN0_FLAGS	0
+static const struct gpio_dt_spec sw0_gpio = GPIO_DT_SPEC_GET(SW0_NODE, gpios);
 #endif
 
 #define SW1_NODE DT_ALIAS(sw1)
 
 #if DT_NODE_HAS_STATUS(SW1_NODE, okay)
-#define PORT1		DT_GPIO_LABEL(SW1_NODE, gpios)
-#define PIN1		DT_GPIO_PIN(SW1_NODE, gpios)
-#define PIN1_FLAGS	DT_GPIO_FLAGS(SW1_NODE, gpios)
+static const struct gpio_dt_spec sw1_gpio = GPIO_DT_SPEC_GET(SW1_NODE, gpios);
 #endif
 
 #define SW2_NODE DT_ALIAS(sw2)
 
 #if DT_NODE_HAS_STATUS(SW2_NODE, okay)
-#define PORT2		DT_GPIO_LABEL(SW2_NODE, gpios)
-#define PIN2		DT_GPIO_PIN(SW2_NODE, gpios)
-#define PIN2_FLAGS	DT_GPIO_FLAGS(SW2_NODE, gpios)
+static const struct gpio_dt_spec sw2_gpio = GPIO_DT_SPEC_GET(SW2_NODE, gpios);
 #endif
 
 #define SW3_NODE DT_ALIAS(sw3)
 
 #if DT_NODE_HAS_STATUS(SW3_NODE, okay)
-#define PORT3		DT_GPIO_LABEL(SW3_NODE, gpios)
-#define PIN3		DT_GPIO_PIN(SW3_NODE, gpios)
-#define PIN3_FLAGS	DT_GPIO_FLAGS(SW3_NODE, gpios)
+static const struct gpio_dt_spec sw3_gpio = GPIO_DT_SPEC_GET(SW3_NODE, gpios);
 #endif
 
 /* Event FIFO */
@@ -521,21 +508,21 @@ static void btn3(const struct device *gpio, struct gpio_callback *cb,
 }
 #endif
 
-int callbacks_configure(const struct device *gpio, uint32_t pin, int flags,
+int callbacks_configure(const struct gpio_dt_spec *gpio,
 			void (*handler)(const struct device *, struct gpio_callback*,
 					uint32_t),
 			struct gpio_callback *callback)
 {
-	if (!gpio) {
-		LOG_ERR("Could not find PORT");
-		return -ENXIO;
+	if (!device_is_ready(gpio->port)) {
+		LOG_ERR("%s: device not ready.", gpio->port->name);
+		return -ENODEV;
 	}
 
-	gpio_pin_configure(gpio, pin, GPIO_INPUT | flags);
+	gpio_pin_configure_dt(gpio, GPIO_INPUT);
 
-	gpio_init_callback(callback, handler, BIT(pin));
-	gpio_add_callback(gpio, callback);
-	gpio_pin_interrupt_configure(gpio, pin, GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_init_callback(callback, handler, BIT(gpio->pin));
+	gpio_add_callback(gpio->port, callback);
+	gpio_pin_interrupt_configure_dt(gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }
@@ -580,31 +567,27 @@ void main(void)
 		}
 	}
 
-	if (callbacks_configure(device_get_binding(PORT0), PIN0, PIN0_FLAGS,
-				&btn0, &callback[0])) {
+	if (callbacks_configure(&sw0_gpio, &btn0, &callback[0])) {
 		LOG_ERR("Failed configuring button 0 callback.");
 		return;
 	}
 
 #if DT_NODE_HAS_STATUS(SW1_NODE, okay)
-	if (callbacks_configure(device_get_binding(PORT1), PIN1, PIN1_FLAGS,
-				&btn1, &callback[1])) {
+	if (callbacks_configure(&sw1_gpio, &btn1, &callback[1])) {
 		LOG_ERR("Failed configuring button 1 callback.");
 		return;
 	}
 #endif
 
 #if DT_NODE_HAS_STATUS(SW2_NODE, okay)
-	if (callbacks_configure(device_get_binding(PORT2), PIN2, PIN2_FLAGS,
-				&btn2, &callback[2])) {
+	if (callbacks_configure(&sw2_gpio, &btn2, &callback[2])) {
 		LOG_ERR("Failed configuring button 2 callback.");
 		return;
 	}
 #endif
 
 #if DT_NODE_HAS_STATUS(SW3_NODE, okay)
-	if (callbacks_configure(device_get_binding(PORT3), PIN3, PIN3_FLAGS,
-				&btn3, &callback[3])) {
+	if (callbacks_configure(&sw3_gpio, &btn3, &callback[3])) {
 		LOG_ERR("Failed configuring button 3 callback.");
 		return;
 	}
