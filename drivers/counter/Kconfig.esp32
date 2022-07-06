@@ -5,20 +5,9 @@
 
 DT_COMPAT_ESP32_TIMER := espressif,esp32-timer
 
-menuconfig COUNTER_ESP32
+config COUNTER_ESP32
 	bool "ESP32 Counter Driver"
 	depends on SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3
 	default $(dt_compat_enabled,$(DT_COMPAT_ESP32_TIMER))
 	help
 	  Enable Counter driver for ESP32 series devices.
-
-if COUNTER_ESP32
-
-config COUNTER_ESP32_PRESCALER
-	int "Prescaling value for counter device"
-	range 2 65336
-	default 2
-	help
-	  Sets prescaler value for Timer clock.
-
-endif
