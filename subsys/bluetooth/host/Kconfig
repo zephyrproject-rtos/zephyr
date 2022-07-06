@@ -338,8 +338,10 @@ if BT_SMP
 config BT_PRIVACY
 	bool "Privacy Feature"
 	help
-	  Enable local Privacy Feature support. This makes it possible
-	  to use Resolvable Private Addresses (RPAs).
+	  Enable Privacy Feature support. This makes it possible to generate and use
+	  Resolvable Private Addresses (RPAs).
+
+	  Disabling this will remove the capability to resolve private addresses.
 
 config BT_RPA_TIMEOUT
 	int "Resolvable Private Address timeout"
