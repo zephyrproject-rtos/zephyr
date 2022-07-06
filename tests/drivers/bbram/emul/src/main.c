@@ -9,13 +9,14 @@
 #include <ztest.h>
 
 #define BBRAM_NODELABEL DT_NODELABEL(bbram)
-#define BBRAM_LABEL DT_LABEL(BBRAM_NODELABEL)
 #define BBRAM_SIZE DT_PROP(BBRAM_NODELABEL, size)
 
 static void test_get_size(void)
 {
-	const struct device *dev = device_get_binding(BBRAM_LABEL);
+	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 	size_t size;
+
+	zassert_true(device_is_ready(dev), "Device is not ready");
 
 	zassert_ok(bbram_get_size(dev, &size), NULL);
 	zassert_equal(size, BBRAM_SIZE, NULL);
@@ -23,10 +24,9 @@ static void test_get_size(void)
 
 static void test_bbram_out_of_bounds(void)
 {
-	const struct device *dev = device_get_binding(BBRAM_LABEL);
+	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 	uint8_t buffer[BBRAM_SIZE];
 
-	zassert_not_null(dev, NULL);
 	zassert_equal(bbram_read(dev, 0, 0, buffer), -EFAULT, NULL);
 	zassert_equal(bbram_read(dev, 0, BBRAM_SIZE + 1, buffer), -EFAULT, NULL);
 	zassert_equal(bbram_read(dev, BBRAM_SIZE - 1, 2, buffer), -EFAULT, NULL);
@@ -37,7 +37,7 @@ static void test_bbram_out_of_bounds(void)
 
 static void test_read_write(void)
 {
-	const struct device *dev = device_get_binding(BBRAM_LABEL);
+	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 	uint8_t buffer[BBRAM_SIZE];
 	uint8_t expected[BBRAM_SIZE];
 
@@ -52,7 +52,7 @@ static void test_read_write(void)
 
 static void test_set_invalid(void)
 {
-	const struct device *dev = device_get_binding(BBRAM_LABEL);
+	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 
 	zassert_equal(bbram_check_invalid(dev), 0, NULL);
 	zassert_ok(bbram_emul_set_invalid(dev, true), NULL);
@@ -62,7 +62,7 @@ static void test_set_invalid(void)
 
 static void test_set_standby(void)
 {
-	const struct device *dev = device_get_binding(BBRAM_LABEL);
+	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 
 	zassert_equal(bbram_check_standby_power(dev), 0, NULL);
 	zassert_ok(bbram_emul_set_standby_power_state(dev, true), NULL);
@@ -72,7 +72,7 @@ static void test_set_standby(void)
 
 static void test_set_power(void)
 {
-	const struct device *dev = device_get_binding(BBRAM_LABEL);
+	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 
 	zassert_equal(bbram_check_power(dev), 0, NULL);
 	zassert_ok(bbram_emul_set_power_state(dev, true), NULL);
@@ -82,7 +82,7 @@ static void test_set_power(void)
 
 static void test_reset_invalid_on_read(void)
 {
-	const struct device *dev = device_get_binding(BBRAM_LABEL);
+	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 	uint8_t buffer[BBRAM_SIZE];
 
 	zassert_ok(bbram_emul_set_invalid(dev, true), NULL);
@@ -92,7 +92,7 @@ static void test_reset_invalid_on_read(void)
 
 static void test_reset_invalid_on_write(void)
 {
-	const struct device *dev = device_get_binding(BBRAM_LABEL);
+	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 	uint8_t buffer[BBRAM_SIZE];
 
 	zassert_ok(bbram_emul_set_invalid(dev, true), NULL);
@@ -102,7 +102,7 @@ static void test_reset_invalid_on_write(void)
 
 static void setup(void)
 {
-	const struct device *dev = device_get_binding(BBRAM_LABEL);
+	const struct device *dev = DEVICE_DT_GET(BBRAM_NODELABEL);
 
 	bbram_emul_set_invalid(dev, false);
 	bbram_emul_set_standby_power_state(dev, false);
