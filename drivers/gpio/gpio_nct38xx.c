@@ -76,11 +76,10 @@ static int nct38xx_gpio_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_DEV_AND_COMMA(node_id) DEVICE_DT_GET(node_id),
-
 #define GPIO_NCT38XX_DEVICE_INSTANCE(inst)                                                         \
-	static const struct device *sub_gpio_dev_##inst[] = { DT_FOREACH_CHILD_STATUS_OKAY(        \
-		DT_DRV_INST(inst), GPIO_DEV_AND_COMMA) };                                          \
+	static const struct device *sub_gpio_dev_##inst[] = {                                      \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(inst, DEVICE_DT_GET, (,))                    \
+	};                                                                                         \
 	static const struct gpio_nct38xx_config gpio_nct38xx_cfg_##inst = {                        \
 		.i2c_dev = I2C_DT_SPEC_INST_GET(inst),                                             \
 		.sub_gpio_dev = sub_gpio_dev_##inst,                                               \
