@@ -15,8 +15,6 @@
 #include "retained.h"
 #include <hal/nrf_gpio.h>
 
-#define CONSOLE_LABEL DT_LABEL(DT_CHOSEN(zephyr_console))
-
 #define BUSY_WAIT_S 2U
 #define SLEEP_S 2U
 
@@ -40,7 +38,12 @@ SYS_INIT(disable_ds_1, PRE_KERNEL_2, 0);
 void main(void)
 {
 	int rc;
-	const struct device *cons = device_get_binding(CONSOLE_LABEL);
+	const struct device *cons = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+
+	if (!device_is_ready(cons)) {
+		printk("%s: device not ready.\n", cons->name);
+		return;
+	}
 
 	printk("\n%s system off demo\n", CONFIG_BOARD);
 
