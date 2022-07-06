@@ -99,8 +99,9 @@ static ALWAYS_INLINE void bmemcpy(void *dest, void *src, size_t bytes)
 	int i;
 
 	z_xtensa_cache_inv(src, bytes);
-	for (i = 0; i < (bytes >> 2); i++)
+	for (i = 0; i < (bytes >> 2); i++) {
 		d[i] = s[i];
+	}
 
 	z_xtensa_cache_flush(dest, bytes);
 }
@@ -111,8 +112,9 @@ static ALWAYS_INLINE void bbzero(void *dest, size_t bytes)
 	uint32_t *d = dest;
 	int i;
 
-	for (i = 0; i < (bytes >> 2); i++)
+	for (i = 0; i < (bytes >> 2); i++) {
 		d[i] = 0;
+	}
 
 	z_xtensa_cache_flush(dest, bytes);
 }
