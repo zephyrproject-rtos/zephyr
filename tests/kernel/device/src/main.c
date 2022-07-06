@@ -278,8 +278,9 @@ ZTEST(device, test_device_init_level)
 	 * correct, and it should be 1, 2, 3, 4
 	 */
 	for (int i = 0; i < 4; i++) {
-		if (init_level_sequence[i] != (i+1))
+		if (init_level_sequence[i] != (i + 1)) {
 			seq_correct = false;
+		}
 	}
 
 	zassert_true((seq_correct == true),
@@ -304,8 +305,9 @@ ZTEST(device, test_device_init_priority)
 	 * and it should be 1, 2, 3, 4
 	 */
 	for (int i = 0; i < 4; i++) {
-		if (init_priority_sequence[i] != (i+1))
+		if (init_priority_sequence[i] != (i + 1)) {
 			sequence_correct = false;
+		}
 	}
 
 	zassert_true((sequence_correct == true),

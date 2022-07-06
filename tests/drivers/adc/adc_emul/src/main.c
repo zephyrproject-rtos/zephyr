@@ -113,9 +113,10 @@ static void check_empty_samples(int expected_count)
 {
 	int i;
 
-	for (i = expected_count; i < BUFFER_SIZE; i++)
+	for (i = expected_count; i < BUFFER_SIZE; i++) {
 		zassert_equal(INVALID_ADC_VALUE, m_sample_buffer[i],
 			      "[%u] should be empty", i);
+	}
 }
 
 /**
@@ -502,9 +503,10 @@ static void test_adc_emul_input_higher_than_ref(void)
 
 	check_empty_samples(samples);
 
-	for (i = 0; i < samples; i++)
+	for (i = 0; i < samples; i++) {
 		zassert_equal(BIT_MASK(ADC_RESOLUTION), m_sample_buffer[i],
 			      "[%u] raw value isn't max value", i);
+	}
 }
 
 /**
