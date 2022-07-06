@@ -846,6 +846,19 @@ struct ll_scan_aux_set *ull_scan_aux_is_valid_get(struct ll_scan_aux_set *aux)
 	return aux;
 }
 
+struct lll_scan_aux *ull_scan_aux_lll_is_valid_get(struct lll_scan_aux *lll)
+{
+	struct ll_scan_aux_set *aux;
+
+	aux = HDR_LLL2ULL(lll);
+	aux = ull_scan_aux_is_valid_get(aux);
+	if (aux) {
+		return &aux->lll;
+	}
+
+	return NULL;
+}
+
 void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 {
 	struct lll_scan_aux *lll_aux;
