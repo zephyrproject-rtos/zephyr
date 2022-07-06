@@ -901,8 +901,9 @@ void radio_crc_configure(uint32_t polynomial, uint32_t iv)
 
 uint32_t radio_crc_is_valid(void)
 {
-	if (force_bad_crc)
+	if (force_bad_crc) {
 		return 0;
+	}
 
 	uint32_t radio_crc = (GENFSK->XCVR_STS & GENFSK_XCVR_STS_CRC_VALID_MASK) >>
 						GENFSK_XCVR_STS_CRC_VALID_SHIFT;
