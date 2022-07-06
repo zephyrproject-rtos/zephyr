@@ -57,7 +57,7 @@ static void check_heap_align(struct sys_heap *h,
 	sys_heap_free(h, p);
 }
 
-static void test_aligned_alloc(void)
+ZTEST(lib_heap_align, test_aligned_alloc)
 {
 	struct sys_heap heap = {};
 	void *p, *q;
@@ -98,10 +98,4 @@ static void test_aligned_alloc(void)
 	sys_heap_free(&heap, q);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(lib_heap_align_test,
-			 ztest_unit_test(test_aligned_alloc));
-
-	ztest_run_test_suite(lib_heap_align_test);
-}
+ZTEST_SUITE(lib_heap_align, NULL, NULL, NULL, NULL, NULL);
