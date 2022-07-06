@@ -471,6 +471,9 @@ static void adc_stm32_oversampling(ADC_TypeDef *adc, uint8_t ratio, uint32_t shi
  */
 static int adc_stm32_enable(ADC_TypeDef *adc)
 {
+	if (LL_ADC_IsEnabled(adc) == 1UL) {
+		return 0;
+	}
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
@@ -478,10 +481,6 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
-
-	if (LL_ADC_IsEnabled(adc) == 1UL) {
-		return 0;
-	}
 
 	LL_ADC_ClearFlag_ADRDY(adc);
 	LL_ADC_Enable(adc);
@@ -503,6 +502,11 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 		}
 	}
 #else
+	/*
+	 * On the stm32F10x, do not re-enable the ADC :
+	 * if ADON holds 1 (LL_ADC_IsEnabled is true) and 1 is written,
+	 * then conversion starts ; that's not what is expected
+	 */
 	LL_ADC_Enable(adc);
 #endif
 
