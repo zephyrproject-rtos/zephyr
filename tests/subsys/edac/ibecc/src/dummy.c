@@ -26,7 +26,7 @@ DEVICE_DEFINE(dummy_edac, "dummy_edac", edac_dummy_init, NULL,
 	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 	      &edac_dummy_api);
 
-void test_edac_dummy_api(void)
+ZTEST(ibecc, test_edac_dummy_api)
 {
 	const struct device *dev = device_get_binding("dummy_edac");
 	uint64_t value;
