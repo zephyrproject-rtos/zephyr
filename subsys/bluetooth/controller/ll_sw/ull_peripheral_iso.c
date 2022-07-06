@@ -26,9 +26,15 @@
 #include "isoal.h"
 #include "ull_iso_types.h"
 
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#include "ull_tx_queue.h"
+#endif
+
 #include "ull_conn_types.h"
 #include "ull_conn_iso_types.h"
 #include "ull_internal.h"
+#include "ull_llcp.h"
+#include "ull_llcp_internal.h"
 
 #include "ull_conn_internal.h"
 #include "ull_conn_iso_internal.h"
@@ -39,14 +45,19 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-uint8_t ll_cis_accept(uint16_t handle)
+static struct ll_conn *ll_cis_get_acl_awaiting_reply(uint16_t handle, uint8_t *error)
 {
 	struct ll_conn *acl_conn = NULL;
 
 	for (int h = 0; h < CONFIG_BT_MAX_CONN; h++) {
 		struct ll_conn *conn = ll_conn_get(h);
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+		uint16_t cis_handle = conn->llcp_cis.cis_handle;
+#else
+		uint16_t cis_handle = ull_cp_cc_ongoing_handle(conn);
+#endif
 
-		if (handle == conn->llcp_cis.cis_handle) {
+		if (handle == cis_handle) {
 			/* ACL connection found */
 			acl_conn = conn;
 			break;
@@ -55,25 +66,62 @@ uint8_t ll_cis_accept(uint16_t handle)
 
 	if (!acl_conn) {
 		BT_ERR("No connection found for handle %u", handle);
-		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+		*error = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		return NULL;
 	}
 
 	if (acl_conn->lll.role == BT_CONN_ROLE_CENTRAL) {
 		BT_ERR("Not allowed for central");
-		return BT_HCI_ERR_CMD_DISALLOWED;
+		*error = BT_HCI_ERR_CMD_DISALLOWED;
+		return NULL;
 	}
 
-	acl_conn->llcp_cis.req++;
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+	if (acl_conn->llcp_cis.state != LLCP_CIS_STATE_RSP_WAIT) {
+#else
+	if (!ull_cp_cc_awaiting_reply(acl_conn)) {
+#endif
+		BT_ERR("Not allowed in current procedure state");
+		*error = BT_HCI_ERR_CMD_DISALLOWED;
+		return NULL;
+	}
 
-	return 0;
+	return acl_conn;
+}
+
+uint8_t ll_cis_accept(uint16_t handle)
+{
+	uint8_t status = BT_HCI_ERR_SUCCESS;
+	struct ll_conn *acl_conn = ll_cis_get_acl_awaiting_reply(handle, &status);
+
+	if (acl_conn) {
+		/* Accept request */
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+		acl_conn->llcp_cis.req++;
+#else
+		ull_cp_cc_accept(acl_conn);
+#endif
+	}
+
+	return status;
 }
 
 uint8_t ll_cis_reject(uint16_t handle, uint8_t reason)
 {
-	ARG_UNUSED(handle);
-	ARG_UNUSED(reason);
+	uint8_t status = BT_HCI_ERR_SUCCESS;
 
-	return BT_HCI_ERR_CMD_DISALLOWED;
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+	status = BT_HCI_ERR_CMD_DISALLOWED;
+#else
+	struct ll_conn *acl_conn = ll_cis_reply_ok(handle, &status);
+
+	if (acl_conn) {
+		/* Accept request */
+		ull_cp_cc_reject(acl_conn, reason);
+	}
+#endif
+
+	return status;
 }
 
 int ull_peripheral_iso_init(void)

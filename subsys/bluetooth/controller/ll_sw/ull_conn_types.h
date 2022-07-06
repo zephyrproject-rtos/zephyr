@@ -541,7 +541,7 @@ struct ll_conn {
 	uint16_t connect_expire;
 	uint16_t supervision_reload;
 	uint16_t supervision_expire;
-
+	uint32_t connect_accept_to;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	uint8_t phy_pref_tx:3;
