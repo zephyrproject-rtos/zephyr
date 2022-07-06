@@ -22,4 +22,13 @@ config DEVICE_CONCURRENT_ACCESS
 	  This can be a valid possibility if you know any your devices will be
 	  accessed by 2+ threads, and thus will reduce the memory footprint.
 
+config DEVICE_CALL_SYNCHRONIZATION
+	bool "Synchronization call object"
+	default y
+	select DEVICE_DATA_CONTEXTS
+	help
+	  Devices may require to use internal synchronization, mostly when
+	  running in interrupt mode where the isr handler - once finished -
+	  will need to notify the original API function.
+
 endmenu

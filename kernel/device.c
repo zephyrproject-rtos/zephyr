@@ -211,7 +211,8 @@ int device_supported_foreach(const struct device *dev,
 	return device_visitor(handles, handle_count, visitor_cb, context);
 }
 
-#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
+#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS) || \
+	defined(CONFIG_DEVICE_CALL_SYNCHRONIZATION)
 
 #include <zephyr/sys/ddc.h>
 
@@ -228,13 +229,37 @@ int device_lock(const struct device *dev)
 
 int device_release(const struct device *dev, int status)
 {
+
+#if defined(CONFIG_DEVICE_CALL_SYNCHRONIZATION)
+	struct device_synchronization *dev_sync = ddc_get_synchronization(dev);
+
+	if (dev_sync != NULL) {
+		k_sem_take(&dev_sync->sync, K_FOREVER);
+		status = dev_sync->call_status;
+	}
+#endif /* CONFIG_DEVICE_CALL_SYNCHRONIZATION */
+
+#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
 	struct device_control *dev_ctrl = ddc_get_control(dev);
 
 	if (dev_ctrl != NULL) {
 		k_sem_give(&dev_ctrl->lock);
 	}
+#endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */
 
 	return status;
 }
+
+#if defined(CONFIG_DEVICE_CALL_SYNCHRONIZATION)
+
+void device_call_complete(const struct device *dev, int status)
+{
+	struct device_synchronization *dev_sync = ddc_get_synchronization(dev);
+
+	dev_sync->call_status = status;
+	k_sem_give(&dev_sync->sync);
+}
+
+#endif /* CONFIG_DEVICE_CALL_SYNCHRONIZATION */
 
 #endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */

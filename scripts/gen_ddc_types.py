@@ -39,6 +39,9 @@ ddc_attributes = [
     { "type" : "struct stats_i2c",
       "var"  : "i2c_stats",
       "init" : "" },
+    { "type" : "struct device_synchronization",
+      "var"  : "synchronization",
+      "init" : ".synchronization.sync = Z_SEM_INITIALIZER(_data.ctx.synchronization.sync, 0, 1)," },
 ]
 
 def parse_args():

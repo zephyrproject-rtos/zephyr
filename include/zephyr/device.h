@@ -420,6 +420,14 @@ struct device_control {
 	struct k_sem lock;
 };
 
+/** @brief Runtime structure that may be used by a device to offer generic
+ *         means to synchronize its internal calls
+ */
+struct device_synchronization {
+	struct k_sem sync;
+	int call_status;
+};
+
 /**
  * @brief Runtime device context (in RAM) per driver instance
  *
@@ -828,8 +836,8 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	return z_device_is_ready(dev);
 }
 
-#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
-
+#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS) || \
+	defined(CONFIG_DEVICE_CALL_SYNCHRONIZATION)
 /**
  * @brief Lock a device to avoid concurrent access.
  *
@@ -860,10 +868,24 @@ int device_lock(const struct device *dev);
  */
 int device_release(const struct device *dev, int status);
 
+#if defined(CONFIG_DEVICE_CALL_SYNCHRONIZATION)
+
+/**
+ * @brief Notify when a call is finished
+ *
+ * @param dev A valid pointer on a struct device instance
+ * @param status The status of the device, 0 on success or a negative errno
+ *               otherwise. This function is ISR ready.
+ */
+void device_call_complete(const struct device *dev, int status);
+
+#endif /* CONFIG_DEVICE_CALL_SYNCHRONIZATION */
+
 #else
 
 #define device_lock(...) (0U)
 #define device_release(_dev, _status) (_status)
+#define device_call_completes(...)
 
 #endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */
 /**
