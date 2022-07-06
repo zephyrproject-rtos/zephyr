@@ -11,7 +11,6 @@
 #include <zephyr/device.h>
 
 #define I2C_SLV_ADDR 0x10
-#define I2C0_LABEL DT_LABEL(DT_NODELABEL(i2c0))
 #define EXT_P13_GPIO_PIN 23     /* P13, SPI1 SCK */
 #define EXT_P14_GPIO_PIN 22     /* P14, SPI1 MISO */
 
@@ -115,8 +114,19 @@ void main(void)
 {
 	static struct gpio_callback line_sensors;
 
-	gpio = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(sw0), gpios));
-	i2c_dev = device_get_binding(I2C0_LABEL);
+	gpio = DEVICE_DT_GET(DT_GPIO_CTLR(DT_ALIAS(sw0), gpios));
+	i2c_dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
+
+	if (!device_is_ready(gpio)) {
+		printk("%s: device not ready.\n", gpio->name);
+		return;
+	}
+
+	if (!device_is_ready(i2c_dev)) {
+		printk("%s: device not ready.\n", i2c_dev->name);
+		return;
+	}
+
 	/* Setup gpio to read data from digital line sensors of the robot */
 	gpio_pin_configure(gpio, EXT_P13_GPIO_PIN, GPIO_INPUT);
 	gpio_pin_configure(gpio, EXT_P14_GPIO_PIN, GPIO_INPUT);
