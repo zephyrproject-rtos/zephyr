@@ -25,8 +25,14 @@
 #include "lll.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
 
 #include "ull_tx_queue.h"
+
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
+#include "ull_conn_iso_internal.h"
 
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
@@ -828,3 +834,26 @@ void llcp_pdu_encode_cte_rsp(const struct proc_ctx *ctx, struct pdu_data *pdu)
 	pdu->cte_info.type = ctx->data.cte_remote_req.cte_type;
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
+void llcp_pdu_encode_cis_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_cis_terminate_ind *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len =
+		offsetof(struct pdu_data_llctrl, cis_terminate_ind) +
+		sizeof(struct pdu_data_llctrl_cis_terminate_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND;
+
+	p = &pdu->llctrl.cis_terminate_ind;
+	p->cig_id = ctx->data.cis_term.cig_id;
+	p->cis_id = ctx->data.cis_term.cis_id;
+	p->error_code = ctx->data.cis_term.error_code;
+}
+
+void llcp_pdu_decode_cis_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ctx->data.cis_term.cig_id = pdu->llctrl.cis_terminate_ind.cig_id;
+	ctx->data.cis_term.cis_id = pdu->llctrl.cis_terminate_ind.cis_id;
+	ctx->data.cis_term.error_code = pdu->llctrl.cis_terminate_ind.error_code;
+}
