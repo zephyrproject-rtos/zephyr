@@ -7,8 +7,6 @@
 #include <ztest.h>
 #include <interrupt_util.h>
 
-#if defined(CONFIG_DYNAMIC_INTERRUPTS)
-
 #define ISR_DYN_ARG	0xab249cfd
 
 static unsigned int handler_has_run;
@@ -36,7 +34,7 @@ extern struct _isr_table_entry __sw_isr_table _sw_isr_table[];
  *
  * @see arch_irq_connect_dynamic()
  */
-void test_isr_dynamic(void)
+ZTEST(interrupt_feature, test_isr_dynamic)
 {
 	int i;
 	const void *argval;
@@ -122,11 +120,3 @@ extern const void *x86_irq_args[];
 
 }
 #endif /* CONFIG_GEN_SW_ISR_TABLE */
-
-#else
-/* Skip the dynamic interrupt test for the platforms that do not support it */
-void test_isr_dynamic(void)
-{
-	ztest_test_skip();
-}
-#endif /* CONFIG_DYNAMIC_INTERRUPTS */
