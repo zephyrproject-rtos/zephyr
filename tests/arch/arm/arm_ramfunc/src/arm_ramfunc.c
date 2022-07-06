@@ -15,7 +15,7 @@ __ramfunc static void arm_ram_function(void)
 	test_flag = 1;
 }
 
-void test_arm_ramfunc(void)
+ZTEST(arm_ramfunc, test_arm_ramfunc)
 {
 	int init_flag, post_flag;
 
