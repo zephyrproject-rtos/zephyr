@@ -165,7 +165,7 @@ static inline void test_time_ms(void)
 #ifndef TC_SUITE_END
 #define TC_SUITE_END(name, result)				\
 	do {								\
-		if (result == TC_PASS) {					\
+		if (result != TC_FAIL) {				\
 			TC_PRINT("TESTSUITE %s succeeded\n", name);	\
 		} else {						\
 			TC_PRINT("TESTSUITE %s failed.\n", name);	\

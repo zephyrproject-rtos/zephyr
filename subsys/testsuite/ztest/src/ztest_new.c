@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/app_memory/app_memdomain.h>
-
 #include <ztest.h>
+
+#include <zephyr/app_memory/app_memdomain.h>
 #ifdef CONFIG_USERSPACE
 #include <zephyr/sys/libc-hooks.h>
 #endif
@@ -186,7 +186,7 @@ void z_vrfy_z_test_1cpu_stop(void) { z_impl_z_test_1cpu_stop(); }
 #endif /* CONFIG_USERSPACE */
 #endif
 
-static void run_test_rules(bool is_before, struct ztest_unit_test *test, void *data)
+__maybe_unused static void run_test_rules(bool is_before, struct ztest_unit_test *test, void *data)
 {
 	for (struct ztest_test_rule *rule = _ztest_test_rule_list_start;
 	     rule < _ztest_test_rule_list_end; ++rule) {
@@ -205,6 +205,15 @@ static void run_test_functions(struct ztest_suite_node *suite, struct ztest_unit
 	test->test(data);
 }
 
+enum ztest_result {
+	ZTEST_RESULT_PENDING,
+	ZTEST_RESULT_PASS,
+	ZTEST_RESULT_FAIL,
+	ZTEST_RESULT_SKIP,
+	ZTEST_RESULT_SUITE_SKIP,
+};
+COND_CODE_1(KERNEL, (ZTEST_BMEM), ()) static enum ztest_result test_result;
+
 #ifndef KERNEL
 
 /* Static code analysis tool can raise a violation that the standard header
@@ -222,11 +231,14 @@ static void run_test_functions(struct ztest_suite_node *suite, struct ztest_unit
 
 static jmp_buf test_fail;
 static jmp_buf test_pass;
+static jmp_buf test_skip;
 static jmp_buf stack_fail;
 
 void ztest_test_fail(void) { raise(SIGABRT); }
 
 void ztest_test_pass(void) { longjmp(test_pass, 1); }
+
+void ztest_test_skip(void) { longjmp(test_skip, 1); }
 
 /**
  * @brief Get a friendly name string for a given test phrase.
@@ -298,9 +310,22 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 		goto out;
 	}
 
+	if (setjmp(test_skip)) {
+		ret = TC_SKIP;
+		goto out;
+	}
+
+	run_test_rules(/*is_before=*/true, test, data);
+	if (suite->before) {
+		suite->before(data);
+	}
 	run_test_functions(suite, test, data);
 out:
 	ret |= cleanup_test(test);
+	if (suite->after != NULL) {
+		suite->after(data);
+	}
+	run_test_rules(/*is_before=*/false, test, data);
 	Z_TC_END_RESULT(ret, test->name);
 
 	return ret;
@@ -318,15 +343,6 @@ out:
 #endif
 
 K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
-
-enum ztest_result {
-	ZTEST_RESULT_PENDING,
-	ZTEST_RESULT_PASS,
-	ZTEST_RESULT_FAIL,
-	ZTEST_RESULT_SKIP,
-	ZTEST_RESULT_SUITE_SKIP,
-};
-static ZTEST_BMEM enum ztest_result test_result;
 
 static void test_finalize(void)
 {
@@ -536,7 +552,9 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 				continue;
 			}
 			if (ztest_api.should_test_run(suite->name, test->name)) {
-				fail += run_test(suite, test, data);
+				if (run_test(suite, test, data) == TC_FAIL) {
+					fail++;
+				}
 			}
 
 			if (fail && FAIL_FAST) {
@@ -546,7 +564,9 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 #else
 		while (((test = z_ztest_get_next_test(suite->name, test)) != NULL)) {
 			if (ztest_api.should_test_run(suite->name, test->name)) {
-				fail += run_test(suite, test, data);
+				if (run_test(suite, test, data) == TC_FAIL) {
+					fail++;
+				}
 			}
 
 			if (fail && FAIL_FAST) {
