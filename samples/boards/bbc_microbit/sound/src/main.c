@@ -22,7 +22,8 @@
 
 #define US_TO_HZ(_us)  (USEC_PER_SEC / (_us))
 
-static const struct device *pwm;
+static const struct device *pwm = DEVICE_DT_GET_ONE(nordic_nrf_sw_pwm);
+
 static uint32_t period = PERIOD_INIT;
 static struct k_work beep_work;
 static volatile bool beep_active;
@@ -86,6 +87,11 @@ void main(void)
 {
 	static struct gpio_callback button_cb_data;
 
+	if (!device_is_ready(pwm)) {
+		printk("%s: device not ready.\n", pwm->name);
+		return;
+	}
+
 	/* since sw0_gpio.port == sw1_gpio.port, we only need to check ready once */
 	if (!device_is_ready(sw0_gpio.port)) {
 		printk("%s: device not ready.\n", sw0_gpio.port->name);
@@ -100,8 +106,6 @@ void main(void)
 
 	gpio_init_callback(&button_cb_data, button_pressed,
 			   BIT(sw0_gpio.pin) | BIT(sw1_gpio.pin));
-
-	pwm = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_sw_pwm)));
 
 	k_work_init(&beep_work, beep);
 	/* Notify with a beep that we've started */
