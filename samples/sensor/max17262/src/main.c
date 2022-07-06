@@ -9,15 +9,6 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
 
-#define MAX17262 DT_INST(0, maxim_max17262)
-
-#if DT_NODE_HAS_STATUS(MAX17262, okay)
-#define MAX17262_LABEL DT_LABEL(MAX17262)
-#else
-#error Your devicetree has no enabled nodes with compatible "maxim,max17262"
-#define MAX17262_LABEL "<none>"
-#endif
-
 void main(void)
 {
 	const struct device *dev = DEVICE_DT_GET_ONE(maxim_max17262);
