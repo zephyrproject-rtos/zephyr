@@ -118,8 +118,7 @@ int main(void)
 
 	LOG_INF("Board '%s' APN '%s' UART '%s' device %p (%s)",
 		CONFIG_BOARD, CONFIG_MODEM_GSM_APN,
-		DT_BUS_LABEL(DT_INST(0, zephyr_gsm_ppp)), uart_dev,
-		gsm_dev->name);
+		uart_dev->name, uart_dev, gsm_dev->name);
 
 	net_mgmt_init_event_callback(&mgmt_cb, event_handler,
 				     NET_EVENT_L4_CONNECTED |
