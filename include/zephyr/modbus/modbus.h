@@ -373,6 +373,18 @@ struct modbus_user_callbacks {
 int modbus_iface_get_by_name(const char *iface_name);
 
 /**
+ * @brief Get Modbus interface index according to interface dev
+ *
+ * If there is more than one interface, it can be used to clearly
+ * identify interfaces in the application.
+ *
+ * @param dev        Modbus interface struct device
+ *
+ * @retval           Modbus interface index or negative error value.
+ */
+int modbus_iface_get_by_dev(const struct device *dev);
+
+/**
  * @brief ADU raw callback function signature
  *
  * @param iface      Modbus RTU interface index

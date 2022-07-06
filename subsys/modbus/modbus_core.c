@@ -47,7 +47,7 @@ static struct modbus_serial_config modbus_serial_cfg[] = {
 #endif
 
 #define MODBUS_DT_GET_DEV(inst) {				\
-		.iface_name = DT_INST_LABEL(inst),		\
+		.iface_name = NULL,				\
 		.cfg = &modbus_serial_cfg[inst],		\
 	},
 
@@ -175,6 +175,20 @@ int modbus_iface_get_by_ctx(const struct modbus_context *ctx)
 	for (int i = 0; i < ARRAY_SIZE(mb_ctx_tbl); i++) {
 		if (&mb_ctx_tbl[i] == ctx) {
 			return i;
+		}
+	}
+
+	return -ENODEV;
+}
+
+int modbus_iface_get_by_dev(const struct device *dev)
+{
+	for (int i = 0; i < ARRAY_SIZE(mb_ctx_tbl); i++) {
+		if ((mb_ctx_tbl[i].mode == MODBUS_MODE_RTU) ||
+		    (mb_ctx_tbl[i].mode == MODBUS_MODE_ASCII)) {
+			if (mb_ctx_tbl[i].cfg->dev == dev) {
+				return i;
+			}
 		}
 	}
 
