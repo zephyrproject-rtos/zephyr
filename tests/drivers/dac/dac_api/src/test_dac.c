@@ -27,25 +27,25 @@
 	defined(CONFIG_BOARD_NUCLEO_WL55JC) || \
 	defined(CONFIG_BOARD_RONOTH_LODEV)
 
-#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac1))
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac1)
 #define DAC_CHANNEL_ID		1
 #define DAC_RESOLUTION		12
 
 #elif defined(CONFIG_BOARD_TWR_KE18F)
 
-#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac0))
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
 #elif defined(CONFIG_BOARD_FRDM_K64F)
 
-#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac0))
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
 #elif defined(CONFIG_BOARD_FRDM_K22F)
 
-#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac0))
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
@@ -56,7 +56,7 @@
  /* Note external DAC MCP4725 is not populated on BL652_DVK, BL653_DVK and
   * BL654_DVK at factory
   */
-#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac0))
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
@@ -71,15 +71,15 @@ static const struct dac_channel_cfg dac_ch_cfg = {
 
 const struct device *get_dac_device(void)
 {
-	return device_get_binding(DAC_DEVICE_NAME);
+	return DEVICE_DT_GET(DAC_DEVICE_NODE);
 }
 
 static const struct device *init_dac(void)
 {
 	int ret;
-	const struct device *dac_dev = device_get_binding(DAC_DEVICE_NAME);
+	const struct device *dac_dev = DEVICE_DT_GET(DAC_DEVICE_NODE);
 
-	zassert_not_null(dac_dev, "Cannot get DAC device");
+	zassert_true(device_is_ready(dac_dev), "DAC device is not ready");
 
 	ret = dac_channel_setup(dac_dev, &dac_ch_cfg);
 	zassert_equal(ret, 0,
