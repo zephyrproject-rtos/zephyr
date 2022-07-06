@@ -22,7 +22,7 @@ extern char __SRAM_REGION_end[];
 extern char __SRAM_REGION_size[];
 extern char __SRAM_REGION_load_start[];
 
-static void test_memory_region(void)
+ZTEST(devicetree_memory_region, test_memory_region)
 {
 	zassert_true(!strcmp(LINKER_DT_NODE_REGION_NAME(TEST_SRAM_NODE), "SRAM_REGION"), "");
 
@@ -35,10 +35,4 @@ static void test_memory_region(void)
 	zassert_equal((unsigned long) __SRAM_REGION_size, TEST_SRAM_SIZE, "");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(devicetree_memory_region,
-			 ztest_unit_test(test_memory_region)
-			 );
-	ztest_run_test_suite(devicetree_memory_region);
-}
+ZTEST_SUITE(devicetree_memory_region, NULL, NULL, NULL, NULL, NULL);
