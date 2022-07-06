@@ -2472,13 +2472,23 @@ static int cmd_pb(bt_mesh_prov_bearer_t bearer, const struct shell *shell,
 
 	return 0;
 }
-#endif
 
 #if defined(CONFIG_BT_MESH_PB_ADV)
-static int cmd_pb_adv(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_pb_adv(const struct shell *sh, size_t argc, char *argv[])
 {
-	return cmd_pb(BT_MESH_PROV_ADV, shell, argc, argv);
+	return cmd_pb(BT_MESH_PROV_ADV, sh, argc, argv);
 }
+
+#endif /* CONFIG_BT_MESH_PB_ADV */
+
+#if defined(CONFIG_BT_MESH_PB_GATT)
+static int cmd_pb_gatt(const struct shell *sh, size_t argc, char *argv[])
+{
+	return cmd_pb(BT_MESH_PROV_GATT, sh, argc, argv);
+}
+#endif /* CONFIG_BT_MESH_PB_GATT */
+
+#endif /* CONFIG_BT_MESH_PROV_DEVICE */
 
 #if defined(CONFIG_BT_MESH_PROVISIONER)
 static int cmd_provision_adv(const struct shell *shell, size_t argc,
@@ -2510,15 +2520,6 @@ static int cmd_provision_adv(const struct shell *shell, size_t argc,
 	return 0;
 }
 #endif /* CONFIG_BT_MESH_PROVISIONER */
-
-#endif /* CONFIG_BT_MESH_PB_ADV */
-
-#if defined(CONFIG_BT_MESH_PB_GATT)
-static int cmd_pb_gatt(const struct shell *shell, size_t argc, char *argv[])
-{
-	return cmd_pb(BT_MESH_PROV_GATT, shell, argc, argv);
-}
-#endif /* CONFIG_BT_MESH_PB_GATT */
 
 static int cmd_provision(const struct shell *shell, size_t argc, char *argv[])
 {
@@ -3330,15 +3331,18 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 	SHELL_CMD_ARG(rpl-clear, NULL, NULL, cmd_rpl_clear, 1, 0),
 
 	/* Provisioning operations */
+#if defined(CONFIG_BT_MESH_PROV_DEVICE)
 #if defined(CONFIG_BT_MESH_PB_GATT)
 	SHELL_CMD_ARG(pb-gatt, NULL, "<val: off, on>", cmd_pb_gatt, 2, 0),
 #endif
 #if defined(CONFIG_BT_MESH_PB_ADV)
 	SHELL_CMD_ARG(pb-adv, NULL, "<val: off, on>", cmd_pb_adv, 2, 0),
+#endif
+#endif /* CONFIG_BT_MESH_PROV_DEVICE */
+
 #if defined(CONFIG_BT_MESH_PROVISIONER)
 	SHELL_CMD_ARG(provision-adv, NULL, "<UUID> <NetKeyIndex> <addr> "
 		      "<AttentionDuration>", cmd_provision_adv, 5, 0),
-#endif
 #endif
 
 #if defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
