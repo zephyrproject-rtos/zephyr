@@ -117,8 +117,9 @@ void cntr_cmp_set(uint8_t cmp, uint32_t value)
 	 * the LPTMR is disabled. If the LPTMR is enabled, the CMR must be
 	 * altered only when TCF is set.
 	 */
-	if (value == 0)
+	if (value == 0) {
 		value = 1;
+	}
 
 	LPTMR1->CMR = value;
 	LPTMR1->CSR |= LPTMR_CSR_TEN(1);
