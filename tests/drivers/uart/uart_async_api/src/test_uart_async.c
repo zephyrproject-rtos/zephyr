@@ -424,8 +424,9 @@ void test_read_abort(void)
 	 * that may affect following test on RX
 	 */
 	uart_rx_enable(uart_dev, rx_buf, sizeof(rx_buf), 50 * USEC_PER_MSEC);
-	while (k_sem_take(&rx_rdy, K_MSEC(1000)) != -EAGAIN)
+	while (k_sem_take(&rx_rdy, K_MSEC(1000)) != -EAGAIN) {
 		;
+	}
 	uart_rx_disable(uart_dev);
 }
 
