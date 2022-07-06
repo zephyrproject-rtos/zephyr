@@ -38,6 +38,11 @@ int stts751_trigger_set(const struct device *dev,
 			  sensor_trigger_handler_t handler)
 {
 	struct stts751_data *stts751 = dev->data;
+	const struct stts751_config *config = dev->config;
+
+	if (!config->int_gpio.port) {
+		return -ENOTSUP;
+	}
 
 	if (trig->chan == SENSOR_CHAN_ALL) {
 		stts751->thsld_handler = handler;
