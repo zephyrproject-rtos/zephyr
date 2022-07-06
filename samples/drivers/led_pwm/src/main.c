@@ -16,10 +16,8 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define LED_PWM_NODE_ID	 DT_COMPAT_GET_ANY_STATUS_OKAY(pwm_leds)
 
-#define LED_PWM_LABEL(led_node_id) DT_PROP_OR(led_node_id, label, NULL),
-
 const char *led_label[] = {
-	DT_FOREACH_CHILD(LED_PWM_NODE_ID, LED_PWM_LABEL)
+	DT_FOREACH_CHILD_SEP_VARGS(LED_PWM_NODE_ID, DT_PROP_OR, (,), label, NULL)
 };
 
 const int num_leds = ARRAY_SIZE(led_label);
