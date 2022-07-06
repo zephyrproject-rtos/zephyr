@@ -165,7 +165,7 @@ static void log_result(size_t sz, struct z_heap_stress_result *r)
  * to prevent runaway fragmentation and most allocations continue to
  * succeed in steady state.
  */
-static void test_small_heap(void)
+ZTEST(lib_heap, test_small_heap)
 {
 	struct sys_heap heap;
 	struct z_heap_stress_result result;
@@ -193,7 +193,7 @@ static void test_small_heap(void)
  * receive a 8 byte minimal chunk, we still count that as 5 bytes of
  * waste).
  */
-static void test_fragmentation(void)
+ZTEST(lib_heap, test_fragmentation)
 {
 	struct sys_heap heap;
 	struct z_heap_stress_result result;
@@ -216,7 +216,7 @@ static void test_fragmentation(void)
  * exhaustively with good performance, so the relative operation count
  * and fragmentation is going to be lower.
  */
-static void test_big_heap(void)
+ZTEST(lib_heap, test_big_heap)
 {
 	struct sys_heap heap;
 	struct z_heap_stress_result result;
@@ -253,7 +253,7 @@ static void test_big_heap(void)
  * - s: solo free header
  * - f: end marker / footer
  */
-static void test_solo_free_header(void)
+ZTEST(lib_heap, test_solo_free_header)
 {
 	struct sys_heap heap;
 
@@ -290,7 +290,7 @@ bool realloc_check_block(uint8_t *data, uint8_t *orig, size_t sz)
 	return true;
 }
 
-static void test_realloc(void)
+ZTEST(lib_heap, test_realloc)
 {
 	struct sys_heap heap;
 	void *p1, *p2, *p3;
@@ -411,7 +411,7 @@ static void heap_free_cb(uintptr_t heap_id, void *mem, size_t bytes)
 }
 #endif /* CONFIG_SYS_HEAP_LISTENER */
 
-static void test_heap_listeners(void)
+ZTEST(lib_heap, test_heap_listeners)
 {
 #ifdef CONFIG_SYS_HEAP_LISTENER
 	void *mem;
@@ -485,16 +485,4 @@ static void test_heap_listeners(void)
 #endif /* CONFIG_SYS_HEAP_LISTENER */
 }
 
-void test_main(void)
-{
-	ztest_test_suite(lib_heap_test,
-			 ztest_unit_test(test_realloc),
-			 ztest_unit_test(test_small_heap),
-			 ztest_unit_test(test_fragmentation),
-			 ztest_unit_test(test_big_heap),
-			 ztest_unit_test(test_solo_free_header),
-			 ztest_unit_test(test_heap_listeners)
-			 );
-
-	ztest_run_test_suite(lib_heap_test);
-}
+ZTEST_SUITE(lib_heap, NULL, NULL, NULL, NULL, NULL);
