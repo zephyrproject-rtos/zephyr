@@ -894,6 +894,24 @@ static int cdc_acm_line_ctrl_get(const struct device *dev,
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 
+static int cdc_acm_configure(const struct device *dev,
+			     const struct uart_config *cfg)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(cfg);
+	/*
+	 * We cannot implement configure API because there is
+	 * no notification of configuration changes provided
+	 * for the Abstract Control Model and the UART controller
+	 * is only emulated.
+	 * However, it allows us to use CDC ACM UART together with
+	 * subsystems like Modbus which require configure API for
+	 * real controllers.
+	 */
+
+	return 0;
+}
+
 static int cdc_acm_config_get(const struct device *dev,
 			      struct uart_config *cfg)
 {
@@ -1021,6 +1039,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 	.line_ctrl_get = cdc_acm_line_ctrl_get,
 #endif /* CONFIG_UART_LINE_CTRL */
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	.configure = cdc_acm_configure,
 	.config_get = cdc_acm_config_get,
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 };
