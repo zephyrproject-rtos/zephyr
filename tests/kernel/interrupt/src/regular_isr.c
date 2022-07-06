@@ -11,7 +11,6 @@
  * Other arch has already been tested in testcase of gen_isr_table,
  * so we only test x86 series here.
  */
-#if defined(CONFIG_X86)
 
 #define TEST_IRQ_LINE_1	27
 #define TEST_IRQ_LINE_2	28
@@ -51,7 +50,7 @@ void isr_comm(const void *param)
  * @see IRQ_CONNECT(), irq_enable(), irq_disable(),
  * irq_unlock(),
  */
-void test_isr_regular(void)
+ZTEST(interrupt_feature, test_isr_regular)
 {
 	int trig_vec1, trig_vec2;
 
@@ -107,9 +106,3 @@ void test_isr_regular(void)
 			"Both ISR should execute again(%d)(%d)",
 			reg_int_executed[0], reg_int_executed[1]);
 }
-#else
-void test_isr_regular(void)
-{
-	ztest_test_skip();
-}
-#endif /* end defined(CONFIG_X86) */
