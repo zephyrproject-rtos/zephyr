@@ -26,8 +26,14 @@
 #include "lll.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
 
 #include "ull_tx_queue.h"
+
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
+#include "ull_conn_iso_internal.h"
 
 #include "ull_internal.h"
 #include "ull_conn_types.h"
@@ -358,6 +364,9 @@ struct proc_ctx *llcp_create_local_procedure(enum llcp_proc proc)
 		llcp_lp_comm_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+	case PROC_CIS_TERMINATE:
+		llcp_lp_comm_init_proc(ctx);
+		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -429,6 +438,9 @@ struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc)
 		llcp_rp_comm_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+	case PROC_CIS_TERMINATE:
+		llcp_rp_comm_init_proc(ctx);
+		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -801,6 +813,31 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 
 	return BT_HCI_ERR_SUCCESS;
 }
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+uint8_t ull_cp_cis_terminate(struct ll_conn *conn,
+			     struct ll_conn_iso_stream *cis,
+			     uint8_t error_code)
+{
+	struct proc_ctx *ctx;
+
+	if (conn->lll.handle != cis->lll.acl_handle) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	ctx = llcp_create_local_procedure(PROC_CIS_TERMINATE);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	ctx->data.cis_term.cig_id = cis->group->cig_id;
+	ctx->data.cis_term.cis_id = cis->cis_id;
+	ctx->data.cis_term.error_code = error_code;
+
+	llcp_lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
 
 #if defined(CONFIG_BT_CENTRAL)
 uint8_t ull_cp_chan_map_update(struct ll_conn *conn, const uint8_t chm[5])
