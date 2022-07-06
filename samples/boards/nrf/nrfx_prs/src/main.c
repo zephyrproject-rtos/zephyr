@@ -349,8 +349,7 @@ void main(void)
 	 */
 	BUILD_ASSERT(
 		DT_IRQ(SPIM_NODE, priority) == DT_IRQ(UARTE_NODE, priority),
-		"Interrupt priorities for " DT_LABEL(SPIM_NODE) " and "
-		DT_LABEL(UARTE_NODE) " need to be equal.");
+		"Interrupt priorities for SPIM_NODE and UARTE_NODE need to be equal.");
 	IRQ_CONNECT(DT_IRQN(SPIM_NODE), DT_IRQ(SPIM_NODE, priority),
 		    nrfx_isr, nrfx_prs_box_2_irq_handler, 0);
 
