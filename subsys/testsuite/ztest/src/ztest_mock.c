@@ -106,8 +106,9 @@ static void free_parameter(struct parameter *param)
 {
 	unsigned int allocation_index = param - params;
 
-	if (param == NULL)
+	if (param == NULL) {
 		return;
+	}
 	__ASSERT(allocation_index < CONFIG_ZTEST_PARAMETER_COUNT,
 		 "param %p given to free is not in the static buffer %p:%u",
 		 param, params, CONFIG_ZTEST_PARAMETER_COUNT);
