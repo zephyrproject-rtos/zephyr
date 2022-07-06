@@ -136,9 +136,18 @@ void ztest_run_all(const void *state);
  * @param state The current state of the machine as it relates to the test executable.
  * @return The number of tests that ran.
  */
-__syscall int ztest_run_test_suites(const void *state);
 
+#ifdef ZTEST_UNITTEST
+int z_impl_ztest_run_test_suites(const void *state);
+static inline int ztest_run_test_suites(const void *state)
+{
+	return z_impl_ztest_run_test_suites(state);
+}
+
+#else
+__syscall int ztest_run_test_suites(const void *state);
 #include <syscalls/ztest_test_new.h>
+#endif
 
 /**
  * @brief Fails the test if any of the registered tests did not run.
@@ -389,7 +398,5 @@ struct ztest_arch_api {
 #ifdef __cplusplus
 }
 #endif
-
-#include <syscalls/ztest_test_new.h>
 
 #endif /* ZEPHYR_TESTSUITE_ZTEST_TEST_H_ */
