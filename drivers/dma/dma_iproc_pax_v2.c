@@ -413,10 +413,11 @@ static inline void set_ring_active(struct dma_iproc_pax_data *pd,
 	uint32_t val;
 
 	val = sys_read32(RM_RING_REG(pd, idx, RING_CONTROL));
-	if (active)
+	if (active) {
 		val |= RING_CONTROL_ACTIVE;
-	else
+	} else {
 		val &= ~RING_CONTROL_ACTIVE;
+	}
 	sys_write32(val, RM_RING_REG(pd, idx, RING_CONTROL));
 }
 
@@ -443,9 +444,9 @@ static int init_ring(struct dma_iproc_pax_data *pd, enum ring_idx idx)
 	sys_write32(RING_CONTROL_FLUSH, RM_RING_REG(pd, idx,
 						    RING_CONTROL));
 	do {
-		if (sys_read32(RM_RING_REG(pd, idx, RING_FLUSH_DONE)) &
-		    RING_FLUSH_DONE_MASK)
+		if (sys_read32(RM_RING_REG(pd, idx, RING_FLUSH_DONE)) & RING_FLUSH_DONE_MASK) {
 			break;
+		}
 		k_busy_wait(1);
 	} while (--timeout);
 
@@ -968,8 +969,9 @@ static int dma_iproc_pax_process_dma_blocks(const struct device *dev,
 						config->channel_direction,
 						block_config,
 						&non_hdr_bd_count);
-		if (ret)
+		if (ret) {
 			goto err;
+		}
 		block_config = block_config->next_block;
 	}
 

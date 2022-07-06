@@ -370,10 +370,11 @@ static int gpio_ite_configure(const struct device *dev,
 	 * Select open drain first, so that we don't glitch the signal
 	 * when changing the line to an output.
 	 */
-	if (flags & GPIO_OPEN_DRAIN)
+	if (flags & GPIO_OPEN_DRAIN) {
 		*reg_gpotr |= mask;
-	else
+	} else {
 		*reg_gpotr &= ~mask;
+	}
 
 	/* 1.8V or 3.3V */
 	reg_1p8v = &IT8XXX2_GPIO_GCRX(
@@ -396,10 +397,11 @@ static int gpio_ite_configure(const struct device *dev,
 
 	/* If output, set level before changing type to an output. */
 	if (flags & GPIO_OUTPUT) {
-		if (flags & GPIO_OUTPUT_INIT_HIGH)
+		if (flags & GPIO_OUTPUT_INIT_HIGH) {
 			*reg_gpdr |= mask;
-		else if (flags & GPIO_OUTPUT_INIT_LOW)
+		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
 			*reg_gpdr &= ~mask;
+		}
 	}
 
 	/* Set input or output. */
@@ -537,15 +539,17 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 		uint8_t wuc_mask = gpio_irqs[gpio_irq].wuc_mask;
 
 		/* Set both edges interrupt. */
-		if ((trig & GPIO_INT_TRIG_BOTH) == GPIO_INT_TRIG_BOTH)
+		if ((trig & GPIO_INT_TRIG_BOTH) == GPIO_INT_TRIG_BOTH) {
 			*(wubemr(wuc_group)) |= wuc_mask;
-		else
+		} else {
 			*(wubemr(wuc_group)) &= ~wuc_mask;
+		}
 
-		if (trig & GPIO_INT_TRIG_LOW)
+		if (trig & GPIO_INT_TRIG_LOW) {
 			*(wuemr(wuc_group)) |= wuc_mask;
-		else
+		} else {
 			*(wuemr(wuc_group)) &= ~wuc_mask;
+		}
 		/*
 		 * Always write 1 to clear the WUC status register after
 		 * modifying edge mode selection register (WUBEMR and WUEMR).

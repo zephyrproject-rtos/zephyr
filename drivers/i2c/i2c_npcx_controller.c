@@ -514,8 +514,9 @@ static void i2c_ctrl_handle_write_int_event(const struct device *dev)
 		size_t tx_avail = MIN(tx_remain, i2c_ctrl_fifo_tx_avail(dev));
 
 		LOG_DBG("tx remains %d, avail %d", tx_remain, tx_avail);
-		for (int i = 0U; i < tx_avail; i++)
+		for (int i = 0U; i < tx_avail; i++) {
 			i2c_ctrl_fifo_write(dev, *(data->ptr_msg++));
+		}
 
 		/* Is there any remaining bytes? */
 		if (data->ptr_msg == data->msg->buf + data->msg->len) {
@@ -926,9 +927,9 @@ static int i2c_ctrl_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (i2c_rate == 15000000)
+	if (i2c_rate == 15000000) {
 		data->ptr_speed_confs = npcx_15m_speed_confs;
-	else if (i2c_rate == 20000000) {
+	} else if (i2c_rate == 20000000) {
 		data->ptr_speed_confs = npcx_20m_speed_confs;
 	} else {
 		LOG_ERR("Unsupported apb2/3 freq for %s.", dev->name);

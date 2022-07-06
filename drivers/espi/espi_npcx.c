@@ -228,10 +228,11 @@ static void espi_bus_cfg_update_isr(const struct device *dev)
 						NPCX_ESPI_HOST_CH_EN(chan));
 			evt.evt_details = BIT(chan);
 
-			if (evt.evt_data)
+			if (evt.evt_data) {
 				inst->ESPICFG |= BIT(chan);
-			else
+			} else {
 				inst->ESPICFG &= ~BIT(chan);
+			}
 
 			espi_send_callbacks(&data->callbacks, dev, evt);
 		}
@@ -569,10 +570,11 @@ static int espi_npcx_send_vwire(const struct device *dev,
 
 	/* Get wire field and set/clear wire bit */
 	val = GET_FIELD(inst->VWEVSM[reg_idx], NPCX_VWEVSM_WIRE);
-	if (level)
+	if (level) {
 		val |= bitmask;
-	else
+	} else {
 		val &= ~bitmask;
+	}
 
 	SET_FIELD(inst->VWEVSM[reg_idx], NPCX_VWEVSM_WIRE, val);
 	LOG_DBG("Send VW: VWEVSM%d 0x%08X", reg_idx, inst->VWEVSM[reg_idx]);

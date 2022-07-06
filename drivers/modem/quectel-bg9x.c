@@ -97,8 +97,9 @@ static inline int find_len(char *data)
 	int  i;
 
 	for (i = 0; i < 10; i++) {
-		if (data[i] == '\r')
+		if (data[i] == '\r') {
 			break;
+		}
 
 		buf[i] = data[i];
 	}
