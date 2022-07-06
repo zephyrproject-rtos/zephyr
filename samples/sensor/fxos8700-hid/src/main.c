@@ -8,6 +8,7 @@
 #include <zephyr/zephyr.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
 
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/usb/class/usb_hid.h>
@@ -29,10 +30,6 @@ static const struct gpio_dt_spec sw1_gpio = GPIO_DT_SPEC_GET(SW1_NODE, gpios);
 
 static const struct gpio_dt_spec led_gpio = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 
-#ifdef CONFIG_FXOS8700
-#include <zephyr/drivers/sensor.h>
-#define SENSOR_ACCEL_NAME DT_LABEL(DT_INST(0, nxp_fxos8700))
-#endif
 
 static const uint8_t hid_report_desc[] = HID_MOUSE_REPORT_DESC(2);
 
@@ -200,9 +197,9 @@ void main(void)
 	}
 #endif
 
-	accel_dev = device_get_binding(SENSOR_ACCEL_NAME);
-	if (accel_dev == NULL) {
-		LOG_ERR("Could not get %s device", SENSOR_ACCEL_NAME);
+	accel_dev = DEVICE_DT_GET_ONE(nxp_fxos8700);
+	if (!device_is_ready(accel_dev)) {
+		LOG_ERR("%s: device not ready.", accel_dev->name);
 		return;
 	}
 
