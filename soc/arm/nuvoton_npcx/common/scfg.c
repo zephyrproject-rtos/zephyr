@@ -229,8 +229,9 @@ static int npcx_scfg_init(const struct device *dev)
 	 * Set bit 7 of DEVCNT again for npcx7 series. Please see Errata
 	 * for more information. It will be fixed in next chip.
 	 */
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7))
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
 		inst_scfg->DEVCNT |= BIT(7);
+	}
 
 	/* Change all pads whose default functionality isn't IO to GPIO */
 	npcx_pinctrl_mux_configure(def_alts, ARRAY_SIZE(def_alts), 0);
