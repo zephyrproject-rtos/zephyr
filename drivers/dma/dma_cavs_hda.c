@@ -55,9 +55,13 @@ int cavs_hda_dma_host_in_config(const struct device *dev,
 	res = cavs_hda_set_buffer(cfg->base, channel, buf,
 				  blk_cfg->block_size);
 
-	if (res == 0 && dma_cfg->source_data_size <= 3) {
-		/* set the sample container set bit to 16bits */
-		*DGCS(cfg->base, channel) |= DGCS_SCS;
+	if (res == 0) {
+		*DGMBS(cfg->base, channel) = blk_cfg->block_size & HDA_ALIGN_MASK;
+
+		if (dma_cfg->source_data_size <= 3) {
+			/* set the sample container set bit to 16bits */
+			*DGCS(cfg->base, channel) |= DGCS_SCS;
+		}
 	}
 
 	return res;
@@ -87,9 +91,13 @@ int cavs_hda_dma_host_out_config(const struct device *dev,
 	res = cavs_hda_set_buffer(cfg->base, channel, buf,
 				  blk_cfg->block_size);
 
-	if (res == 0 && dma_cfg->dest_data_size <= 3) {
-		/* set the sample container set bit to 16bits */
-		*DGCS(cfg->base, channel) |= DGCS_SCS;
+	if (res == 0) {
+		*DGMBS(cfg->base, channel) = blk_cfg->block_size & HDA_ALIGN_MASK;
+
+		if (dma_cfg->dest_data_size <= 3) {
+			/* set the sample container set bit to 16bits */
+			*DGCS(cfg->base, channel) |= DGCS_SCS;
+		}
 	}
 
 	return res;
