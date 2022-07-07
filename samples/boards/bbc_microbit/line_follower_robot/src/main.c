@@ -11,24 +11,33 @@
 #include <zephyr/device.h>
 
 #define I2C_SLV_ADDR 0x10
-#define EXT_P13_GPIO_PIN 23     /* P13, SPI1 SCK */
-#define EXT_P14_GPIO_PIN 22     /* P14, SPI1 MISO */
 
-static const struct device *gpio;
+static const struct gpio_dt_spec left_gpio =
+	GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), left_gpios);
+static const struct gpio_dt_spec right_gpio =
+	GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), right_gpios);
+
+static struct gpio_callback left_cb;
+static struct gpio_callback right_cb;
+
 const struct device *i2c_dev;
 unsigned int left_line[1];
 unsigned int right_line[1];
 unsigned char buf[3];
 unsigned char speed_hex[1];
 
-/* Setup gpio of the microbit board */
-static void line_detection(const struct device *dev, struct gpio_callback *cb,
-			   uint32_t pins)
+static void left_irq(const struct device *dev, struct gpio_callback *cb,
+		     uint32_t pins)
 {
-	left_line[0] = gpio_pin_get_raw(gpio, EXT_P13_GPIO_PIN);
-	right_line[0] = gpio_pin_get_raw(gpio, EXT_P14_GPIO_PIN);
-	/* printk("%d  %d\n", left_line[0], right_line[0]); */
+	left_line[0] = gpio_pin_get_dt(&left_gpio);
 }
+
+static void right_irq(const struct device *dev, struct gpio_callback *cb,
+		      uint32_t pins)
+{
+	right_line[0] = gpio_pin_get_dt(&right_gpio);
+}
+
 /* Function to convert decimal speed value to hex speed value */
 /* It makes possible to transfer that value using I2C bus */
 int decimal_to_hex(int speed_decimal)
@@ -112,13 +121,11 @@ void line_follow(void)
 
 void main(void)
 {
-	static struct gpio_callback line_sensors;
-
-	gpio = DEVICE_DT_GET(DT_GPIO_CTLR(DT_ALIAS(sw0), gpios));
 	i2c_dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
 
-	if (!device_is_ready(gpio)) {
-		printk("%s: device not ready.\n", gpio->name);
+	if (!device_is_ready(left_gpio.port) ||
+	    !device_is_ready(right_gpio.port)) {
+		printk("Left/Right GPIO controllers not ready.\n");
 		return;
 	}
 
@@ -128,19 +135,16 @@ void main(void)
 	}
 
 	/* Setup gpio to read data from digital line sensors of the robot */
-	gpio_pin_configure(gpio, EXT_P13_GPIO_PIN, GPIO_INPUT);
-	gpio_pin_configure(gpio, EXT_P14_GPIO_PIN, GPIO_INPUT);
+	gpio_pin_configure_dt(&left_gpio, GPIO_INPUT);
+	gpio_pin_configure_dt(&right_gpio, GPIO_INPUT);
 
-	gpio_pin_interrupt_configure(gpio, EXT_P13_GPIO_PIN,
-				     GPIO_INT_EDGE_BOTH);
+	gpio_pin_interrupt_configure_dt(&left_gpio, GPIO_INT_EDGE_BOTH);
+	gpio_pin_interrupt_configure_dt(&right_gpio, GPIO_INT_EDGE_BOTH);
 
-	gpio_pin_interrupt_configure(gpio, EXT_P14_GPIO_PIN,
-				     GPIO_INT_EDGE_BOTH);
-
-	gpio_init_callback(&line_sensors, line_detection,
-			   BIT(EXT_P13_GPIO_PIN) | BIT(EXT_P14_GPIO_PIN));
-
-	gpio_add_callback(gpio, &line_sensors);
+	gpio_init_callback(&left_cb, left_irq, BIT(left_gpio.pin));
+	gpio_add_callback(left_gpio.port, &left_cb);
+	gpio_init_callback(&right_cb, right_irq, BIT(right_gpio.pin));
+	gpio_add_callback(right_gpio.port, &right_cb);
 
 	while (1) {
 		line_follow();
