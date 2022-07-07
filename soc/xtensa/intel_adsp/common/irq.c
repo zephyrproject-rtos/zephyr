@@ -27,16 +27,16 @@ void z_soc_irq_enable(uint32_t irq)
 
 	switch (XTENSA_IRQ_NUMBER(irq)) {
 	case DT_IRQN(CAVS_INTC_NODE(0)):
-		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(0)));
+		dev_cavs = DEVICE_DT_GET(CAVS_INTC_NODE(0));
 		break;
 	case DT_IRQN(CAVS_INTC_NODE(1)):
-		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(1)));
+		dev_cavs = DEVICE_DT_GET(CAVS_INTC_NODE(1));
 		break;
 	case DT_IRQN(CAVS_INTC_NODE(2)):
-		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(2)));
+		dev_cavs = DEVICE_DT_GET(CAVS_INTC_NODE(2));
 		break;
 	case DT_IRQN(CAVS_INTC_NODE(3)):
-		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(3)));
+		dev_cavs = DEVICE_DT_GET(CAVS_INTC_NODE(3));
 		break;
 	default:
 		/* regular interrupt */
@@ -44,8 +44,8 @@ void z_soc_irq_enable(uint32_t irq)
 		return;
 	}
 
-	if (!dev_cavs) {
-		LOG_DBG("board: CAVS device binding failed");
+	if (!device_is_ready(dev_cavs)) {
+		LOG_DBG("board: CAVS device is not ready");
 		return;
 	}
 
@@ -65,16 +65,16 @@ void z_soc_irq_disable(uint32_t irq)
 
 	switch (XTENSA_IRQ_NUMBER(irq)) {
 	case DT_IRQN(CAVS_INTC_NODE(0)):
-		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(0)));
+		dev_cavs = DEVICE_DT_GET(CAVS_INTC_NODE(0));
 		break;
 	case DT_IRQN(CAVS_INTC_NODE(1)):
-		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(1)));
+		dev_cavs = DEVICE_DT_GET(CAVS_INTC_NODE(1));
 		break;
 	case DT_IRQN(CAVS_INTC_NODE(2)):
-		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(2)));
+		dev_cavs = DEVICE_DT_GET(CAVS_INTC_NODE(2));
 		break;
 	case DT_IRQN(CAVS_INTC_NODE(3)):
-		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(3)));
+		dev_cavs = DEVICE_DT_GET(CAVS_INTC_NODE(3));
 		break;
 	default:
 		/* regular interrupt */
@@ -82,8 +82,8 @@ void z_soc_irq_disable(uint32_t irq)
 		return;
 	}
 
-	if (!dev_cavs) {
-		LOG_DBG("board: CAVS device binding failed");
+	if (!device_is_ready(dev_cavs)) {
+		LOG_DBG("board: CAVS device is not ready");
 		return;
 	}
 
@@ -106,16 +106,16 @@ int z_soc_irq_is_enabled(unsigned int irq)
 
 	switch (XTENSA_IRQ_NUMBER(irq)) {
 	case DT_IRQN(CAVS_INTC_NODE(0)):
-		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(0)));
+		dev_cavs = DEVICE_DT_GET(CAVS_INTC_NODE(0));
 		break;
 	case DT_IRQN(CAVS_INTC_NODE(1)):
-		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(1)));
+		dev_cavs = DEVICE_DT_GET(CAVS_INTC_NODE(1));
 		break;
 	case DT_IRQN(CAVS_INTC_NODE(2)):
-		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(2)));
+		dev_cavs = DEVICE_DT_GET(CAVS_INTC_NODE(2));
 		break;
 	case DT_IRQN(CAVS_INTC_NODE(3)):
-		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(3)));
+		dev_cavs = DEVICE_DT_GET(CAVS_INTC_NODE(3));
 		break;
 	default:
 		/* regular interrupt */
@@ -123,8 +123,8 @@ int z_soc_irq_is_enabled(unsigned int irq)
 		goto out;
 	}
 
-	if (!dev_cavs) {
-		LOG_DBG("board: CAVS device binding failed");
+	if (!device_is_ready(dev_cavs)) {
+		LOG_DBG("board: CAVS device is not ready");
 		ret = -ENODEV;
 		goto out;
 	}
