@@ -69,6 +69,11 @@ config GD32_LOW_SPEED_IRC_FREQUENCY
 	help
 	  Define value of low speed internal RC oscillator (IRC) in Hz
 
+config GD32_DBG_SUPPORT
+	bool "Support GD32 SoC debug features"
+	select USE_GD32_DBG
+	default y if DEBUG
+
 config USE_GD32_ADC
 	bool
 	help
