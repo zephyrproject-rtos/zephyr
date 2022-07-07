@@ -178,7 +178,6 @@ static inline int cavs_hda_set_buffer(uint32_t base, uint32_t sid,
 
 	*DGBBA(base, sid) = aligned_addr;
 	*DGBS(base, sid) = aligned_size;
-	*DGMBS(base, sid) = aligned_size;
 
 	return 0;
 }
