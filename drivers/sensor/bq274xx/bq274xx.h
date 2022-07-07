@@ -81,9 +81,7 @@ LOG_MODULE_REGISTER(bq274xx, CONFIG_SENSOR_LOG_LEVEL);
 #define BQ274XX_DELAY 1000
 
 struct bq274xx_data {
-#ifdef CONFIG_BQ274XX_LAZY_CONFIGURE
-	bool lazy_loaded;
-#endif
+	bool configured;
 	uint16_t voltage;
 	int16_t avg_current;
 	int16_t stdby_current;
@@ -107,6 +105,7 @@ struct bq274xx_config {
 #ifdef CONFIG_PM_DEVICE
 	struct gpio_dt_spec int_gpios;
 #endif
+	bool lazy_loading;
 };
 
 #endif

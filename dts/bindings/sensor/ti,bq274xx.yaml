@@ -40,3 +40,9 @@ properties:
         specific events happening (e.g. change in State of Charge). While in
         shutdown mode it acts as an input and toggling it will make the sensor
         exit the mode.
+
+    zephyr,lazy-load:
+      type: boolean
+      description: |
+        Configuring the sensor can take a long time, using lazy loading we can delay
+        until the first sample request and keep the boot time as short as possible.
