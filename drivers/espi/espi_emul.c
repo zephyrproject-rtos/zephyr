@@ -225,7 +225,7 @@ static struct emul_espi_driver_api emul_espi_driver_api = {
 
 #define EMUL_LINK_AND_COMMA(node_id)                                                               \
 	{                                                                                          \
-		.label = DT_LABEL(node_id),                                                        \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
 	},
 
 #define ESPI_EMUL_INIT(n)                                                                          \

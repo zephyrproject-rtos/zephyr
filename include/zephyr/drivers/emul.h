@@ -37,11 +37,9 @@ enum emul_bus_type {
 
 /**
  * Structure uniquely identifying a device to be emulated
- *
- * Currently this uses the device node label, but that will go away by 2.5.
  */
 struct emul_link_for_bus {
-	const char *label;
+	const struct device *dev;
 };
 
 /** List of emulators attached to a bus */
@@ -69,7 +67,7 @@ struct emul {
 	/** function used to initialise the emulator state */
 	emul_init_t init;
 	/** handle to the device for which this provides low-level emulation */
-	const char *dev_label;
+	const struct device *dev;
 	/** Emulator-specific configuration data */
 	const void *cfg;
 	/** Emulator-specific data */
@@ -113,7 +111,8 @@ extern const struct emul __emul_list_end[];
  *
  * @param init_ptr function to call to initialise the emulator (see emul_init
  *	typedef)
- * @param node_id Node ID of the driver to emulate (e.g. DT_DRV_INST(n))
+ * @param node_id Node ID of the driver to emulate (e.g. DT_DRV_INST(n)); the node_id *MUST* have a
+ * corresponding DEVICE_DT_DEFINE().
  * @param cfg_ptr emulator-specific configuration data
  * @param data_ptr emulator-specific data
  * @param bus_api emulator-specific bus api
@@ -127,7 +126,7 @@ extern const struct emul __emul_list_end[];
 	static struct emul EMUL_REG_NAME(node_id) __attribute__((__section__(".emulators")))       \
 	__used = {                                                                                 \
 		.init = (init_ptr),                                                                \
-		.dev_label = DT_LABEL(node_id),                                                    \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
 		.cfg = (cfg_ptr),                                                                  \
 		.data = (data_ptr),                                                                \
 		.bus_type = Z_EMUL_BUS(node_id, EMUL_BUS_TYPE_I2C, EMUL_BUS_TYPE_ESPI,             \
