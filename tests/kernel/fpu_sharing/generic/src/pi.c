@@ -166,7 +166,7 @@ K_THREAD_DEFINE(pi_low, THREAD_STACK_SIZE, calculate_pi_low, NULL, NULL, NULL,
 K_THREAD_DEFINE(pi_high, THREAD_STACK_SIZE, calculate_pi_high, NULL, NULL, NULL,
 		THREAD_HIGH_PRIORITY, THREAD_FP_FLAGS, K_TICKS_FOREVER);
 
-void test_pi(void)
+ZTEST(fpu_sharing_generic, test_pi)
 {
 	/* Initialise test states */
 	test_exited = false;
