@@ -15,7 +15,7 @@
 #include <zephyr/drivers/sensor.h>
 
 /* There is no obvious way to pass this to tests, so use a global */
-ZTEST_BMEM static const char *accel_label;
+ZTEST_BMEM const struct device *dev;
 
 static enum sensor_channel channel[] = {
 	SENSOR_CHAN_ACCEL_X,
@@ -28,11 +28,6 @@ static enum sensor_channel channel[] = {
 
 void test_sensor_accel_basic(void)
 {
-	const struct device *dev;
-
-	dev = device_get_binding(accel_label);
-	zassert_not_null(dev, "failed: dev '%s' is null", accel_label);
-
 	zassert_equal(sensor_sample_fetch(dev), 0, "fail to fetch sample");
 
 	for (int i = 0; i < ARRAY_SIZE(channel); i++) {
@@ -47,14 +42,13 @@ void test_sensor_accel_basic(void)
 }
 
 /* Run all of our tests on an accelerometer device with the given label */
-static void run_tests_on_accel(const char *label)
+static void run_tests_on_accel(const struct device *accel)
 {
-	const struct device *accel = device_get_binding(label);
+	zassert_true(device_is_ready(accel), "Accelerometer device is not ready");
 
-	PRINT("Running tests on '%s'\n", label);
-	zassert_not_null(accel, "Unable to get Accelerometer device");
+	PRINT("Running tests on '%s'\n", accel->name);
 	k_object_access_grant(accel, k_current_get());
-	accel_label = label;
+	dev = accel;
 	ztest_test_suite(test_sensor_accel,
 			 ztest_user_unit_test(test_sensor_accel_basic));
 	ztest_run_test_suite(test_sensor_accel);
@@ -63,9 +57,9 @@ static void run_tests_on_accel(const char *label)
 /* test case main entry */
 void test_main(void)
 {
-	run_tests_on_accel(DT_LABEL(DT_ALIAS(accel_0)));
+	run_tests_on_accel(DEVICE_DT_GET(DT_ALIAS(accel_0)));
 
 #if DT_NODE_EXISTS(DT_ALIAS(accel_1))
-	run_tests_on_accel(DT_LABEL(DT_ALIAS(accel_1)));
+	run_tests_on_accel(DEVICE_DT_GET(DT_ALIAS(accel_1)));
 #endif
 }
