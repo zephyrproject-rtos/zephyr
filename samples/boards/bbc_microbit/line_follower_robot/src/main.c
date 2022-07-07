@@ -10,8 +10,6 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/device.h>
 
-#define I2C_SLV_ADDR 0x10
-
 enum motor {
 	MOTOR_LEFT,
 	MOTOR_RIGHT,
@@ -22,10 +20,12 @@ static const struct gpio_dt_spec left_gpio =
 static const struct gpio_dt_spec right_gpio =
 	GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), right_gpios);
 
+static const struct i2c_dt_spec motorctl =
+	I2C_DT_SPEC_GET(DT_NODELABEL(motorctl));
+
 static struct gpio_callback left_cb;
 static struct gpio_callback right_cb;
 
-const struct device *i2c_dev;
 static int left_line;
 static int right_line;
 
@@ -59,7 +59,7 @@ static void motor_control(enum motor motor, int16_t speed)
 		buf[2] = (uint8_t)speed;
 	}
 
-	i2c_write(i2c_dev, buf, 3, 0x10);
+	i2c_write_dt(&motorctl, buf, sizeof(buf));
 }
 
 /* Line follower algorithm for the robot */
@@ -97,16 +97,14 @@ static void line_follow(void)
 
 void main(void)
 {
-	i2c_dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
-
 	if (!device_is_ready(left_gpio.port) ||
 	    !device_is_ready(right_gpio.port)) {
 		printk("Left/Right GPIO controllers not ready.\n");
 		return;
 	}
 
-	if (!device_is_ready(i2c_dev)) {
-		printk("%s: device not ready.\n", i2c_dev->name);
+	if (!device_is_ready(motorctl.bus)) {
+		printk("Motor controller I2C bus not ready.\n");
 		return;
 	}
 
