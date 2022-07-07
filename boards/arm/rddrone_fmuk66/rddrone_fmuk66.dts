@@ -20,15 +20,18 @@
 		pwm-led0 = &red_pwm_led;
 		pwm-led1 = &green_pwm_led;
 		pwm-led2 = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
 	};
 
 	chosen {
-		/*
-		 * Note: when using DMA, the SRAM region must be set to
-		 * a memory region that is not cached by the chip. If the chosen
-		 * sram region is changed and DMA is in use, you will
-		 * encounter issues!
-		 */
+	    /*
+	     * Note: when using DMA, the SRAM region must be set to
+	     * a memory region that is not cached by the chip. If the chosen
+	     * sram region is changed and DMA is in use, you will
+	     * encounter issues!
+	     */
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -78,6 +81,37 @@
 		#phy-cells = <0>;
 	};
 
+
+	/* This regulator enables the 3V3_S line, which powers sensors on-board. */
+	reg-3v3-s {
+		compatible = "regulator-fixed";
+		label = "reg-3v3-s";
+		regulator-name = "reg-3v3-s";
+		enable-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator enables the 3V3_S line, which powers sensors on-board. */
+	reg-3v3-neth {
+		compatible = "regulator-fixed";
+		label = "reg-3v3-neth";
+		regulator-name = "reg-3v3-neth";
+		enable-gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator enables the 3V3_S line, which powers sensors on-board. */
+	reg-3v3-sd {
+		compatible = "regulator-fixed";
+		label = "reg-3v3-sd";
+		regulator-name = "reg-3v3-sd";
+		enable-gpios = <&gpiod 6 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+		status = "okay";
+	};
+	
 	servo: servo {
 		compatible = "pwm-servo";
 		pwms = <&ftm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>, // FMU_CH1
@@ -89,6 +123,7 @@
 		min-pulse = <PWM_USEC(700)>;
 		max-pulse = <PWM_USEC(2500)>;
 	};
+
 };
 
 &sim {
@@ -278,6 +313,24 @@ zephyr_udc0: &usbotg {
 	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+
+	/*
+	 * This board does not have a BME280, it has a BMP280.
+	 * The two parts are incredibly similar, so the BME280 driver should work.
+	 */
+	bme280@76 {
+		compatible = "bosch,bme280";
+		status = "okay";
+		label = "bme280";
+		reg = <0x76>;
+	};
+
+	bmm150@10 {
+		compatible = "bosch,bmm150";
+		status = "okay";
+		label = "bmm150";
+		reg = <0x10>;
+	};
 };
 
 /* f-ram spi port */
@@ -292,6 +345,30 @@ zephyr_udc0: &usbotg {
 	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
+
+	/*
+	 * These two parts do not support SPI in Zephyr.
+	 * The drivers will need to be updated to support SPI
+	 * transmission.
+	 */
+
+	/*
+	fxos8700@1c {
+		compatible = "nxp,fxos8700";
+		reg = <0x1c>;
+		label = "FXOS8700";
+		int1-gpios = <&gpioe 8 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpioe 9 GPIO_ACTIVE_LOW>;
+	};
+
+	fxas21002@20 {
+		compatible = "nxp,fxas21002";
+		reg = <0x20>;
+		label = "FXAS21002";
+		int1-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpioe 10 GPIO_ACTIVE_LOW>;
+	};
+	*/
 };
 
 /* external spi */

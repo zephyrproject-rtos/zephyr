@@ -5,3 +5,10 @@ config BOARD_RDDRONE_FMUK66
 	bool "NXP RDDRONE-FMUK66"
 	depends on SOC_SERIES_KINETIS_K6X
 	select SOC_PART_NUMBER_MK66FN2M0VLQ18
+
+config RDDRONE_FMUK66_INIT_PRIORITY
+	int "Init priority"
+	default 79
+        depends on BOARD_RDDRONE_FMUK66
+	help
+	  Initialization priority of the rddrone_fmuk66
