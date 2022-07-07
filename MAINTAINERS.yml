@@ -3530,7 +3530,8 @@ West:
   maintainers:
     - krish2718
     - jukkar
-  files: []
+  files:
+    - modules/hostap/
   labels:
     - "area: Wi-Fi"
 
