@@ -58,9 +58,6 @@ extern void z_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
 	Z_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p); \
 }
 
-/* Spurious interrupt handler. Throws an error if called */
-extern void z_irq_spurious(const void *unused);
-
 #define XTENSA_ERR_NORET
 
 extern uint32_t sys_clock_cycle_get_32(void);
