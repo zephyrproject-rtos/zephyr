@@ -156,20 +156,6 @@ static int gatt_proxy_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int transmit_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
-                          struct net_buf_simple *buf)
-{
-	uint8_t status;
-
-	status = state_status_u8(model, ctx, buf, OP_NET_TRANSMIT_STATUS);
-
-	if (cli->cb && cli->cb->network_transmit_status) {
-		cli->cb->network_transmit_status(cli, ctx->addr, status);
-	}
-
-	return 0;
-}
-
 struct krp_param {
 	uint8_t *status;
 	uint16_t net_idx;
@@ -940,7 +926,6 @@ const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 	{ OP_NODE_RESET_STATUS,      BT_MESH_LEN_EXACT(0),    node_reset_status },
 	{ OP_NODE_IDENTITY_STATUS,   BT_MESH_LEN_EXACT(4),    node_identity_status},
 	{ OP_LPN_TIMEOUT_STATUS,     BT_MESH_LEN_EXACT(5),    lpn_timeout_status },
-	{ OP_NET_TRANSMIT_STATUS,    BT_MESH_LEN_EXACT(1),    transmit_status},
 	{ OP_KRP_STATUS,             BT_MESH_LEN_EXACT(4),    krp_status},
 	BT_MESH_MODEL_OP_END,
 };
