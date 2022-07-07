@@ -51,44 +51,65 @@ struct ztest_suite_stats {
 };
 
 /**
+ * Setup function to run before running this suite
+ *
+ * @return Pointer to the data structure that will be used throughout this test suite
+ */
+typedef void *(*ztest_suite_setup_t)(void);
+
+/**
+ * Function to run before each test in this suite
+ *
+ * @param fixture The test suite's fixture returned from setup()
+ */
+typedef void (*ztest_suite_before_t)(void *fixture);
+
+/**
+ * Function to run after each test in this suite
+ *
+ * @param fixture The test suite's fixture returned from setup()
+ */
+typedef void (*ztest_suite_after_t)(void *fixture);
+
+/**
+ * Teardown function to run after running this suite
+ *
+ * @param fixture The test suite's data returned from setup()
+ */
+typedef void (*ztest_suite_teardown_t)(void *fixture);
+
+/**
+ * An optional predicate function to determine if the test should run. If NULL, then the
+ * test will only run once on the first attempt.
+ *
+ * @param global_state The current state of the test application.
+ * @return True if the suite should be run; false to skip.
+ */
+typedef bool (*ztest_suite_predicate_t)(const void *global_state);
+
+/**
  * A single node of test suite. Each node should be added to a single linker section which will
  * allow ztest_run_test_suites() to iterate over the various nodes.
  */
 struct ztest_suite_node {
 	/** The name of the test suite. */
 	const char *const name;
-	/**
-	 * Setup function to run before running this suite
-	 *
-	 * @return Pointer to the data structure that will be used throughout this test suite
-	 */
-	void *(*const setup)(void);
-	/**
-	 * Function to run before each test in this suite
-	 *
-	 * @param data The test suite's data returned from setup()
-	 */
-	void (*const before)(void *data);
-	/**
-	 * Function to run after each test in this suite
-	 *
-	 * @param data The test suite's data returned from setup()
-	 */
-	void (*const after)(void *data);
-	/**
-	 * Teardown function to run after running this suite
-	 *
-	 * @param data The test suite's data returned from setup()
-	 */
-	void (*const teardown)(void *data);
-	/**
-	 * An optional predicate function to determine if the test should run. If NULL, then the
-	 * test will only run once on the first attempt.
-	 *
-	 * @param state The current state of the test application.
-	 * @return True if the suite should be run; false to skip.
-	 */
-	bool (*const predicate)(const void *state);
+
+	/** Setup function */
+	const ztest_suite_setup_t setup;
+
+	/** Before function */
+	const ztest_suite_before_t before;
+
+	/** After function */
+	const ztest_suite_after_t after;
+
+	/** Teardown function */
+	const ztest_suite_teardown_t teardown;
+
+	/** Optional predicate filter */
+	const ztest_suite_predicate_t predicate;
+
 	/** Stats */
 	struct ztest_suite_stats *const stats;
 };
@@ -131,7 +152,7 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
 void ztest_run_all(const void *state);
 
 /**
- * Run the registered unit tests which return true from their pragma function.
+ * Run the registered unit tests which return true from their predicate function.
  *
  * @param state The current state of the machine as it relates to the test executable.
  * @return The number of tests that ran.
@@ -181,6 +202,18 @@ int z_ztest_run_test_suite(const char *name);
  */
 struct ztest_unit_test *z_ztest_get_next_test(const char *suite, struct ztest_unit_test *prev);
 
+/* definitions for use with testing application shared memory   */
+#ifdef CONFIG_USERSPACE
+#define ZTEST_DMEM K_APP_DMEM(ztest_mem_partition)
+#define ZTEST_BMEM K_APP_BMEM(ztest_mem_partition)
+#define ZTEST_SECTION K_APP_DMEM_SECTION(ztest_mem_partition)
+extern struct k_mem_partition ztest_mem_partition;
+#else
+#define ZTEST_DMEM
+#define ZTEST_BMEM
+#define ZTEST_SECTION .data
+#endif
+
 /**
  * @defgroup ztest_test Ztest testing macros
  * @ingroup ztest
@@ -214,17 +247,6 @@ void ztest_test_pass(void);
  *
  */
 void ztest_test_skip(void);
-
-/**
- * @brief Do nothing, successfully.
- *
- * Unit test / setup function / teardown function that does
- * nothing, successfully. Can be used as a parameter to
- * ztest_unit_test_setup_teardown().
- */
-static inline void unit_test_noop(void)
-{
-}
 
 #define Z_TEST(suite, fn, t_options, use_fixture)                                                  \
 	static void _##suite##_##fn##_wrapper(void *data);                                         \
@@ -323,6 +345,7 @@ static inline void unit_test_noop(void)
  */
 typedef void (*ztest_rule_cb)(const struct ztest_unit_test *test, void *data);
 
+/** @private */
 struct ztest_test_rule {
 	ztest_rule_cb before_each;
 	ztest_rule_cb after_each;
@@ -343,8 +366,9 @@ struct ztest_test_rule {
  * - Test rule's `after` function is not guaranteed to run in any particular order.
  *
  * @param name The name for the test rule (must be unique within the compilation unit)
- * @param before_each_fn The callback function to call before each test (may be NULL)
- * @param after_each_fn The callback function to call after each test (may be NULL)
+ * @param before_each_fn The callback function (ztest_rule_cb) to call before each test
+ *        (may be NULL)
+ * @param after_each_fn The callback function (ztest_rule_cb) to call after each test (may be NULL)
  */
 #define ZTEST_RULE(name, before_each_fn, after_each_fn)                                            \
 	static STRUCT_SECTION_ITERABLE(ztest_test_rule, z_ztest_test_rule_##name) = {              \
@@ -372,18 +396,6 @@ void ztest_simple_1cpu_before(void *data);
  * @param data The test suite's data
  */
 void ztest_simple_1cpu_after(void *data);
-
-/* definitions for use with testing application shared memory   */
-#ifdef CONFIG_USERSPACE
-#define ZTEST_DMEM K_APP_DMEM(ztest_mem_partition)
-#define ZTEST_BMEM K_APP_BMEM(ztest_mem_partition)
-#define ZTEST_SECTION K_APP_DMEM_SECTION(ztest_mem_partition)
-extern struct k_mem_partition ztest_mem_partition;
-#else
-#define ZTEST_DMEM
-#define ZTEST_BMEM
-#define ZTEST_SECTION .data
-#endif
 
 /**
  * @brief Run the specified test suite.
