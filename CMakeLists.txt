@@ -1181,7 +1181,7 @@ if(CONFIG_GEN_ISR_TABLES)
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>isrList.bin
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
     COMMAND ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/arch/common/gen_isr_tables.py
+    ${ZEPHYR_BASE}/scripts/gen_isr_tables.py
     --output-source isr_tables.c
     --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
     --intlist isrList.bin
