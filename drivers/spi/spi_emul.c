@@ -114,7 +114,7 @@ static struct spi_driver_api spi_emul_api = {
 
 #define EMUL_LINK_AND_COMMA(node_id)                                                               \
 	{                                                                                          \
-		.label = DT_LABEL(node_id),                                                        \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
 	},
 
 #define SPI_EMUL_INIT(n)                                                                           \

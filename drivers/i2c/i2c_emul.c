@@ -139,7 +139,7 @@ static struct i2c_driver_api i2c_emul_api = {
 
 #define EMUL_LINK_AND_COMMA(node_id)                                                               \
 	{                                                                                          \
-		.label = DT_LABEL(node_id),                                                        \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
 	},
 
 #define I2C_EMUL_INIT(n)                                                                           \
