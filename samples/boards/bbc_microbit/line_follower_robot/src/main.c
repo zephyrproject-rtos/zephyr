@@ -12,6 +12,11 @@
 
 #define I2C_SLV_ADDR 0x10
 
+enum motor {
+	MOTOR_LEFT,
+	MOTOR_RIGHT,
+};
+
 static const struct gpio_dt_spec left_gpio =
 	GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), left_gpios);
 static const struct gpio_dt_spec right_gpio =
@@ -23,8 +28,6 @@ static struct gpio_callback right_cb;
 const struct device *i2c_dev;
 static int left_line;
 static int right_line;
-unsigned char buf[3];
-unsigned char speed_hex[1];
 
 static void left_irq(const struct device *dev, struct gpio_callback *cb,
 		     uint32_t pins)
@@ -38,80 +41,54 @@ static void right_irq(const struct device *dev, struct gpio_callback *cb,
 	right_line = gpio_pin_get_dt(&right_gpio);
 }
 
-/* Function to convert decimal speed value to hex speed value */
-/* It makes possible to transfer that value using I2C bus */
-int decimal_to_hex(int speed_decimal)
+static void motor_control(enum motor motor, int16_t speed)
 {
-	speed_hex[0] = (speed_decimal & 0x000000FF);
-	return speed_hex[0];
-}
+	uint8_t buf[3];
 
-/* Function to control motors of the DFRobot Maqueen Robot */
-/* Send value > 0 motor rotates forward */
-/* Send 0 motor stop */
-/* Send value < 0 motor rotates backward */
-void motor_left_control(int left_speed)
-{
-	if (left_speed < 0) {
-		left_speed = left_speed * (-1);
-		/* Command bits to control I2C motordriver of the robot */
-		buf[0] = 0x00;
-		buf[1] = 0x01;
-		buf[2] = decimal_to_hex(left_speed);
+	if (motor == MOTOR_LEFT) {
+		buf[0] = 0x00U;
 	} else {
-		buf[0] = 0x00;
-		buf[1] = 0x00;
-		buf[2] = decimal_to_hex(left_speed);
-	}
-	/* Left motor write data*/
-	/* Address of the I2C motordriver on the robot is 0x10 */
-	i2c_write(i2c_dev, buf, 3, 0x10);
-}
-
-void motor_right_control(int right_speed)
-{
-	if (right_speed < 0) {
-		right_speed = right_speed * (-1);
-		buf[0] = 0x02;
-		buf[1] = 0x01;
-		buf[2] = decimal_to_hex(right_speed);
-	} else {
-		buf[0] = 0x02;
-		buf[1] = 0x00;
-		buf[2] = decimal_to_hex(right_speed);
+		buf[0] = 0x02U;
 	}
 
-/* Right motor write data*/
+	if (speed < 0) {
+		buf[1] = 0x01U;
+		buf[2] = (uint8_t)(speed * (-1));
+	} else {
+		buf[1] = 0x00U;
+		buf[2] = (uint8_t)speed;
+	}
+
 	i2c_write(i2c_dev, buf, 3, 0x10);
 }
 
 /* Line follower algorithm for the robot */
-void line_follow(void)
+static void line_follow(void)
 {
 	if ((left_line == 0) && (right_line == 0)) {
-		motor_left_control(200);
-		motor_right_control(200);
+		motor_control(MOTOR_LEFT, 200);
+		motor_control(MOTOR_RIGHT, 200);
 	} else {
 		if ((left_line == 0) && (right_line == 1)) {
-			motor_left_control(0);
-			motor_right_control(200);
+			motor_control(MOTOR_LEFT, 0);
+			motor_control(MOTOR_RIGHT, 200);
 			if ((left_line == 1) && (right_line == 1)) {
-				motor_left_control(0);
-				motor_right_control(200);
+				motor_control(MOTOR_LEFT, 0);
+				motor_control(MOTOR_RIGHT, 200);
 			}
 		} else {
 			if ((left_line == 1) && (right_line == 0)) {
-				motor_left_control(200);
-				motor_right_control(0);
+				motor_control(MOTOR_LEFT, 200);
+				motor_control(MOTOR_RIGHT, 0);
 				if ((left_line == 1) &&
 					(right_line == 1)) {
-					motor_left_control(200);
-					motor_right_control(0);
+					motor_control(MOTOR_LEFT, 200);
+					motor_control(MOTOR_RIGHT, 0);
 				}
 				if ((left_line == 1) && (right_line == 0)) {
-					motor_left_control(200);
+					motor_control(MOTOR_LEFT, 200);
 				} else {
-					motor_right_control(0);
+					motor_control(MOTOR_RIGHT, 0);
 				}
 			}
 		}
