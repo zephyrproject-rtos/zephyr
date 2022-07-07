@@ -13,34 +13,31 @@ LOG_MODULE_REGISTER(test);
 
 static volatile uint32_t top_cnt;
 
-const char *devices[] = {
+static const struct device *devices[] = {
 #ifdef CONFIG_COUNTER_RTC0
 	/* Nordic RTC0 may be reserved for Bluetooth */
-	DT_LABEL(DT_NODELABEL(rtc0)),
+	DEVICE_DT_GET(DT_NODELABEL(rtc0)),
 #endif
 	/* Nordic RTC1 is used for the system clock */
 #ifdef CONFIG_COUNTER_RTC2
-	DT_LABEL(DT_NODELABEL(rtc2)),
+	DEVICE_DT_GET(DT_NODELABEL(rtc2)),
 #endif
 
 };
 
-typedef void (*counter_test_func_t)(const char *dev_name);
+typedef void (*counter_test_func_t)(const struct device *dev);
 
-static void counter_setup_instance(const char *dev_name)
+static void counter_setup_instance(const struct device *dev)
 {
 	top_cnt = 0U;
 }
 
-static void counter_tear_down_instance(const char *dev_name)
+static void counter_tear_down_instance(const struct device *dev)
 {
 	int err;
-	const struct device *dev;
-
-	dev = device_get_binding(dev_name);
 
 	err = counter_stop(dev);
-	zassert_equal(0, err, "%s: Counter failed to stop", dev_name);
+	zassert_equal(0, err, "%s: Counter failed to stop", dev->name);
 
 }
 
@@ -55,20 +52,18 @@ static void test_all_instances(counter_test_func_t func)
 	}
 }
 
-void test_set_custom_top_value_fails_on_instance(const char *dev_name)
+void test_set_custom_top_value_fails_on_instance(const struct device *dev)
 {
-	const struct device *dev;
 	int err;
 	struct counter_top_cfg top_cfg = {
 		.callback = NULL,
 		.flags = 0
 	};
 
-	dev = device_get_binding(dev_name);
 	top_cfg.ticks = counter_get_max_top_value(dev) - 1;
 
 	err = counter_set_top_value(dev, &top_cfg);
-	zassert_true(err != 0, "%s: Expected error code", dev_name);
+	zassert_true(err != 0, "%s: Expected error code", dev->name);
 }
 
 void test_set_custom_top_value_fails(void)
@@ -81,9 +76,8 @@ static void top_handler(const struct device *dev, void *user_data)
 	top_cnt++;
 }
 
-void test_top_handler_on_instance(const char *dev_name)
+void test_top_handler_on_instance(const struct device *dev)
 {
-	const struct device *dev;
 	uint32_t tmp_top_cnt;
 	int err;
 	struct counter_top_cfg top_cfg = {
@@ -91,11 +85,10 @@ void test_top_handler_on_instance(const char *dev_name)
 		.flags = 0
 	};
 
-	dev = device_get_binding(dev_name);
 	top_cfg.ticks = counter_get_max_top_value(dev);
 
 	err = counter_set_top_value(dev, &top_cfg);
-	zassert_equal(0, err, "%s: Unexpected error code (%d)", dev_name, err);
+	zassert_equal(0, err, "%s: Unexpected error code (%d)", dev->name, err);
 
 #ifdef CONFIG_COUNTER_RTC0
 	nrf_rtc_task_trigger(NRF_RTC0, NRF_RTC_TASK_TRIGGER_OVERFLOW);
@@ -108,7 +101,7 @@ void test_top_handler_on_instance(const char *dev_name)
 	k_busy_wait(10000);
 
 	tmp_top_cnt = top_cnt;
-	zassert_equal(tmp_top_cnt, 1, "%s: Expected top handler", dev_name);
+	zassert_equal(tmp_top_cnt, 1, "%s: Expected top handler", dev->name);
 }
 
 void test_top_handler(void)
