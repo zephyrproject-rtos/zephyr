@@ -10,8 +10,6 @@
 #include <zephyr/zephyr.h>
 #include <ztest.h>
 
-#define KSCAN_DEV_NAME DT_LABEL(DT_ALIAS(kscan0))
-
 static void kb_callback(const struct device *dev, uint32_t row, uint32_t col,
 			bool pressed)
 {
@@ -23,10 +21,10 @@ static void kb_callback(const struct device *dev, uint32_t row, uint32_t col,
 
 static int test_kb_callback(void)
 {
-	const struct device *kscan_dev = device_get_binding(KSCAN_DEV_NAME);
+	const struct device *kscan_dev = DEVICE_DT_GET(DT_ALIAS(kscan0));
 
-	if (!kscan_dev) {
-		TC_PRINT("Cannot get KBSCAN device\n");
+	if (!device_is_ready(kscan_dev)) {
+		TC_PRINT("KBSCAN device is not ready\n");
 		return TC_FAIL;
 	}
 
@@ -40,10 +38,10 @@ static int test_kb_callback(void)
 
 static int test_null_callback(void)
 {
-	const struct device *kscan_dev = device_get_binding(KSCAN_DEV_NAME);
+	const struct device *kscan_dev = DEVICE_DT_GET(DT_ALIAS(kscan0));
 
-	if (!kscan_dev) {
-		TC_PRINT("Cannot get KBSCAN device\n");
+	if (!device_is_ready(kscan_dev)) {
+		TC_PRINT("KBSCAN device is not ready\n");
 		return TC_FAIL;
 	}
 
@@ -57,10 +55,10 @@ static int test_null_callback(void)
 
 static int test_disable_enable_callback(void)
 {
-	const struct device *kscan_dev = device_get_binding(KSCAN_DEV_NAME);
+	const struct device *kscan_dev = DEVICE_DT_GET(DT_ALIAS(kscan0));
 
-	if (!kscan_dev) {
-		TC_PRINT("Cannot get KBSCAN device\n");
+	if (!device_is_ready(kscan_dev)) {
+		TC_PRINT("KBSCAN device is not ready\n");
 		return TC_FAIL;
 	}
 
