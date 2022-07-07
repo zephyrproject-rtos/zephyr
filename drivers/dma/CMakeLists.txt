@@ -20,5 +20,7 @@ zephyr_library_sources_ifdef(CONFIG_DMA_CAVS_GPDMA	dma_cavs_gpdma.c dma_dw_commo
 zephyr_library_sources_ifdef(CONFIG_DMA_CAVS_HDA dma_cavs_hda.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_CAVS_HDA_HOST_IN dma_cavs_hda_host_in.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_CAVS_HDA_HOST_OUT dma_cavs_hda_host_out.c)
-zephyr_library_sources_ifdef(CONFIG_DMA_CAVS_HDA_LINK_IN dma_cavs_hda_link_in.c)
-zephyr_library_sources_ifdef(CONFIG_DMA_CAVS_HDA_LINK_OUT dma_cavs_hda_link_out.c)
+
+# Temporarily disabled, see https://github.com/zephyrproject-rtos/zephyr/pull/47524
+# zephyr_library_sources_ifdef(CONFIG_DMA_CAVS_HDA_LINK_IN dma_cavs_hda_link_in.c)
+# zephyr_library_sources_ifdef(CONFIG_DMA_CAVS_HDA_LINK_OUT dma_cavs_hda_link_out.c)
