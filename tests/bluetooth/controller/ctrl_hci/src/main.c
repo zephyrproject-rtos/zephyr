@@ -353,7 +353,7 @@ void test_hci_terminate(void)
 
 	reason = 0x01;
 	err = ll_terminate_ind_send(conn_handle + 1, reason);
-	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
+	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, "Errorcode %d", err);
 	err = ll_terminate_ind_send(conn_handle, reason);
 	zassert_equal(err, BT_HCI_ERR_INVALID_PARAM, "Errorcode %d", err);
 	reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
