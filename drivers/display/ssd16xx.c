@@ -62,6 +62,18 @@ struct ssd16xx_config {
 	uint8_t pp_height_bits;
 };
 
+static inline void ssd16xx_busy_wait(const struct device *dev)
+{
+	const struct ssd16xx_config *config = dev->config;
+	int pin = gpio_pin_get_dt(&config->busy_gpio);
+
+	while (pin > 0) {
+		__ASSERT(pin >= 0, "Failed to get pin level");
+		k_msleep(SSD16XX_BUSY_DELAY);
+		pin = gpio_pin_get_dt(&config->busy_gpio);
+	}
+}
+
 static inline int ssd16xx_write_cmd(const struct device *dev, uint8_t cmd,
 				    uint8_t *data, size_t len)
 {
@@ -69,6 +81,8 @@ static inline int ssd16xx_write_cmd(const struct device *dev, uint8_t cmd,
 	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
 	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
 	int err = 0;
+
+	ssd16xx_busy_wait(dev);
 
 	err = gpio_pin_set_dt(&config->dc_gpio, 1);
 	if (err < 0) {
@@ -98,18 +112,6 @@ static inline int ssd16xx_write_cmd(const struct device *dev, uint8_t cmd,
 spi_out:
 	spi_release_dt(&config->bus);
 	return err;
-}
-
-static inline void ssd16xx_busy_wait(const struct device *dev)
-{
-	const struct ssd16xx_config *config = dev->config;
-	int pin = gpio_pin_get_dt(&config->busy_gpio);
-
-	while (pin > 0) {
-		__ASSERT(pin >= 0, "Failed to get pin level");
-		k_msleep(SSD16XX_BUSY_DELAY);
-		pin = gpio_pin_get_dt(&config->busy_gpio);
-	}
 }
 
 static inline size_t push_x_param(const struct device *dev,
@@ -301,8 +303,6 @@ static int ssd16xx_write(const struct device *dev, const uint16_t x,
 	default:
 		return -EINVAL;
 	}
-
-	ssd16xx_busy_wait(dev);
 
 	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_ENTRY_MODE,
 				&data->scan_mode, sizeof(data->scan_mode));
@@ -498,8 +498,6 @@ static inline int ssd16xx_load_ws_from_otp(const struct device *dev)
 		return err;
 	}
 
-	ssd16xx_busy_wait(dev);
-
 	/* Load temperature value */
 	sys_put_be16(t, tmp);
 	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_TSENS_CTRL, tmp, 2);
@@ -518,8 +516,6 @@ static inline int ssd16xx_load_ws_from_otp(const struct device *dev)
 		return err;
 	}
 
-	ssd16xx_busy_wait(dev);
-
 	data->update_cmd |= SSD16XX_CTRL2_LOAD_LUT;
 
 	return 0;
@@ -528,43 +524,31 @@ static inline int ssd16xx_load_ws_from_otp(const struct device *dev)
 static int ssd16xx_load_ws_initial(const struct device *dev)
 {
 	const struct ssd16xx_config *config = dev->config;
-	int err = 0;
 
 	if (config->lut_initial.len) {
-		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_UPDATE_LUT,
-					config->lut_initial.data,
-					config->lut_initial.len);
-
-		if (err == 0) {
-			ssd16xx_busy_wait(dev);
-		}
+		return ssd16xx_write_cmd(dev, SSD16XX_CMD_UPDATE_LUT,
+					 config->lut_initial.data,
+					 config->lut_initial.len);
 	} else {
 		if (config->tssv) {
-			err = ssd16xx_load_ws_from_otp_tssv(dev);
+			return ssd16xx_load_ws_from_otp_tssv(dev);
 		} else {
-			err = ssd16xx_load_ws_from_otp(dev);
+			return ssd16xx_load_ws_from_otp(dev);
 		}
 	}
-
-	return err;
 }
 
 static int ssd16xx_load_ws_default(const struct device *dev)
 {
 	const struct ssd16xx_config *config = dev->config;
-	int err = 0;
 
 	if (config->lut_default.len) {
-		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_UPDATE_LUT,
-					config->lut_default.data,
-					config->lut_default.len);
-
-		if (err == 0) {
-			ssd16xx_busy_wait(dev);
-		}
+		return ssd16xx_write_cmd(dev, SSD16XX_CMD_UPDATE_LUT,
+					 config->lut_default.data,
+					 config->lut_default.len);
 	}
 
-	return err;
+	return 0;
 }
 
 
@@ -593,13 +577,11 @@ static int ssd16xx_controller_init(const struct device *dev)
 	}
 
 	k_msleep(SSD16XX_RESET_DELAY);
-	ssd16xx_busy_wait(dev);
 
 	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_SW_RESET, NULL, 0);
 	if (err < 0) {
 		return err;
 	}
-	ssd16xx_busy_wait(dev);
 
 	len = push_y_param(dev, tmp, last_gate);
 	tmp[len++] = 0U;
@@ -675,15 +657,11 @@ static int ssd16xx_controller_init(const struct device *dev)
 		return err;
 	}
 
-	ssd16xx_busy_wait(dev);
-
 	err = ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RED_RAM,
 					     false);
 	if (err < 0) {
 		return err;
 	}
-
-	ssd16xx_busy_wait(dev);
 
 	err = ssd16xx_load_ws_default(dev);
 	if (err < 0) {
