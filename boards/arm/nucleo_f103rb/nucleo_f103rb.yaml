@@ -18,3 +18,4 @@ supported:
   - watchdog
   - adc
   - dma
+  - nvs
