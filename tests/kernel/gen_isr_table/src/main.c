@@ -253,7 +253,7 @@ static int check_sw_isr(void *isr, uintptr_t arg, int offset)
  * @see IRQ_DIRECT_CONNECT(), irq_enable()
  *
  */
-void test_build_time_direct_interrupt(void)
+ZTEST(gen_isr_table, test_build_time_direct_interrupt)
 {
 #ifndef HAS_DIRECT_IRQS
 	ztest_test_skip();
@@ -295,7 +295,7 @@ void test_build_time_direct_interrupt(void)
  * @see IRQ_CONNECT(), irq_enable()
  *
  */
-void test_build_time_interrupt(void)
+ZTEST(gen_isr_table, test_build_time_interrupt)
 {
 #ifndef CONFIG_GEN_SW_ISR_TABLE
 	ztest_test_skip();
@@ -340,7 +340,7 @@ void test_build_time_interrupt(void)
  * @see irq_connect_dynamic(), irq_enable()
  *
  */
-void test_run_time_interrupt(void)
+ZTEST(gen_isr_table, test_run_time_interrupt)
 {
 
 #ifndef CONFIG_GEN_SW_ISR_TABLE
@@ -370,19 +370,16 @@ void test_run_time_interrupt(void)
 #endif
 }
 
-void test_main(void)
+static void *gen_isr_table_setup(void)
 {
 	TC_START("Test gen_isr_tables");
 
 	TC_PRINT("IRQ configuration (total lines %d):\n", CONFIG_NUM_IRQS);
 
-	ztest_test_suite(context,
-			ztest_unit_test(test_build_time_direct_interrupt),
-			ztest_unit_test(test_build_time_interrupt),
-			ztest_unit_test(test_run_time_interrupt)
-	);
-	ztest_run_test_suite(context);
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-label"
+
+	return NULL;
 }
+
+ZTEST_SUITE(gen_isr_table, NULL, gen_isr_table_setup, NULL, NULL, NULL);
