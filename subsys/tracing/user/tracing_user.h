@@ -316,8 +316,8 @@ void sys_trace_idle(void);
 #define sys_port_trace_k_timer_status_sync_exit(timer, result)
 
 #define sys_port_trace_k_event_init(event)
-#define sys_port_trace_k_event_post_enter(event, events, accumulate)
-#define sys_port_trace_k_event_post_exit(event, events, accumulate)
+#define sys_port_trace_k_event_post_enter(event, events, events_mask)
+#define sys_port_trace_k_event_post_exit(event, events, events_mask)
 #define sys_port_trace_k_event_wait_enter(event, events, options, timeout)
 #define sys_port_trace_k_event_wait_blocking(event, events, options, timeout)
 #define sys_port_trace_k_event_wait_exit(event, events, ret)
