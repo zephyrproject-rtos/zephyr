@@ -567,8 +567,10 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 	pb = bt_iso_flags_pb(flags);
 	ts = bt_iso_flags_ts(flags);
 
-	BT_DBG("handle %u len %u flags 0x%02x pb 0x%02x ts 0x%02x",
-	       iso->handle, buf->len, flags, pb, ts);
+	if (IS_ENABLED(CONFIG_BT_DEBUG_ISO_DATA)) {
+		BT_DBG("handle %u len %u flags 0x%02x pb 0x%02x ts 0x%02x",
+		       iso->handle, buf->len, flags, pb, ts);
+	}
 
 	/* When the PB_Flag does not equal 0b00, the fields Time_Stamp,
 	 * Packet_Sequence_Number, Packet_Status_Flag and ISO_SDU_Length
@@ -713,7 +715,9 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
 		return -EINVAL;
 	}
 
-	BT_DBG("chan %p len %zu", chan, net_buf_frags_len(buf));
+	if (IS_ENABLED(CONFIG_BT_DEBUG_ISO_DATA)) {
+		BT_DBG("chan %p len %zu", chan, net_buf_frags_len(buf));
+	}
 
 	if (chan->state != BT_ISO_STATE_CONNECTED) {
 		BT_DBG("Not connected");

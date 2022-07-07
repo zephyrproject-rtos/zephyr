@@ -779,6 +779,14 @@ config BT_DEBUG_ISO
 	  Use this option to enable ISO channels debug logs for the
 	  Bluetooth Audio functionality.
 
+config BT_DEBUG_ISO_DATA
+	bool "ISO channel data debug"
+	depends on BT_DEBUG_ISO
+	help
+	  Use this option to enable ISO channels data debug logs for the
+	  Bluetooth Audio functionality. This will enable debug logs for all
+	  ISO data received and sent.
+
 config BT_DEBUG_KEYS
 	bool "Bluetooth security keys debug"
 	depends on BT_HCI_HOST
