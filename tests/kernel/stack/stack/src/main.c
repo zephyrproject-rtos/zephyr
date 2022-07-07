@@ -72,39 +72,6 @@ extern struct k_stack kstack;
 extern struct k_stack stack;
 extern struct k_sem end_sema;
 
-extern void test_stack_thread2thread(void);
-extern void test_stack_thread2isr(void);
-extern void test_stack_pop_fail(void);
-extern void test_stack_alloc_thread2thread(void);
-extern void test_stack_pop_can_wait(void);
-extern void test_stack_cleanup_error(void);
-extern void test_stack_push_full(void);
-extern void test_stack_multithread_competition(void);
-extern void test_stack_alloc_null(void);
-#ifdef CONFIG_USERSPACE
-extern void test_stack_user_thread2thread(void);
-extern void test_stack_user_pop_fail(void);
-extern void test_stack_user_init_null(void);
-extern void test_stack_user_init_invalid_value(void);
-extern void test_stack_user_push_null(void);
-extern void test_stack_user_pop_null(void);
-extern void test_stack_user_pop_permission(void);
-#else
-#define dummy_test(_name)	   \
-	static void _name(void)	   \
-	{			   \
-		ztest_test_skip(); \
-	}
-
-dummy_test(test_stack_user_thread2thread);
-dummy_test(test_stack_user_pop_fail);
-dummy_test(test_stack_user_init_null);
-dummy_test(test_stack_user_init_invalid_value);
-dummy_test(test_stack_user_push_null);
-dummy_test(test_stack_user_pop_null);
-dummy_test(test_stack_user_pop_permission);
-#endif /* CONFIG_USERSPACE */
-
 /* entry of contexts */
 static void tIsr_entry_push(const void *p)
 {
@@ -191,7 +158,7 @@ static void thread_entry_fn_isr(void *p1, void *p2, void *p3)
  * @brief Verify data passing between threads using single stack
  * @see k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
  */
-static void test_single_stack_play(void)
+ZTEST_USER(stack_usage, test_single_stack_play)
 {
 	stack_data_t tmp[STACK_LEN];
 	uint32_t i;
@@ -228,7 +195,7 @@ static void test_single_stack_play(void)
  * @brief Verify data passing between threads using dual stack
  * @see k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
  */
-static void test_dual_stack_play(void)
+ZTEST_USER(stack_usage_1cpu, test_dual_stack_play)
 {
 	stack_data_t tmp[STACK_LEN];
 	uint32_t i;
@@ -257,7 +224,7 @@ static void test_dual_stack_play(void)
  * @brief Verify data passing between thread and ISR
  * @see k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
  */
-static void test_isr_stack_play(void)
+ZTEST(stack_usage_1cpu, test_isr_stack_play)
 {
 	/* Init kernel objects */
 	k_sem_init(&end_sema, 0, 1);
@@ -305,7 +272,7 @@ void thread_entry_wait(void *p1, void *p2, void *p3)
  *
  * @see k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
  */
-void test_stack_pop_can_wait(void)
+ZTEST(stack_usage, test_stack_pop_can_wait)
 {
 	struct k_stack stack3;
 	stack_data_t tx_data[STACK_LEN] = { 0xaa, 0xbb, 0xcc, 0xdd };
@@ -342,8 +309,7 @@ extern struct k_stack threadstack1;
 extern struct k_thread thread_data1;
 extern struct k_sem end_sema1;
 
-/*test case main entry*/
-void test_main(void)
+static void *stack_setup(void)
 {
 	k_thread_access_grant(k_current_get(), &stack1, &stack2, &thread_data,
 			      &end_sema, &threadstack, &kstack, &stack, &thread_data1,
@@ -351,25 +317,14 @@ void test_main(void)
 
 	k_thread_heap_assign(k_current_get(), &test_pool);
 
-	ztest_test_suite(test_stack_usage,
-			 ztest_unit_test(test_stack_thread2thread),
-			 ztest_user_unit_test(test_stack_user_thread2thread),
-			 ztest_unit_test(test_stack_thread2isr),
-			 ztest_unit_test(test_stack_pop_fail),
-			 ztest_unit_test(test_stack_multithread_competition),
-			 ztest_unit_test(test_stack_cleanup_error),
-			 ztest_unit_test(test_stack_push_full),
-			 ztest_user_unit_test(test_stack_user_pop_fail),
-			 ztest_user_unit_test(test_stack_user_init_null),
-			 ztest_user_unit_test(test_stack_user_init_invalid_value),
-			 ztest_user_unit_test(test_stack_user_push_null),
-			 ztest_user_unit_test(test_stack_user_pop_null),
-			 ztest_user_unit_test(test_stack_user_pop_permission),
-			 ztest_unit_test(test_stack_alloc_thread2thread),
-			 ztest_unit_test(test_stack_alloc_null),
-			 ztest_user_unit_test(test_single_stack_play),
-			 ztest_1cpu_user_unit_test(test_dual_stack_play),
-			 ztest_1cpu_unit_test(test_isr_stack_play),
-			 ztest_unit_test(test_stack_pop_can_wait));
-	ztest_run_test_suite(test_stack_usage);
+	return NULL;
 }
+
+ZTEST_SUITE(stack_usage, NULL, stack_setup, NULL, NULL, NULL);
+
+ZTEST_SUITE(stack_contexts, NULL, stack_setup, NULL, NULL, NULL);
+
+ZTEST_SUITE(stack_fail, NULL, stack_setup, NULL, NULL, NULL);
+
+ZTEST_SUITE(stack_usage_1cpu, NULL, stack_setup,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
