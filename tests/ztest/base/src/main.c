@@ -38,7 +38,7 @@ ZTEST(framework_tests, test_assert_mem_equal)
 ZTEST(framework_tests, test_skip_config)
 {
 	Z_TEST_SKIP_IFDEF(CONFIG_BUGxxxxx);
-	zassert_true(false, NULL);
+	ztest_test_fail();
 }
 
 ZTEST(framework_tests, test_skip_no_config)
