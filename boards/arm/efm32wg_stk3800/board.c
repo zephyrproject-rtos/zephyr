@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
+#include <zephyr/init.h>
 #include "board.h"
-#include <drivers/gpio.h>
-#include <sys/printk.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/printk.h>
 
 static int efm32wg_stk3800_init(const struct device *dev)
 {

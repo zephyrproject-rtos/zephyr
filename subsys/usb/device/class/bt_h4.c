@@ -6,20 +6,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <sys/byteorder.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <usb/usb_device.h>
+#include <zephyr/usb/usb_device.h>
 #include <usb_descriptor.h>
 
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
-#include <bluetooth/buf.h>
-#include <bluetooth/hci_raw.h>
-#include <bluetooth/l2cap.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/hci_raw.h>
+#include <zephyr/bluetooth/l2cap.h>
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_bt_h4);
 
 static K_FIFO_DEFINE(rx_queue);
@@ -32,9 +32,9 @@ static K_FIFO_DEFINE(tx_queue);
 #define BT_H4_IN_EP_IDX                 1
 
 /* HCI RX/TX threads */
-static K_KERNEL_STACK_DEFINE(rx_thread_stack, 512);
+static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 static struct k_thread rx_thread_data;
-static K_KERNEL_STACK_DEFINE(tx_thread_stack, 512);
+static K_KERNEL_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread tx_thread_data;
 
 /* HCI USB state flags */

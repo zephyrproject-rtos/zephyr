@@ -12,15 +12,15 @@
  * for the Nordic Semiconductor nRF53 family processor.
  */
 
-#include <kernel.h>
-#include <init.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <soc/nrfx_coredep.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include <nrf_erratas.h>
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
-#include <drivers/gpio.h>
-#include <devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/devicetree.h>
 #include <hal/nrf_cache.h>
 #include <hal/nrf_gpio.h>
 #include <hal/nrf_oscillators.h>

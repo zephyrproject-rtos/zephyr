@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdlib.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ztest.h>
 #include <cavs_ipc.h>
 #include "tests.h"
@@ -182,7 +182,7 @@ void halt_and_restart(int cpu)
 	/* Startup can be slow */
 	k_msleep(50);
 
-	zassert_true(WAIT_FOR(alive_flag == true, 10000, k_msleep(1)), NULL);
+	AWAIT(alive_flag == true);
 
 	k_thread_abort(&run_on_threads[cpu]);
 }

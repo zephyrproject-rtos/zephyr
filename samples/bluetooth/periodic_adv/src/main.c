@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 static uint8_t mfg_data[] = { 0xff, 0xff, 0x00 };
 

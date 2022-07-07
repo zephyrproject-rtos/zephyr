@@ -7,17 +7,17 @@
 #define DT_DRV_COMPAT st_stm32_ltdc
 
 #include <string.h>
-#include <device.h>
-#include <devicetree.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <stm32_ll_rcc.h>
-#include <drivers/display.h>
-#include <drivers/gpio.h>
-#include <drivers/pinctrl.h>
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/clock_control.h>
-#include <pm/device.h>
+#include <zephyr/drivers/display.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/pm/device.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 
 #if defined(CONFIG_STM32_LTDC_ARGB8888)
@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 #endif /* CONFIG_STM32_LTDC_ARGB8888 */
 
 #if defined(CONFIG_HAS_CMSIS_CORE_M)
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 #if __DCACHE_PRESENT == 1
 #define CACHE_INVALIDATE(addr, size)	SCB_InvalidateDCache_by_Addr((addr), (size))
@@ -129,16 +129,13 @@ static int stm32_ltdc_set_pixel_format(const struct device *dev,
 static int stm32_ltdc_set_orientation(const struct device *dev,
 				const enum display_orientation orientation)
 {
-	int err;
+	ARG_UNUSED(dev);
 
-	switch (orientation) {
-	case DISPLAY_ORIENTATION_NORMAL:
-		err = 0;
-	default:
-		err = -ENOTSUP;
+	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
+		return 0;
 	}
 
-	return err;
+	return -ENOTSUP;
 }
 
 static void stm32_ltdc_get_capabilities(const struct device *dev,
@@ -265,9 +262,9 @@ static int stm32_ltdc_init(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32F7X)
 	LL_RCC_PLLSAI_Disable();
 	LL_RCC_PLLSAI_ConfigDomain_LTDC(LL_RCC_PLLSOURCE_HSE,
-					LL_RCC_PLLM_DIV_8,
-					192,
-					LL_RCC_PLLSAIR_DIV_4,
+					LL_RCC_PLLM_DIV_25,
+					384,
+					LL_RCC_PLLSAIR_DIV_5,
 					LL_RCC_PLLSAIDIVR_DIV_8);
 
 	LL_RCC_PLLSAI_Enable();

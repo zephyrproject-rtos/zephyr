@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <arch/x86/multiboot.h>
-#include <arch/x86/memmap.h>
+#include <zephyr/arch/x86/multiboot.h>
+#include <zephyr/arch/x86/memmap.h>
 
 struct multiboot_info multiboot_info;
 
@@ -133,7 +133,7 @@ void z_multiboot_init(struct multiboot_info *info_pa)
 
 #ifdef CONFIG_MULTIBOOT_FRAMEBUF
 
-#include <display/framebuf.h>
+#include <zephyr/display/framebuf.h>
 
 static struct framebuf_dev_data multiboot_framebuf_data = {
 	.width = CONFIG_MULTIBOOT_FRAMEBUF_X,

@@ -6,9 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <lorawan/lorawan.h>
-#include <zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/lorawan/lorawan.h>
+#include <zephyr/zephyr.h>
 
 #define DEFAULT_RADIO_NODE DT_ALIAS(lora0)
 BUILD_ASSERT(DT_NODE_HAS_STATUS(DEFAULT_RADIO_NODE, okay),
@@ -27,7 +27,7 @@ BUILD_ASSERT(DT_NODE_HAS_STATUS(DEFAULT_RADIO_NODE, okay),
 #define DELAY K_MSEC(10000)
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lorawan_class_a);
 
 char data[] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd'};

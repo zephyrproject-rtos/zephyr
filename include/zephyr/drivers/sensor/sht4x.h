@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 
 /* Maximum temperature above which the heater should not be used */
 #define SHT4X_HEATER_MAX_TEMP 65

@@ -72,6 +72,8 @@
 		sw1 = &button2;
 		sw2 = &button3;
 		sw3 = &button4;
+		mcuboot-button0 = &button1;
+		mcuboot-led0 = &led1;
 	};
 };
 
@@ -183,7 +185,7 @@
 		/* 96K */
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x00018000>;
+			reg = <0x00000000 0x00018000>;
 		};
 		/* 896K */
 		slot0_partition: partition@18000 {
@@ -216,7 +218,7 @@
 		/* 896K */
 		slot1_partition: partition@0 {
 			label = "image-1";
-			reg = <0x0000000 0x000E0000>;
+			reg = <0x00000000 0x000E0000>;
 		};
 		/* 128K */
 		scratch_partition: partition@E0000 {
@@ -226,7 +228,7 @@
 		/* 7MB */
 		lfs_partition: partition@100000 {
 			label = "lfs_storage";
-			reg = <0x00100000 0x000700000>;
+			reg = <0x00100000 0x00700000>;
 		};
 	};
 };

@@ -5,11 +5,11 @@
  */
 
 #include <errno.h>
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <pm/pm.h>
-#include <logging/log.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/logging/log.h>
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(pwrmgmt_test);
 

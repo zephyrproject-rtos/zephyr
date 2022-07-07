@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/pm/policy.h>
 
 #define DT_DRV_COMPAT nuvoton_npcx_i2c_ctrl
 
@@ -67,11 +68,11 @@
  */
 
 #include <assert.h>
-#include <drivers/clock_control.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/i2c.h>
 #include <soc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_npcx, LOG_LEVEL_ERR);
 
 /* I2C controller mode */
@@ -817,6 +818,12 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 	int ret = 0;
 	uint8_t i;
 
+	/*
+	 * suspend-to-idle stops SMB module clocks (derived from APB2/APB3), which must remain
+	 * active during a transaction
+	 */
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
 	/* Does bus need recovery? */
 	if (data->oper_state != NPCX_I2C_WRITE_SUSPEND &&
 			data->oper_state != NPCX_I2C_READ_SUSPEND) {
@@ -825,7 +832,7 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 			ret = i2c_ctrl_recovery(i2c_dev);
 			/* Recovery failed, return it immediately */
 			if (ret) {
-				return ret;
+				goto out;
 			}
 		}
 	}
@@ -876,10 +883,12 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 		 * layer still needs to know why the transaction failed.
 		 */
 		if (recovery_error != 0) {
-			return recovery_error;
+			ret = recovery_error;
 		}
 	}
 
+out:
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	return ret;
 }
 

@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
-#include <timing/timing.h>
+#include <zephyr/timing/timing.h>
 #include <ksched.h>
-#include <spinlock.h>
-#include <sys/check.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/sys/check.h>
 
 /* Need one of these for this to work */
 #if !defined(CONFIG_USE_SWITCH) && !defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
@@ -39,16 +39,19 @@ static void sched_cpu_update_usage(struct _cpu *cpu, uint32_t cycles)
 		return;
 	}
 
-#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
-	cpu->usage.current += cycles;
-
-	if (cpu->usage.longest < cpu->usage.current) {
-		cpu->usage.longest = cpu->usage.current;
-	}
-#endif
-
 	if (cpu->current != cpu->idle_thread) {
 		cpu->usage.total += cycles;
+
+#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+		cpu->usage.current += cycles;
+
+		if (cpu->usage.longest < cpu->usage.current) {
+			cpu->usage.longest = cpu->usage.current;
+		}
+	} else {
+		cpu->usage.current = 0;
+		cpu->usage.num_windows++;
+#endif
 	}
 }
 #else

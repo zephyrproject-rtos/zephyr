@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <linker/linker-defs.h>
-#include <sys/mem_manage.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/mem_manage.h>
 
-#include <multi_heap/shared_multi_heap.h>
+#include <zephyr/multi_heap/shared_multi_heap.h>
 
 #define DT_DRV_COMPAT		zephyr_memory_region
 

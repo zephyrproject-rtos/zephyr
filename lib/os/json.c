@@ -4,44 +4,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
-#include <sys/printk.h>
-#include <sys/util.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/types.h>
 
-#include <data/json.h>
-
-struct token {
-	enum json_tokens type;
-	char *start;
-	char *end;
-};
-
-struct lexer {
-	void *(*state)(struct lexer *lex);
-	char *start;
-	char *pos;
-	char *end;
-	struct token tok;
-};
-
-struct json_obj {
-	struct lexer lex;
-};
+#include <zephyr/data/json.h>
 
 struct json_obj_key_value {
 	const char *key;
 	size_t key_len;
-	struct token value;
+	struct json_token value;
 };
 
-static bool lexer_consume(struct lexer *lex, struct token *tok,
+static bool lexer_consume(struct json_lexer *lex, struct json_token *tok,
 			  enum json_tokens empty_token)
 {
 	if (lex->tok.type == empty_token) {
@@ -54,7 +36,7 @@ static bool lexer_consume(struct lexer *lex, struct token *tok,
 	return true;
 }
 
-static bool lexer_next(struct lexer *lex, struct token *tok)
+static bool lexer_next(struct json_lexer *lex, struct json_token *tok)
 {
 	while (lex->state) {
 		if (lexer_consume(lex, tok, JSON_TOK_NONE)) {
@@ -67,9 +49,9 @@ static bool lexer_next(struct lexer *lex, struct token *tok)
 	return lexer_consume(lex, tok, JSON_TOK_EOF);
 }
 
-static void *lexer_json(struct lexer *lex);
+static void *lexer_json(struct json_lexer *lex);
 
-static void emit(struct lexer *lex, enum json_tokens token)
+static void emit(struct json_lexer *lex, enum json_tokens token)
 {
 	lex->tok.type = token;
 	lex->tok.start = lex->start;
@@ -77,7 +59,7 @@ static void emit(struct lexer *lex, enum json_tokens token)
 	lex->start = lex->pos;
 }
 
-static int next(struct lexer *lex)
+static int next(struct json_lexer *lex)
 {
 	if (lex->pos >= lex->end) {
 		lex->pos = lex->end + 1;
@@ -88,17 +70,17 @@ static int next(struct lexer *lex)
 	return *lex->pos++;
 }
 
-static void ignore(struct lexer *lex)
+static void ignore(struct json_lexer *lex)
 {
 	lex->start = lex->pos;
 }
 
-static void backup(struct lexer *lex)
+static void backup(struct json_lexer *lex)
 {
 	lex->pos--;
 }
 
-static int peek(struct lexer *lex)
+static int peek(struct json_lexer *lex)
 {
 	int chr = next(lex);
 
@@ -107,7 +89,7 @@ static int peek(struct lexer *lex)
 	return chr;
 }
 
-static void *lexer_string(struct lexer *lex)
+static void *lexer_string(struct json_lexer *lex)
 {
 	ignore(lex);
 
@@ -169,7 +151,7 @@ error:
 	return NULL;
 }
 
-static int accept_run(struct lexer *lex, const char *run)
+static int accept_run(struct json_lexer *lex, const char *run)
 {
 	for (; *run; run++) {
 		if (next(lex) != *run) {
@@ -180,7 +162,7 @@ static int accept_run(struct lexer *lex, const char *run)
 	return 0;
 }
 
-static void *lexer_boolean(struct lexer *lex)
+static void *lexer_boolean(struct json_lexer *lex)
 {
 	backup(lex);
 
@@ -203,7 +185,7 @@ static void *lexer_boolean(struct lexer *lex)
 	return NULL;
 }
 
-static void *lexer_null(struct lexer *lex)
+static void *lexer_null(struct json_lexer *lex)
 {
 	if (accept_run(lex, "ull") < 0) {
 		emit(lex, JSON_TOK_ERROR);
@@ -214,7 +196,7 @@ static void *lexer_null(struct lexer *lex)
 	return lexer_json;
 }
 
-static void *lexer_number(struct lexer *lex)
+static void *lexer_number(struct json_lexer *lex)
 {
 	while (true) {
 		int chr = next(lex);
@@ -230,7 +212,7 @@ static void *lexer_number(struct lexer *lex)
 	}
 }
 
-static void *lexer_json(struct lexer *lex)
+static void *lexer_json(struct json_lexer *lex)
 {
 	while (true) {
 		int chr = next(lex);
@@ -276,7 +258,7 @@ static void *lexer_json(struct lexer *lex)
 	}
 }
 
-static void lexer_init(struct lexer *lex, char *data, size_t len)
+static void lexer_init(struct json_lexer *lex, char *data, size_t len)
 {
 	lex->state = lexer_json;
 	lex->start = data;
@@ -287,7 +269,7 @@ static void lexer_init(struct lexer *lex, char *data, size_t len)
 
 static int obj_init(struct json_obj *json, char *data, size_t len)
 {
-	struct token tok;
+	struct json_token tok;
 
 	lexer_init(&json->lex, data, len);
 
@@ -304,7 +286,7 @@ static int obj_init(struct json_obj *json, char *data, size_t len)
 
 static int arr_init(struct json_obj *json, char *data, size_t len)
 {
-	struct token tok;
+	struct json_token tok;
 
 	lexer_init(&json->lex, data, len);
 
@@ -326,6 +308,9 @@ static int element_token(enum json_tokens token)
 	case JSON_TOK_ARRAY_START:
 	case JSON_TOK_STRING:
 	case JSON_TOK_NUMBER:
+	case JSON_TOK_FLOAT:
+	case JSON_TOK_OPAQUE:
+	case JSON_TOK_OBJ_ARRAY:
 	case JSON_TOK_TRUE:
 	case JSON_TOK_FALSE:
 		return 0;
@@ -337,7 +322,7 @@ static int element_token(enum json_tokens token)
 static int obj_next(struct json_obj *json,
 		    struct json_obj_key_value *kv)
 {
-	struct token tok;
+	struct json_token tok;
 
 	if (!lexer_next(&json->lex, &tok)) {
 		return -EINVAL;
@@ -386,7 +371,7 @@ static int obj_next(struct json_obj *json,
 	return element_token(kv->value.type);
 }
 
-static int arr_next(struct json_obj *json, struct token *value)
+static int arr_next(struct json_obj *json, struct json_token *value)
 {
 	if (!lexer_next(&json->lex, value)) {
 		return -EINVAL;
@@ -405,7 +390,7 @@ static int arr_next(struct json_obj *json, struct token *value)
 	return element_token(value->type);
 }
 
-static int decode_num(const struct token *token, int32_t *num)
+static int decode_num(const struct json_token *token, int32_t *num)
 {
 	/* FIXME: strtod() is not available in newlib/minimal libc,
 	 * so using strtol() here.
@@ -438,6 +423,18 @@ static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 		return type2 == JSON_TOK_TRUE || type2 == JSON_TOK_FALSE;
 	}
 
+	if (type1 == JSON_TOK_NUMBER && type2 == JSON_TOK_FLOAT) {
+		return true;
+	}
+
+	if (type1 == JSON_TOK_STRING && type2 == JSON_TOK_OPAQUE) {
+		return true;
+	}
+
+	if (type1 == JSON_TOK_ARRAY_START && type2 == JSON_TOK_OBJ_ARRAY) {
+		return true;
+	}
+
 	return type1 == type2;
 }
 
@@ -448,9 +445,11 @@ static int arr_parse(struct json_obj *obj,
 		     const struct json_obj_descr *elem_descr,
 		     size_t max_elements, void *field, void *val);
 
+static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val);
+
 static int decode_value(struct json_obj *obj,
 			const struct json_obj_descr *descr,
-			struct token *value, void *field, void *val)
+			struct json_token *value, void *field, void *val)
 {
 
 	if (!equivalent_types(value->type, descr->type)) {
@@ -465,6 +464,13 @@ static int decode_value(struct json_obj *obj,
 	case JSON_TOK_ARRAY_START:
 		return arr_parse(obj, descr->array.element_descr,
 				 descr->array.n_elements, field, val);
+	case JSON_TOK_OBJ_ARRAY: {
+		struct json_obj_token *obj_token = field;
+
+		obj_token->start = value->start;
+		return arr_data_parse(obj, obj_token);
+	}
+
 	case JSON_TOK_FALSE:
 	case JSON_TOK_TRUE: {
 		bool *v = field;
@@ -477,6 +483,14 @@ static int decode_value(struct json_obj *obj,
 		int32_t *num = field;
 
 		return decode_num(value, num);
+	}
+	case JSON_TOK_OPAQUE:
+	case JSON_TOK_FLOAT: {
+		struct json_obj_token *obj_token = field;
+
+		obj_token->start = value->start;
+		obj_token->length = value->end - value->start;
+		return 0;
 	}
 	case JSON_TOK_STRING: {
 		char **str = field;
@@ -496,6 +510,10 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 	switch (descr->type) {
 	case JSON_TOK_NUMBER:
 		return sizeof(int32_t);
+	case JSON_TOK_OPAQUE:
+	case JSON_TOK_FLOAT:
+	case JSON_TOK_OBJ_ARRAY:
+		return sizeof(struct json_obj_token);
 	case JSON_TOK_STRING:
 		return sizeof(char *);
 	case JSON_TOK_TRUE:
@@ -527,7 +545,7 @@ static int arr_parse(struct json_obj *obj,
 	ptrdiff_t elem_size = get_elem_size(elem_descr);
 	void *last_elem = (char *)field + elem_size * max_elements;
 	size_t *elements = NULL;
-	struct token value;
+	struct json_token value;
 
 	if (val) {
 		elements = (size_t *)((char *)val + elem_descr->offset);
@@ -556,6 +574,47 @@ static int arr_parse(struct json_obj *obj,
 			(*elements)++;
 		}
 		field = (char *)field + elem_size;
+	}
+
+	return -EINVAL;
+}
+
+static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val)
+{
+	bool string_state = false;
+	int array_in_array = 1;
+
+	/* Init length to zero */
+	val->length = 0;
+
+	while (obj->lex.pos != obj->lex.end) {
+		if (string_state) {
+			if (*obj->lex.pos == JSON_TOK_STRING) {
+				string_state = false;
+			}
+		} else {
+			if (*obj->lex.pos == JSON_TOK_ARRAY_END) {
+				array_in_array--;
+				if (array_in_array == 0) {
+					/* Set array data length + 1 object end */
+					val->length = obj->lex.pos - val->start + 1;
+					/* Init Lexer that Object Parse can be finished properly */
+					obj->lex.state = lexer_json;
+					/* Move position to before array end */
+					obj->lex.pos--;
+					obj->lex.tok.end = obj->lex.pos;
+					obj->lex.tok.start = val->start;
+					obj->lex.tok.type = JSON_TOK_NONE;
+					return 0;
+				}
+			} else if (*obj->lex.pos == JSON_TOK_STRING) {
+				string_state = true;
+			} else if (*obj->lex.pos == JSON_TOK_ARRAY_START) {
+				/* arrary in array update structure count */
+				array_in_array++;
+			}
+		}
+		obj->lex.pos++;
 	}
 
 	return -EINVAL;
@@ -639,6 +698,36 @@ int json_arr_parse(char *payload, size_t len,
 
 	return arr_parse(&arr, descr->array.element_descr,
 			 descr->array.n_elements, ptr, val);
+}
+
+
+int json_arr_separate_object_parse_init(struct json_obj *json, char *payload, size_t len)
+{
+	return arr_init(json, payload, len);
+}
+
+int json_arr_separate_parse_object(struct json_obj *json, const struct json_obj_descr *descr,
+			  size_t descr_len, void *val)
+{
+	struct json_token tok;
+
+	if (!lexer_next(&json->lex, &tok)) {
+		return -EINVAL;
+	}
+
+	if (tok.type == JSON_TOK_ARRAY_END) {
+		return 0;
+	} else if (tok.type == JSON_TOK_COMMA) {
+		if (!lexer_next(&json->lex, &tok)) {
+			return -EINVAL;
+		}
+	}
+
+	if (tok.type != JSON_TOK_OBJECT_START) {
+		return -EINVAL;
+	}
+
+	return obj_parse(json, descr, descr_len, val);
 }
 
 static char escape_as(char chr)
@@ -832,6 +921,31 @@ static int num_encode(const int32_t *num, json_append_bytes_t append_bytes,
 	return append_bytes(buf, (size_t)ret, data);
 }
 
+static int float_ascii_encode(struct json_obj_token *num, json_append_bytes_t append_bytes,
+		      void *data)
+{
+
+	return append_bytes(num->start, num->length, data);
+}
+
+static int opaque_string_encode(struct json_obj_token *opaque, json_append_bytes_t append_bytes,
+		      void *data)
+{
+	int ret;
+
+	ret = append_bytes("\"", 1, data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = append_bytes(opaque->start, opaque->length, data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return append_bytes("\"", 1, data);
+}
+
 static int bool_encode(const bool *value, json_append_bytes_t append_bytes,
 		       void *data)
 {
@@ -862,6 +976,10 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 				       ptr, append_bytes, data);
 	case JSON_TOK_NUMBER:
 		return num_encode(ptr, append_bytes, data);
+	case JSON_TOK_FLOAT:
+		return float_ascii_encode(ptr, append_bytes, data);
+	case JSON_TOK_OPAQUE:
+		return opaque_string_encode(ptr, append_bytes, data);
 	default:
 		return -EINVAL;
 	}

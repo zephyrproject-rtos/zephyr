@@ -13,8 +13,8 @@ extern "C" {
 
 #include <sys/types.h>
 #include <zephyr/types.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/ots.h>
 
 /* Types of Object Action Control Point Procedures. */
 enum bt_gatt_ots_oacp_proc_type {

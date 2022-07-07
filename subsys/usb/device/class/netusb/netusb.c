@@ -7,12 +7,12 @@
  */
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_NETWORK_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_net);
 
-#include <init.h>
+#include <zephyr/init.h>
 
-#include <net/ethernet.h>
+#include <zephyr/net/ethernet.h>
 #include <net_private.h>
 
 #include <usb_device.h>

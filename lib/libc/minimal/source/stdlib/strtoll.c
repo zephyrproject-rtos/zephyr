@@ -1,7 +1,8 @@
-/* SPDX-License-Identifier: BSD-4-Clause-UC */
+/* SPDX-License-Identifier: BSD-3-Clause-UC */
+
 /*-
- * Copyright (c) 1990, 1993
- *	The Regents of the University of California.  All rights reserved.
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -11,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgment:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,6 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+
 #include <limits.h>
 #include <ctype.h>
 #include <errno.h>
@@ -51,7 +49,9 @@ long long strtoll(const char *nptr, char **endptr, register int base)
 	register int neg = 0, any, cutlim;
 
 	/*
-	 * See strtol for comments as to the logic used.
+	 * Skip white space and pick up leading +/- sign if any.
+	 * If base is 0, allow 0x for hex and 0 for octal, else
+	 * assume decimal; if base is already 16, allow 0x.
 	 */
 	do {
 		c = *s++;
@@ -73,6 +73,23 @@ long long strtoll(const char *nptr, char **endptr, register int base)
 		base = c == '0' ? 8 : 10;
 	}
 
+	/*
+	 * Compute the cutoff value between legal numbers and illegal
+	 * numbers.  That is the largest legal value, divided by the
+	 * base.  An input number that is greater than this value, if
+	 * followed by a legal input character, is too big.  One that
+	 * is equal to this value may be valid or not; the limit
+	 * between valid and invalid numbers is then based on the last
+	 * digit.  For instance, if the range for longs is
+	 * [-2147483648..2147483647] and the input base is 10,
+	 * cutoff will be set to 214748364 and cutlim to either
+	 * 7 (neg==0) or 8 (neg==1), meaning that if we have accumulated
+	 * a value > 214748364, or equal but the next digit is > 7 (or 8),
+	 * the number is too big, and we will return a range error.
+	 *
+	 * Set any if any `digits' consumed; make it negative to indicate
+	 * overflow.
+	 */
 	cutoff = neg ? -(unsigned long long)LLONG_MIN : LLONG_MAX;
 	cutlim = cutoff % (unsigned long long)base;
 	cutoff /= (unsigned long long)base;
@@ -104,7 +121,7 @@ long long strtoll(const char *nptr, char **endptr, register int base)
 	}
 
 	if (endptr != NULL) {
-		*endptr = (char *)(any ? s - 1 : nptr);
+		*endptr = (char *)(any ? (char *)s - 1 : nptr);
 	}
 	return acc;
 }

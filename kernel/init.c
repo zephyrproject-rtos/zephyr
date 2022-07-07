@@ -11,30 +11,29 @@
  * This module contains routines that are used to initialize the kernel.
  */
 
-#include <zephyr.h>
 #include <offsets_short.h>
-#include <kernel.h>
-#include <sys/printk.h>
-#include <debug/stack.h>
-#include <random/rand32.h>
-#include <linker/sections.h>
-#include <toolchain.h>
-#include <kernel_structs.h>
-#include <device.h>
-#include <init.h>
-#include <linker/linker-defs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/debug/stack.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/linker/linker-defs.h>
 #include <ksched.h>
 #include <string.h>
-#include <sys/dlist.h>
+#include <zephyr/sys/dlist.h>
 #include <kernel_internal.h>
-#include <drivers/entropy.h>
-#include <logging/log_ctrl.h>
-#include <tracing/tracing.h>
+#include <zephyr/drivers/entropy.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/tracing/tracing.h>
 #include <stdbool.h>
-#include <debug/gcov.h>
+#include <zephyr/debug/gcov.h>
 #include <kswap.h>
-#include <timing/timing.h>
-#include <logging/log.h>
+#include <zephyr/timing/timing.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* the only struct z_kernel instance */
@@ -216,7 +215,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif
 	boot_banner();
 
-#if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_ARCH_POSIX)
+#if defined(CONFIG_CPLUSPLUS)
 	void z_cpp_init_static(void);
 	z_cpp_init_static();
 #endif

@@ -18,7 +18,7 @@ XML_HEADER = """
     xsi:schemaLocation="http://www.mipi.org/1.0/sys-t
                         https://www.mipi.org/schema/sys-t/sys-t_1-0.xsd">
 
-  <syst:Client>
+  <syst:Client Name="Zephyr">
 """
 
 XML_FOOTER = """
@@ -59,7 +59,8 @@ XML_CATALOG64_FOOTER = """
 
 XML_GUIDS = """
     <syst:Guids>
-      <syst:Guid ID="{00000000-0000-0000-0000-000000000000}"><![CDATA[Zephyr]]></syst:Guid>
+      <syst:Guid   ID="{00000000-0000-0000-0000-000000000000}"
+                 Mask="{00000000-0000-0000-FF00-000000000000}"><![CDATA[Zephyr]]></syst:Guid>
     </syst:Guids>
 """
 

@@ -4,7 +4,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "kernel.h"
+#include <zephyr/kernel.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
@@ -14,18 +14,17 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <errno.h>
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/bas.h>
-#include <bluetooth/services/hrs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/bas.h>
+#include <zephyr/bluetooth/services/hrs.h>
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 static struct bt_conn *default_conn;
 

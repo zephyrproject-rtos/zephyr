@@ -11,15 +11,15 @@
  */
 
 
-#include <kernel.h>
-#include <kernel_structs.h>
-#include <arch/cpu.h>
-#include <irq.h>
-#include <sw_isr_table.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/irq.h>
+#include <zephyr/sw_isr_table.h>
 #include <ksched.h>
 #include <kswap.h>
-#include <tracing/tracing.h>
-#include <logging/log.h>
+#include <zephyr/tracing/tracing.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 FUNC_NORETURN void z_irq_spurious(const void *unused)

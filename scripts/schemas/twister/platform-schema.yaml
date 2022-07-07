@@ -48,6 +48,9 @@ mapping:
   "testing":
     type: map
     mapping:
+      "timeout_multiplier":
+        type: number
+        required: false
       "default":
         type: bool
       "only_tags":

@@ -10,11 +10,11 @@
 #include "sys/stat.h"
 #ifdef CONFIG_NETWORKING
 /* For zsock_gethostname() */
-#include "net/socket.h"
+#include <zephyr/net/socket.h>
 #endif
 
 #ifdef CONFIG_POSIX_API
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 #endif
 
 #ifdef __cplusplus

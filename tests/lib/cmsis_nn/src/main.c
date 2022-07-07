@@ -11,7 +11,7 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdlib.h>
 
 #include "arm_nnfunctions.h"

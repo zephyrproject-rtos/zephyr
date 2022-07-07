@@ -5,35 +5,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/gpio.h>
+#include <math.h>
+#include <zephyr/drivers/gpio.h>
 
 #include "ble_mesh.h"
 #include "device_composition.h"
 #include "state_binding.h"
 #include "storage.h"
 #include "transition.h"
-
-#define MINDIFF 2.25e-308
-
-static float sqrt(float square)
-{
-	float root, last, diff;
-
-	root = square / 3.0;
-	diff = 1;
-
-	if (square <= 0) {
-		return 0;
-	}
-
-	do {
-		last = root;
-		root = (root + square / root) / 2.0;
-		diff = root - last;
-	} while (diff > MINDIFF || diff < -MINDIFF);
-
-	return root;
-}
 
 static int32_t ceiling(float num)
 {
@@ -58,7 +37,7 @@ static uint16_t actual_to_linear(uint16_t val)
 
 static uint16_t linear_to_actual(uint16_t val)
 {
-	return (uint16_t) (UINT16_MAX * sqrt(((float) val / UINT16_MAX)));
+	return (uint16_t) (UINT16_MAX * sqrtf(((float) val / UINT16_MAX)));
 }
 
 uint16_t constrain_lightness(uint16_t light)

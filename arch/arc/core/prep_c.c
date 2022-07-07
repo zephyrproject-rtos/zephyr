@@ -17,10 +17,10 @@
  */
 
 #include <zephyr/types.h>
-#include <toolchain.h>
-#include <linker/linker-defs.h>
-#include <arch/arc/v2/aux_regs.h>
-#include <kernel_structs.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/arch/arc/v2/aux_regs.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 
 

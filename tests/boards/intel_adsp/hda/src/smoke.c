@@ -2,11 +2,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "arch/xtensa/cache.h"
-#include <kernel.h>
+#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/kernel.h>
 #include <ztest.h>
 #include <cavs_ipc.h>
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include "tests.h"
 
 #define HDA_HOST_IN_BASE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_in), reg, 0)
@@ -15,12 +15,13 @@
 #define HDA_REGBLOCK_SIZE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_out), reg, 1)
 #include <cavs_hda.h>
 
-#define IPC_TIMEOUT K_MSEC(500)
+#define IPC_TIMEOUT K_MSEC(1500)
 #define STREAM_ID 3U
 #define HDA_BUF_SIZE 256
 #define TRANSFER_COUNT 8
 
-static __aligned(128) uint8_t hda_buf[HDA_BUF_SIZE];
+#define ALIGNMENT DT_PROP(DT_NODELABEL(hda_host_in), dma_buf_alignment)
+static __aligned(ALIGNMENT) uint8_t hda_buf[HDA_BUF_SIZE];
 
 static volatile int msg_cnt;
 static volatile int msg_res;

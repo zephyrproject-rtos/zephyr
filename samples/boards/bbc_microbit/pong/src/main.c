@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <drivers/gpio.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/device.h>
 #include <string.h>
-#include <drivers/pwm.h>
-#include <debug/stack.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/debug/stack.h>
 
-#include <display/mb_display.h>
+#include <zephyr/display/mb_display.h>
 
-#include <bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 #include "pong.h"
 

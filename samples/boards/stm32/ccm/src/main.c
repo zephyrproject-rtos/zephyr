@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <linker/linker-defs.h>
+#include <zephyr/linker/linker-defs.h>
 
 #define CCM_DATA_VAR_8_VAL	0x12
 #define CCM_DATA_VAR_16_VAL	0x3456

@@ -7,14 +7,14 @@
 #define DT_DRV_COMPAT atmel_sam0_i2c
 
 #include <errno.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <drivers/i2c.h>
-#include <drivers/dma.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/pinctrl.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"

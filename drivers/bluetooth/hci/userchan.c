@@ -6,11 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <init.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <errno.h>
 #include <stddef.h>
@@ -24,9 +24,9 @@
 #include "soc.h"
 #include "cmdline.h" /* native_posix command line options header */
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_driver

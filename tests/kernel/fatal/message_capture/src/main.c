@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
 static volatile int expected_reason = -1;
+
+void z_thread_essential_clear(void);
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 {
@@ -73,5 +75,13 @@ void test_message_capture(void)
 
 void main(void)
 {
+	/* main() is an essential thread, and we try to OOPS it.  When
+	 * this test was written, that worked (even though it wasn't
+	 * supposed to per docs).  Now we trap a different error (a
+	 * panic and not an oops).  Set the thread non-essential as a
+	 * workaround.
+	 */
+	z_thread_essential_clear();
+
 	test_message_capture();
 }

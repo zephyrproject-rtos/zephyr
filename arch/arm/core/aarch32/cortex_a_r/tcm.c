@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <arch/arm/aarch32/cortex_a_r/cmsis.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/arch/arm/aarch32/cortex_a_r/cmsis.h>
 
 void z_arm_tcm_disable_ecc(void)
 {

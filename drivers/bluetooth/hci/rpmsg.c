@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <sys/byteorder.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 
-#include <device.h>
-#include <ipc/ipc_service.h>
+#include <zephyr/device.h>
+#include <zephyr/ipc/ipc_service.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_hci_driver
@@ -283,7 +283,8 @@ static struct ipc_ept_cfg hci_ept_cfg = {
 static int bt_rpmsg_open(void)
 {
 	int err;
-	const struct device *hci_ipc_instance = DEVICE_DT_GET(DT_NODELABEL(ipc0));
+	const struct device *hci_ipc_instance =
+		DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci_rpmsg_ipc));
 
 	BT_DBG("");
 

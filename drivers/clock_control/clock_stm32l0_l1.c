@@ -10,11 +10,10 @@
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_utils.h>
-#include <drivers/clock_control.h>
-#include <sys/util.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
-
 
 #if STM32_SYSCLK_SRC_PLL
 
@@ -26,27 +25,42 @@
 #define pll_div(v) z_pll_div(v)
 
 /**
- * @brief Set up pll configuration
+ * @brief Return PLL source
  */
-int config_pll_sysclock(void)
+__unused
+static uint32_t get_pll_source(void)
 {
-	uint32_t pll_source, pll_mul, pll_div;
-
-	pll_mul = pll_mul(STM32_PLL_MULTIPLIER);
-	pll_div = pll_div(STM32_PLL_DIVISOR);
-
 	/* Configure PLL source */
 	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
-		pll_source = LL_RCC_PLLSOURCE_HSI;
+		return LL_RCC_PLLSOURCE_HSI;
 	} else if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
-		pll_source = LL_RCC_PLLSOURCE_HSE;
-	} else {
-		return -ENOTSUP;
+		return LL_RCC_PLLSOURCE_HSE;
 	}
 
-	LL_RCC_PLL_ConfigDomain_SYS(pll_source, pll_mul, pll_div);
-
+	__ASSERT(0, "Invalid source");
 	return 0;
+}
+
+/**
+ * @brief Set up pll configuration
+ */
+__unused
+void config_pll_sysclock(void)
+{
+	LL_RCC_PLL_ConfigDomain_SYS(get_pll_source(),
+				    pll_mul(STM32_PLL_MULTIPLIER),
+				    pll_div(STM32_PLL_DIVISOR));
+}
+
+/**
+ * @brief Return pllout frequency
+ */
+__unused
+uint32_t get_pllout_frequency(void)
+{
+	return __LL_RCC_CALC_PLLCLK_FREQ(get_pll_source(),
+					 pll_mul(STM32_PLL_MULTIPLIER),
+					 pll_div(STM32_PLL_DIVISOR));
 }
 
 #endif /* STM32_SYSCLK_SRC_PLL */

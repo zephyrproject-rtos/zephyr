@@ -6,7 +6,7 @@
 
 #include <zephyr/types.h>
 
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/hci.h>
 
 #include "hal/cpu_vendor_hal.h"
 #include "hal/ccm.h"
@@ -30,6 +30,8 @@
 #include "lll_sync.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
+
+#include "ull_conn_internal.h"
 
 #define EVENT_DONE_MAX 3
 /* Backing storage for elements in mfifo_done */
@@ -291,6 +293,11 @@ static inline int init_reset(void)
 	/* Allocate rx free buffers */
 	mem_link_rx.quota_pdu = RX_CNT;
 	rx_alloc(UINT8_MAX);
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	/* Reset CPR mutex */
+	cpr_active_reset();
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 	return 0;
 }

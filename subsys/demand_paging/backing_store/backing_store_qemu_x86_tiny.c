@@ -18,8 +18,8 @@
 #include <mmu.h>
 #include <string.h>
 #include <kernel_arch_interface.h>
-#include <linker/linker-defs.h>
-#include <sys/util.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/util.h>
 
 void *location_to_flash(uintptr_t location)
 {

@@ -16,8 +16,8 @@
  *   -# Data is transferred correctly from src to dest
  */
 
-#include <zephyr.h>
-#include <drivers/dma.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/dma.h>
 #include <ztest.h>
 
 #define DMA_DEVICE_NAME CONFIG_DMA_TRANSFER_DRV_NAME

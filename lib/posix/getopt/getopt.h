@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 struct getopt_state {
 	int opterr;	/* if error message should be printed */

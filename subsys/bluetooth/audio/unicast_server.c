@@ -6,9 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/check.h>
+#include <zephyr/sys/check.h>
 
-#include <bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/audio.h>
 
 #include "pacs_internal.h"
 
@@ -53,8 +53,13 @@ int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_c
 }
 
 #if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
-int bt_audio_unicast_server_location_changed(enum bt_audio_pac_type type)
+int bt_audio_unicast_server_location_changed(enum bt_audio_dir dir)
 {
-	return bt_pacs_location_changed(type);
+	return bt_pacs_location_changed(dir);
 }
 #endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
+
+int bt_audio_unicast_server_available_contexts_changed(void)
+{
+	return bt_pacs_available_contexts_changed();
+}

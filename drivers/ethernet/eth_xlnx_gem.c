@@ -21,20 +21,20 @@
  *   RX Status and TX Status registers.
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <devicetree.h>
-#include <sys/__assert.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/sys/__assert.h>
 
-#include <net/net_if.h>
-#include <net/ethernet.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 
 #include "eth_xlnx_gem_priv.h"
 
 #define LOG_MODULE_NAME eth_xlnx_gem
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static int  eth_xlnx_gem_dev_init(const struct device *dev);

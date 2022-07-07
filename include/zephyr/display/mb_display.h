@@ -21,8 +21,8 @@
 #include <stdio.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <sys/util.h>
-#include <toolchain.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {

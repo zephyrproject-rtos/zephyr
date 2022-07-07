@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2015 Intel Corporation.
  * Copyright (c) 2020 Norbit ODM AS
+ * Copyright 2022 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,18 +14,18 @@
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
 
 #include "gpio_utils.h"
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_pca95xx);
 
 /* Register definitions */
@@ -263,14 +264,13 @@ static int setup_pin_dir(const struct device *dev, uint32_t pin, int flags)
 		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
 			reg_out &= ~BIT(pin);
 		}
+		ret = update_output_regs(dev, reg_out);
+		if (ret != 0) {
+			return ret;
+		}
 		reg_dir &= ~BIT(pin);
 	} else {
 		reg_dir |= BIT(pin);
-	}
-
-	ret = update_output_regs(dev, reg_out);
-	if (ret != 0) {
-		return ret;
 	}
 
 	ret = update_direction_regs(dev, reg_dir);

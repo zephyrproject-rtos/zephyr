@@ -7,16 +7,16 @@
 
 #define DT_DRV_COMPAT nxp_kinetis_ftm_pwm
 
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 #include <errno.h>
-#include <drivers/pwm.h>
+#include <zephyr/drivers/pwm.h>
 #include <soc.h>
 #include <fsl_ftm.h>
 #include <fsl_clock.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_mcux_ftm);
 
 #define MAX_CHANNELS ARRAY_SIZE(FTM0->CONTROLS)

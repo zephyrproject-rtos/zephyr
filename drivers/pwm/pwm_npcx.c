@@ -7,13 +7,14 @@
 #define DT_DRV_COMPAT nuvoton_npcx_pwm
 
 #include <assert.h>
-#include <drivers/pwm.h>
-#include <dt-bindings/clock/npcx_clock.h>
-#include <drivers/clock_control.h>
-#include <kernel.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/dt-bindings/clock/npcx_clock.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_npcx, LOG_LEVEL_ERR);
 
 /* 16-bit period cycles/prescaler in NPCX PWM modules */
@@ -38,11 +39,8 @@ struct pwm_npcx_config {
 	uintptr_t base;
 	/* clock configuration */
 	struct npcx_clk_cfg clk_cfg;
-	/* Output buffer - open drain */
-	const bool is_od;
 	/* pinmux configuration */
-	const uint8_t alts_size;
-	const struct npcx_alt *alts_list;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 /* Driver data */
@@ -57,7 +55,6 @@ struct pwm_npcx_data {
 /* PWM local functions */
 static void pwm_npcx_configure(const struct device *dev, int clk_bus)
 {
-	const struct pwm_npcx_config *const config = dev->config;
 	struct pwm_reg *const inst = HAL_INSTANCE(dev);
 
 	/* Disable PWM for module configuration first */
@@ -79,12 +76,6 @@ static void pwm_npcx_configure(const struct device *dev, int clk_bus)
 		inst->PWMCTL |= BIT(NPCX_PWMCTL_CKSEL);
 	else
 		inst->PWMCTL &= ~BIT(NPCX_PWMCTL_CKSEL);
-
-	/* Select output buffer type of io pad */
-	if (config->is_od)
-		inst->PWMCTLEX |= BIT(NPCX_PWMCTLEX_OD_OUT);
-	else
-		inst->PWMCTLEX &= ~BIT(NPCX_PWMCTLEX_OD_OUT);
 }
 
 /* PWM api functions */
@@ -212,21 +203,22 @@ static int pwm_npcx_init(const struct device *dev)
 	pwm_npcx_configure(dev, config->clk_cfg.bus);
 
 	/* Configure pin-mux for PWM device */
-	npcx_pinctrl_mux_configure(config->alts_list, config->alts_size, 1);
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("PWM pinctrl setup failed (%d)", ret);
+		return ret;
+	}
 
 	return 0;
 }
 
 #define NPCX_PWM_INIT(inst)                                                    \
-	static const struct npcx_alt pwm_alts##inst[] =			       \
-					NPCX_DT_ALT_ITEMS_LIST(inst);          \
+	PINCTRL_DT_INST_DEFINE(inst);					       \
 									       \
 	static const struct pwm_npcx_config pwm_npcx_cfg_##inst = {            \
 		.base = DT_INST_REG_ADDR(inst),                                \
 		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                         \
-		.is_od = DT_INST_PROP(inst, drive_open_drain),                 \
-		.alts_size = ARRAY_SIZE(pwm_alts##inst),                       \
-		.alts_list = pwm_alts##inst,                                   \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                  \
 	};                                                                     \
 									       \
 	static struct pwm_npcx_data pwm_npcx_data_##inst;                      \

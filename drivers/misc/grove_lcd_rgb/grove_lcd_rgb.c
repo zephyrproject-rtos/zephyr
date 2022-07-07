@@ -7,13 +7,13 @@
 
 #define DT_DRV_COMPAT seeed_grove_lcd_rgb
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <drivers/misc/grove_lcd/grove_lcd.h>
-#include <kernel.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/misc/grove_lcd/grove_lcd.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(grove_lcd, CONFIG_GROVE_LCD_RGB_LOG_LEVEL);
 
 #define GROVE_RGB_BACKLIGHT_ADDR	(0x62)

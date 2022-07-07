@@ -11,14 +11,14 @@
  * @brief PWM driven LEDs
  */
 
-#include <drivers/led.h>
-#include <drivers/pwm.h>
-#include <device.h>
-#include <pm/device.h>
-#include <zephyr.h>
-#include <sys/math_extras.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/device.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/math_extras.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(led_pwm, CONFIG_LED_LOG_LEVEL);
 
 struct led_pwm_config {
@@ -131,7 +131,7 @@ static const struct led_driver_api led_pwm_api = {
 	.set_brightness	= led_pwm_set_brightness,
 };
 
-#define PWM_DT_SPEC_GET_AND_COMMA(node_id) PWM_DT_SPEC_GET(node_id)),
+#define PWM_DT_SPEC_GET_AND_COMMA(node_id) PWM_DT_SPEC_GET(node_id),
 
 #define LED_PWM_DEVICE(id)					\
 								\

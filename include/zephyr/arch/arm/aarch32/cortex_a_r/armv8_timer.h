@@ -10,7 +10,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <drivers/timer/arm_arch_timer.h>
+#include <zephyr/drivers/timer/arm_arch_timer.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus

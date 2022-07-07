@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_SPI_ESP32_SPIM_H_
 #define ZEPHYR_DRIVERS_SPI_ESP32_SPIM_H_
 
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #define SPI_MASTER_FREQ_8M      (APB_CLK_FREQ/10)
 #define SPI_MASTER_FREQ_9M      (APB_CLK_FREQ/9)    /* 8.89MHz */

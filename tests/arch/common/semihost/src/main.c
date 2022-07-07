@@ -6,7 +6,7 @@
  */
 
 #include <ztest.h>
-#include <arch/common/semihost.h>
+#include <zephyr/arch/common/semihost.h>
 
 static void test_file_ops(void)
 {

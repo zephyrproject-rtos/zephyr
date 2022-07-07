@@ -10,9 +10,9 @@
  * "Flush windows" which is used for example by longjmp() and C++ exceptions.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/sparc/sparc.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/sparc/sparc.h>
 
 GTEXT(__sparc_trap_window_overflow)
 GTEXT(__sparc_trap_window_underflow)

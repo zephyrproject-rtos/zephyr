@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <irq_offload.h>
-#include <kernel_structs.h> /* for _THREAD_PENDING */
+#include <zephyr/irq_offload.h>
+#include <zephyr/kernel_structs.h> /* for _THREAD_PENDING */
 
 /* Explicit preemption test.  Works by creating a set of threads in
  * each priority class (cooperative, preemptive, metairq) which all go

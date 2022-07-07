@@ -7,11 +7,11 @@
 #define DT_DRV_COMPAT ti_cc13xx_cc26xx_gpio
 
 #include <zephyr/types.h>
-#include <sys/__assert.h>
-#include <device.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <drivers/gpio.h>
-#include <dt-bindings/gpio/ti-cc13xx-cc26xx-gpio.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/gpio/ti-cc13xx-cc26xx-gpio.h>
 
 #include <driverlib/gpio.h>
 #include <driverlib/interrupt.h>
@@ -262,6 +262,40 @@ static int gpio_cc13xx_cc26xx_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_cc13xx_cc26xx_port_get_direction(const struct device *port, gpio_port_pins_t map,
+						 gpio_port_pins_t *inputs,
+						 gpio_port_pins_t *outputs)
+{
+	uint32_t pin;
+	gpio_port_pins_t ip = 0;
+	gpio_port_pins_t op = 0;
+	const struct gpio_driver_config *cfg = port->config;
+
+	map &= cfg->port_pin_mask;
+
+	if (inputs != NULL) {
+		for (pin = find_lsb_set(map) - 1; map;
+		     map &= ~BIT(pin), pin = find_lsb_set(map) - 1) {
+			ip |= !!(IOCPortConfigureGet(pin) & IOC_INPUT_ENABLE) * BIT(pin);
+		}
+
+		*inputs = ip;
+	}
+
+	if (outputs != NULL) {
+		for (pin = find_lsb_set(map) - 1; map;
+		     map &= ~BIT(pin), pin = find_lsb_set(map) - 1) {
+			op |= GPIO_getOutputEnableDio(pin) * BIT(pin);
+		}
+
+		*outputs = op;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_DIRECTION */
+
 static const struct gpio_driver_api gpio_cc13xx_cc26xx_driver_api = {
 	.pin_configure = gpio_cc13xx_cc26xx_config,
 	.port_get_raw = gpio_cc13xx_cc26xx_port_get_raw,
@@ -271,7 +305,10 @@ static const struct gpio_driver_api gpio_cc13xx_cc26xx_driver_api = {
 	.port_toggle_bits = gpio_cc13xx_cc26xx_port_toggle_bits,
 	.pin_interrupt_configure = gpio_cc13xx_cc26xx_pin_interrupt_configure,
 	.manage_callback = gpio_cc13xx_cc26xx_manage_callback,
-	.get_pending_int = gpio_cc13xx_cc26xx_get_pending_int
+	.get_pending_int = gpio_cc13xx_cc26xx_get_pending_int,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_cc13xx_cc26xx_port_get_direction,
+#endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
 DEVICE_DT_INST_DEFINE(0, gpio_cc13xx_cc26xx_init,

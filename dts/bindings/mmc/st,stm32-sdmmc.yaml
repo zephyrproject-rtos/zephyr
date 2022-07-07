@@ -29,3 +29,15 @@ properties:
         type: phandle-array
         required: false
         description: Power pin
+
+    bus-width:
+        type: int
+        required: false
+        default: 1
+        description: |
+            bus width for SDMMC access, defaults to the minimum necessary
+            number of bus lines
+        enum:
+          - 1
+          - 4
+          - 8

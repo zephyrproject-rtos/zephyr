@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <drivers/lora.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/lora.h>
 #include <errno.h>
-#include <sys/util.h>
-#include <zephyr.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/zephyr.h>
 
 #define DEFAULT_RADIO_NODE DT_ALIAS(lora0)
 BUILD_ASSERT(DT_NODE_HAS_STATUS(DEFAULT_RADIO_NODE, okay),
@@ -17,7 +17,7 @@ BUILD_ASSERT(DT_NODE_HAS_STATUS(DEFAULT_RADIO_NODE, okay),
 #define MAX_DATA_LEN 255
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lora_receive);
 
 void lora_receive_cb(const struct device *dev, uint8_t *data, uint16_t size,
@@ -29,7 +29,7 @@ void lora_receive_cb(const struct device *dev, uint8_t *data, uint16_t size,
 	ARG_UNUSED(size);
 
 	LOG_INF("Received data: %s (RSSI:%ddBm, SNR:%ddBm)",
-		log_strdup(data), rssi, snr);
+		data, rssi, snr);
 
 	/* Stop receiving after 10 packets */
 	if (++cnt == 10) {
@@ -78,7 +78,7 @@ void main(void)
 		}
 
 		LOG_INF("Received data: %s (RSSI:%ddBm, SNR:%ddBm)",
-			log_strdup(data), rssi, snr);
+			data, rssi, snr);
 	}
 
 	/* Enable asynchronous reception */

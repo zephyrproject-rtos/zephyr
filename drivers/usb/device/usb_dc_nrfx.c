@@ -16,17 +16,17 @@
 #include <soc.h>
 #include <string.h>
 #include <stdio.h>
-#include <kernel.h>
-#include <drivers/usb/usb_dc.h>
-#include <usb/usb_device.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/usb/usb_dc.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <nrfx_usbd.h>
 #include <nrfx_power.h>
 
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_nrfx);
 
 /* USB device controller access from devicetree */

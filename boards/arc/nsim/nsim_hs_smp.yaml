@@ -7,6 +7,7 @@ toolchain:
   - zephyr
   - arcmwdt
 testing:
+  timeout_multiplier: 1.5
   default: true
   ignore_tags:
     - net

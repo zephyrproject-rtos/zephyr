@@ -21,12 +21,12 @@
  * @{
  */
 
-#include <kernel.h>
-#include <sys/atomic.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 
-#include <net/net_ip.h>
-#include <net/net_if.h>
-#include <net/net_stats.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_stats.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -16,11 +16,14 @@
 
 #if !defined(_ASMLANGUAGE)
 #include <zephyr/types.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Default vector for the IRQ vector table */
+extern void _isr_wrapper(void);
 
 /*
  * Note the order: arg first, then ISR. This allows a table entry to be

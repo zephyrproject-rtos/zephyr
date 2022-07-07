@@ -107,7 +107,11 @@ kobjects = OrderedDict([
     ("sys_mutex", (None, True, False)),
     ("k_futex", (None, True, False)),
     ("k_condvar", (None, False, True)),
-    ("k_event", ("CONFIG_EVENTS", False, True))
+    ("k_event", ("CONFIG_EVENTS", False, True)),
+    ("ztest_suite_node", ("CONFIG_ZTEST", True, False)),
+    ("ztest_suite_stats", ("CONFIG_ZTEST", True, False)),
+    ("ztest_unit_test", ("CONFIG_ZTEST_NEW_API", True, False)),
+    ("ztest_test_rule", ("CONFIG_ZTEST_NEW_API", True, False))
 ])
 
 def kobject_to_enum(kobj):
@@ -715,9 +719,9 @@ header = """%compare-lengths
 %global-table
 %struct-type
 %{
-#include <kernel.h>
-#include <toolchain.h>
-#include <syscall_handler.h>
+#include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/syscall_handler.h>
 #include <string.h>
 %}
 struct z_object;

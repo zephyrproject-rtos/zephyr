@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 
 static int _stdout_hook_default(int c)

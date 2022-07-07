@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <init.h>
-#include <sys/printk.h>
-#include <sw_isr_table.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sw_isr_table.h>
 #include "intc_ite_it8xxx2.h"
 
 #define MAX_REGISR_IRQ_NUM		8

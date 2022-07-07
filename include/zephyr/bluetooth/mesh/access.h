@@ -10,9 +10,9 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
 
-#include <settings/settings.h>
-#include <sys/util.h>
-#include <bluetooth/mesh/msg.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/bluetooth/mesh/msg.h>
 
 /* Internal macros used to initialize array members */
 #define BT_MESH_KEY_UNUSED_ELT_(IDX, _) BT_MESH_KEY_UNUSED
@@ -50,7 +50,7 @@ extern "C" {
 
 #define BT_MESH_ADDR_IS_UNICAST(addr) ((addr) && (addr) < 0x8000)
 #define BT_MESH_ADDR_IS_GROUP(addr) ((addr) >= 0xc000 && (addr) < 0xff00)
-#define BT_MESH_ADDR_IS_FIXED_GROUP(addr) ((addr) >= 0xfffc && (addr) < 0xffff)
+#define BT_MESH_ADDR_IS_FIXED_GROUP(addr) ((addr) >= 0xff00 && (addr) < 0xffff)
 #define BT_MESH_ADDR_IS_VIRTUAL(addr) ((addr) >= 0x8000 && (addr) < 0xc000)
 #define BT_MESH_ADDR_IS_RFU(addr) ((addr) >= 0xff00 && (addr) <= 0xfffb)
 

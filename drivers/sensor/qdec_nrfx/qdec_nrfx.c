@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/sensor.h>
-#include <pm/device.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
 #include <nrfx_qdec.h>
 #include <hal/nrf_gpio.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(qdec_nrfx, CONFIG_SENSOR_LOG_LEVEL);
 
 #define DT_DRV_COMPAT nordic_nrf_qdec

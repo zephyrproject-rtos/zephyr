@@ -3,22 +3,23 @@
  */
 
 / {
-	reserved-memory {
-		compatible = "reserved-memory";
-		#address-cells = <1>;
-		#size-cells = <1>;
-		status = "okay";
-		ranges;
+	soc {
+		sram0: memory@40000000 {
+			compatible = "mmio-sram";
+			reg = < 0x0 0x40000000 0x0 0x7000000 >;
+		};
 
-		res0: res@42000000 {
-			reg = <0x42000000 0x8>;
-			label = "res0";
+		res: memory@47000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0 0x47000000 0 0x8>;
+			zephyr,memory-region = "RES";
 		};
 	};
-	syscon: syscon@42000000 {
+
+	syscon: syscon@47000000 {
 		compatible = "syscon";
 		status = "okay";
-		reg = <0 0x42000000 0 0x8>;
+		reg = <0 0x47000000 0 0x8>;
 		reg-io-width = <1>;
 	};
 };

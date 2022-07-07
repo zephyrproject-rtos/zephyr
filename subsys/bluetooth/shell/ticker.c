@@ -9,12 +9,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 #include "../controller/util/memq.h"
 #include "../controller/util/mayfly.h"

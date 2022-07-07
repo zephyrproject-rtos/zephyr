@@ -5,15 +5,19 @@
  */
 #define DT_DRV_COMPAT nxp_lpc_ctimer
 
-#include <drivers/counter.h>
+#include <zephyr/drivers/counter.h>
 #include <fsl_ctimer.h>
-#include <logging/log.h>
-#include <drivers/clock_control.h>
-#include <dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 LOG_MODULE_REGISTER(mcux_ctimer, CONFIG_COUNTER_LOG_LEVEL);
 
+#ifdef CONFIG_COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP
 /* One of the CTimer channels is reserved to implement set_top_value API */
 #define NUM_CHANNELS 3
+#else
+#define NUM_CHANNELS 4
+#endif
 
 struct mcux_lpc_ctimer_channel_data {
 	counter_alarm_callback_t alarm_callback;
@@ -70,6 +74,8 @@ static int mcux_lpc_ctimer_get_value(const struct device *dev, uint32_t *ticks)
 static uint32_t mcux_lpc_ctimer_get_top_value(const struct device *dev)
 {
 	const struct mcux_lpc_ctimer_config *config = dev->config;
+
+#ifdef CONFIG_COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP
 	CTIMER_Type *base = config->base;
 
 	/* Return the top value if it has been set, else return the max top value */
@@ -78,6 +84,9 @@ static uint32_t mcux_lpc_ctimer_get_top_value(const struct device *dev)
 	} else {
 		return config->info.max_top_value;
 	}
+#else
+	return config->info.max_top_value;
+#endif
 }
 
 static int mcux_lpc_ctimer_set_alarm(const struct device *dev, uint8_t chan_id,
@@ -85,11 +94,11 @@ static int mcux_lpc_ctimer_set_alarm(const struct device *dev, uint8_t chan_id,
 {
 	const struct mcux_lpc_ctimer_config *config = dev->config;
 	struct mcux_lpc_ctimer_data *data = dev->data;
-
 	uint32_t ticks = alarm_cfg->ticks;
 	uint32_t current = mcux_lpc_ctimer_read(config->base);
+	uint32_t top = mcux_lpc_ctimer_get_top_value(dev);
 
-	if (alarm_cfg->ticks > mcux_lpc_ctimer_get_top_value(dev)) {
+	if (alarm_cfg->ticks > top) {
 		return -EINVAL;
 	}
 
@@ -100,6 +109,9 @@ static int mcux_lpc_ctimer_set_alarm(const struct device *dev, uint8_t chan_id,
 
 	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
 		ticks += current;
+		if (ticks > top) {
+			ticks %= top;
+		}
 	}
 
 	data->channels[chan_id].alarm_callback = alarm_cfg->callback;
@@ -135,29 +147,38 @@ static int mcux_lpc_ctimer_set_top_value(const struct device *dev,
 {
 	const struct mcux_lpc_ctimer_config *config = dev->config;
 	struct mcux_lpc_ctimer_data *data = dev->data;
-	bool counter_reset = true;
-	bool counter_interrupt = true;
+
+#ifndef CONFIG_COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP
+	/* Only allow max value when we do not reserve a ctimer channel for setting top value */
+	if (cfg->ticks != config->info.max_top_value) {
+		LOG_ERR("Wrap can only be set to 0x%x",
+			config->info.max_top_value);
+		return -ENOTSUP;
+	}
+#endif
 
 	data->top_callback = cfg->callback;
 	data->top_user_data = cfg->user_data;
 
-	if (cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
-		counter_reset = false;
+	if (!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
+		CTIMER_Reset(config->base);
+	} else if (mcux_lpc_ctimer_read(config->base) >= cfg->ticks) {
+		if (cfg->flags & COUNTER_TOP_CFG_RESET_WHEN_LATE) {
+			CTIMER_Reset(config->base);
+		}
+		return -ETIME;
 	}
 
-	/* If top value specified is 0, then turn off the interrupt */
-	if (cfg->ticks == 0) {
-		counter_interrupt = false;
-	}
-
+#ifdef CONFIG_COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP
 	ctimer_match_config_t match_config = { .matchValue = cfg->ticks,
-					       .enableCounterReset = counter_reset,
+					       .enableCounterReset = true,
 					       .enableCounterStop = false,
 					       .outControl = kCTIMER_Output_NoAction,
 					       .outPinInitState = false,
-					       .enableInterrupt = counter_interrupt };
+					       .enableInterrupt = true };
 
 	CTIMER_SetupMatch(config->base, NUM_CHANNELS, &match_config);
+#endif
 
 	return 0;
 }
@@ -218,9 +239,11 @@ static void mcux_lpc_ctimer_isr(const struct device *dev)
 		}
 	}
 
+#ifdef CONFIG_COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP
 	if (((interrupt_stat & (0x01 << NUM_CHANNELS)) != 0) && data->top_callback) {
 		data->top_callback(dev, data->top_user_data);
 	}
+#endif
 }
 
 static int mcux_lpc_ctimer_init(const struct device *dev)

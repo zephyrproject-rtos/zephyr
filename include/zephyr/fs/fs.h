@@ -10,8 +10,8 @@
 
 #include <sys/types.h>
 
-#include <sys/dlist.h>
-#include <fs/fs_interface.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/fs/fs_interface.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -4,10 +4,10 @@
 # The AN547 FVP must be used to enable Ethos-U55 NPU support, but QEMU also
 # supports the AN547 without the NPU.
 #
-# To use QEMU instead of the FVP as an emulation platform, set 'EMU_PLATFORM'
-# to 'qemu' instead of 'armfvp', for example:
+# For emulation, QEMU is used by default. To use AN547 FVP as an emulation
+# use the 'run_armfvp' target, for example:
 #
-# $ west build -b mps3_an547 samples/hello°world -DEMU_PLATFORM=qemu -t run
+# $ west build -b mps3_an547 samples/hello_world -t run_armfvp
 
 set(SUPPORTED_EMU_PLATFORMS qemu armfvp)
 

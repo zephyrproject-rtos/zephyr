@@ -9,14 +9,14 @@
  * @brief System/hardware module for STM32L5 processor
  */
 
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <stm32l5xx_ll_icache.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);

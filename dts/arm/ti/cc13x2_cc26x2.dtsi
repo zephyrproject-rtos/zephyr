@@ -5,12 +5,13 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	chosen {
 		zephyr,entropy = &trng;
+		zephyr,flash-controller = &flash_controller;
 	};
 
 	cpus {
@@ -33,10 +34,6 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x11000000 0x2000>;
 		zephyr,memory-region = "SRAM1";
-	};
-
-	flash0: serial-flash@0 {
-		compatible = "serial-flash";
 	};
 
 	sysclk: system-clock {
@@ -67,6 +64,21 @@
 			interrupts = <33 0>;
 			status = "disabled";
 			label = "TRNG";
+		};
+
+		flash_controller: flash-controller@40030000 {
+			compatible = "ti,cc13xx-cc26xx-flash-controller";
+			reg = <0x40030000 0x4000>;
+			label="FLASH_CTRL";
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <DT_SIZE_K(8)>;
+				write-block-size = <1>;
+			};
 		};
 
 		uart0: uart@40001000 {

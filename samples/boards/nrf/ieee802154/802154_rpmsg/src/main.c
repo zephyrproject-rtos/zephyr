@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/__assert.h>
-#include <zephyr.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/zephyr.h>
 
 #include <nrf_802154_serialization_error.h>
 

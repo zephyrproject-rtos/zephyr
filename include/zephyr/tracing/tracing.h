@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_TRACING_TRACING_H_
 #define ZEPHYR_INCLUDE_TRACING_TRACING_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #include "tracking.h"
 

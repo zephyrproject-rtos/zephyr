@@ -6,11 +6,12 @@
 
 #define DT_DRV_COMPAT gd_gd32_exti
 
-#include <device.h>
-#include <drivers/interrupt_controller/gd32_exti.h>
-#include <soc.h>
-#include <sys/__assert.h>
-#include <sys/util_macro.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/interrupt_controller/gd32_exti.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util_macro.h>
+
+#include <gd32_exti.h>
 
 /** Unsupported line indicator */
 #define EXTI_NOTSUP 0xFFU

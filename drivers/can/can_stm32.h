@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_DRIVERS_CAN_STM32_CAN_H_
 #define ZEPHYR_DRIVERS_CAN_STM32_CAN_H_
 
-#include <drivers/can.h>
+#include <zephyr/drivers/can.h>
 
 #define BIT_SEG_LENGTH(cfg) ((cfg)->prop_ts1 + (cfg)->ts2 + 1)
 
@@ -24,7 +24,8 @@
 #define CAN_FIRX_EXT_STD_ID_POS (21U)
 #define CAN_FIRX_EXT_EXT_ID_POS (3U)
 
-#define CAN_BANK_IS_EMPTY(usage, bank_nr) (((usage >> ((bank_nr) * 4)) & 0x0F) == 0x0F)
+#define CAN_BANK_IS_EMPTY(usage, bank_nr, bank_offset) \
+	(((usage >> ((bank_nr - bank_offset) * 4)) & 0x0F) == 0x0F)
 #define CAN_BANK_IN_LIST_MODE(can, bank) ((can)->FM1R & (1U << (bank)))
 #define CAN_BANK_IN_32BIT_MODE(can, bank) ((can)->FS1R & (1U << (bank)))
 #define CAN_IN_16BIT_LIST_MODE(can, bank) (CAN_BANK_IN_LIST_MODE(can, bank) && \

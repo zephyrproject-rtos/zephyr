@@ -5,15 +5,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <stats/stats.h>
-#include <usb/usb_device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/stats/stats.h>
+#include <zephyr/usb/usb_device.h>
 
 #ifdef CONFIG_MCUMGR_CMD_FS_MGMT
-#include <device.h>
-#include <fs/fs.h>
+#include <zephyr/device.h>
+#include <zephyr/fs/fs.h>
 #include "fs_mgmt/fs_mgmt.h"
-#include <fs/littlefs.h>
+#include <zephyr/fs/littlefs.h>
 #endif
 #ifdef CONFIG_MCUMGR_CMD_OS_MGMT
 #include "os_mgmt/os_mgmt.h"
@@ -32,7 +32,7 @@
 #endif
 
 #define LOG_LEVEL LOG_LEVEL_DBG
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smp_sample);
 
 #include "common.h"

@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <sys/sys_heap.h>
-#include <sys/util.h>
-#include <sys/heap_listener.h>
-#include <kernel.h>
+#include <zephyr/sys/sys_heap.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/heap_listener.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include "heap.h"
 

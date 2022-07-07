@@ -255,7 +255,7 @@ void test_sprintf_double(void)
 	var.d = 1234.56789;
 	sprintf(buffer, "%f", var.d);
 	zassert_true((strcmp(buffer, "1234.567890") == 0),
-		     "sprintf(-1.0) - incorrect output '%s'\n", buffer);
+		     "sprintf(1234.56789) - incorrect output '%s'\n", buffer);
 
 	/*
 	 * With very large precision, the output differs significantly in
@@ -363,9 +363,15 @@ void test_sprintf_double(void)
 	var.exponent = 0x00000001;
 	var.fraction = 0x00000000; /* smallest denormal value */
 	sprintf(buffer, "%g", var.d);
+#ifdef CONFIG_PICOLIBC
+	zassert_true((strcmp(buffer, "5e-324") == 0),
+		     "sprintf(5e-324) - incorrect "
+		     "output '%s'\n", buffer);
+#else
 	zassert_true((strcmp(buffer, "4.94066e-324") == 0),
 		     "sprintf(4.94066e-324) - incorrect "
 		     "output '%s'\n", buffer);
+#endif
 }
 
 /**
@@ -537,6 +543,7 @@ void test_sprintf_misc(void)
 	if (IS_MINIMAL_LIBC_NANO) {
 		TC_PRINT(" MINIMAL_LIBC+CPBPRINTF skipped tests\n");
 	} else {
+#ifndef CONFIG_PICOLIBC
 		sprintf(buffer, "test data %n test data", &count);
 		zassert_false((count != 10),
 			      "sprintf(%%n).  Expected count to be %d, not %d",
@@ -545,6 +552,13 @@ void test_sprintf_misc(void)
 		zassert_false((strcmp(buffer, "test data  test data") != 0),
 			      "sprintf(%%p).  Expected '%s', got '%s'",
 			      "test data  test data", buffer);
+#else
+		/*
+		 * Picolibc doesn't include %n support as it makes format string
+		 * bugs a more serious security issue
+		 */
+		(void) count;
+#endif
 
 
 		/*******************/
@@ -764,8 +778,10 @@ void test_fprintf(void)
 	ret = fprintf(stdout, "");
 	zassert_equal(ret, 0, "fprintf failed!");
 
+#ifndef CONFIG_PICOLIBC	/* this is UB */
 	ret = fprintf(NULL, "%d", i);
 	zassert_equal(ret, EOF, "fprintf failed!");
+#endif
 }
 
 
@@ -806,8 +822,10 @@ void test_vfprintf(void)
 	ret = WriteFrmtd_vf(stdout,  "11\n");
 	zassert_equal(ret, 3, "vfprintf \"11\" failed");
 
+#ifndef CONFIG_PICOLIBC	/* this is UB */
 	ret = WriteFrmtd_vf(NULL,  "This %d", 3);
 	zassert_equal(ret, EOF, "vfprintf \"This 3\" failed");
+#endif
 }
 
 /**
@@ -864,8 +882,10 @@ void test_put(void)
 	ret = fputs("This 3\n", stderr);
 	zassert_equal(ret, 0, "fputs \"This 3\" failed");
 
+#ifndef CONFIG_PICOLIBC	/* this is UB */
 	ret = fputs("This 3", NULL);
 	zassert_equal(ret, EOF, "fputs \"This 3\" failed");
+#endif
 
 	ret = puts("This 3");
 	zassert_equal(ret, 0, "puts \"This 3\" failed");
@@ -873,14 +893,18 @@ void test_put(void)
 	ret = fputc('T', stdout);
 	zassert_equal(ret, 84, "fputc \'T\' failed");
 
+#ifndef CONFIG_PICOLIBC	/* this is UB */
 	ret = fputc('T', NULL);
 	zassert_equal(ret, EOF, "fputc \'T\' failed");
+#endif
 
 	ret = putc('T', stdout);
 	zassert_equal(ret, 84, "putc \'T\' failed");
 
+#ifndef CONFIG_PICOLIBC	/* this is UB */
 	ret = putc('T', NULL);
 	zassert_equal(ret, EOF, "putc \'T\' failed");
+#endif
 
 	ret = fputc('T', stderr);
 	zassert_equal(ret, 84, "fputc \'T\' failed");

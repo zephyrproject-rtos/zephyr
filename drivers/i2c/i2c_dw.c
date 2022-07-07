@@ -11,31 +11,31 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include <drivers/i2c.h>
-#include <kernel.h>
-#include <init.h>
-#include <pm/device.h>
-#include <arch/cpu.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/arch/cpu.h>
 #include <string.h>
 
 #if defined(CONFIG_PINCTRL)
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
 
 #include <soc.h>
 #include <errno.h>
-#include <sys/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef CONFIG_IOAPIC
-#include <drivers/interrupt_controller/ioapic.h>
+#include <zephyr/drivers/interrupt_controller/ioapic.h>
 #endif
 
 #include "i2c_dw.h"
 #include "i2c_dw_registers.h"
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_dw);
 
 #include "i2c-priv.h"
@@ -838,7 +838,6 @@ static int i2c_dw_initialize(const struct device *dev)
 	const struct i2c_dw_rom_config * const rom = dev->config;
 	struct i2c_dw_dev_config * const dw = dev->data;
 	union ic_con_register ic_con;
-	uint32_t reg_base = get_regs(dev);
 	int ret = 0;
 
 #if defined(CONFIG_PINCTRL)
@@ -868,6 +867,7 @@ static int i2c_dw_initialize(const struct device *dev)
 	}
 
 	k_sem_init(&dw->device_sync_sem, 0, K_SEM_MAX_LIMIT);
+	uint32_t reg_base = get_regs(dev);
 
 	/* verify that we have a valid DesignWare register first */
 	if (read_comp_type(reg_base) != I2C_DW_MAGIC_KEY) {

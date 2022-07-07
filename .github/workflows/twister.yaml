@@ -27,7 +27,7 @@ jobs:
     runs-on: zephyr_runner
     needs: twister-build-cleanup
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.23.0
+      image: ghcr.io/zephyrproject-rtos/ci:v0.23.3
       options: '--entrypoint /bin/bash'
       volumes:
         - /home/runners/zephyrproject:/github/cache/zephyrproject
@@ -39,7 +39,7 @@ jobs:
       MATRIX_SIZE: 10
       PUSH_MATRIX_SIZE: 15
       DAILY_MATRIX_SIZE: 80
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.1
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.2
       CLANG_ROOT_DIR: /usr/lib/llvm-12
       TESTS_PER_BUILDER: 700
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
@@ -90,7 +90,7 @@ jobs:
           else
             echo "TWISTER_NODES=${MATRIX_SIZE}" >> $GITHUB_ENV
           fi
-          rm -f testplan.csv .testplan
+          rm -f testplan.json .testplan
 
       - name: Determine matrix size
         id: output-services
@@ -120,7 +120,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.23.0
+      image: ghcr.io/zephyrproject-rtos/ci:v0.23.3
       options: '--entrypoint /bin/bash'
       volumes:
         - /home/runners/zephyrproject:/github/cache/zephyrproject
@@ -129,12 +129,12 @@ jobs:
       matrix:
         subset: ${{fromJSON(needs.twister-build-prep.outputs.subset)}}
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.1
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.2
       CLANG_ROOT_DIR: /usr/lib/llvm-12
-      TWISTER_COMMON: ' --inline-logs -v -N -M --retry-failed 3 '
-      DAILY_OPTIONS: ' -M --build-only --all --no-skipped-report'
-      PR_OPTIONS: ' --clobber-output --integration --no-skipped-report'
-      PUSH_OPTIONS: ' --clobber-output -M --no-skipped-report'
+      TWISTER_COMMON: ' --force-color --inline-logs -v -N -M --retry-failed 3 '
+      DAILY_OPTIONS: ' -M --build-only --all'
+      PR_OPTIONS: ' --clobber-output --integration'
+      PUSH_OPTIONS: ' --clobber-output -M'
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
     steps:
@@ -226,11 +226,11 @@ jobs:
       - if: github.event_name == 'pull_request_target'
         name: Run Tests with Twister (Pull Request)
         run: |
-          rm -f testplan.csv
+          rm -f testplan.json
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request
-          ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} --load-tests testplan.csv ${TWISTER_COMMON} ${PR_OPTIONS}
+          ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} --load-tests testplan.json ${TWISTER_COMMON} ${PR_OPTIONS}
           if [ "${{matrix.subset}}" = "1" -a ${{needs.twister-build-prep.outputs.fullrun}} = 'True' ]; then
             ./scripts/zephyr_module.py --twister-out module_tests.args
             if [ -s module_tests.args ]; then
@@ -263,7 +263,7 @@ jobs:
           if-no-files-found: ignore
           path: |
             twister-out/twister.xml
-            testplan.csv
+            testplan.json
 
   twister-test-results:
     name: "Publish Unit Tests Results"

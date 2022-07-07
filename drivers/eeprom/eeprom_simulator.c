@@ -7,13 +7,13 @@
 
 #define DT_DRV_COMPAT zephyr_sim_eeprom
 
-#include <device.h>
-#include <drivers/eeprom.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/eeprom.h>
 
-#include <init.h>
-#include <kernel.h>
-#include <sys/util.h>
-#include <stats/stats.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/stats/stats.h>
 #include <string.h>
 #include <errno.h>
 
@@ -27,7 +27,7 @@
 #endif
 
 #define LOG_LEVEL CONFIG_EEPROM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eeprom_simulator);
 
 struct eeprom_sim_config {

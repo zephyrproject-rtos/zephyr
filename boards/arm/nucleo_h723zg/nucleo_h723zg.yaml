@@ -11,10 +11,12 @@ flash: 1024
 supported:
   - arduino_gpio
   - arduino_i2c
+  - arduino_spi
   - uart
   - gpio
   - counter
   - i2c
   - pwm
+  - spi
   - netif:eth
   - backup_sram

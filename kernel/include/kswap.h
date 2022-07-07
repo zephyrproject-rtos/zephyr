@@ -7,7 +7,7 @@
 #define ZEPHYR_KERNEL_INCLUDE_KSWAP_H_
 
 #include <ksched.h>
-#include <spinlock.h>
+#include <zephyr/spinlock.h>
 #include <kernel_arch_func.h>
 
 #ifdef CONFIG_STACK_SENTINEL

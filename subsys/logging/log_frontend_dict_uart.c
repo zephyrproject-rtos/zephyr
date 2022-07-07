@@ -3,12 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <logging/log_frontend.h>
-#include <logging/log_internal.h>
-#include <logging/log_output_dict.h>
-#include <sys/mpsc_pbuf.h>
-#include <device.h>
-#include <drivers/uart.h>
+#include <zephyr/logging/log_frontend.h>
+#include <zephyr/logging/log_internal.h>
+#include <zephyr/logging/log_output_dict.h>
+#include <zephyr/sys/mpsc_pbuf.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
 
 static uint32_t dbuf[CONFIG_LOG_FRONTEND_DICT_UART_BUFFER_SIZE / sizeof(uint32_t)];
 
@@ -225,7 +225,7 @@ static void uart_isr_callback(const struct device *dev, void *user_data)
 
 static inline void hdr_fill(struct log_dict_output_normal_msg_hdr_t *hdr,
 			    const void *source,
-			    const struct log_msg2_desc desc)
+			    const struct log_msg_desc desc)
 {
 	hdr->type = MSG_NORMAL;
 	hdr->domain = desc.domain;
@@ -242,7 +242,7 @@ static inline void hdr_fill(struct log_dict_output_normal_msg_hdr_t *hdr,
 
 /* Handle logging message in synchronous manner, in panic mode. */
 static void sync_msg(const void *source,
-		     const struct log_msg2_desc desc,
+		     const struct log_msg_desc desc,
 		     uint8_t *package, const void *data)
 {
 	struct log_dict_output_normal_msg_hdr_t hdr;
@@ -259,11 +259,11 @@ static void sync_msg(const void *source,
 }
 
 void log_frontend_msg(const void *source,
-		      const struct log_msg2_desc desc,
+		      const struct log_msg_desc desc,
 		      uint8_t *package, const void *data)
 {
 	uint16_t strl[4];
-	struct log_msg2_desc outdesc = desc;
+	struct log_msg_desc outdesc = desc;
 	int plen = cbprintf_package_copy(package, desc.package_len, NULL, 0,
 					 CBPRINTF_PACKAGE_COPY_RW_STR,
 					 strl, ARRAY_SIZE(strl));

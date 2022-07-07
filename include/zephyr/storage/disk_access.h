@@ -20,7 +20,7 @@
  * @{
  */
 
-#include <drivers/disk.h>
+#include <zephyr/drivers/disk.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -7,15 +7,15 @@
 
 #define DT_DRV_COMPAT zephyr_sdl_dc
 
-#include <drivers/display.h>
+#include <zephyr/drivers/display.h>
 
 #include <SDL.h>
 #include <string.h>
 #include <soc.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 #define LOG_LEVEL CONFIG_DISPLAY_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_sdl);
 
 struct sdl_display_config {

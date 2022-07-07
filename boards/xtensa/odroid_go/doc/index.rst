@@ -75,34 +75,14 @@ features:
 | I2C        | on-chip    | i2c                                 |
 +------------+------------+-------------------------------------+
 
-Programming
-***********
+System requirements
+*******************
 
-The ESP32 toolchain :file:`xtensa-esp32-elf` is required to build this port.
-Install the toolchain:
+Prerequisites
+-------------
 
-   .. code-block:: console
-
-      west espressif install
-
-   .. note::
-
-      By default, the toolchain will be downloaded and installed under $HOME/.espressif directory
-      (%USERPROFILE%/.espressif on Windows).
-
-Set up build environment
-------------------------
-
-With the toolchain installed, the Zephyr build system must be instructed to
-use this particular variant by setting the following shell variables:
-
-.. code-block:: console
-
-   export ZEPHYR_TOOLCHAIN_VARIANT="espressif"
-   export ESPRESSIF_TOOLCHAIN_PATH="/path/to/xtensa-esp32-elf/"
-
-Finally, retrieve required submodules to build this port. This might take
-a while for the first time:
+Espressif HAL requires binary blobs in order work. The west extension below performs the required
+syncronization to clone, checkout and pull the submodules:
 
 .. code-block:: console
 
@@ -110,67 +90,76 @@ a while for the first time:
 
 .. note::
 
-   It is recommended running the command above after :file:`west update` so
-   that submodules also get updated.
+   It is recommended running the command above after :file:`west update`.
 
-Flashing
---------
+Building & Flashing
+-------------------
 
-The usual ``flash`` target will work with the ``odroid_go`` board configuration.
-Here is an example for the :ref:`hello_world` application.
+Build and flash applications as usual (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :host-os: unix
    :board: odroid_go
    :goals: build
 
-Refer to :ref:`build_an_application` and :ref:`application_run` for more
-details.
+The usual ``flash`` target will work with the ``odroid_go`` board
+configuration. Here is an example for the :ref:`hello_world`
+application.
 
-All flashing options are handled by the :ref:`west` tool, including flashing
-with custom options such as a different serial port.  The ``west`` tool supports
-specific options for the ESP32 board, as listed here:
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: odroid_go
+   :goals: flash
 
-  --esp-idf-path ESP_IDF_PATH
-                        path to ESP-IDF
-  --esp-device ESP_DEVICE
-                        serial port to flash, default /dev/ttyUSB0
-  --esp-baud-rate ESP_BAUD_RATE
-                        serial baud rate, default 921600
-  --esp-flash-size ESP_FLASH_SIZE
-                        flash size, default "detect"
-  --esp-flash-freq ESP_FLASH_FREQ
-                        flash frequency, default "40m"
-  --esp-flash-mode ESP_FLASH_MODE
-                        flash mode, default "dio"
-  --esp-tool ESP_TOOL   complete path to espidf, default is to search for it in
-                        [ESP_IDF_PATH]/components/esptool_py/esptool/esptool.py
-  --esp-flash-bootloader ESP_FLASH_BOOTLOADER
-                        Bootloader image to flash
-  --esp-flash-partition_table ESP_FLASH_PARTITION_TABLE
-                        Partition table to flash
+Open the serial monitor using the following command:
 
-For example, to flash to ``/dev/ttyUSB0``, use the following command after
-having build the application in the ``build`` directory:
+.. code-block:: shell
+
+   west espressif monitor
+
+After the board has automatically reset and booted, you should see the following
+message in the monitor:
 
 .. code-block:: console
 
-   west flash -d build/ --skip-rebuild --esp-device /dev/ttyUSB0
-
-Connect ODROID-GO to your PC via the mini USB port and run your favorite
-terminal program to listen for output.
-
-.. code-block:: console
-
-   minicom -D /dev/ttyUSB0 -b 115200
-
-Power off and then power on ODROID-GO. You should see the following message in
-your terminal:
-
-.. code-block:: console
-
+   ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
    Hello World! odroid_go
+
+Debugging
+---------
+
+As with much custom hardware, the ESP32 modules require patches to
+OpenOCD that are not upstreamed. Espressif maintains their own fork of
+the project. The custom OpenOCD can be obtained by running the following extension:
+
+.. code-block:: console
+
+   west espressif install
+
+.. note::
+
+   By default, the OpenOCD will be downloaded and installed under $HOME/.espressif/tools/zephyr directory
+   (%USERPROFILE%/.espressif/tools/zephyr on Windows).
+
+The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite that behavior by adding the
+``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
+parameter when building.
+
+Here is an example for building the :ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: odroid_go
+   :goals: build flash
+   :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
+
+You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: odroid_go
+   :goals: debug
 
 References
 **********

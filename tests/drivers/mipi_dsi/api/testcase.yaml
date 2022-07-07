@@ -1,0 +1,5 @@
+tests:
+  drivers.mipi_dsi.api:
+    tags: drivers mipi_dsi
+    depends_on: mipi_dsi
+    filter: dt_alias_exists("mipi-dsi")

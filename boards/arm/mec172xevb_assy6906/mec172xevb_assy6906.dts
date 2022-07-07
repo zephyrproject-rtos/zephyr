@@ -46,6 +46,20 @@
 			label = "LED 5";
 		};
 	};
+
+	power-states {
+		idle: idle {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <1000000>;
+		};
+
+		suspend_to_ram: suspend_to_ram {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-ram";
+			min-residency-us = <2000000>;
+		};
+	};
 };
 
 &cpu0 {
@@ -245,5 +259,11 @@
 &tach0 {
 	status = "okay";
 	pinctrl-0 = <&tach0_gpio050>;
+	pinctrl-names = "default";
+};
+
+&ps2_0 {
+	status = "okay";
+	pinctrl-0 = <&ps2_clk0a_gpio114 &ps2_dat0a_gpio115>;
 	pinctrl-names = "default";
 };

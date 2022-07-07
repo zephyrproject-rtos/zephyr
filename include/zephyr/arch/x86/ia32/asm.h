@@ -9,8 +9,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_IA32_ASM_H_
 #define ZEPHYR_INCLUDE_ARCH_X86_IA32_ASM_H_
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 
 #if defined(_ASMLANGUAGE)
 

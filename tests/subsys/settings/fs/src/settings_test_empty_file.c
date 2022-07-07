@@ -7,7 +7,7 @@
 
 #include "settings_test.h"
 #include "settings/settings_file.h"
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 
 void test_config_empty_file(void)
 {

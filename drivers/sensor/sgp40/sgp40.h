@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_SGP40_SGP40_H_
 #define ZEPHYR_DRIVERS_SENSOR_SGP40_SGP40_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 #define SGP40_CMD_MEASURE_RAW	0x260F
 #define SGP40_CMD_MEASURE_TEST	0x280E

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <irq.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)

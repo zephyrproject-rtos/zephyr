@@ -13,7 +13,7 @@
 
 #define LOG_MODULE_NAME net_otPlat_radio
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #include <stdbool.h>
@@ -21,11 +21,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <stdint.h>
 #include <string.h>
 
-#include <kernel.h>
-#include <device.h>
-#include <net/ieee802154_radio.h>
-#include <net/net_pkt.h>
-#include <sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/net/ieee802154_radio.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/sys/__assert.h>
 
 #include <openthread/ip6.h>
 #include <openthread-system.h>
@@ -298,7 +298,12 @@ void transmit_message(struct k_work *tx_job)
 	channel = sTransmitFrame.mChannel;
 
 	radio_api->set_channel(radio_dev, sTransmitFrame.mChannel);
+
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
+	net_pkt_set_ieee802154_txpwr(tx_pkt, get_transmit_power_for_channel(channel));
+#else
 	radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(channel));
+#endif /* CONFIG_IEEE802154_SELECTIVE_TXPOWER */
 
 	net_pkt_set_ieee802154_frame_secured(tx_pkt,
 					     sTransmitFrame.mInfo.mTxInfo.mIsSecurityProcessed);
@@ -1029,8 +1034,24 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 			  const otMacKeyMaterial *aNextKey, otRadioKeyType aKeyType)
 {
 	ARG_UNUSED(aInstance);
-	__ASSERT_NO_MSG(aKeyType == OT_KEY_TYPE_LITERAL_KEY);
 	__ASSERT_NO_MSG(aPrevKey != NULL && aCurrKey != NULL && aNextKey != NULL);
+
+#if defined(CONFIG_OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE)
+	__ASSERT_NO_MSG(aKeyType == OT_KEY_TYPE_KEY_REF);
+	size_t keyLen;
+
+	__ASSERT_NO_MSG(otPlatCryptoExportKey(aPrevKey->mKeyMaterial.mKeyRef,
+					      (uint8_t *)aPrevKey->mKeyMaterial.mKey.m8,
+					      OT_MAC_KEY_SIZE, &keyLen) == OT_ERROR_NONE);
+	__ASSERT_NO_MSG(otPlatCryptoExportKey(aCurrKey->mKeyMaterial.mKeyRef,
+					      (uint8_t *)aCurrKey->mKeyMaterial.mKey.m8,
+					      OT_MAC_KEY_SIZE, &keyLen) == OT_ERROR_NONE);
+	__ASSERT_NO_MSG(otPlatCryptoExportKey(aNextKey->mKeyMaterial.mKeyRef,
+					      (uint8_t *)aNextKey->mKeyMaterial.mKey.m8,
+					      OT_MAC_KEY_SIZE, &keyLen) == OT_ERROR_NONE);
+#else
+	__ASSERT_NO_MSG(aKeyType == OT_KEY_TYPE_LITERAL_KEY);
+#endif
 
 	uint8_t key_id_mode = aKeyIdMode >> 3;
 
@@ -1134,6 +1155,15 @@ uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
 
 	return radio_api->get_sch_acc(radio_dev);
 }
+
+#if defined(CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT)
+uint8_t otPlatRadioGetCslUncertainty(otInstance *aInstance)
+{
+	ARG_UNUSED(aInstance);
+
+	return CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT;
+}
+#endif
 
 #if defined(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)
 /**

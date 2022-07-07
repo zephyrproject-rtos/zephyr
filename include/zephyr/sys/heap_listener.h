@@ -8,8 +8,8 @@
 #define ZEPHYR_INCLUDE_SYS_HEAP_LISTENER_H
 
 #include <stdint.h>
-#include <toolchain.h>
-#include <sys/slist.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -8,15 +8,15 @@
 #define LOG_MODULE_NAME net_lwm2m_pull_context
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <net/http_parser.h>
-#include <net/socket.h>
+#include <zephyr/net/http_parser.h>
+#include <zephyr/net/socket.h>
 
 #include "lwm2m_pull_context.h"
 #include "lwm2m_engine.h"
@@ -105,14 +105,14 @@ static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint
 
 	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH, cursor, strlen(cursor));
 	if (ret < 0) {
-		LOG_ERR("Error adding URI_PATH '%s'", log_strdup(cursor));
+		LOG_ERR("Error adding URI_PATH '%s'", cursor);
 		goto cleanup;
 	}
 #else
 	http_parser_url_init(&parser);
 	ret = http_parser_parse_url(context.uri, strlen(context.uri), 0, &parser);
 	if (ret < 0) {
-		LOG_ERR("Invalid firmware url: %s", log_strdup(context.uri));
+		LOG_ERR("Invalid firmware url: %s", context.uri);
 		ret = -ENOTSUP;
 		goto cleanup;
 	}
@@ -158,7 +158,7 @@ static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint
 	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_PROXY_URI, context.uri,
 					strlen(context.uri));
 	if (ret < 0) {
-		LOG_ERR("Error adding PROXY_URI '%s'", log_strdup(context.uri));
+		LOG_ERR("Error adding PROXY_URI '%s'", context.uri);
 		goto cleanup;
 	}
 #else
@@ -352,7 +352,7 @@ static void firmware_transfer(void)
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	server_addr = CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR;
 	if (strlen(server_addr) >= LWM2M_PACKAGE_URI_LEN) {
-		LOG_ERR("Invalid Proxy URI: %s", log_strdup(server_addr));
+		LOG_ERR("Invalid Proxy URI: %s", server_addr);
 		ret = -ENOTSUP;
 		goto error;
 	}
@@ -377,7 +377,7 @@ static void firmware_transfer(void)
 		goto error;
 	}
 
-	LOG_INF("Connecting to server %s", log_strdup(context.uri));
+	LOG_INF("Connecting to server %s", context.uri);
 
 	/* reset block transfer context */
 	coap_block_transfer_init(&context.block_ctx, lwm2m_default_block_size(), 0);

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/can.h>
+#include <zephyr/drivers/can.h>
 #include <ztest.h>
 
 /**
@@ -146,7 +146,7 @@ static void test_filter_handling(void)
 	zassert_true(device_is_ready(dev), "CAN device not ready");
 
 	/* Set driver to loopback mode */
-	err = can_set_mode(dev, CAN_LOOPBACK_MODE);
+	err = can_set_mode(dev, CAN_MODE_LOOPBACK);
 	zassert_equal(err, 0, "failed to set loopback mode");
 
 	/* Add a extended and masked filter (1 bank/filter) */

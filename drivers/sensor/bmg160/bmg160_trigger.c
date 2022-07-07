@@ -8,28 +8,23 @@
  * http://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMG160-DS000-09.pdf
  */
 
-#include <kernel.h>
-#include <drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
 
 #include "bmg160.h"
 
 extern struct bmg160_device_data bmg160_data;
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(BMG160, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int setup_int(const struct device *dev,
 			      bool enable)
 {
-	struct bmg160_device_data *data = dev->data;
-	const struct bmg160_device_config *const cfg =
-		dev->config;
+	const struct bmg160_device_config *cfg = dev->config;
 
-	return gpio_pin_interrupt_configure(data->gpio,
-					    cfg->int_pin,
-					    enable
-					    ? GPIO_INT_EDGE_TO_ACTIVE
-					    : GPIO_INT_DISABLE);
+	return gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
+					       enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE);
 }
 
 static void bmg160_gpio_callback(const struct device *port,
@@ -237,10 +232,9 @@ int bmg160_trigger_init(const struct device *dev)
 		return -EIO;
 	}
 
-	bmg160->gpio = device_get_binding((char *)cfg->gpio_port);
-	if (!bmg160->gpio) {
-		LOG_DBG("Gpio controller %s not found", cfg->gpio_port);
-		return -EINVAL;
+	if (!device_is_ready(cfg->int_gpio.port)) {
+		LOG_ERR("GPIO device not ready");
+		return -ENODEV;
 	}
 
 	bmg160->dev = dev;
@@ -258,16 +252,15 @@ int bmg160_trigger_init(const struct device *dev)
 	bmg160->work.handler = bmg160_work_cb;
 #endif
 
-	ret = gpio_pin_configure(bmg160->gpio, cfg->int_pin,
-				 cfg->int_flags | GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		return ret;
 	}
 
 	gpio_init_callback(&bmg160->gpio_cb, bmg160_gpio_callback,
-			   BIT(cfg->int_pin));
+			   BIT(cfg->int_gpio.pin));
 
-	ret = gpio_add_callback(bmg160->gpio, &bmg160->gpio_cb);
+	ret = gpio_add_callback(cfg->int_gpio.port, &bmg160->gpio_cb);
 	if (ret < 0) {
 		return ret;
 	}

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/ec_host_cmd_periph.h>
-#include <syscall_handler.h>
+#include <zephyr/drivers/ec_host_cmd_periph.h>
+#include <zephyr/syscall_handler.h>
 
 static inline void
 z_vrfy_ec_host_cmd_periph_init(const struct device *dev,

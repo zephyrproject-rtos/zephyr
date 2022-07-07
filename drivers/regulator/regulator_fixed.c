@@ -5,11 +5,11 @@
 
 #define DT_DRV_COMPAT regulator_fixed
 
-#include <kernel.h>
-#include <drivers/regulator.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/regulator.h>
+#include <zephyr/drivers/gpio.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(regulator_fixed, CONFIG_REGULATOR_LOG_LEVEL);
 
 #define OPTION_ALWAYS_ON_POS 0

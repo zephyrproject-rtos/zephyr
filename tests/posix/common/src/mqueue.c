@@ -5,10 +5,10 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 #include <fcntl.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <mqueue.h>
 #include <pthread.h>
 
@@ -60,7 +60,7 @@ void *receiver_thread(void *p1)
 	return NULL;
 }
 
-void test_posix_mqueue(void)
+ZTEST(posix_apis, test_posix_mqueue)
 {
 	mqd_t mqd;
 	struct mq_attr attrs;

@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 #include <assert.h>
 #include <errno.h>
-#include <bluetooth/mesh.h>
-#include <bluetooth/testing.h>
-#include <bluetooth/mesh/cfg.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/mesh.h>
+#include <zephyr/bluetooth/testing.h>
+#include <zephyr/bluetooth/mesh/cfg.h>
+#include <zephyr/sys/byteorder.h>
 #include <app_keys.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_mesh
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -352,7 +352,7 @@ static int output_string(const char *str)
 	struct mesh_out_string_action_ev *ev;
 	struct net_buf_simple *buf = NET_BUF_SIMPLE(BTP_DATA_MAX_SIZE);
 
-	LOG_DBG("str %s", log_strdup(str));
+	LOG_DBG("str %s", str);
 
 	net_buf_simple_init(buf, 0);
 

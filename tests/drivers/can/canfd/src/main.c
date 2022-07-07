@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/can.h>
+#include <zephyr/drivers/can.h>
 #include <ztest.h>
 
 /**
@@ -125,6 +125,7 @@ static inline void assert_frame_equal(const struct zcan_frame *frame1,
 				      const struct zcan_frame *frame2)
 {
 	zassert_equal(frame1->id_type, frame2->id_type, "ID type does not match");
+	zassert_equal(frame1->fd, frame2->fd, "FD bit does not match");
 	zassert_equal(frame1->rtr, frame2->rtr, "RTR bit does not match");
 	zassert_equal(frame1->id, frame2->id, "ID does not match");
 	zassert_equal(frame1->dlc, frame2->dlc, "DLC does not match");
@@ -348,7 +349,7 @@ static void test_set_loopback(void)
 {
 	int err;
 
-	err = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
+	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK | CAN_MODE_FD);
 	zassert_equal(err, 0, "failed to set loopback-mode (err %d)", err);
 }
 

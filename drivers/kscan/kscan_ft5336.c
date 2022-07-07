@@ -8,11 +8,11 @@
 
 #define DT_DRV_COMPAT focaltech_ft5336
 
-#include <drivers/kscan.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/kscan.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ft5336, CONFIG_KSCAN_LOG_LEVEL);
 
 /* FT5336 used registers */

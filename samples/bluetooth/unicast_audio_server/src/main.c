@@ -7,16 +7,14 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <errno.h>
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/audio/audio.h>
-#include <bluetooth/audio/capabilities.h>
-#include <sys/byteorder.h>
-
-#define MAX_PAC 1
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/capabilities.h>
+#include <zephyr/sys/byteorder.h>
 
 #define AVAILABLE_SINK_CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
 				 BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | \
@@ -29,17 +27,23 @@
 				  BT_AUDIO_CONTEXT_TYPE_MEDIA | \
 				  BT_AUDIO_CONTEXT_TYPE_GAME)
 
-#define CHANNEL_COUNT_1 BIT(0)
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ASCS_ASE_SRC_COUNT,
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  8, NULL);
 
 static struct bt_codec lc3_codec =
-	BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY, BT_CODEC_LC3_DURATION_10, CHANNEL_COUNT_1, 40u, 120u,
-		     1u, (BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA),
+	BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY, BT_CODEC_LC3_DURATION_10,
+		     BT_CODEC_LC3_CHAN_COUNT_SUPPORT(1), 40u, 120u, 1u,
+		     (BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA),
 		     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, CONFIG_BT_ISO_TX_MTU, 8, NULL);
 static struct bt_conn *default_conn;
-static struct bt_audio_stream streams[MAX_PAC];
+static struct k_work_delayable audio_send_work;
+static struct bt_audio_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
+static struct bt_audio_stream *source_streams[CONFIG_BT_ASCS_ASE_SRC_COUNT];
+static size_t configured_source_stream_count;
 
+static K_SEM_DEFINE(sem_disconnected, 0, 1);
 
 static uint8_t unicast_server_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL), /* ASCS UUID */
@@ -131,14 +135,76 @@ static void print_qos(struct bt_codec_qos *qos)
 	       qos->rtn, qos->latency, qos->pd);
 }
 
+/**
+ * @brief Send audio data on timeout
+ *
+ * This will send an increasing amount of audio data, starting from 1 octet.
+ * The data is just mock data, and does not actually represent any audio.
+ *
+ * First iteration : 0x00
+ * Second iteration: 0x00 0x01
+ * Third iteration : 0x00 0x01 0x02
+ *
+ * And so on, until it wraps around the configured MTU (CONFIG_BT_ISO_TX_MTU)
+ *
+ * @param work Pointer to the work structure
+ */
+static void audio_timer_timeout(struct k_work *work)
+{
+	int ret;
+	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
+	static bool data_initialized;
+	struct net_buf *buf;
+	static size_t len_to_send = 1;
+
+	if (!data_initialized) {
+		/* TODO: Actually encode some audio data */
+		for (size_t i = 0U; i < ARRAY_SIZE(buf_data); i++) {
+			buf_data[i] = (uint8_t)i;
+		}
+
+		data_initialized = true;
+	}
+
+	/* We configured the sink streams to be first in `streams`, so that
+	 * we can use `stream[i]` to select sink streams (i.e. streams with
+	 * data going to the server)
+	 */
+	for (size_t i = 0; i < configured_source_stream_count; i++) {
+		struct bt_audio_stream *stream = source_streams[i];
+
+		buf = net_buf_alloc(&tx_pool, K_FOREVER);
+		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+
+		net_buf_add_mem(buf, buf_data, len_to_send);
+
+		ret = bt_audio_stream_send(stream, buf);
+		if (ret < 0) {
+			printk("Failed to send audio data on streams[%zu] (%p): (%d)\n",
+			       i, stream, ret);
+			net_buf_unref(buf);
+		} else {
+			printk("Sending mock data with len %zu on streams[%zu] (%p)\n",
+			       len_to_send, i, stream);
+		}
+	}
+
+	k_work_schedule(&audio_send_work, K_MSEC(1000U));
+
+	len_to_send++;
+	if (len_to_send > ARRAY_SIZE(buf_data)) {
+		len_to_send = 1;
+	}
+}
+
 static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 					  struct bt_audio_ep *ep,
-					  enum bt_audio_pac_type type,
+					  enum bt_audio_dir dir,
 					  struct bt_audio_capability *cap,
 					  struct bt_codec *codec)
 {
-	printk("ASE Codec Config: conn %p ep %p type %u, cap %p\n",
-	       conn, ep, type, cap);
+	printk("ASE Codec Config: conn %p ep %p dir %u, cap %p\n",
+	       conn, ep, dir, cap);
 
 	print_codec(codec);
 
@@ -147,6 +213,10 @@ static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 
 		if (!stream->conn) {
 			printk("ASE Codec Config stream %p\n", stream);
+			if (dir == BT_AUDIO_DIR_SOURCE) {
+				source_streams[configured_source_stream_count++] = stream;
+			}
+
 			return stream;
 		}
 	}
@@ -229,6 +299,13 @@ static int lc3_start(struct bt_audio_stream *stream)
 {
 	printk("Start: stream %p\n", stream);
 
+	if (configured_source_stream_count > 0 &&
+	    !k_work_delayable_is_pending(&audio_send_work)) {
+
+		/* Start send timer */
+		k_work_schedule(&audio_send_work, K_MSEC(0));
+	}
+
 	return 0;
 }
 
@@ -276,23 +353,25 @@ static struct bt_audio_capability_ops lc3_ops = {
 
 #if defined(CONFIG_LIBLC3CODEC)
 
-static void stream_recv_lc3_codec(struct bt_audio_stream *stream, struct net_buf *buf)
+static void stream_recv_lc3_codec(struct bt_audio_stream *stream,
+				  const struct bt_iso_recv_info *info,
+				  struct net_buf *buf)
 {
+	const uint8_t *in_buf;
 	uint8_t err = -1;
-
-	/* TODO: If there is a way to know if the controller supports indicating errors in the
-	 *       payload one could feed that into bad-frame-indicator. The HCI layer allows to
-	 *       include this information, but currently there is no controller support.
-	 *       Here it is assumed that reveiving a zero-length payload means a lost frame -
-	 *       but actually it could just as well indicate a pause in the stream.
-	 */
-	const uint8_t bad_frame_indicator = buf->len == 0 ? 1 : 0;
-	uint8_t *in_buf = (bad_frame_indicator ? NULL : buf->data);
 	const int octets_per_frame = buf->len / frames_per_sdu;
 
 	if (lc3_decoder == NULL) {
 		printk("LC3 decoder not setup, cannot decode data.\n");
 		return;
+	}
+
+	if ((info->flags & BT_ISO_FLAGS_VALID) == 0) {
+		printk("Bad packet: 0x%02X\n", info->flags);
+
+		in_buf = NULL;
+	} else {
+		in_buf = buf->data;
 	}
 
 	/* This code is to demonstrate the use of the LC3 codec. On an actual implementation
@@ -325,7 +404,9 @@ static void stream_recv_lc3_codec(struct bt_audio_stream *stream, struct net_buf
 
 #else
 
-static void stream_recv(struct bt_audio_stream *stream, struct net_buf *buf)
+static void stream_recv(struct bt_audio_stream *stream,
+			const struct bt_iso_recv_info *info,
+			struct net_buf *buf)
 {
 	printk("Incoming audio on stream %p len %u\n", stream, buf->len);
 }
@@ -371,6 +452,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
+
+	k_sem_give(&sem_disconnected);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
@@ -380,7 +463,16 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 static struct bt_audio_capability caps[] = {
 	{
-		.type = BT_AUDIO_SINK,
+		.dir = BT_AUDIO_DIR_SINK,
+		.pref = BT_AUDIO_CAPABILITY_PREF(
+				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
+				BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000,
+				40000, 40000),
+		.codec = &lc3_codec,
+		.ops = &lc3_ops,
+	},
+	{
+		.dir = BT_AUDIO_DIR_SOURCE,
 		.pref = BT_AUDIO_CAPABILITY_PREF(
 				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
 				BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000,
@@ -424,11 +516,29 @@ void main(void)
 		return;
 	}
 
-	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
-		printk("Failed to start advertising set (err %d)\n", err);
-		return;
-	}
+	while (true) {
+		struct k_work_sync sync;
 
-	printk("Advertising successfully started\n");
+		err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+		if (err) {
+			printk("Failed to start advertising set (err %d)\n", err);
+			return;
+		}
+
+		printk("Advertising successfully started\n");
+
+		k_work_init_delayable(&audio_send_work, audio_timer_timeout);
+
+		err = k_sem_take(&sem_disconnected, K_FOREVER);
+		if (err != 0) {
+			printk("failed to take sem_disconnected (err %d)\n", err);
+			return;
+		}
+
+		/* reset data */
+		(void)memset(source_streams, 0, sizeof(source_streams));
+		configured_source_stream_count = 0U;
+		k_work_cancel_delayable_sync(&audio_send_work, &sync);
+
+	}
 }

@@ -1,9 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Board initialization
-zephyr_sources_ifdef(CONFIG_PINMUX_HSDK            pinmux_hsdk.c)
-zephyr_sources_ifdef(CONFIG_PINMUX_INTEL_S1000     pinmux_intel_s1000.c)
-zephyr_sources_ifdef(CONFIG_PINMUX_ITE_IT8XXX2     pinmux_ite_it8xxx2.c)
 zephyr_sources_ifdef(CONFIG_PINMUX_LPC11U6X        pinmux_lpc11u6x.c)
 zephyr_sources_ifdef(CONFIG_PINMUX_MCUX            pinmux_mcux.c)
 zephyr_sources_ifdef(CONFIG_PINMUX_MCUX_LPC        pinmux_mcux_lpc.c)

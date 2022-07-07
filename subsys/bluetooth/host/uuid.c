@@ -8,10 +8,10 @@
 
 #include <string.h>
 #include <errno.h>
-#include <sys/byteorder.h>
-#include <sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
 
-#include <bluetooth/uuid.h>
+#include <zephyr/bluetooth/uuid.h>
 
 #define UUID_16_BASE_OFFSET 12
 

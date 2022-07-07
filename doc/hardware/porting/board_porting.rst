@@ -163,18 +163,6 @@ The optional files are:
 - :file:`board.cmake`: used for :ref:`flash-and-debug-support`
 - :file:`CMakeLists.txt`: if you need to add additional source files to
   your build.
-
-  One common use for this file is to add a :file:`pinmux.c` file in your board
-  directory to the build, which configures pin controllers at boot time. In
-  that case, :file:`CMakeLists.txt` usually looks like this:
-
-  .. code-block:: cmake
-
-     if(CONFIG_PINMUX)
-       zephyr_library()
-       zephyr_library_sources(pinmux.c)
-     endif()
-
 - :file:`doc/index.rst`, :file:`doc/plank.png`: documentation for and a picture
   of your board. You only need this if you're :ref:`contributing-your-board` to
   Zephyr.

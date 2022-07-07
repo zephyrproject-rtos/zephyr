@@ -7,7 +7,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 /* Convenience macros to represent the ARMv8-M-specific
  * configuration for memory access permission and

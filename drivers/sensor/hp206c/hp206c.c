@@ -10,13 +10,12 @@
 
 #define DT_DRV_COMPAT hoperf_hp206c
 
-#include <init.h>
-#include <drivers/sensor.h>
-#include <drivers/i2c.h>
-#include <sys/byteorder.h>
-#include <kernel.h>
-#include <drivers/gpio.h>
-#include <logging/log.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 
 #include "hp206c.h"
 
@@ -24,23 +23,22 @@ LOG_MODULE_REGISTER(HP206C, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int hp206c_bus_config(const struct device *dev)
 {
-	struct hp206c_device_data *hp206c = dev->data;
+	const struct hp206c_device_config *cfg = dev->config;
 	uint32_t i2c_cfg;
 
 	i2c_cfg = I2C_MODE_MASTER | I2C_SPEED_SET(I2C_SPEED_STANDARD);
 
-	return i2c_configure(hp206c->i2c, i2c_cfg);
+	return i2c_configure(cfg->i2c.bus, i2c_cfg);
 }
 
 static int hp206c_read(const struct device *dev, uint8_t cmd, uint8_t *data,
 		       uint8_t len)
 {
-	struct hp206c_device_data *hp206c = dev->data;
+	const struct hp206c_device_config *cfg = dev->config;
 
 	hp206c_bus_config(dev);
 
-	if (i2c_burst_read(hp206c->i2c, HP206C_I2C_ADDRESS,
-			   cmd, data, len) < 0) {
+	if (i2c_burst_read_dt(&cfg->i2c, cmd, data, len) < 0) {
 		return -EIO;
 	}
 
@@ -58,12 +56,11 @@ static int hp206c_read_reg(const struct device *dev, uint8_t reg_addr,
 static int hp206c_write(const struct device *dev, uint8_t cmd, uint8_t *data,
 			uint8_t len)
 {
-	struct hp206c_device_data *hp206c = dev->data;
+	const struct hp206c_device_config *cfg = dev->config;
 
 	hp206c_bus_config(dev);
 
-	if (i2c_burst_write(hp206c->i2c, HP206C_I2C_ADDRESS,
-			    cmd, data, len) < 0) {
+	if (i2c_burst_write_dt(&cfg->i2c, cmd, data, len) < 0) {
 		return -EIO;
 	}
 
@@ -80,11 +77,11 @@ static int hp206c_write_reg(const struct device *dev, uint8_t reg_addr,
 
 static int hp206c_cmd_send(const struct device *dev, uint8_t cmd)
 {
-	struct hp206c_device_data *hp206c = dev->data;
+	const struct hp206c_device_config *cfg = dev->config;
 
 	hp206c_bus_config(dev);
 
-	return i2c_write(hp206c->i2c, &cmd, 1, HP206C_I2C_ADDRESS);
+	return i2c_write_dt(&cfg->i2c, &cmd, 1);
 }
 
 /*
@@ -287,10 +284,10 @@ static const struct sensor_driver_api hp206c_api = {
 static int hp206c_init(const struct device *dev)
 {
 	struct hp206c_device_data *hp206c = dev->data;
+	const struct hp206c_device_config *cfg = dev->config;
 
-	hp206c->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!hp206c->i2c) {
-		LOG_ERR("I2C master controller not found!");
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
 		return -EINVAL;
 	}
 
@@ -318,6 +315,10 @@ static int hp206c_init(const struct device *dev)
 
 static struct hp206c_device_data hp206c_data;
 
+static const struct hp206c_device_config hp206c_config = {
+	.i2c = I2C_DT_SPEC_INST_GET(0),
+};
+
 DEVICE_DT_INST_DEFINE(0, hp206c_init, NULL, &hp206c_data,
-		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		    &hp206c_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &hp206c_api);

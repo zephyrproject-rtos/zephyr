@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <debug/coredump.h>
+#include <zephyr/debug/coredump.h>
 
 #define ARCH_HDR_VER 1
 
@@ -22,12 +22,14 @@ struct riscv_arch_block {
 		uint32_t a3;
 		uint32_t a4;
 		uint32_t a5;
+#if !defined(CONFIG_RISCV_ISA_RV32E)
 		uint32_t a6;
 		uint32_t a7;
 		uint32_t t3;
 		uint32_t t4;
 		uint32_t t5;
 		uint32_t t6;
+#endif /* !CONFIG_RISCV_ISA_RV32E */
 		uint32_t pc;
 	} r;
 } __packed;
@@ -62,18 +64,20 @@ void arch_coredump_info_dump(const z_arch_esf_t *esf)
 	arch_blk.r.t0 = esf->t0;
 	arch_blk.r.t1 = esf->t1;
 	arch_blk.r.t2 = esf->t2;
-	arch_blk.r.t3 = esf->t3;
-	arch_blk.r.t4 = esf->t4;
-	arch_blk.r.t5 = esf->t5;
-	arch_blk.r.t6 = esf->t6;
 	arch_blk.r.a0 = esf->a0;
 	arch_blk.r.a1 = esf->a1;
 	arch_blk.r.a2 = esf->a2;
 	arch_blk.r.a3 = esf->a3;
 	arch_blk.r.a4 = esf->a4;
 	arch_blk.r.a5 = esf->a5;
+#if !defined(CONFIG_RISCV_ISA_RV32E)
+	arch_blk.r.t3 = esf->t3;
+	arch_blk.r.t4 = esf->t4;
+	arch_blk.r.t5 = esf->t5;
+	arch_blk.r.t6 = esf->t6;
 	arch_blk.r.a6 = esf->a6;
 	arch_blk.r.a7 = esf->a7;
+#endif /* !CONFIG_RISCV_ISA_RV32E */
 	arch_blk.r.pc = esf->mepc;
 
 	/* Send for output */

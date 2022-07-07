@@ -7,16 +7,16 @@
 
 #define DT_DRV_COMPAT microchip_xec_espi_v2
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <errno.h>
-#include <drivers/espi.h>
-#include <drivers/clock_control/mchp_xec_clock_control.h>
-#include <drivers/interrupt_controller/intc_mchp_xec_ecia.h>
-#include <dt-bindings/interrupt-controller/mchp-xec-ecia.h>
-#include <logging/log.h>
-#include <sys/sys_io.h>
-#include <sys/util.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
+#include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
+#include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/util.h>
 #include "espi_utils.h"
 #include "espi_mchp_xec_v2.h"
 

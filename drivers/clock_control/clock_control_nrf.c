@@ -6,13 +6,13 @@
  */
 
 #include <soc.h>
-#include <sys/onoff.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/sys/onoff.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include "nrf_clock_calibration.h"
 #include <nrfx_clock.h>
-#include <logging/log.h>
-#include <shell/shell.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/shell/shell.h>
 
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 

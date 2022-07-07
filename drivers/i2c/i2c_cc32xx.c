@@ -8,9 +8,9 @@
 
 #define DT_DRV_COMPAT ti_cc32xx_i2c
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #include <soc.h>
 
 /* Driverlib includes */
@@ -21,7 +21,7 @@
 #include <driverlib/i2c.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_cc32xx);
 
 #include "i2c-priv.h"

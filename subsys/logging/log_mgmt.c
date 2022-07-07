@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <logging/log_internal.h>
-#include <logging/log_ctrl.h>
-#include <syscall_handler.h>
+#include <zephyr/logging/log_internal.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/syscall_handler.h>
 
 /* Implementation of functions related to controlling logging sources and backends:
  * - getting/setting source details like name, filtering
@@ -182,10 +182,6 @@ void log_backend_enable(struct log_backend const *const backend,
 	uint32_t id = LOG_FILTER_FIRST_BACKEND_SLOT_IDX;
 
 	id += backend - log_backend_get(0);
-
-	if (!IS_ENABLED(CONFIG_LOG1)) {
-		__ASSERT(backend->api->process, "Backend does not support v2 API");
-	}
 
 	log_backend_id_set(backend, id);
 	backend_filter_set(backend, level);

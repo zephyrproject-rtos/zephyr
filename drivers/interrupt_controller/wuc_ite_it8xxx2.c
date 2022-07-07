@@ -6,15 +6,15 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_wuc
 
-#include <device.h>
-#include <drivers/interrupt_controller/wuc_ite_it8xxx2.h>
-#include <dt-bindings/interrupt-controller/it8xxx2-wuc.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/interrupt_controller/wuc_ite_it8xxx2.h>
+#include <zephyr/dt-bindings/interrupt-controller/it8xxx2-wuc.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <soc_common.h>
 #include <stdlib.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wuc_ite_it8xxx2, CONFIG_INTC_LOG_LEVEL);
 
 /* Driver config */

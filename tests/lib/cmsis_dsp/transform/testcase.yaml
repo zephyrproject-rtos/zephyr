@@ -1,7 +1,3 @@
-common:
-  # TODO: Remove when QEMU 6.2 is released with MVE emulation (see #37694).
-  platform_exclude: mps3_an547
-
 tests:
   libraries.cmsis_dsp.transform:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
@@ -24,6 +20,7 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 512
     min_ram: 64
@@ -48,6 +45,7 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 512
     min_ram: 64
@@ -72,6 +70,7 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 1024
     min_ram: 64
@@ -96,6 +95,7 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 1024
     min_ram: 64
@@ -119,6 +119,7 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1)
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 512
     min_ram: 64
@@ -142,6 +143,7 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1)
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 512
     min_ram: 64
@@ -166,6 +168,7 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 1024
     min_ram: 64
@@ -190,6 +193,7 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 512
     min_ram: 64
@@ -214,6 +218,7 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 1024
     min_ram: 96
@@ -238,6 +243,7 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 1024
     min_ram: 64

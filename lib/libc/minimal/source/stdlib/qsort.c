@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 /*
  * Normally parent is defined parent(k) = floor((k-1) / 2) but we can avoid a

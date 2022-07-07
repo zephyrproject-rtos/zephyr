@@ -13,10 +13,10 @@
 #ifndef __NET_IEEE802154_FRAGMENT_H__
 #define __NET_IEEE802154_FRAGMENT_H__
 
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/types.h>
 
-#include <net/net_pkt.h>
+#include <zephyr/net/net_pkt.h>
 
 #include "ieee802154_frame.h"
 

@@ -14,8 +14,8 @@
 
 #include <stdint.h>
 
-#include <drivers/gpio.h>
-#include <device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/device.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -9,12 +9,12 @@
 #include <stddef.h>
 
 #include <zephyr/types.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/l2cap.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/l2cap.h>
 #include "bs_types.h"
 #include "bs_tracing.h"
 #include "bstests.h"
@@ -34,7 +34,7 @@
 	}
 
 
-#define WAIT_TIME (240 * NSEC_PER_SEC) /* 240 seconds*/
+#define WAIT_TIME (60e6) /* 60 seconds*/
 
 #define FAIL(...)				       \
 	do {					       \

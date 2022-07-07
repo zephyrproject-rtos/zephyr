@@ -7,7 +7,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 #include <soc.h>
 

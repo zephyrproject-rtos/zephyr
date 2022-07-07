@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_INA23X_INA237_H_
 #define ZEPHYR_DRIVERS_SENSOR_INA23X_INA237_H_
 
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 
 #define INA237_REG_CONFIG     0x00
 #define INA237_REG_ADC_CONFIG 0x01

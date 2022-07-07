@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <drivers/espi.h>
-#include <drivers/espi_emul.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/espi_emul.h>
 #include <ztest.h>
 
 static void test_acpi_shared_memory(void)

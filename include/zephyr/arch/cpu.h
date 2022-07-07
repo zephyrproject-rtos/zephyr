@@ -9,28 +9,28 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_CPU_H_
 #define ZEPHYR_INCLUDE_ARCH_CPU_H_
 
-#include <sys/arch_interface.h>
+#include <zephyr/sys/arch_interface.h>
 
 #if defined(CONFIG_X86)
-#include <arch/x86/arch.h>
+#include <zephyr/arch/x86/arch.h>
 #elif defined(CONFIG_ARM64)
-#include <arch/arm64/arch.h>
+#include <zephyr/arch/arm64/arch.h>
 #elif defined(CONFIG_ARM)
-#include <arch/arm/aarch32/arch.h>
+#include <zephyr/arch/arm/aarch32/arch.h>
 #elif defined(CONFIG_ARC)
-#include <arch/arc/arch.h>
+#include <zephyr/arch/arc/arch.h>
 #elif defined(CONFIG_NIOS2)
-#include <arch/nios2/arch.h>
+#include <zephyr/arch/nios2/arch.h>
 #elif defined(CONFIG_RISCV)
-#include <arch/riscv/arch.h>
+#include <zephyr/arch/riscv/arch.h>
 #elif defined(CONFIG_XTENSA)
-#include <arch/xtensa/arch.h>
+#include <zephyr/arch/xtensa/arch.h>
 #elif defined(CONFIG_MIPS)
-#include <arch/mips/arch.h>
+#include <zephyr/arch/mips/arch.h>
 #elif defined(CONFIG_ARCH_POSIX)
-#include <arch/posix/arch.h>
+#include <zephyr/arch/posix/arch.h>
 #elif defined(CONFIG_SPARC)
-#include <arch/sparc/arch.h>
+#include <zephyr/arch/sparc/arch.h>
 #else
 #error "Unknown Architecture"
 #endif

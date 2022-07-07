@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
 
 void z_thread_entry_wrapper(k_thread_entry_t thread,

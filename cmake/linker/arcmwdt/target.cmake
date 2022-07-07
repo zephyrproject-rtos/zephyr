@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 set_property(TARGET linker PROPERTY devices_start_symbol "__device_start")
 
-find_program(CMAKE_LINKER ${CROSS_COMPILE}lldac PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_LINKER ${CROSS_COMPILE}lldac PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
 # the prefix to transfer linker options from compiler
 set_ifndef(LINKERFLAGPREFIX -Wl,)

@@ -8,10 +8,10 @@
  * @brief System module to support early STM32 MCU configuration
  */
 
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 #include <stm32_ll_system.h>
 #include <stm32_ll_bus.h>
 

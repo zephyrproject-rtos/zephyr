@@ -7,8 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_CACHE_H_
 #define ZEPHYR_INCLUDE_CACHE_H_
 
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 
 #ifdef __cplusplus
 extern "C" {

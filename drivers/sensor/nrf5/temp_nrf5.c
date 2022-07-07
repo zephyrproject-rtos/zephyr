@@ -7,11 +7,11 @@
 
 #define DT_DRV_COMPAT nordic_nrf_temp
 
-#include <device.h>
-#include <drivers/sensor.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/nrf_clock_control.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/logging/log.h>
 #include <hal/nrf_temp.h>
 
 LOG_MODULE_REGISTER(temp_nrf5, CONFIG_SENSOR_LOG_LEVEL);

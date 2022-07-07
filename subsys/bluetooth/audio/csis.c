@@ -7,19 +7,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <zephyr/types.h>
 
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <stdlib.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/buf.h>
-#include <sys/byteorder.h>
-#include <sys/check.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 #include "csis_internal.h"
 #include "csis_crypto.h"
 #include "../host/conn_internal.h"
@@ -51,8 +51,6 @@
 #else
 #define SIRK_READ_PERM	(BT_GATT_PERM_READ_ENCRYPT)
 #endif
-
-static struct bt_csis_cb *csis_cbs;
 
 static struct bt_csis csis_insts[CONFIG_BT_CSIS_MAX_INSTANCE_COUNT];
 static bt_addr_le_t server_dummy_addr; /* 0'ed address */
@@ -200,7 +198,7 @@ static int generate_prand(uint32_t *dest)
 	return 0;
 }
 
-static int csis_update_psri(struct bt_csis *csis)
+static int csis_update_rsi(struct bt_csis *csis)
 {
 	int res = 0;
 	uint32_t prand;
@@ -220,12 +218,12 @@ static int csis_update_psri(struct bt_csis *csis)
 
 	res = bt_csis_sih(csis->srv.set_sirk.value, prand, &hash);
 	if (res != 0) {
-		BT_WARN("Could not generate new PSRI");
+		BT_WARN("Could not generate new RSI");
 		return res;
 	}
 
-	(void)memcpy(csis->srv.psri, &hash, BT_CSIS_SIH_HASH_SIZE);
-	(void)memcpy(csis->srv.psri + BT_CSIS_SIH_HASH_SIZE, &prand,
+	(void)memcpy(csis->srv.rsi, &hash, BT_CSIS_SIH_HASH_SIZE);
+	(void)memcpy(csis->srv.rsi + BT_CSIS_SIH_HASH_SIZE, &prand,
 		     BT_CSIS_SIH_PRAND_SIZE);
 	return res;
 }
@@ -240,13 +238,18 @@ int csis_adv_resume(struct bt_csis *csis)
 
 	BT_DBG("Restarting CSIS advertising");
 
-	if (csis_update_psri(csis) != 0) {
+	if (csis_update_rsi(csis) != 0) {
 		return -EAGAIN;
 	}
 
+	if (csis->srv.cb != NULL && csis->srv.cb->rsi_changed != NULL) {
+		csis->srv.cb->rsi_changed(csis->srv.rsi);
+		return 0;
+	}
+
 	ad[1].type = BT_DATA_CSIS_RSI;
-	ad[1].data_len = sizeof(csis->srv.psri);
-	ad[1].data = csis->srv.psri;
+	ad[1].data_len = sizeof(csis->srv.rsi);
+	ad[1].data = csis->srv.rsi;
 
 #if defined(CONFIG_BT_EXT_ADV)
 	struct bt_le_ext_adv_start_param start_param;
@@ -303,11 +306,11 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 	struct bt_csis_set_sirk *sirk;
 	struct bt_csis *csis = attr->user_data;
 
-	if (csis_cbs != NULL && csis_cbs->sirk_read_req != NULL) {
+	if (csis->srv.cb != NULL && csis->srv.cb->sirk_read_req != NULL) {
 		uint8_t cb_rsp;
 
 		/* Ask higher layer for what SIRK to return, if any */
-		cb_rsp = csis_cbs->sirk_read_req(conn, &csis_insts[0]);
+		cb_rsp = csis->srv.cb->sirk_read_req(conn, &csis_insts[0]);
 
 		if (cb_rsp == BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT) {
 			sirk = &csis->srv.set_sirk;
@@ -330,13 +333,14 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 			return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
 		} else if (cb_rsp == BT_CSIS_READ_SIRK_REQ_RSP_OOB_ONLY) {
 			return BT_GATT_ERR(BT_CSIS_ERROR_SIRK_OOB_ONLY);
+		} else {
+			BT_ERR("Invalid callback response: %u", cb_rsp);
+			return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 		}
-
-		BT_ERR("Invalid callback response: %u", cb_rsp);
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+	} else {
+		sirk = &csis->srv.set_sirk;
 	}
 
-	sirk = &csis->srv.set_sirk;
 
 	BT_DBG("Set sirk %sencrypted",
 	       sirk->type ==  BT_CSIS_SIRK_TYPE_PLAIN ? "not " : "");
@@ -444,10 +448,10 @@ static ssize_t write_set_lock(struct bt_conn *conn,
 		 */
 		notify_clients(csis, conn);
 
-		if (csis_cbs != NULL && csis_cbs->lock_changed != NULL) {
+		if (csis->srv.cb != NULL && csis->srv.cb->lock_changed != NULL) {
 			bool locked = csis->srv.set_lock == BT_CSIS_LOCK_VALUE;
 
-			csis_cbs->lock_changed(conn, csis, locked);
+			csis->srv.cb->lock_changed(conn, csis, locked);
 		}
 	}
 	return len;
@@ -486,10 +490,10 @@ static void set_lock_timer_handler(struct k_work *work)
 	csis->srv.set_lock = BT_CSIS_RELEASE_VALUE;
 	notify_clients(csis, NULL);
 
-	if (csis_cbs != NULL && csis_cbs->lock_changed != NULL) {
+	if (csis->srv.cb != NULL && csis->srv.cb->lock_changed != NULL) {
 		bool locked = csis->srv.set_lock == BT_CSIS_LOCK_VALUE;
 
-		csis_cbs->lock_changed(NULL, csis, locked);
+		csis->srv.cb->lock_changed(NULL, csis, locked);
 	}
 }
 
@@ -530,10 +534,10 @@ static void csis_connected(struct bt_conn *conn, uint8_t err)
 		for (int i = 0; i < ARRAY_SIZE(csis_insts); i++) {
 			struct bt_csis *csis = &csis_insts[i];
 
-			csis->srv.conn_cnt++;
+			__ASSERT(csis->srv.conn_cnt < CONFIG_BT_MAX_CONN,
+				 "conn_cnt is %d", CONFIG_BT_MAX_CONN);
 
-			__ASSERT(csis->srv.conn_cnt <= CONFIG_BT_MAX_CONN,
-				"Invalid csis->srv.conn_cnt value");
+			csis->srv.conn_cnt++;
 		}
 	}
 }
@@ -557,13 +561,14 @@ static void disconnect_adv(struct k_work *work)
 static void handle_csis_disconnect(struct bt_csis *csis, struct bt_conn *conn)
 {
 #if defined(CONFIG_BT_EXT_ADV)
-	__ASSERT(csis->srv.conn_cnt != 0, "Invalid csis->srv.conn_cnt value");
+	__ASSERT(csis->srv.conn_cnt > 0, "conn_cnt is 0");
 
 	if (csis->srv.conn_cnt == CONFIG_BT_MAX_CONN &&
 	    csis->srv.adv_enabled) {
 		/* A connection spot opened up */
 		k_work_submit(&csis->srv.work);
 	}
+
 	csis->srv.conn_cnt--;
 #endif /* CONFIG_BT_EXT_ADV */
 
@@ -574,10 +579,10 @@ static void handle_csis_disconnect(struct bt_csis *csis, struct bt_conn *conn)
 		csis->srv.set_lock = BT_CSIS_RELEASE_VALUE;
 		notify_clients(csis, NULL);
 
-		if (csis_cbs != NULL && csis_cbs->lock_changed != NULL) {
+		if (csis->srv.cb != NULL && csis->srv.cb->lock_changed != NULL) {
 			bool locked = csis->srv.set_lock == BT_CSIS_LOCK_VALUE;
 
-			csis_cbs->lock_changed(conn, csis, locked);
+			csis->srv.cb->lock_changed(conn, csis, locked);
 		}
 	}
 
@@ -601,14 +606,6 @@ static void csis_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	BT_DBG("Disconnected: %s (reason %u)",
 	       bt_addr_le_str(bt_conn_get_dst(conn)), reason);
-
-	/*
-	 * If lock was taken by non-bonded device, set lock to released value,
-	 * and notify other connections.
-	 */
-	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
-		return;
-	}
 
 	for (int i = 0; i < ARRAY_SIZE(csis_insts); i++) {
 		handle_csis_disconnect(&csis_insts[i], conn);
@@ -899,6 +896,7 @@ int bt_csis_register(const struct bt_csis_register_param *param,
 	inst->srv.set_size = param->set_size;
 	inst->srv.set_lock = BT_CSIS_RELEASE_VALUE;
 	inst->srv.set_sirk.type = BT_CSIS_SIRK_TYPE_PLAIN;
+	inst->srv.cb = param->cb;
 
 	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_SAMPLE_DATA)) {
 		uint8_t test_sirk[] = {
@@ -926,7 +924,7 @@ int bt_csis_register(const struct bt_csis_register_param *param,
 
 int bt_csis_advertise(struct bt_csis *csis, bool enable)
 {
-	int err;
+	int err = 0;
 
 	if (enable) {
 		if (csis->srv.adv_enabled) {
@@ -944,14 +942,16 @@ int bt_csis_advertise(struct bt_csis *csis, bool enable)
 		if (!csis->srv.adv_enabled) {
 			return -EALREADY;
 		}
+		if (csis->srv.cb == NULL || csis->srv.cb->rsi_changed == NULL) {
 #if defined(CONFIG_BT_EXT_ADV)
-		err = bt_le_ext_adv_stop(csis->srv.adv);
+			err = bt_le_ext_adv_stop(csis->srv.adv);
 #else
-		err = bt_le_adv_stop();
+			err = bt_le_adv_stop();
 #endif /* CONFIG_BT_EXT_ADV */
-		if (err != 0) {
-			BT_DBG("Could not stop start adv: %d", err);
-			return err;
+			if (err != 0) {
+				BT_DBG("Could not stop start adv: %d", err);
+				return err;
+			}
 		}
 		csis->srv.adv_enabled = false;
 	}
@@ -974,8 +974,8 @@ int bt_csis_lock(struct bt_csis *csis, bool lock, bool force)
 		csis->srv.set_lock = BT_CSIS_RELEASE_VALUE;
 		notify_clients(csis, NULL);
 
-		if (csis_cbs != NULL && csis_cbs->lock_changed != NULL) {
-			csis_cbs->lock_changed(NULL, &csis_insts[0], false);
+		if (csis->srv.cb != NULL && csis->srv.cb->lock_changed != NULL) {
+			csis->srv.cb->lock_changed(NULL, &csis_insts[0], false);
 		}
 	} else {
 		err = write_set_lock(NULL, NULL, &lock_val, sizeof(lock_val), 0,

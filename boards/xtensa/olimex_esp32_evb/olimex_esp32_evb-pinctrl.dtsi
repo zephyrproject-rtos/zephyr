@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
 #include <dt-bindings/pinctrl/esp32-pinctrl.h>
-#include <dt-bindings/pinctrl/esp32-gpio-sigmap.h>
+#include <zephyr/dt-bindings/pinctrl/esp32-gpio-sigmap.h>
 
 &pinctrl {
 	uart0_tx_gpio1: uart0_tx_gpio1 {

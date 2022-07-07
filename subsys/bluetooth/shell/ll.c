@@ -11,13 +11,13 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 #include "../controller/util/memq.h"
 #include "../controller/include/ll.h"

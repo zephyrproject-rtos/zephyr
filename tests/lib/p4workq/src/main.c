@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <random/rand32.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/random/rand32.h>
 #include <ztest.h>
-#include <sys/p4wq.h>
+#include <zephyr/sys/p4wq.h>
 
 #define NUM_THREADS (CONFIG_MP_NUM_CPUS * 2)
 #define MAX_ITEMS (NUM_THREADS * 8)

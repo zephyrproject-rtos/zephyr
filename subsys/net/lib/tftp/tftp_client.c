@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tftp_client, CONFIG_TFTP_LOG_LEVEL);
 
 #include <stddef.h>
-#include <net/tftp.h>
+#include <zephyr/net/tftp.h>
 #include "tftp_client.h"
 
 #define ADDRLEN(sock) \
@@ -103,7 +103,7 @@ static int tftp_send_request(int sock, struct sockaddr *server_addr,
 		tx_count++;
 
 		LOG_DBG("Sending TFTP request %d file %s", request,
-			log_strdup(remote_file));
+			remote_file);
 
 		/* Send the request to the server */
 		ret = sendto(sock, tftpc_buffer, req_size, 0, server_addr,

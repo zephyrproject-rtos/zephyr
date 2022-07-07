@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <zephyr/types.h>
 
-#include <bluetooth/audio/csis.h>
+#include <zephyr/bluetooth/audio/csis.h>
 
 #define BT_CSIS_CRYPTO_KEY_SIZE   16
 #define BT_CSIS_CRYPTO_SALT_SIZE  16
@@ -16,8 +16,8 @@
 /**
  * @brief Private Set Unique identifier hash function sih.
  *
- * The PSRI hash function sih is used to generate a hash value that is
- * used in PSRIs - Used by the Coordinated Set Identification service and
+ * The RSI hash function sih is used to generate a hash value that is
+ * used in RSIs - Used by the Coordinated Set Identification service and
  * profile.
  *
  * @param sirk The 16-byte SIRK

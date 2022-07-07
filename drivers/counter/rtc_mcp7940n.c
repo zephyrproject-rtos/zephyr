@@ -7,15 +7,15 @@
 
 #define DT_DRV_COMPAT microchip_mcp7940n
 
-#include <device.h>
-#include <drivers/counter.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <drivers/rtc/mcp7940n.h>
-#include <kernel.h>
-#include <logging/log.h>
-#include <sys/timeutil.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/rtc/mcp7940n.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/timeutil.h>
+#include <zephyr/sys/util.h>
 #include <time.h>
 
 LOG_MODULE_REGISTER(MCP7940N, CONFIG_COUNTER_LOG_LEVEL);

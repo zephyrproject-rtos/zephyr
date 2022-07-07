@@ -4,24 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <hal/nrf_gpio.h>
-#include <nrfx.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(thingy53_board_init);
-
-#define ADXL362_NODE			DT_NODELABEL(adxl362)
-#define ADXL362_GPIO_NODE		DT_SPI_DEV_CS_GPIOS_CTLR(ADXL362_NODE)
-#define ADXL362_CS			DT_SPI_DEV_CS_GPIOS_PIN(ADXL362_NODE)
-#define ADXL362_FLAGS			DT_SPI_DEV_CS_GPIOS_FLAGS(ADXL362_NODE)
-
-#define BMI270_NODE			DT_NODELABEL(bmi270)
-#define BMI270_GPIO_NODE		DT_SPI_DEV_CS_GPIOS_CTLR(BMI270_NODE)
-#define BMI270_CS			DT_SPI_DEV_CS_GPIOS_PIN(BMI270_NODE)
-#define BMI270_FLAGS			DT_SPI_DEV_CS_GPIOS_FLAGS(BMI270_NODE)
 
 /* Initialization chain of Thingy:53 board requires some delays before on board sensors
  * could be accessed after power up. In particular bme680 and bmm150 sensors require,
@@ -70,33 +56,8 @@ static void enable_cpunet(void)
 static int setup(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+
 #if !defined(CONFIG_TRUSTED_EXECUTION_SECURE)
-
-	const struct device *gpio;
-	int err;
-
-	gpio = DEVICE_DT_GET(ADXL362_GPIO_NODE);
-	if (!device_is_ready(gpio)) {
-		LOG_ERR("%s device not ready", gpio->name);
-		return -ENODEV;
-	}
-	err = gpio_pin_configure(gpio, ADXL362_CS, ADXL362_FLAGS | GPIO_OUTPUT_INACTIVE);
-	if (err < 0) {
-		LOG_ERR("Failed to configure ADXL362 CS Pin");
-		return err;
-	}
-
-	gpio = DEVICE_DT_GET(BMI270_GPIO_NODE);
-	if (!device_is_ready(gpio)) {
-		LOG_ERR("%s device not ready", gpio->name);
-		return -ENODEV;
-	}
-	err = gpio_pin_configure(gpio, BMI270_CS, BMI270_FLAGS | GPIO_OUTPUT_INACTIVE);
-	if (err < 0) {
-		LOG_ERR("Failed to configure BMI270 CS Pin");
-		return err;
-	}
-
 	if (IS_ENABLED(CONFIG_SENSOR)) {
 		/* Initialization chain of Thingy:53 board requires some delays before on board
 		 * sensors could be accessed after power up. In particular bme680 and bmm150

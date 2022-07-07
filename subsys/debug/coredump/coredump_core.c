@@ -6,10 +6,10 @@
 
 #include <errno.h>
 #include <kernel_internal.h>
-#include <toolchain.h>
-#include <debug/coredump.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/debug/coredump.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include "coredump_internal.h"
 
@@ -27,6 +27,11 @@ static struct coredump_backend_api
 	*backend_api = &coredump_backend_other;
 #else
 #error "Need to select a coredump backend"
+#endif
+
+#if defined(CONFIG_COREDUMP_DEVICE)
+#include <drivers/coredump.h>
+#define DT_DRV_COMPAT zephyr_coredump
 #endif
 
 static void dump_header(unsigned int reason)
@@ -75,6 +80,15 @@ static void dump_thread(struct k_thread *thread)
 #endif
 }
 
+#if defined(CONFIG_COREDUMP_DEVICE)
+static void process_coredump_dev_memory(const struct device *dev)
+{
+	struct coredump_driver_api *api = (struct coredump_driver_api *)dev->api;
+
+	api->dump(dev);
+}
+#endif
+
 void process_memory_region_list(void)
 {
 #ifdef CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_LINKER_RAM
@@ -92,6 +106,11 @@ void process_memory_region_list(void)
 
 		idx++;
 	}
+#endif
+
+#if defined(CONFIG_COREDUMP_DEVICE)
+#define MY_FN(inst) process_coredump_dev_memory(DEVICE_DT_INST_GET(inst));
+	DT_INST_FOREACH_STATUS_OKAY(MY_FN)
 #endif
 }
 

@@ -11,5 +11,8 @@ config SOC_RISCV32_MIV
 	bool "Microsemi Mi-V system implementation"
 	select ATOMIC_OPERATIONS_C
 	select INCLUDE_RESET_VECTOR
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
 
 endchoice

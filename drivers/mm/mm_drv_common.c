@@ -16,14 +16,14 @@
  * weak functions so they can be overridden by the driver.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <toolchain.h>
-#include <sys/__assert.h>
-#include <sys/check.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
 
-#include <drivers/mm/system_mm.h>
+#include <zephyr/drivers/mm/system_mm.h>
 
 #include "mm_drv_common.h"
 

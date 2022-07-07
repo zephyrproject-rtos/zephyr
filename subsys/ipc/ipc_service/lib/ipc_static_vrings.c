@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ipc/ipc_static_vrings.h>
-#include <cache.h>
+#include <zephyr/ipc/ipc_static_vrings.h>
+#include <zephyr/cache.h>
 
 #define SHM_DEVICE_NAME		"sram0.shm"
 
@@ -32,7 +32,7 @@ static void virtio_set_status(struct virtio_device *p_vdev, unsigned char status
 {
 	struct ipc_static_vrings *vr;
 
-	if (p_vdev->role != VIRTIO_DEV_MASTER) {
+	if (p_vdev->role != VIRTIO_DEV_DRIVER) {
 		return;
 	}
 
@@ -57,7 +57,7 @@ static unsigned char virtio_get_status(struct virtio_device *p_vdev)
 
 	ret = VIRTIO_CONFIG_STATUS_DRIVER_OK;
 
-	if (p_vdev->role == VIRTIO_DEV_SLAVE) {
+	if (p_vdev->role == VIRTIO_DEV_DEVICE) {
 		sys_cache_data_range((void *) vr->status_reg_addr,
 				     sizeof(ret), K_CACHE_INVD);
 		ret = sys_read8(vr->status_reg_addr);

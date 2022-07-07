@@ -9,7 +9,7 @@
 #ifndef SHELL_DUMMY_H__
 #define SHELL_DUMMY_H__
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 #ifdef __cplusplus
 extern "C" {

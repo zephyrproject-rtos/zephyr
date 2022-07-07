@@ -21,9 +21,9 @@ extern "C" {
 #endif
 
 #ifdef CONFIG_USERSPACE
-#include <sys/atomic.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
-#include <sys_clock.h>
+#include <zephyr/sys_clock.h>
 
 struct sys_mutex {
 	/* Currently unused, but will be used to store state for fast mutexes
@@ -131,8 +131,8 @@ static inline int sys_mutex_unlock(struct sys_mutex *mutex)
 #include <syscalls/mutex.h>
 
 #else
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 
 struct sys_mutex {
 	struct k_mutex kernel_mutex;

@@ -7,13 +7,13 @@
 #define DT_DRV_COMPAT nordic_qspi_nor
 
 #include <errno.h>
-#include <drivers/flash.h>
-#include <init.h>
-#include <pm/device.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/init.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 #include "spi_nor.h"
@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 #include "flash_priv.h"
 #include <nrfx_qspi.h>
 #include <hal/nrf_clock.h>
+#include <hal/nrf_gpio.h>
 
 struct qspi_nor_data {
 #ifdef CONFIG_MULTITHREADING
@@ -30,10 +31,8 @@ struct qspi_nor_data {
 	struct k_sem sem;
 	/* The semaphore to indicate that transfer has completed. */
 	struct k_sem sync;
-#if NRF52_ERRATA_122_PRESENT
 	/* The semaphore to control driver init/uninit. */
 	struct k_sem count;
-#endif
 #else /* CONFIG_MULTITHREADING */
 	/* A flag that signals completed transfer when threads are
 	 * not enabled.
@@ -176,19 +175,10 @@ BUILD_ASSERT(DT_INST_PROP(0, address_size_32),
 	    "After entering 4 byte addressing mode, 4 byte addressing is expected");
 #endif
 
+static bool qspi_initialized;
 
-
-#if NRF52_ERRATA_122_PRESENT
-#include <hal/nrf_gpio.h>
-static int anomaly_122_init(const struct device *dev);
-static void anomaly_122_uninit(const struct device *dev);
-
-#define ANOMALY_122_INIT(dev)   anomaly_122_init(dev)
-#define ANOMALY_122_UNINIT(dev) anomaly_122_uninit(dev)
-#else
-#define ANOMALY_122_INIT(dev) 0
-#define ANOMALY_122_UNINIT(dev)
-#endif
+static int qspi_device_init(const struct device *dev);
+static void qspi_device_uninit(const struct device *dev);
 
 #define WORD_SIZE 4
 
@@ -361,23 +351,16 @@ static void qspi_handler(nrfx_qspi_evt_t event, void *p_context)
 	}
 }
 
-#if NRF52_ERRATA_122_PRESENT
-static bool qspi_initialized;
-
-static int anomaly_122_init(const struct device *dev)
+static int qspi_device_init(const struct device *dev)
 {
 	struct qspi_nor_data *dev_data = dev->data;
 	nrfx_err_t res;
 	int ret = 0;
 
-	if (!nrf52_errata_122()) {
-		return 0;
-	}
-
 	qspi_lock(dev);
 
-	/* In multithreading, driver can call anomaly_122_init more than once
-	 * before calling anomaly_122_uninit. Keepping count, so QSPI is
+	/* In multithreading, driver can call qspi_device_init more than once
+	 * before calling qspi_device_uninit. Keepping count, so QSPI is
 	 * uninitialized only at the last call (count == 0).
 	 */
 #ifdef CONFIG_MULTITHREADING
@@ -399,13 +382,9 @@ static int anomaly_122_init(const struct device *dev)
 	return ret;
 }
 
-static void anomaly_122_uninit(const struct device *dev)
+static void qspi_device_uninit(const struct device *dev)
 {
 	bool last = true;
-
-	if (!nrf52_errata_122()) {
-		return;
-	}
 
 	qspi_lock(dev);
 
@@ -438,8 +417,6 @@ static void anomaly_122_uninit(const struct device *dev)
 
 	qspi_unlock(dev);
 }
-#endif /* NRF52_ERRATA_122_PRESENT */
-
 
 /* QSPI send custom command.
  *
@@ -629,7 +606,7 @@ static int qspi_erase(const struct device *dev, uint32_t addr, uint32_t size)
 	int rv = 0;
 	const struct qspi_nor_config *params = dev->config;
 
-	rv = ANOMALY_122_INIT(dev);
+	rv = qspi_device_init(dev);
 	if (rv != 0) {
 		goto out;
 	}
@@ -685,7 +662,7 @@ out_trans_unlock:
 	qspi_trans_unlock(dev);
 
 out:
-	ANOMALY_122_UNINIT(dev);
+	qspi_device_uninit(dev);
 	return rv;
 }
 
@@ -807,12 +784,12 @@ static int qspi_read_jedec_id(const struct device *dev,
 		.rx_buf = &rx_buf,
 	};
 
-	int ret = ANOMALY_122_INIT(dev);
+	int ret = qspi_device_init(dev);
 
 	if (ret == 0) {
 		ret = qspi_send_cmd(dev, &cmd, false);
 	}
-	ANOMALY_122_UNINIT(dev);
+	qspi_device_uninit(dev);
 
 	return ret;
 }
@@ -837,12 +814,12 @@ static int qspi_sfdp_read(const struct device *dev, off_t offset,
 		.io3_level = true,
 	};
 
-	int ret = ANOMALY_122_INIT(dev);
+	int ret = qspi_device_init(dev);
 	nrfx_err_t res = NRFX_SUCCESS;
 
 	if (ret != 0) {
-		LOG_DBG("ANOMALY_122_INIT: %d", ret);
-		ANOMALY_122_UNINIT(dev);
+		LOG_DBG("qspi_device_init: %d", ret);
+		qspi_device_uninit(dev);
 		return ret;
 	}
 
@@ -867,7 +844,7 @@ static int qspi_sfdp_read(const struct device *dev, off_t offset,
 
 out:
 	qspi_unlock(dev);
-	ANOMALY_122_UNINIT(dev);
+	qspi_device_uninit(dev);
 	return qspi_get_zephyr_ret_code(res);
 }
 
@@ -994,7 +971,7 @@ static int qspi_nor_read(const struct device *dev, off_t addr, void *dest,
 		return -EINVAL;
 	}
 
-	int rc = ANOMALY_122_INIT(dev);
+	int rc = qspi_device_init(dev);
 
 	if (rc != 0) {
 		goto out;
@@ -1009,7 +986,7 @@ static int qspi_nor_read(const struct device *dev, off_t addr, void *dest,
 	rc = qspi_get_zephyr_ret_code(res);
 
 out:
-	ANOMALY_122_UNINIT(dev);
+	qspi_device_uninit(dev);
 	return rc;
 }
 
@@ -1102,7 +1079,7 @@ static int qspi_nor_write(const struct device *dev, off_t addr,
 
 	nrfx_err_t res = NRFX_SUCCESS;
 
-	int rc = ANOMALY_122_INIT(dev);
+	int rc = qspi_device_init(dev);
 
 	if (rc != 0) {
 		goto out;
@@ -1132,7 +1109,7 @@ static int qspi_nor_write(const struct device *dev, off_t addr,
 
 	rc = qspi_get_zephyr_ret_code(res);
 out:
-	ANOMALY_122_UNINIT(dev);
+	qspi_device_uninit(dev);
 	return rc;
 }
 
@@ -1184,7 +1161,7 @@ static int qspi_nor_configure(const struct device *dev)
 		return ret;
 	}
 
-	ANOMALY_122_UNINIT(dev);
+	qspi_device_uninit(dev);
 
 	/* now the spi bus is configured, we can verify the flash id */
 	if (qspi_nor_read_id(dev) != 0) {
@@ -1335,7 +1312,7 @@ static int qspi_nor_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
-		ret = ANOMALY_122_INIT(dev);
+		ret = qspi_device_init(dev);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1379,7 +1356,7 @@ static int qspi_nor_pm_action(const struct device *dev,
 			return ret;
 		}
 
-		ANOMALY_122_UNINIT(dev);
+		qspi_device_uninit(dev);
 		break;
 
 	default:
@@ -1410,7 +1387,7 @@ void  z_impl_nrf_qspi_nor_base_clock_div_force(const struct device *dev,
 }
 
 #ifdef CONFIG_USERSPACE
-#include <syscall_handler.h>
+#include <zephyr/syscall_handler.h>
 
 void z_vrfy_nrf_qspi_nor_base_clock_div_force(const struct device *dev,
 					      bool force)
@@ -1429,9 +1406,7 @@ static struct qspi_nor_data qspi_nor_dev_data = {
 	.trans = Z_SEM_INITIALIZER(qspi_nor_dev_data.trans, 1, 1),
 	.sem = Z_SEM_INITIALIZER(qspi_nor_dev_data.sem, 1, 1),
 	.sync = Z_SEM_INITIALIZER(qspi_nor_dev_data.sync, 0, 1),
-#if NRF52_ERRATA_122_PRESENT
 	.count = Z_SEM_INITIALIZER(qspi_nor_dev_data.count, 0, K_SEM_MAX_LIMIT),
-#endif
 #endif /* CONFIG_MULTITHREADING */
 };
 

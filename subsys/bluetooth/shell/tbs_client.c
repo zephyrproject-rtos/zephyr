@@ -11,16 +11,16 @@
 
 #include <stdlib.h>
 #include <ctype.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <zephyr/types.h>
-#include <shell/shell.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/audio/tbs.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/audio/tbs.h>
 
 #include "bt.h"
 

@@ -5,14 +5,14 @@
  *
  */
 #include <errno.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <dt-bindings/gpio/ite-it8xxx2-gpio.h>
-#include <dt-bindings/interrupt-controller/ite-intc.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/gpio/ite-it8xxx2-gpio.h>
+#include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 #include <zephyr/types.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include "gpio_utils.h"
 
 #define DT_DRV_COMPAT ite_it8xxx2_gpio

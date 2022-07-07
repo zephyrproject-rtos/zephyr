@@ -8,17 +8,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
 
 #include <errno.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/udp.h>
-#include <net/ethernet.h>
-#include <net/socket_can.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/udp.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/socket_can.h>
 
 #include "net_private.h"
 #include "icmpv6.h"
@@ -71,13 +71,11 @@ void conn_register_debug(struct net_conn *conn,
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		    conn->family == AF_INET6) {
 			snprintk(dst, sizeof(dst), "%s",
-				 log_strdup(net_sprint_ipv6_addr(
-				    &net_sin6(&conn->remote_addr)->sin6_addr)));
+				 net_sprint_ipv6_addr(&net_sin6(&conn->remote_addr)->sin6_addr));
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 			   conn->family == AF_INET) {
 			snprintk(dst, sizeof(dst), "%s",
-				 log_strdup(net_sprint_ipv4_addr(
-				    &net_sin(&conn->remote_addr)->sin_addr)));
+				 net_sprint_ipv4_addr(&net_sin(&conn->remote_addr)->sin_addr));
 		} else {
 			snprintk(dst, sizeof(dst), "%s", "?");
 		}
@@ -89,13 +87,11 @@ void conn_register_debug(struct net_conn *conn,
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		    conn->family == AF_INET6) {
 			snprintk(src, sizeof(src), "%s",
-				 log_strdup(net_sprint_ipv6_addr(
-				    &net_sin6(&conn->local_addr)->sin6_addr)));
+				 net_sprint_ipv6_addr(&net_sin6(&conn->local_addr)->sin6_addr));
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 			   conn->family == AF_INET) {
 			snprintk(src, sizeof(src), "%s",
-				 log_strdup(net_sprint_ipv4_addr(
-				    &net_sin(&conn->local_addr)->sin_addr)));
+				 net_sprint_ipv4_addr(&net_sin(&conn->local_addr)->sin_addr));
 		} else {
 			snprintk(src, sizeof(src), "%s", "?");
 		}
@@ -105,9 +101,9 @@ void conn_register_debug(struct net_conn *conn,
 
 	NET_DBG("[%p/%d/%u/0x%02x] remote %s/%u ",
 		conn, conn->proto, conn->family, conn->flags,
-		log_strdup(dst), remote_port);
+		dst, remote_port);
 	NET_DBG("  local %s/%u cb %p ud %p",
-		log_strdup(src), local_port, conn->cb, conn->user_data);
+		src, local_port, conn->cb, conn->user_data);
 }
 #else
 #define conn_register_debug(...)
@@ -514,6 +510,15 @@ static bool conn_are_end_points_valid(struct net_pkt *pkt,
 static enum net_verdict conn_raw_socket(struct net_pkt *pkt,
 					struct net_conn *conn, uint8_t proto)
 {
+	if (proto == ETH_P_ALL) {
+		enum net_sock_type type = net_context_get_type(conn->context);
+
+		if ((type == SOCK_DGRAM && !net_pkt_is_l2_processed(pkt)) ||
+		    (type == SOCK_RAW && net_pkt_is_l2_processed(pkt))) {
+			goto out;
+		}
+	}
+
 	if (conn->flags & NET_CONN_LOCAL_ADDR_SET) {
 		struct net_if *pkt_iface = net_pkt_iface(pkt);
 		struct sockaddr_ll *local;
@@ -547,6 +552,7 @@ static enum net_verdict conn_raw_socket(struct net_pkt *pkt,
 		return NET_OK;
 	}
 
+out:
 	return NET_CONTINUE;
 }
 

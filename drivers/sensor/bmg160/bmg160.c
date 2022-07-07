@@ -10,11 +10,11 @@
 
 #define DT_DRV_COMPAT bosch_bmg160
 
-#include <init.h>
-#include <drivers/sensor.h>
-#include <sys/byteorder.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 
 #include "bmg160.h"
 
@@ -25,12 +25,11 @@ struct bmg160_device_data bmg160_data;
 static inline int bmg160_bus_config(const struct device *dev)
 {
 	const struct bmg160_device_config *dev_cfg = dev->config;
-	struct bmg160_device_data *bmg160 = dev->data;
 	uint32_t i2c_cfg;
 
-	i2c_cfg = I2C_MODE_MASTER | I2C_SPEED_SET(dev_cfg->i2c_speed);
+	i2c_cfg = I2C_MODE_MASTER | I2C_SPEED_SET(BMG160_BUS_SPEED);
 
-	return i2c_configure(bmg160->i2c, i2c_cfg);
+	return i2c_configure(dev_cfg->i2c.bus, i2c_cfg);
 }
 
 int bmg160_read(const struct device *dev, uint8_t reg_addr, uint8_t *data,
@@ -44,8 +43,8 @@ int bmg160_read(const struct device *dev, uint8_t reg_addr, uint8_t *data,
 
 	k_sem_take(&bmg160->sem, K_FOREVER);
 
-	if (i2c_burst_read(bmg160->i2c, dev_cfg->i2c_addr,
-			   reg_addr, data, len) < 0) {
+	if (i2c_burst_read_dt(&dev_cfg->i2c,
+			      reg_addr, data, len) < 0) {
 		ret = -EIO;
 	}
 
@@ -72,8 +71,8 @@ static int bmg160_write(const struct device *dev, uint8_t reg_addr,
 
 	k_sem_take(&bmg160->sem, K_FOREVER);
 
-	if (i2c_burst_write(bmg160->i2c, dev_cfg->i2c_addr,
-			    reg_addr, data, len) < 0) {
+	if (i2c_burst_write_dt(&dev_cfg->i2c,
+			       reg_addr, data, len) < 0) {
 		ret = -EIO;
 	}
 
@@ -100,8 +99,8 @@ int bmg160_update_byte(const struct device *dev, uint8_t reg_addr,
 
 	k_sem_take(&bmg160->sem, K_FOREVER);
 
-	if (i2c_reg_update_byte(bmg160->i2c, dev_cfg->i2c_addr,
-				reg_addr, mask, value) < 0) {
+	if (i2c_reg_update_byte_dt(&dev_cfg->i2c,
+				   reg_addr, mask, value) < 0) {
 		ret = -EIO;
 	}
 
@@ -284,10 +283,9 @@ int bmg160_init(const struct device *dev)
 	uint8_t chip_id = 0U;
 	uint16_t range_dps;
 
-	bmg160->i2c = device_get_binding((char *)cfg->i2c_port);
-	if (!bmg160->i2c) {
-		LOG_DBG("I2C master controller not found!");
-		return -EINVAL;
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("I2C bus device not ready");
+		return -ENODEV;
 	}
 
 	k_sem_init(&bmg160->sem, 1, K_SEM_MAX_LIMIT);
@@ -335,15 +333,10 @@ int bmg160_init(const struct device *dev)
 	return 0;
 }
 
-const struct bmg160_device_config bmg160_config = {
-	.i2c_port = DT_INST_BUS_LABEL(0),
-	.i2c_addr = DT_INST_REG_ADDR(0),
-	.i2c_speed = BMG160_BUS_SPEED,
-#ifdef CONFIG_BMG160_TRIGGER
-	.int_pin = DT_INST_GPIO_PIN(0, int_gpios),
-	.int_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
-	.gpio_port = DT_INST_GPIO_LABEL(0, int_gpios),
-#endif
+static const struct bmg160_device_config bmg160_config = {
+	.i2c = I2C_DT_SPEC_INST_GET(0),
+	IF_ENABLED(CONFIG_BMG160_TRIGGER,
+		   (.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),))
 };
 
 DEVICE_DT_INST_DEFINE(0, bmg160_init, NULL,

@@ -17,11 +17,11 @@
  */
 .eabi_attribute Tag_ABI_align_preserved, 1
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <offsets_short.h>
-#include <arch/cpu.h>
-#include <sw_isr_table.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sw_isr_table.h>
 
 
 _ASM_FILE_PROLOGUE
@@ -87,6 +87,31 @@ isr_system_thread:
 	srsdb #MODE_SYS!
 	cps #MODE_SYS
 	push {r0-r3, r12, lr}
+
+#if defined(CONFIG_FPU_SHARING)
+	sub sp, sp, #___fpu_t_SIZEOF
+
+	/*
+	 * Note that this handler was entered with the VFP unit enabled.
+	 * The undefined instruction handler uses this to know that it
+	 * needs to save the current floating context.
+	 */
+	vmrs r0, fpexc
+	str r0, [sp, #___fpu_t_SIZEOF - 4]
+
+	/* Disable VFP */
+	mov r0, #0
+	vmsr fpexc, r0
+
+	/*
+	 * Mark where to store the floating context for the undefined
+	 * instruction handler
+	 */
+	ldr r2, =_kernel
+	ldr r0, [r2, #_kernel_offset_to_fp_ctx]
+	cmp r0, #0
+	streq sp, [r2, #_kernel_offset_to_fp_ctx]
+#endif /* CONFIG_FPU_SHARING */
 
 	/*
 	 * Use SVC mode stack for predictable interrupt behaviour; running ISRs

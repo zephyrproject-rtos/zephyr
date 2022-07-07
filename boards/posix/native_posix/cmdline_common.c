@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <arch/posix/posix_trace.h>
+#include <zephyr/arch/posix/posix_trace.h>
 #include "posix_board_if.h"
 #include "zephyr/types.h"
 #include "cmdline_common.h"

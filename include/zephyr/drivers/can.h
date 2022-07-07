@@ -11,7 +11,7 @@
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <string.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,18 +79,35 @@ extern "C" {
 /** @} */
 
 /**
- * @brief Defines the mode of the CAN controller
+ * @name CAN controller mode flags
+ * @anchor CAN_MODE_FLAGS
+ *
+ * @{
  */
-enum can_mode {
-	/** Normal mode. */
-	CAN_NORMAL_MODE,
-	/** Controller is not allowed to send dominant bits. */
-	CAN_SILENT_MODE,
-	/** Controller is in loopback mode (receives own frames). */
-	CAN_LOOPBACK_MODE,
-	/** Combination of loopback and silent modes. */
-	CAN_SILENT_LOOPBACK_MODE
-};
+
+/** Normal mode. */
+#define CAN_MODE_NORMAL     0
+
+/** Controller is in loopback mode (receives own frames). */
+#define CAN_MODE_LOOPBACK   BIT(0)
+
+/** Controller is not allowed to send dominant bits. */
+#define CAN_MODE_LISTENONLY BIT(1)
+
+/** Controller allows transmitting/receiving CAN-FD frames. */
+#define CAN_MODE_FD         BIT(2)
+
+/** @} */
+
+/**
+ * @brief Provides a type to hold CAN controller configuration flags.
+ *
+ * The lower 24 bits are reserved for common CAN controller mode flags. The upper 8 bits are
+ * reserved for CAN controller/driver specific flags.
+ *
+ * @see @ref CAN_MODE_FLAGS.
+ */
+typedef uint32_t can_mode_t;
 
 /**
  * @brief Defines the state of the CAN bus
@@ -297,14 +314,20 @@ typedef void (*can_state_change_callback_t)(const struct device *dev,
  * See @a can_set_timing() for argument description
  */
 typedef int (*can_set_timing_t)(const struct device *dev,
-				const struct can_timing *timing,
-				const struct can_timing *timing_data);
+				const struct can_timing *timing);
+
+/**
+ * @brief Callback API upon setting CAN bus timing for the data phase.
+ * See @a can_set_timing_data() for argument description
+ */
+typedef int (*can_set_timing_data_t)(const struct device *dev,
+				     const struct can_timing *timing_data);
 
 /**
  * @brief Callback API upon setting CAN controller mode
  * See @a can_set_mode() for argument description
  */
-typedef int (*can_set_mode_t)(const struct device *dev, enum can_mode mode);
+typedef int (*can_set_mode_t)(const struct device *dev, can_mode_t mode);
 
 /**
  * @brief Callback API upon sending a CAN frame
@@ -388,10 +411,11 @@ __subsystem struct can_driver_api {
 	/* Max values for the timing registers */
 	struct can_timing timing_max;
 #if defined(CONFIG_CAN_FD_MODE) || defined(__DOXYGEN__)
+	can_set_timing_data_t set_timing_data;
 	/* Min values for the timing registers during the data phase */
-	struct can_timing timing_min_data;
+	struct can_timing timing_data_min;
 	/* Max values for the timing registers during the data phase */
-	struct can_timing timing_max_data;
+	struct can_timing timing_data_max;
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
@@ -399,7 +423,7 @@ __subsystem struct can_driver_api {
 
 #if defined(CONFIG_CAN_STATS) || defined(__DOXYGEN__)
 
-#include <stats/stats.h>
+#include <zephyr/stats/stats.h>
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -702,8 +726,6 @@ static inline const struct can_timing *z_impl_can_get_timing_max(const struct de
 __syscall int can_calc_timing(const struct device *dev, struct can_timing *res,
 			      uint32_t bitrate, uint16_t sample_pnt);
 
-#if defined(CONFIG_CAN_FD_MODE) || defined(__DOXYGEN__)
-
 /**
  * @brief Get the minimum supported timing parameter values for the data phase.
  *
@@ -717,14 +739,16 @@ __syscall int can_calc_timing(const struct device *dev, struct can_timing *res,
  * @return Pointer to the minimum supported timing parameter values, or NULL if
  *         CAN-FD is not supported.
  */
-__syscall const struct can_timing *can_get_timing_min_data(const struct device *dev);
+__syscall const struct can_timing *can_get_timing_data_min(const struct device *dev);
 
-static inline const struct can_timing *z_impl_can_get_timing_min_data(const struct device *dev)
+#ifdef CONFIG_CAN_FD_MODE
+static inline const struct can_timing *z_impl_can_get_timing_data_min(const struct device *dev)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return &api->timing_min_data;
+	return &api->timing_data_min;
 }
+#endif /* CONFIG_CAN_FD_MODE */
 
 /**
  * @brief Get the maximum supported timing parameter values for the data phase.
@@ -739,14 +763,16 @@ static inline const struct can_timing *z_impl_can_get_timing_min_data(const stru
  * @return Pointer to the maximum supported timing parameter values, or NULL if
  *         CAN-FD is not supported.
  */
-__syscall const struct can_timing *can_get_timing_max_data(const struct device *dev);
+__syscall const struct can_timing *can_get_timing_data_max(const struct device *dev);
 
-static inline const struct can_timing *z_impl_can_get_timing_max_data(const struct device *dev)
+#ifdef CONFIG_CAN_FD_MODE
+static inline const struct can_timing *z_impl_can_get_timing_data_max(const struct device *dev)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return &api->timing_max_data;
+	return &api->timing_data_max;
 }
+#endif /* CONFIG_CAN_FD_MODE */
 
 /**
  * @brief Calculate timing parameters for the data phase
@@ -769,7 +795,61 @@ static inline const struct can_timing *z_impl_can_get_timing_max_data(const stru
 __syscall int can_calc_timing_data(const struct device *dev, struct can_timing *res,
 				   uint32_t bitrate, uint16_t sample_pnt);
 
+/**
+ * @brief Configure the bus timing for the data phase of a CAN-FD controller.
+ *
+ * If the sjw equals CAN_SJW_NO_CHANGE, the sjw parameter is not changed.
+ *
+ * @note @kconfig{CONFIG_CAN_FD_MODE} must be selected for this function to be
+ * available.
+ *
+ * @see can_set_timing()
+ *
+ * @param dev         Pointer to the device structure for the driver instance.
+ * @param timing_data Bus timings for data phase
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input/output error, failed to configure device.
+ */
+__syscall int can_set_timing_data(const struct device *dev,
+				  const struct can_timing *timing_data);
+
+#ifdef CONFIG_CAN_FD_MODE
+static inline int z_impl_can_set_timing_data(const struct device *dev,
+					     const struct can_timing *timing_data)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+
+	return api->set_timing_data(dev, timing_data);
+}
 #endif /* CONFIG_CAN_FD_MODE */
+
+/**
+ * @brief Set the bitrate for the data phase of the CAN-FD controller
+ *
+ * CAN in Automation (CiA) 301 v4.2.0 recommends a sample point location of
+ * 87.5% percent for all bitrates. However, some CAN controllers have
+ * difficulties meeting this for higher bitrates.
+ *
+ * This function defaults to using a sample point of 75.0% for bitrates over 800
+ * kbit/s, 80.0% for bitrates over 500 kbit/s, and 87.5% for all other
+ * bitrates. This is in line with the sample point locations used by the Linux
+ * kernel.
+ *
+ * @note @kconfig{CONFIG_CAN_FD_MODE} must be selected for this function to be
+ * available.
+ *
+ * @see can_set_bitrate()
+
+ * @param dev          Pointer to the device structure for the driver instance.
+ * @param bitrate_data Desired data phase bitrate.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP bitrate not supported by CAN controller/transceiver combination
+ * @retval -EINVAL bitrate/sample point cannot be met.
+ * @retval -EIO General input/output error, failed to set bitrate.
+ */
+__syscall int can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data);
 
 /**
  * @brief Fill in the prescaler value for a given bitrate and timing
@@ -800,28 +880,23 @@ int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
  *
  * If the sjw equals CAN_SJW_NO_CHANGE, the sjw parameter is not changed.
  *
- * @note The parameter ``timing_data`` is only relevant for CAN-FD. If the
- * controller does not support CAN-FD or if @kconfig{CONFIG_CAN_FD_MODE} is not
- * selected, the value of this parameter is ignored.
+ * @see can_set_timing_data()
  *
  * @param dev         Pointer to the device structure for the driver instance.
  * @param timing      Bus timings.
- * @param timing_data Bus timings for data phase (CAN-FD only).
  *
  * @retval 0 If successful.
  * @retval -EIO General input/output error, failed to configure device.
  */
 __syscall int can_set_timing(const struct device *dev,
-			     const struct can_timing *timing,
-			     const struct can_timing *timing_data);
+			     const struct can_timing *timing);
 
 static inline int z_impl_can_set_timing(const struct device *dev,
-					const struct can_timing *timing,
-					const struct can_timing *timing_data)
+					const struct can_timing *timing)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return api->set_timing(dev, timing, timing_data);
+	return api->set_timing(dev, timing);
 }
 
 /**
@@ -833,9 +908,9 @@ static inline int z_impl_can_set_timing(const struct device *dev,
  * @retval 0 If successful.
  * @retval -EIO General input/output error, failed to configure device.
  */
-__syscall int can_set_mode(const struct device *dev, enum can_mode mode);
+__syscall int can_set_mode(const struct device *dev, can_mode_t mode);
 
-static inline int z_impl_can_set_mode(const struct device *dev, enum can_mode mode)
+static inline int z_impl_can_set_mode(const struct device *dev, can_mode_t mode)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
@@ -854,20 +929,17 @@ static inline int z_impl_can_set_mode(const struct device *dev, enum can_mode mo
  * bitrates. This is in line with the sample point locations used by the Linux
  * kernel.
  *
- * @note The parameter ``bitrate_data`` is only relevant for CAN-FD. If the
- * controller does not support CAN-FD or if @kconfig{CONFIG_CAN_FD_MODE} is not
- * selected, the value of this parameter is ignored.
-
+ * @see can_set_bitrate_data()
+ *
  * @param dev          Pointer to the device structure for the driver instance.
  * @param bitrate      Desired arbitration phase bitrate.
- * @param bitrate_data Desired data phase bitrate.
  *
  * @retval 0 If successful.
  * @retval -ENOTSUP bitrate not supported by CAN controller/transceiver combination
  * @retval -EINVAL bitrate/sample point cannot be met.
  * @retval -EIO General input/output error, failed to set bitrate.
  */
-__syscall int can_set_bitrate(const struct device *dev, uint32_t bitrate, uint32_t bitrate_data);
+__syscall int can_set_bitrate(const struct device *dev, uint32_t bitrate);
 
 /** @} */
 

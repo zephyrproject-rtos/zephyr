@@ -7,13 +7,13 @@
 #define DT_DRV_COMPAT microchip_xec_pcr
 
 #include <soc.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/mchp_xec_clock_control.h>
-#include <dt-bindings/clock/mchp_xec_pcr.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
+#include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_xec, LOG_LEVEL_ERR);
 
 #define CLK32K_SIL_OSC_DELAY		256

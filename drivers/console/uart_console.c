@@ -13,26 +13,26 @@
  * Hooks into the printk and fputc (for printf) modules. Poll driven.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #include <stdio.h>
 #include <zephyr/types.h>
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 #include <errno.h>
 #include <ctype.h>
 
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
-#include <drivers/uart.h>
-#include <drivers/console/console.h>
-#include <drivers/console/uart_console.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <sys/atomic.h>
-#include <sys/printk.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/console/console.h>
+#include <zephyr/drivers/console/uart_console.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/printk.h>
 #ifdef CONFIG_UART_CONSOLE_MCUMGR
-#include "mgmt/mcumgr/serial.h"
+#include <zephyr/mgmt/mcumgr/serial.h>
 #endif
 
 static const struct device *uart_console_dev;
@@ -96,11 +96,11 @@ static int console_out(int c)
 #endif
 
 #if defined(CONFIG_STDOUT_CONSOLE)
-extern void __stdout_hook_install(int (*hook)(int));
+extern void __stdout_hook_install(int (*hook)(int c));
 #endif
 
 #if defined(CONFIG_PRINTK)
-extern void __printk_hook_install(int (*fn)(int));
+extern void __printk_hook_install(int (*fn)(int c));
 #endif
 
 #if defined(CONFIG_CONSOLE_HANDLER)

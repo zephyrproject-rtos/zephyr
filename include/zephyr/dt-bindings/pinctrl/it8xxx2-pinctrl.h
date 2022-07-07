@@ -8,11 +8,13 @@
 
 #define NO_FUNC 0
 
-/* PINMUX config */
-#define IT8XXX2_PINMUX_FUNC_1 0
-#define IT8XXX2_PINMUX_FUNC_2 1
-#define IT8XXX2_PINMUX_FUNC_3 2
-#define IT8XXX2_PINMUX_FUNC_4 3
-#define IT8XXX2_PINMUX_PINS   8
+/**
+ * @brief PIN alternate function.
+ */
+#define IT8XXX2_ALT_FUNC_1  0U
+#define IT8XXX2_ALT_FUNC_2  1U
+#define IT8XXX2_ALT_FUNC_3  2U
+#define IT8XXX2_ALT_FUNC_4  3U
+#define IT8XXX2_ALT_DEFAULT 4U
 
 #endif	/* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_IT8XXX2_PINCTRL_H_ */

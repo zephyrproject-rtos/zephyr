@@ -24,9 +24,9 @@
  * @{
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
-#include <sys/dlist.h>
+#include <zephyr/sys/dlist.h>
 
 #ifdef __cplusplus
 extern "C" {

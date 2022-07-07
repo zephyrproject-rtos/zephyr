@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
+#include <zephyr/init.h>
 
 static int sam4e_xpro_init(const struct device *dev)
 {

@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
-#include <sys/mutex.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/sys/mutex.h>
 
 
 /**

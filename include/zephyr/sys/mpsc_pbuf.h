@@ -6,8 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_SYS_MPSC_PBUF_H_
 #define ZEPHYR_INCLUDE_SYS_MPSC_PBUF_H_
 
-#include <kernel.h>
-#include <sys/mpsc_packet.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/mpsc_packet.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -103,7 +103,10 @@ struct mpsc_pbuf_buffer {
 	/** Lock. */
 	struct k_spinlock lock;
 
-	/** User callback called whenever packet is dropped. */
+	/** User callback called whenever packet is dropped.
+	 *
+	 * May be NULL if unneeded.
+	 */
 	mpsc_pbuf_notify_drop notify_drop;
 
 	/** Callback for getting packet length. */

@@ -25,8 +25,8 @@
 
 #ifdef _ASMLANGUAGE
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 
 GTEXT(__start)
 GTEXT(_VectorTable)

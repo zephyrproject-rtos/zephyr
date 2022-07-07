@@ -21,10 +21,10 @@
 #ifndef ZEPHYR_INCLUDE_USB_CLASS_AUDIO_H_
 #define ZEPHYR_INCLUDE_USB_CLASS_AUDIO_H_
 
-#include <usb/usb_ch9.h>
+#include <zephyr/usb/usb_ch9.h>
 #include <zephyr/device.h>
-#include <net/buf.h>
-#include <sys/util.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/util.h>
 
 /** Audio Interface Subclass Codes
  * Refer to Table A-2 from audio10.pdf

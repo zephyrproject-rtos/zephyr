@@ -7,10 +7,10 @@
 #include "soc/interrupt_reg.h"
 #include "riscv/rvruntime-frames.h"
 #include "soc/soc_caps.h"
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 /* Imports */
-GTEXT(__irq_wrapper)
+GTEXT(_isr_wrapper)
 
 	/* This is the vector table. MTVEC points here.
 	 *
@@ -31,5 +31,5 @@ _esp32c3_vector_table:
 	.option push
 	.option norvc
 	.rept (32)
-	j __irq_wrapper		/* 32 identical entries, all pointing to the interrupt handler */
+	j _isr_wrapper		/* 32 identical entries, all pointing to the interrupt handler */
 	.endr

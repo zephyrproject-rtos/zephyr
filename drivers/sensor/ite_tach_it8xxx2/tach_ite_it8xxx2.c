@@ -41,15 +41,15 @@
  * from encoders.
  */
 
-#include <device.h>
-#include <drivers/pinmux.h>
-#include <drivers/sensor.h>
-#include <dt-bindings/sensor/it8xxx2_tach.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/dt-bindings/sensor/it8xxx2_tach.h>
 #include <errno.h>
 #include <soc.h>
 #include <soc_dt.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tach_ite_it8xxx2, CONFIG_SENSOR_LOG_LEVEL);
 
 /*
@@ -57,16 +57,6 @@ LOG_MODULE_REGISTER(tach_ite_it8xxx2, CONFIG_SENSOR_LOG_LEVEL);
  *       then don't let EC enter LPM.
  */
 #define TACH_FREQ		EC_FREQ
-
-/* Device config */
-struct tach_alt_cfg {
-	/* Pinmux control device structure */
-	const struct device *pinctrls;
-	/* GPIO pin */
-	uint8_t pin;
-	/* Alternate function */
-	uint8_t alt_fun;
-};
 
 struct tach_it8xxx2_config {
 	/* Fan x tachometer LSB reading register */
@@ -79,8 +69,8 @@ struct tach_it8xxx2_config {
 	int dvs_bit;
 	/* Tachometer data valid status bit of tswctlr register */
 	int chsel_bit;
-	/* Tachometer alternate configuration list */
-	const struct tach_alt_cfg *alt_list;
+	/* Tachometer alternate configuration */
+	const struct pinctrl_dev_config *pcfg;
 	/* Select channel of tachometer */
 	int channel;
 	/* Number of pulses per round of tachometer's input */
@@ -193,6 +183,7 @@ static int tach_it8xxx2_init(const struct device *dev)
 	const struct tach_it8xxx2_config *const config = dev->config;
 	volatile uint8_t *reg_tswctlr = (uint8_t *)config->reg_tswctlr;
 	int tach_ch = config->channel;
+	int status;
 
 	if (tach_ch > IT8XXX2_TACH_CHANNEL_B) {
 		LOG_ERR("Tach channel %d, only support 0 or 1", tach_ch);
@@ -200,9 +191,11 @@ static int tach_it8xxx2_init(const struct device *dev)
 	}
 
 	/* Select pin to alternate mode for tachometer */
-	pinmux_pin_set(config->alt_list[tach_ch].pinctrls,
-		       config->alt_list[tach_ch].pin,
-		       config->alt_list[tach_ch].alt_fun);
+	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (status < 0) {
+		LOG_ERR("Failed to configure TACH pins");
+		return status;
+	}
 
 	if (tach_ch == IT8XXX2_TACH_CHANNEL_A) {
 		/* Select IT8XXX2_TACH_CHANNEL_A output to tachometer */
@@ -226,9 +219,7 @@ static const struct sensor_driver_api tach_it8xxx2_driver_api = {
 };
 
 #define TACH_IT8XXX2_INIT(inst)						       \
-	static const struct tach_alt_cfg				       \
-		tach_alt_##inst[DT_INST_NUM_PINCTRLS_BY_IDX(inst, 0)] =	       \
-			IT8XXX2_DT_ALT_ITEMS_LIST(inst);		       \
+	PINCTRL_DT_INST_DEFINE(inst);					       \
 									       \
 	static const struct tach_it8xxx2_config tach_it8xxx2_cfg_##inst = {    \
 		.reg_fxtlrr = DT_INST_REG_ADDR_BY_IDX(inst, 0),		       \
@@ -236,7 +227,7 @@ static const struct sensor_driver_api tach_it8xxx2_driver_api = {
 		.reg_tswctlr = DT_INST_REG_ADDR_BY_IDX(inst, 2),	       \
 		.dvs_bit = DT_INST_PROP(inst, dvs_bit),			       \
 		.chsel_bit = DT_INST_PROP(inst, chsel_bit),		       \
-		.alt_list = tach_alt_##inst,				       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		       \
 		.channel = DT_INST_PROP(inst, channel),			       \
 		.pulses_per_round = DT_INST_PROP(inst, pulses_per_round),      \
 	};								       \

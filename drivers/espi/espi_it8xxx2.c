@@ -7,14 +7,14 @@
 #define DT_DRV_COMPAT ite_it8xxx2_espi
 
 #include <assert.h>
-#include <drivers/espi.h>
-#include <drivers/gpio.h>
-#include <kernel.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include "soc_espi.h"
 #include "espi_utils.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 
 #define ESPI_IT8XXX2_GET_GCTRL_BASE \
@@ -378,14 +378,14 @@ static void kbc_it8xxx2_ibf_isr(const struct device *dev)
 
 	/* KBC Input Buffer Full event */
 	kbc_evt->evt = HOST_KBC_EVT_IBF;
-	/* The data in KBC Input Buffer */
-	kbc_evt->data = kbc_reg->KBHIDIR;
 	/*
 	 * Indicates if the host sent a command or data.
 	 * 0 = data
 	 * 1 = Command.
 	 */
 	kbc_evt->type = !!(kbc_reg->KBHISR & KBC_KBHISR_A2_ADDR);
+	/* The data in KBC Input Buffer */
+	kbc_evt->data = kbc_reg->KBHIDIR;
 
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }

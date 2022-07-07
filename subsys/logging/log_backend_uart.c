@@ -4,16 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log_backend.h>
-#include <logging/log_core.h>
-#include <logging/log_msg.h>
-#include <logging/log_output.h>
-#include <logging/log_output_dict.h>
-#include <logging/log_backend_std.h>
-#include <logging/log.h>
-#include <device.h>
-#include <drivers/uart.h>
-#include <sys/__assert.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_output_dict.h>
+#include <zephyr/logging/log_backend_std.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/__assert.h>
 LOG_MODULE_REGISTER(log_uart);
 
 /* Fixed size to avoid auto-added trailing '\0'.
@@ -90,17 +89,8 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 static uint8_t uart_output_buf[CONFIG_LOG_BACKEND_UART_BUFFER_SIZE];
 LOG_OUTPUT_DEFINE(log_output_uart, char_out, uart_output_buf, sizeof(uart_output_buf));
 
-static void put(const struct log_backend *const backend,
-		struct log_msg *msg)
-{
-	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_UART_OUTPUT_SYST) ?
-		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
-
-	log_backend_std_put(&log_output_uart, flag, msg);
-}
-
 static void process(const struct log_backend *const backend,
-		union log_msg2_generic *msg)
+		union log_msg_generic *msg)
 {
 	uint32_t flags = log_backend_std_get_flags();
 
@@ -163,39 +153,12 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 	}
 }
 
-static void sync_string(const struct log_backend *const backend,
-		     struct log_msg_ids src_level, uint32_t timestamp,
-		     const char *fmt, va_list ap)
-{
-	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_UART_OUTPUT_SYST) ?
-		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
-
-	log_backend_std_sync_string(&log_output_uart, flag, src_level,
-				    timestamp, fmt, ap);
-}
-
-static void sync_hexdump(const struct log_backend *const backend,
-			 struct log_msg_ids src_level, uint32_t timestamp,
-			 const char *metadata, const uint8_t *data, uint32_t length)
-{
-	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_UART_OUTPUT_SYST) ?
-		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
-
-	log_backend_std_sync_hexdump(&log_output_uart, flag, src_level,
-				     timestamp, metadata, data, length);
-}
-
 const struct log_backend_api log_backend_uart_api = {
-	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
-	.put = IS_ENABLED(CONFIG_LOG1_DEFERRED) ? put : NULL,
-	.put_sync_string = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
-			sync_string : NULL,
-	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
-			sync_hexdump : NULL,
+	.process = process,
 	.panic = panic,
 	.init = log_backend_uart_init,
 	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
-	.format_set = IS_ENABLED(CONFIG_LOG1) ? NULL : format_set,
+	.format_set = format_set,
 };
 
 LOG_BACKEND_DEFINE(log_backend_uart, log_backend_uart_api, true);

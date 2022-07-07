@@ -9,16 +9,16 @@
 #define LOG_MODULE_NAME net_buf
 #define LOG_LEVEL CONFIG_NET_BUF_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <stdio.h>
 #include <errno.h>
 #include <stddef.h>
 #include <string.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
 #if defined(CONFIG_NET_BUF_LOG)
 #define NET_BUF_DBG(fmt, ...) LOG_DBG("(%p) " fmt, k_current_get(), \

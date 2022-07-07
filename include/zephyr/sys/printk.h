@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_SYS_PRINTK_H_
 #define ZEPHYR_INCLUDE_SYS_PRINTK_H_
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <stddef.h>
 #include <stdarg.h>
 #include <inttypes.h>
@@ -60,10 +60,21 @@ static inline __printf_like(1, 0) void vprintk(const char *fmt, va_list ap)
 }
 #endif
 
+#ifdef CONFIG_PICOLIBC
+
+#include <stdio.h>
+
+#define snprintk(...) snprintf(__VA_ARGS__)
+#define vsnprintk(str, size, fmt, ap) vsnprintf(str, size, fmt, ap)
+
+#else
+
 extern __printf_like(3, 4) int snprintk(char *str, size_t size,
 					const char *fmt, ...);
 extern __printf_like(3, 0) int vsnprintk(char *str, size_t size,
 					  const char *fmt, va_list ap);
+
+#endif
 
 #ifdef __cplusplus
 }

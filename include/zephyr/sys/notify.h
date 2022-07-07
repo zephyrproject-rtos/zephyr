@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_SYS_NOTIFY_H_
 #define ZEPHYR_INCLUDE_SYS_NOTIFY_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus

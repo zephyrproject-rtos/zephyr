@@ -10,9 +10,9 @@
  * Tests the fs_open flags
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 #include <string.h>
 
 /* Path for testr file should be provided by test runner and should start

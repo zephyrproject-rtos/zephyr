@@ -10,15 +10,30 @@
 # Set Zephyr base to environment setting.
 # It will be empty if not set in environment.
 
+# Internal Zephyr CMake package message macro.
+#
+# This macro is only intended to be used within the Zephyr CMake package.
+# The function `find_package()` supports an optional QUIET argument, and to
+# honor that argument, the package_message() macro will not print messages when
+# said flag has been given.
+#
+# Arguments to zephyr_package_message() are identical to regular CMake message()
+# function.
+macro(zephyr_package_message)
+  if(NOT Zephyr_FIND_QUIETLY)
+    message(${ARGN})
+  endif()
+endmacro()
+
 macro(include_boilerplate location)
   set(Zephyr_DIR ${ZEPHYR_BASE}/share/zephyr-package/cmake CACHE PATH
       "The directory containing a CMake configuration file for Zephyr." FORCE
   )
   list(PREPEND CMAKE_MODULE_PATH ${ZEPHYR_BASE}/cmake/modules)
   if(ZEPHYR_UNITTEST)
-    message(WARNING "The ZephyrUnittest CMake package has been deprecated.\n"
-                    "ZephyrUnittest has been replaced with Zephyr CMake module 'unittest' \n"
-                    "and can be loaded as: 'find_package(Zephyr COMPONENTS unittest)'"
+    zephyr_package_message(DEPRECATION "The ZephyrUnittest CMake package has been deprecated.\n"
+                           "ZephyrUnittest has been replaced with Zephyr CMake module 'unittest' \n"
+                           "and can be loaded as: 'find_package(Zephyr COMPONENTS unittest)'"
     )
     set(ZephyrUnittest_FOUND True)
     set(Zephyr_FIND_COMPONENTS unittest)
@@ -47,10 +62,10 @@ macro(include_boilerplate location)
     # and make them more visible to users. This does result in them being output
     # to stderr, but that is an implementation detail of cmake.
     if(components_length EQUAL 0)
-      message(NOTICE "Loading Zephyr default modules (${location}).")
+      zephyr_package_message(NOTICE "Loading Zephyr default modules (${location}).")
       include(zephyr_default NO_POLICY_SCOPE)
     else()
-      message(NOTICE "Loading Zephyr module(s) (${location}): ${Zephyr_FIND_COMPONENTS}")
+      zephyr_package_message(NOTICE "Loading Zephyr module(s) (${location}): ${Zephyr_FIND_COMPONENTS}")
       foreach(component ${Zephyr_FIND_COMPONENTS})
         if(${component} MATCHES "^\([^:]*\):\(.*\)$")
           string(REPLACE "," ";" SUB_COMPONENTS ${CMAKE_MATCH_2})
@@ -60,8 +75,8 @@ macro(include_boilerplate location)
       endforeach()
     endif()
   else()
-    message(WARNING "The NO_BOILERPLATE setting has been deprecated.\n"
-                    "Please use: 'find_package(Zephyr COMPONENTS <components>)'"
+    zephyr_package_message(DEPRECATION "The NO_BOILERPLATE setting has been deprecated.\n"
+                           "Please use: 'find_package(Zephyr COMPONENTS <components>)'"
     )
   endif()
 endmacro()

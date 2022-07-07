@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
 #include <ztest_assert.h>
-#include <sys_clock.h>
-#include <net/net_ip.h>
-#include <net/socket.h>
-#include <net/socket_net_mgmt.h>
-#include <net/net_event.h>
-#include <net/ethernet_mgmt.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/socket_net_mgmt.h>
+#include <zephyr/net/net_event.h>
+#include <zephyr/net/ethernet_mgmt.h>
 
 #define MAX_BUF_LEN 64
 #define STACK_SIZE 1024

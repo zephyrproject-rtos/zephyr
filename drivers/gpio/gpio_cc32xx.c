@@ -7,11 +7,11 @@
 #define DT_DRV_COMPAT ti_cc32xx_gpio
 #include <errno.h>
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <init.h>
-#include <kernel.h>
-#include <sys/sys_io.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/sys_io.h>
 
 /* Driverlib includes */
 #include <inc/hw_types.h>

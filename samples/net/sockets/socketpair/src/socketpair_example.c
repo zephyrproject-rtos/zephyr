@@ -7,10 +7,10 @@
 	|| defined(CONFIG_BOARD_NATIVE_POSIX_64BIT) \
 	|| defined(CONFIG_SOC_SERIES_BSIM_NRFXX))
 
-#include <net/socket.h>
-#include <posix/pthread.h>
-#include <sys/util.h>
-#include <posix/unistd.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/posix/pthread.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/posix/unistd.h>
 
 #else
 

@@ -405,13 +405,13 @@ runners.jlink, confirm the J-Link debug probe is configured, powered, and
 connected to the EVK properly. See :ref:`Using J-Link RT1060` for more details.
 
 .. _MIMXRT1060-EVK Website:
-   https://www.nxp.com/support/developer-resources/software-development-tools/mcuxpresso-software-and-tools/mimxrt1060-evk-i.mx-rt1060-evaluation-kit:MIMXRT1060-EVK
+   https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1060-evaluation-kit:MIMXRT1060-EVKB
 
 .. _MIMXRT1060-EVK User Guide:
-   https://www.nxp.com/docs/en/data-sheet/MIMXRT10601064EKBHUG.pdf
+   https://www.nxp.com/webapp/Download?colCode=MIMXRT10601064EKBHUG
 
 .. _MIMXRT1060-EVK Schematics:
-   https://www.nxp.com/webapp/Download?colCode=MIMXRT1060-EVK-DESIGN-FILE-A2
+   https://www.nxp.com/webapp/Download?colCode=MIMXRT1060-EVK-DESIGNFILE-A3
 
 .. _i.MX RT1060 Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/i.mx-applications-processors/i.mx-rt-series/i.mx-rt1060-crossover-processor-with-arm-cortex-m7-core:i.MX-RT1060

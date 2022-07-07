@@ -8,9 +8,9 @@
 #define ZEPHYR_DRIVERS_ESPI_MCHP_XEC_ESPI_V2_H_
 
 #include <stdint.h>
-#include <device.h>
-#include <drivers/espi.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #define ESPI_XEC_V2_DEBUG	1
 

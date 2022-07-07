@@ -22,16 +22,16 @@
  */
 
 #include <errno.h>
-#include <kernel.h>
-#include <arch/cpu.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
 #include <zephyr/types.h>
 #include <soc.h>
 
-#include <init.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <drivers/uart.h>
-#include <sys/sys_io.h>
+#include <zephyr/init.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/sys_io.h>
 
 /* For all register offsets and bits / bit masks:
  * Comp. Xilinx Zynq-7000 Technical Reference Manual (ug585), chap. B.33

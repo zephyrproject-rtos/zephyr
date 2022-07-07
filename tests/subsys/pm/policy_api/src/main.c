@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <pm/policy.h>
-#include <sys/time_units.h>
-#include <sys_clock.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/sys/time_units.h>
+#include <zephyr/sys_clock.h>
 #include <ztest.h>
 
 #ifdef CONFIG_PM_POLICY_DEFAULT

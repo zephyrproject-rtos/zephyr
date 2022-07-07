@@ -4,7 +4,7 @@
 
 /* file is auto-generated, do not modify ! */
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 GEN_ABS_SYM_BEGIN (_ConfigAbsSyms)
 

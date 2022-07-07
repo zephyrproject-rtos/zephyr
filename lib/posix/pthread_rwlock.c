@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
-#include <posix/time.h>
-#include <posix/posix_types.h>
+#include <zephyr/posix/time.h>
+#include <zephyr/posix/posix_types.h>
 
 #define INITIALIZED 1
 #define NOT_INITIALIZED 0

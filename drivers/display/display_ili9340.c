@@ -7,7 +7,7 @@
 #include "display_ili9340.h"
 #include "display_ili9xxx.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_ili9340, CONFIG_DISPLAY_LOG_LEVEL);
 
 int ili9340_regs_init(const struct device *dev)

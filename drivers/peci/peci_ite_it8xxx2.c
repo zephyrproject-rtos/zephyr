@@ -6,17 +6,17 @@
 
 #define DT_DRV_COMPAT ite_peci_it8xxx2
 
-#include <drivers/gpio.h>
-#include <drivers/pinmux.h>
-#include <drivers/peci.h>
-#include <kernel.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/peci.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
-#include <device.h>
-#include <drivers/peci.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/peci.h>
 #include <soc.h>
 #include <soc_dt.h>
-#include <logging/log.h>
-#include <sys/util.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(peci_ite_it8xxx2, CONFIG_PECI_LOG_LEVEL);
 
@@ -90,19 +90,10 @@ enum peci_vtts {
 	HOVTTS1P25V = 0x10,
 };
 
-/* The following definitions are inclusive of the config/data
- * and related properties of the PECI device.
- */
-struct peci_alts_cfg {
-	const struct device *pinctrls;
-	uint8_t pin;
-	uint8_t alt_fun;
-};
-
 struct peci_it8xxx2_config {
 	uintptr_t base_addr;
 	uint8_t irq_no;
-	const struct peci_alts_cfg *alts_list;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct peci_it8xxx2_data {
@@ -111,14 +102,12 @@ struct peci_it8xxx2_data {
 	uint32_t bitrate;
 };
 
-static const struct peci_alts_cfg
-	peci_alt_inst[DT_INST_NUM_PINCTRLS_BY_IDX(0, 0)] =
-	IT8XXX2_DT_ALT_ITEMS_LIST(0);
+PINCTRL_DT_INST_DEFINE(0);
 
 static const struct peci_it8xxx2_config peci_it8xxx2_config0 = {
 	.base_addr = DT_INST_REG_ADDR(0),
 	.irq_no = DT_INST_IRQN(0),
-	.alts_list = peci_alt_inst,
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
 static struct peci_it8xxx2_data peci_it8xxx2_data0;
@@ -323,14 +312,17 @@ static int peci_it8xxx2_init(const struct device *dev)
 	const struct peci_it8xxx2_config *config = dev->config;
 	struct peci_it8xxx2_regs *const peci_regs =
 		(struct peci_it8xxx2_regs *)config->base_addr;
+	int status;
 
 	/* Initialize Semaphore */
 	k_sem_init(&data->device_sync_sem, 0, 1);
 
 	/* Configure the GPF6 to Alternative Function 3: PECI */
-	pinmux_pin_set(config->alts_list[PECI0].pinctrls,
-					config->alts_list[PECI0].pin,
-					config->alts_list[PECI0].alt_fun);
+	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (status < 0) {
+		LOG_ERR("Failed to configure PECI pins");
+		return status;
+	}
 
 	peci_regs->PADCTLR |= PECI_DVIE;
 	peci_it8xxx2_init_vtts(peci_regs, HOVTTS0P95V);

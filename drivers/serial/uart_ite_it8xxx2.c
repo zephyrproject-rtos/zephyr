@@ -6,15 +6,16 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_uart
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/uart.h>
-#include <kernel.h>
-#include <pm/device.h>
-#include <pm/policy.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <soc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_ite_it8xxx2, CONFIG_UART_LOG_LEVEL);
 
 #if defined(CONFIG_PM_DEVICE) && defined(CONFIG_UART_CONSOLE_INPUT_EXPIRED)
@@ -27,6 +28,8 @@ struct uart_it8xxx2_config {
 	struct gpio_dt_spec gpio_wui;
 	/* UART handle */
 	const struct device *uart_dev;
+	/* UART alternate configuration */
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct uart_it8xxx2_data {
@@ -124,8 +127,17 @@ static void uart_it8xxx2_rx_refresh_timeout(struct k_work *work)
 
 static int uart_it8xxx2_init(const struct device *dev)
 {
-#ifdef CONFIG_PM_DEVICE
 	const struct uart_it8xxx2_config *const config = dev->config;
+	int status;
+
+	/* Set the pin to UART alternate function. */
+	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (status < 0) {
+		LOG_ERR("Failed to configure UART pins");
+		return status;
+	}
+
+#ifdef CONFIG_PM_DEVICE
 	const struct device *uart_console_dev =
 		DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 	int ret = 0;
@@ -175,10 +187,12 @@ static int uart_it8xxx2_init(const struct device *dev)
 }
 
 #define UART_ITE_IT8XXX2_INIT(inst)                                            \
+	PINCTRL_DT_INST_DEFINE(inst);                                          \
 	static const struct uart_it8xxx2_config uart_it8xxx2_cfg_##inst = {    \
 		.port = DT_INST_PROP(inst, port_num),                          \
 		.gpio_wui = GPIO_DT_SPEC_INST_GET(inst, gpios),                \
 		.uart_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, uart_dev)),    \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                  \
 	};                                                                     \
 									       \
 	static struct uart_it8xxx2_data uart_it8xxx2_data_##inst;              \

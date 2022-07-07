@@ -9,8 +9,8 @@
 
 #include <stdint.h>
 #include <sys/types.h>
-#include <net/buf.h>
-#include <zephyr.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/zephyr.h>
 
 #define BT_MESH_NET_FLAG_KR       BIT(0)
 #define BT_MESH_NET_FLAG_IVU      BIT(1)

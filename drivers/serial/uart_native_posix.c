@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include <poll.h>
 
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 #include "cmdline.h" /* native_posix command line options header */
 #include "soc.h"
 
@@ -129,19 +129,19 @@ static int open_tty(struct native_uart_status *driver_data,
 		err_nbr = errno;
 		close(master_pty);
 		ERROR("Could not grant access to the slave PTY side (%i)\n",
-			errno);
+			err_nbr);
 	}
 	ret = unlockpt(master_pty);
 	if (ret == -1) {
 		err_nbr = errno;
 		close(master_pty);
-		ERROR("Could not unlock the slave PTY side (%i)\n", errno);
+		ERROR("Could not unlock the slave PTY side (%i)\n", err_nbr);
 	}
 	slave_pty_name = ptsname(master_pty);
 	if (slave_pty_name == NULL) {
 		err_nbr = errno;
 		close(master_pty);
-		ERROR("Error getting slave PTY device name (%i)\n", errno);
+		ERROR("Error getting slave PTY device name (%i)\n", err_nbr);
 	}
 	/* Set the master PTY as non blocking */
 	flags = fcntl(master_pty, F_GETFL);
@@ -149,7 +149,7 @@ static int open_tty(struct native_uart_status *driver_data,
 		err_nbr = errno;
 		close(master_pty);
 		ERROR("Could not read the master PTY file status flags (%i)\n",
-			errno);
+			err_nbr);
 	}
 
 	ret = fcntl(master_pty, F_SETFL, flags | O_NONBLOCK);
@@ -157,8 +157,10 @@ static int open_tty(struct native_uart_status *driver_data,
 		err_nbr = errno;
 		close(master_pty);
 		ERROR("Could not set the master PTY as non-blocking (%i)\n",
-			errno);
+			err_nbr);
 	}
+
+	(void) err_nbr;
 
 	/*
 	 * Set terminal in "raw" mode:
@@ -291,6 +293,7 @@ static void np_uart_poll_out(const struct device *dev,
 	 * but we do not need the return value for anything.
 	 */
 	ret = write(d->out_fd, &out_char, 1);
+	(void) ret;
 }
 
 /**

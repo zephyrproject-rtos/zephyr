@@ -4,28 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
 
 #include "adt7420.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(ADT7420, CONFIG_SENSOR_LOG_LEVEL);
 
 static void setup_int(const struct device *dev,
 		      bool enable)
 {
-	struct adt7420_data *drv_data = dev->data;
 	const struct adt7420_dev_config *cfg = dev->config;
 	gpio_flags_t flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
 
-	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin, flags);
+	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, flags);
 }
 
 static void handle_int(const struct device *dev)
@@ -48,8 +47,8 @@ static void process_int(const struct device *dev)
 	uint8_t status;
 
 	/* Clear the status */
-	if (i2c_reg_read_byte(drv_data->i2c, cfg->i2c_addr,
-			      ADT7420_REG_STATUS, &status) < 0) {
+	if (i2c_reg_read_byte_dt(&cfg->i2c,
+				 ADT7420_REG_STATUS, &status) < 0) {
 		return;
 	}
 
@@ -60,7 +59,7 @@ static void process_int(const struct device *dev)
 	setup_int(dev, true);
 
 	/* Check for pin that asserted while we were offline */
-	int pv = gpio_pin_get(drv_data->gpio, cfg->int_pin);
+	int pv = gpio_pin_get_dt(&cfg->int_gpio);
 
 	if (pv > 0) {
 		handle_int(dev);
@@ -116,7 +115,7 @@ int adt7420_trigger_set(const struct device *dev,
 		setup_int(dev, true);
 
 		/* Check whether already asserted */
-		int pv = gpio_pin_get(drv_data->gpio, cfg->int_pin);
+		int pv = gpio_pin_get_dt(&cfg->int_gpio);
 
 		if (pv > 0) {
 			handle_int(dev);
@@ -132,24 +131,22 @@ int adt7420_init_interrupt(const struct device *dev)
 	const struct adt7420_dev_config *cfg = dev->config;
 	int rc;
 
-	drv_data->gpio = device_get_binding(cfg->int_name);
-	if (drv_data->gpio == NULL) {
-		LOG_DBG("Failed to get pointer to %s device!",
-			cfg->int_name);
-		return -EINVAL;
+	if (!device_is_ready(cfg->int_gpio.port)) {
+		LOG_ERR("%s: device %s is not ready", dev->name,
+			cfg->int_gpio.port->name);
+		return -ENODEV;
 	}
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   adt7420_gpio_callback,
-			   BIT(cfg->int_pin));
+			   BIT(cfg->int_gpio.pin));
 
-	rc = gpio_pin_configure(drv_data->gpio, cfg->int_pin,
-				GPIO_INPUT | cfg->int_flags);
+	rc = gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INPUT | cfg->int_gpio.dt_flags);
 	if (rc < 0) {
 		return rc;
 	}
 
-	rc = gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb);
+	rc = gpio_add_callback(cfg->int_gpio.port, &drv_data->gpio_cb);
 	if (rc < 0) {
 		return rc;
 	}

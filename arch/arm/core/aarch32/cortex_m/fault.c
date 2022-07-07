@@ -12,11 +12,11 @@
  * Common fault handler for ARM Cortex-M processors.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <inttypes.h>
-#include <exc_handle.h>
-#include <logging/log.h>
+#include <zephyr/exc_handle.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)

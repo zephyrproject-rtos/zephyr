@@ -1,0 +1,106 @@
+/*
+ * Copyright (c) 2021 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay clears clocks back to a state equivalent to what could
+ * be found in stm32h7.dtsi
+ */
+
+
+/* Clocks clean up config
+ * Aim is to avoid conflict with specific default board configuration
+ */
+
+&clk_hse {
+	status = "disabled";
+	/delete-property/ hse-bypass;
+	/delete-property/ clock-frequency;
+};
+
+&clk_hsi {
+	status = "disabled";
+	/delete-property/ hsi-div;
+};
+
+&clk_csi {
+	status = "disabled";
+};
+
+&clk_lse {
+	status = "disabled";
+};
+
+&clk_lsi {
+	status = "disabled";
+};
+
+&pll {
+	/delete-property/ div-m;
+	/delete-property/ mul-n;
+	/delete-property/ div-p;
+	/delete-property/ div-q;
+	/delete-property/ div-r;
+	/delete-property/ clocks;
+	status = "disabled";
+};
+
+&pll3 {
+	/delete-property/ div-m;
+	/delete-property/ mul-n;
+	/delete-property/ div-p;
+	/delete-property/ div-q;
+	/delete-property/ div-r;
+	/delete-property/ clocks;
+	status = "disabled";
+};
+
+&rcc {
+	/delete-property/ clocks;
+	/delete-property/ clock-frequency;
+	/delete-property/ d1cpre;
+	/delete-property/ hpre;
+	/delete-property/ d1ppre;
+	/delete-property/ d2ppre1;
+	/delete-property/ d2ppre2;
+	/delete-property/ d3ppre;
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+/* Core set up
+ * Aim of this part is to provide a base working clock config
+ */
+
+&clk_hse {
+	hse-bypass;
+	clock-frequency = <DT_FREQ_M(8)>; /* STLink 8MHz clock */
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <24>;
+	div-p = <2>;
+	div-q = <1>;
+	div-r = <1>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(96)>;
+	d1cpre = <1>;
+	hpre = <1>;
+	d1ppre = <1>;
+	d2ppre1 = <1>;
+	d2ppre2 = <1>;
+	d3ppre = <1>;
+};

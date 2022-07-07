@@ -14,10 +14,10 @@
  * provide a random number generator.
  */
 
-#include <random/rand32.h>
-#include <drivers/timer/system_timer.h>
-#include <kernel.h>
-#include <sys/atomic.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 #include <string.h>
 
 #if defined(__GNUC__)

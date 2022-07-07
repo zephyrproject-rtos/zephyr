@@ -11,7 +11,7 @@
 #ifndef _ATMEL_SAM_DT_H_
 #define _ATMEL_SAM_DT_H_
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 /* Devicetree macros related to clock */
 

@@ -5,7 +5,7 @@ description: ITE it8xxx2 keyboard matrix controller
 
 compatible: "ite,it8xxx2-kscan"
 
-include: kscan.yaml
+include: [kscan.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -23,12 +23,20 @@ properties:
         enable, disable, and clear wakeup status for the specific pin which
         may be gpio pins or alternate pins.
 
-    gpio-dev:
-        type: phandle
-        required: true
-        description: configure GPIO controller
+    kso16-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        The KSO16 pin for the selected port.
+
+    kso17-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        The KSO17 pin for the selected port.
 
     pinctrl-0:
-        type: phandles
-        required: true
-        description: configure KSO pinmux controller
+      required: true
+
+    pinctrl-names:
+      required: true

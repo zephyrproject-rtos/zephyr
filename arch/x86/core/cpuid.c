@@ -6,9 +6,9 @@
 
 #include <cpuid.h> /* Header provided by the toolchain. */
 
-#include <kernel_structs.h>
-#include <arch/x86/cpuid.h>
-#include <kernel.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/arch/x86/cpuid.h>
+#include <zephyr/kernel.h>
 
 uint32_t z_x86_cpuid_extended_features(void)
 {

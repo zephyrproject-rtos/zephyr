@@ -81,12 +81,12 @@
 			uint32_t stack_mem[1];
 		} fork_obj_t;
 		#define fork_init(x) do { \
-			k_stack_init(x, (void *)((x) + 1), 1); \
+			k_stack_init(x, (stack_data_t *)((x) + 1), 1); \
 			k_stack_push(x, MAGIC); \
 		} while ((0))
 	#endif
 	#define take(x) do { \
-		uint32_t data; k_stack_pop(x, (void *)&data, K_FOREVER); \
+		stack_data_t data; k_stack_pop(x, &data, K_FOREVER); \
 		__ASSERT(data == MAGIC, "data was %x\n", data); \
 	} while ((0))
 	#define drop(x) k_stack_push(x, MAGIC)

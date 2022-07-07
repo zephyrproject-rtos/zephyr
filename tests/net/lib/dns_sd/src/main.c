@@ -9,9 +9,9 @@
 
 #include <ztest.h>
 
-#include <net/dns_sd.h>
-#include <net/net_context.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/dns_sd.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_pkt.h>
 
 #include "dns_pack.h"
 #include "dns_sd.h"

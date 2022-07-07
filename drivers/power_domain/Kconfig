@@ -8,8 +8,13 @@ menuconfig POWER_DOMAIN
 
 if POWER_DOMAIN
 
+module = POWER_DOMAIN
+module-str = power_domain
+source "subsys/logging/Kconfig.template.log_config"
+
 config POWER_DOMAIN_GPIO
 	bool "GPIO controlled power domain"
 	depends on GPIO
+	depends on TIMEOUT_64BIT
 
 endif

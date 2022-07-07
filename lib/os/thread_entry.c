@@ -11,7 +11,7 @@
  * This file provides the common thread entry function
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 __thread k_tid_t z_tls_current;

@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROXY)
 #define LOG_MODULE_NAME bt_mesh_proxy_client

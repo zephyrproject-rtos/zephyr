@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <logging/log.h>
-#include <init.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/init.h>
 #include <mgmt/mgmt.h>
-#include <mgmt/mcumgr/zephyr_groups.h>
-#include <storage/flash_map.h>
+#include <zephyr/mgmt/mcumgr/zephyr_groups.h>
+#include <zephyr/storage/flash_map.h>
 
 LOG_MODULE_REGISTER(mcumgr_zephyr_grp);
 

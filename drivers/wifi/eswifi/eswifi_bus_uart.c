@@ -10,14 +10,13 @@
 #include "eswifi_log.h"
 LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/ring_buffer.h>
-#include <drivers/gpio.h>
-#include <drivers/uart.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/uart.h>
 
 #include "eswifi.h"
 
@@ -220,9 +219,9 @@ int eswifi_uart_init(struct eswifi_dev *eswifi)
 {
 	struct eswifi_uart_data *uart = &eswifi_uart0; /* Static instance */
 
-	uart->dev = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!uart->dev) {
-		LOG_ERR("Failed to initialize uart driver");
+	uart->dev = DEVICE_DT_GET(DT_INST_BUS(0));
+	if (!device_is_ready(uart->dev)) {
+		LOG_ERR("Bus device is not ready");
 		return -ENODEV;
 	}
 

@@ -22,8 +22,8 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <zephyr/device.h>
-#include <dt-bindings/spi/spi.h>
-#include <drivers/gpio.h>
+#include <zephyr/dt-bindings/spi/spi.h>
+#include <zephyr/drivers/gpio.h>
 
 #ifdef __cplusplus
 extern "C" {

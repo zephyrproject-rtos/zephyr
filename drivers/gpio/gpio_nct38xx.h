@@ -7,10 +7,10 @@
 #ifndef ZEPHYR_DRIVERS_GPIO_GPIO_NCT38XX_H_
 #define ZEPHYR_DRIVERS_GPIO_GPIO_NCT38XX_H_
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
 
 /* NCT38XX controller register */
 #define NCT38XX_REG_ALERT      0x10

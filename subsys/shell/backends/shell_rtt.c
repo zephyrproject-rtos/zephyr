@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell_rtt.h>
-#include <init.h>
+#include <zephyr/shell/shell_rtt.h>
+#include <zephyr/init.h>
 #include <SEGGER_RTT.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 BUILD_ASSERT(!(IS_ENABLED(CONFIG_LOG_BACKEND_RTT) &&
 	       COND_CODE_0(CONFIG_LOG_BACKEND_RTT_BUFFER, (1), (0))),

@@ -14,16 +14,24 @@
 #define ZEPHYR_INCLUDE_KERNEL_H_
 
 #if !defined(_ASMLANGUAGE)
-#include <kernel_includes.h>
+#include <zephyr/kernel_includes.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
-#include <toolchain.h>
-#include <tracing/tracing_macros.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/tracing/tracing_macros.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/*
+ * Zephyr currently assumes the size of a couple standard types to simplify
+ * print string formats. Let's make sure this doesn't change without notice.
+ */
+BUILD_ASSERT(sizeof(int32_t) == sizeof(int));
+BUILD_ASSERT(sizeof(int64_t) == sizeof(long long));
+BUILD_ASSERT(sizeof(intptr_t) == sizeof(long));
 
 /**
  * @brief Kernel APIs
@@ -463,6 +471,19 @@ __syscall int32_t k_usleep(int32_t us);
  * clock tolerances.
  */
 __syscall void k_busy_wait(uint32_t usec_to_wait);
+
+/**
+ * @brief Check whether it is possible to yield in the current context.
+ *
+ * This routine checks whether the kernel is in a state where it is possible to
+ * yield or call blocking API's. It should be used by code that needs to yield
+ * to perform correctly, but can feasibly be called from contexts where that
+ * is not possible. For example in the PRE_KERNEL initialization step, or when
+ * being run from the idle thread.
+ *
+ * @return True if it is possible to yield in the current context, false otherwise.
+ */
+bool k_can_yield(void);
 
 /**
  * @brief Yield the current thread.
@@ -2666,7 +2687,6 @@ __syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data,
 struct k_work;
 struct k_work_q;
 struct k_work_queue_config;
-struct k_delayed_work;
 extern struct k_work_q k_sys_work_q;
 
 /**
@@ -3830,129 +3850,6 @@ static inline k_tid_t k_work_queue_thread_get(struct k_work_q *queue)
 	return &queue->thread;
 }
 
-/* Legacy wrappers */
-
-__deprecated
-static inline bool k_work_pending(const struct k_work *work)
-{
-	return k_work_is_pending(work);
-}
-
-__deprecated
-static inline void k_work_q_start(struct k_work_q *work_q,
-				  k_thread_stack_t *stack,
-				  size_t stack_size, int prio)
-{
-	k_work_queue_start(work_q, stack, stack_size, prio, NULL);
-}
-
-/* deprecated, remove when corresponding deprecated API is removed. */
-struct k_delayed_work {
-	struct k_work_delayable work;
-};
-
-#define Z_DELAYED_WORK_INITIALIZER(work_handler) __DEPRECATED_MACRO { \
-	.work = Z_WORK_DELAYABLE_INITIALIZER(work_handler), \
-}
-
-__deprecated
-static inline void k_delayed_work_init(struct k_delayed_work *work,
-				       k_work_handler_t handler)
-{
-	k_work_init_delayable(&work->work, handler);
-}
-
-__deprecated
-static inline int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
-						 struct k_delayed_work *work,
-						 k_timeout_t delay)
-{
-	int rc = k_work_reschedule_for_queue(work_q, &work->work, delay);
-
-	/* Legacy API doesn't distinguish success cases. */
-	return (rc >= 0) ? 0 : rc;
-}
-
-__deprecated
-static inline int k_delayed_work_submit(struct k_delayed_work *work,
-					k_timeout_t delay)
-{
-	int rc = k_work_reschedule(&work->work, delay);
-
-	/* Legacy API doesn't distinguish success cases. */
-	return (rc >= 0) ? 0 : rc;
-}
-
-__deprecated
-static inline int k_delayed_work_cancel(struct k_delayed_work *work)
-{
-	bool pending = k_work_delayable_is_pending(&work->work);
-	int rc = k_work_cancel_delayable(&work->work);
-
-	/* Old return value rules:
-	 *
-	 * 0 if:
-	 * * Work item countdown cancelled before the item was submitted to
-	 *   its queue; or
-	 * * Work item was removed from its queue before it was processed.
-	 *
-	 * -EINVAL if:
-	 * * Work item has never been submitted; or
-	 * * Work item has been successfully cancelled; or
-	 * * Timeout handler is in the process of submitting the work item to
-	 *   its queue; or
-	 * * Work queue thread has removed the work item from the queue but
-	 *   has not called its handler.
-	 *
-	 * -EALREADY if:
-	 * * Work queue thread has removed the work item from the queue and
-	 *   cleared its pending flag; or
-	 * * Work queue thread is invoking the item handler; or
-	 * * Work item handler has completed.
-	 *
-
-	 * We can't reconstruct those states, so call it successful only when
-	 * a pending item is no longer pending, -EINVAL if it was pending and
-	 * still is, and cancel, and -EALREADY if it wasn't pending (so
-	 * presumably cancellation should have had no effect, assuming we
-	 * didn't hit a race condition).
-	 */
-	if (pending) {
-		return (rc == 0) ? 0 : -EINVAL;
-	}
-
-	return -EALREADY;
-}
-
-__deprecated
-static inline bool k_delayed_work_pending(struct k_delayed_work *work)
-{
-	return k_work_delayable_is_pending(&work->work);
-}
-
-__deprecated
-static inline int32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
-{
-	k_ticks_t rem = k_work_delayable_remaining_get(&work->work);
-
-	/* Probably should be ceil32, but was floor32 */
-	return k_ticks_to_ms_floor32(rem);
-}
-
-__deprecated
-static inline k_ticks_t k_delayed_work_expires_ticks(
-	struct k_delayed_work *work)
-{
-	return k_work_delayable_expires_get(&work->work);
-}
-
-__deprecated
-static inline k_ticks_t k_delayed_work_remaining_ticks(
-	struct k_delayed_work *work)
-{
-	return k_work_delayable_remaining_get(&work->work);
-}
-
 /** @} */
 
 struct k_work_user;
@@ -4120,6 +4017,21 @@ extern void k_work_user_queue_start(struct k_work_user_q *work_q,
 				    size_t stack_size, int prio,
 				    const char *name);
 
+/**
+ * @brief Access the user mode thread that animates a work queue.
+ *
+ * This is necessary to grant a user mode work queue thread access to things
+ * the work items it will process are expected to use.
+ *
+ * @param work_q pointer to the user mode queue structure.
+ *
+ * @return the user mode thread associated with the work queue.
+ */
+static inline k_tid_t k_work_user_queue_thread_get(struct k_work_user_q *work_q)
+{
+	return &work_q->thread;
+}
+
 /** @} */
 
 /**
@@ -4159,20 +4071,6 @@ struct k_work_poll {
  */
 #define K_WORK_DEFINE(work, work_handler) \
 	struct k_work work = Z_WORK_INITIALIZER(work_handler)
-
-/**
- * @brief Initialize a statically-defined delayed work item.
- *
- * This macro can be used to initialize a statically-defined workqueue
- * delayed work item, prior to its first use. For example,
- *
- * @code static K_DELAYED_WORK_DEFINE(<work>, <work_handler>); @endcode
- *
- * @param work Symbol name for delayed work item object
- * @param work_handler Function to invoke each time work item is processed.
- */
-#define K_DELAYED_WORK_DEFINE(work, work_handler) __DEPRECATED_MACRO \
-	struct k_delayed_work work = Z_DELAYED_WORK_INITIALIZER(work_handler)
 
 /**
  * @brief Initialize a triggered work item.
@@ -5922,7 +5820,7 @@ extern void k_sys_runtime_stats_disable(void);
 }
 #endif
 
-#include <tracing/tracing.h>
+#include <zephyr/tracing/tracing.h>
 #include <syscalls/kernel.h>
 
 #endif /* !_ASMLANGUAGE */

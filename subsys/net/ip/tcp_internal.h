@@ -14,12 +14,12 @@
 #define __TCP_INTERNAL_H
 
 #include <zephyr/types.h>
-#include <random/rand32.h>
+#include <zephyr/random/rand32.h>
 
-#include <net/net_core.h>
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
-#include <net/net_context.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_context.h>
 
 #include "connection.h"
 
@@ -30,6 +30,10 @@ extern "C" {
 
 #include "tcp_private.h"
 
+enum tcp_conn_option {
+	TCP_OPT_NODELAY	= 1,
+};
+
 /**
  * @brief Calculates and returns the MSS for a given TCP context
  *
@@ -38,9 +42,9 @@ extern "C" {
  * @return Maximum Segment Size
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
-uint16_t net_tcp_get_recv_mss(const struct tcp *conn);
+uint16_t net_tcp_get_supported_mss(const struct tcp *conn);
 #else
-static inline uint16_t net_tcp_get_recv_mss(const struct tcp *conn)
+static inline uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 {
 	ARG_UNUSED(conn);
 	return 0;
@@ -366,6 +370,67 @@ void net_tcp_init(void);
 #else
 #define net_tcp_init(...)
 #endif
+
+/**
+ * @brief Set tcp specific options of a socket
+ *
+ * @param context Network context
+ *
+ * @return 0 on success, -EINVAL if the value is not allowed
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+int net_tcp_set_option(struct net_context *context,
+		       enum tcp_conn_option option,
+		       const void *value, size_t len);
+#else
+static inline int net_tcp_set_option(struct net_context *context,
+				     enum tcp_conn_option option,
+				     const void *value, size_t len)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(option);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -EPROTONOSUPPORT;
+}
+#endif
+
+
+/**
+ * @brief Obtain tcp specific options of a socket
+ *
+ * @param context Network context
+ *
+ * @return 0 on success
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+int net_tcp_get_option(struct net_context *context,
+		       enum tcp_conn_option option,
+		       void *value, size_t *len);
+#else
+static inline int net_tcp_get_option(struct net_context *context,
+				     enum tcp_conn_option option,
+				     void *value, size_t *len)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(option);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -EPROTONOSUPPORT;
+}
+#endif
+
+/**
+ * @brief Obtain a semaphore indicating if transfers are blocked (either due to
+ *        filling TX window or entering retransmission mode).
+ *
+ * @param context Network context
+ *
+ * @return semaphore indicating if transfers are blocked
+ */
+struct k_sem *net_tcp_tx_sem_get(struct net_context *context);
 
 #ifdef __cplusplus
 }

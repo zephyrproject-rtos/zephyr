@@ -9,7 +9,7 @@
 
 #include <sys/types.h>
 #include <zephyr/types.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

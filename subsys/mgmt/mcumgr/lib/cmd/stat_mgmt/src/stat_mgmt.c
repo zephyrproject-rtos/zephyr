@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
 #include <stdio.h>
 
-#include <stats/stats.h>
-#include <mgmt/mcumgr/buf.h>
+#include <zephyr/stats/stats.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
 #include <mgmt/mgmt.h>
 #include <stat_mgmt/stat_mgmt_config.h>
 #include <stat_mgmt/stat_mgmt.h>
@@ -106,7 +106,7 @@ stat_mgmt_cb_encode(zcbor_state_t *zse, struct stat_mgmt_entry *entry)
 	bool ok = zcbor_tstr_put_term(zse, entry->name) &&
 		  zcbor_uint32_put(zse, entry->value);
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 /**
@@ -169,12 +169,10 @@ stat_mgmt_show(struct mgmt_ctxt *ctxt)
 		if (rc != MGMT_ERR_EOK) {
 			return rc;
 		}
-	} else {
-		return MGMT_ERR_ENOMEM;
 	}
 
-	ok = zcbor_map_end_encode(zse, counter);
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+	ok = ok && zcbor_map_end_encode(zse, counter);
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 /**
@@ -201,7 +199,7 @@ stat_mgmt_list(struct mgmt_ctxt *ctxt)
 	     zcbor_list_start_encode(zse, counter);
 
 	if (!ok) {
-		return MGMT_ERR_ENOMEM;
+		return MGMT_ERR_EMSGSIZE;
 	}
 	/* Iterate the list of stat groups, encoding each group's name in the CBOR
 	 * array.
@@ -215,7 +213,7 @@ stat_mgmt_list(struct mgmt_ctxt *ctxt)
 	} while (ok && cur != NULL);
 
 	if (!ok || !zcbor_list_end_encode(zse, counter)) {
-		return MGMT_ERR_ENOMEM;
+		return MGMT_ERR_EMSGSIZE;
 	}
 
 	return 0;

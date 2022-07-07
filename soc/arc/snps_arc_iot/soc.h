@@ -14,17 +14,10 @@
 #ifndef _SOC_H_
 #define _SOC_H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 /* default system clock */
 #define SYSCLK_DEFAULT_IOSC_HZ			MHZ(16)
-
-/*
- * UART: use lr and sr to access subsystem uart IP
- */
-#define UART_NS16550_ACCESS_IOPORT
-#define UART_REG_ADDR_INTERVAL 4
-
 
 /* ARC EM Core IRQs */
 #define IRQ_TIMER0				16
@@ -36,8 +29,8 @@
 #ifndef _ASMLANGUAGE
 
 
-#include <sys/util.h>
-#include <random/rand32.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/random/rand32.h>
 
 
 #endif /* !_ASMLANGUAGE */

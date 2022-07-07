@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
 
 volatile struct {
@@ -32,17 +32,17 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 void z_riscv_secondary_cpu_init(int cpu_num)
 {
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	__asm__("mv tp, %0" : : "r" (z_idle_threads[cpu_num].tls));
+#endif
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
 	soc_interrupt_init();
 #endif
-#ifdef CONFIG_PMP_STACK_GUARD
-	z_riscv_configure_interrupt_stack_guard();
+#ifdef CONFIG_RISCV_PMP
+	z_riscv_pmp_init();
 #endif
 #ifdef CONFIG_SMP
 	irq_enable(RISCV_MACHINE_SOFT_IRQ);
-#endif
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
-	__asm__("mv tp, %0" : : "r" (z_idle_threads[cpu_num].tls));
 #endif
 	riscv_cpu_init[cpu_num].fn(riscv_cpu_init[cpu_num].arg);
 }

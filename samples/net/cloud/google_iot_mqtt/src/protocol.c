@@ -5,18 +5,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(net_google_iot_mqtt, LOG_LEVEL_DBG);
 #include "protocol.h"
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
-#include <data/jwt.h>
-#include <drivers/entropy.h>
+#include <zephyr/data/jwt.h>
+#include <zephyr/drivers/entropy.h>
 
-#include <net/tls_credentials.h>
-#include <net/mqtt.h>
+#include <zephyr/net/tls_credentials.h>
+#include <zephyr/net/mqtt.h>
 
 #include <mbedtls/platform.h>
 #include <mbedtls/ssl.h>
@@ -161,7 +161,7 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 			pub->message_id,
 			pub->message.topic.qos);
 		LOG_INF("   item: %s",
-			log_strdup(pub->message.topic.topic.utf8));
+			pub->message.topic.topic.utf8);
 
 		/* assuming the config message is textual */
 		while (len) {
@@ -174,7 +174,7 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 			}
 
 			d[bytes_read] = '\0';
-			LOG_INF("   payload: %s", log_strdup(d));
+			LOG_INF("   payload: %s", d);
 			len -= bytes_read;
 		}
 

@@ -10,12 +10,12 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <sys/types.h>
-#include <device.h>
-#include <storage/flash_map.h>
+#include <zephyr/device.h>
+#include <zephyr/storage/flash_map.h>
 #include "flash_map_priv.h"
-#include <drivers/flash.h>
+#include <zephyr/drivers/flash.h>
 #include <soc.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 void flash_area_foreach(flash_area_cb_t user_cb, void *user_data)
 {
@@ -37,7 +37,12 @@ int flash_area_open(uint8_t id, const struct flash_area **fap)
 		return -ENOENT;
 	}
 
+	if (device_get_binding(area->fa_dev_name) == NULL) {
+		return -ENODEV;
+	}
+
 	*fap = area;
+
 	return 0;
 }
 

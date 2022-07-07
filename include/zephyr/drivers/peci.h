@@ -23,7 +23,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <zephyr/device.h>
-#include <dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/gpio.h>
-#include <drivers/regulator.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/regulator.h>
 #include <ztest.h>
 
 #define REGULATOR_NODE DT_PATH(regulator)

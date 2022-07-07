@@ -9,23 +9,23 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <init.h>
-#include <device.h>
-#include <drivers/clock_control.h>
-#include <sys/atomic.h>
+#include <zephyr/init.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/atomic.h>
 
-#include <sys/util.h>
-#include <debug/stack.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/debug/stack.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #ifdef CONFIG_CLOCK_CONTROL_NRF
-#include <drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #endif
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -63,8 +63,8 @@
 
 #include "hci_internal.h"
 
-static K_SEM_DEFINE(sem_prio_recv, 0, K_SEM_MAX_LIMIT);
-static K_FIFO_DEFINE(recv_fifo);
+static struct k_sem sem_prio_recv;
+static struct k_fifo recv_fifo;
 
 struct k_thread prio_recv_thread_data;
 static K_KERNEL_STACK_DEFINE(prio_recv_thread_stack,
@@ -73,8 +73,7 @@ struct k_thread recv_thread_data;
 static K_KERNEL_STACK_DEFINE(recv_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
-static struct k_poll_signal hbuf_signal =
-		K_POLL_SIGNAL_INITIALIZER(hbuf_signal);
+static struct k_poll_signal hbuf_signal;
 static sys_slist_t hbuf_pend;
 static int32_t hbuf_count;
 #endif
@@ -111,9 +110,9 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 {
 	struct bt_hci_iso_ts_data_hdr *data_hdr;
 	uint16_t packet_status_flag;
-	uint16_t slen, slen_packed;
 	struct bt_hci_iso_hdr *hdr;
 	uint16_t handle_packed;
+	uint16_t slen_packed;
 	struct net_buf *buf;
 	uint16_t handle;
 	uint8_t  ts, pb;
@@ -131,12 +130,24 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 			return ISOAL_STATUS_OK;
 		}
 #endif /* CONFIG_BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA */
-		data_hdr = net_buf_push(buf, BT_HCI_ISO_TS_DATA_HDR_SIZE);
-		hdr = net_buf_push(buf, BT_HCI_ISO_HDR_SIZE);
 
-		handle = sink_ctx->session.handle;
+		pb  = sink_ctx->sdu_production.sdu_state;
+		len = sink_ctx->sdu_production.sdu_written;
+		packet_status_flag = valid_sdu->status;
 
-		pb = sink_ctx->sdu_production.sdu_state;
+		/* BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
+		 * 5.4.5 HCI ISO Data packets
+		 * If Packet_Status_Flag equals 0b10 then PB_Flag shall equal 0b10.
+		 * When Packet_Status_Flag is set to 0b10 in packets from the Controller to the
+		 * Host, there is no data and ISO_SDU_Length shall be set to zero.
+		 */
+		if (packet_status_flag == ISOAL_SDU_STATUS_LOST_DATA) {
+			if (len > 0 && buf->len >= len) {
+				/* Discard data */
+				net_buf_pull_mem(buf, len);
+			}
+			len = 0;
+		}
 
 		/*
 		 * BLUETOOTH CORE SPECIFICATION Version 5.3 | Vol 4, Part E
@@ -154,28 +165,26 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 		 * Time_Stamp field. This bit shall only be set if the PB_Flag field equals 0b00 or
 		 * 0b10.
 		 */
-		ts = !(pb & 1);
+		ts = (pb & 0x1) == 0x0;
+
+		if (ts) {
+			data_hdr = net_buf_push(buf, BT_HCI_ISO_TS_DATA_HDR_SIZE);
+			slen_packed = bt_iso_pkt_len_pack(len, packet_status_flag);
+
+			data_hdr->ts = sys_cpu_to_le32((uint32_t) valid_sdu->timestamp);
+			data_hdr->data.sn   = sys_cpu_to_le16((uint16_t) valid_sdu->seqn);
+			data_hdr->data.slen = sys_cpu_to_le16(slen_packed);
+
+			len += BT_HCI_ISO_TS_DATA_HDR_SIZE;
+		}
+
+		hdr = net_buf_push(buf, BT_HCI_ISO_HDR_SIZE);
+
+		handle = sink_ctx->session.handle;
 		handle_packed = bt_iso_handle_pack(handle, pb, ts);
-		len = sink_ctx->sdu_production.sdu_written + BT_HCI_ISO_TS_DATA_HDR_SIZE;
 
 		hdr->handle = sys_cpu_to_le16(handle_packed);
 		hdr->len = sys_cpu_to_le16(len);
-
-		packet_status_flag = valid_sdu->status;
-		/* TODO: Validity of length might need to be reconsidered here. Not handled in
-		 * ISO-AL.
-		 * BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
-		 * 5.4.5 HCI ISO Data packets
-		 * If Packet_Status_Flag equals 0b10 then PB_Flag shall equal 0b10.
-		 * When Packet_Status_Flag is set to 0b10 in packets from the Controller to the
-		 * Host, there is no data and ISO_SDU_Length shall be set to zero.
-		 */
-		slen = sink_ctx->sdu_production.sdu_written;
-		slen_packed = bt_iso_pkt_len_pack(slen, packet_status_flag);
-
-		data_hdr->ts = sys_cpu_to_le32((uint32_t) valid_sdu->timestamp);
-		data_hdr->data.sn   = sys_cpu_to_le16((uint16_t) valid_sdu->seqn);
-		data_hdr->data.slen = sys_cpu_to_le16(slen_packed);
 
 		/* send fragment up the chain */
 		bt_recv(buf);
@@ -371,9 +380,8 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 		}
 
 		struct ll_iso_datapath *dp = hdr->datapath_out;
-		isoal_sink_handle_t sink = dp->sink_hdl;
 
-		if (dp->path_id == BT_HCI_DATAPATH_ID_HCI) {
+		if (dp && dp->path_id == BT_HCI_DATAPATH_ID_HCI) {
 			/* If HCI datapath pass to ISO AL here */
 			struct isoal_pdu_rx pckt_meta = {
 				.meta = &node_rx->hdr.rx_iso_meta,
@@ -382,7 +390,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 
 			/* Pass the ISO PDU through ISO-AL */
 			isoal_status_t err =
-				isoal_rx_pdu_recombine(sink, &pckt_meta);
+				isoal_rx_pdu_recombine(dp->sink_hdl, &pckt_meta);
 
 			LL_ASSERT(err == ISOAL_STATUS_OK); /* TODO handle err */
 		}
@@ -730,6 +738,9 @@ static int hci_driver_open(void)
 
 	DEBUG_INIT();
 
+	k_fifo_init(&recv_fifo);
+	k_sem_init(&sem_prio_recv, 0, K_SEM_MAX_LIMIT);
+
 	err = ll_init(&sem_prio_recv);
 	if (err) {
 		BT_ERR("LL initialization failed: %d", err);
@@ -737,6 +748,7 @@ static int hci_driver_open(void)
 	}
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+	k_poll_signal_init(&hbuf_signal);
 	hci_init(&hbuf_signal);
 #else
 	hci_init(NULL);
@@ -759,11 +771,26 @@ static int hci_driver_open(void)
 	return 0;
 }
 
+static int hci_driver_close(void)
+{
+	/* Resetting the LL stops all roles */
+	ll_deinit();
+
+	/* Abort prio RX thread */
+	k_thread_abort(&prio_recv_thread_data);
+
+	/* Abort RX thread */
+	k_thread_abort(&recv_thread_data);
+
+	return 0;
+}
+
 static const struct bt_hci_driver drv = {
 	.name	= "Controller",
 	.bus	= BT_HCI_DRIVER_BUS_VIRTUAL,
 	.quirks = BT_QUIRK_NO_AUTO_DLE,
 	.open	= hci_driver_open,
+	.close	= hci_driver_close,
 	.send	= hci_driver_send,
 };
 

@@ -9,11 +9,11 @@
  * @brief System/hardware module for STM32L1 processor
  */
 
-#include <device.h>
-#include <init.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <linker/linker-defs.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/linker/linker-defs.h>
 #include <string.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>

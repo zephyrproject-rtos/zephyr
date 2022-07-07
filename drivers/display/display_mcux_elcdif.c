@@ -1,21 +1,21 @@
 /*
- * Copyright (c) 2019, NXP
+ * Copyright 2019-22, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT nxp_imx_elcdif
 
-#include <drivers/display.h>
-#include <drivers/pinctrl.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/display.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/gpio.h>
 #include <fsl_elcdif.h>
 
 #ifdef CONFIG_HAS_MCUX_CACHE
 #include <fsl_cache.h>
 #endif
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(display_mcux_elcdif, CONFIG_DISPLAY_LOG_LEVEL);
 
@@ -41,7 +41,7 @@ struct mcux_mem_block {
 };
 
 struct mcux_elcdif_data {
-	struct mcux_mem_block fb[2];
+	struct mcux_mem_block fb[CONFIG_MCUX_ELCDIF_POOL_BLOCK_NUM];
 	struct k_sem sem;
 	size_t pixel_bytes;
 	size_t fb_bytes;

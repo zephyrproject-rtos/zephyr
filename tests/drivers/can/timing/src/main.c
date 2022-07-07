@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/can.h>
+#include <zephyr/drivers/can.h>
 #include <ztest.h>
 #include <strings.h>
 
@@ -175,8 +175,8 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 
 	if (data_phase) {
 		if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
-			min = can_get_timing_min_data(dev);
-			max = can_get_timing_max_data(dev);
+			min = can_get_timing_data_min(dev);
+			max = can_get_timing_data_max(dev);
 			sp_err = can_calc_timing_data(dev, &timing, test->bitrate, test->sp);
 		} else {
 			zassert_unreachable("data phase timing test without CAN-FD support");
@@ -202,14 +202,10 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 		assert_timing_within_bounds(&timing, min, max);
 		assert_sp_within_margin(&timing, test->sp, SAMPLE_POINT_MARGIN);
 
-		if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
-			if (data_phase) {
-				err = can_set_timing(dev, can_get_timing_min(dev), &timing);
-			} else {
-				err = can_set_timing(dev, &timing, can_get_timing_min_data(dev));
-			}
+		if (IS_ENABLED(CONFIG_CAN_FD_MODE) && data_phase) {
+			err = can_set_timing_data(dev, &timing);
 		} else {
-			err = can_set_timing(dev, &timing, NULL);
+			err = can_set_timing(dev, &timing);
 		}
 		zassert_equal(err, 0, "failed to set timing (err %d)", err);
 
@@ -258,12 +254,13 @@ void test_set_timing_min(void)
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int err;
 
-	if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
-		err = can_set_timing(dev, can_get_timing_min(dev), can_get_timing_min_data(dev));
-	} else {
-		err = can_set_timing(dev, can_get_timing_min(dev), NULL);
-	}
+	err = can_set_timing(dev, can_get_timing_min(dev));
 	zassert_equal(err, 0, "failed to set minimum timing parameters (err %d)", err);
+
+	if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
+		err = can_set_timing_data(dev, can_get_timing_data_min(dev));
+		zassert_equal(err, 0, "failed to set minimum timing data parameters (err %d)", err);
+	}
 }
 
 /**
@@ -274,12 +271,13 @@ void test_set_timing_max(void)
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int err;
 
-	if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
-		err = can_set_timing(dev, can_get_timing_max(dev), can_get_timing_max_data(dev));
-	} else {
-		err = can_set_timing(dev, can_get_timing_max(dev), NULL);
-	}
+	err = can_set_timing(dev, can_get_timing_max(dev));
 	zassert_equal(err, 0, "failed to set maximum timing parameters (err %d)", err);
+
+	if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
+		err = can_set_timing_data(dev, can_get_timing_data_max(dev));
+		zassert_equal(err, 0, "failed to set maximum timing data parameters (err %d)", err);
+	}
 }
 
 void test_main(void)

@@ -7,8 +7,8 @@
 #include <ztest.h>
 #include <tc_util.h>
 
-#include <sys/byteorder.h>
-#include <usb/usb_device.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/usb/usb_device.h>
 
 /* Max packet size for endpoints */
 #if IS_ENABLED(CONFIG_USB_DC_HAS_HS_SUPPORT)

@@ -26,7 +26,7 @@ from zephyr_ext_common import ZEPHYR_SCRIPTS
 
 # Runners depend on edtlib. Make sure the copy in the tree is
 # available to them before trying to import any.
-sys.path.append(str(ZEPHYR_SCRIPTS / 'dts' / 'python-devicetree' / 'src'))
+sys.path.insert(0, str(ZEPHYR_SCRIPTS / 'dts' / 'python-devicetree' / 'src'))
 
 from runners import get_runner_cls, ZephyrBinaryRunner, MissingProgram
 from runners.core import RunnerConfig
@@ -140,7 +140,7 @@ def add_parser_common(command, parser_adder=None, parser=None):
     group.add_argument('--gdb', help='path to GDB')
     group.add_argument('--openocd', help='path to openocd')
     group.add_argument(
-        '--openocd-search', metavar='DIR',
+        '--openocd-search', metavar='DIR', action='append',
         help='path to add to openocd search path, if applicable')
 
     return parser

@@ -4,10 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <pm/pm.h>
+#include <zephyr/kernel.h>
+#include <zephyr/pm/pm.h>
 #include <soc.h>
-#include <zephyr.h>
 
 /* Handle when enter deep doze mode. */
 static void ite_power_soc_deep_doze(void)

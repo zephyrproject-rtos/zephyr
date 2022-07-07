@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
 #include "dns_pack.h"
 
@@ -545,12 +545,10 @@ int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 {
 	const uint8_t *end_of_label;
 	uint8_t *dns_query;
-	int remaining_size;
 	int ret;
 	int query_type, query_class;
 
 	dns_query = dns_msg->msg + dns_msg->query_offset;
-	remaining_size = dns_msg->msg_size - dns_msg->query_offset;
 
 	ret = dns_unpack_name(dns_msg->msg, dns_msg->msg_size, dns_query,
 			      buf, &end_of_label);

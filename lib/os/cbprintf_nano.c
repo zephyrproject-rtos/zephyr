@@ -9,9 +9,9 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
-#include <sys/cbprintf.h>
+#include <zephyr/sys/cbprintf.h>
 #include <sys/types.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef CONFIG_CBPRINTF_FULL_INTEGRAL
 typedef intmax_t int_value_type;
@@ -55,6 +55,15 @@ static inline int convert_value(uint_value_type num, unsigned int base,
 #define PAD_ZERO	BIT(0)
 #define PAD_TAIL	BIT(1)
 
+/* Skip over the argument tag if needed as it is not being used here. */
+#define SKIP_TAG_IF_NEEDED(ap, tagged_ap) \
+	do { \
+		if (IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS) \
+		    && tagged_ap) { \
+			(void)va_arg(ap, int); \
+		} \
+	} while (0)
+
 /**
  * @brief Printk internals
  *
@@ -64,13 +73,17 @@ static inline int convert_value(uint_value_type num, unsigned int base,
  *
  * @return printed byte count if CONFIG_CBPRINTF_LIBC_SUBSTS is set
  */
-int cbvprintf(cbprintf_cb out, void *ctx, const char *fmt, va_list ap)
+int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fmt,
+		     va_list ap, uint32_t flags)
 {
 	size_t count = 0;
 	char buf[DIGITS_BUFLEN];
 	char *prefix, *data;
 	int min_width, precision, data_len;
 	char padding_mode, length_mod, special;
+
+	const bool tagged_ap = (flags & Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS)
+			       == Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS;
 
 	/* we pre-increment in the loop  afterwards */
 	fmt--;
@@ -135,6 +148,8 @@ start:
 			continue;
 
 		case '*':
+			SKIP_TAG_IF_NEEDED(ap, tagged_ap);
+
 			if (precision >= 0) {
 				precision = va_arg(ap, int);
 			} else {
@@ -172,6 +187,8 @@ start:
 		case 'i':
 		case 'u': {
 			uint_value_type d;
+
+			SKIP_TAG_IF_NEEDED(ap, tagged_ap);
 
 			if (length_mod == 'z') {
 				if (*fmt == 'u') {
@@ -237,6 +254,8 @@ start:
 		case 'X': {
 			uint_value_type x;
 
+			SKIP_TAG_IF_NEEDED(ap, tagged_ap);
+
 			if (*fmt == 'p') {
 				x = (uintptr_t)va_arg(ap, void *);
 				if (x == (uint_value_type)0) {
@@ -273,6 +292,8 @@ start:
 		}
 
 		case 's': {
+			SKIP_TAG_IF_NEEDED(ap, tagged_ap);
+
 			data = va_arg(ap, char *);
 			data_len = strlen(data);
 			if (precision >= 0 && data_len > precision) {
@@ -283,7 +304,11 @@ start:
 		}
 
 		case 'c': {
-			int c = va_arg(ap, int);
+			int c;
+
+			SKIP_TAG_IF_NEEDED(ap, tagged_ap);
+
+			c = va_arg(ap, int);
 
 			buf[0] = c;
 			data = buf;

@@ -4,8 +4,8 @@
  */
 
 #include <xtensa/simcall.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 /**

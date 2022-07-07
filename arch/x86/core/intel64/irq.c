@@ -3,15 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 #include <kernel_arch_data.h>
 #include <kernel_arch_func.h>
-#include <drivers/interrupt_controller/sysapic.h>
-#include <drivers/interrupt_controller/loapic.h>
-#include <irq.h>
-#include <logging/log.h>
+#include <zephyr/drivers/interrupt_controller/sysapic.h>
+#include <zephyr/drivers/interrupt_controller/loapic.h>
+#include <zephyr/irq.h>
+#include <zephyr/logging/log.h>
 #include <x86_mmu.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -26,13 +26,13 @@ unsigned char _irq_to_interrupt_vector[CONFIG_MAX_IRQ_LINES];
 
 #define NR_IRQ_VECTORS (IV_NR_VECTORS - IV_IRQS)  /* # vectors free for IRQs */
 
-void (*x86_irq_funcs[NR_IRQ_VECTORS])(const void *);
+void (*x86_irq_funcs[NR_IRQ_VECTORS])(const void *arg);
 const void *x86_irq_args[NR_IRQ_VECTORS];
 
 #if defined(CONFIG_INTEL_VTD_ICTL)
 
-#include <device.h>
-#include <drivers/interrupt_controller/intel_vtd.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/interrupt_controller/intel_vtd.h>
 
 static const struct device *vtd = DEVICE_DT_GET_ONE(intel_vt_d);
 
@@ -138,7 +138,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 }
 
 #ifdef CONFIG_IRQ_OFFLOAD
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 
 void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {

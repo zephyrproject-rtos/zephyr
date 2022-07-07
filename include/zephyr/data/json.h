@@ -7,9 +7,9 @@
 #ifndef ZEPHYR_INCLUDE_DATA_JSON_H_
 #define ZEPHYR_INCLUDE_DATA_JSON_H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <stddef.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <sys/types.h>
 
@@ -48,12 +48,39 @@ enum json_tokens {
 	JSON_TOK_COLON = ':',
 	JSON_TOK_COMMA = ',',
 	JSON_TOK_NUMBER = '0',
+	JSON_TOK_FLOAT = '1',
+	JSON_TOK_OPAQUE = '2',
+	JSON_TOK_OBJ_ARRAY = '3',
 	JSON_TOK_TRUE = 't',
 	JSON_TOK_FALSE = 'f',
 	JSON_TOK_NULL = 'n',
 	JSON_TOK_ERROR = '!',
 	JSON_TOK_EOF = '\0',
 };
+
+struct json_token {
+	enum json_tokens type;
+	char *start;
+	char *end;
+};
+
+struct json_lexer {
+	void *(*state)(struct json_lexer *lex);
+	char *start;
+	char *pos;
+	char *end;
+	struct json_token tok;
+};
+
+struct json_obj {
+	struct json_lexer lex;
+};
+
+struct json_obj_token {
+	char *start;
+	size_t length;
+};
+
 
 struct json_obj_descr {
 	const char *field_name;
@@ -595,6 +622,41 @@ int json_obj_parse(char *json, size_t len,
  */
 int json_arr_parse(char *json, size_t len,
 	const struct json_obj_descr *descr, void *val);
+
+/**
+ * @brief Initialize single-object array parsing
+ *
+ * JSON-encoded array data is going to be parsed one object at a time. Data is provided by
+ * @a payload with the size of @a len bytes.
+ *
+ * Function validate that Json Array start is detected and initialize @a json object for
+ * Json object parsing separately.
+ *
+ * @param json Provide storage for parser states. To be used when parsing the array.
+ * @param payload Pointer to JSON-encoded array to be parsed
+ * @param len Length of JSON-encoded array
+ *
+ * @return 0 if array start is detected and initialization is successful or negative error
+ * code in case of failure.
+ */
+int json_arr_separate_object_parse_init(struct json_obj *json, char *payload, size_t len);
+
+/**
+ * @brief Parse a single object from array.
+ *
+ * Parses the JSON-encoded object pointed to by @a json object array, with
+ * size @a len, according to the descriptor pointed to by @a descr.
+ *
+ * @param json Pointer to JSON-object message state
+ * @param descr Pointer to the descriptor array
+ * @param descr_len Number of elements in the descriptor array. Must be less than 31.
+ * @param val Pointer to the struct to hold the decoded values
+ *
+ * @return < 0 if error, 0 for end of message, bitmap of decoded fields on success (bit 0
+ * is set if first field in the descriptor has been properly decoded, etc).
+ */
+int json_arr_separate_parse_object(struct json_obj *json, const struct json_obj_descr *descr,
+				   size_t descr_len, void *val);
 
 /**
  * @brief Escapes the string so it can be used to encode JSON objects

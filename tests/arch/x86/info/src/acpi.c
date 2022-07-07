@@ -3,8 +3,8 @@
  * Copyright (c) 2019 Intel Corp.
  */
 
-#include <zephyr.h>
-#include <arch/x86/acpi.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/arch/x86/acpi.h>
 
 static void vtd_dev_scope_info(struct acpi_dmar_dev_scope *dev_scope)
 {

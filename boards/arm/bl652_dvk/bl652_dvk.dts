@@ -53,6 +53,8 @@
 		led1 = &led2;
 		sw0 = &button1;
 		sw1 = &button2;
+		mcuboot-button0 = &button1;
+		mcuboot-led0 = &led1;
 	};
 };
 

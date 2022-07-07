@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ethernet_mgmt, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 
 #include <errno.h>
 
-#include <net/net_core.h>
-#include <net/net_if.h>
-#include <net/ethernet_mgmt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet_mgmt.h>
 
 static inline bool is_hw_caps_supported(const struct device *dev,
 					enum ethernet_hw_caps caps)
@@ -56,8 +56,6 @@ static int ethernet_set_config(uint32_t mgmt_request,
 		config.auto_negotiation = params->auto_negotiation;
 		type = ETHERNET_CONFIG_TYPE_AUTO_NEG;
 	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_LINK) {
-		type = ETHERNET_CONFIG_TYPE_LINK;
-
 		if (params->l.link_10bt) {
 			if (!is_hw_caps_supported(dev,
 						  ETHERNET_LINK_10BASE_T)) {

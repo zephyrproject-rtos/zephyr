@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 #include <interrupt_util.h>
 
 #define STACK_SIZE	1024
@@ -86,7 +86,7 @@ void isr_handler(const void *param)
  * Other arch will be add later.
  */
 #if defined(CONFIG_X86)
-#define TEST_IRQ_DYN_LINE 17
+#define TEST_IRQ_DYN_LINE 26
 
 #elif defined(CONFIG_ARCH_POSIX)
 #define TEST_IRQ_DYN_LINE 5

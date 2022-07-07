@@ -10,9 +10,9 @@
 #ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_MCR20A_H_
 #define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_MCR20A_H_
 
-#include <linker/sections.h>
-#include <sys/atomic.h>
-#include <drivers/spi.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/drivers/spi.h>
 
 struct mcr20a_config {
 	struct spi_dt_spec bus;

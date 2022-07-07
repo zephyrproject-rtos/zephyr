@@ -6,14 +6,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/dlist.h>
+#include <zephyr/sys/dlist.h>
 
 #include "hal/cntr.h"
 
 #define LOG_MODULE_NAME bt_ctlr_cntr
 #include "common/log.h"
 #include "hal/debug.h"
-#include <dt-bindings/interrupt-controller/openisa-intmux.h>
+#include <zephyr/dt-bindings/interrupt-controller/openisa-intmux.h>
 #include "ll_irqs.h"
 
 

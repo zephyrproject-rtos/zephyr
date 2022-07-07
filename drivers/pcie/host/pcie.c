@@ -5,19 +5,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pcie, LOG_LEVEL_ERR);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <stdbool.h>
-#include <drivers/pcie/pcie.h>
+#include <zephyr/drivers/pcie/pcie.h>
 
 #if CONFIG_PCIE_MSI
-#include <drivers/pcie/msi.h>
+#include <zephyr/drivers/pcie/msi.h>
 #endif
 
 #ifdef CONFIG_PCIE_CONTROLLER
-#include <drivers/pcie/controller.h>
+#include <zephyr/drivers/pcie/controller.h>
 #endif
 
 /* functions documented in drivers/pcie/pcie.h */
@@ -85,7 +85,7 @@ uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id)
 
 	while (reg) {
 		data = pcie_conf_read(bdf, reg);
-		if (!data || data == 0xffffffff) {
+		if (!data || data == 0xffffffffU) {
 			return 0;
 		}
 
@@ -139,7 +139,7 @@ bool pcie_get_mbar(pcie_bdf_t bdf,
 		return false;
 	}
 
-	pcie_conf_write(bdf, reg, 0xFFFFFFFF);
+	pcie_conf_write(bdf, reg, 0xFFFFFFFFU);
 	size = pcie_conf_read(bdf, reg);
 	pcie_conf_write(bdf, reg, (uint32_t)phys_addr);
 
@@ -153,7 +153,7 @@ bool pcie_get_mbar(pcie_bdf_t bdf,
 			return false;
 		}
 
-		pcie_conf_write(bdf, reg, 0xFFFFFFFF);
+		pcie_conf_write(bdf, reg, 0xFFFFFFFFU);
 		size |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
 		pcie_conf_write(bdf, reg, (uint32_t)((uint64_t)phys_addr >> 32));
 	} else if (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL ||

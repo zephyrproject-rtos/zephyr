@@ -5,7 +5,7 @@
  */
 
 #include <errno.h>
-#include <debug/coredump.h>
+#include <zephyr/debug/coredump.h>
 
 static int error;
 static bool is_valid;

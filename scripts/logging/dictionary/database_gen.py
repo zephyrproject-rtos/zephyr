@@ -23,6 +23,7 @@ import sys
 import dictionary_parser.log_database
 from dictionary_parser.log_database import LogDatabase
 from dictionary_parser.utils import extract_one_string_in_section
+from dictionary_parser.utils import find_string_in_mappings
 
 import elftools
 from elftools.elf.constants import SH_FLAGS
@@ -166,7 +167,7 @@ def find_log_const_symbols(elf):
     return ret_list
 
 
-def parse_log_const_symbols(database, log_const_section, log_const_symbols):
+def parse_log_const_symbols(database, log_const_section, log_const_symbols, string_mappings):
     """Find the log instances and map source IDs to names"""
     if database.is_tgt_little_endian():
         formatter = "<"
@@ -210,7 +211,9 @@ def parse_log_const_symbols(database, log_const_section, log_const_symbols):
         str_ptr, level = struct.unpack(formatter, datum)
 
         # Offset to rodata section for string
-        instance_name = database.find_string(str_ptr)
+        instance_name = find_string_in_mappings(string_mappings, str_ptr)
+        if instance_name is None:
+            instance_name = "unknown"
 
         logger.info("Found Log Instance: %s, level: %d", instance_name, level)
 
@@ -255,7 +258,7 @@ def process_kconfigs(elf, database):
                              kconfigs['CONFIG_LOG_TIMESTAMP_64BIT'])
 
 
-def extract_logging_subsys_information(elf, database):
+def extract_logging_subsys_information(elf, database, string_mappings):
     """
     Extract logging subsys related information and store in database.
 
@@ -274,7 +277,7 @@ def extract_logging_subsys_information(elf, database):
 
     # Find all "log_const_*" symbols and parse them
     log_const_symbols = find_log_const_symbols(elf)
-    parse_log_const_symbols(database, section_log_const, log_const_symbols)
+    parse_log_const_symbols(database, section_log_const, log_const_symbols, string_mappings)
 
 
 def is_die_attr_ref(attr):
@@ -510,9 +513,7 @@ def extract_static_strings(elf, database, section_extraction=False):
             if one_str not in string_mappings:
                 string_mappings[one_str] = rawstr_map[one_str]
 
-    if len(string_mappings) > 0:
-        database.set_string_mappings(string_mappings)
-        logger.info("Found %d strings", len(string_mappings))
+    return string_mappings
 
 
 def main():
@@ -536,12 +537,10 @@ def main():
     if args.json:
         logger.info("JSON Database file %s", args.json)
         section_extraction = True
-        get_subsys_info = True
 
     if args.syst:
         logger.info("MIPI Sys-T Collateral file %s", args.syst)
         section_extraction = False
-        get_subsys_info = False
 
     elf = ELFFile(elffile)
 
@@ -574,11 +573,20 @@ def main():
         PTR_FMT = '0x%016x'
 
     # Extract strings from ELF files
-    extract_static_strings(elf, database, section_extraction)
+    string_mappings = extract_static_strings(elf, database, section_extraction)
+    if len(string_mappings) > 0:
+        database.set_string_mappings(string_mappings)
+        logger.info("Found %d strings", len(string_mappings))
 
     # Extract information related to logging subsystem
-    if get_subsys_info:
-        extract_logging_subsys_information(elf, database)
+    if not section_extraction:
+        # The logging subsys information (e.g. log module names)
+        # may require additional strings outside of those extracted
+        # via ELF DWARF variables. So generate a new string mappings
+        # with strings in various ELF sections.
+        string_mappings = extract_static_strings(elf, database, section_extraction=True)
+
+    extract_logging_subsys_information(elf, database, string_mappings)
 
     # Write database file
     if args.json:

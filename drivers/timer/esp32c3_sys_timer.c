@@ -13,11 +13,11 @@
 #include <rom/ets_sys.h>
 #include <esp_attr.h>
 
-#include <drivers/interrupt_controller/intc_esp32c3.h>
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
 #include <soc.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 #define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
 			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))

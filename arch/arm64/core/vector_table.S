@@ -8,11 +8,11 @@
  * Populated vector table
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <offsets.h>
-#include <arch/cpu.h>
-#include <arch/arm64/tpidrro_el0.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm64/tpidrro_el0.h>
 
 _ASM_FILE_PROLOGUE
 

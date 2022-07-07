@@ -19,13 +19,14 @@ config IPC_SERVICE_BACKEND_RPMSG
 	select OPENAMP
 
 config IPC_SERVICE_BACKEND_ICMSG
-	bool "ICMSG backend with ICMsg buffer"
+	bool "ICMSG backend with SPSC packet buffer"
 	depends on MBOX
 	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_IPC_ICMSG))
-	select IPC_SERVICE_ICMSG_BUF
+	select SPSC_PBUF
+	select SPSC_PBUF_USE_CACHE
 	help
 	  Chosing this backend results in single endpoint implementation based
-	  on ringbuf.
+	  on circular packet buffer.
 
 config IPC_SERVICE_RPMSG
 	bool "RPMsg support library"
@@ -43,11 +44,6 @@ config IPC_SERVICE_STATIC_VRINGS_ALIGNMENT
 	default 4
 	help
 	  Static VRINGs alignment
-
-config IPC_SERVICE_ICMSG_BUF
-	bool "Inter core messaging buffer support library"
-	help
-	  Inter core messaging buffer library
 
 rsource "Kconfig.icmsg"
 rsource "Kconfig.rpmsg"

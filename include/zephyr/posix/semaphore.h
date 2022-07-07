@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SEMAPHORE_H_
 #define ZEPHYR_INCLUDE_POSIX_SEMAPHORE_H_
 
-#include <posix/time.h>
+#include <zephyr/posix/time.h>
 #include "posix_types.h"
 
 #ifdef __cplusplus

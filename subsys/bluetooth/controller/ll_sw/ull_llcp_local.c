@@ -6,10 +6,10 @@
 
 #include <zephyr/types.h>
 
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
-#include <sys/slist.h>
-#include <sys/util.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
 
 #include "hal/ccm.h"
 
@@ -126,6 +126,11 @@ void llcp_lr_resume(struct ll_conn *conn)
 void llcp_lr_prt_restart(struct ll_conn *conn)
 {
 	conn->llcp.local.prt_expire = conn->llcp.prt_reload;
+}
+
+void llcp_lr_prt_restart_with_value(struct ll_conn *conn, uint16_t value)
+{
+	conn->llcp.local.prt_expire = value;
 }
 
 void llcp_lr_prt_stop(struct ll_conn *conn)

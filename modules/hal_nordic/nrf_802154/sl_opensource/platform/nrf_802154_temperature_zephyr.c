@@ -13,10 +13,10 @@
 
 #include "platform/nrf_802154_temperature.h"
 
-#include <device.h>
-#include <drivers/sensor.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 
 /** @brief Default temperature [C] reported if NRF_802154_TEMPERATURE_UPDATE is disabled. */
 #define DEFAULT_TEMPERATURE 20

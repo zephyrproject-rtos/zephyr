@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_STM32_PINCTRL_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_STM32_PINCTRL_H_
 
-#include <dt-bindings/pinctrl/stm32-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h>
 
 /* Adapted from Linux: include/dt-bindings/pinctrl/stm32-pinfunc.h */
 

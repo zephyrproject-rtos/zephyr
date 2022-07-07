@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <drivers/ps2.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/ps2.h>
 #include <soc.h>
 #define LOG_LEVEL LOG_LEVEL_DBG
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME main
 
 LOG_MODULE_REGISTER();

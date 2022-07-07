@@ -10,11 +10,11 @@
 
 #define DT_DRV_COMPAT bosch_bmp388
 
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <drivers/gpio.h>
-#include <pm/device.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/logging/log.h>
 
 #include "bmp388.h"
 

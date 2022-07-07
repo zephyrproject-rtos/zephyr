@@ -7,10 +7,10 @@
 #define DT_DRV_COMPAT nuvoton_npcx_pcc
 
 #include <soc.h>
-#include <drivers/clock_control.h>
-#include <dt-bindings/clock/npcx_clock.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/dt-bindings/clock/npcx_clock.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_npcx, LOG_LEVEL_ERR);
 
 /* Driver config */
@@ -218,7 +218,12 @@ static int npcx_clock_control_init(const struct device *dev)
 	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL3) = 0x1F; /* No GDMA_PD */
 	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL4) = 0xFF;
 	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL5) = 0xFA;
+#if CONFIG_ESPI
+	/* Don't gate the clock of the eSPI module if eSPI interface is required */
+	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL6) = 0xEF;
+#else
 	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL6) = 0xFF;
+#endif
 #if defined(CONFIG_SOC_SERIES_NPCX7)
 	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL7) = 0xE7;
 #elif defined(CONFIG_SOC_SERIES_NPCX9)

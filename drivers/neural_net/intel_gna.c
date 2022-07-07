@@ -15,16 +15,16 @@
 
 #define DT_DRV_COMPAT intel_gna
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <device.h>
-#include <drivers/gna.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gna.h>
 
 #include <memory.h>
 #include "intel_gna.h"
 
 #define LOG_LEVEL CONFIG_NEURAL_NET_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(neural_net);
 
 #if LOG_LEVEL >= LOG_LEVEL_DBG

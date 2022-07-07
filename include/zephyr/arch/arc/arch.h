@@ -17,29 +17,29 @@
 #define ZEPHYR_INCLUDE_ARCH_ARC_ARCH_H_
 
 #include <zephyr/devicetree.h>
-#include <sw_isr_table.h>
-#include <arch/common/ffs.h>
-#include <arch/arc/thread.h>
-#include <arch/common/sys_bitops.h>
+#include <zephyr/sw_isr_table.h>
+#include <zephyr/arch/common/ffs.h>
+#include <zephyr/arch/arc/thread.h>
+#include <zephyr/arch/common/sys_bitops.h>
 #include "sys-io-common.h"
 
-#include <arch/arc/v2/exc.h>
-#include <arch/arc/v2/irq.h>
-#include <arch/arc/v2/misc.h>
-#include <arch/arc/v2/aux_regs.h>
-#include <arch/arc/v2/arcv2_irq_unit.h>
-#include <arch/arc/v2/asm_inline.h>
-#include <arch/arc/arc_addr_types.h>
-#include <arch/arc/v2/error.h>
+#include <zephyr/arch/arc/v2/exc.h>
+#include <zephyr/arch/arc/v2/irq.h>
+#include <zephyr/arch/arc/v2/misc.h>
+#include <zephyr/arch/arc/v2/aux_regs.h>
+#include <zephyr/arch/arc/v2/arcv2_irq_unit.h>
+#include <zephyr/arch/arc/v2/asm_inline.h>
+#include <zephyr/arch/arc/arc_addr_types.h>
+#include <zephyr/arch/arc/v2/error.h>
 
 #ifdef CONFIG_ARC_CONNECT
-#include <arch/arc/v2/arc_connect.h>
+#include <zephyr/arch/arc/v2/arc_connect.h>
 #endif
 
 #ifdef CONFIG_ISA_ARCV2
 #include "v2/sys_io.h"
 #ifdef CONFIG_ARC_HAS_SECURE
-#include <arch/arc/v2/secureshield/arc_secure.h>
+#include <zephyr/arch/arc/v2/secureshield/arc_secure.h>
 #endif
 #endif
 
@@ -239,7 +239,7 @@ BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_ARC_MPU_ALIGN == 0,
 #ifdef CONFIG_ARC_MPU
 
 /* Legacy case: retain containing extern "C" with C++ */
-#include <arch/arc/v2/mpu/arc_mpu.h>
+#include <zephyr/arch/arc/v2/mpu/arc_mpu.h>
 
 #define K_MEM_PARTITION_P_NA_U_NA	AUX_MPU_ATTR_N
 #define K_MEM_PARTITION_P_RW_U_RW	(AUX_MPU_ATTR_UW | AUX_MPU_ATTR_UR | \

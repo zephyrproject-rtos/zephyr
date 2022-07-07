@@ -43,10 +43,6 @@ config UART_ITE_IT8XXX2
 config RISCV_HAS_CPU_IDLE
 	default y
 
-config PINMUX_ITE_IT8XXX2
-	default y
-	depends on PINMUX
-
 config WDT_ITE_IT8XXX2
 	default y
 	depends on WATCHDOG
@@ -88,6 +84,9 @@ config PECI_ITE_IT8XXX2
 	depends on PECI
 	select PECI_INTERRUPT_DRIVEN
 
+config PINCTRL
+	default y
+
 if ITE_IT8XXX2_INTC
 config NUM_IRQS
 	default 185
@@ -108,5 +107,7 @@ config RISCV_SOC_INTERRUPT_INIT
 	default y
 
 endif # ITE_IT8XXX2_INTC
+
+source "soc/riscv/riscv-ite/it8xxx2/Kconfig.defconfig.it81*"
 
 endif # SOC_SERIES_RISCV32_IT8XXX2

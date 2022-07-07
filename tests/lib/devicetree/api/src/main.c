@@ -5,10 +5,10 @@
  */
 
 #include <ztest.h>
-#include <devicetree.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/mbox.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/mbox.h>
 
 #define TEST_CHILDREN	DT_PATH(test, test_children)
 #define TEST_DEADBEEF	DT_PATH(test, gpio_deadbeef)
@@ -2220,40 +2220,98 @@ static void test_string_token(void)
 		token_zero,
 		token_one,
 		token_two,
-		token_max,
 		token_no_inst,
+	};
+	enum {
+		TOKEN_ZERO = token_no_inst + 1,
+		TOKEN_ONE,
+		TOKEN_TWO,
+		TOKEN_NO_INST,
 	};
 	int i;
 
-	/* Test DT_INST_STRING_TOKEN_OR when property is found */
+	/* Test DT_INST_STRING_TOKEN */
+#define STRING_TOKEN_TEST_INST_EXPANSION(inst) \
+	DT_INST_STRING_TOKEN(inst, val),
 	int array_inst[] = {
-#define STRING_TOKEN_TEST_INST_EXPANSION(inst)                                \
-	DT_INST_STRING_TOKEN_OR(inst, val, token_no_inst),
-	DT_INST_FOREACH_STATUS_OKAY(STRING_TOKEN_TEST_INST_EXPANSION)
+		DT_INST_FOREACH_STATUS_OKAY(STRING_TOKEN_TEST_INST_EXPANSION)
 	};
 
 	for (i = 0; i < ARRAY_SIZE(array_inst); i++) {
-		zassert_true(array_inst[i] != token_no_inst, "");
+		zassert_between_inclusive(array_inst[i], token_zero, token_two, "");
+	}
+
+	/* Test DT_INST_STRING_UPPER_TOKEN */
+#define STRING_UPPER_TOKEN_TEST_INST_EXPANSION(inst) \
+	DT_INST_STRING_UPPER_TOKEN(inst, val),
+	int array_inst_upper[] = {
+		DT_INST_FOREACH_STATUS_OKAY(STRING_UPPER_TOKEN_TEST_INST_EXPANSION)
+	};
+
+	for (i = 0; i < ARRAY_SIZE(array_inst_upper); i++) {
+		zassert_between_inclusive(array_inst_upper[i], TOKEN_ZERO, TOKEN_TWO, "");
+	}
+
+	/* Test DT_INST_STRING_TOKEN_OR when property is found */
+#define STRING_TOKEN_OR_TEST_INST_EXPANSION(inst) \
+	DT_INST_STRING_TOKEN_OR(inst, val, token_no_inst),
+	int array_inst_or[] = {
+		DT_INST_FOREACH_STATUS_OKAY(STRING_TOKEN_OR_TEST_INST_EXPANSION)
+	};
+
+	for (i = 0; i < ARRAY_SIZE(array_inst_or); i++) {
+		zassert_between_inclusive(array_inst_or[i], token_zero, token_two, "");
+	}
+
+	/* Test DT_INST_STRING_UPPER_TOKEN_OR when property is found */
+#define STRING_UPPER_TOKEN_OR_TEST_INST_EXPANSION(inst)	\
+	DT_INST_STRING_UPPER_TOKEN_OR(inst, val, TOKEN_NO_INST),
+	int array_inst_upper_or[] = {
+		DT_INST_FOREACH_STATUS_OKAY(STRING_UPPER_TOKEN_OR_TEST_INST_EXPANSION)
+	};
+
+	for (i = 0; i < ARRAY_SIZE(array_inst_upper_or); i++) {
+		zassert_between_inclusive(array_inst_upper_or[i], TOKEN_ZERO, TOKEN_TWO, "");
 	}
 
 	/* Test DT_STRING_TOKEN_OR when property is found */
 	zassert_equal(DT_STRING_TOKEN_OR(DT_NODELABEL(test_string_token_0),
-		val, token_one), token_zero, "");
+					 val, token_one), token_zero, "");
 	zassert_equal(DT_STRING_TOKEN_OR(DT_NODELABEL(test_string_token_1),
-		val, token_two), token_one, "");
+					 val, token_two), token_one, "");
 
 	/* Test DT_STRING_TOKEN_OR is not found */
 	zassert_equal(DT_STRING_TOKEN_OR(DT_NODELABEL(test_string_token_1),
-		no_inst, token_zero), token_zero, "");
+					 no_inst, token_zero), token_zero, "");
+
+	/* Test DT_STRING_UPPER_TOKEN_OR when property is found */
+	zassert_equal(DT_STRING_UPPER_TOKEN_OR(DT_NODELABEL(test_string_token_0),
+					       val, TOKEN_ONE), TOKEN_ZERO, "");
+	zassert_equal(DT_STRING_UPPER_TOKEN_OR(DT_NODELABEL(test_string_token_1),
+					       val, TOKEN_TWO), TOKEN_ONE, "");
+
+	/* Test DT_STRING_UPPER_TOKEN_OR is not found */
+	zassert_equal(DT_STRING_UPPER_TOKEN_OR(DT_NODELABEL(test_string_token_1),
+					       no_inst, TOKEN_ZERO), TOKEN_ZERO, "");
 
 	/* Test DT_INST_STRING_TOKEN_OR when property is not found */
-	int array_no_inst[] = {
-#define STRING_TOKEN_TEST_NO_INST_EXPANSION(inst)                             \
+#define STRING_TOKEN_TEST_NO_INST_EXPANSION(inst) \
 	DT_INST_STRING_TOKEN_OR(inst, no_inst, token_no_inst),
-	DT_INST_FOREACH_STATUS_OKAY(STRING_TOKEN_TEST_NO_INST_EXPANSION)
+	int array_no_inst_or[] = {
+		DT_INST_FOREACH_STATUS_OKAY(STRING_TOKEN_TEST_NO_INST_EXPANSION)
 	};
-	for (i = 0; i < ARRAY_SIZE(array_no_inst); i++) {
-		zassert_true(array_no_inst[i] == token_no_inst, "");
+	for (i = 0; i < ARRAY_SIZE(array_no_inst_or); i++) {
+		zassert_equal(array_no_inst_or[i], token_no_inst, "");
+	}
+
+	/* Test DT_INST_STRING_UPPER_TOKEN_OR when property is not found */
+#define STRING_UPPER_TOKEN_TEST_NO_INST_EXPANSION(inst)	\
+	DT_INST_STRING_UPPER_TOKEN_OR(inst, no_inst, TOKEN_NO_INST),
+	int array_no_inst_upper_or[] = {
+		DT_INST_FOREACH_STATUS_OKAY(STRING_UPPER_TOKEN_TEST_NO_INST_EXPANSION)
+	};
+	for (i = 0; i < ARRAY_SIZE(array_no_inst_upper_or); i++) {
+		zassert_equal(array_no_inst_upper_or[i], TOKEN_NO_INST, "");
 	}
 }
 

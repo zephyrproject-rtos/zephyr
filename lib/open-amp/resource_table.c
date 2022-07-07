@@ -26,7 +26,7 @@
  *   https://github.com/OpenAMP/open-amp/wiki/OpenAMP-Life-Cycle-Management
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <resource_table.h>
 
 extern char ram_console[];

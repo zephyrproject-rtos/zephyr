@@ -10,19 +10,19 @@
 #include <errno.h>
 #include <soc.h>
 #include <fsl_lpuart.h>
-#include <device.h>
-#include <drivers/uart.h>
-#include <drivers/clock_control.h>
-#include <pm/policy.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/pm/policy.h>
 #ifdef CONFIG_PINCTRL
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
 #ifdef CONFIG_UART_ASYNC_API
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma.h>
 #endif
 
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_mcux_lpuart, LOG_LEVEL_ERR);
 
 #ifdef CONFIG_UART_ASYNC_API

@@ -4,7 +4,7 @@
 #ifndef _ZEPHYR_SOC_INTEL_ADSP_MEM
 #define _ZEPHYR_SOC_INTEL_ADSP_MEM
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include <cavs-vectors.h>
 
 #define L2_SRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram0)))
@@ -12,6 +12,8 @@
 
 #define LP_SRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram1)))
 #define LP_SRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram1)))
+
+#define ROM_JUMP_ADDR (LP_SRAM_BASE + 0x10)
 
 /* Linker-usable RAM region */
 #define RAM_BASE (L2_SRAM_BASE + CONFIG_HP_SRAM_RESERVE + VECTOR_TBL_SIZE)

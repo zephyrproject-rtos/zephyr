@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <sys/reboot.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <ztest.h>
 #include <tc_util.h>
 
@@ -18,12 +18,13 @@
 
 extern void z_NmiHandlerSet(void (*pHandler)(void));
 
+static bool nmi_triggered;
+
 static void nmi_test_isr(void)
 {
-	printk("NMI received (test_handler_isr)! Rebooting...\n");
+	printk("NMI triggered (test_handler_isr)!\n");
 	/* ISR triggered correctly: test passed! */
-	TC_END_RESULT(TC_PASS);
-	TC_END_REPORT(TC_PASS);
+	nmi_triggered = true;
 }
 
 /**
@@ -49,7 +50,6 @@ void test_arm_runtime_nmi(void)
 {
 	uint32_t i = 0U;
 
-	TC_START("nmi_test_isr");
 	/* Configure the NMI isr */
 	z_NmiHandlerSet(nmi_test_isr);
 
@@ -60,6 +60,14 @@ void test_arm_runtime_nmi(void)
 
 	/* Trigger NMI: Should fire immediately */
 	SCB->ICSR |= SCB_ICSR_NMIPENDSET_Msk;
+
+#ifdef ARM_CACHEL1_ARMV7_H
+	/* Flush Data Cache now if enabled */
+	if (IS_ENABLED(CONFIG_DCACHE)) {
+		SCB_CleanDCache();
+	}
+#endif /* ARM_CACHEL1_ARMV7_H */
+	zassert_true(nmi_triggered, "Isr not triggered!\n");
 }
 /**
  * @}

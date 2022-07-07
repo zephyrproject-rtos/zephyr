@@ -12,7 +12,7 @@
 #ifndef ZEPHYR_DRIVERS_SERIAL_UART_STM32_H_
 #define ZEPHYR_DRIVERS_SERIAL_UART_STM32_H_
 
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #include <stm32_ll_usart.h>
 
@@ -21,7 +21,9 @@ struct uart_stm32_config {
 	/* USART instance */
 	USART_TypeDef *usart;
 	/* clock subsystem driving this peripheral */
-	struct stm32_pclken pclken;
+	const struct stm32_pclken *pclken;
+	/* number of clock subsystems */
+	size_t pclk_len;
 	/* initial hardware flow control, 1 for RTS/CTS */
 	bool hw_flow_control;
 	/* initial parity, 0 for none, 1 for odd, 2 for even */
@@ -30,6 +32,10 @@ struct uart_stm32_config {
 	bool single_wire;
 	/* enable tx/rx pin swap */
 	bool tx_rx_swap;
+	/* enable rx pin inversion */
+	bool rx_invert;
+	/* enable tx pin inversion */
+	bool tx_invert;
 	const struct pinctrl_dev_config *pcfg;
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) || \
 	defined(CONFIG_PM)

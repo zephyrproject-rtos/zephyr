@@ -4,22 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <xtensa/xtruntime.h>
-#include <irq_nextlevel.h>
+#include <zephyr/irq_nextlevel.h>
 #include <xtensa/hal.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 #include <cavs-shim.h>
+#include <cavs-clk.h>
 #include <cavs-idc.h>
 #include "soc.h"
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-#include <sw_isr_table.h>
+#include <zephyr/sw_isr_table.h>
 #endif
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(soc);
 
 #ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
@@ -123,6 +124,10 @@ static __imr int soc_init(const struct device *dev)
 	} else {
 		power_init();
 	}
+
+#ifdef CONFIG_CAVS_CLOCK
+	cavs_clock_init();
+#endif
 
 #if CONFIG_MP_NUM_CPUS > 1
 	soc_mp_init();

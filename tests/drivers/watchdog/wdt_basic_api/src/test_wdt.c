@@ -57,8 +57,8 @@
  * @}
  */
 
-#include <drivers/watchdog.h>
-#include <zephyr.h>
+#include <zephyr/drivers/watchdog.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include "test_wdt.h"
 

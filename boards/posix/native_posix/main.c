@@ -29,7 +29,7 @@
 #include <soc.h>
 #include "hw_models_top.h"
 #include <stdlib.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include "cmdline.h"
 
 void posix_exit(int exit_code)

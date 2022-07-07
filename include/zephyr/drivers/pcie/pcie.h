@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_PCIE_H_
 
 #include <stddef.h>
-#include <dt-bindings/pcie/pcie.h>
+#include <zephyr/dt-bindings/pcie/pcie.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
@@ -370,9 +370,9 @@ extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
 #define PCIE_CONF_INTR_IRQ(w)	((w) & 0xFFU)
 #define PCIE_CONF_INTR_IRQ_NONE	0xFFU  /* no interrupt routed */
 
-#define PCIE_MAX_BUS  (0xFFFFFFFF & PCIE_BDF_BUS_MASK)
-#define PCIE_MAX_DEV  (0xFFFFFFFF & PCIE_BDF_DEV_MASK)
-#define PCIE_MAX_FUNC (0xFFFFFFFF & PCIE_BDF_FUNC_MASK)
+#define PCIE_MAX_BUS  (0xFFFFFFFFU & PCIE_BDF_BUS_MASK)
+#define PCIE_MAX_DEV  (0xFFFFFFFFU & PCIE_BDF_DEV_MASK)
+#define PCIE_MAX_FUNC (0xFFFFFFFFU & PCIE_BDF_FUNC_MASK)
 
 /**
  * @brief Initialize an interrupt handler for a PCIe endpoint IRQ

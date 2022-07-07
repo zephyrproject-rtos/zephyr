@@ -5,9 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/dlist.h>
-#include <toolchain.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <soc.h>
 
 #include <hal/nrf_rtc.h>
@@ -348,9 +348,10 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 	/* nRF51 supports only 27 byte PDU when using h/w CCM for encryption. */
 	if (!IS_ENABLED(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR) &&
 	    pdu_type == RADIO_PKT_CONF_PDU_TYPE_DC) {
-		bits_len = 5U;
-		bits_s1 = 3U;
+		bits_len = RADIO_PKT_CONF_LENGTH_5BIT;
 	}
+	bits_s1 = RADIO_PKT_CONF_LENGTH_8BIT - bits_len;
+
 #elif defined(CONFIG_SOC_COMPATIBLE_NRF52X) || \
 	defined(CONFIG_SOC_SERIES_NRF53X)
 	extra = 0U;
@@ -389,7 +390,7 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 			  RADIO_PCNF0_S1INCL_Pos) & RADIO_PCNF0_S1INCL_Msk;
 #if defined(CONFIG_BT_CTLR_DF)
 		if (RADIO_PKT_CONF_CTE_GET(flags) == RADIO_PKT_CONF_CTE_ENABLED) {
-			bits_s1 = 8U;
+			bits_s1 = RADIO_PKT_CONF_S1_8BIT;
 		} else
 #endif /* CONFIG_BT_CTLR_DF */
 		{
@@ -511,6 +512,7 @@ void radio_status_reset(void)
 	/* Clear it only for SoCs supporting DF extension */
 	NRF_RADIO->EVENTS_PHYEND = 0;
 	NRF_RADIO->EVENTS_CTEPRESENT = 0;
+	NRF_RADIO->EVENTS_BCMATCH = 0;
 #endif /* CONFIG_BT_CTLR_DF_SUPPORT && !CONFIG_ZTEST */
 	NRF_RADIO->EVENTS_DISABLED = 0;
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
@@ -1030,6 +1032,9 @@ void radio_tmr_status_reset(void)
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 			BIT(HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI) |
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+			BIT(HAL_TRIGGER_CRYPT_DELAY_PPI) |
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 			BIT(HAL_TRIGGER_CRYPT_PPI));
 }
 
@@ -1493,12 +1498,30 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 		mode |= (CCM_MODE_DATARATE_1Mbit <<
 			 CCM_MODE_DATARATE_Pos) &
 			CCM_MODE_DATARATE_Msk;
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+		/* When direction finding CTE receive feature is enabled then on-the-fly PDU
+		 * parsing for CTEInfo is always done. In such situation, the CCM TASKS_CRYPT
+		 * must be started with short delay. That give the Radio time to store received bits
+		 * in shared memory.
+		 */
+		radio_bc_configure(CCM_TASKS_CRYPT_DELAY_BITS);
+		radio_bc_status_reset();
+		hal_trigger_crypt_by_bcmatch_ppi_config();
+		hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_DELAY_PPI));
+#else
+		hal_trigger_crypt_ppi_config();
+		hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_PPI));
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 		break;
 
 	case PHY_2M:
 		mode |= (CCM_MODE_DATARATE_2Mbit <<
 			 CCM_MODE_DATARATE_Pos) &
 			CCM_MODE_DATARATE_Msk;
+
+		hal_trigger_crypt_ppi_config();
+		hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_PPI));
+
 		break;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
@@ -1516,6 +1539,10 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 		hal_trigger_rateoverride_ppi_config();
 		hal_radio_nrf_ppi_channels_enable(
 			BIT(HAL_TRIGGER_RATEOVERRIDE_PPI));
+
+		hal_trigger_crypt_ppi_config();
+		hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_PPI));
+
 		break;
 #endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
@@ -1537,11 +1564,9 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 	NRF_CCM->OUTPTR = (uint32_t)pkt;
 	NRF_CCM->SCRATCHPTR = (uint32_t)_ccm_scratch;
 	NRF_CCM->SHORTS = 0;
+	NRF_CCM->EVENTS_ENDKSGEN = 0;
 	NRF_CCM->EVENTS_ENDCRYPT = 0;
 	NRF_CCM->EVENTS_ERROR = 0;
-
-	hal_trigger_crypt_ppi_config();
-	hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_PPI));
 
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_KSGEN);
 
@@ -1573,6 +1598,7 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 	NRF_CCM->OUTPTR = (uint32_t)_pkt_scratch;
 	NRF_CCM->SCRATCHPTR = (uint32_t)_ccm_scratch;
 	NRF_CCM->SHORTS = CCM_SHORTS_ENDKSGEN_CRYPT_Msk;
+	NRF_CCM->EVENTS_ENDKSGEN = 0;
 	NRF_CCM->EVENTS_ENDCRYPT = 0;
 	NRF_CCM->EVENTS_ERROR = 0;
 
@@ -1600,6 +1626,7 @@ uint32_t radio_ccm_mic_is_valid(void)
 	return (NRF_CCM->MICSTATUS != 0);
 }
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 static uint8_t MALIGN(4) _aar_scratch[3];
 
 void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
@@ -1724,6 +1751,7 @@ void radio_ar_resolve(const uint8_t *addr)
 			  AAR_ENABLE_ENABLE_Msk;
 
 }
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 #if defined(CONFIG_BT_CTLR_DF_SUPPORT) && !defined(CONFIG_ZTEST)
 /* @brief Function configures CTE inline register to start sampling of CTE

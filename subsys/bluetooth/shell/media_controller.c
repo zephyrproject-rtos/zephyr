@@ -10,14 +10,14 @@
  */
 
 #include <stdlib.h>
-#include <shell/shell.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 
 #include "bt.h"
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/services/ots.h>
 
-#include <bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/audio/media_proxy.h>
 #include "../audio/media_proxy_internal.h" /* For MPL_NO_TRACK_ID - TODO: Fix */
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
@@ -767,7 +767,7 @@ int cmd_media_set_search(const struct shell *sh, size_t argc, char *argv[])
 
 	search.len = strlen(argv[1]);
 	memcpy(search.search, argv[1], search.len);
-	BT_DBG("Search string: %s", log_strdup(argv[1]));
+	BT_DBG("Search string: %s", argv[1]);
 
 	err = media_proxy_ctrl_send_search(current_player, &search);
 	if (err) {

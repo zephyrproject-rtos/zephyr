@@ -14,7 +14,7 @@
 #include <wctype.h>
 #include <stddef.h>
 #include <string.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define CBPRINTF_VIA_UNIT_TEST
 
@@ -131,7 +131,7 @@
 #define PACKAGE_FLAGS 0
 #endif
 
-#include <sys/cbprintf.h>
+#include <zephyr/sys/cbprintf.h>
 #include "../../../lib/os/cbprintf.c"
 
 #if defined(CONFIG_CBPRINTF_COMPLETE)
@@ -1270,12 +1270,12 @@ static void test_cbprintf_package_rw_string_indexes(void)
 				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
 				test_str, 100, test_str1);
 
-	struct z_cbprintf_desc *desc0 = (struct z_cbprintf_desc *)package0;
-	struct z_cbprintf_desc *desc1 = (struct z_cbprintf_desc *)package1;
+	union cbprintf_package_hdr *desc0 = (union cbprintf_package_hdr *)package0;
+	union cbprintf_package_hdr *desc1 = (union cbprintf_package_hdr *)package1;
 
 	/* Compare descriptor content. Second package has one ro string index. */
-	zassert_equal(desc0->ro_str_cnt, 0, NULL);
-	zassert_equal(desc1->ro_str_cnt, 2, NULL);
+	zassert_equal(desc0->desc.ro_str_cnt, 0, NULL);
+	zassert_equal(desc1->desc.ro_str_cnt, 2, NULL);
 	zassert_equal(len0 + 2, len1, NULL);
 
 	int *p = (int *)package1;

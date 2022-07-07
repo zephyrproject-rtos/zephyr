@@ -9,9 +9,9 @@
 #define ZEPHYR_DRIVERS_SX12XX_COMMON_H_
 
 #include <zephyr/types.h>
-#include <drivers/gpio.h>
-#include <drivers/lora.h>
-#include <device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/lora.h>
+#include <zephyr/device.h>
 
 int __sx12xx_configure_pin(const struct gpio_dt_spec *gpio, gpio_flags_t flags);
 

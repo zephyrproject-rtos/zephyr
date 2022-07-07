@@ -4,8 +4,8 @@
 #ifndef ZEPHYR_INCLUDE_CAVS_IPC_H
 #define ZEPHYR_INCLUDE_CAVS_IPC_H
 
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 
 struct cavs_ipc_config {
 	volatile struct cavs_ipc *regs;

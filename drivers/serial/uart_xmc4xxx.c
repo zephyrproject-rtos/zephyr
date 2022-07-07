@@ -9,7 +9,7 @@
 
 #include <xmc_gpio.h>
 #include <xmc_uart.h>
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 
 struct uart_xmc4xx_config {
 	XMC_USIC_CH_t *uart;
@@ -23,7 +23,11 @@ static int uart_xmc4xxx_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct uart_xmc4xx_config *config = dev->config;
 
-	*(uint16_t *)c = XMC_UART_CH_GetReceivedData(config->uart);
+	if (!XMC_USIC_CH_GetReceiveBufferStatus(config->uart)) {
+		return -1;
+	}
+
+	*c = (unsigned char)XMC_UART_CH_GetReceivedData(config->uart);
 
 	return 0;
 }
@@ -32,7 +36,7 @@ static void uart_xmc4xxx_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_xmc4xx_config *config = dev->config;
 
-	XMC_UART_CH_Transmit(config->uart, (uint16_t)c);
+	XMC_UART_CH_Transmit(config->uart, c);
 }
 
 static int uart_xmc4xxx_init(const struct device *dev)

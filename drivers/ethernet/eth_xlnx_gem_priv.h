@@ -12,9 +12,9 @@
 
 #define DT_DRV_COMPAT xlnx_gem
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_pkt.h>
 
 #include "phy_xlnx_gem.h"
 

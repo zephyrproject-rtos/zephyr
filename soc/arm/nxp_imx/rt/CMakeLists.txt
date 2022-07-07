@@ -41,6 +41,8 @@ endif()
 zephyr_compile_definitions(
   XIP_EXTERNAL_FLASH
 )
+zephyr_linker_sources(
+  RWDATA nocache.ld)
 
 zephyr_linker_section_configure(
   SECTION .rom_start

@@ -8,10 +8,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <soc.h>
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -277,6 +277,20 @@ void lll_conn_isr_rx(void *param)
 		is_done = (crc_expire == 0U);
 	}
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX) && defined(CONFIG_BT_CTLR_LE_ENC)
+		if (lll->enc_rx) {
+			struct pdu_data *pdu_scratch;
+
+			pdu_scratch = (struct pdu_data *)radio_pkt_scratch_get();
+
+			if (pdu_scratch->cp) {
+				(void)memcpy((void *)&pdu_data_rx->cte_info,
+					     (void *)&pdu_scratch->cte_info,
+					     sizeof(pdu_data_rx->cte_info));
+			}
+		}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX && defined(CONFIG_BT_CTLR_LE_ENC) */
+
 	/* prepare tx packet */
 	is_empty_pdu_tx_retry = lll->empty;
 	lll_conn_pdu_tx_prep(lll, &pdu_data_tx);
@@ -381,6 +395,13 @@ lll_conn_isr_rx_exit:
 
 	is_ull_rx = 0U;
 
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
+	if (((lll->rx_hold_req - lll->rx_hold_ack) & RX_HOLD_MASK) ==
+	    RX_HOLD_REQ) {
+		lll->rx_hold_ack--;
+	}
+#endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
+
 	if (tx_release) {
 		LL_ASSERT(lll->handle != 0xFFFF);
 
@@ -406,7 +427,6 @@ lll_conn_isr_rx_exit:
 #elif !defined(HAL_RADIO_PDU_LEN_MAX)
 #error "Undefined HAL_RADIO_PDU_LEN_MAX."
 #endif
-
 		ull_pdu_rx_alloc();
 
 		node_rx->hdr.type = NODE_RX_TYPE_DC_PDU;

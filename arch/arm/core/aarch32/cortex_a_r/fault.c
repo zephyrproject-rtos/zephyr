@@ -5,10 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
-#include <exc_handle.h>
-#include <logging/log.h>
+#include <zephyr/exc_handle.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #define FAULT_DUMP_VERBOSE	(CONFIG_FAULT_DUMP == 2)
@@ -86,6 +86,80 @@ static void dump_fault(uint32_t status, uint32_t addr)
 }
 #endif
 
+#if defined(CONFIG_FPU_SHARING)
+/**
+ * @brief FPU undefined instruction fault handler
+ *
+ * @return Returns true if the FPU is already enabled
+ *           implying a true undefined instruction
+ *         Returns false if the FPU was disabled
+ */
+bool z_arm_fault_undef_instruction_fp(void)
+{
+	/*
+	 * Assume this is a floating point instruction that faulted because
+	 * the FP unit was disabled.  Enable the FP unit and try again.  If
+	 * the FP was already enabled then this was an actual undefined
+	 * instruction.
+	 */
+	if (__get_FPEXC() & FPEXC_EN)
+		return true;
+
+	__set_FPEXC(FPEXC_EN);
+
+	if (_kernel.cpus[0].nested > 1) {
+		/*
+		 * If the nested count is greater than 1, the undefined
+		 * instruction exception came from an irq/svc context.  (The
+		 * irq/svc handler would have the nested count at 1 and then
+		 * the undef exception would increment it to 2).
+		 */
+		struct __fpu_sf *spill_esf =
+			(struct __fpu_sf *)_kernel.cpus[0].fp_ctx;
+
+		if (spill_esf == NULL)
+			return false;
+
+		_kernel.cpus[0].fp_ctx = NULL;
+
+		/*
+		 * If the nested count is 2 and the current thread has used the
+		 * VFP (whether or not it was actually using the VFP before the
+		 * current exception) OR if the nested count is greater than 2
+		 * and the VFP was enabled on the irq/svc entrance for the
+		 * saved exception stack frame, then save the floating point
+		 * context because it is about to be overwritten.
+		 */
+		if (((_kernel.cpus[0].nested == 2)
+				&& (_current->base.user_options & K_FP_REGS))
+			|| ((_kernel.cpus[0].nested > 2)
+				&& (spill_esf->undefined & FPEXC_EN))) {
+			/*
+			 * Spill VFP registers to specified exception stack
+			 * frame
+			 */
+			spill_esf->undefined |= FPEXC_EN;
+			spill_esf->fpscr = __get_FPSCR();
+			__asm__ volatile (
+				"vstmia %0, {s0-s15};\n"
+				: : "r" (&spill_esf->s[0])
+				: "memory"
+				);
+		}
+	} else {
+		/*
+		 * If the nested count is one, a thread was the faulting
+		 * context.  Just flag that this thread uses the VFP.  This
+		 * means that a thread that uses the VFP does not have to,
+		 * but should, set K_FP_REGS on thread creation.
+		 */
+		_current->base.user_options |= K_FP_REGS;
+	}
+
+	return false;
+}
+#endif
+
 /**
  * @brief Undefined instruction fault handler
  *
@@ -93,6 +167,20 @@ static void dump_fault(uint32_t status, uint32_t addr)
  */
 bool z_arm_fault_undef_instruction(z_arch_esf_t *esf)
 {
+#if defined(CONFIG_FPU_SHARING)
+	/*
+	 * This is a true undefined instruction and we will be crashing
+	 * so save away the VFP registers.
+	 */
+	esf->fpu.undefined = __get_FPEXC();
+	esf->fpu.fpscr = __get_FPSCR();
+	__asm__ volatile (
+		"vstmia %0, {s0-s15};\n"
+		: : "r" (&esf->fpu.s[0])
+		: "memory"
+		);
+#endif
+
 	/* Print fault information */
 	LOG_ERR("***** UNDEFINED INSTRUCTION ABORT *****");
 

@@ -14,10 +14,10 @@
  * not wrapped around by _isr_wrapper()).
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <offsets_short.h>
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 
 _ASM_FILE_PROLOGUE
 
@@ -59,6 +59,45 @@ GDATA(_kernel)
 	cps #MODE_SVC
 system_thread_exit\@:
 	pop {r0-r1}
+#endif
+.endm
+
+.macro fpu_exc_exit
+#if defined(CONFIG_FPU_SHARING)
+	/*
+	 * If the floating point context pointer is null, then a context was
+	 * saved so restore the float context from the exception stack frame.
+	 */
+	ldr r2, =_kernel
+	ldr r1, [r2, #_kernel_offset_to_fp_ctx]
+	cmp r1, #0
+	beq vfp_restore\@
+
+	/*
+	 * If leaving the last interrupt context, remove the floating point
+	 * context pointer.
+	 */
+	cmp r0, #0
+	moveq r1, #0
+	streq r1, [r2, #_kernel_offset_to_fp_ctx]
+	b vfp_exit\@
+
+vfp_restore\@:
+	add r3, sp, #___fpu_sf_t_fpscr_OFFSET
+	ldm r3, {r1, r2}
+	tst r2, #FPEXC_EN
+	beq vfp_exit\@
+
+	vmsr fpexc, r2
+	vmsr fpscr, r1
+	vldmia sp, {s0-s15}
+
+vfp_exit\@:
+	/* Leave the VFP disabled when leaving */
+	mov r1, #0
+	vmsr fpexc, r1
+
+	add sp, sp, #___fpu_t_SIZEOF
 #endif
 .endm
 
@@ -133,6 +172,11 @@ __EXIT_INT:
 	 * out or they are the args to _new_thread for a new thread.
 	 */
 	cps #MODE_SYS
+
+#if defined(CONFIG_FPU_SHARING)
+	fpu_exc_exit
+#endif
+
 	pop {r0-r3, r12, lr}
 	userspace_exc_exit
 	rfeia sp!
@@ -173,6 +217,9 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_exc_exit)
 	 */
 
 	/* Clean up exception stack frame */
+#if defined(CONFIG_FPU_SHARING)
+	add sp, sp, #___fpu_t_SIZEOF
+#endif
 	add sp, #32
 
 	/*
@@ -193,6 +240,9 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_exc_exit)
 
 	/* Return to the switched thread */
 	cps #MODE_SYS
+#if defined(CONFIG_FPU_SHARING)
+	fpu_exc_exit
+#endif
 	pop {r0-r3, r12, lr}
 	userspace_exc_exit
 	rfeia sp!
@@ -203,6 +253,9 @@ __EXIT_EXC:
 	sub r0, r0, #1
 	str r0, [r3, #_kernel_offset_to_nested]
 
+#if defined(CONFIG_FPU_SHARING)
+	add sp, sp, #___fpu_t_SIZEOF
+#endif
 	/*
 	 * Restore r0-r3, r12, lr, lr_und and spsr_und from the exception stack
 	 * and return to the current thread.

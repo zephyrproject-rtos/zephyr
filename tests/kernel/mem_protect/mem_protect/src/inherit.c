@@ -5,8 +5,8 @@
  */
 
 #include "mem_protect.h"
-#include <syscall_handler.h>
-#include <sys/libc-hooks.h> /* for z_libc_partition */
+#include <zephyr/syscall_handler.h>
+#include <zephyr/sys/libc-hooks.h> /* for z_libc_partition */
 
 /* function prototypes */
 static inline void dummy_start(struct k_timer *timer)

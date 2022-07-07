@@ -7,13 +7,13 @@
 #define DT_DRV_COMPAT renesas_rcar_scif
 
 #include <errno.h>
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/uart.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/rcar_clock_control.h>
-#include <drivers/pinctrl.h>
-#include <spinlock.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/spinlock.h>
 
 struct uart_rcar_cfg {
 	uint32_t reg_addr;

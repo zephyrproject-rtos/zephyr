@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
+#include <zephyr/init.h>
 #include <hal/nrf_power.h>
 
 static int board_nrf52840dongle_nrf52840_init(const struct device *dev)

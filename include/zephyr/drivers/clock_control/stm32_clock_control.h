@@ -9,35 +9,39 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_STM32_CLOCK_CONTROL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_STM32_CLOCK_CONTROL_H_
 
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F1X) || \
-	defined(CONFIG_SOC_SERIES_STM32F3X)
-#include <dt-bindings/clock/stm32f1_clock.h>
+#if defined(CONFIG_SOC_SERIES_STM32F0X)
+#include <zephyr/dt-bindings/clock/stm32f0_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32F1X)
+#include <zephyr/dt-bindings/clock/stm32f1_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32F3X)
+#include <zephyr/dt-bindings/clock/stm32f3_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F2X) || \
 	defined(CONFIG_SOC_SERIES_STM32F4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F7X)
-#include <dt-bindings/clock/stm32f4_clock.h>
+#include <zephyr/dt-bindings/clock/stm32f4_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32G0X)
-#include <dt-bindings/clock/stm32g0_clock.h>
+#include <zephyr/dt-bindings/clock/stm32g0_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32G4X)
+#include <zephyr/dt-bindings/clock/stm32g4_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32L0X)
-#include <dt-bindings/clock/stm32l0_clock.h>
+#include <zephyr/dt-bindings/clock/stm32l0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32L1X)
-#include <dt-bindings/clock/stm32l1_clock.h>
-#elif defined(CONFIG_SOC_SERIES_STM32G4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX)
-#include <dt-bindings/clock/stm32l4_clock.h>
+#include <zephyr/dt-bindings/clock/stm32l1_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X)
+#include <zephyr/dt-bindings/clock/stm32l4_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32WBX)
+#include <zephyr/dt-bindings/clock/stm32wb_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32WLX)
-#include <dt-bindings/clock/stm32wl_clock.h>
+#include <zephyr/dt-bindings/clock/stm32wl_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
-#include <dt-bindings/clock/stm32h7_clock.h>
+#include <zephyr/dt-bindings/clock/stm32h7_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
-#include <dt-bindings/clock/stm32u5_clock.h>
+#include <zephyr/dt-bindings/clock/stm32u5_clock.h>
 #else
-#include <dt-bindings/clock/stm32_clock.h>
+#include <zephyr/dt-bindings/clock/stm32_clock.h>
 #endif
 
 /** Common clock control device node for all STM32 chips */
@@ -180,9 +184,15 @@
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_lse), fixed_clock, okay)
 #define STM32_LSE_ENABLED	1
 #define STM32_LSE_FREQ		DT_PROP(DT_NODELABEL(clk_lse), clock_frequency)
+#define STM32_LSE_DRIVING	0
+#elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_lse), st_stm32_lse_clock, okay)
+#define STM32_LSE_ENABLED	1
+#define STM32_LSE_FREQ		DT_PROP(DT_NODELABEL(clk_lse), clock_frequency)
+#define STM32_LSE_DRIVING	DT_PROP(DT_NODELABEL(clk_lse), driving_capability)
 #else
 #define STM32_LSE_ENABLED	0
 #define STM32_LSE_FREQ		0
+#define STM32_LSE_DRIVING	0
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msi), st_stm32_msi_clock, okay) || \
@@ -258,11 +268,73 @@
 #define STM32_HSE_FREQ		0
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(perck), st_stm32_clock_mux, okay)
+#define STM32_CKPER_ENABLED	1
+#endif
+
 /** Driver structure definition */
 
 struct stm32_pclken {
 	uint32_t bus;
 	uint32_t enr;
 };
+
+/** Device tree clocks helpers  */
+
+#define STM32_CLOCK_INFO(clk_index, node_id)				\
+	{								\
+	.enr = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bits),		\
+	.bus = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bus)		\
+	}
+#define STM32_DT_CLOCKS(node_id)					\
+	{								\
+		LISTIFY(DT_NUM_CLOCKS(node_id),				\
+			STM32_CLOCK_INFO, (,), node_id)			\
+	}
+
+#define STM32_DT_INST_CLOCKS(inst)					\
+	STM32_DT_CLOCKS(DT_DRV_INST(inst))
+
+#define STM32_OPT_CLOCK_INST_SUPPORT(inst) DT_INST_CLOCKS_HAS_IDX(inst, 1) ||
+#define STM32_DT_INST_DEV_OPT_CLOCK_SUPPORT				\
+		(DT_INST_FOREACH_STATUS_OKAY(STM32_OPT_CLOCK_INST_SUPPORT) 0)
+
+#define STM32_OPT_CLOCK_SUPPORT(id) DT_CLOCKS_HAS_IDX(DT_NODELABEL(id), 1) ||
+#define STM32_DT_DEV_OPT_CLOCK_SUPPORT					\
+		(DT_FOREACH_STATUS_OKAY(STM32_OPT_CLOCK_SUPPORT) 0)
+
+/** Clock source binding accessors */
+
+/**
+ * @brief Obtain register field from clock configuration.
+ *
+ * @param clock clock bit field value.
+ */
+#define STM32_CLOCK_REG_GET(clock) \
+	(((clock) >> STM32_CLOCK_REG_SHIFT) & STM32_CLOCK_REG_MASK)
+
+/**
+ * @brief Obtain position field from clock configuration.
+ *
+ * @param clock Clock bit field value.
+ */
+#define STM32_CLOCK_SHIFT_GET(clock) \
+	(((clock) >> STM32_CLOCK_SHIFT_SHIFT) & STM32_CLOCK_SHIFT_MASK)
+
+/**
+ * @brief Obtain mask field from clock configuration.
+ *
+ * @param clock Clock bit field value.
+ */
+#define STM32_CLOCK_MASK_GET(clock) \
+	(((clock) >> STM32_CLOCK_MASK_SHIFT) & STM32_CLOCK_MASK_MASK)
+
+/**
+ * @brief Obtain value field from clock configuration.
+ *
+ * @param clock Clock bit field value.
+ */
+#define STM32_CLOCK_VAL_GET(clock) \
+	(((clock) >> STM32_CLOCK_VAL_SHIFT) & STM32_CLOCK_VAL_MASK)
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_STM32_CLOCK_CONTROL_H_ */

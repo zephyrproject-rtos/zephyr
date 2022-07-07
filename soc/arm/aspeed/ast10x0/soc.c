@@ -4,13 +4,13 @@
  * Copyright (c) 2021 ASPEED Technology Inc.
  */
 
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <stdint.h>
 #include <string.h>
-#include <linker/linker-defs.h>
-#include <device.h>
-#include <cache.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/device.h>
+#include <zephyr/cache.h>
 #include <soc.h>
 
 extern char __bss_nc_start__[];
@@ -98,6 +98,8 @@ void z_arm_platform_init(void)
 	if (CONFIG_SRAM_NC_SIZE > 0) {
 		(void)memset(__bss_nc_start__, 0, __bss_nc_end__ - __bss_nc_start__);
 	}
+
+	cache_instr_enable();
 }
 
 void aspeed_print_abr_wdt_mode(void)

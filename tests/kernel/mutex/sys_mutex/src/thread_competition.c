@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <sys/mutex.h>
+#include <zephyr/sys/mutex.h>
 
 #define HIGH_T1	 0xaaa
 #define HIGH_T2	 0xbbb

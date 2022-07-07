@@ -7,10 +7,10 @@
 #define DT_DRV_COMPAT microchip_xec_adc
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_mchp_xec);
 
-#include <drivers/adc.h>
+#include <zephyr/drivers/adc.h>
 #include <soc.h>
 #include <errno.h>
 

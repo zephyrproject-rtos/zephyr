@@ -7,10 +7,10 @@
 #ifndef SHELL_UART_H__
 #define SHELL_UART_H__
 
-#include <shell/shell.h>
-#include <sys/ring_buffer.h>
-#include <sys/atomic.h>
-#include "mgmt/mcumgr/smp_shell.h"
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/mgmt/mcumgr/smp_shell.h>
 
 #ifdef __cplusplus
 extern "C" {

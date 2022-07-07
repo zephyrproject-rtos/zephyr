@@ -8,7 +8,7 @@
 
 #include <soc.h>
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"

@@ -9,16 +9,16 @@
 
 #include <stdint.h>
 #include "irq_handler.h"
-#include "irq_offload.h"
-#include "kernel_structs.h"
+#include <zephyr/irq_offload.h>
+#include <zephyr/kernel_structs.h>
 #include "kernel_internal.h"
 #include "kswap.h"
 #include "irq_ctrl.h"
 #include "posix_core.h"
 #include "board_soc.h"
-#include "sw_isr_table.h"
+#include <zephyr/sw_isr_table.h>
 #include "soc.h"
-#include <tracing/tracing.h>
+#include <zephyr/tracing/tracing.h>
 
 typedef void (*normal_irq_f_ptr)(const void *);
 typedef int (*direct_irq_f_ptr)(void);

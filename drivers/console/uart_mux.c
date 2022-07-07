@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_mux, CONFIG_UART_MUX_LOG_LEVEL);
 
-#include <sys/__assert.h>
-#include <kernel.h>
-#include <init.h>
-#include <syscall_handler.h>
-#include <device.h>
-#include <drivers/uart.h>
-#include <drivers/console/uart_mux.h>
-#include <sys/ring_buffer.h>
-#include <sys/util.h>
-#include <sys/atomic.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/console/uart_mux.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/atomic.h>
 
 #include "gsm_mux.h"
 
@@ -170,7 +170,7 @@ static int uart_mux_consume_ringbuf(struct uart_mux *uart_mux)
 
 		snprintk(tmp, sizeof(tmp), "RECV muxed %s",
 			 uart_mux->uart->name);
-		LOG_HEXDUMP_DBG(data, len, log_strdup(tmp));
+		LOG_HEXDUMP_DBG(data, len, tmp);
 	}
 
 	gsm_mux_recv_buf(uart_mux->mux, data, len);
@@ -217,7 +217,7 @@ static void uart_mux_tx_work(struct k_work *work)
 
 		snprintk(tmp, sizeof(tmp), "SEND %s",
 			 dev_data->dev->name);
-		LOG_HEXDUMP_DBG(data, len, log_strdup(tmp));
+		LOG_HEXDUMP_DBG(data, len, tmp);
 	}
 
 	(void)gsm_dlci_send(dev_data->dlci, data, len);
@@ -801,7 +801,7 @@ int uart_mux_send(const struct device *uart, const uint8_t *buf, size_t size)
 
 		snprintk(tmp, sizeof(tmp), "SEND muxed %s",
 			 dev_data->real_uart->uart->name);
-		LOG_HEXDUMP_DBG(buf, size, log_strdup(tmp));
+		LOG_HEXDUMP_DBG(buf, size, tmp);
 	}
 
 	k_mutex_lock(&dev_data->real_uart->lock, K_FOREVER);
@@ -831,7 +831,7 @@ int uart_mux_recv(const struct device *mux, struct gsm_dlci *dlci,
 
 		snprintk(tmp, sizeof(tmp), "RECV %s",
 			 dev_data->dev->name);
-		LOG_HEXDUMP_DBG(data, len, log_strdup(tmp));
+		LOG_HEXDUMP_DBG(data, len, tmp);
 	}
 
 	wrote = ring_buf_put(dev_data->rx_ringbuf, data, len);

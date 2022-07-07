@@ -7,7 +7,7 @@
 
 #include <soc/efuse_reg.h>
 
-#include <drivers/hwinfo.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <string.h>
 
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)

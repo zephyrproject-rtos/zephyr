@@ -6,12 +6,12 @@
 #include "mesh_test.h"
 #include "mesh/net.h"
 #include "mesh/transport.h"
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 #include "argparse.h"
 
 #define LOG_MODULE_NAME test_friendship
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /*

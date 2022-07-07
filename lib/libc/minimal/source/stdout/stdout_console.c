@@ -7,8 +7,8 @@
  */
 
 #include <stdio.h>
-#include <sys/libc-hooks.h>
-#include <syscall_handler.h>
+#include <zephyr/sys/libc-hooks.h>
+#include <zephyr/syscall_handler.h>
 #include <string.h>
 
 static int _stdout_hook_default(int c)
@@ -18,9 +18,9 @@ static int _stdout_hook_default(int c)
 	return EOF;
 }
 
-static int (*_stdout_hook)(int) = _stdout_hook_default;
+static int (*_stdout_hook)(int c) = _stdout_hook_default;
 
-void __stdout_hook_install(int (*hook)(int))
+void __stdout_hook_install(int (*hook)(int c))
 {
 	_stdout_hook = hook;
 }

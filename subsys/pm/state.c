@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <pm/state.h>
-#include <toolchain.h>
+#include <zephyr/pm/state.h>
+#include <zephyr/toolchain.h>
 
 BUILD_ASSERT(DT_NODE_EXISTS(DT_PATH(cpus)),
 	     "cpus node not defined in Devicetree");

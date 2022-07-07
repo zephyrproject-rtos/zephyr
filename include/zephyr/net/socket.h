@@ -24,9 +24,9 @@
 
 #include <sys/types.h>
 #include <zephyr/types.h>
-#include <net/net_ip.h>
-#include <net/dns_resolve.h>
-#include <net/socket_select.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/socket_select.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus
@@ -685,52 +685,62 @@ int zsock_getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 
 #define pollfd zsock_pollfd
 
+/** POSIX wrapper for @ref zsock_socket */
 static inline int socket(int family, int type, int proto)
 {
 	return zsock_socket(family, type, proto);
 }
 
+/** POSIX wrapper for @ref zsock_socketpair */
 static inline int socketpair(int family, int type, int proto, int sv[2])
 {
 	return zsock_socketpair(family, type, proto, sv);
 }
 
+/** POSIX wrapper for @ref zsock_close */
 static inline int close(int sock)
 {
 	return zsock_close(sock);
 }
 
+/** POSIX wrapper for @ref zsock_shutdown */
 static inline int shutdown(int sock, int how)
 {
 	return zsock_shutdown(sock, how);
 }
 
+/** POSIX wrapper for @ref zsock_bind */
 static inline int bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
 {
 	return zsock_bind(sock, addr, addrlen);
 }
 
+/** POSIX wrapper for @ref zsock_connect */
 static inline int connect(int sock, const struct sockaddr *addr,
 			  socklen_t addrlen)
 {
 	return zsock_connect(sock, addr, addrlen);
 }
 
+/** POSIX wrapper for @ref zsock_listen */
 static inline int listen(int sock, int backlog)
 {
 	return zsock_listen(sock, backlog);
 }
 
+/** POSIX wrapper for @ref zsock_accept */
 static inline int accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 {
 	return zsock_accept(sock, addr, addrlen);
 }
 
+/** POSIX wrapper for @ref zsock_send */
 static inline ssize_t send(int sock, const void *buf, size_t len, int flags)
 {
 	return zsock_send(sock, buf, len, flags);
 }
 
+/** POSIX wrapper for @ref zsock_recv */
 static inline ssize_t recv(int sock, void *buf, size_t max_len, int flags)
 {
 	return zsock_recv(sock, buf, max_len, flags);
@@ -753,6 +763,7 @@ static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
 
 #define fcntl zsock_fcntl_wrapper
 
+/** POSIX wrapper for @ref zsock_sendto */
 static inline ssize_t sendto(int sock, const void *buf, size_t len, int flags,
 			     const struct sockaddr *dest_addr,
 			     socklen_t addrlen)
@@ -760,47 +771,55 @@ static inline ssize_t sendto(int sock, const void *buf, size_t len, int flags,
 	return zsock_sendto(sock, buf, len, flags, dest_addr, addrlen);
 }
 
+/** POSIX wrapper for @ref zsock_sendmsg */
 static inline ssize_t sendmsg(int sock, const struct msghdr *message,
 			      int flags)
 {
 	return zsock_sendmsg(sock, message, flags);
 }
 
+/** POSIX wrapper for @ref zsock_recvfrom */
 static inline ssize_t recvfrom(int sock, void *buf, size_t max_len, int flags,
 			       struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	return zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
 }
 
+/** POSIX wrapper for @ref zsock_poll */
 static inline int poll(struct zsock_pollfd *fds, int nfds, int timeout)
 {
 	return zsock_poll(fds, nfds, timeout);
 }
 
+/** POSIX wrapper for @ref zsock_getsockopt */
 static inline int getsockopt(int sock, int level, int optname,
 			     void *optval, socklen_t *optlen)
 {
 	return zsock_getsockopt(sock, level, optname, optval, optlen);
 }
 
+/** POSIX wrapper for @ref zsock_setsockopt */
 static inline int setsockopt(int sock, int level, int optname,
 			     const void *optval, socklen_t optlen)
 {
 	return zsock_setsockopt(sock, level, optname, optval, optlen);
 }
 
+/** POSIX wrapper for @ref zsock_getpeername */
 static inline int getpeername(int sock, struct sockaddr *addr,
 			      socklen_t *addrlen)
 {
 	return zsock_getpeername(sock, addr, addrlen);
 }
 
+/** POSIX wrapper for @ref zsock_getsockname */
 static inline int getsockname(int sock, struct sockaddr *addr,
 			      socklen_t *addrlen)
 {
 	return zsock_getsockname(sock, addr, addrlen);
 }
 
+/** POSIX wrapper for @ref zsock_getaddrinfo */
 static inline int getaddrinfo(const char *host, const char *service,
 			      const struct zsock_addrinfo *hints,
 			      struct zsock_addrinfo **res)
@@ -808,16 +827,19 @@ static inline int getaddrinfo(const char *host, const char *service,
 	return zsock_getaddrinfo(host, service, hints, res);
 }
 
+/** POSIX wrapper for @ref zsock_freeaddrinfo */
 static inline void freeaddrinfo(struct zsock_addrinfo *ai)
 {
 	zsock_freeaddrinfo(ai);
 }
 
+/** POSIX wrapper for @ref zsock_gai_strerror */
 static inline const char *gai_strerror(int errcode)
 {
 	return zsock_gai_strerror(errcode);
 }
 
+/** POSIX wrapper for @ref zsock_getnameinfo */
 static inline int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 			      char *host, socklen_t hostlen,
 			      char *serv, socklen_t servlen, int flags)
@@ -828,46 +850,71 @@ static inline int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 
 #define addrinfo zsock_addrinfo
 
+/** POSIX wrapper for @ref zsock_gethostname */
 static inline int gethostname(char *buf, size_t len)
 {
 	return zsock_gethostname(buf, len);
 }
 
+/** POSIX wrapper for @ref zsock_inet_pton */
 static inline int inet_pton(sa_family_t family, const char *src, void *dst)
 {
 	return zsock_inet_pton(family, src, dst);
 }
 
+/** POSIX wrapper for @ref zsock_inet_ntop */
 static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 			      size_t size)
 {
 	return zsock_inet_ntop(family, src, dst, size);
 }
 
+/** POSIX wrapper for @ref ZSOCK_POLLIN */
 #define POLLIN ZSOCK_POLLIN
+/** POSIX wrapper for @ref ZSOCK_POLLOUT */
 #define POLLOUT ZSOCK_POLLOUT
+/** POSIX wrapper for @ref ZSOCK_POLLERR */
 #define POLLERR ZSOCK_POLLERR
+/** POSIX wrapper for @ref ZSOCK_POLLHUP */
 #define POLLHUP ZSOCK_POLLHUP
+/** POSIX wrapper for @ref ZSOCK_POLLNVAL */
 #define POLLNVAL ZSOCK_POLLNVAL
 
+/** POSIX wrapper for @ref ZSOCK_MSG_PEEK */
 #define MSG_PEEK ZSOCK_MSG_PEEK
+/** POSIX wrapper for @ref ZSOCK_MSG_TRUNC */
 #define MSG_TRUNC ZSOCK_MSG_TRUNC
+/** POSIX wrapper for @ref ZSOCK_MSG_DONTWAIT */
 #define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
+/** POSIX wrapper for @ref ZSOCK_MSG_WAITALL */
 #define MSG_WAITALL ZSOCK_MSG_WAITALL
 
+/** POSIX wrapper for @ref ZSOCK_SHUT_RD */
 #define SHUT_RD ZSOCK_SHUT_RD
+/** POSIX wrapper for @ref ZSOCK_SHUT_WR */
 #define SHUT_WR ZSOCK_SHUT_WR
+/** POSIX wrapper for @ref ZSOCK_SHUT_RDWR */
 #define SHUT_RDWR ZSOCK_SHUT_RDWR
 
+/** POSIX wrapper for @ref DNS_EAI_BADFLAGS */
 #define EAI_BADFLAGS DNS_EAI_BADFLAGS
+/** POSIX wrapper for @ref DNS_EAI_NONAME */
 #define EAI_NONAME DNS_EAI_NONAME
+/** POSIX wrapper for @ref DNS_EAI_AGAIN */
 #define EAI_AGAIN DNS_EAI_AGAIN
+/** POSIX wrapper for @ref DNS_EAI_FAIL */
 #define EAI_FAIL DNS_EAI_FAIL
+/** POSIX wrapper for @ref DNS_EAI_NODATA */
 #define EAI_NODATA DNS_EAI_NODATA
+/** POSIX wrapper for @ref DNS_EAI_MEMORY */
 #define EAI_MEMORY DNS_EAI_MEMORY
+/** POSIX wrapper for @ref DNS_EAI_SYSTEM */
 #define EAI_SYSTEM DNS_EAI_SYSTEM
+/** POSIX wrapper for @ref DNS_EAI_SERVICE */
 #define EAI_SERVICE DNS_EAI_SERVICE
+/** POSIX wrapper for @ref DNS_EAI_SOCKTYPE */
 #define EAI_SOCKTYPE DNS_EAI_SOCKTYPE
+/** POSIX wrapper for @ref DNS_EAI_FAMILY */
 #define EAI_FAMILY DNS_EAI_FAMILY
 #endif /* defined(CONFIG_NET_SOCKETS_POSIX_NAMES) */
 

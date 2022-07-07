@@ -4,23 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <logging/log_ctrl.h>
-#include <net/socket.h>
-#include <net/net_mgmt.h>
-#include <net/net_ip.h>
-#include <net/udp.h>
-#include <net/coap.h>
-#include <net/dns_resolve.h>
-#include <drivers/flash.h>
-#include <sys/reboot.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/udp.h>
+#include <zephyr/net/coap.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/sys/reboot.h>
 #include <tinycrypt/sha256.h>
-#include <data/json.h>
-#include <storage/flash_map.h>
+#include <zephyr/data/json.h>
+#include <zephyr/storage/flash_map.h>
 
 #include "include/updatehub.h"
 #include "updatehub_priv.h"
@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
 #define CA_CERTIFICATE_TAG 1
-#include <net/tls_credentials.h>
+#include <zephyr/net/tls_credentials.h>
 #endif
 
 #define NETWORK_TIMEOUT (2 * MSEC_PER_SEC)
@@ -878,7 +878,7 @@ enum updatehub_response updatehub_probe(void)
 		       SHA256_HEX_DIGEST_SIZE);
 		update_info.image_size = metadata_any_boards.objects[1].objects.size;
 		LOG_DBG("metadata_any: %s",
-			log_strdup(update_info.sha256sum_image));
+			update_info.sha256sum_image);
 	} else {
 		if (metadata_some_boards.objects_len != 2) {
 			LOG_ERR("Could not parse json");
@@ -908,7 +908,7 @@ enum updatehub_response updatehub_probe(void)
 		update_info.image_size =
 			metadata_some_boards.objects[1].objects.size;
 		LOG_DBG("metadata_some: %s",
-			log_strdup(update_info.sha256sum_image));
+			update_info.sha256sum_image);
 	}
 
 	ctx.code_status = UPDATEHUB_HAS_UPDATE;

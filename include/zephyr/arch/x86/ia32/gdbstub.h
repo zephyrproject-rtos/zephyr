@@ -15,7 +15,7 @@
 #ifndef _ASMLANGUAGE
 
 #include <stdint.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 /**
  * @brief Number of register used by gdbstub in IA-32

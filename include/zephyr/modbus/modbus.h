@@ -30,7 +30,7 @@
 #ifndef ZEPHYR_INCLUDE_MODBUS_H_
 #define ZEPHYR_INCLUDE_MODBUS_H_
 
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 
 #ifdef __cplusplus
 extern "C" {

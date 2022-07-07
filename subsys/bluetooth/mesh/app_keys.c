@@ -7,8 +7,8 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <bluetooth/mesh.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/mesh.h>
+#include <zephyr/bluetooth/conn.h>
 #include "mesh.h"
 #include "net.h"
 #include "app_keys.h"
@@ -111,9 +111,9 @@ static void store_app_key(uint16_t app_idx)
 
 	err = settings_save_one(path, &key, sizeof(key));
 	if (err) {
-		BT_ERR("Failed to store AppKey %s value", log_strdup(path));
+		BT_ERR("Failed to store AppKey %s value", path);
 	} else {
-		BT_DBG("Stored AppKey %s value", log_strdup(path));
+		BT_DBG("Stored AppKey %s value", path);
 	}
 }
 

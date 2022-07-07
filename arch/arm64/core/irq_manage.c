@@ -9,14 +9,14 @@
  * @brief ARM64 Cortex-A interrupt management
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <tracing/tracing.h>
-#include <irq.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <sw_isr_table.h>
-#include <drivers/interrupt_controller/gic.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/tracing/tracing.h>
+#include <zephyr/irq.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/sw_isr_table.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
 
 void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf);
 

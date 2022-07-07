@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/can.h>
-#include <kernel.h>
-#include <sys/util.h>
-#include <logging/log.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(can_common, CONFIG_CAN_LOG_LEVEL);
 
@@ -151,8 +151,8 @@ int z_impl_can_calc_timing(const struct device *dev, struct can_timing *res,
 int z_impl_can_calc_timing_data(const struct device *dev, struct can_timing *res,
 				uint32_t bitrate, uint16_t sample_pnt)
 {
-	const struct can_timing *min = can_get_timing_min_data(dev);
-	const struct can_timing *max = can_get_timing_max_data(dev);
+	const struct can_timing *min = can_get_timing_data_min(dev);
+	const struct can_timing *max = can_get_timing_data_max(dev);
 	uint32_t core_clock;
 	int ret;
 
@@ -207,12 +207,9 @@ uint16_t sample_point_for_bitrate(uint32_t bitrate)
 	return sample_pnt;
 }
 
-int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate, uint32_t bitrate_data)
+int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate)
 {
 	struct can_timing timing;
-#ifdef CONFIG_CAN_FD_MODE
-	struct can_timing timing_data;
-#endif /* CONFIG_CAN_FD_MODE */
 	uint32_t max_bitrate;
 	uint16_t sample_pnt;
 	int ret;
@@ -241,7 +238,25 @@ int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate, uint32_t 
 
 	timing.sjw = CAN_SJW_NO_CHANGE;
 
+	return can_set_timing(dev, &timing);
+}
+
 #ifdef CONFIG_CAN_FD_MODE
+int z_impl_can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data)
+{
+	struct can_timing timing_data;
+	uint32_t max_bitrate;
+	uint16_t sample_pnt;
+	int ret;
+
+	ret = can_get_max_bitrate(dev, &max_bitrate);
+	if (ret == -ENOSYS) {
+		/* Maximum bitrate unknown */
+		max_bitrate = 0;
+	} else if (ret < 0) {
+		return ret;
+	}
+
 	if ((max_bitrate > 0) && (bitrate_data > max_bitrate)) {
 		return -ENOTSUP;
 	}
@@ -258,8 +273,6 @@ int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate, uint32_t 
 
 	timing_data.sjw = CAN_SJW_NO_CHANGE;
 
-	return can_set_timing(dev, &timing, &timing_data);
-#else /* CONFIG_CAN_FD_MODE */
-	return can_set_timing(dev, &timing, NULL);
-#endif /* !CONFIG_CAN_FD_MODE */
+	return can_set_timing_data(dev, &timing_data);
 }
+#endif /* CONFIG_CAN_FD_MODE */

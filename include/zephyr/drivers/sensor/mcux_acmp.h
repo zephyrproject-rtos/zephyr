@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Vestas Wind Systems A/S
+ * Copyright 2022 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +17,31 @@
 extern "C" {
 #endif
 
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
+
+#if defined(FSL_FEATURE_ACMP_HAS_C1_INPSEL_BIT) && (FSL_FEATURE_ACMP_HAS_C1_INPSEL_BIT == 1U)
+#define MCUX_ACMP_HAS_INPSEL 1
+#else
+#define MCUX_ACMP_HAS_INPSEL 0
+#endif
+
+#if defined(FSL_FEATURE_ACMP_HAS_C1_INNSEL_BIT) && (FSL_FEATURE_ACMP_HAS_C1_INNSEL_BIT == 1U)
+#define MCUX_ACMP_HAS_INNSEL 1
+#else
+#define MCUX_ACMP_HAS_INNSEL 0
+#endif
+
+#if defined(FSL_FEATURE_ACMP_HAS_C0_OFFSET_BIT) && (FSL_FEATURE_ACMP_HAS_C0_OFFSET_BIT == 1U)
+#define MCUX_ACMP_HAS_OFFSET 1
+#else
+#define MCUX_ACMP_HAS_OFFSET 0
+#endif
+
+#if defined(FSL_FEATURE_ACMP_HAS_C3_REG) && (FSL_FEATURE_ACMP_HAS_C3_REG != 0U)
+#define MCUX_ACMP_HAS_DISCRETE_MODE 1
+#else
+#define MCUX_ACMP_HAS_DISCRETE_MODE 0
+#endif
 
 enum sensor_channel_mcux_acmp {
 	/** Analog Comparator Output. */
@@ -50,6 +75,22 @@ enum sensor_attribute_mcux_acmp {
 	SENSOR_ATTR_MCUX_ACMP_NEGATIVE_PORT_INPUT,
 	/** Analog Comparator negative mux input. */
 	SENSOR_ATTR_MCUX_ACMP_NEGATIVE_MUX_INPUT,
+#if MCUX_ACMP_HAS_DISCRETE_MODE
+	/** Analog Comparator Positive Channel Discrete Mode Enable. */
+	SENSOR_ATTR_MCUX_ACMP_POSITIVE_DISCRETE_MODE,
+	/** Analog Comparator Negative Channel Discrete Mode Enable. */
+	SENSOR_ATTR_MCUX_ACMP_NEGATIVE_DISCRETE_MODE,
+	/** Analog Comparator discrete mode clock selection. */
+	SENSOR_ATTR_MCUX_ACMP_DISCRETE_CLOCK,
+	/** Analog Comparator resistor divider enable. */
+	SENSOR_ATTR_MCUX_ACMP_DISCRETE_ENABLE_RESISTOR_DIVIDER,
+	/** Analog Comparator discrete sample selection. */
+	SENSOR_ATTR_MCUX_ACMP_DISCRETE_SAMPLE_TIME,
+	/** Analog Comparator discrete phase1 sampling time selection. */
+	SENSOR_ATTR_MCUX_ACMP_DISCRETE_PHASE1_TIME,
+	/** Analog Comparator discrete phase2 sampling time selection. */
+	SENSOR_ATTR_MCUX_ACMP_DISCRETE_PHASE2_TIME,
+#endif
 };
 
 #ifdef __cplusplus

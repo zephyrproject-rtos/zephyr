@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <syscall_handler.h>
-#include <drivers/can.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/drivers/can.h>
 
 static int z_vrfy_can_calc_timing(const struct device *dev, struct can_timing *res,
 				  uint32_t bitrate, uint16_t sample_pnt)
@@ -24,21 +24,14 @@ static int z_vrfy_can_calc_timing(const struct device *dev, struct can_timing *r
 #include <syscalls/can_calc_timing_mrsh.c>
 
 static inline int z_vrfy_can_set_timing(const struct device *dev,
-					const struct can_timing *timing,
-					const struct can_timing *timing_data)
+					const struct can_timing *timing)
 {
 	struct can_timing timing_copy;
-	struct can_timing timing_data_copy;
 
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, set_timing));
 	Z_OOPS(z_user_from_copy(&timing_copy, timing, sizeof(timing_copy)));
 
-	if (timing_data != NULL) {
-		Z_OOPS(z_user_from_copy(&timing_data_copy, timing_data, sizeof(timing_data_copy)));
-		return z_impl_can_set_timing(dev, &timing_copy, &timing_data_copy);
-	}
-
-	return z_impl_can_set_timing(dev, &timing_copy, NULL);
+	return z_impl_can_set_timing(dev, &timing_copy);
 }
 #include <syscalls/can_set_timing_mrsh.c>
 
@@ -97,21 +90,42 @@ static int z_vrfy_can_calc_timing_data(const struct device *dev, struct can_timi
 }
 #include <syscalls/can_calc_timing_data_mrsh.c>
 
-static inline const struct can_timing *z_vrfy_can_get_timing_min_data(const struct device *dev)
+static inline const struct can_timing *z_vrfy_can_get_timing_data_min(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
 
-	return z_impl_can_get_timing_min_data(dev);
+	return z_impl_can_get_timing_data_min(dev);
 }
-#include <syscalls/can_get_timing_min_data_mrsh.c>
+#include <syscalls/can_get_timing_data_min_mrsh.c>
 
-static inline const struct can_timing *z_vrfy_can_get_timing_max_data(const struct device *dev)
+static inline const struct can_timing *z_vrfy_can_get_timing_data_max(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
 
-	return z_impl_can_get_timing_max_data(dev);
+	return z_impl_can_get_timing_data_max(dev);
 }
-#include <syscalls/can_get_timing_max_data_mrsh.c>
+#include <syscalls/can_get_timing_data_max_mrsh.c>
+
+static inline int z_vrfy_can_set_timing_data(const struct device *dev,
+					     const struct can_timing *timing_data)
+{
+	struct can_timing timing_data_copy;
+
+	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, set_timing_data));
+	Z_OOPS(z_user_from_copy(&timing_data_copy, timing_data, sizeof(timing_data_copy)));
+
+	return z_impl_can_set_timing_data(dev, &timing_data_copy);
+}
+#include <syscalls/can_set_timing_data_mrsh.c>
+
+static inline int z_vrfy_can_set_bitrate_data(const struct device *dev,
+					      uint32_t bitrate_data)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, set_timing_data));
+
+	return z_impl_can_set_bitrate_data(dev, bitrate_data);
+}
+#include <syscalls/can_set_bitrate_data_mrsh.c>
 
 #endif /* CONFIG_CAN_FD_MODE */
 
@@ -124,7 +138,7 @@ static inline int z_vrfy_can_get_max_filters(const struct device *dev, enum can_
 }
 #include <syscalls/can_get_max_filters_mrsh.c>
 
-static inline int z_vrfy_can_set_mode(const struct device *dev, enum can_mode mode)
+static inline int z_vrfy_can_set_mode(const struct device *dev, can_mode_t mode)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, set_mode));
 
@@ -132,12 +146,11 @@ static inline int z_vrfy_can_set_mode(const struct device *dev, enum can_mode mo
 }
 #include <syscalls/can_set_mode_mrsh.c>
 
-static inline int z_vrfy_can_set_bitrate(const struct device *dev, uint32_t bitrate,
-					 uint32_t bitrate_data)
+static inline int z_vrfy_can_set_bitrate(const struct device *dev, uint32_t bitrate)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, set_timing));
 
-	return z_impl_can_set_bitrate(dev, bitrate, bitrate_data);
+	return z_impl_can_set_bitrate(dev, bitrate);
 }
 #include <syscalls/can_set_bitrate_mrsh.c>
 

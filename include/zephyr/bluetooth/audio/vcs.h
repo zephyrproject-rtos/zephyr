@@ -20,8 +20,8 @@
  */
 
 #include <zephyr/types.h>
-#include <bluetooth/audio/aics.h>
-#include <bluetooth/audio/vocs.h>
+#include <zephyr/bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/audio/vocs.h>
 
 #ifdef __cplusplus
 extern "C" {

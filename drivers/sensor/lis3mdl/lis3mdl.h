@@ -7,13 +7,11 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_LIS3MDL_LIS3MDL_H_
 #define ZEPHYR_DRIVERS_SENSOR_LIS3MDL_LIS3MDL_H_
 
-#include <device.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
-#include <drivers/gpio.h>
-
-#define LIS3MDL_I2C_ADDR_BASE           0x1C
-#define LIS3MDL_I2C_ADDR_MASK           (~BIT(1))
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 
 #define LIS3MDL_REG_WHO_AM_I            0x0F
 #define LIS3MDL_CHIP_ID                 0x3D
@@ -111,7 +109,6 @@ static const uint16_t lis3mdl_magn_gain[] = {
 };
 
 struct lis3mdl_data {
-	const struct device *i2c;
 	int16_t x_sample;
 	int16_t y_sample;
 	int16_t z_sample;
@@ -119,7 +116,6 @@ struct lis3mdl_data {
 
 #ifdef CONFIG_LIS3MDL_TRIGGER
 	const struct device *dev;
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
@@ -134,6 +130,13 @@ struct lis3mdl_data {
 #endif
 
 #endif /* CONFIG_LIS3MDL_TRIGGER */
+};
+
+struct lis3mdl_config {
+	struct i2c_dt_spec i2c;
+#ifdef CONFIG_LIS3MDL_TRIGGER
+	struct gpio_dt_spec irq_gpio;
+#endif
 };
 
 #ifdef CONFIG_LIS3MDL_TRIGGER

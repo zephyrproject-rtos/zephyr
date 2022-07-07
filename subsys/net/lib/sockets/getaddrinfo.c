@@ -11,14 +11,14 @@
 #include <ctype.h>
 
 /* Zephyr headers */
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_addr, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
-#include <kernel.h>
-#include <net/net_ip.h>
-#include <net/socket.h>
-#include <net/socket_offload.h>
-#include <syscall_handler.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/socket_offload.h>
+#include <zephyr/syscall_handler.h>
 
 #if defined(CONFIG_DNS_RESOLVER) || \
 	defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)

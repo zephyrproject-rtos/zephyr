@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_FAKE_DRIVER_H
 #define ZEPHYR_FAKE_DRIVER_H
 
-#include <device.h>
+#include <zephyr/device.h>
 
 #define SAMPLE_DRIVER_NAME_0	"SAMPLE_DRIVER_0"
 #define SAMPLE_DRIVER_MSG_SIZE	128

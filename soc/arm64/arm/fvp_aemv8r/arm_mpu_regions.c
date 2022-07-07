@@ -3,10 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/slist.h>
-#include <linker/linker-defs.h>
-#include <arch/arm64/cortex_r/arm_mpu.h>
+#include <stdint.h>
 
+#include <zephyr/arch/arm64/cortex_r/arm_mpu.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/util.h>
 
 #define DEVICE_REGION_START 0x80000000UL
 #define DEVICE_REGION_END   0xFFFFFFFFUL

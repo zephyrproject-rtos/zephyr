@@ -5,8 +5,8 @@
  */
 
 #include <kernel_internal.h>
-#include <arch/x86/ia32/arch.h>
-#include <arch/x86/ia32/segmentation.h>
+#include <zephyr/arch/x86/ia32/arch.h>
+#include <zephyr/arch/x86/ia32/segmentation.h>
 
 #define ENTRY_NUM	(GS_TLS_SEG >> 3)
 

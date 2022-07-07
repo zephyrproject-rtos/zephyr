@@ -5,14 +5,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
-#include <net/net_core.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
 
-#include <net/ppp.h>
-#include <net/dns_resolve.h>
+#include <zephyr/net/ppp.h>
+#include <zephyr/net/dns_resolve.h>
 
 #include "net_private.h"
 
@@ -201,7 +201,7 @@ static int ipcp_ip_address_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
 					 sizeof(dst));
 
 		NET_DBG("[IPCP] Received peer address %s",
-			log_strdup(addr_str));
+			addr_str);
 	}
 
 	data->addr_present = true;
@@ -409,11 +409,11 @@ static void ipcp_up(struct ppp_fsm *fsm)
 				    NET_ADDR_MANUAL,
 				    0);
 	if (addr == NULL) {
-		NET_ERR("Could not set IP address %s", log_strdup(addr_str));
+		NET_ERR("Could not set IP address %s", addr_str);
 		return;
 	}
 
-	NET_DBG("PPP up with address %s", log_strdup(addr_str));
+	NET_DBG("PPP up with address %s", addr_str);
 	ppp_network_up(ctx, PPP_IP);
 
 	ctx->is_ipcp_up = true;

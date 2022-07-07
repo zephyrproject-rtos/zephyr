@@ -4,15 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(log_backend_net, CONFIG_LOG_DEFAULT_LEVEL);
 
-#include <logging/log_backend.h>
-#include <logging/log_core.h>
-#include <logging/log_output.h>
-#include <logging/log_msg.h>
-#include <net/net_pkt.h>
-#include <net/net_context.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_context.h>
 
 /* Set this to 1 if you want to see what is being sent to server */
 #define DEBUG_PRINTING 0
@@ -173,30 +172,8 @@ static int do_net_init(void)
 	return 0;
 }
 
-static void send_output(const struct log_backend *const backend,
-			struct log_msg *msg)
-{
-	if (panic_mode) {
-		return;
-	}
-
-	if (!net_init_done && do_net_init() == 0) {
-		net_init_done = true;
-	}
-
-	log_msg_get(msg);
-
-	log_output_msg_process(&log_output_net, msg,
-			       LOG_OUTPUT_FLAG_FORMAT_SYSLOG |
-			       LOG_OUTPUT_FLAG_TIMESTAMP |
-			(IS_ENABLED(CONFIG_LOG_BACKEND_NET_OUTPUT_SYST) ?
-			LOG_OUTPUT_FLAG_FORMAT_SYST : 0));
-
-	log_msg_put(msg);
-}
-
 static void process(const struct log_backend *const backend,
-		    union log_msg2_generic *msg)
+		    union log_msg_generic *msg)
 {
 	uint32_t flags = LOG_OUTPUT_FLAG_FORMAT_SYSLOG | LOG_OUTPUT_FLAG_TIMESTAMP;
 
@@ -242,39 +219,11 @@ static void panic(struct log_backend const *const backend)
 	panic_mode = true;
 }
 
-static void sync_string(const struct log_backend *const backend,
-		     struct log_msg_ids src_level, uint32_t timestamp,
-		     const char *fmt, va_list ap)
-{
-	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_FORMAT_SYSLOG |
-		LOG_OUTPUT_FLAG_TIMESTAMP |
-		(IS_ENABLED(CONFIG_LOG_BACKEND_NET_OUTPUT_SYST) ?
-		LOG_OUTPUT_FLAG_FORMAT_SYST : 0);
-	uint32_t key;
-
-	if (!net_init_done && do_net_init() == 0) {
-		net_init_done = true;
-	}
-
-	key = irq_lock();
-	log_output_string(&log_output_net, src_level,
-			  timestamp, fmt, ap, flags);
-	irq_unlock(key);
-}
-
 const struct log_backend_api log_backend_net_api = {
 	.panic = panic,
 	.init = init_net,
-	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
-	.put = IS_ENABLED(CONFIG_LOG1_DEFERRED) ? send_output : NULL,
-	.put_sync_string = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
-							sync_string : NULL,
-	/* Currently we do not send hexdumps over network to remote server
-	 * if CONFIG_LOG_MODE_IMMEDIATE is used. This is just to save resources,
-	 * this can be revisited if needed.
-	 */
-	.put_sync_hexdump = NULL,
-	.format_set = IS_ENABLED(CONFIG_LOG1) ? NULL : format_set,
+	.process = process,
+	.format_set = format_set,
 };
 
 /* Note that the backend can be activated only after we have networking

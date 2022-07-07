@@ -17,9 +17,6 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 50000000
 
-config HARVARD
-	default y
-
 config CACHE_MANAGEMENT
 	default y
 

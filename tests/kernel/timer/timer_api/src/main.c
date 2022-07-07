@@ -17,7 +17,7 @@ struct timer_data {
 #define DURATION 100
 #define PERIOD 50
 #define EXPIRE_TIMES 4
-#define WITHIN_ERROR(var, target, epsilon) (abs((target) - (var)) <= (epsilon))
+#define WITHIN_ERROR(var, target, epsilon) (llabs((int64_t) ((target) - (var))) <= (epsilon))
 
 /* ms can be converted precisely to ticks only when a ms is exactly
  * represented by an integral number of ticks.  If the conversion is
@@ -104,7 +104,7 @@ static bool interval_check(int64_t interval, int64_t desired)
 		slop += 2 * k_ticks_to_ms_ceil32(1);
 	}
 
-	if (abs(interval - desired) > slop) {
+	if (!WITHIN_ERROR(interval, desired, slop)) {
 		return false;
 	}
 

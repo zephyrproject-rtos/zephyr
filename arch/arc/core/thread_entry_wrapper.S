@@ -11,10 +11,10 @@
  * Wrapper for z_thread_entry routine when called from the initial context.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <v2/irq.h>
-#include <arch/arc/asm-compat/assembler.h>
+#include <zephyr/arch/arc/asm-compat/assembler.h>
 
 GTEXT(z_thread_entry_wrapper)
 GTEXT(z_thread_entry_wrapper1)

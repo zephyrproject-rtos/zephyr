@@ -9,13 +9,13 @@
  * @brief Test log message
  */
 
-#include <sys/mpsc_pbuf.h>
+#include <zephyr/sys/mpsc_pbuf.h>
 
 #include <tc_util.h>
 #include <stdbool.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <random/rand32.h>
+#include <zephyr/random/rand32.h>
 
 #define PUT_EXT_LEN \
 	((sizeof(union mpsc_pbuf_generic) + sizeof(void *)) / sizeof(uint32_t))

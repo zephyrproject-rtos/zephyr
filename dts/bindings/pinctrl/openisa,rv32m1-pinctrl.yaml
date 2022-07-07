@@ -1,0 +1,68 @@
+# Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  OpenISA RV32M1 pinctrl node. This node will define pin configurations in pin groups,
+  and has the 'pinctrl' node identifier in the SOC's devicetree. Each group
+  within the pin configuration defines the pin configuration for a peripheral,
+  and each numbered subgroup in the pin group defines all the pins for that
+  peripheral with the same configuration properties. The 'pins' property in
+  a group selects the pins to be configured, and the remaining properties set
+  configuration values for those pins. Here is an example group for UART0 pins:
+
+  uart0_default: uart0_default {
+    group0 {
+      pinmux = <RV32M1_MUX('C', 7, 3)>,
+               <RV32M1_MUX('C', 8, 3)>;
+      drive-strength = "low";
+      slew-rate = "fast";
+    };
+  };
+
+  If only the required properties are supplied, the pin configuration register
+  will be assigned the following values:
+  PCR_PS=0,
+  PCR_PE=0,
+  PCR_ODE=0,
+  PCR_SRE=<slew-rate selection>,
+  PCR_PFE=0
+
+compatible: "openisa,rv32m1-pinctrl"
+
+include:
+  - name: base.yaml
+  - name: pincfg-node-group.yaml
+    child-binding:
+      child-binding:
+        property-allowlist:
+          - drive-open-drain
+          - bias-pull-up
+          - bias-pull-down
+
+child-binding:
+  description: RV32M1 pin controller pin group
+  child-binding:
+    description: |
+      RV31M1 pin controller pin configuration node
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          Pin mux selections for this group. See the SoC level pinctrl DTSI file
+          in the OpenISA HAL for a defined list of these options
+      slew-rate:
+        required: true
+        type: string
+        enum:
+          - "fast"
+          - "slow"
+        description: |
+          Pin output slew rate. Sets the SRE field in the PORTx_PCRn register.
+          0 SRE_0_fast- fast slew rate when pin is configured as output
+          1 SRE_1_slow- slow slew rate when pin is configured as output
+      openisa,passive-filter:
+        type: boolean
+        description: |
+          Enable passive filter on pin. Sets the PFE field in the PORTx_PCRn register.

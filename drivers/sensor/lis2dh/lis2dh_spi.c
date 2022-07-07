@@ -12,7 +12,7 @@
 
 #include <string.h>
 #include "lis2dh.h"
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 

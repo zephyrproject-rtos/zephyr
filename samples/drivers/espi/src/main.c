@@ -5,15 +5,15 @@
  */
 
 #include <errno.h>
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/gpio.h>
-#include <drivers/espi.h>
-#include <drivers/espi_saf.h>
-#include <drivers/spi.h>
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/espi_saf.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
 /* OOB operations will be attempted regardless of channel enabled or not */
 #include "espi_oob_handler.h"
 LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);

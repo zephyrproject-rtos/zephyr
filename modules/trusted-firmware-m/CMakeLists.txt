@@ -147,19 +147,19 @@ if (CONFIG_BUILD_WITH_TFM)
   set(TFM_BINARY_DIR ${CMAKE_BINARY_DIR}/tfm)
 
   set(VENEERS_FILE ${TFM_BINARY_DIR}/secure_fw/s_veneers.o)
-  set(TFM_API_NS_PATH ${TFM_BINARY_DIR}/app/libtfm_api_ns.a)
+  set(TFM_API_NS_PATH ${TFM_BINARY_DIR}/tf-m-tests/app/libtfm_api_ns.a)
   set(TFM_GENERATED_INCLUDES ${TFM_BINARY_DIR}/generated/interface/include)
   set(PLATFORM_NS_FILE ${TFM_BINARY_DIR}/platform/libplatform_ns.a)
 
   if (TFM_PSA_TEST_SUITE)
-    set(PSA_TEST_VAL_FILE ${TFM_BINARY_DIR}/app/psa_api_tests/val/val_nspe.a)
-    set(PSA_TEST_PAL_FILE ${TFM_BINARY_DIR}/app/psa_api_tests/platform/pal_nspe.a)
+    set(PSA_TEST_VAL_FILE ${TFM_BINARY_DIR}/tf-m-tests/app/psa_api_tests/val/val_nspe.a)
+    set(PSA_TEST_PAL_FILE ${TFM_BINARY_DIR}/tf-m-tests/app/psa_api_tests/platform/pal_nspe.a)
     set(COMBINE_DIR_STORAGE storage)
     set(COMBINE_DIR_PROTECTED_STORAGE storage)
     set(COMBINE_DIR_INTERNAL_TRUSTED_STORAGE storage)
     set(COMBINE_DIR_CRYPTO crypto)
     set(COMBINE_DIR_INITIAL_ATTESTATION initial_attestation)
-    set(PSA_TEST_COMBINE_FILE ${TFM_BINARY_DIR}/app/psa_api_tests/dev_apis/${COMBINE_DIR_${TFM_PSA_TEST_SUITE}}/test_combine.a)
+    set(PSA_TEST_COMBINE_FILE ${TFM_BINARY_DIR}/tf-m-tests/app/psa_api_tests/dev_apis/${COMBINE_DIR_${TFM_PSA_TEST_SUITE}}/test_combine.a)
   endif()
 
   if(CONFIG_TFM_BL2)
@@ -250,6 +250,7 @@ if (CONFIG_BUILD_WITH_TFM)
       -DCROSS_COMPILE=${TFM_TOOLCHAIN_PATH}/${TFM_TOOLCHAIN_PREFIX}
       -DCMAKE_BUILD_TYPE=${TFM_CMAKE_BUILD_TYPE}
       -DTFM_PLATFORM=${CONFIG_TFM_BOARD}
+      -DCONFIG_TFM_BUILD_LOG_QUIET=ON
       ${TFM_CMAKE_ARGS}
       $<GENEX_EVAL:$<TARGET_PROPERTY:zephyr_property_target,TFM_CMAKE_OPTIONS>>
       -DTFM_TEST_REPO_PATH=${ZEPHYR_TF_M_TESTS_MODULE_DIR}

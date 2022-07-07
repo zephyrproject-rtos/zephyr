@@ -68,7 +68,7 @@ backend.
     ``settings_load()``.
 
 **csi_save**
-    This gets called when a saving a single setting to persistent storage using
+    This gets called when saving a single setting to persistent storage using
     ``settings_save_one()``.
 
 **csi_save_start**
@@ -199,7 +199,7 @@ export functionality, for example, writing to the shell console).
     }
 
     static int foo_settings_export(int (*storage_func)(const char *name,
-                                                       void *value,
+                                                       const void *value,
                                                        size_t val_len))
     {
         return storage_func("foo/bar", &foo_val, sizeof(foo_val));
@@ -274,7 +274,7 @@ up from where it was before restart.
 
         printk("foo: %d\n", foo_val);
 
-        k_sleep(1000);
+        k_msleep(1000);
         sys_reboot(SYS_REBOOT_COLD);
     }
 

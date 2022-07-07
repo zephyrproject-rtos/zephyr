@@ -6,12 +6,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stddef.h>
 #include <ztest.h>
 
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
 
 #define NUM_STD_CODECS 3
 static const struct bt_hci_std_codec_info_v2 std_codecs[NUM_STD_CODECS] = {

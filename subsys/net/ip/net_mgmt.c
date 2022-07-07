@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_mgmt, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 
-#include <kernel.h>
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 
-#include <sys/util.h>
-#include <sys/slist.h>
-#include <net/net_mgmt.h>
-#include <debug/stack.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/debug/stack.h>
 
 #include "net_private.h"
 

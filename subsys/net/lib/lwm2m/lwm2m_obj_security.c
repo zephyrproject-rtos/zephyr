@@ -8,11 +8,11 @@
 #define LOG_MODULE_NAME net_lwm2m_obj_security
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <stdint.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
@@ -148,24 +148,24 @@ static struct lwm2m_engine_obj_inst *security_create(uint16_t obj_inst_id)
 	init_res_instance(res_inst[index], ARRAY_SIZE(res_inst[index]));
 
 	/* initialize instance resource data */
-	INIT_OBJ_RES_DATA(SECURITY_SERVER_URI_ID, res[index], i,
+	INIT_OBJ_RES_DATA_LEN(SECURITY_SERVER_URI_ID, res[index], i,
 			  res_inst[index], j,
-			  security_uri[index], SECURITY_URI_LEN);
+			  security_uri[index], SECURITY_URI_LEN, 0);
 	INIT_OBJ_RES_DATA(SECURITY_BOOTSTRAP_FLAG_ID, res[index], i,
 			  res_inst[index], j,
 			  &bootstrap_flag[index], sizeof(*bootstrap_flag));
 	INIT_OBJ_RES_DATA(SECURITY_MODE_ID, res[index], i,
 			  res_inst[index], j,
 			  &security_mode[index], sizeof(*security_mode));
-	INIT_OBJ_RES_DATA(SECURITY_CLIENT_PK_ID, res[index], i,
+	INIT_OBJ_RES_DATA_LEN(SECURITY_CLIENT_PK_ID, res[index], i,
 			  res_inst[index], j,
-			  &client_identity[index], IDENTITY_LEN);
-	INIT_OBJ_RES_DATA(SECURITY_SERVER_PK_ID, res[index], i,
+			  &client_identity[index], IDENTITY_LEN, 0);
+	INIT_OBJ_RES_DATA_LEN(SECURITY_SERVER_PK_ID, res[index], i,
 			  res_inst[index], j,
-			  &server_pk[index], KEY_LEN);
-	INIT_OBJ_RES_DATA(SECURITY_SECRET_KEY_ID, res[index], i,
+			  &server_pk[index], KEY_LEN, 0);
+	INIT_OBJ_RES_DATA_LEN(SECURITY_SECRET_KEY_ID, res[index], i,
 			  res_inst[index], j,
-			  &secret_key[index], KEY_LEN);
+			  &secret_key[index], KEY_LEN, 0);
 	INIT_OBJ_RES_DATA(SECURITY_SHORT_SERVER_ID, res[index], i,
 			  res_inst[index], j,
 			  &short_server_id[index], sizeof(*short_server_id));

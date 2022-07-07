@@ -10,9 +10,9 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include <drivers/can.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(can_loopback, CONFIG_CAN_LOG_LEVEL);
 
@@ -197,21 +197,20 @@ static void can_loopback_remove_rx_filter(const struct device *dev, int filter_i
 	k_mutex_unlock(&data->mtx);
 }
 
-static int can_loopback_set_mode(const struct device *dev, enum can_mode mode)
+static int can_loopback_set_mode(const struct device *dev, can_mode_t mode)
 {
 	struct can_loopback_data *data = dev->data;
 
-	data->loopback = mode == CAN_LOOPBACK_MODE ? 1 : 0;
+	data->loopback = (mode & CAN_MODE_LOOPBACK) != 0 ? 1 : 0;
 	return 0;
 }
 
 static int can_loopback_set_timing(const struct device *dev,
-				   const struct can_timing *timing,
-				   const struct can_timing *timing_data)
+				   const struct can_timing *timing)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(timing);
-	ARG_UNUSED(timing_data);
+
 	return 0;
 }
 

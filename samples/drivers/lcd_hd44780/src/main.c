@@ -64,10 +64,10 @@
  *	--------------------
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <sys/printk.h>
-#include <drivers/gpio.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/gpio.h>
 #include <string.h>
 
 

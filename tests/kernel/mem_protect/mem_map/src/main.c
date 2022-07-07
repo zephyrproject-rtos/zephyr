@@ -5,10 +5,10 @@
  */
 
 #include <ztest.h>
-#include <sys/mem_manage.h>
-#include <toolchain.h>
+#include <zephyr/sys/mem_manage.h>
+#include <zephyr/toolchain.h>
 #include <mmu.h>
-#include <linker/sections.h>
+#include <zephyr/linker/sections.h>
 
 /* 32-bit IA32 page tables have no mechanism to restrict execution */
 #if defined(CONFIG_X86) && !defined(CONFIG_X86_64) && !defined(CONFIG_X86_PAE)
@@ -408,6 +408,82 @@ void test_k_mem_map_exhaustion(void)
 #endif /* !CONFIG_DEMAND_PAGING */
 }
 
+#ifdef CONFIG_USERSPACE
+#define USER_STACKSIZE	(128)
+
+struct k_thread user_thread;
+K_THREAD_STACK_DEFINE(user_stack, USER_STACKSIZE);
+
+K_APPMEM_PARTITION_DEFINE(default_part);
+K_APP_DMEM(default_part) uint8_t *mapped;
+
+static void user_function(void *p1, void *p2, void *p3)
+{
+	mapped[0] = 42;
+}
+#endif /* CONFIG_USERSPACE */
+
+/**
+ * Test that the allocated region will be only accessible to userspace when
+ * K_MEM_PERM_USER is used.
+ */
+void test_k_mem_map_user(void)
+{
+#ifdef CONFIG_USERSPACE
+	int ret;
+
+	ret = k_mem_domain_add_partition(&k_mem_domain_default, &default_part);
+	if (ret != 0) {
+		printk("Failed to add default memory partition (%d)\n", ret);
+		k_oops();
+	}
+
+	/*
+	 * Map the region using K_MEM_PERM_USER and try to access it from
+	 * userspace
+	 */
+	expect_fault = false;
+
+	z_phys_map(&mapped, z_mem_phys_addr(test_page), sizeof(test_page),
+		   BASE_FLAGS | K_MEM_PERM_RW | K_MEM_PERM_USER);
+
+	printk("mapped a page: %p - %p (with K_MEM_PERM_USER)\n", mapped,
+		mapped + CONFIG_MMU_PAGE_SIZE);
+	printk("trying to access %p from userspace\n", mapped);
+
+	k_thread_create(&user_thread, user_stack, USER_STACKSIZE,
+			user_function, NULL, NULL, NULL,
+			-1, K_USER, K_NO_WAIT);
+	k_thread_join(&user_thread, K_FOREVER);
+
+	/* Unmap the memory */
+	z_phys_unmap(mapped, sizeof(test_page));
+
+	/*
+	 * Map the region without using K_MEM_PERM_USER and try to access it
+	 * from userspace. This should fault and fail.
+	 */
+	expect_fault = true;
+
+	z_phys_map(&mapped, z_mem_phys_addr(test_page), sizeof(test_page),
+		   BASE_FLAGS | K_MEM_PERM_RW);
+
+	printk("mapped a page: %p - %p (without K_MEM_PERM_USER)\n", mapped,
+		mapped + CONFIG_MMU_PAGE_SIZE);
+	printk("trying to access %p from userspace\n", mapped);
+
+	k_thread_create(&user_thread, user_stack, USER_STACKSIZE,
+			user_function, NULL, NULL, NULL,
+			-1, K_USER, K_NO_WAIT);
+	k_thread_join(&user_thread, K_FOREVER);
+
+	printk("shouldn't get here\n");
+	ztest_test_fail();
+#else
+	ztest_test_skip();
+#endif /* CONFIG_USERSPACE */
+}
+
 /* ztest main entry*/
 void test_main(void)
 {
@@ -425,7 +501,8 @@ void test_main(void)
 			ztest_unit_test(test_k_mem_map_unmap),
 			ztest_unit_test(test_k_mem_map_guard_before),
 			ztest_unit_test(test_k_mem_map_guard_after),
-			ztest_unit_test(test_k_mem_map_exhaustion)
+			ztest_unit_test(test_k_mem_map_exhaustion),
+			ztest_unit_test(test_k_mem_map_user)
 			);
 	ztest_run_test_suite(test_mem_map);
 }

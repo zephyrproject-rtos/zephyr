@@ -15,7 +15,7 @@
 
 #include <mem.h>
 #include <arm64/armv8-a.dtsi>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
 	model = "XENVM-4.15";
@@ -54,7 +54,6 @@
 
 	gic: interrupt-controller@3001000 {
 		compatible = "arm,gic";
-		label = "GIC";
 		#interrupt-cells = <0x04>;
 		#address-cells = <0x00>;
 		interrupt-controller;
@@ -67,7 +66,6 @@
 			      GIC_PPI 0x0e IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY
 			      GIC_PPI 0x0b IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
-		label = "arch_timer";
 	};
 
 	hypervisor: hypervisor@38000000 {
@@ -78,7 +76,8 @@
 	};
 
 	xen_hvc: hvc {
-		compatible = "xen,uart_hvc";
+		compatible = "xen,hvc-uart";
 		status = "okay";
+		label = "UART_HVC";
 	};
 };

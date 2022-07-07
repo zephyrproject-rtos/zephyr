@@ -17,43 +17,34 @@
  *
  * Before individual UART port can be used, uart_ns16550_port_init() has to be
  * called to setup the port.
- *
- * - the following macro for the number of bytes between register addresses:
- *
- *  UART_REG_ADDR_INTERVAL
  */
 
 #include <errno.h>
-#include <kernel.h>
-#include <arch/cpu.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
 #include <zephyr/types.h>
-#include <soc.h>
 
-#include <init.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <drivers/uart.h>
-#include <pm/policy.h>
-#include <sys/sys_io.h>
-#include <spinlock.h>
+#include <zephyr/init.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/spinlock.h>
 
 #include "uart_ns16550.h"
 
 #define INST_HAS_PCP_HELPER(inst) DT_INST_NODE_HAS_PROP(inst, pcp) ||
 #define INST_HAS_DLF_HELPER(inst) DT_INST_NODE_HAS_PROP(inst, dlf) ||
-#define INST_HAS_REG_SHIFT_HELPER(inst) \
-	DT_INST_NODE_HAS_PROP(inst, reg_shift) ||
 
 #define UART_NS16550_PCP_ENABLED \
 	(DT_INST_FOREACH_STATUS_OKAY(INST_HAS_PCP_HELPER) 0)
 #define UART_NS16550_DLF_ENABLED \
 	(DT_INST_FOREACH_STATUS_OKAY(INST_HAS_DLF_HELPER) 0)
-#define UART_NS16550_REG_INTERVAL_ENABLED \
-	(DT_INST_FOREACH_STATUS_OKAY(INST_HAS_REG_SHIFT_HELPER) 0)
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
-#include <drivers/pcie/pcie.h>
+#include <zephyr/drivers/pcie/pcie.h>
 #endif
 
 /* register definitions */
@@ -89,6 +80,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define IIR_MASK  0x07 /* interrupt id bits mask  */
 #define IIR_ID    0x06 /* interrupt ID mask without NIP */
 #define IIR_FE    0xC0 /* FIFO mode enabled */
+#define IIR_CH    0x0C /* Character timeout*/
 
 /* equates for FIFO control register */
 
@@ -206,7 +198,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 
 #define IIRC(dev) (((struct uart_ns16550_dev_data *)(dev)->data)->iir_cache)
 
-#ifdef UART_NS16550_ACCESS_IOPORT
+#ifdef CONFIG_UART_NS16550_ACCESS_IOPORT
 #define INBYTE(x) sys_in8(x)
 #define INWORD(x) sys_in32(x)
 #define OUTBYTE(x, d) sys_out8(d, x)
@@ -216,7 +208,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define INWORD(x) sys_read32(x)
 #define OUTBYTE(x, d) sys_write8(d, x)
 #define OUTWORD(x, d) sys_write32(d, x)
-#endif /* UART_NS16550_ACCESS_IOPORT */
+#endif /* CONFIG_UART_NS16550_ACCESS_IOPORT */
 
 #ifdef CONFIG_UART_NS16550_ACCESS_WORD_ONLY
 #undef INBYTE
@@ -227,7 +219,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 
 /* device config */
 struct uart_ns16550_device_config {
-#ifndef UART_NS16550_ACCESS_IOPORT
+#ifndef CONFIG_UART_NS16550_ACCESS_IOPORT
 	DEVICE_MMIO_ROM;
 #else
 	uint32_t port;
@@ -239,9 +231,7 @@ struct uart_ns16550_device_config {
 #if UART_NS16550_PCP_ENABLED
 	uint32_t pcp;
 #endif
-#if UART_NS16550_REG_INTERVAL_ENABLED
 	uint8_t reg_interval;
-#endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	bool pcie;
 	pcie_bdf_t pcie_bdf;
@@ -251,7 +241,7 @@ struct uart_ns16550_device_config {
 
 /** Device data structure */
 struct uart_ns16550_dev_data {
-#ifndef UART_NS16550_ACCESS_IOPORT
+#ifndef CONFIG_UART_NS16550_ACCESS_IOPORT
 	DEVICE_MMIO_RAM;
 #endif
 	struct uart_config uart_config;
@@ -273,34 +263,18 @@ struct uart_ns16550_dev_data {
 #endif
 };
 
-#if defined(UART_REG_ADDR_INTERVAL)
-#define DEFAULT_REG_INTERVAL UART_REG_ADDR_INTERVAL
-#elif defined(UART_NS16550_ACCESS_IOPORT)
-#define DEFAULT_REG_INTERVAL 1
-#else
-#define DEFAULT_REG_INTERVAL 4
-#endif
-
-#if UART_NS16550_REG_INTERVAL_ENABLED
 static inline uint8_t reg_interval(const struct device *dev)
 {
 	const struct uart_ns16550_device_config *config = dev->config;
 
-	if (config->reg_interval) {
-		return config->reg_interval;
-	}
-
-	return DEFAULT_REG_INTERVAL;
+	return config->reg_interval;
 }
-#else
-#define reg_interval(dev) DEFAULT_REG_INTERVAL
-#endif
 
 static const struct uart_driver_api uart_ns16550_driver_api;
 
 static inline uintptr_t get_port(const struct device *dev)
 {
-#ifndef UART_NS16550_ACCESS_IOPORT
+#ifndef CONFIG_UART_NS16550_ACCESS_IOPORT
 	return DEVICE_MMIO_GET(dev);
 #else
 	const struct uart_ns16550_device_config *config = dev->config;
@@ -352,7 +326,7 @@ static int uart_ns16550_configure(const struct device *dev,
 	ARG_UNUSED(dev_data);
 	ARG_UNUSED(dev_cfg);
 
-#ifndef UART_NS16550_ACCESS_IOPORT
+#ifndef CONFIG_UART_NS16550_ACCESS_IOPORT
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	if (dev_cfg->pcie) {
 		struct pcie_mbar mbar;
@@ -447,7 +421,8 @@ static int uart_ns16550_configure(const struct device *dev,
 		uart_cfg.data_bits | uart_cfg.stop_bits | uart_cfg.parity);
 
 	mdc = MCR_OUT2 | MCR_RTS | MCR_DTR;
-#ifdef CONFIG_UART_NS16750
+#if defined(CONFIG_UART_NS16550_VARIANT_NS16750) || \
+	defined(CONFIG_UART_NS16550_VARIANT_NS16950)
 	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
 		mdc |= MCR_AFCE;
 	}
@@ -462,14 +437,16 @@ static int uart_ns16550_configure(const struct device *dev,
 	 */
 	OUTBYTE(FCR(dev),
 		FCR_FIFO | FCR_MODE0 | FCR_FIFO_8 | FCR_RCVRCLR | FCR_XMITCLR
-#ifdef CONFIG_UART_NS16750
+#ifdef CONFIG_UART_NS16550_VARIANT_NS16750
 		| FCR_FIFO_64
 #endif
 		);
 
 	if ((INBYTE(IIR(dev)) & IIR_FE) == IIR_FE) {
-#ifdef CONFIG_UART_NS16750
+#ifdef CONFIG_UART_NS16550_VARIANT_NS16750
 		dev_data->fifo_size = 64;
+#elif defined(CONFIG_UART_NS16550_VARIANT_NS16950)
+		dev_data->fifo_size = 128;
 #else
 		dev_data->fifo_size = 16;
 #endif
@@ -1081,7 +1058,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 		pcie_irq_enable(DT_INST_REG_ADDR(n), irq);                    \
 	}
 
-#ifdef UART_NS16550_ACCESS_IOPORT
+#ifdef CONFIG_UART_NS16550_ACCESS_IOPORT
 #define DEV_CONFIG_REG_INIT(n) \
 	.port = DT_INST_REG_ADDR(n),
 #else
@@ -1111,12 +1088,6 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define DEV_CONFIG_PCP_INIT(n)
 #endif
 
-#define DEV_CONFIG_REG_INT0(n)
-#define DEV_CONFIG_REG_INT1(n) \
-	.reg_interval = (1 << DT_INST_PROP(n, reg_shift)),
-#define DEV_CONFIG_REG_INT_INIT(n) \
-	_CONCAT(DEV_CONFIG_REG_INT, DT_INST_NODE_HAS_PROP(n, reg_shift))(n)
-
 #define DEV_CONFIG_PCIE0(n)
 #define DEV_CONFIG_PCIE1(n)              \
 	.pcie = true,                    \
@@ -1143,7 +1114,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 		.sys_clk_freq = DT_INST_PROP(n, clock_frequency),                    \
 		DEV_CONFIG_IRQ_FUNC_INIT(n)                                          \
 		DEV_CONFIG_PCP_INIT(n)                                               \
-		DEV_CONFIG_REG_INT_INIT(n)                                           \
+		.reg_interval = (1 << DT_INST_PROP(n, reg_shift)),                   \
 		DEV_CONFIG_PCIE_INIT(n)                                              \
 	};                                                                           \
 	static struct uart_ns16550_dev_data uart_ns16550_dev_data_##n = {            \

@@ -14,9 +14,9 @@ testing.
 
 #ifdef CONFIG_X86
 
-#include <arch/cpu.h>
-#include <kernel_structs.h>
-#include <arch/x86/ia32/asm.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/arch/x86/ia32/asm.h>
 
 /* imports (internal APIs) */
 

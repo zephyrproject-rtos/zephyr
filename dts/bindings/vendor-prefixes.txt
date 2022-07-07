@@ -89,6 +89,7 @@ beacon	Compass Electronics Group, LLC
 beagle	BeagleBoard.org Foundation
 bhf	Beckhoff Automation GmbH & Co. KG
 bitmain	Bitmain Technologies
+blues	Blues Wireless
 blutek	BluTek Power
 boe	BOE Technology Group Co., Ltd.
 bosch	Bosch Sensortec GmbH
@@ -664,6 +665,7 @@ wobo	Wobo
 wolfson	Cirrus Logic, Inc. (formerly Wolfson Microelectronics plc)
 worldsemi	Worldsemi Co., Limited
 x-powers	X-Powers
+xen	Xen Hypervisor
 xes	Extreme Engineering Solutions (X-ES)
 xiaomi	Xiaomi Technology Co., Ltd.
 xillybus	Xillybus Ltd.

@@ -10,7 +10,7 @@
 #ifndef _ZEPHYR_DRIVERS_ETHERNET_PHY_XLNX_GEM_H_
 #define _ZEPHYR_DRIVERS_ETHERNET_PHY_XLNX_GEM_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
 /* Event codes used to indicate a particular state change to the driver */

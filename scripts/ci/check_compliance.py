@@ -192,7 +192,7 @@ class CheckPatch(ComplianceTest):
 
     """
     name = "checkpatch"
-    doc = "See https://docs.zephyrproject.org/latest/contribute/#coding-style for more details."
+    doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#coding-style for more details."
     path_hint = "<git-top>"
 
     def run(self):
@@ -561,6 +561,8 @@ UNDEF_KCONFIG_WHITELIST = {
     "REG2",
     "SAMPLE_MODULE_LOG_LEVEL",  # Used as an example in samples/subsys/logging
     "SAMPLE_MODULE_LOG_LEVEL_DBG",  # Used in tests/subsys/logging/log_api
+    "LOG_BACKEND_MOCK_OUTPUT_DEFAULT", #Referenced in tests/subsys/logging/log_syst
+    "LOG_BACKEND_MOCK_OUTPUT_SYST", #Referenced in testcase.yaml of log_syst test
     "SEL",
     "SHIFT",
     "SOC_WATCH",  # Issue 13749
@@ -735,7 +737,7 @@ class Nits(ComplianceTest):
     already covered by e.g. checkpatch.pl and pylint.
     """
     name = "Nits"
-    doc = "See https://docs.zephyrproject.org/latest/contribute/#coding-style for more details."
+    doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#coding-style for more details."
     path_hint = "<git-top>"
 
     def run(self):
@@ -833,7 +835,7 @@ class GitLint(ComplianceTest):
 
     """
     name = "Gitlint"
-    doc = "See https://docs.zephyrproject.org/latest/contribute/#commit-guidelines for more details"
+    doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#commit-guidelines for more details"
     path_hint = "<git-top>"
 
     def run(self):
@@ -921,7 +923,7 @@ class Identity(ComplianceTest):
     Checks if Emails of author and signed-off messages are consistent.
     """
     name = "Identity"
-    doc = "See https://docs.zephyrproject.org/latest/contribute/#commit-guidelines for more details"
+    doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#commit-guidelines for more details"
     # git rev-list and git log don't depend on the current (sub)directory
     # unless explicited
     path_hint = "<git-top>"

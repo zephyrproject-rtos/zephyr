@@ -4,20 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
-#include <zephyr.h>
-#include <linker/sections.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/linker/sections.h>
 #include <ztest.h>
-#include <random/rand32.h>
+#include <zephyr/random/rand32.h>
 
 #include <fcntl.h>
 
-#include <net/ethernet.h>
-#include <net/dummy.h>
-#include <net/net_if.h>
-#include <net/socket.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/dummy.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/socket.h>
 
 struct fake_dev_context {
 	uint8_t mac_addr[sizeof(struct net_eth_addr)];
@@ -136,7 +136,7 @@ void test_sckt_raw_packet_raw_ip(void)
 	recv_data_len = recv(sock, receive_buffer, sizeof(receive_buffer), 0);
 	zassert_true(recv_data_len == ARRAY_SIZE(testing_data), "Expected data not received");
 
-	NET_DBG("Received successfully data %s", log_strdup(receive_buffer));
+	NET_DBG("Received successfully data %s", receive_buffer);
 
 	close(sock);
 }

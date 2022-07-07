@@ -26,17 +26,17 @@
  * unexpected priority levels (too high, or too low).
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
-#include <toolchain.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/toolchain.h>
 #include <ksched.h>
-#include <wait_q.h>
+#include <zephyr/wait_q.h>
 #include <errno.h>
-#include <init.h>
-#include <syscall_handler.h>
-#include <tracing/tracing.h>
-#include <sys/check.h>
-#include <logging/log.h>
+#include <zephyr/init.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/tracing/tracing.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* We use a global spinlock here because some of the synchronization

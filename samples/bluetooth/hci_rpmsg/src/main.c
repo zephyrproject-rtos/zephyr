@@ -9,19 +9,19 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <device.h>
-#include <zephyr.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
-#include <ipc/ipc_service.h>
+#include <zephyr/ipc/ipc_service.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/l2cap.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/hci_raw.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/hci_raw.h>
 
 #define BT_DBG_ENABLED 0
 #define LOG_MODULE_NAME hci_rpmsg
@@ -268,7 +268,8 @@ static struct ipc_ept_cfg hci_ept_cfg = {
 void main(void)
 {
 	int err;
-	const struct device *hci_ipc_instance = DEVICE_DT_GET(DT_NODELABEL(ipc0));
+	const struct device *hci_ipc_instance =
+		DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci_rpmsg_ipc));
 
 	/* incoming events and data from the controller */
 	static K_FIFO_DEFINE(rx_queue);

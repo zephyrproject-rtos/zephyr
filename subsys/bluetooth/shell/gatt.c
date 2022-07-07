@@ -14,14 +14,14 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 #include "bt.h"
 
@@ -928,7 +928,7 @@ static int cmd_notify(const struct shell *sh, size_t argc, char *argv[])
 	uint8_t data = 0;
 
 	if (!echo_enabled) {
-		shell_error(sh, "Nofication not enabled");
+		shell_error(sh, "No clients have enabled notifications for the vnd1_echo CCC.");
 		return -ENOEXEC;
 	}
 
@@ -949,6 +949,70 @@ static int cmd_notify(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
+static int cmd_notify_mult(const struct shell *sh, size_t argc, char *argv[])
+{
+	const size_t max_cnt = CONFIG_BT_L2CAP_TX_BUF_COUNT;
+	struct bt_gatt_notify_params params[max_cnt];
+	const size_t min_cnt = 1U;
+	unsigned long data;
+	unsigned long cnt;
+	uint16_t cnt_u16;
+	int err = 0;
+
+	if (!echo_enabled) {
+		shell_error(sh, "No clients have enabled notifications for the vnd1_echo CCC.");
+
+		return -ENOEXEC;
+	}
+
+	cnt = shell_strtoul(argv[1], 10, &err);
+	if (err != 0) {
+		shell_error(sh, "Invalid count parameter: %s", argv[1]);
+
+		return -err;
+	}
+
+	if (!IN_RANGE(cnt, min_cnt, max_cnt)) {
+		shell_error(sh, "Invalid count value %lu (range %zu to %zu)",
+			    cnt, min_cnt, max_cnt);
+
+		return -ENOEXEC;
+	}
+
+	cnt_u16 = (uint16_t)cnt;
+
+	if (argc > 2) {
+		data = shell_strtoul(argv[2], 16, &err);
+		if (err != 0) {
+			shell_error(sh, "Invalid data parameter: %s", argv[1]);
+
+			return -err;
+		}
+	}
+
+	(void)memset(params, 0, sizeof(params));
+
+	for (uint16_t i = 0U; i < cnt_u16; i++) {
+		params[i].uuid = &vnd1_echo_uuid.uuid;
+		params[i].attr = vnd1_attrs;
+		params[i].data = &data;
+		params[i].len = sizeof(data);
+		params[i].func = notify_cb;
+		params[i].user_data = (void *)sh;
+	}
+
+	err = bt_gatt_notify_multiple(NULL, cnt_u16, params);
+	if (err != 0) {
+		shell_error(sh, "bt_gatt_notify_multiple failed: %d", err);
+	} else {
+		shell_print(sh, "Send %u notifications", cnt_u16);
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 
 static struct bt_uuid_128 met_svc_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcde01));
@@ -1193,6 +1257,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 		      "unregister pre-predefined test service",
 		      cmd_unregister_test_svc, 1, 0),
 	SHELL_CMD_ARG(notify, NULL, "[data]", cmd_notify, 1, 1),
+#if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
+	SHELL_CMD_ARG(notify-mult, NULL, "count [data]", cmd_notify_mult, 2, 1),
+#endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 	SHELL_SUBCMD_SET_END
 );

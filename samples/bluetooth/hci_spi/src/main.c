@@ -10,22 +10,22 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include <zephyr.h>
-#include <sys/byteorder.h>
-#include <logging/log.h>
-#include <debug/stack.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/debug/stack.h>
 
-#include <device.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/l2cap.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/hci_raw.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/hci_raw.h>
 
 #define LOG_MODULE_NAME hci_spi
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);

@@ -11,16 +11,16 @@
 #include <version.h>
 #include <errno.h>
 
-#include <sys/util.h>
-#include <sys/byteorder.h>
-#include <sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/atomic.h>
 
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/hci_vs.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 #include "../host/hci_ecc.h"
 
@@ -31,6 +31,9 @@
 
 #include "hal/ecb.h"
 #include "hal/ccm.h"
+#include "hal/ticker.h"
+
+#include "ticker/ticker.h"
 
 #include "ll_sw/pdu.h"
 
@@ -58,6 +61,7 @@
 #include "ll_sw/ull_conn_types.h"
 #include "ll_sw/ull_iso_types.h"
 #include "ll_sw/ull_conn_iso_types.h"
+#include "ll_sw/ull_conn_iso_internal.h"
 #include "ll_sw/ull_df_types.h"
 
 #include "ll_sw/ull_adv_internal.h"
@@ -600,7 +604,7 @@ static void write_auth_payload_timeout(struct net_buf *buf,
 }
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
-#if defined(CONFIG_BT_CTLR_ISO)
+#if defined(CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO)
 static void configure_data_path(struct net_buf *buf,
 				struct net_buf **evt)
 {
@@ -620,7 +624,7 @@ static void configure_data_path(struct net_buf *buf,
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
 }
-#endif /* CONFIG_BT_CTLR_ISO */
+#endif /* CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO */
 
 #if defined(CONFIG_BT_CONN)
 static void read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
@@ -690,11 +694,11 @@ static int ctrl_bb_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
-#if defined(CONFIG_BT_CTLR_ISO)
+#if defined(CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO)
 	case BT_OCF(BT_HCI_OP_CONFIGURE_DATA_PATH):
 		configure_data_path(cmd, evt);
 		break;
-#endif /* CONFIG_BT_CTLR_ISO */
+#endif /* CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO */
 
 	default:
 		return -EINVAL;
@@ -928,6 +932,23 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 	/* LE Read Antenna Information */
 	rp->commands[40] |= BIT(4);
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
+	/* LE Set Connection CTE Transmit Parameters */
+	rp->commands[40] |= BIT(1);
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+	/* LE Set Connection CTE Receive Parameters */
+	rp->commands[40] |= BIT(0);
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	/* LE Connection CTE Request Enable */
+	rp->commands[40] |= BIT(2);
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+	/* LE Connection CTE Response Enable */
+	rp->commands[40] |= BIT(3);
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
 #endif /* CONFIG_BT_CTLR_DF */
 
 #if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_TINYCRYPT_ECC)
@@ -969,8 +990,8 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 #if defined(CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO)
 	/* Read Supported Codecs */
 	rp->commands[29] |= BIT(5);
-	/* Read Supported Codecs [v2], Codec Capabilities, Controller Delay */
-	rp->commands[45] |= BIT(2) | BIT(3) | BIT(4);
+	/* Read Supported Codecs [v2], Codec Capabilities, Controller Delay, Configure Data Path */
+	rp->commands[45] |= BIT(2) | BIT(3) | BIT(4) | BIT(5);
 #endif /* CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO */
 }
 
@@ -3273,6 +3294,24 @@ static void le_set_ext_adv_param(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
+	min_interval = sys_get_le24(cmd->prim_min_interval);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
+		const uint32_t max_interval =
+					sys_get_le24(cmd->prim_max_interval);
+
+		/* Compare advertising interval maximum with implementation
+		 * supported advertising interval maximum value defined in the
+		 * Kconfig CONFIG_BT_CTLR_ADV_INTERVAL_MAX.
+		 */
+		if ((min_interval > max_interval) ||
+		    (min_interval < BT_HCI_LE_PRIM_ADV_INTERVAL_MIN) ||
+		    (max_interval > CONFIG_BT_CTLR_ADV_INTERVAL_MAX)) {
+			*evt = cmd_complete_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
+			return;
+		}
+	}
+
 	status = ll_adv_set_by_hci_handle_get_or_new(cmd->handle, &handle);
 	if (status) {
 		*evt = cmd_complete_status(status);
@@ -3280,7 +3319,6 @@ static void le_set_ext_adv_param(struct net_buf *buf, struct net_buf **evt)
 	}
 
 	evt_prop = sys_le16_to_cpu(cmd->props);
-	min_interval = sys_get_le24(cmd->prim_min_interval);
 	tx_pwr = cmd->tx_power;
 	phy_p = BIT(cmd->prim_adv_phy - 1);
 	phy_s = BIT(cmd->sec_adv_phy - 1);
@@ -3464,7 +3502,7 @@ static void le_clear_adv_sets(struct net_buf *buf, struct net_buf **evt)
 static void le_set_per_adv_param(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_set_per_adv_param *cmd = (void *)buf->data;
-	uint16_t interval;
+	uint16_t max_interval;
 	uint16_t flags;
 	uint8_t status;
 	uint8_t handle;
@@ -3473,16 +3511,34 @@ static void le_set_per_adv_param(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
+	max_interval = sys_le16_to_cpu(cmd->max_interval);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
+		const uint32_t min_interval =
+					sys_le16_to_cpu(cmd->min_interval);
+
+		/* Compare periodic advertising interval maximum with
+		 * implementation supported periodic advertising interval
+		 * maximum value defined in the Kconfig
+		 * CONFIG_BT_CTLR_ADV_PERIODIC_INTERVAL_MAX.
+		 */
+		if ((min_interval > max_interval) ||
+		    (min_interval < BT_HCI_LE_PER_ADV_INTERVAL_MIN) ||
+		    (max_interval > CONFIG_BT_CTLR_ADV_PERIODIC_INTERVAL_MAX)) {
+			*evt = cmd_complete_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
+			return;
+		}
+	}
+
 	status = ll_adv_set_by_hci_handle_get(cmd->handle, &handle);
 	if (status) {
 		*evt = cmd_complete_status(status);
 		return;
 	}
 
-	interval = sys_le16_to_cpu(cmd->max_interval);
 	flags = sys_le16_to_cpu(cmd->props);
 
-	status = ll_adv_sync_param_set(handle, interval, flags);
+	status = ll_adv_sync_param_set(handle, max_interval, flags);
 
 	*evt = cmd_complete_status(status);
 }
@@ -3557,7 +3613,7 @@ static void le_set_ext_scan_param(struct net_buf *buf, struct net_buf **evt)
 
 	phys = cmd->phys;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
-	    (phys > phys_bitmask)) {
+	    (((phys & phys_bitmask) == 0) || (phys & ~phys_bitmask))) {
 		*evt = cmd_complete_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 
 		return;
@@ -3893,7 +3949,7 @@ static void le_ext_create_connection(struct net_buf *buf, struct net_buf **evt)
 
 	phys = cmd->phys;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
-	    (phys > phys_bitmask)) {
+	    (((phys & phys_bitmask) == 0) || (phys & ~phys_bitmask))) {
 		*evt = cmd_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 
 		return;
@@ -5125,15 +5181,21 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_iso_data_hdr *iso_data_hdr;
+	struct isoal_sdu_tx sdu_frag_tx;
 	struct bt_hci_iso_hdr *iso_hdr;
-	uint16_t stream_handle;
-	struct node_tx_iso *tx;
+	struct ll_iso_datapath *dp_in;
+	struct ll_iso_stream_hdr *hdr;
+	uint32_t *time_stamp;
 	uint16_t handle;
+	uint8_t pb_flag;
+	uint8_t ts_flag;
 	uint8_t flags;
-	uint16_t slen;
 	uint16_t len;
 
-	*evt = NULL;
+	iso_data_hdr = NULL;
+	*evt  = NULL;
+	hdr   = NULL;
+	dp_in = NULL;
 
 	if (buf->len < sizeof(*iso_hdr)) {
 		BT_ERR("No HCI ISO header");
@@ -5149,113 +5211,201 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		return -EINVAL;
 	}
 
-	/* assigning flags first because handle will be overwritten */
+	/* Assigning flags first because handle will be overwritten */
 	flags = bt_iso_flags(handle);
-	if (bt_iso_flags_ts(flags)) {
-		struct bt_hci_iso_ts_data_hdr *iso_ts_data_hdr;
-
-		iso_ts_data_hdr = net_buf_pull_mem(buf,
-						   sizeof(*iso_ts_data_hdr));
-	}
-
-	iso_data_hdr = net_buf_pull_mem(buf, sizeof(*iso_data_hdr));
-	slen = iso_data_hdr->slen;
-
-#if defined(CONFIG_BT_CTLR_ADV_ISO)
-	/* Check invalid BIS PDU length */
-	if (slen > LL_BIS_OCTETS_TX_MAX) {
-		BT_ERR("Invalid HCI ISO Data length");
-		return -EINVAL;
-	}
-
-	/* Get BIS stream handle and stream context */
+	pb_flag = bt_iso_flags_pb(flags);
+	ts_flag = bt_iso_flags_ts(flags);
 	handle = bt_iso_handle(handle);
-	if (handle < BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE) {
-		return -EINVAL;
-	}
-	stream_handle = handle - BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE;
 
-	struct lll_adv_iso_stream *stream;
-
-	stream = ull_adv_iso_stream_get(stream_handle);
-	if (!stream) {
-		BT_ERR("Invalid BIS stream");
-		return -EINVAL;
-	}
-
-	struct ll_adv_iso_set *adv_iso;
-
-	adv_iso = ull_adv_iso_by_stream_get(stream_handle);
-	if (!adv_iso) {
-		BT_ERR("No BIG associated with stream handle");
-		return -EINVAL;
-	}
-
-	/* Get free node tx */
-	tx = ll_iso_tx_mem_acquire();
-	if (!tx) {
-		BT_ERR("ISO Tx Buffer Overflow");
-		data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO);
-		return -ENOBUFS;
-	}
-
-	struct pdu_bis *pdu = (void *)tx->pdu;
-
-	/* FIXME: Update to use correct LLID for BIS and CIS */
-	switch (bt_iso_flags_pb(flags)) {
-	case BT_ISO_SINGLE:
-		pdu->ll_id = PDU_BIS_LLID_COMPLETE_END;
-		break;
-	default:
-		ll_iso_tx_mem_release(tx);
-		return -EINVAL;
-	}
-
-	pdu->len = slen;
-	memcpy(pdu->payload, buf->data, slen);
-
-	struct lll_adv_iso *lll_iso;
-
-	lll_iso = &adv_iso->lll;
-
-	uint64_t pkt_seq_num;
-
-	pkt_seq_num = lll_iso->payload_count / lll_iso->bn;
-	if (((pkt_seq_num - stream->pkt_seq_num) & BIT64_MASK(39)) <=
-	    BIT64_MASK(38)) {
-		stream->pkt_seq_num = pkt_seq_num;
-	} else {
-		pkt_seq_num = stream->pkt_seq_num;
-	}
-
-	tx->payload_count = pkt_seq_num * lll_iso->bn;
-
-	stream->pkt_seq_num++;
-
-#else /* CONFIG_BT_CTLR_CONN_ISO */
-	/* FIXME: Add Connected ISO implementation */
-	stream_handle = 0U;
-
-	/* NOTE: Keeping the code below to pass compilation until Connected ISO
-	 *       integration.
+	/* Extract time stamp */
+	/* Set default to current time
+	 * BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
+	 * 3.1 Time_Offset in framed PDUs :
+	 * The Controller transmitting a SDU may use any of the following
+	 * methods to determine the value of the SDU reference time:
+	 * -- A captured time stamp of the SDU
+	 * -- A time stamp provided by the higher layer
+	 * -- A computed time stamp based on a sequence counter provided by the
+	 *    higher layer (Not implemented)
+	 * -- Any other method of determining Time_Offset (Not implemented)
 	 */
-	/* Get free node tx */
-	tx = ll_iso_tx_mem_acquire();
-	if (!tx) {
-		BT_ERR("ISO Tx Buffer Overflow");
-		data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO);
-		return -ENOBUFS;
+	if (ts_flag) {
+		/* Overwrite time stamp with HCI provided time stamp */
+		time_stamp = net_buf_pull_mem(buf, sizeof(*time_stamp));
+		len -= sizeof(*time_stamp);
+		sdu_frag_tx.time_stamp = *time_stamp;
+	} else {
+		sdu_frag_tx.time_stamp =
+			HAL_TICKER_TICKS_TO_US(ticker_ticks_now_get());
 	}
 
+	/* Extract ISO data header if included (PB_Flag 0b00 or 0b10) */
+	if ((pb_flag & 0x01) == 0) {
+		iso_data_hdr = net_buf_pull_mem(buf, sizeof(*iso_data_hdr));
+		len -= sizeof(*iso_data_hdr);
+		sdu_frag_tx.packet_sn = iso_data_hdr->sn;
+		sdu_frag_tx.iso_sdu_length = iso_data_hdr->slen;
+	} else {
+		sdu_frag_tx.packet_sn = 0;
+		sdu_frag_tx.iso_sdu_length = 0;
+	}
+
+	/* Packet boudary flags should be bitwise identical to the SDU state
+	 * 0b00 BT_ISO_START
+	 * 0b01 BT_ISO_CONT
+	 * 0b10 BT_ISO_SINGLE
+	 * 0b11 BT_ISO_END
+	 */
+	sdu_frag_tx.sdu_state = pb_flag;
+	/* Fill in SDU buffer fields */
+	sdu_frag_tx.dbuf = buf->data;
+	sdu_frag_tx.size = len;
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+	/* Extract source handle from CIS or BIS handle by way of header and
+	 * data path
+	 */
+	if (IS_CIS_HANDLE(handle)) {
+		struct ll_conn_iso_stream *cis =
+			ll_iso_stream_connected_get(handle);
+		if (!cis) {
+			return -EINVAL;
+		}
+
+		struct ll_conn_iso_group *cig = cis->group;
+
+		hdr = &(cis->hdr);
+
+		/* Set target event as the current event. This might cause some
+		 * misalignment between SDU interval and ISO interval in the
+		 * case of a burst from the application or late release. However
+		 * according to the specifications:
+		 * BT Core V5.3 : Vol 6 Low Energy Controller : Part B LL Spec:
+		 * 4.5.13.3 Connected Isochronous Data:
+		 * This burst is associated with the corresponding CIS event but
+		 * the payloads may be transmitted in later events as well.
+		 * If flush timeout is greater than one, use the current event,
+		 * otherwise postpone to the next.
+		 *
+		 * TODO: Calculate the best possible target event based on CIS
+		 * reference, FT and event_count.
+		 */
+		sdu_frag_tx.target_event = cis->lll.event_count +
+			(cis->lll.tx.flush_timeout > 1 ? 0 : 1);
+
+		sdu_frag_tx.cig_ref_point = cig->cig_ref_point;
+
+		/* Get controller's input data path for CIS */
+		dp_in = hdr->datapath_in;
+		if (!dp_in || dp_in->path_id != BT_HCI_DATAPATH_ID_HCI) {
+			BT_ERR("Input data path not set for HCI");
+			return -EINVAL;
+		}
+
+		/* Get input data path's source handle */
+		isoal_source_handle_t source = dp_in->source_hdl;
+
+		/* Start Fragmentation */
+		if (isoal_tx_sdu_fragment(source, &sdu_frag_tx)) {
+			return -EINVAL;
+		}
+
+		/* TODO: Assign *evt if an immediate response is required */
+		return 0;
+	}
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
-	if (ll_iso_tx_mem_enqueue(stream_handle, tx)) {
-		BT_ERR("Invalid ISO Tx Enqueue");
-		ll_iso_tx_mem_release(tx);
-		return -EINVAL;
-	}
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	if (IS_ADV_ISO_HANDLE(handle)) {
+		/* FIXME: Use ISOAL */
+		struct node_tx_iso *tx;
+		uint16_t stream_handle;
+		uint16_t slen;
 
-	return 0;
+		/* FIXME: Code only expects header present */
+		slen = iso_data_hdr ? iso_data_hdr->slen : 0;
+
+		/* Check invalid BIS PDU length */
+		if (slen > LL_BIS_OCTETS_TX_MAX) {
+			BT_ERR("Invalid HCI ISO Data length");
+			return -EINVAL;
+		}
+
+		/* Get BIS stream handle and stream context */
+		handle = bt_iso_handle(handle);
+		if (handle < BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE) {
+			return -EINVAL;
+		}
+		stream_handle = handle - BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE;
+
+		struct lll_adv_iso_stream *stream;
+
+		stream = ull_adv_iso_stream_get(stream_handle);
+		if (!stream) {
+			BT_ERR("Invalid BIS stream");
+			return -EINVAL;
+		}
+
+		struct ll_adv_iso_set *adv_iso;
+
+		adv_iso = ull_adv_iso_by_stream_get(stream_handle);
+		if (!adv_iso) {
+			BT_ERR("No BIG associated with stream handle");
+			return -EINVAL;
+		}
+
+		/* Get free node tx */
+		tx = ll_iso_tx_mem_acquire();
+		if (!tx) {
+			BT_ERR("ISO Tx Buffer Overflow");
+			data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO);
+			return -ENOBUFS;
+		}
+
+		struct pdu_bis *pdu = (void *)tx->pdu;
+
+		/* FIXME: Update to use correct LLID for BIS and CIS */
+		switch (bt_iso_flags_pb(flags)) {
+		case BT_ISO_SINGLE:
+			pdu->ll_id = PDU_BIS_LLID_COMPLETE_END;
+			break;
+		default:
+			ll_iso_tx_mem_release(tx);
+			return -EINVAL;
+		}
+
+		pdu->len = slen;
+		memcpy(pdu->payload, buf->data, slen);
+
+		struct lll_adv_iso *lll_iso;
+
+		lll_iso = &adv_iso->lll;
+
+		uint64_t pkt_seq_num;
+
+		pkt_seq_num = lll_iso->payload_count / lll_iso->bn;
+		if (((pkt_seq_num - stream->pkt_seq_num) & BIT64_MASK(39)) <=
+		BIT64_MASK(38)) {
+			stream->pkt_seq_num = pkt_seq_num;
+		} else {
+			pkt_seq_num = stream->pkt_seq_num;
+		}
+
+		tx->payload_count = pkt_seq_num * lll_iso->bn;
+
+		stream->pkt_seq_num++;
+
+		if (ll_iso_tx_mem_enqueue(stream_handle, tx, NULL)) {
+			BT_ERR("Invalid ISO Tx Enqueue");
+			ll_iso_tx_mem_release(tx);
+			return -EINVAL;
+		}
+
+		return 0;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
+
+	return -EINVAL;
 }
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
@@ -7775,7 +7925,11 @@ static void le_unknown_rsp(struct pdu_data *pdu_data, uint16_t handle,
 		le_remote_feat_complete(BT_HCI_ERR_UNSUPP_REMOTE_FEATURE,
 					    NULL, handle, buf);
 		break;
-
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	case PDU_DATA_LLCTRL_TYPE_CTE_REQ:
+		le_df_cte_req_failed(BT_HCI_ERR_UNSUPP_REMOTE_FEATURE, handle, buf);
+		break;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	default:
 		BT_WARN("type: 0x%02x",	pdu_data->llctrl.unknown_rsp.type);
 		break;

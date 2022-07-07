@@ -10,7 +10,7 @@
 #include <zephyr/zephyr.h>
 #include <stdint.h>
 
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {

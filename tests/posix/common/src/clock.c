@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ztest.h>
-#include <posix/time.h>
-#include <posix/sys/time.h>
-#include <posix/unistd.h>
+#include <zephyr/posix/time.h>
+#include <zephyr/posix/sys/time.h>
+#include <zephyr/posix/unistd.h>
 
 #define SLEEP_SECONDS 1
 #define CLOCK_INVALID -1
 
-void test_posix_clock(void)
+ZTEST(posix_apis, test_posix_clock)
 {
 	int64_t nsecs_elapsed, secs_elapsed;
 	struct timespec ts, te;
@@ -44,7 +44,7 @@ void test_posix_clock(void)
 	printk("POSIX clock APIs test done\n");
 }
 
-void test_posix_realtime(void)
+ZTEST(posix_apis, test_posix_realtime)
 {
 	int ret;
 	struct timespec rts, mts;

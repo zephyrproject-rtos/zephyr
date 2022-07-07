@@ -8,15 +8,15 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/dlist.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/services/ots.h>
 #include "ots_internal.h"
 #include "ots_obj_manager_internal.h"
 #include "ots_dir_list_internal.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 
@@ -139,7 +139,7 @@ static int bt_ots_dir_list_search_forward(struct bt_ots_dir_list *dir_list, void
 
 	bt_ots_obj_id_to_str(obj->id, id_str, sizeof(id_str));
 	LOG_DBG("Searching forward for offset %ld starting at %ld with object ID %s",
-		(long)offset, (long)dir_list->anchor_offset, log_strdup(id_str));
+		(long)offset, (long)dir_list->anchor_offset, id_str);
 
 	while (dir_list->anchor_offset + rec_len <= offset) {
 
@@ -166,7 +166,7 @@ static int bt_ots_dir_list_search_backward(struct bt_ots_dir_list *dir_list, voi
 
 	bt_ots_obj_id_to_str(obj->id, id_str, sizeof(id_str));
 	LOG_DBG("Searching backward for offset %ld starting at %ld with object ID %s",
-		(long)offset, (long)dir_list->anchor_offset, log_strdup(id_str));
+		(long)offset, (long)dir_list->anchor_offset, id_str);
 
 	while (dir_list->anchor_offset > offset) {
 
@@ -226,7 +226,7 @@ static int bt_ots_dir_list_search(struct bt_ots_dir_list *dir_list, void *obj_ma
 
 	bt_ots_obj_id_to_str(dir_list->anchor_object->id, id_str, sizeof(id_str));
 	LOG_DBG("Found offset %ld starting at %ld in object with ID %s",
-		(long)offset, (long)dir_list->anchor_offset, log_strdup(id_str));
+		(long)offset, (long)dir_list->anchor_offset, id_str);
 
 	return 0;
 }

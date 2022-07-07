@@ -6,9 +6,9 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <device.h>
-#include <drivers/flash.h>
-#include <storage/flash_map.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
 #include <zephyr/types.h>
 #include <ztest_assert.h>
 

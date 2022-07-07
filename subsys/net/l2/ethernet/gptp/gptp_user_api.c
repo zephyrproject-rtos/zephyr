@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 
-#include <drivers/ptp_clock.h>
-#include <net/gptp.h>
+#include <zephyr/drivers/ptp_clock.h>
+#include <zephyr/net/gptp.h>
 
 #include "gptp_messages.h"
 #include "gptp_data_set.h"

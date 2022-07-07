@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_DRIVERS_ETHERNET_ETH_GECKO_PRIV_H_
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_GECKO_PRIV_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
 #define ETH_GECKO_MTU         NET_ETH_MTU

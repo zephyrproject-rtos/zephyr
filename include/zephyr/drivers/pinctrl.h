@@ -20,9 +20,9 @@
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
-#include <devicetree/pinctrl.h>
+#include <zephyr/devicetree/pinctrl.h>
 #include <pinctrl_soc.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -238,7 +238,7 @@ struct pinctrl_dev_config {
 	LISTIFY(DT_NUM_PINCTRL_STATES(node_id),				       \
 		     Z_PINCTRL_STATE_PINS_DEFINE, (;), node_id);	       \
 	Z_PINCTRL_STATES_DEFINE(node_id)				       \
-	Z_PINCTRL_DEV_CONFIG_CONST Z_PINCTRL_DEV_CONFIG_STATIC		       \
+	Z_PINCTRL_DEV_CONFIG_STATIC Z_PINCTRL_DEV_CONFIG_CONST		       \
 	struct pinctrl_dev_config Z_PINCTRL_DEV_CONFIG_NAME(node_id) =	       \
 	Z_PINCTRL_DEV_CONFIG_INIT(node_id)
 
@@ -320,6 +320,7 @@ static inline int pinctrl_apply_state_direct(
 #ifdef CONFIG_PINCTRL_STORE_REG
 	reg = config->reg;
 #else
+	ARG_UNUSED(config);
 	reg = PINCTRL_REG_NONE;
 #endif
 
@@ -441,6 +442,9 @@ static inline int pinctrl_update_states(
 	struct pinctrl_dev_config *config,
 	const struct pinctrl_state *states, uint8_t state_cnt)
 {
+	ARG_UNUSED(config);
+	ARG_UNUSED(states);
+	ARG_UNUSED(state_cnt);
 	return -ENOSYS;
 }
 #endif /* defined(CONFIG_PINCTRL_DYNAMIC) || defined(__DOXYGEN__) */

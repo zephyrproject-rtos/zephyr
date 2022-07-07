@@ -5,15 +5,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <pm/pm.h>
-#include <pm/policy.h>
-#include <spinlock.h>
-#include <sys_clock.h>
-#include <sys/__assert.h>
-#include <sys/time_units.h>
-#include <sys/atomic.h>
-#include <toolchain.h>
+#include <zephyr/kernel.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/time_units.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/toolchain.h>
 
 #define DT_SUB_LOCK_INIT(node_id)				\
 	{ .state = PM_STATE_DT_INIT(node_id),			\

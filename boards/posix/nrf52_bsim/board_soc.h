@@ -19,15 +19,14 @@
 #ifndef _POSIX_NRF52_BOARD_SOC_H
 #define _POSIX_NRF52_BOARD_SOC_H
 
-#include <toolchain.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/util.h>
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <zephyr/types.h>
 #include <stddef.h>
-#include "irq.h"
-#include "irq_sources.h"
+#include <zephyr/irq.h>
 #include <nrfx.h>
 #include "cmsis.h"
 

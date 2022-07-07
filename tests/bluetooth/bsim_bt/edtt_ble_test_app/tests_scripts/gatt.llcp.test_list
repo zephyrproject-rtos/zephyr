@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 GAP/GAT/BV-01-C
-#GAP/GAT/BV-04-C ## Temporarily disable pending debug in refactored LLCP
+GAP/GAT/BV-04-C
 GAP/IDLE/NAMP/BV-01-C
 GATT/SR/GAC/BV-01-C
 GATT/SR/GAD/BV-01-C

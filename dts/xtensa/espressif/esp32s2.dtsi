@@ -5,10 +5,10 @@
  */
 #include <mem.h>
 #include <xtensa/xtensa.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/clock/esp32s2_clock.h>
-#include <dt-bindings/interrupt-controller/esp32s2-xtensa-intmux.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/esp32s2_clock.h>
+#include <zephyr/dt-bindings/interrupt-controller/esp32s2-xtensa-intmux.h>
 #include <dt-bindings/pinctrl/esp32-pinctrl.h>
 
 / {
@@ -34,6 +34,11 @@
 	wifi: wifi {
 		compatible = "espressif,esp32-wifi";
 		status = "disabled";
+	};
+
+	pinctrl: pin-controller {
+		compatible = "espressif,esp32-pinctrl";
+		status = "okay";
 	};
 
 	soc {
@@ -101,11 +106,6 @@
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_UART1_MODULE>;
 			current-speed = <115200>;
-		};
-
-		pinctrl: pin-controller {
-			compatible = "espressif,esp32-pinctrl";
-			status = "okay";
 		};
 
 		gpio0: gpio@3f404000 {

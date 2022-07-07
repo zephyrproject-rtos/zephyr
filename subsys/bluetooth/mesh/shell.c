@@ -6,16 +6,16 @@
 
 #include <stdlib.h>
 #include <ctype.h>
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <sys/util.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
-#include <shell/shell.h>
-#include <settings/settings.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/settings/settings.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/mesh.h>
-#include <bluetooth/mesh/shell.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/mesh.h>
+#include <zephyr/bluetooth/mesh/shell.h>
 
 /* Private includes for raw Network & Transport layer access */
 #include "mesh.h"
@@ -2166,6 +2166,7 @@ static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va,
 
 	if (!is_va) {
 		pub.addr = shell_strtoul(argv[0], 0, &err);
+		pub.uuid = NULL;
 	} else {
 		len = hex2bin(argv[0], strlen(argv[0]), uuid, sizeof(uuid));
 		memset(uuid + len, 0, sizeof(uuid) - len);

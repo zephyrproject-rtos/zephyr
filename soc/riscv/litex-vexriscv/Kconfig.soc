@@ -6,3 +6,14 @@ config SOC_RISCV32_LITEX_VEXRISCV
 	select RISCV
 	select ATOMIC_OPERATIONS_C
 	select INCLUDE_RESET_VECTOR
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+
+if SOC_RISCV32_LITEX_VEXRISCV
+
+config LITEX_CSR_DATA_WIDTH
+	int "Select Control/Status register width"
+	default 32
+
+endif # SOC_RISCV32_LITEX_VEXRISCV

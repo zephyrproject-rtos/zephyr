@@ -6,8 +6,9 @@
 import os
 import pickle
 import sys
+from pathlib import Path
 
-ZEPHYR_BASE = os.environ["ZEPHYR_BASE"]
+ZEPHYR_BASE = str(Path(__file__).resolve().parents[2])
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
                                 "python-devicetree", "src"))
 
@@ -88,6 +89,23 @@ def dt_chosen_path(kconf, _, chosen):
 
     return node.path if node else ""
 
+def dt_chosen_has_compat(kconf, _, chosen, compat):
+    """
+    This function takes a /chosen node property and returns 'y' if the
+    chosen node has the provided compatible string 'compat'
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    node = edt.chosen_node(chosen)
+
+    if node is None:
+        return "n"
+
+    if compat in node.compats:
+        return "y"
+
+    return "n"
 
 def dt_node_enabled(kconf, name, node):
     """
@@ -574,6 +592,7 @@ functions = {
         "dt_chosen_label": (dt_chosen_label, 1, 1),
         "dt_chosen_enabled": (dt_chosen_enabled, 1, 1),
         "dt_chosen_path": (dt_chosen_path, 1, 1),
+        "dt_chosen_has_compat": (dt_chosen_has_compat, 2, 2),
         "dt_path_enabled": (dt_node_enabled, 1, 1),
         "dt_alias_enabled": (dt_node_enabled, 1, 1),
         "dt_nodelabel_enabled": (dt_nodelabel_enabled, 1, 1),

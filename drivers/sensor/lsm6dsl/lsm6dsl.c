@@ -10,14 +10,14 @@
 
 #define DT_DRV_COMPAT st_lsm6dsl
 
-#include <drivers/sensor.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 #include "lsm6dsl.h"
 
@@ -839,9 +839,7 @@ static int lsm6dsl_init(const struct device *dev)
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
 #define LSM6DSL_CFG_IRQ(inst) \
-		.irq_dev_name = DT_INST_GPIO_LABEL(inst, irq_gpios),	\
-		.irq_pin = DT_INST_GPIO_PIN(inst, irq_gpios),		\
-		.irq_flags = DT_INST_GPIO_FLAGS(inst, irq_gpios),
+		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),
 #else
 #define LSM6DSL_CFG_IRQ(inst)
 #endif /* CONFIG_LSM6DSL_TRIGGER */

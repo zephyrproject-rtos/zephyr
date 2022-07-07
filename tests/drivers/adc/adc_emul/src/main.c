@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/adc.h>
-#include <drivers/adc/adc_emul.h>
-#include <zephyr.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/adc/adc_emul.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, zephyr_adc_emul))

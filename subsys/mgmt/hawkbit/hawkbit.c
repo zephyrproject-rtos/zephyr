@@ -8,34 +8,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 
 #include <stdio.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
 #include <stdlib.h>
-#include <fs/nvs.h>
-#include <data/json.h>
-#include <net/net_ip.h>
-#include <net/socket.h>
-#include <net/net_mgmt.h>
-#include <sys/reboot.h>
-#include <drivers/flash.h>
-#include <net/http_client.h>
-#include <net/dns_resolve.h>
-#include <logging/log_ctrl.h>
-#include <storage/flash_map.h>
+#include <zephyr/fs/nvs.h>
+#include <zephyr/data/json.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/net/http_client.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/storage/flash_map.h>
 
 #include "hawkbit_priv.h"
 #include "hawkbit_device.h"
-#include "mgmt/hawkbit.h"
+#include <zephyr/mgmt/hawkbit.h>
 #include "hawkbit_firmware.h"
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 #define CA_CERTIFICATE_TAG 1
-#include <net/tls_credentials.h>
+#include <zephyr/net/tls_credentials.h>
 #endif
 
 #define ADDRESS_ID 1
@@ -104,46 +104,36 @@ static const struct json_obj_descr json_href_descr[] = {
 };
 
 static const struct json_obj_descr json_status_result_descr[] = {
-	JSON_OBJ_DESCR_PRIM(struct hawkbit_status_result, finished,
-			    JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct hawkbit_status_result, finished, JSON_TOK_STRING),
 };
 
 static const struct json_obj_descr json_status_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct hawkbit_status, execution, JSON_TOK_STRING),
-	JSON_OBJ_DESCR_OBJECT(struct hawkbit_status, result,
-			      json_status_result_descr),
+	JSON_OBJ_DESCR_OBJECT(struct hawkbit_status, result, json_status_result_descr),
 };
 
 static const struct json_obj_descr json_ctl_res_sleep_descr[] = {
-	JSON_OBJ_DESCR_PRIM(struct hawkbit_ctl_res_sleep, sleep,
-			    JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct hawkbit_ctl_res_sleep, sleep, JSON_TOK_STRING),
 };
 
 static const struct json_obj_descr json_ctl_res_polling_descr[] = {
-	JSON_OBJ_DESCR_OBJECT(struct hawkbit_ctl_res_polling, polling,
-			      json_ctl_res_sleep_descr),
+	JSON_OBJ_DESCR_OBJECT(struct hawkbit_ctl_res_polling, polling, json_ctl_res_sleep_descr),
 };
 
 static const struct json_obj_descr json_ctl_res_links_descr[] = {
-	JSON_OBJ_DESCR_OBJECT(struct hawkbit_ctl_res_links, deploymentBase,
-			      json_href_descr),
-	JSON_OBJ_DESCR_OBJECT(struct hawkbit_ctl_res_links, cancelAction,
-			      json_href_descr),
-	JSON_OBJ_DESCR_OBJECT(struct hawkbit_ctl_res_links, configData,
-			      json_href_descr),
+	JSON_OBJ_DESCR_OBJECT(struct hawkbit_ctl_res_links, deploymentBase, json_href_descr),
+	JSON_OBJ_DESCR_OBJECT(struct hawkbit_ctl_res_links, cancelAction, json_href_descr),
+	JSON_OBJ_DESCR_OBJECT(struct hawkbit_ctl_res_links, configData, json_href_descr),
 };
 
 static const struct json_obj_descr json_ctl_res_descr[] = {
-	JSON_OBJ_DESCR_OBJECT(struct hawkbit_ctl_res, config,
-			      json_ctl_res_polling_descr),
-	JSON_OBJ_DESCR_OBJECT(struct hawkbit_ctl_res, _links,
-			      json_ctl_res_links_descr),
+	JSON_OBJ_DESCR_OBJECT(struct hawkbit_ctl_res, config, json_ctl_res_polling_descr),
+	JSON_OBJ_DESCR_OBJECT(struct hawkbit_ctl_res, _links, json_ctl_res_links_descr),
 };
 
 static const struct json_obj_descr json_cfg_data_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct hawkbit_cfg_data, VIN, JSON_TOK_STRING),
-	JSON_OBJ_DESCR_PRIM(struct hawkbit_cfg_data, hwRevision,
-			    JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct hawkbit_cfg_data, hwRevision, JSON_TOK_STRING),
 };
 
 static const struct json_obj_descr json_cfg_descr[] = {
@@ -161,66 +151,50 @@ static const struct json_obj_descr json_close_descr[] = {
 };
 
 static const struct json_obj_descr json_dep_res_hashes_descr[] = {
-	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_hashes, sha1,
-			    JSON_TOK_STRING),
-	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_hashes, md5,
-			    JSON_TOK_STRING),
-	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_hashes, sha256,
-			    JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_hashes, sha1, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_hashes, md5, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_hashes, sha256, JSON_TOK_STRING),
 };
 
 static const struct json_obj_descr json_dep_res_links_descr[] = {
-	JSON_OBJ_DESCR_OBJECT_NAMED(struct hawkbit_dep_res_links,
-				    "download-http", download_http,
+	JSON_OBJ_DESCR_OBJECT_NAMED(struct hawkbit_dep_res_links, "download-http", download_http,
 				    json_href_descr),
-	JSON_OBJ_DESCR_OBJECT_NAMED(struct hawkbit_dep_res_links, "md5sum-http",
-				    md5sum_http, json_href_descr),
+	JSON_OBJ_DESCR_OBJECT_NAMED(struct hawkbit_dep_res_links, "md5sum-http", md5sum_http,
+				    json_href_descr),
 };
 
 static const struct json_obj_descr json_dep_res_arts_descr[] = {
-	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_arts, filename,
-			    JSON_TOK_STRING),
-	JSON_OBJ_DESCR_OBJECT(struct hawkbit_dep_res_arts, hashes,
-			      json_dep_res_hashes_descr),
+	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_arts, filename, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_OBJECT(struct hawkbit_dep_res_arts, hashes, json_dep_res_hashes_descr),
 	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_arts, size, JSON_TOK_NUMBER),
-	JSON_OBJ_DESCR_OBJECT(struct hawkbit_dep_res_arts, _links,
-			      json_dep_res_links_descr),
+	JSON_OBJ_DESCR_OBJECT(struct hawkbit_dep_res_arts, _links, json_dep_res_links_descr),
 };
 
 static const struct json_obj_descr json_dep_res_chunk_descr[] = {
-	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_chunk, part,
-			    JSON_TOK_STRING),
-	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_chunk, version,
-			    JSON_TOK_STRING),
-	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_chunk, name,
-			    JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_chunk, part, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_chunk, version, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_chunk, name, JSON_TOK_STRING),
 	JSON_OBJ_DESCR_OBJ_ARRAY(struct hawkbit_dep_res_chunk, artifacts,
-				 HAWKBIT_DEP_MAX_CHUNK_ARTS, num_artifacts,
-				 json_dep_res_arts_descr,
+				 HAWKBIT_DEP_MAX_CHUNK_ARTS, num_artifacts, json_dep_res_arts_descr,
 				 ARRAY_SIZE(json_dep_res_arts_descr)),
 };
 
 static const struct json_obj_descr json_dep_res_deploy_descr[] = {
-	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_deploy, download,
-			    JSON_TOK_STRING),
-	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_deploy, update,
-			    JSON_TOK_STRING),
-	JSON_OBJ_DESCR_OBJ_ARRAY(struct hawkbit_dep_res_deploy, chunks,
-				 HAWKBIT_DEP_MAX_CHUNKS, num_chunks,
-				 json_dep_res_chunk_descr,
+	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_deploy, download, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res_deploy, update, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_OBJ_ARRAY(struct hawkbit_dep_res_deploy, chunks, HAWKBIT_DEP_MAX_CHUNKS,
+				 num_chunks, json_dep_res_chunk_descr,
 				 ARRAY_SIZE(json_dep_res_chunk_descr)),
 };
 
 static const struct json_obj_descr json_dep_res_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_res, id, JSON_TOK_STRING),
-	JSON_OBJ_DESCR_OBJECT(struct hawkbit_dep_res, deployment,
-			      json_dep_res_deploy_descr),
+	JSON_OBJ_DESCR_OBJECT(struct hawkbit_dep_res, deployment, json_dep_res_deploy_descr),
 };
 
 static const struct json_obj_descr json_dep_fbk_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct hawkbit_dep_fbk, id, JSON_TOK_STRING),
-	JSON_OBJ_DESCR_OBJECT(struct hawkbit_dep_fbk, status,
-			      json_status_descr),
+	JSON_OBJ_DESCR_OBJECT(struct hawkbit_dep_fbk, status, json_status_descr),
 };
 
 static bool start_http_client(void)
@@ -245,8 +219,7 @@ static bool start_http_client(void)
 	hints.ai_socktype = SOCK_STREAM;
 
 	while (resolve_attempts--) {
-		ret = getaddrinfo(CONFIG_HAWKBIT_SERVER, CONFIG_HAWKBIT_PORT,
-				  &hints, &addr);
+		ret = getaddrinfo(CONFIG_HAWKBIT_SERVER, CONFIG_HAWKBIT_PORT, &hints, &addr);
 		if (ret == 0) {
 			break;
 		}
@@ -276,8 +249,7 @@ static bool start_http_client(void)
 		goto err_sock;
 	}
 
-	if (setsockopt(hb_context.sock, SOL_TLS, TLS_HOSTNAME,
-		       CONFIG_HAWKBIT_SERVER,
+	if (setsockopt(hb_context.sock, SOL_TLS, TLS_HOSTNAME, CONFIG_HAWKBIT_SERVER,
 		       sizeof(CONFIG_HAWKBIT_SERVER)) < 0) {
 		goto err_sock;
 	}
@@ -382,11 +354,10 @@ static void hawkbit_update_sleep(struct hawkbit_ctl_res *hawkbit_res)
 	const char *sleep = hawkbit_res->config.polling.sleep;
 
 	if (strlen(sleep) != HAWKBIT_SLEEP_LENGTH) {
-		LOG_ERR("Invalid poll sleep: %s", log_strdup(sleep));
+		LOG_ERR("Invalid poll sleep: %s", sleep);
 	} else {
 		sleep_time = hawkbit_time2sec(sleep);
-		if (sleep_time > 0 &&
-		    poll_sleep != (MSEC_PER_SEC * sleep_time)) {
+		if (sleep_time > 0 && poll_sleep != (MSEC_PER_SEC * sleep_time)) {
 			LOG_DBG("New poll sleep %d seconds", sleep_time);
 			poll_sleep = sleep_time * MSEC_PER_SEC;
 		}
@@ -396,8 +367,7 @@ static void hawkbit_update_sleep(struct hawkbit_ctl_res *hawkbit_res)
 /*
  * Find URL component for the device cancel operation and action id
  */
-static int hawkbit_find_cancelAction_base(struct hawkbit_ctl_res *res,
-					  char *cancel_base)
+static int hawkbit_find_cancelAction_base(struct hawkbit_ctl_res *res, char *cancel_base)
 {
 	size_t len;
 	const char *href;
@@ -412,15 +382,15 @@ static int hawkbit_find_cancelAction_base(struct hawkbit_ctl_res *res,
 	helper = strstr(href, "cancelAction/");
 	if (!helper) {
 		/* A badly formatted cancel base is a server error */
-		LOG_ERR("Missing cancelBase/ in href %s", log_strdup(href));
+		LOG_ERR("Missing cancelBase/ in href %s", href);
 		return -EINVAL;
 	}
 
 	len = strlen(helper);
 	if (len > CANCEL_BASE_SIZE - 1) {
 		/* Lack of memory is an application error */
-		LOG_ERR("cancelBase %s is too big (len %zu, max %zu)", log_strdup(helper),
-			len, CANCEL_BASE_SIZE - 1);
+		LOG_ERR("cancelBase %s is too big (len %zu, max %zu)", helper, len,
+			CANCEL_BASE_SIZE - 1);
 		return -ENOMEM;
 	}
 
@@ -449,8 +419,7 @@ static int hawkbit_find_cancelAction_base(struct hawkbit_ctl_res *res,
  * Find URL component for the device's deployment operations
  * resource
  */
-static int hawkbit_find_deployment_base(struct hawkbit_ctl_res *res,
-					char *deployment_base)
+static int hawkbit_find_deployment_base(struct hawkbit_ctl_res *res, char *deployment_base)
 {
 	const char *href;
 	const char *helper;
@@ -465,15 +434,15 @@ static int hawkbit_find_deployment_base(struct hawkbit_ctl_res *res,
 	helper = strstr(href, "deploymentBase/");
 	if (!helper) {
 		/* A badly formatted deployment base is a server error */
-		LOG_ERR("Missing deploymentBase/ in href %s", log_strdup(href));
+		LOG_ERR("Missing deploymentBase/ in href %s", href);
 		return -EINVAL;
 	}
 
 	len = strlen(helper);
 	if (len > DEPLOYMENT_BASE_SIZE - 1) {
 		/* Lack of memory is an application error */
-		LOG_ERR("deploymentBase %s is too big (len %zu, max %zu)",
-			log_strdup(helper), len, DEPLOYMENT_BASE_SIZE - 1);
+		LOG_ERR("deploymentBase %s is too big (len %zu, max %zu)", helper, len,
+			DEPLOYMENT_BASE_SIZE - 1);
 		return -ENOMEM;
 	}
 
@@ -485,8 +454,7 @@ static int hawkbit_find_deployment_base(struct hawkbit_ctl_res *res,
  * Find URL component for this device's deployment operations
  * resource.
  */
-static int hawkbit_parse_deployment(struct hawkbit_dep_res *res,
-				    int32_t *json_action_id,
+static int hawkbit_parse_deployment(struct hawkbit_dep_res *res, int32_t *json_action_id,
 				    char *download_http, int32_t *file_size)
 {
 	int32_t size;
@@ -513,7 +481,7 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res,
 
 	chunk = &res->deployment.chunks[0];
 	if (strcmp("bApp", chunk->part)) {
-		LOG_ERR("Only part 'bApp' is supported; got %s", log_strdup(chunk->part));
+		LOG_ERR("Only part 'bApp' is supported; got %s", chunk->part);
 		return -EINVAL;
 	}
 
@@ -524,17 +492,15 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res,
 	}
 
 	artifact = &chunk->artifacts[0];
-	if (hex2bin(artifact->hashes.sha256, SHA256_HASH_SIZE << 1,
-	    hb_context.dl.file_hash, sizeof(hb_context.dl.file_hash)) !=
-	    SHA256_HASH_SIZE) {
+	if (hex2bin(artifact->hashes.sha256, SHA256_HASH_SIZE << 1, hb_context.dl.file_hash,
+		    sizeof(hb_context.dl.file_hash)) != SHA256_HASH_SIZE) {
 		return -EINVAL;
 	}
 
 	size = artifact->size;
 
 	if (size > SLOT1_SIZE) {
-		LOG_ERR("Artifact file size too big (got %d, max is %d)", size,
-			SLOT1_SIZE);
+		LOG_ERR("Artifact file size too big (got %d, max is %d)", size, SLOT1_SIZE);
 		return -ENOSPC;
 	}
 
@@ -550,7 +516,7 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res,
 
 	helper = strstr(href, "/DEFAULT/controller/v1");
 	if (!helper) {
-		LOG_ERR("Unexpected download-http href format: %s", log_strdup(helper));
+		LOG_ERR("Unexpected download-http href format: %s", helper);
 		return -EINVAL;
 	}
 
@@ -559,8 +525,8 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res,
 		LOG_ERR("Empty download-http");
 		return -EINVAL;
 	} else if (len > DOWNLOAD_HTTP_SIZE - 1) {
-		LOG_ERR("download-http %s is too big (len: %zu, max: %zu)",
-			log_strdup(helper), len, DOWNLOAD_HTTP_SIZE - 1);
+		LOG_ERR("download-http %s is too big (len: %zu, max: %zu)", helper, len,
+			DOWNLOAD_HTTP_SIZE - 1);
 		return -ENOMEM;
 	}
 
@@ -572,13 +538,10 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res,
 
 static void hawkbit_dump_base(struct hawkbit_ctl_res *r)
 {
-	LOG_DBG("config.polling.sleep=%s", log_strdup(r->config.polling.sleep));
-	LOG_DBG("_links.deploymentBase.href=%s",
-		log_strdup(r->_links.deploymentBase.href));
-	LOG_DBG("_links.configData.href=%s",
-		log_strdup(r->_links.configData.href));
-	LOG_DBG("_links.cancelAction.href=%s",
-		log_strdup(r->_links.cancelAction.href));
+	LOG_DBG("config.polling.sleep=%s", r->config.polling.sleep);
+	LOG_DBG("_links.deploymentBase.href=%s", r->_links.deploymentBase.href);
+	LOG_DBG("_links.configData.href=%s", r->_links.configData.href);
+	LOG_DBG("_links.cancelAction.href=%s", r->_links.cancelAction.href);
 }
 
 static void hawkbit_dump_deployment(struct hawkbit_dep_res *d)
@@ -587,22 +550,19 @@ static void hawkbit_dump_deployment(struct hawkbit_dep_res *d)
 	struct hawkbit_dep_res_arts *a = &c->artifacts[0];
 	struct hawkbit_dep_res_links *l = &a->_links;
 
-	LOG_DBG("id=%s", log_strdup(d->id));
-	LOG_DBG("download=%s", log_strdup(d->deployment.download));
-	LOG_DBG("update=%s", log_strdup(d->deployment.update));
-	LOG_DBG("chunks[0].part=%s", log_strdup(c->part));
-	LOG_DBG("chunks[0].name=%s", log_strdup(c->name));
-	LOG_DBG("chunks[0].version=%s", log_strdup(c->version));
-	LOG_DBG("chunks[0].artifacts[0].filename=%s", log_strdup(a->filename));
-	LOG_DBG("chunks[0].artifacts[0].hashes.sha1=%s",
-		log_strdup(a->hashes.sha1));
-	LOG_DBG("chunks[0].artifacts[0].hashes.md5=%s",
-		log_strdup(a->hashes.md5));
-	LOG_DBG("chunks[0].artifacts[0].hashes.sha256=%s",
-		log_strdup(a->hashes.sha256));
+	LOG_DBG("id=%s", d->id);
+	LOG_DBG("download=%s", d->deployment.download);
+	LOG_DBG("update=%s", d->deployment.update);
+	LOG_DBG("chunks[0].part=%s", c->part);
+	LOG_DBG("chunks[0].name=%s", c->name);
+	LOG_DBG("chunks[0].version=%s", c->version);
+	LOG_DBG("chunks[0].artifacts[0].filename=%s", a->filename);
+	LOG_DBG("chunks[0].artifacts[0].hashes.sha1=%s", a->hashes.sha1);
+	LOG_DBG("chunks[0].artifacts[0].hashes.md5=%s", a->hashes.md5);
+	LOG_DBG("chunks[0].artifacts[0].hashes.sha256=%s", a->hashes.sha256);
 	LOG_DBG("chunks[0].size=%d", a->size);
-	LOG_DBG("download-http=%s", log_strdup(l->download_http.href));
-	LOG_DBG("md5sum =%s", log_strdup(l->md5sum_http.href));
+	LOG_DBG("download-http=%s", l->download_http.href);
+	LOG_DBG("md5sum =%s", l->md5sum_http.href);
 }
 
 int hawkbit_init(void)
@@ -675,8 +635,7 @@ static int enum_for_http_req_string(char *userdata)
 	return 0;
 }
 
-static void response_cb(struct http_response *rsp,
-			enum http_final_call final_data, void *userdata)
+static void response_cb(struct http_response *rsp, enum http_final_call final_data, void *userdata)
 {
 	static size_t body_len;
 	int ret, type, downloaded;
@@ -697,19 +656,17 @@ static void response_cb(struct http_response *rsp,
 
 			if ((hb_context.dl.downloaded_size + body_len) > response_buffer_size) {
 				response_buffer_size <<= 1;
-				rsp_tmp = realloc(hb_context.response_data,
-						  response_buffer_size);
+				rsp_tmp = realloc(hb_context.response_data, response_buffer_size);
 				if (rsp_tmp == NULL) {
 					LOG_ERR("Failed to realloc memory");
-					hb_context.code_status =
-						HAWKBIT_METADATA_ERROR;
+					hb_context.code_status = HAWKBIT_METADATA_ERROR;
 					break;
 				}
 
 				hb_context.response_data = rsp_tmp;
 			}
-			strncpy(hb_context.response_data + hb_context.dl.downloaded_size,
-				body_data, body_len);
+			strncpy(hb_context.response_data + hb_context.dl.downloaded_size, body_data,
+				body_len);
 			hb_context.dl.downloaded_size += body_len;
 		}
 
@@ -724,10 +681,8 @@ static void response_cb(struct http_response *rsp,
 
 			hb_context.response_data[hb_context.dl.downloaded_size] = '\0';
 			ret = json_obj_parse(hb_context.response_data,
-					     hb_context.dl.downloaded_size,
-					     json_ctl_res_descr,
-					     ARRAY_SIZE(json_ctl_res_descr),
-					     &hawkbit_results.base);
+					     hb_context.dl.downloaded_size, json_ctl_res_descr,
+					     ARRAY_SIZE(json_ctl_res_descr), &hawkbit_results.base);
 			if (ret < 0) {
 				LOG_ERR("JSON parse error (HAWKBIT_PROBE): %d", ret);
 				hb_context.code_status = HAWKBIT_METADATA_ERROR;
@@ -756,19 +711,17 @@ static void response_cb(struct http_response *rsp,
 
 			if ((hb_context.dl.downloaded_size + body_len) > response_buffer_size) {
 				response_buffer_size <<= 1;
-				rsp_tmp = realloc(hb_context.response_data,
-						  response_buffer_size);
+				rsp_tmp = realloc(hb_context.response_data, response_buffer_size);
 				if (rsp_tmp == NULL) {
 					LOG_ERR("Failed to realloc memory");
-					hb_context.code_status =
-						HAWKBIT_METADATA_ERROR;
+					hb_context.code_status = HAWKBIT_METADATA_ERROR;
 					break;
 				}
 
 				hb_context.response_data = rsp_tmp;
 			}
-			strncpy(hb_context.response_data + hb_context.dl.downloaded_size,
-				body_data, body_len);
+			strncpy(hb_context.response_data + hb_context.dl.downloaded_size, body_data,
+				body_len);
 			hb_context.dl.downloaded_size += body_len;
 		}
 
@@ -781,10 +734,8 @@ static void response_cb(struct http_response *rsp,
 
 			hb_context.response_data[hb_context.dl.downloaded_size] = '\0';
 			ret = json_obj_parse(hb_context.response_data,
-					     hb_context.dl.downloaded_size,
-					     json_dep_res_descr,
-					     ARRAY_SIZE(json_dep_res_descr),
-					     &hawkbit_results.dep);
+					     hb_context.dl.downloaded_size, json_dep_res_descr,
+					     ARRAY_SIZE(json_dep_res_descr), &hawkbit_results.dep);
 			if (ret < 0) {
 				LOG_ERR("DeploymentBase JSON parse error: %d", ret);
 				hb_context.code_status = HAWKBIT_METADATA_ERROR;
@@ -802,9 +753,8 @@ static void response_cb(struct http_response *rsp,
 			body_data = rsp->body_frag_start;
 			body_len = rsp->body_frag_len;
 
-			ret = flash_img_buffered_write(
-				&hb_context.flash_ctx, body_data, body_len,
-				final_data == HTTP_DATA_FINAL);
+			ret = flash_img_buffered_write(&hb_context.flash_ctx, body_data, body_len,
+						       final_data == HTTP_DATA_FINAL);
 			if (ret < 0) {
 				LOG_ERR("Flash write error: %d", ret);
 				hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
@@ -812,16 +762,13 @@ static void response_cb(struct http_response *rsp,
 			}
 		}
 
-		hb_context.dl.downloaded_size =
-			flash_img_bytes_written(&hb_context.flash_ctx);
+		hb_context.dl.downloaded_size = flash_img_bytes_written(&hb_context.flash_ctx);
 
-		downloaded = hb_context.dl.downloaded_size * 100 /
-			     hb_context.dl.http_content_size;
+		downloaded = hb_context.dl.downloaded_size * 100 / hb_context.dl.http_content_size;
 
 		if (downloaded > hb_context.dl.download_progress) {
 			hb_context.dl.download_progress = downloaded;
-			LOG_DBG("Download percentage: %d%% ",
-				hb_context.dl.download_progress);
+			LOG_DBG("Download percentage: %d%% ", hb_context.dl.download_progress);
 		}
 
 		if (final_data == HTTP_DATA_FINAL) {
@@ -832,10 +779,8 @@ static void response_cb(struct http_response *rsp,
 	}
 }
 
-static bool send_request(enum http_method method,
-			 enum hawkbit_http_request type,
-			 enum hawkbit_status_fini finished,
-			 enum hawkbit_status_exec execution)
+static bool send_request(enum http_method method, enum hawkbit_http_request type,
+			 enum hawkbit_status_fini finished, enum hawkbit_status_exec execution)
 {
 	int ret = 0;
 
@@ -847,11 +792,11 @@ static bool send_request(enum http_method method,
 	const char *exec = hawkbit_status_execution(execution);
 	char device_id[DEVICE_ID_HEX_MAX_SIZE] = { 0 };
 #ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
-	static const char * const headers[] = {
+	static const char *const headers[] = {
 #ifdef CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY
-		"Authorization: GatewayToken "CONFIG_HAWKBIT_DDI_SECURITY_TOKEN"\r\n",
+		"Authorization: GatewayToken " CONFIG_HAWKBIT_DDI_SECURITY_TOKEN "\r\n",
 #else
-		"Authorization: TargetToken "CONFIG_HAWKBIT_DDI_SECURITY_TOKEN"\r\n",
+		"Authorization: TargetToken " CONFIG_HAWKBIT_DDI_SECURITY_TOKEN "\r\n",
 #endif /* CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY */
 		NULL
 	};
@@ -878,8 +823,8 @@ static bool send_request(enum http_method method,
 
 	switch (type) {
 	case HAWKBIT_PROBE:
-		ret = http_client_req(hb_context.sock, &hb_context.http_req,
-				      HAWKBIT_RECV_TIMEOUT, "HAWKBIT_PROBE");
+		ret = http_client_req(hb_context.sock, &hb_context.http_req, HAWKBIT_RECV_TIMEOUT,
+				      "HAWKBIT_PROBE");
 		if (ret < 0) {
 			LOG_ERR("Unable to send HTTP request (HAWKBIT_PROBE): %d", ret);
 			return false;
@@ -897,8 +842,7 @@ static bool send_request(enum http_method method,
 		cfg.status.execution = exec;
 		cfg.status.result.finished = fini;
 
-		ret = json_obj_encode_buf(json_cfg_descr,
-					  ARRAY_SIZE(json_cfg_descr), &cfg,
+		ret = json_obj_encode_buf(json_cfg_descr, ARRAY_SIZE(json_cfg_descr), &cfg,
 					  hb_context.status_buffer,
 					  hb_context.status_buffer_size - 1);
 		if (ret) {
@@ -906,14 +850,11 @@ static bool send_request(enum http_method method,
 			return false;
 		}
 
-		hb_context.http_req.content_type_value =
-			HTTP_HEADER_CONTENT_TYPE_JSON;
+		hb_context.http_req.content_type_value = HTTP_HEADER_CONTENT_TYPE_JSON;
 		hb_context.http_req.payload = hb_context.status_buffer;
-		hb_context.http_req.payload_len =
-			strlen(hb_context.status_buffer);
+		hb_context.http_req.payload_len = strlen(hb_context.status_buffer);
 
-		ret = http_client_req(hb_context.sock, &hb_context.http_req,
-				      HAWKBIT_RECV_TIMEOUT,
+		ret = http_client_req(hb_context.sock, &hb_context.http_req, HAWKBIT_RECV_TIMEOUT,
 				      "HAWKBIT_CONFIG_DEVICE");
 		if (ret < 0) {
 			LOG_ERR("Unable to send HTTP request (HAWKBIT_CONFIG_DEVICE): %d", ret);
@@ -924,16 +865,14 @@ static bool send_request(enum http_method method,
 
 	case HAWKBIT_CLOSE:
 		memset(&close, 0, sizeof(close));
-		memset(&hb_context.status_buffer, 0,
-		       sizeof(hb_context.status_buffer));
+		memset(&hb_context.status_buffer, 0, sizeof(hb_context.status_buffer));
 		snprintk(acid, sizeof(acid), "%d", hb_context.action_id);
 		close.id = acid;
 		close.time = "";
 		close.status.execution = exec;
 		close.status.result.finished = fini;
 
-		ret = json_obj_encode_buf(json_close_descr,
-					  ARRAY_SIZE(json_close_descr), &close,
+		ret = json_obj_encode_buf(json_close_descr, ARRAY_SIZE(json_close_descr), &close,
 					  hb_context.status_buffer,
 					  hb_context.status_buffer_size - 1);
 		if (ret) {
@@ -941,14 +880,12 @@ static bool send_request(enum http_method method,
 			return false;
 		}
 
-		hb_context.http_req.content_type_value =
-			HTTP_HEADER_CONTENT_TYPE_JSON;
+		hb_context.http_req.content_type_value = HTTP_HEADER_CONTENT_TYPE_JSON;
 		hb_context.http_req.payload = hb_context.status_buffer;
-		hb_context.http_req.payload_len =
-			strlen(hb_context.status_buffer);
+		hb_context.http_req.payload_len = strlen(hb_context.status_buffer);
 
-		ret = http_client_req(hb_context.sock, &hb_context.http_req,
-				      HAWKBIT_RECV_TIMEOUT, "HAWKBIT_CLOSE");
+		ret = http_client_req(hb_context.sock, &hb_context.http_req, HAWKBIT_RECV_TIMEOUT,
+				      "HAWKBIT_CLOSE");
 		if (ret < 0) {
 			LOG_ERR("Unable to send HTTP request (HAWKBIT_CLOSE): %d", ret);
 			return false;
@@ -958,8 +895,7 @@ static bool send_request(enum http_method method,
 
 	case HAWKBIT_PROBE_DEPLOYMENT_BASE:
 		hb_context.http_req.content_type_value = NULL;
-		ret = http_client_req(hb_context.sock, &hb_context.http_req,
-				      HAWKBIT_RECV_TIMEOUT,
+		ret = http_client_req(hb_context.sock, &hb_context.http_req, HAWKBIT_RECV_TIMEOUT,
 				      "HAWKBIT_PROBE_DEPLOYMENT_BASE");
 		if (ret < 0) {
 			LOG_ERR("Unable to send HTTP request (HAWKBIT_PROBE_DEPLOYMENT_BASE): %d",
@@ -974,8 +910,8 @@ static bool send_request(enum http_method method,
 			return -EINVAL;
 		}
 
-		LOG_INF("Reporting deployment feedback %s (%s) for action %d",
-			fini, exec, hb_context.json_action_id);
+		LOG_INF("Reporting deployment feedback %s (%s) for action %d", fini, exec,
+			hb_context.json_action_id);
 		/* Build JSON */
 		memset(&feedback, 0, sizeof(feedback));
 		snprintk(acid, sizeof(acid), "%d", hb_context.json_action_id);
@@ -983,8 +919,7 @@ static bool send_request(enum http_method method,
 		feedback.status.result.finished = fini;
 		feedback.status.execution = exec;
 
-		ret = json_obj_encode_buf(json_dep_fbk_descr,
-					  ARRAY_SIZE(json_dep_fbk_descr),
+		ret = json_obj_encode_buf(json_dep_fbk_descr, ARRAY_SIZE(json_dep_fbk_descr),
 					  &feedback, hb_context.status_buffer,
 					  hb_context.status_buffer_size - 1);
 		if (ret) {
@@ -992,14 +927,12 @@ static bool send_request(enum http_method method,
 			return ret;
 		}
 
-		hb_context.http_req.content_type_value =
-			HTTP_HEADER_CONTENT_TYPE_JSON;
+		hb_context.http_req.content_type_value = HTTP_HEADER_CONTENT_TYPE_JSON;
 		hb_context.http_req.payload = hb_context.status_buffer;
-		hb_context.http_req.payload_len =
-			strlen(hb_context.status_buffer);
+		hb_context.http_req.payload_len = strlen(hb_context.status_buffer);
 
-		ret = http_client_req(hb_context.sock, &hb_context.http_req,
-				      HAWKBIT_RECV_TIMEOUT, "HAWKBIT_REPORT");
+		ret = http_client_req(hb_context.sock, &hb_context.http_req, HAWKBIT_RECV_TIMEOUT,
+				      "HAWKBIT_REPORT");
 		if (ret < 0) {
 			LOG_ERR("Unable to send HTTP request (HAWKBIT_REPORT): %d", ret);
 			return false;
@@ -1008,8 +941,8 @@ static bool send_request(enum http_method method,
 		break;
 
 	case HAWKBIT_DOWNLOAD:
-		ret = http_client_req(hb_context.sock, &hb_context.http_req,
-				      HAWKBIT_RECV_TIMEOUT, "HAWKBIT_DOWNLOAD");
+		ret = http_client_req(hb_context.sock, &hb_context.http_req, HAWKBIT_RECV_TIMEOUT,
+				      "HAWKBIT_DOWNLOAD");
 		if (ret < 0) {
 			LOG_ERR("Unable to send HTTP request (HAWKBIT_DOWNLOAD): %d", ret);
 			return false;
@@ -1046,8 +979,7 @@ enum hawkbit_response hawkbit_probe(void)
 		goto error;
 	}
 
-	if (!hawkbit_get_firmware_version(firmware_version,
-					  BOOT_IMG_VER_STRLEN_MAX)) {
+	if (!hawkbit_get_firmware_version(firmware_version, BOOT_IMG_VER_STRLEN_MAX)) {
 		hb_context.code_status = HAWKBIT_METADATA_ERROR;
 		goto error;
 	}
@@ -1094,19 +1026,15 @@ enum hawkbit_response hawkbit_probe(void)
 	hawkbit_dump_base(&hawkbit_results.base);
 
 	if (hawkbit_results.base._links.cancelAction.href) {
-		ret = hawkbit_find_cancelAction_base(&hawkbit_results.base,
-						     cancel_base);
+		ret = hawkbit_find_cancelAction_base(&hawkbit_results.base, cancel_base);
 		memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
 		hb_context.dl.http_content_size = 0;
 		hb_context.url_buffer_size = URL_BUFFER_SIZE;
-		snprintk(hb_context.url_buffer, hb_context.url_buffer_size,
-			 "%s/%s-%s/%s/feedback", HAWKBIT_JSON_URL, CONFIG_BOARD,
-			 device_id, cancel_base);
-		memset(&hawkbit_results.cancel, 0,
-		       sizeof(hawkbit_results.cancel));
+		snprintk(hb_context.url_buffer, hb_context.url_buffer_size, "%s/%s-%s/%s/feedback",
+			 HAWKBIT_JSON_URL, CONFIG_BOARD, device_id, cancel_base);
+		memset(&hawkbit_results.cancel, 0, sizeof(hawkbit_results.cancel));
 
-		if (!send_request(HTTP_POST, HAWKBIT_CLOSE,
-				  HAWKBIT_STATUS_FINISHED_SUCCESS,
+		if (!send_request(HTTP_POST, HAWKBIT_CLOSE, HAWKBIT_STATUS_FINISHED_SUCCESS,
 				  HAWKBIT_STATUS_EXEC_CLOSED)) {
 			LOG_ERR("Send request failed (HAWKBIT_CLOSE)");
 			hb_context.code_status = HAWKBIT_NETWORKING_ERROR;
@@ -1121,12 +1049,10 @@ enum hawkbit_response hawkbit_probe(void)
 		memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
 		hb_context.dl.http_content_size = 0;
 		hb_context.url_buffer_size = URL_BUFFER_SIZE;
-		snprintk(hb_context.url_buffer, hb_context.url_buffer_size,
-			 "%s/%s-%s/configData", HAWKBIT_JSON_URL, CONFIG_BOARD,
-			 device_id);
+		snprintk(hb_context.url_buffer, hb_context.url_buffer_size, "%s/%s-%s/configData",
+			 HAWKBIT_JSON_URL, CONFIG_BOARD, device_id);
 
-		if (!send_request(HTTP_PUT, HAWKBIT_CONFIG_DEVICE,
-				  HAWKBIT_STATUS_FINISHED_SUCCESS,
+		if (!send_request(HTTP_PUT, HAWKBIT_CONFIG_DEVICE, HAWKBIT_STATUS_FINISHED_SUCCESS,
 				  HAWKBIT_STATUS_EXEC_CLOSED)) {
 			LOG_ERR("Send request failed (HAWKBIT_CONFIG_DEVICE)");
 			hb_context.code_status = HAWKBIT_NETWORKING_ERROR;
@@ -1134,8 +1060,7 @@ enum hawkbit_response hawkbit_probe(void)
 		}
 	}
 
-	ret = hawkbit_find_deployment_base(&hawkbit_results.base,
-					   deployment_base);
+	ret = hawkbit_find_deployment_base(&hawkbit_results.base, deployment_base);
 	if (ret < 0) {
 		hb_context.code_status = HAWKBIT_METADATA_ERROR;
 		LOG_ERR("Unable to find URL for the device's deploymentBase: %d", ret);
@@ -1151,14 +1076,12 @@ enum hawkbit_response hawkbit_probe(void)
 	hb_context.dl.http_content_size = 0;
 	hb_context.dl.downloaded_size = 0;
 	hb_context.url_buffer_size = URL_BUFFER_SIZE;
-	snprintk(hb_context.url_buffer, hb_context.url_buffer_size,
-		 "%s/%s-%s/%s", HAWKBIT_JSON_URL, CONFIG_BOARD, device_id,
-		 deployment_base);
+	snprintk(hb_context.url_buffer, hb_context.url_buffer_size, "%s/%s-%s/%s", HAWKBIT_JSON_URL,
+		 CONFIG_BOARD, device_id, deployment_base);
 	memset(&hawkbit_results.dep, 0, sizeof(hawkbit_results.dep));
 	memset(hb_context.response_data, 0, RESPONSE_BUFFER_SIZE);
 
-	if (!send_request(HTTP_GET, HAWKBIT_PROBE_DEPLOYMENT_BASE,
-			  HAWKBIT_STATUS_FINISHED_NONE,
+	if (!send_request(HTTP_GET, HAWKBIT_PROBE_DEPLOYMENT_BASE, HAWKBIT_STATUS_FINISHED_NONE,
 			  HAWKBIT_STATUS_EXEC_NONE)) {
 		LOG_ERR("Send request failed (HAWKBIT_PROBE_DEPLOYMENT_BASE)");
 		hb_context.code_status = HAWKBIT_NETWORKING_ERROR;
@@ -1172,8 +1095,7 @@ enum hawkbit_response hawkbit_probe(void)
 	hawkbit_dump_deployment(&hawkbit_results.dep);
 
 	hb_context.dl.http_content_size = 0;
-	ret = hawkbit_parse_deployment(&hawkbit_results.dep,
-				       &hb_context.json_action_id,
+	ret = hawkbit_parse_deployment(&hawkbit_results.dep, &hb_context.json_action_id,
 				       download_http, &file_size);
 	if (ret < 0) {
 		LOG_ERR("Unable to parse deployment base: %d", ret);
@@ -1183,18 +1105,15 @@ enum hawkbit_response hawkbit_probe(void)
 	nvs_read(&fs, ADDRESS_ID, &action_id, sizeof(action_id));
 
 	if (action_id == (int32_t)hb_context.json_action_id) {
-		LOG_INF("Preventing repeated attempt to install %d",
-			hb_context.json_action_id);
+		LOG_INF("Preventing repeated attempt to install %d", hb_context.json_action_id);
 		hb_context.dl.http_content_size = 0;
 		memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
 		hb_context.url_buffer_size = URL_BUFFER_SIZE;
 		snprintk(hb_context.url_buffer, hb_context.url_buffer_size,
-			 "%s/%s-%s/deploymentBase/%d/feedback",
-			 HAWKBIT_JSON_URL, CONFIG_BOARD, device_id,
-			 hb_context.json_action_id);
+			 "%s/%s-%s/deploymentBase/%d/feedback", HAWKBIT_JSON_URL, CONFIG_BOARD,
+			 device_id, hb_context.json_action_id);
 
-		if (!send_request(HTTP_POST, HAWKBIT_REPORT,
-				  HAWKBIT_STATUS_FINISHED_SUCCESS,
+		if (!send_request(HTTP_POST, HAWKBIT_REPORT, HAWKBIT_STATUS_FINISHED_SUCCESS,
 				  HAWKBIT_STATUS_EXEC_CLOSED)) {
 			LOG_ERR("Send request failed (HAWKBIT_REPORT)");
 			hb_context.code_status = HAWKBIT_NETWORKING_ERROR;
@@ -1211,8 +1130,7 @@ enum hawkbit_response hawkbit_probe(void)
 	memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
 	hb_context.url_buffer_size = URL_BUFFER_SIZE;
 
-	snprintk(hb_context.url_buffer, hb_context.url_buffer_size, "%s",
-		 download_http);
+	snprintk(hb_context.url_buffer, hb_context.url_buffer_size, "%s", download_http);
 
 	flash_img_init(&hb_context.flash_ctx);
 

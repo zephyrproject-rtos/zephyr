@@ -7,7 +7,7 @@
 /* This test covers deprecated API.  Avoid inappropriate diagnostics
  * about the use of that API.
  */
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #undef __deprecated
 #define __deprecated
 #undef __DEPRECATED_MACRO
@@ -202,17 +202,6 @@ static void test_delayable_init(void)
 	static struct k_work_delayable stack;
 
 	k_work_init_delayable(&stack, counter_handler);
-	zassert_mem_equal(&stack, &fnstat, sizeof(stack),
-			  NULL);
-}
-
-static void test_legacy_delayed_init(void)
-{
-	static K_DELAYED_WORK_DEFINE(fnstat, counter_handler);
-
-	static struct k_delayed_work stack;
-
-	k_delayed_work_init(&stack, counter_handler);
 	zassert_mem_equal(&stack, &fnstat, sizeof(stack),
 			  NULL);
 }
@@ -694,6 +683,7 @@ static void test_1cpu_running_cancel(void)
 {
 	struct test_running_cancel_timer *ctx = &test_running_cancel_ctx;
 	struct k_work *wp = &ctx->work;
+	static const uint32_t ms_timeout = 10;
 	int rc;
 
 	/* Reset state and use the blocking handler */
@@ -713,7 +703,7 @@ static void test_1cpu_running_cancel(void)
 	ctx->submit_rc = INT_MAX;
 	ctx->busy_rc = INT_MAX;
 	k_timer_init(&ctx->timer, test_running_cancel_cb, NULL);
-	k_timer_start(&ctx->timer, K_TICKS(1), K_NO_WAIT);
+	k_timer_start(&ctx->timer, K_MSEC(ms_timeout), K_NO_WAIT);
 
 	/* Cancellation should not complete. */
 	zassert_equal(k_work_cancel(wp), K_WORK_RUNNING | K_WORK_CANCELING,
@@ -721,6 +711,13 @@ static void test_1cpu_running_cancel(void)
 
 	/* Handler should not have run. */
 	zassert_equal(coophi_counter(), 0, NULL);
+
+	/* Busy wait until timer expires. Thread context is blocked so cancelling
+	 * of work won't be completed.
+	 */
+	k_busy_wait(1000 * (ms_timeout + 1));
+
+	zassert_equal(k_timer_status_get(&ctx->timer), 1, NULL);
 
 	/* Wait for cancellation to complete. */
 	zassert_true(k_work_cancel_sync(wp, &work_sync), NULL);
@@ -730,8 +727,7 @@ static void test_1cpu_running_cancel(void)
 	zassert_equal(rc, 0, NULL);
 
 	/* Handler should have detected running and canceling. */
-	zassert_equal(ctx->busy_rc, K_WORK_RUNNING | K_WORK_CANCELING,
-		      NULL);
+	zassert_equal(ctx->busy_rc, K_WORK_RUNNING | K_WORK_CANCELING, NULL);
 
 	/* Attempt to submit while cancelling should have been
 	 * rejected.
@@ -750,6 +746,7 @@ static void test_1cpu_running_cancel_sync(void)
 {
 	struct test_running_cancel_timer *ctx = &test_running_cancel_ctx;
 	struct k_work *wp = &ctx->work;
+	static const uint32_t ms_timeout = 10;
 	int rc;
 
 	/* Reset state and use the blocking handler */
@@ -769,13 +766,20 @@ static void test_1cpu_running_cancel_sync(void)
 	ctx->submit_rc = INT_MAX;
 	ctx->busy_rc = INT_MAX;
 	k_timer_init(&ctx->timer, test_running_cancel_cb, NULL);
-	k_timer_start(&ctx->timer, K_TICKS(1), K_NO_WAIT);
+	k_timer_start(&ctx->timer, K_MSEC(ms_timeout), K_NO_WAIT);
 
 	/* Cancellation should wait. */
 	zassert_true(k_work_cancel_sync(wp, &work_sync), NULL);
 
 	/* Handler should have run. */
 	zassert_equal(coophi_counter(), 1, NULL);
+
+	/* Busy wait until timer expires. Thread context is blocked so cancelling
+	 * of work won't be completed.
+	 */
+	k_busy_wait(1000 * (ms_timeout + 1));
+
+	zassert_equal(k_timer_status_get(&ctx->timer), 1, NULL);
 
 	/* Verify completion */
 	rc = k_sem_take(&sync_sem, K_NO_WAIT);
@@ -1428,130 +1432,6 @@ static void test_1cpu_system_reschedule(void)
 		     "long %u > %u\n", elapsed_ms, max_ms);
 }
 
-/* Single CPU test legacy delayed API */
-static void test_1cpu_legacy_delayed_submit(void)
-{
-	int rc;
-	uint32_t sched_ms;
-	uint32_t max_ms = k_ticks_to_ms_ceil32(1U
-				+ k_ms_to_ticks_ceil32(DELAY_MS));
-	uint32_t elapsed_ms;
-	static struct k_delayed_work lwork;
-
-	/* Reset state and use non-blocking handler */
-	reset_counters();
-	k_delayed_work_init(&lwork, counter_handler);
-
-	/* Verify that work is not pending */
-	zassert_false(k_delayed_work_pending(&lwork), NULL);
-
-	/* Align to tick, then schedule after normal delay. */
-	k_sleep(K_TICKS(1));
-	sched_ms = k_uptime_get_32();
-	rc = k_delayed_work_submit_to_queue(&coophi_queue, &lwork,
-					    K_MSEC(DELAY_MS));
-	zassert_equal(rc, 0, NULL);
-	zassert_true(k_delayed_work_pending(&lwork), NULL);
-
-	/* Wait for completion */
-	rc = k_sem_take(&sync_sem, K_FOREVER);
-	zassert_equal(rc, 0, NULL);
-
-	/* Make sure it ran and is now idle */
-	zassert_equal(coophi_counter(), 1, NULL);
-	rc = k_work_delayable_busy_get(&lwork.work);
-	zassert_false(k_delayed_work_pending(&lwork), "rc %d", rc);
-
-	/* Check that the delay is within the expected range. */
-	elapsed_ms = last_handle_ms - sched_ms;
-	zassert_true(elapsed_ms >= DELAY_MS,
-		     "short %u < %u\n", elapsed_ms, DELAY_MS);
-	zassert_true(elapsed_ms <= max_ms,
-		     "long %u > %u\n", elapsed_ms, max_ms);
-}
-
-/* Single CPU test legacy delayed API resubmit */
-static void test_1cpu_legacy_delayed_resubmit(void)
-{
-	int rc;
-	uint32_t sched_ms;
-	uint32_t max_ms = k_ticks_to_ms_ceil32(1U
-				+ k_ms_to_ticks_ceil32(DELAY_MS));
-	uint32_t elapsed_ms;
-	static struct k_delayed_work lwork;
-
-	/* Reset state and use non-blocking handler */
-	reset_counters();
-	k_delayed_work_init(&lwork, counter_handler);
-
-	/* Verify that work is not pending */
-	zassert_false(k_delayed_work_pending(&lwork), NULL);
-
-	/* Schedule to the preempt queue after twice the standard
-	 * delay.
-	 */
-	rc = k_delayed_work_submit_to_queue(&preempt_queue, &lwork,
-					    K_MSEC(2 * DELAY_MS));
-	zassert_equal(rc, 0, NULL);
-	zassert_true(k_delayed_work_pending(&lwork), NULL);
-
-	/* Align to tick then schedule after standard delay */
-	k_sleep(K_TICKS(1));
-	sched_ms = k_uptime_get_32();
-	rc = k_delayed_work_submit_to_queue(&coophi_queue, &lwork,
-					    K_MSEC(DELAY_MS));
-	zassert_equal(rc, 0, NULL);
-	zassert_true(k_delayed_work_pending(&lwork), NULL);
-
-	/* Wait for completion */
-	rc = k_sem_take(&sync_sem, K_FOREVER);
-	zassert_equal(rc, 0, NULL);
-
-	/* Make sure it ran and is now idle */
-	rc = k_work_delayable_busy_get(&lwork.work);
-	zassert_false(k_delayed_work_pending(&lwork), "rc %d", rc);
-	zassert_equal(coophi_counter(), 1, NULL);
-
-	/* Check that the delay is within the expected range. */
-	elapsed_ms = last_handle_ms - sched_ms;
-	zassert_true(elapsed_ms >= DELAY_MS,
-		     "short %u < %u\n", elapsed_ms, DELAY_MS);
-	zassert_true(elapsed_ms <= max_ms,
-		     "long %u > %u\n", elapsed_ms, max_ms);
-}
-
-/* Single CPU test legacy delayed cancel */
-static void test_1cpu_legacy_delayed_cancel(void)
-{
-	int rc;
-	static struct k_delayed_work lwork;
-
-	/* Reset state and use non-blocking handler */
-	reset_counters();
-	k_delayed_work_init(&lwork, counter_handler);
-
-	/* Verify that work is not pending */
-	zassert_false(k_delayed_work_pending(&lwork), NULL);
-
-	/* Cancel should be -EALREADY if not submitted/active; this
-	 * does not match original behavior (-EINVAL), but it's what
-	 * we can do.
-	 */
-	rc = k_delayed_work_cancel(&lwork);
-
-	/* Submit after standard delay */
-	rc = k_delayed_work_submit_to_queue(&coophi_queue, &lwork,
-					    K_MSEC(DELAY_MS));
-	zassert_equal(rc, 0, NULL);
-	zassert_true(k_delayed_work_pending(&lwork), NULL);
-
-	/* Cancel should succeed */
-	rc = k_delayed_work_cancel(&lwork);
-	zassert_equal(rc, 0, NULL);
-	zassert_false(k_delayed_work_pending(&lwork), NULL);
-}
-
-
 static void test_nop(void)
 {
 	ztest_test_skip();
@@ -1566,7 +1446,6 @@ void test_main(void)
 	ztest_test_suite(work,
 			 ztest_unit_test(test_work_init),
 			 ztest_unit_test(test_delayable_init),
-			 ztest_unit_test(test_legacy_delayed_init),
 			 ztest_unit_test(test_unstarted),
 			 ztest_unit_test(test_queue_start),
 			 ztest_unit_test(test_null_queue),
@@ -1597,10 +1476,6 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_1cpu_system_queue),
 			 ztest_1cpu_unit_test(test_1cpu_system_schedule),
 			 ztest_1cpu_unit_test(test_1cpu_system_reschedule),
-			 ztest_1cpu_unit_test(test_1cpu_legacy_delayed_submit),
-			 ztest_1cpu_unit_test(
-				 test_1cpu_legacy_delayed_resubmit),
-			 ztest_1cpu_unit_test(test_1cpu_legacy_delayed_cancel),
 			 ztest_unit_test(test_nop));
 	ztest_run_test_suite(work);
 }

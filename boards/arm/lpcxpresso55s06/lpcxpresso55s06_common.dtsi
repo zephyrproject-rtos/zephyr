@@ -1,8 +1,11 @@
 /*
  * Copyright (c) 2022 metraTec
+ * Copyright 2022 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include "lpcxpresso55s06-pinctrl.dtsi"
 
 / {
 	chosen {
@@ -111,4 +114,6 @@
 	status = "okay";
 	compatible = "nxp,lpc-usart";
 	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_usart>;
+	pinctrl-names = "default";
 };

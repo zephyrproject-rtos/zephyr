@@ -10,23 +10,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <kernel_internal.h>
-#include <pm/device.h>
-#include <random/rand32.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/random/rand32.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <shell/shell.h>
-#include <shell/shell_uart.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_uart.h>
 
-#include <net/net_if.h>
-#include <net/dns_resolve.h>
-#include <net/ppp.h>
-#include <net/net_stats.h>
-#include <sys/printk.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/ppp.h>
+#include <zephyr/net/net_stats.h>
+#include <zephyr/sys/printk.h>
 
 #include "route.h"
 #include "icmpv6.h"
@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
 #if defined(CONFIG_NET_TCP)
 #include "tcp_internal.h"
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 #endif
 
 #include "ipv6.h"
@@ -45,25 +45,25 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 #endif
 
 #if defined(CONFIG_NET_L2_ETHERNET)
-#include <net/ethernet.h>
+#include <zephyr/net/ethernet.h>
 #endif
 
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
-#include <net/ethernet_mgmt.h>
+#include <zephyr/net/ethernet_mgmt.h>
 #endif
 
 #if defined(CONFIG_NET_L2_VIRTUAL)
-#include <net/virtual.h>
+#include <zephyr/net/virtual.h>
 #endif
 
 #if defined(CONFIG_NET_L2_VIRTUAL_MGMT)
-#include <net/virtual_mgmt.h>
+#include <zephyr/net/virtual_mgmt.h>
 #endif
 
-#include <net/capture.h>
+#include <zephyr/net/capture.h>
 
 #if defined(CONFIG_NET_GPTP)
-#include <net/gptp.h>
+#include <zephyr/net/gptp.h>
 #include "ethernet/gptp/gptp_messages.h"
 #include "ethernet/gptp/gptp_md.h"
 #include "ethernet/gptp/gptp_state.h"
@@ -72,14 +72,14 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 #endif
 
 #if defined(CONFIG_NET_L2_PPP)
-#include <net/ppp.h>
+#include <zephyr/net/ppp.h>
 #include "ppp/ppp_internal.h"
 #endif
 
 #include "net_shell.h"
 #include "net_stats.h"
 
-#include <sys/fdtable.h>
+#include <zephyr/sys/fdtable.h>
 #include "websocket/websocket_internal.h"
 
 #define PR(fmt, ...)						\
@@ -1468,7 +1468,7 @@ static void tcp_cb(struct tcp *conn, void *user_data)
 	struct net_shell_user_data *data = user_data;
 	const struct shell *shell = data->shell;
 	int *count = data->user_data;
-	uint16_t recv_mss = net_tcp_get_recv_mss(conn);
+	uint16_t recv_mss = net_tcp_get_supported_mss(conn);
 
 	PR("%p %p   %5u    %5u %10u %10u %5u   %s\n",
 	   conn, conn->context,

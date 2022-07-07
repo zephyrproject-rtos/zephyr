@@ -9,16 +9,16 @@
 /* This test covers deprecated API.  Avoid inappropriate diagnostics
  * about the use of that API.
  */
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #undef __deprecated
 #define __deprecated
 #undef __DEPRECATED_MACRO
 #define __DEPRECATED_MACRO
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include <tc_util.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define NUM_TEST_ITEMS          6
 /* Each work item takes 100ms */
@@ -42,7 +42,7 @@
 
 struct delayed_test_item {
 	int key;
-	struct k_delayed_work work;
+	struct k_work_delayable work;
 };
 
 struct triggered_test_item {
@@ -62,6 +62,28 @@ static struct triggered_test_item triggered_tests[NUM_TEST_ITEMS];
 static int results[NUM_TEST_ITEMS];
 static int num_results;
 static int expected_poll_result;
+
+#define MSG_PROVIDER_THREAD_STACK_SIZE 0x400U
+#define MSG_CONSUMER_WORKQ_STACK_SIZE 0x400U
+
+#define MSG_PROVIDER_THREAD_PRIO K_PRIO_PREEMPT(8)
+#define MSG_CONSUMER_WORKQ_PRIO K_PRIO_COOP(7)
+#define MSG_SIZE 16U
+
+static K_THREAD_STACK_DEFINE(provider_thread_stack, MSG_PROVIDER_THREAD_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(consumer_workq_stack, MSG_CONSUMER_WORKQ_STACK_SIZE);
+
+struct triggered_from_msgq_test_item {
+	k_tid_t tid;
+	struct k_thread msg_provider_thread;
+	struct k_work_q msg_consumer_workq;
+	struct k_work_poll work;
+	char msgq_buf[1][MSG_SIZE];
+	struct k_msgq msgq;
+	struct k_poll_event event;
+};
+
+static struct triggered_from_msgq_test_item triggered_from_msgq_test;
 
 static void work_handler(struct k_work *work)
 {
@@ -84,7 +106,7 @@ static void delayed_test_items_init(void)
 
 	for (i = 0; i < NUM_TEST_ITEMS; i++) {
 		delayed_tests[i].key = i + 1;
-		k_delayed_work_init(&delayed_tests[i].work, work_handler);
+		k_work_init_delayable(&delayed_tests[i].work, work_handler);
 	}
 }
 
@@ -111,7 +133,7 @@ static void coop_work_main(int arg1, int arg2)
 
 	for (i = 1; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting work %d from coop thread\n", i + 1);
-		k_delayed_work_submit(&delayed_tests[i].work, K_NO_WAIT);
+		k_work_schedule(&delayed_tests[i].work, K_NO_WAIT);
 		k_msleep(SUBMIT_WAIT);
 	}
 }
@@ -130,7 +152,7 @@ static void delayed_test_items_submit(void)
 
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting work %d from preempt thread\n", i + 1);
-		k_delayed_work_submit(&delayed_tests[i].work, K_NO_WAIT);
+		k_work_schedule(&delayed_tests[i].work, K_NO_WAIT);
 		k_msleep(SUBMIT_WAIT);
 	}
 }
@@ -203,10 +225,10 @@ static void test_resubmit(void)
 	TC_PRINT("Starting resubmit test\n");
 
 	delayed_tests[0].key = 1;
-	k_delayed_work_init(&delayed_tests[0].work, resubmit_work_handler);
+	k_work_init_delayable(&delayed_tests[0].work, resubmit_work_handler);
 
 	TC_PRINT(" - Submitting work\n");
-	k_delayed_work_submit(&delayed_tests[0].work, K_NO_WAIT);
+	k_work_schedule(&delayed_tests[0].work, K_NO_WAIT);
 
 	TC_PRINT(" - Waiting for work to finish\n");
 	k_msleep(CHECK_WAIT);
@@ -231,7 +253,7 @@ static void delayed_work_handler(struct k_work *work)
  *
  * @ingroup kernel_workqueue_tests
  *
- * @see k_delayed_work_init()
+ * @see k_work_init_delayable()
  */
 static void test_delayed_init(void)
 {
@@ -239,8 +261,8 @@ static void test_delayed_init(void)
 
 	for (i = 0; i < NUM_TEST_ITEMS; i++) {
 		delayed_tests[i].key = i + 1;
-		k_delayed_work_init(&delayed_tests[i].work,
-				    delayed_work_handler);
+		k_work_init_delayable(&delayed_tests[i].work,
+				      delayed_work_handler);
 	}
 }
 
@@ -257,8 +279,8 @@ static void coop_delayed_work_main(int arg1, int arg2)
 	for (i = 1; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting delayed work %d from"
 			 " coop thread\n", i + 1);
-		k_delayed_work_submit(&delayed_tests[i].work,
-				      K_MSEC((i + 1) * WORK_ITEM_WAIT));
+		k_work_schedule(&delayed_tests[i].work,
+				K_MSEC((i + 1) * WORK_ITEM_WAIT));
 	}
 }
 
@@ -267,7 +289,7 @@ static void coop_delayed_work_main(int arg1, int arg2)
  *
  * @ingroup kernel_workqueue_tests
  *
- * @see k_delayed_work_init(), k_delayed_work_submit()
+ * @see k_work_init_delayable(), k_work_schedule()
  */
 static void test_delayed_submit(void)
 {
@@ -280,8 +302,8 @@ static void test_delayed_submit(void)
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting delayed work %d from"
 			 " preempt thread\n", i + 1);
-		zassert_true(k_delayed_work_submit(&delayed_tests[i].work,
-			   K_MSEC((i + 1) * WORK_ITEM_WAIT)) == 0, NULL);
+		zassert_true(k_work_reschedule(&delayed_tests[i].work,
+			     K_MSEC((i + 1) * WORK_ITEM_WAIT)) >= 0, NULL);
 	}
 
 }
@@ -291,10 +313,10 @@ static void coop_delayed_work_cancel_main(int arg1, int arg2)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 
-	k_delayed_work_submit(&delayed_tests[1].work, K_MSEC(WORK_ITEM_WAIT));
+	k_work_schedule(&delayed_tests[1].work, K_MSEC(WORK_ITEM_WAIT));
 
 	TC_PRINT(" - Cancel delayed work from coop thread\n");
-	k_delayed_work_cancel(&delayed_tests[1].work);
+	k_work_cancel_delayable(&delayed_tests[1].work);
 }
 
 /**
@@ -302,17 +324,17 @@ static void coop_delayed_work_cancel_main(int arg1, int arg2)
  *
  * @ingroup kernel_workqueue_tests
  *
- * @see k_delayed_work_init(), k_delayed_work_submit(),
- * k_delayed_work_cancel()
+ * @see k_work_delayable_init(), k_work_schedule(),
+ * k_work_cancel_delayable()
  */
 static void test_delayed_cancel(void)
 {
 	TC_PRINT("Starting delayed cancel test\n");
 
-	k_delayed_work_submit(&delayed_tests[0].work, K_MSEC(WORK_ITEM_WAIT));
+	k_work_schedule(&delayed_tests[0].work, K_MSEC(WORK_ITEM_WAIT));
 
 	TC_PRINT(" - Cancel delayed work from preempt thread\n");
-	k_delayed_work_cancel(&delayed_tests[0].work);
+	k_work_cancel_delayable(&delayed_tests[0].work);
 
 	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
 			(k_thread_entry_t)coop_delayed_work_cancel_main,
@@ -330,27 +352,27 @@ static void test_delayed_pending(void)
 {
 	TC_PRINT("Starting delayed pending test\n");
 
-	k_delayed_work_init(&delayed_tests[0].work, delayed_work_handler);
+	k_work_init_delayable(&delayed_tests[0].work, delayed_work_handler);
 
-	zassert_false(k_delayed_work_pending(&delayed_tests[0].work), NULL);
+	zassert_false(k_work_delayable_is_pending(&delayed_tests[0].work), NULL);
 
 	TC_PRINT(" - Check pending delayed work when in workqueue\n");
-	k_delayed_work_submit(&delayed_tests[0].work, K_NO_WAIT);
-	zassert_true(k_delayed_work_pending(&delayed_tests[0].work), NULL);
+	k_work_schedule(&delayed_tests[0].work, K_NO_WAIT);
+	zassert_true(k_work_delayable_is_pending(&delayed_tests[0].work), NULL);
 
 	k_msleep(1);
-	zassert_false(k_delayed_work_pending(&delayed_tests[0].work), NULL);
+	zassert_false(k_work_delayable_is_pending(&delayed_tests[0].work), NULL);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(1);
 	reset_results();
 
 	TC_PRINT(" - Check pending delayed work with timeout\n");
-	k_delayed_work_submit(&delayed_tests[0].work, K_MSEC(WORK_ITEM_WAIT));
-	zassert_true(k_delayed_work_pending(&delayed_tests[0].work), NULL);
+	k_work_schedule(&delayed_tests[0].work, K_MSEC(WORK_ITEM_WAIT));
+	zassert_true(k_work_delayable_is_pending(&delayed_tests[0].work), NULL);
 
 	k_msleep(WORK_ITEM_WAIT_ALIGNED);
-	zassert_false(k_delayed_work_pending(&delayed_tests[0].work), NULL);
+	zassert_false(k_work_delayable_is_pending(&delayed_tests[0].work), NULL);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(1);
@@ -362,7 +384,7 @@ static void test_delayed_pending(void)
  *
  * @ingroup kernel_workqueue_tests
  *
- * @see k_delayed_work_init(), k_delayed_work_submit()
+ * @see k_work_init_delayable(), k_work_schedule()
  */
 static void test_delayed(void)
 {
@@ -701,25 +723,100 @@ static void test_triggered_wait_expired(void)
 	reset_results();
 }
 
+
+static void msg_provider_thread(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	char msg[MSG_SIZE];
+
+	k_msgq_put(&triggered_from_msgq_test.msgq, &msg, K_NO_WAIT);
+}
+
+static void triggered_from_msgq_work_handler(struct k_work *work)
+{
+	char msg[MSG_SIZE];
+
+	k_msgq_get(&triggered_from_msgq_test.msgq, &msg, K_NO_WAIT);
+}
+
+static void test_triggered_from_msgq_init(void)
+{
+	struct triggered_from_msgq_test_item *const ctx = &triggered_from_msgq_test;
+
+	ctx->tid = k_thread_create(&ctx->msg_provider_thread,
+				   provider_thread_stack,
+				   MSG_PROVIDER_THREAD_STACK_SIZE,
+				   msg_provider_thread,
+				   NULL, NULL, NULL,
+				   MSG_PROVIDER_THREAD_PRIO, 0, K_FOREVER);
+	k_work_queue_init(&ctx->msg_consumer_workq);
+	k_msgq_init(&ctx->msgq,
+		    (char *)ctx->msgq_buf,
+		    MSG_SIZE, 1U);
+	k_work_poll_init(&ctx->work, triggered_from_msgq_work_handler);
+	k_poll_event_init(&ctx->event, K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+			  K_POLL_MODE_NOTIFY_ONLY, &ctx->msgq);
+
+	k_work_queue_start(&ctx->msg_consumer_workq, consumer_workq_stack,
+			   MSG_CONSUMER_WORKQ_STACK_SIZE, MSG_CONSUMER_WORKQ_PRIO,
+			   NULL);
+	k_work_poll_submit_to_queue(&ctx->msg_consumer_workq, &ctx->work,
+				    &ctx->event, 1U, K_FOREVER);
+}
+
+static void test_triggered_from_msgq_start(void)
+{
+	k_thread_start(triggered_from_msgq_test.tid);
+}
 /**
- * @brief Test delayed work queue define macro.
+ * @brief Test triggered work item, triggered by a msgq message.
  *
- * The macro should initialize the k_delayed_work exactly the same as
- * @ref k_delayed_work_init does.
+ * Regression test for issue #45267:
+ *
+ * When an object availability event triggers a k_work_poll item,
+ * the object lock should not be held anymore during the execution
+ * of the work callback.
+ *
+ * Tested with msgq with K_POLL_TYPE_MSGQ_DATA_AVAILABLE.
  *
  * @ingroup kernel_workqueue_tests
  *
- * @see K_DELAYED_WORK_DEFINE()
+ * @see k_work_poll_init(), k_work_poll_submit()
+ *
+ */
+static void test_triggered_from_msgq(void)
+{
+	TC_PRINT("Starting triggered from msgq test\n");
+
+	TC_PRINT(" - Initializing kernel objects\n");
+	test_triggered_from_msgq_init();
+
+	TC_PRINT(" - Starting the thread\n");
+	test_triggered_from_msgq_start();
+
+	reset_results();
+}
+
+/**
+ * @brief Test delayed work queue define macro.
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see K_WORK_DELAYABLE_DEFINE()
  */
 void test_delayed_work_define(void)
 {
-	struct k_delayed_work initialized_by_function = { 0 };
-	K_DELAYED_WORK_DEFINE(initialized_by_macro, delayed_work_handler);
+	struct k_work_delayable initialized_by_function = { 0 };
 
-	k_delayed_work_init(&initialized_by_function, delayed_work_handler);
+	K_WORK_DELAYABLE_DEFINE(initialized_by_macro, delayed_work_handler);
+
+	k_work_init_delayable(&initialized_by_function, delayed_work_handler);
 
 	zassert_mem_equal(&initialized_by_function, &initialized_by_macro,
-			  sizeof(struct k_delayed_work), NULL);
+			  sizeof(struct k_work_delayable), NULL);
 }
 
 /**
@@ -773,6 +870,7 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_triggered_no_wait_expired),
 			 ztest_1cpu_unit_test(test_triggered_wait),
 			 ztest_1cpu_unit_test(test_triggered_wait_expired),
+			 ztest_1cpu_unit_test(test_triggered_from_msgq),
 			 ztest_1cpu_unit_test(test_delayed_work_define),
 			 ztest_1cpu_unit_test(test_triggered_cancel)
 			 );

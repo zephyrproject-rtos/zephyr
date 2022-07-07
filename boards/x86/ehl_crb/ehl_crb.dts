@@ -10,7 +10,7 @@
 
 #define DT_DRAM_SIZE		DT_SIZE_M(2048)
 
-#include <elkhart_lake.dtsi>
+#include <intel/elkhart_lake.dtsi>
 
 / {
 	model = "ehl_crb";

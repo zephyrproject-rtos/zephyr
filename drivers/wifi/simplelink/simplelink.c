@@ -7,14 +7,13 @@
 #include "simplelink_log.h"
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <device.h>
-#include <net/net_if.h>
-#include <net/wifi_mgmt.h>
-#include <net/net_offload.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/net_offload.h>
 #ifdef CONFIG_NET_SOCKETS_OFFLOAD
-#include <net/socket_offload.h>
+#include <zephyr/net/socket_offload.h>
 #endif
 
 #include <ti/drivers/net/wifi/wlan.h>

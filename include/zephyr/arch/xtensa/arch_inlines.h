@@ -10,7 +10,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <zsr.h>
 
 #define RSR(sr) \
@@ -30,6 +30,14 @@ static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 	cpu = (_cpu_t *)RSR(ZSR_CPU_STR);
 
 	return cpu;
+}
+
+static ALWAYS_INLINE uint32_t arch_proc_id(void)
+{
+	uint32_t prid;
+
+	__asm__ volatile("rsr %0, PRID" : "=r"(prid));
+	return prid;
 }
 
 #endif /* !_ASMLANGUAGE */

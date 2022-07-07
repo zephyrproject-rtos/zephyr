@@ -13,7 +13,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
-#include <net/net_if.h>
+#include <zephyr/net/net_if.h>
 
 #ifdef __cplusplus
 extern "C" {

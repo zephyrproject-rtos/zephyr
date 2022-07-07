@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <drivers/sensor.h>
-#include <drivers/sensor/mcux_acmp.h>
-#include <zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor/mcux_acmp.h>
+#include <zephyr/zephyr.h>
 
 #include <stdio.h>
 
@@ -16,6 +16,12 @@
 #define ACMP_POSITIVE 5
 #define ACMP_NEGATIVE 5
 #define ACMP_DAC_VREF 0
+#elif (defined(CONFIG_BOARD_MIMXRT1170_EVK_CM7) || defined(CONFIG_BOARD_MIMXRT1170_EVK_CM4))
+#define ACMP_NODE  DT_NODELABEL(acmp1)
+#define ACMP_POSITIVE 2
+#define ACMP_NEGATIVE 7
+/* Select Vin2. Vin1 is not used and tied to ground on this chip. Vin2 is from VDDA_1P8_IN. */
+#define ACMP_DAC_VREF 1
 #else
 #error Unsupported board
 #endif
@@ -28,13 +34,17 @@ struct acmp_attr {
 };
 
 static const struct acmp_attr attrs[] = {
+#if MCUX_ACMP_HAS_INPSEL
 	/* Positive input port set to MUX */
 	{ .attr = SENSOR_ATTR_MCUX_ACMP_POSITIVE_PORT_INPUT, .val = 1 },
+#endif
 	/* Positive input channel */
 	{ .attr = SENSOR_ATTR_MCUX_ACMP_POSITIVE_MUX_INPUT,
 	  .val = ACMP_POSITIVE },
+#if MCUX_ACMP_HAS_INNSEL
 	/* Negative input port set to DAC */
 	{ .attr = SENSOR_ATTR_MCUX_ACMP_NEGATIVE_PORT_INPUT, .val = 0 },
+#endif
 	/* Negative input channel */
 	{ .attr = SENSOR_ATTR_MCUX_ACMP_NEGATIVE_MUX_INPUT,
 	  .val = ACMP_NEGATIVE },
@@ -45,8 +55,14 @@ static const struct acmp_attr attrs[] = {
 	{ .attr = SENSOR_ATTR_MCUX_ACMP_DAC_VALUE, .val = ACMP_DAC_VALUE },
 	/* Hysteresis level */
 	{ .attr = SENSOR_ATTR_MCUX_ACMP_HYSTERESIS_LEVEL, .val = 3 },
+#if MCUX_ACMP_HAS_DISCRETE_MODE
+	/* Discrete mode */
+	{ .attr = SENSOR_ATTR_MCUX_ACMP_POSITIVE_DISCRETE_MODE, .val = 1 },
+#endif
+#if MCUX_ACMP_HAS_OFFSET
 	/* Offset level */
 	{ .attr = SENSOR_ATTR_MCUX_ACMP_OFFSET_LEVEL, .val = 0 },
+#endif
 };
 
 static const int16_t triggers[] = {

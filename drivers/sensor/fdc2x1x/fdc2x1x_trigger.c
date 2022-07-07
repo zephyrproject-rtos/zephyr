@@ -6,16 +6,16 @@
 
 #define DT_DRV_COMPAT ti_fdc2x1x
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
 #include "fdc2x1x.h"
 
 #include <stdio.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(FDC2X1X, CONFIG_SENSOR_LOG_LEVEL);
 
 static void fdc2x1x_thread_cb(const struct device *dev)
@@ -87,8 +87,7 @@ int fdc2x1x_trigger_set(const struct device *dev,
 	uint16_t status, int_mask, int_en;
 	int ret;
 
-	gpio_pin_interrupt_configure(cfg->intb_gpio, cfg->intb_pin,
-				     GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure_dt(&cfg->intb_gpio, GPIO_INT_DISABLE);
 
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
@@ -118,8 +117,7 @@ int fdc2x1x_trigger_set(const struct device *dev,
 	/* Clear INTB pin by reading STATUS register */
 	fdc2x1x_get_status(dev, &status);
 out:
-	gpio_pin_interrupt_configure(cfg->intb_gpio, cfg->intb_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->intb_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 	return ret;
 }
@@ -132,8 +130,8 @@ int fdc2x1x_init_interrupt(const struct device *dev)
 
 	k_mutex_init(&drv_data->trigger_mutex);
 
-	if (!device_is_ready(cfg->intb_gpio)) {
-		LOG_ERR("%s: intb_gpio device not ready", cfg->intb_gpio->name);
+	if (!device_is_ready(cfg->intb_gpio.port)) {
+		LOG_ERR("%s: intb_gpio device not ready", cfg->intb_gpio.port->name);
 		return -ENODEV;
 	}
 
@@ -142,14 +140,13 @@ int fdc2x1x_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	gpio_pin_configure(cfg->intb_gpio, cfg->intb_pin,
-			   GPIO_INPUT | cfg->intb_flags);
+	gpio_pin_configure_dt(&cfg->intb_gpio, GPIO_INPUT);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   fdc2x1x_gpio_callback,
-			   BIT(cfg->intb_pin));
+			   BIT(cfg->intb_gpio.pin));
 
-	if (gpio_add_callback(cfg->intb_gpio, &drv_data->gpio_cb) < 0) {
+	if (gpio_add_callback(cfg->intb_gpio.port, &drv_data->gpio_cb) < 0) {
 		LOG_ERR("Failed to set gpio callback!");
 		return -EIO;
 	}

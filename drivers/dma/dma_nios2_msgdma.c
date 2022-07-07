@@ -6,18 +6,18 @@
 
 #define DT_DRV_COMPAT altr_msgdma
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <init.h>
+#include <zephyr/init.h>
 #include <string.h>
 #include <soc.h>
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma.h>
 #include <altera_common.h>
 #include "altera_msgdma_csr_regs.h"
 #include "altera_msgdma_descriptor_regs.h"
 #include "altera_msgdma.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_nios2, CONFIG_DMA_LOG_LEVEL);
 
 /* Device configuration parameters */

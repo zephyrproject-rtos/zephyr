@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/pcie/endpoint/pcie_ep.h>
-#include <logging/log.h>
+#include <zephyr/drivers/pcie/endpoint/pcie_ep.h>
+#include <zephyr/logging/log.h>
 
 #include "pcie_ep_iproc.h"
 

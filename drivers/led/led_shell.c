@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
-#include <drivers/led.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/led.h>
 #include <stdlib.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(led_shell);
 
 #define MAX_CHANNEL_ARGS 8

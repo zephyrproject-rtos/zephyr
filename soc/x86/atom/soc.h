@@ -15,18 +15,12 @@
 #ifndef __SOC_H_
 #define __SOC_H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef _ASMLANGUAGE
-#include <device.h>
-#include <random/rand32.h>
+#include <zephyr/device.h>
+#include <zephyr/random/rand32.h>
 #endif
-
-/*
- * UART
- */
-#define UART_NS16550_ACCESS_IOPORT 0x3f8
-
 
 /* PCI definitions */
 /* FIXME: The values below copied from generic ia32 soc, we need to get the

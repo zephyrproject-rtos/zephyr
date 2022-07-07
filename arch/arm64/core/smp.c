@@ -10,19 +10,18 @@
  * @brief codes required for AArch64 multicore and Zephyr smp support
  */
 
-#include <cache.h>
-#include <device.h>
-#include <devicetree.h>
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/cache.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <ksched.h>
-#include <soc.h>
-#include <init.h>
-#include <arch/arm64/mm.h>
-#include <arch/cpu.h>
-#include <drivers/interrupt_controller/gic.h>
-#include <drivers/pm_cpu_ops.h>
-#include <sys/arch_interface.h>
+#include <zephyr/init.h>
+#include <zephyr/arch/arm64/mm.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
+#include <zephyr/drivers/pm_cpu_ops.h>
+#include <zephyr/sys/arch_interface.h>
 #include "boot.h"
 
 #define SGI_SCHED_IPI	0
@@ -85,7 +84,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		return;
 	}
 
-	arm64_cpu_boot_params.sp = Z_THREAD_STACK_BUFFER(stack) + sz;
+	arm64_cpu_boot_params.sp = Z_KERNEL_STACK_BUFFER(stack) + sz;
 	arm64_cpu_boot_params.fn = fn;
 	arm64_cpu_boot_params.arg = arg;
 	arm64_cpu_boot_params.cpu_num = cpu_num;
@@ -213,9 +212,9 @@ void flush_fpu_ipi_handler(const void *unused)
 
 void z_arm64_flush_fpu_ipi(unsigned int cpu)
 {
-	const uint64_t mpidr = GET_MPIDR();
+	const uint64_t mpidr = cpu_node_list[cpu];
 
-	gic_raise_sgi(SGI_FPU_IPI, mpidr, (1 << cpu));
+	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1 << MPIDR_TO_CORE(mpidr));
 }
 #endif
 

@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_SOC_ARM_NXP_IMX_RT_PINCTRL_RT11XX_H_
 #define ZEPHYR_SOC_ARM_NXP_IMX_RT_PINCTRL_RT11XX_H_
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/types.h>
 #include "fsl_common.h"
 
@@ -15,19 +15,19 @@
 extern "C" {
 #endif
 
-#define MCUX_RT_ODE_SHIFT 4
-#define MCUX_RT_PUS_SHIFT 3
-#define MCUX_RT_PUE_SHIFT 2
-#define MCUX_RT_DSE_SHIFT 1
-#define MCUX_RT_SRE_SHIFT 0
-#define MCUX_RT_PULL_SHIFT 2
-#define MCUX_RT_PULL_PULLDOWN 0x2
-#define MCUX_RT_PULL_PULLUP 0x1
-#define MCUX_RT_PDRV_SHIFT 1
-#define MCUX_RT_LPSR_ODE_SHIFT 5
-#define MCUX_RT_SNVS_ODE_SHIFT 6
-#define MCUX_RT_INPUT_ENABLE_SHIFT 31 /* Shift to a bit not used by IOMUXC_SW_PAD_CTL */
-#define MCUX_RT_INPUT_ENABLE(x) ((x >> MCUX_RT_INPUT_ENABLE_SHIFT) & 0x1)
+#define MCUX_IMX_ODE_SHIFT 4
+#define MCUX_IMX_PUS_SHIFT 3
+#define MCUX_IMX_PUE_SHIFT 2
+#define MCUX_IMX_DSE_SHIFT 1
+#define MCUX_IMX_SRE_SHIFT 0
+#define MCUX_IMX_PULL_SHIFT 2
+#define MCUX_IMX_PULL_PULLDOWN 0x2
+#define MCUX_IMX_PULL_PULLUP 0x1
+#define MCUX_IMX_PDRV_SHIFT 1
+#define MCUX_IMX_LPSR_ODE_SHIFT 5
+#define MCUX_IMX_SNVS_ODE_SHIFT 6
+#define MCUX_IMX_INPUT_ENABLE_SHIFT 31 /* Shift to a bit not used by IOMUXC_SW_PAD_CTL */
+#define MCUX_IMX_INPUT_ENABLE(x) ((x >> MCUX_IMX_INPUT_ENABLE_SHIFT) & 0x1)
 
 
 /*
@@ -39,55 +39,55 @@ extern "C" {
  * pue_pus_snvs: in SNVS domain, shifted ode field
  */
 
-#define MCUX_RT_PUS_PUE 0
-#define MCUX_RT_PDRV_PULL 1
-#define MCUX_RT_LPSR 2
-#define MCUX_RT_SNVS 3
+#define MCUX_IMX_PUS_PUE 0
+#define MCUX_IMX_PDRV_PULL 1
+#define MCUX_IMX_LPSR 2
+#define MCUX_IMX_SNVS 3
 
 /*
- * Macro for MCUX_RT_PULL_NOPULL, which needs to set field to 0x3 if two
+ * Macro for MCUX_IMX_PULL_NOPULL, which needs to set field to 0x3 if two
  * properties are false
  */
-#define MCUX_RT_NOPULL(node_id)									\
+#define MCUX_IMX_NOPULL(node_id)								\
 	((0x2 & ((!DT_PROP(node_id, bias_pull_down) && !DT_PROP(node_id, bias_pull_up)) << 1)) |\
 	(0x1 & ((!DT_PROP(node_id, bias_pull_down) && !DT_PROP(node_id, bias_pull_up)) << 0)))	\
 
-#define Z_PINCTRL_MCUX_RT_PDRV(node_id)								\
+#define Z_PINCTRL_MCUX_IMX_PDRV(node_id)							\
 	IF_ENABLED(DT_PROP(node_id, bias_pull_down),						\
-		(MCUX_RT_PULL_PULLDOWN << MCUX_RT_PULL_SHIFT) |)				\
+		(MCUX_IMX_PULL_PULLDOWN << MCUX_IMX_PULL_SHIFT) |)				\
 	IF_ENABLED(DT_PROP(node_id, bias_pull_up),						\
-		(MCUX_RT_PULL_PULLUP << MCUX_RT_PULL_SHIFT) |)					\
-	(MCUX_RT_NOPULL(node_id) << MCUX_RT_PULL_SHIFT) |					\
-	(DT_ENUM_IDX_OR(node_id, drive_strength, 0) << MCUX_RT_PDRV_SHIFT) |			\
-	(DT_PROP(node_id, drive_open_drain) << MCUX_RT_ODE_SHIFT) |				\
-	(DT_PROP(node_id, input_enable) << MCUX_RT_INPUT_ENABLE_SHIFT)
+		(MCUX_IMX_PULL_PULLUP << MCUX_IMX_PULL_SHIFT) |)				\
+	(MCUX_IMX_NOPULL(node_id) << MCUX_IMX_PULL_SHIFT) |					\
+	(DT_ENUM_IDX_OR(node_id, drive_strength, 0) << MCUX_IMX_PDRV_SHIFT) |			\
+	(DT_PROP(node_id, drive_open_drain) << MCUX_IMX_ODE_SHIFT) |				\
+	(DT_PROP(node_id, input_enable) << MCUX_IMX_INPUT_ENABLE_SHIFT)
 
-#define Z_PINCTRL_MCUX_RT_PUE_PUS(node_id)							\
-	(DT_PROP(node_id, bias_pull_up) << MCUX_RT_PUS_SHIFT) |					\
+#define Z_PINCTRL_MCUX_IMX_PUE_PUS(node_id)							\
+	(DT_PROP(node_id, bias_pull_up) << MCUX_IMX_PUS_SHIFT) |				\
 	((DT_PROP(node_id, bias_pull_up) || DT_PROP(node_id, bias_pull_down))			\
-		<< MCUX_RT_PUE_SHIFT) |								\
-	(DT_ENUM_IDX_OR(node_id, drive_strength, 0) << MCUX_RT_DSE_SHIFT) |			\
-	(DT_ENUM_IDX_OR(node_id, slew_rate, 0) << MCUX_RT_SRE_SHIFT) |				\
-	(DT_PROP(node_id, drive_open_drain) << MCUX_RT_ODE_SHIFT) |				\
-	(DT_PROP(node_id, input_enable) << MCUX_RT_INPUT_ENABLE_SHIFT)
+		<< MCUX_IMX_PUE_SHIFT) |							\
+	(DT_ENUM_IDX_OR(node_id, drive_strength, 0) << MCUX_IMX_DSE_SHIFT) |			\
+	(DT_ENUM_IDX_OR(node_id, slew_rate, 0) << MCUX_IMX_SRE_SHIFT) |				\
+	(DT_PROP(node_id, drive_open_drain) << MCUX_IMX_ODE_SHIFT) |				\
+	(DT_PROP(node_id, input_enable) << MCUX_IMX_INPUT_ENABLE_SHIFT)
 
-#define Z_PINCTRL_MCUX_RT_LPSR(node_id)								\
-	(DT_PROP(node_id, bias_pull_up) << MCUX_RT_PUS_SHIFT) |					\
+#define Z_PINCTRL_MCUX_IMX_LPSR(node_id)							\
+	(DT_PROP(node_id, bias_pull_up) << MCUX_IMX_PUS_SHIFT) |				\
 	((DT_PROP(node_id, bias_pull_up) || DT_PROP(node_id, bias_pull_down))			\
-		<< MCUX_RT_PUE_SHIFT) |								\
-	(DT_ENUM_IDX_OR(node_id, drive_strength, 0) << MCUX_RT_DSE_SHIFT) |			\
-	(DT_ENUM_IDX_OR(node_id, slew_rate, 0) << MCUX_RT_SRE_SHIFT) |				\
-	(DT_PROP(node_id, drive_open_drain) << MCUX_RT_LPSR_ODE_SHIFT) |			\
-	(DT_PROP(node_id, input_enable) << MCUX_RT_INPUT_ENABLE_SHIFT)
+		<< MCUX_IMX_PUE_SHIFT) |							\
+	(DT_ENUM_IDX_OR(node_id, drive_strength, 0) << MCUX_IMX_DSE_SHIFT) |			\
+	(DT_ENUM_IDX_OR(node_id, slew_rate, 0) << MCUX_IMX_SRE_SHIFT) |				\
+	(DT_PROP(node_id, drive_open_drain) << MCUX_IMX_LPSR_ODE_SHIFT) |			\
+	(DT_PROP(node_id, input_enable) << MCUX_IMX_INPUT_ENABLE_SHIFT)
 
-#define Z_PINCTRL_MCUX_RT_SNVS(node_id)								\
-	(DT_PROP(node_id, bias_pull_up) << MCUX_RT_PUS_SHIFT) |					\
+#define Z_PINCTRL_MCUX_IMX_SNVS(node_id)							\
+	(DT_PROP(node_id, bias_pull_up) << MCUX_IMX_PUS_SHIFT) |				\
 	((DT_PROP(node_id, bias_pull_up) || DT_PROP(node_id, bias_pull_down))			\
-		<< MCUX_RT_PUE_SHIFT) |								\
-	(DT_ENUM_IDX_OR(node_id, drive_strength, 0) << MCUX_RT_DSE_SHIFT) |			\
-	(DT_ENUM_IDX_OR(node_id, slew_rate, 0) << MCUX_RT_SRE_SHIFT) |				\
-	(DT_PROP(node_id, drive_open_drain) << MCUX_RT_SNVS_ODE_SHIFT) |			\
-	(DT_PROP(node_id, input_enable) << MCUX_RT_INPUT_ENABLE_SHIFT)
+		<< MCUX_IMX_PUE_SHIFT) |							\
+	(DT_ENUM_IDX_OR(node_id, drive_strength, 0) << MCUX_IMX_DSE_SHIFT) |			\
+	(DT_ENUM_IDX_OR(node_id, slew_rate, 0) << MCUX_IMX_SRE_SHIFT) |				\
+	(DT_PROP(node_id, drive_open_drain) << MCUX_IMX_SNVS_ODE_SHIFT) |			\
+	(DT_PROP(node_id, input_enable) << MCUX_IMX_INPUT_ENABLE_SHIFT)
 
 /* This struct must be present. It is used by the mcux gpio driver */
 struct pinctrl_soc_pinmux {
@@ -113,7 +113,7 @@ struct pinctrl_soc_pin {
 typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
 
 /* This definition must be present. It is used by the mcux gpio driver */
-#define MCUX_RT_PINMUX(node_id)							\
+#define MCUX_IMX_PINMUX(node_id)						\
 	{									\
 	  .mux_register = DT_PROP_BY_IDX(node_id, pinmux, 0),			\
 	  .config_register = DT_PROP_BY_IDX(node_id, pinmux, 4),		\
@@ -133,19 +133,19 @@ typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
 	}
 
 #define Z_PINCTRL_PINMUX(group_id, pin_prop, idx)				\
-	MCUX_RT_PINMUX(DT_PHANDLE_BY_IDX(group_id, pin_prop, idx))
+	MCUX_IMX_PINMUX(DT_PHANDLE_BY_IDX(group_id, pin_prop, idx))
 
-#define Z_PINCTRL_STATE_PIN_INIT(group_id, pin_prop, idx)				\
-	{										\
-	  .pinmux = Z_PINCTRL_PINMUX(group_id, pin_prop, idx),				\
-IF_ENABLED(DT_PROP(DT_PHANDLE_BY_IDX(group_id, pin_prop, idx), pin_pue),		\
-	  (.pin_ctrl_flags = Z_PINCTRL_MCUX_RT_PUE_PUS(group_id),))			\
-IF_ENABLED(DT_PROP(DT_PHANDLE_BY_IDX(group_id, pin_prop, idx), pin_pdrv),		\
-	  (.pin_ctrl_flags = Z_PINCTRL_MCUX_RT_PDRV(group_id),))			\
-IF_ENABLED(DT_PROP(DT_PHANDLE_BY_IDX(group_id, pin_prop, idx), pin_lpsr),		\
-	  (.pin_ctrl_flags = Z_PINCTRL_MCUX_RT_LPSR(group_id),))			\
-IF_ENABLED(DT_PROP(DT_PHANDLE_BY_IDX(group_id, pin_prop, idx), pin_snvs),		\
-	  (.pin_ctrl_flags = Z_PINCTRL_MCUX_RT_SNVS(group_id),))			\
+#define Z_PINCTRL_STATE_PIN_INIT(group_id, pin_prop, idx)			\
+	{									\
+	  .pinmux = Z_PINCTRL_PINMUX(group_id, pin_prop, idx),			\
+IF_ENABLED(DT_PROP(DT_PHANDLE_BY_IDX(group_id, pin_prop, idx), pin_pue),	\
+	  (.pin_ctrl_flags = Z_PINCTRL_MCUX_IMX_PUE_PUS(group_id),))		\
+IF_ENABLED(DT_PROP(DT_PHANDLE_BY_IDX(group_id, pin_prop, idx), pin_pdrv),	\
+	  (.pin_ctrl_flags = Z_PINCTRL_MCUX_IMX_PDRV(group_id),))		\
+IF_ENABLED(DT_PROP(DT_PHANDLE_BY_IDX(group_id, pin_prop, idx), pin_lpsr),	\
+	  (.pin_ctrl_flags = Z_PINCTRL_MCUX_IMX_LPSR(group_id),))		\
+IF_ENABLED(DT_PROP(DT_PHANDLE_BY_IDX(group_id, pin_prop, idx), pin_snvs),	\
+	  (.pin_ctrl_flags = Z_PINCTRL_MCUX_IMX_SNVS(group_id),))		\
 	},
 
 

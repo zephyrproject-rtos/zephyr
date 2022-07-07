@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/sensor.h>
 
 #define MAX17262 DT_INST(0, maxim_max17262)
 
@@ -20,13 +20,12 @@
 
 void main(void)
 {
-	const struct device *dev = device_get_binding(MAX17262_LABEL);
+	const struct device *dev = DEVICE_DT_GET_ONE(maxim_max17262);
 
-	if (dev == NULL) {
-		printk("No device found...\n");
+	if (!device_is_ready(dev)) {
+		printk("sensor: device not ready.\n");
 		return;
 	}
-	printk("Found device %s\n", dev->name);
 
 	while (1) {
 		struct sensor_value voltage, avg_current, temperature;

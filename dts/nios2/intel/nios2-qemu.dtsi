@@ -1,0 +1,54 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "skeleton.dtsi"
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu: cpu@0 {
+			device_type = "cpu";
+			compatible = "qemu,nios2-zephyr";
+			reg = <0>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+		};
+	};
+
+	flash0: flash@420000 {
+		compatible = "soc-nv-flash";
+		reg = <0x420000 0x20000>;
+	};
+
+	sram0: memory@400000 {
+		compatible = "mmio-sram";
+		reg = <0x400000 0x20000>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&cpu>;
+		ranges;
+
+		jtag_uart: uart@201000 {
+			compatible = "altr,jtag-uart";
+			reg = <0x201000 0x400>;
+			label = "jtag_uart0";
+
+			status = "disabled";
+		};
+
+		ns16550_uart: uart@440000 {
+			compatible = "ns16550";
+			reg = <0x440000 0x400>;
+			interrupts = <1>;
+			clock-frequency = <50000000>;
+			label = "UART_0";
+			reg-shift = <2>;
+			status = "disabled";
+		};
+	};
+};

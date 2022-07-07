@@ -1,0 +1,26 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The Icarus boards provide the user with 2 options regarding SIM usage for
+  LTE-M/NB-IoT communication. Either using the on-board eSIM or using an
+  external nano-SIM. The SIM can be selected using the SIM select pin given by
+  the sim-gpios property by setting it to 0 (eSIM) or to 1 (external nano-SIM).
+
+compatible: "sim-select"
+
+include: base.yaml
+
+properties:
+    sim-gpios:
+      type: phandle-array
+      required: true
+      description: Pin used to select the SIM
+
+    sim:
+      type: string
+      required: true
+      enum:
+        - "esim"
+        - "external"
+      description: SIM choice (eSIM or external nano-SIM)

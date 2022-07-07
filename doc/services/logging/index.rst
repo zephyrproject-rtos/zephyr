@@ -18,43 +18,19 @@ Summary of the logging features:
   consuming operations to a known context instead of processing and sending
   the log message when called.
 - Multiple backends supported (up to 9 backends).
-- Custom frontend support. When enabled no backends can be active.
+- Custom frontend support. It can work together with backends.
 - Compile time filtering on module level.
 - Run time filtering independent for each backend.
 - Additional run time filtering on module instance level.
-- Timestamping with user provided function.
+- Timestamping with user provided function. Timestamp can have 32 or 64 bits.
 - Dedicated API for dumping data.
 - Dedicated API for handling transient strings.
 - Panic support - in panic mode logging switches to blocking, synchronous
   processing.
 - Printk support - printk message can be redirected to the logging.
 - Design ready for multi-domain/multi-processor system.
-
-Logging v2 introduces following changes:
-
-- Option to use 64 bit timestamp
-- Support for logging floating point variables
-- Support for logging variables extending size of a machine word (64 bit values
-  on 32 bit architectures)
-- Remove the need for special treatment of ``%s`` format specifier
-- Extend API for dumping data to accept formatted string
-- Improve memory utilization. More log messages fit in the logging buffer in
-  deferred mode.
-- Log message is no longer fragmented. It is self-contained block of memory which
-  simplifies out of domain handling (e.g. offline processing)
-- Improved performance when logging from user space
-- Improved performance when logging to full buffer and message are dropped.
-- Slightly degrade performance in normal circumstances due to the fact that
-  allocation from ring buffer is more complex than from memslab.
-- No change in logging API
-- Logging to frontend can be used together with backends.
-- Logging backend API extended with function for processing v2 messages.
-
-.. note::
-   Logging v1 is deprecated! Version 2 supports same set of features with extensions
-   listed above. However, logging backend API is different. All backends in
-   the tree support version 2 API. Any custom backend must be adapted to version 2.
-   Version 1 support will be removed after 3.1 release.
+- Support for logging floating point variables and long long arguments.
+- Built-in copying of transient strings used as arguments.
 
 Logging API is highly configurable at compile time as well as at run time. Using
 Kconfig options (see :ref:`logging_kconfig`) logs can be gradually removed from
@@ -121,8 +97,6 @@ Mode of operations:
 
 :kconfig:option:`CONFIG_LOG_MODE_MINIMAL`: Minimal footprint mode.
 
-:kconfig:option:`CONFIG_LOG1`: Use deprecated version of logging.
-
 Filtering options:
 
 :kconfig:option:`CONFIG_LOG_RUNTIME_FILTERING`: Enables runtime reconfiguration of the
@@ -149,9 +123,6 @@ allocated.
 
 :kconfig:option:`CONFIG_LOG_PRINTK`: Redirect printk calls to the logging.
 
-:kconfig:option:`CONFIG_LOG_PRINTK_MAX_STRING_LENGTH`: Maximal string length that can
-be processed by printk. Longer strings are trimmed.
-
 :kconfig:option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`: When number of buffered log
 messages reaches the threshold dedicated thread (see :c:func:`log_thread_set`)
 is waken up. If :kconfig:option:`CONFIG_LOG_PROCESS_THREAD` is enabled then this
@@ -163,25 +134,14 @@ which handles log processing.
 :kconfig:option:`CONFIG_LOG_PROCESS_THREAD_STARTUP_DELAY_MS`: Delay in milliseconds
 after which logging thread is started.
 
-:kconfig:option:`CONFIG_LOG_BUFFER_SIZE`: Number of bytes dedicated for the message pool.
-Single message capable of storing standard log with up to 3 arguments or hexdump
-message with 12 bytes of data take 32 bytes. In v2 it indicates buffer size
-dedicated for circular packet buffer.
-
-:kconfig:option:`CONFIG_LOG_DETECT_MISSED_STRDUP`: Enable detection of missed transient
-strings handling.
-
-:kconfig:option:`CONFIG_LOG_STRDUP_MAX_STRING`: Longest string that can be duplicated
-using log_strdup().
-
-:kconfig:option:`CONFIG_LOG_STRDUP_BUF_COUNT`: Number of buffers in the pool used by
-log_strdup().
+:kconfig:option:`CONFIG_LOG_BUFFER_SIZE`: Number of bytes dedicated for the circular
+packet buffer.
 
 :kconfig:option:`CONFIG_LOG_DOMAIN_ID`: Domain ID. Valid in multi-domain systems.
 
-:kconfig:option`CONFIG_LOG_FRONTEND`: Direct logs to a custom frontend.
+:kconfig:option:`CONFIG_LOG_FRONTEND`: Direct logs to a custom frontend.
 
-:kconfig:option`CONFIG_LOG_FRONTEND_ONLY`: No backends are used when messages goes to frontend.
+:kconfig:option:`CONFIG_LOG_FRONTEND_ONLY`: No backends are used when messages goes to frontend.
 
 :kconfig:option:`CONFIG_LOG_TIMESTAMP_64BIT`: 64 bit timestamp.
 
@@ -401,41 +361,17 @@ time), allocating buffer for the message, creating the message and committing th
 message. Since logging API can be called in an interrupt, frontend is optimized
 to log the message as fast as possible.
 
-Log message v1
---------------
+Log message
+-----------
 
-Each log message consists of one or more fixed size chunks allocated from the
-pool of fixed size buffers (:ref:`memory_slabs_v2`). Message head chunk
-contains log entry details like: source ID, timestamp, severity level and the
-data (string pointer and arguments or raw data). Message contains also a
-reference counter which indicates how many users still uses this message. It is
-used to return message to the pool once last user indicates that it can be
-freed. If more than 3 arguments or 12 bytes of raw data is used in the log then
-log message is formed from multiple chunks which are linked together. When
-message body is filled it is put into the list.
-When log processing is triggered, a message is removed from the list of pending
-messages. If runtime filtering is disabled, the message is passed to all
-active backends, otherwise the message is passed to only those backends that
-have requested messages from that particular source (based on the source ID in
-the message), and severity level. Once all backends are iterated, the message
-is considered processed, but the message may still be in use by a backend.
-Because message is allocated from a pool, it is not mandatory to sequentially
-free messages. Processing by the backends is asynchronous and memory is freed
-when last user indicates that message can be freed. It also means that improper
-backend implementation may lead to pool drought.
-
-Log message v2
---------------
-
-Log message v2 contains message descriptor (source, domain and level), timestamp,
+Log message contains message descriptor (source, domain and level), timestamp,
 formatted string details (see :ref:`cbprintf_packaging`) and optional data.
-Log messages v2 are stored in a continuous block of memory (contrary to v1).
+Log messages are stored in a continuous block of memory.
 Memory is allocated from a circular packet buffer (:ref:`mpsc_pbuf`). It has
 few consequences:
 
  * Each message is self-contained, continuous block of memory thus it is suited
    for copying the message (e.g. for offline processing).
- * Memory is better utilized because fixed size chunks are not used.
  * Messages must be sequentially freed. Backend processing is synchronous. Backend
    can make a copy for deferred processing.
 
@@ -524,47 +460,15 @@ Custom frontend is enabled using :kconfig:option:`CONFIG_LOG_FRONTEND`. Logs are
 to functions declared in :zephyr_file:`include/zephyr/logging/log_frontend.h`.
 If option :kconfig:option:`CONFIG_LOG_FRONTEND_ONLY` is enabled then log message is not
 created and no backend is handled. Otherwise, custom frontend can coexist with
-backends (not available in v1).
+backends.
 
 .. _logging_strings:
 
 Logging strings
 ===============
 
-Logging v1
-----------
-
-Since log message contains only the value of the argument, when ``%s`` is used
-only the address of a string is stored. Because a string variable argument could
-be transient, allocated on the stack, or modifiable, logger provides a mechanism
-and a dedicated buffer pool to hold copies of strings. The buffer size and count
-is configurable (see :kconfig:option:`CONFIG_LOG_STRDUP_MAX_STRING` and
-:kconfig:option:`CONFIG_LOG_STRDUP_BUF_COUNT`).
-
-If a string argument is transient, the user must call :c:func:`log_strdup` to
-duplicate the passed string into a buffer from the pool. See the examples below.
-If a strdup buffer cannot be allocated, a warning message is logged and an error
-code returned indicating :kconfig:option:`CONFIG_LOG_STRDUP_BUF_COUNT` should be
-increased. Buffers are freed together with the log message.
-
-.. code-block:: c
-
-   char local_str[] = "abc";
-
-   LOG_INF("logging transient string: %s", log_strdup(local_str));
-   local_str[0] = '\0'; /* String can be modified, logger will use duplicate."
-
-When :kconfig:option:`CONFIG_LOG_DETECT_MISSED_STRDUP` is enabled logger will scan
-each log message and report if string format specifier is found and string
-address is not in read only memory section or does not belong to memory pool
-dedicated to string duplicates. It indicates that :c:func:`log_strdup` is
-missing in a call to log a message, such as ``LOG_INF``.
-
-Logging v2
-----------
-
 String arguments are handled by :ref:`cbprintf_packaging` thus no special action
-is required.
+is required. Strings which are in read write memory are appended to the log message.
 
 Logging backends
 ================
@@ -585,51 +489,8 @@ not supported.  Occasionally, logging may inform backend about number of dropped
 messages with :c:func:`log_backend_dropped`. Message processing API is version
 specific.
 
-Logging v1
-----------
-
-Logging backend interface contains following functions for processing:
-
-- :c:func:`log_backend_put` - backend gets log message in deferred mode.
-- :c:func:`log_backend_put_sync_string` - backend gets log message with formatted
-  string message in the immediate mode.
-- :c:func:`log_backend_put_sync_hexdump` - backend gets log message with hexdump
-  message in the immediate mode.
-
-The log message contains a reference counter tracking how many backends are
-processing the message. On receiving a message backend must claim it by calling
-:c:func:`log_msg_get` on that message which increments a reference counter.
-Once message is processed, backend puts back the message
-(:c:func:`log_msg_put`) decrementing a reference counter. On last
-:c:func:`log_msg_put`, when reference counter reaches 0, message is returned
-to the pool. It is up to the backend how message is processed.
-
-.. note::
-
-   The message pool can be starved if a backend does not call
-   :c:func:`log_msg_put` when it is done processing a message. The logging
-   core has no means to force messages back to the pool if they're still marked
-   as in use (with a non-zero reference counter).
-
-.. code-block:: c
-
-   #include <zephyr/logging/log_backend.h>
-
-   void put(const struct log_backend *const backend,
-   	    struct log_msg *msg)
-   {
-   	log_msg_get(msg);
-
-	/* message processing */
-
-   	log_msg_put(msg);
-   }
-
-Logging v2
-----------
-
 :c:func:`log_backend_msg2_process` is used for processing message. It is common for
-standard and hexdump messages because log message v2 hold string with arguments
+standard and hexdump messages because log message hold string with arguments
 and data. It is also common for deferred and immediate logging.
 
 Message formatting
@@ -638,8 +499,7 @@ Message formatting
 Logging provides set of function that can be used by the backend to format a
 message. Helper functions are available in :zephyr_file:`include/zephyr/logging/log_output.h`.
 
-Example message formatted using :c:func:`log_output_msg_process` or
-:c:func:`log_output_msg2_process`.
+Example message formatted using :c:func:`log_output_msg2_process`.
 
 .. code-block:: console
 
@@ -713,37 +573,21 @@ the parser to convert the hexadecimal characters to binary before parsing.
 Please refer to :ref:`logging_dictionary_sample` on how to use the log parser.
 
 
+Recommendations
+***************
 
-Limitations and recommendations
-*******************************
-
-Logging v1
-==========
-
-The are following limitations:
-
-* Strings as arguments (*%s*) require special treatment (see
-  :ref:`logging_strings`).
-* Logging double and float variables is not possible because arguments are
-  word size.
-* Variables larger than word size cannot be logged.
-* Number of arguments in the string is limited to 15.
-
-Logging v2
-==========
-
-Solves major limitations of v1. However, in order to get most of the logging
-capabilities following recommendations shall be followed:
+The are following recommendations:
 
 * Enable :kconfig:option:`CONFIG_LOG_SPEED` to slightly speed up deferred logging at the
   cost of slight increase in memory footprint.
 * Compiler with C11 ``_Generic`` keyword support is recommended. Logging
   performance is significantly degraded without it. See :ref:`cbprintf_packaging`.
-* When ``_Generic`` is supported, during compilation it is determined which
-  packaging method shall be used: static or runtime. It is done by searching for
-  any string pointers in the argument list. If string pointer is used with
-  format specifier other than string, e.g. ``%p``, it is recommended to cast it
-  to ``void *``.
+* When C11 ``_Generic`` is used, it is recommended to cast pointer to ``const char *``
+  when it is used with ``%s`` format specifier and it points to a constant string.
+* When C11 ``_Generic`` is used, it is recommended to cast pointer to ``char *``
+  when it is used with ``%s`` format specifier and it points to a transient string.
+* When C11 ``_Generic`` is used, it is recommended to cast character pointer to
+  non character pointer (e.g., ``void *``) when it is used with ``%p`` format specifier.
 
 .. code-block:: c
 
@@ -754,35 +598,33 @@ Benchmark
 *********
 
 Benchmark numbers from :zephyr_file:`tests/subsys/logging/log_benchmark` performed
-on ``qemu_x86``. It is a rough comparison to give general overview. Overall,
-logging v2 improves in most a the areas with the biggest improvement in logging
-from userspace. It is at the cost of larger memory footprint for a log message.
+on ``qemu_x86``. It is a rough comparison to give a general overview.
 
-+--------------------------------------------+----------------+------------------+----------------+
-| Feature                                    | v1             | v2               | Summary        |
-+============================================+================+==================+================+
-| Kernel logging                             | 7us            | 7us [#f0]_/11us  | No significant |
-|                                            |                |                  | change         |
-+--------------------------------------------+----------------+------------------+----------------+
-| User logging                               | 86us           | 13us             | **Strongly     |
-|                                            |                |                  | improved**     |
-+--------------------------------------------+----------------+------------------+----------------+
-| kernel logging with overwrite              | 23us           | 10us [#f0]_/15us | **Improved**   |
-+--------------------------------------------+----------------+------------------+----------------+
-| Logging transient string                   | 16us           | 42us             | **Degraded**   |
-+--------------------------------------------+----------------+------------------+----------------+
-| Logging transient string from user         | 111us          | 50us             | **Improved**   |
-+--------------------------------------------+----------------+------------------+----------------+
-| Memory utilization [#f1]_                  | 416            | 518              | Slightly       |
-|                                            |                |                  | improved       |
-+--------------------------------------------+----------------+------------------+----------------+
-| Memory footprint (test) [#f2]_             | 3.2k           | 2k               | **Improved**   |
-+--------------------------------------------+----------------+------------------+----------------+
-| Memory footprint (application) [#f3]_      | 6.2k           | 3.5k             | **Improved**   |
-+--------------------------------------------+----------------+------------------+----------------+
-| Message footprint [#f4]_                   | 15 bytes       | 47 [#f0]_/32     | **Degraded**   |
-|                                            |                | bytes            |                |
-+--------------------------------------------+----------------+------------------+----------------+
++--------------------------------------------+------------------+
+| Feature                                    |                  |
++============================================+==================+
+| Kernel logging                             | 7us [#f0]_/11us  |
+|                                            |                  |
++--------------------------------------------+------------------+
+| User logging                               | 13us             |
+|                                            |                  |
++--------------------------------------------+------------------+
+| kernel logging with overwrite              | 10us [#f0]_/15us |
++--------------------------------------------+------------------+
+| Logging transient string                   | 42us             |
++--------------------------------------------+------------------+
+| Logging transient string from user         | 50us             |
++--------------------------------------------+------------------+
+| Memory utilization [#f1]_                  | 518              |
+|                                            |                  |
++--------------------------------------------+------------------+
+| Memory footprint (test) [#f2]_             | 2k               |
++--------------------------------------------+------------------+
+| Memory footprint (application) [#f3]_      | 3.5k             |
++--------------------------------------------+------------------+
+| Message footprint [#f4]_                   | 47 [#f0]_/32     |
+|                                            | bytes            |
++--------------------------------------------+------------------+
 
 .. rubric:: Benchmark details
 

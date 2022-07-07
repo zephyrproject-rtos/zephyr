@@ -8,10 +8,10 @@
 #define LOG_MODULE_NAME bt_hci_driver_esp32
 #include "common/log.h"
 
-#include <init.h>
-#include <sys/byteorder.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #include <esp_bt.h>
 

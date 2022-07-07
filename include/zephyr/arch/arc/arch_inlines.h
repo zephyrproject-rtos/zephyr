@@ -10,9 +10,9 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 
-#include <arch/arc/v2/aux_regs.h>
+#include <zephyr/arch/arc/v2/aux_regs.h>
 
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
@@ -25,6 +25,15 @@ static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 #else
 	return &_kernel.cpus[0];
 #endif /* CONFIG_SMP */
+}
+
+static ALWAYS_INLINE uint32_t arch_proc_id(void)
+{
+	/*
+	 * Placeholder implementation to be replaced with an architecture
+	 * specific call to get processor ID
+	 */
+	return arch_curr_cpu()->id;
 }
 
 #endif /* !_ASMLANGUAGE */

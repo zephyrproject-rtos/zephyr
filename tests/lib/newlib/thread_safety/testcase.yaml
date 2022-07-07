@@ -1,53 +1,127 @@
 common:
   filter: TOOLCHAIN_HAS_NEWLIB == 1
-  min_ram: 64
-
 tests:
   libraries.libc.newlib.thread_safety:
     tags: clib newlib
-  libraries.libc.newlib_nano.thread_safety:
-    tags: clib newlib
-    filter: CONFIG_HAS_NEWLIB_LIBC_NANO
-    extra_configs:
-      - CONFIG_NEWLIB_LIBC_NANO=y
+    min_ram: 64
+    testcases:
+    - sfp_lock
+    - env_lock
+    - retargetable_lock_sem
+    - malloc_lock
+    - retargetable_lock_mutex
+    - sinit_lock
+    - tz_lock
   libraries.libc.newlib.thread_safety.stress:
-    tags: clib newlib
-    slow: true
     extra_configs:
-      - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
-  libraries.libc.newlib_nano.thread_safety.stress:
+    - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
+    slow: true
     tags: clib newlib
+    min_ram: 192
+    testcases:
+    - sfp_lock
+    - env_lock
+    - malloc_thread_safety
+    - retargetable_lock_sem
+    - malloc_lock
+    - retargetable_lock_mutex
+    - sinit_lock
+    - tz_lock
+  libraries.libc.newlib.thread_safety.userspace:
+    extra_args: CONF_FILE=prj_userspace.conf
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: clib newlib userspace
+    min_ram: 64
+    testcases:
+    - sfp_lock
+    - env_lock
+    - retargetable_lock_sem
+    - malloc_lock
+    - retargetable_lock_mutex
+    - sinit_lock
+    - tz_lock
+  libraries.libc.newlib.thread_safety.userspace.stress:
+    extra_args: CONF_FILE=prj_userspace.conf
+    extra_configs:
+    - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
+    - CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE=8192
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    slow: true
+    tags: clib newlib userspace
+    min_ram: 192
+    testcases:
+    - sfp_lock
+    - env_lock
+    - malloc_thread_safety
+    - retargetable_lock_sem
+    - malloc_lock
+    - retargetable_lock_mutex
+    - sinit_lock
+    - tz_lock
+    timeout: 120
+  libraries.libc.newlib_nano.thread_safety:
+    extra_configs:
+    - CONFIG_NEWLIB_LIBC_NANO=y
+    filter: CONFIG_HAS_NEWLIB_LIBC_NANO
+    tags: clib newlib
+    min_ram: 64
+    testcases:
+    - sfp_lock
+    - env_lock
+    - retargetable_lock_sem
+    - malloc_lock
+    - retargetable_lock_mutex
+    - sinit_lock
+    - tz_lock
+  libraries.libc.newlib_nano.thread_safety.stress:
+    extra_configs:
+    - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
+    - CONFIG_NEWLIB_LIBC_NANO=y
     filter: CONFIG_HAS_NEWLIB_LIBC_NANO
     slow: true
-    extra_configs:
-      - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
-      - CONFIG_NEWLIB_LIBC_NANO=y
-  libraries.libc.newlib.thread_safety.userspace:
-    tags: clib newlib userspace
-    filter: CONFIG_ARCH_HAS_USERSPACE
-    extra_args: CONF_FILE=prj_userspace.conf
+    tags: clib newlib
+    min_ram: 192
+    testcases:
+    - sfp_lock
+    - env_lock
+    - malloc_thread_safety
+    - retargetable_lock_sem
+    - malloc_lock
+    - retargetable_lock_mutex
+    - sinit_lock
+    - tz_lock
   libraries.libc.newlib_nano.thread_safety.userspace:
-    tags: clib newlib userspace
+    extra_args: CONF_FILE=prj_userspace.conf
+    extra_configs:
+    - CONFIG_NEWLIB_LIBC_NANO=y
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_HAS_NEWLIB_LIBC_NANO
-    extra_args: CONF_FILE=prj_userspace.conf
-    extra_configs:
-      - CONFIG_NEWLIB_LIBC_NANO=y
-  libraries.libc.newlib.thread_safety.userspace.stress:
     tags: clib newlib userspace
-    filter: CONFIG_ARCH_HAS_USERSPACE
-    slow: true
-    timeout: 120
-    extra_args: CONF_FILE=prj_userspace.conf
-    extra_configs:
-      - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
-      - CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE=8192
+    min_ram: 64
+    testcases:
+    - sfp_lock
+    - env_lock
+    - retargetable_lock_sem
+    - malloc_lock
+    - retargetable_lock_mutex
+    - sinit_lock
+    - tz_lock
   libraries.libc.newlib_nano.thread_safety.userspace.stress:
-    tags: clib newlib userspace
-    filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_HAS_NEWLIB_LIBC_NANO
-    slow: true
-    timeout: 120
     extra_args: CONF_FILE=prj_userspace.conf
     extra_configs:
-      - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
-      - CONFIG_NEWLIB_LIBC_NANO=y
-      - CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE=2048
+    - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
+    - CONFIG_NEWLIB_LIBC_NANO=y
+    - CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE=2048
+    filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_HAS_NEWLIB_LIBC_NANO
+    slow: true
+    tags: clib newlib userspace
+    min_ram: 192
+    testcases:
+    - sfp_lock
+    - env_lock
+    - malloc_thread_safety
+    - retargetable_lock_sem
+    - malloc_lock
+    - retargetable_lock_mutex
+    - sinit_lock
+    - tz_lock
+    timeout: 120

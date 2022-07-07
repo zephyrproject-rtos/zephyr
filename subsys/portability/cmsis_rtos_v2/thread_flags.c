@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include "wrapper.h"
 
 #define DONT_CARE               (0)

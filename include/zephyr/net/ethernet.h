@@ -13,29 +13,29 @@
 #ifndef ZEPHYR_INCLUDE_NET_ETHERNET_H_
 #define ZEPHYR_INCLUDE_NET_ETHERNET_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <sys/atomic.h>
+#include <zephyr/sys/atomic.h>
 
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
 
 #if defined(CONFIG_NET_LLDP)
-#include <net/lldp.h>
+#include <zephyr/net/lldp.h>
 #endif
 
-#include <sys/util.h>
-#include <net/net_if.h>
-#include <net/ethernet_vlan.h>
-#include <net/ptp_time.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet_vlan.h>
+#include <zephyr/net/ptp_time.h>
 
 #if defined(CONFIG_NET_DSA)
-#include <net/dsa.h>
+#include <zephyr/net/dsa.h>
 #endif
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE)
-#include <net/ethernet_bridge.h>
+#include <zephyr/net/ethernet_bridge.h>
 #endif
 
 #ifdef __cplusplus

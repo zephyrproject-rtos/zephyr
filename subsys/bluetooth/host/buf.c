@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/buf.h>
-#include <bluetooth/l2cap.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/l2cap.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"

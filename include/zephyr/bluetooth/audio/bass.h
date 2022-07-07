@@ -10,7 +10,7 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BASS_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BASS_
 #include <zephyr/types.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/conn.h>
 
 #if IS_ENABLED(CONFIG_BT_BASS)
 #define BT_BASS_MAX_METADATA_LEN CONFIG_BT_BASS_MAX_METADATA_LEN

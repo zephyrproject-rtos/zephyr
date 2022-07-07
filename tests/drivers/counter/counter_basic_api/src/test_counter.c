@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/counter.h>
+#include <zephyr/drivers/counter.h>
 #include <ztest.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);
 
 static struct k_sem top_cnt_sem;
@@ -85,6 +85,9 @@ static const char * const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_MCUX_RTC
 	LABELS_FOR_DT_COMPAT(nxp_kinetis_rtc)
+#endif
+#ifdef CONFIG_COUNTER_MCUX_QTMR
+	LABELS_FOR_DT_COMPAT(nxp_imx_tmr)
 #endif
 #ifdef CONFIG_COUNTER_MCUX_LPC_RTC
 	LABELS_FOR_DT_COMPAT(nxp_lpc_rtc)
@@ -551,6 +554,12 @@ void test_multiple_alarms_instance(const char *dev_name)
 	if (set_top_value_capable(dev_name)) {
 		err = counter_set_top_value(dev, &top_cfg);
 		zassert_equal(0, err, "%s: Counter failed to set top value", dev_name);
+	} else {
+		/* Counter does not support top value, do not run this test
+		 * as it might take a long time to wrap and trigger the alarm
+		 * resulting in test failures.
+		 */
+		return;
 	}
 
 	k_busy_wait(3*(uint32_t)counter_ticks_to_us(dev, alarm_cfg.ticks));
@@ -798,6 +807,9 @@ static void test_short_relative_alarm_instance(const char *dev_name)
 		.flags = 0,
 		.user_data = NULL
 	};
+
+	/* for timers with very short ticks, counter_ticks_to_us() returns 0 */
+	tick_us = tick_us == 0 ? 1 : tick_us;
 
 	err = counter_start(dev);
 	zassert_equal(0, err, "%s: Unexpected error", dev_name);

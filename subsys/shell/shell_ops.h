@@ -7,7 +7,7 @@
 #define SHELL_OPS_H__
 
 #include <stdbool.h>
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 #include "shell_vt100.h"
 #include "shell_utils.h"
 

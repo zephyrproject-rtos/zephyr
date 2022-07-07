@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <ipc/ipc_rpmsg.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/ipc/ipc_rpmsg.h>
 
 static void rpmsg_service_unbind(struct rpmsg_endpoint *ep)
 {
@@ -71,6 +71,7 @@ int ipc_rpmsg_register_ept(struct ipc_rpmsg_instance *instance, unsigned int rol
 
 int ipc_rpmsg_init(struct ipc_rpmsg_instance *instance,
 		   unsigned int role,
+		   unsigned int buffer_size,
 		   struct metal_io_region *shm_io,
 		   struct virtio_device *vdev,
 		   void *shb, size_t size,
@@ -86,10 +87,17 @@ int ipc_rpmsg_init(struct ipc_rpmsg_instance *instance,
 		bind_cb = ns_bind_cb;
 	}
 
-	if (role == RPMSG_MASTER) {
+	if (role == RPMSG_HOST) {
+		struct rpmsg_virtio_config config;
+
+		config.h2r_buf_size = (uint32_t) buffer_size;
+		config.r2h_buf_size = (uint32_t) buffer_size;
+
 		rpmsg_virtio_init_shm_pool(&instance->shm_pool, shb, size);
-		return rpmsg_init_vdev(&instance->rvdev, vdev, bind_cb,
-				       shm_io, &instance->shm_pool);
+
+		return rpmsg_init_vdev_with_config(&instance->rvdev, vdev, bind_cb,
+						   shm_io, &instance->shm_pool,
+						   &config);
 	} else {
 		return rpmsg_init_vdev(&instance->rvdev, vdev, bind_cb, shm_io, NULL);
 	}

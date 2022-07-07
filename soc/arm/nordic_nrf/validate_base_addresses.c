@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 /*
  * Account for MDK inconsistencies
@@ -26,6 +26,10 @@
 
 #if !defined(NRF_PDM0) && defined(NRF_PDM)
 #define NRF_PDM0 NRF_PDM
+#endif
+
+#if !defined(NRF_QDEC0) && defined(NRF_QDEC)
+#define NRF_QDEC0 NRF_QDEC
 #endif
 
 #if !defined(NRF_SWI0) && defined(NRF_SWI_BASE)
@@ -146,7 +150,9 @@ CHECK_DT_REG(pwm0, NRF_PWM0);
 CHECK_DT_REG(pwm1, NRF_PWM1);
 CHECK_DT_REG(pwm2, NRF_PWM2);
 CHECK_DT_REG(pwm3, NRF_PWM3);
-CHECK_DT_REG(qdec, NRF_QDEC);
+CHECK_DT_REG(qdec, NRF_QDEC0);	/* this should be the same node as qdec0 */
+CHECK_DT_REG(qdec0, NRF_QDEC0);
+CHECK_DT_REG(qdec1, NRF_QDEC1);
 CHECK_DT_REG(radio, NRF_RADIO);
 CHECK_DT_REG(regulators, NRF_REGULATORS);
 CHECK_DT_REG(reset, NRF_RESET);

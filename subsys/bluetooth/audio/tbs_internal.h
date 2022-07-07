@@ -10,7 +10,7 @@
  */
 
 #include <zephyr/types.h>
-#include <bluetooth/audio/tbs.h>
+#include <zephyr/bluetooth/audio/tbs.h>
 
 #define BT_TBS_MAX_UCI_SIZE                        6
 #define BT_TBS_MIN_URI_LEN                         3 /* a:b */

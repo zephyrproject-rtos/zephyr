@@ -15,8 +15,8 @@
  * it guarantee that ALL functionality provided is working correctly.
  */
 
-#include <zephyr.h>
-#include <sys/__assert.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/__assert.h>
 #include <ztest.h>
 
 #include <limits.h>
@@ -32,6 +32,9 @@
 #include <ctype.h>
 #include <time.h>
 #include <ztest_error_hook.h>
+#ifdef CONFIG_PICOLIBC
+#include <unistd.h>
+#endif
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define LIST_LEN 2
@@ -621,7 +624,10 @@ ZTEST(test_c_lib, test_str_operate)
 
 	zassert_true(strncat(ncat, str1, 2), "strncat failed");
 	zassert_not_null(strncat(str1, str3, 2), "strncat failed");
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
 	zassert_not_null(strncat(str1, str3, 1), "strncat failed");
+#pragma GCC diagnostic pop
 	zassert_equal(strcmp(ncat, "ddeeaa"), 0, "strncat failed");
 
 	zassert_is_null(strrchr(ncat, 'z'),
@@ -1065,11 +1071,15 @@ ZTEST(test_c_lib, test_time)
  */
 ZTEST(test_c_lib, test_rand)
 {
+#ifndef CONFIG_PICOLIBC
 	int a;
 
 	a = rand();
 	/* The default seed is 1 */
 	zassert_equal(a, 1103527590, "rand failed");
+#else
+	ztest_test_skip();
+#endif
 }
 
 /**
@@ -1079,6 +1089,7 @@ ZTEST(test_c_lib, test_rand)
  */
 ZTEST(test_c_lib, test_srand)
 {
+#ifndef CONFIG_PICOLIBC
 	int a;
 
 	srand(0);
@@ -1100,6 +1111,9 @@ ZTEST(test_c_lib, test_srand)
 	srand(UINT_MAX);
 	a = rand();
 	zassert_equal(a, 1043980748, "srand with seed UINT_MAX failed");
+#else
+	ztest_test_skip();
+#endif
 }
 
 /**
@@ -1109,6 +1123,7 @@ ZTEST(test_c_lib, test_srand)
  */
 ZTEST(test_c_lib, test_rand_reproducibility)
 {
+#ifndef CONFIG_PICOLIBC
 	int a;
 	int b;
 	int c;
@@ -1162,6 +1177,9 @@ ZTEST(test_c_lib, test_rand_reproducibility)
 	srand(UINT_MAX);
 	c = rand();
 	zassert_equal(c, 1043980748, "srand with seed UINT_MAX failed (3rd)");
+#else
+	ztest_test_skip();
+#endif
 }
 
 /**

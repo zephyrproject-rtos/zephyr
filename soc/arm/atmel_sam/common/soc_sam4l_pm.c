@@ -9,8 +9,8 @@
  */
 
 #include <soc.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 
 /**
  * SAM4L define peripheral-ids out of order.  This maps peripheral-id group

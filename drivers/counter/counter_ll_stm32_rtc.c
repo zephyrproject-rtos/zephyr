@@ -13,19 +13,19 @@
 
 #include <time.h>
 
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/clock_control.h>
-#include <sys/util.h>
-#include <kernel.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <stm32_ll_exti.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_rtc.h>
-#include <drivers/counter.h>
-#include <sys/timeutil.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/sys/timeutil.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "stm32_hsem.h"
 

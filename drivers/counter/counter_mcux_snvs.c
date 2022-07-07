@@ -5,7 +5,7 @@
  */
 
 #define DT_DRV_COMPAT nxp_imx_snvs_rtc
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(mcux_snvs, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(mcux_snvs, CONFIG_COUNTER_LOG_LEVEL);
 #define MCUX_SNVS_NUM_CHANNELS 1
 #endif
 
-#include <drivers/counter.h>
+#include <zephyr/drivers/counter.h>
 #include <fsl_snvs_hp.h>
 
 #ifdef MCUX_SNVS_SRTC

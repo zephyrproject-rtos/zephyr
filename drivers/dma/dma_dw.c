@@ -10,14 +10,14 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <drivers/dma.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/dma.h>
 #include <soc.h>
 #include "dma_dw_common.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_dw, CONFIG_DMA_LOG_LEVEL);
 
 /* Device constant configuration parameters */

@@ -10,7 +10,7 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_HEARTBEAT_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_HEARTBEAT_H_
 
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 
 /**
  * @brief Heartbeat

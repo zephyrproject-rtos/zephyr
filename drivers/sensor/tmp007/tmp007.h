@@ -7,9 +7,9 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_TMP007_TMP007_H_
 #define ZEPHYR_DRIVERS_SENSOR_TMP007_TMP007_H_
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
 
 #define TMP007_I2C_ADDRESS		DT_INST_REG_ADDR(0)
 

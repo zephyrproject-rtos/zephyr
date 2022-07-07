@@ -15,7 +15,7 @@
 
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
 
-	lora: sx1272@0 {
+	lora: lora@0 {
 		compatible = "semtech,sx1272";
 		reg = <0x0>;
 		label = "sx1272";

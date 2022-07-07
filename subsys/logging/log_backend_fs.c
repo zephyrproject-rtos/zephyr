@@ -6,11 +6,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <logging/log_backend.h>
-#include <logging/log_output_dict.h>
-#include <logging/log_backend_std.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_output_dict.h>
+#include <zephyr/logging/log_backend_std.h>
 #include <assert.h>
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 
 #define MAX_PATH_LEN 256
 #define MAX_FLASH_WRITE_SIZE 256
@@ -434,12 +434,6 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE),
 static uint8_t __aligned(4) buf[MAX_FLASH_WRITE_SIZE];
 LOG_OUTPUT_DEFINE(log_output, write_log_to_file, buf, MAX_FLASH_WRITE_SIZE);
 
-static void put(const struct log_backend *const backend,
-		struct log_msg *msg)
-{
-	log_backend_std_put(&log_output, 0, msg);
-}
-
 static void log_backend_fs_init(const struct log_backend *const backend)
 {
 }
@@ -464,7 +458,7 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 }
 
 static void process(const struct log_backend *const backend,
-		union log_msg2_generic *msg)
+		union log_msg_generic *msg)
 {
 	uint32_t flags = log_backend_std_get_flags();
 
@@ -480,16 +474,12 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 }
 
 static const struct log_backend_api log_backend_fs_api = {
-	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
-	.put = put,
-	.put_sync_string = NULL,
-	.put_sync_hexdump = NULL,
+	.process = process,
 	.panic = panic,
 	.init = log_backend_fs_init,
 	.dropped = dropped,
-	.format_set = IS_ENABLED(CONFIG_LOG1) ? NULL : format_set,
+	.format_set = format_set,
 };
-
 
 LOG_BACKEND_DEFINE(log_backend_fs, log_backend_fs_api, true);
 #endif

@@ -6,8 +6,8 @@
 
 #ifdef CONFIG_BT_VCS_CLIENT
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/audio/vcs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/vcs.h>
 
 #include "common.h"
 

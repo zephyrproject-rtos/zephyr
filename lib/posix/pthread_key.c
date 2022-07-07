@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
-#include <posix/pthread.h>
-#include <posix/pthread_key.h>
+#include <zephyr/kernel.h>
+#include <zephyr/posix/pthread.h>
+#include <zephyr/posix/pthread_key.h>
 
 struct k_sem pthread_key_sem;
 

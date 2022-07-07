@@ -7,7 +7,8 @@
 /* Periodic advertisements synchronization status. */
 enum sync_status {
 	SYNC_STAT_ALLOWED,
-	SYNC_STAT_READY_OR_CONT_SCAN,
+	SYNC_STAT_READY,
+	SYNC_STAT_CONT_SCAN,
 	SYNC_STAT_TERM
 };
 

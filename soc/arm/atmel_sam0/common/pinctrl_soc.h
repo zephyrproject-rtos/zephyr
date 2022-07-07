@@ -12,6 +12,6 @@
 #ifndef ZEPHYR_SOC_ARM_ATMEL_SAM_COMMON_PINCTRL_SOC_H_
 #define ZEPHYR_SOC_ARM_ATMEL_SAM_COMMON_PINCTRL_SOC_H_
 
-#include <drivers/pinctrl/pinctrl_soc_sam_common.h>
+#include <zephyr/drivers/pinctrl/pinctrl_soc_sam_common.h>
 
 #endif /* ZEPHYR_SOC_ARM_ATMEL_SAM_COMMON_PINCTRL_SOC_H_ */

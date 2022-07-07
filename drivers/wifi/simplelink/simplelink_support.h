@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_DRIVERS_WIFI_SIMPLELINK_SIMPLELINK_SUPPORT_H_
 #define ZEPHYR_DRIVERS_WIFI_SIMPLELINK_SIMPLELINK_SUPPORT_H_
 
-#include <net/wifi_mgmt.h>
+#include <zephyr/net/wifi_mgmt.h>
 
 #ifdef __cplusplus
 extern "C" {

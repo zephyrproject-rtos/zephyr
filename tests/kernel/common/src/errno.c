@@ -5,8 +5,9 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
+#include <zephyr/sys/errno_private.h>
 
 /**
  * @brief Test the thread context

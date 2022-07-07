@@ -15,13 +15,13 @@
  * available in virtual address space after loading of page table.
  */
 
-#include <arch/x86/ia32/asm.h>
-#include <arch/x86/msr.h>
+#include <zephyr/arch/x86/ia32/asm.h>
+#include <zephyr/arch/x86/msr.h>
 #include <kernel_arch_data.h>
-#include <arch/cpu.h>
-#include <arch/x86/multiboot.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/x86/multiboot.h>
 #include <x86_mmu.h>
-#include <sys/mem_manage.h>
+#include <zephyr/sys/mem_manage.h>
 
 	/* exports (private APIs) */
 

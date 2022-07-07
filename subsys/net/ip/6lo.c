@@ -9,14 +9,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_6lo, CONFIG_NET_6LO_LOG_LEVEL);
 
 #include <errno.h>
-#include <net/net_core.h>
-#include <net/net_if.h>
-#include <net/net_stats.h>
-#include <net/udp.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_stats.h>
+#include <zephyr/net/udp.h>
 
 #include "net_private.h"
 #include "6lo.h"
@@ -1624,7 +1624,6 @@ int net_6lo_uncompress_hdr_diff(struct net_pkt *pkt)
 		}
 
 		nhc_inline_size = get_udp_nhc_inlined_size(nhc);
-		compressed_hdr_size += sizeof(uint8_t) + nhc_inline_size;
 		diff += sizeof(struct net_udp_hdr) - sizeof(uint8_t) -
 			nhc_inline_size;
 	}

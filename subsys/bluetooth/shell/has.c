@@ -7,15 +7,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/audio/has.h>
-#include <shell/shell.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/has.h>
+#include <zephyr/shell/shell.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #include "bt.h"
+
+static int preset_select(uint8_t index, bool sync)
+{
+	return 0;
+}
+
+static const struct bt_has_preset_ops preset_ops = {
+	.select = preset_select,
+};
 
 static int cmd_preset_reg(const struct shell *sh, size_t argc, char **argv)
 {
@@ -24,6 +33,7 @@ static int cmd_preset_reg(const struct shell *sh, size_t argc, char **argv)
 		.index = shell_strtoul(argv[1], 16, &err),
 		.properties = shell_strtoul(argv[2], 16, &err),
 		.name = argv[3],
+		.ops = &preset_ops,
 	};
 
 	if (err < 0) {
@@ -90,6 +100,85 @@ static int cmd_preset_list(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_preset_avail(const struct shell *sh, size_t argc, char **argv)
+{
+	int err = 0;
+	const uint8_t index = shell_strtoul(argv[1], 16, &err);
+
+	if (err < 0) {
+		shell_print(sh, "Invalid command parameter (err %d)", err);
+		return err;
+	}
+
+	err = bt_has_preset_available(index);
+	if (err < 0) {
+		shell_print(sh, "Preset availability set failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_preset_unavail(const struct shell *sh, size_t argc, char **argv)
+{
+	int err = 0;
+	const uint8_t index = shell_strtoul(argv[1], 16, &err);
+
+	if (err < 0) {
+		shell_print(sh, "Invalid command parameter (err %d)", err);
+		return err;
+	}
+
+	err = bt_has_preset_unavailable(index);
+	if (err < 0) {
+		shell_print(sh, "Preset availability set failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_preset_active_set(const struct shell *sh, size_t argc, char **argv)
+{
+	int err = 0;
+	const uint8_t index = shell_strtoul(argv[1], 16, &err);
+
+	if (err < 0) {
+		shell_print(sh, "Invalid command parameter (err %d)", err);
+		return err;
+	}
+
+	err = bt_has_preset_active_set(index);
+	if (err < 0) {
+		shell_print(sh, "Preset selection failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_preset_active_get(const struct shell *sh, size_t argc, char **argv)
+{
+	const uint8_t index = bt_has_preset_active_get();
+
+	shell_print(sh, "Active index 0x%02x", index);
+
+	return 0;
+}
+
+static int cmd_preset_active_clear(const struct shell *sh, size_t argc, char **argv)
+{
+	int err;
+
+	err = bt_has_preset_active_clear();
+	if (err < 0) {
+		shell_print(sh, "Preset selection failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
 static int cmd_has(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -106,6 +195,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(has_cmds,
 		      cmd_preset_reg, 4, 0),
 	SHELL_CMD_ARG(preset-unreg, NULL, "Unregister preset <index>", cmd_preset_unreg, 2, 0),
 	SHELL_CMD_ARG(preset-list, NULL, "List all presets", cmd_preset_list, 1, 0),
+	SHELL_CMD_ARG(preset-set-avail, NULL, "Set preset as available <index>",
+		      cmd_preset_avail, 2, 0),
+	SHELL_CMD_ARG(preset-set-unavail, NULL, "Set preset as unavailable <index>",
+		      cmd_preset_unavail, 2, 0),
+	SHELL_CMD_ARG(preset-active-set, NULL, "Set active preset <index>",
+		      cmd_preset_active_set, 2, 0),
+	SHELL_CMD_ARG(preset-active-get, NULL, "Get active preset", cmd_preset_active_get, 1, 0),
+	SHELL_CMD_ARG(preset-active-clear, NULL, "Clear selected preset",
+		      cmd_preset_active_clear, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 

@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_echo_server_sample, LOG_LEVEL_DBG);
 
-#include <usb/usb_device.h>
-#include <net/net_config.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/net/net_config.h>
 
 int init_usb(void)
 {

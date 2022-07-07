@@ -10,7 +10,7 @@
 #include "posix_types.h"
 
 #ifdef CONFIG_POSIX_FS
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 
 #ifdef __cplusplus
 extern "C" {

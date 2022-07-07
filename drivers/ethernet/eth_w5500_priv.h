@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
 
 #ifndef _W5500_
 #define _W5500_
@@ -76,6 +76,8 @@
 #define W5500_Sn_RX_MEM_START	0x30000
 #define W5500_RX_MEM_SIZE	0x04000
 
+/* Delay for PHY write/read operations (25.6 us) */
+#define W5500_PHY_ACCESS_DELAY		26U
 struct w5500_config {
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec interrupt;

@@ -7,12 +7,12 @@
 #define DT_DRV_COMPAT atmel_sam_gpio
 
 #include <errno.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <drivers/gpio.h>
-#include <dt-bindings/gpio/atmel-sam-gpio.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/gpio/atmel-sam-gpio.h>
 
 #include "gpio_utils.h"
 

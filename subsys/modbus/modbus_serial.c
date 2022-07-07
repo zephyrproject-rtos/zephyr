@@ -20,13 +20,13 @@
  *      Version 2.0 available at www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modbus_serial, CONFIG_MODBUS_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <sys/crc.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/crc.h>
 #include <modbus_internal.h>
 
 static void modbus_serial_tx_on(struct modbus_context *ctx)
@@ -519,7 +519,7 @@ int modbus_serial_init(struct modbus_context *ctx,
 	cfg->dev = device_get_binding(cfg->dev_name);
 	if (cfg->dev == NULL) {
 		LOG_ERR("Failed to get UART device %s",
-			log_strdup(cfg->dev_name));
+			cfg->dev_name);
 		return -ENODEV;
 	}
 

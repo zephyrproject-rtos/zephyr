@@ -6,9 +6,9 @@
 
 #include <string.h>
 
-#include <settings/settings.h>
+#include <zephyr/settings/settings.h>
 
-#include <bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 #include "ll_settings.h"
 

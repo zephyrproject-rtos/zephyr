@@ -9,17 +9,16 @@
  * @brief ADC driver for the LMP90xxx AFE.
  */
 
-#include <drivers/adc.h>
-#include <drivers/adc/lmp90xxx.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
-#include <kernel.h>
-#include <sys/byteorder.h>
-#include <sys/crc.h>
-#include <zephyr.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/adc/lmp90xxx.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/crc.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_lmp90xxx);
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER

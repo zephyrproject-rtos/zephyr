@@ -9,18 +9,18 @@
 #include <errno.h>
 #include <stddef.h>
 
-#include <zephyr.h>
-#include <arch/cpu.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/arch/cpu.h>
 
-#include <init.h>
-#include <drivers/uart.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 #include <string.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_driver

@@ -15,6 +15,6 @@
 #define __ZEPHYR__
 #endif
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #endif /* ZEPHYR_INCLUDE_ZEPHYR_H_ */

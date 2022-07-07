@@ -42,13 +42,27 @@ config CAN_STM32FD_CLOCK_SOURCE_HSE
 
 config CAN_STM32FD_CLOCK_SOURCE_PLL
 	bool "PLL"
+	depends on !SOC_SERIES_STM32U5X
 	help
 	  PLL "Q" clock used ad FDCAN clock source.
 
 config CAN_STM32FD_CLOCK_SOURCE_PCLK1
 	bool "PCLK1"
+	depends on !SOC_SERIES_STM32U5X
 	help
 	  PCLK1 clock used ad FDCAN clock source.
+
+config CAN_STM32FD_CLOCK_SOURCE_PLL1Q
+	bool "PLL1Q"
+	depends on SOC_SERIES_STM32U5X
+	help
+	  PLL1 "Q" clock used as FDCAN clock source.
+
+config CAN_STM32FD_CLOCK_SOURCE_PLL2P
+	bool "PLL2P"
+	depends on SOC_SERIES_STM32U5X
+	help
+	  PLL2 "P" clock used as FDCAN clock source.
 
 endchoice
 

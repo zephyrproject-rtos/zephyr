@@ -7,7 +7,7 @@
 
 #include <stddef.h>
 
-#include <fs/fcb.h>
+#include <zephyr/fs/fcb.h>
 #include "fcb_priv.h"
 
 int
@@ -55,7 +55,7 @@ fcb_getnext_nolock(struct fcb *fcb, struct fcb_entry *loc)
 		/*
 		 * If offset is zero, we serve the first entry from the sector.
 		 */
-		loc->fe_elem_off = sizeof(struct fcb_disk_area);
+		loc->fe_elem_off = fcb_len_in_flash(fcb, sizeof(struct fcb_disk_area));
 		rc = fcb_elem_info(fcb, loc);
 		switch (rc) {
 		case 0:
@@ -89,7 +89,7 @@ next_sector:
 				return -ENOTSUP;
 			}
 			loc->fe_sector = fcb_getnext_sector(fcb, loc->fe_sector);
-			loc->fe_elem_off = sizeof(struct fcb_disk_area);
+			loc->fe_elem_off = fcb_len_in_flash(fcb, sizeof(struct fcb_disk_area));
 			rc = fcb_elem_info(fcb, loc);
 			switch (rc) {
 			case 0:

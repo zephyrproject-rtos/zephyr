@@ -13,7 +13,7 @@
  * structures.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_arch_data.h>
 #include <gen_offset.h>
 #include <kernel_offsets.h>
@@ -28,9 +28,9 @@
 /* struct _callee_saved member offsets */
 GEN_OFFSET_SYM(_callee_saved_t, sp);
 GEN_OFFSET_SYM(_callee_saved_t, ra);
-GEN_OFFSET_SYM(_callee_saved_t, tp);
 GEN_OFFSET_SYM(_callee_saved_t, s0);
 GEN_OFFSET_SYM(_callee_saved_t, s1);
+#if !defined(CONFIG_RISCV_ISA_RV32E)
 GEN_OFFSET_SYM(_callee_saved_t, s2);
 GEN_OFFSET_SYM(_callee_saved_t, s3);
 GEN_OFFSET_SYM(_callee_saved_t, s4);
@@ -41,6 +41,7 @@ GEN_OFFSET_SYM(_callee_saved_t, s8);
 GEN_OFFSET_SYM(_callee_saved_t, s9);
 GEN_OFFSET_SYM(_callee_saved_t, s10);
 GEN_OFFSET_SYM(_callee_saved_t, s11);
+#endif /* !CONFIG_RISCV_ISA_RV32E */
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 GEN_OFFSET_SYM(_callee_saved_t, fcsr);
@@ -63,25 +64,26 @@ GEN_OFFSET_SYM(z_arch_esf_t, ra);
 GEN_OFFSET_SYM(z_arch_esf_t, t0);
 GEN_OFFSET_SYM(z_arch_esf_t, t1);
 GEN_OFFSET_SYM(z_arch_esf_t, t2);
-GEN_OFFSET_SYM(z_arch_esf_t, t3);
-GEN_OFFSET_SYM(z_arch_esf_t, t4);
-GEN_OFFSET_SYM(z_arch_esf_t, t5);
-GEN_OFFSET_SYM(z_arch_esf_t, t6);
 GEN_OFFSET_SYM(z_arch_esf_t, a0);
 GEN_OFFSET_SYM(z_arch_esf_t, a1);
 GEN_OFFSET_SYM(z_arch_esf_t, a2);
 GEN_OFFSET_SYM(z_arch_esf_t, a3);
 GEN_OFFSET_SYM(z_arch_esf_t, a4);
 GEN_OFFSET_SYM(z_arch_esf_t, a5);
+
+#if !defined(CONFIG_RISCV_ISA_RV32E)
+GEN_OFFSET_SYM(z_arch_esf_t, t3);
+GEN_OFFSET_SYM(z_arch_esf_t, t4);
+GEN_OFFSET_SYM(z_arch_esf_t, t5);
+GEN_OFFSET_SYM(z_arch_esf_t, t6);
 GEN_OFFSET_SYM(z_arch_esf_t, a6);
 GEN_OFFSET_SYM(z_arch_esf_t, a7);
+#endif /* !CONFIG_RISCV_ISA_RV32E */
 
 GEN_OFFSET_SYM(z_arch_esf_t, mepc);
 GEN_OFFSET_SYM(z_arch_esf_t, mstatus);
 
 GEN_OFFSET_SYM(z_arch_esf_t, s0);
-
-GEN_OFFSET_SYM(z_arch_esf_t, tp);
 
 #ifdef CONFIG_USERSPACE
 GEN_OFFSET_SYM(z_arch_esf_t, sp);

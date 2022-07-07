@@ -19,6 +19,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
 	};
 
 	leds {
@@ -65,9 +66,9 @@
 
 &pll {
 	div-m = <1>;
-	mul-n = <24>;
-	div-p = <2>;
-	div-q = <4>;
+	mul-n = <35>;
+	div-p = <1>;
+	div-q = <5>;
 	div-r = <2>;
 	clocks = <&clk_hse>;
 	status = "okay";
@@ -75,7 +76,7 @@
 
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(96)>;
+	clock-frequency = <DT_FREQ_M(280)>;
 	d1cpre = <1>;
 	hpre = <1>;
 	d1ppre = <2>;
@@ -108,6 +109,12 @@
 
 &adc1 {
 	pinctrl-0 = <&adc1_inp15_pa3>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_dm_pa11 &usb_otg_hs_dp_pa12>;
 	pinctrl-names = "default";
 	status = "okay";
 };

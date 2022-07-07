@@ -7,7 +7,7 @@
 #include <stddef.h>
 #include <zephyr/types.h>
 #include <errno.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 int char2hex(char c, uint8_t *x)
 {

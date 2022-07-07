@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
-#include <init.h>
+#include <zephyr/init.h>
 #include <ksched.h>
-#include <wait_q.h>
-#include <syscall_handler.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/syscall_handler.h>
 #include <stdbool.h>
-#include <spinlock.h>
+#include <zephyr/spinlock.h>
 
 static struct k_spinlock lock;
 
@@ -32,8 +32,25 @@ void z_timer_expiration_handler(struct _timeout *t)
 	 */
 	if (!K_TIMEOUT_EQ(timer->period, K_NO_WAIT) &&
 	    !K_TIMEOUT_EQ(timer->period, K_FOREVER)) {
+		k_timeout_t next = timer->period;
+
+#ifdef CONFIG_TIMEOUT_64BIT
+		/* Exploit the fact that uptime during a kernel
+		 * timeout handler reflects the time of the scheduled
+		 * event and not real time to get some inexpensive
+		 * protection against late interrupts.  If we're
+		 * delayed for any reason, we still end up calculating
+		 * the next expiration as a regular stride from where
+		 * we "should" have run.  Requires absolute timeouts.
+		 * (Note offset by one: we're nominally at the
+		 * beginning of a tick, so need to defeat the "round
+		 * down" behavior on timeout addition).
+		 */
+		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + 1
+					   + timer->period.ticks);
+#endif
 		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
-			     timer->period);
+			      next);
 	}
 
 	/* update timer's status */

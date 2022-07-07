@@ -3,5 +3,5 @@ sample:
   name: WS2812 sample
 tests:
   sample.drivers.led.ws2812:
-    platform_allow: bbc_microbit nrf51dk_nrf51422 nrf52dk_nrf52832
     tags: LED
+    filter: dt_compat_enabled("worldsemi,ws2812-spi")

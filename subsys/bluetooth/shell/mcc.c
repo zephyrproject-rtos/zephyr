@@ -10,14 +10,14 @@
  */
 
 #include <stdlib.h>
-#include <bluetooth/audio/mcc.h>
-#include <shell/shell.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/audio/mcc.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 
 #include "bt.h"
 
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/services/ots.h>
 #include "../services/ots/ots_client_internal.h"
 #include "../audio/media_proxy_internal.h"
 
@@ -975,7 +975,7 @@ int cmd_mcc_send_search_raw(const struct shell *sh, size_t argc, char *argv[])
 
 	search.len = strlen(argv[1]);
 	memcpy(search.search, argv[1], search.len);
-	BT_DBG("Search string: %s", log_strdup(argv[1]));
+	BT_DBG("Search string: %s", argv[1]);
 
 	result = bt_mcc_send_search(default_conn, &search);
 	if (result) {

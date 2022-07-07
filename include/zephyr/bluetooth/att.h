@@ -10,8 +10,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_ATT_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_ATT_H_
 
-#include <sys/slist.h>
-#include <bluetooth/conn.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/bluetooth/conn.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,6 +59,9 @@ extern "C" {
 #if defined(CONFIG_BT_TESTING)
 
 int bt_eatt_disconnect_one(struct bt_conn *conn);
+
+/* Reconfigure all EATT channels on connection */
+int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu);
 
 #endif /* CONFIG_BT_TESTING */
 

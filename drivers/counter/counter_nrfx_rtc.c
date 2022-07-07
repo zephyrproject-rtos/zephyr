@@ -3,11 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <drivers/counter.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <hal/nrf_rtc.h>
-#include <sys/atomic.h>
+#include <zephyr/sys/atomic.h>
 #ifdef DPPI_PRESENT
 #include <nrfx_dppi.h>
 #else
@@ -15,7 +15,7 @@
 #endif
 
 #define LOG_MODULE_NAME counter_rtc
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_COUNTER_LOG_LEVEL);
 
 #define ERR(...) LOG_INST_ERR( \

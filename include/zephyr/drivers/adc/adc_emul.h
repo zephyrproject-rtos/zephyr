@@ -13,7 +13,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_ADC_ADC_EMUL_H_
 
 #include <zephyr/types.h>
-#include <drivers/adc.h>
+#include <zephyr/drivers/adc.h>
 
 #ifdef __cplusplus
 extern "C" {

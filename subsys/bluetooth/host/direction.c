@@ -5,14 +5,14 @@
  */
 #include <stdint.h>
 #include <assert.h>
-#include <sys/check.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/l2cap.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/direction.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/direction.h>
 
 #include "hci_core.h"
 #include "scan.h"

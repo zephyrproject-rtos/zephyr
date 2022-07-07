@@ -5,8 +5,8 @@
  */
 #ifndef ZEPHYR_TRACE_TEST_H
 #define ZEPHYR_TRACE_TEST_H
-#include <kernel.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 
 #define sys_port_trace_k_thread_foreach_enter() sys_trace_k_thread_foreach_enter(user_cb, user_data)
 #define sys_port_trace_k_thread_foreach_exit() sys_trace_k_thread_foreach_exit(user_cb, user_data)

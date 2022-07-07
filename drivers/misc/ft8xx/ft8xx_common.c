@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/misc/ft8xx/ft8xx_common.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx_common.h>
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 #include "ft8xx_drv.h"
 
 void ft8xx_wr8(uint32_t address, uint8_t data)

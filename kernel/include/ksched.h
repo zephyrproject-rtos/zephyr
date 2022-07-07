@@ -7,10 +7,10 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
 #define ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
-#include <timeout_q.h>
-#include <tracing/tracing.h>
+#include <zephyr/timeout_q.h>
+#include <zephyr/tracing/tracing.h>
 #include <stdbool.h>
 
 BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO

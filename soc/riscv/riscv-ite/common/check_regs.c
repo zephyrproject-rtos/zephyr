@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
 
 /* SMFI register structure check */
@@ -85,6 +85,17 @@ IT8XXX2_REG_OFFSET_CHECK(espi_queue0_regs, PUT_OOB_DATA, 0x80);
 IT8XXX2_REG_SIZE_CHECK(espi_queue1_regs, 0xc0);
 IT8XXX2_REG_OFFSET_CHECK(espi_queue1_regs, UPSTREAM_DATA, 0x00);
 IT8XXX2_REG_OFFSET_CHECK(espi_queue1_regs, PUT_FLASH_NP_DATA, 0x80);
+
+/* GPIO register structure check */
+IT8XXX2_REG_SIZE_CHECK(gpio_it8xxx2_regs, 0x100);
+IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR, 0x00);
+IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR31, 0xD5);
+IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR18, 0xE2);
+IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR21, 0xE6);
+IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR29, 0xEE);
+IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR2, 0xF1);
+IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR7, 0xF6);
+IT8XXX2_REG_OFFSET_CHECK(gpio_it8xxx2_regs, GPIO_GCR14, 0xFD);
 
 /* GCTRL register structure check */
 IT8XXX2_REG_SIZE_CHECK(gctrl_it8xxx2_regs, 0x88);

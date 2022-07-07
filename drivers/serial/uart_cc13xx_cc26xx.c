@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT ti_cc13xx_cc26xx_uart
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <sys/__assert.h>
-#include <pm/device.h>
-#include <pm/policy.h>
-#include <drivers/uart.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #include <driverlib/prcm.h>
 #include <driverlib/uart.h>

@@ -7,14 +7,14 @@
  */
 
 #include <errno.h>
-#include <sys/atomic.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <drivers/bluetooth/hci_driver.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/hci_raw.h>
-#include <bluetooth/l2cap.h>
-#include <bluetooth/iso.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/hci_raw.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/iso.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #define LOG_MODULE_NAME bt_hci_raw

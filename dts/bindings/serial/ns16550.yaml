@@ -10,7 +10,7 @@ properties:
 
     reg-shift:
       type: int
-      required: false
+      required: true
       description: quantity to shift the register offsets by
 
     pcp:

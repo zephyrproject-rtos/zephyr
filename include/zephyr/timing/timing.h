@@ -7,8 +7,12 @@
 #ifndef ZEPHYR_INCLUDE_TIMING_TIMING_H_
 #define ZEPHYR_INCLUDE_TIMING_TIMING_H_
 
-#include <sys/arch_interface.h>
-#include <timing/types.h>
+#include <zephyr/sys/arch_interface.h>
+#include <zephyr/timing/types.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void soc_timing_init(void);
 void soc_timing_start(void);
@@ -174,5 +178,9 @@ static inline uint32_t timing_freq_get_mhz(void)
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_TIMING_TIMING_H_ */

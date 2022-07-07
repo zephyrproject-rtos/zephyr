@@ -20,7 +20,7 @@
 	};
 
 	chosen {
-		zephyr,flash-controller = &flexspi;
+		zephyr,flash-controller = &is25wp032;
 		zephyr,flash = &is25wp032;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &sdram0;
@@ -40,7 +40,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led: led-1 {
-			gpios = <&gpio1 24 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
 	};
@@ -49,7 +49,7 @@
 		compatible = "gpio-keys";
 		user_button: button-1 {
 			label = "User SW4";
-			gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio5 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 	};
 };
@@ -129,6 +129,8 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c4>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpio3 22 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpio3 23 GPIO_ACTIVE_HIGH>;
 
 	fxos8700: fxos8700@1f {
 		compatible = "nxp,fxos8700";
@@ -165,4 +167,20 @@
 
 zephyr_udc0: &usb1 {
 	status = "okay";
+};
+
+&usdhc1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_slow>;
+	pinctrl-2 = <&pinmux_usdhc1_med>;
+	pinctrl-3 = <&pinmux_usdhc1_fast>;
+	pinctrl-names = "default", "slow", "med", "fast";
+	cd-gpios = <&gpio3 19 GPIO_ACTIVE_LOW>;
+	pwr-gpios = <&gpio3 30 GPIO_ACTIVE_HIGH>;
+	no-1-8-v;
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
 };

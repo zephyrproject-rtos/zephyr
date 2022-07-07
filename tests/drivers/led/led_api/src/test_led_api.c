@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <drivers/led.h>
+#include <zephyr/drivers/led.h>
 
 #define BRIGHTNESS_MAX	100
 #define TEST_MAX_COLORS	8

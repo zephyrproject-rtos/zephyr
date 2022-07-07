@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/counter.h>
+#include <zephyr/drivers/counter.h>
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 /*
  * Basic test to ensure that the clock is ticking at roughly 1Hz.

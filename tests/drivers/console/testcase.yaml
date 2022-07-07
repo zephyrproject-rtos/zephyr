@@ -13,5 +13,6 @@ tests:
   drivers.console.semihost:
     tags: drivers console
     arch_allow: arm arm64 riscv32 riscv64
-    filter: CONFIG_QEMU_TARGET
+    platform_type:
+      - qemu
     extra_args: CONF_FILE=prj_semihost.conf

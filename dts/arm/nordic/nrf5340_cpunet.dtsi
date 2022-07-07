@@ -153,15 +153,6 @@
 			label = "RTC_0";
 		};
 
-		ipc0: ipc0 {
-			compatible = "zephyr,ipc-openamp-static-vrings";
-			memory-region = <&sram0_shared>;
-			mboxes = <&mbox 0>, <&mbox 1>;
-			mbox-names = "rx", "tx";
-			role = "remote";
-			status = "okay";
-		};
-
 		mbox: ipc: mbox@41012000 {
 			compatible = "nordic,mbox-nrf-ipc", "nordic,nrf-ipc";
 			reg = <0x41012000 0x1000>;
@@ -327,6 +318,18 @@
 			label = "GPIO_1";
 			status = "disabled";
 			port = <1>;
+		};
+	};
+
+	/* Default IPC description */
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram0_shared>;
+			mboxes = <&mbox 0>, <&mbox 1>;
+			mbox-names = "rx", "tx";
+			role = "remote";
+			status = "okay";
 		};
 	};
 };

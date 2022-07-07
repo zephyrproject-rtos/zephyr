@@ -20,7 +20,7 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`adc_api`
      - Stable
      - 1.0
-     - 2.6
+     - 3.1
 
    * - :ref:`audio_codec_api`
      - Experimental
@@ -35,12 +35,12 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`bluetooth_api`
      - Stable
      - 1.0
-     - 2.4
+     - 3.1
 
    * - :ref:`clock_control_api`
      - Stable
      - 1.0
-     - 2.6
+     - 3.1
 
    * - :ref:`coap_sock_interface`
      - Unstable
@@ -50,7 +50,7 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`can_api`
      - Unstable
      - 1.14
-     - 3.0
+     - 3.1
 
    * - :ref:`counter_api`
      - Unstable
@@ -60,7 +60,7 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`crypto_api`
      - Stable
      - 1.7
-     - 2.2
+     - 3.1
 
    * - :ref:`dac_api`
      - Experimental
@@ -69,28 +69,28 @@ current :ref:`stability level <api_lifecycle>`.
 
    * - :ref:`dai_api`
      - Experimental
-     - 3.2
-     - 3.2
+     - 3.1
+     - 3.1
 
    * - :ref:`dma_api`
      - Stable
      - 1.5
-     - 2.6
+     - 3.1
 
    * - :ref:`device_model_api`
      - Stable
      - 1.0
-     - 2.4
+     - 3.1
 
    * - :ref:`devicetree_api`
      - Stable
      - 2.2
-     - 2.6
+     - 3.1
 
    * - :ref:`disk_access_api`
      - Stable
      - 1.6
-     - 2.0
+     - 3.1
 
    * - :ref:`display_api`
      - Unstable
@@ -105,7 +105,7 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`edac_api`
      - Experimental
      - 2.5
-     - 2.5
+     - 3.1
 
    * - :ref:`eeprom_api`
      - Stable
@@ -125,7 +125,7 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`flash_api`
      - Stable
      - 1.2
-     - 2.6
+     - 3.1
 
    * - :ref:`fcb_api`
      - Stable
@@ -145,12 +145,12 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`gpio_api`
      - Stable
      - 1.0
-     - 2.6
+     - 3.1
 
    * - :ref:`hwinfo_api`
      - Stable
      - 1.14
-     - 2.3
+     - 3.1
 
    * - :ref:`i2c_eeprom_slave_api`
      - Stable
@@ -160,7 +160,7 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`i2c_api`
      - Stable
      - 1.0
-     - 2.6
+     - 3.1
 
    * - :ref:`i2c-slave-api`
      - Experimental
@@ -175,7 +175,7 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`ipm_api`
      - Stable
      - 1.0
-     - 2.4
+     - 3.1
 
    * - :ref:`kscan_api`
      - Stable
@@ -185,7 +185,7 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`kernel_api`
      - Stable
      - 1.0
-     - 2.6
+     - 3.1
 
    * - :ref:`led_api`
      - Stable
@@ -195,12 +195,12 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`lwm2m_interface`
      - Unstable
      - 1.9
-     - 2.5
+     - 3.1
 
    * - :ref:`logging_api`
      - Stable
      - 1.13
-     - 1.14
+     - 3.1
 
    * - :ref:`lora_api`
      - Experimental
@@ -210,17 +210,22 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`lorawan_api`
      - Experimental
      - 2.5
-     - 2.5
+     - 3.1
 
    * - :ref:`mbox_api`
      - Experimental
      - 1.0
-     - 3.0
+     - 3.1
 
    * - :ref:`mqtt_socket_interface`
      - Unstable
      - 1.14
      - 2.4
+
+   * - :ref:`mipi_dsi_api`
+     - Experimental
+     - 3.1
+     - 3.1
 
    * - :ref:`misc_api`
      - Stable
@@ -230,12 +235,12 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`networking_api`
      - Stable
      - 1.0
-     - 2.4
+     - 3.1
 
    * - :ref:`nvs_api`
      - Stable
      - 1.12
-     - 1.14
+     - 3.1
 
    * - :ref:`peci_api`
      - Stable
@@ -250,12 +255,12 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`pwm_api`
      - Stable
      - 1.0
-     - 2.6
+     - 3.1
 
    * - :ref:`pinctrl_api`
      - Experimental
      - 3.0
-     - 3.0
+     - 3.1
 
    * - :ref:`pinmux_api`
      - Stable
@@ -265,7 +270,7 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`pm_api`
      - Experimental
      - 1.2
-     - 2.2
+     - 3.1
 
    * - :ref:`random_api`
      - Stable
@@ -285,7 +290,7 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`spi_api`
      - Stable
      - 1.0
-     - 2.6
+     - 3.1
 
    * - :ref:`sensor_api`
      - Stable
@@ -300,12 +305,17 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`shell_api`
      - Stable
      - 1.14
-     - 2.4
+     - 3.1
 
    * - :ref:`stream_flash`
      - Experimental
      - 2.3
      - 2.3
+
+   * - :ref:`sdhc_api`
+     - Experimental
+     - 3.1
+     - 3.1
 
    * - :ref:`task_wdt_api`
      - Experimental
@@ -320,7 +330,7 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`uart_api`
      - Stable
      - 1.0
-     - 2.6
+     - 3.1
 
    * - :ref:`UART async <uart_api>`
      - Unstable
@@ -330,7 +340,7 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`usb_api`
      - Stable
      - 1.5
-     - 2.4
+     - 3.1
 
    * - :ref:`usermode_api`
      - Stable
@@ -340,7 +350,7 @@ current :ref:`stability level <api_lifecycle>`.
    * - :ref:`util_api`
      - Experimental
      - 2.4
-     - 2.4
+     - 3.1
 
    * - :ref:`video_api`
      - Stable

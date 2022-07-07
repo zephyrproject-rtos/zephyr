@@ -4,31 +4,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <kernel.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include <offsets_short.h>
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 #include "asm_macros.inc"
 
 /* Convenience macros for loading/storing register states. */
 
 #define DO_CALLEE_SAVED(op, reg) \
-	op ra, _thread_offset_to_ra(reg)	;\
-	op tp, _thread_offset_to_tp(reg)	;\
-	op s0, _thread_offset_to_s0(reg)	;\
-	op s1, _thread_offset_to_s1(reg)	;\
-	op s2, _thread_offset_to_s2(reg)	;\
-	op s3, _thread_offset_to_s3(reg)	;\
-	op s4, _thread_offset_to_s4(reg)	;\
-	op s5, _thread_offset_to_s5(reg)	;\
-	op s6, _thread_offset_to_s6(reg)	;\
-	op s7, _thread_offset_to_s7(reg)	;\
-	op s8, _thread_offset_to_s8(reg)	;\
-	op s9, _thread_offset_to_s9(reg)	;\
-	op s10, _thread_offset_to_s10(reg)	;\
-	op s11, _thread_offset_to_s11(reg)
+	RV_E(	op ra, _thread_offset_to_ra(reg)	);\
+	RV_E(	op s0, _thread_offset_to_s0(reg)	);\
+	RV_E(	op s1, _thread_offset_to_s1(reg)	);\
+	RV_I(	op s2, _thread_offset_to_s2(reg)	);\
+	RV_I(	op s3, _thread_offset_to_s3(reg)	);\
+	RV_I(	op s4, _thread_offset_to_s4(reg)	);\
+	RV_I(	op s5, _thread_offset_to_s5(reg)	);\
+	RV_I(	op s6, _thread_offset_to_s6(reg)	);\
+	RV_I(	op s7, _thread_offset_to_s7(reg)	);\
+	RV_I(	op s8, _thread_offset_to_s8(reg)	);\
+	RV_I(	op s9, _thread_offset_to_s9(reg)	);\
+	RV_I(	op s10, _thread_offset_to_s10(reg)	);\
+	RV_I(	op s11, _thread_offset_to_s11(reg)	)
 
 #define DO_FP_CALLEE_SAVED(op, reg) \
 	op fs0, _thread_offset_to_fs0(reg)	;\
@@ -75,19 +74,30 @@ skip_store_fp_callee_saved:
 	/* Get the new thread's stack pointer */
 	lr sp, _thread_offset_to_sp(a0)
 
-#ifdef CONFIG_PMP_STACK_GUARD
-	/* Preserve a0 across following call. s0 is not yet restored. */
-	mv s0, a0
-	call z_riscv_configure_stack_guard
-	mv a0, s0
+#if defined(CONFIG_THREAD_LOCAL_STORAGE)
+	/* Get the new thread's tls pointer */
+	lr tp, _thread_offset_to_tls(a0)
 #endif
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_PMP_STACK_GUARD)
+	/*
+	 * Stack guard has priority over user space for PMP usage.
+	 * Preserve a0 across following call. s0 is not yet restored.
+	 */
+	mv s0, a0
+	call z_riscv_pmp_stackguard_enable
+	mv a0, s0
+#elif defined(CONFIG_USERSPACE)
+	/*
+	 * When stackguard is not enabled, we need to configure the PMP only
+	 * at context switch time as the PMP is not in effect while inm-mode.
+	 * (it is done on every exception return otherwise).
+	 */
 	lb t0, _thread_offset_to_user_options(a0)
 	andi t0, t0, K_USER
 	beqz t0, not_user_task
 	mv s0, a0
-	call z_riscv_configure_user_allowed_stack
+	call z_riscv_pmp_usermode_enable
 	mv a0, s0
 not_user_task:
 #endif
@@ -123,4 +133,5 @@ no_fp:
 1:
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
+	/* Return to arch_switch() or _irq_wrapper() */
 	ret

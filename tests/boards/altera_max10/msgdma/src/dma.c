@@ -7,8 +7,8 @@
 #include <ztest.h>
 #include <soc.h>
 #include <kernel_arch_func.h>
-#include <device.h>
-#include <drivers/dma.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/dma.h>
 
 #define DMA_BUFF_SIZE		1024
 

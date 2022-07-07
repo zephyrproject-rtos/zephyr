@@ -6,8 +6,8 @@
 
 #include <stdio.h>
 #include <fcntl.h>
-#include <posix/unistd.h>
-#include <posix/dirent.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/dirent.h>
 #include "test_fs.h"
 
 extern int test_file_write(void);
@@ -54,6 +54,7 @@ static int test_mkdir(void)
 static int test_lsdir(const char *path)
 {
 	DIR *dirp;
+	int res = 0;
 	struct dirent *entry;
 
 	TC_PRINT("\nreaddir test:\n");
@@ -67,21 +68,37 @@ static int test_lsdir(const char *path)
 
 	TC_PRINT("\nListing dir %s:\n", path);
 	/* Verify fs_readdir() */
-	entry = readdir(dirp);
+	errno = 0;
+	while ((entry = readdir(dirp)) != NULL) {
+		if (entry->d_name[0] == 0) {
+			res = -EIO;
+			break;
+		}
 
-	/* entry.name[0] == 0 means end-of-dir */
-	if (entry == NULL) {
-		closedir(dirp);
-		return -EIO;
-	} else {
 		TC_PRINT("[FILE] %s\n", entry->d_name);
+	}
+
+	if (errno) {
+		res = -EIO;
 	}
 
 	/* Verify fs_closedir() */
 	closedir(dirp);
 
-	return 0;
+	return res;
 }
+
+static void after_fn(void *unused)
+{
+	ARG_UNUSED(unused);
+
+	unlink(TEST_DIR_FILE);
+	unlink(TEST_DIR);
+}
+
+/* FIXME: restructure tests as per #46897 */
+ZTEST_SUITE(posix_fs_dir_test, NULL, test_mount, NULL, after_fn,
+	    test_unmount);
 
 /**
  * @brief Test for POSIX mkdir API
@@ -90,8 +107,9 @@ static int test_lsdir(const char *path)
  * mkdir API and open a new file under the directory and
  * writes some data into the file.
  */
-void test_fs_mkdir(void)
+ZTEST(posix_fs_dir_test, test_fs_mkdir)
 {
+	/* FIXME: restructure tests as per #46897 */
 	zassert_true(test_mkdir() == TC_PASS, NULL);
 }
 
@@ -102,7 +120,9 @@ void test_fs_mkdir(void)
  * opendir API, reads the contents of the directory through
  * readdir API and closes it through closedir API.
  */
-void test_fs_readdir(void)
+ZTEST(posix_fs_dir_test, test_fs_readdir)
 {
+	/* FIXME: restructure tests as per #46897 */
+	zassert_true(test_mkdir() == TC_PASS, NULL);
 	zassert_true(test_lsdir(TEST_DIR) == TC_PASS, NULL);
 }

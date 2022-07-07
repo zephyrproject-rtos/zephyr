@@ -58,7 +58,7 @@
 
 #include "test_ecc_utils.h"
 #include <tinycrypt/constants.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #include <stdio.h>
 #include <stdlib.h>

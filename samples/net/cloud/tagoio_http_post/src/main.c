@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tagoio_http_post, CONFIG_TAGOIO_HTTP_POST_LOG_LEVEL);
 
-#include <zephyr.h>
-#include <net/socket.h>
-#include <net/http_client.h>
-#include <random/rand32.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/http_client.h>
+#include <zephyr/random/rand32.h>
 #include <stdio.h>
 
 #include "wifi.h"

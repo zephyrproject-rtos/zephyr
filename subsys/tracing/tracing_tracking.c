@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <spinlock.h>
-#include <sys/slist.h>
-#include <tracing/tracking.h>
+#include <zephyr/init.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/tracing/tracking.h>
 
 struct k_timer *_track_list_k_timer;
 struct k_spinlock _track_list_k_timer_lock;

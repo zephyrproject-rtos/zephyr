@@ -6,9 +6,9 @@
 
 #define DT_DRV_COMPAT st_lis2dh
 
-#include <sys/util.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 
 #define START_TRIG_INT1			0
 #define START_TRIG_INT2			1

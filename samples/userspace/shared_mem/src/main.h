@@ -7,17 +7,17 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <kernel_structs.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/kernel_structs.h>
 #include <string.h>
 #include <stdlib.h>
 
-#include <app_memory/app_memdomain.h>
-#include <sys/util.h>
+#include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/sys/util.h>
 
 #if defined(CONFIG_ARC)
-#include <arch/arc/v2/mpu/arc_core_mpu.h>
+#include <zephyr/arch/arc/v2/mpu/arc_core_mpu.h>
 #endif
 
 void enc(void);

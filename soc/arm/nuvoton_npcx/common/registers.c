@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
 
 /* CDCG register structure check */
@@ -64,6 +64,7 @@ NPCX_REG_OFFSET_CHECK(twd_reg, WDCP, 0x010);
 /* ESPI register structure check */
 NPCX_REG_SIZE_CHECK(espi_reg, 0x500);
 NPCX_REG_OFFSET_CHECK(espi_reg, FLASHCFG, 0x034);
+NPCX_REG_OFFSET_CHECK(espi_reg, NPCX_ONLY_ESPI_REG1, 0x0f0);
 NPCX_REG_OFFSET_CHECK(espi_reg, VWEVMS, 0x140);
 NPCX_REG_OFFSET_CHECK(espi_reg, VWCTL, 0x2fc);
 NPCX_REG_OFFSET_CHECK(espi_reg, OOBTXBUF, 0x380);

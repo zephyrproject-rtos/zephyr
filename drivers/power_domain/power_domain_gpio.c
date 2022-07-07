@@ -7,13 +7,13 @@
 
 #define DT_DRV_COMPAT power_domain_gpio
 
-#include <kernel.h>
-#include <drivers/gpio.h>
-#include <pm/device.h>
-#include <pm/device_runtime.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
-#include <logging/log.h>
-LOG_MODULE_REGISTER(power_domain_gpio, LOG_LEVEL_INF);
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(power_domain_gpio, CONFIG_POWER_DOMAIN_LOG_LEVEL);
 
 struct pd_gpio_config {
 	struct gpio_dt_spec enable;
@@ -22,28 +22,32 @@ struct pd_gpio_config {
 };
 
 struct pd_gpio_data {
-	k_timeout_t last_boot;
+	k_timeout_t next_boot;
 };
-
-const char *actions[] = {
-	[PM_DEVICE_ACTION_RESUME] = "RESUME",
-	[PM_DEVICE_ACTION_SUSPEND] = "SUSPEND",
-	[PM_DEVICE_ACTION_TURN_ON] = "TURN ON",
-	[PM_DEVICE_ACTION_TURN_OFF] = "TURN OFF"
-};
-
 
 static int pd_gpio_pm_action(const struct device *dev,
 			     enum pm_device_action action)
 {
 	const struct pd_gpio_config *cfg = dev->config;
+	struct pd_gpio_data *data = dev->data;
+	int64_t next_boot_ticks;
 	int rc = 0;
+
+	/* Validate that blocking API's can be used */
+	if (!k_can_yield()) {
+		LOG_ERR("Blocking actions cannot run in this context");
+		return -ENOTSUP;
+	}
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		/* Wait until we can boot again */
+		k_sleep(data->next_boot);
 		/* Switch power on */
 		gpio_pin_set_dt(&cfg->enable, 1);
-		LOG_DBG("%s is now ON", dev->name);
+		LOG_INF("%s is now ON", dev->name);
+		/* Wait for domain to come up */
+		k_sleep(K_USEC(cfg->startup_delay_us));
 		/* Notify supported devices they are now powered */
 		pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_ON, NULL);
 		break;
@@ -52,7 +56,10 @@ static int pd_gpio_pm_action(const struct device *dev,
 		pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_OFF, NULL);
 		/* Switch power off */
 		gpio_pin_set_dt(&cfg->enable, 0);
-		LOG_DBG("%s is now OFF and powered", dev->name);
+		LOG_INF("%s is now OFF", dev->name);
+		/* Store next time we can boot */
+		next_boot_ticks = k_uptime_ticks() + k_us_to_ticks_ceil32(cfg->off_on_delay_us);
+		data->next_boot = K_TIMEOUT_ABS_TICKS(next_boot_ticks);
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
 		/* Actively control the enable pin now that the device is powered */
@@ -74,12 +81,15 @@ static int pd_gpio_pm_action(const struct device *dev,
 static int pd_gpio_init(const struct device *dev)
 {
 	const struct pd_gpio_config *cfg = dev->config;
+	struct pd_gpio_data *data = dev->data;
 	int rc;
 
 	if (!device_is_ready(cfg->enable.port)) {
 		LOG_ERR("GPIO port %s is not ready", cfg->enable.port->name);
 		return -ENODEV;
 	}
+	/* We can't know how long the domain has been off for before boot */
+	data->next_boot = K_TIMEOUT_ABS_US(cfg->off_on_delay_us);
 
 	if (pm_device_on_power_domain(dev)) {
 		/* Device is unpowered */

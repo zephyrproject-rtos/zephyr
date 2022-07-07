@@ -84,6 +84,8 @@
 		sw1 = &button2;
 		sw2 = &button3;
 		sw3 = &button4;
+		mcuboot-button0 = &button1;
+		mcuboot-led0 = &led1;
 	};
 };
 
@@ -190,11 +192,15 @@
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
 	sdhc@0 {
-		compatible = "zephyr,mmc-spi-slot";
 		reg = <0>;
+		compatible = "zephyr,sdhc-spi-slot";
 		status = "okay";
-		label = "SDHC";
+		label = "SDHC_0";
 		spi-max-frequency = <8000000>;
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
 	};
 };
 
@@ -332,7 +338,7 @@
 		/* 7MB */
 		lfs_partition: partition@100000 {
 			label = "lfs_storage";
-			reg = <0x00100000 0x000700000>;
+			reg = <0x00100000 0x00700000>;
 		};
 	};
 };

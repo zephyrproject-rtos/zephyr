@@ -161,8 +161,7 @@ config NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT
 	    used for TLS/DTLS session resumption.
 
 config NET_SOCKETS_OFFLOAD
-	bool "Offload Socket APIs [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Offload Socket APIs"
 	help
 	  Enables direct offloading of socket operations to dedicated TCP/IP
 	  hardware.
@@ -186,9 +185,8 @@ config NET_SOCKETS_OFFLOAD_PRIORITY
 	  means that native TLS will be used.
 
 config NET_SOCKETS_OFFLOAD_DISPATCHER
-	bool "Intermediate socket offloading layer [EXPERIMENTAL]"
+	bool "Intermediate socket offloading layer"
 	depends on NET_SOCKETS_OFFLOAD
-	select EXPERIMENTAL
 	help
 	  If enabled, an intermediate socket offloading layer is included
 	  (called socket dispatcher), allowing to select an offloaded network

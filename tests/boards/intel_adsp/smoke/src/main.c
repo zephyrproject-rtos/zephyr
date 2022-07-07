@@ -1,7 +1,7 @@
 /* Copyright (c) 2022 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include <stdlib.h>
 #include "tests.h"
@@ -31,7 +31,7 @@ void test_clock_calibrate(void)
 	/* Now do it again, but with a handler to catch the result */
 	cyc1 = k_cycle_get_32();
 	cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_TIMESTAMP, 0);
-	zassert_true(WAIT_FOR(host_dt != 0, 10000, k_msleep(1)), NULL);
+	AWAIT(host_dt != 0);
 	cavs_ipc_set_message_handler(CAVS_HOST_DEV, NULL, NULL);
 
 	hz = 1000000ULL * (cyc1 - cyc0) / host_dt;

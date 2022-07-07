@@ -9,6 +9,7 @@ void test_print_conn(struct ll_conn *conn);
 uint16_t test_ctx_buffers_cnt(void);
 void test_set_role(struct ll_conn *conn, uint8_t role);
 void test_setup(struct ll_conn *conn);
+void test_setup_idx(struct ll_conn *conn, uint8_t idx);
 
 void event_prepare(struct ll_conn *conn);
 void event_tx_ack(struct ll_conn *conn, struct node_tx *tx);

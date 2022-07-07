@@ -5,9 +5,9 @@
  */
 
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include "i2s_api_test.h"
 
 void test_main(void)

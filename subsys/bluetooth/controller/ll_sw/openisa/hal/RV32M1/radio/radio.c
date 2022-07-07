@@ -7,12 +7,12 @@
  */
 
 #include <string.h>
-#include <sys/printk.h>
-#include <sys/dlist.h>
-#include <sys/byteorder.h>
-#include <bluetooth/addr.h>
-#include <toolchain.h>
-#include <irq.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/irq.h>
 #include <errno.h>
 
 #include "util/mem.h"
@@ -138,12 +138,14 @@ static struct {
 	uint8_t empty_pdu_rxed;
 } ctx_ccm;
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 #define RPA_NO_IRK_MATCH 0xFF	/* No IRK match in AR table */
 
 static struct {
 	uint8_t ar_enable;
 	uint32_t irk_idx;
 } radio_ar_ctx = {0U, RPA_NO_IRK_MATCH};
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 static void tmp_cb(void *param)
 {
@@ -1466,6 +1468,7 @@ uint32_t radio_ccm_is_available(void)
 	return ctx_ccm.empty_pdu_rxed;
 }
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 void radio_ar_configure(uint32_t nirk, void *irk)
 {
 	status_t status;
@@ -1516,6 +1519,7 @@ uint32_t radio_ar_has_match(void)
 {
 	return (radio_ar_ctx.irk_idx != RPA_NO_IRK_MATCH);
 }
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 uint32_t radio_sleep(void)
 {

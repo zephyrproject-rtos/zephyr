@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <syscall_handler.h>
-#include <drivers/ptp_clock.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/drivers/ptp_clock.h>
 
 #ifdef CONFIG_USERSPACE
 int z_vrfy_ptp_clock_get(const struct device *dev,

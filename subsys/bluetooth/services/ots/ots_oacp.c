@@ -8,17 +8,17 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/ots.h>
 #include "ots_internal.h"
 #include "ots_dir_list_internal.h"
 #include "ots_obj_manager_internal.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 
@@ -62,7 +62,7 @@ static enum bt_gatt_ots_oacp_res_code oacp_create_proc_validate(
 
 	bt_uuid_to_str(&param.type.uuid, str, BT_UUID_STR_LEN);
 	LOG_DBG("Validating Create procedure with size: 0x%08X and "
-		"type: %s", param.size, log_strdup(str));
+		"type: %s", param.size, str);
 
 	if (!BT_OTS_OACP_GET_FEAT_CREATE(ots->features.oacp)) {
 		LOG_DBG("Create Procedure is not supported.");

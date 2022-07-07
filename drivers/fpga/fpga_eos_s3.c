@@ -6,8 +6,8 @@
 
 #include <errno.h>
 #include <string.h>
-#include <device.h>
-#include <drivers/fpga.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/fpga.h>
 #include "fpga_eos_s3.h"
 
 void eos_s3_fpga_enable_clk(void)

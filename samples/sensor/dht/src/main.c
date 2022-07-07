@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 #include <stdio.h>
 
 static const char *now_str(void)
@@ -32,11 +32,10 @@ static const char *now_str(void)
 
 void main(void)
 {
-	const char *const label = DT_LABEL(DT_INST(0, aosong_dht));
-	const struct device *dht22 = device_get_binding(label);
+	const struct device *dht22 = DEVICE_DT_GET_ONE(aosong_dht);
 
-	if (!dht22) {
-		printf("Failed to find sensor %s\n", label);
+	if (!device_is_ready(dht22)) {
+		printf("Device %s is not ready\n", dht22->name);
 		return;
 	}
 

@@ -18,9 +18,9 @@
  */
 
 #include <stdbool.h>
-#include <net/buf.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/hci_vs.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/device.h>
 
 #ifdef __cplusplus

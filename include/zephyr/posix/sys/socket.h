@@ -7,7 +7,7 @@
 #define ZEPHYR_INCLUDE_POSIX_SYS_SOCKET_H_
 
 #include <sys/types.h>
-#include <net/socket.h>
+#include <zephyr/net/socket.h>
 
 #ifdef __cplusplus
 extern "C" {

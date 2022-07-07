@@ -12,9 +12,9 @@
  * processor architecture.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <arch/x86/mmustructs.h>
+#include <zephyr/arch/x86/mmustructs.h>
 #include <kswap.h>
 #include <x86_mmu.h>
 

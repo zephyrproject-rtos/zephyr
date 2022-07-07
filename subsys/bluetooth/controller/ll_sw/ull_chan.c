@@ -8,8 +8,8 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <toolchain.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/util.h>
 
 #include "util/util.h"
 #include "util/memq.h"

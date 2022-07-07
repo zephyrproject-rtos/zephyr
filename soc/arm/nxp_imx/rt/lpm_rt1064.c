@@ -7,9 +7,9 @@
  * to the flexspi modules must be linked to RAM, or within this file
  */
 
-#include <init.h>
+#include <zephyr/init.h>
 #include <power_rt10xx.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include "clock_config.h"
 
 

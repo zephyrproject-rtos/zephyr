@@ -10,7 +10,7 @@
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STRING_H_
 
 #include <stddef.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {

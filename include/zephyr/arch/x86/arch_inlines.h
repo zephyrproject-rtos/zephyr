@@ -12,8 +12,8 @@
 
 #if defined(CONFIG_X86_64)
 
-#include <arch/x86/intel64/thread.h>
-#include <kernel_structs.h>
+#include <zephyr/arch/x86/intel64/thread.h>
+#include <zephyr/kernel_structs.h>
 
 static inline struct _cpu *arch_curr_cpu(void)
 {
@@ -24,6 +24,15 @@ static inline struct _cpu *arch_curr_cpu(void)
 			 : "i" (offsetof(x86_tss64_t, cpu)));
 
 	return cpu;
+}
+
+static ALWAYS_INLINE uint32_t arch_proc_id(void)
+{
+	/*
+	 * Placeholder implementation to be replaced with an architecture
+	 * specific call to get processor ID
+	 */
+	return arch_curr_cpu()->id;
 }
 
 #endif /* CONFIG_X86_64 */

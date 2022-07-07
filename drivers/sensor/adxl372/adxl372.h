@@ -8,11 +8,11 @@
 #define ZEPHYR_DRIVERS_SENSOR_ADXL372_ADXL372_H_
 
 #include <zephyr/types.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
-#include <drivers/i2c.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/util.h>
 
 /*
  * ADXL372 registers definition

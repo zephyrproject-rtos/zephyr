@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_TRACING_TRACING_FORMAT_H
 #define ZEPHYR_INCLUDE_TRACING_TRACING_FORMAT_H
 
-#include <toolchain/common.h>
+#include <zephyr/toolchain/common.h>
 
 #ifdef __cplusplus
 extern "C" {

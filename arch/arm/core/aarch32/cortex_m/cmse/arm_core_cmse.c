@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <aarch32/cortex_m/cmse.h>
 
 int arm_cmse_mpu_region_get(uint32_t addr)

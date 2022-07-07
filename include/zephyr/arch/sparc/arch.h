@@ -14,14 +14,14 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_SPARC_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_SPARC_ARCH_H_
 
-#include <arch/sparc/thread.h>
-#include <arch/sparc/sparc.h>
-#include <arch/common/sys_bitops.h>
-#include <arch/common/sys_io.h>
-#include <arch/common/ffs.h>
+#include <zephyr/arch/sparc/thread.h>
+#include <zephyr/arch/sparc/sparc.h>
+#include <zephyr/arch/common/sys_bitops.h>
+#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/arch/common/ffs.h>
 
-#include <irq.h>
-#include <sw_isr_table.h>
+#include <zephyr/irq.h>
+#include <zephyr/sw_isr_table.h>
 #include <soc.h>
 #include <zephyr/devicetree.h>
 
@@ -37,7 +37,7 @@
 #define SPARC_SW_TRAP_EXCEPT            0x0F
 
 #ifndef _ASMLANGUAGE
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {

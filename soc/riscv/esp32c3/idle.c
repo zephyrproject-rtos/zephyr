@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <irq.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/irq.h>
+#include <zephyr/arch/cpu.h>
 
 /**
  * @brief Power save idle routine

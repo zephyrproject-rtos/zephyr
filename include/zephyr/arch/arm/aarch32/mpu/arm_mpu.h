@@ -11,11 +11,11 @@
 	defined(CONFIG_CPU_CORTEX_M4) || \
 	defined(CONFIG_CPU_CORTEX_M7) || \
 	defined(CONFIG_CPU_AARCH32_CORTEX_R)
-#include <arch/arm/aarch32/mpu/arm_mpu_v7m.h>
+#include <zephyr/arch/arm/aarch32/mpu/arm_mpu_v7m.h>
 #elif defined(CONFIG_CPU_CORTEX_M23) || \
 	defined(CONFIG_CPU_CORTEX_M33) || \
 	defined(CONFIG_CPU_CORTEX_M55)
-#include <arch/arm/aarch32/mpu/arm_mpu_v8m.h>
+#include <zephyr/arch/arm/aarch32/mpu/arm_mpu_v8m.h>
 #else
 #error "Unsupported ARM CPU"
 #endif

@@ -9,9 +9,9 @@
 
 #include <stdint.h>
 
-#include <device.h>
-#include <drivers/espi.h>
-#include <sys/slist.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {

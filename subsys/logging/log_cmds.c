@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-#include <logging/log_internal.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_internal.h>
 #include <string.h>
 
 typedef int (*log_backend_cmd_t)(const struct shell *shell,
@@ -362,48 +362,6 @@ static int cmd_log_backends_list(const struct shell *shell,
 	return 0;
 }
 
-static int cmd_log_strdup_utilization(const struct shell *shell,
-				      size_t argc, char **argv)
-{
-
-	/* Defines needed when string duplication is disabled (LOG2 or immediate
-	 * mode). In that case, this function is not compiled in.
-	 */
-	#ifndef CONFIG_LOG_STRDUP_BUF_COUNT
-	#define CONFIG_LOG_STRDUP_BUF_COUNT 0
-	#endif
-
-	#ifndef CONFIG_LOG_STRDUP_MAX_STRING
-	#define CONFIG_LOG_STRDUP_MAX_STRING 0
-	#endif
-
-	uint32_t cur_cnt = log_get_strdup_pool_current_utilization();
-	uint32_t buf_cnt = log_get_strdup_pool_utilization();
-	uint32_t buf_size = log_get_strdup_longest_string();
-	uint32_t percent = CONFIG_LOG_STRDUP_BUF_COUNT ?
-			buf_cnt * 100U / CONFIG_LOG_STRDUP_BUF_COUNT : 0U;
-
-	shell_print(shell, "Current utilization of the buffer pool: %d.",
-		    cur_cnt);
-
-	shell_print(shell,
-		"Maximal utilization of the buffer pool: %d / %d (%d %%).",
-		buf_cnt, CONFIG_LOG_STRDUP_BUF_COUNT, percent);
-	if (buf_cnt == CONFIG_LOG_STRDUP_BUF_COUNT) {
-		shell_warn(shell, "Buffer count too small.");
-	}
-
-	shell_print(shell,
-		"Longest duplicated string: %d, buffer capacity: %d.",
-		buf_size, CONFIG_LOG_STRDUP_MAX_STRING);
-	if (buf_size > CONFIG_LOG_STRDUP_MAX_STRING) {
-		shell_warn(shell, "Buffer size too small.");
-
-	}
-
-	return 0;
-}
-
 static int cmd_log_mem(const struct shell *sh, size_t argc, char **argv)
 {
 	uint32_t size;
@@ -477,9 +435,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(list_backends, NULL, "Lists logger backends.", cmd_log_backends_list, 1, 0),
 	SHELL_COND_CMD(CONFIG_SHELL_LOG_BACKEND, status, NULL, "Logger status",
 		       cmd_log_self_status),
-	SHELL_COND_CMD_ARG(CONFIG_LOG_STRDUP_POOL_PROFILING, strdup_utilization, NULL,
-			   "Get utilization of string duplicates pool", cmd_log_strdup_utilization,
-			   1, 0),
 	SHELL_COND_CMD(CONFIG_LOG_MODE_DEFERRED, mem, NULL, "Logger memory usage",
 		       cmd_log_mem),
 	SHELL_SUBCMD_SET_END);

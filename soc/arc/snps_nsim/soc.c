@@ -12,8 +12,8 @@
  *
  */
 
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include "soc.h"
 
 #ifdef CONFIG_SMP

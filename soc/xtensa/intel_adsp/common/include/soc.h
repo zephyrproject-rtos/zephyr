@@ -8,7 +8,7 @@
 
 #include <string.h>
 #include <errno.h>
-#include <arch/xtensa/cache.h>
+#include <zephyr/arch/xtensa/cache.h>
 
 /* macros related to interrupt handling */
 #define XTENSA_IRQ_NUM_SHIFT			0
@@ -43,15 +43,6 @@
 
 #define IOAPIC_EDGE				0
 #define IOAPIC_HIGH				0
-
-/* I2S */
-#define I2S_CAVS_IRQ(i2s_num)			\
-	SOC_AGGREGATE_IRQ(0, (i2s_num), CAVS_L2_AGG_INT_LEVEL5)
-
-#define I2S0_CAVS_IRQ				I2S_CAVS_IRQ(0)
-#define I2S1_CAVS_IRQ				I2S_CAVS_IRQ(1)
-#define I2S2_CAVS_IRQ				I2S_CAVS_IRQ(2)
-#define I2S3_CAVS_IRQ				I2S_CAVS_IRQ(3)
 
 #define SSP_MN_DIV_SIZE				(8)
 #define SSP_MN_DIV_BASE(x)			\

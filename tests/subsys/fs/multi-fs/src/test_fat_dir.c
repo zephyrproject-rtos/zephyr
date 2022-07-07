@@ -5,7 +5,7 @@
  */
 
 #include <stdio.h>
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 #include "test_common.h"
 #include "test_fat.h"
 #include "test_fat_priv.h"

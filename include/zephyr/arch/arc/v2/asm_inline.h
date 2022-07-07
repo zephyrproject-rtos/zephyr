@@ -15,7 +15,7 @@
  */
 
 #if defined(__GNUC__)
-#include <arch/arc/v2/asm_inline_gcc.h>
+#include <zephyr/arch/arc/v2/asm_inline_gcc.h>
 #else
 #erro "you need to provide an asm_inline.h for your compiler"
 #endif

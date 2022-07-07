@@ -10,7 +10,7 @@
 #define MS_TO_US(ms)  (ms * USEC_PER_MSEC)
 
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 static inline uint32_t get_available_nvic_line(uint32_t initial_offset)
 {
@@ -71,8 +71,8 @@ static inline void trigger_irq(int irq)
 }
 
 #elif defined(CONFIG_GIC)
-#include <drivers/interrupt_controller/gic.h>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 static inline void trigger_irq(int irq)
 {
@@ -103,14 +103,12 @@ static inline void trigger_irq(int irq)
 #elif defined(CONFIG_X86)
 
 #ifdef CONFIG_X2APIC
-#include <drivers/interrupt_controller/loapic.h>
+#include <zephyr/drivers/interrupt_controller/loapic.h>
 #define VECTOR_MASK 0xFF
 #else
-#include <sys/arch_interface.h>
+#include <zephyr/sys/arch_interface.h>
 #define LOAPIC_ICR_IPI_TEST  0x00004000U
 #endif
-
-#define TRIGGER_IRQ_INT(vector) __asm__ volatile("int %0" : : "i" (vector) : "memory")
 
 /*
  * We can emulate the interrupt by sending the IPI to
@@ -133,6 +131,8 @@ static inline void trigger_irq(int irq)
  */
 static inline void trigger_irq(int vector)
 {
+	uint8_t i;
+
 #ifdef CONFIG_X2APIC
 	x86_write_x2apic(LOAPIC_SELF_IPI, ((VECTOR_MASK & vector)));
 #else
@@ -144,6 +144,14 @@ static inline void trigger_irq(int vector)
 #endif
 	z_loapic_ipi(cpu_id, LOAPIC_ICR_IPI_TEST, vector);
 #endif /* CONFIG_X2APIC */
+
+	/*
+	 * add some nop operations here to cost some cycles to make sure
+	 * the IPI interrupt is handled before do our check.
+	 */
+	for (i = 0; i < 10; i++) {
+		arch_nop();
+	}
 }
 
 #elif defined(CONFIG_ARCH_POSIX)

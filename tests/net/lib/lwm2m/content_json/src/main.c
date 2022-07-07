@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #include "lwm2m_engine.h"
@@ -500,8 +500,6 @@ static void test_get_s32(void)
 		ret = do_write_op_json(&test_msg);
 		zassert_true(ret >= 0, "Error reported");
 		zassert_equal(test_s32, expected_value[i], "Invalid value parsed");
-		zassert_equal(test_msg.in.offset, strlen(payload[i]) + 1,
-			      "Invalid packet offset");
 	}
 }
 
@@ -512,7 +510,7 @@ static void test_get_s32_nodata(void)
 	test_msg.path.res_id = TEST_RES_S32;
 
 	ret = do_write_op_json(&test_msg);
-	zassert_equal(ret, -ENODATA, "Invalid error code returned");
+	zassert_equal(ret, -EINVAL, "Invalid error code returned");
 }
 
 static void test_get_s64(void)
@@ -534,8 +532,6 @@ static void test_get_s64(void)
 		ret = do_write_op_json(&test_msg);
 		zassert_true(ret >= 0, "Error reported");
 		zassert_equal(test_s64, expected_value[i], "Invalid value parsed");
-		zassert_equal(test_msg.in.offset, strlen(payload[i]) + 1,
-			      "Invalid packet offset");
 	}
 }
 
@@ -546,7 +542,7 @@ static void test_get_s64_nodata(void)
 	test_msg.path.res_id = TEST_RES_S64;
 
 	ret = do_write_op_json(&test_msg);
-	zassert_equal(ret, -ENODATA, "Invalid error code returned");
+	zassert_equal(ret, -EINVAL, "Invalid error code returned");
 }
 
 static void test_get_string(void)
@@ -564,8 +560,6 @@ static void test_get_string(void)
 	zassert_true(ret >= 0, "Error reported");
 	zassert_mem_equal(test_string, expected_value, strlen(expected_value),
 			  "Invalid value parsed");
-	zassert_equal(test_msg.in.offset, strlen(payload) + 1,
-		      "Invalid packet offset");
 }
 
 static void test_get_string_nodata(void)
@@ -575,7 +569,7 @@ static void test_get_string_nodata(void)
 	test_msg.path.res_id = TEST_RES_STRING;
 
 	ret = do_write_op_json(&test_msg);
-	zassert_equal(ret, -ENODATA, "Invalid error code returned");
+	zassert_equal(ret, -EINVAL, "Invalid error code returned");
 }
 
 #define DOUBLE_CMP_EPSILON 0.000000001
@@ -607,8 +601,6 @@ static void test_get_float(void)
 		zassert_true((test_float > expected_value[i] - DOUBLE_CMP_EPSILON) &&
 			     (test_float < expected_value[i] + DOUBLE_CMP_EPSILON),
 			     "Invalid value parsed");
-		zassert_equal(test_msg.in.offset, strlen(payload[i]) + 1,
-			      "Invalid packet offset");
 	}
 }
 
@@ -619,7 +611,7 @@ static void test_get_float_nodata(void)
 	test_msg.path.res_id = TEST_RES_FLOAT;
 
 	ret = do_write_op_json(&test_msg);
-	zassert_equal(ret, -ENODATA, "Invalid error code returned");
+	zassert_equal(ret, -EINVAL, "Invalid error code returned");
 }
 
 static void test_get_bool(void)
@@ -640,8 +632,6 @@ static void test_get_bool(void)
 		ret = do_write_op_json(&test_msg);
 		zassert_true(ret >= 0, "Error reported");
 		zassert_equal(test_bool, expected_value[i], "Invalid value parsed");
-		zassert_equal(test_msg.in.offset, strlen(payload[i]) + 1,
-			      "Invalid packet offset");
 	}
 }
 
@@ -652,7 +642,7 @@ static void test_get_bool_nodata(void)
 	test_msg.path.res_id = TEST_RES_BOOL;
 
 	ret = do_write_op_json(&test_msg);
-	zassert_equal(ret, -ENODATA, "Invalid error code returned");
+	zassert_equal(ret, -EINVAL, "Invalid error code returned");
 }
 
 static void test_get_objlnk(void)
@@ -677,8 +667,6 @@ static void test_get_objlnk(void)
 		zassert_true(ret >= 0, "Error reported");
 		zassert_mem_equal(&test_objlnk, &expected_value[i],
 				  sizeof(test_objlnk), "Invalid value parsed");
-		zassert_equal(test_msg.in.offset, strlen(payload[i]) + 1,
-			      "Invalid packet offset");
 	}
 }
 
@@ -689,7 +677,7 @@ static void test_get_objlnk_nodata(void)
 	test_msg.path.res_id = TEST_RES_OBJLNK;
 
 	ret = do_write_op_json(&test_msg);
-	zassert_equal(ret, -ENODATA, "Invalid error code returned");
+	zassert_equal(ret, -EINVAL, "Invalid error code returned");
 }
 
 void test_main(void)

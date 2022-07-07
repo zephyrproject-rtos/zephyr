@@ -6,9 +6,9 @@
 
 #ifdef CONFIG_BT_BASS_CLIENT
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/audio/bass.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/audio/bass.h>
 #include "../../../../../subsys/bluetooth/host/hci_core.h"
 #include "common.h"
 
@@ -65,7 +65,7 @@ static void bass_client_scan_cb(const struct bt_le_scan_recv_info *info,
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	printk("Scan Recv: [DEVICE]: %s, broadcast_id %u, "
-	       "interval (ms) %u), SID 0x%x, RSSI %i",
+	       "interval (ms) %u), SID 0x%x, RSSI %i\n",
 	       le_addr, broadcast_id, info->interval * 5 / 4,
 	       info->sid, info->rssi);
 

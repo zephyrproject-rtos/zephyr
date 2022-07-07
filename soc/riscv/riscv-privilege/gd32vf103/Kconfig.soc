@@ -9,5 +9,9 @@ choice
 
 config SOC_GD32VF103
 	bool "GD32VF103"
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
 
 endchoice

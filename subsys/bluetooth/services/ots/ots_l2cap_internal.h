@@ -12,10 +12,10 @@ extern "C" {
 #endif
 
 #include <zephyr/types.h>
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 #include <sys/types.h>
 
-#include <bluetooth/l2cap.h>
+#include <zephyr/bluetooth/l2cap.h>
 
 struct bt_gatt_ots_l2cap_tx {
 	uint8_t *data;

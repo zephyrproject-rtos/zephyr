@@ -5,21 +5,21 @@
  */
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 #include <string.h>
 #include <stdio.h>
 #include <ztest.h>
 
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 
-#define SPI_DRV_NAME	CONFIG_SPI_LOOPBACK_DRV_NAME
-#define SPI_SLAVE	CONFIG_SPI_LOOPBACK_SLAVE_NUMBER
-#define SLOW_FREQ	CONFIG_SPI_LOOPBACK_SLOW_FREQ
-#define FAST_FREQ	CONFIG_SPI_LOOPBACK_FAST_FREQ
+#define SPI_DRV_NAME		CONFIG_SPI_LOOPBACK_DRV_NAME
+#define SPI_SLAVE_NUMBER	CONFIG_SPI_LOOPBACK_SLAVE_NUMBER
+#define SLOW_FREQ		CONFIG_SPI_LOOPBACK_SLOW_FREQ
+#define FAST_FREQ		CONFIG_SPI_LOOPBACK_FAST_FREQ
 
 #if defined(CONFIG_SPI_LOOPBACK_CS_GPIO)
 #define CS_CTRL_GPIO_DRV_NAME CONFIG_SPI_LOOPBACK_CS_CTRL_GPIO_DRV_NAME
@@ -43,10 +43,10 @@ struct spi_cs_control spi_cs = {
 #define BUF2_SIZE 36
 
 #if CONFIG_NOCACHE_MEMORY
-static const char tx_data[] = "0123456789abcdef\0";
+static const char tx_data[BUF_SIZE] = "0123456789abcdef\0";
 static __aligned(32) char buffer_tx[BUF_SIZE] __used __attribute__((__section__(".nocache")));
 static __aligned(32) char buffer_rx[BUF_SIZE] __used __attribute__((__section__(".nocache")));
-static const char tx2_data[] = "Thequickbrownfoxjumpsoverthelazydog\0";
+static const char tx2_data[BUF2_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
 static __aligned(32) char buffer2_tx[BUF2_SIZE] __used __attribute__((__section__(".nocache")));
 static __aligned(32) char buffer2_rx[BUF2_SIZE] __used __attribute__((__section__(".nocache")));
 #else
@@ -85,7 +85,7 @@ struct spi_config spi_cfg_slow = {
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
 #endif
 	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
-	.slave = SPI_SLAVE,
+	.slave = SPI_SLAVE_NUMBER,
 	.cs = SPI_CS,
 };
 
@@ -97,7 +97,7 @@ struct spi_config spi_cfg_fast = {
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
 #endif
 	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
-	.slave = SPI_SLAVE,
+	.slave = SPI_SLAVE_NUMBER,
 	.cs = SPI_CS,
 };
 

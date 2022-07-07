@@ -13,8 +13,8 @@
 #ifndef OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 #define OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 
-#include <devicetree.h>
-#include <toolchain.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/toolchain.h>
 
 /**
  * @def OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT
@@ -317,16 +317,6 @@
 #endif /* CONFIG_OPENTHREAD_CSL_MIN_RECEIVE_ON */
 
 /**
- * @def OPENTHREAD_CONFIG_PLATFORM_CSL_UNCERT
- *
- * The Uncertainty of the scheduling CSL of transmission by the parent, in ±10 us units.
- */
-
-#ifdef CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT
-#define OPENTHREAD_CONFIG_PLATFORM_CSL_UNCERT CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT
-#endif /* CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT */
-
-/**
  * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_SECURITY_ENABLE
  *
  * Set to 1 to enable software transmission security logic.
@@ -412,6 +402,16 @@
  */
 #ifdef CONFIG_OPENTHREAD_PLATFORM_KEY_REFERENCES_ENABLE
 #define OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_MAC_KEYS_EXPORTABLE_ENABLE
+ *
+ * Set to 1 if you want to make MAC keys exportable.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_MAC_KEYS_EXPORTABLE_ENABLE 1
 #endif
 
 #endif  /* OPENTHREAD_CORE_ZEPHYR_CONFIG_H_ */

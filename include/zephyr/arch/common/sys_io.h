@@ -12,9 +12,9 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <sys/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 
 #ifdef __cplusplus
 extern "C" {

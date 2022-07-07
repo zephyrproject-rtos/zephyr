@@ -8,16 +8,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 
 #include <errno.h>
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_stats.h>
-#include <net/net_context.h>
-#include <net/net_mgmt.h>
-#include <net/igmp.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_stats.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/igmp.h>
 #include "net_private.h"
 #include "connection.h"
 #include "ipv4.h"
@@ -33,8 +33,8 @@ static const struct in_addr all_routers = { { { 224, 0, 0, 2 } } };
 
 #define dbg_addr(action, pkt_str, src, dst)				\
 	NET_DBG("%s %s from %s to %s", action, pkt_str,			\
-		log_strdup(net_sprint_ipv4_addr(src)),			\
-		log_strdup(net_sprint_ipv4_addr(dst)));
+		net_sprint_ipv4_addr(src),			\
+		net_sprint_ipv4_addr(dst));
 
 #define dbg_addr_recv(pkt_str, src, dst) \
 	dbg_addr("Received", pkt_str, src, dst)

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <bluetooth/bluetooth.h>
-#include <sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "util/util.h"
 #include "util/mem.h"
@@ -451,7 +451,12 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 			   HAL_TICKER_US_TO_TICKS(sync_iso_offset_us),
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us),
+#if !defined(CONFIG_BT_TICKER_LOW_LAT) && \
+	!defined(CONFIG_BT_CTLR_LOW_LAT)
+			   TICKER_LAZY_MUST_EXPIRE,
+#else
 			   TICKER_NULL_LAZY,
+#endif /* !CONFIG_BT_TICKER_LOW_LAT && !CONFIG_BT_CTLR_LOW_LAT */
 			   (sync_iso->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync_iso,
 			   ticker_start_op_cb, (void *)__LINE__);
@@ -678,6 +683,15 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	uint8_t ref;
 
 	DEBUG_RADIO_PREPARE_O(1);
+
+	if (!IS_ENABLED(CONFIG_BT_TICKER_LOW_LAT) &&
+	    !IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) &&
+	    (lazy == TICKER_LAZY_MUST_EXPIRE)) {
+		/* FIXME: generate ISO PDU with status set to invalid */
+
+		DEBUG_RADIO_PREPARE_O(0);
+		return;
+	}
 
 	sync_iso = param;
 	lll = &sync_iso->lll;

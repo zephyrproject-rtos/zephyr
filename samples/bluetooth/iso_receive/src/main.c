@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/gpio.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/iso.h>
-#include <sys/byteorder.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/byteorder.h>
 
 #define TIMEOUT_SYNC_CREATE K_SECONDS(10)
 #define NAME_LEN            30
@@ -221,8 +221,9 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 	}
 
 	str_len = bin2hex(buf->data, buf->len, data_str, sizeof(data_str));
-	printk("Incoming data channel %p len %u: %s (counter value %u)\n",
-	       chan, buf->len, data_str, count);
+	printk("Incoming data channel %p flags 0x%x seq_num %u ts %u len %u: "
+	       "%s (counter value %u)\n", chan, info->flags, info->seq_num,
+	       info->ts, buf->len, data_str, count);
 }
 
 static void iso_connected(struct bt_iso_chan *chan)

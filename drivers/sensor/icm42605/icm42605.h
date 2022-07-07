@@ -7,10 +7,10 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_ICM42605_ICM42605_H_
 #define ZEPHYR_DRIVERS_SENSOR_ICM42605_ICM42605_H_
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
 #include "icm42605_reg.h"

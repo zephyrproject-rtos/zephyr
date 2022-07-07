@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <drivers/entropy.h>
-#include <logging/log.h>
+#include <zephyr/drivers/entropy.h>
+#include <zephyr/logging/log.h>
 
 #include <openthread/platform/entropy.h>
 

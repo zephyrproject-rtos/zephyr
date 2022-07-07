@@ -5,10 +5,10 @@
  */
 
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <drivers/uart.h>
-#include <sys/sys_io.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/sys_io.h>
 
 #define DT_DRV_COMPAT   altr_jtag_uart
 
@@ -81,7 +81,7 @@ static int uart_altera_jtag_init(const struct device *dev)
 	uint32_t ctrl_val = sys_read32(config->base + UART_ALTERA_JTAG_CTRL_OFFSET);
 
 	ctrl_val &= ~(UART_IE_TX | UART_IE_RX);
-	sys_write32(ctrl_val, sys_read32(config->base + UART_ALTERA_JTAG_CTRL_OFFSET));
+	sys_write32(ctrl_val, config->base + UART_ALTERA_JTAG_CTRL_OFFSET);
 #endif /* CONFIG_UART_ALTERA_JTAG_HAL */
 	return 0;
 }

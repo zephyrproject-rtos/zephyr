@@ -133,23 +133,23 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x00014000>;
+			reg = <0x00000000 0x00014000>;
 		};
 		slot0_partition: partition@14000 {
 			label = "image-0";
-			reg = <0x000014000 0x0006e000>;
+			reg = <0x00014000 0x0006e000>;
 		};
 		slot1_partition: partition@82000 {
 			label = "image-1";
-			reg = <0x000082000 0x0006e000>;
+			reg = <0x00082000 0x0006e000>;
 		};
 		scratch_partition: partition@f0000 {
 			label = "image-scratch";
-			reg = <0x0000f0000 0x00008000>;
+			reg = <0x000f0000 0x00008000>;
 		};
 		storage_partition: partition@f8000 {
 			label = "storage";
-			reg = <0x0000f8000 0x00008000>;
+			reg = <0x000f8000 0x00008000>;
 		};
 	};
 };

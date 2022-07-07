@@ -8,18 +8,22 @@
 
 #include <stddef.h>
 
-#include <sys/byteorder.h>
-#include <sys/printk.h>
-#include <sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/iso.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/iso.h>
 
 #include "subsys/bluetooth/host/hci_core.h"
 #include "subsys/bluetooth/controller/include/ll.h"
 #include "subsys/bluetooth/controller/util/memq.h"
 #include "subsys/bluetooth/controller/ll_sw/lll.h"
+
+/* For VS data path */
+#include "subsys/bluetooth/controller/ll_sw/isoal.h"
+#include "subsys/bluetooth/controller/ll_sw/ull_iso_types.h"
 
 #include "bs_types.h"
 #include "bs_tracing.h"
@@ -65,9 +69,15 @@ static struct bt_iso_chan_ops iso_ops = {
 	.recv		= iso_recv,
 };
 
-static struct bt_iso_chan_io_qos iso_tx_qos;
-static struct bt_iso_chan_io_qos iso_rx_qos;
+static struct bt_iso_chan_path iso_path_rx = {
+	.pid = BT_HCI_DATAPATH_ID_HCI
+};
+
 static struct bt_iso_chan_qos bis_iso_qos;
+static struct bt_iso_chan_io_qos iso_tx_qos;
+static struct bt_iso_chan_io_qos iso_rx_qos = {
+	.path = &iso_path_rx
+};
 
 static struct bt_iso_chan bis_iso_chan = {
 	.ops = &iso_ops,
@@ -76,9 +86,62 @@ static struct bt_iso_chan bis_iso_chan = {
 
 #define BIS_ISO_CHAN_COUNT 1
 static struct bt_iso_chan *bis_channels[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
+static uint32_t seq_num;
 
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
+
+#if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
+static uint8_t test_rx_buffer[CONFIG_BT_CTLR_SYNC_ISO_PDU_LEN_MAX];
+static bool is_iso_vs_emitted;
+
+static isoal_status_t test_sink_sdu_alloc(const struct isoal_sink    *sink_ctx,
+					  const struct isoal_pdu_rx  *valid_pdu,
+					  struct isoal_sdu_buffer    *sdu_buffer)
+{
+	sdu_buffer->dbuf = test_rx_buffer;
+	sdu_buffer->size = sizeof(test_rx_buffer);
+
+	return ISOAL_STATUS_OK;
+}
+
+
+static isoal_status_t test_sink_sdu_emit(const struct isoal_sink         *sink_ctx,
+					 const struct isoal_sdu_produced *valid_sdu)
+{
+	printk("Vendor sink SDU len %u, seq_num %u, ts %u\n",
+		sink_ctx->sdu_production.sdu_written, valid_sdu->seqn,
+		valid_sdu->timestamp);
+	is_iso_vs_emitted = true;
+
+	return ISOAL_STATUS_OK;
+}
+
+static isoal_status_t test_sink_sdu_write(void *dbuf,
+					  const uint8_t *pdu_payload,
+					  const size_t consume_len)
+{
+	memcpy(dbuf, pdu_payload, consume_len);
+
+	return ISOAL_STATUS_OK;
+}
+
+
+bool ll_data_path_sink_create(struct ll_iso_datapath *datapath,
+			      isoal_sink_sdu_alloc_cb *sdu_alloc,
+			      isoal_sink_sdu_emit_cb *sdu_emit,
+			      isoal_sink_sdu_write_cb *sdu_write)
+{
+	ARG_UNUSED(datapath);
+
+	*sdu_alloc = test_sink_sdu_alloc;
+	*sdu_emit  = test_sink_sdu_emit;
+	*sdu_write = test_sink_sdu_write;
+
+	printk("VS data path sink created\n");
+	return true;
+}
+#endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
 
 static void test_iso_main(void)
 {
@@ -194,7 +257,7 @@ static void test_iso_main(void)
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	sys_put_le32(++iso_send_count, iso_data);
 	net_buf_add_mem(buf, iso_data, sizeof(iso_data));
-	err = bt_iso_chan_send(&bis_iso_chan, buf);
+	err = bt_iso_chan_send(&bis_iso_chan, buf, seq_num++, BT_ISO_TIMESTAMP_NONE);
 	if (err < 0) {
 		net_buf_unref(buf);
 		FAIL("Unable to broadcast data (%d)", err);
@@ -283,14 +346,15 @@ static const char *phy2str(uint8_t phy)
 static void iso_recv(struct bt_iso_chan *chan,
 		     const struct bt_iso_recv_info *info, struct net_buf *buf)
 {
-	printk("Incoming data channel %p len %u, flags %u, sn %u, ts %u\n",
-		chan, buf->len, info->flags, info->sn, info->ts);
+	printk("Incoming data channel %p len %u, flags %u, seq_num %u, ts %u\n",
+		chan, buf->len, info->flags, info->seq_num, info->ts);
 }
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
 	printk("ISO Channel %p connected\n", chan);
 
+	seq_num = 0U;
 	is_iso_connected = true;
 }
 
@@ -612,6 +676,7 @@ static void test_iso_recv_main(void)
 	big_param.mse = 1;
 	big_param.sync_timeout = 100; /* 1000 ms */
 	big_param.encryption = false;
+	iso_path_rx.pid = BT_HCI_DATAPATH_ID_HCI;
 	memset(big_param.bcode, 0, sizeof(big_param.bcode));
 	err = bt_iso_big_sync(sync, &big_param, &big);
 	if (err) {
@@ -714,6 +779,161 @@ static void test_iso_recv_main(void)
 	return;
 }
 
+#if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
+static void test_iso_recv_vs_dp_main(void)
+{
+	struct bt_le_scan_param scan_param = {
+		.type       = BT_HCI_LE_SCAN_ACTIVE,
+		.options    = BT_LE_SCAN_OPT_NONE,
+		.interval   = 0x0004,
+		.window     = 0x0004,
+	};
+	struct bt_le_per_adv_sync_param sync_create_param;
+	struct bt_le_per_adv_sync *sync = NULL;
+	int err;
+
+	printk("Bluetooth initializing... ");
+	err = bt_enable(NULL);
+	if (err) {
+		FAIL("Could not init BT: %d\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	printk("Scan callbacks register... ");
+	bt_le_scan_cb_register(&scan_callbacks);
+	printk("success.\n");
+
+	printk("Periodic Advertising callbacks register... ");
+	bt_le_per_adv_sync_cb_register(&sync_cb);
+	printk("success.\n");
+
+	printk("Start scanning... ");
+	is_periodic = false;
+	err = bt_le_scan_start(&scan_param, NULL);
+	if (err) {
+		FAIL("Could not start scan: %d\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	while (!is_periodic) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("Periodic Advertising found (SID: %u)\n", per_sid);
+
+	printk("Creating Periodic Advertising Sync... ");
+	is_sync = false;
+
+	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
+	sync_create_param.options =
+		BT_LE_PER_ADV_SYNC_OPT_REPORTING_INITIALLY_DISABLED;
+	sync_create_param.sid = per_sid;
+	sync_create_param.skip = 0;
+	sync_create_param.timeout = 0xa;
+
+	err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
+	if (err) {
+		FAIL("Could not create sync: %d\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	/* TODO: Enable when advertiser is added */
+	printk("Waiting for sync...\n");
+	while (!is_sync) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("success.\n");
+
+	printk("Stop scanning... ");
+	err = bt_le_scan_stop();
+	if (err) {
+		FAIL("Could not stop scan: %d\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	printk("Wait for BIG Info Advertising Report...\n");
+	is_big_info = false;
+	while (!is_big_info) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("success.\n");
+
+	struct bt_iso_big_sync_param big_param = { 0, };
+	struct bt_iso_big *big;
+
+	printk("ISO BIG create sync... ");
+	is_iso_connected = false;
+	bis_iso_qos.tx = NULL;
+	bis_iso_qos.rx = &iso_rx_qos;
+	big_param.bis_channels = bis_channels;
+	big_param.num_bis = BIS_ISO_CHAN_COUNT;
+	big_param.bis_bitfield = BIT(1); /* BIS 1 selected */
+	big_param.mse = 1;
+	big_param.sync_timeout = 100; /* 1000 ms */
+	big_param.encryption = false;
+	memset(big_param.bcode, 0, sizeof(big_param.bcode));
+
+	is_iso_connected = false;
+	is_iso_disconnected = 0U;
+	is_iso_vs_emitted = false;
+	iso_path_rx.pid = BT_HCI_DATAPATH_ID_VS;
+
+	err = bt_iso_big_sync(sync, &big_param, &big);
+	if (err) {
+		FAIL("Could not create BIG sync: %d\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	printk("Wait for ISO connected callback... ");
+	while (!is_iso_connected) {
+		k_sleep(K_MSEC(100));
+	}
+
+	/* Allow some SDUs to be received */
+	k_sleep(K_MSEC(100));
+
+	printk("ISO terminate BIG... ");
+	is_iso_disconnected = 0U;
+	err = bt_iso_big_terminate(big);
+	if (err) {
+		FAIL("Could not terminate BIG sync: %d\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	printk("Waiting for ISO disconnected callback...\n");
+	while (!is_iso_disconnected) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("disconnected.\n");
+
+	if (is_iso_disconnected != BT_HCI_ERR_LOCALHOST_TERM_CONN) {
+		FAIL("Local Host Terminate Failed.\n");
+	}
+
+	if (!is_iso_vs_emitted) {
+		FAIL("Emitting of VS SDUs failed.\n");
+	}
+
+	printk("success.\n");
+
+	printk("Deleting Periodic Advertising Sync... ");
+	err = bt_le_per_adv_sync_delete(sync);
+	if (err) {
+		FAIL("Failed to delete periodic advertising sync (err %d)\n",
+		     err);
+		return;
+	}
+	printk("success.\n");
+
+	PASS("ISO recv VS test Passed\n");
+}
+#endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
+
 static void test_iso_init(void)
 {
 	bst_ticker_set_next_tick_absolute(60e6);
@@ -742,6 +962,15 @@ static const struct bst_test_instance test_def[] = {
 		.test_tick_f = test_iso_tick,
 		.test_main_f = test_iso_recv_main
 	},
+#if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
+	{
+		.test_id = "receive_vs_dp",
+		.test_descr = "ISO receive VS",
+		.test_post_init_f = test_iso_init,
+		.test_tick_f = test_iso_tick,
+		.test_main_f = test_iso_recv_vs_dp_main
+	},
+#endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
 	BSTEST_END_MARKER
 };
 

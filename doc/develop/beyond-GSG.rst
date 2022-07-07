@@ -41,8 +41,8 @@ is good practice to use this flag if the latest version of a package is
 required.  (Check the :zephyr_file:`scripts/requirements.txt` file to
 see if a specific Python package version is expected.)
 
-Advanced Setup and tool chain alternatives
-******************************************
+Advanced Platform Setup
+***********************
 
 Here are some alternative instructions for more advanced platform setup
 configurations for supported development platforms:
@@ -56,36 +56,23 @@ configurations for supported development platforms:
 
 .. _gs_toolchain:
 
-Set Up a Toolchain
-******************
+Install a Toolchain
+*******************
 
 Zephyr binaries are compiled and linked by a *toolchain* comprised of
-a cross-compiler and related tools which are different than the compiler
-and tools used for developing software that runs
-natively on your operating system.
+a cross-compiler and related tools which are different from the compiler
+and tools used for developing software that runs natively on your host
+operating system.
 
-You can install the :ref:`Zephyr SDK <zephyr_sdk>` to get toolchains for all
-supported architectures.  Otherwise, you can install other toolchains in the
-usual way for your operating system: with installer programs or system package
-managers, by downloading and extracting a zip archive, and so on.
+You can install the :ref:`Zephyr SDK <toolchain_zephyr_sdk>` to get toolchains for all
+supported architectures, or install an :ref:`alternate toolchain <toolchains>`
+recommended by the SoC vendor or a specific board (check your specific
+:ref:`board-level documentation <boards>`).
 
-You configure the Zephyr build system to use a specific toolchain by
+You can configure the Zephyr build system to use a specific toolchain by
 setting :ref:`environment variables <env_vars>` such as
 :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to a supported value, along with
 additional variable(s) specific to the toolchain variant.
-
-While the Zephyr SDK includes standard toolchains for all supported
-architectures, there are also customized alternatives as described in
-these documents. (If you're not sure which to use, check your specific
-:ref:`board-level documentation <boards>`.)
-
-.. toctree::
-   :maxdepth: 2
-
-   getting_started/toolchain_3rd_party_x_compilers.rst
-   getting_started/toolchain_other_x_compilers.rst
-   getting_started/toolchain_host.rst
-   getting_started/toolchain_custom_cmake.rst
 
 Cloning the Zephyr Repositories
 *******************************

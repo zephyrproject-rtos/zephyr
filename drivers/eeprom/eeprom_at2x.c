@@ -9,15 +9,15 @@
  * @brief Driver for Atmel AT24 I2C and Atmel AT25 SPI EEPROMs.
  */
 
-#include <drivers/eeprom.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <drivers/spi.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/drivers/eeprom.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
 #define LOG_LEVEL CONFIG_EEPROM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eeprom_at2x);
 
 /* AT25 instruction set */

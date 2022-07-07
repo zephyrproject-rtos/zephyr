@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include <psa/crypto.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #ifndef EXC_RETURN_S
 /* bit [6] stack used to push registers: 0=Non-secure 1=Secure */
@@ -30,7 +30,7 @@ static void do_hash(char *hash)
 	psa_status_t status = psa_hash_compute(PSA_ALG_SHA_512, dummy_string,
 			sizeof(dummy_string), hash, HASH_LEN, &len);
 
-	zassert_equal(PSA_SUCCESS, status, "psa_hash_compute_fail\n");
+	zassert_equal(PSA_SUCCESS, status, "psa_hash_compute_fail: %d\n", status);
 	zassert_equal(HASH_LEN, len, "hash length not correct\n");
 }
 

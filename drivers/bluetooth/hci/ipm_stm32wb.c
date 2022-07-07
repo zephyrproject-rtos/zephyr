@@ -7,12 +7,12 @@
  */
 
 
-#include <init.h>
-#include <sys/util.h>
-#include <bluetooth/hci.h>
-#include <drivers/bluetooth/hci_driver.h>
-#include "bluetooth/addr.h"
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 #include "app_conf.h"
 #include "stm32_wpan_common.h"
@@ -397,6 +397,8 @@ static void start_ble_rf(void)
 	}
 
 #if STM32_LSE_ENABLED
+	/* Configure driving capability */
+	LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
 	/* Select LSE clock */
 	LL_RCC_LSE_Enable();
 	while (!LL_RCC_LSE_IsReady()) {

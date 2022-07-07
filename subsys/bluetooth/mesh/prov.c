@@ -5,17 +5,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
-#include <sys/atomic.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/mesh.h>
-#include <bluetooth/uuid.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/mesh.h>
+#include <zephyr/bluetooth/uuid.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROV)
 #define LOG_MODULE_NAME bt_mesh_prov
@@ -302,7 +302,7 @@ int bt_mesh_input_number(uint32_t num)
 
 int bt_mesh_input_string(const char *str)
 {
-	BT_DBG("%s", log_strdup(str));
+	BT_DBG("%s", str);
 
 	if (strlen(str) > PROV_IO_OOB_SIZE_MAX ||
 			strlen(str) > bt_mesh_prov_link.oob_size) {

@@ -12,7 +12,7 @@
 #include <string.h>
 #include <ztest.h>
 
-#include <fs/fcb.h>
+#include <zephyr/fs/fcb.h>
 #include "fcb_priv.h"
 #include <errno.h>
 

@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
 /*
  * The hello world demo has two threads that utilize semaphores and sleeping

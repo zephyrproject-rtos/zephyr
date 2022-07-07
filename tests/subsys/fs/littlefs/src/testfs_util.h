@@ -23,7 +23,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <zephyr/types.h>
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 
 /** Maximum length of a path supported by the test infrastructure. */
 #define TESTFS_PATH_MAX 127

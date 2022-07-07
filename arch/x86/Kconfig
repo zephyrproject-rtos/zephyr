@@ -326,7 +326,6 @@ config EXCEPTION_DEBUG
 config X86_VERY_EARLY_CONSOLE
 	bool "Support very early boot printk"
 	depends on PRINTK
-	default y
 	help
 	  Non-emulated X86 devices often require special hardware to attach
 	  a debugger, which may not be easily available. This option adds a
@@ -486,6 +485,21 @@ config X86_EFI
 	help
 	  Enable EFI support. This means you build your image with zefi
 	  support. See arch/x86/zefi/README.txt for more information.
+
+config X86_EFI_CONSOLE
+	bool
+	depends on X86_EFI && X86_64 && !X86_VERY_EARLY_CONSOLE
+	default y
+	help
+	  This enables the use of the UEFI console device as the
+	  Zephyr printk handler.  It requires that no interferences
+	  with hardware used by the firmware console (e.g. a UART or
+	  framebuffer) happens from Zephyr code, and that all memory
+	  used by the firmware environment and its page tables be
+	  separate and preserved.  In general this is safe to assume,
+	  but no automatic checking exists at runtime to verify.
+	  Likewise be sure to disable any other console/printk
+	  drivers!
 
 source "arch/x86/core/Kconfig.ia32"
 source "arch/x86/core/Kconfig.intel64"

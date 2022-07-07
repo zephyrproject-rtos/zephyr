@@ -65,7 +65,7 @@ set -e
 
 if [ -z "$CAVS_HOST" -o -z "$CAVS_KEY" -o -z "$CAVS_RIMAGE" ]; then
     echo "Missing cavstwist.sh configuration, must have:" 1>&2
-    echo "  export CAVS_HOST=ssh_host_name" 1>&2
+    echo "  export CAVS_HOST=ssh_host_name[:port]" 1>&2
     echo "  export CAVS_KEY=/path/to/signing_key.pem" 1>&2
     echo "  export CAVS_RIMAGE=/path/to/built/rimage/dir" 1>&2
     exit 1
@@ -112,14 +112,14 @@ if [ "$DO_LOAD" = "1" ]; then
     # Must "accept" the file so the next signing script knows it's OK
     # to write a new one
     mv $IMAGE $IMAGE2
-    scp $IMAGE2 $CAVSTOOL $CAVS_HOST:
+    scp $IMAGE2 $CAVSTOOL scp://$CAVS_HOST
     rm -f $IMAGE2
 
     # Twister seems to overlap tests by a tiny bit, and of course the
     # remote system might have other junk running from manual testing.
     # If something is doing log reading at the moment of firmware
     # load, it tends fairly reliably to hang the DSP.  Kill it.
-    ssh $CAVS_HOST "sudo pkill -9 -f cavstool" ||:
+    ssh ssh://$CAVS_HOST "sudo pkill -9 -f cavstool" ||:
 
-    exec ssh $CAVS_HOST "sudo ./$(basename $CAVSTOOL) $(basename $IMAGE2)"
+    exec ssh ssh://$CAVS_HOST "sudo ./$(basename $CAVSTOOL) $(basename $IMAGE2)"
 fi

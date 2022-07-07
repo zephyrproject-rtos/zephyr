@@ -17,10 +17,10 @@
  * @{
  */
 
-#include <sys/atomic.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/hci.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci.h>
 
 #ifdef __cplusplus
 extern "C" {

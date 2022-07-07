@@ -12,13 +12,12 @@
 
 #define DT_DRV_COMPAT zephyr_adc_emul
 
-#include <drivers/adc.h>
-#include <drivers/adc/adc_emul.h>
-#include <kernel.h>
-#include <logging/log.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <zephyr.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/adc/adc_emul.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(adc_emul, CONFIG_ADC_LOG_LEVEL);
 

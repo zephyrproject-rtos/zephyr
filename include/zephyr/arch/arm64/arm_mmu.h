@@ -7,6 +7,11 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM64_ARM_MMU_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM64_ARM_MMU_H_
 
+#ifndef _ASMLANGUAGE
+#include <stdint.h>
+#include <stdlib.h>
+#endif
+
 /* Following Memory types supported through MAIR encodings can be passed
  * by user through "attrs"(attributes) field of specified memory region.
  * As MAIR supports such 8 encodings, we will reserve attrs[2:0];

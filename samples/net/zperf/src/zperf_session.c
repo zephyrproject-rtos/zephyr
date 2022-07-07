@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <net/net_pkt.h>
-#include <net/udp.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/udp.h>
 
 #include "zperf_session.h"
 
@@ -19,41 +19,17 @@ LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 static struct session sessions[SESSION_PROTO_END][SESSION_MAX];
 
 /* Get session from a given packet */
-struct session *get_session(struct net_pkt *pkt,
-			    union net_ip_header *ip_hdr,
-			    union net_proto_header *proto_hdr,
+struct session *get_session(const struct sockaddr *addr,
 			    enum session_proto proto)
 {
 	struct session *active = NULL;
 	struct session *free = NULL;
-	struct in6_addr ipv6 = { };
-	struct in_addr ipv4 = { };
-	struct net_udp_hdr *udp_hdr;
 	int i = 0;
-	uint16_t port;
-
-	if (!pkt) {
-		printk("Error! null pkt detected.\n");
-		return NULL;
-	}
+	const struct sockaddr_in *addr4 = (const struct sockaddr_in *)addr;
+	const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6 *)addr;
 
 	if (proto != SESSION_TCP && proto != SESSION_UDP) {
 		printk("Error! unsupported proto.\n");
-		return NULL;
-	}
-
-	udp_hdr = proto_hdr->udp;
-
-	/* Get tuple of the remote connection */
-	port = udp_hdr->src_port;
-
-	if (net_pkt_family(pkt) == AF_INET6) {
-		net_ipv6_addr_copy_raw((uint8_t *)&ipv6, ip_hdr->ipv6->src);
-	} else if (net_pkt_family(pkt) == AF_INET) {
-		net_ipv4_addr_copy_raw((uint8_t *)&ipv4, ip_hdr->ipv4->src);
-	} else {
-		printk("Error! unsupported protocol %d\n",
-		       net_pkt_family(pkt));
 		return NULL;
 	}
 
@@ -61,22 +37,26 @@ struct session *get_session(struct net_pkt *pkt,
 	while (!active && i < SESSION_MAX) {
 		struct session *ptr = &sessions[proto][i];
 
-#if defined(CONFIG_NET_IPV4)
-		if (ptr->port == port &&
-		    net_pkt_family(pkt) == AF_INET &&
-		    net_ipv4_addr_cmp(&ptr->ip.in_addr, &ipv4)) {
+		if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		    addr->sa_family == AF_INET &&
+		    ptr->ip.family == AF_INET &&
+		    ptr->port == addr4->sin_port &&
+		    net_ipv4_addr_cmp(&ptr->ip.in_addr, &addr4->sin_addr)) {
 			/* We found an active session */
 			active = ptr;
-		} else
-#endif
-#if defined(CONFIG_NET_IPV6)
-		if (ptr->port == port &&
-		    net_pkt_family(pkt) == AF_INET6 &&
-		    net_ipv6_addr_cmp(&ptr->ip.in6_addr, &ipv6)) {
+			break;
+		}
+
+		if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		    addr->sa_family == AF_INET6 &&
+		    ptr->ip.family == AF_INET6 &&
+		    ptr->port == addr6->sin6_port &&
+		    net_ipv6_addr_cmp(&ptr->ip.in6_addr, &addr6->sin6_addr)) {
 			/* We found an active session */
 			active = ptr;
-		} else
-#endif
+			break;
+		}
+
 		if (!free && (ptr->state == STATE_NULL ||
 			      ptr->state == STATE_COMPLETED)) {
 			/* We found a free slot - just in case */
@@ -89,30 +69,30 @@ struct session *get_session(struct net_pkt *pkt,
 	/* If no active session then create a new one */
 	if (!active && free) {
 		active = free;
-		active->port = port;
 
-#if defined(CONFIG_NET_IPV6)
-		if (net_pkt_family(pkt) == AF_INET6) {
-			net_ipaddr_copy(&active->ip.in6_addr, &ipv6);
+		if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
+			active->port = addr4->sin_port;
+			active->ip.family = AF_INET;
+			net_ipaddr_copy(&active->ip.in_addr, &addr4->sin_addr);
+		} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+			   addr->sa_family == AF_INET6) {
+			active->port = addr6->sin6_port;
+			active->ip.family = AF_INET6;
+			net_ipaddr_copy(&active->ip.in6_addr, &addr6->sin6_addr);
 		}
-#endif
-#if defined(CONFIG_NET_IPV4)
-		if (net_pkt_family(pkt) == AF_INET) {
-			net_ipaddr_copy(&active->ip.in_addr, &ipv4);
-		}
-#endif
 	}
 
 	return active;
 }
 
-struct session *get_tcp_session(struct net_context *ctx)
+/* TODO Unify session handling */
+struct session *get_tcp_session(int sock)
 {
 	struct session *free = NULL;
 	int i = 0;
 
-	if (!ctx) {
-		printk("Error! null context detected.\n");
+	if (sock < 0) {
+		printk("Error! Invalid socket.\n");
 		return NULL;
 	}
 
@@ -120,7 +100,7 @@ struct session *get_tcp_session(struct net_context *ctx)
 	while (i < SESSION_MAX) {
 		struct session *ptr = &sessions[SESSION_TCP][i];
 
-		if (ptr->ctx == ctx) {
+		if (ptr->sock == sock) {
 			return ptr;
 		}
 
@@ -135,7 +115,7 @@ struct session *get_tcp_session(struct net_context *ctx)
 	}
 
 	if (free) {
-		free->ctx = ctx;
+		free->sock = sock;
 	}
 
 	return free;

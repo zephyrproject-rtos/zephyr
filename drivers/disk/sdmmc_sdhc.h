@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_DISK_DRIVER_SDMMC_H_
 #define ZEPHYR_INCLUDE_DISK_DRIVER_SDMMC_H_
 
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 
 #define SDMMC_CLOCK_400KHZ (400000U)
 #define SD_CLOCK_25MHZ (25000000U)

@@ -7,13 +7,13 @@
 #define DT_DRV_COMPAT atmel_sam0_nvmctrl
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_sam0);
 
-#include <device.h>
-#include <drivers/flash.h>
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <string.h>
 

@@ -8,13 +8,13 @@
 #include <string.h>
 #include <errno.h>
 
-#include <zephyr.h>
-#include <sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/crypto.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/crypto.h>
 
 #include <tinycrypt/constants.h>
 #include <tinycrypt/hmac_prng.h>

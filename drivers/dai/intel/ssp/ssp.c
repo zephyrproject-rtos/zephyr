@@ -5,12 +5,13 @@
  */
 
 #include <errno.h>
+#include <zephyr/sys/util_macro.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <spinlock.h>
-#include <devicetree.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/devicetree.h>
 #define LOG_DOMAIN dai_intel_ssp
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include "ssp.h"
@@ -706,7 +707,7 @@ static inline void dai_ssp_pm_runtime_en_ssp_clk_gating(struct dai_intel_ssp *dp
 
 static void dai_ssp_pm_runtime_en_ssp_power(struct dai_intel_ssp *dp, uint32_t index)
 {
-#if CONFIG_SOC_SERIES_INTEL_CAVS_V25
+#if CONFIG_DAI_SSP_HAS_POWER_CONTROL
 	int ret;
 
 	LOG_INF("%s en_ssp_power index %d", __func__, index);
@@ -724,12 +725,15 @@ static void dai_ssp_pm_runtime_en_ssp_power(struct dai_intel_ssp *dp, uint32_t i
 	}
 
 	LOG_INF("%s I2SLCTL", __func__);
-#endif
+#else
+	ARG_UNUSED(dp);
+	ARG_UNUSED(index);
+#endif /* CONFIG_DAI_SSP_HAS_POWER_CONTROL */
 }
 
 static void dai_ssp_pm_runtime_dis_ssp_power(struct dai_intel_ssp *dp, uint32_t index)
 {
-#if CONFIG_SOC_SERIES_INTEL_CAVS_V25
+#if CONFIG_DAI_SSP_HAS_POWER_CONTROL
 	int ret;
 
 	LOG_INF("%s index %d", __func__, index);
@@ -747,7 +751,10 @@ static void dai_ssp_pm_runtime_dis_ssp_power(struct dai_intel_ssp *dp, uint32_t 
 	}
 
 	LOG_INF("%s I2SLCTL", __func__);
-#endif
+#else
+	ARG_UNUSED(dp);
+	ARG_UNUSED(index);
+#endif /* CONFIG_DAI_SSP_HAS_POWER_CONTROL */
 }
 
 /* empty SSP transmit FIFO */
@@ -1538,7 +1545,11 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const void *spec_co
 	ssrsa = blob->i2s_driver_config.i2s_config.ssrsa;
 
 	sys_write32(ssc0, dai_base(dp) + SSCR0);
+	sys_write32(blob->i2s_driver_config.i2s_config.ssc2 & ~SSCR2_SFRMEN,
+			dai_base(dp) + SSCR2); /* hardware specific flow */
 	sys_write32(blob->i2s_driver_config.i2s_config.ssc1, dai_base(dp) + SSCR1);
+	sys_write32(blob->i2s_driver_config.i2s_config.ssc2 | SSCR2_SFRMEN,
+			dai_base(dp) + SSCR2); /* hardware specific flow */
 	sys_write32(blob->i2s_driver_config.i2s_config.ssc2, dai_base(dp) + SSCR2);
 	sys_write32(blob->i2s_driver_config.i2s_config.ssc3, dai_base(dp) + SSCR3);
 	sys_write32(blob->i2s_driver_config.i2s_config.sspsp, dai_base(dp) + SSPSP);
@@ -1748,7 +1759,10 @@ static void dai_ssp_stop(struct dai_intel_ssp *dp, int direction)
 	/* disable SSP port if no users */
 	if (ssp->state[DAI_DIR_CAPTURE] == DAI_STATE_PRE_RUNNING &&
 	    ssp->state[DAI_DIR_PLAYBACK] == DAI_STATE_PRE_RUNNING) {
-		if (!(ssp->clk_active & SSP_CLK_BCLK_ES_REQ)) {
+		bool clear_rse_bits = COND_CODE_1(CONFIG_INTEL_ADSP_CAVS,
+						 (!(ssp->clk_active & SSP_CLK_BCLK_ES_REQ)),
+						 (false));
+		if (clear_rse_bits) {
 			/* clear TRSE/RSRE before SSE */
 			dai_ssp_update_bits(dp, SSCR1, SSCR1_TSRE | SSCR1_RSRE, 0);
 			dai_ssp_update_bits(dp, SSCR0, SSCR0_SSE, 0);

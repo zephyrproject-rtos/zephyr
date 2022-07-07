@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/sys_io.h>
-#include <sys/__assert.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/__assert.h>
 #include <soc.h>
 #include "soc_i2c.h"
 

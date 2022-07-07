@@ -6,9 +6,9 @@
 
 #define DT_DRV_COMPAT atmel_sam0_eic
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/interrupt_controller/sam0_eic.h>
+#include <zephyr/drivers/interrupt_controller/sam0_eic.h>
 #include "intc_sam0_eic_priv.h"
 
 struct sam0_eic_line_assignment {

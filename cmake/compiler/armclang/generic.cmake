@@ -2,7 +2,7 @@
 
 # Configures CMake for using ccac
 
-find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}armclang PATH ${TOOLCHAIN_HOME}/bin NO_DEFAULT_PATH)
+find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}armclang PATHS ${TOOLCHAIN_HOME}/bin NO_DEFAULT_PATH)
 
 set(triple arm-arm-none-eabi)
 

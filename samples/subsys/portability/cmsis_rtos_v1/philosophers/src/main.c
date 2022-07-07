@@ -27,17 +27,16 @@
  * object attributes array in the phil_obj_abstract.h
  * header file.
  */
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <cmsis_os.h>
-#include <zephyr.h>
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
 #else
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #endif
 
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 
 #include "phil_obj_abstract.h"
 

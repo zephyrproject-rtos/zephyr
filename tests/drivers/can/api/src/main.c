@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/can.h>
+#include <zephyr/drivers/can.h>
 #include <ztest.h>
 
 /**
@@ -636,7 +636,7 @@ static void test_set_bitrate_too_high(void)
 	zassert_equal(err, 0, "failed to get max bitrate (err %d)", err);
 	zassert_not_equal(max, 0, "max bitrate is 0");
 
-	err = can_set_bitrate(can_dev, max + 1, max + 1);
+	err = can_set_bitrate(can_dev, max + 1);
 	zassert_equal(err, -ENOTSUP, "too high bitrate accepted");
 }
 
@@ -647,7 +647,7 @@ static void test_set_bitrate(void)
 {
 	int err;
 
-	err = can_set_bitrate(can_dev, TEST_BITRATE_1, 0);
+	err = can_set_bitrate(can_dev, TEST_BITRATE_1);
 	zassert_equal(err, 0, "failed to set bitrate");
 }
 
@@ -661,7 +661,7 @@ static void test_set_loopback(void)
 {
 	int err;
 
-	err = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
+	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
 	zassert_equal(err, 0, "failed to set loopback-mode (err %d)", err);
 }
 
@@ -953,10 +953,10 @@ static void test_filters_preserved_through_mode_change(void)
 	zassert_equal(err, 0, "receive timeout");
 	assert_frame_equal(&frame, &test_std_frame_1, 0);
 
-	err = can_set_mode(can_dev, CAN_NORMAL_MODE);
+	err = can_set_mode(can_dev, CAN_MODE_NORMAL);
 	zassert_equal(err, 0, "failed to set normal mode (err %d)", err);
 
-	err = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
+	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
 	zassert_equal(err, 0, "failed to set loopback-mode (err %d)", err);
 
 	send_test_frame(can_dev, &test_std_frame_1);
@@ -981,10 +981,10 @@ static void test_filters_preserved_through_bitrate_change(void)
 	zassert_equal(err, 0, "receive timeout");
 	assert_frame_equal(&frame, &test_std_frame_1, 0);
 
-	err = can_set_bitrate(can_dev, TEST_BITRATE_2, 0);
+	err = can_set_bitrate(can_dev, TEST_BITRATE_2);
 	zassert_equal(err, 0, "failed to set bitrate");
 
-	err = can_set_bitrate(can_dev, TEST_BITRATE_1, 0);
+	err = can_set_bitrate(can_dev, TEST_BITRATE_1);
 	zassert_equal(err, 0, "failed to set bitrate");
 
 	send_test_frame(can_dev, &test_std_frame_1);

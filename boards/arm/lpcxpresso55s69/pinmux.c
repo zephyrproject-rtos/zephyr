@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <drivers/pinmux.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/pinmux.h>
 #include <fsl_common.h>
 #include <fsl_iocon.h>
 #include <soc.h>

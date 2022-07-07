@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <gpio/gpio_stm32.h>
 
 #include <stm32_ll_bus.h>

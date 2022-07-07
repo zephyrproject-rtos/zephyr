@@ -7,21 +7,21 @@
  * driver for x86 CPU local APIC (as an interrupt controller)
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
-#include <arch/cpu.h>
-#include <pm/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/types.h>
 #include <string.h>
-#include <sys/__assert.h>
-#include <arch/x86/msr.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/arch/x86/msr.h>
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <drivers/interrupt_controller/loapic.h> /* public API declarations */
-#include <device.h>
-#include <drivers/interrupt_controller/sysapic.h>
-#include <drivers/interrupt_controller/ioapic.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/drivers/interrupt_controller/loapic.h> /* public API declarations */
+#include <zephyr/device.h>
+#include <zephyr/drivers/interrupt_controller/sysapic.h>
+#include <zephyr/drivers/interrupt_controller/ioapic.h>
 
 /* Local APIC Version Register Bits */
 
@@ -62,7 +62,7 @@
 #define LOPIC_SSPND_BITS_PER_IRQ  1  /* Just the one for enable disable*/
 #define LOPIC_SUSPEND_BITS_REQD (ROUND_UP((LOAPIC_IRQ_COUNT * LOPIC_SSPND_BITS_PER_IRQ), 32))
 #ifdef CONFIG_PM_DEVICE
-#include <pm/device.h>
+#include <zephyr/pm/device.h>
 __pinned_bss
 uint32_t loapic_suspend_buf[LOPIC_SUSPEND_BITS_REQD / 32] = {0};
 #endif

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2020 ITE Corporation. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -6,7 +6,7 @@
 #ifndef CHIP_CHIPREGS_H
 #define CHIP_CHIPREGS_H
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define EC_REG_BASE_ADDR 0x00f00000
 
@@ -1443,6 +1443,101 @@ struct flash_it8xxx2_regs {
 
 #define IT8XXX2_GPIO_GPCRP0     ECREG(IT8XXX2_GPIO2_BASE + 0x18)
 #define IT8XXX2_GPIO_GPCRP1     ECREG(IT8XXX2_GPIO2_BASE + 0x19)
+
+/**
+ *
+ * (16xxh) General Purpose I/O Port (GPIO) registers
+ *
+ */
+#ifndef __ASSEMBLER__
+struct gpio_it8xxx2_regs {
+	/* 0x00: General Control */
+	volatile uint8_t GPIO_GCR;
+	/* 0x01-D0: Reserved1 */
+	volatile uint8_t reserved1[208];
+	/* 0xD1: General Control 25 */
+	volatile uint8_t GPIO_GCR25;
+	/* 0xD2: General Control 26 */
+	volatile uint8_t GPIO_GCR26;
+	/* 0xD3: General Control 27 */
+	volatile uint8_t GPIO_GCR27;
+	/* 0xD4: General Control 28 */
+	volatile uint8_t GPIO_GCR28;
+	/* 0xD5: General Control 31 */
+	volatile uint8_t GPIO_GCR31;
+	/* 0xD6: General Control 32 */
+	volatile uint8_t GPIO_GCR32;
+	/* 0xD7: General Control 33 */
+	volatile uint8_t GPIO_GCR33;
+	/* 0xD8-0xDF: Reserved2 */
+	volatile uint8_t reserved2[8];
+	/* 0xE0: General Control 16 */
+	volatile uint8_t GPIO_GCR16;
+	/* 0xE1: General Control 17 */
+	volatile uint8_t GPIO_GCR17;
+	/* 0xE2: General Control 18 */
+	volatile uint8_t GPIO_GCR18;
+	/* 0xE3: Reserved3 */
+	volatile uint8_t reserved3;
+	/* 0xE4: General Control 19 */
+	volatile uint8_t GPIO_GCR19;
+	/* 0xE5: General Control 20 */
+	volatile uint8_t GPIO_GCR20;
+	/* 0xE6: General Control 21 */
+	volatile uint8_t GPIO_GCR21;
+	/* 0xE7: General Control 22 */
+	volatile uint8_t GPIO_GCR22;
+	/* 0xE8: General Control 23 */
+	volatile uint8_t GPIO_GCR23;
+	/* 0xE9: General Control 24 */
+	volatile uint8_t GPIO_GCR24;
+	/* 0xEA-0xEC: Reserved4 */
+	volatile uint8_t reserved4[3];
+	/* 0xED: General Control 30 */
+	volatile uint8_t GPIO_GCR30;
+	/* 0xEE: General Control 29 */
+	volatile uint8_t GPIO_GCR29;
+	/* 0xEF: Reserved5 */
+	volatile uint8_t reserved5;
+	/* 0xF0: General Control 1 */
+	volatile uint8_t GPIO_GCR1;
+	/* 0xF1: General Control 2 */
+	volatile uint8_t GPIO_GCR2;
+	/* 0xF2: General Control 3 */
+	volatile uint8_t GPIO_GCR3;
+	/* 0xF3: General Control 4 */
+	volatile uint8_t GPIO_GCR4;
+	/* 0xF4: General Control 5 */
+	volatile uint8_t GPIO_GCR5;
+	/* 0xF5: General Control 6 */
+	volatile uint8_t GPIO_GCR6;
+	/* 0xF6: General Control 7 */
+	volatile uint8_t GPIO_GCR7;
+	/* 0xF7: General Control 8 */
+	volatile uint8_t GPIO_GCR8;
+	/* 0xF8: General Control 9 */
+	volatile uint8_t GPIO_GCR9;
+	/* 0xF9: General Control 10 */
+	volatile uint8_t GPIO_GCR10;
+	/* 0xFA: General Control 11 */
+	volatile uint8_t GPIO_GCR11;
+	/* 0xFB: General Control 12 */
+	volatile uint8_t GPIO_GCR12;
+	/* 0xFC: General Control 13 */
+	volatile uint8_t GPIO_GCR13;
+	/* 0xFD: General Control 14 */
+	volatile uint8_t GPIO_GCR14;
+	/* 0xFE: General Control 15 */
+	volatile uint8_t GPIO_GCR15;
+	/* 0xFF: Power Good Watch Control */
+	volatile uint8_t GPIO_PGWCR;
+};
+#endif /* !__ASSEMBLER__ */
+
+/* GPIO register fields */
+/* 0x00: General Control */
+#define IT8XXX2_GPIO_LPCRSTEN        (BIT(2) | BIT(1))
+
 
 /**
  *

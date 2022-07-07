@@ -13,7 +13,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_H_
 #define ZEPHYR_INCLUDE_DRIVERS_DMA_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 
 #ifdef __cplusplus
@@ -147,34 +147,34 @@ typedef void (*dma_callback_t)(const struct device *dev, void *user_data,
  * @struct dma_config
  * @brief DMA configuration structure.
  *
- * @param dma_slot             [ 0 : 6 ]   - which peripheral and direction
+ * @param dma_slot             [ 0 : 7 ]   - which peripheral and direction
  *                                        (HW specific)
- * @param channel_direction    [ 7 : 9 ]   - 000-memory to memory,
+ * @param channel_direction    [ 8 : 10 ]  - 000-memory to memory,
  *                                        001-memory to peripheral,
  *                                        010-peripheral to memory,
  *                                        011-peripheral to peripheral,
  *                                        100-host to memory
  *                                        101-memory to host
  *                                        ...
- * @param complete_callback_en [ 10 ]       - 0-callback invoked at completion only
+ * @param complete_callback_en [ 11 ]       - 0-callback invoked at completion only
  *                                        1-callback invoked at completion of
  *                                          each block
- * @param error_callback_en    [ 11 ]      - 0-error callback enabled
+ * @param error_callback_en    [ 12 ]      - 0-error callback enabled
  *                                        1-error callback disabled
- * @param source_handshake     [ 12 ]      - 0-HW, 1-SW
- * @param dest_handshake       [ 13 ]      - 0-HW, 1-SW
- * @param channel_priority     [ 14 : 17 ] - DMA channel priority
- * @param source_chaining_en   [ 18 ]      - enable/disable source block chaining
+ * @param source_handshake     [ 13 ]      - 0-HW, 1-SW
+ * @param dest_handshake       [ 14 ]      - 0-HW, 1-SW
+ * @param channel_priority     [ 15 : 18 ] - DMA channel priority
+ * @param source_chaining_en   [ 19 ]      - enable/disable source block chaining
  *                                        0-disable, 1-enable
- * @param dest_chaining_en     [ 19 ]      - enable/disable destination block
+ * @param dest_chaining_en     [ 20 ]      - enable/disable destination block
  *                                        chaining.
  *                                        0-disable, 1-enable
- * @param linked_channel       [ 20 : 26 ] - after channel count exhaust will
+ * @param linked_channel       [ 21 : 27 ] - after channel count exhaust will
  *                                        initiate a channel service request
  *                                        at this channel
- * @param cyclic               [ 27 ]      - enable/disable cyclic buffer
+ * @param cyclic               [ 28 ]      - enable/disable cyclic buffer
  *                                        0-disable, 1-enable
- * @param reserved             [ 28 : 31 ]
+ * @param reserved             [ 29 : 31 ]
  * @param source_data_size    [ 0 : 15 ]   - width of source data (in bytes)
  * @param dest_data_size      [ 16 : 31 ]  - width of dest data (in bytes)
  * @param source_burst_length [ 0 : 15 ]   - number of source data units
@@ -185,7 +185,7 @@ typedef void (*dma_callback_t)(const struct device *dev, void *user_data,
  * @param dma_callback see dma_callback_t for details
  */
 struct dma_config {
-	uint32_t  dma_slot :             7;
+	uint32_t  dma_slot :             8;
 	uint32_t  channel_direction :    3;
 	uint32_t  complete_callback_en : 1;
 	uint32_t  error_callback_en :    1;
@@ -196,7 +196,7 @@ struct dma_config {
 	uint32_t  dest_chaining_en :     1;
 	uint32_t  linked_channel   :     7;
 	uint32_t  cyclic :				 1;
-	uint32_t  reserved :             4;
+	uint32_t  reserved :             3;
 	uint32_t  source_data_size :    16;
 	uint32_t  dest_data_size :      16;
 	uint32_t  source_burst_length : 16;
@@ -487,12 +487,12 @@ static inline int z_impl_dma_request_channel(const struct device *dev,
 
 	for (i = 0; i < dma_ctx->dma_channels; i++) {
 		if (!atomic_test_and_set_bit(dma_ctx->atomic, i)) {
-			channel = i;
 			if (api->chan_filter &&
-			    !api->chan_filter(dev, channel, filter_param)) {
-				atomic_clear_bit(dma_ctx->atomic, channel);
+			    !api->chan_filter(dev, i, filter_param)) {
+				atomic_clear_bit(dma_ctx->atomic, i);
 				continue;
 			}
+			channel = i;
 			break;
 		}
 	}
@@ -639,6 +639,17 @@ static inline uint32_t dma_burst_index(uint32_t burst)
 	/* Convert to bit pattern for writing to a register */
 	return find_msb_set(burst);
 }
+
+/**
+ * Get the device tree property describing the buffer alignment
+ *
+ * Useful when statically defining or allocating buffers for DMA usage where
+ * memory alignment often matters.
+ *
+ * @param node Node identifier, e.g. DT_NODELABEL(dma_0)
+ * @return alignment Memory byte alignment required for DMA buffers
+ */
+#define DMA_BUF_ALIGNMENT(node) DT_PROP(node, dma_buf_alignment)
 
 /**
  * @}

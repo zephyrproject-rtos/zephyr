@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <sys/onoff.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/onoff.h>
 #include <stdio.h>
 
 #define SERVICE_REFS_MAX UINT16_MAX
@@ -396,7 +396,6 @@ static void process_event(struct onoff_manager *mgr,
 
 			key = k_spin_lock(&mgr->lock);
 			mgr->flags &= ~ONOFF_FLAG_PROCESSING;
-			state = mgr->flags & ONOFF_STATE_MASK;
 		}
 
 		/* Process deferred events.  Completion takes priority

@@ -8,10 +8,10 @@
  * @file Sample app to demonstrate PWM-based servomotor control
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <device.h>
-#include <drivers/pwm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pwm.h>
 
 static const struct pwm_dt_spec servo = PWM_DT_SPEC_GET(DT_NODELABEL(servo));
 static const uint32_t min_pulse = DT_PROP(DT_NODELABEL(servo), min_pulse);

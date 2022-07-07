@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/dt-util.h>
+#include <zephyr/dt-bindings/dt-util.h>
 
 / {
 	/* Mapping between wuc bits and source device */

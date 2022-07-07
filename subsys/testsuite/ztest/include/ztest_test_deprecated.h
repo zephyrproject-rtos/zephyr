@@ -13,8 +13,8 @@
 #ifndef ZEPHYR_TESTSUITE_ZTEST_TEST_H_
 #define ZEPHYR_TESTSUITE_ZTEST_TEST_H_
 
-#include <app_memory/app_memdomain.h>
-#include <init.h>
+#include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/init.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -59,7 +59,7 @@ struct ztest_suite_node {
 	 */
 	bool (*predicate)(const void *state);
 	/** Stats */
-	struct ztest_suite_stats stats;
+	struct ztest_suite_stats *stats;
 };
 
 extern struct ztest_suite_node _ztest_suite_node_list_start[];
@@ -78,10 +78,12 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
  */
 #define ztest_register_test_suite(SUITE_NAME, PREDICATE, args...)                                  \
 	ztest_test_suite(SUITE_NAME, ##args);                                                      \
+	struct ztest_suite_stats UTIL_CAT(z_ztest_test_node_stats_, SUITE_NAME);                   \
 	static STRUCT_SECTION_ITERABLE(ztest_suite_node, z_ztest_test_node_##SUITE_NAME) = {       \
 		.name = #SUITE_NAME,                                                               \
 		.suite = _##SUITE_NAME,                                                            \
 		.predicate = PREDICATE,                                                            \
+		.stats = &UTIL_CAT(z_ztest_test_node_stats_, SUITE_NAME),                          \
 	};
 
 /**

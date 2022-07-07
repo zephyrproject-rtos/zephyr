@@ -9,14 +9,14 @@
 
 #include <zephyr/types.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <zephyr/types.h>
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 #include <stdlib.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/audio/bass.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/audio/bass.h>
 #include "bt.h"
 #include "../host/hci_core.h"
 

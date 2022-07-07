@@ -21,17 +21,17 @@
  * @brief Kernel event object
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 
-#include <toolchain.h>
-#include <wait_q.h>
-#include <sys/dlist.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/sys/dlist.h>
 #include <ksched.h>
-#include <init.h>
-#include <syscall_handler.h>
-#include <tracing/tracing.h>
-#include <sys/check.h>
+#include <zephyr/init.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/tracing/tracing.h>
+#include <zephyr/sys/check.h>
 
 #define K_EVENT_WAIT_ANY      0x00   /* Wait for any events */
 #define K_EVENT_WAIT_ALL      0x01   /* Wait for all events */

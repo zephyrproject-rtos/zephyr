@@ -45,16 +45,16 @@
  * INCLUDE FILES: soc_clock.h
  */
 
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <zephyr.h>
-#include <drivers/espi.h>
-#include <pm/pm.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/pm/pm.h>
 #include <soc.h>
 
 #include "soc_host.h"
 #include "soc_power.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /* The steps that npcx ec enters sleep/deep mode and leaves it. */

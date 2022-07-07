@@ -6,9 +6,9 @@
 
 #include <stdio.h>
 
-#include <zephyr.h>
-#include <drivers/sensor.h>
-#include <drivers/sensor/tmp108.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor/tmp108.h>
 
 void temperature_one_shot(const struct device *dev,
 			  const struct sensor_trigger *trigger)

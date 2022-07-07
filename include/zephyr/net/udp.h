@@ -13,9 +13,9 @@
 
 #include <zephyr/types.h>
 
-#include <net/net_core.h>
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
 
 #ifdef __cplusplus
 extern "C" {

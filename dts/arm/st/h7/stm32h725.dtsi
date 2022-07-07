@@ -1,11 +1,7 @@
 /*
  * Copyright (c) 2021 Esco Medical ApS
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * The STM32H725 SoC family is functionally identical to the STM32H723 family except for the
- * presence of a built-in switch mode power supply (SMPS) on the H725 family. For this reason, the
- * H725 device tree can safely reuse the H723 devicetree
- */
 #include <st/h7/stm32h723.dtsi>

@@ -13,7 +13,7 @@
 #ifndef _ASMLANGUAGE
 #include <kernel_internal.h>
 #include <string.h>
-#include <arch/xtensa/cache.h>
+#include <zephyr/arch/xtensa/cache.h>
 #include <zsr.h>
 
 #ifdef __cplusplus
@@ -22,8 +22,8 @@ extern "C" {
 
 extern void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 
-extern K_KERNEL_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
-				   CONFIG_ISR_STACK_SIZE);
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+			     CONFIG_ISR_STACK_SIZE);
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
@@ -82,6 +82,14 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 				 "call0 xtensa_spill_reg_windows;"
 				 "mov a0, %0"
 				 : "=r"(a0save));
+	}
+
+	/* The following option ensures that a living thread will never
+	 * be executed in a different CPU so we can safely return without
+	 * invalidate and/or flush threads cache.
+	 */
+	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
+		return;
 	}
 
 	/* The "live" area (the region between the switch handle,

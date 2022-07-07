@@ -211,6 +211,20 @@ static inline bool z_zassert(bool cond,
 		msg, ##__VA_ARGS__)
 
 /**
+ * @brief Assert that @a a is greater than or equal to @a l and less
+ *        than or equal to @a u
+ *
+ * @param a Value to compare
+ * @param l Lower limit
+ * @param u Upper limit
+ * @param msg Optional message to print if the assertion fails
+ */
+#define zassert_between_inclusive(a, l, u, msg, ...)		     \
+	zassert(((a) >= (l)) && ((a) <= (u)),			     \
+		#a " not between " #l " and " #u " inclusive",	     \
+		msg, ##__VA_ARGS__)
+
+/**
  * @brief Assert that 2 memory buffers have the same contents
  *
  * This macro calls the final memory comparison assertion macro.

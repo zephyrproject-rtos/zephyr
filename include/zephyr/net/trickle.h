@@ -16,8 +16,8 @@
 #include <stdbool.h>
 #include <zephyr/types.h>
 
-#include <kernel.h>
-#include <net/net_core.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/net_core.h>
 
 #ifdef __cplusplus
 extern "C" {

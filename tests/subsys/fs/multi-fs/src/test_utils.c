@@ -5,10 +5,10 @@
  */
 
 #include <limits.h>
-#include <device.h>
-#include <fs/fs.h>
+#include <zephyr/device.h>
+#include <zephyr/fs/fs.h>
 #include <ztest.h>
-#include <storage/flash_map.h>
+#include <zephyr/storage/flash_map.h>
 
 int check_file_dir_exists(const char *fpath)
 {

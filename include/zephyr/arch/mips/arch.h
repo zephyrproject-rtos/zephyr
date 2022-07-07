@@ -9,14 +9,14 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_MIPS_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_MIPS_ARCH_H_
 
-#include <arch/mips/thread.h>
-#include <arch/mips/exp.h>
-#include <arch/common/sys_bitops.h>
-#include <arch/common/sys_io.h>
-#include <arch/common/ffs.h>
+#include <zephyr/arch/mips/thread.h>
+#include <zephyr/arch/mips/exp.h>
+#include <zephyr/arch/common/sys_bitops.h>
+#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/arch/common/ffs.h>
 
-#include <irq.h>
-#include <sw_isr_table.h>
+#include <zephyr/irq.h>
+#include <zephyr/sw_isr_table.h>
 #include <zephyr/devicetree.h>
 #include <mips/mipsregs.h>
 
@@ -28,7 +28,7 @@
 #define CP0_STATUS_DEF_RESTORE (ST0_EXL | ST0_IE)
 
 #ifndef _ASMLANGUAGE
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {

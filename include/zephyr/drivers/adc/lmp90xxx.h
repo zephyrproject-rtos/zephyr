@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_ADC_LMP90XXX_H_
 
 #include <zephyr/device.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 /* LMP90xxx supports GPIO D0..D6 */
 #define LMP90XXX_GPIO_MAX 6

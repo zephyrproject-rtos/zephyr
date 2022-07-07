@@ -10,12 +10,12 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <sys/types.h>
-#include <device.h>
-#include <storage/flash_map.h>
+#include <zephyr/device.h>
+#include <zephyr/storage/flash_map.h>
 #include "flash_map_priv.h"
-#include <drivers/flash.h>
+#include <zephyr/drivers/flash.h>
 #include <soc.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 #if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY)
 #define SHA256_DIGEST_SIZE 32

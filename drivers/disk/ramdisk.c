@@ -7,11 +7,11 @@
 
 #include <string.h>
 #include <zephyr/types.h>
-#include <drivers/disk.h>
+#include <zephyr/drivers/disk.h>
 #include <errno.h>
-#include <init.h>
-#include <device.h>
-#include <logging/log.h>
+#include <zephyr/init.h>
+#include <zephyr/device.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(ramdisk, CONFIG_RAMDISK_LOG_LEVEL);
 

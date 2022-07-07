@@ -24,8 +24,8 @@
 #include <arpa/inet.h>
 
 /* Zephyr headers */
-#include <kernel.h>
-#include <usb/usb_device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/usb/usb_device.h>
 
 #include <posix_board_if.h>
 #include "usb_dc_native_posix_adapt.h"

@@ -10,10 +10,9 @@
  * @brief Measure time
  *
  */
-#include <kernel.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <sys/libc-hooks.h>
+#include <zephyr/sys/libc-hooks.h>
 #include "footprint.h"
 
 #ifdef CONFIG_USERSPACE

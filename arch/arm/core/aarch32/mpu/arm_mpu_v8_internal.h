@@ -10,7 +10,7 @@
 
 #include <aarch32/cortex_m/cmse.h>
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 /**
  * @brief internal structure holding information of

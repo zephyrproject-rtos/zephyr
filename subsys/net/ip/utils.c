@@ -9,21 +9,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_utils, CONFIG_NET_UTILS_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
-#include <syscall_handler.h>
+#include <zephyr/syscall_handler.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <string.h>
 #include <errno.h>
 
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
-#include <net/net_core.h>
-#include <net/socket_can.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/socket_can.h>
 
 char *net_sprint_addr(sa_family_t af, const void *addr)
 {
@@ -234,7 +234,6 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 
 		if (needcolon) {
 			*ptr++ = ':';
-			needcolon = false;
 		}
 
 		value = (uint32_t)sys_be16_to_cpu(UNALIGNED_GET(&w[i]));
@@ -721,13 +720,11 @@ static bool parse_ipv6(const char *str, size_t str_len,
 		net_sin6(addr)->sin6_port = htons(port);
 
 		NET_DBG("IPv6 host %s port %d",
-			log_strdup(net_addr_ntop(AF_INET6, addr6,
-						 ipaddr, sizeof(ipaddr) - 1)),
+			net_addr_ntop(AF_INET6, addr6, ipaddr, sizeof(ipaddr) - 1),
 			port);
 	} else {
 		NET_DBG("IPv6 host %s",
-			log_strdup(net_addr_ntop(AF_INET6, addr6,
-						 ipaddr, sizeof(ipaddr) - 1)));
+			net_addr_ntop(AF_INET6, addr6, ipaddr, sizeof(ipaddr) - 1));
 	}
 
 	return true;
@@ -798,8 +795,7 @@ static bool parse_ipv4(const char *str, size_t str_len,
 	net_sin(addr)->sin_port = htons(port);
 
 	NET_DBG("IPv4 host %s port %d",
-		log_strdup(net_addr_ntop(AF_INET, addr4,
-					 ipaddr, sizeof(ipaddr) - 1)),
+		net_addr_ntop(AF_INET, addr4, ipaddr, sizeof(ipaddr) - 1),
 		port);
 	return true;
 }

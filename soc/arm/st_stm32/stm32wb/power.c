@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <pm/pm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/pm/pm.h>
 #include <soc.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 #include <stm32wbxx_ll_utils.h>
 #include <stm32wbxx_ll_bus.h>
@@ -16,7 +16,7 @@
 #include <clock_control/clock_stm32_ll_common.h>
 #include "stm32_hsem.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /*

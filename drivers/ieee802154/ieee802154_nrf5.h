@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_
 #define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_
 
-#include <net/ieee802154_radio.h>
+#include <zephyr/net/ieee802154_radio.h>
 
 #define NRF5_FCS_LENGTH   (2)
 #define NRF5_PSDU_LENGTH  (125)

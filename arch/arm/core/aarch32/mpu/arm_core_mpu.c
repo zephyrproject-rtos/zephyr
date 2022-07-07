@@ -4,17 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
-#include <soc.h>
-#include <kernel_structs.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 
 #include "arm_core_mpu_dev.h"
-#include <linker/linker-defs.h>
+#include <zephyr/linker/linker-defs.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mpu);
 
 /*
@@ -47,7 +46,7 @@ LOG_MODULE_REGISTER(mpu);
 		_MPU_DYNAMIC_REGIONS_AREA_START)
 
 #if !defined(CONFIG_MULTITHREADING) && defined(CONFIG_MPU_STACK_GUARD)
-extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 #endif
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) \

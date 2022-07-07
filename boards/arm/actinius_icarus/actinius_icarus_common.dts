@@ -74,6 +74,8 @@
 		blue-pwm-led = &blue_pwm_led;
 		sw0 = &button0;
 		bootloader-led0 = &green_pwm_led;
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &green_pwm_led;
 	};
 
 	vbatt {
@@ -81,6 +83,12 @@
 		io-channels = <&adc 0>;
 		output-ohms = <10000000>;
 		full-ohms = <(10000000 + 4700000)>;
+	};
+
+	sim_select: sim-select {
+		compatible = "sim-select";
+		sim-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		sim = "esim";
 	};
 };
 

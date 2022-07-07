@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT raspberrypi_pico_reset
 
-#include <device.h>
-#include <drivers/reset.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/reset.h>
 
 struct reset_rpi_config {
 	DEVICE_MMIO_ROM;
@@ -106,26 +106,26 @@ static int reset_rpi_update(const struct device *dev, uint32_t id, uint8_t asser
 	return reset_rpi_write_register(dev, offset, value);
 }
 
-static int reset_rpi_assert(const struct device *dev, uint32_t id)
+static int reset_rpi_line_assert(const struct device *dev, uint32_t id)
 {
 	return reset_rpi_update(dev, id, 1);
 }
 
-static int reset_rpi_deassert(const struct device *dev, uint32_t id)
+static int reset_rpi_line_deassert(const struct device *dev, uint32_t id)
 {
 	return reset_rpi_update(dev, id, 0);
 }
 
-static int reset_rpi_toggle(const struct device *dev, uint32_t id)
+static int reset_rpi_line_toggle(const struct device *dev, uint32_t id)
 {
 	int ret;
 
-	ret = reset_rpi_assert(dev, id);
+	ret = reset_rpi_line_assert(dev, id);
 	if (ret) {
 		return ret;
 	}
 
-	return reset_rpi_deassert(dev, id);
+	return reset_rpi_line_deassert(dev, id);
 }
 
 static int reset_rpi_init(const struct device *dev)
@@ -137,9 +137,9 @@ static int reset_rpi_init(const struct device *dev)
 
 static const struct reset_driver_api reset_rpi_driver_api = {
 	.status = reset_rpi_status,
-	.assert = reset_rpi_assert,
-	.deassert = reset_rpi_deassert,
-	.toggle = reset_rpi_toggle,
+	.line_assert = reset_rpi_line_assert,
+	.line_deassert = reset_rpi_line_deassert,
+	.line_toggle = reset_rpi_line_toggle,
 };
 
 #define RPI_RESET_INIT(idx)							\

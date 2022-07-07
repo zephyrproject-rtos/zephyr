@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <drivers/counter.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/counter.h>
 #include <soc.h>
 #include <hw_counter.h>
 

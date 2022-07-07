@@ -7,7 +7,7 @@
 
 #ifdef CONFIG_BT_TBS_CLIENT
 
-#include <bluetooth/audio/tbs.h>
+#include <zephyr/bluetooth/audio/tbs.h>
 
 #include "common.h"
 

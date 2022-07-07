@@ -26,7 +26,7 @@
 
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <arch/arm/aarch32/misc.h>
+#include <zephyr/arch/arm/aarch32/misc.h>
 
 #ifdef __cplusplus
 extern "C" {

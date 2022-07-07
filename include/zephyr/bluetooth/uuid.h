@@ -17,7 +17,7 @@
  * @{
  */
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -374,6 +374,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_BMS \
 	BT_UUID_DECLARE_16(BT_UUID_BMS_VAL)
+/** @def BT_UUID_CGMS_VAL
+ *  @brief Continuous Glucose Monitoring Service UUID value
+ */
+#define BT_UUID_CGMS_VAL 0x181f
+/** @def BT_UUID_CGMS
+ *  @brief Continuous Glucose Monitoring Service
+ */
+#define BT_UUID_CGMS \
+	BT_UUID_DECLARE_16(BT_UUID_CGMS_VAL)
 /** @def BT_UUID_IPSS_VAL
  *  @brief IP Support Service UUID value
  */
@@ -960,6 +969,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_HIDS_PROTOCOL_MODE \
 	BT_UUID_DECLARE_16(BT_UUID_HIDS_PROTOCOL_MODE_VAL)
+/** @def BT_UUID_RECORD_ACCESS_CONTROL_POINT_VAL
+ *  @brief Record Access Control Point Characteristic value
+ */
+#define BT_UUID_RECORD_ACCESS_CONTROL_POINT_VAL 0x2a52
+/** @def BT_UUID_RECORD_ACCESS_CONTROL_POINT
+ *  @brief Record Access Control Point
+ */
+#define BT_UUID_RECORD_ACCESS_CONTROL_POINT \
+	BT_UUID_DECLARE_16(BT_UUID_RECORD_ACCESS_CONTROL_POINT_VAL)
 /** @def BT_UUID_RSC_MEASUREMENT_VAL
  *  @brief RSC Measurement Characteristic UUID value
  */
@@ -1221,6 +1239,60 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_CENTRAL_ADDR_RES \
 	BT_UUID_DECLARE_16(BT_UUID_CENTRAL_ADDR_RES_VAL)
+/** @def BT_UUID_CGM_MEASUREMENT_VAL
+ *  @brief CGM Measurement Characteristic value
+ */
+#define BT_UUID_CGM_MEASUREMENT_VAL 0x2aa7
+/** @def BT_UUID_CGM_MEASUREMENT
+ *  @brief CGM Measurement Characteristic
+ */
+#define BT_UUID_CGM_MEASUREMENT \
+	BT_UUID_DECLARE_16(BT_UUID_CGM_MEASUREMENT_VAL)
+/** @def BT_UUID_CGM_FEATURE_VAL
+ *  @brief CGM Feature Characteristic value
+ */
+#define BT_UUID_CGM_FEATURE_VAL 0x2aa8
+/** @def BT_UUID_CGM_FEATURE
+ *  @brief CGM Feature Characteristic
+ */
+#define BT_UUID_CGM_FEATURE \
+	BT_UUID_DECLARE_16(BT_UUID_CGM_FEATURE_VAL)
+/** @def BT_UUID_CGM_STATUS_VAL
+ *  @brief CGM Status Characteristic value
+ */
+#define BT_UUID_CGM_STATUS_VAL 0x2aa9
+/** @def BT_UUID_CGM_STATUS
+ *  @brief CGM Status Characteristic
+ */
+#define BT_UUID_CGM_STATUS \
+	BT_UUID_DECLARE_16(BT_UUID_CGM_STATUS_VAL)
+/** @def BT_UUID_CGM_SESSION_START_TIME_VAL
+ *  @brief CGM Session Start Time Characteristic value
+ */
+#define BT_UUID_CGM_SESSION_START_TIME_VAL 0x2aaa
+/** @def BT_UUID_CGM_SESSION_START_TIME
+ *  @brief CGM Session Start Time
+ */
+#define BT_UUID_CGM_SESSION_START_TIME \
+	BT_UUID_DECLARE_16(BT_UUID_CGM_SESSION_START_TIME_VAL)
+/** @def BT_UUID_CGM_SESSION_RUN_TIME_VAL
+ *  @brief CGM Session Run Time Characteristic value
+ */
+#define BT_UUID_CGM_SESSION_RUN_TIME_VAL 0x2aab
+/** @def BT_UUID_CGM_SESSION_RUN_TIME
+ *  @brief CGM Session Run Time
+ */
+#define BT_UUID_CGM_SESSION_RUN_TIME \
+	BT_UUID_DECLARE_16(BT_UUID_CGM_SESSION_RUN_TIME_VAL)
+/** @def BT_UUID_CGM_SPECIFIC_OPS_CONTROL_POINT_VAL
+ *  @brief CGM Specific Ops Control Point Characteristic value
+ */
+#define BT_UUID_CGM_SPECIFIC_OPS_CONTROL_POINT_VAL 0x2aac
+/** @def BT_UUID_CGM_SPECIFIC_OPS_CONTROL_POINT
+ *  @brief CGM Specific Ops Control Point
+ */
+#define BT_UUID_CGM_SPECIFIC_OPS_CONTROL_POINT \
+	BT_UUID_DECLARE_16(BT_UUID_CGM_SPECIFIC_OPS_CONTROL_POINT_VAL)
 /** @def BT_UUID_URI_VAL
  *  @brief URI UUID value
  */
@@ -2078,15 +2150,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_PACS_SRC_LOC \
 	BT_UUID_DECLARE_16(BT_UUID_PACS_SRC_LOC_VAL)
-/** @def BT_UUID_PACS_CONTEXT_VAL
+/** @def BT_UUID_PACS_AVAILABLE_CONTEXT_VAL
  *  @brief Available Audio Contexts Characteristic value
  */
-#define BT_UUID_PACS_CONTEXT_VAL 0x2BCD
-/** @def BT_UUID_PACS_CONTEXT
+#define BT_UUID_PACS_AVAILABLE_CONTEXT_VAL 0x2BCD
+/** @def BT_UUID_PACS_AVAILABLE_CONTEXT
  *  @brief Available Audio Contexts Characteristic
  */
-#define BT_UUID_PACS_CONTEXT \
-	BT_UUID_DECLARE_16(BT_UUID_PACS_CONTEXT_VAL)
+#define BT_UUID_PACS_AVAILABLE_CONTEXT \
+	BT_UUID_DECLARE_16(BT_UUID_PACS_AVAILABLE_CONTEXT_VAL)
 /** @def BT_UUID_PACS_SUPPORTED_CONTEXT_VAL
  *  @brief Supported Audio Context Characteristic value
  */

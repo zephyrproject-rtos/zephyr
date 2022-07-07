@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <ia32/exception.h>
 #include <inttypes.h>
-#include <debug/gdbstub.h>
+#include <zephyr/debug/gdbstub.h>
 
 
 static struct gdb_ctx ctx;

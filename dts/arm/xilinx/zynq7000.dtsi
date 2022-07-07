@@ -5,8 +5,8 @@
 
 #include <mem.h>
 #include <arm/armv7-a.dtsi>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
-#include <dt-bindings/ethernet/xlnx_gem.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/ethernet/xlnx_gem.h>
 
 / {
 	soc {
@@ -37,7 +37,6 @@
 				     <GIC_PPI 10 IRQ_TYPE_EDGE
 					IRQ_DEFAULT_PRIORITY>;
 			reg = <0xf8f00200 0x1C>;
-			label = "arch_timer";
 		};
 
 		gic: interrupt-controller@f8f01000 {

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <syscall_handler.h>
-#include <logging/log.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(app_syscall);
 

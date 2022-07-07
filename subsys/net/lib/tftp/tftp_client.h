@@ -5,9 +5,9 @@
  */
 
 /* Generic header files required by the TFTPC Module. */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
-#include <net/socket.h>
+#include <zephyr/net/socket.h>
 
 /* Defines for creating static arrays for TFTP communication. */
 #define TFTP_HEADER_SIZE         4

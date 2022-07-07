@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <irq_offload.h>
-#include <arch/riscv/syscall.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/arch/riscv/syscall.h>
 
 void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {

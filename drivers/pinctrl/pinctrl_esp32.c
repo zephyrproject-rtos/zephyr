@@ -9,8 +9,8 @@
 #include <hal/rtc_io_hal.h>
 
 #include <soc.h>
-#include <drivers/pinctrl.h>
-#include <drivers/pinctrl/pinctrl_esp32_common.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl/pinctrl_esp32_common.h>
 
 #ifdef CONFIG_SOC_ESP32C3
 /* gpio structs in esp32c3 series are different from xtensa ones */

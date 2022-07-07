@@ -6,20 +6,20 @@
 
 #define DT_DRV_COMPAT st_stm32_window_watchdog
 
-#include <drivers/watchdog.h>
+#include <zephyr/drivers/watchdog.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_wwdg.h>
 #include <stm32_ll_system.h>
 #include <errno.h>
-#include <sys/__assert.h>
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/clock_control.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include "wdt_wwdg_stm32.h"
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_wwdg_stm32);
 
 #define WWDG_INTERNAL_DIVIDER   4096U

@@ -14,16 +14,16 @@
 #define LOG_MODULE_NAME netlo
 #define LOG_LEVEL CONFIG_NET_LOOPBACK_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <net/net_pkt.h>
-#include <net/buf.h>
-#include <net/net_ip.h>
-#include <net/net_if.h>
-#include <net/loopback.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/loopback.h>
 
-#include <net/dummy.h>
+#include <zephyr/net/dummy.h>
 
 int loopback_dev_init(const struct device *dev)
 {
@@ -64,6 +64,7 @@ static void loopback_init(struct net_if *iface)
 #ifdef CONFIG_NET_LOOPBACK_SIMULATE_PACKET_DROP
 static float loopback_packet_drop_ratio = 0.0f;
 static float loopback_packet_drop_state = 0.0f;
+static int loopback_packet_dropped_count;
 
 int loopback_set_packet_drop_ratio(float ratio)
 {
@@ -73,6 +74,12 @@ int loopback_set_packet_drop_ratio(float ratio)
 	loopback_packet_drop_ratio = ratio;
 	return 0;
 }
+
+int loopback_get_num_dropped_packets(void)
+{
+	return loopback_packet_dropped_count;
+}
+
 #endif
 
 static int loopback_send(const struct device *dev, struct net_pkt *pkt)
@@ -126,6 +133,7 @@ static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 	if (loopback_packet_drop_state >= 1.0f) {
 		/* Administrate we dropped a packet */
 		loopback_packet_drop_state -= 1.0f;
+		loopback_packet_dropped_count++;
 
 		/* Clean up the packet */
 		net_pkt_unref(cloned);

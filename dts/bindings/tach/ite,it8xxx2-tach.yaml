@@ -5,7 +5,7 @@ description: ITE, it8xxx2 Tachometer node
 
 compatible: "ite,it8xxx2-tach"
 
-include: tach.yaml
+include: [tach.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -21,11 +21,6 @@ properties:
         required: true
         description: tachometer data valid status bit of tswctlr register
 
-    pinctrl-0:
-        type: phandles
-        required: true
-        description: configuration of tachometer pinmux controller
-
     channel:
         type: int
         required: true
@@ -38,3 +33,9 @@ properties:
         type: int
         required: true
         description: number of pulses per round of tachometer's input
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true

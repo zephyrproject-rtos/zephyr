@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_SHELL_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_SHELL_H_
 
-#include <bluetooth/mesh.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #ifdef __cplusplus
 extern "C" {

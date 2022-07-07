@@ -10,13 +10,13 @@
 
 #include <errno.h>
 #include <stdbool.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/gpio.h>
-#include <dt-bindings/gpio/andestech-atcgpio100.h>
-#include <sys/util.h>
-#include <sys/sys_io.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/gpio/andestech-atcgpio100.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/sys_io.h>
 
 #include "gpio_utils.h"
 

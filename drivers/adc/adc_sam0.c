@@ -7,10 +7,10 @@
 #define DT_DRV_COMPAT atmel_sam0_adc
 
 #include <soc.h>
-#include <drivers/adc.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/pinctrl.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_sam0, CONFIG_ADC_LOG_LEVEL);
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
@@ -133,7 +133,6 @@ static int adc_sam0_channel_setup(const struct device *dev,
 	adc->SAMPCTRL.reg = sampctrl;
 	wait_synchronization(adc);
 
-
 	uint8_t refctrl;
 
 	switch (channel_cfg->reference) {
@@ -142,14 +141,14 @@ static int adc_sam0_channel_setup(const struct device *dev,
 		/* Enable the internal bandgap reference */
 		ADC_BGEN = 1;
 		break;
-	case ADC_REF_VDD_1_2:
-		refctrl = ADC_REFCTRL_REFSEL_VDD_1_2 | ADC_REFCTRL_REFCOMP;
-		break;
 #ifdef ADC_REFCTRL_REFSEL_VDD_1
 	case ADC_REF_VDD_1:
 		refctrl = ADC_REFCTRL_REFSEL_VDD_1 | ADC_REFCTRL_REFCOMP;
 		break;
 #endif
+	case ADC_REF_VDD_1_2:
+		refctrl = ADC_REFCTRL_REFSEL_VDD_1_2 | ADC_REFCTRL_REFCOMP;
+		break;
 	case ADC_REF_EXTERNAL0:
 		refctrl = ADC_REFCTRL_REFSEL_AREFA;
 		break;

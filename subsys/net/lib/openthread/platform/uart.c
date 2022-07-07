@@ -7,19 +7,19 @@
 #define LOG_LEVEL CONFIG_OPENTHREAD_LOG_LEVEL
 #define LOG_MODULE_NAME net_otPlat_uart
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 
-#include <sys/ring_buffer.h>
-#include <sys/atomic.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/atomic.h>
 
-#include <usb/usb_device.h>
+#include <zephyr/usb/usb_device.h>
 
 #include <openthread/ncp.h>
 #include <openthread-system.h>

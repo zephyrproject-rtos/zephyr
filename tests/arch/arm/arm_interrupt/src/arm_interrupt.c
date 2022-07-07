@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 static volatile int test_flag;
 static volatile int expected_reason = -1;
@@ -377,7 +377,7 @@ void test_arm_interrupt(void)
 }
 
 #if defined(CONFIG_USERSPACE)
-#include <syscall_handler.h>
+#include <zephyr/syscall_handler.h>
 #include "test_syscalls.h"
 
 void z_impl_test_arm_user_interrupt_syscall(void)

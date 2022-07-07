@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ztest.h>
-#include <sys/winstream.h>
+#include <zephyr/sys/winstream.h>
 
 /* This, uh, seems to be the standard way to unit test library code.
  * Or so I gather from tests/unit/rbtree ...

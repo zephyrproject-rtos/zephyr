@@ -12,7 +12,7 @@
  * hardware for the RT5XX platforms.
  */
 
-#include <init.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include "flash_clock_setup.h"
 #include "fsl_power.h"
@@ -24,6 +24,12 @@
 #define BOARD_XTAL_SYS_CLK_HZ                      24000000U
 /* Core clock frequency: 198000000Hz */
 #define CLOCK_INIT_CORE_CLOCK                     198000000U
+
+#define CTIMER_CLOCK_SOURCE(node_id) \
+	TO_CTIMER_CLOCK_SOURCE(DT_CLOCKS_CELL(node_id, name), DT_PROP(node_id, clk_source))
+#define TO_CTIMER_CLOCK_SOURCE(inst, val) TO_CLOCK_ATTACH_ID(inst, val)
+#define TO_CLOCK_ATTACH_ID(inst, val) CLKCTL1_TUPLE_MUXA(CT32BIT##inst##FCLKSEL_OFFSET, val)
+#define CTIMER_CLOCK_SETUP(node_id) CLOCK_AttachClk(CTIMER_CLOCK_SOURCE(node_id));
 
 const clock_sys_pll_config_t g_sysPllConfig_clock_init = {
 	/* OSC clock */
@@ -184,12 +190,21 @@ void clock_init(void)
 	/* Switch FLEXCOMM0 to FRG */
 	CLOCK_AttachClk(kFRG_to_FLEXCOMM0);
 #endif
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay)
+	/* Switch FLEXCOMM4 to FRO_DIV4 */
+	CLOCK_AttachClk(kFRO_DIV4_to_FLEXCOMM4);
+#endif
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(hs_spi1), nxp_lpc_spi, okay)
+	CLOCK_AttachClk(kFRO_DIV4_to_FLEXCOMM16);
+#endif
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm12), nxp_lpc_usart, okay)
 	/* Switch FLEXCOMM12 to FRG */
 	CLOCK_AttachClk(kFRG_to_FLEXCOMM12);
 #endif
 	/* Switch CLKOUT to FRO_DIV2 */
 	CLOCK_AttachClk(kFRO_DIV2_to_CLKOUT);
+
+	DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 
 	/* Set up dividers. */
 	/* Set AUDIOPLLCLKDIV divider to value 15 */

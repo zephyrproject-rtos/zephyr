@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <sw_isr_table.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/sw_isr_table.h>
+#include <zephyr/arch/cpu.h>
 
 /* There is an additional member at the end populated by the linker script
  * which indicates the number of interrupts specified

@@ -6,7 +6,7 @@
 
 #include <tracing_user.h>
 #include <kernel_internal.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <ksched.h>
 
 static int nested_interrupts[CONFIG_MP_NUM_CPUS];

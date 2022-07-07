@@ -8,12 +8,12 @@
 #define LOG_MODULE_NAME net_lwm2m_obj_firmware
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <string.h>
 #include <stdio.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
@@ -239,14 +239,17 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 		 * make sure it fail after timeout
 		 */
 		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADING);
-	} else if (state != STATE_DOWNLOADING) {
-		if (data_len == 0U && state == STATE_DOWNLOADED) {
+	} else if (state == STATE_DOWNLOADED) {
+		if (data_len == 0U || (data_len == 1U && data[0] == '\0')) {
 			/* reset to state idle and result default */
 			lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_DEFAULT);
+			LOG_DBG("Update canceled by writing %d bytes", data_len);
 			return 0;
 		}
-
-		LOG_DBG("Cannot download: state = %d", state);
+		LOG_WRN("Download has already completed");
+		return -EPERM;
+	} else if (state != STATE_DOWNLOADING) {
+		LOG_WRN("Cannot download: state = %d", state);
 		return -EPERM;
 	}
 
@@ -284,7 +287,7 @@ static int package_uri_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 				uint16_t res_inst_id, uint8_t *data, uint16_t data_len,
 				bool last_block, size_t total_size)
 {
-	LOG_DBG("PACKAGE_URI WRITE: %s", log_strdup(package_uri[obj_inst_id]));
+	LOG_DBG("PACKAGE_URI WRITE: %s", package_uri[obj_inst_id]);
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	uint8_t state = lwm2m_firmware_get_update_state_inst(obj_inst_id);
@@ -385,8 +388,8 @@ static struct lwm2m_engine_obj_inst *firmware_create(uint16_t obj_inst_id)
 	/* initialize instance resource data */
 	INIT_OBJ_RES_OPT(FIRMWARE_PACKAGE_ID, res[obj_inst_id], i, res_inst[obj_inst_id], j, 1,
 			 false, true, NULL, NULL, NULL, package_write_cb, NULL);
-	INIT_OBJ_RES(FIRMWARE_PACKAGE_URI_ID, res[obj_inst_id], i, res_inst[obj_inst_id], j, 1,
-		     false, true, package_uri[obj_inst_id], PACKAGE_URI_LEN, NULL, NULL, NULL,
+	INIT_OBJ_RES_LEN(FIRMWARE_PACKAGE_URI_ID, res[obj_inst_id], i, res_inst[obj_inst_id], j, 1,
+		     false, true, package_uri[obj_inst_id], PACKAGE_URI_LEN, 0, NULL, NULL, NULL,
 		     package_uri_write_cb, NULL);
 	INIT_OBJ_RES_EXECUTE(FIRMWARE_UPDATE_ID, res[obj_inst_id], i, firmware_update_cb);
 	INIT_OBJ_RES_DATA(FIRMWARE_STATE_ID, res[obj_inst_id], i, res_inst[obj_inst_id], j,

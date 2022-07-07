@@ -12,7 +12,7 @@
 #include <timestamp.h>
 
 #include <stdio.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 #define STACK_SIZE 2048
 #if CONFIG_SRAM_SIZE <= 32
@@ -22,8 +22,8 @@
 #endif
 
 
-extern K_THREAD_STACK_DEFINE(thread_stack1, STACK_SIZE);
-extern K_THREAD_STACK_DEFINE(thread_stack2, STACK_SIZE);
+K_THREAD_STACK_DECLARE(thread_stack1, STACK_SIZE);
+K_THREAD_STACK_DECLARE(thread_stack2, STACK_SIZE);
 extern struct k_thread thread_data1;
 extern struct k_thread thread_data2;
 

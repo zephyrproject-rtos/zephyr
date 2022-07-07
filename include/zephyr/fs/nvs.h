@@ -8,9 +8,9 @@
 #define ZEPHYR_INCLUDE_FS_NVS_H_
 
 #include <sys/types.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,6 +55,9 @@ struct nvs_fs {
 	struct k_mutex nvs_lock;
 	const struct device *flash_device;
 	const struct flash_parameters *flash_parameters;
+#if CONFIG_NVS_LOOKUP_CACHE
+	uint32_t lookup_cache[CONFIG_NVS_LOOKUP_CACHE_SIZE];
+#endif
 };
 
 /**

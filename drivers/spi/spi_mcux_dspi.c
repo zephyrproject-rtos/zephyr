@@ -8,17 +8,17 @@
 #define DT_DRV_COMPAT	nxp_kinetis_dspi
 
 #include <errno.h>
-#include <drivers/spi.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/clock_control.h>
 #include <fsl_dspi.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #ifdef CONFIG_DSPI_MCUX_EDMA
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma.h>
 #include <fsl_edma.h>
 #endif
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_mcux_dspi);
 
 #include "spi_context.h"

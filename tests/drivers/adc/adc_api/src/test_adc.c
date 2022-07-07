@@ -6,8 +6,8 @@
  */
 
 
-#include <drivers/adc.h>
-#include <zephyr.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #if defined(CONFIG_SHIELD_MIKROE_ADC_CLICK)
@@ -34,6 +34,7 @@
 
 #elif defined(CONFIG_BOARD_NRF21540DK_NRF52840) || \
 	defined(CONFIG_BOARD_NRF52DK_NRF52832) || \
+	defined(CONFIG_BOARD_EBYTE_E73_TBB_NRF52832) || \
 	defined(CONFIG_BOARD_NRF52840DK_NRF52840) || \
 	defined(CONFIG_BOARD_RAK4631_NRF52840) || \
 	defined(CONFIG_BOARD_RAK5010_NRF52840) || \
@@ -64,7 +65,11 @@
 	defined(CONFIG_BOARD_UBX_EVKNINAB4_NRF52833) || \
 	defined(CONFIG_BOARD_WE_PROTEUS2EV_NRF52832) || \
 	defined(CONFIG_BOARD_WE_PROTEUS3EV_NRF52840) || \
-	defined(CONFIG_BOARD_BT610)
+	defined(CONFIG_BOARD_BT610) || \
+	defined(CONFIG_BOARD_PAN1780_EVB) || \
+	defined(CONFIG_BOARD_PAN1781_EVB) || \
+	defined(CONFIG_BOARD_PAN1782_EVB) || \
+	defined(CONFIG_BOARD_PAN1770_EVB)
 
 #include <hal/nrf_saadc.h>
 #define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nordic_nrf_saadc))
@@ -191,7 +196,8 @@
 	defined(CONFIG_BOARD_STM32_MIN_DEV_BLACK) || \
 	defined(CONFIG_BOARD_WAVESHARE_OPEN103Z) || \
 	defined(CONFIG_BOARD_RONOTH_LODEV) || \
-	defined(CONFIG_BOARD_STM32L496G_DISCO)
+	defined(CONFIG_BOARD_STM32L496G_DISCO) || \
+	defined(CONFIG_BOARD_SWAN_R5)
 #define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, st_stm32_adc))
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
@@ -322,6 +328,7 @@
 	defined(CONFIG_BOARD_MIMXRT1050_EVK_QSPI) || \
 	defined(CONFIG_BOARD_MIMXRT1064_EVK) || \
 	defined(CONFIG_BOARD_MIMXRT1060_EVK) || \
+	defined(CONFIG_BOARD_MIMXRT1060_EVKB) || \
 	defined(CONFIG_BOARD_MIMXRT1024_EVK) || \
 	defined(CONFIG_BOARD_MIMXRT1010_EVK) || \
 	defined(CONFIG_BOARD_MIMXRT1015_EVK) || \

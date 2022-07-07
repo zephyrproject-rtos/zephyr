@@ -72,55 +72,75 @@ Loading image to Audio DSP
 `SOF Diagnostic Driver`_ provide interface for firmware loading. Python tools
 in the board support directory use the interface to load firmware to ``ADSP``.
 
-Note that the ``/dev/hda`` device file created by the diagnostic
-driver must be readable and writable by the process.  This can be
-accomplished via a simple chmod, via a udev handler that associates
-the device with a particular user or group, or simply by running the
+Assume that the up_squared board's host name is ``cavs15`` (It also can be an
+ip address), and the user account is ``user``. Then copy the python tool to the
+``up_squared`` board from your build environment::
+
+   $ scp boards/xtensa/intel_adsp/tools/cavstool.py user@cavs15:
+
+
+Note that the ``/dev/hda`` device file created by the diagnostic driver must
+be readable and writable by the process.  So we simply by running the
 loader script as root:
 
 .. code-block:: console
 
-   $ sudo chmod 777 /dev/hda
-   $ boards/xtensa/intel_adsp_cavs15/tools/fw_loader.py -f <path to zephyr.ri>
+   cavs15$ sudo ./cavstool.py
 
-Debugging
-=========
+Cavstool_server.py is a daemon which accepts a firmware image from a remote host
+and loads it into the ADSP. After successful firmware download, the daemon also
+sends any log messages or output back to the client.
 
-The only way to debug application is using logging. Logging and ADSP logging
-backend needs to be enabled in the application configuration.
+Running and Debugging
+=====================
 
-ADSP logging backend writes logs to the ring buffer in the shared memory.
-
-As above, the ``adsplog`` tool requires appropriate permissions, in
-this case to the sysfs "resource4" device on the appropriate PCI
-device.  This can likewise be managed via any filesystem, setuid or
-udev trick the operator prefers.
+While the python script is running on ``up_squared`` board, you can start load
+image and run the application by:
 
 .. code-block:: console
 
-   $ boards/xtensa/intel_adsp_cavs15/tools/adsplog.py
-   ERROR: Cannot open /sys/bus/pci/devices/0000:00:0e.0/resource4 for reading
+   west flash --remote-host cavs15
 
-   $ sudo chmod 666 /sys/bus/pci/devices/0000:00:0e.0/resource4
-   $ boards/xtensa/intel_adsp_cavs15/tools/adsplog.py
+or
+
+.. code-block:: console
+
+   west flash --remote-host 192.168.x.x
+
+Then you can see the log message immediately:
+
+.. code-block:: console
+
    Hello World! intel_adsp_cavs15
+
 
 Integration Testing With Twister
 ================================
 
 The ADSP hardware also has integration for testing using the twister
-tool.  The ``adsplog`` script can be used as the
+tool.  The ``cavstool_client.py`` script can be used as the
 ``--device-serial-pty`` handler, and the west flash script should take
-a path to the same key file used above.  Remember to pass the
-``--no-history`` argument to ``adsplog.py``, because by default it
-will dump the current log buffer, which may contain output from a
-previous test run.
+a path to the same key file used above.
 
 .. code-block:: console
 
-    $ZEPHYR_BASE/scripts/twister --device-testing -p intel_adsp_cavs15 \
-      --device-serial-pty $ZEPHYR_BASE/boards/xtensa/intel_adsp_cavs15/tools/adsplog.py,--no-history \
-      --west-flash $ZEPHYR_BASE/boards/xtensa/intel_adsp_cavs15/tools/flash.sh,$PATH_TO_KEYFILE.pem
+    ./scripts/twister --device-testing -p intel_adsp_cavs15 \
+      --device-serial-pty $ZEPHYR_BASE/soc/xtensa/intel_adsp/tools/cavstool_client.py,cavs15,-l \
+      --west-flash "--remote-host=cavs15,--pty"
+
+And if you install the SOF software stack in rather than the default path,
+you also can specify the location of the rimage tool, signing key and the
+toml config, for example:
+
+.. code-block:: console
+
+    ./scripts/twister --device-testing -p intel_adsp_cavs15 \
+      --device-serial-pty $ZEPHYR_BASE/soc/xtensa/intel_adsp/tools/cavstool_client.py,cavs15,-l \
+      --west-flash "--remote-host=cavs15,--pty\
+      --rimage-tool=/path/to/rimage_tool,\
+      --key=/path/to/otc_private_key.pem,\
+      --config-dir=/path/to/config_dir"
+
 
 .. target-notes::
 

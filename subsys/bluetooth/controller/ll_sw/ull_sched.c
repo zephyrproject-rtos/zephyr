@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
@@ -16,6 +16,7 @@
 #include "util/memq.h"
 #include "util/mayfly.h"
 #include "util/dbuf.h"
+#include "util/mem.h"
 
 #include "ticker/ticker.h"
 

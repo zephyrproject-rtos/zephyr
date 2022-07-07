@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/virtualization/ivshmem.h>
-#include <syscall_handler.h>
+#include <zephyr/drivers/virtualization/ivshmem.h>
+#include <zephyr/syscall_handler.h>
 #include <string.h>
 
 static inline size_t z_vrfy_ivshmem_get_mem(const struct device *dev,

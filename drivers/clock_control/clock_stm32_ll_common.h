@@ -33,7 +33,8 @@
 #endif
 
 #ifdef STM32_SYSCLK_SRC_PLL
-int config_pll_sysclock(void);
+void config_pll_sysclock(void);
+uint32_t get_pllout_frequency(void);
 #endif
 void config_enable_default_clocks(void);
 

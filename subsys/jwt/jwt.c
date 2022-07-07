@@ -8,14 +8,14 @@
 #include <zephyr/types.h>
 #include <errno.h>
 
-#include <data/jwt.h>
-#include <data/json.h>
+#include <zephyr/data/jwt.h>
+#include <zephyr/data/json.h>
 
 #ifdef CONFIG_JWT_SIGN_RSA
 #include <mbedtls/pk.h>
 #include <mbedtls/rsa.h>
 #include <mbedtls/sha256.h>
-#include <random/rand32.h>
+#include <zephyr/random/rand32.h>
 #endif
 
 #ifdef CONFIG_JWT_SIGN_ECDSA
@@ -24,7 +24,7 @@
 #include <tinycrypt/ecc_dsa.h>
 #include <tinycrypt/constants.h>
 
-#include <random/rand32.h>
+#include <zephyr/random/rand32.h>
 #endif
 
 /*

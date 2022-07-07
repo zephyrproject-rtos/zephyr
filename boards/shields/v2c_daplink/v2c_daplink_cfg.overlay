@@ -28,9 +28,13 @@
 	status = "okay";
 
 	sdhc0: sdhc@0 {
-		compatible = "zephyr,mmc-spi-slot";
+		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
 		label = "SDHC_0";
 		spi-max-frequency = <25000000>;
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
 	};
 };

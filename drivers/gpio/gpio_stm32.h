@@ -11,9 +11,9 @@
  * @file header for STM32 GPIO
  */
 
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <pinmux/pinmux_stm32.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 /* GPIO buses definitions */
 

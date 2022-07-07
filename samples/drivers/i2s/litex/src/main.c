@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <drivers/i2s.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/i2s.h>
 #include <stdlib.h>
 #include <string.h>
 #define AUDIO_SAMPLE_FREQ (44100)

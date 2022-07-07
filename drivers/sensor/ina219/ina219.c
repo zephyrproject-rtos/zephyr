@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT ti_ina219
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
-#include <pm/device.h>
-#include <sys/byteorder.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "ina219.h"
 

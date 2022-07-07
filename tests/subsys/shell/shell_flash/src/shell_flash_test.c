@@ -9,13 +9,13 @@
  *
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <device.h>
+#include <zephyr/device.h>
 
-#include <drivers/flash.h>
-#include <shell/shell.h>
-#include <shell/shell_dummy.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_dummy.h>
 
 /* configuration derived from DT */
 #ifdef CONFIG_ARCH_POSIX

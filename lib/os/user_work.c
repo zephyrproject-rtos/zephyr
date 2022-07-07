@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 static void z_work_user_q_main(void *work_q_ptr, void *p2, void *p3)
 {

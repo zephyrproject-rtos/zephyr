@@ -9,8 +9,8 @@
 #define ZEPHYR_INCLUDE_SETTINGS_SETTINGS_H_
 
 #include <sys/types.h>
-#include <sys/util.h>
-#include <sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/slist.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -125,7 +125,7 @@ struct settings_handler {
 /**
  * @struct settings_handler_static
  * Config handlers without the node element, used for static handlers.
- * These are registered using a call to SETTINGS_REGISTER_STATIC().
+ * These are registered using a call to SETTINGS_STATIC_HANDLER_DEFINE().
  */
 struct settings_handler_static {
 
@@ -259,13 +259,6 @@ int settings_load_subtree(const char *subtree);
  *                        backend.
  * @param[in,out] param   parameter given to the
  *                        @ref settings_load_subtree_direct function.
- *
- *  - key[in] the name with skipped part that was used as name in
- *    handler registration
- *  - len[in] the size of the data found in the backend.
- *  - read_cb[in] function provided to read the data from the backend.
- *  - cb_arg[in] arguments for the read function provided by the
- *    backend.
  *
  * @return When nonzero value is returned, further subtree searching is stopped.
  *         Use with care as some settings backends would iterate through old

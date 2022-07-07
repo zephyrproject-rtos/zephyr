@@ -3,7 +3,7 @@
 
 /dts-v1/;
 
-#include <riscv32-fe310.dtsi>
+#include <sifive/riscv32-fe310.dtsi>
 #include "hifive1-pinctrl.dtsi"
 
 / {

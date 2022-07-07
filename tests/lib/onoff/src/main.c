@@ -6,7 +6,7 @@
  */
 
 #include <ztest.h>
-#include <sys/onoff.h>
+#include <zephyr/sys/onoff.h>
 
 static struct onoff_client cli;
 struct onoff_transitions transitions;

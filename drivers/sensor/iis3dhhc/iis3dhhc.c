@@ -10,12 +10,12 @@
 
 #define DT_DRV_COMPAT st_iis3dhhc
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 #include "iis3dhhc.h"
 

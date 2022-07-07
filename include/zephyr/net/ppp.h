@@ -8,10 +8,10 @@
 #ifndef ZEPHYR_INCLUDE_NET_PPP_H_
 #define ZEPHYR_INCLUDE_NET_PPP_H_
 
-#include <net/net_if.h>
-#include <net/net_pkt.h>
-#include <net/net_stats.h>
-#include <net/net_mgmt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_stats.h>
+#include <zephyr/net/net_mgmt.h>
 
 #ifdef __cplusplus
 extern "C" {

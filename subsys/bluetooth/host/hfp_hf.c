@@ -5,21 +5,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
-#include <sys/atomic.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <sys/printk.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/printk.h>
 
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/conn.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HFP_HF)
 #define LOG_MODULE_NAME bt_hfp_hf
 #include "common/log.h"
 
-#include <bluetooth/rfcomm.h>
-#include <bluetooth/hfp_hf.h>
+#include <zephyr/bluetooth/rfcomm.h>
+#include <zephyr/bluetooth/hfp_hf.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"

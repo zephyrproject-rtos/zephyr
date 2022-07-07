@@ -8,8 +8,8 @@
  * @file
  * @brief Zperf sample.
  */
-#include <usb/usb_device.h>
-#include <net/net_config.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/net/net_config.h>
 
 void main(void)
 {

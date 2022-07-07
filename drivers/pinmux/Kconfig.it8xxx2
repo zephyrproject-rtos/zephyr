@@ -1,7 +1,0 @@
-# Copyright (c) 2020 ITE Corporation. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-
-config PINMUX_ITE_IT8XXX2
-	bool "IT8XXX2 pinmux driver"
-	help
-	  Enable driver for the IT8XXX2 pinmux driver

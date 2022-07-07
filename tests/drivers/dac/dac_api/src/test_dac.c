@@ -5,8 +5,8 @@
  */
 
 
-#include <drivers/dac.h>
-#include <zephyr.h>
+#include <zephyr/drivers/dac.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #if defined(CONFIG_BOARD_NUCLEO_F091RC) || \

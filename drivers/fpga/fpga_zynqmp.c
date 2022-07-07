@@ -6,16 +6,16 @@
 
 #define DT_DRV_COMPAT xlnx_fpga
 
-#include <device.h>
-#include <drivers/fpga.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/fpga.h>
 #include "fpga_zynqmp.h"
 #include <errno.h>
 #include <string.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(fpga_zynqmp);
 
 static void power_up_fpga(void)

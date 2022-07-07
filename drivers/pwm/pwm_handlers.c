@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <syscall_handler.h>
-#include <drivers/pwm.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/drivers/pwm.h>
 
 static inline int z_vrfy_pwm_set_cycles(const struct device *dev,
 					uint32_t channel, uint32_t period,

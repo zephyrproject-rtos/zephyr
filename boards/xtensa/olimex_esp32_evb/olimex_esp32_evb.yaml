@@ -3,13 +3,16 @@ name: Olimex ESP32-EVB
 type: mcu
 arch: xtensa
 toolchain:
-  - espressif
+  - zephyr
 supported:
   - counter
   - gpio
   - hwinfo
   - i2c
-  - netif:wifi
   - spi
   - uart
   - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

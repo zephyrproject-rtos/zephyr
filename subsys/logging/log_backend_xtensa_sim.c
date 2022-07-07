@@ -8,11 +8,10 @@
 
 #include <stdio.h>
 #include <stddef.h>
-#include <logging/log_backend.h>
-#include <logging/log_core.h>
-#include <logging/log_msg.h>
-#include <logging/log_output.h>
-#include <logging/log_backend_std.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_backend_std.h>
 #include <xtensa/simcall.h>
 
 #define CHAR_BUF_SIZE (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? \
@@ -38,15 +37,8 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 LOG_OUTPUT_DEFINE(log_output_xsim, char_out,
 		  xtensa_log_buf, sizeof(xtensa_log_buf));
 
-static void put(const struct log_backend *const backend,
-		struct log_msg *msg)
-{
-	log_backend_std_put(&log_output_xsim, 0, msg);
-
-}
-
 static void process(const struct log_backend *const backend,
-		    union log_msg2_generic *msg)
+		    union log_msg_generic *msg)
 {
 	uint32_t flags = log_backend_std_get_flags();
 
@@ -73,32 +65,11 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 	log_backend_std_dropped(&log_output_xsim, cnt);
 }
 
-static void sync_string(const struct log_backend *const backend,
-		     struct log_msg_ids src_level, uint32_t timestamp,
-		     const char *fmt, va_list ap)
-{
-	log_backend_std_sync_string(&log_output_xsim, 0, src_level,
-				    timestamp, fmt, ap);
-}
-
-static void sync_hexdump(const struct log_backend *const backend,
-			 struct log_msg_ids src_level, uint32_t timestamp,
-			 const char *metadata, const uint8_t *data, uint32_t length)
-{
-	log_backend_std_sync_hexdump(&log_output_xsim, 0, src_level,
-				     timestamp, metadata, data, length);
-}
-
 const struct log_backend_api log_backend_xtensa_sim_api = {
-	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
-	.put = IS_ENABLED(CONFIG_LOG1_DEFERRED) ? put : NULL,
-	.put_sync_string = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
-			sync_string : NULL,
-	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
-			sync_hexdump : NULL,
+	.process = process,
 	.panic = panic,
 	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
-	.format_set = IS_ENABLED(CONFIG_LOG1) ? NULL : format_set,
+	.format_set = format_set,
 };
 
 LOG_BACKEND_DEFINE(log_backend_xtensa_sim, log_backend_xtensa_sim_api, true);

@@ -83,7 +83,7 @@ child-binding:
             * 4 : Full remap
             To simplify the usage, macro is available to generate "pinmux" field.
             This macro is available here:
-              -include/dt-bindings/pinctrl/stm32f1-pinctrl.h
+              -include/zephyr/dt-bindings/pinctrl/stm32f1-pinctrl.h
             Some examples of macro usage:
                GPIO A9 set as alernate with no remap
             ... {

@@ -6,10 +6,10 @@
 
 #include "rpmsg_backend.h"
 
-#include <zephyr.h>
-#include <drivers/ipm.h>
-#include <device.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/device.h>
+#include <zephyr/logging/log.h>
 
 #include <openamp/open_amp.h>
 #include <metal/device.h>
@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_RPMSG_SERVICE_LOG_LEVEL);
 
 #if MASTER
 #define VIRTQUEUE_ID 0
-#define RPMSG_ROLE RPMSG_MASTER
+#define RPMSG_ROLE RPMSG_HOST
 #else
 #define VIRTQUEUE_ID 1
 #define RPMSG_ROLE RPMSG_REMOTE

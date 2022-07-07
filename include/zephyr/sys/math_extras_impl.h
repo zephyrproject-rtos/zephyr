@@ -13,7 +13,7 @@
 #error "please include <sys/math_extras.h> instead of this file"
 #endif
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 /*
  * Force the use of portable C code (no builtins) by defining

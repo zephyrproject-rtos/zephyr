@@ -5,19 +5,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <stm32_ll_lptim.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_system.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
 
-#include <spinlock.h>
+#include <zephyr/spinlock.h>
 
 /*
  * Assumptions and limitations:
@@ -279,6 +279,7 @@ static int sys_clock_driver_init(const struct device *dev)
 
 	/* enable LSE clock */
 	LL_RCC_LSE_DisableBypass();
+	LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
 	LL_RCC_LSE_Enable();
 	while (!LL_RCC_LSE_IsReady()) {
 		/* Wait for LSE ready */

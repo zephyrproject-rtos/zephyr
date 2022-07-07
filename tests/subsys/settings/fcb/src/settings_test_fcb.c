@@ -9,7 +9,7 @@
 
 #include "settings_test.h"
 #include "settings_priv.h"
-#include <storage/flash_map.h>
+#include <zephyr/storage/flash_map.h>
 
 uint8_t val8;
 uint8_t val8_un;

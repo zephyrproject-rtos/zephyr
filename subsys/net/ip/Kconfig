@@ -354,19 +354,10 @@ module-help = Enables TCP handler output debug messages
 source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_TCP
 
-config NET_TCP_BACKLOG_SIZE
-	int "Number of simultaneous incoming TCP connections"
-	depends on NET_TCP
-	default 1
-	range 1 128
-	help
-	  The number of simultaneous TCP connection attempts, i.e. outstanding
-	  TCP connections waiting for initial ACK.
-
 config NET_TCP_TIME_WAIT_DELAY
 	int "How long to wait in TIME_WAIT state (in milliseconds)"
 	depends on NET_TCP
-	default 250
+	default 1500
 	help
 	  To avoid a (low-probability) issue when delayed packets from
 	  previous connection get delivered to next connection reusing
@@ -380,7 +371,7 @@ config NET_TCP_TIME_WAIT_DELAY
 	  DoS attacks). At the same time, the issue of packet misdelivery
 	  is largely alleviated in the modern TCP stacks by using random,
 	  non-repeating port numbers and initial sequence numbers. Due
-	  to this, Zephyr uses much lower value of 250ms by default.
+	  to this, Zephyr uses much lower value of 1500ms by default.
 	  Value of 0 disables TIME_WAIT state completely.
 
 config NET_TCP_ACK_TIMEOUT

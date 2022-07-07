@@ -17,7 +17,7 @@
  * @{
  */
 
-#include <bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 #ifdef __cplusplus
 extern "C" {

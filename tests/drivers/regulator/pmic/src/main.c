@@ -9,11 +9,11 @@
  * respectively.
  */
 
-#include <zephyr.h>
-#include <drivers/gpio.h>
-#include <drivers/adc.h>
-#include <drivers/regulator.h>
-#include <drivers/regulator/consumer.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/regulator.h>
+#include <zephyr/drivers/regulator/consumer.h>
 #include <ztest.h>
 
 #if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || \

@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 /** @cond INTERNAL_HIDDEN */
 

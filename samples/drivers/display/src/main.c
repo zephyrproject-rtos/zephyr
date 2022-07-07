@@ -7,12 +7,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/display.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/display.h>
 
 #ifdef CONFIG_ARCH_POSIX
 #include "posix_board_if.h"

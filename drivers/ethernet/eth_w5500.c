@@ -8,18 +8,18 @@
 
 #define DT_DRV_COMPAT	wiznet_w5500
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eth_w5500, CONFIG_ETHERNET_LOG_LEVEL);
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <string.h>
 #include <errno.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <net/ethernet.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 
 #include "eth.h"
@@ -160,18 +160,17 @@ static int w5500_command(const struct device *dev, uint8_t cmd)
 	uint64_t end = sys_clock_timeout_end_calc(K_MSEC(100));
 
 	w5500_spi_write(dev, W5500_S0_CR, &cmd, 1);
-	do {
+	while (1) {
+		w5500_spi_read(dev, W5500_S0_CR, &reg, 1);
+		if (!reg) {
+			break;
+			}
 		int64_t remaining = end - sys_clock_tick_get();
-
 		if (remaining <= 0) {
 			return -EIO;
+			}
+		k_busy_wait(W5500_PHY_ACCESS_DELAY);
 		}
-
-		w5500_spi_read(dev, W5500_S0_CR, &reg, 1);
-
-		k_msleep(1);
-	} while (reg != 0);
-
 	return 0;
 }
 
@@ -208,7 +207,6 @@ static int w5500_tx(const struct device *dev, struct net_pkt *pkt)
 
 static void w5500_rx(const struct device *dev)
 {
-	uint8_t mask = 0;
 	uint8_t header[2];
 	uint8_t tmp[2];
 	uint16_t off;
@@ -221,8 +219,6 @@ static void w5500_rx(const struct device *dev)
 	struct w5500_runtime *ctx = dev->data;
 	const struct w5500_config *config = dev->config;
 
-	/* disable interrupt */
-	w5500_spi_write(dev, W5500_SIMR, &mask, 1);
 	w5500_spi_read(dev, W5500_S0_RX_RSR, tmp, 2);
 	rx_buf_len = sys_get_be16(tmp);
 
@@ -280,34 +276,36 @@ static void w5500_rx(const struct device *dev)
 	w5500_command(dev, S0_CR_RECV);
 }
 
-static void w5500_isr(const struct device *dev)
+static void w5500_thread(const struct device *dev)
 {
 	uint8_t ir;
-	uint8_t mask = 0;
 	struct w5500_runtime *ctx = dev->data;
+	const struct w5500_config *config = dev->config;
 
 	while (true) {
 		k_sem_take(&ctx->int_sem, K_FOREVER);
 
-		w5500_spi_read(dev, W5500_S0_IR, &ir, 1);
-		if (!ir) {
-			goto done;
-		}
+		while (gpio_pin_get_dt(&(config->interrupt))) {
+			/* Read interrupt */
+			w5500_spi_read(dev, W5500_S0_IR, &ir, 1);
 
-		w5500_spi_write(dev, W5500_S0_IR, &ir, 1);
+			if (ir) {
+				/* Clear interrupt */
+				w5500_spi_write(dev, W5500_S0_IR, &ir, 1);
 
-		if (ir & S0_IR_SENDOK) {
-			k_sem_give(&ctx->tx_sem);
-			LOG_DBG("TX Done");
-		}
+				LOG_DBG("IR received");
 
-		if (ir & S0_IR_RECV) {
-			w5500_rx(dev);
+				if (ir & S0_IR_SENDOK) {
+					k_sem_give(&ctx->tx_sem);
+					LOG_DBG("TX Done");
+				}
+
+				if (ir & S0_IR_RECV) {
+					w5500_rx(dev);
+					LOG_DBG("RX Done");
+				}
+			}
 		}
-done:
-		/* enable interrupt */
-		mask = IR_S0;
-		w5500_spi_write(dev, W5500_SIMR, &mask, 1);
 	}
 }
 
@@ -510,6 +508,7 @@ static int w5500_init(const struct device *dev)
 		}
 		gpio_pin_set_dt(&config->reset, 0);
 		k_usleep(500);
+		gpio_pin_set_dt(&config->reset, 1);
 	}
 
 	err = w5500_hw_reset(dev);
@@ -530,7 +529,7 @@ static int w5500_init(const struct device *dev)
 
 	k_thread_create(&ctx->thread, ctx->thread_stack,
 			CONFIG_ETH_W5500_RX_THREAD_STACK_SIZE,
-			(k_thread_entry_t)w5500_isr,
+			(k_thread_entry_t)w5500_thread,
 			(void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_ETH_W5500_RX_THREAD_PRIO),
 			0, K_NO_WAIT);

@@ -16,13 +16,13 @@
 #define LOG_LEVEL LOG_LEVEL_NONE
 #endif
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <random/rand32.h>
-#include <net/ieee802154_radio.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/net/ieee802154_radio.h>
 #if defined(CONFIG_NET_L2_OPENTHREAD)
-#include <net/openthread.h>
+#include <zephyr/net/openthread.h>
 #endif
 
 #include "ieee802154_b91.h"

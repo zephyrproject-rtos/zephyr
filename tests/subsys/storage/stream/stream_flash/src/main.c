@@ -8,10 +8,10 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <ztest.h>
-#include <drivers/flash.h>
-#include <settings/settings.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/settings/settings.h>
 
-#include <storage/stream_flash.h>
+#include <zephyr/storage/stream_flash.h>
 
 #define BUF_LEN 512
 #define MAX_PAGE_SIZE 0x1000 /* Max supported page size to run test on */

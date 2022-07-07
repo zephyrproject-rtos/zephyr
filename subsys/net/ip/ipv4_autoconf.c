@@ -9,16 +9,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ipv4_autoconf, CONFIG_NET_IPV4_AUTO_LOG_LEVEL);
 
 #include "net_private.h"
 #include <errno.h>
 #include "../l2/ethernet/arp.h"
-#include <net/net_pkt.h>
-#include <net/net_core.h>
-#include <net/net_if.h>
-#include <random/rand32.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/random/rand32.h>
 
 #include "ipv4_autoconf_internal.h"
 
@@ -95,7 +95,7 @@ static void ipv4_autoconf_send_announcement(
 enum net_verdict net_ipv4_autoconf_input(struct net_if *iface,
 					 struct net_pkt *pkt)
 {
-	struct net_if_config *cfg = net_if_get_config(iface);
+	struct net_if_config *cfg;
 	struct net_arp_hdr *arp_hdr;
 
 	cfg = net_if_get_config(iface);
@@ -125,9 +125,9 @@ enum net_verdict net_ipv4_autoconf_input(struct net_if *iface,
 	}
 
 	NET_DBG("Conflict detected from %s for %s, state %d",
-		log_strdup(net_sprint_ll_addr((uint8_t *)&arp_hdr->src_hwaddr,
-					      arp_hdr->hwlen)),
-		log_strdup(net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr)),
+		net_sprint_ll_addr((uint8_t *)&arp_hdr->src_hwaddr,
+					      arp_hdr->hwlen),
+		net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr),
 		cfg->ipv4auto.state);
 
 	cfg->ipv4auto.conflict_cnt++;

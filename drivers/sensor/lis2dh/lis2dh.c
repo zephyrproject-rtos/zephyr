@@ -7,11 +7,11 @@
 #define DT_DRV_COMPAT st_lis2dh
 
 
-#include <init.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
-#include <pm/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 
 LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"

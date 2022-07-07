@@ -6,11 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_ARP_LOG_LEVEL);
 
-#include <zephyr.h>
-#include <linker/sections.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/linker/sections.h>
 
 #include <tc_util.h>
 
@@ -18,14 +18,14 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ARP_LOG_LEVEL);
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <device.h>
-#include <init.h>
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_ip.h>
-#include <net/dummy.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/dummy.h>
 #include <ztest.h>
-#include <random/rand32.h>
+#include <zephyr/random/rand32.h>
 
 #include "arp.h"
 

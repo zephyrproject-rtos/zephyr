@@ -15,12 +15,12 @@
 
 #include "clock.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_telink);
 
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #include "spi_context.h"
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 
 #define CHIP_SELECT_COUNT               3u
@@ -471,9 +471,9 @@ static struct spi_driver_api spi_b91_api = {
 									  \
 	static struct spi_b91_cfg spi_b91_cfg_##inst = {		  \
 		.peripheral_id = DT_INST_ENUM_IDX(inst, peripheral_id),	  \
-		.cs_pin[0] = DT_STRING_TOKEN(DT_DRV_INST(inst), cs0_pin), \
-		.cs_pin[1] = DT_STRING_TOKEN(DT_DRV_INST(inst), cs1_pin), \
-		.cs_pin[2] = DT_STRING_TOKEN(DT_DRV_INST(inst), cs2_pin), \
+		.cs_pin[0] = DT_INST_STRING_TOKEN(inst, cs0_pin),	  \
+		.cs_pin[1] = DT_INST_STRING_TOKEN(inst, cs1_pin),	  \
+		.cs_pin[2] = DT_INST_STRING_TOKEN(inst, cs2_pin),	  \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		  \
 	};								  \
 									  \

@@ -19,10 +19,10 @@
 #ifndef ZEPHYR_INCLUDE_LINKER_LINKER_DEFS_H_
 #define ZEPHYR_INCLUDE_LINKER_LINKER_DEFS_H_
 
-#include <toolchain.h>
-#include <toolchain/common.h>
-#include <linker/sections.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/toolchain/common.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/sys/util.h>
 #include <offsets.h>
 
 /* We need to dummy out DT_NODE_HAS_STATUS when building the unittests.
@@ -33,7 +33,6 @@
 #ifdef ZTEST_UNITTEST
 #define DT_NODE_HAS_STATUS(node, status) 0
 #else
-#include <linker/devicetree_reserved.h>
 #include <zephyr/devicetree.h>
 #endif
 
@@ -245,10 +244,6 @@ extern char __rodata_region_size[];
 
 extern char _vector_start[];
 extern char _vector_end[];
-
-#if DT_NODE_HAS_STATUS(_NODE_RESERVED, okay)
-LINKER_DT_RESERVED_MEM_SYMBOLS()
-#endif
 
 #ifdef CONFIG_SW_VECTOR_RELAY
 extern char __vector_relay_table[];

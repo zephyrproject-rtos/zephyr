@@ -14,10 +14,10 @@
 
 #include <stdint.h>
 
-#include <drivers/misc/ft8xx/ft8xx_copro.h>
-#include <drivers/misc/ft8xx/ft8xx_common.h>
-#include <drivers/misc/ft8xx/ft8xx_dl.h>
-#include <drivers/misc/ft8xx/ft8xx_memory.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx_copro.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx_common.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx_dl.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx_memory.h>
 
 #ifdef __cplusplus
 extern "C" {

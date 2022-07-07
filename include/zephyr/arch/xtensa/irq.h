@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_
 #define ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <xtensa/config/core-isa.h>
 
 #define CONFIG_GEN_IRQ_START_VECTOR 0
@@ -126,6 +126,6 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 
 extern int z_xtensa_irq_is_enabled(unsigned int irq);
 
-#include <irq.h>
+#include <zephyr/irq.h>
 
 #endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_ */

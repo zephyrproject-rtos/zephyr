@@ -28,6 +28,9 @@ Here are the choices regarding memory dump:
   walking the stack in the debugger. Use this only if absolute minimum of data
   dump is desired.
 
+Additional memory can be included in a dump (even with the "DEBUG_COREDUMP_MEMORY_DUMP_MIN"
+config selected) through one or more :ref:`coredump devices <coredump_device_api>`
+
 Usage
 *****
 
@@ -53,6 +56,11 @@ This usually involves the following steps:
    binary log file, and the Zephyr ELF file as parameters.
 
 4. Start the debugger corresponding to the target architecture.
+
+.. note::
+   Developers for Intel ADSP CAVS 15-25 platforms using
+   ``ZEPHYR_TOOLCHAIN_VARIANT=zephyr`` should use the debugger in the
+   ``xtensa-intel_apl_adsp`` toolchain of the SDK.
 
 Example
 -------

@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_SUBSYS_PM_PM_STATS_H_
 #define ZEPHYR_SUBSYS_PM_PM_STATS_H_
 
-#include <pm/state.h>
+#include <zephyr/pm/state.h>
 
 #ifdef CONFIG_PM_STATS
 void pm_stats_start(void);

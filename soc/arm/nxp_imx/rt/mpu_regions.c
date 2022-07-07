@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include "../../common/cortex_m/arm_mpu_mem_cfg.h"
 #define IS_CHOSEN_SRAM(x) (DT_DEP_ORD(DT_NODELABEL(x)) == DT_DEP_ORD(DT_CHOSEN(zephyr_sram)))
 

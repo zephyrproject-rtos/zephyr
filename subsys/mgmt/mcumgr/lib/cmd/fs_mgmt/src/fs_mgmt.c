@@ -6,16 +6,16 @@
  */
 
 #include <assert.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <limits.h>
 #include <string.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
 #include "zcbor_bulk/zcbor_bulk_priv.h"
-#include <mgmt/mcumgr/buf.h>
-#include <fs/fs.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
+#include <zephyr/fs/fs.h>
 #include "mgmt/mgmt.h"
 #include "fs_mgmt/fs_mgmt.h"
 #include "fs_mgmt/fs_mgmt_impl.h"
@@ -50,7 +50,7 @@
 #endif
 
 #define LOG_LEVEL CONFIG_MCUMGR_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(fs_mgmt);
 
 #define HASH_CHECKSUM_TYPE_SIZE 8
@@ -67,6 +67,10 @@ static struct {
 } fs_mgmt_ctxt;
 
 static const struct mgmt_handler fs_mgmt_handlers[];
+
+#ifdef CONFIG_FS_MGMT_FILE_ACCESS_HOOK
+static fs_mgmt_on_evt_cb fs_evt_cb;
+#endif
 
 /**
  * Encodes a file upload response.
@@ -117,6 +121,17 @@ fs_mgmt_file_download(struct mgmt_ctxt *ctxt)
 	memcpy(path, name.value, name.len);
 	path[name.len] = '\0';
 
+#ifdef CONFIG_FS_MGMT_FILE_ACCESS_HOOK
+	if (fs_evt_cb != NULL) {
+		/* Send request to application to check if access should be allowed or not */
+		rc = fs_evt_cb(false, path);
+
+		if (rc != 0) {
+			return rc;
+		}
+	}
+#endif
+
 	/* Only the response to the first download request contains the total file
 	 * length.
 	 */
@@ -141,7 +156,7 @@ fs_mgmt_file_download(struct mgmt_ctxt *ctxt)
 	     ((off != 0)							||
 		(zcbor_tstr_put_lit(zse, "len") && zcbor_uint64_put(zse, file_len)));
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 /**
@@ -179,6 +194,17 @@ fs_mgmt_file_upload(struct mgmt_ctxt *ctxt)
 
 	memcpy(file_name, name.value, name.len);
 	file_name[name.len] = '\0';
+
+#ifdef CONFIG_FS_MGMT_FILE_ACCESS_HOOK
+	if (fs_evt_cb != NULL) {
+		/* Send request to application to check if access should be allowed or not */
+		rc = fs_evt_cb(true, file_name);
+
+		if (rc != 0) {
+			return rc;
+		}
+	}
+#endif
 
 	if (off == 0) {
 		/* Total file length is a required field in the first chunk request. */
@@ -222,7 +248,7 @@ fs_mgmt_file_upload(struct mgmt_ctxt *ctxt)
 
 	/* Send the response. */
 	return fs_mgmt_file_rsp(zse, MGMT_ERR_EOK, fs_mgmt_ctxt.off) ?
-			MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+			MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 #if defined(CONFIG_FS_MGMT_FILE_STATUS)
@@ -271,10 +297,10 @@ fs_mgmt_file_status(struct mgmt_ctxt *ctxt)
 	}
 
 	if (!ok) {
-		return MGMT_ERR_ENOMEM;
+		return MGMT_ERR_EMSGSIZE;
 	}
 
-	return 0;
+	return MGMT_ERR_EOK;
 }
 #endif
 
@@ -412,7 +438,7 @@ fs_mgmt_file_hash_checksum(struct mgmt_ctxt *ctxt)
 	}
 
 	if (!ok) {
-		return MGMT_ERR_ENOMEM;
+		return MGMT_ERR_EMSGSIZE;
 	}
 
 	return MGMT_ERR_EOK;
@@ -462,3 +488,10 @@ fs_mgmt_register_group(void)
 #endif
 #endif
 }
+
+#ifdef CONFIG_FS_MGMT_FILE_ACCESS_HOOK
+void fs_mgmt_register_evt_cb(fs_mgmt_on_evt_cb cb)
+{
+	fs_evt_cb = cb;
+}
+#endif

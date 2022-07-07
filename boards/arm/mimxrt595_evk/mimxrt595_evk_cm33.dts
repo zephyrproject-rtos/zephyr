@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, NXP
+ * Copyright 2022, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,8 @@
 /dts-v1/;
 
 #include <nxp/nxp_rt5xx.dtsi>
+
+#include "mimxrt595_evk_cm33-pinctrl.dtsi"
 
 / {
 	model = "NXP MIMXRT595-EVK board";
@@ -19,9 +21,13 @@
 		led1 = &blue_led;
 		led2 = &red_led;
 		usart-0 = &flexcomm0;
+		watchdog0 = &wwdt0;
 	};
 
 	chosen {
+		zephyr,flash-controller = &flexspi;
+		zephyr,flash = &mx25um51345g;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &sram0;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
@@ -98,12 +104,43 @@
 	compatible = "nxp,lpc-usart";
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_usart>;
+	pinctrl-names = "default";
+};
+
+arduino_i2c: &flexcomm4 {
+	compatible = "nxp,lpc-i2c";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
+	pinctrl-names = "default";
+
+	fxos8700@1e {
+		compatible = "nxp,fxos8700";
+		reg = <0x1e>;
+		label = "FXOS8700";
+		int1-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+hs_spi1: &hs_lspi1 {
+	compatible = "nxp,lpc-spi";
+	pinctrl-0 = <&pinmux_flexcomm16_spi>;
+	pinctrl-names = "default";
+	dmas = <&dma0 28>, <&dma0 29>;
+	dma-names = "rx", "tx";
+	status = "okay";
 };
 
 arduino_serial: &flexcomm12 {
 	compatible = "nxp,lpc-usart";
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm12_usart>;
+	pinctrl-names = "default";
 };
 
 &gpio0 {
@@ -154,12 +191,49 @@ arduino_serial: &flexcomm12 {
 	status = "okay";
 };
 
+&dma0 {
+	/*
+	 * The total number of dma channels available is defined by
+	 * FSL_FEATURE_DMA_NUMBER_OF_CHANNELS in the SoC features file.
+	 * Since memory from the heap pool is allocated based on the number
+	 * of DMA channels, set this property to as many channels is needed
+	 * for the platform. Adjust HEAP_MEM_POOL_SIZE in case you need more
+	 * memory.
+	 */
+	dma-channels = <37>;
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&ctimer1 {
+	status = "okay";
+};
+
+&ctimer2 {
+	status = "okay";
+};
+
+&ctimer3 {
+	status = "okay";
+};
+
+&ctimer4 {
+	status = "okay";
+};
+
+&wwdt0 {
+	status = "okay";
+};
+
 &flexspi {
-	mx25um51345g: mx25um51345g@2 {
+	mx25um51345g: mx25um51345g@0 {
 		compatible = "nxp,imx-flexspi-mx25um51345g";
 		size = <DT_SIZE_M(64)>;
 		label = "MX25UM51345G";
-		reg = <2>;
+		reg = <0>;
 		spi-max-frequency = <200000000>;
 		status = "okay";
 		jedec-id = [c2 81 3a];

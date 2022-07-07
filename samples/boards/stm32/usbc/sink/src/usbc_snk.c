@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <devicetree.h>
-#include <smf.h>
-#include <drivers/usbc/usbc_tcpc.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/smf.h>
+#include <zephyr/drivers/usbc/usbc_tcpc.h>
 
 #include "board.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(snk, LOG_LEVEL_DBG);
 
 #define TCPC_NODE       DT_ALIAS(tcpc)

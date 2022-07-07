@@ -8,7 +8,7 @@
 #define __INTEL_DAI_DRIVER_SSP_H__
 
 #include <stdint.h>
-#include <drivers/dai.h>
+#include <zephyr/drivers/dai.h>
 #include "dai-params-intel-ipc3.h"
 #include "dai-params-intel-ipc4.h"
 
@@ -130,6 +130,8 @@
 #define SSCR2_LJDFD		BIT(17)
 #define SSCR2_MMRATF		BIT(18)
 #define SSCR2_SMTATF		BIT(19)
+#define SSCR2_SFRMEN		BIT(20)
+#define SSCR2_ACIOLBS		BIT(21)
 
 /* SSR bits */
 #define SSSR_TNF		BIT(2)

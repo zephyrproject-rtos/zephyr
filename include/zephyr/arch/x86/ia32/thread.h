@@ -49,7 +49,7 @@
 
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
-#include <arch/x86/mmustructs.h>
+#include <zephyr/arch/x86/mmustructs.h>
 
 /*
  * The following structure defines the set of 'non-volatile' integer registers.

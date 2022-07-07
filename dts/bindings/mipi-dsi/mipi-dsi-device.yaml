@@ -1,0 +1,27 @@
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for MIPI-DSI devices
+
+include: base.yaml
+
+on-bus: mipi-dsi
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true
+
+    data-lanes:
+      type: array
+      required: true
+      description:
+        Number of data lanes.
+
+    pixel-format:
+      type: int
+      required: true
+      description:
+        Pixel format. Available formats in dt-bindings/mipi_dsi/mipi_dsi.h.

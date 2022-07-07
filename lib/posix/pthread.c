@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
-#include <sys/atomic.h>
+#include <zephyr/sys/atomic.h>
 #include <ksched.h>
-#include <wait_q.h>
-#include <posix/pthread.h>
-#include <sys/slist.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/posix/pthread.h>
+#include <zephyr/sys/slist.h>
 
 #define PTHREAD_INIT_FLAGS	PTHREAD_CANCEL_ENABLE
 #define PTHREAD_CANCELED	((void *) -1)

@@ -6,21 +6,20 @@
 
 #define DT_DRV_COMPAT u_blox_sara_r4
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ctype.h>
 #include <errno.h>
-#include <zephyr.h>
-#include <drivers/gpio.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <fcntl.h>
 
-#include <net/net_if.h>
-#include <net/net_offload.h>
-#include <net/socket_offload.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_offload.h>
+#include <zephyr/net/socket_offload.h>
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 #include <stdio.h>
@@ -38,46 +37,21 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 #include "tls_internal.h"
-#include <net/tls_credentials.h>
+#include <zephyr/net/tls_credentials.h>
 #endif
 
 /* pin settings */
-enum mdm_control_pins {
-	MDM_POWER = 0,
+static const struct gpio_dt_spec power_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_power_gpios);
 #if DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
-	MDM_RESET,
+static const struct gpio_dt_spec reset_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_reset_gpios);
 #endif
 #if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
-	MDM_VINT,
+static const struct gpio_dt_spec vint_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_vint_gpios);
 #endif
-};
-
-static struct modem_pin modem_pins[] = {
-	/* MDM_POWER */
-	MODEM_PIN(DT_INST_GPIO_LABEL(0, mdm_power_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_power_gpios),
-		  DT_INST_GPIO_FLAGS(0, mdm_power_gpios) | GPIO_OUTPUT),
-
-#if DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
-	/* MDM_RESET */
-	MODEM_PIN(DT_INST_GPIO_LABEL(0, mdm_reset_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_reset_gpios),
-		  DT_INST_GPIO_FLAGS(0, mdm_reset_gpios) | GPIO_OUTPUT),
-#endif
-
-#if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
-	/* MDM_VINT */
-	MODEM_PIN(DT_INST_GPIO_LABEL(0, mdm_vint_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_vint_gpios),
-		  DT_INST_GPIO_FLAGS(0, mdm_vint_gpios) | GPIO_INPUT),
-#endif
-};
 
 #define MDM_UART_NODE			DT_INST_BUS(0)
 #define MDM_UART_DEV			DEVICE_DT_GET(MDM_UART_NODE)
 
-#define MDM_POWER_ENABLE		1
-#define MDM_POWER_DISABLE		0
 #define MDM_RESET_NOT_ASSERTED		1
 #define MDM_RESET_ASSERTED		0
 
@@ -215,8 +189,8 @@ static int modem_atoi(const char *s, const int err_value,
 
 	ret = (int)strtol(s, &endptr, 10);
 	if (!endptr || *endptr != '\0') {
-		LOG_ERR("bad %s '%s' in %s", log_strdup(s), log_strdup(desc),
-			log_strdup(func));
+		LOG_ERR("bad %s '%s' in %s", s, desc,
+			func);
 		return err_value;
 	}
 
@@ -300,7 +274,7 @@ int modem_detect_apn(const char *imsi)
 	}
 
 	if (rc == 0) {
-		LOG_INF("Assign APN: \"%s\"", log_strdup(mdata.mdm_apn));
+		LOG_INF("Assign APN: \"%s\"", mdata.mdm_apn);
 	}
 
 	return rc;
@@ -316,7 +290,9 @@ static ssize_t send_socket_data(void *obj,
 				k_timeout_t timeout)
 {
 	int ret;
-	char send_buf[sizeof("AT+USO**=#,!###.###.###.###!,#####,####\r\n")];
+	char send_buf[sizeof("AT+USO**=###,"
+			     "!####.####.####.####.####.####.####.####!,"
+			     "#####,#########\r\n")];
 	uint16_t dst_port = 0U;
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	const struct modem_cmd handler_cmds[] = {
@@ -352,6 +328,11 @@ static ssize_t send_socket_data(void *obj,
 	 * the socket in one command
 	 */
 	if (buf_len > MDM_MAX_DATA_LENGTH) {
+		if (sock->type == SOCK_DGRAM) {
+			errno = EMSGSIZE;
+			return -1;
+		}
+
 		buf_len = MDM_MAX_DATA_LENGTH;
 	}
 
@@ -368,6 +349,11 @@ static ssize_t send_socket_data(void *obj,
 		}
 
 		ret = modem_context_get_addr_port(dst_addr, &dst_port);
+		if (ret != 0) {
+			LOG_ERR("Error getting port from IP address %d", ret);
+			goto exit;
+		}
+
 		snprintk(send_buf, sizeof(send_buf),
 			 "AT+USOST=%d,\"%s\",%u,%zu", sock->id,
 			 ip_str,
@@ -575,7 +561,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_manufacturer)
 				    sizeof(mdata.mdm_manufacturer) - 1,
 				    data->rx_buf, 0, len);
 	mdata.mdm_manufacturer[out_len] = '\0';
-	LOG_INF("Manufacturer: %s", log_strdup(mdata.mdm_manufacturer));
+	LOG_INF("Manufacturer: %s", mdata.mdm_manufacturer);
 	return 0;
 }
 
@@ -588,7 +574,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_model)
 				    sizeof(mdata.mdm_model) - 1,
 				    data->rx_buf, 0, len);
 	mdata.mdm_model[out_len] = '\0';
-	LOG_INF("Model: %s", log_strdup(mdata.mdm_model));
+	LOG_INF("Model: %s", mdata.mdm_model);
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
 	/* Set modem type */
@@ -614,7 +600,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_revision)
 				    sizeof(mdata.mdm_revision) - 1,
 				    data->rx_buf, 0, len);
 	mdata.mdm_revision[out_len] = '\0';
-	LOG_INF("Revision: %s", log_strdup(mdata.mdm_revision));
+	LOG_INF("Revision: %s", mdata.mdm_revision);
 	return 0;
 }
 
@@ -626,7 +612,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imei)
 	out_len = net_buf_linearize(mdata.mdm_imei, sizeof(mdata.mdm_imei) - 1,
 				    data->rx_buf, 0, len);
 	mdata.mdm_imei[out_len] = '\0';
-	LOG_INF("IMEI: %s", log_strdup(mdata.mdm_imei));
+	LOG_INF("IMEI: %s", mdata.mdm_imei);
 	return 0;
 }
 
@@ -638,7 +624,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imsi)
 	out_len = net_buf_linearize(mdata.mdm_imsi, sizeof(mdata.mdm_imsi) - 1,
 				    data->rx_buf, 0, len);
 	mdata.mdm_imsi[out_len] = '\0';
-	LOG_INF("IMSI: %s", log_strdup(mdata.mdm_imsi));
+	LOG_INF("IMSI: %s", mdata.mdm_imsi);
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 	/* set the APN automatically */
@@ -780,7 +766,7 @@ MODEM_CMD_DEFINE(on_cmd_sockwrite)
 /* Handler: +USECMNG: 0,<type>[0],<internal_name>[1],<md5_string>[2] */
 MODEM_CMD_DEFINE(on_cmd_cert_write)
 {
-	LOG_DBG("cert md5: %s", log_strdup(argv[2]));
+	LOG_DBG("cert md5: %s", argv[2]);
 	return 0;
 }
 #endif
@@ -968,36 +954,36 @@ static int pin_init(void)
 
 #if DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
 	LOG_DBG("MDM_RESET_PIN -> NOT_ASSERTED");
-	modem_pin_write(&mctx, MDM_RESET, MDM_RESET_NOT_ASSERTED);
+	gpio_pin_set_dt(&reset_gpio, MDM_RESET_NOT_ASSERTED);
 #endif
 
 	LOG_DBG("MDM_POWER_PIN -> ENABLE");
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+	gpio_pin_set_dt(&power_gpio, 1);
 	k_sleep(K_SECONDS(4));
 
 	LOG_DBG("MDM_POWER_PIN -> DISABLE");
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+	gpio_pin_set_dt(&power_gpio, 0);
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
 	k_sleep(K_SECONDS(1));
 #else
 	k_sleep(K_SECONDS(4));
 #endif
 	LOG_DBG("MDM_POWER_PIN -> ENABLE");
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+	gpio_pin_set_dt(&power_gpio, 1);
 	k_sleep(K_SECONDS(1));
 
 	/* make sure module is powered off */
 #if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
 	LOG_DBG("Waiting for MDM_VINT_PIN = 0");
 
-	while (modem_pin_read(&mctx, MDM_VINT) > 0) {
+	while (gpio_pin_get_dt(&vint_gpio) > 0) {
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
 		/* try to power off again */
 		LOG_DBG("MDM_POWER_PIN -> DISABLE");
-		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+		gpio_pin_set_dt(&power_gpio, 0);
 		k_sleep(K_SECONDS(1));
 		LOG_DBG("MDM_POWER_PIN -> ENABLE");
-		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+		gpio_pin_set_dt(&power_gpio, 1);
 #endif
 		k_sleep(K_MSEC(100));
 	}
@@ -1009,13 +995,13 @@ static int pin_init(void)
 
 	unsigned int irq_lock_key = irq_lock();
 
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+	gpio_pin_set_dt(&power_gpio, 0);
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
 	k_usleep(50);		/* 50-80 microseconds */
 #else
 	k_sleep(K_SECONDS(1));
 #endif
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+	gpio_pin_set_dt(&power_gpio, 1);
 
 	irq_unlock(irq_lock_key);
 
@@ -1025,12 +1011,12 @@ static int pin_init(void)
 	LOG_DBG("Waiting for MDM_VINT_PIN = 1");
 	do {
 		k_sleep(K_MSEC(100));
-	} while (modem_pin_read(&mctx, MDM_VINT) == 0);
+	} while (gpio_pin_get_dt(&vint_gpio) == 0);
 #else
 	k_sleep(K_SECONDS(10));
 #endif
 
-	modem_pin_config(&mctx, MDM_POWER, false);
+	gpio_pin_configure_dt(&power_gpio, GPIO_INPUT);
 
 	LOG_INF("... Done!");
 
@@ -1469,7 +1455,7 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 	return 0;
 
 error:
-	LOG_ERR("%s ret:%d", log_strdup(buf), ret);
+	LOG_ERR("%s ret:%d", buf, ret);
 	modem_socket_put(&mdata.socket_config, sock->sock_fd);
 	errno = -ret;
 	return -1;
@@ -1514,7 +1500,7 @@ static int offload_close(void *obj)
 				     NULL, 0U, buf,
 				     &mdata.sem_response, MDM_CMD_TIMEOUT);
 		if (ret < 0) {
-			LOG_ERR("%s ret:%d", log_strdup(buf), ret);
+			LOG_ERR("%s ret:%d", buf, ret);
 		}
 	}
 
@@ -1545,7 +1531,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	int ret;
-	char buf[sizeof("AT+USOCO=#,!###.###.###.###!,#####,#\r")];
+	char buf[sizeof("AT+USOCO=###,!####.####.####.####.####.####.####.####!,#####,#\r")];
 	uint16_t dst_port = 0U;
 	char ip_str[NET_IPV6_ADDR_LEN];
 
@@ -1597,7 +1583,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 			     NULL, 0U, buf,
 			     &mdata.sem_response, MDM_CMD_CONN_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("%s ret:%d", log_strdup(buf), ret);
+		LOG_ERR("%s ret:%d", buf, ret);
 		errno = -ret;
 		return -1;
 	}
@@ -2032,9 +2018,9 @@ static int offload_getaddrinfo(const char *node, const char *service,
 	}
 
 	LOG_DBG("DNS RESULT: %s",
-		log_strdup(net_addr_ntop(result.ai_family,
+		net_addr_ntop(result.ai_family,
 					 &net_sin(&result_addr)->sin_addr,
-					 sendbuf, NET_IPV4_ADDR_LEN)));
+					 sendbuf, NET_IPV4_ADDR_LEN));
 
 	*res = (struct zsock_addrinfo *)&result;
 	return 0;
@@ -2196,8 +2182,27 @@ static int modem_init(const struct device *dev)
 	mctx.data_rssi = &mdata.mdm_rssi;
 
 	/* pin setup */
-	mctx.pins = modem_pins;
-	mctx.pins_len = ARRAY_SIZE(modem_pins);
+	ret = gpio_pin_configure_dt(&power_gpio, GPIO_OUTPUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure %s pin", "power");
+		goto error;
+	}
+
+#if DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
+	ret = gpio_pin_configure_dt(&reset_gpio, GPIO_OUTPUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure %s pin", "reset");
+		goto error;
+	}
+#endif
+
+#if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
+	ret = gpio_pin_configure_dt(&vint_gpio, GPIO_INPUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure %s pin", "vint");
+		goto error;
+	}
+#endif
 
 	mctx.driver_data = &mdata;
 

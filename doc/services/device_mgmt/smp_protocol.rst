@@ -240,6 +240,10 @@ Status/error codes in responses
     +---------------+-----------------------------------------------+
     | ``9``         | Corrupted payload received.                   |
     +---------------+-----------------------------------------------+
+    | ``10``        | Device is busy with processing previous SMP   |
+    |               | request and may not process incoming one.     |
+    |               | Client should re-try later.                   |
+    +---------------+-----------------------------------------------+
     | ``256``       | This is base error number of user defined     |
     |               | error codes.                                  |
     +---------------+-----------------------------------------------+

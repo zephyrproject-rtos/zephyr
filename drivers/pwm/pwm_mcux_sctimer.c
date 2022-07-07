@@ -8,15 +8,15 @@
 #define DT_DRV_COMPAT nxp_sctimer_pwm
 
 #include <errno.h>
-#include <drivers/pwm.h>
+#include <zephyr/drivers/pwm.h>
 #include <fsl_sctimer.h>
 #include <fsl_clock.h>
 #ifdef CONFIG_PINCTRL
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_mcux_sctimer);
 
 #define CHANNEL_COUNT FSL_FEATURE_SCT_NUMBER_OF_OUTPUTS

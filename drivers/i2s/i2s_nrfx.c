@@ -5,13 +5,13 @@
  */
 
 #include <stdlib.h>
-#include <drivers/i2s.h>
-#include <drivers/clock_control/nrf_clock_control.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/i2s.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <nrfx_i2s.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2s_nrfx, CONFIG_I2S_LOG_LEVEL);
 
 struct stream_cfg {

@@ -10,9 +10,9 @@
 #define ZEPHYR_DRIVERS_SX126X_COMMON_H_
 
 #include <zephyr/types.h>
-#include <drivers/gpio.h>
-#include <drivers/lora.h>
-#include <drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/lora.h>
+#include <zephyr/drivers/spi.h>
 
 #include <sx126x/sx126x.h>
 

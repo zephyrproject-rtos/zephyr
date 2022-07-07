@@ -6,7 +6,7 @@
 
 
 #include <platform/nrf_802154_temperature.h>
-#include <drivers/entropy.h>
+#include <zephyr/drivers/entropy.h>
 
 static uint32_t state;
 

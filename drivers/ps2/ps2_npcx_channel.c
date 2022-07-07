@@ -16,23 +16,23 @@
  *
  */
 
-#include <drivers/clock_control.h>
-#include <drivers/ps2.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/ps2.h>
 #include <soc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ps2_npcx_channel, CONFIG_PS2_LOG_LEVEL);
 
 #include "ps2_npcx_controller.h"
 
 /* Device config */
 struct ps2_npcx_ch_config {
-	/* pinmux configuration */
-	const uint8_t alts_size;
-	const struct npcx_alt *alts_list;
 	/* Indicate the channel's number of the PS/2 channel device */
 	uint8_t channel_id;
 	const struct device *ps2_ctrl;
+	/* pinmux configuration */
+	const struct pinctrl_dev_config *pcfg;
 };
 
 /* PS/2 api functions */
@@ -78,6 +78,7 @@ static int ps2_npcx_ch_inhibit_interface(const struct device *dev)
 static int ps2_npcx_channel_init(const struct device *dev)
 {
 	const struct ps2_npcx_ch_config *const config = dev->config;
+	int ret;
 
 	if (!device_is_ready(config->ps2_ctrl)) {
 		LOG_ERR("%s device not ready", config->ps2_ctrl->name);
@@ -85,7 +86,11 @@ static int ps2_npcx_channel_init(const struct device *dev)
 	}
 
 	/* Configure pin-mux for PS/2 device */
-	npcx_pinctrl_mux_configure(config->alts_list, config->alts_size, 1);
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("PS2 pinctrl setup failed (%d)", ret);
+		return ret;
+	}
 
 	return 0;
 }
@@ -101,14 +106,12 @@ static const struct ps2_driver_api ps2_channel_npcx_driver_api = {
 /* PS/2 channel initialization macro functions */
 #define NPCX_PS2_CHANNEL_INIT(inst)                                            \
 									       \
-	static const struct npcx_alt ps2_channel_alts##inst[] =                \
-		NPCX_DT_ALT_ITEMS_LIST(inst);                                  \
+	PINCTRL_DT_INST_DEFINE(inst);					       \
 									       \
 	static const struct ps2_npcx_ch_config ps2_npcx_ch_cfg_##inst = {      \
 		.channel_id = DT_INST_PROP(inst, channel),                     \
-		.alts_size = ARRAY_SIZE(ps2_channel_alts##inst),               \
-		.alts_list = ps2_channel_alts##inst,                           \
 		.ps2_ctrl = DEVICE_DT_GET(DT_INST_PARENT(inst)),               \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                  \
 	};                                                                     \
 									       \
 	DEVICE_DT_INST_DEFINE(inst, ps2_npcx_channel_init, NULL, NULL,         \

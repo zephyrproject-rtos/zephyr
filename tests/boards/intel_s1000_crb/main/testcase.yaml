@@ -1,4 +1,0 @@
-tests:
-  boards.s1000_crb.main:
-    platform_allow: intel_s1000_crb
-    tags: boards

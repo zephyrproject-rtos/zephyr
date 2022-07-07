@@ -45,17 +45,40 @@
 			compatible = "litex,uart0";
 			interrupt-parent = <&intc0>;
 			interrupts = <2 10>;
-			reg = <0xe0001800 0x18>;
-			reg-names = "control";
+			reg = <0xe0001800 0x4
+				0xe0001804 0x4
+				0xe0001808 0x4
+				0xe000180c 0x4
+				0xe0001810 0x4
+				0xe0001814 0x4
+				0xe0001818 0x4
+				0xe000181c 0x4>;
+			reg-names =
+				"rxtx",
+				"txfull",
+				"rxempty",
+				"ev_status",
+				"ev_pending",
+				"ev_enable",
+				"txempty",
+				"rxfull";
 			label = "uart0";
 			status = "disabled";
 		};
 		spi0: spi@e0002000 {
 			compatible = "litex,spi";
-			interrupt-parent = <&intc0>;
-			interrupts = <5 0>;
-			reg = <0xe0002000 0x34>;
-			reg-names = "control";
+			reg = <0xe0002000 0x4
+				0xe0002004 0x4
+				0xe0002008 0x4
+				0xe000200c 0x4
+				0xe0002010 0x4
+				0xe0002014 0x4>;
+			reg-names = "control",
+				"status",
+				"mosi",
+				"miso",
+				"cs",
+				"loopback";
 			label = "spi0";
 			status = "disabled";
 			#address-cells = <1>;
@@ -65,8 +88,27 @@
 			compatible = "litex,timer0";
 			interrupt-parent = <&intc0>;
 			interrupts = <1 0>;
-			reg = <0xe0002800 0x40>;
-			reg-names = "control";
+			reg = <0xe0002800 0x4
+				0xe0002804 0x4
+				0xe0002808 0x4
+				0xe000280c 0x4
+				0xe0002810 0x4
+				0xe0002814 0x4
+				0xe0002818 0x4
+				0xe000281c 0x4
+				0xe0002820 0x4
+				0xe0002824 0x8>;
+			reg-names =
+				"load",
+				"reload",
+				"en",
+				"update_value",
+				"value",
+				"ev_status",
+				"ev_pending",
+				"ev_enable",
+				"uptime_latch",
+				"uptime_cycles";
 			label = "timer0";
 			status = "disabled";
 		};
@@ -74,9 +116,37 @@
 			compatible = "litex,eth0";
 			interrupt-parent = <&intc0>;
 			interrupts = <3 0>;
-			reg = <0xe0009800 0x6b 0xb0000000 0x2000>;
+			reg = <0xe0009800 0x4
+				0xe0009804 0x4
+				0xe0009808 0x4
+				0xe000980c 0x4
+				0xe0009810 0x4
+				0xe0009814 0x4
+				0xe0009818 0x4
+				0xe000981c 0x4
+				0xe0009820 0x4
+				0xe0009824 0x4
+				0xe0009828 0x4
+				0xe000982c 0x4
+				0xe0009830 0x4
+				0xe0009834 0x4
+				0xb0000000 0x2000>;
 			local-mac-address = [10 e2 d5 00 00 02];
-			reg-names = "control", "buffers";
+			reg-names = "rx_slot",
+				"rx_length",
+				"rx_errors",
+				"rx_ev_status",
+				"rx_ev_pending",
+				"rx_ev_enable",
+				"tx_start",
+				"tx_ready",
+				"tx_level",
+				"tx_slot",
+				"tx_length",
+				"tx_ev_status",
+				"tx_ev_pending",
+				"tx_ev_enable",
+				"buffers";
 			label = "eth0";
 			status = "disabled";
 		};
@@ -115,10 +185,10 @@
 		gpio_in: gpio@e0006000 {
 			compatible = "litex,gpio";
 			reg = <0xe0006000 0x4
-				0xe0006004 0x1
-				0xe0006008 0x1
-				0xe0006010 0x1
-				0xe0006014 0x1>;
+				0xe0006004 0x4
+				0xe0006008 0x4
+				0xe0006010 0x4
+				0xe0006014 0x4>;
 			interrupt-parent = <&intc0>;
 			interrupts = <4 2>;
 			reg-names = "base",
@@ -149,24 +219,48 @@
 		};
 		i2s_rx: i2s_rx@e000a800 {
 			compatible = "litex,i2s";
-			reg = <0xe000a800 0x20 0xb1000000 0x40000>;
+			reg = <0xe000a800 0x4
+				0xe000a804 0x4
+				0xe000a808 0x4
+				0xe000a80c 0x4
+				0xe000a810 0x4
+				0xe000a814 0x4
+				0xb1000000 0x40000>;
 			interrupt-parent = <&intc0>;
 			interrupts = <6 2>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg-names = "control", "fifo";
+			reg-names = "ev_status",
+				"ev_pending",
+				"ev_enable",
+				"rx_ctl",
+				"rx_stat",
+				"rx_conf",
+				"fifo";
 			fifo_depth = <256>;
 			label = "i2s_rx";
 			status = "disabled";
 		};
 		i2s_tx: i2s_tx@e000b000 {
 			compatible = "litex,i2s";
-			reg = <0xe000b000 0x20 0xb2000000 0x40000>;
+			reg = <0xe000b000 0x4
+				0xe000b004 0x4
+				0xe000b008 0x4
+				0xe000b00c 0x4
+				0xe000b010 0x4
+				0xe000b014 0x4
+				0xb2000000 0x40000>;
 			interrupt-parent = <&intc0>;
 			interrupts = <7 2>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg-names = "control", "fifo";
+			reg-names = "ev_status",
+				"ev_pending",
+				"ev_enable",
+				"tx_ctl",
+				"tx_stat",
+				"tx_conf",
+				"fifo";
 			fifo_depth = <256>;
 			label = "i2s_tx";
 			status = "disabled";
@@ -179,7 +273,7 @@
 				reg = <0>;
 				compatible = "litex,clkout";
 				clock-output-names = "CLK_0";
-				litex,clock-frequency = <100000000>;
+				litex,clock-frequency = <11289600>;
 				litex,clock-phase = <0>;
 				litex,clock-duty-num = <1>;
 				litex,clock-duty-den = <2>;
@@ -192,7 +286,7 @@
 				reg = <1>;
 				compatible = "litex,clkout";
 				clock-output-names = "CLK_1";
-				litex,clock-frequency = <100000000>;
+				litex,clock-frequency = <22579200>;
 				litex,clock-phase = <0>;
 				litex,clock-duty-num = <1>;
 				litex,clock-duty-den = <2>;
@@ -201,25 +295,25 @@
 				status = "disabled";
 			};
 		};
-		clock0: clock@82005000 {
+		clock0: clock@e0004800 {
 			compatible = "litex,clk";
 			label = "clock0";
-			reg = <0x82005000 0x1
-			       0x82005004 0x1
-			       0x82005008 0x1
-			       0x8200500c 0x1
-			       0x82005010 0x1
-			       0x82005014 0x1
-			       0x82005018 0x2
-			       0x82005020 0x2>;
+			reg = <0xe0004800 0x4
+				0xe0004804 0x4
+				0xe0004808 0x4
+				0xe000480c 0x4
+				0xe0004810 0x4
+				0xe0004814 0x4
+				0xe0004818 0x4
+				0xe000481c 0x4>;
 			reg-names = "drp_reset",
-				    "drp_locked",
-				    "drp_read",
-				    "drp_write",
-				    "drp_drdy",
-				    "drp_adr",
-				    "drp_dat_w",
-				    "drp_dat_r";
+				"drp_locked",
+				"drp_read",
+				"drp_write",
+				"drp_drdy",
+				"drp_adr",
+				"drp_dat_w",
+				"drp_dat_r";
 			#clock-cells = <1>;
 			clocks = <&clk0 0>, <&clk1 1>;
 			clock-output-names = "CLK_0", "CLK_1";

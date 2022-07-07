@@ -14,7 +14,7 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_arch_interface.h>
 #include <string.h>
 
@@ -156,8 +156,8 @@ extern struct k_thread z_main_thread;
 #ifdef CONFIG_MULTITHREADING
 extern struct k_thread z_idle_threads[CONFIG_MP_NUM_CPUS];
 #endif
-K_KERNEL_PINNED_STACK_ARRAY_EXTERN(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
-				   CONFIG_ISR_STACK_SIZE);
+K_KERNEL_PINNED_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+				    CONFIG_ISR_STACK_SIZE);
 
 #ifdef CONFIG_GEN_PRIV_STACKS
 extern uint8_t *z_priv_stack_find(k_thread_stack_t *stack);

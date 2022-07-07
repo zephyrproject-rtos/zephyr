@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 
 /**
  * @brief Collect the values for several channels

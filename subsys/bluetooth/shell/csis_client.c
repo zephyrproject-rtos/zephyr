@@ -9,25 +9,25 @@
  */
 
 #include <zephyr/types.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/conn.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <zephyr/types.h>
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 #include <stdlib.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 #include "bt.h"
 
-#include <bluetooth/audio/csis.h>
+#include <zephyr/bluetooth/audio/csis.h>
 
 static uint8_t members_found;
 static struct k_work_delayable discover_members_timer;
 static struct bt_csis_client_set_member set_members[CONFIG_BT_MAX_CONN];
 struct bt_csis_client_csis_inst *cur_inst;
 static bt_addr_le_t addr_found[CONFIG_BT_MAX_CONN];
-const struct bt_csis_client_set_member *locked_members[CONFIG_BT_MAX_CONN];
+static struct bt_csis_client_set_member *locked_members[CONFIG_BT_MAX_CONN];
 
 static bool is_discovered(const bt_addr_le_t *addr)
 {
@@ -121,28 +121,37 @@ static void csis_client_release_set_cb(int err)
 	shell_print(ctx_shell, "Set released");
 }
 
-static void csis_client_lock_state_read_cb(const struct bt_csis_client_set_info *set_info,
-					   int err, bool locked)
+static void csis_client_ordered_access_cb(const struct bt_csis_client_set_info *set_info,
+					  int err, bool locked,
+					  struct bt_csis_client_set_member *member)
 {
-	struct bt_csis_client_csis_inst *inst = CONTAINER_OF(set_info,
-							     struct bt_csis_client_csis_inst,
-							     info);
-
-	if (err != 0) {
-		shell_error(ctx_shell, "Device (inst %p) lock get "
-			    "failed (%d)", inst, err);
+	if (err) {
+		printk("Ordered access failed with err %d\n", err);
+	} else if (locked) {
+		printk("Cannot do ordered access as member %p is locked\n",
+		       member);
+	} else {
+		printk("Ordered access procedure finished\n");
 	}
-
-	shell_print(ctx_shell, "Device (inst %p) lock value %d",
-		    inst, locked);
 }
 
 static struct bt_csis_client_cb cbs = {
 	.lock_set = csis_client_lock_set_cb,
 	.release_set = csis_client_release_set_cb,
 	.discover = csis_discover_cb,
-	.lock_state_read = csis_client_lock_state_read_cb
+	.ordered_access = csis_client_ordered_access_cb
 };
+
+static bool csis_client_oap_cb(const struct bt_csis_client_set_info *set_info,
+			       struct bt_csis_client_set_member *members[],
+			       size_t count)
+{
+	for (size_t i = 0; i < count; i++) {
+		printk("Ordered access for members[%zu]: %p\n", i, members[i]);
+	}
+
+	return true;
+}
 
 static bool csis_found(struct bt_data *data, void *user_data)
 {
@@ -356,38 +365,30 @@ static int cmd_csis_client_release_set(const struct shell *sh, size_t argc,
 	return err;
 }
 
-static int cmd_csis_client_lock_get(const struct shell *sh, size_t argc,
-				    char *argv[])
+static int cmd_csis_client_ordered_access(const struct shell *sh, size_t argc,
+					  char *argv[])
 {
 	int err;
-	long idx = 0;
-	long member_index = 0;
-	const struct bt_csis_client_set_member *lock_member[1];
+	long member_count = (long)ARRAY_SIZE(set_members);
+	struct bt_csis_client_set_member *members[ARRAY_SIZE(set_members)];
 
 	if (argc > 1) {
-		member_index = strtol(argv[1], NULL, 0);
+		member_count = strtol(argv[1], NULL, 0);
 
-		if (member_index < 0 || member_index > CONFIG_BT_MAX_CONN) {
-			shell_error(sh, "Invalid member_index %ld",
-				    member_index);
+		if (member_count < 0 || member_count > ARRAY_SIZE(members)) {
+			shell_error(sh, "Invalid member count %ld",
+				    member_count);
 			return -ENOEXEC;
 		}
 	}
 
-	if (argc > 2) {
-		idx = strtol(argv[2], NULL, 0);
-
-		if (idx < 0 || idx > CONFIG_BT_CSIS_CLIENT_MAX_CSIS_INSTANCES) {
-			shell_error(sh, "Invalid index %ld", idx);
-			return -ENOEXEC;
-		}
+	for (size_t i = 0; i < (size_t)member_count; i++) {
+		members[i] = &set_members[i];
 	}
 
-	lock_member[0] = &set_members[member_index];
-
-	err = bt_csis_client_get_lock_state(lock_member,
-					    ARRAY_SIZE(lock_member),
-					    &cur_inst->info);
+	err = bt_csis_client_ordered_access(members, ARRAY_SIZE(members),
+					    &cur_inst->info,
+					    csis_client_oap_cb);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
@@ -400,7 +401,7 @@ static int cmd_csis_client_lock(const struct shell *sh, size_t argc,
 {
 	int err;
 	long member_index = 0;
-	const struct bt_csis_client_set_member *lock_member[1];
+	struct bt_csis_client_set_member *lock_member[1];
 
 	if (cur_inst == NULL) {
 		shell_error(sh, "No set selected");
@@ -432,7 +433,7 @@ static int cmd_csis_client_release(const struct shell *sh, size_t argc,
 {
 	int err;
 	long member_index = 0;
-	const struct bt_csis_client_set_member *lock_member[1];
+	struct bt_csis_client_set_member *lock_member[1];
 
 	if (cur_inst == NULL) {
 		shell_error(sh, "No set selected");
@@ -493,10 +494,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(csis_client_cmds,
 	SHELL_CMD_ARG(release, NULL,
 		      "Release specific member [member_index]",
 		      cmd_csis_client_release, 1, 1),
-	SHELL_CMD_ARG(lock_get, NULL,
-		      "Get the lock value of the specific member and instance "
-		      "[member_index [inst_idx]]",
-		      cmd_csis_client_lock_get, 1, 2),
+	SHELL_CMD_ARG(ordered_access, NULL,
+		      "Perform dummy ordered access procedure [member_count]",
+		      cmd_csis_client_ordered_access, 1, 1),
 	SHELL_SUBCMD_SET_END
 );
 

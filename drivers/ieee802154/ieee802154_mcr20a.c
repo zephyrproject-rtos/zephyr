@@ -11,28 +11,28 @@
 #define LOG_MODULE_NAME ieee802154_mcr20a
 #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <debug/stack.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/debug/stack.h>
 
-#include <device.h>
-#include <init.h>
-#include <net/net_if.h>
-#include <net/net_pkt.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 #include <string.h>
-#include <random/rand32.h>
-#include <debug/stack.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/debug/stack.h>
 
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
-#include <net/ieee802154_radio.h>
+#include <zephyr/net/ieee802154_radio.h>
 
 #include "ieee802154_mcr20a.h"
 #include "MCR20Overwrites.h"

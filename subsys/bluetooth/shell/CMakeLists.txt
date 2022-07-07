@@ -70,8 +70,12 @@ zephyr_library_sources_ifdef(
   media_controller.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_HAS
+  CONFIG_BT_HAS_PRESET_SUPPORT
   has.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_HAS_CLIENT
+  has_client.c
   )
 # We use BT_AUDIO_STREAM as a common ground for audio, as that is set whenever
 # any audio stream functionality is enabled.

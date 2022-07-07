@@ -8,7 +8,7 @@
 
 #define NET_LOG_LEVEL CONFIG_NET_L2_ETHERNET_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #include <zephyr/types.h>
@@ -16,17 +16,17 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <linker/sections.h>
-#include <random/rand32.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/random/rand32.h>
 
 #include <ztest.h>
 
-#include <net/ethernet.h>
-#include <net/buf.h>
-#include <net/net_ip.h>
-#include <net/net_l2.h>
-#include <net/udp.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_l2.h>
+#include <zephyr/net/udp.h>
 
 #include "ipv6.h"
 #include "udp_internal.h"

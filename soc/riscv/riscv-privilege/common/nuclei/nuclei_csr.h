@@ -16,7 +16,7 @@
 #ifndef ZEPHYR_SOC_RISCV_RISCV_PRIVILEGE_COMMON_NUCLEI_NUCLEI_CSR_H_
 #define ZEPHYR_SOC_RISCV_RISCV_PRIVILEGE_COMMON_NUCLEI_NUCLEI_CSR_H_
 
-#include <sys/util_macro.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {

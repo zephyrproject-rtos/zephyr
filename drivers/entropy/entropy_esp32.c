@@ -14,7 +14,7 @@
 #include <esp_system.h>
 #include <soc.h>
 #include <hal/cpu_hal.h>
-#include <drivers/entropy.h>
+#include <zephyr/drivers/entropy.h>
 
 static inline uint32_t entropy_esp32_get_u32(void)
 {

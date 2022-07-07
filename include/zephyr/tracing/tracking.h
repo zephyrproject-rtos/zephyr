@@ -6,8 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_TRACING_TRACKING_H_
 #define ZEPHYR_INCLUDE_TRACING_TRACKING_H_
 
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 
 #if defined(CONFIG_TRACING_OBJECT_TRACKING) || defined(__DOXYGEN__)
 

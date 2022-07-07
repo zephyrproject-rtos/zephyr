@@ -8,7 +8,7 @@
 #define LOG_MODULE_NAME net_lwm2m_obj_firmware_pull
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <string.h>

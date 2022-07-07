@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT silabs_gecko_gpio_port
 
 #include <errno.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 #include <soc.h>
 #include <em_gpio.h>
 

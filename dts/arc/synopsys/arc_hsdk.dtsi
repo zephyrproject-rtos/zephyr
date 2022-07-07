@@ -1,0 +1,204 @@
+/*
+ * Copyright (c) 2019, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "snps,archs38";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "snps,archs38";
+			reg = <1>;
+		};
+
+		cpu@2 {
+			device_type = "cpu";
+			compatible = "snps,archs38";
+			reg = <2>;
+		};
+
+		cpu@3 {
+			device_type = "cpu";
+			compatible = "snps,archs38";
+			reg = <3>;
+		};
+
+	};
+
+	intc: arcv2-intc {
+		compatible = "snps,arcv2-intc";
+		interrupt-controller;
+		#interrupt-cells = <2>;
+	};
+
+
+	idu_intc: idu-interrupt-controller {
+		compatible = "snps,archs-idu-intc";
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupt-parent = <&intc>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&idu_intc>;
+		ranges;
+
+		ddr0: memory@90000000 {
+			device_type = "memory";
+			reg = <0x90000000 0x50000000>;
+		};
+
+		uart0: uart@f0005000 {
+			compatible = "ns16550";
+			clock-frequency = <33333333>;
+			reg = <0xf0005000 0x1000>;
+			label = "UART_0";
+			interrupts = <30 1>;
+			reg-shift = <2>;
+		};
+
+		uart1: uart@f0026000{
+			compatible = "ns16550";
+			clock-frequency = <33333333>;
+			reg = <0xf0026000 0x1000>;
+			label = "UART_1";
+			interrupts = <46 1>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart2: uart@f0027000 {
+			compatible = "ns16550";
+			clock-frequency = <33333333>;
+			reg = <0xf0027000 0x1000>;
+			label = "UART_2";
+			interrupts = <47 1>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart3: uart@f0028000 {
+			compatible = "ns16550";
+			clock-frequency = <33333333>;
+			reg = <0xf0028000 0x1000>;
+			label = "UART_3";
+			interrupts = <48 1>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		gpio0: gpio@f0003000 {
+			compatible = "snps,designware-gpio";
+			reg = <0xf0003000 0x1000>;
+			ngpios = <24>;
+			label = "GPIO_0";
+			interrupt-parent = <&idu_intc>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			status = "disabled";
+		};
+
+		creg_gpio: creg_gpio@f00014b0 {
+			compatible = "snps,creg-gpio";
+			reg = <0xf00014b0 0x4>;
+			ngpios = <12>;
+			label = "CREG_GPIO";
+			bit_per_gpio = <2>;
+			off_val = <0>;
+			on_val = <2>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			status = "disabled";
+		};
+
+		i2c0: i2c@f0023000 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xf0023000 0x1000>;
+			interrupts = <43 1>;
+			label = "I2C_0";
+
+			status = "disabled";
+		};
+
+		i2c1: i2c@f0024000 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xf0024000 0x1000>;
+			interrupts = <44 1>;
+			label = "I2C_1";
+
+			status = "disabled";
+		};
+
+		i2c2: i2c@f0025000 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xf0025000 0x1000>;
+			interrupts = <45 1>;
+			label = "I2C_2";
+
+			status = "disabled";
+		};
+
+		spi0: spi@f0020000 {
+			compatible = "snps,designware-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xf0020000 0x1000>;
+			interrupts = <40 1>;
+			label = "SPI_0";
+
+			status = "disabled";
+		};
+
+		spi1: spi@f0021000 {
+			compatible = "snps,designware-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xf0021000 0x1000>;
+			interrupts = <41 1>;
+			label = "SPI_1";
+			status = "disabled";
+		};
+
+		spi2: spi@f0022000 {
+			compatible = "snps,designware-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xf0022000 0x1000>;
+			interrupts = <42 1>;
+			label = "SPI_2";
+			status = "disabled";
+		};
+
+	};
+};

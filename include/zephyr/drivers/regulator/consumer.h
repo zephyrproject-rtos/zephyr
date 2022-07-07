@@ -17,7 +17,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_PMIC_CONSUMER_H_
 
 #include <zephyr/types.h>
-#include <drivers/regulator.h>
+#include <zephyr/drivers/regulator.h>
 
 #ifdef __cplusplus
 extern "C" {

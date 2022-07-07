@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_PS2_PS2_NPCX_CONTROLLER_H_
 #define ZEPHYR_DRIVERS_PS2_PS2_NPCX_CONTROLLER_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 #ifdef __cplusplus
 extern "C" {

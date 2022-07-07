@@ -5,9 +5,9 @@
  */
 
 #include <string.h>
-#include <device.h>
-#include <sys/atomic.h>
-#include <syscall_handler.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/syscall_handler.h>
 
 extern const struct init_entry __init_start[];
 extern const struct init_entry __init_PRE_KERNEL_1_start[];

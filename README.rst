@@ -22,9 +22,9 @@ The Zephyr OS is based on a small-footprint kernel designed for use on
 resource-constrained systems: from simple embedded environmental sensors and
 LED wearables to sophisticated smart watches and IoT wireless gateways.
 
-The Zephyr kernel supports multiple architectures, including ARM Cortex-M,
-Intel x86, ARC, Nios II, Tensilica Xtensa, and RISC-V, and a large number of
-`supported boards`_.
+The Zephyr kernel supports multiple architectures, including ARM (Cortex-A,
+Cortex-R, Cortex-M), Intel x86, ARC, Nios II, Tensilica Xtensa, and RISC-V,
+SPARC, MIPS, and a large number of `supported boards`_.
 
 .. below included in doc/introduction/introduction.rst
 
@@ -78,11 +78,11 @@ Here's a quick summary of resources to help you find your way around:
 .. _supported boards: http://docs.zephyrproject.org/latest/boards/index.html
 .. _Zephyr Documentation: http://docs.zephyrproject.org
 .. _Introduction to Zephyr: http://docs.zephyrproject.org/latest/introduction/index.html
-.. _Getting Started Guide: http://docs.zephyrproject.org/latest/getting_started/index.html
+.. _Getting Started Guide: http://docs.zephyrproject.org/latest/develop/getting_started/index.html
 .. _Contribution Guide: http://docs.zephyrproject.org/latest/contribute/index.html
 .. _Zephyr GitHub wiki: https://github.com/zephyrproject-rtos/zephyr/wiki
 .. _Zephyr Development mailing list: https://lists.zephyrproject.org/g/devel
 .. _Zephyr mailing list subgroups: https://lists.zephyrproject.org/g/main/subgroups
 .. _Sample and Demo Code Examples: http://docs.zephyrproject.org/latest/samples/index.html
 .. _Security: http://docs.zephyrproject.org/latest/security/index.html
-.. _Asking for Help Tips: https://docs.zephyrproject.org/latest/getting_started/index.html#asking-for-help
+.. _Asking for Help Tips: https://docs.zephyrproject.org/latest/develop/getting_started/index.html#asking-for-help

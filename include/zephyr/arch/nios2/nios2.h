@@ -54,8 +54,8 @@ extern "C"
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
-#include <arch/cpu.h>
-#include <sys/sys_io.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/sys_io.h>
 
 /*
  * Functions for accessing select Nios II general-purpose registers.

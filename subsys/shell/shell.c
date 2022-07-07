@@ -6,10 +6,10 @@
 
 #include <ctype.h>
 #include <stdlib.h>
-#include <sys/atomic.h>
-#include <shell/shell.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/shell/shell.h>
 #if defined(CONFIG_SHELL_BACKEND_DUMMY)
-#include <shell/shell_dummy.h>
+#include <zephyr/shell/shell_dummy.h>
 #endif
 #include "shell_ops.h"
 #include "shell_help.h"
@@ -1330,15 +1330,15 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 
 		k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
 
-		if (shell->iface->api->update) {
-			shell->iface->api->update(shell->iface);
-		}
-
 		shell_signal_handle(shell, SHELL_SIGNAL_KILL, kill_handler);
 		shell_signal_handle(shell, SHELL_SIGNAL_RXRDY, shell_process);
 		if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
 			shell_signal_handle(shell, SHELL_SIGNAL_LOG_MSG,
 					    shell_log_process);
+		}
+
+		if (shell->iface->api->update) {
+			shell->iface->api->update(shell->iface);
 		}
 
 		k_mutex_unlock(&shell->ctx->wr_mtx);
@@ -1413,7 +1413,9 @@ int shell_start(const struct shell *shell)
 		z_shell_vt100_color_set(shell, SHELL_NORMAL);
 	}
 
-	z_shell_raw_fprintf(shell->fprintf_ctx, "\n\n");
+	if (z_shell_strlen(shell->default_prompt) > 0) {
+		z_shell_raw_fprintf(shell->fprintf_ctx, "\n\n");
+	}
 	state_set(shell, SHELL_STATE_ACTIVE);
 
 	k_mutex_unlock(&shell->ctx->wr_mtx);

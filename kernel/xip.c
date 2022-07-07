@@ -6,10 +6,9 @@
  */
 
 
-#include <zephyr.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
-#include <linker/linker-defs.h>
+#include <zephyr/linker/linker-defs.h>
 
 #ifdef CONFIG_STACK_CANARIES
 extern volatile uintptr_t __stack_chk_guard;

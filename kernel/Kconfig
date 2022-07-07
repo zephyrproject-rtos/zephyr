@@ -148,7 +148,9 @@ config SCHED_CPU_MASK_PIN_ONLY
 	  architecture and want to make their own decisions about how
 	  to assign work to CPUs.  In that circumstance, some moderate
 	  optimizations can be made (e.g. having a separate run queue
-	  per CPU, keeping the list length shorter).  Most
+	  per CPU, keeping the list length shorter). When selected,
+	  the CPU mask becomes an immutable thread attribute. It can
+	  only be modified before a thread is started.  Most
 	  applications don't want this.
 
 config MAIN_STACK_SIZE
@@ -202,6 +204,12 @@ config THREAD_USERSPACE_LOCAL_DATA
 	depends on USERSPACE
 	default y if ERRNO && !ERRNO_IN_TLS
 
+config LIBC_ERRNO
+	bool
+	help
+	  Use external libc errno, not the internal one. This eliminates any
+	  locally allocated errno storage and usage.
+
 config ERRNO
 	bool "Errno support"
 	default y
@@ -213,7 +221,7 @@ config ERRNO
 
 config ERRNO_IN_TLS
 	bool "Store errno in thread local storage (TLS)"
-	depends on ERRNO && THREAD_LOCAL_STORAGE
+	depends on ERRNO && THREAD_LOCAL_STORAGE && !LIBC_ERRNO
 	default y
 	help
 	  Use thread local storage to store errno instead of storing it in
@@ -914,7 +922,7 @@ config TICKLESS_KERNEL
 
 config TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
 	bool
-	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" || "$(ZEPHYR_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE)" = "y"
 	help
 	  Hidden option to signal that toolchain supports generating code
 	  with thread local storage.

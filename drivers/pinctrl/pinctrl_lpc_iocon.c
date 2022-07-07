@@ -1,11 +1,13 @@
 /*
- * Copyright (c) 2022, NXP
+ * Copyright 2022, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
+#if !defined(CONFIG_SOC_SERIES_LPC11U6X)
 #include <fsl_clock.h>
+#endif
 
 #define OFFSET(mux) (((mux) & 0xFFF00000) >> 20)
 #define TYPE(mux) (((mux) & 0xC0000) >> 18)
@@ -37,13 +39,16 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			break;
 		default:
 			/* Should not occur */
-			assert(TYPE(pin_mux <= IOCON_TYPE_A));
+			__ASSERT_NO_MSG(TYPE(pin_mux) <= IOCON_TYPE_A);
 		}
 		/* Set pinmux */
 		*(iocon + offset) = pin_mux;
 	}
 	return 0;
 }
+
+#if defined(CONFIG_SOC_FAMILY_LPC) && !defined(CONFIG_SOC_SERIES_LPC11U6X)
+/* LPC family (except 11u6x) needs iocon clock to be enabled */
 
 static int pinctrl_clock_init(const struct device *dev)
 {
@@ -54,3 +59,5 @@ static int pinctrl_clock_init(const struct device *dev)
 }
 
 SYS_INIT(pinctrl_clock_init, PRE_KERNEL_1, 0);
+
+#endif /* CONFIG_SOC_FAMILY_LPC  && !CONFIG_SOC_SERIES_LPC11U6X */

@@ -1,18 +1,38 @@
 /*
- * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_MSG_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_MSG_H_
 
-#include <sys/atomic.h>
-#include <sys/util.h>
+#include <zephyr/logging/log_instance.h>
+#include <zephyr/sys/mpsc_packet.h>
+#include <zephyr/sys/cbprintf.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
-#include <logging/log_msg2.h>
+#include <zephyr/toolchain.h>
+
+#ifdef __GNUC__
+#ifndef alloca
+#define alloca __builtin_alloca
+#endif
+#else
+#include <alloca.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#define LOG_MSG2_DEBUG 0
+#define LOG_MSG2_DBG(...) IF_ENABLED(LOG_MSG2_DEBUG, (printk(__VA_ARGS__)))
+
+#ifdef CONFIG_LOG_TIMESTAMP_64BIT
+typedef uint64_t log_timestamp_t;
+#else
+typedef uint32_t log_timestamp_t;
 #endif
 
 /**
@@ -22,475 +42,625 @@ extern "C" {
  * @{
  */
 
-/** @brief Log argument type.
- *
- * Should preferably be equivalent to a native word size.
- */
-typedef unsigned long log_arg_t;
+#define Z_LOG_MSG2_LOG 0
 
-/** @brief Maximum number of arguments in the standard log entry.
- *
- * It is limited by 4 bit nargs field in the log message.
- */
-#define LOG_MAX_NARGS 15
+#define LOG_MSG2_GENERIC_HDR \
+	MPSC_PBUF_HDR;\
+	uint32_t type:1
 
-/** @brief Number of arguments in the log entry which fits in one chunk.*/
-#ifdef CONFIG_64BIT
-#define LOG_MSG_NARGS_SINGLE_CHUNK 4U
+struct log_msg_desc {
+	LOG_MSG2_GENERIC_HDR;
+	uint32_t domain:3;
+	uint32_t level:3;
+	uint32_t package_len:10;
+	uint32_t data_len:12;
+	uint32_t reserved:1;
+};
+
+union log_msg_source {
+	const struct log_source_const_data *fixed;
+	struct log_source_dynamic_data *dynamic;
+	void *raw;
+};
+
+struct log_msg_hdr {
+	struct log_msg_desc desc;
+/* Attempting to keep best alignment. When address is 64 bit and timestamp 32
+ * swap the order to have 16 byte header instead of 24 byte.
+ */
+#if (INTPTR_MAX > INT32_MAX) && !CONFIG_LOG_TIMESTAMP_64BIT
+	log_timestamp_t timestamp;
+	const void *source;
 #else
-#define LOG_MSG_NARGS_SINGLE_CHUNK 3U
+	const void *source;
+	log_timestamp_t timestamp;
+#endif
+};
+
+/* Messages are aligned to alignment required by cbprintf package. */
+#define Z_LOG_MSG2_ALIGNMENT CBPRINTF_PACKAGE_ALIGNMENT
+
+#define Z_LOG_MSG2_PADDING \
+	((sizeof(struct log_msg_hdr) % Z_LOG_MSG2_ALIGNMENT) > 0 ? \
+	(Z_LOG_MSG2_ALIGNMENT - (sizeof(struct log_msg_hdr) % Z_LOG_MSG2_ALIGNMENT)) : \
+		0)
+
+struct log_msg {
+	struct log_msg_hdr hdr;
+	/* Adding padding to ensure that cbprintf package that follows is
+	 * properly aligned.
+	 */
+	uint8_t padding[Z_LOG_MSG2_PADDING];
+	uint8_t data[];
+};
+
+struct log_msg_generic_hdr {
+	LOG_MSG2_GENERIC_HDR;
+};
+
+union log_msg_generic {
+	union mpsc_pbuf_generic buf;
+	struct log_msg_generic_hdr generic;
+	struct log_msg log;
+};
+
+/** @brief Method used for creating a log message.
+ *
+ * It is used for testing purposes to validate that expected mode was used.
+ */
+enum z_log_msg_mode {
+	/* Runtime mode is least efficient but supports all cases thus it is
+	 * treated as a fallback method when others cannot be used.
+	 */
+	Z_LOG_MSG2_MODE_RUNTIME,
+	/* Mode creates statically a string package on stack and calls a
+	 * function for creating a message. It takes code size than
+	 * Z_LOG_MSG2_MODE_ZERO_COPY but is a bit slower.
+	 */
+	Z_LOG_MSG2_MODE_FROM_STACK,
+
+	/* Mode calculates size of the message and allocates it and writes
+	 * directly to the message space. It is the fastest method but requires
+	 * more code size.
+	 */
+	Z_LOG_MSG2_MODE_ZERO_COPY,
+};
+
+#define Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, _plen, _dlen) \
+{ \
+	.valid = 0, \
+	.busy = 0, \
+	.type = Z_LOG_MSG2_LOG, \
+	.domain = _domain_id, \
+	.level = _level, \
+	.package_len = _plen, \
+	.data_len = _dlen, \
+	.reserved = 0, \
+}
+
+#define Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt) \
+	(CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt))
+
+#ifdef CONFIG_LOG_USE_VLA
+#define Z_LOG_MSG2_ON_STACK_ALLOC(ptr, len) \
+	long long _ll_buf[ceiling_fraction(len, sizeof(long long))]; \
+	long double _ld_buf[ceiling_fraction(len, sizeof(long double))]; \
+	ptr = (sizeof(long double) == Z_LOG_MSG2_ALIGNMENT) ? \
+			(struct log_msg *)_ld_buf : (struct log_msg *)_ll_buf; \
+	if (IS_ENABLED(CONFIG_LOG_TEST_CLEAR_MESSAGE_SPACE)) { \
+		/* During test fill with 0's to simplify message comparison */ \
+		memset(ptr, 0, len); \
+	}
+#else /* Z_LOG_MSG2_USE_VLA */
+/* When VLA cannot be used we need to trick compiler a bit and create multiple
+ * fixed size arrays and take the smallest one that will fit the message.
+ * Compiler will remove unused arrays and stack usage will be kept similar
+ * to vla case, rounded to the size of the used buffer.
+ */
+#define Z_LOG_MSG2_ON_STACK_ALLOC(ptr, len) \
+	long long _ll_buf32[32 / sizeof(long long)]; \
+	long long _ll_buf48[48 / sizeof(long long)]; \
+	long long _ll_buf64[64 / sizeof(long long)]; \
+	long long _ll_buf128[128 / sizeof(long long)]; \
+	long long _ll_buf256[256 / sizeof(long long)]; \
+	long double _ld_buf32[32 / sizeof(long double)]; \
+	long double _ld_buf48[48 / sizeof(long double)]; \
+	long double _ld_buf64[64 / sizeof(long double)]; \
+	long double _ld_buf128[128 / sizeof(long double)]; \
+	long double _ld_buf256[256 / sizeof(long double)]; \
+	if (sizeof(long double) == Z_LOG_MSG2_ALIGNMENT) { \
+		ptr = (len > 128) ? (struct log_msg *)_ld_buf256 : \
+			((len > 64) ? (struct log_msg *)_ld_buf128 : \
+			((len > 48) ? (struct log_msg *)_ld_buf64 : \
+			((len > 32) ? (struct log_msg *)_ld_buf48 : \
+				      (struct log_msg *)_ld_buf32)));\
+	} else { \
+		ptr = (len > 128) ? (struct log_msg *)_ll_buf256 : \
+			((len > 64) ? (struct log_msg *)_ll_buf128 : \
+			((len > 48) ? (struct log_msg *)_ll_buf64 : \
+			((len > 32) ? (struct log_msg *)_ll_buf48 : \
+				      (struct log_msg *)_ll_buf32)));\
+	} \
+	if (IS_ENABLED(CONFIG_LOG_TEST_CLEAR_MESSAGE_SPACE)) { \
+		/* During test fill with 0's to simplify message comparison */ \
+		memset(ptr, 0, len); \
+	}
+#endif /* Z_LOG_MSG2_USE_VLA */
+
+#define Z_LOG_MSG2_ALIGN_OFFSET \
+	offsetof(struct log_msg, data)
+
+#define Z_LOG_MSG2_LEN(pkg_len, data_len) \
+	(offsetof(struct log_msg, data) + pkg_len + (data_len))
+
+#define Z_LOG_MSG2_ALIGNED_WLEN(pkg_len, data_len) \
+	ceiling_fraction(ROUND_UP(Z_LOG_MSG2_LEN(pkg_len, data_len), \
+				  Z_LOG_MSG2_ALIGNMENT), \
+			 sizeof(uint32_t))
+
+#define Z_LOG_MSG2_STACK_CREATE(_cstr_cnt, _domain_id, _source, _level, _data, _dlen, ...) \
+do { \
+	int _plen; \
+	uint32_t flags = Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt) | \
+			 CBPRINTF_PACKAGE_ADD_RW_STR_POS; \
+	if (GET_ARG_N(1, __VA_ARGS__) == NULL) { \
+		_plen = 0; \
+	} else { \
+		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, flags, \
+					__VA_ARGS__); \
+	} \
+	struct log_msg *_msg; \
+	Z_LOG_MSG2_ON_STACK_ALLOC(_msg, Z_LOG_MSG2_LEN(_plen, 0)); \
+	if (_plen) { \
+		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, \
+					_plen, Z_LOG_MSG2_ALIGN_OFFSET, flags, \
+					__VA_ARGS__);\
+	} \
+	struct log_msg_desc _desc = \
+		Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, \
+					   (uint32_t)_plen, _dlen); \
+	LOG_MSG2_DBG("creating message on stack: package len: %d, data len: %d\n", \
+			_plen, (int)(_dlen)); \
+	z_log_msg_static_create((void *)_source, _desc, _msg->data, _data); \
+} while (0)
+
+#ifdef CONFIG_LOG_SPEED
+#define Z_LOG_MSG2_SIMPLE_CREATE(_cstr_cnt, _domain_id, _source, _level, ...) do { \
+	int _plen; \
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
+				Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt), \
+				__VA_ARGS__); \
+	size_t _msg_wlen = Z_LOG_MSG2_ALIGNED_WLEN(_plen, 0); \
+	struct log_msg *_msg = z_log_msg_alloc(_msg_wlen); \
+	struct log_msg_desc _desc = \
+		Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, (uint32_t)_plen, 0); \
+	LOG_MSG2_DBG("creating message zero copy: package len: %d, msg: %p\n", \
+			_plen, _msg); \
+	if (_msg) { \
+		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, _plen, \
+					Z_LOG_MSG2_ALIGN_OFFSET, \
+					Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt), \
+					__VA_ARGS__); \
+	} \
+	z_log_msg_finalize(_msg, (void *)_source, _desc, NULL); \
+} while (0)
+#else
+/* Alternative empty macro created to speed up compilation when LOG_SPEED is
+ * disabled (default).
+ */
+#define Z_LOG_MSG2_SIMPLE_CREATE(...)
 #endif
 
-/** @brief Number of arguments in the head of extended standard log message..*/
-#define LOG_MSG_NARGS_HEAD_CHUNK \
-	(LOG_MSG_NARGS_SINGLE_CHUNK - (sizeof(void *)/sizeof(log_arg_t)))
-
-/** @brief Maximal amount of bytes in the hexdump entry which fits in one chunk.
+/* Macro handles case when local variable with log message string is created. It
+ * replaces original string literal with that variable.
  */
-#define LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK \
-	(LOG_MSG_NARGS_SINGLE_CHUNK * sizeof(log_arg_t))
+#define Z_LOG_FMT_ARGS_2(_name, ...) \
+	COND_CODE_1(CONFIG_LOG_FMT_SECTION, \
+		(COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
+		   (_name), (_name, GET_ARGS_LESS_N(1, __VA_ARGS__)))), \
+		(__VA_ARGS__))
 
-/** @brief Number of bytes in the first chunk of hexdump message if message
- *         consists of more than one chunk.
+/** @brief Wrapper for log message string with arguments.
+ *
+ * Wrapper is replacing first argument with a variable from a dedicated memory
+ * section if option is enabled. Macro handles the case when there is no
+ * log message provided.
+ *
+ * @param _name Name of the variable with log message string. It is optionally used.
+ * @param ... Optional log message with arguments (may be empty).
  */
-#define LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK \
-	(LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK - sizeof(void *))
+#define Z_LOG_FMT_ARGS(_name, ...) \
+	COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), \
+		(NULL), \
+		(Z_LOG_FMT_ARGS_2(_name, ##__VA_ARGS__)))
 
-/** @brief Number of bytes that can be stored in chunks following head chunk
- *         in hexdump log message.
+#if defined(CONFIG_LOG_USE_TAGGED_ARGUMENTS)
+
+#define Z_LOG_FMT_TAGGED_ARGS_2(_name, ...) \
+	COND_CODE_1(CONFIG_LOG_FMT_SECTION, \
+		    (_name, Z_CBPRINTF_TAGGED_ARGS(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
+						   GET_ARGS_LESS_N(1, __VA_ARGS__))), \
+		    (GET_ARG_N(1, __VA_ARGS__), \
+		     Z_CBPRINTF_TAGGED_ARGS(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
+					    GET_ARGS_LESS_N(1, __VA_ARGS__))))
+
+/** @brief Wrapper for log message string with tagged arguments.
+ *
+ * Wrapper is replacing first argument with a variable from a dedicated memory
+ * section if option is enabled. Macro handles the case when there is no
+ * log message provided. Each subsequent arguments are tagged by preceding
+ * each argument with its type value.
+ *
+ * @param _name Name of the variable with log message string. It is optionally used.
+ * @param ... Optional log message with arguments (may be empty).
  */
-#define HEXDUMP_BYTES_CONT_MSG \
-	(sizeof(struct log_msg) - sizeof(void *))
+#define Z_LOG_FMT_TAGGED_ARGS(_name, ...) \
+	COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), \
+		(Z_CBPRINTF_TAGGED_ARGS(0)), \
+		(Z_LOG_FMT_TAGGED_ARGS_2(_name, ##__VA_ARGS__)))
 
-#define ARGS_CONT_MSG (HEXDUMP_BYTES_CONT_MSG / sizeof(log_arg_t))
+#define Z_LOG_FMT_RUNTIME_ARGS(...) \
+	Z_LOG_FMT_TAGGED_ARGS(__VA_ARGS__)
 
-/** @brief Flag indicating standard log message. */
-#define LOG_MSG_TYPE_STD 0U
+#else
 
-/** @brief Flag indicating hexdump log message. */
-#define LOG_MSG_TYPE_HEXDUMP 1
+#define Z_LOG_FMT_RUNTIME_ARGS(...) \
+	Z_LOG_FMT_ARGS(__VA_ARGS__)
 
-/** @brief Common part of log message header. */
-#define COMMON_PARAM_HDR() \
-	uint16_t type : 1;	   \
-	uint16_t ext : 1
+#endif /* CONFIG_LOG_USE_TAGGED_ARGUMENTS */
 
-/** @brief Number of bits used for storing length of hexdump log message. */
-#define LOG_MSG_HEXDUMP_LENGTH_BITS 14
-
-/** @brief Maximum length of log hexdump message. */
-#define LOG_MSG_HEXDUMP_MAX_LENGTH (BIT(LOG_MSG_HEXDUMP_LENGTH_BITS) - 1)
-
-/** @brief Part of log message header identifying source and level. */
-struct log_msg_ids {
-	uint16_t level     : 3;    /*!< Severity. */
-	uint16_t domain_id : 3;    /*!< Originating domain. */
-	uint16_t source_id : 10;   /*!< Source ID. */
-};
-
-/** Part of log message header common to standard and hexdump log message. */
-struct log_msg_generic_hdr {
-	COMMON_PARAM_HDR();
-	uint16_t reserved : 14;
-};
-
-/** Part of log message header specific to standard log message. */
-struct log_msg_std_hdr {
-	COMMON_PARAM_HDR();
-	uint16_t reserved : 10;
-	uint16_t nargs    : 4;
-};
-
-/** Part of log message header specific to hexdump log message. */
-struct log_msg_hexdump_hdr {
-	COMMON_PARAM_HDR();
-	uint16_t length     : LOG_MSG_HEXDUMP_LENGTH_BITS;
-};
-
-/** Log message header structure */
-struct log_msg_hdr {
-	atomic_t ref_cnt; /*!< Reference counter for tracking message users. */
-	union log_msg_hdr_params {
-		struct log_msg_generic_hdr generic;
-		struct log_msg_std_hdr std;
-		struct log_msg_hexdump_hdr hexdump;
-		uint16_t raw;
-	} params;
-	struct log_msg_ids ids; /*!< Identification part of the message.*/
-	uint32_t timestamp;        /*!< Timestamp. */
-};
-
-/** @brief Data part of log message. */
-union log_msg_head_data {
-	log_arg_t args[LOG_MSG_NARGS_SINGLE_CHUNK];
-	uint8_t bytes[LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK];
-};
-
-/** @brief Data part of extended log message. */
-struct log_msg_ext_head_data {
-	struct log_msg_cont *next;
-	union log_msg_ext_head_data_data {
-		log_arg_t args[LOG_MSG_NARGS_HEAD_CHUNK];
-		uint8_t bytes[LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK];
-	} data;
-};
-
-/** @brief Log message structure. */
-struct log_msg {
-	struct log_msg *next;   /*!< Used by logger core list.*/
-	struct log_msg_hdr hdr; /*!< Message header. */
-	const char *str;
-	union log_msg_data {
-		union log_msg_head_data single;
-		struct log_msg_ext_head_data ext;
-	} payload;                 /*!< Message data. */
-};
-
-/** @brief Chunks following message head when message is extended. */
-struct log_msg_cont {
-	struct log_msg_cont *next; /*!< Pointer to the next chunk. */
-	union log_msg_cont_data {
-		log_arg_t args[ARGS_CONT_MSG];
-		uint8_t bytes[HEXDUMP_BYTES_CONT_MSG];
-	} payload;
-};
-
-/** @brief Log message */
-union log_msg_chunk {
-	struct log_msg head;
-	struct log_msg_cont cont;
-};
-
-/** @brief Function for initialization of the log message pool. */
-void log_msg_pool_init(void);
-
-/** @brief Function for indicating that message is in use.
- *
- *  @details Message can be used (read) by multiple users. Internal reference
- *           counter is atomically increased. See @ref log_msg_put.
- *
- *  @param msg Message.
+/* Macro handles case when there is no string provided, in that case variable
+ * is not created.
  */
-void log_msg_get(struct log_msg *msg);
+#define Z_LOG_MSG2_STR_VAR_IN_SECTION(_name, ...) \
+	COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), \
+		    (/* No args provided, no variable */), \
+		    (static const char _name[] \
+			__attribute__((__section__(".log_strings"))) = \
+			GET_ARG_N(1, __VA_ARGS__);))
 
-/** @brief Function for indicating that message is no longer in use.
+/** @brief Create variable in the dedicated memory section (if enabled).
  *
- *  @details Internal reference counter is atomically decreased. If reference
- *           counter equals 0 message is freed.
+ * Variable is initialized with a format string from the log message.
  *
- *  @param msg Message.
+ * @param _name Variable name.
+ * @param ... Optional log message with arguments (may be empty).
  */
-void log_msg_put(struct log_msg *msg);
+#define Z_LOG_MSG2_STR_VAR(_name, ...) \
+	IF_ENABLED(CONFIG_LOG_FMT_SECTION, \
+		   (Z_LOG_MSG2_STR_VAR_IN_SECTION(_name, ##__VA_ARGS__)))
 
-/** @brief Get domain ID of the message.
+/** @brief Create log message and write it into the logger buffer.
  *
- * @param msg Message
+ * Macro handles creation of log message which includes storing log message
+ * description, timestamp, arguments, copying string arguments into message and
+ * copying user data into the message space. The are 3 modes of message
+ * creation:
+ * - at compile time message size is determined, message is allocated and
+ *   content is written directly to the message. It is the fastest but cannot
+ *   be used in user mode. Message size cannot be determined at compile time if
+ *   it contains data or string arguments which are string pointers.
+ * - at compile time message size is determined, string package is created on
+ *   stack, message is created in function call. String package can only be
+ *   created on stack if it does not contain unexpected pointers to strings.
+ * - string package is created at runtime. This mode has no limitations but
+ *   it is significantly slower.
  *
- * @return Domain ID.
+ * @param _try_0cpy If positive then, if possible, message content is written
+ * directly to message. If 0 then, if possible, string package is created on
+ * the stack and message is created in the function call.
+ *
+ * @param _mode Used for testing. It is set according to message creation mode
+ *		used.
+ *
+ * @param _cstr_cnt Number of constant strings present in the string. It is
+ * used to help detect messages which must be runtime processed, compared to
+ * message which can be prebuilt at compile time.
+ *
+ * @param _domain_id Domain ID.
+ *
+ * @param _source Pointer to the constant descriptor of the log message source.
+ *
+ * @param _level Log message level.
+ *
+ * @param _data Pointer to the data. Can be null.
+ *
+ * @param _dlen Number of data bytes. 0 if data is not provided.
+ *
+ * @param ...  Optional string with arguments (fmt, ...). It may be empty.
  */
-static inline uint32_t log_msg_domain_id_get(struct log_msg *msg)
+#if defined(CONFIG_LOG_ALWAYS_RUNTIME) || \
+	(!defined(CONFIG_LOG) && \
+		(!TOOLCHAIN_HAS_PRAGMA_DIAG || !TOOLCHAIN_HAS_C_AUTO_TYPE))
+#define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
+			  _level, _data, _dlen, ...) \
+do {\
+	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__) \
+	z_log_msg_runtime_create(_domain_id, (void *)_source, \
+				  _level, (uint8_t *)_data, _dlen,\
+				  Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt) | \
+				  (IS_ENABLED(CONFIG_LOG_USE_TAGGED_ARGUMENTS) ? \
+				   CBPRINTF_PACKAGE_ARGS_ARE_TAGGED : 0), \
+				  Z_LOG_FMT_RUNTIME_ARGS(_fmt, ##__VA_ARGS__));\
+	_mode = Z_LOG_MSG2_MODE_RUNTIME; \
+} while (0)
+#else /* CONFIG_LOG_ALWAYS_RUNTIME */
+#define Z_LOG_MSG2_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
+			  _level, _data, _dlen, ...) \
+do { \
+	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__); \
+	bool has_rw_str = CBPRINTF_MUST_RUNTIME_PACKAGE( \
+					Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt), \
+					__VA_ARGS__); \
+	if (IS_ENABLED(CONFIG_LOG_SPEED) && _try_0cpy && ((_dlen) == 0) && !has_rw_str) {\
+		LOG_MSG2_DBG("create zero-copy message\n");\
+		Z_LOG_MSG2_SIMPLE_CREATE(_cstr_cnt, _domain_id, _source, \
+					_level, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
+		_mode = Z_LOG_MSG2_MODE_ZERO_COPY; \
+	} else { \
+		LOG_MSG2_DBG("create on stack message\n");\
+		Z_LOG_MSG2_STACK_CREATE(_cstr_cnt, _domain_id, _source, _level, _data, \
+					_dlen, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
+		_mode = Z_LOG_MSG2_MODE_FROM_STACK; \
+	} \
+	(void)_mode; \
+} while (0)
+
+#if defined(__cplusplus)
+#define Z_AUTO_TYPE auto
+#else
+#define Z_AUTO_TYPE __auto_type
+#endif
+
+/* Macro for getting name of a local variable with the exception of the first argument
+ * which is a formatted string in log message.
+ */
+#define Z_LOG_LOCAL_ARG_NAME(idx, arg) COND_CODE_0(idx, (arg), (_v##idx))
+
+/* Create local variable from input variable (expect for the first (fmt) argument). */
+#define Z_LOG_LOCAL_ARG_CREATE(idx, arg) \
+	COND_CODE_0(idx, (), (Z_AUTO_TYPE Z_LOG_LOCAL_ARG_NAME(idx, arg) = (arg) + 0))
+
+/* First level of processing creates stack variables to be passed for further processing.
+ * This is done to prevent multiple evaluations of input arguments (in case argument
+ * evaluation has side effects, e.g. it is a non-pure function call).
+ */
+#define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode, _cstr_cnt,  _domain_id, _source, \
+			   _level, _data, _dlen, ...) \
+do { \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
+	FOR_EACH_IDX(Z_LOG_LOCAL_ARG_CREATE, (;), __VA_ARGS__); \
+	_Pragma("GCC diagnostic pop") \
+	Z_LOG_MSG2_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
+			   _level, _data, _dlen, \
+			   FOR_EACH_IDX(Z_LOG_LOCAL_ARG_NAME, (,), __VA_ARGS__)); \
+} while (0)
+#endif /* CONFIG_LOG_ALWAYS_RUNTIME ||
+	* (!LOG && (!TOOLCHAIN_HAS_PRAGMA_DIAG || !TOOLCHAIN_HAS_C_AUTO_TYPE))
+	*/
+
+
+#define Z_LOG_MSG2_CREATE(_try_0cpy, _mode,  _domain_id, _source,\
+			  _level, _data, _dlen, ...) \
+	Z_LOG_MSG2_CREATE2(_try_0cpy, _mode, UTIL_CAT(Z_LOG_FUNC_PREFIX_, _level), \
+			   _domain_id, _source, _level, _data, _dlen, \
+			   Z_LOG_STR(_level, __VA_ARGS__))
+
+/** @brief Allocate log message.
+ *
+ * @param wlen Length in 32 bit words.
+ *
+ * @return allocated space or null if cannot be allocated.
+ */
+struct log_msg *z_log_msg_alloc(uint32_t wlen);
+
+/** @brief Finalize message.
+ *
+ * Finalization includes setting source, copying data and timestamp in the
+ * message followed by committing the message.
+ *
+ * @param msg Message.
+ *
+ * @param source Address of the source descriptor.
+ *
+ * @param desc Message descriptor.
+ *
+ * @param data Data.
+ */
+void z_log_msg_finalize(struct log_msg *msg, const void *source,
+			 const struct log_msg_desc desc, const void *data);
+
+/** @brief Create simple message from message details and string package.
+ *
+ * @param source Source.
+ *
+ * @param desc Message descriptor.
+ *
+ * @param package Package.
+ *
+ * @oaram data Data.
+ */
+__syscall void z_log_msg_static_create(const void *source,
+					const struct log_msg_desc desc,
+					uint8_t *package, const void *data);
+
+/** @brief Create message at runtime.
+ *
+ * Function allows to build any log message based on input data. Processing
+ * time is significantly higher than statically message creating.
+ *
+ * @param domain_id Domain ID.
+ *
+ * @param source Source.
+ *
+ * @param level Log level.
+ *
+ * @param data Data.
+ *
+ * @param dlen Data length.
+ *
+ * @param package_flags Package flags.
+ *
+ * @param fmt String.
+ *
+ * @param ap Variable list of string arguments.
+ */
+__syscall void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
+					  uint8_t level, const void *data,
+					  size_t dlen, uint32_t package_flags,
+					  const char *fmt,
+					  va_list ap);
+
+/** @brief Create message at runtime.
+ *
+ * Function allows to build any log message based on input data. Processing
+ * time is significantly higher than statically message creating.
+ *
+ * @param domain_id Domain ID.
+ *
+ * @param source Source.
+ *
+ * @param level Log level.
+ *
+ * @param data Data.
+ *
+ * @param dlen Data length.
+ *
+ * @param package_flags Package flags.
+ *
+ * @param fmt String.
+ *
+ * @param ... String arguments.
+ */
+static inline void z_log_msg_runtime_create(uint8_t domain_id,
+					     const void *source,
+					     uint8_t level, const void *data,
+					     size_t dlen, uint32_t package_flags,
+					     const char *fmt, ...)
 {
-	return msg->hdr.ids.domain_id;
+	va_list ap;
+
+	va_start(ap, fmt);
+	z_log_msg_runtime_vcreate(domain_id, source, level,
+				   data, dlen, package_flags, fmt, ap);
+	va_end(ap);
 }
 
-/** @brief Get source ID (module or instance) of the message.
- *
- * @param msg Message
- *
- * @return Source ID.
- */
-static inline uint32_t log_msg_source_id_get(struct log_msg *msg)
+static inline bool z_log_item_is_msg(const union log_msg_generic *msg)
 {
-	return msg->hdr.ids.source_id;
+	return msg->generic.type == Z_LOG_MSG2_LOG;
 }
 
-/** @brief Get severity level of the message.
+/** @brief Get total length (in 32 bit words) of a log message.
  *
- * @param msg Message
+ * @param desc Log message descriptor.
  *
- * @return Severity message.
+ * @return Length.
  */
-static inline uint32_t log_msg_level_get(struct log_msg *msg)
+static inline uint32_t log_msg_get_total_wlen(const struct log_msg_desc desc)
 {
-	return msg->hdr.ids.level;
+	return Z_LOG_MSG2_ALIGNED_WLEN(desc.package_len, desc.data_len);
 }
 
-/** @brief Get timestamp of the message.
+/** @brief Get length of the log item.
  *
- * @param msg Message
+ * @param item Item.
  *
- * @return Timestamp value.
+ * @return Length in 32 bit words.
  */
-static inline uint32_t log_msg_timestamp_get(struct log_msg *msg)
+static inline uint32_t log_msg_generic_get_wlen(const union mpsc_pbuf_generic *item)
+{
+	const union log_msg_generic *generic_msg = (const union log_msg_generic *)item;
+
+	if (z_log_item_is_msg(generic_msg)) {
+		const struct log_msg *msg = (const struct log_msg *)generic_msg;
+
+		return log_msg_get_total_wlen(msg->hdr.desc);
+	}
+
+	return 0;
+}
+
+/** @brief Get log message domain ID.
+ *
+ * @param msg Log message.
+ *
+ * @return Domain ID
+ */
+static inline uint8_t log_msg_get_domain(struct log_msg *msg)
+{
+	return msg->hdr.desc.domain;
+}
+
+/** @brief Get log message level.
+ *
+ * @param msg Log message.
+ *
+ * @return Log level.
+ */
+static inline uint8_t log_msg_get_level(struct log_msg *msg)
+{
+	return msg->hdr.desc.level;
+}
+
+/** @brief Get message source data.
+ *
+ * @param msg Log message.
+ *
+ * @return Pointer to the source data.
+ */
+static inline const void *log_msg_get_source(struct log_msg *msg)
+{
+	return msg->hdr.source;
+}
+
+/** @brief Get timestamp.
+ *
+ * @param msg Log message.
+ *
+ * @return Timestamp.
+ */
+static inline log_timestamp_t log_msg_get_timestamp(struct log_msg *msg)
 {
 	return msg->hdr.timestamp;
 }
 
-/** @brief Check if message is of standard type.
+/** @brief Get data buffer.
  *
- * @param msg Message
+ * @param msg log message.
  *
- * @retval true  Standard message.
- * @retval false Hexdump message.
+ * @param len location where data length is written.
+ *
+ * @return pointer to the data buffer.
  */
-static inline bool log_msg_is_std(struct log_msg *msg)
+static inline uint8_t *log_msg_get_data(struct log_msg *msg, size_t *len)
 {
-	return  (msg->hdr.params.generic.type == LOG_MSG_TYPE_STD);
+	*len = msg->hdr.desc.data_len;
+
+	return msg->data + msg->hdr.desc.package_len;
 }
 
-/** @brief Returns number of arguments in standard log message.
+/** @brief Get string package.
  *
- * @param msg Standard log message.
+ * @param msg log message.
  *
- * @return Number of arguments.
+ * @param len location where string package length is written.
+ *
+ * @return pointer to the package.
  */
-uint32_t log_msg_nargs_get(struct log_msg *msg);
-
-/** @brief Gets argument from standard log message.
- *
- * @param msg		Standard log message.
- * @param arg_idx	Argument index.
- *
- * @return Argument value or 0 if arg_idx exceeds number of arguments in the
- *	   message.
- */
-log_arg_t log_msg_arg_get(struct log_msg *msg, uint32_t arg_idx);
-
-
-/** @brief Gets pointer to the unformatted string from standard log message.
- *
- * @param msg Standard log message.
- *
- * @return Pointer to the string.
- */
-const char *log_msg_str_get(struct log_msg *msg);
-
-/** @brief Allocates chunks for hexdump message and copies the data.
- *
- *  @details Function resets header and sets following fields:
- *		- message type
- *		- length
- *
- *  @note Allocation and partial filling is combined for performance reasons.
- *
- * @param str		String.
- * @param data		Data.
- * @param length	Data length.
- *
- * @return Pointer to allocated head of the message or NULL
- */
-struct log_msg *log_msg_hexdump_create(const char *str,
-				       const uint8_t *data,
-				       uint32_t length);
-
-/** @brief Put data into hexdump log message.
- *
- * @param[in]		msg      Message.
- * @param[in]		data	 Data to be copied.
- * @param[in, out]	length   Input: requested amount. Output: actual amount.
- * @param[in]		offset   Offset.
- */
-void log_msg_hexdump_data_put(struct log_msg *msg,
-			      uint8_t *data,
-			      size_t *length,
-			      size_t offset);
-
-/** @brief Get data from hexdump log message.
- *
- * @param[in]		msg      Message.
- * @param[in]		data	 Buffer for data.
- * @param[in, out]	length   Input: requested amount. Output: actual amount.
- * @param[in]		offset   Offset.
- */
-void log_msg_hexdump_data_get(struct log_msg *msg,
-			      uint8_t *data,
-			      size_t *length,
-			      size_t offset);
-
-union log_msg_chunk *log_msg_no_space_handle(void);
-
-/** @brief Allocate single chunk from the pool.
- *
- * @return Pointer to the allocated chunk or NULL if failed to allocate.
- */
-union log_msg_chunk *log_msg_chunk_alloc(void);
-
-/** @brief Allocate chunk for standard log message.
- *
- *  @return Allocated chunk of NULL.
- */
-static inline struct log_msg *z_log_msg_std_alloc(void)
+static inline uint8_t *log_msg_get_package(struct log_msg *msg, size_t *len)
 {
-	struct  log_msg *msg = (struct  log_msg *)log_msg_chunk_alloc();
+	*len = msg->hdr.desc.package_len;
 
-	if (msg != NULL) {
-		/* all fields reset to 0, reference counter to 1 */
-		msg->hdr.ref_cnt = 1;
-		msg->hdr.params.raw = 0U;
-		msg->hdr.params.std.type = LOG_MSG_TYPE_STD;
-
-		if (IS_ENABLED(CONFIG_USERSPACE)) {
-			/* it may be used in msg_free() function. */
-			msg->hdr.ids.level = 0;
-			msg->hdr.ids.domain_id = 0;
-			msg->hdr.ids.source_id = 0;
-		}
-	}
-
-	return msg;
+	return msg->data;
 }
 
-/** @brief Create standard log message with no arguments.
- *
- *  @details Function resets header and sets following fields:
- *		- message type
- *		- string pointer
- *
- *  @return Pointer to allocated head of the message or NULL.
- */
-static inline struct log_msg *log_msg_create_0(const char *str)
-{
-	struct log_msg *msg = z_log_msg_std_alloc();
-
-	if (msg != NULL) {
-		msg->str = str;
-	}
-
-	return msg;
-}
-
-/** @brief Create standard log message with one argument.
- *
- *  @details Function resets header and sets following fields:
- *		- message type
- *		- string pointer
- *		- number of arguments
- *		- argument
- *
- *  @param str  String.
- *  @param arg1 Argument.
- *
- *  @return Pointer to allocated head of the message or NULL.
- */
-static inline struct log_msg *log_msg_create_1(const char *str,
-					       log_arg_t arg1)
-{
-	struct  log_msg *msg = z_log_msg_std_alloc();
-
-	if (msg != NULL) {
-		msg->str = str;
-		msg->hdr.params.std.nargs = 1U;
-		msg->payload.single.args[0] = arg1;
-	}
-
-	return msg;
-}
-
-/** @brief Create standard log message with two arguments.
- *
- *  @details Function resets header and sets following fields:
- *		- message type
- *		- string pointer
- *		- number of arguments
- *		- arguments
- *
- *  @param str  String.
- *  @param arg1 Argument 1.
- *  @param arg2 Argument 2.
- *
- *  @return Pointer to allocated head of the message or NULL.
- */
-static inline struct log_msg *log_msg_create_2(const char *str,
-					       log_arg_t arg1,
-					       log_arg_t arg2)
-{
-	struct  log_msg *msg = z_log_msg_std_alloc();
-
-	if (msg != NULL) {
-		msg->str = str;
-		msg->hdr.params.std.nargs = 2U;
-		msg->payload.single.args[0] = arg1;
-		msg->payload.single.args[1] = arg2;
-	}
-
-	return msg;
-}
-
-/** @brief Create standard log message with three arguments.
- *
- *  @details Function resets header and sets following fields:
- *		- message type
- *		- string pointer
- *		- number of arguments
- *		- arguments
- *
- *  @param str  String.
- *  @param arg1 Argument 1.
- *  @param arg2 Argument 2.
- *  @param arg3 Argument 3.
- *
- *  @return Pointer to allocated head of the message or NULL.
- */
-static inline struct log_msg *log_msg_create_3(const char *str,
-					       log_arg_t arg1,
-					       log_arg_t arg2,
-					       log_arg_t arg3)
-{
-	struct  log_msg *msg = z_log_msg_std_alloc();
-
-	if (msg != NULL) {
-		msg->str = str;
-		msg->hdr.params.std.nargs = 3U;
-		msg->payload.single.args[0] = arg1;
-		msg->payload.single.args[1] = arg2;
-		msg->payload.single.args[2] = arg3;
-	}
-
-	return msg;
-}
-
-/** @brief Create standard log message with variable number of arguments.
- *
- *  @details Function resets header and sets following fields:
- *		- message type
- *		- string pointer
- *		- number of arguments
- *		- arguments
- *
- *  @param str   String.
- *  @param args  Array with arguments.
- *  @param nargs Number of arguments.
- *
- *  @return Pointer to allocated head of the message or NULL.
- */
-struct log_msg *log_msg_create_n(const char *str,
-				 log_arg_t *args,
-				 uint32_t nargs);
-
-/**
- * @brief Get number of free blocks from the log mem pool
- */
-uint32_t log_msg_mem_get_free(void);
-
-/**
- * @brief Get number of used blocks from the log mem pool
- */
-uint32_t log_msg_mem_get_used(void);
-
-/**
- * @brief Get max used blocks from the log mem pool
- */
-uint32_t log_msg_mem_get_max_used(void);
-
-/**
- * @brief Get slab size
- *
- * @return Size of a slab used in slab pool for log messages.
- */
-size_t log_msg_get_slab_size(void);
 /**
  * @}
  */
+
+#include <syscalls/log_msg.h>
 
 #ifdef __cplusplus
 }

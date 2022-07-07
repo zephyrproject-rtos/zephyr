@@ -11,11 +11,11 @@
 #define DT_DRV_COMPAT nxp_lpc_lpadc
 
 #include <errno.h>
-#include <drivers/adc.h>
+#include <zephyr/drivers/adc.h>
 #include <fsl_lpadc.h>
 
 #if CONFIG_PINCTRL
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
 
 #if !defined(CONFIG_SOC_SERIES_IMX_RT11XX)
@@ -23,7 +23,7 @@
 #endif
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(nxp_mcux_lpadc);
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER

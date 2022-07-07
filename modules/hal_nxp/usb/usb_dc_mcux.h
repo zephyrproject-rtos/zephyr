@@ -7,8 +7,8 @@
 #ifndef __USB_DC_MCUX_H__
 #define __USB_DC_MCUX_H__
 
-#include <drivers/usb/usb_dc.h>
-#include <sys/byteorder.h>
+#include <zephyr/drivers/usb/usb_dc.h>
+#include <zephyr/sys/byteorder.h>
 #include "usb_spec.h"
 #include "usb.h"
 #include "usb_device_dci.h"

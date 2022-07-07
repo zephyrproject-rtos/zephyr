@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/audio.h>
 
 #define SEM_TIMEOUT K_SECONDS(10)
 
@@ -37,7 +37,9 @@ static void stream_stopped_cb(struct bt_audio_stream *stream)
 	printk("Stream %p stopped\n", stream);
 }
 
-static void stream_recv_cb(struct bt_audio_stream *stream, struct net_buf *buf)
+static void stream_recv_cb(struct bt_audio_stream *stream,
+			   const struct bt_iso_recv_info *info,
+			   struct net_buf *buf)
 {
 	static uint32_t recv_cnt;
 
@@ -182,12 +184,17 @@ static void reset(void)
 
 void main(void)
 {
+	struct bt_audio_stream *streams_p[ARRAY_SIZE(streams)];
 	int err;
 
 	err = init();
 	if (err) {
 		printk("Init failed (err %d)\n", err);
 		return;
+	}
+
+	for (size_t i = 0U; i < ARRAY_SIZE(streams_p); i++) {
+		streams_p[i] = &streams[i];
 	}
 
 	while (true) {
@@ -232,7 +239,7 @@ void main(void)
 		printk("Syncing to broadcast\n");
 		err = bt_audio_broadcast_sink_sync(broadcast_sink,
 						   bis_index_bitfield,
-						   streams,
+						   streams_p,
 						   &preset_16_2_1.codec, NULL);
 		if (err != 0) {
 			printk("Unable to sync to broadcast source: %d\n", err);

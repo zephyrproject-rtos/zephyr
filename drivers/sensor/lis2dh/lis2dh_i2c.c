@@ -11,8 +11,8 @@
 #define DT_DRV_COMPAT st_lis2dh
 
 #include <string.h>
-#include <drivers/i2c.h>
-#include <logging/log.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/logging/log.h>
 
 #include "lis2dh.h"
 

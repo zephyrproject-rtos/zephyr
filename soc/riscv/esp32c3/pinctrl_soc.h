@@ -12,10 +12,10 @@
 #ifndef ZEPHYR_SOC_RISCV_ESP32C3_PINCTRL_SOC_H_
 #define ZEPHYR_SOC_RISCV_ESP32C3_PINCTRL_SOC_H_
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/types.h>
 
-#include <dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
 
 /** @cond INTERNAL_HIDDEN */
 

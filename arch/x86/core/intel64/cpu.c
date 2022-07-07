@@ -3,15 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_arch_data.h>
 #include <kernel_arch_func.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
-#include <arch/x86/multiboot.h>
+#include <zephyr/arch/x86/multiboot.h>
 #include <x86_mmu.h>
-#include <drivers/interrupt_controller/loapic.h>
-#include <arch/x86/acpi.h>
+#include <zephyr/drivers/interrupt_controller/loapic.h>
+#include <zephyr/arch/x86/acpi.h>
 
 /*
  * Map of CPU logical IDs to CPU local APIC IDs. By default,

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/printk.h>
-#include <shell/shell.h>
-#include <drivers/can.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/can.h>
 #include <zephyr/types.h>
 #include <stdlib.h>
 
@@ -20,7 +20,7 @@ static struct k_poll_event msgq_events[1] = {
 };
 
 static inline int read_config_options(const struct shell *sh, int pos,
-				      char **argv, bool *silent, bool *loopback)
+				      char **argv, bool *listenonly, bool *loopback)
 {
 	char *arg = argv[pos];
 
@@ -31,10 +31,10 @@ static inline int read_config_options(const struct shell *sh, int pos,
 	for (arg = &arg[1]; *arg; arg++) {
 		switch (*arg) {
 		case 's':
-			if (silent == NULL) {
+			if (listenonly == NULL) {
 				shell_error(sh, "Unknown option %c", *arg);
 			} else {
-				*silent = true;
+				*listenonly = true;
 			}
 			break;
 		case 'l':
@@ -231,8 +231,8 @@ static int cmd_config(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *can_dev;
 	int pos = 1;
-	bool silent = false, loopback = false;
-	enum can_mode mode;
+	bool listenonly = false, loopback = false;
+	can_mode_t mode = CAN_MODE_NORMAL;
 	uint32_t bitrate;
 	int ret;
 
@@ -245,19 +245,17 @@ static int cmd_config(const struct shell *sh, size_t argc, char **argv)
 
 	pos++;
 
-	pos = read_config_options(sh, pos, argv, &silent, &loopback);
+	pos = read_config_options(sh, pos, argv, &listenonly, &loopback);
 	if (pos < 0) {
 		return -EINVAL;
 	}
 
-	if (silent && loopback) {
-		mode = CAN_SILENT_LOOPBACK_MODE;
-	} else if (silent) {
-		mode = CAN_SILENT_MODE;
-	} else if (loopback) {
-		mode = CAN_LOOPBACK_MODE;
-	} else {
-		mode = CAN_NORMAL_MODE;
+	if (listenonly) {
+		mode |= CAN_MODE_LISTENONLY;
+	}
+
+	if (loopback) {
+		mode |= CAN_MODE_LOOPBACK;
 	}
 
 	ret = can_set_mode(can_dev, mode);
@@ -272,7 +270,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	ret = can_set_bitrate(can_dev, bitrate, 0);
+	ret = can_set_bitrate(can_dev, bitrate);
 	if (ret) {
 		shell_error(sh, "Failed to set bitrate [%d]",
 			    ret);
@@ -447,8 +445,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_can,
 	SHELL_CMD_ARG(config, NULL,
 		      "Configure CAN controller.\n"
 		      " Usage: config device_name [-sl] bitrate\n"
-		      " -s Silent mode\n"
-		      " -l Listen-only mode",
+		      " -s Listen-only mode\n"
+		      " -l Loopback mode",
 		      cmd_config, 3, 1),
 	SHELL_CMD_ARG(send, NULL,
 		      "Send a CAN frame.\n"

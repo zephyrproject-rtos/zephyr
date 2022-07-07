@@ -4,12 +4,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 
-#include <usb/usb_device.h>
-#include <usb/class/usb_hid.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/usb/class/usb_hid.h>
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(main);

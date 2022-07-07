@@ -10,11 +10,11 @@
  * Linker script for the Xtensa platform.
  */
 
-#include <linker/sections.h>
+#include <zephyr/linker/sections.h>
 
-#include <devicetree.h>
-#include <linker/linker-defs.h>
-#include <linker/linker-tool.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/linker-tool.h>
 
 #define RAMABLE_REGION sram0_seg :sram0_phdr
 #define ROMABLE_REGION srom1_seg :srom1_phdr
@@ -175,7 +175,7 @@ PROVIDE(_memmap_cacheattr_reset = _memmap_cacheattr_wb_trapnull);
 SECTIONS
 {
 
-#include <linker/rel-sections.ld>
+#include <zephyr/linker/rel-sections.ld>
 
   .dram1.rodata : ALIGN(4)
   {
@@ -432,7 +432,7 @@ SECTIONS
     _sram_rodata_end = ABSOLUTE(.);
   } >sram0_seg :sram0_phdr
 
-#include <linker/common-rom.ld>
+#include <zephyr/linker/common-rom.ld>
 
   .rodata : ALIGN(4)
   {
@@ -545,7 +545,7 @@ SECTIONS
 
 #include <snippets-data-sections.ld>
 
-#include <linker/common-ram.ld>
+#include <zephyr/linker/common-ram.ld>
 
   .tm_clone_table :
   {
@@ -624,6 +624,6 @@ SECTIONS
     KEEP (*(.debug.xt.callgraph .debug.xt.callgraph.* .gnu.linkonce.xt.callgraph.*))
   }
 #ifdef CONFIG_GEN_ISR_TABLES
-#include <linker/intlist.ld>
+#include <zephyr/linker/intlist.ld>
 #endif
 }

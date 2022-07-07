@@ -10,7 +10,7 @@
  *        broker.
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_mqtt_dec, CONFIG_MQTT_LOG_LEVEL);
 
 #include "mqtt_internal.h"

@@ -157,7 +157,7 @@ config BT_CTLR_DUP_FILTER_LEN
 
 config BT_CTLR_DUP_FILTER_ADV_SET_MAX
 	int "Number of Extended Advertising Sets in the scan duplicate filter"
-	depends on BT_OBSERVER && (BT_CTLR_DUP_FILTER_LEN > 0)
+	depends on BT_OBSERVER && BT_CTLR_ADV_EXT && (BT_CTLR_DUP_FILTER_LEN > 0)
 	range 1 16
 	default 1
 	help
@@ -245,6 +245,7 @@ config BT_CTLR_ISOAL_SINKS
 config BT_CTLR_ISO_VENDOR_DATA_PATH
 	bool "Vendor-specific ISO data path"
 	depends on BT_CTLR_SYNC_ISO || BT_CTLR_CONN_ISO
+	select BT_CTLR_HCI_CODEC_AND_DELAY_INFO
 
 choice BT_CTLR_TX_PWR
 	prompt "Tx Power"
@@ -415,16 +416,16 @@ endif # BT_CONN
 
 config BT_CTLR_FILTER_ACCEPT_LIST
 	bool "Filter Accept List Support"
-	default y
+	default y if BT_HCI_RAW || BT_FILTER_ACCEPT_LIST
 	help
 	  Enable support for controller Filter Accept List feature
 
 config BT_CTLR_PRIVACY
 	bool "LE Controller-based Privacy"
 	depends on BT_CTLR_PRIVACY_SUPPORT
-	default y
 	select BT_CTLR_FILTER_ACCEPT_LIST if BT_LL_SW_SPLIT
 	select BT_RPA
+	default y if BT_HCI_RAW || BT_PRIVACY
 	help
 	  Enable support for Bluetooth v4.2 LE Controller-based Privacy feature
 	  in the Controller.
@@ -482,25 +483,14 @@ config BT_CTLR_CHAN_SEL_2
 	  the Controller.
 
 config BT_CTLR_ADV_EXT
-	bool "LE Advertising Extensions" if !BT_LL_SW_SPLIT
+	bool "LE Advertising Extensions"
 	depends on BT_CTLR_ADV_EXT_SUPPORT
 	select BT_CTLR_CHAN_SEL_2 if BT_LL_SW_SPLIT && BT_BROADCASTER
 	select BT_CTLR_SCAN_REQ_NOTIFY if BT_LL_SW_SPLIT && BT_BROADCASTER
-	# Enable by default for BT_LL_SW_SPLIT when "LE Advertising Set Terminated event" is implemented
-	default y if BT_EXT_ADV && !BT_LL_SW_SPLIT
+	default y if BT_EXT_ADV
 	help
 	  Enable support for Bluetooth 5.0 LE Advertising Extensions in the
 	  Controller.
-
-config BT_CTLR_ADV_EXT
-	prompt "LE Advertising Extensions (Split Link Layer) [EXPERIMENTAL]" if BT_LL_SW_SPLIT
-	select EXPERIMENTAL if BT_LL_SW_SPLIT
-
-config PROMPT_ADJUSTMENT_WORKAROUND
-	bool
-	help
-	  Unused and hidden Kconfig symbol to allow prompt adjustment.
-	  Work around for https://github.com/ulfalizer/Kconfiglib/issues/117
 
 if BT_CTLR_ADV_EXT
 
@@ -511,6 +501,18 @@ config BT_CTLR_ADV_SET
 	default BT_EXT_ADV_MAX_ADV_SET if BT_EXT_ADV
 	help
 	  Maximum supported advertising sets.
+
+config BT_CTLR_ADV_INTERVAL_MAX
+	hex "Primary Advertising Interval Maximum"
+	depends on BT_BROADCASTER
+	range 0x000020 0x004000 if BT_LL_SW_SPLIT
+	range 0x000020 0xFFFFFF
+	default 0x004000 if BT_LL_SW_SPLIT
+	default 0xFFFFFF
+	help
+	  Supported Primary Advertising Interval Maximum value.
+	  Bluetooth Core Specification v5.3 permitted range is 0x000020 to
+	  0xFFFFFF in 0.625 ms units.
 
 config BT_CTLR_ADV_DATA_LEN_MAX
 	int "Maximum Advertising Data Length"
@@ -534,7 +536,7 @@ config BT_CTLR_SCAN_DATA_LEN_MAX
 	  Maximum Extended Scanning Data Length.
 
 config BT_CTLR_ADV_PERIODIC
-	bool "LE Periodic Advertising in Advertising State" if !BT_LL_SW_SPLIT
+	bool "LE Periodic Advertising in Advertising State"
 	depends on BT_BROADCASTER && BT_CTLR_ADV_PERIODIC_SUPPORT
 	select BT_CTLR_CHAN_SEL_2
 	default y if BT_PER_ADV
@@ -542,35 +544,35 @@ config BT_CTLR_ADV_PERIODIC
 	  Enable support for Bluetooth 5.0 LE Periodic Advertising in the
 	  Controller.
 
-config BT_CTLR_ADV_PERIODIC
-	bool "LE Periodic Advertising in Advertising State (Split Link Layer) [EXPERIMENTAL]" if BT_LL_SW_SPLIT
-	select EXPERIMENTAL if BT_LL_SW_SPLIT
-
-config PROMPT_ADJUSTMENT_WORKAROUND
-	bool
+if BT_CTLR_ADV_PERIODIC
 
 config BT_CTLR_ADV_PERIODIC_ADI_SUPPORT
 	bool "Periodic Advertising ADI support"
-	depends on BT_CTLR_ADV_PERIODIC
 	default y
 	help
 	  Enable support for adding AdvDataInfo in Periodic Advertising PDUs.
 
+config BT_CTLR_ADV_PERIODIC_INTERVAL_MAX
+	hex "Periodic Advertising Interval Maximum"
+	range 0x0006 0x2000 if BT_LL_SW_SPLIT
+	range 0x0006 0xFFFF
+	default 0x2000 if BT_LL_SW_SPLIT
+	default 0xFFFF
+	help
+	  Supported Periodic Advertising Interval Maximum value.
+	  Bluetooth Core Specification v5.3 permitted range is 0x0006 to
+	  0xFFFF in 1.25 ms units.
+
+endif # BT_CTLR_ADV_PERIODIC
+
 config BT_CTLR_SYNC_PERIODIC
-	bool "LE Periodic Advertising in Synchronization State" if !BT_LL_SW_SPLIT
+	bool "LE Periodic Advertising in Synchronization State"
 	depends on BT_OBSERVER && BT_CTLR_SYNC_PERIODIC_SUPPORT
 	select BT_CTLR_CHAN_SEL_2
 	default y if BT_PER_ADV_SYNC
 	help
 	  Enable support for Bluetooth 5.0 LE Periodic Advertising in
 	  Synchronization state in the Controller.
-
-config BT_CTLR_SYNC_PERIODIC
-	bool "LE Periodic Advertising in Synchronization State (Split Link Layer) [EXPERIMENTAL]" if BT_LL_SW_SPLIT
-	select EXPERIMENTAL if BT_LL_SW_SPLIT
-
-config PROMPT_ADJUSTMENT_WORKAROUND
-	bool
 
 config BT_CTLR_SYNC_PERIODIC_ADV_LIST
 	bool "LE Periodic Advertiser List support"

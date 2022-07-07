@@ -9,11 +9,11 @@
 #define DT_DRV_COMPAT cypress_psoc6_spi
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_psoc6);
 
 #include <errno.h>
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #include <soc.h>
 
 #include "spi_context.h"

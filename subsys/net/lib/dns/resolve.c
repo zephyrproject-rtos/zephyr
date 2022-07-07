@@ -10,20 +10,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 #include <zephyr/types.h>
-#include <random/rand32.h>
+#include <zephyr/random/rand32.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
 
-#include <sys/crc.h>
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
-#include <net/net_mgmt.h>
-#include <net/dns_resolve.h>
+#include <zephyr/sys/crc.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/dns_resolve.h>
 #include "dns_pack.h"
 #include "dns_internal.h"
 
@@ -229,7 +229,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 
 			dns_postprocess_server(ctx, idx);
 
-			NET_DBG("[%d] %s%s%s", i, log_strdup(servers[i]),
+			NET_DBG("[%d] %s%s%s", i, servers[i],
 				IS_ENABLED(CONFIG_MDNS_RESOLVER) ?
 				(ctx->servers[i].is_mdns ? " mDNS" : "") : "",
 				IS_ENABLED(CONFIG_LLMNR_RESOLVER) ?
@@ -992,7 +992,7 @@ static int dns_resolve_cancel_with_hash(struct dns_resolve_context *ctx,
 	}
 
 	NET_DBG("Cancelling DNS req %u (name %s type %d hash %u)", dns_id,
-		log_strdup(query_name), ctx->queries[i].query_type,
+		query_name, ctx->queries[i].query_type,
 		query_hash);
 
 	dns_resolve_cancel_slot(ctx, i);
@@ -1000,7 +1000,7 @@ static int dns_resolve_cancel_with_hash(struct dns_resolve_context *ctx,
 unlock:
 	k_mutex_unlock(&ctx->lock);
 
-	return 0;
+	return ret;
 }
 
 int dns_resolve_cancel_with_name(struct dns_resolve_context *ctx,

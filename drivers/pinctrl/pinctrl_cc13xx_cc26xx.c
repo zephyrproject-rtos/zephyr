@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT ti_cc13xx_cc26xx_pinctrl
 
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #include <driverlib/ioc.h>
 

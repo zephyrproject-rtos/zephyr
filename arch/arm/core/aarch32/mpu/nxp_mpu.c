@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include "arm_core_mpu_dev.h"
-#include <sys/__assert.h>
-#include <sys/math_extras.h>
-#include <linker/linker-defs.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/math_extras.h>
+#include <zephyr/linker/linker-defs.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(mpu);
 
 /*

@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT intel_cavs_hda_link_out
 
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma.h>
 #include "dma_cavs_hda.h"
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_cavs_hda_dma_link_out);
 
 static const struct dma_driver_api cavs_hda_dma_link_out_api = {

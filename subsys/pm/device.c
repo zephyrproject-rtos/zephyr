@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <pm/device.h>
-#include <pm/device_runtime.h>
+#include <zephyr/device.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
 
 const char *pm_device_state_str(enum pm_device_state state)
@@ -370,5 +370,21 @@ bool pm_device_on_power_domain(const struct device *dev)
 	return pm->domain != NULL;
 #else
 	return false;
+#endif
+}
+
+bool pm_device_is_powered(const struct device *dev)
+{
+#ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
+	struct pm_device *pm = dev->pm;
+
+	/* If a device doesn't support PM or is not under a PM domain,
+	 * assume it is always powered on.
+	 */
+	return (pm == NULL) ||
+	       (pm->domain == NULL) ||
+	       (pm->domain->pm->state == PM_DEVICE_STATE_ACTIVE);
+#else
+	return true;
 #endif
 }

@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <cavs-idc.h>
 #include <cavs-mem.h>
 #include <cavs-shim.h>
@@ -45,17 +45,9 @@ __imr void soc_mp_startup(uint32_t cpu)
 	}
 }
 
-static ALWAYS_INLINE uint32_t prid(void)
-{
-	uint32_t prid;
-
-	__asm__ volatile("rsr %0, PRID" : "=r"(prid));
-	return prid;
-}
-
 void soc_start_core(int cpu_num)
 {
-	uint32_t curr_cpu = prid();
+	uint32_t curr_cpu = arch_proc_id();
 
 #ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
 	/* On cAVS v2.5, MP startup works differently.  The core has
@@ -131,7 +123,7 @@ void soc_start_core(int cpu_num)
 
 void arch_sched_ipi(void)
 {
-	uint32_t curr = prid();
+	uint32_t curr = arch_proc_id();
 
 	for (int c = 0; c < CONFIG_MP_NUM_CPUS; c++) {
 		if (c != curr && soc_cpus_active[c]) {
@@ -155,7 +147,7 @@ void idc_isr(const void *param)
 	 * CPU".
 	 */
 	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
-		IDC[prid()].core[i].tfc = BIT(31);
+		IDC[arch_proc_id()].core[i].tfc = BIT(31);
 	}
 }
 

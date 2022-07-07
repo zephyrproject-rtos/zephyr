@@ -5,11 +5,10 @@
  */
 #define DT_DRV_COMPAT nxp_lpc11u6x_uart
 
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
-#include <drivers/uart.h>
-#include <drivers/pinmux.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include "uart_lpc11u6x.h"
 
@@ -345,20 +344,14 @@ static int lpc11u6x_uart0_init(const struct device *dev)
 {
 	const struct lpc11u6x_uart0_config *cfg = dev->config;
 	struct lpc11u6x_uart0_data *data = dev->data;
-	const struct device *clk_drv, *rx_pinmux_drv, *tx_pinmux_drv;
+	const struct device *clk_drv;
+	int err;
 
-	/* Configure RX and TX pin via the pinmux driver */
-	rx_pinmux_drv = device_get_binding(cfg->rx_pinmux_drv_name);
-	if (!rx_pinmux_drv) {
-		return -EINVAL;
+	/* Apply default pin control state to select RX and TX pins */
+	err = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
 	}
-	pinmux_pin_set(rx_pinmux_drv, cfg->rx_pin, cfg->rx_func);
-
-	tx_pinmux_drv = device_get_binding(cfg->tx_pinmux_drv_name);
-	if (!tx_pinmux_drv) {
-		return -EINVAL;
-	}
-	pinmux_pin_set(tx_pinmux_drv, cfg->tx_pin, cfg->tx_func);
 
 	/* Call clock driver to initialize uart0 clock */
 	clk_drv = device_get_binding(cfg->clock_drv_name);
@@ -392,19 +385,14 @@ static int lpc11u6x_uart0_init(const struct device *dev)
 static void lpc11u6x_uart0_isr_config(const struct device *dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+PINCTRL_DT_DEFINE(DT_NODELABEL(uart0));
+
 static const struct lpc11u6x_uart0_config uart0_config = {
 	.uart0 = (struct lpc11u6x_uart0_regs *)
 	DT_REG_ADDR(DT_NODELABEL(uart0)),
 	.clock_drv_name = DT_LABEL(DT_PHANDLE(DT_NODELABEL(uart0), clocks)),
-	.rx_pinmux_drv_name =
-	DT_LABEL(DT_PHANDLE_BY_NAME(DT_NODELABEL(uart0), pinmuxs, rxd)),
-	.tx_pinmux_drv_name =
-	DT_LABEL(DT_PHANDLE_BY_NAME(DT_NODELABEL(uart0), pinmuxs, txd)),
+	.pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(uart0)),
 	.clkid = DT_PHA_BY_IDX(DT_NODELABEL(uart0), clocks, 0, clkid),
-	.rx_pin = DT_PHA_BY_NAME(DT_NODELABEL(uart0), pinmuxs, rxd, pin),
-	.rx_func = DT_PHA_BY_NAME(DT_NODELABEL(uart0), pinmuxs, rxd, function),
-	.tx_pin = DT_PHA_BY_NAME(DT_NODELABEL(uart0), pinmuxs, txd, pin),
-	.tx_func = DT_PHA_BY_NAME(DT_NODELABEL(uart0), pinmuxs, txd, function),
 	.baudrate = DT_PROP(DT_NODELABEL(uart0), current_speed),
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = lpc11u6x_uart0_isr_config,
@@ -791,20 +779,14 @@ static int lpc11u6x_uartx_init(const struct device *dev)
 {
 	const struct lpc11u6x_uartx_config *cfg = dev->config;
 	struct lpc11u6x_uartx_data *data = dev->data;
-	const struct device *clk_drv, *rx_pinmux_drv, *tx_pinmux_drv;
+	const struct device *clk_drv;
+	int err;
 
-	/* Configure RX and TX pin via the pinmux driver */
-	rx_pinmux_drv = device_get_binding(cfg->rx_pinmux_drv_name);
-	if (!rx_pinmux_drv) {
-		return -EINVAL;
+	/* Apply default pin control state to select RX and TX pins */
+	err = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
 	}
-	pinmux_pin_set(rx_pinmux_drv, cfg->rx_pin, cfg->rx_func);
-
-	tx_pinmux_drv = device_get_binding(cfg->tx_pinmux_drv_name);
-	if (!tx_pinmux_drv) {
-		return -EINVAL;
-	}
-	pinmux_pin_set(tx_pinmux_drv, cfg->tx_pin, cfg->tx_func);
 
 	/* Call clock driver to initialize uart0 clock */
 	clk_drv = device_get_binding(cfg->clock_drv_name);
@@ -874,25 +856,15 @@ static const struct uart_driver_api uartx_api = {
 
 
 #define LPC11U6X_UARTX_INIT(idx)                                              \
+PINCTRL_DT_DEFINE(DT_NODELABEL(uart##idx));                                   \
 									      \
 static const struct lpc11u6x_uartx_config uart_cfg_##idx = {	              \
 	.base = (struct lpc11u6x_uartx_regs *)                                \
 	DT_REG_ADDR(DT_NODELABEL(uart##idx)),			              \
 	.clock_drv_name =						      \
 	DT_LABEL(DT_PHANDLE(DT_NODELABEL(uart##idx), clocks)),		      \
-	.rx_pinmux_drv_name =                                                 \
-	DT_LABEL(DT_PHANDLE_BY_NAME(DT_NODELABEL(uart##idx), pinmuxs, rxd)),  \
-	.tx_pinmux_drv_name =                                                 \
-	DT_LABEL(DT_PHANDLE_BY_NAME(DT_NODELABEL(uart##idx), pinmuxs, txd)),  \
 	.clkid = DT_PHA_BY_IDX(DT_NODELABEL(uart##idx), clocks, 0, clkid),    \
-	.rx_pin = DT_PHA_BY_NAME(DT_NODELABEL(uart##idx), pinmuxs, rxd, pin), \
-	.rx_func = DT_PHA_BY_NAME(DT_NODELABEL(uart##idx),		      \
-				  pinmuxs, rxd, function),		      \
-	.rx_func = DT_PHA_BY_NAME(DT_NODELABEL(uart##idx), pinmuxs,	      \
-				  rxd, function),			      \
-	.tx_pin = DT_PHA_BY_NAME(DT_NODELABEL(uart##idx), pinmuxs, txd, pin), \
-	.tx_func = DT_PHA_BY_NAME(DT_NODELABEL(uart##idx), pinmuxs,	      \
-				  txd, function),			      \
+	.pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(uart##idx)),         \
 	.baudrate = DT_PROP(DT_NODELABEL(uart##idx), current_speed),	      \
 };									      \
 									      \

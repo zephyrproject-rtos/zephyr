@@ -6,7 +6,7 @@
 
 #include "test_modbus.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mbc_test, LOG_LEVEL_INF);
 
 #ifdef CONFIG_MODBUS_CLIENT

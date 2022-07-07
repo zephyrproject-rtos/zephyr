@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <arch/riscv/csr.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/arch/riscv/csr.h>
 #include <nuclei/nuclei_csr.h>
 
 GTEXT(__nuclei_start)
@@ -57,4 +57,4 @@ _start0800:
 
 .align 6
 trap_entry:
-	tail __irq_wrapper
+	tail _isr_wrapper

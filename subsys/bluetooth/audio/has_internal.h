@@ -44,6 +44,8 @@
 #define BT_HAS_CHANGE_ID_PRESET_AVAILABLE   0x02
 #define BT_HAS_CHANGE_ID_PRESET_UNAVAILABLE 0x03
 
+#define BT_HAS_IS_LAST 0x01
+
 struct bt_has {
 	/** Hearing Aid Features value */
 	uint8_t features;
@@ -72,6 +74,13 @@ struct bt_has_cp_read_preset_rsp {
 struct bt_has_cp_preset_changed {
 	uint8_t change_id;
 	uint8_t is_last;
+} __packed;
+
+struct bt_has_cp_generic_update {
+	uint8_t prev_index;
+	uint8_t index;
+	uint8_t properties;
+	uint8_t name[0];
 } __packed;
 
 struct bt_has_cp_write_preset_name {

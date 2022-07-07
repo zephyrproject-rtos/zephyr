@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 /* global values and data structures */
 struct fifo_msg {

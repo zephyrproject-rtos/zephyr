@@ -8,12 +8,12 @@
  *  @brief Thread analyzer implementation
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
-#include <debug/thread_analyzer.h>
-#include <debug/stack.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/debug/thread_analyzer.h>
+#include <zephyr/debug/stack.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <stdio.h>
 
 LOG_MODULE_REGISTER(thread_analyzer, CONFIG_THREAD_ANALYZER_LOG_LEVEL);
@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(thread_analyzer, CONFIG_THREAD_ANALYZER_LOG_LEVEL);
 #else
 #define THREAD_ANALYZER_PRINT(...) LOG_INF(__VA_ARGS__)
 #define THREAD_ANALYZER_FMT(str)   str
-#define THREAD_ANALYZER_VSTR(str)  log_strdup(str)
+#define THREAD_ANALYZER_VSTR(str)  str
 #endif
 
 /* @brief Maximum length of the pointer when converted to string
@@ -126,8 +126,8 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	cb(&info);
 }
 
-extern K_KERNEL_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
-				   CONFIG_ISR_STACK_SIZE);
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+			     CONFIG_ISR_STACK_SIZE);
 
 static void isr_stacks(void)
 {

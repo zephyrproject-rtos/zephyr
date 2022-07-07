@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #endif
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

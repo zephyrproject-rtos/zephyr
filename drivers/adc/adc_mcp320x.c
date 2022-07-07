@@ -9,14 +9,13 @@
  * @brief ADC driver for the MCP3204/MCP3208 ADCs.
  */
 
-#include <drivers/adc.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
-#include <kernel.h>
-#include <logging/log.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <zephyr.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(adc_mcp320x, CONFIG_ADC_LOG_LEVEL);
 

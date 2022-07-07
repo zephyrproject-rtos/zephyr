@@ -16,7 +16,7 @@
 
 #include <soc.h>
 
-#include <arch/arm/aarch32/cortex_m/nvic.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/nvic.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,6 +64,7 @@ typedef enum {
 	DebugMonitor_IRQn             =  -4,
 	PendSV_IRQn                   =  -2,
 	SysTick_IRQn                  =  -1,
+	Max_IRQn                      =  CONFIG_NUM_IRQS,
 } IRQn_Type;
 
 #if defined(CONFIG_CPU_CORTEX_M0)

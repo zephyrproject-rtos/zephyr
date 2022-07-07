@@ -14,7 +14,7 @@
 
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <arch/xtensa/arch.h>
+#include <zephyr/arch/xtensa/arch.h>
 
 #include <xtensa/core-macros.h>
 #include <esp32/clk.h>

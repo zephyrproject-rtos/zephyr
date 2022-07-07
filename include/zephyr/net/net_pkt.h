@@ -19,15 +19,15 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
-#include <net/net_core.h>
-#include <net/net_linkaddr.h>
-#include <net/net_ip.h>
-#include <net/net_if.h>
-#include <net/net_context.h>
-#include <net/ethernet_vlan.h>
-#include <net/ptp_time.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_linkaddr.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/ethernet_vlan.h>
+#include <zephyr/net/ptp_time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -189,6 +189,10 @@ struct net_pkt {
 				 * defined(CONFIG_NET_ETHERNET_BRIDGE).
 				 */
 
+	uint8_t l2_processed : 1; /* Set to 1 if this packet has already been
+				   * processed by the L2
+				   */
+
 	union {
 		/* IPv6 hop limit or IPv4 ttl for this network packet.
 		 * The value is shared between IPv6 and IPv4.
@@ -239,8 +243,24 @@ struct net_pkt {
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_IEEE802154)
-	uint8_t ieee802154_rssi; /* Received Signal Strength Indication */
+#if defined(CONFIG_IEEE802154_2015)
+	uint32_t ieee802154_ack_fc; /* Frame counter set in the ACK */
+	uint8_t ieee802154_ack_keyid; /* Key index set in the ACK */
+#endif
 	uint8_t ieee802154_lqi;  /* Link Quality Indicator */
+	union {
+		uint8_t ieee802154_rssi; /* Received Signal Strength Indication */
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
+		int8_t ieee802154_txpwr; /* TX power in dBm. It should be clear from
+					  * the context which field of the union
+					  * is valid at the moment.
+					  */
+#endif /* CONFIG_IEEE802154_SELECTIVE_TXPOWER */
+	};
+#if defined(CONFIG_IEEE802154_2015)
+	uint8_t ieee802154_fv2015 : 1; /* Frame version is IEEE 802.15.4-2015 */
+	uint8_t ieee802154_ack_seb : 1; /* Security Enabled Bit was set in the ACK */
+#endif
 	uint8_t ieee802154_arb : 1; /* ACK Request Bit is set in the frame */
 	uint8_t ieee802154_ack_fpb : 1; /* Frame Pending Bit was set in the ACK */
 	uint8_t ieee802154_frame_secured : 1; /* Frame is authenticated and
@@ -252,12 +272,6 @@ struct net_pkt {
 					     * it requires further modifications,
 					     * e.g. Frame Counter injection.
 					     */
-#if defined(CONFIG_IEEE802154_2015)
-	uint8_t ieee802154_fv2015 : 1; /* Frame version is IEEE 802.15.4-2015 */
-	uint8_t ieee802154_ack_seb : 1; /* Security Enabled Bit was set in the ACK */
-	uint32_t ieee802154_ack_fc; /* Frame counter set in the ACK */
-	uint8_t ieee802154_ack_keyid; /* Key index set in the ACK */
-#endif
 #endif
 	/* @endcond */
 };
@@ -357,6 +371,17 @@ static inline void net_pkt_set_l2_bridged(struct net_pkt *pkt, bool is_l2_bridge
 	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE)) {
 		pkt->l2_bridged = is_l2_bridged;
 	}
+}
+
+static inline bool net_pkt_is_l2_processed(struct net_pkt *pkt)
+{
+	return !!(pkt->l2_processed);
+}
+
+static inline void net_pkt_set_l2_processed(struct net_pkt *pkt,
+					    bool is_l2_processed)
+{
+	pkt->l2_processed = is_l2_processed;
 }
 
 static inline uint8_t net_pkt_ip_hdr_len(struct net_pkt *pkt)
@@ -1102,6 +1127,19 @@ static inline void net_pkt_set_ieee802154_ack_keyid(struct net_pkt *pkt,
 	pkt->ieee802154_ack_keyid = keyid;
 }
 #endif /* CONFIG_IEEE802154_2015 */
+
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
+static inline int8_t net_pkt_ieee802154_txpwr(struct net_pkt *pkt)
+{
+	return pkt->ieee802154_txpwr;
+}
+
+static inline void net_pkt_set_ieee802154_txpwr(struct net_pkt *pkt,
+						int8_t txpwr)
+{
+	pkt->ieee802154_txpwr = txpwr;
+}
+#endif /* CONFIG_IEEE802154_SELECTIVE_TXPOWER */
 #endif /* CONFIG_IEEE802154 || CONFIG_IEEE802154_RAW_MODE */
 
 #if defined(CONFIG_NET_IPV4_AUTO)

@@ -14,8 +14,8 @@
  *
  */
 
-#include <sys/__assert.h>
-#include <sys/libc-hooks.h> /* for z_libc_partition */
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/libc-hooks.h> /* for z_libc_partition */
 
 #include "main.h"
 #include "enc.h"

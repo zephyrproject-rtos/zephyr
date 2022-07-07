@@ -16,8 +16,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_IRQ_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_IRQ_H_
 
-#include <irq.h>
-#include <sw_isr_table.h>
+#include <zephyr/irq.h>
+#include <zephyr/sw_isr_table.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -86,16 +86,27 @@ extern void z_arm_interrupt_init(void);
 
 /* Flags for use with IRQ_CONNECT() */
 /**
- * Set this interrupt up as a zero-latency IRQ. It has a fixed hardware
- * priority level (discarding what was supplied in the interrupt's priority
- * argument), and will run even if irq_lock() is active. Be careful!
+ * Set this interrupt up as a zero-latency IRQ. If CONFIG_ZERO_LATENCY_LEVELS
+ * is 1 it has a fixed hardware priority level (discarding what was supplied
+ * in the interrupt's priority argument). If CONFIG_ZERO_LATENCY_LEVELS is
+ * greater 1 it has the priority level assigned by the argument.
+ * The interrupt wil run even if irq_lock() is active. Be careful!
  */
 #define IRQ_ZERO_LATENCY	BIT(0)
 
 #ifdef CONFIG_CPU_CORTEX_M
+
+#if defined(CONFIG_ZERO_LATENCY_LEVELS)
+#define ZERO_LATENCY_LEVELS CONFIG_ZERO_LATENCY_LEVELS
+#else
+#define ZERO_LATENCY_LEVELS 1
+#endif
+
 #define _CHECK_PRIO(priority_p, flags_p) \
-	BUILD_ASSERT((flags_p & IRQ_ZERO_LATENCY) || \
-		     priority_p <= IRQ_PRIO_LOWEST, \
+	BUILD_ASSERT(((flags_p & IRQ_ZERO_LATENCY) && \
+		      ((ZERO_LATENCY_LEVELS == 1) || \
+		       (priority_p < ZERO_LATENCY_LEVELS))) || \
+		     (priority_p <= IRQ_PRIO_LOWEST), \
 		     "Invalid interrupt priority. Values must not exceed IRQ_PRIO_LOWEST");
 #else
 #define _CHECK_PRIO(priority_p, flags_p)
@@ -234,14 +245,6 @@ extern void z_arm_irq_direct_dynamic_dispatch_no_reschedule(void);
 
 /* Spurious interrupt handler. Throws an error if called */
 extern void z_irq_spurious(const void *unused);
-
-#ifdef CONFIG_GEN_SW_ISR_TABLE
-/* Architecture-specific common entry point for interrupts from the vector
- * table. Most likely implemented in assembly. Looks up the correct handler
- * and parameter from the _sw_isr_table and executes it.
- */
-extern void _isr_wrapper(void);
-#endif
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 /* Architecture-specific definition for the target security

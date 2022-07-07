@@ -1,8 +1,8 @@
 /* Copyright (c) 2022, Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
-#include <drivers/ipm.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/ipm.h>
 #include <cavs-mem.h>
 #include <cavs-shim.h>
 #include <cavs_ipc.h>

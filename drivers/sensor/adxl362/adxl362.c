@@ -8,15 +8,15 @@
 
 #define DT_DRV_COMPAT adi_adxl362
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <drivers/sensor.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <drivers/spi.h>
-#include <logging/log.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/logging/log.h>
 
 #include "adxl362.h"
 
@@ -130,24 +130,6 @@ static int adxl362_software_reset(const struct device *dev)
 {
 	return adxl362_set_reg(dev, ADXL362_RESET_KEY,
 			       ADXL362_REG_SOFT_RESET, 1);
-}
-
-static int adxl362_set_power_mode(const struct device *dev, uint8_t mode)
-{
-	uint8_t old_power_ctl;
-	uint8_t new_power_ctl;
-	int ret;
-
-	ret = adxl362_get_reg(dev, &old_power_ctl, ADXL362_REG_POWER_CTL, 1);
-	if (ret) {
-		return ret;
-	}
-
-	new_power_ctl = old_power_ctl & ~ADXL362_POWER_CTL_MEASURE(0x3);
-	new_power_ctl = new_power_ctl |
-		      (mode *
-		       ADXL362_POWER_CTL_MEASURE(ADXL362_MEASURE_ON));
-	return adxl362_set_reg(dev, new_power_ctl, ADXL362_REG_POWER_CTL, 1);
 }
 
 #if defined(CONFIG_ADXL362_ACCEL_ODR_RUNTIME)
@@ -372,7 +354,7 @@ static int adxl362_fifo_setup(const struct device *dev, uint8_t mode,
 		return ret;
 	}
 
-	ret = adxl362_set_reg(dev, water_mark_lvl, ADXL362_REG_FIFO_SAMPLES, 2);
+	ret = adxl362_set_reg(dev, water_mark_lvl, ADXL362_REG_FIFO_SAMPLES, 1);
 	if (ret) {
 		return ret;
 	}
@@ -619,6 +601,7 @@ static const struct sensor_driver_api adxl362_api_funcs = {
 
 static int adxl362_chip_init(const struct device *dev)
 {
+	const struct adxl362_config *config = dev->config;
 	int ret;
 
 	/* Configures activity detection.
@@ -696,8 +679,9 @@ static int adxl362_chip_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Places the device into measure mode. */
-	ret = adxl362_set_power_mode(dev, 1);
+	/* Places the device into measure mode, enable wakeup mode and autosleep if desired. */
+	LOG_DBG("setting pwrctl: 0x%02x", config->power_ctl);
+	ret = adxl362_set_reg(dev, config->power_ctl, ADXL362_REG_POWER_CTL, 1);
 	if (ret) {
 		return ret;
 	}
@@ -735,7 +719,7 @@ static int adxl362_init(const struct device *dev)
 
 	adxl362_get_reg(dev, &value, ADXL362_REG_PARTID, 1);
 	if (value != ADXL362_PART_ID) {
-		LOG_ERR("Failed: %d\n", value);
+		LOG_ERR("wrong part_id: %d\n", value);
 		return -ENODEV;
 	}
 
@@ -762,6 +746,9 @@ static int adxl362_init(const struct device *dev)
 
 static const struct adxl362_config adxl362_config = {
 	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),
+	.power_ctl = ADXL362_POWER_CTL_MEASURE(ADXL362_MEASURE_ON) |
+		(DT_INST_PROP(0, wakeup_mode) * ADXL362_POWER_CTL_WAKEUP) |
+		(DT_INST_PROP(0, autosleep) * ADXL362_POWER_CTL_AUTOSLEEP),
 #if defined(CONFIG_ADXL362_TRIGGER)
 	.interrupt = GPIO_DT_SPEC_INST_GET(0, int1_gpios),
 #endif

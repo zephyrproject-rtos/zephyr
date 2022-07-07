@@ -14,7 +14,7 @@
 #ifndef ZEPHYR_INCLUDE_SYS_REBOOT_H_
 #define ZEPHYR_INCLUDE_SYS_REBOOT_H_
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {

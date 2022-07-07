@@ -1,7 +1,6 @@
 common:
     tags: tfm
-    platform_allow: lpcxpresso55s69_ns
-                    nrf5340dk_nrf5340_cpuapp_ns nrf9160dk_nrf9160_ns
+    platform_allow: nrf5340dk_nrf5340_cpuapp_ns nrf9160dk_nrf9160_ns
                     v2m_musca_s1_ns
     harness: console
     harness_config:
@@ -15,6 +14,9 @@ sample:
   name: "TFM Regression Test"
 
 tests:
-  sample.tfm.tfm_regression:
-    extra_args: ""
+  sample.tfm.regression:
+    timeout: 200
+
+  sample.tfm.regression_ipc:
+    extra_args: CONFIG_TFM_IPC=y
     timeout: 200

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 #include "app_gpio.h"
 #include "ble_mesh.h"
@@ -16,7 +16,7 @@
 #include "transition.h"
 
 #if defined(CONFIG_MCUMGR)
-#include <mgmt/mcumgr/smp_bt.h>
+#include <zephyr/mgmt/mcumgr/smp_bt.h>
 #include "smp_svr.h"
 #endif
 

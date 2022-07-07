@@ -22,9 +22,9 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MCC_
 
 #include <zephyr/types.h>
-#include <bluetooth/conn.h>
-#include <net/buf.h>
-#include <bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/audio/media_proxy.h>
 
 #ifdef __cplusplus
 extern "C" {

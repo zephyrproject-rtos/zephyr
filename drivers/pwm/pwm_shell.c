@@ -9,8 +9,8 @@
  * @brief PWM shell commands.
  */
 
-#include <shell/shell.h>
-#include <drivers/pwm.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/pwm.h>
 #include <stdlib.h>
 
 struct args_index {

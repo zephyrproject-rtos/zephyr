@@ -7,11 +7,11 @@
 #define LOG_MODULE_NAME net_lwm2m_obj_portfolio
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <stdint.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
@@ -94,9 +94,9 @@ static struct lwm2m_engine_obj_inst *portfolio_create(uint16_t obj_inst_id)
 	init_res_instance(res_inst[avail], ARRAY_SIZE(res_inst[avail]));
 
 	/* initialize instance resource data */
-	INIT_OBJ_RES_MULTI_DATA(PORTFOLIO_IDENTITY_ID, res[avail], i,
-				res_inst[avail], j, PORTFOLIO_IDENTITY_MAX, false,
-				identity[indentity_buffer_start], DEFAULT_IDENTITY_BUFFER_LENGTH);
+	INIT_OBJ_RES_MULTI_DATA_LEN(PORTFOLIO_IDENTITY_ID, res[avail], i, res_inst[avail], j,
+				    PORTFOLIO_IDENTITY_MAX, false, identity[indentity_buffer_start],
+				    DEFAULT_IDENTITY_BUFFER_LENGTH, 0);
 	INIT_OBJ_RES_EXECUTE(PORTFOLIO_GET_AUTH_DATA_ID, res[avail], i, NULL);
 	INIT_OBJ_RES_MULTI_OPTDATA(PORTFOLIO_AUTH_DATA_ID, res[avail], i, res_inst[avail], j,
 				   PORTFOLIO_AUTH_DATA_MAX, false);

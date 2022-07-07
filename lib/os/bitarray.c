@@ -8,9 +8,9 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <sys/bitarray.h>
-#include <sys/check.h>
-#include <sys/sys_io.h>
+#include <zephyr/sys/bitarray.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/sys_io.h>
 
 /* Number of bits represented by one bundle */
 #define bundle_bitness(ba)	(sizeof(ba->bundles[0]) * 8)
@@ -435,8 +435,6 @@ int sys_bitarray_alloc(sys_bitarray_t *bitarray, size_t num_bits,
 	while (bit_idx <= off_end) {
 		if (match_region(bitarray, bit_idx, num_bits, false,
 				 &bd, &mismatch)) {
-			off_end = bit_idx + num_bits - 1;
-
 			set_region(bitarray, bit_idx, num_bits, true, &bd);
 
 			*offset = bit_idx;

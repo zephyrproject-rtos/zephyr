@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_SYS___ASSERT_H_
 
 #include <stdbool.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 #ifdef CONFIG_ASSERT
 #ifndef __ASSERT_ON

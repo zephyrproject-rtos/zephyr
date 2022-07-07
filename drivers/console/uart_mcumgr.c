@@ -10,10 +10,10 @@
  */
 
 #include <string.h>
-#include <kernel.h>
-#include <drivers/uart.h>
-#include <mgmt/mcumgr/serial.h>
-#include <drivers/console/uart_mcumgr.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/mgmt/mcumgr/serial.h>
+#include <zephyr/drivers/console/uart_mcumgr.h>
 
 static const struct device *uart_mcumgr_dev;
 

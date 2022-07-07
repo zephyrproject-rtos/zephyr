@@ -1,0 +1,21 @@
+# Copyright (c) 2022 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_ARCELI_ETH_W5500
+
+if NETWORKING
+
+# W5500 is L2 chip slave on SPI
+config SPI
+	default y
+
+config NET_L2_ETHERNET
+	default y
+
+# W5500 Ethernet Device
+config ETH_W5500
+	default y
+
+endif # NETWORKING
+
+endif # SHIELD_ARCELI_ETH_W5500

@@ -18,7 +18,7 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,canbus = &can1;
+		zephyr,canbus = &can2;
 	};
 
 	leds {
@@ -124,6 +124,13 @@
 	status = "okay";
 };
 
+&can2 {
+	pinctrl-0 = <&can2_rx_pb12 &can2_tx_pb13>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
+	status = "okay";
+};
+
 &flash0 {
 
 	partitions {
@@ -133,7 +140,7 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x00010000>;
+			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
 		};
 
@@ -144,20 +151,20 @@
 		 */
 		storage_partition: partition@10000 {
 			label = "storage";
-			reg = <0x00010000 0x00010000>;
+			reg = <0x00010000 DT_SIZE_K(64)>;
 		};
 
 		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x00020000 0x00020000>;
+			reg = <0x00020000 DT_SIZE_K(128)>;
 		};
 		slot1_partition: partition@40000 {
 			label = "image-1";
-			reg = <0x00040000 0x00020000>;
+			reg = <0x00040000 DT_SIZE_K(128)>;
 		};
 		scratch_partition: partition@60000 {
 			label = "image-scratch";
-			reg = <0x00060000 0x00020000>;
+			reg = <0x00060000 DT_SIZE_K(128)>;
 		};
 	};
 };

@@ -12,11 +12,11 @@
 
 #include <errno.h>
 
-#include <drivers/adc.h>
-#include <drivers/pinctrl.h>
-#include <device.h>
-#include <kernel.h>
-#include <init.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include <stm32_ll_adc.h>
 #if defined(CONFIG_SOC_SERIES_STM32U5X)
@@ -27,10 +27,10 @@
 #include "adc_context.h"
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_stm32);
 
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X)
 #if defined(ADC1_V2_5)
@@ -805,18 +805,16 @@ static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_i
 {
 	const struct adc_stm32_cfg *config = dev->config;
 #ifdef CONFIG_SOC_SERIES_STM32G4X
-	ADC_TypeDef *adc = config->base;
-
 	if (config->has_temp_channel) {
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay)
 		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC1) == channel_id)
-		    && (adc == ADC1)) {
+		    && (config->base == ADC1)) {
 			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 		}
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(adc5), okay)
 		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC5) == channel_id)
-		   && (adc == ADC5)) {
+		   && (config->base == ADC5)) {
 			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 		}
 #endif

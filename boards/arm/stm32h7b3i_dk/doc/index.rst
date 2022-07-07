@@ -64,6 +64,8 @@ The current Zephyr stm32h7b3i_dk board configuration supports the following hard
 +-----------+------------+-------------------------------------+
 | LTDC      | on-chip    | display                             |
 +-----------+------------+-------------------------------------+
+| CANFD     | on-chip    | can                                 |
++-----------+------------+-------------------------------------+
 
 
 Other hardware features have not been enabled yet for this board.
@@ -87,14 +89,18 @@ Default Zephyr Peripheral Mapping:
 - LD2 : PG2
 - USER_PB : PC13
 - SDMMC D0/D1/D2/D3/CK/CMD/CD : PC8/PC9/PC10/PC11/PC12/PD2/PI8
+- CANFD RX/TX/WAKE [#]_ : PA11/PA12/PH8
 - FMC SDRAM :
+
     - D0-D15 : PD14/PD15/PD0/PD1/PE7/PE8/PE9/PE10/PE11/PE12/PE13/PE14/PE15/PD8/PD9/PD10
     - A0-A11 : PF0/PF1/PF2/PF3/PF4/PF5/PF12/PF13/PF14/PF15/PG0/PG1
     - A14/A15 : PG4/PG5
     - SDNRAS/SDNCAS : PF11/PG15
     - NBL0/NBL1 : PE0/PE1
     - SDCLK/SDNWE/SDCKE1/SDNE1 : PG8/PH5/PH7/PH6
+
 - LTDC :
+
     - R0-R7 : PI15/PJ0/PJ1/PJ2/PJ3/PJ4/PJ5/PJ6
     - G0-G7 : PJ7/PJ8/PJ9/PJ10/PJ11/PK0/PK1/PK2
     - B0-B7 : PJ12/PK13/PJ14/PJ15/PK3/PK4/PK5/PK6
@@ -158,3 +164,10 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _STM32H7B3I_DK board schematics:
+   https://www.st.com/resource/en/schematic_pack/mb1332-h7b3i-c02_schematic.pdf
+
+.. [#] To use CAN, solder bridges SB3, SB4 and SB5 need to be connected.
+       Take note that CANFD pins are shared with STMOD+ connector (P1), so please check
+       `STM32H7B3I_DK board schematics`_ for possible collisions if using that connector.

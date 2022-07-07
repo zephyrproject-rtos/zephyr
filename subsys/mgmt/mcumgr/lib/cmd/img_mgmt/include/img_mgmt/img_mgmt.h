@@ -9,6 +9,7 @@
 
 #include <inttypes.h>
 #include "img_mgmt_config.h"
+#include "image.h"
 #include "mgmt/mgmt.h"
 #include <zcbor_common.h>
 
@@ -40,6 +41,7 @@ extern "C" {
 #define IMG_MGMT_SWAP_TYPE_TEST		1
 #define IMG_MGMT_SWAP_TYPE_PERM		2
 #define IMG_MGMT_SWAP_TYPE_REVERT	3
+#define IMG_MGMT_SWAP_TYPE_UNKNOWN	255
 
 /**
  * Command IDs for image management group.
@@ -63,9 +65,9 @@ extern struct img_mgmt_state g_img_mgmt_state;
 
 /** Represents an individual upload request. */
 struct img_mgmt_upload_req {
-	unsigned long long image;	/* 0 by default */
-	unsigned long long off;		/* -1 if unspecified */
-	unsigned long long size;	/* -1 if unspecified */
+	uint32_t image;	/* 0 by default */
+	size_t off;	/* SIZE_MAX if unspecified */
+	size_t size;	/* SIZE_MAX if unspecified */
 	struct zcbor_string img_data;
 	struct zcbor_string data_sha;
 	bool upgrade;			/* Only allow greater version numbers. */
@@ -76,16 +78,12 @@ struct img_mgmt_state {
 	/** Flash area being written; -1 if no upload in progress. */
 	int area_id;
 	/** Flash offset of next chunk. */
-	uint32_t off;
+	size_t off;
 	/** Total size of image data. */
-	uint32_t size;
+	size_t size;
 	/** Hash of image data; used for resumption of a partial upload. */
 	uint8_t data_sha_len;
 	uint8_t data_sha[IMG_MGMT_DATA_SHA_LEN];
-#if CONFIG_IMG_ERASE_PROGRESSIVELY
-	int sector_id;
-	uint32_t sector_end;
-#endif
 };
 
 /** Describes what to do during processing of an upload request. */
@@ -213,15 +211,14 @@ struct img_mgmt_dfu_callbacks_t {
  * proceeds.  If the callback returns nonzero, the request is rejected with a
  * response containing an `rc` value equal to the return code.
  *
- * @param offset	The offset specified by the incoming request.
- * @param size		The total size of the image being uploaded.
- * @param arg		Optional argument specified when the callback
- *			was configured.
+ * @param req		Image upload request structure
+ * @param action	Image upload action structure
  *
- * @return 0 if the upload request should be accepted; nonzero to reject the request with the
- *	   specified status.
+ * @return	0 if the upload request should be accepted; nonzero to reject
+ *		the request with the specified status.
  */
-typedef int (*img_mgmt_upload_fn)(uint32_t offset, uint32_t size, void *arg);
+typedef int (*img_mgmt_upload_fn)(const struct img_mgmt_upload_req req,
+				  const struct img_mgmt_upload_action action);
 
 /**
  * @brief Configures a callback that gets called whenever a valid image upload
@@ -233,14 +230,25 @@ typedef int (*img_mgmt_upload_fn)(uint32_t offset, uint32_t size, void *arg);
  * response containing an `rc` value equal to the return code.
  *
  * @param cb	The callback to execute on rx of an upload request.
- * @param arg	Optional argument that gets passed to the callback.
  */
-void img_mgmt_set_upload_cb(img_mgmt_upload_fn cb, void *arg);
+void img_mgmt_set_upload_cb(img_mgmt_upload_fn cb);
 void img_mgmt_register_callbacks(const struct img_mgmt_dfu_callbacks_t *cb_struct);
 void img_mgmt_dfu_stopped(void);
 void img_mgmt_dfu_started(void);
 void img_mgmt_dfu_pending(void);
 void img_mgmt_dfu_confirmed(void);
+
+/**
+ * Compares two image version numbers in a semver-compatible way.
+ *
+ * @param a	The first version to compare.
+ * @param b	The second version to compare.
+ *
+ * @return	-1 if a < b
+ * @return	0 if a = b
+ * @return	1 if a > b
+ */
+int img_mgmt_vercmp(const struct image_version *a, const struct image_version *b);
 
 #ifdef CONFIG_IMG_MGMT_VERBOSE_ERR
 #define IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, rsn) ((action)->rc_rsn = (rsn))

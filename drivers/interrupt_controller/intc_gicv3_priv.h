@@ -8,8 +8,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_INTC_GICV3_PRIV_H_
 
 #include <zephyr/types.h>
-#include <device.h>
-#include <sys/atomic.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/atomic.h>
 
 /* Cache and Share ability for ITS & Redistributor LPI state tables */
 #define GIC_BASER_CACHE_NGNRNE		0x0UL /* Device-nGnRnE */

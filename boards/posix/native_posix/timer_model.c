@@ -26,8 +26,8 @@
 #include "irq_ctrl.h"
 #include "board_soc.h"
 #include "zephyr/types.h"
-#include <arch/posix/posix_trace.h>
-#include <sys/util.h>
+#include <zephyr/arch/posix/posix_trace.h>
+#include <zephyr/sys/util.h>
 #include "cmdline.h"
 #include "soc.h"
 

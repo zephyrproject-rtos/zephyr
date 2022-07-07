@@ -5,11 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/sensor.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/device.h>
 #include <stdio.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 #ifdef CONFIG_APDS9960_TRIGGER
 K_SEM_DEFINE(sem, 0, 1);
@@ -30,9 +30,9 @@ void main(void)
 	struct sensor_value intensity, pdata;
 
 	printk("APDS9960 sample application\n");
-	dev = device_get_binding(DT_LABEL(DT_INST(0, avago_apds9960)));
-	if (!dev) {
-		printk("sensor: device not found.\n");
+	dev = DEVICE_DT_GET_ONE(avago_apds9960);
+	if (!device_is_ready(dev)) {
+		printk("sensor: device not ready.\n");
 		return;
 	}
 

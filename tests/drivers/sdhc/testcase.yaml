@@ -1,0 +1,12 @@
+common:
+  depends_on: sdhc
+  tags: drivers sdhc
+tests:
+  drivers.sdhc.sdhc_api:
+    harness: ztest
+    harness_config:
+      fixture: fixture_sdhc
+    filter: CONFIG_SDHC
+    tags: sdhc
+    integration_platforms:
+      - mimxrt1064_evk

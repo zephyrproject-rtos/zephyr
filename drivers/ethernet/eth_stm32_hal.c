@@ -10,27 +10,27 @@
 #define LOG_MODULE_NAME eth_stm32_hal
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <kernel.h>
-#include <device.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <net/ethernet.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 #include <soc.h>
-#include <sys/printk.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-#include <drivers/ptp_clock.h>
+#include <zephyr/drivers/ptp_clock.h>
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 #include "eth.h"

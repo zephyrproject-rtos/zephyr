@@ -6,14 +6,14 @@
 
 #define DT_DRV_COMPAT ti_tlc5971
 
-#include <zephyr.h>
-#include <drivers/spi.h>
-#include <drivers/led_strip.h>
-#include <drivers/led_strip/tlc5971.h>
-#include <dt-bindings/led/led.h>
-#include <sys/util.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/led_strip.h>
+#include <zephyr/drivers/led_strip/tlc5971.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/sys/util.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tlc5971, CONFIG_LED_STRIP_LOG_LEVEL);
 
 struct tlc5971_config {

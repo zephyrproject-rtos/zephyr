@@ -11,13 +11,13 @@
  * Core thread related primitives for the ARCv2 processor architecture.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
 #include <offsets_short.h>
-#include <wait_q.h>
+#include <zephyr/wait_q.h>
 
 #ifdef CONFIG_USERSPACE
-#include <arch/arc/v2/mpu/arc_core_mpu.h>
+#include <zephyr/arch/arc/v2/mpu/arc_core_mpu.h>
 #endif
 
 /*  initial stack frame */

@@ -20,9 +20,9 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-#include <kernel.h>
-#include <math/ilog2.h>
-#include <sys/bitarray.h>
+#include <zephyr/kernel.h>
+#include <zephyr/math/ilog2.h>
+#include <zephyr/sys/bitarray.h>
 
 #define MAX_MULTI_ALLOCATORS 8
 

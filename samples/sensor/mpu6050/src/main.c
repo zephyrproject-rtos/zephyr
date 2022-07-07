@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 #include <stdio.h>
 
 static const char *now_str(void)
@@ -86,11 +86,10 @@ static void handle_mpu6050_drdy(const struct device *dev,
 
 void main(void)
 {
-	const char *const label = DT_LABEL(DT_INST(0, invensense_mpu6050));
-	const struct device *mpu6050 = device_get_binding(label);
+	const struct device *mpu6050 = DEVICE_DT_GET_ONE(invensense_mpu6050);
 
-	if (!mpu6050) {
-		printf("Failed to find sensor %s\n", label);
+	if (!device_is_ready(mpu6050)) {
+		printf("Device %s is not ready\n", mpu6050->name);
 		return;
 	}
 

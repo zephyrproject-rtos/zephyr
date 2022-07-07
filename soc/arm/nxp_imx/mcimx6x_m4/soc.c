@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <dt-bindings/rdc/imx_rdc.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/dt-bindings/rdc/imx_rdc.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include "wdog_imx.h"
 
 /* Initialize Resource Domain Controller. */

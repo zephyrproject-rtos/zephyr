@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
 #include <ztest_assert.h>
 
-#include <net/socket.h>
-#include <sys/fdtable.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/sys/fdtable.h>
 
 #include "../../socket_helpers.h"
 
@@ -175,10 +175,88 @@ void test_poll(void)
 	zassert_equal(res, 0, "close failed");
 }
 
+#define TEST_SNDBUF_SIZE CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE
+
+static void test_pollout_tcp(void)
+{
+	int res;
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in6 c_addr;
+	struct sockaddr_in6 s_addr;
+	struct pollfd pollout[1];
+	char buf[TEST_SNDBUF_SIZE] = { };
+
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, CLIENT_PORT,
+			    &c_sock, &c_addr);
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
+			    &s_sock, &s_addr);
+
+	res = bind(s_sock, (struct sockaddr *)&s_addr, sizeof(s_addr));
+	zassert_equal(res, 0, "");
+	res = listen(s_sock, 0);
+	zassert_equal(res, 0, "");
+	res = connect(c_sock, (const struct sockaddr *)&s_addr,
+		      sizeof(s_addr));
+	zassert_equal(res, 0, "");
+	new_sock = accept(s_sock, NULL, NULL);
+	zassert_true(new_sock >= 0, "");
+
+	k_msleep(10);
+
+	/* POLLOUT should be reported after connecting */
+	memset(pollout, 0, sizeof(pollout));
+	pollout[0].fd = c_sock;
+	pollout[0].events = POLLOUT;
+
+	res = poll(pollout, ARRAY_SIZE(pollout), 10);
+	zassert_equal(res, 1, "");
+	zassert_equal(pollout[0].revents, POLLOUT, "");
+
+	/* POLLOUT should not be reported after filling the window */
+	res = send(c_sock, buf, sizeof(buf), 0);
+	zassert_equal(res, sizeof(buf), "");
+
+	memset(pollout, 0, sizeof(pollout));
+	pollout[0].fd = c_sock;
+	pollout[0].events = POLLOUT;
+
+	res = poll(pollout, ARRAY_SIZE(pollout), 10);
+	zassert_equal(res, 0, "%d", pollout[0].revents);
+	zassert_equal(pollout[0].revents, 0, "");
+
+	/* POLLOUT should be reported again after consuming the data server
+	 * side.
+	 */
+	res = recv(new_sock, buf, sizeof(buf), 0);
+	zassert_equal(res, sizeof(buf), "");
+
+	memset(pollout, 0, sizeof(pollout));
+	pollout[0].fd = c_sock;
+	pollout[0].events = POLLOUT;
+
+	/* Wait longer this time to give TCP stack a chance to send ZWP. */
+	res = poll(pollout, ARRAY_SIZE(pollout), 500);
+	zassert_equal(res, 1, "");
+	zassert_equal(pollout[0].revents, POLLOUT, "");
+
+	k_msleep(10);
+
+	/* Finalize the test */
+	res = close(c_sock);
+	zassert_equal(res, 0, "close failed");
+	res = close(s_sock);
+	zassert_equal(res, 0, "close failed");
+	res = close(new_sock);
+	zassert_equal(res, 0, "close failed");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(socket_poll,
-			 ztest_unit_test(test_poll));
+			 ztest_unit_test(test_poll),
+			 ztest_unit_test(test_pollout_tcp));
 
 	ztest_run_test_suite(socket_poll);
 }

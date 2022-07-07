@@ -1,5 +1,15 @@
-description: Bosch m_can CAN-FD controller
+description: ST STM32 FDCAN CAN-FD controller
 
 compatible: "st,stm32-fdcan"
 
-include: ["bosch,m-can.yaml", "pinctrl-device.yaml"]
+include: ["can-fd-controller.yaml", "pinctrl-device.yaml"]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    clocks:
+      required: true

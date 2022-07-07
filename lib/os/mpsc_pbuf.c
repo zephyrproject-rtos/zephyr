@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <sys/mpsc_pbuf.h>
+#include <zephyr/sys/mpsc_pbuf.h>
 
 #define MPSC_PBUF_DEBUG 0
 
@@ -44,6 +44,7 @@ void mpsc_pbuf_init(struct mpsc_pbuf_buffer *buffer,
 
 	err = k_sem_init(&buffer->sem, 0, 1);
 	__ASSERT_NO_MSG(err == 0);
+	ARG_UNUSED(err);
 }
 
 static inline bool free_space(struct mpsc_pbuf_buffer *buffer, uint32_t *res)
@@ -224,7 +225,9 @@ void mpsc_pbuf_put_word(struct mpsc_pbuf_buffer *buffer,
 
 		if (cont && valid_drop) {
 			/* Notify about item being dropped. */
-			buffer->notify_drop(buffer, dropped_item);
+			if (buffer->notify_drop) {
+				buffer->notify_drop(buffer, dropped_item);
+			}
 		}
 	} while (cont);
 
@@ -286,7 +289,9 @@ union mpsc_pbuf_generic *mpsc_pbuf_alloc(struct mpsc_pbuf_buffer *buffer,
 
 		if (cont && dropped_item && valid_drop) {
 			/* Notify about item being dropped. */
-			buffer->notify_drop(buffer, dropped_item);
+			if (buffer->notify_drop) {
+				buffer->notify_drop(buffer, dropped_item);
+			}
 			dropped_item = NULL;
 		}
 	} while (cont);
@@ -359,7 +364,9 @@ void mpsc_pbuf_put_word_ext(struct mpsc_pbuf_buffer *buffer,
 
 		if (cont && dropped_item && valid_drop) {
 			/* Notify about item being dropped. */
-			buffer->notify_drop(buffer, dropped_item);
+			if (buffer->notify_drop) {
+				buffer->notify_drop(buffer, dropped_item);
+			}
 			dropped_item = NULL;
 		}
 	} while (cont);
@@ -403,7 +410,9 @@ void mpsc_pbuf_put_data(struct mpsc_pbuf_buffer *buffer, const uint32_t *data,
 
 		if (cont && dropped_item && valid_drop) {
 			/* Notify about item being dropped. */
-			buffer->notify_drop(buffer, dropped_item);
+			if (buffer->notify_drop) {
+				buffer->notify_drop(buffer, dropped_item);
+			}
 			dropped_item = NULL;
 		}
 	} while (cont);
@@ -417,11 +426,10 @@ const union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer)
 	do {
 		uint32_t a;
 		k_spinlock_key_t key;
-		bool wrap;
 
 		cont = false;
 		key = k_spin_lock(&buffer->lock);
-		wrap = available(buffer, &a);
+		(void)available(buffer, &a);
 		item = (union mpsc_pbuf_generic *)
 			&buffer->buf[buffer->tmp_rd_idx];
 

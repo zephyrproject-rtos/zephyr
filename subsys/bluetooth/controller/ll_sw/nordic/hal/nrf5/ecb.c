@@ -7,7 +7,7 @@
 
 #include <string.h>
 
-#include <sys/dlist.h>
+#include <zephyr/sys/dlist.h>
 
 #include <hal/nrf_ecb.h>
 

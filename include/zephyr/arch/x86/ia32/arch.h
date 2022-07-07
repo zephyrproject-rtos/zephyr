@@ -16,19 +16,19 @@
 
 #include "sys_io.h"
 #include <stdbool.h>
-#include <kernel_structs.h>
-#include <arch/common/ffs.h>
-#include <sys/util.h>
-#include <arch/x86/ia32/gdbstub.h>
-#include <arch/x86/ia32/thread.h>
-#include <arch/x86/ia32/syscall.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/arch/common/ffs.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/arch/x86/ia32/gdbstub.h>
+#include <zephyr/arch/x86/ia32/thread.h>
+#include <zephyr/arch/x86/ia32/syscall.h>
 
 #ifndef _ASMLANGUAGE
 #include <stddef.h>	/* for size_t */
 
-#include <arch/common/addr_types.h>
-#include <arch/x86/ia32/segmentation.h>
-#include <pm/pm.h>
+#include <zephyr/arch/common/addr_types.h>
+#include <zephyr/arch/x86/ia32/segmentation.h>
+#include <zephyr/pm/pm.h>
 
 #endif /* _ASMLANGUAGE */
 

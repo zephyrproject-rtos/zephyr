@@ -8,8 +8,8 @@
 #ifndef I2S_API_TEST_H
 #define I2S_API_TEST_H
 
-#include <kernel.h>
-#include <drivers/i2s.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/i2s.h>
 
 void test_i2s_tx_transfer_configure_0(void);
 void test_i2s_rx_transfer_configure_0(void);

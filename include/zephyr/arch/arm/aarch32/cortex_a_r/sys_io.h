@@ -15,8 +15,8 @@
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
-#include <sys/sys_io.h>
-#include <arch/arm/aarch32/cortex_a_r/cmsis.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/arch/arm/aarch32/cortex_a_r/cmsis.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -7,7 +7,7 @@
 #define NDS_MCACHE_CTL               0x7CA
 #define NDS_MMISC_CTL                0x7D0
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 	.option push
 	.option norelax
@@ -41,6 +41,16 @@ start:
 	/* Enable misaligned access and non-blocking load */
 	li t0, (1 << 8) | (1 << 6)
 	csrs NDS_MMISC_CTL, t0
+
+_ZERO_AES:
+	lui    t0, 0
+	la     t2, _AES_DATA_VMA_START
+	la     t3, _AES_DATA_VMA_END
+_ZERO_AES_BEGIN:
+	bleu   t3, t2, _RETENTION_DATA_INIT
+	sw     t0, 0(t2)
+	addi   t2, t2, 4
+	j      _ZERO_AES_BEGIN
 
 _RETENTION_DATA_INIT:
 	la     t1, _RETENTION_DATA_LMA_START

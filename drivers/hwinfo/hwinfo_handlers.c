@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <syscall_handler.h>
-#include <drivers/hwinfo.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/drivers/hwinfo.h>
 
 ssize_t z_vrfy_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {

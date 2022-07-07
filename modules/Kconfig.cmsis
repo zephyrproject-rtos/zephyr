@@ -30,7 +30,8 @@ endif
 
 menuconfig CMSIS_NN
 	bool "CMSIS-NN Library Support"
-	depends on CPU_CORTEX_M && CMSIS_DSP
+	depends on CPU_CORTEX_M
+	select CMSIS_DSP
 
 if CMSIS_NN
 source "modules/Kconfig.cmsis_nn"

@@ -5,7 +5,7 @@
  */
 
 #include <stdbool.h>
-#include <arch/arm/aarch32/cortex_a_r/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_a_r/cmsis.h>
 
 bool z_arm_thread_is_in_user_mode(void)
 {

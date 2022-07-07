@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <drivers/pcie/msi.h>
-#include <drivers/pcie/cap.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/pcie/msi.h>
+#include <zephyr/drivers/pcie/cap.h>
 
 /* functions documented in include/drivers/pcie/msi.h */
 
@@ -38,7 +38,7 @@ static uint32_t pcie_msi_base(pcie_bdf_t bdf, bool *msi)
 
 #ifdef CONFIG_PCIE_MSI_MULTI_VECTOR
 
-#include <sys/mem_manage.h>
+#include <zephyr/sys/mem_manage.h>
 
 __weak uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 					      msi_vector_t *vectors,

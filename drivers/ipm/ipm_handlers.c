@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <syscall_handler.h>
-#include <drivers/ipm.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/drivers/ipm.h>
 
 static inline int z_vrfy_ipm_send(const struct device *dev, int wait,
 				  uint32_t id,

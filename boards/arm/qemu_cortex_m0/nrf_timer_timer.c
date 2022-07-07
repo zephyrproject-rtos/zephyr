@@ -6,12 +6,12 @@
  */
 
 #include <soc.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/nrf_clock_control.h>
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
 #include <hal/nrf_timer.h>
-#include <spinlock.h>
+#include <zephyr/spinlock.h>
 
 #define TIMER NRF_TIMER0
 

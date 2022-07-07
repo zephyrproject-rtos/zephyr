@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_telnet_sample, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
-#include <linker/sections.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/linker/sections.h>
 #include <errno.h>
 #include <stdio.h>
 
-#include <net/net_core.h>
-#include <net/net_if.h>
-#include <net/net_mgmt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_mgmt.h>
 
 #if defined(CONFIG_NET_DHCPV4)
 static struct net_mgmt_event_callback mgmt_cb;
@@ -40,19 +40,19 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 		}
 
 		LOG_INF("IPv4 address: %s",
-			log_strdup(net_addr_ntop(AF_INET,
-					       &if_addr->address.in_addr,
-					       hr_addr, NET_IPV4_ADDR_LEN)));
+			net_addr_ntop(AF_INET,
+				      &if_addr->address.in_addr,
+				      hr_addr, NET_IPV4_ADDR_LEN));
 		LOG_INF("Lease time: %u seconds",
 			 iface->config.dhcpv4.lease_time);
 		LOG_INF("Subnet: %s",
-			log_strdup(net_addr_ntop(AF_INET,
-					       &iface->config.ip.ipv4->netmask,
-					       hr_addr, NET_IPV4_ADDR_LEN)));
+			net_addr_ntop(AF_INET,
+				      &iface->config.ip.ipv4->netmask,
+				      hr_addr, NET_IPV4_ADDR_LEN));
 		LOG_INF("Router: %s",
-			log_strdup(net_addr_ntop(AF_INET,
-						 &iface->config.ip.ipv4->gw,
-						 hr_addr, NET_IPV4_ADDR_LEN)));
+			net_addr_ntop(AF_INET,
+				      &iface->config.ip.ipv4->gw,
+				      hr_addr, NET_IPV4_ADDR_LEN));
 		break;
 	}
 }
@@ -91,8 +91,8 @@ static void setup_ipv4(struct net_if *iface)
 	net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
 
 	LOG_INF("IPv4 address: %s",
-		log_strdup(net_addr_ntop(AF_INET, &addr, hr_addr,
-					 NET_IPV4_ADDR_LEN)));
+		net_addr_ntop(AF_INET, &addr, hr_addr,
+			      NET_IPV4_ADDR_LEN));
 }
 
 #else
@@ -120,8 +120,7 @@ static void setup_ipv6(struct net_if *iface)
 	net_if_ipv6_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
 
 	LOG_INF("IPv6 address: %s",
-		log_strdup(net_addr_ntop(AF_INET6, &addr, hr_addr,
-					 NET_IPV6_ADDR_LEN)));
+		net_addr_ntop(AF_INET6, &addr, hr_addr, NET_IPV6_ADDR_LEN));
 
 	if (net_addr_pton(AF_INET6, MCAST_IP6ADDR, &addr)) {
 		LOG_ERR("Invalid address: %s", MCAST_IP6ADDR);

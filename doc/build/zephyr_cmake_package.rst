@@ -5,9 +5,14 @@ Zephyr CMake Package
 
 The Zephyr `CMake package`_ is a convenient way to create a Zephyr-based application.
 
-The Zephyr CMake package ensures that CMake can automatically select a Zephyr to use for building
-the application, whether it is a Zephyr repository application, Zephyr workspace application, or a
-Zephyr freestanding application.
+.. note::
+   The :ref:`zephyr-app-types` section introduces the application types
+   used in this page.
+
+The Zephyr CMake package ensures that CMake can automatically select a Zephyr installation to use for building
+the application, whether it is a :ref:`Zephyr repository application <zephyr-repo-app>`,
+a :ref:`Zephyr workspace application <zephyr-workspace-app>`, or a
+:ref:`Zephyr freestanding application <zephyr-freestanding-app>`.
 
 When developing a Zephyr-based application, then a developer simply needs to write
 ``find_package(Zephyr)`` in the beginning of the application :file:`CMakeLists.txt` file.
@@ -68,86 +73,7 @@ To also export the Zephyr Unittest CMake package, run the following command in a
 
    cmake -P <PATH-TO-ZEPHYR>/share/zephyrunittest-package/cmake/zephyr_export.cmake
 
-
 .. _zephyr_cmake_package_zephyr_base:
-
-
-Zephyr application structure
-****************************
-
-An application can be placed anywhere on your disk, but to better understand how the Zephyr
-package is used, we will name three specific layouts.
-
-
-Zephyr repository application
-=============================
-
-A Zephyr repository has the following structure:
-
-.. code-block:: none
-
-   <projects>/zephyr-workspace
-   └── zephyr
-        ├── arch
-        ├── boards
-        ├── cmake
-        ├── samples
-        │    ├── hello_world
-        │    └── ...
-        ├── tests
-        └── ...
-
-Any application located inside this tree, is simply referred to as a Zephyr repository application.
-In this example ``hello_world`` is a Zephyr repository application.
-
-
-Zephyr workspace application
-============================
-
-A Zephyr workspace has the following structure:
-
-.. code-block:: none
-
-   <projects>/zephyr-workspace
-   ├── zephyr
-   ├── bootloader
-   ├── modules
-   ├── tools
-   ├── <vendor/private-repositories>
-   └── my_applications
-        └── my_first_app
-
-Any application located in such workspace, but outside the Zephyr repository itself, is referred to
-as a Zephyr workspace application.
-In this example ``my_first_app`` is a Zephyr workspace application.
-
-.. note:: The root of a Zephyr workspace is identical to ``west topdir`` if the workspace was
-          installed using ``west``
-
-
-.. _freestanding_application:
-
-Zephyr freestanding application
-===============================
-
-A Zephyr freestanding application is a Zephyr application located outside of a Zephyr workspace.
-
-
-.. code-block:: none
-
-   <projects>/zephyr-workspace
-   ├── zephyr
-   ├── bootloader
-   └── ...
-
-   <home>/app
-   ├── CMakeLists.txt
-   ├── prj.conf
-   └── src
-       └── main.c
-
-In this example ``app`` is a Zephyr freestanding application.
-
 
 Zephyr Base Environment Setting
 *******************************
@@ -198,6 +124,9 @@ the following criteria will be used:
   in this example, ``my_first_app`` will use ``<projects>/zephyr-workspace/zephyr`` as this Zephyr
   is located in the same workspace as the Zephyr workspace application.
 
+.. note::
+   The root of a Zephyr workspace is identical to ``west topdir`` if the workspace was
+   installed using ``west``
 
 * Zephyr freestanding application will use the Zephyr registered in the CMake user package registry.
   For example:
@@ -451,7 +380,7 @@ Zephyr Build Configuration CMake package (Freestanding application)
 *******************************************************************
 
 The Zephyr Build Configuration CMake package can be located outside a Zephyr
-workspace, for example located with a :ref:`freestanding_application`.
+workspace, for example located with a :ref:`zephyr-freestanding-app`.
 
 Create the build configuration as described in the previous section, and then
 refer to the location of your Zephyr Build Configuration CMake package using

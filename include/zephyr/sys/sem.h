@@ -19,8 +19,8 @@
  * enabled, sys_sem behaves like k_sem.
  */
 
-#include <kernel.h>
-#include <sys/atomic.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus

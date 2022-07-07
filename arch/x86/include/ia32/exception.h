@@ -9,7 +9,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <toolchain/common.h>
+#include <zephyr/toolchain/common.h>
 
 #define _EXCEPTION_INTLIST(vector, dpl) \
 	".pushsection .gnu.linkonce.intList.exc_" #vector "\n\t" \

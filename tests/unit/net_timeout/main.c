@@ -7,7 +7,7 @@
 #include <ztest.h>
 #include <string.h>
 #include <inttypes.h>
-#include <net/net_timeout.h>
+#include <zephyr/net/net_timeout.h>
 
 #include "../../../subsys/net/ip/net_timeout.c"
 

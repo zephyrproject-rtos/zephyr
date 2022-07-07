@@ -13,12 +13,15 @@ config OPENTHREAD_THREAD_VERSION_1_1
 	bool "Version 1.1"
 config OPENTHREAD_THREAD_VERSION_1_2
 	bool "Version 1.2"
+config OPENTHREAD_THREAD_VERSION_1_3
+	bool "Version 1.3"
 endchoice
 
 config OPENTHREAD_THREAD_VERSION
 	string
 	default "1.1" if OPENTHREAD_THREAD_VERSION_1_1
 	default "1.2" if OPENTHREAD_THREAD_VERSION_1_2
+	default "1.3" if OPENTHREAD_THREAD_VERSION_1_3
 	default "unknown"
 
 config OPENTHREAD_BACKBONE_ROUTER

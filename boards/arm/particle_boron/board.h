@@ -8,7 +8,7 @@
 #define __INC_BOARD_H
 
 /* pin used to enable the buffer power */
-#define SERIAL_BUFFER_ENABLE_GPIO_NAME  DT_LABEL(DT_INST(0, nordic_nrf_gpio))
+#define SERIAL_BUFFER_ENABLE_GPIO_NODE  DT_INST(0, nordic_nrf_gpio)
 #define SERIAL_BUFFER_ENABLE_GPIO_PIN   25
 #define SERIAL_BUFFER_ENABLE_GPIO_FLAGS GPIO_ACTIVE_LOW
 

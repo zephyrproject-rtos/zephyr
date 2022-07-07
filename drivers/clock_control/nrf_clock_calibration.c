@@ -3,12 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <drivers/sensor.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/clock_control.h>
 #include "nrf_clock_calibration.h"
-#include <drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <nrfx_clock.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include <stdlib.h>
 
 LOG_MODULE_DECLARE(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);

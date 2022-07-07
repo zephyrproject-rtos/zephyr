@@ -5,11 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/flash.h>
-#include <storage/flash_map.h>
-#include <device.h>
-#include <devicetree.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <stdio.h>
 
 
@@ -155,8 +155,8 @@ void main(void)
 
 	if (!rc) {
 		printf("   Offset  0x%08x:\n", FLASH_TEST_OFFSET2);
-		printf("     belongs to the page %u of start offset 0x%08x\n",
-		       info.index, info.start_offset);
+		printf("     belongs to the page %u of start offset 0x%08lx\n",
+		       info.index, (unsigned long) info.start_offset);
 		printf("     and the size of 0x%08x B.\n", info.size);
 	} else {
 		printf("   Error: flash_get_page_info_by_offs returns %d\n",
@@ -166,9 +166,9 @@ void main(void)
 	rc = flash_get_page_info_by_idx(flash_dev, FLASH_TEST_PAGE_IDX, &info);
 
 	if (!rc) {
-		printf("   Page of number %u has start offset 0x%08x\n",
+		printf("   Page of number %u has start offset 0x%08lx\n",
 		       FLASH_TEST_PAGE_IDX,
-		       info.start_offset);
+		       (unsigned long) info.start_offset);
 		printf("     and size of 0x%08x B.\n", info.size);
 		if (info.index == FLASH_TEST_PAGE_IDX) {
 			printf("     Page index resolved properly\n");

@@ -17,20 +17,20 @@
 
 #include <soc.h>
 #include <errno.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <dt-bindings/gpio/espressif-esp32-gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/gpio/espressif-esp32-gpio.h>
 #ifdef CONFIG_SOC_ESP32C3
-#include <drivers/interrupt_controller/intc_esp32c3.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #else
-#include <drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #endif
-#include <kernel.h>
-#include <sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 
 #include "gpio_utils.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 
 #ifdef CONFIG_SOC_ESP32C3
@@ -415,7 +415,7 @@ static void IRAM_ATTR gpio_esp32_fire_callbacks(const struct device *dev)
 	}
 }
 
-static void IRAM_ATTR gpio_esp32_isr(void *param);
+static void gpio_esp32_isr(void *param);
 
 static int gpio_esp32_init(const struct device *dev)
 {

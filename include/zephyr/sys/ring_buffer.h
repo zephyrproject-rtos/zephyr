@@ -10,8 +10,8 @@
 #ifndef ZEPHYR_INCLUDE_SYS_RING_BUFFER_H_
 #define ZEPHYR_INCLUDE_SYS_RING_BUFFER_H_
 
-#include <kernel.h>
-#include <sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include <errno.h>
 
 #ifdef __cplusplus
@@ -78,8 +78,8 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, int32_t value)
 		RING_BUFFER_SIZE_ASSERT_MSG); \
 	static uint8_t __noinit _ring_buffer_data_##name[size8]; \
 	struct ring_buf name = { \
-		.size = size8, \
-		.buffer = _ring_buffer_data_##name \
+		.buffer = _ring_buffer_data_##name, \
+		.size = size8 \
 	}
 
 /**
@@ -102,8 +102,8 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, int32_t value)
 		RING_BUFFER_SIZE_ASSERT_MSG); \
 	static uint32_t __noinit _ring_buffer_data_##name[size32]; \
 	struct ring_buf name = { \
-		.size = 4 * (size32), \
-		.buffer = (uint8_t *) _ring_buffer_data_##name \
+		.buffer = (uint8_t *) _ring_buffer_data_##name, \
+		.size = 4 * (size32) \
 	}
 
 /**

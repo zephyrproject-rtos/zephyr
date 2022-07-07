@@ -14,7 +14,7 @@
  */
 
 #if defined(__GNUC__)
-#include <arch/riscv/riscv-privilege/asm_inline_gcc.h>
+#include <zephyr/arch/riscv/riscv-privilege/asm_inline_gcc.h>
 #else
 #error "Supports only GNU C compiler"
 #endif

@@ -10,6 +10,7 @@
   "type": "manifest_list",
   "version_major": 0,
   "version_minor": 1,
+  "pid": 1000,
   "manifest_list": [
     {
       "name": "Dummy Partition",

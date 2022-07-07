@@ -6,10 +6,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/ipm.h>
-#include <sys/printk.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/device.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

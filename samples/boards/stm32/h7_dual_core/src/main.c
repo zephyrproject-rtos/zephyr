@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/ipm.h>
-#include <drivers/gpio.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/printk.h>
 
 #define SLEEP_TIME_MS   1000
 

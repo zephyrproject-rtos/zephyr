@@ -19,7 +19,7 @@
 extern "C" {
 #endif
 
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 
 enum sensor_attribute_mhz19b {
 	/** Automatic Baseline Correction Self Calibration Function. */

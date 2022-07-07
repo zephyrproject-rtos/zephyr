@@ -6,10 +6,10 @@
 
 #include <stdint.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
@@ -201,8 +201,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_tx_power_set(RADIO_TXP_DEFAULT);
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
-	lll_conn_rx_pkt_set(lll);
-
 	radio_aa_set(lll->access_addr);
 	radio_crc_configure(PDU_CRC_POLYNOMIAL,
 				sys_get_le24(lll->crc_init));
@@ -264,6 +262,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 		radio_switch_complete_and_tx(0, 0, 0, 0);
 #endif /* !CONFIG_BT_CTLR_PHY */
 	}
+
+	/* The call can use Radio interface that alternates NRF_RADIO->SHORTS. The register is
+	 * set by radio_switch_complete_XXX functions, hence any changes done before are cleared.
+	 */
+	lll_conn_rx_pkt_set(lll);
 
 	ticks_at_event = p->ticks_at_expire;
 	ull = HDR_LLL2ULL(lll);

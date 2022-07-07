@@ -14,14 +14,14 @@
 #include <hal/timer_types.h>
 #include <hal/timer_hal.h>
 #include <string.h>
-#include <drivers/counter.h>
+#include <zephyr/drivers/counter.h>
 #ifndef CONFIG_SOC_ESP32C3
-#include <drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #else
-#include <drivers/interrupt_controller/intc_esp32c3.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #endif
-#include <device.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_counter, CONFIG_COUNTER_LOG_LEVEL);
 
 #ifdef CONFIG_SOC_ESP32C3

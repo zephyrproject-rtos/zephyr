@@ -4,29 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
+#include <zephyr/init.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <mipi_syst.h>
-#include <spinlock.h>
-#include <toolchain.h>
-#include <sys/__assert.h>
-#include <linker/utils.h>
-#include <logging/log.h>
-#include <logging/log_ctrl.h>
-#include <logging/log_output.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/linker/utils.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log_output.h>
 
 static struct mipi_syst_header log_syst_header;
 static struct mipi_syst_handle log_syst_handle;
 
 #define HEXDUMP_BYTES_IN_LINE 16
 
-#ifdef CONFIG_LOG_STRDUP_MAX_STRING
-#define STRING_BUF_MAX_LEN CONFIG_LOG_STRDUP_MAX_STRING
-#else
 #define STRING_BUF_MAX_LEN 128
-#endif
 
 #if defined(MIPI_SYST_PCFG_ENABLE_PLATFORM_STATE_DATA)
 #if defined(CONFIG_MIPI_SYST_STP)
@@ -420,6 +416,29 @@ static void update_systh_platform_data(struct mipi_syst_handle *handle,
 #endif
 }
 
+#if defined(CONFIG_LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID)
+/**
+ * @brief Set module ID in the origin unit of Sys-T message
+ *
+ * Note that this only sets the module ID if
+ * CONFIG_LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID is enabled.
+ * Otherwise, this is a no-op as the module ID is set to
+ * default at boot time, and no need to be set again.
+ *
+ * @param handle Pointer to mipi_syst_handle struct
+ * @param module_id Module ID to be set (range 0x00 - 0x7F)
+ */
+static void update_handle_origin_unit(struct mipi_syst_handle *handle,
+				      int16_t module_id)
+{
+	handle->systh_tag.et_modunit =
+		_MIPI_SYST_MK_MODUNIT_ORIGIN(
+			module_id,
+			CONFIG_LOG_MIPI_SYST_MSG_DEFAULT_UNIT_ID
+		);
+}
+#endif
+
 #if defined(MIPI_SYST_PCFG_ENABLE_PLATFORM_HANDLE_DATA)
 /*
  * Platform specific SyS-T handle initialization hook function
@@ -576,190 +595,6 @@ static void hexdump_line_print(const uint8_t *data, uint32_t length,
 	MIPI_SYST_PRINTF(&log_syst_handle, severity, "%s", hexdump_buf);
 }
 
-#ifndef CONFIG_LOG2
-static void std_print(struct log_msg *msg,
-		const struct log_output *log_output)
-{
-	const char *str = log_msg_str_get(msg);
-	uint32_t nargs = log_msg_nargs_get(msg);
-	uint32_t *args = alloca(sizeof(uint32_t)*nargs);
-	uint32_t severity = level_to_syst_severity(log_msg_level_get(msg));
-
-	for (int i = 0; i < nargs; i++) {
-		args[i] = log_msg_arg_get(msg, i);
-	}
-
-	switch (log_msg_nargs_get(msg)) {
-	case 0:
-		MIPI_SYST_PRINTF(&log_syst_handle, severity, str);
-		break;
-	case 1:
-		MIPI_SYST_PRINTF(&log_syst_handle, severity, str, args[0]);
-		break;
-	case 2:
-		MIPI_SYST_PRINTF(&log_syst_handle, severity, str, args[0],
-				args[1]);
-		break;
-	case 3:
-		MIPI_SYST_PRINTF(&log_syst_handle, severity, str, args[0],
-				args[1], args[2]);
-		break;
-	case 4:
-		MIPI_SYST_PRINTF(&log_syst_handle, severity, str, args[0],
-				args[1], args[2], args[3]);
-		break;
-	case 5:
-		MIPI_SYST_PRINTF(&log_syst_handle, severity, str, args[0],
-				args[1], args[2], args[3], args[4]);
-		break;
-	case 6:
-		MIPI_SYST_PRINTF(&log_syst_handle, severity, str, args[0],
-				args[1], args[2], args[3], args[4], args[5]);
-		break;
-	case 7:
-		MIPI_SYST_PRINTF(&log_syst_handle, severity, str, args[0],
-				args[1], args[2], args[3], args[4], args[5],
-				args[6]);
-		break;
-	case 8:
-		MIPI_SYST_PRINTF(&log_syst_handle, severity, str, args[0],
-				args[1], args[2], args[3], args[4], args[5],
-				args[6], args[7]);
-		break;
-	case 9:
-		MIPI_SYST_PRINTF(&log_syst_handle, severity, str, args[0],
-				args[1], args[2], args[3], args[4], args[5],
-				args[6], args[7], args[8]);
-		break;
-	case 10:
-		MIPI_SYST_PRINTF(&log_syst_handle, severity, str, args[0],
-				args[1], args[2], args[3], args[4], args[5],
-				args[6], args[7], args[8], args[9]);
-		break;
-	case 11:
-		MIPI_SYST_PRINTF(&log_syst_handle, severity, str, args[0],
-				args[1], args[2], args[3], args[4], args[5],
-				args[6], args[7], args[8], args[9], args[10]);
-		break;
-	case 12:
-		MIPI_SYST_PRINTF(&log_syst_handle, severity, str, args[0],
-				args[1], args[2], args[3], args[4], args[5],
-				args[6], args[7], args[8], args[9], args[10],
-				args[11]);
-		break;
-	case 13:
-		MIPI_SYST_PRINTF(&log_syst_handle, severity, str, args[0],
-				args[1], args[2], args[3], args[4], args[5],
-				args[6], args[7], args[8], args[9], args[10],
-				args[11], args[12]);
-		break;
-	case 14:
-		MIPI_SYST_PRINTF(&log_syst_handle, severity, str, args[0],
-				args[1], args[2], args[3], args[4], args[5],
-				args[6], args[7], args[8], args[9], args[10],
-				args[11], args[12], args[13]);
-		break;
-	case 15:
-		MIPI_SYST_PRINTF(&log_syst_handle, severity, str, args[0],
-				args[1], args[2], args[3], args[4], args[5],
-				args[6], args[7], args[8], args[9], args[10],
-				args[11], args[12], args[13], args[14]);
-		break;
-	default:
-		/* Unsupported number of arguments. */
-		__ASSERT_NO_MSG(true);
-		break;
-	}
-}
-
-static void raw_string_print(struct log_msg *msg,
-			const struct log_output *log_output)
-{
-	char buf[STRING_BUF_MAX_LEN + 1];
-	size_t length = STRING_BUF_MAX_LEN;
-	uint32_t severity = level_to_syst_severity(log_msg_level_get(msg));
-
-	log_msg_hexdump_data_get(msg, buf, &length, 0);
-
-	buf[length] = '\0';
-
-	MIPI_SYST_PRINTF(&log_syst_handle, severity, buf);
-}
-
-static void hexdump_print(struct log_msg *msg,
-			  const struct log_output *log_output)
-{
-	uint32_t offset = 0U;
-	uint8_t buf[HEXDUMP_BYTES_IN_LINE];
-	size_t length;
-	uint32_t severity = level_to_syst_severity(log_msg_level_get(msg));
-
-	MIPI_SYST_PRINTF(&log_syst_handle, severity, "%s", log_msg_str_get(msg));
-
-	do {
-		length = sizeof(buf);
-		log_msg_hexdump_data_get(msg, buf, &length, offset);
-
-		if (length) {
-			hexdump_line_print(buf, length, severity);
-			offset += length;
-		} else {
-			break;
-		}
-	} while (true);
-}
-
-void log_output_msg_syst_process(const struct log_output *log_output,
-				struct log_msg *msg, uint32_t flag)
-{
-	uint8_t level = (uint8_t)log_msg_level_get(msg);
-	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
-
-	update_systh_platform_data(&log_syst_handle, log_output, flag);
-
-	if (log_msg_is_std(msg)) {
-		std_print(msg, log_output);
-	} else if (raw_string) {
-		raw_string_print(msg, log_output);
-	} else {
-		hexdump_print(msg, log_output);
-	}
-}
-
-void log_output_string_syst_process(const struct log_output *log_output,
-				struct log_msg_ids src_level,
-				const char *fmt, va_list ap, uint32_t flag)
-{
-	uint32_t severity = level_to_syst_severity((uint32_t)src_level.level);
-
-	update_systh_platform_data(&log_syst_handle, log_output, flag);
-
-	MIPI_SYST_VPRINTF(&log_syst_handle, severity, fmt, ap);
-}
-
-void log_output_hexdump_syst_process(const struct log_output *log_output,
-				     struct log_msg_ids src_level,
-				     const char *metadata,
-				     const uint8_t *data, uint32_t length,
-				     uint32_t flag)
-{
-	uint32_t severity = level_to_syst_severity((uint32_t)src_level.level);
-
-	update_systh_platform_data(&log_syst_handle, log_output, flag);
-
-	MIPI_SYST_PRINTF(&log_syst_handle, severity, "%s", metadata);
-
-	while (length != 0U) {
-		uint32_t part_len = MIN(length, HEXDUMP_BYTES_IN_LINE);
-
-		hexdump_line_print(data, part_len, severity);
-
-		data += part_len;
-		length -= part_len;
-	}
-}
-
-#else /* !CONFIG_LOG2 */
 static void hexdump2_print(const uint8_t *data, uint32_t length,
 			   uint32_t severity)
 {
@@ -773,59 +608,18 @@ static void hexdump2_print(const uint8_t *data, uint32_t length,
 	}
 }
 
-#ifndef CONFIG_LOG_MIPI_SYST_USE_CATALOG
 static int mipi_vprintf_formatter(cbprintf_cb out, void *ctx,
 			  const char *fmt, va_list ap)
 {
-	struct log_msg2 *msg = ctx;
-	uint32_t severity = level_to_syst_severity(log_msg2_get_level(msg));
+	struct log_msg *msg = ctx;
+	uint32_t severity = level_to_syst_severity(log_msg_get_level(msg));
 
 	MIPI_SYST_VPRINTF(&log_syst_handle, severity, fmt, ap);
 
 	return 0;
 }
-#else
 
-/*
- * TODO: Big endian support.
- *
- * MIPI Sys-T catalog messages require arguments to be in little endian.
- * Currently, if the format strings are removed (which is very highly
- * probable with usage of catalog messages), there is no way to
- * distinguish arguments in va_list anymore, and thus no longer able
- * to convert endianness. So assert that we only support little endian
- * machines for now.
- */
-BUILD_ASSERT(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__,
-	     "Does not support big endian machines at the moment!");
-
-/*
- * TODO: Support x86-32 and long double.
- *
- * The argument of long double on x86 32-bit is 3 bytes. However,
- * MIPI Sys-T requires 4 bytes for this. Currently, since we are
- * copying the argument list as-is, and no way to know which
- * argument is long double, a long double argument cannot be
- * expanded to 4 bytes. So error out here to prevent it being
- * used at all.
- */
-#if defined(CONFIG_X86) && !defined(CONFIG_X86_64) && defined(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE)
-#error "x86-32 and CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE is not supported!"
-#endif
-
-/*
- * TODO: Support integer arguments under 64-bit systems.
- *
- * On 64-bit systems, an integer argument is of 8 bytes even though
- * sizeof(int) == 4. MIPI Sys-T expects an integer argument to be 4 bytes.
- * Currently, since we are copying argument list as-is, and no way to
- * know which argument is integer, a 32-bit integer cannot be
- * shrunk to 4 bytes for output. So error out here to prevent it
- * being used at all.
- */
-#ifdef CONFIG_64BIT
-#error "64-bit is not support at the moment!"
-#endif
+#ifdef CONFIG_LOG_MIPI_SYST_USE_CATALOG
 
 #ifdef CONFIG_64BIT
 #define MIPI_SYST_CATMSG_ARGS_COPY MIPI_SYST_CATALOG64_ARGS_COPY
@@ -846,360 +640,239 @@ static inline bool is_in_log_strings_section(const void *addr)
 	return false;
 }
 
+
 static struct k_spinlock payload_lock;
 static uint8_t payload_buf[CONFIG_LOG_MIPI_SYST_CATALOG_ARGS_BUFFER_SIZE];
-static const uint8_t * const payload_buf_end =
-	&payload_buf[CONFIG_LOG_MIPI_SYST_CATALOG_ARGS_BUFFER_SIZE];
 
-enum string_list {
-	NO_STRING_LIST,
-	RO_STR_IDX_LIST,
-	RW_STR_IDX_LIST,
-	APPENDED_STR_LIST,
-};
-
-/*
- * @brief Figure out where is the next string argument.
- *
- * @param[out] pos Offset in byte of string argument from beginning of package.
- *
- * @param[in] ros_remaining How many read-only strings left
- * @param[in] ros_str_pos Pointer to the read-only string indexes
- *
- * @param[in] rws_remaining How many read-write strings left
- * @param[in] rws_str_pos Pointer to the read-write string indexes
- *
- * @param[in] s_remaining How many appended strings left
- * @param[in] str_pos Pointer to the appended string list
- *
- * @retval NO_STRING_LIST No string picked. Usually means there is
- *                        no more strings remaining in lists.
- * @retval RO_STR_IDX_LIST Position coming from read-only string list.
- * @retval RW_STR_IDX_LIST Position coming from read-write string list.
- * @retval APPENDED_STR_LIST Position coming from appended string list.
- */
-static inline
-enum string_list get_next_string_arg(uint16_t *pos,
-				     uint8_t ros_remaining, uint8_t *ro_str_pos,
-				     uint8_t rws_remaining, uint8_t *rw_str_pos,
-				     uint8_t s_remaining, uint8_t *str_pos)
+static int mipi_catalog_formatter(cbprintf_cb out, void *ctx,
+				  const char *fmt, va_list ap)
 {
-	enum string_list which_list = NO_STRING_LIST;
+	struct log_msg *msg = ctx;
+	uint32_t severity = level_to_syst_severity(log_msg_get_level(msg));
+	k_spinlock_key_t key;
 
-	if (ros_remaining > 0) {
-		*pos = ro_str_pos[0];
-		which_list = RO_STR_IDX_LIST;
-	}
+	union {
+		mipi_syst_u64 v64;
+		mipi_syst_u32 v32;
 
-	if (rws_remaining > 0) {
-		if ((which_list == NO_STRING_LIST) || (rw_str_pos[0] < *pos)) {
-			*pos = rw_str_pos[0];
-			which_list = RW_STR_IDX_LIST;
-		}
-	}
+		unsigned int u;
+		unsigned long lu;
+		unsigned long long llu;
 
-	if (s_remaining > 0) {
-		/*
-		 * The first uint8_t in the appended string list for
-		 * each string is its supposed position in
-		 * the argument list.
-		 */
-		if ((which_list == NO_STRING_LIST) || (str_pos[0] < *pos)) {
-			*pos = str_pos[0];
-			which_list = APPENDED_STR_LIST;
-		}
-	}
+		double d;
 
-	if (which_list != NO_STRING_LIST) {
-		/*
-		 * Note that the stored position value is in
-		 * multiple of uint32_t. So need to convert it
-		 * back to number of bytes.
-		 */
-		*pos *= sizeof(uint32_t);
-	}
+		void *p;
+	} val;
 
-	return which_list;
-}
+	const char *s;
+	size_t arg_sz;
 
-/**
- * @brief Build the catalog message payload and send it out.
- *
- * This builds the catalog message payload to be sent through MIPI Sys-T
- * interface.
- *
- * For format strings without any string arguments, the argument list
- * is provided to the MIPI library as-is without any processing.
- * Otherwise, the strings replace the arguments in the argument list
- * by replacing the string arguments with the full strings.
- *
- * @param[in] severity Severity of log message.
- * @param[in] fmt Format string.
- * @param[in] pkg Pointer to log message package.
- * @param[in] pkg_sz Log message package size in bytes.
- * @param[in] arg Pointer to argument list inside log message package.
- * @param[in] arg_sz Argument list size in bytes inside log message package.
- * @param[in] s_nbr Number of appended strings in log message package.
- * @param[in] ros_nbr Number of read-only string indexes in log message package.
- * @param[in] rws_nbr Number of read-write string indexes in log message package.
- *
- * @retval 0 Success
- * @retval -ENOSPC Payload buffer size is too small.
- */
-static int build_catalog_payload(uint32_t severity, const char *fmt,
-				 uint8_t *pkg, size_t pkg_sz,
-				 uint8_t *arg, size_t arg_sz,
-				 uint8_t s_nbr, uint8_t ros_nbr, uint8_t rws_nbr)
-{
-	uint8_t *cur_str_arg_pos = NULL;
-	uint8_t *payload = payload_buf;
-	enum string_list which_str_list = NO_STRING_LIST;
-	int ret = 0;
+	uint8_t *argp = payload_buf;
+	const uint8_t * const argEob = payload_buf + sizeof(payload_buf);
 
-	/* End of argument list. */
-	uint8_t * const arg_end = arg + arg_sz;
+	size_t payload_sz;
 
-	/*
-	 * Start of read-only strings indexes, which is
-	 * after the argument list. Skip the first ro-string
-	 * index as it points to the format string.
-	 */
-	uint8_t *ro_str_pos = arg_end + 1;
+	key = k_spin_lock(&payload_lock);
 
-	/*
-	 * Start of read-write strings indexes, which is
-	 * after the argument list, and read-only string
-	 * indexes.
-	 */
-	uint8_t *rw_str_pos = arg_end + ros_nbr;
+	for (int arg_tag = va_arg(ap, int);
+	     arg_tag != CBPRINTF_PACKAGE_ARG_TYPE_END;
+	     arg_tag = va_arg(ap, int)) {
 
-	/* Start of appended strings in package */
-	uint8_t *str_pos = arg_end + ros_nbr + rws_nbr;
+		switch (arg_tag) {
+		case CBPRINTF_PACKAGE_ARG_TYPE_CHAR:
+			__fallthrough;
+		case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_CHAR:
+			__fallthrough;
+		case CBPRINTF_PACKAGE_ARG_TYPE_SHORT:
+			__fallthrough;
+		case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_SHORT:
+			__fallthrough;
+		case CBPRINTF_PACKAGE_ARG_TYPE_INT:
+			__fallthrough;
+		case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_INT:
+			val.u = (unsigned int)va_arg(ap, unsigned int);
+			arg_sz = sizeof(unsigned int);
+			break;
 
-	/* Number of strings remaining to be processed */
-	uint8_t ros_remaining = ros_nbr - 1;
-	uint8_t rws_remaining = rws_nbr;
-	uint8_t s_remaining = s_nbr;
+		case CBPRINTF_PACKAGE_ARG_TYPE_LONG:
+			__fallthrough;
+		case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_LONG:
+			val.lu = (unsigned long)va_arg(ap, unsigned long);
+			arg_sz = sizeof(unsigned long);
+			break;
 
-	k_spinlock_key_t key = k_spin_lock(&payload_lock);
+		case CBPRINTF_PACKAGE_ARG_TYPE_LONG_LONG:
+			__fallthrough;
+		case CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_LONG_LONG:
+			val.llu = (unsigned long long)va_arg(ap, unsigned long long);
+			arg_sz = sizeof(unsigned long long);
+			break;
 
-	do {
-		if (payload == payload_buf_end) {
-			/*
-			 * No space left in payload buffer but there are
-			 * still arguments left. So bail out.
-			 */
-			ret = -ENOSPC;
-			goto out;
-		}
+		case CBPRINTF_PACKAGE_ARG_TYPE_FLOAT:
+			__fallthrough;
+		case CBPRINTF_PACKAGE_ARG_TYPE_DOUBLE:
+			val.d = (double)va_arg(ap, double);
+			arg_sz = sizeof(double);
+			break;
 
-		if (cur_str_arg_pos == NULL) {
-			uint16_t str_arg_pos;
+		case CBPRINTF_PACKAGE_ARG_TYPE_LONG_DOUBLE:
+			/* Handle long double as double */
+			val.d = (double)va_arg(ap, long double);
+			arg_sz = sizeof(double);
+			break;
 
-			which_str_list = get_next_string_arg(&str_arg_pos,
-							     ros_remaining, ro_str_pos,
-							     rws_remaining, rw_str_pos,
-							     s_remaining, str_pos);
+		case CBPRINTF_PACKAGE_ARG_TYPE_PTR_VOID:
+			val.p = (void *)va_arg(ap, void *);
+			arg_sz = sizeof(void *);
+			break;
 
-			if (which_str_list != NO_STRING_LIST) {
-				cur_str_arg_pos = pkg + str_arg_pos;
-			} else {
-				/*
-				 * No more strings remaining from the lists.
-				 * Set the pointer to the end of argument list,
-				 * which it will never match the incrementally
-				 * moving arg, and also string selection will
-				 * no longer be carried out.
-				 */
-				cur_str_arg_pos = arg + arg_sz;
-			}
-		}
-
-		if (arg == cur_str_arg_pos) {
-			/*
-			 * The current argument is a string pointer.
-			 * So need to copy the string into the payload.
-			 */
-
-			size_t str_sz = 0;
-
-			/* Extract the string pointer from package */
-			uint8_t *s = *((uint8_t **)arg);
-
-			/* Skip the string pointer for next argument */
-			arg += sizeof(void *);
-
-			/* Copy the string over. */
-			while (s[0] != '\0') {
-				payload[0] = s[0];
-				payload++;
-				str_sz++;
+		case CBPRINTF_PACKAGE_ARG_TYPE_PTR_CHAR:
+			s = va_arg(ap, char *);
+			while (argp < argEob) {
+				*argp++ = *s;
+				if (*s == 0) {
+					break;
+				}
 				s++;
 
-				if (payload == payload_buf_end) {
-					/*
-					 * No space left in payload buffer but there are
-					 * still characters to be copied. So bail out.
-					 */
-					ret = -ENOSPC;
-					goto out;
+				if (argp == argEob) {
+					goto no_space;
 				}
 			}
+			continue;
 
-			/* Need to terminate the string */
-			payload[0] = '\0';
-			payload++;
-
-			if (which_str_list == RO_STR_IDX_LIST) {
-				/* Move to next read-only string index */
-				ro_str_pos++;
-				ros_remaining--;
-			} else if (which_str_list == RW_STR_IDX_LIST) {
-				/* Move to next read-write string index */
-				rw_str_pos++;
-				rws_remaining--;
-			} else if (which_str_list == APPENDED_STR_LIST) {
-				/*
-				 * str_pos needs to skip the string index,
-				 * the string itself, and the NULL character.
-				 * So next time it points to another position
-				 * index.
-				 */
-				str_pos += str_sz + 2;
-				s_remaining--;
-			}
-
-			cur_str_arg_pos = NULL;
-		} else {
-			/*
-			 * Copy until the next string argument
-			 * (or until the end of argument list).
-			 */
-			while (arg < cur_str_arg_pos) {
-				payload[0] = arg[0];
-				payload++;
-				arg++;
-
-				if (payload == payload_buf_end) {
-					/*
-					 * No space left in payload buffer but there are
-					 * still characters to be copied. So bail out.
-					 */
-					ret = -ENOSPC;
-					goto out;
-				}
-			}
+		default:
+			k_spin_unlock(&payload_lock, key);
+			return -EINVAL;
 		}
-	} while (arg < arg_end);
+
+		if (argp + arg_sz >= argEob) {
+			goto no_space;
+		}
+
+		if (arg_sz == sizeof(mipi_syst_u64)) {
+			*((mipi_syst_u64 *)argp) =
+				(mipi_syst_u64)MIPI_SYST_HTOLE64(val.v64);
+		} else {
+			*((mipi_syst_u32 *)argp) =
+				(mipi_syst_u32)MIPI_SYST_HTOLE32(val.v32);
+		}
+		argp += arg_sz;
+	}
+
+	/* Calculate how much buffer has been used */
+	payload_sz = argp - payload_buf;
 
 	MIPI_SYST_CATMSG_ARGS_COPY(&log_syst_handle, severity,
 				   (uintptr_t)fmt,
 				   payload_buf,
-				   (size_t)(payload - payload_buf));
-out:
+				   payload_sz);
+
 	k_spin_unlock(&payload_lock, key);
-	return ret;
+
+	return 0;
+
+no_space:
+	k_spin_unlock(&payload_lock, key);
+	return -ENOSPC;
 }
+#endif /* CONFIG_LOG_MIPI_SYST_USE_CATALOG */
 
-static int mipi_catalog_formatter(cbprintf_cb out, void *ctx,
-			  const char *fmt, va_list ap)
-{
-	int ret = 0;
-	struct log_msg2 *msg = ctx;
-	uint32_t severity = level_to_syst_severity(log_msg2_get_level(msg));
-
-	if (is_in_log_strings_section(fmt)) {
-		/*
-		 * Note that only format strings that are in
-		 * the log_strings_section are processed as
-		 * catalog messages because only these strings
-		 * are in the collateral XML file.
-		 */
-
-		size_t pkg_sz, arg_sz;
-		uint8_t s_nbr, ros_nbr, rws_nbr, total_str;
-		uint8_t *arg;
-
-		uint8_t *pkg = log_msg2_get_package(msg, &pkg_sz);
-
-		/*
-		 * Need to skip the package header (of pointer size),
-		 * and the pointer to format string to get to
-		 * the argument list.
-		 */
-		arg = pkg + 2 * sizeof(void *);
-		arg_sz = pkg[0] * sizeof(uint32_t) - 2 * sizeof(void *);
-
-		/* Number of appended strings already in the package. */
-		s_nbr = pkg[1];
-
-		/* Number of string indexes, for both read-only and read-write strings. */
-		ros_nbr = pkg[2];
-		rws_nbr = pkg[3];
-
-		total_str = s_nbr + rws_nbr;
-		if (ros_nbr > 0) {
-			/*
-			 * If there are read-only string indexes, the first
-			 * is the format string. So we can ignore that as
-			 * we are not copying it to the catalog message
-			 * payload.
-			 */
-			total_str += ros_nbr - 1;
-		}
-
-		if (total_str == 0) {
-			/*
-			 * There are no string arguments so the argument list
-			 * inside the package can be used as-is. The first
-			 * read-only string pointer is the the format string so
-			 * we can ignore that.
-			 */
-			MIPI_SYST_CATMSG_ARGS_COPY(&log_syst_handle, severity,
-						   (uintptr_t)fmt,
-						   arg,
-						   arg_sz);
-		} else {
-			ret = build_catalog_payload(severity, fmt, pkg, pkg_sz,
-						    arg, arg_sz,
-						    s_nbr, ros_nbr, rws_nbr);
-		}
-
-	} else {
-		MIPI_SYST_VPRINTF(&log_syst_handle, severity, fmt, ap);
-	}
-
-	return ret;
-}
-#endif /* !CONFIG_LOG_MIPI_SYST_USE_CATALOG */
-
-void log_output_msg2_syst_process(const struct log_output *output,
-				struct log_msg2 *msg, uint32_t flag)
+void log_output_msg_syst_process(const struct log_output *output,
+				 struct log_msg *msg, uint32_t flag)
 {
 	size_t len, hexdump_len;
 
 	update_systh_platform_data(&log_syst_handle, output, flag);
 
-	uint8_t *data = log_msg2_get_package(msg, &len);
+#ifdef CONFIG_LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID
+	uint8_t level = log_msg_get_level(msg);
+	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
+	int16_t source_id = CONFIG_LOG_MIPI_SYST_MSG_DEFAULT_MODULE_ID;
 
-	if (len) {
-		(void)cbpprintf_external(NULL,
-#ifdef CONFIG_LOG_MIPI_SYST_USE_CATALOG
-					 mipi_catalog_formatter,
-#else
-					 mipi_vprintf_formatter,
-#endif
-					 msg, data);
+	/* Set the log source ID as Sys-T message module ID */
+	if (!raw_string) {
+		void *source = (void *)log_msg_get_source(msg);
+
+		if (source != NULL) {
+			source_id = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
+					log_dynamic_source_id(source) :
+					log_const_source_id(source);
+		}
 	}
 
-	data = log_msg2_get_data(msg, &hexdump_len);
+	update_handle_origin_unit(&log_syst_handle, source_id);
+#endif
+
+	uint8_t *data = log_msg_get_package(msg, &len);
+
+	if (len) {
+#ifdef CONFIG_LOG_MIPI_SYST_USE_CATALOG
+		struct cbprintf_package_hdr_ext *pkg_hdr = (void *)data;
+		bool is_cat_msg = false, skip = false;
+
+		if (is_in_log_strings_section(pkg_hdr->fmt)) {
+			if ((pkg_hdr->hdr.desc.pkg_flags & CBPRINTF_PACKAGE_ARGS_ARE_TAGGED) ==
+			    CBPRINTF_PACKAGE_ARGS_ARE_TAGGED) {
+				/*
+				 * Only if the package has tagged argument and
+				 * the format string is in the log strings section,
+				 * then we treat it as catalog message, because:
+				 *
+				 * 1. mipi_catalog_formatter() can only deal with
+				 *    tagged arguments; and,
+				 * 2. the collateral XML file only contains strings
+				 *    in the log strings section.
+				 */
+				is_cat_msg = true;
+			} else {
+				/*
+				 * The format string is in log strings section
+				 * but the package does not have tagged argument.
+				 * This cannot be processed as a catalog message,
+				 * and also means we cannot print the message as
+				 * it is highly likely that the log strings section
+				 * has been stripped from binary and cannot be
+				 * accessed.
+				 */
+				skip = true;
+			}
+		}
+
+		if (is_cat_msg) {
+			(void)cbpprintf_external(NULL,
+						 mipi_catalog_formatter,
+						 msg, data);
+		} else if (!skip)
+#endif
+		{
+#ifdef CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
+			struct cbprintf_package_desc *pkg_hdr = (void *)data;
+
+			CHECKIF((pkg_hdr->pkg_flags & CBPRINTF_PACKAGE_ARGS_ARE_TAGGED) ==
+				CBPRINTF_PACKAGE_ARGS_ARE_TAGGED) {
+				/*
+				 * Tagged arguments are to be used with catalog messages,
+				 * and should not be used for non-tagged ones.
+				 */
+				return;
+			}
+#endif
+
+
+			(void)cbpprintf_external(NULL,
+						 mipi_vprintf_formatter,
+						 msg, data);
+		}
+	}
+
+	data = log_msg_get_data(msg, &hexdump_len);
 	if (hexdump_len) {
-		uint32_t severity = level_to_syst_severity(log_msg2_get_level(msg));
+		uint32_t severity = level_to_syst_severity(log_msg_get_level(msg));
 
 		hexdump2_print(data, hexdump_len, severity);
 	}
 }
-#endif /* !CONFIG_LOG2 */
 
 static int syst_init(const struct device *arg)
 {
@@ -1210,6 +883,17 @@ static int syst_init(const struct device *arg)
 
 	MIPI_SYST_INIT_HANDLE_STATE(&log_syst_header,
 				    &log_syst_handle, NULL);
+
+	log_syst_handle.systh_tag.et_guid = 0;
+
+#ifndef CONFIG_LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID
+	/* Set the default here once as it won't be modified anymore. */
+	log_syst_handle.systh_tag.et_modunit =
+		_MIPI_SYST_MK_MODUNIT_ORIGIN(
+			CONFIG_LOG_MIPI_SYST_MSG_DEFAULT_MODULE_ID,
+			CONFIG_LOG_MIPI_SYST_MSG_DEFAULT_UNIT_ID
+		);
+#endif
 
 	return 0;
 }

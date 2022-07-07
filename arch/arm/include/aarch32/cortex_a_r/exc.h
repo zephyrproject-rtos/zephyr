@@ -14,7 +14,7 @@
 #ifndef ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_A_R_EXC_H_
 #define ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_A_R_EXC_H_
 
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 
 #ifdef _ASMLANGUAGE
 
@@ -22,7 +22,7 @@
 
 #else
 
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -5,12 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modbus, CONFIG_MODBUS_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 #include <modbus_internal.h>
 
 #define DT_DRV_COMPAT zephyr_modbus_serial

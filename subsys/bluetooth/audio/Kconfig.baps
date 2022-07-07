@@ -17,9 +17,9 @@ config BT_AUDIO_UNICAST_SERVER
 	select EXPERIMENTAL
 	select BT_PERIPHERAL
 	select BT_AUDIO_UNICAST
+	select BT_ISO_PERIPHERAL
 	select BT_GATT_DYNAMIC_DB
 	select BT_GATT_CACHING
-	select BT_PACS
 	select BT_ASCS
 	help
 	  This option enables support for Bluetooth Unicast Audio Server
@@ -29,6 +29,7 @@ config BT_AUDIO_UNICAST_CLIENT
 	bool "Bluetooth Unicast Audio Client Support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select BT_AUDIO_UNICAST
+	select BT_ISO_CENTRAL
 	select BT_CENTRAL
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
@@ -182,13 +183,6 @@ config BT_AUDIO_BROADCAST_SNK_STREAM_COUNT
 
 endif # BT_AUDIO_BROADCAST_SINK
 
-
-config BT_DEBUG_PACS
-	bool "Published Audio Capabilities Service debug"
-	depends on BT_PACS
-	help
-	  Use this option to enable Published Audio Capabilities Service debug
-	  logs for the Bluetooth Audio functionality.
 
 config BT_AUDIO_DEBUG_STREAM
 	bool "Bluetooth Audio Stream debug"

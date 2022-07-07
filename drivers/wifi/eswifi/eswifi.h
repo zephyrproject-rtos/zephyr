@@ -7,12 +7,11 @@
 #ifndef ZEPHYR_DRIVERS_WIFI_ESWIFI_ESWIFI_H_
 #define ZEPHYR_DRIVERS_WIFI_ESWIFI_ESWIFI_H_
 
-#include <zephyr.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 
-#include <net/wifi_mgmt.h>
+#include <zephyr/net/wifi_mgmt.h>
 
 #include "eswifi_offload.h"
 
@@ -140,6 +139,7 @@ int __eswifi_socket_new(struct eswifi_dev *eswifi, int family, int type,
 			int proto, void *context);
 int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 			      struct eswifi_off_socket *socket);
+int __eswifi_listen(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket, int backlog);
 int __eswifi_accept(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket);
 int __eswifi_bind(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket,
 		  const struct sockaddr *addr, socklen_t addrlen);

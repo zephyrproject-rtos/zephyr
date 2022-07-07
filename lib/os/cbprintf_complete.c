@@ -14,10 +14,10 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <sys/types.h>
-#include <sys/util.h>
-#include <sys/cbprintf.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/cbprintf.h>
 
 /* newlib doesn't declare this function unless __POSIX_VISIBLE >= 200809.  No
  * idea how to make that happen, so lets put it right here.
@@ -1335,11 +1335,15 @@ static int outs(cbprintf_cb out,
 	return (int)count;
 }
 
-int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
+int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
+		     va_list ap, uint32_t flags)
 {
 	char buf[CONVERTED_BUFLEN];
 	size_t count = 0;
 	sint_value_type sint;
+
+	const bool tagged_ap = (flags & Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS)
+			       == Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS;
 
 /* Output character, returning EOF if output failed, otherwise
  * updating count.
@@ -1372,6 +1376,14 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		if (*fp != '%') {
 			OUTC(*fp++);
 			continue;
+		}
+
+		if (IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS)
+		    && tagged_ap) {
+			/* Skip over the argument tag as it is not being
+			 * used here.
+			 */
+			(void)va_arg(ap, int);
 		}
 
 		/* Force union into RAM with conversion state to
@@ -1502,7 +1514,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 				break;
 			}
 			if (length_mod == LENGTH_HH) {
-				value->sint = (char)value->sint;
+				value->sint = (signed char)value->sint;
 			} else if (length_mod == LENGTH_H) {
 				value->sint = (short)value->sint;
 			}

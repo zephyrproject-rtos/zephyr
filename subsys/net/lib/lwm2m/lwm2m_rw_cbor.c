@@ -7,8 +7,8 @@
 #define LOG_MODULE_NAME net_lwm2m_cbor
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
-#include <sys/util.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -19,7 +19,7 @@
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
 
-#include <net/lwm2m.h>
+#include <zephyr/net/lwm2m.h>
 #include "lwm2m_object.h"
 #include "lwm2m_rw_cbor.h"
 #include "lwm2m_engine.h"
@@ -449,7 +449,7 @@ static int get_objlnk(struct lwm2m_input_context *in, struct lwm2m_objlnk *value
 	value->obj_id = LWM2M_OBJLNK_MAX_ID;
 	value->obj_inst = LWM2M_OBJLNK_MAX_ID;
 
-	int len = get_string(in, objlnk, sizeof(objlnk) - 1);
+	int len = get_string(in, objlnk, sizeof(objlnk));
 
 
 	for (int idx = 0; idx < 2; idx++) {
@@ -457,7 +457,7 @@ static int get_objlnk(struct lwm2m_input_context *in, struct lwm2m_objlnk *value
 
 		unsigned long id = strtoul(idp, &end, 10);
 
-		idp = end;
+		idp = end + 1;
 
 		if ((!id && errno == ERANGE) || id > LWM2M_OBJLNK_MAX_ID) {
 			LOG_WRN("decoded id %lu out of range[0..65535]", id);

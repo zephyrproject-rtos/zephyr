@@ -5,9 +5,9 @@
  */
 
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <pthread.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define N_THR 2
 #define N_KEY 2
@@ -122,7 +122,7 @@ static void make_keys(void)
  * multiple keys.
  */
 
-void test_posix_multiple_threads_single_key(void)
+ZTEST(posix_apis, test_posix_multiple_threads_single_key)
 {
 	int i, ret = -1;
 
@@ -171,7 +171,7 @@ void test_posix_multiple_threads_single_key(void)
 	printk("\n");
 }
 
-void test_posix_single_thread_multiple_keys(void)
+ZTEST(posix_apis, test_posix_single_thread_multiple_keys)
 {
 	int i, ret = -1;
 

@@ -8,12 +8,14 @@
 
 #include <errno.h>
 
-#include <drivers/pwm.h>
-#include <drivers/pinctrl.h>
-#include <soc.h>
-#include <sys/util_macro.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/sys/util_macro.h>
 
-#include <logging/log.h>
+#include <gd32_rcu.h>
+#include <gd32_timer.h>
+
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_gd32, CONFIG_PWM_LOG_LEVEL);
 
 /** PWM data. */

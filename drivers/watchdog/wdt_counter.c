@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/watchdog.h>
-#include <drivers/counter.h>
-#include <logging/log_ctrl.h>
+#include <zephyr/drivers/watchdog.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/logging/log_ctrl.h>
 
 #define WDT_CHANNEL_COUNT DT_PROP(DT_WDT_COUNTER, num_channels)
 #define DT_WDT_COUNTER DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_counter_watchdog)

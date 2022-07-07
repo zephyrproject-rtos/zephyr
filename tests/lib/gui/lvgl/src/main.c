@@ -6,10 +6,10 @@
 
 #include "img.h"
 
-#include <zephyr.h>
-#include <device.h>
-#include <fs/fs.h>
-#include <fs/littlefs.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/littlefs.h>
 #include <ztest.h>
 
 #include <lvgl.h>

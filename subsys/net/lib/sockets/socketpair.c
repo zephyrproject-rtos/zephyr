@@ -7,14 +7,14 @@
 #include <fcntl.h>
 
 /* Zephyr headers */
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_spair, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
-#include <kernel.h>
-#include <net/socket.h>
-#include <syscall_handler.h>
-#include <sys/__assert.h>
-#include <sys/fdtable.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/fdtable.h>
 
 #include "sockets_internal.h"
 

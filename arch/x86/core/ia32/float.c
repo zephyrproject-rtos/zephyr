@@ -43,7 +43,7 @@
  * to enable FP register sharing on its behalf.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
 
 /* SSE control/status register default value (used by assembler code) */

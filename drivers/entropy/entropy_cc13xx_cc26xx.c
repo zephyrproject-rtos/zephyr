@@ -6,15 +6,15 @@
 
 #define DT_DRV_COMPAT ti_cc13xx_cc26xx_trng
 
-#include <kernel.h>
-#include <device.h>
-#include <drivers/entropy.h>
-#include <irq.h>
-#include <pm/policy.h>
-#include <pm/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/entropy.h>
+#include <zephyr/irq.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device.h>
 
-#include <sys/ring_buffer.h>
-#include <sys/sys_io.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/sys_io.h>
 
 #include <driverlib/prcm.h>
 #include <driverlib/trng.h>

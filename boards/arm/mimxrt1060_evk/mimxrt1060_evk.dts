@@ -21,7 +21,7 @@
 	};
 
 	chosen {
-		zephyr,flash-controller = &flexspi;
+		zephyr,flash-controller = &is25wp064;
 		zephyr,flash = &is25wp064;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &sdram0;
@@ -43,7 +43,7 @@
 		compatible = "gpio-leds";
 		green_led: led-1 {
 			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
-			label = "User LD1";
+			label = "User LED1";
 		};
 	};
 
@@ -51,7 +51,7 @@
 		compatible = "gpio-keys";
 		user_button: button-1 {
 			label = "User SW8";
-			gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio5 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 	};
 
@@ -217,15 +217,19 @@ zephyr_udc0: &usb1 {
 
 &usdhc1 {
 	status = "okay";
+	power-delay-ms = <1000>;
 	pwr-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
-	no-1-8-v;
 	status = "okay";
 	pinctrl-0 = <&pinmux_usdhc1>;
 	pinctrl-1 = <&pinmux_usdhc1_slow>;
 	pinctrl-2 = <&pinmux_usdhc1_med>;
 	pinctrl-3 = <&pinmux_usdhc1_fast>;
 	pinctrl-names = "default", "slow", "med", "fast";
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
 };
 
 &edma0 {

@@ -46,7 +46,10 @@ enum cavstool_cmd {
 	IPCCMD_HDA_VALIDATE,
 
 	/* Host sends some data */
-	IPCCMD_HDA_SEND
+	IPCCMD_HDA_SEND,
+
+	/* Host prints some data */
+	IPCCMD_HDA_PRINT
 };
 
 #endif /* ZEPHYR_INCLUDE_CAVS_TEST_H */

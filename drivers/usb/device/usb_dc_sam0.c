@@ -7,11 +7,11 @@
 #define DT_DRV_COMPAT atmel_sam0_usb
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_sam0);
 
-#include <usb/usb_device.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <string.h>
 

@@ -6,14 +6,12 @@
 
 #define DT_DRV_COMPAT intel_cavs_intc
 
-#include <device.h>
-#include <irq_nextlevel.h>
+#include <zephyr/device.h>
+#include <zephyr/irq_nextlevel.h>
 #include "intc_cavs.h"
 
 #if defined(CONFIG_SMP) && (CONFIG_MP_NUM_CPUS > 1)
-#if defined(CONFIG_SOC_INTEL_S1000)
-#define PER_CPU_OFFSET(x)	(0x40 * x)
-#elif defined(CONFIG_SOC_SERIES_INTEL_CAVS_V15)
+#if defined(CONFIG_SOC_SERIES_INTEL_CAVS_V15)
 #define PER_CPU_OFFSET(x)	(0x40 * x)
 #elif defined(CONFIG_SOC_SERIES_INTEL_CAVS_V18)
 #define PER_CPU_OFFSET(x)	(0x40 * x)

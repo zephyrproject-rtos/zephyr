@@ -7,11 +7,11 @@
 #define DT_DRV_COMPAT ite_it8xxx2_adc
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 
-#include <drivers/adc.h>
-#include <drivers/pinmux.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <soc_dt.h>
 #include <errno.h>
@@ -68,12 +68,8 @@ struct adc_it8xxx2_data {
  * this config will be used at initial time
  */
 struct adc_it8xxx2_cfg {
-	/* Pinmux control group */
-	const struct device *pinctrls;
-	/* GPIO pin */
-	uint8_t pin;
-	/* Alternate function */
-	uint8_t alt_fun;
+	/* ADC alternate configuration */
+	const struct pinctrl_dev_config *pcfg;
 };
 
 #define ADC_IT8XXX2_REG_BASE	\
@@ -82,7 +78,6 @@ struct adc_it8xxx2_cfg {
 static int adc_it8xxx2_channel_setup(const struct device *dev,
 				     const struct adc_channel_cfg *channel_cfg)
 {
-	const struct adc_it8xxx2_cfg *config = dev->config;
 	uint8_t channel_id = channel_cfg->channel_id;
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
@@ -112,10 +107,6 @@ static int adc_it8xxx2_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	/* The channel is set to ADC alternate function */
-	pinmux_pin_set(config[channel_id].pinctrls,
-		       config[channel_id].pin,
-		       config[channel_id].alt_fun);
 	LOG_DBG("Channel setup succeeded!");
 	return 0;
 }
@@ -410,11 +401,20 @@ static void adc_accuracy_initialization(void)
 
 static int adc_it8xxx2_init(const struct device *dev)
 {
+	const struct adc_it8xxx2_cfg *config = dev->config;
 	struct adc_it8xxx2_data *data = dev->data;
 	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
+	int status;
 
 	/* ADC analog accuracy initialization */
 	adc_accuracy_initialization();
+
+	/* Set the pin to ADC alternate function. */
+	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (status < 0) {
+		LOG_ERR("Failed to configure ADC pins");
+		return status;
+	}
 
 	/*
 	 * The ADC channel conversion time is 30.8*(SCLKDIV+1) us.
@@ -451,8 +451,11 @@ static struct adc_it8xxx2_data adc_it8xxx2_data_0 = {
 		ADC_CONTEXT_INIT_SYNC(adc_it8xxx2_data_0, ctx),
 };
 
-static const struct adc_it8xxx2_cfg adc_it8xxx2_cfg_0[CHIP_ADC_COUNT] =
-	IT8XXX2_DT_ALT_ITEMS_LIST(0);
+PINCTRL_DT_INST_DEFINE(0);
+
+static const struct adc_it8xxx2_cfg adc_it8xxx2_cfg_0 = {
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+};
 
 DEVICE_DT_INST_DEFINE(0, adc_it8xxx2_init,
 		      NULL,

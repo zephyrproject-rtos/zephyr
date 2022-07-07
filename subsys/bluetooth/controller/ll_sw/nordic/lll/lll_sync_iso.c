@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 #include <soc.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -44,6 +44,10 @@ static int prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb_common(struct lll_prepare_param *p);
 static void isr_rx_estab(void *param);
 static void isr_rx(void *param);
+static void isr_rx_iso_data_valid(struct lll_sync_iso *lll, uint8_t bis_idx,
+				  struct node_rx_pdu *node_rx);
+static void isr_rx_iso_data_invalid(struct lll_sync_iso *lll, uint8_t bis_idx,
+				    uint8_t bn, struct node_rx_pdu *node_rx);
 static void isr_rx_ctrl_recv(struct lll_sync_iso *lll, struct pdu_bis *pdu);
 
 /* FIXME: Optimize by moving to a common place, as similar variable is used for
@@ -450,7 +454,12 @@ static void isr_rx(void *param)
 
 			isr_rx_ctrl_recv(lll, pdu);
 		} else {
-			node_rx = ull_iso_pdu_rx_alloc_peek(3U);
+			/* check if there are 2 free rx buffers, one will be
+			 * consumed to receive the current PDU, and the other
+			 * is to ensure a PDU can be setup for the radio DMA to
+			 * receive in the next sub_interval/iso_interval.
+			 */
+			node_rx = ull_iso_pdu_rx_alloc_peek(2U);
 			if (!node_rx) {
 				goto isr_rx_done;
 			}
@@ -470,27 +479,11 @@ static void isr_rx(void *param)
 			payload_index -= lll->payload_count_max;
 		}
 
-		if (!lll->payload[bis_idx][payload_index] &&
+		if (pdu->len && !lll->payload[bis_idx][payload_index] &&
 		    ((payload_index >= lll->payload_tail) ||
 		     (payload_index < lll->payload_head))) {
-			struct node_rx_iso_meta *iso_meta;
-
 			ull_iso_pdu_rx_alloc();
-
-			node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
-			node_rx->hdr.handle = lll->stream_handle[bis_idx];
-
-			iso_meta = &node_rx->hdr.rx_iso_meta;
-			iso_meta->payload_number = lll->payload_count +
-						   (lll->bn_curr - 1U) +
-						   (lll->ptc_curr * lll->pto) -
-						   lll->bn;
-			iso_meta->timestamp =
-				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
-				radio_tmr_aa_restore() - addr_us_get(lll->phy) +
-				(ceiling_fraction(lll->ptc_curr, lll->bn) *
-				 lll->iso_interval * PERIODIC_INT_UNIT_US);
-			iso_meta->status = 0U;
+			isr_rx_iso_data_valid(lll, bis_idx, node_rx);
 
 			lll->payload[bis_idx][payload_index] = node_rx;
 		}
@@ -597,6 +590,21 @@ isr_rx_find_subevent:
 				lll->payload[bis_idx][payload_tail] = NULL;
 
 				iso_rx_put(node_rx->hdr.link, node_rx);
+			} else {
+				/* check if there are 2 free rx buffers, one
+				 * will be consumed to generate PDU with invalid
+				 * status, and the other is to ensure a PDU can
+				 * be setup for the radio DMA to receive in the
+				 * next sub_interval/iso_interval.
+				 */
+				node_rx = ull_iso_pdu_rx_alloc_peek(2U);
+				if (node_rx) {
+					ull_iso_pdu_rx_alloc();
+					isr_rx_iso_data_invalid(lll, bis_idx,
+								bn, node_rx);
+
+					iso_rx_put(node_rx->hdr.link, node_rx);
+				}
 			}
 
 			payload_index = payload_tail + 1U;
@@ -774,6 +782,39 @@ isr_rx_next_subevent:
 							  PHY_FLAGS_S8) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
+}
+
+static void isr_rx_iso_data_valid(struct lll_sync_iso *lll, uint8_t bis_idx,
+				  struct node_rx_pdu *node_rx)
+{
+	struct node_rx_iso_meta *iso_meta;
+
+	node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
+	node_rx->hdr.handle = lll->stream_handle[bis_idx];
+
+	iso_meta = &node_rx->hdr.rx_iso_meta;
+	iso_meta->payload_number = lll->payload_count + (lll->bn_curr - 1U) +
+				   (lll->ptc_curr * lll->pto) - lll->bn;
+	iso_meta->timestamp = HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
+			      radio_tmr_aa_restore() - addr_us_get(lll->phy) +
+			      (ceiling_fraction(lll->ptc_curr, lll->bn) *
+			       lll->iso_interval * PERIODIC_INT_UNIT_US);
+	iso_meta->status = 0U;
+}
+
+static void isr_rx_iso_data_invalid(struct lll_sync_iso *lll, uint8_t bis_idx,
+				    uint8_t bn, struct node_rx_pdu *node_rx)
+{
+	struct node_rx_iso_meta *iso_meta;
+
+	node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
+	node_rx->hdr.handle = lll->stream_handle[bis_idx];
+
+	iso_meta = &node_rx->hdr.rx_iso_meta;
+	iso_meta->payload_number = lll->payload_count - bn - 1U;
+	iso_meta->timestamp = HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
+			      radio_tmr_aa_restore() - addr_us_get(lll->phy);
+	iso_meta->status = 1U;
 }
 
 static void isr_rx_ctrl_recv(struct lll_sync_iso *lll, struct pdu_bis *pdu)

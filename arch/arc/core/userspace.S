@@ -5,11 +5,11 @@
  */
 
 #include <offsets_short.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <kernel_structs.h>
-#include <arch/cpu.h>
-#include <syscall.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/syscall.h>
 #include <swap_macros.h>
 #include <v2/irq.h>
 

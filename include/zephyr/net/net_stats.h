@@ -15,8 +15,8 @@
 #define ZEPHYR_INCLUDE_NET_NET_STATS_H_
 
 #include <zephyr/types.h>
-#include <net/net_core.h>
-#include <net/net_mgmt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_mgmt.h>
 
 #ifdef __cplusplus
 extern "C" {

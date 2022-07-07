@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/kscan.h>
-#include <logging/log.h>
+#include <zephyr/drivers/kscan.h>
+#include <zephyr/logging/log.h>
 
 #include <SDL.h>
 

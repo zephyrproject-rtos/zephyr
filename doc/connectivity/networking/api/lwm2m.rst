@@ -410,6 +410,95 @@ value of 1 is ok here).
 
 For a more detailed LwM2M client sample see: :ref:`lwm2m-client-sample`.
 
+LwM2M engine and application events
+***********************************
+
+The Zephyr LwM2M engine defines events that can be sent back to the application through callback
+functions.
+The engine state machine shows when the events are spawned.
+Events depicted in the diagram are listed in the table.
+The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
+
+.. figure:: images/lwm2m_engine_state_machine.png
+    :alt: LwM2M engine state machine
+
+    State machine for the LwM2M engine
+
+.. list-table:: LwM2M RD Client events
+   :widths: auto
+   :header-rows: 1
+
+   * - Event ID
+     - Event Name
+     - Description
+     - Actions
+   * - 0
+     - NONE
+     - No event
+     - Do nothing
+   * - 1
+     - BOOTSTRAP_REG_FAILURE
+     - Bootstrap registration failed.
+       Occurs if there is a timeout or failure in bootstrap registration.
+     - Retry bootstrap
+   * - 2
+     - BOOTSTRAP_REG_COMPLETE
+     - Bootstrap registration complete.
+       Occurs after successful bootstrap registration.
+     - No actions needed
+   * - 3
+     - BOOTSTRAP_TRANSFER_COMPLETE
+     - Bootstrap finish command received from the server.
+     - No actions needed, client proceeds to registration.
+   * - 4
+     - REGISTRATION_FAILURE
+     - Registration to LwM2M server failed.
+       Occurs if there is a timeout or failure in the registration.
+     - Retry registration
+   * - 5
+     - REGISTRATION_COMPLETE
+     - Registration to LwM2M server successful.
+       Occurs after a successful registration reply from the LwM2M server
+       or when session resumption is used.
+     - No actions needed
+   * - 6
+     - REG_UPDATE_FAILURE
+     - Registration update failed.
+       Occurs if there is a timeout during registration update.
+       NOTE: If registration update fails without a timeout,
+       a full registration is triggered automatically and
+       no registration update failure event is generated.
+     - No actions needed, client proceeds to re-registration automatically.
+   * - 7
+     - REG_UPDATE_COMPLETE
+     - Registration update completed.
+       Occurs after successful registration update reply from the LwM2M server.
+     - No actions needed
+   * - 8
+     - DEREGISTER_FAILURE
+     - Deregistration to LwM2M server failed.
+       Occurs if there is a timeout or failure in the deregistration.
+     - No actions needed, client proceeds to idle state automatically.
+   * - 9
+     - DISCONNECT
+     - Disconnected from LwM2M server.
+       Occurs if there is a timeout during communication with server.
+       Also triggered after deregistration has been done.
+     - If connection is required, the application should restart the client.
+   * - 10
+     - QUEUE_MODE_RX_OFF
+     - Used only in queue mode, not actively listening for incoming packets.
+       In queue mode the client is not required to actively listen for the incoming packets
+       after a configured time period.
+     - No actions needed
+   * - 11
+     - NETWORK_ERROR
+     - Sending messages to the network failed too many times.
+       If sending a message fails, it will be retried.
+       If the retry counter reaches its limits, this event will be triggered.
+     - No actions needed, client will do a re-registrate automatically.
+
+
 .. _lwm2m_api_reference:
 
 API Reference

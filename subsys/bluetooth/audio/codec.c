@@ -10,9 +10,9 @@
  *  Generic Audio.
  */
 
-#include <bluetooth/audio/audio.h>
-#include <sys/byteorder.h>
-#include <sys/check.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO)
 #define LOG_MODULE_NAME bt_audio

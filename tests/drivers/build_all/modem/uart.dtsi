@@ -56,3 +56,8 @@ test_gsm_ppp: gsm_ppp {
 	compatible = "zephyr,gsm-ppp";
 	label = "gsm_ppp";
 };
+
+test_esp_at: esp_at {
+	compatible = "espressif,esp-at";
+	label = "espressif,esp-at";
+};

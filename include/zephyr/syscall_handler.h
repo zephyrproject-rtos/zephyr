@@ -11,11 +11,11 @@
 #ifdef CONFIG_USERSPACE
 
 #ifndef _ASMLANGUAGE
-#include <kernel.h>
-#include <sys/arch_interface.h>
-#include <sys/math_extras.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/arch_interface.h>
+#include <zephyr/sys/math_extras.h>
 #include <stdbool.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 extern const _k_syscall_handler_t _k_syscall_table[K_SYSCALL_LIMIT];
 

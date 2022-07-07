@@ -6,7 +6,7 @@
 
 #include "xtensa/corebits.h"
 #include "xtensa_backtrace.h"
-#include "sys/printk.h"
+#include <zephyr/sys/printk.h>
 #if defined(CONFIG_SOC_ESP32)
 #include "soc/soc_memory_layout.h"
 #elif defined(CONFIG_SOC_FAMILY_INTEL_ADSP)

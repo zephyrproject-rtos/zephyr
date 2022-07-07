@@ -5,9 +5,9 @@
  */
 
 #include <string.h>
-#include <sys/byteorder.h>
-#include "net/buf.h"
-#include "mgmt/mcumgr/buf.h"
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
 #include <mgmt/mgmt.h>
 #include <zcbor_common.h>
 #include <zcbor_decode.h>

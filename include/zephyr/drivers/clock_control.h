@@ -24,8 +24,8 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <zephyr/device.h>
-#include <sys/__assert.h>
-#include <sys/slist.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -92,6 +92,10 @@ typedef int (*clock_control_set)(const struct device *dev,
 				 clock_control_subsys_t sys,
 				 clock_control_subsys_rate_t rate);
 
+typedef int (*clock_control_configure_fn)(const struct device *dev,
+					  clock_control_subsys_t sys,
+					  void *data);
+
 struct clock_control_driver_api {
 	clock_control			on;
 	clock_control			off;
@@ -99,6 +103,7 @@ struct clock_control_driver_api {
 	clock_control_get		get_rate;
 	clock_control_get_status_fn	get_status;
 	clock_control_set		set_rate;
+	clock_control_configure_fn	configure;
 };
 
 /**
@@ -270,6 +275,45 @@ static inline int clock_control_set_rate(const struct device *dev,
 	return api->set_rate(dev, sys, rate);
 }
 
+/**
+ * @brief Configure a source clock
+ *
+ * This function is non-blocking and can be called from any context.
+ * On success, the selected clock is configured as per caller's request.
+ *
+ * It is caller's responsibility to ensure that subsequent calls to the API
+ * provide the right information to allows clock_control driver to perform
+ * the right action (such as using the right clock source on clock_control_get_rate
+ * call).
+ *
+ * @p data is implementation specific and could be used to convey
+ * supplementary information required for expected clock configuration.
+ *
+ * @param dev Device structure whose driver controls the clock
+ * @param sys Opaque data representing the clock
+ * @param data Opaque data providing additional input for clock configuration
+ *
+ * @retval 0 On success
+ * @retval -ENOSYS If the device driver does not implement this call
+ * @retval -errno Other negative errno on failure.
+ */
+static inline int clock_control_configure(const struct device *dev,
+					  clock_control_subsys_t sys,
+					  void *data)
+{
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
+	}
+
+	const struct clock_control_driver_api *api =
+		(const struct clock_control_driver_api *)dev->api;
+
+	if (api->configure == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->configure(dev, sys, data);
+}
 
 #ifdef __cplusplus
 }

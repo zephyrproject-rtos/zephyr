@@ -6,10 +6,10 @@
 
 #define DISABLE_SYSCALL_TRACING
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <tracing_test.h>
 #include <tracing_test_syscall.h>
-#include <tracing/tracing_format.h>
+#include <zephyr/tracing/tracing_format.h>
 
 void sys_trace_k_thread_switched_out(void)
 {

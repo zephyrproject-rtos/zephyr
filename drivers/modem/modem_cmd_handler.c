@@ -10,12 +10,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_cmd_handler, CONFIG_MODEM_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <stddef.h>
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
 #include "modem_context.h"
 #include "modem_cmd_handler.h"
@@ -339,7 +339,7 @@ static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 				break;
 			} else if (ret > 0) {
 				LOG_DBG("match direct cmd [%s] (ret:%d)",
-					log_strdup(cmd->cmd), ret);
+					cmd->cmd, ret);
 				data->rx_buf = net_buf_skip(data->rx_buf, ret);
 			}
 
@@ -377,7 +377,7 @@ static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 		cmd = find_cmd_match(data);
 		if (cmd) {
 			LOG_DBG("match cmd [%s] (len:%zu)",
-				log_strdup(cmd->cmd), match_len);
+				cmd->cmd, match_len);
 
 			ret = process_cmd(cmd, match_len, data);
 			if (ret == -EAGAIN) {
@@ -385,7 +385,7 @@ static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 				break;
 			} else if (ret < 0) {
 				LOG_ERR("process cmd [%s] (len:%zu, ret:%d)",
-					log_strdup(cmd->cmd), match_len, ret);
+					cmd->cmd, match_len, ret);
 			}
 
 			/*
@@ -586,7 +586,7 @@ int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
 
 		if (ret < 0) {
 			LOG_ERR("command %s ret:%d",
-				log_strdup(cmds[i].send_cmd), ret);
+				cmds[i].send_cmd, ret);
 			break;
 		}
 	}
@@ -622,7 +622,7 @@ int modem_cmd_handler_setup_cmds_nolock(struct modem_iface *iface,
 
 		if (ret < 0) {
 			LOG_ERR("command %s ret:%d",
-				log_strdup(cmds[i].send_cmd), ret);
+				cmds[i].send_cmd, ret);
 			break;
 		}
 	}

@@ -150,8 +150,12 @@ void test_k_float_disable_syscall(void)
 
 #if defined(CONFIG_ARM) && defined(CONFIG_DYNAMIC_INTERRUPTS)
 
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/cpu.h>
+#if defined(CONFIG_CPU_CORTEX_M)
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#else
+#include <interrupt_util.h>
+#endif
 
 struct k_thread sup_fp_thread;
 K_THREAD_STACK_DEFINE(sup_fp_thread_stack, STACKSIZE);
@@ -180,6 +184,7 @@ static void sup_fp_thread_entry(void)
 	/* Determine an NVIC IRQ line that is not currently in use. */
 	int i;
 
+#if defined(CONFIG_CPU_CORTEX_M)
 	for (i = CONFIG_NUM_IRQS - 1; i >= 0; i--) {
 		if (NVIC_GetEnableIRQ(i) == 0) {
 			/*
@@ -191,6 +196,13 @@ static void sup_fp_thread_entry(void)
 			break;
 		}
 	}
+#else
+	/*
+	 * SGIs are always enabled by default, so choose the last one
+	 * for testing.
+	 */
+	i = GIC_PPI_INT_BASE - 1;
+#endif
 
 	zassert_true(i >= 0,
 		"No available IRQ line to use in the test\n");
@@ -203,9 +215,14 @@ static void sup_fp_thread_entry(void)
 		NULL,
 		0);
 
+#if defined(CONFIG_CPU_CORTEX_M)
 	NVIC_ClearPendingIRQ(i);
 	NVIC_EnableIRQ(i);
 	NVIC_SetPendingIRQ(i);
+#else
+	arch_irq_enable(i);
+	trigger_irq(i);
+#endif
 
 	/*
 	 * Instruction barriers to make sure the NVIC IRQ is

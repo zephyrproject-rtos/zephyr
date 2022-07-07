@@ -6,14 +6,14 @@
 
 #define DT_DRV_COMPAT sensirion_shtcx
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <sys/crc.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/crc.h>
+#include <zephyr/logging/log.h>
 
 #include "shtcx.h"
 
@@ -30,7 +30,7 @@ static const uint16_t measure_wait_us[2][2] = {
 	/* shtc1: 14.4ms, 0.94ms */
 	{ 14400, 940 }, /* shtc1 */
 	/* shtc3: 12.1ms, 0.8ms */
-	{ 1210, 800 }, /* shtc3 */
+	{ 12100, 800 }, /* shtc3 */
 };
 
 /*
@@ -69,11 +69,11 @@ static void shtcx_humidity_from_raw(uint16_t raw, struct sensor_value *val)
 
 static int shtcx_write_command(const struct device *dev, uint16_t cmd)
 {
+	const struct shtcx_config *cfg = dev->config;
 	uint8_t tx_buf[2];
 
 	sys_put_be16(cmd, tx_buf);
-	return i2c_write(shtcx_i2c_bus(dev), tx_buf, sizeof(tx_buf),
-			 shtcx_i2c_address(dev));
+	return i2c_write_dt(&cfg->i2c, tx_buf, sizeof(tx_buf));
 }
 
 static int shtcx_read_words(const struct device *dev, uint16_t cmd, uint16_t *data,
@@ -96,8 +96,7 @@ static int shtcx_read_words(const struct device *dev, uint16_t cmd, uint16_t *da
 		k_sleep(K_USEC(max_duration_us));
 	}
 
-	status = i2c_read(shtcx_i2c_bus(dev), rx_buf, raw_len,
-			  shtcx_i2c_address(dev));
+	status = i2c_read_dt(&cfg->i2c, rx_buf, raw_len);
 	if (status != 0) {
 		LOG_DBG("Failed to read data");
 		return -EIO;
@@ -194,8 +193,8 @@ static int shtcx_init(const struct device *dev)
 	const struct shtcx_config *cfg = dev->config;
 	uint16_t product_id;
 
-	if (device_is_ready(cfg->bus) ==  0) {
-		LOG_DBG("i2c bus is not ready");
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
 		return -ENODEV;
 	}
 
@@ -240,8 +239,7 @@ static int shtcx_init(const struct device *dev)
 
 #define SHTCX_CONFIG(inst)						       \
 	{								       \
-		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		       \
-		.base_address = DT_INST_REG_ADDR(inst),			       \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),			       \
 		.chip = DT_INST_ENUM_IDX(inst, chip),			       \
 		.measure_mode = DT_INST_ENUM_IDX(inst, measure_mode),	       \
 		.clock_stretching = DT_INST_PROP(inst, clock_stretching)       \

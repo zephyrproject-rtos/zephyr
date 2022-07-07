@@ -2,8 +2,8 @@
  * Copyright (c) 2021 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <sys/util.h>
-#include <sys/winstream.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/winstream.h>
 
 /* This code may be used (e.g. for trace/logging) in very early
  * environments where the standard library isn't available yet.
@@ -13,6 +13,7 @@
 # define MEMCPY(dst, src, n) \
 	do { for (int i = 0; i < (n); i++) { (dst)[i] = (src)[i]; } } while (0)
 #else
+# include <string.h>
 # define MEMCPY memcpy
 #endif
 

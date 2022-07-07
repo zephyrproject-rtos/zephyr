@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifdef CONFIG_BT_CSIS_CLIENT
-#include <bluetooth/addr.h>
-#include <bluetooth/audio/csis.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/csis.h>
 #include "common.h"
 
 extern enum bst_result_t bst_result;
@@ -15,8 +15,8 @@ static volatile bool discovered;
 static volatile bool members_discovered;
 static volatile bool set_locked;
 static volatile bool set_unlocked;
-static volatile bool set_read_locked;
-static volatile bool set_read_unlocked;
+static volatile bool ordered_access_locked;
+static volatile bool ordered_access_unlocked;
 static struct bt_csis_client_csis_inst *inst;
 
 static uint8_t members_found;
@@ -70,21 +70,18 @@ static void csis_lock_changed_cb(struct bt_csis_client_csis_inst *inst,
 	printk("Inst %p %s\n", inst, locked ? "locked" : "released");
 }
 
-
-static void csis_client_lock_state_read_cb(const struct bt_csis_client_set_info *set_info,
-					   int err, bool locked)
+static void csis_client_ordered_access_cb(const struct bt_csis_client_set_info *set_info,
+					  int err, bool locked,
+					  struct bt_csis_client_set_member *member)
 {
-	printk("%s\n", __func__);
-
-	if (err != 0) {
-		FAIL("read lock state failed (%d)\n", err);
-		return;
-	}
-
-	if (locked) {
-		set_read_locked = true;
+	if (err) {
+		FAIL("Ordered access failed with err %d\n", err);
+	} else if (locked) {
+		printk("Ordered access procedure locked member %p\n", member);
+		ordered_access_locked = true;
 	} else {
-		set_read_unlocked = true;
+		printk("Ordered access procedure finished\n");
+		ordered_access_unlocked = true;
 	}
 }
 
@@ -118,8 +115,19 @@ static struct bt_csis_client_cb cbs = {
 	.release_set = csis_client_lock_release_cb,
 	.discover = csis_discover_cb,
 	.lock_changed = csis_lock_changed_cb,
-	.lock_state_read = csis_client_lock_state_read_cb,
+	.ordered_access = csis_client_ordered_access_cb
 };
+
+static bool csis_client_oap_cb(const struct bt_csis_client_set_info *set_info,
+			       struct bt_csis_client_set_member *members[],
+			       size_t count)
+{
+	for (size_t i = 0; i < count; i++) {
+		printk("Ordered access for members[%zu]: %p\n", i, members[i]);
+	}
+
+	return true;
+}
 
 static bool is_discovered(const bt_addr_le_t *addr)
 {
@@ -185,30 +193,31 @@ static void discover_members_timer_handler(struct k_work *work)
 	     members_found, inst->info.set_size);
 }
 
-static void read_set_lock_state(const struct bt_csis_client_set_member **members,
-				uint8_t count, bool expect_locked)
+static void ordered_access(struct bt_csis_client_set_member **members,
+			   size_t count, bool expect_locked)
 {
 	int err;
 
-	printk("Reading set state, expecting %s\n",
+	printk("Performing ordered access, expecting %s\n",
 	       expect_locked ? "locked" : "unlocked");
 
 	if (expect_locked) {
-		set_read_locked = false;
+		ordered_access_locked = false;
 	} else {
-		set_read_unlocked = false;
+		ordered_access_unlocked = false;
 	}
 
-	err = bt_csis_client_get_lock_state(members, count, &inst->info);
+	err = bt_csis_client_ordered_access(members, count, &inst->info,
+					    csis_client_oap_cb);
 	if (err != 0) {
-		FAIL("Failed to do CSIS client read lock state (%d)", err);
+		FAIL("Failed to do CSIS client ordered access (%d)", err);
 		return;
 	}
 
 	if (expect_locked) {
-		WAIT_FOR_COND(set_read_locked);
+		WAIT_FOR_COND(ordered_access_locked);
 	} else {
-		WAIT_FOR_COND(set_read_unlocked);
+		WAIT_FOR_COND(ordered_access_unlocked);
 	}
 }
 
@@ -216,7 +225,7 @@ static void test_main(void)
 {
 	int err;
 	char addr[BT_ADDR_LE_STR_LEN];
-	const struct bt_csis_client_set_member *locked_members[CONFIG_BT_MAX_CONN];
+	struct bt_csis_client_set_member *locked_members[CONFIG_BT_MAX_CONN];
 	uint8_t connected_member_count = 0;
 
 	err = bt_enable(NULL);
@@ -327,7 +336,7 @@ static void test_main(void)
 		locked_members[i] = &set_members[i];
 	}
 
-	read_set_lock_state(locked_members, connected_member_count, false);
+	ordered_access(locked_members, connected_member_count, false);
 
 	printk("Locking set\n");
 	err = bt_csis_client_lock(locked_members, connected_member_count,
@@ -339,7 +348,7 @@ static void test_main(void)
 
 	WAIT_FOR_COND(set_locked);
 
-	read_set_lock_state(locked_members, connected_member_count, true);
+	ordered_access(locked_members, connected_member_count, true);
 
 	k_sleep(K_MSEC(1000)); /* Simulate doing stuff */
 
@@ -353,7 +362,7 @@ static void test_main(void)
 
 	WAIT_FOR_COND(set_unlocked);
 
-	read_set_lock_state(locked_members, connected_member_count, false);
+	ordered_access(locked_members, connected_member_count, false);
 
 	/* Lock and unlock again */
 	set_locked = false;

@@ -6,7 +6,7 @@
  */
 
 #include <mem.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 #include "psoc6-pinctrl.dtsi"
 

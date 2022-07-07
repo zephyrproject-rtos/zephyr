@@ -5,12 +5,12 @@
  */
 
 #include <ctype.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include "shell_utils.h"
 
@@ -21,7 +21,7 @@ const char *KBPS_UNIT[] = { "Mbps", "Kbps" };
 const uint32_t K[] = { 1024 * 1024, 1024, 0 };
 const char *K_UNIT[] = { "M", "K", "" };
 
-void print_number(const struct shell *shell, uint32_t value,
+void print_number(const struct shell *sh, uint32_t value,
 		  const uint32_t *divisor, const char **units)
 {
 	const char **unit;
@@ -39,10 +39,10 @@ void print_number(const struct shell *shell, uint32_t value,
 	if (*div != 0U) {
 		radix = value / *div;
 		dec = (value % *div) * 100U / *div;
-		shell_fprintf(shell, SHELL_NORMAL, "%u.%s%u %s", radix,
+		shell_fprintf(sh, SHELL_NORMAL, "%u.%s%u %s", radix,
 			      (dec < 10) ? "0" : "", dec, *unit);
 	} else {
-		shell_fprintf(shell, SHELL_NORMAL, "%u %s", value, *unit);
+		shell_fprintf(sh, SHELL_NORMAL, "%u %s", value, *unit);
 	}
 }
 

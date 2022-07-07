@@ -4,30 +4,11 @@
  * Copyright (c) 2022 STMicroelectronics
  */
 
-#include <dt-bindings/pwm/pwm.h>
-
-
-/ {
-	pwmleds {
-		compatible = "pwm-leds";
-
-		green_pwm_led: green_pwm_led {
-			pwms = <&pwm2 1 4 PWM_POLARITY_NORMAL>;
-		};
-	};
-
-	aliases {
-		pwm-led0 = &green_pwm_led;
-	};
+&pwmleds {
+	/* NOTE: enable here because it is disabled by default */
+	status = "okay";
 };
 
-&timers2 {
-	st,prescaler = <10000>;
+&pwm2 {
 	status = "okay";
-
-	pwm2: pwm {
-		status = "okay";
-		pinctrl-0 = <&tim2_ch1_pa5>; /* might conflict with SPI1 */
-		pinctrl-names = "default";
-	};
 };

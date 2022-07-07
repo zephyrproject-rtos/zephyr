@@ -20,11 +20,11 @@
 
 #define EXTI_NODE DT_INST(0, st_stm32_exti)
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <stm32_ll_exti.h>
-#include <sys/__assert.h>
-#include <drivers/interrupt_controller/exti_stm32.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/interrupt_controller/exti_stm32.h>
 
 #include "stm32_hsem.h"
 

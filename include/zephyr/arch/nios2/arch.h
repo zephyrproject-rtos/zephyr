@@ -16,21 +16,21 @@
 
 #include <system.h>
 
-#include <arch/nios2/thread.h>
-#include <arch/nios2/asm_inline.h>
-#include <arch/common/addr_types.h>
+#include <zephyr/arch/nios2/thread.h>
+#include <zephyr/arch/nios2/asm_inline.h>
+#include <zephyr/arch/common/addr_types.h>
 #include <zephyr/devicetree.h>
-#include <arch/nios2/nios2.h>
-#include <arch/common/sys_bitops.h>
-#include <sys/sys_io.h>
-#include <arch/common/ffs.h>
+#include <zephyr/arch/nios2/nios2.h>
+#include <zephyr/arch/common/sys_bitops.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/arch/common/ffs.h>
 
 #define ARCH_STACK_PTR_ALIGN  4
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
-#include <irq.h>
-#include <sw_isr_table.h>
+#include <zephyr/irq.h>
+#include <zephyr/sw_isr_table.h>
 
 #ifdef __cplusplus
 extern "C" {

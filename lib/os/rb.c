@@ -12,8 +12,8 @@
 #define CHECK(n) /**/
 /* #define CHECK(n) __ASSERT_NO_MSG(n) */
 
-#include <kernel.h>
-#include <sys/rb.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/rb.h>
 #include <stdbool.h>
 
 enum rb_color { RED = 0U, BLACK = 1U };
@@ -199,7 +199,6 @@ static void fix_extra_red(struct rbnode **stack, int stacksz)
 
 		if (parent_side != side) {
 			rotate(stack, stacksz);
-			node = stack[stacksz - 1];
 		}
 
 		/* Rotate the grandparent with parent, swapping colors */

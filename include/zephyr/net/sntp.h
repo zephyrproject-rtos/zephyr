@@ -9,11 +9,11 @@
 #define ZEPHYR_INCLUDE_NET_SNTP_H_
 
 #ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
-#include <net/socket.h>
+#include <zephyr/net/socket.h>
 #else
-#include <posix/sys/socket.h>
-#include <posix/unistd.h>
-#include <posix/poll.h>
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/poll.h>
 #endif
 
 #ifdef __cplusplus

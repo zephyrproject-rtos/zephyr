@@ -5,9 +5,9 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 
 /*
  * @file

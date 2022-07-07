@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 
-#include <ipc/ipc_service.h>
+#include <zephyr/ipc/ipc_service.h>
 
 #define STACKSIZE	(4096 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define PRIORITY	K_PRIO_PREEMPT(2)

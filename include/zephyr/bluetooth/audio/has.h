@@ -22,9 +22,9 @@
  * ongoing development.
  */
 
-#include <bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <sys/types.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,6 +67,18 @@ enum bt_has_capabilities {
 	BT_HAS_PRESET_SUPPORT = BIT(0),
 };
 
+/** @brief Preset record definition */
+struct bt_has_preset_record {
+	/** Unique preset index. */
+	uint8_t index;
+
+	/** Bitfield of preset properties. */
+	enum bt_has_properties properties;
+
+	/** Preset name. */
+	const char *name;
+};
+
 /** @brief Hearing Access Service Client callback structure. */
 struct bt_has_client_cb {
 	/**
@@ -95,6 +107,61 @@ struct bt_has_client_cb {
 	 * @param index Active preset index.
 	 */
 	void (*preset_switch)(struct bt_has *has, uint8_t index);
+
+	/**
+	 * @brief Callback function for presets read operation.
+	 *
+	 * The callback is called when the preset read response is sent by the remote server.
+	 * The record object as well as its members are temporary and must be copied to in order
+	 * to cache its information.
+	 *
+	 * @param has Pointer to the Hearing Access Service object.
+	 * @param err 0 on success, ATT error or negative errno otherwise.
+	 * @param record Preset record or NULL on errors.
+	 * @param is_last True if Read Presets operation can be considered concluded.
+	 */
+	void (*preset_read_rsp)(struct bt_has *has, int err,
+				const struct bt_has_preset_record *record, bool is_last);
+
+	/**
+	 * @brief Callback function for preset update notifications.
+	 *
+	 * The callback is called when the preset record update is notified by the remote server.
+	 * The record object as well as its objects are temporary and must be copied to in order
+	 * to cache its information.
+	 *
+	 * @param has Pointer to the Hearing Access Service object.
+	 * @param index_prev Index of the previous preset in the list.
+	 * @param record Preset record.
+	 * @param is_last True if preset list update operation can be considered concluded.
+	 */
+	void (*preset_update)(struct bt_has *has, uint8_t index_prev,
+			      const struct bt_has_preset_record *record, bool is_last);
+
+	/**
+	 * @brief Callback function for preset deletion notifications.
+	 *
+	 * The callback is called when the preset has been deleted by the remote server.
+	 *
+	 * @param has Pointer to the Hearing Access Service object.
+	 * @param index Preset index.
+	 * @param is_last True if preset list update operation can be considered concluded.
+	 */
+	void (*preset_deleted)(struct bt_has *has, uint8_t index, bool is_last);
+
+	/**
+	 * @brief Callback function for preset availability notifications.
+	 *
+	 * The callback is called when the preset availability change is notified by the remote
+	 * server.
+	 *
+	 * @param has Pointer to the Hearing Access Service object.
+	 * @param index Preset index.
+	 * @param available True if available, false otherwise.
+	 * @param is_last True if preset list update operation can be considered concluded.
+	 */
+	void (*preset_availability)(struct bt_has *has, uint8_t index, bool available,
+				    bool is_last);
 };
 
 /** @brief Registers the callbacks used by the Hearing Access Service client.
@@ -131,6 +198,41 @@ int bt_has_client_discover(struct bt_conn *conn);
  */
 int bt_has_client_conn_get(const struct bt_has *has, struct bt_conn **conn);
 
+/**
+ * @brief Read Preset Records.
+ *
+ * Client method to read up to @p max_count presets starting from given @p index.
+ * The preset records are returned in the @ref bt_has_client_cb.preset_read_rsp callback
+ * (called once for each preset).
+ *
+ * @param has Pointer to the Hearing Access Service object.
+ * @param index The index to start with.
+ * @param max_count Maximum number of presets to read.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_has_client_presets_read(struct bt_has *has, uint8_t index, uint8_t max_count);
+
+/** @brief Preset operations structure. */
+struct bt_has_preset_ops {
+	/**
+	 * @brief Preset select callback.
+	 *
+	 * This callback is called when the client requests to select preset identified by
+	 * @p index.
+	 *
+	 * @param index Preset index requested to activate.
+	 * @param sync Whether the server must relay this change to the other member of the
+	 *             Binaural Hearing Aid Set.
+	 *
+	 * @return 0 in case of success or negative value in case of error.
+	 * @return -EBUSY if operation cannot be performed at the time.
+	 * @return -EINPROGRESS in case where user has to confirm once the requested preset
+	 *                      becomes active by calling @ref bt_has_preset_active_set.
+	 */
+	int (*select)(uint8_t index, bool sync);
+};
+
 /** @brief Register structure for preset. */
 struct bt_has_preset_register_param {
 	/**
@@ -156,6 +258,9 @@ struct bt_has_preset_register_param {
 	 * @ref BT_HAS_PRESET_NAME_MAX, the name will be truncated.
 	 */
 	const char *name;
+
+	/** Preset operations structure. */
+	const struct bt_has_preset_ops *ops;
 };
 
 /**
@@ -180,6 +285,30 @@ int bt_has_preset_register(const struct bt_has_preset_register_param *param);
  * @return 0 if success, errno on failure.
  */
 int bt_has_preset_unregister(uint8_t index);
+
+/**
+ * @brief Set the preset as available.
+ *
+ * Set the @ref BT_HAS_PROP_AVAILABLE property bit. This will notify preset availability
+ * to peer devices. Only available preset can be selected as active preset.
+ *
+ * @param index The index of preset that's became available.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_has_preset_available(uint8_t index);
+
+/**
+ * @brief Set the preset as unavailable.
+ *
+ * Clear the @ref BT_HAS_PROP_AVAILABLE property bit. This will notify preset availability
+ * to peer devices. Unavailable preset cannot be selected as active preset.
+ *
+ * @param index The index of preset that's became unavailable.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_has_preset_unavailable(uint8_t index);
 
 enum {
 	BT_HAS_PRESET_ITER_STOP = 0,
@@ -211,6 +340,39 @@ typedef uint8_t (*bt_has_preset_func_t)(uint8_t index, enum bt_has_properties pr
  * @param user_data Data to pass to the callback.
  */
 void bt_has_preset_foreach(uint8_t index, bt_has_preset_func_t func, void *user_data);
+
+/**
+ * @brief Set active preset.
+ *
+ * Function used to set the preset identified by the @p index as the active preset.
+ * The preset index will be notified to peer devices.
+ *
+ * @param index Preset index.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_has_preset_active_set(uint8_t index);
+
+/**
+ * @brief Get active preset.
+ *
+ * Function used to get the currently active preset index.
+ *
+ * @return Active preset index.
+ */
+uint8_t bt_has_preset_active_get(void);
+
+/**
+ * @brief Clear out active preset.
+ *
+ * Used by server to deactivate currently active preset.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+static inline int bt_has_preset_active_clear(void)
+{
+	return bt_has_preset_active_set(BT_HAS_PRESET_INDEX_NONE);
+}
 
 #ifdef __cplusplus
 }

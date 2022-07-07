@@ -14,29 +14,37 @@
  *        Please validate for newly added series.
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/__assert.h>
 #include <soc.h>
-#include <init.h>
-#include <drivers/uart.h>
-#include <drivers/clock_control.h>
-#include <pm/policy.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/pm/policy.h>
 
 #ifdef CONFIG_UART_ASYNC_API
-#include <drivers/dma/dma_stm32.h>
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma/dma_stm32.h>
+#include <zephyr/drivers/dma.h>
 #endif
 
-#include <linker/sections.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "uart_stm32.h"
 
 #include <stm32_ll_usart.h>
 #include <stm32_ll_lpuart.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_stm32, CONFIG_UART_LOG_LEVEL);
+
+/* This symbol takes the value 1 if one of the device instances */
+/* is configured in dts with an optional clock */
+#if STM32_DT_INST_DEV_OPT_CLOCK_SUPPORT
+#define STM32_UART_OPT_CLOCK_SUPPORT 1
+#else
+#define STM32_UART_OPT_CLOCK_SUPPORT 0
+#endif
 
 #define HAS_LPUART_1 (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart1), \
 					 st_stm32_lpuart, okay))
@@ -69,8 +77,6 @@ uint32_t lpuartdiv_calc(const uint64_t clock_rate, const uint32_t baud_rate)
 #endif /* USART_PRESC_PRESCALER */
 #endif /* HAS_LPUART_1 */
 
-#define TIMEOUT 1000
-
 #ifdef CONFIG_PM
 static void uart_stm32_pm_policy_state_lock_get(const struct device *dev)
 {
@@ -93,8 +99,7 @@ static void uart_stm32_pm_policy_state_lock_put(const struct device *dev)
 }
 #endif /* CONFIG_PM */
 
-static inline void uart_stm32_set_baudrate(const struct device *dev,
-					   uint32_t baud_rate)
+static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t baud_rate)
 {
 	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
@@ -102,11 +107,20 @@ static inline void uart_stm32_set_baudrate(const struct device *dev,
 	uint32_t clock_rate;
 
 	/* Get clock rate */
-	if (clock_control_get_rate(data->clock,
-			       (clock_control_subsys_t *)&config->pclken,
-			       &clock_rate) < 0) {
-		LOG_ERR("Failed call clock_control_get_rate");
-		return;
+	if (IS_ENABLED(STM32_UART_OPT_CLOCK_SUPPORT) && (config->pclk_len > 1)) {
+		if (clock_control_get_rate(data->clock,
+					   (clock_control_subsys_t)&config->pclken[1],
+					   &clock_rate) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
+			return;
+		}
+	} else {
+		if (clock_control_get_rate(data->clock,
+					   (clock_control_subsys_t)&config->pclken[0],
+					   &clock_rate) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
+			return;
+		}
 	}
 
 #if HAS_LPUART_1
@@ -472,12 +486,6 @@ static int uart_stm32_configure(const struct device *dev,
 		uart_stm32_set_baudrate(dev, cfg->baudrate);
 		data->baud_rate = cfg->baudrate;
 	}
-
-#ifdef LL_USART_TXRX_SWAPPED
-	if (config->tx_rx_swap) {
-		LL_USART_SetTXRXSwap(config->usart, LL_USART_TXRX_SWAPPED);
-	}
-#endif
 
 	LL_USART_Enable(config->usart);
 	return 0;
@@ -1410,7 +1418,7 @@ static int uart_stm32_async_init(const struct device *dev)
 	}
 
 	if (data->dma_tx.dma_dev != NULL) {
-		if (!device_is_ready(data->dma_rx.dma_dev)) {
+		if (!device_is_ready(data->dma_tx.dma_dev)) {
 			return -ENODEV;
 		}
 	}
@@ -1556,9 +1564,20 @@ static int uart_stm32_init(const struct device *dev)
 
 	__uart_stm32_get_clock(dev);
 	/* enable clock */
-	if (clock_control_on(data->clock,
-			(clock_control_subsys_t *)&config->pclken) != 0) {
-		return -EIO;
+	err = clock_control_on(data->clock, (clock_control_subsys_t)&config->pclken[0]);
+	if (err != 0) {
+		LOG_ERR("Could not enable (LP)UART clock");
+		return err;
+	}
+
+	if (IS_ENABLED(STM32_UART_OPT_CLOCK_SUPPORT) && (config->pclk_len > 1)) {
+		err = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					      (clock_control_subsys_t) &config->pclken[1],
+					      NULL);
+		if (err != 0) {
+			LOG_ERR("Could not select UART source clock");
+			return err;
+		}
 	}
 
 	/* Configure dt provided device signals when available */
@@ -1611,6 +1630,24 @@ static int uart_stm32_init(const struct device *dev)
 	if (config->single_wire) {
 		LL_USART_EnableHalfDuplex(config->usart);
 	}
+
+#ifdef LL_USART_TXRX_SWAPPED
+	if (config->tx_rx_swap) {
+		LL_USART_SetTXRXSwap(config->usart, LL_USART_TXRX_SWAPPED);
+	}
+#endif
+
+#ifdef LL_USART_RXPIN_LEVEL_INVERTED
+	if (config->rx_invert) {
+		LL_USART_SetRXPinLevel(config->usart, LL_USART_RXPIN_LEVEL_INVERTED);
+	}
+#endif
+
+#ifdef LL_USART_TXPIN_LEVEL_INVERTED
+	if (config->tx_invert) {
+		LL_USART_SetTXPinLevel(config->usart, LL_USART_TXPIN_LEVEL_INVERTED);
+	}
+#endif
 
 	LL_USART_Enable(config->usart);
 
@@ -1697,10 +1734,10 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 
 #ifdef CONFIG_UART_ASYNC_API
 #define UART_DMA_CHANNEL(index, dir, DIR, src, dest)			\
-.dma_##dir = {				\
+.dma_##dir = {								\
 	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),			\
 		 (UART_DMA_CHANNEL_INIT(index, dir, DIR, src, dest)),	\
-		 (NULL))				\
+		 (NULL))						\
 	},
 
 #else
@@ -1712,16 +1749,20 @@ STM32_UART_IRQ_HANDLER_DECL(index)					\
 									\
 PINCTRL_DT_INST_DEFINE(index);						\
 									\
+static const struct stm32_pclken pclken_##index[] =			\
+					    STM32_DT_INST_CLOCKS(index);\
+									\
 static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.usart = (USART_TypeDef *)DT_INST_REG_ADDR(index),		\
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),		\
-		    .enr = DT_INST_CLOCKS_CELL(index, bits)		\
-	},								\
+	.pclken = pclken_##index,					\
+	.pclk_len = DT_INST_NUM_CLOCKS(index),				\
 	.hw_flow_control = DT_INST_PROP(index, hw_flow_control),	\
 	.parity = DT_INST_ENUM_IDX_OR(index, parity, UART_CFG_PARITY_NONE),	\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
-	.single_wire = DT_INST_PROP_OR(index, single_wire, false), \
+	.single_wire = DT_INST_PROP_OR(index, single_wire, false),	\
 	.tx_rx_swap = DT_INST_PROP_OR(index, tx_rx_swap, false),	\
+	.rx_invert = DT_INST_PROP(index, rx_invert),	\
+	.tx_invert = DT_INST_PROP(index, tx_invert),	\
 	STM32_UART_IRQ_HANDLER_FUNC(index)				\
 };									\
 									\

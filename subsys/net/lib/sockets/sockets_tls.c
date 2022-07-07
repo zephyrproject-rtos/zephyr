@@ -8,15 +8,15 @@
 #include <stdbool.h>
 #include <fcntl.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
-#include <init.h>
-#include <sys/util.h>
-#include <net/socket.h>
-#include <random/rand32.h>
-#include <syscall_handler.h>
-#include <sys/fdtable.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/sys/fdtable.h>
 
 /* TODO: Remove all direct access to private fields.
  * According with Mbed TLS migration guide:
@@ -256,7 +256,7 @@ static void tls_debug(void *ctx, int level, const char *file,
 	}
 
 	NET_DBG("%s:%04d: |%d| %s", basename, line, level,
-		log_strdup(str));
+		str);
 }
 #endif /* defined(MBEDTLS_DEBUG_C) && (CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG) */
 
@@ -2055,6 +2055,19 @@ ssize_t ztls_sendmsg_ctx(struct tls_context *ctx, const struct msghdr *msg,
 	ssize_t len;
 	ssize_t ret;
 	int i;
+
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_ENABLE_DTLS) &&
+	    ctx->type == SOCK_DGRAM) {
+		/*
+		 * Current mbedTLS API (i.e. mbedtls_ssl_write()) allows only to send a single
+		 * contiguous buffer. This means that gather write using sendmsg() can only be
+		 * handled correctly if there is a single non-empty buffer in msg->msg_iov.
+		 */
+		if (msghdr_non_empty_iov_count(msg) > 1) {
+			errno = EMSGSIZE;
+			return -1;
+		}
+	}
 
 	len = 0;
 	if (msg) {

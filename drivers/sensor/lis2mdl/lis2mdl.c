@@ -10,13 +10,13 @@
 
 #define DT_DRV_COMPAT st_lis2mdl
 
-#include <init.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
-#include <pm/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include "lis2mdl.h"
 
 /* Based on the data sheet, the maximum turn-on time is ("9.4 ms + 1/ODR") when

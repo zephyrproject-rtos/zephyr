@@ -6,24 +6,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <sys/atomic.h>
-#include <sys/byteorder.h>
-#include <sys/check.h>
-#include <sys/util.h>
-#include <sys/slist.h>
-#include <debug/stack.h>
-#include <sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/debug/stack.h>
+#include <zephyr/sys/__assert.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/direction.h>
-#include <bluetooth/conn.h>
-#include <drivers/bluetooth/hci_driver.h>
-#include <bluetooth/att.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/direction.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/att.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CONN)
 #define LOG_MODULE_NAME bt_conn
@@ -47,6 +47,23 @@ struct tx_meta {
 
 #define tx_data(buf) ((struct tx_meta *)net_buf_user_data(buf))
 K_FIFO_DEFINE(free_tx);
+
+static void tx_free(struct bt_conn_tx *tx);
+
+static void conn_tx_destroy(struct bt_conn *conn, struct bt_conn_tx *tx)
+{
+	__ASSERT_NO_MSG(tx);
+
+	bt_conn_tx_cb_t cb = tx->cb;
+	void *user_data = tx->user_data;
+
+	/* Free up TX metadata before calling callback in case the callback
+	 * tries to allocate metadata
+	 */
+	tx_free(tx);
+
+	cb(conn, user_data, -ESHUTDOWN);
+}
 
 #if defined(CONFIG_BT_CONN_TX)
 static void tx_complete_work(struct k_work *work);
@@ -115,10 +132,15 @@ struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
 	}
 #endif /* CONFIG_BT_BREDR */
 #if defined(CONFIG_BT_ISO)
-	if (conn->type == BT_CONN_TYPE_ISO || bt_dev.le.iso_mtu) {
-		if (bt_dev.le.iso_pkts.limit) {
+	/* Use ISO pkts semaphore if LE Read Buffer Size command returned
+	 * dedicated ISO buffers.
+	 */
+	if (conn->type == BT_CONN_TYPE_ISO) {
+		if (bt_dev.le.iso_mtu && bt_dev.le.iso_pkts.limit) {
 			return &bt_dev.le.iso_pkts;
 		}
+
+		return NULL;
 	}
 #endif /* CONFIG_BT_ISO */
 #if defined(CONFIG_BT_CONN)
@@ -194,7 +216,7 @@ static void tx_notify(struct bt_conn *conn)
 		 * allocate new buffers since the TX should have been
 		 * unblocked by tx_free.
 		 */
-		cb(conn, user_data);
+		cb(conn, user_data, 0);
 	}
 }
 
@@ -537,7 +559,7 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 fail:
 	k_sem_give(bt_conn_get_pkts(conn));
 	if (tx) {
-		tx_free(tx);
+		conn_tx_destroy(conn, tx);
 	}
 
 	if (always_consume) {
@@ -650,7 +672,7 @@ static void conn_cleanup(struct bt_conn *conn)
 	/* Give back any allocated buffers */
 	while ((buf = net_buf_get(&conn->tx_queue, K_NO_WAIT))) {
 		if (tx_data(buf)->tx) {
-			tx_free(tx_data(buf)->tx);
+			conn_tx_destroy(conn, tx_data(buf)->tx);
 		}
 
 		net_buf_unref(buf);
@@ -778,7 +800,7 @@ static void process_unack_tx(struct bt_conn *conn)
 		tx->pending_no_cb = 0U;
 		irq_unlock(key);
 
-		tx_free(tx);
+		conn_tx_destroy(conn, tx);
 
 		k_sem_give(bt_conn_get_pkts(conn));
 	}
@@ -892,7 +914,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			tx_notify(conn);
 
 			/* Cancel Connection Update if it is pending */
-			if (conn->type == BT_CONN_TYPE_LE) {
+			if ((conn->type == BT_CONN_TYPE_LE) &&
+			    (k_work_delayable_busy_get(&conn->deferred_work) &
+			     (K_WORK_QUEUED | K_WORK_DELAYED))) {
 				k_work_cancel_delayable(&conn->deferred_work);
 			}
 
@@ -1984,6 +2008,9 @@ void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 
 	reset_pairing(conn);
 	bt_l2cap_security_changed(conn, hci_err);
+	if (IS_ENABLED(CONFIG_BT_ISO_CENTRAL)) {
+		bt_iso_security_changed(conn, hci_err);
+	}
 
 	for (cb = callback_list; cb; cb = cb->_next) {
 		if (cb->security_changed) {

@@ -5,8 +5,8 @@
  */
 
 #include <arm/armv8-m.dtsi>
-#include <dt-bindings/clock/mcux_lpc_syscon_clock.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <mem.h>
 
 / {
@@ -33,32 +33,31 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	/* lpc55_0x Memory configurations:
+	 *
+	 * LPC5502:  RAMX: 16K, SRAM0: 32K
+	 * LPC55x04: RAMX: 16K, SRAM0: 32K, SRAM1: 16K
+	 * LPC55x06: RAMX: 16K, SRAM0: 32K, SRAM1: 16K, SRAM2: 16K, SRAM3: 16k
+	 */
 	sramx: memory@4000000 {
 		compatible = "mmio-sram";
-		reg = <0x4000000 DT_SIZE_K(16)>;
+		reg = <0x04000000 DT_SIZE_K(16)>;
 	};
-
 	sram0: memory@20000000 {
 		compatible = "mmio-sram";
 		reg = <0x20000000 DT_SIZE_K(32)>;
 	};
-
 	sram1: memory@20008000 {
-		compatible = "zephyr,memory-region","mmio-sram";
+		compatible = "mmio-sram";
 		reg = <0x20008000 DT_SIZE_K(16)>;
-		zephyr,memory-region = "SRAM1";
 	};
-
-	sram2: memory@2000c000 {
-		compatible = "zephyr,memory-region","mmio-sram";
-		reg = <0x2000c000 DT_SIZE_K(16)>;
-		zephyr,memory-region = "SRAM2";
+	sram2: memory@2000C000 {
+		compatible = "mmio-sram";
+		reg = <0x2000C000 DT_SIZE_K(16)>;
 	};
-
 	sram3: memory@20010000 {
-		compatible = "zephyr,memory-region","mmio-sram";
+		compatible = "mmio-sram";
 		reg = <0x20010000 DT_SIZE_K(16)>;
-		zephyr,memory-region = "SRAM3";
 	};
 };
 
@@ -96,7 +95,7 @@
 
 		uuid: flash@9fc70 {
 			compatible = "nxp,lpc-uid";
-			reg = <0x9fc70 0x10>;
+			reg = <0x3fc70 0x10>;
 		};
 
 		boot_rom: flash@3000000 {
@@ -111,6 +110,9 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x1000 0x100>;
+		pinctrl: pinctrl {
+			compatible = "nxp,lpc-iocon-pinctrl";
+		};
 		pio0: pio0@0 {
 			compatible = "nxp,lpc-iocon-pio";
 			reg = <0x0 0x80>;

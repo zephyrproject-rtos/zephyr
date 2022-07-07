@@ -24,7 +24,7 @@
 #if !defined(_ASMLANGUAGE)
 
 #if defined(CONFIG_ARM64)
-#include <arch/arm64/structs.h>
+#include <zephyr/arch/arm64/structs.h>
 #else
 
 /* Default definitions when no architecture specific definitions exist. */

@@ -11,14 +11,14 @@
 #include <errno.h>
 #include <zephyr/types.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/hci.h>
 
 #define LOG_LEVEL CONFIG_BT_TPS_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tps);
 
 static ssize_t read_tx_power_level(struct bt_conn *conn,

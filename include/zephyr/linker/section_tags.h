@@ -9,7 +9,7 @@
 #ifndef ZEPHYR_INCLUDE_LINKER_SECTION_TAGS_H_
 #define ZEPHYR_INCLUDE_LINKER_SECTION_TAGS_H_
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 #if !defined(_ASMLANGUAGE)
 

@@ -7,15 +7,15 @@
 
 #define DT_DRV_COMPAT invensense_icm42670
 
-#include <drivers/sensor.h>
-#include <drivers/spi.h>
-#include <sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/byteorder.h>
 #include "icm42670.h"
 #include "icm42670_reg.h"
 #include "icm42670_spi.h"
 #include "icm42670_trigger.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ICM42670, CONFIG_SENSOR_LOG_LEVEL);
 
 /*

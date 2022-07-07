@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <pm/pm.h>
-#include <pm/device.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/device.h>
 
 #define DEV_NAME DT_NODELABEL(gpio0)
 

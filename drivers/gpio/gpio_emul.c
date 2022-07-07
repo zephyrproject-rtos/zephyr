@@ -6,17 +6,17 @@
 
 #define DT_DRV_COMPAT zephyr_gpio_emul
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/gpio/gpio_emul.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_emul.h>
 #include <errno.h>
-#include <zephyr.h>
-#include <pm/device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/pm/device.h>
 
 #include "gpio_utils.h"
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_emul);
 
 #define GPIO_EMUL_INT_BITMASK						\
@@ -666,6 +666,40 @@ static gpio_port_pins_t gpio_emul_get_pending_int(const struct device *dev)
 	return drv_data->interrupts;
 }
 
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_emul_port_get_direction(const struct device *port, gpio_port_pins_t map,
+					gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
+{
+	int i;
+	gpio_port_pins_t ip = 0;
+	gpio_port_pins_t op = 0;
+	struct gpio_emul_data *const drv_data = (struct gpio_emul_data *)port->data;
+	const struct gpio_emul_config *config = (const struct gpio_emul_config *)port->config;
+
+	map &= config->common.port_pin_mask;
+
+	if (inputs != NULL) {
+		for (i = find_lsb_set(map) - 1; map;
+		     map &= ~BIT(i), i = find_lsb_set(map) - 1) {
+			ip |= !!(drv_data->flags[i] & GPIO_INPUT) * BIT(i);
+		}
+
+		*inputs = ip;
+	}
+
+	if (outputs != NULL) {
+		for (i = find_lsb_set(map) - 1; map;
+		     map &= ~BIT(i), i = find_lsb_set(map) - 1) {
+			op |= !!(drv_data->flags[i] & GPIO_OUTPUT) * BIT(i);
+		}
+
+		*outputs = op;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_DIRECTION */
+
 static const struct gpio_driver_api gpio_emul_driver = {
 	.pin_configure = gpio_emul_pin_configure,
 	.port_get_raw = gpio_emul_port_get_raw,
@@ -676,6 +710,9 @@ static const struct gpio_driver_api gpio_emul_driver = {
 	.pin_interrupt_configure = gpio_emul_pin_interrupt_configure,
 	.manage_callback = gpio_emul_manage_callback,
 	.get_pending_int = gpio_emul_get_pending_int,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_emul_port_get_direction,
+#endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
 static int gpio_emul_init(const struct device *dev)
@@ -738,6 +775,6 @@ static int gpio_emul_pm_device_pm_action(const struct device *dev,
 			    &gpio_emul_data_##_num,			\
 			    &gpio_emul_config_##_num, POST_KERNEL,	\
 			    CONFIG_GPIO_INIT_PRIORITY,			\
-			    &gpio_emul_driver)
+			    &gpio_emul_driver);
 
-DT_INST_FOREACH_STATUS_OKAY(DEFINE_GPIO_EMUL);
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_GPIO_EMUL)

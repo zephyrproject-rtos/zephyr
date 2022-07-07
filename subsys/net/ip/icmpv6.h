@@ -13,11 +13,11 @@
 #ifndef __ICMPV6_H
 #define __ICMPV6_H
 
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/types.h>
 
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
 
 struct net_icmpv6_ns_hdr {
 	uint32_t reserved;

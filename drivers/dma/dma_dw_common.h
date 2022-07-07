@@ -7,8 +7,8 @@
 #ifndef ZEPHYR_DRIVERS_DMA_DMA_DW_COMMON_H_
 #define ZEPHYR_DRIVERS_DMA_DMA_DW_COMMON_H_
 
-#include <sys/atomic.h>
-#include <drivers/dma.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/drivers/dma.h>
 
 #ifdef __cplusplus
 extern "C" {

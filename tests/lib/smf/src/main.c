@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
-#include <smf.h>
+#include <zephyr/smf.h>
 #include "test_lib_smf.h"
 
 void test_main(void)

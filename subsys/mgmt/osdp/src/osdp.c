@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <init.h>
-#include <device.h>
-#include <drivers/uart.h>
-#include <sys/ring_buffer.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/logging/log.h>
 
 #include "osdp_common.h"
 

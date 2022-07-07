@@ -14,8 +14,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM64_ERROR_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM64_ERROR_H_
 
-#include <arch/arm64/syscall.h>
-#include <arch/arm64/exc.h>
+#include <zephyr/arch/arm64/syscall.h>
+#include <zephyr/arch/arm64/exc.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus

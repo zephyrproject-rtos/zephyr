@@ -26,4 +26,4 @@ SECTIONS
 }
 #endif /* CONFIG_RP2_REQUIRES_SECOND_STAGE_BOOT */
 
-#include <arch/arm/aarch32/cortex_m/scripts/linker.ld>
+#include <zephyr/arch/arm/aarch32/cortex_m/scripts/linker.ld>

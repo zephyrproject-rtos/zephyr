@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT microchip_xec_qmspi
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_xec, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 #include <errno.h>
-#include <device.h>
-#include <drivers/spi.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/spi.h>
 #include <soc.h>
 
 /* Device constant configuration parameters */

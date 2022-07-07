@@ -16,11 +16,11 @@
 
 #include "accelerometer_handler.hpp"
 
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 #include <stdio.h>
 #include <string.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #define BUFLEN 300
 int begin_index = 0;

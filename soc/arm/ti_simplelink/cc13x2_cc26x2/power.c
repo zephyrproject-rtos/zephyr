@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <init.h>
-#include <pm/pm.h>
-#include <pm/policy.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/policy.h>
 
 #include <driverlib/pwr_ctrl.h>
 #include <driverlib/sys_ctrl.h>
@@ -20,7 +20,7 @@
 #include <ti/devices/cc13x2_cc26x2/driverlib/vims.h>
 #include <ti/devices/cc13x2_cc26x2/driverlib/sys_ctrl.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 

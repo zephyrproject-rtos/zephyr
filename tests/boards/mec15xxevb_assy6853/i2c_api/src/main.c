@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/i2c.h>
-#include <zephyr.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #define I2C_DEV_NAME DT_LABEL(DT_ALIAS(i2c1))

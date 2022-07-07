@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_tc, CONFIG_NET_TC_LOG_LEVEL);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
 
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_stats.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_stats.h>
 
 #include "net_private.h"
 #include "net_stats.h"

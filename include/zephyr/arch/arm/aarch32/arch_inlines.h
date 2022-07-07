@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ARCH_INLINES_H
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ARCH_INLINES_H
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 
 #ifndef CONFIG_SMP
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
@@ -16,5 +16,14 @@ static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 	return &_kernel.cpus[0];
 }
 #endif
+
+static ALWAYS_INLINE uint32_t arch_proc_id(void)
+{
+	/*
+	 * Placeholder implementation to be replaced with an architecture
+	 * specific call to get processor ID
+	 */
+	return arch_curr_cpu()->id;
+}
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ARCH_INLINES_H */

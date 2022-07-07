@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/printk.h>
-#include <shell/shell.h>
-#include <drivers/hwinfo.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <zephyr/types.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 static int cmd_get_device_id(const struct shell *sh, size_t argc, char **argv)
 {

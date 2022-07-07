@@ -6,19 +6,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_ICMPV6_LOG_LEVEL);
 
 #include <errno.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
-#include <sys/printk.h>
-#include <linker/sections.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/linker/sections.h>
 
 #include <tc_util.h>
 
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
 #include "icmpv6.h"
 #include <ztest.h>

@@ -6,11 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/check.h>
+#include <zephyr/sys/check.h>
 
-#include <bluetooth/services/ots.h>
-#include <bluetooth/audio/media_proxy.h>
-#include <bluetooth/audio/mcc.h>
+#include <zephyr/bluetooth/services/ots.h>
+#include <zephyr/bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/audio/mcc.h>
 
 #include "media_proxy_internal.h"
 

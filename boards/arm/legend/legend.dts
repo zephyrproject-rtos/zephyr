@@ -7,8 +7,8 @@
 /dts-v1/;
 #include <st/f0/stm32f070Xb.dtsi>
 #include <st/f0/stm32f070cbtx-pinctrl.dtsi>
-#include <dt-bindings/led/led.h>
-#include <dt-bindings/led/seagate_legend_b1414.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/led/seagate_legend_b1414.h>
 
 / {
 	chosen {
@@ -132,11 +132,11 @@
 
 			product_info: partition@0 {
 				label = "product-info";
-				reg = <0x00000000 0x1000>;
+				reg = <0x00000000 DT_SIZE_K(4)>;
 			};
 			led_das: partition@10000 {
 				label = "led-das";
-				reg = <0x00001000 0x0000f000>;
+				reg = <0x00001000 DT_SIZE_K(60)>;
 			};
 		};
 	};

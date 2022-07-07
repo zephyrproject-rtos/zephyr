@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022 Intel Corporation
+
+config LOG_BACKEND_DEFAULT
+	string "DEFAULT backend"
+	default "log_backend_uart" if LOG_BACKEND_UART
+	default "log_backend_adsp" if LOG_BACKEND_ADSP
+	default "log_backend_swo" if LOG_BACKEND_SWO
+	default "log_backend_rtt" if LOG_BACKEND_RTT
+	default "log_backend_spinel" if LOG_BACKEND_SPINEL
+	default "log_backend_native_posix" if LOG_BACKEND_NATIVE_POSIX
+	default "log_backend_xtensa_sim" if LOG_BACKEND_XTENSA_SIM
+	default "log_backend_net" if LOG_BACKEND_NET
+	default "log_backend_cavs_hda" if LOG_BACKEND_CAVS_HDA
+	default "log_backend_fs" if LOG_BACKEND_FS
+	help
+	  Default value for the name of the backend enabled.
+
+# Include Zephyr's Kconfig.
+source "Kconfig.zephyr"

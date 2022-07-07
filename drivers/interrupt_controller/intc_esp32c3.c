@@ -14,14 +14,14 @@
 #include <assert.h>
 #include "soc/soc.h"
 #include <soc.h>
-#include <zephyr.h>
-#include <drivers/interrupt_controller/intc_esp32c3.h>
-#include <sw_isr_table.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
+#include <zephyr/sw_isr_table.h>
 #include <riscv/interrupt.h>
 
 #define ESP32C3_INTC_DEFAULT_PRIO			15
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(intc_esp32c3, CONFIG_LOG_DEFAULT_LEVEL);
 
 /*

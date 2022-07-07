@@ -5,7 +5,7 @@
  */
 
 #define LOG_LEVEL LOG_LEVEL_INF
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(mec15_brd_test);
 #include "power_mgmt.h"
 

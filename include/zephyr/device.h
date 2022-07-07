@@ -26,10 +26,10 @@
  * @{
  */
 
-#include <init.h>
-#include <linker/sections.h>
-#include <sys/device_mmio.h>
-#include <sys/util.h>
+#include <zephyr/init.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/sys/device_mmio.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,21 +94,6 @@ typedef int16_t device_handle_t;
  * @return The full name of the device object defined by DEVICE_DEFINE()
  */
 #define DEVICE_NAME_GET(name) _CONCAT(__device_, name)
-
-/**
- * @def SYS_DEVICE_DEFINE
- *
- * @brief Run an initialization function at boot at specified priority.
- *
- * @deprecated Use SYS_INIT() instead.
- *
- * @param drv_name A string name for the pseudo-device (unused).
- * @param init_fn Pointer to the function which should run at boot time.
- * @param level Initialization level to run the function in.
- * @param prio Function's priority within its initialization level.
- */
-#define SYS_DEVICE_DEFINE(drv_name, init_fn, level, prio)		\
-	__DEPRECATED_MACRO SYS_INIT(init_fn, level, prio)
 
 /* Node paths can exceed the maximum size supported by device_get_binding() in user mode,
  * so synthesize a unique dev_name from the devicetree node.
@@ -461,9 +446,9 @@ struct device {
 	/** Address of the API structure exposed by the device instance */
 	const void *api;
 	/** Address of the common device state */
-	struct device_state * const state;
+	struct device_state *state;
 	/** Address of the device instance private data */
-	void * const data;
+	void *data;
 	/** optional pointer to handles associated with the device.
 	 *
 	 * This encodes a sequence of sets of device handles that have
@@ -471,11 +456,11 @@ struct device {
 	 * extracted with dedicated API, such as
 	 * device_required_handles_get().
 	 */
-	Z_DEVICE_HANDLES_CONST device_handle_t * const handles;
+	Z_DEVICE_HANDLES_CONST device_handle_t *handles;
 
 #ifdef CONFIG_PM_DEVICE
 	/** Reference to the device PM resources. */
-	struct pm_device * const pm;
+	struct pm_device *pm;
 #endif
 };
 
@@ -576,6 +561,52 @@ device_required_handles_get(const struct device *dev,
 	if (rv != NULL) {
 		size_t i = 0;
 
+		while ((rv[i] != DEVICE_HANDLE_ENDS)
+		       && (rv[i] != DEVICE_HANDLE_SEP)) {
+			++i;
+		}
+		*count = i;
+	}
+
+	return rv;
+}
+
+/**
+ * @brief Get the device handles for injected dependencies of this device.
+ *
+ * This function returns a pointer to an array of device handles. The
+ * length of the array is stored in the @p count parameter.
+ *
+ * The array contains a handle for each device that @p dev manually injected
+ * as a dependency, via providing extra arguments to Z_DEVICE_DEFINE. This does
+ * not include transitive dependencies; you must recursively determine those.
+ *
+ * @param dev the device for which injected dependencies are desired.
+ *
+ * @param count pointer to where this function should store the length
+ * of the returned array. No value is stored if the call returns a
+ * null pointer. The value may be set to zero if the device has no
+ * devicetree dependencies.
+ *
+ * @return a pointer to a sequence of @p *count device handles, or a null
+ * pointer if @p dev does not have any dependency data.
+ */
+static inline const device_handle_t *
+device_injected_handles_get(const struct device *dev,
+			    size_t *count)
+{
+	const device_handle_t *rv = dev->handles;
+	size_t region = 0;
+	size_t i = 0;
+
+	if (rv != NULL) {
+		/* Fast forward to injected devices */
+		while (region != 1) {
+			if (*rv == DEVICE_HANDLE_SEP) {
+				region++;
+			}
+			rv++;
+		}
 		while ((rv[i] != DEVICE_HANDLE_ENDS)
 		       && (rv[i] != DEVICE_HANDLE_SEP)) {
 			++i;
@@ -779,39 +810,6 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 }
 
 /**
- * @brief Determine whether a device is ready for use
- *
- * This is equivalent to device_usable_check(), without the overhead of a
- * syscall wrapper.
- *
- * @deprecated Use z_device_is_ready() instead.
- *
- * @param dev Device instance.
- *
- * @retval 0 If device is usable.
- * @retval -ENODEV If device is not usable.
- */
-__deprecated static inline int z_device_usable_check(const struct device *dev)
-{
-	return z_device_is_ready(dev) ? 0 : -ENODEV;
-}
-
-/**
- * @brief Determine whether a device is ready for use
- *
- * @deprecated Use device_is_ready() instead.
- *
- * @param dev Device instance.
- *
- * @retval 0 If device is usable.
- * @retval -ENODEV If device is not usable.
- */
-__deprecated static inline int device_usable_check(const struct device *dev)
-{
-	return device_is_ready(dev) ? 0 : -ENODEV;
-}
-
-/**
  * @}
  */
 
@@ -865,7 +863,7 @@ __deprecated static inline int device_usable_check(const struct device *dev)
  * {
  *     List of existing devicetree dependency handles (if any),
  *     DEVICE_HANDLE_SEP,
- *     List of injected dependency ordinals (if any),
+ *     List of injected devicetree dependency handles (if any),
  *     DEVICE_HANDLE_SEP,
  *     List of existing devicetree support handles (if any),
  *     DEVICE_HANDLE_NULL

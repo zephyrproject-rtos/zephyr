@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log_backend.h>
-#include <logging/log_core.h>
-#include <logging/log_msg.h>
-#include <logging/log_output.h>
-#include <logging/log_backend_std.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_backend_std.h>
 #include <SEGGER_RTT.h>
 
 #ifndef CONFIG_LOG_BACKEND_RTT_BUFFER_SIZE
@@ -255,15 +254,6 @@ LOG_OUTPUT_DEFINE(log_output_rtt,
 		  data_out_overwrite_mode : data_out_drop_mode,
 		  char_buf, sizeof(char_buf));
 
-static void put(const struct log_backend *const backend,
-		struct log_msg *msg)
-{
-	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_RTT_OUTPUT_SYST) ?
-		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
-
-	log_backend_std_put(&log_output_rtt, flag, msg);
-}
-
 static void log_backend_rtt_cfg(void)
 {
 	SEGGER_RTT_ConfigUpBuffer(CONFIG_LOG_BACKEND_RTT_BUFFER, "Logger",
@@ -294,30 +284,8 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 	log_backend_std_dropped(&log_output_rtt, cnt);
 }
 
-static void sync_string(const struct log_backend *const backend,
-		     struct log_msg_ids src_level, uint32_t timestamp,
-		     const char *fmt, va_list ap)
-{
-	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_RTT_OUTPUT_SYST) ?
-		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
-
-	log_backend_std_sync_string(&log_output_rtt, flag, src_level,
-				    timestamp, fmt, ap);
-}
-
-static void sync_hexdump(const struct log_backend *const backend,
-			 struct log_msg_ids src_level, uint32_t timestamp,
-			 const char *metadata, const uint8_t *data, uint32_t length)
-{
-	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_RTT_OUTPUT_SYST) ?
-		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
-
-	log_backend_std_sync_hexdump(&log_output_rtt, flag, src_level,
-				     timestamp, metadata, data, length);
-}
-
 static void process(const struct log_backend *const backend,
-		union log_msg2_generic *msg)
+		union log_msg_generic *msg)
 {
 	uint32_t flags = log_backend_std_get_flags();
 
@@ -333,16 +301,11 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 }
 
 const struct log_backend_api log_backend_rtt_api = {
-	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
-	.put = IS_ENABLED(CONFIG_LOG1_DEFERRED) ? put : NULL,
-	.put_sync_string = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
-			sync_string : NULL,
-	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
-			sync_hexdump : NULL,
+	.process = process,
 	.panic = panic,
 	.init = log_backend_rtt_init,
 	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
-	.format_set = IS_ENABLED(CONFIG_LOG1) ? NULL : format_set,
+	.format_set = format_set,
 };
 
 LOG_BACKEND_DEFINE(log_backend_rtt, log_backend_rtt_api, true);

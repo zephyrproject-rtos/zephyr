@@ -9,12 +9,12 @@
  * @brief Internal functions to handle transport over TLS socket.
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_mqtt_sock_tls, CONFIG_MQTT_LOG_LEVEL);
 
 #include <errno.h>
-#include <net/socket.h>
-#include <net/mqtt.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/mqtt.h>
 
 #include "mqtt_os.h"
 

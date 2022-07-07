@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/spi.h>
-#include <drivers/dac.h>
-#include <logging/log.h>
-#include <dt-bindings/dac/dacx0508.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/dac.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/dt-bindings/dac/dacx0508.h>
 
 LOG_MODULE_REGISTER(dac_dacx0508, CONFIG_DAC_LOG_LEVEL);
 

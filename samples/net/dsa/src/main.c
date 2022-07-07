@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_dsa_lldp_sample, CONFIG_NET_DSA_LOG_LEVEL);
 
-#include <net/dsa.h>
+#include <zephyr/net/dsa.h>
 #include "main.h"
 
 static void iface_cb(struct net_if *iface, void *user_data)

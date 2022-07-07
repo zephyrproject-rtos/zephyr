@@ -49,6 +49,11 @@
 			#include "nrf5340_cpuapp_peripherals.dtsi"
 		};
 	};
+
+	/* Default IPC description */
+	ipc {
+		#include "nrf5340_cpuapp_ipc.dtsi"
+	};
 };
 
 &nvic {

@@ -1,0 +1,12 @@
+# Intel cAVS clock control driver
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Idertifier: Apache-2.0
+
+config CLOCK_CONTROL_CAVS
+	bool "Intel CAVS clock control"
+	depends on SOC_FAMILY_INTEL_ADSP
+	select CAVS_CLOCK
+	help
+	  Driver for the CAVS clocks. Allow type of clock (and
+	  thus frequency) to be chosen.

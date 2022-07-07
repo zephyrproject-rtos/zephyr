@@ -6,8 +6,9 @@
 #define ZEPHYR_INCLUDE_ARCH_XTENSA_CACHE_H_
 
 #include <xtensa/config/core-isa.h>
-#include <toolchain.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/debug/sparse.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -127,11 +128,11 @@ static ALWAYS_INLINE uint32_t z_xtrpoflip(uint32_t addr, uint32_t rto, uint32_t 
  * @param ptr A pointer to a valid C object
  * @return A pointer to the same object via the L1 dcache
  */
-static inline void *arch_xtensa_cached_ptr(void *ptr)
+static inline void __sparse_cache *arch_xtensa_cached_ptr(void *ptr)
 {
-	return (void *)z_xtrpoflip((uint32_t) ptr,
-				   CONFIG_XTENSA_CACHED_REGION,
-				   CONFIG_XTENSA_UNCACHED_REGION);
+	return (__sparse_force void __sparse_cache *)z_xtrpoflip((uint32_t) ptr,
+						CONFIG_XTENSA_CACHED_REGION,
+						CONFIG_XTENSA_UNCACHED_REGION);
 }
 
 /**
@@ -152,7 +153,7 @@ static inline void *arch_xtensa_cached_ptr(void *ptr)
  * @param ptr A pointer to a valid C object
  * @return A pointer to the same object bypassing the L1 dcache
  */
-static inline void *arch_xtensa_uncached_ptr(void *ptr)
+static inline void *arch_xtensa_uncached_ptr(void __sparse_cache *ptr)
 {
 	return (void *)z_xtrpoflip((uint32_t) ptr,
 				   CONFIG_XTENSA_UNCACHED_REGION,

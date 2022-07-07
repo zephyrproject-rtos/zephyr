@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_mgmt.h>
-#include <net/openthread.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/openthread.h>
 
 #include <net_private.h>
 
-#include <init.h>
-#include <sys/util.h>
-#include <sys/__assert.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
 #include <version.h>
 
 #include <openthread/cli.h>
@@ -116,19 +116,28 @@ static struct net_mgmt_event_callback ip6_addr_cb;
 static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb,
 				    uint32_t mgmt_event, struct net_if *iface)
 {
-	struct openthread_context *ot_context = net_if_l2_data(iface);
-
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(OPENTHREAD)) {
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_IPV6_ADDR_ADD) {
-		add_ipv6_addr_to_ot(ot_context);
-	} else if (mgmt_event == NET_EVENT_IPV6_MADDR_ADD) {
-		add_ipv6_maddr_to_ot(ot_context);
+#ifdef CONFIG_NET_MGMT_EVENT_INFO
+	struct openthread_context *ot_context = net_if_l2_data(iface);
+
+	if (cb->info == NULL || cb->info_length != sizeof(struct in6_addr)) {
+		return;
 	}
+
+	if (mgmt_event == NET_EVENT_IPV6_ADDR_ADD) {
+		add_ipv6_addr_to_ot(ot_context, (const struct in6_addr *)cb->info);
+	} else if (mgmt_event == NET_EVENT_IPV6_MADDR_ADD) {
+		add_ipv6_maddr_to_ot(ot_context, (const struct in6_addr *)cb->info);
+	}
+#else
+	NET_WARN("No address info provided with event, "
+		 "please enable CONFIG_NET_MGMT_EVENT_INFO");
+#endif /* CONFIG_NET_MGMT_EVENT_INFO */
 }
-#endif
+#endif /* CONFIG_NET_MGMT_EVENT */
 
 static int ncp_hdlc_send(const uint8_t *buf, uint16_t len)
 {
@@ -169,7 +178,7 @@ static void ot_state_changed_handler(uint32_t flags, void *context)
 
 	NET_INFO("State changed! Flags: 0x%08" PRIx32 " Current role: %s",
 		flags,
-		log_strdup(otThreadDeviceRoleToString(otThreadGetDeviceRole(ot_context->instance)))
+		otThreadDeviceRoleToString(otThreadGetDeviceRole(ot_context->instance))
 		);
 
 	if (flags & OT_CHANGED_IP6_ADDRESS_REMOVED) {
@@ -428,7 +437,7 @@ int openthread_start(struct openthread_context *ot_context)
 	}
 
 	NET_INFO("Network name: %s",
-		 log_strdup(otThreadGetNetworkName(ot_instance)));
+		 otThreadGetNetworkName(ot_instance));
 
 	/* Start the network. */
 	error = otThreadSetEnabled(ot_instance, true);
@@ -531,7 +540,7 @@ void ieee802154_init(struct net_if *iface)
 
 static enum net_l2_flags openthread_flags(struct net_if *iface)
 {
-	return NET_L2_MULTICAST;
+	return NET_L2_MULTICAST | NET_L2_MULTICAST_SKIP_JOIN_SOLICIT_NODE;
 }
 
 static int openthread_enable(struct net_if *iface, bool state)

@@ -7,9 +7,9 @@
 #ifndef NRFX_GLUE_H__
 #define NRFX_GLUE_H__
 
-#include <sys/__assert.h>
-#include <sys/atomic.h>
-#include <irq.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/irq.h>
 
 #ifdef __cplusplus
 extern "C" {

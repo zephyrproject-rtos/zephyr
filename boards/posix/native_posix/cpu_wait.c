@@ -6,7 +6,7 @@
 
 #include <stdbool.h>
 #include "timer_model.h"
-#include <arch/posix/posix_soc_if.h>
+#include <zephyr/arch/posix/posix_soc_if.h>
 #include <posix_board_if.h>
 #include <posix_soc.h>
 

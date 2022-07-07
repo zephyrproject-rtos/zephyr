@@ -8,7 +8,7 @@
 #define TIMEUTIL_TEST_H
 
 #include <stdlib.h>
-#include <sys/timeutil.h>
+#include <zephyr/sys/timeutil.h>
 
 struct timeutil_test_data {
 	time_t ux;

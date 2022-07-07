@@ -9,10 +9,10 @@
  * @file Sample app to demonstrate PWM.
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <device.h>
-#include <drivers/pwm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pwm.h>
 
 static const struct pwm_dt_spec pwm_led0 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led0));
 

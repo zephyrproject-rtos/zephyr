@@ -21,18 +21,18 @@
 
 #include <errno.h>
 #include <string.h>
-#include <sys/__assert.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <drivers/dma.h>
-#include <drivers/i2s.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/i2s.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
 #define LOG_DOMAIN dev_i2s_sam_ssc
 #define LOG_LEVEL CONFIG_I2S_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #if __DCACHE_PRESENT == 1

@@ -8,14 +8,14 @@
 #ifndef ZEPHYR_DRIVERS_I2C_I2C_DW_H_
 #define ZEPHYR_DRIVERS_I2C_I2C_DW_H_
 
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #include <stdbool.h>
 
 #define DT_DRV_COMPAT snps_designware_i2c
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "DW I2C in DT needs CONFIG_PCIE");
-#include <drivers/pcie/pcie.h>
+#include <zephyr/drivers/pcie/pcie.h>
 #endif
 
 #ifdef __cplusplus

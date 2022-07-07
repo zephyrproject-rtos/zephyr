@@ -7,20 +7,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <cache.h>
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/cache.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <kernel_arch_func.h>
 #include <kernel_arch_interface.h>
 #include <kernel_internal.h>
-#include <logging/log.h>
-#include <arch/arm64/cpu.h>
-#include <arch/arm64/lib_helpers.h>
-#include <arch/arm64/mm.h>
-#include <linker/linker-defs.h>
-#include <spinlock.h>
-#include <sys/util.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/arch/arm64/cpu.h>
+#include <zephyr/arch/arm64/lib_helpers.h>
+#include <zephyr/arch/arm64/mm.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/sys/util.h>
 
 #include "mmu.h"
 
@@ -416,6 +416,16 @@ static int privatize_page_range(struct arm_mmu_ptables *dst_pt,
 	return ret;
 }
 
+/*
+ * GCC 12 and above may report a warning about the potential infinite recursion
+ * in the `discard_table` function.
+ */
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Winfinite-recursion"
+#endif
+
 static void discard_table(uint64_t *table, unsigned int level)
 {
 	unsigned int i;
@@ -432,6 +442,10 @@ static void discard_table(uint64_t *table, unsigned int level)
 	}
 	free_table(table);
 }
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
 			   uintptr_t virt, size_t size, unsigned int level)
@@ -862,7 +876,7 @@ static void sync_domains(uintptr_t virt, size_t size)
 static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	struct arm_mmu_ptables *ptables;
-	uint32_t entry_flags = MT_SECURE | MT_P_RX_U_NA;
+	uint32_t entry_flags = MT_DEFAULT_SECURE_STATE | MT_P_RX_U_NA;
 
 	/* Always map in the kernel page tables */
 	ptables = &kernel_ptables;
@@ -911,7 +925,7 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 	}
 
 	if ((flags & K_MEM_PERM_USER) != 0U) {
-		return -ENOTSUP;
+		entry_flags |= MT_RW_AP_ELx;
 	}
 
 	return add_map(ptables, "generic", phys, (uintptr_t)virt, size, entry_flags);

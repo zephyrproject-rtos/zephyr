@@ -5,11 +5,11 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_watchdog
 
-#include <drivers/watchdog.h>
+#include <zephyr/drivers/watchdog.h>
 #include <errno.h>
 #include <soc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
 LOG_MODULE_REGISTER(wdt_ite_it8xxx2);
 

@@ -15,7 +15,7 @@
  */
 
 #if defined(__GNUC__)
-#include <arch/posix/asm_inline_gcc.h>
+#include <zephyr/arch/posix/asm_inline_gcc.h>
 #else
 #error "Only a compiler with GNU C extensions is supported for the POSIX arch"
 #endif

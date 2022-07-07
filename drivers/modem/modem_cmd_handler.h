@@ -13,7 +13,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_CMD_HANDLER_H_
 #define ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_CMD_HANDLER_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #include "modem_context.h"
 
@@ -118,6 +118,9 @@ struct modem_cmd_handler_data {
 	/* locks */
 	struct k_sem sem_tx_lock;
 	struct k_sem sem_parse_lock;
+
+	/* user data */
+	void *user_data;
 };
 
 /**

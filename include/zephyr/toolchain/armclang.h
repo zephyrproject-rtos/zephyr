@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_TOOLCHAIN_ARMCLANG_H_
 
 
-#include <toolchain/llvm.h>
+#include <zephyr/toolchain/llvm.h>
 
 /*
  * To reuse as much as possible from the llvm.h header we only redefine the

@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_ZEPHYR_MCUMGR_GRP_H_
 #define ZEPHYR_INCLUDE_ZEPHYR_MCUMGR_GRP_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

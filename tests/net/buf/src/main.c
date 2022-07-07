@@ -9,9 +9,9 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
 #include <ztest.h>
 

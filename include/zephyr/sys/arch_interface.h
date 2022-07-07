@@ -27,11 +27,11 @@
 #define ZEPHYR_INCLUDE_SYS_ARCH_INTERFACE_H_
 
 #ifndef _ASMLANGUAGE
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <stddef.h>
 #include <zephyr/types.h>
-#include <arch/cpu.h>
-#include <irq_offload.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/irq_offload.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -430,6 +430,28 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter);
 #ifdef CONFIG_SMP
 /** Return the CPU struct for the currently executing CPU */
 static inline struct _cpu *arch_curr_cpu(void);
+
+
+/**
+ * @brief Processor hardware ID
+ *
+ * Most multiprocessor architectures have a low-level unique ID value
+ * associated with the current CPU that can be retrieved rapidly and
+ * efficiently in kernel context.  Note that while the numbering of
+ * the CPUs is guaranteed to be unique, the values are
+ * platform-defined. In particular, they are not guaranteed to match
+ * Zephyr's own sequential CPU IDs (even though on some platforms they
+ * do).
+ *
+ * @note There is an inherent race with this API: the system may
+ * preempt the current thread and migrate it to another CPU before the
+ * value is used.  Safe usage requires knowing the migration is
+ * impossible (e.g. because the code is in interrupt context, holds a
+ * spinlock, or cannot migrate due to k_cpu_mask state).
+ *
+ * @return Unique ID for currently-executing CPU
+ */
+static inline uint32_t arch_proc_id(void);
 
 /**
  * Broadcast an interrupt to all CPUs
@@ -1077,7 +1099,7 @@ size_t arch_icache_line_size_get(void);
 /** @} */
 
 #ifdef CONFIG_TIMING_FUNCTIONS
-#include <timing/types.h>
+#include <zephyr/timing/types.h>
 
 /**
  * @ingroup arch-timing
@@ -1099,6 +1121,10 @@ void arch_timing_init(void);
  * Signal to the timing subsystem that timing information
  * will be gathered from this point forward.
  *
+ * @note Any call to arch_timing_counter_get() must be done between
+ * calls to arch_timing_start() and arch_timing_stop(), and on the
+ * same CPU core.
+ *
  * @see timing_start()
  */
 void arch_timing_start(void);
@@ -1109,12 +1135,27 @@ void arch_timing_start(void);
  * Signal to the timing subsystem that timing information
  * is no longer being gathered from this point forward.
  *
+ * @note Any call to arch_timing_counter_get() must be done between
+ * calls to arch_timing_start() and arch_timing_stop(), and on the
+ * same CPU core.
+ *
  * @see timing_stop()
  */
 void arch_timing_stop(void);
 
 /**
  * @brief Return timing counter.
+ *
+ * @note Any call to arch_timing_counter_get() must be done between
+ * calls to arch_timing_start() and arch_timing_stop(), and on the
+ * same CPU core.
+ *
+ * @note Not all platforms have a timing counter with 64 bit precision.  It
+ * is possible to see this value "go backwards" due to internal
+ * rollover.  Timing code must be prepared to address the rollover
+ * (with platform-dependent code, e.g. by casting to a uint32_t before
+ * subtraction) or by using arch_timing_cycles_get() which is required
+ * to understand the distinction.
  *
  * @return Timing counter.
  *
@@ -1125,8 +1166,10 @@ timing_t arch_timing_counter_get(void);
 /**
  * @brief Get number of cycles between @p start and @p end.
  *
- * For some architectures or SoCs, the raw numbers from counter
- * need to be scaled to obtain actual number of cycles.
+ * For some architectures or SoCs, the raw numbers from counter need
+ * to be scaled to obtain actual number of cycles, or may roll over
+ * internally.  This function computes a positive-definite interval
+ * between two returned cycle values.
  *
  * @param start Pointer to counter at start of a measured execution.
  * @param end Pointer to counter at stop of a measured execution.
@@ -1219,7 +1262,7 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 }
 #endif /* __cplusplus */
 
-#include <arch/arch_inlines.h>
+#include <zephyr/arch/arch_inlines.h>
 
 #endif /* _ASMLANGUAGE */
 

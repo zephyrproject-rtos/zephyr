@@ -10,8 +10,8 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_STMEMSC_STMEMSC_H_
 #define ZEPHYR_DRIVERS_SENSOR_STMEMSC_STMEMSC_H_
 
-#include <drivers/i2c.h>
-#include <drivers/spi.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/spi.h>
 
 #ifdef CONFIG_I2C
 int stmemsc_i2c_read(const struct i2c_dt_spec *stmemsc,

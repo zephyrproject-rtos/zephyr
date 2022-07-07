@@ -5,18 +5,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config BT_PACS
-	bool "Published Audio Capabilities Service Support"
-	select BT_SMP_SC_PAIR_ONLY
-	help
-	  This option enables support for Published Audio Capabilities Service.
+menu "Published Audio Capabilities (PAC) options"
 
-if BT_PACS
 config BT_PAC_SNK
 	bool "Sink PAC Characteristic Support"
-	default y if BT_ASCS
 	help
-	  This option enables support for Sink PAC Characteristic.
+	  This option enables support for Sink Published Audio Capabilities.
 
 if BT_PAC_SNK
 config BT_PACS_SNK_CONTEXT
@@ -45,7 +39,6 @@ config BT_PAC_SNK_LOC
 
 config BT_PAC_SNK_LOC_WRITEABLE
 	bool "Sink PAC Location Writable Support"
-	default y
 	depends on BT_PAC_SNK_LOC
 	help
 	  This option enables support for clients to write to the Sink PAC
@@ -55,10 +48,8 @@ endif # BT_PACS_SNK
 
 config BT_PAC_SRC
 	bool "Source PAC Characteristic Support"
-	default y if BT_ASCS
-	default y
 	help
-	  This option enables support for Source PAC Characteristic.
+	  This option enables support for Source Published Audio Capabilities.
 
 if BT_PAC_SRC
 config BT_PACS_SRC_CONTEXT
@@ -87,11 +78,22 @@ config BT_PAC_SRC_LOC
 
 config BT_PAC_SRC_LOC_WRITEABLE
 	bool "Source PAC Location Writable Support"
-	default y
 	depends on BT_PAC_SRC_LOC
 	help
 	  This option enables support for clients to write to the Source PAC
 	  Location Characteristic.
 
 endif # BT_PAC_SRC
-endif # BT_PACS
+
+config BT_PACS
+	def_bool BT_PAC_SNK || BT_PAC_SRC
+	select BT_SMP_SC_PAIR_ONLY
+
+config BT_DEBUG_PACS
+	bool "Published Audio Capabilities Service debug"
+	depends on BT_PACS
+	help
+	  Use this option to enable Published Audio Capabilities Service debug
+	  logs for the Bluetooth Audio functionality.
+
+endmenu

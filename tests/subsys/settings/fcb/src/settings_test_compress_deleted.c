@@ -6,7 +6,7 @@
 
 #include "settings_test.h"
 #include "settings/settings_fcb.h"
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 #define NAME_DELETABLE "4/deletable"
 

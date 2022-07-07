@@ -2,7 +2,7 @@
 
 /dts-v1/;
 
-#include <nios2f.dtsi>
+#include <intel/nios2f.dtsi>
 
 / {
 	model = "altera_max10";

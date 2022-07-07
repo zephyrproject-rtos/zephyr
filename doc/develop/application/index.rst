@@ -67,107 +67,103 @@ generated in a build directory; Zephyr does not support "in-tree" builds.
 The following sections describe how to create, build, and run Zephyr
 applications, followed by more detailed reference material.
 
+.. _zephyr-app-types:
 
-.. _source_tree_v2:
+Application types
+*****************
 
-Source Tree Structure
-*********************
+Based on where the source code of the application is located we can distinguish
+between three basic application types.
 
-Understanding the Zephyr source tree can be helpful in locating the code
-associated with a particular Zephyr feature.
+* Zephyr repository application
+* Zephyr workspace application
+* Zephyr freestanding application
 
-At the top of the tree there are several files that are of importance:
+You can find out more about how the build system supports all the application
+types described in this section in the :ref:`cmake_pkg` section.
 
-:file:`CMakeLists.txt`
-    The top-level file for the CMake build system, containing a lot of the
-    logic required to build Zephyr.
+.. _zephyr-repo-app:
 
-:file:`Kconfig`
-    The top-level Kconfig file, which refers to the file :file:`Kconfig.zephyr`
-    also found at the top-level directory.
+Zephyr repository application
+=============================
 
-    See :ref:`the Kconfig section of the manual <kconfig>` for detailed Kconfig
-    documentation.
+An application located within the ``zephyr`` folder in a Zephyr :ref:`west
+workspace <west-workspaces>` is referred to as a Zephyr repository application.
+In the following example, the :ref:`hello_world sample <hello_world>` is a
+Zephyr repository application:
 
-:file:`west.yml`
-    The :ref:`west` manifest, listing the external repositories managed by
-    the west command-line tool.
+.. code-block:: none
 
-The Zephyr source tree also contains the following top-level
-directories, each of which may have one or more additional levels of
-subdirectories which are not described here.
+   zephyrproject/
+   ├─── .west/
+   │    └─── config
+   └─── zephyr/
+        ├── arch/
+        ├── boards/
+        ├── cmake/
+        ├── samples/
+        │    ├── hello_world/
+        │    └── ...
+        ├── tests/
+        └── ...
 
-:file:`arch`
-    Architecture-specific kernel and system-on-chip (SoC) code.
-    Each supported architecture (for example, x86 and ARM)
-    has its own subdirectory,
-    which contains additional subdirectories for the following areas:
+.. _zephyr-workspace-app:
 
-    * architecture-specific kernel source files
-    * architecture-specific kernel include files for private APIs
+Zephyr workspace application
+============================
 
-:file:`soc`
-    SoC related code and configuration files.
+An application located within a :ref:`workspace <west-workspaces>`, but outside
+the Zephyr repository (and thus folder) itself, is referred to as a Zephyr
+workspace application.  In the following example, ``app`` is a Zephyr workspace
+application:
 
-:file:`boards`
-    Board related code and configuration files.
+.. code-block:: none
 
-:file:`doc`
-    Zephyr technical documentation source files and tools used to
-    generate the https://docs.zephyrproject.org web content.
+   zephyrproject/
+   ├─── .west/
+   │    └─── config
+   ├─── zephyr/
+   ├─── bootloader/
+   ├─── modules/
+   ├─── tools/
+   ├─── <vendor/private-repositories>/
+   └─── applications/
+        └── app/
 
-:file:`drivers`
-    Device driver code.
+.. _zephyr-freestanding-app:
 
-:file:`dts`
-    :ref:`devicetree <dt-guide>` source files used to describe non-discoverable
-    board-specific hardware details.
+Zephyr freestanding application
+===============================
 
-:file:`include`
-    Include files for all public APIs, except those defined under :file:`lib`.
+A Zephyr application located outside of a Zephyr :ref:`workspace
+<west-workspaces>` is referred to as a Zephyr freestanding application. In the
+following example, ``app`` is a Zephyr freestanding application:
 
-:file:`kernel`
-    Architecture-independent kernel code.
+.. code-block:: none
 
-:file:`lib`
-    Library code, including the minimal standard C library.
+   <home>/
+   ├─── zephyrproject/
+   │     ├─── .west/
+   │     │    └─── config
+   │     ├── zephyr/
+   │     ├── bootloader/
+   │     ├── modules/
+   │     └── ...
+   │
+   └─── app/
+        ├── CMakeLists.txt
+        ├── prj.conf
+        └── src/
+            └── main.c
 
-:file:`misc`
-    Miscellaneous code that doesn't belong to any of the other top-level
-    directories.
-
-:file:`samples`
-    Sample applications that demonstrate the use of Zephyr features.
-
-:file:`scripts`
-    Various programs and other files used to build and test Zephyr
-    applications.
-
-:file:`cmake`
-    Additional build scripts needed to build Zephyr.
-
-:file:`subsys`
-    Subsystems of Zephyr, including:
-
-    * USB device stack code.
-    * Networking code, including the Bluetooth stack and networking stacks.
-    * File system code.
-    * Bluetooth host and controller
-
-:file:`tests`
-    Test code and benchmarks for Zephyr features.
-
-:file:`share`
-    Additional architecture independent data. Currently containing Zephyr CMake
-    package.
-
-
-Example standalone application
+Example workspace application
 ******************************
 
-A reference standalone application contained in its own Git repository can be found in the `Example Application`_
-repository. It can be used as a reference on how to structure out-of-tree, Zephyr-based
-applications using the :ref:`T2 star topology <west-t2>`. It also demonstrates the out-of-tree use of features commonly used in applications such as:
+A reference :ref:`workspace application <zephyr-workspace-app>` contained in its
+own Git repository can be found in the `Example Application`_ repository.
+It can be used as a reference on how to structure out-of-tree, Zephyr-based workspace applications
+using the :ref:`T2 star topology <west-t2>`. It also demonstrates the out-of-tree
+use of features commonly used in applications such as:
 
 - Custom boards
 - Custom devicetree bindings
@@ -921,7 +917,7 @@ again.
 
 .. note::
 
-   If the (Linux only) :ref:`Zephyr SDK <zephyr_sdk>` is installed, the ``run``
+   If the (Linux only) :ref:`Zephyr SDK <toolchain_zephyr_sdk>` is installed, the ``run``
    target will use the SDK's QEMU binary by default. To use another version of
    QEMU, :ref:`set the environment variable <env_vars>` :envvar:`QEMU_BIN_PATH`
    to the path of the QEMU binary you want to use instead.
@@ -1316,7 +1312,7 @@ Generate and Import an Eclipse Project
 ======================================
 
 #. Set up a GNU Arm Embedded toolchain as described in
-   :ref:`third_party_x_compilers`.
+   :ref:`toolchain_gnuarmemb`.
 
 #. Navigate to a folder outside of the Zephyr tree to build your application.
 

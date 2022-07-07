@@ -18,7 +18,7 @@
  * @{
  */
 
-#include <sys/util_macro.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -129,21 +129,30 @@ enum bt_codec_capability_type {
  */
 #define BT_CODEC_LC3_DURATION_PREFER_10  BIT(5)
 
-
+/** @def BT_CODEC_LC3_CHAN_COUNT_MIN
+ *  @brief LC3 minimum supported channel counts
+ */
+#define BT_CODEC_LC3_CHAN_COUNT_MIN 1
+/** @def BT_CODEC_LC3_CHAN_COUNT_MIN
+ *  @brief LC3 maximum supported channel counts
+ */
+#define BT_CODEC_LC3_CHAN_COUNT_MAX 8
 /** @def BT_CODEC_LC3_CHAN_COUNT_SUPPORT
  *  @brief LC3 channel count support capability
- *  OR multiple supported counts together from 1 to 8
+ *
+ *  Macro accepts variable number of channel counts.
+ *  The allowed channel counts are defined by specification and have to be in range from
+ *  @ref BT_CODEC_LC3_CHAN_COUNT_MIN to @ref BT_CODEC_LC3_CHAN_COUNT_MAX inclusive.
+ *
  *  Example to support 1 and 3 channels:
- *  BT_CODEC_LC3_CHAN_COUNT_SUPPORT(1) | BT_CODEC_LC3_CHAN_COUNT_SUPPORT(3)
+ *    BT_CODEC_LC3_CHAN_COUNT_SUPPORT(1, 3)
  */
-#define BT_CODEC_LC3_CHAN_COUNT_SUPPORT(_count)  ((uint8_t)BIT((_count) - 1))
-
+#define BT_CODEC_LC3_CHAN_COUNT_SUPPORT(...) ((uint8_t)((FOR_EACH(BIT, (|), __VA_ARGS__)) >> 1))
 
 struct bt_codec_lc3_frame_len {
 	uint16_t min;
 	uint16_t max;
 };
-
 
 /**
  * @brief Codec configuration type IDs

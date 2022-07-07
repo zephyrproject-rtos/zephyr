@@ -6,9 +6,9 @@
 
 #include <soc.h>
 #include <stdio.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <cmdline.h>
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 #include <tracing_backend.h>
 
 static void *out_stream;

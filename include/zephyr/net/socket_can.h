@@ -14,9 +14,9 @@
 #define ZEPHYR_INCLUDE_NET_SOCKET_CAN_H_
 
 #include <zephyr/types.h>
-#include <net/net_ip.h>
-#include <net/net_if.h>
-#include <drivers/can.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/drivers/can.h>
 
 #ifdef __cplusplus
 extern "C" {

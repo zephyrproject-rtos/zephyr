@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include <tc_util.h>
-#include <kernel_structs.h>
-#include <irq_offload.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/irq_offload.h>
 #include <kswap.h>
 #include <assert.h>
 
 #if defined(CONFIG_USERSPACE)
-#include <sys/mem_manage.h>
-#include <syscall_handler.h>
+#include <zephyr/sys/mem_manage.h>
+#include <zephyr/syscall_handler.h>
 #include "test_syscalls.h"
 #endif
 

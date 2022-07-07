@@ -5,14 +5,14 @@
  */
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wpanusb);
 
-#include <usb/usb_device.h>
+#include <zephyr/usb/usb_device.h>
 #include <usb_descriptor.h>
 
-#include <net/buf.h>
-#include <net/ieee802154_radio.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/ieee802154_radio.h>
 #include <ieee802154/ieee802154_frame.h>
 #include <net_private.h>
 

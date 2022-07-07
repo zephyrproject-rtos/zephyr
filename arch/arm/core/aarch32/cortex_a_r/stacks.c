@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <aarch32/cortex_a_r/stack.h>
 #include <string.h>
 #include <kernel_internal.h>

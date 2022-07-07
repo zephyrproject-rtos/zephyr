@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <sys_clock.h>
-#include <timing/timing.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/timing/timing.h>
 #include "altera_avalon_timer_regs.h"
 
 #define NIOS2_SUBTRACT_CLOCK_CYCLES(val)                                       \

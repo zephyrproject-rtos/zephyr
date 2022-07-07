@@ -92,7 +92,7 @@ Most of Xen-specific features are not supported at the moment. This includes:
 
 Now only following features are supported:
 * Xen Enlighten memory page
-* Xen event channels (currently only pre-defined - PV console, Xenbus)
+* Xen event channels
 * Xen PV console (2 versions: regular ring buffer based for DomU and consoleio for Dom0)
 * Xen early console_io interface (mainly for debug purposes - requires debug version of Xen)
 

@@ -7,16 +7,16 @@
 #define DT_DRV_COMPAT nxp_kinetis_adc16
 
 #include <errno.h>
-#include <drivers/adc.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/pinctrl.h>
 #ifdef CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma.h>
 #endif
 
 #include <fsl_adc16.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_mcux_adc16);
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER

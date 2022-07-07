@@ -42,5 +42,14 @@
 			status = "disabled";
 			label = "SPI_2";
 		};
+
+		dac1: dac@40007400 {
+			compatible = "st,stm32-dac";
+			reg = <0x40007400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
+			status = "disabled";
+			label = "DAC_1";
+			#io-channel-cells = <1>;
+		};
 	};
 };

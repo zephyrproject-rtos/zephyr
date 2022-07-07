@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/watchdog.h>
-#include <sys/reboot.h>
-#include <task_wdt/task_wdt.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/watchdog.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/task_wdt/task_wdt.h>
+#include <zephyr/sys/printk.h>
 #include <stdbool.h>
 
 /*

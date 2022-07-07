@@ -12,14 +12,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 
 #include "eth_xlnx_gem_priv.h"
 
 #define LOG_MODULE_NAME phy_xlnx_gem
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* Basic MDIO read / write functions for PHY access */

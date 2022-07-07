@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_FUNC_H_
 #define ZEPHYR_ARCH_X86_INCLUDE_INTEL64_KERNEL_ARCH_FUNC_H_
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 
 #ifndef _ASMLANGUAGE
 

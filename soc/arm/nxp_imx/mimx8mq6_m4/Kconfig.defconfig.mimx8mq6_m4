@@ -27,6 +27,10 @@ config PINMUX_MCUX
 
 endif # PINMUX
 
+config PINCTRL_IMX
+	default y if HAS_MCUX_IOMUXC
+	depends on PINCTRL
+
 if SERIAL
 
 config UART_MCUX_IUART

@@ -23,10 +23,10 @@
 #ifndef ZEPHYR_INCLUDE_NET_LWM2M_H_
 #define ZEPHYR_INCLUDE_NET_LWM2M_H_
 
-#include <kernel.h>
-#include <sys/mutex.h>
-#include <net/coap.h>
-#include <net/lwm2m_path.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/mutex.h>
+#include <zephyr/net/coap.h>
+#include <zephyr/net/lwm2m_path.h>
 
 /**
  * @brief LwM2M Objects managed by OMA for LwM2M tech specification.  Objects
@@ -105,6 +105,19 @@ enum lwm2m_observe_event {
 typedef void (*lwm2m_observe_cb_t)(enum lwm2m_observe_event event, struct lwm2m_obj_path *path,
 				   void *user_data);
 
+
+struct lwm2m_ctx;
+enum lwm2m_rd_client_event;
+/**
+ * @brief Asynchronous RD client event callback
+ *
+ * @param[in] ctx LwM2M context generating the event
+ * @param[in] event LwM2M RD client event code
+ */
+typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
+				     enum lwm2m_rd_client_event event);
+
+
 /**
  * @brief LwM2M context structure to maintain information for a single
  * LwM2M connection.
@@ -113,10 +126,13 @@ struct lwm2m_ctx {
 	/** Destination address storage */
 	struct sockaddr remote_addr;
 
-	/** Private CoAP and networking structures */
-	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
-	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
+	/** Private CoAP and networking structures + 1 is for RD Client own message */
+	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING + 1];
+	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES + 1];
 	sys_slist_t pending_sends;
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
+	sys_slist_t queued_messages;
+#endif
 	sys_slist_t observer;
 
 	/** A pointer to currently processed request, for internal LwM2M engine
@@ -151,6 +167,19 @@ struct lwm2m_ctx {
 	 */
 	bool use_dtls;
 
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
+	/**
+	 * Flag to indicate that the socket connection is suspended.
+	 * With queue mode, this will tell if there is a need to reconnect.
+	 */
+	bool connection_suspended;
+
+	/**
+	 * Flag to indicate that the client is buffering Notifications and Send messages.
+	 * True value buffer Notifications and Send messages.
+	 */
+	bool buffer_client_messages;
+#endif
 	/** Current index of Security Object used for server credentials */
 	int sec_obj_inst;
 
@@ -175,6 +204,8 @@ struct lwm2m_ctx {
 	 *  out notifications.
 	 */
 	lwm2m_observe_cb_t observe_cb;
+
+	lwm2m_ctx_event_cb_t event_cb;
 
 	/** Validation buffer. Used as a temporary buffer to decode the resource
 	 *  value before validation. On successful validation, its content is
@@ -992,14 +1023,47 @@ int lwm2m_engine_register_delete_callback(uint16_t obj_id,
  * resource.
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
+ * @param[in] buffer_ptr Data buffer pointer
+ * @param[in] buffer_len Length of buffer
+ * @param[in] data_len Length of existing data in the buffer
+ * @param[in] data_flags Data buffer flags (such as read-only, etc)
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_set_res_buf(const char *pathstr, void *buffer_ptr, uint16_t buffer_len,
+			     uint16_t data_len, uint8_t data_flags);
+
+/**
+ * @brief Set data buffer for a resource
+ *
+ * Use this function to set the data buffer and flags for the specified LwM2M
+ * resource.
+ *
+ * @deprecated Use lwm2m_engine_set_res_buf() instead, so you can define buffer size and data size
+ *             separately.
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
  * @param[in] data_ptr Data buffer pointer
  * @param[in] data_len Length of buffer
  * @param[in] data_flags Data buffer flags (such as read-only, etc)
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_engine_set_res_data(const char *pathstr, void *data_ptr, uint16_t data_len,
 			      uint8_t data_flags);
+
+/**
+ * @brief Update data size for a resource
+ *
+ * Use this function to set the new size of data in the buffer if you write
+ * to a buffer received by lwm2m_engine_get_res_buf().
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
+ * @param[in] data_len Length of data
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_set_res_data_len(const char *pathstr, uint16_t data_len);
 
 /**
  * @brief Get data buffer for a resource
@@ -1007,15 +1071,40 @@ int lwm2m_engine_set_res_data(const char *pathstr, void *data_ptr, uint16_t data
  * Use this function to get the data buffer information for the specified LwM2M
  * resource.
  *
+ * If you directly write into the buffer, you must use lwm2m_engine_set_res_data_len()
+ * function to update the new size of the written data.
+ *
+ * All parameters except pathstr can NULL if you don't want to read those values.
+ *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
- * @param[out] data_ptr Data buffer pointer
- * @param[out] data_len Length of buffer
+ * @param[out] buffer_ptr Data buffer pointer
+ * @param[out] buffer_len Length of buffer
+ * @param[out] data_len Length of existing data in the buffer
  * @param[out] data_flags Data buffer flags (such as read-only, etc)
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_res_data(const char *pathstr, void **data_ptr,
-			      uint16_t *data_len, uint8_t *data_flags);
+int lwm2m_engine_get_res_buf(const char *pathstr, void **buffer_ptr, uint16_t *buffer_len,
+			     uint16_t *data_len, uint8_t *data_flags);
+
+/**
+ * @brief Get data buffer for a resource
+ *
+ * Use this function to get the data buffer information for the specified LwM2M
+ * resource.
+ *
+ * @deprecated Use lwm2m_engine_get_res_buf() as it can tell you the size of the buffer as well.
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
+ * @param[out] data_ptr Data buffer pointer
+ * @param[out] data_len Length of existing data in the buffer
+ * @param[out] data_flags Data buffer flags (such as read-only, etc)
+ *
+ * @return 0 for success or negative in case of error.
+ */
+__deprecated
+int lwm2m_engine_get_res_data(const char *pathstr, void **data_ptr, uint16_t *data_len,
+			      uint8_t *data_flags);
 
 /**
  * @brief Create a resource instance
@@ -1138,15 +1227,6 @@ enum lwm2m_rd_client_event {
 #define LWM2M_RD_CLIENT_FLAG_BOOTSTRAP BIT(0)
 
 /**
- * @brief Asynchronous RD client event callback
- *
- * @param[in] ctx LwM2M context generating the event
- * @param[in] event LwM2M RD client event code
- */
-typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
-				     enum lwm2m_rd_client_event event);
-
-/**
  * @brief Start the LwM2M RD (Registration / Discovery) Client
  *
  * The RD client sits just above the LwM2M engine and performs the necessary
@@ -1163,8 +1243,11 @@ typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
  * @param[in] observe_cb Observe callback function called when an observer was
  *			 added or deleted, and when a notification was acked or
  *			 has timed out
+ *
+ * @return 0 for success, -EINPROGRESS when client is already running
+ *         or negative error codes in case of failure.
  */
-void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
+int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 			   uint32_t flags, lwm2m_ctx_event_cb_t event_cb,
 			   lwm2m_observe_cb_t observe_cb);
 
@@ -1180,8 +1263,10 @@ void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
  * @param[in] event_cb Client event callback function
  * @param[in] deregister True to deregister the client if registered.
  *                       False to force close the connection.
+ *
+ * @return 0 for success or negative in case of error.
  */
-void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
+int lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 			  lwm2m_ctx_event_cb_t event_cb, bool deregister);
 
 /**
@@ -1202,7 +1287,7 @@ void lwm2m_rd_client_update(void);
  *
  * @return Resulting formatted path string
  */
-char *lwm2m_path_log_strdup(char *buf, struct lwm2m_obj_path *path);
+char *lwm2m_path_log_buf(char *buf, struct lwm2m_obj_path *path);
 
 /** 
  * @brief LwM2M SEND operation to given path list

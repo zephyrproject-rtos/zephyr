@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_IPC_SERVICE_IPC_SERVICE_BACKEND_H_
 #define ZEPHYR_INCLUDE_IPC_SERVICE_IPC_SERVICE_BACKEND_H_
 
-#include <ipc/ipc_service.h>
+#include <zephyr/ipc/ipc_service.h>
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -47,6 +47,7 @@ struct ipc_service_backend {
 	 *  @retval -EINVAL when instance is invalid.
 	 *  @retval -EBADMSG when the message is invalid.
 	 *  @retval -EBUSY when the instance is busy or not ready.
+	 *  @retval -ENOMEM when no memory / buffers are available.
 	 *
 	 *  @retval bytes number of bytes sent.
 	 *  @retval other errno codes depending on the implementation of the

@@ -25,7 +25,7 @@
 
 #include <tc_util.h>
 #include <stdbool.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 /* size of stack area used by each thread */

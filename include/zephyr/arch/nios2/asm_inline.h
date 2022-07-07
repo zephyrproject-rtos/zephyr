@@ -13,7 +13,7 @@
  */
 
 #if defined(__GNUC__)
-#include <arch/nios2/asm_inline_gcc.h>
+#include <zephyr/arch/nios2/asm_inline_gcc.h>
 #else
 #include <arch/nios2/asm_inline_other.h>
 #endif

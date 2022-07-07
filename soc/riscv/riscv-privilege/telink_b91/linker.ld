@@ -8,8 +8,8 @@
  * @brief Linker script for the Telink B91 SoC
  */
 
-#include <devicetree.h>
-#include <linker/linker-tool.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/linker/linker-tool.h>
 
 MEMORY
 {
@@ -21,15 +21,26 @@ SECTIONS
 {
 	SECTION_PROLOGUE(vector,,)
 	{
+		. = CONFIG_ROM_START_OFFSET;
 		. = ALIGN(4);
 		KEEP(*(.init.*))
 	} GROUP_LINK_IN(ROM_INIT)
 }
 
-#include <arch/riscv/common/linker.ld>
+#include <zephyr/arch/riscv/common/linker.ld>
 
 SECTIONS
 {
+	SECTION_DATA_PROLOGUE(aes_data,,)
+	{
+		. = ALIGN(8);
+		*(.aes_data)
+		*(".aes_data.*")
+
+		PROVIDE (_AES_DATA_VMA_END = .);
+		PROVIDE (_AES_DATA_VMA_START = ADDR(aes_data));
+	} GROUP_DATA_LINK_IN(RAM_ILM, ROMABLE_REGION)
+
 	SECTION_DATA_PROLOGUE(retention_data,,)
 	{
 		. = ALIGN(8);

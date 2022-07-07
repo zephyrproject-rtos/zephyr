@@ -7,8 +7,8 @@
 #ifndef _OSDP_COMMON_H_
 #define _OSDP_COMMON_H_
 
-#include <mgmt/osdp.h>
-#include <sys/__assert.h>
+#include <zephyr/mgmt/osdp.h>
+#include <zephyr/sys/__assert.h>
 
 #define OSDP_RESP_TOUT_MS              (200)
 

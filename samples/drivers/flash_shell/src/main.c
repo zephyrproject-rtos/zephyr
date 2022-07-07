@@ -6,13 +6,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <zephyr.h>
-#include <devicetree.h>
-#include <sys/printk.h>
-#include <logging/log.h>
-#include <shell/shell.h>
-#include <drivers/flash.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <stdlib.h>
 

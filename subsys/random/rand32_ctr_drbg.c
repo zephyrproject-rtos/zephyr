@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <device.h>
-#include <drivers/entropy.h>
-#include <kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/entropy.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 
 #if defined(CONFIG_MBEDTLS)

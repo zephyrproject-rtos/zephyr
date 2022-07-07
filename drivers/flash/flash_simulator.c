@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT zephyr_sim_flash
 
-#include <device.h>
-#include <drivers/flash.h>
-#include <init.h>
-#include <kernel.h>
-#include <sys/util.h>
-#include <random/rand32.h>
-#include <stats/stats.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/stats/stats.h>
 #include <string.h>
 
 #ifdef CONFIG_ARCH_POSIX
@@ -488,7 +488,7 @@ void *z_impl_flash_simulator_get_memory(const struct device *dev,
 
 #ifdef CONFIG_USERSPACE
 
-#include <syscall_handler.h>
+#include <zephyr/syscall_handler.h>
 
 void *z_vrfy_flash_simulator_get_memory(const struct device *dev,
 				      size_t *mock_size)

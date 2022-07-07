@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 /* FIXME: Implement vendor specific data path configuration */
 static bool dummy;

@@ -11,17 +11,17 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <random/rand32.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/bas.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/bas.h>
 
 #define CSC_SUPPORTED_LOCATIONS		{ CSC_LOC_OTHER, \
 					  CSC_LOC_FRONT_WHEEL, \

@@ -1,0 +1,26 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2022 Nordic Semiconductor ASA
+ */
+
+
+/ {
+	zephyr,user {
+		io-channels = <&adc 0>;
+	};
+};
+
+&adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_3";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_ADC_AIN2>; /* P0.01 */
+		zephyr,resolution = <10>;
+	};
+};

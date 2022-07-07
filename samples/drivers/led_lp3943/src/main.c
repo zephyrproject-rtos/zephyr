@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <drivers/led.h>
-#include <sys/util.h>
-#include <zephyr.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/zephyr.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app);
 
 #define NUM_LEDS 16

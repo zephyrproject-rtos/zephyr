@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT invensense_icm42605
 
-#include <drivers/spi.h>
-#include <init.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
 
 #include "icm42605.h"
 #include "icm42605_reg.h"

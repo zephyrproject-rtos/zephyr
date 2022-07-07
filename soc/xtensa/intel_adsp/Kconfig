@@ -5,6 +5,7 @@
 
 config SOC_FAMILY_INTEL_ADSP
 	select WINSTREAM
+	select ARCH_SUPPORTS_COREDUMP
 	bool
 
 if SOC_FAMILY_INTEL_ADSP
@@ -19,6 +20,12 @@ config CAVS_IPC
 	help
 	  Driver for the host IPC interrupt delivery mechanism.
 	  Currently SOF has its own driver for this hardware.
+
+config CAVS_CLOCK
+	bool
+	help
+	  Driver for the CAVS clocks. Allow type of clock (and
+	  thus frequency) to be chosen.
 
 config INTEL_ADSP_CAVS
 	bool

@@ -9,14 +9,14 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <em_cmu.h>
 #include <em_rtcc.h>
-#include <drivers/counter.h>
+#include <zephyr/drivers/counter.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(counter_gecko, CONFIG_COUNTER_LOG_LEVEL);
 
 #define RTCC_MAX_VALUE       (_RTCC_CNT_MASK)

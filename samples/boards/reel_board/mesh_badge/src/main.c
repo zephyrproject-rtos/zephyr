@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
 #include <string.h>
 
-#include <settings/settings.h>
+#include <zephyr/settings/settings.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/gatt.h>
-#include <drivers/sensor.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/drivers/sensor.h>
 
 #include "mesh.h"
 #include "board.h"

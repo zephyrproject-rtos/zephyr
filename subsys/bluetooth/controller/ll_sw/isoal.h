@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 #include <zephyr/types.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 /** Function return error codes */
 typedef uint8_t isoal_status_t;
@@ -59,25 +59,6 @@ typedef uint8_t isoal_production_mode_t;
 #define ISOAL_PRODUCTION_MODE_DISABLED    ((isoal_production_mode_t) 0x00)
 #define ISOAL_PRODUCTION_MODE_ENABLED     ((isoal_production_mode_t) 0x01)
 
-
-/**
- *  Origin of {PDU or SDU}.
- */
-struct isoal_rx_origin {
-	/** Originating subsystem */
-	enum __packed {
-		ISOAL_SUBSYS_BT_LLL   = 0x01,    /*!< Bluetooth LLL */
-		ISOAL_SUBSYS_BT_HCI   = 0x02,    /*!< Bluetooth HCI */
-		ISOAL_SUBSYS_VS       = 0xff     /*!< Vendor specific */
-	} subsys;
-
-	/** Subsystem instance */
-	union {
-		struct {
-			uint16_t  handle;       /*!< BT connection handle */
-		} bt_lll;
-	} inst;
-};
 
 enum isoal_mode {
 	ISOAL_MODE_CIS,
@@ -133,10 +114,6 @@ struct isoal_sdu_produced {
 	isoal_time_t            timestamp;
 	/** Sequence number of SDU */
 	isoal_sdu_cnt_t         seqn;
-	/** Regardless of status, we always know where the PDUs that produced
-	 *  this SDU, came from
-	 */
-	struct isoal_rx_origin  origin;
 	/** Contents and length can only be trusted if status is valid */
 	struct isoal_sdu_buffer contents;
 	/** Optional context to be carried from PDU at alloc-time */
@@ -171,6 +148,18 @@ struct isoal_sdu_tx {
 	 *  can be directly assigned to the SDU state
 	 */
 	uint8_t sdu_state;
+	/** Packet sequence number from HCI ISO Data Header (ISO Data Load
+	 *  Field)
+	 */
+	uint16_t packet_sn;
+	/** ISO SDU length from HCI ISO Data Header (ISO Data Load Field) */
+	uint16_t iso_sdu_length;
+	/** Time stamp from HCI or vendor specific path (us) */
+	uint32_t time_stamp;
+	/** CIG Reference of target event (us, compensated for drift) */
+	uint32_t cig_ref_point;
+	/** Target Event of SDU */
+	uint64_t target_event:39;
 };
 
 
@@ -236,6 +225,7 @@ struct isoal_sink_session {
 	isoal_sdu_cnt_t          seqn;
 	uint16_t                 handle;
 	uint8_t                  pdus_per_sdu;
+	uint8_t                  framed;
 	uint32_t                 latency_unframed;
 	uint32_t                 latency_framed;
 };
@@ -247,6 +237,10 @@ struct isoal_sdu_production {
 	struct isoal_sdu_produced  sdu;
 	/* Bookkeeping */
 	isoal_pdu_cnt_t  prev_pdu_id : 39;
+	/* Assumes that isoal_pdu_cnt_t is a uint64_t bit field */
+	uint64_t prev_pdu_is_end:1;
+	uint64_t prev_pdu_is_padding:1;
+	uint64_t sdu_allocated:1;
 	enum {
 		ISOAL_START,
 		ISOAL_CONTINUE,
@@ -341,21 +335,31 @@ struct isoal_source_session {
 	struct isoal_source_config param;
 	isoal_sdu_cnt_t            seqn;
 	uint16_t                   handle;
+	uint16_t                   iso_interval;
+	uint8_t                    framed;
+	uint8_t                    burst_number;
 	uint8_t                    pdus_per_sdu;
 	uint8_t                    max_pdu_size;
-	uint32_t                   latency_unframed;
-	uint32_t                   latency_framed;
+	int32_t                    latency_unframed;
+	int32_t                    latency_framed;
 };
 
 struct isoal_pdu_production {
 	/* Permit atomic enable/disable of PDU production */
 	volatile isoal_production_mode_t  mode;
-	/* We are constructing an PDU from {<1 or =1 or >1} SDUs */
+	/* We are constructing a PDU from {<1 or =1 or >1} SDUs */
 	struct isoal_pdu_produced pdu;
+	uint8_t                   pdu_state;
 	/* PDUs produced for current SDU */
 	uint8_t                   pdu_cnt;
+	uint64_t                  payload_number:39;
+	uint64_t                  seg_hdr_sc:1;
+	uint64_t                  seg_hdr_length:8;
+	uint64_t                  sdu_fragments:8;
 	isoal_pdu_len_t           pdu_written;
 	isoal_pdu_len_t           pdu_available;
+	/* Location (byte index) of last segmentation header */
+	isoal_pdu_len_t           last_seg_hdr_loc;
 };
 
 struct isoal_source {
@@ -372,6 +376,7 @@ isoal_status_t isoal_reset(void);
 
 isoal_status_t isoal_sink_create(uint16_t handle,
 				 uint8_t  role,
+				 uint8_t  framed,
 				 uint8_t  burst_number,
 				 uint8_t  flush_timeout,
 				 uint32_t sdu_interval,
@@ -406,6 +411,7 @@ isoal_status_t sink_sdu_write_hci(void *dbuf,
 
 isoal_status_t isoal_source_create(uint16_t handle,
 				   uint8_t  role,
+				   uint8_t  framed,
 				   uint8_t  burst_number,
 				   uint8_t  flush_timeout,
 				   uint8_t  max_octets,
@@ -428,7 +434,7 @@ void isoal_source_disable(isoal_source_handle_t hdl);
 void isoal_source_destroy(isoal_source_handle_t hdl);
 
 isoal_status_t isoal_tx_sdu_fragment(isoal_source_handle_t source_hdl,
-				      const struct isoal_sdu_tx *tx_sdu);
+				     struct isoal_sdu_tx *tx_sdu);
 
 void isoal_tx_pdu_release(isoal_source_handle_t source_hdl,
 			  struct node_tx_iso *node_tx);

@@ -10,13 +10,13 @@
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_utils.h>
-#include <drivers/clock_control.h>
-#include <sys/util.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
 
-
 #if STM32_SYSCLK_SRC_PLL
+
 /*
  * Select PLL source for STM32F1 Connectivity line devices (STM32F105xx and
  * STM32F107xx).
@@ -26,7 +26,8 @@
 /**
  * @brief Set up pll configuration
  */
-int config_pll_sysclock(void)
+__unused
+void config_pll_sysclock(void)
 {
 	uint32_t pll_source, pll_mul, pll_div;
 
@@ -88,13 +89,12 @@ int config_pll_sysclock(void)
 		pll_source = LL_RCC_PLLSOURCE_PLL2 | pll_div;
 #endif
 	} else {
-		return -ENOTSUP;
+		__ASSERT(0, "Invalid source");
 	}
 
 	LL_RCC_PLL_ConfigDomain_SYS(pll_source, pll_mul);
-
-	return 0;
 }
+
 #endif /* STM32_SYSCLK_SRC_PLL */
 
 /**

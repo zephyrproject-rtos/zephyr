@@ -16,11 +16,11 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include <logging/log.h>
-#include <sys/__assert.h>
-#include <kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/kernel.h>
 
-#include <net/net_timeout.h>
+#include <zephyr/net/net_timeout.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,7 +45,7 @@ extern "C" {
 /* Network subsystem logging helpers */
 #ifdef CONFIG_THREAD_NAME
 #define NET_DBG(fmt, ...) LOG_DBG("(%s): " fmt,				\
-			log_strdup(k_thread_name_get(k_current_get())), \
+			k_thread_name_get(k_current_get()), \
 			##__VA_ARGS__)
 #else
 #define NET_DBG(fmt, ...) LOG_DBG("(%p): " fmt, k_current_get(),	\

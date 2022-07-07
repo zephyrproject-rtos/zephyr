@@ -6,12 +6,12 @@
 
 #include <mem.h>
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/clock/imx_ccm_rev2.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/pwm/pwm.h>
-#include <dt-bindings/pm/imx_spc.h>
-
+#include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pm/imx_spc.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 / {
 	cpus {
 		#address-cells = <1>;
@@ -65,7 +65,7 @@
 			compatible = "zephyr,power-state";
 			power-state-name="runtime-idle";
 			substate-id = <IMX_SPC_SET_POINT_1_WAIT>;
-			min-residency-us = <10>;
+			min-residency-us = <100>;
 		};
 
 		suspend: set_point_10_suspend {
@@ -74,6 +74,7 @@
 			power-state-name="suspend-to-idle";
 			substate-id = <IMX_SPC_SET_POINT_10_SUSPEND>;
 			min-residency-us = <5000>;
+			exit-latency-us = <500>;
 		};
 	};
 
@@ -374,6 +375,19 @@
 			interrupts = <54 0>;
 			label = "ELCDIF_1";
 			status = "disabled";
+		};
+
+		mipi_dsi: mipi-dsi@4080c000 {
+			compatible = "nxp,imx-mipi-dsi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4080c000 0x200>,
+			      <0x4080c200 0x80>,
+			      <0x4080c280 0x80>,
+			      <0x4080c300 0x200>;
+			interrupts = <59 1>;
+			status = "disabled";
+			label = "MIPI_DSI";
 		};
 
 		lpspi1: spi@40114000 {
@@ -780,7 +794,11 @@
 			status = "disabled";
 			interrupts = <133 0>;
 			clocks = <&ccm IMX_CCM_USDHC1_CLK 0 0>;
-			label = "USDHC_1";
+			label = "SDHC_0";
+			max-current-330 = <1020>;
+			max-current-180 = <1020>;
+			max-bus-freq = <208000000>;
+			min-bus-freq = <400000>;
 		};
 
 		usdhc2: usdhc@4041c000 {
@@ -789,7 +807,11 @@
 			status = "disabled";
 			interrupts = <134 0>;
 			clocks = <&ccm IMX_CCM_USDHC2_CLK 0 0>;
-			label = "USDHC_2";
+			label = "SDHC_1";
+			max-current-330 = <1020>;
+			max-current-180 = <1020>;
+			max-bus-freq = <208000000>;
+			min-bus-freq = <400000>;
 		};
 
 		csi: csi@40800000 {
@@ -892,6 +914,42 @@
 			offset-value-a = <10>;
 			offset-value-b = <10>;
 			#io-channel-cells = <1>;
+		};
+
+		acmp1: cmp@401a4000 {
+			compatible = "nxp,kinetis-acmp";
+			reg = <0x401a4000 0x4000>;
+			interrupts = <157 0>;
+			label = "CMP_1";
+			status = "disabled";
+			#io-channel-cells = <2>;
+		};
+
+		acmp2: cmp@401a8000 {
+			compatible = "nxp,kinetis-acmp";
+			reg = <0x401a8000 0x4000>;
+			interrupts = <158 0>;
+			label = "CMP_2";
+			status = "disabled";
+			#io-channel-cells = <2>;
+		};
+
+		acmp3: cmp@401ac000 {
+			compatible = "nxp,kinetis-acmp";
+			reg = <0x401ac000 0x4000>;
+			interrupts = <159 0>;
+			label = "CMP_3";
+			status = "disabled";
+			#io-channel-cells = <2>;
+		};
+
+		acmp4: cmp@401b0000 {
+			compatible = "nxp,kinetis-acmp";
+			reg = <0x401b0000 0x4000>;
+			interrupts = <160 0>;
+			label = "CMP_4";
+			status = "disabled";
+			#io-channel-cells = <2>;
 		};
 
 		anatop: anatop@40c84000 {
@@ -1033,6 +1091,13 @@
 			nxp,tx-channel = <1>;
 			status = "disabled";
 			label = "I2S_3";
+		};
+
+		src: reset-controller@40c04000 {
+			compatible = "nxp,imx-src-rev2";
+			reg = <0x40c04000 0x4000>;
+			status = "okay";
+			label = "SRC";
 		};
 
 	};

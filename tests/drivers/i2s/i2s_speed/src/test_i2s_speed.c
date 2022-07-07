@@ -5,9 +5,9 @@
  */
 
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <drivers/i2s.h>
+#include <zephyr/drivers/i2s.h>
 
 #define I2S_DEV_NAME_RX "I2S_0"
 #ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES

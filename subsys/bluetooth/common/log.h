@@ -11,15 +11,15 @@
 #ifndef __BT_LOG_H
 #define __BT_LOG_H
 
-#include <linker/sections.h>
+#include <zephyr/linker/sections.h>
 #include <offsets.h>
-#include <zephyr.h>
-#include <logging/log.h>
-#include <sys/__assert.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/hci.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -92,14 +92,10 @@ const char *bt_addr_str_real(const bt_addr_t *addr);
 const char *bt_addr_le_str_real(const bt_addr_le_t *addr);
 const char *bt_uuid_str_real(const struct bt_uuid *uuid);
 
-/* NOTE: log_strdup does not guarantee a duplication of the string.
- * It is therefore still the responsibility of the user to handle the
- * restrictions in the underlying function call.
- */
-#define bt_hex(buf, len) log_strdup(bt_hex_real(buf, len))
-#define bt_addr_str(addr) log_strdup(bt_addr_str_real(addr))
-#define bt_addr_le_str(addr) log_strdup(bt_addr_le_str_real(addr))
-#define bt_uuid_str(uuid) log_strdup(bt_uuid_str_real(uuid))
+#define bt_hex(buf, len) bt_hex_real(buf, len)
+#define bt_addr_str(addr) bt_addr_str_real(addr)
+#define bt_addr_le_str(addr) bt_addr_le_str_real(addr)
+#define bt_uuid_str(uuid) bt_uuid_str_real(uuid)
 
 #ifdef __cplusplus
 }

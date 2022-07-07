@@ -16,7 +16,7 @@
  */
 
 #include <zephyr/device.h>
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -153,6 +153,10 @@ struct ll_conn {
 
 	struct node_rx_pdu *llcp_rx;
 
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
+	struct node_rx_pdu *llcp_rx_hold;
+#endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
+
 	struct {
 		uint8_t  req;
 		uint8_t  ack;
@@ -335,7 +339,6 @@ struct ll_conn {
 		uint8_t  cis_id;
 		uint32_t c_max_sdu:12;
 		uint32_t p_max_sdu:12;
-		uint32_t framed:1;
 		uint32_t cis_offset_min;
 		uint32_t cis_offset_max;
 		uint16_t conn_event_count;
@@ -405,7 +408,17 @@ struct llcp_struct {
 	struct {
 		uint8_t sent;
 		uint8_t valid;
+		/*
+		 * Stores features supported by peer device. The content of the member may be
+		 * verified when feature exchange procedure has completed, valid member is set to 1.
+		 */
 		uint64_t features_peer;
+		/*
+		 * Stores features common for two connected devices. Before feature exchange
+		 * procedure is completed, the member stores information about all features
+		 * supported by local device. After completion of the procedure, the feature set
+		 * may be limited to features that are common.
+		 */
 		uint64_t features_used;
 	} fex;
 
@@ -429,15 +442,12 @@ struct llcp_struct {
 		/* Procedure may be active periodically, active state must be stored.
 		 * If procedure is active, request parameters update may not be issued.
 		 */
-		uint8_t is_enabled:1;
-		uint8_t is_active:1;
+		volatile uint8_t is_enabled;
 		uint8_t cte_type;
 		/* Minimum requested CTE length in 8us units */
 		uint8_t min_cte_len;
 		uint16_t req_interval;
 		uint16_t req_expire;
-		void *disable_param;
-		void (*disable_cb)(void *param);
 	} cte_req;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 

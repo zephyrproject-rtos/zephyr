@@ -5,9 +5,9 @@
  */
 
 #include <arm/armv8-m.dtsi>
-#include <dt-bindings/clock/mcux_lpc_syscon_clock.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <mem.h>
 
 / {
@@ -114,6 +114,9 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x1000 0x100>;
+		pinctrl: pinctrl {
+			compatible = "nxp,lpc-iocon-pinctrl";
+		};
 		pio0: pio0@0 {
 			compatible = "nxp,lpc-iocon-pio";
 			reg = <0x0 0x80>;

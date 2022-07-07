@@ -5,17 +5,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/byteorder.h>
-#include <sys/check.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/audio/aics.h>
 
 #include "aics_internal.h"
 
@@ -322,7 +322,7 @@ static ssize_t write_description(struct bt_conn *conn,
 		}
 	}
 
-	BT_DBG("%s", log_strdup(inst->srv.description));
+	BT_DBG("%s", inst->srv.description);
 
 	return len;
 }
@@ -334,7 +334,7 @@ static ssize_t read_description(struct bt_conn *conn,
 {
 	struct bt_aics *inst = attr->user_data;
 
-	BT_DBG("%s", log_strdup(inst->srv.description));
+	BT_DBG("%s", inst->srv.description);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &inst->srv.description, strlen(inst->srv.description));
@@ -433,7 +433,7 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 		if (IS_ENABLED(CONFIG_BT_DEBUG_AICS) &&
 		    strcmp(aics->srv.description, param->description)) {
 			BT_DBG("Input desc clipped to %s",
-			       log_strdup(aics->srv.description));
+			       aics->srv.description);
 		}
 	}
 

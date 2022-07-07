@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <drivers/display.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/display.h>
 #include <lvgl.h>
 #include <stdio.h>
 #include <string.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app);
 
 void main(void)

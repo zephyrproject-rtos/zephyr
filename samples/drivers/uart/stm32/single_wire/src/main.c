@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include "kernel.h"
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/uart.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/uart.h>
 
 #define UART_NODE1 DT_ALIAS(single_line_uart1)
 #define UART_NODE2 DT_ALIAS(single_line_uart2)

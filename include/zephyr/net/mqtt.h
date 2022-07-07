@@ -26,10 +26,10 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/types.h>
-#include <net/tls_credentials.h>
-#include <net/net_ip.h>
-#include <sys/mutex.h>
-#include <net/websocket.h>
+#include <zephyr/net/tls_credentials.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/sys/mutex.h>
+#include <zephyr/net/websocket.h>
 
 #ifdef __cplusplus
 extern "C" {

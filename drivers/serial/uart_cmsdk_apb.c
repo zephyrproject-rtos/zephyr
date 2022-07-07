@@ -12,13 +12,13 @@
  * UART has two wires for RX and TX, and does not provide CTS or RTS.
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <drivers/clock_control/arm_clock_control.h>
-#include <sys/__assert.h>
-#include <init.h>
-#include <drivers/uart.h>
-#include <linker/sections.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/drivers/clock_control/arm_clock_control.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/linker/sections.h>
 
 /* UART registers struct */
 struct uart_cmsdk_apb {

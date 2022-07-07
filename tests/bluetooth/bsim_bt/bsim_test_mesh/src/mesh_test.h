@@ -9,7 +9,7 @@
  */
 #ifndef ZEPHYR_TESTS_BLUETOOTH_BSIM_BT_BSIM_TEST_MESH_MESH_TEST_H_
 #define ZEPHYR_TESTS_BLUETOOTH_BSIM_BT_BSIM_TEST_MESH_MESH_TEST_H_
-#include "kernel.h"
+#include <zephyr/kernel.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
@@ -19,11 +19,10 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <errno.h>
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define TEST_MOD_ID 0x8888
 #define TEST_MSG_OP_1  BT_MESH_MODEL_OP_1(0x0f)

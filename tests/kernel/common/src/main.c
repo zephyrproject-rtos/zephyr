@@ -6,8 +6,8 @@
 
 
 #include <ztest.h>
-#include <kernel_version.h>
-#include <sys/speculation.h>
+#include <zephyr/kernel_version.h>
+#include <zephyr/sys/speculation.h>
 #include "version.h"
 
 extern void test_byteorder_memcpy_swap(void);
@@ -52,6 +52,7 @@ extern void test_bitarray_alloc_free(void);
 extern void test_bitarray_region_set_clear(void);
 extern void test_nop(void);
 extern void test_ffs(void);
+extern void test_pow2_ceil(void);
 
 /**
  * @defgroup kernel_common_tests Common Tests
@@ -126,7 +127,7 @@ void test_main(void)
 	ztest_test_suite(common,
 			 ztest_unit_test(test_bootdelay),
 			 ztest_unit_test(test_irq_offload),
-			 ztest_unit_test(test_nested_irq_offload),
+			 ztest_1cpu_unit_test(test_nested_irq_offload),
 			 ztest_unit_test(test_byteorder_memcpy_swap),
 			 ztest_unit_test(test_byteorder_mem_swap),
 			 ztest_unit_test(test_sys_get_be64),
@@ -168,7 +169,8 @@ void test_main(void)
 			 ztest_unit_test(test_ms_time_duration),
 			 ztest_unit_test(test_bounds_check_mitigation),
 			 ztest_unit_test(test_nop),
-			 ztest_unit_test(test_ffs)
+			 ztest_unit_test(test_ffs),
+			 ztest_unit_test(test_pow2_ceil)
 			 );
 
 	ztest_run_test_suite(common);

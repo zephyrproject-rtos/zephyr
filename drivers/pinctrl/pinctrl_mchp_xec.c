@@ -9,7 +9,7 @@
 
 #define DT_DRV_COMPAT microchip_xec_pinctrl
 
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
 /* Microchip XEC: each GPIO pin has two 32-bit control register.
@@ -74,7 +74,7 @@ static int xec_config_pin(uint32_t portpin, uint32_t conf, uint32_t altf)
 
 	/* default input pad enabled, buffer type push-pull, no internal pulls */
 	msk |= (BIT(MCHP_GPIO_CTRL_INPAD_DIS_POS) | MCHP_GPIO_CTRL_BUFT_MASK |
-			MCHP_GPIO_CTRL_PUD_MASK | MCHP_GPIO_CTRL_DIR_MASK |
+			MCHP_GPIO_CTRL_PUD_MASK |
 			MCHP_GPIO_CTRL_MUX_MASK);
 
 	if (conf & BIT(MCHP_XEC_PIN_LOW_POWER_POS)) {

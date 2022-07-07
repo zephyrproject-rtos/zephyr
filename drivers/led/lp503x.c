@@ -11,14 +11,14 @@
  * @brief LP503x LED controller
  */
 
-#include <drivers/i2c.h>
-#include <drivers/led.h>
-#include <drivers/led/lp503x.h>
-#include <device.h>
-#include <zephyr.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/drivers/led/lp503x.h>
+#include <zephyr/device.h>
+#include <zephyr/zephyr.h>
 
 #define LOG_LEVEL CONFIG_LED_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lp503x);
 
 #define LP503X_DEVICE_CONFIG0		0

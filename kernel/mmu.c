@@ -8,16 +8,16 @@
 
 #include <stdint.h>
 #include <kernel_arch_interface.h>
-#include <spinlock.h>
+#include <zephyr/spinlock.h>
 #include <mmu.h>
-#include <init.h>
+#include <zephyr/init.h>
 #include <kernel_internal.h>
-#include <syscall_handler.h>
-#include <toolchain.h>
-#include <linker/linker-defs.h>
-#include <sys/bitarray.h>
-#include <timing/timing.h>
-#include <logging/log.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/bitarray.h>
+#include <zephyr/timing/timing.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /*

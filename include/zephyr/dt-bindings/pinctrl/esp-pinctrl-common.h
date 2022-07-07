@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESP_PINCTRL_COMMON_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESP_PINCTRL_COMMON_H_
 
-#include <sys/util_macro.h>
+#include <zephyr/sys/util_macro.h>
 
 #define ESP32_PIN_NUM_SHIFT      0U
 #define ESP32_PIN_NUM_MASK       0x3FU

@@ -8,11 +8,11 @@
 #define ZEPHYR_DRIVERS_SENSOR_MPU9250_MPU9250_H_
 
 #include <stdint.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
 
 struct mpu9250_data {
 	int16_t accel_x;

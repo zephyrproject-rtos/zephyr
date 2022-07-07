@@ -12,7 +12,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_NET_EVENT_H_
 #define ZEPHYR_INCLUDE_NET_NET_EVENT_H_
 
-#include <net/net_ip.h>
+#include <zephyr/net/net_ip.h>
 
 #ifdef __cplusplus
 extern "C" {

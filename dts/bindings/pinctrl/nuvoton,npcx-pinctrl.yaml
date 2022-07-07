@@ -1,0 +1,71 @@
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The Nuvoton pin controller is a singleton node responsible for controlling
+  pin function selection and pin properties. For example, you can use these
+  nodes to select peripheral pin functions.
+
+  Here is a list of supported standard pin properties:
+    - bias-pull-down: Enable pull-down resistor.
+    - bias-pull-up: Enable pull-up resistor.
+    - drive-open-drain: Output driver is open-drain.
+
+  Custom pin properties for npcx series are available also:
+    - pinmux-locked: Lock pinmux configuration for peripheral device
+    - pinmux-gpio: Inverse pinmux back to gpio
+
+  An example for NPCX7 family, include the chip level pinctrl DTSI file in the
+  board level DTS:
+
+    #include <nuvoton/npcx/npcx7/npcx7-pinctrl.dtsi>
+
+  We want to use the I2C0_0 port of the NPCX7M6FB controller and enable the
+  internal 3.3V pull-up if its i2c frequency won't exceed 400kHz.
+
+  To change a pin's pinctrl default properties, add a reference to the
+  pin in the board's DTS file and set the properties as below:
+
+    &i2c0_0_sda_scl_gpb4_b5 {
+      bias-pull-up; /* Enable internal pull-up for i2c0_0 */
+      pinmux-locked; /* Lock pinmuxing */
+    };
+
+    &i2c0_0 {
+      pinctrl-0 = <&i2c0_0_sda_scl_gpb4_b5>;
+      pinctrl-names = "default";
+    }
+
+compatible: "nuvoton,npcx-pinctrl"
+
+include:
+    - name: base.yaml
+    - name: pincfg-node.yaml
+      child-binding:
+        property-allowlist:
+          - bias-pull-down
+          - bias-pull-up
+          - drive-open-drain
+
+child-binding:
+    description: |
+      NPCX pin controller pin configuration nodes
+    properties:
+      pinmux:
+        type: phandle
+        required: false
+        description: Configurations of pinmux selection
+      periph-pupd:
+        type: array
+        required: false
+        description: |
+          A map to PUPD_ENn register/bit that enable pull-up/down of NPCX peripheral devices.
+          Please don't overwrite this property in the board-level DT driver.
+      pinmux-locked:
+        required: false
+        type: boolean
+        description: Lock pinmux selection
+      pinmux-gpio:
+        required: false
+        type: boolean
+        description: Inverse pinmux selection to GPIO

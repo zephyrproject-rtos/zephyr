@@ -61,7 +61,7 @@
 			test_dev_c: test-i2c-dev@13 {
 				compatible = "vnd,i2c-device";
 				label = "TEST_SPI_DEV_0";
-				reg = <13>;
+				reg = <0x13>;
 				status = "disabled";
 
 				partitions {
@@ -71,7 +71,7 @@
 
 					test_p0: partition@0 {
 						label = "partition-0";
-						reg = <0x000000000 0x0000C000>;
+						reg = <0x00000000 0x0000C000>;
 					};
 					test_p1: partition@c000 {
 						label = "partition-1";
@@ -79,6 +79,15 @@
 					};
 				};
 			};
+		};
+
+		test_gpio_injected: gpio@1000 {
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			compatible = "vnd,gpio-device";
+			status = "okay";
+			reg = <0x1000 0x1000>;
+			label = "TEST_GPIO_INJECTED";
 		};
 	};
 };

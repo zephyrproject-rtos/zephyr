@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/flash.h>
-#include <logging/log_ctrl.h>
-#include <pm/device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/pm/device.h>
 
 #define FLASH_DEVICE        DT_LABEL(DT_INST(0, atmel_at45))
 

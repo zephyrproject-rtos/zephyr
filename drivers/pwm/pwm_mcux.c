@@ -7,14 +7,14 @@
 #define DT_DRV_COMPAT nxp_imx_pwm
 
 #include <errno.h>
-#include <drivers/pwm.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/drivers/clock_control.h>
 #include <soc.h>
 #include <fsl_pwm.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_mcux);
 
 #define CHANNEL_COUNT 2

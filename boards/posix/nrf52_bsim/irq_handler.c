@@ -7,17 +7,17 @@
  */
 
 #include <stdint.h>
-#include "irq_offload.h"
-#include "kernel_structs.h"
+#include <zephyr/irq_offload.h>
+#include <zephyr/kernel_structs.h>
 #include "kernel_internal.h"
 #include "kswap.h"
 #include "irq_ctrl.h"
 #include "posix_core.h"
 #include "board_soc.h"
-#include "sw_isr_table.h"
+#include <zephyr/sw_isr_table.h>
 #include "soc.h"
 #include "bs_tracing.h"
-#include <tracing/tracing.h>
+#include <zephyr/tracing/tracing.h>
 #include "bstests.h"
 
 static bool CPU_will_be_awaken_from_WFE;
@@ -28,46 +28,6 @@ typedef int (*direct_irq_f_ptr)(void);
 static struct _isr_list irq_vector_table[NRF_HW_NBR_IRQs];
 
 static int currently_running_irq = -1;
-
-const char *irqnames[] = { /*just for the traces*/
-	"POWER_CLOCK", /*0 */
-	"RADIO",       /*1 */
-	"UART0",       /*2 */
-	"SPI0_TWI0",   /*3 */
-	"SPI1_TWI1",   /*4 */
-	"NFCT",        /*5 */
-	"GPIOTE",      /*6 */
-	"ADC",         /*7 */
-	"TIMER0",      /*8 */
-	"TIMER1",      /*9 */
-	"TIMER2",      /*10*/
-	"RTC0",        /*11*/
-	"TEMP",        /*12*/
-	"RNG",         /*13*/
-	"ECB",         /*14*/
-	"CCM_AAR",     /*15*/
-	"WDT",         /*16*/
-	"RTC1",        /*17*/
-	"QDEC",        /*18*/
-	"LPCOMP",      /*19*/
-	"SWI0",        /*20*/
-	"SWI1",        /*21*/
-	"SWI2",        /*22*/
-	"SWI3",        /*23*/
-	"SWI4",        /*24*/
-	"SWI5",        /*25*/
-	"TIMER3",      /*26*/
-	"TIMER4",      /*27*/
-	"PWM0",        /*28*/
-	"PDM",         /*29*/
-	"MWU",         /*30*/
-	"PWM1",        /*31*/
-	"PWM2",        /*32*/
-	"SPIM2_SPIS2_SPI2", /*33*/
-	"RTC2",        /*34*/
-	"I2S",         /*35*/
-	"FPU"          /*36*/
-};
 
 static inline void vector_to_irq(int irq_nbr, int *may_swap)
 {
@@ -83,7 +43,7 @@ static inline void vector_to_irq(int irq_nbr, int *may_swap)
 	}
 
 	bs_trace_raw_time(6, "Vectoring to irq %i (%s)\n", irq_nbr,
-			  irqnames[irq_nbr]);
+			  hw_irq_ctrl_get_name(irq_nbr));
 
 	sys_trace_isr_enter();
 
@@ -109,7 +69,7 @@ static inline void vector_to_irq(int irq_nbr, int *may_swap)
 
 	sys_trace_isr_exit();
 
-	bs_trace_raw_time(7, "Irq %i (%s) ended\n", irq_nbr, irqnames[irq_nbr]);
+	bs_trace_raw_time(7, "Irq %i (%s) ended\n", irq_nbr, hw_irq_ctrl_get_name(irq_nbr));
 }
 
 /**

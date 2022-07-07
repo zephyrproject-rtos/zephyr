@@ -52,6 +52,25 @@ config FLASH_MCUX_FLEXSPI_HYPERFLASH
 
 endmenu
 
+if FLASH_MCUX_FLEXSPI_MX25UM51345G
+
+choice FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_MODE
+	prompt "FlexSPI MX25UM51345G OPI mode"
+	default FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR
+	help
+	  Select the MX25UM51345G octal flash operation mode(Octal I/O STR
+	  or Octal I/O DTR).
+
+config FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_STR
+	bool "STR"
+
+config FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR
+	bool "DTR"
+
+endchoice
+
+endif # FLASH_MCUX_FLEXSPI_MX25UM51345G
+
 config FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
 	bool "MCUX FlexSPI NOR write RAM buffer"
 	default y
@@ -72,6 +91,7 @@ config FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
 
 config FLASH_MCUX_FLEXSPI_XIP
 	bool "MCUX FlexSPI flash access with xip"
+	default y
 	depends on MEMC_MCUX_FLEXSPI
 	depends on (CODE_FLEXSPI || CODE_FLEXSPI2 || SOC_SERIES_IMX_RT6XX)
 	select XIP

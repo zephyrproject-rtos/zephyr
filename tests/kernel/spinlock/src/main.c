@@ -3,11 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
 #include <tc_util.h>
 #include <ztest.h>
-#include <kernel.h>
-#include <spinlock.h>
+#include <zephyr/kernel.h>
+#include <zephyr/spinlock.h>
 
 BUILD_ASSERT(CONFIG_MP_NUM_CPUS > 1);
 

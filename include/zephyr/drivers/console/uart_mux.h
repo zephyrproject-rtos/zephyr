@@ -20,7 +20,7 @@
  */
 
 #include <zephyr/device.h>
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 
 #ifdef __cplusplus
 extern "C" {

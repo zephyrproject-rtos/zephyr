@@ -7,21 +7,20 @@
 #ifndef SIMCOM_SIM7080_H
 #define SIMCOM_SIM7080_H
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ctype.h>
 #include <inttypes.h>
 #include <errno.h>
-#include <zephyr.h>
-#include <drivers/gpio.h>
-#include <drivers/modem/simcom-sim7080.h>
-#include <device.h>
-#include <devicetree.h>
-#include <init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/modem/simcom-sim7080.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/init.h>
 #include <string.h>
 
-#include <net/net_if.h>
-#include <net/net_offload.h>
-#include <net/socket_offload.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_offload.h>
+#include <zephyr/net/socket_offload.h>
 
 #include "modem_context.h"
 #include "modem_cmd_handler.h"
@@ -166,13 +165,6 @@ struct sim7080_data {
 	struct k_sem sem_dns;
 	struct k_sem sem_ftp;
 };
-
-/*
- * Pin definitions
- */
-static struct modem_pin modem_pins[] = { MODEM_PIN(
-	DT_INST_GPIO_LABEL(0, mdm_power_gpios), DT_INST_GPIO_PIN(0, mdm_power_gpios),
-	DT_INST_GPIO_FLAGS(0, mdm_power_gpios) | GPIO_OUTPUT_LOW) };
 
 /*
  * Socket read callback data.

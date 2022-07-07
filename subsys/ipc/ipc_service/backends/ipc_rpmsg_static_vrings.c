@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
-#include <zephyr.h>
-#include <cache.h>
-#include <device.h>
-#include <sys/atomic.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/cache.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/atomic.h>
 
-#include <ipc/ipc_service_backend.h>
-#include <ipc/ipc_static_vrings.h>
-#include <ipc/ipc_rpmsg.h>
+#include <zephyr/ipc/ipc_service_backend.h>
+#include <zephyr/ipc/ipc_static_vrings.h>
+#include <zephyr/ipc/ipc_rpmsg.h>
 
-#include <drivers/mbox.h>
-#include <dt-bindings/ipc_service/static_vrings.h>
+#include <zephyr/drivers/mbox.h>
+#include <zephyr/dt-bindings/ipc_service/static_vrings.h>
 
 #include "ipc_rpmsg_static_vrings.h"
 
@@ -45,6 +45,9 @@ struct backend_data_t {
 	/* General */
 	unsigned int role;
 	atomic_t state;
+
+	/* TX buffer size */
+	int tx_buffer_size;
 };
 
 struct backend_config_t {
@@ -56,6 +59,7 @@ struct backend_config_t {
 	unsigned int wq_prio_type;
 	unsigned int wq_prio;
 	unsigned int id;
+	unsigned int buffer_size;
 };
 
 static void rpmsg_service_unbind(struct rpmsg_endpoint *ep)
@@ -226,15 +230,15 @@ static int vr_shm_configure(struct ipc_static_vrings *vr, const struct backend_c
 {
 	unsigned int num_desc;
 
-	num_desc = optimal_num_desc(conf->shm_size);
+	num_desc = optimal_num_desc(conf->shm_size, conf->buffer_size);
 	if (num_desc == 0) {
 		return -ENOMEM;
 	}
 
 	vr->shm_addr = conf->shm_addr + VDEV_STATUS_SIZE;
-	vr->shm_size = shm_size(num_desc) - VDEV_STATUS_SIZE;
+	vr->shm_size = shm_size(num_desc, conf->buffer_size) - VDEV_STATUS_SIZE;
 
-	vr->rx_addr = vr->shm_addr + VRING_COUNT * vq_ring_size(num_desc);
+	vr->rx_addr = vr->shm_addr + VRING_COUNT * vq_ring_size(num_desc, conf->buffer_size);
 	vr->tx_addr = vr->rx_addr + vring_size(num_desc, VRING_ALIGNMENT);
 
 	vr->status_reg_addr = conf->shm_addr;
@@ -394,6 +398,7 @@ static int send(const struct device *instance, void *token,
 {
 	struct backend_data_t *data = instance->data;
 	struct ipc_rpmsg_ept *rpmsg_ept;
+	int ret;
 
 	/* Instance is not ready */
 	if (atomic_get(&data->state) != STATE_INITED) {
@@ -407,7 +412,14 @@ static int send(const struct device *instance, void *token,
 
 	rpmsg_ept = (struct ipc_rpmsg_ept *) token;
 
-	return rpmsg_send(&rpmsg_ept->ep, msg, len);
+	ret = rpmsg_send(&rpmsg_ept->ep, msg, len);
+
+	/* No buffers available */
+	if (ret == RPMSG_ERR_NO_BUFF) {
+		return -ENOMEM;
+	}
+
+	return ret;
 }
 
 static int send_nocopy(const struct device *instance, void *token,
@@ -436,6 +448,7 @@ static int open(const struct device *instance)
 	const struct backend_config_t *conf = instance->config;
 	struct backend_data_t *data = instance->data;
 	struct ipc_rpmsg_instance *rpmsg_inst;
+	struct rpmsg_device *rdev;
 	int err;
 
 	if (!atomic_cas(&data->state, STATE_READY, STATE_BUSY)) {
@@ -465,10 +478,19 @@ static int open(const struct device *instance)
 	rpmsg_inst->bound_cb = bound_cb;
 	rpmsg_inst->cb = ept_cb;
 
-	err = ipc_rpmsg_init(rpmsg_inst, data->role, data->vr.shm_io, &data->vr.vdev,
+	err = ipc_rpmsg_init(rpmsg_inst, data->role, conf->buffer_size,
+			     data->vr.shm_io, &data->vr.vdev,
 			     (void *) data->vr.shm_device.regions->virt,
 			     data->vr.shm_device.regions->size, ns_bind_cb);
 	if (err != 0) {
+		goto error;
+	}
+
+	rdev = rpmsg_virtio_get_rpmsg_device(&rpmsg_inst->rvdev);
+
+	data->tx_buffer_size = rpmsg_virtio_get_buffer_size(rdev);
+	if (data->tx_buffer_size < 0) {
+		err = -EINVAL;
 		goto error;
 	}
 
@@ -485,27 +507,16 @@ error:
 static int get_tx_buffer_size(const struct device *instance, void *token)
 {
 	struct backend_data_t *data = instance->data;
-	struct ipc_rpmsg_instance *rpmsg_inst;
-	struct rpmsg_device *rdev;
-	int size;
 
-	rpmsg_inst = &data->rpmsg_inst;
-	rdev = rpmsg_virtio_get_rpmsg_device(&rpmsg_inst->rvdev);
-
-	size = rpmsg_virtio_get_buffer_size(rdev);
-	if (size < 0) {
-		return -EIO;
-	}
-
-	return size;
+	return data->tx_buffer_size;
 }
 
 static int get_tx_buffer(const struct device *instance, void *token,
 			 void **r_data, uint32_t *size, k_timeout_t wait)
 {
+	struct backend_data_t *data = instance->data;
 	struct ipc_rpmsg_ept *rpmsg_ept;
 	void *payload;
-	int buf_size;
 
 	rpmsg_ept = (struct ipc_rpmsg_ept *) token;
 
@@ -519,22 +530,24 @@ static int get_tx_buffer(const struct device *instance, void *token,
 	}
 
 	/* The user requested a specific size */
-	if (*size) {
-		buf_size = get_tx_buffer_size(instance, token);
-		if (buf_size < 0) {
-			return -EIO;
-		}
-
+	if ((*size) && (*size > data->tx_buffer_size)) {
 		/* Too big to fit */
-		if (*size > buf_size) {
-			*size = buf_size;
-			return -ENOMEM;
-		}
+		*size = data->tx_buffer_size;
+		return -ENOMEM;
 	}
 
-	payload = rpmsg_get_tx_payload_buffer(&rpmsg_ept->ep, size, K_TIMEOUT_EQ(wait, K_FOREVER));
+	/*
+	 * OpenAMP doesn't really have the concept of forever but instead it
+	 * gives up after 15 seconds.  In that case, just keep retrying.
+	 */
+	do {
+		payload = rpmsg_get_tx_payload_buffer(&rpmsg_ept->ep, size,
+						      K_TIMEOUT_EQ(wait, K_FOREVER));
+	} while ((!payload) && K_TIMEOUT_EQ(wait, K_FOREVER));
+
+	/* This should really only be valid for K_NO_WAIT */
 	if (!payload) {
-		return -EIO;
+		return -ENOBUFS;
 	}
 
 	(*r_data) = payload;
@@ -610,7 +623,9 @@ static int backend_init(const struct device *instance)
 			   (0)),							\
 		.wq_prio_type = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, zephyr_priority),	\
 			   (DT_INST_PROP_BY_IDX(i, zephyr_priority, 1)),		\
-			   (PRIO_COOP)),						\
+			   (PRIO_PREEMPT)),						\
+		.buffer_size = DT_INST_PROP_OR(i, zephyr_buffer_size,			\
+					       RPMSG_BUFFER_SIZE),			\
 		.id = i,								\
 	};										\
 											\

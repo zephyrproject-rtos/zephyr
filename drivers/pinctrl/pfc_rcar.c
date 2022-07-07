@@ -7,10 +7,10 @@
 
 #define DT_DRV_COMPAT renesas_rcar_pfc
 
-#include <devicetree.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define PFC_REG_BASE  DT_INST_REG_ADDR(0)
 #define PFC_RCAR_PMMR 0x0

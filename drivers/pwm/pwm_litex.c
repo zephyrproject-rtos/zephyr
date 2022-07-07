@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT litex_pwm
 
-#include <device.h>
-#include <drivers/pwm.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pwm.h>
 #include <zephyr/types.h>
 
 #define REG_EN_ENABLE             0x1
@@ -17,31 +17,16 @@
 #define NUMBER_OF_CHANNELS        1
 
 struct pwm_litex_cfg {
-	uint32_t reg_en_size;
-	uint32_t reg_width_size;
-	uint32_t reg_period_size;
-	volatile uint32_t *reg_en;
-	volatile uint32_t *reg_width;
-	volatile uint32_t *reg_period;
+	uint32_t reg_en;
+	uint32_t reg_width;
+	uint32_t reg_period;
 };
-
-static void litex_set_reg(volatile uint32_t *reg, uint32_t reg_size, uint32_t val)
-{
-	uint32_t shifted_data;
-	volatile uint32_t *reg_addr;
-
-	for (int i = 0; i < reg_size; ++i) {
-		shifted_data = val >> ((reg_size - i - 1) * 8);
-		reg_addr = ((volatile uint32_t *) reg) + i;
-		*(reg_addr) = shifted_data;
-	}
-}
 
 int pwm_litex_init(const struct device *dev)
 {
 	const struct pwm_litex_cfg *cfg = dev->config;
 
-	litex_set_reg(cfg->reg_en, cfg->reg_en_size, REG_EN_ENABLE);
+	litex_write8(REG_EN_ENABLE, cfg->reg_en);
 	return 0;
 }
 
@@ -55,10 +40,10 @@ int pwm_litex_set_cycles(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	litex_set_reg(cfg->reg_en, cfg->reg_en_size, REG_EN_DISABLE);
-	litex_set_reg(cfg->reg_width, cfg->reg_width_size, pulse_cycles);
-	litex_set_reg(cfg->reg_period, cfg->reg_period_size, period_cycles);
-	litex_set_reg(cfg->reg_en, cfg->reg_en_size, REG_EN_ENABLE);
+	litex_write8(REG_EN_DISABLE, cfg->reg_en);
+	litex_write32(pulse_cycles, cfg->reg_width);
+	litex_write32(period_cycles, cfg->reg_period);
+	litex_write8(REG_EN_ENABLE, cfg->reg_en);
 
 	return 0;
 }
@@ -81,25 +66,11 @@ static const struct pwm_driver_api pwm_litex_driver_api = {
 
 /* Device Instantiation */
 
-/* LiteX registers use only first byte from 4-bytes register, that's why they
- * occupy larger space in memory. We need to know the size that is
- * actually used, that is why the register size from dts is divided by 4.
- */
-
 #define PWM_LITEX_INIT(n)						       \
 	static const struct pwm_litex_cfg pwm_litex_cfg_##n = {		       \
-		.reg_en =						       \
-		  (volatile uint32_t *)                                           \
-			DT_INST_REG_ADDR_BY_NAME(n, enable),           \
-		.reg_en_size = DT_INST_REG_SIZE_BY_NAME(n, enable) / 4,        \
-		.reg_width =						       \
-		  (volatile uint32_t *)                                           \
-			DT_INST_REG_ADDR_BY_NAME(n, width),            \
-		.reg_width_size = DT_INST_REG_SIZE_BY_NAME(n, width) / 4,      \
-		.reg_period  =						       \
-		  (volatile uint32_t *)                                           \
-			DT_INST_REG_ADDR_BY_NAME(n, period),           \
-		.reg_period_size = DT_INST_REG_SIZE_BY_NAME(n, period) / 4,    \
+		.reg_en = DT_INST_REG_ADDR_BY_NAME(n, enable),		       \
+		.reg_width = DT_INST_REG_ADDR_BY_NAME(n, width),	       \
+		.reg_period = DT_INST_REG_ADDR_BY_NAME(n, period),	       \
 	};								       \
 									       \
 	DEVICE_DT_INST_DEFINE(n,					       \

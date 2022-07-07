@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 
-#include <net/net_pkt.h>
-#include <drivers/ptp_clock.h>
-#include <net/ethernet_mgmt.h>
-#include <random/rand32.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/drivers/ptp_clock.h>
+#include <zephyr/net/ethernet_mgmt.h>
+#include <zephyr/random/rand32.h>
 
-#include <net/gptp.h>
+#include <zephyr/net/gptp.h>
 
 #include "gptp_messages.h"
 #include "gptp_mi.h"
@@ -84,12 +84,8 @@ static void gptp_compute_clock_identity(int port)
 	}
 }
 
-/* Note that we do not use log_strdup() here when printing msg as currently the
- * msg variable is always a const string that is not allocated from the stack.
- * If this changes at some point, then add log_strdup(msg) here.
- */
 #define PRINT_INFO(msg, hdr, pkt)				\
-	NET_DBG("Received %s seq %d pkt %p", msg,		\
+	NET_DBG("Received %s seq %d pkt %p", (const char *)msg,	\
 		ntohs(hdr->sequence_id), pkt)			\
 
 

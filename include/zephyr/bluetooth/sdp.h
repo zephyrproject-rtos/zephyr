@@ -17,8 +17,8 @@
  * @{
  */
 
-#include <bluetooth/uuid.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/conn.h>
 
 #ifdef __cplusplus
 extern "C" {

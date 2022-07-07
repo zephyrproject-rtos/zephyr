@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <sys/device_mmio.h>
-#include <sys/util.h>
-#include <drivers/pcie/pcie.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/device_mmio.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/pcie/pcie.h>
 #include <soc.h>
 
 
-#ifdef UART_NS16550_ACCESS_IOPORT
+#ifdef CONFIG_UART_NS16550_ACCESS_IOPORT
 /* Legacy I/O Port Access to a NS16550 UART */
-#define IN(reg)       sys_in8(reg + UART_NS16550_ACCESS_IOPORT)
-#define OUT(reg, val) sys_out8(val, reg + UART_NS16550_ACCESS_IOPORT)
+#define IN(reg)       sys_in8(reg + DT_REG_ADDR(DT_CHOSEN(zephyr_console)))
+#define OUT(reg, val) sys_out8(val, reg + DT_REG_ADDR(DT_CHOSEN(zephyr_console)))
 #elif defined(X86_SOC_EARLY_SERIAL_PCIDEV)
 /* "Modern" mapping of a UART into a PCI MMIO device.  The registers
  * are still bytes, but spaced at a 32 bit stride instead of packed
@@ -86,7 +86,7 @@ int arch_printk_char_out(int c)
 
 void z_x86_early_serial_init(void)
 {
-#if defined(DEVICE_MMIO_IS_IN_RAM) && !defined(UART_NS16550_ACCESS_IOPORT)
+#if defined(DEVICE_MMIO_IS_IN_RAM) && !defined(CONFIG_UART_NS16550_ACCESS_IOPORT)
 #ifdef X86_SOC_EARLY_SERIAL_PCIDEV
 	struct pcie_mbar mbar;
 	pcie_get_mbar(X86_SOC_EARLY_SERIAL_PCIDEV, 0, &mbar);

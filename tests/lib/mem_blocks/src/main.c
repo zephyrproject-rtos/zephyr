@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
-#include <sys/heap_listener.h>
-#include <sys/mem_blocks.h>
-#include <sys/util.h>
+#include <zephyr/sys/heap_listener.h>
+#include <zephyr/sys/mem_blocks.h>
+#include <zephyr/sys/util.h>
 
 #define BLK_SZ     64
 #define NUM_BLOCKS 8

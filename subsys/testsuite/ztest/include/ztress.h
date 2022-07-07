@@ -6,8 +6,12 @@
 #ifndef TESTSUITE_ZTEST_INCLUDE_ZTRESS_H__
 #define TESTSUITE_ZTEST_INCLUDE_ZTRESS_H__
 
-#include <sys/util.h>
-#include <kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** @internal Internal ID's to distinguish context type. */
 #define ZTRESS_ID_THREAD 0
@@ -228,5 +232,9 @@ int ztress_preempt_count(uint32_t id);
  * @return Optimized timeout base.
  */
 uint32_t ztress_optimized_ticks(uint32_t id);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* TESTSUITE_ZTEST_INCLUDE_ZTRESS_H__ */

@@ -8,11 +8,11 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
-#include <sys/printk.h>
-#include <sys/util.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)

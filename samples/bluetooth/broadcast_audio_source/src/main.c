@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/audio.h>
 
 /* When BROADCAST_ENQUEUE_COUNT > 1 we can enqueue enough buffers to ensure that
  * the controller is never idle
@@ -83,6 +83,7 @@ struct bt_audio_stream_ops stream_ops = {
 
 void main(void)
 {
+	struct bt_audio_stream *streams_p[ARRAY_SIZE(streams)];
 	int err;
 
 	err = bt_enable(NULL);
@@ -94,6 +95,7 @@ void main(void)
 
 	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 		streams[i].ops = &stream_ops;
+		streams_p[i] = &streams[i];
 	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(mock_data); i++) {
@@ -103,8 +105,8 @@ void main(void)
 
 	while (true) {
 		printk("Creating broadcast source\n");
-		err = bt_audio_broadcast_source_create(streams,
-						       ARRAY_SIZE(streams),
+		err = bt_audio_broadcast_source_create(streams_p,
+						       ARRAY_SIZE(streams_p),
 						       &preset_16_2_1.codec,
 						       &preset_16_2_1.qos,
 						       &broadcast_source);

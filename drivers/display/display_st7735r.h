@@ -6,7 +6,7 @@
 #ifndef ST7735R_DISPLAY_DRIVER_H__
 #define ST7735R_DISPLAY_DRIVER_H__
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #define ST7735R_CMD_SW_RESET            0x01
 #define ST7735R_CMD_RDDID               0x04

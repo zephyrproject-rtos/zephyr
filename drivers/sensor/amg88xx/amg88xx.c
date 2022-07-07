@@ -7,15 +7,15 @@
 #define DT_DRV_COMPAT panasonic_amg88xx
 
 #include <string.h>
-#include <device.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 #include "amg88xx.h"
 
@@ -29,7 +29,7 @@ static int amg88xx_sample_fetch(const struct device *dev,
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
 
-	if (i2c_burst_read(drv_data->i2c, config->i2c_address,
+	if (i2c_burst_read_dt(&config->i2c,
 			   AMG88XX_OUTPUT_BASE,
 			   (uint8_t *)drv_data->sample,
 			   sizeof(drv_data->sample))) {
@@ -66,11 +66,10 @@ static int amg88xx_channel_get(const struct device *dev,
 
 static int amg88xx_init_device(const struct device *dev)
 {
-	struct amg88xx_data *drv_data = dev->data;
 	const struct amg88xx_config *config = dev->config;
 	uint8_t tmp;
 
-	if (i2c_reg_read_byte(drv_data->i2c, config->i2c_address,
+	if (i2c_reg_read_byte_dt(&config->i2c,
 			      AMG88XX_PCLT, &tmp)) {
 		LOG_ERR("Failed to read Power mode");
 		return -EIO;
@@ -78,8 +77,7 @@ static int amg88xx_init_device(const struct device *dev)
 
 	LOG_DBG("Power mode 0x%02x", tmp);
 	if (tmp != AMG88XX_PCLT_NORMAL_MODE) {
-		if (i2c_reg_write_byte(drv_data->i2c,
-				       config->i2c_address,
+		if (i2c_reg_write_byte_dt(&config->i2c,
 				       AMG88XX_PCLT,
 				       AMG88XX_PCLT_NORMAL_MODE)) {
 			return -EIO;
@@ -87,14 +85,14 @@ static int amg88xx_init_device(const struct device *dev)
 		k_busy_wait(AMG88XX_WAIT_MODE_CHANGE_US);
 	}
 
-	if (i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
+	if (i2c_reg_write_byte_dt(&config->i2c,
 			       AMG88XX_RST, AMG88XX_RST_INITIAL_RST)) {
 		return -EIO;
 	}
 
 	k_busy_wait(AMG88XX_WAIT_INITIAL_RESET_US);
 
-	if (i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
+	if (i2c_reg_write_byte_dt(&config->i2c,
 			       AMG88XX_FPSC, AMG88XX_FPSC_10FPS)) {
 		return -EIO;
 	}
@@ -106,13 +104,10 @@ static int amg88xx_init_device(const struct device *dev)
 
 int amg88xx_init(const struct device *dev)
 {
-	struct amg88xx_data *drv_data = dev->data;
 	const struct amg88xx_config *config = dev->config;
 
-	drv_data->i2c = device_get_binding(config->i2c_name);
-	if (drv_data->i2c == NULL) {
-		LOG_ERR("Failed to get pointer to %s device!",
-			config->i2c_name);
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
 		return -EINVAL;
 	}
 
@@ -144,12 +139,9 @@ static const struct sensor_driver_api amg88xx_driver_api = {
 };
 
 static const struct amg88xx_config amg88xx_config = {
-	.i2c_name = DT_INST_BUS_LABEL(0),
-	.i2c_address = DT_INST_REG_ADDR(0),
+	.i2c = I2C_DT_SPEC_INST_GET(0),
 #ifdef CONFIG_AMG88XX_TRIGGER
-	.gpio_name = DT_INST_GPIO_LABEL(0, int_gpios),
-	.gpio_pin = DT_INST_GPIO_PIN(0, int_gpios),
-	.gpio_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
+	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 #endif
 };
 

@@ -11,7 +11,7 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TBS_H_
 
 #include <zephyr/types.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/conn.h>
 
 /* Call States */
 #define BT_TBS_CALL_STATE_INCOMING                      0x00

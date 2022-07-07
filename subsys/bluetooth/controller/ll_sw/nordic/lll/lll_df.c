@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 #include <soc.h>
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/hci.h>
 
 #include "util/util.h"
 #include "util/memq.h"

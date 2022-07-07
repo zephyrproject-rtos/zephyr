@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
+#include <zephyr/init.h>
 
 #include "nrf_802154.h"
 #include "nrf_802154_serialization.h"

@@ -7,8 +7,8 @@
 #ifndef ZEPHYR_DRIVERS_PCIE_HOST_PTM_H_
 #define ZEPHYR_DRIVERS_PCIE_HOST_PTM_H_
 
-#include <drivers/pcie/pcie.h>
-#include <drivers/pcie/cap.h>
+#include <zephyr/drivers/pcie/pcie.h>
+#include <zephyr/drivers/pcie/cap.h>
 
 #define PTM_CAP_REG_OFFSET 0x04U
 

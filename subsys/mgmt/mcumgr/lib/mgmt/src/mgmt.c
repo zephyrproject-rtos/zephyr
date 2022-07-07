@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 #include <string.h>
 
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
-#include <mgmt/mcumgr/buf.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
 
 static mgmt_on_evt_cb evt_cb;
@@ -20,12 +20,6 @@ void *
 mgmt_streamer_alloc_rsp(struct mgmt_streamer *streamer, const void *req)
 {
 	return streamer->cfg->alloc_rsp(req, streamer->cb_arg);
-}
-
-void
-mgmt_streamer_trim_front(struct mgmt_streamer *streamer, void *buf, size_t len)
-{
-	streamer->cfg->trim_front(buf, len, streamer->cb_arg);
 }
 
 int
@@ -138,7 +132,7 @@ mgmt_write_rsp_status(struct mgmt_ctxt *ctxt, int errcode)
 	}
 #endif
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 void

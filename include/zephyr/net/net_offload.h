@@ -19,9 +19,9 @@
  * @{
  */
 
-#include <net/buf.h>
-#include <net/net_ip.h>
-#include <net/net_context.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_context.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -10,8 +10,8 @@
  * @brief EEPROM shell commands.
  */
 
-#include <shell/shell.h>
-#include <drivers/eeprom.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/eeprom.h>
 #include <stdlib.h>
 
 struct args_index {

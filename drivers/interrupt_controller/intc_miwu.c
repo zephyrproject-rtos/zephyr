@@ -46,17 +46,17 @@
  *
  */
 
-#include <device.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
-#include <sys/__assert.h>
-#include <irq_nextlevel.h>
-#include <drivers/gpio.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/irq_nextlevel.h>
+#include <zephyr/drivers/gpio.h>
 
 #include "soc_miwu.h"
 #include "soc_gpio.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(intc_miwu, LOG_LEVEL_ERR);
 
 /* MIWU module instances forward declaration */

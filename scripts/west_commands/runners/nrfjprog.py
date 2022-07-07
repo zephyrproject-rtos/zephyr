@@ -20,22 +20,6 @@ try:
 except ImportError:
     IntelHex = None
 
-# Helper function for inspecting hex files.
-# has_region returns True if hex file has any contents in a specific region
-# region_filter is a callable that takes an address as argument and
-# returns True if that address is in the region in question
-def has_region(regions, hex_file):
-    if IntelHex is None:
-        raise RuntimeError('one or more Python dependencies were missing; '
-                           "see the getting started guide for details on "
-                           "how to fix")
-
-    try:
-        ih = IntelHex(hex_file)
-        return any((len(ih[rs:re]) > 0) for (rs, re) in regions)
-    except FileNotFoundError:
-        return False
-
 # https://infocenter.nordicsemi.com/index.jsp?topic=%2Fug_nrf_cltools%2FUG%2Fcltools%2Fnrf_nrfjprogexe_return_codes.html&cp=9_1_3_1
 UnavailableOperationBecauseProtectionError = 16
 
@@ -188,6 +172,12 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         else:
             raise RuntimeError(f'unknown nRF; update {__file__}')
 
+    def hex_refers_region(self, region_start, region_end):
+        for segment_start, _ in self.hex_contents.segments():
+            if region_start <= segment_start <= region_end:
+                return True
+        return False
+
     def check_force_uicr(self):
         # On SoCs without --sectoranduicrerase, we want to fail by
         # default if the application contains UICR data and we're not sure
@@ -201,17 +191,16 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
             'NRF91': ((0x00FF8000, 0x00FF8800),),
         }
 
-        if self.family not in uicr_ranges:
+        if self.uicr_data_ok or self.family not in uicr_ranges:
             return
 
-        uicr = uicr_ranges[self.family]
-
-        if not self.uicr_data_ok and has_region(uicr, self.hex_):
-            # Hex file has UICR contents, and that's not OK.
-            raise RuntimeError(
-                'The hex file contains data placed in the UICR, which '
-                'needs a full erase before reprogramming. Run west '
-                'flash again with --force, --erase, or --recover.')
+        for region_start, region_end in uicr_ranges[self.family]:
+            if self.hex_refers_region(region_start, region_end):
+                # Hex file has UICR contents, and that's not OK.
+                raise RuntimeError(
+                    'The hex file contains data placed in the UICR, which '
+                    'needs a full erase before reprogramming. Run west '
+                    'flash again with --force, --erase, or --recover.')
 
     @property
     def uicr_data_ok(self):
@@ -249,17 +238,28 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
             else:
                 erase_arg = '--sectorerase'
 
+        xip_ranges = {
+            'NRF52': (0x12000000, 0x19FFFFFF),
+            'NRF53': (0x10000000, 0x1FFFFFFF),
+        }
+        qspi_erase_opt = []
+        if self.family in xip_ranges:
+            xip_start, xip_end = xip_ranges[self.family]
+            if self.hex_refers_region(xip_start, xip_end):
+                qspi_erase_opt = ['--qspisectorerase']
+
         # What nrfjprog commands do we need to flash this target?
         program_commands = []
         if self.family == 'NRF53':
             # nRF53 requires special treatment due to the extra coprocessor.
-            self.program_hex_nrf53(erase_arg, program_commands)
+            self.program_hex_nrf53(erase_arg, qspi_erase_opt, program_commands)
         else:
             # It's important for tool_opt to come last, so it can override
             # any options that we set here.
             program_commands.append(['nrfjprog', '--program', self.hex_,
-                                     erase_arg, '--verify',
-                                     '-f', self.family,
+                                     erase_arg] +
+                                    qspi_erase_opt +
+                                    ['--verify', '-f', self.family,
                                      '--snr', self.dev_id] +
                                     self.tool_opt)
 
@@ -284,7 +284,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                     family_help)
             raise
 
-    def program_hex_nrf53(self, erase_arg, program_commands):
+    def program_hex_nrf53(self, erase_arg, qspi_erase_opt, program_commands):
         # program_hex() helper for nRF53.
 
         # *********************** NOTE *******************************
@@ -305,32 +305,42 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         # one core's flash, then we skip the extra work to save time.
         # ************************************************************
 
-        def add_program_cmd(hex_file, coprocessor):
+        def add_program_cmd(hex_file, coprocessor, qspi_erase_opt):
             program_commands.append(
-                ['nrfjprog', '--program', hex_file, erase_arg,
-                '--verify', '-f', 'NRF53', '--snr', self.dev_id,
-                 '--coprocessor', coprocessor] + self.tool_opt)
+                ['nrfjprog', '--program', hex_file, erase_arg] +
+                qspi_erase_opt +
+                ['--verify', '-f', 'NRF53', '--snr', self.dev_id,
+                 '--coprocessor', coprocessor] +
+                self.tool_opt)
 
-        full_hex = IntelHex()
-        full_hex.loadfile(self.hex_, format='hex')
-        min_addr, max_addr = full_hex.minaddr(), full_hex.maxaddr()
+        # Address range of the network coprocessor's flash. From nRF5340 OPS.
+        # We should get this from DTS instead if multiple values are possible,
+        # but this is fine for now.
+        net_flash_start = 0x01000000
+        net_flash_end   = 0x0103FFFF
 
-        # Base address of network coprocessor's flash. From nRF5340
-        # OPS. We should get this from DTS instead if multiple values
-        # are possible, but this is fine for now.
-        net_base = 0x01000000
+        # If there is nothing in the hex file for the network core,
+        # only the application core is programmed.
+        if not self.hex_refers_region(net_flash_start, net_flash_end):
+            add_program_cmd(self.hex_, 'CP_APPLICATION', qspi_erase_opt)
+        # If there is some content that addresses a region beyond the network
+        # core flash range, two hex files are generated and the two cores
+        # are programmed one by one.
+        elif self.hex_contents.minaddr() < net_flash_start or \
+             self.hex_contents.maxaddr() > net_flash_end:
 
-        if min_addr < net_base <= max_addr:
             net_hex, app_hex = IntelHex(), IntelHex()
-
-            for start, stop in full_hex.segments():
-                segment_hex = net_hex if start >= net_base else app_hex
-                segment_hex.merge(full_hex[start:stop])
+            for start, end in self.hex_contents.segments():
+                if net_flash_start <= start <= net_flash_end:
+                    net_hex.merge(self.hex_contents[start:end])
+                else:
+                    app_hex.merge(self.hex_contents[start:end])
 
             hex_path = Path(self.hex_)
             hex_dir, hex_name = hex_path.parent, hex_path.name
 
-            net_hex_file = os.fspath(hex_dir / f'GENERATED_CP_NETWORK_{hex_name}')
+            net_hex_file = os.fspath(
+                hex_dir / f'GENERATED_CP_NETWORK_{hex_name}')
             app_hex_file = os.fspath(
                 hex_dir / f'GENERATED_CP_APPLICATION_{hex_name}')
 
@@ -341,11 +351,11 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
             net_hex.write_hex_file(net_hex_file)
             app_hex.write_hex_file(app_hex_file)
 
-            add_program_cmd(net_hex_file, 'CP_NETWORK')
-            add_program_cmd(app_hex_file, 'CP_APPLICATION')
+            add_program_cmd(net_hex_file, 'CP_NETWORK', [])
+            add_program_cmd(app_hex_file, 'CP_APPLICATION', qspi_erase_opt)
+        # Otherwise, only the network core is programmed.
         else:
-            coprocessor = 'CP_NETWORK' if max_addr >= net_base else 'CP_APPLICATION'
-            add_program_cmd(self.hex_, coprocessor)
+            add_program_cmd(self.hex_, 'CP_NETWORK', [])
 
     def reset_target(self):
         if self.family == 'NRF52' and not self.softreset:
@@ -363,6 +373,16 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         self.require('nrfjprog')
 
         self.ensure_output('hex')
+        if IntelHex is None:
+            raise RuntimeError('one or more Python dependencies were missing; '
+                               'see the getting started guide for details on '
+                               'how to fix')
+        self.hex_contents = IntelHex()
+        try:
+            self.hex_contents.loadfile(self.hex_, format='hex')
+        except FileNotFoundError:
+            pass
+
         self.ensure_snr()
         self.ensure_family()
         self.check_force_uicr()

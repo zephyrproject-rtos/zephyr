@@ -66,8 +66,8 @@
 #include <tinycrypt/sha256.h>
 #include <test_utils.h>
 #include "test_ecc_utils.h"
-#include <sys/util.h>
-#include <random/rand32.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/random/rand32.h>
 
 #include <stdio.h>
 #include <stdlib.h>

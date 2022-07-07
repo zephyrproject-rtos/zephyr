@@ -8,13 +8,13 @@
  * @brief Driver for Nordic Semiconductor nRF5X UART
  */
 
-#include <drivers/uart.h>
-#include <pm/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/pm/device.h>
 #include <soc.h>
 #include <hal/nrf_uart.h>
 
 #ifdef CONFIG_PINCTRL
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #else
 #include <hal/nrf_gpio.h>
 #endif /* CONFIG_PINCTRL */

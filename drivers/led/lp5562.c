@@ -30,13 +30,13 @@
  * communication between the host MCU and the driver.
  */
 
-#include <drivers/i2c.h>
-#include <drivers/led.h>
-#include <device.h>
-#include <zephyr.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/device.h>
+#include <zephyr/zephyr.h>
 
 #define LOG_LEVEL CONFIG_LED_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lp5562);
 
 #include "led_context.h"
@@ -938,12 +938,6 @@ static int lp5562_led_init(const struct device *dev)
 	return 0;
 }
 
-static const struct lp5562_config lp5562_led_config = {
-	.bus = I2C_DT_SPEC_INST_GET(0),
-};
-
-static struct lp5562_data lp5562_led_data;
-
 static const struct led_driver_api lp5562_led_api = {
 	.blink = lp5562_led_blink,
 	.set_brightness = lp5562_led_set_brightness,
@@ -951,6 +945,16 @@ static const struct led_driver_api lp5562_led_api = {
 	.off = lp5562_led_off,
 };
 
-DEVICE_DT_INST_DEFINE(0, &lp5562_led_init, NULL, &lp5562_led_data,
-		      &lp5562_led_config, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,
-		      &lp5562_led_api);
+#define LP5562_DEFINE(id)						\
+	static const struct lp5562_config lp5562_config_##id = {	\
+		.bus = I2C_DT_SPEC_INST_GET(id),			\
+	};								\
+									\
+	struct lp5562_data lp5562_data_##id;				\
+	DEVICE_DT_INST_DEFINE(id, &lp5562_led_init, NULL,		\
+			&lp5562_data_##id,				\
+			&lp5562_config_##id, POST_KERNEL,		\
+			CONFIG_LED_INIT_PRIORITY,			\
+			&lp5562_led_api);				\
+
+DT_INST_FOREACH_STATUS_OKAY(LP5562_DEFINE)

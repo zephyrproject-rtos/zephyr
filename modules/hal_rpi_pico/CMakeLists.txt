@@ -22,11 +22,14 @@ if(CONFIG_HAS_RPI_PICO)
     endforeach()
 
     set(rp2_bootloader_prefix ${CMAKE_BINARY_DIR}/bootloader)
+    set(rp2_bootloader_asm ${rp2_bootloader_prefix}/boot_stage2.S)
+
     ExternalProject_Add(
       second_stage_bootloader
       SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/bootloader
       BINARY_DIR ${rp2_bootloader_prefix}
       CMAKE_ARGS
+        -DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}
         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
         -DCMAKE_ASM_COMPILER=${CMAKE_ASM_COMPILER}
         -DZEPHYR_HAL_RPI_PICO_MODULE_DIR=${ZEPHYR_HAL_RPI_PICO_MODULE_DIR}
@@ -34,11 +37,14 @@ if(CONFIG_HAS_RPI_PICO)
         -DFLASH_TYPE=${flash_type}
         -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}
         -DCONFIG_LEGACY_INCLUDE_PATH=$<BOOL:${CONFIG_LEGACY_INCLUDE_PATH}>
+        -DRP2_BOOTLOADER_BYPRODUCT=${rp2_bootloader_asm}
       INSTALL_COMMAND "" # No installation needed
-      BUILD_BYPRODUCTS ${rp2_bootloader_prefix}/boot_stage2.S
+      BUILD_BYPRODUCTS ${rp2_bootloader_asm}
       BUILD_ALWAYS TRUE
       )
-    zephyr_library_sources(${rp2_bootloader_prefix}/boot_stage2.S)
+
+      add_dependencies(${ZEPHYR_CURRENT_LIBRARY} second_stage_bootloader)
+      zephyr_library_sources(${rp2_bootloader_asm})
   endif()
 
   # Pico sources and headers necessary for every build.

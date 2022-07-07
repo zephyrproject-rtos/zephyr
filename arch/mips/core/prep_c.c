@@ -10,7 +10,7 @@
  */
 
 #include <kernel_internal.h>
-#include <irq.h>
+#include <zephyr/irq.h>
 
 static void interrupt_init(void)
 {

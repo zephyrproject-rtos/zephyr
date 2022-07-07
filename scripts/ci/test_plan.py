@@ -7,10 +7,9 @@
 import re, os
 import argparse
 import yaml
-import json
 import fnmatch
 import subprocess
-import csv
+import json
 import logging
 import sys
 from git import Repo
@@ -104,18 +103,17 @@ class Filters:
             self.find_boards()
 
     def get_plan(self, options, integration=False):
-        fname = "_test_plan_partial.csv"
+        fname = "_test_plan_partial.json"
         cmd = ["scripts/twister", "-c"] + options + ["--save-tests", fname ]
         if integration:
             cmd.append("--integration")
 
         logging.info(" ".join(cmd))
         _ = subprocess.call(cmd)
-        with open(fname, newline='') as csvfile:
-            csv_reader = csv.reader(csvfile, delimiter=',')
-            _ = next(csv_reader)
-            for e in csv_reader:
-                self.all_tests.append(e)
+        with open(fname, newline='') as jsonfile:
+            json_data = json.load(jsonfile)
+            suites = json_data.get("testsuites", [])
+            self.all_tests.extend(suites)
         if os.path.exists(fname):
             os.remove(fname)
 
@@ -172,6 +170,10 @@ class Filters:
                     all_boards.add(kb.name)
 
         _options = []
+        if len(all_boards) > 20:
+            logging.warning(f"{len(boards)} boards changed, this looks like a global change, skipping test handling")
+            return
+
         for board in all_boards:
             _options.extend(["-p", board ])
 
@@ -197,8 +199,12 @@ class Filters:
         for t in tests:
             _options.extend(["-T", t ])
 
+        if len(tests) > 20:
+            logging.warning(f"{len(tests)} tests changed, this looks like a global change, skipping test handling")
+            return
+
         if _options:
-            logging.info(f'Potential test filters...')
+            logging.info(f'Potential test filters...({len(tests)} changed...)')
             if self.platforms:
                 for platform in self.platforms:
                     _options.extend(["-p", platform])
@@ -283,8 +289,8 @@ def parse_args():
             help="Commit range in the form: a..b")
     parser.add_argument('-m', '--modified-files', default=None,
             help="File with information about changed/deleted/added files.")
-    parser.add_argument('-o', '--output-file', default="testplan.csv",
-            help="CSV file with the test plan to be passed to twister")
+    parser.add_argument('-o', '--output-file', default="testplan.json",
+            help="JSON file with the test plan to be passed to twister")
     parser.add_argument('-P', '--pull-request', action="store_true",
             help="This is a pull request")
     parser.add_argument('-p', '--platform', action="append",
@@ -320,12 +326,18 @@ if __name__ == "__main__":
     # remove dupes and filtered cases
     dup_free = []
     dup_free_set = set()
-    for x in f.all_tests:
-        if x[3] == 'skipped':
+    logging.info(f'Total tests gathered: {len(f.all_tests)}')
+    for ts in f.all_tests:
+        if ts.get('status') == 'filtered':
             continue
-        if tuple(x) not in dup_free_set:
-            dup_free.append(x)
-            dup_free_set.add(tuple(x))
+        n = ts.get("name")
+        a = ts.get("arch")
+        p = ts.get("platform")
+        if (n, a, p,) not in dup_free_set:
+            dup_free.append(ts)
+            dup_free_set.add((n, a, p,))
+        else:
+            logging.info(f"skipped {n} on {p}")
 
     logging.info(f'Total tests to be run: {len(dup_free)}')
     with open(".testplan", "w") as tp:
@@ -351,7 +363,7 @@ if __name__ == "__main__":
 
     # write plan
     if dup_free:
-        with open(args.output_file, 'w', newline='') as csv_file:
-            writer = csv.writer(csv_file)
-            writer.writerow(header)
-            writer.writerows(dup_free)
+        data = {}
+        data['testsuites'] = dup_free
+        with open(args.output_file, 'w', newline='') as json_file:
+            json.dump(data, json_file, indent=4, separators=(',',':'))

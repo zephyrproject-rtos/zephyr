@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ztest.h>
-#include <drivers/ipm.h>
+#include <zephyr/drivers/ipm.h>
 #include "tests.h"
 
 #define IPM_DEV device_get_binding("ipm_cavs_host")

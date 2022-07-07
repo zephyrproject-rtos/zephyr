@@ -3,9 +3,12 @@
 # Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+# BT_CTLR_DF_SUPPORT is a wrapper for all DF features.
+# If only certain DF features are supported, those should be selected
+# individually.
 config BT_CTLR_DF_SUPPORT
 	bool
-	depends on !BT_CTLR_TIFS_HW
+	depends on BT_LL_SW_SPLIT && !BT_CTLR_TIFS_HW
 	select BT_CTLR_DF_CTE_TX_SUPPORT
 	select BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
 	select BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
@@ -31,9 +34,8 @@ config BT_CTLR_CTEINLINE_SUPPORT
 	bool
 
 menuconfig BT_CTLR_DF
-	bool "LE Direction Finding [EXPERIMENTAL]"
-	depends on BT_CTLR_DF_SUPPORT
-	select EXPERIMENTAL
+	bool "LE Direction Finding"
+	depends on BT_CTLR_DF_CTE_TX_SUPPORT || BT_CTLR_DF_CTE_RX_SUPPORT
 	help
 	  Enable support for Bluetooth 5.1 Direction Finding
 
@@ -112,7 +114,7 @@ config BT_CTLR_DF_CONN_CTE_RSP
 config BT_CTLR_DF_ADV_CTE_TX
 	bool "Connectionless CTE Transmitter feature"
 	depends on BT_CTLR_DF_CTE_TX && BT_CTLR_ADV_PERIODIC
-	select BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
+	select BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY if BT_LL_SW_SPLIT
 	default y
 	help
 	  Enable support for Bluetooth v5.1 Connectionless CTE Transmitter
@@ -142,6 +144,8 @@ config BT_CTLR_DF_CONN_CTE_RX
 	  Enable reception and sampling of Constant Tone Extension in direction
 	  finding connected mode.
 
+if BT_LL_SW_SPLIT
+
 config BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC
 	bool "Sampling of CTE for PDUs with bad CRC"
 	depends on BT_CTLR_DF_SCAN_CTE_RX
@@ -153,13 +157,13 @@ config BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC
 
 config BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN
 	int "Maximum length of antenna switch pattern"
-	range 3 39 if SOC_COMPATIBLE_NRF
+	range 2 38 if SOC_COMPATIBLE_NRF
 	range 2 75 if !SOC_COMPATIBLE_NRF
 	default 12
 	help
 	  Defines maximum length of antenna switch pattern that controller
 	  is able to store. For nRF5x-based controllers, the hardware imposes
-	  the value is within range 3 to 40, where last value is maximum.
+	  the value is within range 2 to 38, where last value is maximum.
 	  For general use cases Bluetooth Core 5.1 spec. required the value
 	  to be within range 2 up to 75.
 
@@ -265,5 +269,7 @@ config BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE
 	  CTEINLINECTRLEN is enabled and received PDU does not have CTEInfo field. The option
 	  enables workaround for the delay to maintain inter frame spacing (IFS) for connection
 	  events.
+
+endif # BT_LL_SW_SPLIT
 
 endif # BT_CTLR_DF

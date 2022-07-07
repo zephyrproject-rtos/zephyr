@@ -10,19 +10,19 @@
 
 #include <errno.h>
 
-#include <zephyr.h>
-#include <init.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
 
-#include <mgmt/mcumgr/smp_bt.h>
-#include <mgmt/mcumgr/buf.h>
+#include <zephyr/mgmt/mcumgr/smp_bt.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
 
-#include <mgmt/mcumgr/smp.h>
+#include <zephyr/mgmt/mcumgr/smp.h>
 #include "smp_reassembly.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(mcumgr_smp, CONFIG_MCUMGR_SMP_LOG_LEVEL);
 
 #define RESTORE_TIME	COND_CODE_1(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL, \

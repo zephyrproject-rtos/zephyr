@@ -1,0 +1,73 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "skeleton.dtsi"
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu: cpu@0 {
+			device_type = "cpu";
+			compatible = "altr,nios2f";
+			reg = <0>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+		};
+	};
+
+	flash0: flash@0 {
+		compatible = "soc-nv-flash";
+		reg = <0x00 0xb8000>;
+	};
+
+	sram0: memory@400000 {
+		compatible = "mmio-sram";
+		reg = <0x400000 0x20000>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&cpu>;
+		ranges;
+
+		uart0: uart@100000 {
+			compatible = "ns16550";
+			reg = <0x100000 0x400>;
+			clock-frequency = <50000000>;
+			interrupts = <1 0>;
+			label = "UART_0";
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		jtag_uart: uart@201000 {
+			compatible = "altr,jtag-uart";
+			reg = <0x201000 0x8>;
+			label = "JTAG_UART";
+
+			status = "disabled";
+		};
+
+		i2c0: i2c@100200 {
+			compatible = "altr,nios2-i2c";
+			clock-frequency = <I2C_BITRATE_ULTRA>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x100200 0x400>;
+			interrupts = <4 10>;
+			label = "I2C_0";
+		};
+
+		dma: dma@100200 {
+			compatible = "altr,msgdma";
+			reg = <0x1002c0 0x30>;
+			label = "DMA_0";
+			interrupts = <3 3>;
+			#dma-cells = <0>;
+		};
+	};
+};

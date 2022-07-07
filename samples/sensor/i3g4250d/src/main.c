@@ -5,9 +5,9 @@
  */
 
 #include <stdio.h>
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 
 #define SAMPLING_INTERVAL_MS 10
 #define DISPLAY_INTERVAL_MS 50

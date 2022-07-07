@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <sys/printk.h>
-#include <device.h>
-#include <drivers/can.h>
-#include <drivers/gpio.h>
-#include <sys/byteorder.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/byteorder.h>
 
 #define RX_THREAD_STACK_SIZE 512
 #define RX_THREAD_PRIORITY 2
@@ -220,7 +219,11 @@ void main(void)
 	}
 
 #ifdef CONFIG_LOOPBACK_MODE
-	can_set_mode(can_dev, CAN_LOOPBACK_MODE);
+	ret = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
+	if (ret != 0) {
+		printk("Error setting CAN mode [%d]", ret);
+		return;
+	}
 #endif
 
 	if (led.port != NULL) {

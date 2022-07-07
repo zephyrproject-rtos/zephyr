@@ -6,8 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_
 
-#include <arch/x86/intel64/thread.h>
-#include <arch/x86/thread_stack.h>
+#include <zephyr/arch/x86/intel64/thread.h>
+#include <zephyr/arch/x86/thread_stack.h>
 
 #if CONFIG_ISR_STACK_SIZE != (CONFIG_ISR_SUBSTACK_SIZE * CONFIG_ISR_DEPTH)
 #error "Check ISR stack configuration (CONFIG_ISR_*)"

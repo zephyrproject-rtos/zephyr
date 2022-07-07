@@ -10,13 +10,13 @@
 #define DT_DRV_COMPAT zephyr_espi_emul_espi_host
 
 #define LOG_LEVEL CONFIG_ESPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(espi_host);
 
-#include <device.h>
-#include <drivers/emul.h>
-#include <drivers/espi.h>
-#include <drivers/espi_emul.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/emul.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/espi_emul.h>
 
 /** Data about the virtual wire */
 struct vw_data {

@@ -4,20 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <updatehub.h>
-#include <net/net_mgmt.h>
-#include <net/net_event.h>
-#include <net/net_conn_mgr.h>
-#include <net/wifi_mgmt.h>
-#include <dfu/mcuboot.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_event.h>
+#include <zephyr/net/net_conn_mgr.h>
+#include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/dfu/mcuboot.h>
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
-#include <net/tls_credentials.h>
+#include <zephyr/net/tls_credentials.h>
 #include "c_certificates.h"
 #endif
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
 #define EVENT_MASK (NET_EVENT_L4_CONNECTED | \

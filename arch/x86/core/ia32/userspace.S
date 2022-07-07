@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arch/x86/ia32/asm.h>
-#include <arch/cpu.h>
+#include <zephyr/arch/x86/ia32/asm.h>
+#include <zephyr/arch/cpu.h>
 #include <offsets_short.h>
-#include <syscall.h>
-#include <sys/mem_manage.h>
+#include <zephyr/syscall.h>
+#include <zephyr/sys/mem_manage.h>
 #include <x86_mmu.h>
 
 /* Exports */

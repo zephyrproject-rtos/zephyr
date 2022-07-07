@@ -115,6 +115,13 @@
 	status = "okay";
 };
 
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiod 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+};
+
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";

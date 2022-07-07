@@ -11,9 +11,9 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <toolchain.h>
-#include <sys/util.h>
-#include <sys/__assert.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
 
 /*
  * Special alignment cases
@@ -30,7 +30,11 @@
 #elif defined(__aarch64__)
 #define VA_STACK_MIN_ALIGN	8
 #elif defined(__riscv)
+#ifdef CONFIG_RISCV_ISA_RV32E
+#define VA_STACK_ALIGN(type)	4
+#else
 #define VA_STACK_MIN_ALIGN	(__riscv_xlen / 8)
+#endif /* CONFIG_RISCV_ISA_RV32E */
 #endif
 
 /*
@@ -52,7 +56,7 @@ static inline void z_cbprintf_wcpy(int *dst, int *src, size_t len)
 	}
 }
 
-#include <sys/cbprintf_cxx.h>
+#include <zephyr/sys/cbprintf_cxx.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -168,6 +172,8 @@ extern "C" {
 #else
 #define Z_CBPRINTF_ARG_SIZE(v) ({\
 	__auto_type _v = (v) + 0; \
+	/* Static code analysis may complain about unused variable. */ \
+	(void)_v; \
 	size_t _arg_size = _Generic((v), \
 		float : sizeof(double), \
 		default : \
@@ -194,6 +200,9 @@ extern "C" {
 				float : (arg) + 0, \
 				default : \
 					0.0); \
+		/* Static code analysis may complain about unused variable. */ \
+		(void)_v; \
+		(void)_d; \
 		size_t arg_size = Z_CBPRINTF_ARG_SIZE(arg); \
 		size_t _wsize = arg_size / sizeof(int); \
 		z_cbprintf_wcpy((int *)buf, \
@@ -323,25 +332,6 @@ do { \
 #define Z_CBPRINTF_PACK_ARG(arg_idx, arg) \
 	Z_CBPRINTF_PACK_ARG2(arg_idx, _pbuf, _pkg_len, _pkg_offset, _pmax, arg)
 
-/** @brief Package descriptor.
- *
- * @param len Package length.
- *
- * @param str_cnt Number of strings stored in the package.
- */
-struct z_cbprintf_desc {
-	uint8_t len;
-	uint8_t str_cnt;    /* Number of appended strings in the package. */
-	uint8_t ro_str_cnt; /* Number of read-only strings, indexes appended to the package.*/
-	uint8_t rw_str_cnt; /* Number of read-write strings, indexes appended to the package.*/
-};
-
-/** @brief Package header. */
-union z_cbprintf_hdr {
-	struct z_cbprintf_desc desc;
-	void *raw;
-};
-
 /* When using clang additional warning needs to be suppressed since each
  * argument of fmt string is used for sizeof() which results in the warning
  * if argument is a string literal. Suppression is added here instead of
@@ -357,7 +347,15 @@ union z_cbprintf_hdr {
 /* Allocation to avoid using VLA and alloca. Alloc frees space when leaving
  * a function which can lead to increased stack usage if logging is used
  * multiple times. VLA is not always available.
+ *
+ * Use large array when optimization is off to avoid increased stack usage.
  */
+#ifdef CONFIG_NO_OPTIMIZATIONS
+#define Z_CBPRINTF_ON_STACK_ALLOC(_name, _len) \
+	__ASSERT(_len <= 32, "Too many string arguments."); \
+	uint8_t _name##_buf32[32]; \
+	_name = _name##_buf32
+#else
 #define Z_CBPRINTF_ON_STACK_ALLOC(_name, _len) \
 	__ASSERT(_len <= 32, "Too many string arguments."); \
 	uint8_t _name##_buf4[4]; \
@@ -370,6 +368,7 @@ union z_cbprintf_hdr {
 		((_len) <= 12 ? _name##_buf12 : \
 		((_len) <= 16 ? _name##_buf16 : \
 		 _name##_buf32)))
+#endif
 
 /** @brief Statically package a formatted string with arguments.
  *
@@ -423,20 +422,20 @@ do { \
 	int _pkg_len = 0; \
 	int _total_len = 0; \
 	int _pkg_offset = _align_offset; \
-	union z_cbprintf_hdr *_len_loc; \
+	union cbprintf_package_hdr *_len_loc; \
 	/* If string has rw string arguments CBPRINTF_PACKAGE_ADD_RW_STR_POS is a must. */ \
 	if (_rws_cnt && !((_flags) & CBPRINTF_PACKAGE_ADD_RW_STR_POS)) { \
 		_outlen = -EINVAL; \
 		break; \
 	} \
 	/* package starts with string address and field with length */ \
-	if (_pmax < sizeof(union z_cbprintf_hdr)) { \
+	if (_pmax < sizeof(*_len_loc)) { \
 		_outlen = -ENOSPC; \
 		break; \
 	} \
-	_len_loc = (union z_cbprintf_hdr *)_pbuf; \
-	_pkg_len += sizeof(union z_cbprintf_hdr); \
-	_pkg_offset += sizeof(union z_cbprintf_hdr); \
+	_len_loc = (union cbprintf_package_hdr *)_pbuf; \
+	_pkg_len += sizeof(*_len_loc); \
+	_pkg_offset += sizeof(*_len_loc); \
 	/* Pack remaining arguments */\
 	FOR_EACH_IDX(Z_CBPRINTF_PACK_ARG, (;), __VA_ARGS__);\
 	_total_len = _pkg_len; \
@@ -457,7 +456,7 @@ do { \
 	_outlen = (_total_len > (int)_pmax) ? -ENOSPC : _total_len; \
 	/* Store length in the header, set number of dumped strings to 0 */ \
 	if (_pbuf) { \
-		union z_cbprintf_hdr hdr = { \
+		union cbprintf_package_hdr hdr = { \
 			.desc = { \
 				.len = (uint8_t)(_pkg_len / sizeof(int)), \
 				.str_cnt = 0, \
@@ -465,6 +464,8 @@ do { \
 				.rw_str_cnt = _rws_cnt, \
 			} \
 		}; \
+		IF_ENABLED(CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS, \
+			   (hdr.desc.pkg_flags = flags)); \
 		*_len_loc = hdr; \
 	} \
 	_Pragma("GCC diagnostic pop") \
@@ -492,5 +493,113 @@ do { \
 }
 #endif
 
+#ifdef CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS
+#ifdef __cplusplus
+/*
+ * Remove qualifiers like const, volatile. And also transform
+ * C++ argument reference back to its basic type.
+ */
+#define Z_CBPRINTF_ARG_REMOVE_QUAL(arg) \
+	z_cbprintf_cxx_remove_cv < \
+		z_cbprintf_cxx_remove_reference < decltype(arg) > ::type \
+	> ::type
+
+/*
+ * Note that qualifiers of char * must be explicitly matched
+ * due to type matching in C++, where remove_cv() does not work.
+ */
+#define Z_CBPRINTF_ARG_TYPE(arg) \
+	(z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
+	 char > ::value ? \
+	 CBPRINTF_PACKAGE_ARG_TYPE_CHAR : \
+	 (z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
+	  unsigned char > ::value ? \
+	  CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_CHAR : \
+	  (z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
+	   short > ::value ? \
+	   CBPRINTF_PACKAGE_ARG_TYPE_SHORT : \
+	   (z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
+	    unsigned short > ::value ? \
+	    CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_SHORT : \
+	    (z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
+	     int > ::value ? \
+	     CBPRINTF_PACKAGE_ARG_TYPE_INT : \
+	     (z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
+	      unsigned int > ::value ? \
+	      CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_INT : \
+	      (z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
+	       long > ::value ? \
+	       CBPRINTF_PACKAGE_ARG_TYPE_LONG : \
+	       (z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
+		unsigned long > ::value ? \
+		CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_LONG : \
+		(z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
+		 long long > ::value ? \
+		 CBPRINTF_PACKAGE_ARG_TYPE_LONG_LONG : \
+		 (z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
+		  unsigned long long > ::value ? \
+		  CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_LONG_LONG : \
+		  (z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
+		   float > ::value ? \
+		   CBPRINTF_PACKAGE_ARG_TYPE_FLOAT : \
+		   (z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
+		    double > ::value ? \
+		    CBPRINTF_PACKAGE_ARG_TYPE_DOUBLE : \
+		    (z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
+		     long double > ::value ? \
+		     CBPRINTF_PACKAGE_ARG_TYPE_LONG_DOUBLE : \
+		      (z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
+		       char * > :: value ? \
+		       CBPRINTF_PACKAGE_ARG_TYPE_PTR_CHAR : \
+		       (z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
+			const char * > :: value ? \
+			CBPRINTF_PACKAGE_ARG_TYPE_PTR_CHAR : \
+			(z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
+			 volatile char * > :: value ? \
+			 CBPRINTF_PACKAGE_ARG_TYPE_PTR_CHAR : \
+			 (z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
+			  const volatile char * > :: value ? \
+			  CBPRINTF_PACKAGE_ARG_TYPE_PTR_CHAR : \
+			  CBPRINTF_PACKAGE_ARG_TYPE_PTR_VOID)))))))))))))))))
+#else
+#define Z_CBPRINTF_ARG_TYPE(arg) \
+	_Generic(arg, \
+		char : CBPRINTF_PACKAGE_ARG_TYPE_CHAR, \
+		unsigned char : CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_CHAR, \
+		short : CBPRINTF_PACKAGE_ARG_TYPE_SHORT, \
+		unsigned short : CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_SHORT, \
+		int : CBPRINTF_PACKAGE_ARG_TYPE_INT, \
+		unsigned int : CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_INT, \
+		long : CBPRINTF_PACKAGE_ARG_TYPE_LONG, \
+		unsigned long : CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_LONG, \
+		long long : CBPRINTF_PACKAGE_ARG_TYPE_LONG_LONG, \
+		unsigned long long : CBPRINTF_PACKAGE_ARG_TYPE_UNSIGNED_LONG_LONG, \
+		float : CBPRINTF_PACKAGE_ARG_TYPE_FLOAT, \
+		double : CBPRINTF_PACKAGE_ARG_TYPE_DOUBLE, \
+		long double : CBPRINTF_PACKAGE_ARG_TYPE_LONG_DOUBLE, \
+		char * : CBPRINTF_PACKAGE_ARG_TYPE_PTR_CHAR, \
+		const char * : CBPRINTF_PACKAGE_ARG_TYPE_PTR_CHAR, \
+		void * : CBPRINTF_PACKAGE_ARG_TYPE_PTR_VOID, \
+		default : \
+			CBPRINTF_PACKAGE_ARG_TYPE_PTR_VOID \
+	)
+#endif /* _cplusplus */
+
+#define Z_CBPRINTF_TAGGED_EMPTY_ARGS(...) \
+	CBPRINTF_PACKAGE_ARG_TYPE_END
+
+#define Z_CBPRINTF_TAGGED_ARGS_3(arg) \
+	Z_CBPRINTF_ARG_TYPE(arg), arg
+
+#define Z_CBPRINTF_TAGGED_ARGS_2(...) \
+	FOR_EACH(Z_CBPRINTF_TAGGED_ARGS_3, (,), __VA_ARGS__), \
+	CBPRINTF_PACKAGE_ARG_TYPE_END
+
+#define Z_CBPRINTF_TAGGED_ARGS(_num_args, ...) \
+	COND_CODE_0(_num_args, \
+		    (CBPRINTF_PACKAGE_ARG_TYPE_END), \
+		    (Z_CBPRINTF_TAGGED_ARGS_2(__VA_ARGS__)))
+
+#endif /* CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS */
 
 #endif /* ZEPHYR_INCLUDE_SYS_CBPRINTF_INTERNAL_H_ */

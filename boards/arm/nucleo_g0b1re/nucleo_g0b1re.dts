@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <st/g0/stm32g0b1Xe.dtsi>
-#include <st/g0/stm32g0b1r(c-e)tx-pinctrl.dtsi>
+#include <st/g0/stm32g0b1r(b-c-e)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
@@ -176,21 +176,21 @@ zephyr_udc0: &usb {
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x0000C000>;
+			reg = <0x00000000 DT_SIZE_K(48)>;
 			read-only;
 		};
 		slot0_partition: partition@C000 {
 			label = "image-0";
-			reg = <0x0000C000 0x00032000>;
+			reg = <0x0000C000 DT_SIZE_K(200)>;
 		};
 		slot1_partition: partition@3E000 {
 			label = "image-1";
-			reg = <0x0003E000 0x00032000>;
+			reg = <0x0003E000 DT_SIZE_K(200)>;
 		};
 		/* final 64KiB reserved for app storage partition */
 		storage_partition: partition@70000 {
 			label = "storage";
-			reg = <0x00070000 0x00010000>;
+			reg = <0x00070000 DT_SIZE_K(64)>;
 		};
 	};
 };

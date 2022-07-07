@@ -10,14 +10,14 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_CAPABILITIES_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_CAPABILITIES_H_
 
-#include <bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/audio.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Get list of capabilities by type */
-sys_slist_t *bt_audio_capability_get(uint8_t type);
+sys_slist_t *bt_audio_capability_get(enum bt_audio_dir dir);
 
 
 /** @brief Audio Capability type */
@@ -107,7 +107,7 @@ struct bt_audio_capability_ops {
 	 *
 	 *  @param conn Connection object
 	 *  @param ep Remote Audio Endpoint being configured
-	 *  @param type Type of the endpoint.
+	 *  @param dir Direction of the endpoint.
 	 *  @param cap Local Audio Capability being configured
 	 *  @param codec Codec configuration
 	 *
@@ -115,7 +115,7 @@ struct bt_audio_capability_ops {
 	 */
 	struct bt_audio_stream *(*config)(struct bt_conn *conn,
 					  struct bt_audio_ep *ep,
-					  enum bt_audio_pac_type type,
+					  enum bt_audio_dir dir,
 					  struct bt_audio_capability *cap,
 					  struct bt_codec *codec);
 
@@ -228,10 +228,8 @@ struct bt_audio_capability_ops {
  *
  */
 struct bt_audio_capability {
-	/** Capability type */
-	uint8_t  type;
-	/** Supported Audio Contexts */
-	uint16_t context;
+	/** Capability direction */
+	enum bt_audio_dir dir;
 	/** Capability codec reference */
 	struct bt_codec *codec;
 	/** Capability preferences */
@@ -263,12 +261,28 @@ int bt_audio_capability_unregister(struct bt_audio_capability *cap);
 
 /** @brief Set the location for an endpoint type
  *
- * @param type     Type of the endpoint.
+ * @param dir      Direction of the endpoints to change location for.
  * @param location The location to be set.
  *
  */
-int bt_audio_capability_set_location(enum bt_audio_pac_type type,
+int bt_audio_capability_set_location(enum bt_audio_dir dir,
 				     enum bt_audio_location location);
+
+/** @brief Set the available contexts for an endpoint type
+ *
+ * @param dir      Direction of the endpoints to change available contexts for.
+ * @param contexts The contexts to be set.
+ */
+int bt_audio_capability_set_available_contexts(enum bt_audio_dir dir,
+					       enum bt_audio_context contexts);
+
+/** @brief Get the available contexts for an endpoint type
+ *
+ * @param dir      Direction of the endpoints to get contexts for.
+ *
+ * @return Bitmask of available contexts.
+ */
+enum bt_audio_context bt_audio_capability_get_available_contexts(enum bt_audio_dir dir);
 
 #ifdef __cplusplus
 }

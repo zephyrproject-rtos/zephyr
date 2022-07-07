@@ -6,10 +6,10 @@
 
 #define DT_DRV_COMPAT microchip_mcp4728
 
-#include <zephyr.h>
-#include <drivers/dac.h>
-#include <drivers/i2c.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/dac.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(dac_mcp4728, CONFIG_DAC_LOG_LEVEL);
 

@@ -6,7 +6,7 @@
 
 #include <platform/nrf_802154_irq.h>
 
-#include <irq.h>
+#include <zephyr/irq.h>
 #include <nrfx.h>
 
 void nrf_802154_irq_init(uint32_t irqn, int32_t prio, nrf_802154_isr_t isr)

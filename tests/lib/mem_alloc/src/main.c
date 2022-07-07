@@ -16,11 +16,23 @@
  * it guarantee that ALL functionality provided is working correctly.
  */
 
-#include <zephyr.h>
+#if defined(__GNUC__)
+/*
+ * Don't complain about ridiculous alloc size requests
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Walloc-size-larger-than="
+#endif
+
+#define _BSD_SOURCE
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <time.h>
+#include <stdint.h>
+
+#define TOO_BIG PTRDIFF_MAX
 
 /**
  *
@@ -241,11 +253,11 @@ __no_optimization void test_calloc(void)
 {
 	char *cptr = NULL;
 
-	cptr =  calloc(0x7fffffff, sizeof(int));
+	cptr =  calloc(TOO_BIG, sizeof(int));
 	zassert_is_null((cptr), "calloc failed, errno: %d", errno);
 	free(cptr);
 
-	cptr =  calloc(0x7fffffff, sizeof(char));
+	cptr =  calloc(TOO_BIG, sizeof(char));
 	zassert_is_null((cptr), "calloc failed, errno: %d", errno);
 	free(cptr);
 
@@ -264,7 +276,7 @@ void test_reallocarray(void)
 	char *ptr = NULL;
 	char *cptr = NULL;
 
-	cptr =  reallocarray(ptr, 0x7fffffff, sizeof(int));
+	cptr =  reallocarray(ptr, TOO_BIG, sizeof(int));
 	zassert_is_null((ptr), "reallocarray failed, errno: %d", errno);
 	zassert_is_null((cptr), "reallocarray failed, errno: %d");
 	free(cptr);
@@ -337,7 +349,7 @@ __no_optimization void test_memalloc_max(void)
 {
 	char *ptr = NULL;
 
-	ptr = malloc(0x7fffffff);
+	ptr = malloc(TOO_BIG);
 	zassert_is_null(ptr, "malloc passed unexpectedly");
 	free(ptr);
 	ptr = NULL;

@@ -5,7 +5,7 @@
  */
 
 #include <st/f4/stm32f401.dtsi>
-#include <dt-bindings/memory-controller/stm32-fmc-sdram.h>
+#include <zephyr/dt-bindings/memory-controller/stm32-fmc-sdram.h>
 
 / {
 	soc {
@@ -67,7 +67,8 @@
 			reg = <0x40006800 0x400>;
 			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
+			/* also enabling clock for can1 (master instance) */
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x06000000>;
 			master-can-reg = <0x40006400>;
 			status = "disabled";
 			label = "CAN_2";

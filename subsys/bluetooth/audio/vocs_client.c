@@ -6,18 +6,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <zephyr/types.h>
 
-#include <device.h>
-#include <init.h>
-#include <sys/check.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/check.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/l2cap.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/audio/vocs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/audio/vocs.h>
 
 #include "vocs_internal.h"
 
@@ -90,7 +90,7 @@ uint8_t vocs_client_notify_handler(struct bt_conn *conn, struct bt_gatt_subscrib
 
 		memcpy(desc, data, length);
 		desc[length] = '\0';
-		BT_DBG("Inst %p: Output description: %s", inst, log_strdup(desc));
+		BT_DBG("Inst %p: Output description: %s", inst, desc);
 		if (inst->cli.cb && inst->cli.cb->description) {
 			inst->cli.cb->description(inst, 0, desc);
 		}
@@ -324,7 +324,7 @@ static uint8_t vcs_client_read_output_desc_cb(struct bt_conn *conn, uint8_t err,
 			memcpy(desc, data, length);
 		}
 		desc[length] = '\0';
-		BT_DBG("Output description: %s", log_strdup(desc));
+		BT_DBG("Output description: %s", desc);
 	}
 
 	if (inst->cli.cb && inst->cli.cb->description) {

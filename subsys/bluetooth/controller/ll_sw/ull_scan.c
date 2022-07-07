@@ -5,9 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/hci.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -34,9 +34,15 @@
 #include "lll_conn.h"
 #include "lll_filter.h"
 
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#include "ull_tx_queue.h"
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+
+
 #include "ull_adv_types.h"
 #include "ull_filter.h"
 
+#include "ull_conn_types.h"
 #include "ull_internal.h"
 #include "ull_adv_internal.h"
 #include "ull_scan_types.h"

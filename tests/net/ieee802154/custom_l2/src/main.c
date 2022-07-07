@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <net/net_if.h>
-#include <net/ieee802154_radio.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ieee802154_radio.h>
 
 #define TEST_FLAG_SET (NET_L2_MULTICAST | NET_L2_PROMISC_MODE)
 #define TEST_PAYLOAD "TEST PAYLOAD"

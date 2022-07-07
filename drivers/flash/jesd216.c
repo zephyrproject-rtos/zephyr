@@ -6,7 +6,7 @@
 
 
 #include <sys/types.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include "jesd216.h"
 #include "spi_nor.h"
 

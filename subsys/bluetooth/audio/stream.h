@@ -42,8 +42,8 @@ void bt_audio_stream_attach(struct bt_conn *conn, struct bt_audio_stream *stream
 			    struct bt_audio_ep *ep,
 			    struct bt_codec *codec);
 
-int bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
-				  const struct bt_codec_qos *codec);
+void bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
+				   const struct bt_codec_qos *codec);
 
 void bt_audio_stream_detach(struct bt_audio_stream *stream);
 

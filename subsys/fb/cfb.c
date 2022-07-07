@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
-#include <display/cfb.h>
+#include <zephyr/display/cfb.h>
 
 #define LOG_LEVEL CONFIG_CFB_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(cfb);
 
 extern const struct cfb_font __font_entry_start[];

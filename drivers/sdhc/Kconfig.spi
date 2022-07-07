@@ -1,0 +1,12 @@
+# Copyright (c) 2022, NXP
+# SPDX -License-Identifier: Apache-2.0
+
+DT_COMPAT_ZEPHYR_MMC_SPI_SLOT := zephyr,sdhc-spi-slot
+
+config SPI_SDHC
+	bool "SD protocol over SPI bus"
+	select SPI
+	select SDHC_SUPPORTS_SPI_MODE
+	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_MMC_SPI_SLOT))
+	help
+	  Enable the SPI SD host controller driver

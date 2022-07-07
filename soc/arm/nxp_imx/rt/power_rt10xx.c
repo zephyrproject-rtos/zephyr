@@ -6,15 +6,15 @@
  * Note: this file is linked to RAM. Any functions called while preparing for
  * sleep mode must be defined within this file, or linked to RAM.
  */
-#include <zephyr.h>
-#include <device.h>
-#include <pm/pm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/pm/pm.h>
 #include <fsl_dcdc.h>
 #include <fsl_pmu.h>
 #include <fsl_gpc.h>
 #include <fsl_lpuart.h>
 #include <fsl_clock.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "power_rt10xx.h"
 
@@ -74,6 +74,15 @@ static void lpm_set_sleep_mode_config(clock_mode_t mode)
 #endif
 	CCM->CLPCR = clpcr;
 	GPC_DisableIRQ(GPC, GPR_IRQ_IRQn);
+}
+
+static void lpm_enter_soft_off_mode(void)
+{
+	/* Enable the SNVS RTC as a wakeup source from soft-off mode, in case an RTC alarm
+	 * was set.
+	 */
+	GPC_EnableIRQ(GPC, DT_IRQN(DT_INST(0, nxp_imx_snvs_rtc)));
+	SNVS->LPCR |= SNVS_LPCR_TOP_MASK;
 }
 
 static void lpm_enter_sleep_mode(clock_mode_t mode)
@@ -174,9 +183,11 @@ static void lpm_raise_voltage(void)
 
 
 /* Sets device into low power mode */
-__weak void pm_power_state_set(struct pm_state_info info)
+__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
-	switch (info.state) {
+	ARG_UNUSED(substate_id);
+
+	switch (state) {
 	case PM_STATE_RUNTIME_IDLE:
 		LOG_DBG("entering PM state runtime idle");
 		lpm_set_sleep_mode_config(kCLOCK_ModeWait);
@@ -192,16 +203,22 @@ __weak void pm_power_state_set(struct pm_state_info info)
 		lpm_set_sleep_mode_config(kCLOCK_ModeWait);
 		lpm_enter_sleep_mode(kCLOCK_ModeWait);
 		break;
+	case PM_STATE_SOFT_OFF:
+		LOG_DBG("Entering PM state soft off");
+		lpm_enter_soft_off_mode();
+		break;
 	default:
 		return;
 	}
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
+	ARG_UNUSED(substate_id);
+
 	/* Set run mode config after wakeup */
-	switch (info.state) {
+	switch (state) {
 	case PM_STATE_RUNTIME_IDLE:
 		lpm_set_run_mode_config();
 		LOG_DBG("exited PM state runtime idle");

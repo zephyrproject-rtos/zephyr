@@ -16,11 +16,11 @@
 #ifndef __SOC_H_
 #define __SOC_H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef _ASMLANGUAGE
-#include <device.h>
-#include <random/rand32.h>
+#include <zephyr/device.h>
+#include <zephyr/random/rand32.h>
 #endif
 
 #ifdef CONFIG_GPIO_INTEL
@@ -28,7 +28,7 @@
 #endif
 
 #if DT_ON_BUS(DT_CHOSEN(zephyr_console), pcie)
-#include <drivers/pcie/pcie.h>
+#include <zephyr/drivers/pcie/pcie.h>
 #define X86_SOC_EARLY_SERIAL_PCIDEV DT_REG_ADDR(DT_CHOSEN(zephyr_console))
 #else
 #define X86_SOC_EARLY_SERIAL_MMIO8_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_console))

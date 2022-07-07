@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 /*
  * precision timing tests in an emulation environment are not reliable.

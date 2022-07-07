@@ -6,19 +6,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/atomic.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <settings/settings.h>
+#include <zephyr/settings/settings.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_KEYS)
 #define LOG_MODULE_NAME bt_keys
@@ -302,7 +302,7 @@ void bt_keys_clear(struct bt_keys *keys)
 					       &keys->addr, NULL);
 		}
 
-		BT_DBG("Deleting key %s", log_strdup(key));
+		BT_DBG("Deleting key %s", key);
 		settings_delete(key);
 	}
 
@@ -333,7 +333,7 @@ int bt_keys_store(struct bt_keys *keys)
 	}
 
 	BT_DBG("Stored keys for %s (%s)", bt_addr_le_str(&keys->addr),
-	       log_strdup(key));
+	       key);
 
 	return 0;
 }
@@ -360,7 +360,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		return -EINVAL;
 	}
 
-	BT_DBG("name %s val %s", log_strdup(name),
+	BT_DBG("name %s val %s", name,
 	       (len) ? bt_hex(val, sizeof(val)) : "(null)");
 
 	err = bt_settings_decode_key(name, &addr);

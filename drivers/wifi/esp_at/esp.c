@@ -7,49 +7,33 @@
 
 #define DT_DRV_COMPAT espressif_esp_at
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wifi_esp_at, CONFIG_WIFI_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ctype.h>
 #include <errno.h>
-#include <zephyr.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <stdlib.h>
 
-#include <drivers/gpio.h>
-#include <drivers/uart.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/uart.h>
 
-#include <net/dns_resolve.h>
-#include <net/net_if.h>
-#include <net/net_ip.h>
-#include <net/net_offload.h>
-#include <net/wifi_mgmt.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_offload.h>
+#include <zephyr/net/wifi_mgmt.h>
 
 #include "esp.h"
 
-/* pin settings */
-enum modem_control_pins {
+struct esp_config {
 #if DT_INST_NODE_HAS_PROP(0, power_gpios)
-	ESP_POWER,
+	const struct gpio_dt_spec power;
 #endif
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	ESP_RESET,
-#endif
-	NUM_PINS,
-};
-
-static struct modem_pin modem_pins[] = {
-#if DT_INST_NODE_HAS_PROP(0, power_gpios)
-	MODEM_PIN(DT_INST_GPIO_LABEL(0, power_gpios),
-		  DT_INST_GPIO_PIN(0, power_gpios),
-		  DT_INST_GPIO_FLAGS(0, power_gpios) | GPIO_OUTPUT_INACTIVE),
-#endif
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	MODEM_PIN(DT_INST_GPIO_LABEL(0, reset_gpios),
-		  DT_INST_GPIO_PIN(0, reset_gpios),
-		  DT_INST_GPIO_FLAGS(0, reset_gpios) | GPIO_OUTPUT_INACTIVE),
+	const struct gpio_dt_spec reset;
 #endif
 };
 
@@ -65,6 +49,14 @@ struct k_thread esp_rx_thread;
 K_KERNEL_STACK_DEFINE(esp_workq_stack,
 		      CONFIG_WIFI_ESP_AT_WORKQ_STACK_SIZE);
 
+static const struct esp_config esp_driver_config = {
+#if DT_INST_NODE_HAS_PROP(0, power_gpios)
+	.power = GPIO_DT_SPEC_INST_GET(0, power_gpios),
+#endif
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
+#endif
+};
 struct esp_data esp_driver_data;
 
 static void esp_configure_hostname(struct esp_data *data)
@@ -341,12 +333,12 @@ MODEM_CMD_DEFINE(on_cmd_cipdns)
 		}
 
 		servers[i] = str_unquote(servers[i]);
-		LOG_DBG("DNS[%zu]: %s", i, log_strdup(servers[i]));
+		LOG_DBG("DNS[%zu]: %s", i, servers[i]);
 
 		err = net_addr_pton(AF_INET, servers[i], &addrs[i].sin_addr);
 		if (err) {
 			LOG_ERR("Invalid DNS address: %s",
-				log_strdup(servers[i]));
+				servers[i]);
 			addrs[i].sin_addr.s_addr = 0;
 			break;
 		}
@@ -384,13 +376,20 @@ MODEM_CMD_DEFINE(on_cmd_wifi_connected)
 	return 0;
 }
 
-MODEM_CMD_DEFINE(on_cmd_wifi_disconnected)
+static void esp_mgmt_disconnect_work(struct k_work *work)
 {
-	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
-					    cmd_handler_data);
+	struct esp_socket *sock;
+	struct esp_data *dev;
 
-	if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
-		return 0;
+	dev = CONTAINER_OF(work, struct esp_data, disconnect_work);
+
+	/* Cleanup any sockets that weren't closed */
+	for (int i = 0; i < ARRAY_SIZE(dev->sockets); i++) {
+		sock = &dev->sockets[i];
+		if (esp_socket_connected(sock)) {
+			LOG_WRN("Socket %d left open, manually closing", i);
+			esp_socket_close(sock);
+		}
 	}
 
 	esp_flags_clear(dev, EDF_STA_CONNECTED);
@@ -398,6 +397,16 @@ MODEM_CMD_DEFINE(on_cmd_wifi_disconnected)
 
 	net_if_ipv4_addr_rm(dev->net_iface, &dev->ip);
 	wifi_mgmt_raise_disconnect_result_event(dev->net_iface, 0);
+}
+
+MODEM_CMD_DEFINE(on_cmd_wifi_disconnected)
+{
+	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
+					    cmd_handler_data);
+
+	if (esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
+		k_work_submit_to_queue(&dev->workq, &dev->disconnect_work);
+	}
 
 	return 0;
 }
@@ -422,7 +431,7 @@ MODEM_CMD_DEFINE(on_cmd_cipsta)
 	} else if (!strcmp(argv[0], "netmask")) {
 		net_addr_pton(AF_INET, ip, &dev->nm);
 	} else {
-		LOG_WRN("Unknown IP type %s", log_strdup(argv[0]));
+		LOG_WRN("Unknown IP type %s", argv[0]);
 	}
 
 	return 0;
@@ -509,6 +518,8 @@ MODEM_CMD_DEFINE(on_cmd_closed)
 
 	link_id = data->match_buf[0] - '0';
 
+	LOG_DBG("Link %d closed", link_id);
+
 	dev = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
 	sock = esp_socket_ref_from_link_id(dev, link_id);
 	if (!sock) {
@@ -562,7 +573,7 @@ static int cmd_ipd_parse_hdr(struct net_buf *buf, uint16_t len,
 
 	ipd_buf[match_len] = 0;
 	if (ipd_buf[len] != ',' || ipd_buf[len + 2] != ',') {
-		LOG_ERR("Invalid IPD: %s", log_strdup(ipd_buf));
+		LOG_ERR("Invalid IPD: %s", ipd_buf);
 		return -EBADMSG;
 	}
 
@@ -572,7 +583,7 @@ static int cmd_ipd_parse_hdr(struct net_buf *buf, uint16_t len,
 
 	if (endptr == &ipd_buf[len + 3] ||
 	    (*endptr == 0 && match_len >= MAX_IPD_LEN)) {
-		LOG_ERR("Invalid IPD len: %s", log_strdup(ipd_buf));
+		LOG_ERR("Invalid IPD len: %s", ipd_buf);
 		return -EBADMSG;
 	} else if (*endptr == 0) {
 		return -EAGAIN;
@@ -951,7 +962,7 @@ static void esp_init_work(struct k_work *work)
 		SETUP_CMD_NOHANDLE(
 			ESP_CMD_CWLAPOPT(ESP_CMD_CWLAPOPT_ORDERED, ESP_CMD_CWLAPOPT_MASK)),
 
-#if defined(CONFIG_WIFI_ESP_AT_VERSION_2_0)
+#if !defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(STA)),
 		SETUP_CMD_NOHANDLE("AT+CWAUTOCONN=0"),
 		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(NONE)),
@@ -985,8 +996,7 @@ static void esp_init_work(struct k_work *work)
 			UART_CFG_FLOW_CTRL_RTS_CTS : UART_CFG_FLOW_CTRL_NONE,
 	};
 
-	ret = uart_configure(device_get_binding(DT_INST_BUS_LABEL(0)),
-			     &uart_config);
+	ret = uart_configure(DEVICE_DT_GET(DT_INST_BUS(0)), &uart_config);
 	if (ret < 0) {
 		LOG_ERR("Baudrate change failed %d", ret);
 		return;
@@ -1026,27 +1036,33 @@ static void esp_init_work(struct k_work *work)
 	net_if_up(dev->net_iface);
 }
 
-static int esp_reset(struct esp_data *dev)
+static int esp_reset(const struct device *dev)
 {
-	if (net_if_is_up(dev->net_iface)) {
-		net_if_down(dev->net_iface);
+	struct esp_data *data = dev->data;
+
+	if (net_if_is_up(data->net_iface)) {
+		net_if_down(data->net_iface);
 	}
 
 #if DT_INST_NODE_HAS_PROP(0, power_gpios)
-	modem_pin_write(&dev->mctx, ESP_POWER, 0);
+	const struct esp_config *config = dev->config;
+
+	gpio_pin_set_dt(&config->power, 0);
 	k_sleep(K_MSEC(100));
-	modem_pin_write(&dev->mctx, ESP_POWER, 1);
+	gpio_pin_set_dt(&config->power, 1);
 #elif DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	modem_pin_write(&dev->mctx, ESP_RESET, 1);
+	const struct esp_config *config = dev->config;
+
+	gpio_pin_set_dt(&config->reset, 1);
 	k_sleep(K_MSEC(100));
-	modem_pin_write(&dev->mctx, ESP_RESET, 0);
+	gpio_pin_set_dt(&config->reset, 0);
 #else
 	int ret;
 	int retries = 3;
 
 	while (retries--) {
-		ret = modem_cmd_send(&dev->mctx.iface, &dev->mctx.cmd_handler,
-				     NULL, 0, "AT+RST", &dev->sem_if_ready,
+		ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
+				     NULL, 0, "AT+RST", &data->sem_if_ready,
 				     K_MSEC(CONFIG_WIFI_ESP_AT_RESET_TIMEOUT));
 		if (ret == 0 || ret != -ETIMEDOUT) {
 			break;
@@ -1083,12 +1099,15 @@ static int esp_init(const struct device *dev);
  * function. An `extern` declaration does not work as the struct is static.
  */
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, esp_init, NULL,
-				  &esp_driver_data, NULL,
+				  &esp_driver_data, &esp_driver_config,
 				  CONFIG_WIFI_INIT_PRIORITY, &esp_api,
 				  ESP_MTU);
 
 static int esp_init(const struct device *dev)
 {
+#if DT_INST_NODE_HAS_PROP(0, power_gpios) || DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	const struct esp_config *config = dev->config;
+#endif
 	struct esp_data *data = dev->data;
 	int ret = 0;
 
@@ -1100,6 +1119,7 @@ static int esp_init(const struct device *dev)
 	k_work_init_delayable(&data->ip_addr_work, esp_ip_addr_work);
 	k_work_init(&data->scan_work, esp_mgmt_scan_work);
 	k_work_init(&data->connect_work, esp_mgmt_connect_work);
+	k_work_init(&data->disconnect_work, esp_mgmt_disconnect_work);
 	k_work_init(&data->mode_switch_work, esp_mode_switch_work);
 	if (IS_ENABLED(CONFIG_WIFI_ESP_AT_DNS_USE)) {
 		k_work_init(&data->dns_work, esp_dns_work);
@@ -1141,8 +1161,20 @@ static int esp_init(const struct device *dev)
 	}
 
 	/* pin setup */
-	data->mctx.pins = modem_pins;
-	data->mctx.pins_len = ARRAY_SIZE(modem_pins);
+#if DT_INST_NODE_HAS_PROP(0, power_gpios)
+	ret = gpio_pin_configure_dt(&config->power, GPIO_OUTPUT_INACTIVE);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure %s pin", "power");
+		goto error;
+	}
+#endif
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure %s pin", "reset");
+		goto error;
+	}
+#endif
 
 	data->mctx.driver_data = data;
 
@@ -1165,7 +1197,7 @@ static int esp_init(const struct device *dev)
 	data->net_iface = NET_IF_GET(Z_DEVICE_DT_DEV_NAME(DT_DRV_INST(0)), 0);
 
 	/* Reset the modem */
-	ret = esp_reset(data);
+	ret = esp_reset(dev);
 
 error:
 	return ret;

@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_I2C_I2C_NPCX_CONTROLLER_H_
 #define ZEPHYR_DRIVERS_I2C_I2C_NPCX_CONTROLLER_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 #ifdef __cplusplus
 extern "C" {

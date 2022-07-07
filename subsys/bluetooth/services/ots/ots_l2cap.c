@@ -8,16 +8,16 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
-#include <init.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
 
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
 #include "ots_l2cap_internal.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 /* This l2cap is the only OTS-file in use for OTC.
  * If only OTC is used, the OTS log module must be registered here.

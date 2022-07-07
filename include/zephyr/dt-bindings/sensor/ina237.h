@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_INA237_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_INA237_H_
 
-#include <dt-bindings/dt-util.h>
+#include <zephyr/dt-bindings/dt-util.h>
 
 /* Operating Mode */
 #define INA237_OPER_MODE_SHUTDOWN				0x00

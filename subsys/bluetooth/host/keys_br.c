@@ -6,15 +6,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
-#include <sys/atomic.h>
-#include <sys/util.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/hci.h>
-#include <settings/settings.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/settings/settings.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_KEYS)
 #define LOG_MODULE_NAME bt_keys_br
@@ -171,7 +171,7 @@ static int link_key_set(const char *name, size_t len_rd,
 		return -EINVAL;
 	}
 
-	BT_DBG("name %s val %s", log_strdup(name),
+	BT_DBG("name %s val %s", name,
 	       len ? bt_hex(val, sizeof(val)) : "(null)");
 
 	err = bt_settings_decode_key(name, &le_addr);

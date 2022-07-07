@@ -6,7 +6,7 @@
 
 #include "mem_protect.h"
 #include <kernel_internal.h> /* For z_main_thread */
-#include <sys/libc-hooks.h> /* for z_libc_partition */
+#include <zephyr/sys/libc-hooks.h> /* for z_libc_partition */
 
 static struct k_thread child_thread;
 static K_THREAD_STACK_DEFINE(child_stack, 512 + CONFIG_TEST_EXTRA_STACK_SIZE);

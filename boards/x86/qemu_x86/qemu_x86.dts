@@ -12,7 +12,7 @@
 #endif
 #define DT_FLASH_SIZE		DT_SIZE_K(4096)
 
-#include <ia32.dtsi>
+#include <intel/ia32.dtsi>
 
 / {
 	model = "QEMU X86 emulator";

@@ -1,0 +1,37 @@
+# Copyright (c) 2022 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE IT8XXX2 pin controller function node
+
+compatible: "ite,it8xxx2-pinctrl-func"
+
+include: base.yaml
+
+properties:
+    func3-gcr:
+        type: array
+        required: true
+
+    func3-en-mask:
+        type: array
+        required: true
+
+    func4-gcr:
+        type: array
+        required: true
+
+    func4-en-mask:
+        type: array
+        required: true
+
+    volt-sel:
+        type: array
+        required: true
+
+    volt-sel-mask:
+        type: array
+        required: true
+
+pinmux-cells:
+  - pin
+  - alt_func

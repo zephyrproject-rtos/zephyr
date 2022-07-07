@@ -13,7 +13,7 @@
  * This module contains functions for manipulation of the d-cache.
  */
 
-#include <cache.h>
+#include <zephyr/cache.h>
 
 #define	CTR_EL0_DMINLINE_SHIFT		16
 #define	CTR_EL0_DMINLINE_MASK		BIT_MASK(4)

@@ -13,8 +13,14 @@ sample:
   name: "TFM PSA Test"
 
 tests:
-  sample.tfm.psa_protected_storage_test:
+  sample.tfm.psa_test_protected_storage:
     extra_args: "CONFIG_TFM_PSA_TEST_PROTECTED_STORAGE=y"
-    timeout: 100
-  sample.tfm.psa_internal_trusted_storage_test:
+    timeout: 120
+  sample.tfm.psa_test_internal_trusted_storage:
     extra_args: "CONFIG_TFM_PSA_TEST_INTERNAL_TRUSTED_STORAGE=y"
+  sample.tfm.psa_test_storage:
+    extra_args: "CONFIG_TFM_PSA_TEST_STORAGE=y"
+  sample.tfm.psa_test_crypto:
+    extra_args: "CONFIG_TFM_PSA_TEST_CRYPTO=y"
+  sample.tfm.psa_test_initial_attestation:
+    extra_args: "CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION=y"

@@ -6,7 +6,7 @@
 #include "mesh_test.h"
 #include "mesh/net.h"
 #include "mesh/transport.h"
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 /*
  * Transport layer tests:

@@ -1011,6 +1011,12 @@ General rules
 
   Do not use any other style for long or multi-line strings.
 
+- Do not use uppercase letters (``A`` through ``Z``) or underscores (``_``) in
+  property names. Use lowercase letters (``a`` through ``z``) instead of
+  uppercase. Use dashes (``-``) instead of underscores. (The one exception to
+  this rule is if you are replicating a well-established binding from somewhere
+  like Linux.)
+
 Vendor prefixes
 ===============
 
@@ -1069,7 +1075,7 @@ For example, with this DTS fragment:
 
 .. code-block:: devicetree
 
-   #include <dt-bindings/gpio/gpio.h>
+   #include <zephyr/dt-bindings/gpio/gpio.h>
 
    / {
 	zephyr,user {

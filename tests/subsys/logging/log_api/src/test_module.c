@@ -11,7 +11,7 @@
  */
 
 #include "test_module.h"
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(test, CONFIG_SAMPLE_MODULE_LOG_LEVEL);
 

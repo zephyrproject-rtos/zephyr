@@ -10,14 +10,14 @@
 
 #define DT_DRV_COMPAT st_lis2ds12
 
-#include <drivers/sensor.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 #include "lis2ds12.h"
 

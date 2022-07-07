@@ -20,8 +20,8 @@
 
 #include <zephyr/types.h>
 
-#include <net/net_if.h>
-#include <net/net_ip.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_ip.h>
 
 #ifdef __cplusplus
 extern "C" {

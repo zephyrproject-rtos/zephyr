@@ -9,7 +9,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <arch/arm64/cpu.h>
+#include <zephyr/arch/arm64/cpu.h>
 #include <stdint.h>
 
 /* All the macros need a memory clobber */

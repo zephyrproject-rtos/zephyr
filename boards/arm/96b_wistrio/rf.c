@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/gpio.h>
-#include <init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/init.h>
 
 static int rf_init(const struct device *dev)
 {
@@ -25,9 +25,9 @@ static int rf_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	(void)gpio_pin_configure_dt(&rf1, GPIO_OUTPUT_INIT_HIGH);
-	(void)gpio_pin_configure_dt(&rf2, GPIO_OUTPUT_INIT_HIGH);
-	(void)gpio_pin_configure_dt(&rf3, GPIO_OUTPUT_INIT_LOW);
+	(void)gpio_pin_configure_dt(&rf1, GPIO_OUTPUT_HIGH);
+	(void)gpio_pin_configure_dt(&rf2, GPIO_OUTPUT_HIGH);
+	(void)gpio_pin_configure_dt(&rf3, GPIO_OUTPUT_LOW);
 
 	return 0;
 }

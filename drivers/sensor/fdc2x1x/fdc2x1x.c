@@ -8,14 +8,14 @@
 
 #define DT_DRV_COMPAT ti_fdc2x1x
 
-#include <device.h>
-#include <pm/device.h>
-#include <sys/util.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
 #include <math.h>
 
 #include "fdc2x1x.h"
-#include "drivers/sensor/fdc2x1x.h"
+#include <zephyr/drivers/sensor/fdc2x1x.h>
 
 LOG_MODULE_REGISTER(FDC2X1X, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -75,10 +75,7 @@ static int fdc2x1x_bus_access(const struct device *dev, uint8_t reg,
 	const struct fdc2x1x_config *cfg = dev->config;
 
 	if (reg & FDC2X1X_READ) {
-		return i2c_burst_read(cfg->bus,
-				      cfg->i2c_addr,
-				      FDC2X1X_TO_I2C_REG(reg),
-				      data, length);
+		return i2c_burst_read_dt(&cfg->i2c, FDC2X1X_TO_I2C_REG(reg), data, length);
 	} else {
 		if (length != 2) {
 			return -EINVAL;
@@ -89,8 +86,7 @@ static int fdc2x1x_bus_access(const struct device *dev, uint8_t reg,
 		buf[0] = FDC2X1X_TO_I2C_REG(reg);
 		memcpy(buf + 1, data, sizeof(uint16_t));
 
-		return i2c_write(cfg->bus, buf,
-				 sizeof(buf), cfg->i2c_addr);
+		return i2c_write_dt(&cfg->i2c, buf, sizeof(buf));
 	}
 }
 
@@ -467,7 +463,7 @@ static int fdc2x1x_set_shutdown(const struct device *dev, bool enable)
 	const struct fdc2x1x_config *cfg = dev->config;
 	int ret = 0;
 
-	gpio_pin_set(cfg->sd_gpio, cfg->sd_pin, enable);
+	gpio_pin_set_dt(&cfg->sd_gpio, enable);
 
 	if (!enable) {
 		ret = fdc2x1x_restart(dev);
@@ -520,7 +516,7 @@ static int fdc2x1x_device_pm_action(const struct device *dev,
 
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
-		if (cfg->sd_gpio->name) {
+		if (cfg->sd_gpio->port.name) {
 			ret = fdc2x1x_set_shutdown(dev, true);
 		} else {
 			LOG_ERR("SD pin not defined");
@@ -890,13 +886,12 @@ static int fdc2x1x_init_sd_pin(const struct device *dev)
 {
 	const struct fdc2x1x_config *cfg = dev->config;
 
-	if (!device_is_ready(cfg->sd_gpio)) {
-		LOG_ERR("%s: sd_gpio device not ready", cfg->sd_gpio->name);
+	if (!device_is_ready(cfg->sd_gpio.port)) {
+		LOG_ERR("%s: sd_gpio device not ready", cfg->sd_gpio.port->name);
 		return -ENODEV;
 	}
 
-	gpio_pin_configure(cfg->sd_gpio, cfg->sd_pin,
-			   GPIO_OUTPUT_INACTIVE | cfg->sd_flags);
+	gpio_pin_configure_dt(&cfg->sd_gpio, GPIO_OUTPUT_INACTIVE);
 
 	return 0;
 }
@@ -925,14 +920,14 @@ static int fdc2x1x_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (cfg->sd_gpio->name) {
+	if (cfg->sd_gpio.port->name) {
 		if (fdc2x1x_init_sd_pin(dev) < 0) {
 			return -ENODEV;
 		}
 	}
 
-	if (!device_is_ready(cfg->bus)) {
-		LOG_ERR("%s: fdc2x1x device not ready", dev->name);
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("I2C bus device not ready");
 		return -ENODEV;
 	}
 
@@ -963,18 +958,14 @@ static int fdc2x1x_init(const struct device *dev)
 }
 
 #define FDC2X1X_SD_PROPS(n)						  \
-	.sd_gpio = DEVICE_DT_GET(DT_GPIO_CTLR(DT_DRV_INST(n), sd_gpios)), \
-	.sd_pin = DT_INST_GPIO_PIN(n, sd_gpios),			  \
-	.sd_flags = DT_INST_GPIO_FLAGS(n, sd_gpios),			  \
+	.sd_gpio = GPIO_DT_SPEC_INST_GET(n, sd_gpios),			  \
 
 #define FDC2X1X_SD(n)				       \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, sd_gpios), \
 		   (FDC2X1X_SD_PROPS(n)))
 
 #define FDC2X1X_INTB_PROPS(n)						      \
-	.intb_gpio = DEVICE_DT_GET(DT_GPIO_CTLR(DT_DRV_INST(n), intb_gpios)), \
-	.intb_pin = DT_INST_GPIO_PIN(n, intb_gpios),			      \
-	.intb_flags = DT_INST_GPIO_FLAGS(n, intb_gpios),		      \
+	.intb_gpio = GPIO_DT_SPEC_INST_GET(n, intb_gpios),		      \
 
 #define FDC2X1X_INTB(n)			   \
 	IF_ENABLED(CONFIG_FDC2X1X_TRIGGER, \
@@ -1007,8 +998,7 @@ static int fdc2x1x_init(const struct device *dev)
 	};								   \
 									   \
 	static const struct fdc2x1x_config fdc2x1x_config_##n = {	   \
-		.bus = DEVICE_DT_GET(DT_INST_BUS(n)),			   \
-		.i2c_addr = DT_INST_REG_ADDR(n),			   \
+		.i2c = I2C_DT_SPEC_INST_GET(n),				   \
 		.fdc2x14 = DT_INST_PROP(n, fdc2x14),			   \
 		.autoscan_en = DT_INST_PROP(n, autoscan),		   \
 		.rr_sequence = DT_INST_PROP(n, rr_sequence),		   \

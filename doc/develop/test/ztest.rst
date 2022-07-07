@@ -508,3 +508,33 @@ These will be surrounded by blocks such as::
         #ifndef SOMETHING
         #define SOMETHING <default implementation>
         #endif /* SOMETHING */
+
+.. _ztest_shuffle:
+
+Shuffling Test Sequence
+***********************
+By default the tests are sorted and ran in alphanumerical order.  Test cases may
+be dependent on this sequence. Enable `ZTEST_SHUFFLE` to randomize the order. The
+output from the test will display the seed for failed tests.  For native posix
+builds you can provide the seed as an argument to twister with `--seed`
+
+Static configuration of ZTEST_SHUFFLE contains:
+
+ - :c:macro:`ZTEST_SHUFFLE_SUITE_REPEAT_COUNT` - Number of iterations the test suite will run.
+ - :c:macro:`ZTEST_SHUFFLE_TEST_REPEAT_COUNT` - Number of iterations the test will run.
+
+
+Test Selection
+**************
+For POSIX enabled builds with ZTEST_NEW_API use command line arguments to list
+or select tests to run. The test argument expects a comma separated list
+of ``suite::test`` .  You can substitute the test name with an ``*`` to run all
+tests within a suite.
+
+For example
+
+.. code-block:: bash
+
+    $ zephyr.exe -list
+    $ zephyr.exe -test="fixture_tests::test_fixture_pointer,framework_tests::test_assert_mem_equal"
+    $ zephyr.exe -test="framework_tests::*"

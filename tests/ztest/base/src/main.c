@@ -59,8 +59,8 @@ ZTEST_SUITE(fixture_tests, NULL, fixture_tests_setup, NULL, NULL, NULL);
 
 ZTEST_F(fixture_tests, test_fixture_pointer)
 {
-	zassert_equal_ptr(&test_fixture, this, "Test fixture should be at 0x%x but was at 0x%x",
-			  &test_fixture, this);
+	zassert_equal_ptr(&test_fixture, fixture, "Test fixture should be at 0x%x but was at 0x%x",
+			  &test_fixture, fixture);
 }
 
 /***************************************************************************************************
@@ -76,6 +76,7 @@ enum rule_state {
 
 struct rules_tests_fixture {
 	enum rule_state state;
+	int  run_count;
 };
 
 static struct rules_tests_fixture rule_tests_fixture;
@@ -88,7 +89,11 @@ static void rule_before_each(const struct ztest_unit_test *test, void *data)
 
 		zassert_equal_ptr(&rule_tests_fixture, data,
 				  "Data expected to point to rule_state");
-		zassert_equal(fixture->state, RULE_STATE_SETUP, "Unexpected state");
+		if (fixture->run_count == 0) {
+			zassert_equal(fixture->state, RULE_STATE_SETUP, "Unexpected state");
+		} else {
+			zassert_equal(fixture->state, RULE_STATE_AFTER_EACH, "Unexpected state");
+		}
 		fixture->state = RULE_STATE_BEFORE_EACH;
 	}
 }
@@ -109,6 +114,7 @@ static void rule_after_each(const struct ztest_unit_test *test, void *data)
 static void *rule_test_setup(void)
 {
 	rule_tests_fixture.state = RULE_STATE_SETUP;
+	rule_tests_fixture.run_count = 0;
 	return &rule_tests_fixture;
 }
 
@@ -121,6 +127,9 @@ static void rule_test_teardown(void *data)
 	 * after_each function was called.
 	 */
 	zassert_equal(fixture->state, RULE_STATE_AFTER_EACH, "Unexpected state");
+#ifdef CONFIG_ZTEST_SHUFFLE
+	zassert_equal(fixture->run_count, CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT, NULL);
+#endif
 }
 
 ZTEST_RULE(verify_before_after_rule, rule_before_each, rule_after_each);
@@ -129,6 +138,8 @@ ZTEST_SUITE(rules_tests, NULL, rule_test_setup, NULL, NULL, rule_test_teardown);
 
 ZTEST_F(rules_tests, test_rules_before_after)
 {
-	zassert_equal(this->state, RULE_STATE_BEFORE_EACH, "Unexpected state");
-	this->state = RULE_STATE_TEST;
+	zassert_equal(fixture->state, RULE_STATE_BEFORE_EACH,
+		      "Unexpected state");
+	fixture->state = RULE_STATE_TEST;
+	fixture->run_count++;
 }

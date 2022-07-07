@@ -129,7 +129,7 @@
 		 */
 		storage_partition: partition@1c276 {
 			label = "storage";
-			reg = <0x0001c276 0x00004000>;
+			reg = <0x0001c276 DT_SIZE_K(16)>;
 		};
 	};
 };

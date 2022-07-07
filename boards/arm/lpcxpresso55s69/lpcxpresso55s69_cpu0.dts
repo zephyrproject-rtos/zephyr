@@ -8,7 +8,7 @@
 
 #include <nxp/nxp_lpc55S6x.dtsi>
 #include "lpcxpresso55s69.dtsi"
-#include <dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	model = "NXP LPCXpresso55S69 board";
@@ -65,6 +65,22 @@
 	};
 };
 
+/*
+ * Default for this board is to allocate SRAM0-2 to cpu0 but the
+ * application can have an application specific device tree to
+ * allocate the SRAM0-4 differently.
+ *
+ * For example, SRAM0-3 could be allocated to cpu0 with only SRAM4
+ * for cpu1. This would require the zephyr,sram chosen value for cpu1
+ * to be changed to sram4 and the value of sram0 to have a DT_SIZE_K
+ * of 256.
+ *
+ */
+&sram0 {
+	compatible = "mmio-sram";
+	reg = <0x20000000 DT_SIZE_K(192)>;
+};
+
 &gpio0 {
 	status = "okay";
 };
@@ -93,6 +109,17 @@
 	status = "okay";
 	dmas = <&dma0 2>, <&dma0 3>;
 	dma-names = "rx", "tx";
+	cs-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+	sdhc0: sdhc0@0 {
+		reg = <0>;
+		compatible = "zephyr,sdhc-spi-slot";
+		spi-max-frequency = <25000000>;
+		label = "SDHC_0";
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+	};
 };
 
 &wwdt0 {
@@ -101,6 +128,8 @@
 
 &adc0 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
 };
 
 &dma0 {

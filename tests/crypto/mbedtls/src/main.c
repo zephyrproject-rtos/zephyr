@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <app_memory/partitions.h>
+#include <zephyr/app_memory/partitions.h>
 
 extern void test_mbedtls(void);
 

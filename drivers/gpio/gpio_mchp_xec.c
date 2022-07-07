@@ -7,9 +7,9 @@
 #define DT_DRV_COMPAT microchip_xec_gpio
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <sys/sys_io.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/sys_io.h>
 #include <soc.h>
 
 #include "gpio_utils.h"

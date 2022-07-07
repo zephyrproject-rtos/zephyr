@@ -7,9 +7,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -34,7 +34,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 }
 
 #ifdef CONFIG_CPU_CORTEX_M
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 /* Must clear LSB of function address to access as data. */
 #define FUNC_TO_PTR(x) (void *)((uintptr_t)(x) & ~0x1)
 /* Must set LSB of function address to call in Thumb mode. */

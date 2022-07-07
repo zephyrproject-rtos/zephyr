@@ -7,17 +7,18 @@
 #define DT_DRV_COMPAT nuvoton_npcx_espi
 
 #include <assert.h>
-#include <drivers/espi.h>
-#include <drivers/gpio.h>
-#include <drivers/clock_control.h>
-#include <dt-bindings/espi/npcx_espi.h>
-#include <kernel.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/dt-bindings/espi/npcx_espi.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include "espi_utils.h"
 #include "soc_host.h"
 #include "soc_miwu.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 
 struct espi_npcx_config {
@@ -27,8 +28,7 @@ struct espi_npcx_config {
 	/* mapping table between eSPI reset signal and wake-up input */
 	struct npcx_wui espi_rst_wui;
 	/* pinmux configuration */
-	const uint8_t alts_size;
-	const struct npcx_alt *alts_list;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct espi_npcx_data {
@@ -829,14 +829,15 @@ static const struct espi_driver_api espi_npcx_driver_api = {
 
 static struct espi_npcx_data espi_npcx_data;
 
-static const struct npcx_alt espi_alts[] = NPCX_DT_ALT_ITEMS_LIST(0);
+PINCTRL_DT_INST_DEFINE(0);
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
+	"only one 'nuvoton_npcx_espi' compatible node may be present");
 
 static const struct espi_npcx_config espi_npcx_config = {
 	.base = DT_INST_REG_ADDR(0),
 	.espi_rst_wui = NPCX_DT_WUI_ITEM_BY_NAME(0, espi_rst_wui),
 	.clk_cfg = NPCX_DT_CLK_CFG_ITEM(0),
-	.alts_size = ARRAY_SIZE(espi_alts),
-	.alts_list = espi_alts,
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
 DEVICE_DT_INST_DEFINE(0, &espi_npcx_init, NULL,
@@ -863,6 +864,14 @@ static int espi_npcx_init(const struct device *dev)
 	if (ret < 0) {
 		LOG_ERR("Turn on eSPI clock fail %d", ret);
 		return ret;
+	}
+
+	if (IS_ENABLED(CONFIG_ESPI_NPCX_BYPASS_CH_ENABLE_FATAL_ERROR)) {
+		/* Enable the access to the NPCX_ONLY_ESPI_REG2 register */
+		inst->NPCX_ONLY_ESPI_REG1 = NPCX_ONLY_ESPI_REG1_UNLOCK_REG2;
+		inst->NPCX_ONLY_ESPI_REG2 &= ~BIT(NPCX_ONLY_ESPI_REG2_TRANS_END_CONFIG);
+		/* Disable the access to the NPCX_ONLY_ESPI_REG2 register */
+		inst->NPCX_ONLY_ESPI_REG1 = NPCX_ONLY_ESPI_REG1_LOCK_REG2;
 	}
 
 	/* Enable events which share the same espi bus interrupt */
@@ -893,7 +902,11 @@ static int espi_npcx_init(const struct device *dev)
 				&config->espi_rst_wui, espi_vw_espi_rst_isr);
 
 	/* Configure pin-mux for eSPI bus device */
-	npcx_pinctrl_mux_configure(config->alts_list, config->alts_size, 1);
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("eSPI pinctrl setup failed (%d)", ret);
+		return ret;
+	}
 
 	/* Configure host sub-modules which HW blocks belong to core domain */
 	npcx_host_init_subs_core_domain(dev, &data->callbacks);

@@ -16,7 +16,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <arch/arm64/lib_helpers.h>
+#include <zephyr/arch/arm64/lib_helpers.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus

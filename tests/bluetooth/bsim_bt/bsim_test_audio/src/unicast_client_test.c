@@ -6,9 +6,9 @@
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/audio/audio.h>
-#include <bluetooth/audio/capabilities.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/capabilities.h>
 #include "common.h"
 #include "unicast_common.h"
 
@@ -100,13 +100,14 @@ static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
 	g_sinks[index] = ep;
 }
 
-static void add_remote_codec(struct bt_codec *codec, int index, uint8_t type)
+static void add_remote_codec(struct bt_codec *codec, int index,
+			     enum bt_audio_dir dir)
 {
-	printk("#%u: codec %p type 0x%02x\n", index, codec, type);
+	printk("#%u: codec %p dir 0x%02x\n", index, codec, dir);
 
 	print_codec(codec);
 
-	if (type != BT_AUDIO_SINK && type != BT_AUDIO_SOURCE) {
+	if (dir != BT_AUDIO_DIR_SINK && dir != BT_AUDIO_DIR_SOURCE) {
 		return;
 	}
 
@@ -129,17 +130,17 @@ static void discover_sink_cb(struct bt_conn *conn,
 	}
 
 	if (codec != NULL) {
-		add_remote_codec(codec, params->num_caps, params->type);
+		add_remote_codec(codec, params->num_caps, params->dir);
 		codec_found = true;
 		return;
 	}
 
 	if (ep != NULL) {
-		if (params->type == BT_AUDIO_SINK) {
+		if (params->dir == BT_AUDIO_DIR_SINK) {
 			add_remote_sink(ep, params->num_eps);
 			endpoint_found = true;
 		} else {
-			FAIL("Invalid param type: %u\n", params->type);
+			FAIL("Invalid param dir: %u\n", params->dir);
 		}
 
 		return;
@@ -231,7 +232,7 @@ static void discover_sink(void)
 	int err;
 
 	params.func = discover_sink_cb;
-	params.type = BT_AUDIO_SINK;
+	params.dir = BT_AUDIO_DIR_SINK;
 
 	err = bt_audio_discover(default_conn, &params);
 	if (err != 0) {
@@ -266,14 +267,14 @@ static size_t configure_streams(void)
 	size_t stream_cnt;
 
 	for (stream_cnt = 0; stream_cnt < ARRAY_SIZE(g_sinks); stream_cnt++) {
+		struct bt_audio_stream *stream = &g_streams[stream_cnt];
 		int err;
 
 		if (g_sinks[stream_cnt] == NULL) {
 			break;
 		}
 
-		err = configure_stream(&g_streams[stream_cnt],
-				       g_sinks[stream_cnt]);
+		err = configure_stream(stream, g_sinks[stream_cnt]);
 		if (err != 0) {
 			FAIL("Unable to configure stream[%zu]: %d",
 			     stream_cnt, err);
@@ -310,9 +311,15 @@ static size_t release_streams(size_t stream_cnt)
 static void create_unicast_group(struct bt_audio_unicast_group **unicast_group,
 				 size_t stream_cnt)
 {
+	struct bt_audio_stream *streams[ARRAY_SIZE(g_streams)];
 	int err;
 
-	err = bt_audio_unicast_group_create(g_streams, 1, unicast_group);
+	for (size_t i = 0U; i < stream_cnt; i++) {
+		streams[i] = &g_streams[i];
+	}
+
+	printk("Creating unicast group\n");
+	err = bt_audio_unicast_group_create(streams, 1, unicast_group);
 	if (err != 0) {
 		FAIL("Unable to create unicast group: %d", err);
 		return;
@@ -320,9 +327,11 @@ static void create_unicast_group(struct bt_audio_unicast_group **unicast_group,
 
 	/* Test removing streams from group before adding them */
 	if (stream_cnt > 1) {
+		const size_t remaining_streams = stream_cnt - 1;
+
 		err = bt_audio_unicast_group_remove_streams(*unicast_group,
-							    g_streams + 1,
-							    stream_cnt - 1);
+							    &streams[1],
+							    remaining_streams);
 		if (err == 0) {
 			FAIL("Able to remove stream not in group");
 			return;
@@ -330,8 +339,8 @@ static void create_unicast_group(struct bt_audio_unicast_group **unicast_group,
 
 		/* Test adding streams to group after creation */
 		err = bt_audio_unicast_group_add_streams(*unicast_group,
-							 g_streams + 1,
-							 stream_cnt - 1);
+							 &streams[1],
+							 remaining_streams);
 		if (err != 0) {
 			FAIL("Unable to add streams to unicast group: %d", err);
 			return;
@@ -342,12 +351,19 @@ static void create_unicast_group(struct bt_audio_unicast_group **unicast_group,
 static void delete_unicast_group(struct bt_audio_unicast_group *unicast_group,
 				 size_t stream_cnt)
 {
+	struct bt_audio_stream *streams[ARRAY_SIZE(g_streams)];
 	int err;
 
+	for (size_t i = 0U; i < stream_cnt; i++) {
+		streams[i] = &g_streams[i];
+	}
+
 	if (stream_cnt > 1) {
+		const size_t remove_streams_cnt = stream_cnt - 1;
+
 		err = bt_audio_unicast_group_remove_streams(unicast_group,
-							    g_streams + 1,
-							    stream_cnt - 1);
+							    &streams[1],
+							    remove_streams_cnt);
 		if (err != 0) {
 			FAIL("Unable to remove streams from unicast group: %d",
 			     err);

@@ -11,13 +11,13 @@
  */
 
 #include <errno.h>
-#include <sys/printk.h>
-#include <net/net_context.h>
-#include <net/net_pkt.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_pkt.h>
 
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 
-#include <net/net_event.h>
+#include <zephyr/net/net_event.h>
 
 /* Maximum size of "struct net_event_ipv6_addr" or
  * "struct net_event_ipv6_nbr" or "struct net_event_ipv6_route".
@@ -26,7 +26,7 @@
 
 #ifdef CONFIG_NET_L2_WIFI_MGMT
 
-#include <net/wifi_mgmt.h>
+#include <zephyr/net/wifi_mgmt.h>
 #define NET_EVENT_INFO_MAX_SIZE sizeof(struct wifi_scan_result)
 
 #else
@@ -229,13 +229,13 @@ static inline void net_pkt_hexdump(struct net_pkt *pkt, const char *str)
 	char pkt_str[sizeof("0x") + sizeof(intptr_t) * 2];
 
 	if (str && str[0]) {
-		LOG_DBG("%s", log_strdup(str));
+		LOG_DBG("%s", str);
 	}
 
 	snprintk(pkt_str, sizeof(pkt_str), "%p", pkt);
 
 	while (buf) {
-		LOG_HEXDUMP_DBG(buf->data, buf->len, log_strdup(pkt_str));
+		LOG_HEXDUMP_DBG(buf->data, buf->len, pkt_str);
 		buf = buf->frags;
 	}
 }

@@ -12,6 +12,23 @@ menuconfig MCUMGR_CMD_IMG_MGMT
 	  Enables mcumgr handlers for image management
 
 if MCUMGR_CMD_IMG_MGMT
+
+if HEAP_MEM_POOL_SIZE > 0
+config IMG_MGMT_USE_HEAP_FOR_FLASH_IMG_CONTEXT
+	bool "Use heap mem pool for flash image DFU context"
+	help
+	  Use heap to allocate flash image upload context, otherwise a static variable will
+	  be used. The context object is used by IMG_MANAGER to buffer image writes
+	  and has significant size, mainly affected by image write buffer of
+	  the CONFIG_IMG_BLOCK_BUF_SIZE size and additional fields that hold the state information
+	  (struct flash_img_context).
+	  When the option is not enabled it increases static RAM use.
+	  Make sure with testing, when enabling the option, that the heap has enough size
+	  to allocate this context or it will not be possible to perform DFU; it may also not be
+	  possible to allocate such context when heap is under pressure, due to application
+	  operation, an issue that should also be addressed within application.
+endif
+
 config IMG_MGMT_UL_CHUNK_SIZE
 	int "Maximum chunk size for image uploads (DEPRECATED)"
 	default 512
@@ -38,10 +55,11 @@ config IMG_MGMT_UPDATABLE_IMAGE_NUMBER
 	  by that library.
 
 config IMG_MGMT_VERBOSE_ERR
-	bool "Verbose logging when uploading a new image"
+	bool "Verbose error responses when uploading application image"
 	select MGMT_VERBOSE_ERR_RESPONSE
 	help
-	  Enable verbose logging during a firmware upgrade.
+	  Add additional "rsn" key to SMP responses, where provided, explaining
+	  non-0 "rc" codes.
 
 config IMG_MGMT_DUMMY_HDR
 	bool "Return dummy image header data for imgr functions"

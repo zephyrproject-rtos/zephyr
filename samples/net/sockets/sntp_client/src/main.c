@@ -5,10 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sntp_client_sample, LOG_LEVEL_DBG);
 
-#include <net/sntp.h>
+#include <zephyr/net/sntp.h>
 #ifdef CONFIG_POSIX_API
 #include <arpa/inet.h>
 #endif

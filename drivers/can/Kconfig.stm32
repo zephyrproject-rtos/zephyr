@@ -11,7 +11,7 @@ config CAN_STM32
 	select CAN_HAS_RX_TIMESTAMP
 	help
 	  Enable STM32 CAN Driver.
-	  Tested on stm32F0, stm32L4 and stm32F7 series.
+	  Tested on STM32F0, STM32F4, STM32L4 and STM32F7 series.
 
 config CAN_MAX_FILTER
 	int "Maximum number of concurrent active filters"
@@ -19,5 +19,5 @@ config CAN_MAX_FILTER
 	default 5
 	range 1 56
 	help
-	  Defines the array size of the callback/msgq pointers.
+	  Defines the array size of the callback pointers.
 	  Must be at least the size of concurrent reads.

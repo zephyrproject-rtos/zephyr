@@ -9,12 +9,12 @@
 #include "i2c.h"
 #include "clock.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_telink);
 
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #include "i2c-priv.h"
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 /* I2C configuration structure */
 struct i2c_b91_cfg {

@@ -6,13 +6,13 @@
 
 #include <ctype.h>
 
-#include <console/console.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/iso.h>
+#include <zephyr/console/console.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/iso.h>
 
 #include "common.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(iso_broadcast_main, LOG_LEVEL_DBG);
 
 enum benchmark_role {

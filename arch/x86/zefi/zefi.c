@@ -9,7 +9,7 @@
 #include "efi.h"
 #include "printf.h"
 #include <zefi-segments.h>
-#include <arch/x86/efi.h>
+#include <zephyr/arch/x86/efi.h>
 
 #define PUTCHAR_BUFSZ 128
 
@@ -178,6 +178,9 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 	}
 
 	unsigned char *code = (void *)zefi_entry;
+
+	efi_arg.efi_systab = efi;
+	__asm__ volatile("movq %%cr3, %0" : "=r"(efi_arg.efi_cr3));
 
 	printf("Jumping to Entry Point: %p (%x %x %x %x %x %x %x)\n",
 	       code, code[0], code[1], code[2], code[3],

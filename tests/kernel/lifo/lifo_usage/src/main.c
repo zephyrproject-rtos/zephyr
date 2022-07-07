@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include "lifo_usage.h"
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define LIST_LEN 2

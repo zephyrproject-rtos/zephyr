@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_promisc_sample, LOG_LEVEL_INF);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
-#include <net/net_core.h>
-#include <net/promiscuous.h>
-#include <net/udp.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/promiscuous.h>
+#include <zephyr/net/udp.h>
 
 static void net_pkt_hexdump(struct net_pkt *pkt, const char *str)
 {
@@ -131,23 +131,23 @@ static void print_info(struct net_pkt *pkt)
 		if (next_hdr == IPPROTO_TCP || next_hdr == IPPROTO_UDP) {
 			LOG_INF("%s %s (%zd) %s:%u -> %s:%u",
 				"IPv4", proto, len,
-				log_strdup(src_addr), src_port,
-				log_strdup(dst_addr), dst_port);
+				src_addr, src_port,
+				dst_addr, dst_port);
 		} else {
 			LOG_INF("%s %s (%zd) %s -> %s", "IPv4", proto,
-				len, log_strdup(src_addr),
-				log_strdup(dst_addr));
+				len, src_addr,
+				dst_addr);
 		}
 	} else {
 		if (next_hdr == IPPROTO_TCP || next_hdr == IPPROTO_UDP) {
 			LOG_INF("%s %s (%zd) [%s]:%u -> [%s]:%u",
 				"IPv6", proto, len,
-				log_strdup(src_addr), src_port,
-				log_strdup(dst_addr), dst_port);
+				src_addr, src_port,
+				dst_addr, dst_port);
 		} else {
 			LOG_INF("%s %s (%zd) %s -> %s", "IPv6", proto,
-				len, log_strdup(src_addr),
-				log_strdup(dst_addr));
+				len, src_addr,
+				dst_addr);
 		}
 	}
 }

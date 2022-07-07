@@ -9,7 +9,7 @@
 #include <rpi_pico/rp2040.dtsi>
 #include "rpi_pico-pinctrl.dtsi"
 
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	chosen {
@@ -83,4 +83,8 @@
 	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
 };

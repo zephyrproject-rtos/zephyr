@@ -10,25 +10,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_websocket, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <strings.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include <sys/fdtable.h>
-#include <net/net_core.h>
-#include <net/net_ip.h>
-#include <net/socket.h>
-#include <net/http_client.h>
-#include <net/websocket.h>
+#include <zephyr/sys/fdtable.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#if defined(CONFIG_POSIX_API)
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/sys/socket.h>
+#else
+#include <zephyr/net/socket.h>
+#endif
+#include <zephyr/net/http_client.h>
+#include <zephyr/net/websocket.h>
 
-#include <random/rand32.h>
-#include <sys/byteorder.h>
-#include <sys/base64.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/base64.h>
 #include <mbedtls/sha1.h>
 
 #include "net_private.h"

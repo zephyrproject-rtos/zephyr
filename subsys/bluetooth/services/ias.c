@@ -9,14 +9,14 @@
  */
 
 #include <errno.h>
-#include <init.h>
+#include <zephyr/init.h>
 #include <stdint.h>
-#include <zephyr.h>
-#include <net/buf.h>
-#include <logging/log.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/services/ias.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/services/ias.h>
 
 #define LOG_LEVEL CONFIG_BT_IAS_LOG_LEVEL
 LOG_MODULE_REGISTER(ias);

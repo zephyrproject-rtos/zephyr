@@ -11,17 +11,17 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
-#include <drivers/gpio.h>
-#include <logging/log.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
 #include "button_svc.h"
 #include "led_svc.h"
 

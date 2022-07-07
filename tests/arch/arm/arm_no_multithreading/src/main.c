@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <sys/printk.h>
-#include <sys/__assert.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 #if !defined(CONFIG_CPU_CORTEX_M)
   #error test can only run on Cortex-M MCUs
@@ -23,7 +23,7 @@
 #define FPSCR_MASK		(0xffffffffU)
 #endif
 
-extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 
 static volatile int test_flag;
 static unsigned int expected_reason;

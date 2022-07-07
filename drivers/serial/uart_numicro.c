@@ -5,7 +5,7 @@
  * Author: Saravanan Sekar <saravanan@linumiz.com>
  */
 
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 #include <NuMicro.h>
 #include <string.h>
 

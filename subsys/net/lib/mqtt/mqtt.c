@@ -9,10 +9,10 @@
  * @brief MQTT Client API Implementation.
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_mqtt, CONFIG_MQTT_LOG_LEVEL);
 
-#include <net/mqtt.h>
+#include <zephyr/net/mqtt.h>
 
 #include "mqtt_transport.h"
 #include "mqtt_internal.h"

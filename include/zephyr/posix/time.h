@@ -56,10 +56,10 @@ struct itimerspec {
 # endif
 #endif /* CONFIG_NEWLIB_LIBC */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
 #include "posix_types.h"
-#include <posix/signal.h>
+#include <zephyr/posix/signal.h>
 
 #ifdef __cplusplus
 extern "C" {

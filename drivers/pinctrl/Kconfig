@@ -31,6 +31,8 @@ config PINCTRL_DYNAMIC
 
 source "drivers/pinctrl/Kconfig.b91"
 source "drivers/pinctrl/Kconfig.gd32"
+source "drivers/pinctrl/Kconfig.it8xxx2"
+source "drivers/pinctrl/Kconfig.npcx"
 source "drivers/pinctrl/Kconfig.nrf"
 source "drivers/pinctrl/Kconfig.rcar"
 source "drivers/pinctrl/Kconfig.rpi_pico"
@@ -39,10 +41,11 @@ source "drivers/pinctrl/Kconfig.sam0"
 source "drivers/pinctrl/Kconfig.stm32"
 source "drivers/pinctrl/Kconfig.kinetis"
 source "drivers/pinctrl/Kconfig.xec"
-source "drivers/pinctrl/Kconfig.mcux"
+source "drivers/pinctrl/Kconfig.imx"
 source "drivers/pinctrl/Kconfig.sifive"
 source "drivers/pinctrl/Kconfig.lpc_iocon"
 source "drivers/pinctrl/Kconfig.cc13xx_cc26xx"
 source "drivers/pinctrl/Kconfig.esp32"
+source "drivers/pinctrl/Kconfig.rv32m1"
 
 endif # PINCTRL

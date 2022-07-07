@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/spi.h>
-#include <pm/device.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 #include <nrfx_gpiote.h>
@@ -15,11 +15,16 @@
 #include <nrfx_spim.h>
 #include <hal/nrf_clock.h>
 #include <string.h>
+#include <zephyr/linker/devicetree_regions.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
+
+#if (CONFIG_SPI_NRFX_RAM_BUFFER_SIZE > 0)
+#define SPI_BUFFER_IN_RAM 1
+#endif
 
 struct spi_nrfx_data {
 	struct spi_context ctx;
@@ -27,8 +32,8 @@ struct spi_nrfx_data {
 	size_t  chunk_len;
 	bool    busy;
 	bool    initialized;
-#if (CONFIG_SPI_NRFX_RAM_BUFFER_SIZE > 0)
-	uint8_t buffer[CONFIG_SPI_NRFX_RAM_BUFFER_SIZE];
+#if SPI_BUFFER_IN_RAM
+	uint8_t *buffer;
 #endif
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 	bool    anomaly_58_workaround_active;
@@ -291,8 +296,8 @@ static void transfer_next_chunk(const struct device *dev)
 		const uint8_t *tx_buf = ctx->tx_buf;
 #if (CONFIG_SPI_NRFX_RAM_BUFFER_SIZE > 0)
 		if (spi_context_tx_buf_on(ctx) && !nrfx_is_in_ram(tx_buf)) {
-			if (chunk_len > sizeof(dev_data->buffer)) {
-				chunk_len = sizeof(dev_data->buffer);
+			if (chunk_len > CONFIG_SPI_NRFX_RAM_BUFFER_SIZE) {
+				chunk_len = CONFIG_SPI_NRFX_RAM_BUFFER_SIZE;
 			}
 
 			memcpy(dev_data->buffer, tx_buf, chunk_len);
@@ -481,11 +486,12 @@ static int spim_nrfx_pm_action(const struct device *dev,
  * being operated on. Since DT_INST() makes no guarantees about that,
  * it won't work.
  */
-#define SPIM(idx) DT_NODELABEL(spi##idx)
-#define SPIM_PROP(idx, prop) DT_PROP(SPIM(idx), prop)
+#define SPIM(idx)			DT_NODELABEL(spi##idx)
+#define SPIM_PROP(idx, prop)		DT_PROP(SPIM(idx), prop)
+#define SPIM_HAS_PROP(idx, prop)	DT_NODE_HAS_PROP(SPIM(idx), prop)
 
-#define SPIM_NRFX_MISO_PULL_DOWN(idx) DT_PROP(SPIM(idx), miso_pull_down)
-#define SPIM_NRFX_MISO_PULL_UP(idx) DT_PROP(SPIM(idx), miso_pull_up)
+#define SPIM_NRFX_MISO_PULL_DOWN(idx)	DT_PROP(SPIM(idx), miso_pull_down)
+#define SPIM_NRFX_MISO_PULL_UP(idx)	DT_PROP(SPIM(idx), miso_pull_up)
 
 #define SPIM_NRFX_MISO_PULL(idx)			\
 	(SPIM_PROP(idx, miso_pull_up)			\
@@ -546,10 +552,16 @@ static int spim_nrfx_pm_action(const struct device *dev,
 		(return anomaly_58_workaround_init(dev);),		       \
 		(return 0;))						       \
 	}								       \
+	IF_ENABLED(SPI_BUFFER_IN_RAM,					       \
+		(static uint8_t spim_##idx##_buffer			       \
+			[CONFIG_SPI_NRFX_RAM_BUFFER_SIZE]		       \
+			SPIM_MEMORY_SECTION(idx);))			       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
 		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
 		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(SPIM(idx), ctx)		       \
+		IF_ENABLED(SPI_BUFFER_IN_RAM,				       \
+			(.buffer = spim_##idx##_buffer,))		       \
 		.dev  = DEVICE_DT_GET(SPIM(idx)),			       \
 		.busy = false,						       \
 	};								       \
@@ -579,6 +591,12 @@ static int spim_nrfx_pm_action(const struct device *dev,
 		      &spi_##idx##z_config,				       \
 		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \
 		      &spi_nrfx_driver_api)
+
+#define SPIM_MEMORY_SECTION(idx)					       \
+	COND_CODE_1(SPIM_HAS_PROP(idx, memory_regions),			       \
+		(__attribute__((__section__(LINKER_DT_NODE_REGION_NAME(	       \
+			DT_PHANDLE(SPIM(idx), memory_regions)))))),	       \
+		())
 
 #ifdef CONFIG_SPI_0_NRF_SPIM
 SPI_NRFX_SPIM_DEVICE(0);

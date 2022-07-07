@@ -8,15 +8,15 @@
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(creg_gpio, CONFIG_GPIO_LOG_LEVEL);
 
 #include "gpio_utils.h"

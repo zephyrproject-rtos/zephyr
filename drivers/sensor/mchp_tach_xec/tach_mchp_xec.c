@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyrigth (c) 2022 Microchip Technology Inc.
+ * Copyright (c) 2022 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,18 +8,18 @@
 #define DT_DRV_COMPAT microchip_xec_tach
 
 #include <errno.h>
-#include <device.h>
+#include <zephyr/device.h>
 #ifdef CONFIG_SOC_SERIES_MEC172X
-#include <drivers/clock_control/mchp_xec_clock_control.h>
-#include <drivers/interrupt_controller/intc_mchp_xec_ecia.h>
+#include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
+#include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #endif
 #ifdef CONFIG_PINCTRL
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 #include <soc.h>
-#include <sys/sys_io.h>
-#include <logging/log.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(tach_xec, CONFIG_SENSOR_LOG_LEVEL);
 

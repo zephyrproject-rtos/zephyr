@@ -8,14 +8,14 @@
 #define DT_DRV_COMPAT nxp_lpc_i2c
 
 #include <errno.h>
-#include <drivers/i2c.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/clock_control.h>
 #include <fsl_i2c.h>
 #ifdef CONFIG_PINCTRL
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mcux_flexcomm);
 
 #include "i2c-priv.h"

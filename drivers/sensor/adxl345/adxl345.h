@@ -8,10 +8,10 @@
 #define ZEPHYR_DRIVERS_SENSOR_ADX345_ADX345_H_
 
 #include <zephyr/types.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/util.h>
 
 #define ADXL345_DEVICE_ID_REG      0x00
 #define ADXL345_RATE_REG           0x2c
@@ -37,8 +37,6 @@
 
 struct adxl345_dev_data {
 	unsigned int sample_number;
-	const struct device *i2c_master;
-	uint8_t i2c_addr;
 
 	int16_t bufx[ADXL345_MAX_FIFO_SIZE];
 	int16_t bufy[ADXL345_MAX_FIFO_SIZE];
@@ -52,8 +50,7 @@ struct adxl345_sample {
 };
 
 struct adxl345_dev_config {
-	const char *i2c_master_name;
-	uint16_t i2c_addr;
+	struct i2c_dt_spec i2c;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADX345_ADX345_H_ */

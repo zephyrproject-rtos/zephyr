@@ -6,12 +6,12 @@
 #include <string.h>
 #include <zephyr/types.h>
 #include <sys/types.h>
-#include <toolchain.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/util.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 #include "util/memq.h"
 #include "pdu.h"
@@ -117,6 +117,7 @@ static void isoal_sink_deallocate(isoal_sink_handle_t hdl)
  *
  * @param handle[in]            Connection handle
  * @param role[in]              Peripheral, Central or Broadcast
+ * @param framed[in]            Framed case
  * @param burst_number[in]      Burst Number
  * @param flush_timeout[in]     Flush timeout
  * @param sdu_interval[in]      SDU interval
@@ -133,6 +134,7 @@ static void isoal_sink_deallocate(isoal_sink_handle_t hdl)
 isoal_status_t isoal_sink_create(
 	uint16_t                 handle,
 	uint8_t                  role,
+	uint8_t                  framed,
 	uint8_t                  burst_number,
 	uint8_t                  flush_timeout,
 	uint32_t                 sdu_interval,
@@ -144,7 +146,13 @@ isoal_status_t isoal_sink_create(
 	isoal_sink_sdu_write_cb  sdu_write,
 	isoal_sink_handle_t      *hdl)
 {
+	uint32_t iso_interval_us;
 	isoal_status_t err;
+
+	/* ISO interval in units of time requires the integer (iso_interval)
+	 * to be multiplied by 1250us.
+	 */
+	iso_interval_us = iso_interval * ISO_INT_UNIT_US;
 
 	/* Allocate a new sink */
 	err = isoal_sink_allocate(hdl);
@@ -155,15 +163,15 @@ isoal_status_t isoal_sink_create(
 	struct isoal_sink_session *session = &isoal_global.sink_state[*hdl].session;
 
 	session->handle = handle;
+	session->framed = framed;
 
 	/* Todo: Next section computing various constants, should potentially be a
 	 * function in itself as a number of the dependencies could be changed while
 	 * a connection is active.
 	 */
 
-	/* Note: sdu_interval unit is uS, iso_interval is a multiple of 1.25mS */
 	session->pdus_per_sdu = (burst_number * sdu_interval) /
-		((uint32_t)iso_interval * CONN_INT_UNIT_US);
+		iso_interval_us;
 
 	/* Computation of transport latency (constant part)
 	 *
@@ -195,14 +203,14 @@ isoal_status_t isoal_sink_create(
 	 */
 	if (role == BT_CONN_ROLE_PERIPHERAL) {
 		isoal_global.sink_state[*hdl].session.latency_unframed =
-			stream_sync_delay + ((flush_timeout - 1) * iso_interval);
+			stream_sync_delay + ((flush_timeout - 1) * iso_interval_us);
 
 		isoal_global.sink_state[*hdl].session.latency_framed =
-			stream_sync_delay + sdu_interval + (flush_timeout * iso_interval);
+			stream_sync_delay + sdu_interval + (flush_timeout * iso_interval_us);
 	} else if (role == BT_CONN_ROLE_CENTRAL) {
 		isoal_global.sink_state[*hdl].session.latency_unframed =
 			stream_sync_delay - group_sync_delay -
-			(((iso_interval / sdu_interval) - 1) * iso_interval);
+			(((iso_interval_us / sdu_interval) - 1) * iso_interval_us);
 
 		isoal_global.sink_state[*hdl].session.latency_framed =
 			stream_sync_delay - group_sync_delay;
@@ -211,7 +219,7 @@ isoal_status_t isoal_sink_create(
 			group_sync_delay;
 
 		isoal_global.sink_state[*hdl].session.latency_framed =
-			group_sync_delay + sdu_interval + iso_interval;
+			group_sync_delay + sdu_interval + iso_interval_us;
 
 	} else {
 		LL_ASSERT(0);
@@ -303,14 +311,15 @@ static isoal_status_t isoal_rx_allocate_sdu(struct isoal_sink *sink,
 			&sdu->contents  /* [out] Updated with pointer and size */
 		);
 
+		if (err == ISOAL_STATUS_OK) {
+			sp->sdu_allocated = true;
+		}
+
 		/* Nothing has been written into buffer yet */
 		sp->sdu_written   = 0;
 		sp->sdu_available = sdu->contents.size;
 		LL_ASSERT(sdu->contents.size > 0);
 
-		/* Remember meta data */
-		sdu->status = pdu_meta->meta->status;
-		sdu->timestamp = pdu_meta->meta->timestamp;
 		/* Get seq number from session counter */
 		sdu->seqn = session->seqn;
 	}
@@ -362,6 +371,7 @@ static isoal_status_t isoal_rx_try_emit_sdu(struct isoal_sink *sink, bool end_of
 		struct isoal_sink_session *session = &sink->session;
 
 		err = session->sdu_emit(sink, sdu);
+		sp->sdu_allocated = false;
 
 		/* update next state */
 		sink->sdu_production.sdu_state = next_state;
@@ -374,7 +384,8 @@ static isoal_status_t isoal_rx_append_to_sdu(struct isoal_sink *sink,
 					     const struct isoal_pdu_rx *pdu_meta,
 					     uint8_t offset,
 					     uint8_t length,
-					     bool is_end_fragment)
+					     bool is_end_fragment,
+					     bool is_padding)
 {
 	isoal_pdu_len_t packet_available;
 	const uint8_t *pdu_payload;
@@ -393,9 +404,21 @@ static isoal_status_t isoal_rx_append_to_sdu(struct isoal_sink *sink,
 	/* While there is something left of the packet to consume */
 	err = ISOAL_STATUS_OK;
 	while ((packet_available > 0) || handle_error_case) {
-		const isoal_status_t err_alloc = isoal_rx_allocate_sdu(sink, pdu_meta);
-		struct isoal_sdu_production *sp = &sink->sdu_production;
-		struct isoal_sdu_produced *sdu = &sp->sdu;
+		isoal_status_t err_alloc;
+		struct isoal_sdu_production *sp;
+		struct isoal_sdu_produced *sdu;
+
+		err_alloc = ISOAL_STATUS_OK;
+		if (!is_padding) {
+			/* A new SDU should only be allocated if the current is
+			 * not padding. Covers a situation where the end
+			 * fragment was not received.
+			 */
+			err_alloc = isoal_rx_allocate_sdu(sink, pdu_meta);
+		}
+
+		sp = &sink->sdu_production;
+		sdu = &sp->sdu;
 
 		err |= err_alloc;
 
@@ -410,13 +433,11 @@ static isoal_status_t isoal_rx_append_to_sdu(struct isoal_sink *sink,
 		);
 
 		if (consume_len > 0) {
-			if (pdu_meta->meta->status == ISOAL_PDU_STATUS_VALID) {
-				struct isoal_sink_session *session = &sink->session;
+			const struct isoal_sink_session *session = &sink->session;
 
-				err |= session->sdu_write(sdu->contents.dbuf,
-							  pdu_payload,
-							  consume_len);
-			}
+			err |= session->sdu_write(sdu->contents.dbuf,
+						  pdu_payload,
+						  consume_len);
 			pdu_payload += consume_len;
 			sp->sdu_written   += consume_len;
 			sp->sdu_available -= consume_len;
@@ -424,7 +445,12 @@ static isoal_status_t isoal_rx_append_to_sdu(struct isoal_sink *sink,
 		}
 		bool end_of_sdu = (packet_available == 0) && is_end_fragment;
 
-		const isoal_status_t err_emit = isoal_rx_try_emit_sdu(sink, end_of_sdu);
+		isoal_status_t err_emit = ISOAL_STATUS_OK;
+
+		if (sp->sdu_allocated) {
+			/* SDU should be emitted only if it was allocated */
+			err_emit = isoal_rx_try_emit_sdu(sink, end_of_sdu);
+		}
 
 		handle_error_case = false;
 		err |= err_emit;
@@ -471,7 +497,7 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 	/* If status is not ISOAL_PDU_STATUS_VALID, length and LLID cannot be trusted */
 	llid = pdu_meta->pdu->ll_id;
 	pdu_err = (pdu_meta->meta->status != ISOAL_PDU_STATUS_VALID);
-	length = pdu_err ? 0 : pdu_meta->pdu->length;
+	length = pdu_meta->pdu->length;
 	/* A zero length PDU with LLID 0b01 (PDU_BIS_LLID_START_CONTINUE) would be a padding PDU.
 	 * However if there are errors in the PDU, it could be an incorrectly receive non-padding
 	 * PDU. Therefore only consider a PDU with errors as padding if received after the end
@@ -479,6 +505,36 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 	 */
 	pdu_padding = (length == 0) && (llid == PDU_BIS_LLID_START_CONTINUE) &&
 		      (!pdu_err || sp->fsm == ISOAL_ERR_SPOOL);
+	seq_err = (meta->payload_number != (sp->prev_pdu_id+1));
+
+	/* If there are no buffers available, the PDUs received by the ISO-AL
+	 * may not be in sequence even though this is expected for unframed rx.
+	 * It would be necessary to exit the ISOAL_ERR_SPOOL state as the PDU
+	 * count and as a result the last_pdu detection is no longer reliable.
+	 */
+	if (sp->fsm == ISOAL_ERR_SPOOL) {
+		if ((!pdu_err && !seq_err &&
+			/* Previous sequence error should have move to the
+			 * ISOAL_ERR_SPOOL state and emitted the SDU in production. No
+			 * PDU error so LLID and length are reliable and no sequence
+			 * error so this PDU is the next in order.
+			 */
+			((sp->prev_pdu_is_end || sp->prev_pdu_is_padding) &&
+				((llid == PDU_BIS_LLID_START_CONTINUE && length > 0) ||
+					(llid == PDU_BIS_LLID_COMPLETE_END && length == 0))))
+			/* Detected a start of a new SDU as the last PDU was an end
+			 * fragment or padding and the current is the start of a new SDU
+			 * (either filled or zero length). Move to ISOAL_START
+			 * immediately.
+			 */
+
+			|| (meta->payload_number % session->pdus_per_sdu == 0)) {
+			/* Based on the payload number, this should be the start
+			 * of a new SDU.
+			 */
+			sp->fsm = ISOAL_START;
+		}
+	}
 
 	if (sp->fsm == ISOAL_START) {
 		struct isoal_sdu_produced *sdu;
@@ -499,7 +555,6 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 		sdu->timestamp = anchorpoint + latency;
 	} else {
 		sp->pdu_cnt++;
-		seq_err = (meta->payload_number != (sp->prev_pdu_id+1));
 	}
 
 	last_pdu = (sp->pdu_cnt == session->pdus_per_sdu);
@@ -536,6 +591,8 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 		} else  {
 			/* Unsupported case */
 			err = ISOAL_STATUS_ERR_UNSPECIFIED;
+			BT_ERR("Invalid unframed LLID (%d)", llid);
+			LL_ASSERT(0);
 		}
 		break;
 
@@ -554,25 +611,44 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 	}
 
 	/* Update error state */
-	if (pdu_err && !pdu_padding) {
+	/* Prioritisation:
+	 * (1) Sequence Error should set the ISOAL_SDU_STATUS_LOST_DATA status
+	 *     as data is missing and this will trigger the HCI to discard any
+	 *     data received.
+	 *
+	 *     BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
+	 *     5.4.5 HCI ISO Data packets
+	 *     If Packet_Status_Flag equals 0b10 then PB_Flag shall equal 0b10.
+	 *     When Packet_Status_Flag is set to 0b10 in packets from the Controller to the
+	 *     Host, there is no data and ISO_SDU_Length shall be set to zero.
+	 *
+	 * (2) Any error status received from the LL via the PDU status should
+	 *     set the relevant error conditions.
+	 *
+	 * (3) Missing end fragment handling.
+	 */
+	if (seq_err) {
+		sp->sdu_status |= ISOAL_SDU_STATUS_LOST_DATA;
+	} else if (pdu_err && !pdu_padding) {
 		sp->sdu_status |= meta->status;
 	} else if (last_pdu && (llid != PDU_BIS_LLID_COMPLETE_END) &&
 				(sp->fsm  != ISOAL_ERR_SPOOL)) {
 		/* END fragment never seen */
 		sp->sdu_status |= ISOAL_SDU_STATUS_ERRORS;
-	} else if (seq_err) {
-		sp->sdu_status |= ISOAL_SDU_STATUS_LOST_DATA;
 	}
 
 	/* Append valid PDU to SDU */
-	if (!pdu_padding) {
+	if (sp->fsm != ISOAL_ERR_SPOOL && (!pdu_padding || end_of_packet)) {
 		err |= isoal_rx_append_to_sdu(sink, pdu_meta, 0,
-					      length, end_of_packet);
+					      length, end_of_packet,
+					      pdu_padding);
 	}
 
 	/* Update next state */
 	sp->fsm = next_state;
 	sp->prev_pdu_id = meta->payload_number;
+	sp->prev_pdu_is_end = !pdu_err && llid == PDU_BIS_LLID_COMPLETE_END;
+	sp->prev_pdu_is_padding = !pdu_err && pdu_padding;
 
 	return err;
 }
@@ -630,8 +706,6 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 		 * may also be discarded.
 		 */
 		next_state = ISOAL_ERR_SPOOL;
-		/* Update next state */
-		sink->sdu_production.fsm = next_state;
 
 		/* This maps directly to the HCI ISO Data packet Packet_Status_Flag by way of the
 		 * sdu_status in the SDU emitted.
@@ -645,17 +719,27 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 		 *   0b10  Part(s) of the SDU were not received correctly. This is reported as
 		 *         "lost data".
 		 */
-		if (pdu_err) {
-			sp->sdu_status |= meta->status;
-		} else if (seq_err) {
+		if (seq_err) {
 			sp->sdu_status |= ISOAL_SDU_STATUS_LOST_DATA;
+		} else if (pdu_err) {
+			sp->sdu_status |= meta->status;
+		}
+
+		if (sp->fsm == ISOAL_START) {
+			/* Sequence number shall be incremented even if an error
+			 * occurs at the beginning.
+			 */
+			session->seqn++;
 		}
 
 		/* Flush current SDU with error if any */
-		err |= isoal_rx_append_to_sdu(sink, pdu_meta, 0, 0, true);
+		err |= isoal_rx_append_to_sdu(sink, pdu_meta, 0, 0, true, false);
 
 		/* Skip searching this PDU */
 		seg_hdr = NULL;
+
+		/* Update next state */
+		sink->sdu_production.fsm = next_state;
 	}
 
 	if (pdu_padding) {
@@ -782,7 +866,7 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 			 * We should possibly be able to send empty packets with only time stamp
 			 */
 
-			err |= isoal_rx_append_to_sdu(sink, pdu_meta, offset, length, cmplt);
+			err |= isoal_rx_append_to_sdu(sink, pdu_meta, offset, length, cmplt, false);
 		}
 
 		/* Update next state */
@@ -814,12 +898,10 @@ isoal_status_t isoal_rx_pdu_recombine(isoal_sink_handle_t sink_hdl,
 				      const struct isoal_pdu_rx *pdu_meta)
 {
 	struct isoal_sink *sink = &isoal_global.sink_state[sink_hdl];
-	isoal_status_t err = ISOAL_STATUS_ERR_SDU_ALLOC;
+	isoal_status_t err = ISOAL_STATUS_OK;
 
-	if (sink->sdu_production.mode != ISOAL_PRODUCTION_MODE_DISABLED) {
-		bool pdu_framed = (pdu_meta->pdu->ll_id == PDU_BIS_LLID_FRAMED);
-
-		if (pdu_framed) {
+	if (sink && sink->sdu_production.mode != ISOAL_PRODUCTION_MODE_DISABLED) {
+		if (sink->session.framed) {
 			err = isoal_rx_framed_consume(sink, pdu_meta);
 		} else {
 			err = isoal_rx_unframed_consume(sink, pdu_meta);
@@ -868,6 +950,7 @@ static void isoal_source_deallocate(isoal_source_handle_t hdl)
  *
  * @param handle[in]            Connection handle
  * @param role[in]              Peripheral, Central or Broadcast
+ * @param framed[in]            Framed case
  * @param burst_number[in]      Burst Number
  * @param flush_timeout[in]     Flush timeout
  * @param max_octets[in]        Maximum PDU size (Max_PDU_C_To_P / Max_PDU_P_To_C)
@@ -886,6 +969,7 @@ static void isoal_source_deallocate(isoal_source_handle_t hdl)
 isoal_status_t isoal_source_create(
 	uint16_t                    handle,
 	uint8_t                     role,
+	uint8_t                     framed,
 	uint8_t                     burst_number,
 	uint8_t                     flush_timeout,
 	uint8_t                     max_octets,
@@ -910,6 +994,9 @@ isoal_status_t isoal_source_create(
 	struct isoal_source_session *session = &isoal_global.source_state[*hdl].session;
 
 	session->handle = handle;
+	session->framed = framed;
+	session->burst_number = burst_number;
+	session->iso_interval = iso_interval;
 
 	/* Todo: Next section computing various constants, should potentially be a
 	 * function in itself as a number of the dependencies could be changed while
@@ -918,7 +1005,7 @@ isoal_status_t isoal_source_create(
 
 	/* Note: sdu_interval unit is uS, iso_interval is a multiple of 1.25mS */
 	session->pdus_per_sdu = (burst_number * sdu_interval) /
-		((uint32_t)iso_interval * CONN_INT_UNIT_US);
+		((uint32_t)iso_interval * ISO_INT_UNIT_US);
 	/* Set maximum PDU size */
 	session->max_pdu_size = max_octets;
 
@@ -990,15 +1077,19 @@ void isoal_source_destroy(isoal_source_handle_t hdl)
  * Queue the PDU in production in the relevant LL transmit queue. If the
  * attmept to release the PDU fails, the buffer linked to the PDU will be released
  * and it will not be possible to retry the emit operation on the same PDU.
- * @param[in]  source_ctx   ISO-AL source reference for this CIS / BIS
- * @param[in]  produced_pdu PDU in production
- * @param[in]  pdu_ll_id    LLID to be set indicating the type of fragment
- * @param[in]  payload_size Length of the data written to the PDU
+ * @param[in]  source_ctx        ISO-AL source reference for this CIS / BIS
+ * @param[in]  produced_pdu      PDU in production
+ * @param[in]  pdu_ll_id         LLID to be set indicating the type of fragment
+ * @param[in]  sdu_fragments     Nummber of SDU HCI fragments consumed
+ * @param[in]  payload_number    CIS / BIS payload number
+ * @param[in]  payload_size      Length of the data written to the PDU
  * @return     Error status of the operation
  */
 static isoal_status_t isoal_tx_pdu_emit(const struct isoal_source *source_ctx,
 					const struct isoal_pdu_produced *produced_pdu,
 					const uint8_t pdu_ll_id,
+					const uint8_t sdu_fragments,
+					const uint64_t payload_number,
 					const isoal_pdu_len_t payload_size)
 {
 	struct node_tx_iso *node_tx;
@@ -1010,6 +1101,9 @@ static isoal_status_t isoal_tx_pdu_emit(const struct isoal_source *source_ctx,
 
 	/* Retrieve Node handle */
 	node_tx = produced_pdu->contents.handle;
+	/* Set payload number */
+	node_tx->payload_count = payload_number & 0x7fffffffff;
+	node_tx->sdu_fragments = sdu_fragments;
 	/* Set PDU LLID */
 	produced_pdu->contents.pdu->ll_id = pdu_ll_id;
 	/* Set PDU length */
@@ -1077,17 +1171,17 @@ static isoal_status_t isoal_tx_allocate_pdu(struct isoal_source *source,
 
 /**
  * Attempt to emit the PDU in production if it is complete.
- * @param[in]  source     ISO-AL source reference
- * @param[in]  end_of_sdu SDU end has been reached
- * @param[in]  pdu_ll_id  LLID / PDU fragment type as Start, Cont, End, Single (Unframed) or Framed
+ * @param[in]  source      ISO-AL source reference
+ * @param[in]  force_emit  Request PDU emit
+ * @param[in]  pdu_ll_id   LLID / PDU fragment type as Start, Cont, End, Single (Unframed) or Framed
  * @return     Error status of operation
  */
 static isoal_status_t isoal_tx_try_emit_pdu(struct isoal_source *source,
-					    bool end_of_sdu,
+					    bool force_emit,
 					    uint8_t pdu_ll_id)
 {
 	struct isoal_pdu_production *pp;
-	struct isoal_pdu_produced *pdu;
+	struct isoal_pdu_produced   *pdu;
 	isoal_status_t err;
 
 	err = ISOAL_STATUS_OK;
@@ -1095,14 +1189,20 @@ static isoal_status_t isoal_tx_try_emit_pdu(struct isoal_source *source,
 	pdu = &pp->pdu;
 
 	/* Emit a PDU */
-	const bool pdu_complete = (pp->pdu_available == 0) || end_of_sdu;
+	const bool pdu_complete = (pp->pdu_available == 0) || force_emit;
 
-	if (end_of_sdu) {
+	if (force_emit) {
 		pp->pdu_available = 0;
 	}
 
 	if (pdu_complete) {
-		err = isoal_tx_pdu_emit(source, pdu, pdu_ll_id, pp->pdu_written);
+		/* Emit PDU and increment the payload number */
+		err = isoal_tx_pdu_emit(source, pdu, pdu_ll_id,
+					pp->sdu_fragments,
+					pp->payload_number,
+					pp->pdu_written);
+		pp->payload_number++;
+		pp->sdu_fragments = 0;
 	}
 
 	return err;
@@ -1160,8 +1260,24 @@ static isoal_status_t isoal_tx_unframed_produce(struct isoal_source *source,
 		 */
 		session->seqn++;
 
+		/* Update payload counter in case time has passed since last
+		 * SDU. This should mean that event count * burst number should
+		 * be greater than the current payload number. In the event of
+		 * an SDU interval smaller than the ISO interval, multiple SDUs
+		 * will be sent in the same event. As such the current payload
+		 * number should be retained. Payload numbers are indexed at 0
+		 * and valid until the PDU is emitted.
+		 */
+		pp->payload_number = MAX(pp->payload_number,
+			(tx_sdu->target_event * session->burst_number));
+
 		/* Reset PDU fragmentation count for this SDU */
 		pp->pdu_cnt = 0;
+
+		/* The start of an unframed SDU will always be in a new PDU.
+		 * There cannot be any other fragments packed.
+		 */
+		pp->sdu_fragments = 0;
 	}
 
 	/* PDUs should be created until the SDU fragment has been fragmented or
@@ -1172,7 +1288,6 @@ static isoal_status_t isoal_tx_unframed_produce(struct isoal_source *source,
 		((packet_available > 0) || padding_pdu || zero_length_sdu)) {
 		const isoal_status_t err_alloc = isoal_tx_allocate_pdu(source, tx_sdu);
 		struct isoal_pdu_produced  *pdu = &pp->pdu;
-
 		err |= err_alloc;
 
 		/*
@@ -1185,6 +1300,13 @@ static isoal_status_t isoal_tx_unframed_produce(struct isoal_source *source,
 			pp->pdu_available
 		);
 
+		/* End of the SDU fragment has been reached when the last of the
+		 * SDU is packed into a PDU.
+		 */
+		bool end_of_sdu_frag = !padding_pdu &&
+				((consume_len > 0 && consume_len == packet_available) ||
+					zero_length_sdu);
+
 		if (consume_len > 0) {
 			err |= session->pdu_write(&pdu->contents,
 						  pp->pdu_written,
@@ -1194,6 +1316,13 @@ static isoal_status_t isoal_tx_unframed_produce(struct isoal_source *source,
 			pp->pdu_written   += consume_len;
 			pp->pdu_available -= consume_len;
 			packet_available  -= consume_len;
+		}
+
+		if (end_of_sdu_frag) {
+			/* Each PDU will carry the number of completed SDU
+			 * fragments contained in that PDU.
+			 */
+			pp->sdu_fragments++;
 		}
 
 		/* End of the SDU is reached at the end of the last SDU fragment
@@ -1246,6 +1375,326 @@ static isoal_status_t isoal_tx_unframed_produce(struct isoal_source *source,
 	return err;
 }
 
+/**
+ * @brief  Inserts a segmentation header at the current write point in the PDU
+ *         under production.
+ * @param  source              source handle
+ * @param  sc                  start / continuation bit value to be written
+ * @param  cmplt               complete bit value to be written
+ * @param  time_offset         value of time offset to be written
+ * @return                     status
+ */
+static isoal_status_t isoal_insert_seg_header_timeoffset(struct isoal_source *source,
+							 const bool sc,
+							 const bool cmplt,
+							 const uint32_t time_offset)
+{
+	struct isoal_source_session *session;
+	struct isoal_pdu_production *pp;
+	struct isoal_pdu_produced *pdu;
+	struct pdu_iso_sdu_sh seg_hdr;
+	isoal_status_t err;
+	uint8_t write_size;
+
+	session    = &source->session;
+	pp         = &source->pdu_production;
+	pdu        = &pp->pdu;
+	write_size = PDU_ISO_SEG_HDR_SIZE + (sc ? 0 : PDU_ISO_SEG_TIMEOFFSET_SIZE);
+
+	memset(&seg_hdr, 0, sizeof(seg_hdr));
+
+	/* Check if there is enough space left in the PDU. This should not fail
+	 * as the calling should also check before requesting insertion of a
+	 * new header.
+	 */
+	if (pp->pdu_available < write_size) {
+
+		return ISOAL_STATUS_ERR_UNSPECIFIED;
+	}
+
+	seg_hdr.sc = sc;
+	seg_hdr.cmplt = cmplt;
+	seg_hdr.length = sc ? 0 : PDU_ISO_SEG_TIMEOFFSET_SIZE;
+
+	if (!sc) {
+		seg_hdr.timeoffset = time_offset;
+	}
+
+	/* Store header */
+	pp->seg_hdr_sc = seg_hdr.sc;
+	pp->seg_hdr_length = seg_hdr.length;
+
+	/* Save location of last segmentation header so that it can be updated
+	 * as data is written.
+	 */
+	pp->last_seg_hdr_loc = pp->pdu_written;
+	/* Write to PDU */
+	err = session->pdu_write(&pdu->contents,
+				  pp->pdu_written,
+				  (uint8_t *) &seg_hdr,
+				  write_size);
+	pp->pdu_written   += write_size;
+	pp->pdu_available -= write_size;
+
+	return err;
+}
+
+/**
+ * @breif  Updates the cmplt flag and length in the last segmentation header written
+ * @param  source     source handle
+ * @param  cmplt      ew value for complete flag
+ * param   add_length length to add
+ * @return            status
+ */
+static isoal_status_t isoal_update_seg_header_cmplt_length(struct isoal_source *source,
+							   const bool cmplt,
+							   const uint8_t add_length)
+{
+	struct isoal_source_session *session;
+	struct isoal_pdu_production *pp;
+	struct isoal_pdu_produced *pdu;
+	struct pdu_iso_sdu_sh seg_hdr;
+
+	session    = &source->session;
+	pp         = &source->pdu_production;
+	pdu        = &pp->pdu;
+	memset(&seg_hdr, 0, sizeof(seg_hdr));
+
+	seg_hdr.sc = pp->seg_hdr_sc;
+
+	/* Update the complete flag and length */
+	seg_hdr.cmplt = cmplt;
+	pp->seg_hdr_length += add_length;
+	seg_hdr.length = pp->seg_hdr_length;
+
+
+	/* Re-write the segmentation header at the same location */
+	return session->pdu_write(&pdu->contents,
+				  pp->last_seg_hdr_loc,
+				  (uint8_t *) &seg_hdr,
+				  PDU_ISO_SEG_HDR_SIZE);
+}
+
+/**
+ * @brief Fragment received SDU and produce framed PDUs
+ * @details Destination source may have an already partially built PDU
+ *
+ * @param source[in,out] Destination source with bookkeeping state
+ * @param tx_sdu[in]     SDU with packet boundary information
+ *
+ * @return Status
+ */
+static isoal_status_t isoal_tx_framed_produce(struct isoal_source *source,
+						const struct isoal_sdu_tx *tx_sdu)
+{
+	struct isoal_source_session *session;
+	struct isoal_pdu_production *pp;
+	isoal_sdu_len_t packet_available;
+	const uint8_t *sdu_payload;
+	uint32_t time_offset;
+	bool zero_length_sdu;
+	isoal_status_t err;
+	bool padding_pdu;
+	uint8_t ll_id;
+
+	session     = &source->session;
+	pp          = &source->pdu_production;
+	padding_pdu = false;
+	err         = ISOAL_STATUS_OK;
+	time_offset = 0;
+
+	packet_available = tx_sdu->size;
+	sdu_payload      = tx_sdu->dbuf;
+	LL_ASSERT(sdu_payload);
+
+	zero_length_sdu = (packet_available == 0 &&
+		tx_sdu->sdu_state == BT_ISO_SINGLE);
+
+	if (tx_sdu->sdu_state == BT_ISO_START ||
+		tx_sdu->sdu_state == BT_ISO_SINGLE) {
+		/* Start of a new SDU */
+
+		/* Initialize to info provided in SDU */
+		uint32_t actual_cig_ref_point = tx_sdu->cig_ref_point;
+		uint64_t actual_event = tx_sdu->target_event;
+
+		/* Update sequence number for received SDU
+		 *
+		 * BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
+		 * 2 ISOAL Features :
+		 * SDUs received by the ISOAL from the upper layer shall be
+		 * given a sequence number which is initialized to 0 when the
+		 * CIS or BIS is created.
+		 *
+		 * NOTE: The upper layer may synchronize its sequence number
+		 * with the sequence number in the ISOAL once the Datapath is
+		 * configured and the link is established.
+		 */
+		session->seqn++;
+
+		/* Reset PDU production state */
+		pp->pdu_state = BT_ISO_START;
+
+		/* Update payload counter in case time has passed since the last
+		 * SDU. This should mean that event count * burst number should
+		 * be greater than the current payload number. In the event of
+		 * an SDU interval smaller than the ISO interval, multiple SDUs
+		 * will be sent in the same event. As such the current payload
+		 * number should be retained. Payload numbers are indexed at 0
+		 * and valid until the PDU is emitted.
+		 */
+		pp->payload_number = MAX(pp->payload_number,
+			(tx_sdu->target_event * session->burst_number));
+
+		/* Get actual event for this payload number */
+		actual_event = pp->payload_number / session->burst_number;
+
+		/* Get cig reference point for this PDU based on the actual
+		 * event being set. This might introduce some errors as the cig
+		 * refernce point for future events could drift. However as the
+		 * time offset calculation requires an absolute value, this
+		 * seems to be the best candidate.
+		 */
+		if (actual_event > tx_sdu->target_event) {
+			actual_cig_ref_point = tx_sdu->cig_ref_point +
+				((actual_event - tx_sdu->target_event) * session->iso_interval *
+					ISO_INT_UNIT_US);
+		}
+
+		/* Check if time stamp on packet is later than the CIG reference
+		 * point and adjust targets. This could happen if the SDU has
+		 * been time-stampped at the controller when received via HCI.
+		 *
+		 * BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
+		 * 3.1 Time_Offset in framed PDUs :
+		 * The Time_Offset shall be a positive value.
+		 */
+		if (actual_cig_ref_point <= tx_sdu->time_stamp) {
+			/* Advance target to next event */
+			actual_event++;
+			actual_cig_ref_point += session->iso_interval * ISO_INT_UNIT_US;
+
+			/* Set payload number */
+			pp->payload_number = actual_event * session->burst_number;
+		}
+
+		/* Calculate the time offset */
+		LL_ASSERT(actual_cig_ref_point > tx_sdu->time_stamp);
+		time_offset = actual_cig_ref_point - tx_sdu->time_stamp;
+
+		/* Reset PDU fragmentation count for this SDU */
+		pp->pdu_cnt = 0;
+	}
+
+	/* PDUs should be created until the SDU fragment has been fragmented or if
+	 * this is the last fragment of the SDU, until the required padding PDU(s)
+	 * are sent.
+	 */
+	while ((err == ISOAL_STATUS_OK) &&
+		((packet_available > 0) || padding_pdu || zero_length_sdu)) {
+		const isoal_status_t err_alloc = isoal_tx_allocate_pdu(source, tx_sdu);
+		struct isoal_pdu_produced  *pdu = &pp->pdu;
+
+		err |= err_alloc;
+
+		if (pp->pdu_state == BT_ISO_START) {
+			/* Start of a new SDU. Segmentation header and time-offset
+			 * should be inserted.
+			 */
+			err |= isoal_insert_seg_header_timeoffset(source,
+								false, false,
+								time_offset);
+			pp->pdu_state = BT_ISO_CONT;
+		} else if (!padding_pdu && pp->pdu_state == BT_ISO_CONT && pp->pdu_written == 0) {
+			/* Continuing an SDU in a new PDU. Segmentation header
+			 * alone should be inserted.
+			 */
+			err |= isoal_insert_seg_header_timeoffset(source,
+								true, false,
+								0);
+		}
+
+		/*
+		 * For this PDU we can only consume of packet, bounded by:
+		 *   - What can fit in the destination PDU.
+		 *   - What remains of the packet.
+		 */
+		const size_t consume_len = MIN(
+			packet_available,
+			pp->pdu_available
+		);
+
+		/* End of the SDU fragment has been reached when the last of the
+		 * SDU is packed into a PDU.
+		 */
+		bool end_of_sdu_frag = !padding_pdu &&
+				((consume_len > 0 && consume_len == packet_available) ||
+					zero_length_sdu);
+
+		if (consume_len > 0) {
+			err |= session->pdu_write(&pdu->contents,
+						  pp->pdu_written,
+						  sdu_payload,
+						  consume_len);
+			sdu_payload       += consume_len;
+			pp->pdu_written   += consume_len;
+			pp->pdu_available -= consume_len;
+			packet_available  -= consume_len;
+		}
+
+		if (end_of_sdu_frag) {
+			/* Each PDU will carry the number of completed SDU
+			 * fragments contained in that PDU.
+			 */
+			pp->sdu_fragments++;
+		}
+
+		/* End of the SDU is reached at the end of the last SDU fragment
+		 * or if this is a single fragment SDU
+		 */
+		bool end_of_sdu = (packet_available == 0) &&
+				((tx_sdu->sdu_state == BT_ISO_SINGLE) ||
+					(tx_sdu->sdu_state == BT_ISO_END));
+		/* Update complete flag in last segmentation header */
+		err |= isoal_update_seg_header_cmplt_length(source, end_of_sdu, consume_len);
+
+		/* LLID is fixed for framed PDUs */
+		ll_id = PDU_BIS_LLID_FRAMED;
+
+		/* NOTE: Ideally even if the end of the SDU is reached, the PDU
+		 * should not be emitted as long as there is space left. If the
+		 * PDU is not released, it might require a flush timeout to
+		 * trigger the release as receiving an SDU per SDU interval is
+		 * not guaranteed. As there is no trigger for this in the
+		 * ISO-AL, the PDU is released. This does mean that the
+		 * bandwidth of this implementation will be less that the ideal
+		 * supported by framed PDUs. Ideally ISOAL_SEGMENT_MIN_SIZE
+		 * should be used to assess if there is sufficient usable space
+		 * left in the PDU.
+		 */
+		bool release_pdu = end_of_sdu;
+		const isoal_status_t err_emit = isoal_tx_try_emit_pdu(source, release_pdu, ll_id);
+
+		err |= err_emit;
+
+		/* TODO: Send padding PDU(s) if required
+		 *
+		 * BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
+		 * 2 ISOAL Features :
+		 * Padding is required when the data does not add up to the
+		 * configured number of PDUs that are specified in the BN
+		 * parameter per CIS or BIS event.
+		 *
+		 * When padding PDUs as opposed to null PDUs are required for
+		 * framed production is not clear.
+		 */
+		padding_pdu = false;
+		zero_length_sdu = false;
+	}
+
+	return err;
+}
+
 
 /**
  * @brief Deep copy a SDU, fragment into PDU(s)
@@ -1256,14 +1705,16 @@ static isoal_status_t isoal_tx_unframed_produce(struct isoal_source *source,
  * @return Status
  */
 isoal_status_t isoal_tx_sdu_fragment(isoal_source_handle_t source_hdl,
-				      const struct isoal_sdu_tx *tx_sdu)
+				     struct isoal_sdu_tx *tx_sdu)
 {
-	struct isoal_source *source = &isoal_global.source_state[source_hdl];
-	isoal_status_t err = ISOAL_STATUS_ERR_PDU_ALLOC;
+	struct isoal_source *source;
+	isoal_status_t err;
+
+	source = &isoal_global.source_state[source_hdl];
+	err = ISOAL_STATUS_ERR_PDU_ALLOC;
 
 	if (source->pdu_production.mode != ISOAL_PRODUCTION_MODE_DISABLED) {
-		/* TODO: consider how to separate framed and unframed production
-		 * BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
+		/* BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
 		 * 2 ISOAL Features :
 		 * (1) Unframed PDUs shall only be used when the ISO_Interval
 		 *     is equal to or an integer multiple of the SDU_Interval
@@ -1273,10 +1724,8 @@ isoal_status_t isoal_tx_sdu_fragment(isoal_source_handle_t source_hdl,
 		 * (2) When the Host requests the use of framed PDUs, the
 		 *     Controller shall use framed PDUs.
 		 */
-		bool pdu_framed = false;
-
-		if (pdu_framed) {
-			/* TODO: add framed handling */
+		if (source->session.framed) {
+			err = isoal_tx_framed_produce(source, tx_sdu);
 		} else {
 			err = isoal_tx_unframed_produce(source, tx_sdu);
 		}

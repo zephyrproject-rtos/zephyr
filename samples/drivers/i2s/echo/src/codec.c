@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include "codec.h"
-#include <sys/printk.h>
-#include <drivers/i2c.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/i2c.h>
 
 #if DT_ON_BUS(WM8731_NODE, i2c)
 

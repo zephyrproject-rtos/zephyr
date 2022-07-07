@@ -9,9 +9,9 @@
 
 #define DT_DRV_COMPAT xlnx_xps_uartlite_1_00_a
 
-#include <device.h>
-#include <drivers/uart.h>
-#include <sys/sys_io.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/sys_io.h>
 
 /* AXI UART Lite v2 registers offsets (See Xilinx PG142 for details) */
 #define RX_FIFO_OFFSET  0x00
@@ -46,6 +46,11 @@ struct xlnx_uartlite_config {
 
 struct xlnx_uartlite_data {
 	uint32_t errors;
+
+	/* spinlocks for RX and TX FIFO preventing a bus error */
+	struct k_spinlock rx_lock;
+	struct k_spinlock tx_lock;
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	const struct device *dev;
 	struct k_timer timer;
@@ -96,20 +101,38 @@ static inline void xlnx_uartlite_write_tx_fifo(const struct device *dev,
 
 static int xlnx_uartlite_poll_in(const struct device *dev, unsigned char *c)
 {
-	if (xlnx_uartlite_read_status(dev) & STAT_REG_RX_FIFO_VALID_DATA) {
-		*c = xlnx_uartlite_read_rx_fifo(dev);
-		return 0;
-	}
+	uint32_t status;
+	k_spinlock_key_t key;
+	struct xlnx_uartlite_data *data = dev->data;
+	int ret = -1;
 
-	return -1;
+	key = k_spin_lock(&data->rx_lock);
+	status = xlnx_uartlite_read_status(dev);
+	if ((status & STAT_REG_RX_FIFO_VALID_DATA) != 0) {
+		*c = xlnx_uartlite_read_rx_fifo(dev);
+		ret = 0;
+	}
+	k_spin_unlock(&data->rx_lock, key);
+
+	return ret;
 }
 
 static void xlnx_uartlite_poll_out(const struct device *dev, unsigned char c)
 {
-	while (xlnx_uartlite_read_status(dev) & STAT_REG_TX_FIFO_FULL) {
-	}
+	uint32_t status;
+	k_spinlock_key_t key;
+	struct xlnx_uartlite_data *data = dev->data;
+	bool done = false;
 
-	xlnx_uartlite_write_tx_fifo(dev, c);
+	while (!done) {
+		key = k_spin_lock(&data->tx_lock);
+		status = xlnx_uartlite_read_status(dev);
+		if ((status & STAT_REG_TX_FIFO_FULL) == 0) {
+			xlnx_uartlite_write_tx_fifo(dev, c);
+			done = true;
+		}
+		k_spin_unlock(&data->tx_lock, key);
+	}
 }
 
 static int xlnx_uartlite_err_check(const struct device *dev)
@@ -157,12 +180,18 @@ static int xlnx_uartlite_fifo_fill(const struct device *dev,
 				   const uint8_t *tx_data,
 				   int len)
 {
-	uint32_t status = xlnx_uartlite_read_status(dev);
+	uint32_t status;
+	k_spinlock_key_t key;
+	struct xlnx_uartlite_data *data = dev->data;
 	int count = 0U;
 
-	while ((len - count > 0) && (status & STAT_REG_TX_FIFO_FULL) == 0U) {
-		xlnx_uartlite_write_tx_fifo(dev, tx_data[count++]);
+	while (len - count > 0) {
+		key = k_spin_lock(&data->tx_lock);
 		status = xlnx_uartlite_read_status(dev);
+		if ((status & STAT_REG_TX_FIFO_FULL) == 0U) {
+			xlnx_uartlite_write_tx_fifo(dev, tx_data[count++]);
+		}
+		k_spin_unlock(&data->tx_lock, key);
 	}
 
 	return count;
@@ -171,12 +200,18 @@ static int xlnx_uartlite_fifo_fill(const struct device *dev,
 static int xlnx_uartlite_fifo_read(const struct device *dev, uint8_t *rx_data,
 				   const int len)
 {
-	uint32_t status = xlnx_uartlite_read_status(dev);
+	uint32_t status;
+	k_spinlock_key_t key;
+	struct xlnx_uartlite_data *data = dev->data;
 	int count = 0U;
 
-	while ((len - count > 0) && (status & STAT_REG_RX_FIFO_VALID_DATA)) {
-		rx_data[count++] = xlnx_uartlite_read_rx_fifo(dev);
+	while ((len - count) > 0) {
+		key = k_spin_lock(&data->rx_lock);
 		status = xlnx_uartlite_read_status(dev);
+		if ((status & STAT_REG_RX_FIFO_VALID_DATA) != 0) {
+			rx_data[count++] = xlnx_uartlite_read_rx_fifo(dev);
+		}
+		k_spin_unlock(&data->rx_lock, key);
 	}
 
 	return count;

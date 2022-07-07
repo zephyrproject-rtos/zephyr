@@ -42,7 +42,7 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 
 #define TSTACK_SIZE     (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define STACK_LEN       4

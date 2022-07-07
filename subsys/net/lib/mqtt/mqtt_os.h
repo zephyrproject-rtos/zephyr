@@ -19,10 +19,10 @@
 #define MQTT_OS_H_
 
 #include <stddef.h>
-#include <kernel.h>
-#include <sys/mutex.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/mutex.h>
 
-#include <net/net_core.h>
+#include <zephyr/net/net_core.h>
 
 #include "mqtt_internal.h"
 

@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <audio/dmic.h>
-#include <drivers/clock_control/nrf_clock_control.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/audio/dmic.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <nrfx_pdm.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dmic_nrfx_pdm, CONFIG_AUDIO_DMIC_LOG_LEVEL);
 
 struct dmic_nrfx_pdm_drv_data {

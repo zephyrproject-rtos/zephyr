@@ -6,23 +6,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <sys/byteorder.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <usb/usb_device.h>
+#include <zephyr/usb/usb_device.h>
 #include <usb_descriptor.h>
 
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
-#include <bluetooth/buf.h>
-#include <bluetooth/hci_raw.h>
-#include <bluetooth/l2cap.h>
-#include <bluetooth/hci_vs.h>
-#include <drivers/bluetooth/hci_driver.h>
-#include <sys/atomic.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/hci_raw.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/sys/atomic.h>
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_bluetooth);
 
 #define USB_RF_SUBCLASS			0x01

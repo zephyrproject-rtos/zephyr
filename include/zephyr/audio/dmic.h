@@ -32,7 +32,7 @@
  * @{
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 
 #ifdef __cplusplus

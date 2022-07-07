@@ -10,12 +10,12 @@
 
 #define DT_DRV_COMPAT nxp_mcux_12b1msps_sar
 
-#include <drivers/adc.h>
+#include <zephyr/drivers/adc.h>
 #include <fsl_adc.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_mcux_12b1msps_sar);
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER

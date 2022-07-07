@@ -6,15 +6,15 @@
 
 #define DT_DRV_COMPAT nuvoton_nct38xx_gpio
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/gpio/gpio_nct38xx.h>
-#include <kernel.h>
-#include <sys/util_macro.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_nct38xx.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "gpio_nct38xx.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_ntc38xx, CONFIG_GPIO_LOG_LEVEL);
 
 void nct38xx_gpio_alert_handler(const struct device *dev)

@@ -5,11 +5,11 @@
  */
 
 #include <errno.h>
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/pinmux.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/pinmux.h>
 #include <soc.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 #define DT_DRV_COMPAT microchip_xec_pinmux
 

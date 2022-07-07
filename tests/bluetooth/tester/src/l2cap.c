@@ -6,14 +6,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 #include <errno.h>
-#include <bluetooth/l2cap.h>
-#include <bluetooth/att.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_l2cap
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 

@@ -5,10 +5,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Flash image header file
+ *
+ * This header file declares prototypes for the flash image APIs used for DFU.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DFU_FLASH_IMG_H_
 #define ZEPHYR_INCLUDE_DFU_FLASH_IMG_H_
 
-#include <storage/stream_flash.h>
+#include <zephyr/storage/stream_flash.h>
+
+/**
+ * @brief Abstraction layer to write firmware images to flash
+ *
+ * @defgroup flash_img_api Flash image API
+ * @{
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -99,5 +113,9 @@ int flash_img_check(struct flash_img_context *ctx,
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif	/* ZEPHYR_INCLUDE_DFU_FLASH_IMG_H_ */

@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <sys/printk.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
 
 
 /* This function will allow execute from sram region.
@@ -17,7 +16,7 @@
  */
 
 #ifdef CONFIG_ARM_MPU
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 void disable_mpu_rasr_xn(void)
 {
 	uint32_t index;

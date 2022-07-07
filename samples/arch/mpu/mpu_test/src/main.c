@@ -6,11 +6,11 @@
  */
 #include <stdlib.h>
 
-#include <zephyr.h>
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/flash.h>
-#include <shell/shell.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/shell/shell.h>
 
 #define PR_SHELL(shell, fmt, ...)				\
 	shell_fprintf(shell, SHELL_NORMAL, fmt, ##__VA_ARGS__)

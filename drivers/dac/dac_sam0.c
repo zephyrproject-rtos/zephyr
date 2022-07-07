@@ -8,8 +8,8 @@
 
 #include <errno.h>
 
-#include <drivers/dac.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/dac.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
 /*

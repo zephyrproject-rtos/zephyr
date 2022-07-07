@@ -6,15 +6,15 @@
 
 #define DT_DRV_COMPAT st_stm32_ucpd
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ucpd_stm32, CONFIG_USBC_LOG_LEVEL);
 
-#include <device.h>
-#include <sys/util.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <stddef.h>
-#include <math/ilog2.h>
+#include <zephyr/math/ilog2.h>
 #include <stm32g0xx_ll_system.h>
 
 #include "ucpd_stm32_priv.h"

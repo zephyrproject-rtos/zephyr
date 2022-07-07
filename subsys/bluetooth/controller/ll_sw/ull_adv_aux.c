@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -313,11 +313,19 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 	sr_adi = NULL;
 #endif
 
+	/* Check Max Advertising Data Length */
+	if (len > CONFIG_BT_CTLR_ADV_DATA_LEN_MAX) {
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	}
+
 	/* Check if data will fit in remaining space */
 	/* TODO: need aux_chain_ind support */
 	ext_hdr_len = sr_dptr - &sr_com_hdr->ext_hdr_adv_data[0];
 	if ((PDU_AC_EXT_HEADER_SIZE_MIN + ext_hdr_len + len) >
 	    PDU_AC_PAYLOAD_SIZE_MAX) {
+		/* Will use packet too long error to determine fragmenting
+		 * long data
+		 */
 		return BT_HCI_ERR_PACKET_TOO_LONG;
 	}
 
@@ -824,18 +832,22 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 		ad_data = sec_dptr_prev;
 	}
 
-	/* Add AD len to secondary PDU length */
-	sec_len += ad_len;
+	/* Check Max Advertising Data Length */
+	if (ad_len > CONFIG_BT_CTLR_ADV_DATA_LEN_MAX) {
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	}
 
 	/* Check AdvData overflow */
 	/* TODO: need aux_chain_ind support */
-	if (sec_len > PDU_AC_PAYLOAD_SIZE_MAX) {
-		/* FIXME: release allocations */
+	if ((sec_len + ad_len) > PDU_AC_PAYLOAD_SIZE_MAX) {
+		/* Will use packet too long error to determine fragmenting
+		 * long data
+		 */
 		return BT_HCI_ERR_PACKET_TOO_LONG;
 	}
 
 	/* set the secondary PDU len */
-	sec_pdu->len = sec_len;
+	sec_pdu->len = sec_len + ad_len;
 
 	/* Start filling pri and sec PDU payload based on flags from here
 	 * ==============================================================

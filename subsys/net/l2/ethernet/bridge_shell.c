@@ -5,11 +5,11 @@
  */
 
 #include <stdlib.h>
-#include <shell/shell.h>
-#include <net/net_if.h>
-#include <net/ethernet.h>
-#include <net/ethernet_bridge.h>
-#include <sys/slist.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/ethernet_bridge.h>
+#include <zephyr/sys/slist.h>
 
 static int get_idx(const struct shell *sh, char *index_str)
 {

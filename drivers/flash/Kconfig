@@ -68,6 +68,8 @@ config FLASH_INIT_PRIORITY
 
 source "drivers/flash/Kconfig.b91"
 
+source "drivers/flash/Kconfig.cc13xx_cc26xx"
+
 source "drivers/flash/Kconfig.at45"
 
 source "drivers/flash/Kconfig.esp32"
@@ -89,6 +91,8 @@ source "drivers/flash/Kconfig.nor"
 source "drivers/flash/Kconfig.stm32"
 
 source "drivers/flash/Kconfig.stm32_qspi"
+
+source "drivers/flash/Kconfig.stm32_ospi"
 
 source "drivers/flash/Kconfig.sam0"
 

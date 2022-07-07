@@ -6,9 +6,9 @@
 
 #define DT_DRV_COMPAT xlnx_xps_gpio_1_00_a
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <sys/sys_io.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/sys_io.h>
 
 #include "gpio_utils.h"
 

@@ -5,9 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <arch/arm/aarch32/cortex_m/fpu.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/fpu.h>
 
 /**
  * @file @brief Helper functions for saving and restoring the FP context.

@@ -8,17 +8,17 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/ots.h>
 #include "ots_internal.h"
 #include "ots_obj_manager_internal.h"
 #include "ots_dir_list_internal.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 
@@ -262,7 +262,7 @@ ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
 			bt_ots_obj_id_to_str(ots->cur_obj->id, id,
 						sizeof(id));
 			LOG_DBG("Selecting a new Current Object with id: %s",
-				log_strdup(id));
+				id);
 
 			if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
 				bt_ots_dir_list_selected(ots->dir_list, ots->obj_manager,

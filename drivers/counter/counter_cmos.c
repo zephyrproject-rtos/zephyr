@@ -11,14 +11,16 @@
  * crossing clock domains (no pun intended). Use accordingly.
  */
 
-#include <drivers/counter.h>
-#include <device.h>
+#define DT_DRV_COMPAT motorola_mc146818
+
+#include <zephyr/drivers/counter.h>
+#include <zephyr/device.h>
 #include <soc.h>
 
 /* The "CMOS" device is accessed via an address latch and data port. */
 
-#define X86_CMOS_ADDR 0x70
-#define X86_CMOS_DATA 0x71
+#define X86_CMOS_ADDR (DT_INST_REG_ADDR_BY_IDX(0, 0))
+#define X86_CMOS_DATA (DT_INST_REG_ADDR_BY_IDX(0, 1))
 
 /*
  * A snapshot of the RTC state, or at least the state we're
@@ -208,5 +210,5 @@ static const struct counter_driver_api api = {
 	.get_value = get_value
 };
 
-DEVICE_DEFINE(counter_cmos, "CMOS", init, NULL, NULL, &info,
-		    POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY, &api);
+DEVICE_DT_INST_DEFINE(0, &init, NULL, NULL, &info,
+		      POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY, &api);

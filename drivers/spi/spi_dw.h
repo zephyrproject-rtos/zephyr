@@ -10,7 +10,7 @@
 #define ZEPHYR_DRIVERS_SPI_SPI_DW_H_
 
 #include <string.h>
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 
 #include "spi_context.h"
 
@@ -97,11 +97,7 @@ struct spi_dw_data {
 #define DW_SPI_CTRLR0_SLV_OE_BIT	(10)
 #define DW_SPI_CTRLR0_SLV_OE		BIT(DW_SPI_CTRLR0_SLV_OE_BIT)
 
-#ifdef CONFIG_SOC_INTEL_S1000
-#define DW_SPI_CTRLR0_TMOD_SHIFT	(10)
-#else
 #define DW_SPI_CTRLR0_TMOD_SHIFT	(8)
-#endif
 
 #define DW_SPI_CTRLR0_TMOD_TX_RX	(0)
 #define DW_SPI_CTRLR0_TMOD_TX		(1 << DW_SPI_CTRLR0_TMOD_SHIFT)
@@ -112,7 +108,7 @@ struct spi_dw_data {
 #define DW_SPI_CTRLR0_DFS_16(__bpw)	((__bpw) - 1)
 #define DW_SPI_CTRLR0_DFS_32(__bpw)	(((__bpw) - 1) << 16)
 
-#if defined(CONFIG_ARC) || defined(CONFIG_SOC_INTEL_S1000)
+#if defined(CONFIG_ARC)
 #define DW_SPI_CTRLR0_DFS		DW_SPI_CTRLR0_DFS_16
 #else
 #define DW_SPI_CTRLR0_DFS		DW_SPI_CTRLR0_DFS_32

@@ -14,11 +14,11 @@
  * definitions and more complex routines, if needed.
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <sys/util.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <linker/linker-defs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/linker/linker-defs.h>
 
 #if defined(CONFIG_CPU_HAS_NXP_MPU)
 #include <fsl_sysmpu.h>

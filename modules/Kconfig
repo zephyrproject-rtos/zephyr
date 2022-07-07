@@ -9,10 +9,10 @@ comment "Optional modules. Make sure they're installed, via the project manifest
 
 source "modules/Kconfig.altera"
 source "modules/Kconfig.atmel"
-source "modules/Kconfig.civetweb"
 source "modules/Kconfig.cmsis"
 source "modules/Kconfig.cypress"
 source "modules/Kconfig.eos_s3"
+source "modules/Kconfig.esp32"
 source "modules/Kconfig.imx"
 source "modules/Kconfig.infineon"
 source "modules/Kconfig.libmetal"

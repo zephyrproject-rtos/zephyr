@@ -6,11 +6,11 @@
 #include <nrfx_dppi.h>
 #include <hal/nrf_ipc.h>
 #include <helpers/nrfx_gppi.h>
-#include <drivers/timer/nrf_rtc_timer.h>
-#include <drivers/ipm.h>
-#include <drivers/mbox.h>
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
+#include <zephyr/drivers/timer/nrf_rtc_timer.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/drivers/mbox.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sync_rtc, CONFIG_SYNC_RTC_LOG_LEVEL);
 
 /* Arbitrary delay is used needed to handle cases when offset between cores is

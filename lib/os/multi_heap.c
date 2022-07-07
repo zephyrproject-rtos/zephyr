@@ -1,10 +1,10 @@
 /* Copyright (c) 2021 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <sys/__assert.h>
-#include <sys/util.h>
-#include <sys/sys_heap.h>
-#include <sys/multi_heap.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/sys_heap.h>
+#include <zephyr/sys/multi_heap.h>
 
 void sys_multi_heap_init(struct sys_multi_heap *heap, sys_multi_heap_fn_t choice_fn)
 {

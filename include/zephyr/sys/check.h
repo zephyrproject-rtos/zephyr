@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_SYS_CHECK_H_
 #define ZEPHYR_INCLUDE_SYS_CHECK_H_
 
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 
 #if defined(CONFIG_ASSERT_ON_ERRORS)
 #define CHECKIF(expr) \

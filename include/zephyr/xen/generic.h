@@ -6,7 +6,7 @@
 #ifndef __XEN_GENERIC_H__
 #define __XEN_GENERIC_H__
 
-#include <xen/public/xen.h>
+#include <zephyr/xen/public/xen.h>
 
 #define XEN_PAGE_SIZE		4096
 #define XEN_PAGE_SHIFT		12

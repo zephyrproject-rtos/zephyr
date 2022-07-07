@@ -19,10 +19,10 @@
 #include "irq_ctrl.h"
 #include "posix_board_if.h"
 #include "hw_counter.h"
-#include <arch/posix/posix_soc_if.h>
+#include <zephyr/arch/posix/posix_soc_if.h>
 #include "posix_arch_internal.h"
 #include "sdl_events.h"
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 
 static uint64_t simu_time; /* The actual time as known by the HW models */

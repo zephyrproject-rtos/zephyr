@@ -22,7 +22,7 @@
 #include "testfs_lfs.h"
 #include <lfs.h>
 
-#include <fs/littlefs.h>
+#include <zephyr/fs/littlefs.h>
 
 #define HELLO "hello"
 #define GOODBYE "goodbye"

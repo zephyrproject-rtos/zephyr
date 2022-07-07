@@ -6,12 +6,12 @@
 
 #define DT_DRV_COMPAT st_stm32h7_flash_controller
 
-#include <sys/util.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <string.h>
-#include <drivers/flash.h>
-#include <init.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include <stm32h7xx_ll_bus.h>
 #include <stm32h7xx_ll_utils.h>
@@ -21,15 +21,14 @@
 
 #define LOG_DOMAIN flash_stm32h7
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
-
-#define STM32H7_FLASH_MAX_ERASE_TIME    4000
 
 /* Let's wait for double the max erase time to be sure that the operation is
  * completed.
  */
-#define STM32H7_FLASH_TIMEOUT   (2 * STM32H7_FLASH_MAX_ERASE_TIME)
+#define STM32H7_FLASH_TIMEOUT	\
+	(2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
 
 #ifdef CONFIG_CPU_CORTEX_M4
 #error Flash driver on M4 core is not supported yet
@@ -240,7 +239,6 @@ static struct flash_stm32_sector_t get_sector(const struct device *dev,
 static int erase_sector(const struct device *dev, int offset)
 {
 	int rc;
-	uint32_t tmp;
 	struct flash_stm32_sector_t sector = get_sector(dev, offset);
 
 	if (sector.bank == 0) {
@@ -264,7 +262,7 @@ static int erase_sector(const struct device *dev, int offset)
 		| ((sector.sector_index << FLASH_CR_SNB_Pos) & FLASH_CR_SNB));
 	*(sector.cr) |= FLASH_CR_START;
 	/* flush the register write */
-	tmp = *(sector.cr);
+	__DSB();
 
 	rc = flash_stm32_wait_flash_idle(dev);
 	*(sector.cr) &= ~(FLASH_CR_SER | FLASH_CR_SNB);
@@ -289,17 +287,11 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 	return rc;
 }
 
-static int wait_write_queue(const struct device *dev, off_t offset)
+static int wait_write_queue(const struct flash_stm32_sector_t *sector)
 {
 	int64_t timeout_time = k_uptime_get() + 100;
-	struct flash_stm32_sector_t sector = get_sector(dev, offset);
 
-	if (sector.bank == 0) {
-		LOG_ERR("Offset %ld does not exist", (long) offset);
-		return -EINVAL;
-	}
-
-	while (*(sector.sr) & FLASH_SR_QW) {
+	while (*(sector->sr) & FLASH_SR_QW) {
 		if (k_uptime_get() > timeout_time) {
 			LOG_ERR("Timeout! val: %d", 100);
 			return -EIO;
@@ -315,7 +307,6 @@ static int write_ndwords(const struct device *dev,
 {
 	volatile uint64_t *flash = (uint64_t *)(offset
 						+ CONFIG_FLASH_BASE_ADDRESS);
-	uint32_t tmp;
 	int rc;
 	int i;
 	struct flash_stm32_sector_t sector = get_sector(dev, offset);
@@ -347,12 +338,16 @@ static int write_ndwords(const struct device *dev,
 	*(sector.cr) |= FLASH_CR_PG;
 
 	/* Flush the register write */
-	tmp = *(sector.cr);
+	__DSB();
 
 	/* Perform the data write operation at the desired memory address */
 	for (i = 0; i < n; ++i) {
 		flash[i] = data[i];
-		wait_write_queue(dev, offset);
+
+		/* Flush the data write */
+		__DSB();
+
+		wait_write_queue(&sector);
 	}
 
 	/* Wait until the BSY bit is cleared */
@@ -373,7 +368,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	const uint8_t nbytes = FLASH_NB_32BITWORD_IN_FLASHWORD * 4;
 	uint8_t unaligned_datas[nbytes];
 
-	for (i = 0; i < len && i + 32 <= len; i += 32, offset += 32U) {
+	for (i = 0; i < len && i + nbytes <= len; i += nbytes, offset += nbytes) {
 		rc = write_ndwords(dev, offset,
 				   (const uint64_t *) data + (i >> 3),
 				   ndwords);

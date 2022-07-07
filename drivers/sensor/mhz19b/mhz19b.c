@@ -9,11 +9,11 @@
 
 #define DT_DRV_COMPAT winsen_mhz19b
 
-#include <logging/log.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
 
-#include <drivers/sensor/mhz19b.h>
+#include <zephyr/drivers/sensor/mhz19b.h>
 #include "mhz19b.h"
 
 LOG_MODULE_REGISTER(mhz19b, CONFIG_SENSOR_LOG_LEVEL);

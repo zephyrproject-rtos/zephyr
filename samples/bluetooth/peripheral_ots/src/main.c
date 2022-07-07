@@ -7,14 +7,14 @@
 #include <zephyr/types.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
 
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/services/ots.h>
 
 #define DEVICE_NAME      CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN  (sizeof(DEVICE_NAME) - 1)

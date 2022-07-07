@@ -8,7 +8,7 @@
 
 #define LOG_DOMAIN modem_wncm14a2a
 #define LOG_LEVEL CONFIG_MODEM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include <zephyr/types.h>
@@ -16,16 +16,16 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
-#include <zephyr.h>
-#include <drivers/gpio.h>
-#include <device.h>
-#include <init.h>
-#include <random/rand32.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/random/rand32.h>
 
-#include <net/net_context.h>
-#include <net/net_if.h>
-#include <net/net_offload.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_offload.h>
+#include <zephyr/net/net_pkt.h>
 #if defined(CONFIG_NET_IPV6)
 #include "ipv6.h"
 #endif
@@ -912,7 +912,7 @@ static void on_cmd_sockdataind(struct net_buf **buf, uint16_t len)
 	size_t out_len;
 	char *delim1, *delim2;
 	char value[sizeof("#,#,#####\r")];
-	char sendbuf[sizeof("AT@SOCKREAD=#,#####\r")];
+	char sendbuf[sizeof("AT@SOCKREAD=-#####,-#####\r")];
 	struct wncm14a2a_socket *sock = NULL;
 
 	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
@@ -1519,7 +1519,7 @@ static int offload_get(sa_family_t family,
 		       struct net_context **context)
 {
 	int ret;
-	char buf[sizeof("AT@SOCKCREAT=#,#\r")];
+	char buf[sizeof("AT@SOCKCREAT=###,#\r")];
 	struct wncm14a2a_socket *sock = NULL;
 
 	/* new socket */

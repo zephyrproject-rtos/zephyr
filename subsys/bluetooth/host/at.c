@@ -13,7 +13,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdarg.h>
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
 #include "at.h"
 

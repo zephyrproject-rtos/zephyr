@@ -6,10 +6,10 @@
 #ifndef __XEN_CONSOLE_H__
 #define __XEN_CONSOLE_H__
 
-#include <init.h>
+#include <zephyr/init.h>
 #include <zephyr/device.h>
-#include <drivers/uart.h>
-#include <sys/device_mmio.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/device_mmio.h>
 
 struct hvc_xen_data {
 	DEVICE_MMIO_RAM;	/* should be first */

@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 /* MEC devices IDs with special PLL handling */
 #define MCHP_GCFG_DID_DEV_ID_MEC150x    0x0020U

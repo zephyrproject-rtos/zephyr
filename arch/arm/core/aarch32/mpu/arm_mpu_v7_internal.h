@@ -9,11 +9,11 @@
 #define ZEPHYR_ARCH_ARM_CORE_AARCH32_MPU_ARM_MPU_V7_INTERNAL_H_
 
 
-#include <sys/math_extras.h>
+#include <zephyr/sys/math_extras.h>
 #include <arm_mpu_internal.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 /* Global MPU configuration at system initialization. */
 static void mpu_init(void)

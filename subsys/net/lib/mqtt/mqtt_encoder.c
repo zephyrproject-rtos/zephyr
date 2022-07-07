@@ -9,7 +9,7 @@
  * @brief Encoding functions needed to create packet to be sent to the broker.
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_mqtt_enc, CONFIG_MQTT_LOG_LEVEL);
 
 #include "mqtt_internal.h"

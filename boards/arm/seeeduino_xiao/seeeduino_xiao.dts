@@ -11,7 +11,7 @@
 
 / {
 	model = "Seeeduino XIAO";
-	compatible = "seeedstudio,seeeduino-xiao";
+	compatible = "seeed,seeeduino-xiao";
 
 	chosen {
 		zephyr,console = &sercom4;

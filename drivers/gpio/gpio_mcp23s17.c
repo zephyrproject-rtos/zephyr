@@ -12,18 +12,18 @@
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <sys/byteorder.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
 
 #include "gpio_utils.h"
 #include "gpio_mcp23s17.h"
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_mcp23s17);
 
 /**

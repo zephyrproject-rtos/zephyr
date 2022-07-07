@@ -7,8 +7,8 @@
 #include <mem.h>
 #include <freq.h>
 #include <arm64/armv8-a.dtsi>
-#include <dt-bindings/clock/imx_ccm.h>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/clock/imx_ccm.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
 	#address-cells = <1>;
@@ -47,7 +47,6 @@
 			      IRQ_DEFAULT_PRIORITY>,
 			     <GIC_PPI 10 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
-		label = "arch_timer";
 		interrupt-parent = <&gic>;
 	};
 
@@ -57,8 +56,17 @@
 		      <0x38880000 0xc0000>; /* GICR (RD_base + SGI_base) */
 		interrupt-controller;
 		#interrupt-cells = <4>;
-		label = "GIC";
 		status = "okay";
+	};
+
+	iomuxc: iomuxc@30330000 {
+		compatible = "nxp,imx-iomuxc";
+		reg = <0x30330000 DT_SIZE_K(64)>;
+		status = "okay";
+		pinctrl: pinctrl {
+			status = "okay";
+			compatible = "nxp,imx8m-pinctrl";
+		};
 	};
 
 	ana_pll: ana_pll@30360000 {

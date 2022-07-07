@@ -97,6 +97,30 @@ config ZTEST_RULE_1CPU
 
 endmenu
 
+config ZTEST_SHUFFLE
+	bool "Shuffle the order of tests and suites"
+	select TEST_RANDOM_GENERATOR if !ENTROPY_HAS_DRIVER
+	help
+	  This rule will shuffle the order of tests and test suites.
+
+if ZTEST_SHUFFLE
+config ZTEST_SHUFFLE_SUITE_REPEAT_COUNT
+	int "Number of iterations the test suite will run"
+	default 3
+	help
+	  This rule will execute a test suite N number of times. The tests
+	  per suite will be shuffled on each iteration.  The test order will likely
+	  be different per iteration.
+
+config ZTEST_SHUFFLE_TEST_REPEAT_COUNT
+	int "Number of iterations the test will run"
+	default 3
+	help
+	  This rule will execute a test N number of times.  The test order will
+	  likely be different per iteration.
+
+endif #ZTEST_SHUFFLE
+
 endif # ZTEST_NEW_API
 
 endif # ZTEST

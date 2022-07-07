@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #include <hal/nrf_gpio.h>
 
@@ -274,6 +274,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			NRF_PSEL_QDEC(reg, B) = NRF_GET_PIN(pins[i]);
 			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
 					  NRF_GPIO_PIN_INPUT_CONNECT);
+			break;
 		case NRF_FUN_QDEC_LED:
 			NRF_PSEL_QDEC(reg, LED) = NRF_GET_PIN(pins[i]);
 			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
@@ -295,14 +296,17 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			NRF_PSEL_QSPI(reg, IO0) = NRF_GET_PIN(pins[i]);
 			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
 					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+			break;
 		case NRF_FUN_QSPI_IO1:
 			NRF_PSEL_QSPI(reg, IO1) = NRF_GET_PIN(pins[i]);
 			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
 					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+			break;
 		case NRF_FUN_QSPI_IO2:
 			NRF_PSEL_QSPI(reg, IO2) = NRF_GET_PIN(pins[i]);
 			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
 					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+			break;
 		case NRF_FUN_QSPI_IO3:
 			NRF_PSEL_QSPI(reg, IO3) = NRF_GET_PIN(pins[i]);
 			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,

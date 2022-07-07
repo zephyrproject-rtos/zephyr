@@ -21,9 +21,9 @@
  * @{
  */
 
-#include <drivers/can.h>
+#include <zephyr/drivers/can.h>
 #include <zephyr/types.h>
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
 /*
  * Abbreviations

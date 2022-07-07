@@ -14,11 +14,11 @@
 
 #include <stddef.h>
 #include <zephyr/types.h>
-#include <zephyr.h>
-#include <sys/util.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/hci.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/hci.h>
 
 const char *bt_hex_real(const void *buf, size_t len)
 {

@@ -63,6 +63,11 @@ config HAS_MCUX_ELCDIF
 	  Set if the enhanced LCD interface (eLCDIF) module is present in the
 	  SoC.
 
+config HAS_MCUX_MIPI_DSI
+	bool
+	help
+	  Set if the MIPI DSI module is present in the SoC.
+
 config HAS_MCUX_ENET
 	bool
 	help
@@ -111,6 +116,11 @@ config HAS_MCUX_IGPIO
 	help
 	  Set if the iMX GPIO (IGPIO) module is present in the SoC.
 
+config HAS_MCUX_IOMUXC
+	bool
+	help
+	  Set if the iMX I/O mux controller (IOMUXC) is present in the SoC.
+
 config HAS_MCUX_LPI2C
 	bool
 	help
@@ -135,6 +145,11 @@ config HAS_MCUX_GPT
 	bool
 	help
 	  Set if the general purpose timer (GPT) module is present in the SoC.
+
+config HAS_MCUX_QTMR
+	bool
+	help
+	  Set if the quad timer (QTMR) module is present in the SoC.
 
 config HAS_MCUX_GPC
 	bool
@@ -201,6 +216,12 @@ config HAS_MCUX_SRC
 	help
 	  Set if the system reset controller (SRC) module is present in the
 	  SoC.
+
+config HAS_MCUX_SRC_V2
+	bool
+	help
+	  Set if version 2 of the system reset controller (SRC) module is
+	  present in the SoC.
 
 config HAS_MCUX_TRNG
 	bool
@@ -333,5 +354,11 @@ config HAS_MCUX_MCAN
 	bool
 	help
 	  Set if the MCAN module is present on the SoC.
+
+config HAS_MCUX_ADC_ETC
+	bool
+	help
+	  Set if the ADC External Trigger Control module is present
+	  on the SoC.
 
 endif # HAS_MCUX

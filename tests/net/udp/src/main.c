@@ -8,28 +8,28 @@
 
 #define NET_LOG_LEVEL CONFIG_NET_UDP_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
-#include <zephyr.h>
-#include <linker/sections.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/linker/sections.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
-#include <device.h>
-#include <init.h>
-#include <sys/printk.h>
-#include <net/buf.h>
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_ip.h>
-#include <net/ethernet.h>
-#include <net/dummy.h>
-#include <net/udp.h>
-#include <random/rand32.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/dummy.h>
+#include <zephyr/net/udp.h>
+#include <zephyr/random/rand32.h>
 
 #include "ipv4.h"
 #include "ipv6.h"

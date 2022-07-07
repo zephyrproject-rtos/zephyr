@@ -15,6 +15,13 @@ config SUPPORT_MINIMAL_LIBC
 	bool
 	default y
 
+config PICOLIBC_SUPPORTED
+	bool
+	depends on ARC || ARM || ARM64 || MIPS || RISCV
+	default y
+	help
+	  Selected when the target has support for picolibc.
+
 choice LIBC_IMPLEMENTATION
 	prompt "C Library Implementation"
 	default EXTERNAL_LIBC if NATIVE_APPLICATION
@@ -28,6 +35,16 @@ config MINIMAL_LIBC
 	depends on SUPPORT_MINIMAL_LIBC
 	help
 	  Build with minimal C library.
+
+config PICOLIBC
+	bool "Picolibc library"
+	select THREAD_LOCAL_STORAGE if ARCH_HAS_THREAD_LOCAL_STORAGE
+	select LIBC_ERRNO if THREAD_LOCAL_STORAGE
+	depends on !NATIVE_APPLICATION
+	help
+	  Build with picolibc library. The picolibc library is built as
+	  a module if PICOLIBC_MODULE is set, otherwise picolibc is
+	  expected to be provided by the toolchain.
 
 config NEWLIB_LIBC
 	bool "Newlib C library"
@@ -52,6 +69,12 @@ endchoice # LIBC_IMPLEMENTATION
 
 config HAS_NEWLIB_LIBC_NANO
 	bool
+
+if PICOLIBC
+
+source "lib/libc/picolibc/Kconfig"
+
+endif # PICOLIBC
 
 if NEWLIB_LIBC
 
@@ -121,6 +144,16 @@ endif # NEWLIB_LIBC
 
 if MINIMAL_LIBC
 
+config MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS
+	bool "Non-reentrant functions"
+	default y if !USERSPACE
+	select NEED_LIBC_MEM_PARTITION
+	help
+	  Enable non-reentrant functions that make use of the globals; e.g.
+	  rand() and gmtime(). The globals must be put into a dedicated C
+	  library memory partition when CONFIG_USERSPACE=y, and enabling this
+	  option may require an additional memory protection region.
+
 config MINIMAL_LIBC_MALLOC
 	bool "Minimal libc malloc implementation"
 	default y
@@ -166,16 +199,23 @@ config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
 
 config MINIMAL_LIBC_RAND
 	bool "Rand and srand functions"
-	select NEED_LIBC_MEM_PARTITION
 	help
-	  Enable rand() and srand() for the minimal libc. The
-	  functions implicitly access global/static data.  Such data
-	  must be put into a memory partition if CONFIG_USERSPACE=y,
-	  and disabling this option may save an entry for application
-	  defining many custom partitions.
+	  Enable rand_r() for the minimal libc.
 
-	  Say 'Y' here if you need rand() and srand(). This might require
-	  an additional memory partition.
+	  In order to make use of the non-reentrant rand() and srand(), it is
+	  necessary to set CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y.
+
+config MINIMAL_LIBC_TIME
+	bool "Time functions"
+	default y
+	help
+	  Enable time() and gmtime_r() for the minimal libc.
+
+	  time() requires CONFIG_POSIX_CLOCK=y because it relies on the POSIX
+	  clock_gettime() function.
+
+	  In order to make use of the non-reentrant gmtime(), it is necessary
+	  to set CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y.
 
 endif # MINIMAL_LIBC
 

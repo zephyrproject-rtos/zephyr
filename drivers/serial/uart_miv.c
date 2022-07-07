@@ -6,9 +6,9 @@
 
 #define DT_DRV_COMPAT microsemi_coreuart
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <drivers/uart.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/drivers/uart.h>
 
 
 /* UART REGISTERS DEFINITIONS */

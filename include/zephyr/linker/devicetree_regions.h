@@ -224,12 +224,14 @@
  * to the MPU_FN macro using the 'attr' parameter, in the form
  * REGION_{attr}_ATTR.
  *
- * Currently only three enums are supported for the 'zephyr,memory-region-mpu'
+ * The following enums are supported for the 'zephyr,memory-region-mpu'
  * property:
  *
  *  - RAM
  *  - RAM_NOCACHE
  *  - FLASH
+ *  - PPB
+ *  - IO
  *
  * This means that usually the arch code would provide some macros or defines
  * with the same name of the extended property, that is:
@@ -237,6 +239,8 @@
  *  - REGION_RAM_ATTR
  *  - REGION_RAM_NOCACHE_ATTR
  *  - REGION_FLASH_ATTR
+ *  - REGION_PPB_ATTR
+ *  - REGION_IO_ATTR
  *
  * Example devicetree fragment:
  *
@@ -248,6 +252,10 @@
  *                     };
  *             };
  *     };
+ *
+ * For detailed information about MPU region attribute define configuration refer
+ * to the specific architecture MPU header.
+ * For example: include/zephyr/arch/arm/aarch32/mpu/arm_mpu_v7m.h.
  *
  * The 'attr' parameter of the MPU_FN function will be the extended
  * 'REGION_RAM_NOCACHE_ATTR' token and the arch code will be usually

@@ -12,13 +12,13 @@
 #define DT_DRV_COMPAT zephyr_espi_emul_controller
 
 #define LOG_LEVEL CONFIG_ESPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(espi_emul_ctlr);
 
-#include <device.h>
-#include <drivers/emul.h>
-#include <drivers/espi.h>
-#include <drivers/espi_emul.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/emul.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/espi_emul.h>
 #include "espi_utils.h"
 
 /** Working data for the controller */

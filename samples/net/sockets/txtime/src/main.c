@@ -4,23 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_txtime_sample, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
 #include <stdio.h>
 #include <inttypes.h>
-#include <drivers/ptp_clock.h>
-#include <shell/shell.h>
+#include <zephyr/drivers/ptp_clock.h>
+#include <zephyr/shell/shell.h>
 
-#include <net/net_mgmt.h>
-#include <net/net_event.h>
-#include <net/net_conn_mgr.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_event.h>
+#include <zephyr/net/net_conn_mgr.h>
 
-#include <net/socket.h>
-#include <net/ethernet.h>
-#include <net/ethernet_mgmt.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/ethernet_mgmt.h>
 
 #define APP_BANNER "Run SO_TXTIME client"
 
@@ -314,7 +314,7 @@ static int create_socket(struct net_if *iface, struct sockaddr *peer)
 			return -EINVAL;
 		}
 
-		LOG_DBG("Binding to %s", log_strdup(addr_str));
+		LOG_DBG("Binding to %s", addr_str);
 	}
 
 	ret = bind(sock, &local, addrlen);
@@ -602,7 +602,7 @@ void main(void)
 	if (IS_ENABLED(CONFIG_NET_SAMPLE_UDP_SOCKET)) {
 		LOG_INF("Socket SO_TXTIME sample to %s port %d using "
 			"interface %d (%p) and PTP clock %p",
-			log_strdup(addr_str),
+			addr_str,
 			ntohs(net_sin(&data.peer)->sin_port),
 			if_index, iface, data.clk);
 	}

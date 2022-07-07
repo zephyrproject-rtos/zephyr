@@ -2,10 +2,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <devicetree.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <ztest.h>
-#include <ipc/ipc_service.h>
+#include <zephyr/ipc/ipc_service.h>
 
 static void received_cb(const void *data, size_t len, void *priv)
 {

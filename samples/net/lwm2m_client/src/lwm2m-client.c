@@ -8,14 +8,14 @@
 #define LOG_MODULE_NAME net_lwm2m_client_app
 #define LOG_LEVEL LOG_LEVEL_DBG
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <drivers/hwinfo.h>
-#include <zephyr.h>
-#include <drivers/gpio.h>
-#include <drivers/sensor.h>
-#include <net/lwm2m.h>
+#include <zephyr/drivers/hwinfo.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/net/lwm2m.h>
 
 #define APP_BANNER "Run LWM2M client"
 
@@ -282,26 +282,24 @@ static int lwm2m_setup(void)
 	int ret;
 	char *server_url;
 	uint16_t server_url_len;
-	uint8_t server_url_flags;
 
 	/* setup SECURITY object */
 
 	/* Server URL */
-	ret = lwm2m_engine_get_res_data("0/0/0",
-					(void **)&server_url, &server_url_len,
-					&server_url_flags);
+	ret = lwm2m_engine_get_res_buf("0/0/0", (void **)&server_url, &server_url_len, NULL, NULL);
 	if (ret < 0) {
 		return ret;
 	}
 
-	snprintk(server_url, server_url_len, "coap%s//%s%s%s",
-		 IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) ? "s:" : ":",
-		 strchr(SERVER_ADDR, ':') ? "[" : "", SERVER_ADDR,
-		 strchr(SERVER_ADDR, ':') ? "]" : "");
+	server_url_len = snprintk(server_url, server_url_len, "coap%s//%s%s%s",
+				  IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) ? "s:" : ":",
+				  strchr(SERVER_ADDR, ':') ? "[" : "", SERVER_ADDR,
+				  strchr(SERVER_ADDR, ':') ? "]" : "");
+
+	lwm2m_engine_set_res_data_len("0/0/0", server_url_len + 1);
 
 	/* Security Mode */
-	lwm2m_engine_set_u8("0/0/2",
-			    IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) ? 0 : 3);
+	lwm2m_engine_set_u8("0/0/2", IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) ? 0 : 3);
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 	lwm2m_engine_set_string("0/0/3", (char *)client_psk_id);
 	lwm2m_engine_set_opaque("0/0/5",
@@ -326,45 +324,60 @@ static int lwm2m_setup(void)
 
 	/* setup DEVICE object */
 
-	lwm2m_engine_set_res_data("3/0/0", CLIENT_MANUFACTURER,
-				  sizeof(CLIENT_MANUFACTURER),
-				  LWM2M_RES_DATA_FLAG_RO);
-	lwm2m_engine_set_res_data("3/0/1", CLIENT_MODEL_NUMBER,
-				  sizeof(CLIENT_MODEL_NUMBER),
-				  LWM2M_RES_DATA_FLAG_RO);
-	lwm2m_engine_set_res_data("3/0/2", CLIENT_SERIAL_NUMBER,
-				  sizeof(CLIENT_SERIAL_NUMBER),
-				  LWM2M_RES_DATA_FLAG_RO);
-	lwm2m_engine_set_res_data("3/0/3", CLIENT_FIRMWARE_VER,
-				  sizeof(CLIENT_FIRMWARE_VER),
-				  LWM2M_RES_DATA_FLAG_RO);
+	lwm2m_engine_set_res_buf("3/0/0", CLIENT_MANUFACTURER,
+				 sizeof(CLIENT_MANUFACTURER),
+				 sizeof(CLIENT_MANUFACTURER),
+				 LWM2M_RES_DATA_FLAG_RO);
+	lwm2m_engine_set_res_buf("3/0/1", CLIENT_MODEL_NUMBER,
+				 sizeof(CLIENT_MODEL_NUMBER),
+				 sizeof(CLIENT_MODEL_NUMBER),
+				 LWM2M_RES_DATA_FLAG_RO);
+	lwm2m_engine_set_res_buf("3/0/2", CLIENT_SERIAL_NUMBER,
+				 sizeof(CLIENT_SERIAL_NUMBER),
+				 sizeof(CLIENT_SERIAL_NUMBER),
+				 LWM2M_RES_DATA_FLAG_RO);
+	lwm2m_engine_set_res_buf("3/0/3", CLIENT_FIRMWARE_VER,
+				 sizeof(CLIENT_FIRMWARE_VER),
+				 sizeof(CLIENT_FIRMWARE_VER),
+				 LWM2M_RES_DATA_FLAG_RO);
 	lwm2m_engine_register_exec_callback("3/0/4", device_reboot_cb);
 	lwm2m_engine_register_exec_callback("3/0/5", device_factory_default_cb);
-	lwm2m_engine_set_res_data("3/0/9", &bat_level, sizeof(bat_level), 0);
-	lwm2m_engine_set_res_data("3/0/10", &mem_free, sizeof(mem_free), 0);
-	lwm2m_engine_set_res_data("3/0/17", CLIENT_DEVICE_TYPE,
-				  sizeof(CLIENT_DEVICE_TYPE),
-				  LWM2M_RES_DATA_FLAG_RO);
-	lwm2m_engine_set_res_data("3/0/18", CLIENT_HW_VER,
-				  sizeof(CLIENT_HW_VER),
-				  LWM2M_RES_DATA_FLAG_RO);
-	lwm2m_engine_set_res_data("3/0/20", &bat_status, sizeof(bat_status), 0);
-	lwm2m_engine_set_res_data("3/0/21", &mem_total, sizeof(mem_total), 0);
+	lwm2m_engine_set_res_buf("3/0/9", &bat_level, sizeof(bat_level),
+				 sizeof(bat_level), 0);
+	lwm2m_engine_set_res_buf("3/0/10", &mem_free, sizeof(mem_free),
+				 sizeof(mem_free), 0);
+	lwm2m_engine_set_res_buf("3/0/17", CLIENT_DEVICE_TYPE,
+				 sizeof(CLIENT_DEVICE_TYPE),
+				 sizeof(CLIENT_DEVICE_TYPE),
+				 LWM2M_RES_DATA_FLAG_RO);
+	lwm2m_engine_set_res_buf("3/0/18", CLIENT_HW_VER,
+				 sizeof(CLIENT_HW_VER), sizeof(CLIENT_HW_VER),
+				 LWM2M_RES_DATA_FLAG_RO);
+	lwm2m_engine_set_res_buf("3/0/20", &bat_status, sizeof(bat_status),
+				 sizeof(bat_status), 0);
+	lwm2m_engine_set_res_buf("3/0/21", &mem_total, sizeof(mem_total),
+				 sizeof(mem_total), 0);
 
 	/* add power source resource instances */
 	lwm2m_engine_create_res_inst("3/0/6/0");
-	lwm2m_engine_set_res_data("3/0/6/0", &bat_idx, sizeof(bat_idx), 0);
+	lwm2m_engine_set_res_buf("3/0/6/0", &bat_idx, sizeof(bat_idx),
+				 sizeof(bat_idx), 0);
 
 	lwm2m_engine_create_res_inst("3/0/7/0");
-	lwm2m_engine_set_res_data("3/0/7/0", &bat_mv, sizeof(bat_mv), 0);
+	lwm2m_engine_set_res_buf("3/0/7/0", &bat_mv, sizeof(bat_mv),
+				 sizeof(bat_mv), 0);
 	lwm2m_engine_create_res_inst("3/0/8/0");
-	lwm2m_engine_set_res_data("3/0/8/0", &bat_ma, sizeof(bat_ma), 0);
+	lwm2m_engine_set_res_buf("3/0/8/0", &bat_ma, sizeof(bat_ma),
+				 sizeof(bat_ma), 0);
 	lwm2m_engine_create_res_inst("3/0/6/1");
-	lwm2m_engine_set_res_data("3/0/6/1", &usb_idx, sizeof(usb_idx), 0);
+	lwm2m_engine_set_res_buf("3/0/6/1", &usb_idx, sizeof(usb_idx),
+				 sizeof(usb_idx), 0);
 	lwm2m_engine_create_res_inst("3/0/7/1");
-	lwm2m_engine_set_res_data("3/0/7/1", &usb_mv, sizeof(usb_mv), 0);
+	lwm2m_engine_set_res_buf("3/0/7/1", &usb_mv, sizeof(usb_mv),
+				 sizeof(usb_mv), 0);
 	lwm2m_engine_create_res_inst("3/0/8/1");
-	lwm2m_engine_set_res_data("3/0/8/1", &usb_ma, sizeof(usb_ma), 0);
+	lwm2m_engine_set_res_buf("3/0/8/1", &usb_ma, sizeof(usb_ma),
+				 sizeof(usb_ma), 0);
 
 	/* setup FIRMWARE object */
 
@@ -375,8 +388,9 @@ static int lwm2m_setup(void)
 #endif
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
 	lwm2m_engine_create_res_inst("5/0/8/0");
-	lwm2m_engine_set_res_data("5/0/8/0", &supported_protocol[0],
-				  sizeof(supported_protocol[0]), 0);
+	lwm2m_engine_set_res_buf("5/0/8/0", &supported_protocol[0],
+				 sizeof(supported_protocol[0]),
+				 sizeof(supported_protocol[0]), 0);
 
 	lwm2m_firmware_set_update_cb(firmware_update_cb);
 #endif
@@ -390,9 +404,10 @@ static int lwm2m_setup(void)
 		lwm2m_engine_create_obj_inst("3311/0");
 		lwm2m_engine_register_post_write_callback("3311/0/5850",
 				led_on_off_cb);
-		lwm2m_engine_set_res_data("3311/0/5750",
-					  LIGHT_NAME, sizeof(LIGHT_NAME),
-					  LWM2M_RES_DATA_FLAG_RO);
+		lwm2m_engine_set_res_buf("3311/0/5750", LIGHT_NAME,
+					 sizeof(LIGHT_NAME),
+					 sizeof(LIGHT_NAME),
+					 LWM2M_RES_DATA_FLAG_RO);
 	}
 
 	/* IPSO: Timer object */
@@ -401,8 +416,9 @@ static int lwm2m_setup(void)
 			timer_on_off_validate_cb);
 	lwm2m_engine_register_post_write_callback("3340/0/5543",
 			timer_digital_state_cb);
-	lwm2m_engine_set_res_data("3340/0/5750", TIMER_NAME, sizeof(TIMER_NAME),
-				  LWM2M_RES_DATA_FLAG_RO);
+	lwm2m_engine_set_res_buf("3340/0/5750", TIMER_NAME,
+				 sizeof(TIMER_NAME), sizeof(TIMER_NAME),
+				 LWM2M_RES_DATA_FLAG_RO);
 
 	return 0;
 }
@@ -471,20 +487,20 @@ static void observe_cb(enum lwm2m_observe_event event,
 	switch (event) {
 
 	case LWM2M_OBSERVE_EVENT_OBSERVER_ADDED:
-		LOG_INF("Observer added for %s", lwm2m_path_log_strdup(buf, path));
+		LOG_INF("Observer added for %s", lwm2m_path_log_buf(buf, path));
 		break;
 
 	case LWM2M_OBSERVE_EVENT_OBSERVER_REMOVED:
-		LOG_INF("Observer removed for %s", lwm2m_path_log_strdup(buf, path));
+		LOG_INF("Observer removed for %s", lwm2m_path_log_buf(buf, path));
 		break;
 
 	case LWM2M_OBSERVE_EVENT_NOTIFY_ACK:
-		LOG_INF("Notify acknowledged for %s", lwm2m_path_log_strdup(buf, path));
+		LOG_INF("Notify acknowledged for %s", lwm2m_path_log_buf(buf, path));
 		break;
 
 	case LWM2M_OBSERVE_EVENT_NOTIFY_TIMEOUT:
 		LOG_INF("Notify timeout for %s, trying registration update",
-			lwm2m_path_log_strdup(buf, path));
+			lwm2m_path_log_buf(buf, path));
 
 		lwm2m_rd_client_update();
 		break;

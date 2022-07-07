@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/__assert.h>
-#include <sw_isr_table.h>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
-#include <drivers/interrupt_controller/gic.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sw_isr_table.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
 #include "intc_gic_common_priv.h"
 #include "intc_gicv3_priv.h"
 

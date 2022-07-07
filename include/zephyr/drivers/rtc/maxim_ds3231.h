@@ -34,10 +34,10 @@
 
 #include <time.h>
 
-#include <drivers/counter.h>
-#include <kernel.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
-#include <sys/notify.h>
+#include <zephyr/sys/notify.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,0 +1,28 @@
+# RISCV64_MIV Microchip Polarfire SOC configuration options
+
+# Copyright (c) 2020-2021 Microchip Technology Inc
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Microchip Polarfire SOC implementation"
+	depends on SOC_SERIES_RISCV64_MIV
+
+config SOC_MPFS
+	bool "Microchip MPFS system implementation"
+	select ATOMIC_OPERATIONS_BUILTIN
+	select RISCV_GP
+	select USE_SWITCH_SUPPORTED
+	select USE_SWITCH
+	select CPU_HAS_FPU
+	select SCHED_IPI_SUPPORTED
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+
+endchoice
+
+config MPFS_HAL
+	depends on SOC_MPFS
+	bool "Microchip Polarfire SOC hardware abstracton layer"
+	select HAS_MPFS_HAL

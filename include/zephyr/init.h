@@ -7,8 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_INIT_H_
 #define ZEPHYR_INCLUDE_INIT_H_
 
-#include <toolchain.h>
-#include <kernel.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus

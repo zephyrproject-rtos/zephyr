@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
 
 #include "psa/crypto.h"
 #include "util_app_log.h"
@@ -104,7 +104,7 @@ psa_status_t al_psa_status(psa_status_t status, const char *func_name)
 
 void al_dump_log(void)
 {
-	while (log_process(false)) {
+	while (log_process()) {
 
 	}
 }

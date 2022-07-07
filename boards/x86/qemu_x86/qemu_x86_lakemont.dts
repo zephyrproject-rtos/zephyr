@@ -15,7 +15,7 @@
 #define DT_DRAM_SIZE		DT_SIZE_K(4096)
 #endif
 
-#include <lakemont.dtsi>
+#include <intel/lakemont.dtsi>
 
 / {
 	model = "QEMU X86 (Lakemont) emulator";
@@ -45,7 +45,7 @@
 			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 			current-speed = <115200>;
-
+			reg-shift = <2>;
 			status = "okay";
 		};
 

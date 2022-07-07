@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #endif
 #ifndef LFS_NO_ASSERT
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 #endif
 
 #if !defined(LFS_NO_DEBUG) || \
@@ -29,7 +29,7 @@
 	    !defined(LFS_NO_ERROR) || \
 	    defined(LFS_YES_TRACE)
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #ifdef LFS_LOG_REGISTER
 LOG_MODULE_REGISTER(littlefs, CONFIG_FS_LOG_LEVEL);

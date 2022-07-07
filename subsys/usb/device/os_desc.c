@@ -5,12 +5,12 @@
  */
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_os_desc);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <usb/usb_device.h>
+#include <zephyr/usb/usb_device.h>
 #include <os_desc.h>
 
 static struct usb_os_descriptor *os_desc;

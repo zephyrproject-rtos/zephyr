@@ -11,7 +11,7 @@
  */
 
 #include "test_module.h"
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 /* Module disabled by default, will emit logs only when CONFIG_LOG_OVERRIDE_LEVEL. */
 LOG_MODULE_REGISTER(test2, 0);

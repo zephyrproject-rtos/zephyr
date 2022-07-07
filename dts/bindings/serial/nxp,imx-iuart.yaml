@@ -3,7 +3,7 @@ description: |
 
 compatible: "nxp,imx-iuart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -13,4 +13,10 @@ properties:
       required: false
 
     clocks:
+      required: true
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
       required: true

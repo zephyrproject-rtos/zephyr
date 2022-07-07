@@ -28,3 +28,11 @@ config RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER
 	  The division ratio should define in devicetree,
 	  and it is desirable usage that references it with using a function such as
 	  dt_node_int_prop_int from Kconfig. (Tune in the conf file is not preferable.)
+
+config RISCV_MACHINE_TIMER_MIN_DELAY
+	int
+	default 100
+	help
+	  Specifies the minimum number of machine cycles before the RISC-V machine
+	  time compare register is allowed to be updated by the RISC-V machine timer
+	  driver.

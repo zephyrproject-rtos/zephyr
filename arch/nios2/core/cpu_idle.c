@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 
 void arch_cpu_idle(void)
 {

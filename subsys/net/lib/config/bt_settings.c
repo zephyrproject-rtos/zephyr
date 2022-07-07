@@ -6,20 +6,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
 
-#include <net/net_if.h>
-#include <net/net_core.h>
-#include <net/net_mgmt.h>
-#include <net/bt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/bt.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
 
 #if defined(CONFIG_NET_CONFIG_BT_NODE)
 #define ADV_STR "on"

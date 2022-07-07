@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
-#include <arch/arc/v2/mpu/arc_core_mpu.h>
-#include <kernel_structs.h>
+#include <zephyr/arch/arc/v2/mpu/arc_core_mpu.h>
+#include <zephyr/kernel_structs.h>
 
 /*
  * @brief Configure MPU for the thread

@@ -14,7 +14,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_ADC_H_
 
 #include <zephyr/device.h>
-#include <dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,8 +33,10 @@ enum adc_gain {
 	ADC_GAIN_1_5, /**< x 1/5. */
 	ADC_GAIN_1_4, /**< x 1/4. */
 	ADC_GAIN_1_3, /**< x 1/3. */
+	ADC_GAIN_2_5, /**< x 2/5. */
 	ADC_GAIN_1_2, /**< x 1/2. */
 	ADC_GAIN_2_3, /**< x 2/3. */
+	ADC_GAIN_4_5, /**< x 4/5. */
 	ADC_GAIN_1,   /**< x 1. */
 	ADC_GAIN_2,   /**< x 2. */
 	ADC_GAIN_3,   /**< x 3. */
@@ -145,42 +147,260 @@ struct adc_channel_cfg {
 };
 
 /**
- * @brief Convert a raw ADC value to millivolts.
+ * @brief Get ADC channel configuration from a given devicetree node.
  *
- * This function performs the necessary conversion to transform a raw
- * ADC measurement to a voltage in millivolts.
+ * This returns a static initializer for a <tt>struct adc_channel_cfg</tt>
+ * filled with data from a given devicetree node.
  *
- * @param ref_mv the reference voltage used for the measurement, in
- * millivolts.  This may be from adc_ref_internal() or a known
- * external reference.
+ * Example devicetree fragment:
  *
- * @param gain the ADC gain configuration used to sample the input
+ * @code{.dts}
+ * &adc {
+ *    #address-cells = <1>;
+ *    #size-cells = <0>;
  *
- * @param resolution the number of bits in the absolute value of the
- * sample.  For differential sampling this may be one less than the
- * resolution in struct adc_sequence.
+ *    channel@0 {
+ *        reg = <0>;
+ *        zephyr,gain = "ADC_GAIN_1_6";
+ *        zephyr,reference = "ADC_REF_INTERNAL";
+ *        zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 20)>;
+ *        zephyr,input-positive = <NRF_SAADC_AIN6>;
+ *        zephyr,input-negative = <NRF_SAADC_AIN7>;
+ *    };
  *
- * @param valp pointer to the raw measurement value on input, and the
- * corresponding millivolt value on successful conversion.  If
- * conversion fails the stored value is left unchanged.
+ *    channel@1 {
+ *        reg = <1>;
+ *        zephyr,gain = "ADC_GAIN_1_6";
+ *        zephyr,reference = "ADC_REF_INTERNAL";
+ *        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+ *        zephyr,input-positive = <NRF_SAADC_AIN0>;
+ *    };
+ * };
+ * @endcode
  *
- * @retval 0 on successful conversion
- * @retval -EINVAL if the gain is not reversible
+ * Example usage:
+ *
+ * @code{.c}
+ * static const struct adc_channel_cfg ch0_cfg_dt =
+ *     ADC_CHANNEL_CFG_DT(DT_CHILD(DT_NODELABEL(adc), channel_0));
+ * static const struct adc_channel_cfg ch1_cfg_dt =
+ *     ADC_CHANNEL_CFG_DT(DT_CHILD(DT_NODELABEL(adc), channel_1));
+ *
+ * // Initializes 'ch0_cfg_dt' to:
+ * // {
+ * //     .channel_id = 0,
+ * //     .gain = ADC_GAIN_1_6,
+ * //     .reference = ADC_REF_INTERNAL,
+ * //     .acquisition_time = ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 20),
+ * //     .differential = true,
+ * //     .input_positive = NRF_SAADC_AIN6,
+ * //     .input-negative = NRF_SAADC_AIN7,
+ * // }
+ * // and 'ch1_cfg_dt' to:
+ * // {
+ * //     .channel_id = 1,
+ * //     .gain = ADC_GAIN_1_6,
+ * //     .reference = ADC_REF_INTERNAL,
+ * //     .acquisition_time = ADC_ACQ_TIME_DEFAULT,
+ * //     .input_positive = NRF_SAADC_AIN0,
+ * // }
+ * @endcode
+ *
+ * @param node_id Devicetree node identifier.
+ *
+ * @return Static initializer for an adc_channel_cfg structure.
  */
-static inline int adc_raw_to_millivolts(int32_t ref_mv,
-					enum adc_gain gain,
-					uint8_t resolution,
-					int32_t *valp)
-{
-	int32_t adc_mv = *valp * ref_mv;
-	int ret = adc_gain_invert(gain, &adc_mv);
+#define ADC_CHANNEL_CFG_DT(node_id) { \
+	.channel_id       = DT_REG_ADDR(node_id), \
+	.gain             = DT_STRING_TOKEN(node_id, zephyr_gain), \
+	.reference        = DT_STRING_TOKEN(node_id, zephyr_reference), \
+	.acquisition_time = DT_PROP(node_id, zephyr_acquisition_time), \
+IF_ENABLED(CONFIG_ADC_CONFIGURABLE_INPUTS, \
+	(COND_CODE_1(DT_NODE_HAS_PROP(node_id, zephyr_input_negative), \
+		(.differential   = true, \
+		 .input_positive = DT_PROP(node_id, zephyr_input_positive), \
+		 .input_negative = DT_PROP(node_id, zephyr_input_negative),), \
+		(.input_positive = DT_PROP(node_id, zephyr_input_positive),)))) \
+}
 
-	if (ret == 0) {
-		*valp = (adc_mv >> resolution);
+/**
+ * @brief Container for ADC channel information specified in devicetree.
+ *
+ * @see ADC_DT_SPEC_GET_BY_IDX
+ * @see ADC_DT_SPEC_GET
+ */
+struct adc_dt_spec {
+	/**
+	 * Pointer to the device structure for the ADC driver instance
+	 * used by this io-channel.
+	 */
+	const struct device *dev;
+
+	/** ADC channel identifier used by this io-channel. */
+	uint8_t channel_id;
+
+	/**
+	 * Flag indicating whether configuration of the associated ADC channel
+	 * is provided as a child node of the corresponding ADC controller in
+	 * devicetree.
+	 */
+	bool channel_cfg_dt_node_exists;
+
+	/**
+	 * Configuration of the associated ADC channel specified in devicetree.
+	 * This field is valid only when @a channel_cfg_dt_node_exists is set
+	 * to @a true.
+	 */
+	struct adc_channel_cfg channel_cfg;
+
+	/**
+	 * Voltage of the reference selected for the channel or 0 if this
+	 * value is not provided in devicetree.
+	 * This field is valid only when @a channel_cfg_dt_node_exists is set
+	 * to @a true.
+	 */
+	uint16_t vref_mv;
+
+	/**
+	 * ADC resolution to be used for that channel.
+	 * This field is valid only when @a channel_cfg_dt_node_exists is set
+	 * to @a true.
+	 */
+	uint8_t resolution;
+
+	/**
+	 * Oversampling setting to be used for that channel.
+	 * This field is valid only when @a channel_cfg_dt_node_exists is set
+	 * to @a true.
+	 */
+	uint8_t oversampling;
+};
+
+/** @cond INTERNAL_HIDDEN */
+
+#define ADC_DT_SPEC_STRUCT(ctlr, input) { \
+		.dev = DEVICE_DT_GET(ctlr), \
+		.channel_id = input, \
+		ADC_CHANNEL_CFG_FROM_DT_NODE( \
+			DT_CHILD(ctlr, UTIL_CAT(channel_, input))) \
 	}
 
-	return ret;
-}
+#define ADC_CHANNEL_CFG_FROM_DT_NODE(node_id) \
+	IF_ENABLED(DT_NODE_EXISTS(node_id), \
+		(.channel_cfg_dt_node_exists = true, \
+		 .channel_cfg  = ADC_CHANNEL_CFG_DT(node_id), \
+		 .vref_mv      = DT_PROP_OR(node_id, zephyr_vref_mv, 0), \
+		 .resolution   = DT_PROP_OR(node_id, zephyr_resolution, 0), \
+		 .oversampling = DT_PROP_OR(node_id, zephyr_oversampling, 0),))
+
+/** @endcond */
+
+/**
+ * @brief Get ADC io-channel information from devicetree.
+ *
+ * This returns a static initializer for an @p adc_dt_spec structure
+ * given a devicetree node and a channel index. The node must have
+ * the "io-channels" property defined.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ * / {
+ *     zephyr,user {
+ *         io-channels = <&adc0 1>, <&adc0 3>;
+ *     };
+ * };
+ *
+ * &adc0 {
+ *    #address-cells = <1>;
+ *    #size-cells = <0>;
+ *
+ *    channel@3 {
+ *        reg = <3>;
+ *        zephyr,gain = "ADC_GAIN_1_5";
+ *        zephyr,reference = "ADC_REF_VDD_1_4";
+ *        zephyr,vref-mv = <750>;
+ *        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+ *        zephyr,resolution = <12>;
+ *        zephyr,oversampling = <4>;
+ *    };
+ * };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ * static const struct adc_dt_spec adc_chan0 =
+ *     ADC_DT_SPEC_GET_BY_IDX(DT_PATH(zephyr_user), 0);
+ * static const struct adc_dt_spec adc_chan1 =
+ *     ADC_DT_SPEC_GET_BY_IDX(DT_PATH(zephyr_user), 1);
+ *
+ * // Initializes 'adc_chan0' to:
+ * // {
+ * //     .dev = DEVICE_DT_GET(DT_NODELABEL(adc0)),
+ * //     .channel_id = 1,
+ * // }
+ * // and 'adc_chan1' to:
+ * // {
+ * //     .dev = DEVICE_DT_GET(DT_NODELABEL(adc0)),
+ * //     .channel_id = 3,
+ * //     .channel_cfg_dt_node_exists = true,
+ * //     .channel_cfg = {
+ * //         .channel_id = 3,
+ * //         .gain = ADC_GAIN_1_5,
+ * //         .reference = ADC_REF_VDD_1_4,
+ * //         .acquisition_time = ADC_ACQ_TIME_DEFAULT,
+ * //     },
+ * //     .vref_mv = 750,
+ * //     .resolution = 12,
+ * //     .oversampling = 4,
+ * // }
+ * @endcode
+ *
+ * @see ADC_DT_SPEC_GET()
+ *
+ * @param node_id Devicetree node identifier.
+ * @param idx Channel index.
+ *
+ * @return Static initializer for an adc_dt_spec structure.
+ */
+#define ADC_DT_SPEC_GET_BY_IDX(node_id, idx) \
+	ADC_DT_SPEC_STRUCT(DT_IO_CHANNELS_CTLR_BY_IDX(node_id, idx), \
+			   DT_IO_CHANNELS_INPUT_BY_IDX(node_id, idx))
+
+/** @brief Get ADC io-channel information from a DT_DRV_COMPAT devicetree
+ *         instance.
+ *
+ * @see ADC_DT_SPEC_GET_BY_IDX()
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param idx Channel index.
+ *
+ * @return Static initializer for an adc_dt_spec structure.
+ */
+#define ADC_DT_SPEC_INST_GET_BY_IDX(inst, idx) \
+	ADC_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), idx)
+
+/**
+ * @brief Equivalent to ADC_DT_SPEC_GET_BY_IDX(node_id, 0).
+ *
+ * @see ADC_DT_SPEC_GET_BY_IDX()
+ *
+ * @param node_id Devicetree node identifier.
+ *
+ * @return Static initializer for an adc_dt_spec structure.
+ */
+#define ADC_DT_SPEC_GET(node_id) ADC_DT_SPEC_GET_BY_IDX(node_id, 0)
+
+/** @brief Equivalent to ADC_DT_SPEC_INST_GET_BY_IDX(inst, 0).
+ *
+ * @see ADC_DT_SPEC_GET()
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ *
+ * @return Static initializer for an adc_dt_spec structure.
+ */
+#define ADC_DT_SPEC_INST_GET(inst) ADC_DT_SPEC_GET(DT_DRV_INST(inst))
 
 /* Forward declaration of the adc_sequence structure. */
 struct adc_sequence;
@@ -387,6 +607,24 @@ static inline int z_impl_adc_channel_setup(const struct device *dev,
 }
 
 /**
+ * @brief Configure an ADC channel from a struct adc_dt_spec.
+ *
+ * @param spec ADC specification from Devicetree.
+ *
+ * @return A value from adc_channel_setup() or -ENOTSUP if information from
+ * Devicetree is not valid.
+ * @see adc_channel_setup()
+ */
+static inline int adc_channel_setup_dt(const struct adc_dt_spec *spec)
+{
+	if (!spec->channel_cfg_dt_node_exists) {
+		return -ENOTSUP;
+	}
+
+	return adc_channel_setup(spec->dev, &spec->channel_cfg);
+}
+
+/**
  * @brief Set a read request.
  *
  * @param dev       Pointer to the device structure for the driver instance.
@@ -471,6 +709,119 @@ static inline uint16_t adc_ref_internal(const struct device *dev)
 				(const struct adc_driver_api *)dev->api;
 
 	return api->ref_internal;
+}
+
+/**
+ * @brief Convert a raw ADC value to millivolts.
+ *
+ * This function performs the necessary conversion to transform a raw
+ * ADC measurement to a voltage in millivolts.
+ *
+ * @param ref_mv the reference voltage used for the measurement, in
+ * millivolts.  This may be from adc_ref_internal() or a known
+ * external reference.
+ *
+ * @param gain the ADC gain configuration used to sample the input
+ *
+ * @param resolution the number of bits in the absolute value of the
+ * sample.  For differential sampling this needs to be one less than the
+ * resolution in struct adc_sequence.
+ *
+ * @param valp pointer to the raw measurement value on input, and the
+ * corresponding millivolt value on successful conversion.  If
+ * conversion fails the stored value is left unchanged.
+ *
+ * @retval 0 on successful conversion
+ * @retval -EINVAL if the gain is not reversible
+ */
+static inline int adc_raw_to_millivolts(int32_t ref_mv,
+					enum adc_gain gain,
+					uint8_t resolution,
+					int32_t *valp)
+{
+	int32_t adc_mv = *valp * ref_mv;
+	int ret = adc_gain_invert(gain, &adc_mv);
+
+	if (ret == 0) {
+		*valp = (adc_mv >> resolution);
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Convert a raw ADC value to millivolts using information stored
+ * in a struct adc_dt_spec.
+ *
+ * @param[in] spec ADC specification from Devicetree.
+ * @param[in,out] valp Pointer to the raw measurement value on input, and the
+ * corresponding millivolt value on successful conversion. If conversion fails
+ * the stored value is left unchanged.
+ *
+ * @return A value from adc_raw_to_millivolts() or -ENOTSUP if information from
+ * Devicetree is not valid.
+ * @see adc_raw_to_millivolts()
+ */
+static inline int adc_raw_to_millivolts_dt(const struct adc_dt_spec *spec,
+					   int32_t *valp)
+{
+	int32_t vref_mv;
+	uint8_t resolution;
+
+	if (!spec->channel_cfg_dt_node_exists) {
+		return -ENOTSUP;
+	}
+
+	if (spec->channel_cfg.reference == ADC_REF_INTERNAL) {
+		vref_mv = (int32_t)adc_ref_internal(spec->dev);
+	} else {
+		vref_mv = spec->vref_mv;
+	}
+
+	resolution = spec->resolution;
+
+	/*
+	 * For differential channels, one bit less needs to be specified
+	 * for resolution to achieve correct conversion.
+	 */
+	if (spec->channel_cfg.differential) {
+		resolution -= 1U;
+	}
+
+	return adc_raw_to_millivolts(vref_mv, spec->channel_cfg.gain,
+				     resolution, valp);
+}
+
+/**
+ * @brief Initialize a struct adc_sequence from information stored in
+ * struct adc_dt_spec.
+ *
+ * Note that this function only initializes the following fields:
+ *
+ * - @ref adc_sequence.channels
+ * - @ref adc_sequence.resolution
+ * - @ref adc_sequence.oversampling
+ *
+ * Other fields should be initialized by the caller.
+ *
+ * @param[in] spec ADC specification from Devicetree.
+ * @param[out] seq Sequence to initialize.
+ *
+ * @retval 0 On success
+ * @retval -ENOTSUP If @p spec does not have valid channel configuration
+ */
+static inline int adc_sequence_init_dt(const struct adc_dt_spec *spec,
+				       struct adc_sequence *seq)
+{
+	if (!spec->channel_cfg_dt_node_exists) {
+		return -ENOTSUP;
+	}
+
+	seq->channels = BIT(spec->channel_id);
+	seq->resolution = spec->resolution;
+	seq->oversampling = spec->oversampling;
+
+	return 0;
 }
 
 /**

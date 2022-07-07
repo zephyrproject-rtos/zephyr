@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "drivers/dma.h"
+#include <zephyr/drivers/dma.h>
 #define DT_DRV_COMPAT intel_cavs_gpdma
 
 #define GPDMA_CTL_OFFSET 0x0004
@@ -20,7 +20,7 @@
 #include "dma_dw_common.h"
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_cavs_gpdma);
 
 

@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROXY)
 #define LOG_MODULE_NAME bt_mesh_gatt_client
@@ -76,7 +76,7 @@ static uint8_t notify_func(struct bt_conn *conn,
 }
 
 static void notify_enabled(struct bt_conn *conn, uint8_t err,
-			   struct bt_gatt_write_params *params)
+			   struct bt_gatt_subscribe_params *params)
 {
 	struct bt_mesh_gatt_server *server = get_server(conn);
 
@@ -143,7 +143,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 		(void)memset(&server->subscribe, 0, sizeof(server->subscribe));
 
 		server->subscribe.notify = notify_func;
-		server->subscribe.write = notify_enabled;
+		server->subscribe.subscribe = notify_enabled;
 		server->subscribe.value = BT_GATT_CCC_NOTIFY;
 		server->subscribe.ccc_handle = attr->handle;
 		server->subscribe.value_handle = attr->handle - 1;

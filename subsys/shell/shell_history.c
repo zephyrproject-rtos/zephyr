@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell_history.h>
+#include <zephyr/shell/shell_history.h>
 #include <string.h>
 
 /*

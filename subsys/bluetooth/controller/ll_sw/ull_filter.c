@@ -6,10 +6,10 @@
 
 #include <string.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"

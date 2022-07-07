@@ -190,7 +190,7 @@ DTC (Device Tree Compiler)
 A :ref:`recent DTC version <install-required-tools>` is required. Check what
 version you have by using ``dtc --version``. If you have an older version,
 either install a more recent one by building from source, or use the one that is
-bundled in the :ref:`Zephyr SDK <zephyr_sdk>` by installing it.
+bundled in the :ref:`Zephyr SDK <toolchain_zephyr_sdk>` by installing it.
 
 Python
 ======
@@ -204,8 +204,6 @@ manager channels if one is available. Isolating this Python in a virtual
 environment is recommended to avoid interfering with your system Python.
 
 .. _pyenv: https://github.com/pyenv/pyenv
-
-.. _zephyr_sdk:
 
 Install the Zephyr Software Development Kit (SDK)
 *************************************************
@@ -234,10 +232,10 @@ Follow these steps to install the Zephyr SDK:
 
    .. code-block:: bash
 
-      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.1/zephyr-sdk-0.14.1_linux-x86_64.tar.gz
-      wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.1/sha256.sum | shasum --check --ignore-missing
+      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.2/zephyr-sdk-0.14.2_linux-x86_64.tar.gz
+      wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.2/sha256.sum | shasum --check --ignore-missing
 
-   You can change ``0.14.1`` to another version if needed; the `Zephyr SDK
+   You can change ``0.14.2`` to another version if needed; the `Zephyr SDK
    Releases`_ page contains all available SDK releases.
 
    If your host architecture is 64-bit ARM (for example, Raspberry Pi), replace
@@ -248,13 +246,13 @@ Follow these steps to install the Zephyr SDK:
    .. code-block:: bash
 
       cd <sdk download directory>
-      tar xvf zephyr-sdk-0.14.1_linux-x86_64.tar.gz
+      tar xvf zephyr-sdk-0.14.2_linux-x86_64.tar.gz
 
 #. Run the Zephyr SDK bundle setup script:
 
    .. code-block:: bash
 
-      cd zephyr-sdk-0.14.1
+      cd zephyr-sdk-0.14.2
       ./setup.sh
 
    If this fails, make sure Zephyr's dependencies were installed as described
@@ -273,9 +271,9 @@ If you relocate the SDK directory, you need to re-run the setup script.
    * ``/opt``
    * ``/usr/local``
 
-   The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.14.1`` directory and, when
+   The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.14.2`` directory and, when
    extracted under ``$HOME``, the resulting installation path will be
-   ``$HOME/zephyr-sdk-0.14.1``.
+   ``$HOME/zephyr-sdk-0.14.2``.
 
    If you install the Zephyr SDK outside any of these locations, you must
    register the Zephyr SDK in the CMake package registry by running the setup
@@ -305,7 +303,7 @@ toolchains for all Zephyr target architectures, and does not require any extra
 flags when building applications or running tests. In addition to
 cross-compilers, the Zephyr SDK also provides prebuilt host tools. It is,
 however, possible to build without the SDK's toolchain by using another
-toolchain as as described in the :ref:`third_party_x_compilers` section.
+toolchain as as described in the :ref:`toolchains` section.
 
 As already noted above, the SDK also includes prebuilt host tools.  To use the
 SDK's prebuilt host tools with a toolchain from another source, you must set the

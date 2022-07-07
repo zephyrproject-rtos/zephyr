@@ -4,10 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <drivers/flash.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/device.h>
 #include <ztest.h>
 
 #define MAX_NUM_OF_SECTORS		1024

@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/printk.h>
-#include <shell/shell.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/shell/shell.h>
 #include <version.h>
 #include <stdlib.h>
-#include <drivers/fpga.h>
+#include <zephyr/drivers/fpga.h>
 
 static int parse_common_args(const struct shell *sh, char **argv,
 			     const struct device **dev)

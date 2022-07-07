@@ -15,7 +15,7 @@
  */
 
 #include <kernel_internal.h>
-#include <linker/linker-defs.h>
+#include <zephyr/linker/linker-defs.h>
 
 __weak void z_arm64_mm_init(bool is_primary_core) { }
 

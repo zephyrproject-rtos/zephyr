@@ -85,7 +85,7 @@
 #define ZRESTRICT restrict
 #endif
 
-#include <toolchain/common.h>
+#include <zephyr/toolchain/common.h>
 #include <stdbool.h>
 
 #define ALIAS_OF(of) __attribute__((alias(#of)))
@@ -94,7 +94,7 @@
 	return_type new_alias() ALIAS_OF(real_func)
 
 #if defined(CONFIG_ARCH_POSIX)
-#include <arch/posix/posix_trace.h>
+#include <zephyr/arch/posix/posix_trace.h>
 
 /*let's not segfault if this were to happen for some reason*/
 #define CODE_UNREACHABLE \
@@ -205,23 +205,46 @@ do {                                                                    \
 #ifndef __packed
 #define __packed        __attribute__((__packed__))
 #endif
+
 #ifndef __aligned
 #define __aligned(x)	__attribute__((__aligned__(x)))
 #endif
+
 #define __may_alias     __attribute__((__may_alias__))
+
 #ifndef __printf_like
+#ifdef CONFIG_ENFORCE_ZEPHYR_STDINT
 #define __printf_like(f, a)   __attribute__((format (printf, f, a)))
+#else
+/*
+ * The Zephyr stdint convention enforces int32_t = int, int64_t = long long,
+ * and intptr_t = long so that short string format length modifiers can be
+ * used universally across ILP32 and LP64 architectures. Without that it
+ * is possible for ILP32 toolchains to have int32_t = long and intptr_t = int
+ * clashing with the Zephyr convention and generating pointless warnings
+ * as they're still the same size. Inhibit the format argument type
+ * validation in that case and let the other configs do it.
+ */
+#define __printf_like(f, a)
 #endif
+#endif
+
 #define __used		__attribute__((__used__))
+#define __unused	__attribute__((__unused__))
+#define __maybe_unused	__attribute__((__unused__))
+
 #ifndef __deprecated
 #define __deprecated	__attribute__((deprecated))
 #endif
+
 #ifndef __attribute_const__
 #define __attribute_const__ __attribute__((__const__))
 #endif
+
 #ifndef __must_check
 #define __must_check __attribute__((warn_unused_result))
 #endif
+
 #define ARG_UNUSED(x) (void)(x)
 
 #define likely(x)   __builtin_expect((bool)!!(x), true)
@@ -236,7 +259,6 @@ do {                                                                    \
 #ifndef __weak
 #define __weak __attribute__((__weak__))
 #endif
-#define __unused __attribute__((__unused__))
 
 /* Builtins with availability that depend on the compiler version. */
 #if __GNUC__ >= 5
@@ -586,15 +608,8 @@ do {                                                                    \
  * @param x Nonzero unsigned long value
  * @return X rounded up to the next power of two
  */
-#ifdef CONFIG_64BIT
-#define Z_POW2_CEIL(x) ((1UL << (63U - __builtin_clzl(x))) < x ?  \
-		1UL << (63U - __builtin_clzl(x) + 1U) : \
-		1UL << (63U - __builtin_clzl(x)))
-#else
-#define Z_POW2_CEIL(x) ((1UL << (31U - __builtin_clz(x))) < x ?  \
-		1UL << (31U - __builtin_clz(x) + 1U) : \
-		1UL << (31U - __builtin_clz(x)))
-#endif
+#define Z_POW2_CEIL(x) \
+	((x) <= 2UL ? (x) : (1UL << (8 * sizeof(long) - __builtin_clzl((x) - 1))))
 
 /**
  * @brief Check whether or not a value is a power of 2

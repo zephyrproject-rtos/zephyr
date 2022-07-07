@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <drivers/uart.h>
-#include <sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/__assert.h>
 
 static const struct device *uart_dev;
 

@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/dma.h>
-#include <drivers/pcie/endpoint/pcie_ep.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/pcie/endpoint/pcie_ep.h>
 
 #define LOG_LEVEL CONFIG_PCIE_EP_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(iproc_pcie);
 
 #include "pcie_ep_iproc.h"

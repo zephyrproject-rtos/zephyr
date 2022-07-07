@@ -13,7 +13,7 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define NUM_OF_WORK 2

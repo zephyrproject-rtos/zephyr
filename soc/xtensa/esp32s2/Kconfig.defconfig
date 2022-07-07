@@ -24,6 +24,10 @@ endif
 config SOC
 	default "esp32s2"
 
+config SOC_TOOLCHAIN_NAME
+	string
+	default "espressif_esp32s2"
+
 config GEN_ISR_TABLES
 	default y
 
@@ -40,9 +44,6 @@ config MP_NUM_CPUS
 	default 1
 
 config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
-	default n
-
-config LOG_DETECT_MISSED_STRDUP
 	default n
 
 endif

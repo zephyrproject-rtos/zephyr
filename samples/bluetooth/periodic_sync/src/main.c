@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/gpio.h>
-#include <bluetooth/bluetooth.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 #define TIMEOUT_SYNC_CREATE K_SECONDS(10)
 #define NAME_LEN            30

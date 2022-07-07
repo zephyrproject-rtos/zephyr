@@ -8,19 +8,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <zephyr/types.h>
-#include <sys/byteorder.h>
-#include <sys/check.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/audio/mcc.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/audio/mcc.h>
 
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/services/ots.h>
 #include "../services/ots/ots_client_internal.h"
 
 /* TODO: Temporarily copied here from media_proxy_internal.h - clean up */
@@ -32,7 +32,7 @@
 		if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) { \
 			char t[BT_OTS_OBJ_ID_STR_LEN]; \
 			(void)bt_ots_obj_id_to_str(id64, t, sizeof(t)); \
-			BT_DBG(text "0x%s", log_strdup(t)); \
+			BT_DBG(text "0x%s", t); \
 		} \
 	} while (0)
 
@@ -40,9 +40,6 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCC)
 #define LOG_MODULE_NAME bt_mcc
 #include "common/log.h"
-
-#define FIRST_HANDLE			0x0001
-#define LAST_HANDLE			0xFFFF
 
 struct mcs_instance_t {
 	uint16_t start_handle;
@@ -202,7 +199,7 @@ static uint8_t mcc_read_player_name_cb(struct bt_conn *conn, uint8_t err,
 
 		(void)memcpy(&name, data, length);
 		name[length] = '\0';
-		BT_DBG("Player name: %s", log_strdup(name));
+		BT_DBG("Player name: %s", name);
 	}
 
 	if (mcc_cb && mcc_cb->read_player_name) {
@@ -261,7 +258,7 @@ static uint8_t mcc_read_icon_url_cb(struct bt_conn *conn, uint8_t err,
 		BT_HEXDUMP_DBG(data, length, "Icon URL");
 		(void)memcpy(&url, data, length);
 		url[length] = '\0';
-		BT_DBG("Icon URL: %s", log_strdup(url));
+		BT_DBG("Icon URL: %s", url);
 	}
 
 	if (mcc_cb && mcc_cb->read_icon_url) {
@@ -291,7 +288,7 @@ static uint8_t mcc_read_track_title_cb(struct bt_conn *conn, uint8_t err,
 		}
 		(void)memcpy(&title, data, length);
 		title[length] = '\0';
-		BT_DBG("Track title: %s", log_strdup(title));
+		BT_DBG("Track title: %s", title);
 	}
 
 	if (mcc_cb && mcc_cb->read_track_title) {
@@ -1494,8 +1491,8 @@ int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe)
 	discover_params.func = discover_primary_func;
 	discover_params.uuid = &uuid.uuid;
 	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
-	discover_params.start_handle = FIRST_HANDLE;
-	discover_params.end_handle = LAST_HANDLE;
+	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
 	BT_DBG("start discovery of GMCS primary service");
 	return bt_gatt_discover(conn, &discover_params);
@@ -2435,7 +2432,7 @@ int on_track_segments_content(struct bt_ots_client *otc_inst,
 		for (int i = 0; i < track_segments.cnt; i++) {
 			BT_DBG("Track segment %i:", i);
 			BT_DBG("\t-Name\t:%s",
-			       log_strdup(track_segments.segs[i].name));
+			       track_segments.segs[i].name);
 			BT_DBG("\t-Position\t:%d", track_segments.segs[i].pos);
 		}
 #endif /* CONFIG_BT_DEBUG_MCC */
@@ -2574,7 +2571,7 @@ int on_parent_group_content(struct bt_ots_client *otc_inst,
 			(void)bt_ots_obj_id_to_str(group.ids[i].id, t,
 						   BT_OTS_OBJ_ID_STR_LEN);
 			BT_DBG("Object type: %d, object  ID: %s",
-			       group.ids[i].type, log_strdup(t));
+			       group.ids[i].type, t);
 		}
 #endif /* CONFIG_BT_DEBUG_MCC */
 
@@ -2620,7 +2617,7 @@ int on_current_group_content(struct bt_ots_client *otc_inst,
 			(void)bt_ots_obj_id_to_str(group.ids[i].id, t,
 						   BT_OTS_OBJ_ID_STR_LEN);
 			BT_DBG("Object type: %d, object  ID: %s",
-			       group.ids[i].type, log_strdup(t));
+			       group.ids[i].type, t);
 		}
 #endif /* CONFIG_BT_DEBUG_MCC */
 

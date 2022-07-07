@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
 #include <sys/types.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <settings/settings.h>
+#include <zephyr/settings/settings.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_SETTINGS)
 #define LOG_MODULE_NAME bt_mesh_settings
@@ -30,6 +30,12 @@
 #include "pb_gatt_srv.h"
 #include "settings.h"
 #include "cfg.h"
+
+#ifdef CONFIG_BT_MESH_RPL_STORE_TIMEOUT
+#define RPL_STORE_TIMEOUT CONFIG_BT_MESH_RPL_STORE_TIMEOUT
+#else
+#define RPL_STORE_TIMEOUT (-1)
+#endif
 
 static struct k_work_delayable pending_store;
 static ATOMIC_DEFINE(pending_flags, BT_MESH_SETTINGS_FLAG_COUNT);
@@ -111,10 +117,10 @@ void bt_mesh_settings_store_schedule(enum bt_mesh_settings_flag flag)
 
 	if (atomic_get(pending_flags) & NO_WAIT_PENDING_BITS) {
 		timeout_ms = 0;
-	} else if (CONFIG_BT_MESH_RPL_STORE_TIMEOUT >= 0 &&
+	} else if (IS_ENABLED(CONFIG_BT_MESH_RPL_STORAGE_MODE_SETTINGS) && RPL_STORE_TIMEOUT >= 0 &&
 		   atomic_test_bit(pending_flags, BT_MESH_SETTINGS_RPL_PENDING) &&
 		   !(atomic_get(pending_flags) & GENERIC_PENDING_BITS)) {
-		timeout_ms = CONFIG_BT_MESH_RPL_STORE_TIMEOUT * MSEC_PER_SEC;
+		timeout_ms = RPL_STORE_TIMEOUT * MSEC_PER_SEC;
 	} else {
 		timeout_ms = CONFIG_BT_MESH_STORE_TIMEOUT * MSEC_PER_SEC;
 	}
@@ -142,8 +148,8 @@ static void store_pending(struct k_work *work)
 {
 	BT_DBG("");
 
-	if (atomic_test_and_clear_bit(pending_flags,
-				      BT_MESH_SETTINGS_RPL_PENDING)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_RPL_STORAGE_MODE_SETTINGS) &&
+	    atomic_test_and_clear_bit(pending_flags, BT_MESH_SETTINGS_RPL_PENDING)) {
 		bt_mesh_rpl_pending_store(BT_MESH_ADDR_ALL_NODES);
 	}
 

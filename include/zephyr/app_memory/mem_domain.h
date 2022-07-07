@@ -10,9 +10,9 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <sys/dlist.h>
-#include <toolchain.h>
-#include <kernel/thread.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/kernel/thread.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -5,9 +5,20 @@
  */
 
 #include <st/h7/stm32h7.dtsi>
+#include <zephyr/dt-bindings/display/stm32_ltdc.h>
 
 / {
 	soc {
+		flash-controller@52002000 {
+			flash0: flash@8000000 {
+				compatible = "st,stm32-nv-flash", "soc-nv-flash";
+				write-block-size = <32>;
+				erase-block-size = <DT_SIZE_K(128)>;
+				/* maximum erase time for a 128K sector */
+				max-erase-time = <4000>;
+			};
+		};
+
 		dmamux1: dmamux@40020800 {
 			dma-requests= <107>;
 		};
@@ -17,7 +28,7 @@
 			reg = <0x50001000 0x200>;
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
-			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x000000008>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>;
 			label = "LTDC";
 			status = "disabled";
 		};

@@ -7,7 +7,7 @@
 #ifndef LWM2M_UTIL_H_
 #define LWM2M_UTIL_H_
 
-#include <net/lwm2m.h>
+#include <zephyr/net/lwm2m.h>
 
 /* convert float to binary format */
 int lwm2m_float_to_b32(double *in, uint8_t *b32, size_t len);

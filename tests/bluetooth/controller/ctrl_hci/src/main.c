@@ -5,16 +5,16 @@
  */
 
 #include <zephyr/types.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 #include <ztest.h>
 #include "kconfig.h"
 
 #define ULL_LLCP_UNITTEST
 
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
-#include <sys/slist.h>
-#include <sys/util.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
 #include "hal/ccm.h"
 
 #include "util/util.h"
@@ -319,8 +319,8 @@ void test_hci_dle(void)
 	ll_length_max_get(&max_tx_octets, &max_tx_time, &max_rx_octets, &max_rx_time);
 	zassert_equal(max_tx_octets, LL_LENGTH_OCTETS_RX_MAX, NULL);
 	zassert_equal(max_rx_octets, LL_LENGTH_OCTETS_RX_MAX, NULL);
-	zassert_equal(max_tx_time, 2120, "Actual time is %d", max_tx_time);
-	zassert_equal(max_rx_time, 2120, "Actual time is %d", max_rx_time);
+	zassert_equal(max_tx_time, 17040, "Actual time is %d", max_tx_time);
+	zassert_equal(max_rx_time, 17040, "Actual time is %d", max_rx_time);
 
 	err = ll_length_default_set(0x00, 0x00);
 	ll_length_default_get(&max_tx_octets, &max_tx_time);

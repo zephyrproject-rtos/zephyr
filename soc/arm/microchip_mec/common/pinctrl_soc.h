@@ -14,10 +14,10 @@
 #ifndef ZEPHYR_SOC_ARM_MICROCHIP_XEC_COMMON_PINCTRL_SOC_H_
 #define ZEPHYR_SOC_ARM_MICROCHIP_XEC_COMMON_PINCTRL_SOC_H_
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/types.h>
 
-#include <dt-bindings/pinctrl/mchp-xec-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/mchp-xec-pinctrl.h>
 
 #ifdef __cplusplus
 extern "C" {

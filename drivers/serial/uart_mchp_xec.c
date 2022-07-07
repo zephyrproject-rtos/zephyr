@@ -16,20 +16,20 @@
 #define DT_DRV_COMPAT microchip_xec_uart
 
 #include <errno.h>
-#include <kernel.h>
-#include <arch/cpu.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
 #include <zephyr/types.h>
 #include <soc.h>
 
-#include <init.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <drivers/clock_control/mchp_xec_clock_control.h>
-#include <drivers/interrupt_controller/intc_mchp_xec_ecia.h>
-#include <drivers/pinctrl.h>
-#include <drivers/uart.h>
-#include <sys/sys_io.h>
-#include <spinlock.h>
+#include <zephyr/init.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
+#include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/spinlock.h>
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_SOC_SERIES_MEC172X),
 	     "XEC UART driver only support MEC172x at this time");

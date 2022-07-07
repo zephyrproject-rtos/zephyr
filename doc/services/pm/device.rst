@@ -73,6 +73,12 @@ in transition between power states:
 * Gate/Un-gate power.
 * Mask/Un-mask interrupts.
 
+.. note::
+
+   When using :ref:`pm-system`, device transitions can be run from the idle thread.
+   As functions in this context cannot block, transitions that intend to use blocking
+   API's **must** check whether they can do so with :c:func:`k_can_yield`.
+
 Device Model with Power Management Support
 ******************************************
 

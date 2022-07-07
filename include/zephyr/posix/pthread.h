@@ -7,13 +7,13 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_PTHREAD_H_
 #define ZEPHYR_INCLUDE_POSIX_PTHREAD_H_
 
-#include <kernel.h>
-#include <wait_q.h>
-#include <posix/time.h>
-#include <posix/unistd.h>
+#include <zephyr/kernel.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/posix/time.h>
+#include <zephyr/posix/unistd.h>
 #include "posix_types.h"
 #include "posix_sched.h"
-#include <posix/pthread_key.h>
+#include <zephyr/posix/pthread_key.h>
 #include <stdlib.h>
 #include <string.h>
 

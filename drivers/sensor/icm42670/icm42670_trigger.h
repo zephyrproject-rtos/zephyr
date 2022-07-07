@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_ICM42670_TRIGGER_H_
 #define ZEPHYR_DRIVERS_SENSOR_ICM42670_TRIGGER_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 /** implement the trigger_set sensor api function */
 int icm42670_trigger_set(const struct device *dev, const struct sensor_trigger *trig,

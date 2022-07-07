@@ -18,6 +18,7 @@
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
+		zephyr,bt-hci-rpmsg-ipc = &ipc0;
 		zephyr,sram = &sram1;
 		zephyr,flash = &flash1;
 		zephyr,code-partition = &slot0_partition;

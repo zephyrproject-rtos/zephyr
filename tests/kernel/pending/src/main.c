@@ -5,10 +5,9 @@
  */
 
 #include <tc_util.h>
-#include <zephyr.h>
 #include <ztest.h>
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <stdbool.h>
 
 #define  NUM_SECONDS(x)      ((x) * 1000)

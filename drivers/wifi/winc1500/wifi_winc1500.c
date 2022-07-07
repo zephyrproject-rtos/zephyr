@@ -7,23 +7,22 @@
 #define LOG_MODULE_NAME wifi_winc1500
 #define LOG_LEVEL CONFIG_WIFI_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <debug/stack.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/debug/stack.h>
+#include <zephyr/device.h>
 #include <string.h>
 #include <errno.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <net/net_l2.h>
-#include <net/net_context.h>
-#include <net/net_offload.h>
-#include <net/wifi_mgmt.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_l2.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_offload.h>
+#include <zephyr/net/wifi_mgmt.h>
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 /* We do not need <socket/include/socket.h>
  * It seems there is a bug in ASF side: if OS is already defining sockaddr
@@ -54,7 +53,7 @@ NMI_API sint16 send(SOCKET sock, void *pvSendBuffer,
 NMI_API sint16 sendto(SOCKET sock, void *pvSendBuffer,
 		      uint16 u16SendLength, uint16 flags,
 		      struct sockaddr *pstrDestAddr, uint8 u8AddrLen);
-NMI_API sint8 close(SOCKET sock);
+NMI_API sint8 winc1500_close(SOCKET sock);
 
 enum socket_errors {
 	SOCK_ERR_NO_ERROR = 0,
@@ -596,7 +595,7 @@ static int winc1500_put(struct net_context *context)
 
 	memset(&(context->remote), 0, sizeof(struct sockaddr_in));
 	context->flags &= ~NET_CONTEXT_REMOTE_ADDR_SET;
-	ret = close(sock);
+	ret = winc1500_close(sock);
 
 	net_pkt_unref(sd->rx_pkt);
 
@@ -899,7 +898,7 @@ static void handle_socket_msg_accept(struct socket_data *sd, void *pvMsg)
 		 * context as well. The new context gives us another socket
 		 * so we have to close that one first.
 		 */
-		close((int)a_sd->context->offload_context);
+		winc1500_close((int)a_sd->context->offload_context);
 
 		a_sd->context->offload_context =
 				(void *)((int)accept_msg->sock);

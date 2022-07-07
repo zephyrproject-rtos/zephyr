@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CALIBRATION_H_
 #define ZEPHYR_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CALIBRATION_H_
 
-#include <sys/onoff.h>
+#include <zephyr/sys/onoff.h>
 
 #ifdef __cplusplus
 extern "C" {

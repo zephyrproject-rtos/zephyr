@@ -5,19 +5,19 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_kscan
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/interrupt_controller/wuc_ite_it8xxx2.h>
-#include <drivers/kscan.h>
-#include <drivers/pinmux.h>
-#include <dt-bindings/interrupt-controller/it8xxx2-wuc.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/interrupt_controller/wuc_ite_it8xxx2.h>
+#include <zephyr/drivers/kscan.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/dt-bindings/interrupt-controller/it8xxx2-wuc.h>
 #include <errno.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <soc_dt.h>
-#include <sys/atomic.h>
+#include <zephyr/sys/atomic.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #define LOG_LEVEL CONFIG_KSCAN_LOG_LEVEL
 LOG_MODULE_REGISTER(kscan_ite_it8xxx2);
 
@@ -48,15 +48,6 @@ struct kscan_wuc_map_cfg {
 	uint8_t mask;
 };
 
-struct kscan_alt_cfg {
-	/* Pinmux control device structure */
-	const struct device *pinctrls;
-	/* GPIO pin */
-	uint8_t pin;
-	/* Alternate function */
-	uint8_t alt_fun;
-};
-
 struct kscan_it8xxx2_config {
 	/* Keyboard scan controller base address */
 	struct kscan_it8xxx2_regs *base;
@@ -64,10 +55,12 @@ struct kscan_it8xxx2_config {
 	int irq;
 	/* KSI[7:0] wake-up input source configuration list */
 	const struct kscan_wuc_map_cfg *wuc_map_list;
-	/* GPIO control device structure */
-	const struct device *gpio_dev;
-	/* Keyboard scan alternate configuration list */
-	const struct kscan_alt_cfg *alt_list;
+	/* Keyboard scan alternate configuration */
+	const struct pinctrl_dev_config *pcfg;
+	/* KSO16 GPIO cells */
+	struct gpio_dt_spec kso16_gpios;
+	/* KSO17 GPIO cells */
+	struct gpio_dt_spec kso17_gpios;
 };
 
 /* Device data */
@@ -440,6 +433,8 @@ static int kscan_it8xxx2_init(const struct device *dev)
 	inst->KBS_KSOCTRL = (IT8XXX2_KBS_KSOOD | IT8XXX2_KBS_KSOPU);
 
 #if (CONFIG_KSCAN_ITE_IT8XXX2_COLUMN_SIZE > 16)
+	int status;
+
 	/*
 	 * For KSO[16] and KSO[17]:
 	 * 1.GPOTRC:
@@ -451,18 +446,14 @@ static int kscan_it8xxx2_init(const struct device *dev)
 	 * NOTE: Set input temporarily for gpio_pin_configure(), after that
 	 *       pinmux_pin_set() set to alternate function immediately.
 	 */
-	gpio_pin_configure(config->gpio_dev,
-			   config->alt_list[KSO16].pin,
-			   (GPIO_OPEN_DRAIN | GPIO_INPUT | GPIO_PULL_UP));
-	gpio_pin_configure(config->gpio_dev,
-			   config->alt_list[KSO17].pin,
-			   (GPIO_OPEN_DRAIN | GPIO_INPUT | GPIO_PULL_UP));
-	pinmux_pin_set(config->alt_list[KSO16].pinctrls,
-		       config->alt_list[KSO16].pin,
-		       config->alt_list[KSO16].alt_fun);
-	pinmux_pin_set(config->alt_list[KSO17].pinctrls,
-		       config->alt_list[KSO17].pin,
-		       config->alt_list[KSO17].alt_fun);
+	gpio_pin_configure_dt(&config->kso16_gpios, GPIO_INPUT);
+	gpio_pin_configure_dt(&config->kso17_gpios, GPIO_INPUT);
+	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (status < 0) {
+		LOG_ERR("Failed to configure kscan pins");
+		return status;
+	}
+
 #endif
 
 	/* Bit[2] = 1: Enable the internal pull-up of KSI[7:0] pins */
@@ -578,15 +569,15 @@ static const struct kscan_driver_api kscan_it8xxx2_driver_api = {
 static const struct kscan_wuc_map_cfg kscan_wuc_0[IT8XXX2_DT_INST_WUCCTRL_LEN(0)] =
 		IT8XXX2_DT_WUC_ITEMS_LIST(0);
 
-static const struct kscan_alt_cfg kscan_alt_0[DT_INST_NUM_PINCTRLS_BY_IDX(0, 0)] =
-		IT8XXX2_DT_ALT_ITEMS_LIST(0);
+PINCTRL_DT_INST_DEFINE(0);
 
 static const struct kscan_it8xxx2_config kscan_it8xxx2_cfg_0 = {
 	.base = (struct kscan_it8xxx2_regs *)DT_INST_REG_ADDR_BY_IDX(0, 0),
 	.irq = DT_INST_IRQN(0),
 	.wuc_map_list = kscan_wuc_0,
-	.gpio_dev = DEVICE_DT_GET(DT_INST_PHANDLE_BY_IDX(0, gpio_dev, 0)),
-	.alt_list = kscan_alt_0,
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+	.kso16_gpios = GPIO_DT_SPEC_INST_GET(0, kso16_gpios),
+	.kso17_gpios = GPIO_DT_SPEC_INST_GET(0, kso17_gpios),
 };
 
 static struct kscan_it8xxx2_data kscan_it8xxx2_kbd_data;

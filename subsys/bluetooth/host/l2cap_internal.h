@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/l2cap.h>
+#include <zephyr/bluetooth/l2cap.h>
 
 enum l2cap_conn_list_action {
 	BT_L2CAP_CHAN_LOOKUP,
@@ -372,9 +372,8 @@ void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf);
 
 struct bt_l2cap_ecred_cb {
 	void (*ecred_conn_rsp)(struct bt_conn *conn, uint16_t result, uint8_t attempted,
-			       uint8_t succeeded);
-	void (*ecred_conn_req)(struct bt_conn *conn, uint16_t result, uint8_t attempted,
-			       uint8_t succeeded);
+			       uint8_t succeeded, uint16_t psm);
+	void (*ecred_conn_req)(struct bt_conn *conn, uint16_t result, uint16_t psm);
 };
 
 /* Register callbacks for Enhanced Credit based Flow Control */

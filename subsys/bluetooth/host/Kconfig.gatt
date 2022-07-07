@@ -24,10 +24,19 @@ config BT_ATT_PREPARE_COUNT
 	  Number of buffers available for ATT prepare write, setting
 	  this to 0 disables GATT long/reliable writes.
 
+config BT_ATT_RETRY_ON_SEC_ERR
+	bool "Automatic security elevation and retry on security errors"
+	default y
+	depends on BT_SMP
+	help
+	  If an ATT request fails due to insufficient security, the host will
+	  try to elevate the security level and retry the ATT request.
+
 config BT_EATT
 	bool "Enhanced ATT Bearers support [EXPERIMENTAL]"
 	depends on BT_L2CAP_ECRED
 	select EXPERIMENTAL
+	select BT_GATT_READ_MULT_VAR_LEN
 	help
 	  This option enables support for Enhanced ATT bearers support. When
 	  enabled additional L2CAP channels can be connected as bearers enabling
@@ -141,6 +150,14 @@ config BT_GATT_READ_MULTIPLE
 	help
 	  This option enables support for the GATT Read Multiple Characteristic
 	  Values procedure.
+
+config BT_GATT_READ_MULT_VAR_LEN
+	bool "GATT Read Multiple Variable Length Characteristic Values support"
+	default y
+	help
+	  This option enables support for the GATT Read Multiple Variable Length
+	  Characteristic Values procedure. Mandatory if EATT is enabled, optional
+	  otherwise (Core spec v5.3, Vol 3, Part G, Section 4.2, Table 4.1).
 
 config BT_GATT_AUTO_DISCOVER_CCC
 	bool "Support to automatic discover the CCC handles of characteristics"

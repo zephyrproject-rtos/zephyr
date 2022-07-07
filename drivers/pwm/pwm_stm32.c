@@ -12,16 +12,16 @@
 #include <soc.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_tim.h>
-#include <drivers/pwm.h>
-#include <drivers/pinctrl.h>
-#include <device.h>
-#include <kernel.h>
-#include <init.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <dt-bindings/pwm/stm32_pwm.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_stm32, CONFIG_PWM_LOG_LEVEL);
 
 /* L0 series MCUs only have 16-bit timers and don't have below macro defined */
@@ -245,21 +245,6 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	if (cfg->countermode == LL_TIM_COUNTERMODE_UP) {
-		/* remove 1 period cycle, accounts for 1 extra low cycle */
-		period_cycles -= 1U;
-	} else if (cfg->countermode == LL_TIM_COUNTERMODE_DOWN) {
-		/* remove 1 pulse cycle, accounts for 1 extra high cycle */
-		pulse_cycles -= 1U;
-		/* remove 1 period cycle, accounts for 1 extra low cycle */
-		period_cycles -= 1U;
-	} else if (is_center_aligned(cfg->countermode)) {
-		pulse_cycles /= 2U;
-		period_cycles /= 2U;
-	} else {
-		return -ENOTSUP;
-	}
-
 	/*
 	 * Non 32-bit timers count from 0 up to the value in the ARR register
 	 * (16-bit). Thus period_cycles cannot be greater than UINT16_MAX + 1.
@@ -298,6 +283,21 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 	if (period_cycles == 0u) {
 		LL_TIM_CC_DisableChannel(cfg->timer, current_ll_channel);
 		return 0;
+	}
+
+	if (cfg->countermode == LL_TIM_COUNTERMODE_UP) {
+		/* remove 1 period cycle, accounts for 1 extra low cycle */
+		period_cycles -= 1U;
+	} else if (cfg->countermode == LL_TIM_COUNTERMODE_DOWN) {
+		/* remove 1 pulse cycle, accounts for 1 extra high cycle */
+		pulse_cycles -= 1U;
+		/* remove 1 period cycle, accounts for 1 extra low cycle */
+		period_cycles -= 1U;
+	} else if (is_center_aligned(cfg->countermode)) {
+		pulse_cycles /= 2U;
+		period_cycles /= 2U;
+	} else {
+		return -ENOTSUP;
 	}
 
 	if (!LL_TIM_CC_IsEnabledChannel(cfg->timer, current_ll_channel)) {

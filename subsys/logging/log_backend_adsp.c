@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log_backend.h>
-#include <logging/log_core.h>
-#include <logging/log_msg.h>
-#include <logging/log_output.h>
-#include <logging/log_backend_std.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_backend_std.h>
 
 /*
  * A lock is needed as log_process() and log_panic() have no internal locks
@@ -53,17 +52,7 @@ static uint32_t format_flags(void)
 		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	}
 
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_ADSP_OUTPUT_SYST)) {
-		flags |= LOG_OUTPUT_FLAG_FORMAT_SYST;
-	}
-
 	return flags;
-}
-
-static inline void put(const struct log_backend *const backend,
-		       struct log_msg *msg)
-{
-	log_backend_std_put(&log_output_adsp, format_flags(), msg);
 }
 
 static void panic(struct log_backend const *const backend)
@@ -81,26 +70,8 @@ static inline void dropped(const struct log_backend *const backend,
 	log_output_dropped_process(&log_output_adsp, cnt);
 }
 
-static inline void put_sync_string(const struct log_backend *const backend,
-				   struct log_msg_ids src_level,
-				   uint32_t timestamp, const char *fmt,
-				   va_list ap)
-{
-	log_output_string(&log_output_adsp, src_level,
-			  timestamp, fmt, ap, format_flags());
-}
-
-static inline void put_sync_hexdump(const struct log_backend *const backend,
-				    struct log_msg_ids src_level,
-				    uint32_t timestamp, const char *metadata,
-				    const uint8_t *data, uint32_t length)
-{
-	log_output_hexdump(&log_output_adsp, src_level, timestamp,
-			   metadata, data, length, format_flags());
-}
-
 static void process(const struct log_backend *const backend,
-		union log_msg2_generic *msg)
+		union log_msg_generic *msg)
 {
 	log_format_func_t log_output_func = log_format_func_t_get(log_format_current);
 
@@ -118,15 +89,10 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 }
 
 const struct log_backend_api log_backend_adsp_api = {
-	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
-	.put_sync_string = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
-		put_sync_string : NULL,
-	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
-		put_sync_hexdump : NULL,
-	.put = IS_ENABLED(CONFIG_LOG1_DEFERRED) ? put : NULL,
+	.process = process,
 	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
 	.panic = panic,
-	.format_set = IS_ENABLED(CONFIG_LOG1) ? NULL : format_set,
+	.format_set = format_set,
 };
 
 LOG_BACKEND_DEFINE(log_backend_adsp, log_backend_adsp_api, true);

@@ -9,8 +9,8 @@
 #include <assert.h>
 #include <string.h>
 
-#include <net/buf.h>
-#include <mgmt/mcumgr/buf.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
@@ -75,7 +75,7 @@ smp_build_err_rsp(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
 	     zcbor_map_end_encode(zsp, 1);
 
 	if (!ok) {
-		return MGMT_ERR_ENOMEM;
+		return MGMT_ERR_EMSGSIZE;
 	}
 
 	smp_make_rsp_hdr(req_hdr, &rsp_hdr,
@@ -135,7 +135,7 @@ smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct mgmt_hdr *req_hdr
 		/* End response payload. */
 		if (!zcbor_map_end_encode(cbuf->cnbe->zs, CONFIG_MGMT_MAX_MAIN_MAP_ENTRIES) &&
 		    rc == 0) {
-			rc = MGMT_ERR_ENOMEM;
+			rc = MGMT_ERR_EMSGSIZE;
 		}
 	} else {
 		rc = MGMT_ERR_ENOTSUP;

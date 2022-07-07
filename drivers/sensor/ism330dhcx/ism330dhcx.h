@@ -11,11 +11,11 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_ISM330DHCX_ISM330DHCX_H_
 #define ZEPHYR_DRIVERS_SENSOR_ISM330DHCX_ISM330DHCX_H_
 
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/types.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
-#include <sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/util.h>
 #include "ism330dhcx_reg.h"
 
 #define ISM330DHCX_EN_BIT					0x01

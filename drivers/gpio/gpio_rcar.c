@@ -8,12 +8,12 @@
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/rcar_clock_control.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
 
 #include "gpio_utils.h"
 

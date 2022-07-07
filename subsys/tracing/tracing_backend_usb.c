@@ -9,11 +9,11 @@
  */
 #define DISABLE_SYSCALL_TRACING
 
-#include <sys/util.h>
-#include <sys/atomic.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <usb/usb_device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/usb/usb_device.h>
 #include <tracing_core.h>
 #include <tracing_buffer.h>
 #include <tracing_backend.h>

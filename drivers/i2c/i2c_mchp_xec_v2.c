@@ -7,17 +7,17 @@
 
 #define DT_DRV_COMPAT microchip_xec_i2c_v2
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <errno.h>
-#include <drivers/clock_control.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <drivers/interrupt_controller/intc_mchp_xec_ecia.h>
-#include <drivers/pinctrl.h>
-#include <sys/printk.h>
-#include <sys/sys_io.h>
-#include <logging/log.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_mchp, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"

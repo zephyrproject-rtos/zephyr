@@ -15,8 +15,8 @@
 #ifndef ZEPHYR_INCLUDE_SYS_DEVICE_MMIO_H
 #define ZEPHYR_INCLUDE_SYS_DEVICE_MMIO_H
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 
 /**
  * @defgroup device-mmio Device memory-mapped IO management
@@ -40,8 +40,8 @@
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
 #include <stddef.h>
-#include <sys/mem_manage.h>
-#include <sys/sys_io.h>
+#include <zephyr/sys/mem_manage.h>
+#include <zephyr/sys/sys_io.h>
 
 #ifdef DEVICE_MMIO_IS_IN_RAM
 /* Store the physical address and size from DTS, we'll memory
@@ -60,6 +60,12 @@ struct z_device_mmio_rom {
 	{ \
 		.phys_addr = DT_REG_ADDR(node_id), \
 		.size = DT_REG_SIZE(node_id) \
+	}
+
+#define Z_DEVICE_MMIO_NAMED_ROM_INITIALIZER(name, node_id) \
+	{ \
+		.phys_addr = DT_REG_ADDR_BY_NAME(node_id, name), \
+		.size = DT_REG_SIZE_BY_NAME(node_id, name) \
 	}
 
 /**
@@ -112,6 +118,12 @@ struct z_device_mmio_rom {
 	{ \
 		.addr = DT_REG_ADDR(node_id) \
 	}
+
+#define Z_DEVICE_MMIO_NAMED_ROM_INITIALIZER(name, node_id) \
+	{ \
+		.addr = DT_REG_ADDR_BY_NAME(node_id, name) \
+	}
+
 #endif /* DEVICE_MMIO_IS_IN_RAM */
 #endif /* !_ASMLANGUAGE */
 /** @} */
@@ -434,6 +446,49 @@ struct z_device_mmio_rom {
  */
 #define DEVICE_MMIO_NAMED_ROM_INIT(name, node_id) \
 	.name = Z_DEVICE_MMIO_ROM_INITIALIZER(node_id)
+
+/**
+ * @def DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(name, node_id)
+ *
+ * @brief Initialize a named DEVICE_MMIO_NAMED_ROM member using a named DT
+ *        reg property.
+ *
+ * Same as @ref DEVICE_MMIO_NAMED_ROM_INIT but the size and address are taken
+ * from a named DT reg property.
+ *
+ * Example for an instance of a driver belonging to the "foo" subsystem
+ * that will have two DT-defined regions named 'chip' and 'dale':
+ *
+ * @code{.dts}
+ *
+ *    foo@E5000000 {
+ *         reg = <0xE5000000 0x1000>, <0xE6000000 0x1000>;
+ *         reg-names = "chip", "dale";
+ *         ...
+ *    };
+ *
+ * @endcode
+ *
+ * @code{.c}
+ *
+ * struct foo_config my_config = {
+ *	bar = 7;
+ *	DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(chip, DT_DRV_INST(...));
+ *	DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(dale, DT_DRV_INST(...));
+ *	baz = 2;
+ *	...
+ * }
+ *
+ * @endcode
+ *
+ * @see DEVICE_MMIO_NAMED_ROM_INIT()
+ *
+ * @param name Member name within config for the MMIO region and name of the
+ *             reg property in the DT
+ * @param node_id DTS node identifier
+ */
+#define DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(name, node_id) \
+	.name = Z_DEVICE_MMIO_NAMED_ROM_INITIALIZER(name, node_id)
 
 /**
  * @def DEVICE_MMIO_NAMED_MAP(dev, name, flags)

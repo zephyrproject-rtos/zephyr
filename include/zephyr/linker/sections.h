@@ -129,6 +129,6 @@
 
 #endif /* _ASMLANGUAGE */
 
-#include <linker/section_tags.h>
+#include <zephyr/linker/section_tags.h>
 
 #endif /* ZEPHYR_INCLUDE_LINKER_SECTIONS_H_ */

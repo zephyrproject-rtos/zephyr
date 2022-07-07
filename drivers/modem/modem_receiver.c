@@ -11,12 +11,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <init.h>
-#include <drivers/uart.h>
-#include <pm/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/pm/device.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(mdm_receiver, CONFIG_MODEM_LOG_LEVEL);
 

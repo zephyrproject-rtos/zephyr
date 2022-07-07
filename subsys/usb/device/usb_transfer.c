@@ -5,9 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <usb/usb_device.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/logging/log.h>
 
 #include "usb_transfer.h"
 #include "usb_work_q.h"

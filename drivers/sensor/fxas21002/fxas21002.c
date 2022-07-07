@@ -7,9 +7,9 @@
 #define DT_DRV_COMPAT nxp_fxas21002
 
 #include "fxas21002.h"
-#include <sys/util.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(FXAS21002, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -36,8 +36,8 @@ static int fxas21002_sample_fetch(const struct device *dev,
 	k_sem_take(&data->sem, K_FOREVER);
 
 	/* Read all the channels in one I2C transaction. */
-	if (i2c_burst_read(data->i2c, config->i2c_address,
-			   FXAS21002_REG_OUTXMSB, buffer, sizeof(buffer))) {
+	if (i2c_burst_read_dt(&config->i2c, FXAS21002_REG_OUTXMSB, buffer,
+			      sizeof(buffer))) {
 		LOG_ERR("Could not fetch sample");
 		ret = -EIO;
 		goto exit;
@@ -137,12 +137,9 @@ static int fxas21002_channel_get(const struct device *dev,
 int fxas21002_get_power(const struct device *dev, enum fxas21002_power *power)
 {
 	const struct fxas21002_config *config = dev->config;
-	struct fxas21002_data *data = dev->data;
 	uint8_t val = *power;
 
-	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
-			      FXAS21002_REG_CTRLREG1,
-			      &val)) {
+	if (i2c_reg_read_byte_dt(&config->i2c, FXAS21002_REG_CTRLREG1, &val)) {
 		LOG_ERR("Could not get power setting");
 		return -EIO;
 	}
@@ -155,12 +152,9 @@ int fxas21002_get_power(const struct device *dev, enum fxas21002_power *power)
 int fxas21002_set_power(const struct device *dev, enum fxas21002_power power)
 {
 	const struct fxas21002_config *config = dev->config;
-	struct fxas21002_data *data = dev->data;
 
-	return i2c_reg_update_byte(data->i2c, config->i2c_address,
-				   FXAS21002_REG_CTRLREG1,
-				   FXAS21002_CTRLREG1_POWER_MASK,
-				   power);
+	return i2c_reg_update_byte_dt(&config->i2c, FXAS21002_REG_CTRLREG1,
+				      FXAS21002_CTRLREG1_POWER_MASK, power);
 }
 
 uint32_t fxas21002_get_transition_time(enum fxas21002_power start,
@@ -196,19 +190,16 @@ static int fxas21002_init(const struct device *dev)
 	uint8_t whoami;
 	uint8_t ctrlreg1;
 
-	/* Get the I2C device */
-	data->i2c = device_get_binding(config->i2c_name);
-	if (data->i2c == NULL) {
-		LOG_ERR("Could not find I2C device");
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("I2C bus device not ready");
+		return -ENODEV;
 	}
 
 	/* Read the WHOAMI register to make sure we are talking to FXAS21002
 	 * and not some other type of device that happens to have the same I2C
 	 * address.
 	 */
-	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
-			      FXAS21002_REG_WHOAMI, &whoami)) {
+	if (i2c_reg_read_byte_dt(&config->i2c, FXAS21002_REG_WHOAMI, &whoami)) {
 		LOG_ERR("Could not get WHOAMI value");
 		return -EIO;
 	}
@@ -224,32 +215,29 @@ static int fxas21002_init(const struct device *dev)
 	 * acknowledgment (ACK) of the written byte to the master. Therefore,
 	 * do not check the return code of the I2C transaction.
 	 */
-	i2c_reg_write_byte(data->i2c, config->i2c_address,
-			   FXAS21002_REG_CTRLREG1, FXAS21002_CTRLREG1_RST_MASK);
+	i2c_reg_write_byte_dt(&config->i2c, FXAS21002_REG_CTRLREG1,
+			      FXAS21002_CTRLREG1_RST_MASK);
 
 	/* Wait for the reset sequence to complete */
 	do {
-		if (i2c_reg_read_byte(data->i2c, config->i2c_address,
-				      FXAS21002_REG_CTRLREG1, &ctrlreg1)) {
+		if (i2c_reg_read_byte_dt(&config->i2c, FXAS21002_REG_CTRLREG1,
+					 &ctrlreg1)) {
 			LOG_ERR("Could not get ctrlreg1 value");
 			return -EIO;
 		}
 	} while (ctrlreg1 & FXAS21002_CTRLREG1_RST_MASK);
 
 	/* Set the full-scale range */
-	if (i2c_reg_update_byte(data->i2c, config->i2c_address,
-				FXAS21002_REG_CTRLREG0,
-				FXAS21002_CTRLREG0_FS_MASK,
-				config->range)) {
+	if (i2c_reg_update_byte_dt(&config->i2c, FXAS21002_REG_CTRLREG0,
+				   FXAS21002_CTRLREG0_FS_MASK, config->range)) {
 		LOG_ERR("Could not set range");
 		return -EIO;
 	}
 
 	/* Set the output data rate */
-	if (i2c_reg_update_byte(data->i2c, config->i2c_address,
-				FXAS21002_REG_CTRLREG1,
-				FXAS21002_CTRLREG1_DR_MASK,
-				config->dr << FXAS21002_CTRLREG1_DR_SHIFT)) {
+	if (i2c_reg_update_byte_dt(&config->i2c, FXAS21002_REG_CTRLREG1,
+				   FXAS21002_CTRLREG1_DR_MASK,
+				   config->dr << FXAS21002_CTRLREG1_DR_SHIFT)) {
 		LOG_ERR("Could not set output data rate");
 		return -EIO;
 	}
@@ -290,20 +278,15 @@ static const struct sensor_driver_api fxas21002_driver_api = {
 };
 
 static const struct fxas21002_config fxas21002_config = {
-	.i2c_name = DT_INST_BUS_LABEL(0),
-	.i2c_address = DT_INST_REG_ADDR(0),
+	.i2c = I2C_DT_SPEC_INST_GET(0),
 	.whoami = CONFIG_FXAS21002_WHOAMI,
 	.range = CONFIG_FXAS21002_RANGE,
 	.dr = CONFIG_FXAS21002_DR,
 #ifdef CONFIG_FXAS21002_TRIGGER
 #ifdef CONFIG_FXAS21002_DRDY_INT1
-	.gpio_name = DT_INST_GPIO_LABEL(0, int1_gpios),
-	.gpio_pin = DT_INST_GPIO_PIN(0, int1_gpios),
-	.gpio_flags = DT_INST_GPIO_FLAGS(0, int1_gpios),
+	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int1_gpios),
 #else
-	.gpio_name = DT_INST_GPIO_LABEL(0, int2_gpios),
-	.gpio_pin = DT_INST_GPIO_PIN(0, int2_gpios),
-	.gpio_flags = DT_INST_GPIO_FLAGS(0, int2_gpios),
+	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int2_gpios),
 #endif
 #endif
 };

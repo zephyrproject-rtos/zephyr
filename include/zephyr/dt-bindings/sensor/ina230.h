@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_INA230_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_INA230_H_
 
-#include <dt-bindings/dt-util.h>
+#include <zephyr/dt-bindings/dt-util.h>
 
 /* Mask/Enable bits that asserts the ALERT pin */
 #define INA230_SHUNT_VOLTAGE_OVER    BIT(15)

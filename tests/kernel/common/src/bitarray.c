@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 
 #include <tc_util.h>
-#include <sys/bitarray.h>
-#include <sys/util.h>
+#include <zephyr/sys/bitarray.h>
+#include <zephyr/sys/util.h>
 
 #ifdef CONFIG_BIG_ENDIAN
 #define BIT_INDEX(bit)  ((3 - ((bit >> 3) & 0x3)) + 4*(bit >> 5))

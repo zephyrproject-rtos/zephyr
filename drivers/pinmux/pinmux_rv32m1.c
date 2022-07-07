@@ -8,8 +8,8 @@
 #define DT_DRV_COMPAT openisa_rv32m1_pinmux
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/pinmux.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pinmux.h>
 
 #include <fsl_common.h>
 #include <fsl_clock.h>

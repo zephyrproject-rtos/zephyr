@@ -20,21 +20,21 @@
  */
 
 #include <zephyr/device.h>
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 
-#include <net/net_core.h>
-#include <net/hostname.h>
-#include <net/net_linkaddr.h>
-#include <net/net_ip.h>
-#include <net/net_l2.h>
-#include <net/net_stats.h>
-#include <net/net_timeout.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/hostname.h>
+#include <zephyr/net/net_linkaddr.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_l2.h>
+#include <zephyr/net/net_stats.h>
+#include <zephyr/net/net_timeout.h>
 
 #if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
-#include <net/dhcpv4.h>
+#include <zephyr/net/dhcpv4.h>
 #endif
 #if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
-#include <net/ipv4_autoconf.h>
+#include <zephyr/net/ipv4_autoconf.h>
 #endif
 
 #ifdef __cplusplus
@@ -901,6 +901,13 @@ static inline struct net_if_config *net_if_config_get(struct net_if *iface)
  * @param router Pointer to existing router
  */
 void net_if_router_rm(struct net_if_router *router);
+
+/**
+ * @brief Set the default network interface.
+ *
+ * @param iface New default interface, or NULL to revert to the one set by Kconfig.
+ */
+void net_if_set_default(struct net_if *iface);
 
 /**
  * @brief Get the default network interface.
@@ -2452,7 +2459,8 @@ struct net_if_api {
 				      api, l2, l2_ctx_type, mtu)	\
 	Z_NET_DEVICE_INIT_INSTANCE(node_id,				\
 				   Z_DEVICE_DT_DEV_NAME(node_id),	\
-				   DT_LABEL(node_id), instance,		\
+				   DT_PROP_OR(node_id, label, ""),	\
+				   instance, init_fn,			\
 				   pm_action_cb, data, cfg, prio, api,	\
 				   l2, l2_ctx_type, mtu)
 
@@ -2529,7 +2537,7 @@ struct net_if_api {
 #define NET_DEVICE_DT_OFFLOAD_DEFINE(node_id, init_fn, pm_action_cb,	\
 				   data, cfg, prio, api, mtu)		\
 	Z_NET_DEVICE_OFFLOAD_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id), \
-				  DT_PROP_OR(node_id, label, NULL),	\
+				  DT_PROP_OR(node_id, label, ""),	\
 				  init_fn, pm_action_cb, data, cfg,	\
 				  prio, api, mtu)
 

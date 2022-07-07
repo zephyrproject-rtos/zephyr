@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <timing/timing.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/timing/timing.h>
 #include "utils.h"
 
 #define TEST_COUNT 100

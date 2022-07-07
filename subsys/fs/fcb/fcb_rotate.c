@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <fs/fcb.h>
+#include <zephyr/fs/fcb.h>
 #include "fcb_priv.h"
 
 int
@@ -35,7 +35,7 @@ fcb_rotate(struct fcb *fcb)
 			goto out;
 		}
 		fcb->f_active.fe_sector = sector;
-		fcb->f_active.fe_elem_off = sizeof(struct fcb_disk_area);
+		fcb->f_active.fe_elem_off = fcb_len_in_flash(fcb, sizeof(struct fcb_disk_area));
 		fcb->f_active_id++;
 	}
 	fcb->f_oldest = fcb_getnext_sector(fcb, fcb->f_oldest);

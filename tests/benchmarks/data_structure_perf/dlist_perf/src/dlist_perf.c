@@ -11,7 +11,7 @@
  */
 
 #include <ztest.h>
-#include <sys/dlist.h>
+#include <zephyr/sys/dlist.h>
 
 #define NODE_SIZE 5
 

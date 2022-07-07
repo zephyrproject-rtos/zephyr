@@ -53,7 +53,7 @@
 	ftm0_default: ftm0_default {
 		group0 {
 			pinmux = <FTM0_CH0_PTC1>,
-				<FTM0_CH1_PTA4>,
+				<FTM0_CH3_PTA6>,
 				<FTM0_CH4_PTD4>,
 				<FTM0_CH5_PTD5>;
 			drive-strength = "low";

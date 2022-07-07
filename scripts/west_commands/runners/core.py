@@ -651,7 +651,7 @@ class ZephyrBinaryRunner(abc.ABC):
             return b''
         return subprocess.check_output(cmd, **kwargs)
 
-    def popen_ignore_int(self, cmd: List[str]) -> subprocess.Popen:
+    def popen_ignore_int(self, cmd: List[str], **kwargs) -> subprocess.Popen:
         '''Spawn a child command, ensuring it ignores SIGINT.
 
         The returned subprocess.Popen object must be manually terminated.'''
@@ -671,7 +671,7 @@ class ZephyrBinaryRunner(abc.ABC):
         if _DRY_RUN:
             return _DebugDummyPopen()  # type: ignore
 
-        return subprocess.Popen(cmd, creationflags=cflags, preexec_fn=preexec)
+        return subprocess.Popen(cmd, creationflags=cflags, preexec_fn=preexec, **kwargs)
 
     def ensure_output(self, output_type: str) -> None:
         '''Ensure self.cfg has a particular output artifact.

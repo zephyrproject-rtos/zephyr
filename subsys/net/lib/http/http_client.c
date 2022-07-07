@@ -10,19 +10,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_http, CONFIG_NET_HTTP_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include <strings.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include <net/net_ip.h>
-#include <net/socket.h>
-#include <net/http_client.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/http_client.h>
 
 #include "net_private.h"
 
@@ -148,7 +148,7 @@ static void print_header_field(size_t len, const char *str)
 
 		snprintk(output, len + 1, "%s", str);
 
-		NET_DBG("[%zd] %s", len, log_strdup(output));
+		NET_DBG("[%zd] %s", len, output);
 	}
 }
 
@@ -181,7 +181,7 @@ static int on_status(struct http_parser *parser, const char *at, size_t length)
 		(uint16_t)parser->status_code;
 
 	NET_DBG("HTTP response status %d %s", parser->status_code,
-		log_strdup(req->internal.response.http_status));
+		req->internal.response.http_status);
 
 	if (req->internal.response.http_cb &&
 	    req->internal.response.http_cb->on_status) {

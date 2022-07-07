@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <drivers/gpio.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/device.h>
 
-#include <display/mb_display.h>
+#include <zephyr/display/mb_display.h>
 
 static struct mb_image smiley = MB_IMAGE({ 0, 1, 0, 1, 0 },
 					 { 0, 1, 0, 1, 0 },

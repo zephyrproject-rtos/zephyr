@@ -7,15 +7,15 @@
 #define DT_DRV_COMPAT nxp_imx_lpspi
 
 #include <errno.h>
-#include <drivers/spi.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/clock_control.h>
 #include <fsl_lpspi.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma.h>
 #endif
 #ifdef CONFIG_PINCTRL
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif /* CONFIG_PINCTRL */
 
 LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);

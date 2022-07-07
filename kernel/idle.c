@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <drivers/timer/system_timer.h>
-#include <wait_q.h>
-#include <pm/pm.h>
+#include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/pm/pm.h>
 #include <stdbool.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include <ksched.h>
 #include <kswap.h>
 

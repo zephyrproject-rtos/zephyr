@@ -15,10 +15,10 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
-#include <sys/ring_buffer.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/sys/ring_buffer.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);
 
 /**

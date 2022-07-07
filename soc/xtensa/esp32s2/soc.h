@@ -18,7 +18,7 @@
 
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <arch/xtensa/arch.h>
+#include <zephyr/arch/xtensa/arch.h>
 #include <stdlib.h>
 
 void __esp_platform_start(void);
@@ -68,7 +68,7 @@ extern uint8_t g_rom_spiflash_dummy_len_plus[];
 extern uint32_t esp_rom_g_ticks_per_us_pro;
 
 /* cache initialization functions */
-void IRAM_ATTR esp_config_instruction_cache_mode(void);
-void IRAM_ATTR esp_config_data_cache_mode(void);
+void esp_config_instruction_cache_mode(void);
+void esp_config_data_cache_mode(void);
 
 #endif /* __SOC_H__ */

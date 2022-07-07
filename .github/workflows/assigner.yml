@@ -1,0 +1,38 @@
+name: Pull Request Assigner
+
+on:
+  pull_request_target:
+    types:
+    - opened
+    - synchronize
+    - reopened
+    - ready_for_review
+    branches:
+    - main
+    - v*-branch
+
+jobs:
+  assignment:
+    name: Pull Request Assignment
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Install Python dependencies
+      run: |
+        sudo pip3 install -U setuptools wheel pip
+        pip3 install -U PyGithub>=1.55
+
+    - name: Check out source code
+      uses: actions/checkout@v2
+
+    - name: Run assignment script
+      env:
+        GITHUB_TOKEN: ${{ secrets.ZB_GITHUB_TOKEN }}
+      run: |
+        python3 scripts/set_assignees.py \
+          -v \
+          -o ${{ github.event.repository.owner.login }} \
+          -r ${{ github.event.repository.name }} \
+          -M MAINTAINERS.yml \
+          -P ${{ github.event.pull_request.number }}

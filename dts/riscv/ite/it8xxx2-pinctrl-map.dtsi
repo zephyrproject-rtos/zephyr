@@ -1,0 +1,175 @@
+/*
+ * Copyright (c) 2022 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/it8xxx2-pinctrl.h>
+
+&pinctrl {
+	/* ADC alternate function */
+	adc0_ch0_gpi0_default: adc0_ch0_gpi0_default {
+		pinmuxs = <&pinctrli 0 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch1_gpi1_default: adc0_ch1_gpi1_default {
+		pinmuxs = <&pinctrli 1 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch2_gpi2_default: adc0_ch2_gpi2_default {
+		pinmuxs = <&pinctrli 2 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch3_gpi3_default: adc0_ch3_gpi3_default {
+		pinmuxs = <&pinctrli 3 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch4_gpi4_default: adc0_ch4_gpi4_default {
+		pinmuxs = <&pinctrli 4 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch5_gpi5_default: adc0_ch5_gpi5_default {
+		pinmuxs = <&pinctrli 5 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch6_gpi6_default: adc0_ch6_gpi6_default {
+		pinmuxs = <&pinctrli 6 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch7_gpi7_default: adc0_ch7_gpi7_default {
+		pinmuxs = <&pinctrli 7 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch13_gpl0_default: adc0_ch13_gpl0_default {
+		pinmuxs = <&pinctrll 0 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch14_gpl1_default: adc0_ch14_gpl1_default {
+		pinmuxs = <&pinctrll 1 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch15_gpl2_default: adc0_ch15_gpl2_default {
+		pinmuxs = <&pinctrll 2 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch16_gpl3_default: adc0_ch16_gpl3_default {
+		pinmuxs = <&pinctrll 3 IT8XXX2_ALT_FUNC_1>;
+	};
+
+	/* I2C alternate function */
+	i2c0_clk_gpb3_default: i2c0_clk_gpb3_default {
+		pinmuxs = <&pinctrlb 3 IT8XXX2_ALT_FUNC_1>;
+	};
+	i2c0_data_gpb4_default: i2c0_data_gpb4_default {
+		pinmuxs = <&pinctrlb 4 IT8XXX2_ALT_FUNC_1>;
+	};
+	i2c1_clk_gpc1_default: i2c1_clk_gpc1_default {
+		pinmuxs = <&pinctrlc 1 IT8XXX2_ALT_FUNC_1>;
+	};
+	i2c1_data_gpc2_default: i2c1_data_gpc2_default {
+		pinmuxs = <&pinctrlc 2 IT8XXX2_ALT_FUNC_1>;
+	};
+	i2c2_clk_gpf6_default: i2c2_clk_gpf6_default {
+		pinmuxs = <&pinctrlf 6 IT8XXX2_ALT_FUNC_1>;
+	};
+	i2c2_data_gpf7_default: i2c2_data_gpf7_default {
+		pinmuxs = <&pinctrlf 7 IT8XXX2_ALT_FUNC_1>;
+	};
+	i2c3_clk_gph1_default: i2c3_clk_gph1_default {
+		pinmuxs = <&pinctrlh 1 IT8XXX2_ALT_FUNC_3>;
+	};
+	i2c3_data_gph2_default: i2c3_data_gph2_default {
+		pinmuxs = <&pinctrlh 2 IT8XXX2_ALT_FUNC_3>;
+	};
+	i2c3_clk_gpf2_default: i2c3_clk_gpf2_default {
+		pinmuxs = <&pinctrlf 2 IT8XXX2_ALT_FUNC_4>;
+	};
+	i2c3_data_gpf3_default: i2c3_data_gpf3_default {
+		pinmuxs = <&pinctrlf 3 IT8XXX2_ALT_FUNC_4>;
+	};
+	i2c4_clk_gpe0_default: i2c4_clk_gpe0_default {
+		pinmuxs = <&pinctrle 0 IT8XXX2_ALT_FUNC_3>;
+	};
+	i2c4_data_gpe7_default: i2c4_data_gpe7_default {
+		pinmuxs = <&pinctrle 7 IT8XXX2_ALT_FUNC_3>;
+	};
+	i2c5_clk_gpa4_default: i2c5_clk_gpa4_default {
+		pinmuxs = <&pinctrla 4 IT8XXX2_ALT_FUNC_3>;
+	};
+	i2c5_data_gpa5_default: i2c5_data_gpa5_default {
+		pinmuxs = <&pinctrla 5 IT8XXX2_ALT_FUNC_3>;
+	};
+
+	/* Keyboard alternate function */
+	kso16_gpc3_default: kso16_gpc3_default {
+		pinmuxs = <&pinctrlc 3 IT8XXX2_ALT_FUNC_1>;
+		bias-pull-up;
+	};
+	kso17_gpc5_default: kso17_gpc5_default {
+		pinmuxs = <&pinctrlc 5 IT8XXX2_ALT_FUNC_1>;
+		bias-pull-up;
+	};
+
+	/* PECI alternate function */
+	peci_gpf6_default: peci_gpf6_default {
+		pinmuxs = <&pinctrlf 6 IT8XXX2_ALT_FUNC_3>;
+	};
+
+	/* PWM alternate function */
+	pwm0_gpa0_default: pwm0_gpa0_default {
+		pinmuxs = <&pinctrla 0 IT8XXX2_ALT_FUNC_1>;
+	};
+	pwm1_gpa1_default: pwm1_gpa1_default {
+		pinmuxs = <&pinctrla 1 IT8XXX2_ALT_FUNC_1>;
+	};
+	pwm2_gpa2_default: pwm2_gpa2_default {
+		pinmuxs = <&pinctrla 2 IT8XXX2_ALT_FUNC_1>;
+	};
+	pwm3_gpa3_default: pwm3_gpa3_default {
+		pinmuxs = <&pinctrla 3 IT8XXX2_ALT_FUNC_1>;
+	};
+	pwm4_gpa4_default: pwm4_gpa4_default {
+		pinmuxs = <&pinctrla 4 IT8XXX2_ALT_FUNC_1>;
+	};
+	pwm5_gpa5_default: pwm5_gpa5_default {
+		pinmuxs = <&pinctrla 5 IT8XXX2_ALT_FUNC_1>;
+	};
+	pwm6_gpa6_default: pwm6_gpa6_default {
+		pinmuxs = <&pinctrla 6 IT8XXX2_ALT_FUNC_1>;
+	};
+	pwm7_gpa7_default: pwm7_gpa7_default {
+		pinmuxs = <&pinctrla 7 IT8XXX2_ALT_FUNC_1>;
+	};
+
+	/* SHI alternate function */
+	shi_mosi_gpm0_default: shi_mosi_gpm0_default {
+		pinmuxs = <&pinctrlm 0 IT8XXX2_ALT_FUNC_1>;
+	};
+	shi_miso_gpm1_default: shi_miso_gpm1_default {
+		pinmuxs = <&pinctrlm 1 IT8XXX2_ALT_FUNC_1>;
+	};
+	shi_clk_gpm4_default: shi_clk_gpm4_default {
+		pinmuxs = <&pinctrlm 4 IT8XXX2_ALT_FUNC_1>;
+	};
+	shi_cs_gpm5_default: shi_cs_gpm5_default {
+		pinmuxs = <&pinctrlm 5 IT8XXX2_ALT_FUNC_1>;
+	};
+
+	/* Tachometer alternate function */
+	tach0a_gpd6_default: tach0a_gpd6_default {
+		pinmuxs = <&pinctrld 6 IT8XXX2_ALT_FUNC_1>;
+	};
+	tach0b_gpj2_default: tach0b_gpj2_default {
+		pinmuxs = <&pinctrlj 2 IT8XXX2_ALT_FUNC_3>;
+	};
+	tach1a_gpd7_default: tach1a_gpd7_default {
+		pinmuxs = <&pinctrld 7 IT8XXX2_ALT_FUNC_1>;
+	};
+	tach1b_gpj3_default: tach1b_gpj3_default {
+		pinmuxs = <&pinctrlj 3 IT8XXX2_ALT_FUNC_3>;
+	};
+
+	/* UART alternate function */
+	uart1_rx_gpb0_default: uart1_rx_gpb0_default {
+		pinmuxs = <&pinctrlb 0 IT8XXX2_ALT_FUNC_3>;
+	};
+	uart1_tx_gpb1_default: uart1_tx_gpb1_default {
+		pinmuxs = <&pinctrlb 1 IT8XXX2_ALT_FUNC_3>;
+	};
+	uart2_rx_gph1_default: uart2_rx_gph1_default {
+		pinmuxs = <&pinctrlh 1 IT8XXX2_ALT_FUNC_4>;
+	};
+	uart2_tx_gph2_default: uart2_tx_gph2_default {
+		pinmuxs = <&pinctrlh 2 IT8XXX2_ALT_FUNC_4>;
+	};
+
+};

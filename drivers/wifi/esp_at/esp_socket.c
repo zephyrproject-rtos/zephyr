@@ -7,7 +7,7 @@
 
 #include "esp.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(wifi_esp_at, CONFIG_WIFI_LOG_LEVEL);
 
 #define RX_NET_PKT_ALLOC_TIMEOUT				\
@@ -198,7 +198,7 @@ void esp_socket_rx(struct esp_socket *sock, struct net_buf *buf,
 void esp_socket_close(struct esp_socket *sock)
 {
 	struct esp_data *dev = esp_socket_to_dev(sock);
-	char cmd_buf[sizeof("AT+CIPCLOSE=0")];
+	char cmd_buf[sizeof("AT+CIPCLOSE=000")];
 	int ret;
 
 	snprintk(cmd_buf, sizeof(cmd_buf), "AT+CIPCLOSE=%d",
