@@ -65,6 +65,16 @@
 			#io-channel-cells = <1>;
 		};
 
+		dma0: dma@40020000 {
+			compatible = "gd,gd32-dma";
+			reg = <0x40020000 0x400>;
+			interrupts = <9 0>, <10 0>, <11 0>, <48 0>;
+			rcu-periph-clock = <0x500>;
+			dma-channels = <7>;
+			#dma-cells = <1>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@48000000 {
 			compatible = "gd,gd32-pinctrl-af";
 			reg = <0x48000000 0x1800>;
