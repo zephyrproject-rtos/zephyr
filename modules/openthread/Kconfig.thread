@@ -39,7 +39,7 @@ config OPENTHREAD_JOINER_PSKD
 	depends on OPENTHREAD_JOINER_AUTOSTART
 	default "J01NME"
 
-choice
+choice OPENTHREAD_DEVICE_TYPE
 	prompt "OpenThread device type"
 	help
 	  This option selects Thread network device type
