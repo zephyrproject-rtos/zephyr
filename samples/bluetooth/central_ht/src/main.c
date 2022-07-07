@@ -107,7 +107,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 		}
 	} else {
 		subscribe_params.notify = notify_func;
-		subscribe_params.value = BT_GATT_CCC_INDICATE;
+		subscribe_params.value = BT_GATT_CCC_NOTIFY;
 		subscribe_params.ccc_handle = attr->handle;
 
 		err = bt_gatt_subscribe(conn, &subscribe_params);

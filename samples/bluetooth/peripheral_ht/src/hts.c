@@ -56,7 +56,7 @@ static void indicate_destroy(struct bt_gatt_indicate_params *params)
 /* Health Thermometer Service Declaration */
 BT_GATT_SERVICE_DEFINE(hts_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_HTS),
-	BT_GATT_CHARACTERISTIC(BT_UUID_HTS_MEASUREMENT, BT_GATT_CHRC_INDICATE,
+	BT_GATT_CHARACTERISTIC(BT_UUID_HTS_MEASUREMENT, BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_NONE, NULL, NULL, NULL),
 	BT_GATT_CCC(htmc_ccc_cfg_changed,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
@@ -86,9 +86,9 @@ void hts_indicate(void)
 		uint8_t exponent;
 		int r;
 
-		if (indicating) {
-			return;
-		}
+		// if (indicating) {
+		// 	return;
+		// }
 
 		if (!temp_dev) {
 			temperature++;
@@ -122,14 +122,15 @@ gatt_indicate:
 		sys_put_le24(mantissa, (uint8_t *)&htm[1]);
 		htm[4] = exponent;
 
-		ind_params.attr = &hts_svc.attrs[2];
-		ind_params.func = indicate_cb;
-		ind_params.destroy = indicate_destroy;
-		ind_params.data = &htm;
-		ind_params.len = sizeof(htm);
+		// ind_params.attr = &hts_svc.attrs[2];
+		// ind_params.func = indicate_cb;
+		// ind_params.destroy = indicate_destroy;
+		// ind_params.data = &htm;
+		// ind_params.len = sizeof(htm);
 
-		if (bt_gatt_indicate(NULL, &ind_params) == 0) {
-			indicating = 1U;
-		}
+		// if (bt_gatt_indicate(NULL, &ind_params) == 0) {
+		// 	indicating = 1U;
+		// }
+		bt_gatt_notify(NULL, &hts_svc.attrs[2], &htm, sizeof(htm));
 	}
 }
