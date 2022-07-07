@@ -13,6 +13,7 @@ menuconfig NET_L2_OPENTHREAD
 	bool "OpenThread L2"
 	depends on NETWORKING
 	select NET_L2_PHY_IEEE802154
+	select OPENTHREAD
 
 	imply FLASH
 	imply FLASH_PAGE_LAYOUT
@@ -55,14 +56,6 @@ config OPENTHREAD_MANUAL_START
 	  credentials stored in persistent storage, obtained during
 	  commissioning or pre-commissioned with other Kconfig options,
 	  depending on configuration used).
-
-menu "OpenThread stack features"
-source "subsys/net/l2/openthread/Kconfig.features"
-endmenu
-
-menu "Thread Network configuration"
-source "subsys/net/l2/openthread/Kconfig.thread"
-endmenu
 
 menu "Logging"
 
