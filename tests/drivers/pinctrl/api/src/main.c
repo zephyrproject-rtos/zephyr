@@ -7,7 +7,12 @@
 #include "test_device.h"
 
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/fff.h>
 #include <zephyr/ztest.h>
+
+DEFINE_FFF_GLOBALS;
+
+FAKE_VALUE_FUNC(int, pinctrl_configure_pins, const pinctrl_soc_pin_t *, uint8_t, uintptr_t);
 
 /* test device 0 */
 #define TEST_DEVICE0 DT_NODELABEL(test_device0)
@@ -104,18 +109,15 @@ ZTEST(pinctrl_api, test_lookup_state)
  */
 ZTEST(pinctrl_api, test_apply_state)
 {
-	int ret;
-
-	ztest_expect_data(pinctrl_configure_pins, pins, pcfg0->states[0].pins);
-	ztest_expect_value(pinctrl_configure_pins, pin_cnt, pcfg0->states[0].pin_cnt);
+	zassert_ok(pinctrl_apply_state(pcfg0, PINCTRL_STATE_DEFAULT), NULL);
+	zassert_equal(1, pinctrl_configure_pins_fake.call_count, NULL);
+	zassert_equal(pcfg0->states[0].pins, pinctrl_configure_pins_fake.arg0_val, NULL);
+	zassert_equal(pcfg0->states[0].pin_cnt, pinctrl_configure_pins_fake.arg1_val, NULL);
 #ifdef CONFIG_PINCTRL_STORE_REG
-	ztest_expect_value(pinctrl_configure_pins, reg, 0);
+	zassert_equal(0, pinctrl_configure_pins_fake.arg2_val, NULL);
 #else
-	ztest_expect_value(pinctrl_configure_pins, reg, PINCTRL_REG_NONE);
+	zassert_equal(PINCTRL_REG_NONE, pinctrl_configure_pins_fake.arg2_val, NULL);
 #endif
-
-	ret = pinctrl_apply_state(pcfg0, PINCTRL_STATE_DEFAULT);
-	zassert_equal(ret, 0, NULL);
 }
 
 /** Test device 0 alternative pins for default state */
@@ -157,4 +159,11 @@ ZTEST(pinctrl_api, test_update_states)
 	zassert_equal(ret, -EINVAL, NULL);
 }
 
-ZTEST_SUITE(pinctrl_api, NULL, NULL, NULL, NULL, NULL);
+static void pinctrl_api_before(void *f)
+{
+	ARG_UNUSED(f);
+	RESET_FAKE(pinctrl_configure_pins);
+	FFF_RESET_HISTORY();
+}
+
+ZTEST_SUITE(pinctrl_api, NULL, NULL, pinctrl_api_before, NULL, NULL);
