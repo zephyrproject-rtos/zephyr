@@ -106,11 +106,10 @@ static struct x_y ball_vel = { 0, 0 };
 static int64_t a_timestamp;
 static int64_t b_timestamp;
 
-#define SOUND_PWM_CHANNEL    0
-#define SOUND_PERIOD_PADDLE  200
-#define SOUND_PERIOD_WALL    1000
+#define SOUND_PERIOD_PADDLE  PWM_USEC(200)
+#define SOUND_PERIOD_WALL    PWM_USEC(1000)
 
-static const struct device *pwm = DEVICE_DT_GET(DT_INST(0, nordic_nrf_sw_pwm));
+static const struct pwm_dt_spec pwm = PWM_DT_SPEC_GET(DT_PATH(zephyr_user));
 
 static enum sound_state {
 	SOUND_IDLE,    /* No sound */
@@ -124,9 +123,9 @@ static const struct gpio_dt_spec sw1_gpio = GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpio
 /* ensure SW0 & SW1 are on same gpio controller */
 BUILD_ASSERT(DT_SAME_NODE(DT_GPIO_CTLR(DT_ALIAS(sw0), gpios), DT_GPIO_CTLR(DT_ALIAS(sw1), gpios)));
 
-static inline void beep(int period)
+static inline void beep(uint32_t period)
 {
-	pwm_set(pwm, SOUND_PWM_CHANNEL, PWM_USEC(period), PWM_USEC(period) / 2, 0);
+	pwm_set_dt(&pwm, period, period / 2);
 }
 
 static void sound_set(enum sound_state state)
@@ -522,8 +521,8 @@ void main(void)
 
 	k_work_init_delayable(&refresh, game_refresh);
 
-	if (!device_is_ready(pwm)) {
-		printk("%s: device not ready.\n", pwm->name);
+	if (!device_is_ready(pwm.dev)) {
+		printk("%s: device not ready.\n", pwm.dev->name);
 		return;
 	}
 
