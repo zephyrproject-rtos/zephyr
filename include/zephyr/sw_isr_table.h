@@ -25,6 +25,9 @@ extern "C" {
 /* Default vector for the IRQ vector table */
 extern void _isr_wrapper(void);
 
+/* Spurious interrupt handler. Throws an error if called */
+extern void z_irq_spurious(const void *unused);
+
 /*
  * Note the order: arg first, then ISR. This allows a table entry to be
  * loaded arg -> r0, isr -> r3 in _isr_wrapper with one ldmia instruction,
