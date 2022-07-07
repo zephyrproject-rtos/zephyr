@@ -34,6 +34,22 @@ static uint32_t get_pll_source(void)
 }
 
 /**
+ * @brief get the pll source frequency
+ */
+__unused
+uint32_t get_pllsrc_frequency(void)
+{
+	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+		return STM32_HSI_FREQ;
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
+		return STM32_HSE_FREQ;
+	}
+
+	__ASSERT(0, "Invalid source");
+	return 0;
+}
+
+/**
  * @brief Set up pll configuration
  */
 __unused
