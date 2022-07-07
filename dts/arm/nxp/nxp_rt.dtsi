@@ -819,7 +819,6 @@
 			status = "disabled";
 			interrupts = <110 0>;
 			clocks = <&ccm IMX_CCM_USDHC1_CLK 0 0>;
-			label = "SDHC_0";
 			max-current-330 = <1020>;
 			max-current-180 = <1020>;
 			max-bus-freq = <208000000>;
@@ -832,7 +831,6 @@
 			status = "disabled";
 			interrupts = <111 0>;
 			clocks = <&ccm IMX_CCM_USDHC2_CLK 0 0>;
-			label = "SDHC_1";
 			max-current-330 = <120>;
 			max-current-180 = <45>;
 			max-bus-freq = <198000000>;
