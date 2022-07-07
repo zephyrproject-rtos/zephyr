@@ -14,7 +14,7 @@
 #define SECTOR_COUNT 32
 #define SECTOR_SIZE 512 /* subsystem should set all cards to 512 byte blocks */
 #define BUF_SIZE SECTOR_SIZE * SECTOR_COUNT
-const struct device *sdhc_dev;
+static const struct device *sdhc_dev = DEVICE_DT_GET(DT_ALIAS(sdhc0));
 static struct sd_card card;
 static uint8_t buf[BUF_SIZE] __aligned(CONFIG_SDHC_BUFFER_ALIGNMENT);
 static uint8_t check_buf[BUF_SIZE] __aligned(CONFIG_SDHC_BUFFER_ALIGNMENT);
@@ -29,8 +29,7 @@ ZTEST(sd_stack, test_init)
 {
 	int ret;
 
-	sdhc_dev = device_get_binding(CONFIG_SDHC_LABEL);
-	zassert_not_null(sdhc_dev, "Could not get SD host controller dev");
+	zassert_true(device_is_ready(sdhc_dev), "SDHC device is not ready");
 
 	ret = sd_is_card_present(sdhc_dev);
 	zassert_equal(ret, 1, "SD card not present in slot");
