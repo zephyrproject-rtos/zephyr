@@ -776,19 +776,36 @@ static size_t tcp_check_pending_data(struct tcp *conn, struct net_pkt *pkt,
 
 	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT &&
 	    !net_pkt_is_empty(conn->queue_recv_data)) {
+		/* Some potentential cases:
+		 * Note: MI = MAX_INT
+		 * Packet | Queued| End off   | Gap size | Required handling
+		 * Seq|Len|Seq|Len|           |          |
+		 *  3 | 3 | 6 | 4 | 3+3-6=  0 | 6-3-3=0  | Append
+		 *  3 | 4 | 6 | 4 | 3+4-6 = 1 | 6-3-4=-1 | Append, pull from queue
+		 *  3 | 7 | 6 | 4 | 3+7-6 = 4 | 6-3-7=-4 | Drop queued data
+		 *  3 | 8 | 6 | 4 | 3+8-6 = 5 | 6-3-8=-5 | Drop queued data
+		 *  6 | 5 | 6 | 4 | 6+5-6 = 5 | 6-6-5=-5 | Drop queued data
+		 *  6 | 4 | 6 | 4 | 6+4-6 = 4 | 6-6-4=-4 | Drop queued data / packet
+		 * 10 | 2 | 6 | 4 | 10+2-6= 6 | 6-10-2=-6| Should not happen, dropping queue
+		 *  7 | 4 | 6 | 4 | 7+4-6 = 5 | 6-7-4=-5 | Should not happen, dropping queue
+		 * 11 | 2 | 6 | 4 | 11+2-6= 7 | 6-11-2=-7| Should not happen, dropping queue
+		 *  2 | 3 | 6 | 4 | 2+3-6= MI | 6-2-3=1  | Keep queued data
+		 */
 		struct tcphdr *th = th_get(pkt);
 		uint32_t expected_seq = th_seq(th) + len;
 		uint32_t pending_seq;
-		uint32_t offset;
+		int32_t gap_size;
+		uint32_t end_offset;
 
 		pending_seq = tcp_get_seq(conn->queue_recv_data->buffer);
-		offset = expected_seq - pending_seq;
+		end_offset = expected_seq - pending_seq;
+		gap_size = (int32_t)(pending_seq - th_seq(th) - ((uint32_t)len));
 		pending_len = net_pkt_get_len(conn->queue_recv_data);
-		if (offset < pending_len) {
-			if (offset) {
-				net_buf_pull_mem(conn->queue_recv_data->buffer, offset);
+		if (end_offset < pending_len) {
+			if (end_offset) {
+				net_pkt_remove_tail(pkt, end_offset);
+				pending_len -= end_offset;
 			}
-			pending_len -= offset;
 
 			NET_DBG("Found pending data seq %u len %zd",
 				expected_seq, pending_len);
@@ -798,6 +815,16 @@ static size_t tcp_check_pending_data(struct tcp *conn, struct net_pkt *pkt,
 			conn->queue_recv_data->buffer = NULL;
 
 			k_work_cancel_delayable(&conn->recv_queue_timer);
+		} else {
+			/* Check if the queued data is just a section of the incoming data */
+			if (gap_size <= 0) {
+				net_buf_unref(conn->queue_recv_data->buffer);
+				conn->queue_recv_data->buffer = NULL;
+
+				k_work_cancel_delayable(&conn->recv_queue_timer);
+			}
+
+			pending_len = 0;
 		}
 	}
 
@@ -1826,19 +1853,40 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 	if (!net_pkt_is_empty(conn->queue_recv_data)) {
 		/* Place the data to correct place in the list. If the data
 		 * would not be sequential, then drop this packet.
+		 *
+		 * Only work with subtractions between sequence numbers in uint32_t format
+		 * to proper handle cases that are around the wrapping point.
 		 */
+
+		/* Some potentential cases:
+		 * Note: MI = MAX_INT
+		 * Packet | Queued| End off1  | Start off| End off2    | Required handling
+		 * Seq|Len|Seq|Len|           |          |             |
+		 *  3 | 3 | 6 | 4 | 3+3-6=  0 | NA       | NA          | Prepend
+		 *  3 | 4 | 6 | 4 | 3+4-6 = 1 | NA       | NA          | Prepend, pull from buffer
+		 *  3 | 7 | 6 | 4 | 3+7-6 = 4 | 6-3=3    | 6+4-3=7     | Drop queued data
+		 *  3 | 8 | 6 | 4 | 3+8-6 = 5 | 6-3=3    | 6+4-3=7     | Drop queued data
+		 *  6 | 5 | 6 | 4 | 6+5-6 = 5 | 6-6=0    | 6+4-6=4     | Drop queued data
+		 *  6 | 4 | 6 | 4 | 6+4-6 = 4 | 6-6=0    | 6+4-6=4     | Drop queued data / packet
+		 * 10 | 2 | 6 | 4 | 10+2-6= 6 | 6-10=MI-3| 6+4-10=0    | Append
+		 *  7 | 4 | 6 | 4 | 7+4-6 = 5 | 6-7 =MI  | 6+4-7 =3    | Append, pull from packet
+		 * 11 | 2 | 6 | 4 | 11+2-6= 7 | 6-11=MI-6| 6+4-11=MI-1 | Drop incoming packet
+		 *  2 | 3 | 6 | 4 | 2+3-6= MI | 6-2=4    | 6+4-2=8     | Drop incoming packet
+		 */
+
 		uint32_t pending_seq;
-		uint32_t offset;
+		uint32_t start_offset;
+		uint32_t end_offset;
 		size_t pending_len;
 
 		pending_seq = tcp_get_seq(conn->queue_recv_data->buffer);
-		offset = seq - pending_seq;
+		end_offset = seq - pending_seq;
 		pending_len = net_pkt_get_len(conn->queue_recv_data);
-		if (offset < pending_len) {
-			if (offset) {
-				net_buf_pull_mem(conn->queue_recv_data->buffer, offset);
+		if (end_offset < pending_len) {
+			if (end_offset) {
+				net_pkt_remove_tail(pkt, end_offset);
 			}
-			pending_len -= offset;
+
 			/* Put new data before the pending data */
 			net_buf_frag_add(pkt->buffer,
 					 conn->queue_recv_data->buffer);
@@ -1849,17 +1897,30 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 
 			last = net_buf_frag_last(conn->queue_recv_data->buffer);
 			pending_seq = tcp_get_seq(last);
+
+			start_offset = pending_seq - seq_start;
 			/* Compute the offset w.r.t. the start point of the new packet */
-			offset = (pending_seq + last->len) - seq_start;
+			end_offset = (pending_seq + last->len) - seq_start;
 
-			if (offset < len) {
-				if (offset) {
-					net_buf_pull_mem(pkt->buffer, offset);
-				}
-
-				/* Put new data after pending data */
-				last->frags = pkt->buffer;
+			/* Check if queue start with within the within the new packet */
+			if ((start_offset < len) && (end_offset <= len)) {
+				/* The queued data is irrelevant since the new packet overlaps the
+				 * new packet, take the new packet as contents
+				 */
+				net_buf_unref(conn->queue_recv_data->buffer);
+				conn->queue_recv_data->buffer = pkt->buffer;
 				inserted = true;
+			} else {
+				if (end_offset < len) {
+					if (end_offset) {
+						net_pkt_remove_tail(conn->queue_recv_data,
+								    end_offset);
+					}
+
+					/* Put new data after pending data */
+					last->frags = pkt->buffer;
+					inserted = true;
+				}
 			}
 		}
 
@@ -2203,11 +2264,7 @@ next_state:
 
 				conn->unacked_len = 0;
 
-				ret = tcp_send_data(conn);
-				if (ret < 0) {
-					/* Retry at the next duplicate ack */
-					conn->dup_ack_cnt--;
-				}
+				(void)tcp_send_data(conn);
 
 				/* Restore the current transmission */
 				conn->unacked_len = temp_unacked_len;
