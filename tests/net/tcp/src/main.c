@@ -1374,11 +1374,22 @@ struct out_of_order_check_struct {
 static struct out_of_order_check_struct out_of_order_check_list[] = {
 	{ 30, 10, 0, 0}, /* First packet will be out-of-order */
 	{ 20, 12, 0, 0},
-	{ 10, 10, 0, 0},
-	{ 0,  10, 40, 0}, /* First sequence complete */
-	{ 60, 12, 40, 0},
-	{ 70, 10, 40, 0},
-	{ 40, 25, 80, 0}, /* Some bigger data */
+	{ 10,  9, 0, 0}, /* Section with a gap */
+	{ 0,  10, 10, 0},
+	{ 10, 10, 40, 0}, /* First sequence complete */
+	{ 50,  6, 40, 0},
+	{ 55,  5, 40, 0},
+	{ 40, 10, 60, 0}, /* Some bigger data */
+	{ 61,  2, 60, 0},
+	{ 60,  5, 65, 0}, /* Over lapped incoming packet */
+	{ 66,  4, 65, 0},
+	{ 65,  5, 70, 0}, /* Over lapped incoming packet, at boundary */
+	{ 72,  2, 70, 0},
+	{ 71,  4, 70, 0},
+	{ 70,  1, 75, 0}, /* Over lapped in out of order processing */
+	{ 78,  2, 75, 0},
+	{ 77,  3, 75, 0},
+	{ 75,  2, 80, 0}, /* Over lapped in out of order processing, at boundary */
 };
 
 static void checklist_based_out_of_order_test(struct out_of_order_check_struct *check_list,
