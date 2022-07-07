@@ -13,7 +13,7 @@ config SOC_SERIES_GD32VF103
 	select XIP
 	select GD32_HAS_AFIO_PINMUX
 	select HAS_GD32_HAL
-	select HAS_NUCLEI_ECLIC
+	select RISCV_HAS_CLIC
 
 	help
 	  Enable support for GigaDevice GD32VF1 series SoC
