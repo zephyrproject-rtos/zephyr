@@ -55,6 +55,8 @@ source "drivers/spi/Kconfig.b91"
 
 source "drivers/spi/Kconfig.stm32"
 
+source "drivers/spi/Kconfig.stm32_ospi"
+
 source "drivers/spi/Kconfig.dw"
 
 source "drivers/spi/Kconfig.mcux_dspi"

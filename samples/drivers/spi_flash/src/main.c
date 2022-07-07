@@ -15,6 +15,9 @@
 	DT_NODE_HAS_STATUS(DT_INST(0, jedec_spi_nor), okay)
 #define SPI_FLASH_DEVICE DT_LABEL(DT_INST(0, jedec_spi_nor))
 #define SPI_FLASH_NAME "JEDEC SPI-NOR"
+#elif DT_NODE_HAS_STATUS(DT_INST(0, jedec_ospi_nor), okay)
+#define SPI_FLASH_DEVICE DT_LABEL(DT_INST(0, jedec_ospi_nor))
+#define SPI_FLASH_NAME "JEDEC OSPI-NOR"
 #elif (CONFIG_NORDIC_QSPI_NOR - 0) || \
 	DT_NODE_HAS_STATUS(DT_INST(0, nordic_qspi_nor), okay)
 #define SPI_FLASH_DEVICE DT_LABEL(DT_INST(0, nordic_qspi_nor))

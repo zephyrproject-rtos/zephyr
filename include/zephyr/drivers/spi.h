@@ -115,6 +115,8 @@ extern "C" {
  * the solution.
  */
 #define SPI_CS_ACTIVE_HIGH	BIT(14)
+
+#define SPI_DTR_ENABLE		BIT(18)
 /** @} */
 
 /**
