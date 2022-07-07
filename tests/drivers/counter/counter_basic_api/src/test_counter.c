@@ -106,6 +106,17 @@ typedef void (*counter_test_func_t)(const char *dev_name);
 
 typedef bool (*counter_capability_func_t)(const char *dev_name);
 
+static inline uint32_t get_counter_period_us(const char *dev_name)
+{
+	if (strcmp(dev_name, "RTC_0") == 0) {
+		return COUNTER_PERIOD_US_VAL;
+	}
+
+	/* if more counter drivers exist other than RTC,
+	 * the test value set to 20000 by default
+	 */
+	return 20000;
+}
 
 static void counter_setup_instance(const char *dev_name)
 {
@@ -214,13 +225,7 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 	top_cnt = 0;
 
 	dev = device_get_binding(dev_name);
-	if (strcmp(dev_name, "RTC_0") == 0) {
-		counter_period_us = COUNTER_PERIOD_US_VAL;
-	} else {
-		/* if more counter drivers exist other than RTC,
-		   the test value set to 20000 by default */
-		counter_period_us = 20000;
-	}
+	counter_period_us = get_counter_period_us(dev_name);
 	top_cfg.ticks = counter_us_to_ticks(dev, counter_period_us);
 	err = counter_start(dev);
 	zassert_equal(0, err, "%s: Counter failed to start", dev_name);
@@ -270,13 +275,7 @@ void test_set_top_value_without_alarm_instance(const char *dev_name)
 		.flags = 0
 	};
 
-	if (strcmp(dev_name, "RTC_0") == 0) {
-		counter_period_us = COUNTER_PERIOD_US_VAL;
-	} else {
-		/* if more counter drivers exist other than RTC,
-		   the test value set to 20000 by default */
-		counter_period_us = 20000;
-	}
+	counter_period_us = get_counter_period_us(dev_name);
 	dev = device_get_binding(dev_name);
 	top_cfg.ticks = counter_us_to_ticks(dev, counter_period_us);
 	err = counter_start(dev);
@@ -369,13 +368,7 @@ void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 		.flags = 0
 	};
 
-	if (strcmp(dev_name, "RTC_0") == 0) {
-		counter_period_us = COUNTER_PERIOD_US_VAL;
-	} else {
-		/* if more counter drivers exist other than RTC,
-		   the test value set to 20000 by default */
-		counter_period_us = 20000;
-	}
+	counter_period_us = get_counter_period_us(dev_name);
 	dev = device_get_binding(dev_name);
 	ticks = counter_us_to_ticks(dev, counter_period_us);
 	top_cfg.ticks = ticks;
@@ -516,13 +509,7 @@ void test_multiple_alarms_instance(const char *dev_name)
 		.flags = 0
 	};
 
-	if (strcmp(dev_name, "RTC_0") == 0) {
-		counter_period_us = COUNTER_PERIOD_US_VAL;
-	} else {
-		/* if more counter drivers exist other than RTC,
-		   the test value set to 20000 by default */
-		counter_period_us = 20000;
-	}
+	counter_period_us = get_counter_period_us(dev_name);
 	dev = device_get_binding(dev_name);
 	ticks = counter_us_to_ticks(dev, counter_period_us);
 
@@ -618,11 +605,7 @@ void test_all_channels_instance(const char *dev_name)
 	uint32_t cnt;
 	uint32_t counter_period_us;
 
-	if (strcmp(dev_name, "RTC_0") == 0) {
-		counter_period_us = COUNTER_PERIOD_US_VAL;
-	} else {
-		counter_period_us = 20000;
-	}
+	counter_period_us = get_counter_period_us(dev_name);
 	dev = device_get_binding(dev_name);
 	ticks = counter_us_to_ticks(dev, counter_period_us);
 
