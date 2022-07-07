@@ -206,7 +206,7 @@ static void test_thread_put_timeout(void *p1, void *p2, void *p3)
  * @brief Test last in, first out queue using LIFO
  * @see k_sem_init(), k_lifo_put(), k_lifo_get()
  */
-static void test_lifo_nowait(void)
+ZTEST(lifo_usage, test_lifo_nowait)
 {
 	k_lifo_init(&lifo);
 
@@ -230,7 +230,7 @@ static void test_lifo_nowait(void)
  * @brief Test pending reader in LIFO
  * @see k_lifo_init(), k_lifo_get(), k_lifo_put()
  */
-static void test_lifo_wait(void)
+ZTEST(lifo_usage_1cpu, test_lifo_wait)
 {
 	int *ret;
 
@@ -258,7 +258,7 @@ static void test_lifo_wait(void)
  * @brief Test reading empty LIFO
  * @see k_lifo_get()
  */
-static void test_timeout_empty_lifo(void)
+ZTEST(lifo_usage_1cpu, test_timeout_empty_lifo)
 {
 	void *packet;
 
@@ -283,7 +283,7 @@ static void test_timeout_empty_lifo(void)
  * @brief Test read and write operation in LIFO with timeout
  * @see k_lifo_put(), k_lifo_get()
  */
-static void test_timeout_non_empty_lifo(void)
+ZTEST(lifo_usage, test_timeout_non_empty_lifo)
 {
 	void *packet, *scratch_packet;
 
@@ -305,7 +305,7 @@ static void test_timeout_non_empty_lifo(void)
  * @brief Test LIFO with timeout
  * @see k_lifo_put(), k_lifo_get()
  */
-static void test_timeout_lifo_thread(void)
+ZTEST(lifo_usage_1cpu, test_timeout_lifo_thread)
 {
 	void *packet, *scratch_packet;
 	static volatile struct reply_packet reply_packet;
@@ -409,7 +409,7 @@ void test_thread_pend_and_timeout(void *p1, void *p2, void *p3)
  * with different timeouts
  * @see k_lifo_get()
  */
-static void test_timeout_threads_pend_on_lifo(void)
+ZTEST(lifo_usage_1cpu, test_timeout_threads_pend_on_lifo)
 {
 	int32_t rv, test_data_size;
 
@@ -457,16 +457,15 @@ static void test_para_init(void)
  */
 
 /** test case main entry */
-void test_main(void)
+void *lifo_usage_setup(void)
 {
 	test_para_init();
 
-	ztest_test_suite(test_lifo_usage,
-			 ztest_unit_test(test_lifo_nowait),
-			 ztest_1cpu_unit_test(test_lifo_wait),
-			 ztest_1cpu_unit_test(test_timeout_empty_lifo),
-			 ztest_unit_test(test_timeout_non_empty_lifo),
-			 ztest_1cpu_unit_test(test_timeout_lifo_thread),
-			 ztest_1cpu_unit_test(test_timeout_threads_pend_on_lifo));
-	ztest_run_test_suite(test_lifo_usage);
+	return NULL;
 }
+
+
+ZTEST_SUITE(lifo_usage_1cpu, NULL, lifo_usage_setup,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
+
+ZTEST_SUITE(lifo_usage, NULL, lifo_usage_setup, NULL, NULL, NULL);
