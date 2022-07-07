@@ -24,8 +24,6 @@
 #define AK8975_MICRO_GAUSS_PER_BIT	3000
 
 struct ak8975_data {
-	const struct device *i2c;
-
 	int16_t x_sample;
 	int16_t y_sample;
 	int16_t z_sample;
@@ -33,6 +31,10 @@ struct ak8975_data {
 	uint8_t x_adj;
 	uint8_t y_adj;
 	uint8_t z_adj;
+};
+
+struct ak8975_config {
+	struct i2c_dt_spec i2c;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_AK8975_AK8975_H_ */

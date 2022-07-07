@@ -23,22 +23,19 @@ static int ak8975_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
 	struct ak8975_data *drv_data = dev->data;
+	const struct ak8975_config *drv_config = dev->config;
 	uint8_t buf[6];
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	if (i2c_reg_write_byte(drv_data->i2c,
-			       DT_INST_REG_ADDR(0),
-			       AK8975_REG_CNTL, AK8975_MODE_MEASURE) < 0) {
+	if (i2c_reg_write_byte_dt(&drv_config->i2c, AK8975_REG_CNTL, AK8975_MODE_MEASURE) < 0) {
 		LOG_ERR("Failed to start measurement.");
 		return -EIO;
 	}
 
 	k_busy_wait(AK8975_MEASURE_TIME_US);
 
-	if (i2c_burst_read(drv_data->i2c,
-			   DT_INST_REG_ADDR(0),
-			   AK8975_REG_DATA_START, buf, 6) < 0) {
+	if (i2c_burst_read_dt(&drv_config->i2c, AK8975_REG_DATA_START, buf, 6) < 0) {
 		LOG_ERR("Failed to read sample data.");
 		return -EIO;
 	}
@@ -92,20 +89,18 @@ static const struct sensor_driver_api ak8975_driver_api = {
 	.channel_get = ak8975_channel_get,
 };
 
-static int ak8975_read_adjustment_data(struct ak8975_data *drv_data)
+static int ak8975_read_adjustment_data(const struct device *dev)
 {
+	struct ak8975_data *drv_data = dev->data;
+	const struct ak8975_config *drv_config = dev->config;
 	uint8_t buf[3];
 
-	if (i2c_reg_write_byte(drv_data->i2c,
-			       DT_INST_REG_ADDR(0),
-			       AK8975_REG_CNTL, AK8975_MODE_FUSE_ACCESS) < 0) {
+	if (i2c_reg_write_byte_dt(&drv_config->i2c, AK8975_REG_CNTL, AK8975_MODE_FUSE_ACCESS) < 0) {
 		LOG_ERR("Failed to set chip in fuse access mode.");
 		return -EIO;
 	}
 
-	if (i2c_burst_read(drv_data->i2c,
-			   DT_INST_REG_ADDR(0),
-			   AK8975_REG_ADJ_DATA_START, buf, 3) < 0) {
+	if (i2c_burst_read_dt(&drv_config->i2c, AK8975_REG_ADJ_DATA_START, buf, 3) < 0) {
 		LOG_ERR("Failed to read adjustment data.");
 		return -EIO;
 	}
@@ -119,21 +114,16 @@ static int ak8975_read_adjustment_data(struct ak8975_data *drv_data)
 
 int ak8975_init(const struct device *dev)
 {
-	struct ak8975_data *drv_data = dev->data;
+	const struct ak8975_config *drv_config = dev->config;
 	uint8_t id;
 
-	drv_data->i2c =
-		device_get_binding(DT_INST_BUS_LABEL(0));
-	if (drv_data->i2c == NULL) {
-		LOG_ERR("Failed to get pointer to %s device!",
-			    DT_INST_BUS_LABEL(0));
-		return -EINVAL;
+	if (!device_is_ready(drv_config->i2c.bus)) {
+		LOG_ERR("I2C bus device not ready");
+		return -ENODEV;
 	}
 
 	/* check chip ID */
-	if (i2c_reg_read_byte(drv_data->i2c,
-			      DT_INST_REG_ADDR(0),
-			      AK8975_REG_CHIP_ID, &id) < 0) {
+	if (i2c_reg_read_byte_dt(&drv_config->i2c, AK8975_REG_CHIP_ID, &id) < 0) {
 		LOG_ERR("Failed to read chip ID.");
 		return -EIO;
 	}
@@ -143,16 +133,20 @@ int ak8975_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (ak8975_read_adjustment_data(drv_data) < 0) {
+	if (ak8975_read_adjustment_data(dev) < 0) {
 		return -EIO;
 	}
 
 	return 0;
 }
 
-struct ak8975_data ak8975_data;
+static struct ak8975_data ak8975_inst_data;
+
+static const struct ak8975_config ak8975_inst_config = {
+	.i2c = I2C_DT_SPEC_INST_GET(0),
+};
 
 DEVICE_DT_INST_DEFINE(0, ak8975_init, NULL,
-		    &ak8975_data,
-		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &ak8975_driver_api);
+		      &ak8975_inst_data, &ak8975_inst_config,
+		      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		      &ak8975_driver_api);
