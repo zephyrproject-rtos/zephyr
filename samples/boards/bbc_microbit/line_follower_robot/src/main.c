@@ -21,21 +21,21 @@ static struct gpio_callback left_cb;
 static struct gpio_callback right_cb;
 
 const struct device *i2c_dev;
-unsigned int left_line[1];
-unsigned int right_line[1];
+static int left_line;
+static int right_line;
 unsigned char buf[3];
 unsigned char speed_hex[1];
 
 static void left_irq(const struct device *dev, struct gpio_callback *cb,
 		     uint32_t pins)
 {
-	left_line[0] = gpio_pin_get_dt(&left_gpio);
+	left_line = gpio_pin_get_dt(&left_gpio);
 }
 
 static void right_irq(const struct device *dev, struct gpio_callback *cb,
 		      uint32_t pins)
 {
-	right_line[0] = gpio_pin_get_dt(&right_gpio);
+	right_line = gpio_pin_get_dt(&right_gpio);
 }
 
 /* Function to convert decimal speed value to hex speed value */
@@ -88,28 +88,27 @@ void motor_right_control(int right_speed)
 /* Line follower algorithm for the robot */
 void line_follow(void)
 {
-	if ((left_line[0] == 0) && (right_line[0] == 0)) {
+	if ((left_line == 0) && (right_line == 0)) {
 		motor_left_control(200);
 		motor_right_control(200);
 	} else {
-		if ((left_line[0] == 0) && (right_line[0] == 1)) {
+		if ((left_line == 0) && (right_line == 1)) {
 			motor_left_control(0);
 			motor_right_control(200);
-			if ((left_line[0] == 1) && (right_line[0] == 1)) {
+			if ((left_line == 1) && (right_line == 1)) {
 				motor_left_control(0);
 				motor_right_control(200);
 			}
 		} else {
-			if ((left_line[0] == 1) && (right_line[0] == 0)) {
+			if ((left_line == 1) && (right_line == 0)) {
 				motor_left_control(200);
 				motor_right_control(0);
-				if ((left_line[0] == 1) &&
-					(right_line[0] == 1)) {
+				if ((left_line == 1) &&
+					(right_line == 1)) {
 					motor_left_control(200);
 					motor_right_control(0);
 				}
-				if ((left_line[0] == 1) &&
-					(right_line[0] == 0)) {
+				if ((left_line == 1) && (right_line == 0)) {
 					motor_left_control(200);
 				} else {
 					motor_right_control(0);
