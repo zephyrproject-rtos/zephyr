@@ -13,11 +13,19 @@ Requirements
 ************
 
 This sample has been tested with the nRF52840-DK and FRDM-K64F boards,
-but it should work with any board that has a free UART interface.
-Additionally the board should have three LEDs.
+but it should work with any board that has a free UART interface or USB
+device controller. Additionally the board should have three LEDs.
 
 RTU server example is running on an evaluation board. Client is running
 on a PC or laptop.
+
+The description of this sample uses `PyModbus`_ (Pymodbus REPL).
+The user can of course try out other client implementations with this sample.
+
+Using RS-485 transceiver
+========================
+
+It is the default configuration of this sample.
 In addition to the evaluation board, an USB to RS-485 bus adapter and
 a RS-485 shield are required. The shield converts UART TX, RX signals to RS-485.
 An Arduino header compatible shield like `joy-it RS-485 shield for Arduino`_
@@ -29,8 +37,15 @@ or removed in the application overlay file
 The USB to RS-485 adapter connects to the USB port of a computer.
 The two A+, B- lines should be connected to the RS-485 shield.
 
-The description of this sample uses `PyModbus`_ (Pymodbus REPL).
-The user can of course try out other client implementations with this sample.
+Using CDC ACM UART
+==================
+
+Only an evaluation board with supported USB device controller is required.
+USB device port should be connected to the USB port of a computer.
+Although it is only a point to point connection and does not represent a bus,
+it can, apart from testing the server implementation, also be used practically
+for example to control relays or to read ADC values via USB connection without
+implementing custom USB class or driver.
 
 Building and Running
 ********************
@@ -46,8 +61,18 @@ The following commands build and flash RTU server sample.
    :goals: build flash
    :compact:
 
+The following commands build and flash RTU server sample using CDC ACM UART.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/modbus/rtu_server
+   :board: nrf52840dk_nrf52840
+   :goals: build flash
+   :gen-args: -DDTC_OVERLAY_FILE=cdc-acm.overlay -DOVERLAY_CONFIG=overlay-cdc-acm.conf
+   :compact:
+
 On the client side, PC or laptop, the following command connects PyModbus
-to the RTU server.
+to the RTU server. If CDC ACM UART is used, ttyUSB should be replaced by a
+matching ttyACM device.
 
 .. code-block:: console
 
