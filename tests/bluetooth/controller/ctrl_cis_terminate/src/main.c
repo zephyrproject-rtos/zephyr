@@ -116,7 +116,18 @@ void test_cis_terminate_loc(uint8_t role)
 	/* Prepare */
 	event_prepare(&conn);
 
-	/* Tx Queue should have one LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* 'Signal' CIS terminated */
+	conn.llcp.cis.terminate_ack = 1;
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should now have one LL Control PDU */
 	lt_rx(LL_CIS_TERMINATE_IND, &conn, &tx, &local_cis_terminate_ind);
 	lt_rx_q_is_empty(&conn);
 

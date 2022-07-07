@@ -552,43 +552,69 @@ static bool is_valid_disconnect_reason(uint8_t reason)
 uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 {
 	struct ll_conn *conn;
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	struct ll_conn_iso_stream *cis;
+#endif
 
-	if (!IS_ACL_HANDLE(handle)) {
-		return BT_HCI_ERR_UNKNOWN_CONN_ID;
-	}
+	if (IS_ACL_HANDLE(handle)) {
+		conn = ll_connected_get(handle);
 
-	conn = ll_connected_get(handle);
-
-	if (!conn) {
-		return BT_HCI_ERR_UNKNOWN_CONN_ID;
-	}
+		/* Is conn still connected? */
+		if (!conn) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-	if (conn->llcp_terminate.req != conn->llcp_terminate.ack) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
+		if (conn->llcp_terminate.req != conn->llcp_terminate.ack) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
-	if (!is_valid_disconnect_reason(reason)) {
-		return BT_HCI_ERR_INVALID_PARAM;
-	}
+		if (!is_valid_disconnect_reason(reason)) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
 
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-	conn->llcp_terminate.reason_own = reason;
-	conn->llcp_terminate.req++; /* (req - ack) == 1, TERM_REQ */
+		conn->llcp_terminate.reason_own = reason;
+		conn->llcp_terminate.req++; /* (req - ack) == 1, TERM_REQ */
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-	uint8_t err;
+		uint8_t err;
 
-	err = ull_cp_terminate(conn, reason);
-	if (err) {
-		return err;
-	}
+		err = ull_cp_terminate(conn, reason);
+		if (err) {
+			return err;
+		}
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
-		ull_periph_latency_cancel(conn, handle);
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
+			ull_periph_latency_cancel(conn, handle);
+		}
+		return 0;
 	}
-	return 0;
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	if (IS_CIS_HANDLE(handle)) {
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+		cis = ll_iso_stream_connected_get(handle);
+		if (!cis) {
+			return BT_HCI_ERR_UNKNOWN_CONN_ID;
+		}
+
+		conn = ll_connected_get(cis->lll.acl_handle);
+		/* Is conn still connected? */
+		if (!conn) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		return ull_cp_cis_terminate(conn, cis, reason);
+#else
+		ARG_UNUSED(cis);
+		/* LEGACY LLCP does not support CIS Terminate procedure */
+		return BT_HCI_ERR_UNKNOWN_CMD;
+#endif /* !defined(CONFIG_BT_LL_SW_LLCP_LEGACY) */
+	}
+#endif /* defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
+
+	return BT_HCI_ERR_UNKNOWN_CONN_ID;
 }
 
 #if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
@@ -1378,11 +1404,7 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 	LL_ASSERT(conn->lll.handle != LLL_HANDLE_INVALID);
 
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	conn->llcp.prep.ticks_at_expire = ticks_at_expire;
-#else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
-	ARG_UNUSED(ticks_at_expire);
-#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 	conn->llcp.prep.lazy = lazy;
 
 	ull_cp_run(conn);
