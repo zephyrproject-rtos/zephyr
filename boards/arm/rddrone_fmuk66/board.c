@@ -29,15 +29,8 @@ BUILD_ASSERT(CONFIG_RDDRONE_FMUK66_INIT_PRIORITY < CONFIG_SENSOR_INIT_PRIORITY,
 
 
 
-static int setup(const struct device *dev)
+static int setup()
 {
-	ARG_UNUSED(dev);
-
-	const struct device *gpiob = DEVICE_DT_GET(DT_NODELABEL(gpiob));
-
-        /* PTB8 or gpiob 8th pin is responsible for enabling 3.3V for sensors
-         * on rddrone fmuk66 */
-        gpio_pin_configure(gpiob, 8, GPIO_OUTPUT_HIGH);
 
 	if (IS_ENABLED(CONFIG_SENSOR)) {
 		/* Initialization chain of rddrone fmuk66 board requires some delays before on board
