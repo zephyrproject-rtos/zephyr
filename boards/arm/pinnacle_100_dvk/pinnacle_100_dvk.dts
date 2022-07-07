@@ -113,10 +113,10 @@
 		compatible = "swir,hl7800";
 		status = "okay";
 		label = "hl7800";
-		mdm-reset-gpios = <&gpio1 15 0>;
-		mdm-wake-gpios = <&gpio1 13 0>;
-		mdm-pwr-on-gpios = <&gpio1 2 0>;
-		mdm-fast-shutd-gpios = <&gpio1 14 0>;
+		mdm-reset-gpios = <&gpio1 15 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+		mdm-wake-gpios = <&gpio1 13 (GPIO_OPEN_SOURCE | GPIO_ACTIVE_HIGH)>;
+		mdm-pwr-on-gpios = <&gpio1 2 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+		mdm-fast-shutd-gpios = <&gpio1 14 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
 		mdm-vgpio-gpios = <&gpio1 11 0>;
 		mdm-uart-dsr-gpios = <&gpio0 25 0>;
 		mdm-uart-cts-gpios = <&gpio0 15 0>;
