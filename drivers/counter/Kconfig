@@ -64,6 +64,8 @@ source "drivers/counter/Kconfig.xlnx"
 
 source "drivers/counter/Kconfig.esp32"
 
+source "drivers/counter/Kconfig.esp32_rtc"
+
 source "drivers/counter/Kconfig.mcp7940n"
 
 source "drivers/counter/Kconfig.mcux_ctimer"
