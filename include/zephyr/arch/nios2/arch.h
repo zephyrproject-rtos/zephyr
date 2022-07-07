@@ -44,8 +44,6 @@ extern "C" {
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 }
 
-extern void z_irq_spurious(const void *unused);
-
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key, tmp;
