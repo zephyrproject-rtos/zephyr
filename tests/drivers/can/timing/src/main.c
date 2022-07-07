@@ -216,7 +216,7 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 /**
  * @brief Test all CAN timing values
  */
-void test_timing(void)
+ZTEST_USER(can_timing, test_timing)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int i;
@@ -230,7 +230,7 @@ void test_timing(void)
  * @brief Test all CAN timing values for the data phase.
  */
 #ifdef CONFIG_CAN_FD_MODE
-void test_timing_data(void)
+ZTEST_USER(can_timing, test_timing_data)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int i;
@@ -240,7 +240,7 @@ void test_timing_data(void)
 	}
 }
 #else /* CONFIG_CAN_FD_MODE */
-void test_timing_data(void)
+ZTEST_USER(can_timing, test_timing_data)
 {
 	ztest_test_skip();
 }
@@ -249,7 +249,7 @@ void test_timing_data(void)
 /**
  * @brief Test that the minimum timing values can be set.
  */
-void test_set_timing_min(void)
+ZTEST_USER(can_timing, test_set_timing_min)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int err;
@@ -266,7 +266,7 @@ void test_set_timing_min(void)
 /**
  * @brief Test that the maximum timing values can be set.
  */
-void test_set_timing_max(void)
+ZTEST_USER(can_timing, test_set_timing_max)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int err;
@@ -280,25 +280,20 @@ void test_set_timing_max(void)
 	}
 }
 
-void test_main(void)
+void *can_timing_setup(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	uint32_t core_clock;
 	int err;
 
-	zassert_true(device_is_ready(dev), "CAN device not ready");
+	zassume_true(device_is_ready(dev), "CAN device not ready");
 
 	err = can_get_core_clock(dev, &core_clock);
-	zassert_equal(err, 0, "failed to get core CAN clock");
+	zassume_equal(err, 0, "failed to get core CAN clock");
 
 	printk("testing on device %s @ %u Hz\n", dev->name, core_clock);
 
 	k_object_access_grant(dev, k_current_get());
-
-	ztest_test_suite(can_timing_tests,
-			 ztest_user_unit_test(test_set_timing_min),
-			 ztest_user_unit_test(test_set_timing_max),
-			 ztest_user_unit_test(test_timing),
-			 ztest_user_unit_test(test_timing_data));
-	ztest_run_test_suite(can_timing_tests);
+	return NULL;
 }
+ZTEST_SUITE(can_timing, NULL, can_timing_setup, NULL, NULL, NULL);
