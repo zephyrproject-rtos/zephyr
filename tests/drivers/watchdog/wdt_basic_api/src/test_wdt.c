@@ -100,13 +100,6 @@
 #define TIMEOUTS 0
 #endif
 
-#ifdef WDT_NODE
-#define WDT_DEV_NAME DT_LABEL(WDT_NODE)
-#else
-#define WDT_DEV_NAME ""
-#error "Unsupported SoC and no watchdog0 alias in zephyr.dts"
-#endif
-
 #define WDT_TEST_STATE_IDLE        0
 #define WDT_TEST_STATE_CHECK_RESET 1
 
@@ -182,10 +175,10 @@ static void wdt_int_cb1(const struct device *wdt_dev, int channel_id)
 static int test_wdt_no_callback(void)
 {
 	int err;
-	const struct device *wdt = device_get_binding(WDT_DEV_NAME);
+	const struct device *wdt = DEVICE_DT_GET(WDT_NODE);
 
-	if (!wdt) {
-		TC_PRINT("Cannot get WDT device\n");
+	if (!device_is_ready(wdt)) {
+		TC_PRINT("WDT device is not ready\n");
 		return TC_FAIL;
 	}
 
@@ -223,10 +216,10 @@ static int test_wdt_no_callback(void)
 static int test_wdt_callback_1(void)
 {
 	int err;
-	const struct device *wdt = device_get_binding(WDT_DEV_NAME);
+	const struct device *wdt = DEVICE_DT_GET(WDT_NODE);
 
-	if (!wdt) {
-		TC_PRINT("Cannot get WDT device\n");
+	if (!device_is_ready(wdt)) {
+		TC_PRINT("WDT device is not ready\n");
 		return TC_FAIL;
 	}
 
@@ -278,10 +271,10 @@ static int test_wdt_callback_1(void)
 static int test_wdt_callback_2(void)
 {
 	int err;
-	const struct device *wdt = device_get_binding(WDT_DEV_NAME);
+	const struct device *wdt = DEVICE_DT_GET(WDT_NODE);
 
-	if (!wdt) {
-		TC_PRINT("Cannot get WDT device\n");
+	if (!device_is_ready(wdt)) {
+		TC_PRINT("WDT device is not ready\n");
 		return TC_FAIL;
 	}
 
@@ -339,10 +332,10 @@ static int test_wdt_callback_2(void)
 static int test_wdt_bad_window_max(void)
 {
 	int err;
-	const struct device *wdt = device_get_binding(WDT_DEV_NAME);
+	const struct device *wdt = DEVICE_DT_GET(WDT_NODE);
 
-	if (!wdt) {
-		TC_PRINT("Cannot get WDT device\n");
+	if (!device_is_ready(wdt)) {
+		TC_PRINT("WDT device is not ready\n");
 		return TC_FAIL;
 	}
 
