@@ -211,31 +211,20 @@ struct arch_mem_domain {
 	unsigned int pmp_update_nr;
 };
 
-void arch_irq_enable(unsigned int irq);
-void arch_irq_disable(unsigned int irq);
-int arch_irq_is_enabled(unsigned int irq);
-void arch_irq_priority_set(unsigned int irq, unsigned int prio);
-void z_irq_spurious(const void *unused);
+extern void z_irq_spurious(const void *unused);
 
-#if defined(CONFIG_RISCV_HAS_PLIC)
+extern void arch_irq_enable(unsigned int irq);
+extern void arch_irq_disable(unsigned int irq);
+extern int arch_irq_is_enabled(unsigned int irq);
+
+extern void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio,
+				     uint32_t flags);
+
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 { \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
-	arch_irq_priority_set(irq_p, priority_p); \
+	z_riscv_irq_priority_set(irq_p, priority_p, flags_p); \
 }
-#elif defined(CONFIG_NUCLEI_ECLIC)
-void nuclei_eclic_irq_priority_set(unsigned int irq, unsigned int prio, unsigned int flags);
-#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-{ \
-	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
-	nuclei_eclic_irq_priority_set(irq_p, priority_p, flags_p); \
-}
-#else
-#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-{ \
-	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
-}
-#endif
 
 #define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 { \

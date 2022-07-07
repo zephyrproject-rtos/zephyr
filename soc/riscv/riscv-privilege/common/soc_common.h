@@ -50,11 +50,11 @@ void riscv_plic_set_priority(uint32_t irq, uint32_t priority);
 int riscv_plic_get_irq(void);
 #endif
 
-#if defined(CONFIG_NUCLEI_ECLIC)
-void nuclei_eclic_irq_enable(uint32_t irq);
-void nuclei_eclic_irq_disable(uint32_t irq);
-int nuclei_eclic_irq_is_enabled(uint32_t irq);
-void nuclei_eclic_set_priority(uint32_t irq, uint32_t priority);
+#if defined(CONFIG_RISCV_HAS_CLIC)
+int riscv_clic_irq_is_enabled(uint32_t irq);
+void riscv_clic_irq_disable(uint32_t irq);
+void riscv_clic_irq_enable(uint32_t irq);
+void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags);
 #endif
 
 #endif /* !_ASMLANGUAGE */
