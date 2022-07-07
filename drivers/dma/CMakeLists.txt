@@ -17,4 +17,5 @@ zephyr_library_sources_ifdef(CONFIG_DMA_PL330		dma_pl330.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_IPROC_PAX	dma_iproc_pax_v1.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_IPROC_PAX_V2	dma_iproc_pax_v2.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_CAVS_GPDMA	dma_cavs_gpdma.c dma_dw_common.c)
-zephyr_library_sources_ifdef(CONFIG_DMA_CAVS_HDA	dma_cavs_hda.c dma_cavs_hda_host_in.c dma_cavs_hda_host_out.c)
+zephyr_library_sources_ifdef(CONFIG_DMA_CAVS_HDA	dma_cavs_hda.c dma_cavs_hda_host_in.c dma_cavs_hda_host_out.c
+													dma_cavs_hda_link_in.c dma_cavs_hda_link_out.c)
