@@ -174,6 +174,22 @@ void z_vrfy_k_event_set(struct k_event *event, uint32_t events)
 #include <syscalls/k_event_set_mrsh.c>
 #endif
 
+void z_impl_k_event_set_masked(struct k_event *event, uint32_t events,
+			       uint32_t events_mask)
+{
+	k_event_post_internal(event, events, events_mask);
+}
+
+#ifdef CONFIG_USERSPACE
+void z_vrfy_k_event_set_masked(struct k_event *event, uint32_t events,
+			       uint32_t events_mask)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	z_impl_k_event_set_masked(event, events, events_mask);
+}
+#include <syscalls/k_event_set_masked_mrsh.c>
+#endif
+
 static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 				      unsigned int options, k_timeout_t timeout)
 {
