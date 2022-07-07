@@ -350,5 +350,29 @@
 			channels = <0>;
 			status = "disabled";
 		};
+
+		dma0: dma@40020000 {
+			compatible = "gd,gd32-dma";
+			reg = <0x40020000 0x400>;
+			interrupt-parent = <&eclic>;
+			interrupts = <30 0>, <31 0>, <32 0>, <33 0>,
+				     <34 0>, <35 0>, <36 0>;
+			rcu-periph-clock = <0x500>;
+			dma-channels = <7>;
+			#dma-cells = <1>;
+			status = "disabled";
+		};
+
+		dma1: dma@40020400 {
+			compatible = "gd,gd32-dma";
+			reg = <0x40020400 0x400>;
+			interrupt-parent = <&eclic>;
+			interrupts = <75 0>, <76 0>, <77 0>, <78 0>,
+				     <79 0>;
+			rcu-periph-clock = <0x501>;
+			dma-channels = <5>;
+			#dma-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
