@@ -72,6 +72,14 @@ elseif(CONFIG_ETH_GD32_HAL_PHY_DP83848)
   zephyr_compile_definitions(PHY_DUPLEX_STATUS=0x0004U)
 endif()
 
+if(CONFIG_GD32_HAS_IRC_32K)
+  zephyr_compile_definitions(IRC32K_VALUE=${CONFIG_GD32_HAS_IRC_32K})
+endif()
+
+if(CONFIG_GD32_HAS_IRC_40K)
+  zephyr_compile_definitions(IRC32K_VALUE=${CONFIG_GD32_HAS_IRC_40K})
+endif()
+
 # Global includes to be used outside hal_gigadevice
 zephyr_include_directories(${gd32_soc_sys_dir}/include)
 zephyr_include_directories(${gd32_std_dir}/include)
