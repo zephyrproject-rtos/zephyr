@@ -82,3 +82,10 @@ tests:
         - CONFIG_SDL_DISPLAY=n
         - CONFIG_TEST=y
     tags: display
+  sample.display.max7219:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: SHIELD=max7219_8x8
+    tags: display shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
