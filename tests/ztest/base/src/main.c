@@ -41,6 +41,12 @@ ZTEST(framework_tests, test_skip_config)
 	zassert_true(false, NULL);
 }
 
+ZTEST(framework_tests, test_skip_no_config)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_BUGyyyyy);
+	ztest_test_fail();
+}
+
 /***************************************************************************************************
  * Sample fixture tests
  **************************************************************************************************/
