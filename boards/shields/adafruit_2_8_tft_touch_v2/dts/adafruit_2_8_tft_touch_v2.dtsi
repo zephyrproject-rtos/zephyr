@@ -40,7 +40,6 @@
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
 		status = "okay";
-		label = "SDHC_0";
 		spi-max-frequency = <24000000>;
 		mmc {
 			compatible = "zephyr,sdmmc-disk";

@@ -334,7 +334,6 @@
 		status = "disabled";
 		interrupts = <45 0>;
 		clocks = <&clkctl1 MCUX_USDHC1_CLK>;
-		label = "SDHC_0";
 		max-current-330 = <1020>;
 		max-current-180 = <1020>;
 		max-bus-freq = <208000000>;
@@ -347,7 +346,6 @@
 		status = "disabled";
 		interrupts = <46 0>;
 		clocks = <&clkctl1 MCUX_USDHC2_CLK>;
-		label = "SDHC_1";
 		max-current-330 = <1020>;
 		max-current-180 = <1020>;
 		max-bus-freq = <208000000>;
