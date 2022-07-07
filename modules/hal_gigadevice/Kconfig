@@ -53,6 +53,23 @@ config GD32_HXTAL_25MHZ
 
 endchoice
 
+config GD32_HAS_IRC_32K
+	bool
+	help
+	  Use 32KHz oscillator for low speed internal RC Oscillator
+
+config GD32_HAS_IRC_40K
+	bool
+	help
+	  Use 40KHz oscillator for low speed internal RC Oscillator
+
+config GD32_LOW_SPEED_IRC_FREQUENCY
+	int
+	default 32000 if GD32_HAS_IRC_32K
+	default 40000 if GD32_HAS_IRC_40K
+	help
+	  Define value of low speed internal RC oscillator (IRC) in Hz
+
 config USE_GD32_ADC
 	bool
 	help
