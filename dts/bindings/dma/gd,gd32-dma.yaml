@@ -1,0 +1,30 @@
+# Copyright (c) 2022, TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GD32 DMA controller
+
+compatible: "gd,gd32-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  dma-channels:
+    required: true
+
+  rcu-periph-clock:
+    type: int
+    description: Peripheral RCU(Reset Clock Unit) Clock ID
+    required: true
+
+  "#dma-cells":
+    const: 1
+
+dma-cells:
+  - channel
