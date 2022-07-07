@@ -2558,7 +2558,9 @@ ZTest:
     maintainers:
         - nashif
     collaborators:
+        - aaronemassey
         - jeremybettis
+        - yperess
     files:
         - subsys/testsuite/
         - tests/ztest/
