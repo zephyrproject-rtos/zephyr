@@ -8,6 +8,7 @@
 #include <nrfx_gpiote.h>
 #include <string.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/gpio/nordic-nrf-gpio.h>
 #include "gpio_utils.h"
 
 struct gpio_nrfx_data {
@@ -36,16 +37,33 @@ static inline const struct gpio_nrfx_cfg *get_port_cfg(const struct device *port
 
 static int get_drive(gpio_flags_t flags, nrf_gpio_pin_drive_t *drive)
 {
-	switch (flags & GPIO_OPEN_DRAIN) {
-	case GPIO_OPEN_DRAIN:
-		*drive = NRF_GPIO_PIN_S0D1;
-		break;
-	case GPIO_OPEN_SOURCE:
-		*drive = NRF_GPIO_PIN_D0S1;
-		break;
-	default:
+	switch (flags & (NRF_GPIO_DRIVE_MSK | GPIO_OPEN_DRAIN)) {
+	case NRF_GPIO_DRIVE_S0S1:
 		*drive = NRF_GPIO_PIN_S0S1;
 		break;
+	case NRF_GPIO_DRIVE_S0H1:
+		*drive = NRF_GPIO_PIN_S0H1;
+		break;
+	case NRF_GPIO_DRIVE_H0S1:
+		*drive = NRF_GPIO_PIN_H0S1;
+		break;
+	case NRF_GPIO_DRIVE_H0H1:
+		*drive = NRF_GPIO_PIN_H0H1;
+		break;
+	case NRF_GPIO_DRIVE_S0 | GPIO_OPEN_DRAIN:
+		*drive = NRF_GPIO_PIN_S0D1;
+		break;
+	case NRF_GPIO_DRIVE_H0 | GPIO_OPEN_DRAIN:
+		*drive = NRF_GPIO_PIN_H0D1;
+		break;
+	case NRF_GPIO_DRIVE_S1 | GPIO_OPEN_SOURCE:
+		*drive = NRF_GPIO_PIN_D0S1;
+		break;
+	case NRF_GPIO_DRIVE_H1 | GPIO_OPEN_SOURCE:
+		*drive = NRF_GPIO_PIN_D0H1;
+		break;
+	default:
+		return -EINVAL;
 	}
 
 	return 0;
