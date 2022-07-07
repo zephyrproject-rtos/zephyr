@@ -135,7 +135,7 @@ static void send_test_frame(const struct device *dev, const struct zcan_frame *f
  * before sending a frame. This tests the internal filter handling of the STM32
  * driver.
  */
-static void test_filter_handling(void)
+ZTEST(can_stm32, test_filter_handling)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	struct zcan_frame frame_buffer;
@@ -198,10 +198,4 @@ static void test_filter_handling(void)
 	can_remove_rx_filter(dev, filter_id_1);
 	can_remove_rx_filter(dev, filter_id_2);
 }
-
-void test_main(void)
-{
-	ztest_test_suite(can_stm32_tests,
-			 ztest_unit_test(test_filter_handling));
-	ztest_run_test_suite(can_stm32_tests);
-}
+ZTEST_SUITE(can_stm32, NULL, NULL, NULL, NULL, NULL);
