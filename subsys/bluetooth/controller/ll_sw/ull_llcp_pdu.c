@@ -835,6 +835,7 @@ void llcp_pdu_encode_cte_rsp(const struct proc_ctx *ctx, struct pdu_data *pdu)
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 void llcp_pdu_encode_cis_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_cis_terminate_ind *p;
@@ -857,3 +858,4 @@ void llcp_pdu_decode_cis_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pd
 	ctx->data.cis_term.cis_id = pdu->llctrl.cis_terminate_ind.cis_id;
 	ctx->data.cis_term.error_code = pdu->llctrl.cis_terminate_ind.error_code;
 }
+#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
