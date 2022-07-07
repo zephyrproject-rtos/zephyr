@@ -65,7 +65,15 @@
 			reg = <0x3ff48000 0x0D8>;
 			xtal-freq = <ESP32_CLK_XTAL_40M>;
 			#clock-cells = <1>;
-			status = "ok";
+			status = "okay";
+
+			rtc_timer: rtc_timer {
+				compatible = "espressif,esp32-rtc-timer";
+				slow-clk-freq = <ESP32_RTC_SLOW_CLK_FREQ_150K>;
+				interrupts = <RTC_CORE_INTR_SOURCE>;
+				interrupt-parent = <&intc>;
+				status = "okay";
+			};
 		};
 
 		flash: flash-controller@3ff42000 {
