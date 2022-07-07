@@ -31,12 +31,124 @@ static const struct bt_data ad[] = {
 		      BT_UUID_16_ENCODE(BT_UUID_BAS_VAL)),
 };
 
+static double pow(double x, double y)
+{
+	double result = 1;
+
+	if (y < 0) {
+		y = -y;
+		while (y--) {
+			result /= x;
+		}
+	} else {
+		while (y--) {
+			result *= x;
+		}
+	}
+
+	return result;
+}
+
+static struct bt_conn *default_conn;
+static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
+static struct bt_gatt_discover_params discover_params;
+static struct bt_gatt_subscribe_params subscribe_params;
+
+static uint8_t notify_func(struct bt_conn *conn,
+			   struct bt_gatt_subscribe_params *params,
+			   const void *data, uint16_t length)
+{
+	double temperature;
+	uint32_t mantissa;
+	int8_t exponent;
+
+	if (!data) {
+		printk("[UNSUBSCRIBED]\n");
+		params->value_handle = 0U;
+		return BT_GATT_ITER_STOP;
+	}
+
+	/* temperature value display */
+	mantissa = sys_get_le24(&((uint8_t *)data)[1]);
+	exponent = ((uint8_t *)data)[4];
+	temperature = (double)mantissa * pow(10, exponent);
+
+	printk("NOTIFY Temperature %gC.\n", temperature);
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static uint8_t discover_func(struct bt_conn *conn,
+			     const struct bt_gatt_attr *attr,
+			     struct bt_gatt_discover_params *params)
+{
+	int err;
+
+	if (!attr) {
+		printk("Discover complete\n");
+		(void)memset(params, 0, sizeof(*params));
+		return BT_GATT_ITER_STOP;
+	}
+
+	if (!bt_uuid_cmp(discover_params.uuid, BT_UUID_HTS)) {
+		memcpy(&uuid, BT_UUID_HTS_MEASUREMENT, sizeof(uuid));
+		discover_params.uuid = &uuid.uuid;
+		discover_params.start_handle = attr->handle + 1;
+		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+
+		err = bt_gatt_discover(conn, &discover_params);
+		if (err) {
+			printk("Discover failed (err %d)\n", err);
+		}
+	} else if (!bt_uuid_cmp(discover_params.uuid,
+				BT_UUID_HTS_MEASUREMENT)) {
+		memcpy(&uuid, BT_UUID_GATT_CCC, sizeof(uuid));
+		discover_params.uuid = &uuid.uuid;
+		discover_params.start_handle = attr->handle + 2;
+		discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
+		subscribe_params.value_handle = bt_gatt_attr_value_handle(attr);
+
+		err = bt_gatt_discover(conn, &discover_params);
+		if (err) {
+			printk("Discover failed (err %d)\n", err);
+		}
+	} else {
+		subscribe_params.notify = notify_func;
+		subscribe_params.value = BT_GATT_CCC_NOTIFY;
+		subscribe_params.ccc_handle = attr->handle;
+
+		err = bt_gatt_subscribe(conn, &subscribe_params);
+		if (err && err != -EALREADY) {
+			printk("Subscribe failed (err %d)\n", err);
+		} else {
+			printk("[SUBSCRIBED]\n");
+		}
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	return BT_GATT_ITER_STOP;
+}
+
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
 		printk("Connection failed (err 0x%02x)\n", err);
 	} else {
 		printk("Connected\n");
+	}
+
+	memcpy(&uuid, BT_UUID_HTS, sizeof(uuid));
+	discover_params.uuid = &uuid.uuid;
+	discover_params.func = discover_func;
+	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
+	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
+
+	err = bt_gatt_discover(conn, &discover_params);
+	if (err) {
+		printk("Discover failed(err %d)\n", err);
+		return;
 	}
 }
 

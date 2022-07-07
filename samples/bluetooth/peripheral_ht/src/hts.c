@@ -79,7 +79,7 @@ void hts_indicate(void)
 	/* Temperature measurements simulation */
 	struct sensor_value temp_value;
 
-	if (simulate_htm) {
+	// if (simulate_htm) {
 		static uint8_t htm[5];
 		static double temperature = 20U;
 		uint32_t mantissa;
@@ -113,7 +113,7 @@ void hts_indicate(void)
 		temperature = sensor_value_to_double(&temp_value);
 
 gatt_indicate:
-		printf("temperature is %gC\n", temperature);
+		// printf("temperature is %gC\n", temperature);
 
 		mantissa = (uint32_t)(temperature * 100);
 		exponent = (uint8_t)-2;
@@ -132,5 +132,5 @@ gatt_indicate:
 		// 	indicating = 1U;
 		// }
 		bt_gatt_notify(NULL, &hts_svc.attrs[2], &htm, sizeof(htm));
-	}
+	// }
 }
