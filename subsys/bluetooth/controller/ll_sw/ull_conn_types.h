@@ -462,9 +462,12 @@ struct llcp_struct {
 	} cte_rsp;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
+	struct {
+		uint8_t terminate_ack;
+	} cis;
+
 	uint8_t tx_buffer_alloc;
 	uint8_t tx_q_pause_data_mask;
-
 }; /* struct llcp_struct */
 
 struct ll_conn {

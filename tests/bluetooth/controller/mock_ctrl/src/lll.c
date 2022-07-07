@@ -37,8 +37,6 @@
 #include "ull_iso_types.h"
 #include "ull_conn_iso_types.h"
 
-#include "ull_llcp.h"
-
 extern sys_slist_t ut_rx_q;
 
 __attribute__((weak)) int lll_csrand_get(void *buf, size_t len)
