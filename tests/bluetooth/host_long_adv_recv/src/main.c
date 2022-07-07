@@ -6,11 +6,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/fff.h>
 #include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
 
 #include <errno.h>
 #include <tc_util.h>
-#include <ztest.h>
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
@@ -21,6 +22,8 @@
 #define LOG_LEVEL CONFIG_BT_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(host_test_app);
+
+DEFINE_FFF_GLOBALS;
 
 struct test_adv_report {
 	uint8_t data[CONFIG_BT_EXT_SCAN_BUF_SIZE];
@@ -315,15 +318,7 @@ static void send_adv_report(const struct test_adv_report *report)
 	bt_recv_job_submit(buf);
 }
 
-static uint16_t get_expected_length(void)
-{
-	return ztest_get_return_value();
-}
-
-static uint8_t *get_expected_data(void)
-{
-	return ztest_get_return_value_ptr();
-}
+FAKE_VALUE_FUNC(struct test_adv_report, get_expected_report);
 
 static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf_simple *buf)
 {
@@ -331,11 +326,10 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf
 
 	LOG_DBG("Received event with length %u", buf->len);
 
-	const uint16_t expected_length = get_expected_length();
-	const uint8_t *expected_data = get_expected_data();
+	const struct test_adv_report expected = get_expected_report();
 
-	zassert_equal(buf->len, expected_length, "Lengths should be equal");
-	zassert_mem_equal(buf->data, expected_data, buf->len, "Data should be equal");
+	zassert_equal(buf->len, expected.length, "Lengths should be equal");
+	zassert_mem_equal(buf->data, expected.data, buf->len, "Data should be equal");
 }
 
 static void scan_timeout_cb(void)
@@ -361,6 +355,8 @@ ZTEST_SUITE(long_adv_rx_tests, NULL, NULL, NULL, NULL, NULL);
 
 ZTEST(long_adv_rx_tests, test_host_long_adv_recv)
 {
+	struct test_adv_report expected_reports[2];
+
 	/* Register the test HCI driver */
 	bt_hci_driver_register(&drv);
 
@@ -427,49 +423,58 @@ ZTEST(long_adv_rx_tests, test_host_long_adv_recv)
 		     report_b_2.length);
 
 	/* Check that non-interleaved fragmented adv reports work */
-	ztest_returns_value(get_expected_data, report_a_combined.data);
-	ztest_returns_value(get_expected_length, report_a_combined.length); /* Expect a */
-	ztest_returns_value(get_expected_data, report_b_combined.data);
-	ztest_returns_value(get_expected_length, report_b_combined.length); /* Then b */
+	expected_reports[0] = report_a_combined;
+	expected_reports[1] = report_b_combined;
+	SET_RETURN_SEQ(get_expected_report, expected_reports, 2);
 	send_adv_report(&report_a_1);
 	send_adv_report(&report_a_2);
 	send_adv_report(&report_b_1);
 	send_adv_report(&report_b_2);
+	zassert_equal(2, get_expected_report_fake.call_count, NULL);
+	RESET_FAKE(get_expected_report);
+	FFF_RESET_HISTORY();
 
 	/* Check that legacy adv reports interleaved with fragmented adv reports work */
-	ztest_returns_value(get_expected_data, report_c.data);
-	ztest_returns_value(get_expected_length, report_c.length); /* Expect c */
-	ztest_returns_value(get_expected_data, report_a_combined.data);
-	ztest_returns_value(get_expected_length, report_a_combined.length); /* Then a */
+	expected_reports[0] = report_c;
+	expected_reports[1] = report_a_combined;
+	SET_RETURN_SEQ(get_expected_report, expected_reports, 2);
 	send_adv_report(&report_a_1);
 	send_adv_report(&report_c); /* Interleaved legacy adv report */
 	send_adv_report(&report_a_2);
+	zassert_equal(2, get_expected_report_fake.call_count, NULL);
+	RESET_FAKE(get_expected_report);
+	FFF_RESET_HISTORY();
 
 	/* Check that complete adv reports interleaved with fragmented adv reports work */
-	ztest_returns_value(get_expected_data, report_b_2.data);
-	ztest_returns_value(get_expected_length, report_b_2.length); /* Expect b */
-	ztest_returns_value(get_expected_data, report_a_combined.data);
-	ztest_returns_value(get_expected_length, report_a_combined.length); /* Then a */
+	expected_reports[0] = report_b_2;
+	expected_reports[1] = report_a_combined;
+	SET_RETURN_SEQ(get_expected_report, expected_reports, 2);
 	send_adv_report(&report_a_1);
 	send_adv_report(&report_b_2); /* Interleaved short extended adv report */
 	send_adv_report(&report_a_2);
+	zassert_equal(2, get_expected_report_fake.call_count, NULL);
+	RESET_FAKE(get_expected_report);
+	FFF_RESET_HISTORY();
 
 	/* Check that fragmented adv reports from one peer are received,
 	 * and that interleaved fragmented adv reports from other peers are discarded
 	 */
-	ztest_returns_value(get_expected_data, report_a_combined.data);
-	ztest_returns_value(get_expected_length, report_a_combined.length); /* Expect a */
-	ztest_returns_value(get_expected_data, report_b_2.data);
-	ztest_returns_value(get_expected_length,
-			    report_b_2.length); /* Then b, INCOMPLETE REPORT */
+	expected_reports[0] = report_a_combined;
+	expected_reports[1] = report_b_2;
+	SET_RETURN_SEQ(get_expected_report, expected_reports, 2);
 	send_adv_report(&report_a_1);
 	send_adv_report(&report_b_1); /* Interleaved fragmented adv report, NOT SUPPORTED */
 	send_adv_report(&report_a_2);
 	send_adv_report(&report_b_2);
+	zassert_equal(2, get_expected_report_fake.call_count, NULL);
+	RESET_FAKE(get_expected_report);
+	FFF_RESET_HISTORY();
 
 	/* Check that host discards the data if the controller keeps sending
 	 * incomplete packets.
 	 */
+	expected_reports[0] = report_b_combined;
+	SET_RETURN_SEQ(get_expected_report, expected_reports, 1);
 	for (int i = 0; i < (2 + (CONFIG_BT_EXT_SCAN_BUF_SIZE / report_a_1.length)); i++) {
 		send_adv_report(&report_a_1);
 	}
@@ -479,8 +484,7 @@ ZTEST(long_adv_rx_tests, test_host_long_adv_recv)
 	send_adv_report(&report_d);
 
 	/* Check that reports from a different advertiser works after truncation */
-	ztest_returns_value(get_expected_data, report_b_combined.data);
-	ztest_returns_value(get_expected_length, report_b_combined.length); /* Expect b */
 	send_adv_report(&report_b_1);
 	send_adv_report(&report_b_2);
+	zassert_equal(1, get_expected_report_fake.call_count, NULL);
 }
