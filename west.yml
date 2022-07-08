@@ -239,6 +239,11 @@ manifest:
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
+    - name: trusted-firmware-a
+      revision: d29cddecde614d81cbec1fb0086cdaebd77d3575
+      path: modules/tee/tf-a/trusted-firmware-a
+      groups:
+        - tee
     - name: tf-m-tests
       revision: c99a86b295c4887520da9d8402566d7f225c974e
       path: modules/tee/tf-m/tf-m-tests
