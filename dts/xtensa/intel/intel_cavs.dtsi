@@ -9,7 +9,7 @@
 / {
 	soc {
 		lpgpdma0: dma@7c000 {
-			compatible = "intel,cavs-gpdma";
+			compatible = "intel,adsp-gpdma";
 			#dma-cells = <1>;
 			reg = <0x0007c000 0x1000>;
 			shim = <0x00078400 0x100>;
@@ -21,7 +21,7 @@
 		};
 
 		lpgpdma1: dma@7d000 {
-			compatible = "intel,cavs-gpdma";
+			compatible = "intel,adsp-gpdma";
 			#dma-cells = <1>;
 			reg = <0x0007d000 0x1000>;
 			shim = <0x00078500 0x100>;

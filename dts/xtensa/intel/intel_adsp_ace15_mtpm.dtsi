@@ -128,7 +128,7 @@
 		};
 
 		lpgpdma0: dma@7c000 {
-			compatible = "intel,ace-gpdma";
+			compatible = "intel,adsp-gpdma";
 			#dma-cells = <1>;
 			reg = <0x0007c000 0x1000>;
 			shim = <0x0007c800 0x1000>;
@@ -139,7 +139,7 @@
 		};
 
 		lpgpdma1: dma@7d000 {
-			compatible = "intel,ace-gpdma";
+			compatible = "intel,adsp-gpdma";
 			#dma-cells = <1>;
 			reg = <0x0007d000 0x1000>;
 			shim = <0x0007d800 0x1000>;
