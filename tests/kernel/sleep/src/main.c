@@ -191,7 +191,7 @@ static void helper_thread(int arg1, int arg2)
  *
  * @see k_sleep(), k_wakeup(), k_uptime_get_32()
  */
-void test_sleep(void)
+ZTEST(sleep, test_sleep)
 {
 	int status = TC_FAIL;
 	uint32_t start_tick;
@@ -244,8 +244,6 @@ void test_sleep(void)
 	status = TC_PASS;
 }
 
-extern void test_usleep(void);
-
 static void forever_thread_entry(void *p1, void *p2, void *p3)
 {
 	int32_t ret;
@@ -255,7 +253,7 @@ static void forever_thread_entry(void *p1, void *p2, void *p3)
 	k_sem_give(&test_thread_sem);
 }
 
-void test_sleep_forever(void)
+ZTEST(sleep, test_sleep_forever)
 {
 	test_objects_init();
 
@@ -274,13 +272,12 @@ void test_sleep_forever(void)
 }
 
 /*test case main entry*/
-void test_main(void)
+static void *sleep_setup(void)
 {
 	k_thread_access_grant(k_current_get(), &test_thread_sem);
 
-	ztest_test_suite(sleep,
-			 ztest_1cpu_unit_test(test_sleep),
-			 ztest_1cpu_user_unit_test(test_usleep),
-			 ztest_1cpu_unit_test(test_sleep_forever));
-	ztest_run_test_suite(sleep);
+	return NULL;
 }
+
+ZTEST_SUITE(sleep, NULL, sleep_setup,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
