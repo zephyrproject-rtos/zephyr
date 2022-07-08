@@ -3,7 +3,45 @@
 # Copyright (c) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+DT_COMPAT_INTEL_CAVS_HDA_HOST_IN := intel,cavs-hda-host-in
+DT_COMPAT_INTEL_CAVS_HDA_HOST_OUT := intel,cavs-hda-host-out
+DT_COMPAT_INTEL_CAVS_HDA_LINK_IN := intel,cavs-hda-link-in
+DT_COMPAT_INTEL_CAVS_HDA_LINK_OUT := intel,cavs-hda-link-out
+
+config DMA_CAVS_HDA_HOST_IN
+	bool "Intel cAVS HDA Host In DMA drivers"
+	default $(dt_compat_enabled,$(DT_COMPAT_INTEL_CAVS_HDA_HOST_IN))
+	depends on DMA
+	select DMA_CAVS_HDA
+	help
+	  Intel cAVS Host HDA DMA driver.
+
+config DMA_CAVS_HDA_HOST_OUT
+	bool "Intel cAVS HDA Host Out DMA drivers"
+	default $(dt_compat_enabled,$(DT_COMPAT_INTEL_CAVS_HDA_HOST_OUT))
+	depends on DMA
+	select DMA_CAVS_HDA
+	help
+	  Intel cAVS Host HDA DMA driver.
+
+config DMA_CAVS_HDA_LINK_IN
+	bool "Intel cAVS HDA Link In DMA drivers"
+	default $(dt_compat_enabled,$(DT_COMPAT_INTEL_CAVS_HDA_LINK_IN))
+	depends on DMA
+	select DMA_CAVS_HDA
+	help
+	  Intel cAVS Link In HDA DMA driver.
+
+config DMA_CAVS_HDA_LINK_OUT
+	bool "Intel cAVS HDA Link Out DMA drivers"
+	default $(dt_compat_enabled,$(DT_COMPAT_INTEL_CAVS_HDA_LINK_OUT))
+	depends on DMA
+	select DMA_CAVS_HDA
+	help
+	  Intel cAVS Link Out HDA DMA driver.
+
 config DMA_CAVS_HDA
-	bool "Intel cAVS HDA DMA driver"
+	bool
+	depends on DMA_CAVS_HDA_LINK_OUT || DMA_CAVS_HDA_LINK_IN || DMA_CAVS_HDA_HOST_OUT || DMA_CAVS_HDA_HOST_IN
 	help
 	  Intel cAVS HDA DMA driver.
