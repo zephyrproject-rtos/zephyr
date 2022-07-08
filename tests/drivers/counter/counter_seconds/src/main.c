@@ -12,9 +12,9 @@
  */
 
 #ifdef CONFIG_COUNTER_CMOS
-#define DEVICE_LABEL "CMOS"
+#define CTR_DEV		DT_COMPAT_GET_ANY_STATUS_OKAY(motorola_mc146818)
 #else
-#define DEVICE_LABEL DT_LABEL(DT_ALIAS(rtc_0))
+#define CTR_DEV		DT_ALIAS(rtc_0)
 #endif
 
 #define DELAY_MS 1200	/* pause 1.2 seconds should always pass */
@@ -23,12 +23,11 @@
 
 void test_seconds_rate(void)
 {
-	const struct device *dev;
+	const struct device *dev = DEVICE_DT_GET(CTR_DEV);
 	uint32_t start, elapsed;
 	int err;
 
-	dev = device_get_binding(DEVICE_LABEL);
-	zassert_true(dev != NULL, "can't find counter device");
+	zassert_true(device_is_ready(dev), "counter device is not ready");
 
 	err = counter_get_value(dev, &start);
 	zassert_true(err == 0, "failed to read counter device");
