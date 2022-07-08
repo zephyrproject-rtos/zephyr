@@ -56,6 +56,7 @@ config APIC_TSC_DEADLINE_TIMER
 	depends on X86
 	select LOAPIC
 	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help
 	  Extremely simple timer driver based the local APIC TSC
 	  deadline capability.  The use of a free-running 64 bit
