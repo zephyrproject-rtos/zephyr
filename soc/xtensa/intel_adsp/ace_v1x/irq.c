@@ -44,7 +44,7 @@ int z_soc_irq_is_enabled(unsigned int irq)
 
 	if (!device_is_ready(dev)) {
 		LOG_DBG("board: ACE V1X device is not ready");
-		return;
+		return -ENODEV;
 	}
 
 	api = (const struct dw_ace_v1_ictl_driver_api *)dev->api;
