@@ -121,6 +121,27 @@ NET_BUF_POOL_DEFINE(gsm_recv_pool, GSM_RECV_MAX_BUF, GSM_RECV_BUF_SIZE, 0, NULL)
 K_KERNEL_STACK_DEFINE(gsm_rx_stack, CONFIG_MODEM_GSM_RX_STACK_SIZE);
 K_KERNEL_STACK_DEFINE(gsm_workq_stack, CONFIG_MODEM_GSM_WORKQ_STACK_SIZE);
 
+#if DT_INST_NODE_HAS_PROP(0, mdm_restart_gpios)
+static const struct gpio_dt_spec restart_gpio =
+			GPIO_DT_SPEC_INST_GET(0, mdm_restart_gpios);
+
+#if !DT_INST_NODE_HAS_PROP(0, mdm_off_delay)
+#error "mdm-restart-gpios needs mdm-off-delay"
+#elif !DT_INST_NODE_HAS_PROP(0, mdm_on_delay)
+#error "mdm-restart-gpios needs mdm-on-delay"
+#endif
+
+#endif /* DT_INST_NODE_HAS_PROP(0, mdm-restart-gpios) */
+
+#if DT_INST_NODE_HAS_PROP(0, mdm_dtr_gpios)
+static const struct gpio_dt_spec dtr_gpio =
+			GPIO_DT_SPEC_INST_GET(0, mdm_dtr_gpios);
+#endif
+#if DT_INST_NODE_HAS_PROP(0, mdm_wdisable_gpios)
+static const struct gpio_dt_spec wdisable_gpio =
+			GPIO_DT_SPEC_INST_GET(0, mdm_wdisable_gpios);
+#endif
+
 static inline void gsm_ppp_lock(struct gsm_modem *gsm)
 {
 	(void)k_mutex_lock(&gsm->lock, K_FOREVER);
@@ -1124,12 +1145,61 @@ reschedule:
 	gsm_ppp_unlock(gsm);
 }
 
+static int pin_init(void)
+{
+	int rc = 0;
+
+#if DT_INST_NODE_HAS_PROP(0, mdm_wdisable_gpios)
+	rc = gpio_pin_configure_dt(&wdisable_gpio, GPIO_OUTPUT_LOW);
+	if (rc < 0) {
+		LOG_ERR("Failed to configure wdisable pin");
+		return rc;
+	}
+	gpio_pin_set_dt(&wdisable_gpio, 0);
+#endif
+
+#if DT_INST_NODE_HAS_PROP(0, mdm_dtr_gpios)
+	gpio_pin_set_dt(&dtr_gpio, 0);
+	rc = gpio_pin_configure_dt(&dtr_gpio, GPIO_OUTPUT_LOW);
+	if (rc < 0) {
+		LOG_ERR("Failed to configure dtr pin");
+		return rc;
+	}
+	gpio_pin_set_dt(&dtr_gpio, 0);
+#endif
+
+#if DT_INST_NODE_HAS_PROP(0, mdm_restart_gpios)
+	rc = gpio_pin_configure_dt(&restart_gpio, GPIO_OUTPUT_LOW);
+	if (rc < 0) {
+		LOG_ERR("Failed to configure restart pin");
+		return rc;
+	}
+	LOG_INF("Stop modem");
+	gpio_pin_set_dt(&restart_gpio, 1);
+	k_sleep(K_MSEC(DT_INST_PROP(0, mdm_off_delay)));
+
+	LOG_INF("Start modem");
+	gpio_pin_set_dt(&restart_gpio, 0);
+	k_sleep(K_MSEC(DT_INST_PROP(0, mdm_on_delay)));
+
+	LOG_INF("... Done!");
+#endif
+
+	return rc;
+}
+
 void gsm_ppp_start(const struct device *dev)
 {
 	int ret;
 	struct gsm_modem *gsm = dev->data;
 
 	gsm_ppp_lock(gsm);
+
+	ret = pin_init();
+	if (ret < 0) {
+		LOG_ERR("pin_init returned %d", ret);
+		goto unlock;
+	}
 
 	/* Re-init underlying UART comms */
 	ret = modem_iface_uart_init_dev(&gsm->context.iface, DEVICE_DT_GET(GSM_UART_NODE));

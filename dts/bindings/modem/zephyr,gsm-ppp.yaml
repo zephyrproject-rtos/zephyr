@@ -6,3 +6,30 @@ description: GSM PPP modem
 compatible: "zephyr,gsm-ppp"
 
 include: uart-device.yaml
+
+properties:
+    label:
+      required: true
+
+    mdm-restart-gpios:
+      type: phandle-array
+      required: false
+      description: Pin to restart modem can be a reset or a power pin.
+
+    mdm-off-delay:
+      type: int
+      required: false
+      description: Delay in ms after disabling modem.
+
+    mdm-on-delay:
+      type: int
+      required: false
+      description: Delay in ms after enabling modem.
+
+    mdm-dtr-gpios:
+      type: phandle-array
+      required: false
+
+    mdm-wdisable-gpios:
+      type: phandle-array
+      required: false
