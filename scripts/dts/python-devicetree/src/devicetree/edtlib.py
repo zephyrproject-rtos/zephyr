@@ -2547,12 +2547,14 @@ def _interrupt_parent(node):
     # the parents of 'node'. As of writing, this behavior isn't specified in
     # the DT spec., but seems to match what some .dts files except.
 
+    start_node = node
+
     while node:
         if "interrupt-parent" in node.props:
             return node.props["interrupt-parent"].to_node()
         node = node.parent
 
-    _err(f"{node!r} has an 'interrupts' property, but neither the node "
+    _err(f"{start_node!r} has an 'interrupts' property, but neither the node "
          f"nor any of its parents has an 'interrupt-parent' property")
 
 
