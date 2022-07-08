@@ -35,7 +35,7 @@ static void clock_off(void)
 	} while (!clock_is_off());
 }
 
-void test_clock_blocking_on(void)
+ZTEST(clock_control_onoff, test_clock_blocking_on)
 {
 	struct onoff_client cli;
 	struct onoff_manager *mgr = get_mgr();
@@ -58,7 +58,7 @@ void test_clock_blocking_on(void)
 	zassert_true(err >= 0, "");
 }
 
-void test_clock_spinwait_release_before_start(void)
+ZTEST(clock_control_onoff, test_clock_spinwait_release_before_start)
 {
 	struct onoff_client cli;
 	struct onoff_manager *mgr = get_mgr();
@@ -93,7 +93,7 @@ static void request_cb(struct onoff_manager *mgr, struct onoff_client *cli,
  * it is started it is the best to do that release from the callback to avoid
  * waiting until clock is started in the release context.
  */
-void test_clock_release_from_callback(void)
+ZTEST(clock_control_onoff, test_clock_release_from_callback)
 {
 	struct onoff_client cli;
 	struct onoff_manager *mgr = get_mgr();
@@ -111,14 +111,4 @@ void test_clock_release_from_callback(void)
 	/* clock should be turned off in the started callback */
 	zassert_true(clock_is_off(), "clock should be off");
 }
-
-
-void test_main(void)
-{
-	ztest_test_suite(test_clock_control_onoff,
-		ztest_unit_test(test_clock_blocking_on),
-		ztest_unit_test(test_clock_spinwait_release_before_start),
-		ztest_unit_test(test_clock_release_from_callback)
-			 );
-	ztest_run_test_suite(test_clock_control_onoff);
-}
+ZTEST_SUITE(clock_control_onoff, NULL, NULL, NULL, NULL, NULL);
