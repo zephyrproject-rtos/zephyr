@@ -24,19 +24,15 @@ static const struct device *const entropy = DEVICE_DT_GET(DT_CHOSEN(zephyr_entro
 static struct onoff_manager *hf_mgr;
 static uint32_t iteration;
 
-static void setup(void)
+static void before(void *data)
 {
+	ARG_UNUSED(data);
 	zassert_true(device_is_ready(entropy), NULL);
 
 	hf_mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 	zassert_true(hf_mgr, NULL);
 
 	iteration = 0;
-}
-
-static void teardown(void)
-{
-	/* empty */
 }
 
 static void bt_timeout_handler(struct k_timer *timer)
@@ -100,7 +96,7 @@ static void check_hf_status(const struct device *dev, bool exp_on,
  * Test runs in the loop to eventually lead to cases when clock controlling is
  * preempted by timeout handler. At certain points clock status is validated.
  */
-static void test_onoff_interrupted(void)
+ZTEST(nrf_onoff_and_bt, test_onoff_interrupted)
 {
 	const struct device *const clock_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock);
 	struct onoff_client cli;
@@ -194,7 +190,7 @@ K_TIMER_DEFINE(timer2, onoff_timeout_handler, NULL);
  * Test runs in the loop to eventually lead to cases when clock controlling is
  * preempted by timeout handler. At certain points clock status is validated.
  */
-static void test_bt_interrupted(void)
+ZTEST(nrf_onoff_and_bt, test_bt_interrupted)
 {
 	const struct device *const clock_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock);
 	uint64_t start_time = k_uptime_get();
@@ -240,14 +236,4 @@ static void test_bt_interrupted(void)
 	k_msleep(100);
 	check_hf_status(clock_dev, false, true);
 }
-
-void test_main(void)
-{
-	ztest_test_suite(test_nrf_onoff_and_bt,
-		ztest_unit_test_setup_teardown(test_onoff_interrupted,
-					       setup, teardown),
-		ztest_unit_test_setup_teardown(test_bt_interrupted,
-					       setup, teardown)
-			);
-	ztest_run_test_suite(test_nrf_onoff_and_bt);
-}
+ZTEST_SUITE(nrf_onoff_and_bt, NULL, NULL, before, NULL, NULL);
