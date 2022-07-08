@@ -11,6 +11,9 @@
  */
 #include <zephyr/irq.h>
 
+#include <zephyr/drivers/interrupt_controller/riscv_clic.h>
+#include <zephyr/drivers/interrupt_controller/riscv_plic.h>
+
 #if defined(CONFIG_RISCV_HAS_CLIC)
 
 void arch_irq_enable(unsigned int irq)
