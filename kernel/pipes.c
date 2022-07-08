@@ -22,8 +22,17 @@
 #include <zephyr/sys/check.h>
 
 struct k_pipe_desc {
+	sys_dnode_t    node;
 	unsigned char *buffer;           /* Position in src/dest buffer */
 	size_t bytes_to_xfer;            /* # bytes left to transfer */
+	struct k_thread *thread;         /* Owning thread */
+};
+
+struct k_pipe_info {
+	unsigned char *buffer;
+	size_t         start_index;
+	size_t         end_index;
+	size_t         size;
 };
 
 static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
@@ -196,174 +205,68 @@ static size_t pipe_xfer(unsigned char *dest, size_t dest_size,
 }
 
 /**
- * @brief Put data from @a src into the pipe's circular buffer
+ * @brief Popluate pipe descriptors for copying to/from waiters' buffers
  *
- * Modifies the following fields in @a pipe:
- *        buffer, bytes_used, write_index
+ * This routine cycles through the waiters on the wait queue and creates
+ * a list of threads that will have data directly copied to / read from
+ * their buffers. This list helps us avoid double copying later.
  *
- * @return Number of bytes written to the pipe's circular buffer
+ * @return # of bytes available for direct copying
  */
-static size_t pipe_buffer_put(struct k_pipe *pipe,
-			       const unsigned char *src, size_t src_size)
-{
-	size_t  bytes_copied;
-	size_t  run_length;
-	size_t  num_bytes_written = 0;
-	int     i;
-
-
-	for (i = 0; i < 2; i++) {
-		run_length = MIN(pipe->size - pipe->bytes_used,
-				 pipe->size - pipe->write_index);
-
-		bytes_copied = pipe_xfer(pipe->buffer + pipe->write_index,
-					  run_length,
-					  src + num_bytes_written,
-					  src_size - num_bytes_written);
-
-		num_bytes_written += bytes_copied;
-		pipe->bytes_used += bytes_copied;
-		pipe->write_index += bytes_copied;
-		if (pipe->write_index == pipe->size) {
-			pipe->write_index = 0;
-		}
-	}
-
-	return num_bytes_written;
-}
-
-/**
- * @brief Get data from the pipe's circular buffer
- *
- * Modifies the following fields in @a pipe:
- *        bytes_used, read_index
- *
- * @return Number of bytes read from the pipe's circular buffer
- */
-static size_t pipe_buffer_get(struct k_pipe *pipe,
-			       unsigned char *dest, size_t dest_size)
-{
-	size_t  bytes_copied;
-	size_t  run_length;
-	size_t  num_bytes_read = 0;
-	size_t  dest_off;
-	int     i;
-
-	for (i = 0; i < 2; i++) {
-		run_length = MIN(pipe->bytes_used,
-				 pipe->size - pipe->read_index);
-
-		dest_off = (dest == NULL) ? 0 : num_bytes_read;
-
-		bytes_copied = pipe_xfer(dest + dest_off,
-					 dest_size - num_bytes_read,
-					 pipe->buffer + pipe->read_index,
-					 run_length);
-
-		num_bytes_read += bytes_copied;
-		pipe->bytes_used -= bytes_copied;
-		pipe->read_index += bytes_copied;
-		if (pipe->read_index == pipe->size) {
-			pipe->read_index = 0;
-		}
-	}
-
-	return num_bytes_read;
-}
-
-/**
- * @brief Prepare a working set of readers/writers
- *
- * Prepare a list of "working threads" into/from which the data
- * will be directly copied. This list is useful as it is used to ...
- *
- *  1. avoid double copying
- *  2. minimize interrupt latency as interrupts are unlocked
- *     while copying data
- *  3. ensure a timeout can not make the request impossible to satisfy
- *
- * The list is populated with previously pended threads that will be ready to
- * run after the pipe call is complete.
- *
- * Important things to remember when reading from the pipe ...
- * 1. If there are writers int @a wait_q, then the pipe's buffer is full.
- * 2. Conversely if the pipe's buffer is not full, there are no writers.
- * 3. The amount of available data in the pipe is the sum the bytes used in
- *    the pipe (@a pipe_space) and all the requests from the waiting writers.
- * 4. Since data is read from the pipe's buffer first, the working set must
- *    include writers that will (try to) re-fill the pipe's buffer afterwards.
- *
- * Important things to remember when writing to the pipe ...
- * 1. If there are readers in @a wait_q, then the pipe's buffer is empty.
- * 2. Conversely if the pipe's buffer is not empty, then there are no readers.
- * 3. The amount of space available in the pipe is the sum of the bytes unused
- *    in the pipe (@a pipe_space) and all the requests from the waiting readers.
- *
- * @return false if request is unsatisfiable, otherwise true
- */
-static bool pipe_xfer_prepare(sys_dlist_t      *xfer_list,
-			       struct k_thread **waiter,
-			       _wait_q_t        *wait_q,
-			       size_t            pipe_space,
-			       size_t            bytes_to_xfer,
-			       size_t            min_xfer,
-			       k_timeout_t           timeout)
+static size_t pipe_waiter_list_populate(sys_dlist_t  *list,
+					_wait_q_t    *wait_q,
+					size_t        bytes_to_xfer)
 {
 	struct k_thread  *thread;
-	struct k_pipe_desc *desc;
+	struct k_pipe_desc *curr;
 	size_t num_bytes = 0;
 
-	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		_WAIT_Q_FOR_EACH(wait_q, thread) {
-			desc = (struct k_pipe_desc *)thread->base.swap_data;
+	_WAIT_Q_FOR_EACH(wait_q, thread) {
+		curr = (struct k_pipe_desc *)thread->base.swap_data;
 
-			num_bytes += desc->bytes_to_xfer;
+		sys_dlist_append(list, &curr->node);
 
-			if (num_bytes >= bytes_to_xfer) {
-				break;
-			}
-		}
-
-		if (num_bytes + pipe_space < min_xfer) {
-			return false;
-		}
-	}
-
-	/*
-	 * Either @a timeout is not K_NO_WAIT (so the thread may pend) or
-	 * the entire request can be satisfied. Generate the working list.
-	 */
-
-	sys_dlist_init(xfer_list);
-	num_bytes = 0;
-
-	while ((thread = z_waitq_head(wait_q)) != NULL) {
-		desc = (struct k_pipe_desc *)thread->base.swap_data;
-		num_bytes += desc->bytes_to_xfer;
-
-		if (num_bytes > bytes_to_xfer) {
-			/*
-			 * This request can not be fully satisfied.
-			 * Do not remove it from the wait_q.
-			 * Do not abort its timeout (if applicable).
-			 * Do not add it to the transfer list
-			 */
+		num_bytes += curr->bytes_to_xfer;
+		if (num_bytes >= bytes_to_xfer) {
 			break;
 		}
-
-		/*
-		 * This request can be fully satisfied.
-		 * Remove it from the wait_q.
-		 * Abort its timeout.
-		 * Add it to the transfer list.
-		 */
-		z_unpend_thread(thread);
-		sys_dlist_append(xfer_list, &thread->base.qnode_dlist);
 	}
 
-	*waiter = (num_bytes > bytes_to_xfer) ? thread : NULL;
+	return num_bytes;
+}
 
-	return true;
+/**
+ * @brief Populate pipe descriptors for copying to/from pipe buffer
+ *
+ * This routine is only called if the pipe buffer is not empty (when reading),
+ * or if not full (when writing).
+ */
+static size_t pipe_buffer_list_populate(sys_dlist_t         *list,
+					struct k_pipe_desc  *desc,
+					unsigned char       *buffer,
+					size_t               size,
+					size_t               start,
+					size_t               end)
+{
+	sys_dlist_append(list, &desc[0].node);
+
+	desc[0].thread = NULL;
+	desc[0].buffer = &buffer[start];
+
+	if (start < end) {
+		desc[0].bytes_to_xfer = end - start;
+		return end - start;
+	}
+
+	desc[0].bytes_to_xfer = size - start;
+
+	desc[1].thread = NULL;
+	desc[1].buffer = &buffer[0];
+	desc[1].bytes_to_xfer = end;
+
+	sys_dlist_append(list, &desc[1].node);
+
+	return size - start + end;
 }
 
 /**
@@ -373,8 +276,8 @@ static bool pipe_xfer_prepare(sys_dlist_t      *xfer_list,
  *   >= Minimum       0       0
  *    < Minimum      -EIO*   -EAGAIN
  *
- * * The "-EIO No Wait" case was already checked when the "working set"
- *   was created in  _pipe_xfer_prepare().
+ * * The "-EIO No Wait" case was already checked after the list of pipe
+ *   descriptors was created.
  *
  * @return See table above
  */
@@ -396,11 +299,14 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 		     size_t *bytes_written, size_t min_xfer,
 		      k_timeout_t timeout)
 {
-	struct k_thread    *reader;
-	struct k_pipe_desc *desc;
-	sys_dlist_t    xfer_list;
-	size_t         num_bytes_written = 0;
-	size_t         bytes_copied;
+	struct k_pipe_desc  pipe_desc[2];
+	sys_dlist_t         list;
+	size_t              bytes_copied;
+	size_t              bytes_can_write;
+	bool                reschedule_needed = false;
+
+	__ASSERT(((arch_is_in_isr() == false) ||
+		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, put, pipe, timeout);
 
@@ -413,42 +319,49 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 	k_spinlock_key_t key = k_spin_lock(&pipe->lock);
 
 	/*
-	 * Create a list of "working readers" into which the data will be
-	 * directly copied.
+	 * If there are any waiting readers then the pipe's buffer must be
+	 * empty and we then want to copy directly to the waiting readers'
+	 * buffers. If the pipe's buffer is not empty, we want to copy as
+	 * much data as possible into the pipe's buffer.
+	 *
+	 * For both cases, we create a linked list of pipe descriptors that
+	 * can then be traversed to perform a sort of scatter-gather copy.
 	 */
 
-	if (!pipe_xfer_prepare(&xfer_list, &reader, &pipe->wait_q.readers,
-				pipe->size - pipe->bytes_used, bytes_to_write,
-				min_xfer, timeout)) {
+	sys_dlist_init(&list);
+
+	bytes_can_write = pipe_waiter_list_populate(&list,
+						    &pipe->wait_q.readers,
+						    bytes_to_write);
+
+	if (pipe->bytes_used != pipe->size) {
+		bytes_can_write += pipe_buffer_list_populate(&list,
+							     pipe_desc,
+							     pipe->buffer,
+							     pipe->size,
+							     pipe->write_index,
+							     pipe->read_index);
+	}
+
+	if ((bytes_can_write < min_xfer) &&
+	    (K_TIMEOUT_EQ(timeout, K_NO_WAIT))) {
+
+		/* The request can not be fulfilled. */
+
 		k_spin_unlock(&pipe->lock, key);
 		*bytes_written = 0;
 
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, put, pipe, timeout, -EIO);
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, put, pipe,
+					       timeout, -EIO);
 
 		return -EIO;
 	}
 
-	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_pipe, put, pipe, timeout);
+	struct k_pipe_desc *desc;
+	size_t         num_bytes_written = 0;
 
-	z_sched_lock();
-	k_spin_unlock(&pipe->lock, key);
-
-	/*
-	 * 1. 'xfer_list' currently contains a list of reader threads that can
-	 * have their read requests fulfilled by the current call.
-	 * 2. 'reader' if not NULL points to a thread on the reader wait_q
-	 * that can get some of its requested data.
-	 * 3. Interrupts are unlocked but the scheduler is locked to allow
-	 * ticks to be delivered but no scheduling to occur
-	 * 4. If 'reader' times out while we are copying data, not only do we
-	 * still have a pointer to it, but it can not execute until this call
-	 * is complete so it is still safe to copy data to it.
-	 */
-
-	struct k_thread *thread = (struct k_thread *)
-				  sys_dlist_get(&xfer_list);
-	while (thread != NULL) {
-		desc = (struct k_pipe_desc *)thread->base.swap_data;
+	desc = (struct k_pipe_desc *)sys_dlist_get(&list);
+	while (desc != NULL) {
 		bytes_copied = pipe_xfer(desc->buffer, desc->bytes_to_xfer,
 					  (uint8_t *)data + num_bytes_written,
 					  bytes_to_write - num_bytes_written);
@@ -457,82 +370,67 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 		desc->buffer        += bytes_copied;
 		desc->bytes_to_xfer -= bytes_copied;
 
-		/* The thread's read request has been satisfied. Ready it. */
-		z_ready_thread(thread);
+		if (desc->thread == NULL) {
 
-		thread = (struct k_thread *)sys_dlist_get(&xfer_list);
+			/* Writing to the pipe buffer. Update details. */
+
+			pipe->bytes_used += bytes_copied;
+			pipe->write_index += bytes_copied;
+			if (pipe->write_index >= pipe->size) {
+				pipe->write_index -= pipe->size;
+			}
+		} else if (desc->bytes_to_xfer == 0) {
+
+			/* A thread's read request has been satisfied. */
+
+			z_unpend_thread(desc->thread);
+			z_ready_thread(desc->thread);
+			reschedule_needed = true;
+		}
+		desc = (struct k_pipe_desc *)sys_dlist_get(&list);
 	}
 
-	/*
-	 * Copy any data to the reader that we left on the wait_q.
-	 * It is possible no data will be copied.
-	 */
-	if (reader != NULL) {
-		desc = (struct k_pipe_desc *)reader->base.swap_data;
-		bytes_copied = pipe_xfer(desc->buffer, desc->bytes_to_xfer,
-					 (uint8_t *)data + num_bytes_written,
-					  bytes_to_write - num_bytes_written);
+	if (num_bytes_written >= min_xfer) {
 
-		num_bytes_written   += bytes_copied;
-		desc->buffer        += bytes_copied;
-		desc->bytes_to_xfer -= bytes_copied;
-	}
+		/* The minimum amount of data has been copied */
 
-	/*
-	 * As much data as possible has been directly copied to any waiting
-	 * readers. Add as much as possible to the pipe's circular buffer.
-	 */
-
-	num_bytes_written +=
-		pipe_buffer_put(pipe, (uint8_t *)data + num_bytes_written,
-				 bytes_to_write - num_bytes_written);
-
-	if (num_bytes_written == bytes_to_write) {
 		*bytes_written = num_bytes_written;
-		k_sched_unlock();
+
+		if (reschedule_needed) {
+			z_reschedule(&pipe->lock, key);
+		} else {
+			k_spin_unlock(&pipe->lock, key);
+		}
 
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, put, pipe, timeout, 0);
 
 		return 0;
 	}
 
-	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)
-	    && num_bytes_written >= min_xfer
-	    && min_xfer > 0U) {
-		*bytes_written = num_bytes_written;
-		k_sched_unlock();
+	/*
+	 * The minimum amount of data has not been copied. Block.
+	 * (We never reach here on a flush.)
+	 */
 
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, put, pipe, timeout, 0);
+	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_pipe, put, pipe, timeout);
 
-		return 0;
-	}
+	struct k_pipe_desc  desc_for_waiter;
 
-	/* Not all data was copied */
+	desc_for_waiter.buffer        = (uint8_t *)data + num_bytes_written;
+	desc_for_waiter.bytes_to_xfer = bytes_to_write - num_bytes_written;
+	desc_for_waiter.thread        = _current;
 
-	struct k_pipe_desc  pipe_desc;
+	_current->base.swap_data = &desc_for_waiter;
 
-	pipe_desc.buffer         = (uint8_t *)data + num_bytes_written;
-	pipe_desc.bytes_to_xfer  = bytes_to_write - num_bytes_written;
+	z_pend_curr(&pipe->lock, key, &pipe->wait_q.writers, timeout);
 
-	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		_current->base.swap_data = &pipe_desc;
-		/*
-		 * Lock interrupts and unlock the scheduler before
-		 * manipulating the writers wait_q.
-		 */
-		k_spinlock_key_t key2 = k_spin_lock(&pipe->lock);
-		z_sched_unlock_no_reschedule();
-		(void)z_pend_curr(&pipe->lock, key2,
-				  &pipe->wait_q.writers, timeout);
-	} else {
-		k_sched_unlock();
-	}
+	*bytes_written = bytes_to_write - desc_for_waiter.bytes_to_xfer;
 
-	*bytes_written = bytes_to_write - pipe_desc.bytes_to_xfer;
-
-	int ret = pipe_return_code(min_xfer, pipe_desc.bytes_to_xfer,
+	int ret = pipe_return_code(min_xfer, desc_for_waiter.bytes_to_xfer,
 				   bytes_to_write);
+
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, put, pipe, timeout, ret);
+
 	return ret;
 }
 
@@ -557,50 +455,53 @@ static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 			     size_t *bytes_read, size_t min_xfer,
 			     k_timeout_t timeout)
 {
-	struct k_thread    *writer;
+	struct k_pipe_desc  pipe_desc[2];
+	sys_dlist_t         list;
 	struct k_pipe_desc *desc;
-	sys_dlist_t    xfer_list;
 	size_t         num_bytes_read = 0;
 	size_t         data_off;
 	size_t         bytes_copied;
+	size_t         bytes_can_read = 0;
+	bool           reschedule_needed = false;
 
 	/*
-	 * Create a list of "working readers" into which the data will be
-	 * directly copied.
+	 * If the pipe's buffer is not empty, we want to copy as much data as
+	 * possible into the requesting reader's buffer. If there are any
+	 * waiting writers, then the pipe's buffer must be full and we then
+	 * want to copy directly to the requesting reader's buffer.
+	 *
+	 * For both cases, we create a linked list of pipe descriptors that
+	 * can then be traversed to perform a sort of scatter-gather copy.
 	 */
 
-	if (!pipe_xfer_prepare(&xfer_list, &writer, &pipe->wait_q.writers,
-				pipe->bytes_used, bytes_to_read,
-				min_xfer, timeout)) {
+	sys_dlist_init(&list);
+
+	if (pipe->bytes_used != 0) {
+		bytes_can_read = pipe_buffer_list_populate(&list,
+							   pipe_desc,
+							   pipe->buffer,
+							   pipe->size,
+							   pipe->read_index,
+							   pipe->write_index);
+	}
+
+	bytes_can_read += pipe_waiter_list_populate(&list,
+						    &pipe->wait_q.writers,
+						    bytes_to_read);
+
+	if ((bytes_can_read < min_xfer) &&
+	    (K_TIMEOUT_EQ(timeout, K_NO_WAIT))) {
+
+		/* The request can not be fulfilled. */
+
 		k_spin_unlock(&pipe->lock, key);
 		*bytes_read = 0;
 
 		return -EIO;
 	}
 
-	z_sched_lock();
-	k_spin_unlock(&pipe->lock, key);
-
-	num_bytes_read = pipe_buffer_get(pipe, data, bytes_to_read);
-
-	/*
-	 * 1. 'xfer_list' currently contains a list of writer threads that can
-	 *     have their write requests fulfilled by the current call.
-	 * 2. 'writer' if not NULL points to a thread on the writer wait_q
-	 *    that can post some of its requested data.
-	 * 3. Data will be copied from each writer's buffer to either the
-	 *    reader's buffer and/or to the pipe's circular buffer.
-	 * 4. Interrupts are unlocked but the scheduler is locked to allow
-	 *    ticks to be delivered but no scheduling to occur
-	 * 5. If 'writer' times out while we are copying data, not only do we
-	 *    still have a pointer to it, but it can not execute until this
-	 *    call is complete so it is still safe to copy data from it.
-	 */
-
-	struct k_thread *thread = (struct k_thread *)
-				  sys_dlist_get(&xfer_list);
-	while ((thread != NULL) && (num_bytes_read < bytes_to_read)) {
-		desc = (struct k_pipe_desc *)thread->base.swap_data;
+	desc = (struct k_pipe_desc *)sys_dlist_get(&list);
+	while (desc != NULL) {
 		data_off = (data == NULL) ? 0 : num_bytes_read;
 		bytes_copied = pipe_xfer((uint8_t *)data + data_off,
 					  bytes_to_read - num_bytes_read,
@@ -610,120 +511,68 @@ static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
 		desc->buffer         += bytes_copied;
 		desc->bytes_to_xfer  -= bytes_copied;
 
-		/*
-		 * It is expected that the write request will be satisfied.
-		 * However, if the read request was satisfied before the
-		 * write request was satisfied, then the write request must
-		 * finish later when writing to the pipe's circular buffer.
-		 */
-		if (num_bytes_read == bytes_to_read) {
-			break;
+		if (desc->thread == NULL) {
+
+			/* Reading from the pipe buffer. Update details. */
+
+			pipe->bytes_used -= bytes_copied;
+			pipe->read_index += bytes_copied;
+			if (pipe->read_index >= pipe->size) {
+				pipe->read_index -= pipe->size;
+			}
+		} else if (desc->bytes_to_xfer == 0) {
+
+			/* The thread's read request has been satisfied. */
+
+			z_unpend_thread(desc->thread);
+			z_ready_thread(desc->thread);
+			reschedule_needed = true;
 		}
-		z_ready_thread(thread);
-
-		thread = (struct k_thread *)sys_dlist_get(&xfer_list);
+		desc = (struct k_pipe_desc *)sys_dlist_get(&list);
 	}
 
-	if ((writer != NULL) && (num_bytes_read < bytes_to_read)) {
-		desc = (struct k_pipe_desc *)writer->base.swap_data;
-		data_off = (data == NULL) ? 0 : num_bytes_read;
-		bytes_copied = pipe_xfer((uint8_t *)data + data_off,
-					  bytes_to_read - num_bytes_read,
-					  desc->buffer, desc->bytes_to_xfer);
+	if (num_bytes_read >= min_xfer) {
 
-		num_bytes_read       += bytes_copied;
-		desc->buffer         += bytes_copied;
-		desc->bytes_to_xfer  -= bytes_copied;
-	}
-
-	/*
-	 * Copy as much data as possible from the writers (if any)
-	 * into the pipe's circular buffer.
-	 */
-
-	while (thread != NULL) {
-		desc = (struct k_pipe_desc *)thread->base.swap_data;
-		bytes_copied = pipe_buffer_put(pipe, desc->buffer,
-						desc->bytes_to_xfer);
-
-		desc->buffer         += bytes_copied;
-		desc->bytes_to_xfer  -= bytes_copied;
-
-		/* Write request has been satisfied */
-		z_ready_thread(thread);
-
-		thread = (struct k_thread *)sys_dlist_get(&xfer_list);
-	}
-
-	if (writer != NULL) {
-		desc = (struct k_pipe_desc *)writer->base.swap_data;
-		bytes_copied = pipe_buffer_put(pipe, desc->buffer,
-						desc->bytes_to_xfer);
-
-		desc->buffer         += bytes_copied;
-		desc->bytes_to_xfer  -= bytes_copied;
-	}
-
-	if (num_bytes_read == bytes_to_read) {
-		k_sched_unlock();
+		/* The minimum amount of data has been copied */
 
 		*bytes_read = num_bytes_read;
+		if (reschedule_needed) {
+			z_reschedule(&pipe->lock, key);
+		} else {
+			k_spin_unlock(&pipe->lock, key);
+		}
 
 		return 0;
 	}
 
-	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)
-	    && num_bytes_read >= min_xfer
-	    && min_xfer > 0U) {
-		k_sched_unlock();
+	/* The minimum amount of data has not been copied. Block. */
 
-		*bytes_read = num_bytes_read;
+	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_pipe, get, pipe, timeout);
 
-		return 0;
-	}
+	struct k_pipe_desc  desc_for_waiter;
 
-	/*
-	 * Not all data was read. It is important to note that when this
-	 * routine is invoked by either of the flush routines() both the <data>
-	 * and <timeout> parameters are set to NULL and K_NO_WAIT respectively.
-	 * Consequently, neither k_pipe_flush() nor k_pipe_buffer_flush()
-	 * will block.
-	 *
-	 * However, this routine may also be invoked by k_pipe_get() and there
-	 * is no enforcement of <data> being non-NULL when called from
-	 * kernel-space. That restriction is enforced when called from
-	 * user-space.
-	 */
+	desc_for_waiter.buffer        = (uint8_t *)data + num_bytes_read;
+	desc_for_waiter.bytes_to_xfer = bytes_to_read - num_bytes_read;
+	desc_for_waiter.thread        = _current;
 
-	struct k_pipe_desc  pipe_desc;
+	_current->base.swap_data = &desc_for_waiter;
 
-	pipe_desc.buffer        = (uint8_t *)data + num_bytes_read;
-	pipe_desc.bytes_to_xfer = bytes_to_read - num_bytes_read;
+	z_pend_curr(&pipe->lock, key, &pipe->wait_q.readers, timeout);
 
-	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_pipe, get, pipe, timeout);
+	*bytes_read = bytes_to_read - desc_for_waiter.bytes_to_xfer;
 
-		_current->base.swap_data = &pipe_desc;
-		k_spinlock_key_t key2 = k_spin_lock(&pipe->lock);
-
-		z_sched_unlock_no_reschedule();
-		(void)z_pend_curr(&pipe->lock, key2,
-				 &pipe->wait_q.readers, timeout);
-	} else {
-		k_sched_unlock();
-	}
-
-	*bytes_read = bytes_to_read - pipe_desc.bytes_to_xfer;
-
-	int ret = pipe_return_code(min_xfer, pipe_desc.bytes_to_xfer,
+	int ret = pipe_return_code(min_xfer, desc_for_waiter.bytes_to_xfer,
 				   bytes_to_read);
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, get, pipe, timeout, ret);
+
 	return ret;
 }
 
 int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 		     size_t *bytes_read, size_t min_xfer, k_timeout_t timeout)
 {
+	__ASSERT(((arch_is_in_isr() == false) ||
+		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
+
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, get, pipe, timeout);
 
 	CHECKIF((min_xfer > bytes_to_read) || bytes_read == NULL) {
