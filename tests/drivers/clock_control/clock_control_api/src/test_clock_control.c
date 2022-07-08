@@ -176,7 +176,7 @@ static void test_on_off_status_instance(const struct device *dev,
 			"%s: Unexpected status (%d)", dev->name, status);
 }
 
-static void test_on_off_status(void)
+ZTEST(clock_control, test_on_off_status)
 {
 	test_all_instances(test_on_off_status_instance, NULL);
 }
@@ -249,7 +249,7 @@ static void test_async_on_instance(const struct device *dev,
 			"Unexpected clock status");
 }
 
-static void test_async_on(void)
+ZTEST(clock_control, test_async_on)
 {
 	test_all_instances(test_async_on_instance, async_capable);
 }
@@ -288,7 +288,7 @@ static void test_async_on_stopped_on_instance(const struct device *dev,
 	zassert_false(executed, "%s: Expected flag to be false", dev->name);
 }
 
-static void test_async_on_stopped(void)
+ZTEST(clock_control, test_async_on_stopped)
 {
 	test_all_instances(test_async_on_stopped_on_instance, async_capable);
 }
@@ -314,7 +314,7 @@ static void test_double_start_on_instance(const struct device *dev,
 	zassert_true(err < 0, "%s: Unexpected return value:%d", dev->name, err);
 }
 
-static void test_double_start(void)
+ZTEST(clock_control, test_double_start)
 {
 	test_all_instances(test_double_start_on_instance, NULL);
 }
@@ -338,19 +338,9 @@ static void test_double_stop_on_instance(const struct device *dev,
 	zassert_equal(0, err, "%s: Unexpected err (%d)", dev->name, err);
 }
 
-static void test_double_stop(void)
+ZTEST(clock_control, test_double_stop)
 {
 	test_all_instances(test_double_stop_on_instance, NULL);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_clock_control,
-		ztest_unit_test(test_on_off_status),
-		ztest_unit_test(test_async_on),
-		ztest_unit_test(test_async_on_stopped),
-		ztest_unit_test(test_double_start),
-		ztest_unit_test(test_double_stop)
-			 );
-	ztest_run_test_suite(test_clock_control);
-}
+ZTEST_SUITE(clock_control, NULL, NULL, NULL, NULL, NULL);
