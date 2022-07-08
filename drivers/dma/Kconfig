@@ -44,9 +44,7 @@ source "drivers/dma/Kconfig.dma_pl330"
 
 source "drivers/dma/Kconfig.iproc_pax"
 
-source "drivers/dma/Kconfig.cavs_gpdma"
-
-source "drivers/dma/Kconfig.ace_gpdma"
+source "drivers/dma/Kconfig.intel_adsp_gpdma"
 
 source "drivers/dma/Kconfig.cavs_hda"
 
