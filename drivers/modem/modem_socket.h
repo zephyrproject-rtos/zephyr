@@ -29,7 +29,11 @@ __net_socket struct modem_socket {
 	int ip_proto;
 	struct sockaddr src;
 	struct sockaddr dst;
+
+	/** The number identifying the socket handle inside the modem */
 	int id;
+
+	/** The file descriptor identifying the socket in the fdtable */
 	int sock_fd;
 
 	/** packet data */
