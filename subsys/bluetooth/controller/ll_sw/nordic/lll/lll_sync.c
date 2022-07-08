@@ -577,7 +577,7 @@ static void isr_aux_setup(void *param)
 	node_rx = param;
 	ftr = &node_rx->hdr.rx_ftr;
 	aux_ptr = ftr->aux_ptr;
-	phy_aux = BIT(aux_ptr->phy);
+	phy_aux = BIT(PDU_ADV_AUX_PTR_PHY_GET(aux_ptr));
 	ftr->aux_phy = phy_aux;
 
 	lll = ftr->param;
@@ -590,7 +590,7 @@ static void isr_aux_setup(void *param)
 	}
 
 	/* Calculate the aux offset from start of the scan window */
-	aux_offset_us = (uint32_t) aux_ptr->offs * window_size_us;
+	aux_offset_us = (uint32_t) PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) * window_size_us;
 
 	/* Calculate the window widening that needs to be deducted */
 	if (aux_ptr->ca) {
@@ -617,7 +617,8 @@ static void isr_aux_setup(void *param)
 
 	if (cfg->is_enabled && is_max_cte_reached(cfg->max_cte_count, cfg->cte_count)) {
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
-					  aux_ptr->chan_idx, CTE_INFO_IN_PAYLOAD, aux_ptr->phy);
+					  aux_ptr->chan_idx, CTE_INFO_IN_PAYLOAD,
+					  PDU_ADV_AUX_PTR_PHY_GET(aux_ptr));
 	}
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 	radio_switch_complete_and_disable();

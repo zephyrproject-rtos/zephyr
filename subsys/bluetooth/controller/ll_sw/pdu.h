@@ -150,6 +150,11 @@
 /* Value specified in BT Spec. Vol 6, Part B, section 2.3.4.6 */
 #define OFFS_ADJUST_US         2457600UL
 
+/* Macros for getting offset/phy from pdu_adv_aux_ptr */
+#define PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) ((aux_ptr)->offs_phy_packed[0] | \
+					     (((aux_ptr)->offs_phy_packed[1] & 0x1F) << 8))
+#define PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) (((aux_ptr)->offs_phy_packed[1] >> 5) & 0x07)
+
 /* Advertiser's Sleep Clock Accuracy Value */
 #define SCA_500_PPM       500 /* 51 ppm to 500 ppm */
 #define SCA_50_PPM        50  /* 0 ppm to 50 ppm */
@@ -371,17 +376,19 @@ struct pdu_adv_aux_ptr {
 	uint8_t  chan_idx:6;
 	uint8_t  ca:1;
 	uint8_t  offs_units:1;
-	uint16_t offs:13;
-	uint16_t phy:3;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 	uint8_t  offs_units:1;
 	uint8_t  ca:1;
 	uint8_t  chan_idx:6;
-	uint16_t phy:3;
-	uint16_t offs:13;
 #else
 #error "Unsupported endianness"
 #endif
+	/* offs:13
+	 * phy:3
+	 * NOTE: This layout as bitfields is not portable for BE using
+	 * endianness conversion macros.
+	 */
+	uint8_t  offs_phy_packed[2];
 } __packed;
 
 enum pdu_adv_aux_ptr_ca {
