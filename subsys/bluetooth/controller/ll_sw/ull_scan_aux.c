@@ -456,8 +456,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	 * or aux pointer is zero or scannable advertising has erroneous aux
 	 * pointer being present or PHY in the aux pointer is invalid.
 	 */
-	if (!aux_ptr || !aux_ptr->offs || is_scan_req ||
-	    (aux_ptr->phy > EXT_ADV_AUX_PHY_LE_CODED)) {
+	if (!aux_ptr || !PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) || is_scan_req ||
+	    (PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) > EXT_ADV_AUX_PHY_LE_CODED)) {
 		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync_lll) {
 			struct ll_sync_set *sync;
 
@@ -552,7 +552,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	/* Initialize the channel index and PHY for the Auxiliary PDU reception.
 	 */
 	lll_aux->chan = aux_ptr->chan_idx;
-	lll_aux->phy = BIT(aux_ptr->phy);
+	lll_aux->phy = BIT(PDU_ADV_AUX_PTR_PHY_GET(aux_ptr));
 
 	/* See if this was already scheduled from LLL. If so, store aux context
 	 * in global scan struct so we can pick it when scanned node is received
@@ -619,7 +619,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		lll_aux->window_size_us = OFFS_UNIT_30_US;
 	}
 
-	aux_offset_us = (uint32_t)aux_ptr->offs * lll_aux->window_size_us;
+	aux_offset_us = (uint32_t)PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) * lll_aux->window_size_us;
 
 	/* CA field contains the clock accuracy of the advertiser;
 	 * 0 - 51 ppm to 500 ppm
