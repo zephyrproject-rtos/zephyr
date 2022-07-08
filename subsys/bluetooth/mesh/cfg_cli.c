@@ -722,7 +722,7 @@ static int mod_sub_status(struct bt_mesh_model *model,
 done:
 	if (cli->cb && cli->cb->mod_sub_status) {
 		cli->cb->mod_sub_status(cli, ctx->addr, status, elem_addr,
-				sub_addr, mod_id);
+				sub_addr, (cid << 16) | mod_id);
 	}
 
 	return err;
