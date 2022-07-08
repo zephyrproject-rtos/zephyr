@@ -9,6 +9,7 @@
 
 #include "../riscv-privilege/common/soc_common.h"
 #include <zephyr/devicetree.h>
+#include <zephyr/arch/common/sys_io.h>
 
 /* lib-c hooks required RAM defined variables */
 #define RISCV_RAM_BASE              DT_REG_ADDR(DT_INST(0, mmio_sram))
