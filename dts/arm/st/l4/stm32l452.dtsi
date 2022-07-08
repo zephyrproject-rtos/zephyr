@@ -124,6 +124,12 @@
 				label = "PWM_3";
 				#pwm-cells = <3>;
 			};
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+				label = "COUNTER_3";
+			};
 		};
 
 		dac1: dac@40007400 {
