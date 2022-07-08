@@ -208,6 +208,10 @@ class Gcovr(CoverageTool):
 
         tracefiles = self._interleave_list("--add-tracefile", files)
 
+        # Apply gcovr output format default
+        if self.output_formats is None:
+            self.output_formats = "html"
+
         # Convert command line argument (comma-separated list) to gcovr flags
         report_options = {
             "html": ["--html", os.path.join(subdir, "index.html"), "--html-details"],

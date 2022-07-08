@@ -247,9 +247,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument("--coverage-tool", choices=['lcov', 'gcovr'], default='lcov',
                         help="Tool to use to generate coverage report.")
 
-    parser.add_argument("--coverage-formats", action="store", default='html',
+    parser.add_argument("--coverage-formats", action="store", default=None, # default behavior is set in Gcovr._generate
                         help="Output formats to use for generated coverage reports, as a comma-separated list. "
                              "Only used in conjunction with gcovr. "
+                             "Default to html. "
                              "Valid options are html, xml, csv, txt, coveralls, sonarqube.")
 
     parser.add_argument(
@@ -629,6 +630,11 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         logger.error("""When --device-testing is used with
                         --device-serial or --device-serial-pty,
                         only one platform is allowed""")
+        sys.exit(1)
+
+    if options.coverage_formats and (options.coverage_tool != "gcovr"):
+        logger.error("""--coverage-formats can only be used when coverage
+                        tool is set to gcovr""")
         sys.exit(1)
 
     if options.size:
