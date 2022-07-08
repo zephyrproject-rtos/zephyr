@@ -141,7 +141,7 @@ NET_DEVICE_INIT(net_udp_test, "net_udp_test",
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_udp_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
 
-static void test_setup(void)
+static void *test_setup(void)
 {
 	struct net_if *iface;
 	struct net_if_addr *ifaddr;
@@ -202,9 +202,11 @@ static void test_setup(void)
 		       net_sprint_ipv4_addr(&in4addr_my), iface);
 		zassert_true(0, "exiting");
 	}
+
+	return NULL;
 }
 
-static void test_net_shell(void)
+ZTEST(net_shell_test_suite, test_net_shell)
 {
 	int ret;
 
@@ -217,10 +219,4 @@ static void test_net_shell(void)
 	zassert_equal(ret, 1, "");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_net_shell_usability,
-			 ztest_unit_test(test_setup),
-			 ztest_unit_test(test_net_shell));
-	ztest_run_test_suite(test_net_shell_usability);
-}
+ZTEST_SUITE(net_shell_test_suite, NULL, test_setup, NULL, NULL, NULL);
