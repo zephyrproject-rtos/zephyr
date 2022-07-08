@@ -43,6 +43,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_engine.h"
 #include "lwm2m_object.h"
+#include "lwm2m_obj_access_control.h"
 #include "lwm2m_rw_link_format.h"
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_rw_plain_text.h"
@@ -1960,7 +1961,17 @@ int handle_request(struct coap_packet *request, struct lwm2m_message *msg)
 	}
 
 	if (!ignore) {
-
+#if defined(CONFIG_LWM2M_ACCESS_CONTROL_ENABLE)
+		r = access_control_check_access(msg->path.obj_id, msg->path.obj_inst_id,
+						msg->ctx->srv_obj_inst, msg->operation,
+						msg->ctx->bootstrap_mode);
+		if (r < 0) {
+			LOG_ERR("Access denied - Server obj %u does not have proper access to "
+				"resource",
+				msg->ctx->srv_obj_inst);
+			goto error;
+		}
+#endif
 		switch (msg->operation) {
 
 		case LWM2M_OP_READ:
@@ -2011,6 +2022,12 @@ int handle_request(struct coap_packet *request, struct lwm2m_message *msg)
 				/* Single resource write Operation */
 				r = do_write_op(msg, format);
 			}
+#if defined(CONFIG_LWM2M_ACCESS_CONTROL_ENABLE)
+			if (msg->operation == LWM2M_OP_CREATE && r >= 0) {
+				access_control_add(msg->path.obj_id, msg->path.obj_inst_id,
+						   msg->ctx->srv_obj_inst);
+			}
+#endif
 			break;
 
 		case LWM2M_OP_WRITE_ATTR:
@@ -2076,6 +2093,8 @@ error:
 		msg->code = COAP_RESPONSE_CODE_NOT_IMPLEMENTED;
 	} else if (r == -ENOMSG) {
 		msg->code = COAP_RESPONSE_CODE_UNSUPPORTED_CONTENT_FORMAT;
+	} else if (r == -EACCES) {
+		msg->code = COAP_RESPONSE_CODE_UNAUTHORIZED;
 	} else {
 		/* Failed to handle the request */
 		msg->code = COAP_RESPONSE_CODE_INTERNAL_ERROR;

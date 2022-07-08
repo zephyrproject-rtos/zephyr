@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_engine.h"
 #include "lwm2m_object.h"
+#include "lwm2m_obj_access_control.h"
 #include "lwm2m_util.h"
 
 #include <ctype.h>
@@ -52,11 +53,22 @@ sys_slist_t *lwm2m_engine_obj_inst_list(void) { return &engine_obj_inst_list; }
 
 void lwm2m_register_obj(struct lwm2m_engine_obj *obj)
 {
+#if defined(CONFIG_LWM2M_ACCESS_CONTROL_ENABLE)
+	/* If bootstrap, then bootstrap server should create the ac obj instances */
+#if !IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	int server_obj_inst_id = lwm2m_server_short_id_to_inst(CONFIG_LWM2M_SERVER_DEFAULT_SSID);
+
+	access_control_add_obj(obj->obj_id, server_obj_inst_id);
+#endif /* CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP */
+#endif /* CONFIG_LWM2M_ACCESS_CONTROL_ENABLE */
 	sys_slist_append(&engine_obj_list, &obj->node);
 }
 
 void lwm2m_unregister_obj(struct lwm2m_engine_obj *obj)
 {
+#if defined(CONFIG_LWM2M_ACCESS_CONTROL_ENABLE)
+	access_control_remove_obj(obj->obj_id);
+#endif
 	engine_remove_observer_by_id(obj->obj_id, -1);
 	sys_slist_find_and_remove(&engine_obj_list, &obj->node);
 }
@@ -101,11 +113,22 @@ struct lwm2m_engine_obj *lwm2m_engine_get_obj(const struct lwm2m_obj_path *path)
 
 static void engine_register_obj_inst(struct lwm2m_engine_obj_inst *obj_inst)
 {
+#if defined(CONFIG_LWM2M_ACCESS_CONTROL_ENABLE)
+	/* If bootstrap, then bootstrap server should create the ac obj instances */
+#if !IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	int server_obj_inst_id = lwm2m_server_short_id_to_inst(CONFIG_LWM2M_SERVER_DEFAULT_SSID);
+
+	access_control_add(obj_inst->obj->obj_id, obj_inst->obj_inst_id, server_obj_inst_id);
+#endif /* CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP */
+#endif /* CONFIG_LWM2M_ACCESS_CONTROL_ENABLE */
 	sys_slist_append(&engine_obj_inst_list, &obj_inst->node);
 }
 
 static void engine_unregister_obj_inst(struct lwm2m_engine_obj_inst *obj_inst)
 {
+#if defined(CONFIG_LWM2M_ACCESS_CONTROL_ENABLE)
+	access_control_remove(obj_inst->obj->obj_id, obj_inst->obj_inst_id);
+#endif
 	engine_remove_observer_by_id(obj_inst->obj->obj_id, obj_inst->obj_inst_id);
 	sys_slist_find_and_remove(&engine_obj_inst_list, &obj_inst->node);
 }
