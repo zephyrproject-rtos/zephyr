@@ -20,8 +20,3 @@
 		zephyr,sram-non-secure-partition = &sram0_ns;
 	};
 };
-
-zephyr_udc0: &usbd {
-	compatible = "nordic,nrf-usbd";
-	status = "okay";
-};
