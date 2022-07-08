@@ -65,6 +65,7 @@ int lwm2m_security_index_to_inst_id(int index);
 
 int32_t lwm2m_server_get_pmin(uint16_t obj_inst_id);
 int32_t lwm2m_server_get_pmax(uint16_t obj_inst_id);
+int lwm2m_server_get_ssid(uint16_t obj_inst_id);
 int lwm2m_server_short_id_to_inst(uint16_t short_id);
 
 #if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
