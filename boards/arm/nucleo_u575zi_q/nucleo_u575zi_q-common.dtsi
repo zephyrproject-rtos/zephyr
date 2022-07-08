@@ -107,3 +107,7 @@
 &iwdg {
 	status = "okay";
 };
+
+&rng {
+	status = "okay";
+};
