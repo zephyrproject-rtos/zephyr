@@ -183,15 +183,6 @@ struct xmodem_packet {
 
 #define MDM_UART_DEV	DEVICE_DT_GET(DT_INST_BUS(0))
 
-#define MDM_WAKE_ASSERTED 1 /* Asserted keeps the module awake */
-#define MDM_WAKE_NOT_ASSERTED 0
-#define MDM_RESET_ASSERTED 0
-#define MDM_RESET_NOT_ASSERTED 1
-#define MDM_PWR_ON_ASSERTED 0
-#define MDM_PWR_ON_NOT_ASSERTED 1
-#define MDM_FAST_SHUTD_ASSERTED 0
-#define MDM_FAST_SHUTD_NOT_ASSERTED 1
-
 #define MDM_SEND_OK_ENABLED 0
 #define MDM_SEND_OK_DISABLED 1
 
@@ -864,10 +855,10 @@ static void modem_assert_wake(bool assert)
 
 	if (assert) {
 		HL7800_IO_DBG_LOG("MDM_WAKE_PIN -> ASSERTED");
-		state = MDM_WAKE_ASSERTED;
+		state = 1;
 	} else {
 		HL7800_IO_DBG_LOG("MDM_WAKE_PIN -> NOT_ASSERTED");
-		state = MDM_WAKE_NOT_ASSERTED;
+		state = 0;
 	}
 
 	gpio_pin_set_dt(&hl7800_cfg.gpio[MDM_WAKE], state);
@@ -881,10 +872,10 @@ static void modem_assert_pwr_on(bool assert)
 {
 	if (assert) {
 		HL7800_IO_DBG_LOG("MDM_PWR_ON -> ASSERTED");
-		gpio_pin_set_dt(&hl7800_cfg.gpio[MDM_PWR_ON], MDM_PWR_ON_ASSERTED);
+		gpio_pin_set_dt(&hl7800_cfg.gpio[MDM_PWR_ON], 1);
 	} else {
 		HL7800_IO_DBG_LOG("MDM_PWR_ON -> NOT_ASSERTED");
-		gpio_pin_set_dt(&hl7800_cfg.gpio[MDM_PWR_ON], MDM_PWR_ON_NOT_ASSERTED);
+		gpio_pin_set_dt(&hl7800_cfg.gpio[MDM_PWR_ON], 0);
 	}
 }
 
@@ -892,10 +883,10 @@ static void modem_assert_fast_shutd(bool assert)
 {
 	if (assert) {
 		HL7800_IO_DBG_LOG("MDM_FAST_SHUTD -> ASSERTED");
-		gpio_pin_set_dt(&hl7800_cfg.gpio[MDM_FAST_SHUTD], MDM_FAST_SHUTD_ASSERTED);
+		gpio_pin_set_dt(&hl7800_cfg.gpio[MDM_FAST_SHUTD], 1);
 	} else {
 		HL7800_IO_DBG_LOG("MDM_FAST_SHUTD -> NOT_ASSERTED");
-		gpio_pin_set_dt(&hl7800_cfg.gpio[MDM_FAST_SHUTD], MDM_FAST_SHUTD_NOT_ASSERTED);
+		gpio_pin_set_dt(&hl7800_cfg.gpio[MDM_FAST_SHUTD], 0);
 	}
 }
 
@@ -4854,7 +4845,7 @@ static void modem_reset(void)
 
 	LOG_INF("Modem Reset");
 	/* Hard reset the modem */
-	gpio_pin_set_dt(&hl7800_cfg.gpio[MDM_RESET], MDM_RESET_ASSERTED);
+	gpio_pin_set_dt(&hl7800_cfg.gpio[MDM_RESET], 1);
 	/* >20 milliseconds required for reset low */
 	k_sleep(MDM_RESET_LOW_TIME);
 
@@ -4876,7 +4867,7 @@ static void modem_reset(void)
 static void modem_run(void)
 {
 	LOG_INF("Modem Run");
-	gpio_pin_set_dt(&hl7800_cfg.gpio[MDM_RESET], MDM_RESET_NOT_ASSERTED);
+	gpio_pin_set_dt(&hl7800_cfg.gpio[MDM_RESET], 0);
 	k_sleep(MDM_RESET_HIGH_TIME);
 	allow_sleep(false);
 }
