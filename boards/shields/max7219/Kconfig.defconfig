@@ -1,0 +1,16 @@
+# Copyright (c) 2022 Jimmy Ou <yanagiis@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_MAX7219_8X8
+
+if DISPLAY
+
+config SPI
+	default y
+
+config MAX7219
+	default y
+
+endif # DISPLAY
+
+endif # SHIELD_MAX7219_GENERIC
