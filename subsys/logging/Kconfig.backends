@@ -335,7 +335,7 @@ endif # LOG_BACKEND_ADSP
 
 config LOG_BACKEND_CAVS_HDA
 	bool "cAVS HDA backend"
-	depends on SOC_FAMILY_INTEL_ADSP && DMA && DMA_CAVS_HDA
+	depends on SOC_FAMILY_INTEL_ADSP && DMA && DMA_CAVS_HDA_HOST_OUT
 	select LOG_OUTPUT
 	help
 	  Provide a logging backend which writes to a buffer and
