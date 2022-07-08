@@ -15,6 +15,7 @@
 #include <soc.h>
 
 #include <zephyr/sw_isr_table.h>
+#include <zephyr/drivers/interrupt_controller/riscv_clic.h>
 
 union CLICCFG {
 	struct {
