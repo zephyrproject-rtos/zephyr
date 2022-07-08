@@ -44,7 +44,7 @@ void *ptr;
  * and verifies that the heap listener is notified of allocating or returning
  * memory from the system.
  */
-void test_alloc_and_trim(void)
+ZTEST(newlib_libc_heap_listener, test_alloc_and_trim)
 {
 	uintptr_t saved_heap_end;
 
@@ -77,10 +77,4 @@ void test_alloc_and_trim(void)
 	heap_listener_unregister(&listener);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(newlib_libc_heap_listener,
-			 ztest_unit_test(test_alloc_and_trim));
-
-	ztest_run_test_suite(newlib_libc_heap_listener);
-}
+ZTEST_SUITE(newlib_libc_heap_listener, NULL, NULL, NULL, NULL, NULL);
