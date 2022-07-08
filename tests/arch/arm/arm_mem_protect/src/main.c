@@ -14,7 +14,7 @@ ZTEST_BMEM char user_stack[256];
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_user_corrupt_stack_pointer(void)
+ZTEST_USER(arm_mem_protect, test_user_corrupt_stack_pointer)
 {
 	int ret = 0;
 	uint32_t saved_sp;
@@ -37,10 +37,4 @@ void test_user_corrupt_stack_pointer(void)
 	zassert_equal(ret, 0, "svc exception wrote to user stack");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(arm_mem_protect,
-			 ztest_user_unit_test(test_user_corrupt_stack_pointer)
-			 );
-	ztest_run_test_suite(arm_mem_protect);
-}
+ZTEST_SUITE(arm_mem_protect, NULL, NULL, NULL, NULL, NULL);
