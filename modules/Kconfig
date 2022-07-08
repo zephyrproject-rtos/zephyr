@@ -74,6 +74,9 @@ comment "mbedtls module not available."
 comment "Trusted-firmware-m module not available."
 	depends on !ZEPHYR_TRUSTED_FIRMWARE_M_MODULE
 
+comment "Trusted-firmware-a module not available."
+	depends on !ZEPHYR_TRUSTED_FIRMWARE_A_MODULE
+
 comment "Nanopb module not available."
 	depends on !ZEPHYR_NANOPB_MODULE
 
