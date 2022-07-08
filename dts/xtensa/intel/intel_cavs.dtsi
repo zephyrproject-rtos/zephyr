@@ -36,22 +36,22 @@
 			compatible = "intel,cavs-hda-link-out";
 			#dma-cells = <1>;
 			reg = <0x00072400 0x40>;
-			dma-channels = <9>;
+			dma-channels = <4>;
 			dma-buf-alignment = <128>;
 			label = "HDA_LINK_OUT";
 
-			status = "disabled";
+			status = "okay";
 		};
 
 		hda_link_in: dma@72600 {
 			compatible = "intel,cavs-hda-link-in";
 			#dma-cells = <1>;
 			reg = <0x00072600 0x40>;
-			dma-channels = <7>;
+			dma-channels = <4>;
 			dma-buf-alignment = <128>;
 			label = "HDA_LINK_IN";
 
-			status = "disabled";
+			status = "okay";
 		};
 
 		hda_host_out: dma@72800 {

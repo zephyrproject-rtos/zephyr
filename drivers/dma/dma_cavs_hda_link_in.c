@@ -26,7 +26,7 @@ static const struct dma_driver_api cavs_hda_dma_link_in_api = {
 	static const struct cavs_hda_dma_cfg cavs_hda_dma##inst##_config = {                       \
 		.base = DT_INST_REG_ADDR(inst),                                                    \
 		.dma_channels = DT_INST_PROP(inst, dma_channels),                                  \
-		.direction = MEMORY_TO_HOST                                                        \
+		.direction = PERIPHERAL_TO_MEMORY						   \
 	};                                                                                         \
 												   \
 	static struct cavs_hda_dma_data cavs_hda_dma##inst##_data = {};                            \
