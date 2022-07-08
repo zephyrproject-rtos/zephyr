@@ -2583,6 +2583,18 @@ West:
   labels:
     - manifest-tf-m-tests
 
+"West project: trusted-firmware-a":
+  status: maintained
+  maintainers:
+    - povergoing
+    - sgrrzhf
+  collaborators:
+    - carlocaione
+  files:
+    - modules/trusted-firmware-a/
+  labels:
+    - manifest-trusted-firmware-a
+
 "West project: psa-arch-tests":
   status: maintained
   maintainers:
