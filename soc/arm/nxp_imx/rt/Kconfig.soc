@@ -182,6 +182,7 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
+	select HAS_MCUX_SRC
 	select HAS_SWO
 
 config SOC_MIMXRT1061
