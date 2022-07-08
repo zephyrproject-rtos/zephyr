@@ -28,6 +28,12 @@
 			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_7";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+				label = "COUNTER_7";
+			};
 		};
 
 		can1: can@40006400 {
