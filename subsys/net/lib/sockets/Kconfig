@@ -244,6 +244,7 @@ config NET_SOCKETS_CAN_RECEIVERS
 config NET_SOCKETPAIR
 	bool "Support for the socketpair syscall [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	select PIPES
 	depends on HEAP_MEM_POOL_SIZE != 0
 	help
 	  Choose y here if you would like to use the socketpair(2)
