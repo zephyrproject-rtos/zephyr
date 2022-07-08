@@ -11,7 +11,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);
 
-static void test_hclk_freq(void)
+ZTEST(stm32_syclck_config, test_hclk_freq)
 {
 	uint32_t soc_hclk_freq;
 
@@ -22,7 +22,7 @@ static void test_hclk_freq(void)
 			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, soc_hclk_freq);
 }
 
-static void test_sysclk_src(void)
+ZTEST(stm32_syclck_config, test_sysclk_src)
 {
 	int sys_clk_src = __HAL_RCC_GET_SYSCLK_SOURCE();
 
@@ -53,7 +53,7 @@ static void test_sysclk_src(void)
 
 }
 
-static void test_pll_src(void)
+ZTEST(stm32_syclck_config, test_pll_src)
 {
 	uint32_t pll_src = __HAL_RCC_GET_PLL_OSCSOURCE();
 
@@ -76,13 +76,4 @@ static void test_pll_src(void)
 #endif
 
 }
-
-void test_main(void)
-{
-	ztest_test_suite(test_stm32_syclck_config,
-		ztest_unit_test(test_hclk_freq),
-		ztest_unit_test(test_sysclk_src),
-		ztest_unit_test(test_pll_src)
-			 );
-	ztest_run_test_suite(test_stm32_syclck_config);
-}
+ZTEST_SUITE(stm32_syclck_config, NULL, NULL, NULL, NULL, NULL);
