@@ -24,7 +24,7 @@ config LWM2M_IPSO_TEMP_SENSOR_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Temperature
 	  Sensor instances available to the LWM2M client.
 
-choice
+choice LWM2M_IPSO_TEMP_SENSOR_VERSION
 	prompt "IPSO Temperature object version"
 	depends on LWM2M_IPSO_TEMP_SENSOR
 	default LWM2M_IPSO_TEMP_SENSOR_VERSION_1_0
@@ -53,7 +53,7 @@ config LWM2M_IPSO_GENERIC_SENSOR_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Generic
 	  Sensor instances available to the LWM2M client.
 
-choice
+choice LWM2M_IPSO_GENERIC_SENSOR_VERSION
 	prompt "IPSO Generic Sensor object version"
 	default LWM2M_IPSO_GENERIC_SENSOR_VERSION_1_0
 	help
@@ -93,7 +93,7 @@ config LWM2M_IPSO_HUMIDITY_SENSOR_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Humidity
 	  Sensor instances available to the LWM2M client.
 
-choice
+choice LWM2M_IPSO_HUMIDITY_SENSOR_VERSION
 	prompt "IPSO Humidity Sensor object version"
 	default LWM2M_IPSO_HUMIDITY_SENSOR_VERSION_1_0
 	help
@@ -124,7 +124,7 @@ config LWM2M_IPSO_PRESSURE_SENSOR_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Pressure
 	  Sensor instances available to the LWM2M client.
 
-choice
+choice LWM2M_IPSO_PRESSURE_SENSOR_VERSION
 	prompt "IPSO Pressure Sensor object version"
 	default LWM2M_IPSO_PRESSURE_SENSOR_VERSION_1_0
 	help
@@ -170,7 +170,7 @@ config LWM2M_IPSO_ACCELEROMETER_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Accelerometer
 	  instances available to the LWM2M client.
 
-choice
+choice LWM2M_IPSO_ACCELEROMETER_VERSION
 	prompt "IPSO Accelerometer object version"
 	depends on LWM2M_IPSO_ACCELEROMETER
 	default LWM2M_IPSO_ACCELEROMETER_VERSION_1_0
@@ -199,7 +199,7 @@ config LWM2M_IPSO_BUZZER_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Buzzer
 	  instances available to the LWM2M client.
 
-choice
+choice LWM2M_IPSO_BUZZER_VERSION
 	prompt "IPSO Buzzer object version"
 	depends on LWM2M_IPSO_BUZZER
 	default LWM2M_IPSO_BUZZER_VERSION_1_0
@@ -240,7 +240,7 @@ config LWM2M_IPSO_ONOFF_SWITCH_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO On/Off Switch
 	  instances available to the LWM2M client.
 
-choice
+choice LWM2M_IPSO_ONOFF_SWITCH_VERSION
 	prompt "IPSO On/Off Switch object version"
 	depends on LWM2M_IPSO_ONOFF_SWITCH
 	default LWM2M_IPSO_ONOFF_SWITCH_VERSION_1_0
@@ -270,7 +270,7 @@ config LWM2M_IPSO_PUSH_BUTTON_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Push Button
 	  instances available to the LWM2M client.
 
-choice
+choice LWM2M_IPSO_PUSH_BUTTON_VERSION
 	prompt "IPSO Push Button object version"
 	depends on LWM2M_IPSO_PUSH_BUTTON
 	default LWM2M_IPSO_PUSH_BUTTON_VERSION_1_0
@@ -301,7 +301,7 @@ config LWM2M_IPSO_CURRENT_SENSOR_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Current
 	  Sensor instances available to the LWM2M client.
 
-choice
+choice LWM2M_IPSO_CURRENT_SENSOR_VERSION
 	prompt "IPSO Current object version"
 	default LWM2M_IPSO_CURRENT_SENSOR_VERSION_1_0
 	depends on LWM2M_IPSO_CURRENT_SENSOR
