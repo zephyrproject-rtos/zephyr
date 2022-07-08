@@ -2330,6 +2330,7 @@ void ull_adv_aux_ptr_fill(struct pdu_adv_aux_ptr *aux_ptr, uint32_t offs_us,
 			  uint8_t phy_s)
 {
 	uint32_t offs;
+	uint8_t phy;
 
 	/* NOTE: Channel Index and Aux Offset will be set on every advertiser's
 	 * event prepare when finding the auxiliary event's ticker offset.
@@ -2342,14 +2343,15 @@ void ull_adv_aux_ptr_fill(struct pdu_adv_aux_ptr *aux_ptr, uint32_t offs_us,
 
 	offs = offs_us / OFFS_UNIT_30_US;
 	if (!!(offs >> OFFS_UNIT_BITS)) {
-		aux_ptr->offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
+		offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
 		aux_ptr->offs_units = OFFS_UNIT_VALUE_300_US;
 	} else {
-		aux_ptr->offs = offs;
 		aux_ptr->offs_units = OFFS_UNIT_VALUE_30_US;
 	}
+	phy = find_lsb_set(phy_s) - 1;
 
-	aux_ptr->phy = find_lsb_set(phy_s) - 1;
+	aux_ptr->offs_phy_packed[0] = offs & 0xFF;
+	aux_ptr->offs_phy_packed[1] = ((offs>>8) & 0x1F) + (phy << 5);
 }
 
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
@@ -2629,12 +2631,13 @@ struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(struct pdu_adv *pdu,
 	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) + remainder_us - start_us;
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> OFFS_UNIT_BITS)) {
-		aux_ptr->offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
+		offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
 		aux_ptr->offs_units = OFFS_UNIT_VALUE_300_US;
 	} else {
-		aux_ptr->offs = offs;
 		aux_ptr->offs_units = OFFS_UNIT_VALUE_30_US;
 	}
+	aux_ptr->offs_phy_packed[0] = offs & 0xFF;
+	aux_ptr->offs_phy_packed[1] = ((offs>>8) & 0x1F) + (aux_ptr->offs_phy_packed[1] & 0xE0);
 
 	return aux_ptr;
 }
