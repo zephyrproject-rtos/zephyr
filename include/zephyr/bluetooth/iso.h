@@ -617,7 +617,26 @@ int bt_iso_cig_terminate(struct bt_iso_cig *cig);
  *  @param param Pointer to a connect parameter array with the ISO and ACL pointers.
  *  @param count Number of connect parameters.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 Successfully started the connecting procedure.
+ *
+ *  @retval -EINVAL Invalid parameters were supplied.
+ *
+ *  @retval -EBUSY Some ISO channels are already being connected.
+ *          It is not possible to have multiple outstanding connection requests.
+ *          May also be returned if @kconfig{CONFIG_BT_SMP} is enabled and a
+ *          pairing procedure is already in progress.
+ *
+ *  @retval -ENOBUFS Not buffers available to send request to controller or if
+ *          @kconfig{CONFIG_BT_SMP} is enabled and no more keys could be stored.
+ *
+ *  @retval -ENOMEM If @kconfig{CONFIG_BT_SMP} is enabled and no more keys
+ *          could be stored.
+ *
+ *  @retval -EIO Controller rejected the request or if @kconfig{CONFIG_BT_SMP}
+ *          is enabled and pairing has timed out.
+ *
+ *  @retval -ENOTCONN If @kconfig{CONFIG_BT_SMP} is enabled the ACL is not
+ *          connected.
  */
 int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count);
 

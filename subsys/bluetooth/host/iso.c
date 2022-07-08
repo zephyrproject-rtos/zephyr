@@ -1977,6 +1977,27 @@ static int iso_chan_connect_security(const struct bt_iso_connect_param *param,
 }
 #endif /* CONFIG_BT_SMP */
 
+static bool iso_chans_connecting(void)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(iso_conns); i++) {
+		const struct bt_conn *iso = &iso_conns[i];
+		const struct bt_iso_chan *iso_chan;
+
+		if (iso == NULL ||
+		    iso->iso.info.type != BT_ISO_CHAN_TYPE_CONNECTED) {
+			continue;
+		}
+
+		iso_chan = iso_chan(iso);
+		if (iso_chan->state == BT_ISO_STATE_CONNECTING ||
+		    iso_chan->state == BT_ISO_STATE_ENCRYPT_PENDING) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 {
 	int err;
@@ -2024,6 +2045,11 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 			       i, param[i].iso_chan->state);
 			return -EINVAL;
 		}
+	}
+
+	if (iso_chans_connecting()) {
+		BT_DBG("There are pending ISO connections");
+		return -EBUSY;
 	}
 
 #if defined(CONFIG_BT_SMP)
