@@ -8,13 +8,16 @@ tests:
     tags: kernel mmu ignore_faults
     filter: CONFIG_MMU and CONFIG_X86_64 and not CONFIG_COVERAGE
     extra_sections: _TRANSPLANTED_FUNC
+    platform_allow: qemu_x86_64
   kernel.memory_protection.mem_map.x86_64.coverage:
     tags: kernel mmu ignore_faults
     filter: CONFIG_MMU and CONFIG_X86_64 and CONFIG_COVERAGE
     extra_sections: _TRANSPLANTED_FUNC
     extra_args: EXTRA_CFLAGS=-DSKIP_EXECUTE_TESTS
+    platform_allow: qemu_x86_64
   kernel.memory_protection.mem_map.x86_64.coverage.exec:
     tags: kernel mmu ignore_faults
     filter: CONFIG_MMU and CONFIG_X86_64 and CONFIG_COVERAGE
     extra_sections: _TRANSPLANTED_FUNC
     extra_args: CONF_FILE=prj_x86_64_coverage_exec.conf
+    platform_allow: qemu_x86_64
