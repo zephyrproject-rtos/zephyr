@@ -32,7 +32,7 @@ For example, using the :ref:`qemu_cortex_m3` board to build :ref:`hello_world`:
 
    # --cmake-only here just forces CMake to run, skipping the
    # build process to save time.
-   west build -b qemu_cortex_m3 -s samples/hello_world --cmake-only
+   west build -b qemu_cortex_m3 samples/hello_world --cmake-only
 
 You can change ``qemu_cortex_m3`` to match your board.
 
