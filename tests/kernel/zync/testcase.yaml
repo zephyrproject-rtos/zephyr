@@ -1,0 +1,20 @@
+common:
+    tags: kernel userspace
+tests:
+  kernel.zync:
+    tags: kernel userspace
+  kernel.zync.max_val:
+    extra_configs:
+      - CONFIG_ZYNC_MAX_VAL=y
+  kernel.zync.recursive:
+    extra_configs:
+      - CONFIG_ZYNC_RECURSIVE=y
+  kernel.zync.prio_boost:
+    extra_configs:
+      - CONFIG_ZYNC_PRIO_BOOST=y
+  kernel.zync.nouser:
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
+      - CONFIG_ZYNC_RECURSIVE=y
+      - CONFIG_ZYNC_PRIO_BOOST=y
+      - CONFIG_ZYNC_MAX_VAL=y
