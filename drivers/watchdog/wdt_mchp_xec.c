@@ -14,6 +14,7 @@
 LOG_MODULE_REGISTER(wdt_mchp_xec);
 
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <errno.h>
 

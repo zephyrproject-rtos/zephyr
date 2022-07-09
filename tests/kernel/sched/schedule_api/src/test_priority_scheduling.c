@@ -27,6 +27,9 @@ static K_SEM_DEFINE(sema2, 0, NUM_THREAD);
 /* Semaphore on which application threads wait */
 static K_SEM_DEFINE(sema3, 0, NUM_THREAD);
 
+/* Semaphore to flag the next iteration */
+static K_SEM_DEFINE(sema4, 0, NUM_THREAD);
+
 static int thread_idx;
 static struct k_thread t[NUM_THREAD];
 
@@ -40,6 +43,9 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 			       (idx + 'A');
 
 	while (1) {
+		/* Wait for the signal to start */
+		k_sem_take(&sema3, K_FOREVER);
+
 		/* Printing alphabet corresponding to thread */
 		TC_PRINT("%c", thread_parameter);
 		/* Testing if threads are executed as per priority */
@@ -48,8 +54,9 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 
 		/* Release CPU and give chance to Ztest thread to run */
 		k_sem_give(&sema2);
-		/* Wait for release of semaphore from Ztest thread */
-		k_sem_take(&sema3, K_FOREVER);
+
+		/* Wait here for the end of the iteration */
+		k_sem_take(&sema4, K_FOREVER);
 	}
 
 }
@@ -84,18 +91,19 @@ ZTEST(threads_scheduling, test_priority_scheduling)
 	}
 
 	while (count < ITRERATION_COUNT) {
-
-		/* Wait for each thread to complete */
-		for (int i = 0; i < NUM_THREAD; i++) {
-			k_sem_take(&sema2, K_FOREVER);
-		}
-		/* Delay to give chance to last thread to run */
-		k_sleep(K_MSEC(1));
-
-		/* Giving Chance to other threads to run */
+		/* Wake up each thread in turn and give it a chance to run */
 		for (int i = 0; i < NUM_THREAD; i++) {
 			k_sem_give(&sema3);
+			k_sem_take(&sema2, K_FOREVER);
 		}
+
+		/* Wake them all up for the next iteration */
+		for (int i = 0; i < NUM_THREAD; i++) {
+			k_sem_give(&sema4);
+		}
+
+		/* Give them all a chance to block on sema3 again */
+		k_msleep(100);
 		count++;
 	}
 

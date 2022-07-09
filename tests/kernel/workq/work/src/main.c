@@ -1302,6 +1302,8 @@ static bool try_queue_no_yield(struct k_work_q *wq)
 
 	zassert_equal(k_sem_take(&sync_sem, K_NO_WAIT), -EBUSY);
 
+	k_sem_reset(&sync_sem);
+
 	return is_high;
 }
 

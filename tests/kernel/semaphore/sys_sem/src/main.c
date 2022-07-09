@@ -22,7 +22,7 @@ static K_THREAD_STACK_ARRAY_DEFINE(multi_stack_take, STACK_NUMS, STACK_SIZE);
 
 static struct k_thread multi_tid_give[STACK_NUMS];
 static struct k_thread multi_tid_take[STACK_NUMS];
-static struct k_sem usage_sem, sync_sem, limit_sem, uninit_sem;
+static struct k_sem usage_sem, sync_sem, limit_sem;
 static ZTEST_DMEM int flag;
 static ZTEST_DMEM atomic_t atomic_count;
 
@@ -32,16 +32,6 @@ static ZTEST_DMEM atomic_t atomic_count;
  * @{
  * @}
  */
-
-static void sem_thread_give_uninit(void *p1, void *p2, void *p3)
-{
-	ztest_set_fault_valid(true);
-
-	/* use sem without initialise */
-	k_sem_give(&uninit_sem);
-
-	ztest_test_fail();
-}
 
 static void sem_thread_give(void *p1, void *p2, void *p3)
 {
@@ -69,7 +59,6 @@ static void thread_high_prio_sem_take(void *p1, void *p2, void *p3)
  * @brief Test semaphore usage with multiple thread
  *
  * @details Using semaphore with some situations
- * - Use a uninitialized semaphore
  * - Use semaphore normally
  * - Use semaphore with different priority threads
  *
@@ -89,6 +78,7 @@ ZTEST_USER(kernel_sys_sem, test_multiple_thread_sem_usage)
 	k_sem_take(&usage_sem, K_FOREVER);
 	zassert_equal(flag, 1, "value != 1");
 	zassert_equal(k_sem_count_get(&usage_sem), 0, "sem not be took");
+
 
 	k_sem_reset(&usage_sem);
 	/* Use sem with different priority thread */
@@ -116,13 +106,6 @@ ZTEST_USER(kernel_sys_sem, test_multiple_thread_sem_usage)
 	k_thread_join(&multi_tid_give[0], K_FOREVER);
 	k_thread_join(&multi_tid_take[0], K_FOREVER);
 	k_thread_join(&multi_tid_take[1], K_FOREVER);
-
-	k_thread_create(&multi_tid_give[1], multi_stack_give[1], STACK_SIZE,
-			sem_thread_give_uninit, NULL, NULL,
-			NULL, PRIO, K_USER | K_INHERIT_PERMS,
-			K_NO_WAIT);
-	k_sleep(K_MSEC(20));
-	k_thread_join(&multi_tid_give[1], K_FOREVER);
 }
 
 static void multi_thread_sem_give(void *p1, void *p2, void *p3)

@@ -17,7 +17,7 @@ pthread_rwlock_t rwlock;
 static void *thread_top(void *p1)
 {
 	pthread_t pthread;
-	uint32_t policy, ret = 0U;
+	uint32_t policy;
 	struct sched_param param;
 	int id = POINTER_TO_INT(p1);
 
@@ -26,11 +26,12 @@ static void *thread_top(void *p1)
 	printk("Thread %d scheduling policy = %d & priority %d started\n",
 	       id, policy, param.sched_priority);
 
-	ret = pthread_rwlock_tryrdlock(&rwlock);
-	if (ret) {
+	while (true) {
+		if (pthread_rwlock_tryrdlock(&rwlock) == 0) {
+			break;
+		}
 		printk("Not able to get RD lock on trying, try again\n");
-		zassert_false(pthread_rwlock_rdlock(&rwlock),
-			      "Failed to acquire write lock");
+		k_sleep(K_TICKS(1));
 	}
 
 	printk("Thread %d got RD lock\n", id);
@@ -39,10 +40,12 @@ static void *thread_top(void *p1)
 	zassert_false(pthread_rwlock_unlock(&rwlock), "Failed to unlock");
 
 	printk("Thread %d acquiring WR lock\n", id);
-	ret = pthread_rwlock_trywrlock(&rwlock);
-	if (ret != 0U) {
-		zassert_false(pthread_rwlock_wrlock(&rwlock),
-			      "Failed to acquire WR lock");
+	while (true) {
+		if (pthread_rwlock_trywrlock(&rwlock) == 0U) {
+			break;
+		}
+		printk("Failed to acquire WR lock, trying again\n");
+		k_sleep(K_TICKS(1));
 	}
 
 	printk("Thread %d acquired WR lock\n", id);

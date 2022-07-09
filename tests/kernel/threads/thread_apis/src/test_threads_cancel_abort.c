@@ -188,6 +188,11 @@ extern struct k_sem offload_sem;
  */
 ZTEST(threads_lifecycle, test_abort_from_isr)
 {
+	if (IS_ENABLED(CONFIG_ARC)) {
+		/* This doesn't work on ARC currently, see #51814 */
+		ztest_test_skip();
+	}
+
 	isr_finished = false;
 	k_thread_create(&tdata, tstack, STACK_SIZE, entry_abort_isr,
 			NULL, NULL, NULL, 0, 0, K_NO_WAIT);

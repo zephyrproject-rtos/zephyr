@@ -204,8 +204,20 @@
  * The section name is the struct type prepended with an underscore.
  * The subsection is "static" and the subsubsection is the variable name.
  *
- * In the linker script, create output sections for these using
- * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM().
+ * Note that this is only the C syntax side of this feature.  The
+ * linker script also needs to be made aware of the output sections.
+ * Traditionally this is done by inserting expansions of
+ * ITERABLE_SECTION_*() macros into
+ * include/zephyr/linker/common-ram/rom.ld.
+ *
+ * But now there is a variant linker script generation scheme when
+ * CONFIG_CMAKE_LINKER_GENERATOR=y.  That is a different framework,
+ * where you have to use zephyr_iterable_section() commands in
+ * cmake/linker_script/common/common-ram.cmake
+ *
+ * (Really both of those are problematic: the build should be able to
+ * detect iterable sections in the build artifacts automatically from
+ * nothing more than what we have here).
  *
  * @note In order to store the element in ROM, a const specifier has to
  * be added to the declaration: const STRUCT_SECTION_ITERABLE(...);

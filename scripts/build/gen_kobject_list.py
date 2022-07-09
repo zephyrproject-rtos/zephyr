@@ -589,9 +589,7 @@ def find_kobjects(elf, syms):
             continue
 
         if "DW_AT_location" not in die.attributes:
-            debug_die(die,
-                      "No location information for object '%s'; possibly stack allocated"
-                      % name)
+            # This can happen for linker aliases
             continue
 
         loc = die.attributes["DW_AT_location"]

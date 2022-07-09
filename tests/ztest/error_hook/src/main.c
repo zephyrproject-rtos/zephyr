@@ -322,6 +322,10 @@ static void tIsr_assert(const void *p)
  */
 ZTEST(error_hook_tests, test_catch_assert_in_isr)
 {
+	if (IS_ENABLED(CONFIG_ARC)) {
+		ztest_test_skip();
+	}
+
 	case_type = ZTEST_CATCH_ASSERT_IN_ISR;
 	irq_offload(tIsr_assert, NULL);
 }

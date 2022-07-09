@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <zephyr/arch/xtensa/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>

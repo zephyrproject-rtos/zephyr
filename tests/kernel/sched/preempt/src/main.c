@@ -87,12 +87,12 @@ void wakeup_src_thread(int id)
 
 	zassert_true(k_current_get() == &manager_thread, "");
 
-	/* irq_offload() on ARM appears not to do what we want.  It
-	 * doesn't appear to go through the normal exception return
-	 * path and always returns back into the calling context, so
-	 * it can't be used to fake preemption.
+	/* irq_offload() on ARM (and ARC, see #51814) appear not to do
+	 * what we want.  It doesn't appear to go through the normal
+	 * exception return path and always returns back into the
+	 * calling context, so it can't be used to fake preemption.
 	 */
-	if (do_irq && IS_ENABLED(CONFIG_ARM)) {
+	if (do_irq && (IS_ENABLED(CONFIG_ARM) || IS_ENABLED(CONFIG_ARC))) {
 		return;
 	}
 
