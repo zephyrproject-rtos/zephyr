@@ -167,7 +167,7 @@
 			dma-buf-alignment = <128>;
 			label = "HDA_LINK_OUT";
 
-			status = "okay";
+			status = "disabled";
 		};
 
 		hda_link_in: dma@2600 {
@@ -178,7 +178,7 @@
 			dma-buf-alignment = <128>;
 			label = "HDA_LINK_IN";
 
-			status = "okay";
+			status = "disabled";
 		};
 
 		hda_host_out: dma@2800 {
