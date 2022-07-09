@@ -1,0 +1,10 @@
+# MPU9150 Nine-Axis Motion Tracking device configuration options
+
+# Copyright (c) 2022 Benjamin Björnsson <benjamin.bjornsson@gmail.com>.
+# SPDX-License-Identifier: Apache-2.0
+
+config MPU9150
+	bool "MPU9150 Nine-Axis Motion Tracking Device"
+	depends on I2C
+	help
+	  Enable driver for MPU9150 I2C-based nine-axis motion tracking device.

@@ -9,6 +9,12 @@ compatible: "invensense,mpu9150"
 
 include: i2c-device.yaml
 
+properties:
+    ak8975-pass-through:
+        type: boolean
+        required: false
+        description: Enable pass-through for accessing AK8975.
+
 child-binding:
     description: Embedded AK8975 Magnetometer
     compatible: "asahi-kasei,ak8975"
