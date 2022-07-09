@@ -194,7 +194,8 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	int i, rc = 0;
 
 	for (i = 0; i < len; i += 8, offset += 8) {
-		rc = write_dword(dev, offset, ((const uint64_t *) data)[i>>3]);
+		rc = write_dword(dev, offset,
+				UNALIGNED_GET((const uint64_t *) data + (i >> 3)));
 		if (rc < 0) {
 			return rc;
 		}
