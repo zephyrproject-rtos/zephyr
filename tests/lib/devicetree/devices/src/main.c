@@ -284,7 +284,8 @@ ZTEST(devicetree_devices, test_supports)
 	/* TEST_DEVB: None */
 	dev = DEVICE_DT_GET(TEST_DEVB);
 	hdls = device_supported_handles_get(dev, &nhdls);
-	zassert_equal(nhdls, 0, NULL);
+	zassert_equal(nhdls, 1, NULL);
+	zassert_true(check_handle(DEV_HDL(TEST_GPIO_INJECTED), hdls, nhdls), NULL);
 
 	/* TEST_GPIO_INJECTED: None */
 	dev = DEVICE_DT_GET(TEST_GPIO_INJECTED);
