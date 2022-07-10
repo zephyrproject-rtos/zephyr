@@ -26,3 +26,6 @@ grpcio-tools
 
 # used by scripts/release/bug_bash.py for generating top ten bug squashers
 PyGithub
+
+# used to generate devicetree dependency graphs
+graphviz
