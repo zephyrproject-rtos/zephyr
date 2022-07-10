@@ -24,6 +24,27 @@ FILE(GLOB mock_sources
 )
 
 add_definitions(-include kconfig.h)
+
+if(COMPILE_PARAM_1)
+  add_compile_definitions(${COMPILE_PARAM_1})
+endif()
+
+if(COMPILE_PARAM_2)
+  add_compile_definitions(${COMPILE_PARAM_2})
+endif()
+
+if(COMPILE_PARAM_3)
+  add_compile_definitions(${COMPILE_PARAM_3})
+endif()
+
+if(COMPILE_PARAM_4)
+  add_compile_definitions(${COMPILE_PARAM_4})
+endif()
+
+if(COMPILE_PARAM_5)
+  add_compile_definitions(${COMPILE_PARAM_5})
+endif()
+
 if(KCONFIG_OVERRIDE_FILE)
   add_definitions(-include ${KCONFIG_OVERRIDE_FILE})
 endif()
