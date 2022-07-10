@@ -211,6 +211,7 @@ class ZephyrElf:
             for inj in injected:
                 if inj in devices:
                     dev.devs_depends_on_injected.add(devices[inj])
+                    devices[inj].devs_supports.add(dev)
 
     def _device_parse_and_link(self):
         # Find all PM structs
