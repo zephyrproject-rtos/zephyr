@@ -254,3 +254,25 @@ class ZephyrElf:
 
         # Link injected devices to each other
         self._link_injected(devices_by_ord)
+
+    def device_dependency_graph(self, title, comment):
+        """
+        Construct a graphviz Digraph of the relationships between devices.
+        """
+        import graphviz
+        dot = graphviz.Digraph(title, comment=comment)
+        # Split iteration so nodes and edges are grouped in source
+        for dev in self.devices:
+            if dev.ordinal == DeviceOrdinals.DEVICE_HANDLE_NULL:
+                text = '{:s}\\nHandle: {:d}'.format(dev.sym.name, dev.handle)
+            else:
+                n = self.edt.dep_ord2node[dev.ordinal]
+                label = n.labels[0] if n.labels else n.label
+                text = '{:s}\\nOrdinal: {:d} | Handle: {:d}\\n{:s}'.format(
+                    label, dev.ordinal, dev.handle, n.path
+                )
+            dot.node(str(dev.ordinal), text)
+        for dev in self.devices:
+            for sup in dev.devs_supports:
+                dot.edge(str(dev.ordinal), str(sup.ordinal))
+        return dot
