@@ -263,7 +263,7 @@ def main():
                         node = edt.dep_ord2node[hdls[0]] if (hdls and hdls[0] != 0) else None
                         handles.append(Handles(sym, addr, hdls, node))
                         debug("handles %s %d %s" % (sym.name, hdls[0] if hdls else -1, node))
-                if sym.name.startswith("__pm_device__") and not sym.name.endswith("_slot"):
+                if sym.name.startswith("__pm_device_"):
                     addr = sym.entry.st_value
                     pm_devices[addr] = PMDevice(elf, ld_constants, sym, addr)
                     debug("pm device %s" % (sym.name,))
