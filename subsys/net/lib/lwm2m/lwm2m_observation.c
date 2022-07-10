@@ -458,7 +458,7 @@ static void engine_observe_node_init(struct observe_node *obs, const uint8_t *to
 			tmp->path.res_id, tmp->path.res_inst_id, tmp->path.level);
 
 		if (ctx->observe_cb) {
-			ctx->observe_cb(LWM2M_OBSERVE_EVENT_OBSERVER_ADDED, &tmp->path, NULL);
+			ctx->observe_cb(LWM2M_OBSERVE_EVENT_OBSERVER_ADDED, &tmp->path, ctx);
 		}
 	}
 
