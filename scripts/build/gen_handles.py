@@ -51,6 +51,8 @@ def parse_args():
                         type=int, help="Input number of dynamic devices allowed")
     parser.add_argument("-o", "--output-source", required=True,
                         help="Output source file")
+    parser.add_argument("-g", "--output-graphviz",
+                        help="Output file for graphviz dependency graph")
     parser.add_argument("-z", "--zephyr-base",
                         help="Path to current Zephyr base. If this argument \
                         is not provided the environment will be checked for \
@@ -115,6 +117,15 @@ def main():
         edt = pickle.load(f)
 
     parsed_elf = ZephyrElf(args.kernel, edt, args.start_symbol)
+
+    if args.output_graphviz:
+        # Try and output the dependency tree
+        try:
+            dot = parsed_elf.device_dependency_graph('Device dependency graph', args.kernel)
+            with open(args.output_graphviz, 'w') as f:
+                f.write(dot.source)
+        except ImportError:
+            pass
 
     with open(args.output_source, "w") as fp:
         fp.write('#include <zephyr/device.h>\n')
