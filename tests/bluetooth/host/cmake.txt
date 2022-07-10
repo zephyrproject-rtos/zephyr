@@ -1,0 +1,15 @@
+#
+# Common include directories and source files for bluetooth/host unit tests
+#
+
+include_directories(
+  ${ZEPHYR_BASE}/subsys/bluetooth
+  ${ZEPHYR_BASE}/tests/bluetooth/host/host_mocks
+)
+
+FILE(GLOB host_mocks
+  ${ZEPHYR_BASE}/tests/bluetooth/host/host_mocks/assert.c
+)
+
+add_definitions(-include kconfig.h)
+add_definitions(-include ztest.h)

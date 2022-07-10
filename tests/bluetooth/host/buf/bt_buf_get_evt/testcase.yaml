@@ -1,0 +1,23 @@
+common:
+    tags: test_framework bluetooth host
+tests:
+  bluetooth.host.bt_buf_get_evt.default:
+     type: unit
+  bluetooth.host.bt_buf_get_evt.hci_acl_flow_control:
+     type: unit
+     extra_args: COMPILE_SWITCH_PARAM=CONFIG_BT_HCI_ACL_FLOW_CONTROL
+  bluetooth.host.bt_buf_get_evt.bt_connect_enabled:
+     type: unit
+     extra_args: COMPILE_SWITCH_PARAM=BT_CONN_CONFIG_SET
+  bluetooth.host.bt_buf_get_evt.bt_iso_enabled:
+     type: unit
+     extra_args: COMPILE_SWITCH_PARAM=BT_ISO_CONFIG_SET
+  bluetooth.host.bt_buf_get_evt.buf_evt_discardable_count:
+     type: unit
+     extra_args: COMPILE_SWITCH_PARAM=BT_BUF_EVT_DISCARDABLE_COUNT_CONFIG_SET
+  bluetooth.host.bt_buf_get_evt.iso_unicast:
+     type: unit
+     extra_args: COMPILE_SWITCH_PARAM=BT_ISO_UNICAST_CONFIG_SET
+  bluetooth.host.bt_buf_get_evt.iso_sync_receiver:
+     type: unit
+     extra_args: COMPILE_SWITCH_PARAM=BT_ISO_SYNC_RECEIVER_CONFIG_SET
