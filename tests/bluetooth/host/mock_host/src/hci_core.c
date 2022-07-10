@@ -30,3 +30,10 @@ struct bt_dev bt_dev = {
 static void init_work(struct k_work *work)
 {
 }
+
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+__attribute__((weak)) void bt_hci_host_num_completed_packets(struct net_buf *buf)
+{
+
+}
+#endif

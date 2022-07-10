@@ -3,3 +3,6 @@ common:
 tests:
   bluetooth.host.bt_buf_get_evt.api:
      type: unit
+  bluetooth.host.bt_buf_get_evt.hci_acl_flow_control:
+     type: unit
+     extra_args: COMPILE_PARAM_1=CONFIG_BT_HCI_ACL_FLOW_CONTROL
