@@ -60,7 +60,7 @@
 
 			test_dev_c: test-i2c-dev@13 {
 				compatible = "vnd,i2c-device";
-				label = "TEST_SPI_DEV_0";
+				label = "TEST_I2C_DEV_13";
 				reg = <0x13>;
 				status = "disabled";
 
@@ -78,6 +78,14 @@
 						reg = <0x0000C000 0x00067000>;
 					};
 				};
+			};
+
+			test-i2c-dev@14 {
+				compatible = "vnd,i2c-device";
+				status = "okay";
+				reg = <0x14>;
+				supply-gpios = <&test_gpiox 2 0>;
+				label = "TEST_I2C_DEV_14";
 			};
 		};
 
