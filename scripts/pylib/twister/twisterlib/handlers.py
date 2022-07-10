@@ -90,13 +90,15 @@ class Handler:
                 for instance in harness.recording:
                     cw.writerow(instance)
 
-    def terminate(self, proc):
+    @staticmethod
+    def terminate(proc_pid):
         # encapsulate terminate functionality so we do it consistently where ever
         # we might want to terminate the proc.  We need try_kill_process_by_pid
         # because of both how newer ninja (1.6.0 or greater) and .NET / renode
         # work.  Newer ninja's don't seem to pass SIGTERM down to the children
         # so we need to use try_kill_process_by_pid.
-        for child in psutil.Process(proc.pid).children(recursive=True):
+        proc = psutil.Process(proc_pid)
+        for child in proc.children(recursive=True):
             try:
                 os.kill(child.pid, signal.SIGTERM)
             except ProcessLookupError:
@@ -104,8 +106,10 @@ class Handler:
         proc.terminate()
         # sleep for a while before attempting to kill
         time.sleep(0.5)
-        proc.kill()
-        self.terminated = True
+        try:
+            proc.kill()
+        except ProcessLookupError:
+            pass
 
     def _verify_ztest_suite_name(self, harness_state, detected_suite_names, handler_time):
         """
@@ -215,7 +219,7 @@ class BinaryHandler(Handler):
             # so let's give it up to 100ms to do so
             proc.wait(0.1)
         except subprocess.TimeoutExpired:
-            self.terminate(proc)
+            self.terminate(proc.pid)
 
         log_out_fp.close()
 
@@ -271,7 +275,8 @@ class BinaryHandler(Handler):
             t.start()
             t.join()
             if t.is_alive():
-                self.terminate(proc)
+                self.terminate(proc.pid)
+                self.terminated = True
                 t.join()
             proc.wait()
             self.returncode = proc.returncode
@@ -411,7 +416,7 @@ class DeviceHandler(Handler):
                     logger.error(f"Custom script failure: {stderr.decode(errors='ignore')}")
 
             except subprocess.TimeoutExpired:
-                proc.kill()
+                Handler.terminate(proc.pid)
                 proc.communicate()
                 logger.error("{} timed out".format(script))
 
@@ -519,7 +524,7 @@ class DeviceHandler(Handler):
 
             self.instance.add_missing_case_status("blocked", "Serial Device Error")
             if serial_pty and ser_pty_process:
-                ser_pty_process.terminate()
+                self.terminate(ser_pty_process.pid)
                 outs, errs = ser_pty_process.communicate()
                 logger.debug("Process {} terminated outs: {} errs {}".format(serial_pty, outs, errs))
 
@@ -562,7 +567,7 @@ class DeviceHandler(Handler):
                         os.write(write_pipe, b'x')  # halt the thread
                 except subprocess.TimeoutExpired:
                     logger.warning("Flash operation timed out.")
-                    proc.kill()
+                    self.terminate(proc.pid)
                     (stdout, stderr) = proc.communicate()
                     self.instance.status = "error"
                     self.instance.reason = "Device issue (Timeout)"
@@ -586,7 +591,7 @@ class DeviceHandler(Handler):
             ser.close()
 
         if serial_pty:
-            ser_pty_process.terminate()
+            self.terminate(ser_pty_process.pid)
             outs, errs = ser_pty_process.communicate()
             logger.debug("Process {} terminated outs: {} errs {}".format(serial_pty, outs, errs))
 
@@ -791,12 +796,7 @@ class QEMUHandler(Handler):
         out_fp.close()
         in_fp.close()
         if pid:
-            try:
-                if pid:
-                    os.kill(pid, signal.SIGTERM)
-            except ProcessLookupError:
-                # Oh well, as long as it's dead! User probably sent Ctrl-C
-                pass
+            Handler.terminate(pid)
 
         os.unlink(fifo_in)
         os.unlink(fifo_out)
@@ -850,7 +850,7 @@ class QEMUHandler(Handler):
                 # twister to judge testing result by console output
 
                 is_timeout = True
-                self.terminate(proc)
+                self.terminate(proc.pid)
                 if harness.state == "passed":
                     self.returncode = 0
                 else:
