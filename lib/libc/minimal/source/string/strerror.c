@@ -10,7 +10,7 @@
 #include <zephyr/sys/util.h>
 
 /*
- * See scripts/gen_strerror_table.py
+ * See scripts/build/gen_strerror_table.py
  *
  * #define sys_nerr N
  * const char *const sys_errlist[sys_nerr];
