@@ -236,7 +236,7 @@ static uint32_t activate_foreach_backend(uint32_t mask)
 		const struct log_backend *backend = log_backend_get(i);
 
 		mask_cpy &= ~BIT(i);
-		if (log_backend_is_ready(backend) == 0) {
+		if (backend->autostart && (log_backend_is_ready(backend) == 0)) {
 			mask &= ~BIT(i);
 			log_backend_enable(backend,
 					   backend->cb->ctx,
