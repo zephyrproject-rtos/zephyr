@@ -34,7 +34,7 @@ __imr void power_init(void)
  * (each bit corresponds to one ebb)
  * @param response_to_ipc       flag if ipc response should be send during power down
  */
-extern void ace_power_down(bool disable_lpsram, uint32_t *hpsram_pg_mask,
+extern void power_down(bool disable_lpsram, uint32_t *hpsram_pg_mask,
 			   bool response_to_ipc);
 
 
@@ -53,8 +53,8 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			/* FIXME: this value should come from MM */
 			uint32_t hpsram_mask[1] = { 0x3FFFFF };
 
-			ace_power_down(true, uncache_to_cache(&hpsram_mask[0]),
-				       true);
+			power_down(true, uncache_to_cache(&hpsram_mask[0]),
+				   true);
 		} else {
 			k_cpu_idle();
 		}

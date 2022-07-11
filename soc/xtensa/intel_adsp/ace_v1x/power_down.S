@@ -13,8 +13,8 @@ ipc_flag:
 sram_dis_loop_cnt:
 	.word 4096
 
-	.global ace_power_down
-	.type ace_power_down, @function
+	.global power_down
+	.type power_down, @function
 
  /**
  * @brief Perform power down.
@@ -42,7 +42,7 @@ sram_dis_loop_cnt:
 #define u32_ipc_response_mask		a14
 #define pfl_reg						a15
 
-ace_power_down:
+power_down:
 	entry sp, 32
 	/**
 	 * effectively executes:
@@ -54,7 +54,7 @@ ace_power_down:
 	dpfl pfl_reg, 0
 	dpfl pfl_reg, 64
 
-	movi pfl_reg, ace_power_down
+	movi pfl_reg, power_down
 	ipfl pfl_reg, 0
 	ipfl pfl_reg, 64
 	ipfl pfl_reg, 128
@@ -156,4 +156,4 @@ loop:
 	1:
 	j 1b
 
-.size ace_power_down , . - ace_power_down
+.size power_down , . - power_down
