@@ -245,9 +245,11 @@ static int fxas21002_init(const struct device *dev)
 	k_sem_init(&data->sem, 0, K_SEM_MAX_LIMIT);
 
 #if CONFIG_FXAS21002_TRIGGER
-	if (fxas21002_trigger_init(dev)) {
-		LOG_ERR("Could not initialize interrupts");
-		return -EIO;
+	if (config->int_gpio.port) {
+		if (fxas21002_trigger_init(dev)) {
+			LOG_ERR("Could not initialize interrupts");
+			return -EIO;
+		}
 	}
 #endif
 
@@ -277,23 +279,25 @@ static const struct sensor_driver_api fxas21002_driver_api = {
 #endif
 };
 
-static const struct fxas21002_config fxas21002_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-	.whoami = CONFIG_FXAS21002_WHOAMI,
-	.range = CONFIG_FXAS21002_RANGE,
-	.dr = CONFIG_FXAS21002_DR,
-#ifdef CONFIG_FXAS21002_TRIGGER
-#ifdef CONFIG_FXAS21002_DRDY_INT1
-	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int1_gpios),
-#else
-	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int2_gpios),
-#endif
-#endif
-};
+#define FXAS21002_DEFINE(inst)									\
+	static struct fxas21002_data fxas21002_data_##inst;					\
+												\
+	static const struct fxas21002_config fxas21002_config_##inst = {			\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+		.whoami = CONFIG_FXAS21002_WHOAMI,						\
+		.range = CONFIG_FXAS21002_RANGE,						\
+		.dr = CONFIG_FXAS21002_DR,							\
+		IF_ENABLED(CONFIG_FXAS21002_TRIGGER,						\
+			   (COND_CODE_1(CONFIG_FXAS21002_DRDY_INT1,				\
+					(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios,	\
+									      { 0 }),),		\
+					(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios,	\
+									      { 0 }),))))	\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, fxas21002_init, NULL,					\
+			      &fxas21002_data_##inst, &fxas21002_config_##inst,			\
+			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
+			      &fxas21002_driver_api);						\
 
-static struct fxas21002_data fxas21002_data;
-
-DEVICE_DT_INST_DEFINE(0, fxas21002_init, NULL,
-		    &fxas21002_data, &fxas21002_config,
-		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &fxas21002_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(FXAS21002_DEFINE)
