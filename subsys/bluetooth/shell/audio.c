@@ -597,8 +597,16 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 	shell_print(ctx_shell, "dir %u loc %X\n", dir, loc);
 }
 
+static void available_contexts_cb(struct bt_conn *conn,
+				  enum bt_audio_context snk_ctx,
+				  enum bt_audio_context src_ctx)
+{
+	shell_print(ctx_shell, "snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
+}
+
 const struct bt_audio_unicast_client_cb unicast_client_cbs = {
-	.location = unicast_client_location_cb
+	.location = unicast_client_location_cb,
+	.available_contexts = available_contexts_cb,
 };
 
 static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
