@@ -37,9 +37,9 @@ void test_bt_buf_get_cmd_complete_returns_not_null(void)
 
 void test_main(void)
 {
-	ztest_test_suite(public,
+	ztest_test_suite(default,
 			ztest_unit_test(test_bt_buf_get_cmd_complete_returns_not_null)
 			);
 
-	ztest_run_test_suite(public);
+	ztest_run_test_suite(default);
 }

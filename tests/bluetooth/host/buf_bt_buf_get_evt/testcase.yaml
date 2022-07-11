@@ -6,3 +6,6 @@ tests:
   bluetooth.host.bt_buf_get_evt.hci_acl_flow_control:
      type: unit
      extra_args: COMPILE_PARAM_1=CONFIG_BT_HCI_ACL_FLOW_CONTROL
+  bluetooth.host.bt_buf_get_evt.buf_evt_discardable_count:
+     type: unit
+     extra_args: KCONFIG_OVERRIDE_FILE="kconfig_override.h" COMPILE_PARAM_1=EVT_DISCARDABLE_COUNT_CONFIG_SET
