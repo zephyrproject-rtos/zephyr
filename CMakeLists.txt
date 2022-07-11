@@ -688,7 +688,7 @@ add_custom_command(
   ${struct_tags_json}
   COMMAND
   ${PYTHON_EXECUTABLE}
-  ${ZEPHYR_BASE}/scripts/parse_syscalls.py
+  ${ZEPHYR_BASE}/scripts/build/parse_syscalls.py
    --include          ${ZEPHYR_BASE}/include        # Read files from this dir
    --include          ${ZEPHYR_BASE}/drivers        # For net sockets
    --include          ${ZEPHYR_BASE}/subsys/net     # More net sockets
