@@ -702,7 +702,7 @@ scripts/gen_image_info.py                 @tejlmand
 /arch/x86/gen_gdt.py                      @dcpleung @nashif
 /arch/x86/gen_idt.py                      @dcpleung @nashif
 /scripts/build/gen_kobject_list.py        @dcpleung @nashif
-/scripts/gen_kobject_placeholders.py      @dcpleung
+/scripts/build/gen_kobject_placeholders.py      @dcpleung
 /scripts/gen_syscalls.py                  @dcpleung @nashif
 /scripts/list_boards.py                   @mbolivar-nordic
 /scripts/process_gperf.py                 @dcpleung @nashif
