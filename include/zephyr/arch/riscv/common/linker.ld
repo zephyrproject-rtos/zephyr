@@ -40,7 +40,7 @@
 #define ROM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
 #endif /* CONFIG_FLASH_LOAD_OFFSET */
 #define ROM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_flash))
-#elif DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_flash), jedec_spi_nor, okay)
+#elif DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_flash), jedec_spi_nor)
 /* For jedec,spi-nor we expect the spi controller to memory map the flash
  * and for that mapping to be the second register property of the spi
  * controller.
