@@ -753,12 +753,12 @@ add_custom_command(
   OUTPUT ${DRV_VALIDATION}
   COMMAND
   ${PYTHON_EXECUTABLE}
-  ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
+  ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py
   --validation-output ${DRV_VALIDATION}
   ${gen_kobject_list_include_args}
   $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
   DEPENDS
-  ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
+  ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py
   ${PARSE_SYSCALLS_TARGET}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
@@ -895,7 +895,7 @@ if(CONFIG_USERSPACE)
          NO_COVERAGE_FLAGS "${compiler_flags_priv}"
   )
 
-  set(GEN_KOBJ_LIST ${ZEPHYR_BASE}/scripts/gen_kobject_list.py)
+  set(GEN_KOBJ_LIST ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py)
   set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/process_gperf.py)
 endif()
 
