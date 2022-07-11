@@ -50,12 +50,12 @@
 	pinctrl-names = "default";
 };
 
+/* disabled (used by Flash ROM by default) */
 &spi0 {
-	status = "okay";
-
 	reg = <0x10014000 0x1000 0x20400000 0xc00000>;
 	flash0: flash@0 {
 		compatible = "issi,is25lp128", "jedec,spi-nor";
+		status = "disabled";
 		size = <134217728>;
 		label = "FLASH0";
 		jedec-id = [96 60 18];
