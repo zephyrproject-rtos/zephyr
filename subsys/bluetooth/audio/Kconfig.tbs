@@ -170,6 +170,151 @@ config BT_TBS_CLIENT_MAX_TBS_INSTANCES
 	  Sets the maximum number of Telephone Bearer Service (TBS)
 	  instances to setup and use.
 
+config BT_TBS_CLIENT_MINIMAL
+	bool "Minimal TBS Client without optional procedures"
+	default n
+	help
+	  This option disables all optional procedures in the TBS Client.
+
+config BT_TBS_CLIENT_BEARER_PROVIDER_NAME
+	bool "Support reading Bearer Provider Name"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Bearer Provider Name.
+
+config BT_TBS_CLIENT_BEARER_UCI
+	bool "Support reading Bearer UCI"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Bearer UCI.
+
+config BT_TBS_CLIENT_BEARER_TECHNOLOGY
+	bool "Support reading Bearer Technology"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Bearer Technology.
+
+config BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST
+	bool "Support reading Bearer URI Schemes Supported List"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Bearer URI Schemes Supported
+	  List.
+
+config BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH
+	bool "Support reading Bearer Signal Strength"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Bearer Signal Strength.
+
+config BT_TBS_CLIENT_READ_BEARER_SIGNAL_INTERVAL
+	bool "Support reading Bearer Signal Strength Reporting Interval"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Bearer Signal Strength
+	  Reporting Interval.
+
+config BT_TBS_CLIENT_SET_BEARER_SIGNAL_INTERVAL
+	bool "Support setting Bearer Signal Strength Reporting Interval"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for setting Bearer Signal Strength
+	  Reporting Interval.
+
+config BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS
+	bool "Support reading Bearer List Current Calls"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Bearer List Current Calls.
+
+config BT_TBS_CLIENT_CCID
+	bool "Support reading Content Control ID"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Content Control ID.
+
+config BT_TBS_CLIENT_INCOMING_URI
+	bool "Support reading Incoming Call Target Bearer URI"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Incoming Call Target Bearer
+	  URI.
+
+config BT_TBS_CLIENT_STATUS_FLAGS
+	bool "Support reading Status Flags"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Status Flags.
+
+config BT_TBS_CLIENT_CP_PROCEDURES
+	def_bool y
+	depends on (BT_TBS_CLIENT_ACCEPT_CALL || \
+		    BT_TBS_CLIENT_TERMINATE_CALL || \
+		    BT_TBS_CLIENT_HOLD_CALL || \
+		    BT_TBS_CLIENT_RETRIEVE_CALL || \
+		    BT_TBS_CLIENT_ORIGINATE_CALL || \
+		    BT_TBS_CLIENT_JOIN_CALLS)
+	help
+	  This hidden option indicates that there are at least one control
+	  point procedure available.
+	  When this option is disabled it indicates that the control point can
+	  be optimized away.
+
+config BT_TBS_CLIENT_ACCEPT_CALL
+	bool "Support Accept Call"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for answering an incoming call.
+
+config BT_TBS_CLIENT_TERMINATE_CALL
+	bool "Support Terminate Call"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for terminating a call.
+
+config BT_TBS_CLIENT_HOLD_CALL
+	bool "Support Hold Call"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for putting a call on hold.
+
+config BT_TBS_CLIENT_RETRIEVE_CALL
+	bool "Support Retrieve Call"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for retrieving a call on hold.
+
+config BT_TBS_CLIENT_ORIGINATE_CALL
+	bool "Support Originate Call"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for originating a call.
+
+config BT_TBS_CLIENT_JOIN_CALLS
+	bool "Support Join Calls"
+	depends on BT_TBS_CLIENT_MAX_CALLS > 1
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for joining calls.
+
+config BT_TBS_CLIENT_OPTIONAL_OPCODES
+	bool "Support reading Optional Opcodes"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Optional Opcodes.
+
+config BT_TBS_CLIENT_INCOMING_CALL
+	bool "Support reading Incoming Call"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Incoming Call.
+
+config BT_TBS_CLIENT_CALL_FRIENDLY_NAME
+	bool "Support reading Call Friendly Name"
+	default !BT_TBS_CLIENT_MINIMAL
+	help
+	  This option enables support for reading Call Friendly Name.
+
 ############# DEBUG #############
 
 config BT_DEBUG_TBS_CLIENT
