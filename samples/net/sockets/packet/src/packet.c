@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(net_pkt_sock_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_mgmt.h>
 
 #define STACK_SIZE 1024
 #if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
@@ -35,6 +36,7 @@ struct packet_data {
 
 static struct packet_data packet;
 static bool finish;
+static K_SEM_DEFINE(iface_up, 0, 1);
 
 static void recv_packet(void);
 static void send_packet(void);
@@ -248,9 +250,38 @@ static void send_packet(void)
 	}
 }
 
+static void iface_up_handler(struct net_mgmt_event_callback *cb,
+			     uint32_t mgmt_event, struct net_if *iface)
+{
+	if (mgmt_event == NET_EVENT_IF_UP) {
+		k_sem_give(&iface_up);
+	}
+}
+
+static void wait_for_interface(void)
+{
+	struct net_if *iface = net_if_get_default();
+	struct net_mgmt_event_callback iface_up_cb;
+
+	if (net_if_is_up(iface)) {
+		return;
+	}
+
+	net_mgmt_init_event_callback(&iface_up_cb, iface_up_handler,
+				     NET_EVENT_IF_UP);
+	net_mgmt_add_event_callback(&iface_up_cb);
+
+	/* Wait for the interface to come up. */
+	k_sem_take(&iface_up, K_FOREVER);
+
+	net_mgmt_del_event_callback(&iface_up_cb);
+}
+
 void main(void)
 {
 	k_sem_init(&quit_lock, 0, K_SEM_MAX_LIMIT);
+
+	wait_for_interface();
 
 	LOG_INF("Packet socket sample is running");
 
