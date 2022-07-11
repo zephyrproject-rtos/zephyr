@@ -705,7 +705,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /scripts/build/gen_kobject_placeholders.py      @dcpleung
 /scripts/build/gen_syscalls.py            @dcpleung @nashif
 /scripts/list_boards.py                   @mbolivar-nordic
-/scripts/process_gperf.py                 @dcpleung @nashif
+/scripts/build/process_gperf.py           @dcpleung @nashif
 /scripts/build/gen_relocate_app.py        @dcpleung
 /scripts/requirements*.txt                @mbolivar-nordic @galak @nashif
 /scripts/tests/twister/                   @aasthagr
