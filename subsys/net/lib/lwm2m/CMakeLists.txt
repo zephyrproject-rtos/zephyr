@@ -45,6 +45,9 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_GATEWAY_OBJ_SUPPORT
 zephyr_library_sources_ifdef(CONFIG_LWM2M_PORTFOLIO_OBJ_SUPPORT
     lwm2m_obj_portfolio.c
     )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_EVENT_LOG_OBJ_SUPPORT
+    lwm2m_obj_event_log.c
+    )
 
 # TLV Support
 zephyr_library_sources_ifdef(CONFIG_LWM2M_RW_OMA_TLV_SUPPORT
