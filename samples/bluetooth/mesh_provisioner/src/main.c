@@ -5,11 +5,15 @@
  */
 
 #include <zephyr/sys/printk.h>
-
 #include <zephyr/settings/settings.h>
-
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/mesh.h>
+#include <zephyr/drivers/gpio.h>
+
+#define SW0_NODE	DT_ALIAS(sw0)
+#if !DT_NODE_HAS_STATUS(SW0_NODE, okay)
+#error "Unsupported board: sw0 devicetree alias is not defined"
+#endif
 
 static const uint16_t net_idx;
 static const uint16_t app_idx;
@@ -294,6 +298,24 @@ static uint8_t check_unconfigured(struct bt_mesh_cdb_node *node, void *data)
 	return BT_MESH_CDB_ITER_CONTINUE;
 }
 
+static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios, {0});
+static struct gpio_callback button_cb_data;
+
+static void timeout_timer_expired(struct k_timer *timer)
+{
+	printk("Provisioner timed out, press button at %s pin %d to continue.\n", button.port->name,
+	       button.pin);
+}
+
+K_TIMER_DEFINE(timeout_timer, timeout_timer_expired, NULL);
+
+void button_pressed(const struct device *dev, struct gpio_callback *cb,
+		    uint32_t pins)
+{
+	k_timer_start(&timeout_timer, K_MINUTES(10), K_NO_WAIT);
+	printk("Provisioner timeout reset.\n");
+}
+
 void main(void)
 {
 	char uuid_hex_str[32 + 1];
@@ -311,33 +333,58 @@ void main(void)
 	printk("Bluetooth initialized\n");
 	bt_ready();
 
+	/* Initializing button to reset timeout */
+	int ret;
+
+	if (!device_is_ready(button.port)) {
+		printk("Error: button device %s is not ready\n", button.port->name);
+		return;
+	}
+	ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
+	if (ret != 0) {
+		printk("Error %d: failed to configure %s pin %d\n", ret, button.port->name,
+		       button.pin);
+		return;
+	}
+	ret = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret != 0) {
+		printk("Error %d: failed to configure interrupt on %s pin %d\n", ret,
+		       button.port->name, button.pin);
+		return;
+	}
+	gpio_init_callback(&button_cb_data, button_pressed, BIT(button.pin));
+	gpio_add_callback(button.port, &button_cb_data);
+	printk("Press button at %s pin %d to enable Provisioner.\n", button.port->name, button.pin);
+
 	while (1) {
-		k_sem_reset(&sem_unprov_beacon);
-		k_sem_reset(&sem_node_added);
-		bt_mesh_cdb_node_foreach(check_unconfigured, NULL);
+		if (k_timer_remaining_get(&timeout_timer) > 0) {
+			k_sem_reset(&sem_unprov_beacon);
+			k_sem_reset(&sem_node_added);
+			bt_mesh_cdb_node_foreach(check_unconfigured, NULL);
 
-		printk("Waiting for unprovisioned beacon...\n");
-		err = k_sem_take(&sem_unprov_beacon, K_SECONDS(10));
-		if (err == -EAGAIN) {
-			continue;
+			printk("Waiting for unprovisioned beacon...\n");
+			err = k_sem_take(&sem_unprov_beacon, K_SECONDS(10));
+			if (err == -EAGAIN) {
+				continue;
+			}
+
+			bin2hex(node_uuid, 16, uuid_hex_str, sizeof(uuid_hex_str));
+
+			printk("Provisioning %s\n", uuid_hex_str);
+			err = bt_mesh_provision_adv(node_uuid, net_idx, 0, 0);
+			if (err < 0) {
+				printk("Provisioning failed (err %d)\n", err);
+				continue;
+			}
+
+			printk("Waiting for node to be added...\n");
+			err = k_sem_take(&sem_node_added, K_SECONDS(10));
+			if (err == -EAGAIN) {
+				printk("Timeout waiting for node to be added\n");
+				continue;
+			}
+
+			printk("Added node 0x%04x\n", node_addr);
 		}
-
-		bin2hex(node_uuid, 16, uuid_hex_str, sizeof(uuid_hex_str));
-
-		printk("Provisioning %s\n", uuid_hex_str);
-		err = bt_mesh_provision_adv(node_uuid, net_idx, 0, 0);
-		if (err < 0) {
-			printk("Provisioning failed (err %d)\n", err);
-			continue;
-		}
-
-		printk("Waiting for node to be added...\n");
-		err = k_sem_take(&sem_node_added, K_SECONDS(10));
-		if (err == -EAGAIN) {
-			printk("Timeout waiting for node to be added\n");
-			continue;
-		}
-
-		printk("Added node 0x%04x\n", node_addr);
 	}
 }
