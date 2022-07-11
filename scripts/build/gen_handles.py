@@ -39,7 +39,7 @@ from elftools.elf.sections import SymbolTableSection
 import elftools.elf.enums
 
 # This is needed to load edt.pickle files.
-sys.path.insert(0, os.path.join(os.path.dirname(__file__),
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..',
                                 'dts', 'python-devicetree', 'src'))
 from devicetree import edtlib  # pylint: disable=unused-import
 
