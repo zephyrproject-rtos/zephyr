@@ -39,8 +39,6 @@ struct bmi160_emul_data {
 
 /** Static configuration for the emulator */
 struct bmi160_emul_cfg {
-	/** Label of the SPI bus this emulator connects to */
-	const char *bus_label;
 	/** Chip registers */
 	uint8_t *reg;
 	union {
@@ -393,7 +391,6 @@ static int emul_bosch_bmi160_init_i2c(const struct emul *emul,
 #define BMI160_EMUL_SPI(n) \
 	BMI160_EMUL_DATA(n) \
 	static const struct bmi160_emul_cfg bmi160_emul_cfg_##n = { \
-		.bus_label = DT_INST_BUS_LABEL(n), \
 		.reg = bmi160_emul_reg_##n, \
 		.chipsel = DT_INST_REG_ADDR(n) \
 	}; \
@@ -402,7 +399,6 @@ static int emul_bosch_bmi160_init_i2c(const struct emul *emul,
 #define BMI160_EMUL_I2C(n) \
 	BMI160_EMUL_DATA(n) \
 	static const struct bmi160_emul_cfg bmi160_emul_cfg_##n = { \
-		.bus_label = DT_INST_BUS_LABEL(n), \
 		.reg = bmi160_emul_reg_##n, \
 		.addr = DT_INST_REG_ADDR(n) \
 	}; \
