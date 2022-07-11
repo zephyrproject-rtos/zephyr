@@ -30,6 +30,7 @@ enum {
 	BT_KEYS_DEBUG           = BIT(1),
 	/* Bit 2 and 3 might accidentally exist in old stored keys */
 	BT_KEYS_SC              = BIT(4),
+	BT_KEYS_OOB             = BIT(5),
 };
 
 struct bt_ltk {
