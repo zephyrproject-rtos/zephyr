@@ -121,8 +121,9 @@ static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
 	}
 
 	*mnt_pntp = mnt_p;
-	if (match_len)
+	if (match_len) {
 		*match_len = mnt_p->mountp_len;
+	}
 
 	return 0;
 }
@@ -653,6 +654,11 @@ int fs_mount(struct fs_mount_t *mp)
 		return -EINVAL;
 	}
 
+	if (sys_dnode_is_linked(&mp->node)) {
+		LOG_ERR("file system already mounted!!");
+		return -EBUSY;
+	}
+
 	len = strlen(mp->mnt_point);
 
 	if ((len <= 1) || (mp->mnt_point[0] != '/')) {
@@ -693,7 +699,7 @@ int fs_mount(struct fs_mount_t *mp)
 
 	if (fs->unmount == NULL) {
 		LOG_WRN("mount path %s is not unmountable",
-			log_strdup(mp->mnt_point));
+			mp->mnt_point);
 	}
 
 	rc = fs->mount(mp);
@@ -707,7 +713,7 @@ int fs_mount(struct fs_mount_t *mp)
 	mp->fs = fs;
 
 	sys_dlist_append(&fs_mnt_list, &mp->node);
-	LOG_DBG("fs mounted at %s", log_strdup(mp->mnt_point));
+	LOG_DBG("fs mounted at %s", mp->mnt_point);
 
 mount_err:
 	k_mutex_unlock(&mutex);
@@ -725,7 +731,7 @@ int fs_unmount(struct fs_mount_t *mp)
 
 	k_mutex_lock(&mutex, K_FOREVER);
 
-	if (mp->fs == NULL) {
+	if (!sys_dnode_is_linked(&mp->node)) {
 		LOG_ERR("fs not mounted (mp == %p)", mp);
 		goto unmount_err;
 	}
@@ -747,7 +753,7 @@ int fs_unmount(struct fs_mount_t *mp)
 
 	/* remove mount node from the list */
 	sys_dlist_remove(&mp->node);
-	LOG_DBG("fs unmounted from %s", log_strdup(mp->mnt_point));
+	LOG_DBG("fs unmounted from %s", mp->mnt_point);
 
 unmount_err:
 	k_mutex_unlock(&mutex);

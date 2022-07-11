@@ -11,6 +11,7 @@
 #include <aarch32/cortex_m/cmse.h>
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/math_extras.h>
 
 /**
  * @brief internal structure holding information of
@@ -28,7 +29,109 @@ struct dynamic_region_info {
  * regions may be configured.
  */
 static struct dynamic_region_info dyn_reg_info[MPU_DYNAMIC_REGION_AREAS_NUM];
+#if defined(CONFIG_CPU_CORTEX_M23) || defined(CONFIG_CPU_CORTEX_M33) || \
+	defined(CONFIG_CPU_CORTEX_M55)
+static inline void mpu_set_mair0(uint32_t mair0)
+{
+	MPU->MAIR0 = mair0;
+}
 
+static inline void mpu_set_rnr(uint32_t rnr)
+{
+	MPU->RNR = rnr;
+}
+
+static inline void mpu_set_rbar(uint32_t rbar)
+{
+	MPU->RBAR = rbar;
+}
+
+static inline uint32_t mpu_get_rbar(void)
+{
+	return MPU->RBAR;
+}
+
+static inline void mpu_set_rlar(uint32_t rlar)
+{
+	MPU->RLAR = rlar;
+}
+
+static inline uint32_t mpu_get_rlar(void)
+{
+	return MPU->RLAR;
+}
+
+static inline uint8_t mpu_get_num_regions(void)
+{
+	uint32_t type = MPU->TYPE;
+
+	type = (type & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos;
+
+	return (uint8_t)type;
+}
+
+static inline void mpu_clear_region(uint32_t rnr)
+{
+	ARM_MPU_ClrRegion(rnr);
+}
+
+#elif defined(CONFIG_AARCH32_ARMV8_R)
+static inline void mpu_set_mair0(uint32_t mair0)
+{
+	write_mair0(mair0);
+	__DSB();
+	__ISB();
+}
+
+static inline void mpu_set_rnr(uint32_t rnr)
+{
+	write_prselr(rnr);
+	__DSB();
+}
+
+static inline void mpu_set_rbar(uint32_t rbar)
+{
+	write_prbar(rbar);
+	__DSB();
+	__ISB();
+}
+
+static inline uint32_t mpu_get_rbar(void)
+{
+	return read_prbar();
+}
+
+static inline void mpu_set_rlar(uint32_t rlar)
+{
+	write_prlar(rlar);
+	__DSB();
+	__ISB();
+}
+
+static inline uint32_t mpu_get_rlar(void)
+{
+	return read_prlar();
+}
+
+static inline uint8_t mpu_get_num_regions(void)
+{
+	uint32_t type = read_mpuir();
+
+	type = (type >> MPU_IR_REGION_Pos) & MPU_IR_REGION_Msk;
+
+	return (uint8_t)type;
+}
+
+static inline void mpu_clear_region(uint32_t rnr)
+{
+	mpu_set_rnr(rnr);
+	mpu_set_rbar(0);
+	mpu_set_rlar(0);
+}
+
+#else
+#error "Unsupported ARM CPU"
+#endif
 
 /* Global MPU configuration at system initialization. */
 static void mpu_init(void)
@@ -36,20 +139,14 @@ static void mpu_init(void)
 	/* Configure the cache-ability attributes for all the
 	 * different types of memory regions.
 	 */
+	mpu_set_mair0(MPU_MAIR_ATTRS);
+}
 
-	/* Flash region(s): Attribute-0
-	 * SRAM region(s): Attribute-1
-	 * SRAM no cache-able regions(s): Attribute-2
-	 */
-	MPU->MAIR0 =
-		((MPU_MAIR_ATTR_FLASH << MPU_MAIR0_Attr0_Pos) &
-			MPU_MAIR0_Attr0_Msk)
-		|
-		((MPU_MAIR_ATTR_SRAM << MPU_MAIR0_Attr1_Pos) &
-			MPU_MAIR0_Attr1_Msk)
-		|
-		((MPU_MAIR_ATTR_SRAM_NOCACHE << MPU_MAIR0_Attr2_Pos) &
-			MPU_MAIR0_Attr2_Msk);
+static void mpu_set_region(uint32_t rnr, uint32_t rbar, uint32_t rlar)
+{
+	mpu_set_rnr(rnr);
+	mpu_set_rbar(rbar);
+	mpu_set_rlar(rlar);
 }
 
 /* This internal function performs MPU region initialization.
@@ -60,7 +157,7 @@ static void mpu_init(void)
 static void region_init(const uint32_t index,
 	const struct arm_mpu_region *region_conf)
 {
-	ARM_MPU_SetRegion(
+	mpu_set_region(
 		/* RNR */
 		index,
 		/* RBAR */
@@ -116,6 +213,21 @@ static int mpu_partition_is_valid(const struct z_arm_mpu_partition *part)
  * needs to be enabled.
  *
  */
+#if defined(CONFIG_AARCH32_ARMV8_R)
+static inline int get_region_index(uint32_t start, uint32_t size)
+{
+	uint32_t limit = (start + size - 1) & MPU_RLAR_LIMIT_Msk;
+
+	for (uint8_t idx = 0; idx < mpu_get_num_regions(); idx++) {
+		mpu_set_rnr(idx);
+		if (start >= (mpu_get_rbar() & MPU_RBAR_BASE_Msk) &&
+		    limit <= (mpu_get_rlar() & MPU_RLAR_LIMIT_Msk)) {
+			return idx;
+		}
+	}
+	return -EINVAL;
+}
+#else
 static inline int get_region_index(uint32_t start, uint32_t size)
 {
 	uint32_t region_start_addr = arm_cmse_mpu_region_get(start);
@@ -129,48 +241,49 @@ static inline int get_region_index(uint32_t start, uint32_t size)
 	}
 	return -EINVAL;
 }
+#endif
 
 static inline uint32_t mpu_region_get_base(const uint32_t index)
 {
-	MPU->RNR = index;
-	return MPU->RBAR & MPU_RBAR_BASE_Msk;
+	mpu_set_rnr(index);
+	return mpu_get_rbar() & MPU_RBAR_BASE_Msk;
 }
 
 static inline void mpu_region_set_base(const uint32_t index, const uint32_t base)
 {
-	MPU->RNR = index;
-	MPU->RBAR = (MPU->RBAR & (~MPU_RBAR_BASE_Msk))
-		| (base & MPU_RBAR_BASE_Msk);
+	mpu_set_rnr(index);
+	mpu_set_rbar((mpu_get_rbar() & (~MPU_RBAR_BASE_Msk))
+		     | (base & MPU_RBAR_BASE_Msk));
 }
 
 static inline uint32_t mpu_region_get_last_addr(const uint32_t index)
 {
-	MPU->RNR = index;
-	return (MPU->RLAR & MPU_RLAR_LIMIT_Msk) | (~MPU_RLAR_LIMIT_Msk);
+	mpu_set_rnr(index);
+	return (mpu_get_rlar() & MPU_RLAR_LIMIT_Msk) | (~MPU_RLAR_LIMIT_Msk);
 }
 
 static inline void mpu_region_set_limit(const uint32_t index, const uint32_t limit)
 {
-	MPU->RNR = index;
-	MPU->RLAR = (MPU->RLAR & (~MPU_RLAR_LIMIT_Msk))
-		| (limit & MPU_RLAR_LIMIT_Msk);
+	mpu_set_rnr(index);
+	mpu_set_rlar((mpu_get_rlar() & (~MPU_RLAR_LIMIT_Msk))
+		     | (limit & MPU_RLAR_LIMIT_Msk));
 }
 
 static inline void mpu_region_get_access_attr(const uint32_t index,
 	arm_mpu_region_attr_t *attr)
 {
-	MPU->RNR = index;
+	mpu_set_rnr(index);
 
-	attr->rbar = MPU->RBAR &
+	attr->rbar = mpu_get_rbar() &
 		(MPU_RBAR_XN_Msk | MPU_RBAR_AP_Msk | MPU_RBAR_SH_Msk);
-	attr->mair_idx = (MPU->RLAR & MPU_RLAR_AttrIndx_Msk) >>
+	attr->mair_idx = (mpu_get_rlar() & MPU_RLAR_AttrIndx_Msk) >>
 		MPU_RLAR_AttrIndx_Pos;
 }
 
 static inline void mpu_region_get_conf(const uint32_t index,
 	struct arm_mpu_region *region_conf)
 {
-	MPU->RNR = index;
+	mpu_set_rnr(index);
 
 	/* Region attribution:
 	 * - Cache-ability
@@ -180,10 +293,10 @@ static inline void mpu_region_get_conf(const uint32_t index,
 	mpu_region_get_access_attr(index, &region_conf->attr);
 
 	/* Region base address */
-	region_conf->base = (MPU->RBAR & MPU_RBAR_BASE_Msk);
+	region_conf->base = mpu_get_rbar() & MPU_RBAR_BASE_Msk;
 
 	/* Region limit address */
-	region_conf->attr.r_limit = MPU->RLAR & MPU_RLAR_LIMIT_Msk;
+	region_conf->attr.r_limit = mpu_get_rlar() & MPU_RLAR_LIMIT_Msk;
 }
 
 /**
@@ -242,11 +355,82 @@ static inline uint32_t mpu_region_get_size(uint32_t index)
  */
 static inline int is_enabled_region(uint32_t index)
 {
-	MPU->RNR = index;
+	mpu_set_rnr(index);
 
-	return (MPU->RLAR & MPU_RLAR_EN_Msk) ? 1 : 0;
+	return (mpu_get_rlar() & MPU_RLAR_EN_Msk) ? 1 : 0;
 }
 
+#if defined(CONFIG_AARCH32_ARMV8_R)
+/**
+ * This internal function checks if the given buffer is in the region.
+ *
+ * Note:
+ *   The caller must provide a valid region number.
+ */
+static inline int is_in_region(uint32_t rnr, uint32_t start, uint32_t size)
+{
+	uint32_t r_addr_start;
+	uint32_t r_addr_end;
+	uint32_t end;
+
+	r_addr_start = mpu_region_get_base(rnr);
+	r_addr_end = mpu_region_get_last_addr(rnr);
+
+	size = size == 0U ? 0U : size - 1U;
+	if (u32_add_overflow(start, size, &end)) {
+		return 0;
+	}
+
+	if ((start >= r_addr_start) && (end <= r_addr_end)) {
+		return 1;
+	}
+
+	return 0;
+}
+
+static inline int is_user_accessible_region(uint32_t rnr, int write)
+{
+	uint32_t r_ap;
+
+	mpu_set_rnr(rnr);
+
+	r_ap = (mpu_get_rbar() & MPU_RBAR_AP_Msk) >> MPU_RBAR_AP_Pos;
+
+	if (write != 0) {
+		return r_ap == P_RW_U_RW;
+	}
+
+	return ((r_ap == P_RW_U_RW) ||  (r_ap == P_RO_U_RO));
+}
+
+/**
+ * This internal function validates whether a given memory buffer
+ * is user accessible or not.
+ */
+static inline int mpu_buffer_validate(void *addr, size_t size, int write)
+{
+	int32_t rnr;
+	int rc = -EPERM;
+
+	int key = arch_irq_lock();
+
+	/* Iterate all mpu regions in reversed order */
+	for (rnr = 0; rnr < mpu_get_num_regions(); rnr++) {
+		if (!is_enabled_region(rnr) ||
+		    !is_in_region(rnr, (uint32_t)addr, size)) {
+			continue;
+		}
+
+		if (is_user_accessible_region(rnr, write)) {
+			rc = 0;
+		}
+	}
+
+	arch_irq_unlock(key);
+	return rc;
+}
+
+#else
 /**
  * This internal function validates whether a given memory buffer
  * is user accessible or not.
@@ -308,7 +492,7 @@ static inline int mpu_buffer_validate(void *addr, size_t size, int write)
 #endif /* CONFIG_CPU_HAS_TEE */
 	return -EPERM;
 }
-
+#endif /* CONFIG_AARCH32_ARMV8_R */
 
 #endif /* CONFIG_USERSPACE */
 
@@ -539,11 +723,7 @@ static inline uint8_t get_num_regions(void)
 	/* Retrieve the number of regions from DTS configuration. */
 	return NUM_MPU_REGIONS;
 #else
-	uint32_t type = MPU->TYPE;
-
-	type = (type & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos;
-
-	return (uint8_t)type;
+	return mpu_get_num_regions();
 #endif /* NUM_MPU_REGIONS */
 }
 
@@ -562,7 +742,7 @@ static int mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
 
 	/* Disable all MPU regions except for the static ones. */
 	for (int i = mpu_reg_index; i < get_num_regions(); i++) {
-		ARM_MPU_ClrRegion(i);
+		mpu_clear_region(i);
 	}
 
 #if defined(CONFIG_MPU_GAP_FILLING)
@@ -587,7 +767,7 @@ static int mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
 	 * may be programmed.
 	 */
 	for (int i = 0; i < MPU_DYNAMIC_REGION_AREAS_NUM; i++) {
-		ARM_MPU_ClrRegion(dyn_reg_info[i].index);
+		mpu_clear_region(dyn_reg_info[i].index);
 	}
 
 	/* The dynamic regions are now programmed on top of

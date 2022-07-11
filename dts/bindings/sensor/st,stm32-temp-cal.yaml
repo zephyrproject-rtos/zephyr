@@ -38,8 +38,3 @@ properties:
       description: |
         Analog voltage reference (Vref+) voltage with which
         temperature sensor has been calibrated in production
-
-    ts-cal-offset:
-      type: int
-      required: true
-      description: Temperature offset in Celcius

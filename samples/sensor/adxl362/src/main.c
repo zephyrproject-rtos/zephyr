@@ -22,8 +22,11 @@ static void trigger_handler(const struct device *dev,
 		}
 		k_sem_give(&sem);
 		break;
-	case SENSOR_TRIG_THRESHOLD:
-		printf("Threshold trigger\n");
+	case SENSOR_TRIG_MOTION:
+		printf("Motion trigger\n");
+		break;
+	case SENSOR_TRIG_STATIONARY:
+		printf("Stationary trigger\n");
 		break;
 	default:
 		printf("Unknown trigger\n");
@@ -34,16 +37,23 @@ void main(void)
 {
 	struct sensor_value accel[3];
 
-	const struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, adi_adxl362)));
-	if (dev == NULL) {
-		printf("Device get binding device\n");
+	const struct device *dev = DEVICE_DT_GET_ONE(adi_adxl362);
+
+	if (!device_is_ready(dev)) {
+		printf("Device %s is not ready\n", dev->name);
 		return;
 	}
 
 	if (IS_ENABLED(CONFIG_ADXL362_TRIGGER)) {
 		struct sensor_trigger trig = { .chan = SENSOR_CHAN_ACCEL_XYZ };
 
-		trig.type = SENSOR_TRIG_THRESHOLD;
+		trig.type = SENSOR_TRIG_MOTION;
+		if (sensor_trigger_set(dev, &trig, trigger_handler)) {
+			printf("Trigger set error\n");
+			return;
+		}
+
+		trig.type = SENSOR_TRIG_STATIONARY;
 		if (sensor_trigger_set(dev, &trig, trigger_handler)) {
 			printf("Trigger set error\n");
 			return;

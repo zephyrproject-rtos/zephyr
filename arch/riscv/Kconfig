@@ -28,6 +28,16 @@ config RISCV_GP
 	  global pointer at program start or earlier than any instruction
 	  using GP relative addressing.
 
+config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
+	bool "Do not use mret outside a trap handler context"
+	depends on !RISCV_PMP
+	help
+	  Use mret instruction only when in a trap handler.
+	  This is for RISC-V implementations that require every mret to be
+	  balanced with an ecall. This is not required by the RISC-V spec
+	  and most people should say n here to minimize context switching
+	  overhead.
+
 menu "RISCV Processor Options"
 
 config INCLUDE_RESET_VECTOR
@@ -128,6 +138,7 @@ config RISCV_PMP
 	select SRAM_REGION_PERMISSIONS
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
+	select THREAD_LOCAL_STORAGE if USERSPACE
 	help
 	  MCU implements Physical Memory Protection.
 
@@ -187,6 +198,12 @@ config CMSIS_THREAD_MAX_STACK_SIZE
 
 config CMSIS_V2_THREAD_MAX_STACK_SIZE
 	default 1024 if 64BIT
+
+config ARCH_IRQ_VECTOR_TABLE_ALIGN
+	default 256
+
+config GEN_IRQ_VECTOR_TABLE
+	select RISCV_MTVEC_VECTORED_MODE if SOC_FAMILY_RISCV_PRIVILEGE
 
 rsource "Kconfig.isa"
 rsource "Kconfig.core"

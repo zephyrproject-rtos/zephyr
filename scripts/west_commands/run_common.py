@@ -140,7 +140,7 @@ def add_parser_common(command, parser_adder=None, parser=None):
     group.add_argument('--gdb', help='path to GDB')
     group.add_argument('--openocd', help='path to openocd')
     group.add_argument(
-        '--openocd-search', metavar='DIR',
+        '--openocd-search', metavar='DIR', action='append',
         help='path to add to openocd search path, if applicable')
 
     return parser

@@ -18,15 +18,11 @@ LOG_MODULE_DECLARE(BMC150_MAGN, CONFIG_SENSOR_LOG_LEVEL);
 static inline void setup_drdy(const struct device *dev,
 			      bool enable)
 {
-	struct bmc150_magn_data *data = dev->data;
 	const struct bmc150_magn_config *const cfg =
 		dev->config;
 
-	gpio_pin_interrupt_configure(data->gpio_drdy,
-				     cfg->gpio_drdy_int_pin,
-				     enable
-				     ? GPIO_INT_EDGE_TO_ACTIVE
-				     : GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
+					enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE);
 }
 
 
@@ -38,6 +34,10 @@ int bmc150_magn_trigger_set(const struct device *dev,
 	const struct bmc150_magn_config * const config =
 					dev->config;
 	uint8_t state;
+
+	if (!config->int_gpio.port) {
+		return -ENOTSUP;
+	}
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
@@ -51,12 +51,11 @@ int bmc150_magn_trigger_set(const struct device *dev,
 		data->handler_drdy = handler;
 		data->trigger_drdy = *trig;
 
-		if (i2c_reg_update_byte(data->i2c_master,
-					config->i2c_slave_addr,
-					BMC150_MAGN_REG_INT_DRDY,
-					BMC150_MAGN_MASK_DRDY_EN,
-					state << BMC150_MAGN_SHIFT_DRDY_EN)
-					< 0) {
+		if (i2c_reg_update_byte_dt(&config->i2c,
+					   BMC150_MAGN_REG_INT_DRDY,
+					   BMC150_MAGN_MASK_DRDY_EN,
+					   state << BMC150_MAGN_SHIFT_DRDY_EN)
+					   < 0) {
 			LOG_DBG("failed to set DRDY interrupt");
 			return -EIO;
 		}
@@ -90,10 +89,9 @@ static void bmc150_magn_thread_main(struct bmc150_magn_data *data)
 	while (1) {
 		k_sem_take(&data->sem, K_FOREVER);
 
-		while (i2c_reg_read_byte(data->i2c_master,
-					 config->i2c_slave_addr,
-					 BMC150_MAGN_REG_INT_STATUS,
-					 &reg_val) < 0) {
+		while (i2c_reg_read_byte_dt(&config->i2c,
+					    BMC150_MAGN_REG_INT_STATUS,
+					    &reg_val) < 0) {
 			LOG_DBG("failed to clear data ready interrupt");
 		}
 
@@ -107,17 +105,16 @@ static void bmc150_magn_thread_main(struct bmc150_magn_data *data)
 
 static int bmc150_magn_set_drdy_polarity(const struct device *dev, int state)
 {
-	struct bmc150_magn_data *data = dev->data;
 	const struct bmc150_magn_config *config = dev->config;
 
 	if (state) {
 		state = 1;
 	}
 
-	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				   BMC150_MAGN_REG_INT_DRDY,
-				   BMC150_MAGN_MASK_DRDY_DR_POLARITY,
-				   state << BMC150_MAGN_SHIFT_DRDY_DR_POLARITY);
+	return i2c_reg_update_byte_dt(&config->i2c,
+				      BMC150_MAGN_REG_INT_DRDY,
+				      BMC150_MAGN_MASK_DRDY_DR_POLARITY,
+				      state << BMC150_MAGN_SHIFT_DRDY_DR_POLARITY);
 }
 
 int bmc150_magn_init_interrupt(const struct device *dev)
@@ -133,10 +130,10 @@ int bmc150_magn_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				BMC150_MAGN_REG_INT_DRDY,
-				BMC150_MAGN_MASK_DRDY_EN,
-				0 << BMC150_MAGN_SHIFT_DRDY_EN) < 0) {
+	if (i2c_reg_update_byte_dt(&config->i2c,
+				   BMC150_MAGN_REG_INT_DRDY,
+				   BMC150_MAGN_MASK_DRDY_EN,
+				   0 << BMC150_MAGN_SHIFT_DRDY_EN) < 0) {
 		LOG_DBG("failed to set data ready interrupt enabled bit");
 		return -EIO;
 	}
@@ -152,22 +149,18 @@ int bmc150_magn_init_interrupt(const struct device *dev)
 			data, NULL, NULL,
 			K_PRIO_COOP(10), 0, K_NO_WAIT);
 
-	data->gpio_drdy = device_get_binding(config->gpio_drdy_dev_name);
-	if (!data->gpio_drdy) {
-		LOG_DBG("gpio controller %s not found",
-			    config->gpio_drdy_dev_name);
-		return -EINVAL;
+	if (!device_is_ready(config->int_gpio.port)) {
+		LOG_ERR("GPIO device not ready");
+		return -ENODEV;
 	}
 
-	gpio_pin_configure(data->gpio_drdy, config->gpio_drdy_int_pin,
-			   config->gpio_drdy_int_flags
-			   | GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 	gpio_init_callback(&data->gpio_cb,
 			   bmc150_magn_gpio_drdy_callback,
-			   BIT(config->gpio_drdy_int_pin));
+			   BIT(config->int_gpio.pin));
 
-	if (gpio_add_callback(data->gpio_drdy, &data->gpio_cb) < 0) {
+	if (gpio_add_callback(config->int_gpio.port, &data->gpio_cb) < 0) {
 		LOG_DBG("failed to set gpio callback");
 		return -EIO;
 	}

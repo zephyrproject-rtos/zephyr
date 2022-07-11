@@ -41,7 +41,7 @@ static void test_sysclk_freq(void)
 
 static void test_i2c_clk_config(void)
 {
-	static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(i2c1);
+	static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(DT_NODELABEL(i2c1));
 
 	uint32_t dev_dt_clk_freq, dev_actual_clk_freq;
 	uint32_t dev_actual_clk_src;
@@ -136,7 +136,7 @@ static void test_i2c_clk_config(void) {}
 
 static void test_lptim_clk_config(void)
 {
-	static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(lptim1);
+	static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(DT_NODELABEL(lptim1));
 
 	uint32_t dev_dt_clk_freq, dev_actual_clk_freq;
 	uint32_t dev_actual_clk_src;
@@ -208,7 +208,7 @@ static void test_lptim_clk_config(void)
 				(clock_control_subsys_t) &pclken[0]);
 	zassert_true((r == 0), "Could not disable LPTIM1 gating clk");
 
-	zassert_true(!__HAL_RCC_I2C1_IS_CLK_ENABLED(), "LPTIM1 gating clk should be off");
+	zassert_true(!__HAL_RCC_LPTIM1_IS_CLK_ENABLED(), "LPTIM1 gating clk should be off");
 	TC_PRINT("LPTIM1 gating clk off\n");
 
 	/* Test clock_off(srce) */
@@ -218,12 +218,125 @@ static void test_lptim_clk_config(void)
 static void test_lptim_clk_config(void) {}
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT st_stm32_adc
+
+#if STM32_DT_INST_DEV_OPT_CLOCK_SUPPORT
+#define STM32_ADC_OPT_CLOCK_SUPPORT 1
+#else
+#define STM32_ADC_OPT_CLOCK_SUPPORT 0
+#endif
+
+#if defined(__HAL_RCC_GET_ADC12_SOURCE)
+#define PERIPHCLK_ADC		RCC_PERIPHCLK_ADC12
+#define ADC_IS_CLK_ENABLED	__HAL_RCC_ADC12_IS_CLK_ENABLED
+#define GET_ADC_SOURCE		__HAL_RCC_GET_ADC12_SOURCE
+#define ADC_SOURCE_SYSCLK	RCC_ADC12CLKSOURCE_SYSCLK
+#elif defined(__HAL_RCC_GET_ADC_SOURCE)
+#define PERIPHCLK_ADC		RCC_PERIPHCLK_ADC
+#define ADC_IS_CLK_ENABLED	__HAL_RCC_ADC_IS_CLK_ENABLED
+#define GET_ADC_SOURCE		__HAL_RCC_GET_ADC_SOURCE
+#define ADC_SOURCE_SYSCLK	RCC_ADCCLKSOURCE_SYSCLK
+#else
+#define PERIPHCLK_ADC		(-1)
+#define ADC_IS_CLK_ENABLED	__HAL_RCC_ADC1_IS_CLK_ENABLED
+#define GET_ADC_SOURCE()	(-1);
+#endif
+
+#if defined(RCC_ADC12CLKSOURCE_PLL)
+#define ADC_SOURCE_PLL		RCC_ADC12CLKSOURCE_PLL
+#elif defined(RCC_ADCCLKSOURCE_PLLADC)
+#define ADC_SOURCE_PLL		RCC_ADCCLKSOURCE_PLLADC
+#elif defined(RCC_ADCCLKSOURCE_PLL)
+#define ADC_SOURCE_PLL		RCC_ADCCLKSOURCE_PLL
+#else
+#define ADC_SOURCE_PLL		(-1)
+#endif
+
+static void test_adc_clk_config(void)
+{
+	static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(DT_NODELABEL(adc1));
+
+	uint32_t dev_dt_clk_freq, dev_actual_clk_freq;
+	uint32_t dev_actual_clk_src;
+	int r;
+
+	/* Test clock_on(gating clock) */
+	r = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				(clock_control_subsys_t) &pclken[0]);
+	zassert_true((r == 0), "Could not enable ADC1 gating clock");
+
+	zassert_true(ADC_IS_CLK_ENABLED(), "ADC1 gating clock should be on");
+	TC_PRINT("ADC1 gating clock on\n");
+
+	if (IS_ENABLED(STM32_ADC_OPT_CLOCK_SUPPORT) && DT_NUM_CLOCKS(DT_NODELABEL(adc1)) > 1) {
+		/* Test clock_on(ker_clk) */
+		r = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					    (clock_control_subsys_t) &pclken[1],
+					    NULL);
+		zassert_true((r == 0), "Could not enable ADC1 soure clock");
+		TC_PRINT("ADC1 source clock configured\n");
+
+		/* Test clock source */
+		zassert_true((ADC_SOURCE_PLL != -1), "Invalid ADC_SOURCE_PLL defined for target.");
+		dev_actual_clk_src = GET_ADC_SOURCE();
+
+		switch (pclken[1].bus) {
+#if defined(STM32_SRC_PLL_P)
+		case STM32_SRC_PLL_P:
+			zassert_equal(dev_actual_clk_src, ADC_SOURCE_PLL,
+					"Expected ADC1 src: PLL (0x%lx). Actual ADC1 src: 0x%x",
+					ADC_SOURCE_PLL, dev_actual_clk_src);
+			break;
+#endif
+		default:
+			zassert_true(0, "Unexpected src clk (%d)", dev_actual_clk_src);
+		}
+
+		/* Test get_rate(srce clk) */
+		r = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					(clock_control_subsys_t) &pclken[1],
+					&dev_dt_clk_freq);
+		zassert_true((r == 0), "Could not get ADC1 clk srce freq");
+
+		dev_actual_clk_freq = HAL_RCCEx_GetPeriphCLKFreq(PERIPHCLK_ADC);
+		zassert_equal(dev_dt_clk_freq, dev_actual_clk_freq,
+				"Expected DT freq: %d Hz. Actual freq: %d Hz",
+				dev_dt_clk_freq, dev_actual_clk_freq);
+
+		TC_PRINT("ADC1 clock source rate: %d Hz\n", dev_dt_clk_freq);
+	} else {
+		zassert_true((DT_NUM_CLOCKS(DT_NODELABEL(adc1)) == 1), "test config issue");
+		/* No alt clock available, don't check gating clock as for adc there is no
+		 * uniform way to verify via hal.
+		 */
+		TC_PRINT("ADC1 no alt clock defined. Skipped check\n");
+	}
+
+	/* Test clock_off(reg_clk) */
+	r = clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				(clock_control_subsys_t) &pclken[0]);
+	zassert_true((r == 0), "Could not disable ADC1 gating clk");
+
+	zassert_true(!ADC_IS_CLK_ENABLED(), "ADC1 gating clk should be off");
+	TC_PRINT("ADC1 gating clk off\n");
+
+	/* Test clock_off(srce) */
+	/* Not supported today */
+}
+#else
+static void test_adc_clk_config(void) {}
+#endif
+
 void test_main(void)
 {
 	ztest_test_suite(test_stm32_common_devices_clocks,
 		ztest_unit_test(test_sysclk_freq),
 		ztest_unit_test(test_i2c_clk_config),
-		ztest_unit_test(test_lptim_clk_config)
+		ztest_unit_test(test_lptim_clk_config),
+		ztest_unit_test(test_adc_clk_config)
 			 );
 	ztest_run_test_suite(test_stm32_common_devices_clocks);
 }

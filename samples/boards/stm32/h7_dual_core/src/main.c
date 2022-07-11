@@ -12,8 +12,6 @@
 
 #define SLEEP_TIME_MS   1000
 
-#define IPM  DT_LABEL(DT_NODELABEL(mailbox))
-
 struct ipm_data {
 	const struct gpio_dt_spec *led;
 	bool led_is_on;
@@ -36,11 +34,10 @@ void new_message_callback(const struct device *dev, void *user_data,
 
 void main(void)
 {
-	const struct device *ipm;
+	const struct device *ipm = DEVICE_DT_GET(DT_NODELABEL(mailbox));
 
 	printk("STM32 h7_dual_core application\n");
 
-	ipm = device_get_binding(IPM);
 	if (!device_is_ready(ipm)) {
 		printk("ipm device not ready\n");
 		return;

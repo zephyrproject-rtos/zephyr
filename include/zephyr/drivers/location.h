@@ -1,7 +1,7 @@
 /**
- * @file location.h
+ * @file drivers/location.h
  *
- * @brief Public location API.
+ * @brief Public location API for drivers.
  *
  */
 

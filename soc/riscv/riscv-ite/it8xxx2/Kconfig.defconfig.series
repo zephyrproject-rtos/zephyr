@@ -26,7 +26,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32768
 
 config SYS_CLOCK_TICKS_PER_SEC
-	default 8192
+	default 4096
 
 config UART_NS16550
 	default y
@@ -107,5 +107,7 @@ config RISCV_SOC_INTERRUPT_INIT
 	default y
 
 endif # ITE_IT8XXX2_INTC
+
+source "soc/riscv/riscv-ite/it8xxx2/Kconfig.defconfig.it81*"
 
 endif # SOC_SERIES_RISCV32_IT8XXX2

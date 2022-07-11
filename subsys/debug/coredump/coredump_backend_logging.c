@@ -30,8 +30,9 @@ static void coredump_logging_backend_start(void)
 	/* Reset error */
 	error = 0;
 
-	while (LOG_PROCESS())
+	while (LOG_PROCESS()) {
 		;
+	}
 
 	LOG_PANIC();
 	LOG_ERR(COREDUMP_PREFIX_STR COREDUMP_BEGIN_STR);
@@ -75,7 +76,7 @@ static void coredump_logging_backend_buffer_output(uint8_t *buf, size_t buflen)
 
 		if ((log_ptr >= LOG_BUF_SZ) || (remaining == 0)) {
 			log_buf[log_ptr] = '\0';
-			LOG_ERR(COREDUMP_PREFIX_STR "%s", log_strdup(log_buf));
+			LOG_ERR(COREDUMP_PREFIX_STR "%s", log_buf);
 			log_ptr = 0;
 		}
 	}

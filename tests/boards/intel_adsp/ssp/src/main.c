@@ -82,10 +82,11 @@ static __aligned(32) int32_t rx_data[XFERS][BUF_SIZE] = { { 0 } };
 static void dma_callback(const struct device *dma_dev, void *user_data,
 			 uint32_t channel, int status)
 {
-	if (status)
+	if (status) {
 		TC_PRINT("tx callback status %d\n", status);
-	else
+	} else {
 		TC_PRINT("tx giving up\n");
+	}
 }
 
 static void dma_callback_rx(const struct device *dma_dev, void *user_data,
@@ -196,13 +197,15 @@ static int check_transmission(void)
 		buffer[BUF_SIZE + i] = rx_data[1][i];
 	}
 
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < 4; i++) {
 		pattern[i] = sine_buf[i];
+	}
 
 	TC_PRINT("tx_data (will be sent 2 times):\n");
 	for (i = 0; i < BUF_SIZE; i += 8) {
-		for (j = 0; j < 8; j++)
+		for (j = 0; j < 8; j++) {
 			TC_PRINT("0x%08x ", sine_buf[i + j]);
+		}
 		TC_PRINT("\n");
 	}
 	TC_PRINT("\n");
@@ -238,8 +241,9 @@ static int check_transmission(void)
 
 	for (i = 0; i < BUF_SIZE; i++) {
 		TC_PRINT("tx 0x%08x rx 0x%08x\n", buffer[start_index + i], sine_buf[i]);
-		if (buffer[start_index + i] != sine_buf[i])
+		if (buffer[start_index + i] != sine_buf[i]) {
 			break;
+		}
 	}
 
 	if (i < BUF_SIZE - 1) {

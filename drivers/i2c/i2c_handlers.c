@@ -71,19 +71,19 @@ static inline int z_vrfy_i2c_transfer(const struct device *dev,
 }
 #include <syscalls/i2c_transfer_mrsh.c>
 
-static inline int z_vrfy_i2c_slave_driver_register(const struct device *dev)
+static inline int z_vrfy_i2c_target_driver_register(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2C));
-	return z_impl_i2c_slave_driver_register(dev);
+	return z_impl_i2c_target_driver_register(dev);
 }
-#include <syscalls/i2c_slave_driver_register_mrsh.c>
+#include <syscalls/i2c_target_driver_register_mrsh.c>
 
-static inline int z_vrfy_i2c_slave_driver_unregister(const struct device *dev)
+static inline int z_vrfy_i2c_target_driver_unregister(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2C));
-	return z_impl_i2c_slave_driver_unregister(dev);
+	return z_impl_i2c_target_driver_unregister(dev);
 }
-#include <syscalls/i2c_slave_driver_unregister_mrsh.c>
+#include <syscalls/i2c_target_driver_unregister_mrsh.c>
 
 static inline int z_vrfy_i2c_recover_bus(const struct device *dev)
 {

@@ -87,7 +87,13 @@ static void broadcast_source_set_ep_state(struct bt_audio_ep *ep, uint8_t state)
 		break;
 	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		if (state != BT_AUDIO_EP_STATE_IDLE &&
-		    state != BT_AUDIO_EP_STATE_STREAMING) {
+		    state != BT_AUDIO_EP_STATE_ENABLING) {
+			BT_DBG("Invalid broadcast sync endpoint state transition");
+			return;
+		}
+		break;
+	case BT_AUDIO_EP_STATE_ENABLING:
+		if (state != BT_AUDIO_EP_STATE_STREAMING) {
 			BT_DBG("Invalid broadcast sync endpoint state transition");
 			return;
 		}
@@ -119,7 +125,9 @@ static void broadcast_source_set_ep_state(struct bt_audio_ep *ep, uint8_t state)
 
 static void broadcast_source_iso_sent(struct bt_iso_chan *chan)
 {
-	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
+	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
+						      iso_chan);
+	struct bt_audio_ep *ep = audio_iso->source_ep;
 	struct bt_audio_stream_ops *ops = ep->stream->ops;
 
 	BT_DBG("stream %p ep %p", chan, ep);
@@ -146,7 +154,6 @@ static void broadcast_source_iso_connected(struct bt_iso_chan *chan)
 	BT_DBG("stream %p ep %p", chan, ep);
 
 	broadcast_source_set_ep_state(ep, BT_AUDIO_EP_STATE_STREAMING);
-	ep->seq_num = 0U;
 
 	if (ops != NULL && ops->started != NULL) {
 		ops->started(ep->stream);
@@ -671,6 +678,12 @@ int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source)
 		return err;
 	}
 
+	for (size_t i = 0U; i < source->stream_count; i++) {
+		struct bt_audio_ep *ep = source->streams[i]->ep;
+
+		broadcast_source_set_ep_state(ep, BT_AUDIO_EP_STATE_ENABLING);
+	}
+
 	return 0;
 }
 
@@ -696,7 +709,8 @@ int bt_audio_broadcast_source_stop(struct bt_audio_broadcast_source *source)
 		return -EINVAL;
 	}
 
-	if (stream->ep->status.state != BT_AUDIO_EP_STATE_STREAMING) {
+	if (stream->ep->status.state != BT_AUDIO_EP_STATE_STREAMING &&
+	    stream->ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
 		BT_DBG("Broadcast source stream %p invalid state: %u",
 		       stream, stream->ep->status.state);
 		return -EBADMSG;

@@ -13,8 +13,6 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/device.h>
-#include <soc.h>
-#include <stdlib.h>
 
 LOG_MODULE_REGISTER(app);
 

@@ -33,8 +33,8 @@ static const struct in_addr all_routers = { { { 224, 0, 0, 2 } } };
 
 #define dbg_addr(action, pkt_str, src, dst)				\
 	NET_DBG("%s %s from %s to %s", action, pkt_str,			\
-		log_strdup(net_sprint_ipv4_addr(src)),			\
-		log_strdup(net_sprint_ipv4_addr(dst)));
+		net_sprint_ipv4_addr(src),			\
+		net_sprint_ipv4_addr(dst));
 
 #define dbg_addr_recv(pkt_str, src, dst) \
 	dbg_addr("Received", pkt_str, src, dst)

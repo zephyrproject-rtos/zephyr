@@ -3,8 +3,20 @@
 # Copyright (c) 2019 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
 
+# Keep this option as an alias to INTEL_ADSP_TIMER because
+# SoF is still referencing this symbol. The reason is the
+# symbiotic relationship between these two projects, that from
+# Zephyr's perspective is the framework and also the application.
+# Once it gets merged, we have to update SoF to use INTEL_ADSP_TIMER
+# option and remove it.
 config CAVS_TIMER
-	bool "CAVS DSP Wall Clock Timer on Intel SoC"
+	bool
+	help
+	  Temporary alias to INTEL_ADSP_TIMER
+
+config INTEL_ADSP_TIMER
+	bool "Intel Audio DSP timer"
+	select CAVS_TIMER
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help

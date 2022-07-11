@@ -25,6 +25,12 @@ config PM_STATS
 	help
 	  Enable System Power Management Stats.
 
+config PM_S2RAM
+	bool "Suspend-to-RAM (S2RAM)"
+	depends on ARCH_HAS_SUSPEND_TO_RAM
+	help
+	  This option enables suspend-to-RAM (S2RAM).
+
 choice PM_POLICY
 	prompt "Idle State Power Management Policy"
 	default PM_POLICY_DEFAULT
@@ -102,6 +108,14 @@ config PM_DEVICE_RUNTIME
 	  Enable Runtime Power Management to save power. With device runtime PM
 	  enabled, devices can be suspended or resumed based on the device
 	  usage even while the CPU or system is running.
+
+config PM_DEVICE_RUNTIME_EXCLUSIVE
+	depends on PM_DEVICE_RUNTIME
+	bool "Use only on Runtime Power Management on system suspend / resume"
+	default y
+	help
+	  On system suspend / resume do not trigger the Device PM hooks but
+	  only rely on Runtime PM to manage the devices power states.
 
 endif # PM_DEVICE
 

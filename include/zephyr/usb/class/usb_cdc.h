@@ -86,6 +86,26 @@
 #define SERIAL_STATE_RX_CARRIER		0x01
 
 /**
+ * @brief PSTN Subclass Line Coding Values
+ *
+ * @note PSTN120.pdf, 6.3.11, Table 17
+ */
+#define USB_CDC_LINE_CODING_STOP_BITS_1		0
+#define USB_CDC_LINE_CODING_STOP_BITS_1_5	1
+#define USB_CDC_LINE_CODING_STOP_BITS_2		2
+
+#define USB_CDC_LINE_CODING_PARITY_NO		0
+#define USB_CDC_LINE_CODING_PARITY_ODD		1
+#define USB_CDC_LINE_CODING_PARITY_EVEN		2
+#define USB_CDC_LINE_CODING_PARITY_MARK		3
+#define USB_CDC_LINE_CODING_PARITY_SPACE	4
+
+#define USB_CDC_LINE_CODING_DATA_BITS_5		5
+#define USB_CDC_LINE_CODING_DATA_BITS_6		6
+#define USB_CDC_LINE_CODING_DATA_BITS_7		7
+#define USB_CDC_LINE_CODING_DATA_BITS_8		8
+
+/**
  * @brief Class-Specific Request Codes for Ethernet subclass
  * @note ECM120.pdf, 6.2, Table 6
  */

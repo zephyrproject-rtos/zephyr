@@ -89,8 +89,14 @@ static struct bt_gatt_attr test1_attrs[] = {
 
 static struct bt_gatt_service test1_svc = BT_GATT_SERVICE(test1_attrs);
 
-void test_gatt_register(void)
+ZTEST_SUITE(test_gatt, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(test_gatt, test_gatt_register)
 {
+	/* Ensure our test services are not already registered */
+	bt_gatt_service_unregister(&test_svc);
+	bt_gatt_service_unregister(&test1_svc);
+
 	/* Attempt to register services */
 	zassert_false(bt_gatt_service_register(&test_svc),
 		     "Test service registration failed");
@@ -104,7 +110,7 @@ void test_gatt_register(void)
 		     "Test service1 duplicate succeeded");
 }
 
-void test_gatt_unregister(void)
+ZTEST(test_gatt, test_gatt_unregister)
 {
 	/* Attempt to unregister last */
 	zassert_false(bt_gatt_service_unregister(&test1_svc),
@@ -156,7 +162,7 @@ static uint8_t find_attr(const struct bt_gatt_attr *attr, uint16_t handle,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-void test_gatt_foreach(void)
+ZTEST(test_gatt, test_gatt_foreach)
 {
 	const struct bt_gatt_attr *attr;
 	uint16_t num = 0;
@@ -224,7 +230,7 @@ void test_gatt_foreach(void)
 	}
 }
 
-void test_gatt_read(void)
+ZTEST(test_gatt, test_gatt_read)
 {
 	const struct bt_gatt_attr *attr;
 	uint8_t buf[256];
@@ -246,11 +252,15 @@ void test_gatt_read(void)
 			  "Attribute read value don't match");
 }
 
-void test_gatt_write(void)
+ZTEST(test_gatt, test_gatt_write)
 {
 	const struct bt_gatt_attr *attr;
 	char *value = "    ";
 	ssize_t ret;
+
+	/* Need our service to be registered */
+	zassert_false(bt_gatt_service_register(&test_svc),
+		     "Test service registration failed");
 
 	/* Find attribute by UUID */
 	attr = NULL;
@@ -263,16 +273,4 @@ void test_gatt_write(void)
 	zassert_equal(ret, strlen(value), "Attribute write unexpected return");
 	zassert_mem_equal(value, test_value, ret,
 			  "Attribute write value don't match");
-}
-
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_gatt,
-			 ztest_unit_test(test_gatt_register),
-			 ztest_unit_test(test_gatt_unregister),
-			 ztest_unit_test(test_gatt_foreach),
-			 ztest_unit_test(test_gatt_read),
-			 ztest_unit_test(test_gatt_write));
-	ztest_run_test_suite(test_gatt);
 }

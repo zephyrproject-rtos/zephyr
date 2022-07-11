@@ -97,8 +97,7 @@ static int bin2hex_str(uint8_t *bin, size_t bin_len, char *str, size_t str_buf_l
 	}
 
 	memset(str, 0, str_buf_len);
-	/* str_buf_len - 1 ensure space for \0 */
-	bin2hex(bin, bin_len, str, str_buf_len - 1);
+	bin2hex(bin, bin_len, str, str_buf_len);
 
 	return 0;
 }
@@ -878,7 +877,7 @@ enum updatehub_response updatehub_probe(void)
 		       SHA256_HEX_DIGEST_SIZE);
 		update_info.image_size = metadata_any_boards.objects[1].objects.size;
 		LOG_DBG("metadata_any: %s",
-			log_strdup(update_info.sha256sum_image));
+			update_info.sha256sum_image);
 	} else {
 		if (metadata_some_boards.objects_len != 2) {
 			LOG_ERR("Could not parse json");
@@ -908,7 +907,7 @@ enum updatehub_response updatehub_probe(void)
 		update_info.image_size =
 			metadata_some_boards.objects[1].objects.size;
 		LOG_DBG("metadata_some: %s",
-			log_strdup(update_info.sha256sum_image));
+			update_info.sha256sum_image);
 	}
 
 	ctx.code_status = UPDATEHUB_HAS_UPDATE;

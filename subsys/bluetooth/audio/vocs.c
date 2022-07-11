@@ -193,7 +193,7 @@ static ssize_t write_output_desc(struct bt_conn *conn, const struct bt_gatt_attr
 		}
 	}
 
-	BT_DBG("%s", log_strdup(inst->srv.output_desc));
+	BT_DBG("%s", inst->srv.output_desc);
 
 	return len;
 }
@@ -204,7 +204,7 @@ static ssize_t read_output_desc(struct bt_conn *conn, const struct bt_gatt_attr 
 {
 	struct bt_vocs *inst = attr->user_data;
 
-	BT_DBG("%s", log_strdup(inst->srv.output_desc));
+	BT_DBG("%s", inst->srv.output_desc);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.output_desc,
 				 strlen(inst->srv.output_desc));
 }
@@ -311,7 +311,7 @@ int bt_vocs_register(struct bt_vocs *vocs,
 		vocs->srv.output_desc[sizeof(vocs->srv.output_desc) - 1] = '\0';
 		if (IS_ENABLED(CONFIG_BT_DEBUG_VOCS) &&
 		    strcmp(vocs->srv.output_desc, param->output_desc)) {
-			BT_DBG("Output desc clipped to %s", log_strdup(vocs->srv.output_desc));
+			BT_DBG("Output desc clipped to %s", vocs->srv.output_desc);
 		}
 	}
 

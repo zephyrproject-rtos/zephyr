@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2022, Rtone.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <gigadevice/gd32f4xx/gd32f470.dtsi>
+
+/ {
+	soc {
+		flash-controller@40023c00 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(3072)>;
+			};
+		};
+	};
+};

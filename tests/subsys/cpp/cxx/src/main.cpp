@@ -103,19 +103,29 @@ static int test_init(const struct device *dev)
 
 SYS_INIT(test_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 
+/* Check that global static object constructors are called. */
+foo_class static_foo(12345678);
 
-static void test_new_delete(void)
+ZTEST(cxx_tests, test_global_static_ctor)
+{
+	zassert_equal(static_foo.get_foo(), 12345678, NULL);
+}
+
+/*
+ * Check that dynamic memory allocation (usually, the C library heap) is
+ * functional when the global static object constructors are called.
+ */
+foo_class *static_init_dynamic_foo = new foo_class(87654321);
+
+ZTEST(cxx_tests, test_global_static_ctor_dynmem)
+{
+	zassert_equal(static_init_dynamic_foo->get_foo(), 87654321, NULL);
+}
+
+ZTEST(cxx_tests, test_new_delete)
 {
 	foo_class *test_foo = new foo_class(10);
 	zassert_equal(test_foo->get_foo(), 10, NULL);
 	delete test_foo;
 }
-
-void test_main(void)
-{
-	ztest_test_suite(cpp_tests,
-			 ztest_unit_test(test_new_delete)
-		);
-
-	ztest_run_test_suite(cpp_tests);
-}
+ZTEST_SUITE(cxx_tests, NULL, NULL, NULL, NULL, NULL);

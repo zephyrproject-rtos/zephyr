@@ -18,22 +18,21 @@
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
-static uint16_t iis2dh_i2c_slave_addr = DT_INST_REG_ADDR(0);
-
 LOG_MODULE_DECLARE(IIS2DH, CONFIG_SENSOR_LOG_LEVEL);
 
-static int iis2dh_i2c_read(struct iis2dh_data *data, uint8_t reg_addr,
-			   uint8_t *value, uint16_t len)
+static int iis2dh_i2c_read(const struct device *dev, uint8_t reg_addr, uint8_t *value, uint16_t len)
 {
-	return i2c_burst_read(data->bus, iis2dh_i2c_slave_addr,
-			      reg_addr | 0x80, value, len);
+	const struct iis2dh_device_config *config = dev->config;
+
+	return i2c_burst_read_dt(&config->i2c, reg_addr | 0x80, value, len);
 }
 
-static int iis2dh_i2c_write(struct iis2dh_data *data, uint8_t reg_addr,
-			    uint8_t *value, uint16_t len)
+static int iis2dh_i2c_write(const struct device *dev, uint8_t reg_addr, uint8_t *value,
+			    uint16_t len)
 {
-	return i2c_burst_write(data->bus, iis2dh_i2c_slave_addr,
-			       reg_addr | 0x80, value, len);
+	const struct iis2dh_device_config *config = dev->config;
+
+	return i2c_burst_write_dt(&config->i2c, reg_addr | 0x80, value, len);
 }
 
 stmdev_ctx_t iis2dh_i2c_ctx = {
@@ -44,9 +43,15 @@ stmdev_ctx_t iis2dh_i2c_ctx = {
 int iis2dh_i2c_init(const struct device *dev)
 {
 	struct iis2dh_data *data = dev->data;
+	const struct iis2dh_device_config *config = dev->config;
+
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
+	}
 
 	data->ctx = &iis2dh_i2c_ctx;
-	data->ctx->handle = data;
+	data->ctx->handle = (void *)dev;
 
 	return 0;
 }

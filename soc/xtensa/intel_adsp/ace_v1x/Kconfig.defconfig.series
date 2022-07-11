@@ -1,0 +1,78 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_INTEL_ACE1X
+
+config SOC_SERIES
+	string
+	default "ace_v1x"
+
+config SOC_TOOLCHAIN_NAME
+	string
+	default "intel_s1000"
+
+config SOC
+	string
+	default "intel_ace15_mtpm"
+
+config IMR_MANIFEST_ADDR
+	default 0xa1042000
+
+config MP_NUM_CPUS
+	default 3
+
+config SMP
+	default y
+
+# MTL leaves the upper mapping in the same spot as cAVS, but moves the
+# lower one inexplicably.
+config XTENSA_UNCACHED_REGION
+	default 2
+
+# Parameters for gen_isr_tables.py:
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 4
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 29
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 9
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config XTENSA_TIMER
+	default n
+
+config XTENSA_TIMER_ID
+	default 0
+
+config INTEL_ADSP_TIMER
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 400000000 if XTENSA_TIMER
+	default 19200000 if INTEL_ADSP_TIMER
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 50000
+
+config DYNAMIC_INTERRUPTS
+	default y
+
+if LOG
+
+config LOG_BACKEND_ADSP
+	default y
+
+endif # LOG
+
+endif # SOC_SERIES_INTEL_ACE1X

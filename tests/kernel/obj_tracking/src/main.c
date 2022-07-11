@@ -26,7 +26,7 @@ char __aligned(4) slab_buffer[8 * 4];
 stack_data_t stack_array[8 * 4];
 int msgq_buffer[64];
 
-void test_obj_tracking_sanity(void)
+ZTEST(obj_tracking, test_obj_tracking_sanity)
 {
 	struct k_timer timer;
 	struct k_mem_slab slab;
@@ -140,11 +140,4 @@ void test_obj_tracking_sanity(void)
 	zassert_equal(count, 2, "Wrong number of queue objects");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(obj_tracking,
-			 ztest_unit_test(test_obj_tracking_sanity)
-			 );
-
-	ztest_run_test_suite(obj_tracking);
-}
+ZTEST_SUITE(obj_tracking, NULL, NULL, NULL, NULL, NULL);

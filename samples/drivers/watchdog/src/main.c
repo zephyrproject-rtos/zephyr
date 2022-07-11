@@ -45,6 +45,13 @@
 #define WDT_NODE DT_INST(0, ti_cc32xx_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_wdog)
 #define WDT_NODE DT_INST(0, nxp_imx_wdog)
+#else
+#error "Unsupported SoC and no watchdog0 alias in zephyr.dts"
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_watchdog)
+#define WDT_MAX_WINDOW  600000U
+#define WDT_ALLOW_CALLBACK 0
 #endif
 
 #ifndef WDT_ALLOW_CALLBACK
@@ -53,16 +60,6 @@
 
 #ifndef WDT_MAX_WINDOW
 #define WDT_MAX_WINDOW  1000U
-#endif
-
-/*
- * If the devicetree has a watchdog node, get its label property.
- */
-#ifdef WDT_NODE
-#define WDT_DEV_NAME DT_LABEL(WDT_NODE)
-#else
-#define WDT_DEV_NAME ""
-#error "Unsupported SoC and no watchdog0 alias in zephyr.dts"
 #endif
 
 #if WDT_ALLOW_CALLBACK
@@ -85,13 +82,12 @@ void main(void)
 {
 	int err;
 	int wdt_channel_id;
-	const struct device *wdt;
+	const struct device *wdt = DEVICE_DT_GET(WDT_NODE);
 
 	printk("Watchdog sample application\n");
 
-	wdt = device_get_binding(WDT_DEV_NAME);
-	if (!wdt) {
-		printk("Cannot get WDT device\n");
+	if (!device_is_ready(wdt)) {
+		printk("%s: device not ready.\n", wdt->name);
 		return;
 	}
 

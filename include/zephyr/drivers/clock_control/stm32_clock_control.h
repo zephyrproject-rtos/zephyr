@@ -241,13 +241,17 @@
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), fixed_clock, okay)
+#define STM32_HSI_DIV_ENABLED	0
 #define STM32_HSI_ENABLED	1
 #define STM32_HSI_FREQ		DT_PROP(DT_NODELABEL(clk_hsi), clock_frequency)
-#elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), st_stm32h7_hsi_clock, okay)
+#elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), st_stm32h7_hsi_clock, okay) \
+	|| DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), st_stm32g0_hsi_clock, okay)
+#define STM32_HSI_DIV_ENABLED	1
 #define STM32_HSI_ENABLED	1
 #define STM32_HSI_DIVISOR	DT_PROP(DT_NODELABEL(clk_hsi), hsi_div)
 #define STM32_HSI_FREQ		DT_PROP(DT_NODELABEL(clk_hsi), clock_frequency)
 #else
+#define STM32_HSI_DIV_ENABLED	0
 #define STM32_HSI_DIVISOR	1
 #define STM32_HSI_FREQ		0
 #endif
@@ -281,27 +285,19 @@ struct stm32_pclken {
 
 /** Device tree clocks helpers  */
 
-#define STM32_CLOCK_INFO(clk_index, id)					\
+#define STM32_CLOCK_INFO(clk_index, node_id)				\
 	{								\
-	.enr = DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(id), clk_index, bits),\
-	.bus = DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(id), clk_index, bus)	\
+	.enr = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bits),		\
+	.bus = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bus)		\
 	}
-#define STM32_DT_CLOCKS(id)						\
+#define STM32_DT_CLOCKS(node_id)					\
 	{								\
-		LISTIFY(DT_NUM_CLOCKS(DT_NODELABEL(id)),		\
-			STM32_CLOCK_INFO, (,), id)			\
+		LISTIFY(DT_NUM_CLOCKS(node_id),				\
+			STM32_CLOCK_INFO, (,), node_id)			\
 	}
 
-#define STM32_INST_CLOCK_INFO(clk_index, inst)				\
-	{								\
-	.enr = DT_INST_CLOCKS_CELL_BY_IDX(inst, clk_index, bits),	\
-	.bus = DT_INST_CLOCKS_CELL_BY_IDX(inst, clk_index, bus)		\
-	}
 #define STM32_DT_INST_CLOCKS(inst)					\
-	{								\
-		LISTIFY(DT_INST_NUM_CLOCKS(inst),			\
-			STM32_INST_CLOCK_INFO, (,), inst)		\
-	}
+	STM32_DT_CLOCKS(DT_DRV_INST(inst))
 
 #define STM32_OPT_CLOCK_INST_SUPPORT(inst) DT_INST_CLOCKS_HAS_IDX(inst, 1) ||
 #define STM32_DT_INST_DEV_OPT_CLOCK_SUPPORT				\

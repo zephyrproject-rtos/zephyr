@@ -177,8 +177,9 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 			next_msg_flags = &(next->flags);
 		}
 		ret = i2c_stm32_transaction(dev, *current, next_msg_flags, slave);
-		if (ret < 0)
+		if (ret < 0) {
 			break;
+		}
 		current++;
 		num_msgs--;
 	}
@@ -190,9 +191,9 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 static const struct i2c_driver_api api_funcs = {
 	.configure = i2c_stm32_runtime_configure,
 	.transfer = i2c_stm32_transfer,
-#if defined(CONFIG_I2C_SLAVE)
-	.slave_register = i2c_stm32_slave_register,
-	.slave_unregister = i2c_stm32_slave_unregister,
+#if defined(CONFIG_I2C_TARGET)
+	.target_register = i2c_stm32_target_register,
+	.target_unregister = i2c_stm32_target_unregister,
 #endif
 };
 
@@ -271,7 +272,7 @@ static int i2c_stm32_init(const struct device *dev)
 
 	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
 
-	ret = i2c_stm32_runtime_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
+	ret = i2c_stm32_runtime_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (ret < 0) {
 		LOG_ERR("i2c: failure initializing");
 		return ret;

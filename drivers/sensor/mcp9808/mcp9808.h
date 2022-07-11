@@ -14,6 +14,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 
 #define MCP9808_REG_CONFIG		0x01
@@ -58,12 +59,9 @@
 #define MCP9808_REG_RESOLUTION          0x08
 
 struct mcp9808_data {
-	const struct device *i2c_master;
-
 	uint16_t reg_val;
 
 #ifdef CONFIG_MCP9808_TRIGGER
-	const struct device *alert_gpio;
 	struct gpio_callback alert_cb;
 
 	const struct device *dev;
@@ -82,13 +80,10 @@ struct mcp9808_data {
 };
 
 struct mcp9808_config {
-	const char *i2c_bus;
-	uint16_t i2c_addr;
+	struct i2c_dt_spec i2c;
 	uint8_t resolution;
 #ifdef CONFIG_MCP9808_TRIGGER
-	uint8_t alert_pin;
-	uint8_t alert_flags;
-	const char *alert_controller;
+	struct gpio_dt_spec int_gpio;
 #endif /* CONFIG_MCP9808_TRIGGER */
 };
 

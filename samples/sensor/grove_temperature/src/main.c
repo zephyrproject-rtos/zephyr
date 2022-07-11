@@ -19,16 +19,15 @@
 
 void main(void)
 {
-	const struct device *dev =
-		device_get_binding(DT_LABEL(DT_INST(0,
-						    seeed_grove_temperature)));
+	const struct device *dev = DEVICE_DT_GET_ONE(seeed_grove_temperature);
 	struct sensor_value temp;
 	int read;
 
-	if (dev == NULL) {
-		printf("device not found.  aborting test.\n");
+	if (!device_is_ready(dev)) {
+		printk("sensor: device not ready.\n");
 		return;
 	}
+
 #ifdef CONFIG_GROVE_LCD_RGB
 	const struct device *glcd;
 

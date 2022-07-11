@@ -93,8 +93,9 @@ static int test_task(uint32_t chan_id, uint32_t blen)
 	}
 	k_sleep(K_MSEC(2000));
 	TC_PRINT("%s\n", rx_data);
-	if (strcmp(tx_data, rx_data) != 0)
+	if (strcmp(tx_data, rx_data) != 0) {
 		return TC_FAIL;
+	}
 	return TC_PASS;
 }
 

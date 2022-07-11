@@ -430,13 +430,15 @@ static const uint8_t saturation_regs[NUM_SATURATION_LEVELS + 1][5] = {
 	{ 0x00, 0x02, 0x03, 0x58, 0x58 }, /* +2 */
 };
 
+struct ov2640_config {
+	struct i2c_dt_spec i2c;
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	struct gpio_dt_spec reset_gpio;
+#endif
+};
+
 struct ov2640_data {
-	const struct device *i2c;
-	const struct device *reset_gpio;
-	uint8_t reset_pin;
-	gpio_dt_flags_t reset_pin_flags;
 	struct video_format fmt;
-	uint8_t i2c_addr;
 };
 
 #define OV2640_VIDEO_FORMAT_CAP(width, height, format) \
@@ -474,10 +476,9 @@ static const struct video_format_cap fmts[] = {
 	{ 0 }
 };
 
-static int ov2640_write_reg(const struct device *dev, uint8_t reg_addr,
+static int ov2640_write_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr,
 				uint8_t value)
 {
-	struct ov2640_data *drv_data = dev->data;
 	uint8_t tries = 3;
 
 	/**
@@ -487,8 +488,7 @@ static int ov2640_write_reg(const struct device *dev, uint8_t reg_addr,
 	 * itself.
 	 */
 	while (tries--) {
-		if (!i2c_reg_write_byte(drv_data->i2c, drv_data->i2c_addr,
-								reg_addr, value)) {
+		if (!i2c_reg_write_byte_dt(spec, reg_addr, value)) {
 			return 0;
 		}
 		/* If writing failed wait 5ms before next attempt */
@@ -499,9 +499,8 @@ static int ov2640_write_reg(const struct device *dev, uint8_t reg_addr,
 	return -1;
 }
 
-static int ov2640_read_reg(const struct device *dev, uint8_t reg_addr)
+static int ov2640_read_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr)
 {
-	struct ov2640_data *drv_data = dev->data;
 	uint8_t tries = 3;
 	uint8_t value;
 
@@ -512,8 +511,7 @@ static int ov2640_read_reg(const struct device *dev, uint8_t reg_addr)
 	 * itself.
 	 */
 	while (tries--) {
-		if (!i2c_reg_read_byte(drv_data->i2c, drv_data->i2c_addr,
-								reg_addr, &value)) {
+		if (!i2c_reg_read_byte_dt(spec, reg_addr, &value)) {
 			return value;
 		}
 		/* If reading failed wait 5ms before next attempt */
@@ -528,11 +526,12 @@ static int ov2640_write_all(const struct device *dev,
 				const struct ov2640_reg *regs, uint16_t reg_num)
 {
 	uint16_t i = 0;
+	const struct ov2640_config *cfg = dev->config;
 
 	for (i = 0; i < reg_num; i++) {
 		int err;
 
-		err = ov2640_write_reg(dev, regs[i].addr, regs[i].value);
+		err = ov2640_write_reg(&cfg->i2c, regs[i].addr, regs[i].value);
 		if (err) {
 			return err;
 		}
@@ -544,12 +543,13 @@ static int ov2640_write_all(const struct device *dev,
 static int ov2640_soft_reset(const struct device *dev)
 {
 	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
 
 	/* Switch to DSP register bank */
-	ret |= ov2640_write_reg(dev, BANK_SEL, BANK_SEL_SENSOR);
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
 
 	/* Initiate system reset */
-	ret |= ov2640_write_reg(dev, COM7, COM7_SRST);
+	ret |= ov2640_write_reg(&cfg->i2c, COM7, COM7_SRST);
 
 	return ret;
 }
@@ -558,6 +558,7 @@ static int ov2640_set_level(const struct device *dev, int level,
 				int max_level, int cols, const uint8_t regs[][cols])
 {
 	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
 
 	level += (max_level / 2 + 1);
 	if (level < 0 || level > max_level) {
@@ -565,10 +566,10 @@ static int ov2640_set_level(const struct device *dev, int level,
 	}
 
 	/* Switch to DSP register bank */
-	ret |= ov2640_write_reg(dev, BANK_SEL, BANK_SEL_DSP);
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_DSP);
 
 	for (int i = 0; i < (ARRAY_SIZE(regs[0]) / sizeof(regs[0][0])); i++)	{
-		ret |= ov2640_write_reg(dev, regs[0][i], regs[level][i]);
+		ret |= ov2640_write_reg(&cfg->i2c, regs[0][i], regs[level][i]);
 	}
 
 	return ret;
@@ -620,16 +621,17 @@ static int ov2640_set_output_format(const struct device *dev,
 				int output_format)
 {
 	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
 
 	/* Switch to DSP register bank */
-	ret |= ov2640_write_reg(dev, BANK_SEL, BANK_SEL_DSP);
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_DSP);
 
 	if (output_format == VIDEO_PIX_FMT_JPEG)	{
 		/* Enable JPEG compression */
-		ret |= ov2640_write_reg(dev, IMAGE_MODE, IMAGE_MODE_JPEG_EN);
+		ret |= ov2640_write_reg(&cfg->i2c, IMAGE_MODE, IMAGE_MODE_JPEG_EN);
 	} else if (output_format == VIDEO_PIX_FMT_RGB565)	{
 		/* Disable JPEG compression and set output to RGB565 */
-		ret |= ov2640_write_reg(dev, IMAGE_MODE, IMAGE_MODE_RGB565);
+		ret |= ov2640_write_reg(&cfg->i2c, IMAGE_MODE, IMAGE_MODE_RGB565);
 	} else {
 		LOG_ERR("Image format not supported");
 		return -ENOTSUP;
@@ -642,12 +644,13 @@ static int ov2640_set_output_format(const struct device *dev,
 static int ov2640_set_quality(const struct device *dev, int qs)
 {
 	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
 
 	/* Switch to DSP register bank */
-	ret |= ov2640_write_reg(dev, BANK_SEL, BANK_SEL_DSP);
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_DSP);
 
 	/* Write QS register */
-	ret |= ov2640_write_reg(dev, QS, qs);
+	ret |= ov2640_write_reg(&cfg->i2c, QS, qs);
 
 	return ret;
 }
@@ -655,14 +658,15 @@ static int ov2640_set_quality(const struct device *dev, int qs)
 static int ov2640_set_colorbar(const struct device *dev, uint8_t enable)
 {
 	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
 
 	uint8_t reg;
 
 	/* Switch to SENSOR register bank */
-	ret |= ov2640_write_reg(dev, BANK_SEL, BANK_SEL_SENSOR);
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
 
 	/* Update COM7 to enable/disable color bar test pattern */
-	reg = ov2640_read_reg(dev, COM7);
+	reg = ov2640_read_reg(&cfg->i2c, COM7);
 
 	if (enable) {
 		reg |= COM7_COLOR_BAR;
@@ -670,7 +674,7 @@ static int ov2640_set_colorbar(const struct device *dev, uint8_t enable)
 		reg &= ~COM7_COLOR_BAR;
 	}
 
-	ret |= ov2640_write_reg(dev, COM7, reg);
+	ret |= ov2640_write_reg(&cfg->i2c, COM7, reg);
 
 	return ret;
 }
@@ -678,14 +682,15 @@ static int ov2640_set_colorbar(const struct device *dev, uint8_t enable)
 static int ov2640_set_white_bal(const struct device *dev, int enable)
 {
 	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
 
 	uint8_t reg;
 
 	/* Switch to SENSOR register bank */
-	ret |= ov2640_write_reg(dev, BANK_SEL, BANK_SEL_SENSOR);
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
 
 	/* Update CTRL1 to enable/disable automatic white balance*/
-	reg = ov2640_read_reg(dev, CTRL1);
+	reg = ov2640_read_reg(&cfg->i2c, CTRL1);
 
 	if (enable) {
 		reg |= CTRL1_AWB;
@@ -693,7 +698,7 @@ static int ov2640_set_white_bal(const struct device *dev, int enable)
 		reg &= ~CTRL1_AWB;
 	}
 
-	ret |= ov2640_write_reg(dev, CTRL1, reg);
+	ret |= ov2640_write_reg(&cfg->i2c, CTRL1, reg);
 
 	return ret;
 }
@@ -701,14 +706,15 @@ static int ov2640_set_white_bal(const struct device *dev, int enable)
 static int ov2640_set_gain_ctrl(const struct device *dev, int enable)
 {
 	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
 
 	uint8_t reg;
 
 	/* Switch to SENSOR register bank */
-	ret |= ov2640_write_reg(dev, BANK_SEL, BANK_SEL_SENSOR);
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
 
 	/* Update COM8 to enable/disable automatic gain control */
-	reg = ov2640_read_reg(dev, COM8);
+	reg = ov2640_read_reg(&cfg->i2c, COM8);
 
 	if (enable) {
 		reg |= COM8_AGC_EN;
@@ -716,7 +722,7 @@ static int ov2640_set_gain_ctrl(const struct device *dev, int enable)
 		reg &= ~COM8_AGC_EN;
 	}
 
-	ret |= ov2640_write_reg(dev, COM8, reg);
+	ret |= ov2640_write_reg(&cfg->i2c, COM8, reg);
 
 	return ret;
 }
@@ -724,14 +730,15 @@ static int ov2640_set_gain_ctrl(const struct device *dev, int enable)
 static int ov2640_set_exposure_ctrl(const struct device *dev, int enable)
 {
 	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
 
 	uint8_t reg;
 
 	/* Switch to SENSOR register bank */
-	ret |= ov2640_write_reg(dev, BANK_SEL, BANK_SEL_SENSOR);
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
 
 	/* Update COM8  to enable/disable automatic exposure control */
-	reg = ov2640_read_reg(dev, COM8);
+	reg = ov2640_read_reg(&cfg->i2c, COM8);
 
 	if (enable) {
 		reg |= COM8_AEC_EN;
@@ -739,7 +746,7 @@ static int ov2640_set_exposure_ctrl(const struct device *dev, int enable)
 		reg &= ~COM8_AEC_EN;
 	}
 
-	ret |= ov2640_write_reg(dev, COM8, reg);
+	ret |= ov2640_write_reg(&cfg->i2c, COM8, reg);
 
 	return ret;
 }
@@ -748,14 +755,15 @@ static int ov2640_set_horizontal_mirror(const struct device *dev,
 				int enable)
 {
 	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
 
 	uint8_t reg;
 
 	/* Switch to SENSOR register bank */
-	ret |= ov2640_write_reg(dev, BANK_SEL, BANK_SEL_SENSOR);
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
 
 	/* Update REG04 to enable/disable horizontal mirror */
-	reg = ov2640_read_reg(dev, REG04);
+	reg = ov2640_read_reg(&cfg->i2c, REG04);
 
 	if (enable) {
 		reg |= REG04_HFLIP_IMG;
@@ -763,7 +771,7 @@ static int ov2640_set_horizontal_mirror(const struct device *dev,
 		reg &= ~REG04_HFLIP_IMG;
 	}
 
-	ret |= ov2640_write_reg(dev, REG04, reg);
+	ret |= ov2640_write_reg(&cfg->i2c, REG04, reg);
 
 	return ret;
 }
@@ -771,14 +779,15 @@ static int ov2640_set_horizontal_mirror(const struct device *dev,
 static int ov2640_set_vertical_flip(const struct device *dev, int enable)
 {
 	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
 
 	uint8_t reg;
 
 	/* Switch to SENSOR register bank */
-	ret |= ov2640_write_reg(dev, BANK_SEL, BANK_SEL_SENSOR);
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
 
 	/* Update REG04 to enable/disable vertical flip */
-	reg = ov2640_read_reg(dev, REG04);
+	reg = ov2640_read_reg(&cfg->i2c, REG04);
 
 	if (enable) {
 		reg |= REG04_VFLIP_IMG;
@@ -786,7 +795,7 @@ static int ov2640_set_vertical_flip(const struct device *dev, int enable)
 		reg &= ~REG04_VFLIP_IMG;
 	}
 
-	ret |= ov2640_write_reg(dev, REG04, reg);
+	ret |= ov2640_write_reg(&cfg->i2c, REG04, reg);
 
 	return ret;
 }
@@ -795,30 +804,31 @@ static int ov2640_set_resolution(const struct device *dev,
 				uint16_t img_width, uint16_t img_height)
 {
 	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
 
 	uint16_t w = img_width;
 	uint16_t h = img_height;
 
 	/* Disable DSP */
-	ret |= ov2640_write_reg(dev, BANK_SEL, BANK_SEL_DSP);
-	ret |= ov2640_write_reg(dev, R_BYPASS, R_BYPASS_DSP_BYPAS);
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_DSP);
+	ret |= ov2640_write_reg(&cfg->i2c, R_BYPASS, R_BYPASS_DSP_BYPAS);
 
 	/* Write output width */
-	ret |= ov2640_write_reg(dev, ZMOW, (w >> 2) & 0xFF); /* OUTW[7:0] (real/4) */
-	ret |= ov2640_write_reg(dev, ZMOH, (h >> 2) & 0xFF); /* OUTH[7:0] (real/4) */
-	ret |= ov2640_write_reg(dev, ZMHH, ((h >> 8) & 0x04) |
+	ret |= ov2640_write_reg(&cfg->i2c, ZMOW, (w >> 2) & 0xFF); /* OUTW[7:0] (real/4) */
+	ret |= ov2640_write_reg(&cfg->i2c, ZMOH, (h >> 2) & 0xFF); /* OUTH[7:0] (real/4) */
+	ret |= ov2640_write_reg(&cfg->i2c, ZMHH, ((h >> 8) & 0x04) |
 							((w>>10) & 0x03)); /* OUTH[8]/OUTW[9:8] */
 
 	/* Set CLKRC */
-	ret |= ov2640_write_reg(dev, BANK_SEL, BANK_SEL_SENSOR);
-	ret |= ov2640_write_reg(dev, CLKRC, 0x87);
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
+	ret |= ov2640_write_reg(&cfg->i2c, CLKRC, 0x87);
 
 	/* Write DSP input registers */
 	ov2640_write_all(dev, uxga_regs, ARRAY_SIZE(uxga_regs));
 
 	/* Enable DSP */
-	ret |= ov2640_write_reg(dev, BANK_SEL, BANK_SEL_DSP);
-	ret |= ov2640_write_reg(dev, R_BYPASS, R_BYPASS_DSP_EN);
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_DSP);
+	ret |= ov2640_write_reg(&cfg->i2c, R_BYPASS, R_BYPASS_DSP_EN);
 
 	k_msleep(30);
 
@@ -828,12 +838,13 @@ static int ov2640_set_resolution(const struct device *dev,
 uint8_t ov2640_check_connection(const struct device *dev)
 {
 	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
 
 	uint8_t reg_pid_val, reg_ver_val;
 
-	ret |= ov2640_write_reg(dev, BANK_SEL, BANK_SEL_SENSOR);
-	reg_pid_val = ov2640_read_reg(dev, REG_PID);
-	reg_ver_val = ov2640_read_reg(dev, REG_VER);
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
+	reg_pid_val = ov2640_read_reg(&cfg->i2c, REG_PID);
+	reg_ver_val = ov2640_read_reg(&cfg->i2c, REG_VER);
 
 	if (REG_PID_VAL != reg_pid_val || REG_VER_VAL != reg_ver_val) {
 		LOG_ERR("OV2640 not detected\n");
@@ -969,26 +980,21 @@ static const struct video_driver_api ov2640_driver_api = {
 static int ov2640_init(const struct device *dev)
 {
 	struct video_format fmt;
-	struct ov2640_data *drv_data = dev->data;
 	int ret = 0;
 
-	if (drv_data->reset_gpio) {
-		ret = gpio_pin_configure(drv_data->reset_gpio,
-					 drv_data->reset_pin,
-					 GPIO_OUTPUT_ACTIVE |
-					 drv_data->reset_pin_flags);
-		if (ret) {
-			return ret;
-		}
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	const struct ov2640_config *cfg = dev->config;
 
-		/* Perform hardware reset */
-		gpio_pin_set(drv_data->reset_gpio,
-				 drv_data->reset_pin, 0);
-		k_msleep(1);
-		gpio_pin_set(drv_data->reset_gpio,
-				 drv_data->reset_pin, 1);
-		k_msleep(1);
+	ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
+	if (ret) {
+		return ret;
 	}
+
+	gpio_pin_set_dt(&cfg->reset_gpio, 0);
+	k_sleep(K_MSEC(1));
+	gpio_pin_set_dt(&cfg->reset_gpio, 1);
+	k_sleep(K_MSEC(1));
+#endif
 
 	ret = ov2640_check_connection(dev);
 
@@ -1019,48 +1025,42 @@ static int ov2640_init(const struct device *dev)
 }
 
 /* Unique Instance */
+static const struct ov2640_config ov2640_cfg_0 = {
+	.i2c = I2C_DT_SPEC_INST_GET(0),
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
+#endif
+};
 static struct ov2640_data ov2640_data_0;
 
 static int ov2640_init_0(const struct device *dev)
 {
-	struct ov2640_data *drv_data = dev->data;
+	const struct ov2640_config *cfg = dev->config;
 
-#if DT_NODE_EXISTS(reset_gpios)
-	char *gpio_name = DT_INST_GPIO_LABEL(0, reset_gpios);
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
+	}
 
-	drv_data->reset_pin = DT_INST_GPIO_PIN(0, reset_gpios);
-	drv_data->reset_pin_flags = DT_INST_GPIO_FLAGS(0, reset_gpios);
-
-	if (gpio_name) {
-		drv_data->reset_gpio = device_get_binding(gpio_name);
-		if (drv_data->reset_gpio == NULL) {
-			LOG_ERR("Failed to get pointer to %s device!",
-				gpio_name);
-		}
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	if (!device_is_ready(cfg->reset_gpio.port)) {
+		LOG_ERR("%s: device %s is not ready", dev->name,
+				cfg->reset_gpio.port->name);
+		return -ENODEV;
 	}
 #endif
 
-	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
-
-	if (drv_data->i2c == NULL) {
-		LOG_ERR("Failed to get pointer to %s device!",
-			DT_INST_LABEL(0));
-		return -EINVAL;
-	}
-
-	uint32_t i2c_cfg = I2C_MODE_MASTER |
+	uint32_t i2c_cfg = I2C_MODE_CONTROLLER |
 					I2C_SPEED_SET(I2C_SPEED_STANDARD);
 
-	if (i2c_configure(drv_data->i2c, i2c_cfg)) {
+	if (i2c_configure(cfg->i2c.bus, i2c_cfg)) {
 		LOG_ERR("Failed to configure ov2640 i2c interface.");
 	}
-
-	drv_data->i2c_addr = DT_INST_REG_ADDR(0);
 
 	return ov2640_init(dev);
 }
 
 DEVICE_DT_INST_DEFINE(0, &ov2640_init_0, NULL,
-			&ov2640_data_0, NULL,
+			&ov2640_data_0, &ov2640_cfg_0,
 			POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 			&ov2640_driver_api);

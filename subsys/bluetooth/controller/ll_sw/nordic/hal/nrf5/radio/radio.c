@@ -1206,13 +1206,14 @@ uint32_t radio_tmr_start_now(uint8_t trx)
 		start = (now << 1) - start;
 
 		/* Setup compare event with min. 1 us offset */
+		EVENT_TIMER->EVENTS_COMPARE[0] = 0U;
 		nrf_timer_cc_set(EVENT_TIMER, 0, start + 1);
 
 		/* Capture the current time */
 		nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CAPTURE1);
 
 		now = EVENT_TIMER->CC[1];
-	} while (now > start);
+	} while ((now > start) && (EVENT_TIMER->EVENTS_COMPARE[0] == 0U));
 
 	return start + 1;
 }
@@ -1720,8 +1721,10 @@ uint32_t radio_ar_has_match(void)
 	return 0U;
 }
 
-void radio_ar_resolve(const uint8_t *addr)
+uint8_t radio_ar_resolve(const uint8_t *addr)
 {
+	uint8_t retval;
+
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Enabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;
 
@@ -1747,8 +1750,13 @@ void radio_ar_resolve(const uint8_t *addr)
 
 	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
 
+	retval = (NRF_AAR->EVENTS_RESOLVED && !NRF_AAR->EVENTS_NOTRESOLVED) ?
+		 1U : 0U;
+
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Disabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;
+
+	return retval;
 
 }
 #endif /* CONFIG_BT_CTLR_PRIVACY */

@@ -84,8 +84,9 @@ void test_led_get_info(void)
 	uint8_t led;
 	int ret;
 
-	if (!led_ctrl || !num_leds)
+	if (!led_ctrl || !num_leds) {
 		ztest_test_skip();
+	}
 
 	for (led = 0; led < num_leds; led++) {
 		const struct led_info *info;
@@ -116,8 +117,9 @@ void test_led_get_info(void)
 		TC_PRINT("LED %d - label: %s, index: %d, num_colors: %d",
 			 led, info->label, info->index, info->num_colors);
 
-		if (!info->num_colors)
+		if (!info->num_colors) {
 			continue;
+		}
 
 		TC_PRINT(" color_mapping: ");
 
@@ -138,8 +140,9 @@ void test_led_on(void)
 	uint8_t led;
 	int ret;
 
-	if (!led_ctrl || !num_leds)
+	if (!led_ctrl || !num_leds) {
 		ztest_test_skip();
+	}
 
 	for (led = 0; led < num_leds; led++) {
 		ret = led_on(led_ctrl, led);
@@ -152,8 +155,9 @@ void test_led_off(void)
 	uint8_t led;
 	int ret;
 
-	if (!led_ctrl || !num_leds)
+	if (!led_ctrl || !num_leds) {
 		ztest_test_skip();
+	}
 
 	for (led = 0; led < num_leds; led++) {
 		ret = led_off(led_ctrl, led);
@@ -167,8 +171,9 @@ void test_led_set_color(void)
 	uint8_t colors[TEST_MAX_COLORS + 1];
 	int ret;
 
-	if (!led_ctrl || !num_leds)
+	if (!led_ctrl || !num_leds) {
 		ztest_test_skip();
+	}
 
 	for (led = 0; led < num_leds; led++) {
 		uint8_t num_colors = test_led_info[led].num_colors;
@@ -226,8 +231,9 @@ void test_led_set_brightness(void)
 	uint8_t led;
 	int ret;
 
-	if (!led_ctrl || !num_leds)
+	if (!led_ctrl || !num_leds) {
 		ztest_test_skip();
+	}
 
 	for (led = 0; led < num_leds; led++) {
 		uint16_t level;

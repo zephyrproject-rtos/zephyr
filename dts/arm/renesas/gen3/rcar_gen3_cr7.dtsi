@@ -7,7 +7,7 @@
 #include <mem.h>
 #include <arm/armv7-r.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
-#include <zephyr/dt-bindings/clock/renesas_rcar_cpg.h>
+#include <zephyr/dt-bindings/clock/renesas_cpg_mssr.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
@@ -83,21 +83,12 @@
 			label = "cmt0";
 		};
 
-		cpg: clock-controller@e6150000 {
-			compatible = "renesas,rcar-cpg-mssr";
-			reg = <0xe6150000 0x1000>;
-			#clock-cells = <2>;
-			label = "cpg";
-		};
-
 		can0: can@e6c30000 {
 			compatible = "renesas,rcar-can";
 			reg = <0xe6c30000 0x1000>;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 186 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
-			clocks = <&cpg CPG_MOD 916>,
-				<&cpg CPG_CORE CPG_CORE_CLK_CANFD>;
 			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
@@ -138,8 +129,6 @@
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
-			clocks = <&cpg CPG_MOD 206>,
-			<&cpg CPG_CORE CPG_CORE_CLK_S3D4>;
 			current-speed = <115200>;
 			status = "disabled";
 			label = "scif1";
@@ -151,8 +140,6 @@
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
-			clocks = <&cpg CPG_MOD 310>,
-			<&cpg CPG_CORE CPG_CORE_CLK_S3D4>;
 			current-speed = <115200>;
 			status = "disabled";
 			label = "scif2";

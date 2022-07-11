@@ -1,0 +1,34 @@
+# 1-Wire configuration options
+
+# Copyright (c) 2022 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig W1
+	bool
+	prompt "1-Wire Drivers"
+	help
+	  Enable 1-Wire Drivers
+
+if W1
+
+module = W1
+module-str = W1
+source "subsys/logging/Kconfig.template.log_config"
+
+config W1_INIT_PRIORITY
+	int
+	default 65
+	prompt "Init priority"
+	help
+	  1-Wire device driver initialization priority.
+
+rsource "Kconfig.test"
+rsource "Kconfig.zephyr_serial"
+
+config W1_NET
+	bool "1-Wire network layer"
+	default y
+	help
+	  Enable 1-wire network layer
+
+endif # W1

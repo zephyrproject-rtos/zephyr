@@ -908,7 +908,7 @@ static void on_cmd_sockread(struct net_buf **buf, uint16_t len)
 /* Handler: @SOCKDATAIND: <socket_id>,<session_status>,<left_bytes> */
 static void on_cmd_sockdataind(struct net_buf **buf, uint16_t len)
 {
-	int socket_id, session_status, left_bytes;
+	int socket_id, left_bytes;
 	size_t out_len;
 	char *delim1, *delim2;
 	char value[sizeof("#,#,#####\r")];
@@ -937,7 +937,6 @@ static void on_cmd_sockdataind(struct net_buf **buf, uint16_t len)
 	}
 
 	*delim2++ = '\0';
-	session_status = atoi(delim1);
 
 	/* Third param is for left_bytes */
 	/* TODO: ignore for now because we ask for max data len
@@ -1411,7 +1410,6 @@ restart:
 		retry_count++;
 		if (retry_count > 3) {
 			LOG_ERR("Failed network init.  Too many attempts!");
-			ret = -ENETUNREACH;
 			goto error;
 		}
 
@@ -1431,7 +1429,6 @@ restart:
 	if (ret < 0) {
 		LOG_ERR("SOCKDIAL=1 CHECK ret:%d", ret);
 		/* don't report this as an error, we retry later */
-		ret = 0;
 	}
 
 	/* Set iface up */
@@ -1725,7 +1722,6 @@ static int offload_send(struct net_pkt *pkt,
 	struct net_context *context = net_pkt_context(pkt);
 	socklen_t addrlen;
 
-	addrlen = 0;
 #if defined(CONFIG_NET_IPV6)
 	if (net_pkt_family(pkt) == AF_INET6) {
 		addrlen = sizeof(struct sockaddr_in6);

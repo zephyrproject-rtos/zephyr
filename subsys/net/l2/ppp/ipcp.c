@@ -201,7 +201,7 @@ static int ipcp_ip_address_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
 					 sizeof(dst));
 
 		NET_DBG("[IPCP] Received peer address %s",
-			log_strdup(addr_str));
+			addr_str);
 	}
 
 	data->addr_present = true;
@@ -409,11 +409,11 @@ static void ipcp_up(struct ppp_fsm *fsm)
 				    NET_ADDR_MANUAL,
 				    0);
 	if (addr == NULL) {
-		NET_ERR("Could not set IP address %s", log_strdup(addr_str));
+		NET_ERR("Could not set IP address %s", addr_str);
 		return;
 	}
 
-	NET_DBG("PPP up with address %s", log_strdup(addr_str));
+	NET_DBG("PPP up with address %s", addr_str);
 	ppp_network_up(ctx, PPP_IP);
 
 	ctx->is_ipcp_up = true;

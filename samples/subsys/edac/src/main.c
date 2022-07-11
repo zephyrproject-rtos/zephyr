@@ -30,15 +30,12 @@ static void notification_callback(const struct device *dev, void *data)
 	atomic_set(&handled, true);
 }
 
-#define DEVICE_NAME DT_LABEL(DT_NODELABEL(ibecc))
-
 void main(void)
 {
-	const struct device *dev;
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
 
-	dev = device_get_binding(DEVICE_NAME);
-	if (!dev) {
-		LOG_ERR("Cannot open EDAC device: %s", DEVICE_NAME);
+	if (!device_is_ready(dev)) {
+		printk("%s: device not ready.\n", dev->name);
 		return;
 	}
 

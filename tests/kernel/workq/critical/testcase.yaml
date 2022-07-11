@@ -1,5 +1,6 @@
 common:
   tags: kernel
+  timeout: 60
 
 tests:
   kernel.workqueue.critical:

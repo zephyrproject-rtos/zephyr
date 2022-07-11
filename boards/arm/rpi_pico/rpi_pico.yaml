@@ -13,3 +13,5 @@ supported:
   - gpio
   - i2c
   - hwinfo
+  - watchdog
+  - pwm

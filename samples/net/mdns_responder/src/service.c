@@ -99,7 +99,7 @@ void service(void)
 
 	inet_ntop(server_addr.sa_family, addrp, addrstr, sizeof(addrstr));
 	NET_DBG("bound to [%s]:%u",
-		log_strdup(addrstr), ntohs(*portp));
+		addrstr, ntohs(*portp));
 
 	r = listen(server_fd, 1);
 	if (r == -1) {
@@ -120,7 +120,7 @@ void service(void)
 
 		inet_ntop(server_addr.sa_family, addrp, addrstr, sizeof(addrstr));
 		NET_DBG("accepted connection from [%s]:%u",
-			log_strdup(addrstr), ntohs(*portp));
+			addrstr, ntohs(*portp));
 
 		/* send a banner */
 		r = welcome(client_fd);

@@ -25,8 +25,14 @@
 #include "lll.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
 
 #include "ull_tx_queue.h"
+
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
+#include "ull_conn_iso_internal.h"
 
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
@@ -828,3 +834,73 @@ void llcp_pdu_encode_cte_rsp(const struct proc_ctx *ctx, struct pdu_data *pdu)
 	pdu->cte_info.type = ctx->data.cte_remote_req.cte_type;
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+void llcp_pdu_decode_cis_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ctx->data.cis_create.cig_id	= pdu->llctrl.cis_req.cig_id;
+	ctx->data.cis_create.cis_id	= pdu->llctrl.cis_req.cis_id;
+	ctx->data.cis_create.cis_offset_min = sys_get_le24(pdu->llctrl.cis_req.cis_offset_min);
+	ctx->data.cis_create.cis_offset_max = sys_get_le24(pdu->llctrl.cis_req.cis_offset_max);
+	ctx->data.cis_create.conn_event_count =
+		sys_le16_to_cpu(pdu->llctrl.cis_req.conn_event_count);
+	/* The remainder of the req is decoded by ull_peripheral_iso_acquire, so
+	 *  no need to do it here too
+	ctx->data.cis_create.c_phy	= pdu->llctrl.cis_req.c_phy;
+	ctx->data.cis_create.p_phy	= pdu->llctrl.cis_req.p_phy;
+	ctx->data.cis_create.c_max_sdu	= pdu->llctrl.cis_req.c_max_sdu;
+	ctx->data.cis_create.p_max_sdu	= pdu->llctrl.cis_req.p_max_sdu;
+	ctx->data.cis_create.framed	= pdu->llctrl.cis_req.framed;
+	ctx->data.cis_create.c_sdu_interval = sys_get_le24(pdu->llctrl.cis_req.c_sdu_interval);
+	ctx->data.cis_create.p_sdu_interval = sys_get_le24(pdu->llctrl.cis_req.p_sdu_interval);
+	ctx->data.cis_create.nse	= pdu->llctrl.cis_req.nse;
+	ctx->data.cis_create.c_max_pdu	= sys_le16_to_cpu(pdu->llctrl.cis_req.c_max_pdu);
+	ctx->data.cis_create.p_max_pdu	= sys_le16_to_cpu(pdu->llctrl.cis_req.p_max_pdu);
+	ctx->data.cis_create.sub_interval = sys_get_le24(pdu->llctrl.cis_req.sub_interval);
+	ctx->data.cis_create.p_bn	= pdu->llctrl.cis_req.p_bn;
+	ctx->data.cis_create.c_bn	= pdu->llctrl.cis_req.c_bn;
+	ctx->data.cis_create.c_ft	= pdu->llctrl.cis_req.c_ft;
+	ctx->data.cis_create.p_ft	= pdu->llctrl.cis_req.p_ft;
+	ctx->data.cis_create.iso_interval = sys_le16_to_cpu(pdu->llctrl.cis_req.iso_interval);
+	*/
+}
+
+void llcp_pdu_encode_cis_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_cis_rsp *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len =
+		offsetof(struct pdu_data_llctrl, cis_rsp) + sizeof(struct pdu_data_llctrl_cis_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CIS_RSP;
+
+	p = &pdu->llctrl.cis_rsp;
+	sys_put_le24(ctx->data.cis_create.cis_offset_max, p->cis_offset_max);
+	sys_put_le24(ctx->data.cis_create.cis_offset_min, p->cis_offset_min);
+	p->conn_event_count = sys_cpu_to_le16(ctx->data.cis_create.conn_event_count);
+}
+#endif /* defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+void llcp_pdu_encode_cis_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_cis_terminate_ind *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len =
+		offsetof(struct pdu_data_llctrl, cis_terminate_ind) +
+		sizeof(struct pdu_data_llctrl_cis_terminate_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND;
+
+	p = &pdu->llctrl.cis_terminate_ind;
+	p->cig_id = ctx->data.cis_term.cig_id;
+	p->cis_id = ctx->data.cis_term.cis_id;
+	p->error_code = ctx->data.cis_term.error_code;
+}
+
+void llcp_pdu_decode_cis_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ctx->data.cis_term.cig_id = pdu->llctrl.cis_terminate_ind.cig_id;
+	ctx->data.cis_term.cis_id = pdu->llctrl.cis_terminate_ind.cis_id;
+	ctx->data.cis_term.error_code = pdu->llctrl.cis_terminate_ind.error_code;
+}
+#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */

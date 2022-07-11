@@ -975,7 +975,7 @@ int cmd_mcc_send_search_raw(const struct shell *sh, size_t argc, char *argv[])
 
 	search.len = strlen(argv[1]);
 	memcpy(search.search, argv[1], search.len);
-	BT_DBG("Search string: %s", log_strdup(argv[1]));
+	BT_DBG("Search string: %s", argv[1]);
 
 	result = bt_mcc_send_search(default_conn, &search);
 	if (result) {

@@ -309,9 +309,9 @@ static void store_rpl(struct bt_mesh_rpl *entry)
 
 	err = settings_save_one(path, &rpl, sizeof(rpl));
 	if (err) {
-		BT_ERR("Failed to store RPL %s value", log_strdup(path));
+		BT_ERR("Failed to store RPL %s value", path);
 	} else {
-		BT_DBG("Stored RPL %s value", log_strdup(path));
+		BT_DBG("Stored RPL %s value", path);
 	}
 }
 

@@ -21,6 +21,12 @@ config LOG_FUNC_NAME_PREFIX_DBG
 
 endmenu
 
+config LOG_OUTPUT
+	bool "Formatter helper"
+	help
+	  Module which provides formatting of log messages to a human-readable
+	  strings.
+
 menuconfig LOG_MIPI_SYST_ENABLE
 	bool "MIPI SyS-T format output"
 	select MIPI_SYST_LIB
@@ -31,8 +37,9 @@ if LOG_MIPI_SYST_ENABLE
 
 config LOG_MIPI_SYST_USE_CATALOG
 	bool "Use MIPI Sys-T Catalog for logging"
-	select LOG2_FMT_SECTION
-	select LOG2_USE_TAGGED_ARGUMENTS
+	depends on !PICOLIBC
+	select LOG_FMT_SECTION
+	select LOG_USE_TAGGED_ARGUMENTS
 	help
 	  Use MIPI Sys-T Catalog for logging instead of plain text.
 
@@ -135,7 +142,8 @@ config LOG_TAG_DEFAULT
 config LOG_BACKEND_FORMAT_TIMESTAMP
 	bool "Timestamp formatting in the backend"
 	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
-	           || LOG_BACKEND_SWO || LOG_BACKEND_XTENSA_SIM || LOG_BACKEND_FS
+	           || LOG_BACKEND_SWO || LOG_BACKEND_XTENSA_SIM || LOG_BACKEND_FS \
+	           || LOG_BACKEND_ADSP || LOG_BACKEND_CAVS_HDA
 	default y
 	help
 	  When enabled timestamp is formatted to hh:mm:ss:ms,us.

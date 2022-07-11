@@ -25,14 +25,11 @@ LOG_MODULE_REGISTER(LSM9DS0_MFD, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int lsm9ds0_mfd_reboot_memory(const struct device *dev)
 {
-	struct lsm9ds0_mfd_data *data = dev->data;
 	const struct lsm9ds0_mfd_config *config = dev->config;
 
-	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				LSM9DS0_MFD_REG_CTRL_REG0_XM,
-				LSM9DS0_MFD_MASK_CTRL_REG0_XM_BOOT,
-				1 << LSM9DS0_MFD_SHIFT_CTRL_REG0_XM_BOOT)
-				< 0) {
+	if (i2c_reg_update_byte_dt(&config->i2c, LSM9DS0_MFD_REG_CTRL_REG0_XM,
+				   LSM9DS0_MFD_MASK_CTRL_REG0_XM_BOOT,
+				   1 << LSM9DS0_MFD_SHIFT_CTRL_REG0_XM_BOOT) < 0) {
 		return -EIO;
 	}
 
@@ -45,13 +42,11 @@ static inline int lsm9ds0_mfd_reboot_memory(const struct device *dev)
 static inline int lsm9ds0_mfd_accel_set_odr_raw(const struct device *dev,
 						uint8_t odr)
 {
-	struct lsm9ds0_mfd_data *data = dev->data;
 	const struct lsm9ds0_mfd_config *config = dev->config;
 
-	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				   LSM9DS0_MFD_REG_CTRL_REG1_XM,
-				   LSM9DS0_MFD_MASK_CTRL_REG1_XM_AODR,
-				   odr << LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_AODR);
+	return i2c_reg_update_byte_dt(&config->i2c, LSM9DS0_MFD_REG_CTRL_REG1_XM,
+				      LSM9DS0_MFD_MASK_CTRL_REG1_XM_AODR,
+				      odr << LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_AODR);
 }
 
 #if defined(CONFIG_LSM9DS0_MFD_ACCEL_SAMPLING_RATE_RUNTIME)
@@ -90,14 +85,11 @@ static int lsm9ds0_mfd_accel_set_odr(const struct device *dev,
 static inline int lsm9ds0_mfd_accel_set_fs_raw(const struct device *dev,
 					       uint8_t fs)
 {
-	struct lsm9ds0_mfd_data *data = dev->data;
 	const struct lsm9ds0_mfd_config *config = dev->config;
 
-	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				LSM9DS0_MFD_REG_CTRL_REG2_XM,
-				LSM9DS0_MFD_MASK_CTRL_REG2_XM_AFS,
-				fs << LSM9DS0_MFD_SHIFT_CTRL_REG2_XM_AFS)
-				< 0) {
+	if (i2c_reg_update_byte_dt(&config->i2c, LSM9DS0_MFD_REG_CTRL_REG2_XM,
+				   LSM9DS0_MFD_MASK_CTRL_REG2_XM_AFS,
+				   fs << LSM9DS0_MFD_SHIFT_CTRL_REG2_XM_AFS) < 0) {
 		return -EIO;
 	}
 
@@ -136,13 +128,11 @@ static int lsm9ds0_mfd_accel_set_fs(const struct device *dev, int val)
 static inline int lsm9ds0_mfd_magn_set_odr_raw(const struct device *dev,
 					       uint8_t odr)
 {
-	struct lsm9ds0_mfd_data *data = dev->data;
 	const struct lsm9ds0_mfd_config *config = dev->config;
 
-	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				   LSM9DS0_MFD_REG_CTRL_REG5_XM,
-				   LSM9DS0_MFD_MASK_CTRL_REG5_XM_M_ODR,
-				   odr << LSM9DS0_MFD_SHIFT_CTRL_REG5_XM_M_ODR);
+	return i2c_reg_update_byte_dt(&config->i2c, LSM9DS0_MFD_REG_CTRL_REG5_XM,
+				      LSM9DS0_MFD_MASK_CTRL_REG5_XM_M_ODR,
+				      odr << LSM9DS0_MFD_SHIFT_CTRL_REG5_XM_M_ODR);
 }
 
 #if defined(CONFIG_LSM9DS0_MFD_MAGN_SAMPLING_RATE_RUNTIME)
@@ -177,14 +167,11 @@ static int lsm9ds0_mfd_magn_set_odr(const struct device *dev,
 static inline int lsm9ds0_mfd_magn_set_fs_raw(const struct device *dev,
 					      uint8_t fs)
 {
-	struct lsm9ds0_mfd_data *data = dev->data;
 	const struct lsm9ds0_mfd_config *config = dev->config;
 
-	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				LSM9DS0_MFD_REG_CTRL_REG6_XM,
-				LSM9DS0_MFD_MASK_CTRL_REG6_XM_MFS,
-				fs << LSM9DS0_MFD_SHIFT_CTRL_REG6_XM_MFS)
-				< 0) {
+	if (i2c_reg_update_byte_dt(&config->i2c, LSM9DS0_MFD_REG_CTRL_REG6_XM,
+				   LSM9DS0_MFD_MASK_CTRL_REG6_XM_MFS,
+				   fs << LSM9DS0_MFD_SHIFT_CTRL_REG6_XM_MFS) < 0) {
 		return -EIO;
 	}
 
@@ -227,10 +214,8 @@ static inline int lsm9ds0_mfd_sample_fetch_accel(const struct device *dev)
 	uint8_t out_l, out_h;
 
 #if defined(CONFIG_LSM9DS0_MFD_ACCEL_ENABLE_X)
-	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-			      LSM9DS0_MFD_REG_OUT_X_L_A, &out_l) < 0 ||
-	    i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-			      LSM9DS0_MFD_REG_OUT_X_H_A, &out_h) < 0) {
+	if (i2c_reg_read_byte_dt(&config->i2c, LSM9DS0_MFD_REG_OUT_X_L_A, &out_l) < 0 ||
+	    i2c_reg_read_byte_dt(&config->i2c, LSM9DS0_MFD_REG_OUT_X_H_A, &out_h) < 0) {
 		LOG_DBG("failed to read accel sample (X axis)");
 		return -EIO;
 	}
@@ -240,10 +225,8 @@ static inline int lsm9ds0_mfd_sample_fetch_accel(const struct device *dev)
 #endif
 
 #if defined(CONFIG_LSM9DS0_MFD_ACCEL_ENABLE_Y)
-	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-			      LSM9DS0_MFD_REG_OUT_Y_L_A, &out_l) < 0 ||
-	    i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-			      LSM9DS0_MFD_REG_OUT_Y_H_A, &out_h) < 0) {
+	if (i2c_reg_read_byte_dt(&config->i2c, LSM9DS0_MFD_REG_OUT_Y_L_A, &out_l) < 0 ||
+	    i2c_reg_read_byte_dt(&config->i2c, LSM9DS0_MFD_REG_OUT_Y_H_A, &out_h) < 0) {
 		LOG_DBG("failed to read accel sample (Y axis)");
 		return -EIO;
 	}
@@ -253,10 +236,8 @@ static inline int lsm9ds0_mfd_sample_fetch_accel(const struct device *dev)
 #endif
 
 #if defined(CONFIG_LSM9DS0_MFD_ACCEL_ENABLE_Z)
-	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-			      LSM9DS0_MFD_REG_OUT_Z_L_A, &out_l) < 0 ||
-	    i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-			      LSM9DS0_MFD_REG_OUT_Z_H_A, &out_h) < 0) {
+	if (i2c_reg_read_byte_dt(&config->i2c, LSM9DS0_MFD_REG_OUT_Z_L_A, &out_l) < 0 ||
+	    i2c_reg_read_byte_dt(&config->i2c, LSM9DS0_MFD_REG_OUT_Z_H_A, &out_h) < 0) {
 		LOG_DBG("failed to read accel sample (Z axis)");
 		return -EIO;
 	}
@@ -280,10 +261,8 @@ static inline int lsm9ds0_mfd_sample_fetch_magn(const struct device *dev)
 	const struct lsm9ds0_mfd_config *config = dev->config;
 	uint8_t out_l, out_h;
 
-	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-			      LSM9DS0_MFD_REG_OUT_X_L_M, &out_l) < 0 ||
-	    i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-			      LSM9DS0_MFD_REG_OUT_X_H_M, &out_h) < 0) {
+	if (i2c_reg_read_byte_dt(&config->i2c, LSM9DS0_MFD_REG_OUT_X_L_M, &out_l) < 0 ||
+	    i2c_reg_read_byte_dt(&config->i2c, LSM9DS0_MFD_REG_OUT_X_H_M, &out_h) < 0) {
 		LOG_DBG("failed to read magn sample (X axis)");
 		return -EIO;
 	}
@@ -291,10 +270,8 @@ static inline int lsm9ds0_mfd_sample_fetch_magn(const struct device *dev)
 	data->sample_magn_x = (int16_t)((uint16_t)(out_l) |
 			      ((uint16_t)(out_h) << 8));
 
-	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-			      LSM9DS0_MFD_REG_OUT_Y_L_M, &out_l) < 0 ||
-	    i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-			      LSM9DS0_MFD_REG_OUT_Y_H_M, &out_h) < 0) {
+	if (i2c_reg_read_byte_dt(&config->i2c, LSM9DS0_MFD_REG_OUT_Y_L_M, &out_l) < 0 ||
+	    i2c_reg_read_byte_dt(&config->i2c, LSM9DS0_MFD_REG_OUT_Y_H_M, &out_h) < 0) {
 		LOG_DBG("failed to read magn sample (Y axis)");
 		return -EIO;
 	}
@@ -302,10 +279,8 @@ static inline int lsm9ds0_mfd_sample_fetch_magn(const struct device *dev)
 	data->sample_magn_y = (int16_t)((uint16_t)(out_l) |
 			      ((uint16_t)(out_h) << 8));
 
-	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-			      LSM9DS0_MFD_REG_OUT_Z_L_M, &out_l) < 0 ||
-	    i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-			      LSM9DS0_MFD_REG_OUT_Z_H_M, &out_h) < 0) {
+	if (i2c_reg_read_byte_dt(&config->i2c, LSM9DS0_MFD_REG_OUT_Z_L_M, &out_l) < 0 ||
+	    i2c_reg_read_byte_dt(&config->i2c, LSM9DS0_MFD_REG_OUT_Z_H_M, &out_h) < 0) {
 		LOG_DBG("failed to read magn sample (Z axis)");
 		return -EIO;
 	}
@@ -328,10 +303,8 @@ static inline int lsm9ds0_mfd_sample_fetch_temp(const struct device *dev)
 	const struct lsm9ds0_mfd_config *config = dev->config;
 	uint8_t out_l, out_h;
 
-	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-			      LSM9DS0_MFD_REG_OUT_TEMP_L_XM, &out_l) < 0 ||
-	    i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-			      LSM9DS0_MFD_REG_OUT_TEMP_H_XM, &out_h) < 0) {
+	if (i2c_reg_read_byte_dt(&config->i2c, LSM9DS0_MFD_REG_OUT_TEMP_L_XM, &out_l) < 0 ||
+	    i2c_reg_read_byte_dt(&config->i2c, LSM9DS0_MFD_REG_OUT_TEMP_H_XM, &out_h) < 0) {
 		LOG_DBG("failed to read temperature sample\n");
 		return -EIO;
 	}
@@ -671,7 +644,6 @@ static const struct sensor_driver_api lsm9ds0_mfd_api_funcs = {
 
 static int lsm9ds0_mfd_init_chip(const struct device *dev)
 {
-	struct lsm9ds0_mfd_data *data = dev->data;
 	const struct lsm9ds0_mfd_config *config = dev->config;
 	uint8_t chip_id;
 
@@ -680,8 +652,7 @@ static int lsm9ds0_mfd_init_chip(const struct device *dev)
 		return -EIO;
 	}
 
-	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-			      LSM9DS0_MFD_REG_WHO_AM_I_XM, &chip_id) < 0) {
+	if (i2c_reg_read_byte_dt(&config->i2c, LSM9DS0_MFD_REG_WHO_AM_I_XM, &chip_id) < 0) {
 		LOG_DBG("failed reading chip id");
 		return -EIO;
 	}
@@ -694,13 +665,12 @@ static int lsm9ds0_mfd_init_chip(const struct device *dev)
 	LOG_DBG("chip id 0x%x", chip_id);
 
 #if !defined(LSM9DS0_MFD_ACCEL_DISABLED)
-	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				LSM9DS0_MFD_REG_CTRL_REG1_XM,
-				LSM9DS0_MFD_MASK_CTRL_REG1_XM_BDU |
-				LSM9DS0_MFD_MASK_CTRL_REG1_XM_AODR,
-				(1 << LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_BDU) |
-				(LSM9DS0_MFD_ACCEL_DEFAULT_AODR <<
-				LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_AODR))) {
+	if (i2c_reg_update_byte_dt(&config->i2c, LSM9DS0_MFD_REG_CTRL_REG1_XM,
+				   LSM9DS0_MFD_MASK_CTRL_REG1_XM_BDU |
+				   LSM9DS0_MFD_MASK_CTRL_REG1_XM_AODR,
+				   (1 << LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_BDU) |
+				   (LSM9DS0_MFD_ACCEL_DEFAULT_AODR <<
+				   LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_AODR))) {
 		LOG_DBG("failed to set AODR and BDU");
 		return -EIO;
 	}
@@ -710,38 +680,33 @@ static int lsm9ds0_mfd_init_chip(const struct device *dev)
 		return -EIO;
 	}
 
-	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				LSM9DS0_MFD_REG_CTRL_REG1_XM,
-				LSM9DS0_MFD_MASK_CTRL_REG1_XM_AXEN |
-				LSM9DS0_MFD_MASK_CTRL_REG1_XM_AYEN |
-				LSM9DS0_MFD_MASK_CTRL_REG1_XM_AZEN,
-				(LSM9DS0_MFD_ACCEL_ENABLE_X <<
-				LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_AXEN) |
-				(LSM9DS0_MFD_ACCEL_ENABLE_Y <<
-				LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_AYEN) |
-				(LSM9DS0_MFD_ACCEL_ENABLE_Z <<
-				LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_AZEN)) < 0) {
+	if (i2c_reg_update_byte_dt(&config->i2c, LSM9DS0_MFD_REG_CTRL_REG1_XM,
+				   LSM9DS0_MFD_MASK_CTRL_REG1_XM_AXEN |
+				   LSM9DS0_MFD_MASK_CTRL_REG1_XM_AYEN |
+				   LSM9DS0_MFD_MASK_CTRL_REG1_XM_AZEN,
+				   (LSM9DS0_MFD_ACCEL_ENABLE_X <<
+				   LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_AXEN) |
+				   (LSM9DS0_MFD_ACCEL_ENABLE_Y <<
+				   LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_AYEN) |
+				   (LSM9DS0_MFD_ACCEL_ENABLE_Z <<
+				   LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_AZEN)) < 0) {
 		LOG_DBG("failed to set accelerometer axis enable bits\n");
 		return -EIO;
 	}
 
 #elif !defined(LSM9DS0_MFD_MAGN_DISABLED)
-	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				LSM9DS0_MFD_REG_CTRL_REG1_XM,
-				LSM9DS0_MFD_MASK_CTRL_REG1_XM_BDU,
-				1 << LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_BDU)
-				< 0) {
+	if (i2c_reg_update_byte_dt(&config->i2c, LSM9DS0_MFD_REG_CTRL_REG1_XM,
+				   LSM9DS0_MFD_MASK_CTRL_REG1_XM_BDU,
+				   1 << LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_BDU) < 0) {
 		LOG_DBG("failed to set BDU\n");
 		return -EIO;
 	}
 #endif
 
 #if !defined(LSM9DS0_MFD_MAGN_DISABLED)
-	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				LSM9DS0_MFD_REG_CTRL_REG7_XM,
-				LSM9DS0_MFD_MASK_CTRL_REG7_XM_MD,
-				(0 << LSM9DS0_MFD_SHIFT_CTRL_REG7_XM_MD))
-				< 0) {
+	if (i2c_reg_update_byte_dt(&config->i2c, LSM9DS0_MFD_REG_CTRL_REG7_XM,
+				   LSM9DS0_MFD_MASK_CTRL_REG7_XM_MD,
+				   (0 << LSM9DS0_MFD_SHIFT_CTRL_REG7_XM_MD)) < 0) {
 		LOG_DBG("failed to power on magnetometer");
 		return -EIO;
 	}
@@ -758,11 +723,9 @@ static int lsm9ds0_mfd_init_chip(const struct device *dev)
 #endif
 
 #if !defined(LSM9DS0_MFD_TEMP_DISABLED)
-	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				LSM9DS0_MFD_REG_CTRL_REG5_XM,
-				LSM9DS0_MFD_MASK_CTRL_REG5_XM_TEMP_EN,
-				1 << LSM9DS0_MFD_SHIFT_CTRL_REG5_XM_TEMP_EN)
-				< 0) {
+	if (i2c_reg_update_byte_dt(&config->i2c, LSM9DS0_MFD_REG_CTRL_REG5_XM,
+				   LSM9DS0_MFD_MASK_CTRL_REG5_XM_TEMP_EN,
+				   1 << LSM9DS0_MFD_SHIFT_CTRL_REG5_XM_TEMP_EN) < 0) {
 		LOG_DBG("failed to power on temperature sensor");
 		return -EIO;
 	}
@@ -774,13 +737,10 @@ static int lsm9ds0_mfd_init_chip(const struct device *dev)
 int lsm9ds0_mfd_init(const struct device *dev)
 {
 	const struct lsm9ds0_mfd_config * const config = dev->config;
-	struct lsm9ds0_mfd_data *data = dev->data;
 
-	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
-	if (!data->i2c_master) {
-		LOG_DBG("i2c master not found: %s",
-			   config->i2c_master_dev_name);
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
 	if (lsm9ds0_mfd_init_chip(dev) < 0) {
@@ -791,13 +751,15 @@ int lsm9ds0_mfd_init(const struct device *dev)
 	return 0;
 }
 
-static const struct lsm9ds0_mfd_config lsm9ds0_mfd_config = {
-	.i2c_master_dev_name = DT_INST_BUS_LABEL(0),
-	.i2c_slave_addr = DT_INST_REG_ADDR(0),
-};
+#define LSM9DS0_MFD_DEFINE(inst)								\
+	static struct lsm9ds0_mfd_data lsm9ds0_mfd_data_##inst;					\
+												\
+	static const struct lsm9ds0_mfd_config lsm9ds0_mfd_config_##inst = {			\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, lsm9ds0_mfd_init, NULL,					\
+			      &lsm9ds0_mfd_data_##inst, &lsm9ds0_mfd_config_##inst, POST_KERNEL,\
+			      CONFIG_SENSOR_INIT_PRIORITY, &lsm9ds0_mfd_api_funcs);		\
 
-static struct lsm9ds0_mfd_data lsm9ds0_mfd_data;
-
-DEVICE_DT_INST_DEFINE(0, lsm9ds0_mfd_init, NULL,
-		    &lsm9ds0_mfd_data, &lsm9ds0_mfd_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &lsm9ds0_mfd_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(LSM9DS0_MFD_DEFINE)

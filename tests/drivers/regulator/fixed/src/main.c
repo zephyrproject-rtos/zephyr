@@ -20,13 +20,15 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT_STATUS(CHECK_NODE, test_regulator_fixed, okay));
 #define STARTUP_DELAY_US DT_PROP(REGULATOR_NODE, startup_delay_us)
 #define OFF_ON_DELAY_US DT_PROP(REGULATOR_NODE, off_on_delay_us)
 
-static const struct device *check_gpio;
-static const struct device *reg_dev;
-static const gpio_pin_t check_pin = DT_GPIO_PIN(CHECK_NODE, check_gpios);
+static const struct gpio_dt_spec reg_gpio = GPIO_DT_SPEC_GET(REGULATOR_NODE, enable_gpios);
+static const struct gpio_dt_spec check_gpio = GPIO_DT_SPEC_GET(CHECK_NODE, check_gpios);
+
+static const struct device *reg_dev = DEVICE_DT_GET(REGULATOR_NODE);
+
 static enum {
 	PC_UNCHECKED,
-	PC_FAIL_REG_INIT,
-	PC_FAIL_DEVICES,
+	PC_FAIL_REG_DEV_READY,
+	PC_FAIL_DEVICES_READY,
 	PC_FAIL_CFG_OUTPUT,
 	PC_FAIL_CFG_INPUT,
 	PC_FAIL_INACTIVE,
@@ -36,8 +38,8 @@ static enum {
 } precheck = PC_UNCHECKED;
 static const char *const pc_errstr[] = {
 	[PC_UNCHECKED] = "precheck not verified",
-	[PC_FAIL_REG_INIT] = "regulator already initialized",
-	[PC_FAIL_DEVICES] = "bad GPIO devices",
+	[PC_FAIL_REG_DEV_READY] = "regulator device not ready",
+	[PC_FAIL_DEVICES_READY] = "GPIO devices not ready",
 	[PC_FAIL_CFG_OUTPUT] = "failed to configure output",
 	[PC_FAIL_CFG_INPUT] = "failed to configure input",
 	[PC_FAIL_INACTIVE] = "inactive check failed",
@@ -89,48 +91,37 @@ static void reset_client(void)
 
 static int reg_status(void)
 {
-	return gpio_pin_get(check_gpio, check_pin);
+	return gpio_pin_get_dt(&check_gpio);
 }
 
 static int setup(const struct device *dev)
 {
-#if 0
-	reg_dev = device_get_binding(DT_LABEL(REGULATOR_NODE));
-
-	/* todo: figure out how to verify the device hasn't been initialized. */
-	if (reg_dev != NULL) {
-		precheck = PC_FAIL_REG_INIT;
-		return -EBUSY;
+	if (!device_is_ready(reg_dev)) {
+		precheck = PC_FAIL_REG_DEV_READY;
+		return -ENODEV;
 	}
-#endif
 
 	/* Configure the regulator GPIO as an output inactive, and the check
 	 * GPIO as an input, then start testing whether they track.
 	 */
 
-	const char *reg_label = DT_GPIO_LABEL(REGULATOR_NODE, enable_gpios);
-	const struct device *reg_gpio = device_get_binding(reg_label);
-	const char *check_label = DT_GPIO_LABEL(CHECK_NODE, check_gpios);
-	const gpio_pin_t reg_pin = DT_GPIO_PIN(REGULATOR_NODE, enable_gpios);
-
-	check_gpio = device_get_binding(check_label);
-
-	if ((reg_gpio == NULL) || (check_gpio == NULL)) {
-		precheck = PC_FAIL_DEVICES;
-		return -EINVAL;
+	if (!device_is_ready(reg_gpio.port)) {
+		precheck = PC_FAIL_DEVICES_READY;
+		return -ENODEV;
 	}
 
-	int rc = gpio_pin_configure(reg_gpio, reg_pin,
-				    GPIO_OUTPUT_INACTIVE
-				    | DT_GPIO_FLAGS(REGULATOR_NODE, enable_gpios));
+	if (!device_is_ready(check_gpio.port)) {
+		precheck = PC_FAIL_DEVICES_READY;
+		return -ENODEV;
+	}
+
+	int rc = gpio_pin_configure_dt(&reg_gpio, GPIO_OUTPUT_INACTIVE);
 	if (rc != 0) {
 		precheck = PC_FAIL_CFG_OUTPUT;
 		return -EIO;
 	}
 
-	rc = gpio_pin_configure(check_gpio, check_pin,
-				GPIO_INPUT
-				| DT_GPIO_FLAGS(CHECK_NODE, check_gpios));
+	rc = gpio_pin_configure_dt(&check_gpio, GPIO_INPUT);
 	if (rc != 0) {
 		precheck = PC_FAIL_CFG_INPUT;
 		return -EIO;
@@ -143,7 +134,7 @@ static int setup(const struct device *dev)
 		return -EIO;
 	}
 
-	rc = gpio_pin_set(reg_gpio, reg_pin, true);
+	rc = gpio_pin_set_dt(&reg_gpio, true);
 
 	if (rc == 0) {
 		rc = reg_status();
@@ -154,9 +145,9 @@ static int setup(const struct device *dev)
 		return -EIO;
 	}
 
-	rc = gpio_pin_configure(reg_gpio, reg_pin, GPIO_DISCONNECTED);
+	rc = gpio_pin_configure_dt(&reg_gpio, GPIO_DISCONNECTED);
 	if (rc == -ENOTSUP) {
-		rc = gpio_pin_configure(reg_gpio, reg_pin, GPIO_INPUT);
+		rc = gpio_pin_configure_dt(&reg_gpio, GPIO_INPUT);
 	}
 	if (rc == 0) {
 		rc = reg_status();
@@ -185,9 +176,6 @@ static void test_preconditions(void)
 	zassert_equal(precheck, PC_OK,
 		      "precheck failed: %s",
 		      pc_errstr[precheck]);
-
-	zassert_not_equal(reg_dev, NULL,
-			  "no regulator device");
 }
 
 static void test_basic(void)
@@ -195,9 +183,6 @@ static void test_basic(void)
 	zassert_equal(precheck, PC_OK,
 		      "precheck failed: %s",
 		      pc_errstr[precheck]);
-
-	zassert_not_equal(reg_dev, NULL,
-			  "no regulator device");
 
 	int rs = reg_status();
 
@@ -292,9 +277,8 @@ static void test_basic(void)
 void test_main(void)
 {
 	const char * const compats[] = DT_PROP(REGULATOR_NODE, compatible);
-	reg_dev = device_get_binding(DT_LABEL(REGULATOR_NODE));
 
-	printk("reg %p gpio %p\n", reg_dev, check_gpio);
+	printk("reg %p gpio %p\n", reg_dev, check_gpio.port);
 	TC_PRINT("Regulator: %s%s%s\n", compats[0],
 		 IS_ENABLED(BOOT_ON) ? ", boot-on" : "",
 		 IS_ENABLED(ALWAYS_ON) ? ", always-on" : "");

@@ -231,6 +231,16 @@ struct bt_has_preset_ops {
 	 *                      becomes active by calling @ref bt_has_preset_active_set.
 	 */
 	int (*select)(uint8_t index, bool sync);
+
+	/**
+	 * @brief Preset name changed callback
+	 *
+	 * This callback is called when the name of the preset identified by @p index has changed.
+	 *
+	 * @param index Preset index that name has been changed.
+	 * @param name Preset current name.
+	 */
+	void (*name_changed)(uint8_t index, const char *name);
 };
 
 /** @brief Register structure for preset. */
@@ -373,6 +383,18 @@ static inline int bt_has_preset_active_clear(void)
 {
 	return bt_has_preset_active_set(BT_HAS_PRESET_INDEX_NONE);
 }
+
+/**
+ * @brief Change the Preset Name.
+ *
+ * Change the name of the preset identified by @p index.
+ *
+ * @param index The index of the preset to change the name of.
+ * @param name Name to write.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_has_preset_name_change(uint8_t index, const char *name);
 
 #ifdef __cplusplus
 }

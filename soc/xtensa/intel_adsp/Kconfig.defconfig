@@ -15,11 +15,7 @@ config XTENSA_UNCACHED_REGION
 
 if INTEL_ADSP_CAVS
 
-config DMA_CAVS_GPDMA
-	default y
-	depends on DMA
-
-config DMA_CAVS_HDA
+config DMA_INTEL_ADSP_GPDMA
 	default y
 	depends on DMA
 

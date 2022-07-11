@@ -13,6 +13,7 @@
 # define MEMCPY(dst, src, n) \
 	do { for (int i = 0; i < (n); i++) { (dst)[i] = (src)[i]; } } while (0)
 #else
+# include <string.h>
 # define MEMCPY memcpy
 #endif
 

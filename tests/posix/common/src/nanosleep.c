@@ -11,7 +11,7 @@
 #include <zephyr/sys_clock.h>
 
 /** req and rem are both NULL */
-void test_nanosleep_NULL_NULL(void)
+ZTEST(posix_apis, test_nanosleep_NULL_NULL)
 {
 	int r = nanosleep(NULL, NULL);
 
@@ -24,7 +24,7 @@ void test_nanosleep_NULL_NULL(void)
  *
  * Expect rem to be the same when function returns
  */
-void test_nanosleep_NULL_notNULL(void)
+ZTEST(posix_apis, test_nanosleep_NULL_notNULL)
 {
 	struct timespec rem = {};
 
@@ -45,7 +45,7 @@ void test_nanosleep_NULL_notNULL(void)
  *
  * Expect req to be the same when function returns
  */
-void test_nanosleep_notNULL_NULL(void)
+ZTEST(posix_apis, test_nanosleep_notNULL_NULL)
 {
 	struct timespec req = {};
 
@@ -65,7 +65,7 @@ void test_nanosleep_notNULL_NULL(void)
  *
  * Expect req & rem to be the same when function returns
  */
-void test_nanosleep_notNULL_notNULL(void)
+ZTEST(posix_apis, test_nanosleep_notNULL_notNULL)
 {
 	struct timespec req = {};
 	struct timespec rem = {};
@@ -91,7 +91,7 @@ void test_nanosleep_notNULL_notNULL(void)
  * Normative spec says they may be the same.
  * Expect rem to be zero after returning.
  */
-void test_nanosleep_req_is_rem(void)
+ZTEST(posix_apis, test_nanosleep_req_is_rem)
 {
 	struct timespec ts = {0, 1};
 
@@ -107,7 +107,7 @@ void test_nanosleep_req_is_rem(void)
 }
 
 /** req tv_sec is -1 */
-void test_nanosleep_n1_0(void)
+ZTEST(posix_apis, test_nanosleep_n1_0)
 {
 	struct timespec req = {-1, 0};
 
@@ -119,7 +119,7 @@ void test_nanosleep_n1_0(void)
 }
 
 /** req tv_nsec is -1 */
-void test_nanosleep_0_n1(void)
+ZTEST(posix_apis, test_nanosleep_0_n1)
 {
 	struct timespec req = {0, -1};
 
@@ -131,7 +131,7 @@ void test_nanosleep_0_n1(void)
 }
 
 /** req tv_sec and tv_nsec are both -1 */
-void test_nanosleep_n1_n1(void)
+ZTEST(posix_apis, test_nanosleep_n1_n1)
 {
 	struct timespec req = {-1, -1};
 
@@ -143,7 +143,7 @@ void test_nanosleep_n1_n1(void)
 }
 
 /** req tv_sec is 0 tv_nsec is 10^9 */
-void test_nanosleep_0_1000000000(void)
+ZTEST(posix_apis, test_nanosleep_0_1000000000)
 {
 	struct timespec req = {0, 1000000000};
 
@@ -191,37 +191,37 @@ static void common(const uint32_t s, uint32_t ns)
 }
 
 /** sleep for 1ns */
-void test_nanosleep_0_1(void)
+ZTEST(posix_apis, test_nanosleep_0_1)
 {
 	common(0, 1);
 }
 
 /** sleep for 1us + 1ns */
-void test_nanosleep_0_1001(void)
+ZTEST(posix_apis, test_nanosleep_0_1001)
 {
 	common(0, 1001);
 }
 
 /** sleep for 500000000ns */
-void test_nanosleep_0_500000000(void)
+ZTEST(posix_apis, test_nanosleep_0_500000000)
 {
 	common(0, 500000000);
 }
 
 /** sleep for 1s */
-void test_nanosleep_1_0(void)
+ZTEST(posix_apis, test_nanosleep_1_0)
 {
 	common(1, 0);
 }
 
 /** sleep for 1s + 1ns */
-void test_nanosleep_1_1(void)
+ZTEST(posix_apis, test_nanosleep_1_1)
 {
 	common(1, 1);
 }
 
 /** sleep for 1s + 1us + 1ns */
-void test_nanosleep_1_1001(void)
+ZTEST(posix_apis, test_nanosleep_1_1001)
 {
 	common(1, 1001);
 }

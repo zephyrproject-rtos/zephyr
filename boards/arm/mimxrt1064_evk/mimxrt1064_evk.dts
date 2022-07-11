@@ -348,3 +348,8 @@ zephyr_udc0: &usb1 {
 &gpt_hw_timer {
 	status = "okay";
 };
+
+&itm {
+	pinctrl-0 = <&pinmux_swo>;
+	pinctrl-names = "default";
+};

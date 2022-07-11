@@ -6,6 +6,9 @@ zephyr_include_directories(.)
 
 zephyr_library_sources(
     lwm2m_engine.c
+    lwm2m_registry.c
+    lwm2m_observation.c
+    lwm2m_message_handling.c
     lwm2m_obj_security.c
     lwm2m_obj_server.c
     lwm2m_obj_device.c

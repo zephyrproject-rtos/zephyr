@@ -11,14 +11,18 @@
 	soc {
 		flash-controller@52002000 {
 			flash0: flash@8000000 {
-				compatible = "soc-nv-flash";
+				compatible = "st,stm32-nv-flash", "soc-nv-flash";
 				write-block-size = <32>;
 				erase-block-size = <DT_SIZE_K(128)>;
+				/* maximum erase time for a 128K sector */
+				max-erase-time = <4000>;
 			};
 			flash1: flash@8100000 {
-				compatible = "soc-nv-flash";
+				compatible = "st,stm32-nv-flash", "soc-nv-flash";
 				write-block-size = <32>;
 				erase-block-size = <DT_SIZE_K(128)>;
+				/* maximum erase time for a 128K sector */
+				max-erase-time = <4000>;
 			};
 		};
 

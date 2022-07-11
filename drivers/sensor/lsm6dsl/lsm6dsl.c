@@ -839,9 +839,7 @@ static int lsm6dsl_init(const struct device *dev)
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
 #define LSM6DSL_CFG_IRQ(inst) \
-		.irq_dev_name = DT_INST_GPIO_LABEL(inst, irq_gpios),	\
-		.irq_pin = DT_INST_GPIO_PIN(inst, irq_gpios),		\
-		.irq_flags = DT_INST_GPIO_FLAGS(inst, irq_gpios),
+		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),
 #else
 #define LSM6DSL_CFG_IRQ(inst)
 #endif /* CONFIG_LSM6DSL_TRIGGER */

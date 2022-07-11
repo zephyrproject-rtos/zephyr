@@ -200,7 +200,7 @@ static void setup_mgmt_events(void)
 	}
 }
 
-static void test_mld_setup(void)
+static void *test_mld_setup(void)
 {
 	struct net_if_addr *ifaddr;
 
@@ -214,6 +214,8 @@ static void test_mld_setup(void)
 				      NET_ADDR_MANUAL, 0);
 
 	zassert_not_null(ifaddr, "Cannot add IPv6 address");
+
+	return NULL;
 }
 
 static void test_join_group(void)
@@ -246,12 +248,7 @@ static void test_leave_group(void)
 
 	zassert_equal(ret, 0, "Cannot leave IPv6 multicast group");
 
-	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
-		/* Let the network stack to proceed */
-		k_msleep(THREAD_SLEEP);
-	} else {
-		k_yield();
-	}
+	k_msleep(THREAD_SLEEP);
 }
 
 static void test_catch_join_group(void)
@@ -411,12 +408,8 @@ static void join_mldv2_capable_routers_group(void)
 	zassert_true(ret == 0 || ret == -EALREADY,
 		     "Cannot join MLDv2-capable routers multicast group");
 
-	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
-		/* Let the network stack to proceed */
-		k_msleep(THREAD_SLEEP);
-	} else {
-		k_yield();
-	}
+	k_msleep(THREAD_SLEEP);
+
 }
 
 static void leave_mldv2_capable_routers_group(void)
@@ -432,12 +425,7 @@ static void leave_mldv2_capable_routers_group(void)
 	zassert_equal(ret, 0,
 		      "Cannot leave MLDv2-capable routers multicast group");
 
-	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
-		/* Let the network stack to proceed */
-		k_msleep(THREAD_SLEEP);
-	} else {
-		k_yield();
-	}
+	k_msleep(THREAD_SLEEP);
 }
 
 /* We are not really interested to parse the query at this point */
@@ -468,12 +456,7 @@ static void test_catch_query(void)
 
 	send_query(net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)));
 
-	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
-		/* Let the network stack to proceed */
-		k_msleep(THREAD_SLEEP);
-	} else {
-		k_yield();
-	}
+	k_msleep(THREAD_SLEEP);
 
 	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting query event");
@@ -516,7 +499,7 @@ static void test_verify_send_report(void)
 /* This value should be longer that the one in net_if.c when DAD timeouts */
 #define DAD_TIMEOUT (MSEC_PER_SEC / 5U)
 
-static void test_allnodes(void)
+ZTEST(net_mld_test_suite, test_allnodes)
 {
 	struct net_if *iface = NULL;
 	struct net_if_mcast_addr *ifmaddr;
@@ -533,7 +516,7 @@ static void test_allnodes(void)
 			"allnodes multicast address");
 }
 
-static void test_solicit_node(void)
+ZTEST(net_mld_test_suite, test_solicit_node)
 {
 	struct net_if *iface = NULL;
 	struct net_if_mcast_addr *ifmaddr;
@@ -547,21 +530,24 @@ static void test_solicit_node(void)
 			"solicit node multicast address");
 }
 
-void test_main(void)
+ZTEST(net_mld_test_suite, test_join_leave)
 {
-	ztest_test_suite(net_mld_test,
-			 ztest_unit_test(test_mld_setup),
-			 ztest_unit_test(test_join_group),
-			 ztest_unit_test(test_leave_group),
-			 ztest_unit_test(test_catch_join_group),
-			 ztest_unit_test(test_catch_leave_group),
-			 ztest_unit_test(test_verify_join_group),
-			 ztest_unit_test(test_verify_leave_group),
-			 ztest_unit_test(test_catch_query),
-			 ztest_unit_test(test_verify_send_report),
-			 ztest_unit_test(test_allnodes),
-			 ztest_unit_test(test_solicit_node)
-			 );
-
-	ztest_run_test_suite(net_mld_test);
+	test_join_group();
+	test_leave_group();
 }
+
+ZTEST(net_mld_test_suite, test_catch_join_leave)
+{
+	test_catch_join_group();
+	test_catch_leave_group();
+}
+
+ZTEST(net_mld_test_suite, test_verify_join_leave)
+{
+	test_verify_join_group();
+	test_verify_leave_group();
+	test_catch_query();
+	test_verify_send_report();
+}
+
+ZTEST_SUITE(net_mld_test_suite, NULL, test_mld_setup, NULL, NULL, NULL);

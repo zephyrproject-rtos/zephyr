@@ -30,18 +30,20 @@ static int sm351lt_trigger_set(const struct device *dev,
 
 	if (trig->chan == SENSOR_CHAN_PROX) {
 		data->changed_handler = handler;
-		ret = gpio_pin_interrupt_configure(data->bus, config->gpio_pin,
-						   (handler ? data->trigger_type
-							    : GPIO_INT_DISABLE));
+		ret = gpio_pin_interrupt_configure_dt(&config->int_gpio,
+						      (handler ? data->trigger_type
+							       : GPIO_INT_DISABLE));
 
 		if (ret < 0) {
 			return ret;
 		}
 
 		if (handler) {
-			ret = gpio_add_callback(data->bus, &data->gpio_cb);
+			ret = gpio_add_callback(config->int_gpio.port,
+						&data->gpio_cb);
 		} else {
-			ret = gpio_remove_callback(data->bus, &data->gpio_cb);
+			ret = gpio_remove_callback(config->int_gpio.port,
+						   &data->gpio_cb);
 		}
 	}
 
@@ -113,7 +115,7 @@ static int sm351lt_sample_fetch(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	data->sample_status = gpio_pin_get(data->bus, config->gpio_pin);
+	data->sample_status = gpio_pin_get_dt(&config->int_gpio);
 
 	return 0;
 }
@@ -192,26 +194,24 @@ static const struct sensor_driver_api sm351lt_api_funcs = {
 static int sm351lt_init(const struct device *dev)
 {
 	const struct sm351lt_config *const config = dev->config;
-	struct sm351lt_data *data = dev->data;
 	uint32_t ret;
 
-	data->bus = device_get_binding(config->bus_name);
-	if (!data->bus) {
-		LOG_ERR("gpio bus not found: %s", config->bus_name);
+	if (!device_is_ready(config->int_gpio.port)) {
+		LOG_ERR("GPIO device not ready");
 		return -ENODEV;
 	}
 
-	ret = gpio_pin_configure(data->bus, config->gpio_pin,
-				 (config->gpio_flags | GPIO_INPUT));
+	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (ret) {
 		LOG_ERR("failed to configure gpio: %d", ret);
 		return ret;
 	}
 
 #if defined(CONFIG_SM351LT_TRIGGER)
-#if defined(CONFIG_SM351LT_TRIGGER_OWN_THREAD)
+	struct sm351lt_data *data = dev->data;
 	data->dev = dev;
 
+#if defined(CONFIG_SM351LT_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&data->thread, data->thread_stack,
@@ -231,8 +231,8 @@ static int sm351lt_init(const struct device *dev)
 
 	data->trigger_type = GPIO_INT_DISABLE;
 
-	ret = gpio_pin_interrupt_configure(data->bus, config->gpio_pin,
-					   GPIO_INT_DISABLE);
+	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio,
+					      GPIO_INT_DISABLE);
 	if (ret) {
 		LOG_ERR("failed to configure gpio interrupt: %d", ret);
 		return ret;
@@ -240,7 +240,7 @@ static int sm351lt_init(const struct device *dev)
 
 	/* Setup callback struct but do not add it yet */
 	gpio_init_callback(&data->gpio_cb, sm351lt_gpio_callback,
-			   BIT(config->gpio_pin));
+			   BIT(config->int_gpio.pin));
 #endif
 
 	return 0;
@@ -250,9 +250,7 @@ static int sm351lt_init(const struct device *dev)
 #define SM351LT_DEFINE(inst)					     \
 	static struct sm351lt_data sm351lt_data_##inst;		     \
 	static const struct sm351lt_config sm351lt_config_##inst = { \
-		.bus_name =   DT_INST_GPIO_LABEL(inst, gpios),	     \
-		.gpio_pin =   DT_INST_GPIO_PIN(inst, gpios),	     \
-		.gpio_flags = DT_INST_GPIO_FLAGS(inst, gpios),	     \
+		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, gpios),	     \
 	};							     \
 								     \
 	DEVICE_DT_INST_DEFINE(inst,				     \

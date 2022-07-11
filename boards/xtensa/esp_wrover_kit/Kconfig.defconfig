@@ -24,5 +24,9 @@ endchoice
 
 endif # BT
 
+# enable SPI when enabling display drivers (for ILI9341)
+config SPI
+	default y if DISPLAY
+
 config DISK_DRIVER_SDMMC
 	default y

@@ -12,6 +12,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_RFCOMM           rfcomm.c)
 zephyr_library_sources_ifdef(CONFIG_BT_TESTING          testing.c)
 zephyr_library_sources_ifdef(CONFIG_BT_SETTINGS         settings.c)
 zephyr_library_sources_ifdef(CONFIG_BT_HOST_CCM         aes_ccm.c)
+zephyr_library_sources_ifdef(CONFIG_BT_LONG_WQ          long_wq.c)
 
 zephyr_library_sources_ifdef(
   CONFIG_BT_BREDR

@@ -44,6 +44,7 @@
 #include "smp.h"
 #include "settings.h"
 #include "gatt_internal.h"
+#include "long_wq.h"
 
 #define SC_TIMEOUT	K_MSEC(10)
 #define CCC_STORE_DELAY	K_SECONDS(1)
@@ -343,7 +344,7 @@ static void sc_store(struct gatt_sc_cfg *cfg)
 	}
 
 	BT_DBG("stored SC for %s (%s, 0x%04x-0x%04x)",
-	       bt_addr_le_str(&cfg->peer), log_strdup(key), cfg->data.start,
+	       bt_addr_le_str(&cfg->peer), key, cfg->data.start,
 	       cfg->data.end);
 }
 
@@ -383,7 +384,7 @@ static int bt_gatt_clear_sc(uint8_t id, const bt_addr_le_t *addr)
 		} else {
 			BT_DBG("deleted SC for %s (%s)",
 			       bt_addr_le_str(&cfg->peer),
-			       log_strdup(key));
+			       key);
 		}
 	}
 
@@ -956,7 +957,7 @@ static int bt_gatt_store_cf(struct bt_conn *conn)
 		return err;
 	}
 
-	BT_DBG("Stored CF for %s (%s)", bt_addr_le_str(&conn->le.dst), log_strdup(key));
+	BT_DBG("Stored CF for %s (%s)", bt_addr_le_str(&conn->le.dst), key);
 #endif /* CONFIG_BT_GATT_CACHING */
 	return 0;
 
@@ -1307,7 +1308,11 @@ void bt_gatt_init(void)
 	/* Submit work to Generate initial hash as there could be static
 	 * services already in the database.
 	 */
-	k_work_schedule(&db_hash.work, DB_HASH_TIMEOUT);
+	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
+		bt_long_wq_schedule(&db_hash.work, DB_HASH_TIMEOUT);
+	} else {
+		k_work_schedule(&db_hash.work, DB_HASH_TIMEOUT);
+	}
 #endif /* CONFIG_BT_GATT_CACHING */
 
 #if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
@@ -1377,7 +1382,12 @@ static void db_changed(void)
 	int i;
 
 	atomic_clear_bit(gatt_sc.flags, DB_HASH_VALID);
-	k_work_reschedule(&db_hash.work, DB_HASH_TIMEOUT);
+
+	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
+		bt_long_wq_reschedule(&db_hash.work, DB_HASH_TIMEOUT);
+	} else {
+		k_work_reschedule(&db_hash.work, DB_HASH_TIMEOUT);
+	}
 
 	for (i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
 		struct gatt_cf_cfg *cfg = &cf_cfg[i];
@@ -5085,7 +5095,7 @@ static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 		err = bt_settings_decode_key(name, &addr);
 		if (err) {
-			BT_ERR("Unable to decode address %s", log_strdup(name));
+			BT_ERR("Unable to decode address %s", name);
 			return -EINVAL;
 		}
 
@@ -5140,7 +5150,7 @@ static int ccc_set_direct(const char *key, size_t len, settings_read_cb read_cb,
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		const char *name;
 
-		BT_DBG("key: %s", log_strdup((const char *)param));
+		BT_DBG("key: %s", (const char *)param);
 
 		/* Only "bt/ccc" settings should ever come here */
 		if (!settings_name_steq((const char *)param, "bt/ccc", &name)) {
@@ -5397,7 +5407,7 @@ int bt_gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
 	}
 
 	BT_DBG("Stored CCCs for %s (%s)", bt_addr_le_str(addr),
-	       log_strdup(key));
+	       key);
 	if (len) {
 		for (size_t i = 0; i < save.count; i++) {
 			BT_DBG("  CCC: handle 0x%04x value 0x%04x",
@@ -5428,7 +5438,7 @@ static int sc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 	err = bt_settings_decode_key(name, &addr);
 	if (err) {
-		BT_ERR("Unable to decode address %s", log_strdup(name));
+		BT_ERR("Unable to decode address %s", name);
 		return -EINVAL;
 	}
 
@@ -5513,7 +5523,7 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 	err = bt_settings_decode_key(name, &addr);
 	if (err) {
-		BT_ERR("Unable to decode address %s", log_strdup(name));
+		BT_ERR("Unable to decode address %s", name);
 		return -EINVAL;
 	}
 
@@ -5586,9 +5596,12 @@ static int db_hash_commit(void)
 	/* Reschedule work to calculate and compare against the Hash value
 	 * loaded from flash.
 	 */
-	k_work_reschedule(&db_hash.work, K_NO_WAIT);
+	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
+		return bt_long_wq_reschedule(&db_hash.work, K_NO_WAIT);
+	} else {
+		return k_work_reschedule(&db_hash.work, K_NO_WAIT);
+	}
 
-	return 0;
 }
 
 SETTINGS_STATIC_HANDLER_DEFINE(bt_hash, "bt/hash", NULL, db_hash_set,

@@ -51,16 +51,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define ENDPOINT_LEN		32
 
-#if DT_NODE_HAS_STATUS(DT_ALIAS(led0), okay)
-#define LED_GPIO_PORT	DT_GPIO_LABEL(DT_ALIAS(led0), gpios)
-#define LED_GPIO_PIN	DT_GPIO_PIN(DT_ALIAS(led0), gpios)
-#define LED_GPIO_FLAGS	DT_GPIO_FLAGS(DT_ALIAS(led0), gpios)
-#else
-/* Not an error; the relevant IPSO object will simply not be created. */
-#define LED_GPIO_PORT	""
-#define LED_GPIO_PIN	0
-#define LED_GPIO_FLAGS	0
-#endif
+/* If led0 gpios doesn't exist the relevant IPSO object will simply not be created. */
+static const struct gpio_dt_spec led_gpio = GPIO_DT_SPEC_GET_OR(DT_ALIAS(led0), gpios, {});
 
 static uint8_t bat_idx = LWM2M_DEVICE_PWR_SRC_TYPE_BAT_INT;
 static int bat_mv = 3800;
@@ -73,7 +65,6 @@ static uint8_t bat_status = LWM2M_DEVICE_BATTERY_STATUS_CHARGING;
 static int mem_free = 15;
 static int mem_total = 25;
 
-static const struct device *led_dev;
 static uint32_t led_state;
 
 static struct lwm2m_ctx client;
@@ -111,7 +102,7 @@ static int led_on_off_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_ins
 
 	led_val = *(uint8_t *) data;
 	if (led_val != led_state) {
-		ret = gpio_pin_set(led_dev, LED_GPIO_PIN, (int) led_val);
+		ret = gpio_pin_set_dt(&led_gpio, (int) led_val);
 		if (ret) {
 			/*
 			 * We need an extra hook in LWM2M to better handle
@@ -119,7 +110,7 @@ static int led_on_off_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_ins
 			 * post_write_cb, as there is not much that can be
 			 * done here.
 			 */
-			LOG_ERR("Fail to write to GPIO %d", LED_GPIO_PIN);
+			LOG_ERR("Fail to write to GPIO %d", led_gpio.pin);
 			return ret;
 		}
 
@@ -135,13 +126,11 @@ static int init_led_device(void)
 {
 	int ret;
 
-	led_dev = device_get_binding(LED_GPIO_PORT);
-	if (!led_dev) {
+	if (!device_is_ready(led_gpio.port)) {
 		return -ENODEV;
 	}
 
-	ret = gpio_pin_configure(led_dev, LED_GPIO_PIN, LED_GPIO_FLAGS |
-							GPIO_OUTPUT_INACTIVE);
+	ret = gpio_pin_configure_dt(&led_gpio, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
 		return ret;
 	}
@@ -199,7 +188,12 @@ static void *temperature_get_buf(uint16_t obj_inst_id, uint16_t res_id,
 	const struct device *dev = NULL;
 
 #if defined(CONFIG_FXOS8700_TEMP)
-	dev = device_get_binding(DT_LABEL(DT_INST(0, nxp_fxos8700)));
+	dev = DEVICE_DT_GET_ONE(nxp_fxos8700);
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("%s: device not ready.", dev->name);
+		return;
+	}
 #endif
 
 	if (dev != NULL) {
@@ -487,20 +481,20 @@ static void observe_cb(enum lwm2m_observe_event event,
 	switch (event) {
 
 	case LWM2M_OBSERVE_EVENT_OBSERVER_ADDED:
-		LOG_INF("Observer added for %s", lwm2m_path_log_strdup(buf, path));
+		LOG_INF("Observer added for %s", lwm2m_path_log_buf(buf, path));
 		break;
 
 	case LWM2M_OBSERVE_EVENT_OBSERVER_REMOVED:
-		LOG_INF("Observer removed for %s", lwm2m_path_log_strdup(buf, path));
+		LOG_INF("Observer removed for %s", lwm2m_path_log_buf(buf, path));
 		break;
 
 	case LWM2M_OBSERVE_EVENT_NOTIFY_ACK:
-		LOG_INF("Notify acknowledged for %s", lwm2m_path_log_strdup(buf, path));
+		LOG_INF("Notify acknowledged for %s", lwm2m_path_log_buf(buf, path));
 		break;
 
 	case LWM2M_OBSERVE_EVENT_NOTIFY_TIMEOUT:
 		LOG_INF("Notify timeout for %s, trying registration update",
-			lwm2m_path_log_strdup(buf, path));
+			lwm2m_path_log_buf(buf, path));
 
 		lwm2m_rd_client_update();
 		break;

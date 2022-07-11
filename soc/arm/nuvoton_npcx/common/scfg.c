@@ -52,11 +52,6 @@ static const struct npcx_scfg_config npcx_scfg_cfg = {
 
 #define HAL_GLUE_INST() (struct glue_reg *)(npcx_scfg_cfg.base_glue)
 
-/* PSL input detection mode is configured by bits 7:4 of PSL_CTS */
-#define NPCX_PSL_CTS_MODE_BIT(bit) BIT(bit + 4)
-/* PSL input assertion events are reported by bits 3:0 of PSL_CTS */
-#define NPCX_PSL_CTS_EVENT_BIT(bit) BIT(bit)
-
 /* Pin-control local functions */
 static void npcx_pinctrl_alt_sel(const struct npcx_alt *alt, int alt_func)
 {
@@ -229,8 +224,9 @@ static int npcx_scfg_init(const struct device *dev)
 	 * Set bit 7 of DEVCNT again for npcx7 series. Please see Errata
 	 * for more information. It will be fixed in next chip.
 	 */
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7))
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
 		inst_scfg->DEVCNT |= BIT(7);
+	}
 
 	/* Change all pads whose default functionality isn't IO to GPIO */
 	npcx_pinctrl_mux_configure(def_alts, ARRAY_SIZE(def_alts), 0);

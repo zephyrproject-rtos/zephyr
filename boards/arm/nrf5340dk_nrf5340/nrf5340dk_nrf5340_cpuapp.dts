@@ -7,7 +7,6 @@
 /dts-v1/;
 #include <nordic/nrf5340_cpuapp_qkaa.dtsi>
 #include "nrf5340_cpuapp_common.dts"
-#include "nrf5340dk_nrf5340_cpuapp-pinctrl.dtsi"
 
 / {
 	model = "Nordic NRF5340 DK NRF5340 Application";
@@ -20,17 +19,4 @@
 		zephyr,sram-secure-partition = &sram0_s;
 		zephyr,sram-non-secure-partition = &sram0_ns;
 	};
-};
-
-&spi2 {
-	compatible = "nordic,nrf-spim";
-	status = "okay";
-	pinctrl-0 = <&spi2_default>;
-	pinctrl-1 = <&spi2_sleep>;
-	pinctrl-names = "default", "sleep";
-};
-
-zephyr_udc0: &usbd {
-	compatible = "nordic,nrf-usbd";
-	status = "okay";
 };

@@ -219,6 +219,7 @@ arduino_i2c: &i2c1 {};
 
 arduino_spi: &spi4 {
 	compatible = "nordic,nrf-spim";
+	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
 	pinctrl-0 = <&spi4_default>;
 	pinctrl-1 = <&spi4_sleep>;
@@ -257,6 +258,11 @@ arduino_spi: &spi4 {
 			reg = <0x000fa000 0x00006000>;
 		};
 	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
 };
 
 / {

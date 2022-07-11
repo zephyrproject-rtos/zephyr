@@ -32,7 +32,6 @@ static int lpc11u6x_i2c_configure(const struct device *dev,
 {
 	const struct lpc11u6x_i2c_config *cfg = dev->config;
 	struct lpc11u6x_i2c_data *data = dev->data;
-	const struct device *clk_dev;
 	uint32_t speed;
 	int ret;
 	uint8_t mux_selection = PINCTRL_STATE_DEFAULT;
@@ -59,13 +58,8 @@ static int lpc11u6x_i2c_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	clk_dev = device_get_binding(cfg->clock_drv);
-	if (!clk_dev) {
-		return -EINVAL;
-	}
-
 	k_mutex_lock(&data->mutex, K_FOREVER);
-	lpc11u6x_i2c_set_bus_speed(cfg, clk_dev, speed);
+	lpc11u6x_i2c_set_bus_speed(cfg, cfg->clock_dev, speed);
 
 	ret = pinctrl_apply_state(cfg->pincfg, mux_selection);
 	if (ret) {
@@ -121,7 +115,7 @@ static int lpc11u6x_i2c_transfer(const struct device *dev,
 }
 
 static int lpc11u6x_i2c_slave_register(const struct device *dev,
-				       struct i2c_slave_config *cfg)
+				       struct i2c_target_config *cfg)
 {
 	const struct lpc11u6x_i2c_config *dev_cfg = dev->config;
 	struct lpc11u6x_i2c_data *data = dev->data;
@@ -131,7 +125,7 @@ static int lpc11u6x_i2c_slave_register(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (cfg->flags & I2C_SLAVE_FLAGS_ADDR_10_BITS) {
+	if (cfg->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) {
 		return -ENOTSUP;
 	}
 
@@ -155,7 +149,7 @@ exit:
 
 
 static int lpc11u6x_i2c_slave_unregister(const struct device *dev,
-					 struct i2c_slave_config *cfg)
+					 struct i2c_target_config *cfg)
 {
 	const struct lpc11u6x_i2c_config *dev_cfg = dev->config;
 	struct lpc11u6x_i2c_data *data = dev->data;
@@ -313,7 +307,6 @@ static int lpc11u6x_i2c_init(const struct device *dev)
 {
 	const struct lpc11u6x_i2c_config *cfg = dev->config;
 	struct lpc11u6x_i2c_data *data = dev->data;
-	const struct device *clk_dev;
 	int err;
 
 	err = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
@@ -322,14 +315,10 @@ static int lpc11u6x_i2c_init(const struct device *dev)
 	}
 
 	/* Configure clock and de-assert reset for I2Cx */
-	clk_dev = device_get_binding(cfg->clock_drv);
-	if (!clk_dev) {
-		return -EINVAL;
-	}
-	clock_control_on(clk_dev, (clock_control_subsys_t) cfg->clkid);
+	clock_control_on(cfg->clock_dev, (clock_control_subsys_t) cfg->clkid);
 
 	/* Configure bus speed. Default is 100KHz */
-	lpc11u6x_i2c_set_bus_speed(cfg, clk_dev, 100000);
+	lpc11u6x_i2c_set_bus_speed(cfg, cfg->clock_dev, 100000);
 
 	/* Clear all control bytes and enable I2C interface */
 	cfg->base->con_clr = LPC11U6X_I2C_CONTROL_AA | LPC11U6X_I2C_CONTROL_SI |
@@ -349,8 +338,8 @@ static int lpc11u6x_i2c_init(const struct device *dev)
 static const struct i2c_driver_api i2c_api = {
 	.configure = lpc11u6x_i2c_configure,
 	.transfer = lpc11u6x_i2c_transfer,
-	.slave_register = lpc11u6x_i2c_slave_register,
-	.slave_unregister = lpc11u6x_i2c_slave_unregister,
+	.target_register = lpc11u6x_i2c_slave_register,
+	.target_unregister = lpc11u6x_i2c_slave_unregister,
 };
 
 #define LPC11U6X_I2C_INIT(idx)						      \
@@ -362,7 +351,7 @@ PINCTRL_DT_INST_DEFINE(idx);                                                  \
 static const struct lpc11u6x_i2c_config i2c_cfg_##idx = {		      \
 	.base =								      \
 	(struct lpc11u6x_i2c_regs *) DT_INST_REG_ADDR(idx),		      \
-	.clock_drv = DT_LABEL(DT_INST_PHANDLE(idx, clocks)),		      \
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),		      \
 	.irq_config_func = lpc11u6x_i2c_isr_config_##idx,		      \
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                        \
 	.clkid = DT_INST_PHA_BY_IDX(idx, clocks, 0, clkid),		      \

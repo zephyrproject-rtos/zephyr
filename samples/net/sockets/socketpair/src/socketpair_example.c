@@ -110,7 +110,6 @@ int main(int argc, char *argv[])
 	int r;
 	int fd;
 	int idx;
-	int poll_r;
 	size_t i;
 	size_t num_active;
 	char buf[32];
@@ -174,7 +173,7 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		poll_r = poll(fds, num_active, -1);
+		(void)poll(fds, num_active, -1);
 
 		for (size_t i = 0; i < num_active; ++i) {
 

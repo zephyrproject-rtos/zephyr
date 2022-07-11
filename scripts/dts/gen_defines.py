@@ -651,6 +651,8 @@ def write_vanilla_props(node):
             for i, subval in enumerate(prop.val):
                 if isinstance(subval, str):
                     macro2val[macro + f"_IDX_{i}"] = quote_str(subval)
+                    macro2val[macro + f"_IDX_{i}_TOKEN"] = subval
+                    macro2val[macro + f"_IDX_{i}_UPPER_TOKEN"] = subval.upper()
                 else:
                     macro2val[macro + f"_IDX_{i}"] = subval
                 macro2val[macro + f"_IDX_{i}_EXISTS"] = 1

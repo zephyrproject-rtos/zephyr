@@ -502,13 +502,13 @@ static ssize_t read_provider_name(struct bt_conn *conn,
 
 	if (IS_ENABLED(CONFIG_BT_GTBS) && attr->user_data == &gtbs_inst) {
 		provider_name = gtbs_inst.provider_name;
-		BT_DBG("GTBS: Provider name %s", log_strdup(provider_name));
+		BT_DBG("GTBS: Provider name %s", provider_name);
 	} else {
 		const struct tbs_service_inst *inst = (struct tbs_service_inst *)attr->user_data;
 
 		provider_name = inst->provider_name;
 		BT_DBG("Index %u, Provider name %s",
-		       inst->index, log_strdup(provider_name));
+		       inst->index, provider_name);
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
@@ -535,12 +535,12 @@ static ssize_t read_uci(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	if (IS_ENABLED(CONFIG_BT_GTBS) && attr->user_data == &gtbs_inst) {
 		uci = gtbs_inst.uci;
-		BT_DBG("GTBS: UCI %s", log_strdup(uci));
+		BT_DBG("GTBS: UCI %s", uci);
 	} else {
 		const struct tbs_service_inst *inst = (struct tbs_service_inst *)attr->user_data;
 
 		uci = inst->uci;
-		BT_DBG("Index %u: UCI %s", inst->index, log_strdup(uci));
+		BT_DBG("Index %u: UCI %s", inst->index, uci);
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
@@ -602,7 +602,7 @@ static ssize_t read_uri_scheme_list(struct bt_conn *conn,
 		}
 		/* Add null terminator for printing */
 		read_buf.data[read_buf.len] = '\0';
-		BT_DBG("GTBS: URI scheme %s", log_strdup(read_buf.data));
+		BT_DBG("GTBS: URI scheme %s", read_buf.data);
 	} else {
 		const struct tbs_service_inst *inst = (struct tbs_service_inst *)attr->user_data;
 
@@ -611,7 +611,7 @@ static ssize_t read_uri_scheme_list(struct bt_conn *conn,
 		/* Add null terminator for printing */
 		read_buf.data[read_buf.len] = '\0';
 		BT_DBG("Index %u: URI scheme %s", inst->index,
-		       log_strdup(read_buf.data));
+		       read_buf.data);
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
@@ -829,14 +829,14 @@ static ssize_t read_incoming_uri(struct bt_conn *conn,
 		inc_call_target = &gtbs_inst.incoming_uri;
 		BT_DBG("GTBS: call index 0x%02X, URI %s",
 		       inc_call_target->call_index,
-		       log_strdup(inc_call_target->uri));
+		       inc_call_target->uri);
 	} else {
 		const struct tbs_service_inst *inst = (struct tbs_service_inst *)attr->user_data;
 
 		inc_call_target = &inst->incoming_uri;
 		BT_DBG("Index %u: call index 0x%02X, URI %s",
 		       inst->index, inc_call_target->call_index,
-		       log_strdup(inc_call_target->uri));
+		       inc_call_target->uri);
 	}
 
 	if (!inc_call_target->call_index) {
@@ -1075,7 +1075,7 @@ static int originate_call(struct tbs_service_inst *inst,
 	(void)memcpy(call->remote_uri, ccp->uri, uri_len);
 	call->remote_uri[uri_len] = '\0';
 	if (!bt_tbs_valid_uri(call->remote_uri)) {
-		BT_DBG("Invalid URI: %s", log_strdup(call->remote_uri));
+		BT_DBG("Invalid URI: %s", call->remote_uri);
 		call->index = BT_TBS_FREE_CALL_INDEX;
 
 		return BT_TBS_RESULT_CODE_INVALID_URI;
@@ -1523,14 +1523,14 @@ static ssize_t read_friendly_name(struct bt_conn *conn,
 		friendly_name = &gtbs_inst.friendly_name;
 		BT_DBG("GTBS: call index 0x%02X, URI %s",
 		       friendly_name->call_index,
-		       log_strdup(friendly_name->uri));
+		       friendly_name->uri);
 	} else {
 		const struct tbs_service_inst *inst = (struct tbs_service_inst *)attr->user_data;
 
 		friendly_name = &inst->friendly_name;
 		BT_DBG("Index %u: call index 0x%02X, URI %s",
 		       inst->index, friendly_name->call_index,
-		       log_strdup(friendly_name->uri));
+		       friendly_name->uri);
 	}
 
 	if (friendly_name->call_index == BT_TBS_FREE_CALL_INDEX) {
@@ -1567,14 +1567,14 @@ static ssize_t read_incoming_call(struct bt_conn *conn,
 	if (IS_ENABLED(CONFIG_BT_GTBS) && attr->user_data == &gtbs_inst) {
 		remote_uri = &gtbs_inst.in_call;
 		BT_DBG("GTBS: call index 0x%02X, URI %s",
-		       remote_uri->call_index, log_strdup(remote_uri->uri));
+		       remote_uri->call_index, remote_uri->uri);
 	} else {
 		const struct tbs_service_inst *inst = (struct tbs_service_inst *)attr->user_data;
 
 		remote_uri = &inst->in_call;
 		BT_DBG("Index %u: call index 0x%02X, URI %s",
 		       inst->index, remote_uri->call_index,
-		       log_strdup(remote_uri->uri));
+		       remote_uri->uri);
 	}
 
 	if (remote_uri->call_index == BT_TBS_FREE_CALL_INDEX) {
@@ -1944,7 +1944,7 @@ int bt_tbs_originate(uint8_t bearer_index, char *remote_uri,
 	if (bearer_index >= CONFIG_BT_TBS_BEARER_COUNT) {
 		return -EINVAL;
 	} else if (!bt_tbs_valid_uri(remote_uri)) {
-		BT_DBG("Invalid URI %s", log_strdup(remote_uri));
+		BT_DBG("Invalid URI %s", remote_uri);
 		return -EINVAL;
 	}
 
@@ -2102,10 +2102,10 @@ int bt_tbs_remote_incoming(uint8_t bearer_index, const char *to,
 	if (bearer_index >= CONFIG_BT_TBS_BEARER_COUNT) {
 		return -EINVAL;
 	} else if (!bt_tbs_valid_uri(to)) {
-		BT_DBG("Invalid \"to\" URI: %s", log_strdup(to));
+		BT_DBG("Invalid \"to\" URI: %s", to);
 		return -EINVAL;
 	} else if (!bt_tbs_valid_uri(from)) {
-		BT_DBG("Invalid \"from\" URI: %s", log_strdup(from));
+		BT_DBG("Invalid \"from\" URI: %s", from);
 		return -EINVAL;
 	}
 
@@ -2421,7 +2421,7 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list,
 	(void)strcpy(inst->uri_scheme_list, uri_scheme_list);
 
 	BT_DBG("TBS instance %u uri prefix list is now %s",
-	       bearer_index, log_strdup(inst->uri_scheme_list));
+	       bearer_index, inst->uri_scheme_list);
 
 	bt_gatt_notify_uuid(NULL, BT_UUID_TBS_URI_LIST,
 			    inst->service_p->attrs, &inst->uri_scheme_list,
@@ -2447,7 +2447,7 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list,
 
 		/* Add null terminator for printing */
 		uri_scheme_buf.data[uri_scheme_buf.len] = '\0';
-		BT_DBG("GTBS: URI scheme %s", log_strdup(uri_scheme_buf.data));
+		BT_DBG("GTBS: URI scheme %s", uri_scheme_buf.data);
 
 		bt_gatt_notify_uuid(NULL, BT_UUID_TBS_URI_LIST,
 				    gtbs_inst.service_p->attrs,
@@ -2477,7 +2477,7 @@ void bt_tbs_dbg_print_calls(void)
 			BT_DBG("  Call #%u", call->index);
 			BT_DBG("    State: %s", bt_tbs_state_str(call->state));
 			BT_DBG("    Flags: 0x%02X", call->flags);
-			BT_DBG("    URI  : %s", log_strdup(call->remote_uri));
+			BT_DBG("    URI  : %s", call->remote_uri);
 		}
 	}
 }

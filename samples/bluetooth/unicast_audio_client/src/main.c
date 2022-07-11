@@ -21,7 +21,10 @@ static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
 static struct bt_audio_unicast_group *unicast_group;
 static struct bt_codec *remote_codec_capabilities[CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
-static struct bt_audio_ep *sinks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
+static struct bt_audio_sink {
+	struct bt_audio_ep *ep;
+	uint32_t seq_num;
+} sinks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
 static struct bt_audio_ep *sources[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT];
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT,
 			  CONFIG_BT_ISO_TX_MTU + BT_ISO_CHAN_SEND_RESERVE,
@@ -37,15 +40,31 @@ static size_t configured_stream_count;
  * Allows this sample application to work without logic to parse the codec capabilities of the
  * server and selection of an appropriate codec configuration.
  */
-static struct bt_audio_lc3_preset codec_configuration = BT_AUDIO_LC3_UNICAST_PRESET_16_2_1;
+static struct bt_audio_lc3_preset codec_configuration =
+	BT_AUDIO_LC3_UNICAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
+					   BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 static K_SEM_DEFINE(sem_connected, 0, 1);
-static K_SEM_DEFINE(sem_sink_discovered, 0, 1);
+static K_SEM_DEFINE(sem_mtu_exchanged, 0, 1);
+static K_SEM_DEFINE(sem_sinks_discovered, 0, 1);
+static K_SEM_DEFINE(sem_sources_discovered, 0, 1);
 static K_SEM_DEFINE(sem_stream_configured, 0, 1);
 static K_SEM_DEFINE(sem_stream_qos, 0, 1);
 static K_SEM_DEFINE(sem_stream_enabled, 0, 1);
 static K_SEM_DEFINE(sem_stream_started, 0, 1);
 
+static uint32_t get_and_incr_seq_num(const struct bt_audio_stream *stream)
+{
+	for (size_t i = 0U; i < configured_sink_stream_count; i++) {
+		if (stream->ep == sinks[i].ep) {
+			return sinks[i].seq_num++;
+		}
+	}
+
+	printk("Could not find endpoint from stream %p\n", stream);
+
+	return 0;
+}
 
 #if defined(CONFIG_LIBLC3CODEC)
 
@@ -157,22 +176,30 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 		}
 
 		for (size_t i = 0U; i < configured_sink_stream_count; i++) {
+			struct bt_audio_stream *stream = &streams[i];
+			struct net_buf *buf_to_send;
 			int ret;
 
-			ret = bt_audio_stream_send(&streams[i], net_buf_ref(buf));
+			/* Clone the buffer if sending on more than 1 stream */
+			if (i == configured_sink_stream_count - 1) {
+				buf_to_send = buf;
+			} else {
+				buf_to_send = net_buf_clone(buf, K_FOREVER);
+			}
+
+			ret = bt_audio_stream_send(stream, buf_to_send,
+						   get_and_incr_seq_num(stream),
+						   BT_ISO_TIMESTAMP_NONE);
 			if (ret < 0) {
 				printk("  Failed to send LC3 audio data on streams[%zu] (%d)\n",
 				       i, ret);
-				net_buf_unref(buf);
+				net_buf_unref(buf_to_send);
 			} else {
 				printk("  TX LC3 l on streams[%zu]: %zu\n",
 				       tx_sdu_len, i);
 				sdu_cnt++;
 			}
 		}
-
-		/* Unref original as we add a reference to each TX */
-		net_buf_unref(buf);
 	}
 }
 
@@ -266,21 +293,29 @@ static void audio_timer_timeout(struct k_work *work)
 	 * data going to the server)
 	 */
 	for (size_t i = 0U; i < configured_sink_stream_count; i++) {
+		struct bt_audio_stream *stream = &streams[i];
+		struct net_buf *buf_to_send;
 		int ret;
 
-		ret = bt_audio_stream_send(&streams[i], net_buf_ref(buf));
+		/* Clone the buffer if sending on more than 1 stream */
+		if (i == configured_sink_stream_count - 1) {
+			buf_to_send = buf;
+		} else {
+			buf_to_send = net_buf_clone(buf, K_FOREVER);
+		}
+
+		ret = bt_audio_stream_send(stream, buf_to_send,
+					   get_and_incr_seq_num(stream),
+					   BT_ISO_TIMESTAMP_NONE);
 		if (ret < 0) {
 			printk("Failed to send audio data on streams[%zu]: (%d)\n",
 			       i, ret);
-			net_buf_unref(buf);
+			net_buf_unref(buf_to_send);
 		} else {
 			printk("Sending mock data with len %zu on streams[%zu]\n",
 			       len_to_send, i);
 		}
 	}
-
-	/* Unref original as we add a reference to each TX */
-	net_buf_unref(buf);
 
 	k_work_schedule(&audio_send_work, K_MSEC(1000));
 
@@ -443,6 +478,14 @@ static void stream_started(struct bt_audio_stream *stream)
 {
 	printk("Audio Stream %p started\n", stream);
 
+	/* Reset sequence number for sinks */
+	for (size_t i = 0U; i < configured_sink_stream_count; i++) {
+		if (stream->ep == sinks[i].ep) {
+			sinks[i].seq_num = 0U;
+			break;
+		}
+	}
+
 	k_sem_give(&sem_stream_started);
 }
 
@@ -469,6 +512,13 @@ static void stream_released(struct bt_audio_stream *stream)
 	printk("Audio Stream %p released\n", stream);
 }
 
+static void stream_recv(struct bt_audio_stream *stream,
+			const struct bt_iso_recv_info *info,
+			struct net_buf *buf)
+{
+	printk("Incoming audio on stream %p len %u\n", stream, buf->len);
+}
+
 static struct bt_audio_stream_ops stream_ops = {
 	.configured = stream_configured,
 	.qos_set = stream_qos_set,
@@ -478,6 +528,7 @@ static struct bt_audio_stream_ops stream_ops = {
 	.disabled = stream_disabled,
 	.stopped = stream_stopped,
 	.released = stream_released,
+	.recv = stream_recv
 };
 
 static void add_remote_source(struct bt_audio_ep *ep, uint8_t index)
@@ -501,7 +552,7 @@ static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
 		return;
 	}
 
-	sinks[index] = ep;
+	sinks[index].ep = ep;
 }
 
 static void add_remote_codec(struct bt_codec *codec_capabilities, int index,
@@ -521,10 +572,10 @@ static void add_remote_codec(struct bt_codec *codec_capabilities, int index,
 	}
 }
 
-static void discover_sink_cb(struct bt_conn *conn,
-			     struct bt_codec *codec,
-			     struct bt_audio_ep *ep,
-			     struct bt_audio_discover_params *params)
+static void discover_sinks_cb(struct bt_conn *conn,
+			      struct bt_codec *codec,
+			      struct bt_audio_ep *ep,
+			      struct bt_audio_discover_params *params)
 {
 	if (params->err != 0) {
 		printk("Discovery failed: %d\n", params->err);
@@ -537,20 +588,44 @@ static void discover_sink_cb(struct bt_conn *conn,
 	}
 
 	if (ep != NULL) {
-		if (params->dir == BT_AUDIO_DIR_SINK) {
-			add_remote_sink(ep, params->num_eps);
-		} else {
-			add_remote_source(ep, params->num_eps);
-		}
+		add_remote_sink(ep, params->num_eps);
 
 		return;
 	}
 
-	printk("Discover complete: err %d\n", params->err);
+	printk("Discover sinks complete: err %d\n", params->err);
 
 	(void)memset(params, 0, sizeof(*params));
 
-	k_sem_give(&sem_sink_discovered);
+	k_sem_give(&sem_sinks_discovered);
+}
+
+static void discover_sources_cb(struct bt_conn *conn,
+				struct bt_codec *codec,
+				struct bt_audio_ep *ep,
+				struct bt_audio_discover_params *params)
+{
+	if (params->err != 0) {
+		printk("Discovery failed: %d\n", params->err);
+		return;
+	}
+
+	if (codec != NULL) {
+		add_remote_codec(codec, params->num_caps, params->dir);
+		return;
+	}
+
+	if (ep != NULL) {
+		add_remote_source(ep, params->num_eps);
+
+		return;
+	}
+
+	printk("Discover sources complete: err %d\n", params->err);
+
+	(void)memset(params, 0, sizeof(*params));
+
+	k_sem_give(&sem_sources_discovered);
 }
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -600,6 +675,16 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
+static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
+{
+	printk("MTU exchanged: %u/%u\n", tx, rx);
+	k_sem_give(&sem_mtu_exchanged);
+}
+
+static struct bt_gatt_cb gatt_callbacks = {
+	.att_mtu_updated = att_mtu_updated,
+};
+
 static int init(void)
 {
 	int err;
@@ -613,6 +698,8 @@ static int init(void)
 	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
 		streams[i].ops = &stream_ops;
 	}
+
+	bt_gatt_cb_register(&gatt_callbacks);
 
 #if defined(CONFIG_LIBLC3CODEC)
 	k_work_init_delayable(&audio_send_work, lc3_audio_timer_timeout);
@@ -635,26 +722,55 @@ static int scan_and_connect(void)
 		return err;
 	}
 
+	err = k_sem_take(&sem_mtu_exchanged, K_FOREVER);
+	if (err != 0) {
+		printk("failed to take sem_mtu_exchanged (err %d)\n", err);
+		return err;
+	}
+
 	return 0;
 }
 
-static int discover_sink(void)
+static int discover_sinks(void)
 {
 	static struct bt_audio_discover_params params;
 	int err;
 
-	params.func = discover_sink_cb;
+	params.func = discover_sinks_cb;
 	params.dir = BT_AUDIO_DIR_SINK;
 
 	err = bt_audio_discover(default_conn, &params);
 	if (err != 0) {
-		printk("Failed to discover sink: %d\n", err);
+		printk("Failed to discover sinks: %d\n", err);
 		return err;
 	}
 
-	err = k_sem_take(&sem_sink_discovered, K_FOREVER);
+	err = k_sem_take(&sem_sinks_discovered, K_FOREVER);
 	if (err != 0) {
-		printk("failed to take sem_sink_discovered (err %d)\n", err);
+		printk("failed to take sem_sinks_discovered (err %d)\n", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int discover_sources(void)
+{
+	static struct bt_audio_discover_params params;
+	int err;
+
+	params.func = discover_sources_cb;
+	params.dir = BT_AUDIO_DIR_SOURCE;
+
+	err = bt_audio_discover(default_conn, &params);
+	if (err != 0) {
+		printk("Failed to discover sources: %d\n", err);
+		return err;
+	}
+
+	err = k_sem_take(&sem_sources_discovered, K_FOREVER);
+	if (err != 0) {
+		printk("failed to take sem_sources_discovered (err %d)\n", err);
 		return err;
 	}
 
@@ -686,7 +802,7 @@ static int configure_streams(void)
 	int err;
 
 	for (size_t i = 0; i < ARRAY_SIZE(sinks); i++) {
-		struct bt_audio_ep *ep = sinks[i];
+		struct bt_audio_ep *ep = sinks[i].ep;
 		struct bt_audio_stream *stream = &streams[i];
 
 		if (ep == NULL) {
@@ -713,7 +829,7 @@ static int configure_streams(void)
 			continue;
 		}
 
-		err = configure_stream(stream, sources[i]);
+		err = configure_stream(stream, ep);
 		if (err != 0) {
 			printk("Could not configure source stream[%zu]: %d\n",
 			       i, err);
@@ -832,12 +948,19 @@ void main(void)
 	}
 	printk("Connected\n");
 
-	printk("Discovering sink\n");
-	err = discover_sink();
+	printk("Discovering sinks\n");
+	err = discover_sinks();
 	if (err != 0) {
 		return;
 	}
-	printk("Sink discovered\n");
+	printk("Sinks discovered\n");
+
+	printk("Discovering sources\n");
+	err = discover_sources();
+	if (err != 0) {
+		return;
+	}
+	printk("Sources discovered\n");
 
 	printk("Configuring streams\n");
 	err = configure_streams();

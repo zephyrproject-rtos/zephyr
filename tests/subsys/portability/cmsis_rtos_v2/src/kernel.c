@@ -34,18 +34,14 @@ void get_version_check(const void *param)
 
 void lock_unlock_check(const void *arg)
 {
-	ARG_UNUSED(arg);
-
 	int32_t state_before_lock, state_after_lock, current_state;
-	uint32_t tick_freq, sys_timer_freq;
 
+	ARG_UNUSED(arg);
 
 	state_before_lock = osKernelLock();
 	if (k_is_in_isr()) {
 		zassert_true(state_before_lock == osErrorISR, NULL);
 	}
-	tick_freq = osKernelGetTickFreq();
-	sys_timer_freq = osKernelGetTickFreq();
 
 	state_after_lock = osKernelUnlock();
 	if (k_is_in_isr()) {
@@ -63,7 +59,20 @@ void lock_unlock_check(const void *arg)
 
 void test_kernel_apis(void)
 {
-	versionInfo version, version_irq;
+	versionInfo version = {
+		.os_info = {
+			.api = 0xfefefefe,
+			.kernel = 0xfdfdfdfd,
+		},
+		.info = "local function call info is uninitialized"
+	};
+	versionInfo version_irq = {
+		.os_info = {
+			.api = 0xfcfcfcfc,
+			.kernel = 0xfbfbfbfb,
+		},
+		.info = "irq_offload function call info is uninitialized"
+	};
 
 	get_version_check(&version);
 	irq_offload(get_version_check, (const void *)&version_irq);

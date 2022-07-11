@@ -137,3 +137,9 @@
 		jedec-id = [c8 40 15];
 	};
 };
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};

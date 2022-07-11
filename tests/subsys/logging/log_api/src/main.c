@@ -22,15 +22,15 @@
 
 LOG_MODULE_REGISTER(test, CONFIG_SAMPLE_MODULE_LOG_LEVEL);
 
-#ifdef CONFIG_LOG2_USE_TAGGED_ARGUMENTS
+#ifdef CONFIG_LOG_USE_TAGGED_ARGUMENTS
 /* The extra sizeof(int) is the end of arguments tag. */
 #define LOG_SIMPLE_MSG_LEN \
-	ROUND_UP(sizeof(struct log_msg2_hdr) + \
+	ROUND_UP(sizeof(struct log_msg_hdr) + \
 		 sizeof(struct cbprintf_package_hdr_ext) + \
 		 sizeof(int), sizeof(long long))
 #else
 #define LOG_SIMPLE_MSG_LEN \
-	ROUND_UP(sizeof(struct log_msg2_hdr) + \
+	ROUND_UP(sizeof(struct log_msg_hdr) + \
 		 sizeof(struct cbprintf_package_hdr_ext), sizeof(long long))
 #endif
 
@@ -56,26 +56,6 @@ static int16_t test2_source_id;
 static log_timestamp_t timestamp_get(void)
 {
 	return NO_BACKENDS ? (log_timestamp_t)UINT32_MAX : stamp++;
-}
-
-/**
- * @brief Function for finding source ID based on source name.
- *
- * @param name Source name
- *
- * @return Source ID.
- */
-static int16_t log_source_id_get(const char *name)
-{
-	int16_t count = (int16_t)log_src_cnt_get(CONFIG_LOG_DOMAIN_ID);
-
-	for (int16_t i = 0; i < count; i++) {
-		if (strcmp(log_source_name_get(CONFIG_LOG_DOMAIN_ID, i), name)
-		    == 0) {
-			return i;
-		}
-	}
-	return -1;
 }
 
 /**
@@ -149,6 +129,10 @@ static void process_and_validate(bool backend2_enable, bool panic)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {
+		return;
+	}
+
 	mock_log_backend_validate(&backend1, panic);
 
 	if (backend2_enable) {
@@ -218,7 +202,7 @@ ZTEST(test_log_api, test_log_various_messages)
 				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_ERR,
 				exp_timestamp++, "err");
 
-	LOG_WRN("wrn %s", log_strdup(dstr));
+	LOG_WRN("wrn %s", dstr);
 	dstr[0] = '\0';
 
 	LOG_ERR("err");
@@ -334,7 +318,7 @@ ZTEST(test_log_api, test_log_backend_runtime_filtering)
 
 static size_t get_max_hexdump(void)
 {
-	return CONFIG_LOG_BUFFER_SIZE - sizeof(struct log_msg2_hdr);
+	return CONFIG_LOG_BUFFER_SIZE - sizeof(struct log_msg_hdr);
 }
 
 #if defined(CONFIG_ARCH_POSIX)
@@ -348,7 +332,7 @@ static size_t get_long_hexdump(void)
 	size_t extra_msg_sz = 0;
 	size_t extra_hexdump_sz = 0;
 
-	if (IS_ENABLED(CONFIG_LOG2_USE_TAGGED_ARGUMENTS)) {
+	if (IS_ENABLED(CONFIG_LOG_USE_TAGGED_ARGUMENTS)) {
 		/* First message with 2 arguments => 2 tags */
 		extra_msg_sz = 2 * sizeof(int);
 

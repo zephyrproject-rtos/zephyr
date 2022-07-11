@@ -75,6 +75,62 @@ typedef uint32_t evtchn_port_t;
 DEFINE_XEN_GUEST_HANDLE(evtchn_port_t);
 
 /*
+ * EVTCHNOP_alloc_unbound: Allocate a port in domain <dom> and mark as
+ * accepting interdomain bindings from domain <remote_dom>. A fresh port
+ * is allocated in <dom> and returned as <port>.
+ * NOTES:
+ *  1. If the caller is unprivileged then <dom> must be DOMID_SELF.
+ *  2. <remote_dom> may be DOMID_SELF, allowing loopback connections.
+ */
+struct evtchn_alloc_unbound {
+	/* IN parameters */
+	domid_t dom, remote_dom;
+	/* OUT parameters */
+	evtchn_port_t port;
+};
+typedef struct evtchn_alloc_unbound evtchn_alloc_unbound_t;
+
+/*
+ * EVTCHNOP_bind_interdomain: Construct an interdomain event channel between
+ * the calling domain and <remote_dom>. <remote_dom,remote_port> must identify
+ * a port that is unbound and marked as accepting bindings from the calling
+ * domain. A fresh port is allocated in the calling domain and returned as
+ * <local_port>.
+ *
+ * In case the peer domain has already tried to set our event channel
+ * pending, before it was bound, EVTCHNOP_bind_interdomain always sets
+ * the local event channel pending.
+ *
+ * The usual pattern of use, in the guest's upcall (or subsequent
+ * handler) is as follows: (Re-enable the event channel for subsequent
+ * signalling and then) check for the existence of whatever condition
+ * is being waited for by other means, and take whatever action is
+ * needed (if any).
+ *
+ * NOTES:
+ *  1. <remote_dom> may be DOMID_SELF, allowing loopback connections.
+ */
+struct evtchn_bind_interdomain {
+	/* IN parameters. */
+	domid_t remote_dom;
+	evtchn_port_t remote_port;
+	/* OUT parameters. */
+	evtchn_port_t local_port;
+};
+typedef struct evtchn_bind_interdomain evtchn_bind_interdomain_t;
+
+/*
+ * EVTCHNOP_close: Close a local event channel <port>. If the channel is
+ * interdomain then the remote end is placed in the unbound state
+ * (EVTCHNSTAT_unbound), awaiting a new connection.
+ */
+struct evtchn_close {
+	/* IN parameters. */
+	evtchn_port_t port;
+};
+typedef struct evtchn_close evtchn_close_t;
+
+/*
  * EVTCHNOP_send: Send an event to the remote end of the channel whose local
  * endpoint is <port>.
  */
@@ -83,6 +139,77 @@ struct evtchn_send {
 	evtchn_port_t port;
 };
 typedef struct evtchn_send evtchn_send_t;
+
+/*
+ * EVTCHNOP_status: Get the current status of the communication channel which
+ * has an endpoint at <dom, port>.
+ * NOTES:
+ *  1. <dom> may be specified as DOMID_SELF.
+ *  2. Only a sufficiently-privileged domain may obtain the status of an event
+ *     channel for which <dom> is not DOMID_SELF.
+ */
+struct evtchn_status {
+	/* IN parameters */
+	domid_t  dom;
+	evtchn_port_t port;
+	/* OUT parameters */
+#define EVTCHNSTAT_closed	0 /* Channel is not in use.                 */
+#define EVTCHNSTAT_unbound	1 /* Channel is waiting interdom connection.*/
+#define EVTCHNSTAT_interdomain	2 /* Channel is connected to remote domain. */
+#define EVTCHNSTAT_pirq		3 /* Channel is bound to a phys IRQ line.   */
+#define EVTCHNSTAT_virq		4 /* Channel is bound to a virtual IRQ line */
+#define EVTCHNSTAT_ipi		5 /* Channel is bound to a virtual IPI line */
+	uint32_t status;
+	uint32_t vcpu;			/* VCPU to which this channel is bound.   */
+	union {
+		struct {
+			domid_t dom;
+		} unbound;			/* EVTCHNSTAT_unbound */
+		struct {
+			domid_t dom;
+			evtchn_port_t port;
+		} interdomain;			/* EVTCHNSTAT_interdomain */
+		uint32_t pirq;			/* EVTCHNSTAT_pirq */
+		uint32_t virq;			/* EVTCHNSTAT_virq */
+	} u;
+};
+typedef struct evtchn_status evtchn_status_t;
+
+/*
+ * EVTCHNOP_unmask: Unmask the specified local event-channel port and deliver
+ * a notification to the appropriate VCPU if an event is pending.
+ */
+struct evtchn_unmask {
+	/* IN parameters. */
+	evtchn_port_t port;
+};
+typedef struct evtchn_unmask evtchn_unmask_t;
+
+/*
+ * EVTCHNOP_reset: Close all event channels associated with specified domain.
+ * NOTES:
+ *  1. <dom> may be specified as DOMID_SELF.
+ *  2. Only a sufficiently-privileged domain may specify other than DOMID_SELF.
+ *  3. Destroys all control blocks and event array, resets event channel
+ *     operations to 2-level ABI if called with <dom> == DOMID_SELF and FIFO
+ *     ABI was used. Guests should not bind events during EVTCHNOP_reset call
+ *     as these events are likely to be lost.
+ */
+struct evtchn_reset {
+	/* IN parameters. */
+	domid_t dom;
+};
+typedef struct evtchn_reset evtchn_reset_t;
+
+/*
+ * EVTCHNOP_set_priority: set the priority for an event channel.
+ */
+struct evtchn_set_priority {
+	/* IN parameters. */
+	evtchn_port_t port;
+	uint32_t priority;
+};
+typedef struct evtchn_set_priority evtchn_set_priority_t;
 
 #define EVTCHN_2L_NR_CHANNELS (sizeof(xen_ulong_t) * sizeof(xen_ulong_t) * 64)
 

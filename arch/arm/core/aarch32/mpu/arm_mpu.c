@@ -43,11 +43,12 @@ static uint8_t static_regions_num;
 	defined(CONFIG_CPU_CORTEX_M3) || \
 	defined(CONFIG_CPU_CORTEX_M4) || \
 	defined(CONFIG_CPU_CORTEX_M7) || \
-	defined(CONFIG_CPU_AARCH32_CORTEX_R)
+	defined(CONFIG_ARMV7_R)
 #include "arm_mpu_v7_internal.h"
 #elif defined(CONFIG_CPU_CORTEX_M23) || \
 	defined(CONFIG_CPU_CORTEX_M33) || \
-	defined(CONFIG_CPU_CORTEX_M55)
+	defined(CONFIG_CPU_CORTEX_M55) || \
+	defined(CONFIG_AARCH32_ARMV8_R)
 #include "arm_mpu_v8_internal.h"
 #else
 #error "Unsupported ARM CPU"
@@ -84,7 +85,7 @@ static int mpu_configure_region(const uint8_t index,
 
 	/* Populate internal ARM MPU region configuration structure. */
 	region_conf.base = new_region->start;
-#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
+#if defined(CONFIG_ARMV7_R)
 	region_conf.size = size_to_mpu_rasr_size(new_region->size);
 #endif
 	get_region_attr_from_mpu_partition_info(&region_conf.attr,

@@ -20,6 +20,7 @@
 #include <string.h>
 #include <zephyr/toolchain/gcc.h>
 #include <soc.h>
+#include <zephyr/arch/riscv/arch.h>
 
 #define ESP32C3_INTSTATUS_SLOT1_THRESHOLD	32
 

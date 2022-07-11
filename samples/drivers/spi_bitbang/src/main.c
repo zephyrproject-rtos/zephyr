@@ -120,21 +120,15 @@ void test_8bit_xfer(const struct device *dev, struct spi_cs_control *cs)
 
 void main(void)
 {
-	const struct device *dev;
+	const struct device *dev = DEVICE_DT_GET(SPIBB_NODE);
 
-	dev = device_get_binding(DT_LABEL(SPIBB_NODE));
-
-	if (!dev) {
-		printf("SPI bitbang driver %s was not found!\n",
-				DT_LABEL(SPIBB_NODE));
+	if (!device_is_ready(dev)) {
+		printk("%s: device not ready.\n", dev->name);
 		return;
 	}
 
 	struct spi_cs_control cs_ctrl = (struct spi_cs_control){
-		.gpio_dev = device_get_binding(
-				DT_GPIO_LABEL(SPIBB_NODE, cs_gpios)),
-		.gpio_pin = DT_GPIO_PIN(SPIBB_NODE, cs_gpios),
-		.gpio_dt_flags = DT_GPIO_FLAGS(SPIBB_NODE, cs_gpios),
+		.gpio = GPIO_DT_SPEC_GET(SPIBB_NODE, cs_gpios),
 		.delay = 0u,
 	};
 

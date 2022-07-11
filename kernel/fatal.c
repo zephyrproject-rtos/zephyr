@@ -13,7 +13,9 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/fatal.h>
+#ifndef	CONFIG_XTENSA
 #include <zephyr/debug/coredump.h>
+#endif
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -120,9 +122,11 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 #endif
 
 	LOG_ERR("Current thread: %p (%s)", thread,
-		log_strdup(thread_name_get(thread)));
+		thread_name_get(thread));
 
+#ifndef CONFIG_XTENSA
 	coredump(reason, esf, thread);
+#endif
 
 	k_sys_fatal_error_handler(reason, esf);
 

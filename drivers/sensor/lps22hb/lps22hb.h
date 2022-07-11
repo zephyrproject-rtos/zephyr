@@ -154,12 +154,10 @@
 
 
 struct lps22hb_config {
-	char *i2c_master_dev_name;
-	uint16_t i2c_slave_addr;
+	struct i2c_dt_spec i2c;
 };
 
 struct lps22hb_data {
-	const struct device *i2c_master;
 	int32_t sample_press;
 	int16_t sample_temp;
 };

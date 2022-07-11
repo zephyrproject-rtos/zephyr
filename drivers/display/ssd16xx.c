@@ -19,7 +19,6 @@ LOG_MODULE_REGISTER(ssd16xx);
 #include <zephyr/sys/byteorder.h>
 
 #include "ssd16xx_regs.h"
-#include <zephyr/display/cfb.h>
 
 /**
  * SSD1673, SSD1608, SSD1681, ILI3897 compatible EPD controller driver.
@@ -68,7 +67,7 @@ static inline int ssd16xx_write_cmd(const struct device *dev, uint8_t cmd,
 	const struct ssd16xx_config *config = dev->config;
 	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
 	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
-	int err;
+	int err = 0;
 
 	err = gpio_pin_set_dt(&config->dc_gpio, 1);
 	if (err < 0) {
@@ -77,7 +76,7 @@ static inline int ssd16xx_write_cmd(const struct device *dev, uint8_t cmd,
 
 	err = spi_write_dt(&config->bus, &buf_set);
 	if (err < 0) {
-		return err;
+		goto spi_out;
 	}
 
 	if (data != NULL) {
@@ -86,16 +85,18 @@ static inline int ssd16xx_write_cmd(const struct device *dev, uint8_t cmd,
 
 		err = gpio_pin_set_dt(&config->dc_gpio, 0);
 		if (err < 0) {
-			return err;
+			goto spi_out;
 		}
 
 		err = spi_write_dt(&config->bus, &buf_set);
 		if (err < 0) {
-			return err;
+			goto spi_out;
 		}
 	}
 
-	return 0;
+spi_out:
+	spi_release_dt(&config->bus);
+	return err;
 }
 
 static inline void ssd16xx_busy_wait(const struct device *dev)
@@ -787,7 +788,9 @@ static struct display_driver_api ssd16xx_driver_api = {
 									\
 	static const struct ssd16xx_config ssd16xx_cfg_##n = {		\
 		.bus = SPI_DT_SPEC_INST_GET(n,				\
-			SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),	\
+			SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |		\
+			SPI_HOLD_ON_CS | SPI_LOCK_ON,			\
+			0),						\
 		.reset_gpio = GPIO_DT_SPEC_INST_GET(n, reset_gpios),	\
 		.dc_gpio = GPIO_DT_SPEC_INST_GET(n, dc_gpios),		\
 		.busy_gpio = GPIO_DT_SPEC_INST_GET(n, busy_gpios),	\

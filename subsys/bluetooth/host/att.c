@@ -234,14 +234,6 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 			return -EAGAIN;
 		}
 
-		/* Check the encryption level for EATT */
-		if (bt_conn_get_security(chan->att->conn) < BT_SECURITY_L2) {
-			/* Vol 3, Part G, Section 5.3.2 Channel Requirements states:
-			 * The channel shall be encrypted.
-			 */
-			return -EINVAL;
-		}
-
 		data->att_chan = chan;
 
 		/* bt_l2cap_chan_send does actually return the number of bytes
@@ -2313,8 +2305,18 @@ static uint8_t att_error_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 	BT_DBG("request 0x%02x handle 0x%04x error 0x%02x", rsp->request,
 	       sys_le16_to_cpu(rsp->handle), rsp->error);
 
-	/* Don't retry if there is no req pending or it has been cancelled */
-	if (!chan->req || chan->req == &cancel) {
+	/* Don't retry if there is no req pending or it has been cancelled.
+	 *
+	 * BLUETOOTH SPECIFICATION Version 5.2 [Vol 3, Part F]
+	 * page 1423:
+	 *
+	 * If an error code is received in the ATT_ERROR_RSP PDU that is not
+	 * understood by the client, for example an error code that was reserved
+	 * for future use that is now being used in a future version of the
+	 * specification, then the ATT_ERROR_RSP PDU shall still be considered to
+	 * state that the given request cannot be performed for an unknown reason.
+	 */
+	if (!chan->req || chan->req == &cancel || !rsp->error) {
 		err = BT_ATT_ERR_UNLIKELY;
 		goto done;
 	}
@@ -3324,6 +3326,14 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 	size_t i = 0;
 	int err;
 
+	/* Check the encryption level for EATT */
+	if (bt_conn_get_security(conn) < BT_SECURITY_L2) {
+		/* Vol 3, Part G, Section 5.3.2 Channel Requirements states:
+		 * The channel shall be encrypted.
+		 */
+		return -EPERM;
+	}
+
 	if (num_channels > CONFIG_BT_EATT_MAX || num_channels == 0) {
 		return -EINVAL;
 	}
@@ -3358,11 +3368,12 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 }
 
 #if defined(CONFIG_BT_EATT_AUTO_CONNECT)
-void eatt_auto_connect(struct bt_conn *conn, uint8_t conn_err)
+static void eatt_auto_connect(struct bt_conn *conn, bt_security_t level,
+			      enum bt_security_err err)
 {
 	int eatt_err;
 
-	if (conn_err) {
+	if (err || level < BT_SECURITY_L2 || !bt_att_fixed_chan_only(conn)) {
 		return;
 	}
 
@@ -3375,7 +3386,7 @@ void eatt_auto_connect(struct bt_conn *conn, uint8_t conn_err)
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = eatt_auto_connect,
+	.security_changed = eatt_auto_connect,
 };
 
 #endif /* CONFIG_BT_EATT_AUTO_CONNECT */
@@ -3477,9 +3488,7 @@ static void bt_eatt_init(void)
 	int err;
 	static struct bt_l2cap_server eatt_l2cap = {
 		.psm = BT_EATT_PSM,
-#if defined(CONFIG_BT_EATT_SEC_LEVEL)
-		.sec_level = CONFIG_BT_EATT_SEC_LEVEL,
-#endif
+		.sec_level = BT_SECURITY_L2,
 		.accept = bt_eatt_accept,
 	};
 

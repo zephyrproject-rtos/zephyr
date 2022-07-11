@@ -80,6 +80,8 @@ source "drivers/sensor/dht/Kconfig"
 
 source "drivers/sensor/dps310/Kconfig"
 
+source "drivers/sensor/ds18b20/Kconfig"
+
 source "drivers/sensor/ens210/Kconfig"
 
 source "drivers/sensor/fdc2x1x/Kconfig"
@@ -215,6 +217,8 @@ source "drivers/sensor/si7210/Kconfig"
 source "drivers/sensor/sm351lt/Kconfig"
 
 source "drivers/sensor/stm32_temp/Kconfig"
+
+source "drivers/sensor/stm32_vbat/Kconfig"
 
 source "drivers/sensor/stts751/Kconfig"
 

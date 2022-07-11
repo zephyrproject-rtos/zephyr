@@ -38,6 +38,8 @@ struct i2c_nrfx_twim_config {
 
 static int init_twim(const struct device *dev);
 
+static int i2c_nrfx_twim_recover_bus(const struct device *dev);
+
 static int i2c_nrfx_twim_transfer(const struct device *dev,
 				  struct i2c_msg *msgs,
 				  uint8_t num_msgs, uint16_t addr)
@@ -170,14 +172,13 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 			 * In many situation, a retry is sufficient.
 			 * However, some time the I2C device get stuck and need
 			 * help to recover.
-			 * Therefore we always call nrfx_twim_bus_recover() to
-			 * make sure everything has been done to restore the
+			 * Therefore we always call i2c_nrfx_twim_recover_bus()
+			 * to make sure everything has been done to restore the
 			 * bus from this error.
 			 */
 			LOG_ERR("Error on I2C line occurred for message %d", i);
 			nrfx_twim_disable(&dev_config->twim);
-			nrfx_twim_bus_recover(dev_data->twim_config.scl,
-					      dev_data->twim_config.sda);
+			(void)i2c_nrfx_twim_recover_bus(dev);
 			ret = -EIO;
 			break;
 		}
@@ -304,11 +305,23 @@ static int i2c_nrfx_twim_configure(const struct device *dev,
 
 static int i2c_nrfx_twim_recover_bus(const struct device *dev)
 {
+	uint32_t scl_pin;
+	uint32_t sda_pin;
+	nrfx_err_t err;
+
+#ifdef CONFIG_PINCTRL
+	const struct i2c_nrfx_twim_config *dev_config = dev->config;
+
+	scl_pin = nrf_twim_scl_pin_get(dev_config->twim.p_twim);
+	sda_pin = nrf_twim_sda_pin_get(dev_config->twim.p_twim);
+#else
 	struct i2c_nrfx_twim_data *dev_data = dev->data;
 
-	nrfx_err_t err = nrfx_twim_bus_recover(dev_data->twim_config.scl,
-					       dev_data->twim_config.sda);
+	scl_pin = dev_data->twim_config.scl;
+	sda_pin = dev_data->twim_config.sda;
+#endif
 
+	err = nrfx_twim_bus_recover(scl_pin, sda_pin);
 	return (err == NRFX_SUCCESS ? 0 : -EBUSY);
 }
 

@@ -63,10 +63,10 @@ void test_gpio_pin_toggle(void)
 	int val_expected;
 	int ret;
 
-	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	port = DEVICE_DT_GET(TEST_NODE);
+	zassert_true(device_is_ready(port), "GPIO dev is not ready");
 
-	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
+	TC_PRINT("Running test on port=%s, pin=%d\n", port->name, TEST_PIN);
 
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_OUTPUT | GPIO_INPUT);
 	if (ret == -ENOTSUP) {
@@ -105,10 +105,10 @@ void test_gpio_pin_toggle_visual(void)
 	int val_expected;
 	int ret;
 
-	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	port = DEVICE_DT_GET(TEST_NODE);
+	zassert_true(device_is_ready(port), "GPIO dev is not ready");
 
-	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
+	TC_PRINT("Running test on port=%s, pin=%d\n", port->name, TEST_PIN);
 
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_OUTPUT |
 				 TEST_PIN_DTS_FLAGS);
@@ -144,10 +144,10 @@ void test_gpio_pin_set_get_raw(void)
 		4, 1, 45, 0, 0, -7, 0, 0, 0, INT_MAX, INT_MIN, 0
 	};
 
-	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	port = DEVICE_DT_GET(TEST_NODE);
+	zassert_true(device_is_ready(port), "GPIO dev is not ready");
 
-	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
+	TC_PRINT("Running test on port=%s, pin=%d\n", port->name, TEST_PIN);
 
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_OUTPUT | GPIO_INPUT);
 	if (ret == -ENOTSUP) {
@@ -181,10 +181,10 @@ void test_gpio_pin_set_get(void)
 		1, 2, 3, 0, 4, 0, 0, 0, 17, INT_MAX, INT_MIN, 0
 	};
 
-	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	port = DEVICE_DT_GET(TEST_NODE);
+	zassert_true(device_is_ready(port), "GPIO dev is not ready");
 
-	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
+	TC_PRINT("Running test on port=%s, pin=%d\n", port->name, TEST_PIN);
 
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_OUTPUT | GPIO_INPUT);
 	if (ret == -ENOTSUP) {
@@ -218,10 +218,10 @@ void test_gpio_pin_set_get_active_high(void)
 
 	const int test_vector[] = {0, 2, 0, 9, -1, 0, 0, 1, INT_MAX, INT_MIN};
 
-	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	port = DEVICE_DT_GET(TEST_NODE);
+	zassert_true(device_is_ready(port), "GPIO dev is not ready");
 
-	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
+	TC_PRINT("Running test on port=%s, pin=%d\n", port->name, TEST_PIN);
 
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_OUTPUT | GPIO_INPUT |
 				 GPIO_ACTIVE_HIGH);
@@ -268,10 +268,10 @@ void test_gpio_pin_set_get_active_low(void)
 
 	const int test_vector[] = {0, 4, 0, 0, 1, 8, -3, -12, 0};
 
-	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	port = DEVICE_DT_GET(TEST_NODE);
+	zassert_true(device_is_ready(port), "GPIO dev is not ready");
 
-	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
+	TC_PRINT("Running test on port=%s, pin=%d\n", port->name, TEST_PIN);
 
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_OUTPUT | GPIO_INPUT |
 				 GPIO_ACTIVE_LOW);

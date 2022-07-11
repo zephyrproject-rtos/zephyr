@@ -65,13 +65,12 @@ static int powerup_adv7513(const struct device *i2c_dev)
 
 static int test_i2c_adv7513(void)
 {
-	const struct device *i2c_dev =
-		device_get_binding(DT_LABEL(DT_INST(0, altr_nios2_i2c)));
-	uint32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_MASTER;
+	const struct device *i2c_dev = DEVICE_DT_GET_ONE(altr_nios2_i2c);
+	uint32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_CONTROLLER;
 	uint8_t data;
 
-	if (!i2c_dev) {
-		TC_PRINT("cannot get i2c device\n");
+	if (!device_is_ready(i2c_dev)) {
+		TC_PRINT("i2c device is not ready\n");
 		return TC_FAIL;
 	}
 

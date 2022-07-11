@@ -265,6 +265,26 @@ static int gpio_litex_pin_interrupt_configure(const struct device *dev,
 	return -ENOTSUP;
 }
 
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_litex_port_get_direction(const struct device *dev, gpio_port_pins_t map,
+					 gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
+{
+	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
+
+	map &= gpio_config->port_pin_mask;
+
+	if (inputs != NULL) {
+		*inputs = map & (!gpio_config->port_is_output);
+	}
+
+	if (outputs != NULL) {
+		*outputs = map & (gpio_config->port_is_output);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_DIRECTION */
+
 static const struct gpio_driver_api gpio_litex_driver_api = {
 	.pin_configure = gpio_litex_configure,
 	.port_get_raw = gpio_litex_port_get_raw,
@@ -274,6 +294,9 @@ static const struct gpio_driver_api gpio_litex_driver_api = {
 	.port_toggle_bits = gpio_litex_port_toggle_bits,
 	.pin_interrupt_configure = gpio_litex_pin_interrupt_configure,
 	.manage_callback = gpio_litex_manage_callback,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_litex_port_get_direction,
+#endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
 /* Device Instantiation */

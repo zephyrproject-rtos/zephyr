@@ -65,9 +65,9 @@ extern struct img_mgmt_state g_img_mgmt_state;
 
 /** Represents an individual upload request. */
 struct img_mgmt_upload_req {
-	unsigned long long image;	/* 0 by default */
-	unsigned long long off;		/* -1 if unspecified */
-	unsigned long long size;	/* -1 if unspecified */
+	uint32_t image;	/* 0 by default */
+	size_t off;	/* SIZE_MAX if unspecified */
+	size_t size;	/* SIZE_MAX if unspecified */
 	struct zcbor_string img_data;
 	struct zcbor_string data_sha;
 	bool upgrade;			/* Only allow greater version numbers. */
@@ -78,16 +78,12 @@ struct img_mgmt_state {
 	/** Flash area being written; -1 if no upload in progress. */
 	int area_id;
 	/** Flash offset of next chunk. */
-	uint32_t off;
+	size_t off;
 	/** Total size of image data. */
-	uint32_t size;
+	size_t size;
 	/** Hash of image data; used for resumption of a partial upload. */
 	uint8_t data_sha_len;
 	uint8_t data_sha[IMG_MGMT_DATA_SHA_LEN];
-#if CONFIG_IMG_ERASE_PROGRESSIVELY
-	int sector_id;
-	uint32_t sector_end;
-#endif
 };
 
 /** Describes what to do during processing of an upload request. */

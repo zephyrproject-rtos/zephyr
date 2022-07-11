@@ -60,6 +60,14 @@ uint32_t table_p_size[] = {
 	LL_DMA_PDATAALIGN_WORD,
 };
 
+/* Lookup table to set dma priority from the DTS */
+uint32_t table_priority[] = {
+	DMA_PRIORITY_LOW,
+	DMA_PRIORITY_MEDIUM,
+	DMA_PRIORITY_HIGH,
+	DMA_PRIORITY_VERY_HIGH,
+};
+
 typedef void (*irq_config_func_t)(const struct device *dev);
 
 struct stream {
@@ -1103,7 +1111,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	hdma.Init.PeriphInc = DMA_PINC_DISABLE;
 	hdma.Init.MemInc = DMA_MINC_ENABLE;
 	hdma.Init.Mode = DMA_NORMAL;
-	hdma.Init.Priority = dma_cfg.channel_priority;
+	hdma.Init.Priority = table_priority[dma_cfg.channel_priority];
 #ifdef CONFIG_DMA_STM32_V1
 	/* TODO: Not tested in this configuration */
 	hdma.Init.Channel = dma_cfg.dma_slot;

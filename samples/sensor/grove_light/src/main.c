@@ -13,13 +13,13 @@
 
 void main(void)
 {
-	const struct device *dev =
-		device_get_binding(DT_LABEL(DT_INST(0, seeed_grove_light)));
+	const struct device *dev = DEVICE_DT_GET_ONE(seeed_grove_light);
 
-	if (dev == NULL) {
-		printf("device not found.  aborting test.\n");
+	if (!device_is_ready(dev)) {
+		printk("sensor: device not ready.\n");
 		return;
 	}
+
 	while (1) {
 		int read;
 		struct sensor_value lux;

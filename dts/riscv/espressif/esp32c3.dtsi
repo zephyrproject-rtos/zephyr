@@ -47,8 +47,9 @@
 		};
 
 		intc: interrupt-controller@600c2000 {
-			#interrupt-cells = <1>;
 			compatible = "espressif,esp32-intc";
+			#address-cells = <0>;
+			#interrupt-cells = <1>;
 			interrupt-controller;
 			reg = <0x600c2000 0x198>;
 			label = "INTC_0";
@@ -132,6 +133,28 @@
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_UART1_MODULE>;
 			current-speed = <115200>;
+		};
+
+		ledc0: ledc@60019000 {
+			compatible = "espressif,esp32-ledc";
+			pwm-controller;
+			#pwm-cells = <3>;
+			reg = <0x60019000 0x1000>;
+			label = "LEDC_0";
+			clocks = <&rtc ESP32_LEDC_MODULE>;
+			status = "disabled";
+		};
+
+		usb_serial: uart@60043000 {
+			compatible = "espressif,esp32-usb-serial";
+			reg = <0x60043000 0x400>;
+			label = "USB_SERIAL";
+			status = "disabled";
+			interrupts = <USB_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_USB_MODULE>;
+			current-speed = <115200>;
+			peripheral = <0>;
 		};
 
 		timer0: counter@6001f000 {

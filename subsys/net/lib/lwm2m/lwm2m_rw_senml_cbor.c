@@ -837,7 +837,7 @@ int do_composite_read_op_senml_cbor(struct lwm2m_message *msg)
 
 	lwm2m_engine_clear_duplicate_path(&lwm_path_list, &lwm_path_free_list);
 
-	return do_composite_read_op_for_parsed_path_senml_cbor(msg, &lwm_path_free_list);
+	return do_composite_read_op_for_parsed_path_senml_cbor(msg, &lwm_path_list);
 }
 
 

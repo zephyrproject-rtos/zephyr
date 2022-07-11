@@ -75,8 +75,8 @@ void dns_result_cb(enum dns_resolve_status status,
 
 	LOG_INF("%s %s address: %s", user_data ? (char *)user_data : "<null>",
 		hr_family,
-		log_strdup(net_addr_ntop(info->ai_family, addr,
-					 hr_addr, sizeof(hr_addr))));
+		net_addr_ntop(info->ai_family, addr,
+					 hr_addr, sizeof(hr_addr)));
 }
 
 void mdns_result_cb(enum dns_resolve_status status,
@@ -124,8 +124,8 @@ void mdns_result_cb(enum dns_resolve_status status,
 
 	LOG_INF("%s %s address: %s", user_data ? (char *)user_data : "<null>",
 		hr_family,
-		log_strdup(net_addr_ntop(info->ai_family, addr,
-					 hr_addr, sizeof(hr_addr))));
+		net_addr_ntop(info->ai_family, addr,
+					 hr_addr, sizeof(hr_addr)));
 }
 
 #if defined(CONFIG_NET_DHCPV4)
@@ -172,19 +172,19 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 		}
 
 		LOG_INF("IPv4 address: %s",
-			log_strdup(net_addr_ntop(AF_INET,
+			net_addr_ntop(AF_INET,
 						 &if_addr->address.in_addr,
-						 hr_addr, NET_IPV4_ADDR_LEN)));
+						 hr_addr, NET_IPV4_ADDR_LEN));
 		LOG_INF("Lease time: %u seconds",
 			 iface->config.dhcpv4.lease_time);
 		LOG_INF("Subnet: %s",
-			log_strdup(net_addr_ntop(AF_INET,
+			net_addr_ntop(AF_INET,
 					       &iface->config.ip.ipv4->netmask,
-					       hr_addr, NET_IPV4_ADDR_LEN)));
+					       hr_addr, NET_IPV4_ADDR_LEN));
 		LOG_INF("Router: %s",
-			log_strdup(net_addr_ntop(AF_INET,
+			net_addr_ntop(AF_INET,
 					       &iface->config.ip.ipv4->gw,
-					       hr_addr, NET_IPV4_ADDR_LEN)));
+					       hr_addr, NET_IPV4_ADDR_LEN));
 		break;
 	}
 

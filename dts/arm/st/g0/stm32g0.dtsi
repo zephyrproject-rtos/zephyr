@@ -45,7 +45,8 @@
 
 		clk_hsi: clk-hsi {
 			#clock-cells = <0>;
-			compatible = "fixed-clock";
+			compatible = "st,stm32g0-hsi-clock";
+			hsi-div = <1>;
 			clock-frequency = <DT_FREQ_M(16)>;
 			status = "disabled";
 		};
@@ -363,6 +364,7 @@
 			#io-channel-cells = <1>;
 			has-temp-channel;
 			has-vref-channel;
+			has-vbat-channel;
 		};
 
 		dma1: dma@40020000 {

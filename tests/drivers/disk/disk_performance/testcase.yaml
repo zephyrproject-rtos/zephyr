@@ -1,0 +1,9 @@
+tests:
+  drivers.disk.disk_performance:
+    depends_on: sdhc
+    harness: ztest
+    harness_config:
+      fixture: fixture_sdhc
+    tags: disk sdhc
+    integration_platforms:
+      - mimxrt1064_evk

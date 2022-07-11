@@ -115,12 +115,11 @@ static void test_basic(void)
 	const struct device *reg_dev, *adc_dev;
 	int rc, adc_reading;
 
-	adc_dev = device_get_binding(DT_LABEL(ADC_NODE));
+	adc_dev = DEVICE_DT_GET(ADC_NODE);
 	reg_dev = device_get_binding(CONFIG_TEST_PMIC_REGULATOR_NAME);
-	zassert_not_null(adc_dev,
-					"ADC device to check regulator output not defined");
-	zassert_not_null(reg_dev,
-					"Could not get regulator device binding");
+
+	zassert_true(device_is_ready(adc_dev), "ADC device is not ready");
+	zassert_not_null(reg_dev, "Could not get regulator device binding");
 
 	/* Configure ADC */
 	adc_channel_setup(adc_dev, &channel_cfg);

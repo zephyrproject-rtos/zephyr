@@ -71,6 +71,7 @@
 
 		event0: interrupt-controller@e0041000 {
 			compatible = "openisa,rv32m1-event-unit";
+			#address-cells = <0>;
 			#interrupt-cells = <1>;
 			interrupt-controller;
 			reg = <0xe0041000 0x88>;
@@ -78,6 +79,7 @@
 
 		event1: interrupt-controller@4101f000 {
 			compatible = "openisa,rv32m1-event-unit";
+			#address-cells = <0>;
 			#interrupt-cells = <1>;
 			interrupt-controller;
 			reg = <0x4101f000 0x88>;
@@ -96,6 +98,7 @@
 
 			intmux0_ch0: interrupt-controller@0 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH0_IRQ>;
@@ -106,6 +109,7 @@
 
 			intmux0_ch1: interrupt-controller@40 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH1_IRQ>;
@@ -116,6 +120,7 @@
 
 			intmux0_ch2: interrupt-controller@80 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH2_IRQ>;
@@ -126,6 +131,7 @@
 
 			intmux0_ch3: interrupt-controller@c0 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH3_IRQ>;
@@ -136,6 +142,7 @@
 
 			intmux0_ch4: interrupt-controller@100 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH4_IRQ>;
@@ -146,6 +153,7 @@
 
 			intmux0_ch5: interrupt-controller@140 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH5_IRQ>;
@@ -156,6 +164,7 @@
 
 			intmux0_ch6: interrupt-controller@180 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH6_IRQ>;
@@ -166,6 +175,7 @@
 
 			intmux0_ch7: interrupt-controller@1c0 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH7_IRQ>;
@@ -188,6 +198,7 @@
 
 			intmux1_ch0: interrupt-controller@0 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH0_IRQ>;
@@ -198,6 +209,7 @@
 
 			intmux1_ch1: interrupt-controller@40 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH1_IRQ>;
@@ -208,6 +220,7 @@
 
 			intmux1_ch2: interrupt-controller@80 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH2_IRQ>;
@@ -218,6 +231,7 @@
 
 			intmux1_ch3: interrupt-controller@c0 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH3_IRQ>;
@@ -228,6 +242,7 @@
 
 			intmux1_ch4: interrupt-controller@100 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH4_IRQ>;
@@ -238,6 +253,7 @@
 
 			intmux1_ch5: interrupt-controller@140 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH5_IRQ>;
@@ -248,6 +264,7 @@
 
 			intmux1_ch6: interrupt-controller@180 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH6_IRQ>;
@@ -258,6 +275,7 @@
 
 			intmux1_ch7: interrupt-controller@1c0 {
 				compatible = "openisa,rv32m1-intmux-ch";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 				interrupts = <INTMUX_CH7_IRQ>;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Intel Corporation
+ * Copyright (c) 2020-2022 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,9 +30,9 @@
  * edac info ecc_error [show|clear]       Show ECC Errors
  * edac info parity_error [show|clear]    Show Parity Errors
  *
- * Physical memory access interface
+ * Physical memory access interface using devmem shell module
  *
- * edac mem address [width [value]]       Physical memory read / write
+ * devmem [width [value]]       Physical memory read / write
  */
 
 static void decode_ecc_error(const struct shell *shell, uint64_t ecc_error)
@@ -56,10 +56,45 @@ static void decode_ecc_error(const struct shell *shell, uint64_t ecc_error)
 	}
 }
 
+static int ecc_error_show(const struct shell *sh, const struct device *dev)
+{
+	uint64_t error;
+	int err;
+
+	err = edac_ecc_error_log_get(dev, &error);
+	if (err != 0 && err != -ENODATA) {
+		shell_error(sh, "Error getting error log (err %d)", err);
+		return err;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "ECC Error: 0x%llx\n", error);
+
+	if (error != 0) {
+		decode_ecc_error(sh, error);
+	}
+
+	return 0;
+}
+
+static int parity_error_show(const struct shell *sh, const struct device *dev)
+{
+	uint64_t error;
+	int err;
+
+	err = edac_parity_error_log_get(dev, &error);
+	if (err != 0 && err != -ENODATA) {
+		shell_error(sh, "Error getting parity error log (err %d)", err);
+		return err;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "Parity Error: 0x%llx\n", error);
+
+	return 0;
+}
+
 static int cmd_edac_info(const struct shell *shell, size_t argc, char **argv)
 {
 	const struct device *dev;
-	uint64_t error;
 	int err;
 
 	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
@@ -70,27 +105,15 @@ static int cmd_edac_info(const struct shell *shell, size_t argc, char **argv)
 
 	shell_fprintf(shell, SHELL_NORMAL, "Show EDAC status\n");
 
-	err = edac_ecc_error_log_get(dev, &error);
+	err = ecc_error_show(shell, dev);
 	if (err != 0) {
-		shell_error(shell, "Error getting ecc error log (err %d)",
-			    err);
 		return err;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "ECC Error Log 0x%llx\n", error);
-
-	if (error != 0) {
-		decode_ecc_error(shell, error);
-	}
-
-	err = edac_parity_error_log_get(dev, &error);
+	err = parity_error_show(shell, dev);
 	if (err != 0) {
-		shell_error(shell, "Error getting parity error log (err %d)",
-			    err);
 		return err;
 	}
-
-	shell_fprintf(shell, SHELL_NORMAL, "Parity Error Log 0x%llx\n", error);
 
 	shell_fprintf(shell, SHELL_NORMAL,
 		      "Errors correctable: %d Errors uncorrectable %d\n",
@@ -338,8 +361,6 @@ static int cmd_ecc_error_show(const struct shell *shell, size_t argc,
 			      char **argv)
 {
 	const struct device *dev;
-	uint64_t error;
-	int err;
 
 	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
 	if (!device_is_ready(dev)) {
@@ -347,19 +368,7 @@ static int cmd_ecc_error_show(const struct shell *shell, size_t argc,
 		return -ENODEV;
 	}
 
-	err = edac_ecc_error_log_get(dev, &error);
-	if (err != 0) {
-		shell_error(shell, "Error getting error log (err %d)", err);
-		return err;
-	}
-
-	shell_fprintf(shell, SHELL_NORMAL, "ECC Error: 0x%llx\n", error);
-
-	if (error != 0) {
-		decode_ecc_error(shell, error);
-	}
-
-	return err;
+	return ecc_error_show(shell, dev);
 }
 
 static int cmd_ecc_error_clear(const struct shell *shell, size_t argc,
@@ -396,8 +405,6 @@ static int cmd_parity_error_show(const struct shell *shell, size_t argc,
 				 char **argv)
 {
 	const struct device *dev;
-	uint64_t error;
-	int err;
 
 	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
 	if (!device_is_ready(dev)) {
@@ -405,16 +412,7 @@ static int cmd_parity_error_show(const struct shell *shell, size_t argc,
 		return -ENODEV;
 	}
 
-	err = edac_parity_error_log_get(dev, &error);
-	if (err != 0) {
-		shell_error(shell, "Error getting parity error log (err %d)",
-			    err);
-		return err;
-	}
-
-	shell_fprintf(shell, SHELL_NORMAL, "Parity Error: 0x%llx\n", error);
-
-	return 0;
+	return parity_error_show(shell, dev);
 }
 
 static int cmd_parity_error_clear(const struct shell *shell, size_t argc,

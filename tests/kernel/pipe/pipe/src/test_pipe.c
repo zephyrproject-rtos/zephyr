@@ -724,7 +724,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
  *
  * @see k_pipe_put(), k_pipe_get()
  */
-void test_pipe_on_single_elements(void)
+ZTEST_USER(pipe, test_pipe_on_single_elements)
 {
 	/* initialize the tx buffer */
 	for (int i = 0; i < sizeof(tx_buffer); i++) {
@@ -750,7 +750,7 @@ void test_pipe_on_single_elements(void)
  * @ingroup kernel_pipe_tests
  * @see k_pipe_put()
  */
-void test_pipe_on_multiple_elements(void)
+ZTEST_USER(pipe, test_pipe_on_multiple_elements)
 {
 	k_thread_create(&get_single_tid, stack_1, STACK_SIZE,
 			pipe_get_multiple, NULL, NULL, NULL,
@@ -768,7 +768,7 @@ void test_pipe_on_multiple_elements(void)
  * @ingroup kernel_pipe_tests
  * @see k_pipe_put()
  */
-void test_pipe_forever_wait(void)
+ZTEST_USER(pipe, test_pipe_forever_wait)
 {
 	k_thread_create(&get_single_tid, stack_1, STACK_SIZE,
 			pipe_get_forever_wait, NULL, NULL, NULL,
@@ -819,7 +819,7 @@ void test_pipe_forever_wait(void)
  *
  * @see k_pipe_put()
  */
-void test_pipe_timeout(void)
+ZTEST_USER(pipe, test_pipe_timeout)
 {
 	k_thread_create(&get_single_tid, stack_1, STACK_SIZE,
 			pipe_get_timeout, NULL, NULL, NULL,
@@ -837,7 +837,7 @@ void test_pipe_timeout(void)
  * @ingroup kernel_pipe_tests
  * @see k_pipe_get()
  */
-void test_pipe_get_on_empty_pipe(void)
+ZTEST_USER(pipe, test_pipe_get_on_empty_pipe)
 {
 	pipe_get_on_empty_pipe();
 	ztest_test_pass();
@@ -850,7 +850,7 @@ void test_pipe_get_on_empty_pipe(void)
  * @ingroup kernel_pipe_tests
  * @see k_pipe_put()
  */
-void test_pipe_forever_timeout(void)
+ZTEST_USER(pipe, test_pipe_forever_timeout)
 {
 	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(0));
 
@@ -869,7 +869,7 @@ void test_pipe_forever_timeout(void)
  * @ingroup kernel_pipe_tests
  * @see k_pipe_get()
  */
-void test_pipe_get_timeout(void)
+ZTEST_USER(pipe, test_pipe_get_timeout)
 {
 	pipe_put_get_timeout();
 
@@ -881,7 +881,7 @@ void test_pipe_get_timeout(void)
  * @ingroup kernel_pipe_tests
  * @see k_pipe_get()
  */
-void test_pipe_get_invalid_size(void)
+ZTEST_USER(pipe, test_pipe_get_invalid_size)
 {
 	size_t read;
 	int ret;
@@ -900,7 +900,7 @@ void test_pipe_get_invalid_size(void)
  * @ingroup kernel_pipe_tests
  * @see k_pipe_get()
  */
-void test_pipe_get_min_xfer(void)
+ZTEST_USER(pipe, test_pipe_get_min_xfer)
 {
 	int res;
 	size_t bytes_written = 0;
@@ -923,7 +923,7 @@ void test_pipe_get_min_xfer(void)
  * @ingroup kernel_pipe_tests
  * @see k_pipe_put()
  */
-void test_pipe_put_min_xfer(void)
+ZTEST_USER(pipe, test_pipe_put_min_xfer)
 {
 	int res;
 	size_t bytes_written = 0;
@@ -943,6 +943,9 @@ void test_pipe_put_min_xfer(void)
 			 1 /* min_xfer */, K_FOREVER);
 	zassert_equal(res, 0, "did not write min_xfer");
 	zassert_true(bytes_written >= 1, "did not write min_xfer");
+
+	/* flush the pipe so other test can write to this pipe */
+	k_pipe_flush(&test_pipe);
 }
 
 /**
@@ -981,7 +984,7 @@ void test_pipe_put_min_xfer(void)
  *
  * @see k_pipe_init()
  */
-void test_pipe_define_at_runtime(void)
+ZTEST(pipe, test_pipe_define_at_runtime)
 {
 	unsigned char ring_buffer[PIPE_SIZE];
 	struct k_pipe pipe;
@@ -1095,7 +1098,7 @@ void test_pipe_flush_helper(void *p1, void *p2, void *p3)
  * Assumptions and Constraints:
  * - N/A
  */
-void test_pipe_flush(void)
+ZTEST(pipe, test_pipe_flush)
 {
 	unsigned char  results_buffer[50];
 	size_t  bytes_read;

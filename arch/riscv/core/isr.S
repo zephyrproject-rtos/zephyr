@@ -41,39 +41,23 @@
 	op fa6, __z_arch_esf_t_fa6_OFFSET(reg)	 ;\
 	op fa7, __z_arch_esf_t_fa7_OFFSET(reg)	 ;
 
-#define DO_CALLER_SAVED_T0T1(op) \
-	op t0, __z_arch_esf_t_t0_OFFSET(sp)		;\
-	op t1, __z_arch_esf_t_t1_OFFSET(sp)
-
-#if defined(CONFIG_RISCV_ISA_RV32E)
-#define DO_CALLER_SAVED_REST(op) \
-	op t2, __z_arch_esf_t_t2_OFFSET(sp)		;\
-	op a0, __z_arch_esf_t_a0_OFFSET(sp)		;\
-	op a1, __z_arch_esf_t_a1_OFFSET(sp)		;\
-	op a2, __z_arch_esf_t_a2_OFFSET(sp)		;\
-	op a3, __z_arch_esf_t_a3_OFFSET(sp)		;\
-	op a4, __z_arch_esf_t_a4_OFFSET(sp)		;\
-	op a5, __z_arch_esf_t_a5_OFFSET(sp)		;\
-	op tp, __z_arch_esf_t_tp_OFFSET(sp)             ;\
-	op ra, __z_arch_esf_t_ra_OFFSET(sp)
-#else
-#define DO_CALLER_SAVED_REST(op) \
-	op t2, __z_arch_esf_t_t2_OFFSET(sp)		;\
-	op t3, __z_arch_esf_t_t3_OFFSET(sp)		;\
-	op t4, __z_arch_esf_t_t4_OFFSET(sp)		;\
-	op t5, __z_arch_esf_t_t5_OFFSET(sp)		;\
-	op t6, __z_arch_esf_t_t6_OFFSET(sp)		;\
-	op a0, __z_arch_esf_t_a0_OFFSET(sp)		;\
-	op a1, __z_arch_esf_t_a1_OFFSET(sp)		;\
-	op a2, __z_arch_esf_t_a2_OFFSET(sp)		;\
-	op a3, __z_arch_esf_t_a3_OFFSET(sp)		;\
-	op a4, __z_arch_esf_t_a4_OFFSET(sp)		;\
-	op a5, __z_arch_esf_t_a5_OFFSET(sp)		;\
-	op a6, __z_arch_esf_t_a6_OFFSET(sp)		;\
-	op a7, __z_arch_esf_t_a7_OFFSET(sp)		;\
-	op tp, __z_arch_esf_t_tp_OFFSET(sp)             ;\
-	op ra, __z_arch_esf_t_ra_OFFSET(sp)
-#endif /* CONFIG_RISCV_ISA_RV32E */
+#define DO_CALLER_SAVED(op) \
+	RV_E(	op t0, __z_arch_esf_t_t0_OFFSET(sp)	);\
+	RV_E(	op t1, __z_arch_esf_t_t1_OFFSET(sp)	);\
+	RV_E(	op t2, __z_arch_esf_t_t2_OFFSET(sp)	);\
+	RV_I(	op t3, __z_arch_esf_t_t3_OFFSET(sp)	);\
+	RV_I(	op t4, __z_arch_esf_t_t4_OFFSET(sp)	);\
+	RV_I(	op t5, __z_arch_esf_t_t5_OFFSET(sp)	);\
+	RV_I(	op t6, __z_arch_esf_t_t6_OFFSET(sp)	);\
+	RV_E(	op a0, __z_arch_esf_t_a0_OFFSET(sp)	);\
+	RV_E(	op a1, __z_arch_esf_t_a1_OFFSET(sp)	);\
+	RV_E(	op a2, __z_arch_esf_t_a2_OFFSET(sp)	);\
+	RV_E(	op a3, __z_arch_esf_t_a3_OFFSET(sp)	);\
+	RV_E(	op a4, __z_arch_esf_t_a4_OFFSET(sp)	);\
+	RV_E(	op a5, __z_arch_esf_t_a5_OFFSET(sp)	);\
+	RV_I(	op a6, __z_arch_esf_t_a6_OFFSET(sp)	);\
+	RV_I(	op a7, __z_arch_esf_t_a7_OFFSET(sp)	);\
+	RV_E(	op ra, __z_arch_esf_t_ra_OFFSET(sp)	)
 
 #ifdef CONFIG_SMP
 #define GET_CURRENT_CPU(dst, tmp) \
@@ -84,8 +68,6 @@
 #define GET_CURRENT_CPU(dst, tmp) \
 	la dst, _kernel + ___kernel_t_cpus_OFFSET
 #endif
-
-#define ASSUME_EQUAL(x, y)	.if x != y; .err; .endif
 
 /* imports */
 GDATA(_sw_isr_table)
@@ -112,7 +94,7 @@ GDATA(_k_syscall_table)
 #endif
 
 /* exports */
-GTEXT(__irq_wrapper)
+GTEXT(_isr_wrapper)
 
 /* use ABI name of registers for the sake of simplicity */
 
@@ -140,7 +122,7 @@ GTEXT(__irq_wrapper)
 /*
  * Handler called upon each exception/interrupt/fault
  */
-SECTION_FUNC(exception.entry, __irq_wrapper)
+SECTION_FUNC(exception.entry, _isr_wrapper)
 
 #ifdef CONFIG_USERSPACE
 	/*
@@ -153,46 +135,12 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 
 	/* restore privileged stack pointer and zero the scratch reg */
 	csrrw sp, mscratch, sp
-
-#ifdef CONFIG_SMP
-	j 2f
-
-1:	/*
-	 * We were in user space. Determine if it attempted to execute an
-	 * arch_is_user_context() based on mscratch access. We want to return
-	 * to u-mode with t0!=0 as quickly as possible if so.
-	 */
-	addi sp, sp, -__z_arch_esf_t_SIZEOF
-	DO_CALLER_SAVED_T0T1(sr)		;
-	/* First, determine if we had an illegal instruction exception. */
-	csrr t0, mcause
-	li t1, SOC_MCAUSE_EXP_MASK
-	and t0, t0, t1
-	addi t0, t0, -2  /* = 2 = illegal instruction */
-	bnez t0, 3f
-	/* Make sure it was actually a "csrr t0, mscratch" */
-	csrr t0, mepc
-	lw t0, 0(t0)
-	li t1, 0x340022f3
-	bne t0, t1, 3f
-	/* So it was: skip over it and return leaving t0 clobbered. */
-	csrr t0, mepc
-	addi t0, t0, 4
-	csrw mepc, t0
-	lr t1, __z_arch_esf_t_t1_OFFSET(sp)
-	addi sp, sp, __z_arch_esf_t_SIZEOF
-	/* restore user stack pointer and leave */
-	csrrw sp, mscratch, sp
-	mret
-2:
-#endif /* CONFIG_SMP */
 1:
-#endif /* CONFIG_USERSPACE */
+#endif
 
 	/* Save caller-saved registers on current thread stack. */
 	addi sp, sp, -__z_arch_esf_t_SIZEOF
-	DO_CALLER_SAVED_T0T1(sr)		;
-3:	DO_CALLER_SAVED_REST(sr)		;
+	DO_CALLER_SAVED(sr)		;
 
 	/* Save s0 in the esf and load it with &_current_cpu. */
 	sr s0, __z_arch_esf_t_s0_OFFSET(sp)
@@ -213,11 +161,14 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	/* save stack value to be restored later */
 	sr t0, __z_arch_esf_t_sp_OFFSET(sp)
 
-#if !defined(CONFIG_SMP)
-	/* Clear user mode variable */
-	la t0, is_user_mode
-	sw zero, 0(t0)
-#endif
+	/* Make sure tls pointer is sane */
+	lr t0, ___cpu_t_current_OFFSET(s0)
+	lr tp, _thread_offset_to_tls(t0)
+
+	/* Clear our per-thread usermode flag */
+	lui t0, %tprel_hi(is_user_mode)
+	add t0, t0, tp, %tprel_add(is_user_mode)
+	sb zero, %tprel_lo(is_user_mode)(t0)
 #endif
 
 	/* Save MEPC register */
@@ -319,13 +270,21 @@ is_kernel_syscall:
 	/* Determine what to do. Operation code is in t0. */
 	lr t0, __z_arch_esf_t_t0_OFFSET(sp)
 
-	ASSUME_EQUAL(RV_ECALL_RUNTIME_EXCEPT, 0)
+	.if RV_ECALL_RUNTIME_EXCEPT != 0; .err; .endif
 	beqz t0, do_fault
 
 #if defined(CONFIG_IRQ_OFFLOAD)
-	addi t0, t0, -1
-	ASSUME_EQUAL(RV_ECALL_IRQ_OFFLOAD, 1)
-	beqz t0, do_irq_offload
+	li t1, RV_ECALL_IRQ_OFFLOAD
+	beq t0, t1, do_irq_offload
+#endif
+
+#ifdef CONFIG_RISCV_ALWAYS_SWITCH_THROUGH_ECALL
+	li t1, RV_ECALL_SCHEDULE
+	bne t0, t1, skip_schedule
+	lr a0, __z_arch_esf_t_a0_OFFSET(sp)
+	lr a1, __z_arch_esf_t_a1_OFFSET(sp)
+	j reschedule
+skip_schedule:
 #endif
 
 	/* default fault code is K_ERR_KERNEL_OOPS */
@@ -533,7 +492,7 @@ irq_done:
 	call z_check_stack_sentinel
 #endif
 
-reschedule:
+check_reschedule:
 
 	/* Get pointer to current thread on this CPU */
 	lr a1, ___cpu_t_current_OFFSET(s0)
@@ -550,6 +509,8 @@ reschedule:
 	lr a1, 0(sp)
 	addi sp, sp, 16
 	beqz a0, no_reschedule
+
+reschedule:
 
 	/*
 	 * Perform context switch:
@@ -616,12 +577,11 @@ no_fp:	/* make sure this is reflected in the restored mstatus */
 	call z_riscv_pmp_usermode_enable
 #endif
 
-#if !defined(CONFIG_SMP)
-	/* Set user mode variable */
-	li t0, 1
-	la t1, is_user_mode
-	sw t0, 0(t1)
-#endif
+	/* Set our per-thread usermode flag */
+	li t1, 1
+	lui t0, %tprel_hi(is_user_mode)
+	add t0, t0, tp, %tprel_add(is_user_mode)
+	sb t1, %tprel_lo(is_user_mode)(t0)
 
 	/* load scratch reg with stack pointer for next exception entry */
 	add t0, sp, __z_arch_esf_t_SIZEOF
@@ -633,8 +593,7 @@ no_fp:	/* make sure this is reflected in the restored mstatus */
 	lr s0, __z_arch_esf_t_s0_OFFSET(sp)
 
 	/* Restore caller-saved registers from thread stack */
-	DO_CALLER_SAVED_T0T1(lr)
-	DO_CALLER_SAVED_REST(lr)
+	DO_CALLER_SAVED(lr)
 
 #ifdef CONFIG_USERSPACE
 	/* retrieve saved stack pointer */

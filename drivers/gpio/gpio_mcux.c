@@ -261,6 +261,26 @@ static void gpio_mcux_port_isr(const struct device *dev)
 	gpio_fire_callbacks(&data->callbacks, dev, int_status);
 }
 
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_mcux_port_get_direction(const struct device *dev, gpio_port_pins_t map,
+					gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
+{
+	const struct gpio_mcux_config *config = dev->config;
+	GPIO_Type *gpio_base = config->gpio_base;
+
+	map &= config->common.port_pin_mask;
+
+	if (inputs != NULL) {
+		*inputs = map & (~gpio_base->PDDR);
+	}
+
+	if (outputs != NULL) {
+		*outputs = map & gpio_base->PDDR;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_DIRECTION */
 
 static const struct gpio_driver_api gpio_mcux_driver_api = {
 	.pin_configure = gpio_mcux_configure,
@@ -271,6 +291,9 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 	.port_toggle_bits = gpio_mcux_port_toggle_bits,
 	.pin_interrupt_configure = gpio_mcux_pin_interrupt_configure,
 	.manage_callback = gpio_mcux_manage_callback,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_mcux_port_get_direction,
+#endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
 #define GPIO_MCUX_IRQ_INIT(n)						\

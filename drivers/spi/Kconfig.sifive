@@ -3,20 +3,8 @@
 # Copyright (c) 2018 SiFive Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig SPI_SIFIVE
+config SPI_SIFIVE
 	bool "SiFive SPI controller driver"
 	depends on SOC_SERIES_RISCV_SIFIVE_FREEDOM
 	help
 	  Enable the SPI peripherals on SiFive Freedom processors
-
-config SIFIVE_SPI_0_ROM
-	bool "SPI 0 is used to access SPI Flash ROM"
-	default y
-	depends on SPI_SIFIVE
-	help
-	  If enabled, SPI 0 is reserved for accessing the SPI flash ROM and a
-	  driver interface won't be instantiated for SPI 0.
-
-	  Beware disabling this option on HiFive 1! The SPI flash ROM is where the
-	  program is stored, and if this driver initializes the interface for
-	  peripheral control the FE310 will crash on boot.

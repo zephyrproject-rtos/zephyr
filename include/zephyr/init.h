@@ -53,10 +53,23 @@ struct init_entry {
 
 void z_sys_init_run_level(int32_t level);
 
-/* A counter is used to avoid issues when two or more system devices
- * are declared in the same C file with the same init function.
+/**
+ * @def Z_SYS_NAME
+ *
+ * @brief Construct a namespaced identifier for SYS_INIT instance
+ *
+ * @param _name Base unique name
  */
-#define Z_SYS_NAME(_init_fn) _CONCAT(_CONCAT(sys_init_, _init_fn), __COUNTER__)
+#define Z_SYS_NAME(_name) _CONCAT(sys_init_, _name)
+
+/**
+ * @def Z_INIT_ENTRY_NAME
+ *
+ * @brief Construct a namespaced identifier for @ref init_entry instance
+ *
+ * @param _entry_name Base unique name
+ */
+#define Z_INIT_ENTRY_NAME(_entry_name) _CONCAT(__init_, _entry_name)
 
 /**
  * @def Z_INIT_ENTRY_DEFINE
@@ -84,7 +97,7 @@ void z_sys_init_run_level(int32_t level);
  */
 #define Z_INIT_ENTRY_DEFINE(_entry_name, _init_fn, _device, _level, _prio)	\
 	static const Z_DECL_ALIGN(struct init_entry)			\
-		_CONCAT(__init_, _entry_name) __used			\
+		Z_INIT_ENTRY_NAME(_entry_name) __used			\
 	__attribute__((__section__(".z_init_" #_level STRINGIFY(_prio)"_"))) = { \
 		.init = (_init_fn),					\
 		.dev = (_device),					\
@@ -133,7 +146,28 @@ void z_sys_init_run_level(int32_t level);
  * (e.g. CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5).
  */
 #define SYS_INIT(_init_fn, _level, _prio)					\
-	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(_init_fn), _init_fn, NULL, _level, _prio)
+	SYS_INIT_NAMED(_init_fn, _init_fn, _level, _prio)
+
+/**
+ * @def SYS_INIT_NAMED
+ *
+ * @ingroup device_model
+ *
+ * @brief Run an initialization function at boot at specified priority
+ *
+ * @details This macro lets you run a function at system boot.
+ *
+ * @param _name Unique name for SYS_INIT entry. Allows specifying multiple init
+ *              entries that utilise the same function.
+ *
+ * @param _init_fn See @ref SYS_INIT
+ *
+ * @param _level See @ref SYS_INIT
+ *
+ * @param _prio See @ref SYS_INIT
+ */
+#define SYS_INIT_NAMED(_name, _init_fn, _level, _prio)				\
+	Z_INIT_ENTRY_DEFINE(Z_SYS_NAME(_name), _init_fn, NULL, _level, _prio)
 
 #ifdef __cplusplus
 }

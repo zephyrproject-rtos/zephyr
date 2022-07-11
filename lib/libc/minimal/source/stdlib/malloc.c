@@ -94,7 +94,7 @@ void free(void *ptr)
 	(void) sys_mutex_unlock(&z_malloc_heap_mutex);
 }
 
-SYS_INIT(malloc_prepare, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else /* No malloc arena */
 void *malloc(size_t size)
 {

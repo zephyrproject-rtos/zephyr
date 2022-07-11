@@ -57,14 +57,14 @@ static int hmc5883l_sample_fetch(const struct device *dev,
 				 enum sensor_channel chan)
 {
 	struct hmc5883l_data *drv_data = dev->data;
+	const struct hmc5883l_config *config = dev->config;
 	int16_t buf[3];
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	/* fetch magnetometer sample */
-	if (i2c_burst_read(drv_data->i2c,
-			   DT_INST_REG_ADDR(0),
-			   HMC5883L_REG_DATA_START, (uint8_t *)buf, 6) < 0) {
+	if (i2c_burst_read_dt(&config->i2c, HMC5883L_REG_DATA_START,
+			      (uint8_t *)buf, 6) < 0) {
 		LOG_ERR("Failed to fetch magnetometer sample.");
 		return -EIO;
 	}
@@ -87,20 +87,16 @@ static const struct sensor_driver_api hmc5883l_driver_api = {
 int hmc5883l_init(const struct device *dev)
 {
 	struct hmc5883l_data *drv_data = dev->data;
+	const struct hmc5883l_config *config = dev->config;
 	uint8_t chip_cfg[3], id[3], idx;
 
-	drv_data->i2c = device_get_binding(
-		DT_INST_BUS_LABEL(0));
-	if (drv_data->i2c == NULL) {
-		LOG_ERR("Failed to get pointer to %s device.",
-			DT_INST_BUS_LABEL(0));
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("I2C bus device not ready");
+		return -ENODEV;
 	}
 
 	/* check chip ID */
-	if (i2c_burst_read(drv_data->i2c,
-			   DT_INST_REG_ADDR(0),
-			   HMC5883L_REG_CHIP_ID, id, 3) < 0) {
+	if (i2c_burst_read_dt(&config->i2c, HMC5883L_REG_CHIP_ID, id, 3) < 0) {
 		LOG_ERR("Failed to read chip ID.");
 		return -EIO;
 	}
@@ -142,25 +138,35 @@ int hmc5883l_init(const struct device *dev)
 	chip_cfg[1] = drv_data->gain_idx << HMC5883L_GAIN_SHIFT;
 	chip_cfg[2] = HMC5883L_MODE_CONTINUOUS;
 
-	if (i2c_burst_write(drv_data->i2c,
-			    DT_INST_REG_ADDR(0),
-			    HMC5883L_REG_CONFIG_A, chip_cfg, 3) < 0) {
+	if (i2c_burst_write_dt(&config->i2c, HMC5883L_REG_CONFIG_A,
+			       chip_cfg, 3) < 0) {
 		LOG_ERR("Failed to configure chip.");
 		return -EIO;
 	}
 
 #ifdef CONFIG_HMC5883L_TRIGGER
-	if (hmc5883l_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupts.");
-		return -EIO;
+	if (config->int_gpio.port) {
+		if (hmc5883l_init_interrupt(dev) < 0) {
+			LOG_ERR("Failed to initialize interrupts.");
+			return -EIO;
+		}
 	}
 #endif
 
 	return 0;
 }
 
-struct hmc5883l_data hmc5883l_driver;
+#define HMC5883L_DEFINE(inst)									\
+	static struct hmc5883l_data hmc5883l_data_##inst;					\
+												\
+	static const struct hmc5883l_config hmc5883l_config_##inst = {				\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+		IF_ENABLED(CONFIG_HMC5883L_TRIGGER,						\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, hmc5883l_init, NULL,					\
+			      &hmc5883l_data_##inst, &hmc5883l_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &hmc5883l_driver_api);		\
 
-DEVICE_DT_INST_DEFINE(0, hmc5883l_init, NULL,
-		    &hmc5883l_driver, NULL, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &hmc5883l_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(HMC5883L_DEFINE)

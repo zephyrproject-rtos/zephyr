@@ -16,3 +16,6 @@ cbor>=1.0.0
 
 # use for twister
 psutil
+
+# use for adsp runner
+netifaces

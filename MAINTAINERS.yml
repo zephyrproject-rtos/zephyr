@@ -168,6 +168,7 @@ Bluetooth:
     maintainers:
         - jhedberg
     collaborators:
+        - hermabe
         - jori-nordic
         - alwa-nordic
         - Vudentz
@@ -293,6 +294,8 @@ C library:
          - nashif
          - enjiamai
          - KangJianX
+         - keith-packard
+         - cfriedt
     files:
          - lib/libc/
          - tests/lib/c_lib/
@@ -506,6 +509,7 @@ Documentation:
         - alexanderwachter
         - karstenkoenig
         - martinjaeger
+        - str4t0m
     files:
         - doc/hardware/peripherals/canbus/
         - drivers/can/
@@ -686,6 +690,9 @@ Documentation:
     status: maintained
     maintainers:
         - mnkp
+    collaborators:
+        - henrikbrixandersen
+        - cfriedt
     files:
         - doc/hardware/peripherals/gpio.rst
         - drivers/gpio/
@@ -784,6 +791,8 @@ Documentation:
     status: maintained
     maintainers:
         - Mani-Sadhasivam
+    collaborators:
+        - simonguinot
     files:
         - drivers/led/
         - include/zephyr/drivers/led/
@@ -992,6 +1001,22 @@ Documentation:
     labels:
         - "area: Video"
 
+"Drivers: W1":
+    status: maintained
+    maintainers:
+        - str4t0m
+    collaborators:
+        - dp7hgh7
+    files:
+        - doc/hardware/peripherals/w1.rst
+        - drivers/w1/
+        - dts/bindings/w1/
+        - include/zephyr/drivers/w1.h
+        - include/zephyr/drivers/sensor/w1_sensor.h
+        - tests/drivers/w1/
+    labels:
+        - "area: W1"
+
 "Drivers: Watchdog":
     status: odd fixes
     collaborators:
@@ -1157,6 +1182,21 @@ Base OS:
     labels:
         - "area: Base OS"
 
+Laird Connectivity platforms:
+    status: maintained
+    maintainers:
+        - rerickson1
+    collaborators:
+        - greg-leach
+    files:
+        - boards/arm/bl5340_dvk/
+        - boards/arm/bl65*/
+        - boards/arm/bt510/
+        - boards/arm/bt610/
+        - boards/arm/pinnacle_100_dvk/
+    labels:
+        - "platform: Laird Connectivity"
+
 Little FS:
     status: odd fixes
     files:
@@ -1294,7 +1334,6 @@ Networking:
         - samples/net/lwm2m_client/
         - subsys/net/lib/coap/
         - subsys/net/lib/lwm2m/
-        - subsys/net/lib/openthread/
         - subsys/net/lib/tls_credentials/
     labels:
         - "area: Networking"
@@ -1370,7 +1409,6 @@ Networking:
         - pdgendt
     files:
         - subsys/net/l2/openthread/
-        - subsys/net/lib/openthread/
         - samples/net/openthread/
     labels:
         - "area: Networking"
@@ -1396,12 +1434,13 @@ nRF52 BSIM:
         - "platform: nRF52 BSIM"
 
 POSIX API layer:
-    status: odd fixes
+    status: maintained
+    maintainers:
+        - cfriedt
     collaborators:
         - pfalcon
         - enjiamai
         - KangJianX
-        - cfriedt
     files:
         - include/zephyr/posix/
         - lib/posix/
@@ -1505,7 +1544,7 @@ Shields:
 SPARC arch:
     status: odd fixes
     collaborators:
-        - martin-aberg
+        - julius-barendt
     files:
         - arch/sparc/
         - include/zephyr/arch/sparc/
@@ -1533,6 +1572,7 @@ GD32 Platforms:
         - gmarull
     collaborators:
         - soburi
+        - cameled
     files:
         - boards/arm/gd32*/
         - boards/riscv/gd32*/
@@ -1722,6 +1762,7 @@ Renesas R-Car Platforms:
     files:
         - boards/arm/rcar_*/
         - drivers/*/*rcar*
+        - drivers/clock_control/*cpg_mssr*
         - dts/arm/renesas/
         - dts/bindings/*/*rcar*
         - soc/arm/renesas_rcar/
@@ -1976,16 +2017,6 @@ West:
         - manifest-canopennode
         - "area: CAN"
 
-"West project: civetweb":
-    status: obsolete
-    files:
-        - samples/net/civetweb/
-        - modules/Kconfig.civetweb
-    labels:
-        - manifest-civetweb
-        - "area: Networking"
-        - "area: civetweb"
-
 "West project: cmsis":
     status: maintained
     maintainers:
@@ -2194,7 +2225,7 @@ West:
 "West project: hal_telink":
     status: maintained
     maintainers:
-        - yurvyn
+        - andy-liu-telink
     files:
         - modules/Kconfig.telink
     labels:
@@ -2351,9 +2382,20 @@ West:
         - rlubos
     collaborators:
         - pdgendt
-    files: []
+    files:
+        - modules/openthread/
     labels:
         - manifest-openthread
+
+"West project: picolibc":
+    status: maintained
+    maintainers:
+        - keith-packard
+    collaborators:
+        - stephanosio
+    files: []
+    labels:
+        - manifest-picolibc
 
 "West project: segger":
     status: odd fixes
@@ -2515,7 +2557,9 @@ ZTest:
     maintainers:
         - nashif
     collaborators:
+        - aaronemassey
         - jeremybettis
+        - yperess
     files:
         - subsys/testsuite/
         - tests/ztest/

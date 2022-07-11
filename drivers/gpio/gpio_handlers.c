@@ -83,3 +83,23 @@ static inline int z_vrfy_gpio_get_pending_int(const struct device *dev)
 	return z_impl_gpio_get_pending_int((const struct device *)dev);
 }
 #include <syscalls/gpio_get_pending_int_mrsh.c>
+
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static inline int z_vrfy_gpio_port_get_direction(const struct device *dev, gpio_port_pins_t map,
+						 gpio_port_pins_t *inputs,
+						 gpio_port_pins_t *outputs)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(dev, port_get_direction));
+
+	if (inputs != NULL) {
+		Z_OOPS(Z_SYSCALL_MEMORY_WRITE(inputs, sizeof(gpio_port_pins_t)));
+	}
+
+	if (outputs != NULL) {
+		Z_OOPS(Z_SYSCALL_MEMORY_WRITE(outputs, sizeof(gpio_port_pins_t)));
+	}
+
+	return z_impl_gpio_port_get_direction(dev, map, inputs, outputs);
+}
+#include <syscalls/gpio_port_get_direction_mrsh.c>
+#endif /* CONFIG_GPIO_GET_DIRECTION */

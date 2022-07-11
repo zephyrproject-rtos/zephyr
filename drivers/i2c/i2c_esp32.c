@@ -253,7 +253,7 @@ static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
 	const struct i2c_esp32_config *config = dev->config;
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
-	if (!(dev_config & I2C_MODE_MASTER)) {
+	if (!(dev_config & I2C_MODE_CONTROLLER)) {
 		LOG_ERR("Only I2C Master mode supported.");
 		return -ENOTSUP;
 	}
@@ -763,7 +763,7 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 	}, \
 	.irq_source = ETS_I2C_EXT##idx##_INTR_SOURCE,	\
 	.bitrate = I2C_FREQUENCY(idx),	\
-	.default_config = I2C_MODE_MASTER,				\
+	.default_config = I2C_MODE_CONTROLLER,				\
 	};								       \
 	I2C_DEVICE_DT_DEFINE(DT_NODELABEL(i2c##idx),					       \
 		      i2c_esp32_init,					       \

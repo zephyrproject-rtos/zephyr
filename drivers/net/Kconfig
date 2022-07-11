@@ -23,10 +23,6 @@ config NET_PPP_ASYNC_UART
 	depends on UART_ASYNC_API
 	depends on !GSM_MUX
 
-config NET_PPP_UART_NAME
-	string "UART device name the PPP is connected to"
-	depends on !MODEM_GSM_PPP
-
 config NET_PPP_DRV_NAME
 	string "PPP Driver name"
 	default "ppp"

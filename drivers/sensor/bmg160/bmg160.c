@@ -20,14 +20,12 @@
 
 LOG_MODULE_REGISTER(BMG160, CONFIG_SENSOR_LOG_LEVEL);
 
-struct bmg160_device_data bmg160_data;
-
 static inline int bmg160_bus_config(const struct device *dev)
 {
 	const struct bmg160_device_config *dev_cfg = dev->config;
 	uint32_t i2c_cfg;
 
-	i2c_cfg = I2C_MODE_MASTER | I2C_SPEED_SET(BMG160_BUS_SPEED);
+	i2c_cfg = I2C_MODE_CONTROLLER | I2C_SPEED_SET(BMG160_BUS_SPEED);
 
 	return i2c_configure(dev_cfg->i2c.bus, i2c_cfg);
 }
@@ -136,6 +134,7 @@ static int bmg160_attr_set(const struct device *dev, enum sensor_channel chan,
 			   const struct sensor_value *val)
 {
 	struct bmg160_device_data *bmg160 = dev->data;
+	const struct bmg160_device_config *config = dev->config;
 	int idx;
 	uint16_t range_dps;
 
@@ -184,6 +183,10 @@ static int bmg160_attr_set(const struct device *dev, enum sensor_channel chan,
 #ifdef CONFIG_BMG160_TRIGGER
 	case SENSOR_ATTR_SLOPE_TH:
 	case SENSOR_ATTR_SLOPE_DUR:
+		if (!config->int_gpio.port) {
+			return -ENOTSUP;
+		}
+
 		return bmg160_slope_config(dev, attr, val);
 #endif
 	default:
@@ -327,19 +330,26 @@ int bmg160_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_BMG160_TRIGGER
-	bmg160_trigger_init(dev);
+	if (cfg->int_gpio.port) {
+		bmg160_trigger_init(dev);
+	}
 #endif
 
 	return 0;
 }
 
-static const struct bmg160_device_config bmg160_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-	IF_ENABLED(CONFIG_BMG160_TRIGGER,
-		   (.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),))
-};
+#define BMG160_DEFINE(inst)									\
+	static struct bmg160_device_data bmg160_data_##inst;					\
+												\
+	static const struct bmg160_device_config bmg160_config_##inst = {			\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+		IF_ENABLED(CONFIG_BMG160_TRIGGER,						\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
+												\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, bmg160_init, NULL,						\
+			      &bmg160_data_##inst, &bmg160_config_##inst,			\
+			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &bmg160_api);		\
 
-DEVICE_DT_INST_DEFINE(0, bmg160_init, NULL,
-		    &bmg160_data,
-		    &bmg160_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &bmg160_api);
+DT_INST_FOREACH_STATUS_OKAY(BMG160_DEFINE)

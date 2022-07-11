@@ -3,6 +3,10 @@
 zephyr_system_include_directories(include)
 
 zephyr_library()
+
+set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
+set(STRERROR_TABLE_H ${GEN_DIR}/libc/minimal/strerror_table.h)
+
 zephyr_library_sources(
   source/stdlib/abort.c
   source/stdlib/atoi.c
@@ -14,6 +18,7 @@ zephyr_library_sources(
   source/stdlib/bsearch.c
   source/stdlib/exit.c
   source/stdlib/qsort.c
+  source/string/strerror.c
   source/string/strncasecmp.c
   source/string/strstr.c
   source/string/string.c
@@ -23,6 +28,7 @@ zephyr_library_sources(
   source/stdout/fprintf.c
   source/math/sqrtf.c
   source/math/sqrt.c
+  ${STRERROR_TABLE_H}
 )
 
 if(CONFIG_MINIMAL_LIBC_TIME)
@@ -31,3 +37,14 @@ if(CONFIG_MINIMAL_LIBC_TIME)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_MINIMAL_LIBC_RAND source/stdlib/rand.c)
+
+add_custom_command(
+  OUTPUT ${STRERROR_TABLE_H}
+  COMMAND
+  ${PYTHON_EXECUTABLE}
+  ${ZEPHYR_BASE}/scripts/gen_strerror_table.py
+  -i include/errno.h
+  -o ${STRERROR_TABLE_H}
+  DEPENDS include/errno.h
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)

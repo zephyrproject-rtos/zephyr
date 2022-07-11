@@ -1,7 +1,12 @@
 # Copyright (c) 2018, SiFive Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Sifive SPI controller
+description: |
+  Sifive SPI controller.
+
+  Note: First instance of the Sifive SPI controller (spi0) must be kept
+  disabled if used to access SPI Flash ROM. Failing to do so could result in
+  crashes during boot time.
 
 compatible: "sifive,spi0"
 

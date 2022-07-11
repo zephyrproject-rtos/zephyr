@@ -125,6 +125,14 @@
 			status = "disabled";
 		};
 
+		wdt0: watchdog@40058000 {
+			compatible = "raspberrypi,pico-watchdog";
+			reg = <0x40058000 DT_SIZE_K(4)>;
+			clocks = <&xtal_clk>;
+			label = "WDT_0";
+			status = "disabled";
+		};
+
 		usbd: usbd@50100000 {
 			compatible = "raspberrypi,pico-usbd";
 			reg = <0x50100000 0x10000>;
@@ -134,6 +142,18 @@
 			num-bidir-endpoints = <16>;
 			label = "USBD";
 			status = "disabled";
+		};
+
+		pwm: pwm@40050000 {
+			compatible = "raspberrypi,pico-pwm";
+			reg = <0x40050000 DT_SIZE_K(4)>;
+			resets = <&reset RPI_PICO_RESETS_RESET_PWM>;
+			clocks = <&system_clk>;
+			interrupts = <4 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "PWM_IRQ_WRAP";
+			label = "PWM_0";
+			status = "disabled";
+			#pwm-cells = <3>;
 		};
 	};
 };

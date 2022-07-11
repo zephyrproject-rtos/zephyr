@@ -213,7 +213,20 @@ do {                                                                    \
 #define __may_alias     __attribute__((__may_alias__))
 
 #ifndef __printf_like
+#ifdef CONFIG_ENFORCE_ZEPHYR_STDINT
 #define __printf_like(f, a)   __attribute__((format (printf, f, a)))
+#else
+/*
+ * The Zephyr stdint convention enforces int32_t = int, int64_t = long long,
+ * and intptr_t = long so that short string format length modifiers can be
+ * used universally across ILP32 and LP64 architectures. Without that it
+ * is possible for ILP32 toolchains to have int32_t = long and intptr_t = int
+ * clashing with the Zephyr convention and generating pointless warnings
+ * as they're still the same size. Inhibit the format argument type
+ * validation in that case and let the other configs do it.
+ */
+#define __printf_like(f, a)
+#endif
 #endif
 
 #define __used		__attribute__((__used__))

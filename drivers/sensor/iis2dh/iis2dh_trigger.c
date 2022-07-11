@@ -42,8 +42,13 @@ int iis2dh_trigger_set(const struct device *dev,
 		       sensor_trigger_handler_t handler)
 {
 	struct iis2dh_data *iis2dh = dev->data;
+	const struct iis2dh_device_config *cfg = dev->config;
 	int16_t raw[3];
 	int state = (handler != NULL) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
+
+	if (!cfg->int_gpio.port) {
+		return -ENOTSUP;
+	}
 
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
@@ -81,13 +86,11 @@ static int iis2dh_handle_drdy_int(const struct device *dev)
  */
 static void iis2dh_handle_interrupt(const struct device *dev)
 {
-	struct iis2dh_data *iis2dh = dev->data;
 	const struct iis2dh_device_config *cfg = dev->config;
 
 	iis2dh_handle_drdy_int(dev);
 
-	gpio_pin_interrupt_configure(iis2dh->gpio, cfg->int_gpio_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 static void iis2dh_gpio_callback(const struct device *dev,
@@ -95,13 +98,13 @@ static void iis2dh_gpio_callback(const struct device *dev,
 {
 	struct iis2dh_data *iis2dh =
 		CONTAINER_OF(cb, struct iis2dh_data, gpio_cb);
+	const struct iis2dh_device_config *cfg = iis2dh->dev->config;
 
-	if ((pins & BIT(iis2dh->gpio_pin)) == 0U) {
+	if ((pins & BIT(cfg->int_gpio.pin)) == 0U) {
 		return;
 	}
 
-	gpio_pin_interrupt_configure(dev, iis2dh->gpio_pin,
-				     GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_DISABLE);
 
 #if defined(CONFIG_IIS2DH_TRIGGER_OWN_THREAD)
 	k_sem_give(&iis2dh->gpio_sem);
@@ -136,12 +139,9 @@ int iis2dh_init_interrupt(const struct device *dev)
 	const struct iis2dh_device_config *cfg = dev->config;
 	int ret;
 
-	/* setup data ready gpio interrupt */
-	iis2dh->gpio = device_get_binding(cfg->int_gpio_port);
-	if (iis2dh->gpio == NULL) {
-		LOG_DBG("Cannot get pointer to %s device",
-			    cfg->int_gpio_port);
-		return -EINVAL;
+	if (!device_is_ready(cfg->int_gpio.port)) {
+		LOG_ERR("%s: device %s is not ready", dev->name, cfg->int_gpio.port->name);
+		return -ENODEV;
 	}
 
 	iis2dh->dev = dev;
@@ -158,10 +158,7 @@ int iis2dh_init_interrupt(const struct device *dev)
 	iis2dh->work.handler = iis2dh_work_cb;
 #endif /* CONFIG_IIS2DH_TRIGGER_OWN_THREAD */
 
-	iis2dh->gpio_pin = cfg->int_gpio_pin;
-
-	ret = gpio_pin_configure(iis2dh->gpio, cfg->int_gpio_pin,
-				 GPIO_INPUT | cfg->int_gpio_flags);
+	ret = gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
 		LOG_DBG("Could not configure gpio");
 		return ret;
@@ -169,9 +166,9 @@ int iis2dh_init_interrupt(const struct device *dev)
 
 	gpio_init_callback(&iis2dh->gpio_cb,
 			   iis2dh_gpio_callback,
-			   BIT(cfg->int_gpio_pin));
+			   BIT(cfg->int_gpio.pin));
 
-	if (gpio_add_callback(iis2dh->gpio, &iis2dh->gpio_cb) < 0) {
+	if (gpio_add_callback(cfg->int_gpio.port, &iis2dh->gpio_cb) < 0) {
 		LOG_DBG("Could not set gpio callback");
 		return -EIO;
 	}
@@ -181,6 +178,5 @@ int iis2dh_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	return gpio_pin_interrupt_configure(iis2dh->gpio, cfg->int_gpio_pin,
-					    GPIO_INT_EDGE_TO_ACTIVE);
+	return gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }

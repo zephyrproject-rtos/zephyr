@@ -32,9 +32,10 @@ tests:
       - fatfs
     depends_on: usb_device
     filter: dt_compat_enabled("nordic,qspi-nor")
+    platform_allow: nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp adafruit_feather_nrf52840
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
-        - CONFIG_APP_MSC_STORAGE_FLASH_LITTLEFS=y
+        - CONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
     tags: msd usb
     harness: console
     harness_config:
@@ -62,9 +63,10 @@ tests:
     min_ram: 32
     depends_on: usb_device
     filter: dt_compat_enabled("nordic,qspi-nor")
+    platform_allow: nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp adafruit_feather_nrf52840
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
-        - CONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
+        - CONFIG_APP_MSC_STORAGE_FLASH_LITTLEFS=y
     tags: msd usb
     harness: console
     harness_config:

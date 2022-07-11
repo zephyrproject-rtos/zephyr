@@ -19,7 +19,9 @@ static struct bt_codec *g_remote_codecs[CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT
 static struct bt_audio_ep *g_sinks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
 
 /* Mandatory support preset by both client and server */
-static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_UNICAST_PRESET_16_2_1;
+static struct bt_audio_lc3_preset preset_16_2_1 =
+	BT_AUDIO_LC3_UNICAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
+					   BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 CREATE_FLAG(flag_connected);
 CREATE_FLAG(flag_mtu_exchanged);

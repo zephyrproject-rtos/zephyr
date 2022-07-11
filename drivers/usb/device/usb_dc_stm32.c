@@ -279,10 +279,10 @@ static int usb_dc_stm32_clock_enable(void)
 	 */
 	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
 		switch (sys_clock_hw_cycles_per_sec()) {
-		case 48000000U:
+		case MHZ(48):
 			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL_DIV_2);
 			break;
-		case 72000000U:
+		case MHZ(72):
 			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL_DIV_3);
 			break;
 		default:
@@ -293,8 +293,28 @@ static int usb_dc_stm32_clock_enable(void)
 		LOG_ERR("Unable to set USB clock source (not using PLL1)");
 		return -EIO;
 	}
-
-#endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE / RCC_CFGR_OTGFSPRE */
+#elif defined(RCC_CFGR_USBPRE)
+	/* on other STM32F1 family SOCs, we have a simple /1 or /1.5 divider on
+	 * the back of the RCC.  Similar strategy to the above, but we use the
+	 * correct flags
+	 */
+	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
+		switch (sys_clock_hw_cycles_per_sec()) {
+		case MHZ(48):
+			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL);
+			break;
+		case MHZ(72):
+			LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL_DIV_1_5);
+			break;
+		default:
+			LOG_ERR("Unable to set USB clock source (incompatible PLLCLK rate)");
+			return -EIO;
+		}
+	} else {
+		LOG_ERR("Unable to set USB clock source (not using PLL1)");
+		return -EIO;
+	}
+#endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE / RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
 
 	if (clock_control_on(clk, (clock_control_subsys_t *)&pclken) != 0) {
 		LOG_ERR("Unable to enable USB clock");
@@ -305,9 +325,16 @@ static int usb_dc_stm32_clock_enable(void)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc)
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* Disable ULPI interface (for external high-speed PHY) clock in sleep
+	 * mode.
+	 */
+	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
 #else
-	/* Disable ULPI interface (for external high-speed PHY) clock */
-	LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+	/* Disable ULPI interface (for external high-speed PHY) clock in low
+	 * power mode. It is disabled by default in run power mode, no need to
+	 * disable it.
+	 */
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 #endif
 #endif
@@ -392,15 +419,15 @@ static int usb_dc_stm32_init(void)
 #endif /* CONFIG_USB_DEVICE_SOF */
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
-	/* Currently assuming FS mode. Need to disable the ULPI clock on USB2 and
-	 * enable the FS clock. Need to make this dependent on HS or FS config.
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
+	/* The USB2 controller only works in FS mode, but the ULPI clock needs
+	 * to be disabled in sleep mode for it to work. For the USB1
+	 * controller, as it is an HS one, the clock is disabled in the common
+	 * path.
 	 */
 
-	LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_USB2OTGHSULPI);
 	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB2OTGHSULPI);
-
-	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_USB2OTGHS);
-	LL_AHB1_GRP1_EnableClockSleep(LL_AHB1_GRP1_PERIPH_USB2OTGHS);
+#endif
 
 	LL_PWR_EnableUSBVoltageDetector();
 
@@ -1102,14 +1129,9 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 #if (defined(USB) || defined(USB_DRD_FS)) && DT_INST_NODE_HAS_PROP(0, disconnect_gpios)
 void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
 {
-	const struct device *usb_disconnect;
+	struct gpio_dt_spec usb_disconnect = GPIO_DT_SPEC_INST_GET(0, disconnect_gpios);
 
-	usb_disconnect = device_get_binding(
-				DT_GPIO_LABEL(DT_INST(0, st_stm32_usb), disconnect_gpios));
-
-	gpio_pin_configure(usb_disconnect,
-			   DT_GPIO_PIN(DT_INST(0, st_stm32_usb), disconnect_gpios),
-			   DT_GPIO_FLAGS(DT_INST(0, st_stm32_usb), disconnect_gpios) |
+	gpio_pin_configure_dt(&usb_disconnect,
 			   (state ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE));
 }
 #endif /* USB && DT_INST_NODE_HAS_PROP(0, disconnect_gpios) */

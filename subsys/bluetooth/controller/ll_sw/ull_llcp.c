@@ -26,8 +26,14 @@
 #include "lll.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
 
 #include "ull_tx_queue.h"
+
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
+#include "ull_conn_iso_internal.h"
 
 #include "ull_internal.h"
 #include "ull_conn_types.h"
@@ -92,6 +98,18 @@ void llcp_proc_ctx_release(struct proc_ctx *ctx)
 }
 
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
+/*
+ * @brief Update 'global' tx buffer allowance
+ */
+void ull_cp_update_tx_buffer_queue(struct ll_conn *conn)
+{
+	if (conn->llcp.tx_buffer_alloc > CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM) {
+		common_tx_buffer_alloc -= (conn->llcp.tx_buffer_alloc -
+					   CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM);
+	}
+}
+
+
 /*
  * @brief Check for per conn pre-allocated tx buffer allowance
  * @return true if buffer is available
@@ -159,8 +177,8 @@ void llcp_tx_alloc_unpeek(struct proc_ctx *ctx)
  */
 struct node_tx *llcp_tx_alloc(struct ll_conn *conn, struct proc_ctx *ctx)
 {
-#if (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0)
 	conn->llcp.tx_buffer_alloc++;
+#if (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0)
 	if (conn->llcp.tx_buffer_alloc > CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM) {
 		common_tx_buffer_alloc++;
 		/* global buffer allocated, so we're at the head and should just pop head */
@@ -239,16 +257,21 @@ void llcp_tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
 
 void llcp_tx_pause_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask pause_mask)
 {
-	if ((conn->llcp.tx_q_pause_data_mask & pause_mask) == 0) {
-		conn->llcp.tx_q_pause_data_mask |= pause_mask;
+	/* Only pause the TX Q if we have not already paused it (by any procedure) */
+	if (conn->llcp.tx_q_pause_data_mask == 0) {
 		ull_tx_q_pause_data(&conn->tx_q);
 	}
+
+	/* Add the procedure that paused data */
+	conn->llcp.tx_q_pause_data_mask |= pause_mask;
 }
 
 void llcp_tx_resume_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask resume_mask)
 {
+	/* Remove the procedure that paused data */
 	conn->llcp.tx_q_pause_data_mask &= ~resume_mask;
 
+	/* Only resume the TX Q if we have removed all procedures that paused data */
 	if (conn->llcp.tx_q_pause_data_mask == 0) {
 		ull_tx_q_resume_data(&conn->tx_q);
 	}
@@ -341,6 +364,11 @@ struct proc_ctx *llcp_create_local_procedure(enum llcp_proc proc)
 		llcp_lp_comm_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	case PROC_CIS_TERMINATE:
+		llcp_lp_comm_init_proc(ctx);
+		break;
+#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -412,6 +440,17 @@ struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc)
 		llcp_rp_comm_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	case PROC_CIS_CREATE:
+		llcp_rp_cc_init_proc(ctx);
+		break;
+#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_PERIPHERAL_ISO */
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	case PROC_CIS_TERMINATE:
+		llcp_rp_comm_init_proc(ctx);
+		break;
+#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -494,9 +533,7 @@ void ull_llcp_init(struct ll_conn *conn)
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
-#if (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0)
 	conn->llcp.tx_buffer_alloc = 0;
-#endif /* (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0) */
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
 	conn->llcp.tx_q_pause_data_mask = 0;
@@ -506,15 +543,13 @@ void ull_llcp_init(struct ll_conn *conn)
 void ull_cp_release_tx(struct ll_conn *conn, struct node_tx *tx)
 {
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
-#if (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0)
-	if (conn->llcp.tx_buffer_alloc > CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM) {
-		common_tx_buffer_alloc--;
+	if (conn) {
+		LL_ASSERT(conn->llcp.tx_buffer_alloc > 0);
+		if (conn->llcp.tx_buffer_alloc > CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM) {
+			common_tx_buffer_alloc--;
+		}
+		conn->llcp.tx_buffer_alloc--;
 	}
-	conn->llcp.tx_buffer_alloc--;
-#else /* CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0 */
-	ARG_UNUSED(conn);
-	common_tx_buffer_alloc--;
-#endif /* CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0 */
 #else /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 	ARG_UNUSED(conn);
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
@@ -788,6 +823,31 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 
 	return BT_HCI_ERR_SUCCESS;
 }
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+uint8_t ull_cp_cis_terminate(struct ll_conn *conn,
+			     struct ll_conn_iso_stream *cis,
+			     uint8_t error_code)
+{
+	struct proc_ctx *ctx;
+
+	if (conn->lll.handle != cis->lll.acl_handle) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	ctx = llcp_create_local_procedure(PROC_CIS_TERMINATE);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	ctx->data.cis_term.cig_id = cis->group->cig_id;
+	ctx->data.cis_term.cis_id = cis->cis_id;
+	ctx->data.cis_term.error_code = error_code;
+
+	llcp_lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
 
 #if defined(CONFIG_BT_CENTRAL)
 uint8_t ull_cp_chan_map_update(struct ll_conn *conn, const uint8_t chm[5])
@@ -1034,6 +1094,53 @@ void ull_cp_cte_req_set_disable(struct ll_conn *conn)
 	conn->llcp.cte_req.req_interval = 0U;
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+bool ull_cp_cc_awaiting_reply(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_rr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		return llcp_rp_cc_awaiting_reply(ctx);
+	}
+
+	return false;
+
+}
+
+uint16_t ull_cp_cc_ongoing_handle(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_rr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		return ctx->data.cis_create.cis_handle;
+	}
+
+	return 0xFFFF;
+}
+
+void ull_cp_cc_accept(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_rr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		llcp_rp_cc_accept(conn, ctx);
+	}
+}
+
+void ull_cp_cc_reject(struct ll_conn *conn, uint8_t error_code)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_rr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		ctx->data.cis_create.error = error_code;
+		llcp_rp_cc_reject(conn, ctx);
+	}
+}
+#endif /* defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
 
 static bool pdu_is_expected(struct pdu_data *pdu, struct proc_ctx *ctx)
 {
@@ -1615,6 +1722,13 @@ uint16_t ctx_buffers_free(void)
 {
 	return local_ctx_buffers_free() + remote_ctx_buffers_free();
 }
+
+#if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
+uint8_t common_tx_buffer_alloc_count(void)
+{
+	return common_tx_buffer_alloc;
+}
+#endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
 void test_int_mem_proc_ctx(void)
 {

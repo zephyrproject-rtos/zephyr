@@ -175,10 +175,9 @@ static int stts751_init(const struct device *dev)
 
 	data->dev = dev;
 
-	data->bus = device_get_binding(config->master_dev_name);
-	if (!data->bus) {
-		LOG_DBG("bus master not found: %s", config->master_dev_name);
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
 	config->bus_init(dev);
@@ -189,32 +188,31 @@ static int stts751_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_STTS751_TRIGGER
-	if (stts751_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupt.");
-		return -EIO;
+	if (config->int_gpio.port) {
+		if (stts751_init_interrupt(dev) < 0) {
+			LOG_ERR("Failed to initialize interrupt.");
+			return -EIO;
+		}
 	}
 #endif
 
 	return 0;
 }
 
-static struct stts751_data stts751_data;
+#define STTS751_DEFINE(inst)									\
+	static struct stts751_data stts751_data_##inst;						\
+												\
+	static const struct stts751_config stts751_config_##inst = {				\
+		COND_CODE_1(DT_INST_ON_BUS(inst, i2c),						\
+			    (.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+			     .bus_init = stts751_i2c_init,),					\
+			    ())									\
+		IF_ENABLED(CONFIG_STTS751_TRIGGER,						\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),))	\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, stts751_init, NULL,						\
+			      &stts751_data_##inst, &stts751_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &stts751_api_funcs);			\
 
-static const struct stts751_config stts751_config = {
-	.master_dev_name = DT_INST_BUS_LABEL(0),
-#ifdef CONFIG_STTS751_TRIGGER
-	.event_port	= DT_INST_GPIO_LABEL(0, drdy_gpios),
-	.event_pin	= DT_INST_GPIO_PIN(0, drdy_gpios),
-	.int_flags	= DT_INST_GPIO_FLAGS(0, drdy_gpios),
-#endif
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	.bus_init = stts751_i2c_init,
-	.i2c_slv_addr = DT_INST_REG_ADDR(0),
-#else
-#error "BUS MACRO NOT DEFINED IN DTS"
-#endif
-};
-
-DEVICE_DT_INST_DEFINE(0, stts751_init, NULL,
-		    &stts751_data, &stts751_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &stts751_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(STTS751_DEFINE)

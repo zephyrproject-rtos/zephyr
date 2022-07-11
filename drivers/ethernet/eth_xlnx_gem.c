@@ -829,15 +829,7 @@ static void eth_xlnx_gem_configure_clocks(const struct device *dev)
 			((div1 & ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR_MASK) <<
 			ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR1_SHIFT);
 
-	/*
-	 * SLCR must be unlocked prior to and locked after writing to
-	 * the clock configuration register.
-	 */
-	sys_write32(ETH_XLNX_SLCR_UNLOCK_KEY,
-		    ETH_XLNX_SLCR_UNLOCK_REGISTER_ADDRESS);
 	sys_write32(clk_ctrl_reg, dev_conf->clk_ctrl_reg_address);
-	sys_write32(ETH_XLNX_SLCR_LOCK_KEY,
-		    ETH_XLNX_SLCR_LOCK_REGISTER_ADDRESS);
 #endif /* CONFIG_SOC_XILINX_ZYNQMP / CONFIG_SOC_FAMILY_XILINX_ZYNQ7000 */
 
 	LOG_DBG("%s set clock dividers div0/1 %u/%u for target "

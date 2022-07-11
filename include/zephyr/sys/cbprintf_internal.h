@@ -505,6 +505,43 @@ do { \
 	> ::type
 
 /*
+ * Get the type of elements in an array.
+ */
+#define Z_CBPRINTF_CXX_ARG_ARRAY_TYPE(arg) \
+	z_cbprintf_cxx_remove_cv < \
+		z_cbprintf_cxx_remove_extent < decltype(arg) > ::type \
+	> ::type
+
+/*
+ * Determine if incoming type is char.
+ */
+#define Z_CBPRINTF_CXX_ARG_IS_TYPE_CHAR(type) \
+	(z_cbprintf_cxx_is_same_type < type, \
+	 char > :: value ? \
+	 true : \
+	 (z_cbprintf_cxx_is_same_type < type, \
+	  const char > :: value ? \
+	  true : \
+	  (z_cbprintf_cxx_is_same_type < type, \
+	   volatile char > :: value ? \
+	   true : \
+	   (z_cbprintf_cxx_is_same_type < type, \
+	    const volatile char > :: value ? \
+	    true : \
+	    false))))
+
+/*
+ * Figure out if this is a char array since (char *) and (char[])
+ * are of different types in C++.
+ */
+#define Z_CBPRINTF_CXX_ARG_IS_CHAR_ARRAY(arg) \
+	(z_cbprintf_cxx_is_array < decltype(arg) > :: value ? \
+	 (Z_CBPRINTF_CXX_ARG_IS_TYPE_CHAR(Z_CBPRINTF_CXX_ARG_ARRAY_TYPE(arg)) ? \
+	  true : \
+	  false) : \
+	 false)
+
+/*
  * Note that qualifiers of char * must be explicitly matched
  * due to type matching in C++, where remove_cv() does not work.
  */
@@ -560,7 +597,9 @@ do { \
 			 (z_cbprintf_cxx_is_same_type < Z_CBPRINTF_ARG_REMOVE_QUAL(arg), \
 			  const volatile char * > :: value ? \
 			  CBPRINTF_PACKAGE_ARG_TYPE_PTR_CHAR : \
-			  CBPRINTF_PACKAGE_ARG_TYPE_PTR_VOID)))))))))))))))))
+			  (Z_CBPRINTF_CXX_ARG_IS_CHAR_ARRAY(arg) ? \
+			   CBPRINTF_PACKAGE_ARG_TYPE_PTR_CHAR : \
+			   CBPRINTF_PACKAGE_ARG_TYPE_PTR_VOID))))))))))))))))))
 #else
 #define Z_CBPRINTF_ARG_TYPE(arg) \
 	_Generic(arg, \

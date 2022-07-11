@@ -198,27 +198,6 @@ config IPM_CONSOLE_LINE_BUF_LEN
 	  IPM console line buffer length specify amount of the buffer
 	  where characters are stored before sending the whole line.
 
-config UART_PIPE
-	bool "Pipe UART driver"
-	select UART_INTERRUPT_DRIVEN
-	help
-	  Enable pipe UART driver. This driver allows application to communicate
-	  over UART with custom defined protocol. Driver doesn't inspect received
-	  data (as contrary to console UART driver) and all aspects of received
-	  protocol data are handled by application provided callback.
-
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_UART_PIPE := zephyr,uart-pipe
-
-config UART_PIPE_ON_DEV_NAME
-	string "Device Name of UART Device for pipe UART"
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_UART_PIPE))" if HAS_DTS
-	default "UART_0"
-	depends on UART_PIPE
-	help
-	  This option specifies the name of UART device to be used
-	  for pipe UART.
-
 config UART_MCUMGR
 	bool "Mcumgr UART driver"
 	select UART_INTERRUPT_DRIVEN
@@ -384,5 +363,10 @@ config UART_MUX_VERBOSE_DEBUG
 	  As there might be lot of debug output printed, only enable
 	  this if really needed.
 
+config EFI_CONSOLE
+	bool "Use EFI console for console output"
+	select CONSOLE_HAS_DRIVER
+	help
+	  Enable this option to use EFI console output.
 
 endif # CONSOLE

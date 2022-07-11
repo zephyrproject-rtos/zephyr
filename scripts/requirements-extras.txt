@@ -9,6 +9,9 @@ gitlint
 # helper for developers
 junit2html
 
+# helper for developers - code formatter
+clang-format>=1.12x
+
 # Script used to build firmware images for NXP LPC MCUs.
 lpc_checksum
 
@@ -19,7 +22,7 @@ Pillow
 imgtool>=1.7.1
 
 # used by nanopb module to generate sources from .proto files
-protobuf
+grpcio-tools
 
 # used by scripts/release/bug_bash.py for generating top ten bug squashers
 PyGithub

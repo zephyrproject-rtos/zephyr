@@ -9,25 +9,22 @@
 #include <zephyr/drivers/gpio.h>
 #include "board.h"
 
+#define ANT_UFLn_GPIO_SPEC	GPIO_DT_SPEC_GET(DT_NODELABEL(sky13351), vctl1_gpios)
+
 static inline void external_antenna(bool on)
 {
-	const struct device *gpio_dev;
+	struct gpio_dt_spec ufl_gpio = ANT_UFLn_GPIO_SPEC;
 
 	/*
 	 * On power-up the SKY13351 is left uncontrolled, so neither
 	 * PCB nor external antenna is selected.  Select the PCB
 	 * antenna.
 	 */
-	gpio_dev = device_get_binding(ANT_UFLn_GPIO_NAME);
-	if (!gpio_dev) {
+	if (!device_is_ready(ufl_gpio.port)) {
 		return;
 	}
 
-	gpio_pin_configure(gpio_dev, ANT_UFLn_GPIO_PIN,
-			   ANT_UFLn_GPIO_FLAGS
-			   | (on
-			      ? GPIO_OUTPUT_ACTIVE
-			      : GPIO_OUTPUT_INACTIVE));
+	gpio_pin_configure_dt(&ufl_gpio, (on ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE));
 }
 
 static int board_particle_boron_init(const struct device *dev)
@@ -40,8 +37,8 @@ static int board_particle_boron_init(const struct device *dev)
 	const struct device *gpio_dev;
 
 	/* Enable the serial buffer for SARA-R4 modem */
-	gpio_dev = device_get_binding(SERIAL_BUFFER_ENABLE_GPIO_NAME);
-	if (!gpio_dev) {
+	gpio_dev = DEVICE_DT_GET(SERIAL_BUFFER_ENABLE_GPIO_NODE);
+	if (!device_is_ready(gpio_dev)) {
 		return -ENODEV;
 	}
 

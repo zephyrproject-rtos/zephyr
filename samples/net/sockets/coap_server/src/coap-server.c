@@ -101,7 +101,7 @@ static bool join_coap_multicast_group(void)
 	ret = net_ipv6_mld_join(iface, &mcast_addr.sin6_addr);
 	if (ret < 0) {
 		LOG_ERR("Cannot join %s IPv6 multicast group (%d)",
-			log_strdup(net_sprint_ipv6_addr(&mcast_addr.sin6_addr)), ret);
+			net_sprint_ipv6_addr(&mcast_addr.sin6_addr), ret);
 		return false;
 	}
 

@@ -189,19 +189,21 @@ static void tx_notify(struct bt_conn *conn)
 	BT_DBG("conn %p", conn);
 
 	while (1) {
-		struct bt_conn_tx *tx;
+		struct bt_conn_tx *tx = NULL;
 		unsigned int key;
 		bt_conn_tx_cb_t cb;
 		void *user_data;
 
 		key = irq_lock();
-		if (sys_slist_is_empty(&conn->tx_complete)) {
-			irq_unlock(key);
-			break;
+		if (!sys_slist_is_empty(&conn->tx_complete)) {
+			tx = CONTAINER_OF(sys_slist_get_not_empty(&conn->tx_complete),
+					  struct bt_conn_tx, node);
 		}
-
-		tx = (void *)sys_slist_get_not_empty(&conn->tx_complete);
 		irq_unlock(key);
+
+		if (!tx) {
+			return;
+		}
 
 		BT_DBG("tx %p cb %p user_data %p", tx, tx->cb, tx->user_data);
 
@@ -2490,7 +2492,7 @@ static bool create_param_validate(const struct bt_conn_le_create_param *param)
 {
 #if defined(CONFIG_BT_PRIVACY)
 	/* Initiation timeout cannot be greater than the RPA timeout */
-	const uint32_t timeout_max = (MSEC_PER_SEC / 10) * CONFIG_BT_RPA_TIMEOUT;
+	const uint32_t timeout_max = (MSEC_PER_SEC / 10) * bt_dev.rpa_timeout;
 
 	if (param->timeout > timeout_max) {
 		return false;

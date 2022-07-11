@@ -29,6 +29,68 @@ static void empty_callback(void *data)
 	events_missed[port] = true;
 }
 
+int alloc_unbound_event_channel(domid_t remote_dom)
+{
+	int rc;
+	struct evtchn_alloc_unbound alloc = {
+		.dom = DOMID_SELF,
+		.remote_dom = remote_dom,
+	};
+
+	rc = HYPERVISOR_event_channel_op(EVTCHNOP_alloc_unbound, &alloc);
+	if (rc == 0) {
+		rc = alloc.port;
+	}
+
+	return rc;
+}
+
+int bind_interdomain_event_channel(domid_t remote_dom, evtchn_port_t remote_port,
+		evtchn_cb_t cb, void *data)
+{
+	int rc;
+	struct evtchn_bind_interdomain bind = {
+		.remote_dom = remote_dom,
+		.remote_port = remote_port,
+	};
+
+	rc = HYPERVISOR_event_channel_op(EVTCHNOP_bind_interdomain, &bind);
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = bind_event_channel(bind.local_port, cb, data);
+	if (rc < 0) {
+		return rc;
+	}
+
+	return bind.local_port;
+}
+
+int evtchn_status(evtchn_status_t *status)
+{
+	return HYPERVISOR_event_channel_op(EVTCHNOP_status, status);
+}
+
+int evtchn_close(evtchn_port_t port)
+{
+	struct evtchn_close close = {
+		.port = port,
+	};
+
+	return HYPERVISOR_event_channel_op(EVTCHNOP_close, &close);
+}
+
+int evtchn_set_priority(evtchn_port_t port, uint32_t priority)
+{
+	struct evtchn_set_priority set = {
+		.port = port,
+		.priority = priority,
+	};
+
+	return HYPERVISOR_event_channel_op(EVTCHNOP_set_priority, &set);
+}
+
 void notify_evtchn(evtchn_port_t port)
 {
 	struct evtchn_send send;
@@ -49,7 +111,6 @@ int bind_event_channel(evtchn_port_t port, evtchn_cb_t cb, void *data)
 		__func__, port);
 	__ASSERT(cb != NULL, "%s: NULL callback for evtchn #%u\n",
 		__func__, port);
-
 
 	if (event_channels[port].cb != empty_callback)
 		LOG_WRN("%s: re-bind callback for evtchn #%u\n",
@@ -157,7 +218,7 @@ static void events_isr(void *data)
 	 */
 	vcpu->evtchn_upcall_pending = 0;
 
-	compiler_barrier();
+	dmb();
 
 	/* Can not use system atomic_t/atomic_set() due to 32-bit casting */
 	pos_selector = __atomic_exchange_n(&vcpu->evtchn_pending_sel,
@@ -166,12 +227,12 @@ static void events_isr(void *data)
 	while (pos_selector) {
 		/* Find first position, clear it in selector and process */
 		pos_index = __builtin_ffsl(pos_selector) - 1;
-		pos_selector &= ~(1 << pos_index);
+		pos_selector &= ~(((xen_ulong_t) 1) << pos_index);
 
 		/* Find all active evtchn on selected position */
 		while ((events_pending = get_pending_events(pos_index)) != 0) {
 			event_index =  __builtin_ffsl(events_pending) - 1;
-			events_pending &= (1 << event_index);
+			events_pending &= (((xen_ulong_t) 1) << event_index);
 
 			port = (pos_index * 8 * sizeof(xen_ulong_t))
 					+ event_index;

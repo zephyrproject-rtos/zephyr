@@ -102,6 +102,11 @@ void mock_log_backend_validate(const struct log_backend *backend, bool panic)
 	zassert_equal(mock->msg_rec_idx, mock->msg_proc_idx,
 			"%p Recored:%d, Got: %d", mock, mock->msg_rec_idx, mock->msg_proc_idx);
 	zassert_equal(mock->panic, panic, NULL);
+
+#if defined(CONFIG_LOG_MODE_DEFERRED) && \
+	defined(CONFIG_LOG_PROCESS_THREAD)
+	zassert_true(mock->evt_notified, NULL);
+#endif
 }
 
 struct test_str {
@@ -119,7 +124,7 @@ static int out(int c, void *ctx)
 }
 
 static void process(const struct log_backend *const backend,
-		union log_msg2_generic *msg)
+		union log_msg_generic *msg)
 {
 	struct mock_log_backend *mock = backend->cb->ctx;
 	struct mock_log_backend_msg *exp = &mock->exp_msgs[mock->msg_proc_idx];
@@ -161,7 +166,7 @@ static void process(const struct log_backend *const backend,
 	size_t len;
 	uint8_t *data;
 
-	data = log_msg2_get_data(&msg->log, &len);
+	data = log_msg_get_data(&msg->log, &len);
 	zassert_equal(exp->data_len, len, NULL);
 	if (exp->data_len <= sizeof(exp->data)) {
 		zassert_equal(memcmp(data, exp->data, len), 0, NULL);
@@ -170,7 +175,7 @@ static void process(const struct log_backend *const backend,
 	char str[128];
 	struct test_str s = { .str = str };
 
-	data = log_msg2_get_package(&msg->log, &len);
+	data = log_msg_get_package(&msg->log, &len);
 	len = cbpprintf(out, &s, data);
 	if (len > 0) {
 		str[len] = '\0';
@@ -200,9 +205,26 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 }
 
 
+#if defined(CONFIG_LOG_MODE_DEFERRED) && \
+	defined(CONFIG_LOG_PROCESS_THREAD)
+static void notify(const struct log_backend *const backend,
+		   enum log_backend_evt event,
+		   union log_backend_evt_arg *arg)
+{
+	struct mock_log_backend *mock = backend->cb->ctx;
+
+	mock->evt_notified = true;
+}
+#endif
+
 const struct log_backend_api mock_log_backend_api = {
 	.process = process,
 	.panic = panic,
 	.init = mock_init,
 	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
+
+#if defined(CONFIG_LOG_MODE_DEFERRED) && \
+	defined(CONFIG_LOG_PROCESS_THREAD)
+	.notify = notify,
+#endif
 };

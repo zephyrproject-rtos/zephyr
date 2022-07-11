@@ -19,15 +19,15 @@ LOG_MODULE_REGISTER(vcnl4040, CONFIG_SENSOR_LOG_LEVEL);
 int vcnl4040_read(const struct device *dev, uint8_t reg, uint16_t *out)
 {
 	const struct vcnl4040_config *config = dev->config;
-	struct vcnl4040_data *data = dev->data;
 	uint8_t buff[2] = { 0 };
 	int ret = 0;
 
-	ret = i2c_write_read(data->i2c, config->i2c_address,
+	ret = i2c_write_read_dt(&config->i2c,
 			     &reg, sizeof(reg), buff, sizeof(buff));
 
-	if (!ret)
+	if (!ret) {
 		*out = sys_get_le16(buff);
+	}
 
 	return ret;
 }
@@ -35,7 +35,6 @@ int vcnl4040_read(const struct device *dev, uint8_t reg, uint16_t *out)
 int vcnl4040_write(const struct device *dev, uint8_t reg, uint16_t value)
 {
 	const struct vcnl4040_config *config = dev->config;
-	struct vcnl4040_data *data = dev->data;
 	struct i2c_msg msg;
 	int ret;
 	uint8_t buff[3];
@@ -48,7 +47,7 @@ int vcnl4040_write(const struct device *dev, uint8_t reg, uint16_t value)
 	msg.flags = 0;
 	msg.len = sizeof(buff);
 
-	ret = i2c_transfer(data->i2c, &msg, 1, config->i2c_address);
+	ret = i2c_transfer_dt(&config->i2c, &msg, 1);
 
 	if (ret < 0) {
 		LOG_ERR("write block failed");
@@ -287,10 +286,9 @@ static int vcnl4040_init(const struct device *dev)
 	uint16_t id;
 
 	/* Get the I2C device */
-	data->i2c = device_get_binding(config->i2c_name);
-	if (data->i2c == NULL) {
-		LOG_ERR("Could not find I2C device");
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
 	/* Check device id */
@@ -319,9 +317,11 @@ static int vcnl4040_init(const struct device *dev)
 	k_sem_init(&data->sem, 0, K_SEM_MAX_LIMIT);
 
 #if CONFIG_VCNL4040_TRIGGER
-	if (vcnl4040_trigger_init(dev)) {
-		LOG_ERR("Could not initialise interrupts");
-		return -EIO;
+	if (config->int_gpio.port) {
+		if (vcnl4040_trigger_init(dev)) {
+			LOG_ERR("Could not initialise interrupts");
+			return -EIO;
+		}
 	}
 #endif
 
@@ -341,31 +341,24 @@ static const struct sensor_driver_api vcnl4040_driver_api = {
 #endif
 };
 
-static const struct vcnl4040_config vcnl4040_config = {
-	.i2c_name = DT_INST_BUS_LABEL(0),
-	.i2c_address = DT_INST_REG_ADDR(0),
-#ifdef CONFIG_VCNL4040_TRIGGER
-#if DT_INST_NODE_HAS_PROP(0, int_gpios)
-	.gpio_name = DT_INST_GPIO_LABEL(0, int_gpios),
-	.gpio_pin = DT_INST_GPIO_PIN(0, int_gpios),
-	.gpio_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
-#else
-	.gpio_name = NULL,
-	.gpio_pin = 0,
-	.gpio_flags = 0,
-#endif
-#endif
-	.led_i = DT_INST_ENUM_IDX(0, led_current),
-	.led_dc = DT_INST_ENUM_IDX(0, led_duty_cycle),
-	.als_it = DT_INST_ENUM_IDX(0, als_it),
-	.proxy_it = DT_INST_ENUM_IDX(0, proximity_it),
-	.proxy_type = DT_INST_ENUM_IDX(0, proximity_trigger),
-};
+#define VCNL4040_DEFINE(inst)									\
+	static struct vcnl4040_data vcnl4040_data_##inst;					\
+												\
+	static const struct vcnl4040_config vcnl4040_config_##inst = {				\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+		IF_ENABLED(CONFIG_VCNL4040_TRIGGER,						\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
+		.led_i = DT_INST_ENUM_IDX(inst, led_current),					\
+		.led_dc = DT_INST_ENUM_IDX(inst, led_duty_cycle),				\
+		.als_it = DT_INST_ENUM_IDX(inst, als_it),					\
+		.proxy_it = DT_INST_ENUM_IDX(inst, proximity_it),				\
+		.proxy_type = DT_INST_ENUM_IDX(inst, proximity_trigger),			\
+	};											\
+												\
+	PM_DEVICE_DT_INST_DEFINE(inst, vcnl4040_pm_action);					\
+												\
+	DEVICE_DT_INST_DEFINE(inst, vcnl4040_init, PM_DEVICE_DT_INST_GET(inst),			\
+			      &vcnl4040_data_##inst, &vcnl4040_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &vcnl4040_driver_api);		\
 
-static struct vcnl4040_data vcnl4040_data;
-
-PM_DEVICE_DT_INST_DEFINE(0, vcnl4040_pm_action);
-
-DEVICE_DT_INST_DEFINE(0, vcnl4040_init,
-	      PM_DEVICE_DT_INST_GET(0), &vcnl4040_data, &vcnl4040_config,
-	      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &vcnl4040_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(VCNL4040_DEFINE)

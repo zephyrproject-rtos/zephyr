@@ -46,12 +46,6 @@
 #define LOG_MODULE_NAME bt_csis
 #include "common/log.h"
 
-#if defined(CONFIG_BT_RPA) && !defined(CONFIG_BT_BONDABLE)
-#define SIRK_READ_PERM	(BT_GATT_PERM_READ_AUTHEN | BT_GATT_PERM_READ_ENCRYPT)
-#else
-#define SIRK_READ_PERM	(BT_GATT_PERM_READ_ENCRYPT)
-#endif
-
 static struct bt_csis csis_insts[CONFIG_BT_CSIS_MAX_INSTANCE_COUNT];
 static bt_addr_le_t server_dummy_addr; /* 0'ed address */
 
@@ -800,7 +794,7 @@ static void adv_connected(struct bt_le_ext_adv *adv,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_CSIS), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_CSIS_SET_SIRK, \
 			BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			SIRK_READ_PERM, \
+			BT_GATT_PERM_READ_ENCRYPT, \
 			read_set_sirk, NULL, &_csis), \
 	BT_GATT_CCC(set_sirk_cfg_changed, \
 			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
@@ -848,10 +842,12 @@ static bool valid_register_param(const struct bt_csis_register_param *param)
 		return false;
 	}
 
-	if (param->set_size > 0 && param->set_size < BT_CSIS_MINIMUM_SET_SIZE) {
-		BT_DBG("Invalid set size: %u", param->set_size);
+#if CONFIG_BT_CSIS_MAX_INSTANCE_COUNT > 1
+	if (param->parent == NULL) {
+		BT_DBG("Parent service not provided");
 		return false;
 	}
+#endif /* CONFIG_BT_CSIS_MAX_INSTANCE_COUNT > 1 */
 
 	return true;
 }

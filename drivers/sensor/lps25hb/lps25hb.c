@@ -22,24 +22,20 @@ LOG_MODULE_REGISTER(LPS25HB, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int lps25hb_power_ctrl(const struct device *dev, uint8_t value)
 {
-	struct lps25hb_data *data = dev->data;
 	const struct lps25hb_config *config = dev->config;
 
-	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				   LPS25HB_REG_CTRL_REG1,
-				   LPS25HB_MASK_CTRL_REG1_PD,
-				   value << LPS25HB_SHIFT_CTRL_REG1_PD);
+	return i2c_reg_update_byte_dt(&config->i2c, LPS25HB_REG_CTRL_REG1,
+				      LPS25HB_MASK_CTRL_REG1_PD,
+				      value << LPS25HB_SHIFT_CTRL_REG1_PD);
 }
 
 static inline int lps25hb_set_odr_raw(const struct device *dev, uint8_t odr)
 {
-	struct lps25hb_data *data = dev->data;
 	const struct lps25hb_config *config = dev->config;
 
-	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				   LPS25HB_REG_CTRL_REG1,
-				   LPS25HB_MASK_CTRL_REG1_ODR,
-				   odr << LPS25HB_SHIFT_CTRL_REG1_ODR);
+	return i2c_reg_update_byte_dt(&config->i2c, LPS25HB_REG_CTRL_REG1,
+				      LPS25HB_MASK_CTRL_REG1_ODR,
+				      odr << LPS25HB_SHIFT_CTRL_REG1_ODR);
 }
 
 static int lps25hb_sample_fetch(const struct device *dev,
@@ -53,9 +49,9 @@ static int lps25hb_sample_fetch(const struct device *dev,
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	for (offset = 0; offset < sizeof(out); ++offset) {
-		if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-				      LPS25HB_REG_PRESS_OUT_XL + offset,
-				      out + offset) < 0) {
+		if (i2c_reg_read_byte_dt(&config->i2c,
+					 LPS25HB_REG_PRESS_OUT_XL + offset,
+					 out + offset) < 0) {
 			LOG_DBG("failed to read sample");
 			return -EIO;
 		}
@@ -113,7 +109,6 @@ static const struct sensor_driver_api lps25hb_api_funcs = {
 
 static int lps25hb_init_chip(const struct device *dev)
 {
-	struct lps25hb_data *data = dev->data;
 	const struct lps25hb_config *config = dev->config;
 	uint8_t chip_id;
 
@@ -127,8 +122,8 @@ static int lps25hb_init_chip(const struct device *dev)
 
 	k_busy_wait(USEC_PER_MSEC * 20U);
 
-	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
-			      LPS25HB_REG_WHO_AM_I, &chip_id) < 0) {
+	if (i2c_reg_read_byte_dt(&config->i2c, LPS25HB_REG_WHO_AM_I,
+				 &chip_id) < 0) {
 		LOG_DBG("failed reading chip id");
 		goto err_poweroff;
 	}
@@ -145,10 +140,9 @@ static int lps25hb_init_chip(const struct device *dev)
 		goto err_poweroff;
 	}
 
-	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				LPS25HB_REG_CTRL_REG1,
-				LPS25HB_MASK_CTRL_REG1_BDU,
-				(1 << LPS25HB_SHIFT_CTRL_REG1_BDU)) < 0) {
+	if (i2c_reg_update_byte_dt(&config->i2c, LPS25HB_REG_CTRL_REG1,
+				   LPS25HB_MASK_CTRL_REG1_BDU,
+				   (1 << LPS25HB_SHIFT_CTRL_REG1_BDU)) < 0) {
 		LOG_DBG("failed to set BDU");
 		goto err_poweroff;
 	}
@@ -163,13 +157,10 @@ err_poweroff:
 static int lps25hb_init(const struct device *dev)
 {
 	const struct lps25hb_config * const config = dev->config;
-	struct lps25hb_data *data = dev->data;
 
-	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
-	if (!data->i2c_master) {
-		LOG_DBG("i2c master not found: %s",
-			    config->i2c_master_dev_name);
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("I2C bus device not ready");
+		return -ENODEV;
 	}
 
 	if (lps25hb_init_chip(dev) < 0) {
@@ -180,13 +171,15 @@ static int lps25hb_init(const struct device *dev)
 	return 0;
 }
 
-static const struct lps25hb_config lps25hb_config = {
-	.i2c_master_dev_name = DT_INST_BUS_LABEL(0),
-	.i2c_slave_addr = DT_INST_REG_ADDR(0),
-};
+#define LPS25HB_DEFINE(inst)									\
+	static struct lps25hb_data lps25hb_data_##inst;						\
+												\
+	static const struct lps25hb_config lps25hb_config_##inst = {				\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, lps25hb_init, NULL,						\
+			      &lps25hb_data_##inst, &lps25hb_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &lps25hb_api_funcs);			\
 
-static struct lps25hb_data lps25hb_data;
-
-DEVICE_DT_INST_DEFINE(0, lps25hb_init, NULL,
-		    &lps25hb_data, &lps25hb_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &lps25hb_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(LPS25HB_DEFINE)

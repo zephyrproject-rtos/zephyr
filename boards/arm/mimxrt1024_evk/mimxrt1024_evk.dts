@@ -17,6 +17,7 @@
 		led0 = &green_led;
 		sw0 = &user_button;
 		watchdog0 = &wdog0;
+		magn0 = &fxos8700;
 	};
 
 	chosen {
@@ -129,6 +130,8 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c4>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpio3 22 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpio3 23 GPIO_ACTIVE_HIGH>;
 
 	fxos8700: fxos8700@1f {
 		compatible = "nxp,fxos8700";

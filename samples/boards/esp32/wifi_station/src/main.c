@@ -30,19 +30,19 @@ static void handler_cb(struct net_mgmt_event_callback *cb,
 	char buf[NET_IPV4_ADDR_LEN];
 
 	LOG_INF("Your address: %s",
-		log_strdup(net_addr_ntop(AF_INET,
+		net_addr_ntop(AF_INET,
 				   &iface->config.dhcpv4.requested_ip,
-				   buf, sizeof(buf))));
+				   buf, sizeof(buf)));
 	LOG_INF("Lease time: %u seconds",
 			iface->config.dhcpv4.lease_time);
 	LOG_INF("Subnet: %s",
-		log_strdup(net_addr_ntop(AF_INET,
+		net_addr_ntop(AF_INET,
 					&iface->config.ip.ipv4->netmask,
-					buf, sizeof(buf))));
+					buf, sizeof(buf)));
 	LOG_INF("Router: %s",
-		log_strdup(net_addr_ntop(AF_INET,
+		net_addr_ntop(AF_INET,
 						&iface->config.ip.ipv4->gw,
-						buf, sizeof(buf))));
+						buf, sizeof(buf)));
 }
 
 void main(void)

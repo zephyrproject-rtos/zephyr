@@ -1,0 +1,37 @@
+# Bluetooth Audio - Common Audio Profile (CAP) options
+#
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BT_CAP
+	bool
+	help
+	  Hidden Kconfig to enable cross-role CAP capabilities.
+
+config BT_CAP_ACCEPTOR
+	bool "Common Audio Profile Acceptor Role Support [EXPERIMENTAL]"
+	depends on BT_AUDIO_UNICAST_SERVER || (BT_AUDIO_BROADCAST_SINK && BT_BASS)
+	select EXPERIMENTAL
+	select BT_CAP
+	help
+	  Enabling this will enable the CAP Acceptor role. This instantiates the
+	  common audio service (CAS).
+
+config BT_CAP_ACCEPTOR_SET_MEMBER
+	bool "Common Audio Profile Acceptor Role Set Member support"
+	depends on BT_CAP_ACCEPTOR
+	depends on BT_CSIS
+	help
+	  Enabling this will allow a CAP acceptor to be a set member.
+	  Enabling this will require a manual register of the CAS service.
+	  Enabling will take one of the allocated CSIS instances
+	  (BT_CSIS_MAX_INSTANCE_COUNT).
+
+config BT_DEBUG_CAP
+	bool "Common Audio Profile debug"
+	depends on BT_CAP
+	help
+	  Use this option to enable CAP debug logs for the
+	  Bluetooth Audio functionality.

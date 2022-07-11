@@ -3,46 +3,14 @@ sample:
   name: lvgl
 tests:
   sample.display.lvgl.gui:
-    harness: display
-    platform_allow: reel_board mimxrt1050_evk mimxrt1060_evk mimxrt1064_evk
+    filter: dt_chosen_enabled("zephyr,display")
+    # flash usage varies depending on the platform, but ~200K are the bare
+    # minimum, give some room by adding 50K more. RAM usage depends largerly on
+    # the display buffer, but a minimum is also required for the system itself.
+    # ~25K seem to be sufficient for most cases, rounded to 32K.
+    min_flash: 250
+    min_ram: 32
+    harness: none
     tags: samples display gui
-  sample.display.lvgl.adafruit_2_8_tft_touch_v2:
-    depends_on: arduino_gpio arduino_i2c arduino_spi
-    # Default settings end up allocating an ~150KB sized buffer in lvgl.
-    # This adds a bit of buffer to that for other data.
-    min_ram: 175
-    platform_exclude: reel_board reel_board_v2 ubx_evkannab1_nrf52832 stm32f769i_disco
-    extra_args: SHIELD=adafruit_2_8_tft_touch_v2
-    tags: shield
-    harness: console
-    harness_config:
-      fixture: fixture_shield_adafruit_2_8_tft_touch_v2
-  sample.display.lvgl.waveshare_epaper_gdeh0213b1:
-    platform_allow: nrf52840dk_nrf52840
-    extra_args: SHIELD=waveshare_epaper_gdeh0213b1
-    tags: shield
-  sample.display.lvgl.waveshare_epaper_gdeh0213b72:
-    platform_allow: nrf52840dk_nrf52840
-    extra_args: SHIELD=waveshare_epaper_gdeh0213b72
-    tags: shield
-  sample.display.lvgl.waveshare_epaper_gdeh029a1:
-    platform_allow: nrf52840dk_nrf52840
-    extra_args: SHIELD=waveshare_epaper_gdeh029a1
-    tags: shield
-  sample.display.lvgl.sdl:
-    build_only: true
-    platform_allow: native_posix_64
-    tags: samples display gui
-  sample.display.lvgl.buydisplay_2_8_tft_touch_arduino:
-    platform_allow: nrf52840dk_nrf52840
-    extra_args: SHIELD=buydisplay_2_8_tft_touch_arduino
-    tags: shield
-  sample.display.lvgl.dummy:
-    build_only: true
-    platform_allow: native_posix native_posix_64
-    extra_args: DTC_OVERLAY_FILE="dummy_dc.overlay"
-    extra_configs:
-      - CONFIG_DUMMY_DISPLAY=y
-      - CONFIG_KSCAN=n
-      - CONFIG_SDL_DISPLAY=n
-    tags: samples display gui
+    modules:
+      - lvgl

@@ -285,7 +285,7 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 }
 
 static void process(const struct log_backend *const backend,
-		union log_msg2_generic *msg)
+		union log_msg_generic *msg)
 {
 	uint32_t flags = log_backend_std_get_flags();
 

@@ -26,8 +26,14 @@
 #include "ll_feat.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
 
 #include "ull_tx_queue.h"
+
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
+#include "ull_conn_iso_internal.h"
 
 #include "ull_conn_types.h"
 #include "ull_internal.h"
@@ -175,9 +181,24 @@ static void pu_reset_timing_restrict(struct ll_conn *conn)
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)
+static inline bool phy_valid(uint8_t phy)
+{
+	/* This is equivalent to:
+	 * maximum one bit set, and no bit set is rfu's
+	 */
+	return (phy < 5 && phy != 3);
+}
+
 static uint8_t pu_check_update_ind(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	uint8_t ret = 0;
+
+	/* Check if either phy selected is invalid */
+	if (!phy_valid(ctx->data.pu.c_to_p_phy) || !phy_valid(ctx->data.pu.p_to_c_phy)) {
+		/* more than one or any rfu bit selected in either phy */
+		ctx->data.pu.error = BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		ret = 1;
+	}
 
 	/* Both tx and rx PHY unchanged */
 	if (!((ctx->data.pu.c_to_p_phy | ctx->data.pu.p_to_c_phy) & 0x07)) {
@@ -199,29 +220,41 @@ static uint8_t pu_check_update_ind(struct ll_conn *conn, struct proc_ctx *ctx)
 static uint8_t pu_apply_phy_update(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	struct lll_conn *lll = &conn->lll;
+	uint8_t phy_bitmask = PHY_1M;
+	const uint8_t old_tx = lll->phy_tx;
+	const uint8_t old_rx = lll->phy_rx;
+
+#if defined(CONFIG_BT_CTLR_PHY_2M)
+	phy_bitmask |= PHY_2M;
+#endif
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	phy_bitmask |= PHY_CODED;
+#endif
+	const uint8_t p_to_c_phy = ctx->data.pu.p_to_c_phy & phy_bitmask;
+	const uint8_t c_to_p_phy = ctx->data.pu.c_to_p_phy & phy_bitmask;
 
 	if (0) {
 #if defined(CONFIG_BT_PERIPHERAL)
 	} else if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
-		if (ctx->data.pu.p_to_c_phy) {
-			lll->phy_tx = ctx->data.pu.p_to_c_phy;
+		if (p_to_c_phy) {
+			lll->phy_tx = p_to_c_phy;
 		}
-		if (ctx->data.pu.c_to_p_phy) {
-			lll->phy_rx = ctx->data.pu.c_to_p_phy;
+		if (c_to_p_phy) {
+			lll->phy_rx = c_to_p_phy;
 		}
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CENTRAL)
 	} else if (lll->role == BT_HCI_ROLE_CENTRAL) {
-		if (ctx->data.pu.p_to_c_phy) {
-			lll->phy_rx = ctx->data.pu.p_to_c_phy;
+		if (p_to_c_phy) {
+			lll->phy_rx = p_to_c_phy;
 		}
-		if (ctx->data.pu.c_to_p_phy) {
-			lll->phy_tx = ctx->data.pu.c_to_p_phy;
+		if (c_to_p_phy) {
+			lll->phy_tx = c_to_p_phy;
 		}
 #endif /* CONFIG_BT_CENTRAL */
 	}
 
-	return (ctx->data.pu.c_to_p_phy || ctx->data.pu.p_to_c_phy);
+	return ((old_tx != lll->phy_tx) || (old_rx != lll->phy_rx));
 }
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
@@ -259,8 +292,8 @@ static uint8_t pu_update_eff_times(struct ll_conn *conn, struct proc_ctx *ctx)
 			pu_calc_eff_time(lll->dle.eff.max_rx_octets, lll->phy_rx, max_rx_time);
 	}
 
-	if ((eff_tx_time != lll->dle.eff.max_tx_time) ||
-	    (eff_rx_time != lll->dle.eff.max_rx_time)) {
+	if ((eff_tx_time > lll->dle.eff.max_tx_time) ||
+	    (eff_rx_time > lll->dle.eff.max_rx_time)) {
 		lll->dle.eff.max_tx_time = eff_tx_time;
 		lll->dle.eff.max_rx_time = eff_rx_time;
 		return 1U;
@@ -313,8 +346,9 @@ static void pu_prepare_instant(struct ll_conn *conn, struct proc_ctx *ctx)
 	/* Set instance only in case there is actual PHY change. Otherwise the instant should be
 	 * set to 0.
 	 */
-	if (ctx->data.pu.c_to_p_phy  != 0 || ctx->data.pu.p_to_c_phy != 0) {
-		ctx->data.pu.instant = ull_conn_event_counter(conn) + PHY_UPDATE_INSTANT_DELTA;
+	if (ctx->data.pu.c_to_p_phy != 0 || ctx->data.pu.p_to_c_phy != 0) {
+		ctx->data.pu.instant = ull_conn_event_counter(conn) + conn->lll.latency +
+			PHY_UPDATE_INSTANT_DELTA;
 	} else {
 		ctx->data.pu.instant = 0;
 	}
@@ -563,13 +597,14 @@ static void lp_pu_st_wait_tx_ack_phy_req(struct ll_conn *conn, struct proc_ctx *
 				conn, pu_select_phy_timing_restrict(conn, ctx->data.pu.tx));
 			ctx->state = LP_PU_STATE_WAIT_RX_PHY_UPDATE_IND;
 			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
+			llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
 			break;
 #endif /* CONFIG_BT_PERIPHERAL */
 		default:
 			/* Unknown role */
 			LL_ASSERT(0);
 		}
-		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
+
 		break;
 	default:
 		/* Ignore other evts */
@@ -650,9 +685,14 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 			ctx->state = LP_PU_STATE_WAIT_INSTANT;
 		} else {
 			llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
+			if (ctx->data.pu.error != BT_HCI_ERR_SUCCESS) {
+				/* Mark the connection for termination */
+				conn->llcp_terminate.reason_final = ctx->data.pu.error;
+			}
 			ctx->data.pu.ntf_pu = ctx->data.pu.host_initiated;
 			lp_pu_complete(conn, ctx, evt, param);
 		}
+		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
 		break;
 	case LP_PU_EVT_REJECT:
 		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
@@ -660,6 +700,7 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 		ctx->data.pu.error = ctx->reject_ext_ind.error_code;
 		ctx->data.pu.ntf_pu = 1;
 		lp_pu_complete(conn, ctx, evt, param);
+		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
 	default:
 		/* Ignore other evts */
 		break;
@@ -887,7 +928,8 @@ static void rp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx
 				      void *param)
 {
 	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx) ||
-	(llcp_rr_get_paused_cmd(conn) == PROC_PHY_UPDATE)) {
+	(llcp_rr_get_paused_cmd(conn) == PROC_PHY_UPDATE) ||
+	    !ull_is_lll_tx_queue_empty(conn)) {
 		ctx->state = RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
 		llcp_rr_set_paused_cmd(conn, PROC_CTE_REQ);
@@ -933,6 +975,7 @@ static void rp_pu_st_wait_rx_phy_req(struct ll_conn *conn, struct proc_ctx *ctx,
 	/* Combine with the 'Preferred' the phys in conn->phy_pref_?x */
 	pu_combine_phys(conn, ctx, conn->phy_pref_tx, conn->phy_pref_rx);
 	llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
+
 	switch (evt) {
 	case RP_PU_EVT_PHY_REQ:
 		switch (conn->lll.role) {
@@ -1045,8 +1088,12 @@ static void rp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 			 */
 			llcp_rr_prt_stop(conn);
 
-			ctx->state = LP_PU_STATE_WAIT_INSTANT;
+			ctx->state = RP_PU_STATE_WAIT_INSTANT;
 		} else {
+			if (ctx->data.pu.error == BT_HCI_ERR_INSTANT_PASSED) {
+				/* Mark the connection for termination */
+				conn->llcp_terminate.reason_final = BT_HCI_ERR_INSTANT_PASSED;
+			}
 			rp_pu_complete(conn, ctx, evt, param);
 		}
 		break;

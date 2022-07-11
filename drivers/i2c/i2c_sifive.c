@@ -243,7 +243,7 @@ static int i2c_sifive_configure(const struct device *dev, uint32_t dev_config)
 		   I2C_REG(config, REG_PRESCALE_HIGH));
 
 	/* Support I2C Master mode only */
-	if (!(dev_config & I2C_MODE_MASTER)) {
+	if (!(dev_config & I2C_MODE_CONTROLLER)) {
 		LOG_ERR("I2C only supports operation as master");
 		return -ENOTSUP;
 	}
@@ -305,7 +305,7 @@ static int i2c_sifive_init(const struct device *dev)
 	uint32_t dev_config = 0U;
 	int rc = 0;
 
-	dev_config = (I2C_MODE_MASTER | i2c_map_dt_bitrate(config->f_bus));
+	dev_config = (I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->f_bus));
 
 	rc = i2c_sifive_configure(dev, dev_config);
 	if (rc != 0) {

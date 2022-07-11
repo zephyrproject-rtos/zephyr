@@ -38,7 +38,7 @@ LOG_OUTPUT_DEFINE(log_output_xsim, char_out,
 		  xtensa_log_buf, sizeof(xtensa_log_buf));
 
 static void process(const struct log_backend *const backend,
-		    union log_msg2_generic *msg)
+		    union log_msg_generic *msg)
 {
 	uint32_t flags = log_backend_std_get_flags();
 

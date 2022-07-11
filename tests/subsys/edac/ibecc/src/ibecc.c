@@ -12,8 +12,6 @@
 #include <zephyr/drivers/edac.h>
 #include <ibecc.h>
 
-#define DEVICE_NAME		DT_LABEL(DT_NODELABEL(ibecc))
-
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 #define TEST_ADDRESS1		0x1000
 #define TEST_ADDRESS2		0x2000
@@ -26,8 +24,8 @@ static void test_ibecc_initialized(void)
 {
 	const struct device *dev;
 
-	dev = device_get_binding(DEVICE_NAME);
-	zassert_not_null(dev, "Device not found");
+	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
+	zassert_true(device_is_ready(dev), "Device is not ready");
 
 	TC_PRINT("Test ibecc driver is initialized\n");
 
@@ -58,8 +56,8 @@ static void test_ibecc_api(void)
 
 	/* Error log API */
 
-	dev = device_get_binding(DEVICE_NAME);
-	zassert_not_null(dev, "Device not found");
+	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
+	zassert_true(device_is_ready(dev), "Device is not ready");
 
 	ret = edac_ecc_error_log_get(dev, &value);
 	zassert_equal(ret, -ENODATA, "edac_ecc_error_log_get failed");
@@ -95,8 +93,8 @@ static void test_ibecc_error_inject_api(void)
 	uint64_t val;
 	int ret;
 
-	dev = device_get_binding(DEVICE_NAME);
-	zassert_not_null(dev, "Device not found");
+	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
+	zassert_true(device_is_ready(dev), "Device is not ready");
 
 	/* Verify default parameters */
 
@@ -270,8 +268,8 @@ static void ibecc_error_inject_test(uint64_t addr, uint64_t mask, uint64_t type)
 	const struct device *dev;
 	int ret;
 
-	dev = device_get_binding(DEVICE_NAME);
-	zassert_not_null(dev, "Device not found");
+	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
+	zassert_true(device_is_ready(dev), "Device is not ready");
 
 	ret = edac_notify_callback_set(dev, callback);
 	zassert_equal(ret, 0, "Error setting notification callback");

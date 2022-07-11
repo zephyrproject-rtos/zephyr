@@ -5,7 +5,12 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     CONFIG_LOG
     log_core.c
     log_mgmt.c
-    log_msg2.c
+    log_msg.c
+    log_output.c
+  )
+
+  zephyr_sources_ifdef(
+    CONFIG_LOG_OUTPUT
     log_output.c
   )
 
@@ -15,15 +20,15 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
   # - C++ (auto)
   # - GCC 4.9.0 https://gcc.gnu.org/gcc-4.9/changes.html
   # - Clang 3.8
-  if (NOT CONFIG_LOG2_ALWAYS_RUNTIME)
+  if (NOT CONFIG_LOG_ALWAYS_RUNTIME)
     if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
       if(CMAKE_C_COMPILER_VERSION VERSION_LESS "3.8.0")
-        message(WARNING "Compiler version requires CONFIG_LOG2_ALWAYS_RUNTIME to be set")
+        message(WARNING "Compiler version requires CONFIG_LOG_ALWAYS_RUNTIME to be set")
       endif()
     endif()
     if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
       if(CMAKE_C_COMPILER_VERSION VERSION_LESS "4.9.0")
-        message(WARNING "Compiler version requires CONFIG_LOG2_ALWAYS_RUNTIME to be set")
+        message(WARNING "Compiler version requires CONFIG_LOG_ALWAYS_RUNTIME to be set")
       endif()
     endif()
   endif()
@@ -81,6 +86,11 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
   zephyr_sources_ifdef(
     CONFIG_LOG_BACKEND_CAVS_HDA
     log_backend_cavs_hda.c
+  )
+
+  zephyr_sources_ifdef(
+    CONFIG_LOG_BACKEND_EFI_CONSOLE
+    log_backend_efi_console.c
   )
 
   if(CONFIG_LOG_BACKEND_SPINEL)

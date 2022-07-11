@@ -128,19 +128,11 @@ endchoice
 config HEAP_MEM_POOL_SIZE
 	default 4096 if BT_RPMSG
 
-config BT_HCI_VS
-	default y if BT
-
 endif #  BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 
 if BOARD_NRF5340DK_NRF5340_CPUNET
 
-# BT_CTLR depends on BT. When BT is enabled we should default to also
-# enabling the controller.
 config BT_CTLR
-	default y if BT
-
-config BT_ECC
 	default y if BT
 
 endif # BOARD_NRF5340DK_NRF5340_CPUNET

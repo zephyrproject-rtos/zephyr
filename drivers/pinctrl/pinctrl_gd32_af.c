@@ -5,7 +5,9 @@
  */
 
 #include <zephyr/drivers/pinctrl.h>
-#include <soc.h>
+
+#include <gd32_gpio.h>
+#include <gd32_rcu.h>
 
 BUILD_ASSERT((GD32_PUPD_NONE == GPIO_PUPD_NONE) &&
 	     (GD32_PUPD_PULLUP == GPIO_PUPD_PULLUP) &&
@@ -23,7 +25,7 @@ BUILD_ASSERT((GD32_OSPEED_2MHZ == GPIO_OSPEED_2MHZ) &&
 #else
 	     (GD32_OSPEED_25MHZ == GPIO_OSPEED_25MHZ) &&
 	     (GD32_OSPEED_50MHZ == GPIO_OSPEED_50MHZ) &&
-	     (GD32_OSPEED_200MHZ == GPIO_OSPEED_200MHZ) &&
+	     (GD32_OSPEED_MAX == GPIO_OSPEED_MAX) &&
 #endif /* CONFIG_SOC_SERIES_GD32F3X0 */
 	     1U,
 	     "pinctrl output speed definitions != HAL definitions");

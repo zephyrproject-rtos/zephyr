@@ -69,12 +69,12 @@ static int setup(void)
 	int rc;
 	gpio_port_value_t v1;
 
-	TC_PRINT("Validate device %s\n", DEV_NAME);
-	dev = device_get_binding(DEV_NAME);
-	zassert_not_equal(dev, NULL,
-			  "Device not found");
+	const struct device *dev = DEVICE_DT_GET(DEV);
 
-	TC_PRINT("Check %s output %d connected to input %d\n", DEV_NAME,
+	TC_PRINT("Validate device %s\n", dev->name);
+	zassert_true(device_is_ready(dev), "GPIO dev is not ready");
+
+	TC_PRINT("Check %s output %d connected to input %d\n", dev->name,
 		 PIN_OUT, PIN_IN);
 
 	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT);

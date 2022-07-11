@@ -21,45 +21,39 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 }
 #endif
 
-#define LSM6DSL_DEVNAME		DT_LABEL(DT_INST(0, st_lsm6dsl))
-#define HTS221_DEVNAME		DT_LABEL(DT_INST(0, st_hts221))
-#define LPS22HB_DEVNAME		DT_LABEL(DT_INST(0, st_lps22hb_press))
-#define LIS2DH_DEVNAME		DT_LABEL(DT_INST(0, st_lis2dh))
-#define LIS2MDL_DEVNAME		DT_LABEL(DT_INST(0, st_lis2mdl))
-
 void main(void)
 {
 	struct sensor_value temp1, temp2, hum, press;
 	struct sensor_value accel1[3], accel2[3];
 	struct sensor_value gyro[3];
 	struct sensor_value magn[3];
-	const struct device *hts221 = device_get_binding(HTS221_DEVNAME);
-	const struct device *lps22hb = device_get_binding(LPS22HB_DEVNAME);
-	const struct device *lsm6dsl = device_get_binding(LSM6DSL_DEVNAME);
-	const struct device *lsm303agr_a = device_get_binding(LIS2DH_DEVNAME);
-	const struct device *lsm303agr_m = device_get_binding(LIS2MDL_DEVNAME);
+	const struct device *hts221 = DEVICE_DT_GET_ONE(st_hts221);
+	const struct device *lps22hb = DEVICE_DT_GET_ONE(st_lps22hb_press);
+	const struct device *lsm6dsl = DEVICE_DT_GET_ONE(st_lsm6dsl);
+	const struct device *lsm303agr_a = DEVICE_DT_GET_ONE(st_lis2dh);
+	const struct device *lsm303agr_m = DEVICE_DT_GET_ONE(st_lis2mdl);
 #ifdef CONFIG_LSM6DSL_TRIGGER
 	int cnt = 1;
 #endif
 
-	if (hts221 == NULL) {
-		printf("Could not get HTS221 device\n");
+	if (!device_is_ready(hts221)) {
+		printk("%s: device not ready.\n", hts221->name);
 		return;
 	}
-	if (lps22hb == NULL) {
-		printf("Could not get LPS22HB device\n");
+	if (!device_is_ready(lps22hb)) {
+		printk("%s: device not ready.\n", lps22hb->name);
 		return;
 	}
-	if (lsm6dsl == NULL) {
-		printf("Could not get LSM6DSL device\n");
+	if (!device_is_ready(lsm6dsl)) {
+		printk("%s: device not ready.\n", lsm6dsl->name);
 		return;
 	}
-	if (lsm303agr_a == NULL) {
-		printf("Could not get LSM303AGR Accel device\n");
+	if (!device_is_ready(lsm303agr_a)) {
+		printk("%s: device not ready.\n", lsm303agr_a->name);
 		return;
 	}
-	if (lsm303agr_m == NULL) {
-		printf("Could not get LSM303AGR Magn device\n");
+	if (!device_is_ready(lsm303agr_m)) {
+		printk("%s: device not ready.\n", lsm303agr_m->name);
 		return;
 	}
 

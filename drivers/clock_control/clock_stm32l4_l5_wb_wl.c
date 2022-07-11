@@ -16,14 +16,14 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
 
-#if STM32_SYSCLK_SRC_PLL
+#if defined(STM32_PLL_ENABLED)
 
-/* Macros to fill up division factors values */
-#define z_pllm(v) LL_RCC_PLLM_DIV_ ## v
-#define pllm(v) z_pllm(v)
-
-#define z_pllr(v) LL_RCC_PLLR_DIV_ ## v
-#define pllr(v) z_pllr(v)
+#if defined(LL_RCC_MSIRANGESEL_RUN)
+#define CALC_RUN_MSI_FREQ(range) __LL_RCC_CALC_MSI_FREQ(LL_RCC_MSIRANGESEL_RUN, \
+							range << RCC_CR_MSIRANGE_Pos);
+#else
+#define CALC_RUN_MSI_FREQ(range) __LL_RCC_CALC_MSI_FREQ(range << RCC_CR_MSIRANGE_Pos);
+#endif
 
 /**
  * @brief Return PLL source
@@ -38,6 +38,26 @@ static uint32_t get_pll_source(void)
 		return LL_RCC_PLLSOURCE_HSE;
 	} else if (IS_ENABLED(STM32_PLL_SRC_MSI)) {
 		return LL_RCC_PLLSOURCE_MSI;
+	}
+
+	__ASSERT(0, "Invalid source");
+	return 0;
+}
+
+/**
+ * @brief get the pll source frequency
+ */
+__unused
+uint32_t get_pllsrc_frequency(void)
+{
+	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+		return STM32_HSI_FREQ;
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
+		return STM32_HSE_FREQ;
+#if defined(STM32_MSI_ENABLED)
+	} else if (IS_ENABLED(STM32_PLL_SRC_MSI)) {
+		return CALC_RUN_MSI_FREQ(STM32_MSI_RANGE);
+#endif
 	}
 
 	__ASSERT(0, "Invalid source");
@@ -64,19 +84,7 @@ void config_pll_sysclock(void)
 	LL_RCC_PLL_EnableDomain_SYS();
 }
 
-/**
- * @brief Return pllout frequency
- */
-__unused
-uint32_t get_pllout_frequency(void)
-{
-	return __LL_RCC_CALC_PLLCLK_FREQ(get_pll_source(),
-					 pllm(STM32_PLL_M_DIVISOR),
-					 STM32_PLL_N_MULTIPLIER,
-					 pllr(STM32_PLL_R_DIVISOR));
-}
-
-#endif /* STM32_SYSCLK_SRC_PLL */
+#endif /* defined(STM32_PLL_ENABLED) */
 
 /**
  * @brief Activate default clocks

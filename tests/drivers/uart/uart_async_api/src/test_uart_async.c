@@ -21,7 +21,11 @@ K_TIMER_DEFINE(read_abort_timer, read_abort_timeout, NULL);
 
 void init_test(void)
 {
-	uart_dev = device_get_binding(UART_DEVICE_NAME);
+	uart_dev = DEVICE_DT_GET(UART_DEVICE_DEV);
+	if (!device_is_ready(uart_dev)) {
+		printk("UART device is not ready\n");
+		return;
+	}
 }
 
 #ifdef CONFIG_USERSPACE
@@ -420,8 +424,9 @@ void test_read_abort(void)
 	 * that may affect following test on RX
 	 */
 	uart_rx_enable(uart_dev, rx_buf, sizeof(rx_buf), 50 * USEC_PER_MSEC);
-	while (k_sem_take(&rx_rdy, K_MSEC(1000)) != -EAGAIN)
+	while (k_sem_take(&rx_rdy, K_MSEC(1000)) != -EAGAIN) {
 		;
+	}
 	uart_rx_disable(uart_dev);
 }
 

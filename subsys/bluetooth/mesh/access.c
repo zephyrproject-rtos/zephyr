@@ -1115,9 +1115,9 @@ static void store_pending_mod_bind(struct bt_mesh_model *mod, bool vnd)
 	}
 
 	if (err) {
-		BT_ERR("Failed to store %s value", log_strdup(path));
+		BT_ERR("Failed to store %s value", path);
 	} else {
-		BT_DBG("Stored %s value", log_strdup(path));
+		BT_DBG("Stored %s value", path);
 	}
 }
 
@@ -1143,9 +1143,9 @@ static void store_pending_mod_sub(struct bt_mesh_model *mod, bool vnd)
 	}
 
 	if (err) {
-		BT_ERR("Failed to store %s value", log_strdup(path));
+		BT_ERR("Failed to store %s value", path);
 	} else {
-		BT_DBG("Stored %s value", log_strdup(path));
+		BT_DBG("Stored %s value", path);
 	}
 }
 
@@ -1172,9 +1172,9 @@ static void store_pending_mod_pub(struct bt_mesh_model *mod, bool vnd)
 	}
 
 	if (err) {
-		BT_ERR("Failed to store %s value", log_strdup(path));
+		BT_ERR("Failed to store %s value", path);
 	} else {
-		BT_DBG("Stored %s value", log_strdup(path));
+		BT_DBG("Stored %s value", path);
 	}
 }
 
@@ -1245,9 +1245,9 @@ int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
 	}
 
 	if (err) {
-		BT_ERR("Failed to store %s value", log_strdup(path));
+		BT_ERR("Failed to store %s value", path);
 	} else {
-		BT_DBG("Stored %s value", log_strdup(path));
+		BT_DBG("Stored %s value", path);
 	}
 	return err;
 }

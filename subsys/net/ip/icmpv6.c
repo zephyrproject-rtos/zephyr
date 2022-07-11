@@ -114,8 +114,8 @@ enum net_verdict icmpv6_handle_echo_request(struct net_pkt *pkt,
 	ARG_UNUSED(icmp_hdr);
 
 	NET_DBG("Received Echo Request from %s to %s",
-		log_strdup(net_sprint_ipv6_addr(&ip_hdr->src)),
-		log_strdup(net_sprint_ipv6_addr(&ip_hdr->dst)));
+		net_sprint_ipv6_addr(&ip_hdr->src),
+		net_sprint_ipv6_addr(&ip_hdr->dst));
 
 	payload_len = ntohs(ip_hdr->len) -
 		net_pkt_ipv6_ext_len(pkt) - NET_ICMPH_LEN;
@@ -161,8 +161,8 @@ enum net_verdict icmpv6_handle_echo_request(struct net_pkt *pkt,
 	net_ipv6_finalize(reply, IPPROTO_ICMPV6);
 
 	NET_DBG("Sending Echo Reply from %s to %s",
-		log_strdup(net_sprint_ipv6_addr(src)),
-		log_strdup(net_sprint_ipv6_addr(&ip_hdr->src)));
+		net_sprint_ipv6_addr(src),
+		net_sprint_ipv6_addr(&ip_hdr->src));
 
 	if (net_send_data(reply) < 0) {
 		goto drop;
@@ -313,8 +313,8 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 
 	NET_DBG("Sending ICMPv6 Error Message type %d code %d param %d"
 		" from %s to %s", type, code, param,
-		log_strdup(net_sprint_ipv6_addr(src)),
-		log_strdup(net_sprint_ipv6_addr(&ip_hdr->src)));
+		net_sprint_ipv6_addr(src),
+		net_sprint_ipv6_addr(&ip_hdr->src));
 
 	if (net_send_data(pkt) >= 0) {
 		net_stats_update_icmp_sent(net_pkt_iface(pkt));
@@ -377,8 +377,8 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 
 	NET_DBG("Sending ICMPv6 Echo Request type %d from %s to %s",
 		NET_ICMPV6_ECHO_REQUEST,
-		log_strdup(net_sprint_ipv6_addr(src)),
-		log_strdup(net_sprint_ipv6_addr(dst)));
+		net_sprint_ipv6_addr(src),
+		net_sprint_ipv6_addr(dst));
 
 	if (net_send_data(pkt) >= 0) {
 		net_stats_update_icmp_sent(iface);

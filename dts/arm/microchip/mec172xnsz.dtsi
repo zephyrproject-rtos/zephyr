@@ -10,6 +10,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
+#include <freq.h>
+#include <mem.h>
 
 #include "mec172x/mec172x-vw-routing.dtsi"
 
@@ -758,7 +760,7 @@
 			clock-frequency = <12000000>;
 			label = "SPI_0";
 			lines = <1>;
-			chip-select = <0>;
+			chip_select = <0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";

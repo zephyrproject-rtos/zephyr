@@ -47,10 +47,8 @@ struct i2c_xec_config {
 	uint32_t base_addr;
 	uint8_t girq_id;
 	uint8_t girq_bit;
-	uint8_t sda_pos;
-	uint8_t scl_pos;
-	const char *sda_gpio_label;
-	const char *scl_gpio_label;
+	struct gpio_dt_spec sda_gpio;
+	struct gpio_dt_spec scl_gpio;
 	void (*irq_config_func)(void);
 };
 
@@ -60,9 +58,7 @@ struct i2c_xec_data {
 	uint32_t timeout_seen;
 	uint32_t previously_in_read;
 	uint32_t speed_id;
-	const struct device *sda_gpio;
-	const struct device *scl_gpio;
-	struct i2c_slave_config *slave_cfg;
+	struct i2c_target_config *slave_cfg;
 	bool slave_attached;
 	bool slave_read;
 };
@@ -177,7 +173,7 @@ static void cleanup_registers(uint32_t ba)
 	cfg &= ~MCHP_I2C_SMB_CFG_FLUSH_SRBUF_WO;
 }
 
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 static void restart_slave(uint32_t ba)
 {
 	MCHP_I2C_SMB_CTRL_WO(ba) = MCHP_I2C_SMB_CTRL_PIN |
@@ -299,26 +295,25 @@ static bool check_lines_high(const struct device *dev)
 {
 	const struct i2c_xec_config *config =
 		(const struct i2c_xec_config *const)(dev->config);
-	struct i2c_xec_data *data = (struct i2c_xec_data *const)(dev->data);
 	gpio_port_value_t sda = 0, scl = 0;
 
-	if (gpio_port_get_raw(data->sda_gpio, &sda)) {
+	if (gpio_port_get_raw(config->sda_gpio.port, &sda)) {
 		LOG_ERR("gpio_port_get_raw for %s SDA failed", dev->name);
 		return false;
 	}
 
 	/* both pins could be on same GPIO group */
-	if (data->sda_gpio == data->scl_gpio) {
+	if (config->sda_gpio.port == config->scl_gpio.port) {
 		scl = sda;
 	} else {
-		if (gpio_port_get_raw(data->scl_gpio, &scl)) {
+		if (gpio_port_get_raw(config->scl_gpio.port, &scl)) {
 			LOG_ERR("gpio_port_get_raw for %s SCL failed",
 				dev->name);
 			return false;
 		}
 	}
 
-	return (sda & BIT(config->sda_pos)) && (scl & BIT(config->scl_pos));
+	return (sda & BIT(config->sda_gpio.pin)) && (scl & BIT(config->scl_gpio.pin));
 
 }
 
@@ -328,7 +323,7 @@ static int i2c_xec_configure(const struct device *dev,
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->data);
 
-	if (!(dev_config_raw & I2C_MODE_MASTER)) {
+	if (!(dev_config_raw & I2C_MODE_CONTROLLER)) {
 		return -ENOTSUP;
 	}
 
@@ -658,7 +653,7 @@ static int i2c_xec_transfer(const struct device *dev, struct i2c_msg *msgs,
 {
 	int ret = 0;
 
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 	struct i2c_xec_data *data = dev->data;
 
 	if (data->slave_attached) {
@@ -689,11 +684,11 @@ static int i2c_xec_transfer(const struct device *dev, struct i2c_msg *msgs,
 
 static void i2c_xec_bus_isr(const struct device *dev)
 {
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 	const struct i2c_xec_config *config =
 		(const struct i2c_xec_config *const) (dev->config);
 	struct i2c_xec_data *data = dev->data;
-	const struct i2c_slave_callbacks *slave_cb = data->slave_cfg->callbacks;
+	const struct i2c_target_callbacks *slave_cb = data->slave_cfg->callbacks;
 	uint32_t ba = config->base_addr;
 
 	uint32_t status;
@@ -773,9 +768,9 @@ clear_iag:
 #endif
 }
 
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 static int i2c_xec_slave_register(const struct device *dev,
-				  struct i2c_slave_config *config)
+				  struct i2c_target_config *config)
 {
 	const struct i2c_xec_config *cfg = dev->config;
 	struct i2c_xec_data *data = dev->data;
@@ -818,7 +813,7 @@ static int i2c_xec_slave_register(const struct device *dev,
 }
 
 static int i2c_xec_slave_unregister(const struct device *dev,
-				    struct i2c_slave_config *config)
+				    struct i2c_target_config *config)
 {
 	const struct i2c_xec_config *cfg = dev->config;
 	struct i2c_xec_data *data = dev->data;
@@ -838,7 +833,7 @@ static int i2c_xec_slave_unregister(const struct device *dev,
 static const struct i2c_driver_api i2c_xec_driver_api = {
 	.configure = i2c_xec_configure,
 	.transfer = i2c_xec_transfer,
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 	.slave_register = i2c_xec_slave_register,
 	.slave_unregister = i2c_xec_slave_unregister,
 #endif
@@ -854,28 +849,26 @@ static int i2c_xec_init(const struct device *dev)
 	data->pending_stop = 0;
 	data->slave_attached = false;
 
-	data->sda_gpio = device_get_binding(cfg->sda_gpio_label);
-	if (!data->sda_gpio) {
-		LOG_ERR("%s configure failed to bind SDA GPIO", dev->name);
-		return -ENXIO;
+	if (!device_is_ready(cfg->sda_gpio.port)) {
+		LOG_ERR("%s GPIO device is not ready for SDA GPIO", dev->name);
+		return -ENODEV;
 	}
 
-	data->scl_gpio = device_get_binding(cfg->scl_gpio_label);
-	if (!data->scl_gpio) {
-		LOG_ERR("%s configure failed to bind SCL GPIO", dev->name);
-		return -ENXIO;
+	if (!device_is_ready(cfg->scl_gpio.port)) {
+		LOG_ERR("%s GPIO device is not ready for SCL GPIO", dev->name);
+		return -ENODEV;
 	}
 
 	/* Default configuration */
 	ret = i2c_xec_configure(dev,
-				I2C_MODE_MASTER |
+				I2C_MODE_CONTROLLER |
 				I2C_SPEED_SET(I2C_SPEED_STANDARD));
 	if (ret) {
 		LOG_ERR("%s configure failed %d", dev->name, ret);
 		return ret;
 	}
 
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 	const struct i2c_xec_config *config =
 	(const struct i2c_xec_config *const) (dev->config);
 
@@ -894,10 +887,8 @@ static int i2c_xec_init(const struct device *dev)
 		.port_sel = DT_INST_PROP(n, port_sel),			\
 		.girq_id = DT_INST_PROP(n, girq),			\
 		.girq_bit = DT_INST_PROP(n, girq_bit),			\
-		.sda_pos = DT_INST_GPIO_PIN(n, sda_gpios),		\
-		.scl_pos = DT_INST_GPIO_PIN(n, scl_gpios),		\
-		.sda_gpio_label = DT_INST_GPIO_LABEL(n, sda_gpios),	\
-		.scl_gpio_label = DT_INST_GPIO_LABEL(n, scl_gpios),	\
+		.sda_gpio = GPIO_DT_SPEC_INST_GET(n, sda_gpios),	\
+		.scl_gpio = GPIO_DT_SPEC_INST_GET(n, scl_gpios),	\
 		.irq_config_func = i2c_xec_irq_config_func_##n,		\
 	};								\
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_xec_init, NULL,	\

@@ -39,11 +39,11 @@
  * ADC input read from PA1 (Arduino A1 pin of Nucleo board)
  */
 
-#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac1))
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac1)
 #define DAC_CHANNEL_ID		1
 #define DAC_RESOLUTION		12
 
-#define ADC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(adc1))
+#define ADC_DEVICE_NODE		DT_NODELABEL(adc1)
 #define ADC_CHANNEL_ID		1
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
@@ -52,17 +52,18 @@
 
 #elif defined(CONFIG_BOARD_NUCLEO_F207ZG) || \
 	defined(CONFIG_BOARD_NUCLEO_F429ZI) || \
-	defined(CONFIG_BOARD_NUCLEO_F746ZG)
+	defined(CONFIG_BOARD_NUCLEO_F746ZG) || \
+	defined(CONFIG_BOARD_NUCLEO_G071RB)
 /*
  * DAC output on PA4
  * ADC input read from PA0
  */
 
-#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac1))
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac1)
 #define DAC_CHANNEL_ID		1
 #define DAC_RESOLUTION		12
 
-#define ADC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(adc1))
+#define ADC_DEVICE_NODE		DT_NODELABEL(adc1)
 #define ADC_CHANNEL_ID		0
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
@@ -76,11 +77,11 @@
  * is enabled.
  */
 
-#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac0))
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
-#define ADC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(adc0))
+#define ADC_DEVICE_NODE		DT_NODELABEL(adc0)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -91,11 +92,11 @@
 
 /* DAC0 output is internally available on ADC0_SE23 */
 
-#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac0))
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
-#define ADC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(adc0))
+#define ADC_DEVICE_NODE		DT_NODELABEL(adc0)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -106,11 +107,11 @@
 
 /* DAC0 output is internally available on ADC0_SE23 */
 
-#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac0))
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
-#define ADC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(adc0))
+#define ADC_DEVICE_NODE		DT_NODELABEL(adc0)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -129,11 +130,11 @@
   * BL654_DVK at factory
   */
 
-#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac0))
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
-#define ADC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(adc))
+#define ADC_DEVICE_NODE		DT_NODELABEL(adc)
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1_4
 #define ADC_REFERENCE		ADC_REF_VDD_1_4
@@ -167,9 +168,9 @@ static const struct adc_channel_cfg adc_ch_cfg = {
 static const struct device *init_dac(void)
 {
 	int ret;
-	const struct device *dac_dev = device_get_binding(DAC_DEVICE_NAME);
+	const struct device *dac_dev = DEVICE_DT_GET(DAC_DEVICE_NODE);
 
-	zassert_not_null(dac_dev, "Cannot get DAC device");
+	zassert_true(device_is_ready(dac_dev), "DAC device is not ready");
 
 	ret = dac_channel_setup(dac_dev, &dac_ch_cfg);
 	zassert_equal(ret, 0,
@@ -182,9 +183,9 @@ static const struct device *init_dac(void)
 static const struct device *init_adc(void)
 {
 	int ret;
-	const struct device *adc_dev = device_get_binding(ADC_DEVICE_NAME);
+	const struct device *adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
-	zassert_not_null(adc_dev, "Cannot get ADC device");
+	zassert_true(device_is_ready(adc_dev), "ADC device is not ready");
 
 	ret = adc_channel_setup(adc_dev, &adc_ch_cfg);
 	zassert_equal(ret, 0,

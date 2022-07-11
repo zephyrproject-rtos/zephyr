@@ -1,12 +1,10 @@
 tests:
   kernel.scheduler.metairq:
     tags: kernel
-    filter: not CONFIG_SMP
     platform_exclude: nrf52dk_nrf52810
   kernel.scheduler.metairq.linker_generator:
     platform_allow: qemu_cortex_m3
     tags: kernel linker_generator
-    filter: not CONFIG_SMP
     platform_exclude: nrf52dk_nrf52810
     extra_configs:
       - CONFIG_CMAKE_LINKER_GENERATOR=y

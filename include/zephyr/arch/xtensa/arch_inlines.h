@@ -32,6 +32,14 @@ static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 	return cpu;
 }
 
+static ALWAYS_INLINE uint32_t arch_proc_id(void)
+{
+	uint32_t prid;
+
+	__asm__ volatile("rsr %0, PRID" : "=r"(prid));
+	return prid;
+}
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_INLINES_H_ */

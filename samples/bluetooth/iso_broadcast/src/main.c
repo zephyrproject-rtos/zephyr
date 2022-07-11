@@ -8,7 +8,8 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/byteorder.h>
 
-#define BIG_TERMINATE_TIMEOUT 60 /* seconds */
+#define BIG_TERMINATE_TIMEOUT_US (60 * USEC_PER_SEC) /* microseconds */
+#define BIG_SDU_INTERVAL_US (10000)
 
 #define BIS_ISO_CHAN_COUNT 1
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
@@ -16,6 +17,8 @@ NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
 
 static K_SEM_DEFINE(sem_big_cmplt, 0, 1);
 static K_SEM_DEFINE(sem_big_term, 0, 1);
+
+#define INITIAL_TIMEOUT_COUNTER (BIG_TERMINATE_TIMEOUT_US / BIG_SDU_INTERVAL_US)
 
 static uint32_t seq_num;
 
@@ -60,7 +63,7 @@ static struct bt_iso_chan *bis[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
 static struct bt_iso_big_create_param big_create_param = {
 	.num_bis = BIS_ISO_CHAN_COUNT,
 	.bis_channels = bis,
-	.interval = 10000, /* in microseconds */
+	.interval = BIG_SDU_INTERVAL_US, /* in microseconds */
 	.latency = 10, /* milliseconds */
 	.packing = 0, /* 0 - sequential, 1 - interleaved */
 	.framing = 0, /* 0 - unframed, 1 - framed */
@@ -74,6 +77,7 @@ void main(void)
 	uint32_t iso_send_count = 0;
 	uint8_t iso_data[sizeof(iso_send_count)] = { 0 };
 	struct net_buf *buf;
+	uint32_t timeout_counter = INITIAL_TIMEOUT_COUNTER;
 
 	printk("Starting ISO Broadcast Demo\n");
 
@@ -129,7 +133,6 @@ void main(void)
 	printk("done.\n");
 
 	while (true) {
-		static uint8_t timeout = BIG_TERMINATE_TIMEOUT;
 		int ret;
 
 		k_sleep(K_USEC(big_create_param.interval));
@@ -145,11 +148,14 @@ void main(void)
 			net_buf_unref(buf);
 			return;
 		}
-		printk("Sending value %u\n", iso_send_count);
 
-		timeout--;
-		if (!timeout) {
-			timeout = BIG_TERMINATE_TIMEOUT;
+		if ((iso_send_count % 100) == 0) {
+			printk("Sending value %u\n", iso_send_count);
+		}
+
+		timeout_counter--;
+		if (!timeout_counter) {
+			timeout_counter = INITIAL_TIMEOUT_COUNTER;
 
 			printk("BIG Terminate...");
 			err = bt_iso_big_terminate(big);

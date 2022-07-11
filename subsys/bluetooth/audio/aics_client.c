@@ -105,7 +105,7 @@ uint8_t aics_client_notify_handler(struct bt_conn *conn, struct bt_gatt_subscrib
 
 		memcpy(desc, data, length);
 		desc[length] = '\0';
-		BT_DBG("Inst %p: Input description: %s", inst, log_strdup(desc));
+		BT_DBG("Inst %p: Input description: %s", inst, desc);
 		if (inst->cli.cb && inst->cli.cb->description) {
 			inst->cli.cb->description(inst, 0, desc);
 		}
@@ -527,7 +527,7 @@ static uint8_t aics_client_read_desc_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	desc[length] = '\0';
-	BT_DBG("Input description: %s", log_strdup(desc));
+	BT_DBG("Input description: %s", desc);
 
 	if (inst->cli.cb && inst->cli.cb->description) {
 		inst->cli.cb->description(inst, cb_err, desc);

@@ -33,6 +33,9 @@ config NET_CONFIG_IEEE802154_DEV_NAME
 config I2C_TELINK_B91
 	default y if I2C
 
+config ADC_TELINK_B91
+	default y if ADC
+
 if BT
 
 # BLE Controller SDK from hal_telink requires
@@ -48,5 +51,11 @@ choice BT_HCI_BUS_TYPE
 endchoice
 
 endif # BT
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+
+config FLASH_LOAD_OFFSET
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
 
 endif

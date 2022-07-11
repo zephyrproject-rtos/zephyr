@@ -5,3 +5,6 @@
 #
 
 add_subdirectory(${SOC_SERIES})
+
+# This is for access to pinctrl macros
+zephyr_include_directories(common)

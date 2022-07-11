@@ -29,7 +29,7 @@ static int itds_trigger_drdy_set(const struct device *dev,
 		drdy_en = ITDS_MASK_INT_DRDY;
 	}
 
-	ret = i2c_reg_update_byte(ddata->i2c, cfg->i2c_addr, ITDS_REG_CTRL4,
+	ret = i2c_reg_update_byte_dt(&cfg->i2c, ITDS_REG_CTRL4,
 				  ITDS_MASK_INT_DRDY, drdy_en);
 	if (ret) {
 		return ret;
@@ -42,6 +42,12 @@ int itds_trigger_set(const struct device *dev,
 		     const struct sensor_trigger *trig,
 		     sensor_trigger_handler_t handler)
 {
+	const struct itds_device_config *cfg = dev->config;
+
+	if (!cfg->int_gpio.port) {
+		return -ENOTSUP;
+	}
+
 	if (trig->chan != SENSOR_CHAN_ACCEL_XYZ) {
 		return -ENOTSUP;
 	}
@@ -66,7 +72,7 @@ static void itds_work_handler(struct k_work *work)
 		.chan = SENSOR_CHAN_ACCEL_XYZ,
 	};
 
-	if (i2c_reg_read_byte(ddata->i2c, cfg->i2c_addr, ITDS_REG_STATUS,
+	if (i2c_reg_read_byte_dt(&cfg->i2c, ITDS_REG_STATUS,
 			      &status) < 0) {
 		return;
 	}
@@ -96,26 +102,31 @@ int itds_trigger_mode_init(const struct device *dev)
 	struct itds_device_data *ddata = dev->data;
 	const struct itds_device_config *cfg = dev->config;
 
-	ddata->gpio = device_get_binding(cfg->gpio_port);
-	if (!ddata->gpio) {
-		LOG_DBG("Gpio controller %s not found.", cfg->gpio_port);
-		return -EINVAL;
+	/* dts doesn't have GPIO int pin set, so we dont support
+	 * trigger mode for this instance
+	 */
+	if (!cfg->int_gpio.port) {
+		return 0;
+	}
+
+	if (!device_is_ready(cfg->int_gpio.port)) {
+		LOG_ERR("%s: device %s is not ready", dev->name,
+				cfg->int_gpio.port->name);
+		return -ENODEV;
 	}
 
 	ddata->work.handler = itds_work_handler;
 	ddata->dev = dev;
 
-	gpio_pin_configure(ddata->gpio, cfg->int_pin,
-			   GPIO_INPUT | cfg->int_flags);
+	gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INPUT);
 
 	gpio_init_callback(&ddata->gpio_cb, itds_gpio_callback,
-			   BIT(cfg->int_pin));
+			   BIT(cfg->int_gpio.pin));
 
-	gpio_add_callback(ddata->gpio, &ddata->gpio_cb);
-	gpio_pin_interrupt_configure(ddata->gpio, cfg->int_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_add_callback(cfg->int_gpio.port, &ddata->gpio_cb);
+	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 	/* enable global interrupt */
-	return i2c_reg_update_byte(ddata->i2c, cfg->i2c_addr, ITDS_REG_CTRL7,
+	return i2c_reg_update_byte_dt(&cfg->i2c, ITDS_REG_CTRL7,
 				   ITDS_MASK_INT_EN, ITDS_MASK_INT_EN);
 }

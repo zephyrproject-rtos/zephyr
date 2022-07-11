@@ -1231,7 +1231,7 @@ void test_thread_alloc_out_of_idx(void)
 
 	fail_thread = k_object_alloc(K_OBJ_THREAD);
 	/** TESTPOINT: thread alloc failed due to out of idx */
-	zassert_is_null(thread[cur_max],
+	zassert_is_null(fail_thread,
 			"mo more kobj[%d](0x%lx) shall be allocated"
 			, cur_max, (uintptr_t)thread[cur_max]);
 

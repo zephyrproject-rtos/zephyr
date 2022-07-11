@@ -25,14 +25,13 @@ struct lm75_data {
 };
 
 struct lm75_config {
-	const struct device *i2c_dev;
-	uint8_t i2c_addr;
+	struct i2c_dt_spec i2c;
 };
 
 static inline int lm75_reg_read(const struct lm75_config *cfg, uint8_t reg,
 				uint8_t *buf, uint32_t size)
 {
-	return i2c_burst_read(cfg->i2c_dev, cfg->i2c_addr, reg, buf, size);
+	return i2c_burst_read_dt(&cfg->i2c, reg, buf, size);
 }
 
 static inline int lm75_fetch_temp(const struct lm75_config *cfg, struct lm75_data *data)
@@ -98,7 +97,7 @@ int lm75_init(const struct device *dev)
 {
 	const struct lm75_config *cfg = dev->config;
 
-	if (device_is_ready(cfg->i2c_dev)) {
+	if (device_is_ready(cfg->i2c.bus)) {
 		return 0;
 	}
 
@@ -109,8 +108,7 @@ int lm75_init(const struct device *dev)
 #define LM75_INST(inst)                                             \
 static struct lm75_data lm75_data_##inst;                           \
 static const struct lm75_config lm75_config_##inst = {              \
-	.i2c_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),                \
-	.i2c_addr = DT_INST_REG_ADDR(inst),                         \
+	.i2c = I2C_DT_SPEC_INST_GET(inst),                          \
 };                                                                  \
 DEVICE_DT_INST_DEFINE(inst, lm75_init, NULL, &lm75_data_##inst,     \
 		      &lm75_config_##inst, POST_KERNEL,             \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Vestas Wind Systems A/S
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,68 +7,59 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_NORDIC_NRF_GPIO_H_
 
 /**
- * @name GPIO drive strength flags
- *
- * The drive strength flags are a Zephyr specific extension of the standard GPIO
- * flags specified by the Linux GPIO binding. Only applicable for Nordic
- * Semiconductor nRF SoCs.
- *
- * The drive strength of individual pins can be configured
- * independently for when the pin output is low and high.
- *
- * The `GPIO_DS_*_LOW` enumerations define the drive strength of a pin
- * when output is low.
+ * @brief nRF-specific GPIO Flags
+ * @defgroup gpio_interface_nrf nRF-specific GPIO Flags
+ * @ingroup gpio_interface
+ * @{
+ */
 
- * The `GPIO_DS_*_HIGH` enumerations define the drive strength of a pin
- * when output is high.
+/**
+ * @name nRF GPIO drive flags
+ * @brief nRF GPIO drive flags
  *
- * The interface supports two different drive strengths:
- * `DFLT` - The lowest drive strength supported by the HW
- * `ALT` - The highest drive strength supported by the HW
+ * Standard (S) or High (H) drive modes can be applied to both pin levels, 0 or
+ * 1. High drive mode will increase current capabilities of the pin (refer to
+ * each SoC reference manual).
+ *
+ * When the pin is configured to operate in open-drain mode (wired-and), the
+ * drive mode can only be selected for the 0 level (1 is disconnected).
+ * Similarly, when the pin is configured to operate in open-source mode
+ * (wired-or), the drive mode can only be set for the 1 level
+ * (0 is disconnected).
+ *
+ * The drive flags are encoded in the 8 upper bits of @ref gpio_dt_flags_t as
+ * follows:
+ *
+ * - Bit 8: Drive mode for '0' (0=Standard, 1=High)
+ * - Bit 9: Drive mode for '1' (0=Standard, 1=High)
  *
  * @{
  */
-/** @cond INTERNAL_HIDDEN */
-#define NRF_GPIO_DS_LOW_POS 9
-#define NRF_GPIO_DS_LOW_MASK (0x1U << NRF_GPIO_DS_LOW_POS)
-/** @endcond */
-
-/** Default drive strength standard when GPIO pin output is low.
- */
-#define NRF_GPIO_DS_DFLT_LOW (0x0U << NRF_GPIO_DS_LOW_POS)
-
-/** Alternative drive strength when GPIO pin output is low.
- * For hardware that does not support configurable drive strength
- * use the default drive strength.
- */
-#define NRF_GPIO_DS_ALT_LOW (0x1U << NRF_GPIO_DS_LOW_POS)
 
 /** @cond INTERNAL_HIDDEN */
-#define NRF_GPIO_DS_HIGH_POS 10
-#define NRF_GPIO_DS_HIGH_MASK (0x1U << NRF_GPIO_DS_HIGH_POS)
+/** Drive mode field mask */
+#define NRF_GPIO_DRIVE_MSK	0x0300U
 /** @endcond */
 
-/** Default drive strength when GPIO pin output is high.
- */
-#define NRF_GPIO_DS_DFLT_HIGH (0x0U << NRF_GPIO_DS_HIGH_POS)
+/** Standard drive for '0' (default, used with GPIO_OPEN_DRAIN) */
+#define NRF_GPIO_DRIVE_S0	(0U << 8U)
+/** High drive for '0' (used with GPIO_OPEN_DRAIN) */
+#define NRF_GPIO_DRIVE_H0	(1U << 8U)
+/** Standard drive for '1' (default, used with GPIO_OPEN_SOURCE) */
+#define NRF_GPIO_DRIVE_S1	(0U << 9U)
+/** High drive for '1' (used with GPIO_OPEN_SOURCE) */
+#define NRF_GPIO_DRIVE_H1	(1U << 9U)
+/** Standard drive for '0' and '1' (default) */
+#define NRF_GPIO_DRIVE_S0S1	(NRF_GPIO_DRIVE_S0 | NRF_GPIO_DRIVE_S1)
+/** Standard drive for '0' and high for '1' */
+#define NRF_GPIO_DRIVE_S0H1	(NRF_GPIO_DRIVE_S0 | NRF_GPIO_DRIVE_H1)
+/** High drive for '0' and standard for '1' */
+#define NRF_GPIO_DRIVE_H0S1	(NRF_GPIO_DRIVE_H0 | NRF_GPIO_DRIVE_S1)
+/** High drive for '0' and '1' */
+#define NRF_GPIO_DRIVE_H0H1	(NRF_GPIO_DRIVE_H0 | NRF_GPIO_DRIVE_H1)
 
-/** Alternative drive strength when GPIO pin output is high.
- * For hardware that does not support configurable drive strengths
- * use the default drive strength.
- */
-#define NRF_GPIO_DS_ALT_HIGH (0x1U << NRF_GPIO_DS_HIGH_POS)
+/** @} */
 
-/** Combined default drive strength.
- */
-#define NRF_GPIO_DS_DFLT (NRF_GPIO_DS_DFLT_LOW | NRF_GPIO_DS_DFLT_HIGH)
-
-/** Combined alternative drive strength.
- */
-#define NRF_GPIO_DS_ALT (NRF_GPIO_DS_ALT_LOW | NRF_GPIO_DS_ALT_HIGH)
-
-/** @cond INTERNAL_HIDDEN */
-#define NRF_GPIO_DS_MASK (NRF_GPIO_DS_LOW_MASK | NRF_GPIO_DS_HIGH_MASK)
-/** @endcond */
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_NORDIC_NRF_GPIO_H_ */

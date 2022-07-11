@@ -21,10 +21,176 @@
 extern "C" {
 #endif
 
+struct bt_mesh_cfg_cli;
+
+/** Mesh Configuration Client Status messages callback */
+struct bt_mesh_cfg_cli_cb {
+	/** @brief Optional callback for Model Sub Status messages.
+	 *
+	 *  Handles received Model Sub Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param status      Status Code for requesting message.
+	 *  @param elem_addr   The unicast address of the element.
+	 *  @param sub_addr    The sub address.
+	 *  @param mod_id      The model ID within the element.
+	 */
+	void (*mod_sub_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+			     uint8_t status, uint16_t elem_addr,
+			     uint16_t sub_addr, uint32_t mod_id);
+
+	/** @brief Optional callback for Node Reset Status messages.
+	 *
+	 *  Handles received Node Reset Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 */
+	void (*node_reset_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr);
+
+	/** @brief Optional callback for Beacon Status messages.
+	 *
+	 *  Handles received Beacon Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param status      Status Code for requesting message.
+	 */
+	void (*beacon_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+				uint8_t status);
+
+	/** @brief Optional callback for Default TTL Status messages.
+	 *
+	 *  Handles received Default TTL Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param status      Status Code for requesting message.
+	 */
+	void (*ttl_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+				uint8_t status);
+
+	/** @brief Optional callback for Friend Status messages.
+	 *
+	 *  Handles received Friend Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param status      Status Code for requesting message.
+	 */
+	void (*friend_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+				uint8_t status);
+
+	/** @brief Optional callback for GATT Proxy Status messages.
+	 *
+	 *  Handles received GATT Proxy Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param status      Status Code for requesting message.
+	 */
+	void (*gatt_proxy_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+				uint8_t status);
+
+	/** @brief Optional callback for Network Transmit Status messages.
+	 *
+	 *  Handles received Network Transmit Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param status      Status Code for requesting message.
+	 */
+	void (*network_transmit_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+					uint8_t status);
+
+	/** @brief Optional callback for Relay Status messages.
+	 *
+	 *  Handles received Relay Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param status      Status Code for requesting message.
+	 *  @param transmit    The relay retransmit count and interval steps.
+	 */
+	void (*relay_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+			     uint8_t status, uint8_t transmit);
+
+	/** @brief Optional callback for NetKey Status messages.
+	 *
+	 *  Handles received NetKey Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param status      Status Code for requesting message.
+	 *  @param net_idx     The index of the NetKey.
+	 */
+	void (*net_key_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+			       uint8_t status, uint16_t net_idx);
+
+	/** @brief Optional callback for AppKey Status messages.
+	 *
+	 *  Handles received AppKey Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param status      Status Code for requesting message.
+	 *  @param net_idx     The index of the NetKey.
+	 *  @param app_idx     The index of the AppKey.
+	 */
+	void (*app_key_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+			       uint8_t status, uint16_t net_idx,
+			       uint16_t app_idx);
+
+	/** @brief Optional callback for Model App Status messages.
+	 *
+	 *  Handles received Model App Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param status      Status Code for requesting message.
+	 *  @param elem_addr   The unicast address of the element.
+	 *  @param app_idx     The sub address.
+	 *  @param mod_id      The model ID within the element.
+	 */
+	void (*mod_app_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+			       uint8_t status, uint16_t elem_addr,
+			       uint16_t app_idx, uint32_t mod_id);
+
+	/** @brief Optional callback for Node Identity Status messages.
+	 *
+	 *  Handles received Node Identity Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param status      Status Code for requesting message.
+	 *  @param net_idx     The index of the NetKey.
+	 *  @param identity    The node identity state.
+	 */
+	void (*node_identity_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+				     uint8_t status, uint16_t net_idx,
+				     uint8_t identity);
+
+	/** @brief Optional callback for LPN PollTimeout Status messages.
+	 *
+	 *  Handles received LPN PollTimeout Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param elem_addr   The unicast address of the LPN.
+	 *  @param timeout     Current value of PollTimeout timer of the LPN.
+	 */
+	void (*lpn_timeout_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+				   uint16_t elem_addr, uint32_t timeout);
+};
+
 /** Mesh Configuration Client Model Context */
 struct bt_mesh_cfg_cli {
 	/** Composition data model entry pointer. */
 	struct bt_mesh_model *model;
+
+	/** Optional callback for Mesh Configuration Client Status messages. */
+	const struct bt_mesh_cfg_cli_cb *cb;
 
 	/* Internal parameters for tracking message responses. */
 	struct bt_mesh_msg_ack_ctx ack_ctx;

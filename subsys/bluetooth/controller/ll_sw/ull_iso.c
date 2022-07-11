@@ -30,6 +30,10 @@
 #include "lll_conn_iso.h"
 #include "lll_iso_tx.h"
 
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#include "ull_tx_queue.h"
+#endif
+
 #include "isoal.h"
 
 #include "ull_adv_types.h"
@@ -44,6 +48,7 @@
 #include "ull_sync_iso_internal.h"
 #include "ull_conn_iso_internal.h"
 #include "ull_conn_types.h"
+#include "ull_llcp.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_iso
@@ -248,9 +253,12 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 			 * disallowed status.
 			 */
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 			const uint8_t cis_waiting = (conn->llcp_cis.state ==
 						     LLCP_CIS_STATE_RSP_WAIT);
-
+#else
+			const uint8_t cis_waiting = ull_cp_cc_awaiting_reply(conn);
+#endif
 			if (cis_waiting) {
 				return BT_HCI_ERR_CMD_DISALLOWED;
 			}
@@ -786,12 +794,8 @@ static void iso_rx_cig_ref_point_update(struct ll_conn_iso_group *cig,
 			/* Update the CIG reference point based on the CIS
 			 * anchor point
 			 */
-			/* TODO: It is not clear that the timestamp is in ticks.
-			 * Upstream expectations might be different and this
-			 * might have to be updated.
-			 */
-			cig->cig_ref_point = HAL_TICKER_TICKS_TO_US(meta->timestamp) +
-						cis_sync_delay - cig_sync_delay;
+			cig->cig_ref_point = meta->timestamp + cis_sync_delay -
+					     cig_sync_delay;
 		}
 	}
 }

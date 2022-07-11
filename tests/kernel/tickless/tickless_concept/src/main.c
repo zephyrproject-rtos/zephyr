@@ -74,7 +74,7 @@ static void thread_tslice(void *p1, void *p2, void *p3)
  * @details Check if system clock recovers and works as expected
  * when tickless idle is enabled and disabled.
  */
-void test_tickless_sysclock(void)
+ZTEST(tickless_concept, test_tickless_sysclock)
 {
 	volatile uint32_t t0, t1;
 
@@ -101,7 +101,7 @@ void test_tickless_sysclock(void)
  * @details Create threads of equal priority and enable time
  * slice. Check if the threads execute more than a tick.
  */
-void test_tickless_slice(void)
+ZTEST(tickless_concept, test_tickless_slice)
 {
 	k_tid_t tid[NUM_THREAD];
 
@@ -133,10 +133,6 @@ void test_tickless_slice(void)
 /**
  * @}
  */
-void test_main(void)
-{
-	ztest_test_suite(tickless_concept,
-			 ztest_1cpu_unit_test(test_tickless_sysclock),
-			 ztest_1cpu_unit_test(test_tickless_slice));
-	ztest_run_test_suite(tickless_concept);
-}
+
+ZTEST_SUITE(tickless_concept, NULL, NULL,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

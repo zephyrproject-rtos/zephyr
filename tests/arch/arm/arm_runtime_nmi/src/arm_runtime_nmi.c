@@ -46,7 +46,7 @@ static void nmi_test_isr(void)
  *
  * @see z_NmiHandlerSet()
  */
-void test_arm_runtime_nmi(void)
+ZTEST(arm_runtime_nmi_fn, test_arm_runtime_nmi)
 {
 	uint32_t i = 0U;
 
@@ -61,6 +61,12 @@ void test_arm_runtime_nmi(void)
 	/* Trigger NMI: Should fire immediately */
 	SCB->ICSR |= SCB_ICSR_NMIPENDSET_Msk;
 
+#ifdef ARM_CACHEL1_ARMV7_H
+	/* Flush Data Cache now if enabled */
+	if (IS_ENABLED(CONFIG_DCACHE)) {
+		SCB_CleanDCache();
+	}
+#endif /* ARM_CACHEL1_ARMV7_H */
 	zassert_true(nmi_triggered, "Isr not triggered!\n");
 }
 /**

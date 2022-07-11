@@ -6,6 +6,8 @@
 
 /dts-v1/;
 
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/b91-adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -117,6 +119,7 @@
 
 		plic0: interrupt-controller@e4000000 {
 			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			reg = < 0xe4000000 0x00001000
@@ -204,6 +207,14 @@
 			#size-cells = <0>;
 			status = "disabled";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
+		};
+
+		adc: adc@ea {
+			compatible = "telink,b91-adc";
+			label = "ADC";
+			reg = <0xea 0x18>;
+			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 
 		pinctrl: pinctrl@80140330 {

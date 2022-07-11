@@ -165,20 +165,14 @@ Most everyday users will run with no arguments.
 """
 
 import os
-import argparse
 import sys
 import logging
 import time
 import shutil
-from collections import OrderedDict
-import multiprocessing
-from itertools import islice
 import colorama
 from colorama import Fore
 from pathlib import Path
-from multiprocessing.managers import BaseManager
-import queue
-from zephyr_module import west_projects, parse_modules
+
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -193,615 +187,17 @@ if not ZEPHYR_BASE:
 
     print(f'ZEPHYR_BASE unset, using "{ZEPHYR_BASE}"')
 
-try:
-    from anytree import RenderTree, Node, find
-except ImportError:
-    print("Install the anytree module to use the --test-tree option")
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister/"))
 
-try:
-    from tabulate import tabulate
-except ImportError:
-    print("Install tabulate python module with pip to use --device-testing option.")
-
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
-
-import twisterlib
-from twisterlib import HardwareMap, TestPlan, SizeCalculator, CoverageTool, ExecutionCounter
+from twisterlib.testplan import TestPlan
+from twisterlib.enviornment import TwisterEnv, parse_arguments
+from twisterlib.reports import Reporting
+from twisterlib.hardwaremap import HardwareMap
+from twisterlib.coverage import run_coverage
+from twisterlib.runner import TwisterRunner
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
-
-def size_report(sc):
-    logger.info(sc.filename)
-    logger.info("SECTION NAME             VMA        LMA     SIZE  HEX SZ TYPE")
-    for v in sc.sections:
-        logger.info("%-17s 0x%08x 0x%08x %8d 0x%05x %-7s" %
-                    (v["name"], v["virt_addr"], v["load_addr"], v["size"], v["size"],
-                     v["type"]))
-
-    logger.info("Totals: %d bytes (ROM), %d bytes (RAM)" %
-                (sc.rom_size, sc.ram_size))
-    logger.info("")
-
-def parse_arguments():
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.fromfile_prefix_chars = "+"
-
-    case_select = parser.add_argument_group("Test case selection",
-                                            """
-Artificially long but functional example:
-    $ ./scripts/twister -v     \\
-      --testsuite-root tests/ztest/base    \\
-      --testsuite-root tests/kernel   \\
-      --test      tests/ztest/base/testing.ztest.verbose_0  \\
-      --test      tests/kernel/fifo/fifo_api/kernel.fifo
-
-   "kernel.fifo.poll" is one of the test section names in
-                                 __/fifo_api/testcase.yaml
-    """)
-
-    compare_group_option = parser.add_mutually_exclusive_group()
-
-    platform_group_option = parser.add_mutually_exclusive_group()
-
-    run_group_option = parser.add_mutually_exclusive_group()
-
-    serial = parser.add_mutually_exclusive_group(required="--device-testing" in sys.argv)
-
-    test_or_build = parser.add_mutually_exclusive_group()
-
-    test_xor_subtest = case_select.add_mutually_exclusive_group()
-
-    valgrind_asan_group = parser.add_mutually_exclusive_group()
-
-    case_select.add_argument(
-        "-E",
-        "--save-tests",
-        metavar="FILENAME",
-        action="store",
-        help="Append list of tests and platforms to be run to file.")
-
-    case_select.add_argument(
-        "-F",
-        "--load-tests",
-        metavar="FILENAME",
-        action="store",
-        help="Load list of tests and platforms to be run from file.")
-
-    case_select.add_argument(
-        "-T", "--testsuite-root", action="append", default=[],
-        help="Base directory to recursively search for test cases. All "
-             "testcase.yaml files under here will be processed. May be "
-             "called multiple times. Defaults to the 'samples/' and "
-             "'tests/' directories at the base of the Zephyr tree.")
-
-    case_select.add_argument(
-        "-f",
-        "--only-failed",
-        action="store_true",
-        help="Run only those tests that failed the previous twister run "
-             "invocation.")
-
-    case_select.add_argument("--list-tests", action="store_true",
-                             help="""List of all sub-test functions recursively found in
-        all --testsuite-root arguments. Note different sub-tests can share
-        the same section name and come from different directories.
-        The output is flattened and reports --sub-test names only,
-        not their directories. For instance net.socket.getaddrinfo_ok
-        and net.socket.fd_set belong to different directories.
-        """)
-
-    case_select.add_argument("--list-test-duplicates", action="store_true",
-                             help="""List tests with duplicate identifiers.
-        """)
-
-    case_select.add_argument("--test-tree", action="store_true",
-                             help="""Output the test plan in a tree form""")
-
-    compare_group_option.add_argument("--compare-report",
-                        help="Use this report file for size comparison")
-
-    compare_group_option.add_argument(
-        "-m", "--last-metrics", action="store_true",
-        help="Compare with the results of the previous twister "
-             "invocation")
-
-    platform_group_option.add_argument(
-        "-G",
-        "--integration",
-        action="store_true",
-        help="Run integration tests")
-
-    platform_group_option.add_argument(
-        "--emulation-only", action="store_true",
-        help="Only build and run emulation platforms")
-
-    run_group_option.add_argument(
-        "--device-testing", action="store_true",
-        help="Test on device directly. Specify the serial device to "
-             "use with the --device-serial option.")
-
-    run_group_option.add_argument("--generate-hardware-map",
-                        help="""Probe serial devices connected to this platform
-                        and create a hardware map file to be used with
-                        --device-testing
-                        """)
-
-    serial.add_argument("--device-serial",
-                        help="""Serial device for accessing the board
-                        (e.g., /dev/ttyACM0)
-                        """)
-
-    serial.add_argument("--device-serial-pty",
-                        help="""Script for controlling pseudoterminal.
-                        Twister believes that it interacts with a terminal
-                        when it actually interacts with the script.
-
-                        E.g "twister --device-testing
-                        --device-serial-pty <script>
-                        """)
-
-    serial.add_argument("--hardware-map",
-                        help="""Load hardware map from a file. This will be used
-                        for testing on hardware that is listed in the file.
-                        """)
-
-    test_or_build.add_argument(
-        "-b", "--build-only", action="store_true",
-        help="Only build the code, do not execute any of it in QEMU")
-
-    test_or_build.add_argument(
-        "--test-only", action="store_true",
-        help="""Only run device tests with current artifacts, do not build
-             the code""")
-
-    test_xor_subtest.add_argument(
-        "-s", "--test", action="append",
-        help="Run only the specified test cases. These are named by "
-             "<path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
-
-    test_xor_subtest.add_argument(
-        "--sub-test", action="append",
-        help="""Recursively find sub-test functions and run the entire
-        test section where they were found, including all sibling test
-        functions. Sub-tests are named by:
-        section.name.in.testcase.yaml.function_name_without_test_prefix
-        Example: In kernel.fifo.fifo_loop: 'kernel.fifo' is a section name
-        and 'fifo_loop' is a name of a function found in main.c without test prefix.
-        """)
-
-    valgrind_asan_group.add_argument(
-        "--enable-valgrind", action="store_true",
-        help="""Run binary through valgrind and check for several memory access
-        errors. Valgrind needs to be installed on the host. This option only
-        works with host binaries such as those generated for the native_posix
-        configuration and is mutual exclusive with --enable-asan.
-        """)
-
-    valgrind_asan_group.add_argument(
-        "--enable-asan", action="store_true",
-        help="""Enable address sanitizer to check for several memory access
-        errors. Libasan needs to be installed on the host. This option only
-        works with host binaries such as those generated for the native_posix
-        configuration and is mutual exclusive with --enable-valgrind.
-        """)
-
-    # Start of individual args place them in alpha-beta order
-
-    board_root_list = ["%s/boards" % ZEPHYR_BASE,
-                       "%s/scripts/pylib/twister/boards" % ZEPHYR_BASE]
-
-    parser.add_argument(
-        "-A", "--board-root", action="append", default=board_root_list,
-        help="""Directory to search for board configuration files. All .yaml
-files in the directory will be processed. The directory should have the same
-structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
-
-    parser.add_argument(
-        "-a", "--arch", action="append",
-        help="Arch filter for testing. Takes precedence over --platform. "
-             "If unspecified, test all arches. Multiple invocations "
-             "are treated as a logical 'or' relationship")
-
-    parser.add_argument(
-        "-B", "--subset",
-        help="Only run a subset of the tests, 1/4 for running the first 25%%, "
-             "3/5 means run the 3rd fifth of the total. "
-             "This option is useful when running a large number of tests on "
-             "different hosts to speed up execution time.")
-
-    parser.add_argument("-C", "--coverage", action="store_true",
-                        help="Generate coverage reports. Implies "
-                             "--enable-coverage.")
-
-    parser.add_argument(
-        "-c", "--clobber-output", action="store_true",
-        help="Cleaning the output directory will simply delete it instead "
-             "of the default policy of renaming.")
-
-    parser.add_argument(
-        "--cmake-only", action="store_true",
-        help="Only run cmake, do not build or run.")
-
-    parser.add_argument("--coverage-basedir", default=ZEPHYR_BASE,
-                        help="Base source directory for coverage report.")
-
-    parser.add_argument("--coverage-platform", action="append", default=[],
-                        help="Platforms to run coverage reports on. "
-                             "This option may be used multiple times. "
-                             "Default to what was selected with --platform.")
-
-    parser.add_argument("--coverage-tool", choices=['lcov', 'gcovr'], default='lcov',
-                        help="Tool to use to generate coverage report.")
-
-    parser.add_argument(
-        "-D", "--all-deltas", action="store_true",
-        help="Show all footprint deltas, positive or negative. Implies "
-             "--footprint-threshold=0")
-
-    parser.add_argument(
-        "--device-serial-baud", action="store", default=None,
-        help="Serial device baud rate (default 115200)")
-
-    parser.add_argument("--disable-asserts", action="store_false",
-                        dest="enable_asserts",
-                        help="deprecated, left for compatibility")
-
-    parser.add_argument(
-        "--disable-unrecognized-section-test", action="store_true",
-        default=False,
-        help="Skip the 'unrecognized section' test.")
-
-    parser.add_argument(
-        "--disable-suite-name-check", action="store_true", default=False,
-        help="Disable extended test suite name verification at the beginning "
-             "of Ztest test. This option could be useful for tests or "
-             "platforms, which from some reasons cannot print early logs.")
-
-    parser.add_argument("-e", "--exclude-tag", action="append",
-                        help="Specify tags of tests that should not run. "
-                             "Default is to run all tests with all tags.")
-
-    parser.add_argument("--enable-coverage", action="store_true",
-                        help="Enable code coverage using gcov.")
-
-    parser.add_argument(
-        "--enable-lsan", action="store_true",
-        help="""Enable leak sanitizer to check for heap memory leaks.
-        Libasan needs to be installed on the host. This option only
-        works with host binaries such as those generated for the native_posix
-        configuration and when --enable-asan is given.
-        """)
-
-    parser.add_argument(
-        "--enable-ubsan", action="store_true",
-        help="""Enable undefined behavior sanitizer to check for undefined
-        behaviour during program execution. It uses an optional runtime library
-        to provide better error diagnostics. This option only works with host
-        binaries such as those generated for the native_posix configuration.
-        """)
-
-    parser.add_argument("--enable-size-report", action="store_true",
-                        help="Enable expensive computation of RAM/ROM segment sizes.")
-
-    parser.add_argument(
-        "--filter", choices=['buildable', 'runnable'],
-        default='buildable',
-        help="""Filter tests to be built and executed. By default everything is
-        built and if a test is runnable (emulation or a connected device), it
-        is run. This option allows for example to only build tests that can
-        actually be run. Runnable is a subset of buildable.""")
-
-    parser.add_argument("--force-color", action="store_true",
-                        help="Always output ANSI color escape sequences "
-                             "even when the output is redirected (not a tty)")
-
-    parser.add_argument("--force-toolchain", action="store_true",
-                        help="Do not filter based on toolchain, use the set "
-                             " toolchain unconditionally")
-
-    parser.add_argument("--gcov-tool", default=None,
-                        help="Path to the gcov tool to use for code coverage "
-                             "reports")
-
-    parser.add_argument(
-        "-H", "--footprint-threshold", type=float, default=5,
-        help="When checking test case footprint sizes, warn the user if "
-             "the new app size is greater then the specified percentage "
-             "from the last release. Default is 5. 0 to warn on any "
-             "increase on app size.")
-
-    parser.add_argument(
-        "-i", "--inline-logs", action="store_true",
-        help="Upon test failure, print relevant log data to stdout "
-             "instead of just a path to it.")
-
-    parser.add_argument(
-        "-j", "--jobs", type=int,
-        help="Number of jobs for building, defaults to number of CPU threads, "
-             "overcommitted by factor 2 when --build-only.")
-
-    parser.add_argument(
-        "-K", "--force-platform", action="store_true",
-        help="""Force testing on selected platforms,
-        even if they are excluded in the test configuration (testcase.yaml)."""
-    )
-
-    parser.add_argument(
-        "-l", "--all", action="store_true",
-        help="Build/test on all platforms. Any --platform arguments "
-             "ignored.")
-
-    parser.add_argument("--list-tags", action="store_true",
-                        help="List all tags occurring in selected tests.")
-
-    parser.add_argument("--log-file", metavar="FILENAME", action="store",
-                        help="Specify a file where to save logs.")
-
-    parser.add_argument(
-        "-M", "--runtime-artifact-cleanup", action="store_true",
-        help="Delete artifacts of passing tests.")
-
-    parser.add_argument(
-        "-N", "--ninja", action="store_true",
-        help="Use the Ninja generator with CMake.",
-        required="--short-build-path" in sys.argv)
-
-    parser.add_argument(
-        "-n", "--no-clean", action="store_true",
-        help="Re-use the outdir before building. Will result in "
-             "faster compilation since builds will be incremental.")
-
-    # To be removed in favor of --detailed-skipped-report
-    parser.add_argument(
-        "--no-skipped-report", action="store_true",
-        help="""Do not report skipped test cases in junit output. [Experimental]
-        """)
-
-    parser.add_argument(
-        "--detailed-skipped-report", action="store_true",
-        help="Generate a detailed report with all skipped test cases"
-             "including those that are filtered based on testsuite definition."
-        )
-
-    parser.add_argument(
-        "-O", "--outdir",
-        default=os.path.join(os.getcwd(), "twister-out"),
-        help="Output directory for logs and binaries. "
-             "Default is 'twister-out' in the current directory. "
-             "This directory will be cleaned unless '--no-clean' is set. "
-             "The '--clobber-output' option controls what cleaning does.")
-
-    parser.add_argument(
-        "-o", "--report-dir",
-        help="""Output reports containing results of the test run into the
-        specified directory.
-        The output will be both in JSON and JUNIT format
-        (twister.json and twister.xml).
-        """)
-
-    parser.add_argument("--overflow-as-errors", action="store_true",
-                        help="Treat RAM/SRAM overflows as errors.")
-
-
-    parser.add_argument("-P", "--exclude-platform", action="append", default=[],
-            help="""Exclude platforms and do not build or run any tests
-            on those platforms. This option can be called multiple times.
-            """
-            )
-
-    parser.add_argument("--persistent-hardware-map", action='store_true',
-                        help="""With --generate-hardware-map, tries to use
-                        persistent names for serial devices on platforms
-                        that support this feature (currently only Linux).
-                        """)
-
-    parser.add_argument(
-        "-p", "--platform", action="append",
-        help="Platform filter for testing. This option may be used multiple "
-             "times. Test suites will only be built/run on the platforms "
-             "specified. If this option is not used, then platforms marked "
-             "as default in the platform metadata file will be chosen "
-             "to build and test. ")
-
-    parser.add_argument(
-        "--platform-reports", action="store_true",
-        help="""Create individual reports for each platform.
-        """)
-
-    parser.add_argument("--pre-script",
-                        help="""specify a pre script. This will be executed
-                        before device handler open serial port and invoke runner.
-                        """)
-
-    parser.add_argument("-Q", "--error-on-deprecations", action="store_false",
-                        help="Error on deprecation warnings.")
-
-    parser.add_argument(
-        "--quarantine-list",
-        metavar="FILENAME",
-        help="Load list of test scenarios under quarantine. The entries in "
-             "the file need to correspond to the test scenarios names as in "
-             "corresponding tests .yaml files. These scenarios "
-             "will be skipped with quarantine as the reason.")
-
-    parser.add_argument(
-        "--quarantine-verify",
-        action="store_true",
-        help="Use the list of test scenarios under quarantine and run them"
-             "to verify their current status.")
-
-    parser.add_argument("-R", "--enable-asserts", action="store_true",
-                        default=True,
-                        help="deprecated, left for compatibility")
-
-    parser.add_argument("--report-excluded",
-                        action="store_true",
-                        help="""List all tests that are never run based on current scope and
-            coverage. If you are looking for accurate results, run this with
-            --all, but this will take a while...""")
-
-    parser.add_argument(
-        "--report-name",
-        help="""Create a report with a custom name.
-        """)
-
-    parser.add_argument(
-        "--report-suffix",
-        help="""Add a suffix to all generated file names, for example to add a
-        version or a commit ID.
-        """)
-
-    parser.add_argument(
-        "--retry-failed", type=int, default=0,
-        help="Retry failing tests again, up to the number of times specified.")
-
-    parser.add_argument(
-        "--retry-interval", type=int, default=60,
-        help="Retry failing tests after specified period of time.")
-
-    parser.add_argument(
-        "--retry-build-errors", action="store_true",
-        help="Retry build errors as well.")
-
-    parser.add_argument(
-        "-S", "--enable-slow", action="store_true",
-        help="Execute time-consuming test cases that have been marked "
-             "as 'slow' in testcase.yaml. Normally these are only built.")
-
-    parser.add_argument(
-        "--seed", type=int,
-        help="Seed for native posix pseudo-random number generator")
-
-    parser.add_argument(
-        "--short-build-path",
-        action="store_true",
-        help="Create shorter build directory paths based on symbolic links. "
-             "The shortened build path will be used by CMake for generating "
-             "the build system and executing the build. Use this option if "
-             "you experience build failures related to path length, for "
-             "example on Windows OS. This option can be used only with "
-             "'--ninja' argument (to use Ninja build generator).")
-
-    parser.add_argument(
-        "--show-footprint", action="store_true",
-        help="Show footprint statistics and deltas since last release."
-    )
-
-    parser.add_argument(
-        "-t", "--tag", action="append",
-        help="Specify tags to restrict which tests to run by tag value. "
-             "Default is to not do any tag filtering. Multiple invocations "
-             "are treated as a logical 'or' relationship.")
-
-    parser.add_argument("--timestamps",
-                        action="store_true",
-                        help="Print all messages with time stamps.")
-
-    parser.add_argument(
-        "-u",
-        "--no-update",
-        action="store_true",
-         help="Do not update the results of the last run of twister.")
-
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="count",
-        default=0,
-        help="Emit debugging information, call multiple times to increase "
-             "verbosity.")
-
-    parser.add_argument("-W", "--disable-warnings-as-errors", action="store_true",
-                        help="Do not treat warning conditions as errors.")
-
-    parser.add_argument(
-        "--west-flash", nargs='?', const=[],
-        help="""Uses west instead of ninja or make to flash when running with
-             --device-testing. Supports comma-separated argument list.
-
-        E.g "twister --device-testing --device-serial /dev/ttyACM0
-                         --west-flash="--board-id=foobar,--erase"
-        will translate to "west flash -- --board-id=foobar --erase"
-
-        NOTE: device-testing must be enabled to use this option.
-        """
-    )
-    parser.add_argument(
-        "--west-runner",
-        help="""Uses the specified west runner instead of default when running
-             with --west-flash.
-
-        E.g "twister --device-testing --device-serial /dev/ttyACM0
-                         --west-flash --west-runner=pyocd"
-        will translate to "west flash --runner pyocd"
-
-        NOTE: west-flash must be enabled to use this option.
-        """
-    )
-
-    parser.add_argument(
-        "-X", "--fixture", action="append", default=[],
-        help="Specify a fixture that a board might support.")
-
-    parser.add_argument(
-        "-x", "--extra-args", action="append", default=[],
-        help="""Extra CMake cache entries to define when building test cases.
-        May be called multiple times. The key-value entries will be
-        prefixed with -D before being passed to CMake.
-        E.g
-        "twister -x=USE_CCACHE=0"
-        will translate to
-        "cmake -DUSE_CCACHE=0"
-        which will ultimately disable ccache.
-        """
-    )
-
-    parser.add_argument(
-        "-y", "--dry-run", action="store_true",
-        help="""Create the filtered list of test cases, but don't actually
-        run them. Useful if you're just interested in the test plan
-        generated for every run and saved in the specified output
-        directory (testplan.json).
-        """)
-
-    parser.add_argument(
-        "-z", "--size", action="append",
-        help="Don't run twister. Instead, produce a report to "
-             "stdout detailing RAM/ROM sizes on the specified filenames. "
-             "All other command line arguments ignored.")
-
-    options = parser.parse_args()
-
-    # Very early error handling
-    if options.device_serial_pty and os.name == "nt":  # OS is Windows
-        logger.error("--device-serial-pty is not supported on Windows OS")
-        sys.exit(1)
-
-    if options.west_runner and options.west_flash is None:
-        logger.error("west-runner requires west-flash to be enabled")
-        sys.exit(1)
-
-    if options.west_flash and not options.device_testing:
-        logger.error("west-flash requires device-testing to be enabled")
-        sys.exit(1)
-
-    if not options.testsuite_root:
-        options.testsuite_root = [os.path.join(ZEPHYR_BASE, "tests"),
-                                 os.path.join(ZEPHYR_BASE, "samples")]
-
-    if options.show_footprint or options.compare_report:
-        options.enable_size_report = True
-
-    if options.coverage:
-        options.enable_coverage = True
-
-    if not options.coverage_platform:
-        options.coverage_platform = options.platform
-
-    return options
 
 def setup_logging(outdir, log_file, verbose, timestamps):
    # create file handler which logs even debug messages
@@ -835,16 +231,19 @@ def setup_logging(outdir, log_file, verbose, timestamps):
     logger.addHandler(fh)
 
 
+def init_color(colorama_strip):
+    colorama.init(strip=colorama_strip)
+
 def main():
     start_time = time.time()
 
-    options = parse_arguments()
+    options = parse_arguments(sys.argv[1:])
 
     # Configure color output
     color_strip = False if options.force_color else None
 
     colorama.init(strip=color_strip)
-    twisterlib.init(colorama_strip=color_strip)
+    init_color(colorama_strip=color_strip)
 
     previous_results = None
     # Cleanup
@@ -880,289 +279,35 @@ def main():
     VERBOSE = options.verbose
     setup_logging(options.outdir, options.log_file, VERBOSE, options.timestamps)
 
-    if options.size:
-        for fn in options.size:
-            size_report(SizeCalculator(fn, []))
-        return
+    env = TwisterEnv(options)
+    env.discover()
 
-    hwm = HardwareMap()
-    if options.generate_hardware_map:
-        hwm.scan(persistent=options.persistent_hardware_map)
-        hwm.save(options.generate_hardware_map)
-        return
+    hwm = HardwareMap(env)
+    ret = hwm.discover()
+    if ret == 0:
+        return 0
 
-    if not options.device_testing and options.hardware_map:
-        hwm.load(options.hardware_map)
-        logger.info("Available devices:")
-        table = []
-        hwm.dump(connected_only=True)
-        return
+    env.hwm = hwm
 
-    if options.enable_valgrind and not shutil.which("valgrind"):
-        logger.error("valgrind enabled but valgrind executable not found")
-        sys.exit(1)
+    tplan = TestPlan(env)
+    try:
+        tplan.discover()
+    except RuntimeError as e:
+        logger.error(f"{e}")
+        return 1
 
-    if options.subset:
-        subset, sets = options.subset.split("/")
-        if int(subset) > 0 and int(sets) >= int(subset):
-            logger.info("Running only a subset: %s/%s" % (subset, sets))
-        else:
-            logger.error("You have provided a wrong subset value: %s." % options.subset)
-            return
+    if tplan.report() == 0:
+        return 0
 
-    tplan = TestPlan(options.board_root, options.testsuite_root, options.outdir)
-
-    # Check version of zephyr repo
-    tplan.check_zephyr_version()
-
-    # Set testplan options from command line.
-    tplan.build_only = options.build_only
-    tplan.cmake_only = options.cmake_only
-    tplan.cleanup = options.runtime_artifact_cleanup
-    tplan.test_only = options.test_only
-    tplan.retry_build_errors = options.retry_build_errors
-    tplan.enable_slow = options.enable_slow
-    tplan.device_testing = options.device_testing
-    tplan.fixtures = options.fixture
-    tplan.enable_asan = options.enable_asan
-    tplan.enable_lsan = options.enable_lsan
-    tplan.enable_ubsan = options.enable_ubsan
-    tplan.enable_coverage = options.enable_coverage
-    tplan.enable_valgrind = options.enable_valgrind
-    tplan.coverage_platform = options.coverage_platform
-    tplan.inline_logs = options.inline_logs
-    tplan.enable_size_report = options.enable_size_report
-    tplan.extra_args = options.extra_args
-    tplan.west_flash = options.west_flash
-    tplan.west_runner = options.west_runner
-    tplan.verbose = VERBOSE
-    tplan.warnings_as_errors = not options.disable_warnings_as_errors
-    tplan.integration = options.integration
-    tplan.overflow_as_errors = options.overflow_as_errors
-    tplan.suite_name_check = not options.disable_suite_name_check
-    tplan.seed = options.seed
-    tplan.detailed_skipped_report = options.detailed_skipped_report
-
-    # get all enabled west projects
-    west_proj = west_projects()
-    modules_meta = parse_modules(ZEPHYR_BASE,
-                                [p.posixpath for p in west_proj['projects']]
-                                if west_proj else None, None)
-    modules = [module.meta.get('name') for module in modules_meta]
-    tplan.modules = modules
-
-    if options.ninja:
-        tplan.generator_cmd = "ninja"
-        tplan.generator = "Ninja"
-    else:
-        tplan.generator_cmd = "make"
-        tplan.generator = "Unix Makefiles"
-
-    # Set number of jobs
-    if options.jobs:
-        tplan.jobs = options.jobs
-    elif options.build_only:
-        tplan.jobs = multiprocessing.cpu_count() * 2
-    else:
-        tplan.jobs = multiprocessing.cpu_count()
-    logger.info("JOBS: %d" % tplan.jobs)
-
-    run_individual_tests = []
-
-    if options.test:
-        run_individual_tests = options.test
-
-    num = tplan.add_testsuites(testsuite_filter=run_individual_tests)
-    if num == 0:
-        logger.error("No test cases found at the specified location...")
-        sys.exit(1)
-    tplan.add_configurations()
-
-    if options.device_testing:
-        if options.hardware_map:
-            hwm.load(options.hardware_map)
-            tplan.duts = hwm.duts
-            if not options.platform:
-                options.platform = []
-                for d in hwm.duts:
-                    if d.connected:
-                        options.platform.append(d.platform)
-
-        elif options.device_serial or options.device_serial_pty:
-            if options.platform and len(options.platform) == 1:
-                if options.device_serial:
-                    hwm.add_device(options.device_serial,
-                                   options.platform[0],
-                                   options.pre_script,
-                                   False,
-                                   baud=options.device_serial_baud
-                                   )
-                else:
-                    hwm.add_device(options.device_serial_pty,
-                                                 options.platform[0],
-                                                 options.pre_script,
-                                                 True)
-
-                tplan.duts = hwm.duts
-            else:
-                logger.error("""When --device-testing is used with
-                             --device-serial or --device-serial-pty,
-                             only one platform is allowed""")
-
-    # the fixtures given by twister command explicitly should be assigned to each DUTs
-    if tplan.fixtures:
-        for d in tplan.duts:
-            d.fixtures.extend(tplan.fixtures)
-
-    if tplan.load_errors:
-        sys.exit(1)
-
-    if options.list_tags:
-        tags = set()
-        for _, tc in tplan.testsuites.items():
-            tags = tags.union(tc.tags)
-
-        for t in tags:
-            print("- {}".format(t))
-
-        return
-
-    if not options.platform and (options.list_tests or options.test_tree or options.list_test_duplicates \
-        or options.sub_test):
-        cnt = 0
-        all_tests = tplan.get_all_tests()
-
-        if options.list_test_duplicates:
-            import collections
-            dupes = [item for item, count in collections.Counter(all_tests).items() if count > 1]
-            if dupes:
-                print("Tests with duplicate identifiers:")
-                for dupe in dupes:
-                    print("- {}".format(dupe))
-                    for dc in tplan.get_testsuite(dupe):
-                        print("  - {}".format(dc))
-            else:
-                print("No duplicates found.")
-            return
-
-        if options.sub_test:
-            for st in options.sub_test:
-                subtests = tplan.get_testcase(st)
-                for sti in subtests:
-                    run_individual_tests.append(sti.name)
-
-            if run_individual_tests:
-                logger.info("Running the following tests:")
-                for test in run_individual_tests:
-                    print(" - {}".format(test))
-            else:
-                logger.info("Tests not found")
-                return
-
-        elif options.list_tests or options.test_tree:
-            if options.test_tree:
-                testsuite = Node("Testsuite")
-                samples = Node("Samples", parent=testsuite)
-                tests = Node("Tests", parent=testsuite)
-
-            for test in sorted(all_tests):
-                cnt = cnt + 1
-                if options.list_tests:
-                    print(" - {}".format(test))
-
-                if options.test_tree:
-                    if test.startswith("sample."):
-                        sec = test.split(".")
-                        area = find(samples, lambda node: node.name == sec[1] and node.parent == samples)
-                        if not area:
-                            area = Node(sec[1], parent=samples)
-
-                        t = Node(test, parent=area)
-                    else:
-                        sec = test.split(".")
-                        area = find(tests, lambda node: node.name == sec[0] and node.parent == tests)
-                        if not area:
-                            area = Node(sec[0], parent=tests)
-
-                        if area and len(sec) > 2:
-                            subarea = find(area, lambda node: node.name == sec[1] and node.parent == area)
-                            if not subarea:
-                                subarea = Node(sec[1], parent=area)
-                            t = Node(test, parent=subarea)
-
-            if options.list_tests:
-                print("{} total.".format(cnt))
-
-            if options.test_tree:
-                for pre, _, node in RenderTree(testsuite):
-                    print("%s%s" % (pre, node.name))
-            return
-
-    if options.report_suffix:
-        last_run = os.path.join(options.outdir, "twister_{}.json".format(options.report_suffix))
-    else:
-        last_run = os.path.join(options.outdir, "twister.json")
-
-    if options.quarantine_list:
-        tplan.load_quarantine(options.quarantine_list)
-
-    if options.quarantine_verify:
-        if not options.quarantine_list:
-            logger.error("No quarantine list given to be verified")
-            sys.exit(1)
-        tplan.quarantine_verify = options.quarantine_verify
-
-    if options.only_failed:
-        tplan.load_from_file(last_run)
-        tplan.selected_platforms = set(p.platform.name for p in tplan.instances.values())
-    elif options.load_tests:
-        tplan.load_from_file(options.load_tests)
-        tplan.selected_platforms = set(p.platform.name for p in tplan.instances.values())
-    elif options.test_only:
-        # Get list of connected hardware and filter tests to only be run on connected hardware
-        # in cases where no platform was specified when running the tests.
-        # If the platform does not exist in the hardware map, just skip it.
-        connected_list = []
-        if not options.platform:
-            for connected in hwm.duts:
-                if connected['connected']:
-                    connected_list.append(connected['platform'])
-
-        tplan.load_from_file(last_run, filter_platform=connected_list)
-        tplan.selected_platforms = set(p.platform.name for p in tplan.instances.values())
-    else:
-        tplan.apply_filters(
-            enable_slow=options.enable_slow,
-            platform=options.platform,
-            exclude_platform=options.exclude_platform,
-            arch=options.arch,
-            tag=options.tag,
-            exclude_tag=options.exclude_tag,
-            force_toolchain=options.force_toolchain,
-            all=options.all,
-            emulation_only=options.emulation_only,
-            run_individual_tests=run_individual_tests,
-            runnable=(options.device_testing or options.filter == 'runnable'),
-            force_platform=options.force_platform
-        )
+    try:
+        tplan.load()
+    except RuntimeError as e:
+        logger.error(f"{e}")
+        return 1
 
     if options.list_tests and options.platform:
-        if len(options.platform) > 1:
-            logger.error("When exporting tests, only one platform "
-                         "should be specified.")
-            return
-
-        for p in options.platform:
-            inst = tplan.get_platform_instances(p)
-
-            count = 0
-            for i in inst.values():
-                for c in i.testsuite.cases:
-                    print(f"- {c}")
-                    count += 1
-
-            print(f"Tests found: {count}")
-        return
+        tplan.report_platform_tests(options.platform)
+        return 0
 
     if VERBOSE > 1:
         # if we are using command line platform filter, no need to list every
@@ -1183,71 +328,15 @@ def main():
                         i.reason))
 
     if options.report_excluded:
-        all_tests = tplan.get_all_tests()
-        to_be_run = set()
-        for i, p in tplan.instances.items():
-            to_be_run.update(p.testsuite.cases)
+        tplan.report_excluded_tests()
+        return 0
 
-        if all_tests - to_be_run:
-            print("Tests that never build or run:")
-            for not_run in all_tests - to_be_run:
-                print("- {}".format(not_run))
-
-        return
-
-    if options.subset:
-        # Test instances are sorted depending on the context. For CI runs
-        # the execution order is: "plat1-testA, plat1-testB, ...,
-        # plat1-testZ, plat2-testA, ...". For hardware tests
-        # (device_testing), were multiple physical platforms can run the tests
-        # in parallel, it is more efficient to run in the order:
-        # "plat1-testA, plat2-testA, ..., plat1-testB, plat2-testB, ..."
-        if options.device_testing:
-            tplan.instances = OrderedDict(sorted(tplan.instances.items(),
-                                key=lambda x: x[0][x[0].find("/") + 1:]))
-        else:
-            tplan.instances = OrderedDict(sorted(tplan.instances.items()))
-
-        # Do calculation based on what is actually going to be run and evaluated
-        # at runtime, ignore the cases we already know going to be skipped.
-        # This fixes an issue where some sets would get majority of skips and
-        # basically run nothing beside filtering.
-        to_run = {k : v for k,v in tplan.instances.items() if v.status is None}
-
-        subset, sets = options.subset.split("/")
-        subset = int(subset)
-        sets = int(sets)
-        total = len(to_run)
-        per_set = int(total / sets)
-        num_extra_sets = total - (per_set * sets)
-
-        # Try and be more fair for rounding error with integer division
-        # so the last subset doesn't get overloaded, we add 1 extra to
-        # subsets 1..num_extra_sets.
-        if subset <= num_extra_sets:
-            start = (subset - 1) * (per_set + 1)
-            end = start + per_set + 1
-        else:
-            base = num_extra_sets * (per_set + 1)
-            start = ((subset - num_extra_sets - 1) * per_set) + base
-            end = start + per_set
-
-        sliced_instances = islice(to_run.items(), start, end)
-        skipped = {k : v for k,v in tplan.instances.items() if v.status == 'skipped'}
-        errors = {k : v for k,v in tplan.instances.items() if v.status == 'error'}
-        tplan.instances = OrderedDict(sliced_instances)
-        if subset == 1:
-            # add all pre-filtered tests that are skipped or got error status
-            # to the first set to allow for better distribution among all sets.
-            tplan.instances.update(skipped)
-            tplan.instances.update(errors)
-
-
-    tplan.json_report(os.path.join(options.outdir, "testplan.json"))
+    report = Reporting(tplan, env)
+    report.json_report(os.path.join(options.outdir, "testplan.json"))
 
     if options.save_tests:
-        tplan.json_report(options.save_tests)
-        return
+        report.json_report(options.save_tests)
+        return 0
 
     if options.device_testing and not options.build_only:
         print("\nDevice testing on:")
@@ -1257,61 +346,14 @@ def main():
     if options.dry_run:
         duration = time.time() - start_time
         logger.info("Completed in %d seconds" % (duration))
-        return
+        return 0
 
     if options.short_build_path:
         tplan.create_build_dir_links()
 
-    retries = options.retry_failed + 1
-    completed = 0
-
-    BaseManager.register('LifoQueue', queue.LifoQueue)
-    manager = BaseManager()
-    manager.start()
-
-    results = ExecutionCounter(total=len(tplan.instances))
-    pipeline = manager.LifoQueue()
-    done_queue = manager.LifoQueue()
-
-    tplan.update_counting(results)
-    logger.info("%d test scenarios (%d configurations) selected, %d configurations discarded due to filters." %
-                (len(tplan.testsuites), len(tplan.instances), results.skipped_configs))
-    tplan.start_time = start_time
-
-    while True:
-        completed += 1
-
-        if completed > 1:
-            logger.info("%d Iteration:" % (completed))
-            time.sleep(options.retry_interval)  # waiting for the system to settle down
-            results.done = results.total - results.failed
-            if options.retry_build_errors:
-                results.failed = 0
-                results.error = 0
-            else:
-                results.failed = results.error
-
-        results = tplan.execute(pipeline, done_queue, results)
-
-        while True:
-            try:
-                inst = done_queue.get_nowait()
-            except queue.Empty:
-                break
-            else:
-                inst.metrics.update(tplan.instances[inst.name].metrics)
-                inst.metrics["handler_time"] = inst.execution_time
-                inst.metrics["unrecognized"] = []
-                tplan.instances[inst.name] = inst
-
-        print("")
-
-        retries = retries - 1
-        # There are cases where failed == error (only build failures),
-        # we do not try build failures.
-        if retries == 0 or (results.failed == results.error and not options.retry_build_errors):
-            break
-
+    runner = TwisterRunner(tplan.instances, tplan.testsuites, env)
+    runner.duts = hwm.duts
+    runner.run()
 
     # figure out which report to use for size comparison
     report_to_use = None
@@ -1320,53 +362,25 @@ def main():
     elif options.last_metrics:
         report_to_use = previous_results_file
 
-    tplan.footprint_reports(report_to_use,
+    report.footprint_reports(report_to_use,
                             options.show_footprint,
                             options.all_deltas,
                             options.footprint_threshold,
                             options.last_metrics)
 
-    tplan.duration = time.time() - start_time
+    duration = time.time() - start_time
 
-    results.summary()
+    runner.results.summary()
 
-    tplan.summary(results, options.disable_unrecognized_section_test)
+    report.summary(runner.results, options.disable_unrecognized_section_test, duration)
 
     if options.coverage:
-        if not options.gcov_tool:
-            use_system_gcov = False
-
-            for plat in options.coverage_platform:
-                ts_plat = tplan.get_platform(plat)
-                if ts_plat and (ts_plat.type in {"native", "unit"}):
-                    use_system_gcov = True
-
-            if use_system_gcov or "ZEPHYR_SDK_INSTALL_DIR" not in os.environ:
-                options.gcov_tool = "gcov"
-            else:
-                options.gcov_tool = os.path.join(os.environ["ZEPHYR_SDK_INSTALL_DIR"],
-                                                 "x86_64-zephyr-elf/bin/x86_64-zephyr-elf-gcov")
-
-        logger.info("Generating coverage files...")
-        coverage_tool = CoverageTool.factory(options.coverage_tool)
-        coverage_tool.gcov_tool = options.gcov_tool
-        coverage_tool.base_dir = os.path.abspath(options.coverage_basedir)
-        coverage_tool.add_ignore_file('generated')
-        coverage_tool.add_ignore_directory('tests')
-        coverage_tool.add_ignore_directory('samples')
-        coverage_tool.generate(options.outdir)
+        run_coverage(tplan, options)
 
     if options.device_testing and not options.build_only:
-        print("\nHardware distribution summary:\n")
-        table = []
-        header = ['Board', 'ID', 'Counter']
-        for d in hwm.duts:
-            if d.connected and d.platform in tplan.selected_platforms:
-                row = [d.platform, d.id, d.counter]
-                table.append(row)
-        print(tabulate(table, headers=header, tablefmt="github"))
+        hwm.summary(tplan.selected_platforms)
 
-    tplan.save_reports(options.report_name,
+    report.save_reports(options.report_name,
                        options.report_suffix,
                        options.report_dir,
                        options.no_update,
@@ -1374,14 +388,19 @@ def main():
                        )
 
     logger.info("Run completed")
-    if results.failed or results.error or (tplan.warnings and options.warnings_as_errors):
-        sys.exit(1)
+    if runner.results.failed or runner.results.error or (tplan.warnings and options.warnings_as_errors):
+        return 1
+
+    return 0
 
 
 if __name__ == "__main__":
+    ret = 0
     try:
-        main()
+        ret = main()
     finally:
         if (os.name != "nt") and os.isatty(1):
             # (OS is not Windows) and (stdout is interactive)
             os.system("stty sane")
+
+    sys.exit(ret)

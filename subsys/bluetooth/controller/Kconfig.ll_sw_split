@@ -232,6 +232,17 @@ config BT_CTLR_ADV_SYNC_PDU_BACK2BACK_AFS
 	  Specific AUX Frame Space to be used for back-to-back transmission of
 	  periodic advertising trains. Time specified in microseconds.
 
+config BT_CTLR_ADV_RESERVE_MAX
+	bool "Use maximum Advertising PDU size time reservation"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	default y
+	help
+	  Use the maximum advertising PDU size time reservation considering the
+	  Advertising Data could be updated from zero to maximum support size.
+	  If maximum time reservation is disabled then time reservation
+	  corresponding to the Advertising Data present at the time of the
+	  start/enable of Advertising is used.
+
 config BT_CTLR_ADV_DATA_BUF_MAX
 	int "Advertising Data Maximum Buffers"
 	depends on BT_BROADCASTER
@@ -341,8 +352,11 @@ config BT_CTLR_XTAL_THRESHOLD
 
 config BT_CTLR_SCHED_ADVANCED
 	bool "Advanced scheduling"
-	depends on (BT_MAX_CONN != 0) && BT_CTLR_SCHED_ADVANCED_SUPPORT
-	default y if !(BT_PERIPHERAL && !BT_CENTRAL)
+	depends on BT_CTLR_SCHED_ADVANCED_SUPPORT && \
+		   (BT_CONN || \
+		    (BT_CTLR_ADV_EXT && (BT_CTLR_ADV_AUX_SET > 1)) || \
+		    BT_CTLR_ADV_ISO)
+	default y if BT_CENTRAL || (BT_BROADCASTER && BT_CTLR_ADV_EXT) || BT_CTLR_ADV_ISO
 	help
 	  Enable non-overlapping placement of observer, initiator and central
 	  roles in timespace. Uses window offset in connection updates and uses

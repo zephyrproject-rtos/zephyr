@@ -21,6 +21,7 @@ SECTIONS
 {
 	SECTION_PROLOGUE(vector,,)
 	{
+		. = CONFIG_ROM_START_OFFSET;
 		. = ALIGN(4);
 		KEEP(*(.init.*))
 	} GROUP_LINK_IN(ROM_INIT)

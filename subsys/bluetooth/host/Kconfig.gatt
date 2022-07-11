@@ -60,17 +60,6 @@ config BT_EATT_AUTO_CONNECT
 	  The device will try to connect BT_EATT_MAX enhanced ATT bearers when a
 	  connection to a peer is established.
 
-config BT_EATT_SEC_LEVEL
-	int "Enhanced ATT bearer security level"
-	default 1
-	range 1 4
-	help
-	  L2CAP server required security level of EATT bearers:
-	  Level 1 (BT_SECURITY_L1) = No encryption or authentication required
-	  Level 2 (BT_SECURITY_L2) = Only encryption required
-	  Level 3 (BT_SECURITY_L3) = Encryption and authentication required
-	  Level 4 (BT_SECURITY_L4) = Secure connection required
-
 endif # BT_EATT
 
 config BT_GATT_AUTO_SEC_REQ

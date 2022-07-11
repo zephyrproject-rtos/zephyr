@@ -70,13 +70,13 @@ static inline uint32_t z_log_sources_count(void)
 }
 
 /** @brief Initialize module for handling logging message. */
-void z_log_msg2_init(void);
+void z_log_msg_init(void);
 
 /** @brief Commit log message.
  *
  * @param msg Message.
  */
-void z_log_msg2_commit(struct log_msg2 *msg);
+void z_log_msg_commit(struct log_msg *msg);
 
 /** @brief Get pending log message.
  *
@@ -84,20 +84,20 @@ void z_log_msg2_commit(struct log_msg2 *msg);
  *
  * @param Message or null if no pending messages.
  */
-union log_msg2_generic *z_log_msg2_claim(void);
+union log_msg_generic *z_log_msg_claim(void);
 
 /** @brief Free message.
  *
  * @param msg Message.
  */
-void z_log_msg2_free(union log_msg2_generic *msg);
+void z_log_msg_free(union log_msg_generic *msg);
 
 /** @brief Check if there are any message pending.
  *
  * @retval true if at least one message is pending.
  * @retval false if no message is pending.
  */
-bool z_log_msg2_pending(void);
+bool z_log_msg_pending(void);
 
 /** @brief Get tag.
  *

@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __INC_SOC_H
-#define __INC_SOC_H
+#ifndef ZEPHYR_SOC_INTEL_ADSP_COMMON_SOC_H_
+#define ZEPHYR_SOC_INTEL_ADSP_COMMON_SOC_H_
 
 #include <string.h>
 #include <errno.h>
@@ -126,4 +126,36 @@ static inline bool intel_adsp_ptr_is_sane(uint32_t sp)
 		 && sp <= CONFIG_IMR_MANIFEST_ADDR);
 }
 
-#endif /* __INC_SOC_H */
+static ALWAYS_INLINE void z_idelay(int n)
+{
+	while (n--) {
+		__asm__ volatile("nop");
+	}
+}
+
+/* memcopy used by boot loader */
+static ALWAYS_INLINE void bmemcpy(void *dest, void *src, size_t bytes)
+{
+	uint32_t *d = (uint32_t *)dest;
+	uint32_t *s = (uint32_t *)src;
+
+	z_xtensa_cache_inv(src, bytes);
+	for (size_t i = 0; i < (bytes >> 2); i++)
+		d[i] = s[i];
+
+	z_xtensa_cache_flush(dest, bytes);
+}
+
+/* bzero used by bootloader */
+static ALWAYS_INLINE void bbzero(void *dest, size_t bytes)
+{
+	uint32_t *d = (uint32_t *)dest;
+
+	for (size_t i = 0; i < (bytes >> 2); i++)
+		d[i] = 0;
+
+	z_xtensa_cache_flush(dest, bytes);
+}
+
+
+#endif /* ZEPHYR_SOC_INTEL_ADSP_COMMON_SOC_H_ */

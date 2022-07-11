@@ -291,6 +291,7 @@ MODEM_CMD_DEFINE(on_cmd_cwlap)
 
 static void esp_dns_work(struct k_work *work)
 {
+#if defined(ESP_MAX_DNS)
 	struct esp_data *data = CONTAINER_OF(work, struct esp_data, dns_work);
 	struct dns_resolve_context *dnsctx;
 	struct sockaddr_in *addrs = data->dns_addresses;
@@ -312,11 +313,13 @@ static void esp_dns_work(struct k_work *work)
 	}
 
 	LOG_DBG("DNS resolver reconfigured");
+#endif
 }
 
 /* +CIPDNS:enable[,"DNS IP1"[,"DNS IP2"[,"DNS IP3"]]] */
 MODEM_CMD_DEFINE(on_cmd_cipdns)
 {
+#if defined(ESP_MAX_DNS)
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
 	struct sockaddr_in *addrs = dev->dns_addresses;
@@ -333,12 +336,12 @@ MODEM_CMD_DEFINE(on_cmd_cipdns)
 		}
 
 		servers[i] = str_unquote(servers[i]);
-		LOG_DBG("DNS[%zu]: %s", i, log_strdup(servers[i]));
+		LOG_DBG("DNS[%zu]: %s", i, servers[i]);
 
 		err = net_addr_pton(AF_INET, servers[i], &addrs[i].sin_addr);
 		if (err) {
 			LOG_ERR("Invalid DNS address: %s",
-				log_strdup(servers[i]));
+				servers[i]);
 			addrs[i].sin_addr.s_addr = 0;
 			break;
 		}
@@ -352,6 +355,7 @@ MODEM_CMD_DEFINE(on_cmd_cipdns)
 	if (valid_servers) {
 		k_work_submit(&dev->dns_work);
 	}
+#endif
 
 	return 0;
 }
@@ -431,7 +435,7 @@ MODEM_CMD_DEFINE(on_cmd_cipsta)
 	} else if (!strcmp(argv[0], "netmask")) {
 		net_addr_pton(AF_INET, ip, &dev->nm);
 	} else {
-		LOG_WRN("Unknown IP type %s", log_strdup(argv[0]));
+		LOG_WRN("Unknown IP type %s", argv[0]);
 	}
 
 	return 0;
@@ -573,7 +577,7 @@ static int cmd_ipd_parse_hdr(struct net_buf *buf, uint16_t len,
 
 	ipd_buf[match_len] = 0;
 	if (ipd_buf[len] != ',' || ipd_buf[len + 2] != ',') {
-		LOG_ERR("Invalid IPD: %s", log_strdup(ipd_buf));
+		LOG_ERR("Invalid IPD: %s", ipd_buf);
 		return -EBADMSG;
 	}
 
@@ -583,7 +587,7 @@ static int cmd_ipd_parse_hdr(struct net_buf *buf, uint16_t len,
 
 	if (endptr == &ipd_buf[len + 3] ||
 	    (*endptr == 0 && match_len >= MAX_IPD_LEN)) {
-		LOG_ERR("Invalid IPD len: %s", log_strdup(ipd_buf));
+		LOG_ERR("Invalid IPD len: %s", ipd_buf);
 		return -EBADMSG;
 	} else if (*endptr == 0) {
 		return -EAGAIN;

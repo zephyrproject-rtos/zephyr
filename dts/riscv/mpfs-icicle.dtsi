@@ -18,8 +18,9 @@
 			reg = < 0x0 >;
 			riscv,isa = "rv64imac";
 			hlic0: interrupt-controller {
-				#interrupt-cells = <1>;
 				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
@@ -31,8 +32,9 @@
 			reg = < 0x1 >;
 			riscv,isa = "rv64imafdc";
 			hlic1: interrupt-controller {
-				#interrupt-cells = <1>;
 				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
@@ -55,9 +57,9 @@
 		};
 
 		plic: interrupt-controller@c000000 {
+			compatible = "sifive,plic-1.0.0";
 			#interrupt-cells = <2>;
 			#address-cells = <1>;
-			compatible = "sifive,plic-1.0.0";
 			interrupt-controller;
 			interrupts-extended = <&hlic0 11
 						&hlic1 11>;
@@ -81,7 +83,7 @@
 			status = "disabled";
 		};
 
-		qspi0: qspi@21000000 {
+		qspi0: spi@21000000 {
 			compatible = "microchip,mpfs-qspi";
 			#address-cells = <1>;
 			#size-cells = <0>;

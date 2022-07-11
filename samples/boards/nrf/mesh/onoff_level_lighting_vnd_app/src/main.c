@@ -94,8 +94,7 @@ static void light_default_status_init(void)
 void update_vnd_led_gpio(void)
 {
 #ifndef ONE_LED_ONE_BUTTON_BOARD
-	gpio_pin_set(led_device[1], DT_GPIO_PIN(DT_ALIAS(led1), gpios),
-		     vnd_user_data.current == STATE_ON);
+	gpio_pin_set_dt(&led_device[1], vnd_user_data.current == STATE_ON);
 #endif
 }
 
@@ -109,13 +108,10 @@ void update_led_gpio(void)
 
 	printk("power-> %d, color-> %d\n", power, color);
 
-	gpio_pin_set(led_device[0], DT_GPIO_PIN(DT_ALIAS(led0), gpios),
-		     ctl->light->current);
+	gpio_pin_set_dt(&led_device[0], ctl->light->current);
 #ifndef ONE_LED_ONE_BUTTON_BOARD
-	gpio_pin_set(led_device[2], DT_GPIO_PIN(DT_ALIAS(led2), gpios),
-		     power < 50);
-	gpio_pin_set(led_device[3], DT_GPIO_PIN(DT_ALIAS(led3), gpios),
-		     color < 50);
+	gpio_pin_set_dt(&led_device[2], power < 50);
+	gpio_pin_set_dt(&led_device[3], color < 50);
 #endif
 }
 

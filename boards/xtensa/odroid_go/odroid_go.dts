@@ -82,7 +82,7 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	pinctrl-0 = <&uart0_tx_gpio1 &uart0_rx_gpio3>;
+	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 };
 
@@ -99,7 +99,7 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-pin = <4>;
 	scl-pin = <15>;
-	pinctrl-0 = <&i2c0_sda_gpio4 &i2c0_scl_gpio15>;
+	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 };
 
@@ -107,8 +107,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
-	pinctrl-0 = <&spim3_miso_gpio19 &spim3_mosi_gpio23
-		     &spim3_sclk_gpio18 &spim3_csel_gpio5>;
+	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
 
 	ili9341: ili9341@0 {

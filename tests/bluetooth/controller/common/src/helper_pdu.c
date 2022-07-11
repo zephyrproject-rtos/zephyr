@@ -27,9 +27,14 @@
 
 #include "lll.h"
 #include "lll_df_types.h"
+#include "lll_conn_iso.h"
+
 #include "lll_conn.h"
 #include "ull_tx_queue.h"
+#include "isoal.h"
+#include "ull_iso_types.h"
 #include "ull_conn_types.h"
+#include "ull_conn_iso_types.h"
 
 #include "ull_llcp.h"
 
@@ -400,6 +405,79 @@ void helper_pdu_encode_zero(struct pdu_data *pdu, void *param)
 void helper_node_encode_cte_rsp(struct node_rx_pdu *rx, void *param)
 {
 	rx->hdr.rx_ftr.iq_report = (struct cte_conn_iq_report *)param;
+}
+
+void helper_pdu_encode_cis_req(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_cis_req *p = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, cis_req) +
+		   sizeof(struct pdu_data_llctrl_cis_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CIS_REQ;
+
+	pdu->llctrl.cis_req.cig_id           =  p->cig_id;
+	pdu->llctrl.cis_req.cis_id           =  p->cis_id;
+	pdu->llctrl.cis_req.c_phy            =  p->c_phy;
+	pdu->llctrl.cis_req.p_phy            =  p->p_phy;
+	pdu->llctrl.cis_req.c_max_pdu        =  p->c_max_pdu;
+	pdu->llctrl.cis_req.p_max_pdu        =  p->p_max_pdu;
+	pdu->llctrl.cis_req.nse              =  p->nse;
+	pdu->llctrl.cis_req.p_bn             =  p->p_bn;
+	pdu->llctrl.cis_req.c_bn             =  p->c_bn;
+	pdu->llctrl.cis_req.c_ft             =  p->c_ft;
+	pdu->llctrl.cis_req.p_ft             =  p->p_ft;
+	pdu->llctrl.cis_req.iso_interval     =  p->iso_interval;
+	pdu->llctrl.cis_req.conn_event_count = p->conn_event_count;
+	memcpy(pdu->llctrl.cis_req.c_max_sdu_packed, p->c_max_sdu_packed,
+	       sizeof(p->c_max_sdu_packed));
+	memcpy(pdu->llctrl.cis_req.p_max_sdu, p->p_max_sdu, sizeof(p->p_max_sdu));
+	memcpy(pdu->llctrl.cis_req.c_sdu_interval, p->c_sdu_interval, sizeof(p->c_sdu_interval));
+	memcpy(pdu->llctrl.cis_req.p_sdu_interval, p->p_sdu_interval, sizeof(p->p_sdu_interval));
+	memcpy(pdu->llctrl.cis_req.sub_interval, p->sub_interval, sizeof(p->sub_interval));
+	memcpy(pdu->llctrl.cis_req.cis_offset_min, p->cis_offset_min, sizeof(p->cis_offset_min));
+	memcpy(pdu->llctrl.cis_req.cis_offset_max, p->cis_offset_max, sizeof(p->cis_offset_max));
+}
+
+void helper_pdu_encode_cis_rsp(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_cis_rsp *p = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, cis_rsp) +
+		   sizeof(struct pdu_data_llctrl_cis_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CIS_RSP;
+	memcpy(pdu->llctrl.cis_rsp.cis_offset_min, p->cis_offset_min, sizeof(p->cis_offset_min));
+	memcpy(pdu->llctrl.cis_rsp.cis_offset_max, p->cis_offset_max, sizeof(p->cis_offset_max));
+	pdu->llctrl.cis_rsp.conn_event_count = p->conn_event_count;
+}
+
+void helper_pdu_encode_cis_ind(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_cis_ind *p = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, cis_ind) +
+		   sizeof(struct pdu_data_llctrl_cis_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CIS_IND;
+	memcpy(pdu->llctrl.cis_ind.aa, p->aa, sizeof(p->aa));
+	memcpy(pdu->llctrl.cis_ind.cis_offset, p->cis_offset, sizeof(p->cis_offset));
+	memcpy(pdu->llctrl.cis_ind.cig_sync_delay, p->cig_sync_delay, sizeof(p->cig_sync_delay));
+	memcpy(pdu->llctrl.cis_ind.cis_sync_delay, p->cis_sync_delay, sizeof(p->cis_sync_delay));
+	pdu->llctrl.cis_ind.conn_event_count = p->conn_event_count;
+}
+
+void helper_pdu_encode_cis_terminate_ind(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_cis_terminate_ind *p = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, cis_terminate_ind) +
+		   sizeof(struct pdu_data_llctrl_cis_terminate_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND;
+	pdu->llctrl.cis_terminate_ind.cig_id = p->cig_id;
+	pdu->llctrl.cis_terminate_ind.cis_id = p->cis_id;
+	pdu->llctrl.cis_terminate_ind.error_code = p->error_code;
 }
 
 void helper_pdu_verify_version_ind(const char *file, uint32_t line, struct pdu_data *pdu,
@@ -963,4 +1041,163 @@ void helper_pdu_ntf_verify_cte_rsp(const char *file, uint32_t line, struct pdu_d
 		      line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CTE_RSP,
 		      "Not a LL_CTE_RSP. Called at %s:%d\n", file, line);
+}
+
+void helper_node_verify_cis_request(const char *file, uint32_t line, struct node_rx_pdu *rx,
+				    void *param)
+{
+	struct node_rx_conn_iso_req *p = (struct node_rx_conn_iso_req *)param;
+	struct node_rx_conn_iso_req *pdu = (struct node_rx_conn_iso_req *)rx->pdu;
+
+	zassert_equal(rx->hdr.type, NODE_RX_TYPE_CIS_REQUEST,
+		      "Not a CIS_REQUEST node.\nCalled at %s:%d\n", file, line);
+	zassert_equal(p->cig_id, pdu->cig_id,
+		      "cig_id mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(p->cis_handle, pdu->cis_handle,
+		      "cis_handle mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(p->cis_id, pdu->cis_id,
+		      "cis_id mismatch.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_node_verify_cis_established(const char *file, uint32_t line, struct node_rx_pdu *rx,
+					void *param)
+{
+	struct node_rx_conn_iso_estab *p = (struct node_rx_conn_iso_estab *)param;
+	struct node_rx_conn_iso_estab *pdu = (struct node_rx_conn_iso_estab *)rx->pdu;
+
+	zassert_equal(rx->hdr.type, NODE_RX_TYPE_CIS_ESTABLISHED,
+		      "Not a CIS_ESTABLISHED node.\nCalled at %s:%d\n", file, line);
+	zassert_equal(p->status, pdu->status,
+		      "status mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(p->cis_handle, pdu->cis_handle,
+		      "cis_handle mismatch.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_pdu_verify_cis_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_cis_req *p = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, cis_req) +
+		   sizeof(struct pdu_data_llctrl_cis_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CIS_REQ;
+
+	zassert_equal(pdu->llctrl.cis_req.cig_id, p->cig_id,
+		      "cig_id mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_req.cis_id, p->cis_id,
+		      "cis_id mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_req.c_phy, p->c_phy,
+		      "c_phy mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_req.p_phy, p->p_phy,
+		      "p_phy mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_req.c_max_pdu, p->c_max_pdu,
+		      "c_max_pdu mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_req.p_max_pdu, p->p_max_pdu,
+		      "p_max_pdu mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_req.nse, p->nse,
+		      "nse mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_req.p_bn, p->p_bn,
+		      "p_bn mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_req.c_bn, p->c_bn,
+		      "c_bn mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_req.c_ft, p->c_ft,
+		      "c_ft mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_req.p_ft, p->p_ft,
+		      "p_ft mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_req.iso_interval, p->iso_interval,
+		      "iso_interval mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_req.conn_event_count, p->conn_event_count,
+		      "conn_event_count mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_mem_equal(pdu->llctrl.cis_req.c_max_sdu_packed, p->c_max_sdu_packed,
+			  sizeof(p->c_max_sdu_packed),
+			  "c_max_sdu_packed mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_mem_equal(pdu->llctrl.cis_req.p_max_sdu, p->p_max_sdu,
+			  sizeof(p->p_max_sdu),
+			  "p_max_sdu mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_mem_equal(pdu->llctrl.cis_req.c_sdu_interval, p->c_sdu_interval,
+			  sizeof(p->c_sdu_interval),
+			  "c_sdu_interval mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_mem_equal(pdu->llctrl.cis_req.p_sdu_interval, p->p_sdu_interval,
+			  sizeof(p->p_sdu_interval),
+			  "p_sdu_interval mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_mem_equal(pdu->llctrl.cis_req.sub_interval, p->sub_interval,
+			  sizeof(p->sub_interval),
+			  "sub_interval mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_mem_equal(pdu->llctrl.cis_req.cis_offset_min, p->cis_offset_min,
+			  sizeof(p->cis_offset_min),
+			  "cis_offset_min mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_mem_equal(pdu->llctrl.cis_req.cis_offset_max, p->cis_offset_max,
+			  sizeof(p->cis_offset_max),
+			  "cis_offset_max mismatch.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_pdu_verify_cis_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_cis_rsp *p = param;
+
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file,
+		      line);
+	zassert_equal(pdu->len,
+		      offsetof(struct pdu_data_llctrl, cis_rsp) +
+			      sizeof(struct pdu_data_llctrl_cis_rsp),
+		      "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CIS_RSP,
+		      "Not a LL_CIS_RSP.\nCalled at %s:%d\n", file, line);
+
+	zassert_mem_equal(pdu->llctrl.cis_rsp.cis_offset_min, p->cis_offset_min,
+			  sizeof(p->cis_offset_min),
+			  "cis_offset_min mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_mem_equal(pdu->llctrl.cis_rsp.cis_offset_max, p->cis_offset_max,
+			  sizeof(p->cis_offset_max),
+			  "cis_offset_max mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_rsp.conn_event_count, p->conn_event_count,
+		      "conn_event_count mismatch.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_pdu_verify_cis_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_cis_ind *p = param;
+
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file,
+		      line);
+	zassert_equal(pdu->len,
+		      offsetof(struct pdu_data_llctrl, cis_ind) +
+			      sizeof(struct pdu_data_llctrl_cis_ind),
+		      "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CIS_IND,
+		      "Not a LL_CIS_IND.\nCalled at %s:%d\n", file, line);
+
+	zassert_mem_equal(pdu->llctrl.cis_ind.aa, p->aa, sizeof(p->aa),
+			  "aa mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_mem_equal(pdu->llctrl.cis_ind.cis_offset, p->cis_offset, sizeof(p->cis_offset),
+			  "cis_offset mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_mem_equal(pdu->llctrl.cis_ind.cig_sync_delay, p->cig_sync_delay,
+			  sizeof(p->cig_sync_delay),
+			  "cig_sync_delay mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_mem_equal(pdu->llctrl.cis_ind.cis_sync_delay, p->cis_sync_delay,
+			  sizeof(p->cis_sync_delay),
+			  "cis_sync_delay mismatch.\nCalled at %s:%d\n", file, line);
+
+	pdu->llctrl.cis_ind.conn_event_count = p->conn_event_count;
+}
+
+void helper_pdu_verify_cis_terminate_ind(const char *file, uint32_t line, struct pdu_data *pdu,
+					 void *param)
+{
+	struct pdu_data_llctrl_cis_terminate_ind *p = param;
+
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file,
+		      line);
+	zassert_equal(pdu->len,
+		      offsetof(struct pdu_data_llctrl, cis_terminate_ind) +
+			      sizeof(struct pdu_data_llctrl_cis_terminate_ind),
+		      "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND,
+		      "Not a LL_CIS_TERMINATE_IND.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_terminate_ind.cig_id, p->cig_id,
+		      "CIG ID mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_terminate_ind.cis_id, p->cis_id,
+		      "CIS ID mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cis_terminate_ind.error_code, p->error_code,
+		      "Error code mismatch.\nCalled at %s:%d\n", file, line);
 }

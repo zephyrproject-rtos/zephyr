@@ -431,7 +431,25 @@ System reset request header fields:
     | ``2``  | ``0``        |  ``5``         |
     +--------+--------------+----------------+
 
-The command sends empty CBOR map as data.
+Normally the command sends empty CBOR map as data, but if previous
+reset attempt has been responded with "rc" code equal ``10`` (busy),
+then following map may be send to force the reset:
+
+.. code-block:: none
+
+    {
+        (opt)"force"       : (int)
+    }
+
+where:
+
+.. table::
+    :align: center
+
+    +-----------------------+---------------------------------------------------+
+    | "force"               | Force reset if value > 0, optional if 0.          |
+    +-----------------------+---------------------------------------------------+
+
 
 System reset response
 =====================

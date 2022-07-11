@@ -8,7 +8,7 @@
 #include <zephyr/drivers/pm_cpu_ops/psci.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 
-void test_psci_func(void)
+ZTEST(arm64_psci, test_psci_func)
 {
 	uint32_t ver;
 	int ret;
@@ -24,9 +24,4 @@ void test_psci_func(void)
 	zassert_true(ret == -EINVAL, "Wrong return code from psci_cpu_on");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(psci_func,
-		ztest_unit_test(test_psci_func));
-	ztest_run_test_suite(psci_func);
-}
+ZTEST_SUITE(arm64_psci, NULL, NULL, NULL, NULL, NULL);
