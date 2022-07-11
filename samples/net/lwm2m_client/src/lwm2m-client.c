@@ -310,8 +310,8 @@ static int lwm2m_setup(void)
 	/* Match Security object instance with a Server object instance with
 	 * Short Server ID.
 	 */
-	lwm2m_engine_set_u16("0/0/10", 101);
-	lwm2m_engine_set_u16("1/0/0", 101);
+	lwm2m_engine_set_u16("0/0/10", CONFIG_LWM2M_SERVER_DEFAULT_SSID);
+	lwm2m_engine_set_u16("1/0/0", CONFIG_LWM2M_SERVER_DEFAULT_SSID);
 #endif
 
 	/* setup SERVER object */
