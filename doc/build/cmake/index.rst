@@ -330,7 +330,7 @@ The following is a detailed description of the scripts used during the build pro
 .. _gen_syscalls.py:
 
 :zephyr_file:`scripts/build/gen_syscalls.py`
---------------------------------------
+--------------------------------------------
 
 .. include:: ../../../scripts/build/gen_syscalls.py
    :start-after: """
@@ -339,7 +339,7 @@ The following is a detailed description of the scripts used during the build pro
 .. _gen_handles.py:
 
 :zephyr_file:`scripts/build/gen_handles.py`
---------------------------------------
+-------------------------------------------
 
 .. include:: ../../../scripts/build/gen_handles.py
    :start-after: """
@@ -348,7 +348,7 @@ The following is a detailed description of the scripts used during the build pro
 .. _gen_kobject_list.py:
 
 :zephyr_file:`scripts/build/gen_kobject_list.py`
-------------------------------------------
+------------------------------------------------
 
 .. include:: ../../../scripts/build/gen_kobject_list.py
    :start-after: """
@@ -357,7 +357,7 @@ The following is a detailed description of the scripts used during the build pro
 .. _gen_offset_header.py:
 
 :zephyr_file:`scripts/build/gen_offset_header.py`
--------------------------------------------
+-------------------------------------------------
 
 .. include:: ../../../scripts/build/gen_offset_header.py
    :start-after: """
@@ -366,7 +366,7 @@ The following is a detailed description of the scripts used during the build pro
 .. _parse_syscalls.py:
 
 :zephyr_file:`scripts/build/parse_syscalls.py`
-----------------------------------------
+----------------------------------------------
 
 
 .. include:: ../../../scripts/build/parse_syscalls.py
@@ -394,7 +394,7 @@ The following is a detailed description of the scripts used during the build pro
 .. _gen_relocate_app.py:
 
 :zephyr_file:`scripts/build/gen_relocate_app.py`
--------------------------------------------
+------------------------------------------------
 
 .. include:: ../../../scripts/build/gen_relocate_app.py
    :start-after: """
@@ -403,14 +403,14 @@ The following is a detailed description of the scripts used during the build pro
 .. _process_gperf.py:
 
 :zephyr_file:`scripts/build/process_gperf.py`
----------------------------------------
+---------------------------------------------
 
 .. include:: ../../../scripts/build/process_gperf.py
    :start-after: """
    :end-before: """
 
 :zephyr_file:`scripts/build/gen_app_partitions.py`
---------------------------------------------
+--------------------------------------------------
 
 .. include:: ../../../scripts/build/gen_app_partitions.py
    :start-after: """
