@@ -8,7 +8,6 @@
 #include <nrfx_gpiote.h>
 #include <string.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/dt-bindings/gpio/nordic-nrf-gpio.h>
 #include "gpio_utils.h"
 
 struct gpio_nrfx_data {
@@ -37,43 +36,19 @@ static inline const struct gpio_nrfx_cfg *get_port_cfg(const struct device *port
 
 static int get_drive(gpio_flags_t flags, nrf_gpio_pin_drive_t *drive)
 {
-	int err = 0;
-
-	switch (flags & (NRF_GPIO_DS_LOW_MASK | NRF_GPIO_DS_HIGH_MASK |
-			 GPIO_OPEN_DRAIN)) {
-	case NRF_GPIO_DS_DFLT:
-		*drive = NRF_GPIO_PIN_S0S1;
-		break;
-	case NRF_GPIO_DS_DFLT_LOW | NRF_GPIO_DS_ALT_HIGH:
-		*drive = NRF_GPIO_PIN_S0H1;
-		break;
-	case NRF_GPIO_DS_DFLT_LOW | GPIO_OPEN_DRAIN:
+	switch (flags & GPIO_OPEN_DRAIN) {
+	case GPIO_OPEN_DRAIN:
 		*drive = NRF_GPIO_PIN_S0D1;
 		break;
-
-	case NRF_GPIO_DS_ALT_LOW | NRF_GPIO_DS_DFLT_HIGH:
-		*drive = NRF_GPIO_PIN_H0S1;
-		break;
-	case NRF_GPIO_DS_ALT:
-		*drive = NRF_GPIO_PIN_H0H1;
-		break;
-	case NRF_GPIO_DS_ALT_LOW | GPIO_OPEN_DRAIN:
-		*drive = NRF_GPIO_PIN_H0D1;
-		break;
-
-	case NRF_GPIO_DS_DFLT_HIGH | GPIO_OPEN_SOURCE:
+	case GPIO_OPEN_SOURCE:
 		*drive = NRF_GPIO_PIN_D0S1;
 		break;
-	case NRF_GPIO_DS_ALT_HIGH | GPIO_OPEN_SOURCE:
-		*drive = NRF_GPIO_PIN_D0H1;
-		break;
-
 	default:
-		err = -EINVAL;
+		*drive = NRF_GPIO_PIN_S0S1;
 		break;
 	}
 
-	return err;
+	return 0;
 }
 
 static nrf_gpio_pin_pull_t get_pull(gpio_flags_t flags)
