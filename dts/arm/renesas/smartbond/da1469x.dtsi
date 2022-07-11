@@ -24,30 +24,37 @@
 			compatible = "mmio-sram";
 		};
 
-		gpio0: gpio@50020a00 {
-			compatible = "renesas,smartbond-gpio";
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <32>;
-			reg = <0x50020a00 20
-			       0x50020a18 128
-			       0x50000070 12
-			       0x50000114 36>;
-			reg-names = "data", "mode", "latch", "wkup";
-			interrupts = <38 0>;
-		};
+		pinctrl: pin-controller@50020a00 {
+			compatible = "renesas,smartbond-pinctrl";
+			reg = <0x50020a00 0x100>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		gpio1: gpio@50020a04 {
-			compatible = "renesas,smartbond-gpio";
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <23>;
-			reg = <0x50020a04 20
-			       0x50020a98 92
-			       0x5000007c 12
-			       0x50000118 36>;
-			reg-names = "data", "mode", "latch", "wkup";
-			interrupts = <39 0>;
+			gpio0: gpio@50020a00 {
+				compatible = "renesas,smartbond-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				reg = <0x50020a00 20
+					   0x50020a18 128
+					   0x50000070 12
+					   0x50000114 36>;
+				reg-names = "data", "mode", "latch", "wkup";
+				interrupts = <38 0>;
+			};
+
+			gpio1: gpio@50020a04 {
+				compatible = "renesas,smartbond-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <23>;
+				reg = <0x50020a04 20
+					   0x50020a98 92
+					   0x5000007c 12
+					   0x50000118 36>;
+				reg-names = "data", "mode", "latch", "wkup";
+				interrupts = <39 0>;
+			};
 		};
 	};
 };
