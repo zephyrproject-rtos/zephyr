@@ -356,10 +356,10 @@ The following is a detailed description of the scripts used during the build pro
 
 .. _gen_offset_header.py:
 
-:zephyr_file:`scripts/gen_offset_header.py`
+:zephyr_file:`scripts/build/gen_offset_header.py`
 -------------------------------------------
 
-.. include:: ../../../scripts/gen_offset_header.py
+.. include:: ../../../scripts/build/gen_offset_header.py
    :start-after: """
    :end-before: """
 
