@@ -644,7 +644,11 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	__ASSERT_NO_MSG(log_backend_count_get() > 0);
 
 	uint32_t activate_mask = z_log_init(false, false);
-	k_timeout_t timeout = K_MSEC(50); /* Arbitrary value */
+	/* If some backends are not activated yet set periodical thread wake up
+	 * to poll backends for readiness. Period is set arbitrary.
+	 * If all backends are ready periodic wake up is not needed.
+	 */
+	k_timeout_t timeout = (activate_mask != 0) ? K_MSEC(50) : K_FOREVER;
 	bool processed_any = false;
 
 	thread_set(k_current_get());
@@ -656,6 +660,9 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 		if (activate_mask) {
 			activate_mask = activate_foreach_backend(activate_mask);
 			if (!activate_mask) {
+				/* Periodic wake up no longer needed since all
+				 * backends are ready.
+				 */
 				timeout = K_FOREVER;
 			}
 		}
