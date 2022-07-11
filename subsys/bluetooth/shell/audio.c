@@ -985,7 +985,8 @@ static struct bt_audio_base received_base;
 static bool sink_syncable;
 
 static bool scan_recv(const struct bt_le_scan_recv_info *info,
-		     uint32_t broadcast_id)
+		      struct net_buf_simple *ad,
+		      uint32_t broadcast_id)
 {
 	shell_print(ctx_shell, "Found broadcaster with ID 0x%06X",
 		    broadcast_id);

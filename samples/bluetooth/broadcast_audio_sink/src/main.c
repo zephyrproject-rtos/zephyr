@@ -58,6 +58,7 @@ static struct bt_audio_stream_ops stream_ops = {
 };
 
 static bool scan_recv_cb(const struct bt_le_scan_recv_info *info,
+			 struct net_buf_simple *ad,
 			 uint32_t broadcast_id)
 {
 	k_sem_give(&sem_broadcaster_found);
