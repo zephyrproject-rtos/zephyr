@@ -409,9 +409,9 @@ The following is a detailed description of the scripts used during the build pro
    :start-after: """
    :end-before: """
 
-:zephyr_file:`scripts/gen_app_partitions.py`
+:zephyr_file:`scripts/build/gen_app_partitions.py`
 --------------------------------------------
 
-.. include:: ../../../scripts/gen_app_partitions.py
+.. include:: ../../../scripts/build/gen_app_partitions.py
    :start-after: """
    :end-before: """
