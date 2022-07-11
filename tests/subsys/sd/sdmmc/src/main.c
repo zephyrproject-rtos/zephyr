@@ -25,7 +25,7 @@ static uint32_t sector_count;
 
 
 /* Verify that SD stack can initialize an SD card */
-static void test_init(void)
+ZTEST(sd_stack, test_init)
 {
 	int ret;
 
@@ -40,7 +40,7 @@ static void test_init(void)
 }
 
 /* Verify that SD stack returns valid IOCTL values */
-static void test_ioctl(void)
+ZTEST(sd_stack, test_ioctl)
 {
 	int ret;
 
@@ -55,7 +55,7 @@ static void test_ioctl(void)
 
 
 /* Verify that SD stack can read from an SD card */
-static void test_read(void)
+ZTEST(sd_stack, test_read)
 {
 	int ret;
 	int block_addr = 0;
@@ -91,7 +91,7 @@ static void test_read(void)
 }
 
 /* Verify that SD stack can write to an SD card */
-static void test_write(void)
+ZTEST(sd_stack, test_write)
 {
 	int ret;
 	int block_addr = 0;
@@ -127,7 +127,7 @@ static void test_write(void)
 }
 
 /* Test reads and writes interleaved, to verify data is making it on disk */
-static void test_rw(void)
+ZTEST(sd_stack, test_rw)
 {
 	int ret;
 	int block_addr = 0;
@@ -177,7 +177,7 @@ static void test_rw(void)
 }
 
 /* Simply dump the card configuration. */
-void test_card_config(void)
+ZTEST(sd_stack, test_card_config)
 {
 	switch (card.card_voltage) {
 	case SD_VOL_1_2_V:
@@ -241,17 +241,4 @@ void test_card_config(void)
 	}
 }
 
-
-void test_main(void)
-{
-	ztest_test_suite(sd_stack_test,
-		ztest_unit_test(test_init),
-		ztest_unit_test(test_ioctl),
-		ztest_unit_test(test_read),
-		ztest_unit_test(test_write),
-		ztest_unit_test(test_rw),
-		ztest_unit_test(test_card_config)
-	);
-
-	ztest_run_test_suite(sd_stack_test);
-}
+ZTEST_SUITE(sd_stack, NULL, NULL, NULL, NULL, NULL);
