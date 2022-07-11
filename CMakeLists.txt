@@ -951,7 +951,7 @@ if(CONFIG_USERSPACE)
   add_custom_command(
     OUTPUT ${APP_SMEM_UNALIGNED_LD} ${APP_SMEM_PINNED_UNALIGNED_LD}
     COMMAND ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
+    ${ZEPHYR_BASE}/scripts/build/gen_app_partitions.py
     -f ${CMAKE_BINARY_DIR}/compile_commands.json
     -o ${APP_SMEM_UNALIGNED_LD}
     $<$<BOOL:${APP_SMEM_PINNED_UNALIGNED_LD}>:--pinoutput=${APP_SMEM_PINNED_UNALIGNED_LD}>
@@ -989,7 +989,7 @@ if (CONFIG_USERSPACE)
   add_custom_command(
     OUTPUT ${APP_SMEM_ALIGNED_LD} ${APP_SMEM_PINNED_ALIGNED_LD}
     COMMAND ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
+    ${ZEPHYR_BASE}/scripts/build/gen_app_partitions.py
     -e $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
     -o ${APP_SMEM_ALIGNED_LD}
     $<$<BOOL:${APP_SMEM_PINNED_ALIGNED_LD}>:--pinoutput=${APP_SMEM_PINNED_ALIGNED_LD}>
