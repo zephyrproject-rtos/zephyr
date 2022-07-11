@@ -111,6 +111,11 @@
 			reg = <0x71f00 0x100>;
 		};
 
+		lps: lps@71ac0 {
+			compatible = "intel,adsp-lps";
+			reg = <0x00071ac0 0x100>;
+		};
+
 		sspbase: ssp_base@28800 {
 			compatible = "intel,ssp-sspbase";
 			reg = <0x28800 0x1000>;
