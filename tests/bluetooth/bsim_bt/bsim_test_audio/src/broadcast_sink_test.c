@@ -38,6 +38,7 @@ static const uint32_t bis_index_mask = BIT_MASK(ARRAY_SIZE(streams) + 1U);
 static uint32_t bis_index_bitfield;
 
 static bool scan_recv_cb(const struct bt_le_scan_recv_info *info,
+			 struct net_buf_simple *ad,
 			 uint32_t broadcast_id)
 {
 	SET_FLAG(broadcaster_found);
