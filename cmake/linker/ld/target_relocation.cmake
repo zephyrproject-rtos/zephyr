@@ -14,7 +14,7 @@ macro(toolchain_ld_relocation)
     OUTPUT ${MEM_RELOCATION_CODE} ${MEM_RELOCATION_LD}
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/gen_relocate_app.py
+    ${ZEPHYR_BASE}/scripts/build/gen_relocate_app.py
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     -d ${APPLICATION_BINARY_DIR}
     -i \"$<TARGET_PROPERTY:code_data_relocation_target,COMPILE_DEFINITIONS>\"
