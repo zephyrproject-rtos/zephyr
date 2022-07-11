@@ -365,11 +365,11 @@ The following is a detailed description of the scripts used during the build pro
 
 .. _parse_syscalls.py:
 
-:zephyr_file:`scripts/parse_syscalls.py`
+:zephyr_file:`scripts/build/parse_syscalls.py`
 ----------------------------------------
 
 
-.. include:: ../../../scripts/parse_syscalls.py
+.. include:: ../../../scripts/build/parse_syscalls.py
    :start-after: """
    :end-before: """
 
