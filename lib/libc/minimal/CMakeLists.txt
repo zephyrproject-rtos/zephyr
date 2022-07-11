@@ -42,7 +42,7 @@ add_custom_command(
   OUTPUT ${STRERROR_TABLE_H}
   COMMAND
   ${PYTHON_EXECUTABLE}
-  ${ZEPHYR_BASE}/scripts/gen_strerror_table.py
+  ${ZEPHYR_BASE}/scripts/build/gen_strerror_table.py
   -i include/errno.h
   -o ${STRERROR_TABLE_H}
   DEPENDS include/errno.h
