@@ -23,3 +23,4 @@ zephyr_library_sources_ifdef(CONFIG_PINCTRL_CC13XX_CC26XX pinctrl_cc13xx_cc26xx.
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_ESP32 pinctrl_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_RV32M1 pinctrl_rv32m1.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_XLNX_ZYNQ pinctrl_xlnx_zynq.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_SMARTBOND pinctrl_smartbond.c)
