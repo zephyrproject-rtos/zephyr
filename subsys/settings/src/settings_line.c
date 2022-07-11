@@ -27,7 +27,7 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 	size_t w_size, rem, add;
 
 	bool done;
-	char w_buf[16]; /* write buff, must be aligned either to minimal */
+	char w_buf[32]; /* write buff, must be aligned either to minimal */
 			/* base64 encoding size and write-block-size */
 	int rc;
 	uint8_t wbs = settings_io_cb.rwbs;
@@ -174,7 +174,7 @@ static int settings_line_raw_read_until(off_t seek, char *out, size_t len_req,
 				 void *cb_arg)
 {
 	size_t rem_size, len;
-	char temp_buf[16]; /* buffer for fit read-block-size requirements */
+	char temp_buf[32]; /* buffer for fit read-block-size requirements */
 	size_t exp_size, read_size;
 	uint8_t rbs = settings_io_cb.rwbs;
 	off_t off;
