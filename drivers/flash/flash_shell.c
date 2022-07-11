@@ -14,7 +14,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/drivers/flash.h>
-#include <soc.h>
 
 /* Buffer is only needed for bytes that follow command and offset */
 #define BUF_ARRAY_CNT (CONFIG_SHELL_ARGC_MAX - 2)
