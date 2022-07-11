@@ -128,6 +128,11 @@ endchoice
 config HEAP_MEM_POOL_SIZE
 	default 4096 if BT_RPMSG
 
+# Application core does not have dependencies to the Controller.
+# BT_HCI_VS must be explicitly enabled.
+config BT_HCI_VS
+	default y if BT
+
 endif #  BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 
 if BOARD_NRF5340DK_NRF5340_CPUNET
