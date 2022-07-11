@@ -14,8 +14,6 @@
 #include "npcx/npcx9/npcx9-espi-vws-map.dtsi"
 /* NPCX9 series low-voltage io controls mapping table */
 #include "npcx/npcx9/npcx9-lvol-ctrl-map.dtsi"
-/* NPCX9 series power-switch-logic (PSL) io controls mapping table */
-#include "npcx/npcx9/npcx9-psl-ctrl-map.dtsi"
 
 /* Device tree declarations of npcx soc family */
 #include "npcx.dtsi"
