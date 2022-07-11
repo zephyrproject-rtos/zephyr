@@ -401,6 +401,7 @@ static isoal_status_t sink_sdu_emit_test(const struct isoal_sink *sink_ctx,
 	return ztest_get_return_value();
 }
 
+FAKE_VALUE_FUNC(isoal_status_t, sink_sdu_write_test, void *, const uint8_t *, const size_t);
 /**
  * Callback test fixture to be provided for RX sink creation. Writes provided
  * data into target SDU buffer.
@@ -409,7 +410,7 @@ static isoal_status_t sink_sdu_emit_test(const struct isoal_sink *sink_ctx,
  * @param  consume_len Length of data to transfer
  * @return             Status of the operation
  */
-static isoal_status_t sink_sdu_write_test(void *dbuf,
+static isoal_status_t custom_sink_sdu_write_test(void *dbuf,
 					  const uint8_t *pdu_payload,
 					  const size_t consume_len)
 {
@@ -426,11 +427,7 @@ static isoal_status_t sink_sdu_write_test(void *dbuf,
 	rx_sdu_frag_buf->write_loc += consume_len;
 #endif
 
-	ztest_check_expected_value(dbuf);
-	ztest_check_expected_value(pdu_payload);
-	ztest_check_expected_value(consume_len);
-
-	return ztest_get_return_value();
+	return sink_sdu_write_test_fake.return_val;
 }
 
 /**
@@ -951,11 +948,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu)
 	/* Test recombine (Black Box) */
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
-
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should be emitted as it is complete */
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
@@ -981,6 +974,10 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu)
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val,
 			  NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -1058,10 +1055,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu)
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -1075,6 +1069,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_CONTINUE));
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -1093,10 +1090,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -1121,6 +1115,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu)
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val,
 			  NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -1196,11 +1193,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_split)
 	/* Test recombine (Black Box) */
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
-
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -1216,6 +1209,10 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_split)
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val,
 			  NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* SDU 1 - PDU 2 -----------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -1233,10 +1230,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_split)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU emitted with errors as end fragment was not seen */
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
@@ -1258,6 +1252,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_split)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_START));
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* SDU 2 - PDU 3 -----------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -1279,10 +1276,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_split)
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -1298,6 +1292,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_split)
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val,
 			  NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* SDU 2 - PDU 4 */
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -1315,10 +1312,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_split)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU emitted with errors as end fragment was not seen */
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
@@ -1340,6 +1334,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_split)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_START));
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* SDU 3 - PDU 5 -----------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -1361,10 +1358,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_split)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -1388,6 +1382,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_split)
 		FSM_TO_STR(ISOAL_ERR_SPOOL));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -1464,10 +1461,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -1482,6 +1476,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -1499,10 +1496,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -1515,6 +1509,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_CONTINUE));
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 3 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -1532,10 +1529,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -1548,6 +1542,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_CONTINUE));
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 4 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -1565,10 +1562,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -1581,6 +1575,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_CONTINUE));
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 5 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -1598,10 +1595,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -1622,6 +1616,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_multi_split)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_START));
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -1700,10 +1697,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_long_pdu_short_sdu)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, 20);
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_START);
@@ -1722,10 +1716,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_long_pdu_short_sdu)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2+20]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, 20);
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_END);
@@ -1748,6 +1739,12 @@ ZTEST(test_rx_unframed, test_rx_unframed_long_pdu_short_sdu)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_history[0], NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_history[0], NULL);
+	zassert_equal(20, sink_sdu_write_test_fake.arg2_history[0], NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_history[1], NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+20], sink_sdu_write_test_fake.arg1_history[1], NULL);
+	zassert_equal(20, sink_sdu_write_test_fake.arg2_history[1], NULL);
 }
 
 /**
@@ -1824,10 +1821,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_prem)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -1850,6 +1844,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_prem)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -1871,10 +1868,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_prem)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -1897,6 +1891,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_prem)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -1973,10 +1970,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu_err)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -1999,6 +1993,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu_err)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -2020,10 +2017,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu_err)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -2046,6 +2040,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu_err)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -2122,10 +2119,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_err)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -2140,6 +2134,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_err)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 Not transferred to ISO-AL ------------------------------------*/
 	payload_number++;
@@ -2163,10 +2160,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_err)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -2191,6 +2185,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_err)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_ERR_SPOOL));
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 4 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -2213,10 +2210,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_err)
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -2236,6 +2230,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_err)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -2313,10 +2310,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -2331,6 +2325,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 Not transferred to ISO-AL ------------------------------------*/
 	payload_number++;
@@ -2355,10 +2352,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* Lost data should be higher priority */
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
@@ -2384,6 +2378,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_ERR_SPOOL));
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 4 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -2406,10 +2403,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err)
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -2429,6 +2423,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 5 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -2446,10 +2443,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -2471,6 +2465,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_ERR_SPOOL));
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -2547,10 +2544,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -2565,6 +2559,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -2582,10 +2579,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -2607,6 +2601,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_ERR_SPOOL));
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 3 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -2741,10 +2738,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_no_end)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -2759,6 +2753,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_no_end)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -2903,10 +2900,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_error1)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -2929,6 +2923,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_error1)
 		FSM_TO_STR(ISOAL_ERR_SPOOL));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -3064,10 +3061,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_error2)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -3082,6 +3076,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_error2)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -3224,10 +3221,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_error3)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -3242,6 +3236,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_error3)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -3259,10 +3256,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_error3)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -3283,6 +3277,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_error3)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_ERR_SPOOL));
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 3 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -3489,10 +3486,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_no_end)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -3507,6 +3501,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_no_end)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -3524,10 +3521,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_no_end)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -3548,6 +3542,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_no_end)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_START));
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -3705,11 +3702,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_invalid_llid2)
 	/* Test recombine (Black Box) */
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
-
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -3724,6 +3717,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_invalid_llid2)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -3823,10 +3819,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_invalid_llid2_pdu_err)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -3841,6 +3834,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_invalid_llid2_pdu_err)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -3859,10 +3855,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_invalid_llid2_pdu_err)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload, &rx_pdu_meta_buf.pdu[2]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU emitted with errors */
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
@@ -3884,6 +3877,9 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_invalid_llid2_pdu_err)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_START));
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -3966,11 +3962,7 @@ ZTEST(test_rx_framed, test_rx_framed_single_pdu_single_sdu)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-						&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -3994,6 +3986,9 @@ ZTEST(test_rx_framed, test_rx_framed_single_pdu_single_sdu)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 
@@ -4077,11 +4072,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-						&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -4097,6 +4088,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -4116,11 +4110,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -4134,6 +4124,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_CONTINUE));
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 3 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -4153,11 +4146,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-						&rx_pdu_meta_buf.pdu[2+pdu_data_loc[2]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -4178,6 +4167,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_START));
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[2]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -4263,11 +4255,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[0]);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf[0]);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-						&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -4282,6 +4270,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf[0], sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -4312,11 +4303,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu)
 
 	/* Test recombine (Black Box) */
 	/* SDU 1 */
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf[0]);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-						&rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, 10);
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -4332,11 +4319,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[1]);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf[1]);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-						&rx_pdu_meta_buf.pdu[2+pdu_data_loc[2]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU 2 should not be emitted */
 
@@ -4351,6 +4334,12 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf[0], sink_sdu_write_test_fake.arg0_history[1], NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]], sink_sdu_write_test_fake.arg1_history[1], NULL);
+	zassert_equal(10, sink_sdu_write_test_fake.arg2_history[1], NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf[1], sink_sdu_write_test_fake.arg0_history[2], NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[2]], sink_sdu_write_test_fake.arg1_history[2], NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_history[2], NULL);
 
 	/* PDU 3 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -4370,11 +4359,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf[1]);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-						&rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -4395,6 +4380,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_START));
+	zassert_equal_ptr(&rx_sdu_frag_buf[1], sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -4483,11 +4471,7 @@ ZTEST(test_rx_framed, test_rx_framed_zero_length_sdu)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[0]);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf[0]);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-						&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -4502,6 +4486,9 @@ ZTEST(test_rx_framed, test_rx_framed_zero_length_sdu)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf[0], sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -4544,11 +4531,7 @@ ZTEST(test_rx_framed, test_rx_framed_zero_length_sdu)
 
 	/* Test recombine (Black Box) */
 	/* SDU 1 */
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf[0]);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-						&rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, 10);
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -4581,11 +4564,7 @@ ZTEST(test_rx_framed, test_rx_framed_zero_length_sdu)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[2]);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf[2]);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-						&rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU 2 should not be emitted */
 
@@ -4600,6 +4579,12 @@ ZTEST(test_rx_framed, test_rx_framed_zero_length_sdu)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf[0], sink_sdu_write_test_fake.arg0_history[1], NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]], sink_sdu_write_test_fake.arg1_history[1], NULL);
+	zassert_equal(10, sink_sdu_write_test_fake.arg2_history[1], NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf[2], sink_sdu_write_test_fake.arg0_history[2], NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]], sink_sdu_write_test_fake.arg1_history[2], NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_history[2], NULL);
 
 	/* PDU 3 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -4619,11 +4604,7 @@ ZTEST(test_rx_framed, test_rx_framed_zero_length_sdu)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf[2]);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -4644,6 +4625,9 @@ ZTEST(test_rx_framed, test_rx_framed_zero_length_sdu)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_START));
+	zassert_equal_ptr(&rx_sdu_frag_buf[2], sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -4727,11 +4711,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_padding)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -4755,6 +4735,9 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_padding)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	/* Padding PDU */
@@ -4810,11 +4793,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_padding)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -4837,6 +4816,9 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_padding)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -4971,11 +4953,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_pdu_err1)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -4999,6 +4977,9 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_pdu_err1)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -5133,11 +5114,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_pdu_err2)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -5161,6 +5138,9 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_pdu_err2)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -5244,11 +5224,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_seq_err1)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -5272,6 +5248,9 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_seq_err1)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	/* Not transferred to the ISO-AL */
@@ -5316,11 +5295,7 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_seq_err1)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -5343,6 +5318,9 @@ ZTEST(test_rx_framed, test_rx_framed_dbl_pdu_dbl_sdu_seq_err1)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -5539,11 +5517,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err1)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -5567,6 +5541,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err1)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -5650,11 +5627,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err2)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -5669,6 +5642,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err2)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -5766,11 +5742,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err2)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -5793,6 +5765,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err2)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -5876,11 +5851,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err3)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -5895,6 +5866,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err3)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -5914,11 +5888,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err3)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -5931,6 +5901,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err3)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_CONTINUE));
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 3 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -5996,11 +5969,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err3)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -6023,6 +5992,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_err3)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -6106,11 +6078,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_seq_err1)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -6125,6 +6093,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_seq_err1)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	/* PDU not transferred to the ISO-AL */
@@ -6199,11 +6170,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_seq_err1)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -6226,6 +6193,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_seq_err1)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -6309,11 +6279,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_seq_err1)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -6328,6 +6294,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_seq_err1)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	/* PDU not transferred to the ISO-AL */
@@ -6402,11 +6371,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_seq_err1)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -6429,6 +6394,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_single_sdu_pdu_seq_err1)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -6576,11 +6544,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err1)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[1]);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf[1]);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[2]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU 2 should not be emitted */
 
@@ -6595,6 +6559,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err1)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf[1], sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[2]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 3 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -6614,11 +6581,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err1)
 	/* Test recombine (Black Box) */
 	/* Should not allocate a new SDU */
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf[1]);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -6639,6 +6602,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err1)
 		"FSM state %s should be %s!",
 		FSM_TO_STR(isoal_global.sink_state[sink_hdl].sdu_production.fsm),
 		FSM_TO_STR(ISOAL_START));
+	zassert_equal_ptr(&rx_sdu_frag_buf[1], sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[3]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 4 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -6665,11 +6631,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err1)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[0]);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[4]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -6692,6 +6654,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err1)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[4]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -6777,11 +6742,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err2)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[0]);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf[0]);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -6796,6 +6757,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err2)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf[0], sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -6909,11 +6873,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err2)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[0]);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[4]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -6936,6 +6896,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err2)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[4]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -7021,11 +6984,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err3)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[0]);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf[0]);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -7040,6 +6999,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err3)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf[0], sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -7070,11 +7032,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err3)
 
 	/* Test recombine (Black Box) */
 	/* SDU 1 */
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf[0]);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, 10);
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -7090,11 +7048,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err3)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[1]);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf[1]);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[2]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU 2 should not be emitted */
 
@@ -7109,6 +7063,12 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err3)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf[0], sink_sdu_write_test_fake.arg0_history[1], NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]], sink_sdu_write_test_fake.arg1_history[1], NULL);
+	zassert_equal(10, sink_sdu_write_test_fake.arg2_history[1], NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf[1], sink_sdu_write_test_fake.arg0_history[2], NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[2]], sink_sdu_write_test_fake.arg1_history[2], NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_history[2], NULL);
 
 	/* PDU 3 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -7175,11 +7135,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err3)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[0]);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[4]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -7202,6 +7158,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err3)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[4]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -7287,11 +7246,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seq_err1)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[0]);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf[0]);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -7306,6 +7261,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seq_err1)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf[0], sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -7393,11 +7351,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seq_err1)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[0]);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[4]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -7420,6 +7374,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_seq_err1)
 		FSM_TO_STR(ISOAL_ERR_SPOOL));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[4]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -7505,11 +7462,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_seq_err1)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[0]);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf[0]);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	/* SDU should not be emitted */
 
@@ -7524,6 +7477,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_seq_err1)
 		FSM_TO_STR(ISOAL_CONTINUE));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf[0], sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 
 	/* PDU 2 -------------------------------------------------------------*/
 	init_rx_pdu_buffer(&rx_pdu_meta_buf);
@@ -7611,11 +7567,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_seq_err1)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[0]);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[4]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -7638,6 +7590,9 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_seq_err1)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_val, NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[4]], sink_sdu_write_test_fake.arg1_val, NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_val, NULL);
 }
 
 /**
@@ -7737,23 +7692,7 @@ ZTEST(test_rx_framed, test_rx_framed_single_invalid_pdu_single_sdu)
 	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
 	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
 
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, 13);
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
-
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, 5);
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
-
-	ztest_expect_value(sink_sdu_write_test, dbuf, &rx_sdu_frag_buf);
-	ztest_expect_value(sink_sdu_write_test, pdu_payload,
-			   &rx_pdu_meta_buf.pdu[2+pdu_data_loc[2]]);
-	ztest_expect_value(sink_sdu_write_test, consume_len, (testdata_size - testdata_indx));
-	ztest_returns_value(sink_sdu_write_test, ISOAL_STATUS_OK);
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
 
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx, &isoal_global.sink_state[sink_hdl]);
 	ztest_expect_value(sink_sdu_emit_test, sink_ctx->sdu_production.sdu_state, BT_ISO_SINGLE);
@@ -7777,6 +7716,18 @@ ZTEST(test_rx_framed, test_rx_framed_single_invalid_pdu_single_sdu)
 		FSM_TO_STR(ISOAL_START));
 	zassert_equal_ptr(&isoal_global.sink_state[sink_hdl], sink_sdu_alloc_test_fake.arg0_val, NULL);
 	zassert_equal_ptr(&rx_pdu_meta_buf.pdu_meta, sink_sdu_alloc_test_fake.arg1_val, NULL);
+
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_history[0], NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[0]], sink_sdu_write_test_fake.arg1_history[0], NULL);
+	zassert_equal(13, sink_sdu_write_test_fake.arg2_history[0], NULL);
+
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_history[1], NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[1]], sink_sdu_write_test_fake.arg1_history[1], NULL);
+	zassert_equal(5, sink_sdu_write_test_fake.arg2_history[1], NULL);
+
+	zassert_equal_ptr(&rx_sdu_frag_buf, sink_sdu_write_test_fake.arg0_history[2], NULL);
+	zassert_equal_ptr(&rx_pdu_meta_buf.pdu[2+pdu_data_loc[2]], sink_sdu_write_test_fake.arg1_history[2], NULL);
+	zassert_equal((testdata_size - testdata_indx), sink_sdu_write_test_fake.arg2_history[2], NULL);
 }
 
 static void common_before(void *f)
@@ -7786,10 +7737,12 @@ static void common_before(void *f)
 	custom_sink_sdu_alloc_test_output_buffer.buffer_size = 0;
 	custom_sink_sdu_alloc_test_output_buffer.pos = 0;
 	RESET_FAKE(sink_sdu_alloc_test);
+	RESET_FAKE(sink_sdu_write_test);
 
 	FFF_RESET_HISTORY();
 
 	sink_sdu_alloc_test_fake.custom_fake = custom_sink_sdu_alloc_test;
+	sink_sdu_write_test_fake.custom_fake = custom_sink_sdu_write_test;
 }
 
 ZTEST_SUITE(test_rx_basics, NULL, NULL, common_before, NULL, NULL);
