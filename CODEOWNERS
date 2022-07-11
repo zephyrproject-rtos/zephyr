@@ -721,7 +721,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /scripts/west-commands.yml                @mbolivar-nordic
 /scripts/zephyr_module.py                 @tejlmand
 /scripts/build/uf2conv.py                 @petejohanson
-/scripts/user_wordsize.py                 @cfriedt
+/scripts/build/user_wordsize.py           @cfriedt
 /scripts/valgrind.supp                    @aescolar @daor-oti
 /share/zephyr-package/                    @tejlmand
 /share/zephyrunittest-package/            @tejlmand
