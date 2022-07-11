@@ -20,22 +20,22 @@ properties:
 
     gdv:
       type: uint8-array
-      required: true
+      required: false
       description: Gate driving voltage values
 
     sdv:
       type: uint8-array
-      required: true
+      required: false
       description: Source driving voltage values
 
     vcom:
       type: int
-      required: true
+      required: false
       description: VCOM voltage
 
     border-waveform:
       type: int
-      required: true
+      required: false
       description: Border waveform
 
     softstart:
