@@ -1975,7 +1975,7 @@ Userspace:
         - scripts/build/gen_kobject_list.py
         - scripts/gen_syscalls.py
         - scripts/process_gperf.py
-        - scripts/gen_relocate_app.py
+        - scripts/build/gen_relocate_app.py
         - include/zephyr/sys/kobject.h
     labels:
         - "area: Userspace"
