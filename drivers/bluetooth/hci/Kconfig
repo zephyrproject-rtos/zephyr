@@ -32,6 +32,7 @@ config BT_H5
 
 config BT_RPMSG
 	bool "HCI using RPMsg"
+	select BT_HAS_HCI_VS
 	select IPC_SERVICE
 	select MBOX
 	help
