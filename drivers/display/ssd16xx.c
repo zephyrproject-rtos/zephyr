@@ -244,18 +244,23 @@ static inline int ssd16xx_set_ram_ptr(const struct device *dev, uint16_t x,
 	return ssd16xx_write_cmd(dev, SSD16XX_CMD_RAM_YPOS_CNTR, tmp, len);
 }
 
-static int ssd16xx_update_display(const struct device *dev)
+static int ssd16xx_activate(const struct device *dev, uint8_t ctrl2)
 {
-	struct ssd16xx_data *data = dev->data;
 	int err;
 
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_UPDATE_CTRL2,
-				&data->update_cmd, 1);
+	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_UPDATE_CTRL2, &ctrl2, 1);
 	if (err < 0) {
 		return err;
 	}
 
 	return ssd16xx_write_cmd(dev, SSD16XX_CMD_MASTER_ACTIVATION, NULL, 0);
+}
+
+static int ssd16xx_update_display(const struct device *dev)
+{
+	struct ssd16xx_data *data = dev->data;
+
+	return ssd16xx_activate(dev, data->update_cmd);
 }
 
 static int ssd16xx_blanking_off(const struct device *dev)
@@ -602,13 +607,7 @@ static inline int ssd16xx_load_ws_from_otp(const struct device *dev)
 
 	LOG_INF("Load default WS (25 degrees Celsius) from OTP");
 
-	tmp[0] = SSD16XX_CTRL2_ENABLE_CLK;
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_UPDATE_CTRL2, tmp, 1);
-	if (err < 0) {
-		return err;
-	}
-
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_MASTER_ACTIVATION, NULL, 0);
+	err = ssd16xx_activate(dev, SSD16XX_CTRL2_ENABLE_CLK);
 	if (err < 0) {
 		return err;
 	}
@@ -620,13 +619,7 @@ static inline int ssd16xx_load_ws_from_otp(const struct device *dev)
 		return err;
 	}
 
-	tmp[0] = SSD16XX_CTRL2_DISABLE_CLK;
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_UPDATE_CTRL2, tmp, 1);
-	if (err < 0) {
-		return err;
-	}
-
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_MASTER_ACTIVATION, NULL, 0);
+	err = ssd16xx_activate(dev, SSD16XX_CTRL2_DISABLE_CLK);
 	if (err < 0) {
 		return err;
 	}
