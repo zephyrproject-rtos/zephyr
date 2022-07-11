@@ -1096,7 +1096,7 @@ if(CONFIG_USERSPACE)
     OUTPUT ${KOBJECT_LINKER_HEADER_DATA}
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/gen_kobject_placeholders.py
+    ${ZEPHYR_BASE}/scripts/build/gen_kobject_placeholders.py
     --object $<TARGET_OBJECTS:kobj_prebuilt_hash_output_lib>
     --outdir ${PROJECT_BINARY_DIR}/include/generated
     --datapct ${CONFIG_KOBJECT_DATA_AREA_RESERVE_EXTRA_PERCENT}

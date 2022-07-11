@@ -24,7 +24,7 @@
 	 * space needs to be reserved for the rodata that will be
 	 * produced by gperf during the final stages of linking.
 	 * The alignment and size are produced by
-	 * scripts/gen_kobject_placeholders.py. These are here
+	 * scripts/build/gen_kobject_placeholders.py. These are here
 	 * so the addresses to kobjects would remain the same
 	 * during the final stages of linking (LINKER_ZEPHYR_FINAL).
 	 */
@@ -60,7 +60,7 @@
 	_kobject_data_area_used = _kobject_data_area_end - _kobject_data_area_start;
 
 	ASSERT(_kobject_data_area_used <= KOBJECT_DATA_SZ,
-"scripts/gen_kobject_placeholders.py did not reserve enough space \
+"scripts/build/gen_kobject_placeholders.py did not reserve enough space \
 for kobject data."
 	);
 
