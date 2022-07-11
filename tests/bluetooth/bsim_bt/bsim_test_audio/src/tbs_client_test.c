@@ -102,7 +102,6 @@ static const struct bt_tbs_client_cb tbs_client_cbs = {
 	.hold_call = NULL,
 	.accept_call = NULL,
 	.retrieve_call = NULL,
-	.join_calls = NULL,
 	.bearer_provider_name = tbs_client_read_bearer_provider_name,
 	.bearer_uci = NULL,
 	.technology = NULL,
