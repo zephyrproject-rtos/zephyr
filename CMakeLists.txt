@@ -869,7 +869,7 @@ if(CONFIG_HAS_DTS)
     OUTPUT dev_handles.c
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/gen_handles.py
+    ${ZEPHYR_BASE}/scripts/build/gen_handles.py
     --output-source dev_handles.c
     --num-dynamic-devices ${number_of_dynamic_devices}
     --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
