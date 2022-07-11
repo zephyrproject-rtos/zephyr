@@ -347,10 +347,10 @@ The following is a detailed description of the scripts used during the build pro
 
 .. _gen_kobject_list.py:
 
-:zephyr_file:`scripts/gen_kobject_list.py`
+:zephyr_file:`scripts/build/gen_kobject_list.py`
 ------------------------------------------
 
-.. include:: ../../../scripts/gen_kobject_list.py
+.. include:: ../../../scripts/build/gen_kobject_list.py
    :start-after: """
    :end-before: """
 
