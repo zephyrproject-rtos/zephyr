@@ -3736,7 +3736,13 @@ int bt_disable(void)
 
 	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
 
-	/* Clear BT_DEV_ENABLE here to prevent early bt_enable() calls */
+#if defined(CONFIG_BT_PER_ADV_SYNC)
+	bt_periodic_sync_disable();
+#endif /* CONFIG_BT_PER_ADV_SYNC */
+
+	/* Clear BT_DEV_ENABLE here to prevent early bt_enable() calls, before disable is
+	 * completed.
+	 */
 	atomic_clear_bit(bt_dev.flags, BT_DEV_ENABLE);
 
 	return 0;

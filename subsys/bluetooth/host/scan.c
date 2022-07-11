@@ -723,6 +723,13 @@ static struct bt_le_per_adv_sync *get_pending_per_adv_sync(void)
 	return NULL;
 }
 
+void bt_periodic_sync_disable(void)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
+		per_adv_sync_delete(&per_adv_sync_pool[i]);
+	}
+}
+
 struct bt_le_per_adv_sync *bt_hci_get_per_adv_sync(uint16_t handle)
 {
 	for (int i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
