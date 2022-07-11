@@ -1791,7 +1791,7 @@ if(HEX_FILES_TO_MERGE)
     OUTPUT ${MERGED_HEX_NAME}
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/mergehex.py
+    ${ZEPHYR_BASE}/scripts/build/mergehex.py
     -o ${MERGED_HEX_NAME}
     ${HEX_FILES_TO_MERGE}
     DEPENDS ${HEX_FILES_TO_MERGE} ${logical_target_for_zephyr_elf}
