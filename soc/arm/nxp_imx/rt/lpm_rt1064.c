@@ -10,8 +10,6 @@
 #include <zephyr/init.h>
 #include <power_rt10xx.h>
 #include <zephyr/zephyr.h>
-#include "clock_config.h"
-
 
 /*
  * Clock configuration structures populated at boot time. These structures are
