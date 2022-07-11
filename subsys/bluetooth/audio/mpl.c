@@ -386,7 +386,7 @@ static uint32_t setup_parent_group_object(struct mpl_group *group)
 	/* poinbter in the other direction, so it is not possible to go from */
 	/* the parent group to a group of tracks. */
 
-	uint8_t type = BT_MCS_GROUP_OBJECT_GROUP_TYPE;
+	uint8_t type = MEDIA_PROXY_GROUP_OBJECT_GROUP_TYPE;
 	uint8_t record_size = sizeof(type) + BT_OTS_OBJ_ID_SIZE;
 	int next_size = record_size;
 
@@ -419,7 +419,7 @@ static uint32_t setup_parent_group_object(struct mpl_group *group)
 static uint32_t setup_group_object(struct mpl_group *group)
 {
 	struct mpl_track *track = group->track;
-	uint8_t type = BT_MCS_GROUP_OBJECT_TRACK_TYPE;
+	uint8_t type = MEDIA_PROXY_GROUP_OBJECT_TRACK_TYPE;
 	uint8_t record_size = sizeof(type) + BT_OTS_OBJ_ID_SIZE;
 	int next_size = record_size;
 

@@ -235,6 +235,10 @@ struct mpl_search {
 #define MEDIA_PROXY_SEARCH_SUCCESS  0x01
 #define MEDIA_PROXY_SEARCH_FAILURE  0x02
 
+/* Group object object types */
+#define MEDIA_PROXY_GROUP_OBJECT_TRACK_TYPE 0x00
+#define MEDIA_PROXY_GROUP_OBJECT_GROUP_TYPE 0x01
+
 
 /**
  * @brief Opaque media player instance
