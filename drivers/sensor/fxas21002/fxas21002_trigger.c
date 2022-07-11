@@ -101,6 +101,10 @@ int fxas21002_trigger_set(const struct device *dev,
 	uint8_t mask;
 	int ret = 0;
 
+	if (!config->int_gpio.port) {
+		return -ENOTSUP;
+	}
+
 	k_sem_take(&data->sem, K_FOREVER);
 
 	switch (trig->type) {
