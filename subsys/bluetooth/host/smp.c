@@ -5803,16 +5803,19 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	 * security level upon encryption
 	 */
 	switch (smp->method) {
+	case LE_SC_OOB:
+	case LEGACY_OOB:
+		conn->le.keys->flags |= BT_KEYS_OOB;
+		/* fallthrough */
 	case PASSKEY_DISPLAY:
 	case PASSKEY_INPUT:
 	case PASSKEY_CONFIRM:
-	case LE_SC_OOB:
-	case LEGACY_OOB:
 		conn->le.keys->flags |= BT_KEYS_AUTHENTICATED;
 		break;
 	case JUST_WORKS:
 	default:
 		/* unauthenticated key, clear it */
+		conn->le.keys->flags &= ~BT_KEYS_OOB;
 		conn->le.keys->flags &= ~BT_KEYS_AUTHENTICATED;
 		break;
 	}
