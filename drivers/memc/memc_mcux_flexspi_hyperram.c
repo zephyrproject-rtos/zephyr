@@ -23,7 +23,7 @@
 	read-while-write hazards. This configuration is not recommended."
 #endif
 
-LOG_MODULE_REGISTER(memc_flexspi, CONFIG_MEMC_LOG_LEVEL);
+LOG_MODULE_REGISTER(memc_flexspi_hyperram, CONFIG_MEMC_LOG_LEVEL);
 
 enum {
 	READ_DATA,
