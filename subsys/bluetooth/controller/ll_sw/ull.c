@@ -531,6 +531,7 @@ static void ull_done(void *param);
 
 int ll_init(struct k_sem *sem_rx)
 {
+	static bool mayfly_initialized;
 	int err;
 
 	/* Store the semaphore to be used to wakeup Thread context */
@@ -540,8 +541,24 @@ int ll_init(struct k_sem *sem_rx)
 	/* TODO: Bind and use counter driver? */
 	cntr_init();
 
-	/* Initialize Mayfly */
-	mayfly_init();
+	/* Initialize mayfly. It may be done only once due to mayfly design.
+	 *
+	 * On init mayfly memq head and tail is assigned with a link instance
+	 * that is used during enqueue operation. New link provided by enqueue
+	 * is added as a tail and will be used in future enqueue. While dequeue,
+	 * the link that was used for storage of the job is relesed and stored
+	 * in a job it was related to. The job may store initial link. If mayfly
+	 * is re-initialized but job objects were not re-initialized there is a
+	 * risk that enqueued job will point to the same link as it is in a memq
+	 * just after re-initialization. After enqueue operation with that link,
+	 * head and tail still points to the same link object, so memq is
+	 * considered as empty.
+	 */
+	if (!mayfly_initialized) {
+		mayfly_init();
+		mayfly_initialized = true;
+	}
+
 
 	/* Initialize Ticker */
 	ticker_users[MAYFLY_CALL_ID_0][0] = TICKER_USER_LLL_OPS;
