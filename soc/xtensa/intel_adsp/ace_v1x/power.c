@@ -5,12 +5,18 @@
  */
 #include <zephyr/zephyr.h>
 #include <zephyr/pm/pm.h>
+#include <cpu_init.h>
 
 #include <ace_v1x-regs.h>
 
+#define LPSRAM_MAGIC_VALUE      0x13579BDF
 #define LPSCTL_BATTR_MASK       GENMASK(16, 12)
 #define SRAM_ALIAS_BASE         0xA0000000
 #define SRAM_ALIAS_MASK         0xF0000000
+#define MEMCTL_INIT_BIT         BIT(23)
+#define MEMCTL_DEFAULT_VALUE    (MEMCTL_L0IBUF_EN | MEMCTL_INIT_BIT)
+
+__aligned(XCHAL_DCACHE_LINESIZE) uint8_t d0i3_stack[CONFIG_MM_DRV_PAGE_SIZE];
 
 __imr void power_init(void)
 {
@@ -23,6 +29,14 @@ __imr void power_init(void)
 #define uncache_to_cache(address) \
 				((__typeof__(address))(((uint32_t)(address) &  \
 				~SRAM_ALIAS_MASK) | SRAM_ALIAS_BASE))
+
+#define L2_INTERRUPT_NUMBER     4
+#define L2_INTERRUPT_MASK       (1<<L2_INTERRUPT_NUMBER)
+
+#define L3_INTERRUPT_NUMBER     6
+#define L3_INTERRUPT_MASK       (1<<L3_INTERRUPT_NUMBER)
+
+#define ALL_USED_INT_LEVELS_MASK (L2_INTERRUPT_MASK | L3_INTERRUPT_MASK)
 
 /**
  * @brief Power down procedure.
@@ -42,6 +56,8 @@ extern void power_down(bool disable_lpsram, uint32_t *hpsram_pg_mask,
  * proper cpu restore after PG.
  */
 struct core_state {
+	uint32_t a0;
+	uint32_t a1;
 	uint32_t vecbase;
 	uint32_t excsave2;
 	uint32_t excsave3;
@@ -51,21 +67,84 @@ struct core_state {
 
 static struct core_state core_desc[CONFIG_MP_NUM_CPUS] = { 0 };
 
+struct lpsram_header {
+	uint32_t alt_reset_vector;
+	uint32_t adsp_lpsram_magic;
+	void *lp_restore_vector;
+	uint32_t reserved;
+	uint32_t slave_core_vector;
+	uint8_t rom_bypass_vectors_reserved[0xC00 - 0x14];
+};
+
+static ALWAYS_INLINE void _core_basic_init(void)
+{
+	WSR("MEMCTL", MEMCTL_DEFAULT_VALUE);
+	WSR("PREFCTL", ADSP_L1_CACHE_PREFCTL_VALUE);
+	ARCH_XTENSA_SET_RPO_TLB();
+	WSR("ATOMCTL", 0x15);
+	__asm__ volatile("rsync");
+}
+
 static ALWAYS_INLINE void _save_core_context(uint32_t core_id)
 {
 	core_desc[core_id].vecbase = RSR("VECBASE");
 	core_desc[core_id].excsave2 = RSR("EXCSAVE2");
 	core_desc[core_id].excsave3 = RSR("EXCSAVE3");
 	core_desc[core_id].thread_ptr = RUR("THREADPTR");
+	__asm__ volatile("mov %0, a0" : "=r"(core_desc[core_id].a0));
+	__asm__ volatile("mov %0, a1" : "=r"(core_desc[core_id].a1));
 }
+
+static ALWAYS_INLINE void _restore_core_context(void)
+{
+	uint32_t core_id = arch_proc_id();
+
+	WSR("VECBASE", core_desc[core_id].vecbase);
+	WSR("EXCSAVE2", core_desc[core_id].excsave2);
+	WSR("EXCSAVE3", core_desc[core_id].excsave3);
+	WUR("THREADPTR", core_desc[core_id].thread_ptr);
+	__asm__ volatile("mov a0, %0" :: "r"(core_desc[core_id].a0));
+	__asm__ volatile("mov a1, %0" :: "r"(core_desc[core_id].a1));
+	__asm__ volatile("rsync");
+}
+
+void dsp_restore_vector(void);
 
 void power_gate_entry(uint32_t core_id)
 {
+	struct lpsram_header *lpsheader =
+		(struct lpsram_header *) DT_REG_ADDR(DT_NODELABEL(sram1));
+
+	xthal_window_spill();
 	_save_core_context(core_id);
+	lpsheader->adsp_lpsram_magic = LPSRAM_MAGIC_VALUE;
+	lpsheader->lp_restore_vector = (uint32_t) &dsp_restore_vector;
 	soc_cpus_active[core_id] = false;
-	z_xtensa_cache_flush_inv_all();
+	xthal_dcache_all_writeback();
+	z_xt_ints_on(ALL_USED_INT_LEVELS_MASK);
 	k_cpu_idle();
+	z_xt_ints_off(0xffffffff);
 }
+
+void power_gate_exit(void)
+{
+	_core_basic_init();
+	_restore_core_context();
+}
+
+__asm__(".align 4\n\t"
+	"dsp_restore_vector:\n\t"
+	"  movi  a0, 0\n\t"
+	"  movi  a1, 1\n\t"
+	"  movi  a2, 0x40020\n\t"/* PS_UM|PS_WOE */
+	"  wsr   a2, PS\n\t"
+	"  wsr   a1, WINDOWSTART\n\t"
+	"  wsr   a0, WINDOWBASE\n\t"
+	"  rsync\n\t"
+	"  movi  sp, d0i3_stack\n\t"
+	"  movi a2, 0x1000\n\t"
+	"  add sp, sp, a2\n\t"
+	"  call0 power_gate_exit\n\t");
 
 __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
