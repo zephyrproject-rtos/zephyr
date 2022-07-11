@@ -1529,12 +1529,14 @@ struct bt_audio_broadcast_sink_cb {
 	 *  found.
 	 *
 	 *  @param info          Advertiser packet information.
+	 *  @param ad            Buffer containing advertiser data.
 	 *  @param broadcast_id  24-bit broadcast ID
 	 *
 	 *  @return true to sync to the broadcaster, else false.
 	 *          Syncing to the broadcaster will stop the current scan.
 	 */
 	bool (*scan_recv)(const struct bt_le_scan_recv_info *info,
+			  struct net_buf_simple *ad,
 			  uint32_t broadcast_id);
 
 	/** @brief Periodic advertising sync callback
