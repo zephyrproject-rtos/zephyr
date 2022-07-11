@@ -329,10 +329,10 @@ The following is a detailed description of the scripts used during the build pro
 
 .. _gen_syscalls.py:
 
-:zephyr_file:`scripts/gen_syscalls.py`
+:zephyr_file:`scripts/build/gen_syscalls.py`
 --------------------------------------
 
-.. include:: ../../../scripts/gen_syscalls.py
+.. include:: ../../../scripts/build/gen_syscalls.py
    :start-after: """
    :end-before: """
 
