@@ -370,7 +370,8 @@ int net_context_unref(struct net_context *context)
 
 	if (context->conn_handler) {
 		if (IS_ENABLED(CONFIG_NET_TCP) || IS_ENABLED(CONFIG_NET_UDP) ||
-		    IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
+		    IS_ENABLED(CONFIG_NET_SOCKETS_CAN) ||
+		    IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
 			net_conn_unregister(context->conn_handler);
 		}
 
