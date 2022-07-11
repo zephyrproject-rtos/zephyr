@@ -236,7 +236,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 	}
 
 	if (net_buf_tailroom(nb) < len) {
-		LOG_DBG("SMP packet len (%zu) > net_buf len (%zu)",
+		LOG_DBG("SMP packet len (%" PRIu16 ") > net_buf len (%zu)",
 			len, net_buf_tailroom(nb));
 		mcumgr_buf_free(nb);
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
