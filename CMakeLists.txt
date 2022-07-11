@@ -896,7 +896,7 @@ if(CONFIG_USERSPACE)
   )
 
   set(GEN_KOBJ_LIST ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py)
-  set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/process_gperf.py)
+  set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/build/process_gperf.py)
 endif()
 
 get_property(CSTD GLOBAL PROPERTY CSTD)

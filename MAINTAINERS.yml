@@ -1974,7 +1974,7 @@ Userspace:
         - scripts/build/gen_app_partitions.py
         - scripts/build/gen_kobject_list.py
         - scripts/build/gen_syscalls.py
-        - scripts/process_gperf.py
+        - scripts/build/process_gperf.py
         - scripts/build/gen_relocate_app.py
         - include/zephyr/sys/kobject.h
     labels:
