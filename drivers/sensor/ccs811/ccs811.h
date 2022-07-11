@@ -49,7 +49,6 @@
 #define CCS811_CO2_MAX_PPM              32767
 
 struct ccs811_data {
-#if DT_INST_NODE_HAS_PROP(0, irq_gpios)
 #ifdef CONFIG_CCS811_TRIGGER
 	const struct device *dev;
 
@@ -70,7 +69,6 @@ struct ccs811_data {
 	uint16_t co2_l2m;
 	uint16_t co2_m2h;
 #endif /* CONFIG_CCS811_TRIGGER */
-#endif
 	struct ccs811_result_type result;
 	uint8_t mode;
 	uint8_t app_fw_ver;
@@ -78,15 +76,9 @@ struct ccs811_data {
 
 struct ccs811_config {
 	struct i2c_dt_spec i2c;
-#if DT_INST_NODE_HAS_PROP(0, irq_gpios)
 	struct gpio_dt_spec irq_gpio;
-#endif
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	struct gpio_dt_spec reset_gpio;
-#endif
-#if DT_INST_NODE_HAS_PROP(0, wake_gpios)
 	struct gpio_dt_spec wake_gpio;
-#endif
 };
 
 #ifdef CONFIG_CCS811_TRIGGER

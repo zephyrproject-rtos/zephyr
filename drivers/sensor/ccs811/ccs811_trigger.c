@@ -19,7 +19,12 @@ int ccs811_attr_set(const struct device *dev,
 		    const struct sensor_value *thr)
 {
 	struct ccs811_data *drv_data = dev->data;
+	const struct ccs811_config *config = dev->config;
 	int rc;
+
+	if (!config->irq_gpio.port) {
+		return -ENOTSUP;
+	}
 
 	if (chan != SENSOR_CHAN_CO2) {
 		rc = -ENOTSUP;
@@ -121,6 +126,10 @@ int ccs811_trigger_set(const struct device *dev,
 	const struct ccs811_config *config = dev->config;
 	uint8_t drdy_thresh = CCS811_MODE_THRESH | CCS811_MODE_DATARDY;
 	int rc;
+
+	if (!config->irq_gpio.port) {
+		return -ENOTSUP;
+	}
 
 	LOG_DBG("CCS811 trigger set");
 	setup_irq(dev, false);
