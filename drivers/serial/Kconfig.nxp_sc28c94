@@ -1,0 +1,7 @@
+# Copyright (c) 2022, Trackuit.
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_SC28C94
+	bool "NXP SC28C94 driver"
+	help
+	  Include drivers for NXP SC28C94 driver

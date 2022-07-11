@@ -1,0 +1,80 @@
+# Copyright (c) 2022 Trackunit
+# SPDX-License-Identifier: Apache-2.0
+
+description: Quectel BG96 modem
+
+compatible: "quectel,bg96"
+
+include: [base.yaml, uart-device.yaml]
+
+properties:
+    label:
+      required: true
+
+    power-gpios:
+      type: phandles
+      required: true
+
+    reset-gpios:
+      type: phandles
+      required: false
+
+    powerdown-gpios:
+      type: phandles
+      required: false
+
+    nmea-uart:
+      type: path
+      required: false
+      description: |
+        Used for NMEA frames from GNSS if included,
+        otherwise,the location is read from the modem
+        using AT commands.
+
+    apn-name:
+      type: string
+      required: false
+      description: APN name for network connection context
+
+    username:
+      type: string
+      required: false
+      description: Username for network connection context
+
+    password:
+      type: string
+      required: false
+      description: Password for network connection context
+
+on-bus: uart
+
+bus: quectel,bg96
+
+# Example
+#
+# / {
+#     aliases {
+#         modem = <&bg96>;
+#         gnss = <&gnss>;
+#     };
+# };
+#
+# &uart0 {
+#     bg96 {
+#         compatible = "quectel,bg96";
+#         label = "quectel,bg96";
+#
+#         power-gpios = <&gpioe 2 GPIO_ACTIVE_HIGH>;
+#         reset-gpios = <&gpiod 0 GPIO_ACTIVE_HIGH>;
+#         powerdown-gpios = < &gpiof 5 GPIO_ACTIVE_HIGH>;
+#
+#         nmea-uart = &uart1;
+#
+#         apn-name = "verycoolapn.m2m";
+#
+#         gnss: gnss {
+#             compatible = "quectel,bg96-gnss";
+#             label = "bg96,gnss";
+#         };
+#     };
+# };

@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Trackunit A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: Quectel BG96 GNSS interface
+
+compatible: "quectel,bg96-gnss"
+
+include: [base.yaml]
+
+on-bus: quectel,bg96

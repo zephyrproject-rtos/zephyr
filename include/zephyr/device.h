@@ -373,6 +373,48 @@ typedef int16_t device_handle_t;
 		    (DEVICE_DT_GET(node_id)), (NULL))
 
 /**
+ * @def DEVICE_CHILD_DT_GET
+ *
+ * @brief Get a <tt>const struct device*</tt> for the child of the
+ * devicetree node identifier
+ *
+ * @details Returns a pointer to a device object created from a
+ * devicetree node, if any device was allocated by a driver.
+ *
+ * If no such device was allocated, this will fail at linker time. If
+ * you get an error that looks like <tt>undefined reference to
+ * __device_dts_ord_<N></tt>, that is what happened. Check to make
+ * sure your device driver is being compiled, usually by enabling the
+ * Kconfig options it requires.
+ *
+ * @param node_id A devicetree node identifier
+ * @param child relative path to the child
+ * @return A pointer to the device object created for that node
+ */
+
+#define DEVICE_CHILD_DT_GET(node_id, child) \
+	DEVICE_DT_GET(DT_CHILD(node_id, child))
+
+/**
+ * @def DEVICE_CHILD_DT_GET_OR_NULL
+ *
+ * @brief Utility macro to obtain an optional reference to a child device.
+ *
+ * @details If the node identifier refers to a child node with status
+ * "okay", this returns <tt>DEVICE_DT_GET(DT_CHILD(node_id, child))</tt>.
+ * Otherwise, it returns NULL.
+ *
+ * @param node_id devicetree node identifier
+ * @param child relative path to the child
+ *
+ * @return a <tt>const struct device*</tt> for the node identifier,
+ * which may be NULL.
+ */
+#define DEVICE_CHILD_DT_GET_OR_NULL(node_id, child) \
+	COND_CODE_1(DT_NODE_EXISTS(DT_CHILD(node_id, child)), \
+			(DEVICE_DT_GET_OR_NULL(DT_CHILD(node_id, child)), (NULL)))
+
+/**
  * @def DEVICE_GET
  *
  * @brief Obtain a pointer to a device object by name

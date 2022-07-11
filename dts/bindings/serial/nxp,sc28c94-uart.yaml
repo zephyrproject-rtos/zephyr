@@ -1,0 +1,12 @@
+# Copyright (c) 2022 Trackunit A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP SC28C94 UART interface which is part of SC28C94
+
+compatible: "nxp,sc28c94-uart"
+
+include: [base.yaml, uart-controller.yaml]
+
+on-bus: nxp,sc28c94
+
+bus: uart

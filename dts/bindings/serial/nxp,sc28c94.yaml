@@ -1,0 +1,71 @@
+# Copyright (c) 2020 Analog Life LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: SC28C94 SPI to 4x UART transceiver
+
+compatible: "nxp,sc28c94"
+
+include: [base.yaml]
+
+properties:
+    label:
+      required: true
+
+    enable-gpios:
+      type: phandles
+      required: true
+
+on-bus: spi
+
+bus: nxp,sc28c94
+
+# Example
+#
+# The up to 4 supported UART devices are child devices of the
+# parent quart. The node id (serial0) of the UART devices may
+# be modified and must be referenced by the application, the
+# path to the UART devices must match the naming scheme. One
+# uart0, one uart1 etc.
+#
+# / {
+#     aliases {
+#         vcom1 = <&serial0>;
+#         vcom2 = <&serial1>;
+#         vcom3 = <&serial2>;
+#         vcom4 = <&serial3>;
+#     };
+# };
+#
+# &spi0 {
+#     quart {
+#         compatible = "nxp,sc28c94";
+#
+#         serial0: uart0 {
+#             compatible = "nxp,sc28c94-uart";
+#             label "serial0";
+#             current-speed = 115200;
+#             hw-flow-control;
+#         };
+#
+#         serial1: uart1 {
+#             compatible = "nxp,sc28c94-uart";
+#             label "serial1";
+#             current-speed = 115200;
+#             hw-flow-control;
+#         };
+#
+#         serial2: uart2 {
+#             compatible = "nxp,sc28c94-uart";
+#             label "serial2";
+#             current-speed = 115200;
+#             hw-flow-control;
+#         };
+#
+#         serial3: uart3 {
+#             compatible = "nxp,sc28c94-uart";
+#             label "serial3";
+#             current-speed = 9600;
+#             hw-flow-control;
+#         };
+#     };
+# };
