@@ -25,8 +25,3 @@ struct ut_bt_df_conn_cte_rx_params {
  */
 int send_set_conn_cte_rx_params(uint16_t conn_handle,
 				const struct ut_bt_df_conn_cte_rx_params *params, bool enable);
-
-/**
- * @brief  Runs tests for HCI_LE_Set_Connection_CTE_Receive_Parameters command.
- */
-void run_set_cte_rx_params_tests(void);
