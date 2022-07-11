@@ -54,21 +54,6 @@
 		lvol-io-pads = <>;
 	};
 
-	vsby-psl-in-list {
-		compatible = "nuvoton,npcx-pslctrl-def";
-		/* Put Power Switch Logic (PSL) input pads which detect the
-		 * wake-up events and turn on core power supply (VCC1) from
-		 * standby power state (ultra-low-power mode) into "psl-in-pads"
-		 * property. For example, if PSL input 1 that is plan to detect
-		 * a 'falling edge' event, this property should be:
-		 *   psl-in-pads = <&psl_in1>;
-		 * And the flag property in psl_in1 should change to
-		 *   flag = <NPCX_PSL_FALLING_EDGE>;
-		 */
-		psl-in-pads = <>;
-		status = "disabled";
-	};
-
 	/** Dummy pinctrl node. It will be initialized with defaults based on the SoC series.
 	 *  Then, the user can override the pin control options at the board level.
 	 */
@@ -583,13 +568,6 @@
 			compatible = "nuvoton,npcx-host-uart";
 			label = "HOST_UART_IO";
 			status = "disabled";
-		};
-
-		psl_out: psl-out {
-			compatible = "nuvoton,npcx-psl-out";
-			controller = <&gpio8>;
-			pin = <5>;
-			label = "PSL_OUT";
 		};
 
 		i2c0_0: io_i2c_ctrl0_port0 {
