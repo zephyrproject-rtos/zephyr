@@ -29,17 +29,17 @@ const struct net_buf_data_cb net_buf_fixed_cb = {
 	.unref = fixed_data_unref,
 };
 
-__attribute__((weak)) struct net_buf *net_buf_alloc_fixed(struct net_buf_pool *pool,
-				    k_timeout_t timeout)
+struct net_buf *net_buf_alloc_fixed(struct net_buf_pool *pool, k_timeout_t timeout)
 {
-	return NULL;
+	return (struct net_buf *)ztest_get_return_value_ptr();
 }
 
-__attribute__((weak)) void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve)
+void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve)
 {
 }
 
-__attribute__((weak)) struct net_buf *net_buf_ref(struct net_buf *buf)
+struct net_buf *net_buf_ref(struct net_buf *buf)
 {
-	return NULL;
+	ztest_check_expected_value(buf);
+	return buf;
 }

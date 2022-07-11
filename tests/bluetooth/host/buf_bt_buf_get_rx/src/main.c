@@ -14,11 +14,6 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 
-struct net_buf *net_buf_alloc_fixed(struct net_buf_pool *pool, k_timeout_t timeout)
-{
-	return (struct net_buf *)ztest_get_return_value_ptr();
-}
-
 void test_bt_buf_get_rx_returns_null(void)
 {
 	struct net_buf *buf;
