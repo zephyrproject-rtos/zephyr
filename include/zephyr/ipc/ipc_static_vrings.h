@@ -101,6 +101,18 @@ struct ipc_static_vrings {
  */
 int ipc_static_vrings_init(struct ipc_static_vrings *vr, unsigned int role);
 
+/** @brief Deinitialise the static VRINGs.
+ *
+ *  Deinitialise VRINGs and Virtqueues of an OpenAMP / RPMsg instance.
+ *
+ *  @param vr Pointer to the VRINGs instance struct.
+ *  @param role Host / Remote role.
+ *
+ *  @retval 0 If successful.
+ *  @retval Other errno codes depending on the OpenAMP implementation.
+ */
+int ipc_static_vrings_deinit(struct ipc_static_vrings *vr, unsigned int role);
+
 /**
  * @}
  */
