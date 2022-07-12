@@ -250,7 +250,7 @@ static const struct dac_driver_api dacx3608_driver_api = {
 				&dacx3608_init, NULL, \
 				&dac##t##_data_##n, \
 				&dac##t##_config_##n, POST_KERNEL, \
-				CONFIG_DAC_INIT_PRIORITY, \
+				CONFIG_DAC_DACX3608_INIT_PRIORITY, \
 				&dacx3608_driver_api)
 
 /*
