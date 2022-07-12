@@ -11,7 +11,11 @@ tests:
     platform_allow: nucleo_f091rc nucleo_f103rb nucleo_f207zg stm32f3_disco
         nucleo_f429zi nucleo_f746zg nucleo_g071rb nucleo_g474re nucleo_l073rz
         nucleo_l152re nucleo_l4r5zi stm32l562e_dk nucleo_wb55rg nucleo_wl55jc
-        b_u585i_iot02a nucleo_u575zi_q nucleo_h753zi nucleo_h743zi
+        b_u585i_iot02a nucleo_u575zi_q
+  drivers.watchdog.stm32wwdg_h7:
+    filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
+    extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg_h7.overlay"
+    platform_allow: nucleo_h753zi nucleo_h743zi
   drivers.watchdog.stm32iwdg:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_iwdg.overlay"
