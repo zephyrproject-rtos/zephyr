@@ -3,9 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define DT_DRV_COMPAT intel_cavs_idc
-
 #include <stdint.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>

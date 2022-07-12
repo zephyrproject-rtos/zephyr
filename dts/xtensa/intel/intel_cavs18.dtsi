@@ -82,8 +82,8 @@
 			#interrupt-cells = <3>;
 		};
 
-		cavs_host_ipc: cavs_host_ipc@71e00 {
-			compatible = "intel,cavs-host-ipc";
+		adsp_host_ipc: cavs_host_ipc@71e00 {
+			compatible = "intel,adsp-host-ipc";
 			reg = <0x71e00 0x30>;
 			interrupts = <7 0 0>;
 			interrupt-parent = <&cavs0>;
@@ -125,8 +125,8 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		idc: idc@1200 {
-			compatible = "intel,cavs-idc";
+		adsp_idc: idc@1200 {
+			compatible = "intel,adsp-idc";
 			reg = <0x1200 0x80>;
 			interrupts = <8 0 0>;
 			interrupt-parent = <&cavs0>;

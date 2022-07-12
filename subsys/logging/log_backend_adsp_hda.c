@@ -323,7 +323,7 @@ void adsp_hda_log_init(adsp_hda_log_hook_t fn, uint32_t channel)
 
 #ifdef CONFIG_LOG_BACKEND_ADSP_HDA_CAVSTOOL
 
-#include <cavs_ipc.h>
+#include <intel_adsp_ipc.h>
 #include <cavstool.h>
 
 #define CHANNEL 6
@@ -333,7 +333,7 @@ void adsp_hda_log_init(adsp_hda_log_hook_t fn, uint32_t channel)
 static inline void hda_ipc_msg(const struct device *dev, uint32_t data,
 			       uint32_t ext, k_timeout_t timeout)
 {
-	__ASSERT(cavs_ipc_send_message_sync(dev, data, ext, timeout),
+	__ASSERT(intel_adsp_ipc_send_message_sync(dev, data, ext, timeout),
 		"Unexpected ipc send message failure, try increasing IPC_TIMEOUT");
 }
 
@@ -347,14 +347,14 @@ void adsp_hda_log_cavstool_hook(uint32_t written)
 
 	/*  Send IPC message notifying log data has been written */
 	do {
-		done = cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_HDA_PRINT,
+		done = intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_PRINT,
 					     (written << 8) | CHANNEL);
 	} while (!done);
 
 
 	/* Wait for confirmation log data has been received */
 	do {
-		done = cavs_ipc_is_complete(CAVS_HOST_DEV);
+		done = intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV);
 	} while (!done);
 
 }
@@ -363,12 +363,12 @@ int adsp_hda_log_cavstool_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_RESET, CHANNEL, IPC_TIMEOUT);
-	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_CONFIG,
+	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_RESET, CHANNEL, IPC_TIMEOUT);
+	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_CONFIG,
 		    CHANNEL | (HOST_BUF_SIZE << 8), IPC_TIMEOUT);
 	adsp_hda_log_init(adsp_hda_log_cavstool_hook, CHANNEL);
-	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_START, CHANNEL, IPC_TIMEOUT);
-	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_PRINT,
+	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_START, CHANNEL, IPC_TIMEOUT);
+	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_PRINT,
 		    ((HOST_BUF_SIZE*2) << 8) | CHANNEL, IPC_TIMEOUT);
 
 	return 0;
