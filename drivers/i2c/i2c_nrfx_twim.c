@@ -269,8 +269,7 @@ static void deinit_twim(const struct device *dev)
 static int i2c_nrfx_twim_configure(const struct device *dev,
 				   uint32_t i2c_config)
 {
-	struct i2c_nrfx_twim_data *dev_data = dev->data;
-	nrf_twim_frequency_t frequency;
+	const struct i2c_nrfx_twim_config *dev_config = dev->config;
 
 	if (I2C_ADDR_10_BITS & i2c_config) {
 		return -EINVAL;
@@ -278,26 +277,22 @@ static int i2c_nrfx_twim_configure(const struct device *dev,
 
 	switch (I2C_SPEED_GET(i2c_config)) {
 	case I2C_SPEED_STANDARD:
-		frequency = NRF_TWIM_FREQ_100K;
+		nrf_twim_frequency_set(dev_config->twim.p_twim,
+				       NRF_TWIM_FREQ_100K);
 		break;
 	case I2C_SPEED_FAST:
-		frequency = NRF_TWIM_FREQ_400K;
+		nrf_twim_frequency_set(dev_config->twim.p_twim,
+				       NRF_TWIM_FREQ_400K);
 		break;
 #if NRF_TWIM_HAS_1000_KHZ_FREQ
 	case I2C_SPEED_FAST_PLUS:
-		frequency = NRF_TWIM_FREQ_1000K;
+		nrf_twim_frequency_set(dev_config->twim.p_twim,
+				       NRF_TWIM_FREQ_1000K);
 		break;
 #endif
 	default:
 		LOG_ERR("unsupported speed");
 		return -EINVAL;
-	}
-
-	if (frequency != dev_data->twim_config.frequency) {
-		dev_data->twim_config.frequency = frequency;
-
-		deinit_twim(dev);
-		return init_twim(dev);
 	}
 
 	return 0;
