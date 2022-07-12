@@ -41,6 +41,7 @@ config USB_DFU_DEFAULT_POLLTIMEOUT
 
 config USB_DFU_ENABLE_UPLOAD
 	bool "Firmware uploading to the host"
+	select HAS_SECURITY_RISK
 	help
 	  Enabling this option allows to upload firmware image to the host.
 	  Be aware that upload capability can be a security risk because
