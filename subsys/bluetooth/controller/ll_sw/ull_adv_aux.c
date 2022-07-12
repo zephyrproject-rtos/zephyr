@@ -1332,6 +1332,134 @@ void ull_adv_aux_done(struct node_rx_event_done *done)
 	ull_adv_done(done);
 }
 
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+void ull_adv_aux_chain_pdu_duplicate(struct pdu_adv *pdu_prev,
+				     struct pdu_adv *pdu,
+				     struct pdu_adv_aux_ptr *aux_ptr,
+				     uint8_t phy_s, uint8_t phy_flags,
+				     uint32_t mafs_us)
+{
+	/* Duplicate any chain PDUs */
+	while (aux_ptr) {
+		struct pdu_adv_com_ext_adv *com_hdr_chain;
+		struct pdu_adv_com_ext_adv *com_hdr;
+		struct pdu_adv_ext_hdr *hdr_chain;
+		struct pdu_adv_adi *adi_parent;
+		struct pdu_adv *pdu_chain_prev;
+		struct pdu_adv_ext_hdr *hdr;
+		struct pdu_adv *pdu_chain;
+		uint8_t *dptr_chain;
+		uint32_t offs_us;
+		uint8_t *dptr;
+
+		/* Get the next chain PDU */
+		pdu_chain_prev = lll_adv_pdu_linked_next_get(pdu_prev);
+		if (!pdu_chain_prev) {
+			break;
+		}
+
+		/* Fill the aux offset in the parent PDU */
+		offs_us = PDU_AC_US(pdu->len, phy_s, phy_flags) + mafs_us;
+		ull_adv_aux_ptr_fill(aux_ptr, offs_us, phy_s);
+
+		/* Get reference to flags in superior PDU */
+		com_hdr = &pdu->adv_ext_ind;
+		hdr = (void *)&com_hdr->ext_hdr_adv_data[0];
+		dptr = (void *)hdr;
+
+		/* Get the next new chain PDU */
+		pdu_chain = lll_adv_pdu_linked_next_get(pdu);
+		if (!pdu_chain) {
+			/* Get a new chain PDU */
+			pdu_chain = lll_adv_pdu_alloc_pdu_adv();
+			LL_ASSERT(pdu_chain);
+
+			/* Copy previous chain PDU into new chain PDU */
+			(void)memcpy(pdu_chain, pdu_chain_prev,
+				     offsetof(struct pdu_adv, payload) +
+				     pdu_chain_prev->len);
+
+			/* Link the chain PDU to parent PDU */
+			lll_adv_pdu_linked_append(pdu_chain, pdu);
+		}
+
+		/* Get reference to common header format */
+		com_hdr_chain = &pdu_chain_prev->adv_ext_ind;
+		hdr_chain = (void *)&com_hdr_chain->ext_hdr_adv_data[0];
+		dptr_chain = (void *)hdr_chain;
+
+		/* Check for no Flags */
+		if (!com_hdr_chain->ext_hdr_len) {
+			break;
+		}
+
+		/* Proceed to next byte if any flags present */
+		if (*dptr) {
+			dptr++;
+		}
+		if (*dptr_chain) {
+			dptr_chain++;
+		}
+
+		/* AdvA flag */
+		if (hdr->adv_addr) {
+			dptr += BDADDR_SIZE;
+		}
+		if (hdr_chain->adv_addr) {
+			dptr_chain += BDADDR_SIZE;
+		}
+
+		/* TgtA flag */
+		if (hdr->tgt_addr) {
+			dptr += BDADDR_SIZE;
+		}
+		if (hdr_chain->tgt_addr) {
+			dptr_chain += BDADDR_SIZE;
+		}
+
+		/* CTE Info */
+		if (hdr->cte_info) {
+			dptr += sizeof(struct pdu_cte_info);
+		}
+		if (hdr_chain->cte_info) {
+			dptr_chain += sizeof(struct pdu_cte_info);
+		}
+
+		/* ADI */
+		if (hdr->adi) {
+			adi_parent = (void *)dptr;
+
+			dptr += sizeof(struct pdu_adv_adi);
+		} else {
+			adi_parent = NULL;
+		}
+		if (hdr_chain->adi) {
+			struct pdu_adv_adi *adi;
+
+			/* update DID to superior PDU DID */
+			adi = (void *)dptr_chain;
+			if (adi_parent) {
+				adi->did = adi_parent->did;
+			}
+
+			dptr_chain += sizeof(struct pdu_adv_adi);
+		}
+
+		/* No aux ptr, no further chain PDUs */
+		if (!hdr_chain->aux_ptr) {
+			break;
+		}
+
+		/* Remember the aux ptr to be populated */
+		aux_ptr = (void *)dptr_chain;
+
+		/* Progress to next chain PDU */
+		pdu_prev = pdu_chain_prev;
+		pdu = pdu_chain;
+	}
+}
+#endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
+
 static int init_reset(void)
 {
 	/* Initialize adv aux pool. */
