@@ -599,6 +599,19 @@ static void test_get_core_clock(void)
 }
 
 /**
+ * @brief Test getting the CAN controller capabilities.
+ */
+static void test_get_capabilities(void)
+{
+	can_mode_t cap;
+	int err;
+
+	err = can_get_capabilities(can_dev, &cap);
+	zassert_equal(err, 0, "failed to get CAN capabilities (err %d)", err);
+	zassert_not_equal(cap & CAN_MODE_LOOPBACK, 0, "CAN loopback mode not supported");
+}
+
+/**
  * @brief CAN state change callback.
  */
 static void state_change_callback(const struct device *dev, enum can_state state,
@@ -1009,6 +1022,7 @@ void test_main(void)
 	/* Tests without callbacks can run in userspace */
 	ztest_test_suite(can_api_tests,
 			 ztest_user_unit_test(test_get_core_clock),
+			 ztest_user_unit_test(test_get_capabilities),
 			 ztest_unit_test(test_set_state_change_callback),
 			 ztest_user_unit_test(test_set_bitrate_too_high),
 			 ztest_user_unit_test(test_set_bitrate),
