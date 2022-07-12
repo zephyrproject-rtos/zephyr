@@ -161,7 +161,7 @@ Artificially long but functional example:
 
     test_or_build.add_argument(
         "-b", "--build-only", action="store_true",
-        help="Only build the code, do not execute any of it in QEMU")
+        help="Only build the code, do not attempt to run the code on targets.")
 
     test_or_build.add_argument(
         "--test-only", action="store_true",
