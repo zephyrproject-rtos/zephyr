@@ -9,3 +9,13 @@ config DAC_DACX3608
 	depends on I2C
 	help
 	  Enable the driver for the TI DACX3608.
+
+if DAC_DACX3608
+
+config DAC_DACX3608_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  TI DACX3608 DAC device driver initialization priority.
+
+endif # DAC_DACX3608
