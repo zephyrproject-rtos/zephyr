@@ -14,3 +14,12 @@
 #define CONFIG_BT_BUF_ACL_RX_COUNT 6
 #define CONFIG_BT_BUF_ACL_RX_SIZE 27
 #define CONFIG_BT_BUF_EVT_RX_SIZE 68
+
+/*
+ * Assertion configuration
+ */
+
+#define CONFIG_ASSERT 1
+#define CONFIG_ASSERT_LEVEL 2
+#define CONFIG_ASSERT_VERBOSE 1
+

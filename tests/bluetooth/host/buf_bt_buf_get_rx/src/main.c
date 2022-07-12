@@ -14,6 +14,50 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 
+static bool assetion_expected_flag;
+
+void assert_post_action(const char *file, unsigned int line)
+{
+	printk("Assert error expected as part of test case.\n");
+	printk("file : %s\n", file);
+	printk("line : %d\n", line);
+
+	if (assetion_expected_flag == true) {
+		ztest_test_pass();
+	} else {
+		ztest_test_fail();
+	}
+	assetion_expected_flag = false;
+}
+
+void test_bt_buf_get_rx_invalid_input_type_bt_buf_cmd(void)
+{
+	assetion_expected_flag = true;
+	bt_buf_get_rx(BT_BUF_CMD, Z_TIMEOUT_TICKS(1000));
+	zassert_false(assetion_expected_flag, "Flag value is incorrect");
+}
+
+void test_bt_buf_get_rx_invalid_input_type_bt_buf_acl_out(void)
+{
+	assetion_expected_flag = true;
+	bt_buf_get_rx(BT_BUF_ACL_OUT, Z_TIMEOUT_TICKS(1000));
+	zassert_false(assetion_expected_flag, "Flag value is incorrect");
+}
+
+void test_bt_buf_get_rx_invalid_input_type_bt_buf_iso_out(void)
+{
+	assetion_expected_flag = true;
+	bt_buf_get_rx(BT_BUF_ISO_OUT, Z_TIMEOUT_TICKS(1000));
+	zassert_false(assetion_expected_flag, "Flag value is incorrect");
+}
+
+void test_bt_buf_get_rx_invalid_input_type_bt_buf_h4(void)
+{
+	assetion_expected_flag = true;
+	bt_buf_get_rx(BT_BUF_H4, Z_TIMEOUT_TICKS(1000));
+	zassert_false(assetion_expected_flag, "Flag value is incorrect");
+}
+
 void test_bt_buf_get_rx_returns_null(void)
 {
 	struct net_buf *buf;
@@ -63,8 +107,13 @@ void test_main(void)
 {
 	ztest_test_suite(default,
 			ztest_unit_test(test_bt_buf_get_rx_returns_null),
-			ztest_unit_test(test_bt_buf_get_rx_returns_not_null)
+			ztest_unit_test(test_bt_buf_get_rx_returns_not_null),
+			ztest_unit_test(test_bt_buf_get_rx_invalid_input_type_bt_buf_cmd),
+			ztest_unit_test(test_bt_buf_get_rx_invalid_input_type_bt_buf_acl_out),
+			ztest_unit_test(test_bt_buf_get_rx_invalid_input_type_bt_buf_iso_out),
+			ztest_unit_test(test_bt_buf_get_rx_invalid_input_type_bt_buf_h4)
 			);
 
+	assetion_expected_flag = false;
 	ztest_run_test_suite(default);
 }
