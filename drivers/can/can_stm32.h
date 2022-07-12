@@ -74,7 +74,6 @@ struct can_stm32_config {
 	uint8_t sjw;
 	uint8_t prop_ts1;
 	uint8_t ts2;
-	bool one_shot;
 	struct stm32_pclken pclken;
 	void (*config_irq)(CAN_TypeDef *can);
 	const struct pinctrl_dev_config *pcfg;
