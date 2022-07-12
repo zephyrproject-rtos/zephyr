@@ -169,7 +169,6 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 			 * bus from this error.
 			 */
 			LOG_ERR("Error on I2C line occurred for message %d", i);
-			nrfx_twim_disable(&dev_config->twim);
 			(void)i2c_nrfx_twim_recover_bus(dev);
 			ret = -EIO;
 			break;
@@ -266,13 +265,13 @@ static int i2c_nrfx_twim_configure(const struct device *dev,
 
 static int i2c_nrfx_twim_recover_bus(const struct device *dev)
 {
+	const struct i2c_nrfx_twim_config *dev_config = dev->config;
+	enum pm_device_state state;
 	uint32_t scl_pin;
 	uint32_t sda_pin;
 	nrfx_err_t err;
 
 #ifdef CONFIG_PINCTRL
-	const struct i2c_nrfx_twim_config *dev_config = dev->config;
-
 	scl_pin = nrf_twim_scl_pin_get(dev_config->twim.p_twim);
 	sda_pin = nrf_twim_sda_pin_get(dev_config->twim.p_twim);
 #else
@@ -282,7 +281,21 @@ static int i2c_nrfx_twim_recover_bus(const struct device *dev)
 	sda_pin = dev_data->twim_config.sda;
 #endif
 
+	/* disable peripheral if active (required to release SCL/SDA lines) */
+	(void)pm_device_state_get(dev, &state);
+	if (state == PM_DEVICE_STATE_ACTIVE) {
+		nrfx_twim_disable(&dev_config->twim);
+	}
+
 	err = nrfx_twim_bus_recover(scl_pin, sda_pin);
+
+	/* restore peripheral if it was active before */
+	if (state == PM_DEVICE_STATE_ACTIVE) {
+		(void)pinctrl_apply_state(dev_config->pcfg,
+					  PINCTRL_STATE_DEFAULT);
+		nrfx_twim_enable(&dev_config->twim);
+	}
+
 	return (err == NRFX_SUCCESS ? 0 : -EBUSY);
 }
 
