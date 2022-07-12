@@ -5,7 +5,7 @@
 #include <zephyr/drivers/ipm.h>
 #include <adsp_memory.h>
 #include <adsp_shim.h>
-#include <cavs_ipc.h>
+#include <intel_adsp_ipc.h>
 
 /* Matches SOF_IPC_MSG_MAX_SIZE, though in practice nothing anywhere
  * near that big is ever sent.  Should maybe consider making this a
@@ -34,14 +34,14 @@ struct ipm_cavs_host_data {
 	bool enabled;
 };
 
-/* Note: this call is unsynchronized.  The IPM docs are silent as to
+/* Note: this call is unsynchronized. The IPM docs are silent as to
  * whether this is required, and the SOF code that will be using this
  * is externally synchronized already.
  */
 static int send(const struct device *ipmdev, int wait, uint32_t id,
 		const void *data, int size)
 {
-	if (!cavs_ipc_is_complete(CAVS_HOST_DEV)) {
+	if (!intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV)) {
 		return -EBUSY;
 	}
 
@@ -67,17 +67,17 @@ static int send(const struct device *ipmdev, int wait, uint32_t id,
 
 	memcpy(MSG_OUTBUF, data, size);
 
-	bool ok = cavs_ipc_send_message(CAVS_HOST_DEV, id, ext_data);
+	bool ok = intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, id, ext_data);
 
 	/* The IPM docs call for "busy waiting" here, but in fact
 	 * there's a blocking synchronous call available that might be
-	 * better.  But then we'd have to check whether we're in
+	 * better. But then we'd have to check whether we're in
 	 * interrupt context, and it's not clear to me that SOF would
-	 * benefit anyway as all its usage is async.  This is OK for
+	 * benefit anyway as all its usage is async. This is OK for
 	 * now.
 	 */
 	if (ok && wait) {
-		while (!cavs_ipc_is_complete(CAVS_HOST_DEV)) {
+		while (!intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV)) {
 			k_busy_wait(1);
 		}
 	}
@@ -151,7 +151,7 @@ static int set_enabled(const struct device *ipmdev, int enable)
 
 static void complete(const struct device *ipmdev)
 {
-	cavs_ipc_complete(CAVS_HOST_DEV);
+	intel_adsp_ipc_complete(INTEL_ADSP_IPC_HOST_DEV);
 }
 
 static int init(const struct device *dev)
@@ -165,7 +165,7 @@ static int init(const struct device *dev)
 	CAVS_WIN[1].dmwlo = ROUND_UP(MAX_MSG, 8);
 	CAVS_WIN[1].dmwba = ((uint32_t) MSG_INBUF) | CAVS_DMWBA_ENABLE;
 
-	cavs_ipc_set_message_handler(CAVS_HOST_DEV, ipc_handler, (void *)dev);
+	intel_adsp_ipc_set_message_handler(INTEL_ADSP_IPC_HOST_DEV, ipc_handler, (void *)dev);
 
 	data->enabled = true;
 	return 0;

@@ -32,7 +32,7 @@ __imr void soc_mp_startup(uint32_t cpu)
 	}
 
 	/* Interrupt must be enabled while running on current core */
-	irq_enable(DT_IRQN(DT_INST(0, intel_cavs_idc)));
+	irq_enable(DT_IRQN(INTEL_ADSP_IDC_DTNODE));
 
 	/* Unfortunately the interrupt controller doesn't understand
 	 * that each CPU has its own mask register (the timer has a
@@ -153,7 +153,7 @@ void idc_isr(const void *param)
 
 __imr void soc_mp_init(void)
 {
-	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(idc)), 0, idc_isr, NULL, 0);
+	IRQ_CONNECT(DT_IRQN(INTEL_ADSP_IDC_DTNODE), 0, idc_isr, NULL, 0);
 
 	/* Every CPU should be able to receive an IDC interrupt from
 	 * every other CPU, but not to be back-interrupted when the

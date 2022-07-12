@@ -9,7 +9,7 @@
 
 #include <soc.h>
 #include <ace_v1x-regs.h>
-#include <ace-ipc-regs.h>
+#include <adsp_ipc_regs.h>
 #include <adsp_memory.h>
 
 #define CORE_POWER_CHECK_NUM 32
@@ -17,7 +17,7 @@
 
 static void ipc_isr(void *arg)
 {
-	MTL_P2P_IPC[arch_proc_id()].agents[0].ipc.tdr = BIT(31); /* clear BUSY bit */
+	IDC[arch_proc_id()].agents[0].ipc.tdr = BIT(31); /* clear BUSY bit */
 #ifdef CONFIG_SMP
 	void z_sched_ipi(void);
 	z_sched_ipi();
@@ -35,7 +35,7 @@ void soc_mp_init(void)
 		MTL_DINT[i].ie[MTL_INTL_IDCA] = BIT(i);
 
 		/* Agent A should signal only BUSY interrupts */
-		MTL_P2P_IPC[i].agents[0].ipc.ctl = BIT(0); /* IPCTBIE */
+		IDC[i].agents[0].ipc.ctl = BIT(0); /* IPCTBIE */
 	}
 
 	/* Set the core 0 active */
@@ -95,7 +95,7 @@ void arch_sched_ipi(void)
 	/* Signal agent B[n] to cause an interrupt from agent A[n] */
 	for (int core = 0; core < CONFIG_MP_NUM_CPUS; core++) {
 		if (core != curr && soc_cpus_active[core]) {
-			MTL_P2P_IPC[core].agents[1].ipc.idr = CAVS_IPC_BUSY;
+			IDC[core].agents[1].ipc.idr = INTEL_ADSP_IPC_BUSY;
 		}
 	}
 }

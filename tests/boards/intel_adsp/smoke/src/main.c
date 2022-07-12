@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include "tests.h"
 
-cavs_ipc_handler_t ipm_handler;
+intel_adsp_ipc_handler_t ipm_handler;
 
 static bool clock_msg(const struct device *dev, void *arg,
 		      uint32_t data, uint32_t ext_data)
@@ -22,17 +22,17 @@ ZTEST(intel_adsp, test_clock_calibrate)
 
 	/* Prime the host script's timestamp */
 	cyc0 = k_cycle_get_32();
-	cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_TIMESTAMP, 0);
+	intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_TIMESTAMP, 0);
 
 	k_msleep(1000);
 	host_dt = 0;
-	cavs_ipc_set_message_handler(CAVS_HOST_DEV, clock_msg, (void *)&host_dt);
+	intel_adsp_ipc_set_message_handler(INTEL_ADSP_IPC_HOST_DEV, clock_msg, (void *)&host_dt);
 
 	/* Now do it again, but with a handler to catch the result */
 	cyc1 = k_cycle_get_32();
-	cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_TIMESTAMP, 0);
+	intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_TIMESTAMP, 0);
 	AWAIT(host_dt != 0);
-	cavs_ipc_set_message_handler(CAVS_HOST_DEV, NULL, NULL);
+	intel_adsp_ipc_set_message_handler(INTEL_ADSP_IPC_HOST_DEV, NULL, NULL);
 
 	hz = 1000000ULL * (cyc1 - cyc0) / host_dt;
 	printk("CLOCK: %lld Hz\n", (1000000ULL * (cyc1 - cyc0)) / host_dt);
@@ -44,7 +44,7 @@ ZTEST(intel_adsp, test_clock_calibrate)
 
 static void *intel_adsp_setup(void)
 {
-	struct cavs_ipc_data *devdata = CAVS_HOST_DEV->data;
+	struct intel_adsp_ipc_data *devdata = INTEL_ADSP_IPC_HOST_DEV->data;
 
 	ipm_handler = devdata->handle_message;
 

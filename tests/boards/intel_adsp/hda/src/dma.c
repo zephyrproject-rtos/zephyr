@@ -5,7 +5,7 @@
 #include <zephyr/arch/xtensa/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <cavs_ipc.h>
+#include <intel_adsp_ipc.h>
 #include <zephyr/drivers/dma.h>
 #include "tests.h"
 
@@ -48,9 +48,9 @@ ZTEST(intel_adsp_hda_dma, test_hda_host_in_dma)
 	uint32_t last_msg_cnt;
 
 	printk("smoke testing hda with fifo buffer at address %p, size %d\n",
-	       dma_buf, DMA_BUF_SIZE);
+		dma_buf, DMA_BUF_SIZE);
 
-	cavs_ipc_set_message_handler(CAVS_HOST_DEV, ipc_message, NULL);
+	intel_adsp_ipc_set_message_handler(INTEL_ADSP_IPC_HOST_DEV, ipc_message, NULL);
 
 	printk("Using buffer of size %d at addr %p\n", DMA_BUF_SIZE, dma_buf);
 
@@ -74,10 +74,10 @@ ZTEST(intel_adsp_hda_dma, test_hda_host_in_dma)
 	zassert_true(channel >= 0, "Expected a valid DMA channel");
 	hda_dump_regs(HOST_IN, HDA_REGBLOCK_SIZE, channel, "dma channel");
 
-	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_RESET, channel, IPC_TIMEOUT);
+	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_RESET, channel, IPC_TIMEOUT);
 	hda_dump_regs(HOST_IN, HDA_REGBLOCK_SIZE, channel, "host reset");
 
-	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_CONFIG,
+	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_CONFIG,
 		    channel | (DMA_BUF_SIZE << 8), IPC_TIMEOUT);
 	hda_dump_regs(HOST_IN, HDA_REGBLOCK_SIZE, channel, "host config");
 
@@ -101,7 +101,7 @@ ZTEST(intel_adsp_hda_dma, test_hda_host_in_dma)
 	hda_dump_regs(HOST_IN, HDA_REGBLOCK_SIZE, channel, "dsp dma start");
 	zassert_ok(res, "Expected dma start to succeed");
 
-	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_START, channel, IPC_TIMEOUT);
+	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_START, channel, IPC_TIMEOUT);
 	hda_dump_regs(HOST_IN, HDA_REGBLOCK_SIZE, channel, "host start");
 
 	for (uint32_t i = 0; i < TRANSFER_COUNT; i++) {
@@ -124,7 +124,7 @@ ZTEST(intel_adsp_hda_dma, test_hda_host_in_dma)
 			"dsp read write equal after %d uS", j*100);
 
 		last_msg_cnt = msg_cnt;
-		hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_VALIDATE, channel,
+		hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_VALIDATE, channel,
 			    IPC_TIMEOUT);
 
 		WAIT_FOR(msg_cnt > last_msg_cnt, 10000, k_msleep(1));
@@ -132,7 +132,7 @@ ZTEST(intel_adsp_hda_dma, test_hda_host_in_dma)
 			     "Expected data validation to be true from Host");
 	}
 
-	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_RESET,
+	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_RESET,
 		    channel, IPC_TIMEOUT);
 
 	res = dma_stop(dma, channel);
@@ -150,9 +150,9 @@ void test_hda_host_out_dma(void)
 
 
 	printk("smoke testing hda with fifo buffer at address %p, size %d\n",
-	       dma_buf, DMA_BUF_SIZE);
+		dma_buf, DMA_BUF_SIZE);
 
-	cavs_ipc_set_message_handler(CAVS_HOST_DEV, ipc_message, NULL);
+	intel_adsp_ipc_set_message_handler(INTEL_ADSP_IPC_HOST_DEV, ipc_message, NULL);
 
 	printk("Using buffer of size %d at addr %p\n", DMA_BUF_SIZE, dma_buf);
 
@@ -163,11 +163,11 @@ void test_hda_host_out_dma(void)
 	zassert_true(channel >= 0, "Expected a valid DMA channel");
 	hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, channel, "dma request channel");
 
-	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_RESET,
+	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_RESET,
 		    (channel + 7), IPC_TIMEOUT);
 	hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, channel, "host reset");
 
-	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_CONFIG,
+	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_CONFIG,
 		    (channel + 7) | (DMA_BUF_SIZE << 8), IPC_TIMEOUT);
 	hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, channel, "host config");
 
@@ -190,11 +190,11 @@ void test_hda_host_out_dma(void)
 	hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, channel, "dsp dma start");
 	zassert_ok(res, "Expected dma start to succeed");
 
-	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_START, (channel + 7), IPC_TIMEOUT);
+	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_START, (channel + 7), IPC_TIMEOUT);
 	hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, channel, "host start");
 
 	for (uint32_t i = 0; i < TRANSFER_COUNT; i++) {
-		hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_SEND,
+		hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_SEND,
 			    (channel + 7) | (DMA_BUF_SIZE << 8), IPC_TIMEOUT);
 		hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, channel, "host send");
 
@@ -227,7 +227,7 @@ void test_hda_host_out_dma(void)
 		hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, channel, "dsp dma reload");
 	}
 
-	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_RESET, (channel + 7), IPC_TIMEOUT);
+	hda_ipc_msg(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_HDA_RESET, (channel + 7), IPC_TIMEOUT);
 
 	hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, channel, "host reset");
 

@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <zephyr/ztest.h>
-#include <cavs_ipc.h>
+#include <intel_adsp_ipc.h>
 #include "tests.h"
 
 #include <zephyr/logging/log.h>

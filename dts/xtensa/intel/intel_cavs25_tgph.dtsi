@@ -96,8 +96,8 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		idc: idc@1200 {
-			compatible = "intel,cavs-idc";
+		adsp_idc: idc@1200 {
+			compatible = "intel,adsp-idc";
 			reg = <0x1200 0x80>;
 			interrupts = <8 0 0>;
 			interrupt-parent = <&cavs0>;
