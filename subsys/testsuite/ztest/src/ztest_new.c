@@ -134,7 +134,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	 * logic views it as one "job") and cause other test failures.
 	 */
 	dt = k_uptime_get_32() - start_ms;
-	zassert_true(dt < 3000, "1cpu test took too long (%d ms)", dt);
+	zassert_true(dt < 10000, "1cpu test took too long (%d ms)", dt);
 	arch_irq_unlock(key);
 }
 
@@ -202,7 +202,16 @@ static void run_test_functions(struct ztest_suite_node *suite, struct ztest_unit
 			       void *data)
 {
 	phase = TEST_PHASE_TEST;
+
+	if (test->before) {
+		test->before(/*data=*/data);
+	}
+
 	test->test(data);
+
+	if (test->after) {
+		test->after(/*data=*/data);
+	}
 }
 
 enum ztest_result {

@@ -32,6 +32,17 @@ struct ztest_unit_test {
 	const char *name;
 	void (*test)(void *data);
 	uint32_t thread_options;
+
+	/**
+	 * Function to run before this specific test
+	 * @param data The test suite's data returned from setup()
+	 */
+	void (*const before)(void *data);
+	/**
+	 * Function to run after this specific test
+	 * @param data The test suite's data returned from setup()
+	 */
+	void (*const after)(void *data);
 };
 
 extern struct ztest_unit_test _ztest_unit_test_list_start[];
@@ -226,7 +237,10 @@ static inline void unit_test_noop(void)
 {
 }
 
-#define Z_TEST(suite, fn, t_options, use_fixture)                                                  \
+#define Z_TEST(suite, fn, t_options, use_fixture) \
+			Z_TEST_WITH_BEFORE_AFTER(suite, fn, t_options, use_fixture, 0, 0)
+
+#define Z_TEST_WITH_BEFORE_AFTER(suite, fn, t_options, use_fixture, fn_before, fn_after)       \
 	static void _##suite##_##fn##_wrapper(void *data);                                         \
 	static void suite##_##fn(                                                                  \
 		COND_CODE_1(use_fixture, (struct suite##_fixture *fixture), (void)));              \
@@ -235,6 +249,8 @@ static inline void unit_test_noop(void)
 		.name = STRINGIFY(fn),                                                             \
 		.test = (_##suite##_##fn##_wrapper),                                               \
 		.thread_options = t_options,                                                       \
+		.before = fn_before,                                                               \
+		.after = fn_after                                                                  \
 	};                                                                                         \
 	static void _##suite##_##fn##_wrapper(void *data)                                          \
 	{                                                                                          \
@@ -245,7 +261,11 @@ static inline void unit_test_noop(void)
 		COND_CODE_1(use_fixture, (struct suite##_fixture *fixture), (void)))
 
 #define Z_ZTEST(suite, fn, t_options) Z_TEST(suite, fn, t_options, 0)
+#define Z_ZTEST_WITH_BEFORE_AFTER(suite, fn, t_options, fn_before, fn_after)   \
+			Z_TEST_WITH_BEFORE_AFTER(suite, fn, t_options, 0, fn_before, fn_after)
 #define Z_ZTEST_F(suite, fn, t_options) Z_TEST(suite, fn, t_options, 1)
+#define Z_ZTEST_F_WITH_BEFORE_AFTER(suite, fn, t_options, fn_before, fn_after) \
+			Z_TEST_WITH_BEFORE_AFTER(suite, fn, t_options, 1, fn_before, fn_after)
 
 /**
  * @brief Skips the test if config is enabled
@@ -279,6 +299,9 @@ static inline void unit_test_noop(void)
  */
 #define ZTEST(suite, fn) Z_ZTEST(suite, fn, 0)
 
+#define ZTEST_WITH_BEFORE_AFTER(suite, fn, fn_before, fn_after) \
+			Z_ZTEST_WITH_BEFORE_AFTER(suite, fn, 0, fn_before, fn_after)
+
 /**
  * @brief Define a test function that should run as a user thread
  *
@@ -289,6 +312,10 @@ static inline void unit_test_noop(void)
  * @param fn The test function to call.
  */
 #define ZTEST_USER(suite, fn) Z_ZTEST(suite, fn, K_USER)
+
+#define ZTEST_USER_WITH_BEFORE_AFTER(suite, fn, fn_before, fn_after) \
+			Z_ZTEST_WITH_BEFORE_AFTER(suite, fn, K_USER, fn_before, fn_after)
+
 
 /**
  * @brief Define a test function
@@ -301,6 +328,9 @@ static inline void unit_test_noop(void)
  */
 #define ZTEST_F(suite, fn) Z_ZTEST_F(suite, fn, 0)
 
+#define ZTEST_F_WITH_BEFORE_AFTER(suite, fn, fn_before, fn_after) \
+			Z_ZTEST_F_WITH_BEFORE_AFTER(suite, fn, 0, fn_before, fn_after)
+
 /**
  * @brief Define a test function that should run as a user thread
  *
@@ -311,6 +341,9 @@ static inline void unit_test_noop(void)
  * @param fn The test function to call.
  */
 #define ZTEST_USER_F(suite, fn) Z_ZTEST_F(suite, fn, K_USER)
+
+#define ZTEST_USER_F_WITH_BEFORE_AFTER(suite, fn, fn_before, fn_after) \
+			Z_ZTEST_F_WITH_BEFORE_AFTER(suite, fn, K_USER, fn_before, fn_after)
 
 /**
  * @brief Test rule callback function signature
