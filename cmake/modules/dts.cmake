@@ -35,6 +35,10 @@ set(DTS_DEPS                    ${PROJECT_BINARY_DIR}/zephyr.dts.d)
 # This is relative to each element of DTS_ROOT.
 set(VENDOR_PREFIXES             dts/bindings/vendor-prefixes.txt)
 
+# Devicetree in Kconfig.
+set(GEN_DRIVER_KCONFIG_SCRIPT   ${ZEPHYR_BASE}/scripts/dts/gen_driver_kconfig_dts.py)
+set(DTS_KCONFIG                 ${KCONFIG_BINARY_DIR}/Kconfig.dts)
+
 # Devicetree in CMake.
 set(DTS_CMAKE_SCRIPT            ${ZEPHYR_BASE}/scripts/dts/gen_dts_cmake.py)
 set(DTS_CMAKE                   ${PROJECT_BINARY_DIR}/dts.cmake)
@@ -196,6 +200,7 @@ if(SUPPORTS_DTS)
     CMAKE_CONFIGURE_DEPENDS
     ${include_files}
     ${GEN_DEFINES_SCRIPT}
+    ${GEN_DRIVER_KCONFIG_SCRIPT}
     ${DTS_CMAKE_SCRIPT}
     )
 
@@ -231,6 +236,18 @@ if(SUPPORTS_DTS)
     message(STATUS "Generated zephyr.dts: ${ZEPHYR_DTS}")
     message(STATUS "Generated devicetree_unfixed.h: ${DEVICETREE_UNFIXED_H}")
     message(STATUS "Generated device_extern.h: ${DEVICE_EXTERN_H}")
+  endif()
+
+
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${GEN_DRIVER_KCONFIG_SCRIPT}
+    --kconfig-out ${DTS_KCONFIG}
+    --bindings-dirs ${DTS_ROOT_BINDINGS}
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    RESULT_VARIABLE ret
+    )
+  if(NOT "${ret}" STREQUAL "0")
+    message(FATAL_ERROR "gen_driver_kconfig_dts.py failed with return code: ${ret}")
   endif()
 
   execute_process(
