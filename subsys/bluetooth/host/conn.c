@@ -1966,7 +1966,7 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 #endif /* CONFIG_BT_SMP */
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
-uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
+uint8_t bt_conn_enc_key_size(const struct bt_conn *conn)
 {
 	if (!conn->encrypt) {
 		return 0;
@@ -2111,12 +2111,12 @@ int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
 	return err;
 }
 
-bt_security_t bt_conn_get_security(struct bt_conn *conn)
+bt_security_t bt_conn_get_security(const struct bt_conn *conn)
 {
 	return conn->sec_level;
 }
 #else
-bt_security_t bt_conn_get_security(struct bt_conn *conn)
+bt_security_t bt_conn_get_security(const struct bt_conn *conn)
 {
 	return BT_SECURITY_L1;
 }
