@@ -20,7 +20,7 @@ config IPM_CALLBACK_ASYNC
 
 config IPM_CAVS_HOST
 	bool "cAVS DSP/host communication"
-	select CAVS_IPC
+	select INTEL_ADSP_IPC
 	help
 	  Driver for host/DSP communication on intel_adsp devices
 
@@ -28,7 +28,7 @@ if IPM_CAVS_HOST
 
 config IPM_CAVS_HOST_INBOX_OFFSET
 	hex "Byte offset of cAVS inbox window"
-	depends on CAVS_IPC
+	depends on INTEL_ADSP_IPC
 	default 0x6000
 	help
 	  Location of the host-writable inbox window within the
@@ -38,7 +38,7 @@ config IPM_CAVS_HOST_INBOX_OFFSET
 
 config IPM_CAVS_HOST_OUTBOX_OFFSET
 	hex "Byte offset of cAVS outbox memory"
-	depends on CAVS_IPC
+	depends on INTEL_ADSP_IPC
 	default 0x1000
 	help
 	  Location of the "outbox" region for SOF IPC3/4 message
@@ -50,7 +50,7 @@ config IPM_CAVS_HOST_OUTBOX_OFFSET
 
 config IPM_CAVS_HOST_REGWORD
 	bool "Store first 4 bytes in IPC register"
-	depends on CAVS_IPC
+	depends on INTEL_ADSP_IPC
 	depends on !SOC_INTEL_CAVS_V15
 	help
 	  Protocol variant.  When true, the first four bytes of a

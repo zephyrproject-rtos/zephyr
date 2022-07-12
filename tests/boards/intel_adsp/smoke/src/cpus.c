@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <cavs_ipc.h>
+#include <intel_adsp_ipc.h>
 #include "tests.h"
 
 #define RUN_ON_STACKSZ 2048
@@ -155,7 +155,7 @@ static void halt_and_restart(int cpu)
 	 * off.  Construct an ADSPCS with only this core disabled
 	 */
 	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V25)) {
-		cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_ADSPCS,
+		intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_ADSPCS,
 				     (all_cpus & ~BIT(cpu)) << 16);
 	}
 
@@ -172,7 +172,7 @@ static void halt_and_restart(int cpu)
 		 * We don't have a return message wired to be notified
 		 * of completion.
 		 */
-		cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_ADSPCS,
+		intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_ADSPCS,
 				     all_cpus << 16);
 		k_msleep(50);
 	}
