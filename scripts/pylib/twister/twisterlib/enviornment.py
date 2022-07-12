@@ -57,7 +57,7 @@ Artificially long but functional example:
 
     run_group_option = parser.add_mutually_exclusive_group()
 
-    serial = parser.add_mutually_exclusive_group(required="--device-testing" in sys.argv)
+    device = parser.add_mutually_exclusive_group(required="--device-testing" in sys.argv)
 
     test_or_build = parser.add_mutually_exclusive_group()
 
@@ -140,12 +140,12 @@ Artificially long but functional example:
                         --device-testing
                         """)
 
-    serial.add_argument("--device-serial",
+    device.add_argument("--device-serial",
                         help="""Serial device for accessing the board
                         (e.g., /dev/ttyACM0)
                         """)
 
-    serial.add_argument("--device-serial-pty",
+    device.add_argument("--device-serial-pty",
                         help="""Script for controlling pseudoterminal.
                         Twister believes that it interacts with a terminal
                         when it actually interacts with the script.
@@ -154,7 +154,7 @@ Artificially long but functional example:
                         --device-serial-pty <script>
                         """)
 
-    serial.add_argument("--hardware-map",
+    device.add_argument("--hardware-map",
                         help="""Load hardware map from a file. This will be used
                         for testing on hardware that is listed in the file.
                         """)
