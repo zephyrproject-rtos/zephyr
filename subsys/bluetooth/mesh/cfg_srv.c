@@ -38,6 +38,13 @@
 #include "settings.h"
 #include "cfg.h"
 
+static void node_reset_pending_handler(struct k_work *work)
+{
+	bt_mesh_reset();
+}
+
+static K_WORK_DEFINE(node_reset_pending, node_reset_pending_handler);
+
 static int comp_add_elem(struct net_buf_simple *buf, struct bt_mesh_elem *elem,
 			 bool primary)
 {
@@ -2071,13 +2078,13 @@ static void reset_send_start(uint16_t duration, int err, void *cb_data)
 {
 	if (err) {
 		BT_ERR("Sending Node Reset Status failed (err %d)", err);
-		bt_mesh_reset();
+		k_work_submit(&node_reset_pending);
 	}
 }
 
 static void reset_send_end(int err, void *cb_data)
 {
-	bt_mesh_reset();
+	k_work_submit(&node_reset_pending);
 }
 
 static int node_reset(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
