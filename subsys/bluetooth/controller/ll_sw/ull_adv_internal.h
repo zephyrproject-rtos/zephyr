@@ -191,6 +191,12 @@ void ull_adv_aux_ptr_fill(struct pdu_adv_aux_ptr *aux_ptr, uint32_t offs_us,
 /* helper function to handle adv aux done events */
 void ull_adv_aux_done(struct node_rx_event_done *done);
 
+/* helper function to duplicate chain PDUs */
+void ull_adv_aux_chain_pdu_duplicate(struct pdu_adv *pdu_prev,
+				     struct pdu_adv *pdu,
+				     struct pdu_adv_aux_ptr *aux_ptr,
+				     uint8_t phy_s, uint8_t phy_flags,
+				     uint32_t mafs_us);
 int ull_adv_sync_init(void);
 int ull_adv_sync_reset(void);
 int ull_adv_sync_reset_finalize(void);

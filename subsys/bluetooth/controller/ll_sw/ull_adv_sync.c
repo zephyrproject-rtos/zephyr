@@ -66,8 +66,6 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
 static void ticker_op_cb(uint32_t status, void *param);
-static void adv_sync_pdu_chain_check_and_duplicate(struct pdu_adv *new_pdu,
-						   struct pdu_adv *prev_pdu);
 
 static struct ll_adv_sync_set ll_adv_sync_pool[CONFIG_BT_CTLR_ADV_SYNC_SET];
 static void *adv_sync_free;
@@ -121,146 +119,7 @@ void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags)
 	pdu->len = len;
 }
 
-#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
-static uint8_t adv_sync_pdu_init_from_prev_pdu(struct pdu_adv *pdu,
-					       struct pdu_adv *pdu_prev,
-					       uint16_t ext_hdr_flags_add,
-					       uint16_t ext_hdr_flags_rem)
-{
-	struct pdu_adv_com_ext_adv *com_hdr_prev;
-	struct pdu_adv_ext_hdr *ext_hdr_prev;
-	struct pdu_adv_com_ext_adv *com_hdr;
-	struct pdu_adv_ext_hdr *ext_hdr;
-	uint8_t ext_hdr_flags_prev;
-	uint8_t ext_hdr_flags;
-	uint8_t *dptr_prev;
-	uint8_t len_prev;
-	uint8_t *dptr;
-	uint8_t len;
-
-	/* Copy complete header, assume it was set properly in old PDU */
-	*(uint8_t *)pdu = *(uint8_t *)pdu_prev;
-
-	com_hdr_prev = &pdu_prev->adv_ext_ind;
-	com_hdr = &pdu->adv_ext_ind;
-
-	com_hdr->adv_mode = 0U;
-
-	ext_hdr_prev = &com_hdr_prev->ext_hdr;
-	ext_hdr = &com_hdr->ext_hdr;
-
-	if (com_hdr_prev->ext_hdr_len) {
-		ext_hdr_flags_prev = *(uint8_t *) ext_hdr_prev;
-	} else {
-		ext_hdr_flags_prev = 0;
-	}
-	ext_hdr_flags = ext_hdr_flags_prev |
-			(ext_hdr_flags_add & (~ext_hdr_flags_rem));
-
-	*(uint8_t *)ext_hdr = ext_hdr_flags;
-
-	LL_ASSERT(!ext_hdr->adv_addr);
-	LL_ASSERT(!ext_hdr->tgt_addr);
-	LL_ASSERT(IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) ||
-		  !ext_hdr->adi);
-	LL_ASSERT(!ext_hdr->sync_info);
-
-	dptr = ext_hdr->data;
-	dptr_prev = ext_hdr_prev->data;
-
-	/* Note: skip length verification of ext header writes as we assume that
-	 *       all PDUs are large enough to store at least complete ext header.
-	 */
-
-	/* Copy CTEInfo, if applicable */
-	if (ext_hdr->cte_info) {
-		if (ext_hdr_prev->cte_info) {
-			(void)memcpy(dptr, dptr_prev, sizeof(struct pdu_cte_info));
-		}
-		dptr += sizeof(struct pdu_cte_info);
-	}
-	if (ext_hdr_prev->cte_info) {
-		dptr_prev += sizeof(struct pdu_cte_info);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) && ext_hdr->adi != 0) {
-		if (ext_hdr_prev->adi) {
-			(void)memcpy(dptr, dptr_prev, sizeof(struct pdu_adv_adi));
-		}
-		dptr += sizeof(struct pdu_adv_adi);
-	}
-	if (ext_hdr_prev->adi) {
-		dptr_prev += sizeof(struct pdu_adv_adi);
-	}
-
-	/* Add AuxPtr, if applicable. Do not copy since it will be updated later
-	 * anyway.
-	 */
-	if (ext_hdr->aux_ptr) {
-		dptr += sizeof(struct pdu_adv_aux_ptr);
-	}
-	if (ext_hdr_prev->aux_ptr) {
-		dptr_prev += sizeof(struct pdu_adv_aux_ptr);
-	}
-
-	/* Copy TxPower, if applicable */
-	if (ext_hdr->tx_pwr) {
-		if (ext_hdr_prev->tx_pwr) {
-			(void)memcpy(dptr, dptr_prev, sizeof(uint8_t));
-		}
-		dptr += sizeof(uint8_t);
-	}
-	if (ext_hdr_prev->tx_pwr) {
-		dptr_prev += sizeof(uint8_t);
-	}
-
-	LL_ASSERT(ext_hdr_prev  >= 0);
-
-	/* Copy ACAD */
-	len = com_hdr_prev->ext_hdr_len - (dptr_prev - (uint8_t *)ext_hdr_prev);
-	(void)memcpy(dptr, dptr_prev, len);
-	dptr += len;
-
-	/* Check populated ext header length excluding length itself. If 0, then
-	 * there was neither field nor ACAD populated and we skip ext header
-	 * entirely.
-	 */
-	len = dptr - ext_hdr->data;
-	if (len == 0) {
-		com_hdr->ext_hdr_len = 0;
-	} else {
-		com_hdr->ext_hdr_len = len +
-				       offsetof(struct pdu_adv_ext_hdr, data);
-	}
-
-	/* Both PDUs have now ext header length calculated properly, reset
-	 * pointers to start of AD.
-	 */
-	dptr = &com_hdr->ext_hdr_adv_data[com_hdr->ext_hdr_len];
-	dptr_prev = &com_hdr_prev->ext_hdr_adv_data[com_hdr_prev->ext_hdr_len];
-
-	/* Calculate length of AD to copy and AD length available in new PDU */
-	len_prev = pdu_prev->len - (dptr_prev - pdu_prev->payload);
-	len = PDU_AC_PAYLOAD_SIZE_MAX - (dptr - pdu->payload);
-
-	/* TODO: we should allow partial copy and let caller refragment data */
-	if (len < len_prev) {
-		return BT_HCI_ERR_PACKET_TOO_LONG;
-	}
-
-	/* Copy AD */
-	if (!(ext_hdr_flags_rem & ULL_ADV_PDU_HDR_FIELD_AD_DATA)) {
-		len = MIN(len, len_prev);
-		(void)memcpy(dptr, dptr_prev, len);
-		dptr += len;
-	}
-
-	/* Finalize PDU */
-	pdu->len = dptr - pdu->payload;
-
-	return 0;
-}
-
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
 uint8_t ull_adv_sync_pdu_cte_info_set(struct pdu_adv *pdu, const struct pdu_cte_info *cte_info)
 {
 	struct pdu_adv_com_ext_adv *com_hdr;
@@ -281,35 +140,7 @@ uint8_t ull_adv_sync_pdu_cte_info_set(struct pdu_adv *pdu, const struct pdu_cte_
 
 	return 0;
 }
-
-static struct pdu_adv *adv_sync_pdu_duplicate_chain(struct pdu_adv *pdu)
-{
-	struct pdu_adv *pdu_dup = NULL;
-	uint8_t err;
-
-	while (pdu) {
-		struct pdu_adv *pdu_new;
-
-		pdu_new = lll_adv_pdu_alloc_pdu_adv();
-
-		/* We make exact copy of old PDU, there's really nothing that
-		 * can go wrong there assuming original PDU was created properly
-		 */
-		err = adv_sync_pdu_init_from_prev_pdu(pdu_new, pdu, 0, 0);
-		LL_ASSERT(err == 0);
-
-		if (pdu_dup) {
-			lll_adv_pdu_linked_append_end(pdu_new, pdu_dup);
-		} else {
-			pdu_dup = pdu_new;
-		}
-
-		pdu = lll_adv_pdu_linked_next_get(pdu);
-	}
-
-	return pdu_dup;
-}
-#endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
+#endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK */
 
 uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 {
@@ -518,13 +349,6 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
-	/* alloc() will return the same PDU as peek() in case there was PDU
-	 * queued but not switched to current before alloc() - no need to deal
-	 * with chain as it's already there. In other case we need to duplicate
-	 * chain from current PDU and append it to new PDU.
-	 */
-	adv_sync_pdu_chain_check_and_duplicate(pdu, pdu_prev);
-
 	/* Update time reservation if Periodic Advertising events are active */
 	if (sync->is_started) {
 		err = ull_adv_sync_time_update(sync, pdu);
@@ -652,13 +476,6 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		if (err) {
 			return err;
 		}
-
-		/* alloc() will return the same PDU as peek() in case there was PDU
-		 * queued but not switched to current before alloc() - no need to deal
-		 * with chain as it's already there. In other case we need to duplicate
-		 * chain from current PDU and append it to new PDU.
-		 */
-		adv_sync_pdu_chain_check_and_duplicate(pdu, pdu_prev);
 	}
 
 	/* Start Periodic Advertising events if Extended Advertising events are
@@ -1957,28 +1774,4 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 static void ticker_op_cb(uint32_t status, void *param)
 {
 	*((uint32_t volatile *)param) = status;
-}
-
-/**
- * @brief Set a periodic advertising chained PDUs in a new periodic advertising data if there are
- *        chained PDUs in former periodic advertising data.
- *
- * @param pdu_new  Pointer to new pdu_adv where to add chained pdu_adv.
- * @param pdu_prev Pointer to former pdu_adv where to add chained pdu_adv.
- */
-static void adv_sync_pdu_chain_check_and_duplicate(struct pdu_adv *pdu_new,
-						   struct pdu_adv *pdu_prev)
-{
-#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
-	if (pdu_new != pdu_prev) {
-		struct pdu_adv *next, *next_dup;
-
-		LL_ASSERT(lll_adv_pdu_linked_next_get(pdu_new) == NULL);
-
-		next = lll_adv_pdu_linked_next_get(pdu_prev);
-		next_dup = adv_sync_pdu_duplicate_chain(next);
-
-		lll_adv_pdu_linked_append(next_dup, pdu_new);
-	}
-#endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
 }
