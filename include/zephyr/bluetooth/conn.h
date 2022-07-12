@@ -341,6 +341,24 @@ typedef enum __packed {
 	BT_SECURITY_FORCE_PAIR = BIT(7),
 } bt_security_t;
 
+/** Security Info Flags. */
+enum bt_security_flag {
+	/** Paired with Secure Connections. */
+	BT_SECURITY_FLAG_SC = BIT(0),
+	/** Paired with Out of Band method. */
+	BT_SECURITY_FLAG_OOB = BIT(1),
+};
+
+/** Security Info Structure. */
+struct bt_security_info {
+	/** Security Level. */
+	bt_security_t level;
+	/** Encryption Key Size. */
+	uint8_t enc_key_size;
+	/** Flags. */
+	enum bt_security_flag flags;
+};
+
 /** Connection role (central or peripheral) */
 #define BT_CONN_ROLE_MASTER __DEPRECATED_MACRO BT_CONN_ROLE_CENTRAL
 #define BT_CONN_ROLE_SLAVE __DEPRECATED_MACRO BT_CONN_ROLE_PERIPHERAL
@@ -360,8 +378,10 @@ struct bt_conn_info {
 		/** BR/EDR Connection specific Info. */
 		struct bt_conn_br_info br;
 	};
-
+	/** Connection state. */
 	enum bt_conn_state state;
+	/** Security specific info. */
+	struct bt_security_info security;
 };
 
 /** LE Connection Remote Info Structure */
