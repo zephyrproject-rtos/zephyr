@@ -50,7 +50,11 @@ void z_intel_adsp_ipc_isr(const void *devarg)
 
 		regs->tdr = INTEL_ADSP_IPC_BUSY;
 		if (done && !IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+			regs->tda = INTEL_ADSP_IPC_ACE1X_TDA_DONE;
+#else
 			regs->tda = INTEL_ADSP_IPC_DONE;
+#endif
 		}
 	}
 
@@ -88,7 +92,11 @@ int intel_adsp_ipc_init(const struct device *dev)
 		config->regs->idd = INTEL_ADSP_IPC_DONE;
 	} else {
 		config->regs->ida = INTEL_ADSP_IPC_DONE;
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+		config->regs->tda = INTEL_ADSP_IPC_ACE1X_TDA_DONE;
+#else
 		config->regs->tda = INTEL_ADSP_IPC_DONE;
+#endif
 	}
 	config->regs->ctl |= (INTEL_ADSP_IPC_CTL_IDIE | INTEL_ADSP_IPC_CTL_TBIE);
 	return 0;
@@ -98,7 +106,11 @@ void intel_adsp_ipc_complete(const struct device *dev)
 {
 	const struct intel_adsp_ipc_config *config = dev->config;
 
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+	config->regs->tda = INTEL_ADSP_IPC_ACE1X_TDA_DONE;
+#else
 	config->regs->tda = INTEL_ADSP_IPC_DONE;
+#endif
 }
 
 bool intel_adsp_ipc_is_complete(const struct device *dev)
