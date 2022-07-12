@@ -139,7 +139,7 @@ union bt_cap_set_member {
 	struct bt_conn *member;
 
 	/** CSIP Coordinated Set struct used if type is BT_CAP_SET_TYPE_CSIP. */
-	struct bt_csip_set_coordinator_set_member *csip;
+	struct bt_csip_set_coordinator_csis_inst *csip;
 };
 
 struct bt_cap_stream {
@@ -156,22 +156,15 @@ struct bt_cap_stream {
  */
 void bt_cap_stream_ops_register(struct bt_cap_stream *stream, struct bt_bap_stream_ops *ops);
 
-struct bt_cap_unicast_audio_start_param {
-	/** The type of the set. */
-	enum bt_cap_set_type type;
+struct bt_cap_unicast_audio_start_stream_param {
+	/** Coordinated or ad-hoc set member. */
+	union bt_cap_set_member member;
 
-	/** The number of set members in @p members and number of streams in @p streams. */
-	size_t count;
+	/** @brief Stream for the @p member */
+	struct bt_cap_stream *stream;
 
-	/** Coordinated or ad-hoc set members. */
-	union bt_cap_set_member **members;
-
-	/** @brief Streams for the @p members
-	 *
-	 * stream[i] will be associated with members[i] if not already
-	 * initialized, else the stream will be verified against the member.
-	 */
-	struct bt_cap_stream **streams;
+	/** Endpoint reference for the @p stream */
+	struct bt_bap_ep *ep;
 
 	/**
 	 * @brief Codec configuration.
@@ -180,10 +173,30 @@ struct bt_cap_unicast_audio_start_param {
 	 * (@ref BT_AUDIO_METADATA_TYPE_CCID_LIST) as well as a non-0
 	 * stream context (@ref BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) bitfield.
 	 */
-	const struct bt_codec *codec;
+	struct bt_codec *codec;
 
 	/** Quality of Service configuration. */
-	const struct bt_codec_qos *qos;
+	struct bt_codec_qos *qos;
+};
+
+struct bt_cap_unicast_audio_start_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
+	/** The number of parameters in @p stream_params */
+	size_t count;
+
+	/** Array of stream parameters */
+	struct bt_cap_unicast_audio_start_stream_param *stream_params;
+
+	/** @brief Unicast Group packing mode.
+	 *
+	 *  @ref BT_ISO_PACKING_SEQUENTIAL or @ref BT_ISO_PACKING_INTERLEAVED.
+	 *
+	 *  @note This is a recommendation to the controller, which the
+	 *  controller may ignore.
+	 */
+	uint8_t packing;
 };
 
 /**
@@ -207,12 +220,12 @@ int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb);
  * to be enabled.
  *
  * @param[in]  param          Parameters to start the audio streams.
- * @param[out] unicast_group  Pointer to the unicast group created.
+ * @param[out] unicast_group  Pointer to the unicast group.
  *
  * @return 0 on success or negative error value on failure.
  */
 int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param,
-					 struct bt_bap_unicast_group **unicast_group);
+					 struct bt_bap_unicast_group *unicast_group);
 
 /**
  * @brief Update unicast audio streams for a unicast group.
