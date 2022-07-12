@@ -7,7 +7,7 @@
 #include <ztest.h>
 #include <time.h>
 
-static void test_time_passing(void)
+ZTEST(libc_time, test_time_passing)
 {
 	time_t time_initial_unaligned;
 	time_t time_initial;
@@ -41,7 +41,7 @@ static void test_time_passing(void)
 	}
 }
 
-static void test_time_param(void)
+ZTEST(libc_time, test_time_param)
 {
 	time_t time_result;
 	time_t time_param;
@@ -60,11 +60,4 @@ static void test_time_param(void)
 	}
 }
 
-void test_main(void)
-{
-	ztest_test_suite(libc_time,
-			ztest_unit_test(test_time_passing),
-			ztest_unit_test(test_time_param)
-			);
-	ztest_run_test_suite(libc_time);
-}
+ZTEST_SUITE(libc_time, NULL, NULL, NULL, NULL, NULL);
