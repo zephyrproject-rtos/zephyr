@@ -45,13 +45,13 @@ static __imr void hp_sram_pm_banks(void)
 	uint32_t hpsram_ebb_quantity = mtl_hpsram_get_bank_count();
 	volatile uint32_t *l2hsbpmptr = (volatile uint32_t *)MTL_L2MM->l2hsbpmptr;
 	volatile uint8_t *status = (volatile uint8_t *)l2hsbpmptr + 4;
-	int inx;
+	int idx;
 
-	for (inx = 0; inx < hpsram_ebb_quantity; ++inx) {
-		*(l2hsbpmptr + inx * 2) = 0;
+	for (idx = 0; idx < hpsram_ebb_quantity; ++idx) {
+		*(l2hsbpmptr + idx * 2) = 0;
 	}
-	for (inx = 0; inx < hpsram_ebb_quantity; ++inx) {
-		while (*(status + inx * 8) != 0) {
+	for (idx = 0; idx < hpsram_ebb_quantity; ++idx) {
+		while (*(status + idx * 8) != 0) {
 			z_idelay(DELAY_COUNT);
 		}
 	}
@@ -69,8 +69,8 @@ __imr void lp_sram_init(void)
 	uint32_t lpsram_ebb_quantity = mtl_lpsram_get_bank_count();
 	volatile uint32_t *l2usbpmptr = (volatile uint32_t *)MTL_L2MM->l2usbpmptr;
 
-	for (uint32_t inx = 0; inx < lpsram_ebb_quantity; ++inx) {
-		*(l2usbpmptr + inx * 2) = 0;
+	for (uint32_t idx = 0; idx < lpsram_ebb_quantity; ++idx) {
+		*(l2usbpmptr + idx * 2) = 0;
 	}
 #endif /* PLATFORM_INIT_LPSRAM */
 }
