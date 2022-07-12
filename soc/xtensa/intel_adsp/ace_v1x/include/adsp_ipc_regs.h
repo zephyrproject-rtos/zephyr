@@ -5,6 +5,7 @@
 #define ZEPHYR_SOC_INTEL_ADSP_ACE_IPC_REGS_H
 
 #include <intel_adsp_ipc.h>
+#include <intel_adsp_ipc_devtree.h>
 
 /**
  * @file
@@ -35,6 +36,18 @@ struct intel_adsp_ipc {
 	uint32_t idd;
 };
 
+/**
+ * @brief Set TDA busy bit.
+ *
+ * On ACE SoC family boards TDA bit 31 (BUSY) during IPC doorbell acknowledgment
+ * must be cleared (!), not set (in contrary to CAVS SoC family boards).
+ * This clears BUSY on the other side of the connection in IDR register.
+ */
+#define INTEL_ADSP_IPC_BUSY BIT(31)
+#define INTEL_ADSP_IPC_DONE 0
+
+#define INTEL_ADSP_IPC_CTL_TBIE BIT(0)
+#define INTEL_ADSP_IPC_CTL_IDIE BIT(1)
 /**
  * @brief ACE SoC family Intra DSP Communication.
  *

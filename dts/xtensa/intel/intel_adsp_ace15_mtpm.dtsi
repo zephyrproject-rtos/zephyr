@@ -97,6 +97,21 @@
 			#interrupt-cells = <3>;
 		};
 
+		adsp_host_ipc: ace_host_ipc@73000 {
+			compatible = "intel,adsp-host-ipc";
+			status = "okay";
+			reg = <0x73000 0x30>;
+			interrupts = <0 0 0>;
+			interrupt-parent = <&ace_intc>;
+		};
+
+		adsp_idc: ace_idc@70400 {
+			compatible = "intel,adsp-idc";
+			reg = <0x70400 0x0400>;
+			interrupts = <24 0 0>;
+			interrupt-parent = <&ace_intc>;
+		};
+
 		/* This is actually an array of per-core designware
 		 * controllers, but the special setup and extra
 		 * masking layer makes it easier for MTL to handle
