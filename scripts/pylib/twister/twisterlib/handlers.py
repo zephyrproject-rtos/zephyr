@@ -485,12 +485,10 @@ class DeviceHandler(Handler):
                     elif runner == "intel_adsp":
                         command.append("--pty")
 
-                    # Receive parameters from an runner_params field
-                    # of the specified hardware map file.
-                    for d in self.duts:
-                        if (d.platform == self.instance.platform.name) and d.runner_params:
-                            for param in d.runner_params:
-                                command.append(param)
+                    # Receive parameters from runner_params field.
+                    if hardware.runner_params:
+                        for param in hardware.runner_params:
+                            command.append(param)
 
             if command_extra_args != []:
                 command.append('--')
