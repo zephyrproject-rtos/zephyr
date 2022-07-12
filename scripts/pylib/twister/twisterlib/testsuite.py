@@ -221,11 +221,11 @@ def _get_search_area_boundary(search_area, suite_regex_matches, is_registered_te
 
 def _find_new_ztest_testcases(search_area):
     """
-    Find regular ztest testcases like "ZTEST" or "ZTEST_F". Return
+    Find regular ztest testcases like "ZTEST", "ZTEST_F" etc. Return
     testcases' names and eventually found warnings.
     """
     testcase_regex = re.compile(
-        br"^\s*(?:ZTEST|ZTEST_F)\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,"
+        br"^\s*(?:ZTEST|ZTEST_F|ZTEST_USER|ZTEST_USER_F)\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,"
         br"\s*(?P<testcase_name>[a-zA-Z0-9_]+)\s*",
         re.MULTILINE)
 
