@@ -681,9 +681,10 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 	}
 
 	/*
-	 * Unmap unused physical pages from the TLB to save power
+	 * Unmap all unused physical pages from the entire
+	 * virtual address space to save power
 	 */
-	size_t unused_size = L2_SRAM_BASE + L2_SRAM_SIZE -
+	size_t unused_size = CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE -
 			     unused_l2_start_aligned;
 
 	ret = sys_mm_drv_unmap_region(UINT_TO_POINTER(unused_l2_start_aligned),
