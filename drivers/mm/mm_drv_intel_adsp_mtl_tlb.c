@@ -517,19 +517,99 @@ int sys_mm_drv_remap_region(void *virt_old, size_t size,
 int sys_mm_drv_move_region(void *virt_old, size_t size, void *virt_new,
 			   uintptr_t phys_new)
 {
-	int ret;
+	k_spinlock_key_t key;
+	size_t offset;
+	int ret = 0;
 
-	void *va_new = z_soc_cached_ptr(virt_new);
-	void *va_old = z_soc_cached_ptr(virt_old);
+	virt_new = z_soc_cached_ptr(virt_new);
+	virt_old = z_soc_cached_ptr(virt_old);
 
-	ret = sys_mm_drv_simple_move_region(va_old, size, va_new, phys_new);
+	CHECKIF(!sys_mm_drv_is_virt_addr_aligned(virt_old) ||
+		!sys_mm_drv_is_virt_addr_aligned(virt_new) ||
+		!sys_mm_drv_is_size_aligned(size)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if ((POINTER_TO_UINT(virt_new) >= POINTER_TO_UINT(virt_old)) &&
+	    (POINTER_TO_UINT(virt_new) < (POINTER_TO_UINT(virt_old) + size))) {
+		ret = -EINVAL; /* overlaps */
+		goto out;
+	}
 
 	/*
-	 * Since memcpy() is done in virtual space, need to
+	 * The function's behavior has been updated to accept
+	 * phys_new == NULL and get the physical addresses from
+	 * the actual TLB instead of from the caller.
+	 */
+	if (phys_new != POINTER_TO_UINT(NULL) &&
+	    !sys_mm_drv_is_addr_aligned(phys_new)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	key = k_spin_lock(&sys_mm_drv_common_lock);
+
+	if (!sys_mm_drv_is_virt_region_mapped(virt_old, size) ||
+	    !sys_mm_drv_is_virt_region_unmapped(virt_new, size)) {
+		ret = -EINVAL;
+		goto unlock_out;
+	}
+
+	for (offset = 0; offset < size; offset += CONFIG_MM_DRV_PAGE_SIZE) {
+		uint8_t *va_old = (uint8_t *)virt_old + offset;
+		uint8_t *va_new = (uint8_t *)virt_new + offset;
+		uintptr_t pa;
+		uint32_t flags;
+		int ret2;
+
+		ret2 = sys_mm_drv_page_flag_get(va_old, &flags);
+		if (ret2 != 0) {
+			__ASSERT(false, "cannot query page flags %p\n", va_old);
+
+			ret = ret2;
+			goto unlock_out;
+		}
+
+		ret2 = sys_mm_drv_page_phys_get(va_old, &pa);
+		if (ret2 != 0) {
+			__ASSERT(false, "cannot query page paddr %p\n", va_old);
+
+			ret = ret2;
+			goto unlock_out;
+		}
+
+		/*
+		 * Only map the new page when we can retrieve
+		 * flags and phys addr of the old mapped page as We don't
+		 * want to map with unknown random flags.
+		 */
+		ret2 = sys_mm_drv_map_page(va_new, pa, flags);
+		if (ret2 != 0) {
+			__ASSERT(false, "cannot map 0x%lx to %p\n", pa, va_new);
+
+			ret = ret2;
+		}
+
+		ret2 = sys_mm_drv_unmap_page(va_old);
+		if (ret2 != 0) {
+			__ASSERT(false, "cannot unmap %p\n", va_old);
+
+			ret = ret2;
+		}
+	}
+
+unlock_out:
+	k_spin_unlock(&sys_mm_drv_common_lock, key);
+
+out:
+	/*
+	 * Since move is done in virtual space, need to
 	 * flush the cache to make sure the backing physical
 	 * pages have the new data.
 	 */
-	z_xtensa_cache_flush(va_new, size);
+	z_xtensa_cache_flush(virt_new, size);
+	z_xtensa_cache_flush_inv(virt_old, size);
 
 	return ret;
 }
