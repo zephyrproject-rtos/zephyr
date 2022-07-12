@@ -74,6 +74,9 @@ Bluetooth
 
 * Host
 
+  * :c:func:`bt_conn_get_security` and `bt_conn_enc_key_size` now take
+    a ``const struct bt_conn*`` argument.
+
 * Mesh
 
 * Controller
