@@ -117,6 +117,12 @@ spi_out:
 	return err;
 }
 
+static inline int ssd16xx_write_uint8(const struct device *dev, uint8_t cmd,
+				      uint8_t data)
+{
+	return ssd16xx_write_cmd(dev, cmd, &data, 1);
+}
+
 static inline int ssd16xx_read_cmd(const struct device *dev, uint8_t cmd,
 				    uint8_t *data, size_t len)
 {
@@ -248,7 +254,7 @@ static int ssd16xx_activate(const struct device *dev, uint8_t ctrl2)
 {
 	int err;
 
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_UPDATE_CTRL2, &ctrl2, 1);
+	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_UPDATE_CTRL2, ctrl2);
 	if (err < 0) {
 		return err;
 	}
@@ -526,7 +532,6 @@ static int ssd16xx_clear_cntlr_mem(const struct device *dev, uint8_t ram_cmd,
 	const struct ssd16xx_config *config = dev->config;
 	uint16_t panel_h = config->height / EPD_PANEL_NUMOF_ROWS_PER_PAGE;
 	uint16_t last_gate = config->width - 1;
-	uint8_t scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
 	uint8_t clear_page[64];
 	int err;
 
@@ -538,7 +543,8 @@ static int ssd16xx_clear_cntlr_mem(const struct device *dev, uint8_t ram_cmd,
 		panel_h += 1;
 	}
 
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_ENTRY_MODE, &scan_mode, 1);
+	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_ENTRY_MODE,
+				  SSD16XX_DATA_ENTRY_XIYDY);
 	if (err < 0) {
 		return err;
 	}
@@ -581,7 +587,6 @@ static inline int ssd16xx_load_ws_from_otp_tssv(const struct device *dev)
 {
 	const struct ssd16xx_config *config = dev->config;
 	struct ssd16xx_data *data = dev->data;
-	uint8_t tssv = config->tssv;
 	int err;
 
 	/*
@@ -589,7 +594,8 @@ static inline int ssd16xx_load_ws_from_otp_tssv(const struct device *dev)
 	 * temperature sensor is connected to the controller.
 	 */
 	LOG_INF("Select and load WS from OTP");
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_TSENSOR_SELECTION, &tssv, 1);
+	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_TSENSOR_SELECTION,
+				  config->tssv);
 	if (err == 0) {
 		data->update_cmd |= SSD16XX_CTRL2_LOAD_LUT |
 				    SSD16XX_CTRL2_LOAD_TEMPERATURE;
@@ -719,26 +725,25 @@ static int ssd16xx_controller_init(const struct device *dev)
 		return err;
 	}
 
-	tmp[0] = config->vcom;
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_VCOM_VOLTAGE, tmp, 1);
+	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_VCOM_VOLTAGE, config->vcom);
 	if (err < 0) {
 		return err;
 	}
 
-	tmp[0] = SSD16XX_VAL_DUMMY_LINE;
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_DUMMY_LINE, tmp, 1);
+	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_DUMMY_LINE,
+				  SSD16XX_VAL_DUMMY_LINE);
 	if (err < 0) {
 		return err;
 	}
 
-	tmp[0] = SSD16XX_VAL_GATE_LWIDTH;
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_GATE_LINE_WIDTH, tmp, 1);
+	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_GATE_LINE_WIDTH,
+				  SSD16XX_VAL_GATE_LWIDTH);
 	if (err < 0) {
 		return err;
 	}
 
-	tmp[0] = config->b_waveform;
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_BWF_CTRL, tmp, 1);
+	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_BWF_CTRL,
+				  config->b_waveform);
 	if (err < 0) {
 		return err;
 	}
