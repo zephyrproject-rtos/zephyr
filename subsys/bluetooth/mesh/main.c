@@ -228,6 +228,10 @@ void bt_mesh_reset(void)
 
 	bt_mesh_comp_unprovision();
 
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_settings_store_pending();
+	}
+
 	if (IS_ENABLED(CONFIG_BT_MESH_PROV)) {
 		bt_mesh_prov_reset();
 	}
