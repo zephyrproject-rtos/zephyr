@@ -6,6 +6,7 @@
 
 #include <zephyr/arch/xtensa/cache.h>
 #include <xtensa/config/core-isa.h>
+#include <fw_defs.h>
 
 #define CxL1CCAP (*(volatile uint32_t *)0x9F080080)
 #define CxL1CCFG (*(volatile uint32_t *)0x9F080084)
@@ -61,7 +62,7 @@ static ALWAYS_INLINE void cpu_early_init(void)
 	 * SOF for now.  If we care about prefetch priority tuning
 	 * we're supposed to ask Cadence I guess.
 	 */
-	reg = IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25) ? 0x1038 : 0;
+	reg = ADSP_L1_CACHE_PREFCTL_VALUE;
 	__asm__ volatile("wsr %0, PREFCTL; rsync" :: "r"(reg));
 
 	/* Finally we need to enable the cache in the Region
