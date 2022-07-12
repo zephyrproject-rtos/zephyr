@@ -97,11 +97,11 @@ static int test_gy271(void)
 static int test_burst_gy271(void)
 {
 	unsigned char datas[6];
-	const struct device *i2c_dev = device_get_binding(I2C_DEV_NAME);
+	const struct device *i2c_dev = DEVICE_DT_GET(I2C_DEV_NODE);
 	uint32_t i2c_cfg_tmp;
 
-	if (!i2c_dev) {
-		TC_PRINT("Cannot get I2C device\n");
+	if (!device_is_ready(i2c_dev)) {
+		TC_PRINT("I2C device is not ready\n");
 		return TC_FAIL;
 	}
 
