@@ -239,6 +239,9 @@ static void mcux_lpuart_irq_tx_enable(const struct device *dev)
 	key = irq_lock();
 	data->tx_poll_stream_on = false;
 	data->tx_int_stream_on = true;
+	/* Transmission complete interrupt no longer required */
+	LPUART_DisableInterrupts(config->base,
+		kLPUART_TransmissionCompleteInterruptEnable);
 	/* Do not allow system to sleep while UART tx is ongoing */
 	mcux_lpuart_pm_policy_state_lock_get(dev);
 #endif
@@ -847,6 +850,8 @@ static void mcux_lpuart_isr(const struct device *dev)
 			data->tx_poll_stream_on = false;
 			mcux_lpuart_pm_policy_state_lock_put(dev);
 		}
+		assert(LPUART_ClearStatusFlags(config->base,
+			kLPUART_TransmissionCompleteFlag) == 0U);
 	}
 #endif /* CONFIG_PM */
 
