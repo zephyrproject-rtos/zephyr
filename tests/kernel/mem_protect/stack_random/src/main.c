@@ -55,7 +55,7 @@ static struct k_thread alt_thread_data;
  * @ingroup kernel_memprotect_tests
  *
  */
-void test_stack_pt_randomization(void)
+ZTEST(stack_pointer_randomness, test_stack_pt_randomization)
 {
 	int i, sp_changed;
 	int old_prio = k_thread_priority_get(k_current_get());
@@ -84,9 +84,5 @@ void test_stack_pt_randomization(void)
 	k_thread_priority_set(k_current_get(), old_prio);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(stack_pointer_randomness,
-			ztest_1cpu_unit_test(test_stack_pt_randomization));
-	ztest_run_test_suite(stack_pointer_randomness);
-}
+ZTEST_SUITE(stack_pointer_randomness, NULL, NULL,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
