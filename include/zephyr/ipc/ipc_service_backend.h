@@ -37,6 +37,18 @@ struct ipc_service_backend {
 	 */
 	int (*open_instance)(const struct device *instance);
 
+	/** @brief Pointer to the function that will be used to close an instance
+	 *
+	 *  @param[in] instance Instance pointer.
+	 *
+	 *  @retval -EALREADY when the instance is not already inited.
+	 *
+	 *  @retval 0 on success
+	 *  @retval other errno codes depending on the implementation of the
+	 *	    backend.
+	 */
+	int (*close_instance)(const struct device *instance);
+
 	/** @brief Pointer to the function that will be used to send data to the endpoint.
 	 *
 	 *  @param[in] instance Instance pointer.
