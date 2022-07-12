@@ -81,7 +81,7 @@ void object_permission_checks(struct k_sem *sem, bool skip_init)
  *
  * @see k_object_alloc(), k_object_access_grant()
  */
-void test_generic_object(void)
+ZTEST(object_validation, test_generic_object)
 {
 	struct k_sem stack_sem;
 
@@ -129,7 +129,7 @@ void test_generic_object(void)
  *
  * @see k_object_alloc()
  */
-void test_kobj_assign_perms_on_alloc_obj(void)
+ZTEST(object_validation, test_kobj_assign_perms_on_alloc_obj)
 {
 	static struct k_sem *test_dyn_sem;
 	struct k_thread *thread = _current;
@@ -164,7 +164,7 @@ void test_kobj_assign_perms_on_alloc_obj(void)
  *
  * @see k_object_alloc()
  */
-void test_no_ref_dyn_kobj_release_mem(void)
+ZTEST(object_validation, test_no_ref_dyn_kobj_release_mem)
 {
 	int ret;
 
@@ -183,14 +183,11 @@ void test_no_ref_dyn_kobj_release_mem(void)
 	zassert_true(ret == -EBADF, "Dynamic kernel object not released");
 }
 
-void test_main(void)
+void *object_validation_setup(void)
 {
 	k_thread_system_pool_assign(k_current_get());
 
-	ztest_test_suite(object_validation,
-			 ztest_unit_test(test_generic_object),
-			 ztest_unit_test(test_kobj_assign_perms_on_alloc_obj),
-			 ztest_unit_test(test_no_ref_dyn_kobj_release_mem)
-			 );
-	ztest_run_test_suite(object_validation);
+	return NULL;
 }
+
+ZTEST_SUITE(object_validation, NULL, NULL, NULL, NULL, NULL);
