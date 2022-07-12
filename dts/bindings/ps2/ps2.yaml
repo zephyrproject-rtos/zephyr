@@ -16,5 +16,3 @@ properties:
       type: int
       required: true
       const: 0
-    label:
-      required: true
