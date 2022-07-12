@@ -735,7 +735,7 @@ int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec);
  *
  *  @return Connection security level
  */
-bt_security_t bt_conn_get_security(struct bt_conn *conn);
+bt_security_t bt_conn_get_security(const struct bt_conn *conn);
 
 /** @brief Get encryption key size.
  *
@@ -746,7 +746,7 @@ bt_security_t bt_conn_get_security(struct bt_conn *conn);
  *
  *  @return Encryption key size.
  */
-uint8_t bt_conn_enc_key_size(struct bt_conn *conn);
+uint8_t bt_conn_enc_key_size(const struct bt_conn *conn);
 
 enum bt_security_err {
 	/** Security procedure successful. */
