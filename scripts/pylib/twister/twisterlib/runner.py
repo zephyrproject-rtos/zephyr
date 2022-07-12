@@ -506,7 +506,7 @@ class ProjectBuilder(FilterBuilder):
                 })
 
         elif op == "cleanup":
-            if self.options.device_testing:
+            if self.options.device_testing or self.options.prep_artifacts_for_testing:
                 self.cleanup_device_testing_artifacts()
             else:
                 self.cleanup_artifacts()
