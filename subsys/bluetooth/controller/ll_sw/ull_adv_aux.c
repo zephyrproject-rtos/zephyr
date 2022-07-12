@@ -93,10 +93,10 @@ uint8_t ll_adv_aux_random_addr_set(uint8_t handle, uint8_t const *const addr)
 uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			       uint8_t len, uint8_t const *const data)
 {
+	uint8_t pri_idx, sec_idx;
 	struct ll_adv_set *adv;
 	uint8_t value[1 + sizeof(data)];
 	uint8_t *val_ptr;
-	uint8_t pri_idx;
 	uint8_t err;
 
 	/* op param definitions:
@@ -125,7 +125,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 	*val_ptr++ = len;
 	(void)memcpy(val_ptr, &data, sizeof(data));
 	err = ull_adv_aux_hdr_set_clear(adv, ULL_ADV_PDU_HDR_FIELD_AD_DATA,
-					0, value, NULL, &pri_idx);
+					0, value, NULL, &pri_idx, &sec_idx);
 	if (err) {
 		return err;
 	}
@@ -195,6 +195,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		ARG_UNUSED(tmp_idx);
 	}
 
+	lll_adv_aux_data_enqueue(adv->lll.aux, sec_idx);
 	lll_adv_data_enqueue(&adv->lll, pri_idx);
 
 	return 0;
@@ -215,7 +216,8 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 	uint8_t ext_hdr_len;
 	uint8_t *sr_dptr;
 	uint8_t pri_idx;
-	uint8_t idx;
+	uint8_t sec_idx;
+	uint8_t sr_idx;
 	uint8_t err;
 
 	/* TODO: handle other op values */
@@ -270,7 +272,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 	}
 
 	/* Update scan response PDU fields. */
-	sr_pdu = lll_adv_scan_rsp_alloc(lll, &idx);
+	sr_pdu = lll_adv_scan_rsp_alloc(lll, &sr_idx);
 	sr_pdu->type = PDU_ADV_TYPE_AUX_SCAN_RSP;
 	sr_pdu->rfu = 0;
 	sr_pdu->chan_sel = 0;
@@ -344,15 +346,16 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 
 sr_data_set_did_update:
 	/* Trigger DID update */
-	err = ull_adv_aux_hdr_set_clear(adv, 0, 0, NULL, sr_adi, &pri_idx);
+	err = ull_adv_aux_hdr_set_clear(adv, 0, 0, NULL, sr_adi, &pri_idx, &sec_idx);
 	if (err) {
 		return err;
 	}
 
 	/* NOTE: No update to primary channel PDU time reservation  */
 
+	lll_adv_aux_data_enqueue(adv->lll.aux, sec_idx);
 	lll_adv_data_enqueue(&adv->lll, pri_idx);
-	lll_adv_scan_rsp_enqueue(&adv->lll, idx);
+	lll_adv_scan_rsp_enqueue(&adv->lll, sr_idx);
 
 	return 0;
 }
@@ -523,7 +526,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 				  uint16_t sec_hdr_rem_fields,
 				  void *value,
 				  struct pdu_adv_adi *adi,
-				  uint8_t *pri_idx)
+				  uint8_t *pri_idx, uint8_t *sec_idx)
 {
 	struct pdu_adv_com_ext_adv *pri_com_hdr, *pri_com_hdr_prev;
 	struct pdu_adv_com_ext_adv *sec_com_hdr, *sec_com_hdr_prev;
@@ -542,7 +545,6 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	uint8_t is_aux_new;
 	uint8_t *ad_data;
 	uint16_t sec_len;
-	uint8_t sec_idx;
 	uint8_t ad_len;
 	uint16_t did;
 
@@ -624,7 +626,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	sec_dptr_prev = sec_hdr->data;
 
 	/* Get reference to new secondary PDU data buffer */
-	sec_pdu = lll_adv_aux_data_alloc(lll_aux, &sec_idx);
+	sec_pdu = lll_adv_aux_data_alloc(lll_aux, sec_idx);
 	sec_pdu->type = pri_pdu->type;
 	sec_pdu->rfu = 0U;
 	sec_pdu->chan_sel = 0U;
@@ -989,8 +991,6 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 			return err;
 		}
 	}
-
-	lll_adv_aux_data_enqueue(lll_aux, sec_idx);
 
 	return 0;
 }

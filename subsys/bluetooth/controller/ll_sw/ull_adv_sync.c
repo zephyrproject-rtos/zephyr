@@ -577,7 +577,6 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 	struct ll_adv_sync_set *sync;
 	uint8_t sync_got_enabled;
 	struct ll_adv_set *adv;
-	uint8_t pri_idx;
 	uint8_t ter_idx;
 	uint8_t err;
 
@@ -700,6 +699,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		struct ll_adv_aux_set *aux;
 		uint32_t ticks_anchor_sync;
 		uint32_t ticks_anchor_aux;
+		uint8_t pri_idx, sec_idx;
 		uint32_t ret;
 
 		lll_aux = adv->lll.aux;
@@ -707,7 +707,8 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		/* Add sync_info into auxiliary PDU */
 		err = ull_adv_aux_hdr_set_clear(adv,
 						ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-						0, value, NULL, &pri_idx);
+						0, value, NULL, &pri_idx,
+						&sec_idx);
 		if (err) {
 			return err;
 		}
@@ -761,6 +762,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 
 		sync->is_started = 1U;
 
+		lll_adv_aux_data_enqueue(lll_aux, sec_idx);
 		lll_adv_data_enqueue(&adv->lll, pri_idx);
 
 		if (aux) {
@@ -1644,16 +1646,17 @@ static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
 				  struct ll_adv_set *adv, uint8_t enable)
 {
 	uint8_t pri_idx;
+	uint8_t sec_idx;
 	uint8_t err;
 
 	/* Remove sync_info from auxiliary PDU */
-	err = ull_adv_aux_hdr_set_clear(adv, 0,
-					ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-					NULL, NULL, &pri_idx);
+	err = ull_adv_aux_hdr_set_clear(adv, 0, ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
+					NULL, NULL, &pri_idx, &sec_idx);
 	if (err) {
 		return err;
 	}
 
+	lll_adv_aux_data_enqueue(adv->lll.aux, sec_idx);
 	lll_adv_data_enqueue(&adv->lll, pri_idx);
 
 	if (sync->is_started) {

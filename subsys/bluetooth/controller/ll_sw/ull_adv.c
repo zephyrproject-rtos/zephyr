@@ -630,18 +630,20 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 		/* Make sure aux is created if we have AuxPtr */
 		if (pri_hdr->aux_ptr) {
-			uint8_t pri_idx;
+			uint8_t pri_idx, sec_idx;
 			uint8_t err;
 
 			err = ull_adv_aux_hdr_set_clear(adv,
 							ULL_ADV_PDU_HDR_FIELD_ADVA,
 							0, &own_addr_type,
-							NULL, &pri_idx);
+							NULL, &pri_idx,
+							&sec_idx);
 			if (err) {
 				/* TODO: cleanup? */
 				return err;
 			}
 
+			lll_adv_aux_data_enqueue(adv->lll.aux, sec_idx);
 			lll_adv_data_enqueue(&adv->lll, pri_idx);
 		}
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
@@ -1355,7 +1357,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 					 ticks_slot_overhead;
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
-		uint8_t pri_idx = 0U;
+		uint8_t pri_idx, sec_idx;
 
 		/* Add sync_info into auxiliary PDU */
 		if (lll->sync) {
@@ -1367,7 +1369,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 				err = ull_adv_aux_hdr_set_clear(adv,
 					ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-					0, value, NULL, &pri_idx);
+					0, value, NULL, &pri_idx, &sec_idx);
 				if (err) {
 					return err;
 				}
@@ -1460,6 +1462,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 				sync_is_started = 1U;
 
+				lll_adv_aux_data_enqueue(adv->lll.aux, sec_idx);
 				lll_adv_data_enqueue(lll, pri_idx);
 			} else {
 				/* TODO: Find the anchor before the group of
