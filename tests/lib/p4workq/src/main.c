@@ -97,7 +97,7 @@ static void stress_handler(struct k_p4wq_work *item)
  * schedulable (i.e. high priority) items than there are threads to
  * run them.
  */
-static void test_stress(void)
+ZTEST(lib_p4wq, test_stress)
 {
 	k_thread_priority_set(k_current_get(), -1);
 	memset(items, 0, sizeof(items));
@@ -166,7 +166,7 @@ static bool add_new_item(int pri)
  * priorities and verify that they get scheduled too (to allow
  * preemption), up to the maximum number of threads that we created.
  */
-static void test_fill_queue(void)
+ZTEST(lib_p4wq, test_fill_queue)
 {
 	int p0 = 4;
 
@@ -226,7 +226,7 @@ static void resubmit_handler(struct k_p4wq_work *item)
 }
 
 /* Validate item can be resubmitted from its own handler */
-static void test_resubmit(void)
+ZTEST(lib_p4wq, test_resubmit)
 {
 	run_count = 0;
 	simple_item = (struct k_p4wq_work){};
@@ -245,7 +245,7 @@ void simple_handler(struct k_p4wq_work *work)
 }
 
 /* Simple test that submitted items run, and at the correct priority */
-static void test_p4wq_simple(void)
+ZTEST(lib_p4wq_1cpu, test_p4wq_simple)
 {
 	int prio = 2;
 
@@ -270,13 +270,5 @@ static void test_p4wq_simple(void)
 	zassert_true(has_run, "high-priority item didn't run");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(lib_p4wq_test,
-			 ztest_1cpu_unit_test(test_p4wq_simple),
-			 ztest_unit_test(test_resubmit),
-			 ztest_unit_test(test_fill_queue),
-			 ztest_unit_test(test_stress));
-
-	ztest_run_test_suite(lib_p4wq_test);
-}
+ZTEST_SUITE(lib_p4wq, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(lib_p4wq_1cpu, NULL, NULL, ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
