@@ -340,6 +340,20 @@ static void send_receive(const struct zcan_filter *filter1,
 }
 
 /**
+ * @brief Test getting the CAN controller capabilities.
+ */
+static void test_get_capabilities(void)
+{
+	can_mode_t cap;
+	int err;
+
+	err = can_get_capabilities(can_dev, &cap);
+	zassert_equal(err, 0, "failed to get CAN capabilities (err %d)", err);
+	zassert_not_equal(cap & (CAN_MODE_LOOPBACK | CAN_MODE_FD), 0,
+			  "CAN-FD loopback mode not supported");
+}
+
+/**
  * @brief Test configuring the CAN controller for loopback mode.
  *
  * This test case must be run before sending/receiving test cases as it allows
@@ -388,6 +402,7 @@ void test_main(void)
 	zassert_true(device_is_ready(can_dev), "CAN device not ready");
 
 	ztest_test_suite(canfd_driver,
+			 ztest_unit_test(test_get_capabilities),
 			 ztest_unit_test(test_set_loopback),
 			 ztest_unit_test(test_send_receive_classic),
 			 ztest_unit_test(test_send_receive_fd),
