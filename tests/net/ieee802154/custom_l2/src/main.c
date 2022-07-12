@@ -74,7 +74,7 @@ NET_DEVICE_INIT(dummy, "dummy_ieee802154",
 		NET_L2_GET_CTX_TYPE(CUSTOM_IEEE802154_L2),
 		CONFIG_NET_L2_CUSTOM_IEEE802154_MTU);
 
-static void test_send(void)
+ZTEST(ieee802154_custom_l2, test_send)
 {
 	int ret;
 	struct net_pkt *tx_pkt;
@@ -98,7 +98,7 @@ static void test_send(void)
 	net_pkt_unref(tx_pkt);
 }
 
-static void test_recv(void)
+ZTEST(ieee802154_custom_l2, test_recv)
 {
 	int ret;
 	struct net_pkt *rx_pkt;
@@ -122,7 +122,7 @@ static void test_recv(void)
 	net_pkt_unref(rx_pkt);
 }
 
-static void test_enable(void)
+ZTEST(ieee802154_custom_l2, test_enable)
 {
 	int ret;
 	struct net_if *iface = net_if_get_first_by_type(
@@ -140,7 +140,7 @@ static void test_enable(void)
 	zassert_true(test_data.state, "L2 down");
 }
 
-static void test_flags(void)
+ZTEST(ieee802154_custom_l2, test_flags)
 {
 	enum net_l2_flags flags;
 	struct net_if *iface = net_if_get_first_by_type(
@@ -152,14 +152,4 @@ static void test_flags(void)
 	zassert_equal(TEST_FLAG_SET, flags, "Invalid flags");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(ieee802154_custom_l2,
-			 ztest_unit_test(test_send),
-			 ztest_unit_test(test_recv),
-			 ztest_unit_test(test_enable),
-			 ztest_unit_test(test_flags)
-		);
-
-	ztest_run_test_suite(ieee802154_custom_l2);
-}
+ZTEST_SUITE(ieee802154_custom_l2, NULL, NULL, NULL, NULL, NULL);
