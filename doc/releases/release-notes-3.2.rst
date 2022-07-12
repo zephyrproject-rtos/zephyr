@@ -38,6 +38,9 @@ Removed APIs in this release
   * ``k_delayed_work_remaining_ticks()``
   * ``K_DELAYED_WORK_DEFINE``
 
+* Removed support for enabling passthrough mode on MPU9150 to
+  AK8975 sensor.
+
 Deprecated in this release
 ==========================
 
