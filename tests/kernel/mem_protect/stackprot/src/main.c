@@ -110,8 +110,7 @@ static struct k_thread alt_thread_data;
  *
  * @ingroup kernel_memprotect_tests
  */
-
-void test_stackprot(void)
+ZTEST_USER(stackprot, test_stackprot)
 {
 	zassert_true(ret == TC_PASS, NULL);
 	print_loop(__func__);
@@ -125,7 +124,7 @@ void test_stackprot(void)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_create_alt_thread(void)
+ZTEST(stackprot, test_create_alt_thread)
 {
 	/* Start thread */
 	k_thread_create(&alt_thread_data, alt_thread_stack_area, STACKSIZE,
@@ -138,10 +137,4 @@ void test_create_alt_thread(void)
 	k_sleep(K_MSEC(100));
 }
 
-void test_main(void)
-{
-	ztest_test_suite(stackprot,
-			 ztest_unit_test(test_create_alt_thread),
-			 ztest_user_unit_test(test_stackprot));
-	ztest_run_test_suite(stackprot);
-}
+ZTEST_SUITE(stackprot, NULL, NULL, NULL, NULL, NULL);
