@@ -280,7 +280,7 @@ def scan_testsuite_path(testsuite_path):
         except ValueError as e:
             logger.error("%s: can't find: %s" % (filename, e))
 
-    for filename in glob.glob(os.path.join(testsuite_path, "*.c")):
+    for filename in glob.glob(os.path.join(testsuite_path, "*.c*")):
         try:
             result: ScanPathResult = scan_file(filename)
             if result.warnings:
