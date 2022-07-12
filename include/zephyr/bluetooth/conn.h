@@ -323,6 +323,24 @@ enum bt_conn_state {
 	BT_CONN_STATE_DISCONNECTING,
 };
 
+/** Security level. */
+typedef enum __packed {
+	/** Level 0: Only for BR/EDR special cases, like SDP */
+	BT_SECURITY_L0,
+	/** Level 1: No encryption and no authentication. */
+	BT_SECURITY_L1,
+	/** Level 2: Encryption and no authentication (no MITM). */
+	BT_SECURITY_L2,
+	/** Level 3: Encryption and authentication (MITM). */
+	BT_SECURITY_L3,
+	/** Level 4: Authenticated Secure Connections and 128-bit key. */
+	BT_SECURITY_L4,
+	/** Bit to force new pairing procedure, bit-wise OR with requested
+	 *  security level.
+	 */
+	BT_SECURITY_FORCE_PAIR = BIT(7),
+} bt_security_t;
+
 /** Connection role (central or peripheral) */
 #define BT_CONN_ROLE_MASTER __DEPRECATED_MACRO BT_CONN_ROLE_CENTRAL
 #define BT_CONN_ROLE_SLAVE __DEPRECATED_MACRO BT_CONN_ROLE_PERIPHERAL
@@ -680,24 +698,6 @@ int bt_conn_create_auto_stop(void);
  */
 int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 			const struct bt_le_conn_param *param);
-
-/** Security level. */
-typedef enum __packed {
-	/** Level 0: Only for BR/EDR special cases, like SDP */
-	BT_SECURITY_L0,
-	/** Level 1: No encryption and no authentication. */
-	BT_SECURITY_L1,
-	/** Level 2: Encryption and no authentication (no MITM). */
-	BT_SECURITY_L2,
-	/** Level 3: Encryption and authentication (MITM). */
-	BT_SECURITY_L3,
-	/** Level 4: Authenticated Secure Connections and 128-bit key. */
-	BT_SECURITY_L4,
-	/** Bit to force new pairing procedure, bit-wise OR with requested
-	 *  security level.
-	 */
-	BT_SECURITY_FORCE_PAIR = BIT(7),
-} bt_security_t;
 
 /** @brief Set security level for a connection.
  *
