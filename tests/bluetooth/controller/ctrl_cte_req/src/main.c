@@ -39,7 +39,7 @@
 
 struct ll_conn conn;
 
-static void setup(void)
+static void setup(void *data)
 {
 	test_setup(&conn);
 
@@ -47,9 +47,9 @@ static void setup(void)
 	conn.llcp.cte_req.is_enabled = 1U;
 }
 
-static void fex_setup(void)
+static void fex_setup(void *data)
 {
-	setup();
+	setup(data);
 
 	/* Emulate valid feature exchange and all features valid for local and peer devices */
 	memset(&conn.llcp.fex, 0, sizeof(conn.llcp.fex));
@@ -82,7 +82,7 @@ static void fex_setup(void)
  *    |                            |                   |
  *    |                            |                   |
  */
-void test_cte_req_central_local(void)
+ZTEST(cte_req_after_fex, test_cte_req_central_local)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -157,7 +157,7 @@ void test_cte_req_central_local(void)
  *    |                            |                   |
  *    |                            |                   |
  */
-void test_cte_req_peripheral_local(void)
+ZTEST(cte_req_after_fex, test_cte_req_peripheral_local)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -227,7 +227,7 @@ void test_cte_req_peripheral_local(void)
  *    |                            |                   |
  *    |                            |                   |
  */
-void test_cte_req_central_remote(void)
+ZTEST(cte_req_after_fex, test_cte_req_central_remote)
 {
 	struct node_tx *tx;
 
@@ -296,7 +296,7 @@ void test_cte_req_central_remote(void)
  *    |                            |                   |
  *    |                            |                   |
  */
-void test_cte_req_peripheral_remote(void)
+ZTEST(cte_req_after_fex, test_cte_req_peripheral_remote)
 {
 	struct node_tx *tx;
 
@@ -374,7 +374,7 @@ void test_cte_req_peripheral_remote(void)
  *    |                            |                                |
  *    |                            |                                |
  */
-void test_cte_req_rejected_inv_ll_param_central_local(void)
+ZTEST(cte_req_after_fex, test_cte_req_rejected_inv_ll_param_central_local)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -453,7 +453,7 @@ void test_cte_req_rejected_inv_ll_param_central_local(void)
  *    |                            |                                |
  *    |                            |                                |
  */
-void test_cte_req_rejected_inv_ll_param_peripheral_local(void)
+ZTEST(cte_req_after_fex, test_cte_req_rejected_inv_ll_param_peripheral_local)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -525,7 +525,7 @@ void test_cte_req_rejected_inv_ll_param_peripheral_local(void)
  *    |                            |------------------------------->|
  *    |                            |                                |
  */
-void test_cte_req_reject_inv_ll_param_central_remote(void)
+ZTEST(cte_req_after_fex, test_cte_req_reject_inv_ll_param_central_remote)
 {
 	struct node_tx *tx;
 
@@ -597,7 +597,7 @@ void test_cte_req_reject_inv_ll_param_central_remote(void)
  *    |                            |------------------------------->|
  *    |                            |                                |
  */
-void test_cte_req_reject_inv_ll_param_peripheral_remote(void)
+ZTEST(cte_req_after_fex, test_cte_req_reject_inv_ll_param_peripheral_remote)
 {
 	struct node_tx *tx;
 
@@ -674,7 +674,7 @@ void test_cte_req_reject_inv_ll_param_peripheral_remote(void)
  *    |                            |                                |
  *    |                            |                                |
  */
-void test_cte_req_ll_unknown_rsp_local(uint8_t role)
+static void test_cte_req_ll_unknown_rsp_local(uint8_t role)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -733,12 +733,12 @@ void test_cte_req_ll_unknown_rsp_local(uint8_t role)
 	zassert_equal(err, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE, NULL);
 }
 
-void test_cte_req_ll_unknown_rsp_central_local(void)
+ZTEST(cte_req, test_cte_req_ll_unknown_rsp_central_local)
 {
 	test_cte_req_ll_unknown_rsp_local(BT_HCI_ROLE_CENTRAL);
 }
 
-void test_cte_req_ll_unknown_rsp_peripheral_local(void)
+ZTEST(cte_req, test_cte_req_ll_unknown_rsp_peripheral_local)
 {
 	test_cte_req_ll_unknown_rsp_local(BT_HCI_ROLE_PERIPHERAL);
 }
@@ -861,7 +861,7 @@ static void run_local_cte_req(struct pdu_data_llctrl_cte_req *cte_req)
 	ull_cp_release_tx(&conn, tx);
 }
 
-void wait_for_phy_update_instant(uint8_t instant)
+static void wait_for_phy_update_instant(uint8_t instant)
 {
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -881,9 +881,10 @@ void wait_for_phy_update_instant(uint8_t instant)
 	}
 }
 
-void check_phy_update_and_cte_req_complete(bool is_local, struct pdu_data_llctrl_cte_req *cte_req,
-					   struct pdu_data_llctrl_phy_req *phy_req,
-					   uint8_t ctx_num_at_end, bool dle_ntf)
+static void check_phy_update_and_cte_req_complete(bool is_local,
+						  struct pdu_data_llctrl_cte_req *cte_req,
+						  struct pdu_data_llctrl_phy_req *phy_req,
+						  uint8_t ctx_num_at_end, bool dle_ntf)
 {
 	struct pdu_data_llctrl_length_rsp length_ntf = {
 		PDU_PDU_MAX_OCTETS, PDU_DC_MAX_US(PDU_PDU_MAX_OCTETS, phy_req->tx_phys),
@@ -1184,12 +1185,12 @@ static void test_local_cte_req_wait_for_phy_update_complete_and_disable(uint8_t 
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_central_local_cte_req_wait_for_phy_update_complete_and_disable(void)
+ZTEST(cte_req_after_fex, test_central_local_cte_req_wait_for_phy_update_complete_and_disable)
 {
 	test_local_cte_req_wait_for_phy_update_complete_and_disable(BT_HCI_ROLE_CENTRAL);
 }
 
-void test_peripheral_local_cte_req_wait_for_phy_update_complete_and_disable(void)
+ZTEST(cte_req_after_fex, test_peripheral_local_cte_req_wait_for_phy_update_complete_and_disable)
 {
 	test_local_cte_req_wait_for_phy_update_complete_and_disable(BT_HCI_ROLE_PERIPHERAL);
 }
@@ -1238,12 +1239,12 @@ static void test_local_cte_req_wait_for_phy_update_complete(uint8_t role)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-void test_central_local_cte_req_wait_for_phy_update_complete(void)
+ZTEST(cte_req_after_fex, test_central_local_cte_req_wait_for_phy_update_complete)
 {
 	test_local_cte_req_wait_for_phy_update_complete(BT_HCI_ROLE_CENTRAL);
 }
 
-void test_peripheral_local_cte_req_wait_for_phy_update_complete(void)
+ZTEST(cte_req_after_fex, test_peripheral_local_cte_req_wait_for_phy_update_complete)
 {
 	test_local_cte_req_wait_for_phy_update_complete(BT_HCI_ROLE_PERIPHERAL);
 }
@@ -1290,12 +1291,12 @@ static void test_local_phy_update_wait_for_cte_req_complete(uint8_t role)
 	}
 }
 
-void test_central_local_phy_update_wait_for_cte_req_complete(void)
+ZTEST(cte_req_after_fex, test_central_local_phy_update_wait_for_cte_req_complete)
 {
 	test_local_phy_update_wait_for_cte_req_complete(BT_HCI_ROLE_CENTRAL);
 }
 
-void test_peripheral_local_phy_update_wait_for_cte_req_complete(void)
+ZTEST(cte_req_after_fex, test_peripheral_local_phy_update_wait_for_cte_req_complete)
 {
 	test_local_phy_update_wait_for_cte_req_complete(BT_HCI_ROLE_PERIPHERAL);
 }
@@ -1380,12 +1381,12 @@ static void test_phy_update_wait_for_remote_cte_req_complete(uint8_t role)
 	}
 }
 
-void test_central_phy_update_wait_for_remote_cte_req_complete(void)
+ZTEST(cte_req_after_fex, test_central_phy_update_wait_for_remote_cte_req_complete)
 {
 	test_phy_update_wait_for_remote_cte_req_complete(BT_HCI_ROLE_CENTRAL);
 }
 
-void test_peripheral_phy_update_wait_for_remote_cte_req_complete(void)
+ZTEST(cte_req_after_fex, test_peripheral_phy_update_wait_for_remote_cte_req_complete)
 {
 	test_phy_update_wait_for_remote_cte_req_complete(BT_HCI_ROLE_PERIPHERAL);
 }
@@ -1436,12 +1437,12 @@ static void test_cte_req_wait_for_remote_phy_update_complete_and_disable(uint8_t
 	 */
 }
 
-void test_central_cte_req_wait_for_remote_phy_update_complete_and_disable(void)
+ZTEST(cte_req_after_fex, test_central_cte_req_wait_for_remote_phy_update_complete_and_disable)
 {
 	test_cte_req_wait_for_remote_phy_update_complete_and_disable(BT_HCI_ROLE_CENTRAL);
 }
 
-void test_peripheral_cte_req_wait_for_remote_phy_update_complete_and_disable(void)
+ZTEST(cte_req_after_fex, test_peripheral_cte_req_wait_for_remote_phy_update_complete_and_disable)
 {
 	test_cte_req_wait_for_remote_phy_update_complete_and_disable(BT_HCI_ROLE_PERIPHERAL);
 }
@@ -1492,75 +1493,15 @@ static void test_cte_req_wait_for_remote_phy_update_complete(uint8_t role)
 	 */
 }
 
-void test_central_cte_req_wait_for_remote_phy_update_complete(void)
+ZTEST(cte_req_after_fex, test_central_cte_req_wait_for_remote_phy_update_complete)
 {
 	test_cte_req_wait_for_remote_phy_update_complete(BT_HCI_ROLE_CENTRAL);
 }
 
-void test_peripheral_cte_req_wait_for_remote_phy_update_complete(void)
+ZTEST(cte_req_after_fex, test_peripheral_cte_req_wait_for_remote_phy_update_complete)
 {
 	test_cte_req_wait_for_remote_phy_update_complete(BT_HCI_ROLE_PERIPHERAL);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(
-		cte_req,
-		ztest_unit_test_setup_teardown(test_cte_req_central_local, fex_setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cte_req_peripheral_local, fex_setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cte_req_central_remote, fex_setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cte_req_peripheral_remote, fex_setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cte_req_rejected_inv_ll_param_central_local,
-					       fex_setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cte_req_rejected_inv_ll_param_peripheral_local,
-					       fex_setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cte_req_reject_inv_ll_param_central_remote,
-					       fex_setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cte_req_reject_inv_ll_param_peripheral_remote,
-					       fex_setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cte_req_ll_unknown_rsp_central_local, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cte_req_ll_unknown_rsp_peripheral_local, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_central_local_cte_req_wait_for_phy_update_complete_and_disable,
-			fex_setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_central_local_cte_req_wait_for_phy_update_complete_and_disable,
-			fex_setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_central_local_cte_req_wait_for_phy_update_complete, fex_setup,
-			unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_central_local_phy_update_wait_for_cte_req_complete, fex_setup,
-			unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_peripheral_local_phy_update_wait_for_cte_req_complete, fex_setup,
-			unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_peripheral_local_cte_req_wait_for_phy_update_complete, fex_setup,
-			unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_central_phy_update_wait_for_remote_cte_req_complete, fex_setup,
-			unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_peripheral_phy_update_wait_for_remote_cte_req_complete, fex_setup,
-			unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_central_cte_req_wait_for_remote_phy_update_complete_and_disable,
-			fex_setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_peripheral_cte_req_wait_for_remote_phy_update_complete_and_disable,
-			fex_setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_central_cte_req_wait_for_remote_phy_update_complete, fex_setup,
-			unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_peripheral_cte_req_wait_for_remote_phy_update_complete, fex_setup,
-			unit_test_noop));
-	ztest_run_test_suite(cte_req);
-}
+ZTEST_SUITE(cte_req, NULL, NULL, setup, NULL, NULL);
+ZTEST_SUITE(cte_req_after_fex, NULL, NULL, fex_setup, NULL, NULL);
