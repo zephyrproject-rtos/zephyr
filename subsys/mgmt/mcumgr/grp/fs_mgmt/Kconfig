@@ -16,6 +16,7 @@ menuconfig MCUMGR_GRP_FS
 	bool "Mcumgr handlers for file management (insecure)"
 	depends on FILE_SYSTEM
 	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
+	select HAS_SECURITY_RISK
 	help
 	  Enables mcumgr handlers for file management
 
