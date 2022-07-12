@@ -7,14 +7,13 @@
 #include <zephyr/init.h>
 #include <zephyr/irq_nextlevel.h>
 
-#include <xtensa/xtruntime.h>
-#include <xtensa/hal.h>
-
 #include <ace_v1x-regs.h>
 #include <cavs-mem.h>
 #include <cavs-shim.h>
 #include <cpu_init.h>
 #include <soc.h>
+#include <xtensa/hal.h>
+#include <xtensa/xtruntime.h>
 
 extern void soc_mp_init(void);
 extern void win_setup(void);
@@ -22,18 +21,16 @@ extern void lp_sram_init(void);
 extern void hp_sram_init(void);
 extern void parse_manifest(void);
 
-#define DSP_INIT_LPGPDMA(x)		(0x71A60 + (2*x))
-#define LPGPDMA_CTLOSEL_FLAG	BIT(15)
-#define LPGPDMA_CHOSEL_FLAG		0xFF
-
+#define DSP_INIT_LPGPDMA(x)  (0x71A60 + (2 * x))
+#define LPGPDMA_CTLOSEL_FLAG BIT(15)
+#define LPGPDMA_CHOSEL_FLAG  0xFF
 
 #define LPSRAM_MASK(x) 0x00000003
 #define SRAM_BANK_SIZE (64 * 1024)
 #define HOST_PAGE_SIZE 4096
 
 #define MANIFEST_SEGMENT_COUNT 3
-#define DELAY_COUNT 256
-
+#define DELAY_COUNT	       256
 
 __imr void hp_sram_init(void)
 {
@@ -62,14 +59,13 @@ __imr void lp_sram_init(void)
 	}
 }
 
-
 __imr void boot_core0(void)
 {
 	int prid;
 
 	prid = arch_proc_id();
 	if (prid != 0) {
-		((void(*)(void))DFDSPBRCP.bootctl[prid].baddr)();
+		((void (*)(void))DFDSPBRCP.bootctl[prid].baddr)();
 	}
 
 	cpu_early_init();
