@@ -15,3 +15,15 @@ tests:
   bluetooth.host.bt_buf_get_evt.buf_evt_discardable_count:
      type: unit
      extra_args: KCONFIG_OVERRIDE_FILE="kconfig_override.h" COMPILE_PARAM_1=EVT_DISCARDABLE_COUNT_CONFIG_SET
+  bluetooth.host.bt_buf_get_evt.iso_unicast:
+     type: unit
+     extra_args:
+      COMPILE_PARAM_1=CONFIG_BT_ISO_UNICAST=1
+      COMPILE_PARAM_2=CONFIG_BT_ISO_RX_BUF_COUNT=1
+      COMPILE_PARAM_3=CONFIG_BT_ISO_RX_MTU=251
+  bluetooth.host.bt_buf_get_evt.iso_sync_receiver:
+     type: unit
+     extra_args:
+      COMPILE_PARAM_1=CONFIG_BT_ISO_SYNC_RECEIVER=1
+      COMPILE_PARAM_2=CONFIG_BT_ISO_RX_BUF_COUNT=1
+      COMPILE_PARAM_3=CONFIG_BT_ISO_RX_MTU=251

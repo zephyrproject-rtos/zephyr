@@ -25,6 +25,12 @@ void test_bt_buf_get_rx_returns_null(void)
 	ztest_returns_value(net_buf_alloc_fixed, NULL);
 	buf = bt_buf_get_rx(BT_BUF_ACL_IN, Z_TIMEOUT_TICKS(1000));
 	zassert_is_null(buf, "Return value was not NULL");
+
+#if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_SYNC_RECEIVER)
+	ztest_returns_value(net_buf_alloc_fixed, NULL);
+	buf = bt_buf_get_rx(BT_BUF_ISO_IN, Z_TIMEOUT_TICKS(1000));
+	zassert_is_null(buf, "Return value was not NULL");
+#endif
 }
 
 void test_bt_buf_get_rx_returns_not_null(void)
@@ -43,6 +49,14 @@ void test_bt_buf_get_rx_returns_not_null(void)
 	zassert_not_null(buf, "Return value was NULL");
 	zassert_equal(buf, &test_reference, "Incorrect value");
 	zassert_equal(bt_buf_get_type(buf), BT_BUF_ACL_IN, "Incorrect type");
+
+#if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_SYNC_RECEIVER)
+	ztest_returns_value(net_buf_alloc_fixed, &test_reference);
+	buf = bt_buf_get_rx(BT_BUF_ISO_IN, Z_TIMEOUT_TICKS(1000));
+	zassert_not_null(buf, "Return value was NULL");
+	zassert_equal(buf, &test_reference, "Incorrect value");
+	zassert_equal(bt_buf_get_type(buf), BT_BUF_ISO_IN, "Incorrect type");
+#endif
 }
 
 void test_main(void)

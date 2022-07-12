@@ -6,3 +6,15 @@ tests:
   bluetooth.host.bt_buf_get_cmd_complete.hci_acl_flow_control:
      type: unit
      extra_args: COMPILE_PARAM_1=CONFIG_BT_HCI_ACL_FLOW_CONTROL
+  bluetooth.host.bt_buf_get_cmd_complete.iso_unicast:
+     type: unit
+     extra_args:
+      COMPILE_PARAM_1=CONFIG_BT_ISO_UNICAST=1
+      COMPILE_PARAM_2=CONFIG_BT_ISO_RX_BUF_COUNT=1
+      COMPILE_PARAM_3=CONFIG_BT_ISO_RX_MTU=251
+  bluetooth.host.bt_buf_get_cmd_complete.iso_sync_receiver:
+     type: unit
+     extra_args:
+      COMPILE_PARAM_1=CONFIG_BT_ISO_SYNC_RECEIVER=1
+      COMPILE_PARAM_2=CONFIG_BT_ISO_RX_BUF_COUNT=1
+      COMPILE_PARAM_3=CONFIG_BT_ISO_RX_MTU=251
