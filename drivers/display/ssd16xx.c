@@ -73,6 +73,12 @@ struct ssd16xx_config {
 	uint8_t tssv;
 	uint8_t pp_width_bits;
 	uint8_t pp_height_bits;
+
+	uint8_t dummy_line;
+	bool override_dummy_line;
+
+	uint8_t gate_line_width;
+	bool override_gate_line_width;
 };
 
 static inline void ssd16xx_busy_wait(const struct device *dev)
@@ -777,16 +783,21 @@ static int ssd16xx_controller_init(const struct device *dev)
 		}
 	}
 
-	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_DUMMY_LINE,
-				  SSD16XX_VAL_DUMMY_LINE);
-	if (err < 0) {
-		return err;
+	if (config->override_dummy_line) {
+		tmp[0] = config->dummy_line;
+		err = ssd16xx_write_uint8(dev, SSD16XX_CMD_DUMMY_LINE,
+					  config->dummy_line);
+		if (err < 0) {
+			return err;
+		}
 	}
 
-	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_GATE_LINE_WIDTH,
-				  SSD16XX_VAL_GATE_LWIDTH);
-	if (err < 0) {
-		return err;
+	if (config->override_gate_line_width) {
+		err = ssd16xx_write_uint8(dev, SSD16XX_CMD_GATE_LINE_WIDTH,
+					  config->override_gate_line_width);
+		if (err < 0) {
+			return err;
+		}
 	}
 
 	if (config->orientation == 1) {
@@ -949,6 +960,13 @@ static struct display_driver_api ssd16xx_driver_api = {
 		.softstart = SSD16XX_ASSIGN_ARRAY(n, softstart),	\
 		.lut_default = SSD16XX_ASSIGN_ARRAY(n, lut_default),	\
 		.profile_initial = SSD16XX_INITIAL_PROFILE(n),		\
+		.dummy_line = DT_INST_PROP_OR(n, dummy_line, 0),	\
+		.override_dummy_line =					\
+			DT_INST_NODE_HAS_PROP(n, dummy_line),		\
+		.gate_line_width =					\
+			DT_INST_PROP_OR(n, gate_line_width, 0),		\
+		.override_gate_line_width =				\
+			DT_INST_NODE_HAS_PROP(n, gate_line_width),	\
 	};								\
 									\
 	static struct ssd16xx_data ssd16xx_data_##n;			\
