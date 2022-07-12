@@ -19,7 +19,7 @@
 extern void soc_mp_init(void);
 extern void win_setup(void);
 extern void lp_sram_init(void);
-extern void hp_sram_init(uint32_t memory_size);
+extern void hp_sram_init(void);
 extern void parse_manifest(void);
 
 #define DSP_INIT_LPGPDMA(x)		(0x71A60 + (2*x))
@@ -33,15 +33,10 @@ extern void parse_manifest(void);
 
 #define MANIFEST_SEGMENT_COUNT 3
 #define DELAY_COUNT 256
-#define PLATFORM_INIT_HPSRAM
-#define PLATFORM_INIT_LPSRAM
 
-/* function powers up a number of memory banks provided as an argument and
- * gates remaining memory banks
- */
-static __imr void hp_sram_pm_banks(void)
+
+__imr void hp_sram_init(void)
 {
-#ifdef PLATFORM_INIT_HPSRAM
 	uint32_t hpsram_ebb_quantity = mtl_hpsram_get_bank_count();
 	volatile uint32_t *l2hsbpmptr = (volatile uint32_t *)MTL_L2MM->l2hsbpmptr;
 	volatile uint8_t *status = (volatile uint8_t *)l2hsbpmptr + 4;
@@ -55,24 +50,16 @@ static __imr void hp_sram_pm_banks(void)
 			z_idelay(DELAY_COUNT);
 		}
 	}
-#endif /* PLATFORM_INIT_HPSRAM */
-}
-
-__imr void hp_sram_init(uint32_t memory_size)
-{
-	hp_sram_pm_banks();
 }
 
 __imr void lp_sram_init(void)
 {
-#ifdef PLATFORM_INIT_LPSRAM
 	uint32_t lpsram_ebb_quantity = mtl_lpsram_get_bank_count();
 	volatile uint32_t *l2usbpmptr = (volatile uint32_t *)MTL_L2MM->l2usbpmptr;
 
 	for (uint32_t idx = 0; idx < lpsram_ebb_quantity; ++idx) {
 		*(l2usbpmptr + idx * 2) = 0;
 	}
-#endif /* PLATFORM_INIT_LPSRAM */
 }
 
 
@@ -87,7 +74,7 @@ __imr void boot_core0(void)
 
 	cpu_early_init();
 
-	hp_sram_init(L2_SRAM_SIZE);
+	hp_sram_init();
 	win_setup();
 	lp_sram_init();
 	parse_manifest();
