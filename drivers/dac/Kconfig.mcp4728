@@ -6,4 +6,4 @@ config DAC_MCP4728
 	bool "Microchip MCP4728 DAC driver"
 	depends on I2C
 	help
-	Enable driver for the Microchip MCP4728.
+	  Enable driver for the Microchip MCP4728.
