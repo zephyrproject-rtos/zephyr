@@ -513,11 +513,14 @@ Documentation:
     files:
         - doc/hardware/peripherals/canbus/
         - drivers/can/
+        - drivers/net/canbus.c
         - dts/bindings/can/
         - include/zephyr/canbus/
         - include/zephyr/devicetree/can.h
         - include/zephyr/drivers/can.h
         - include/zephyr/drivers/can/
+        - include/zephyr/net/canbus.h
+        - include/zephyr/net/socket_can.h
         - samples/drivers/can/
         - samples/modules/canopennode/
         - samples/net/sockets/can/
