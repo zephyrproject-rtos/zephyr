@@ -32,7 +32,7 @@ extern void parse_manifest(void);
 #define HOST_PAGE_SIZE 4096
 
 #define MANIFEST_SEGMENT_COUNT 3
-
+#define DELAY_COUNT 256
 #define PLATFORM_INIT_HPSRAM
 #define PLATFORM_INIT_LPSRAM
 
@@ -45,14 +45,14 @@ static __imr void hp_sram_pm_banks(void)
 	uint32_t hpsram_ebb_quantity = mtl_hpsram_get_bank_count();
 	volatile uint32_t *l2hsbpmptr = (volatile uint32_t *)MTL_L2MM->l2hsbpmptr;
 	volatile uint8_t *status = (volatile uint8_t *)l2hsbpmptr + 4;
-	int inx, delay_count = 256;
+	int inx;
 
 	for (inx = 0; inx < hpsram_ebb_quantity; ++inx) {
 		*(l2hsbpmptr + inx * 2) = 0;
 	}
 	for (inx = 0; inx < hpsram_ebb_quantity; ++inx) {
 		while (*(status + inx * 8) != 0) {
-			z_idelay(delay_count);
+			z_idelay(DELAY_COUNT);
 		}
 	}
 #endif /* PLATFORM_INIT_HPSRAM */
