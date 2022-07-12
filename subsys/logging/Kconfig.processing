@@ -90,6 +90,19 @@ config LOG_PROCESS_THREAD_STACK_SIZE
 	help
 	  Set the internal stack size for log processing thread.
 
+config LOG_PROCESS_THREAD_CUSTOM_PRIORITY
+	bool "Custom log thread priority"
+	help
+	  Set a custom value for the log processing thread.
+
+config LOG_PROCESS_THREAD_PRIORITY
+	int "Priority of the log processing thread"
+	default 0
+	depends on LOG_PROCESS_THREAD_CUSTOM_PRIORITY
+	help
+	  The priority of the log processing thread.
+	  When not set the prority is set to K_LOWEST_APPLICATION_THREAD_PRIO.
+
 endif # LOG_PROCESS_THREAD
 
 config LOG_BUFFER_SIZE
