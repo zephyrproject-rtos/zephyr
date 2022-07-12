@@ -138,6 +138,15 @@ static inline int z_vrfy_can_get_max_filters(const struct device *dev, enum can_
 }
 #include <syscalls/can_get_max_filters_mrsh.c>
 
+static inline int z_vrfy_can_get_capabilities(const struct device *dev, can_mode_t *cap)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, get_capabilities));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(cap, sizeof(*cap)));
+
+	return z_impl_can_get_capabilities(dev, cap);
+}
+#include <syscalls/can_get_capabilities_mrsh.c>
+
 static inline int z_vrfy_can_set_mode(const struct device *dev, can_mode_t mode)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, set_mode));

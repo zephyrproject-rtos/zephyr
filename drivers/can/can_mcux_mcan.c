@@ -58,6 +58,7 @@ static int mcux_mcan_init(const struct device *dev)
 }
 
 static const struct can_driver_api mcux_mcan_driver_api = {
+	.get_capabilities = can_mcan_get_capabilities,
 	.set_mode = can_mcan_set_mode,
 	.set_timing = can_mcan_set_timing,
 	.send = can_mcan_send,
