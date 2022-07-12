@@ -7,7 +7,7 @@ config SOC
 	default "ae350"
 
 config SYS_CLOCK_TICKS_PER_SEC
-	default 100 if !CACHE_ENABLE
+	default 100 if (!CACHE_ENABLE || XIP)
 
 config MAIN_STACK_SIZE
 	default 2048
