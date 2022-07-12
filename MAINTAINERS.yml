@@ -2512,7 +2512,6 @@ Xtensa arch:
         - arch/xtensa/
         - include/zephyr/arch/xtensa/
         - dts/xtensa/
-        - tests/arch/xtensa_asm2/
     labels:
         - "area: Xtensa"
 
