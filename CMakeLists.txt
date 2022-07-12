@@ -1879,6 +1879,13 @@ if(CONFIG_SOC_DEPRECATED_RELEASE)
   )
 endif()
 
+if (CONFIG_HAS_SECURITY_RISK AND (NOT CONFIG_SUPPRESS_SECURITY_RISK_WARNING))
+  message(WARNING "
+      WARNING: One or more of enabled Kconfig options selects HAS_SECURITY_RISK option
+      to warn you about introduced security risks."
+  )
+endif()
+
 # In CMake projects, 'CMAKE_BUILD_TYPE' usually determines the
 # optimization flag, but in Zephyr it is determined through
 # Kconfig. Here we give a warning when there is a mismatch between the

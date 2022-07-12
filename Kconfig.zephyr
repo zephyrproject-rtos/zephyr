@@ -969,3 +969,22 @@ config COMPAT_INCLUDES
 	  deprecated header files.
 
 endmenu
+
+config HAS_SECURITY_RISK
+	bool
+	help
+	  Option or combination options introduce security risk into application.
+
+if HAS_SECURITY_RISK
+
+config SUPPRESS_SECURITY_RISK_WARNING
+	bool "Suppress cmake security risk warning"
+	default n if HAS_SECURITY_RISK
+	default y
+	help
+	  Allows to suppress security risk warning during build.
+
+	  To find out which Kconfig options cause the warning, check which items
+	  select HAS_SECURITY_RISK.
+
+endif
