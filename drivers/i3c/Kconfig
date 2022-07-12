@@ -40,6 +40,43 @@ config I3C_IBI_MAX_PAYLOAD_SIZE
 	help
 	  Maxmium IBI payload size.
 
+menuconfig I3C_IBI_WORKQUEUE
+	bool "Use IBI Workqueue"
+	help
+	  Use global workqueue for processing IBI.
+
+	  This is enabled by driver if needed.
+
+if I3C_IBI_WORKQUEUE
+
+config I3C_IBI_WORKQUEUE_STACK_SIZE
+	int "IBI workqueue stack size"
+	default 1024
+	help
+	  Stack size for the IBI global workqueue.
+
+config I3C_IBI_WORKQUEUE_PRIORITY
+	int "IBI workqueue thread priority"
+	default -1
+	help
+	  Thread priority for the IBI global workqueue.
+
+config I3C_IBI_WORKQUEUE_LENGTH
+	int "IBI workqueue queue length"
+	default 8
+	help
+	  Define the maximum number of IBIs that can be
+	  queued in the workqueue.
+
+config I3C_IBI_WORKQUEUE_VERBOSE_DEBUG
+	bool "Verbose debug messages for IBI workqueue"
+	help
+	  This turns on verbose debug for the IBI workqueue
+	  when logging level is set to DEBUG, and prints
+	  the IBI payload.
+
+endif # I3C_IBI_WORKQUEUE
+
 endif # I3C_USE_IBI
 
 comment "Initialization Priority"
