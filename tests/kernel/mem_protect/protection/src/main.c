@@ -86,7 +86,7 @@ static void execute_from_buffer(uint8_t *dst)
  *
  * @ingroup kernel_memprotect_tests
  */
-static void test_write_ro(void)
+ZTEST(protection, test_write_ro)
 {
 	volatile uint32_t *ptr = (volatile uint32_t *)&rodata_var;
 
@@ -115,7 +115,7 @@ static void test_write_ro(void)
  *
  * @ingroup kernel_memprotect_tests
  */
-static void test_write_text(void)
+ZTEST(protection, test_write_text)
 {
 	void *src = FUNC_TO_PTR(add_one);
 	void *dst = FUNC_TO_PTR(overwrite_target);
@@ -146,7 +146,7 @@ static void test_write_text(void)
  *
  * @ingroup kernel_memprotect_tests
  */
-static void test_exec_data(void)
+ZTEST(protection, test_exec_data)
 {
 #ifdef SKIP_EXECUTE_TESTS
 	ztest_test_skip();
@@ -161,7 +161,7 @@ static void test_exec_data(void)
  *
  * @ingroup kernel_memprotect_tests
  */
-static void test_exec_stack(void)
+ZTEST(protection, test_exec_stack)
 {
 #ifdef SKIP_EXECUTE_TESTS
 	ztest_test_skip();
@@ -178,30 +178,17 @@ static void test_exec_stack(void)
  *
  * @ingroup kernel_memprotect_tests
  */
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0) && !defined(SKIP_EXECUTE_TESTS)
-static void test_exec_heap(void)
+ZTEST(protection, test_exec_heap)
 {
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0) && !defined(SKIP_EXECUTE_TESTS)
 	uint8_t *heap_buf = k_malloc(BUF_SIZE);
 
 	execute_from_buffer(heap_buf);
 	k_free(heap_buf);
 	zassert_unreachable("Execute from heap did not fault");
-}
 #else
-static void test_exec_heap(void)
-{
 	ztest_test_skip();
-}
 #endif
-
-void test_main(void)
-{
-	ztest_test_suite(protection,
-			 ztest_unit_test(test_exec_data),
-			 ztest_unit_test(test_exec_stack),
-			 ztest_unit_test(test_exec_heap),
-			 ztest_unit_test(test_write_ro),
-			 ztest_unit_test(test_write_text)
-		);
-	ztest_run_test_suite(protection);
 }
+
+ZTEST_SUITE(protection, NULL, NULL, NULL, NULL, NULL);
