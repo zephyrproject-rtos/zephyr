@@ -31,6 +31,13 @@ LOG_MODULE_REGISTER(ssd16xx);
 #define SSD16XX_DEFAULT_TR_VALUE	25U
 #define SSD16XX_TR_SCALE_FACTOR		256U
 
+
+enum ssd16xx_profile_type {
+	SSD16XX_PROFILE_FULL = 0,
+	SSD16XX_NUM_PROFILES,
+	SSD16XX_PROFILE_INVALID = SSD16XX_NUM_PROFILES,
+};
+
 struct ssd16xx_quirks {
 	/* Gates */
 	uint16_t max_width;
@@ -47,6 +54,7 @@ struct ssd16xx_data {
 	uint8_t scan_mode;
 	uint8_t update_cmd;
 	bool blanking_on;
+	enum ssd16xx_profile_type profile;
 };
 
 struct ssd16xx_dt_array {
@@ -60,9 +68,13 @@ struct ssd16xx_profile {
 	struct ssd16xx_dt_array sdv;
 	uint8_t vcom;
 	uint8_t bwf;
+	uint8_t dummy_line;
+	uint8_t gate_line_width;
 
 	bool override_vcom;
 	bool override_bwf;
+	bool override_dummy_line;
+	bool override_gate_line_width;
 };
 
 struct ssd16xx_config {
@@ -75,19 +87,14 @@ struct ssd16xx_config {
 
 	struct ssd16xx_dt_array softstart;
 
-	struct ssd16xx_profile profile_initial;
+	const struct ssd16xx_profile *profiles[SSD16XX_NUM_PROFILES];
+
 	struct ssd16xx_dt_array lut_default;
 
 	bool orientation;
 	uint16_t height;
 	uint16_t width;
 	uint8_t tssv;
-
-	uint8_t dummy_line;
-	bool override_dummy_line;
-
-	uint8_t gate_line_width;
-	bool override_gate_line_width;
 };
 
 static inline void ssd16xx_busy_wait(const struct device *dev)
@@ -684,17 +691,82 @@ static int ssd16xx_load_lut(const struct device *dev,
 	}
 }
 
-static int ssd16xx_load_profile(const struct device *dev,
-				const struct ssd16xx_profile *p)
+static int ssd16xx_set_profile(const struct device *dev,
+			       enum ssd16xx_profile_type type)
 {
+	const struct ssd16xx_config *config = dev->config;
+	struct ssd16xx_data *data = dev->data;
+	const struct ssd16xx_profile *p;
+	const uint16_t last_gate = config->width - 1;
+	uint8_t gdo[3];
+	size_t gdo_len;
 	int err = 0;
 
-	err = ssd16xx_load_lut(dev, &p->lut);
+	if (type >= SSD16XX_NUM_PROFILES) {
+		return -EINVAL;
+	}
+
+	p = config->profiles[type];
+
+	/*
+	 * The full profile is the only one that always exists. If it
+	 * hasn't been specified, we use the defaults.
+	 */
+	if (!p && type != SSD16XX_PROFILE_FULL) {
+		return -ENOENT;
+	}
+
+	if (type == data->profile) {
+		return 0;
+	}
+
+	/*
+	 * Perform a soft reset to make sure registers are reset. This
+	 * will leave the RAM contents intact.
+	 */
+	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_SW_RESET, NULL, 0);
 	if (err < 0) {
 		return err;
 	}
 
-	if (p->gdv.len) {
+	gdo_len = push_y_param(dev, gdo, last_gate);
+	gdo[gdo_len++] = 0U;
+	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_GDO_CTRL, gdo, gdo_len);
+	if (err < 0) {
+		return err;
+	}
+
+	if (config->softstart.len) {
+		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_SOFTSTART,
+					config->softstart.data,
+					config->softstart.len);
+		if (err < 0) {
+			return err;
+		}
+	}
+
+	err = ssd16xx_load_lut(dev, p ? &p->lut : NULL);
+	if (err < 0) {
+		return err;
+	}
+
+	if (p && p->override_dummy_line) {
+		err = ssd16xx_write_uint8(dev, SSD16XX_CMD_DUMMY_LINE,
+					  p->dummy_line);
+		if (err < 0) {
+			return err;
+		}
+	}
+
+	if (p && p->override_gate_line_width) {
+		err = ssd16xx_write_uint8(dev, SSD16XX_CMD_GATE_LINE_WIDTH,
+					  p->override_gate_line_width);
+		if (err < 0) {
+			return err;
+		}
+	}
+
+	if (p && p->gdv.len) {
 		LOG_DBG("Setting GDV");
 		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_GDV_CTRL,
 					p->gdv.data, p->gdv.len);
@@ -703,7 +775,7 @@ static int ssd16xx_load_profile(const struct device *dev,
 		}
 	}
 
-	if (p->sdv.len) {
+	if (p && p->sdv.len) {
 		LOG_DBG("Setting SDV");
 		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_SDV_CTRL,
 					p->sdv.data, p->sdv.len);
@@ -712,7 +784,7 @@ static int ssd16xx_load_profile(const struct device *dev,
 		}
 	}
 
-	if (p->override_vcom) {
+	if (p && p->override_vcom) {
 		LOG_DBG("Setting VCOM");
 		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_VCOM_VOLTAGE,
 					&p->vcom, 1);
@@ -721,7 +793,7 @@ static int ssd16xx_load_profile(const struct device *dev,
 		}
 	}
 
-	if (p->override_bwf) {
+	if (p && p->override_bwf) {
 		LOG_DBG("Setting BWF");
 		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_BWF_CTRL,
 					&p->bwf, 1);
@@ -729,6 +801,8 @@ static int ssd16xx_load_profile(const struct device *dev,
 			return err;
 		}
 	}
+
+	data->profile = type;
 
 	return 0;
 }
@@ -751,14 +825,12 @@ static int ssd16xx_controller_init(const struct device *dev)
 {
 	const struct ssd16xx_config *config = dev->config;
 	struct ssd16xx_data *data = dev->data;
-	uint16_t last_gate = config->width - 1;
 	int err;
-	uint8_t tmp[3];
-	size_t len;
 
 	LOG_DBG("");
 
 	data->blanking_on = false;
+	data->profile = SSD16XX_PROFILE_INVALID;
 
 	err = gpio_pin_set_dt(&config->reset_gpio, 1);
 	if (err < 0) {
@@ -773,44 +845,6 @@ static int ssd16xx_controller_init(const struct device *dev)
 
 	k_msleep(SSD16XX_RESET_DELAY);
 
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_SW_RESET, NULL, 0);
-	if (err < 0) {
-		return err;
-	}
-
-	len = push_y_param(dev, tmp, last_gate);
-	tmp[len++] = 0U;
-	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_GDO_CTRL, tmp, len);
-	if (err < 0) {
-		return err;
-	}
-
-	if (config->softstart.len) {
-		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_SOFTSTART,
-					config->softstart.data,
-					config->softstart.len);
-		if (err < 0) {
-			return err;
-		}
-	}
-
-	if (config->override_dummy_line) {
-		tmp[0] = config->dummy_line;
-		err = ssd16xx_write_uint8(dev, SSD16XX_CMD_DUMMY_LINE,
-					  config->dummy_line);
-		if (err < 0) {
-			return err;
-		}
-	}
-
-	if (config->override_gate_line_width) {
-		err = ssd16xx_write_uint8(dev, SSD16XX_CMD_GATE_LINE_WIDTH,
-					  config->override_gate_line_width);
-		if (err < 0) {
-			return err;
-		}
-	}
-
 	if (config->orientation == 1) {
 		data->scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
 	} else {
@@ -823,7 +857,7 @@ static int ssd16xx_controller_init(const struct device *dev)
 			      SSD16XX_CTRL2_DISABLE_ANALOG |
 			      SSD16XX_CTRL2_DISABLE_CLK);
 
-	err = ssd16xx_load_profile(dev, &config->profile_initial);
+	err = ssd16xx_set_profile(dev, SSD16XX_PROFILE_FULL);
 	if (err < 0) {
 		return err;
 	}
@@ -967,35 +1001,47 @@ static struct ssd16xx_quirks quirks_solomon_ssd1681 = {
 		},
 
 #define SSD16XX_MAKE_ARRAY_OPT(n, p)					\
-	static uint8_t data_ ## n ## _ ## p[] =				\
-		DT_PROP_OR(n, p, {})
+	static uint8_t data_ ## n ## _ ## p[] = DT_PROP_OR(n, p, {})
 
 #define SSD16XX_ASSIGN_ARRAY(n, p)					\
 	{								\
 		.data = data_ ## n ## _ ## p,				\
-		.len = sizeof(data_ ## n ## _ ## p),		\
+		.len = sizeof(data_ ## n ## _ ## p),			\
 	}
 
-#define SSD16XX_INITIAL_PROFILE_DEFINE(n)				\
-	SSD16XX_MAKE_ARRAY_OPT(n, lut_initial);				\
+#define SSD16XX_PROFILE(n)						\
+	SSD16XX_MAKE_ARRAY_OPT(n, lut);					\
 	SSD16XX_MAKE_ARRAY_OPT(n, gdv);					\
-	SSD16XX_MAKE_ARRAY_OPT(n, sdv)
-
-#define SSD16XX_INITIAL_PROFILE(n)					\
-	{								\
-		.lut = SSD16XX_ASSIGN_ARRAY(n, lut_initial),		\
+	SSD16XX_MAKE_ARRAY_OPT(n, sdv);					\
+									\
+	static const struct ssd16xx_profile ssd16xx_profile_ ## n = {	\
+		.lut = SSD16XX_ASSIGN_ARRAY(n, lut),			\
 		.gdv = SSD16XX_ASSIGN_ARRAY(n, gdv),			\
 		.sdv = SSD16XX_ASSIGN_ARRAY(n, sdv),			\
 		.vcom = DT_PROP_OR(n, vcom, 0),				\
 		.override_vcom = DT_NODE_HAS_PROP(n, vcom),		\
 		.bwf = DT_PROP_OR(n, border_waveform, 0),		\
 		.override_bwf = DT_NODE_HAS_PROP(n, border_waveform),	\
-	}
+		.dummy_line = DT_PROP_OR(n, dummy_line, 0),		\
+		.override_dummy_line = DT_NODE_HAS_PROP(n, dummy_line),	\
+		.gate_line_width = DT_PROP_OR(n, gate_line_width, 0),	\
+		.override_gate_line_width = DT_NODE_HAS_PROP(		\
+			n, gate_line_width),				\
+	};
+
+
+#define _SSD16XX_PROFILE_PTR(n) &ssd16xx_profile_ ## n
+
+#define SSD16XX_PROFILE_PTR(n)						\
+	COND_CODE_1(DT_NODE_EXISTS(n),					\
+		    (_SSD16XX_PROFILE_PTR(n)),				\
+		    NULL)
 
 #define SSD16XX_DEFINE(n, quirks_ptr)					\
 	SSD16XX_MAKE_ARRAY_OPT(n, lut_default);				\
 	SSD16XX_MAKE_ARRAY_OPT(n, softstart);				\
-	SSD16XX_INITIAL_PROFILE_DEFINE(n);				\
+									\
+	DT_FOREACH_CHILD(n, SSD16XX_PROFILE);				\
 									\
 	static const struct ssd16xx_config ssd16xx_cfg_ ## n = {	\
 		.bus = SPI_DT_SPEC_GET(n,				\
@@ -1012,12 +1058,10 @@ static struct ssd16xx_quirks quirks_solomon_ssd1681 = {
 		.tssv = DT_PROP_OR(n, tssv, 0),				\
 		.softstart = SSD16XX_ASSIGN_ARRAY(n, softstart),	\
 		.lut_default = SSD16XX_ASSIGN_ARRAY(n, lut_default),	\
-		.profile_initial = SSD16XX_INITIAL_PROFILE(n),		\
-		.dummy_line = DT_PROP_OR(n, dummy_line, 0),		\
-		.override_dummy_line = DT_NODE_HAS_PROP(n, dummy_line),	\
-		.gate_line_width = DT_PROP_OR(n, gate_line_width, 0),	\
-		.override_gate_line_width = DT_NODE_HAS_PROP(		\
-			n, gate_line_width),				\
+		.profiles = {						\
+			[SSD16XX_PROFILE_FULL] =			\
+			SSD16XX_PROFILE_PTR(DT_CHILD(n, full)),		\
+		},							\
 	};								\
 									\
 	static struct ssd16xx_data ssd16xx_data_ ## n;			\

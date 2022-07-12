@@ -22,19 +22,24 @@
 		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
 		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
 		busy-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;	/* D7 */
-		gdv = [16];
-		sdv = [0a];
-		vcom = <0xa8>;
-		border-waveform = <0x33>;
+
 		softstart = [d7 d6 9d];
-		dummy-line = <0x1a>;
-		gate-line-width = <0x08>;
-		lut-initial = [
-			50 AA 55 AA 11 00 00 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 FF FF 1F 00
-			00 00 00 00 00 00
-		];
+
+		full {
+			gdv = [16];
+			sdv = [0a];
+			vcom = <0xa8>;
+			border-waveform = <0x33>;
+			dummy-line = <0x1a>;
+			gate-line-width = <0x08>;
+			lut = [
+				50 AA 55 AA 11 00 00 00
+				00 00 00 00 00 00 00 00
+				00 00 00 00 FF FF 1F 00
+				00 00 00 00 00 00
+			];
+		};
+
 		lut-default = [
 			10 18 18 08 18 18 08 00
 			00 00 00 00 00 00 00 00
