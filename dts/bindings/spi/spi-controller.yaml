@@ -19,8 +19,6 @@ properties:
     "#size-cells":
       required: true
       const: 0
-    label:
-      required: true
     cs-gpios:
       type: phandle-array
       required: false

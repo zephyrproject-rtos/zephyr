@@ -8,8 +8,6 @@ include: base.yaml
 bus: mdio
 
 properties:
-    label:
-      required: true
     protocol:
       required: false
       type: string

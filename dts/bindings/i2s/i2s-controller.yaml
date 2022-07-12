@@ -14,5 +14,3 @@ properties:
     "#size-cells":
       required: true
       const: 0
-    label:
-      required: true
