@@ -2,6 +2,7 @@
  * Copyright (c) 2018 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-T2
  */
 
 #ifndef INTERRUPT_UTIL_H_

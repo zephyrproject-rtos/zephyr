@@ -2,7 +2,9 @@
  * Copyright (c) 2018 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-T2
  */
+
 #include <logging/log_msg.h>
 #include "log_list.h"
 #include <logging/log.h>

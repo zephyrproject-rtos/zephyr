@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T2
 
 add_subdirectory_ifdef(CONFIG_ZTEST ztest)
 

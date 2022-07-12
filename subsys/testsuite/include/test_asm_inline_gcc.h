@@ -4,6 +4,7 @@
  * Copyright (c) 2015, Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-T2
  */
 
 #ifndef _TEST_ASM_INLINE_GCC_H

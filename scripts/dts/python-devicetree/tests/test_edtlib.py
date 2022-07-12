@@ -1,5 +1,6 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: BSD-3-Clause
+# SPDX-FileComment: IEC-61508-T3
 
 import contextlib
 import io

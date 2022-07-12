@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
+# SPDX-FileComment: IEC-61508-T2
 
 description: |
   An include must not give both an allowlist and a blocklist.

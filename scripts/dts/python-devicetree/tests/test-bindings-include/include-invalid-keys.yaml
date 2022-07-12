@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
+# SPDX-FileComment: IEC-61508-T2
 
 description: |
   Invalid include element: invalid keys are present.

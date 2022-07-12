@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T2
 
 if(CONFIG_OPENOCD_SUPPORT)
   message(WARNING "CONFIG_OPENOCD_SUPPORT is deprecated

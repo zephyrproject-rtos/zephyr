@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T2
 
 choice "$(module)_LOG_LEVEL_CHOICE"
 	prompt "Max compiled-in log level for $(module-str)"

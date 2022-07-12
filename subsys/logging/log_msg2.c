@@ -2,6 +2,7 @@
  * Copyright (c) 2020 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-T2
  */
 #include <zephyr.h>
 #include <syscall_handler.h>

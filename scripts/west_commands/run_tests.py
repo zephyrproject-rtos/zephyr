@@ -3,6 +3,7 @@
 # Copyright (c) 2020 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T2
 
 # A convenience script provided for running tests on the runners
 # package. Runs mypy and pytest. Any extra arguments in sys.argv are
