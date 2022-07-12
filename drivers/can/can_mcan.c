@@ -240,6 +240,19 @@ int can_mcan_set_timing_data(const struct device *dev,
 }
 #endif /* CONFIG_CAN_FD_MODE */
 
+int can_mcan_get_capabilities(const struct device *dev, can_mode_t *cap)
+{
+	ARG_UNUSED(dev);
+
+	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY;
+
+#if CONFIG_CAN_FD_MODE
+	*cap |= CAN_MODE_FD;
+#endif /* CONFIG_CAN_FD_MODE */
+
+	return 0;
+}
+
 int can_mcan_set_mode(const struct device *dev, can_mode_t mode)
 {
 	const struct can_mcan_config *cfg = dev->config;

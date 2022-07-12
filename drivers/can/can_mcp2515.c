@@ -440,6 +440,15 @@ done:
 	return ret;
 }
 
+static int mcp2515_get_capabilities(const struct device *dev, can_mode_t *cap)
+{
+	ARG_UNUSED(dev);
+
+	*cap = CAN_MODE_NORMAL | CAN_MODE_LISTENONLY | CAN_MODE_LOOPBACK;
+
+	return 0;
+}
+
 static int mcp2515_set_mode(const struct device *dev, can_mode_t mode)
 {
 	const struct mcp2515_config *dev_cfg = dev->config;
@@ -827,6 +836,7 @@ static void mcp2515_int_gpio_callback(const struct device *dev,
 }
 
 static const struct can_driver_api can_api_funcs = {
+	.get_capabilities = mcp2515_get_capabilities,
 	.set_timing = mcp2515_set_timing,
 	.set_mode = mcp2515_set_mode,
 	.send = mcp2515_send,

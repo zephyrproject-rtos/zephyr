@@ -342,6 +342,15 @@ static int can_leave_sleep_mode(CAN_TypeDef *can)
 	return 0;
 }
 
+static int can_stm32_get_capabilities(const struct device *dev, can_mode_t *cap)
+{
+	ARG_UNUSED(dev);
+
+	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY;
+
+	return 0;
+}
+
 static int can_stm32_set_mode(const struct device *dev, can_mode_t mode)
 {
 	const struct can_stm32_config *cfg = dev->config;
@@ -1126,6 +1135,7 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 }
 
 static const struct can_driver_api can_api_funcs = {
+	.get_capabilities = can_stm32_get_capabilities,
 	.set_mode = can_stm32_set_mode,
 	.set_timing = can_stm32_set_timing,
 	.send = can_stm32_send,
