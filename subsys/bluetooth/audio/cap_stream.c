@@ -6,6 +6,8 @@
 
 #include <zephyr/bluetooth/audio/cap.h>
 
+#include "cap_internal.h"
+
 #if defined(CONFIG_BT_BAP_UNICAST)
 static void cap_stream_configured_cb(struct bt_bap_stream *bap_stream,
 				     const struct bt_codec_qos_pref *pref)
@@ -14,6 +16,10 @@ static void cap_stream_configured_cb(struct bt_bap_stream *bap_stream,
 							struct bt_cap_stream,
 							bap_stream);
 	struct bt_bap_stream_ops *ops = cap_stream->ops;
+
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
+		bt_cap_initiator_codec_configured(cap_stream);
+	}
 
 	if (ops != NULL && ops->configured != NULL) {
 		ops->configured(bap_stream, pref);
@@ -27,6 +33,10 @@ static void cap_stream_qos_set_cb(struct bt_bap_stream *bap_stream)
 							bap_stream);
 	struct bt_bap_stream_ops *ops = cap_stream->ops;
 
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
+		bt_cap_initiator_qos_configured(cap_stream);
+	}
+
 	if (ops != NULL && ops->qos_set != NULL) {
 		ops->qos_set(bap_stream);
 	}
@@ -38,6 +48,10 @@ static void cap_stream_enabled_cb(struct bt_bap_stream *bap_stream)
 							struct bt_cap_stream,
 							bap_stream);
 	struct bt_bap_stream_ops *ops = cap_stream->ops;
+
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
+		bt_cap_initiator_enabled(cap_stream);
+	}
 
 	if (ops != NULL && ops->enabled != NULL) {
 		ops->enabled(bap_stream);
@@ -88,6 +102,10 @@ static void cap_stream_started_cb(struct bt_bap_stream *bap_stream)
 							struct bt_cap_stream,
 							bap_stream);
 	struct bt_bap_stream_ops *ops = cap_stream->ops;
+
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
+		bt_cap_initiator_started(cap_stream);
+	}
 
 	if (ops != NULL && ops->started != NULL) {
 		ops->started(bap_stream);
@@ -154,8 +172,21 @@ static struct bt_bap_stream_ops bap_stream_ops = {
 #endif /* CONFIG_BT_BAP_UNICAST || CONFIG_BT_BAP_BROADCAST_SOURCE */
 };
 
-void bt_cap_stream_ops_register(struct bt_cap_stream *stream, struct bt_bap_stream_ops *ops)
+void bt_cap_stream_ops_register_bap(struct bt_cap_stream *cap_stream)
+{
+	bt_bap_stream_cb_register(&cap_stream->bap_stream, &bap_stream_ops);
+}
+
+void bt_cap_stream_ops_register(struct bt_cap_stream *stream,
+				struct bt_bap_stream_ops *ops)
 {
 	stream->ops = ops;
-	bt_bap_stream_cb_register(&stream->bap_stream, &bap_stream_ops);
+
+	/* For the broadcast sink role, this is the only way we can ensure that
+	 * the BAP callbacks are registered, as there are no CAP broadcast sink
+	 * procedures that we can use to register the callbacks in other ways.
+	 */
+	if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK)) {
+		bt_cap_stream_ops_register_bap(stream);
+	}
 }
