@@ -57,9 +57,6 @@
 #define DSP_WCT_CS_TA(x)			BIT(x)
 #define DSP_WCT_CS_TT(x)			BIT(4 + x)
 
-/* Attribute macros to place code and data into IMR memory */
-#define __imr __in_section_unique(imr)
-#define __imrdata __in_section_unique(imrdata)
 
 extern char _text_start[];
 extern char _text_end[];
