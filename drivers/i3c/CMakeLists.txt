@@ -13,3 +13,8 @@ zephyr_library_sources_ifdef(
   CONFIG_USERSPACE
   i3c_handlers.c
 )
+
+zephyr_library_sources_ifdef(
+  CONFIG_I3C_IBI_WORKQUEUE
+  i3c_ibi_workq.c
+)
