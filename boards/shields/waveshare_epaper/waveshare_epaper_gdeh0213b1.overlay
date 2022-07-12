@@ -28,6 +28,8 @@
 		sdv = [19];
 		vcom = <0xa8>;
 		border-waveform = <0x71>;
+		dummy-line = <0x1a>;
+		gate-line-width = <0x08>;
 		lut-initial = [
 			22 55 AA 55 AA 55 AA 11
 			00 00 00 00 00 00 00 00

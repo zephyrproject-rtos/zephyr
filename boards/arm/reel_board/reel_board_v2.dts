@@ -54,6 +54,8 @@
 		sdv = [41 a8 32];
 		vcom = <0x26>;
 		border-waveform = <0x03>;
+		dummy-line = <0x30>;
+		gate-line-width = <0x0a>;
 		lut-initial = [
 			/*
 			 * Waveform Composition
