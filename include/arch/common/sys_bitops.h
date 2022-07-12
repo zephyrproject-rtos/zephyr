@@ -4,6 +4,7 @@
  * Copyright (c) 2020, Synopsys
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 /* Memory bits manipulation functions in non-arch-specific C code */

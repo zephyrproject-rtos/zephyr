@@ -3,6 +3,7 @@
  * Copyright (c) 2018 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 /* this file is only meant to be included by kernel_structs.h */

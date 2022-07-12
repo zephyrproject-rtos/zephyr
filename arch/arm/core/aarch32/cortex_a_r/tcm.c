@@ -2,6 +2,7 @@
  * Copyright (c) 2020, Antmicro
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 #include <zephyr.h>
 #include <arch/arm/aarch32/cortex_a_r/cmsis.h>

@@ -2,7 +2,8 @@
  * Copyright (c) 2020 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
- */
+ * SPDX-FileComment: IEC-61508-SIL3
+*/
 #ifndef ZEPHYR_INCLUDE_MEMPOOL_HEAP_H_
 #define ZEPHYR_INCLUDE_MEMPOOL_HEAP_H_
 

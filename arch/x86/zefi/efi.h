@@ -2,6 +2,7 @@
  * Copyright (c) 2020 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 #ifndef _EFI_H
 #define _EFI_H

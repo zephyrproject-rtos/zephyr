@@ -3,6 +3,7 @@
 # Copyright (c) 2018 Marvell
 # Copyright (c) 2018 Lexmark International, Inc.
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-SIL3
 
 # NOTE: We have the specific core implementations first and outside of the
 # if CPU_CORTEX_R block so that SoCs can select which core they are using

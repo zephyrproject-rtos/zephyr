@@ -2,6 +2,7 @@
  * Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_SAM0_EIC_PRIV_H_

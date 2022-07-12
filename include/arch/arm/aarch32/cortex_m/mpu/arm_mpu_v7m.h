@@ -3,6 +3,7 @@
  * Copyright (c) 2018 Nordic Semiconductor ASA.
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_MPU_ARM_MPU_V7M_H_

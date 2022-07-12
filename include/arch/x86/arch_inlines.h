@@ -3,6 +3,7 @@
  * Copyright (c) 2019 Stephanos Ioannidis <root@stephanos.io>
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_ARCH_INLINES_H_

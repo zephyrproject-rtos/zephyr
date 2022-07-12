@@ -2,6 +2,7 @@
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 /**

@@ -2,7 +2,8 @@
  * Copyright (c) 2020 ITE Corporation. All Rights Reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
- */
+ * SPDX-FileComment: IEC-61508-SIL3
+*/
 #ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_ITE_IT8XXX2_H_
 #define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_ITE_IT8XXX2_H_
 

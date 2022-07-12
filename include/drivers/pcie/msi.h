@@ -2,6 +2,7 @@
  * Copyright (c) 2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_MSI_H_
@@ -15,7 +16,8 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif * SPDX-FileComment: IEC-61508-SIL3
+
 
 struct msix_vector {
 	uint32_t msg_addr;

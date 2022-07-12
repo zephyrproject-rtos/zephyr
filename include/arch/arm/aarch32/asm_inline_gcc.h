@@ -4,6 +4,7 @@
  * Copyright (c) 2015, Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 /* Either public functions or macros or invoked by public functions */

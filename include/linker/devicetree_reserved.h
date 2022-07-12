@@ -2,6 +2,7 @@
  * Copyright (c) 2021, Carlo Caione <ccaione@baylibre.com>
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  *
  * Generate memory regions and sections from reserved-memory nodes.
  */

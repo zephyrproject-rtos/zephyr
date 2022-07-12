@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019 Intel Corp.
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #ifndef _X86_OFFSETS_INC_

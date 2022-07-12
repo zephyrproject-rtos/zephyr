@@ -5,6 +5,7 @@
  * Copyright (c) 2015 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_IOAPIC_PRIV_H_

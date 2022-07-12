@@ -3,6 +3,7 @@
  * Copyright (c) 2017, Oticon A/S
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 /* Memory mapped registers I/O functions in non-arch-specific C code */

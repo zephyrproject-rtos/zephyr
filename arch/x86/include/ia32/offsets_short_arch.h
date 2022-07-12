@@ -2,6 +2,7 @@
  * Copyright (c) 2016 Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #ifndef ZEPHYR_ARCH_X86_INCLUDE_IA32_OFFSETS_SHORT_ARCH_H_

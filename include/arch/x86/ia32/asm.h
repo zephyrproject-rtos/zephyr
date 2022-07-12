@@ -4,6 +4,7 @@
  * Copyright (c) 2007-2014 Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_IA32_ASM_H_

@@ -2,6 +2,7 @@
  * Copyright (c) 2020 Friedt Professional Engineering Services, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 /**

@@ -2,6 +2,7 @@
  * Copyright (c) 2019 Vestas Wind Systems A/S
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_ADC_LMP90XXX_H_

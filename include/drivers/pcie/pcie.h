@@ -2,6 +2,7 @@
  * Copyright (c) 2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_PCIE_H_
@@ -15,7 +16,8 @@
 extern "C" {
 #endif
 
-/**
+/** * SPDX-FileComment: IEC-61508-SIL3
+
  * @typedef pcie_bdf_t
  * @brief A unique PCI(e) endpoint (bus, device, function).
  *

@@ -3,6 +3,7 @@
  * Copyright (c) 2018 Laczen
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 #ifndef ZEPHYR_INCLUDE_FS_NVS_H_
 #define ZEPHYR_INCLUDE_FS_NVS_H_

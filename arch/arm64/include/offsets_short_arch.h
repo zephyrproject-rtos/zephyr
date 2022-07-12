@@ -2,6 +2,7 @@
  * Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #ifndef ZEPHYR_ARCH_ARM64_INCLUDE_OFFSETS_SHORT_ARCH_H_

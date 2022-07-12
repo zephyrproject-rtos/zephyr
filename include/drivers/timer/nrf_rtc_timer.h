@@ -2,6 +2,7 @@
  * Copyright (c) 2016-2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_TIMER_NRF_RTC_TIMER_H

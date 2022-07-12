@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019 Intel Corp.
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_MSR_H_

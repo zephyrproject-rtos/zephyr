@@ -4,6 +4,7 @@
  * Copyright (c) 2013-2014, Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #ifndef ZEPHYR_INCLUDE_LINKER_SECTION_TAGS_H_

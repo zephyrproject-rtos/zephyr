@@ -8,6 +8,7 @@
  * Copyright (c) 2015 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 #ifndef ZEPHYR_INCLUDE_DRIVERS_I2C_H_
 #define ZEPHYR_INCLUDE_DRIVERS_I2C_H_

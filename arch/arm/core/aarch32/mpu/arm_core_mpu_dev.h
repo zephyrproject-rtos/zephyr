@@ -2,6 +2,7 @@
  * Copyright (c) 2017 Linaro Limited.
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_MPU_ARM_CORE_MPU_DEV_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_MPU_ARM_CORE_MPU_DEV_H_

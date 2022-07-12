@@ -2,6 +2,7 @@
  * Copyright (c) 2020 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  *
  * Definitions and helper macros for managing driver memory-mapped
  * input/output (MMIO) regions appropriately in either RAM or ROM.

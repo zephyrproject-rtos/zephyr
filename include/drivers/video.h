@@ -8,6 +8,7 @@
  * Copyright (c) 2019 Linaro Limited.
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 #ifndef ZEPHYR_INCLUDE_VIDEO_H_
 #define ZEPHYR_INCLUDE_VIDEO_H_

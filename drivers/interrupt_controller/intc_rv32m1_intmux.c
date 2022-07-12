@@ -2,6 +2,7 @@
  * Copyright (c) 2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #define DT_DRV_COMPAT openisa_rv32m1_intmux

@@ -2,6 +2,7 @@
  * Copyright (c) 2019 Western Digital Corporation or its affiliates
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #define DT_DRV_COMPAT swerv_pic

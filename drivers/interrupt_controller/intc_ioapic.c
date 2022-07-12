@@ -3,6 +3,7 @@
  * Systems, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #define DT_DRV_COMPAT intel_ioapic

@@ -2,6 +2,7 @@
  * Copyright (c) 2021 IoT.bzh
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_TIMER_H_

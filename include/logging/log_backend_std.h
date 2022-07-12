@@ -2,6 +2,7 @@
  * Copyright (c) 2019 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 #ifndef ZEPHYR_LOG_BACKEND_STD_H_
 #define ZEPHYR_LOG_BACKEND_STD_H_

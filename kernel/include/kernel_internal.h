@@ -2,6 +2,7 @@
  * Copyright (c) 2010-2012, 2014-2015 Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 /**

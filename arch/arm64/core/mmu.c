@@ -5,6 +5,7 @@
  * Copyright (c) 2021 BayLibre, SAS
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #include <cache.h>

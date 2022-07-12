@@ -3,6 +3,7 @@
  * The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 /* Set below flag to get debug prints */

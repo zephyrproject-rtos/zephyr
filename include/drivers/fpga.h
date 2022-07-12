@@ -2,6 +2,7 @@
  * Copyright (c) 2021 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_FPGA_H_

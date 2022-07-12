@@ -3,6 +3,7 @@
  * Copyright (c) 2017-2020 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  *
  * Internal memory management interfaces implemented in x86_mmu.c.
  * None of these are application-facing, use only if you know what you are

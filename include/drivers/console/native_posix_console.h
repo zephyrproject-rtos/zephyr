@@ -2,6 +2,7 @@
  * Copyright (c) 2018 Oticon A/S
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CONSOLE_NATIVE_POSIX_CONSOLE_H_

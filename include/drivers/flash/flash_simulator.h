@@ -2,6 +2,7 @@
  * Copyright (c) 2021 Noric Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 #ifndef __ZEPHYR_INCLUDE_DRIVERS__FLASH_SIMULATOR_H__
 #define __ZEPHYR_INCLUDE_DRIVERS__FLASH_SIMULATOR_H__

@@ -3,6 +3,7 @@
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 #include <stdlib.h>
 #include <string.h>

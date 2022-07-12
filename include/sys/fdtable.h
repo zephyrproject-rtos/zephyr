@@ -2,6 +2,7 @@
  * Copyright (c) 2018 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-SIL3
  */
 #ifndef ZEPHYR_INCLUDE_SYS_FDTABLE_H_
 #define ZEPHYR_INCLUDE_SYS_FDTABLE_H_
