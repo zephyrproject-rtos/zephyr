@@ -160,8 +160,13 @@ Artificially long but functional example:
                         """)
 
     test_or_build.add_argument(
-        "-b", "--build-only", action="store_true",
+        "-b", "--build-only", action="store_true", default="--prep-artifacts-for-testing" in sys.argv,
         help="Only build the code, do not attempt to run the code on targets.")
+
+    test_or_build.add_argument(
+        "--prep-artifacts-for-testing", action="store_true",
+        help="Generate artifacts for testing, do not attempt to run the"
+              "code on targets.")
 
     test_or_build.add_argument(
         "--test-only", action="store_true",
