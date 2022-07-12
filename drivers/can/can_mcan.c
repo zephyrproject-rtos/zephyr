@@ -7,6 +7,7 @@
 
 #include <zephyr/sys/util.h>
 #include <string.h>
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/can/transceiver.h>
@@ -25,22 +26,6 @@ LOG_MODULE_REGISTER(can_mcan, CONFIG_CAN_LOG_LEVEL);
 #else
 #define MCAN_MAX_DLC CAN_MAX_DLC
 #endif
-
-#if CONFIG_HAS_CMSIS_CORE_M
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
-
-#if __DCACHE_PRESENT == 1
-#define CACHE_INVALIDATE(addr, size) SCB_InvalidateDCache_by_Addr((addr), (size))
-#define CACHE_CLEAN(addr, size) SCB_CleanDCache_by_Addr((addr), (size))
-#else
-#define CACHE_INVALIDATE(addr, size)
-#define CACHE_CLEAN(addr, size) __DSB()
-#endif /* __DCACHE_PRESENT == 1 */
-
-#else /* CONFIG_HAS_CMSIS_CORE_M */
-#define CACHE_INVALIDATE(addr, size)
-#define CACHE_CLEAN(addr, size)
-#endif /* CONFIG_HAS_CMSIS_CORE_M */
 
 static void memcpy32_volatile(volatile void *dst_, const volatile void *src_,
 			      size_t len)
@@ -523,7 +508,7 @@ int can_mcan_init(const struct device *dev)
 	can->txbtie = CAN_MCAN_TXBTIE_TIE;
 
 	memset32_volatile(msg_ram, 0, sizeof(struct can_mcan_msg_sram));
-	CACHE_CLEAN(msg_ram, sizeof(struct can_mcan_msg_sram));
+	sys_cache_data_range(msg_ram, sizeof(struct can_mcan_msg_sram), K_CACHE_WB);
 
 	ret = can_leave_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret) {
@@ -569,8 +554,9 @@ static void can_mcan_tc_event_handler(const struct device *dev)
 	while (can->txefs & CAN_MCAN_TXEFS_EFFL) {
 		event_idx = (can->txefs & CAN_MCAN_TXEFS_EFGI) >>
 			    CAN_MCAN_TXEFS_EFGI_POS;
-		CACHE_INVALIDATE(&msg_ram->tx_event_fifo[event_idx],
-				 sizeof(struct can_mcan_tx_event_fifo));
+		sys_cache_data_range((void *)&msg_ram->tx_event_fifo[event_idx],
+				     sizeof(struct can_mcan_tx_event_fifo),
+				     K_CACHE_INVD);
 		tx_event = &msg_ram->tx_event_fifo[event_idx];
 		tx_idx = tx_event->mm.idx;
 		/* Acknowledge TX event */
@@ -643,8 +629,9 @@ static void can_mcan_get_message(const struct device *dev,
 		get_idx = (*fifo_status_reg & CAN_MCAN_RXF0S_F0GI) >>
 			   CAN_MCAN_RXF0S_F0GI_POS;
 
-		CACHE_INVALIDATE(&fifo[get_idx].hdr,
-				 sizeof(struct can_mcan_rx_fifo_hdr));
+		sys_cache_data_range((void *)&fifo[get_idx].hdr,
+				     sizeof(struct can_mcan_rx_fifo_hdr),
+				     K_CACHE_INVD);
 		memcpy32_volatile(&hdr, &fifo[get_idx].hdr,
 				  sizeof(struct can_mcan_rx_fifo_hdr));
 
@@ -677,8 +664,9 @@ static void can_mcan_get_message(const struct device *dev,
 		data_length = can_dlc_to_bytes(frame.dlc);
 		if (data_length <= sizeof(frame.data)) {
 			/* data needs to be written in 32 bit blocks!*/
-			CACHE_INVALIDATE(fifo[get_idx].data_32,
-					 ROUND_UP(data_length, sizeof(uint32_t)));
+			sys_cache_data_range((void *)fifo[get_idx].data_32,
+					     ROUND_UP(data_length, sizeof(uint32_t)),
+					     K_CACHE_INVD);
 			memcpy32_volatile(frame.data_32, fifo[get_idx].data_32,
 					  ROUND_UP(data_length, sizeof(uint32_t)));
 
@@ -858,8 +846,9 @@ int can_mcan_send(const struct device *dev,
 	memcpy32_volatile(&msg_ram->tx_buffer[put_idx].hdr, &tx_hdr, sizeof(tx_hdr));
 	memcpy32_volatile(msg_ram->tx_buffer[put_idx].data_32, frame->data_32,
 			  ROUND_UP(data_length, 4));
-	CACHE_CLEAN(&msg_ram->tx_buffer[put_idx].hdr, sizeof(tx_hdr));
-	CACHE_CLEAN(&msg_ram->tx_buffer[put_idx].data_32, ROUND_UP(data_length, 4));
+	sys_cache_data_range((void *)&msg_ram->tx_buffer[put_idx].hdr, sizeof(tx_hdr), K_CACHE_WB);
+	sys_cache_data_range((void *)&msg_ram->tx_buffer[put_idx].data_32, ROUND_UP(data_length, 4),
+			     K_CACHE_WB);
 
 	data->tx_fin_cb[put_idx] = callback;
 	data->tx_fin_cb_arg[put_idx] = user_data;
@@ -930,8 +919,9 @@ int can_mcan_add_rx_filter_std(const struct device *dev,
 
 	memcpy32_volatile(&msg_ram->std_filt[filter_id], &filter_element,
 			 sizeof(struct can_mcan_std_filter));
-	CACHE_CLEAN(&msg_ram->std_filt[filter_id],
-		    sizeof(struct can_mcan_std_filter));
+	sys_cache_data_range((void *)&msg_ram->std_filt[filter_id],
+			     sizeof(struct can_mcan_std_filter),
+			     K_CACHE_WB);
 
 	k_mutex_unlock(&data->inst_mutex);
 
@@ -993,8 +983,9 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev,
 
 	memcpy32_volatile(&msg_ram->ext_filt[filter_id], &filter_element,
 			  sizeof(struct can_mcan_ext_filter));
-	CACHE_CLEAN(&msg_ram->ext_filt[filter_id],
-		    sizeof(struct can_mcan_ext_filter));
+	sys_cache_data_range((void *)&msg_ram->ext_filt[filter_id],
+			     sizeof(struct can_mcan_ext_filter),
+			     K_CACHE_WB);
 
 	k_mutex_unlock(&data->inst_mutex);
 
@@ -1055,13 +1046,15 @@ void can_mcan_remove_rx_filter(const struct device *dev, int filter_id)
 
 		memset32_volatile(&msg_ram->ext_filt[filter_id], 0,
 				  sizeof(struct can_mcan_ext_filter));
-		CACHE_CLEAN(&msg_ram->ext_filt[filter_id],
-			    sizeof(struct can_mcan_ext_filter));
+		sys_cache_data_range((void *)&msg_ram->ext_filt[filter_id],
+				     sizeof(struct can_mcan_ext_filter),
+				     K_CACHE_WB);
 	} else {
 		memset32_volatile(&msg_ram->std_filt[filter_id], 0,
 				  sizeof(struct can_mcan_std_filter));
-		CACHE_CLEAN(&msg_ram->std_filt[filter_id],
-			    sizeof(struct can_mcan_std_filter));
+		sys_cache_data_range((void *)&msg_ram->std_filt[filter_id],
+				     sizeof(struct can_mcan_std_filter),
+				     K_CACHE_WB);
 	}
 
 	k_mutex_unlock(&data->inst_mutex);
