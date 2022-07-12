@@ -97,6 +97,9 @@ extern "C" {
 /** Controller allows transmitting/receiving CAN-FD frames. */
 #define CAN_MODE_FD         BIT(2)
 
+/** Controller does not retransmit in case of lost arbitration or missing ACK */
+#define CAN_MODE_ONE_SHOT   BIT(3)
+
 /** @} */
 
 /**
@@ -971,8 +974,7 @@ __syscall int can_set_bitrate(const struct device *dev, uint32_t bitrate);
  *
  * By default, the CAN controller will automatically retry transmission in case
  * of lost bus arbitration or missing acknowledge. Some CAN controllers support
- * disabling automatic retransmissions ("one-shot" mode) via a devicetree
- * property.
+ * disabling automatic retransmissions via ``CAN_MODE_ONE_SHOT``.
  *
  * @param dev       Pointer to the device structure for the driver instance.
  * @param frame     CAN frame to transmit.
