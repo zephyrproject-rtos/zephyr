@@ -46,18 +46,18 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0) {
-		shell_error(ctx_shell, "Failed to connect to %s (%u)",
+		shell_error(shell_get_ctx(), "Failed to connect to %s (%u)",
 			    addr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "[%u]: Connected to %s",
+	shell_print(shell_get_ctx(), "[%u]: Connected to %s",
 		    bt_conn_index(conn), addr);
 
 	/* TODO: Handle RPAs */
 
 	if (members_found == 0) {
-		shell_print(ctx_shell, "Assuming member[0] connected");
+		shell_print(shell_get_ctx(), "Assuming member[0] connected");
 		set_members[0].conn = conn;
 		bt_addr_le_copy(&addr_found[0], bt_conn_get_dst(conn));
 		members_found = 1;
@@ -68,11 +68,11 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 		if (bt_addr_le_cmp(bt_conn_get_dst(conn),
 				   &addr_found[i]) == 0) {
 			set_members[i].conn = conn;
-			shell_print(ctx_shell, "Member[%u] connected", i);
+			shell_print(shell_get_ctx(), "Member[%u] connected", i);
 			return;
 		}
 	}
-	shell_warn(ctx_shell, "[%u] connected but was not member of set",
+	shell_warn(shell_get_ctx(), "[%u] connected but was not member of set",
 		   bt_conn_index(conn));
 }
 
@@ -84,18 +84,18 @@ static void csis_discover_cb(struct bt_csis_client_set_member *member, int err,
 			     uint8_t set_count)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "discover failed (%d)", err);
+		shell_error(shell_get_ctx(), "discover failed (%d)", err);
 		return;
 	}
 
 	if (set_count == 0) {
-		shell_warn(ctx_shell, "Device has no sets");
+		shell_warn(shell_get_ctx(), "Device has no sets");
 		return;
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(set_members); i++) {
 		if (&set_members[i] == member) {
-			shell_print(ctx_shell, "Found %u sets on member[%u]",
+			shell_print(shell_get_ctx(), "Found %u sets on member[%u]",
 				    set_count, i);
 		}
 	}
@@ -104,21 +104,21 @@ static void csis_discover_cb(struct bt_csis_client_set_member *member, int err,
 static void csis_client_lock_set_cb(int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Lock sets failed (%d)", err);
+		shell_error(shell_get_ctx(), "Lock sets failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Set locked");
+	shell_print(shell_get_ctx(), "Set locked");
 }
 
 static void csis_client_release_set_cb(int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "Lock sets failed (%d)", err);
+		shell_error(shell_get_ctx(), "Lock sets failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Set released");
+	shell_print(shell_get_ctx(), "Set released");
 }
 
 static void csis_client_ordered_access_cb(const struct bt_csis_client_set_info *set_info,
@@ -160,18 +160,18 @@ static bool csis_found(struct bt_data *data, void *user_data)
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
 		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-		shell_print(ctx_shell, "Found CSIS advertiser with address %s",
+		shell_print(shell_get_ctx(), "Found CSIS advertiser with address %s",
 			    addr_str);
 
 		if (is_discovered(addr)) {
-			shell_print(ctx_shell, "Set member already found");
+			shell_print(shell_get_ctx(), "Set member already found");
 			/* Stop parsing */
 			return false;
 		}
 
 		bt_addr_le_copy(&addr_found[members_found++], addr);
 
-		shell_print(ctx_shell, "Found member (%u / %u)",
+		shell_print(shell_get_ctx(), "Found member (%u / %u)",
 			    members_found, cur_inst->info.set_size);
 
 		if (members_found == cur_inst->info.set_size) {
@@ -181,7 +181,7 @@ static bool csis_found(struct bt_data *data, void *user_data)
 
 			err = bt_le_scan_stop();
 			if (err != 0) {
-				shell_error(ctx_shell,
+				shell_error(shell_get_ctx(),
 					    "Failed to stop scan: %d",
 					    err);
 			}
@@ -213,12 +213,12 @@ static void discover_members_timer_handler(struct k_work *work)
 {
 	int err;
 
-	shell_error(ctx_shell, "Could not find all members (%u / %u)",
+	shell_error(shell_get_ctx(), "Could not find all members (%u / %u)",
 		    members_found, cur_inst->info.set_size);
 
 	err = bt_le_scan_stop();
 	if (err != 0) {
-		shell_error(ctx_shell, "Failed to stop scan: %d", err);
+		shell_error(shell_get_ctx(), "Failed to stop scan: %d", err);
 	}
 }
 
@@ -256,10 +256,6 @@ static int cmd_csis_client_discover(const struct shell *sh, size_t argc,
 				    member_index);
 			return -ENOEXEC;
 		}
-	}
-
-	if (ctx_shell == NULL) {
-		ctx_shell = sh;
 	}
 
 	shell_print(sh, "Discovering for member[%u]", (uint8_t)member_index);

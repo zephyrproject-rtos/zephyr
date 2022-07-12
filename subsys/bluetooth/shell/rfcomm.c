@@ -101,17 +101,17 @@ static struct bt_sdp_record spp_rec = BT_SDP_RECORD(spp_attrs);
 
 static void rfcomm_recv(struct bt_rfcomm_dlc *dlci, struct net_buf *buf)
 {
-	shell_print(ctx_shell, "Incoming data dlc %p len %u", dlci, buf->len);
+	shell_print(shell_get_ctx(), "Incoming data dlc %p len %u", dlci, buf->len);
 }
 
 static void rfcomm_connected(struct bt_rfcomm_dlc *dlci)
 {
-	shell_print(ctx_shell, "Dlc %p connected", dlci);
+	shell_print(shell_get_ctx(), "Dlc %p connected", dlci);
 }
 
 static void rfcomm_disconnected(struct bt_rfcomm_dlc *dlci)
 {
-	shell_print(ctx_shell, "Dlc %p disconnected", dlci);
+	shell_print(shell_get_ctx(), "Dlc %p disconnected", dlci);
 }
 
 static struct bt_rfcomm_dlc_ops rfcomm_ops = {
@@ -127,10 +127,10 @@ static struct bt_rfcomm_dlc rfcomm_dlc = {
 
 static int rfcomm_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
 {
-	shell_print(ctx_shell, "Incoming RFCOMM conn %p", conn);
+	shell_print(shell_get_ctx(), "Incoming RFCOMM conn %p", conn);
 
 	if (rfcomm_dlc.session) {
-		shell_error(ctx_shell, "No channels available");
+		shell_error(shell_get_ctx(), "No channels available");
 		return -ENOMEM;
 	}
 

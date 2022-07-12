@@ -68,7 +68,7 @@ static void update_write_stats(uint16_t len)
 
 static void print_write_stats(void)
 {
-	shell_print(ctx_shell, "Write #%u: %u bytes (%u bps)",
+	shell_print(shell_get_ctx(), "Write #%u: %u bytes (%u bps)",
 		    write_stats.count, write_stats.total, write_stats.rate);
 }
 #endif /* CONFIG_BT_GATT_CLIENT || CONFIG_BT_GATT_DYNAMIC_DB */
@@ -82,7 +82,7 @@ static void reset_write_stats(void)
 static void exchange_func(struct bt_conn *conn, uint8_t err,
 			  struct bt_gatt_exchange_params *params)
 {
-	shell_print(ctx_shell, "Exchange %s", err == 0U ? "successful" :
+	shell_print(shell_get_ctx(), "Exchange %s", err == 0U ? "successful" :
 		    "failed");
 
 	(void)memset(params, 0, sizeof(*params));
@@ -166,7 +166,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 	char str[BT_UUID_STR_LEN];
 
 	if (!attr) {
-		shell_print(ctx_shell, "Discover complete");
+		shell_print(shell_get_ctx(), "Discover complete");
 		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
@@ -176,28 +176,28 @@ static uint8_t discover_func(struct bt_conn *conn,
 	case BT_GATT_DISCOVER_PRIMARY:
 		gatt_service = attr->user_data;
 		bt_uuid_to_str(gatt_service->uuid, str, sizeof(str));
-		shell_print(ctx_shell, "Service %s found: start handle %x, "
+		shell_print(shell_get_ctx(), "Service %s found: start handle %x, "
 			    "end_handle %x", str, attr->handle,
 			    gatt_service->end_handle);
 		break;
 	case BT_GATT_DISCOVER_CHARACTERISTIC:
 		gatt_chrc = attr->user_data;
 		bt_uuid_to_str(gatt_chrc->uuid, str, sizeof(str));
-		shell_print(ctx_shell, "Characteristic %s found: handle %x",
+		shell_print(shell_get_ctx(), "Characteristic %s found: handle %x",
 			    str, attr->handle);
-		print_chrc_props(ctx_shell, gatt_chrc->properties);
+		print_chrc_props(shell_get_ctx(), gatt_chrc->properties);
 		break;
 	case BT_GATT_DISCOVER_INCLUDE:
 		gatt_include = attr->user_data;
 		bt_uuid_to_str(gatt_include->uuid, str, sizeof(str));
-		shell_print(ctx_shell, "Include %s found: handle %x, start %x, "
+		shell_print(shell_get_ctx(), "Include %s found: handle %x, start %x, "
 			    "end %x", str, attr->handle,
 			    gatt_include->start_handle,
 			    gatt_include->end_handle);
 		break;
 	default:
 		bt_uuid_to_str(attr->uuid, str, sizeof(str));
-		shell_print(ctx_shell, "Descriptor %s found: handle %x", str,
+		shell_print(shell_get_ctx(), "Descriptor %s found: handle %x", str,
 			    attr->handle);
 		break;
 	}
@@ -268,7 +268,7 @@ static uint8_t read_func(struct bt_conn *conn, uint8_t err,
 			 struct bt_gatt_read_params *params,
 			 const void *data, uint16_t length)
 {
-	shell_print(ctx_shell, "Read complete: err 0x%02x length %u", err, length);
+	shell_print(shell_get_ctx(), "Read complete: err 0x%02x length %u", err, length);
 
 	if (!data) {
 		(void)memset(params, 0, sizeof(*params));
@@ -401,7 +401,7 @@ static uint8_t gatt_write_buf[CHAR_SIZE_MAX];
 static void write_func(struct bt_conn *conn, uint8_t err,
 		       struct bt_gatt_write_params *params)
 {
-	shell_print(ctx_shell, "Write complete: err 0x%02x", err);
+	shell_print(shell_get_ctx(), "Write complete: err 0x%02x", err);
 
 	(void)memset(&write_params, 0, sizeof(write_params));
 }
@@ -527,12 +527,12 @@ static uint8_t notify_func(struct bt_conn *conn,
 			const void *data, uint16_t length)
 {
 	if (!data) {
-		shell_print(ctx_shell, "Unsubscribed");
+		shell_print(shell_get_ctx(), "Unsubscribed");
 		params->value_handle = 0U;
 		return BT_GATT_ITER_STOP;
 	}
 
-	shell_print(ctx_shell, "Notification: data %p length %u", data, length);
+	shell_print(shell_get_ctx(), "Notification: data %p length %u", data, length);
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -759,7 +759,7 @@ static ssize_t write_vnd1(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  uint8_t flags)
 {
 	if (echo_enabled) {
-		shell_print(ctx_shell, "Echo attr len %u", len);
+		shell_print(shell_get_ctx(), "Echo attr len %u", len);
 		bt_gatt_notify(conn, attr, buf, len);
 	}
 

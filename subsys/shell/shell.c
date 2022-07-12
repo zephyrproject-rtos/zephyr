@@ -41,6 +41,8 @@ BUILD_ASSERT(SHELL_THREAD_PRIORITY >=
 		&& SHELL_THREAD_PRIORITY <= K_LOWEST_APPLICATION_THREAD_PRIO,
 		  "Invalid range for thread priority");
 
+static const struct shell *shell_ctx;
+
 static inline void receive_state_change(const struct shell *shell,
 					enum shell_receive_state state)
 {
@@ -1345,6 +1347,11 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 	}
 }
 
+const struct shell *shell_get_ctx(void)
+{
+	return shell_ctx;
+}
+
 int shell_init(const struct shell *shell, const void *transport_config,
 	       struct shell_backend_config_flags cfg_flags,
 	       bool log_backend, uint32_t init_log_level)
@@ -1370,6 +1377,8 @@ int shell_init(const struct shell *shell, const void *transport_config,
 
 	shell->ctx->tid = tid;
 	k_thread_name_set(tid, shell->thread_name);
+
+	shell_ctx = shell;
 
 	return 0;
 }

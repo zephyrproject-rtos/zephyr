@@ -24,11 +24,11 @@ static void has_client_discover_cb(struct bt_conn *conn, int err, struct bt_has 
 				   enum bt_has_capabilities caps)
 {
 	if (err) {
-		shell_error(ctx_shell, "HAS discovery (err %d)", err);
+		shell_error(shell_get_ctx(), "HAS discovery (err %d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "HAS discovered %p type 0x%02x caps 0x%02x for conn %p",
+	shell_print(shell_get_ctx(), "HAS discovered %p type 0x%02x caps 0x%02x for conn %p",
 		    has, type, caps, conn);
 
 	inst = has;
@@ -36,22 +36,22 @@ static void has_client_discover_cb(struct bt_conn *conn, int err, struct bt_has 
 
 static void has_client_preset_switch_cb(struct bt_has *has, uint8_t index)
 {
-	shell_print(ctx_shell, "HAS %p preset switch index 0x%02x", has, index);
+	shell_print(shell_get_ctx(), "HAS %p preset switch index 0x%02x", has, index);
 }
 
 static void has_client_preset_read_rsp_cb(struct bt_has *has, int err,
 					  const struct bt_has_preset_record *record, bool is_last)
 {
 	if (err) {
-		shell_error(ctx_shell, "Preset Read operation failed (err %d)", err);
+		shell_error(shell_get_ctx(), "Preset Read operation failed (err %d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Preset Index: 0x%02x\tProperties: 0x%02x\tName: %s",
+	shell_print(shell_get_ctx(), "Preset Index: 0x%02x\tProperties: 0x%02x\tName: %s",
 		    record->index, record->properties, record->name);
 
 	if (is_last) {
-		shell_print(ctx_shell, "Preset Read operation complete");
+		shell_print(shell_get_ctx(), "Preset Read operation complete");
 	}
 }
 
@@ -64,10 +64,6 @@ static const struct bt_has_client_cb has_client_cb = {
 static int cmd_has_client_init(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
-
-	if (!ctx_shell) {
-		ctx_shell = sh;
-	}
 
 	err = bt_has_client_cb_register(&has_client_cb);
 	if (err != 0) {
@@ -84,10 +80,6 @@ static int cmd_has_client_discover(const struct shell *sh, size_t argc, char **a
 	if (default_conn == NULL) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
-	}
-
-	if (!ctx_shell) {
-		ctx_shell = sh;
 	}
 
 	err = bt_has_client_discover(default_conn);

@@ -24,7 +24,7 @@ static int preset_select(uint8_t index, bool sync)
 
 static void preset_name_changed(uint8_t index, const char *name)
 {
-	shell_print(ctx_shell, "Preset name changed index %u name %s", index, name);
+	shell_print(shell_get_ctx(), "Preset name changed index %u name %s", index, name);
 }
 
 static const struct bt_has_preset_ops preset_ops = {

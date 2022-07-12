@@ -24,9 +24,9 @@ static void bass_client_discover_cb(struct bt_conn *conn, int err,
 				    uint8_t recv_state_count)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "BASS discover failed (%d)", err);
+		shell_error(shell_get_ctx(), "BASS discover failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "BASS discover done with %u recv states",
+		shell_print(shell_get_ctx(), "BASS discover done with %u recv states",
 			    recv_state_count);
 	}
 
@@ -41,7 +41,7 @@ static void bass_client_scan_cb(const struct bt_le_scan_recv_info *info,
 	(void)memset(name, 0, sizeof(name));
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-	shell_print(ctx_shell, "[DEVICE]: %s (%s), broadcast_id %u, "
+	shell_print(shell_get_ctx(), "[DEVICE]: %s (%s), broadcast_id %u, "
 		    "interval (ms) %u), SID 0x%x, RSSI %i",
 		    le_addr, name, broadcast_id, info->interval * 5 / 4,
 		    info->sid, info->rssi);
@@ -54,7 +54,7 @@ static bool metadata_entry(struct bt_data *data, void *user_data)
 
 	bin2hex(data->data, data->data_len, metadata, sizeof(metadata));
 
-	shell_print(ctx_shell, "\t\tMetadata length %u, type %u, data: %s",
+	shell_print(shell_get_ctx(), "\t\tMetadata length %u, type %u, data: %s",
 		    data->data_len, data->type, metadata);
 
 	return true;
@@ -67,14 +67,14 @@ static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
 	char bad_code[33];
 
 	if (err != 0) {
-		shell_error(ctx_shell, "BASS recv state read failed (%d)", err);
+		shell_error(shell_get_ctx(), "BASS recv state read failed (%d)", err);
 		return;
 	}
 
 	bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
 	bin2hex(state->bad_code, BT_BASS_BROADCAST_CODE_SIZE,
 		bad_code, sizeof(bad_code));
-	shell_print(ctx_shell, "BASS recv state: src_id %u, addr %s, "
+	shell_print(shell_get_ctx(), "BASS recv state: src_id %u, addr %s, "
 		    "sid %u, sync_state %u, encrypt_state %u%s%s",
 		    state->src_id, le_addr, state->adv_sid,
 		    state->pa_sync_state, state->encrypt_state,
@@ -85,7 +85,7 @@ static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
 		const struct bt_bass_subgroup *subgroup = &state->subgroups[i];
 		struct net_buf_simple buf;
 
-		shell_print(ctx_shell, "\t[%d]: BIS sync %u, metadata_len %u",
+		shell_print(shell_get_ctx(), "\t[%d]: BIS sync %u, metadata_len %u",
 			    i, subgroup->bis_sync, subgroup->metadata_len);
 
 		net_buf_simple_init_with_data(&buf, (void *)subgroup->metadata,
@@ -109,14 +109,15 @@ static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
 		}
 
 		if (per_adv_sync) {
-			shell_print(ctx_shell, "Sending PAST");
+			shell_print(shell_get_ctx(), "Sending PAST");
 
 			err = bt_le_per_adv_sync_transfer(per_adv_sync,
 							  conn,
 							  BT_UUID_BASS_VAL);
 
 			if (err != 0) {
-				shell_error(ctx_shell, "Could not transfer periodic adv sync: %d",
+				shell_error(shell_get_ctx(),
+					    "Could not transfer periodic adv sync: %d",
 					    err);
 			}
 
@@ -135,7 +136,7 @@ static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
 							  &oob_local);
 
 			if (err != 0) {
-				shell_error(ctx_shell,
+				shell_error(shell_get_ctx(),
 					    "Could not get local OOB %d",
 					    err);
 				return;
@@ -149,18 +150,18 @@ static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
 		}
 
 		if (ext_adv != NULL && IS_ENABLED(CONFIG_BT_PER_ADV)) {
-			shell_print(ctx_shell, "Sending local PAST");
+			shell_print(shell_get_ctx(), "Sending local PAST");
 
 			err = bt_le_per_adv_set_info_transfer(ext_adv, conn,
 							      BT_UUID_BASS_VAL);
 
 			if (err != 0) {
-				shell_error(ctx_shell,
+				shell_error(shell_get_ctx(),
 					    "Could not transfer per adv set info: %d",
 					    err);
 			}
 		} else {
-			shell_error(ctx_shell, "Could not send PA to BASS server");
+			shell_error(shell_get_ctx(), "Could not send PA to BASS server");
 		}
 	}
 }
@@ -169,64 +170,64 @@ static void bass_client_recv_state_removed_cb(struct bt_conn *conn, int err,
 					      uint8_t src_id)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "BASS recv state removed failed (%d)",
+		shell_error(shell_get_ctx(), "BASS recv state removed failed (%d)",
 			    err);
 	} else {
-		shell_print(ctx_shell, "BASS recv state %u removed", src_id);
+		shell_print(shell_get_ctx(), "BASS recv state %u removed", src_id);
 	}
 }
 
 static void bass_client_scan_start_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "BASS scan start failed (%d)", err);
+		shell_error(shell_get_ctx(), "BASS scan start failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "BASS scan start successful");
+		shell_print(shell_get_ctx(), "BASS scan start successful");
 	}
 }
 
 static void bass_client_scan_stop_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "BASS scan stop failed (%d)", err);
+		shell_error(shell_get_ctx(), "BASS scan stop failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "BASS scan stop successful");
+		shell_print(shell_get_ctx(), "BASS scan stop successful");
 	}
 }
 
 static void bass_client_add_src_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "BASS add source failed (%d)", err);
+		shell_error(shell_get_ctx(), "BASS add source failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "BASS add source successful");
+		shell_print(shell_get_ctx(), "BASS add source successful");
 	}
 }
 
 static void bass_client_mod_src_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "BASS modify source failed (%d)", err);
+		shell_error(shell_get_ctx(), "BASS modify source failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "BASS modify source successful");
+		shell_print(shell_get_ctx(), "BASS modify source successful");
 	}
 }
 
 static void bass_client_broadcast_code_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "BASS broadcast code failed (%d)", err);
+		shell_error(shell_get_ctx(), "BASS broadcast code failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "BASS broadcast code successful");
+		shell_print(shell_get_ctx(), "BASS broadcast code successful");
 	}
 }
 
 static void bass_client_rem_src_cb(struct bt_conn *conn, int err)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "BASS remove source failed (%d)", err);
+		shell_error(shell_get_ctx(), "BASS remove source failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "BASS remove source successful");
+		shell_print(shell_get_ctx(), "BASS remove source successful");
 	}
 }
 

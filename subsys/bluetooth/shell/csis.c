@@ -19,21 +19,20 @@
 #include <zephyr/bluetooth/audio/csis.h>
 #include "bt.h"
 
-extern const struct shell *ctx_shell;
 static struct bt_csis *csis;
 static uint8_t sirk_read_rsp = BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT;
 
 static void locked_cb(struct bt_conn *conn, struct bt_csis *csis, bool locked)
 {
 	if (conn == NULL) {
-		shell_error(ctx_shell, "Server %s the device",
+		shell_error(shell_get_ctx(), "Server %s the device",
 			    locked ? "locked" : "released");
 	} else {
 		char addr[BT_ADDR_LE_STR_LEN];
 
 		conn_addr_str(conn, addr, sizeof(addr));
 
-		shell_print(ctx_shell, "Client %s %s the device",
+		shell_print(shell_get_ctx(), "Client %s %s the device",
 			    addr, locked ? "locked" : "released");
 	}
 }
@@ -47,7 +46,7 @@ static uint8_t sirk_read_req_cb(struct bt_conn *conn, struct bt_csis *csis)
 
 	conn_addr_str(conn, addr, sizeof(addr));
 
-	shell_print(ctx_shell, "Client %s requested to read the sirk. "
+	shell_print(shell_get_ctx(), "Client %s requested to read the sirk. "
 		    "Responding with %s", addr, rsp_strings[sirk_read_rsp]);
 
 	return sirk_read_rsp;

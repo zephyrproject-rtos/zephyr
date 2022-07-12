@@ -1216,6 +1216,19 @@ int shell_obscure_set(const struct shell *shell, bool obscure);
  */
 int shell_mode_delete_set(const struct shell *shell, bool val);
 
+
+/**
+ * @brief Get the shell context.
+ *
+ * This is useful for functions where the shell context is not passed as a
+ * parameter, e.g., in callbacks.
+ *
+ * The shell context is initialized in `shell_init`.
+ *
+ * @retval Pointer to the shell context.
+ */
+const struct shell *shell_get_ctx(void);
+
 /**
  * @}
  */

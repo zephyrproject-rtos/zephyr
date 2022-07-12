@@ -21,14 +21,14 @@
 static void pa_synced(struct bt_bass_recv_state *recv_state,
 		      const struct bt_le_per_adv_sync_synced_info *info)
 {
-	shell_print(ctx_shell, "BASS receive state %p was PA synced",
+	shell_print(shell_get_ctx(), "BASS receive state %p was PA synced",
 		    recv_state);
 }
 
 static void pa_term(struct bt_bass_recv_state *recv_state,
 		    const struct bt_le_per_adv_sync_term_info *info)
 {
-	shell_print(ctx_shell, "BASS receive state %p PA synced terminated",
+	shell_print(shell_get_ctx(), "BASS receive state %p PA synced terminated",
 		    recv_state);
 
 }
@@ -42,7 +42,7 @@ static void pa_recv(struct bt_bass_recv_state *recv_state,
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	bin2hex(buf->data, buf->len, hex, sizeof(hex));
-	shell_print(ctx_shell, "Receive state %p: device %s, tx_power %i, "
+	shell_print(shell_get_ctx(), "Receive state %p: device %s, tx_power %i, "
 		    "RSSI %i, CTE %u, data length %u, data %s",
 		    recv_state, le_addr, info->tx_power,
 		    info->rssi, info->cte_type, buf->len, hex);

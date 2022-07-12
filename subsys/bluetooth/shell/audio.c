@@ -136,23 +136,23 @@ static void print_codec(const struct bt_codec *codec)
 {
 	int i;
 
-	shell_print(ctx_shell, "codec 0x%02x cid 0x%04x vid 0x%04x count %u",
+	shell_print(shell_get_ctx(), "codec 0x%02x cid 0x%04x vid 0x%04x count %u",
 		    codec->id, codec->cid, codec->vid, codec->data_count);
 
 	for (i = 0; i < codec->data_count; i++) {
-		shell_print(ctx_shell, "data #%u: type 0x%02x len %u", i,
+		shell_print(shell_get_ctx(), "data #%u: type 0x%02x len %u", i,
 			    codec->data[i].data.type,
 			    codec->data[i].data.data_len);
-		shell_hexdump(ctx_shell, codec->data[i].data.data,
+		shell_hexdump(shell_get_ctx(), codec->data[i].data.data,
 			      codec->data[i].data.data_len -
 				sizeof(codec->data[i].data.type));
 	}
 
 	for (i = 0; i < codec->meta_count; i++) {
-		shell_print(ctx_shell, "meta #%u: type 0x%02x len %u", i,
+		shell_print(shell_get_ctx(), "meta #%u: type 0x%02x len %u", i,
 			    codec->meta[i].data.type,
 			    codec->meta[i].data.data_len);
-		shell_hexdump(ctx_shell, codec->meta[i].data.data,
+		shell_hexdump(shell_get_ctx(), codec->meta[i].data.data,
 			      codec->data[i].data.data_len -
 				sizeof(codec->meta[i].data.type));
 	}
@@ -235,7 +235,7 @@ static void set_stream(struct bt_audio_stream *stream)
 
 	for (i = 0; i < ARRAY_SIZE(streams); i++) {
 		if (stream == &streams[i]) {
-			shell_print(ctx_shell, "Default stream: %u", i + 1);
+			shell_print(shell_get_ctx(), "Default stream: %u", i + 1);
 		}
 	}
 }
@@ -243,7 +243,7 @@ static void set_stream(struct bt_audio_stream *stream)
 #if defined(CONFIG_BT_AUDIO_UNICAST)
 static void print_qos(struct bt_codec_qos *qos)
 {
-	shell_print(ctx_shell, "QoS: interval %u framing 0x%02x "
+	shell_print(shell_get_ctx(), "QoS: interval %u framing 0x%02x "
 		    "phy 0x%02x sdu %u rtn %u latency %u pd %u",
 		    qos->interval, qos->framing, qos->phy, qos->sdu,
 		    qos->rtn, qos->latency, qos->pd);
@@ -280,7 +280,7 @@ static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 {
 	int i;
 
-	shell_print(ctx_shell, "ASE Codec Config: conn %p ep %p dir %u, cap %p",
+	shell_print(shell_get_ctx(), "ASE Codec Config: conn %p ep %p dir %u, cap %p",
 		    conn, ep, dir, cap);
 
 	print_codec(codec);
@@ -289,14 +289,14 @@ static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 		struct bt_audio_stream *stream = &streams[i];
 
 		if (stream->conn == NULL) {
-			shell_print(ctx_shell, "ASE Codec Config stream %p",
+			shell_print(shell_get_ctx(), "ASE Codec Config stream %p",
 				    stream);
 			set_stream(stream);
 			return stream;
 		}
 	}
 
-	shell_print(ctx_shell, "No streams available");
+	shell_print(shell_get_ctx(), "No streams available");
 
 	return NULL;
 }
@@ -305,7 +305,7 @@ static int lc3_reconfig(struct bt_audio_stream *stream,
 			struct bt_audio_capability *cap,
 			struct bt_codec *codec)
 {
-	shell_print(ctx_shell, "ASE Codec Reconfig: stream %p cap %p", stream, cap);
+	shell_print(shell_get_ctx(), "ASE Codec Reconfig: stream %p cap %p", stream, cap);
 
 	print_codec(codec);
 
@@ -318,7 +318,7 @@ static int lc3_reconfig(struct bt_audio_stream *stream,
 
 static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 {
-	shell_print(ctx_shell, "QoS: stream %p %p", stream, qos);
+	shell_print(shell_get_ctx(), "QoS: stream %p %p", stream, qos);
 
 	print_qos(qos);
 
@@ -329,7 +329,7 @@ static int lc3_enable(struct bt_audio_stream *stream,
 		      struct bt_codec_data *meta,
 		      size_t meta_count)
 {
-	shell_print(ctx_shell, "Enable: stream %p meta_count %zu", stream,
+	shell_print(shell_get_ctx(), "Enable: stream %p meta_count %zu", stream,
 		    meta_count);
 
 	return 0;
@@ -337,7 +337,7 @@ static int lc3_enable(struct bt_audio_stream *stream,
 
 static int lc3_start(struct bt_audio_stream *stream)
 {
-	shell_print(ctx_shell, "Start: stream %p", stream);
+	shell_print(shell_get_ctx(), "Start: stream %p", stream);
 
 	seq_num = 0;
 
@@ -392,12 +392,12 @@ static int lc3_metadata(struct bt_audio_stream *stream,
 			struct bt_codec_data *meta,
 			size_t meta_count)
 {
-	shell_print(ctx_shell, "Metadata: stream %p meta_count %zu", stream,
+	shell_print(shell_get_ctx(), "Metadata: stream %p meta_count %zu", stream,
 		    meta_count);
 
 	for (size_t i = 0; i < meta_count; i++) {
 		if (!valid_metadata_type(meta->data.type, meta->data.data_len)) {
-			shell_print(ctx_shell,
+			shell_print(shell_get_ctx(),
 				    "Invalid metadata type %u or length %u",
 				    meta->data.type, meta->data.data_len);
 
@@ -410,21 +410,21 @@ static int lc3_metadata(struct bt_audio_stream *stream,
 
 static int lc3_disable(struct bt_audio_stream *stream)
 {
-	shell_print(ctx_shell, "Disable: stream %p", stream);
+	shell_print(shell_get_ctx(), "Disable: stream %p", stream);
 
 	return 0;
 }
 
 static int lc3_stop(struct bt_audio_stream *stream)
 {
-	shell_print(ctx_shell, "Stop: stream %p", stream);
+	shell_print(shell_get_ctx(), "Stop: stream %p", stream);
 
 	return 0;
 }
 
 static int lc3_release(struct bt_audio_stream *stream)
 {
-	shell_print(ctx_shell, "Release: stream %p", stream);
+	shell_print(shell_get_ctx(), "Release: stream %p", stream);
 
 	if (stream == default_stream) {
 		default_stream = NULL;
@@ -503,7 +503,7 @@ static uint8_t stream_dir(const struct bt_audio_stream *stream)
 
 static void add_codec(struct bt_codec *codec, uint8_t index, enum bt_audio_dir dir)
 {
-	shell_print(ctx_shell, "#%u: codec %p dir 0x%02x", index, codec, dir);
+	shell_print(shell_get_ctx(), "#%u: codec %p dir 0x%02x", index, codec, dir);
 
 	print_codec(codec);
 
@@ -518,14 +518,14 @@ static void add_codec(struct bt_codec *codec, uint8_t index, enum bt_audio_dir d
 
 static void add_sink(struct bt_audio_ep *ep, uint8_t index)
 {
-	shell_print(ctx_shell, "Sink #%u: ep %p", index, ep);
+	shell_print(shell_get_ctx(), "Sink #%u: ep %p", index, ep);
 
 	snks[index] = ep;
 }
 
 static void add_source(struct bt_audio_ep *ep, uint8_t index)
 {
-	shell_print(ctx_shell, "Source #%u: ep %p", index, ep);
+	shell_print(shell_get_ctx(), "Source #%u: ep %p", index, ep);
 
 	srcs[index] = ep;
 }
@@ -549,7 +549,7 @@ static void discover_cb(struct bt_conn *conn, struct bt_codec *codec,
 		return;
 	}
 
-	shell_print(ctx_shell, "Discover complete: err %d", params->err);
+	shell_print(shell_get_ctx(), "Discover complete: err %d", params->err);
 
 	memset(params, 0, sizeof(*params));
 }
@@ -582,7 +582,7 @@ static void discover_all(struct bt_conn *conn, struct bt_codec *codec,
 
 		err = bt_audio_discover(default_conn, params);
 		if (err) {
-			shell_error(ctx_shell, "bt_audio_discover err %d", err);
+			shell_error(shell_get_ctx(), "bt_audio_discover err %d", err);
 			discover_cb(conn, NULL, NULL, params);
 		}
 	}
@@ -980,11 +980,11 @@ static bool sink_syncable;
 static bool scan_recv(const struct bt_le_scan_recv_info *info,
 		     uint32_t broadcast_id)
 {
-	shell_print(ctx_shell, "Found broadcaster with ID 0x%06X",
+	shell_print(shell_get_ctx(), "Found broadcaster with ID 0x%06X",
 		    broadcast_id);
 
 	if (broadcast_id == accepted_broadcast_id) {
-		shell_print(ctx_shell, "PA syncing to broadcaster");
+		shell_print(shell_get_ctx(), "PA syncing to broadcaster");
 		accepted_broadcast_id = 0;
 		return true;
 	}
@@ -996,14 +996,14 @@ static void pa_synced(struct bt_audio_broadcast_sink *sink,
 		      struct bt_le_per_adv_sync *sync,
 		      uint32_t broadcast_id)
 {
-	shell_print(ctx_shell,
+	shell_print(shell_get_ctx(),
 		    "PA synced to broadcaster with ID 0x%06X as sink %p",
 		    broadcast_id, sink);
 
 	if (default_sink == NULL) {
 		default_sink = sink;
 
-		shell_print(ctx_shell, "Sink %p is set as default", sink);
+		shell_print(shell_get_ctx(), "Sink %p is set as default", sink);
 	}
 }
 
@@ -1020,14 +1020,14 @@ static void base_recv(struct bt_audio_broadcast_sink *sink,
 		return;
 	}
 
-	shell_print(ctx_shell, "Received BASE from sink %p:", sink);
+	shell_print(shell_get_ctx(), "Received BASE from sink %p:", sink);
 
 	for (int i = 0; i < base->subgroup_count; i++) {
 		const struct bt_audio_base_subgroup *subgroup;
 
 		subgroup = &base->subgroups[i];
 
-		shell_print(ctx_shell, "Subgroup[%d]:", i);
+		shell_print(shell_get_ctx(), "Subgroup[%d]:", i);
 		print_codec(&subgroup->codec);
 
 		for (int j = 0; j < subgroup->bis_count; j++) {
@@ -1035,7 +1035,7 @@ static void base_recv(struct bt_audio_broadcast_sink *sink,
 
 			bis_data = &subgroup->bis_data[j];
 
-			shell_print(ctx_shell, "BIS[%d] index 0x%02x",
+			shell_print(shell_get_ctx(), "BIS[%d] index 0x%02x",
 				    i, bis_data->index);
 			bis_indexes[index_count++] = bis_data->index;
 
@@ -1044,11 +1044,11 @@ static void base_recv(struct bt_audio_broadcast_sink *sink,
 
 				codec_data = &bis_data->data[k];
 
-				shell_print(ctx_shell,
+				shell_print(shell_get_ctx(),
 					    "data #%u: type 0x%02x len %u",
 					    i, codec_data->data.type,
 					    codec_data->data.data_len);
-				shell_hexdump(ctx_shell, codec_data->data.data,
+				shell_hexdump(shell_get_ctx(), codec_data->data.data,
 					      codec_data->data.data_len -
 						sizeof(codec_data->data.type));
 			}
@@ -1063,10 +1063,10 @@ static void base_recv(struct bt_audio_broadcast_sink *sink,
 		sprintf(bis_index_str, "0x%02x ", bis_indexes[i]);
 
 		strcat(bis_indexes_str, bis_index_str);
-		shell_print(ctx_shell, "[%d]: %s", i, bis_index_str);
+		shell_print(shell_get_ctx(), "[%d]: %s", i, bis_index_str);
 	}
 
-	shell_print(ctx_shell, "Possible indexes: %s", bis_indexes_str);
+	shell_print(shell_get_ctx(), "Possible indexes: %s", bis_indexes_str);
 
 	(void)memcpy(&received_base, base, sizeof(received_base));
 }
@@ -1077,20 +1077,20 @@ static void syncable(struct bt_audio_broadcast_sink *sink, bool encrypted)
 		return;
 	}
 
-	shell_print(ctx_shell, "Sink %p is ready to sync %s encryption",
+	shell_print(shell_get_ctx(), "Sink %p is ready to sync %s encryption",
 		    sink, encrypted ? "with" : "without");
 	sink_syncable = true;
 }
 
 static void scan_term(int err)
 {
-	shell_print(ctx_shell, "Broadcast scan was terminated: %d", err);
+	shell_print(shell_get_ctx(), "Broadcast scan was terminated: %d", err);
 
 }
 
 static void pa_sync_lost(struct bt_audio_broadcast_sink *sink)
 {
-	shell_warn(ctx_shell, "Sink %p disconnected", sink);
+	shell_warn(shell_get_ctx(), "Sink %p disconnected", sink);
 
 	if (default_sink == sink) {
 		default_sink = NULL;
@@ -1115,7 +1115,7 @@ static void audio_recv(struct bt_audio_stream *stream,
 		       const struct bt_iso_recv_info *info,
 		       struct net_buf *buf)
 {
-	shell_print(ctx_shell, "Incoming audio on stream %p len %u\n", stream, buf->len);
+	shell_print(shell_get_ctx(), "Incoming audio on stream %p len %u\n", stream, buf->len);
 }
 
 static struct bt_audio_stream_ops stream_ops = {
@@ -1367,7 +1367,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err, i;
 
-	ctx_shell = sh;
+	shell_get_ctx() = sh;
 
 	err = bt_enable(NULL);
 	if (err && err != -EALREADY) {

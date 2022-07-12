@@ -41,7 +41,6 @@
 static bool no_settings_load;
 
 uint8_t selected_id = BT_ID_DEFAULT;
-const struct shell *ctx_shell;
 
 #if defined(CONFIG_BT_CONN)
 struct bt_conn *default_conn;
@@ -116,7 +115,7 @@ static bool is_substring(const char *substr, const char *str)
 	for (size_t pos = 0; pos < str_len; pos++) {
 		if (tolower(substr[0]) == tolower(str[pos])) {
 			if (pos + sub_str_len > str_len) {
-				shell_print(ctx_shell, "length fail");
+				shell_print(shell_get_ctx(), "length fail");
 				return false;
 			}
 
@@ -163,7 +162,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		return;
 	}
 
-	shell_print(ctx_shell, "[DEVICE]: %s, AD evt type %u, RSSI %i %s "
+	shell_print(shell_get_ctx(), "[DEVICE]: %s, AD evt type %u, RSSI %i %s "
 		    "C:%u S:%u D:%d SR:%u E:%u Prim: %s, Secn: %s, "
 		    "Interval: 0x%04x (%u ms), SID: 0x%x",
 		    le_addr, info->adv_type, info->rssi, name,
@@ -179,7 +178,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 
 static void scan_timeout(void)
 {
-	shell_print(ctx_shell, "Scan timeout");
+	shell_print(shell_get_ctx(), "Scan timeout");
 }
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -188,7 +187,7 @@ static void scan_timeout(void)
 static void adv_sent(struct bt_le_ext_adv *adv,
 		     struct bt_le_ext_adv_sent_info *info)
 {
-	shell_print(ctx_shell, "Advertiser[%d] %p sent %d",
+	shell_print(shell_get_ctx(), "Advertiser[%d] %p sent %d",
 		    bt_le_ext_adv_get_index(adv), adv, info->num_sent);
 }
 
@@ -199,7 +198,7 @@ static void adv_scanned(struct bt_le_ext_adv *adv,
 
 	bt_addr_le_to_str(info->addr, str, sizeof(str));
 
-	shell_print(ctx_shell, "Advertiser[%d] %p scanned by %s",
+	shell_print(shell_get_ctx(), "Advertiser[%d] %p scanned by %s",
 		    bt_le_ext_adv_get_index(adv), adv, str);
 }
 #endif /* CONFIG_BT_BROADCASTER */
@@ -212,7 +211,7 @@ static void adv_connected(struct bt_le_ext_adv *adv,
 
 	bt_addr_le_to_str(bt_conn_get_dst(info->conn), str, sizeof(str));
 
-	shell_print(ctx_shell, "Advertiser[%d] %p connected by %s",
+	shell_print(shell_get_ctx(), "Advertiser[%d] %p connected by %s",
 		    bt_le_ext_adv_get_index(adv), adv, str);
 }
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -296,12 +295,12 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	conn_addr_str(conn, addr, sizeof(addr));
 
 	if (err) {
-		shell_error(ctx_shell, "Failed to connect to %s (0x%02x)", addr,
+		shell_error(shell_get_ctx(), "Failed to connect to %s (0x%02x)", addr,
 			     err);
 		goto done;
 	}
 
-	shell_print(ctx_shell, "Connected: %s", addr);
+	shell_print(shell_get_ctx(), "Connected: %s", addr);
 
 	if (!default_conn) {
 		default_conn = bt_conn_ref(conn);
@@ -320,7 +319,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	char addr[BT_ADDR_LE_STR_LEN];
 
 	conn_addr_str(conn, addr, sizeof(addr));
-	shell_print(ctx_shell, "Disconnected: %s (reason 0x%02x)", addr, reason);
+	shell_print(shell_get_ctx(), "Disconnected: %s (reason 0x%02x)", addr, reason);
 
 	if (default_conn == conn) {
 		bt_conn_unref(default_conn);
@@ -330,7 +329,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 {
-	shell_print(ctx_shell, "LE conn  param req: int (0x%04x, 0x%04x) lat %d"
+	shell_print(shell_get_ctx(), "LE conn  param req: int (0x%04x, 0x%04x) lat %d"
 		    " to %d", param->interval_min, param->interval_max,
 		    param->latency, param->timeout);
 
@@ -340,7 +339,7 @@ static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 static void le_param_updated(struct bt_conn *conn, uint16_t interval,
 			     uint16_t latency, uint16_t timeout)
 {
-	shell_print(ctx_shell, "LE conn param updated: int 0x%04x lat %d "
+	shell_print(shell_get_ctx(), "LE conn param updated: int 0x%04x lat %d "
 		     "to %d", interval, latency, timeout);
 }
 
@@ -354,7 +353,7 @@ static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 	bt_addr_le_to_str(identity, addr_identity, sizeof(addr_identity));
 	bt_addr_le_to_str(rpa, addr_rpa, sizeof(addr_rpa));
 
-	shell_print(ctx_shell, "Identity resolved %s -> %s", addr_rpa,
+	shell_print(shell_get_ctx(), "Identity resolved %s -> %s", addr_rpa,
 	      addr_identity);
 }
 #endif
@@ -394,10 +393,10 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 	conn_addr_str(conn, addr, sizeof(addr));
 
 	if (!err) {
-		shell_print(ctx_shell, "Security changed: %s level %u", addr,
+		shell_print(shell_get_ctx(), "Security changed: %s level %u", addr,
 			    level);
 	} else {
-		shell_print(ctx_shell, "Security failed: %s level %u "
+		shell_print(shell_get_ctx(), "Security failed: %s level %u "
 			    "reason: %s (%d)",
 			    addr, level, security_err_str(err), err);
 	}
@@ -427,7 +426,7 @@ static void remote_info_available(struct bt_conn *conn,
 	bt_conn_get_info(conn, &info);
 
 	if (IS_ENABLED(CONFIG_BT_REMOTE_VERSION)) {
-		shell_print(ctx_shell,
+		shell_print(shell_get_ctx(),
 			    "Remote LMP version %s (0x%02x) subversion 0x%04x "
 			    "manufacturer 0x%04x", ver_str(remote_info->version),
 			    remote_info->version, remote_info->subversion,
@@ -442,7 +441,7 @@ static void remote_info_available(struct bt_conn *conn,
 				sizeof(features));
 		bin2hex(features, sizeof(features),
 			features_str, sizeof(features_str));
-		shell_print(ctx_shell, "LE Features: 0x%s ", features_str);
+		shell_print(shell_get_ctx(), "LE Features: 0x%s ", features_str);
 	}
 }
 #endif /* defined(CONFIG_BT_REMOTE_INFO) */
@@ -451,7 +450,7 @@ static void remote_info_available(struct bt_conn *conn,
 void le_data_len_updated(struct bt_conn *conn,
 			 struct bt_conn_le_data_len_info *info)
 {
-	shell_print(ctx_shell,
+	shell_print(shell_get_ctx(),
 		    "LE data len updated: TX (len: %d time: %d)"
 		    " RX (len: %d time: %d)", info->tx_max_len,
 		    info->tx_max_time, info->rx_max_len, info->rx_max_time);
@@ -462,7 +461,7 @@ void le_data_len_updated(struct bt_conn *conn,
 void le_phy_updated(struct bt_conn *conn,
 		    struct bt_conn_le_phy_info *info)
 {
-	shell_print(ctx_shell, "LE PHY updated: TX PHY %s, RX PHY %s",
+	shell_print(shell_get_ctx(), "LE PHY updated: TX PHY %s, RX PHY %s",
 		    phy2str(info->tx_phy), phy2str(info->rx_phy));
 }
 #endif
@@ -527,7 +526,7 @@ static void per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
 		memset(past_peer, 0, sizeof(past_peer));
 	}
 
-	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
+	shell_print(shell_get_ctx(), "PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
 		    "Interval 0x%04x (%u ms), PHY %s, SD 0x%04X, PAST peer %s",
 		    bt_le_per_adv_sync_get_index(sync), le_addr,
 		    info->interval, BT_CONN_INTERVAL_TO_MS(info->interval),
@@ -557,7 +556,7 @@ static void per_adv_sync_terminated_cb(
 	}
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated",
+	shell_print(shell_get_ctx(), "PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated",
 		    bt_le_per_adv_sync_get_index(sync), le_addr);
 }
 
@@ -569,7 +568,7 @@ static void per_adv_sync_recv_cb(
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
+	shell_print(shell_get_ctx(), "PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
 		    "RSSI %i, CTE %u, data length %u",
 		    bt_le_per_adv_sync_get_index(sync), le_addr, info->tx_power,
 		    info->rssi, info->cte_type, buf->len);
@@ -581,7 +580,8 @@ static void per_adv_sync_biginfo_cb(struct bt_le_per_adv_sync *sync,
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(biginfo->addr, le_addr, sizeof(le_addr));
-	shell_print(ctx_shell, "BIG_INFO PER_ADV_SYNC[%u]: [DEVICE]: %s, sid 0x%02x, num_bis %u, "
+	shell_print(shell_get_ctx(),
+		    "BIG_INFO PER_ADV_SYNC[%u]: [DEVICE]: %s, sid 0x%02x, num_bis %u, "
 		    "nse 0x%02x, interval 0x%04x (%u ms), bn 0x%02x, pto 0x%02x, irc 0x%02x, "
 		    "max_pdu 0x%04x, sdu_interval 0x%04x, max_sdu 0x%04x, phy %s, framing 0x%02x, "
 		    "%sencrypted",
@@ -604,15 +604,15 @@ static struct bt_le_per_adv_sync_cb per_adv_sync_cb = {
 static void bt_ready(int err)
 {
 	if (err) {
-		shell_error(ctx_shell, "Bluetooth init failed (err %d)", err);
+		shell_error(shell_get_ctx(), "Bluetooth init failed (err %d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Bluetooth initialized");
+	shell_print(shell_get_ctx(), "Bluetooth initialized");
 
 	if (IS_ENABLED(CONFIG_SETTINGS) && !no_settings_load) {
 		settings_load();
-		shell_print(ctx_shell, "Settings Loaded");
+		shell_print(shell_get_ctx(), "Settings Loaded");
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
@@ -642,8 +642,6 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	bool no_ready_cb = false;
-
-	ctx_shell = sh;
 
 	for (size_t argn = 1; argn < argc; argn++) {
 		const char *arg = argv[argn];
@@ -1032,7 +1030,7 @@ static int cmd_scan_filter_set_name(const struct shell *sh, size_t argc,
 	const char *name_arg = argv[1];
 
 	if (strlen(name_arg) >= sizeof(scan_filter.name)) {
-		shell_error(ctx_shell, "Name is too long (max %zu): %s\n",
+		shell_error(shell_get_ctx(), "Name is too long (max %zu): %s\n",
 			    sizeof(scan_filter.name), name_arg);
 		return -ENOEXEC;
 	}
@@ -1050,7 +1048,7 @@ static int cmd_scan_filter_set_addr(const struct shell *sh, size_t argc,
 
 	/* Validate length including null terminator. */
 	if (strlen(addr_arg) >= sizeof(scan_filter.addr)) {
-		shell_error(ctx_shell, "Invalid address string: %s\n",
+		shell_error(shell_get_ctx(), "Invalid address string: %s\n",
 			    addr_arg);
 		return -ENOEXEC;
 	}
@@ -1061,7 +1059,7 @@ static int cmd_scan_filter_set_addr(const struct shell *sh, size_t argc,
 		uint8_t tmp;
 
 		if (c != ':' && char2hex(c, &tmp) < 0) {
-			shell_error(ctx_shell,
+			shell_error(shell_get_ctx(),
 					"Invalid address string: %s\n",
 					addr_arg);
 			return -ENOEXEC;
@@ -1548,7 +1546,7 @@ static int cmd_adv_delete(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_le_ext_adv_delete(adv);
 	if (err) {
-		shell_error(ctx_shell, "Failed to delete advertiser set");
+		shell_error(shell_get_ctx(), "Failed to delete advertiser set");
 		return err;
 	}
 
@@ -2165,7 +2163,7 @@ static void print_le_addr(const char *desc, const bt_addr_le_t *addr)
 
 	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 
-	shell_print(ctx_shell, "%s address: %s (%s)", desc, addr_str,
+	shell_print(shell_get_ctx(), "%s address: %s (%s)", desc, addr_str,
 		    addr_desc);
 }
 
@@ -2211,11 +2209,11 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_conn_get_info(conn, &info);
 	if (err) {
-		shell_print(ctx_shell, "Failed to get info");
+		shell_print(shell_get_ctx(), "Failed to get info");
 		goto done;
 	}
 
-	shell_print(ctx_shell, "Type: %s, Role: %s, Id: %u",
+	shell_print(shell_get_ctx(), "Type: %s, Role: %s, Id: %u",
 		    get_conn_type_str(info.type),
 		    get_conn_role_str(info.role),
 		    info.id);
@@ -2226,21 +2224,21 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 		print_le_addr("Remote on-air", info.le.remote);
 		print_le_addr("Local on-air", info.le.local);
 
-		shell_print(ctx_shell, "Interval: 0x%04x (%u ms)",
+		shell_print(shell_get_ctx(), "Interval: 0x%04x (%u ms)",
 			    info.le.interval,
 			    BT_CONN_INTERVAL_TO_MS(info.le.interval));
-		shell_print(ctx_shell, "Latency: 0x%04x (%u ms)",
+		shell_print(shell_get_ctx(), "Latency: 0x%04x (%u ms)",
 			    info.le.latency,
 			    BT_CONN_INTERVAL_TO_MS(info.le.latency));
-		shell_print(ctx_shell, "Supervision timeout: 0x%04x (%d ms)",
+		shell_print(shell_get_ctx(), "Supervision timeout: 0x%04x (%d ms)",
 			    info.le.timeout, info.le.timeout * 10);
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
-		shell_print(ctx_shell, "LE PHY: TX PHY %s, RX PHY %s",
+		shell_print(shell_get_ctx(), "LE PHY: TX PHY %s, RX PHY %s",
 			    phy2str(info.le.phy->tx_phy),
 			    phy2str(info.le.phy->rx_phy));
 #endif
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
-		shell_print(ctx_shell, "LE data len: TX (len: %d time: %d)"
+		shell_print(shell_get_ctx(), "LE data len: TX (len: %d time: %d)"
 			    " RX (len: %d time: %d)",
 			    info.le.data_len->tx_max_len,
 			    info.le.data_len->tx_max_time,
@@ -2254,7 +2252,7 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 		char addr_str[BT_ADDR_STR_LEN];
 
 		bt_addr_to_str(info.br.dst, addr_str, sizeof(addr_str));
-		shell_print(ctx_shell, "Peer address %s", addr_str);
+		shell_print(shell_get_ctx(), "Peer address %s", addr_str);
 	}
 #endif /* defined(CONFIG_BT_BREDR) */
 
@@ -2586,7 +2584,7 @@ static void bond_info(const struct bt_bond_info *info, void *user_data)
 	int *bond_count = user_data;
 
 	bt_addr_le_to_str(&info->addr, addr, sizeof(addr));
-	shell_print(ctx_shell, "Remote Identity: %s", addr);
+	shell_print(shell_get_ctx(), "Remote Identity: %s", addr);
 	(*bond_count)++;
 }
 
@@ -2620,7 +2618,7 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 	struct bt_conn_info info;
 
 	if (bt_conn_get_info(conn, &info) < 0) {
-		shell_error(ctx_shell, "Unable to get info: conn %p", conn);
+		shell_error(shell_get_ctx(), "Unable to get info: conn %p", conn);
 		return;
 	}
 
@@ -2628,20 +2626,20 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 #if defined(CONFIG_BT_BREDR)
 	case BT_CONN_TYPE_BR:
 		bt_addr_to_str(info.br.dst, addr, sizeof(addr));
-		shell_print(ctx_shell, "#%u [BR][%s] %s", info.id,
+		shell_print(shell_get_ctx(), "#%u [BR][%s] %s", info.id,
 			    role_str(info.role), addr);
 		break;
 #endif
 	case BT_CONN_TYPE_LE:
 		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
-		shell_print(ctx_shell, "#%u [LE][%s] %s: Interval %u latency %u"
+		shell_print(shell_get_ctx(), "#%u [LE][%s] %s: Interval %u latency %u"
 			    " timeout %u", info.id, role_str(info.role), addr,
 			    info.le.interval, info.le.latency, info.le.timeout);
 		break;
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
 		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
-		shell_print(ctx_shell, "#%u [ISO][%s] %s", info.id,
+		shell_print(shell_get_ctx(), "#%u [ISO][%s] %s", info.id,
 			    role_str(info.role), addr);
 		break;
 #endif
@@ -2670,7 +2668,7 @@ static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 
 	snprintk(passkey_str, 7, "%06u", passkey);
 
-	shell_print(ctx_shell, "Passkey for %s: %s", addr, passkey_str);
+	shell_print(shell_get_ctx(), "Passkey for %s: %s", addr, passkey_str);
 }
 
 static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
@@ -2682,7 +2680,7 @@ static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
 
 	snprintk(passkey_str, 7, "%06u", passkey);
 
-	shell_print(ctx_shell, "Confirm passkey for %s: %s", addr, passkey_str);
+	shell_print(shell_get_ctx(), "Confirm passkey for %s: %s", addr, passkey_str);
 }
 
 static void auth_passkey_entry(struct bt_conn *conn)
@@ -2691,7 +2689,7 @@ static void auth_passkey_entry(struct bt_conn *conn)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	shell_print(ctx_shell, "Enter passkey for %s", addr);
+	shell_print(shell_get_ctx(), "Enter passkey for %s", addr);
 }
 
 static void auth_cancel(struct bt_conn *conn)
@@ -2700,7 +2698,7 @@ static void auth_cancel(struct bt_conn *conn)
 
 	conn_addr_str(conn, addr, sizeof(addr));
 
-	shell_print(ctx_shell, "Pairing cancelled: %s", addr);
+	shell_print(shell_get_ctx(), "Pairing cancelled: %s", addr);
 
 	/* clear connection reference for sec mode 3 pairing */
 	if (pairing_conn) {
@@ -2715,7 +2713,7 @@ static void auth_pairing_confirm(struct bt_conn *conn)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	shell_print(ctx_shell, "Confirm pairing for %s", addr);
+	shell_print(shell_get_ctx(), "Confirm pairing for %s", addr);
 }
 
 #if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
@@ -2761,7 +2759,7 @@ static void auth_pairing_oob_data_request(struct bt_conn *conn,
 		if (oobd_remote &&
 		    bt_addr_le_cmp(info.le.remote, &oob_remote.addr)) {
 			bt_addr_le_to_str(info.le.remote, addr, sizeof(addr));
-			shell_print(ctx_shell,
+			shell_print(shell_get_ctx(),
 				    "No OOB data available for remote %s",
 				    addr);
 			bt_conn_auth_cancel(conn);
@@ -2771,7 +2769,7 @@ static void auth_pairing_oob_data_request(struct bt_conn *conn,
 		if (oobd_local &&
 		    bt_addr_le_cmp(info.le.local, &oob_local.addr)) {
 			bt_addr_le_to_str(info.le.local, addr, sizeof(addr));
-			shell_print(ctx_shell,
+			shell_print(shell_get_ctx(),
 				    "No OOB data available for local %s",
 				    addr);
 			bt_conn_auth_cancel(conn);
@@ -2781,14 +2779,14 @@ static void auth_pairing_oob_data_request(struct bt_conn *conn,
 		bt_le_oob_set_sc_data(conn, oobd_local, oobd_remote);
 
 		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
-		shell_print(ctx_shell, "Set %s OOB SC data for %s, ",
+		shell_print(shell_get_ctx(), "Set %s OOB SC data for %s, ",
 			    oob_config_str(oob_info->lesc.oob_config), addr);
 		return;
 	}
 #endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
 	bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
-	shell_print(ctx_shell, "Legacy OOB TK requested from remote %s", addr);
+	shell_print(shell_get_ctx(), "Legacy OOB TK requested from remote %s", addr);
 }
 
 static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
@@ -2797,7 +2795,7 @@ static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	shell_print(ctx_shell, "%s with %s", bonded ? "Bonded" : "Paired",
+	shell_print(shell_get_ctx(), "%s with %s", bonded ? "Bonded" : "Paired",
 		    addr);
 }
 
@@ -2807,7 +2805,7 @@ static void auth_pairing_failed(struct bt_conn *conn, enum bt_security_err err)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	shell_print(ctx_shell, "Pairing failed with %s reason: %s (%d)", addr,
+	shell_print(shell_get_ctx(), "Pairing failed with %s reason: %s (%d)", addr,
 		    security_err_str(err), err);
 }
 
@@ -2828,10 +2826,10 @@ static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 	bt_addr_to_str(info.br.dst, addr, sizeof(addr));
 
 	if (highsec) {
-		shell_print(ctx_shell, "Enter 16 digits wide PIN code for %s",
+		shell_print(shell_get_ctx(), "Enter 16 digits wide PIN code for %s",
 			    addr);
 	} else {
-		shell_print(ctx_shell, "Enter PIN code for %s", addr);
+		shell_print(shell_get_ctx(), "Enter PIN code for %s", addr);
 	}
 
 	/*
@@ -2848,7 +2846,7 @@ static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 enum bt_security_err pairing_accept(
 	struct bt_conn *conn, const struct bt_conn_pairing_feat *const feat)
 {
-	shell_print(ctx_shell, "Remote pairing features: "
+	shell_print(shell_get_ctx(), "Remote pairing features: "
 			       "IO: 0x%02x, OOB: %d, AUTH: 0x%02x, Key: %d, "
 			       "Init Kdist: 0x%02x, Resp Kdist: 0x%02x",
 			       feat->io_capability, feat->oob_data_flag,
@@ -2864,7 +2862,7 @@ void bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 	char addr[BT_ADDR_STR_LEN];
 
 	bt_addr_le_to_str(peer, addr, sizeof(addr));
-	shell_print(ctx_shell, "Bond deleted for %s, id %u", addr, id);
+	shell_print(shell_get_ctx(), "Bond deleted for %s, id %u", addr, id);
 }
 
 static struct bt_conn_auth_cb auth_cb_display = {
