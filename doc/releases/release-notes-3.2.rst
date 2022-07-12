@@ -19,6 +19,11 @@ API Changes
 Changes in this release
 =======================
 
+* Changed :c:struct:`spi_cs_control` to remove anonymous struct.
+  This causes possible breakage for static initialization of the
+  struct.  Updated :c:macro:`SPI_CS_CONTROL_PTR_DT` to reflect
+  this change.
+
 Removed APIs in this release
 ============================
 

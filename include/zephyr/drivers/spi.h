@@ -149,9 +149,7 @@ struct spi_cs_control {
 	 * equivalent to SPI_CS_ACTIVE_HIGH/SPI_CS_ACTIVE_LOW options in struct
 	 * spi_config.
 	 */
-	struct {
-		struct gpio_dt_spec gpio;
-	};
+	struct gpio_dt_spec gpio;
 	/**
 	 * Delay in microseconds to wait before starting the
 	 * transmission and before releasing the CS line.
@@ -258,9 +256,7 @@ struct spi_cs_control {
  */
 #define SPI_CS_CONTROL_PTR_DT(node_id, delay_)			  \
 	(&(struct spi_cs_control) {				  \
-		{						  \
-			.gpio = SPI_CS_GPIOS_DT_SPEC_GET(node_id),\
-		},						  \
+		.gpio = SPI_CS_GPIOS_DT_SPEC_GET(node_id),	  \
 		.delay = (delay_),				  \
 	})
 
