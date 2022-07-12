@@ -104,7 +104,7 @@ static const struct dac_driver_api mcp4728_driver_api = {
 	DEVICE_DT_INST_DEFINE(index, dac_mcp4728_init, NULL, NULL,		\
 				&mcp4728_config_##index,			\
 				POST_KERNEL,					\
-				CONFIG_DAC_INIT_PRIORITY,			\
+				CONFIG_DAC_MCP4728_INIT_PRIORITY,		\
 				&mcp4728_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INST_DT_MCP4728);

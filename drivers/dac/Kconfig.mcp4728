@@ -7,3 +7,13 @@ config DAC_MCP4728
 	depends on I2C
 	help
 	  Enable driver for the Microchip MCP4728.
+
+if DAC_MCP4728
+
+config DAC_MCP4728_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  Microchip MCP4728 device driver initialization priority.
+
+endif # DAC_MCP4728
