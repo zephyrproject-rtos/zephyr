@@ -237,6 +237,7 @@
 /drivers/console/jailhouse_debug_console.c @MrVan
 /drivers/counter/counter_cmos.c           @dcpleung
 /drivers/counter/counter_ll_stm32_timer.c @kentjhall
+/drivers/counter/*esp32*                  @glaubermaroto
 /drivers/crypto/*nrf_ecb*                 @maciekfabia @anangl
 /drivers/display/display_framebuf.c       @dcpleung
 /drivers/display/*rm68200*                @mmahadevan108
