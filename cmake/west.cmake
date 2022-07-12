@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 # west is an optional dependency. We need to run west using the same
 # Python interpreter as everything else, though, so we play some extra

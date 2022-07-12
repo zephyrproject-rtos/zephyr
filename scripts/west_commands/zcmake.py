@@ -1,6 +1,7 @@
 # Copyright (c) 2018 Open Source Foundries Limited.
 #
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 '''Common definitions for building Zephyr applications with CMake.
 
 This provides some default settings and convenience wrappers for

@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 if(CONFIG_FILE_SYSTEM)
   zephyr_interface_library_named(FS)

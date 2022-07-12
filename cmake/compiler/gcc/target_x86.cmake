@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 if(CONFIG_X86_64)
   string(PREPEND CMAKE_ASM_FLAGS "-m64 ")

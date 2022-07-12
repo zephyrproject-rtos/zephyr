@@ -2,6 +2,7 @@
  * Copyright (c) 2019 - 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-T3
  */
 
 #if defined(CONFIG_CPU_CORTEX_M_HAS_VTOR)

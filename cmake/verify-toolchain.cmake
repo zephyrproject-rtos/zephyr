@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 # The purpose of this file is to verify that required variables has been
 # defined for proper toolchain use.
 #

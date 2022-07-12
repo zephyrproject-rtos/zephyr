@@ -2,6 +2,7 @@
 
 # Copyright (c) 2018-2019, Nordic Semiconductor ASA and Ulf Magnusson
 # SPDX-License-Identifier: ISC
+# SPDX-FileComment: IEC-61508-T3
 
 """
 Overview

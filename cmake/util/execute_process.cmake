@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 # Parameter names identical to the execute_process() CMake command, and
 # "ARGS" for the process command-line arguments.

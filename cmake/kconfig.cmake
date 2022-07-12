@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 # Folders needed for conf/mconf files (kconfig has no method of redirecting all output files).
 # conf/mconf needs to be run from a different directory because of: GH-3408

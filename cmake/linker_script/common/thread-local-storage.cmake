@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 # originates from thread-local-storage.ld
 
 if(CONFIG_THREAD_LOCAL_STORAGE)

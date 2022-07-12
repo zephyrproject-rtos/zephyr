@@ -2,6 +2,7 @@
  * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-T3
  */
 
 #include <arch/arm/aarch32/cortex_a_r/scripts/linker.ld>

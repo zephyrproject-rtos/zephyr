@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 set_ifndef(ARMCLANG_TOOLCHAIN_PATH "$ENV{ARMCLANG_TOOLCHAIN_PATH}")
 set(ARMCLANG_TOOLCHAIN_PATH ${ARMCLANG_TOOLCHAIN_PATH} CACHE PATH "armclang tools install directory")

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 # coverage is a property holding the linker flag required for coverage support on the toolchain.
 # For example, on ld/gcc this would be: -lgcov
 # Set the property for the corresponding flags of the given toolchain.

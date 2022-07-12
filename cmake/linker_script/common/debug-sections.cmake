@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 # Content of this file originates from include/linker/debug-sections.ld
 # Following sections are obtained via 'ld --verbose'
 

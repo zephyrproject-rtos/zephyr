@@ -3,6 +3,7 @@
 # Copyright (c) 2017 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 """Generate a Global Descriptor Table (GDT) for x86 CPUs.
 

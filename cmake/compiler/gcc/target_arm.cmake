@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 list(APPEND TOOLCHAIN_C_FLAGS   -mcpu=${GCC_M_CPU})
 list(APPEND TOOLCHAIN_LD_FLAGS  -mcpu=${GCC_M_CPU})
 

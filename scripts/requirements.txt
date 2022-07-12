@@ -1,3 +1,5 @@
+# SPDX-FileComment: IEC-61508-T3
+
 -r requirements-base.txt
 -r requirements-build-test.txt
 -r requirements-doc.txt

@@ -1,5 +1,6 @@
 # Copyright (c) 2019 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 #
 # XXX: When using the Intel toolchain, cmake doesn't recognize .S files

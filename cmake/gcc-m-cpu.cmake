@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 # Determines what argument to give to -mcpu= based on the
 # KConfig'uration and sets this to GCC_M_CPU

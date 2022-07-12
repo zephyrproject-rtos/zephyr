@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 add_definitions(-D__ZEPHYR_SUPERVISOR__)
 

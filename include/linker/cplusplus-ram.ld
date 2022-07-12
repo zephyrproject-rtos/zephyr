@@ -2,6 +2,7 @@
  * Copyright (c) 2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-T3
  */
 
 #if defined (CONFIG_CPLUSPLUS)

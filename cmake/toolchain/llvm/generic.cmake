@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 set_ifndef(LLVM_TOOLCHAIN_PATH "$ENV{CLANG_ROOT_DIR}")
 set_ifndef(LLVM_TOOLCHAIN_PATH "$ENV{LLVM_TOOLCHAIN_PATH}")

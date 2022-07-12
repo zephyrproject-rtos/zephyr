@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 # This template file can be used as a starting point for implementing support
 # for additional tools for reading and/or conversion of elf files.
 #

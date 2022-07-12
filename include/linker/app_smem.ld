@@ -1,4 +1,7 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-T3
+ */
 
 /*
  * This hackish way of including files is due to CMake issues:

@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 # In order to ensure that the armlink symbol name is correctly passed to
 # gen_handles.py, we must first ensure that it is properly escaped.

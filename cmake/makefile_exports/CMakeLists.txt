@@ -1,5 +1,6 @@
 # Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 
 zephyr_get_compile_options_for_lang_as_string(ASM ASM_compile_options)

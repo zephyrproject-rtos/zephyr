@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 if(${SDK_VERSION} VERSION_LESS_EQUAL 0.11.2)
   # For backward compatibility with 0.11.1 and 0.11.2

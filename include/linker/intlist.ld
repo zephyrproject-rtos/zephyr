@@ -2,6 +2,7 @@
  * Copyright (c) 2017 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-T3
  */
 
 /* This creates a special section which is not included by the final binary,

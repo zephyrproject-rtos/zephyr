@@ -1,4 +1,7 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-T3
+ */
 
 #ifdef CONFIG_USERSPACE
 	/* We need to reserve room for the gperf generated hash functions.

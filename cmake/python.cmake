@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 # On Windows, instruct Python to output UTF-8 even when not
 # interacting with a terminal. This is required since Python scripts

@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T2
 
 set(flag_for_ram_report ram)
 set(flag_for_rom_report rom)

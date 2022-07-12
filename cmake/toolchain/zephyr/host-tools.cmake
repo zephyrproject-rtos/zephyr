@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 # This is the minimum required version for Zephyr to work (Old style)
 set(REQUIRED_SDK_VER 0.11.1)

@@ -1,6 +1,7 @@
 # Copyright 2009-2013, 2019 Peter A. Bigot
 #
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 # This implementation is derived from the one in
 # [PyXB](https://github.com/pabigot/pyxb), stripped down and modified

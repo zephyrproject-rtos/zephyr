@@ -2,7 +2,7 @@
 
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
-# SPDX-FileComment: IEC-61508-SIL3
+# SPDX-FileComment: IEC-61508-T3
 
 # NOTE: We have the specific core implementations first and outside of the
 # if CPU_CORTEX_M block so that SoCs can select which core they are using

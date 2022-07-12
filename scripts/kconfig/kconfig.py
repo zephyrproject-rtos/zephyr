@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 # Writes/updates the zephyr/.config configuration file by merging configuration
 # files passed as arguments, e.g. board *_defconfig and application prj.conf
 # files.

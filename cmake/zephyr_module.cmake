@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 # This cmake file provides functionality to import CMakeLists.txt and Kconfig
 # files for Zephyr modules into Zephyr build system.

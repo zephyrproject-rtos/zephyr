@@ -1,3 +1,5 @@
+# SPDX-FileComment: IEC-61508-T3
+
 # EXTRAS: optional or useful for development/developers workflow
 
 # used by twister for --test-tree option

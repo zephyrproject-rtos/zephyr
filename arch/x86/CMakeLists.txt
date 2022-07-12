@@ -1,5 +1,6 @@
 # Copyright (c) 2019 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 # Convert the .bin file argument to a .o file, create a wrapper
 # library for the .o file, and register the library as a generated

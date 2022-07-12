@@ -1,6 +1,7 @@
 # Copyright (c) 2021 The Linux Foundation
 #
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 import os
 import uuid

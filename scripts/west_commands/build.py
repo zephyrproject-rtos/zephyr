@@ -1,6 +1,7 @@
 # Copyright (c) 2018 Foundries.io
 #
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 import argparse
 import os

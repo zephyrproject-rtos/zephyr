@@ -2,6 +2,7 @@
 
 # Copyright (c) 2018 Foundries.io
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 config RV32M1_INTMUX
 	bool "OpenISA RV32M1 INTMUX interrupt controller support"

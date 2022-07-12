@@ -1,3 +1,5 @@
+# SPDX-FileComment: IEC-61508-T3
+
 # BUILD-TEST: required to do build tests of zephyr
 #
 # things used by twister or other things like code coverage or python

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 # find the compilers for C, CPP, assembly
 find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}armclang PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 find_program(CMAKE_CXX_COMPILER ${CROSS_COMPILE}armclang PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)

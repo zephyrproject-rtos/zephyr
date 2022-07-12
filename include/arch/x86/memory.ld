@@ -3,6 +3,7 @@
  * Copyright (c) 2019-2020 Intel Corp.
  *
  * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileComment: IEC-61508-T3
  */
 
 /**

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 set(c23id c2x gnu2x)
 set(c17id c17 c18 gnu17 gnu18 "iso9899:2017" "iso9899:2018")
 set(c11id c11 gnu11 "iso9899:2011")

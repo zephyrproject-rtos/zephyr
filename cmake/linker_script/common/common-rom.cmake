@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 # originates from common-rom.ld
 
 zephyr_linker_section(NAME init KVMA RAM_REGION GROUP RODATA_REGION)

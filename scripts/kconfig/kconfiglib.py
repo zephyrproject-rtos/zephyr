@@ -1,5 +1,6 @@
 # Copyright (c) 2011-2019, Ulf Magnusson
 # SPDX-License-Identifier: ISC
+# SPDX-FileComment: IEC-61508-T3
 
 """
 Overview

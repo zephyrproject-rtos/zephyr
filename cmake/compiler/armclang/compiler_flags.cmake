@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 # First step is to inherit all properties from gcc, as clang is compatible with most flags.
 include(${ZEPHYR_BASE}/cmake/compiler/clang/compiler_flags.cmake)
 

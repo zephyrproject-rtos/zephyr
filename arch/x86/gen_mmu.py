@@ -3,6 +3,7 @@
 # Copyright (c) 2020 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 """Create the kernel's page tables for x86 CPUs.
 

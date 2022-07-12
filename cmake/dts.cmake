@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
 

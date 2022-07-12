@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 # Those are flags not to test for CXX compiler.
 list(APPEND CXX_EXCLUDED_OPTIONS
   -Werror=implicit-int

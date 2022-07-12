@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # - memusage: Name of command for memusage
 #             In this implementation `sizeac` is used
 set_property(TARGET bintools PROPERTY memusage_command "${CMAKE_SIZE}")

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # For MWDT the elfconvert command is made into a script.
 # Reason for that is because not a single command covers all use cases,
 # and it must therefore be possible to call individual commands, depending

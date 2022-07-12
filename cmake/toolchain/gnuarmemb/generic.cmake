@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 # Until we completely deprecate it
 if(NOT DEFINED ENV{GNUARMEMB_TOOLCHAIN_PATH})

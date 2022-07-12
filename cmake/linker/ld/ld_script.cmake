@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 # ToDo:
 # - Ensure LMA / VMA sections are correctly grouped similar to scatter file creation.
 cmake_minimum_required(VERSION 3.18)

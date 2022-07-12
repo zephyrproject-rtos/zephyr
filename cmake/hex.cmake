@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 # from https://gist.github.com/korzo89/71a6de0f388f7cf8b349101b0134060c
 function(from_hex HEX DEC)

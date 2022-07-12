@@ -1,5 +1,6 @@
 # Copyright (c) 2019, Nordic Semiconductor
 # SPDX-License-Identifier: BSD-3-Clause
+# SPDX-FileComment: IEC-61508-T3
 
 # Tip: You can view just the documentation with 'pydoc3 devicetree.dtlib'
 

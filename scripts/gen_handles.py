@@ -4,6 +4,7 @@
 # Copyright (c) 2020 Nordic Semiconductor NA
 #
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 """Translate generic handles into ones optimized for the application.
 
 Immutable device data includes information about dependencies,

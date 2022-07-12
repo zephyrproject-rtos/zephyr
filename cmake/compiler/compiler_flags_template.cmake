@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 # Overview of used compiler properties for gcc / g++ compilers.
 #
 # Define the flags your toolchain support, and keep the unsupported flags empty.

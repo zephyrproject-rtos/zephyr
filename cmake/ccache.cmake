@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 # Use ccache if it is installed, unless the user explicitly disables
 # it by setting USE_CCACHE=0.

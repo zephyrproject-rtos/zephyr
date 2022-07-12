@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 # For armclang the elfconvert command is made into a script.
 # Reason for that is because not a single command covers all use cases,
 # and it must therefore be possible to call individual commands, depending

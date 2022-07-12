@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 # The coverage linker flag is specific for gcc.
 
 # Using a config check is ok for now, but in future it would be desired if

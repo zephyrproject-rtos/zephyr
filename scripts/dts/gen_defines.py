@@ -3,6 +3,7 @@
 # Copyright (c) 2019 - 2020 Nordic Semiconductor ASA
 # Copyright (c) 2019 Linaro Limited
 # SPDX-License-Identifier: BSD-3-Clause
+# SPDX-FileComment: IEC-61508-T3
 
 # This script uses edtlib to generate a header file from a devicetree
 # (.dts) file. Information from binding files in YAML format is used

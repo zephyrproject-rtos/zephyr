@@ -1,6 +1,7 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # Copyright (c) 2019 Linaro Limited
 # SPDX-License-Identifier: BSD-3-Clause
+# SPDX-FileComment: IEC-61508-T3
 
 # Tip: You can view just the documentation with 'pydoc3 devicetree.edtlib'
 

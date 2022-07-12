@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 # Uniquely identify the toolchain wrt. it's capabilities.
 #
 # What we are looking for, is a signature definition that is defined

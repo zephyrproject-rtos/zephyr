@@ -2,6 +2,7 @@
 
 # Copyright (c) 2019, Nordic Semiconductor ASA and Ulf Magnusson
 # SPDX-License-Identifier: ISC
+# SPDX-FileComment: IEC-61508-T3
 
 # _load_images() builds names dynamically to avoid having to give them twice
 # (once for the variable and once for the filename). This forces consistency

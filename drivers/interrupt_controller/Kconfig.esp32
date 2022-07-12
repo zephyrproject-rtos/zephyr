@@ -2,6 +2,7 @@
 
 # Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 config INTC_ESP32
 	bool "Interrupt allocator for Xtensa-based Espressif SoCs"

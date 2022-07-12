@@ -1,3 +1,5 @@
+# SPDX-FileComment: IEC-61508-T3
+
 # RUN-TEST: required to do run time tests of zephyr
 #
 # things used by twister or related in run time testing

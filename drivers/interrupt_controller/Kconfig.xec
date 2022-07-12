@@ -2,6 +2,7 @@
 
 # Copyright (c) 2021 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
 
 config MCHP_ECIA_XEC
 	bool "External EC Interrupt Aggregator (ECIA) Driver for MCHP MEC family of MCUs"

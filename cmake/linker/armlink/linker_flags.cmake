@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileComment: IEC-61508-T3
+
 # The ARMClang linker, armlink, requires a dedicated linking signature in
 # order for Zephyr to control the map file.
 
