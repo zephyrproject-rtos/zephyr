@@ -197,6 +197,15 @@ static void can_loopback_remove_rx_filter(const struct device *dev, int filter_i
 	k_mutex_unlock(&data->mtx);
 }
 
+static int can_loopback_get_capabilities(const struct device *dev, can_mode_t *cap)
+{
+	ARG_UNUSED(dev);
+
+	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK;
+
+	return 0;
+}
+
 static int can_loopback_set_mode(const struct device *dev, can_mode_t mode)
 {
 	struct can_loopback_data *data = dev->data;
@@ -265,6 +274,7 @@ static int can_loopback_get_max_filters(const struct device *dev, enum can_ide i
 }
 
 static const struct can_driver_api can_loopback_driver_api = {
+	.get_capabilities = can_loopback_get_capabilities,
 	.set_mode = can_loopback_set_mode,
 	.set_timing = can_loopback_set_timing,
 	.send = can_loopback_send,

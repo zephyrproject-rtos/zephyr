@@ -123,6 +123,7 @@ static int can_stm32fd_init(const struct device *dev)
 }
 
 static const struct can_driver_api can_stm32fd_driver_api = {
+	.get_capabilities = can_mcan_get_capabilities,
 	.set_mode = can_mcan_set_mode,
 	.set_timing = can_mcan_set_timing,
 	.send = can_mcan_send,

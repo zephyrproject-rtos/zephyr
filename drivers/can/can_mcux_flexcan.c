@@ -179,6 +179,15 @@ static int mcux_flexcan_set_timing(const struct device *dev,
 	return 0;
 }
 
+static int mcux_flexcan_get_capabilities(const struct device *dev, can_mode_t *cap)
+{
+	ARG_UNUSED(dev);
+
+	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY;
+
+	return 0;
+}
+
 static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 {
 	const struct mcux_flexcan_config *config = dev->config;
@@ -783,6 +792,7 @@ static int mcux_flexcan_init(const struct device *dev)
 }
 
 static const struct can_driver_api mcux_flexcan_driver_api = {
+	.get_capabilities = mcux_flexcan_get_capabilities,
 	.set_mode = mcux_flexcan_set_mode,
 	.set_timing = mcux_flexcan_set_timing,
 	.send = mcux_flexcan_send,
