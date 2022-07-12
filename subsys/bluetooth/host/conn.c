@@ -2283,6 +2283,13 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 	info->role = conn->role;
 	info->id = conn->id;
 	info->state = conn_internal_to_public_state(conn->state);
+	info->security.flags = 0;
+	info->security.level = bt_conn_get_security(conn);
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+	info->security.enc_key_size = bt_conn_enc_key_size(conn);
+#else
+	info->security.enc_key_size = 0;
+#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
 	switch (conn->type) {
 	case BT_CONN_TYPE_LE:
@@ -2304,6 +2311,12 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
 		info->le.data_len = &conn->le.data_len;
 #endif
+		if (conn->le.keys && (conn->le.keys->flags & BT_KEYS_SC)) {
+			info->security.flags |= BT_SECURITY_FLAG_SC;
+		}
+		if (conn->le.keys && (conn->le.keys->flags & BT_KEYS_OOB)) {
+			info->security.flags |= BT_SECURITY_FLAG_OOB;
+		}
 		return 0;
 #if defined(CONFIG_BT_BREDR)
 	case BT_CONN_TYPE_BR:
