@@ -130,24 +130,6 @@ int ak8975_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, invensense_mpu9150), okay)
-	/* wake up MPU9150 chip */
-	if (i2c_reg_update_byte(drv_data->i2c, MPU9150_I2C_ADDR,
-				MPU9150_REG_PWR_MGMT1, MPU9150_SLEEP_EN,
-				0) < 0) {
-		LOG_ERR("Failed to wake up MPU9150 chip.");
-		return -EIO;
-	}
-
-	/* enable MPU9150 pass-though to have access to AK8975 */
-	if (i2c_reg_update_byte(drv_data->i2c, MPU9150_I2C_ADDR,
-				MPU9150_REG_BYPASS_CFG, MPU9150_I2C_BYPASS_EN,
-				MPU9150_I2C_BYPASS_EN) < 0) {
-		LOG_ERR("Failed to enable pass-through mode for MPU9150.");
-		return -EIO;
-	}
-#endif
-
 	/* check chip ID */
 	if (i2c_reg_read_byte(drv_data->i2c,
 			      DT_INST_REG_ADDR(0),

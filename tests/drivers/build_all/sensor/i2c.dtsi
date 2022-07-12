@@ -142,12 +142,6 @@ test_i2c_mpu6050: mpu6050@15 {
 	int-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_mpu9150: mpu9150@16 {
-	compatible = "invensense,mpu9150";
-	label = "MPU9150";
-	reg = <0x16>;
-};
-
 test_i2c_mpu9250: mpu9250@1e {
 	compatible = "invensense,mpu9250";
 	reg = <0x1e>;
