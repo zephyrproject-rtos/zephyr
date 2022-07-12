@@ -6,22 +6,6 @@ description: SSD16XX EPD display controller
 include: [spi-device.yaml, display-controller.yaml]
 
 properties:
-  gdv:
-    type: uint8-array
-    description: Gate driving voltage values
-
-  sdv:
-    type: uint8-array
-    description: Source driving voltage values
-
-  vcom:
-    type: int
-    description: VCOM voltage
-
-  border-waveform:
-    type: int
-    description: Border waveform
-
   softstart:
     type: uint8-array
     description: Booster soft start values
@@ -57,14 +41,6 @@ properties:
       If connected directly the MCU pin should be configured
       as active high.
 
-  lut-initial:
-    type: uint8-array
-    description: |
-      Initial LUT used when initializing the device and performing
-      clearing the screen using a full refresh operation. The
-      default LUT will be loaded from OTP if this property isn't
-      defined.
-
   lut-default:
     type: uint8-array
 
@@ -76,10 +52,42 @@ properties:
       an external temperature sensor is connected to the controller.
       The value selects which sensor should be used.
 
-  dummy-line:
-    type: int
-    description: Dummy line period override.
+child-binding:
+  description: |
+    Child nodes describe refresh profiles. Each refresh profile
+    specifies a set of voltages used to drive the refresh
+    cycle. Refresh profiles are optional and are used to override
+    defaults loaded from the controllers OTP memory.
 
-  gate-line-width:
-    type: int
-    description: Gate line width override.
+    The driver typically looks for the following child nodes:
+
+      - 'full' - Normal / full refresh.
+
+  properties:
+    lut:
+      type: uint8-array
+      description: LUT associated with this profile.
+
+    gdv:
+      type: uint8-array
+      description: Gate driving voltage values
+
+    sdv:
+      type: uint8-array
+      description: Source driving voltage values
+
+    vcom:
+      type: int
+      description: VCOM voltage
+
+    border-waveform:
+      type: int
+      description: Border waveform
+
+    dummy-line:
+      type: int
+      description: Dummy line period override.
+
+    gate-line-width:
+      type: int
+      description: Gate line width override.

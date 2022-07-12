@@ -22,7 +22,11 @@
 		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
 		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
 		busy-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;	/* D7 */
-		border-waveform = <0x3c>;
+
 		tssv = <0x80>;
+
+		full {
+			border-waveform = <0x3c>;
+		};
 	};
 };
