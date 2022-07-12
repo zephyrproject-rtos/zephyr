@@ -69,7 +69,7 @@ static int setup(void)
 	int rc;
 	gpio_port_value_t v1;
 
-	const struct device *dev = DEVICE_DT_GET(DEV);
+	dev = DEVICE_DT_GET(DEV);
 
 	TC_PRINT("Validate device %s\n", dev->name);
 	zassert_true(device_is_ready(dev), "GPIO dev is not ready");
