@@ -77,8 +77,6 @@
 			reg = <0xf000200c 0xc>;
 			ngpios = <8>;
 			label = "GPIO_1";
-			interrupt-parent = <&intc>;
-			interrupts = <0 1>;
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
