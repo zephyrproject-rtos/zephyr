@@ -90,6 +90,18 @@
 			compatible = "st,stm32u5-pll-clock";
 			status = "disabled";
 		};
+
+		pll2: pll2 {
+			#clock-cells = <0>;
+			compatible = "st,stm32u5-pll-clock";
+			status = "disabled";
+		};
+
+		pll3: pll3 {
+			#clock-cells = <0>;
+			compatible = "st,stm32u5-pll-clock";
+			status = "disabled";
+		};
 	};
 
 	soc {
