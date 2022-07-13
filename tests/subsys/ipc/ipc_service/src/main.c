@@ -67,6 +67,16 @@ ZTEST(ipc_service, test_ipc_service)
 
 	ret = ipc_service_send(&ept_20, &msg, sizeof(msg));
 	zassert_ok(ret, "ipc_service_send() failed");
+
+	/*
+	 * Deregister the endpoint and ensure that we fail
+	 * correctly
+	 */
+	ret = ipc_service_deregister_endpoint(&ept_10);
+	zassert_ok(ret, "ipc_service_deregister_endpoint() failed");
+
+	ret = ipc_service_send(&ept_10, &msg, sizeof(msg));
+	zassert_equal(ret, -ENOENT, "ipc_service_send() should return -ENOENT");
 }
 
 ZTEST_SUITE(ipc_service, NULL, NULL, NULL, NULL, NULL);
