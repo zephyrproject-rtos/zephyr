@@ -11,9 +11,6 @@ properties:
     reg:
       required: true
 
-    interrupts:
-      required: true
-
     label:
       required: true
 

@@ -434,170 +434,39 @@ static int gpio_dw_initialize(const struct device *port)
 }
 
 /* Bindings to the platform */
-#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0
-static void gpio_config_0_irq(const struct device *port);
+#define INST_IRQ_FLAGS(n) \
+	COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, flags), (DT_INST_IRQ(n, flags)), (0))
 
-static const struct gpio_dw_config gpio_config_0 = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
-	},
-	.irq_num = DT_INST_IRQN(0),
-	.ngpios = DT_INST_PROP(0, ngpios),
-	.config_func = gpio_config_0_irq,
-};
+#define GPIO_CFG_IRQ(n)										\
+		const struct gpio_dw_config *config = port->config;				\
+												\
+		IRQ_CONNECT(DT_INST_IRQN(n),							\
+			    DT_INST_IRQ(n, priority), gpio_dw_isr,				\
+			    DEVICE_DT_INST_GET(n), INST_IRQ_FLAGS(n));				\
+		irq_enable(config->irq_num);							\
+		gpio_dw_unmask_int(GPIO_DW_PORT_##n##_INT_MASK);				\
 
-static struct gpio_dw_runtime gpio_0_runtime = {
-	.base_addr = DT_INST_REG_ADDR(0),
-};
+#define GPIO_DW_INIT(n)										\
+	static void gpio_config_##n##_irq(const struct device *port)				\
+	{											\
+		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0), (GPIO_CFG_IRQ(n)))			\
+	}											\
+												\
+	static const struct gpio_dw_config gpio_dw_config_##n = {				\
+		.common = {									\
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),			\
+		},										\
+		.irq_num = COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0), (DT_INST_IRQN(n)), (0)),	\
+		.ngpios = DT_INST_PROP(n, ngpios),						\
+		.config_func = gpio_config_##n##_irq,						\
+	};											\
+												\
+	static struct gpio_dw_runtime gpio_##n##_runtime = {					\
+		.base_addr = DT_INST_REG_ADDR(n),						\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(n, gpio_dw_initialize, NULL, &gpio_##n##_runtime,			\
+		      &gpio_dw_config_##n, PRE_KERNEL_1,					\
+		      CONFIG_GPIO_INIT_PRIORITY, &api_funcs);					\
 
-DEVICE_DT_INST_DEFINE(0,
-	      gpio_dw_initialize, NULL, &gpio_0_runtime,
-	      &gpio_config_0, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-	      &api_funcs);
-
-#if DT_INST_IRQ_HAS_CELL(0, flags)
-#define INST_0_IRQ_FLAGS DT_INST_IRQ(0, flags)
-#else
-#define INST_0_IRQ_FLAGS 0
-#endif
-static void gpio_config_0_irq(const struct device *port)
-{
-#if (DT_INST_IRQN(0) > 0)
-	const struct gpio_dw_config *config = port->config;
-
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority), gpio_dw_isr,
-		    DEVICE_DT_INST_GET(0),
-		    INST_0_IRQ_FLAGS);
-	irq_enable(config->irq_num);
-	gpio_dw_unmask_int(GPIO_DW_PORT_0_INT_MASK);
-#endif
-}
-
-#endif /* DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0 */
-
-
-#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1
-static void gpio_config_1_irq(const struct device *port);
-
-static const struct gpio_dw_config gpio_dw_config_1 = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
-	},
-	.irq_num = DT_INST_IRQN(1),
-	.ngpios = DT_INST_PROP(1, ngpios),
-	.config_func = gpio_config_1_irq,
-};
-
-static struct gpio_dw_runtime gpio_1_runtime = {
-	.base_addr = DT_INST_REG_ADDR(1),
-};
-
-DEVICE_DT_INST_DEFINE(1,
-	      gpio_dw_initialize, NULL, &gpio_1_runtime,
-	      &gpio_dw_config_1, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-	      &api_funcs);
-
-#if DT_INST_IRQ_HAS_CELL(1, flags)
-#define INST_1_IRQ_FLAGS DT_INST_IRQ(1, flags)
-#else
-#define INST_1_IRQ_FLAGS 0
-#endif
-static void gpio_config_1_irq(const struct device *port)
-{
-#if (DT_INST_IRQN(1) > 0)
-	const struct gpio_dw_config *config = port->config;
-
-	IRQ_CONNECT(DT_INST_IRQN(1),
-		    DT_INST_IRQ(1, priority), gpio_dw_isr,
-		    DEVICE_DT_INST_GET(1),
-		    INST_1_IRQ_FLAGS);
-	irq_enable(config->irq_num);
-	gpio_dw_unmask_int(GPIO_DW_PORT_1_INT_MASK);
-#endif
-}
-
-#endif /* DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1 */
-
-#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 2
-static void gpio_config_2_irq(const struct device *port);
-
-static const struct gpio_dw_config gpio_dw_config_2 = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(2),
-	},
-	.irq_num = DT_INST_IRQN(2),
-	.ngpios = DT_INST_PROP(2, ngpios),
-	.config_func = gpio_config_2_irq,
-};
-
-static struct gpio_dw_runtime gpio_2_runtime = {
-	.base_addr = DT_INST_REG_ADDR(2),
-};
-
-DEVICE_DT_INST_DEFINE(2,
-	      gpio_dw_initialize, NULL, &gpio_2_runtime,
-	      &gpio_dw_config_2, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-	      &api_funcs);
-
-#if DT_INST_IRQ_HAS_CELL(2, flags)
-#define INST_2_IRQ_FLAGS DT_INST_IRQ(2, flags)
-#else
-#define INST_2_IRQ_FLAGS 0
-#endif
-static void gpio_config_2_irq(const struct device *port)
-{
-#if (DT_INST_IRQN(2) > 0)
-	const struct gpio_dw_config *config = port->config;
-
-	IRQ_CONNECT(DT_INST_IRQN(2),
-		    DT_INST_IRQ(2, priority), gpio_dw_isr,
-		    DEVICE_DT_INST_GET(2),
-		    INST_2_IRQ_FLAGS);
-	irq_enable(config->irq_num);
-	gpio_dw_unmask_int(GPIO_DW_PORT_2_INT_MASK);
-#endif
-}
-
-#endif /* DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 2 */
-
-#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 3
-static void gpio_config_3_irq(const struct device *port);
-
-static const struct gpio_dw_config gpio_dw_config_3 = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(3),
-	},
-	.irq_num = DT_INST_IRQN(3),
-	.ngpios = DT_INST_PROP(3, ngpios),
-	.config_func = gpio_config_3_irq,
-};
-
-static struct gpio_dw_runtime gpio_3_runtime = {
-	.base_addr = DT_INST_REG_ADDR(3),
-};
-
-DEVICE_DT_INST_DEFINE(3,
-	      gpio_dw_initialize, NULL, &gpio_3_runtime,
-	      &gpio_dw_config_3, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-	      &api_funcs);
-
-#if DT_INST_IRQ_HAS_CELL(3, flags)
-#define INST_3_IRQ_FLAGS DT_INST_IRQ(3, flags)
-#else
-#define INST_3_IRQ_FLAGS 0
-#endif
-static void gpio_config_3_irq(const struct device *port)
-{
-#if (DT_INST_IRQN(3) > 0)
-	const struct gpio_dw_config *config = port->config;
-
-	IRQ_CONNECT(DT_INST_IRQN(3),
-		    DT_INST_IRQ(3, priority), gpio_dw_isr,
-		    DEVICE_DT_INST_GET(3),
-		    INST_3_IRQ_FLAGS);
-	irq_enable(config->irq_num);
-	gpio_dw_unmask_int(GPIO_DW_PORT_3_INT_MASK);
-#endif
-}
-#endif /* DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 3 */
+DT_INST_FOREACH_STATUS_OKAY(GPIO_DW_INIT)

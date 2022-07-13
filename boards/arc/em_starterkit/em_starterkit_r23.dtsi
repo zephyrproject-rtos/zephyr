@@ -30,18 +30,6 @@
 			interrupts = <24 1>;
 		};
 
-		gpio@f000200c {
-			interrupts = <0 1>;
-		};
-
-		gpio@f0002018 {
-			interrupts = <0 1>;
-		};
-
-		gpio@f0002024 {
-			interrupts = <0 1>;
-		};
-
 		creg_gpio: creg_gpio@f0000014 {
 			compatible = "snps,creg-gpio";
 			reg = <0xf0000014 0x4>;
