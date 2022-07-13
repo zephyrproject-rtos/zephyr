@@ -146,8 +146,11 @@ void arm_core_mpu_enable(void)
 {
 	uint32_t val;
 
+	/* Enable MPU and use the default memory map as a
+	 * background region for privileged software access.
+	 */
 	val = __get_SCTLR();
-	val |= SCTLR_MPU_ENABLE;
+	val |= SCTLR_M_BIT | SCTLR_BR_BIT;
 	__set_SCTLR(val);
 
 	/* Make sure that all the registers are set before proceeding */
@@ -166,7 +169,7 @@ void arm_core_mpu_disable(void)
 	__DMB();
 
 	val = __get_SCTLR();
-	val &= ~SCTLR_MPU_ENABLE;
+	val &= ~SCTLR_M_BIT;
 	__set_SCTLR(val);
 
 	/* Make sure that all the registers are set before proceeding */

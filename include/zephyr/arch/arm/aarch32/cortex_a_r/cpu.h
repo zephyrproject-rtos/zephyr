@@ -14,8 +14,6 @@
 /*
  * SCTLR register bit assignments
  */
-#define SCTLR_MPU_ENABLE	(1 << 0)
-
 #define MODE_USR	0x10
 #define MODE_FIQ	0x11
 #define MODE_IRQ	0x12
@@ -53,6 +51,7 @@
 #define SCTLR_A_BIT		BIT(1)
 #define SCTLR_C_BIT		BIT(2)
 #define SCTLR_I_BIT		BIT(12)
+#define SCTLR_BR_BIT		BIT(17)
 
 /* Hyp System Control Register */
 #define HSCTLR_RES1		(BIT(29) | BIT(28) | BIT(23) | \
