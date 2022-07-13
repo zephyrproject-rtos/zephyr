@@ -635,10 +635,9 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 			uint8_t err;
 
 			err = ull_adv_aux_hdr_set_clear(adv,
-							ULL_ADV_PDU_HDR_FIELD_ADVA,
-							0, &own_addr_type,
-							NULL, &pri_idx,
-							&sec_idx);
+						ULL_ADV_PDU_HDR_FIELD_ADVA,
+						0U, &own_addr_type,
+						&pri_idx, &sec_idx);
 			if (err) {
 				/* TODO: cleanup? */
 				return err;
@@ -687,9 +686,9 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		/* Make sure new extended advertising set is initialized with no
 		 * scan response data. Existing sets keep whatever data was set.
 		 */
-		if (is_new_set) {
+		if (is_pdu_type_changed) {
 			pdu = lll_adv_scan_rsp_peek(&adv->lll);
-			pdu->type = PDU_ADV_TYPE_AUX_SCAN_REQ;
+			pdu->type = PDU_ADV_TYPE_AUX_SCAN_RSP;
 			pdu->len = 0;
 		}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
@@ -1369,8 +1368,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 				uint8_t err;
 
 				err = ull_adv_aux_hdr_set_clear(adv,
-					ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-					0, value, NULL, &pri_idx, &sec_idx);
+						ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
+						0U, value, &pri_idx, &sec_idx);
 				if (err) {
 					return err;
 				}
