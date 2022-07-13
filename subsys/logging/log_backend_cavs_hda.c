@@ -248,8 +248,8 @@ void cavs_hda_log_init(cavs_hda_log_hook_t fn, uint32_t channel)
 
 	int res;
 
-	hda_log_dev = device_get_binding("HDA_HOST_IN");
-	__ASSERT(hda_log_dev, "No valid DMA device found");
+	hda_log_dev = DEVICE_DT_GET(DT_NODELABEL(hda_host_in));
+	__ASSERT(device_is_ready(hda_log_dev), "DMA device is not ready");
 
 	hda_log_chan = dma_request_channel(hda_log_dev, &channel);
 	__ASSERT(hda_log_chan >= 0, "No valid DMA channel");

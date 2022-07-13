@@ -67,8 +67,8 @@ void test_hda_host_in_dma(void)
 	z_xtensa_cache_flush(dma_buf, DMA_BUF_SIZE);
 #endif
 
-	dma = device_get_binding("HDA_HOST_IN");
-	zassert_not_null(dma, "Expected a valid DMA device pointer");
+	dma = DEVICE_DT_GET(DT_NODELABEL(hda_host_in));
+	zassert_true(device_is_ready(dma), "DMA device is not ready");
 
 	channel = dma_request_channel(dma, NULL);
 	zassert_true(channel >= 0, "Expected a valid DMA channel");
@@ -159,8 +159,8 @@ void test_hda_host_out_dma(void)
 
 	printk("Using buffer of size %d at addr %p\n", DMA_BUF_SIZE, dma_buf);
 
-	dma = device_get_binding("HDA_HOST_OUT");
-	zassert_not_null(dma, "Expected a valid DMA device pointer");
+	dma = DEVICE_DT_GET(DT_NODELABEL(hda_host_out));
+	zassert_true(device_is_ready(dma), "DMA device is not ready");
 
 	channel = dma_request_channel(dma, NULL);
 	zassert_true(channel >= 0, "Expected a valid DMA channel");
