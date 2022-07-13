@@ -1689,6 +1689,7 @@ Intel Platforms (Xtensa):
     files:
         - boards/xtensa/intel_*/
         - soc/xtensa/intel_*/
+        - dts/xtensa/intel/
     labels:
         - "platform: Intel CAVS"
 
