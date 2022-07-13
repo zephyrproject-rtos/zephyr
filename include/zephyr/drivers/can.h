@@ -100,6 +100,9 @@ extern "C" {
 /** Controller does not retransmit in case of lost arbitration or missing ACK */
 #define CAN_MODE_ONE_SHOT   BIT(3)
 
+/** Controller uses triple sampling mode */
+#define CAN_MODE_3_SAMPLES  BIT(4)
+
 /** @} */
 
 /**
