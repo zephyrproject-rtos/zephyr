@@ -53,9 +53,19 @@ static int register_ept(const struct device *instance,
 	return 0;
 }
 
+static int deregister_ept(const struct device *instance, void *token)
+{
+	struct backend_data_t *data = instance->data;
+
+	data->cfg = NULL;
+
+	return 0;
+}
+
 const static struct ipc_service_backend backend_ops = {
 	.send = send,
 	.register_endpoint = register_ept,
+	.deregister_endpoint = deregister_ept,
 };
 
 static int backend_init(const struct device *dev)
