@@ -8,22 +8,14 @@
 
 #include <hal/usb_serial_jtag_ll.h>
 
-#include <soc/uart_reg.h>
 #include <device.h>
+#include <errno.h>
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #include <zephyr/drivers/clock_control.h>
-#include <errno.h>
 #include <zephyr/sys/util.h>
 #include <esp_attr.h>
-
-#define ISR_HANDLER isr_handler_t
-
-struct serial_esp32_usb_pin {
-	const char *gpio_name;
-	int pin;
-};
 
 struct serial_esp32_usb_config {
 	const struct device *clock_dev;
@@ -39,8 +31,6 @@ struct serial_esp32_usb_data {
 #endif
 	int irq_line;
 };
-
-#define SERIAL_FIFO_LIMIT (USB_SERIAL_JTAG_PACKET_SZ_BYTES)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void serial_esp32_usb_isr(void *arg);
@@ -106,7 +96,7 @@ static int serial_esp32_usb_init(const struct device *dev)
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	const struct serial_esp32_usb_config *config = dev->config;
 
-	data->irq_line = esp_intr_alloc(config->irq_source, 0, (ISR_HANDLER)serial_esp32_usb_isr,
+	data->irq_line = esp_intr_alloc(config->irq_source, 0, (isr_handler_t)serial_esp32_usb_isr,
 					(void *)dev, NULL);
 #endif
 	return ret;
