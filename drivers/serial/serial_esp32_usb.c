@@ -28,7 +28,6 @@ struct serial_esp32_usb_pin {
 struct serial_esp32_usb_config {
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
-	uint8_t uart_num;
 	int irq_source;
 };
 
@@ -265,7 +264,6 @@ static const DRAM_ATTR struct uart_driver_api serial_esp32_usb_api = {
 
 #define ESP32_UART_INIT(idx)                                                                       \
 	static const DRAM_ATTR struct serial_esp32_usb_config serial_esp32_usb_cfg_port_##idx = {  \
-		.uart_num = DT_INST_PROP(idx, peripheral),                                         \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
 		.irq_source = DT_INST_IRQN(idx)                                                    \

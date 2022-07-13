@@ -10,9 +10,3 @@ properties:
 
   interrupts:
     required: false
-
-  peripheral:
-    type: int
-    required: true
-    description: |
-      The UART peripheral number
