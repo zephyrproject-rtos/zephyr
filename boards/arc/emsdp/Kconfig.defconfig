@@ -17,16 +17,6 @@ config GPIO_INIT_PRIORITY
 config GPIO_DW
 	default y
 
-if GPIO_DW
-
-config GPIO_DW_0
-	default y
-
-config GPIO_DW_1
-	default y
-
-endif # GPIO_DW
-
 endif # GPIO
 
 config UART_NS16550
