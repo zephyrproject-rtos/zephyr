@@ -22,13 +22,13 @@ LOG_MODULE_REGISTER(i2c_nrfx_twim, CONFIG_I2C_LOG_LEVEL);
 struct i2c_nrfx_twim_data {
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
-	nrfx_twim_config_t twim_config;
 	volatile nrfx_err_t res;
 	uint8_t *msg_buf;
 };
 
 struct i2c_nrfx_twim_config {
 	nrfx_twim_t twim;
+	nrfx_twim_config_t twim_config;
 	uint16_t concat_buf_size;
 	uint16_t flash_buf_max_size;
 	void (*irq_connect)(void);
@@ -275,10 +275,8 @@ static int i2c_nrfx_twim_recover_bus(const struct device *dev)
 	scl_pin = nrf_twim_scl_pin_get(dev_config->twim.p_twim);
 	sda_pin = nrf_twim_sda_pin_get(dev_config->twim.p_twim);
 #else
-	struct i2c_nrfx_twim_data *dev_data = dev->data;
-
-	scl_pin = dev_data->twim_config.scl;
-	sda_pin = dev_data->twim_config.sda;
+	scl_pin = dev_config->twim_config.scl;
+	sda_pin = dev_config->twim_config.sda;
 #endif
 
 	/* disable peripheral if active (required to release SCL/SDA lines) */
@@ -363,7 +361,7 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 	}
 #endif
 
-	if (nrfx_twim_init(&dev_config->twim, &dev_data->twim_config,
+	if (nrfx_twim_init(&dev_config->twim, &dev_config->twim_config,
 			   event_handler, dev_data) != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s", dev->name);
 		return -EIO;
@@ -425,10 +423,6 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 	IF_ENABLED(USES_MSG_BUF(idx),					       \
 		(static uint8_t twim_##idx##_msg_buf[MSG_BUF_SIZE(idx)];))     \
 	static struct i2c_nrfx_twim_data twim_##idx##_data = {		       \
-		.twim_config = {					       \
-			I2C_NRFX_TWIM_PIN_CFG(idx)			       \
-			.frequency = I2C_FREQUENCY(idx),		       \
-		},							       \
 		.transfer_sync = Z_SEM_INITIALIZER(			       \
 			twim_##idx##_data.transfer_sync, 1, 1),		       \
 		.completion_sync = Z_SEM_INITIALIZER(			       \
@@ -439,6 +433,10 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(I2C(idx))));	       \
 	static const struct i2c_nrfx_twim_config twim_##idx##z_config = {      \
 		.twim = NRFX_TWIM_INSTANCE(idx),			       \
+		.twim_config = {					       \
+			I2C_NRFX_TWIM_PIN_CFG(idx)			       \
+			.frequency = I2C_FREQUENCY(idx),		       \
+		},							       \
 		.concat_buf_size = CONCAT_BUF_SIZE(idx),		       \
 		.flash_buf_max_size = FLASH_BUF_MAX_SIZE(idx),		       \
 		.irq_connect = irq_connect##idx,			       \
