@@ -5,7 +5,7 @@ common:
   platform_exclude: qemu_leon3
   tags: posix
   min_ram: 64
-  timeout: 600
+  timeout: 240
 
 tests:
   portability.posix.common:
