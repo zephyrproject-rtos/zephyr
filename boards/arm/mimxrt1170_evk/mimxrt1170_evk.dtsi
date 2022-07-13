@@ -11,6 +11,7 @@
 		led0 = &green_led;
 		sw0 = &user_button;
 		magn0 = &fxos8700;
+		sdhc0 = &usdhc1;
 	};
 
 	leds {

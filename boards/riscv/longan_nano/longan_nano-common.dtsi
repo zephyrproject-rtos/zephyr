@@ -10,6 +10,7 @@
 		zephyr,shell-uart = &usart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		sdhc0 = &sdhc0;
 	};
 
 	leds {
