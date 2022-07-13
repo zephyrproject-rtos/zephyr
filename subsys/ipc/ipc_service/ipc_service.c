@@ -72,6 +72,11 @@ int ipc_service_send(struct ipc_ept *ept, const void *data, size_t len)
 		return -EINVAL;
 	}
 
+	if (!ept->instance) {
+		LOG_ERR("Endpoint not registered\n");
+		return -ENOENT;
+	}
+
 	backend = ept->instance->api;
 
 	if (!backend || !backend->send) {
@@ -89,6 +94,11 @@ int ipc_service_get_tx_buffer_size(struct ipc_ept *ept)
 	if (!ept) {
 		LOG_ERR("Invalid endpoint");
 		return -EINVAL;
+	}
+
+	if (!ept->instance) {
+		LOG_ERR("Endpoint not registered\n");
+		return -ENOENT;
 	}
 
 	backend = ept->instance->api;
@@ -115,6 +125,11 @@ int ipc_service_get_tx_buffer(struct ipc_ept *ept, void **data, uint32_t *len, k
 		return -EINVAL;
 	}
 
+	if (!ept->instance) {
+		LOG_ERR("Endpoint not registered\n");
+		return -ENOENT;
+	}
+
 	backend = ept->instance->api;
 
 	if (!backend) {
@@ -137,6 +152,11 @@ int ipc_service_drop_tx_buffer(struct ipc_ept *ept, const void *data)
 	if (!ept || !data) {
 		LOG_ERR("Invalid endpoint or data pointer");
 		return -EINVAL;
+	}
+
+	if (!ept->instance) {
+		LOG_ERR("Endpoint not registered\n");
+		return -ENOENT;
 	}
 
 	backend = ept->instance->api;
@@ -163,6 +183,11 @@ int ipc_service_send_nocopy(struct ipc_ept *ept, const void *data, size_t len)
 		return -EINVAL;
 	}
 
+	if (!ept->instance) {
+		LOG_ERR("Endpoint not registered\n");
+		return -ENOENT;
+	}
+
 	backend = ept->instance->api;
 
 	if (!backend) {
@@ -187,6 +212,11 @@ int ipc_service_hold_rx_buffer(struct ipc_ept *ept, void *data)
 		return -EINVAL;
 	}
 
+	if (!ept->instance) {
+		LOG_ERR("Endpoint not registered\n");
+		return -ENOENT;
+	}
+
 	backend = ept->instance->api;
 
 	if (!backend) {
@@ -209,6 +239,11 @@ int ipc_service_release_rx_buffer(struct ipc_ept *ept, void *data)
 	if (!ept) {
 		LOG_ERR("Invalid endpoint");
 		return -EINVAL;
+	}
+
+	if (!ept->instance) {
+		LOG_ERR("Endpoint not registered\n");
+		return -ENOENT;
 	}
 
 	backend = ept->instance->api;
