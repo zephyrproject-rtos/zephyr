@@ -66,6 +66,26 @@ struct lora_modem_config {
 
 	/* Set to true for transmission, false for receiving */
 	bool tx;
+
+	/**
+	 * Invert the In-Phase and Quadrature (IQ) signals. Normally this
+	 * should be set to false. In advanced use-cases where a
+	 * differentation is needed between "uplink" and "downlink" traffic,
+	 * the IQ can be inverted to create two different channels on the
+	 * same frequency
+	 */
+	bool iq_inverted;
+
+	/**
+	 * Sets the sync-byte to use:
+	 *  - false: for using the private network sync-byte
+	 *  - true:  for using the public network sync-byte
+	 * The public network sync-byte is only intended for advanced usage.
+	 * Normally the private network sync-byte should be used for peer
+	 * to peer communications and the LoRaWAN APIs should be used for
+	 * interacting with a public network.
+	 */
+	bool public_network;
 };
 
 /**

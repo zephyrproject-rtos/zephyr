@@ -316,14 +316,16 @@ int sx12xx_lora_config(const struct device *dev,
 		Radio.SetTxConfig(MODEM_LORA, config->tx_power, 0,
 				  config->bandwidth, config->datarate,
 				  config->coding_rate, config->preamble_len,
-				  false, true, 0, 0, false, 4000);
+				  false, true, 0, 0, config->iq_inverted, 4000);
 	} else {
 		/* TODO: Get symbol timeout value from config parameters */
 		Radio.SetRxConfig(MODEM_LORA, config->bandwidth,
 				  config->datarate, config->coding_rate,
 				  0, config->preamble_len, 10, false, 0,
-				  false, 0, 0, false, true);
+				  false, 0, 0, config->iq_inverted, true);
 	}
+
+	Radio.SetPublicNetwork(config->public_network);
 
 	modem_release(&dev_data);
 	return 0;
