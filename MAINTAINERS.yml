@@ -2587,6 +2587,23 @@ ZTest:
     labels:
         - "area: Testsuite"
 
+Emulation:
+    status: maintained
+    maintainers:
+        - yperess
+    collaborators:
+        - aaronemassey
+        - jeremybettis
+        - alevkoy
+    files:
+        - subsys/emul/
+        - include/zephyr/drivers/emul.h
+        - include/zephyr/drivers/espi_emul.h
+        - include/zephyr/drivers/i2c_emul.h
+        - include/zephyr/drivers/spi_emul.h
+    labels:
+        - "area: HW Emulation"
+
 Random:
     status: odd fixes
     collaborators:
