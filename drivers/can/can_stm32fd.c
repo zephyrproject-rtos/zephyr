@@ -12,26 +12,11 @@
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <stm32_ll_rcc.h>
-#include <stm32_ll_bus.h>
 #include <zephyr/logging/log.h>
 
 #include "can_mcan.h"
 
 LOG_MODULE_REGISTER(can_stm32fd, CONFIG_CAN_LOG_LEVEL);
-
-#if defined(CONFIG_CAN_STM32FD_CLOCK_SOURCE_HSE)
-#define CAN_STM32FD_CLOCK_SOURCE LL_RCC_FDCAN_CLKSOURCE_HSE
-#elif defined(CONFIG_CAN_STM32FD_CLOCK_SOURCE_PLL)
-#define CAN_STM32FD_CLOCK_SOURCE LL_RCC_FDCAN_CLKSOURCE_PLL
-#elif defined(CONFIG_CAN_STM32FD_CLOCK_SOURCE_PCLK1)
-#define CAN_STM32FD_CLOCK_SOURCE LL_RCC_FDCAN_CLKSOURCE_PCLK1
-#elif defined(CONFIG_CAN_STM32FD_CLOCK_SOURCE_PLL1Q)
-#define CAN_STM32FD_CLOCK_SOURCE LL_RCC_FDCAN_CLKSOURCE_PLL1
-#elif defined(CONFIG_CAN_STM32FD_CLOCK_SOURCE_PLL2P)
-#define CAN_STM32FD_CLOCK_SOURCE LL_RCC_FDCAN_CLKSOURCE_PLL2
-#else
-#error "Unsupported FDCAN clock source"
-#endif
 
 #ifdef CONFIG_CAN_STM32FD_CLOCK_DIVISOR
 #if CONFIG_CAN_STM32FD_CLOCK_DIVISOR != 1 && CONFIG_CAN_STM32FD_CLOCK_DIVISOR & 0x01
@@ -45,8 +30,17 @@ LOG_MODULE_REGISTER(can_stm32fd, CONFIG_CAN_LOG_LEVEL);
 
 #define DT_DRV_COMPAT st_stm32_fdcan
 
+/* This symbol takes the value 1 if one of the device instances */
+/* is configured in dts with a domain clock */
+#if STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT
+#define STM32_CANFD_DOMAIN_CLOCK_SUPPORT 1
+#else
+#define STM32_CANFD_DOMAIN_CLOCK_SUPPORT 0
+#endif
+
 struct can_stm32fd_config {
-	struct stm32_pclken pclken;
+	size_t pclk_len;
+	const struct stm32_pclken *pclken;
 	void (*config_irq)(void);
 	const struct pinctrl_dev_config *pcfg;
 };
@@ -74,20 +68,21 @@ static int can_stm32fd_clock_enable(const struct device *dev)
 	const struct can_stm32fd_config *stm32fd_cfg = mcan_cfg->custom;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	LL_RCC_SetFDCANClockSource(CAN_STM32FD_CLOCK_SOURCE);
-
-	/* LL_RCC API names do not align with PLL output name but are correct */
-#ifdef CONFIG_CAN_STM32FD_CLOCK_SOURCE_PLL1Q
-	LL_RCC_PLL1_EnableDomain_48M();
-#elif CONFIG_CAN_STM32FD_CLOCK_SOURCE_PLL2P
-	LL_RCC_PLL2_EnableDomain_SAI();
-#endif
-
 	if (!device_is_ready(clk)) {
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(clk, (clock_control_subsys_t *)&stm32fd_cfg->pclken);
+	if (IS_ENABLED(STM32_CANFD_DOMAIN_CLOCK_SUPPORT) && (stm32fd_cfg->pclk_len > 1)) {
+		ret = clock_control_configure(clk,
+				(clock_control_subsys_t)&stm32fd_cfg->pclken[1],
+				NULL);
+		if (ret < 0) {
+			LOG_ERR("Could not select can_stm32fd domain clock");
+			return ret;
+		}
+	}
+
+	ret = clock_control_on(clk, (clock_control_subsys_t)&stm32fd_cfg->pclken[0]);
 	if (ret < 0) {
 		return ret;
 	}
@@ -190,12 +185,12 @@ static void config_can_##inst##_irq(void)                                      \
 
 #define CAN_STM32FD_CFG_INST(inst)					\
 	PINCTRL_DT_INST_DEFINE(inst);					\
+	static const struct stm32_pclken can_stm32fd_pclken_##inst[] =	\
+					STM32_DT_INST_CLOCKS(inst);	\
 									\
 	static const struct can_stm32fd_config can_stm32fd_cfg_##inst = { \
-		.pclken = {						\
-			.enr = DT_INST_CLOCKS_CELL(inst, bits),		\
-			.bus = DT_INST_CLOCKS_CELL(inst, bus),		\
-		},							\
+		.pclken = can_stm32fd_pclken_##inst,			\
+		.pclk_len = DT_INST_NUM_CLOCKS(inst),			\
 		.config_irq = config_can_##inst##_irq,			\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
 	};								\
