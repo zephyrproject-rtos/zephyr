@@ -183,7 +183,7 @@ static int mcux_flexcan_get_capabilities(const struct device *dev, can_mode_t *c
 {
 	ARG_UNUSED(dev);
 
-	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY;
+	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_3_SAMPLES;
 
 	return 0;
 }
@@ -195,7 +195,7 @@ static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 	uint32_t mcr;
 	int err;
 
-	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) != 0) {
+	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_3_SAMPLES)) != 0) {
 		LOG_ERR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
@@ -229,6 +229,14 @@ static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 	} else {
 		/* Disable listen-only mode */
 		ctrl1 &= ~(CAN_CTRL1_LOM_MASK);
+	}
+
+	if ((mode & CAN_MODE_3_SAMPLES) != 0) {
+		/* Enable triple sampling mode */
+		ctrl1 |= CAN_CTRL1_SMP_MASK;
+	} else {
+		/* Disable triple sampling mode */
+		ctrl1 &= ~(CAN_CTRL1_SMP_MASK);
 	}
 
 	config->base->CTRL1 = ctrl1;
