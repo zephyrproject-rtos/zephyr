@@ -52,6 +52,10 @@ Removed APIs in this release
 Deprecated in this release
 ==========================
 
+* :c:macro:`DT_SPI_DEV_CS_GPIOS_LABEL` and
+  :c:macro:`DT_INST_SPI_DEV_CS_GPIOS_LABEL` are deprecated in favor of
+  utilizing :c:macro:`DT_SPI_DEV_CS_GPIOS_CTLR` and variants.
+
 Stable API changes in this release
 ==================================
 
