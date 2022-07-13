@@ -399,24 +399,32 @@ static int ssd16xx_write(const struct device *dev, const uint16_t x,
 	return 0;
 }
 
-static int ssd16xx_set_read_ctrl(const struct device *dev, uint8_t ctrl)
-{
-	return ssd16xx_write_cmd(dev, SSD16XX_CMD_RAM_READ_CTRL,
-				 &ctrl, sizeof(ctrl));
-}
-
-static int ssd16xx_read(const struct device *dev, const uint16_t x,
-			const uint16_t y,
-			const struct display_buffer_descriptor *desc,
-			void *buf)
+int ssd16xx_read_ram(const struct device *dev, enum ssd16xx_ram ram_type,
+		     const uint16_t x, const uint16_t y,
+		     const struct display_buffer_descriptor *desc,
+		     void *buf)
 {
 	const struct ssd16xx_data *data = dev->data;
 	const size_t buf_len = MIN(desc->buf_size,
 				   desc->height * desc->width / 8);
 	int err;
+	uint8_t ram_ctrl;
 
 	if (!data->read_supported) {
 		return -ENOTSUP;
+	}
+
+	switch (ram_type) {
+	case SSD16XX_RAM_BLACK:
+		ram_ctrl = SSD16XX_RAM_READ_CTRL_BLACK;
+		break;
+
+	case SSD16XX_RAM_RED:
+		ram_ctrl = SSD16XX_RAM_READ_CTRL_RED;
+		break;
+
+	default:
+		return -EINVAL;
 	}
 
 	if (buf == NULL || buf_len == 0U) {
@@ -429,7 +437,8 @@ static int ssd16xx_read(const struct device *dev, const uint16_t x,
 		return err;
 	}
 
-	err = ssd16xx_set_read_ctrl(dev, SSD16XX_RAM_READ_CTRL_BLACK);
+	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_RAM_READ_CTRL,
+				&ram_ctrl, sizeof(ram_ctrl));
 	if (err < 0) {
 		return err;
 	}
@@ -441,6 +450,14 @@ static int ssd16xx_read(const struct device *dev, const uint16_t x,
 	}
 
 	return 0;
+}
+
+static int ssd16xx_read(const struct device *dev,
+			const uint16_t x, const uint16_t y,
+			const struct display_buffer_descriptor *desc,
+			void *buf)
+{
+	return ssd16xx_read_ram(dev, SSD16XX_RAM_BLACK, x, y, desc, buf);
 }
 
 static void *ssd16xx_get_framebuffer(const struct device *dev)
