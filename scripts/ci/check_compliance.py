@@ -270,6 +270,26 @@ class KconfigCheck(ComplianceTest):
                 ))
             fp_module_file.write(content)
 
+    def get_kconfig_dts(self, kconfig_dts_file):
+        """
+        Generate the Kconfig.dts using dts/bindings as the source.
+
+        This is needed to complete Kconfig compliance tests.
+
+        """
+        # Invoke the script directly using the Python executable since this is
+        # not a module nor a pip-installed Python utility
+        zephyr_drv_kconfig_path = os.path.join(ZEPHYR_BASE, "scripts", "dts",
+			                       "gen_driver_kconfig_dts.py")
+        binding_path = os.path.join(ZEPHYR_BASE, "dts", "bindings")
+        cmd = [sys.executable, zephyr_drv_kconfig_path,
+               '--kconfig-out', kconfig_dts_file, '--bindings', binding_path]
+        try:
+            _ = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as ex:
+            self.error(ex.output)
+
+
     def parse_kconfig(self):
         """
         Returns a kconfiglib.Kconfig object for the Kconfig files. We reuse
@@ -308,6 +328,9 @@ class KconfigCheck(ComplianceTest):
 
         # For multi repo support
         self.get_modules(os.path.join(tempfile.gettempdir(), "Kconfig.modules"))
+
+        # For Kconfig.dts support
+        self.get_kconfig_dts(os.path.join(tempfile.gettempdir(), "Kconfig.dts"))
 
         # Tells Kconfiglib to generate warnings for all references to undefined
         # symbols within Kconfig files
