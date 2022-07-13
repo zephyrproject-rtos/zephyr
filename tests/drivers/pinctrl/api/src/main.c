@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/pinctrl.h>
-#include <ztest.h>
-
 #include "test_device.h"
+
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/ztest.h>
 
 /* test device 0 */
 #define TEST_DEVICE0 DT_NODELABEL(test_device0)
@@ -107,8 +107,7 @@ ZTEST(pinctrl_api, test_apply_state)
 	int ret;
 
 	ztest_expect_data(pinctrl_configure_pins, pins, pcfg0->states[0].pins);
-	ztest_expect_value(pinctrl_configure_pins, pin_cnt,
-			   pcfg0->states[0].pin_cnt);
+	ztest_expect_value(pinctrl_configure_pins, pin_cnt, pcfg0->states[0].pin_cnt);
 #ifdef CONFIG_PINCTRL_STORE_REG
 	ztest_expect_value(pinctrl_configure_pins, reg, 0);
 #else
@@ -144,8 +143,7 @@ ZTEST(pinctrl_api, test_update_states)
 	int ret;
 	const struct pinctrl_state *scfg;
 
-	ret = pinctrl_update_states(pcfg0, test_device0_alt,
-				    ARRAY_SIZE(test_device0_alt));
+	ret = pinctrl_update_states(pcfg0, test_device0_alt, ARRAY_SIZE(test_device0_alt));
 	zassert_equal(ret, 0, NULL);
 
 	scfg = &pcfg0->states[0];
