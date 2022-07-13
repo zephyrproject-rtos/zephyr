@@ -51,8 +51,10 @@ LOG_MODULE_REGISTER(soc);
 extern void soc_mp_init(void);
 #endif
 
-static __imr void power_init_v15(void)
+
+static __imr void power_init(void)
 {
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
 	/* HP domain clocked by PLL
 	 * LP domain clocked by PLL
 	 * DSP Core 0 PLL Clock Select divide by 1
@@ -68,10 +70,7 @@ static __imr void power_init_v15(void)
 
 	/* Rewrite the low power sequencing control bits */
 	CAVS_SHIM.lpsctl = CAVS_SHIM.lpsctl;
-}
-
-static __imr void power_init(void)
-{
+#else
 	/* Request HP ring oscillator and
 	 * wait for status to indicate it's ready.
 	 */
@@ -91,16 +90,13 @@ static __imr void power_init(void)
 			    CAVS_CLKCTL_OCS |
 			    CAVS_CLKCTL_LMCS);
 
-#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
 	/* Prevent LP GPDMA 0 & 1 clock gating */
 	sys_write32(SHIM_CLKCTL_LPGPDMAFDCGB, SHIM_GPDMA_CLKCTL(0));
 	sys_write32(SHIM_CLKCTL_LPGPDMAFDCGB, SHIM_GPDMA_CLKCTL(1));
-#endif
 
 	/* Disable power gating for first cores */
 	CAVS_SHIM.pwrctl |= CAVS_PWRCTL_TCPDSPPG(0);
 
-#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
 	/* On cAVS 1.8+, we must demand ownership of the timestamping
 	 * and clock generator registers.  Lacking the former will
 	 * prevent wall clock timer interrupts from arriving, even
@@ -118,11 +114,7 @@ static __imr void power_init(void)
 
 static __imr int soc_init(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
-		power_init_v15();
-	} else {
-		power_init();
-	}
+	power_init();
 
 #ifdef CONFIG_CAVS_CLOCK
 	cavs_clock_init();
