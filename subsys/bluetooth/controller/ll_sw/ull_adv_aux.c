@@ -164,7 +164,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 	    (op == BT_HCI_LE_EXT_ADV_OP_UNCHANGED_DATA)) {
 		err = ull_adv_aux_hdr_set_clear(adv,
 						ULL_ADV_PDU_HDR_FIELD_AD_DATA,
-						0, hdr_data, NULL, &pri_idx,
+						0U, hdr_data, &pri_idx,
 						&sec_idx);
 #if defined(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK)
 		/* No AD data overflow */
@@ -184,8 +184,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		err = ull_adv_aux_hdr_set_clear(adv,
 						ULL_ADV_PDU_HDR_FIELD_AD_DATA,
 						ULL_ADV_PDU_HDR_FIELD_AUX_PTR,
-						hdr_data, NULL, &pri_idx,
-						&sec_idx);
+						hdr_data, &pri_idx, &sec_idx);
 #if defined(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK)
 		if (err == BT_HCI_ERR_PACKET_TOO_LONG) {
 			ad_len_overflow =
@@ -201,8 +200,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			err = ull_adv_aux_hdr_set_clear(adv,
 						ULL_ADV_PDU_HDR_FIELD_AD_DATA,
 						ULL_ADV_PDU_HDR_FIELD_AUX_PTR,
-						hdr_data, NULL, &pri_idx,
-						&sec_idx);
+						hdr_data, &pri_idx, &sec_idx);
 		}
 
 		if (!err && adv->lll.aux) {
@@ -644,21 +642,29 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			       uint8_t len, uint8_t const *const data)
 {
-	struct pdu_adv_com_ext_adv *sr_com_hdr;
-	struct pdu_adv_ext_hdr *sr_hdr;
+	uint8_t hdr_data[ULL_ADV_HDR_DATA_LEN_SIZE +
+			 ULL_ADV_HDR_DATA_ADI_PTR_SIZE +
+			 ULL_ADV_HDR_DATA_LEN_SIZE +
+			 ULL_ADV_HDR_DATA_AUX_PTR_PTR_SIZE +
+			 ULL_ADV_HDR_DATA_LEN_SIZE +
+			 ULL_ADV_HDR_DATA_DATA_PTR_SIZE +
+			 ULL_ADV_HDR_DATA_LEN_SIZE];
 	struct pdu_adv *pri_pdu_prev;
 	struct pdu_adv *sec_pdu_prev;
-	struct pdu_adv_adi *sr_adi;
 	struct pdu_adv *sr_pdu_prev;
+	uint8_t pri_idx, sec_idx;
+	uint16_t hdr_add_fields;
 	struct ll_adv_set *adv;
 	struct pdu_adv *sr_pdu;
 	struct lll_adv *lll;
-	uint8_t ext_hdr_len;
-	uint8_t *sr_dptr;
-	uint8_t pri_idx;
-	uint8_t sec_idx;
+	uint8_t *val_ptr;
 	uint8_t sr_idx;
 	uint8_t err;
+
+#if defined(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK)
+	uint8_t ad_len_overflow;
+	uint8_t ad_len_chain;
+#endif /* CONFIG_BT_CTLR_ADV_AUX_PDU_LINK */
 
 	/* Get the advertising set instance */
 	adv = ull_adv_is_created_get(handle);
@@ -708,92 +714,509 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* Update scan response PDU fields. */
-	sr_pdu = lll_adv_scan_rsp_alloc(lll, &sr_idx);
-	sr_pdu->type = PDU_ADV_TYPE_AUX_SCAN_RSP;
-	sr_pdu->rfu = 0;
-	sr_pdu->chan_sel = 0;
-	sr_pdu->tx_addr = sec_pdu_prev->tx_addr;
-	sr_pdu->rx_addr = 0;
-	sr_pdu->len = 0;
-
-	/* If no length is provided, discard data */
-	if (!len) {
-		/* No scan response data, primary channel PDU's ADI update
-		 * should not copy into scan response ADI.
-		 */
-		sr_adi = NULL;
-
-		goto sr_data_set_did_update;
-	}
-
-	sr_com_hdr = &sr_pdu->adv_ext_ind;
-	sr_hdr = (void *)&sr_com_hdr->ext_hdr_adv_data[0];
-	sr_dptr = (void *)sr_hdr;
-
-	/* Flags */
-	*sr_dptr = 0;
-	sr_hdr->adv_addr = 1;
-#if defined(CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP)
-	sr_hdr->adi = 1;
-#endif
-	sr_dptr++;
-
+	/* Get reference to previous scan response PDU */
 	sr_pdu_prev = lll_adv_scan_rsp_peek(lll);
 
-	/* AdvA */
-	(void)memcpy(sr_dptr,
-		     &sr_pdu_prev->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
-		     BDADDR_SIZE);
-	sr_dptr += BDADDR_SIZE;
+	/* Get reference to next scan response  PDU */
+	sr_pdu = lll_adv_scan_rsp_alloc(lll, &sr_idx);
 
-#if defined(CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP)
-	/* ADI */
-	sr_adi = (void *)sr_dptr;
-	sr_dptr += sizeof(struct pdu_adv_adi);
-#else
-	sr_adi = NULL;
-#endif
-
-	/* Check Max Advertising Data Length */
-	if (len > CONFIG_BT_CTLR_ADV_DATA_LEN_MAX) {
-		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	/* Prepare the AD data as parameter to update in PDU */
+	/* Use length = 0 and NULL pointer to retain old data in the PDU.
+	 * Use length = 0 and valid pointer of `data` (auto/local variable) to
+	 * remove old data.
+	 * User length > 0 and valid pointer of `data` (auto/local variable) to
+	 * set new data.
+	 */
+	val_ptr = hdr_data;
+	if (op == BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG ||
+	    op == BT_HCI_LE_EXT_ADV_OP_LAST_FRAG ||
+	    op == BT_HCI_LE_EXT_ADV_OP_UNCHANGED_DATA) {
+		*val_ptr++ = 0U;
+		(void)memset((void *)val_ptr, 0U,
+			     ULL_ADV_HDR_DATA_DATA_PTR_SIZE);
+	} else {
+		*val_ptr++ = len;
+		(void)memcpy(val_ptr, &data, sizeof(data));
 	}
 
-	/* Check if data will fit in remaining space */
-	/* TODO: need aux_chain_ind support */
-	ext_hdr_len = sr_dptr - &sr_com_hdr->ext_hdr_adv_data[0];
-	if ((PDU_AC_EXT_HEADER_SIZE_MIN + ext_hdr_len + len) >
-	    PDU_AC_PAYLOAD_SIZE_MAX) {
-		/* Will use packet too long error to determine fragmenting
-		 * long data
+	if (false) {
+
+#if defined(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK)
+	} else if (op == BT_HCI_LE_EXT_ADV_OP_UNCHANGED_DATA) {
+		hdr_add_fields = ULL_ADV_PDU_HDR_FIELD_AD_DATA;
+		err = ull_adv_aux_pdu_set_clear(adv, sr_pdu_prev, sr_pdu,
+						hdr_add_fields, 0U, hdr_data);
+
+		/* No AD data overflow */
+		ad_len_overflow = 0U;
+
+		/* No AD data in chain PDU */
+		ad_len_chain = 0U;
+
+		/* pri_idx and sec_idx not used later in code in this function
 		 */
-		return BT_HCI_ERR_PACKET_TOO_LONG;
+		pri_idx = 0U;
+		sec_idx = 0U;
+#endif /* CONFIG_BT_CTLR_ADV_AUX_PDU_LINK */
+
+	} else if (!IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK) ||
+		   (op == BT_HCI_LE_EXT_ADV_OP_FIRST_FRAG ||
+		    op == BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA)) {
+		struct pdu_adv_adi *adi;
+
+		/* If ADI in scan response is not supported then we do not
+		 * need reference to ADI in auxiliary PDU
+		 */
+		hdr_add_fields = 0U;
+
+		/* Add ADI if support enabled */
+		if (IS_ENABLED(CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP)) {
+			/* We need to get reference to ADI in auxiliary PDU */
+			hdr_add_fields |= ULL_ADV_PDU_HDR_FIELD_ADI;
+
+			/* Update DID by passing NULL reference for ADI */
+			(void)memset((void *)val_ptr, 0,
+				     sizeof(struct pdu_adv_adi *));
+
+			/* Data place holder is after ADI */
+			val_ptr += sizeof(struct pdu_adv_adi *);
+
+			/* Place holder and reference to data passed and
+			 * old reference to be returned
+			 */
+			*val_ptr++ = len;
+			(void)memcpy(val_ptr, &data, sizeof(data));
+		}
+
+		/* Trigger DID update */
+		err = ull_adv_aux_hdr_set_clear(adv, hdr_add_fields, 0U,
+						hdr_data, &pri_idx, &sec_idx);
+		if (err) {
+			return err;
+		}
+
+		if ((op == BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA) && !len) {
+			sr_pdu->len = 0;
+			goto sr_data_set_did_update;
+		}
+
+		if (IS_ENABLED(CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP)) {
+			(void)memcpy(&adi,
+				     &hdr_data[ULL_ADV_HDR_DATA_ADI_PTR_OFFSET],
+				     sizeof(struct pdu_adv_adi *));
+		}
+
+		/* Add AD Data and remove any prior presence of Aux Ptr */
+		hdr_add_fields |= ULL_ADV_PDU_HDR_FIELD_ADVA |
+				  ULL_ADV_PDU_HDR_FIELD_AD_DATA;
+		err = ull_adv_aux_pdu_set_clear(adv, sr_pdu_prev, sr_pdu,
+						hdr_add_fields,
+						ULL_ADV_PDU_HDR_FIELD_AUX_PTR,
+						hdr_data);
+#if defined(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK)
+		if (err == BT_HCI_ERR_PACKET_TOO_LONG) {
+			uint8_t ad_len_offset;
+
+			ad_len_offset = ULL_ADV_HDR_DATA_DATA_PTR_OFFSET +
+					ULL_ADV_HDR_DATA_DATA_PTR_SIZE;
+			if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ADI) {
+				ad_len_offset =
+					ULL_ADV_HDR_DATA_ADI_PTR_OFFSET +
+					ULL_ADV_HDR_DATA_ADI_PTR_SIZE;
+			}
+			ad_len_overflow = hdr_data[ad_len_offset];
+
+			/* Prepare the AD data as parameter to update in
+			 * PDU
+			 */
+			val_ptr = hdr_data;
+
+			/* Place holder for ADI field reference to be
+			 * returned
+			 */
+			if (hdr_add_fields &
+			    ULL_ADV_PDU_HDR_FIELD_ADI) {
+				val_ptr++;
+				(void)memcpy(val_ptr, &adi,
+					     sizeof(struct pdu_adv_adi *));
+				val_ptr += sizeof(struct pdu_adv_adi *);
+			}
+
+			/* Place holder and reference to data passed and
+			 * old reference to be returned
+			 */
+			*val_ptr++ = len - ad_len_overflow;
+			(void)memcpy(val_ptr, &data, sizeof(data));
+
+			err = ull_adv_aux_pdu_set_clear(adv, sr_pdu_prev,
+						sr_pdu, hdr_add_fields,
+						ULL_ADV_PDU_HDR_FIELD_AUX_PTR,
+						hdr_data);
+		}
+
+		if (!err) {
+			/* Fragment into chain PDU if len > 191 bytes */
+			if (len > (PDU_AC_PAYLOAD_SIZE_MAX -
+				   PDU_AC_EXT_PAYLOAD_OVERHEAD)) {
+				const uint8_t ad_len = PDU_AC_PAYLOAD_SIZE_MAX -
+					PDU_AC_EXT_PAYLOAD_OVERHEAD;
+
+				/* Prepare the AD data as parameter to update in
+				 * PDU
+				 */
+				val_ptr = hdr_data;
+
+				/* Place holder for ADI field reference to be
+				 * returned
+				 */
+				if (hdr_add_fields &
+				    ULL_ADV_PDU_HDR_FIELD_ADI) {
+					val_ptr++;
+					val_ptr += sizeof(struct pdu_adv_adi *);
+				}
+
+				/* Place holder for aux ptr reference to be
+				 * returned
+				 */
+				val_ptr++;
+				val_ptr += sizeof(uint8_t *);
+
+				/* Place holder and reference to data passed and
+				 * old reference to be returned
+				 */
+				*val_ptr = ad_len;
+				(void)memcpy(&val_ptr[ULL_ADV_HDR_DATA_DATA_PTR_OFFSET],
+					     &data, sizeof(data));
+
+				/* Calculate the overflow chain PDU's AD data
+				 * length
+				 */
+				ad_len_overflow = len - ad_len;
+
+				/* No AD data in chain PDU besides the
+				 * overflow
+				 */
+				ad_len_chain = 0U;
+			} else {
+				struct pdu_adv *pdu_chain;
+
+				/* Remove/Release any previous chain PDU
+				 * allocations
+				 */
+				pdu_chain = lll_adv_pdu_linked_next_get(sr_pdu);
+				if (pdu_chain) {
+					lll_adv_pdu_linked_append(NULL, sr_pdu);
+					lll_adv_pdu_linked_release_all(pdu_chain);
+				}
+
+				/* No AD data overflow */
+				ad_len_overflow = 0U;
+
+				/* No AD data in chain PDU */
+				ad_len_chain = 0U;
+			}
+		} else {
+			/* No AD data overflow */
+			ad_len_overflow = 0U;
+
+			/* No AD data in chain PDU */
+			ad_len_chain = 0U;
+		}
+	} else {
+		struct pdu_adv *pdu_chain_prev;
+		struct pdu_adv *pdu_chain;
+		uint16_t ad_len_total;
+		uint8_t ad_len_prev;
+
+		/* Traverse to next set clear hdr data parameter */
+		val_ptr += sizeof(data);
+
+		/* Traverse to the last chain PDU */
+		ad_len_total = 0U;
+		pdu_chain_prev = sr_pdu_prev;
+		pdu_chain = sr_pdu;
+		do {
+			/* Prepare for aux ptr field reference to be returned, hence
+			 * second parameter will be for AD data field.
+			 */
+			*val_ptr = 0U;
+			(void)memset((void *)&val_ptr[ULL_ADV_HDR_DATA_DATA_PTR_OFFSET],
+				     0U, ULL_ADV_HDR_DATA_DATA_PTR_SIZE);
+
+			sr_pdu_prev = pdu_chain_prev;
+			sr_pdu = pdu_chain;
+
+			/* Add Aux Ptr field if not already present */
+			hdr_add_fields = ULL_ADV_PDU_HDR_FIELD_AD_DATA |
+					 ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
+			err = ull_adv_aux_pdu_set_clear(adv, sr_pdu_prev,
+							sr_pdu, hdr_add_fields,
+							0U, hdr_data);
+			LL_ASSERT(!err || (err == BT_HCI_ERR_PACKET_TOO_LONG));
+
+			/* Get PDUs previous AD data length */
+			ad_len_prev =
+				hdr_data[ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET +
+					 ULL_ADV_HDR_DATA_AUX_PTR_PTR_SIZE];
+
+			/* Check of max supported AD data len */
+			ad_len_total += ad_len_prev;
+			if ((ad_len_total + len) >
+			    CONFIG_BT_CTLR_ADV_DATA_LEN_MAX) {
+				/* NOTE: latest PDU was not consumed by LLL and
+				 * as ull_adv_sync_pdu_alloc() has reverted back
+				 * the double buffer with the first PDU, and
+				 * returned the latest PDU as the new PDU, we
+				 * need to enqueue back the new PDU which is
+				 * infact the latest PDU.
+				 */
+				if (sr_pdu_prev == sr_pdu) {
+					lll_adv_scan_rsp_enqueue(lll, sr_idx);
+				}
+
+				return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+			}
+
+			pdu_chain_prev = lll_adv_pdu_linked_next_get(sr_pdu_prev);
+			pdu_chain = lll_adv_pdu_linked_next_get(sr_pdu);
+			LL_ASSERT((pdu_chain_prev && pdu_chain) ||
+				  (!pdu_chain_prev && !pdu_chain));
+		} while (pdu_chain_prev);
+
+		if (err == BT_HCI_ERR_PACKET_TOO_LONG) {
+			ad_len_overflow =
+				hdr_data[ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET +
+					 ULL_ADV_HDR_DATA_AUX_PTR_PTR_SIZE +
+					 ULL_ADV_HDR_DATA_DATA_PTR_OFFSET +
+					 ULL_ADV_HDR_DATA_DATA_PTR_SIZE];
+
+			/* Prepare for aux ptr field reference to be returned,
+			 * hence second parameter will be for AD data field.
+			 * Fill it with reduced AD data length.
+			 */
+			*val_ptr = ad_len_prev - ad_len_overflow;
+
+			/* AD data len in chain PDU */
+			ad_len_chain = len;
+
+			/* Proceed to add chain PDU */
+			err = 0U;
+		} else {
+			/* No AD data overflow */
+			ad_len_overflow = 0U;
+
+			/* No AD data in chain PDU */
+			ad_len_chain = 0U;
+		}
+
+		/* pri_idx and sec_idx not used later in code in this function
+		 */
+		pri_idx = 0U;
+		sec_idx = 0U;
+#endif /* CONFIG_BT_CTLR_ADV_AUX_PDU_LINK */
 	}
-
-	/* Copy data */
-	(void)memcpy(sr_dptr, data, len);
-	sr_dptr += len;
-
-	/* Finish Common ExtAdv Payload header */
-	sr_com_hdr->adv_mode = 0;
-	sr_com_hdr->ext_hdr_len = ext_hdr_len;
-
-	/* Finish PDU */
-	sr_pdu->len = sr_dptr - &sr_pdu->payload[0];
-
-sr_data_set_did_update:
-	/* Trigger DID update */
-	err = ull_adv_aux_hdr_set_clear(adv, 0, 0, NULL, sr_adi, &pri_idx, &sec_idx);
 	if (err) {
 		return err;
 	}
 
-	/* NOTE: No update to primary channel PDU time reservation  */
+#if defined(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK)
+	if ((op == BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG) ||
+	    (op == BT_HCI_LE_EXT_ADV_OP_LAST_FRAG) ||
+	    ad_len_overflow) {
+		struct pdu_adv_com_ext_adv *com_hdr_chain;
+		struct pdu_adv_com_ext_adv *com_hdr;
+		struct pdu_adv_ext_hdr *hdr_chain;
+		struct pdu_adv_aux_ptr *aux_ptr;
+		struct pdu_adv *pdu_chain_prev;
+		struct pdu_adv_ext_hdr *hdr;
+		struct pdu_adv *pdu_chain;
+		uint8_t aux_ptr_offset;
+		uint8_t *dptr_chain;
+		uint32_t offs_us;
+		uint16_t sec_len;
+		uint8_t *dptr;
 
-	lll_adv_aux_data_enqueue(adv->lll.aux, sec_idx);
-	lll_adv_data_enqueue(&adv->lll, pri_idx);
-	lll_adv_scan_rsp_enqueue(&adv->lll, sr_idx);
+		/* Get reference to aux ptr in superior PDU */
+		aux_ptr_offset = ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET;
+		if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ADI) {
+			aux_ptr_offset +=  ULL_ADV_HDR_DATA_ADI_PTR_OFFSET +
+					   ULL_ADV_HDR_DATA_ADI_PTR_SIZE;
+		}
+		(void)memcpy(&aux_ptr, &hdr_data[aux_ptr_offset],
+			     sizeof(aux_ptr));
+
+		/* Get reference to flags in superior PDU */
+		com_hdr = &sr_pdu->adv_ext_ind;
+		hdr = (void *)&com_hdr->ext_hdr_adv_data[0];
+		dptr = (void *)hdr;
+
+		/* Allocate new PDU */
+		pdu_chain = lll_adv_pdu_alloc_pdu_adv();
+		LL_ASSERT(pdu_chain);
+
+		/* Populate the appended chain PDU */
+		pdu_chain->type = PDU_ADV_TYPE_AUX_CHAIN_IND;
+		pdu_chain->rfu = 0U;
+		pdu_chain->chan_sel = 0U;
+		pdu_chain->tx_addr = 0U;
+		pdu_chain->rx_addr = 0U;
+		pdu_chain->len = 0U;
+
+		com_hdr_chain = &pdu_chain->adv_ext_ind;
+		hdr_chain = (void *)&com_hdr_chain->ext_hdr_adv_data[0];
+		dptr_chain = (void *)hdr_chain;
+
+		/* Flags */
+		*dptr_chain = 0U;
+
+		/* ADI flag, mandatory if superior PDU has it */
+		if (hdr->adi) {
+			hdr_chain->adi = 1U;
+		}
+
+		/* Proceed to next byte if any flags present */
+		if (*dptr) {
+			dptr++;
+		}
+		if (*dptr_chain) {
+			dptr_chain++;
+		}
+
+		/* Start adding fields corresponding to flags here, if any */
+
+		/* AdvA flag */
+		if (hdr->adv_addr) {
+			dptr += BDADDR_SIZE;
+		}
+
+		/* TgtA flag */
+		if (hdr->tgt_addr) {
+			dptr += BDADDR_SIZE;
+		}
+
+		/* No CTEInfo in Extended Advertising */
+
+		/* ADI flag */
+		if (hdr_chain->adi) {
+			(void)memcpy(dptr_chain, dptr,
+				     sizeof(struct pdu_adv_adi));
+
+			dptr += sizeof(struct pdu_adv_adi);
+			dptr_chain += sizeof(struct pdu_adv_adi);
+		}
+
+		/* Finish Common ExtAdv Payload header */
+		com_hdr_chain->adv_mode = 0;
+		com_hdr_chain->ext_hdr_len =
+			dptr_chain - &com_hdr_chain->ext_hdr_adv_data[0];
+
+		/* Prefix overflowed data to chain PDU and reduce the AD data in
+		 * in the current PDU.
+		 */
+		if (ad_len_overflow) {
+			uint8_t *ad_overflow;
+
+			/* Copy overflowed AD data from previous PDU into this
+			 * new chain PDU
+			 */
+			(void)memcpy(&ad_overflow,
+				     &val_ptr[ULL_ADV_HDR_DATA_DATA_PTR_OFFSET],
+				     sizeof(ad_overflow));
+			ad_overflow += *val_ptr;
+			(void)memcpy(dptr_chain, ad_overflow, ad_len_overflow);
+			dptr_chain += ad_len_overflow;
+
+			hdr_add_fields |= ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
+
+			/* Reduce the AD data in the previous PDU */
+			err = ull_adv_aux_pdu_set_clear(adv, sr_pdu_prev,
+							sr_pdu, hdr_add_fields,
+							0U, hdr_data);
+			if (err) {
+				/* NOTE: latest PDU was not consumed by LLL and
+				 * as ull_adv_sync_pdu_alloc() has reverted back
+				 * the double buffer with the first PDU, and
+				 * returned the latest PDU as the new PDU, we
+				 * need to enqueue back the new PDU which is
+				 * infact the latest PDU.
+				 */
+				if (sr_pdu_prev == sr_pdu) {
+					lll_adv_scan_rsp_enqueue(lll, sr_idx);
+				}
+
+				return err;
+			}
+
+			/* AD data len in chain PDU besides the overflow */
+			len = ad_len_chain;
+		}
+
+		/* PDU length so far */
+		sec_len = dptr_chain - &pdu_chain->payload[0];
+
+		/* Check AdvData overflow */
+		if ((sec_len + len) > PDU_AC_PAYLOAD_SIZE_MAX) {
+			/* NOTE: latest PDU was not consumed by LLL and
+			 * as ull_adv_sync_pdu_alloc() has reverted back
+			 * the double buffer with the first PDU, and
+			 * returned the latest PDU as the new PDU, we
+			 * need to enqueue back the new PDU which is
+			 * infact the latest PDU.
+			 */
+			if (sr_pdu_prev == sr_pdu) {
+				lll_adv_aux_data_enqueue(adv->lll.aux, sr_idx);
+			}
+
+			return BT_HCI_ERR_PACKET_TOO_LONG;
+		}
+
+		/* Fill AD Data in chain PDU */
+		(void)memcpy(dptr_chain, data, len);
+
+		/* Fill the chain PDU length */
+		pdu_chain->len = sec_len + len;
+
+		/* Fill the aux offset in the previous AUX_SYNC_IND PDU */
+		offs_us = PDU_AC_US(sr_pdu->len, adv->lll.phy_s,
+				    adv->lll.phy_flags) +
+			  EVENT_B2B_MAFS_US;
+		ull_adv_aux_ptr_fill(aux_ptr, offs_us, adv->lll.phy_s);
+
+		/* Remove/Release any previous chain PDUs */
+		pdu_chain_prev = lll_adv_pdu_linked_next_get(sr_pdu);
+		if (pdu_chain_prev) {
+			lll_adv_pdu_linked_append(NULL, sr_pdu);
+			lll_adv_pdu_linked_release_all(pdu_chain_prev);
+		}
+
+		/* Chain the PDU */
+		lll_adv_pdu_linked_append(pdu_chain, sr_pdu);
+	}
+#endif /* CONFIG_BT_CTLR_ADV_AUX_PDU_LINK */
+
+sr_data_set_did_update:
+	if ((op == BT_HCI_LE_EXT_ADV_OP_FIRST_FRAG) ||
+	    (op == BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA)) {
+		/* NOTE: No update to primary channel PDU time reservation  */
+
+		lll_adv_aux_data_enqueue(adv->lll.aux, sec_idx);
+		lll_adv_data_enqueue(&adv->lll, pri_idx);
+
+		sr_pdu->type = PDU_ADV_TYPE_AUX_SCAN_RSP;
+		sr_pdu->rfu = 0U;
+		sr_pdu->chan_sel = 0U;
+		sr_pdu->rx_addr = 0U;
+		if (sr_pdu->len) {
+			sr_pdu->tx_addr = sec_pdu_prev->tx_addr;
+			(void)memcpy(&sr_pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
+				     &sec_pdu_prev->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
+				     BDADDR_SIZE);
+		} else {
+			sr_pdu->tx_addr = 0U;
+		}
+	}
+
+	lll_adv_scan_rsp_enqueue(lll, sr_idx);
 
 	return 0;
 }
@@ -963,7 +1386,6 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 				  uint16_t sec_hdr_add_fields,
 				  uint16_t sec_hdr_rem_fields,
 				  void *hdr_data,
-				  struct pdu_adv_adi *adi,
 				  uint8_t *pri_idx, uint8_t *sec_idx)
 {
 	struct pdu_adv_com_ext_adv *pri_com_hdr, *pri_com_hdr_prev;
@@ -979,6 +1401,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	uint8_t pri_len, sec_len_prev;
 	struct lll_adv_aux *lll_aux;
 	struct ll_adv_aux_set *aux;
+	struct pdu_adv_adi *adi;
 	struct lll_adv *lll;
 	uint8_t is_aux_new;
 	uint8_t *ad_data;
@@ -1151,11 +1574,25 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	}
 	pri_hdr->adi = 1;
 	pri_dptr += sizeof(struct pdu_adv_adi);
+	if (sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ADI) {
+		sec_hdr->adi = 1U;
+		/* return the size of ADI structure */
+		*(uint8_t *)hdr_data = sizeof(struct pdu_adv_adi);
+		hdr_data = (uint8_t *)hdr_data + sizeof(uint8_t);
+		/* pick the reference to ADI param */
+		(void)memcpy(&adi, hdr_data, sizeof(struct pdu_adv_adi *));
+		/* return the pointer to ADI struct inside the PDU */
+		(void)memcpy(hdr_data, &sec_dptr, sizeof(sec_dptr));
+		hdr_data = (uint8_t *)hdr_data + sizeof(sec_dptr);
+		sec_dptr += sizeof(struct pdu_adv_adi);
+	} else {
+		sec_hdr->adi = 1;
+		adi = NULL;
+		sec_dptr += sizeof(struct pdu_adv_adi);
+	}
 	if (sec_hdr_prev.adi) {
 		sec_dptr_prev += sizeof(struct pdu_adv_adi);
 	}
-	sec_hdr->adi = 1;
-	sec_dptr += sizeof(struct pdu_adv_adi);
 
 	/* AuxPtr flag */
 	if (pri_hdr_prev.aux_ptr) {
@@ -1407,16 +1844,16 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	pri_adi->sid = adv->sid;
 	sec_adi->sid = adv->sid;
 
-	/* The DID for a specific SID shall be unique.
-	 */
-	did = ull_adv_aux_did_next_unique_get(adv->sid);
+	if (!adi) {
+		/* The DID for a specific SID shall be unique.
+		 */
+		did = ull_adv_aux_did_next_unique_get(adv->sid);
+	} else {
+		did = adi->did;
+	}
 
 	pri_adi->did = sys_cpu_to_le16(did);
 	sec_adi->did = sys_cpu_to_le16(did);
-
-	if (adi) {
-		*adi = *pri_adi;
-	}
 
 	/* No CTEInfo field in primary channel PDU */
 
@@ -1506,8 +1943,10 @@ uint8_t ull_adv_aux_pdu_set_clear(struct ll_adv_set *adv,
 
 	/* Get common pointers from reference to previous tertiary PDU data */
 	com_hdr_prev = (void *)&pdu_prev->adv_ext_ind;
-	if (com_hdr_prev->ext_hdr_len != 0) {
+	if (pdu_prev->len && com_hdr_prev->ext_hdr_len) {
 		hdr_prev = com_hdr_prev->ext_hdr;
+	} else {
+		com_hdr_prev->ext_hdr_len = 0U;
 	}
 	dptr_prev = com_hdr_prev->ext_hdr.data;
 
@@ -1529,21 +1968,33 @@ uint8_t ull_adv_aux_pdu_set_clear(struct ll_adv_set *adv,
 	dptr = com_hdr->ext_hdr.data;
 
 	/* AdvA flag */
-	if (hdr_prev.adv_addr) {
+	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ADVA) {
+		hdr.adv_addr = 1U;
+		dptr += BDADDR_SIZE;
+	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_ADVA) &&
+		   hdr_prev.adv_addr) {
 		hdr.adv_addr = 1U;
 		pdu->tx_addr = pdu_prev->tx_addr;
 
-		dptr_prev += BDADDR_SIZE;
 		dptr += BDADDR_SIZE;
+	}
+	if (hdr_prev.adv_addr) {
+		dptr_prev += BDADDR_SIZE;
 	}
 
 	/* TargetA flag */
-	if (hdr_prev.tgt_addr) {
+	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_TARGETA) {
+		hdr.tgt_addr = 1U;
+		dptr += BDADDR_SIZE;
+	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_TARGETA) &&
+		   hdr_prev.tgt_addr) {
 		hdr.tgt_addr = 1U;
 		pdu->rx_addr = pdu_prev->rx_addr;
 
-		dptr_prev += BDADDR_SIZE;
 		dptr += BDADDR_SIZE;
+	}
+	if (hdr_prev.tgt_addr) {
+		dptr_prev += BDADDR_SIZE;
 	}
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
@@ -1660,7 +2111,7 @@ uint8_t ull_adv_aux_pdu_set_clear(struct ll_adv_set *adv,
 		 *       hence set len_prev to size of the length/mode
 		 *       field.
 		 */
-		len_prev = PDU_AC_EXT_HEADER_SIZE_MIN;
+		len_prev = (pdu_prev->len) ? PDU_AC_EXT_HEADER_SIZE_MIN : 0U;
 		dptr_prev = (uint8_t *)com_hdr_prev + len_prev;
 	}
 

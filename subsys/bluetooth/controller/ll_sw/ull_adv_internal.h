@@ -141,7 +141,6 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 				  uint16_t sec_hdr_add_fields,
 				  uint16_t sec_hdr_rem_fields,
 				  void *value,
-				  struct pdu_adv_adi *adi,
 				  uint8_t *pri_idx, uint8_t *sec_idx);
 
 /* helper function to set/clear common extended header format fields for

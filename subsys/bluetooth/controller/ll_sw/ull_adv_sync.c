@@ -784,8 +784,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		/* Add sync_info into auxiliary PDU */
 		err = ull_adv_aux_hdr_set_clear(adv,
 						ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-						0, value, NULL, &pri_idx,
-						&sec_idx);
+						0U, value, &pri_idx, &sec_idx);
 		if (err) {
 			return err;
 		}
@@ -1835,8 +1834,9 @@ static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
 	uint8_t err;
 
 	/* Remove sync_info from auxiliary PDU */
-	err = ull_adv_aux_hdr_set_clear(adv, 0, ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-					NULL, NULL, &pri_idx, &sec_idx);
+	err = ull_adv_aux_hdr_set_clear(adv, 0U,
+					ULL_ADV_PDU_HDR_FIELD_SYNC_INFO, NULL,
+					&pri_idx, &sec_idx);
 	if (err) {
 		return err;
 	}
