@@ -174,6 +174,11 @@
 
 	pinctrl-0 = <&twihs0_default>;
 	pinctrl-names = "default";
+
+	eeprom: eeprom@5f {
+		compatible = "atmel,24mac402";
+		reg = <0x5f>;
+	};
 };
 
 &twihs2 {
@@ -223,6 +228,8 @@ zephyr_udc0: &usbhs {
 
 	pinctrl-0 = <&gmac_rmii>;
 	pinctrl-names = "default";
+
+	mac-eeprom = <&eeprom>;
 
 	phy: phy {
 		compatible = "ethernet-phy";
