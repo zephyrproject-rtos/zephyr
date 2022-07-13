@@ -245,7 +245,7 @@ static int notify_callback_set(const struct device *dev,
 			       edac_notify_callback_f cb)
 {
 	struct ibecc_data *data = dev->data;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	data->cb = cb;
 	irq_unlock(key);
