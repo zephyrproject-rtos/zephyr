@@ -12,6 +12,8 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/crypto/crypto.h>
 
+#define DT_DRV_COMPAT atmel_ataes132a
+
 #include "crypto_ataes132a_priv.h"
 
 #define D10D24S 11
@@ -60,12 +62,11 @@ static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 	 * If there is concurrency protection around the driver, this should
 	 * never happen.
 	 */
-	read_reg_i2c(data->i2c, cfg->i2c_addr, ATAES_STATUS_REG, &status);
+	read_reg_i2c(&cfg->i2c, ATAES_STATUS_REG, &status);
 
 	while (status & ATAES_STATUS_WIP) {
 		k_busy_wait(D10D24S);
-		read_reg_i2c(data->i2c, cfg->i2c_addr,
-			     ATAES_STATUS_REG, &status);
+		read_reg_i2c(&cfg->i2c, ATAES_STATUS_REG, &status);
 	}
 
 	data->command_buffer[0] = count;
@@ -81,12 +82,10 @@ static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 	data->command_buffer[nparams + 4] = crc[1];
 
 	/*Reset i/O address start before sending a command*/
-	write_reg_i2c(data->i2c, cfg->i2c_addr,
-		      ATAES_COMMAND_ADDRR_RESET, 0x0);
+	write_reg_i2c(&cfg->i2c, ATAES_COMMAND_ADDRR_RESET, 0x0);
 
 	/*Send a command through the command buffer*/
-	i2c_return = burst_write_i2c(data->i2c, cfg->i2c_addr,
-				     ATAES_COMMAND_MEM_ADDR,
+	i2c_return = burst_write_i2c(&cfg->i2c, ATAES_COMMAND_MEM_ADDR,
 				     data->command_buffer, count);
 
 	LOG_DBG("BURST WRITE RETURN: %d", i2c_return);
@@ -94,8 +93,7 @@ static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 	/* Idle-waiting for the command completion*/
 	do {
 		k_busy_wait(D10D24S);
-		read_reg_i2c(data->i2c, cfg->i2c_addr,
-			     ATAES_STATUS_REG, &status);
+		read_reg_i2c(&cfg->i2c, ATAES_STATUS_REG, &status);
 	} while (status & ATAES_STATUS_WIP);
 
 	if (status & ATAES_STATUS_CRC) {
@@ -109,9 +107,7 @@ static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 	}
 
 	/* Read the response */
-	burst_read_i2c(data->i2c, cfg->i2c_addr,
-		       ATAES_COMMAND_MEM_ADDR,
-		       data->command_buffer, 64);
+	burst_read_i2c(&cfg->i2c, ATAES_COMMAND_MEM_ADDR, data->command_buffer, 64);
 
 	count = data->command_buffer[0];
 
@@ -131,9 +127,7 @@ static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 			return -EINVAL;
 		}
 
-		burst_read_i2c(data->i2c, cfg->i2c_addr,
-			       ATAES_COMMAND_MEM_ADDR,
-			       data->command_buffer, 64);
+		burst_read_i2c(&cfg->i2c, ATAES_COMMAND_MEM_ADDR, data->command_buffer, 64);
 
 		count = data->command_buffer[0];
 
@@ -172,15 +166,14 @@ int ataes132a_init(const struct device *dev)
 
 	LOG_DBG("ATAES132A INIT");
 
-	ataes132a->i2c = device_get_binding((char *)cfg->i2c_port);
-	if (!ataes132a->i2c) {
-		LOG_DBG("ATAE132A master controller not found!");
-		return -EINVAL;
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
 	i2c_cfg = I2C_MODE_CONTROLLER | I2C_SPEED_SET(ATAES132A_BUS_SPEED);
 
-	i2c_configure(ataes132a->i2c, i2c_cfg);
+	i2c_configure(cfg->i2c.bus, i2c_cfg);
 
 	k_sem_init(&ataes132a->device_sem, 1, K_SEM_MAX_LIMIT);
 
@@ -798,7 +791,6 @@ static int ataes132a_session_setup(const struct device *dev,
 				   enum cipher_op op_type)
 {
 	uint8_t key_id = *((uint8_t *)ctx->key.handle);
-	struct ataes132a_device_data *data = dev->data;
 	const struct ataes132a_device_config *cfg = dev->config;
 	uint8_t config;
 
@@ -818,13 +810,9 @@ static int ataes132a_session_setup(const struct device *dev,
 	}
 
 	ataes132a_state[key_id].in_use = true;
-	read_reg_i2c(data->i2c, cfg->i2c_addr,
-		     ATAES_KEYCFG_REG(key_id),
-		     &config);
+	read_reg_i2c(&cfg->i2c, ATAES_KEYCFG_REG(key_id), &config);
 	ataes132a_state[key_id].key_config = config;
-	read_reg_i2c(data->i2c, cfg->i2c_addr,
-		     ATAES_CHIPCONFIG_REG,
-		     &config);
+	read_reg_i2c(&cfg->i2c, ATAES_CHIPCONFIG_REG, &config);
 	ataes132a_state[key_id].chip_config = config;
 
 	ctx->drv_sessn_state = &ataes132a_state[key_id];
@@ -883,10 +871,8 @@ static int ataes132a_query_caps(const struct device *dev)
 		CAP_SYNC_OPS | CAP_AUTONONCE);
 }
 
-const struct ataes132a_device_config ataes132a_config = {
-	.i2c_port = CONFIG_CRYPTO_ATAES132A_I2C_PORT_NAME,
-	.i2c_addr = CONFIG_CRYPTO_ATAES132A_I2C_ADDR,
-	.i2c_speed = ATAES132A_BUS_SPEED,
+static const struct ataes132a_device_config ataes132a_config = {
+	.i2c = I2C_DT_SPEC_INST_GET(0),
 };
 
 static struct crypto_driver_api crypto_enc_funcs = {
@@ -898,7 +884,7 @@ static struct crypto_driver_api crypto_enc_funcs = {
 
 struct ataes132a_device_data ataes132a_data;
 
-DEVICE_DEFINE(ataes132a, CONFIG_CRYPTO_ATAES132A_DRV_NAME, ataes132a_init,
+DEVICE_DT_INST_DEFINE(0, ataes132a_init,
 		NULL, &ataes132a_data, &ataes132a_config,
 		POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
 		(void *)&crypto_enc_funcs);
