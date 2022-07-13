@@ -1682,6 +1682,7 @@ Intel Platforms (Xtensa):
         - marc-hb
         - kv2019i
         - MaureenHelm
+        - ceolin
     files:
         - boards/xtensa/intel_*/
         - soc/xtensa/intel_*/
