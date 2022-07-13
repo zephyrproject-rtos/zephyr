@@ -14,10 +14,6 @@ config GPIO_INIT_PRIORITY
 config GPIO_DW
 	default y
 
-config GPIO_DW_0
-	default y
-	depends on GPIO_DW
-
 config I2C
 	default y
 

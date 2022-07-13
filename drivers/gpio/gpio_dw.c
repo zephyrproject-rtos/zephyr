@@ -434,7 +434,7 @@ static int gpio_dw_initialize(const struct device *port)
 }
 
 /* Bindings to the platform */
-#ifdef CONFIG_GPIO_DW_0
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0
 static void gpio_config_0_irq(const struct device *port);
 
 static const struct gpio_dw_config gpio_config_0 = {
@@ -474,10 +474,10 @@ static void gpio_config_0_irq(const struct device *port)
 #endif
 }
 
-#endif /* CONFIG_GPIO_DW_0 */
+#endif /* DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0 */
 
 
-#ifdef CONFIG_GPIO_DW_1
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1
 static void gpio_config_1_irq(const struct device *port);
 
 static const struct gpio_dw_config gpio_dw_config_1 = {
@@ -517,9 +517,9 @@ static void gpio_config_1_irq(const struct device *port)
 #endif
 }
 
-#endif /* CONFIG_GPIO_DW_1 */
+#endif /* DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1 */
 
-#ifdef CONFIG_GPIO_DW_2
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 2
 static void gpio_config_2_irq(const struct device *port);
 
 static const struct gpio_dw_config gpio_dw_config_2 = {
@@ -559,9 +559,9 @@ static void gpio_config_2_irq(const struct device *port)
 #endif
 }
 
-#endif /* CONFIG_GPIO_DW_2 */
+#endif /* DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 2 */
 
-#ifdef CONFIG_GPIO_DW_3
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 3
 static void gpio_config_3_irq(const struct device *port);
 
 static const struct gpio_dw_config gpio_dw_config_3 = {
@@ -600,4 +600,4 @@ static void gpio_config_3_irq(const struct device *port)
 	gpio_dw_unmask_int(GPIO_DW_PORT_3_INT_MASK);
 #endif
 }
-#endif /* CONFIG_GPIO_DW_3 */
+#endif /* DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 3 */
