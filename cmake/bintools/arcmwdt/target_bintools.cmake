@@ -101,3 +101,11 @@ set_property(TARGET bintools PROPERTY strip_flag_debug -ql)
 
 set_property(TARGET bintools PROPERTY strip_flag_infile "")
 set_property(TARGET bintools PROPERTY strip_flag_outfile -o )
+
+# list symbols in a binary
+set_property(TARGET bintools PROPERTY symbols_command ${CMAKE_NM})
+# flags are set to be as close to gnu nm format as possible
+set_property(TARGET bintools PROPERTY symbols_flag "-xhpqgn")
+set_property(TARGET bintools PROPERTY symbols_final "")
+set_property(TARGET bintools PROPERTY symbols_infile "")
+set_property(TARGET bintools PROPERTY symbols_outfile ">;" )
