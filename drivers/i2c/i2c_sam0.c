@@ -202,7 +202,7 @@ static void i2c_sam0_dma_write_done(const struct device *dma_dev, void *arg,
 	ARG_UNUSED(dma_dev);
 	ARG_UNUSED(id);
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (i2c_sam0_terminate_on_error(dev)) {
 		irq_unlock(key);
@@ -293,7 +293,7 @@ static void i2c_sam0_dma_read_done(const struct device *dma_dev, void *arg,
 	ARG_UNUSED(dma_dev);
 	ARG_UNUSED(id);
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (i2c_sam0_terminate_on_error(dev)) {
 		irq_unlock(key);
@@ -435,7 +435,7 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 #endif
 		}
 
-		int key = irq_lock();
+		unsigned int key = irq_lock();
 
 		/*
 		 * Writing the address starts the transaction, issuing

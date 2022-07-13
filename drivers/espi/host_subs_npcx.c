@@ -631,7 +631,7 @@ void host_c2h_write_io_cfg_reg(uint8_t reg_index, uint8_t reg_data)
 	struct c2h_reg *const inst_c2h = host_sub_cfg.inst_c2h;
 
 	/* Disable interrupts */
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	/* Lock host access EC configuration registers (0x4E/0x4F) */
 	inst_c2h->LKSIOHA |= BIT(NPCX_LKSIOHA_LKCFG);
@@ -675,7 +675,7 @@ uint8_t host_c2h_read_io_cfg_reg(uint8_t reg_index)
 	uint8_t data_val;
 
 	/* Disable interrupts */
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	/* Lock host access EC configuration registers (0x4E/0x4F) */
 	inst_c2h->LKSIOHA |= BIT(NPCX_LKSIOHA_LKCFG);
