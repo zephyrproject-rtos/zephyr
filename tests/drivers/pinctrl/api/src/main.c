@@ -29,7 +29,7 @@ static struct pinctrl_dev_config *pcfg1 = PINCTRL_DT_DEV_CONFIG_GET(TEST_DEVICE1
  * set of macros used to define and initialize pin control config from
  * Devicetree works as expected.
  */
-static void test_config_dev0(void)
+ZTEST(pinctrl_api, test_config_dev0)
 {
 	const struct pinctrl_state *scfg;
 
@@ -53,7 +53,7 @@ static void test_config_dev0(void)
  *
  * @see test_config_dev0()
  */
-static void test_config_dev1(void)
+ZTEST(pinctrl_api, test_config_dev1)
 {
 	const struct pinctrl_state *scfg;
 
@@ -86,7 +86,7 @@ static void test_config_dev1(void)
 /**
  * @brief Test that pinctrl_lookup_state() works as expected
  */
-static void test_lookup_state(void)
+ZTEST(pinctrl_api, test_lookup_state)
 {
 	int ret;
 	const struct pinctrl_state *scfg;
@@ -102,7 +102,7 @@ static void test_lookup_state(void)
 /**
  * @brief Test that pinctrl_apply_state() works as expected.
  */
-static void test_apply_state(void)
+ZTEST(pinctrl_api, test_apply_state)
 {
 	int ret;
 
@@ -139,7 +139,7 @@ static const struct pinctrl_state test_device0_alt_invalid[] = {
 /**
  * @brief This test checks if pinctrl_update_states() works as expected.
  */
-static void test_update_states(void)
+ZTEST(pinctrl_api, test_update_states)
 {
 	int ret;
 	const struct pinctrl_state *scfg;
@@ -159,13 +159,4 @@ static void test_update_states(void)
 	zassert_equal(ret, -EINVAL, NULL);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(pinctrl_api,
-			 ztest_unit_test(test_config_dev0),
-			 ztest_unit_test(test_config_dev1),
-			 ztest_unit_test(test_lookup_state),
-			 ztest_unit_test(test_apply_state),
-			 ztest_unit_test(test_update_states));
-	ztest_run_test_suite(pinctrl_api);
-}
+ZTEST_SUITE(pinctrl_api, NULL, NULL, NULL, NULL, NULL);
