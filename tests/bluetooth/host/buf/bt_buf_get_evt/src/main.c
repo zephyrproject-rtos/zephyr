@@ -35,6 +35,19 @@ void bt_buf_get_evt_returns_not_null_cmd_complete(uint8_t evt)
 	zassert_equal(bt_buf_get_type(buf), BT_BUF_EVT, "Incorrect type");
 }
 
+void bt_buf_get_evt_returns_null_default(uint8_t evt)
+{
+	struct net_buf *buf;
+
+	ztest_returns_value(net_buf_alloc_fixed, NULL);
+	buf = bt_buf_get_evt(evt, true, Z_TIMEOUT_TICKS(1000));
+	zassert_is_null(buf, "Return value was NULL");
+
+	ztest_returns_value(net_buf_alloc_fixed, NULL);
+	buf = bt_buf_get_evt(evt, false, Z_TIMEOUT_TICKS(1000));
+	zassert_is_null(buf, "Return value was NULL");
+}
+
 void bt_buf_get_evt_returns_not_null_default(uint8_t evt)
 {
 	static struct net_buf test_reference;
@@ -92,6 +105,38 @@ void test_bt_buf_get_evt_default(void)
 	bt_buf_get_evt_returns_not_null_default(BT_HCI_EVT_USER_PASSKEY_NOTIFY);
 	bt_buf_get_evt_returns_not_null_default(BT_HCI_EVT_LE_META_EVENT);
 	bt_buf_get_evt_returns_not_null_default(BT_HCI_EVT_AUTH_PAYLOAD_TIMEOUT_EXP);
+
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_UNKNOWN);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_VENDOR);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_INQUIRY_COMPLETE);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_CONN_COMPLETE);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_CONN_REQUEST);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_DISCONN_COMPLETE);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_AUTH_COMPLETE);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_REMOTE_NAME_REQ_COMPLETE);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_ENCRYPT_CHANGE);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_REMOTE_FEATURES);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_REMOTE_VERSION_INFO);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_HARDWARE_ERROR);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_ROLE_CHANGE);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_NUM_COMPLETED_PACKETS);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_PIN_CODE_REQ);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_LINK_KEY_REQ);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_LINK_KEY_NOTIFY);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_DATA_BUF_OVERFLOW);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_REMOTE_EXT_FEATURES);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_SYNC_CONN_COMPLETE);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_EXTENDED_INQUIRY_RESULT);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_IO_CAPA_REQ);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_IO_CAPA_RESP);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_USER_CONFIRM_REQ);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_USER_PASSKEY_REQ);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_SSP_COMPLETE);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_USER_PASSKEY_NOTIFY);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_LE_META_EVENT);
+	bt_buf_get_evt_returns_null_default(BT_HCI_EVT_AUTH_PAYLOAD_TIMEOUT_EXP);
 }
 
 void test_main(void)
