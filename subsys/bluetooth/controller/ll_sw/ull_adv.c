@@ -328,6 +328,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 
 	is_new_set = !adv->is_created;
 	adv->is_created = 1;
+	adv->is_ad_data_cmplt = 1U;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	/* remember parameters so that set adv/scan data and adv enable
