@@ -201,7 +201,7 @@
 /doc/_scripts/                            @carlescufi
 /doc/connectivity/bluetooth/                    @alwa-nordic @jhedberg @Vudentz
 /doc/build/dts/                          @galak @mbolivar-nordic
-/doc/hardware/preipherals/canbus/                    @alexanderwachter @henrikbrixandersen
+/doc/hardware/peripherals/canbus/                    @alexanderwachter @henrikbrixandersen
 /doc/security/                            @ceolin @d3zd3z
 /drivers/debug/                           @nashif
 /drivers/*/*sam4l*                        @nandojve
@@ -338,7 +338,7 @@
 /drivers/peci/                            @albertofloyd @franciscomunoz @sjvasanth1
 /drivers/pinctrl/                         @gmarull
 /drivers/pinctrl/*esp32*                  @glaubermaroto
-/drivers/pinmux/*it8xxx2*                 @ite
+/drivers/pinctrl/*it8xxx2*                @ite
 /drivers/pm_cpu_ops/                      @carlocaione
 /drivers/power_domain/                    @ceolin
 /drivers/ps2/                             @franciscomunoz @sjvasanth1
@@ -369,7 +369,7 @@
 /drivers/sensor/mpr/                      @sven-hm
 /drivers/sensor/st*/                      @avisconti
 /drivers/serial/*b91*                     @andy-liu-telink
-/drivers/serial/uart_altera_jtag_hal.c    @nashif
+/drivers/serial/uart_altera_jtag.c        @nashif
 /drivers/serial/*ns16550*                 @dcpleung @nashif @jenmwms @aasthagr
 /drivers/serial/*nrfx*                    @Mierunski @anangl
 /drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
@@ -394,8 +394,6 @@
 /drivers/serial/uart_ite_it8xxx2.c        @GTLin08
 /drivers/disk/                            @jfischer-no
 /drivers/disk/sdmmc_sdhc.h                @JunYangNXP
-/drivers/disk/sdmmc_spi.c                 @JunYangNXP
-/drivers/disk/usdhc.c                     @JunYangNXP
 /drivers/disk/sdmmc_stm32.c               @anthonybrandon
 /drivers/net/                             @rlubos @tbursztyka
 /drivers/ptp_clock/                       @tbursztyka
@@ -494,11 +492,11 @@
 /dts/arm/silabs/efr32fg13*                @yonsch
 /dts/riscv/                               @kgugala @pgielda
 /dts/riscv/ite/                           @ite
-/dts/riscv/microsemi-miv.dtsi             @galak
-/dts/riscv/rv32m1*                        @dleach02
+/dts/riscv/microsemi/microsemi-miv.dtsi   @galak
+/dts/riscv/openisa/rv32m1*                @dleach02
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
 /dts/riscv/starfive/                      @rajnesh-kanwal
-/dts/riscv/andes_v5*                      @cwshu @kevinwang821020 @jimmyzhe
+/dts/riscv/andes/andes_v5*                @cwshu @kevinwang821020 @jimmyzhe
 /dts/arm/armv*m.dtsi                      @galak @ioannisg
 /dts/arm/armv7-a.dtsi                     @ibirnbaum
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
@@ -563,7 +561,7 @@
 /include/zephyr/drivers/peci.h                   @albertofloyd @franciscomunoz @sjvasanth1
 /include/zephyr/drivers/pm_cpu_ops.h             @carlocaione
 /include/zephyr/drivers/pm_cpu_ops/              @carlocaione
-/include/zephyr/drivers/w1/                      @str4t0m
+/include/zephyr/drivers/w1.h                     @str4t0m
 /include/zephyr/app_memory/                      @dcpleung
 /include/zephyr/arch/arc/                        @abrodkin @ruuddw @evgeniy-paltsev
 /include/zephyr/arch/arc/arch.h                  @abrodkin @ruuddw @evgeniy-paltsev
