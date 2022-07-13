@@ -140,13 +140,16 @@ int ak8975_init(const struct device *dev)
 	return 0;
 }
 
-static struct ak8975_data ak8975_inst_data;
+#define AK8975_DEFINE(inst)								\
+	static struct ak8975_data ak8975_data_##inst;					\
+											\
+	static const struct ak8975_config ak8975_config_##inst = {			\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+	};										\
+											\
+	DEVICE_DT_INST_DEFINE(inst, ak8975_init, NULL,					\
+			      &ak8975_data_##inst, &ak8975_config_##inst,		\
+			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,			\
+			      &ak8975_driver_api);					\
 
-static const struct ak8975_config ak8975_inst_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
-
-DEVICE_DT_INST_DEFINE(0, ak8975_init, NULL,
-		      &ak8975_inst_data, &ak8975_inst_config,
-		      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		      &ak8975_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(AK8975_DEFINE)
