@@ -148,9 +148,10 @@ void arm_core_mpu_enable(void)
 
 	val = __get_SCTLR();
 	val |= SCTLR_MPU_ENABLE;
+	__set_SCTLR(val);
+
 	/* Make sure that all the registers are set before proceeding */
 	__DSB();
-	__set_SCTLR(val);
 	__ISB();
 }
 
