@@ -13,3 +13,4 @@ Networking APIs
    system_mgmt.rst
    tsn.rst
    gsm_modem.rst
+   zperf.rst
