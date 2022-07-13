@@ -19,7 +19,7 @@ FILE(GLOB host_sources
 )
 
 FILE(GLOB mock_sources
-  ${ZEPHYR_BASE}/tests/bluetooth/host/mock_host/src/net/net.c
+  ${ZEPHYR_BASE}/tests/bluetooth/host/mock_host/src/net.c
   ${ZEPHYR_BASE}/tests/bluetooth/host/mock_host/src/iso.c
   ${ZEPHYR_BASE}/tests/bluetooth/host/mock_host/src/hci_core.c
   ${ZEPHYR_BASE}/tests/bluetooth/host/mock_host/src/assert.c
