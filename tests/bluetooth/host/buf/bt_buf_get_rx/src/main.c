@@ -61,18 +61,22 @@ void test_bt_buf_get_rx_invalid_input_type_bt_buf_h4(void)
 void test_bt_buf_get_rx_returns_null(void)
 {
 	struct net_buf *buf;
+	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
 
 	ztest_returns_value(net_buf_alloc_fixed, NULL);
-	buf = bt_buf_get_rx(BT_BUF_EVT, Z_TIMEOUT_TICKS(1000));
+	ztest_expect_value(hooks_net_buf_alloc_fixed_timeout_validation_hook, value, timeout.ticks);
+	buf = bt_buf_get_rx(BT_BUF_EVT, timeout);
 	zassert_is_null(buf, "Return value was not NULL");
 
 	ztest_returns_value(net_buf_alloc_fixed, NULL);
-	buf = bt_buf_get_rx(BT_BUF_ACL_IN, Z_TIMEOUT_TICKS(1000));
+	ztest_expect_value(hooks_net_buf_alloc_fixed_timeout_validation_hook, value, timeout.ticks);
+	buf = bt_buf_get_rx(BT_BUF_ACL_IN, timeout);
 	zassert_is_null(buf, "Return value was not NULL");
 
 #if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_SYNC_RECEIVER)
 	ztest_returns_value(net_buf_alloc_fixed, NULL);
-	buf = bt_buf_get_rx(BT_BUF_ISO_IN, Z_TIMEOUT_TICKS(1000));
+	ztest_expect_value(hooks_net_buf_alloc_fixed_timeout_validation_hook, value, timeout.ticks);
+	buf = bt_buf_get_rx(BT_BUF_ISO_IN, timeout);
 	zassert_is_null(buf, "Return value was not NULL");
 #endif
 }
@@ -81,22 +85,26 @@ void test_bt_buf_get_rx_returns_not_null(void)
 {
 	static struct net_buf test_reference;
 	struct net_buf *buf;
+	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
 
 	ztest_returns_value(net_buf_alloc_fixed, &test_reference);
-	buf = bt_buf_get_rx(BT_BUF_EVT, Z_TIMEOUT_TICKS(1000));
+	ztest_expect_value(hooks_net_buf_alloc_fixed_timeout_validation_hook, value, timeout.ticks);
+	buf = bt_buf_get_rx(BT_BUF_EVT, timeout);
 	zassert_not_null(buf, "Return value was NULL");
 	zassert_equal(buf, &test_reference, "Incorrect value");
 	zassert_equal(bt_buf_get_type(buf), BT_BUF_EVT, "Incorrect type");
 
 	ztest_returns_value(net_buf_alloc_fixed, &test_reference);
-	buf = bt_buf_get_rx(BT_BUF_ACL_IN, Z_TIMEOUT_TICKS(1000));
+	ztest_expect_value(hooks_net_buf_alloc_fixed_timeout_validation_hook, value, timeout.ticks);
+	buf = bt_buf_get_rx(BT_BUF_ACL_IN, timeout);
 	zassert_not_null(buf, "Return value was NULL");
 	zassert_equal(buf, &test_reference, "Incorrect value");
 	zassert_equal(bt_buf_get_type(buf), BT_BUF_ACL_IN, "Incorrect type");
 
 #if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_SYNC_RECEIVER)
 	ztest_returns_value(net_buf_alloc_fixed, &test_reference);
-	buf = bt_buf_get_rx(BT_BUF_ISO_IN, Z_TIMEOUT_TICKS(1000));
+	ztest_expect_value(hooks_net_buf_alloc_fixed_timeout_validation_hook, value, timeout.ticks);
+	buf = bt_buf_get_rx(BT_BUF_ISO_IN, timeout);
 	zassert_not_null(buf, "Return value was NULL");
 	zassert_equal(buf, &test_reference, "Incorrect value");
 	zassert_equal(bt_buf_get_type(buf), BT_BUF_ISO_IN, "Incorrect type");

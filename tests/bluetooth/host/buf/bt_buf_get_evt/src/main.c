@@ -7,6 +7,7 @@
 #include <zephyr/types.h>
 #include <ztest.h>
 #include "kconfig.h"
+#include "hooks.h"
 
 #include <zephyr/bluetooth/hci.h>
 #include <host/hci_core.h>
@@ -19,17 +20,19 @@ void bt_buf_get_evt_returns_not_null_cmd_complete(uint8_t evt)
 {
 	static struct net_buf test_reference;
 	struct net_buf *buf;
+	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
 
 	bt_dev.sent_cmd = NULL;
 	ztest_returns_value(net_buf_alloc_fixed, &test_reference);
-	buf = bt_buf_get_evt(evt, true, Z_TIMEOUT_TICKS(1000));
+	ztest_expect_value(hooks_net_buf_alloc_fixed_timeout_validation_hook, value, timeout.ticks);
+	buf = bt_buf_get_evt(evt, true, timeout);
 	zassert_not_null(buf, "Return value was NULL");
 	zassert_equal(buf, &test_reference, "Incorrect value");
 	zassert_equal(bt_buf_get_type(buf), BT_BUF_EVT, "Incorrect type");
 
 	bt_dev.sent_cmd = &test_reference;
 	ztest_expect_value(net_buf_ref, buf, bt_dev.sent_cmd);
-	buf = bt_buf_get_evt(evt, false, Z_TIMEOUT_TICKS(1000));
+	buf = bt_buf_get_evt(evt, false, timeout);
 	zassert_not_null(buf, "Return value was NULL");
 	zassert_equal(buf, &test_reference, "Incorrect value");
 	zassert_equal(bt_buf_get_type(buf), BT_BUF_EVT, "Incorrect type");
@@ -38,13 +41,16 @@ void bt_buf_get_evt_returns_not_null_cmd_complete(uint8_t evt)
 void bt_buf_get_evt_returns_null_default(uint8_t evt)
 {
 	struct net_buf *buf;
+	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
 
 	ztest_returns_value(net_buf_alloc_fixed, NULL);
-	buf = bt_buf_get_evt(evt, true, Z_TIMEOUT_TICKS(1000));
+	ztest_expect_value(hooks_net_buf_alloc_fixed_timeout_validation_hook, value, timeout.ticks);
+	buf = bt_buf_get_evt(evt, true, timeout);
 	zassert_is_null(buf, "Return value was NULL");
 
 	ztest_returns_value(net_buf_alloc_fixed, NULL);
-	buf = bt_buf_get_evt(evt, false, Z_TIMEOUT_TICKS(1000));
+	ztest_expect_value(hooks_net_buf_alloc_fixed_timeout_validation_hook, value, timeout.ticks);
+	buf = bt_buf_get_evt(evt, false, timeout);
 	zassert_is_null(buf, "Return value was NULL");
 }
 
@@ -52,15 +58,18 @@ void bt_buf_get_evt_returns_not_null_default(uint8_t evt)
 {
 	static struct net_buf test_reference;
 	struct net_buf *buf;
+	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
 
 	ztest_returns_value(net_buf_alloc_fixed, &test_reference);
-	buf = bt_buf_get_evt(evt, true, Z_TIMEOUT_TICKS(1000));
+	ztest_expect_value(hooks_net_buf_alloc_fixed_timeout_validation_hook, value, timeout.ticks);
+	buf = bt_buf_get_evt(evt, true, timeout);
 	zassert_not_null(buf, "Return value was NULL");
 	zassert_equal(buf, &test_reference, "Incorrect value");
 	zassert_equal(bt_buf_get_type(buf), BT_BUF_EVT, "Incorrect type");
 
 	ztest_returns_value(net_buf_alloc_fixed, &test_reference);
-	buf = bt_buf_get_evt(evt, false, Z_TIMEOUT_TICKS(1000));
+	ztest_expect_value(hooks_net_buf_alloc_fixed_timeout_validation_hook, value, timeout.ticks);
+	buf = bt_buf_get_evt(evt, false, timeout);
 	zassert_not_null(buf, "Return value was NULL");
 	zassert_equal(buf, &test_reference, "Incorrect value");
 	zassert_equal(bt_buf_get_type(buf), BT_BUF_EVT, "Incorrect type");

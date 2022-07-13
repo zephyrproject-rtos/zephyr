@@ -31,6 +31,8 @@ const struct net_buf_data_cb net_buf_fixed_cb = {
 
 struct net_buf *net_buf_alloc_fixed(struct net_buf_pool *pool, k_timeout_t timeout)
 {
+	zassert_not_null(pool, "Value was NULL");
+	hooks_net_buf_alloc_fixed_timeout_validation_hook(timeout.ticks);
 	return (struct net_buf *)ztest_get_return_value_ptr();
 }
 
