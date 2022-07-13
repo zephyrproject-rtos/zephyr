@@ -1059,6 +1059,22 @@ Documentation:
     labels:
         - "area: Wifi"
 
+"Drivers: Memory Management":
+    status: maintained
+    maintainers:
+      - dcpleung
+    collaborators:
+      - ceolin
+      - edersondisouza
+      - jxstelter
+    files:
+      - include/zephyr/drivers/mm/
+      - drivers/mm/
+      - tests/boards/intel_adsp/mm/
+      - dts/bindings/mm/
+    labels:
+      - "area: Memory Management"
+
 Xen Platform:
     status: maintained
     maintainers:
