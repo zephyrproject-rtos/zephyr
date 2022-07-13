@@ -1151,8 +1151,6 @@ static void modem_reset(void)
 		/* setup PDP context definition */
 		SETUP_CMD_NOHANDLE("AT+CGDCONT=1,\"IP\",\""
 					CONFIG_MODEM_UBLOX_SARA_R4_APN "\""),
-		/* start functionality */
-		SETUP_CMD_NOHANDLE("AT+CFUN=1"),
 #endif
 	};
 
@@ -1242,15 +1240,16 @@ restart:
 		(const char *)cmd,
 		&mdata.sem_response,
 		MDM_REGISTRATION_TIMEOUT);
-
-	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
-		NULL, 0,
-		"AT+CFUN=1",
-		&mdata.sem_response,
-		MDM_REGISTRATION_TIMEOUT);
 #endif
 
 	if (strlen(CONFIG_MODEM_UBLOX_SARA_R4_MANUAL_MCCMNO) > 0) {
+		/* enable functionality */
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+				    NULL, 0,
+				    "AT+CFUN=1",
+				    &mdata.sem_response,
+				    MDM_REGISTRATION_TIMEOUT);
+
 		/* use manual MCC/MNO entry */
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
 				     NULL, 0,
@@ -1265,6 +1264,13 @@ restart:
 				     NULL, 0, "AT+COPS=0,0",
 				     &mdata.sem_response,
 				     MDM_REGISTRATION_TIMEOUT);
+
+		/* enable functionality */
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+			NULL, 0,
+			"AT+CFUN=1",
+			&mdata.sem_response,
+			MDM_REGISTRATION_TIMEOUT);
 	}
 
 	if (ret < 0) {
