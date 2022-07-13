@@ -46,12 +46,25 @@ enum lora_coding_rate {
 };
 
 struct lora_modem_config {
+	/* Frequency in Hz to use for transceiving */
 	uint32_t frequency;
+
+	/* The bandwidth to use for transceiving */
 	enum lora_signal_bandwidth bandwidth;
+
+	/* The data-rate to use for transceiving */
 	enum lora_datarate datarate;
+
+	/* The coding rate to use for transceiving */
 	enum lora_coding_rate coding_rate;
+
+	/* Length of the preamble */
 	uint16_t preamble_len;
+
+	/* TX-power in dBm to use for transmission */
 	int8_t tx_power;
+
+	/* Set to true for transmission, false for receiving */
 	bool tx;
 };
 
