@@ -1707,7 +1707,7 @@ Intel Platforms (Xtensa):
         - soc/xtensa/intel_*/
         - dts/xtensa/intel/
     labels:
-        - "platform: Intel CAVS"
+        - "platform: Intel ADSP"
 
 NXP Platforms:
   status: maintained
