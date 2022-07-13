@@ -18,6 +18,7 @@
 		sw0 = &user_button;
 		kscan0 = &touch_controller;
 		watchdog0 = &wdog0;
+		sdhc0 = &usdhc1;
 	};
 
 	chosen {
