@@ -10,11 +10,11 @@
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_output_dict.h>
 #include <zephyr/logging/log_backend_std.h>
-#include <zephyr/logging/log_backend_cavs_hda.h>
+#include <zephyr/logging/log_backend_adsp_hda.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/kernel.h>
 
-static uint32_t log_format_current = CONFIG_LOG_BACKEND_CAVS_HDA_OUTPUT_DEFAULT;
+static uint32_t log_format_current = CONFIG_LOG_BACKEND_ADSP_HDA_OUTPUT_DEFAULT;
 static const struct device *hda_log_dev;
 static uint32_t hda_log_chan;
 
@@ -22,11 +22,11 @@ static uint32_t hda_log_chan;
  * HDA requires 128 byte aligned data and 128 byte aligned transfers.
  */
 #define ALIGNMENT DMA_BUF_ALIGNMENT(DT_NODELABEL(hda_host_in))
-static __aligned(ALIGNMENT) uint8_t hda_log_buf[CONFIG_LOG_BACKEND_CAVS_HDA_SIZE];
+static __aligned(ALIGNMENT) uint8_t hda_log_buf[CONFIG_LOG_BACKEND_ADSP_HDA_SIZE];
 static volatile uint32_t hda_log_buffered;
 static struct k_spinlock hda_log_lock;
 static struct k_timer hda_log_timer;
-static cavs_hda_log_hook_t hook;
+static adsp_hda_log_hook_t hook;
 
 /* atomic bit flags for state */
 #define HDA_LOG_DMA_READY 0
@@ -40,7 +40,7 @@ static uint32_t hda_log_flush(void)
 	if (nearest128 > 0) {
 		hda_log_buffered = hda_log_buffered - nearest128;
 #if !(IS_ENABLED(CONFIG_KERNEL_COHERENCE))
-		z_xtensa_cache_flush(hda_log_buf, CONFIG_LOG_BACKEND_CAVS_HDA_SIZE);
+		z_xtensa_cache_flush(hda_log_buf, CONFIG_LOG_BACKEND_ADSP_HDA_SIZE);
 #endif
 		dma_reload(hda_log_dev, hda_log_chan, 0, 0, nearest128);
 	}
@@ -155,7 +155,7 @@ out:
  */
 #define LOG_BUF_SIZE 128
 static uint8_t log_buf[LOG_BUF_SIZE];
-LOG_OUTPUT_DEFINE(log_output_cavs_hda, hda_log_out, log_buf, LOG_BUF_SIZE);
+LOG_OUTPUT_DEFINE(log_output_adsp_hda, hda_log_out, log_buf, LOG_BUF_SIZE);
 
 static void hda_log_periodic(struct k_timer *tm)
 {
@@ -182,9 +182,9 @@ static inline void dropped(const struct log_backend *const backend,
 	ARG_UNUSED(backend);
 
 	if (IS_ENABLED(CONFIG_LOG_DICTIONARY_SUPPORT)) {
-		log_dict_output_dropped_process(&log_output_cavs_hda, cnt);
+		log_dict_output_dropped_process(&log_output_adsp_hda, cnt);
 	} else {
-		log_output_dropped_process(&log_output_cavs_hda, cnt);
+		log_output_dropped_process(&log_output_adsp_hda, cnt);
 	}
 }
 
@@ -196,7 +196,7 @@ static void panic(struct log_backend const *const backend)
 	atomic_set_bit(&hda_log_flags, HDA_LOG_PANIC_MODE);
 
 	/* flushes the log queue */
-	log_backend_std_panic(&log_output_cavs_hda);
+	log_backend_std_panic(&log_output_adsp_hda);
 }
 
 static int format_set(const struct log_backend *const backend, uint32_t log_type)
@@ -218,7 +218,7 @@ static void process(const struct log_backend *const backend,
 
 	log_format_func_t log_output_func = log_format_func_t_get(log_format_current);
 
-	log_output_func(&log_output_cavs_hda, &msg->log, flags);
+	log_output_func(&log_output_adsp_hda, &msg->log, flags);
 }
 
 /**
@@ -232,7 +232,7 @@ static void init(const struct log_backend *const backend)
 	hda_log_buffered = 0;
 }
 
-const struct log_backend_api log_backend_cavs_hda_api = {
+const struct log_backend_api log_backend_adsp_hda_api = {
 	.process = process,
 	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
 	.panic = panic,
@@ -240,9 +240,9 @@ const struct log_backend_api log_backend_cavs_hda_api = {
 	.init = init,
 };
 
-LOG_BACKEND_DEFINE(log_backend_cavs_hda, log_backend_cavs_hda_api, true);
+LOG_BACKEND_DEFINE(log_backend_adsp_hda, log_backend_adsp_hda_api, true);
 
-void cavs_hda_log_init(cavs_hda_log_hook_t fn, uint32_t channel)
+void adsp_hda_log_init(adsp_hda_log_hook_t fn, uint32_t channel)
 {
 	hook = fn;
 
@@ -259,7 +259,7 @@ void cavs_hda_log_init(cavs_hda_log_hook_t fn, uint32_t channel)
 
 	/* configure channel */
 	struct dma_block_config hda_log_dma_blk_cfg = {
-		.block_size = CONFIG_LOG_BACKEND_CAVS_HDA_SIZE,
+		.block_size = CONFIG_LOG_BACKEND_ADSP_HDA_SIZE,
 		.source_address = (uint32_t)(uintptr_t)&hda_log_buf,
 	};
 
@@ -280,8 +280,8 @@ void cavs_hda_log_init(cavs_hda_log_hook_t fn, uint32_t channel)
 
 	k_timer_init(&hda_log_timer, hda_log_periodic, NULL);
 	k_timer_start(&hda_log_timer,
-		      K_MSEC(CONFIG_LOG_BACKEND_CAVS_HDA_FLUSH_TIME),
-		      K_MSEC(CONFIG_LOG_BACKEND_CAVS_HDA_FLUSH_TIME));
+		      K_MSEC(CONFIG_LOG_BACKEND_ADSP_HDA_FLUSH_TIME),
+		      K_MSEC(CONFIG_LOG_BACKEND_ADSP_HDA_FLUSH_TIME));
 
 	printk("hda log initialized\n");
 }
