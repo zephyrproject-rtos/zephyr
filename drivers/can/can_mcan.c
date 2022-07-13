@@ -229,7 +229,7 @@ int can_mcan_get_capabilities(const struct device *dev, can_mode_t *cap)
 {
 	ARG_UNUSED(dev);
 
-	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY;
+	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT;
 
 #if CONFIG_CAN_FD_MODE
 	*cap |= CAN_MODE_FD;
@@ -245,12 +245,13 @@ int can_mcan_set_mode(const struct device *dev, can_mode_t mode)
 	int ret;
 
 #ifdef CONFIG_CAN_FD_MODE
-	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_FD)) != 0) {
+	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT |
+		      CAN_MODE_FD)) != 0) {
 		LOG_ERR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
 #else
-	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) != 0) {
+	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT)) != 0) {
 		LOG_ERR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
@@ -292,6 +293,13 @@ int can_mcan_set_mode(const struct device *dev, can_mode_t mode)
 		can->cccr |= CAN_MCAN_CCCR_MON;
 	} else {
 		can->cccr &= ~CAN_MCAN_CCCR_MON;
+	}
+
+	if ((mode & CAN_MODE_ONE_SHOT) != 0) {
+		/* Disable automatic retransmission */
+		can->cccr |= CAN_MCAN_CCCR_DAR;
+	} else {
+		can->cccr &= ~CAN_MCAN_CCCR_DAR;
 	}
 
 #ifdef CONFIG_CAN_FD_MODE
