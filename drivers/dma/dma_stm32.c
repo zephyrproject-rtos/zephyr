@@ -93,7 +93,12 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 
 	stream = &config->streams[id];
 
-	if (stream->busy == false) {
+	/* The busy channel is pertinent if not overridden by the HAL */
+	if ((stream->hal_override != true) && (stream->busy == false)) {
+		/*
+		 * When DMA channel is not overridden by HAL,
+		 * ignore irq if the channel is not busy anymore
+		 */
 		dma_stm32_clear_stream_irq(dev, id);
 		return;
 	}
