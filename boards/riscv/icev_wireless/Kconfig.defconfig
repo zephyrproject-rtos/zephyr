@@ -1,0 +1,20 @@
+# Copyright (c) 2022 Friedt Professional Engineering Services, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "icev_wireless"
+	depends on BOARD_ICEV_WIRELESS
+
+config ENTROPY_ESP32_RNG
+	default y if ENTROPY_GENERATOR
+
+if BT
+
+config HEAP_MEM_POOL_SIZE
+	default 16384
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32
+endchoice
+
+endif # BT
