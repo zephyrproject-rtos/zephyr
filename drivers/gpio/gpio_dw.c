@@ -22,10 +22,6 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/drivers/clock_control.h>
 
-#ifdef CONFIG_SHARED_IRQ
-#include <zephyr/shared_irq.h>
-#endif
-
 #ifdef CONFIG_IOAPIC
 #include <zephyr/drivers/interrupt_controller/ioapic.h>
 #endif
@@ -459,16 +455,6 @@ static void gpio_dw_isr(const struct device *port)
 
 	int_status = dw_read(base_addr, INTSTATUS);
 
-#ifdef CONFIG_SHARED_IRQ
-	/* If using with shared IRQ, this function will be called
-	 * by the shared IRQ driver. So check here if the interrupt
-	 * is coming from the GPIO controller (or somewhere else).
-	 */
-	if (!int_status) {
-		return;
-	}
-#endif
-
 	dw_write(base_addr, PORTA_EOI, int_status);
 
 	gpio_fire_callbacks(&context->callbacks, port, int_status);
@@ -519,14 +505,9 @@ static const struct gpio_dw_config gpio_config_0 = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
 	},
-#ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 	.irq_num = DT_INST_IRQN(0),
-#endif
 	.ngpios = DT_INST_PROP(0, ngpios),
 	.config_func = gpio_config_0_irq,
-#ifdef CONFIG_GPIO_DW_0_IRQ_SHARED
-	.shared_irq_dev_name = DT_INST_IRQ_BY_NAME(0, shared_name, irq),
-#endif
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
 	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_0_CLOCK_GATE_SUBSYS),
 #endif
@@ -553,21 +534,11 @@ static void gpio_config_0_irq(const struct device *port)
 #if (DT_INST_IRQN(0) > 0)
 	const struct gpio_dw_config *config = port->config;
 
-#ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority), gpio_dw_isr,
 		    DEVICE_DT_INST_GET(0),
 		    INST_0_IRQ_FLAGS);
 	irq_enable(config->irq_num);
-#elif defined(CONFIG_GPIO_DW_0_IRQ_SHARED)
-	const struct device *shared_irq_dev;
-
-	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
-	__ASSERT(shared_irq_dev != NULL,
-		 "Failed to get gpio_dw_0 device binding");
-	shared_irq_isr_register(shared_irq_dev, (isr_t)gpio_dw_isr, port);
-	shared_irq_enable(shared_irq_dev, port);
-#endif
 	gpio_dw_unmask_int(GPIO_DW_PORT_0_INT_MASK);
 #endif
 }
@@ -582,15 +553,10 @@ static const struct gpio_dw_config gpio_dw_config_1 = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
 	},
-#ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
 	.irq_num = DT_INST_IRQN(1),
-#endif
 	.ngpios = DT_INST_PROP(1, ngpios),
 	.config_func = gpio_config_1_irq,
 
-#ifdef CONFIG_GPIO_DW_1_IRQ_SHARED
-	.shared_irq_dev_name = DT_INST_IRQ_BY_NAME(1, shared_name, irq),
-#endif
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
 	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_1_CLOCK_GATE_SUBSYS),
 #endif
@@ -617,21 +583,11 @@ static void gpio_config_1_irq(const struct device *port)
 #if (DT_INST_IRQN(1) > 0)
 	const struct gpio_dw_config *config = port->config;
 
-#ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
 	IRQ_CONNECT(DT_INST_IRQN(1),
 		    DT_INST_IRQ(1, priority), gpio_dw_isr,
 		    DEVICE_DT_INST_GET(1),
 		    INST_1_IRQ_FLAGS);
 	irq_enable(config->irq_num);
-#elif defined(CONFIG_GPIO_DW_1_IRQ_SHARED)
-	const struct device *shared_irq_dev;
-
-	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
-	__ASSERT(shared_irq_dev != NULL,
-		 "Failed to get gpio_dw_1 device binding");
-	shared_irq_isr_register(shared_irq_dev, (isr_t)gpio_dw_isr, port);
-	shared_irq_enable(shared_irq_dev, port);
-#endif
 	gpio_dw_unmask_int(GPIO_DW_PORT_1_INT_MASK);
 #endif
 }
@@ -645,15 +601,10 @@ static const struct gpio_dw_config gpio_dw_config_2 = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(2),
 	},
-#ifdef CONFIG_GPIO_DW_2_IRQ_DIRECT
 	.irq_num = DT_INST_IRQN(2),
-#endif
 	.ngpios = DT_INST_PROP(2, ngpios),
 	.config_func = gpio_config_2_irq,
 
-#ifdef CONFIG_GPIO_DW_2_IRQ_SHARED
-	.shared_irq_dev_name = DT_INST_IRQ_BY_NAME(2, shared_name, irq),
-#endif
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
 	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_2_CLOCK_GATE_SUBSYS),
 #endif
@@ -680,21 +631,11 @@ static void gpio_config_2_irq(const struct device *port)
 #if (DT_INST_IRQN(2) > 0)
 	const struct gpio_dw_config *config = port->config;
 
-#ifdef CONFIG_GPIO_DW_2_IRQ_DIRECT
 	IRQ_CONNECT(DT_INST_IRQN(2),
 		    DT_INST_IRQ(2, priority), gpio_dw_isr,
 		    DEVICE_DT_INST_GET(2),
 		    INST_2_IRQ_FLAGS);
 	irq_enable(config->irq_num);
-#elif defined(CONFIG_GPIO_DW_2_IRQ_SHARED)
-	const struct device *shared_irq_dev;
-
-	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
-	__ASSERT(shared_irq_dev != NULL,
-		 "Failed to get gpio_dw_2 device binding");
-	shared_irq_isr_register(shared_irq_dev, (isr_t)gpio_dw_isr, port);
-	shared_irq_enable(shared_irq_dev, port);
-#endif
 	gpio_dw_unmask_int(GPIO_DW_PORT_2_INT_MASK);
 #endif
 }
@@ -708,15 +649,10 @@ static const struct gpio_dw_config gpio_dw_config_3 = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(3),
 	},
-#ifdef CONFIG_GPIO_DW_3_IRQ_DIRECT
 	.irq_num = DT_INST_IRQN(3),
-#endif
 	.ngpios = DT_INST_PROP(3, ngpios),
 	.config_func = gpio_config_3_irq,
 
-#ifdef CONFIG_GPIO_DW_3_IRQ_SHARED
-	.shared_irq_dev_name = DT_INST_IRQ_BY_NAME(3, shared_name, irq),
-#endif
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
 	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_3_CLOCK_GATE_SUBSYS),
 #endif
@@ -743,21 +679,11 @@ static void gpio_config_3_irq(const struct device *port)
 #if (DT_INST_IRQN(3) > 0)
 	const struct gpio_dw_config *config = port->config;
 
-#ifdef CONFIG_GPIO_DW_3_IRQ_DIRECT
 	IRQ_CONNECT(DT_INST_IRQN(3),
 		    DT_INST_IRQ(3, priority), gpio_dw_isr,
 		    DEVICE_DT_INST_GET(3),
 		    INST_3_IRQ_FLAGS);
 	irq_enable(config->irq_num);
-#elif defined(CONFIG_GPIO_DW_3_IRQ_SHARED)
-	const struct device *shared_irq_dev;
-
-	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
-	__ASSERT(shared_irq_dev != NULL,
-			 "Failed to get gpio_dw_3 device binding");
-	shared_irq_isr_register(shared_irq_dev, (isr_t)gpio_dw_isr, port);
-	shared_irq_enable(shared_irq_dev, port);
-#endif
 	gpio_dw_unmask_int(GPIO_DW_PORT_3_INT_MASK);
 #endif
 }
