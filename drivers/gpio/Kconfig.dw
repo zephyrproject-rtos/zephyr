@@ -10,49 +10,24 @@ menuconfig GPIO_DW
 
 if GPIO_DW
 
-config GPIO_DW_CLOCK_GATE
-	bool "Clock gating"
-	depends on CLOCK_CONTROL
-
-config GPIO_DW_CLOCK_GATE_DRV_NAME
-	string
-	depends on GPIO_DW_CLOCK_GATE
-	default ""
-
 config GPIO_DW_0
 	bool "Designware GPIO block 0"
 	help
 	  Include Designware GPIO driver
-
-config GPIO_DW_0_CLOCK_GATE_SUBSYS
-	int "Clock controller's subsystem"
-	depends on GPIO_DW_CLOCK_GATE && GPIO_DW_0
 
 config GPIO_DW_1
 	bool "Designware GPIO block 1"
 	help
 	  Include Designware GPIO driver
 
-config GPIO_DW_1_CLOCK_GATE_SUBSYS
-	int "Clock controller's subsystem"
-	depends on GPIO_DW_CLOCK_GATE && GPIO_DW_1
-
 config GPIO_DW_2
 	bool "Designware GPIO block 1"
 	help
 	  Include Designware GPIO driver
 
-config GPIO_DW_2_CLOCK_GATE_SUBSYS
-	int "Clock controller's subsystem"
-	depends on GPIO_DW_CLOCK_GATE && GPIO_DW_2
-
 config GPIO_DW_3
 	bool "Designware GPIO block 1"
 	help
 	  Include Designware GPIO driver
-
-config GPIO_DW_3_CLOCK_GATE_SUBSYS
-	int "Clock controller's subsystem"
-	depends on GPIO_DW_CLOCK_GATE && GPIO_DW_3
 
 endif # GPIO_DW

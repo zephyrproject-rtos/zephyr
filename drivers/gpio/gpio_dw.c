@@ -26,10 +26,6 @@
 #include <zephyr/drivers/interrupt_controller/ioapic.h>
 #endif
 
-#ifdef CONFIG_PM_DEVICE
-#include <zephyr/pm/device.h>
-#endif
-
 static int gpio_dw_port_set_bits_raw(const struct device *port, uint32_t mask);
 static int gpio_dw_port_clear_bits_raw(const struct device *port,
 				       uint32_t mask);
@@ -80,41 +76,6 @@ static void dw_set_bit(uint32_t base_addr, uint32_t offset,
 		sys_set_bit(base_addr + offset, bit);
 	}
 }
-#endif
-
-#ifdef CONFIG_GPIO_DW_CLOCK_GATE
-static inline void gpio_dw_clock_config(const struct device *port)
-{
-	char *drv = CONFIG_GPIO_DW_CLOCK_GATE_DRV_NAME;
-	const struct device *clk;
-
-	clk = device_get_binding(drv);
-	if (clk) {
-		struct gpio_dw_runtime *context = port->data;
-
-		context->clock = clk;
-	}
-}
-
-static inline void gpio_dw_clock_on(const struct device *port)
-{
-	const struct gpio_dw_config *config = port->config;
-	struct gpio_dw_runtime *context = port->data;
-
-	clock_control_on(context->clock, config->clock_data);
-}
-
-static inline void gpio_dw_clock_off(const struct device *port)
-{
-	const struct gpio_dw_config *config = port->config;
-	struct gpio_dw_runtime *context = port->data;
-
-	clock_control_off(context->clock, config->clock_data);
-}
-#else
-#define gpio_dw_clock_config(...)
-#define gpio_dw_clock_on(...)
-#define gpio_dw_clock_off(...)
 #endif
 
 static inline int dw_base_to_block_base(uint32_t base_addr)
@@ -422,29 +383,6 @@ static inline int gpio_dw_manage_callback(const struct device *port,
 	return gpio_manage_callback(&context->callbacks, callback, set);
 }
 
-#ifdef CONFIG_PM_DEVICE
-/*
-* Implements the driver control management functionality
-* the *context may include IN data or/and OUT data
-*/
-static int gpio_dw_device_pm_action(const struct device *dev,
-				    enum pm_device_action action)
-{
-	switch (action) {
-	case PM_DEVICE_ACTION_SUSPEND:
-		gpio_dw_clock_off(dev);
-		break;
-	case PM_DEVICE_ACTION_RESUME:
-		gpio_dw_clock_on(dev);
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-#endif
-
 #define gpio_dw_unmask_int(...)
 
 static void gpio_dw_isr(const struct device *port)
@@ -484,8 +422,6 @@ static int gpio_dw_initialize(const struct device *port)
 		/* interrupts in sync with system clock */
 		dw_set_bit(base_addr, INT_CLOCK_SYNC, LS_SYNC_POS, 1);
 
-		gpio_dw_clock_config(port);
-
 		/* mask and disable interrupts */
 		dw_write(base_addr, INTMASK, ~(0));
 		dw_write(base_addr, INTEN, 0);
@@ -508,19 +444,14 @@ static const struct gpio_dw_config gpio_config_0 = {
 	.irq_num = DT_INST_IRQN(0),
 	.ngpios = DT_INST_PROP(0, ngpios),
 	.config_func = gpio_config_0_irq,
-#ifdef CONFIG_GPIO_DW_CLOCK_GATE
-	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_0_CLOCK_GATE_SUBSYS),
-#endif
 };
 
 static struct gpio_dw_runtime gpio_0_runtime = {
 	.base_addr = DT_INST_REG_ADDR(0),
 };
 
-PM_DEVICE_DT_INST_DEFINE(0, gpio_dw_device_pm_action);
-
 DEVICE_DT_INST_DEFINE(0,
-	      gpio_dw_initialize, PM_DEVICE_DT_INST_GET(0), &gpio_0_runtime,
+	      gpio_dw_initialize, NULL, &gpio_0_runtime,
 	      &gpio_config_0, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
 	      &api_funcs);
 
@@ -556,20 +487,14 @@ static const struct gpio_dw_config gpio_dw_config_1 = {
 	.irq_num = DT_INST_IRQN(1),
 	.ngpios = DT_INST_PROP(1, ngpios),
 	.config_func = gpio_config_1_irq,
-
-#ifdef CONFIG_GPIO_DW_CLOCK_GATE
-	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_1_CLOCK_GATE_SUBSYS),
-#endif
 };
 
 static struct gpio_dw_runtime gpio_1_runtime = {
 	.base_addr = DT_INST_REG_ADDR(1),
 };
 
-PM_DEVICE_DT_INST_DEFINE(1, gpio_dw_device_pm_action);
-
 DEVICE_DT_INST_DEFINE(1,
-	      gpio_dw_initialize, PM_DEVICE_DT_INST_GET(1), &gpio_1_runtime,
+	      gpio_dw_initialize, NULL, &gpio_1_runtime,
 	      &gpio_dw_config_1, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
 	      &api_funcs);
 
@@ -604,20 +529,14 @@ static const struct gpio_dw_config gpio_dw_config_2 = {
 	.irq_num = DT_INST_IRQN(2),
 	.ngpios = DT_INST_PROP(2, ngpios),
 	.config_func = gpio_config_2_irq,
-
-#ifdef CONFIG_GPIO_DW_CLOCK_GATE
-	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_2_CLOCK_GATE_SUBSYS),
-#endif
 };
 
 static struct gpio_dw_runtime gpio_2_runtime = {
 	.base_addr = DT_INST_REG_ADDR(2),
 };
 
-PM_DEVICE_DT_INST_DEFINE(2, gpio_dw_device_pm_action);
-
 DEVICE_DT_INST_DEFINE(2,
-	      gpio_dw_initialize, PM_DEVICE_DT_INST_GET(2), &gpio_2_runtime,
+	      gpio_dw_initialize, NULL, &gpio_2_runtime,
 	      &gpio_dw_config_2, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
 	      &api_funcs);
 
@@ -652,20 +571,14 @@ static const struct gpio_dw_config gpio_dw_config_3 = {
 	.irq_num = DT_INST_IRQN(3),
 	.ngpios = DT_INST_PROP(3, ngpios),
 	.config_func = gpio_config_3_irq,
-
-#ifdef CONFIG_GPIO_DW_CLOCK_GATE
-	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_3_CLOCK_GATE_SUBSYS),
-#endif
 };
 
 static struct gpio_dw_runtime gpio_3_runtime = {
 	.base_addr = DT_INST_REG_ADDR(3),
 };
 
-PM_DEVICE_DT_INST_DEFINE(3, gpio_dw_device_pm_action);
-
 DEVICE_DT_INST_DEFINE(3,
-	      gpio_dw_initialize, PM_DEVICE_DT_INST_GET(3), &gpio_3_runtime,
+	      gpio_dw_initialize, NULL, &gpio_3_runtime,
 	      &gpio_dw_config_3, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
 	      &api_funcs);
 
