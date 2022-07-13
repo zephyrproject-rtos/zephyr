@@ -740,7 +740,7 @@ static void gptp_update_local_port_clock(void)
 	int64_t second_diff;
 	const struct device *clk;
 	struct net_ptp_time tm;
-	int key;
+	unsigned int key;
 
 	state = &GPTP_STATE()->clk_slave_sync;
 	global_ds = GPTP_GLOBAL_DS();
