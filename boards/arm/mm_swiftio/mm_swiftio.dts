@@ -17,6 +17,7 @@
 		led0 = &green_led;
 		led1 = &red_led;
 		led2 = &blue_led;
+		sdhc0 = &usdhc1;
 	};
 
 	chosen {

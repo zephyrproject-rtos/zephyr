@@ -19,6 +19,7 @@
 		kscan0 = &touch_controller;
 		watchdog0 = &wdog0;
 		magn0 = &fxos8700;
+		sdhc0 = &usdhc1;
 	};
 
 	chosen {

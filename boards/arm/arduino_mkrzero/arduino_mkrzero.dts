@@ -31,6 +31,7 @@
 
 	aliases {
 		led0 = &led0;
+		sdhc0 = &sdhc0;
 	};
 };
 
