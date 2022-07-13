@@ -21,7 +21,6 @@
 #include <esp32c3/rom/gpio.h>
 #endif
 #include <soc/uart_struct.h>
-#include "stubs.h"
 #include <hal/uart_ll.h>
 #include <hal/uart_hal.h>
 #include <hal/uart_types.h>

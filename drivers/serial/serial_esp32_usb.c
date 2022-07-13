@@ -6,7 +6,6 @@
 
 #define DT_DRV_COMPAT espressif_esp32_usb_serial
 
-#include "stubs.h"
 #include <hal/usb_serial_jtag_ll.h>
 
 #include <soc/uart_reg.h>
