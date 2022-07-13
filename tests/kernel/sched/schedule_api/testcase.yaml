@@ -18,6 +18,7 @@ tests:
       - CONFIG_TIMESLICING=y
       - CONFIG_TIMESLICE_PER_THREAD=y
     tags: kernel threads sched userspace ignore_faults
+    platform_exclude: it8xxx2_evb
   kernel.scheduler.multiq:
     extra_args: CONF_FILE=prj_multiq.conf
     extra_configs:
