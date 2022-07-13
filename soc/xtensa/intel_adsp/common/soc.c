@@ -51,7 +51,6 @@ LOG_MODULE_REGISTER(soc);
 extern void soc_mp_init(void);
 #endif
 
-#ifdef CONFIG_INTEL_ADSP_CAVS
 static __imr void power_init_v15(void)
 {
 	/* HP domain clocked by PLL
@@ -137,4 +136,3 @@ static __imr int soc_init(const struct device *dev)
 }
 
 SYS_INIT(soc_init, PRE_KERNEL_1, 99);
-#endif /* CONFIG_INTEL_ADSP_CAVS */

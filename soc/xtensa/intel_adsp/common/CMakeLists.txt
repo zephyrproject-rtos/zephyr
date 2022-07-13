@@ -9,7 +9,7 @@ zephyr_library_named(intel_adsp_common)
 zephyr_library_include_directories(include)
 zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
 
-zephyr_library_sources(soc.c)
+zephyr_library_sources_ifdef(CONFIG_INTEL_ADSP_CAVS soc.c)
 zephyr_library_sources(trace_out.c)
 zephyr_library_sources_ifdef(CONFIG_CAVS_IPC ipc.c)
 
