@@ -5,7 +5,6 @@ description: |
   PLL node binding for STM32U5 devices
 
   It can be used to describe 3 different PLLs: PLL1, PLL2 and PLL3.
-  Only main PLL (PLL1) is supported for now.
 
   These PLLs could take one of clk_hse, clk_hsi or clk_msis as input clock, with
   an input frequency from 4 to 16 MHz. PLLM factor is used to set the input
