@@ -49,8 +49,6 @@
 #define SSP_MN_DIV_BASE(x)			\
 	(0x00078D00 + ((x) * SSP_MN_DIV_SIZE))
 
-#define PDM_BASE				DMIC_BASE
-
 /* DSP Wall Clock Timers (0 and 1) */
 #define DSP_WCT_IRQ(x) \
 	SOC_AGGREGATE_IRQ((22 + x), CAVS_L2_AGG_INT_LEVEL2)
