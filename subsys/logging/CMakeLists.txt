@@ -84,8 +84,8 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     )
 
   zephyr_sources_ifdef(
-    CONFIG_LOG_BACKEND_CAVS_HDA
-    log_backend_cavs_hda.c
+    CONFIG_LOG_BACKEND_ADSP_HDA
+    log_backend_adsp_hda.c
   )
 
   zephyr_sources_ifdef(

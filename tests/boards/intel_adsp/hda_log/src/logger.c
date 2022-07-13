@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/logging/log_backend_cavs_hda.h>
+#include <zephyr/logging/log_backend_adsp_hda.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/kernel.h>
@@ -51,7 +51,7 @@ void test_hda_logger(void)
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_RESET, CHANNEL, IPC_TIMEOUT);
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_CONFIG,
 		    CHANNEL | (HOST_BUF_SIZE << 8), IPC_TIMEOUT);
-	cavs_hda_log_init(hda_log_hook, CHANNEL);
+	adsp_hda_log_init(hda_log_hook, CHANNEL);
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_START, CHANNEL, IPC_TIMEOUT);
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_PRINT,
 		    ((HOST_BUF_SIZE*2) << 8) | CHANNEL, IPC_TIMEOUT);

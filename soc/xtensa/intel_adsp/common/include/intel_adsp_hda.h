@@ -2,8 +2,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_CAVS_HDA_H
-#define ZEPHYR_INCLUDE_CAVS_HDA_H
+#ifndef ZEPHYR_INCLUDE_INTEL_ADSP_HDA_H
+#define ZEPHYR_INCLUDE_INTEL_ADSP_HDA_H
 
 #include <zephyr/arch/xtensa/cache.h>
 #include <zephyr/kernel.h>
@@ -12,9 +12,9 @@
 #include <cavs-mem.h>
 
 /**
- * @brief HDA stream functionality for cAVS
+ * @brief HDA stream functionality for Intel ADSP
  *
- * Provides low level calls to support cAVS HDA streams with
+ * Provides low level calls to support Intel ADSP HDA streams with
  * minimal abstraction that allows testing the hardware
  * and its demands separately from the intended DMA API
  * usage. The only requirement is that you define the base
@@ -99,7 +99,7 @@
  * @param base Base address of the IP register block
  * @param sid Stream ID
  */
-#define cavs_hda_dbg(name, base, sid)					\
+#define intel_adsp_hda_dbg(name, base, sid)				\
 		printk("%s:%u %s(%u:0x%p), dgcs: 0x%x, dgbba 0x%x, "	\
 		       "dgbs %u, dgbrp %u, dgbwp %u, dgbsp %u, "	\
 		       "dgmbs %u, dgbllpi 0x%x, dglpibi 0x%x\n",	\
@@ -123,7 +123,7 @@
  * @param hda Stream set to work with
  * @param sid Stream ID
  */
-static inline void cavs_hda_init(uint32_t base, uint32_t sid)
+static inline void intel_adsp_hda_init(uint32_t base, uint32_t sid)
 {
 	*DGCS(base, sid) |= DGCS_FWCB;
 }
@@ -147,7 +147,7 @@ static inline void cavs_hda_init(uint32_t base, uint32_t sid)
  * @retval -EINVAL if the buf is not in L2, buf isn't aligned on 128 byte boundaries
  * @retval 0 on Success
  */
-static inline int cavs_hda_set_buffer(uint32_t base, uint32_t sid,
+static inline int intel_adsp_hda_set_buffer(uint32_t base, uint32_t sid,
 				     uint8_t *buf, uint32_t buf_size)
 {
 	/* While we don't actually care if the pointer is in the cached
@@ -188,7 +188,7 @@ static inline int cavs_hda_set_buffer(uint32_t base, uint32_t sid,
  * @param hda HDA stream set
  * @param sid Stream ID
  */
-static inline void cavs_hda_enable(uint32_t base, uint32_t sid)
+static inline void intel_adsp_hda_enable(uint32_t base, uint32_t sid)
 {
 	*DGCS(base, sid) |= DGCS_GEN | DGCS_FIFORDY;
 }
@@ -199,7 +199,7 @@ static inline void cavs_hda_enable(uint32_t base, uint32_t sid)
  * @param hda HDA stream set
  * @param sid Stream ID
  */
-static inline void cavs_hda_disable(uint32_t base, uint32_t sid)
+static inline void intel_adsp_hda_disable(uint32_t base, uint32_t sid)
 {
 	*DGCS(base, sid) &= ~(DGCS_GEN | DGCS_FIFORDY);
 }
@@ -214,7 +214,7 @@ static inline void cavs_hda_disable(uint32_t base, uint32_t sid)
  *
  * @retval n Number of unused bytes
  */
-static inline uint32_t cavs_hda_unused(uint32_t base, uint32_t sid)
+static inline uint32_t intel_adsp_hda_unused(uint32_t base, uint32_t sid)
 {
 	uint32_t dgcs = *DGCS(base, sid);
 	uint32_t dgbs = *DGBS(base, sid);
@@ -259,7 +259,7 @@ static inline uint32_t cavs_hda_unused(uint32_t base, uint32_t sid)
  * @param sid Stream ID within the register block
  * @param len Len to increment postion by
  */
-static inline void cavs_hda_host_commit(uint32_t base, uint32_t sid, uint32_t len)
+static inline void intel_adsp_hda_host_commit(uint32_t base, uint32_t sid, uint32_t len)
 {
 	*DGBFPI(base, sid) = len;
 	*DGLLPI(base, sid) = len;
@@ -271,13 +271,13 @@ static inline void cavs_hda_host_commit(uint32_t base, uint32_t sid, uint32_t le
  *
  * Writes the length to BFPI.
  *
- * @seealso cavs_hda_host_commit
+ * @seealso intel_adsp_hda_host_commit
  *
  * @param base Base address of the IP register block
  * @param sid Stream ID within the register block
  * @param len Len to increment postion by
  */
-static inline void cavs_hda_link_commit(uint32_t base, uint32_t sid, uint32_t len)
+static inline void intel_adsp_hda_link_commit(uint32_t base, uint32_t sid, uint32_t len)
 {
 	*DGBFPI(base, sid) = len;
 }
@@ -290,7 +290,7 @@ static inline void cavs_hda_link_commit(uint32_t base, uint32_t sid, uint32_t le
  *
  * @retval true If the buffer full flag is set
  */
-static inline bool cavs_hda_buf_full(uint32_t base, uint32_t sid)
+static inline bool intel_adsp_hda_buf_full(uint32_t base, uint32_t sid)
 {
 	return *DGCS(base, sid) & DGCS_BF;
 }
@@ -302,16 +302,16 @@ static inline bool cavs_hda_buf_full(uint32_t base, uint32_t sid)
  * there are bit flags for those cases.
  *
  * Useful for waiting on the hardware to catch up to
- * reads or writes (e.g. after a cavs_hda_commit)
+ * reads or writes (e.g. after a intel_adsp_hda_commit)
  *
  * @param dev HDA Stream device
- * @param sid Stream ID
+ * @param sid Stream D
  *
  * @retval true If the read and write positions are equal
  */
-static inline bool cavs_hda_wp_rp_eq(uint32_t base, uint32_t sid)
+static inline bool intel_adsp_hda_wp_rp_eq(uint32_t base, uint32_t sid)
 {
 	return *DGBWP(base, sid) == *DGBRP(base, sid);
 }
 
-#endif /* ZEPHYR_INCLUDE_CAVS_HDA_H */
+#endif /* ZEPHYR_INCLUDE_INTEL_ADSP_HDA_H */

@@ -1,7 +1,7 @@
 # Copyright (c) 2022 Intel Corporation. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# Common fields for HDA DMA controllers
+# Common fields for Intel ADSP HDA DMA controllers
 
 include: dma-controller.yaml
 
