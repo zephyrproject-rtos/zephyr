@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 /** GATT attribute permission bit field values */
-enum {
+enum bt_gatt_perm {
 	/** No operations supported, e.g. for notify-only */
 	BT_GATT_PERM_NONE = 0,
 
@@ -120,44 +120,54 @@ enum {
 	BT_GATT_WRITE_FLAG_EXECUTE = BIT(2),
 };
 
+/* Forward declaration of GATT Attribute structure */
+struct bt_gatt_attr;
+
+/** @typedef bt_gatt_attr_read_func_t
+ *  @brief Attribute read callback
+ *
+ *  The callback can also be used locally to read the contents of the
+ *  attribute in which case no connection will be set.
+ *
+ *  @param conn   The connection that is requesting to read
+ *  @param attr   The attribute that's being read
+ *  @param buf    Buffer to place the read result in
+ *  @param len    Length of data to read
+ *  @param offset Offset to start reading from
+ *
+ *  @return Number of bytes read, or in case of an error
+ *          BT_GATT_ERR() with a specific ATT error code.
+ */
+typedef ssize_t (*bt_gatt_attr_read_func_t)(struct bt_conn *conn,
+					    const struct bt_gatt_attr *attr,
+					    void *buf, uint16_t len,
+					    uint16_t offset);
+
+/** @typedef bt_gatt_attr_write_func_t
+ *  @brief Attribute write callback
+ *
+ *  @param conn   The connection that is requesting to write
+ *  @param attr   The attribute that's being written
+ *  @param buf    Buffer with the data to write
+ *  @param len    Number of bytes in the buffer
+ *  @param offset Offset to start writing from
+ *  @param flags  Flags (BT_GATT_WRITE_FLAG_*)
+ *
+ *  @return Number of bytes written, or in case of an error
+ *          BT_GATT_ERR() with a specific ATT error code.
+ */
+typedef ssize_t (*bt_gatt_attr_write_func_t)(struct bt_conn *conn,
+					     const struct bt_gatt_attr *attr,
+					     const void *buf, uint16_t len,
+					     uint16_t offset, uint8_t flags);
+
 /** @brief GATT Attribute structure. */
 struct bt_gatt_attr {
 	/** Attribute UUID */
 	const struct bt_uuid *uuid;
-
-	/** @brief Attribute read callback
-	 *
-	 *  The callback can also be used locally to read the contents of the
-	 *  attribute in which case no connection will be set.
-	 *
-	 *  @param conn   The connection that is requesting to read
-	 *  @param attr   The attribute that's being read
-	 *  @param buf    Buffer to place the read result in
-	 *  @param len    Length of data to read
-	 *  @param offset Offset to start reading from
-	 *
-	 *  @return Number fo bytes read, or in case of an error
-	 *          BT_GATT_ERR() with a specific ATT error code.
-	 */
-	ssize_t (*read)(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			void *buf, uint16_t len, uint16_t offset);
-
-	/** @brief Attribute write callback
-	 *
-	 *  @param conn   The connection that is requesting to write
-	 *  @param attr   The attribute that's being written
-	 *  @param buf    Buffer with the data to write
-	 *  @param len    Number of bytes in the buffer
-	 *  @param offset Offset to start writing from
-	 *  @param flags  Flags (BT_GATT_WRITE_FLAG_*)
-	 *
-	 *  @return Number of bytes written, or in case of an error
-	 *          BT_GATT_ERR() with a specific ATT error code.
-	 */
-	ssize_t	(*write)(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 const void *buf, uint16_t len, uint16_t offset,
-			 uint8_t flags);
-
+	bt_gatt_attr_read_func_t read;
+	/** Attribute write callback */
+	bt_gatt_attr_write_func_t write;
 	/** Attribute user data */
 	void *user_data;
 	/** Attribute handle */
@@ -678,10 +688,14 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
  *  attribute value.
  *
  *  @param _uuid Characteristic attribute uuid.
- *  @param _props Characteristic attribute properties.
- *  @param _perm Characteristic Attribute access permissions.
- *  @param _read Characteristic Attribute read callback.
- *  @param _write Characteristic Attribute write callback.
+ *  @param _props Characteristic attribute properties,
+ *                a bitmap of BT_GATT_CHRC_* macros.
+ *  @param _perm Characteristic Attribute access permissions,
+ *               a bitmap of @ref bt_gatt_perm values.
+ *  @param _read Characteristic Attribute read callback
+ *               (@ref bt_gatt_attr_read_func_t).
+ *  @param _write Characteristic Attribute write callback
+ *                (@ref bt_gatt_attr_write_func_t).
  *  @param _user_data Characteristic Attribute user data.
  */
 #define BT_GATT_CHARACTERISTIC(_uuid, _props, _perm, _read, _write, _user_data) \
@@ -816,7 +830,8 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *  Helper macro to declare a Managed CCC attribute.
  *
  *  @param _ccc CCC attribute user data, shall point to a _bt_gatt_ccc.
- *  @param _perm CCC access permissions.
+ *  @param _perm CCC access permissions,
+ *               a bitmap of @ref bt_gatt_perm values.
  */
 #define BT_GATT_CCC_MANAGED(_ccc, _perm)				\
 	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CCC, _perm,			\
@@ -829,7 +844,8 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *  Helper macro to declare a CCC attribute.
  *
  *  @param _changed Configuration changed callback.
- *  @param _perm CCC access permissions.
+ *  @param _perm CCC access permissions,
+ *               a bitmap of @ref bt_gatt_perm values.
  */
 #define BT_GATT_CCC(_changed, _perm)				\
 	BT_GATT_CCC_MANAGED(((struct _bt_gatt_ccc[])			\
@@ -893,7 +909,8 @@ ssize_t bt_gatt_attr_read_cud(struct bt_conn *conn,
  *  Helper macro to declare a CUD attribute.
  *
  *  @param _value User description NULL-terminated C string.
- *  @param _perm Descriptor attribute access permissions.
+ *  @param _perm Descriptor attribute access permissions,
+ *               a bitmap of @ref bt_gatt_perm values.
  */
 #define BT_GATT_CUD(_value, _perm)					\
 	BT_GATT_DESCRIPTOR(BT_UUID_GATT_CUD, _perm, bt_gatt_attr_read_cud, \
@@ -936,9 +953,12 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
  *  Helper macro to declare a descriptor attribute.
  *
  *  @param _uuid Descriptor attribute uuid.
- *  @param _perm Descriptor attribute access permissions.
- *  @param _read Descriptor attribute read callback.
- *  @param _write Descriptor attribute write callback.
+ *  @param _perm Descriptor attribute access permissions,
+ *               a bitmap of @ref bt_gatt_perm values.
+ *  @param _read Descriptor attribute read callback
+ *               (@ref bt_gatt_attr_read_func_t).
+ *  @param _write Descriptor attribute write callback
+ *                (@ref bt_gatt_attr_write_func_t).
  *  @param _user_data Descriptor attribute user data.
  */
 #define BT_GATT_DESCRIPTOR(_uuid, _perm, _read, _write, _user_data)	\
@@ -950,9 +970,10 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
  *  Helper macro to declare an attribute.
  *
  *  @param _uuid Attribute uuid.
- *  @param _perm Attribute access permissions.
- *  @param _read Attribute read callback.
- *  @param _write Attribute write callback.
+ *  @param _perm Attribute access permissions,
+ *               a bitmap of @ref bt_gatt_perm values.
+ *  @param _read Attribute read callback (@ref bt_gatt_attr_read_func_t).
+ *  @param _write Attribute write callback (@ref bt_gatt_attr_write_func_t).
  *  @param _user_data Attribute user data.
  */
 #define BT_GATT_ATTRIBUTE(_uuid, _perm, _read, _write, _user_data)	\
