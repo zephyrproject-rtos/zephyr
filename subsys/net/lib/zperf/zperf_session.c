@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
+LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
 #include <zephyr/zephyr.h>
 
@@ -29,7 +29,7 @@ struct session *get_session(const struct sockaddr *addr,
 	const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6 *)addr;
 
 	if (proto != SESSION_TCP && proto != SESSION_UDP) {
-		printk("Error! unsupported proto.\n");
+		NET_ERR("Error! unsupported proto.\n");
 		return NULL;
 	}
 
@@ -92,7 +92,7 @@ struct session *get_tcp_session(int sock)
 	int i = 0;
 
 	if (sock < 0) {
-		printk("Error! Invalid socket.\n");
+		NET_ERR("Error! Invalid socket.\n");
 		return NULL;
 	}
 
