@@ -1705,7 +1705,7 @@ Intel Platforms (Xtensa):
         - boards/xtensa/intel_*/
         - soc/xtensa/intel_*/
     labels:
-        - "platform: Intel CAVS"
+        - "platform: Intel ADSP"
 
 NXP Platforms:
   status: maintained
