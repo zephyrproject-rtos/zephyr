@@ -193,7 +193,7 @@ extern const struct pseudo_descriptor z_x86_idt;
 
 static void idt_vector_install(int vector, void *irq_handler)
 {
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 	z_init_irq_gate(&z_x86_idt.entries[vector], CODE_SEG,

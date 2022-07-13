@@ -1482,7 +1482,7 @@ bool z_page_fault(void *addr)
 static void do_mem_unpin(void *addr)
 {
 	struct z_page_frame *pf;
-	int key;
+	unsigned int key;
 	uintptr_t flags, phys;
 
 	key = irq_lock();
