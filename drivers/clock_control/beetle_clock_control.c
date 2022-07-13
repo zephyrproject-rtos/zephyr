@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT arm_cortex_m3
+#define DT_DRV_COMPAT arm_beetle_syscon
 
 /**
  * @file
@@ -235,17 +235,14 @@ static int beetle_clock_control_init(const struct device *dev)
 
 static const struct beetle_clock_control_cfg_t beetle_cc_cfg = {
 	.clock_control_id = 0,
-	.freq = DT_INST_PROP(0, clock_frequency),
+	.freq = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency),
 };
 
 /**
  * @brief Clock Control device init
  *
  */
-DEVICE_DEFINE(clock_control_beetle, CONFIG_ARM_CLOCK_CONTROL_DEV_NAME,
-		    &beetle_clock_control_init,
-		    NULL,
-		    NULL, &beetle_cc_cfg,
-		    PRE_KERNEL_1,
-		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		    &beetle_clock_control_api);
+DEVICE_DT_INST_DEFINE(0, &beetle_clock_control_init, NULL,
+		      NULL, &beetle_cc_cfg, PRE_KERNEL_1,
+		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+		      &beetle_clock_control_api);
