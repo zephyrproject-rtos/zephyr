@@ -5,7 +5,6 @@ tests:
     tags: rtio
     integration_platforms:
       - native_posix
-    timeout: 120
     harness: console
     harness_config:
       type: multi_line
