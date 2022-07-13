@@ -395,7 +395,7 @@ void z_impl_test_arm_user_interrupt_syscall(void)
 		first_call = 0;
 
 		/* Lock IRQs in supervisor mode */
-		int key = irq_lock();
+		unsigned int key = irq_lock();
 
 		/* Verify that IRQs were not already locked */
 		zassert_false(key, "IRQs locked in system call\n");
