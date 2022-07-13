@@ -149,7 +149,7 @@ struct bt_gatt_attr {
 	 *  @param buf    Buffer with the data to write
 	 *  @param len    Number of bytes in the buffer
 	 *  @param offset Offset to start writing from
-	 *  @param flags  Flags (BT_GATT_WRITE_*)
+	 *  @param flags  Flags (BT_GATT_WRITE_FLAG_*)
 	 *
 	 *  @return Number of bytes written, or in case of an error
 	 *          BT_GATT_ERR() with a specific ATT error code.
