@@ -230,6 +230,7 @@ int ipc_service_register_endpoint(const struct device *instance,
  *  @retval -EIO when no backend is registered or send hook is missing from
  *               backend.
  *  @retval -EINVAL when instance or endpoint is invalid.
+ *  @retval -ENOENT when the endpoint is not registered with the instance.
  *  @retval -EBADMSG when the data is invalid (i.e. invalid data format,
  *		     invalid length, ...)
  *  @retval -EBUSY when the instance is busy.
@@ -250,6 +251,7 @@ int ipc_service_send(struct ipc_ept *ept, const void *data, size_t len);
  *  @retval -EIO when no backend is registered or send hook is missing from
  *		 backend.
  *  @retval -EINVAL when instance or endpoint is invalid.
+ *  @retval -ENOENT when the endpoint is not registered with the instance.
  *  @retval -ENOTSUP when the operation is not supported by backend.
  *
  *  @retval size TX buffer size on success.
@@ -294,6 +296,7 @@ int ipc_service_get_tx_buffer_size(struct ipc_ept *ept);
  *  @retval -EIO when no backend is registered or send hook is missing from
  *		 backend.
  *  @retval -EINVAL when instance or endpoint is invalid.
+ *  @retval -ENOENT when the endpoint is not registered with the instance.
  *  @retval -ENOTSUP when the operation or the timeout is not supported by backend.
  *  @retval -ENOBUFS when there are no TX buffers available.
  *  @retval -EALREADY when a buffer was already claimed and not yet released.
@@ -316,6 +319,7 @@ int ipc_service_get_tx_buffer(struct ipc_ept *ept, void **data, uint32_t *size, 
  *  @retval -EIO when no backend is registered or send hook is missing from
  *		 backend.
  *  @retval -EINVAL when instance or endpoint is invalid.
+ *  @retval -ENOENT when the endpoint is not registered with the instance.
  *  @retval -ENOTSUP when this is not supported by backend.
  *  @retval -EALREADY when the buffer was already dropped.
  *  @retval -ENXIO when the buffer was not obtained using @ref
@@ -350,6 +354,7 @@ int ipc_service_drop_tx_buffer(struct ipc_ept *ept, const void *data);
  *  @retval -EIO when no backend is registered or send hook is missing from
  *		 backend.
  *  @retval -EINVAL when instance or endpoint is invalid.
+ *  @retval -ENOENT when the endpoint is not registered with the instance.
  *  @retval -EBADMSG when the data is invalid (i.e. invalid data format,
  *		     invalid length, ...)
  *  @retval -EBUSY when the instance is busy.
@@ -375,6 +380,7 @@ int ipc_service_send_nocopy(struct ipc_ept *ept, const void *data, size_t len);
  *  @retval -EIO when no backend is registered or release hook is missing from
  *		 backend.
  *  @retval -EINVAL when instance or endpoint is invalid.
+ *  @retval -ENOENT when the endpoint is not registered with the instance.
  *  @retval -EALREADY when the buffer data has been hold already.
  *  @retval -ENOTSUP when this is not supported by backend.
  *
@@ -398,6 +404,7 @@ int ipc_service_hold_rx_buffer(struct ipc_ept *ept, void *data);
  *  @retval -EIO when no backend is registered or release hook is missing from
  *		 backend.
  *  @retval -EINVAL when instance or endpoint is invalid.
+ *  @retval -ENOENT when the endpoint is not registered with the instance.
  *  @retval -EALREADY when the buffer data has been already released.
  *  @retval -ENOTSUP when this is not supported by backend.
  *  @retval -ENXIO when the buffer was not hold before using @ref
