@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_AMG88XX_EVAL_KIT
+
+config I2C
+	default y if SENSOR
+
+endif # SHIELD_AMG88XX_EVAL_KIT
