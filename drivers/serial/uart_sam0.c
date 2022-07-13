@@ -145,7 +145,7 @@ static void uart_sam0_dma_tx_done(const struct device *dma_dev, void *arg,
 static int uart_sam0_tx_halt(struct uart_sam0_dev_data *dev_data)
 {
 	const struct uart_sam0_dev_cfg *const cfg = dev_data->cfg;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 	size_t tx_active = dev_data->tx_len;
 	struct dma_status st;
 
@@ -227,7 +227,7 @@ static void uart_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
 	const struct device *dev = dev_data->dev;
 	const struct uart_sam0_dev_cfg *const cfg = dev_data->cfg;
 	SercomUsart * const regs = cfg->regs;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (dev_data->rx_len == 0U) {
 		irq_unlock(key);
@@ -306,7 +306,7 @@ static void uart_sam0_rx_timeout(struct k_work *work)
 	const struct uart_sam0_dev_cfg *const cfg = dev_data->cfg;
 	SercomUsart * const regs = cfg->regs;
 	struct dma_status st;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (dev_data->rx_len == 0U) {
 		irq_unlock(key);
@@ -724,7 +724,7 @@ static void uart_sam0_isr(const struct device *dev)
 
 		k_work_cancel_delayable(&dev_data->tx_timeout_work);
 
-		int key = irq_lock();
+		unsigned int key = irq_lock();
 
 		struct uart_event evt = {
 			.type = UART_TX_DONE,
@@ -956,7 +956,7 @@ static int uart_sam0_tx(const struct device *dev, const uint8_t *buf,
 		return -EINVAL;
 	}
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (dev_data->tx_len != 0U) {
 		retval = -EBUSY;
@@ -1016,7 +1016,7 @@ static int uart_sam0_rx_enable(const struct device *dev, uint8_t *buf,
 		return -EINVAL;
 	}
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (dev_data->rx_len != 0U) {
 		retval = -EBUSY;
@@ -1063,7 +1063,7 @@ static int uart_sam0_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 	}
 
 	struct uart_sam0_dev_data *const dev_data = dev->data;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 	int retval = 0;
 
 	if (dev_data->rx_len == 0U) {
@@ -1096,7 +1096,7 @@ static int uart_sam0_rx_disable(const struct device *dev)
 
 	k_work_cancel_delayable(&dev_data->rx_timeout_work);
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (dev_data->rx_len == 0U) {
 		irq_unlock(key);

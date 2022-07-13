@@ -137,7 +137,7 @@ static int mcux_lpuart_poll_in(const struct device *dev, unsigned char *c)
 static void mcux_lpuart_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct mcux_lpuart_config *config = dev->config;
-	int key;
+	unsigned int key;
 #ifdef CONFIG_PM
 	struct mcux_lpuart_data *data = dev->data;
 #endif
@@ -232,7 +232,7 @@ static void mcux_lpuart_irq_tx_enable(const struct device *dev)
 	uint32_t mask = kLPUART_TxDataRegEmptyInterruptEnable;
 #ifdef CONFIG_PM
 	struct mcux_lpuart_data *data = dev->data;
-	int key;
+	unsigned int key;
 #endif
 
 #ifdef CONFIG_PM
@@ -254,7 +254,7 @@ static void mcux_lpuart_irq_tx_disable(const struct device *dev)
 	uint32_t mask = kLPUART_TxDataRegEmptyInterruptEnable;
 #ifdef CONFIG_PM
 	struct mcux_lpuart_data *data = dev->data;
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 #endif
@@ -481,7 +481,7 @@ static int mcux_lpuart_rx_disable(const struct device *dev)
 	const struct mcux_lpuart_config *config = dev->config;
 	struct mcux_lpuart_data *data = (struct mcux_lpuart_data *)dev->data;
 	LPUART_Type *lpuart = config->base;
-	const int key = irq_lock();
+	const unsigned int key = irq_lock();
 
 	LPUART_EnableRx(lpuart, false);
 	(void)k_work_cancel_delayable(&data->async.rx_dma_params.timeout_work);
@@ -662,7 +662,7 @@ static int mcux_lpuart_tx(const struct device *dev, const uint8_t *buf, size_t l
 	const struct mcux_lpuart_config *config = dev->config;
 	LPUART_Type *lpuart = config->base;
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	/* Check for an ongiong transfer and abort if it is pending */
 	struct dma_status status;
@@ -753,7 +753,7 @@ static int mcux_lpuart_rx_enable(const struct device *dev, uint8_t *buf, const s
 
 	struct mcux_lpuart_rx_dma_params *rx_dma_params = &data->async.rx_dma_params;
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 	struct dma_status status;
 	const int get_status_result = dma_get_status(config->rx_dma_config.dma_dev,
 						     config->rx_dma_config.dma_channel,

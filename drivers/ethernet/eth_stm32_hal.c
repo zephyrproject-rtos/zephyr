@@ -1132,7 +1132,7 @@ static int ptp_clock_stm32_set(const struct device *dev,
 	struct ptp_context *ptp_context = dev->data;
 	struct eth_stm32_hal_dev_data *eth_dev_data = ptp_context->eth_dev_data;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 
@@ -1163,7 +1163,7 @@ static int ptp_clock_stm32_get(const struct device *dev,
 	struct ptp_context *ptp_context = dev->data;
 	struct eth_stm32_hal_dev_data *eth_dev_data = ptp_context->eth_dev_data;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
-	int key;
+	unsigned int key;
 	uint32_t second_2;
 
 	key = irq_lock();

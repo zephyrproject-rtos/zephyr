@@ -188,7 +188,7 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	struct dma_block_config *block_config = config->head_block;
 	uint32_t slot = config->dma_slot;
 	edma_transfer_type_t transfer_type;
-	int key;
+	unsigned int key;
 	int ret = 0;
 
 	if (slot > DT_INST_PROP(0, dma_requests)) {
@@ -400,7 +400,7 @@ static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 
 	/* Lock the channel configuration */
-	const int key = irq_lock();
+	const unsigned int key = irq_lock();
 	int ret = 0;
 
 	if (!data->transfer_settings.valid) {

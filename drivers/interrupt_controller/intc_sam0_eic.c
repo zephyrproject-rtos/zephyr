@@ -103,7 +103,7 @@ int sam0_eic_acquire(int port, int pin, enum sam0_eic_trigger trigger,
 	int line_index;
 	int config_index;
 	int config_shift;
-	int key;
+	unsigned int key;
 	uint32_t config;
 
 	line_index = sam0_eic_map_to_line(port, pin);
@@ -210,7 +210,7 @@ int sam0_eic_release(int port, int pin)
 	int line_index;
 	int config_index;
 	int config_shift;
-	int key;
+	unsigned int key;
 
 	line_index = sam0_eic_map_to_line(port, pin);
 	if (line_index < 0) {
