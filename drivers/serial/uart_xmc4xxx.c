@@ -13,6 +13,7 @@
 
 struct uart_xmc4xx_config {
 	XMC_USIC_CH_t *uart;
+	uint8_t input_src;
 };
 
 struct uart_xmc4xxx_data {
@@ -51,7 +52,7 @@ static int uart_xmc4xxx_init(const struct device *dev)
 	XMC_UART_CH_Init(config->uart, &(data->config));
 	XMC_GPIO_SetMode(P0_0, XMC_GPIO_MODE_INPUT_TRISTATE);
 	XMC_UART_CH_SetInputSource(config->uart, XMC_UART_CH_INPUT_RXD,
-				   USIC1_C1_DX0_P0_0);
+				   config->input_src);
 	XMC_UART_CH_Start(config->uart);
 
 	XMC_GPIO_SetMode(P0_1,
@@ -72,6 +73,7 @@ static struct uart_xmc4xxx_data xmc4xxx_data_##index = {		\
 									\
 static const struct uart_xmc4xx_config xmc4xxx_config_##index = {	\
 	.uart = (XMC_USIC_CH_t *)DT_INST_REG_ADDR(index),		\
+	.input_src = DT_INST_ENUM_IDX(index, input_src),		\
 };									\
 									\
 	DEVICE_DT_INST_DEFINE(index, &uart_xmc4xxx_init,		\
