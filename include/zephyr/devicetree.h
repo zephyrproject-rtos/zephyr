@@ -2350,11 +2350,14 @@
 #define DT_BUS(node_id) DT_CAT(node_id, _BUS)
 
 /**
+ * @deprecated If used to obtain a device instance with device_get_binding,
+ * consider using @c DEVICE_DT_GET(DT_BUS(node)).
+ *
  * @brief Node's bus controller's label property
  * @param node_id node identifier
  * @return the label property of the node's bus controller DT_BUS(node)
  */
-#define DT_BUS_LABEL(node_id) DT_PROP(DT_BUS(node_id), label)
+#define DT_BUS_LABEL(node_id) DT_PROP(DT_BUS(node_id), label) __DEPRECATED_MACRO
 
 /**
  * @brief Is a node on a bus of a given type?
@@ -2764,11 +2767,14 @@
 #define DT_INST_BUS(inst) DT_BUS(DT_DRV_INST(inst))
 
 /**
+ * @deprecated If used to obtain a device instance with device_get_binding,
+ * consider using @c DEVICE_DT_GET(DT_INST_BUS(inst)).
+ *
  * @brief Get a DT_DRV_COMPAT's bus node's label property
  * @param inst instance number
  * @return the label property of the instance's bus controller
  */
-#define DT_INST_BUS_LABEL(inst) DT_BUS_LABEL(DT_DRV_INST(inst))
+#define DT_INST_BUS_LABEL(inst) DT_BUS_LABEL(DT_DRV_INST(inst)) __DEPRECATED_MACRO
 
 /**
  * @brief Test if a DT_DRV_COMPAT's bus type is a given type
