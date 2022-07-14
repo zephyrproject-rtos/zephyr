@@ -528,15 +528,17 @@ class EDT:
             if node.path != '/' and \
                    vendor not in self._vendor_prefixes and \
                    vendor not in _VENDOR_PREFIX_ALLOWED:
-                if self._werror:
-                    handler_fn = _err
-                else:
-                    handler_fn = _LOG.warning
-                handler_fn(
+                self._warning(
                     f"node '{node.path}' compatible '{compat}' "
                     f"has unknown vendor prefix '{vendor}'")
 
         self._checked_compatibles.add(compat)
+
+    def _warning(self, msg):
+        if self._werror:
+            _err(msg)
+        else:
+            _LOG.warning(msg)
 
 class Node:
     """
