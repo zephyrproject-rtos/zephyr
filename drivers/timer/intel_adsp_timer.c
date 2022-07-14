@@ -10,7 +10,7 @@
 #include <zephyr/drivers/interrupt_controller/dw_ace_v1x.h>
 
 #include <cavs-idc.h>
-#include <cavs-shim.h>
+#include <adsp_shim.h>
 
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE1X
 #include <ace_v1x-regs.h>

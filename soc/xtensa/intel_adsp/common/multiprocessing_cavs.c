@@ -4,7 +4,7 @@
 #include <zephyr/zephyr.h>
 #include <cavs-idc.h>
 #include <cavs-mem.h>
-#include <cavs-shim.h>
+#include <adsp_shim.h>
 
 /* IDC power up message to the ROM firmware.  This isn't documented
  * anywhere, it's basically just a magic number (except the high bit,

@@ -10,7 +10,7 @@
 #include <xtensa/hal.h>
 #include <zephyr/init.h>
 
-#include <cavs-shim.h>
+#include <adsp_shim.h>
 #include <cavs-clk.h>
 #include <cavs-idc.h>
 #include "soc.h"

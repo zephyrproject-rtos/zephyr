@@ -9,7 +9,7 @@
 
 #include <ace_v1x-regs.h>
 #include <cavs-mem.h>
-#include <cavs-shim.h>
+#include <adsp_shim.h>
 #include <cpu_init.h>
 #include <soc.h>
 #include <xtensa/hal.h>
