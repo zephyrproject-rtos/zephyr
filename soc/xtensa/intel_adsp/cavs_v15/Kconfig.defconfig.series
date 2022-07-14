@@ -24,12 +24,6 @@ config ADSP_WIN0_OFFSET
 config ADSP_WIN3_OFFSET
 	default 0
 
-config IMR_MANIFEST_ADDR
-	default 0xb0004000
-
-config IMR_DATA_ADDR
-	default 0xb0002000
-
 config SMP
 	default y
 

@@ -35,7 +35,10 @@
  * memory.  There's no ability to change this offset, it's a magic
  * number from rimage we simply need to honor.
  */
-#define IMR_BOOT_LDR_TEXT_ENTRY_BASE (CONFIG_IMR_MANIFEST_ADDR + 0x6000)
+
+#define IMR_BOOT_LDR_DATA_BASE          (0xA1048000+0x1000)
+#define IMR_BOOT_LDR_MANIFEST_BASE      0xA1042000
+#define IMR_BOOT_LDR_TEXT_ENTRY_BASE (IMR_BOOT_LDR_MANIFEST_BASE + 0x6000)
 
 #define ADSP_L1_CACHE_PREFCTL_VALUE 0x1038
 
