@@ -17,17 +17,23 @@
 
 include_guard(GLOBAL)
 
+if(CMAKE_SCRIPT_MODE_FILE AND NOT COMMAND zephyr_get)
+  # This module is called in script mode from twister, in which case we can't
+  # load extra modules and must defined zephyr_get() as empty function.
+  function(zephyr_get)
+    # empty in script mode
+  endfunction()
+else()
+  include(extensions)
+endif()
+
 # This is the minimum required Zephyr-SDK version which supports CMake package
 set(TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION 0.13.1)
 
 # Set internal variables if set in environment.
-if(NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT)
-  set(ZEPHYR_TOOLCHAIN_VARIANT $ENV{ZEPHYR_TOOLCHAIN_VARIANT})
-endif()
+zephyr_get(ZEPHYR_TOOLCHAIN_VARIANT)
 
-if(NOT DEFINED ZEPHYR_SDK_INSTALL_DIR)
-  set(ZEPHYR_SDK_INSTALL_DIR $ENV{ZEPHYR_SDK_INSTALL_DIR})
-endif()
+zephyr_get(ZEPHYR_SDK_INSTALL_DIR)
 
 # Pick host system's toolchain if we are targeting posix
 if("${ARCH}" STREQUAL "posix")
