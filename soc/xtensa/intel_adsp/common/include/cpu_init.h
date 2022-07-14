@@ -6,7 +6,7 @@
 
 #include <zephyr/arch/xtensa/cache.h>
 #include <xtensa/config/core-isa.h>
-#include <fw_defs.h>
+#include <adsp_memory.h>
 
 #define CxL1CCAP (*(volatile uint32_t *)0x9F080080)
 #define CxL1CCFG (*(volatile uint32_t *)0x9F080084)
