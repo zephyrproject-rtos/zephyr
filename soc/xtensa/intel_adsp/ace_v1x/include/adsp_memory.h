@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ADSP_PLATFORM_DEFS_H
-#define ADSP_PLATFORM_DEFS_H
+#ifndef ZEPHYR_SOC_INTEL_ADSP_MEMORY_H_
+#define ZEPHYR_SOC_INTEL_ADSP_MEMORY_H_
 
 #define ADSP_L1_CACHE_PREFCTL_VALUE 0x1038
 
-#endif
+#endif /* ZEPHYR_SOC_INTEL_ADSP_MEMORY_H_ */
