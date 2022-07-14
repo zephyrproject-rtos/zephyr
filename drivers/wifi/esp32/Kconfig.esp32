@@ -231,4 +231,11 @@ config ESP32_WIFI_RX_IRAM_OPT
 	  When this option is disabled, more than 17Kbytes of IRAM memory will be saved
 	  but Wi-Fi performance will be reduced.
 
+config ESP32_WIFI_NET_ALLOC_SPIRAM
+	bool "Allocate memory of WiFi and NET in SPIRAM"
+	depends on ESP_SPIRAM
+	help
+	  Allocate memory of WiFi and NET stack in SPIRAM, increasing available RAM memory space
+	  for application stack.
+
 endif # WIFI_ESP32
