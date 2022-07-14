@@ -7,12 +7,13 @@
 
 #define DT_DRV_COMPAT	infineon_xmc4xxx_uart
 
-#include <xmc_gpio.h>
 #include <xmc_uart.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/uart.h>
 
 struct uart_xmc4xx_config {
 	XMC_USIC_CH_t *uart;
+	const struct pinctrl_dev_config *pcfg;
 	uint8_t input_src;
 };
 
@@ -42,21 +43,29 @@ static void uart_xmc4xxx_poll_out(const struct device *dev, unsigned char c)
 
 static int uart_xmc4xxx_init(const struct device *dev)
 {
+	int ret;
 	const struct uart_xmc4xx_config *config = dev->config;
 	struct uart_xmc4xxx_data *data = dev->data;
 
 	data->config.data_bits = 8U;
 	data->config.stop_bits = 1U;
 
-	/* configure PIN 0.0 and 0.1 as UART */
 	XMC_UART_CH_Init(config->uart, &(data->config));
-	XMC_GPIO_SetMode(P0_0, XMC_GPIO_MODE_INPUT_TRISTATE);
-	XMC_UART_CH_SetInputSource(config->uart, XMC_UART_CH_INPUT_RXD,
-				   config->input_src);
+
+	/* Connect UART RX to logical 1. It is connected to proper pin after pinctrl is applied */
+	XMC_UART_CH_SetInputSource(config->uart, XMC_UART_CH_INPUT_RXD, 0x7);
+
+	/* Start the UART before pinctrl, because the USIC is driving the TX line */
+	/* low in off state */
 	XMC_UART_CH_Start(config->uart);
 
-	XMC_GPIO_SetMode(P0_1,
-			 XMC_GPIO_MODE_OUTPUT_PUSH_PULL | P0_1_AF_U1C1_DOUT0);
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+	/* Connect UART RX to the target pin */
+	XMC_UART_CH_SetInputSource(config->uart, XMC_UART_CH_INPUT_RXD,
+				   config->input_src);
 
 	return 0;
 }
@@ -67,12 +76,14 @@ static const struct uart_driver_api uart_xmc4xxx_driver_api = {
 };
 
 #define XMC4XXX_INIT(index)						\
+PINCTRL_DT_INST_DEFINE(index);						\
 static struct uart_xmc4xxx_data xmc4xxx_data_##index = {		\
 	.config.baudrate = DT_INST_PROP(index, current_speed)		\
 };									\
 									\
 static const struct uart_xmc4xx_config xmc4xxx_config_##index = {	\
 	.uart = (XMC_USIC_CH_t *)DT_INST_REG_ADDR(index),		\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 	.input_src = DT_INST_ENUM_IDX(index, input_src),		\
 };									\
 									\
