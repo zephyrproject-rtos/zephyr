@@ -223,7 +223,7 @@ NET_SOCKET_REGISTER(tls,       TEST_SOCKET_PRIO, AF_UNSPEC, is_tls,    socket_te
 NET_SOCKET_REGISTER(af_packet, TEST_SOCKET_PRIO, AF_PACKET, is_packet, socket_test_ok);
 NET_SOCKET_REGISTER(af_can,    TEST_SOCKET_PRIO, AF_CAN,    is_can,    socket_test_ok);
 
-void test_create_sockets(void)
+ZTEST(socket_register_test_suite, test_create_sockets)
 {
 	int i, fd, ok_tests = 0, failed_tests = 0;
 
@@ -265,10 +265,4 @@ void test_create_sockets(void)
 		      ok_tests + failed_tests - failed_family, func_called);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(socket_register,
-			 ztest_unit_test(test_create_sockets));
-
-	ztest_run_test_suite(socket_register);
-}
+ZTEST_SUITE(socket_register_test_suite, NULL, NULL, NULL, NULL, NULL);
