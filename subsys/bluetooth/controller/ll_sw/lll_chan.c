@@ -12,7 +12,6 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_chan
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 static uint8_t chan_sel_remap(uint8_t *chan_map, uint8_t chan_index);

@@ -6,7 +6,6 @@
 
 #include <stdint.h>
 #include <zephyr/zephyr.h>
-#include <soc.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/hci.h>
 

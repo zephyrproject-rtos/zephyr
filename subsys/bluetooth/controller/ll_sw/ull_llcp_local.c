@@ -42,7 +42,6 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_llcp_local
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 static void lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);

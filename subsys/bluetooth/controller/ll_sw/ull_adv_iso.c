@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <soc.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/bluetooth.h>
 

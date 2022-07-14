@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <soc.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci.h>
 
@@ -49,7 +48,6 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_sync
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 /* Check that timeout_reload member is at safe offset when ll_sync_set is

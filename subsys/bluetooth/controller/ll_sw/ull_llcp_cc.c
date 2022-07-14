@@ -48,7 +48,6 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_llcp_cis
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 static uint16_t cc_event_counter(struct ll_conn *conn)
