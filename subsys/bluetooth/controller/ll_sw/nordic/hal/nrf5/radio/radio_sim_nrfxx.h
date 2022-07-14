@@ -6,11 +6,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * This header needs lots of types and macros, instead of relaying on
- * good inclusion order let's pull them through soc.h
- */
-#include <soc.h>
+#include <stdint.h>
+
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
+
+#include <nrf.h>
+
+#include "hal/nrf5/radio/radio_nrf5.h"
 
 /* NRF Radio HW timing constants
  * - provided in US and NS (for higher granularity)
