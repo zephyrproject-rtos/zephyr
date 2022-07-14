@@ -207,6 +207,17 @@ Flashing
 Board is configured to be flashed using west STM32CubeProgrammer runner.
 Installation of `STM32CubeProgrammer`_ is then required to flash the board.
 
+Alternatively pyocd and JLink can be used to flash and debug the board.
+JLink works out of the box if west is told to use it as runner,
+which can be done by passing ``-r jlink``.
+For pyocd (``-r pyocd``) additional target information needs to be installed.
+This can be done by executing the following commands.
+
+.. code-block:: console
+
+   $ pyocd pack --update
+   $ pyocd pack --install stm32u5
+
 
 Flashing an application to Nucleo U575ZI Q
 ------------------------------------------
