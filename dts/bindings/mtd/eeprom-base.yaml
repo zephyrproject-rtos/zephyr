@@ -14,5 +14,3 @@ properties:
       type: boolean
       required: false
       description: Disable writes to the EEPROM
-    label:
-      required: true

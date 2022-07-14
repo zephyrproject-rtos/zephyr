@@ -14,8 +14,6 @@ properties:
       type: int
       required: true
       description: Maximum clock frequency of device's SPI interface in Hz
-    label:
-      required: true
     duplex:
       type: int
       default: 0
