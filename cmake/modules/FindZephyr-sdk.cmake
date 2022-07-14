@@ -23,13 +23,9 @@
 # True if the Zephyr SDK was found.
 
 # Set internal variables if set in environment.
-if(NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT)
-  set(ZEPHYR_TOOLCHAIN_VARIANT $ENV{ZEPHYR_TOOLCHAIN_VARIANT})
-endif()
+zephyr_get(ZEPHYR_TOOLCHAIN_VARIANT)
 
-if(NOT DEFINED ZEPHYR_SDK_INSTALL_DIR)
-  set(ZEPHYR_SDK_INSTALL_DIR $ENV{ZEPHYR_SDK_INSTALL_DIR})
-endif()
+zephyr_get(ZEPHYR_SDK_INSTALL_DIR)
 
 # Load Zephyr SDK Toolchain.
 # There are three scenarios where Zephyr SDK should be looked up:
