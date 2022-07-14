@@ -18,9 +18,6 @@ include: regulator.yaml
 compatible: "regulator-fixed"
 
 properties:
-  label:
-    required: true
-
   regulator-name:
     type: string
     required: true
