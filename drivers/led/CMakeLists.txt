@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+add_subdirectory_ifdef(CONFIG_IS31FL3194 is31fl3194)
+
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_HT16K33 ht16k33.c)

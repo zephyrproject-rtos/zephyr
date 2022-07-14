@@ -1,0 +1,33 @@
+# Copyright (c) 2022 Benjamin Björnsson <benjamin.bjornsson@gmail.com>.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Lumissil IS31FL3194 LED Driver
+
+compatible: "issi,is31fl3194"
+
+include: ["i2c-device.yaml", "led-controller.yaml"]
+
+child-binding:
+    description: IS31FL3194 LED controller node
+
+    properties:
+        label:
+          required: true
+        index:
+          required: true
+          enum:
+            - 0
+            - 1
+            - 2
+        color-mapping:
+          required: true
+        curr-band-max:
+          type: int
+          required: false
+          enum:
+            - 10
+            - 20
+            - 30
+            - 40
+          default: 20
+          description: Maximum current band output in mA.
