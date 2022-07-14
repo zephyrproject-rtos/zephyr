@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 #include <soc.h>
 #include <zephyr/arch/xtensa/cache.h>
 #include <adsp_shim.h>
-#include <cavs-mem.h>
+#include <adsp_memory.h>
 #include <cpu_init.h>
 
 struct cpustart_rec {

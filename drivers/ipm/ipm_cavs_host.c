@@ -3,7 +3,7 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/ipm.h>
-#include <cavs-mem.h>
+#include <adsp_memory.h>
 #include <adsp_shim.h>
 #include <cavs_ipc.h>
 

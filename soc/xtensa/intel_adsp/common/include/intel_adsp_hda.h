@@ -9,7 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <adsp_shim.h>
-#include <cavs-mem.h>
+#include <adsp_memory.h>
 
 /**
  * @brief HDA stream functionality for Intel ADSP
