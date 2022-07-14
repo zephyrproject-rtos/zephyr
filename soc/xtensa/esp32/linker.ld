@@ -400,6 +400,24 @@ SECTIONS
     _rtc_bss_end = ABSOLUTE(.);
   } GROUP_LINK_IN(rtc_slow_seg)
 
+#if defined(CONFIG_ESP_SPIRAM)
+  .ext_ram.bss (NOLOAD):
+  {
+    _ext_ram_data_start = ABSOLUTE(.);
+
+#if defined(CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM)
+    *libdrivers__wifi.a:(.noinit .noinit.*)
+    *libsubsys__net__l2__ethernet.a:(.noinit .noinit.*)
+    *libsubsys__net__lib__config.a:(.noinit .noinit.*)
+    *libsubsys__net__ip.a:(.noinit .noinit.*)
+    *libsubsys__net.a:(.noinit .noinit.*)
+#endif
+
+    *(.ext_ram.bss*)
+    _ext_ram_data_end = ABSOLUTE(.) + CONFIG_ESP_SPIRAM_SIZE;
+  } GROUP_LINK_IN(ext_ram_seg)
+#endif
+
   /* Shared RAM */
   SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
   {
@@ -444,15 +462,6 @@ SECTIONS
     *(.noinit.*)
     . = ALIGN (8);
   } GROUP_LINK_IN(RAMABLE_REGION_1)
-
-#if defined(CONFIG_ESP_SPIRAM)
-  .ext_ram.bss (NOLOAD):
-  {
-    _ext_ram_data_start = ABSOLUTE(.);
-    *(.ext_ram.bss*)
-    _ext_ram_data_end = ABSOLUTE(.) + CONFIG_ESP_SPIRAM_SIZE;
-  } > ext_ram_seg
-#endif
 
   _image_irom_start = LOADADDR(.flash.text);
   _image_irom_size = LOADADDR(.flash.text) + SIZEOF(.flash.text) - _image_irom_start;
