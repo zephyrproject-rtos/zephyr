@@ -66,7 +66,7 @@ jobs:
 
       - name: use cache
         id: cache-ccache
-        uses: nashif/action-s3-cache@master
+        uses: zephyrproject-rtos/action-s3-cache@v1
         with:
           key: ${{ steps.ccache_cache_prop.outputs.repo }}-${{github.event_name}}-${{matrix.platform}}-codecov-ccache
           path: /github/home/.ccache
