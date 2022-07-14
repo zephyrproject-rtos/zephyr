@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if($ENV{ONEAPI_ROOT})
-  set_ifndef(ONEAPI_TOOLCHAIN_PATH "$ENV{ONEAPI_ROOT}")
+if(DEFINED ENV{ONEAPI_ROOT})
+  set_ifndef(ONEAPI_TOOLCHAIN_PATH $ENV{ONEAPI_ROOT})
 else()
-  set_ifndef(ONEAPI_TOOLCHAIN_PATH "$ENV{ONEAPI_TOOLCHAIN_PATH}")
+  zephyr_get(ONEAPI_TOOLCHAIN_PATH)
 endif()
 
 # the default oneApi installation path is related to os
