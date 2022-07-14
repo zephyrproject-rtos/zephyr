@@ -6,7 +6,7 @@
 #include <zephyr/device.h>
 
 #include <cavs-clk.h>
-#include <cavs-shim.h>
+#include <adsp_shim.h>
 
 static struct cavs_clock_info platform_clocks[CONFIG_MP_NUM_CPUS];
 static struct k_spinlock lock;

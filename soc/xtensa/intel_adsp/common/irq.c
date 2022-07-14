@@ -9,7 +9,7 @@
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 
-#include <cavs-shim.h>
+#include <adsp_shim.h>
 #include <cavs-idc.h>
 #include "soc.h"
 

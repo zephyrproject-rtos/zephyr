@@ -8,7 +8,7 @@
 #include <zephyr/arch/xtensa/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <cavs-shim.h>
+#include <adsp_shim.h>
 #include <cavs-mem.h>
 
 /**
