@@ -6,9 +6,9 @@
 
 #include <stdint.h>
 #include <errno.h>
-#include <soc.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/util_macro.h>
+
 #include <hal/nrf_radio.h>
 #include <hal/nrf_gpio.h>
 #include <hal/ccm.h>
