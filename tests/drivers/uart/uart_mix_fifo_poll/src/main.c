@@ -147,8 +147,8 @@ static void init_test(void)
 	/* Setup counter which will periodically enable/disable UART RX,
 	 * Disabling RX should lead to flow control being activated.
 	 */
-	counter_dev = device_get_binding("TIMER_0");
-	zassert_true(counter_dev != NULL, NULL);
+	counter_dev = DEVICE_DT_GET(DT_NODELABEL(timer0));
+	zassert_true(device_is_ready(counter_dev), NULL);
 
 	top_cfg.ticks = counter_us_to_ticks(counter_dev, 1000);
 
