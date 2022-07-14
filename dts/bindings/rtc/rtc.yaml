@@ -10,8 +10,6 @@ properties:
       type: int
       required: false
       description: Clock frequency information for RTC operation
-    label:
-      required: true
     interrupts:
       required: true
 
