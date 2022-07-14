@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/sys_clock.h>
+
 #if defined(CONFIG_BT_CTLR_RX_PDU_META)
 #include "lll_meta.h"
 #endif /* CONFIG_BT_CTLR_RX_PDU_META */
