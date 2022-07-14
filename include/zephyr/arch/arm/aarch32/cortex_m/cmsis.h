@@ -22,10 +22,6 @@
 extern "C" {
 #endif
 
-#define SCB_UFSR  (*((__IOM uint16_t *) &SCB->CFSR + 1))
-#define SCB_BFSR  (*((__IOM uint8_t *) &SCB->CFSR + 1))
-#define SCB_MMFSR (*((__IOM uint8_t *) &SCB->CFSR))
-
 /* Fill in CMSIS required values for non-CMSIS compliant SoCs.
  * Use __NVIC_PRIO_BITS as it is required and simple to check, but
  * ultimately all SoCs will define their own CMSIS types and constants.
