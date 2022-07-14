@@ -283,9 +283,7 @@ static int eeprom_at24_read(const struct device *dev, off_t offset, void *buf,
 	timeout = k_uptime_get() + config->timeout;
 	while (1) {
 		int64_t now = k_uptime_get();
-		err = i2c_write_read(config->bus.i2c.bus, bus_addr,
-				     addr, config->addr_width / 8,
-				     buf, len);
+		err = i2c_write_read_dt(&config->bus.i2c, addr, config->addr_width / 8, buf, len);
 		if (!err || now > timeout) {
 			break;
 		}
@@ -331,8 +329,7 @@ static int eeprom_at24_write(const struct device *dev, off_t offset,
 	timeout = k_uptime_get() + config->timeout;
 	while (1) {
 		int64_t now = k_uptime_get();
-		err = i2c_write(config->bus.i2c.bus, block, sizeof(block),
-				bus_addr);
+		err = i2c_write_dt(&config->bus.i2c, block, sizeof(block));
 		if (!err || now > timeout) {
 			break;
 		}
