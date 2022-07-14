@@ -742,9 +742,6 @@ static const struct eeprom_driver_api eeprom_emu_api = {
 #define PART_DEV(part) \
 	DEVICE_DT_GET(PART_DEV_ID(part))
 
-#define PART_DEV_NAME(part) \
-	DT_PROP(PART_DEV_ID(part), label)
-
 #define RECALC_SIZE(size, cbs) \
 	(size % cbs) ? ((size + cbs - 1) & ~(cbs - 1)) : size
 
