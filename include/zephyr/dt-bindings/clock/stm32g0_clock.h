@@ -21,16 +21,17 @@
 /** Fixed clocks  */
 #define STM32_SRC_HSI		0x001
 #define STM32_SRC_MSI		0x002
-#define STM32_SRC_LSE		0x003
-#define STM32_SRC_LSI		0x004
+#define STM32_SRC_HSE		0x003
+#define STM32_SRC_LSE		0x004
+#define STM32_SRC_LSI		0x005
 /** System clock */
-#define STM32_SRC_SYSCLK	0x005
+#define STM32_SRC_SYSCLK	0x006
 /** Peripheral bus clock */
-#define STM32_SRC_PCLK		0x006
+#define STM32_SRC_PCLK		0x007
 /** PLL clock outputs */
-#define STM32_SRC_PLL_P		0x007
-#define STM32_SRC_PLL_Q		0x008
-#define STM32_SRC_PLL_R		0x009
+#define STM32_SRC_PLL_P		0x008
+#define STM32_SRC_PLL_Q		0x009
+#define STM32_SRC_PLL_R		0x00a
 
 /**
  * @brief STM32 clock configuration bit field.
