@@ -30,14 +30,6 @@ LOG_MODULE_REGISTER(gd7965, CONFIG_DISPLAY_LOG_LEVEL);
 #define EPD_PANEL_HEIGHT		DT_INST_PROP(0, height)
 #define GD7965_PIXELS_PER_BYTE		8U
 
-/* Horizontally aligned page! */
-#define GD7965_NUMOF_PAGES		(EPD_PANEL_WIDTH / \
-					 GD7965_PIXELS_PER_BYTE)
-#define GD7965_PANEL_FIRST_GATE		0U
-#define GD7965_PANEL_LAST_GATE		(EPD_PANEL_HEIGHT - 1)
-#define GD7965_PANEL_FIRST_PAGE		0U
-#define GD7965_PANEL_LAST_PAGE		(GD7965_NUMOF_PAGES - 1)
-
 struct gd7965_config {
 	struct spi_dt_spec bus;
 	struct gpio_dt_spec dc_gpio;
@@ -84,6 +76,49 @@ static inline int gd7965_write_cmd(const struct device *dev, uint8_t cmd,
 		if (err < 0) {
 			goto spi_out;
 		}
+	}
+
+spi_out:
+	spi_release_dt(&config->bus);
+	return err;
+}
+
+static inline int gd7965_write_cmd_pattern(const struct device *dev,
+					   uint8_t cmd,
+					   uint8_t pattern, size_t len)
+{
+	const struct gd7965_config *config = dev->config;
+	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
+	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
+	int err;
+	uint8_t data[64];
+
+	err = gpio_pin_set_dt(&config->dc_gpio, 1);
+	if (err < 0) {
+		return err;
+	}
+
+	err = spi_write_dt(&config->bus, &buf_set);
+	if (err < 0) {
+		goto spi_out;
+	}
+
+	err = gpio_pin_set_dt(&config->dc_gpio, 0);
+	if (err < 0) {
+		goto spi_out;
+	}
+
+	memset(data, pattern, sizeof(data));
+	while (len) {
+		buf.buf = data;
+		buf.len = MIN(len, sizeof(data));
+
+		err = spi_write_dt(&config->bus, &buf_set);
+		if (err < 0) {
+			goto spi_out;
+		}
+
+		len -= buf.len;
 	}
 
 spi_out:
@@ -272,25 +307,16 @@ static int gd7965_set_pixel_format(const struct device *dev,
 static int gd7965_clear_and_write_buffer(const struct device *dev,
 					 uint8_t pattern, bool update)
 {
-	struct display_buffer_descriptor desc = {
-		.buf_size = GD7965_NUMOF_PAGES,
-		.width = EPD_PANEL_WIDTH,
-		.height = 1,
-		.pitch = EPD_PANEL_WIDTH,
-	};
-	uint8_t *line;
+	const int size = EPD_PANEL_WIDTH * EPD_PANEL_HEIGHT
+		/ GD7965_PIXELS_PER_BYTE;
 
-	line = k_malloc(GD7965_NUMOF_PAGES);
-	if (line == NULL) {
-		return -ENOMEM;
+	if (gd7965_write_cmd_pattern(dev, GD7965_CMD_DTM1, pattern, size)) {
+		return -EIO;
 	}
 
-	memset(line, pattern, GD7965_NUMOF_PAGES);
-	for (int i = 0; i < EPD_PANEL_HEIGHT; i++) {
-		gd7965_write(dev, 0, i, &desc, line);
+	if (gd7965_write_cmd_pattern(dev, GD7965_CMD_DTM2, pattern, size)) {
+		return -EIO;
 	}
-
-	k_free(line);
 
 	if (update == true) {
 		if (gd7965_update_display(dev)) {
