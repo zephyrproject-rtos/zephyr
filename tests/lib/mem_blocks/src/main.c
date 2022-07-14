@@ -808,4 +808,10 @@ static void *lib_mem_block_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(lib_mem_block, NULL, lib_mem_block_setup, NULL, NULL, NULL);
+static void delay(void *unused)
+{
+	ARG_UNUSED(unused);
+	k_sleep(K_SECONDS(1));
+}
+
+ZTEST_SUITE(lib_mem_block, NULL, lib_mem_block_setup, delay, NULL, NULL);
