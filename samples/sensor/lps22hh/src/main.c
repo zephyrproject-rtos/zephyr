@@ -50,10 +50,10 @@ static void lps22hh_handler(const struct device *dev,
 
 void main(void)
 {
-	const struct device *dev = device_get_binding("LPS22HH");
+	const struct device *dev = DEVICE_DT_GET_ONE(st_lps22hh);
 
-	if (dev == NULL) {
-		printf("Could not get LPS22HH device\n");
+	if (!device_is_ready(dev)) {
+		printk("sensor: device not ready.\n");
 		return;
 	}
 
