@@ -13,12 +13,12 @@ config BOARD
 config FLASH
 	default y
 
-if BOARD_BL5340_DVK_CPUAPP
-
 # Enable QSPI for secondary partition maps
 
 config NORDIC_QSPI_NOR
 	default y
+
+if BOARD_BL5340_DVK_CPUAPP
 
 if DAC
 
