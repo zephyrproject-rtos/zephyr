@@ -1872,6 +1872,8 @@ Espressif Platforms:
     - sylvioalves
     - glaubermaroto
     - uLipe
+  collaborators:
+    - LucasTambor
   files:
     - drivers/*/*esp32*.c
     - boards/xtensa/esp32*/
@@ -2167,6 +2169,8 @@ West:
     - sylvioalves
     - glaubermaroto
     - uLipe
+  collaborators:
+    - LucasTambor
   files: []
   labels:
     - manifest-hal_espressif
