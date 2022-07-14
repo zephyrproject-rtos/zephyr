@@ -179,6 +179,12 @@ config IPM_CAVS_HOST_REGWORD
 
 endif # IPM_CAVS_HOST
 
+config ESP32_SOFT_IPM
+	bool "ESP32 Software IPM driver"
+	depends on ESP32_NETWORK_CORE || SOC_ESP32_NET
+	help
+	  Interprocessor driver for ESP32 when using AMP.
+
 module = IPM
 module-str = ipm
 source "subsys/logging/Kconfig.template.log_config"
