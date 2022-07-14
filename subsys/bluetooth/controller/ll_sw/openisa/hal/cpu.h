@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <soc.h>
+
 static inline void cpu_sleep(void)
 {
 	__WFE();
