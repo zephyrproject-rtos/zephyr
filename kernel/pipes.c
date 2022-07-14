@@ -127,6 +127,8 @@ void z_impl_k_pipe_buffer_flush(struct k_pipe *pipe)
 	if (pipe->buffer != NULL) {
 		(void) pipe_get_internal(key, pipe, NULL, pipe->size,
 					 &bytes_read, 0, K_NO_WAIT);
+	} else {
+		k_spin_unlock(&pipe->lock, key);
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, buffer_flush, pipe);
