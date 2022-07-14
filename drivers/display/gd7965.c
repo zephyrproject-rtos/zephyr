@@ -59,22 +59,36 @@ static inline int gd7965_write_cmd(const struct device *dev, uint8_t cmd,
 	const struct gd7965_config *config = dev->config;
 	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
 	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
+	int err;
 
-	gpio_pin_set_dt(&config->dc_gpio, 1);
-	if (spi_write_dt(&config->bus, &buf_set)) {
-		return -EIO;
+	err = gpio_pin_set_dt(&config->dc_gpio, 1);
+	if (err < 0) {
+		return err;
+	}
+
+	err = spi_write_dt(&config->bus, &buf_set);
+	if (err < 0) {
+		goto spi_out;
 	}
 
 	if (data != NULL) {
 		buf.buf = data;
 		buf.len = len;
-		gpio_pin_set_dt(&config->dc_gpio, 0);
-		if (spi_write_dt(&config->bus, &buf_set)) {
-			return -EIO;
+
+		err = gpio_pin_set_dt(&config->dc_gpio, 0);
+		if (err < 0) {
+			goto spi_out;
+		}
+
+		err = spi_write_dt(&config->bus, &buf_set);
+		if (err < 0) {
+			goto spi_out;
 		}
 	}
 
-	return 0;
+spi_out:
+	spi_release_dt(&config->bus);
+	return err;
 }
 
 static inline void gd7965_busy_wait(const struct device *dev)
@@ -403,7 +417,10 @@ static int gd7965_init(const struct device *dev)
 
 static const struct gd7965_config gd7965_config = {
 	.bus = SPI_DT_SPEC_INST_GET(
-		0, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),
+		0,
+		SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |
+		SPI_LOCK_ON,
+		0),
 	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 	.dc_gpio = GPIO_DT_SPEC_INST_GET(0, dc_gpios),
 	.busy_gpio = GPIO_DT_SPEC_INST_GET(0, busy_gpios),
