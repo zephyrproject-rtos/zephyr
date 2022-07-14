@@ -495,7 +495,7 @@ static const struct adc_driver_api api = {
 		IF_ENABLED(CONFIG_ADC_ASYNC, (.stack = thread_stack_##n))		   \
 	};										   \
 	static struct ads1119_data data_##n;						   \
-	DEVICE_DEFINE(ads1119_##n, DT_INST_LABEL(n), ads1119_init,			   \
+	DEVICE_DT_INST_DEFINE(n, ads1119_init,						   \
 		      NULL, &data_##n, &config_##n,					   \
 		      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,				   \
 		      &api);
