@@ -72,16 +72,25 @@
 #define GD7965_CDI_DDX1				BIT(1)
 #define GD7965_CDI_DDX0				BIT(0)
 
-#define GD7965_TRES_REG_LENGTH			4U
-#define GD7965_TRES_HRES_IDX			0
-#define GD7965_TRES_VRES_IDX			2
+struct gd7965_tres {
+	uint16_t hres;
+	uint16_t vres;
+} __packed;
 
-#define GD7965_PTL_REG_LENGTH			9U
-#define GD7965_PTL_HRST_IDX			0
-#define GD7965_PTL_HRED_IDX			2
-#define GD7965_PTL_VRST_IDX			4
-#define GD7965_PTL_VRED_IDX			6
-#define GD7965_PTL_PT_SCAN			BIT(0)
+BUILD_ASSERT(sizeof(struct gd7965_tres) == 4);
+
+struct gd7965_ptl {
+	uint16_t hrst;
+	uint16_t hred;
+	uint16_t vrst;
+	uint16_t vred;
+	uint8_t flags;
+} __packed;
+
+BUILD_ASSERT(sizeof(struct gd7965_ptl) == 9);
+
+#define GD7965_PTL_FLAG_PT_SCAN			BIT(0)
+
 
 /* Time constants in ms */
 #define GD7965_RESET_DELAY			10U
