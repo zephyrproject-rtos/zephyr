@@ -8,7 +8,7 @@
 
 #include <soc.h>
 #include <zephyr/arch/xtensa/cache.h>
-#include <cavs-shim.h>
+#include <adsp_shim.h>
 #include <cavs-mem.h>
 #include <cpu_init.h>
 #include "manifest.h"
