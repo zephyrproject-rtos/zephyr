@@ -70,78 +70,6 @@ static void ticker_op_cb(uint32_t status, void *param);
 static struct ll_adv_sync_set ll_adv_sync_pool[CONFIG_BT_CTLR_ADV_SYNC_SET];
 static void *adv_sync_free;
 
-void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags)
-{
-	struct pdu_adv_com_ext_adv *com_hdr;
-	struct pdu_adv_ext_hdr *ext_hdr;
-	uint8_t *dptr;
-	uint8_t len;
-
-	pdu->type = PDU_ADV_TYPE_AUX_SYNC_IND;
-	pdu->rfu = 0U;
-	pdu->chan_sel = 0U;
-
-	pdu->tx_addr = 0U;
-	pdu->rx_addr = 0U;
-
-	com_hdr = &pdu->adv_ext_ind;
-	/* Non-connectable and Non-scannable adv mode */
-	com_hdr->adv_mode = 0U;
-
-	ext_hdr = &com_hdr->ext_hdr;
-	*(uint8_t *)ext_hdr = ext_hdr_flags;
-	dptr = ext_hdr->data;
-
-	LL_ASSERT(!(ext_hdr_flags & (ULL_ADV_PDU_HDR_FIELD_ADVA | ULL_ADV_PDU_HDR_FIELD_TARGETA |
-#if !defined(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)
-				     ULL_ADV_PDU_HDR_FIELD_ADI |
-#endif /* CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT */
-				     ULL_ADV_PDU_HDR_FIELD_SYNC_INFO)));
-
-	if (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) {
-		dptr += sizeof(struct pdu_cte_info);
-	}
-	if (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_AUX_PTR) {
-		dptr += sizeof(struct pdu_adv_aux_ptr);
-	}
-	if (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_TX_POWER) {
-		dptr += sizeof(uint8_t);
-	}
-	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) &&
-	    (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_ADI)) {
-		dptr += sizeof(struct pdu_adv_adi);
-	}
-
-	/* Calc tertiary PDU len */
-	len = ull_adv_aux_hdr_len_calc(com_hdr, &dptr);
-	ull_adv_aux_hdr_len_fill(com_hdr, len);
-
-	pdu->len = len;
-}
-
-#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
-uint8_t ull_adv_sync_pdu_cte_info_set(struct pdu_adv *pdu, const struct pdu_cte_info *cte_info)
-{
-	struct pdu_adv_com_ext_adv *com_hdr;
-	struct pdu_adv_ext_hdr *ext_hdr;
-	uint8_t *dptr;
-
-	com_hdr = &pdu->adv_ext_ind;
-	ext_hdr = &com_hdr->ext_hdr;
-	dptr = ext_hdr->data;
-
-	/* Periodic adv PDUs do not have AdvA/TargetA */
-	LL_ASSERT(!ext_hdr->adv_addr);
-	LL_ASSERT(!ext_hdr->tgt_addr);
-
-	if (ext_hdr->cte_info) {
-		(void)memcpy(dptr, cte_info, sizeof(*cte_info));
-	}
-
-	return 0;
-}
-#endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK */
-
 uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 {
 	void *extra_data_prev, *extra_data;
@@ -933,6 +861,55 @@ void ull_adv_sync_offset_get(struct ll_adv_set *adv)
 	LL_ASSERT(!ret);
 }
 
+void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags)
+{
+	struct pdu_adv_com_ext_adv *com_hdr;
+	struct pdu_adv_ext_hdr *ext_hdr;
+	uint8_t *dptr;
+	uint8_t len;
+
+	pdu->type = PDU_ADV_TYPE_AUX_SYNC_IND;
+	pdu->rfu = 0U;
+	pdu->chan_sel = 0U;
+
+	pdu->tx_addr = 0U;
+	pdu->rx_addr = 0U;
+
+	com_hdr = &pdu->adv_ext_ind;
+	/* Non-connectable and Non-scannable adv mode */
+	com_hdr->adv_mode = 0U;
+
+	ext_hdr = &com_hdr->ext_hdr;
+	*(uint8_t *)ext_hdr = ext_hdr_flags;
+	dptr = ext_hdr->data;
+
+	LL_ASSERT(!(ext_hdr_flags & (ULL_ADV_PDU_HDR_FIELD_ADVA | ULL_ADV_PDU_HDR_FIELD_TARGETA |
+#if !defined(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)
+				     ULL_ADV_PDU_HDR_FIELD_ADI |
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT */
+				     ULL_ADV_PDU_HDR_FIELD_SYNC_INFO)));
+
+	if (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) {
+		dptr += sizeof(struct pdu_cte_info);
+	}
+	if (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_AUX_PTR) {
+		dptr += sizeof(struct pdu_adv_aux_ptr);
+	}
+	if (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_TX_POWER) {
+		dptr += sizeof(uint8_t);
+	}
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) &&
+	    (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_ADI)) {
+		dptr += sizeof(struct pdu_adv_adi);
+	}
+
+	/* Calc tertiary PDU len */
+	len = ull_adv_aux_hdr_len_calc(com_hdr, &dptr);
+	ull_adv_aux_hdr_len_fill(com_hdr, len);
+
+	pdu->len = len;
+}
+
 uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
 			       enum ull_adv_pdu_extra_data_flag extra_data_flag,
 			       struct pdu_adv **ter_pdu_prev, struct pdu_adv **ter_pdu_new,
@@ -1316,6 +1293,29 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
+uint8_t ull_adv_sync_pdu_cte_info_set(struct pdu_adv *pdu, const struct pdu_cte_info *cte_info)
+{
+	struct pdu_adv_com_ext_adv *com_hdr;
+	struct pdu_adv_ext_hdr *ext_hdr;
+	uint8_t *dptr;
+
+	com_hdr = &pdu->adv_ext_ind;
+	ext_hdr = &com_hdr->ext_hdr;
+	dptr = ext_hdr->data;
+
+	/* Periodic adv PDUs do not have AdvA/TargetA */
+	LL_ASSERT(!ext_hdr->adv_addr);
+	LL_ASSERT(!ext_hdr->tgt_addr);
+
+	if (ext_hdr->cte_info) {
+		(void)memcpy(dptr, cte_info, sizeof(*cte_info));
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK */
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 /* @brief Set or clear fields in extended advertising header and store
