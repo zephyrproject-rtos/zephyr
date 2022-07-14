@@ -9,12 +9,6 @@ menuconfig IEEE802154_CC2520
 
 if IEEE802154_CC2520
 
-config IEEE802154_CC2520_DRV_NAME
-	string "TI CC2520 Driver's name"
-	default "cc2520"
-	help
-	  This option sets the driver name
-
 config IEEE802154_CC2520_RX_STACK_SIZE
 	int "Driver's internal RX thread stack size"
 	default 800
