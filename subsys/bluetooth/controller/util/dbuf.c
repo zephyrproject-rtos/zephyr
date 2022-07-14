@@ -7,8 +7,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include <soc.h>
-
 #include "hal/cpu.h"
 
 #include "util/util.h"

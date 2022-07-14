@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
 /**
  * @brief   Element of a memory-queue
  * @details Elements form a linked list, and as payload carries a pointer
