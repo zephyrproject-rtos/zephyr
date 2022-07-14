@@ -9,7 +9,7 @@
 
 #define CPU_RESET_REASON RTC_SW_CPU_RESET
 
-#ifdef CONFIG_SOC_ESP32
+#if defined(CONFIG_SOC_ESP32) || defined(CONFIG_SOC_ESP32_NET)
 #define DT_CPU_COMPAT cdns_tensilica_xtensa_lx6
 #undef CPU_RESET_REASON
 #define CPU_RESET_REASON SW_CPU_RESET
@@ -46,7 +46,7 @@ struct esp32_clock_config {
 };
 
 static uint8_t const xtal_freq[] = {
-#ifdef CONFIG_SOC_ESP32
+#if defined(CONFIG_SOC_ESP32) || defined(CONFIG_SOC_ESP32_NET)
 	[ESP32_CLK_XTAL_24M] = 24,
 	[ESP32_CLK_XTAL_26M] = 26,
 	[ESP32_CLK_XTAL_40M] = 40,
