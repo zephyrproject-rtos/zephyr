@@ -24,3 +24,9 @@ properties:
         - "DX0E"
         - "DX0F"
         - "DX0G"
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
