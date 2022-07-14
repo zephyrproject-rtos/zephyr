@@ -2293,6 +2293,48 @@ function(zephyr_string)
 endfunction()
 
 # Usage:
+#   zephyr_get(<variable>)
+#
+# Return the value of <variable> as local scoped variable of same name.
+#
+# zephyr_get() is a common function to provide a uniform way of supporting
+# build settings that can be set from CMakeLists.txt, CMake cache, or in
+# environment.
+#
+# The order of precedence for variables defined in multiple scopes:
+# - CMake cache, set by `-D<var>=<value>` or `set(<var> <val> CACHE ...)
+# - Environment
+# - Locally in CMakeLists.txt before 'find_package(Zephyr)'
+#
+# For example, it ZEPHYR_TOOLCHAIN_VARIANT is set in environment but locally
+# overridden with `-DZEPHYR_TOOLCHAIN_VARIANT=<val>` for local build, then the
+# value from the cache is returned.
+function(zephyr_get variable)
+  cmake_parse_arguments(GET_VAR "" "" "" ${ARGN})
+
+  if(DEFINED CACHE{${variable}})
+    set(${variable} $CACHE{${variable}} PARENT_SCOPE)
+  elseif(DEFINED ENV{${variable}})
+    set(${variable} $ENV{${variable}} PARENT_SCOPE)
+    # Set the environment variable in CMake cache, so that a build invocation
+    # triggering a CMake rerun doesn't rely on the environment variable still
+    # being available / have identical value.
+    set(${variable} $ENV{${variable}} CACHE INTERNAL "")
+
+    if(DEFINED ${variable} AND NOT "${${variable}}" STREQUAL "$ENV{${variable}}")
+      # Variable exists as a local scoped variable, defined in a CMakeLists.txt
+      # file, however it is also set in environment.
+      # This might be a surprise to the user, so warn about it.
+      message(WARNING "environment variable '${variable}' is hidding local "
+                      "variable of same name.\n"
+                      "Environment value (in use): $ENV{${variable}}\n"
+                      "Local scope value (hidden): ${${variable}}\n"
+      )
+    endif()
+  endif()
+endfunction(zephyr_get variable)
+
+# Usage:
 #   zephyr_check_cache(<variable> [REQUIRED])
 #
 # Check the current CMake cache for <variable> and warn the user if the value
@@ -2360,13 +2402,13 @@ function(zephyr_check_cache variable)
 
   set(app_cmake_lists ${${variable}})
   if(cached_value STREQUAL ${variable})
-    # The app build scripts did not set a default, The BOARD we are
+    # The app build scripts did not set a default, The variable we are
     # reading is the cached value from the CLI
     unset(app_cmake_lists)
   endif()
 
   if(DEFINED CACHED_${variable})
-    # Warn the user if it looks like he is trying to change the board
+    # Warn the user if it looks like he is trying to change the variable
     # without cleaning first
     if(cli_argument)
       if(NOT ((CACHED_${variable} STREQUAL cli_argument) OR (${variable}_DEPRECATED STREQUAL cli_argument)))
@@ -2379,22 +2421,18 @@ function(zephyr_check_cache variable)
 
     if(CACHED_${variable})
       set(${variable} ${CACHED_${variable}} PARENT_SCOPE)
+      set(${variable} ${CACHED_${variable}})
       # This resets the user provided value with previous (working) value.
       set(${variable} ${CACHED_${variable}} CACHE STRING "Selected ${variable_text}" FORCE)
     else()
       unset(${variable} PARENT_SCOPE)
       unset(${variable} CACHE)
     endif()
-  elseif(cli_argument)
-    set(${variable} ${cli_argument})
+  else()
+    zephyr_get(${variable})
+  endif()
 
-  elseif(DEFINED ENV{${variable}})
-    set(${variable} $ENV{${variable}})
-
-  elseif(app_cmake_lists)
-    set(${variable} ${app_cmake_lists})
-
-  elseif(${CACHE_VAR_REQUIRED})
+  if(${CACHE_VAR_REQUIRED} AND NOT DEFINED ${variable})
     message(FATAL_ERROR "${variable} is not being defined on the CMake command-line in the environment or by the app.")
   endif()
 
