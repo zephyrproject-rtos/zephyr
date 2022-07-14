@@ -44,7 +44,9 @@ struct gd7965_config {
 	uint16_t width;
 
 	uint8_t cdi;
+	bool override_cdi;
 	uint8_t tcon;
+	bool override_tcon;
 	struct gd7965_dt_array softstart;
 	struct gd7965_dt_array pwr;
 };
@@ -135,6 +137,22 @@ static inline int gd7965_write_cmd_pattern(const struct device *dev,
 spi_out:
 	spi_release_dt(&config->bus);
 	return err;
+}
+
+static inline int gd7965_write_cmd_uint8(const struct device *dev, uint8_t cmd,
+					 uint8_t data)
+{
+	return gd7965_write_cmd(dev, cmd, &data, 1);
+}
+
+static inline int gd7965_write_array_opt(const struct device *dev, uint8_t cmd,
+					 const struct gd7965_dt_array *array)
+{
+	if (array->len && array->data) {
+		return gd7965_write_cmd(dev, cmd, array->data, array->len);
+	} else {
+		return 0;
+	}
 }
 
 static inline void gd7965_busy_wait(const struct device *dev)
@@ -234,11 +252,13 @@ static int gd7965_write(const struct device *dev, const uint16_t x, const uint16
 		return -EIO;
 	}
 
-	/* Disable boarder output */
-	data->bdd_polarity |= GD7965_CDI_BDZ;
-	if (gd7965_write_cmd(dev, GD7965_CMD_CDI,
-			     &data->bdd_polarity, sizeof(data->bdd_polarity))) {
-		return -EIO;
+	if (config->override_cdi) {
+		/* Disable boarder output */
+		data->bdd_polarity |= GD7965_CDI_BDZ;
+		if (gd7965_write_cmd_uint8(dev, GD7965_CMD_CDI,
+					   data->bdd_polarity)) {
+			return -EIO;
+		}
 	}
 
 	if (gd7965_write_cmd(dev, GD7965_CMD_DTM2, (uint8_t *)buf, buf_len)) {
@@ -252,11 +272,13 @@ static int gd7965_write(const struct device *dev, const uint16_t x, const uint16
 		}
 	}
 
-	/* Enable boarder output */
-	data->bdd_polarity &= ~GD7965_CDI_BDZ;
-	if (gd7965_write_cmd(dev, GD7965_CMD_CDI,
-			     &data->bdd_polarity, sizeof(data->bdd_polarity))) {
-		return -EIO;
+	if (config->override_cdi) {
+		/* Enable boarder output */
+		data->bdd_polarity &= ~GD7965_CDI_BDZ;
+		if (gd7965_write_cmd_uint8(dev, GD7965_CMD_CDI,
+					   data->bdd_polarity)) {
+			return -EIO;
+		}
 	}
 
 	if (gd7965_write_cmd(dev, GD7965_CMD_PTOUT, NULL, 0)) {
@@ -352,6 +374,12 @@ static int gd7965_controller_init(const struct device *dev)
 {
 	const struct gd7965_config *config = dev->config;
 	struct gd7965_data *data = dev->data;
+	const uint8_t psr_kw =
+		GD7965_PSR_KW_R |
+		GD7965_PSR_UD |
+		GD7965_PSR_SHL |
+		GD7965_PSR_SHD |
+		GD7965_PSR_RST;
 	uint8_t tmp[GD7965_TRES_REG_LENGTH];
 
 	data->blanking_on = true;
@@ -364,13 +392,11 @@ static int gd7965_controller_init(const struct device *dev)
 
 	LOG_DBG("Initialize GD7965 controller");
 
-	if (gd7965_write_cmd(dev, GD7965_CMD_PWR, config->pwr.data,
-			     config->pwr.len)) {
+	if (gd7965_write_array_opt(dev, GD7965_CMD_PWR, &config->pwr)) {
 		return -EIO;
 	}
 
-	if (gd7965_write_cmd(dev, GD7965_CMD_BTST,
-			     config->softstart.data, config->softstart.len)) {
+	if (gd7965_write_array_opt(dev, GD7965_CMD_BTST, &config->softstart)) {
 		return -EIO;
 	}
 
@@ -383,12 +409,7 @@ static int gd7965_controller_init(const struct device *dev)
 	gd7965_busy_wait(dev);
 
 	/* Panel settings, KW mode */
-	tmp[0] = GD7965_PSR_KW_R |
-		 GD7965_PSR_UD |
-		 GD7965_PSR_SHL |
-		 GD7965_PSR_SHD |
-		 GD7965_PSR_RST;
-	if (gd7965_write_cmd(dev, GD7965_CMD_PSR, tmp, 1)) {
+	if (gd7965_write_cmd_uint8(dev, GD7965_CMD_PSR, psr_kw)) {
 		return -EIO;
 	}
 
@@ -403,27 +424,31 @@ static int gd7965_controller_init(const struct device *dev)
 
 	data->bdd_polarity = GD7965_CDI_BDV1 |
 		       GD7965_CDI_N2OCP | GD7965_CDI_DDX0;
-	tmp[GD7965_CDI_BDZ_DDX_IDX] = data->bdd_polarity;
-	tmp[GD7965_CDI_CDI_IDX] = config->cdi;
-	LOG_HEXDUMP_DBG(tmp, GD7965_CDI_REG_LENGTH, "CDI");
-	if (gd7965_write_cmd(dev, GD7965_CMD_CDI, tmp,
-			     GD7965_CDI_REG_LENGTH)) {
-		return -EIO;
+	if (config->override_cdi) {
+		tmp[GD7965_CDI_BDZ_DDX_IDX] = data->bdd_polarity;
+		tmp[GD7965_CDI_CDI_IDX] = config->cdi;
+		LOG_HEXDUMP_DBG(tmp, GD7965_CDI_REG_LENGTH, "CDI");
+		if (gd7965_write_cmd(dev, GD7965_CMD_CDI, tmp,
+				     GD7965_CDI_REG_LENGTH)) {
+			return -EIO;
+		}
 	}
 
-	tmp[0] = config->tcon;
-	if (gd7965_write_cmd(dev, GD7965_CMD_TCON, tmp, 1)) {
-		return -EIO;
+	if (config->override_tcon) {
+		if (gd7965_write_cmd_uint8(dev, GD7965_CMD_TCON,
+					   config->tcon)) {
+			return -EIO;
+		}
 	}
 
 	/* Enable Auto Sequence */
-	tmp[0] = GD7965_AUTO_PON_DRF_POF;
-	if (gd7965_write_cmd(dev, GD7965_CMD_AUTO, tmp, 1)) {
+	if (gd7965_write_cmd_uint8(dev, GD7965_CMD_AUTO,
+				   GD7965_AUTO_PON_DRF_POF)) {
 		return -EIO;
 	}
 
 	if (gd7965_clear_and_write_buffer(dev, 0xff, false)) {
-		return -1;
+		return -EIO;
 	}
 
 	return 0;
@@ -491,8 +516,8 @@ static struct display_driver_api gd7965_driver_api = {
 	}
 
 #define GD7965_DEFINE(n)						\
-	GD7965_MAKE_INST_ARRAY(n, softstart);				\
-	GD7965_MAKE_INST_ARRAY(n, pwr);					\
+	GD7965_MAKE_INST_ARRAY_OPT(n, softstart);			\
+	GD7965_MAKE_INST_ARRAY_OPT(n, pwr);				\
 									\
 	static const struct gd7965_config gd7965_cfg_##n = {		\
 		.bus = SPI_DT_SPEC_INST_GET(n,				\
@@ -506,8 +531,10 @@ static struct display_driver_api gd7965_driver_api = {
 		.height = DT_INST_PROP(n, height),			\
 		.width = DT_INST_PROP(n, width),			\
 									\
-		.cdi = DT_INST_PROP(n, cdi),				\
-		.tcon = DT_INST_PROP(n, tcon),				\
+		.cdi = DT_INST_PROP_OR(n, cdi, 0),			\
+		.override_cdi = DT_INST_NODE_HAS_PROP(n, cdi),		\
+		.tcon = DT_INST_PROP_OR(n, tcon, 0),			\
+		.override_tcon = DT_INST_NODE_HAS_PROP(n, tcon),	\
 		.softstart = GD7965_ASSIGN_ARRAY(n, softstart),		\
 		.pwr = GD7965_ASSIGN_ARRAY(n, pwr),			\
 	};								\
