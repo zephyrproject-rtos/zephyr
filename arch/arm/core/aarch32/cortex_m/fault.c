@@ -98,6 +98,16 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  */
 #define ADDITIONAL_STATE_CONTEXT_WORDS 10
 
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+/* helpers to access memory/bus/usage faults */
+#define SCB_CFSR_MEMFAULTSTR \
+	((SCB->CFSR & SCB_CFSR_MEMFAULTSR_Msk) >> SCB_CFSR_MEMFAULTSR_Pos)
+#define SCB_CFSR_BUSFAULTSTR \
+	((SCB->CFSR & SCB_CFSR_BUSFAULTSR_Msk) >> SCB_CFSR_BUSFAULTSR_Pos)
+#define SCB_CFSR_USGFAULTSTR \
+	((SCB->CFSR & SCB_CFSR_USGFAULTSR_Msk) >> SCB_CFSR_USGFAULTSR_Pos)
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
 /**
  *
  * Dump information regarding fault (FAULT_DUMP == 1)
@@ -136,8 +146,8 @@ static void fault_show(const z_arch_esf_t *esf, int fault)
 	PR_EXC("Fault! EXC #%d", fault);
 
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	PR_EXC("MMFSR: 0x%x, BFSR: 0x%x, UFSR: 0x%x",
-	       SCB_MMFSR, SCB_BFSR, SCB_UFSR);
+	PR_EXC("MMFSR: 0x%x, BFSR: 0x%x, UFSR: 0x%x", SCB_CFSR_MEMFAULTSR,
+	       SCB_CFSR_BUSFAULTSR, SCB_CFSR_USGFAULTSR);
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 	PR_EXC("SFSR: 0x%x", SAU->SFSR);
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
@@ -703,11 +713,11 @@ static uint32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
 		if (z_arm_is_synchronous_svc(esf)) {
 			PR_EXC("ARCH_EXCEPT with reason %x\n", esf->basic.r0);
 			reason = esf->basic.r0;
-		} else if (SCB_MMFSR != 0) {
+		} else if ((SCB->CFSR & SCB_CFSR_MEMFAULTSR_Msk) != 0) {
 			reason = mem_manage_fault(esf, 1, recoverable);
-		} else if (SCB_BFSR != 0) {
+		} else if ((SCB->CFSR & SCB_CFSR_BUSFAULTSR_Msk) != 0) {
 			reason = bus_fault(esf, 1, recoverable);
-		} else if (SCB_UFSR != 0) {
+		} else if ((SCB->CFSR & SCB_CFSR_USGFAULTSR_Msk) != 0) {
 			reason = usage_fault(esf);
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 		} else if (SAU->SFSR != 0) {
