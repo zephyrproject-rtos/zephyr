@@ -227,15 +227,16 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 		x, y, desc->pitch, desc->width, desc->height, buf_len);
 
 #if defined(CONFIG_SSD1306_DEFAULT)
+	uint8_t x_offset = x + DT_INST_PROP(0, segment_offset);
 	uint8_t cmd_buf[] = {
 		SSD1306_SET_MEM_ADDRESSING_MODE,
 		SSD1306_ADDRESSING_MODE,
 		SSD1306_SET_COLUMN_ADDRESS,
-		x,
-		(x + desc->width - 1),
+		x_offset,
+		(x_offset + desc->width - 1),
 		SSD1306_SET_PAGE_ADDRESS,
-		y/8,
-		((y + desc->height)/8 - 1)
+		((y)/8) + DT_INST_PROP(0, page_offset),
+		(((y + desc->height)/8 - 1)) + DT_INST_PROP(0, page_offset)
 	};
 
 	if (ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true)) {
