@@ -59,7 +59,7 @@ struct gd7965_data {
 };
 
 static inline int gd7965_write_cmd(const struct device *dev, uint8_t cmd,
-				   uint8_t *data, size_t len)
+				   const uint8_t *data, size_t len)
 {
 	const struct gd7965_config *config = dev->config;
 	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
@@ -77,7 +77,7 @@ static inline int gd7965_write_cmd(const struct device *dev, uint8_t cmd,
 	}
 
 	if (data != NULL) {
-		buf.buf = data;
+		buf.buf = (void *)data;
 		buf.len = len;
 
 		err = gpio_pin_set_dt(&config->dc_gpio, 0);
@@ -215,7 +215,13 @@ static int gd7965_write(const struct device *dev, const uint16_t x, const uint16
 
 	uint16_t x_end_idx = x + desc->width - 1;
 	uint16_t y_end_idx = y + desc->height - 1;
-	uint8_t ptl[GD7965_PTL_REG_LENGTH] = {0};
+	const struct gd7965_ptl ptl = {
+		.hrst = sys_cpu_to_be16(x),
+		.hred = sys_cpu_to_be16(x_end_idx),
+		.vrst = sys_cpu_to_be16(y),
+		.vred = sys_cpu_to_be16(y_end_idx),
+		.flags = GD7965_PTL_FLAG_PT_SCAN,
+	};
 	size_t buf_len;
 
 	LOG_DBG("x %u, y %u, height %u, width %u, pitch %u",
@@ -236,19 +242,15 @@ static int gd7965_write(const struct device *dev, const uint16_t x, const uint16
 	}
 
 	/* Setup Partial Window and enable Partial Mode */
-	sys_put_be16(x, &ptl[GD7965_PTL_HRST_IDX]);
-	sys_put_be16(x_end_idx, &ptl[GD7965_PTL_HRED_IDX]);
-	sys_put_be16(y, &ptl[GD7965_PTL_VRST_IDX]);
-	sys_put_be16(y_end_idx, &ptl[GD7965_PTL_VRED_IDX]);
-	ptl[sizeof(ptl) - 1] = GD7965_PTL_PT_SCAN;
-	LOG_HEXDUMP_DBG(ptl, sizeof(ptl), "ptl");
+	LOG_HEXDUMP_DBG(&ptl, sizeof(ptl), "ptl");
 
 	gd7965_busy_wait(dev);
 	if (gd7965_write_cmd(dev, GD7965_CMD_PTIN, NULL, 0)) {
 		return -EIO;
 	}
 
-	if (gd7965_write_cmd(dev, GD7965_CMD_PTL, ptl, sizeof(ptl))) {
+	if (gd7965_write_cmd(dev, GD7965_CMD_PTL,
+			     (const void *)&ptl, sizeof(ptl))) {
 		return -EIO;
 	}
 
@@ -380,7 +382,11 @@ static int gd7965_controller_init(const struct device *dev)
 		GD7965_PSR_SHL |
 		GD7965_PSR_SHD |
 		GD7965_PSR_RST;
-	uint8_t tmp[GD7965_TRES_REG_LENGTH];
+	const struct gd7965_tres tres = {
+		.hres = sys_cpu_to_be16(config->width),
+		.vres = sys_cpu_to_be16(config->height),
+	};
+	uint8_t cdi[GD7965_CDI_REG_LENGTH];
 
 	data->blanking_on = true;
 
@@ -414,22 +420,20 @@ static int gd7965_controller_init(const struct device *dev)
 	}
 
 	/* Set panel resolution */
-	sys_put_be16(config->width, &tmp[GD7965_TRES_HRES_IDX]);
-	sys_put_be16(config->height, &tmp[GD7965_TRES_VRES_IDX]);
-	LOG_HEXDUMP_DBG(tmp, sizeof(tmp), "TRES");
+	LOG_HEXDUMP_DBG(&tres, sizeof(tres), "TRES");
 	if (gd7965_write_cmd(dev, GD7965_CMD_TRES,
-			     tmp, GD7965_TRES_REG_LENGTH)) {
+			     (const void *)&tres, sizeof(tres))) {
 		return -EIO;
 	}
 
 	data->bdd_polarity = GD7965_CDI_BDV1 |
 		       GD7965_CDI_N2OCP | GD7965_CDI_DDX0;
 	if (config->override_cdi) {
-		tmp[GD7965_CDI_BDZ_DDX_IDX] = data->bdd_polarity;
-		tmp[GD7965_CDI_CDI_IDX] = config->cdi;
-		LOG_HEXDUMP_DBG(tmp, GD7965_CDI_REG_LENGTH, "CDI");
-		if (gd7965_write_cmd(dev, GD7965_CMD_CDI, tmp,
-				     GD7965_CDI_REG_LENGTH)) {
+		cdi[GD7965_CDI_BDZ_DDX_IDX] = data->bdd_polarity;
+		cdi[GD7965_CDI_CDI_IDX] = config->cdi;
+		LOG_HEXDUMP_DBG(cdi, sizeof(cdi), "CDI");
+		if (gd7965_write_cmd(dev, GD7965_CMD_CDI,
+				     cdi, sizeof(cdi))) {
 			return -EIO;
 		}
 	}
