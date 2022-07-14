@@ -58,7 +58,7 @@ __asm__(".pushsection .boot_entry.text, \"ax\" \n\t"
  * enter C code successfully, and calls boot_core0()
  */
 #define STRINGIFY_MACRO(x) Z_STRINGIFY(x)
-#define IMRSTACK STRINGIFY_MACRO(CONFIG_IMR_MANIFEST_ADDR)
+#define IMRSTACK STRINGIFY_MACRO(IMR_BOOT_LDR_MANIFEST_BASE)
 __asm__(".section .imr.z_boot_asm_entry, \"x\" \n\t"
 	".align 4                   \n\t"
 	"z_boot_asm_entry:          \n\t"
@@ -110,7 +110,7 @@ static __imr void parse_module(struct sof_man_fw_header *hdr,
 __imr void parse_manifest(void)
 {
 	struct sof_man_fw_desc *desc =
-		(struct sof_man_fw_desc *)CONFIG_IMR_MANIFEST_ADDR;
+		(struct sof_man_fw_desc *)IMR_BOOT_LDR_MANIFEST_BASE;
 	struct sof_man_fw_header *hdr = &desc->header;
 	struct sof_man_module *mod;
 	int i;
