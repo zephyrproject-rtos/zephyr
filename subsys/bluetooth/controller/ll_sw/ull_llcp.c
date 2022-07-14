@@ -1570,6 +1570,23 @@ void ull_cp_tx_ack(struct ll_conn *conn, struct node_tx *tx)
 	}
 }
 
+void ull_cp_tx_ntf(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_lr_peek(conn);
+	if (ctx) {
+		/* TX notifications towards Host */
+		llcp_lr_tx_ntf(conn, ctx);
+	}
+
+	ctx = llcp_rr_peek(conn);
+	if (ctx) {
+		/* TX notifications towards Host */
+		llcp_rr_tx_ntf(conn, ctx);
+	}
+}
+
 void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 {
 	struct proc_ctx *ctx_l;
