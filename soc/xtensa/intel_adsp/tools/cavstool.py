@@ -37,9 +37,8 @@ PACKET_HEADER_FORMAT_FW = 'I 42s 32s'
 HEADER_SZ = 78
 
 
-logging.basicConfig()
+logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("cavs-fw")
-log.setLevel(logging.INFO)
 
 PAGESZ = 4096
 HUGEPAGESZ = 2 * 1024 * 1024
@@ -168,12 +167,12 @@ class HDAStream:
         return (mem, hugef, phys_addr + bdl_off, phys_addr+dpib_off, 2)
 
     def debug(self):
-        log.info("HDA %d: PPROC %d, CTL 0x%x, LPIB 0x%x, BDPU 0x%x, BDPL 0x%x, CBL 0x%x, LVI 0x%x",
+        log.debug("HDA %d: PPROC %d, CTL 0x%x, LPIB 0x%x, BDPU 0x%x, BDPL 0x%x, CBL 0x%x, LVI 0x%x",
                  self.stream_id, (hda.PPCTL >> self.stream_id) & 1, self.regs.CTL, self.regs.LPIB, self.regs.BDPU,
                  self.regs.BDPL, self.regs.CBL, self.regs.LVI)
-        log.info("    FIFOW %d, FIFOS %d, FMT %x, FIFOL %d, DPIB %d, EFIFOS %d",
+        log.debug("    FIFOW %d, FIFOS %d, FMT %x, FIFOL %d, DPIB %d, EFIFOS %d",
                  self.regs.FIFOW & 0x7, self.regs.FIFOS, self.regs.FMT, self.regs.FIFOL, self.dbg0.DPIB, self.dbg0.EFIFOS)
-        log.info("    status: FIFORDY %d, DESE %d, FIFOE %d, BCIS %d",
+        log.debug("    status: FIFORDY %d, DESE %d, FIFOE %d, BCIS %d",
                  (self.regs.STS >> 5) & 1, (self.regs.STS >> 4) & 1, (self.regs.STS >> 3) & 1, (self.regs.STS >> 2) & 1)
 
     def reset(self):
@@ -850,6 +849,8 @@ def get_host_ip():
 ap = argparse.ArgumentParser(description="DSP loader/logger tool")
 ap.add_argument("-q", "--quiet", action="store_true",
                 help="No loader output, just DSP logging")
+ap.add_argument("-v", "--verbose", action="store_true",
+                help="More loader output, DEBUG logging level")
 ap.add_argument("-l", "--log-only", action="store_true",
                 help="Don't load firmware, just show log output")
 ap.add_argument("-n", "--no-history", action="store_true",
@@ -862,6 +863,8 @@ args = ap.parse_args()
 
 if args.quiet:
     log.setLevel(logging.WARN)
+elif args.verbose:
+    log.setLevel(logging.DEBUG)
 
 if args.fw_file:
     fw_file = args.fw_file
