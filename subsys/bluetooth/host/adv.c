@@ -1748,6 +1748,11 @@ int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
 		return -EINVAL;
 	}
 
+	if (!BT_FEAT_LE_PER_ADV_ADI_SUPP(bt_dev.le.features) &&
+	    (param->options & BT_LE_PER_ADV_OPT_INCLUDE_ADI)) {
+		return -ENOTSUP;
+	}
+
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_PARAM, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
@@ -1768,6 +1773,12 @@ int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_PARAM, buf, NULL);
 	if (err) {
 		return err;
+	}
+
+	if (param->options & BT_LE_PER_ADV_OPT_INCLUDE_ADI) {
+		atomic_set_bit(adv->flags, BT_PER_ADV_INCLUDE_ADI);
+	} else {
+		atomic_clear_bit(adv->flags, BT_PER_ADV_INCLUDE_ADI);
 	}
 
 	atomic_set_bit(adv->flags, BT_PER_ADV_PARAMS_SET);
@@ -1836,7 +1847,16 @@ static int bt_le_per_adv_enable(struct bt_le_ext_adv *adv, bool enable)
 	(void)memset(cp, 0, sizeof(*cp));
 
 	cp->handle = adv->handle;
-	cp->enable = enable ? 1 : 0;
+
+	if (enable) {
+		cp->enable = BT_HCI_LE_SET_PER_ADV_ENABLE_ENABLE;
+
+		if (atomic_test_bit(adv->flags, BT_PER_ADV_INCLUDE_ADI)) {
+			cp->enable |= BT_HCI_LE_SET_PER_ADV_ENABLE_ADI;
+		}
+	} else {
+		cp->enable = 0U;
+	}
 
 	bt_hci_cmd_state_set_init(buf, &state, adv->flags,
 				  BT_PER_ADV_ENABLED, enable);
