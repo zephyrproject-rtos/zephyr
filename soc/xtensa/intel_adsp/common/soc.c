@@ -66,7 +66,7 @@ static __imr void power_init(void)
 	 * Disable Tensilica Core Prevent Local Clock Gating (Core 1)
 	 *   - Disabling "prevent clock gating" means allowing clock gating
 	 */
-	CAVS_SHIM.clkctl = CAVS15_CLKCTL_LMPCS;
+	CAVS_SHIM.clkctl = CAVS_CLKCTL_LMPCS;
 
 	/* Rewrite the low power sequencing control bits */
 	CAVS_SHIM.lpsctl = CAVS_SHIM.lpsctl;

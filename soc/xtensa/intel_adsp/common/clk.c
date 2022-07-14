@@ -21,9 +21,9 @@ static void select_cpu_clock_hw(uint32_t freq)
 {
 	uint8_t cpu_id = _current_cpu->id;
 	uint32_t enc = cavs_clock_freq_enc[freq] << (8 + cpu_id * 2);
-	uint32_t mask = CAVS15_CLKCTL_DPCS_MASK(cpu_id);
+	uint32_t mask = CAVS_CLKCTL_DPCS_MASK(cpu_id);
 
-	CAVS_SHIM_CLKCTL &= ~CAVS15_CLKCTL_HDCS;
+	CAVS_SHIM_CLKCTL &= ~CAVS_CLKCTL_HDCS;
 	CAVS_SHIM_CLKCTL = (CAVS_SHIM_CLKCTL & ~mask) | (enc & mask);
 }
 #else
