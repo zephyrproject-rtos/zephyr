@@ -192,7 +192,7 @@
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
-	sdhc@0 {
+	sdhc0: sdhc@0 {
 		reg = <0>;
 		compatible = "zephyr,sdhc-spi-slot";
 		status = "okay";
