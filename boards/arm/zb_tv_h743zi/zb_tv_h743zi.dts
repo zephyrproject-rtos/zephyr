@@ -14,8 +14,8 @@
 	compatible = "st,stm32h743zi-zb_tv";
 
 	chosen {
-		//zephyr,console = &usart3;
-		zephyr,console = &cdc_acm_uart0;
+		zephyr,console = &usart3;
+		//zephyr,console = &cdc_acm_uart0;
 		zephyr,shell-uart = &usart3;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -73,28 +73,24 @@
 	};
 };
 
-&clk_hsi{
-    hsi-div = <1>;
-	status = "okay";
-};
-
 zephyr_udc0: &usbotg_hs {
 	pinctrl-0 = <&usb_otg_hs_dm_pb14 &usb_otg_hs_dp_pb15>;
     pinctrl-names = "default";
 	status = "okay";
 };
 
+/*
 &zephyr_udc0 {
 	cdc_acm_uart0: cdc_acm_uart0 {
 		compatible = "zephyr,cdc-acm-uart";
 		label = "CDC_ACM_0";
 	};
 };
-
+*/
 /*
 &clk_hse {
 	hse-bypass;
-	//clock-frequency = <DT_FREQ_M(8)>;
+	clock-frequency = <DT_FREQ_M(8)>;
 	status = "okay";
 };
 
@@ -109,21 +105,36 @@ zephyr_udc0: &usbotg_hs {
 };
 */
 
+&clk_hsi{
+    hsi-div = <1>;
+	status = "okay";
+};
+
 &pll {
-	div-m = <8>;
-	mul-n = <64>;
-	div-p = <2>;
+	div-m = <32>;
+	mul-n = <256>;
+	div-p = <4>;
 	div-q = <2>;
 	div-r = <2>;
 	clocks = <&clk_hsi>;
 	status = "okay";
 };
 
+&pll3 {
+	div-m = <4>;
+	mul-n = <16>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <12>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(96)>;
+	clock-frequency = <DT_FREQ_M(128)>;
 	d1cpre = <1>;
-	hpre = <4>;
+	hpre = <2>;
 	d1ppre = <1>;
 	d2ppre1 = <1>;
 	d2ppre2 = <1>;
@@ -341,7 +352,7 @@ zephyr_udc0: &usbotg_hs {
 	status = "okay";
 
 	width = <480>;
-	height = <80>;
+	height = <272>;
 	hsync-pol = <STM32_LTDC_HSPOL_ACTIVE_LOW>;
 	vsync-pol = <STM32_LTDC_VSPOL_ACTIVE_LOW>;
 	de-pol = <STM32_LTDC_DEPOL_ACTIVE_LOW>;

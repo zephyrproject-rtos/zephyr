@@ -301,6 +301,7 @@ static int usb_dc_stm32_clock_enable(void)
 		return -EIO;
 	}
 
+#if !defined(CONFIG_SOC_SERIES_STM32H7X)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc)
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
@@ -309,6 +310,7 @@ static int usb_dc_stm32_clock_enable(void)
 	/* Disable ULPI interface (for external high-speed PHY) clock */
 	LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+#endif
 #endif
 #endif
 
