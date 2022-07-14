@@ -8,7 +8,7 @@
 #include <zephyr/irq_nextlevel.h>
 
 #include <ace_v1x-regs.h>
-#include <cavs-mem.h>
+#include <adsp_memory.h>
 #include <adsp_shim.h>
 #include <cpu_init.h>
 #include <soc.h>

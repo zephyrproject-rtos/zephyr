@@ -33,7 +33,7 @@
 #include <zephyr/sys/mem_blocks.h>
 
 #include <soc.h>
-#include <cavs-mem.h>
+#include <adsp_memory.h>
 
 #include "mm_drv_common.h"
 

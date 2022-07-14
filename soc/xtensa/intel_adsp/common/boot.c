@@ -9,7 +9,7 @@
 #include <soc.h>
 #include <zephyr/arch/xtensa/cache.h>
 #include <adsp_shim.h>
-#include <cavs-mem.h>
+#include <adsp_memory.h>
 #include <cpu_init.h>
 #include "manifest.h"
 

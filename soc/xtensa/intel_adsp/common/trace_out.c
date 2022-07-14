@@ -3,7 +3,7 @@
  */
 #include <zephyr/zephyr.h>
 #include <soc.h>
-#include <cavs-mem.h>
+#include <adsp_memory.h>
 #include <zephyr/sys/winstream.h>
 
 struct k_spinlock trace_lock;
