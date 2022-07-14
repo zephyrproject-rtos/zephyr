@@ -18,7 +18,11 @@
 #include <zephyr/linker/linker-tool.h>
 
 #define RAMABLE_REGION dram0_0_seg
+#ifndef CONFIG_ESP32_NETWORK_CORE
 #define RAMABLE_REGION_1 dram0_1_seg
+#else
+#define RAMABLE_REGION_1 dram0_0_seg
+#endif
 #define RODATA_REGION drom0_0_seg
 #define IRAM_REGION iram0_0_seg
 #define FLASH_CODE_REGION irom0_0_seg
@@ -46,7 +50,13 @@ MEMORY
   mcuboot_hdr (RX): org = 0x0, len = 0x20
   metadata (RX): org = 0x20, len = 0x20
   ROM (RX): org = 0x40, len = ROM_SIZE - 0x40
+
+  #ifdef CONFIG_ESP32_NETWORK_CORE
+  iram0_0_seg(RX): org = 0x40080000, len = 0x10000
+  #else
   iram0_0_seg(RX): org = 0x40080000, len = 0x20000
+  #endif
+
   irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
   /*
    * Following is DRAM memory split with reserved address ranges in ESP32:
@@ -61,7 +71,14 @@ MEMORY
    *  - Utilize available memory regions to full capacity
    */
   dram0_0_seg(RW): org = 0x3FFB0000 + CONFIG_ESP32_BT_RESERVE_DRAM, len = 0x2c200 - CONFIG_ESP32_BT_RESERVE_DRAM
+
+  #ifdef CONFIG_ESP32_NETWORK_CORE
+  dram0_shm0_seg(RW): org = 0x3FFE5230, len = 2K /* shared RAM reserved for IPM */
+  dram0_sem0_seg(RW): org = 0x3FFE5A30, len = 8 /* shared data reserved for IPM data header */
+  dram0_1_seg(RW): org = 0x3FFE5A38, len = 0K /* for AMP builds dram0_1 is reserved for network core */
+  #else
   dram0_1_seg(RW): org = 0x3FFE5230, len = 0x1BCB0 - 0xEE0 /* skip data for APP CPU initialization usage */
+  #endif
 
   /* DROM is the first segment placed in generated binary.
    * MCUboot binary for ESP32 has image header of 0x20 bytes.

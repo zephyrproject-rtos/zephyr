@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@
 
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <zephyr/arch/xtensa/arch.h>
+#include <arch/xtensa/arch.h>
 
 #include <xtensa/core-macros.h>
 #include <esp32/clk.h>
@@ -57,7 +57,6 @@ extern STATUS esp_rom_uart_rx_one_char(uint8_t *chr);
 extern void esp_rom_Cache_Flush(int cpu);
 extern void esp_rom_Cache_Read_Enable(int cpu);
 extern void esp_rom_ets_set_appcpu_boot_addr(void *addr);
-void esp_appcpu_start(void *entry_point);
 
 /* ROM functions which read/write internal i2c control bus for PLL, APLL */
 extern uint8_t esp_rom_i2c_readReg(uint8_t block, uint8_t host_id, uint8_t reg_add);
