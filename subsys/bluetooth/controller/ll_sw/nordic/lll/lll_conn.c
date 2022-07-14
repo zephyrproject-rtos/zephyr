@@ -9,8 +9,6 @@
 #include <stddef.h>
 
 #include <zephyr/toolchain.h>
-#include <soc.h>
-
 #include <zephyr/sys/util.h>
 
 #include "hal/cpu.h"

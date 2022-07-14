@@ -6,7 +6,6 @@
 
 #include <stdint.h>
 
-#include <soc.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "hal/cpu.h"

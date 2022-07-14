@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <soc.h>
 #include <zephyr/device.h>
 
 #include <zephyr/drivers/clock_control.h>

@@ -7,9 +7,6 @@
 #include <stdint.h>
 
 #include <zephyr/toolchain.h>
-
-#include <soc.h>
-
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci.h>
 

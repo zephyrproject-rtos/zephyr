@@ -9,7 +9,6 @@
 
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci.h>
-#include <soc.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"

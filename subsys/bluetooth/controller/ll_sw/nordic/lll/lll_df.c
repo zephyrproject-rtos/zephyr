@@ -5,7 +5,7 @@
  */
 
 #include <stdint.h>
-#include <soc.h>
+
 #include <zephyr/bluetooth/hci.h>
 
 #include "util/util.h"
@@ -30,7 +30,6 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_CTLR_DF_DEBUG_ENABLE)
 #define LOG_MODULE_NAME bt_ctlr_lll_df
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 /* Minimum number of antenna switch patterns required by Direction Finding Extension to be

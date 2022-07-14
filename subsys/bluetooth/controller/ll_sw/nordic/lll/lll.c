@@ -9,11 +9,10 @@
 #include <errno.h>
 
 #include <zephyr/toolchain.h>
-
-#include <soc.h>
 #include <zephyr/device.h>
-
 #include <zephyr/drivers/entropy.h>
+
+#include <nrf.h>
 
 #include "hal/swi.h"
 #include "hal/ccm.h"

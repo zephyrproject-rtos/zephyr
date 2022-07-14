@@ -7,7 +7,6 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
-#include <soc.h>
 
 #include "hal/cpu.h"
 #include "util/memq.h"
