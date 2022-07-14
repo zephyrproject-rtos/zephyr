@@ -408,6 +408,7 @@ static int set_up_plls(void)
 	}
 
 	if (IS_ENABLED(STM32_PLL_R_ENABLED)) {
+		__ASSERT_NO_MSG(STM32_PLL_R_DIVISOR != 1);
 		LL_RCC_PLL1_SetR(STM32_PLL_R_DIVISOR);
 		LL_RCC_PLL1_EnableDomain_SYS();
 	}
