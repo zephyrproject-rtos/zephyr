@@ -45,6 +45,7 @@
 &usic1ch1 {
 	compatible = "infineon,xmc4xxx-uart";
 	current-speed = <115200>;
+	input-src = "DX0D";
 	status = "okay";
 };
 
