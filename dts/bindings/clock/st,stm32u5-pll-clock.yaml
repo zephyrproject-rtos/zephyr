@@ -64,11 +64,12 @@ properties:
       required: false
       description: |
           PLLx DIVQ division factor
-          Valid range: 2 - 128
+          Valid range: 1 - 128
 
     div-r:
       type: int
       required: true
       description: |
           PLLx DIVR division factor
-          Valid range: 2 - 128
+          PLL1 DIVR must not be set to 1, but DIVR can be set to 1 for PLL2 and PLL3
+          Valid range: 1 - 128
