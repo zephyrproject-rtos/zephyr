@@ -117,6 +117,8 @@ enum {
 	BT_PER_ADV_ENABLED,
 	/* Periodic Advertising parameters has been set in the controller. */
 	BT_PER_ADV_PARAMS_SET,
+	/* Periodic Advertising to include AdvDataInfo (ADI) */
+	BT_PER_ADV_INCLUDE_ADI,
 	/* Constant Tone Extension parameters for Periodic Advertising
 	 * has been set in the controller.
 	 */
