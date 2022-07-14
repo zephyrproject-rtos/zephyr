@@ -14,7 +14,7 @@
 #include <zephyr/drivers/mm/system_mm.h>
 
 #include <soc.h>
-#include <cavs-mem.h>
+#include <adsp_memory.h>
 
 #define N_PAGES 3
 #define PAGE_SZ CONFIG_MM_DRV_PAGE_SIZE

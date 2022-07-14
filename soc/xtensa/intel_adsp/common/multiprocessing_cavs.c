@@ -3,7 +3,7 @@
  */
 #include <zephyr/zephyr.h>
 #include <cavs-idc.h>
-#include <cavs-mem.h>
+#include <adsp_memory.h>
 #include <adsp_shim.h>
 
 /* IDC power up message to the ROM firmware.  This isn't documented
