@@ -10,7 +10,6 @@
 #include <string.h>
 
 #include <zephyr/zephyr.h>
-#include <soc.h>
 #include <zephyr/init.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
