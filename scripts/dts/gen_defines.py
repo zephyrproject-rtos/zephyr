@@ -146,34 +146,19 @@ def main():
         write_chosen(edt)
         write_global_compat_info(edt)
 
-        write_device_extern_header(args.device_header_out, edt)
+        write_device_ord_header(args.device_header_out, edt)
 
     if args.edt_pickle_out:
         write_pickled_edt(edt, args.edt_pickle_out)
 
 
-def write_device_extern_header(device_header_out, edt):
+def write_device_ord_header(device_ord_header_out, edt):
     # Generate header that will extern devicetree struct device's
 
-    with open(device_header_out, "w", encoding="utf-8") as dev_header_file:
-        print("#ifndef DEVICE_EXTERN_GEN_H", file=dev_header_file)
-        print("#define DEVICE_EXTERN_GEN_H", file=dev_header_file)
-        print("", file=dev_header_file)
-        print("#ifdef __cplusplus", file=dev_header_file)
-        print('extern "C" {', file=dev_header_file)
-        print("#endif", file=dev_header_file)
-        print("", file=dev_header_file)
-
+    with open(device_ord_header_out, "w", encoding="utf-8") as dev_ord_header_file:
         for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
-            print(f"extern const struct device DEVICE_DT_NAME_GET(DT_{node.z_path_id}); /* dts_ord_{node.dep_ordinal} */",
-                  file=dev_header_file)
-
-        print("", file=dev_header_file)
-        print("#ifdef __cplusplus", file=dev_header_file)
-        print("}", file=dev_header_file)
-        print("#endif", file=dev_header_file)
-        print("", file=dev_header_file)
-        print("#endif /* DEVICE_EXTERN_GEN_H */", file=dev_header_file)
+            print(f"DEVICE_ORD_MACRO(DT_{node.z_path_id}); /* dts_ord_{node.dep_ordinal} */",
+                  file=dev_ord_header_file)
 
 
 def setup_edtlib_logging():

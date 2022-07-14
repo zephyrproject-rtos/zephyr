@@ -28,7 +28,7 @@ set(ZEPHYR_DTS                  ${PROJECT_BINARY_DIR}/zephyr.dts)
 # and should not be made part of the documentation.
 set(EDT_PICKLE                  ${PROJECT_BINARY_DIR}/edt.pickle)
 set(DEVICETREE_UNFIXED_H        ${PROJECT_BINARY_DIR}/include/generated/devicetree_unfixed.h)
-set(DEVICE_EXTERN_H             ${PROJECT_BINARY_DIR}/include/generated/device_extern.h)
+set(DEVICE_ORD_H             ${PROJECT_BINARY_DIR}/include/generated/device_ord.h)
 set(DTS_POST_CPP                ${PROJECT_BINARY_DIR}/zephyr.dts.pre)
 set(DTS_DEPS                    ${PROJECT_BINARY_DIR}/zephyr.dts.d)
 # The location of a list of known vendor prefixes.
@@ -209,7 +209,7 @@ if(SUPPORTS_DTS)
   --dtc-flags '${EXTRA_DTC_FLAGS_RAW}'
   --bindings-dirs ${DTS_ROOT_BINDINGS}
   --header-out ${DEVICETREE_UNFIXED_H}.new
-  --device-header-out ${DEVICE_EXTERN_H}.new
+  --device-header-out ${DEVICE_ORD_H}.new
   --dts-out ${ZEPHYR_DTS}.new # for debugging and dtc
   --edt-pickle-out ${EDT_PICKLE}
   ${EXTRA_GEN_DEFINES_ARGS}
@@ -226,11 +226,11 @@ if(SUPPORTS_DTS)
   else()
     zephyr_file_copy(${ZEPHYR_DTS}.new ${ZEPHYR_DTS} ONLY_IF_DIFFERENT)
     zephyr_file_copy(${DEVICETREE_UNFIXED_H}.new ${DEVICETREE_UNFIXED_H} ONLY_IF_DIFFERENT)
-    zephyr_file_copy(${DEVICE_EXTERN_H}.new ${DEVICE_EXTERN_H})
-    file(REMOVE ${ZEPHYR_DTS}.new ${DEVICETREE_UNFIXED_H}.new ${DEVICE_EXTERN_H}.new)
+    zephyr_file_copy(${DEVICE_ORD_H}.new ${DEVICE_ORD_H})
+    file(REMOVE ${ZEPHYR_DTS}.new ${DEVICETREE_UNFIXED_H}.new ${DEVICE_ORD_H}.new)
     message(STATUS "Generated zephyr.dts: ${ZEPHYR_DTS}")
     message(STATUS "Generated devicetree_unfixed.h: ${DEVICETREE_UNFIXED_H}")
-    message(STATUS "Generated device_extern.h: ${DEVICE_EXTERN_H}")
+    message(STATUS "Generated device_extern.h: ${DEVICE_ORD_H}")
   endif()
 
   execute_process(
@@ -293,5 +293,5 @@ if(SUPPORTS_DTS)
 else()
   set(header_template ${ZEPHYR_BASE}/misc/generated/generated_header.template)
   zephyr_file_copy(${header_template} ${DEVICETREE_UNFIXED_H} ONLY_IF_DIFFERENT)
-  zephyr_file_copy(${header_template} ${DEVICE_EXTERN_H} ONLY_IF_DIFFERENT)
+  zephyr_file_copy(${header_template} ${DEVICE_ORD_H} ONLY_IF_DIFFERENT)
 endif(SUPPORTS_DTS)

@@ -950,12 +950,15 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,		\
 		(&DEVICE_NAME_GET(dev_name)), level, prio)
 
+/* device_extern is generated based on devicetree nodes */
+#undef DEVICE_ORD_MACRO
+#define DEVICE_ORD_MACRO(x) extern const struct device DEVICE_DT_NAME_GET(x)
+
+#include <device_ord.h>
+
 #ifdef __cplusplus
 }
 #endif
-
-/* device_extern is generated based on devicetree nodes */
-#include <device_extern.h>
 
 #include <syscalls/device.h>
 
