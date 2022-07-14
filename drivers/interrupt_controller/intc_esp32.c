@@ -75,7 +75,7 @@ struct intr_alloc_table_entry {
 /* Default handler for unhandled interrupts. */
 void default_intr_handler(void *arg)
 {
-	printk("Unhandled interrupt %d on cpu %d!\n", (int)arg, arch_curr_cpu()->id);
+	printk("Unhandled interrupt %d on cpu %d!\n", (int)arg, esp_core_id());
 }
 
 static struct intr_alloc_table_entry intr_alloc_table[ESP_INTC_INTS_NUM * CONFIG_MP_NUM_CPUS];
@@ -507,7 +507,7 @@ int esp_intr_alloc_intrstatus(int source,
 	struct intr_handle_data_t *ret = NULL;
 	int force = -1;
 
-	INTC_LOG("%s (cpu %d): checking args", __func__, arch_curr_cpu()->id);
+	INTC_LOG("%s (cpu %d): checking args", __func__, esp_core_id());
 	/* Shared interrupts should be level-triggered. */
 	if ((flags & ESP_INTR_FLAG_SHARED) && (flags & ESP_INTR_FLAG_EDGE)) {
 		return -EINVAL;
@@ -548,7 +548,7 @@ int esp_intr_alloc_intrstatus(int source,
 		}
 	}
 	INTC_LOG("%s (cpu %d): Args okay."
-		"Resulting flags 0x%X", __func__, arch_curr_cpu()->id, flags);
+		"Resulting flags 0x%X", __func__, esp_core_id(), flags);
 
 	/*
 	 * Check 'special' interrupt sources. These are tied to one specific
@@ -584,7 +584,7 @@ int esp_intr_alloc_intrstatus(int source,
 	}
 
 	esp_intr_lock();
-	int cpu = arch_curr_cpu()->id;
+	int cpu = esp_core_id();
 	/* See if we can find an interrupt that matches the flags. */
 	int intr = get_available_int(flags, cpu, force, source);
 
@@ -815,7 +815,7 @@ int IRAM_ATTR esp_intr_enable(struct intr_handle_data_t *handle)
 		intr_matrix_set(handle->vector_desc->cpu, source, handle->vector_desc->intno);
 	} else {
 		/* Re-enable using cpu int ena reg */
-		if (handle->vector_desc->cpu != arch_curr_cpu()->id) {
+		if (handle->vector_desc->cpu != esp_core_id()) {
 			return -EINVAL; /* Can only enable these ints on this cpu */
 		}
 		irq_enable(handle->vector_desc->intno);
@@ -858,7 +858,7 @@ int IRAM_ATTR esp_intr_disable(struct intr_handle_data_t *handle)
 		}
 	} else {
 		/* Disable using per-cpu regs */
-		if (handle->vector_desc->cpu != arch_curr_cpu()->id) {
+		if (handle->vector_desc->cpu != esp_core_id()) {
 			esp_intr_unlock();
 			return -EINVAL; /* Can only enable these ints on this cpu */
 		}
@@ -872,7 +872,7 @@ int IRAM_ATTR esp_intr_disable(struct intr_handle_data_t *handle)
 void IRAM_ATTR esp_intr_noniram_disable(void)
 {
 	int oldint;
-	int cpu = arch_curr_cpu()->id;
+	int cpu = esp_core_id();
 	int intmask = ~non_iram_int_mask[cpu];
 
 	if (non_iram_int_disabled_flag[cpu]) {
@@ -886,7 +886,7 @@ void IRAM_ATTR esp_intr_noniram_disable(void)
 
 void IRAM_ATTR esp_intr_noniram_enable(void)
 {
-	int cpu = arch_curr_cpu()->id;
+	int cpu = esp_core_id();
 	int intmask = non_iram_int_disabled[cpu];
 
 	if (!non_iram_int_disabled_flag[cpu]) {
