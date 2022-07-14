@@ -97,32 +97,32 @@ struct cavs_win {
 
 #define CAVS_SHIM (*((volatile struct cavs_shim *)DT_REG_ADDR(DT_NODELABEL(shim))))
 
-#define CAVS_CLKCTL_RAPLLC          BIT(31)
-#define CAVS_CLKCTL_RFROSCC         BIT(29)
+#define CAVS_CLKCTL_RAPLLC	    BIT(31)
+#define CAVS_CLKCTL_RFROSCC	    BIT(29)
 #define CAVS_CLKCTL_HPGPDMAFDCGB    BIT(28)
-#define CAVS_CLKCTL_LPGPDMAFDCGB(x) BIT(26+x)
-#define CAVS_CLKCTL_SLIMFDCGB       BIT(25)
-#define CAVS_CLKCTL_DMICFDCGB       BIT(24)
-#define CAVS_CLKCTL_I2SFDCGB(x)     BIT(20+x)
-#define CAVS_CLKCTL_I2SEFDCGB(x)    BIT(18+x)
-#define CAVS_CLKCTL_TCPLCG(x)	    BIT(16+x) /* Set bit: prevent clock gating on core x */
+#define CAVS_CLKCTL_LPGPDMAFDCGB(x) BIT(26 + x)
+#define CAVS_CLKCTL_SLIMFDCGB	    BIT(25)
+#define CAVS_CLKCTL_DMICFDCGB	    BIT(24)
+#define CAVS_CLKCTL_I2SFDCGB(x)	    BIT(20 + x)
+#define CAVS_CLKCTL_I2SEFDCGB(x)    BIT(18 + x)
+#define CAVS_CLKCTL_TCPLCG(x)	    BIT(16 + x) /* Set bit: prevent clock gating on core x */
 
 #define CAVS_CLKCTL_DPCS(div) ((((div)-1) & 3) << 8) /* DSP PLL divisor (1/2/4) */
-#define CAVS_CLKCTL_TCPAPLLS        BIT(7)
-#define CAVS_CLKCTL_LDCS            BIT(5)
-#define CAVS_CLKCTL_HDCS            BIT(4)
-#define CAVS_CLKCTL_LDOCS           BIT(3)
-#define CAVS_CLKCTL_HDOCS           BIT(2)
-#define CAVS_CLKCTL_LMPCS           BIT(1)
-#define CAVS_CLKCTL_HMPCS           BIT(0)
+#define CAVS_CLKCTL_TCPAPLLS  BIT(7)
+#define CAVS_CLKCTL_LDCS      BIT(5)
+#define CAVS_CLKCTL_HDCS      BIT(4)
+#define CAVS_CLKCTL_LDOCS     BIT(3)
+#define CAVS_CLKCTL_HDOCS     BIT(2)
+#define CAVS_CLKCTL_LMPCS     BIT(1)
+#define CAVS_CLKCTL_HMPCS     BIT(0)
 
-#define CAVS_CLKCTL_DPCS_MASK(x)    (0x3 << (8 + (x) * 2))
+#define CAVS_CLKCTL_DPCS_MASK(x) (0x3 << (8 + (x)*2))
 
 #define CAVS_PWRCTL_TCPDSPPG(x) BIT(x)
-#define CAVS_PWRSTS_PDSPPGS(x)  BIT(x)
+#define CAVS_PWRSTS_PDSPPGS(x)	BIT(x)
 
-# define SHIM_LDOCTL_HPSRAM_LDO_ON     (3 << 0)
-# define SHIM_LDOCTL_HPSRAM_LDO_BYPASS BIT(0)
+#define SHIM_LDOCTL_HPSRAM_LDO_ON     (3 << 0)
+#define SHIM_LDOCTL_HPSRAM_LDO_BYPASS BIT(0)
 
 #define SHIM_LDOCTL_LPSRAM_LDO_ON     (3 << 2)
 #define SHIM_LDOCTL_LPSRAM_LDO_BYPASS BIT(2)
@@ -130,7 +130,7 @@ struct cavs_win {
 #define CAVS_DMWBA_ENABLE   BIT(0)
 #define CAVS_DMWBA_READONLY BIT(1)
 
-#define CAVS_CLKCTL_OSC_SOURCE_MASK   BIT_MASK(2)
-#define CAVS_CLKCTL_OSC_REQUEST_MASK  (~BIT_MASK(28))
+#define CAVS_CLKCTL_OSC_SOURCE_MASK  BIT_MASK(2)
+#define CAVS_CLKCTL_OSC_REQUEST_MASK (~BIT_MASK(28))
 
 #endif /* ZEPHYR_SOC_INTEL_ADSP_SHIM_H_ */
