@@ -1,0 +1,13 @@
+identifier: esp32_net
+name: ESP32_NET
+type: mcu
+arch: xtensa
+toolchain:
+  - espressif
+supported:
+  - gpio
+  - i2c
+  - watchdog
+  - uart
+  - pinmux
+  - nvs
