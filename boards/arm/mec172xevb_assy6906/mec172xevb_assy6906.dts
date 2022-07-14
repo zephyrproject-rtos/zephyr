@@ -137,7 +137,7 @@
 /* I2C */
 &i2c_smb_0 {
 	status = "okay";
-	port_sel = <0>;
+	port-sel = <0>;
 
 	pinctrl-0 = < &i2c00_scl_gpio004 &i2c00_sda_gpio003 >;
 	pinctrl-names = "default";
@@ -171,7 +171,7 @@
 
 &i2c_smb_1 {
 	status = "okay";
-	port_sel = <1>;
+	port-sel = <1>;
 	pinctrl-0 = <&i2c01_scl_gpio131 &i2c01_sda_gpio130>;
 	pinctrl-names = "default";
 };
@@ -188,7 +188,7 @@
 
 &i2c_smb_2 {
 	status = "okay";
-	port_sel = <7>;
+	port-sel = <7>;
 	pinctrl-0 = <&i2c07_scl_gpio013 &i2c07_sda_gpio012>;
 	pinctrl-names = "default";
 };
@@ -207,8 +207,8 @@
 	status = "okay";
 	clock-frequency = <4000000>;
 	lines = <4>;
-	chip_select = <0>;
-	port_sel = <0>; /* Shared SPI */
+	chip-select = <0>;
+	port-sel = <0>; /* Shared SPI */
 
 	pinctrl-0 = < &shd_cs0_n_gpio055
 		      &shd_clk_gpio056

@@ -8,12 +8,12 @@ compatible: "ti,lp503x"
 include: ["i2c-device.yaml", "led-controller.yaml"]
 
 properties:
-    max_curr_opt:
+    max-curr-opt:
       type: boolean
       required: false
       description: |
         If enabled the maximum current output is set to 35 mA (25.5 mA else).
-    log_scale_en:
+    log-scale-en:
       type: boolean
       required: false
       description: |

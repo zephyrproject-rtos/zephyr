@@ -89,7 +89,7 @@
 
 &i2c_smb_0 {
 	status = "okay";
-	port_sel = <0>;
+	port-sel = <0>;
 	sda-gpios = <&gpio_000_036 3 0>;
 	scl-gpios = <&gpio_000_036 4 0>;
 
@@ -112,23 +112,22 @@
 
 &i2c_smb_1 {
 	status = "okay";
-	port_sel = <1>;
+	port-sel = <1>;
 	sda-gpios = <&gpio_100_136 24 0>;
 	scl-gpios = <&gpio_100_136 25 0>;
 };
 
 &i2c_smb_2 {
-	status = "okay";
-	port_sel = <7>;
+	port-sel = <7>;
 	sda-gpios = <&gpio_000_036 10 0>;
 	scl-gpios = <&gpio_000_036 11 0>;
 };
 
 &espi0 {
 	status = "okay";
-	io_girq = <19>;
-	vw_girqs = <24 25>;
-	pc_girq = <15>;
+	io-girq = <19>;
+	vw-girqs = <24 25>;
+	pc-girq = <15>;
 };
 
 &timer5 {
@@ -157,8 +156,8 @@
 
 &spi0 {
 	status = "okay";
-	port_sel = <0>;
-	chip_select = <0>;
+	port-sel = <0>;
+	chip-select = <0>;
 	lines = <1>;
 };
 

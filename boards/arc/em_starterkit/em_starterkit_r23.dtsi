@@ -34,9 +34,9 @@
 			compatible = "snps,creg-gpio";
 			reg = <0xf0000014 0x4>;
 			ngpios = <6>;
-			bit_per_gpio = <1>;
-			off_val = <0>;
-			on_val = <1>;
+			bit-per-gpio = <1>;
+			off-val = <0>;
+			on-val = <1>;
 
 			gpio-controller;
 			#gpio-cells = <2>;
