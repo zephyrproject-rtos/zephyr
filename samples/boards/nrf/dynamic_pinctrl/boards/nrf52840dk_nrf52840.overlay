@@ -5,8 +5,8 @@
 
 / {
 	zephyr,user {
-		uart0_alt_default = <&uart0_alt_default>;
-		uart0_alt_sleep = <&uart0_alt_sleep>;
+		uart0-alt-default = <&uart0_alt_default>;
+		uart0-alt-sleep = <&uart0_alt_sleep>;
 	};
 };
 

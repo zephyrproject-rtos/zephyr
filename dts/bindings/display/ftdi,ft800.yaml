@@ -20,7 +20,7 @@ properties:
       typical main clock was 48MHz and this value is 5, the PCLK
       will be 9.6 MHz. Must be positive value to enable the screen
 
-  pclk_pol:
+  pclk-pol:
     type: int
     required: true
     description: |

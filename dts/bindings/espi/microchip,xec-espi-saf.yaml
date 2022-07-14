@@ -13,26 +13,26 @@ properties:
     description: mmio register space
     required: true
 
-  io_girq:
+  io-girq:
     type: int
     description: soc group irq index for eSPI I/O
 
-  poll_timeout:
+  poll-timeout:
     type: int
     description: poll flash busy timeout in 32KHz periods
 
-  poll_interval:
+  poll-interval:
     type: int
     description: interval between flash busy poll in 20 ns units
 
-  consec_rd_timeout:
+  consec-rd-timeout:
     type: int
     description: timeout after last read to resume supended operations in 20 ns units
 
-  sus_chk_delay:
+  sus-chk-delay:
     type: int
     description: hold off poll after suspend in 20 ns units
 
-  sus_rsm_interval:
+  sus-rsm-interval:
     type: int
     description: force suspended erase or program to resume in 32KHz periods
