@@ -9,12 +9,6 @@ menuconfig IEEE802154_TELINK_B91
 
 if IEEE802154_TELINK_B91
 
-config IEEE802154_B91_DRV_NAME
-	string "b91 IEEE 802.15.4 Driver's name"
-	default "IEEE802154_b91"
-	help
-	  This option sets the driver name
-
 config IEEE802154_B91_INIT_PRIO
 	int "Telink B91 IEEE 802.15.4 initialization priority"
 	default 80
