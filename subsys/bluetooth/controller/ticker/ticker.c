@@ -7,7 +7,6 @@
 
 #include <stdbool.h>
 #include <zephyr/types.h>
-#include <soc.h>
 
 #include "hal/cntr.h"
 #include "hal/ticker.h"
