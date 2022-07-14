@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2022 Andreas Sandberg
  * Copyright (c) 2020 PHYTEC Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -26,24 +27,34 @@ LOG_MODULE_REGISTER(gd7965, CONFIG_DISPLAY_LOG_LEVEL);
  * also first gate/source should be 0.
  */
 
-#define EPD_PANEL_WIDTH			DT_INST_PROP(0, width)
-#define EPD_PANEL_HEIGHT		DT_INST_PROP(0, height)
 #define GD7965_PIXELS_PER_BYTE		8U
+
+struct gd7965_dt_array {
+	uint8_t *data;
+	uint8_t len;
+};
 
 struct gd7965_config {
 	struct spi_dt_spec bus;
 	struct gpio_dt_spec dc_gpio;
 	struct gpio_dt_spec busy_gpio;
 	struct gpio_dt_spec reset_gpio;
+
+	uint16_t height;
+	uint16_t width;
+
+	uint8_t cdi;
+	uint8_t tcon;
+	struct gd7965_dt_array softstart;
+	struct gd7965_dt_array pwr;
 };
 
-static uint8_t gd7965_softstart[] = DT_INST_PROP(0, softstart);
-static uint8_t gd7965_pwr[] = DT_INST_PROP(0, pwr);
+struct gd7965_data {
+	bool blanking_on;
 
-/* Border and data polarity settings */
-static uint8_t bdd_polarity;
-
-static bool blanking_on = true;
+	/* Border and data polarity settings */
+	uint8_t bdd_polarity;
+};
 
 static inline int gd7965_write_cmd(const struct device *dev, uint8_t cmd,
 				   uint8_t *data, size_t len)
@@ -153,7 +164,9 @@ static int gd7965_update_display(const struct device *dev)
 
 static int gd7965_blanking_off(const struct device *dev)
 {
-	if (blanking_on) {
+	struct gd7965_data *data = dev->data;
+
+	if (data->blanking_on) {
 		/* Update EPD panel in normal mode */
 		gd7965_busy_wait(dev);
 		if (gd7965_update_display(dev)) {
@@ -161,14 +174,16 @@ static int gd7965_blanking_off(const struct device *dev)
 		}
 	}
 
-	blanking_on = false;
+	data->blanking_on = false;
 
 	return 0;
 }
 
 static int gd7965_blanking_on(const struct device *dev)
 {
-	blanking_on = true;
+	struct gd7965_data *data = dev->data;
+
+	data->blanking_on = true;
 
 	return 0;
 }
@@ -177,6 +192,9 @@ static int gd7965_write(const struct device *dev, const uint16_t x, const uint16
 			const struct display_buffer_descriptor *desc,
 			const void *buf)
 {
+	const struct gd7965_config *config = dev->config;
+	struct gd7965_data *data = dev->data;
+
 	uint16_t x_end_idx = x + desc->width - 1;
 	uint16_t y_end_idx = y + desc->height - 1;
 	uint8_t ptl[GD7965_PTL_REG_LENGTH] = {0};
@@ -193,8 +211,8 @@ static int gd7965_write(const struct device *dev, const uint16_t x, const uint16
 	__ASSERT(!(desc->width % GD7965_PIXELS_PER_BYTE),
 		 "Buffer width not multiple of %d", GD7965_PIXELS_PER_BYTE);
 
-	if ((y_end_idx > (EPD_PANEL_HEIGHT - 1)) ||
-	    (x_end_idx > (EPD_PANEL_WIDTH - 1))) {
+	if ((y_end_idx > (config->height - 1)) ||
+	    (x_end_idx > (config->width - 1))) {
 		LOG_ERR("Position out of bounds");
 		return -EINVAL;
 	}
@@ -217,9 +235,9 @@ static int gd7965_write(const struct device *dev, const uint16_t x, const uint16
 	}
 
 	/* Disable boarder output */
-	bdd_polarity |= GD7965_CDI_BDZ;
+	data->bdd_polarity |= GD7965_CDI_BDZ;
 	if (gd7965_write_cmd(dev, GD7965_CMD_CDI,
-			     &bdd_polarity, sizeof(bdd_polarity))) {
+			     &data->bdd_polarity, sizeof(data->bdd_polarity))) {
 		return -EIO;
 	}
 
@@ -228,16 +246,16 @@ static int gd7965_write(const struct device *dev, const uint16_t x, const uint16
 	}
 
 	/* Update partial window and disable Partial Mode */
-	if (blanking_on == false) {
+	if (data->blanking_on == false) {
 		if (gd7965_update_display(dev)) {
 			return -EIO;
 		}
 	}
 
 	/* Enable boarder output */
-	bdd_polarity &= ~GD7965_CDI_BDZ;
+	data->bdd_polarity &= ~GD7965_CDI_BDZ;
 	if (gd7965_write_cmd(dev, GD7965_CMD_CDI,
-			     &bdd_polarity, sizeof(bdd_polarity))) {
+			     &data->bdd_polarity, sizeof(data->bdd_polarity))) {
 		return -EIO;
 	}
 
@@ -277,9 +295,11 @@ static int gd7965_set_contrast(const struct device *dev, uint8_t contrast)
 static void gd7965_get_capabilities(const struct device *dev,
 				    struct display_capabilities *caps)
 {
+	const struct gd7965_config *config = dev->config;
+
 	memset(caps, 0, sizeof(struct display_capabilities));
-	caps->x_resolution = EPD_PANEL_WIDTH;
-	caps->y_resolution = EPD_PANEL_HEIGHT;
+	caps->x_resolution = config->width;
+	caps->y_resolution = config->height;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO10;
 	caps->screen_info = SCREEN_INFO_MONO_MSB_FIRST | SCREEN_INFO_EPD;
@@ -307,7 +327,8 @@ static int gd7965_set_pixel_format(const struct device *dev,
 static int gd7965_clear_and_write_buffer(const struct device *dev,
 					 uint8_t pattern, bool update)
 {
-	const int size = EPD_PANEL_WIDTH * EPD_PANEL_HEIGHT
+	const struct gd7965_config *config = dev->config;
+	const int size = config->width * config->height
 		/ GD7965_PIXELS_PER_BYTE;
 
 	if (gd7965_write_cmd_pattern(dev, GD7965_CMD_DTM1, pattern, size)) {
@@ -330,7 +351,10 @@ static int gd7965_clear_and_write_buffer(const struct device *dev,
 static int gd7965_controller_init(const struct device *dev)
 {
 	const struct gd7965_config *config = dev->config;
+	struct gd7965_data *data = dev->data;
 	uint8_t tmp[GD7965_TRES_REG_LENGTH];
+
+	data->blanking_on = true;
 
 	gpio_pin_set_dt(&config->reset_gpio, 1);
 	k_sleep(K_MSEC(GD7965_RESET_DELAY));
@@ -340,13 +364,13 @@ static int gd7965_controller_init(const struct device *dev)
 
 	LOG_DBG("Initialize GD7965 controller");
 
-	if (gd7965_write_cmd(dev, GD7965_CMD_PWR, gd7965_pwr,
-			     sizeof(gd7965_pwr))) {
+	if (gd7965_write_cmd(dev, GD7965_CMD_PWR, config->pwr.data,
+			     config->pwr.len)) {
 		return -EIO;
 	}
 
 	if (gd7965_write_cmd(dev, GD7965_CMD_BTST,
-			     gd7965_softstart, sizeof(gd7965_softstart))) {
+			     config->softstart.data, config->softstart.len)) {
 		return -EIO;
 	}
 
@@ -369,25 +393,25 @@ static int gd7965_controller_init(const struct device *dev)
 	}
 
 	/* Set panel resolution */
-	sys_put_be16(EPD_PANEL_WIDTH, &tmp[GD7965_TRES_HRES_IDX]);
-	sys_put_be16(EPD_PANEL_HEIGHT, &tmp[GD7965_TRES_VRES_IDX]);
+	sys_put_be16(config->width, &tmp[GD7965_TRES_HRES_IDX]);
+	sys_put_be16(config->height, &tmp[GD7965_TRES_VRES_IDX]);
 	LOG_HEXDUMP_DBG(tmp, sizeof(tmp), "TRES");
 	if (gd7965_write_cmd(dev, GD7965_CMD_TRES,
 			     tmp, GD7965_TRES_REG_LENGTH)) {
 		return -EIO;
 	}
 
-	bdd_polarity = GD7965_CDI_BDV1 |
+	data->bdd_polarity = GD7965_CDI_BDV1 |
 		       GD7965_CDI_N2OCP | GD7965_CDI_DDX0;
-	tmp[GD7965_CDI_BDZ_DDX_IDX] = bdd_polarity;
-	tmp[GD7965_CDI_CDI_IDX] = DT_INST_PROP(0, cdi);
+	tmp[GD7965_CDI_BDZ_DDX_IDX] = data->bdd_polarity;
+	tmp[GD7965_CDI_CDI_IDX] = config->cdi;
 	LOG_HEXDUMP_DBG(tmp, GD7965_CDI_REG_LENGTH, "CDI");
 	if (gd7965_write_cmd(dev, GD7965_CMD_CDI, tmp,
 			     GD7965_CDI_REG_LENGTH)) {
 		return -EIO;
 	}
 
-	tmp[0] = DT_INST_PROP(0, tcon);
+	tmp[0] = config->tcon;
 	if (gd7965_write_cmd(dev, GD7965_CMD_TCON, tmp, 1)) {
 		return -EIO;
 	}
@@ -441,17 +465,6 @@ static int gd7965_init(const struct device *dev)
 	return gd7965_controller_init(dev);
 }
 
-static const struct gd7965_config gd7965_config = {
-	.bus = SPI_DT_SPEC_INST_GET(
-		0,
-		SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |
-		SPI_LOCK_ON,
-		0),
-	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
-	.dc_gpio = GPIO_DT_SPEC_INST_GET(0, dc_gpios),
-	.busy_gpio = GPIO_DT_SPEC_INST_GET(0, busy_gpios),
-};
-
 static struct display_driver_api gd7965_driver_api = {
 	.blanking_on = gd7965_blanking_on,
 	.blanking_off = gd7965_blanking_off,
@@ -465,6 +478,47 @@ static struct display_driver_api gd7965_driver_api = {
 	.set_orientation = gd7965_set_orientation,
 };
 
+#define GD7965_MAKE_INST_ARRAY_OPT(n, p)				\
+	static uint8_t data_ ## n ## _ ## p[] = DT_INST_PROP_OR(n, p, {})
 
-DEVICE_DT_INST_DEFINE(0, gd7965_init, NULL, NULL, &gd7965_config, POST_KERNEL,
-		      CONFIG_DISPLAY_INIT_PRIORITY, &gd7965_driver_api);
+#define GD7965_MAKE_INST_ARRAY(n, p)					\
+	static uint8_t data_ ## n ## _ ## p[] = DT_INST_PROP(n, p)
+
+#define GD7965_ASSIGN_ARRAY(n, p)					\
+	{								\
+		.data = data_ ## n ## _ ## p,				\
+		.len = sizeof(data_ ## n ## _ ## p),			\
+	}
+
+#define GD7965_DEFINE(n)						\
+	GD7965_MAKE_INST_ARRAY(n, softstart);				\
+	GD7965_MAKE_INST_ARRAY(n, pwr);					\
+									\
+	static const struct gd7965_config gd7965_cfg_##n = {		\
+		.bus = SPI_DT_SPEC_INST_GET(n,				\
+			SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |		\
+			SPI_LOCK_ON,					\
+			0),						\
+		.reset_gpio = GPIO_DT_SPEC_INST_GET(n, reset_gpios),	\
+		.dc_gpio = GPIO_DT_SPEC_INST_GET(n, dc_gpios),		\
+		.busy_gpio = GPIO_DT_SPEC_INST_GET(n, busy_gpios),	\
+									\
+		.height = DT_INST_PROP(n, height),			\
+		.width = DT_INST_PROP(n, width),			\
+									\
+		.cdi = DT_INST_PROP(n, cdi),				\
+		.tcon = DT_INST_PROP(n, tcon),				\
+		.softstart = GD7965_ASSIGN_ARRAY(n, softstart),		\
+		.pwr = GD7965_ASSIGN_ARRAY(n, pwr),			\
+	};								\
+									\
+	static struct gd7965_data gd7965_data_##n = {};			\
+									\
+	DEVICE_DT_INST_DEFINE(n, gd7965_init, NULL,			\
+			      &gd7965_data_##n,				\
+			      &gd7965_cfg_##n,				\
+			      POST_KERNEL,				\
+			      CONFIG_DISPLAY_INIT_PRIORITY,		\
+			      &gd7965_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(GD7965_DEFINE)
