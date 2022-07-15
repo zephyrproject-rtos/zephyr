@@ -12,12 +12,6 @@ menuconfig IEEE802154_RF2XX
 
 if IEEE802154_RF2XX
 
-config IEEE802154_RF2XX_DRV_NAME
-	string "ATMEL RF2XX Driver's name"
-	default "IEEE802154_rf2xx"
-	help
-	  This option sets the driver name
-
 config IEEE802154_RF2XX_RX_STACK_SIZE
 	int "Driver's internal RX thread stack size"
 	default 800
