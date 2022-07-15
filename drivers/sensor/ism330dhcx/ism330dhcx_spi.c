@@ -106,7 +106,7 @@ int ism330dhcx_spi_init(const struct device *dev)
 	data->ctx_spi.write_reg = (stmdev_write_ptr) ism330dhcx_spi_write,
 
 	data->ctx = &data->ctx_spi;
-	data->ctx->handle = data;
+	data->ctx->handle = dev;
 
 	return 0;
 }
