@@ -21,19 +21,23 @@
 
 #define TEST_OBJECT(o) ((struct test_object *)o)
 
-#define SMF_RUN                         3
+#define SMF_NUM_STATES           4
+#define STATE_A_TERMINATE_VALUE  -1
+#define STATE_B_TERMINATE_VALUE  -2
+#define STATE_C_TERMINATE_VALUE  -3
+#define STATE_D_TERMINATE_VALUE  -4
 
-#define STATE_A_ENTRY_BIT       (1 << 0)
-#define STATE_A_RUN_BIT         (1 << 1)
-#define STATE_A_EXIT_BIT        (1 << 2)
+#define STATE_A_ENTRY_BIT       BIT(0)
+#define STATE_A_RUN_BIT         BIT(1)
+#define STATE_A_EXIT_BIT        BIT(2)
 
-#define STATE_B_ENTRY_BIT       (1 << 3)
-#define STATE_B_RUN_BIT         (1 << 4)
-#define STATE_B_EXIT_BIT        (1 << 5)
+#define STATE_B_ENTRY_BIT       BIT(3)
+#define STATE_B_RUN_BIT         BIT(4)
+#define STATE_B_EXIT_BIT        BIT(5)
 
-#define STATE_C_ENTRY_BIT       (1 << 6)
-#define STATE_C_RUN_BIT         (1 << 7)
-#define STATE_C_EXIT_BIT        (1 << 8)
+#define STATE_C_ENTRY_BIT       BIT(6)
+#define STATE_C_RUN_BIT         BIT(7)
+#define STATE_C_EXIT_BIT        BIT(8)
 
 #define TEST_ENTRY_VALUE_NUM     0
 #define TEST_RUN_VALUE_NUM       4
@@ -87,7 +91,7 @@ static void state_a_entry(void *obj)
 		      "Test State A entry failed");
 
 	if (o->terminate == ENTRY) {
-		smf_set_terminate(obj, -1);
+		smf_set_terminate(obj, STATE_A_TERMINATE_VALUE);
 		return;
 	}
 
@@ -138,7 +142,7 @@ static void state_b_run(void *obj)
 		      "Test State B run failed");
 
 	if (o->terminate == RUN) {
-		smf_set_terminate(obj, -1);
+		smf_set_terminate(obj, STATE_B_TERMINATE_VALUE);
 		return;
 	}
 
@@ -188,7 +192,7 @@ static void state_c_exit(void *obj)
 		      "Test State C exit failed");
 
 	if (o->terminate == EXIT) {
-		smf_set_terminate(obj, -1);
+		smf_set_terminate(obj, STATE_C_TERMINATE_VALUE);
 		return;
 	}
 
@@ -204,7 +208,7 @@ static void state_d_entry(void *obj)
 
 static void state_d_run(void *obj)
 {
-	/* Do nothing */
+	smf_set_terminate(obj, STATE_D_TERMINATE_VALUE);
 }
 
 static void state_d_exit(void *obj)
@@ -221,69 +225,68 @@ static const struct smf_state test_states[] = {
 
 void test_smf_flat(void)
 {
-	/* A) Test transitions */
+	/* Test transitions */
 
+	int ret;
 	test_obj.transition_bits = 0;
 	test_obj.terminate = NONE;
 	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
 
-	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj)) {
-			break;
-		}
+	for (int i = 0; i < SMF_NUM_STATES; i++) {
+		ret = smf_run_state((struct smf_ctx*)&test_obj);
 	}
 
+	zassert_equal(STATE_D_TERMINATE_VALUE, ret,
+		      "Incorrect smf_run_state return value");
 	zassert_equal(TEST_VALUE_NUM, test_obj.tv_idx,
 		      "Incorrect test value index");
 	zassert_equal(test_obj.transition_bits, test_value[test_obj.tv_idx],
 		      "Final state not reached");
 
-	/* B) Test termination in entry action */
+	/* Test termination in entry action */
 
 	test_obj.transition_bits = 0;
 	test_obj.terminate = ENTRY;
 	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
 
-	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj)) {
-			break;
-		}
-	}
+	ret = smf_run_state((struct smf_ctx *)&test_obj);
 
+	zassert_equal(STATE_A_TERMINATE_VALUE, ret,
+		      "Incorrect smf_run_state return value");
 	zassert_equal(TEST_ENTRY_VALUE_NUM, test_obj.tv_idx,
 		      "Incorrect test value index for entry termination");
 	zassert_equal(test_obj.transition_bits, test_value[test_obj.tv_idx],
 		      "Final entry termination state not reached");
 
-	/* C) Test termination in run action */
+	/* Test termination in run action */
 
 	test_obj.transition_bits = 0;
 	test_obj.terminate = RUN;
 	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
 
-	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj)) {
-			break;
-		}
+	for (int i = 0; i < 2; i++) {
+		ret = smf_run_state((struct smf_ctx*)&test_obj);
 	}
 
+	zassert_equal(STATE_B_TERMINATE_VALUE, ret,
+		      "Incorrect smf_run_state return value");
 	zassert_equal(TEST_RUN_VALUE_NUM, test_obj.tv_idx,
 		      "Incorrect test value index for run termination");
 	zassert_equal(test_obj.transition_bits, test_value[test_obj.tv_idx],
 		      "Final run termination state not reached");
 
-	/* D) Test termination in exit action */
+	/* Test termination in exit action */
 
 	test_obj.transition_bits = 0;
 	test_obj.terminate = EXIT;
 	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
 
-	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj)) {
-			break;
-		}
+	for (int i = 0; i < 3; i++) {
+		ret = smf_run_state((struct smf_ctx*)&test_obj);
 	}
 
+	zassert_equal(STATE_C_TERMINATE_VALUE, ret,
+		      "Incorrect smf_run_state return value");
 	zassert_equal(TEST_EXIT_VALUE_NUM, test_obj.tv_idx,
 		      "Incorrect test value index for exit termination");
 	zassert_equal(test_obj.transition_bits, test_value[test_obj.tv_idx],

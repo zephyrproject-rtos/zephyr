@@ -281,5 +281,5 @@ int32_t smf_run_state(struct smf_ctx *const ctx)
 		}
 	}
 
-	return 0;
+	return internal->terminate ? ctx->terminate_val : 0;
 }
