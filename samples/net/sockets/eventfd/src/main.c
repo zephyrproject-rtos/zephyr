@@ -6,11 +6,10 @@
  * This sample application is roughly based on the sample code in Linux
  * manpage for eventfd().
  */
-#include <sys/eventfd.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <net/socket.h>
 
 #define fatal(msg) \
 	do { perror(msg); exit(EXIT_FAILURE); } while (0)
@@ -31,8 +30,8 @@ void writer(void)
 	for (j = 1; j < g_argc; j++) {
 		printf("Writing %s to efd\n", g_argv[j]);
 		u = strtoull(g_argv[j], NULL, 0);
-		s = write(efd, &u, sizeof(uint64_t));
-		if (s != sizeof(uint64_t)) {
+		s = eventfd_write(efd, u);
+		if (s != 0) {
 			fatal("write");
 		}
 	}
@@ -44,21 +43,21 @@ void reader(void)
 	uint64_t u;
 	ssize_t s;
 
-	sleep(1);
+	k_sleep(K_MSEC(1000));
 
 	printf("About to read\n");
-	s = read(efd, &u, sizeof(uint64_t));
-	if (s != sizeof(uint64_t)) {
+	s = eventfd_read(efd, &u);
+	if (s != 0) {
 		fatal("read");
 	}
 	printf("Read %llu (0x%llx) from efd\n",
 	       (unsigned long long)u, (unsigned long long)u);
 }
 
-int main(int argc, char *argv[])
+void main(void)
 {
-	argv = input_argv;
-	argc = sizeof(input_argv) / sizeof(input_argv[0]);
+	char **argv = input_argv;
+	int argc = sizeof(input_argv) / sizeof(input_argv[0]);
 
 	if (argc < 2) {
 		fprintf(stderr, "Usage: %s <num>...\n", argv[0]);
@@ -77,6 +76,4 @@ int main(int argc, char *argv[])
 	reader();
 
 	printf("Finished\n");
-
-	return 0;
 }

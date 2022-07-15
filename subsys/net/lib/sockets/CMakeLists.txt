@@ -31,5 +31,6 @@ if(CONFIG_SOCKS)
 endif()
 
 zephyr_sources_ifdef(CONFIG_NET_SOCKETPAIR socketpair.c)
+zephyr_sources_ifdef(CONFIG_NET_EVENTFD eventfd.c)
 
 zephyr_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)

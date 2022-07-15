@@ -39,6 +39,8 @@ struct zsock_pollfd {
 	short revents;
 };
 
+typedef uint64_t zsock_eventfd_t;
+
 /* ZSOCK_POLL* values are compatible with Linux */
 /** zsock_poll: Poll for readability */
 #define ZSOCK_POLLIN 1
@@ -74,6 +76,12 @@ struct zsock_pollfd {
 #define ZSOCK_SHUT_WR 1
 /** zsock_shutdown: Shut down for both reading and writing */
 #define ZSOCK_SHUT_RDWR 2
+
+/** zsock_eventfd **/
+#define ZSOCK_EFD_IN_USE    0x1
+#define ZSOCK_EFD_SEMAPHORE 0x2
+#define ZSOCK_EFD_NONBLOCK  O_NONBLOCK
+#define ZSOCK_EFD_FLAGS_SET (ZSOCK_EFD_SEMAPHORE | ZSOCK_EFD_NONBLOCK)
 
 /** Protocol level for TLS.
  *  Here, the same socket protocol level for TLS as in Linux was used.
@@ -267,6 +275,43 @@ __syscall int zsock_socket(int family, int type, int proto);
  * @endrst
  */
 __syscall int zsock_socketpair(int family, int type, int proto, int *sv);
+
+/**
+ * @brief Create an unnamed pair of connected sockets
+ *
+ * @details
+ * @rst
+ * See `POSIX.1-2017 article
+ * <https://man7.org/linux/man-pages/man2/eventfd.2.html>`__
+ * for normative description.
+ * This function is also exposed as ``eventfd()``
+ * if :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
+ * @endrst
+ */
+__syscall int zsock_eventfd(unsigned int initval, int flags);
+
+/**
+ * @brief Read from an eventfd
+ *
+ * If call is successful, the value parameter will have the value 1
+ *
+ * @param fd File descriptor
+ * @param value Pointer for storing the read value
+ *
+ * @return 0 on success, -1 on error
+ */
+__syscall int zsock_eventfd_read(int fd, zsock_eventfd_t *value);
+
+/**
+ * @brief Write to an eventfd
+ *
+ * @param fd File descriptor
+ * @param value Value to write
+ *
+ * @return 0 on success, -1 on error
+ */
+__syscall int zsock_eventfd_write(int fd, zsock_eventfd_t value);
+
 
 /**
  * @brief Close a network socket
@@ -685,6 +730,8 @@ int zsock_getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 
 #define pollfd zsock_pollfd
 
+#define eventfd_t zsock_eventfd_t
+
 /** POSIX wrapper for @ref zsock_socket */
 static inline int socket(int family, int type, int proto)
 {
@@ -695,6 +742,24 @@ static inline int socket(int family, int type, int proto)
 static inline int socketpair(int family, int type, int proto, int sv[2])
 {
 	return zsock_socketpair(family, type, proto, sv);
+}
+
+/** POSIX wrapper for @ref zsock_eventfd */
+static inline int eventfd(unsigned int initval, int flags)
+{
+	return zsock_eventfd(initval, flags);
+}
+
+/** POSIX wrapper for @ref zsock_eventfd_read */
+static inline int eventfd_read(int fd, zsock_eventfd_t *value)
+{
+	return zsock_eventfd_read(fd, value);
+}
+
+/** POSIX wrapper for @ref zsock_eventfd_write */
+static inline int eventfd_write(int fd, zsock_eventfd_t value)
+{
+	return zsock_eventfd_write(fd, value);
 }
 
 /** POSIX wrapper for @ref zsock_close */
@@ -895,6 +960,15 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define SHUT_WR ZSOCK_SHUT_WR
 /** POSIX wrapper for @ref ZSOCK_SHUT_RDWR */
 #define SHUT_RDWR ZSOCK_SHUT_RDWR
+
+/** POSIX wrapper for @ref ZSOCK_EFD_IN_USE */
+#define EFD_IN_USE ZSOCK_EFD_IN_USE
+/** POSIX wrapper for @ref ZSOCK_EFD_SEMAPHORE */
+#define EFD_SEMAPHORE ZSOCK_EFD_SEMAPHORE
+/** POSIX wrapper for @ref ZSOCK_EFD_NONBLOCK */
+#define EFD_NONBLOCK ZSOCK_EFD_NONBLOCK
+/** POSIX wrapper for @ref ZSOCK_EFD_FLAGS_SET */
+#define EFD_FLAGS_SET ZSOCK_EFD_FLAGS_SET
 
 /** POSIX wrapper for @ref DNS_EAI_BADFLAGS */
 #define EAI_BADFLAGS DNS_EAI_BADFLAGS

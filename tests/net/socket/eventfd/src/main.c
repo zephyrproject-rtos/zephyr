@@ -6,11 +6,10 @@
 
 #include <ztest.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
+
 #include <zephyr/net/socket.h>
-#include <poll.h>
-#include <sys/eventfd.h>
 
 #define TESTVAL 10
 
