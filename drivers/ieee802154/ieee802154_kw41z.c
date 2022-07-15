@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kw41z_ieee802154
+
 #define LOG_MODULE_NAME ieee802154_kw41z
 #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
 
@@ -1110,9 +1112,8 @@ static struct ieee802154_radio_api kw41z_radio_api = {
 
 #endif
 
-NET_DEVICE_INIT(
-	kw41z,                              /* Device Name */
-	CONFIG_IEEE802154_KW41Z_DRV_NAME,   /* Driver Name */
+NET_DEVICE_DT_INST_DEFINE(
+	0,
 	kw41z_init,                         /* Initialization Function */
 	NULL,              /* No PM API support */
 	&kw41z_context_data,                /* Context data */
