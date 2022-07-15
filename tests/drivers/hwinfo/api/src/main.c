@@ -26,7 +26,7 @@
 #define BUFFER_LENGTH 17
 #define BUFFER_CANARY 0xFF
 
-static void test_device_id_get(void)
+ZTEST(hwinfo_device_id_api, test_device_id_get)
 {
 	uint8_t buffer_1[BUFFER_LENGTH];
 	uint8_t buffer_2[BUFFER_LENGTH];
@@ -83,7 +83,7 @@ static void test_device_id_get(void)
  * @}
  */
 
-static void test_get_reset_cause(void)
+ZTEST(hwinfo_device_id_api, test_get_reset_cause)
 {
 	uint32_t cause;
 	ssize_t ret;
@@ -121,7 +121,7 @@ static void test_get_reset_cause(void)
  *   -# Reset cause value should change after calling clear reset cause.
  * @}
  */
-static void test_clear_reset_cause(void)
+ZTEST(hwinfo_device_id_api, test_clear_reset_cause)
 {
 	uint32_t cause_1, cause_2;
 	ssize_t ret;
@@ -172,7 +172,7 @@ static void test_clear_reset_cause(void)
  *   -# Target buffer contents should be changed after the call.
  * @}
  */
-static void test_get_supported_reset_cause(void)
+ZTEST(hwinfo_device_id_api, test_get_supported_reset_cause)
 {
 	uint32_t supported;
 	ssize_t ret;
@@ -194,14 +194,5 @@ static void test_get_supported_reset_cause(void)
 					"Supported reset cause not written.");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(hwinfo_device_id_api,
-			 ztest_unit_test(test_device_id_get),
-			 ztest_unit_test(test_get_reset_cause),
-			 ztest_unit_test(test_clear_reset_cause),
-			 ztest_unit_test(test_get_supported_reset_cause)
-			);
 
-	ztest_run_test_suite(hwinfo_device_id_api);
-}
+ZTEST_SUITE(hwinfo_device_id_api, NULL, NULL, NULL, NULL, NULL);
