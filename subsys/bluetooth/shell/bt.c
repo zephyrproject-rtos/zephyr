@@ -660,7 +660,7 @@ static void bt_ready(int err)
 static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
-	bool no_ready_cb = false;
+	bool sync = false;
 
 	ctx_shell = sh;
 
@@ -670,23 +670,22 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		if (!strcmp(arg, "no-settings-load")) {
 			no_settings_load = true;
 		} else if (!strcmp(arg, "sync")) {
-			no_ready_cb = true;
+			sync = true;
 		} else {
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		}
 	}
 
-	if (no_ready_cb) {
+	if (sync) {
+		err = bt_enable(NULL);
+		bt_ready(err);
+	} else {
 		err = bt_enable(bt_ready);
 		if (err) {
 			shell_error(sh, "Bluetooth init failed (err %d)",
 				    err);
 		}
-
-	} else {
-		err = bt_enable(NULL);
-		bt_ready(err);
 	}
 
 	return err;
