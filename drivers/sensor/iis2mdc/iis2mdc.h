@@ -27,16 +27,15 @@
 
 union iis2mdc_bus_cfg {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	uint16_t i2c_slv_addr;
+	struct i2c_dt_spec i2c;
 #endif
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	struct spi_config spi_cfg;
+	struct spi_dt_spec spi;
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 };
 
 struct iis2mdc_dev_config {
-	const struct device *bus;
 	int (*bus_init)(const struct device *dev);
 	const union iis2mdc_bus_cfg bus_cfg;
 #ifdef CONFIG_IIS2MDC_TRIGGER
@@ -47,7 +46,6 @@ struct iis2mdc_dev_config {
 /* Sensor data */
 struct iis2mdc_data {
 	const struct device *dev;
-	uint16_t i2c_addr;
 	int16_t mag[3];
 	int32_t temp_sample;
 
