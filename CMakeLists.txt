@@ -1852,8 +1852,6 @@ if(CONFIG_SOC_DEPRECATED_RELEASE)
   )
 endif()
 
-include(modules/deprecation_warnings.cmake)
-
 # In CMake projects, 'CMAKE_BUILD_TYPE' usually determines the
 # optimization flag, but in Zephyr it is determined through
 # Kconfig. Here we give a warning when there is a mismatch between the
