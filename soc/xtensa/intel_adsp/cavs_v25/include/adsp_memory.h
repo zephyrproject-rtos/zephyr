@@ -42,4 +42,24 @@
 
 #define ADSP_L1_CACHE_PREFCTL_VALUE 0x1038
 
+/* L1 init */
+#define ADSP_L1CC_ADDR                       (0x9F080080)
+#define ADSP_CxL1CCAP_ADDR                   (ADSP_L1CC_ADDR + 0x0000)
+#define ADSP_CxL1CCFG_ADDR                   (ADSP_L1CC_ADDR + 0x0004)
+#define ADSP_CxL1PCFG_ADDR                   (ADSP_L1CC_ADDR + 0x0008)
+
+#if (!defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__))
+
+#define ADSP_CxL1CCAP_REG   (*(volatile uint32_t *)(ADSP_CxL1CCAP_ADDR))
+#define ADSP_CxL1CCFG_REG   (*(volatile uint32_t *)(ADSP_CxL1CCFG_ADDR))
+#define ADSP_CxL1PCFG_REG   (*(volatile uint32_t *)(ADSP_CxL1PCFG_ADDR))
+
+#endif  /* (!defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)) */
+
+/* The number of set associative cache way supported on L1 Data Cache */
+#define ADSP_CxL1CCAP_DCMWC ((ADSP_CxL1CCAP_REG >> 16) & 7)
+/* The number of set associative cache way supported on L1 Instruction Cache */
+#define ADSP_CxL1CCAP_ICMWC ((ADSP_CxL1CCAP_REG >> 20) & 7)
+
+
 #endif /* ZEPHYR_SOC_INTEL_ADSP_MEMORY_H_ */
