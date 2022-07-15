@@ -12,7 +12,12 @@
 ---
 BasedOnStyle: LLVM
 AlignConsecutiveMacros: AcrossComments
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
 AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
 AttributeMacros:
   - __aligned
   - __deprecated
