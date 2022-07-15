@@ -8,12 +8,6 @@ menuconfig IEEE802154_CC13XX_CC26XX
 
 if IEEE802154_CC13XX_CC26XX
 
-config IEEE802154_CC13XX_CC26XX_DRV_NAME
-	string "TI CC13xx / CC26xx IEEE 802.15.4 driver's name"
-	default "IEEE802154_0"
-	help
-	  This option sets the driver name.
-
 config IEEE802154_CC13XX_CC26XX_INIT_PRIO
 	int "TI CC13xx / CC26xx IEEE 802.15.4 initialization priority"
 	default 80
