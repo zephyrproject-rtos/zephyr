@@ -411,8 +411,9 @@ static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
 		data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(n, m, irq);	\
 	} while (false)
 
-#define GPIO_MCUX_LPC_IRQ(n, m)								\
-	COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, m), (GPIO_MCUX_LPC_IRQ_CONNECT(n, m)), ())
+#define GPIO_MCUX_LPC_IRQ(idx, inst)							\
+	COND_CODE_1(DT_INST_IRQ_HAS_IDX(inst, idx),					\
+		(GPIO_MCUX_LPC_IRQ_CONNECT(inst, idx)), ())
 
 
 #define GPIO_MCUX_LPC(n)								\
@@ -441,10 +442,7 @@ static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
 	{										\
 		gpio_mcux_lpc_init(dev);						\
 											\
-		GPIO_MCUX_LPC_IRQ(n, 0);						\
-		GPIO_MCUX_LPC_IRQ(n, 1);						\
-		GPIO_MCUX_LPC_IRQ(n, 2);						\
-		GPIO_MCUX_LPC_IRQ(n, 3);						\
+		LISTIFY(8, GPIO_MCUX_LPC_IRQ, (;), n)					\
 											\
 		return 0;								\
 	}
