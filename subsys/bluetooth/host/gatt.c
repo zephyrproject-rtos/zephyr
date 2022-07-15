@@ -4901,6 +4901,11 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
+	/* Attempt to cancel if write is pending */
+	if (atomic_test_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING)) {
+		bt_gatt_cancel(conn, params);
+	}
+
 	if (!has_subscription) {
 		int err;
 
@@ -4912,11 +4917,6 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 	}
 
 	sys_slist_find_and_remove(&sub->list, &params->node);
-
-	/* Attempt to cancel if write is pending */
-	if (atomic_test_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING)) {
-		bt_gatt_cancel(conn, params);
-	}
 
 	if (gatt_sub_is_empty(sub)) {
 		gatt_sub_free(sub);
