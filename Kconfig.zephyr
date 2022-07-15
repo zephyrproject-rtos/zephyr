@@ -600,6 +600,20 @@ config BUILD_OUTPUT_META_STATE_PROPAGATE
 
 endmenu
 
+config DEPRECATED
+	bool
+	help
+	  Symbol that must be selected by a feature or module if it is
+	  considered to be deprecated.
+
+config WARN_DEPRECATED
+	bool
+	default y
+	prompt "Warn on deprecated usage"
+	help
+	  Print a warning when the Kconfig tree is parsed if any deprecated
+	  features are enabled.
+
 config EXPERIMENTAL
 	bool
 	help
