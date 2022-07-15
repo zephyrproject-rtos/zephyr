@@ -54,8 +54,9 @@ pended writer to fill the ring buffer.
     Flushing does not in practice allocate or use additional buffers.
 
 .. note::
-    The kernel does NOT allow for an ISR to send or receive data to/from a
-    pipe or flush even if it does not attempt to wait for space/data.
+    The kernel does allow for an ISR to flush a pipe from an ISR. It also
+    allows it to send/receive data to/from one provided it does not attempt
+    to wait for space/data.
 
 Implementation
 **************
