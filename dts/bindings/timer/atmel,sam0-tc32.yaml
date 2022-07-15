@@ -22,9 +22,6 @@ properties:
   clock-names:
     required: true
 
-  label:
-    required: true
-
   prescaler:
     type: int
     required: false
