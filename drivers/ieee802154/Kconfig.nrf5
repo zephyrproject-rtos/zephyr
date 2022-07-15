@@ -11,12 +11,6 @@ menuconfig IEEE802154_NRF5
 
 if IEEE802154_NRF5
 
-config IEEE802154_NRF5_DRV_NAME
-	string "nRF52 IEEE 802.15.4 Driver's name"
-	default "IEEE802154_nrf5"
-	help
-	  This option sets the driver name
-
 config IEEE802154_NRF5_RX_STACK_SIZE
 	int "Driver's internal RX thread stack size"
 	default 800
