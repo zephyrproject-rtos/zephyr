@@ -57,7 +57,7 @@
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
 	ssd16xx: ssd16xxfb@0 {
-		compatible = "solomon,ssd16xxfb", "gooddisplay,gdeh0213b1";
+		compatible = "gooddisplay,gdeh0213b1", "solomon,ssd1673", "solomon,ssd16xxfb";
 		label = "SSD16XX";
 		spi-max-frequency = <4000000>;
 		reg = <0>;
