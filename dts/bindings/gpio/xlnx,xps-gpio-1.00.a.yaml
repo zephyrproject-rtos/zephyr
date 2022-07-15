@@ -13,9 +13,6 @@ properties:
     reg:
       required: true
 
-    label:
-      required: true
-
     xlnx,all-inputs:
       type: int
       description: |
