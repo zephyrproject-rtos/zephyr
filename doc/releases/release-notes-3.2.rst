@@ -237,6 +237,8 @@ USB
 Build System
 ************
 
+* Removed deprecated ``GCCARMEMB_TOOLCHAIN_PATH`` setting
+
 Devicetree
 **********
 
