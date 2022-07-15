@@ -33,7 +33,7 @@ config IEEE802154_KW41Z
 	default y
 
 config NET_CONFIG_IEEE802154_DEV_NAME
-	default "KW41Z"
+default "KW41Z"
 
 endif # NETWORKING
 

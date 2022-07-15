@@ -73,6 +73,12 @@
 			ble-2mbps-supported;
 			ble-coded-phy-supported;
 			tx-high-power-supported;
+
+			ieee802154: ieee802154 {
+				compatible = "nordic,nrf-ieee802154";
+				label = "IEEE802154_nrf5";
+				status = "disabled";
+			};
 		};
 
 		uart0: uart@40002000 {
