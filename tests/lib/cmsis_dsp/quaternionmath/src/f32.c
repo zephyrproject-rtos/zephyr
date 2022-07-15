@@ -17,7 +17,7 @@
 #define REL_ERROR_THRESH	(1.0e-6)
 #define ABS_ERROR_THRESH	(1.0e-7)
 
-void test_arm_quaternion_norm_f32(void)
+ZTEST(quaternionmath_f32, test_arm_quaternion_norm_f32)
 {
 	size_t length = ARRAY_SIZE(ref_norm);
 	const float32_t *input = (const float32_t *)in_com1;
@@ -45,7 +45,7 @@ void test_arm_quaternion_norm_f32(void)
 	free(output);
 }
 
-void test_arm_quaternion_inverse_f32(void)
+ZTEST(quaternionmath_f32, test_arm_quaternion_inverse_f32)
 {
 	size_t length = ARRAY_SIZE(ref_inv);
 	const float32_t *input = (const float32_t *)in_com1;
@@ -73,7 +73,7 @@ void test_arm_quaternion_inverse_f32(void)
 	free(output);
 }
 
-void test_arm_quaternion_conjugate_f32(void)
+ZTEST(quaternionmath_f32, test_arm_quaternion_conjugate_f32)
 {
 	size_t length = ARRAY_SIZE(ref_conj);
 	const float32_t *input = (const float32_t *)in_com1;
@@ -101,7 +101,7 @@ void test_arm_quaternion_conjugate_f32(void)
 	free(output);
 }
 
-void test_arm_quaternion_normalize_f32(void)
+ZTEST(quaternionmath_f32, test_arm_quaternion_normalize_f32)
 {
 	size_t length = ARRAY_SIZE(ref_normalize);
 	const float32_t *input = (const float32_t *)in_com1;
@@ -129,7 +129,7 @@ void test_arm_quaternion_normalize_f32(void)
 	free(output);
 }
 
-void test_arm_quaternion_product_single_f32(void)
+ZTEST(quaternionmath_f32, test_arm_quaternion_product_single_f32)
 {
 	size_t index;
 	size_t length = ARRAY_SIZE(ref_mult);
@@ -167,7 +167,7 @@ void test_arm_quaternion_product_single_f32(void)
 	free(output_buf);
 }
 
-void test_arm_quaternion_product_f32(void)
+ZTEST(quaternionmath_f32, test_arm_quaternion_product_f32)
 {
 	size_t length = ARRAY_SIZE(ref_mult);
 	const float32_t *input1 = (const float32_t *)in_com1;
@@ -196,7 +196,7 @@ void test_arm_quaternion_product_f32(void)
 	free(output);
 }
 
-void test_arm_quaternion2rotation_f32(void)
+ZTEST(quaternionmath_f32, test_arm_quaternion2rotation_f32)
 {
 	size_t length = ARRAY_SIZE(ref_quat2rot);
 	const float32_t *input = (const float32_t *)in_com1;
@@ -224,7 +224,7 @@ void test_arm_quaternion2rotation_f32(void)
 	free(output);
 }
 
-void test_arm_rotation2quaternion_f32(void)
+ZTEST(quaternionmath_f32, test_arm_rotation2quaternion_f32)
 {
 	size_t length = ARRAY_SIZE(ref_rot2quat);
 	const float32_t *input = (const float32_t *)in_rot;
@@ -262,18 +262,4 @@ void test_arm_rotation2quaternion_f32(void)
 	free(output);
 }
 
-void test_quaternionmath_f32(void)
-{
-	ztest_test_suite(quaternionmath_f32,
-		ztest_unit_test(test_arm_quaternion_norm_f32),
-		ztest_unit_test(test_arm_quaternion_inverse_f32),
-		ztest_unit_test(test_arm_quaternion_conjugate_f32),
-		ztest_unit_test(test_arm_quaternion_normalize_f32),
-		ztest_unit_test(test_arm_quaternion_product_single_f32),
-		ztest_unit_test(test_arm_quaternion_product_f32),
-		ztest_unit_test(test_arm_quaternion2rotation_f32),
-		ztest_unit_test(test_arm_rotation2quaternion_f32)
-		);
-
-	ztest_run_test_suite(quaternionmath_f32);
-}
+ZTEST_SUITE(quaternionmath_f32, NULL, NULL, NULL, NULL, NULL);
