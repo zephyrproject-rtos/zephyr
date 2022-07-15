@@ -53,8 +53,7 @@ struct regulator_config {
 	bool enable_inverted;
 	uint8_t ilim_reg;
 	uint8_t ilim_mask;
-	uint8_t i2c_address;
-	const struct device *i2c_dev;
+	struct i2c_dt_spec i2c;
 	uint32_t *voltage_array;
 	uint32_t *current_array;
 };
@@ -69,17 +68,15 @@ static int regulator_modify_register(const struct regulator_config *conf,
 	uint8_t reg_current;
 	int rc;
 
-	rc = i2c_reg_read_byte(conf->i2c_dev, conf->i2c_address,
-			reg, &reg_current);
+	rc = i2c_reg_read_byte_dt(&conf->i2c, reg, &reg_current);
 	if (rc) {
 		return rc;
 	}
 	reg_current &= ~reg_mask;
 	reg_current |= reg_val;
-	LOG_DBG("Writing 0x%02X to reg 0x%02X at I2C addr 0x%02X",
-			reg_current, reg, conf->i2c_address);
-	return i2c_reg_write_byte(conf->i2c_dev, conf->i2c_address, reg,
-			reg_current);
+	LOG_DBG("Writing 0x%02X to reg 0x%02X at I2C addr 0x%02X", reg_current, reg,
+		conf->i2c.addr);
+	return i2c_reg_write_byte_dt(&conf->i2c, reg, reg_current);
 }
 
 
@@ -165,8 +162,7 @@ int regulator_get_voltage(const struct device *dev)
 	int rc, i = 0;
 	uint8_t raw_reg;
 
-	rc = i2c_reg_read_byte(config->i2c_dev, config->i2c_address,
-			config->vsel_reg, &raw_reg);
+	rc = i2c_reg_read_byte_dt(&config->i2c, config->vsel_reg, &raw_reg);
 	if (rc) {
 		return rc;
 	}
@@ -225,8 +221,7 @@ int regulator_get_current_limit(const struct device *dev)
 	if (config->num_current_levels == 0) {
 		return -ENOTSUP;
 	}
-	rc = i2c_reg_read_byte(config->i2c_dev, config->i2c_address,
-		config->ilim_reg, &raw_reg);
+	rc = i2c_reg_read_byte_dt(&config->i2c, config->ilim_reg, &raw_reg);
 	if (rc) {
 		return rc;
 	}
@@ -301,7 +296,7 @@ static int pmic_reg_init(const struct device *dev)
 	/* Do the same cast for current limit ranges */
 	data->current_levels = (struct current_range *)config->current_array;
 	/* Check to verify we have a valid I2C device */
-	if (!device_is_ready(config->i2c_dev)) {
+	if (!device_is_ready(config->i2c.bus)) {
 		return -ENODEV;
 	}
 	return 0;
@@ -332,8 +327,7 @@ static const struct regulator_driver_api api = {
 		.ilim_reg = DT_INST_PROP_OR(id, ilim_reg, 0),			\
 		.ilim_mask = DT_INST_PROP_OR(id, ilim_mask, 0),			\
 		.enable_inverted = DT_INST_PROP(id, enable_inverted),				\
-		.i2c_address = DT_REG_ADDR(DT_INST_PARENT(id)),					\
-		.i2c_dev = DEVICE_DT_GET(DT_BUS(DT_INST_PARENT(id))),				\
+		.i2c = I2C_DT_SPEC_INST_GET(id),						\
 		.voltage_array = pmic_reg_##id##_vol_range,					\
 		.current_array = pmic_reg_##id##_cur_limits,					\
 	};											\
