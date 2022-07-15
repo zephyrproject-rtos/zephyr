@@ -129,7 +129,7 @@ static int bmp388_read_i2c(const struct device *dev,
 {
 	const struct bmp388_config *cfg = dev->config;
 
-	return i2c_burst_read(cfg->bus, cfg->bus_addr, reg, data, length);
+	return i2c_burst_read_dt(&cfg->i2c, reg, data, length);
 }
 
 static int bmp388_byte_read_i2c(const struct device *dev,
@@ -138,7 +138,7 @@ static int bmp388_byte_read_i2c(const struct device *dev,
 {
 	const struct bmp388_config *cfg = dev->config;
 
-	return i2c_reg_read_byte(cfg->bus, cfg->bus_addr, reg, byte);
+	return i2c_reg_read_byte_dt(&cfg->i2c, reg, byte);
 }
 
 static int bmp388_byte_write_i2c(const struct device *dev,
@@ -147,7 +147,7 @@ static int bmp388_byte_write_i2c(const struct device *dev,
 {
 	const struct bmp388_config *cfg = dev->config;
 
-	return i2c_reg_write_byte(cfg->bus, cfg->bus_addr, reg, byte);
+	return i2c_reg_write_byte_dt(&cfg->i2c, reg, byte);
 }
 
 int bmp388_reg_field_update_i2c(const struct device *dev,
@@ -157,7 +157,7 @@ int bmp388_reg_field_update_i2c(const struct device *dev,
 {
 	const struct bmp388_config *cfg = dev->config;
 
-	return i2c_reg_update_byte(cfg->bus, cfg->bus_addr, reg, mask, val);
+	return i2c_reg_update_byte_dt(&cfg->i2c, reg, mask, val);
 }
 
 static const struct bmp388_io_ops bmp388_i2c_ops = {
@@ -597,8 +597,8 @@ static int bmp388_init(const struct device *dev)
 	bool is_spi = (cfg->ops == &bmp388_spi_ops);
 #endif
 
-	if (!device_is_ready(cfg->bus)) {
-		LOG_ERR("Bus device is not ready");
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("I2C bus device is not ready");
 		return -EINVAL;
 	}
 
@@ -691,7 +691,7 @@ static int bmp388_init(const struct device *dev)
 
 #define BMP388_BUS_CFG_I2C(inst) \
 	.ops = &bmp388_i2c_ops,	 \
-	.bus_addr = DT_INST_REG_ADDR(inst)
+	.i2c = I2C_DT_SPEC_INST_GET(inst)
 
 #define BMP388_BUS_CFG_SPI(inst) \
 	.ops = &bmp388_spi_ops,	 \
@@ -716,7 +716,6 @@ static int bmp388_init(const struct device *dev)
 		.osr_temp = DT_INST_ENUM_IDX(inst, osr_temp),		   \
 	};								   \
 	static const struct bmp388_config bmp388_config_##inst = {	   \
-		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		   \
 		BMP388_BUS_CFG(inst),					   \
 		BMP388_INT_CFG(inst)					   \
 		.iir_filter = DT_INST_ENUM_IDX(inst, iir_filter),	   \
