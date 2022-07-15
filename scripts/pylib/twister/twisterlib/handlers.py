@@ -544,6 +544,7 @@ class DeviceHandler(Handler):
 
         d_log = "{}/device.log".format(self.instance.build_dir)
         logger.debug('Flash command: %s', command)
+        flash_error = False
         try:
             stdout = stderr = None
             with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
@@ -555,6 +556,7 @@ class DeviceHandler(Handler):
                     if proc.returncode != 0:
                         self.instance.status = "error"
                         self.instance.reason = "Device issue (Flash error?)"
+                        flash_error = True
                         with open(d_log, "w") as dlog_fp:
                             dlog_fp.write(stderr.decode())
                         os.write(write_pipe, b'x')  # halt the thread
@@ -564,6 +566,7 @@ class DeviceHandler(Handler):
                     (stdout, stderr) = proc.communicate()
                     self.instance.status = "error"
                     self.instance.reason = "Device issue (Timeout)"
+                    flash_error = True
 
             with open(d_log, "w") as dlog_fp:
                 dlog_fp.write(stderr.decode())
@@ -574,9 +577,10 @@ class DeviceHandler(Handler):
         if post_flash_script:
             self.run_custom_script(post_flash_script, 30)
 
-        t.join(self.timeout)
-        if t.is_alive():
-            logger.debug("Timed out while monitoring serial output on {}".format(self.instance.platform.name))
+        if not flash_error:
+            t.join(self.timeout)
+            if t.is_alive():
+                logger.debug("Timed out while monitoring serial output on {}".format(self.instance.platform.name))
 
         if ser.isOpen():
             ser.close()
@@ -599,14 +603,15 @@ class DeviceHandler(Handler):
             self.instance.status = harness.state
             if harness.state == "failed":
                 self.instance.reason = "Failed"
-        else:
+        elif not flash_error:
             self.instance.status = "error"
             self.instance.reason = "No Console Output(Timeout)"
 
         if self.instance.status == "error":
             self.instance.add_missing_case_status("blocked", self.instance.reason)
 
-        self._final_handle_actions(harness, handler_time)
+        if not flash_error:
+            self._final_handle_actions(harness, handler_time)
 
         if post_script:
             self.run_custom_script(post_script, 30)
