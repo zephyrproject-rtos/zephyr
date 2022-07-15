@@ -2049,6 +2049,9 @@ int bt_le_set_rpa_timeout(uint16_t new_rpa_timeout);
  * common scenario is to call this helper on the advertising data
  * received in the callback that was given to bt_le_scan_start().
  *
+ * @warning This helper function will consume `ad` when parsing. The user should
+ *          make a copy if the original data is to be used afterwards
+ *
  * @param ad        Advertising data as given to the bt_le_scan_cb_t callback.
  * @param func      Callback function which will be called for each element
  *                  that's found in the data. The callback should return
