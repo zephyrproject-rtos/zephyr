@@ -9,12 +9,6 @@ menuconfig IEEE802154_CC1200
 
 if IEEE802154_CC1200
 
-config IEEE802154_CC1200_DRV_NAME
-	string "TI CC1200 Driver's name"
-	default "cc1200"
-	help
-	  This option sets the driver name
-
 config IEEE802154_CC1200_RX_STACK_SIZE
 	int "Driver's internal RX thread stack size"
 	default 800
