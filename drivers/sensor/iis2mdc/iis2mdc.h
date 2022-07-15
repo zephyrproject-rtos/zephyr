@@ -24,20 +24,16 @@
 #include <zephyr/drivers/i2c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
-
-union iis2mdc_bus_cfg {
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	struct i2c_dt_spec i2c;
-#endif
-
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	struct spi_dt_spec spi;
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
-};
-
 struct iis2mdc_dev_config {
+	union {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+		struct i2c_dt_spec i2c;
+#endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+		struct spi_dt_spec spi;
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+	};
 	int (*bus_init)(const struct device *dev);
-	const union iis2mdc_bus_cfg bus_cfg;
 #ifdef CONFIG_IIS2MDC_TRIGGER
 	const struct gpio_dt_spec gpio_drdy;
 #endif  /* CONFIG_IIS2MDC_TRIGGER */

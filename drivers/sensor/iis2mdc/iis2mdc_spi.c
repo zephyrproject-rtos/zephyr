@@ -52,7 +52,7 @@ static int iis2mdc_spi_read(const struct device *dev, uint8_t reg,
 		return -EIO;
 	}
 
-	if (spi_transceive_dt(&cfg->bus_cfg.spi, &tx, &rx)) {
+	if (spi_transceive_dt(&cfg->spi, &tx, &rx)) {
 		return -EIO;
 	}
 
@@ -83,7 +83,7 @@ static int iis2mdc_spi_write(const struct device *dev, uint8_t reg,
 		return -EIO;
 	}
 
-	if (spi_write_dt(&cfg->bus_cfg.spi, &tx)) {
+	if (spi_write_dt(&cfg->spi, &tx)) {
 		return -EIO;
 	}
 
@@ -95,7 +95,7 @@ int iis2mdc_spi_init(const struct device *dev)
 	struct iis2mdc_data *data = dev->data;
 	const struct iis2mdc_dev_config *const cfg = dev->config;
 
-	if (!spi_is_ready(&cfg->bus_cfg.spi)) {
+	if (!spi_is_ready(&cfg->spi)) {
 		LOG_ERR("SPI bus is not ready");
 		return -ENODEV;
 	}
