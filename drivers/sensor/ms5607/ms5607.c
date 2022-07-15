@@ -333,9 +333,8 @@ static const struct sensor_driver_api ms5607_api_funcs = {
 /* Initializes a struct ms5607_config for an instance on a I2C bus. */
 #define MS5607_CONFIG_I2C(inst)						\
 	{								\
-		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
 		.tf = &ms5607_i2c_transfer_function,			\
-		.bus_cfg.i2c_addr = DT_INST_REG_ADDR(inst)		\
+		.bus_cfg.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 	}
 
 /*
