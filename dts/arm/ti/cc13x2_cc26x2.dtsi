@@ -128,6 +128,23 @@
 			interrupts = <4 0>;  /* interrupt #20 = 4 + 16 */
 			status = "disabled";
 		};
+
+		radio: radio@40040000 {
+			compatible = "ti,cc13xx-cc26xx-radio";
+			status = "disabled";
+
+			reg = <0x40040000 0x1000
+			       0x40041000 0x2000
+			       0x40043000 0x1000
+			       0x40044000 0x1000>;
+			reg-names = "RFC_PWR", "RFC_DBELL", "RFC_RAT", "RFC_FSCA";
+
+			ieee802154: ieee802154 {
+				compatible = "ti,cc13xx-cc26xx-ieee802154";
+				label = "IEEE802154_0";
+				status = "disabled";
+			};
+		};
 	};
 };
 
