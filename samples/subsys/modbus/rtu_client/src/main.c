@@ -24,9 +24,11 @@ const static struct modbus_iface_param client_param = {
 	},
 };
 
+#define MODBUS_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_modbus_serial)
+
 static int init_modbus_client(void)
 {
-	const char iface_name[] = {DT_PROP(DT_INST(0, zephyr_modbus_serial), label)};
+	const char iface_name[] = {DEVICE_DT_NAME(MODBUS_NODE)};
 
 	client_iface = modbus_iface_get_by_name(iface_name);
 

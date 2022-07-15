@@ -109,9 +109,11 @@ const static struct modbus_iface_param server_param = {
 	},
 };
 
+#define MODBUS_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_modbus_serial)
+
 static int init_modbus_server(void)
 {
-	const char iface_name[] = {DT_PROP(DT_INST(0, zephyr_modbus_serial), label)};
+	const char iface_name[] = {DEVICE_DT_NAME(MODBUS_NODE)};
 	int iface;
 
 	iface = modbus_iface_get_by_name(iface_name);
@@ -123,8 +125,6 @@ static int init_modbus_server(void)
 
 	return modbus_init_server(iface, server_param);
 }
-
-#define MODBUS_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_modbus_serial)
 
 void main(void)
 {
