@@ -11,6 +11,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SIM7080_GNSS_DATA_UTC_LEN 20
 #define SIM7080_SMS_MAX_LEN 160
 
@@ -214,5 +218,9 @@ int mdm_sim7080_ftp_get_start(const char *server, const char *user, const char *
  * @return According sim7080_ftp_rc.
  */
 int mdm_sim7080_ftp_get_read(char *dst, size_t *size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_MODEM_SIMCOM_SIM7080_H */
