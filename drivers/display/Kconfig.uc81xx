@@ -1,0 +1,10 @@
+# UC81xx display controller configuration options
+
+# Copyright (c) 2020 Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config UC81XX
+	bool "UltraChip UC81xx compatible display controller driver"
+	depends on SPI
+	help
+	  Enable driver for UC81xx compatible controller.
