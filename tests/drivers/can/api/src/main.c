@@ -89,6 +89,28 @@ const struct zcan_frame test_ext_msg_2 = {
 	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
 };
 
+/**
+ * @brief Standard (11-bit) CAN ID RTR frame 1.
+ */
+const struct zcan_frame test_std_rtr_msg_1 = {
+	.id_type = CAN_STANDARD_IDENTIFIER,
+	.rtr     = CAN_REMOTEREQUEST,
+	.id      = TEST_CAN_STD_ID_1,
+	.dlc     = 0,
+	.data    = {0}
+};
+
+/**
+ * @brief Extended (29-bit) CAN ID RTR frame 1.
+ */
+const struct zcan_frame test_ext_rtr_msg_1 = {
+	.id_type = CAN_EXTENDED_IDENTIFIER,
+	.rtr     = CAN_REMOTEREQUEST,
+	.id      = TEST_CAN_EXT_ID_1,
+	.dlc     = 0,
+	.data    = {0}
+};
+
 const struct zcan_filter test_std_filter_1 = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
@@ -152,6 +174,30 @@ const struct zcan_filter test_ext_masked_filter_2 = {
 	.id = TEST_CAN_EXT_ID_1,
 	.rtr_mask = 1,
 	.id_mask = TEST_CAN_EXT_MASK
+};
+
+/**
+ * @brief Standard (11-bit) CAN ID RTR filter 1. This filter matches
+ * ``test_std_rtr_frame_1``.
+ */
+const struct zcan_filter test_std_rtr_filter_1 = {
+	.id_type = CAN_STANDARD_IDENTIFIER,
+	.rtr = CAN_REMOTEREQUEST,
+	.id = TEST_CAN_STD_ID_1,
+	.rtr_mask = 1,
+	.id_mask = CAN_STD_ID_MASK
+};
+
+/**
+ * @brief Extended (29-bit) CAN ID RTR filter 1. This filter matches
+ * ``test_ext_rtr_frame_1``.
+ */
+const struct zcan_filter test_ext_rtr_filter_1 = {
+	.id_type = CAN_EXTENDED_IDENTIFIER,
+	.rtr = CAN_REMOTEREQUEST,
+	.id = TEST_CAN_EXT_ID_1,
+	.rtr_mask = 1,
+	.id_mask = CAN_EXT_ID_MASK
 };
 
 const struct zcan_filter test_std_some_filter = {
@@ -517,6 +563,55 @@ static void send_receive(const struct zcan_filter *filter1,
 	can_detach(can_dev, filter_id_1);
 }
 
+/**
+ * @brief Perform a send/receive test with a set of CAN ID filters and CAN frames, RTR and data
+ * frames.
+ *
+ * @param data_filter CAN data filter
+ * @param rtr_filter  CAN RTR filter
+ * @param data_frame  CAN data frame
+ * @param rtr_frame   CAN RTR frame
+ */
+void send_receive_rtr(const struct zcan_filter *data_filter,
+		      const struct zcan_filter *rtr_filter,
+		      const struct zcan_frame *data_frame,
+		      const struct zcan_frame *rtr_frame)
+{
+	struct zcan_frame frame;
+	int filter_id;
+	int err;
+
+	filter_id = attach_msgq(can_dev, rtr_filter);
+
+	/* Verify that RTR filter does not match data frame */
+	send_test_msg(can_dev, data_frame);
+	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, -EAGAIN, "Data frame passed RTR filter");
+
+	/* Verify that RTR filter matches RTR frame */
+	send_test_msg(can_dev, rtr_frame);
+	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, 0, "receive timeout");
+	check_msg(&frame, rtr_frame, 0);
+
+	can_detach(can_dev, filter_id);
+
+	filter_id = attach_msgq(can_dev, data_filter);
+
+	/* Verify that data filter does not match RTR frame */
+	send_test_msg(can_dev, rtr_frame);
+	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, -EAGAIN, "RTR frame passed data filter");
+
+	/* Verify that data filter matches data frame */
+	send_test_msg(can_dev, data_frame);
+	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, 0, "receive timeout");
+	check_msg(&frame, data_frame, 0);
+
+	can_detach(can_dev, filter_id);
+}
+
 /*
  * Set driver to loopback mode
  * The driver stays in loopback mode after that.
@@ -691,6 +786,24 @@ void test_send_receive_buffer(void)
 	can_detach(can_dev, filter_id);
 }
 
+/**
+ * @brief Test send/receive with standard (11-bit) CAN IDs and remote transmission request (RTR).
+ */
+void test_send_receive_std_id_rtr(void)
+{
+	send_receive_rtr(&test_std_filter_1, &test_std_rtr_filter_1,
+			 &test_std_msg_1, &test_std_rtr_msg_1);
+}
+
+/**
+ * @brief Test send/receive with extended (29-bit) CAN IDs and remote transmission request (RTR).
+ */
+void test_send_receive_ext_id_rtr(void)
+{
+	send_receive_rtr(&test_ext_filter_1, &test_ext_rtr_filter_1,
+			 &test_ext_msg_1, &test_ext_rtr_msg_1);
+}
+
 /*
  * Attach to a filter that should not pass the message and send a message
  * with a different id.
@@ -746,6 +859,8 @@ void test_main(void)
 			 ztest_unit_test(test_send_receive_ext),
 			 ztest_unit_test(test_send_receive_std_masked),
 			 ztest_unit_test(test_send_receive_ext_masked),
+			 ztest_user_unit_test(test_send_receive_std_id_rtr),
+			 ztest_user_unit_test(test_send_receive_ext_id_rtr),
 			 ztest_unit_test(test_send_receive_buffer),
 			 ztest_unit_test(test_send_receive_wrong_id));
 	ztest_run_test_suite(can_driver);
