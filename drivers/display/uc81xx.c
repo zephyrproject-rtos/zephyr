@@ -30,6 +30,8 @@ LOG_MODULE_REGISTER(uc81xx, CONFIG_DISPLAY_LOG_LEVEL);
 struct uc81xx_quirks {
 	uint16_t max_width;
 	uint16_t max_height;
+
+	int (*set_cdi)(const struct device *dev, bool border);
 };
 
 struct uc81xx_dt_array {
@@ -58,9 +60,6 @@ struct uc81xx_config {
 
 struct uc81xx_data {
 	bool blanking_on;
-
-	/* Border and data polarity settings */
-	uint8_t bdd_polarity;
 };
 
 static inline int uc81xx_write_cmd(const struct device *dev, uint8_t cmd,
@@ -259,13 +258,9 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 		return -EIO;
 	}
 
-	if (config->override_cdi) {
-		/* Disable boarder output */
-		data->bdd_polarity |= UC81XX_CDI_BDZ;
-		if (uc81xx_write_cmd_uint8(dev, UC81XX_CMD_CDI,
-					   data->bdd_polarity)) {
-			return -EIO;
-		}
+	/* Disable border output */
+	if (config->quirks->set_cdi(dev, false)) {
+		return -EIO;
 	}
 
 	if (uc81xx_write_cmd(dev, UC81XX_CMD_DTM2, (uint8_t *)buf, buf_len)) {
@@ -279,13 +274,9 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 		}
 	}
 
-	if (config->override_cdi) {
-		/* Enable boarder output */
-		data->bdd_polarity &= ~UC81XX_CDI_BDZ;
-		if (uc81xx_write_cmd_uint8(dev, UC81XX_CMD_CDI,
-					   data->bdd_polarity)) {
-			return -EIO;
-		}
+	/* Enable border output */
+	if (config->quirks->set_cdi(dev, true)) {
+		return -EIO;
 	}
 
 	if (uc81xx_write_cmd(dev, UC81XX_CMD_PTOUT, NULL, 0)) {
@@ -391,7 +382,6 @@ static int uc81xx_controller_init(const struct device *dev)
 		.hres = sys_cpu_to_be16(config->width),
 		.vres = sys_cpu_to_be16(config->height),
 	};
-	uint8_t cdi[UC81XX_CDI_REG_LENGTH];
 
 	data->blanking_on = true;
 
@@ -431,16 +421,9 @@ static int uc81xx_controller_init(const struct device *dev)
 		return -EIO;
 	}
 
-	data->bdd_polarity = UC81XX_CDI_BDV1 |
-		       UC81XX_CDI_N2OCP | UC81XX_CDI_DDX0;
-	if (config->override_cdi) {
-		cdi[UC81XX_CDI_BDZ_DDX_IDX] = data->bdd_polarity;
-		cdi[UC81XX_CDI_CDI_IDX] = config->cdi;
-		LOG_HEXDUMP_DBG(cdi, sizeof(cdi), "CDI");
-		if (uc81xx_write_cmd(dev, UC81XX_CMD_CDI,
-				     cdi, sizeof(cdi))) {
-			return -EIO;
-		}
+	/* Set CDI and enable border output */
+	if (config->quirks->set_cdi(dev, true)) {
+		return -EIO;
 	}
 
 	if (config->override_tcon) {
@@ -506,16 +489,58 @@ static int uc81xx_init(const struct device *dev)
 }
 
 #if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8176)
+static int uc8176_set_cdi(const struct device *dev, bool border)
+{
+	const struct uc81xx_config *config = dev->config;
+	uint8_t cdi =
+		UC8176_CDI_VBD1 | UC8176_CDI_DDX0 |
+		(config->cdi & UC8176_CDI_CDI_MASK);
+
+	if (!config->override_cdi) {
+		return 0;
+	}
+
+	if (!border) {
+		/* Floating border */
+		cdi |= UC8176_CDI_VBD1 | UC8176_CDI_VBD0;
+	}
+
+	LOG_DBG("CDI: %#hhx", cdi);
+	return uc81xx_write_cmd_uint8(dev, UC81XX_CMD_CDI, cdi);
+}
+
 static const struct uc81xx_quirks uc8176_quirks = {
 	.max_width = 400,
 	.max_height = 300,
+
+	.set_cdi = uc8176_set_cdi,
 };
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8179)
+static int uc8179_set_cdi(const struct device *dev, bool border)
+{
+	const struct uc81xx_config *config = dev->config;
+	uint8_t cdi[UC8179_CDI_REG_LENGTH] = {
+		UC8179_CDI_BDV1 | UC8179_CDI_N2OCP | UC8179_CDI_DDX0,
+		config->cdi,
+	};
+
+	if (!config->override_cdi) {
+		return 0;
+	}
+
+	cdi[UC8179_CDI_BDZ_DDX_IDX] |= border ? 0 : UC8179_CDI_BDZ;
+
+	LOG_HEXDUMP_DBG(cdi, sizeof(cdi), "CDI");
+	return uc81xx_write_cmd(dev, UC81XX_CMD_CDI, cdi, sizeof(cdi));
+}
+
 static const struct uc81xx_quirks uc8179_quirks = {
 	.max_width = 800,
 	.max_height = 600,
+
+	.set_cdi = uc8179_set_cdi,
 };
 #endif
 

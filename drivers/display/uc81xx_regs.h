@@ -82,15 +82,22 @@
 #define UC81XX_AUTO_PON_DRF_POF			0xA5
 #define UC81XX_AUTO_PON_DRF_POF_DSLP		0xA7
 
-#define UC81XX_CDI_REG_LENGTH			2U
-#define UC81XX_CDI_BDZ_DDX_IDX			0
-#define UC81XX_CDI_CDI_IDX			1
-#define UC81XX_CDI_BDZ				BIT(7)
-#define UC81XX_CDI_BDV1				BIT(5)
-#define UC81XX_CDI_BDV0				BIT(4)
-#define UC81XX_CDI_N2OCP			BIT(3)
-#define UC81XX_CDI_DDX1				BIT(1)
-#define UC81XX_CDI_DDX0				BIT(0)
+#define UC8176_CDI_VBD_MASK			0xc0
+#define UC8176_CDI_VBD0				BIT(6)
+#define UC8176_CDI_VBD1				BIT(7)
+#define UC8176_CDI_DDX1				BIT(5)
+#define UC8176_CDI_DDX0				BIT(4)
+#define UC8176_CDI_CDI_MASK			0x0f
+
+#define UC8179_CDI_REG_LENGTH			2U
+#define UC8179_CDI_BDZ_DDX_IDX			0
+#define UC8179_CDI_CDI_IDX			1
+#define UC8179_CDI_BDZ				BIT(7)
+#define UC8179_CDI_BDV1				BIT(5)
+#define UC8179_CDI_BDV0				BIT(4)
+#define UC8179_CDI_N2OCP			BIT(3)
+#define UC8179_CDI_DDX1				BIT(1)
+#define UC8179_CDI_DDX0				BIT(0)
 
 struct uc81xx_tres {
 	uint16_t hres;
