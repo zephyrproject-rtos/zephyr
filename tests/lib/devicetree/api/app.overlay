@@ -231,7 +231,6 @@
 		};
 
 		test_mbox: mbox {
-			label = "TEST_MBOX";
 			compatible = "vnd,mbox";
 			#mbox-cells = <1>;
 			status = "okay";

@@ -4,8 +4,3 @@
 description: VND MBOX controller (0 cell)
 
 compatible: "vnd,mbox-zero-cell"
-
-properties:
-  label:
-    type: string
-    required: true
