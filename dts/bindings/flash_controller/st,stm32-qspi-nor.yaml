@@ -8,7 +8,6 @@ description: |
 
         mx25r6435f: qspi-nor-flash@0 {
                 compatible = "st,stm32-qspi-nor";
-                label = "MX25R6435F";
                 reg = <0>;
                 qspi-max-frequency = <80000000>;
                 size = <0x4000000>;
@@ -31,8 +30,6 @@ properties:
       type: int
       required: true
       description: Maximum clock frequency of device's QSPI interface in Hz
-    label:
-      required: true
     size:
       required: true
       description: Flash Memory size in bits
