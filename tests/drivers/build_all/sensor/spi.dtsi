@@ -71,8 +71,19 @@ test_spi_lpd8806: lpd8806@9 {
 	spi-max-frequency = <0>;
 };
 
+test_spi_uc8176: uc8176@a {
+	compatible = "ultrachip,uc8176";
+	reg = <0xa>;
+	spi-max-frequency = <0>;
+	height = <0>;
+	width = <0>;
+	reset-gpios = <&test_gpio 0 0>;
+	dc-gpios = <&test_gpio 0 0>;
+	busy-gpios = <&test_gpio 0 0>;
+};
+
 test_spi_uc8179: uc8179@a {
-	compatible = "ultrachip,uc81xx";
+	compatible = "ultrachip,uc8179";
 	reg = <0xa>;
 	spi-max-frequency = <0>;
 	height = <0>;

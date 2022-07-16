@@ -1,9 +1,8 @@
+# Copyright (c) 2022 Andreas Sandberg
 # Copyright (c) 2020, Phytec Messtechnik GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-description: UltraChip UC81xx EPD display controller
-
-compatible: "ultrachip,uc81xx"
+description: UltraChip UC81xx EPD display controller common properties
 
 include: [spi-device.yaml, display-controller.yaml]
 
