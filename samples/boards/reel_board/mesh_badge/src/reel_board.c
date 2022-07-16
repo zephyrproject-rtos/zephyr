@@ -54,7 +54,7 @@ struct font_info {
 
 #define STAT_COUNT 128
 
-static const struct device *const epd_dev = DEVICE_DT_GET_ONE(solomon_ssd16xxfb);
+static const struct device *const epd_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 static bool pressed;
 static uint8_t screen_id = SCREEN_MAIN;
 static struct k_work_delayable epd_work;
