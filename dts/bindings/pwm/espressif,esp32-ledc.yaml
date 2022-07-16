@@ -77,9 +77,6 @@ compatible: "espressif,esp32-ledc"
 include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
 
 properties:
-  label:
-    required: true
-
   "#pwm-cells":
     const: 3
 
