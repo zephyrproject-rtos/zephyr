@@ -175,11 +175,26 @@ static inline void uc81xx_busy_wait(const struct device *dev)
 static int uc81xx_update_display(const struct device *dev)
 {
 	LOG_DBG("Trigger update sequence");
+
+	/* Turn on: booster, controller, regulators, and sensor. */
+	if (uc81xx_write_cmd(dev, UC81XX_CMD_PON, NULL, 0)) {
+		return -EIO;
+	}
+
+	k_sleep(K_MSEC(UC81XX_PON_DELAY));
+	uc81xx_busy_wait(dev);
+
 	if (uc81xx_write_cmd(dev, UC81XX_CMD_DRF, NULL, 0)) {
 		return -EIO;
 	}
 
 	k_sleep(K_MSEC(UC81XX_BUSY_DELAY));
+	uc81xx_busy_wait(dev);
+
+	/* Turn on: booster, controller, regulators, and sensor. */
+	if (uc81xx_write_cmd(dev, UC81XX_CMD_POF, NULL, 0)) {
+		return -EIO;
+	}
 
 	return 0;
 }
@@ -401,14 +416,6 @@ static int uc81xx_controller_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/* Turn on: booster, controller, regulators, and sensor. */
-	if (uc81xx_write_cmd(dev, UC81XX_CMD_PON, NULL, 0)) {
-		return -EIO;
-	}
-
-	k_sleep(K_MSEC(UC81XX_PON_DELAY));
-	uc81xx_busy_wait(dev);
-
 	/* Panel settings, KW mode */
 	if (uc81xx_write_cmd_uint8(dev, UC81XX_CMD_PSR, psr_kw)) {
 		return -EIO;
@@ -431,12 +438,6 @@ static int uc81xx_controller_init(const struct device *dev)
 					   config->tcon)) {
 			return -EIO;
 		}
-	}
-
-	/* Enable Auto Sequence */
-	if (uc81xx_write_cmd_uint8(dev, UC81XX_CMD_AUTO,
-				   UC81XX_AUTO_PON_DRF_POF)) {
-		return -EIO;
 	}
 
 	if (uc81xx_clear_and_write_buffer(dev, 0xff, false)) {
