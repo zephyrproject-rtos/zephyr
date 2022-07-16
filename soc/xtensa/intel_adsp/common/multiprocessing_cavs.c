@@ -1,7 +1,7 @@
 /* Copyright (c) 2021 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <cavs-idc.h>
 #include <adsp_memory.h>
 #include <adsp_shim.h>
