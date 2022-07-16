@@ -6,6 +6,8 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/infineon-xmc4xxx-gpio.h>
 
 / {
 	cpus {
@@ -41,7 +43,32 @@
 		#clock-cells = <0>;
 	};
 
-	soc {
+	soc: soc {
+
+		gpio0: gpio@48028000 {
+			compatible = "infineon,xmc4xxx-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x48028000 0x100>;
+			status = "disabled";
+		};
+
+		gpio1: gpio@48028100 {
+			compatible = "infineon,xmc4xxx-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x48028100 0x100>;
+			status = "disabled";
+		};
+
+		gpio2: gpio@48028200 {
+			compatible = "infineon,xmc4xxx-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x48028200 0x100>;
+			status = "disabled";
+		};
+
 		usic0ch0: usic@40030000 {
 			reg = <0x40030000 0x1ff>;
 			clocks = <&sysclk>;

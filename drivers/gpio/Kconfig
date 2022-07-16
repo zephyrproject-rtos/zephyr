@@ -144,4 +144,6 @@ source "drivers/gpio/Kconfig.sn74hc595"
 
 source "drivers/gpio/Kconfig.mchp_mss"
 
+source "drivers/gpio/Kconfig.xmc4xxx"
+
 endif # GPIO

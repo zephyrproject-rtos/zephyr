@@ -1,0 +1,16 @@
+description: INFINEON XMC4XXX GPIO PORT node
+
+compatible: "infineon,xmc4xxx-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
+  - pin
+  - flags
