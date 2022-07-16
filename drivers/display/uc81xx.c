@@ -5,8 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ultrachip_uc81xx
-
 #include <string.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -29,12 +27,19 @@ LOG_MODULE_REGISTER(uc81xx, CONFIG_DISPLAY_LOG_LEVEL);
 
 #define UC81XX_PIXELS_PER_BYTE		8U
 
+struct uc81xx_quirks {
+	uint16_t max_width;
+	uint16_t max_height;
+};
+
 struct uc81xx_dt_array {
 	uint8_t *data;
 	uint8_t len;
 };
 
 struct uc81xx_config {
+	const struct uc81xx_quirks *quirks;
+
 	struct spi_dt_spec bus;
 	struct gpio_dt_spec dc_gpio;
 	struct gpio_dt_spec busy_gpio;
@@ -491,8 +496,28 @@ static int uc81xx_init(const struct device *dev)
 
 	gpio_pin_configure_dt(&config->busy_gpio, GPIO_INPUT);
 
+	if (config->width > config->quirks->max_width ||
+	    config->height > config->quirks->max_height) {
+		LOG_ERR("Display size out of range.");
+		return -EINVAL;
+	}
+
 	return uc81xx_controller_init(dev);
 }
+
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8176)
+static const struct uc81xx_quirks uc8176_quirks = {
+	.max_width = 400,
+	.max_height = 300,
+};
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8179)
+static const struct uc81xx_quirks uc8179_quirks = {
+	.max_width = 800,
+	.max_height = 600,
+};
+#endif
 
 static struct display_driver_api uc81xx_driver_api = {
 	.blanking_on = uc81xx_blanking_on,
@@ -507,11 +532,11 @@ static struct display_driver_api uc81xx_driver_api = {
 	.set_orientation = uc81xx_set_orientation,
 };
 
-#define UC81XX_MAKE_INST_ARRAY_OPT(n, p)				\
-	static uint8_t data_ ## n ## _ ## p[] = DT_INST_PROP_OR(n, p, {})
+#define UC81XX_MAKE_ARRAY_OPT(n, p)					\
+	static uint8_t data_ ## n ## _ ## p[] = DT_PROP_OR(n, p, {})
 
-#define UC81XX_MAKE_INST_ARRAY(n, p)					\
-	static uint8_t data_ ## n ## _ ## p[] = DT_INST_PROP(n, p)
+#define UC81XX_MAKE_ARRAY(n, p)						\
+	static uint8_t data_ ## n ## _ ## p[] = DT_PROP(n, p)
 
 #define UC81XX_ASSIGN_ARRAY(n, p)					\
 	{								\
@@ -519,37 +544,42 @@ static struct display_driver_api uc81xx_driver_api = {
 		.len = sizeof(data_ ## n ## _ ## p),			\
 	}
 
-#define UC81XX_DEFINE(n)						\
-	UC81XX_MAKE_INST_ARRAY_OPT(n, softstart);			\
-	UC81XX_MAKE_INST_ARRAY_OPT(n, pwr);				\
+#define UC81XX_DEFINE(n, quirks_ptr)					\
+	UC81XX_MAKE_ARRAY_OPT(n, softstart);				\
+	UC81XX_MAKE_ARRAY_OPT(n, pwr);					\
 									\
-	static const struct uc81xx_config uc81xx_cfg_##n = {		\
-		.bus = SPI_DT_SPEC_INST_GET(n,				\
+	static const struct uc81xx_config uc81xx_cfg_ ## n = {		\
+		.quirks = quirks_ptr,					\
+		.bus = SPI_DT_SPEC_GET(n,				\
 			SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |		\
 			SPI_LOCK_ON,					\
 			0),						\
-		.reset_gpio = GPIO_DT_SPEC_INST_GET(n, reset_gpios),	\
-		.dc_gpio = GPIO_DT_SPEC_INST_GET(n, dc_gpios),		\
-		.busy_gpio = GPIO_DT_SPEC_INST_GET(n, busy_gpios),	\
+		.reset_gpio = GPIO_DT_SPEC_GET(n, reset_gpios),		\
+		.dc_gpio = GPIO_DT_SPEC_GET(n, dc_gpios),		\
+		.busy_gpio = GPIO_DT_SPEC_GET(n, busy_gpios),		\
 									\
-		.height = DT_INST_PROP(n, height),			\
-		.width = DT_INST_PROP(n, width),			\
+		.height = DT_PROP(n, height),				\
+		.width = DT_PROP(n, width),				\
 									\
-		.cdi = DT_INST_PROP_OR(n, cdi, 0),			\
-		.override_cdi = DT_INST_NODE_HAS_PROP(n, cdi),		\
-		.tcon = DT_INST_PROP_OR(n, tcon, 0),			\
-		.override_tcon = DT_INST_NODE_HAS_PROP(n, tcon),	\
+		.cdi = DT_PROP_OR(n, cdi, 0),				\
+		.override_cdi = DT_NODE_HAS_PROP(n, cdi),		\
+		.tcon = DT_PROP_OR(n, tcon, 0),				\
+		.override_tcon = DT_NODE_HAS_PROP(n, tcon),		\
 		.softstart = UC81XX_ASSIGN_ARRAY(n, softstart),		\
 		.pwr = UC81XX_ASSIGN_ARRAY(n, pwr),			\
 	};								\
 									\
 	static struct uc81xx_data uc81xx_data_##n = {};			\
 									\
-	DEVICE_DT_INST_DEFINE(n, uc81xx_init, NULL,			\
-			      &uc81xx_data_##n,				\
-			      &uc81xx_cfg_##n,				\
-			      POST_KERNEL,				\
-			      CONFIG_DISPLAY_INIT_PRIORITY,		\
-			      &uc81xx_driver_api);
+	DEVICE_DT_DEFINE(n, uc81xx_init, NULL,				\
+			 &uc81xx_data_ ## n,				\
+			 &uc81xx_cfg_ ## n,				\
+			 POST_KERNEL,					\
+			 CONFIG_DISPLAY_INIT_PRIORITY,			\
+			 &uc81xx_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(UC81XX_DEFINE)
+DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8176, UC81XX_DEFINE,
+			     &uc8176_quirks);
+
+DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8179, UC81XX_DEFINE,
+			     &uc8179_quirks);

@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_DISPLAY_UC81XX_REGS_H_
 #define ZEPHYR_DRIVERS_DISPLAY_UC81XX_REGS_H_
 
+/* UC8176/UC8179 */
 #define UC81XX_CMD_PSR				0x00
 #define UC81XX_CMD_PWR				0x01
 #define UC81XX_CMD_POF				0x02
@@ -18,20 +19,33 @@
 #define UC81XX_CMD_DTM1				0x10
 #define UC81XX_CMD_DSP				0x11
 #define UC81XX_CMD_DRF				0x12
+
+/* UC8179 only */
 #define UC81XX_CMD_DTM2				0x13
 #define UC81XX_CMD_DUSPI			0x15
 #define UC81XX_CMD_AUTO				0x17
 #define UC81XX_CMD_LUTOPT			0x2A
 #define UC81XX_CMD_KWOPT			0x2B
+
+/* UC8176/UC8179 */
 #define UC81XX_CMD_PLL				0x30
 #define UC81XX_CMD_TSC				0x40
 #define UC81XX_CMD_TSE				0x41
 #define UC81XX_CMD_TSW				0x42
 #define UC81XX_CMD_TSR				0x43
+
+/* UC8179 */
 #define UC81XX_CMD_PBC				0x44
+
+/* UC8176/UC8179 - different register layouts */
 #define UC81XX_CMD_CDI				0x50
+/* UC8176/UC8179 */
 #define UC81XX_CMD_LPD				0x51
+
+/* UC8179 */
 #define UC81XX_CMD_EVS				0x52
+
+/* UC8176/UC8179 */
 #define UC81XX_CMD_TCON				0x60
 #define UC81XX_CMD_TRES				0x61
 #define UC81XX_CMD_GSST				0x65
@@ -48,8 +62,14 @@
 #define UC81XX_CMD_ROTP				0xA2
 #define UC81XX_CMD_CCSET			0xE0
 #define UC81XX_CMD_PWS				0xE3
+
+/* UC8179 */
 #define UC81XX_CMD_LVSEL			0xE4
+
+/* UC8176/UC8179 */
 #define UC81XX_CMD_TSSET			0xE5
+
+/* UC8179 */
 #define UC81XX_CMD_TSBDRY			0xE7
 
 #define UC81XX_PSR_REG				BIT(5)
