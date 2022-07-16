@@ -57,13 +57,11 @@
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
 	ssd16xx: ssd16xxfb@0 {
-		compatible = "gooddisplay,gdeh0213b1", "solomon,ssd1673", "solomon,ssd16xxfb";
+		compatible = "gooddisplay,gdeh0213b1", "solomon,ssd1673";
 		spi-max-frequency = <4000000>;
 		reg = <0>;
 		width = <250>;
 		height = <122>;
-		pp-width-bits = <8>;
-		pp-height-bits = <8>;
 		reset-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 		dc-gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
 		busy-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;

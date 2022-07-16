@@ -16,7 +16,7 @@ static const struct device *const dev_info[] = {
 	DEVICE_DT_GET_ONE(ti_hdc1010),
 	DEVICE_DT_GET_ONE(nxp_mma8652fc),
 	DEVICE_DT_GET_ONE(avago_apds9960),
-	DEVICE_DT_GET_ONE(solomon_ssd16xxfb),
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_display)),
 };
 
 int get_hdc1010_val(struct sensor_value *val)
