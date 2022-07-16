@@ -16,9 +16,6 @@ properties:
     interrupts:
       required: true
 
-    label:
-      required: true
-
     "#pwm-cells":
       const: 2
 
