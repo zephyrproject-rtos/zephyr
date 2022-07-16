@@ -624,6 +624,8 @@ static void can_mcan_get_message(const struct device *dev,
 	int data_length;
 	void *cb_arg;
 	struct can_mcan_rx_fifo_hdr hdr;
+	bool rtr_filter_mask;
+	bool rtr_filter;
 
 	while ((*fifo_status_reg & CAN_MCAN_RXF0S_F0FL)) {
 		get_idx = (*fifo_status_reg & CAN_MCAN_RXF0S_F0GI) >>
@@ -653,11 +655,17 @@ static void can_mcan_get_message(const struct device *dev,
 
 		filt_idx = hdr.fidx;
 
-		/* Check if RTR must match */
-		if ((hdr.xtd && data->ext_filt_rtr_mask & (1U << filt_idx) &&
-		     ((data->ext_filt_rtr >> filt_idx) & 1U) != frame.rtr) ||
-		    (data->std_filt_rtr_mask &  (1U << filt_idx) &&
-		     ((data->std_filt_rtr >> filt_idx) & 1U) != frame.rtr)) {
+		if (hdr.xtd != 0) {
+			rtr_filter_mask = (data->ext_filt_rtr_mask & BIT(filt_idx)) != 0;
+			rtr_filter = (data->ext_filt_rtr & BIT(filt_idx)) != 0;
+		} else {
+			rtr_filter_mask = (data->std_filt_rtr_mask & BIT(filt_idx)) != 0;
+			rtr_filter = (data->std_filt_rtr & BIT(filt_idx)) != 0;
+		}
+
+		if (rtr_filter_mask && (rtr_filter != frame.rtr)) {
+			/* RTR bit does not match filter RTR mask and bit, drop frame */
+			*fifo_ack_reg = get_idx;
 			continue;
 		}
 
