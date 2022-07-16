@@ -13,6 +13,3 @@ properties:
 
   interrupts:
       required: true
-
-  label:
-      required: true

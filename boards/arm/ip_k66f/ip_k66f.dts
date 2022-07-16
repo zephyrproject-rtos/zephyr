@@ -126,7 +126,6 @@
 		compatible = "microchip,ksz8794";
 		reg = <0>;
 
-		label = "dsa";
 		spi-max-frequency = <44000000>;
 		reset-gpios = <&gpiob 22 GPIO_ACTIVE_LOW>;
 
@@ -136,15 +135,12 @@
 		dsa-slave-ports = <3>;
 
 		lan3: lan_3 {
-			label = "lan3";
 		};
 
 		lan2: lan_2 {
-			label = "lan2";
 		};
 
 		lan1: lan_1 {
-			label = "lan1";
 		};
 	};
 };

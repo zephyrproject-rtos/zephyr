@@ -6,7 +6,3 @@ description: Intel Digital PDM Microphone (DMIC) node
 compatible: "intel,dmic"
 
 include: base.yaml
-
-properties:
-    label:
-      required: true
