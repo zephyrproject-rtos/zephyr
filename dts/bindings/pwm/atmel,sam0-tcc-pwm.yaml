@@ -23,9 +23,6 @@ properties:
   clock-names:
     required: true
 
-  label:
-    required: true
-
   channels:
     type: int
     required: true
