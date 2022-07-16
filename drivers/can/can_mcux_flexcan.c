@@ -301,13 +301,11 @@ static void mcux_flexcan_copy_zfilter_to_mbconfig(const struct zcan_filter *src,
 	if (src->id_type == CAN_STANDARD_IDENTIFIER) {
 		dest->format = kFLEXCAN_FrameFormatStandard;
 		dest->id = FLEXCAN_ID_STD(src->id);
-		*mask = FLEXCAN_RX_MB_STD_MASK(src->id_mask,
-					       src->rtr & src->rtr_mask, 1);
+		*mask = FLEXCAN_RX_MB_STD_MASK(src->id_mask, src->rtr_mask, 1);
 	} else {
 		dest->format = kFLEXCAN_FrameFormatExtend;
 		dest->id = FLEXCAN_ID_EXT(src->id);
-		*mask = FLEXCAN_RX_MB_EXT_MASK(src->id_mask,
-					       src->rtr & src->rtr_mask, 1);
+		*mask = FLEXCAN_RX_MB_EXT_MASK(src->id_mask, src->rtr_mask, 1);
 	}
 
 	if ((src->rtr & src->rtr_mask) == CAN_DATAFRAME) {
@@ -661,6 +659,7 @@ static inline void mcux_flexcan_transfer_rx_idle(const struct device *dev,
 static FLEXCAN_CALLBACK(mcux_flexcan_transfer_callback)
 {
 	struct mcux_flexcan_data *data = (struct mcux_flexcan_data *)userData;
+	const struct mcux_flexcan_config *config = data->dev->config;
 	/*
 	 * The result field can either be a MB index (which is limited to 32 bit
 	 * value) or a status flags value, which is 32 bit on some platforms but
@@ -680,6 +679,7 @@ static FLEXCAN_CALLBACK(mcux_flexcan_transfer_callback)
 		mcux_flexcan_transfer_error_status(data->dev, status_flags);
 		break;
 	case kStatus_FLEXCAN_TxSwitchToRx:
+		FLEXCAN_TransferAbortReceive(config->base, &data->handle, mb);
 		__fallthrough;
 	case kStatus_FLEXCAN_TxIdle:
 		mcux_flexcan_transfer_tx_idle(data->dev, mb);
