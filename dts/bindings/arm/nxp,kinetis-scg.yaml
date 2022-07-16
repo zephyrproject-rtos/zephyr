@@ -11,9 +11,6 @@ properties:
     reg:
       required: true
 
-    label:
-      required: true
-
     sosc-mode:
       type: int
       description: system oscillator mode
