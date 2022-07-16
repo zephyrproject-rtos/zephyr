@@ -72,6 +72,3 @@ properties:
       type: int
       description: Number of steps on the rotating wheel
       required: true
-
-    label:
-      required: true

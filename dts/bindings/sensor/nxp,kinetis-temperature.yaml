@@ -8,9 +8,6 @@ compatible: "nxp,kinetis-temperature"
 include: base.yaml
 
 properties:
-    label:
-      required: true
-
     io-channels:
       required: true
       description: ADC channels for temperature sensor and bandgap voltage
