@@ -59,7 +59,6 @@ description: |
          st,mem2mem;
          dma-requests = <7>;
          status = "disabled";
-         label = "DMA_2";
         };
 
   For the client part, example for stm32f411 on DMA2 instance
