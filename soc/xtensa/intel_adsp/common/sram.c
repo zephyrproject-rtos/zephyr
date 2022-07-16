@@ -2,10 +2,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/devicetree.h>
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/devicetree.h>
 #include <soc.h>
 #include <zephyr/arch/xtensa/cache.h>
 #include <adsp_shim.h>
