@@ -71,8 +71,8 @@ test_spi_lpd8806: lpd8806@9 {
 	spi-max-frequency = <0>;
 };
 
-test_spi_gd7965: gd7965@a {
-	compatible = "gooddisplay,gd7965";
+test_spi_uc8179: uc8179@a {
+	compatible = "ultrachip,uc81xx";
 	reg = <0xa>;
 	spi-max-frequency = <0>;
 	height = <0>;
