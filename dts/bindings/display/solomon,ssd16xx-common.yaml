@@ -1,23 +1,11 @@
 # Copyright (c) 2018, Phytec Messtechnik GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-description: SSD16XX 250x150 EPD display controller
-
-compatible: "solomon,ssd16xxfb"
+description: SSD16XX EPD display controller
 
 include: [spi-device.yaml, display-controller.yaml]
 
 properties:
-  pp-height-bits:
-    type: int
-    required: true
-    description: Number of bits used for the height parameters
-
-  pp-width-bits:
-    type: int
-    required: true
-    description: Number of bits used for the width parameters
-
   gdv:
     type: uint8-array
     description: Gate driving voltage values

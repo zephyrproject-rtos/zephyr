@@ -14,13 +14,11 @@
 
 &arduino_spi {
 	ssd16xx_waveshare_epaper_gdeh0213b72: ssd16xxfb@0 {
-		compatible = "gooddisplay,gdeh0213b72", "solomon,ssd1675a", "solomon,ssd16xxfb";
+		compatible = "gooddisplay,gdeh0213b72", "solomon,ssd1675a";
 		spi-max-frequency = <4000000>;
 		reg = <0>;
 		width = <250>;
 		height = <120>;
-		pp-width-bits = <8>;
-		pp-height-bits = <16>;
 		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
 		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
 		busy-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;	/* D7 */
