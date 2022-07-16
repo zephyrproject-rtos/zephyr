@@ -34,18 +34,6 @@ description: |
 
 compatible: "gpio-leds"
 
-include:
-    - name: base.yaml
-      property-allowlist: [label]
-
-properties:
-    label:
-      description: |
-        Human readable string describing the device and used to set the device
-        name. It can be passed as argument to device_get_binding() to retrieve
-        the device. If this property is omitted, then the device name is set
-        from the node full name.
-
 child-binding:
     description: GPIO LED child node
     properties:
