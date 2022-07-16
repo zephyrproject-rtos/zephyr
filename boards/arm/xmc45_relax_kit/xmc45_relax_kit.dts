@@ -15,6 +15,21 @@
 	compatible = "infineon,xm4500-relax-kit", "infineon,xmc4500",
 						"infineon,xmc4xxx";
 
+	aliases {
+		led0 = &led1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		/* leds are labelled LED1 and LED2 in the relax kit documentation */
+		led1: led1 {
+			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+		};
+		led2: led2 {
+			gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
 	chosen {
 		zephyr,sram = &dsram1;
 		zephyr,flash = &flash0;
@@ -31,5 +46,9 @@
 	compatible = "infineon,xmc4xxx-uart";
 	current-speed = <115200>;
 	label = "UART_0";
+	status = "okay";
+};
+
+&gpio1 {
 	status = "okay";
 };
