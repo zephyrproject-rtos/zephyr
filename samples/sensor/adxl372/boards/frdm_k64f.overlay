@@ -10,7 +10,6 @@
 	adxl372@11 {
 		compatible = "adi,adxl372";
 		reg = <0x11>;
-		label = "ADXL372";
 		int1-gpios = <&gpioc 6 0>;
 	};
 };
