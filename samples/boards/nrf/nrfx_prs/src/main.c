@@ -63,13 +63,13 @@ static bool init_buttons(void)
 	} btn_spec[] = {
 		{
 			GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios),
-			DT_PROP(DT_ALIAS(sw0), label),
+			DT_LABEL(DT_ALIAS(sw0)),
 			"trigger a transfer",
 			sw0_handler
 		},
 		{
 			GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpios),
-			DT_PROP(DT_ALIAS(sw1), label),
+			DT_LABEL(DT_ALIAS(sw1)),
 			"switch the type of peripheral",
 			sw1_handler
 		},
