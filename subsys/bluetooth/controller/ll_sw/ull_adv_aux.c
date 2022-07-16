@@ -645,11 +645,11 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			       uint8_t len, uint8_t const *const data)
 {
 	struct pdu_adv_com_ext_adv *sr_com_hdr;
-	struct pdu_adv *pri_pdu_prev;
 	struct pdu_adv_ext_hdr *sr_hdr;
+	struct pdu_adv *pri_pdu_prev;
+	struct pdu_adv *sec_pdu_prev;
 	struct pdu_adv_adi *sr_adi;
-	struct pdu_adv *sr_prev;
-	struct pdu_adv *aux_pdu;
+	struct pdu_adv *sr_pdu_prev;
 	struct ll_adv_set *adv;
 	struct pdu_adv *sr_pdu;
 	struct lll_adv *lll;
@@ -660,23 +660,16 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 	uint8_t sr_idx;
 	uint8_t err;
 
-	/* TODO: handle other op values */
-	if ((op != BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA) &&
-	    (op != BT_HCI_LE_EXT_ADV_OP_UNCHANGED_DATA)) {
-		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
-	}
-
 	/* Get the advertising set instance */
 	adv = ull_adv_is_created_get(handle);
 	if (!adv) {
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
-	lll = &adv->lll;
-
 	/* Do not use Common Extended Advertising Header Format if not extended
 	 * advertising.
 	 */
+	lll = &adv->lll;
 	pri_pdu_prev = lll_adv_data_peek(lll);
 	if (pri_pdu_prev->type != PDU_ADV_TYPE_EXT_IND) {
 		if ((op != BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA) ||
@@ -686,13 +679,9 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		return ull_scan_rsp_set(adv, len, data);
 	}
 
-	LL_ASSERT(lll->aux);
-
-	aux_pdu = lll_adv_aux_data_peek(lll->aux);
-
-	/* Can only discard data on non-scannable instances */
-	if (!(aux_pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) && len) {
-		return BT_HCI_ERR_INVALID_PARAM;
+	/* Can only set complete data if advertising is enabled */
+	if (adv->is_enabled && (op != BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	/* Data can be discarded only using 0x03 op */
@@ -700,14 +689,22 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
-	/* Can only set complete data if advertising is enabled */
-	if (adv->is_enabled && (op != BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA)) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+	/* Scannable advertising shall have aux context allocated */
+	LL_ASSERT(lll->aux);
+
+	/* Get reference to previous secondary channel PDU */
+	sec_pdu_prev = lll_adv_aux_data_peek(lll->aux);
+
+	/* Can only discard data on non-scannable instances */
+	if (!(sec_pdu_prev->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) &&
+	    len) {
+		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
 	/* Cannot discard scan response if scannable advertising is enabled */
 	if (adv->is_enabled &&
-	    (aux_pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) && !len) {
+	    (sec_pdu_prev->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) &&
+	    !len) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -716,7 +713,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 	sr_pdu->type = PDU_ADV_TYPE_AUX_SCAN_RSP;
 	sr_pdu->rfu = 0;
 	sr_pdu->chan_sel = 0;
-	sr_pdu->tx_addr = aux_pdu->tx_addr;
+	sr_pdu->tx_addr = sec_pdu_prev->tx_addr;
 	sr_pdu->rx_addr = 0;
 	sr_pdu->len = 0;
 
@@ -742,10 +739,11 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 #endif
 	sr_dptr++;
 
-	sr_prev = lll_adv_scan_rsp_peek(lll);
+	sr_pdu_prev = lll_adv_scan_rsp_peek(lll);
 
 	/* AdvA */
-	(void)memcpy(sr_dptr, &sr_prev->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
+	(void)memcpy(sr_dptr,
+		     &sr_pdu_prev->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
 		     BDADDR_SIZE);
 	sr_dptr += BDADDR_SIZE;
 
