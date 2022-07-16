@@ -32,7 +32,6 @@
 
 	adxl362@0 {
 		compatible = "adi,adxl362";
-		label = "ADXL362";
 		spi-max-frequency = <8000000>;
 		reg = <0>;
 		int1-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
