@@ -91,10 +91,12 @@ test_spi_uc8179: uc8179@a {
 	reset-gpios = <&test_gpio 0 0>;
 	dc-gpios = <&test_gpio 0 0>;
 	busy-gpios = <&test_gpio 0 0>;
-	pwr = [];
 	softstart = [];
-	cdi = <0>;
-	tcon = <0>;
+	full {
+		pwr = [];
+		cdi = <0>;
+		tcon = <0>;
+	};
 };
 
 test_spi_eswifi: eswifi@c {
