@@ -62,6 +62,19 @@ struct uc81xx_data {
 	bool blanking_on;
 };
 
+
+static inline void uc81xx_busy_wait(const struct device *dev)
+{
+	const struct uc81xx_config *config = dev->config;
+	int pin = gpio_pin_get_dt(&config->busy_gpio);
+
+	while (pin > 0) {
+		__ASSERT(pin >= 0, "Failed to get pin level");
+		k_sleep(K_MSEC(UC81XX_BUSY_DELAY));
+		pin = gpio_pin_get_dt(&config->busy_gpio);
+	}
+}
+
 static inline int uc81xx_write_cmd(const struct device *dev, uint8_t cmd,
 				   const uint8_t *data, size_t len)
 {
@@ -69,6 +82,8 @@ static inline int uc81xx_write_cmd(const struct device *dev, uint8_t cmd,
 	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
 	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
 	int err;
+
+	uc81xx_busy_wait(dev);
 
 	err = gpio_pin_set_dt(&config->dc_gpio, 1);
 	if (err < 0) {
@@ -109,6 +124,8 @@ static inline int uc81xx_write_cmd_pattern(const struct device *dev,
 	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
 	int err;
 	uint8_t data[64];
+
+	uc81xx_busy_wait(dev);
 
 	err = gpio_pin_set_dt(&config->dc_gpio, 1);
 	if (err < 0) {
@@ -159,22 +176,6 @@ static inline int uc81xx_write_array_opt(const struct device *dev, uint8_t cmd,
 	}
 }
 
-static inline void uc81xx_busy_wait(const struct device *dev)
-{
-	const struct uc81xx_config *config = dev->config;
-	int pin = gpio_pin_get_dt(&config->busy_gpio);
-
-	LOG_DBG("entering wait: %u", pin);
-
-	while (pin > 0) {
-		__ASSERT(pin >= 0, "Failed to get pin level");
-		k_sleep(K_MSEC(UC81XX_BUSY_DELAY));
-		pin = gpio_pin_get_dt(&config->busy_gpio);
-	}
-
-	LOG_DBG("done");
-}
-
 static int uc81xx_update_display(const struct device *dev)
 {
 	LOG_DBG("Trigger update sequence");
@@ -185,14 +186,12 @@ static int uc81xx_update_display(const struct device *dev)
 	}
 
 	k_sleep(K_MSEC(UC81XX_PON_DELAY));
-	uc81xx_busy_wait(dev);
 
 	if (uc81xx_write_cmd(dev, UC81XX_CMD_DRF, NULL, 0)) {
 		return -EIO;
 	}
 
 	k_sleep(K_MSEC(UC81XX_BUSY_DELAY));
-	uc81xx_busy_wait(dev);
 
 	/* Turn on: booster, controller, regulators, and sensor. */
 	if (uc81xx_write_cmd(dev, UC81XX_CMD_POF, NULL, 0)) {
@@ -208,7 +207,6 @@ static int uc81xx_blanking_off(const struct device *dev)
 
 	if (data->blanking_on) {
 		/* Update EPD panel in normal mode */
-		uc81xx_busy_wait(dev);
 		if (uc81xx_update_display(dev)) {
 			return -EIO;
 		}
@@ -266,7 +264,6 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 	/* Setup Partial Window and enable Partial Mode */
 	LOG_HEXDUMP_DBG(&ptl, sizeof(ptl), "ptl");
 
-	uc81xx_busy_wait(dev);
 	if (uc81xx_write_cmd(dev, UC81XX_CMD_PTIN, NULL, 0)) {
 		return -EIO;
 	}
