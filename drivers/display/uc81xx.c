@@ -63,6 +63,8 @@ struct uc81xx_quirks {
 	uint16_t max_width;
 	uint16_t max_height;
 
+	bool auto_copy;
+
 	int (*set_cdi)(const struct device *dev, bool border);
 };
 
@@ -409,6 +411,8 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 		.flags = UC81XX_PTL_FLAG_PT_SCAN,
 	};
 	size_t buf_len;
+	const uint8_t back_buffer = data->blanking_on ?
+		UC81XX_CMD_DTM1 : UC81XX_CMD_DTM2;
 
 	LOG_DBG("x %u, y %u, height %u, width %u, pitch %u",
 		x, y, desc->height, desc->width, desc->pitch);
@@ -473,6 +477,23 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 
 		/* Enable border output */
 		if (config->quirks->set_cdi(dev, true)) {
+			return -EIO;
+		}
+	}
+
+	if (!config->quirks->auto_copy) {
+		/* Some controllers don't copy the new data to the old
+		 * data buffer on refresh. Do that manually here if
+		 * needed.
+		 */
+
+		if (uc81xx_write_cmd(dev, UC81XX_CMD_PTL,
+				     (const void *)&ptl, sizeof(ptl))) {
+			return -EIO;
+		}
+
+		if (uc81xx_write_cmd(dev, back_buffer,
+				     (uint8_t *)buf, buf_len)) {
 			return -EIO;
 		}
 	}
@@ -659,6 +680,8 @@ static const struct uc81xx_quirks uc8176_quirks = {
 	.max_width = 400,
 	.max_height = 300,
 
+	.auto_copy = false,
+
 	.set_cdi = uc8176_set_cdi,
 };
 #endif
@@ -687,6 +710,8 @@ static int uc8179_set_cdi(const struct device *dev, bool border)
 static const struct uc81xx_quirks uc8179_quirks = {
 	.max_width = 800,
 	.max_height = 600,
+
+	.auto_copy = true,
 
 	.set_cdi = uc8179_set_cdi,
 };
