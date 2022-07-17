@@ -162,8 +162,11 @@ class VndLookup:
 
 def main():
     args = parse_args()
+    if not args.dts_roots:
+        sys.exit('no DTS roots; use --dts-root to specify at least one')
     setup_logging(args.verbose)
-    bindings = load_bindings(args.dts_roots)
+
+    bindings = load_relevant_bindings(args.dts_roots)
     base_binding = load_base_binding()
     vnd_lookup = VndLookup(args.vendor_prefixes, bindings)
     dump_content(bindings, base_binding, vnd_lookup, args.out_dir,
@@ -196,21 +199,10 @@ def setup_logging(verbose):
     logging.basicConfig(format='%(filename)s:%(levelname)s: %(message)s',
                         level=log_level)
 
-def load_bindings(dts_roots):
-    # Get a list of edtlib.Binding objects from searching 'dts_roots'.
+def load_relevant_bindings(dts_roots):
+    # Load just the bindings we care about from dts_roots.
 
-    if not dts_roots:
-        sys.exit('no DTS roots; use --dts-root to specify at least one')
-
-    binding_files = []
-    for dts_root in dts_roots:
-        binding_files.extend(glob.glob(f'{dts_root}/dts/bindings/**/*.yml',
-                                       recursive=True))
-        binding_files.extend(glob.glob(f'{dts_root}/dts/bindings/**/*.yaml',
-                                       recursive=True))
-
-    bindings = edtlib.bindings_from_paths(binding_files, ignore_errors=True)
-
+    bindings = load_bindings(dts_roots)
     num_total = len(bindings)
 
     # Remove bindings from the 'vnd' vendor, which is not a real vendor,
@@ -223,6 +215,18 @@ def load_bindings(dts_roots):
                 len(bindings), num_total - len(bindings), dts_roots)
 
     return bindings
+
+def load_bindings(dts_roots):
+    # Get a list of edtlib.Binding objects from searching 'dts_roots'.
+
+    binding_files = []
+    for dts_root in dts_roots:
+        binding_files.extend(glob.glob(f'{dts_root}/dts/bindings/**/*.yml',
+                                       recursive=True))
+        binding_files.extend(glob.glob(f'{dts_root}/dts/bindings/**/*.yaml',
+                                       recursive=True))
+
+    return edtlib.bindings_from_paths(binding_files, ignore_errors=True)
 
 def load_base_binding():
     # Make a Binding object for base.yaml.
