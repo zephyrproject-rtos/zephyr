@@ -46,6 +46,13 @@ struct uc81xx_profile {
 	bool override_cdi;
 	uint8_t tcon;
 	bool override_tcon;
+
+	const struct uc81xx_dt_array lutc;
+	const struct uc81xx_dt_array lutww;
+	const struct uc81xx_dt_array lutkw;
+	const struct uc81xx_dt_array lutwk;
+	const struct uc81xx_dt_array lutkk;
+	const struct uc81xx_dt_array lutbd;
 };
 
 struct uc81xx_quirks {
@@ -205,7 +212,7 @@ static int uc81xx_set_profile(const struct device *dev,
 	const struct uc81xx_config *config = dev->config;
 	const struct uc81xx_profile *p;
 	struct uc81xx_data *data = dev->data;
-	const uint8_t psr =
+	uint8_t psr =
 		UC81XX_PSR_KW_R |
 		UC81XX_PSR_UD |
 		UC81XX_PSR_SHL |
@@ -240,6 +247,16 @@ static int uc81xx_set_profile(const struct device *dev,
 					   &config->softstart)) {
 			return -EIO;
 		}
+
+		/*
+		 * Enable LUT overrides if a LUT has been provided by
+		 * the user.
+		 */
+		if (p->lutc.len || p->lutww.len || p->lutkw.len ||
+		    p->lutwk.len || p->lutbd.len) {
+			LOG_DBG("Using LUT from registers");
+			psr |= UC81XX_PSR_REG;
+		}
 	}
 
 	/* Panel settings, KW mode and soft reset */
@@ -266,6 +283,30 @@ static int uc81xx_set_profile(const struct device *dev,
 	 */
 	if (!p) {
 		return 0;
+	}
+
+	if (uc81xx_write_array_opt(dev, UC81XX_CMD_LUTC, &p->lutc)) {
+		return -EIO;
+	}
+
+	if (uc81xx_write_array_opt(dev, UC81XX_CMD_LUTWW, &p->lutww)) {
+		return -EIO;
+	}
+
+	if (uc81xx_write_array_opt(dev, UC81XX_CMD_LUTKW, &p->lutkw)) {
+		return -EIO;
+	}
+
+	if (uc81xx_write_array_opt(dev, UC81XX_CMD_LUTWK, &p->lutwk)) {
+		return -EIO;
+	}
+
+	if (uc81xx_write_array_opt(dev, UC81XX_CMD_LUTKK, &p->lutkk)) {
+		return -EIO;
+	}
+
+	if (uc81xx_write_array_opt(dev, UC81XX_CMD_LUTBD, &p->lutbd)) {
+		return -EIO;
 	}
 
 	if (p->override_tcon) {
@@ -660,6 +701,12 @@ static struct display_driver_api uc81xx_driver_api = {
 
 #define UC81XX_PROFILE(n)						\
 	UC81XX_MAKE_ARRAY_OPT(n, pwr);					\
+	UC81XX_MAKE_ARRAY_OPT(n, lutc);					\
+	UC81XX_MAKE_ARRAY_OPT(n, lutww);				\
+	UC81XX_MAKE_ARRAY_OPT(n, lutkw);				\
+	UC81XX_MAKE_ARRAY_OPT(n, lutwk);				\
+	UC81XX_MAKE_ARRAY_OPT(n, lutkk);				\
+	UC81XX_MAKE_ARRAY_OPT(n, lutbd);				\
 									\
 	static const struct uc81xx_profile uc81xx_profile_ ## n = {	\
 		.pwr = UC81XX_ASSIGN_ARRAY(n, pwr),			\
@@ -667,6 +714,13 @@ static struct display_driver_api uc81xx_driver_api = {
 		.override_cdi = DT_NODE_HAS_PROP(n, cdi),		\
 		.tcon = DT_PROP_OR(n, tcon, 0),				\
 		.override_tcon = DT_NODE_HAS_PROP(n, tcon),		\
+									\
+		.lutc = UC81XX_ASSIGN_ARRAY(n, lutc),			\
+		.lutww = UC81XX_ASSIGN_ARRAY(n, lutww),			\
+		.lutkw = UC81XX_ASSIGN_ARRAY(n, lutkw),			\
+		.lutwk = UC81XX_ASSIGN_ARRAY(n, lutwk),			\
+		.lutkk = UC81XX_ASSIGN_ARRAY(n, lutkk),			\
+		.lutbd = UC81XX_ASSIGN_ARRAY(n, lutbd),			\
 	};
 
 #define _UC81XX_PROFILE_PTR(n) &uc81xx_profile_ ## n

@@ -77,3 +77,33 @@ child-binding:
       type: int
       required: false
       description: TCON setting value
+
+    lutc:
+      type: uint8-array
+      required: false
+      description: VCOM LUT
+
+    lutww:
+      type: uint8-array
+      required: false
+      description: White-to-white LUT
+
+    lutkw:
+      type: uint8-array
+      required: false
+      description: Black-to-white LUT
+
+    lutwk:
+      type: uint8-array
+      required: false
+      description: White-to-black LUT
+
+    lutkk:
+      type: uint8-array
+      required: false
+      description: White-to-black LUT
+
+    lutbd:
+      type: uint8-array
+      required: false
+      description: Border LUT
