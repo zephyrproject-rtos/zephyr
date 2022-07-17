@@ -46,6 +46,10 @@ struct uc81xx_profile {
 	bool override_cdi;
 	uint8_t tcon;
 	bool override_tcon;
+	uint8_t  pll;
+	bool override_pll;
+	uint8_t  vdcs;
+	bool override_vdcs;
 
 	const struct uc81xx_dt_array lutc;
 	const struct uc81xx_dt_array lutww;
@@ -307,6 +311,20 @@ static int uc81xx_set_profile(const struct device *dev,
 
 	if (uc81xx_write_array_opt(dev, UC81XX_CMD_LUTBD, &p->lutbd)) {
 		return -EIO;
+	}
+
+	if (p->override_pll) {
+		LOG_DBG("PLL: %#hhx", p->pll);
+		if (uc81xx_write_cmd_uint8(dev, UC81XX_CMD_PLL, p->pll)) {
+			return -EIO;
+		}
+	}
+
+	if (p->override_vdcs) {
+		LOG_DBG("VDCS: %#hhx", p->vdcs);
+		if (uc81xx_write_cmd_uint8(dev, UC81XX_CMD_VDCS, p->vdcs)) {
+			return -EIO;
+		}
 	}
 
 	if (p->override_tcon) {
@@ -714,6 +732,10 @@ static struct display_driver_api uc81xx_driver_api = {
 		.override_cdi = DT_NODE_HAS_PROP(n, cdi),		\
 		.tcon = DT_PROP_OR(n, tcon, 0),				\
 		.override_tcon = DT_NODE_HAS_PROP(n, tcon),		\
+		.pll = DT_PROP_OR(n, pll, 0),				\
+		.override_pll = DT_NODE_HAS_PROP(n, pll),		\
+		.vdcs = DT_PROP_OR(n, vdcs, 0),				\
+		.override_vdcs = DT_NODE_HAS_PROP(n, vdcs),		\
 									\
 		.lutc = UC81XX_ASSIGN_ARRAY(n, lutc),			\
 		.lutww = UC81XX_ASSIGN_ARRAY(n, lutww),			\

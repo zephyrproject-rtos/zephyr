@@ -78,6 +78,16 @@ child-binding:
       required: false
       description: TCON setting value
 
+    pll:
+      type: int
+      required: false
+      description: PLL / frame rate control
+
+    vdcs:
+      type: int
+      required: false
+      description: VCOM DC settings
+
     lutc:
       type: uint8-array
       required: false
