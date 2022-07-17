@@ -46,9 +46,19 @@ child-binding:
     cycle. Refresh nodes are optional and are used to override
     defaults loaded from the controllers OTP memory.
 
+    The partial refresh profile is used when performing a partial
+    refresh (writes while blanking is off). Since the controller
+    always supports partial updates, the driver uses the full refresh
+    profile and scans the partial window corresponding to the write if
+    no partial profile has been provided. An empty profile can be used
+    to use the reset values from OTP instead of the values specified
+    in the full profile.
+
     The driver typically looks for the following child nodes:
 
       - 'full' - Normal / full refresh.
+      - 'partial' - Partial refresh, defaults to the values in the
+        full profile if not present.
 
   properties:
     pwr:
