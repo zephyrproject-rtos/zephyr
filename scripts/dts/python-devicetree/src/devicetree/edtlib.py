@@ -69,6 +69,7 @@ bindings_from_paths() helper function.
 
 from collections import OrderedDict, defaultdict
 from copy import deepcopy
+import glob
 import logging
 import os
 import re
@@ -2006,6 +2007,35 @@ class Binding:
                                                      (int, str)):
                 _err(f"const in {self.path} for property '{prop_name}' "
                      "is not a scalar")
+
+
+def bindings_from_dirs(dirs):
+    """
+    Get a list of Binding objects from any yaml files discovered
+    under 'dirs', an iterable of os.PathLike.
+
+    All subdirectories of 'dirs' are searched for valid YAML files.
+    YAML files that do not result in complete bindings are ignored;
+    this handles 'include' files like base.yaml.
+
+    Note: *ALL* subdirectories, *NOT* just dts/bindings/ subdirectories!
+    This is meant as a general purpose helper for loading bindings that
+    that doesn't care about zephyr file system conventions.
+
+    If 'ignore_errors' is True, YAML files that cause an EDTError when
+    loaded are ignored. (No other exception types are silenced.)
+    """
+    if isinstance(dirs, str):
+        raise TypeError('expected iterable of os.PathLike, not str')
+
+    yaml_files = []
+
+    for path in dirs:
+        fspath = os.fspath(path)
+        yaml_files.extend(glob.glob(f'{fspath}/**/*.yml', recursive=True))
+        yaml_files.extend(glob.glob(f'{fspath}/**/*.yaml', recursive=True))
+
+    return bindings_from_paths(yaml_files, ignore_errors=True)
 
 
 def bindings_from_paths(yaml_paths, ignore_errors=False):
