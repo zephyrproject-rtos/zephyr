@@ -27,16 +27,31 @@ LOG_MODULE_REGISTER(uc81xx, CONFIG_DISPLAY_LOG_LEVEL);
 
 #define UC81XX_PIXELS_PER_BYTE		8U
 
+struct uc81xx_dt_array {
+	uint8_t *data;
+	uint8_t len;
+};
+
+enum uc81xx_profile_type {
+	UC81XX_PROFILE_FULL = 0,
+	UC81XX_NUM_PROFILES,
+	UC81XX_PROFILE_INVALID = UC81XX_NUM_PROFILES,
+};
+
+struct uc81xx_profile {
+	struct uc81xx_dt_array pwr;
+
+	uint8_t cdi;
+	bool override_cdi;
+	uint8_t tcon;
+	bool override_tcon;
+};
+
 struct uc81xx_quirks {
 	uint16_t max_width;
 	uint16_t max_height;
 
 	int (*set_cdi)(const struct device *dev, bool border);
-};
-
-struct uc81xx_dt_array {
-	uint8_t *data;
-	uint8_t len;
 };
 
 struct uc81xx_config {
@@ -50,16 +65,14 @@ struct uc81xx_config {
 	uint16_t height;
 	uint16_t width;
 
-	uint8_t cdi;
-	bool override_cdi;
-	uint8_t tcon;
-	bool override_tcon;
 	struct uc81xx_dt_array softstart;
-	struct uc81xx_dt_array pwr;
+
+	const struct uc81xx_profile *profiles[UC81XX_NUM_PROFILES];
 };
 
 struct uc81xx_data {
 	bool blanking_on;
+	enum uc81xx_profile_type profile;
 };
 
 
@@ -174,6 +187,84 @@ static inline int uc81xx_write_array_opt(const struct device *dev, uint8_t cmd,
 	} else {
 		return 0;
 	}
+}
+
+static int uc81xx_set_profile(const struct device *dev,
+			      enum uc81xx_profile_type type)
+{
+	const struct uc81xx_config *config = dev->config;
+	const struct uc81xx_profile *p;
+	struct uc81xx_data *data = dev->data;
+	const uint8_t psr =
+		UC81XX_PSR_KW_R |
+		UC81XX_PSR_UD |
+		UC81XX_PSR_SHL |
+		UC81XX_PSR_SHD |
+		UC81XX_PSR_RST;
+	const struct uc81xx_tres tres = {
+		.hres = sys_cpu_to_be16(config->width),
+		.vres = sys_cpu_to_be16(config->height),
+	};
+
+	if (type >= UC81XX_NUM_PROFILES) {
+		return -EINVAL;
+	}
+
+	/* No need to update the current profile, so do nothing */
+	if (data->profile == type) {
+		return 0;
+	}
+
+	p = config->profiles[type];
+	data->profile = type;
+
+	LOG_DBG("Initialize UC81XX controller with profile %d", type);
+
+	if (p) {
+		LOG_HEXDUMP_DBG(p->pwr.data, p->pwr.len, "PWR");
+		if (uc81xx_write_array_opt(dev, UC81XX_CMD_PWR, &p->pwr)) {
+			return -EIO;
+		}
+
+		if (uc81xx_write_array_opt(dev, UC81XX_CMD_BTST,
+					   &config->softstart)) {
+			return -EIO;
+		}
+	}
+
+	/* Panel settings, KW mode and soft reset */
+	LOG_DBG("PSR: %#hhx", psr);
+	if (uc81xx_write_cmd_uint8(dev, UC81XX_CMD_PSR, psr)) {
+		return -EIO;
+	}
+
+	/* Set panel resolution */
+	LOG_HEXDUMP_DBG(&tres, sizeof(tres), "TRES");
+	if (uc81xx_write_cmd(dev, UC81XX_CMD_TRES,
+			     (const void *)&tres, sizeof(tres))) {
+		return -EIO;
+	}
+
+	/* Set CDI and enable border output */
+	if (config->quirks->set_cdi(dev, true)) {
+		return -EIO;
+	}
+
+	/*
+	 * The rest of the configuration is optional and depends on
+	 * having profile overrides specified in the device tree.
+	 */
+	if (!p) {
+		return 0;
+	}
+
+	if (p->override_tcon) {
+		if (uc81xx_write_cmd_uint8(dev, UC81XX_CMD_TCON, p->tcon)) {
+			return -EIO;
+		}
+	}
+
+	return 0;
 }
 
 static int uc81xx_update_display(const struct device *dev)
@@ -387,18 +478,6 @@ static int uc81xx_controller_init(const struct device *dev)
 {
 	const struct uc81xx_config *config = dev->config;
 	struct uc81xx_data *data = dev->data;
-	const uint8_t psr_kw =
-		UC81XX_PSR_KW_R |
-		UC81XX_PSR_UD |
-		UC81XX_PSR_SHL |
-		UC81XX_PSR_SHD |
-		UC81XX_PSR_RST;
-	const struct uc81xx_tres tres = {
-		.hres = sys_cpu_to_be16(config->width),
-		.vres = sys_cpu_to_be16(config->height),
-	};
-
-	data->blanking_on = true;
 
 	gpio_pin_set_dt(&config->reset_gpio, 1);
 	k_sleep(K_MSEC(UC81XX_RESET_DELAY));
@@ -406,38 +485,11 @@ static int uc81xx_controller_init(const struct device *dev)
 	k_sleep(K_MSEC(UC81XX_RESET_DELAY));
 	uc81xx_busy_wait(dev);
 
-	LOG_DBG("Initialize UC81XX controller");
+	data->blanking_on = true;
+	data->profile = UC81XX_PROFILE_INVALID;
 
-	if (uc81xx_write_array_opt(dev, UC81XX_CMD_PWR, &config->pwr)) {
+	if (uc81xx_set_profile(dev, UC81XX_PROFILE_FULL)) {
 		return -EIO;
-	}
-
-	if (uc81xx_write_array_opt(dev, UC81XX_CMD_BTST, &config->softstart)) {
-		return -EIO;
-	}
-
-	/* Panel settings, KW mode */
-	if (uc81xx_write_cmd_uint8(dev, UC81XX_CMD_PSR, psr_kw)) {
-		return -EIO;
-	}
-
-	/* Set panel resolution */
-	LOG_HEXDUMP_DBG(&tres, sizeof(tres), "TRES");
-	if (uc81xx_write_cmd(dev, UC81XX_CMD_TRES,
-			     (const void *)&tres, sizeof(tres))) {
-		return -EIO;
-	}
-
-	/* Set CDI and enable border output */
-	if (config->quirks->set_cdi(dev, true)) {
-		return -EIO;
-	}
-
-	if (config->override_tcon) {
-		if (uc81xx_write_cmd_uint8(dev, UC81XX_CMD_TCON,
-					   config->tcon)) {
-			return -EIO;
-		}
 	}
 
 	if (uc81xx_clear_and_write_buffer(dev, 0xff, false)) {
@@ -493,11 +545,12 @@ static int uc81xx_init(const struct device *dev)
 static int uc8176_set_cdi(const struct device *dev, bool border)
 {
 	const struct uc81xx_config *config = dev->config;
-	uint8_t cdi =
-		UC8176_CDI_VBD1 | UC8176_CDI_DDX0 |
-		(config->cdi & UC8176_CDI_CDI_MASK);
+	const struct uc81xx_data *data = dev->data;
+	const struct uc81xx_profile *p = config->profiles[data->profile];
+	uint8_t cdi = UC8176_CDI_VBD1 | UC8176_CDI_DDX0 |
+		(p ? (p->cdi & UC8176_CDI_CDI_MASK) : 0);
 
-	if (!config->override_cdi) {
+	if (!p || !p->override_cdi) {
 		return 0;
 	}
 
@@ -522,12 +575,14 @@ static const struct uc81xx_quirks uc8176_quirks = {
 static int uc8179_set_cdi(const struct device *dev, bool border)
 {
 	const struct uc81xx_config *config = dev->config;
+	const struct uc81xx_data *data = dev->data;
+	const struct uc81xx_profile *p = config->profiles[data->profile];
 	uint8_t cdi[UC8179_CDI_REG_LENGTH] = {
 		UC8179_CDI_BDV1 | UC8179_CDI_N2OCP | UC8179_CDI_DDX0,
-		config->cdi,
+		p ? p->cdi : 0,
 	};
 
-	if (!config->override_cdi) {
+	if (!p || !p->override_cdi) {
 		return 0;
 	}
 
@@ -570,9 +625,28 @@ static struct display_driver_api uc81xx_driver_api = {
 		.len = sizeof(data_ ## n ## _ ## p),			\
 	}
 
+#define UC81XX_PROFILE(n)						\
+	UC81XX_MAKE_ARRAY_OPT(n, pwr);					\
+									\
+	static const struct uc81xx_profile uc81xx_profile_ ## n = {	\
+		.pwr = UC81XX_ASSIGN_ARRAY(n, pwr),			\
+		.cdi = DT_PROP_OR(n, cdi, 0),				\
+		.override_cdi = DT_NODE_HAS_PROP(n, cdi),		\
+		.tcon = DT_PROP_OR(n, tcon, 0),				\
+		.override_tcon = DT_NODE_HAS_PROP(n, tcon),		\
+	};
+
+#define _UC81XX_PROFILE_PTR(n) &uc81xx_profile_ ## n
+
+#define UC81XX_PROFILE_PTR(n)						\
+	COND_CODE_1(DT_NODE_EXISTS(n),					\
+		    (_UC81XX_PROFILE_PTR(n)),				\
+		    NULL)
+
 #define UC81XX_DEFINE(n, quirks_ptr)					\
 	UC81XX_MAKE_ARRAY_OPT(n, softstart);				\
-	UC81XX_MAKE_ARRAY_OPT(n, pwr);					\
+									\
+	DT_FOREACH_CHILD(n, UC81XX_PROFILE);				\
 									\
 	static const struct uc81xx_config uc81xx_cfg_ ## n = {		\
 		.quirks = quirks_ptr,					\
@@ -587,12 +661,12 @@ static struct display_driver_api uc81xx_driver_api = {
 		.height = DT_PROP(n, height),				\
 		.width = DT_PROP(n, width),				\
 									\
-		.cdi = DT_PROP_OR(n, cdi, 0),				\
-		.override_cdi = DT_NODE_HAS_PROP(n, cdi),		\
-		.tcon = DT_PROP_OR(n, tcon, 0),				\
-		.override_tcon = DT_NODE_HAS_PROP(n, tcon),		\
 		.softstart = UC81XX_ASSIGN_ARRAY(n, softstart),		\
-		.pwr = UC81XX_ASSIGN_ARRAY(n, pwr),			\
+									\
+		.profiles = {						\
+			[UC81XX_PROFILE_FULL] =				\
+				UC81XX_PROFILE_PTR(DT_CHILD(n, full)),	\
+		},							\
 	};								\
 									\
 	static struct uc81xx_data uc81xx_data_##n = {};			\
