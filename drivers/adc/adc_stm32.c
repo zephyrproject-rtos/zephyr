@@ -1074,13 +1074,6 @@ static int adc_stm32_init(const struct device *dev)
 	if (LL_ADC_IsActiveFlag_ADRDY(adc)) {
 		LL_ADC_ClearFlag_ADRDY(adc);
 	}
-
-	/*
-	 * These STM32 series has one internal voltage reference source
-	 * to be enabled.
-	 */
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
-				       LL_ADC_PATH_INTERNAL_VREFINT);
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
