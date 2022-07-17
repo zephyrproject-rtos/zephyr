@@ -513,6 +513,68 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 	return 0;
 }
 
+/*
+ * Enable internal channel source
+ */
+static void adc_stm32_set_common_path(const struct device *dev, uint32_t PathInternal)
+{
+	const struct adc_stm32_cfg *config =
+		(const struct adc_stm32_cfg *)dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	(void) adc; /* Avoid 'unused variable' warning for some families */
+
+	/* Do not remove existing paths */
+	PathInternal |= LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
+	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc), PathInternal);
+}
+
+static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_id)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+#ifdef CONFIG_SOC_SERIES_STM32G4X
+	if (config->has_temp_channel) {
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay)
+		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC1) == channel_id)
+		    && (config->base == ADC1)) {
+			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+			k_sleep(K_USEC(LL_ADC_DELAY_TEMPSENSOR_STAB_US));
+		}
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc5), okay)
+		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC5) == channel_id)
+		   && (config->base == ADC5)) {
+			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+			k_sleep(K_USEC(LL_ADC_DELAY_TEMPSENSOR_STAB_US));
+		}
+#endif
+	}
+#else
+	if (config->has_temp_channel &&
+		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR) == channel_id) {
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+#ifdef LL_ADC_DELAY_TEMPSENSOR_STAB_US
+		k_sleep(K_USEC(LL_ADC_DELAY_TEMPSENSOR_STAB_US));
+#endif
+	}
+#endif /* CONFIG_SOC_SERIES_STM32G4X */
+
+	if (config->has_vref_channel &&
+		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VREFINT) == channel_id) {
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
+#ifdef LL_ADC_DELAY_VREFINT_STAB_US
+		k_sleep(K_USEC(LL_ADC_DELAY_VREFINT_STAB_US));
+#endif
+	}
+#if defined(LL_ADC_CHANNEL_VBAT)
+	/* Enable the bridge divider only when needed for ADC conversion. */
+	if (config->has_vbat_channel &&
+		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VBAT) == channel_id) {
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VBAT);
+	}
+
+#endif /* LL_ADC_CHANNEL_VBAT */
+}
+
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
 {
@@ -575,6 +637,8 @@ static int start_read(const struct device *dev,
 		LOG_ERR("Only single channel supported");
 		return -ENOTSUP;
 	}
+
+	adc_stm32_setup_channels(dev, index);
 
 	data->buffer = sequence->buffer;
 
@@ -814,21 +878,6 @@ static int adc_stm32_check_acq_time(uint16_t acq_time)
 	return -EINVAL;
 }
 
-/*
- * Enable internal channel source
- */
-static void adc_stm32_set_common_path(const struct device *dev, uint32_t PathInternal)
-{
-	const struct adc_stm32_cfg *config =
-		(const struct adc_stm32_cfg *)dev->config;
-	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
-	(void) adc; /* Avoid 'unused variable' warning for some families */
-
-	/* Do not remove existing paths */
-	PathInternal |= LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc), PathInternal);
-}
-
 static void adc_stm32_setup_speed(const struct device *dev, uint8_t id,
 				  uint8_t acq_time_index)
 {
@@ -851,53 +900,6 @@ static void adc_stm32_setup_speed(const struct device *dev, uint8_t id,
 		__LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
 		table_samp_time[acq_time_index]);
 #endif
-}
-
-static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_id)
-{
-	const struct adc_stm32_cfg *config = dev->config;
-#ifdef CONFIG_SOC_SERIES_STM32G4X
-	if (config->has_temp_channel) {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay)
-		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC1) == channel_id)
-		    && (config->base == ADC1)) {
-			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-			k_sleep(K_USEC(LL_ADC_DELAY_TEMPSENSOR_STAB_US));
-		}
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc5), okay)
-		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC5) == channel_id)
-		   && (config->base == ADC5)) {
-			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-			k_sleep(K_USEC(LL_ADC_DELAY_TEMPSENSOR_STAB_US));
-		}
-#endif
-	}
-#else
-	if (config->has_temp_channel &&
-		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR) == channel_id) {
-		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
-#ifdef LL_ADC_DELAY_TEMPSENSOR_STAB_US
-		k_sleep(K_USEC(LL_ADC_DELAY_TEMPSENSOR_STAB_US));
-#endif
-	}
-#endif /* CONFIG_SOC_SERIES_STM32G4X */
-
-	if (config->has_vref_channel &&
-		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VREFINT) == channel_id) {
-		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
-#ifdef LL_ADC_DELAY_VREFINT_STAB_US
-		k_sleep(K_USEC(LL_ADC_DELAY_VREFINT_STAB_US));
-#endif
-	}
-#if defined(LL_ADC_CHANNEL_VBAT)
-	/* Enable the bridge divider only when needed for ADC conversion. */
-	if (config->has_vbat_channel &&
-		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VBAT) == channel_id) {
-		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VBAT);
-	}
-
-#endif /* LL_ADC_CHANNEL_VBAT */
 }
 
 static int adc_stm32_channel_setup(const struct device *dev,
@@ -947,8 +949,6 @@ static int adc_stm32_channel_setup(const struct device *dev,
 		LOG_ERR("Invalid channel reference");
 		return -EINVAL;
 	}
-
-	adc_stm32_setup_channels(dev, channel_cfg->channel_id);
 
 	adc_stm32_setup_speed(dev, channel_cfg->channel_id,
 				  acq_time_index);
