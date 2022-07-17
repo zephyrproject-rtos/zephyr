@@ -27,6 +27,13 @@
 #define UC81XX_CMD_LUTOPT			0x2A
 #define UC81XX_CMD_KWOPT			0x2B
 
+#define UC81XX_CMD_LUTC				0x20
+#define UC81XX_CMD_LUTWW			0x21
+#define UC81XX_CMD_LUTKW			0x22
+#define UC81XX_CMD_LUTWK			0x23
+#define UC81XX_CMD_LUTKK			0x24
+#define UC81XX_CMD_LUTBD			0x25
+
 /* UC8176/UC8179 */
 #define UC81XX_CMD_PLL				0x30
 #define UC81XX_CMD_TSC				0x40
