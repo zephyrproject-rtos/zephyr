@@ -8,7 +8,6 @@ devicetree bindings.
 
 import argparse
 from collections import defaultdict
-import glob
 import io
 import logging
 import os
@@ -202,7 +201,8 @@ def setup_logging(verbose):
 def load_relevant_bindings(dts_roots):
     # Load just the bindings we care about from dts_roots.
 
-    bindings = load_bindings(dts_roots)
+    bindings = edtlib.bindings_from_dirs(f'{root}/dts/bindings' for root in
+                                         dts_roots)
     num_total = len(bindings)
 
     # Remove bindings from the 'vnd' vendor, which is not a real vendor,
@@ -215,18 +215,6 @@ def load_relevant_bindings(dts_roots):
                 len(bindings), num_total - len(bindings), dts_roots)
 
     return bindings
-
-def load_bindings(dts_roots):
-    # Get a list of edtlib.Binding objects from searching 'dts_roots'.
-
-    binding_files = []
-    for dts_root in dts_roots:
-        binding_files.extend(glob.glob(f'{dts_root}/dts/bindings/**/*.yml',
-                                       recursive=True))
-        binding_files.extend(glob.glob(f'{dts_root}/dts/bindings/**/*.yaml',
-                                       recursive=True))
-
-    return edtlib.bindings_from_paths(binding_files, ignore_errors=True)
 
 def load_base_binding():
     # Make a Binding object for base.yaml.
