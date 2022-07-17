@@ -267,40 +267,6 @@ class EDT:
         except Exception as e:
             raise EDTError(e)
 
-    def _init_graph(self):
-        # Constructs a graph of dependencies between Node instances,
-        # which is usable for computing a partial order over the dependencies.
-        # The algorithm supports detecting dependency loops.
-        #
-        # Actually computing the SCC order is lazily deferred to the
-        # first time the scc_order property is read.
-
-        self._graph = Graph()
-
-        for node in self.nodes:
-            # A Node always depends on its parent.
-            for child in node.children.values():
-                self._graph.add_edge(child, node)
-
-            # A Node depends on any Nodes present in 'phandle',
-            # 'phandles', or 'phandle-array' property values.
-            for prop in node.props.values():
-                if prop.type == 'phandle':
-                    self._graph.add_edge(node, prop.val)
-                elif prop.type == 'phandles':
-                    for phandle_node in prop.val:
-                        self._graph.add_edge(node, phandle_node)
-                elif prop.type == 'phandle-array':
-                    for cd in prop.val:
-                        if cd is None:
-                            continue
-                        self._graph.add_edge(node, cd.controller)
-
-            # A Node depends on whatever supports the interrupts it
-            # generates.
-            for intr in node.interrupts:
-                self._graph.add_edge(node, intr.controller)
-
     def _init_compat2binding(self):
         # Creates self._compat2binding, a dictionary that maps
         # (<compatible>, <bus>) tuples (both strings) to Binding objects.
@@ -444,6 +410,40 @@ class EDT:
                     _LOG.warning("unit address and first address in 'reg' "
                                  f"(0x{node.regs[0].addr:x}) don't match for "
                                  f"{node.path}")
+
+    def _init_graph(self):
+        # Constructs a graph of dependencies between Node instances,
+        # which is usable for computing a partial order over the dependencies.
+        # The algorithm supports detecting dependency loops.
+        #
+        # Actually computing the SCC order is lazily deferred to the
+        # first time the scc_order property is read.
+
+        self._graph = Graph()
+
+        for node in self.nodes:
+            # A Node always depends on its parent.
+            for child in node.children.values():
+                self._graph.add_edge(child, node)
+
+            # A Node depends on any Nodes present in 'phandle',
+            # 'phandles', or 'phandle-array' property values.
+            for prop in node.props.values():
+                if prop.type == 'phandle':
+                    self._graph.add_edge(node, prop.val)
+                elif prop.type == 'phandles':
+                    for phandle_node in prop.val:
+                        self._graph.add_edge(node, phandle_node)
+                elif prop.type == 'phandle-array':
+                    for cd in prop.val:
+                        if cd is None:
+                            continue
+                        self._graph.add_edge(node, cd.controller)
+
+            # A Node depends on whatever supports the interrupts it
+            # generates.
+            for intr in node.interrupts:
+                self._graph.add_edge(node, intr.controller)
 
     def _init_luts(self):
         # Initialize node lookup tables (LUTs).
