@@ -97,6 +97,11 @@ test_spi_uc8179: uc8179@a {
 		cdi = <0>;
 		tcon = <0>;
 	};
+	partial {
+		pwr = [];
+		cdi = <0>;
+		tcon = <0>;
+	};
 };
 
 test_spi_eswifi: eswifi@c {

@@ -34,6 +34,7 @@ struct uc81xx_dt_array {
 
 enum uc81xx_profile_type {
 	UC81XX_PROFILE_FULL = 0,
+	UC81XX_PROFILE_PARTIAL,
 	UC81XX_NUM_PROFILES,
 	UC81XX_PROFILE_INVALID = UC81XX_NUM_PROFILES,
 };
@@ -189,6 +190,15 @@ static inline int uc81xx_write_array_opt(const struct device *dev, uint8_t cmd,
 	}
 }
 
+static int uc81xx_have_profile(const struct device *dev,
+			       enum uc81xx_profile_type type)
+{
+	const struct uc81xx_config *config = dev->config;
+
+	return type < UC81XX_NUM_PROFILES &&
+		config->profiles[type];
+}
+
 static int uc81xx_set_profile(const struct device *dev,
 			      enum uc81xx_profile_type type)
 {
@@ -312,6 +322,12 @@ static int uc81xx_blanking_on(const struct device *dev)
 {
 	struct uc81xx_data *data = dev->data;
 
+	if (!data->blanking_on) {
+		if (uc81xx_set_profile(dev, UC81XX_PROFILE_FULL)) {
+			return -EIO;
+		}
+	}
+
 	data->blanking_on = true;
 
 	return 0;
@@ -352,6 +368,23 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 		return -EINVAL;
 	}
 
+	if (!data->blanking_on) {
+		/* Blanking isn't on, so this is a partial
+		 * refresh. Request the partial profile if it
+		 * exists. If a partial profile hasn't been provided,
+		 * we continue to use the full refresh profile. Note
+		 * that the controller still only scans a partial
+		 * window.
+		 *
+		 * This operation becomes a no-op if the profile is
+		 * already active
+		 */
+		if (uc81xx_have_profile(dev, UC81XX_PROFILE_PARTIAL) &&
+		    uc81xx_set_profile(dev, UC81XX_PROFILE_PARTIAL)) {
+			return -EIO;
+		}
+	}
+
 	/* Setup Partial Window and enable Partial Mode */
 	LOG_HEXDUMP_DBG(&ptl, sizeof(ptl), "ptl");
 
@@ -364,25 +397,25 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 		return -EIO;
 	}
 
-	/* Disable border output */
-	if (config->quirks->set_cdi(dev, false)) {
-		return -EIO;
-	}
-
 	if (uc81xx_write_cmd(dev, UC81XX_CMD_DTM2, (uint8_t *)buf, buf_len)) {
 		return -EIO;
 	}
 
-	/* Update partial window and disable Partial Mode */
+	/* Update the display */
 	if (data->blanking_on == false) {
+		/* Disable border output */
+		if (config->quirks->set_cdi(dev, false)) {
+			return -EIO;
+		}
+
 		if (uc81xx_update_display(dev)) {
 			return -EIO;
 		}
-	}
 
-	/* Enable border output */
-	if (config->quirks->set_cdi(dev, true)) {
-		return -EIO;
+		/* Enable border output */
+		if (config->quirks->set_cdi(dev, true)) {
+			return -EIO;
+		}
 	}
 
 	if (uc81xx_write_cmd(dev, UC81XX_CMD_PTOUT, NULL, 0)) {
@@ -666,6 +699,8 @@ static struct display_driver_api uc81xx_driver_api = {
 		.profiles = {						\
 			[UC81XX_PROFILE_FULL] =				\
 				UC81XX_PROFILE_PTR(DT_CHILD(n, full)),	\
+			[UC81XX_PROFILE_PARTIAL] =			\
+				UC81XX_PROFILE_PTR(DT_CHILD(n, partial)), \
 		},							\
 	};								\
 									\
