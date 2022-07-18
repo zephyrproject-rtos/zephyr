@@ -304,6 +304,7 @@
 /drivers/i2s/*litex*                      @mateusz-holenko @kgugala @pgielda
 /drivers/i2s/i2s_ll_stm32*                @avisconti
 /drivers/i2s/*nrfx*                       @anangl
+/drivers/i3c/                             @dcpleung
 /drivers/ieee802154/                      @rlubos @tbursztyka
 /drivers/ieee802154/*b91*                 @andy-liu-telink
 /drivers/ieee802154/ieee802154_nrf5*      @jciupis
@@ -535,6 +536,7 @@
 /dts/bindings/*/vexriscv*                 @mateusz-holenko @kgugala @pgielda
 /dts/bindings/*/andes*                    @cwshu @kevinwang821020 @jimmyzhe
 /dts/bindings/*/neorv32*                  @henrikbrixandersen
+/dts/bindings/i3c/                        @dcpleung
 /dts/bindings/pm_cpu_ops/*                @carlocaione
 /dts/bindings/ethernet/*gem.yaml          @ibirnbaum
 /dts/posix/                               @aescolar @daor-oti
@@ -553,6 +555,8 @@
 /include/zephyr/drivers/bluetooth/               @alwa-nordic @jhedberg @Vudentz
 /include/zephyr/drivers/flash.h                  @nashif @carlescufi @galak @MaureenHelm @nvlsianpu
 /include/zephyr/drivers/i2c_emul.h               @sjg20
+/include/zephyr/drivers/i3c.h                    @dcpleung
+/include/zephyr/drivers/i3c/                     @dcpleung
 /include/zephyr/drivers/led/ht16k33.h            @henrikbrixandersen
 /include/zephyr/drivers/interrupt_controller/    @dcpleung @nashif
 /include/zephyr/drivers/interrupt_controller/gic.h @stephanosio

@@ -43,6 +43,8 @@ source "drivers/sdhc/Kconfig"
 
 source "drivers/i2c/Kconfig"
 
+source "drivers/i3c/Kconfig"
+
 source "drivers/i2s/Kconfig"
 
 source "drivers/dai/Kconfig"
