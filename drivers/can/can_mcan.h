@@ -229,7 +229,7 @@ struct can_mcan_reg;
 		.tx_delay_comp_offset =						\
 			DT_PROP(node_id, tx_delay_comp_offset),			\
 		.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, phys)),	\
-		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, 5000000),\
+		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, 8000000),\
 		.custom = _custom_config,					\
 	}
 #else /* CONFIG_CAN_FD_MODE */
