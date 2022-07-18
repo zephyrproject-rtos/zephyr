@@ -20,7 +20,6 @@
 			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
 			#gpio-cells = <0x2>;
-			label = "TEST_GPIO_1";
 			status = "okay";
 		};
 
@@ -29,7 +28,6 @@
 			#size-cells = <0>;
 			compatible = "vnd,spi";
 			reg = <0x33334444 0x1000>;
-			label = "TEST_SPI_CTLR";
 			status = "okay";
 			clock-frequency = <2000000>;
 
@@ -40,7 +38,6 @@
 
 			test_spi_enc28j60: enc28j60@0 {
 				compatible = "microchip,enc28j60";
-				label = "ENC28J60";
 				reg = <0x0>;
 				spi-max-frequency = <0>;
 				int-gpios = <&test_gpio 0 0>;
@@ -49,7 +46,6 @@
 
 			test_spi_enc424j600: enc424j600@1 {
 				compatible = "microchip,enc424j600";
-				label = "ENC424J600";
 				reg = <0x1>;
 				spi-max-frequency = <0>;
 				int-gpios = <&test_gpio 0 0>;
@@ -58,7 +54,6 @@
 
 			test_spi_w5500: w5500@2 {
 				compatible = "wiznet,w5500";
-				label = "w5500";
 				reg = <0x2>;
 				spi-max-frequency = <0>;
 				int-gpios = <&test_gpio 0 0>;
