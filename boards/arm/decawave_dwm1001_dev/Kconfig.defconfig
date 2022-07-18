@@ -18,10 +18,6 @@ config SPI
 	default y
 	depends on IEEE802154
 
-config IEEE802154_DW1000
-	default y
-	depends on IEEE802154
-
 config NET_CONFIG_IEEE802154_DEV_NAME
 	default "DW1000"
 

@@ -32,13 +32,11 @@ config ENTROPY_CC13XX_CC26XX_RNG
 if IEEE802154
 
 config IEEE802154_CC13XX_CC26XX
-	default y
 	# required for linking with PowerCC26X2_config in
 	# soc/arm/ti_simplelink/cc13x2_cc26x2/power.c
 	select PM
 
 config IEEE802154_CC13XX_CC26XX_SUB_GHZ
-	default y
 	# required for linking with PowerCC26X2_config in
 	# soc/arm/ti_simplelink/cc13x2_cc26x2/power.c
 	select PM
