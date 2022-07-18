@@ -9,9 +9,6 @@ config BOARD
 config SOC_FLASH_TELINK_B91
 	default y if FLASH
 
-config NET_CONFIG_IEEE802154_DEV_NAME
-	default "IEEE802154_b91"
-
 if BT
 
 # BLE Controller SDK from hal_telink requires

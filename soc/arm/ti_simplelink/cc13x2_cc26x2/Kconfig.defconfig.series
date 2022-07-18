@@ -37,9 +37,6 @@ config IEEE802154_CC13XX_CC26XX_SUB_GHZ
 	# soc/arm/ti_simplelink/cc13x2_cc26x2/power.c
 	select PM
 
-config NET_CONFIG_IEEE802154_DEV_NAME
-	default "IEEE802154_0"
-
 endif # IEEE802154
 
 if BT

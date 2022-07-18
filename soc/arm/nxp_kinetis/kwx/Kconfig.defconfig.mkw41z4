@@ -21,9 +21,6 @@ config NET_L2_IEEE802154
 	default y
 	depends on !NET_L2_OPENTHREAD
 
-config NET_CONFIG_IEEE802154_DEV_NAME
-	default "KW41Z"
-
 endif # NETWORKING
 
 choice CSPRNG_GENERATOR_CHOICE
