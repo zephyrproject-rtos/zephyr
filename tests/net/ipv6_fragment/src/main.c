@@ -1434,7 +1434,7 @@ static void setup_udp_handler(const struct in6_addr *raddr,
 	zassert_equal(ret, 0, "Cannot register UDP handler");
 }
 
-static void test_setup(void)
+static void *test_setup(void)
 {
 	struct net_if_addr *ifaddr;
 	int idx;
@@ -1495,9 +1495,11 @@ static void test_setup(void)
 	test_failed = false;
 
 	test_started = true;
+
+	return NULL;
 }
 
-static void test_find_last_ipv6_fragment_udp(void)
+ZTEST(net_ipv6_fragment, test_find_last_ipv6_fragment_udp)
 {
 	uint16_t next_hdr_pos = 0U;
 	uint16_t last_hdr_pos = 0U;
@@ -1531,7 +1533,7 @@ static void test_find_last_ipv6_fragment_udp(void)
 	net_pkt_unref(pkt);
 }
 
-static void test_find_last_ipv6_fragment_hbho_udp(void)
+ZTEST(net_ipv6_fragment, test_find_last_ipv6_fragment_hbho_udp)
 {
 	uint16_t next_hdr_pos = 0U;
 	uint16_t last_hdr_pos = 0U;
@@ -1566,7 +1568,7 @@ static void test_find_last_ipv6_fragment_hbho_udp(void)
 	net_pkt_unref(pkt);
 }
 
-static void test_find_last_ipv6_fragment_hbho_1(void)
+ZTEST(net_ipv6_fragment, test_find_last_ipv6_fragment_hbho_1)
 {
 	uint16_t next_hdr_pos = 0U;
 	uint16_t last_hdr_pos = 0U;
@@ -1609,7 +1611,7 @@ static void test_find_last_ipv6_fragment_hbho_1(void)
 	net_pkt_unref(pkt);
 }
 
-static void test_find_last_ipv6_fragment_hbho_2(void)
+ZTEST(net_ipv6_fragment, test_find_last_ipv6_fragment_hbho_2)
 {
 	uint16_t next_hdr_pos = 0U;
 	uint16_t last_hdr_pos = 0U;
@@ -1652,7 +1654,7 @@ static void test_find_last_ipv6_fragment_hbho_2(void)
 	net_pkt_unref(pkt);
 }
 
-static void test_find_last_ipv6_fragment_hbho_3(void)
+ZTEST(net_ipv6_fragment, test_find_last_ipv6_fragment_hbho_3)
 {
 	uint16_t next_hdr_pos = 0U;
 	uint16_t last_hdr_pos = 0U;
@@ -1695,7 +1697,7 @@ static void test_find_last_ipv6_fragment_hbho_3(void)
 	net_pkt_unref(pkt);
 }
 
-static void test_find_last_ipv6_fragment_hbho_frag(void)
+ZTEST(net_ipv6_fragment, test_find_last_ipv6_fragment_hbho_frag)
 {
 	uint16_t next_hdr_pos = 0U;
 	uint16_t last_hdr_pos = 0U;
@@ -1730,7 +1732,7 @@ static void test_find_last_ipv6_fragment_hbho_frag(void)
 	net_pkt_unref(pkt);
 }
 
-static void test_find_last_ipv6_fragment_hbho_frag_1(void)
+ZTEST(net_ipv6_fragment, test_find_last_ipv6_fragment_hbho_frag_1)
 {
 	uint16_t next_hdr_pos = 0U;
 	uint16_t last_hdr_pos = 0U;
@@ -1774,7 +1776,7 @@ static void test_find_last_ipv6_fragment_hbho_frag_1(void)
 	net_pkt_unref(pkt);
 }
 
-static void test_send_ipv6_fragment(void)
+ZTEST(net_ipv6_fragment, test_send_ipv6_fragment)
 {
 #define MAX_LEN 1600
 	static char data[] = "123456789.";
@@ -1842,7 +1844,7 @@ static void test_send_ipv6_fragment(void)
 	}
 }
 
-static void test_send_ipv6_fragment_large_hbho(void)
+ZTEST(net_ipv6_fragment, test_send_ipv6_fragment_large_hbho)
 {
 	struct net_pkt *pkt;
 	size_t total_len;
@@ -1884,7 +1886,7 @@ static void test_send_ipv6_fragment_large_hbho(void)
 	}
 }
 
-static void test_send_ipv6_fragment_without_hbho(void)
+ZTEST(net_ipv6_fragment, test_send_ipv6_fragment_without_hbho)
 {
 	struct net_pkt *pkt;
 	size_t total_len;
@@ -1949,7 +1951,7 @@ static uint8_t ipv6_reass_frag2[] = {
 0x3a, 0x00, 0x04, 0xd0, 0x7c, 0x8e, 0x53, 0x49
 };
 
-static void test_recv_ipv6_fragment(void)
+ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 {
 	struct net_ipv6_hdr ipv6_hdr;
 	struct net_pkt_cursor backup;
@@ -2043,24 +2045,4 @@ static void test_recv_ipv6_fragment(void)
 	zassert_true(ret == NET_OK, "IPv6 frag2 reassembly failed");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(net_ipv6_fragment_test,
-			 ztest_unit_test(test_setup),
-			 ztest_unit_test(test_find_last_ipv6_fragment_udp),
-			 ztest_unit_test(test_find_last_ipv6_fragment_hbho_udp),
-			 ztest_unit_test(test_find_last_ipv6_fragment_hbho_1),
-			 ztest_unit_test(test_find_last_ipv6_fragment_hbho_2),
-			 ztest_unit_test(test_find_last_ipv6_fragment_hbho_3),
-			 ztest_unit_test(
-				test_find_last_ipv6_fragment_hbho_frag),
-			 ztest_unit_test(
-				test_find_last_ipv6_fragment_hbho_frag_1),
-			 ztest_unit_test(test_send_ipv6_fragment),
-			 ztest_unit_test(test_send_ipv6_fragment_large_hbho),
-			 ztest_unit_test(test_send_ipv6_fragment_without_hbho),
-			 ztest_unit_test(test_recv_ipv6_fragment)
-			 );
-
-	ztest_run_test_suite(net_ipv6_fragment_test);
-}
+ZTEST_SUITE(net_ipv6_fragment, NULL, test_setup, NULL, NULL, NULL);
