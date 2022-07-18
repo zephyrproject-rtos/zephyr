@@ -768,6 +768,18 @@ Documentation:
   labels:
     - "area: I2S"
 
+"Drivers: I3C":
+  status: maintained
+  maintainers:
+    - dcpleung
+  files:
+    - drivers/i3c/
+    - dts/bindings/i3c/
+    - include/zephyr/drivers/i3c.h
+    - include/zephyr/drivers/i3c/
+  labels:
+    - "area: I3C"
+
 "Drivers: IEEE 802.15.4":
   status: maintained
   maintainers:

@@ -1,0 +1,64 @@
+# I3C configuration options
+#
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I3C
+	bool "I3C Drivers"
+	help
+	  Enable I3C Driver Configuration
+
+if I3C
+
+module = I3C
+module-str = i3c
+source "subsys/logging/Kconfig.template.log_config"
+
+config I3C_USE_GROUP_ADDR
+	bool "Use Group Addresses"
+	default y
+	help
+	  Enable this to use group addresses if supported
+	  by the controllers and target devices.
+
+	  Says Y if unsure.
+
+menuconfig I3C_USE_IBI
+	bool "Use In-Band Interrupt (IBI)"
+	default y
+	help
+	  Enable this to use In-Band Interrupt (IBI).
+
+	  Says Y if unsure.
+
+if I3C_USE_IBI
+
+config I3C_IBI_MAX_PAYLOAD_SIZE
+	int "Maximum IBI Payload Size"
+	default 16
+	help
+	  Maxmium IBI payload size.
+
+endif # I3C_USE_IBI
+
+comment "Initialization Priority"
+
+config I3C_CONTROLLER_INIT_PRIORITY
+	int "I3C Controller Init Priority"
+	# Default is just after CONFIG_KERNEL_INIT_PRIORITY_DEVICE
+	default 50
+	help
+	  This is for setting up I3C controller device driver instance
+	  and also to perform bus initialization (e.g. dynamic address
+	  assignment).
+
+	  Note that this needs to be done before the device driver
+	  instances of the connected I2C and I3C devices start
+	  initializing those devices. This is because some devices
+	  may not be addressable until addresses are assigned by
+	  the controller.
+
+comment "Device Drivers"
+
+endif # I3C
