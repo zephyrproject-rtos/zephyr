@@ -73,17 +73,27 @@ static struct ieee802154_radio_api rapi = {.get_capabilities = get_capabilities,
 #endif /* CONFIG_NET_L2_IEEE802154_SUB_GHZ */
 					   .ed_scan = scan_mock};
 
-static struct device radio = {.api = &rapi};
+static int init_mock(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return 0;
+}
+
+#define DT_DRV_COMPAT vnd_ieee802154
+DEVICE_DT_INST_DEFINE(0, init_mock, NULL, NULL, NULL, POST_KERNEL, 0, &rapi);
+
+static const struct device *radio = DEVICE_DT_INST_GET(0);
 
 static int16_t rssi_scan_mock_max_ed;
 static int rssi_scan_mock(const struct device *dev, uint16_t duration,
 			  energy_scan_done_cb_t done_cb)
 {
-	zassert_equal(dev, &radio, "Device handle incorrect.");
+	zassert_equal(dev, radio, "Device handle incorrect.");
 	zassert_equal(duration, 1, "otPlatRadioGetRssi shall pass minimal allowed value.");
 
 	/* use return value as callback param */
-	done_cb(&radio, rssi_scan_mock_max_ed);
+	done_cb(radio, rssi_scan_mock_max_ed);
 
 	return 0;
 }
@@ -119,7 +129,7 @@ FAKE_VOID_FUNC(otPlatRadioTxDone, otInstance *, otRadioFrame *, otRadioFrame *, 
 
 static enum ieee802154_hw_caps get_capabilities(const struct device *dev)
 {
-	zassert_equal(dev, &radio, "Device handle incorrect.");
+	zassert_equal(dev, radio, "Device handle incorrect.");
 
 	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ | IEEE802154_HW_TX_RX_ACK |
 	       IEEE802154_HW_FILTER | IEEE802154_HW_ENERGY_SCAN | IEEE802154_HW_SLEEP_TO_TX;
@@ -127,8 +137,6 @@ static enum ieee802154_hw_caps get_capabilities(const struct device *dev)
 
 FAKE_VALUE_FUNC(int, configure_match_mock, const struct device *, enum ieee802154_config_type,
 		const struct ieee802154_config *);
-
-const struct device *device_get_binding_stub(const char *name) { return &radio; }
 
 FAKE_VALUE_FUNC(otError, otIp6Send, otInstance *, otMessage *);
 
@@ -169,7 +177,7 @@ ZTEST(openthread_radio, test_energy_scan_immediate_test)
 	zassert_equal(1, set_channel_mock_fake.call_count, NULL);
 	zassert_equal(chan, set_channel_mock_fake.arg1_val, NULL);
 
-	scan_mock_fake.arg2_val(&radio, energy);
+	scan_mock_fake.arg2_val(radio, energy);
 	make_sure_sem_set(K_NO_WAIT);
 
 	platformRadioProcess(ot);
@@ -219,7 +227,7 @@ ZTEST(openthread_radio, test_energy_scan_delayed_test)
 	zassert_equal(chan, set_channel_mock_fake.arg1_val, NULL);
 
 	/* invoke scan done */
-	scan_mock_fake.arg2_val(&radio, energy);
+	scan_mock_fake.arg2_val(radio, energy);
 	make_sure_sem_set(K_NO_WAIT);
 
 	platformRadioProcess(ot);
@@ -274,7 +282,7 @@ ZTEST(openthread_radio, test_tx_test)
 	zassert_equal(1, set_txpower_mock_fake.call_count, NULL);
 	zassert_equal(power, set_txpower_mock_fake.arg1_val, NULL);
 	zassert_equal(1, start_mock_fake.call_count, NULL);
-	zassert_equal_ptr(&radio, start_mock_fake.arg0_val, NULL);
+	zassert_equal_ptr(radio, start_mock_fake.arg0_val, NULL);
 	RESET_FAKE(set_channel_mock);
 	RESET_FAKE(set_txpower_mock);
 	RESET_FAKE(start_mock);
@@ -294,7 +302,7 @@ ZTEST(openthread_radio, test_tx_test)
 	zassert_equal(1, set_channel_mock_fake.call_count, NULL);
 	zassert_equal(chan2, set_channel_mock_fake.arg1_val, NULL);
 	zassert_equal(1, cca_mock_fake.call_count, NULL);
-	zassert_equal_ptr(&radio, cca_mock_fake.arg0_val, NULL);
+	zassert_equal_ptr(radio, cca_mock_fake.arg0_val, NULL);
 	zassert_equal(1, set_txpower_mock_fake.call_count, NULL);
 	zassert_equal(power, set_txpower_mock_fake.arg1_val, NULL);
 	zassert_equal(1, tx_mock_fake.call_count, NULL);
@@ -372,7 +380,7 @@ static struct ieee802154_config custom_configure_match_mock_expected_config;
 static int custom_configure_match_mock(const struct device *dev, enum ieee802154_config_type type,
 				       const struct ieee802154_config *config)
 {
-	zassert_equal_ptr(dev, &radio, "Device handle incorrect.");
+	zassert_equal_ptr(dev, radio, "Device handle incorrect.");
 	zassert_equal(custom_configure_match_mock_expected_type, type, NULL);
 	switch (type) {
 	case IEEE802154_CONFIG_AUTO_ACK_FPB:
@@ -481,7 +489,7 @@ static int custom_configure_promiscuous_mock(const struct device *dev,
 					     enum ieee802154_config_type type,
 					     const struct ieee802154_config *config)
 {
-	zassert_equal(dev, &radio, "Device handle incorrect.");
+	zassert_equal(dev, radio, "Device handle incorrect.");
 	zassert_equal(type, IEEE802154_CONFIG_PROMISCUOUS, "Config type incorrect.");
 	custom_configure_promiscuous_mock_promiscuous = config->promiscuous;
 
@@ -637,9 +645,9 @@ ZTEST(openthread_radio, test_radio_state_test)
 	zassert_equal(1, set_txpower_mock_fake.call_count, NULL);
 	zassert_equal(power, set_txpower_mock_fake.arg1_val, NULL);
 	zassert_equal(1, start_mock_fake.call_count, NULL);
-	zassert_equal_ptr(&radio, start_mock_fake.arg0_val, NULL);
+	zassert_equal_ptr(radio, start_mock_fake.arg0_val, NULL);
 	zassert_equal(1, stop_mock_fake.call_count, NULL);
-	zassert_equal_ptr(&radio, stop_mock_fake.arg0_val, NULL);
+	zassert_equal_ptr(radio, stop_mock_fake.arg0_val, NULL);
 }
 
 static uint16_t custom_filter_mock_pan_id;
@@ -762,7 +770,7 @@ ZTEST(openthread_radio, test_receive_test)
 	zassert_equal(1, set_txpower_mock_fake.call_count, NULL);
 	zassert_equal(power, set_txpower_mock_fake.arg1_val, NULL);
 	zassert_equal(1, start_mock_fake.call_count, NULL);
-	zassert_equal_ptr(&radio, start_mock_fake.arg0_val, NULL);
+	zassert_equal_ptr(radio, start_mock_fake.arg0_val, NULL);
 
 	/*
 	 * Not setting any expect values as nothing shall be called from
@@ -806,7 +814,7 @@ ZTEST(openthread_radio, test_net_pkt_transmit)
 	zassert_equal(1, set_txpower_mock_fake.call_count, NULL);
 	zassert_equal(power, set_txpower_mock_fake.arg1_val, NULL);
 	zassert_equal(1, start_mock_fake.call_count, NULL);
-	zassert_equal_ptr(&radio, start_mock_fake.arg0_val, NULL);
+	zassert_equal_ptr(radio, start_mock_fake.arg0_val, NULL);
 
 	notify_new_tx_frame(packet);
 
