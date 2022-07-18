@@ -8,7 +8,7 @@
 
 #include <hal/usb_serial_jtag_ll.h>
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
 #include <soc.h>
 #include <zephyr/drivers/uart.h>

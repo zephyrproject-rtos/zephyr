@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ztest.h>
-#include <drivers/clock_control/clock_control_cavs.h>
+#include <zephyr/drivers/clock_control/clock_control_cavs.h>
 #include <zephyr/drivers/clock_control.h>
 
 static void check_clocks(struct cavs_clock_info *clocks, uint32_t freq_idx)
