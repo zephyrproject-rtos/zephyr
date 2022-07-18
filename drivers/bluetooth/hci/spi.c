@@ -429,9 +429,6 @@ static int bt_spi_send(struct net_buf *buf)
 	} while ((rxmsg[STATUS_HEADER_READY] != READY_NOW ||
 		  (rxmsg[1] | rxmsg[2] | rxmsg[3] | rxmsg[4]) == 0U) && !ret);
 
-
-	k_sem_give(&sem_busy);
-
 	if (!ret) {
 		/* Transmit the message */
 		do {
@@ -441,6 +438,8 @@ static int bt_spi_send(struct net_buf *buf)
 	}
 
 	release_cs();
+
+	k_sem_give(&sem_busy);
 
 	if (ret) {
 		BT_ERR("Error %d", ret);
