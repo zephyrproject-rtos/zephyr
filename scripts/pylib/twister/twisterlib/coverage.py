@@ -98,8 +98,16 @@ class CoverageTool:
         with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
             ret = self._generate(outdir, coveragelog)
             if ret == 0:
-                logger.info("HTML report generated: {}".format(
-                    os.path.join(outdir, "coverage", "index.html")))
+                report_log = {
+                    "html": "HTML report generated: {}".format(os.path.join(outdir, "coverage", "index.html")),
+                    "xml": "XML report generated: {}".format(os.path.join(outdir, "coverage", "coverage.xml")),
+                    "csv": "CSV report generated: {}".format(os.path.join(outdir, "coverage", "coverage.csv")),
+                    "txt": "TXT report generated: {}".format(os.path.join(outdir, "coverage", "coverage.txt")),
+                    "coveralls": "Coveralls report generated: {}".format(os.path.join(outdir, "coverage", "coverage.coveralls.json")),
+                    "sonarqube": "Sonarqube report generated: {}".format(os.path.join(outdir, "coverage", "coverage.sonarqube.xml"))
+                }
+                for r in self.output_formats.split(','):
+                    logger.info(report_log[r])
 
 
 class Lcov(CoverageTool):
@@ -208,10 +216,6 @@ class Gcovr(CoverageTool):
 
         tracefiles = self._interleave_list("--add-tracefile", files)
 
-        # Apply gcovr output format default
-        if self.output_formats is None:
-            self.output_formats = "html"
-
         # Convert command line argument (comma-separated list) to gcovr flags
         report_options = {
             "html": ["--html", os.path.join(subdir, "index.html"), "--html-details"],
@@ -247,6 +251,9 @@ def run_coverage(testplan, options):
     coverage_tool = CoverageTool.factory(options.coverage_tool)
     coverage_tool.gcov_tool = options.gcov_tool
     coverage_tool.base_dir = os.path.abspath(options.coverage_basedir)
+    # Apply output format default
+    if options.coverage_formats is None:
+        options.coverage_formats = "html"
     coverage_tool.output_formats = options.coverage_formats
     coverage_tool.add_ignore_file('generated')
     coverage_tool.add_ignore_directory('tests')
