@@ -21,6 +21,7 @@
 		zephyr,sram           = &sram0;
 		zephyr,flash          = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154     = &ieee802154;
 	};
 
 	leds {
@@ -131,7 +132,7 @@
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
-	dw1000@0 {
+	ieee802154: dw1000@0 {
 		compatible = "decawave,dw1000";
 		spi-max-frequency = <8000000>;
 		int-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;	/* P0.19 */

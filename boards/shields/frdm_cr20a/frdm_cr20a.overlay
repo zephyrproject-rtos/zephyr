@@ -4,10 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	chosen {
+		zephyr,ieee802154 = &ieee802154;
+	};
+};
+
 &arduino_spi {
 	status = "okay";
 
-	mcr20a@0 {
+	ieee802154: mcr20a@0 {
 		compatible = "nxp,mcr20a";
 		reg = <0x0>;
 		spi-max-frequency = <4000000>;

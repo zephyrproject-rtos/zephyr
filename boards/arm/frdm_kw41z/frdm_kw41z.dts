@@ -30,6 +30,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -163,4 +164,8 @@
 	status = "okay";
 	pinctrl-0 = <&tmp2_default>;
 	pinctrl-names = "default";
+};
+
+&ieee802154 {
+	status = "okay";
 };
