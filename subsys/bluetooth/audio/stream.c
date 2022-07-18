@@ -1103,7 +1103,7 @@ int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group)
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
 
 int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
-			     const struct bt_codec *codec)
+			     struct bt_codec *codec)
 {
 	uint8_t state;
 	uint8_t role;

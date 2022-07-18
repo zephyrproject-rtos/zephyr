@@ -1294,7 +1294,7 @@ struct bt_audio_stream {
 	/** Endpoint reference */
 	struct bt_audio_ep *ep;
 	/** Codec Configuration */
-	const struct bt_codec *codec;
+	struct bt_codec *codec;
 	/** QoS Configuration */
 	struct bt_codec_qos *qos;
 	/** Audio stream operations */
@@ -1804,7 +1804,7 @@ int bt_audio_stream_config(struct bt_conn *conn,
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
-			     const struct bt_codec *codec);
+			     struct bt_codec *codec);
 
 /** @brief Configure Audio Stream QoS
  *
