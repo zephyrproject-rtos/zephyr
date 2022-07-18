@@ -136,6 +136,21 @@ union bt_cap_set_member {
 	struct bt_csis_client_set_member *csip;
 };
 
+struct bt_cap_stream {
+	struct bt_audio_stream bap_stream;
+	struct bt_audio_stream_ops *ops;
+};
+
+/** @brief Register Audio operations for a Common Audio Profile stream.
+ *
+ *  Register Audio operations for a stream.
+ *
+ *  @param stream Stream object.
+ *  @param ops    Stream operations structure.
+ */
+void bt_cap_stream_ops_register(struct bt_cap_stream *stream,
+				struct bt_audio_stream_ops *ops);
+
 struct bt_cap_unicast_audio_start_param {
 	/** The type of the set. */
 	enum bt_cap_set_type type;
@@ -151,7 +166,7 @@ struct bt_cap_unicast_audio_start_param {
 	 * stream[i] will be associated with members[i] if not already
 	 * initialized, else the stream will be verified against the member.
 	 */
-	struct bt_audio_stream **streams;
+	struct bt_cap_stream **streams;
 
 	/**
 	 * @brief Codec configuration.
@@ -233,7 +248,7 @@ struct bt_cap_broadcast_audio_start_param {
 	size_t count;
 
 	/** Streams for broadcast source. */
-	struct bt_audio_stream **streams;
+	struct bt_cap_stream **streams;
 
 	/**
 	 * @brief Codec configuration.
