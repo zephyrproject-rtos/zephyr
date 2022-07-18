@@ -164,6 +164,10 @@ Drivers and Sensors
 
 * I2S
 
+* IEEE 802.15.4
+
+  * All IEEE 802.15.4 drivers have been converted to Devicetree-based drivers.
+
 * Interrupt Controller
 
 * MBOX
@@ -190,6 +194,9 @@ Drivers and Sensors
 
 Networking
 **********
+
+* ``CONFIG_NET_CONFIG_IEEE802154_DEV_NAME`` has been removed in favor of
+  using a Devicetree choice given by ``zephyr,ieee802154``.
 
 USB
 ***
