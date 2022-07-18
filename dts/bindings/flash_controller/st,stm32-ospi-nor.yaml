@@ -12,7 +12,7 @@ description: |
                 data-mode = <OSPI_OPI_MODE>; /* access on 8 data lines */
                 data-rate = <OSPI_DTR_TRANSFER>; /* access in DTR */
                 ospi-max-frequency = <DT_FREQ_M(50)>;
-                size = <DT_SIZE_M(4)>;
+                size = <DT_SIZE_M(64*8)>; /* 512 Mbit */
                 status = "okay";
         };
 
