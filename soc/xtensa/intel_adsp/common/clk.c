@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <device.h>
+#include <zephyr/device.h>
 
 #include <cavs-clk.h>
 #include <cavs-shim.h>

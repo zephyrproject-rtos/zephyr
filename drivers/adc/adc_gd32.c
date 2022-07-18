@@ -17,7 +17,7 @@
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_gd32, CONFIG_ADC_LOG_LEVEL);
 
 /**

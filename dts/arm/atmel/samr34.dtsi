@@ -6,7 +6,7 @@
 
 #include <freq.h>
 #include <atmel/saml21.dtsi>
-#include <dt-bindings/lora/sx126x.h>
+#include <zephyr/dt-bindings/lora/sx126x.h>
 
 #include "saml21.dtsi"
 

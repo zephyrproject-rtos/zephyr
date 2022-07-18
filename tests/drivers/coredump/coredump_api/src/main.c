@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/coredump.h>
+#include <zephyr/drivers/coredump.h>
 #include <ztest.h>
 
 /* Test will verify that these values are present in the core dump */
