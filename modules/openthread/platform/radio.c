@@ -79,7 +79,8 @@ static uint8_t ack_psdu[ACK_PKT_LENGTH];
 static struct net_pkt *tx_pkt;
 static struct net_buf *tx_payload;
 
-static const struct device *radio_dev;
+static const struct device *const radio_dev =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154));
 static struct ieee802154_radio_api *radio_api;
 
 static int8_t tx_power;
@@ -256,8 +257,7 @@ void platformRadioInit(void)
 
 	dataInit();
 
-	radio_dev = device_get_binding(CONFIG_NET_CONFIG_IEEE802154_DEV_NAME);
-	__ASSERT_NO_MSG(radio_dev != NULL);
+	__ASSERT_NO_MSG(device_is_ready(radio_dev));
 
 	radio_api = (struct ieee802154_radio_api *)radio_dev->api;
 	if (!radio_api) {
