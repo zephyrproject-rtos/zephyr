@@ -3,7 +3,8 @@
 
 menuconfig IEEE802154_DW1000
 	bool "Decawave DW1000 Driver support"
-	depends on NETWORKING && SPI
+	default y
+	depends on NETWORKING && SPI && DT_HAS_DECAWAVE_DW1000_ENABLED
 
 if IEEE802154_DW1000
 

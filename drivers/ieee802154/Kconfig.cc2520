@@ -5,7 +5,8 @@
 
 menuconfig IEEE802154_CC2520
 	bool "TI CC2520 Driver support"
-	depends on NETWORKING
+	default y
+	depends on NETWORKING && DT_HAS_TI_CC2520_ENABLED
 
 if IEEE802154_CC2520
 
@@ -66,6 +67,7 @@ endif # IEEE802154_CC2520_RANDOM_MAC
 
 config IEEE802154_CC2520_CRYPTO
 	bool "Hardware crypto helper on cc2520"
+	default y
 	depends on NET_L2_IEEE802154_SECURITY
 	help
 	  This option will expose the hardware AES encryption from CC2520.
