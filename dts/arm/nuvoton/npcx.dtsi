@@ -44,16 +44,6 @@
 		pinmux = <>;
 	};
 
-	def-lvol-io-list {
-		compatible = "nuvoton,npcx-lvolctrl-def";
-		/* Put low-voltage io pads into "lvol-io-pads" property if the
-		 * detection level of them is 1.8V, For example, if the bus
-		 * voltage of i2c1_0 port is 1.8V, this property should be:
-		 * lvol-io-pads = <&lvol_io90 &lvol_io87>;
-		 */
-		lvol-io-pads = <>;
-	};
-
 	/** Dummy pinctrl node. It will be initialized with defaults based on the SoC series.
 	 *  Then, the user can override the pin control options at the board level.
 	 */

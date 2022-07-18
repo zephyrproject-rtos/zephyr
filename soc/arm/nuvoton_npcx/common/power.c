@@ -99,11 +99,6 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 	npcx_clock_control_turn_on_system_sleep(slp_mode == NPCX_DEEP_SLEEP,
 					wk_mode == NPCX_INSTANT_WAKE_UP);
 
-	/* A bypass in npcx7 series to prevent leakage in low-voltage pads */
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
-		npcx_lvol_suspend_io_pads();
-	}
-
 	/* Turn on eSPI/LPC host access wake-up interrupt. */
 	if (IS_ENABLED(CONFIG_ESPI_NPCX)) {
 		npcx_host_enable_access_interrupt();
@@ -132,11 +127,6 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 	/* Turn off eSPI/LPC host access wake-up interrupt. */
 	if (IS_ENABLED(CONFIG_ESPI_NPCX)) {
 		npcx_host_disable_access_interrupt();
-	}
-
-	/* A bypass in npcx7 series to prevent leakage in low-voltage pads */
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
-		npcx_lvol_restore_io_pads();
 	}
 
 	/* Turn off system sleep mode. */
