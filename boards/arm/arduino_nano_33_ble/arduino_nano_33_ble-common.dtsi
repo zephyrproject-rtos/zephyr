@@ -14,6 +14,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &code_partition;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -209,5 +210,9 @@ arduino_spi: &spi2 {
 
 zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};
+
+&ieee802154 {
 	status = "okay";
 };

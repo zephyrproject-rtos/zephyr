@@ -40,6 +40,7 @@
 		zephyr,bt-mon-uart = &uart1;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,flash-controller = &sim_flash;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	soc {
@@ -82,6 +83,10 @@
 		status = "okay";
 		compatible = "zephyr,sim-eeprom";
 		size = <DT_SIZE_K(4)>;
+	};
+
+	ieee802154: ieee802154 {
+		compatible = "zephyr,ieee802154-uart-pipe";
 	};
 
 };

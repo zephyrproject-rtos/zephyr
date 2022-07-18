@@ -21,6 +21,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -168,5 +169,9 @@
 
 zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};
+
+&ieee802154 {
 	status = "okay";
 };

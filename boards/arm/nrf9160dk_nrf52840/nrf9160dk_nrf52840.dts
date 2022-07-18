@@ -21,6 +21,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	interface_to_nrf9160: gpio-interface {
@@ -163,6 +164,10 @@
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+};
+
+&ieee802154 {
+	status = "okay";
 };
 
 &flash0 {
