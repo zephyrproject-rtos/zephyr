@@ -10,10 +10,6 @@ if SHIELD_ATMEL_RF2XX || \
 
 if NETWORKING
 
-config IEEE802154_RF2XX
-	default y
-	depends on IEEE802154
-
 config NET_CONFIG_IEEE802154_DEV_NAME
 	default "RF2XX_0"
 	depends on IEEE802154_RF2XX
