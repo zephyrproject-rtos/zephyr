@@ -17,6 +17,7 @@
 		zephyr,shell-uart = &sercom0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -150,7 +151,7 @@
 
 	cs-gpios = <&portb 31 GPIO_ACTIVE_LOW>;
 
-	rf2xx@0 {
+	ieee802154: rf2xx@0 {
 		compatible = "atmel,rf2xx";
 		reg = <0x0>;
 		spi-max-frequency = <6000000>;

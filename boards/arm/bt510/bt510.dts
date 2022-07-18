@@ -21,6 +21,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -134,6 +135,10 @@
 		reg = <0x40>;
 		label = "SI7055";
 	};
+};
+
+&ieee802154 {
+	status = "okay";
 };
 
 &flash0 {

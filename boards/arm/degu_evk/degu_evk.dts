@@ -18,6 +18,7 @@
 		zephyr,console = &degu_cdc_acm_uart;
 		zephyr,shell-uart = &degu_cdc_acm_uart;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -124,6 +125,10 @@
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+};
+
+&ieee802154 {
+	status = "okay";
 };
 
 &flash0 {

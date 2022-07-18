@@ -22,6 +22,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -239,6 +240,10 @@ fem_spi: &spi3 {
 
 &radio {
 	fem = <&nrf_radio_fem>;
+};
+
+&ieee802154 {
+	status = "okay";
 };
 
 &flash0 {

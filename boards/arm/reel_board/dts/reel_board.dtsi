@@ -7,6 +7,10 @@
 #include "reel_board-pinctrl.dtsi"
 
 / {
+	chosen {
+		zephyr,ieee802154 = &ieee802154;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 		red_led: led_0 {
@@ -153,6 +157,10 @@ arduino_i2c: &i2c0 {
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+};
+
+&ieee802154 {
+	status = "okay";
 };
 
 arduino_spi: &spi3 {
