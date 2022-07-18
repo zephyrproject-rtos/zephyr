@@ -8,10 +8,6 @@ menuconfig IEEE802154_UPIPE
 
 if IEEE802154_UPIPE
 
-config IEEE802154_UPIPE_DRV_NAME
-	string "UART PIPE Driver name"
-	default "IEEE802154_UPIPE"
-
 config IEEE802154_UPIPE_HW_FILTER
 	bool "Hw Filtering"
 	default y
