@@ -25,7 +25,6 @@
 
 	mx25l25645g: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		label = "MX25L25645G";
 		reg = <0>;
 		qspi-max-frequency = <50000000>;
 		size = <DT_SIZE_M(32*8)>;
