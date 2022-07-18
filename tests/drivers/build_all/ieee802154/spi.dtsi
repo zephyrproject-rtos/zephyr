@@ -9,7 +9,6 @@
 
 test_spi_cc1200: cc1200@0 {
 	compatible = "ti,cc1200";
-	label = "CC1200";
 	reg = <0x0>;
 	spi-max-frequency = <0>;
 	int-gpios = <&test_gpio 0 0>;
@@ -18,7 +17,6 @@ test_spi_cc1200: cc1200@0 {
 
 test_spi_cc2520: cc2520@1 {
 	compatible = "ti,cc2520";
-	label = "CC2520";
 	reg = <0x1>;
 	spi-max-frequency = <0>;
 	vreg-en-gpios = <&test_gpio 0 0>;
@@ -32,7 +30,6 @@ test_spi_cc2520: cc2520@1 {
 
 test_spi_dw1000: dw1000@2 {
 	compatible = "decawave,dw1000";
-	label = "DW1000";
 	reg = <0x2>;
 	spi-max-frequency = <0>;
 	int-gpios = <&test_gpio 0 0>;
@@ -43,7 +40,6 @@ test_spi_dw1000: dw1000@2 {
 test_spi_mcr20a: mcr20a@3 {
 	compatible = "nxp,mcr20a";
 	reg = <0x3>;
-	label = "MCR20A";
 	spi-max-frequency = <0>;
 	irqb-gpios = <&test_gpio 0 0>;
 	reset-gpios = <&test_gpio 0 0>;
@@ -53,7 +49,6 @@ test_spi_mcr20a: mcr20a@3 {
 test_spi_rf2xx: rf2xx@4 {
 	compatible = "atmel,rf2xx";
 	reg = <0x4>;
-	label = "RF2XX";
 	spi-max-frequency = <0>;
 	irq-gpios = <&test_gpio 0 0>;
 	reset-gpios = <&test_gpio 0 0>;

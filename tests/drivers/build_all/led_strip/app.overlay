@@ -24,7 +24,6 @@
 			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
 			#gpio-cells = <0x2>;
-			label = "TEST_GPIO_1";
 			status = "okay";
 		};
 
@@ -33,7 +32,6 @@
 			#size-cells = <0>;
 			compatible = "vnd,spi";
 			reg = <0x33334444 0x1000>;
-			label = "TEST_SPI_CTLR";
 			status = "okay";
 			clock-frequency = <DT_FREQ_M(2)>;
 
@@ -42,7 +40,6 @@
 			test_spi_tlc5971: tlc5971@0 {
 				status = "okay";
 				compatible = "ti,tlc59711", "ti,tlc5971";
-				label = "TLC5971";
 				spi-max-frequency = <DT_FREQ_M(1)>;
 				reg = <0x0>;
 				chain-length = <8>; // two TLC5971 devices
