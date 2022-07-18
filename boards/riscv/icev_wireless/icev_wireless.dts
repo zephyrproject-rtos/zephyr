@@ -59,8 +59,8 @@
 
 &i2c0 {
 	clock-frequency = <I2C_BITRATE_STANDARD>;
-	sda-pin = <2>;
-	scl-pin = <8>;
+	sda-gpios = <&gpio0 2 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpio0 8 GPIO_OPEN_DRAIN>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 };
