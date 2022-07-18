@@ -8,4 +8,3 @@ toolchain:
 supported:
   - usb_device
   - ble
-  - ieee802154

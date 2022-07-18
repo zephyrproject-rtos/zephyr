@@ -23,7 +23,6 @@ supported:
   - gpio
   - i2c
   - spi
-  - ieee802154
   - pwm
   - watchdog
   - counter
