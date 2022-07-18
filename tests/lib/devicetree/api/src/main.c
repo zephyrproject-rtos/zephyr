@@ -36,6 +36,7 @@
 #define TEST_REG	DT_NODELABEL(test_reg)
 #define TEST_ENUM_0	DT_NODELABEL(test_enum_0)
 
+#define TEST_I2C DT_NODELABEL(test_i2c)
 #define TEST_I2C_DEV DT_PATH(test, i2c_11112222, test_i2c_dev_10)
 #define TEST_I2C_BUS DT_BUS(TEST_I2C_DEV)
 
@@ -44,6 +45,9 @@
 #define TEST_I2C_MUX_CTLR_2 DT_CHILD(TEST_I2C_MUX, i2c_mux_ctlr_2)
 #define TEST_MUXED_I2C_DEV_1 DT_NODELABEL(test_muxed_i2c_dev_1)
 #define TEST_MUXED_I2C_DEV_2 DT_NODELABEL(test_muxed_i2c_dev_2)
+
+#define TEST_GPIO_1 DT_NODELABEL(test_gpio_1)
+#define TEST_GPIO_2 DT_NODELABEL(test_gpio_2)
 
 #define TEST_SPI DT_NODELABEL(test_spi)
 
@@ -91,7 +95,7 @@ static void test_path_props(void)
 	zassert_true(DT_NODE_HAS_PROP(TEST_DEADBEEF, status), "");
 	zassert_false(DT_NODE_HAS_PROP(TEST_DEADBEEF, foobar), "");
 
-	zassert_true(!strcmp(DT_LABEL(TEST_ABCD1234), "TEST_GPIO_2"), "");
+	zassert_true(DT_SAME_NODE(TEST_ABCD1234, TEST_GPIO_2), "");
 	zassert_equal(DT_NUM_REGS(TEST_ABCD1234), 2, "");
 	zassert_equal(DT_PROP(TEST_ABCD1234, gpio_controller), 1, "");
 	zassert_equal(DT_PROP(TEST_ABCD1234, ngpios), 32, "");
@@ -108,7 +112,7 @@ static void test_alias_props(void)
 	zassert_equal(DT_NUM_REGS(TEST_ALIAS), 1, "");
 	zassert_equal(DT_REG_ADDR(TEST_ALIAS), 0xdeadbeef, "");
 	zassert_equal(DT_REG_SIZE(TEST_ALIAS), 0x1000, "");
-	zassert_true(!strcmp(DT_LABEL(TEST_ALIAS), "TEST_GPIO_1"), "");
+	zassert_true(DT_SAME_NODE(TEST_ALIAS, TEST_GPIO_1), "");
 	zassert_equal(DT_PROP(TEST_ALIAS, gpio_controller), 1, "");
 	zassert_equal(DT_PROP(TEST_ALIAS, ngpios), 32, "");
 	zassert_true(!strcmp(DT_PROP(TEST_ALIAS, status), "okay"), "");
@@ -296,9 +300,9 @@ static void test_bus(void)
 	const char *gpio = "TEST_GPIO_";
 	int pin, flags;
 
-	zassert_true(!strcmp(DT_LABEL(TEST_I2C_BUS), "TEST_I2C_CTLR"), "");
-	zassert_true(!strcmp(DT_LABEL(TEST_SPI_BUS_0), "TEST_SPI_CTLR"), "");
-	zassert_true(!strcmp(DT_LABEL(TEST_SPI_BUS_1), "TEST_SPI_CTLR"), "");
+	zassert_true(DT_SAME_NODE(TEST_I2C_BUS, TEST_I2C), "");
+	zassert_true(DT_SAME_NODE(TEST_SPI_BUS_0, TEST_SPI), "");
+	zassert_true(DT_SAME_NODE(TEST_SPI_BUS_1, TEST_SPI), "");
 
 	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_0), 1, "");
 	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_NO_CS), 0, "");
@@ -686,14 +690,11 @@ static void test_phandles(void)
 	zassert_false(DT_PHA_HAS_CELL(TEST_PH, gpios, bar), "");
 
 	/* DT_PHANDLE_BY_IDX */
-	zassert_true(!strcmp(DT_LABEL(DT_PHANDLE_BY_IDX(TEST_PH, gpios, 0)),
-			     "TEST_GPIO_1"), "");
-	zassert_true(!strcmp(DT_LABEL(DT_PHANDLE_BY_IDX(TEST_PH, gpios, 1)),
-			     "TEST_GPIO_2"), "");
+	zassert_true(DT_SAME_NODE(DT_PHANDLE_BY_IDX(TEST_PH, gpios, 0), TEST_GPIO_1), "");
+	zassert_true(DT_SAME_NODE(DT_PHANDLE_BY_IDX(TEST_PH, gpios, 1), TEST_GPIO_2), "");
 
 	/* DT_PHANDLE */
-	zassert_true(!strcmp(DT_LABEL(DT_PHANDLE(TEST_PH, gpios)),
-			     "TEST_GPIO_1"), "");
+	zassert_true(DT_SAME_NODE(DT_PHANDLE(TEST_PH, gpios), TEST_GPIO_1), "");
 
 	/* DT_PHA */
 	zassert_equal(DT_PHA(TEST_PH, gpios, pin), 10, "");
@@ -711,10 +712,8 @@ static void test_phandles(void)
 	zassert_equal(DT_PHA_BY_NAME(TEST_PH, foos, b_c, foocell), 110, "");
 
 	/* DT_PHANDLE_BY_NAME */
-	zassert_true(!strcmp(DT_LABEL(DT_PHANDLE_BY_NAME(TEST_PH, foos, a)),
-			     "TEST_GPIO_1"), "");
-	zassert_true(!strcmp(DT_LABEL(DT_PHANDLE_BY_NAME(TEST_PH, foos, b_c)),
-			     "TEST_GPIO_2"), "");
+	zassert_true(DT_SAME_NODE(DT_PHANDLE_BY_NAME(TEST_PH, foos, a), TEST_GPIO_1), "");
+	zassert_true(DT_SAME_NODE(DT_PHANDLE_BY_NAME(TEST_PH, foos, b_c), TEST_GPIO_2), "");
 
 	/* array initializers */
 	zassert_true(!strcmp(gps[0].name, "TEST_GPIO_1"), "");
@@ -788,14 +787,11 @@ static void test_phandles(void)
 	zassert_false(DT_INST_PHA_HAS_CELL(0, gpios, bar), "");
 
 	/* DT_INST_PHANDLE_BY_IDX */
-	zassert_true(!strcmp(DT_LABEL(DT_INST_PHANDLE_BY_IDX(0, gpios, 0)),
-			     "TEST_GPIO_1"), "");
-	zassert_true(!strcmp(DT_LABEL(DT_INST_PHANDLE_BY_IDX(0, gpios, 1)),
-			     "TEST_GPIO_2"), "");
+	zassert_true(DT_SAME_NODE(DT_INST_PHANDLE_BY_IDX(0, gpios, 0), TEST_GPIO_1), "");
+	zassert_true(DT_SAME_NODE(DT_INST_PHANDLE_BY_IDX(0, gpios, 1), TEST_GPIO_2), "");
 
 	/* DT_INST_PHANDLE */
-	zassert_true(!strcmp(DT_LABEL(DT_INST_PHANDLE(0, gpios)),
-			     "TEST_GPIO_1"), "");
+	zassert_true(DT_SAME_NODE(DT_INST_PHANDLE(0, gpios), TEST_GPIO_1), "");
 
 	/* DT_INST_PHA */
 	zassert_equal(DT_INST_PHA(0, gpios, pin), 10, "");
@@ -813,10 +809,8 @@ static void test_phandles(void)
 	zassert_equal(DT_INST_PHA_BY_NAME(0, foos, b_c, foocell), 110, "");
 
 	/* DT_INST_PHANDLE_BY_NAME */
-	zassert_true(!strcmp(DT_LABEL(DT_INST_PHANDLE_BY_NAME(0, foos, a)),
-			     "TEST_GPIO_1"), "");
-	zassert_true(!strcmp(DT_LABEL(DT_INST_PHANDLE_BY_NAME(0, foos, b_c)),
-			     "TEST_GPIO_2"), "");
+	zassert_true(DT_SAME_NODE(DT_INST_PHANDLE_BY_NAME(0, foos, a), TEST_GPIO_1), "");
+	zassert_true(DT_SAME_NODE(DT_INST_PHANDLE_BY_NAME(0, foos, b_c), TEST_GPIO_2), "");
 }
 
 #undef DT_DRV_COMPAT
@@ -1431,7 +1425,7 @@ static void test_devices(void)
 	zassert_true(data_dev0->init_called, "");
 	zassert_true(data_dev1->init_called, "");
 
-	dev_abcd = device_get_binding(DT_LABEL(TEST_ABCD1234));
+	dev_abcd = DEVICE_DT_GET(TEST_ABCD1234);
 	config_abdc = dev_abcd->config;
 	zassert_not_null(dev_abcd, "");
 	zassert_equal(config_abdc->reg_addr, 0xabcd1234, "");
@@ -1597,23 +1591,19 @@ static void test_clocks(void)
 #define DT_DRV_COMPAT vnd_spi_device
 static void test_parent(void)
 {
-	/* The label of a child node's parent is the label of the parent. */
-	zassert_true(!strcmp(DT_LABEL(DT_PARENT(TEST_SPI_DEV_0)),
-			     DT_LABEL(TEST_SPI_BUS_0)), "");
+	zassert_true(DT_SAME_NODE(DT_PARENT(TEST_SPI_DEV_0), TEST_SPI_BUS_0), "");
 
 	/*
 	 * The parent's label for the first instance of vnd,spi-device,
 	 * child of TEST_SPI, is the same as TEST_SPI.
 	 */
-	zassert_true(!strcmp(DT_LABEL(DT_INST_PARENT(0)),
-			     DT_LABEL(TEST_SPI)), "");
+	zassert_true(DT_SAME_NODE(DT_INST_PARENT(0), TEST_SPI), "");
 	/*
 	 * We should be able to use DT_PARENT() even with nodes, like /test,
 	 * that have no matching compatible.
 	 */
-	zassert_true(!strcmp(DT_LABEL(DT_CHILD(DT_PARENT(TEST_SPI_BUS_0),
-					       spi_33334444)),
-			     DT_LABEL(TEST_SPI_BUS_0)), "");
+	zassert_true(DT_SAME_NODE(DT_CHILD(DT_PARENT(TEST_SPI_BUS_0), spi_33334444),
+				  TEST_SPI_BUS_0), "");
 }
 
 #undef DT_DRV_COMPAT
