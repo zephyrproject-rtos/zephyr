@@ -3,7 +3,9 @@
 
 menuconfig IEEE802154_UPIPE
 	bool "UART PIPE fake radio driver support for QEMU"
-	depends on (BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3) && NETWORKING
+	default y
+	depends on (BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3) && NETWORKING && \
+		   DT_HAS_ZEPHYR_IEEE802154_UART_PIPE_ENABLED
 	select UART_PIPE
 
 if IEEE802154_UPIPE
