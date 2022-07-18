@@ -1,0 +1,13 @@
+common:
+   tags: lorawan
+sample:
+   description: Demonstration of LoRaWAN Firmware Upgrade Over The Air
+   name: LoRaWAN FUOTA
+tests:
+  sample.lorawan.fuota:
+    platform_allow: olimex_lora_stm32wl_devkit
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "<inf> lorawan_fuota: Joining network over OTAA"
