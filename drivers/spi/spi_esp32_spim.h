@@ -28,6 +28,7 @@ struct spi_esp32_config {
 	int irq_source;
 	const struct pinctrl_dev_config *pcfg;
 	clock_control_subsys_t clock_subsys;
+	bool use_iomux;
 };
 
 struct spi_esp32_data {
