@@ -5,7 +5,7 @@ tests:
   ieee802154.build.external:
     platform_allow: native_posix
     extra_args: OVERLAY_CONFIG=external.conf
-  ieee802154.build.cc12xx_cc2520:
+  ieee802154.build.cc13xx_cc26xx:
     platform_allow: cc1352r_sensortag
     extra_configs:
       - CONFIG_IEEE802154_CC2520=y
