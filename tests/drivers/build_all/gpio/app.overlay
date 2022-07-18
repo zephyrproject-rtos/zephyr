@@ -20,7 +20,6 @@
 			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
 			#gpio-cells = <0x2>;
-			label = "TEST_GPIO_1";
 			status = "okay";
 		};
 
@@ -29,13 +28,11 @@
 			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x11112222 0x1000>;
-			label = "TEST_I2C_CTLR";
 			status = "okay";
 			clock-frequency = <100000>;
 
 			test_i2c_sx1509b: sx1509b@0 {
 				compatible = "semtech,sx1509b";
-				label = "SX1509B";
 				reg = <0x0>;
 				#gpio-cells = <2>;
 				ngpios = <16>;
@@ -44,7 +41,6 @@
 
 			test_i2c_pcal6408a: pcal6408a@1 {
 				compatible = "nxp,pcal6408a";
-				label = "PCAL6408A";
 				reg = <0x1>;
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -55,7 +51,6 @@
 
 			test_i2c_pca95xx: pca95xx@20 {
 				compatible = "nxp,pca95xx";
-				label = "PCA95XX";
 				reg = <0x20>;
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -66,7 +61,6 @@
 			test_i2c_pca953x: pca953x@70 {
 				compatible = "ti,tca9538";
 				reg = <0x70>;
-				label = "PCA953X";
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <8>;
@@ -75,7 +69,6 @@
 
 			test_i2c_mcp230xx: mcp230xx@0 {
 				compatible = "microchip,mcp230xx";
-				label = "MCP230XX";
 				reg = <0x0>;
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -85,7 +78,6 @@
 			test_i2c_fxl6408: fxl6408@43 {
 				status = "okay";
 				compatible = "fcs,fxl6408";
-				label = "FXL6408";
 				reg = <0x43>;
 				ngpios = <8>;
 				#gpio-cells = <2>;
@@ -97,12 +89,10 @@
 				#size-cells = <0>;
 				compatible = "nuvoton,nct38xx-gpio";
 				reg = <0x72>;
-				label = "NCT3807_0";
 
 				gpio@0 {
 					compatible = "nuvoton,nct38xx-gpio-port";
 					reg = <0x0>;
-					label = "NCT3807_0_GPIO0";
 					gpio-controller;
 					#gpio-cells = <2>;
 					ngpios = <8>;
@@ -113,7 +103,6 @@
 				gpio@1 {
 					compatible = "nuvoton,nct38xx-gpio-port";
 					reg = <0x1>;
-					label = "NCT3807_0_GPIO1";
 					gpio-controller;
 					#gpio-cells = <2>;
 					ngpios = <8>;
@@ -126,12 +115,10 @@
 				#size-cells = <0>;
 				compatible = "nuvoton,nct38xx-gpio";
 				reg = <0x71>;
-				label = "NCT3808_0_P1";
 
 				gpio@0 {
 					compatible = "nuvoton,nct38xx-gpio-port";
 					reg = <0x0>;
-					label = "NCT3808_0_P1_GPIO0";
 					gpio-controller;
 					#gpio-cells = <2>;
 					ngpios = <8>;
@@ -145,12 +132,10 @@
 				#size-cells = <0>;
 				compatible = "nuvoton,nct38xx-gpio";
 				reg = <0x75>;
-				label = "NCT3808_0_P2";
 
 				gpio@0 {
 					compatible = "nuvoton,nct38xx-gpio-port";
 					reg = <0x0>;
-					label = "NCT3808_0_P2_GPIO0";
 					gpio-controller;
 					#gpio-cells = <2>;
 					ngpios = <8>;
@@ -165,7 +150,6 @@
 			#size-cells = <0>;
 			compatible = "vnd,spi";
 			reg = <0x33334444 0x1000>;
-			label = "TEST_SPI_CTLR";
 			status = "okay";
 			clock-frequency = <2000000>;
 
@@ -174,7 +158,6 @@
 
 			test_spi_mcp23s17: mcp23s17@0 {
 				compatible = "microchip,mcp23s17";
-				label = "GPIO_E0";
 				spi-max-frequency = <0>;
 				reg = <0x0>;
 				gpio-controller;
@@ -184,7 +167,6 @@
 
 			test_spi_mcp23sxx: mcp23sxx@0 {
 				compatible = "microchip,mcp23sxx";
-				label = "GPIO_E1";
 				spi-max-frequency = <0>;
 				reg = <0x0>;
 				gpio-controller;

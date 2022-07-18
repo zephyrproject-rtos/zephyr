@@ -9,7 +9,6 @@
 	test_adc: adc@11112222 {
 		reg = <0x11112222 0x1000>;
 		compatible = "vnd,adc";
-		label = "TEST_ADC";
 		status = "okay";
 		#io-channel-cells = <1>;
 	};
