@@ -131,6 +131,7 @@
 		size = <DT_SIZE_M(64)>;
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_DTR_TRANSFER>;
+		four-byte-opcodes;
 		status = "okay";
 		sfdp-bfp = [
 			53 46 44 50 06 01 02 ff
