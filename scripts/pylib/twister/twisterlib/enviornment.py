@@ -252,7 +252,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument("--coverage-tool", choices=['lcov', 'gcovr'], default='lcov',
                         help="Tool to use to generate coverage report.")
 
-    parser.add_argument("--coverage-formats", action="store", default=None, # default behavior is set in Gcovr._generate
+    parser.add_argument("--coverage-formats", action="store", default=None, # default behavior is set in run_coverage
                         help="Output formats to use for generated coverage reports, as a comma-separated list. "
                              "Only used in conjunction with gcovr. "
                              "Default to html. "
