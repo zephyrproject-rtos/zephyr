@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT test_w1_dummy_slave
 
-#include <device.h>
-#include <drivers/w1.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/w1.h>
 
 struct w1_dummy_slave_api {
 };

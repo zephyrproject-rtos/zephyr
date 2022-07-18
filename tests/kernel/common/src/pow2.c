@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 /**
  * @brief Test the Z_POW2_CEIL() macro

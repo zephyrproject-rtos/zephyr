@@ -13,8 +13,8 @@
  * the arch_is_user_context() check.
  */
 
-#include <logging/log.h>
-#include <drivers/w1.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/w1.h>
 
 LOG_MODULE_REGISTER(w1, CONFIG_W1_LOG_LEVEL);
 

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/gatt.h>
-#include <bluetooth/audio/tbs.h>
-#include <bluetooth/audio/csis.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/audio/tbs.h>
+#include <zephyr/bluetooth/audio/csis.h>
 #include "cap_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CAP)

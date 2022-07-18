@@ -8,7 +8,7 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/types.h>
-#include <sys/check.h>
+#include <zephyr/sys/check.h>
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>

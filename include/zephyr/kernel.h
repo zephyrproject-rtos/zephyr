@@ -20,7 +20,7 @@
 #include <stdbool.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/tracing/tracing_macros.h>
-#include <sys/mem_stats.h>
+#include <zephyr/sys/mem_stats.h>
 
 #ifdef __cplusplus
 extern "C" {

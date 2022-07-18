@@ -6,7 +6,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/syscon.h>
 #include <ztest.h>
-#include <linker/devicetree_regions.h>
+#include <zephyr/linker/devicetree_regions.h>
 
 #define RES_SECT LINKER_DT_NODE_REGION_NAME(DT_NODELABEL(res))
 

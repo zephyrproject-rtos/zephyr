@@ -6,7 +6,7 @@
 #ifndef __XEN_GNTTAB_H__
 #define __XEN_GNTTAB_H__
 
-#include <xen/public/grant_table.h>
+#include <zephyr/xen/public/grant_table.h>
 
 /*
  * Assigns gref and permits access to 4K page for specific domain.

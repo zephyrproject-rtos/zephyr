@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/device.h>
-#include <drivers/clock_control/clock_control_cavs.h>
+#include <zephyr/drivers/clock_control/clock_control_cavs.h>
 #include <zephyr/drivers/clock_control.h>
 
 static int cavs_clock_ctrl_set_rate(const struct device *clk,
