@@ -45,7 +45,6 @@
 		/* Only used for HWINFO device ID */
 		eefc: flash-controller@400e0a00 {
 			compatible = "atmel,sam-flash-controller";
-			label = "FLASH_CTRL";
 			reg = <0x400e0a00 0x200>;
 			peripheral-id = <6>;
 
@@ -54,7 +53,6 @@
 
 			flash0: flash@400000 {
 				compatible = "soc-nv-flash";
-				label = "FLASH_0";
 
 				write-block-size = <16>;
 			};
@@ -65,7 +63,6 @@
 			reg = <0x400e1450 0xc>;
 			interrupts = <4 0>;
 			peripheral-id = <4>;
-			label = "WATCHDOG_0";
 			status = "disabled";
 		};
 
@@ -75,7 +72,6 @@
 			reg = <0x40018000 0x128>;
 			interrupts = <19 0>;
 			peripheral-id = <19>;
-			label = "I2C_0";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -87,7 +83,6 @@
 			reg = <0x4001c000 0x128>;
 			interrupts = <20 0>;
 			peripheral-id = <20>;
-			label = "I2C_1";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -100,7 +95,6 @@
 			reg = <0x40008000 0x4000>;
 			interrupts = <21 0>;
 			peripheral-id = <21>;
-			label = "SPI_0";
 			status = "disabled";
 		};
 
@@ -110,7 +104,6 @@
 			interrupts = <8 1>;
 			peripheral-id = <8>;
 			status = "disabled";
-			label = "UART_0";
 		};
 
 		uart1: uart@400e0800 {
@@ -119,7 +112,6 @@
 			interrupts = <9 1>;
 			peripheral-id = <9>;
 			status = "disabled";
-			label = "UART_1";
 		};
 
 		usart0: usart@40024000 {
@@ -128,7 +120,6 @@
 			interrupts = <14 1>;
 			peripheral-id = <14>;
 			status = "disabled";
-			label = "USART_0";
 		};
 
 		usart1: usart@40028000 {
@@ -137,7 +128,6 @@
 			interrupts = <15 1>;
 			peripheral-id = <15>;
 			status = "disabled";
-			label = "USART_1";
 		};
 
 		pinctrl: pinctrl@400e0e00 {
@@ -146,14 +136,12 @@
 			#size-cells = <1>;
 			ranges = <0x400e0e00 0x400e0e00 0x600>;
 			status = "okay";
-			label = "PINCTRL";
 
 			pioa: gpio@400e0e00 {
 				compatible = "atmel,sam-gpio";
 				reg = <0x400e0e00 0x190>;
 				interrupts = <11 1>;
 				peripheral-id = <11>;
-				label = "PORTA";
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -164,7 +152,6 @@
 				reg = <0x400e1000 0x190>;
 				interrupts = <12 1>;
 				peripheral-id = <12>;
-				label = "PORTB";
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -175,7 +162,6 @@
 				reg = <0x400e1200 0x190>;
 				interrupts = <13 1>;
 				peripheral-id = <13>;
-				label = "PORTC";
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -190,7 +176,6 @@
 				      25 0>;
 			peripheral-id = <23 24 25>;
 			status = "disabled";
-			label = "TC0";
 		};
 
 		tc1: tc@40014000 {
@@ -201,14 +186,12 @@
 				      28 0>;
 			peripheral-id = <26 27 28>;
 			status = "disabled";
-			label = "TC1";
 		};
 
 		rstc: rstc@400e1400 {
 			compatible = "atmel,sam-rstc";
 			reg = <0x400e1400 0x10>;
 			peripheral-id = <1>;
-			label = "RSTC";
 			user-nrst;
 		};
 	};
