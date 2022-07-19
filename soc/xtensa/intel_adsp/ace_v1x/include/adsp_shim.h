@@ -64,6 +64,8 @@ struct cavs_shim {
 	uint32_t svcfg;
 	uint32_t _unused9[2];
 };
+#define CAVS_SHIM (*((volatile struct cavs_shim *)DT_REG_ADDR(DT_NODELABEL(shim))))
+
 
 /* L2 Local Memory control (cAVS 1.8+) */
 struct cavs_l2lm {
@@ -95,7 +97,7 @@ struct cavs_win {
 
 #endif /* _ASMLANGUAGE */
 
-#define CAVS_SHIM (*((volatile struct cavs_shim *)DT_REG_ADDR(DT_NODELABEL(shim))))
+
 
 /* cAVS 1.8+ CLKCTL bits */
 #define CAVS_CLKCTL_RHROSCC   BIT(31)	  /* Request HP RING oscillator */
