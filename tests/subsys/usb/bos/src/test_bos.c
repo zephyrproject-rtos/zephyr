@@ -216,7 +216,7 @@ static void test_usb_bos(void)
 }
 
 /* test case main entry */
-void test_main(void)
+ZTEST(osdesc_bos, test_osdesc)
 {
 	/* Prepare webusb_bos_descriptor_2 */
 	memcpy(&webusb_bos_descriptor_2.bos,
@@ -237,8 +237,7 @@ void test_main(void)
 	       &webusb_bos_descriptor.capability_data_webusb,
 	       sizeof(struct usb_bos_capability_webusb));
 
-	ztest_test_suite(test_osdesc,
-			 ztest_unit_test(test_usb_bos_macros),
-			 ztest_unit_test(test_usb_bos));
-	ztest_run_test_suite(test_osdesc);
+	test_usb_bos_macros();
+	test_usb_bos();
 }
+ZTEST_SUITE(osdesc_bos, NULL, NULL, NULL, NULL, NULL);
