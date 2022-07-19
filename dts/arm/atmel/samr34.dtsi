@@ -22,7 +22,6 @@
 			portc: gpio@40002900 {
 				compatible = "atmel,sam0-gpio";
 				reg = <0x40002900 0x80>;
-				label = "PORTC";
 				gpio-controller;
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
@@ -45,7 +44,6 @@
 	lora: sx1276@0 {
 		compatible = "semtech,sx1276";
 		reg = <0>;
-		label = "SX1276";
 		reset-gpios = <&portb 15 GPIO_ACTIVE_LOW>;               /* nRST */
 		dio-gpios =
 			<&portb 16 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO0 */
