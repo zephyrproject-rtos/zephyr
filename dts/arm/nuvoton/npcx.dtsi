@@ -52,6 +52,14 @@
 		status = "okay";
 	};
 
+	/* Dummy node of IOs that have leakage current. The user can override
+	 * 'leak-gpios' prop. at board DT file to save more power consumption.
+	 */
+	power_leakage_io: power-leakage-io {
+		compatible = "nuvoton,npcx-leakage-io";
+		status = "okay";
+	};
+
 	soc {
 		bbram: bb-ram@400af000 {
 			compatible = "nuvoton,npcx-bbram";
