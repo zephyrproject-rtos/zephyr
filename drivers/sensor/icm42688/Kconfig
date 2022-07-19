@@ -1,0 +1,56 @@
+# ICM42688-P Six-Axis Motion Tracking device configuration options
+#
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_ICM42688 := invensense,icm42688
+
+menuconfig ICM42688
+	bool "ICM42688 Six-Axis Motion Tracking Device"
+	default $(dt_compat_enabled,$(DT_COMPAT_ICM42688))
+	depends on SPI
+	help
+	  Enable driver for ICM42688 SPI-based six-axis motion tracking device.
+
+if ICM42688
+
+choice ICM42688_TRIGGER_MODE
+	prompt "Trigger mode"
+	default ICM42688_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config ICM42688_TRIGGER_NONE
+	bool "No trigger"
+
+config ICM42688_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select ICM42688_TRIGGER
+
+config ICM42688_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select ICM42688_TRIGGER
+
+endchoice
+
+config ICM42688_TRIGGER
+	bool
+
+config ICM42688_THREAD_PRIORITY
+	int "Thread priority"
+	depends on ICM42688_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config ICM42688_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on ICM42688_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # ICM42688
