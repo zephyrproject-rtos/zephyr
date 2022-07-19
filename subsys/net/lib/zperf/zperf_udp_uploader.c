@@ -90,7 +90,7 @@ static inline void zperf_upload_fin(const struct shell *sh,
 		hdr->num_of_bytes = htonl(packet_size);
 
 		/* Send the packet */
-		ret = send(sock, sample_packet, packet_size, 0);
+		ret = zsock_send(sock, sample_packet, packet_size, 0);
 		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Failed to send the packet (%d)\n",
@@ -99,8 +99,8 @@ static inline void zperf_upload_fin(const struct shell *sh,
 		}
 
 		/* Receive statistics */
-		ret = setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &rcvtimeo,
-				 sizeof(rcvtimeo));
+		ret = zsock_setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &rcvtimeo,
+				       sizeof(rcvtimeo));
 		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "setsockopt error (%d)\n",
@@ -108,7 +108,7 @@ static inline void zperf_upload_fin(const struct shell *sh,
 			continue;
 		}
 
-		ret = recv(sock, stats, sizeof(stats), 0);
+		ret = zsock_recv(sock, stats, sizeof(stats), 0);
 		if (ret == -EAGAIN) {
 			shell_fprintf(sh, SHELL_WARNING,
 					"Stats receive timeout\n");
@@ -126,7 +126,7 @@ static inline void zperf_upload_fin(const struct shell *sh,
 
 	/* Drain RX */
 	while (true) {
-		ret = recv(sock, stats, sizeof(stats), MSG_DONTWAIT);
+		ret = zsock_recv(sock, stats, sizeof(stats), ZSOCK_MSG_DONTWAIT);
 		if (ret < 0) {
 			break;
 		}
@@ -236,7 +236,7 @@ void zperf_udp_upload(const struct shell *sh,
 		hdr->num_of_bytes = htonl(packet_size);
 
 		/* Send the packet */
-		ret = send(sock, sample_packet, packet_size, 0);
+		ret = zsock_send(sock, sample_packet, packet_size, 0);
 		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Failed to send the packet (%d)\n",
