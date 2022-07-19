@@ -7,11 +7,11 @@
 #define DT_DRV_COMPAT microchip_mpfs_gpio
 
 #include <errno.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
 
 #include "gpio_utils.h"
 
