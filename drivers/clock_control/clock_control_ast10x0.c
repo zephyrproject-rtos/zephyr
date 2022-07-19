@@ -12,7 +12,7 @@
 #include <zephyr/sys/util.h>
 
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_ast10x0);
 
 #define HPLL_FREQ			MHZ(1000)
