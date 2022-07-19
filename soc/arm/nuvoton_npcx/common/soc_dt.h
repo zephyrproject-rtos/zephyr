@@ -263,7 +263,7 @@
 			DT_PROP(child, group_mask),                            \
 			0);						       \
 		irq_enable(DT_PROP(child, irq));                               \
-	} while (0)
+	} while (false)
 
 /**
  * @brief Get a child node from path '/npcx-espi-vws-map/name'.
