@@ -461,9 +461,9 @@ static int setup_upload_sockets(const struct shell *sh,
 				char *argv0)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		*sock6 = socket(AF_INET6,
-				is_udp ? SOCK_DGRAM : SOCK_STREAM,
-				is_udp ? IPPROTO_UDP : IPPROTO_TCP);
+		*sock6 = zsock_socket(AF_INET6,
+				      is_udp ? SOCK_DGRAM : SOCK_STREAM,
+				      is_udp ? IPPROTO_UDP : IPPROTO_TCP);
 		if (*sock6 < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Cannot create IPv6 network socket (%d)\n",
@@ -476,9 +476,9 @@ static int setup_upload_sockets(const struct shell *sh,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		*sock4 = socket(AF_INET,
-				is_udp ? SOCK_DGRAM : SOCK_STREAM,
-				is_udp ? IPPROTO_UDP : IPPROTO_TCP);
+		*sock4 = zsock_socket(AF_INET,
+				      is_udp ? SOCK_DGRAM : SOCK_STREAM,
+				      is_udp ? IPPROTO_UDP : IPPROTO_TCP);
 		if (*sock4 < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Cannot create IPv4 network socket (%d)\n",
@@ -542,9 +542,9 @@ static int execute_upload(const struct shell *sh,
 		shell_fprintf(sh, SHELL_NORMAL, "\n");
 
 		if (family == AF_INET6 && sock6 >= 0) {
-			ret = connect(sock6,
-				      (struct sockaddr *)ipv6,
-				      sizeof(*ipv6));
+			ret = zsock_connect(sock6,
+					    (struct sockaddr *)ipv6,
+					    sizeof(*ipv6));
 			if (ret < 0) {
 				shell_fprintf(sh, SHELL_WARNING,
 					      "IPv6 connect failed (%d)\n",
@@ -558,9 +558,9 @@ static int execute_upload(const struct shell *sh,
 		}
 
 		if (family == AF_INET && sock4 >= 0) {
-			ret = connect(sock4,
-				      (struct sockaddr *)ipv4,
-				      sizeof(*ipv4));
+			ret = zsock_connect(sock4,
+					    (struct sockaddr *)ipv4,
+					    sizeof(*ipv4));
 			if (ret < 0) {
 				shell_fprintf(sh, SHELL_NORMAL,
 					      "IPv4 connect failed (%d)\n",
@@ -581,9 +581,9 @@ static int execute_upload(const struct shell *sh,
 
 	if (!is_udp && IS_ENABLED(CONFIG_NET_TCP)) {
 		if (family == AF_INET6 && sock6 >= 0) {
-			ret = connect(sock6,
-				      (struct sockaddr *)ipv6,
-				      sizeof(*ipv6));
+			ret = zsock_connect(sock6,
+					    (struct sockaddr *)ipv6,
+					    sizeof(*ipv6));
 			if (ret < 0) {
 				shell_fprintf(sh, SHELL_WARNING,
 					      "IPv6 connect failed (%d)\n",
@@ -595,7 +595,7 @@ static int execute_upload(const struct shell *sh,
 			 * the same time.
 			 */
 			if (IS_ENABLED(CONFIG_NET_IPV4) && sock4 >= 0) {
-				(void)close(sock4);
+				(void)zsock_close(sock4);
 				sock4 = -1;
 			}
 
@@ -606,9 +606,9 @@ static int execute_upload(const struct shell *sh,
 		}
 
 		if (family == AF_INET && sock4 >= 0) {
-			ret = connect(sock4,
-				      (struct sockaddr *)ipv4,
-				      sizeof(*ipv4));
+			ret = zsock_connect(sock4,
+					    (struct sockaddr *)ipv4,
+					    sizeof(*ipv4));
 			if (ret < 0) {
 				shell_fprintf(sh, SHELL_WARNING,
 					      "IPv4 connect failed (%d)\n",
@@ -617,7 +617,7 @@ static int execute_upload(const struct shell *sh,
 			}
 
 			if (IS_ENABLED(CONFIG_NET_IPV6) && sock6 >= 0) {
-				(void)close(sock6);
+				(void)zsock_close(sock6);
 				sock6 = -1;
 			}
 
@@ -635,12 +635,12 @@ static int execute_upload(const struct shell *sh,
 
 out:
 	if (IS_ENABLED(CONFIG_NET_IPV6) && sock6 >= 0) {
-		(void)close(sock6);
+		(void)zsock_close(sock6);
 		sock6 = -1;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && sock4 >= 0) {
-		(void)close(sock4);
+		(void)zsock_close(sock4);
 		sock4 = -1;
 	}
 
