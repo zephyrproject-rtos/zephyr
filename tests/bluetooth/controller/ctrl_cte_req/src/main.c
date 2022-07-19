@@ -886,41 +886,29 @@ static void wait_for_phy_update_instant(uint8_t instant)
 	}
 }
 
-static void check_phy_update_and_cte_req_complete(bool is_local,
-						  struct pdu_data_llctrl_cte_req *cte_req,
-						  struct pdu_data_llctrl_phy_req *phy_req,
-						  uint8_t ctx_num_at_end, bool dle_ntf)
+static void check_phy_update(bool is_local, struct pdu_data_llctrl_phy_req *phy_req,
+		      uint8_t ctx_num_at_end, bool dle_ntf)
 {
 	struct pdu_data_llctrl_length_rsp length_ntf = {
 		PDU_PDU_MAX_OCTETS, PDU_DC_MAX_US(PDU_PDU_MAX_OCTETS, phy_req->tx_phys),
 		PDU_PDU_MAX_OCTETS, PDU_DC_MAX_US(PDU_PDU_MAX_OCTETS, phy_req->rx_phys)
 	};
-	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
-	struct pdu_data_llctrl_cte_rsp remote_cte_rsp = {};
-	struct node_tx *tx = NULL;
+	struct node_rx_pu pu = {.status = BT_HCI_ERR_SUCCESS};
 	struct node_rx_pdu *ntf;
 
-	/* Prepare */
+	/* Execute connection event that is an instant. It is required to send notifications to
+	 * Host that complete already started PHY update procedure.
+	 */
 	event_prepare(&conn);
 
-	if (!is_local && cte_req != NULL) {
-		/* Handle remote PHY update request completion and local CTE request in the same
-		 * event.
-		 */
-
-		/* Tx Queue should have one LL Control PDU */
-		lt_rx(LL_CTE_REQ, &conn, &tx, cte_req);
-		lt_rx_q_is_empty(&conn);
-
-		/* Rx */
-		lt_tx(LL_CTE_RSP, &conn, &remote_cte_rsp);
-	} else {
-		/* Tx Queue should NOT have a LL Control PDU */
-		lt_rx_q_is_empty(&conn);
-	}
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
 
 	/* Done */
 	event_done(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
 
 	/* There should be two host notifications, one pu and one dle */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
@@ -930,17 +918,6 @@ static void check_phy_update_and_cte_req_complete(bool is_local,
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-
-	if (!is_local && cte_req != NULL) {
-		/* Receive notification of sampled CTE response */
-		ut_rx_pdu(LL_CTE_RSP, &ntf, &remote_cte_rsp);
-
-		/* Release Ntf */
-		ull_cp_release_ntf(ntf);
-
-		/* Release tx node */
-		ull_cp_release_tx(&conn, tx);
-	}
 
 	/* The RX queue should be empty now */
 	ut_rx_q_is_empty();
@@ -958,23 +935,15 @@ static void check_phy_update_and_cte_req_complete(bool is_local,
 }
 
 /**
- * @brief The function executes PHY update procedure in central role.
- *
- * The main goal for the function is to run and evaluate the PHY update control procedure.
- * In case the PHY request is remote request and there is a local CTE request then
- * after PHY update completion CTE request is executed in the same event.
- * In this situation the function processes verification of CTE request completion also.
+ * @brief The function executes and verifies PHY update procedure in central role.
  *
  * @param is_local        Flag informing if PHY request is local or remote.
- * @param cte_req         Parameters of CTE request procedure. If it is NULL there were no CTE
- *                        request.
  * @param phy_req         Parameters of PHY update request.
  * @param events_at_start Number of connection events at function start.
  * @param ctx_num_at_end  Expected number of free procedure contexts at function end.
  */
-static void run_phy_update_central(bool is_local, struct pdu_data_llctrl_cte_req *cte_req,
-				   struct pdu_data_llctrl_phy_req *phy_req, uint8_t events_at_start,
-				   uint8_t ctx_num_at_end, bool dle_ntf)
+static void run_phy_update_central(bool is_local, struct pdu_data_llctrl_phy_req *phy_req,
+				   uint8_t events_at_start, uint8_t ctx_num_at_end, bool dle_ntf)
 {
 	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_PREFER_ANY,
 					       .tx_phys = PHY_PREFER_ANY };
@@ -1038,28 +1007,19 @@ static void run_phy_update_central(bool is_local, struct pdu_data_llctrl_cte_req
 
 	wait_for_phy_update_instant(instant);
 
-	check_phy_update_and_cte_req_complete(is_local, cte_req, phy_req, ctx_num_at_end, dle_ntf);
+	check_phy_update(is_local, phy_req, ctx_num_at_end, dle_ntf);
 }
 
 /**
- * @brief The function executes PHY update procedure in peripheral role.
- *
- * The main goal for the function is to run and evaluate the PHY update control procedure.
- * In case the PHY request is remote request and there is a local CTE request then
- * after PHY update completion CTE request is executed in the same event.
- * In this situation the function processes verification of CTE request completion also.
+ * @brief The function executes and verifies PHY update procedure in peripheral role.
  *
  * @param is_local        Flag informing if PHY request is local or remote.
- * @param cte_req         Parameters of CTE request procedure. If it is NULL there were no CTE
- *                        request.
  * @param phy_req         Parameters of PHY update request.
  * @param events_at_start Number of connection events at function start.
  * @param ctx_num_at_end  Expected number of free procedure contexts at function end.
  */
-static void run_phy_update_peripheral(bool is_local, struct pdu_data_llctrl_cte_req *cte_req,
-				      struct pdu_data_llctrl_phy_req *phy_req,
-				      uint8_t events_at_start, uint8_t ctx_num_at_end,
-				      bool dle_ntf)
+static void run_phy_update_peripheral(bool is_local, struct pdu_data_llctrl_phy_req *phy_req,
+				      uint8_t events_at_start, uint8_t ctx_num_at_end, bool dle_ntf)
 {
 	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_PREFER_ANY,
 					       .tx_phys = PHY_PREFER_ANY };
@@ -1131,7 +1091,7 @@ static void run_phy_update_peripheral(bool is_local, struct pdu_data_llctrl_cte_
 
 	wait_for_phy_update_instant(instant);
 
-	check_phy_update_and_cte_req_complete(is_local, cte_req, phy_req, ctx_num_at_end, dle_ntf);
+	check_phy_update(is_local, phy_req, ctx_num_at_end, dle_ntf);
 }
 
 static void test_local_cte_req_wait_for_phy_update_complete_and_disable(uint8_t role)
@@ -1163,10 +1123,10 @@ static void test_local_cte_req_wait_for_phy_update_complete_and_disable(uint8_t 
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
-		run_phy_update_central(true, NULL, &phy_req, pu_event_counter(&conn),
+		run_phy_update_central(true, &phy_req, pu_event_counter(&conn),
 				       test_ctx_buffers_cnt() - 1, true);
 	} else {
-		run_phy_update_peripheral(true, NULL, &phy_req, pu_event_counter(&conn),
+		run_phy_update_peripheral(true, &phy_req, pu_event_counter(&conn),
 					  test_ctx_buffers_cnt() - 1, true);
 	}
 
@@ -1230,10 +1190,10 @@ static void test_local_cte_req_wait_for_phy_update_complete(uint8_t role)
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
-		run_phy_update_central(true, &local_cte_req, &phy_req, pu_event_counter(&conn),
+		run_phy_update_central(true, &phy_req, pu_event_counter(&conn),
 				       test_ctx_buffers_cnt() - 1, false);
 	} else {
-		run_phy_update_peripheral(true, &local_cte_req, &phy_req, pu_event_counter(&conn),
+		run_phy_update_peripheral(true, &phy_req, pu_event_counter(&conn),
 					  test_ctx_buffers_cnt() - 1, false);
 	}
 
@@ -1288,10 +1248,10 @@ static void test_local_phy_update_wait_for_cte_req_complete(uint8_t role)
 		      "Free CTX buffers %d", ctx_buffers_free());
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
-		run_phy_update_central(true, NULL, &phy_req, pu_event_counter(&conn),
+		run_phy_update_central(true, &phy_req, pu_event_counter(&conn),
 				       test_ctx_buffers_cnt(), true);
 	} else {
-		run_phy_update_peripheral(true, NULL, &phy_req, pu_event_counter(&conn),
+		run_phy_update_peripheral(true, &phy_req, pu_event_counter(&conn),
 					  test_ctx_buffers_cnt(), true);
 	}
 }
@@ -1378,10 +1338,10 @@ static void test_phy_update_wait_for_remote_cte_req_complete(uint8_t role)
 		      "Free CTX buffers %d", ctx_buffers_free());
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
-		run_phy_update_central(true, NULL, &phy_req, pu_event_counter(&conn),
+		run_phy_update_central(true, &phy_req, pu_event_counter(&conn),
 				       test_ctx_buffers_cnt(), true);
 	} else {
-		run_phy_update_peripheral(true, NULL, &phy_req, pu_event_counter(&conn),
+		run_phy_update_peripheral(true, &phy_req, pu_event_counter(&conn),
 					  test_ctx_buffers_cnt(), true);
 	}
 }
@@ -1430,10 +1390,10 @@ static void test_cte_req_wait_for_remote_phy_update_complete_and_disable(uint8_t
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
-		run_phy_update_central(false, NULL, &phy_req, pu_event_counter(&conn),
+		run_phy_update_central(false, &phy_req, pu_event_counter(&conn),
 				       test_ctx_buffers_cnt(), true);
 	} else {
-		run_phy_update_peripheral(false, NULL, &phy_req, pu_event_counter(&conn),
+		run_phy_update_peripheral(false, &phy_req, pu_event_counter(&conn),
 					  test_ctx_buffers_cnt(), true);
 	}
 
@@ -1486,16 +1446,21 @@ static void test_cte_req_wait_for_remote_phy_update_complete(uint8_t role)
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
-		run_phy_update_central(false, &local_cte_req, &phy_req, pu_event_counter(&conn),
-				       test_ctx_buffers_cnt(), false);
+		run_phy_update_central(false, &phy_req, pu_event_counter(&conn),
+				       test_ctx_buffers_cnt() - 1, false);
 	} else {
-		run_phy_update_peripheral(false, &local_cte_req, &phy_req, pu_event_counter(&conn),
-					  test_ctx_buffers_cnt(), false);
+		run_phy_update_peripheral(false, &phy_req, pu_event_counter(&conn),
+					  test_ctx_buffers_cnt() - 1, false);
 	}
 
 	/* There is no special handling of CTE REQ completion here. It is done when instant happens
 	 * just after remote PHY update completes.
 	 */
+	/* PHY update was completed. Handle CTE request */
+	run_local_cte_req(&local_cte_req);
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(), "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 ZTEST(cte_req_after_fex, test_central_cte_req_wait_for_remote_phy_update_complete)
