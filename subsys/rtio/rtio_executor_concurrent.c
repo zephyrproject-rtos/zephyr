@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "spinlock.h"
+#include <zephyr/spinlock.h>
 #include <zephyr/rtio/rtio_executor_concurrent.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/kernel.h>
