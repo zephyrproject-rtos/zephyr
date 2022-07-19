@@ -10,7 +10,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/shell/shell_history.h>
 

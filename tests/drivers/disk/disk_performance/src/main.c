@@ -6,7 +6,7 @@
 
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/storage/disk_access.h>
 #include <zephyr/device.h>
 #include <zephyr/timing/timing.h>

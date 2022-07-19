@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/irq_offload.h>
 #include <zephyr/sys/ring_buffer.h>
 

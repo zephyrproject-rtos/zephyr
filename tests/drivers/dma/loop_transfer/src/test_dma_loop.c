@@ -25,7 +25,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/dma.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /* in millisecond */
 #define SLEEPTIME 250

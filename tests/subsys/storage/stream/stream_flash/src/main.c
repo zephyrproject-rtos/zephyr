@@ -7,7 +7,7 @@
 #include <string.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/settings/settings.h>
 

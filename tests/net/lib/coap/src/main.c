@@ -18,8 +18,8 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 
 #include <zephyr/net/coap.h>
 
-#include <tc_util.h>
-#include <ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest.h>
 
 #include "net_private.h"
 

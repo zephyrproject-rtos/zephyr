@@ -5,10 +5,10 @@
  */
 
 #include "test_sched.h"
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/irq_offload.h>
 #include <kernel_internal.h>
-#include <ztest_error_hook.h>
+#include <zephyr/ztest_error_hook.h>
 
 struct k_thread user_thread;
 K_SEM_DEFINE(user_sem, 0, 1);

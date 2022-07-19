@@ -4,7 +4,7 @@
  */
 
 #include <zephyr/drivers/pinctrl.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /* pin configuration for test device */
 #define TEST_DEVICE DT_NODELABEL(test_device)

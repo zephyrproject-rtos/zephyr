@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <tc_util.h>
-#include <ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/sys/printk.h>
 

@@ -60,13 +60,13 @@
 #include <tinycrypt/ecc_dh.h>
 #include <tinycrypt/ecc_platform_specific.h>
 #include "test_ecc_utils.h"
-#include <test_utils.h>
+#include <zephyr/test_utils.h>
 #include <tinycrypt/constants.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 int ecdh_vectors(char **qx_vec, char **qy_vec, char **d_vec, char **z_vec,
 		 int tests, int verbose)

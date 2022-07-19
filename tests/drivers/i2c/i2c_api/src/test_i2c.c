@@ -14,7 +14,7 @@
 
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(i2c_0), okay)
 #define I2C_DEV_NODE	DT_ALIAS(i2c_0)

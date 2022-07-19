@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/interrupt_controller/gicv3_its.h>
 

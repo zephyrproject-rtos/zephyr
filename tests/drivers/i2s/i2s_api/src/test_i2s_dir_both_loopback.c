@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/drivers/i2s.h>
 #include "i2s_api_test.h"
 

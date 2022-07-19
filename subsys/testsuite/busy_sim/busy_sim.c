@@ -6,7 +6,7 @@
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/gpio.h>
-#include "busy_sim.h"
+#include <zephyr/busy_sim.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/random/rand32.h>
 

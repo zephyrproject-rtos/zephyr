@@ -44,9 +44,9 @@
 #include <tinycrypt/constants.h>
 
 #include <stdio.h>
-#include <tc_util.h>
-#include <test_utils.h>
-#include <ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/test_utils.h>
+#include <zephyr/ztest.h>
 
 struct hmac_prng_test_vector {
 	uint8_t entropyinputlen;

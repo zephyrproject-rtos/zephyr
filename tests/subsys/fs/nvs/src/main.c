@@ -17,7 +17,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>

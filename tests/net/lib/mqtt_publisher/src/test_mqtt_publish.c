@@ -9,7 +9,7 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_WRN);
 
 #include <zephyr/net/mqtt.h>
 #include <zephyr/net/socket.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <string.h>
 #include <errno.h>

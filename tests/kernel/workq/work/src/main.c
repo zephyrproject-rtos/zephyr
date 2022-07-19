@@ -13,7 +13,7 @@
 #undef __DEPRECATED_MACRO
 #define __DEPRECATED_MACRO
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define COOPHI_PRIORITY K_PRIO_COOP(0) /* = -4 */

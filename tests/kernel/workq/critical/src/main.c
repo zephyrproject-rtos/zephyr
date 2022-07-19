@@ -26,7 +26,7 @@
  */
 #include <zephyr/zephyr.h>
 #include <zephyr/linker/sections.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define NUM_MILLISECONDS        50
 #define TEST_TIMEOUT            200

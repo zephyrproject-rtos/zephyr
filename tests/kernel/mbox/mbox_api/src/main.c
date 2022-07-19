@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 extern void test_mbox_kinit(void);
 extern void test_mbox_kdefine(void);
 extern void test_enhance_capability(void);

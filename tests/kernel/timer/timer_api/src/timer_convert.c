@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/time_units.h>
 #include <zephyr/random/rand32.h>

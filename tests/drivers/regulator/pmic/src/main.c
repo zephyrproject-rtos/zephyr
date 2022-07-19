@@ -14,7 +14,7 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/drivers/regulator/consumer.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || \
 	!DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)

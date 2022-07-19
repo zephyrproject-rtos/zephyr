@@ -7,7 +7,7 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/kernel.h>
 #include <string.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <cavs_ipc.h>
 #include "tests.h"
 

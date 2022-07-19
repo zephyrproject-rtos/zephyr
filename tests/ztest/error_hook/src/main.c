@@ -7,8 +7,8 @@
 #include <zephyr/irq_offload.h>
 #include <zephyr/syscall_handler.h>
 
-#include <ztest.h>
-#include <ztest_error_hook.h>
+#include <zephyr/ztest.h>
+#include <zephyr/ztest_error_hook.h>
 
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define THREAD_TEST_PRIORITY 5

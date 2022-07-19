@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <zephyr/drivers/kscan.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 static void kb_callback(const struct device *dev, uint32_t row, uint32_t col,
 			bool pressed)

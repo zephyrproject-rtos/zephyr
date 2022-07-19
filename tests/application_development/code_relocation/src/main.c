@@ -7,7 +7,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /* This function will allow execute from sram region.
  * This is needed only for this sample because by default all soc will

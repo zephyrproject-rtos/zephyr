@@ -7,7 +7,7 @@
 #include <limits.h>
 #include <zephyr/device.h>
 #include <zephyr/fs/fs.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/storage/flash_map.h>
 
 int check_file_dir_exists(const char *fpath)

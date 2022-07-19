@@ -7,7 +7,7 @@
 #include <zephyr/zephyr.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/linker/sections.h>
 
 

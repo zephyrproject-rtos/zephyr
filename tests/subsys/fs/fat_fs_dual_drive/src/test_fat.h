@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/fs/fs.h>
 
 /* Make sure to match the drive name to ELM FAT Lib volume strings */

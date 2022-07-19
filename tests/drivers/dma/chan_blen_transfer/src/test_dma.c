@@ -18,7 +18,7 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/drivers/dma.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define RX_BUFF_SIZE (48)
 

@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/drivers/can.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <strings.h>
 
 /**

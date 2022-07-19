@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/sys/crc.h>
 #include <dns_pack.h>
 #include <dns_internal.h>

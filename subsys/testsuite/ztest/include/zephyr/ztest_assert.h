@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #ifdef __cplusplus
 extern "C" {

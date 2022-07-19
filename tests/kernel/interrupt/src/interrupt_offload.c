@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/irq_offload.h>
-#include <interrupt_util.h>
+#include <zephyr/interrupt_util.h>
 
 #define STACK_SIZE	1024
 #define NUM_WORK	4

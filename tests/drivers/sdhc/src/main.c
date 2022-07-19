@@ -7,7 +7,7 @@
 #include <zephyr/zephyr.h>
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/device.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 static const struct device *sdhc_dev = DEVICE_DT_GET(DT_ALIAS(sdhc0));
 static struct sdhc_host_props props;

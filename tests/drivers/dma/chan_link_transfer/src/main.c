@@ -5,6 +5,6 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 ZTEST_SUITE(dma_m2m_link, NULL, NULL, NULL, NULL, NULL);

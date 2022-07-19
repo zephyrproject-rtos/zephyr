@@ -5,7 +5,7 @@
  */
 
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 void test_init_callback(void);
 void test_control_callback(void);

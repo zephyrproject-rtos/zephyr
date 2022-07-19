@@ -7,7 +7,7 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys_clock.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #ifdef CONFIG_PM_POLICY_DEFAULT
 /**

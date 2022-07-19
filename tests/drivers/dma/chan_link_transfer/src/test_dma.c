@@ -19,7 +19,7 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/drivers/dma.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define TEST_DMA_CHANNEL_0 (0)
 #define TEST_DMA_CHANNEL_1 (1)

@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(main);
 #include <zephyr/sys/printk.h>
 #include <string.h>
 #include <stdio.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/drivers/spi.h>
 

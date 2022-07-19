@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/counter.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);

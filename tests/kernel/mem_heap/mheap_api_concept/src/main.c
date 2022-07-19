@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 extern void test_mheap_malloc_free(void);
 extern void test_mheap_calloc(void);
 extern void test_mheap_malloc_align4(void);

@@ -7,7 +7,7 @@
 /* Tests for the time_sync data structures */
 
 #include <string.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "timeutil_test.h"
 
 static const struct timeutil_sync_config cfg1 = {

@@ -6,7 +6,7 @@
 
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 extern const struct device *get_adc_device(void);
 extern const struct device *get_count_device(void);

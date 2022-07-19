@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 #include <string.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/linker/sections.h>
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 #include "tcp_private.h"
 #include "net_stats.h"
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define MY_PORT 4242
 #define PEER_PORT 4242
