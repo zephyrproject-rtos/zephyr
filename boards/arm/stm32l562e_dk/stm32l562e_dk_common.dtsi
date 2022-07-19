@@ -49,6 +49,10 @@
 			min-residency-us = <900>;
 		};
 	};
+
+	aliases {
+		spi-flash0 = &mx25lm51245;
+	};
 };
 
 &clk_msi {

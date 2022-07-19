@@ -20,6 +20,7 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdog0;
+		spi-flash0 = &mx25r80;
 	};
 
 	leds {

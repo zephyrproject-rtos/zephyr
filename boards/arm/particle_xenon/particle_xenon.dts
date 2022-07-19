@@ -29,6 +29,7 @@
 
 	aliases {
 		watchdog0 = &wdt0;
+		spi-flash0 = &mx25l32;
 	};
 };
 
