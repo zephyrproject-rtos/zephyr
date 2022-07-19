@@ -28,8 +28,8 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys_clock.h>
 #include <stdbool.h>
-#include <tc_util.h>
-#include <ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest.h>
 
 #define THREAD_STACK		(384 + CONFIG_TEST_EXTRA_STACK_SIZE)
 

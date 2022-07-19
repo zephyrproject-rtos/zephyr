@@ -14,7 +14,7 @@
 #include <zephyr/zephyr.h>
 #include <zephyr/timing/timing.h>
 #include <stdlib.h>
-#include "timestamp.h"
+#include <zephyr/timestamp.h>
 #include "utils.h" /* PRINT () and other macros */
 
 /* context switch enough time so our measurement is precise */

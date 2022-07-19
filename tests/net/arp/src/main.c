@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ARP_LOG_LEVEL);
 #include <zephyr/zephyr.h>
 #include <zephyr/linker/sections.h>
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ARP_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/dummy.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/random/rand32.h>
 
 #include "arp.h"

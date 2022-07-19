@@ -5,8 +5,8 @@
  */
 
 
-#include <ztest.h>
-#include <ztest_error_hook.h>
+#include <zephyr/ztest.h>
+#include <zephyr/ztest_error_hook.h>
 
 #define TIMEOUT K_MSEC(100)
 #define PIPE_LEN 8

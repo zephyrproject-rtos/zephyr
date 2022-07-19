@@ -15,7 +15,7 @@
  * the one it was defined in.
  */
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include <zephyr/zephyr.h>
 #include <zephyr/sys/mutex.h>
 

@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/device.h>
 

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <ztest_error_hook.h>
+#include <zephyr/ztest.h>
+#include <zephyr/ztest_error_hook.h>
 
 /* Macro declarations */
 

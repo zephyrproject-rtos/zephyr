@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <errno.h>
 #include <zephyr/linker/sections.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>

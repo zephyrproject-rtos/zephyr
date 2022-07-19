@@ -14,7 +14,7 @@ LOG_MODULE_DECLARE(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/sys/util.h>
 #include <zephyr/posix/unistd.h>
 
-#include <ztest_assert.h>
+#include <zephyr/ztest_assert.h>
 
 #include "test_socketpair_thread.h"
 

@@ -12,10 +12,10 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_output.h>
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include <stdbool.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define LOG_MODULE_NAME test
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);

@@ -8,7 +8,7 @@
 
 #include <zephyr/drivers/adc.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #if defined(CONFIG_SHIELD_MIKROE_ADC_CLICK)
 #define ADC_DEVICE_NODE		DT_INST(0, microchip_mcp3204)

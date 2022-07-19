@@ -11,7 +11,7 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_output_dict.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define LOG_MODULE_NAME log_switch_format
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_ERR);

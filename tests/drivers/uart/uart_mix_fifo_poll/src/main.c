@@ -12,7 +12,7 @@
  */
 
 #include <zephyr/drivers/uart.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/random/rand32.h>
 /* RX and TX pins have to be connected together*/

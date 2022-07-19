@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <interrupt_util.h>
+#include <zephyr/ztest.h>
+#include <zephyr/interrupt_util.h>
 
 #define DURATION	5
 #define HANDLER_TOKEN	0xDEADBEEF

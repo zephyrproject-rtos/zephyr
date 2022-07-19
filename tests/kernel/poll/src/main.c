@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 extern void test_poll_no_wait(void);
 extern void test_poll_wait(void);
 extern void test_poll_zero_events(void);

@@ -24,8 +24,8 @@
 #include <errno.h>
 
 #include <zephyr/sys/printk.h>
-#include <tc_util.h>
-#include <ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest.h>
 
 static
 struct http_parser_settings settings_null = {

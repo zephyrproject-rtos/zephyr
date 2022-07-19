@@ -17,7 +17,7 @@
  */
 #define __DEPRECATED_MACRO
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>

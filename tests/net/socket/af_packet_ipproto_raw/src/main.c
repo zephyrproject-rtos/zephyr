@@ -9,7 +9,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/zephyr.h>
 #include <zephyr/linker/sections.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/random/rand32.h>
 
 #include <fcntl.h>

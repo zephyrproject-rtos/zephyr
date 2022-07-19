@@ -8,8 +8,8 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/reboot.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
-#include <ztest.h>
-#include <tc_util.h>
+#include <zephyr/ztest.h>
+#include <zephyr/tc_util.h>
 
 /* on v8m arch the nmi pend bit is renamed to pend nmi map it to old name */
 #ifndef SCB_ICSR_NMIPENDSET_Msk

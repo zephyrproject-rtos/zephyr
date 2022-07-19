@@ -17,9 +17,9 @@
 #include <zephyr/logging/log_backend_std.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log_output.h>
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include <stdbool.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <stdlib.h>
 
 /** Hex string corresponding to "Debug message example, %d, %d, %d", 1, 2, 3.

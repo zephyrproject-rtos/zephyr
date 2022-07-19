@@ -4,7 +4,7 @@
  */
 
 #include <zephyr/drivers/counter.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 
 /*

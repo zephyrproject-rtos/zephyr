@@ -6,7 +6,7 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/device.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/drivers/edac.h>
 

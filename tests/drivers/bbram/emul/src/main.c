@@ -6,7 +6,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/bbram.h>
 #include <string.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define BBRAM_NODELABEL DT_NODELABEL(bbram)
 #define BBRAM_SIZE DT_PROP(BBRAM_NODELABEL, size)

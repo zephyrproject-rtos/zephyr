@@ -6,7 +6,7 @@
 
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /*
  * For ADV7513 Programming details, please

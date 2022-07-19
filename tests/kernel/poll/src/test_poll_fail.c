@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
-#include <ztest_error_hook.h>
+#include <zephyr/ztest_error_hook.h>
 
 static struct k_poll_signal signal_err;
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)

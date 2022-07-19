@@ -9,8 +9,8 @@
 #include <unistd.h>
 #include "cmdline.h" /* native_posix command line options header */
 #include "soc.h"
-#include "tc_util.h"
-#include "ztest_test_new.h"
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest_test_new.h>
 
 static const char *test_args;
 static bool list_tests;

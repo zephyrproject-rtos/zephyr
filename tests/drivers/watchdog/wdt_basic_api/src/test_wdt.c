@@ -59,7 +59,7 @@
 
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /*
  * To use this test, either the devicetree's /aliases must have a

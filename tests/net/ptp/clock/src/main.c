@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/sys/printk.h>
 #include <zephyr/linker/sections.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/drivers/ptp_clock.h>
 #include <zephyr/net/ptp_time.h>

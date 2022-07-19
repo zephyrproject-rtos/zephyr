@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
-#include <tc_util.h>
+#include <zephyr/ztest.h>
+#include <zephyr/tc_util.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/irq_offload.h>
 #include <kswap.h>

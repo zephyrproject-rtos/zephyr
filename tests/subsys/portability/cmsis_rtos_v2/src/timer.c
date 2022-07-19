@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <cmsis_os2.h>
 
 #define ONESHOT_TIME_TICKS      100

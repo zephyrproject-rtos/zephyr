@@ -11,8 +11,8 @@
 
 #include <string.h>
 #include <zephyr/types.h>
-#include <ztest.h>
-#include <ztest_error_hook.h>
+#include <zephyr/ztest.h>
+#include <zephyr/ztest_error_hook.h>
 
 #include <stdio.h>
 #include <stdlib.h>

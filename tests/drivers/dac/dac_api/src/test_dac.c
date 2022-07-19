@@ -7,7 +7,7 @@
 
 #include <zephyr/drivers/dac.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #if defined(CONFIG_BOARD_NUCLEO_F091RC) || \
 	defined(CONFIG_BOARD_NUCLEO_F207ZG) || \

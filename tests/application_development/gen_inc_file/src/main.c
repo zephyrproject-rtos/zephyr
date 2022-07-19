@@ -6,7 +6,7 @@
 #include <string.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /* Don't confuse doxygen with missing files */
 /**

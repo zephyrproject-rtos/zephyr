@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/net/dns_sd.h>
 #include <zephyr/net/net_context.h>

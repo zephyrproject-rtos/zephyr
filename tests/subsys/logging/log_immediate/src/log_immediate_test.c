@@ -11,10 +11,10 @@
  */
 
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include <stdbool.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>

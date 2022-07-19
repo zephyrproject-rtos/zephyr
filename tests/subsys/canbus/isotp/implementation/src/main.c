@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/canbus/isotp.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <strings.h>
 #include "random_data.h"
 #include <zephyr/net/buf.h>

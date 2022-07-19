@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "test_sched.h"
 
 /* nrf 51 has lower ram, so creating less number of threads */

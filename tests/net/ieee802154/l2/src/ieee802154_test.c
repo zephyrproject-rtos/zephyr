@@ -8,7 +8,7 @@
 LOG_MODULE_REGISTER(net_ieee802154_test, LOG_LEVEL_DBG);
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/net/net_core.h>
 #include "net_private.h"

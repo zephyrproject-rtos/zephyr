@@ -6,7 +6,7 @@
 
 #define CONFIG_CBPRINTF_LIBC_SUBSTS 1
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <float.h>
 #include <limits.h>
 #include <math.h>

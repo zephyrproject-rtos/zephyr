@@ -14,7 +14,7 @@
 #include <zephyr/timing/timing.h>
 #include <zephyr/sys/printk.h>
 #include <stdio.h>
-#include "timestamp.h"
+#include <zephyr/timestamp.h>
 
 #define INT_IMM8_OFFSET   1
 #define IRQ_PRIORITY      3

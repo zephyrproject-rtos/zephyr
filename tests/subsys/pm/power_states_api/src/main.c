@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/pm/pm.h>
 
 /* Last state has not declared a minimum residency, so it should be

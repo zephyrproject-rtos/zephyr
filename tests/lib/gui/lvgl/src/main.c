@@ -10,7 +10,7 @@
 #include <zephyr/device.h>
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/littlefs.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <lvgl.h>
 

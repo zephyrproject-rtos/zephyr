@@ -10,7 +10,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/types.h>
-#include <ztest_assert.h>
+#include <zephyr/ztest_assert.h>
 
 static uint8_t rambuf[FLASH_AREA_SIZE(storage)];
 

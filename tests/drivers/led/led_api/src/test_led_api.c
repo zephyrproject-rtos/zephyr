@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/drivers/led.h>
 
 #define BRIGHTNESS_MAX	100

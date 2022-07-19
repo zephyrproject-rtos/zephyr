@@ -15,7 +15,7 @@
 #define __TEST_UART_H__
 
 #include <zephyr/drivers/uart.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /* RX and TX pins have to be connected together*/
 

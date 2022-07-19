@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define TIMEOUT K_MSEC(100)
 #if !defined(CONFIG_BOARD_QEMU_X86)
