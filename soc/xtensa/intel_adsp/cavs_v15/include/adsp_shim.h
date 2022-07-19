@@ -65,6 +65,16 @@ struct cavs_shim {
 	uint32_t _unused9[2];
 };
 
+#define CAVS_SHIM (*((volatile struct cavs_shim *)DT_REG_ADDR(DT_NODELABEL(shim))))
+
+#define SHIM_DSPWCTS (&CAVS_SHIM.dspwctcs)
+#define SHIM_DSPWCH  (&CAVS_SHIM.dspwc_hi)
+#define SHIM_DSPWCL  (&CAVS_SHIM.dspwc_lo)
+#define SHIM_COMPARE_HI(idx) (&CAVS_SHIM.UTIL_CAT(UTIL_CAT(dspwct, idx), c_hi))
+#define SHIM_COMPARE_LO(idx) (&CAVS_SHIM.UTIL_CAT(UTIL_CAT(dspwct, idx), c_lo))
+
+#define SHIM_DSPWCTCS_TTIE(c) BIT(8 + (c))
+
 /* L2 Local Memory control (cAVS 1.8+) */
 struct cavs_l2lm {
 	uint32_t l2lmcap;
@@ -94,8 +104,6 @@ struct cavs_win {
 #define CAVS_WIN ((volatile struct cavs_win *)DT_REG_ADDR(DT_NODELABEL(win)))
 
 #endif /* _ASMLANGUAGE */
-
-#define CAVS_SHIM (*((volatile struct cavs_shim *)DT_REG_ADDR(DT_NODELABEL(shim))))
 
 #define CAVS_CLKCTL_RAPLLC	    BIT(31)
 #define CAVS_CLKCTL_RFROSCC	    BIT(29)
