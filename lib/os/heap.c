@@ -229,7 +229,7 @@ static chunkid_t alloc_chunk(struct z_heap *h, chunksz_t sz)
 	 * fragmentation waste of the order of the block allocated
 	 * only.
 	 */
-	if (b->next) {
+	if (b->next != 0U) {
 		chunkid_t first = b->next;
 		int i = CONFIG_SYS_HEAP_ALLOC_LOOPS;
 		do {

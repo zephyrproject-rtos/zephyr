@@ -10,6 +10,6 @@
 void _exit(int status)
 {
 	printk("exit\n");
-	while (1) {
+	while (true) {
 	}
 }

@@ -266,7 +266,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	union cbprintf_package_hdr *pkg_hdr = packaged;
 
 	/* Buffer must be aligned at least to size of a pointer. */
-	if ((uintptr_t)packaged % sizeof(void *)) {
+	if ((uintptr_t)packaged % sizeof(void *) != 0UL) {
 		return -EFAULT;
 	}
 
@@ -740,7 +740,7 @@ process_string:
 #endif
 
 	/* Store strings pointer locations of read only strings. */
-	if (s_ro_cnt) {
+	if (s_ro_cnt != 0U) {
 		for (i = 0; i < s_idx; i++) {
 			if (!(str_ptr_pos[i] & STR_POS_RO_FLAG)) {
 				continue;

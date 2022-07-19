@@ -18,7 +18,7 @@
  * running one and corrupting it. YMMV.
  */
 
-#define VALIDATE(cond) do { if (!(cond)) { return false; } } while (0)
+#define VALIDATE(cond) do { if (!(cond)) { return false; } } while (false)
 
 static bool in_bounds(struct z_heap *h, chunkid_t c)
 {
@@ -364,7 +364,7 @@ void heap_print_info(struct z_heap *h, bool dump_chunks)
 		chunksz_t largest = 0;
 		int count = 0;
 
-		if (first) {
+		if (first != 0U) {
 			chunkid_t curr = first;
 			do {
 				count++;
@@ -372,7 +372,7 @@ void heap_print_info(struct z_heap *h, bool dump_chunks)
 				curr = next_free_chunk(h, curr);
 			} while (curr != first);
 		}
-		if (count) {
+		if (count != 0) {
 			printk("%9d %12d %12d %12d %12zd\n",
 			       i, (1 << i) - 1 + min_chunk_size(h), count,
 			       largest, chunksz_to_bytes(h, largest));
