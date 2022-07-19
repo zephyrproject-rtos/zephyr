@@ -1262,6 +1262,7 @@ MAINTAINERS file:
         - MaureenHelm
     collaborators:
         - nashif
+        - stephanosio
     files:
         - MAINTAINERS.yml
     labels:
