@@ -185,7 +185,7 @@ int soc_adsp_halt_cpu(int id)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_CAVS_TIMER
+#ifdef CONFIG_INTEL_ADSP_TIMER
 	/*
 	 * Mask timer interrupt for this CPU so it won't wake up
 	 * by itself once WFI (wait for interrupt) instruction
