@@ -22,10 +22,6 @@ config IVSHMEM
 
 if IVSHMEM
 
-config IVSHMEM_DEV_NAME
-       string
-       default "IVSHMEM"
-
 module = IVSHMEM
 module-str = ivshmem
 source "subsys/logging/Kconfig.template.log_config"
