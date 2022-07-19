@@ -1,3 +1,9 @@
+/ {
+	aliases {
+		watchdog0 = &wwdg;
+	};
+};
+
 &rcc {
 	apb1-prescaler = <16>;
 };
