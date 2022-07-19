@@ -943,6 +943,19 @@ config HAS_DYNAMIC_DEVICE_HANDLES
 	  Hidden option that makes possible to manipulate device handles at
 	  runtime.
 
+config ZERO_NOINIT_MEMORY
+	bool "Zero memory regions marked __noinit"
+	help
+	  Normally, the __noinit attribute is used to hand-off a payload in
+	  memory, to save time or power, handle tasks sooner, or enter a
+	  low-power state sooner.
+
+	  However, in most systems with ECC memory, this can cause a fault
+	  that typically occurs soon after boot or at a potentially non-
+	  deterministic point in time.
+
+	  Say Y here to initialize memory even if it is marked __noinit.
+
 endmenu
 
 rsource "Kconfig.vm"

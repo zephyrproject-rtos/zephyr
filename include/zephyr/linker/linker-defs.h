@@ -245,6 +245,9 @@ extern char __rodata_region_size[];
 extern char _vector_start[];
 extern char _vector_end[];
 
+extern char _noinit_start[];
+extern char _noinit_end[];
+
 #ifdef CONFIG_SW_VECTOR_RELAY
 extern char __vector_relay_table[];
 #endif

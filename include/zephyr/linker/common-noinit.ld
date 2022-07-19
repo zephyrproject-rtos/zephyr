@@ -10,6 +10,7 @@ SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
          * This section is used for non-initialized objects that
          * will not be cleared during the boot process.
          */
+        _noinit_start = .;
         *(.noinit)
         *(".noinit.*")
 #ifdef CONFIG_USERSPACE
@@ -22,6 +23,8 @@ SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-noinit.ld>
+
+        _noinit_end = .;
 
 } GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 

@@ -133,6 +133,10 @@ void z_bss_zero(void)
 	z_early_memset(&__gcov_bss_start, 0,
 		       ((uintptr_t) &__gcov_bss_end - (uintptr_t) &__gcov_bss_start));
 #endif
+#ifdef CONFIG_ZERO_NOINIT_MEMORY
+	z_early_memset(&_noinit_start, 0,
+		       ((uintptr_t)&_noinit_end - (uintptr_t)&_noinit_start));
+#endif /* CONFIG_ZERO_NOINIT_MEMORY */
 }
 
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
