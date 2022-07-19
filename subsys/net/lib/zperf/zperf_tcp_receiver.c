@@ -126,7 +126,7 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 	static uint8_t buf[TCP_RECEIVER_BUF_SIZE];
 	const struct shell *sh = ptr1;
 	int port = POINTER_TO_INT(ptr2);
-	struct pollfd fds[SOCK_ID_MAX] = { 0 };
+	struct zsock_pollfd fds[SOCK_ID_MAX] = { 0 };
 	int ret;
 
 	for (int i = 0; i < ARRAY_SIZE(fds); i++) {
@@ -138,8 +138,8 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 
 		in4_addr_my = zperf_get_sin();
 
-		fds[SOCK_ID_IPV4_LISTEN].fd = socket(AF_INET, SOCK_STREAM,
-						     IPPROTO_TCP);
+		fds[SOCK_ID_IPV4_LISTEN].fd = zsock_socket(AF_INET, SOCK_STREAM,
+							   IPPROTO_TCP);
 		if (fds[SOCK_ID_IPV4_LISTEN].fd < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Cannot create IPv4 network socket.\n");
@@ -173,9 +173,9 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 		shell_fprintf(sh, SHELL_NORMAL, "Binding to %s\n",
 			      net_sprint_ipv4_addr(&in4_addr_my->sin_addr));
 
-		ret = bind(fds[SOCK_ID_IPV4_LISTEN].fd,
-			   (struct sockaddr *)in4_addr_my,
-			   sizeof(struct sockaddr_in));
+		ret = zsock_bind(fds[SOCK_ID_IPV4_LISTEN].fd,
+				 (struct sockaddr *)in4_addr_my,
+				 sizeof(struct sockaddr_in));
 		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Cannot bind IPv4 UDP port %d (%d)\n",
@@ -184,14 +184,14 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 			goto cleanup;
 		}
 
-		ret = listen(fds[SOCK_ID_IPV4_LISTEN].fd, 1);
+		ret = zsock_listen(fds[SOCK_ID_IPV4_LISTEN].fd, 1);
 		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Cannot listen IPv4 TCP (%d)", errno);
 			goto cleanup;
 		}
 
-		fds[SOCK_ID_IPV4_LISTEN].events = POLLIN;
+		fds[SOCK_ID_IPV4_LISTEN].events = ZSOCK_POLLIN;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
@@ -199,8 +199,8 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 
 		in6_addr_my = zperf_get_sin6();
 
-		fds[SOCK_ID_IPV6_LISTEN].fd = socket(AF_INET6, SOCK_STREAM,
-						     IPPROTO_TCP);
+		fds[SOCK_ID_IPV6_LISTEN].fd = zsock_socket(AF_INET6, SOCK_STREAM,
+							   IPPROTO_TCP);
 		if (fds[SOCK_ID_IPV6_LISTEN].fd < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Cannot create IPv6 network socket.\n");
@@ -235,9 +235,9 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 		shell_fprintf(sh, SHELL_NORMAL, "Binding to %s\n",
 			      net_sprint_ipv6_addr(&in6_addr_my->sin6_addr));
 
-		ret = bind(fds[SOCK_ID_IPV6_LISTEN].fd,
-			   (struct sockaddr *)in6_addr_my,
-			   sizeof(struct sockaddr_in6));
+		ret = zsock_bind(fds[SOCK_ID_IPV6_LISTEN].fd,
+				 (struct sockaddr *)in6_addr_my,
+				 sizeof(struct sockaddr_in6));
 		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Cannot bind IPv6 UDP port %d (%d)\n",
@@ -246,14 +246,14 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 			goto cleanup;
 		}
 
-		ret = listen(fds[SOCK_ID_IPV6_LISTEN].fd, 1);
+		ret = zsock_listen(fds[SOCK_ID_IPV6_LISTEN].fd, 1);
 		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Cannot listen IPv6 TCP (%d)", errno);
 			goto cleanup;
 		}
 
-		fds[SOCK_ID_IPV6_LISTEN].events = POLLIN;
+		fds[SOCK_ID_IPV6_LISTEN].events = ZSOCK_POLLIN;
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL,
@@ -264,7 +264,7 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 	init_done = true;
 
 	while (true) {
-		ret = poll(fds, ARRAY_SIZE(fds), -1);
+		ret = zsock_poll(fds, ARRAY_SIZE(fds), -1);
 		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "TCP receiver poll error (%d)\n",
@@ -276,8 +276,8 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 			struct sockaddr addr;
 			socklen_t addrlen = sizeof(addr);
 
-			if ((fds[i].revents & POLLERR) ||
-			    (fds[i].revents & POLLNVAL)) {
+			if ((fds[i].revents & ZSOCK_POLLERR) ||
+			    (fds[i].revents & ZSOCK_POLLNVAL)) {
 				shell_fprintf(
 					sh, SHELL_WARNING,
 					"TCP receiver IPv%d socket error\n",
@@ -285,14 +285,15 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 				goto cleanup;
 			}
 
-			if (!(fds[i].revents & POLLIN)) {
+			if (!(fds[i].revents & ZSOCK_POLLIN)) {
 				continue;
 			}
 
 			switch (i) {
 			case SOCK_ID_IPV4_LISTEN:
 			case SOCK_ID_IPV6_LISTEN:{
-				int sock = accept(fds[i].fd, &addr, &addrlen);
+				int sock = zsock_accept(fds[i].fd, &addr,
+							&addrlen);
 
 				if (sock < 0) {
 					shell_fprintf(
@@ -305,14 +306,14 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 				if (i == SOCK_ID_IPV4_LISTEN &&
 				    fds[SOCK_ID_IPV4_DATA].fd < 0) {
 					fds[SOCK_ID_IPV4_DATA].fd = sock;
-					fds[SOCK_ID_IPV4_DATA].events = POLLIN;
+					fds[SOCK_ID_IPV4_DATA].events = ZSOCK_POLLIN;
 				} else if (i == SOCK_ID_IPV6_LISTEN &&
 					   fds[SOCK_ID_IPV6_DATA].fd < 0) {
 					fds[SOCK_ID_IPV6_DATA].fd = sock;
-					fds[SOCK_ID_IPV6_DATA].events = POLLIN;
+					fds[SOCK_ID_IPV6_DATA].events = ZSOCK_POLLIN;
 				} else {
 					/* Too many connections. */
-					close(sock);
+					zsock_close(sock);
 					break;
 				}
 
@@ -321,7 +322,7 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 
 			case SOCK_ID_IPV4_DATA:
 			case SOCK_ID_IPV6_DATA:
-				ret = recv(fds[i].fd, buf, sizeof(buf), 0);
+				ret = zsock_recv(fds[i].fd, buf, sizeof(buf), 0);
 				if (ret < 0) {
 					shell_fprintf(
 						sh, SHELL_WARNING,
@@ -334,7 +335,7 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 				tcp_received(sh, fds[i].fd, ret);
 
 				if (ret == 0) {
-					close(fds[i].fd);
+					zsock_close(fds[i].fd);
 					fds[i].fd = -1;
 				}
 
@@ -346,7 +347,7 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 cleanup:
 	for (int i = 0; i < ARRAY_SIZE(fds); i++) {
 		if (fds[i].fd >= 0) {
-			close(fds[i].fd);
+			zsock_close(fds[i].fd);
 		}
 	}
 }

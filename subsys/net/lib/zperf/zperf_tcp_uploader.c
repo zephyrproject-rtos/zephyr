@@ -55,7 +55,7 @@ void zperf_tcp_upload(const struct shell *sh,
 		int ret = 0;
 
 		/* Send the packet */
-		ret = send(sock, sample_packet, packet_size, 0);
+		ret = zsock_send(sock, sample_packet, packet_size, 0);
 		if (ret < 0) {
 			if (nb_errors == 0 && ret != -ENOMEM) {
 				shell_fprintf(sh, SHELL_WARNING,
