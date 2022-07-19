@@ -57,14 +57,12 @@
 			compatible = "espressif,esp32-intc";
 			interrupt-controller;
 			reg = <0x3ff00104 0x114>;
-			label = "INTC_0";
 			status = "okay";
 		};
 
 		rtc: rtc@3ff48000 {
 			compatible = "espressif,esp32-rtc";
 			reg = <0x3ff48000 0x0D8>;
-			label = "RTC";
 			xtal-freq = <ESP32_CLK_XTAL_40M>;
 			#clock-cells = <1>;
 			status = "ok";
@@ -72,7 +70,6 @@
 
 		flash: flash-controller@3ff42000 {
 			compatible = "espressif,esp32-flash-controller";
-			label = "FLASH_CTRL";
 			reg = <0x3ff42000 0x1000>;
 			/* interrupts = <3 0>; */
 
@@ -81,7 +78,6 @@
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				label = "FLASH_ESP32";
 				reg = <0 0x400000>;
 				erase-block-size = <4096>;
 				write-block-size = <32>;
@@ -90,7 +86,6 @@
 
 		ipi0: ipi@3f4c0058 {
 			compatible = "espressif,crosscore-interrupt";
-			label = "IPI0";
 			reg = <0x3f4c0058 0x4>;
 			interrupts = <FROM_CPU_INTR0_SOURCE>;
 			interrupt-parent = <&intc>;
@@ -98,7 +93,6 @@
 
 		ipi1: ipi@3f4c005c {
 			compatible = "espressif,crosscore-interrupt";
-			label = "IPI1";
 			reg = <0x3f4c005c 0x4>;
 			interrupts = <FROM_CPU_INTR1_SOURCE>;
 			interrupt-parent = <&intc>;
@@ -109,7 +103,6 @@
 			reg = <0x3ff40000 0x400>;
 			interrupts = <UART0_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			label = "UART_0";
 			clocks = <&rtc ESP32_UART0_MODULE>;
 			status = "disabled";
 		};
@@ -119,7 +112,6 @@
 			reg = <0x3ff50000 0x400>;
 			interrupts = <UART1_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			label = "UART_1";
 			clocks = <&rtc ESP32_UART1_MODULE>;
 			status = "disabled";
 		};
@@ -129,7 +121,6 @@
 			reg = <0x3ff6E000 0x400>;
 			interrupts = <UART2_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			label = "UART_2";
 			clocks = <&rtc ESP32_UART2_MODULE>;
 			status = "disabled";
 		};
@@ -138,7 +129,6 @@
 			compatible = "espressif,esp32-ledc";
 			#pwm-cells = <3>;
 			reg = <0x3ff59000 0x800>;
-			label = "LEDC_0";
 			clocks = <&rtc ESP32_LEDC_MODULE>;
 			status = "disabled";
 		};
@@ -148,7 +138,6 @@
 			reg = <0x3ff5e000 0x1000>;
 			interrupts = <PWM0_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			label = "MCPWM_0";
 			clocks = <&rtc ESP32_PWM0_MODULE>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -159,7 +148,6 @@
 			reg = <0x3ff6c000 0x1000>;
 			interrupts = <PWM1_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			label = "MCPWM_1";
 			clocks = <&rtc ESP32_PWM1_MODULE>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -185,7 +173,6 @@
 				reg = <0x3ff44000 0x800>;
 				interrupts = <GPIO_INTR_SOURCE>;
 				interrupt-parent = <&intc>;
-				label = "GPIO_0";
 				ngpios = <32>;   /* 0..31 */
 			};
 
@@ -196,7 +183,6 @@
 				reg = <0x3ff44800 0x800>;
 				interrupts = <GPIO_INTR_SOURCE>;
 				interrupt-parent = <&intc>;
-				label = "GPIO_1";
 				ngpios = <8>;   /* 32..39 */
 			};
 		};
@@ -208,7 +194,6 @@
 			reg = <0x3ff53000 0x1000>;
 			interrupts = <I2C_EXT0_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			label = "I2C_0";
 			clocks = <&rtc ESP32_I2C0_MODULE>;
 			status = "disabled";
 		};
@@ -220,7 +205,6 @@
 			reg = <0x3ff67000 0x1000>;
 			interrupts = <I2C_EXT1_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			label = "I2C_1";
 			clocks = <&rtc ESP32_I2C1_MODULE>;
 			status = "disabled";
 		};
@@ -229,7 +213,6 @@
 			compatible = "espressif,esp32-trng";
 			reg = <0x3FF75144 0x4>;
 			/* interrupts = <33 0>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
-			label = "TRNG_0";
 			status = "disabled";
 		};
 
@@ -239,7 +222,6 @@
 			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_TIMG0_MODULE>;
-			label = "WDT_0";
 			status = "okay";
 		};
 
@@ -249,7 +231,6 @@
 			interrupts = <TG1_WDT_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_TIMG1_MODULE>;
-			label = "WDT_1";
 			status = "disabled";
 		};
 
@@ -258,7 +239,6 @@
 			reg = <0x3ff64000 DT_SIZE_K(4)>;
 			interrupts = <SPI2_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			label = "SPI_2";
 			clocks = <&rtc ESP32_HSPI_MODULE>;
 			status = "disabled";
 		};
@@ -268,7 +248,6 @@
 			reg = <0x3ff65000 DT_SIZE_K(4)>;
 			interrupts = <SPI3_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			label = "SPI_3";
 			clocks = <&rtc ESP32_VSPI_MODULE>;
 			status = "disabled";
 		};
@@ -280,7 +259,6 @@
 			index = <0>;
 			interrupts = <TG0_T0_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			label = "TIMG0_T0";
 			status = "disabled";
 		};
 
@@ -291,7 +269,6 @@
 			index = <1>;
 			interrupts = <TG0_T1_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			label = "TIMG0_T1";
 			status = "disabled";
 		};
 
@@ -302,7 +279,6 @@
 			index = <0>;
 			interrupts = <TG1_T0_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			label = "TIMG1_T0";
 			status = "disabled";
 		};
 
@@ -313,7 +289,6 @@
 			index = <1>;
 			interrupts = <TG1_T1_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			label = "TIMG1_T1";
 			status = "disabled";
 		};
 	};
