@@ -1,9 +1,17 @@
 common:
   tags: drivers w1 userspace
   harness: ztest
-  harness_config:
-    fixture: w1_serial_idle
+
 tests:
   drivers.w1.w1-serial:
-    filter: dt_compat_enabled("zephyr,w1-serial")
+    depends_on: arduino_serial
+    extra_args: DTC_OVERLAY_FILE=w1_serial.overlay OVERLAY_CONFIG=serial.conf
     platform_allow: nucleo_g0b1re nrf52840dk_nrf52840
+    harness_config:
+      fixture: w1_serial_idle
+  drivers.w1.ds2484:
+    depends_on: arduino_i2c
+    extra_args: DTC_OVERLAY_FILE=ds2484.overlay OVERLAY_CONFIG=i2c.conf
+    platform_allow: nrf52840dk_nrf52840
+    harness_config:
+      fixture: w1_ds2484_idle
