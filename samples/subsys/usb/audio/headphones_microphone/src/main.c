@@ -65,21 +65,21 @@ static const struct usb_audio_ops mic_ops = {
 
 void main(void)
 {
-	const struct device *hp_dev = device_get_binding("HEADPHONES");
+	const struct device *hp_dev = DEVICE_DT_GET_ONE(usb_audio_hp);
 	int ret;
 
 	LOG_INF("Entered %s", __func__);
-	mic_dev = device_get_binding("MICROPHONE");
+	mic_dev = DEVICE_DT_GET_ONE(usb_audio_mic);
 
-	if (!hp_dev) {
-		LOG_ERR("Can not get USB Headphones Device");
+	if (!device_is_ready(hp_dev)) {
+		LOG_ERR("Device USB Headphones is not ready");
 		return;
 	}
 
 	LOG_INF("Found USB Headphones Device");
 
-	if (!mic_dev) {
-		LOG_ERR("Can not get USB Microphone Device");
+	if (!device_is_ready(mic_dev)) {
+		LOG_ERR("Device USB Microphone is not ready");
 		return;
 	}
 
