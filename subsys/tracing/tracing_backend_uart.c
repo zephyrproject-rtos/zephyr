@@ -76,9 +76,8 @@ static void tracing_backend_uart_output(
 
 static void tracing_backend_uart_init(void)
 {
-	tracing_uart_dev =
-		device_get_binding(CONFIG_TRACING_BACKEND_UART_NAME);
-	__ASSERT(tracing_uart_dev, "uart backend binding failed");
+	tracing_uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_tracing_uart));
+	__ASSERT(device_is_ready(tracing_uart_dev), "uart backend is not ready");
 
 #ifdef CONFIG_TRACING_HANDLE_HOST_CMD
 	uart_irq_rx_disable(tracing_uart_dev);
