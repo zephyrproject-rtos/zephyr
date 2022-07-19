@@ -134,6 +134,15 @@
 			status = "disabled";
 		};
 
+		pcnt: pcnt@3ff57000 {
+			compatible = "espressif,esp32-pcnt";
+			reg = <0x3ff57000 0x1000>;
+			interrupts = <PCNT_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_PCNT_MODULE>;
+			status = "disabled";
+		};
+
 		ledc0: ledc@3ff59000 {
 			compatible = "espressif,esp32-ledc";
 			#pwm-cells = <3>;
