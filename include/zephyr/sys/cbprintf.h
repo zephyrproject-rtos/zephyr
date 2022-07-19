@@ -527,7 +527,8 @@ static inline int cbprintf_package_copy(void *in_packaged,
 {
 	struct z_cbprintf_buf_desc buf_desc = {
 		.buf = packaged,
-		.size = len
+		.size = len,
+		.off = 0,
 	};
 
 	return cbprintf_package_convert(in_packaged, in_len,
