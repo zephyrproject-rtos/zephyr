@@ -69,11 +69,10 @@ typedef int (*spi_emul_io_t)(const struct emul *target, const struct spi_config 
  * Register an emulated device on the controller
  *
  * @param dev Device that will use the emulator
- * @param name User-friendly name for this emulator
  * @param emul SPI emulator to use
  * @return 0 indicating success (always)
  */
-int spi_emul_register(const struct device *dev, const char *name, struct spi_emul *emul);
+int spi_emul_register(const struct device *dev, struct spi_emul *emul);
 
 /** Definition of the emulator API */
 struct spi_emul_api {

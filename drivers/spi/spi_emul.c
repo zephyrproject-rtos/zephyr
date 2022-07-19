@@ -95,9 +95,10 @@ static int spi_emul_init(const struct device *dev)
 	return emul_init_for_bus(dev);
 }
 
-int spi_emul_register(const struct device *dev, const char *name, struct spi_emul *emul)
+int spi_emul_register(const struct device *dev, struct spi_emul *emul)
 {
 	struct spi_emul_data *data = dev->data;
+	const char *name = emul->target->dev->name;
 
 	sys_slist_append(&data->emuls, &emul->node);
 
