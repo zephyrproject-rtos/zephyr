@@ -334,6 +334,48 @@
 	}
 
 /**
+ * @brief Construct a npcx_lvol structure from 'lvol-maps' property at index 'i'.
+ *
+ * @param node_id Node identifier.
+ * @param prop Low voltage configurations property name. (i.e. 'lvol-maps')
+ * @param idx Property entry index.
+ */
+#define NPCX_DT_LVOL_CTRL_NONE \
+	DT_PHA(DT_NODELABEL(lvol_none), lvols, ctrl)
+
+/**
+ * @brief Length of npcx_lvol structures in 'lvol-maps' property
+ *
+ * @param inst instance number for compatible defined in DT_DRV_COMPAT.
+ * @return length of 'lvol-maps' prop which type is 'phandles'
+ */
+#define NPCX_DT_LVOL_ITEMS_LEN(inst) DT_INST_PROP_LEN(inst, lvol_maps)
+
+/**
+ * @brief Construct a npcx_lvol structure from 'lvol-maps' property at index 'i'.
+ *
+ * @param node_id Node identifier.
+ * @param prop Low voltage configurations property name. (i.e. 'lvol-maps')
+ * @param idx Property entry index.
+ */
+#define NPCX_DT_LVOL_ITEMS_INIT(node_id, prop, idx)				\
+	{									\
+	  .ctrl = DT_PHA(DT_PROP_BY_IDX(node_id, prop, idx), lvols, ctrl),	\
+	  .bit = DT_PHA(DT_PROP_BY_IDX(node_id, prop, idx), lvols, bit),	\
+	},
+
+/**
+ * @brief Macro function to construct a list of npcx_lvol items  from 'lvol-maps'
+ * property.
+ *
+ * @param inst instance number for compatible defined in DT_DRV_COMPAT.
+ * @return an array of npcx_lvol items.
+ */
+#define NPCX_DT_LVOL_ITEMS_LIST(inst) {						\
+	DT_FOREACH_PROP_ELEM(DT_DRV_INST(inst), lvol_maps,			\
+						NPCX_DT_LVOL_ITEMS_INIT)}
+
+/**
  * @brief Check if the host interface type is automatically configured by
  * booter.
  *
