@@ -34,6 +34,7 @@
 		led3 = &statusled;	/* status led, may be not populated */
 		sw0 = &key_in;  /* key in */
 		kscan0 = &cst816s;
+		watchdog0 = &wdt0;
 	};
 
 	leds {

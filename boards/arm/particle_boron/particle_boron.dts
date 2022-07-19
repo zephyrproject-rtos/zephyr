@@ -22,6 +22,10 @@
 		 * but is not used in board.c */
 		vctl2-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
 };
 
 &i2c1 { /* power monitoring */

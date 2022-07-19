@@ -34,6 +34,7 @@
 
 	aliases {
 		sw0 = &user_button;
+		watchdog0 = &wdt0;
 	};
 };
 

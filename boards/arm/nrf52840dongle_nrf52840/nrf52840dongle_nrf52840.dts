@@ -84,6 +84,7 @@
 		blue-pwm-led = &blue_pwm_led;
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &led0_green;
+		watchdog0 = &wdt0;
 	};
 };
 

@@ -81,6 +81,7 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		sw2 = &button2;
+		watchdog0 = &wdt0;
 	};
 };
 

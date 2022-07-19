@@ -133,6 +133,10 @@
 			status = "disabled";
 		};
 	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
 };
 
 &gpiote {
