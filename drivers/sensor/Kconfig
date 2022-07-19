@@ -113,6 +113,8 @@ source "drivers/sensor/icm42605/Kconfig"
 
 source "drivers/sensor/icm42670/Kconfig"
 
+source "drivers/sensor/icm42688/Kconfig"
+
 source "drivers/sensor/icp10125/Kconfig"
 
 source "drivers/sensor/iis2dh/Kconfig"
