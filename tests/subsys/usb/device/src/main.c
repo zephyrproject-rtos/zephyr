@@ -91,18 +91,18 @@ USBD_DEFINE_CFG_DATA(device_config) = {
 	.endpoint = device_ep,
 };
 
-static void test_usb_disable(void)
+ZTEST(device_usb, test_usb_disable)
 {
 	zassert_equal(usb_disable(), TC_PASS, "usb_disable() failed");
 }
 
-static void test_usb_deconfig(void)
+ZTEST(device_usb, test_usb_deconfig)
 {
 	zassert_equal(usb_deconfig(), TC_PASS, "usb_deconfig() failed");
 }
 
 /* Test USB Device Controller API */
-static void test_usb_dc_api(void)
+ZTEST(device_usb, test_usb_dc_api)
 {
 	/* Control endpoints are configured */
 	zassert_equal(usb_dc_ep_mps(0x0), 64,
@@ -116,7 +116,7 @@ static void test_usb_dc_api(void)
 }
 
 /* Test USB Device Controller API for invalid parameters */
-static void test_usb_dc_api_invalid(void)
+ZTEST(device_usb, test_usb_dc_api_invalid)
 {
 	uint32_t size;
 	uint8_t byte;
@@ -175,7 +175,7 @@ static void test_usb_dc_api_invalid(void)
 			  "usb_dc_ep_mps(INVALID_EP)");
 }
 
-static void test_usb_dc_api_read_write(void)
+ZTEST(device_usb, test_usb_dc_api_read_write)
 {
 	uint32_t size;
 	uint8_t byte;
@@ -190,24 +190,13 @@ static void test_usb_dc_api_read_write(void)
 }
 
 /* test case main entry */
-void test_main(void)
+static void *device_usb_setup(void)
 {
 	int ret;
 
 	ret = usb_enable(NULL);
-	if (ret != 0) {
-		printk("Failed to enable USB\n");
-		return;
-	}
+	zassume_true(ret == 0, "Failed to enable USB");
 
-	ztest_test_suite(test_device,
-			 /* Test API for not USB attached state */
-			 ztest_unit_test(test_usb_dc_api_invalid),
-			 ztest_unit_test(test_usb_dc_api),
-			 ztest_unit_test(test_usb_dc_api_read_write),
-			 ztest_unit_test(test_usb_dc_api_invalid),
-			 ztest_unit_test(test_usb_deconfig),
-			 ztest_unit_test(test_usb_disable));
-
-	ztest_run_test_suite(test_device);
+	return NULL;
 }
+ZTEST_SUITE(device_usb, NULL, device_usb_setup, NULL, NULL, NULL);
