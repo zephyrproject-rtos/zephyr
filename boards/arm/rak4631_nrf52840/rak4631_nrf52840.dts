@@ -40,6 +40,7 @@
 	aliases {
 		led0 = &blue_led;
 		lora0 = &lora;
+		watchdog0 = &wdt0;
 	};
 };
 

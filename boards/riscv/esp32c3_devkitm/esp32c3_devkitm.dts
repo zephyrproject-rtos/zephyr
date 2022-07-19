@@ -23,6 +23,7 @@
 	aliases {
 		sw0 = &user_button1;
 		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
 	};
 
 	gpio_keys {

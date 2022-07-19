@@ -17,4 +17,8 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_ns_partition;
 	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
 };

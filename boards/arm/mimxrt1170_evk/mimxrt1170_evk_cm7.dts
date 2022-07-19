@@ -15,6 +15,7 @@
 
 	aliases {
 		mipi-dsi = &mipi_dsi;
+		watchdog0 = &wdog1;
 	};
 
 	chosen {

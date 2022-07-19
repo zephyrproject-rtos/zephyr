@@ -25,6 +25,7 @@
 		pwm-0 = &pwm6;
 		/* For i2c test suites */
 		i2c-0 = &i2c0_0;
+		watchdog0 = &twd0;
 	};
 
 	pwmleds {

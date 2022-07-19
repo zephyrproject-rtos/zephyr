@@ -68,6 +68,7 @@
 		uart-0 = &uart0;
 		led0 = &blue_led;
 		sw0 = &menu_button;
+		watchdog0 = &wdt0;
 	};
 };
 

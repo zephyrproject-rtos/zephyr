@@ -92,6 +92,7 @@
 		sw2 = &joy_down;
 		sw3 = &joy_right;
 		sw4 = &joy_up;
+		watchdog0 = &iwdg;
 	};
 };
 

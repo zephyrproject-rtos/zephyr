@@ -74,6 +74,7 @@
 		led2 = &led_3;
 		led3 = &led_4;
 		sw0 = &button;
+		watchdog0 = &iwdg;
 	};
 };
 

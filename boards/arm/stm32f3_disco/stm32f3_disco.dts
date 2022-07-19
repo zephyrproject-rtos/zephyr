@@ -69,6 +69,7 @@
 		led1 = &green_led_7;
 		sw0 = &user_button;
 		magn0 = &lsm303dlhc_magn;
+		watchdog0 = &iwdg;
 	};
 };
 

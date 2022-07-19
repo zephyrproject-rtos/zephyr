@@ -18,6 +18,7 @@
 		pwm-0 = &pwm0;
 		sw0 = &sw0_user_button;
 		sw1 = &sw1_user_button;
+		watchdog0 = &wdt;
 	};
 
 	chosen {
