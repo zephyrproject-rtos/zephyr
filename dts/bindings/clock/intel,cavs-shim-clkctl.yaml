@@ -9,7 +9,7 @@ properties:
     cavs-clkctl-clk-wovcro:
         type: int
         required: false
-        description: Index of WOVCRO clock encoding in the encoding array (cAVS 2.5 only).
+        description: Index of WOVCRO clock encoding in the encoding array (if wovcro-supported is true).
 
     cavs-clkctl-clk-lpro:
         type: int
@@ -40,3 +40,8 @@ properties:
         type: int
         required: true
         description: Index for the lowest frequency clock.
+
+    wovcro-supported:
+        type: boolean
+        description: |
+          If WoV clock ring oscillator is supported.
