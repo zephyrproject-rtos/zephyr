@@ -8,7 +8,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 LOG_MODULE_REGISTER(dummy_sensor, LOG_LEVEL_DBG);
 static struct dummy_sensor_data dummy_data;

@@ -7,7 +7,7 @@
 /* Tests where time_t requires a 64-bit value */
 
 #include <errno.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "timeutil_test.h"
 
 static const struct timeutil_test_data tests[] = {

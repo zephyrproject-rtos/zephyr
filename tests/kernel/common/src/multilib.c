@@ -6,8 +6,8 @@
 
 #include <zephyr/zephyr.h>
 #include <errno.h>
-#include <tc_util.h>
-#include <ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest.h>
 /**
  * @addtogroup kernel_common_tests
  * @{

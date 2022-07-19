@@ -6,7 +6,7 @@
 
 #include <zephyr/sys/heap_listener.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <malloc.h>
 #include <stdio.h>

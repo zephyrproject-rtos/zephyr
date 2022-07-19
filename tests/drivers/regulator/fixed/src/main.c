@@ -6,7 +6,7 @@
 #include <zephyr/zephyr.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/regulator.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define REGULATOR_NODE DT_PATH(regulator)
 #define CHECK_NODE DT_PATH(resources)

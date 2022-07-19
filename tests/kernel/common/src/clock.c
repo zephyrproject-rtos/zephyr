@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #if defined(CONFIG_ARCH_POSIX)
 #define ALIGN_MS_BOUNDARY		       \

@@ -16,7 +16,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i2c/target/eeprom.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define NODE_EP0 DT_NODELABEL(eeprom0)
 #define NODE_EP1 DT_NODELABEL(eeprom1)

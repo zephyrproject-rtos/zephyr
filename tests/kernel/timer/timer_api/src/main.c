@@ -5,7 +5,7 @@
  */
 
 #include <stdlib.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/types.h>
 
 struct timer_data {

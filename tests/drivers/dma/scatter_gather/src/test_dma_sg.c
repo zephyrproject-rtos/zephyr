@@ -19,7 +19,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/dma.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define XFERS 2
 #define XFER_SIZE 64

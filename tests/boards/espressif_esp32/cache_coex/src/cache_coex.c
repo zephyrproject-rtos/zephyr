@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/drivers/flash.h>

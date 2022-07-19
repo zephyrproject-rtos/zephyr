@@ -7,7 +7,7 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/adc/adc_emul.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define ADC_DEVICE_NODE		DT_INST(0, zephyr_adc_emul)
 #define ADC_REF_INTERNAL_MV	DT_PROP(DT_INST(0, zephyr_adc_emul), ref_internal_mv)

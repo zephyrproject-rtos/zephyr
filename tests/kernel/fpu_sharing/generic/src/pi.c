@@ -31,7 +31,7 @@
  * has occurred.
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include "float_context.h"
 #include "test_common.h"

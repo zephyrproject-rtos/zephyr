@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/coredump.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /* Test will verify that these values are present in the core dump */
 #define TEST_MEMORY_VALUE_0 0xabababab

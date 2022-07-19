@@ -4,7 +4,7 @@
 
 #include <zephyr/arch/xtensa/cache.h>
 #include <zephyr/kernel.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <cavs_ipc.h>
 #include <zephyr/devicetree.h>
 #include "tests.h"

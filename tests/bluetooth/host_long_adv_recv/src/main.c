@@ -11,7 +11,7 @@
 #include <zephyr/ztest.h>
 
 #include <errno.h>
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>

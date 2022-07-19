@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <ztest_test.h>
+#include <zephyr/ztest.h>
+#include <zephyr/ztest_test.h>
 #include <zephyr/drivers/eeprom.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/device.h>

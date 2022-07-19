@@ -45,9 +45,9 @@
  *             : main thread (@ priority 10) sleeps
  */
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/sys/mutex.h>
 
 #define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)

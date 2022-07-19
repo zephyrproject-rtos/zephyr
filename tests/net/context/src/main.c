@@ -10,7 +10,7 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_CONTEXT_LOG_LEVEL);
 
 #include <zephyr/types.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include <zephyr/linker/sections.h>
 #include <zephyr/random/rand32.h>
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>

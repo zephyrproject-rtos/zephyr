@@ -9,7 +9,7 @@
 #include <cavstool.h>
 #include <stdint.h>
 #include <zephyr/device.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 void test_hda_host_in_smoke(void);
 void test_hda_host_out_smoke(void);

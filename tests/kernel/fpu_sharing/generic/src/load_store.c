@@ -35,7 +35,7 @@
  * x87 FPU registers are being saved/restored.
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/debug/gcov.h>
 
 #if defined(CONFIG_X86)

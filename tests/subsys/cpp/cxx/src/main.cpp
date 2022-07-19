@@ -75,7 +75,7 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/watchdog.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 class foo_class {
 public:

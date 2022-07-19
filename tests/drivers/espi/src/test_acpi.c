@@ -6,7 +6,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/espi.h>
 #include <zephyr/drivers/espi_emul.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 static void test_acpi_shared_memory(void)
 {

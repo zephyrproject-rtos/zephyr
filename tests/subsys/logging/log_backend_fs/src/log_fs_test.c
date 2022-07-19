@@ -13,7 +13,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/fs/fs.h>
 
 #define DT_DRV_COMPAT zephyr_fstab_littlefs

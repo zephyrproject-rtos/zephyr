@@ -39,13 +39,13 @@
 
 #include <tinycrypt/sha256.h>
 #include <tinycrypt/constants.h>
-#include <test_utils.h>
+#include <zephyr/test_utils.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/types.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /*
  * NIST SHA256 test vector 1.

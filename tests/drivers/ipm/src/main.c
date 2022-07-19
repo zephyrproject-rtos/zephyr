@@ -11,7 +11,7 @@
 #include <zephyr/init.h>
 #include <stdio.h>
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include "ipm_dummy.h"
 
 #define PRINTK_OUT      1

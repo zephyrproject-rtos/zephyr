@@ -17,7 +17,7 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/sys/__assert.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <limits.h>
 #include <sys/types.h>
@@ -31,7 +31,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <time.h>
-#include <ztest_error_hook.h>
+#include <zephyr/ztest_error_hook.h>
 #ifdef CONFIG_PICOLIBC
 #include <unistd.h>
 #endif

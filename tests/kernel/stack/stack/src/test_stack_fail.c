@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/irq_offload.h>
-#include <ztest_error_hook.h>
+#include <zephyr/ztest_error_hook.h>
 
 #define TIMEOUT K_MSEC(100)
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)

@@ -11,7 +11,7 @@
  * @}
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "dummy_sensor.h"
 
 K_SEM_DEFINE(sem, 0, 1);

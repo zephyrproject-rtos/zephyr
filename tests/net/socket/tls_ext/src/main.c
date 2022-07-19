@@ -11,7 +11,7 @@
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/sys/util.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 LOG_MODULE_REGISTER(tls_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 

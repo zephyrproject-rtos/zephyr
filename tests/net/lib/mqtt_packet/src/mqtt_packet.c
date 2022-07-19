@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include <mqtt_internal.h>
 #include <zephyr/sys/util.h>	/* for ARRAY_SIZE */
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define CLIENTID	MQTT_UTF8_LITERAL("zephyr")
 #define TOPIC		MQTT_UTF8_LITERAL("sensors")

@@ -4,7 +4,7 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 extern void test_k_heap_min_size(void);
 extern void test_k_heap_alloc(void);
 extern void test_k_heap_alloc_fail(void);

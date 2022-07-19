@@ -8,8 +8,8 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/reboot.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
-#include <ztest.h>
-#include <tc_util.h>
+#include <zephyr/ztest.h>
+#include <zephyr/tc_util.h>
 
 static volatile int expected_reason = -1;
 

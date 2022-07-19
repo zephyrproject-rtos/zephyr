@@ -7,7 +7,7 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/sys/printk.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 void function_in_sram(int32_t value)
 {

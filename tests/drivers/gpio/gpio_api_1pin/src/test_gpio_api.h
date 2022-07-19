@@ -9,7 +9,7 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/drivers/gpio.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #if DT_NODE_HAS_PROP(DT_ALIAS(led0), gpios)
 #define TEST_NODE            DT_GPIO_CTLR(DT_ALIAS(led0), gpios)

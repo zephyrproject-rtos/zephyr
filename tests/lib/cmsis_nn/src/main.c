@@ -10,7 +10,7 @@
  * validate the integration of CMSIS-NN and Zephyr
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/zephyr.h>
 #include <stdlib.h>
 

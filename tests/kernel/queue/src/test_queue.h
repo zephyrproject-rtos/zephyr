@@ -7,9 +7,9 @@
 #ifndef __TEST_FIFO_H__
 #define __TEST_FIFO_H__
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/irq_offload.h>
-#include <ztest_error_hook.h>
+#include <zephyr/ztest_error_hook.h>
 
 extern void test_queue_thread2thread(void);
 extern void test_queue_thread2isr(void);

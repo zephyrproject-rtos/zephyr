@@ -5,7 +5,7 @@
  */
 
 #include <stdio.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/zephyr.h>
 #include <zephyr/sys/reboot.h>

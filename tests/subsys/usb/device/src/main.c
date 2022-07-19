@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <tc_util.h>
+#include <zephyr/ztest.h>
+#include <zephyr/tc_util.h>
 
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/usb_device.h>

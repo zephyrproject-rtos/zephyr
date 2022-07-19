@@ -5,7 +5,7 @@
  */
 
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include "tests_thread_apis.h"
 

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/irq_offload.h>
 #include <zephyr/kernel_structs.h> /* for _THREAD_PENDING */
 

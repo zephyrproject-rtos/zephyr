@@ -8,7 +8,7 @@
 #include <zephyr/types.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <ksched.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>

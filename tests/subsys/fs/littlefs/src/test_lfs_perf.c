@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <zephyr/kernel.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "testfs_tests.h"
 #include "testfs_lfs.h"
 #include <lfs.h>

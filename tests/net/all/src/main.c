@@ -13,7 +13,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>

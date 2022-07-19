@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "test_mslab.h"
 
 /* TESTPOINT: Statically define and initialize a memory slab*/
