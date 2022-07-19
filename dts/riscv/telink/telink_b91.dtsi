@@ -42,7 +42,6 @@
 
 		flash_mspi: flash-controller@80140100 {
 			compatible = "telink,b91-flash-controller";
-			label = "FLASH_MSPI";
 			reg = <0x80140100 0x40>;
 
 			#address-cells = <1>;
@@ -68,7 +67,6 @@
 			interrupt-parent = <&plic0>;
 			interrupts = <25 1>, <26 1>, <27 1>;
 			reg = <0x80140300 0x08>;
-			label = "GPIO_A";
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
@@ -79,7 +77,6 @@
 			interrupt-parent = <&plic0>;
 			interrupts = <25 1>, <26 1>, <27 1>;
 			reg = <0x80140308 0x08>;
-			label = "GPIO_B";
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
@@ -90,7 +87,6 @@
 			interrupt-parent = <&plic0>;
 			interrupts = <25 1>, <26 1>, <27 1>;
 			reg = <0x80140310 0x08>;
-			label = "GPIO_C";
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
@@ -101,7 +97,6 @@
 			interrupt-parent = <&plic0>;
 			interrupts = <25 1>, <26 1>, <27 1>;
 			reg = <0x80140318 0x08>;
-			label = "GPIO_D";
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
@@ -112,7 +107,6 @@
 			interrupt-parent = <&plic0>;
 			interrupts = <25 1>, <26 1>, <27 1>;
 			reg = <0x80140320 0x08>;
-			label = "GPIO_E";
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
@@ -132,7 +126,6 @@
 
 		uart0: serial@80140080 {
 			compatible = "telink,b91-uart";
-			label = "UART_0";
 			reg = <0x80140080 0x40>;
 			interrupts = <19 1>;
 			interrupt-parent = <&plic0>;
@@ -141,7 +134,6 @@
 
 		uart1: serial@801400C0 {
 			compatible = "telink,b91-uart";
-			label = "UART_1";
 			reg = <0x801400C0 0x40>;
 			interrupts = <18 1>;
 			interrupt-parent = <&plic0>;
@@ -151,7 +143,6 @@
 		ieee802154: ieee802154@80140800 {
 			compatible = "telink,b91-zb";
 			reg = <0x80140800 0x800>;
-			label = "IEEE802154";
 			interrupt-parent = <&plic0>;
 			interrupts = <15 2>;
 			status = "disabled";
@@ -160,7 +151,6 @@
 		trng0: trng@80101800 {
 			compatible = "telink,b91-trng";
 			reg = <0x80101800 0x20>;
-			label = "TRNG";
 			status = "disabled";
 		};
 
@@ -168,14 +158,12 @@
 			compatible = "telink,b91-pwm";
 			reg = <0x80140400 0x80>;
 			channels = <6>;
-			label = "PWM";
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
 
 		hspi: spi@81FFFFC0 {
 			compatible = "telink,b91-spi";
-			label = "HSPI";
 			reg = <0x81FFFFC0 0x40>;
 			peripheral-id = "HSPI_MODULE";
 			cs0-pin = "0";
@@ -188,7 +176,6 @@
 
 		pspi: spi@80140040 {
 			compatible = "telink,b91-spi";
-			label = "PSPI";
 			reg = <0x80140040 0x40>;
 			peripheral-id = "PSPI_MODULE";
 			cs0-pin = "0";
@@ -201,7 +188,6 @@
 
 		i2c: i2c@80140280 {
 			compatible = "telink,b91-i2c";
-			label = "I2C";
 			reg = <0x80140280 0x40>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -211,7 +197,6 @@
 
 		adc: adc@ea {
 			compatible = "telink,b91-adc";
-			label = "ADC";
 			reg = <0xea 0x18>;
 			status = "disabled";
 			#io-channel-cells = <1>;
@@ -225,7 +210,6 @@
 			reg-names = "pin_mux",
 						"gpio_en",
 						"pull_up_en";
-			label = "PINCTRL";
 			status = "okay";
 		};
 	};

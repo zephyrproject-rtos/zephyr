@@ -78,7 +78,6 @@
 			current-speed = <115200>;
 			interrupt-parent = <&plic>;
 			interrupts = <90 1>;
-			label = "UART_0";
 			reg-shift = <2>;
 			status = "disabled";
 		};
@@ -91,7 +90,6 @@
 			interrupt-parent = <&plic>;
 			interrupts = <85 1>;
 			status = "disabled";
-			label = "QSPI_0";
 			clock-frequency = <150000000>;
 		};
 	};

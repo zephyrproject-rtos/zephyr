@@ -31,7 +31,6 @@
 		reg = < 0x10000000 0x100 >;
 		compatible = "ns16550";
 		reg-shift = < 0 >;
-		label = "UART_0";
 	};
 
 	cpus {
