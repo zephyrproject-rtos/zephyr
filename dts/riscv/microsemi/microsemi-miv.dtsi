@@ -59,7 +59,6 @@
 		uart0: uart@70001000 {
 			compatible = "microsemi,coreuart";
 			reg = <0x70001000 0x1000>;
-			label = "uart_0";
 			status = "disabled";
 			current-speed = <0>;
 			clock-frequency = <0>;
