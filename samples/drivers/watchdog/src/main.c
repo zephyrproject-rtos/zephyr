@@ -15,41 +15,17 @@
 #define WDT_FEED_TRIES 5
 
 /*
- * To use this sample, either the devicetree's /aliases must have a
- * 'watchdog0' property, or one of the following watchdog compatibles
- * must have an enabled node.
+ * To use this sample the devicetree's /aliases must have a 'watchdog0' property.
  */
-#if DT_NODE_HAS_STATUS(DT_ALIAS(watchdog0), okay)
-#define WDT_NODE DT_ALIAS(watchdog0)
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
-#define WDT_NODE DT_INST(0, st_stm32_window_watchdog)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
 #define WDT_MAX_WINDOW  100U
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_watchdog)
-#define WDT_NODE DT_INST(0, st_stm32_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_wdt)
 /* Nordic supports a callback, but it has 61.2 us to complete before
  * the reset occurs, which is too short for this sample to do anything
  * useful.  Explicitly disallow use of the callback.
  */
 #define WDT_ALLOW_CALLBACK 0
-#define WDT_NODE DT_INST(0, nordic_nrf_wdt)
-#elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_watchdog)
-#define WDT_NODE DT_INST(0, espressif_esp32_watchdog)
-#elif DT_HAS_COMPAT_STATUS_OKAY(silabs_gecko_wdog)
-#define WDT_NODE DT_INST(0, silabs_gecko_wdog)
-#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_wdog32)
-#define WDT_NODE DT_INST(0, nxp_kinetis_wdog32)
-#elif DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_watchdog)
-#define WDT_NODE DT_INST(0, microchip_xec_watchdog)
-#elif DT_HAS_COMPAT_STATUS_OKAY(ti_cc32xx_watchdog)
-#define WDT_NODE DT_INST(0, ti_cc32xx_watchdog)
-#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_wdog)
-#define WDT_NODE DT_INST(0, nxp_imx_wdog)
-#else
-#error "Unsupported SoC and no watchdog0 alias in zephyr.dts"
-#endif
-
-#if DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_watchdog)
 #define WDT_MAX_WINDOW  600000U
 #define WDT_ALLOW_CALLBACK 0
 #endif
@@ -82,7 +58,7 @@ void main(void)
 {
 	int err;
 	int wdt_channel_id;
-	const struct device *wdt = DEVICE_DT_GET(WDT_NODE);
+	const struct device *wdt = DEVICE_DT_GET(DT_ALIAS(watchdog0));
 
 	printk("Watchdog sample application\n");
 
