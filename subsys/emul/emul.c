@@ -64,17 +64,17 @@ int emul_init_for_bus(const struct device *dev)
 		switch (emul->bus_type) {
 #ifdef CONFIG_I2C_EMUL
 		case EMUL_BUS_TYPE_I2C:
-			rc = i2c_emul_register(dev, emul->dev->name, emul->bus.i2c);
+			rc = i2c_emul_register(dev, emul->bus.i2c);
 			break;
 #endif /* CONFIG_I2C_EMUL */
 #ifdef CONFIG_ESPI_EMUL
 		case EMUL_BUS_TYPE_ESPI:
-			rc = espi_emul_register(dev, emul->dev->name, emul->bus.espi);
+			rc = espi_emul_register(dev, emul->bus.espi);
 			break;
 #endif /* CONFIG_ESPI_EMUL */
 #ifdef CONFIG_SPI_EMUL
 		case EMUL_BUS_TYPE_SPI:
-			rc = spi_emul_register(dev, emul->dev->name, emul->bus.spi);
+			rc = spi_emul_register(dev, emul->bus.spi);
 			break;
 #endif /* CONFIG_SPI_EMUL */
 		default:
