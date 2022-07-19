@@ -12,7 +12,6 @@
 		zephyr,shell-uart = &usart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		watchdog0 = &wdog0;
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -21,6 +20,7 @@
 		led1 = &led1;
 		sw0 = &button0;
 		sw1 = &button1;
+		watchdog0 = &wdog0;
 	};
 
 	leds {
