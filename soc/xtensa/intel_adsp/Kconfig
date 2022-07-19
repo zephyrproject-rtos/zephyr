@@ -63,6 +63,4 @@ config ADSP_TRACE_SIMCALL
 	  of an enclosing simulator process.  All window contents will
 	  remain identical.
 
-
-
 endif # SOC_FAMILY_INTEL_ADSP
