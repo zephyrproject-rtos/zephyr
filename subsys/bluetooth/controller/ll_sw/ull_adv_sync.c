@@ -138,7 +138,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		sync->is_started = 0U;
 
 		ter_pdu = lll_adv_sync_data_peek(lll_sync, NULL);
-		ull_adv_sync_pdu_init(ter_pdu, 0);
+		ull_adv_sync_pdu_init(ter_pdu, 0U, 0U, 0U, NULL);
 	} else {
 		sync = HDR_LLL2ULL(lll_sync);
 	}
@@ -1219,10 +1219,14 @@ void ull_adv_sync_offset_get(struct ll_adv_set *adv)
 	LL_ASSERT(!ret);
 }
 
-void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags)
+void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags,
+			   uint8_t phy_s, uint8_t phy_flags,
+			   struct pdu_cte_info *cte_info)
 {
 	struct pdu_adv_com_ext_adv *com_hdr;
 	struct pdu_adv_ext_hdr *ext_hdr;
+	struct pdu_adv_aux_ptr *aux_ptr;
+	uint32_t cte_len_us;
 	uint8_t *dptr;
 	uint8_t len;
 
@@ -1247,18 +1251,25 @@ void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags)
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT */
 				     ULL_ADV_PDU_HDR_FIELD_SYNC_INFO)));
 
-	if (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX) &&
+	    (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_CTE_INFO)) {
+		(void)memcpy(dptr, cte_info, sizeof(*cte_info));
+		cte_len_us = CTE_LEN_US(cte_info->time);
 		dptr += sizeof(struct pdu_cte_info);
-	}
-	if (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_AUX_PTR) {
-		dptr += sizeof(struct pdu_adv_aux_ptr);
-	}
-	if (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_TX_POWER) {
-		dptr += sizeof(uint8_t);
+	} else {
+		cte_len_us = 0U;
 	}
 	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) &&
 	    (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_ADI)) {
 		dptr += sizeof(struct pdu_adv_adi);
+	}
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK) &&
+	    (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_AUX_PTR)) {
+		aux_ptr = (void *)dptr;
+		dptr += sizeof(struct pdu_adv_aux_ptr);
+	}
+	if (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_TX_POWER) {
+		dptr += sizeof(uint8_t);
 	}
 
 	/* Calc tertiary PDU len */
@@ -1266,6 +1277,18 @@ void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags)
 	ull_adv_aux_hdr_len_fill(com_hdr, len);
 
 	pdu->len = len;
+
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
+	/* Fill aux offset in aux pointer field */
+	if (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_AUX_PTR) {
+		uint32_t offs_us;
+
+		offs_us = PDU_AC_US(pdu->len, phy_s, phy_flags) +
+			  EVENT_SYNC_B2B_MAFS_US;
+		offs_us += cte_len_us;
+		ull_adv_aux_ptr_fill(aux_ptr, offs_us, phy_s);
+	}
+#endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK */
 }
 
 uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
@@ -1687,29 +1710,6 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 
 	return 0;
 }
-
-#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
-uint8_t ull_adv_sync_pdu_cte_info_set(struct pdu_adv *pdu, const struct pdu_cte_info *cte_info)
-{
-	struct pdu_adv_com_ext_adv *com_hdr;
-	struct pdu_adv_ext_hdr *ext_hdr;
-	uint8_t *dptr;
-
-	com_hdr = &pdu->adv_ext_ind;
-	ext_hdr = &com_hdr->ext_hdr;
-	dptr = ext_hdr->data;
-
-	/* Periodic adv PDUs do not have AdvA/TargetA */
-	LL_ASSERT(!ext_hdr->adv_addr);
-	LL_ASSERT(!ext_hdr->tgt_addr);
-
-	if (ext_hdr->cte_info) {
-		(void)memcpy(dptr, cte_info, sizeof(*cte_info));
-	}
-
-	return 0;
-}
-#endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK */
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 /* @brief Set or clear fields in extended advertising header and store
