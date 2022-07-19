@@ -132,11 +132,10 @@ struct emul_espi_driver_api {
  * Register an emulated device on the controller
  *
  * @param dev Device that will use the emulator
- * @param name User-friendly name for this emulator
  * @param emul eSPI emulator to use
  * @return 0 indicating success (always)
  */
-int espi_emul_register(const struct device *dev, const char *name, struct espi_emul *emul);
+int espi_emul_register(const struct device *dev, struct espi_emul *emul);
 
 /**
  * Sets the eSPI virtual wire on the host side, which will

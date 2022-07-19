@@ -65,11 +65,10 @@ typedef int (*i2c_emul_transfer_t)(const struct emul *target, struct i2c_msg *ms
  * Register an emulated device on the controller
  *
  * @param dev Device that will use the emulator
- * @param name User-friendly name for this emulator
  * @param emul I2C emulator to use
  * @return 0 indicating success (always)
  */
-int i2c_emul_register(const struct device *dev, const char *name, struct i2c_emul *emul);
+int i2c_emul_register(const struct device *dev, struct i2c_emul *emul);
 
 /** Definition of the emulator API */
 struct i2c_emul_api {
