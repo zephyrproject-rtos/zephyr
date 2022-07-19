@@ -20,6 +20,7 @@
 
 	aliases {
 		watchdog0 = &iwdg;
+		spi-flash0 = &spi_nor;
 	};
 
 	board_id: brd-id {

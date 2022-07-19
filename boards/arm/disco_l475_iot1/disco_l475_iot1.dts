@@ -48,6 +48,7 @@
 		sw0 = &user_button;
 		eswifi0 = &wifi0;
 		watchdog0 = &iwdg;
+		spi-flash0 = &mx25r6435f;
 	};
 };
 

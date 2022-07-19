@@ -35,6 +35,7 @@
 	aliases {
 		sw0 = &user_button;
 		watchdog0 = &wdt0;
+		spi-flash0 = &mx25r1635f;
 	};
 };
 
