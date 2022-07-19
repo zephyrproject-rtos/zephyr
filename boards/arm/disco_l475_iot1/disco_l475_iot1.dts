@@ -47,6 +47,7 @@
 		led1 = &green_led_1;
 		sw0 = &user_button;
 		eswifi0 = &wifi0;
+		watchdog0 = &iwdg;
 	};
 };
 

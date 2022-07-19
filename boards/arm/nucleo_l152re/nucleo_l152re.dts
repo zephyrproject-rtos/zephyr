@@ -40,6 +40,7 @@
 		led0 = &green_led_0;
 		sw0 = &user_button;
 		eeprom-0 = &eeprom;
+		watchdog0 = &iwdg;
 	};
 };
 

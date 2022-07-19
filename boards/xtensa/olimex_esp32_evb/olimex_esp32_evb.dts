@@ -22,6 +22,7 @@
 
 	aliases {
 		sw0 = &button1;
+		watchdog0 = &wdt0;
 	};
 
 	gpio_keys {
