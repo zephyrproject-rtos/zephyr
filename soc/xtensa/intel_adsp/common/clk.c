@@ -83,7 +83,7 @@ void cavs_clock_init(void)
 	if (CAVS_SHIM.clkctl & CAVS_CLKCTL_WOVCRO)
 		CAVS_SHIM.clkctl = CAVS_SHIM.clkctl & ~CAVS_CLKCTL_WOVCRO;
 	else
-		platform_lowest_freq_idx = CAVS_CLOCK_FREQ_WOVCRO;
+		platform_lowest_freq_idx = CAVS_CLOCK_FREQ_LPRO;
 #endif
 
 	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
