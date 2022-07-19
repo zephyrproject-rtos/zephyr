@@ -120,7 +120,6 @@
 			#interrupt-cells = <3>;
 			interrupts = <6 0 0>;
 			interrupt-parent = <&core_intc>;
-			label = "CAVS_0";
 		};
 
 		cavs1: cavs@78810  {
@@ -130,7 +129,6 @@
 			#interrupt-cells = <3>;
 			interrupts = <0xA 0 0>;
 			interrupt-parent = <&core_intc>;
-			label = "CAVS_1";
 		};
 
 		cavs2: cavs@78820  {
@@ -140,7 +138,6 @@
 			#interrupt-cells = <3>;
 			interrupts = <0XD 0 0>;
 			interrupt-parent = <&core_intc>;
-			label = "CAVS_2";
 		};
 
 		cavs3: cavs@78830  {
@@ -150,12 +147,10 @@
 			#interrupt-cells = <3>;
 			interrupts = <0x10 0 0>;
 			interrupt-parent = <&core_intc>;
-			label = "CAVS_3";
 		};
 
 		idc: idc@1200 {
 			compatible = "intel,cavs-idc";
-			label = "CAVS_IDC";
 			reg = <0x1200 0x80>;
 			interrupts = <8 0 0>;
 			interrupt-parent = <&cavs0>;
@@ -177,7 +172,6 @@
 			dmas = <&lpgpdma0 2
 				&lpgpdma0 3>;
 			dma-names = "tx", "rx";
-			label = "SSP_0";
 
 			status = "okay";
 		};
@@ -193,7 +187,6 @@
 			dmas = <&lpgpdma0 4
 				&lpgpdma0 5>;
 			dma-names = "tx", "rx";
-			label = "SSP_1";
 
 			status = "okay";
 		};
@@ -209,7 +202,6 @@
 			dmas = <&lpgpdma0 6
 				&lpgpdma0 7>;
 			dma-names = "tx", "rx";
-			label = "SSP_2";
 
 			status = "okay";
 		};
@@ -225,7 +217,6 @@
 			dmas = <&lpgpdma0 8
 				&lpgpdma0 9>;
 			dma-names = "tx", "rx";
-			label = "SSP_3";
 
 			status = "okay";
 		};
@@ -241,7 +232,6 @@
 			dmas = <&lpgpdma0 10
 				&lpgpdma0 11>;
 			dma-names = "tx", "rx";
-			label = "SSP_4";
 
 			status = "okay";
 		};
@@ -257,7 +247,6 @@
 			dmas = <&lpgpdma0 12
 				&lpgpdma0 13>;
 			dma-names = "tx", "rx";
-			label = "SSP_5";
 
 			status = "okay";
 		};
@@ -265,7 +254,6 @@
 		alh0:alh@24400 {
 			compatible = "intel,alh-dai";
 			reg = <0x00024400 0x00024600>;
-			label = "ALH_0";
 
 			status = "okay";
 		};
@@ -273,7 +261,6 @@
 		alh1:alh@24400 {
 			compatible = "intel,alh-dai";
 			reg = <0x00024400 0x00024600>;
-			label = "ALH_1";
 
 			status = "okay";
 		};
