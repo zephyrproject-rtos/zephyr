@@ -4,22 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <zephyr/drivers/w1.h>
-#include <zephyr/zephyr.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/w1_sensor.h>
+#include <zephyr/drivers/w1.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/ztest.h>
 
+#define W1_MASTER  DT_NODELABEL(w1_0)
 #define W1_SLAVE_1 DT_NODELABEL(slave_1)
 #define W1_SLAVE_2 DT_NODELABEL(slave_2)
-
-#define ZEPHYR_W1_SERIAL DT_INST(0, zephyr_w1_serial)
-
-#if DT_NODE_HAS_STATUS(ZEPHYR_W1_SERIAL, okay)
-#define W1_MASTER ZEPHYR_W1_SERIAL
-#else
-#error Your devicetree has no enabled nodes with a compatible w1-driver
-#endif
 
 const struct device *get_w1_master_dev(void)
 {

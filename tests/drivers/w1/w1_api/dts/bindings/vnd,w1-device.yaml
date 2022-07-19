@@ -3,6 +3,6 @@
 
 description: 1-Wire dummy slave
 
-compatible: "test-w1-dummy-slave"
+compatible: "vnd,w1-device"
 
 include: w1-slave.yaml
