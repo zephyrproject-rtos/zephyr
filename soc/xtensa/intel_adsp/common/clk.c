@@ -78,7 +78,7 @@ void cavs_clock_init(void)
 	uint32_t platform_lowest_freq_idx = CAVS_CLOCK_FREQ_LOWEST;
 	int i;
 
-#ifdef CONFIG_SOC_INTEL_CAVS_V25
+#ifdef CAVS_CLOCK_HAS_WOVCRO
 	CAVS_SHIM.clkctl |= CAVS_CLKCTL_WOVCRO;
 	if (CAVS_SHIM.clkctl & CAVS_CLKCTL_WOVCRO)
 		CAVS_SHIM.clkctl = CAVS_SHIM.clkctl & ~CAVS_CLKCTL_WOVCRO;

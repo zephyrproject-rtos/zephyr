@@ -76,6 +76,7 @@
 		cavs-clkctl-freq-mask = <0x10 0x20000000 0x80000000>;
 		cavs-clkctl-freq-default = <2>;
 		cavs-clkctl-freq-lowest = <0>;
+		wovcro-supported;
 	};
 
 	soc {
