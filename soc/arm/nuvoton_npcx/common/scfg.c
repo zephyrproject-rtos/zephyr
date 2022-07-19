@@ -74,6 +74,24 @@ static void npcx_pinctrl_alt_sel(const struct npcx_alt *alt, int alt_func)
 }
 
 /* Platform specific pin-control functions */
+void npcx_lvol_set_detect_level(int lvol_ctrl, int lvol_bit, bool enable)
+{
+	const uintptr_t scfg_base = npcx_scfg_cfg.base_scfg;
+
+	if (enable) {
+		NPCX_LV_GPIO_CTL(scfg_base, lvol_ctrl) |= BIT(lvol_bit);
+	} else {
+		NPCX_LV_GPIO_CTL(scfg_base, lvol_ctrl) &= ~BIT(lvol_bit);
+	}
+}
+
+bool npcx_lvol_get_detect_level(int lvol_ctrl, int lvol_bit)
+{
+	const uintptr_t scfg_base = npcx_scfg_cfg.base_scfg;
+
+	return NPCX_LV_GPIO_CTL(scfg_base, lvol_ctrl) & BIT(lvol_bit);
+}
+
 void npcx_pinctrl_i2c_port_sel(int controller, int port)
 {
 	struct glue_reg *const inst_glue = HAL_GLUE_INST();

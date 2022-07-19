@@ -81,7 +81,7 @@
 			       0x400a5000 0x2000>;
 			reg-names = "scfg", "glue";
 			#alt-cells = <3>;
-			#lvol-cells = <4>;
+			#lvol-cells = <2>;
 			label = "SCFG";
 		};
 

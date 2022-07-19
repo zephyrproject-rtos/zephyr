@@ -35,10 +35,8 @@ struct npcx_alt {
  * low-voltage detection.
  */
 struct npcx_lvol {
-	uint16_t io_port:5; /** A io pad's port which support low-voltage. */
-	uint16_t io_bit:3; /** A io pad's bit which support low-voltage. */
-	uint16_t ctrl:5; /** Related register index for low-voltage conf. */
-	uint16_t bit:3; /** Related register bit for low-voltage conf. */
+	uint8_t ctrl:5; /** Related register index for low-voltage conf. */
+	uint8_t bit:3; /** Related register bit for low-voltage conf. */
 };
 
 /**
@@ -61,6 +59,24 @@ int npcx_pinctrl_flash_write_protect_set(void);
  * @return 1 if write protection is set, 0 otherwise.
  */
 bool npcx_pinctrl_flash_write_protect_is_set(void);
+
+/**
+ * @brief Enable low-voltage input detection
+ *
+ * @param lvol_ctrl Related register index for low-voltage detection
+ * @param lvol_bit Related register bit for low-voltage detection
+ * @param enable True to enable low-voltage input detection, false to disable.
+ */
+void npcx_lvol_set_detect_level(int lvol_ctrl, int lvol_bit, bool enable);
+
+/**
+ * @brief Get status of low-voltage input detection
+ *
+ * @param lvol_ctrl Related register index for low-voltage detection
+ * @param lvol_bit Related register bit for low-voltage detection
+ * @return True means the low-voltage power supply is enabled, otherwise disabled.
+ */
+bool npcx_lvol_get_detect_level(int lvol_ctrl, int lvol_bit);
 
 /**
  * @brief Select the host interface type
