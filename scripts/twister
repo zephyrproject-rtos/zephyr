@@ -190,7 +190,7 @@ if not ZEPHYR_BASE:
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister/"))
 
 from twisterlib.testplan import TestPlan
-from twisterlib.enviornment import TwisterEnv, parse_arguments
+from twisterlib.environment import TwisterEnv, parse_arguments
 from twisterlib.reports import Reporting
 from twisterlib.hardwaremap import HardwareMap
 from twisterlib.coverage import run_coverage
