@@ -29,7 +29,7 @@ manifest:
       revision: 53d3415c14d60f8f4bfca54bfbc5d5a667d7e724
       path: modules/lib/canopennode
     - name: chre
-      revision: 0edfe2c2ec656afb910cfab8ed59a5ffd59b87c8
+      revision: ef76d3456db07e4959df555047d6962279528c8d
       path: modules/lib/chre
     - name: cmsis
       revision: 5f86244bad4ad5a590e084f0e72ba7a1416c2edf
@@ -83,7 +83,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: f5024df56c57794ad964956a2e163bd17f7b3b40
+      revision: f6628a30581d8d4b80954af163b83ce065e87467
       path: modules/hal/nordic
       groups:
         - hal
@@ -114,7 +114,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 08dd39f1a20a2aaec596b909c31e9b23d7fef09d
+      revision: 1ec8dd99aa4ac3e8632d2aa28a7438049bb27102
       path: modules/hal/silabs
       groups:
         - hal
@@ -205,7 +205,7 @@ manifest:
       groups:
         - debug
     - name: sof
-      revision: 2efc3ea41c0074c6dab5f376fafaa26f52c25c75
+      revision: fed466c264ad078c66f7bff9218ba1d3fa0eb201
       path: modules/audio/sof
     - name: tflite-micro
       revision: 9156d050927012da87079064db59d07f03b8baf6
