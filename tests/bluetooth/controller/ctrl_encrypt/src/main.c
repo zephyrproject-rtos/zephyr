@@ -1720,8 +1720,10 @@ void test_encryption_start_periph_rem_no_ltk(void)
 	/* There should not be a host notification */
 	ut_rx_q_is_empty();
 
-	/* Note that for this test the context is not released */
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt() - 1,
+	/* All contexts should be released until now. This is a side-effect of a call to
+	 * ull_cp_tx_ntf that internall calls rr_check_done and lr_check_done.
+	 */
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
