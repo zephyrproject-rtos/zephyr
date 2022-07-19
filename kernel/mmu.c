@@ -69,7 +69,7 @@ static bool page_frames_initialized;
 
 #define COLOR(x)	printk(_CONCAT(ANSI_, x))
 #else
-#define COLOR(x)	do { } while (0)
+#define COLOR(x)	do { } while (false)
 #endif
 
 /* LCOV_EXCL_START */
