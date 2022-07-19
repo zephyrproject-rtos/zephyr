@@ -1,0 +1,13 @@
+# ICM42688-P Six-Axis Motion Tracking device configuration options
+#
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ICM42688
+	bool "ICM42688 Six-Axis Motion Tracking Device"
+	default y
+	depends on DT_HAS_INVENSENSE_ICM42688_ENABLED
+	select SPI
+	help
+	  Enable driver for ICM42688 SPI-based six-axis motion tracking device.
