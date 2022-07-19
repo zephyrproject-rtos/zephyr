@@ -140,7 +140,6 @@
 
 		uart0: serial@f0200020 {
 			compatible = "ns16550";
-			label = "UART_0";
 			reg = <0xf0200020 0x1000>;
 			reg-shift = <2>;
 			interrupts = <8 1>;
@@ -150,7 +149,6 @@
 
 		uart1: serial@f0300020 {
 			compatible = "ns16550";
-			label = "UART_1";
 			reg = <0xf0300020 0x1000>;
 			reg-shift = <2>;
 			interrupts = <9 1>;
@@ -160,7 +158,6 @@
 
 		pit0: pit@f0400000 {
 			compatible = "andestech,atcpit100";
-			label = "PIT_0";
 			reg = <0xf0400000 0x1000>;
 			interrupts = <3 1>;
 			interrupt-parent = <&plic0>;
@@ -179,7 +176,6 @@
 
 		gpio0: gpio@f0700000 {
 			compatible = "andestech,atcgpio100";
-			label = "GPIO_0";
 			reg = <0xf0700000 0x1000>;
 			interrupts = <7 1>;
 			interrupt-parent = <&plic0>;
@@ -191,7 +187,6 @@
 
 		i2c0: i2c@f0a00000 {
 			compatible = "andestech,atciic100";
-			label = "I2C_0";
 			reg = <0xf0a00000 0x1000>;
 			interrupts = <6 1>;
 			interrupt-parent = <&plic0>;
@@ -202,7 +197,6 @@
 
 		spi0: spi@f0b00000 {
 			compatible = "andestech,atcspi200";
-			label = "SPI_0";
 			reg = <0xf0b00000 0x1000
 			       0x80000000 DT_SIZE_K(1024)>;
 			reg-names = "control", "mem";
@@ -217,7 +211,6 @@
 
 		spi1: spi@f0f00000 {
 			compatible = "andestech,atcspi200";
-			label = "SPI_1";
 			reg = <0xf0f00000 0x1000>;
 			reg-names = "control";
 			interrupts = <5 1>;
@@ -239,7 +232,6 @@
 
 		eth0: eth@e0100000 {
 			compatible = "andestech,atfmac100";
-			label = "ETH_0";
 			reg = <0xe0100000 0x1000>;
 			interrupts = <19 2>;
 			interrupt-parent = <&plic0>;
@@ -249,7 +241,6 @@
 
 		lcd0: lcd@e0200000 {
 			compatible = "andestech,atflcdc100";
-			label = "LCD_0";
 			reg = <0xe0200000 0x1000>;
 			interrupts = <20 1>;
 			interrupt-parent = <&plic0>;

@@ -145,7 +145,6 @@
 			compatible = "ns16550", "snps,dw-apb-uart";
 			interrupt-parent = <&plic>;
 			interrupts = <73 1>;
-			label = "UART_3";
 			reg = <0x0 0x12440000 0x0 0x10000>;
 			reg-shift = <2>;
 			clocks = <&uartclk>, <&apb2clk>;
@@ -159,7 +158,6 @@
 			compatible = "ns16550", "snps,dw-apb-uart";
 			interrupt-parent = <&plic>;
 			interrupts = <72 1>;
-			label = "UART_2";
 			reg = <0x0 0x12430000 0x0 0x10000>;
 			reg-shift = <2>;
 			clocks = <&uartclk>, <&apb2clk>;
@@ -173,7 +171,6 @@
 			compatible = "ns16550", "snps,dw-apb-uart";
 			interrupt-parent = <&plic>;
 			interrupts = <93 1>;
-			label = "UART_1";
 			reg = <0x0 0x11880000 0x0 0x10000>;
 			reg-shift = <2>;
 			clocks = <&hs_uartclk>, <&apb1clk>;
@@ -187,7 +184,6 @@
 			compatible = "ns16550", "snps,dw-apb-uart";
 			interrupt-parent = <&plic>;
 			interrupts = <92 1>;
-			label = "UART_0";
 			reg = <0x0 0x11870000 0x0 0x10000>;
 			reg-shift = <2>;
 			clocks = <&hs_uartclk>, <&apb1clk>;

@@ -108,7 +108,6 @@
 			interrupts = <39 1>;
 			reg = <0x10010000 0x1000>;
 			reg-names = "control";
-			label = "uart_0";
 			status = "disabled";
 		};
 
@@ -118,7 +117,6 @@
 			interrupts = <40 1>;
 			reg = <0x10011000 0x1000>;
 			reg-names = "control";
-			label = "uart_1";
 			status = "disabled";
 		};
 
@@ -128,7 +126,6 @@
 			interrupts = <41 1>;
 			reg = <0x10040000 0x1000 0x20000000 0x10000000>;
 			reg-names = "control", "mem";
-			label = "spi_0";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -140,7 +137,6 @@
 			interrupts = <42 1>;
 			reg = <0x10041000 0x1000>;
 			reg-names = "control";
-			label = "spi_1";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -152,7 +148,6 @@
 			interrupts = <43 1>;
 			reg = <0x10050000 0x1000>;
 			reg-names = "control";
-			label = "spi_2";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
