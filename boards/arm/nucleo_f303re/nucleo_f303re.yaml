@@ -13,3 +13,4 @@ supported:
   - gpio
   - counter
   - can
+  - i2c
