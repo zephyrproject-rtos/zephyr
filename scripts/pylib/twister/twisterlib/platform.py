@@ -7,7 +7,7 @@
 import os
 import scl
 from twisterlib.config_parser import TwisterConfigParser
-from twisterlib.enviornment import ZEPHYR_BASE
+from twisterlib.environment import ZEPHYR_BASE
 
 class Platform:
     """Class representing metadata for a particular platform
