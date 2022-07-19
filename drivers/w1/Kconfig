@@ -22,6 +22,23 @@ config W1_INIT_PRIORITY
 	help
 	  1-Wire device driver initialization priority.
 
+config W1_SHELL
+	bool "1-Wire Shell"
+	depends on SHELL
+	default y if !SHELL_MINIMAL
+	help
+	  Enable 1-Wire Shell for testing.
+
+config W1_SHELL_BUFFER_SIZE
+	int
+	default 16
+	depends on W1_SHELL
+	prompt "1-Wire Shell buffer size"
+	help
+	  Size of the send and receive buffer in bytes.
+	  To be able to write more than 8 bytes make
+	  sure to also increase SHELL_ARGC_MAX accordingly.
+
 rsource "Kconfig.ds2484"
 rsource "Kconfig.test"
 rsource "Kconfig.zephyr_serial"
