@@ -203,7 +203,7 @@ static void check_endpoint_allocation(struct usb_desc_header *head)
  */
 #define SYMBOL_SPAN(_ep, _sp) (int)(intptr_t)((uintptr_t)(_ep) - (uintptr_t)(_sp))
 
-static void test_desc_sections(void)
+ZTEST(desc_sections, test_desc_sections)
 {
 	struct usb_desc_header *head;
 
@@ -245,9 +245,4 @@ static void test_desc_sections(void)
 }
 
 /*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_desc,
-			 ztest_unit_test(test_desc_sections));
-	ztest_run_test_suite(test_desc);
-}
+ZTEST_SUITE(desc_sections, NULL, NULL, NULL, NULL, NULL);
