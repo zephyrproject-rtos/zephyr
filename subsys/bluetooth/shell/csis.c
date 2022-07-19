@@ -105,55 +105,6 @@ static int cmd_csis_register(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_csis_advertise(const struct shell *sh, size_t argc,
-			      char *argv[])
-{
-	int err;
-
-	if (strcmp(argv[1], "off") == 0) {
-		err = bt_csis_advertise(csis, false);
-		if (err != 0) {
-			shell_error(sh, "Failed to stop advertising %d", err);
-			return -ENOEXEC;
-		}
-		shell_print(sh, "Advertising stopped");
-	} else if (strcmp(argv[1], "on") == 0) {
-		err = bt_csis_advertise(csis, true);
-		if (err != 0) {
-			shell_error(sh, "Failed to start advertising %d", err);
-			return -ENOEXEC;
-		}
-		shell_print(sh, "Advertising started");
-	} else {
-		shell_error(sh, "Invalid argument: %s", argv[1]);
-		return -ENOEXEC;
-	}
-
-	return 0;
-}
-
-static int cmd_csis_update_rsi(const struct shell *sh, size_t argc,
-				char *argv[])
-{
-	int err;
-
-	if (bt_csis_advertise(csis, false) != 0) {
-		shell_error(sh,
-			    "Failed to stop advertising - rsi not updated");
-		return -ENOEXEC;
-	}
-	err = bt_csis_advertise(csis, true);
-	if (err != 0) {
-		shell_error(sh,
-			    "Failed to start advertising  - rsi not updated");
-		return -ENOEXEC;
-	}
-
-	shell_print(sh, "RSI and optionally RPA updated");
-
-	return 0;
-}
-
 static int cmd_csis_print_sirk(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
@@ -234,12 +185,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(csis_cmds,
 		      "Initialize the service and register callbacks "
 		      "[size <int>] [rank <int>] [not-lockable] [sirk <data>]",
 		      cmd_csis_register, 1, 4),
-	SHELL_CMD_ARG(advertise, NULL,
-		      "Start/stop advertising CSIS RSIs <on/off>",
-		      cmd_csis_advertise, 2, 0),
-	SHELL_CMD_ARG(update_rsi, NULL,
-		      "Update the advertised RSI",
-		      cmd_csis_update_rsi, 1, 0),
 	SHELL_CMD_ARG(lock, NULL,
 		      "Lock the set",
 		      cmd_csis_lock, 1, 0),
