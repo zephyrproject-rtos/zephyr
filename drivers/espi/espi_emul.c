@@ -212,13 +212,15 @@ int espi_emul_register(const struct device *dev, const char *name, struct espi_e
 
 /* Device instantiation */
 static struct emul_espi_driver_api emul_espi_driver_api = {
-	.espi_api = { .config = espi_emul_config,
-		      .get_channel_status = espi_emul_get_channel_status,
-		      .read_lpc_request = espi_emul_read_lpc_request,
-		      .write_lpc_request = espi_emul_write_lpc_request,
-		      .send_vwire = espi_emul_send_vwire,
-		      .receive_vwire = espi_emul_receive_vwire,
-		      .manage_callback = espi_emul_manage_callback },
+	.espi_api = {
+		.config = espi_emul_config,
+		.get_channel_status = espi_emul_get_channel_status,
+		.read_lpc_request = espi_emul_read_lpc_request,
+		.write_lpc_request = espi_emul_write_lpc_request,
+		.send_vwire = espi_emul_send_vwire,
+		.receive_vwire = espi_emul_receive_vwire,
+		.manage_callback = espi_emul_manage_callback
+	},
 	.trigger_event = emul_espi_trigger_event,
 	.find_emul = espi_emul_find,
 };
