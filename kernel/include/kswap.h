@@ -60,7 +60,7 @@ static inline void wait_for_switch(struct k_thread *thread)
  */
 static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 					  struct k_spinlock *lock,
-					  int is_spinlock)
+					  bool is_spinlock)
 {
 	ARG_UNUSED(lock);
 	struct k_thread *new_thread, *old_thread;
@@ -161,17 +161,17 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 
 static inline int z_swap_irqlock(unsigned int key)
 {
-	return do_swap(key, NULL, 0);
+	return do_swap(key, NULL, false);
 }
 
 static inline int z_swap(struct k_spinlock *lock, k_spinlock_key_t key)
 {
-	return do_swap(key.key, lock, 1);
+	return do_swap(key.key, lock, true);
 }
 
 static inline void z_swap_unlocked(void)
 {
-	(void) do_swap(arch_irq_lock(), NULL, 1);
+	(void) do_swap(arch_irq_lock(), NULL, true);
 }
 
 #else /* !CONFIG_USE_SWITCH */

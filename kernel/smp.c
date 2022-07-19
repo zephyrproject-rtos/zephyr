@@ -28,7 +28,7 @@ unsigned int z_smp_global_lock(void)
 
 void z_smp_global_unlock(unsigned int key)
 {
-	if (_current->base.global_lock_count) {
+	if (_current->base.global_lock_count != 0U) {
 		_current->base.global_lock_count--;
 
 		if (!_current->base.global_lock_count) {
