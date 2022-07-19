@@ -75,3 +75,7 @@
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
+
+&wdt0 {
+	status = "okay";
+};
