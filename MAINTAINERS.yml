@@ -627,6 +627,19 @@ Documentation:
     labels:
         - "area: DMA"
 
+"Drivers: EDAC":
+    status: maintained
+    maintainers:
+        - finikorg
+    files:
+        - drivers/edac/
+        - dts/bindings/edac/
+        - include/zephyr/drivers/edac.h
+        - samples/subsys/edac/
+        - tests/subsys/edac/
+    labels:
+        - "area: EDAC"
+
 "Drivers: EEPROM":
     status: maintained
     maintainers:
