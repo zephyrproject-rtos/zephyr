@@ -70,7 +70,6 @@
 			compatible = "ns16550";
 			clock-frequency = <33333333>;
 			reg = <0xf0005000 0x1000>;
-			label = "UART_0";
 			interrupts = <30 1>;
 			reg-shift = <2>;
 		};
@@ -79,7 +78,6 @@
 			compatible = "ns16550";
 			clock-frequency = <33333333>;
 			reg = <0xf0026000 0x1000>;
-			label = "UART_1";
 			interrupts = <46 1>;
 			reg-shift = <2>;
 			status = "disabled";
@@ -89,7 +87,6 @@
 			compatible = "ns16550";
 			clock-frequency = <33333333>;
 			reg = <0xf0027000 0x1000>;
-			label = "UART_2";
 			interrupts = <47 1>;
 			reg-shift = <2>;
 			status = "disabled";
@@ -99,7 +96,6 @@
 			compatible = "ns16550";
 			clock-frequency = <33333333>;
 			reg = <0xf0028000 0x1000>;
-			label = "UART_3";
 			interrupts = <48 1>;
 			reg-shift = <2>;
 			status = "disabled";
@@ -109,7 +105,6 @@
 			compatible = "snps,designware-gpio";
 			reg = <0xf0003000 0x1000>;
 			ngpios = <24>;
-			label = "GPIO_0";
 			interrupt-parent = <&idu_intc>;
 
 			gpio-controller;
@@ -122,7 +117,6 @@
 			compatible = "snps,creg-gpio";
 			reg = <0xf00014b0 0x4>;
 			ngpios = <12>;
-			label = "CREG_GPIO";
 			bit_per_gpio = <2>;
 			off_val = <0>;
 			on_val = <2>;
@@ -140,7 +134,6 @@
 			#size-cells = <0>;
 			reg = <0xf0023000 0x1000>;
 			interrupts = <43 1>;
-			label = "I2C_0";
 
 			status = "disabled";
 		};
@@ -152,7 +145,6 @@
 			#size-cells = <0>;
 			reg = <0xf0024000 0x1000>;
 			interrupts = <44 1>;
-			label = "I2C_1";
 
 			status = "disabled";
 		};
@@ -164,7 +156,6 @@
 			#size-cells = <0>;
 			reg = <0xf0025000 0x1000>;
 			interrupts = <45 1>;
-			label = "I2C_2";
 
 			status = "disabled";
 		};
@@ -175,7 +166,6 @@
 			#size-cells = <0>;
 			reg = <0xf0020000 0x1000>;
 			interrupts = <40 1>;
-			label = "SPI_0";
 
 			status = "disabled";
 		};
@@ -186,7 +176,6 @@
 			#size-cells = <0>;
 			reg = <0xf0021000 0x1000>;
 			interrupts = <41 1>;
-			label = "SPI_1";
 			status = "disabled";
 		};
 
@@ -196,7 +185,6 @@
 			#size-cells = <0>;
 			reg = <0xf0022000 0x1000>;
 			interrupts = <42 1>;
-			label = "SPI_2";
 			status = "disabled";
 		};
 

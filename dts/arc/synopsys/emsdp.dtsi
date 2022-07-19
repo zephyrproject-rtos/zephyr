@@ -57,7 +57,6 @@
 			compatible = "ns16550";
 			clock-frequency = <DT_APB_CLK_HZ>;
 			reg = <0xf0004000 0x1000>;
-			label = "UART_0";
 			interrupt-parent = <&intc>;
 			reg-shift = <2>;
 		};
@@ -66,7 +65,6 @@
 			compatible = "snps,designware-gpio";
 			reg = <0xf0002000 0xc>;
 			ngpios = <4>;
-			label = "GPIO_0";
 			interrupt-parent = <&intc>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -76,7 +74,6 @@
 			compatible = "snps,designware-gpio";
 			reg = <0xf000200c 0xc>;
 			ngpios = <8>;
-			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
