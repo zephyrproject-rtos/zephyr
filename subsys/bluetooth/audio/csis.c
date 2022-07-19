@@ -31,18 +31,6 @@
 #define BT_CSIS_SIH_PRAND_SIZE          3
 #define BT_CSIS_SIH_HASH_SIZE           3
 #define CSIS_SET_LOCK_TIMER_VALUE       K_SECONDS(60)
-#if defined(CONFIG_BT_PRIVACY)
-/* The ADV time (in tens of milliseconds). Shall be less than the RPA.
- * Make it relatively smaller (90%) to handle all ranges. Maximum value is
- * 2^16 - 1 (UINT16_MAX).
- */
-#define CSIS_ADV_TIME  (MIN((CONFIG_BT_RPA_TIMEOUT * 100 * 0.9), UINT16_MAX))
-#else
-/* Without privacy, connectable adv won't update the address when restarting,
- * so we might as well continue advertising non-stop.
- */
-#define CSIS_ADV_TIME  0
-#endif /* CONFIG_BT_PRIVACY */
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CSIS)
 #define LOG_MODULE_NAME bt_csis
@@ -194,7 +182,7 @@ static int generate_prand(uint32_t *dest)
 	return 0;
 }
 
-static int csis_update_rsi(struct bt_csis *csis)
+int bt_csis_generate_rsi(const struct bt_csis *csis, uint8_t rsi[BT_CSIS_RSI_SIZE])
 {
 	int res = 0;
 	uint32_t prand;
@@ -218,80 +206,10 @@ static int csis_update_rsi(struct bt_csis *csis)
 		return res;
 	}
 
-	(void)memcpy(csis->srv.rsi, &hash, BT_CSIS_SIH_HASH_SIZE);
-	(void)memcpy(csis->srv.rsi + BT_CSIS_SIH_HASH_SIZE, &prand,
-		     BT_CSIS_SIH_PRAND_SIZE);
+	(void)memcpy(rsi, &hash, BT_CSIS_SIH_HASH_SIZE);
+	(void)memcpy(rsi + BT_CSIS_SIH_HASH_SIZE, &prand, BT_CSIS_SIH_PRAND_SIZE);
+
 	return res;
-}
-
-int csis_adv_resume(struct bt_csis *csis)
-{
-	int err;
-	struct bt_data ad[2] = {
-		BT_DATA_BYTES(BT_DATA_FLAGS,
-				BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)
-	};
-
-	BT_DBG("Restarting CSIS advertising");
-
-	if (csis_update_rsi(csis) != 0) {
-		return -EAGAIN;
-	}
-
-	if (csis->srv.cb != NULL && csis->srv.cb->rsi_changed != NULL) {
-		csis->srv.cb->rsi_changed(csis->srv.rsi);
-		return 0;
-	}
-
-	ad[1].type = BT_DATA_CSIS_RSI;
-	ad[1].data_len = sizeof(csis->srv.rsi);
-	ad[1].data = csis->srv.rsi;
-
-#if defined(CONFIG_BT_EXT_ADV)
-	struct bt_le_ext_adv_start_param start_param;
-
-	if (csis->srv.adv == NULL) {
-		struct bt_le_adv_param param;
-
-		(void)memset(&param, 0, sizeof(param));
-		param.options |= BT_LE_ADV_OPT_CONNECTABLE;
-		param.options |= BT_LE_ADV_OPT_SCANNABLE;
-		param.options |= BT_LE_ADV_OPT_USE_NAME;
-
-		param.id = BT_ID_DEFAULT;
-		param.sid = 0;
-		param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
-		param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
-
-		err = bt_le_ext_adv_create(&param, &csis->srv.adv_cb,
-					   &csis->srv.adv);
-		if (err != 0) {
-			BT_DBG("Could not create adv set: %d", err);
-			return err;
-		}
-	}
-
-	err = bt_le_ext_adv_set_data(csis->srv.adv, ad, ARRAY_SIZE(ad), NULL,
-				     0);
-
-	if (err != 0) {
-		BT_DBG("Could not set adv data: %d", err);
-		return err;
-	}
-
-	(void)memset(&start_param, 0, sizeof(start_param));
-	start_param.timeout = CSIS_ADV_TIME;
-	err = bt_le_ext_adv_start(csis->srv.adv, &start_param);
-#else
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
-#endif /* CONFIG_BT_EXT_ADV */
-
-	if (err != 0) {
-		BT_DBG("Could not start adv: %d", err);
-		return err;
-	}
-
-	return err;
 }
 
 static ssize_t read_set_sirk(struct bt_conn *conn,
@@ -545,51 +463,8 @@ static void csis_security_changed(struct bt_conn *conn, bt_security_t level,
 	}
 }
 
-#if defined(CONFIG_BT_EXT_ADV)
-static void csis_connected(struct bt_conn *conn, uint8_t err)
-{
-	if (err == BT_HCI_ERR_SUCCESS) {
-		for (int i = 0; i < ARRAY_SIZE(csis_insts); i++) {
-			struct bt_csis *csis = &csis_insts[i];
-
-			__ASSERT(csis->srv.conn_cnt < CONFIG_BT_MAX_CONN,
-				 "conn_cnt is %d", CONFIG_BT_MAX_CONN);
-
-			csis->srv.conn_cnt++;
-		}
-	}
-}
-
-static void disconnect_adv(struct k_work *work)
-{
-	int err;
-	struct bt_csis_server *server = CONTAINER_OF(work, struct bt_csis_server, work);
-	struct bt_csis *csis = CONTAINER_OF(server, struct bt_csis, srv);
-
-	err = csis_adv_resume(csis);
-
-	if (err != 0) {
-		BT_ERR("Disconnect: Could not restart advertising: %d",
-			err);
-		csis->srv.adv_enabled = false;
-	}
-}
-#endif /* CONFIG_BT_EXT_ADV */
-
 static void handle_csis_disconnect(struct bt_csis *csis, struct bt_conn *conn)
 {
-#if defined(CONFIG_BT_EXT_ADV)
-	__ASSERT(csis->srv.conn_cnt > 0, "conn_cnt is 0");
-
-	if (csis->srv.conn_cnt == CONFIG_BT_MAX_CONN &&
-	    csis->srv.adv_enabled) {
-		/* A connection spot opened up */
-		k_work_submit(&csis->srv.work);
-	}
-
-	csis->srv.conn_cnt--;
-#endif /* CONFIG_BT_EXT_ADV */
-
 	BT_DBG("Non-bonded device");
 	if (is_last_client_to_write(csis, conn)) {
 		(void)memset(&csis->srv.lock_client_addr, 0,
@@ -736,10 +611,6 @@ static void csis_bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 }
 
 static struct bt_conn_cb conn_callbacks = {
-
-#if defined(CONFIG_BT_EXT_ADV)
-	.connected = csis_connected,
-#endif /* CONFIG_BT_EXT_ADV */
 	.disconnected = csis_disconnected,
 	.security_changed = csis_security_changed,
 };
@@ -748,71 +619,6 @@ static struct bt_conn_auth_info_cb auth_callbacks = {
 	.pairing_complete = auth_pairing_complete,
 	.bond_deleted = csis_bond_deleted
 };
-
-#if defined(CONFIG_BT_EXT_ADV)
-/* TODO: Temp fix due to bug in adv callbacks:
- * https://github.com/zephyrproject-rtos/zephyr/issues/30699
- */
-static bool conn_based_timeout;
-static void adv_timeout(struct bt_le_ext_adv *adv,
-			struct bt_le_ext_adv_sent_info *info)
-{
-	struct bt_csis *csis = NULL;
-
-	for (int i = 0; i < ARRAY_SIZE(csis_insts); i++) {
-		if (adv == csis_insts[i].srv.adv) {
-			csis = &csis_insts[i];
-			break;
-		}
-	}
-	__ASSERT(csis != NULL, "Could not find CSIS instance by ADV set %p",
-		 adv);
-
-	if (conn_based_timeout) {
-		return;
-	}
-	conn_based_timeout = false;
-
-	/* Restart to update RSI value with new private address */
-	if (csis->srv.adv_enabled) {
-		int err = csis_adv_resume(csis);
-
-		if (err != 0) {
-			BT_ERR("Timeout: Could not restart advertising: %d",
-			       err);
-			csis->srv.adv_enabled = false;
-		}
-	}
-}
-
-static void adv_connected(struct bt_le_ext_adv *adv,
-			  struct bt_le_ext_adv_connected_info *info)
-{
-	struct bt_csis *csis = NULL;
-
-	for (int i = 0; i < ARRAY_SIZE(csis_insts); i++) {
-		if (adv == csis_insts[i].srv.adv) {
-			csis = &csis_insts[i];
-			break;
-		}
-	}
-	__ASSERT(csis != NULL, "Could not find CSIS instance by ADV set %p",
-		 adv);
-
-	if (csis->srv.conn_cnt < CONFIG_BT_MAX_CONN &&
-	    csis->srv.adv_enabled) {
-		int err = csis_adv_resume(csis);
-
-		if (err != 0) {
-			BT_ERR("Connected: Could not restart advertising: %d",
-			       err);
-			csis->srv.adv_enabled = false;
-		}
-	}
-
-	conn_based_timeout = true;
-}
-#endif /* CONFIG_BT_EXT_ADV */
 
 #define BT_CSIS_SERVICE_DEFINITION(_csis) {\
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_CSIS), \
@@ -926,51 +732,8 @@ int bt_csis_register(const struct bt_csis_register_param *param,
 			     sizeof(inst->srv.set_sirk.value));
 	}
 
-#if defined(CONFIG_BT_EXT_ADV)
-	inst->srv.adv_cb.sent = adv_timeout;
-	inst->srv.adv_cb.connected = adv_connected;
-	k_work_init(&inst->srv.work, disconnect_adv);
-#endif /* CONFIG_BT_EXT_ADV */
-
 	*csis = inst;
 	return 0;
-}
-
-int bt_csis_advertise(struct bt_csis *csis, bool enable)
-{
-	int err = 0;
-
-	if (enable) {
-		if (csis->srv.adv_enabled) {
-			return -EALREADY;
-		}
-
-		err = csis_adv_resume(csis);
-
-		if (err != 0) {
-			BT_DBG("Could not start adv: %d", err);
-			return err;
-		}
-		csis->srv.adv_enabled = true;
-	} else {
-		if (!csis->srv.adv_enabled) {
-			return -EALREADY;
-		}
-		if (csis->srv.cb == NULL || csis->srv.cb->rsi_changed == NULL) {
-#if defined(CONFIG_BT_EXT_ADV)
-			err = bt_le_ext_adv_stop(csis->srv.adv);
-#else
-			err = bt_le_adv_stop();
-#endif /* CONFIG_BT_EXT_ADV */
-			if (err != 0) {
-				BT_DBG("Could not stop start adv: %d", err);
-				return err;
-			}
-		}
-		csis->srv.adv_enabled = false;
-	}
-
-	return err;
 }
 
 int bt_csis_lock(struct bt_csis *csis, bool lock, bool force)
