@@ -53,6 +53,7 @@
 		led0 = &green_led_1;
 		led1 = &green_led_2;
 		sw0 = &user_button_UP;
+		spi-flash0 = &w25q16cv;
 	};
 };
 

@@ -64,6 +64,7 @@
 		led3 = &red_led_4;
 		sw0 = &user_button;
 		kscan0 = &touch_controller;
+		spi-flash0 = &mx25l51245g;
 	};
 };
 
