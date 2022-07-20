@@ -5,6 +5,8 @@
 
 config GPIO_IMX
 	bool "IMX GPIO driver"
+	default y
+	depends on DT_HAS_NXP_IMX_GPIO_ENABLED
 	depends on HAS_IMX_GPIO
 	help
 	  Enable the IMX GPIO driver.

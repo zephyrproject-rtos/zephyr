@@ -3,12 +3,10 @@
 # Copyright (c) 2018 Aapo Vienamo
 # SPDX-License-Identifier: Apache-2.0
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_SEMTECH_SX1509B := semtech,sx1509b
-
 menuconfig GPIO_SX1509B
 	bool "SX1509B I2C GPIO chip"
-	default $(dt_compat_enabled,$(DT_COMPAT_SEMTECH_SX1509B))
+	default y
+	depends on DT_HAS_SEMTECH_SX1509B_ENABLED
 	depends on I2C
 	help
 	  Enable driver for SX1509B I2C GPIO chip.
