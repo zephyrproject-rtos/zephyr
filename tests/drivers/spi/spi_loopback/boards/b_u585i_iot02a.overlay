@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 STMicroelectronics
+ * Copyright (c) 2022 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,9 @@
 };
 
 &spi1 {
+	dmas = <&gpdma1 0 7 0x440
+		&gpdma1 1 6 0x480>;
+	dma-names = "tx", "rx";
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
