@@ -505,6 +505,16 @@
 			reg = <0x40020000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL1 2>;
 		};
+
+		peci0: peci@400d4000 {
+			compatible = "nuvoton,npcx-peci";
+			reg = <0x400d4000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <4 4>;
+			clocks = <&pcc NPCX_CLOCK_BUS_FMCLK NPCX_PWDWN_CTL4 5>;
+			status = "disabled";
+		};
 	};
 
 	soc-if {

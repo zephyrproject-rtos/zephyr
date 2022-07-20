@@ -1,0 +1,12 @@
+# NPCX PECI driver configuration options
+
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config PECI_NPCX
+	bool "NPCX PECI driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_PECI_ENABLED
+	select PECI_INTERRUPT_DRIVEN
+	help
+	  Enable the NPCX PECI IO driver.
