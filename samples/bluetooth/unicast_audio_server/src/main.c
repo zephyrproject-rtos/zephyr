@@ -558,6 +558,34 @@ static struct bt_audio_capability caps[] = {
 	}
 };
 
+static int set_location(void)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
+		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
+						       BT_AUDIO_LOCATION_FRONT_CENTER);
+		if (err != 0) {
+			printk("Failed to set sink location (err %d)\n", err);
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
+		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SOURCE,
+						       (BT_AUDIO_LOCATION_FRONT_LEFT |
+							BT_AUDIO_LOCATION_FRONT_RIGHT));
+		if (err != 0) {
+			printk("Failed to set source location (err %d)\n", err);
+			return err;
+		}
+	}
+
+	printk("Location successfully set\n");
+
+	return 0;
+}
+
 void main(void)
 {
 	struct bt_le_ext_adv *adv;
@@ -577,6 +605,11 @@ void main(void)
 
 	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
 		bt_audio_stream_cb_register(&streams[i], &stream_ops);
+	}
+
+	err = set_location();
+	if (err != 0) {
+		return;
 	}
 
 	/* Create a non-connectable non-scannable advertising set */
