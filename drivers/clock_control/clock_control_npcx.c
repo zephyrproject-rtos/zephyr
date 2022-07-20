@@ -95,6 +95,9 @@ static int npcx_clock_control_get_subsys_rate(const struct device *dev,
 	case NPCX_CLOCK_BUS_LFCLK:
 		*rate = LFCLK;
 		break;
+	case NPCX_CLOCK_BUS_FMCLK:
+		*rate = FMCLK;
+		break;
 	default:
 		*rate = 0U;
 		/* Invalid parameters */
