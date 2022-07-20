@@ -899,6 +899,8 @@ Documentation:
         - include/zephyr/drivers/pinctrl/
         - include/zephyr/drivers/pinctrl.h
         - drivers/pinctrl/
+        - tests/drivers/pinctrl/
+        - dts/bindings/pinctrl/
     labels:
         - "area: Pinctrl"
 
