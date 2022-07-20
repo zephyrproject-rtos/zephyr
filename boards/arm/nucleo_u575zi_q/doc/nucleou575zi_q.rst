@@ -146,6 +146,8 @@ The Zephyr nucleo_u575zi_q board configuration supports the following hardware f
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
 +===========+============+=====================================+
+| CAN/CANFD | on-chip    | canbus                              |
++-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | reset and clock control             |
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | DAC Controller                      |
@@ -186,6 +188,9 @@ For mode details please refer to `STM32 Nucleo-144 board User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
+
+- CAN/CANFD_TX: PD1
+- CAN/CANFD_RX: PD0
 - DAC1_OUT1 : PA4
 - I2C_1_SCL : PB8
 - I2C_1_SDA : PB9
