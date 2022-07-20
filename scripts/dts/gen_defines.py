@@ -858,6 +858,14 @@ def write_global_macros(edt):
     # Global or tree-wide information, such as number of instances
     # with status "okay" for each compatible, is printed here.
 
+
+    out_comment("Macros for iterating over all nodes and enabled nodes")
+    out_dt_define("FOREACH_HELPER(fn)",
+                  " ".join(f"fn(DT_{node.z_path_id})" for node in edt.nodes))
+    out_dt_define("FOREACH_OKAY_HELPER(fn)",
+                  " ".join(f"fn(DT_{node.z_path_id})" for node in edt.nodes
+                           if node.status == "okay"))
+
     n_okay_macros = {}
     for_each_macros = {}
     compat2buses = defaultdict(list)  # just for "okay" nodes
