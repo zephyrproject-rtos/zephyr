@@ -846,7 +846,7 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 		mcux_flexcan_isr,					\
 		DEVICE_DT_INST_GET(id), 0);				\
 		irq_enable(DT_INST_IRQ_BY_NAME(id, name, irq));		\
-	} while (0)
+	} while (false)
 
 #define FLEXCAN_IRQ(id, name) \
 	COND_CODE_1(DT_INST_IRQ_HAS_NAME(id, name), \

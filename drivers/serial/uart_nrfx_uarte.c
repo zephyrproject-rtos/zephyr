@@ -2020,7 +2020,7 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 		IRQ_CONNECT(DT_IRQN(UARTE(idx)), DT_IRQ(UARTE(idx), priority), \
 			    isr_handler, DEVICE_DT_GET(UARTE(idx)), 0);	       \
 		irq_enable(DT_IRQN(UARTE(idx)));			       \
-	} while (0)
+	} while (false)
 
 #ifdef CONFIG_PINCTRL
 /* Low power mode is used when disable_rx is not defined or in async mode if

@@ -293,7 +293,7 @@ static int i2c_stm32_init(const struct device *dev)
 			    stm32_i2c_combined_isr,			\
 			    DEVICE_DT_GET(DT_NODELABEL(name)), 0);	\
 		irq_enable(DT_IRQN(DT_NODELABEL(name)));		\
-	} while (0)
+	} while (false)
 #else
 #define STM32_I2C_IRQ_CONNECT_AND_ENABLE(name)				\
 	do {								\
@@ -310,7 +310,7 @@ static int i2c_stm32_init(const struct device *dev)
 			    stm32_i2c_error_isr,			\
 			    DEVICE_DT_GET(DT_NODELABEL(name)), 0);	\
 		irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(name), error, irq));\
-	} while (0)
+	} while (false)
 #endif /* CONFIG_I2C_STM32_COMBINED_INTERRUPT */
 
 #define STM32_I2C_IRQ_HANDLER_DECL(name)				\
