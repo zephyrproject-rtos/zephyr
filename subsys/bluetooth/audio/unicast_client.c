@@ -471,25 +471,31 @@ static void unicast_client_ep_idle_state(struct bt_audio_ep *ep,
 	bt_audio_stream_reset(stream);
 }
 
-static void unicast_client_ep_qos_reset(struct bt_audio_ep *ep)
+static void unicast_client_ep_qos_update(struct bt_audio_ep *ep,
+					 const struct bt_ascs_ase_status_qos *qos)
 {
+	struct bt_iso_chan_io_qos *iso_io_qos;
+
 	BT_DBG("ep %p dir %u audio_iso %p", ep, ep->dir, ep->iso);
 
 	if (ep->dir == BT_AUDIO_DIR_SOURCE) {
 		/* If the endpoint is a source, then we need to
 		 * reset our RX parameters
 		 */
-		ep->iso->iso_qos.rx = memset(&ep->iso->sink_io_qos, 0,
-					     sizeof(ep->iso->sink_io_qos));
+		iso_io_qos = ep->iso->iso_qos.rx;
 	} else if (ep->dir == BT_AUDIO_DIR_SINK) {
 		/* If the endpoint is a sink, then we need to
 		 * reset our TX parameters
 		 */
-		ep->iso->iso_qos.tx = memset(&ep->iso->source_io_qos, 0,
-					     sizeof(ep->iso->source_io_qos));
+		iso_io_qos = ep->iso->iso_qos.tx;
 	} else {
 		__ASSERT(false, "Invalid ep->dir: %u", ep->dir);
+		return;
 	}
+
+	iso_io_qos->phy = qos->phy;
+	iso_io_qos->sdu = sys_le16_to_cpu(qos->sdu);
+	iso_io_qos->rtn = qos->rtn;
 }
 
 static void unicast_client_ep_config_state(struct bt_audio_ep *ep,
@@ -577,8 +583,8 @@ static void unicast_client_ep_qos_state(struct bt_audio_ep *ep,
 
 	qos = net_buf_simple_pull_mem(buf, sizeof(*qos));
 
-	/* Reset any existing QoS configuration */
-	unicast_client_ep_qos_reset(ep);
+	/* Update existing QoS configuration */
+	unicast_client_ep_qos_update(ep, qos);
 
 	ep->cig_id = qos->cig_id;
 	ep->cis_id = qos->cis_id;
