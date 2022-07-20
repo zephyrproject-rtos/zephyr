@@ -275,7 +275,7 @@ static void thread_cb(const struct k_thread *cthread, void *user_data)
 	if (strcmp(tname, (CONFIG_MP_NUM_CPUS == 1) ? "idle" : "idle 0" STRINGIFY(i)) == 0) { \
 		idle_tid[i] = tid; \
 	} \
-} while (0)
+} while (false)
 
 	const char *tname = k_thread_name_get((struct k_thread *)cthread);
 

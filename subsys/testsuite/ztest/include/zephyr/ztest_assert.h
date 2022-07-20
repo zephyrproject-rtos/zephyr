@@ -141,7 +141,7 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
 			COND_CODE_1(KERNEL, (COND_CODE_1(CONFIG_MULTITHREADING, (), (return;))),   \
 				    ())                                                            \
 		}                                                                                  \
-	} while (0)
+	} while (false)
 
 /**
  * @brief Skip the test, if @a cond is false
@@ -172,7 +172,7 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
 			COND_CODE_1(KERNEL, (COND_CODE_1(CONFIG_MULTITHREADING, (), (return;))),   \
 				    ())                                                            \
 		}                                                                                  \
-	} while (0)
+	} while (false)
 /**
  * @brief Assert that this function call won't be reached
  * @param msg Optional message to print if the assertion fails

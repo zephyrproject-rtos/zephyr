@@ -63,7 +63,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 			BT_ASSERT_PRINT(cond);   \
 			BT_ASSERT_DIE();         \
 		}                                \
-	} while (0)
+	} while (false)
 
 #define BT_ASSERT_MSG(cond, fmt, ...)                              \
 	do {                                                       \
@@ -72,7 +72,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 			BT_ASSERT_PRINT_MSG(fmt, ##__VA_ARGS__);   \
 			BT_ASSERT_DIE();                           \
 		}                                                  \
-	} while (0)
+	} while (false)
 #else
 #define BT_ASSERT(cond) __ASSERT_NO_MSG(cond)
 #define BT_ASSERT_MSG(cond, msg, ...) __ASSERT(cond, msg, ##__VA_ARGS__)

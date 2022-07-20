@@ -597,7 +597,7 @@ static void tcp_send_timer_cancel(struct tcp *conn)
 static const char *tcp_state_to_str(enum tcp_state state, bool prefix)
 {
 	const char *s = NULL;
-#define _(_x) case _x: do { s = #_x; goto out; } while (0)
+#define _(_x) case _x: do { s = #_x; goto out; } while (false)
 	switch (state) {
 	_(TCP_LISTEN);
 	_(TCP_SYN_SENT);

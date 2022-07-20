@@ -23,7 +23,7 @@
 			(void)bt_ots_obj_id_to_str(id64, t, sizeof(t)); \
 			BT_DBG(text "0x%s", t); \
 		} \
-	} while (0)
+	} while (false)
 
 
 /* SYNCHRONOUS (CALL/RETURN) API FOR CONTROLLERS */

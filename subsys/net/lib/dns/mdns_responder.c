@@ -644,7 +644,7 @@ static int init_listener(void)
 		} else {
 			ok++;
 		}
-	} while (0);
+	} while (false);
 ipv6_out:
 #endif /* CONFIG_NET_IPV6 */
 
@@ -668,7 +668,7 @@ ipv6_out:
 		} else {
 			ok++;
 		}
-	} while (0);
+	} while (false);
 ipv4_out:
 #endif /* CONFIG_NET_IPV4 */
 

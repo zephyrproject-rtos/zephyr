@@ -35,7 +35,7 @@ static const struct shell *ctx_shell;
 			if (ctx_shell != NULL) {                               \
 				shell_print(ctx_shell, _ft, ##__VA_ARGS__);    \
 			}                                                      \
-		} while (0)
+		} while (false)
 
 /* Default net, app & dev key values, unless otherwise specified */
 static const uint8_t default_key[16] = {

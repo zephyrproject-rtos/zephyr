@@ -58,7 +58,7 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 		k_mutex_unlock(lock);                        \
 							     \
 		return ret;				     \
-	} while (0)
+	} while (false)
 
 const struct socket_op_vtable sock_fd_op_vtable;
 

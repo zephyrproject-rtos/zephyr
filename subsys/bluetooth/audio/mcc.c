@@ -34,7 +34,7 @@
 			(void)bt_ots_obj_id_to_str(id64, t, sizeof(t)); \
 			BT_DBG(text "0x%s", t); \
 		} \
-	} while (0)
+	} while (false)
 
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCC)

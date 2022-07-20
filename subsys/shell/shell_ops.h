@@ -32,7 +32,7 @@ static inline void z_shell_raw_fprintf(const struct shell_fprintf *const ctx,
 		    !z_flag_use_vt100_get(_shell_))			\
 			break;						\
 		z_shell_raw_fprintf(_shell_->fprintf_ctx, __VA_ARGS__);	\
-	} while (0)
+	} while (false)
 
 #define Z_SHELL_SET_FLAG_ATOMIC(_shell_, _type_, _flag_, _val_, _ret_)		\
 	do {									\
@@ -48,7 +48,7 @@ static inline void z_shell_raw_fprintf(const struct shell_fprintf *const ctx,
 						   ~_internal_.value);		\
 		}								\
 		_ret_ = (_internal_.flags._flag_ != 0);				\
-	} while (0)
+	} while (false)
 
 static inline bool z_flag_insert_mode_get(const struct shell *sh)
 {

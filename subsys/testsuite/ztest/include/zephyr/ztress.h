@@ -166,7 +166,7 @@ struct ztress_context_data {
 	int err = ztress_execute(has_timer ? &data[0] : NULL, &data[has_timer], cnt);	\
 											\
 	zassert_equal(err, 0, "ztress_execute failed (err: %d)", err);			\
-} while (0)
+} while (false)
 
 /** Execute contexts.
  *
