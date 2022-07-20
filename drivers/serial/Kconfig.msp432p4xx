@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config UART_MSP432P4XX
-	depends on SOC_SERIES_MSP432P4XX
 	bool "MSP432P4XX UART driver"
+	default y
+	depends on DT_HAS_TI_MSP432P4XX_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	depends on SOC_FAMILY_TISIMPLELINK
 	help
 	  This option enables the MSP432P4XX UART driver, for UART_0.
