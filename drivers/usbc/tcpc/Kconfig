@@ -21,8 +21,8 @@ config USBC_INIT_PRIORITY
 
 source "drivers/usbc/tcpc/Kconfig.tcpc_stm32"
 
-endif # USBC_TCPC_DRIVER
-
 module = USBC
 module-str = usbc
 source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBC_TCPC_DRIVER
