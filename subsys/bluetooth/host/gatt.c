@@ -2877,7 +2877,7 @@ uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr
 	mask &= attr->perm;
 
 	if (mask & BT_GATT_PERM_LESC_MASK) {
-		if (!IS_ENABLED(CONFIG_BT_SMP) ||
+		if (!IS_ENABLED(CONFIG_BT_SMP) || !conn->le.keys ||
 		    (conn->le.keys->flags & BT_KEYS_SC) == 0) {
 			return BT_ATT_ERR_AUTHENTICATION;
 		}
