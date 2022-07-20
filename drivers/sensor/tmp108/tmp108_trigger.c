@@ -35,16 +35,16 @@ void tmp108_trigger_handle_one_shot(struct k_work *work)
 	tmp108_reg_read(drv_data->tmp108_dev, TI_TMP108_REG_CONF, &config);
 
 	/* check shutdown mode which indicates a one shot read was successful */
-	shutdown_mode = (config & (TI_TMP108_CONF_M1 | TI_TMP108_CONF_M0)) == 0;
+	shutdown_mode = (config & (TI_TMP108_CONF_M1(drv_data->tmp108_dev) |
+				   TI_TMP108_CONF_M0(drv_data->tmp108_dev))) == 0;
 
 	if (shutdown_mode == true) {
 		ti_tmp108_read_temp(drv_data->tmp108_dev);
 	} else {
 		LOG_ERR("Temperature one shot mode read failed, retrying");
-		/* Typical wake up time is 27 ms, retry if the read fails
-		 * assuming the chip should wake up and take a reading by the time
-		 * 27 ms for the initial wake up time and call of this thread
-		 * plus 10 ms time has passed
+		/* Wait for typical wake up time, retry if the read fails
+		 * assuming the chip should wake up and take a reading after the typical
+		 * wake up time and call of this thread plus 10 ms time has passed
 		 */
 		k_work_reschedule(&drv_data->scheduled_work,
 				  K_MSEC(TMP108_ONE_SHOT_RETRY_TIME_IN_MS));
