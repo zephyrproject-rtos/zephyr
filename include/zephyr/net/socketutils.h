@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_NET_SOCKETUTILS_H_
+#define ZEPHYR_INCLUDE_NET_SOCKETUTILS_H_
+
 #ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
 #include <zephyr/net/socket.h>
 #else
@@ -37,3 +40,5 @@ const char *net_addr_str_find_port(const char *addr_str);
 int net_getaddrinfo_addr_str(const char *addr_str, const char *def_port,
 			     const struct addrinfo *hints,
 			     struct addrinfo **res);
+
+#endif /* ZEPHYR_INCLUDE_NET_SOCKETUTILS_H_ */
