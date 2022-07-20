@@ -65,6 +65,10 @@ int bt_mesh_comp_store(void);
 void bt_mesh_comp_clear(void);
 int bt_mesh_comp_read(struct net_buf_simple *buf);
 
+int bt_mesh_models_metadata_store(void);
+void bt_mesh_models_metadata_clear(void);
+int bt_mesh_models_metadata_read(struct net_buf_simple *buf, size_t offset);
+
 void bt_mesh_model_pending_store(void);
 void bt_mesh_model_bind_store(struct bt_mesh_model *mod);
 void bt_mesh_model_sub_store(struct bt_mesh_model *mod);

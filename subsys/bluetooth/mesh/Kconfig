@@ -1235,8 +1235,19 @@ config BT_MESH_LARGE_COMP_DATA_SRV
 	help
 	  Enable support for the Large Composition Data Server model.
 
+if BT_MESH_LARGE_COMP_DATA_SRV
+
+config BT_MESH_MODELS_METADATA_PAGE_LEN
+	int "Maximum length of the Models Metadata Page"
+	default 150
+	help
+	  This value is the combined total metadata length for
+	  all models on the device.
+
+endif # BT_MESH_LARGE_COMP_DATA_SRV
+
 config BT_MESH_LARGE_COMP_DATA_CLI
-	bool "Support for Large Composition Data Client Model"
+	bool "Support for Large Composition Data Client model"
 	help
 	  Enable support for the Large Composition Data Client model.
 
