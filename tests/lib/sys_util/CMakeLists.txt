@@ -6,5 +6,4 @@ project(sys_util)
 
 target_sources(app PRIVATE
 	src/main.c
-	src/wait_for.c
   )
