@@ -3,6 +3,8 @@
 
 config UART_ITE_IT8XXX2
 	bool "ITE IT8XXX2 UART driver"
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_UART_ENABLED
 	help
 	  IT8XXX2 uses shared ns16550.c driver which does not
 	  provide a power management callback, so create driver
