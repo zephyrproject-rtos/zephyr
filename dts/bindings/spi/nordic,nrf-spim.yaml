@@ -25,3 +25,28 @@ properties:
         Enables the workaround for the nRF52832 SoC SPIM PAN 58 anomaly.
         Must be used in conjunction with
         CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58=y
+
+    rx-delay-supported:
+      type: boolean
+      required: false
+      description: |
+        Indicates if the SPIM instance has the capability of delaying MISO
+        sampling. This property needs to be defined at SoC level DTS files.
+
+    rx-delay:
+      type: int
+      required: false
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+      description: |
+        Number of 64 MHz clock cycles (15.625 ns) delay from the sampling edge
+        of SCK (leading or trailing, depending on the CPHA setting used) until
+        the input serial data on MISO is actually sampled. This property does
+        not have any effect if the rx-delay-supported property is not set.

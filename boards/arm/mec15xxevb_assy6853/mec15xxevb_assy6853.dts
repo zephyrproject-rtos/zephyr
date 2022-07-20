@@ -29,6 +29,7 @@
 		i2c1 = &i2c_smb_1;
 		i2c7 = &i2c_smb_2;
 		kscan0 = &kscan0;
+		watchdog0 = &wdog;
 	};
 
 	leds {

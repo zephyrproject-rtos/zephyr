@@ -1552,7 +1552,7 @@ class PinCtrl:
     @property
     def name_as_token(self):
         "See the class docstring"
-        return _val_as_token(self.name) if self.name is not None else None
+        return str_as_token(self.name) if self.name is not None else None
 
     def __repr__(self):
         fields = []
@@ -1645,7 +1645,7 @@ class Property:
     @property
     def val_as_token(self):
         "See the class docstring"
-        return _val_as_token(self.val)
+        return str_as_token(self.val)
 
     @property
     def enum_index(self):
@@ -2547,12 +2547,14 @@ def _interrupt_parent(node):
     # the parents of 'node'. As of writing, this behavior isn't specified in
     # the DT spec., but seems to match what some .dts files except.
 
+    start_node = node
+
     while node:
         if "interrupt-parent" in node.props:
             return node.props["interrupt-parent"].to_node()
         node = node.parent
 
-    _err(f"{node!r} has an 'interrupts' property, but neither the node "
+    _err(f"{start_node!r} has an 'interrupts' property, but neither the node "
          f"nor any of its parents has an 'interrupt-parent' property")
 
 
@@ -2927,7 +2929,12 @@ _LOG = logging.getLogger(__name__)
 _NOT_ALPHANUM_OR_UNDERSCORE = re.compile(r'\W', re.ASCII)
 
 
-def _val_as_token(val):
+def str_as_token(val):
+    """Return a canonical representation of a string as a C token.
+
+    This converts special characters in 'val' to underscores, and
+    returns the result."""
+
     return re.sub(_NOT_ALPHANUM_OR_UNDERSCORE, '_', val)
 
 

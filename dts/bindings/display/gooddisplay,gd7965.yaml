@@ -37,20 +37,22 @@ properties:
 
     pwr:
       type: uint8-array
-      required: true
+      required: false
       description: Power Setting (PWR) values
 
     softstart:
       type: uint8-array
-      required: true
+      required: false
       description: Booster Soft Start (BTST) values
 
     cdi:
       type: int
-      required: true
-      description: VCOM and data interval value
+      required: false
+      description: |
+        VCOM and data interval value. This value is optional but must
+        be provided to enable border refresh control.
 
     tcon:
       type: int
-      required: true
+      required: false
       description: TCON setting value

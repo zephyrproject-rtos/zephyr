@@ -72,16 +72,14 @@ void test_hda_host_in_dma(void)
 
 	channel = dma_request_channel(dma, NULL);
 	zassert_true(channel >= 0, "Expected a valid DMA channel");
-
-	printk("dma channel: "); intel_adsp_hda_dbg("host_in", HDA_HOST_IN_BASE, channel);
+	hda_dump_regs(HOST_IN, channel, "dma channel");
 
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_RESET, channel, IPC_TIMEOUT);
-
-	printk("host reset: "); intel_adsp_hda_dbg("host_in", HDA_HOST_IN_BASE, channel);
+	hda_dump_regs(HOST_IN, channel, "host reset");
 
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_CONFIG,
 		    channel | (DMA_BUF_SIZE << 8), IPC_TIMEOUT);
-	printk("host config: "); intel_adsp_hda_dbg("host_in", HDA_HOST_IN_BASE, channel);
+	hda_dump_regs(HOST_IN, channel, "host config");
 
 
 	struct dma_block_config block_cfg = {
@@ -96,22 +94,20 @@ void test_hda_host_in_dma(void)
 	};
 
 	res = dma_config(dma, channel, &dma_cfg);
-	printk("dsp dma config: "); intel_adsp_hda_dbg("host_in", HDA_HOST_IN_BASE, channel);
+	hda_dump_regs(HOST_IN, channel, "dsp dma config");
 	zassert_ok(res, "Expected dma config to succeed");
 
 	res = dma_start(dma, channel);
-	printk("dsp dma start: "); intel_adsp_hda_dbg("host_in", HDA_HOST_IN_BASE, channel);
+	hda_dump_regs(HOST_IN, channel, "dsp dma start");
 	zassert_ok(res, "Expected dma start to succeed");
 
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_START, channel, IPC_TIMEOUT);
-
-	printk("host start: "); intel_adsp_hda_dbg("host_in", HDA_HOST_IN_BASE, channel);
+	hda_dump_regs(HOST_IN, channel, "host start");
 
 	for (uint32_t i = 0; i < TRANSFER_COUNT; i++) {
 		res = dma_reload(dma, channel, 0, 0, DMA_BUF_SIZE);
 		zassert_ok(res, "Expected dma reload to succeed");
-		printk("dsp dma reload: ");
-		intel_adsp_hda_dbg("host_in", HDA_HOST_IN_BASE, channel);
+		hda_dump_regs(HOST_IN, channel, "dsp dma reload");
 
 		struct dma_status status;
 		int j;
@@ -124,8 +120,7 @@ void test_hda_host_in_dma(void)
 			}
 			k_busy_wait(100);
 		}
-		printk("dsp read write equal after %d uS: ", j*100);
-		intel_adsp_hda_dbg("host_in", HDA_HOST_IN_BASE, channel);
+		hda_dump_regs(HOST_IN, channel, "dsp read write equal after %d uS", j*100);
 
 		last_msg_cnt = msg_cnt;
 		hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_VALIDATE, channel,
@@ -165,18 +160,15 @@ void test_hda_host_out_dma(void)
 
 	channel = dma_request_channel(dma, NULL);
 	zassert_true(channel >= 0, "Expected a valid DMA channel");
-
-	printk("dma channel: "); intel_adsp_hda_dbg("host_out", HDA_HOST_OUT_BASE, channel);
+	hda_dump_regs(HOST_OUT, channel, "dma request channel");
 
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_RESET,
 		    (channel + 7), IPC_TIMEOUT);
-
-	printk("host reset: "); intel_adsp_hda_dbg("host_out", HDA_HOST_OUT_BASE, channel);
+	hda_dump_regs(HOST_OUT, channel, "host reset");
 
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_CONFIG,
 		    (channel + 7) | (DMA_BUF_SIZE << 8), IPC_TIMEOUT);
-
-	printk("host config: "); intel_adsp_hda_dbg("host_out", HDA_HOST_OUT_BASE, channel);
+	hda_dump_regs(HOST_OUT, channel, "host config");
 
 	struct dma_block_config block_cfg = {
 		.block_size = DMA_BUF_SIZE,
@@ -190,29 +182,24 @@ void test_hda_host_out_dma(void)
 	};
 
 	res = dma_config(dma, channel, &dma_cfg);
-	printk("dsp dma config: "); intel_adsp_hda_dbg("host_out", HDA_HOST_OUT_BASE, channel);
+	hda_dump_regs(HOST_OUT, channel, "dsp dma config");
 	zassert_ok(res, "Expected dma config to succeed");
 
 	res = dma_start(dma, channel);
-	printk("dsp dma start: "); intel_adsp_hda_dbg("host_out", HDA_HOST_OUT_BASE, channel);
+	hda_dump_regs(HOST_OUT, channel, "dsp dma start");
 	zassert_ok(res, "Expected dma start to succeed");
 
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_START, (channel + 7), IPC_TIMEOUT);
-
-	printk("host start: ");
-	intel_adsp_hda_dbg("host_out", HDA_HOST_OUT_BASE, channel);
+	hda_dump_regs(HOST_OUT, channel, "host start");
 
 	for (uint32_t i = 0; i < TRANSFER_COUNT; i++) {
 		hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_SEND,
 			    (channel + 7) | (DMA_BUF_SIZE << 8), IPC_TIMEOUT);
-
-		printk("host send: ");
-		intel_adsp_hda_dbg("host_out", HDA_HOST_OUT_BASE, channel);
+		hda_dump_regs(HOST_OUT, channel, "host send");
 
 		/* TODO add a dma_poll() style call for xfer ready/complete maybe? */
 		WAIT_FOR(intel_adsp_hda_buf_full(HDA_HOST_OUT_BASE, channel), 10000, k_msleep(1));
-		printk("dsp wait for full: ");
-		intel_adsp_hda_dbg("host_out", HDA_HOST_OUT_BASE, channel);
+		hda_dump_regs(HOST_OUT, channel, "dsp wait for full");
 
 #if (IS_ENABLED(CONFIG_KERNEL_COHERENCE))
 	zassert_true(arch_mem_coherent(dma_buf), "Buffer is unexpectedly incoherent!");
@@ -226,7 +213,7 @@ void test_hda_host_out_dma(void)
 
 		is_ramp = true;
 		for (int j = 0; j < DMA_BUF_SIZE; j++) {
-			printk("dma_buf[%d] = %d\n", j, dma_buf[j]);
+			/* printk("dma_buf[%d] = %d\n", j, dma_buf[j]); */ /* DEBUG HELPER */
 			if (dma_buf[j] != j) {
 				is_ramp = false;
 			}
@@ -235,8 +222,7 @@ void test_hda_host_out_dma(void)
 
 		res = dma_reload(dma, channel, 0, 0, DMA_BUF_SIZE);
 		zassert_ok(res, "Expected dma reload to succeed");
-		printk("dsp dma reload: ");
-		intel_adsp_hda_dbg("host_out", HDA_HOST_IN_BASE, channel);
+		hda_dump_regs(HOST_OUT, channel, "dsp dma reload");
 	}
 
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_RESET, (channel + 7), IPC_TIMEOUT);
@@ -245,5 +231,5 @@ void test_hda_host_out_dma(void)
 
 	res = dma_stop(dma, channel);
 	zassert_ok(res, "Expected dma stop to succeed");
-	printk("dsp dma stop: "); intel_adsp_hda_dbg("host_out", HDA_HOST_OUT_BASE, channel);
+	hda_dump_regs(HOST_OUT, channel, "dsp dma stop");
 }

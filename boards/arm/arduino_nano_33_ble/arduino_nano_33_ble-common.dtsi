@@ -103,6 +103,7 @@
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
 		spi = &spi2;
+		watchdog0 = &wdt0;
 	};
 };
 

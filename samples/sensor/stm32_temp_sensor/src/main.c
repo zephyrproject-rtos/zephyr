@@ -9,19 +9,15 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/printk.h>
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp)
-#define TEMP_NODE DT_INST(0, st_stm32_temp)
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp_cal)
-#define TEMP_NODE DT_INST(0, st_stm32_temp_cal)
-#else
-#error "Could not find a compatible temperature sensor"
-#endif
-
 void main(void)
 {
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp)
+	const struct device *dev = DEVICE_DT_GET_ONE(st_stm32_temp);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp_cal)
+	const struct device *dev = DEVICE_DT_GET_ONE(st_stm32_temp_cal);
+#endif
 	struct sensor_value val;
 	int rc;
-	const struct device *dev = DEVICE_DT_GET(TEMP_NODE);
 
 	if (!device_is_ready(dev)) {
 		printk("Temperature sensor is not ready\n");

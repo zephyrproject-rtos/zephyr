@@ -74,8 +74,8 @@ static int i2c_emul_get_config(const struct device *dev, uint32_t *dev_config)
 	return 0;
 }
 
-static int i2c_emul_transfer(const struct device *dev, struct i2c_msg *msgs,
-			     uint8_t num_msgs, uint16_t addr)
+static int i2c_emul_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+			     uint16_t addr)
 {
 	struct i2c_emul *emul;
 	const struct i2c_emul_api *api;
@@ -90,7 +90,7 @@ static int i2c_emul_transfer(const struct device *dev, struct i2c_msg *msgs,
 	__ASSERT_NO_MSG(emul->api);
 	__ASSERT_NO_MSG(emul->api->transfer);
 
-	ret = api->transfer(emul, msgs, num_msgs, addr);
+	ret = api->transfer(emul->target, msgs, num_msgs, addr);
 	if (ret) {
 		return ret;
 	}
@@ -106,12 +106,11 @@ static int i2c_emul_transfer(const struct device *dev, struct i2c_msg *msgs,
 static int i2c_emul_init(const struct device *dev)
 {
 	struct i2c_emul_data *data = dev->data;
-	const struct emul_list_for_bus *list = dev->config;
 	int rc;
 
 	sys_slist_init(&data->emuls);
 
-	rc = emul_init_for_bus_from_list(dev, list);
+	rc = emul_init_for_bus(dev);
 
 	/* Set config to an uninitialized state */
 	data->config = (I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(data->bitrate));
@@ -119,10 +118,10 @@ static int i2c_emul_init(const struct device *dev)
 	return rc;
 }
 
-int i2c_emul_register(const struct device *dev, const char *name,
-		      struct i2c_emul *emul)
+int i2c_emul_register(const struct device *dev, struct i2c_emul *emul)
 {
 	struct i2c_emul_data *data = dev->data;
+	const char *name = emul->target->dev->name;
 
 	sys_slist_append(&data->emuls, &emul->node);
 
@@ -139,28 +138,22 @@ static struct i2c_driver_api i2c_emul_api = {
 	.transfer = i2c_emul_transfer,
 };
 
-#define EMUL_LINK_AND_COMMA(node_id) {		\
-	.label = DT_LABEL(node_id),		\
-},
+#define EMUL_LINK_AND_COMMA(node_id)                                                               \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
+	},
 
-#define I2C_EMUL_INIT(n) \
-	static const struct emul_link_for_bus emuls_##n[] = { \
-		DT_FOREACH_CHILD(DT_DRV_INST(n), EMUL_LINK_AND_COMMA) \
-	}; \
-	static struct emul_list_for_bus i2c_emul_cfg_##n = { \
-		.children = emuls_##n, \
-		.num_children = ARRAY_SIZE(emuls_##n), \
-	}; \
-	static struct i2c_emul_data i2c_emul_data_##n = { \
-		.bitrate = DT_INST_PROP(n, clock_frequency), \
-	}; \
-	I2C_DEVICE_DT_INST_DEFINE(n, \
-			    i2c_emul_init, \
-			    NULL, \
-			    &i2c_emul_data_##n, \
-			    &i2c_emul_cfg_##n, \
-			    POST_KERNEL, \
-			    CONFIG_I2C_INIT_PRIORITY, \
-			    &i2c_emul_api);
+#define I2C_EMUL_INIT(n)                                                                           \
+	static const struct emul_link_for_bus emuls_##n[] = { DT_FOREACH_CHILD(                    \
+		DT_DRV_INST(n), EMUL_LINK_AND_COMMA) };                                            \
+	static struct emul_list_for_bus i2c_emul_cfg_##n = {                                       \
+		.children = emuls_##n,                                                             \
+		.num_children = ARRAY_SIZE(emuls_##n),                                             \
+	};                                                                                         \
+	static struct i2c_emul_data i2c_emul_data_##n = {                                          \
+		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
+	};                                                                                         \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_emul_init, NULL, &i2c_emul_data_##n, &i2c_emul_cfg_##n,   \
+				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &i2c_emul_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_EMUL_INIT)

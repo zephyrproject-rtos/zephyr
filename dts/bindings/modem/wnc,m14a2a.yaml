@@ -8,9 +8,6 @@ compatible: "wnc,m14a2a"
 include: uart-device.yaml
 
 properties:
-    label:
-      required: true
-
     mdm-boot-mode-sel-gpios:
       type: phandle-array
       required: true

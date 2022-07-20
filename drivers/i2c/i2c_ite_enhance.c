@@ -775,6 +775,14 @@ static bool cq_mode_allowed(const struct device *dev, struct i2c_msg *msgs)
 	struct i2c_enhance_data *data = dev->data;
 
 	/*
+	 * If the transaction of write or read is divided into two
+	 * transfers(not two messages), the command queue mode does
+	 * not support.
+	 */
+	if (data->i2ccs != I2C_CH_NORMAL) {
+		return false;
+	}
+	/*
 	 * When there is only one message, use the command queue transfer
 	 * directly.
 	 */

@@ -153,8 +153,6 @@
 			interrupts = <USB_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_USB_MODULE>;
-			current-speed = <115200>;
-			peripheral = <0>;
 		};
 
 		timer0: counter@6001f000 {

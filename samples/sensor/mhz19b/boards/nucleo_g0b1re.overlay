@@ -10,6 +10,5 @@
 		compatible = "winsen,mhz19b";
 		maximum-range = <10000>;
 		abc-on;
-		label = "MHZ19B_2";
 	};
 };

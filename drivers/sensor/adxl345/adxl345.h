@@ -10,9 +10,20 @@
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 #include <zephyr/drivers/i2c.h>
+#endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#include <zephyr/drivers/spi.h>
+#endif
 #include <zephyr/sys/util.h>
 
+/* ADXL345 communication commands */
+#define ADXL345_WRITE_CMD          0x00
+#define ADXL345_READ_CMD           0x80
+#define ADXL345_MULTIBYTE_FLAG     0x40
+
+/* Registers */
 #define ADXL345_DEVICE_ID_REG      0x00
 #define ADXL345_RATE_REG           0x2c
 #define ADXL345_POWER_CTL_REG      0x2d
@@ -49,8 +60,23 @@ struct adxl345_sample {
 	int16_t z;
 };
 
-struct adxl345_dev_config {
+union adxl345_bus {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	struct i2c_dt_spec i2c;
+#endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+	struct spi_dt_spec spi;
+#endif
+};
+
+typedef bool (*adxl345_bus_is_ready_fn)(const union adxl345_bus *bus);
+typedef int (*adxl345_reg_access_fn)(const struct device *dev, uint8_t cmd,
+				     uint8_t reg_addr, uint8_t *data, size_t length);
+
+struct adxl345_dev_config {
+	const union adxl345_bus bus;
+	adxl345_bus_is_ready_fn bus_is_ready;
+	adxl345_reg_access_fn reg_access;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADX345_ADX345_H_ */

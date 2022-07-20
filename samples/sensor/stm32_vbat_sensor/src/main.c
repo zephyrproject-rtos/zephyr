@@ -9,17 +9,11 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/printk.h>
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_vbat)
-#define VBAT_NODE DT_INST(0, st_stm32_vbat)
-#else
-#error "Could not find a compatible vbat sensor"
-#endif
-
 void main(void)
 {
 	struct sensor_value val;
 	int rc;
-	const struct device *dev = DEVICE_DT_GET(VBAT_NODE);
+	const struct device *dev = DEVICE_DT_GET_ONE(st_stm32_vbat);
 
 	if (!device_is_ready(dev)) {
 		printk("VBAT sensor is not ready\n");

@@ -18,7 +18,7 @@ from colorama import Fore
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
 from twisterlib.cmakecache import CMakeCache
-from twisterlib.enviornment import canonical_zephyr_base
+from twisterlib.environment import canonical_zephyr_base
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)

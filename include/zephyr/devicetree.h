@@ -1896,6 +1896,9 @@
  * The macro "fn" must take one parameter, which will be the node
  * identifier of a child node of "node_id".
  *
+ * The children will be iterated over in the same order as they
+ * appear in the final devicetree.
+ *
  * Example devicetree fragment:
  *
  *     n: node {
@@ -1933,6 +1936,9 @@
  * The macro "fn" takes multiple arguments. The first should be the node
  * identifier for the child node. The remaining are passed-in by the caller.
  *
+ * The children will be iterated over in the same order as they
+ * appear in the final devicetree.
+ *
  * @param node_id node identifier
  * @param fn macro to invoke
  * @param ... variable number of arguments to pass to fn
@@ -1951,6 +1957,9 @@
  * As usual, both a missing status and an "ok" status are
  * treated as "okay".
  *
+ * The children will be iterated over in the same order as they
+ * appear in the final devicetree.
+ *
  * @param node_id node identifier
  * @param fn macro to invoke
  */
@@ -1966,6 +1975,9 @@
  *
  * As usual, both a missing status and an "ok" status are
  * treated as "okay".
+ *
+ * The children will be iterated over in the same order as they
+ * appear in the final devicetree.
  *
  * @param node_id node identifier
  * @param fn macro to invoke
@@ -2409,6 +2421,9 @@
  * The macro "fn" should take one argument, which is the node
  * identifier for the child node.
  *
+ * The children will be iterated over in the same order as they
+ * appear in the final devicetree.
+ *
  * @param inst instance number
  * @param fn macro to invoke on each child node identifier
  *
@@ -2422,6 +2437,9 @@
  *
  * The macro "fn" takes multiple arguments. The first should be the node
  * identifier for the child node. The remaining are passed-in by the caller.
+ *
+ * The children will be iterated over in the same order as they
+ * appear in the final devicetree.
  *
  * @param inst instance number
  * @param fn macro to invoke on each child node identifier

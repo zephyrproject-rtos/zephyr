@@ -13,6 +13,7 @@
 		pwm-led0 = &led0;
 		pwm-led1 = &led1;
 		pwm-led2 = &led2;
+		watchdog0 = &wdog0;
 	};
 
 	chosen {

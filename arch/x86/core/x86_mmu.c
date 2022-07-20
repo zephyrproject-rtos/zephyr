@@ -531,7 +531,7 @@ static inline bool is_region_page_aligned(void *addr, size_t size)
 
 #define COLOR(x)	printk(_CONCAT(ANSI_, x))
 #else
-#define COLOR(x)	do { } while (0)
+#define COLOR(x)	do { } while (false)
 #endif
 
 __pinned_func
@@ -740,7 +740,7 @@ static void dump_entry(int level, void *virt, pentry_t entry)
 			if ((entry & MMU_##bit) != 0U) { \
 				str_append(&pos, &sz, #bit " "); \
 			} \
-		} while (0)
+		} while (false)
 
 	DUMP_BIT(RW);
 	DUMP_BIT(US);

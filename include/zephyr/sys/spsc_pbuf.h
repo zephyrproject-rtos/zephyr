@@ -7,6 +7,9 @@
 #ifndef ZEPHYR_INCLUDE_SYS_SPSC_PBUF_H_
 #define ZEPHYR_INCLUDE_SYS_SPSC_PBUF_H_
 
+#include <zephyr/cache.h>
+#include <zephyr/devicetree.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -32,9 +35,18 @@ extern "C" {
 
 /**@} */
 
-#ifndef CONFIG_SPSC_PBUF_CACHE_LINE
-#define CONFIG_SPSC_PBUF_CACHE_LINE 0
+#if CONFIG_DCACHE_LINE_SIZE != 0
+#define Z_SPSC_PBUF_LOCAL_DCACHE_LINE CONFIG_DCACHE_LINE_SIZE
+#else
+#define Z_SPSC_PBUF_LOCAL_DCACHE_LINE DT_PROP_OR(CPU, d_cache_line_size, 0)
 #endif
+
+#ifndef CONFIG_SPSC_PBUF_REMOTE_DCACHE_LINE
+#define CONFIG_SPSC_PBUF_REMOTE_DCACHE_LINE 0
+#endif
+
+#define Z_SPSC_PBUF_DCACHE_LINE \
+	MAX(CONFIG_SPSC_PBUF_REMOTE_DCACHE_LINE, Z_SPSC_PBUF_LOCAL_DCACHE_LINE)
 
 /** @brief Maximum packet length. */
 #define SPSC_PBUF_MAX_LEN 0xFF00
@@ -54,7 +66,7 @@ struct spsc_pbuf_common {
 
 /* Padding to fill cache line. */
 #define Z_SPSC_PBUF_PADDING \
-	MAX(0, CONFIG_SPSC_PBUF_CACHE_LINE - (int)sizeof(struct spsc_pbuf_common))
+	MAX(0, Z_SPSC_PBUF_DCACHE_LINE - (int)sizeof(struct spsc_pbuf_common))
 
 /** @brief Remaining part of a packet buffer when cache is used.
  *
@@ -116,7 +128,7 @@ static inline uint32_t spsc_pbuf_capacity(struct spsc_pbuf *pb)
  *
  * @param buf			Pointer to a memory region on which buffer is
  *				created. When cache is used it must be aligned to
- *				CONFIG_SPSC_PBUF_CACHE_LINE, otherwise it must
+ *				Z_SPSC_PBUF_DCACHE_LINE, otherwise it must
  *				be 32 bit word aligned.
  * @param blen			Length of the buffer. Must be large enough to
  *				contain the internal structure and at least two

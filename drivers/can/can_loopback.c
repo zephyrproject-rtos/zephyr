@@ -14,6 +14,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+#include "can_utils.h"
+
 LOG_MODULE_REGISTER(can_loopback, CONFIG_CAN_LOG_LEVEL);
 
 struct can_loopback_frame {
@@ -56,13 +58,6 @@ static void dispatch_frame(const struct device *dev,
 	filter->rx_cb(dev, &frame_tmp, filter->cb_arg);
 }
 
-static inline int check_filter_match(const struct zcan_frame *frame,
-				     const struct zcan_filter *filter)
-{
-	return ((filter->id & filter->id_mask) ==
-		(frame->id & filter->id_mask));
-}
-
 static void tx_thread(void *arg1, void *arg2, void *arg3)
 {
 	const struct device *dev = arg1;
@@ -80,7 +75,7 @@ static void tx_thread(void *arg1, void *arg2, void *arg3)
 		for (int i = 0; i < CONFIG_CAN_MAX_FILTER; i++) {
 			filter = &data->filters[i];
 			if (filter->rx_cb &&
-			    check_filter_match(&frame.frame, &filter->filter)) {
+			    can_utils_filter_match(&frame.frame, &filter->filter) != 0) {
 				dispatch_frame(dev, &frame.frame, filter);
 			}
 		}
@@ -101,9 +96,10 @@ static int can_loopback_send(const struct device *dev,
 			     void *user_data)
 {
 	struct can_loopback_data *data = dev->data;
-	int ret;
 	struct can_loopback_frame loopback_frame;
+	uint8_t max_dlc = CAN_MAX_DLC;
 	struct k_sem tx_sem;
+	int ret;
 
 	LOG_DBG("Sending %d bytes on %s. Id: 0x%x, ID type: %s %s",
 		frame->dlc, dev->name, frame->id,
@@ -111,8 +107,14 @@ static int can_loopback_send(const struct device *dev,
 				  "standard" : "extended",
 		frame->rtr == CAN_DATAFRAME ? "" : ", RTR frame");
 
-	if (frame->dlc > CAN_MAX_DLC) {
-		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
+#ifdef CONFIG_CAN_FD_MODE
+	if (frame->fd != 0) {
+		max_dlc = CANFD_MAX_DLC;
+	}
+#endif /* CONFIG_CAN_FD_MODE */
+
+	if (frame->dlc > max_dlc) {
+		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, max_dlc);
 		return -EINVAL;
 	}
 
@@ -203,12 +205,28 @@ static int can_loopback_get_capabilities(const struct device *dev, can_mode_t *c
 
 	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK;
 
+#if CONFIG_CAN_FD_MODE
+	*cap |= CAN_MODE_FD;
+#endif /* CONFIG_CAN_FD_MODE */
+
 	return 0;
 }
 
 static int can_loopback_set_mode(const struct device *dev, can_mode_t mode)
 {
 	struct can_loopback_data *data = dev->data;
+
+#ifdef CONFIG_CAN_FD_MODE
+	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_FD)) != 0) {
+		LOG_ERR("unsupported mode: 0x%08x", mode);
+		return -ENOTSUP;
+	}
+#else
+	if ((mode & ~(CAN_MODE_LOOPBACK)) != 0) {
+		LOG_ERR("unsupported mode: 0x%08x", mode);
+		return -ENOTSUP;
+	}
+#endif /* CONFIG_CAN_FD_MODE */
 
 	data->loopback = (mode & CAN_MODE_LOOPBACK) != 0 ? 1 : 0;
 	return 0;
@@ -222,6 +240,17 @@ static int can_loopback_set_timing(const struct device *dev,
 
 	return 0;
 }
+
+#ifdef CONFIG_CAN_FD_MODE
+static int can_loopback_set_timing_data(const struct device *dev,
+					const struct can_timing *timing)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(timing);
+
+	return 0;
+}
+#endif /* CONFIG_CAN_FD_MODE */
 
 static int can_loopback_get_state(const struct device *dev, enum can_state *state,
 				  struct can_bus_err_cnt *err_cnt)
@@ -300,7 +329,24 @@ static const struct can_driver_api can_loopback_driver_api = {
 		.phase_seg1 = 0x0F,
 		.phase_seg2 = 0x0F,
 		.prescaler = 0xFFFF
-	}
+	},
+#ifdef CONFIG_CAN_FD_MODE
+	.set_timing_data = can_loopback_set_timing_data,
+	.timing_data_min = {
+		.sjw = 0x1,
+		.prop_seg = 0x01,
+		.phase_seg1 = 0x01,
+		.phase_seg2 = 0x01,
+		.prescaler = 0x01
+	},
+	.timing_data_max = {
+		.sjw = 0x0F,
+		.prop_seg = 0x0F,
+		.phase_seg1 = 0x0F,
+		.phase_seg2 = 0x0F,
+		.prescaler = 0xFFFF
+	},
+#endif /* CONFIG_CAN_FD_MODE */
 };
 
 static int can_loopback_init(const struct device *dev)

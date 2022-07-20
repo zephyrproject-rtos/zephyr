@@ -9,6 +9,7 @@
 #include <string.h>
 #include <errno.h>
 #include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/linker/sections.h>
 
 /* macros related to interrupt handling */
 #define XTENSA_IRQ_NUM_SHIFT			0

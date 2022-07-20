@@ -6,43 +6,30 @@
 
 #define DT_DRV_COMPAT espressif_esp32_usb_serial
 
-#include "stubs.h"
 #include <hal/usb_serial_jtag_ll.h>
 
-#include <soc/uart_reg.h>
-#include <device.h>
+#include <zephyr/device.h>
+#include <errno.h>
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #include <zephyr/drivers/clock_control.h>
-#include <errno.h>
 #include <zephyr/sys/util.h>
 #include <esp_attr.h>
-
-#define ISR_HANDLER isr_handler_t
-
-struct serial_esp32_usb_pin {
-	const char *gpio_name;
-	int pin;
-};
 
 struct serial_esp32_usb_config {
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
-	uint8_t uart_num;
 	int irq_source;
 };
 
 struct serial_esp32_usb_data {
-	struct uart_config serial_config;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_cb;
 	void *irq_cb_data;
 #endif
 	int irq_line;
 };
-
-#define SERIAL_FIFO_LIMIT (USB_SERIAL_JTAG_PACKET_SZ_BYTES)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void serial_esp32_usb_isr(void *arg);
@@ -83,32 +70,15 @@ static int serial_esp32_usb_err_check(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-static int serial_esp32_usb_config_get(const struct device *dev, struct uart_config *cfg)
-{
-	return -ENOTSUP;
-}
-#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
-
-static int serial_esp32_usb_configure(const struct device *dev, const struct uart_config *cfg)
-{
-	const struct serial_esp32_usb_config *config = dev->config;
-	struct serial_esp32_usb_data *data = dev->data;
-
-	clock_control_on(config->clock_dev, config->clock_subsys);
-
-	return 0;
-}
-
 static int serial_esp32_usb_init(const struct device *dev)
 {
+	const struct serial_esp32_usb_config *config = dev->config;
 	struct serial_esp32_usb_data *data = dev->data;
-	int ret = serial_esp32_usb_configure(dev, &data->serial_config);
+
+	int ret = clock_control_on(config->clock_dev, config->clock_subsys);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	const struct serial_esp32_usb_config *config = dev->config;
-
-	data->irq_line = esp_intr_alloc(config->irq_source, 0, (ISR_HANDLER)serial_esp32_usb_isr,
+	data->irq_line = esp_intr_alloc(config->irq_source, 0, (isr_handler_t)serial_esp32_usb_isr,
 					(void *)dev, NULL);
 #endif
 	return ret;
@@ -242,10 +212,6 @@ static const DRAM_ATTR struct uart_driver_api serial_esp32_usb_api = {
 	.poll_in = serial_esp32_usb_poll_in,
 	.poll_out = serial_esp32_usb_poll_out,
 	.err_check = serial_esp32_usb_err_check,
-#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-	.configure = serial_esp32_usb_configure,
-	.config_get = serial_esp32_usb_config_get,
-#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = serial_esp32_usb_fifo_fill,
 	.fifo_read = serial_esp32_usb_fifo_read,
@@ -264,27 +230,14 @@ static const DRAM_ATTR struct uart_driver_api serial_esp32_usb_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-#define ESP32_UART_INIT(idx)                                                                       \
-	static const DRAM_ATTR struct serial_esp32_usb_config serial_esp32_usb_cfg_port_##idx = {  \
-		.uart_num = DT_INST_PROP(idx, peripheral),                                         \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
-		.irq_source = DT_INST_IRQN(idx)                                                    \
-	};                                                                                         \
-												   \
-	static struct serial_esp32_usb_data serial_esp32_usb_data_##idx = {                        \
-		.serial_config = { .baudrate = DT_INST_PROP(idx, current_speed),                   \
-				   .parity = UART_CFG_PARITY_NONE,                                 \
-				   .stop_bits = UART_CFG_STOP_BITS_1,                              \
-				   .data_bits = UART_CFG_DATA_BITS_8,                              \
-				   .flow_ctrl =                                                    \
-					   COND_CODE_1(DT_NODE_HAS_PROP(idx, hw_flow_control),     \
-						       (UART_CFG_FLOW_CTRL_RTS_CTS),               \
-						       (UART_CFG_FLOW_CTRL_NONE)) },               \
-	};                                                                                         \
-												   \
-	DEVICE_DT_INST_DEFINE(idx, &serial_esp32_usb_init, NULL, &serial_esp32_usb_data_##idx,     \
-			      &serial_esp32_usb_cfg_port_##idx, PRE_KERNEL_1,                      \
-			      CONFIG_SERIAL_INIT_PRIORITY, &serial_esp32_usb_api);
+static const DRAM_ATTR struct serial_esp32_usb_config serial_esp32_usb_cfg = {
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
+	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
+	.irq_source = DT_INST_IRQN(0)
+};
 
-DT_INST_FOREACH_STATUS_OKAY(ESP32_UART_INIT);
+static struct serial_esp32_usb_data serial_esp32_usb_data_0;
+
+DEVICE_DT_INST_DEFINE(0, &serial_esp32_usb_init, NULL, &serial_esp32_usb_data_0,
+		      &serial_esp32_usb_cfg, PRE_KERNEL_1,
+		      CONFIG_SERIAL_INIT_PRIORITY, &serial_esp32_usb_api);

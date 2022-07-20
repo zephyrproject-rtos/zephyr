@@ -83,6 +83,7 @@
 		sw0 = &button0;
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &led1a;
+		watchdog0 = &wdt0;
 	};
 };
 

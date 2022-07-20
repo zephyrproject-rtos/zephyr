@@ -24,6 +24,7 @@
 		blue-pwm-led = &pwm_led_blue;
 		uart-0 = &uart0;
 		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
 	};
 
 	chosen {

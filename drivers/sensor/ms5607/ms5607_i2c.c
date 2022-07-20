@@ -19,7 +19,7 @@ LOG_MODULE_DECLARE(ms5607);
 
 static int ms5607_i2c_raw_cmd(const struct ms5607_config *config, uint8_t cmd)
 {
-	return i2c_write(config->bus, &cmd, 1, config->bus_cfg.i2c_addr);
+	return i2c_write_dt(&config->bus_cfg.i2c, &cmd, 1);
 }
 
 static int ms5607_i2c_reset(const struct ms5607_config *config)
@@ -39,7 +39,7 @@ static int ms5607_i2c_read_prom(const struct ms5607_config *config, uint8_t cmd,
 	uint8_t valb[2];
 	int err;
 
-	err = i2c_burst_read(config->bus, config->bus_cfg.i2c_addr, cmd, valb, sizeof(valb));
+	err = i2c_burst_read_dt(&config->bus_cfg.i2c, cmd, valb, sizeof(valb));
 	if (err < 0) {
 		return err;
 	}
@@ -60,8 +60,7 @@ static int ms5607_i2c_read_adc(const struct ms5607_config *config, uint32_t *val
 	int err;
 	uint8_t valb[3];
 
-	err = i2c_burst_read(config->bus, config->bus_cfg.i2c_addr,
-			     MS5607_CMD_CONV_READ_ADC, valb, sizeof(valb));
+	err = i2c_burst_read_dt(&config->bus_cfg.i2c, MS5607_CMD_CONV_READ_ADC, valb, sizeof(valb));
 	if (err < 0) {
 		return err;
 	}
@@ -74,8 +73,8 @@ static int ms5607_i2c_read_adc(const struct ms5607_config *config, uint32_t *val
 
 static int ms5607_i2c_check(const struct ms5607_config *config)
 {
-	if (!device_is_ready(config->bus)) {
-		LOG_DBG("I2C bus %s not ready", config->bus->name);
+	if (!device_is_ready(config->bus_cfg.i2c.bus)) {
+		LOG_DBG("I2C bus device not ready");
 		return -ENODEV;
 	}
 

@@ -12,8 +12,6 @@ properties:
         required: true
     clocks:
         required: true
-    label:
-        required: true
     pinctrl-0:
         required: true
     pinctrl-names:

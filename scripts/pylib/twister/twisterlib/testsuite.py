@@ -12,7 +12,7 @@ import mmap
 import glob
 from typing import List
 from twisterlib.mixins import DisablePyTestCollectionMixin
-from twisterlib.enviornment import canonical_zephyr_base
+from twisterlib.environment import canonical_zephyr_base
 from twisterlib.error import TwisterException, TwisterRuntimeError
 
 logger = logging.getLogger('twister')

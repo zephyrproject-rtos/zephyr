@@ -65,7 +65,6 @@
 			compatible = "ns16550";
 			clock-frequency = <16000000>;
 			reg = <0x80014000 0x100>;
-			label = "UART_0";
 			interrupts = <86 0>;
 			interrupt-parent = <&intc>;
 			dlf = <0x01>;
@@ -76,7 +75,6 @@
 			compatible = "ns16550";
 			clock-frequency = <16000000>;
 			reg = <0x80014100 0x100>;
-			label = "UART_1";
 			interrupts = <87 0>;
 			interrupt-parent = <&intc>;
 			reg-shift = <2>;
@@ -87,7 +85,6 @@
 			compatible = "ns16550";
 			clock-frequency = <16000000>;
 			reg = <0x80014200 0x1000>;
-			label = "UART_2";
 			interrupts = <88 0>;
 			interrupt-parent = <&intc>;
 			reg-shift = <2>;
@@ -98,7 +95,6 @@
 			compatible = "ns16550";
 			clock-frequency = <144000000>;
 			reg = <0x80014300 0x100>;
-			label = "UART_3";
 			interrupts = <89 0>;
 			interrupt-parent = <&intc>;
 			reg-shift = <2>;
@@ -109,7 +105,6 @@
 			reg = <0x80017800 0x100>;
 			interrupts = <54 1>;
 			interrupt-parent = <&intc>;
-			label = "GPIO_8B_0";
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -121,7 +116,6 @@
 			reg = <0x80017900 0x100>;
 			interrupts = <55 1>;
 			interrupt-parent = <&intc>;
-			label = "GPIO_8B_1";
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -133,7 +127,6 @@
 			reg = <0x80017a00 0x100>;
 			interrupts = <56 1>;
 			interrupt-parent = <&intc>;
-			label = "GPIO_8B_2";
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -145,7 +138,6 @@
 			reg = <0x80017b00 0x100>;
 			interrupts = <57 1>;
 			interrupt-parent = <&intc>;
-			label = "GPIO_8B_3";
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -157,7 +149,6 @@
 			reg = <0x80017c00 0x100>;
 			interrupts = <19 1>;
 			interrupt-parent = <&intc>;
-			label = "GPIO_4B_0";
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -167,7 +158,6 @@
 			reg = <0x80017d00 0x100>;
 			interrupts = <52 1>;
 			interrupt-parent = <&intc>;
-			label = "GPIO_4B_1";
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -179,7 +169,6 @@
 			reg = <0x80017e00 0x100>;
 			interrupts = <53 1>;
 			interrupt-parent = <&intc>;
-			label = "GPIO_4B_2";
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -196,7 +185,6 @@
 			interrupts = <58 1>, <61 1>, <60 1>, <59 1>;
 			interrupt-names = "error", "stop", "tx", "rx";
 			interrupt-parent = <&intc>;
-			label = "I2C_0";
 
 			status = "disabled";
 		};
@@ -209,7 +197,6 @@
 			interrupts = <62 1>, <65 1>, <64 1>, <63 1>;
 			interrupt-names = "error", "stop", "tx", "rx";
 			interrupt-parent = <&intc>;
-			label = "I2C_1";
 
 			status = "disabled";
 		};
@@ -222,7 +209,6 @@
 			interrupts = <66 1>, <69 1>, <68 1>, <67 1>;
 			interrupt-names = "error", "stop", "tx", "rx";
 			interrupt-parent = <&intc>;
-			label = "I2C_2";
 
 			status = "disabled";
 		};
@@ -236,7 +222,6 @@
 			interrupts = <70 2>, <71 2>, <72 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
 			interrupt-parent = <&intc>;
-			label = "SPI_0";
 			status = "disabled";
 		};
 
@@ -249,7 +234,6 @@
 			interrupts = <74 2>, <75 2>, <76 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
 			interrupt-parent = <&intc>;
-			label = "SPI_1";
 			status = "disabled";
 		};
 
@@ -262,7 +246,6 @@
 			interrupts = <78 2>, <79 2>, <80 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
 			interrupt-parent = <&intc>;
-			label = "SPI_2";
 			status = "disabled";
 		};
 

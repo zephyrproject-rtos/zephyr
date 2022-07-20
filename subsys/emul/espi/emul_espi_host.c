@@ -31,33 +31,33 @@ struct vw_data {
 
 /** Declare the default state of virtual wires */
 const static struct vw_data vw_state_default[] = {
-	{ ESPI_VWIRE_SIGNAL_SLP_S3,        0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_SLP_S4,        0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_SLP_S5,        0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_SUS_STAT,      0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_PLTRST,        0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_OOB_RST_WARN,  0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_OOB_RST_ACK,   0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_WAKE,          0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_PME,           0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_SLP_S3, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_SLP_S4, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_SLP_S5, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_SUS_STAT, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_PLTRST, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_OOB_RST_WARN, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_OOB_RST_ACK, 0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_WAKE, 0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_PME, 0, ESPI_SLAVE_TO_MASTER },
 	{ ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, 0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_ERR_FATAL,     0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_ERR_FATAL, 0, ESPI_SLAVE_TO_MASTER },
 	{ ESPI_VWIRE_SIGNAL_ERR_NON_FATAL, 0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_SLV_BOOT_STS,  0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_SCI,           0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_SMI,           0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_RST_CPU_INIT,  0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_HOST_RST_ACK,  0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, 0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_SCI, 0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_SMI, 0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_RST_CPU_INIT, 0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_HOST_RST_ACK, 0, ESPI_SLAVE_TO_MASTER },
 	{ ESPI_VWIRE_SIGNAL_HOST_RST_WARN, 0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_SUS_ACK,       0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_DNX_ACK,       0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_SUS_WARN,      0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_SUS_ACK, 0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_DNX_ACK, 0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_SUS_WARN, 0, ESPI_MASTER_TO_SLAVE },
 	{ ESPI_VWIRE_SIGNAL_SUS_PWRDN_ACK, 0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_SLP_A,         0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_SLP_LAN,       0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_SLP_WLAN,      0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_HOST_C10,      0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_DNX_WARN,      0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_SLP_A, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_SLP_LAN, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_SLP_WLAN, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_HOST_C10, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_DNX_WARN, 0, ESPI_MASTER_TO_SLAVE },
 };
 
 #define NUMBER_OF_VWIRES ARRAY_SIZE(vw_state_default)
@@ -123,13 +123,12 @@ static int emul_host_find_index(struct espi_host_emul_data *data,
 	return -1;
 }
 
-static int emul_host_set_vw(struct espi_emul *emul, enum espi_vwire_signal vw,
-			    uint8_t level)
+static int emul_host_set_vw(const struct emul *target,
+			    enum espi_vwire_signal vw, uint8_t level)
 {
-	struct espi_host_emul_data *data;
+	struct espi_host_emul_data *data = target->data;
 	int idx;
 
-	data = CONTAINER_OF(emul, struct espi_host_emul_data, emul);
 	idx = emul_host_find_index(data, vw);
 
 	if (idx < 0 || data->vw_state[idx].dir != ESPI_SLAVE_TO_MASTER) {
@@ -142,13 +141,12 @@ static int emul_host_set_vw(struct espi_emul *emul, enum espi_vwire_signal vw,
 	return 0;
 }
 
-static int emul_host_get_vw(struct espi_emul *emul, enum espi_vwire_signal vw,
-			    uint8_t *level)
+static int emul_host_get_vw(const struct emul *target,
+			    enum espi_vwire_signal vw, uint8_t *level)
 {
-	struct espi_host_emul_data *data;
+	struct espi_host_emul_data *data = target->data;
 	int idx;
 
-	data = CONTAINER_OF(emul, struct espi_host_emul_data, emul);
 	idx = emul_host_find_index(data, vw);
 
 	if (idx < 0 || data->vw_state[idx].dir != ESPI_MASTER_TO_SLAVE) {
@@ -177,7 +175,7 @@ int emul_espi_host_send_vw(const struct device *espi_dev, enum espi_vwire_signal
 	__ASSERT_NO_MSG(api->find_emul);
 
 	emul_espi = api->find_emul(espi_dev, EMUL_ESPI_HOST_CHIPSEL);
-	data_host = CONTAINER_OF(emul_espi, struct espi_host_emul_data, emul);
+	data_host = espi_dev->data;
 
 	idx = emul_host_find_index(data_host, vw);
 	if (idx < 0 || data_host->vw_state[idx].dir != ESPI_MASTER_TO_SLAVE) {
@@ -216,10 +214,9 @@ int emul_espi_host_port80_write(const struct device *espi_dev, uint32_t data)
 }
 
 #ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
-static uintptr_t emul_espi_dev_get_acpi_shm(struct espi_emul *emul)
+static uintptr_t emul_espi_dev_get_acpi_shm(const struct emul *target)
 {
-	struct espi_host_emul_data *data =
-		CONTAINER_OF(emul, struct espi_host_emul_data, emul);
+	struct espi_host_emul_data *data = target->data;
 
 	return (uintptr_t)data->shm_acpi_mmap;
 }
@@ -251,16 +248,13 @@ static struct emul_espi_device_api ap_emul_api = {
  */
 static int emul_host_init(const struct emul *emul, const struct device *bus)
 {
-	const struct espi_host_emul_cfg *cfg = emul->cfg;
 	struct espi_host_emul_data *data = emul->data;
 
-	data->emul.api = &ap_emul_api;
-	data->emul.chipsel = cfg->chipsel;
-	data->emul.parent = emul;
-	data->espi = bus;
+	ARG_UNUSED(bus);
+
 	emul_host_init_vw_state(data);
 
-	return espi_emul_register(bus, emul->dev_label, &data->emul);
+	return 0;
 }
 
 #define HOST_EMUL(n)                                                                               \
@@ -269,6 +263,6 @@ static int emul_host_init(const struct emul *emul, const struct device *bus)
 		.chipsel = DT_INST_REG_ADDR(n),                                                    \
 	};                                                                                         \
 	EMUL_DEFINE(emul_host_init, DT_DRV_INST(n), &espi_host_emul_cfg_##n,                       \
-		    &espi_host_emul_data_##n)
+		    &espi_host_emul_data_##n, &ap_emul_api)
 
 DT_INST_FOREACH_STATUS_OKAY(HOST_EMUL)

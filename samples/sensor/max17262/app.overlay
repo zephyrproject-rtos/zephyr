@@ -9,7 +9,6 @@
 
 	max17262@36 {
 		compatible = "maxim,max17262";
-		label = "MAX17262";
 		reg = <0x36>;
 		design-voltage = <3600>;
 		desired-voltage = <3600>;

@@ -8,9 +8,6 @@ compatible: "nxp,pca95xx"
 include: [gpio-controller.yaml, i2c-device.yaml]
 
 properties:
-    label:
-      required: true
-
     has-pud:
       type: boolean
       required: false

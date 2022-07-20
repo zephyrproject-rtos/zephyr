@@ -693,6 +693,10 @@ static int send_check_and_wait(struct net_context *ctx, int status,
 		goto out;
 	}
 
+	if (ctx->cond.lock) {
+		(void)k_mutex_unlock(ctx->cond.lock);
+	}
+
 	if (status == -ENOBUFS) {
 		/* We can monitor net_pkt/net_buf avaialbility, so just wait. */
 		k_sleep(K_MSEC(*retry_timeout));
@@ -717,6 +721,10 @@ static int send_check_and_wait(struct net_context *ctx, int status,
 	 * Cap the value to WAIT_BUFS_MAX_MS
 	 */
 	*retry_timeout = MIN(WAIT_BUFS_MAX_MS, *retry_timeout << 1);
+
+	if (ctx->cond.lock) {
+		(void)k_mutex_lock(ctx->cond.lock, K_FOREVER);
+	}
 
 	return 0;
 

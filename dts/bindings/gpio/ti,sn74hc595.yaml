@@ -8,9 +8,6 @@ compatible: "ti,sn74hc595"
 include: [gpio-controller.yaml, spi-device.yaml]
 
 properties:
-    label:
-      required: true
-
     reset-gpios:
       type: phandle-array
       required: true

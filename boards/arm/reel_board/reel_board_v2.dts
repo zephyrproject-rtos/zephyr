@@ -25,6 +25,10 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &ssd16xx;
 	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
 };
 
 &spi1 {

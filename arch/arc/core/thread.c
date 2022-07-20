@@ -198,7 +198,7 @@ void *z_arch_get_next_switch_handle(struct k_thread **old_thread)
 {
 	*old_thread =  _current;
 
-	return z_get_next_switch_handle(*old_thread);
+	return z_get_next_switch_handle(NULL);
 }
 
 #ifdef CONFIG_USERSPACE

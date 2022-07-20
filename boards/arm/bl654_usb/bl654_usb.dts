@@ -42,6 +42,7 @@
 	aliases {
 		led0 = &led1;
 		led1pwm = &led1bluepwm;
+		watchdog0 = &wdt0;
 	};
 };
 

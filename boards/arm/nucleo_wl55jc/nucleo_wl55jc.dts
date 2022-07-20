@@ -59,6 +59,7 @@
 		sw1 = &user_button_2;
 		sw2 = &user_button_3;
 		lora0 = &lora;
+		watchdog0 = &iwdg;
 	};
 
 	power-states {

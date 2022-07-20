@@ -74,6 +74,7 @@
 		blue-pwm-led = &pwm_led1;
 		red-pwm-led = &pwm_led2;
 		sw0 = &button0;
+		watchdog0 = &wdt0;
 	};
 };
 

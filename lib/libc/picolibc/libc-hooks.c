@@ -256,7 +256,7 @@ int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
 	return nbytes;
 }
 
-#include <sys/cbprintf.h>
+#include <zephyr/sys/cbprintf.h>
 
 struct cb_bits {
 	FILE f;
@@ -528,7 +528,7 @@ int _gettimeofday(struct timeval *__tp, void *__tzp)
 }
 
 #include <stdlib.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 /* Replace picolibc abort with native Zephyr one */
 void abort(void)

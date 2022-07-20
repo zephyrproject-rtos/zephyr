@@ -6,6 +6,5 @@
 config GD7965
 	bool "GD7965 compatible display controller driver"
 	depends on SPI
-	depends on HEAP_MEM_POOL_SIZE != 0
 	help
 	  Enable driver for GD7965 compatible controller.

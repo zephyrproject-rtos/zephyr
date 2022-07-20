@@ -81,7 +81,7 @@ struct bt_audio_broadcast_source {
 	struct bt_iso_chan *bis[BROADCAST_STREAM_CNT];
 	struct bt_codec_qos *qos;
 	/* The streams used to create the broadcast source */
-	struct bt_audio_stream **streams;
+	sys_slist_t streams;
 };
 
 struct bt_audio_broadcast_sink {
@@ -99,7 +99,7 @@ struct bt_audio_broadcast_sink {
 	struct bt_iso_big *big;
 	struct bt_iso_chan *bis[BROADCAST_SNK_STREAM_CNT];
 	/* The streams used to create the broadcast sink */
-	struct bt_audio_stream **streams;
+	sys_slist_t streams;
 };
 
 static inline const char *bt_audio_ep_state_str(uint8_t state)

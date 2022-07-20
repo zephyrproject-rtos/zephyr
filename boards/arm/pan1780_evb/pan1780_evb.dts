@@ -123,6 +123,7 @@
 		sw2 = &evb_sw3;
 		sw3 = &evb_sw4;
 		bootloader-led0 = &evb_led1;
+		watchdog0 = &wdt0;
 	};
 };
 

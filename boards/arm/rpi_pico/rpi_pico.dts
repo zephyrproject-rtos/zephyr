@@ -8,7 +8,7 @@
 
 #include <rpi_pico/rp2040.dtsi>
 #include "rpi_pico-pinctrl.dtsi"
-#include <dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
