@@ -16,5 +16,6 @@ supported:
   - spi
   - usart
   - watchdog
+  - dma
 ram: 786
 flash: 2048
