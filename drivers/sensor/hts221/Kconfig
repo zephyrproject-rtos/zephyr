@@ -3,6 +3,8 @@
 
 menuconfig HTS221
 	bool "HTS221 temperature and humidity sensor"
+	default y
+	depends on DT_HAS_ST_HTS221_ENABLED
 	depends on I2C || SPI
 	select HAS_STMEMSC
 	select USE_STDC_HTS221

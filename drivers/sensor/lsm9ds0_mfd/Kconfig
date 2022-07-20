@@ -5,6 +5,8 @@
 
 menuconfig LSM9DS0_MFD
 	bool "LSM9DS0 I2C accelerometer, magnetometer and temperature sensor chip"
+	default y
+	depends on DT_HAS_ST_LSM9DS0_MFD_ENABLED
 	depends on I2C
 	help
 	  Enable driver for LSM9DS0 I2C-based MFD sensor.

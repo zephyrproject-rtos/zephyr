@@ -5,6 +5,9 @@
 
 config TI_HDC20XX
 	bool "Texas Instruments HDC20XX Temperature and Humidity Sensor"
+	default y
+	depends on DT_HAS_TI_HDC2010_ENABLED || DT_HAS_TI_HDC2021_ENABLED || \
+		   DT_HAS_TI_HDC2022_ENABLED || DT_HAS_TI_HDC2080_ENABLED
 	depends on I2C
 	help
 	  Enable driver for TI HDC20XX temperature and humidity sensors

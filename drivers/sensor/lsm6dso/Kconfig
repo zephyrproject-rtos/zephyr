@@ -5,6 +5,8 @@
 
 menuconfig LSM6DSO
 	bool "LSM6DSO I2C/SPI accelerometer and gyroscope Chip"
+	default y
+	depends on DT_HAS_ST_LSM6DSO_ENABLED
 	depends on I2C || SPI
 	select HAS_STMEMSC
 	select USE_STDC_LSM6DSO
