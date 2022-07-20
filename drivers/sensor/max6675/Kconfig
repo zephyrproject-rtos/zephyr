@@ -3,6 +3,8 @@
 
 config MAX6675
 	bool "MAX6675 K-thermocouple to digital converter"
+	default y
+	depends on DT_HAS_MAXIM_MAX6675_ENABLED
 	depends on SPI
 	help
 	  Enable MAX6675 cold-junction-compensated K-thermocouple to digital

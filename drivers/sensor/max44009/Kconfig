@@ -5,6 +5,8 @@
 
 config MAX44009
 	bool "MAX44009 Light Sensor"
+	default y
+	depends on DT_HAS_MAXIM_MAX44009_ENABLED
 	depends on I2C
 	help
 	  Enable driver for MAX44009 light sensors.

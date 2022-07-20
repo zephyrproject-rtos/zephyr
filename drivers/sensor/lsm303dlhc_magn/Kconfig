@@ -3,11 +3,10 @@
 # Copyright (c) 2018 Philémon Jaermann
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_LSM303DLHC_MAGN := st,lsm303dlhc-magn
-
 menuconfig LSM303DLHC_MAGN
 	bool "LSM303DLHC Three Axis Magnetometer"
-	default $(dt_compat_enabled,$(DT_COMPAT_LSM303DLHC_MAGN))
+	default y
+	depends on DT_HAS_ST_LSM303DLHC_MAGN_ENABLED
 	depends on I2C
 	help
 	  Enable driver for LSM303DLHC I2C-based triaxial magnetometer sensor.

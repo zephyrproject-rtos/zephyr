@@ -4,6 +4,8 @@
 
 config ITDS
 	bool "WSEN-ITDS 3-axis accel sensor"
+	default y
+	depends on DT_HAS_WE_WSEN_ITDS_ENABLED
 	depends on I2C
 	help
 	  Enable Wurth Elektronik WSEN-ITDS 3-axis acceleration sensor

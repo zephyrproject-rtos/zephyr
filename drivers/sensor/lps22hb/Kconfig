@@ -3,6 +3,8 @@
 
 menuconfig LPS22HB
 	bool "LPS22HB pressure and temperature"
+	default y
+	depends on DT_HAS_ST_LPS22HB_PRESS_ENABLED
 	depends on I2C
 	help
 	  Enable driver for LPS22HB I2C-based pressure and temperature

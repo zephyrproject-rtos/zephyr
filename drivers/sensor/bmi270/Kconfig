@@ -5,6 +5,8 @@
 
 config BMI270
 	bool "BMI270 Inertial measurement unit"
+	default y
+	depends on DT_HAS_BOSCH_BMI270_ENABLED
 	depends on I2C
 	help
 	  Enable driver for BMI270 I2C-based imu sensor

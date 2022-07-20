@@ -5,6 +5,8 @@
 
 menuconfig SX9500
 	bool "SX9500 I2C SAR Proximity Chip"
+	default y
+	depends on DT_HAS_SEMTECH_SX9500_ENABLED
 	depends on I2C
 	help
 	  Enable driver for SX9500 I2C-based SAR proximity sensor.
