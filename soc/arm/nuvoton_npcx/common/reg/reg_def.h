@@ -1536,4 +1536,54 @@ struct fiu_reg {
 #define UMA_CODE_CMD_ADR_WR_BYTE(n) (UMA_FLD_EXEC | UMA_FLD_WRITE | \
 					UMA_FLD_ADDR | UMA_FIELD_DATA_##n | \
 					UMA_FLD_SHD_SL)
+
+/* Platform Environment Control Interface (PECI) device registers */
+struct peci_reg {
+	/* 0x000: PECI Control Status */
+	volatile uint8_t PECI_CTL_STS;
+	/* 0x001: PECI Read Length */
+	volatile uint8_t PECI_RD_LENGTH;
+	/* 0x002: PECI Address */
+	volatile uint8_t PECI_ADDR;
+	/* 0x003: PECI Command */
+	volatile uint8_t PECI_CMD;
+	/* 0x004: PECI Control 2 */
+	volatile uint8_t PECI_CTL2;
+	/* 0x005: PECI Index */
+	volatile uint8_t PECI_INDEX;
+	/* 0x006: PECI Index Data */
+	volatile uint8_t PECI_IDATA;
+	/* 0x007: PECI Write Length */
+	volatile uint8_t PECI_WR_LENGTH;
+	volatile uint8_t reserved1[3];
+	/* 0x00B: PECI Write FCS */
+	volatile uint8_t PECI_WR_FCS;
+	/* 0x00C: PECI Read FCS */
+	volatile uint8_t PECI_RD_FCS;
+	/* 0x00D: PECI Assured Write FCS */
+	volatile uint8_t PECI_AW_FCS;
+	volatile uint8_t reserved2;
+	/* 0x00F: PECI Transfer Rate */
+	volatile uint8_t PECI_RATE;
+	/* 0x010 - 0x04F: PECI Data In/Out */
+	union {
+		volatile uint8_t PECI_DATA_IN[64];
+		volatile uint8_t PECI_DATA_OUT[64];
+	};
+};
+
+/* PECI register fields */
+#define NPCX_PECI_CTL_STS_START_BUSY     0
+#define NPCX_PECI_CTL_STS_DONE           1
+#define NPCX_PECI_CTL_STS_CRC_ERR        3
+#define NPCX_PECI_CTL_STS_ABRT_ERR       4
+#define NPCX_PECI_CTL_STS_AWFCS_EB       5
+#define NPCX_PECI_CTL_STS_DONE_EN        6
+#define NPCX_PECI_RATE_MAX_BIT_RATE      FIELD(0, 5)
+#define NPCX_PECI_RATE_MAX_BIT_RATE_MASK 0x1F
+/* The minimal valid value of NPCX_PECI_RATE_MAX_BIT_RATE field */
+#define PECI_MAX_BIT_RATE_VALID_MIN      0x05
+#define PECI_HIGH_SPEED_MIN_VAL          0x07
+
+#define NPCX_PECI_RATE_EHSP              6
 #endif /* _NUVOTON_NPCX_REG_DEF_H */
