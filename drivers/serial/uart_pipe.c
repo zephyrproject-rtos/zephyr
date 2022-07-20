@@ -59,10 +59,8 @@ static void uart_pipe_isr(const struct device *dev, void *user_data)
 
 	uart_irq_update(dev);
 
-	if (uart_irq_is_pending(dev)) {
-		if (uart_irq_rx_ready(dev)) {
-			uart_pipe_rx(dev);
-		}
+	if (uart_irq_rx_ready(dev)) {
+		uart_pipe_rx(dev);
 	}
 }
 
