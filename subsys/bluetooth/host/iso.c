@@ -705,9 +705,49 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 #endif /* CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_SYNC_RECEIVER */
 
 #if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER)
+static uint16_t iso_chan_max_data_len(const struct bt_iso_chan *chan,
+				      uint32_t ts)
+{
+	size_t max_controller_data_len;
+	uint16_t max_data_len;
+
+	if (chan->qos->tx == NULL) {
+		return 0;
+	}
+
+	max_data_len = chan->qos->tx->sdu;
+
+	/* Ensure that the SDU fits when using all the buffers */
+	max_controller_data_len = bt_dev.le.iso_mtu * bt_dev.le.iso_pkts.limit;
+
+	/* Update the max_data_len to take the max_controller_data_len into account */
+	max_data_len = MIN(max_data_len, max_controller_data_len);
+
+	/* Since this returns the maximum ISO data length size, we have to take
+	 * the header size into account, as that also needs to be inserted into
+	 * the SDU
+	 */
+	if (ts == BT_ISO_TIMESTAMP_NONE) {
+		if (max_data_len > BT_HCI_ISO_DATA_HDR_SIZE) {
+			max_data_len -= BT_HCI_ISO_DATA_HDR_SIZE;
+		} else {
+			max_data_len = 0U;
+		}
+	} else {
+		if (max_data_len > BT_HCI_ISO_TS_DATA_HDR_SIZE) {
+			max_data_len -= BT_HCI_ISO_TS_DATA_HDR_SIZE;
+		} else {
+			max_data_len = 0U;
+		}
+	}
+
+	return max_data_len;
+}
+
 int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
 		     uint32_t seq_num, uint32_t ts)
 {
+	uint16_t max_data_len;
 	struct bt_conn *iso_conn;
 
 	CHECKIF(!chan || !buf) {
@@ -730,6 +770,18 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
 		return -EINVAL;
 	}
 
+	if (ts == BT_ISO_TIMESTAMP_NONE &&
+	    buf->size < BT_HCI_ISO_DATA_HDR_SIZE) {
+		BT_DBG("Cannot send ISO packet with buffer size %u", buf->size);
+
+		return -EMSGSIZE;
+	} else if (buf->size < BT_HCI_ISO_TS_DATA_HDR_SIZE) {
+		BT_DBG("Cannot send ISO packet with timestamp with buffer size %u",
+		       buf->size);
+
+		return -EMSGSIZE;
+	}
+
 	/* Once the stored seq_num reaches the maximum value sendable to the
 	 * controller (BT_ISO_MAX_SEQ_NUM) we will allow the application to wrap
 	 * it. This ensures that up to 2^32-1 SDUs can be sent without wrapping
@@ -741,6 +793,13 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
 		BT_DBG("Invalid seq_num %u - Shall be > than %u",
 		       seq_num, iso_conn->iso.seq_num);
 		return -EINVAL;
+	}
+
+	max_data_len = iso_chan_max_data_len(chan, ts);
+	if (buf->len > max_data_len) {
+		BT_DBG("Cannot send %u octets, maximum %u",
+		       buf->len, max_data_len);
+		return -EMSGSIZE;
 	}
 
 	iso_conn->iso.seq_num = seq_num;
