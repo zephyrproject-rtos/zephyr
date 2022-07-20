@@ -34,3 +34,7 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
+&gpdma1 {
+	status = "okay";
+};
