@@ -10,6 +10,8 @@ config HAS_SPI_DW
 
 menuconfig SPI_DW
 	bool "Designware SPI controller driver"
+	default y
+	depends on DT_HAS_SNPS_DESIGNWARE_SPI_ENABLED
 	depends on HAS_SPI_DW
 	help
 	  Enable support for Designware's SPI controllers.
