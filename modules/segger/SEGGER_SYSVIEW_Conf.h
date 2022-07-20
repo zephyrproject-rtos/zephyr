@@ -3,7 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#pragma once
+
+#ifndef SEGGER_SEGGER_SYSVIEW_CONF_H_
+#define SEGGER_SEGGER_SYSVIEW_CONF_H_
 
 #include <stdint.h>
 #include <zephyr/irq.h>
@@ -29,3 +31,5 @@ uint32_t sysview_get_interrupt(void);
 /* Unlock SystemView (nestable) */
 #define SEGGER_SYSVIEW_UNLOCK()		irq_unlock(__sysview_irq_key);         \
 				}
+
+#endif  /* SEGGER_SEGGER_SYSVIEW_CONF_H_ */
