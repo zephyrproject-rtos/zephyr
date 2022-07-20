@@ -897,6 +897,15 @@ bool bt_mesh_model_is_extended(struct bt_mesh_model *model);
  */
 int bt_mesh_comp_change_prepare(void);
 
+/** @brief Indicate that the metadata will change on next bootup.
+ *
+ *  Tell the config server that the models metadata is expected to change on
+ *  the next bootup, and the current models metadata should be backed up.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_models_metadata_change_prepare(void);
+
 /** Node Composition */
 struct bt_mesh_comp {
 	uint16_t cid; /**< Company ID */

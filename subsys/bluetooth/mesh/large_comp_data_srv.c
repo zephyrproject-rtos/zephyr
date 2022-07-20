@@ -91,8 +91,8 @@ static int handle_models_metadata_get(struct bt_mesh_model *model, struct bt_mes
 {
 	BT_MESH_MODEL_BUF_DEFINE(rsp, OP_MODELS_METADATA_STATUS,
 				 BT_MESH_MODEL_PAYLOAD_MAX);
-	uint8_t page;
 	size_t offset, total_size;
+	uint8_t page;
 	int err;
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
@@ -104,24 +104,37 @@ static int handle_models_metadata_get(struct bt_mesh_model *model, struct bt_mes
 
 	LOG_DBG("page %u offset %u", page, offset);
 
-	bt_mesh_model_msg_init(&rsp, OP_MODELS_METADATA_STATUS);
-
-	if (page != 0U) {
-		LOG_DBG("Composition page %u not available", page);
+	if (page >= 128U && atomic_test_bit(bt_mesh.flags, BT_MESH_METADATA_DIRTY)) {
+		LOG_DBG("Models Metadata Page 128");
+		page = 128U;
+	} else if (page != 0U) {
+		LOG_DBG("Models Metadata Page %u not available", page);
 		page = 0U;
 	}
 
+	bt_mesh_model_msg_init(&rsp, OP_MODELS_METADATA_STATUS);
 	net_buf_simple_add_u8(&rsp, page);
-
-	total_size = bt_mesh_metadata_page_0_size();
 	net_buf_simple_add_le16(&rsp, offset);
-	net_buf_simple_add_le16(&rsp, total_size);
 
-	if (offset < total_size) {
-		err = bt_mesh_metadata_get_page_0(&rsp, offset);
-		if (err && err != -E2BIG) {
-			LOG_ERR("bt_mesh_metadata_get_page_0 returned error");
+	if (atomic_test_bit(bt_mesh.flags, BT_MESH_METADATA_DIRTY) == (page == 0U)) {
+		rsp.size -= BT_MESH_MIC_SHORT;
+		err = bt_mesh_models_metadata_read(&rsp, offset);
+		if (err) {
+			LOG_ERR("Unable to get stored models metadata");
 			return err;
+		}
+
+		rsp.size += BT_MESH_MIC_SHORT;
+	} else {
+		total_size = bt_mesh_metadata_page_0_size();
+		net_buf_simple_add_le16(&rsp, total_size);
+
+		if (offset < total_size) {
+			err = bt_mesh_metadata_get_page_0(&rsp, offset);
+			if (err && err != -E2BIG) {
+				LOG_ERR("Failed to get Models Metadata Page 0: %d", err);
+				return err;
+			}
 		}
 	}
 
