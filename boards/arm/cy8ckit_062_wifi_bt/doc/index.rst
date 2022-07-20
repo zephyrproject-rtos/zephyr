@@ -175,22 +175,22 @@ References
 **********
 
 .. _PSoC 62 MCU SoC Website:
-	http://www.cypress.com/products/32-bit-arm-cortex-m4-psoc-6
+	https://www.infineon.com/cms/en/product/microcontroller/32-bit-psoc-arm-cortex-microcontroller/psoc-6-32-bit-arm-cortex-m4-mcu/psoc-62/
 
 .. _PSoC 62 MCU Datasheet:
-	http://www.cypress.com/documentation/datasheets/psoc-6-mcu-psoc-62-datasheet-programmable-system-chip-psoc-preliminary
+	https://www.infineon.com/dgdl/Infineon-PSoC_6_MCU_CY8C62X4-AdditionalTechnicalInformation-v10_00-EN.pdf?fileId=8ac78c8c7ddc01d7017ddd026d585901
 
 .. _PSoC 62 MCU Architecture Reference Manual:
-	http://www.cypress.com/documentation/technical-reference-manuals/psoc-6-mcu-psoc-62-architecture-technical-reference-manual
+	https://www.infineon.com/dgdl/Infineon-PSoC_6_MCU_PSoC_62_Architecture_Technical_Reference_Manual-AdditionalTechnicalInformation-v08_00-EN.pdf?fileId=8ac78c8c7d0d8da4017d0f94758401d1
 
 .. _PSoC 62 MCU Register Reference Manual:
-	http://www.cypress.com/documentation/technical-reference-manuals/psoc-6-mcu-psoc-62-register-technical-reference-manual-trm
+	https://www.infineon.com/dgdl/Infineon-PSoC_6_MCU_PSoC_62_Register_Technical_Reference_Manual-AdditionalTechnicalInformation-v07_00-EN.pdf?fileId=8ac78c8c7d0d8da4017d0f9480c901dd
 
 .. _CY8CKIT-062-WiFi-BT Website:
-   http://www.cypress.com/documentation/development-kitsboards/psoc-6-wifi-bt-pioneer-kit
+   https://www.infineon.com/cms/en/product/evaluation-boards/cy8ckit-062-wifi-bt/
 
 .. _CY8CKIT-062-WiFi-BT User Guide:
-   http://www.cypress.com/file/407731/download
+   https://www.infineon.com/dgdl/Infineon-CY8CKIT-062-WiFi-BT_PSoC_6_WiFi-BT_Pioneer_Kit_Guide-UserManual-v01_00-EN.pdf?fileId=8ac78c8c7d0d8da4017d0f003bc5175b
 
 .. _CY8CKIT-062-WiFi-BT Schematics:
-   http://www.cypress.com/file/420846/download
+   https://www.infineon.com/dgdl/Infineon-CY8CKIT-062-WiFi-BT_Schematic-PCBDesignData-v01_00-EN.pdf?fileId=8ac78c8c7d0d8da4017d0f0055481777
