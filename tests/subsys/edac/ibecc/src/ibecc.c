@@ -310,7 +310,7 @@ static void test_ibecc_error_inject_test_uc(void)
 }
 #endif
 
-void ibecc_before(void *data)
+static void *setup_ibecc(void)
 {
 #if defined(CONFIG_USERSPACE)
 	int ret = k_mem_domain_add_partition(&k_mem_domain_default,
@@ -320,9 +320,10 @@ void ibecc_before(void *data)
 		k_oops();
 	}
 #endif
+	return NULL;
 }
 
-ZTEST(ibecc, ibecc_injection)
+ZTEST(ibecc, test_ibecc_injection)
 {
 	test_ibecc_api();
 	test_ibecc_error_inject_api();
@@ -330,4 +331,4 @@ ZTEST(ibecc, ibecc_injection)
 	test_ibecc_error_inject_test_uc();
 }
 
-ZTEST_SUITE(ibecc, NULL, NULL, ibecc_before, NULL, NULL);
+ZTEST_SUITE(ibecc, NULL, setup_ibecc, NULL, NULL, NULL);
