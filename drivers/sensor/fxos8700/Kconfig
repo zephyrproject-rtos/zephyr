@@ -3,11 +3,10 @@
 # Copyright (c) 2016 Freescale Semiconductor, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_FXOS8700 := nxp,fxos8700
-
 menuconfig FXOS8700
 	bool "FXOS8700 accelerometer/magnetometer driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_FXOS8700))
+	default y
+	depends on DT_HAS_NXP_FXOS8700_ENABLED
 	depends on I2C
 	help
 	  Enable driver for the FXOS8700 accelerometer/magnetometer.

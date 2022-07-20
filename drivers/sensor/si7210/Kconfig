@@ -4,6 +4,8 @@
 
 config SI7210
 	bool "Si7210 Hall Effect Magnetic Position and Temperature Sensor"
+	default y
+	depends on DT_HAS_SILABS_SI7210_ENABLED
 	depends on I2C
 	help
 	  Enable driver for Si7210 Hall Effect Magnetic Position and Temperature Sensor.

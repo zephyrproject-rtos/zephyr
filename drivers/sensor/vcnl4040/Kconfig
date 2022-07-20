@@ -5,6 +5,8 @@
 
 menuconfig VCNL4040
 	bool "VCNL4040 Proximity and Ambient Light Sensor"
+	default y
+	depends on DT_HAS_VISHAY_VCNL4040_ENABLED
 	depends on I2C
 	help
 	  Enable driver for VCNL4040 sensors.

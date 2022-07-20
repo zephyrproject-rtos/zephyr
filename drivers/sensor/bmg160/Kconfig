@@ -5,6 +5,8 @@
 
 menuconfig BMG160
 	bool "Bosch BMG160 gyroscope support"
+	default y
+	depends on DT_HAS_BOSCH_BMG160_ENABLED
 	depends on I2C
 	help
 	  Enable Bosch BMG160 gyroscope support.

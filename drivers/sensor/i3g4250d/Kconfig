@@ -5,6 +5,8 @@
 
 config I3G4250D
 	bool "I3G4250D three-axis digital output gyroscope"
+	default y
+	depends on DT_HAS_ST_I3G4250D_ENABLED
 	depends on SPI
 	select HAS_STMEMSC
 	select USE_STDC_I3G4250D

@@ -5,6 +5,8 @@
 
 config TACH_IT8XXX2
 	bool "ITE it8xxx2 Tachometer sensor"
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_TACH_ENABLED
 	depends on SOC_IT8XXX2
 	help
 	  Enable the ITE it8xxx2 tachometer sensor,

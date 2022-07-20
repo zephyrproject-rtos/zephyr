@@ -5,6 +5,8 @@
 
 config TMP116
 	bool "TMP116 and TMP117 Temperature Sensors"
+	default y
+	depends on DT_HAS_TI_TMP116_ENABLED
 	depends on I2C
 	help
 	  Enable driver for TMP116 and TMP117 temperature sensors.

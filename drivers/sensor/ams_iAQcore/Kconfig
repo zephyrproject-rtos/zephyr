@@ -5,6 +5,8 @@
 
 menuconfig AMS_IAQ_CORE
 	bool "iAQ-core Digital VOC sensor"
+	default y
+	depends on DT_HAS_AMS_IAQCORE_ENABLED
 	depends on I2C
 	help
 	  Enable driver for iAQ-core Digital VOC sensor.

@@ -5,6 +5,8 @@
 
 config MAX31875
 	bool "MAX31875 Temperature Sensor"
+	default y
+	depends on DT_HAS_MAXIM_MAX31875_ENABLED
 	depends on I2C
 	help
 	  Enable the driver for Maxim MAX31875 Low-Power I2C Temperature Sensors.

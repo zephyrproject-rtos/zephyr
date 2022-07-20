@@ -7,6 +7,8 @@
 
 menuconfig BME680
 	bool "BME680 sensor"
+	default y
+	depends on DT_HAS_BOSCH_BME680_ENABLED
 	depends on I2C || SPI
 	help
 	  Enable driver for BME680 I2C- or SPI- based temperature, pressure, humidity and gas sensor.

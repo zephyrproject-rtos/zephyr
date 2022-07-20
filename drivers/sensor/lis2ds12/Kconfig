@@ -5,6 +5,8 @@
 
 menuconfig LIS2DS12
 	bool "LIS2DS12 I2C/SPI accelerometer sensor driver"
+	default y
+	depends on DT_HAS_ST_LIS2DS12_ENABLED
 	depends on I2C || SPI
 	select HAS_STMEMSC
 	select USE_STDC_LIS2DS12

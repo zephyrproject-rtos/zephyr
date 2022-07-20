@@ -5,6 +5,8 @@
 
 menuconfig ISM330DHCX
 	bool "ISM330DHCX I2C/SPI accelerometer and gyroscope Chip"
+	default y
+	depends on DT_HAS_ST_ISM330DHCX_ENABLED
 	depends on I2C || SPI
 	select HAS_STMEMSC
 	select USE_STDC_ISM330DHCX

@@ -5,6 +5,8 @@
 
 config INA219
 	bool "INA219 Current/Power Monitor"
+	default y
+	depends on DT_HAS_TI_INA219_ENABLED
 	depends on I2C
 	help
 	  Enable driver for INA219 Bidirectional Current/Power Monitor.

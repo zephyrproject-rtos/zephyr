@@ -5,6 +5,8 @@
 
 menuconfig LM77
 	bool "LM77 Temperature Sensor"
+	default y
+	depends on DT_HAS_LM77_ENABLED
 	default $(dt_compat_enabled,lm77)
 	depends on I2C
 	help

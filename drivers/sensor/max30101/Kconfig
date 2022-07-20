@@ -5,6 +5,8 @@
 
 menuconfig MAX30101
 	bool "MAX30101 Pulse Oximeter and Heart Rate Sensor"
+	default y
+	depends on DT_HAS_MAXIM_MAX30101_ENABLED
 	depends on I2C
 
 if MAX30101

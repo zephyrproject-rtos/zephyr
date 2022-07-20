@@ -5,6 +5,8 @@
 
 menuconfig IIS2ICLX
 	bool "IIS2ICLX I2C/SPI accelerometer Chip"
+	default y
+	depends on DT_HAS_ST_IIS2ICLX_ENABLED
 	depends on I2C || SPI
 	select HAS_STMEMSC
 	select USE_STDC_IIS2ICLX
