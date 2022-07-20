@@ -6,6 +6,6 @@
 config GPIO_SAM0
 	bool "Atmel SAM0 GPIO (PORT) driver"
 	default y
-	depends on SOC_FAMILY_SAM0
+	depends on DT_HAS_ATMEL_SAM0_GPIO_ENABLED
 	help
 	  Enable support for the Atmel SAM0 'PORT' GPIO controllers.
