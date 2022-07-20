@@ -1891,6 +1891,30 @@
  */
 
 /**
+ * @brief Invokes "fn" for every node in the tree.
+ *
+ * The macro "fn" must take one parameter, which will be a node
+ * identifier. The macro is expanded once for each node in the tree.
+ * The order that nodes are visited in is not specified.
+ *
+ * @param fn macro to invoke
+ */
+#define DT_FOREACH_NODE(fn) DT_FOREACH_HELPER(fn)
+
+/**
+ * @brief Invokes "fn" for every status "okay" node in the tree.
+ *
+ * The macro "fn" must take one parameter, which will be a node
+ * identifier. The macro is expanded once for each node in the tree
+ * with status "okay" (as usual, a missing status property is treated
+ * as status "okay"). The order that nodes are visited in is not
+ * specified.
+ *
+ * @param fn macro to invoke
+ */
+#define DT_FOREACH_STATUS_OKAY_NODE(fn) DT_FOREACH_OKAY_HELPER(fn)
+
+/**
  * @brief Invokes "fn" for each child of "node_id"
  *
  * The macro "fn" must take one parameter, which will be the node
