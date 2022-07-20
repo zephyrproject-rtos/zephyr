@@ -412,6 +412,8 @@ device.
        the ``zephyr,flash`` node
    * - zephyr,gdbstub-uart
      - Sets UART device used by the :ref:`gdbstub` subsystem
+   * - zephyr,ieee802154
+     - Used by the networking subsystem to set the IEEE 802.15.4 device
    * - zephyr,ipc
      - Used by the OpenAMP subsystem to specify the inter-process communication
        (IPC) device
