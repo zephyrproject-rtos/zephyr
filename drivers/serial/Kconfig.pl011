@@ -3,6 +3,8 @@
 
 menuconfig UART_PL011
 	bool "ARM PL011 UART Driver"
+	default y
+	depends on DT_HAS_ARM_PL011_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help

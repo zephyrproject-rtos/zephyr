@@ -5,7 +5,8 @@
 
 config UART_MCUX_FLEXCOMM
 	bool "MCUX FLEXCOMM UART driver"
-	depends on HAS_MCUX_FLEXCOMM
+	default y
+	depends on DT_HAS_NXP_LPC_USART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
