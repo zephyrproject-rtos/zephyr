@@ -1,12 +1,11 @@
-# Copyright (c) 2021 Jimmy Johnson <catch22@fastmail.net>
 # Copyright (c) 2022 T-Mobile USA, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    TMP108 Digital Temperature Sensor.  See more info at
-    https://www.ti.com/product/TMP108
+    AMS AS6212 Digital Temperature Sensor.  See more info at
+    https://ams.com/en/as621x
 
-compatible: "ti,tmp108"
+compatible: "ams,as6212"
 
 include: i2c-device.yaml
 
