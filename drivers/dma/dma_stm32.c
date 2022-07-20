@@ -718,7 +718,7 @@ DEVICE_DT_INST_DEFINE(index,						\
 			    dma_stm32_shared_irq_handler,		\
 			    DEVICE_DT_INST_GET(dma), 0);		\
 		irq_enable(DT_INST_IRQ_BY_IDX(dma, chan, irq));		\
-	} while (0)
+	} while (false)
 
 
 #else /* CONFIG_DMA_STM32_SHARED_IRQS */
@@ -737,7 +737,7 @@ static void dma_stm32_irq_##dma##_##chan(const struct device *dev)	\
 			    dma_stm32_irq_##dma##_##chan,		\
 			    DEVICE_DT_INST_GET(dma), 0);		\
 		irq_enable(DT_INST_IRQ_BY_IDX(dma, chan, irq));		\
-	} while (0)
+	} while (false)
 
 #endif /* CONFIG_DMA_STM32_SHARED_IRQS */
 
