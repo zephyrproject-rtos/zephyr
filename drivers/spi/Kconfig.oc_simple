@@ -5,6 +5,8 @@
 
 menuconfig SPI_OC_SIMPLE
 	bool "OpenCores Simple SPI controller driver"
+	default y
+	depends on DT_HAS_OPENCORES_SPI_SIMPLE_ENABLED
 	help
 	  Enable the Simple SPI controller
 
