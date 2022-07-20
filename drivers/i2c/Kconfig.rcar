@@ -3,11 +3,9 @@
 # Copyright (c) 2021 IoT.bzh
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_RENESAS_RCAR_I2C := renesas,rcar-i2c
-
 config I2C_RCAR
 	bool "Renesas R-Car I2C Driver"
-	depends on SOC_FAMILY_RCAR
-	default $(dt_compat_enabled,$(DT_COMPAT_RENESAS_RCAR_I2C))
+	default y
+	depends on DT_HAS_RENESAS_RCAR_I2C_ENABLED
 	help
 	  Enable Renesas R-Car I2C Driver.

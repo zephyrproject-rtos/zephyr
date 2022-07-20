@@ -65,45 +65,53 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config I2C_GECKO
 	bool "Gecko I2C driver"
-	depends on HAS_SILABS_GECKO
+	default y
+	depends on DT_HAS_SILABS_GECKO_I2C_ENABLED
 	select SOC_GECKO_I2C
 	help
 	  Enable the SiLabs Gecko I2C bus driver.
 
 config I2C_SAM_TWIHS
 	bool "Atmel SAM (TWIHS) I2C driver"
-	depends on SOC_FAMILY_SAM
+	default y
+	depends on DT_HAS_ATMEL_SAM_I2C_TWIHS_ENABLED
 	help
 	  Enable Atmel SAM MCU Family (TWIHS) I2C bus driver.
 
 config I2C_SAM_TWIM
 	bool "Atmel SAM (TWIM) I2C driver"
-	depends on SOC_SERIES_SAM4L
+	default y
+	depends on DT_HAS_ATMEL_SAM_I2C_TWIM_ENABLED
 	help
 	  Enable Atmel SAM MCU Family (TWIM) I2C bus driver.
 
 config I2C_SAM_TWI
 	bool "Atmel SAM (TWI) I2C driver"
-	depends on SOC_FAMILY_SAM
+	default y
+	depends on DT_HAS_ATMEL_SAM_I2C_TWI_ENABLED
 	help
 	  Enable Atmel SAM MCU Family (TWI) I2C bus driver.
 
 config I2C_MCUX
 	bool "MCUX I2C driver"
-	depends on HAS_MCUX
+	default y
+	depends on DT_HAS_NXP_KINETIS_I2C_ENABLED
 	select PINCTRL
 	help
 	  Enable the mcux I2C driver.
 
 config I2C_MCUX_FLEXCOMM
 	bool "MCUX FLEXCOMM I2C driver"
-	depends on HAS_MCUX_FLEXCOMM
+	default y
+	depends on DT_HAS_NXP_LPC_I2C_ENABLED
 	help
 	  Enable the mcux flexcomm i2c driver.
 
 config I2C_MCUX_LPI2C
 	bool "MCUX LPI2C driver"
-	depends on HAS_MCUX_LPI2C && CLOCK_CONTROL
+	default y
+	depends on DT_HAS_NXP_IMX_LPI2C_ENABLED
+	depends on CLOCK_CONTROL
 	help
 	  Enable the mcux LPI2C driver.
 
@@ -116,13 +124,15 @@ config I2C_MCUX_LPI2C_BUS_RECOVERY
 
 config I2C_IMX
 	bool "i.MX I2C driver"
-	depends on HAS_IMX_I2C
+	default y
+	depends on DT_HAS_FSL_IMX21_I2C_ENABLED
 	help
 	  Enable the i.MX I2C driver.
 
 config I2C_CC32XX
 	bool "CC32XX I2C driver"
-	depends on SOC_SERIES_CC32XX
+	default y
+	depends on DT_HAS_TI_CC32XX_I2C_ENABLED
 	help
 	  Enable the CC32XX I2C driver.
 
@@ -133,13 +143,16 @@ config I2C_BITBANG
 
 config I2C_NIOS2
 	bool "Nios-II I2C driver"
-	depends on HAS_ALTERA_HAL
+	default y
+	depends on DT_HAS_ALTR_NIOS2_I2C_ENABLED
 	help
 	  Enable the Nios-II I2C driver.
 
 config I2C_RV32M1_LPI2C
 	bool "RV32M1 LPI2C driver"
-	depends on HAS_RV32M1_LPI2C && CLOCK_CONTROL
+	default y
+	depends on DT_HAS_OPENISA_RV32M1_LPI2C_ENABLED
+	depends on CLOCK_CONTROL
 	help
 	  Enable the RV32M1 LPI2C driver.
 
