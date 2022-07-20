@@ -161,6 +161,7 @@ void bt_mesh_reprovision(uint16_t addr)
 		bt_mesh_net_pending_net_store();
 		bt_mesh_net_pending_seq_store();
 		bt_mesh_comp_clear();
+		bt_mesh_models_metadata_clear();
 	}
 }
 

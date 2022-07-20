@@ -168,7 +168,7 @@ static void comp_add_model(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 	}
 }
 
-#ifdef CONFIG_BT_MESH_LARGE_COMP_DATA_SRV
+#if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
 static void data_buf_add_mem_offset(struct net_buf_simple *buf,
 				    const void *mem, size_t len,
 				    size_t *offset)
@@ -190,6 +190,10 @@ static size_t metadata_model_size(struct bt_mesh_model *mod,
 	const struct bt_mesh_models_metadata_entry *entry;
 	size_t size = 0;
 
+	if (!mod->metadata) {
+		return size;
+	}
+
 	if (vnd) {
 		size += sizeof(mod->vnd.company);
 		size += sizeof(mod->vnd.id);
@@ -198,10 +202,6 @@ static size_t metadata_model_size(struct bt_mesh_model *mod,
 	}
 
 	size += sizeof(uint8_t);
-
-	if (!mod->metadata) {
-		return size;
-	}
 
 	for (entry = *mod->metadata; entry && entry->len; ++entry) {
 		size += sizeof(entry->len) + sizeof(entry->id) + entry->len;
@@ -254,13 +254,13 @@ static int metadata_add_model(struct bt_mesh_model *mod,
 
 	model_size = metadata_model_size(mod, elem, vnd);
 
-	if (*offset <= model_size) {
+	if (*offset >= model_size) {
 		*offset -= model_size;
 		return 0;
 	}
 
 	if (net_buf_simple_tailroom(buf) < (model_size + BT_MESH_MIC_SHORT)) {
-		LOG_ERR("Too large metadata");
+		LOG_DBG("Model metadata didn't fit in the buffer");
 		return -E2BIG;
 	}
 
@@ -293,7 +293,6 @@ int bt_mesh_metadata_get_page_0(struct net_buf_simple *buf, size_t offset)
 	};
 	uint8_t *mod_count_ptr;
 	uint8_t *vnd_count_ptr;
-	uint8_t mod_count = 0;
 	int i, j, err;
 
 	comp = bt_mesh_comp_get();
@@ -317,18 +316,15 @@ int bt_mesh_metadata_get_page_0(struct net_buf_simple *buf, size_t offset)
 				continue;
 			}
 
-			++mod_count;
 			err = metadata_add_model(model, elem, false, &arg);
 			if (err) {
 				return err;
 			}
-		}
 
-		if (mod_count_ptr) {
-			*mod_count_ptr = mod_count;
+			if (mod_count_ptr) {
+				(*mod_count_ptr) += 1;
+			}
 		}
-
-		mod_count = 0;
 
 		for (j = 0; j < elem->vnd_model_count; j++) {
 			struct bt_mesh_model *model = &elem->vnd_models[j];
@@ -337,15 +333,14 @@ int bt_mesh_metadata_get_page_0(struct net_buf_simple *buf, size_t offset)
 				continue;
 			}
 
-			++mod_count;
 			err = metadata_add_model(model, elem, true, &arg);
 			if (err) {
 				return err;
 			}
-		}
 
-		if (vnd_count_ptr) {
-			*vnd_count_ptr = mod_count;
+			if (vnd_count_ptr) {
+				(*vnd_count_ptr) += 1;
+			}
 		}
 	}
 
@@ -1988,6 +1983,116 @@ int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
 		LOG_DBG("Stored %s value", path);
 	}
 	return err;
+}
+
+#if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
+static int metadata_set(const char *name, size_t len_rd, settings_read_cb read_cb, void *cb_arg)
+{
+	/* Only need to know that the entry exists. Will load the contents on
+	 * demand.
+	 */
+	if (len_rd > 0) {
+		atomic_set_bit(bt_mesh.flags, BT_MESH_METADATA_DIRTY);
+	}
+
+	return 0;
+}
+BT_MESH_SETTINGS_DEFINE(metadata, "metadata", metadata_set);
+
+int bt_mesh_models_metadata_store(void)
+{
+	NET_BUF_SIMPLE_DEFINE(buf, CONFIG_BT_MESH_MODELS_METADATA_PAGE_LEN);
+	size_t total_size;
+	int err;
+
+	total_size = bt_mesh_metadata_page_0_size();
+	LOG_DBG("bt/mesh/metadata total %d", total_size);
+
+	net_buf_simple_init(&buf, 0);
+	net_buf_simple_add_le16(&buf, total_size);
+
+	err = bt_mesh_metadata_get_page_0(&buf, 0);
+	if (err == -E2BIG) {
+		LOG_ERR("Metadata too large");
+		return err;
+	}
+	if (err) {
+		LOG_ERR("Failed to read models metadata: %d", err);
+		return err;
+	}
+
+	LOG_DBG("bt/mesh/metadata len %d", buf.len);
+
+	err = settings_save_one("bt/mesh/metadata", buf.data, buf.len);
+	if (err) {
+		LOG_ERR("Failed to store models metadata: %d", err);
+	} else {
+		LOG_DBG("Stored models metadata");
+	}
+
+	return err;
+}
+
+int bt_mesh_models_metadata_read(struct net_buf_simple *buf, size_t offset)
+{
+	NET_BUF_SIMPLE_DEFINE(stored_buf, CONFIG_BT_MESH_MODELS_METADATA_PAGE_LEN);
+	size_t original_len = buf->len;
+	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return -ENOTSUP;
+	}
+
+	net_buf_simple_init(&stored_buf, 0);
+
+	err = settings_load_subtree_direct("bt/mesh/metadata", read_comp_cb, &stored_buf);
+	if (err) {
+		LOG_ERR("Failed reading models metadata: %d", err);
+		return err;
+	}
+
+	/* First two bytes are total length */
+	offset += 2;
+
+	net_buf_simple_add_mem(buf, &stored_buf.data, MIN(net_buf_simple_tailroom(buf), 2));
+
+	if (offset >= stored_buf.len) {
+		return 0;
+	}
+
+	net_buf_simple_add_mem(buf, &stored_buf.data[offset],
+			       MIN(net_buf_simple_tailroom(buf), stored_buf.len - offset));
+
+	LOG_DBG("metadata read %d", buf->len);
+
+	if (buf->len == original_len) {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+#endif
+
+void bt_mesh_models_metadata_clear(void)
+{
+	int err;
+
+	err = settings_delete("bt/mesh/metadata");
+	if (err) {
+		LOG_ERR("Failed to clear models metadata: %d", err);
+	} else {
+		LOG_DBG("Cleared models metadata");
+	}
+
+	atomic_clear_bit(bt_mesh.flags, BT_MESH_METADATA_DIRTY);
+}
+
+int bt_mesh_models_metadata_change_prepare(void)
+{
+#if !IS_ENABLED(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
+	return -ENOTSUP;
+#endif
+	return bt_mesh_models_metadata_store();
 }
 
 static void commit_mod(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
