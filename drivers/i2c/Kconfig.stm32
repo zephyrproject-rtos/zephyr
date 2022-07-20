@@ -1,13 +1,10 @@
 # Copyright (c) 2018 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ST_STM32_I2C_V1 := st,stm32-i2c-v1
-DT_COMPAT_ST_STM32_I2C_V2 := st,stm32-i2c-v2
-
 menuconfig I2C_STM32
 	bool "STM32 I2C driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_I2C_V1)) || $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_I2C_V2))
-	depends on SOC_FAMILY_STM32
+	default y
+	depends on DT_HAS_ST_STM32_I2C_V1_ENABLED || DT_HAS_ST_STM32_I2C_V2_ENABLED
 	help
 	  Enable I2C support on the STM32 SoCs
 
@@ -15,7 +12,8 @@ if I2C_STM32
 
 config I2C_STM32_V1
 	bool
-	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_I2C_V1))
+	default y
+	depends on DT_HAS_ST_STM32_I2C_V1_ENABLED
 	select USE_STM32_LL_I2C
 	select I2C_STM32_INTERRUPT if I2C_TARGET
 	help
@@ -23,7 +21,8 @@ config I2C_STM32_V1
 
 config I2C_STM32_V2
 	bool
-	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_I2C_V2))
+	default y
+	depends on DT_HAS_ST_STM32_I2C_V2_ENABLED
 	select USE_STM32_LL_I2C
 	select USE_STM32_LL_RCC if SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X
 	select I2C_STM32_INTERRUPT if I2C_TARGET

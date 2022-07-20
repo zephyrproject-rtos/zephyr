@@ -8,6 +8,8 @@ config HAS_I2C_DW
 
 menuconfig I2C_DW
 	bool "Design Ware I2C support"
+	default y
+	depends on DT_HAS_SNPS_DESIGNWARE_I2C_ENABLED
 	depends on HAS_I2C_DW
 	help
 	  Enable the Design Ware I2C driver
