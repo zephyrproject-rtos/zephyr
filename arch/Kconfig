@@ -155,10 +155,6 @@ module = ARCH
 module-str = arch
 source "subsys/logging/Kconfig.template.log_config"
 
-module = MPU
-module-str = mpu
-source "subsys/logging/Kconfig.template.log_config"
-
 config BIG_ENDIAN
 	bool
 	help
@@ -664,6 +660,10 @@ menuconfig MPU
 	  is enabled.
 
 if MPU
+module = MPU
+module-str = mpu
+source "subsys/logging/Kconfig.template.log_config"
+
 config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	bool
 	help
