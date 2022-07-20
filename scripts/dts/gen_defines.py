@@ -144,7 +144,7 @@ def main():
             write_vanilla_props(node)
 
         write_chosen(edt)
-        write_global_compat_info(edt)
+        write_global_macros(edt)
 
         write_device_extern_header(args.device_header_out, edt)
 
@@ -854,9 +854,9 @@ def write_chosen(edt):
         out_define(macro, value, width=max_len)
 
 
-def write_global_compat_info(edt):
-    # Tree-wide information related to each compatible, such as number
-    # of instances with status "okay", is printed here.
+def write_global_macros(edt):
+    # Global or tree-wide information, such as number of instances
+    # with status "okay" for each compatible, is printed here.
 
     n_okay_macros = {}
     for_each_macros = {}
