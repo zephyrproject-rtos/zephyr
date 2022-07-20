@@ -277,7 +277,7 @@ struct z_device_mmio_rom {
 		   DEVICE_MMIO_ROM_PTR(dev)->size, \
 		   (flags))
 #else
-#define DEVICE_MMIO_MAP(dev, flags) do { } while (0)
+#define DEVICE_MMIO_MAP(dev, flags) do { } while (false)
 #endif
 
 /**
@@ -525,7 +525,7 @@ struct z_device_mmio_rom {
 		   (DEVICE_MMIO_NAMED_ROM_PTR((dev), name)->size), \
 		   (flags))
 #else
-#define DEVICE_MMIO_NAMED_MAP(dev, name, flags) do { } while (0)
+#define DEVICE_MMIO_NAMED_MAP(dev, name, flags) do { } while (false)
 #endif
 
 /**
@@ -709,7 +709,7 @@ struct z_device_mmio_rom {
 		   Z_TOPLEVEL_ROM_NAME(name).phys_addr, \
 		   Z_TOPLEVEL_ROM_NAME(name).size, flags)
 #else
-#define DEVICE_MMIO_TOPLEVEL_MAP(name, flags) do { } while (0)
+#define DEVICE_MMIO_TOPLEVEL_MAP(name, flags) do { } while (false)
 #endif
 
 /**

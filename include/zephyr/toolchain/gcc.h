@@ -247,9 +247,8 @@ do {                                                                    \
 
 #define ARG_UNUSED(x) (void)(x)
 
-#define likely(x)   __builtin_expect((bool)!!(x), true)
-#define unlikely(x) __builtin_expect((bool)!!(x), false)
-
+#define likely(x)   (__builtin_expect((bool)!!(x), true) != 0L)
+#define unlikely(x) (__builtin_expect((bool)!!(x), false) != 0L)
 #define popcount(x) __builtin_popcount(x)
 
 #ifndef __no_optimization
