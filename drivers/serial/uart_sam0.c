@@ -1201,7 +1201,7 @@ static const struct uart_driver_api uart_sam0_driver_api = {
 			    uart_sam0_isr,				\
 			    DEVICE_DT_INST_GET(n), 0);			\
 		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));		\
-	} while (0)
+	} while (false)
 
 #define UART_SAM0_IRQ_HANDLER_DECL(n)					\
 	static void uart_sam0_irq_config_##n(const struct device *dev)

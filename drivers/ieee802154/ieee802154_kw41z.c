@@ -67,7 +67,7 @@ int kw41_dbg_idx;
 		if (++kw41_dbg_idx == KW41_DBG_TRACE_SIZE) { \
 			kw41_dbg_idx = 0; \
 		} \
-	} while (0)
+	} while (false)
 
 #else
 

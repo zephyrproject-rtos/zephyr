@@ -210,7 +210,7 @@ static void usb_sam0_load_padcal(void)
 		    DT_INST_IRQ_BY_IDX(0, n, priority),		\
 		    usb_sam0_isr, 0, 0);			\
 	irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));		\
-	} while (0)
+	} while (false)
 
 /* Attach by initializing the device */
 int usb_dc_attach(void)

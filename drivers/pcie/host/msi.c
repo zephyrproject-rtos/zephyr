@@ -248,7 +248,7 @@ static void enable_msi(pcie_bdf_t bdf,
 
 	mdr = pcie_msi_mdr(irq, vectors);
 	mcr = pcie_conf_read(bdf, base + PCIE_MSI_MCR);
-	if (mcr & PCIE_MSI_MCR_64) {
+	if ((mcr & PCIE_MSI_MCR_64) != 0U) {
 		pcie_conf_write(bdf, base + PCIE_MSI_MAP1_64, 0U);
 		pcie_conf_write(bdf, base + PCIE_MSI_MDR_64, mdr);
 	} else {

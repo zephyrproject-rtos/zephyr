@@ -329,7 +329,7 @@ uint32_t sam0_eic_interrupt_pending(int port)
 			    DT_INST_IRQ_BY_IDX(0, n, priority),		\
 			    sam0_eic_isr, DEVICE_DT_INST_GET(0), 0);	\
 		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));		\
-	} while (0)
+	} while (false)
 
 static int sam0_eic_init(const struct device *dev)
 {
