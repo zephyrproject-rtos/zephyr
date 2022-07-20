@@ -226,7 +226,7 @@ extern "C" {
 			default : \
 				(const void **)buf) = arg; \
 	} \
-} while (0)
+} while (false)
 #endif
 
 /** @brief Return alignment needed for given argument.
@@ -291,7 +291,7 @@ do { \
 			Z_CBPRINTF_IS_LONGDOUBLE(_arg) && \
 			!IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE)),\
 			"Packaging of long double not enabled in Kconfig."); \
-	while (_align_offset % Z_CBPRINTF_ALIGNMENT(_arg)) { \
+	while (_align_offset % Z_CBPRINTF_ALIGNMENT(_arg) != 0UL) { \
 		_idx += sizeof(int); \
 		_align_offset += sizeof(int); \
 	} \
@@ -321,7 +321,7 @@ do { \
 	} \
 	_idx += _arg_size; \
 	_align_offset += _arg_size; \
-} while (0)
+} while (false)
 
 /** @brief Package single argument.
  *
@@ -442,7 +442,7 @@ do { \
 	/* Append string indexes to the package. */ \
 	_total_len += _ros_cnt; \
 	_total_len += _rws_cnt; \
-	if (_pbuf) { \
+	if (_pbuf != NULL) { \
 		/* Append string locations. */ \
 		uint8_t *_pbuf_loc = &_pbuf[_pkg_len]; \
 		for (size_t i = 0; i < _ros_cnt; i++) { \
@@ -455,7 +455,7 @@ do { \
 	/* Store length */ \
 	_outlen = (_total_len > (int)_pmax) ? -ENOSPC : _total_len; \
 	/* Store length in the header, set number of dumped strings to 0 */ \
-	if (_pbuf) { \
+	if (_pbuf != NULL) { \
 		union cbprintf_package_hdr hdr = { \
 			.desc = { \
 				.len = (uint8_t)(_pkg_len / sizeof(int)), \
@@ -469,7 +469,7 @@ do { \
 		*_len_loc = hdr; \
 	} \
 	_Pragma("GCC diagnostic pop") \
-} while (0)
+} while (false)
 
 #if Z_C_GENERIC
 #define Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, align_offset, flags, \
@@ -486,7 +486,7 @@ do { \
 	} else { \
 		outlen = cbprintf_package(NULL, align_offset, flags, __VA_ARGS__); \
 	} \
-} while (0)
+} while (false)
 #endif /* Z_C_GENERIC */
 
 #ifdef __cplusplus
