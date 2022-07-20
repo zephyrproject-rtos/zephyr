@@ -84,6 +84,74 @@
 				interrupt-controller;
 			};
 		};
+		CPU4: cpu@4 {
+			compatible = "riscv";
+			device_type = "cpu";
+			reg = <4>;
+			status = "okay";
+			riscv,isa = "rv32imafdcxandes";
+			mmu-type = "riscv,sv32";
+			clock-frequency = <60000000>;
+			i-cache-line-size = <32>;
+			d-cache-line-size = <32>;
+			CPU4_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+		CPU5: cpu@5 {
+			compatible = "riscv";
+			device_type = "cpu";
+			reg = <5>;
+			status = "okay";
+			riscv,isa = "rv32imafdcxandes";
+			mmu-type = "riscv,sv32";
+			clock-frequency = <60000000>;
+			i-cache-line-size = <32>;
+			d-cache-line-size = <32>;
+			CPU5_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+		CPU6: cpu@6 {
+			compatible = "riscv";
+			device_type = "cpu";
+			reg = <6>;
+			status = "okay";
+			riscv,isa = "rv32imafdcxandes";
+			mmu-type = "riscv,sv32";
+			clock-frequency = <60000000>;
+			i-cache-line-size = <32>;
+			d-cache-line-size = <32>;
+			CPU6_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+		CPU7: cpu@7 {
+			compatible = "riscv";
+			device_type = "cpu";
+			reg = <7>;
+			status = "okay";
+			riscv,isa = "rv32imafdcxandes";
+			mmu-type = "riscv,sv32";
+			clock-frequency = <60000000>;
+			i-cache-line-size = <32>;
+			d-cache-line-size = <32>;
+			CPU7_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
 	};
 
 	dram: memory@0 {
@@ -110,7 +178,9 @@
 			riscv,max-priority = <255>;
 			riscv,ndev = <1023>;
 			interrupts-extended = <&CPU0_intc 11 &CPU1_intc 11
-					       &CPU2_intc 11 &CPU3_intc 11>;
+					       &CPU2_intc 11 &CPU3_intc 11
+					       &CPU4_intc 11 &CPU5_intc 11
+					       &CPU6_intc 11 &CPU7_intc 11>;
 		};
 
 		plic_sw0: interrupt-controller@e6400000 {
@@ -122,7 +192,9 @@
 			riscv,max-priority = <255>;
 			riscv,ndev = <1023>;
 			interrupts-extended = <&CPU0_intc 3 &CPU1_intc 3
-					       &CPU2_intc 3 &CPU3_intc 3>;
+					       &CPU2_intc 3 &CPU3_intc 3
+					       &CPU4_intc 3 &CPU5_intc 3
+					       &CPU6_intc 3 &CPU7_intc 3>;
 		};
 
 		mtimer: timer@e6000000 {
