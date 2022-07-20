@@ -5,7 +5,8 @@
 
 config GPIO_NPCX
 	bool "Nuvoton NPCX embedded controller (EC) gpio driver"
-	depends on SOC_FAMILY_NPCX
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_GPIO_ENABLED
 	help
 	  This option enables the GPIO driver for NPCX family of
 	  processors.
