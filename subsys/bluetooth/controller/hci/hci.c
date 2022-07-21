@@ -209,6 +209,9 @@ static uint32_t cis_pending_count;
 static uint64_t event_mask = DEFAULT_EVENT_MASK;
 static uint64_t event_mask_page_2 = DEFAULT_EVENT_MASK_PAGE_2;
 static uint64_t le_event_mask = DEFAULT_LE_EVENT_MASK;
+#if defined(CONFIG_BT_HCI_VS_EVT)
+static uint64_t vs_events_mask = DEFAULT_VS_EVT_MASK;
+#endif /* CONFIG_BT_HCI_VS_EVT */
 
 static struct net_buf *cmd_complete_status(uint8_t status);
 
@@ -333,6 +336,19 @@ static void *meta_evt(struct net_buf *buf, uint8_t subevt, uint8_t melen)
 
 	return net_buf_add(buf, melen);
 }
+
+#if defined(CONFIG_BT_HCI_VS_EVT)
+static void *vs_event(struct net_buf *buf, uint8_t subevt, uint8_t evt_len)
+{
+	struct bt_hci_evt_vs *evt;
+
+	hci_evt_create(buf, BT_HCI_EVT_VENDOR, sizeof(*evt) + evt_len);
+	evt = net_buf_add(buf, sizeof(*evt));
+	evt->subevent = subevt;
+
+	return net_buf_add(buf, evt_len);
+}
+#endif /* CONFIG_BT_HCI_VS_EVT */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 static void *mesh_evt(struct net_buf *buf, uint8_t subevt, uint8_t melen)
@@ -2924,7 +2940,7 @@ static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
 	 * HCI event should inform about it by storing single octet with
 	 * special I_sample and Q_sample data.
 	 */
-	samples_cnt = (!iq_report->sample_count ? 1 : iq_report->sample_count);
+	samples_cnt = MAX(1, iq_report->sample_count);
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_CONNECTIONLESS_IQ_REPORT,
 		       (sizeof(*sep) +
@@ -4973,6 +4989,168 @@ struct net_buf *hci_vs_err_assert(const char *file, uint32_t line)
 	return hci_vs_err_trace_create(BT_HCI_EVT_VS_ERROR_DATA_TYPE_CTRL_ASSERT, file, line, 0U);
 }
 #endif /* CONFIG_BT_HCI_VS_FATAL_ERROR */
+
+#if defined(CONFIG_BT_CTLR_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES)
+static void vs_le_df_connectionless_iq_report(struct pdu_data *pdu_rx, struct node_rx_pdu *node_rx,
+					      struct net_buf *buf)
+{
+	struct bt_hci_evt_vs_le_connectionless_iq_report *sep;
+	struct node_rx_iq_report *iq_report;
+	struct lll_sync *lll;
+	uint8_t samples_cnt;
+	int16_t rssi;
+	uint16_t sync_handle;
+	uint16_t per_evt_counter;
+	struct ll_sync_set *sync = NULL;
+
+	iq_report = (struct node_rx_iq_report *)node_rx;
+
+	if (!(vs_events_mask & BT_EVT_MASK_VS_LE_CONNECTIONLESS_IQ_REPORT)) {
+		return;
+	}
+
+	lll = iq_report->hdr.rx_ftr.param;
+
+	sync = HDR_LLL2ULL(lll);
+
+	/* TX LL thread has higher priority than RX thread. It may happen that
+	 * host successfully disables CTE sampling in the meantime.
+	 * It should be verified here, to avoid reporting IQ samples after
+	 * the functionality was disabled or if sync was lost.
+	 */
+	if (ull_df_sync_cfg_is_not_enabled(&lll->df_cfg) || !sync->timeout_reload) {
+		/* Drop further processing of the event. */
+		return;
+	}
+
+	/* Get the sync handle corresponding to the LLL context passed in the
+	 * node rx footer field.
+	 */
+	sync_handle = ull_sync_handle_get(sync);
+	per_evt_counter = iq_report->event_counter;
+
+	/* If there are no IQ samples due to insufficient resources
+	 * HCI event should inform about it by storing single octet with
+	 * special I_sample and Q_sample data.
+	 */
+	samples_cnt = MAX(1, iq_report->sample_count);
+
+	sep = vs_event(buf, BT_HCI_EVT_VS_LE_CONNECTIONLESS_IQ_REPORT,
+		       (sizeof(*sep) + (samples_cnt * sizeof(struct bt_hci_le_iq_sample16))));
+
+	rssi = RSSI_DBM_TO_DECI_DBM(iq_report->hdr.rx_ftr.rssi);
+
+	sep->sync_handle = sys_cpu_to_le16(sync_handle);
+	sep->rssi = sys_cpu_to_le16(rssi);
+	sep->rssi_ant_id = iq_report->rssi_ant_id;
+	sep->cte_type = iq_report->cte_info.type;
+
+	sep->chan_idx = iq_report->chan_idx;
+	sep->per_evt_counter = sys_cpu_to_le16(per_evt_counter);
+
+	if (sep->cte_type == BT_HCI_LE_AOA_CTE) {
+		sep->slot_durations = iq_report->local_slot_durations;
+	} else if (sep->cte_type == BT_HCI_LE_AOD_CTE_1US) {
+		sep->slot_durations = BT_HCI_LE_ANTENNA_SWITCHING_SLOT_1US;
+	} else {
+		sep->slot_durations = BT_HCI_LE_ANTENNA_SWITCHING_SLOT_2US;
+	}
+
+	sep->packet_status = iq_report->packet_status;
+
+	if (iq_report->packet_status == BT_HCI_LE_CTE_INSUFFICIENT_RESOURCES) {
+		sep->sample[0].i = BT_HCI_VS_LE_CTE_REPORT_NO_VALID_SAMPLE;
+		sep->sample[0].q = BT_HCI_VS_LE_CTE_REPORT_NO_VALID_SAMPLE;
+		sep->sample_count = 0U;
+	} else {
+		for (uint8_t idx = 0U; idx < samples_cnt; ++idx) {
+			sep->sample[idx].i = sys_cpu_to_le16(iq_report->sample[idx].i);
+			sep->sample[idx].q = sys_cpu_to_le16(iq_report->sample[idx].q);
+		}
+
+		sep->sample_count = samples_cnt;
+	}
+}
+#endif /* CONFIG_BT_CTLR_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES */
+
+#if defined(CONFIG_BT_CTLR_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES)
+static void vs_le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct net_buf *buf)
+{
+	struct bt_hci_evt_vs_le_connection_iq_report *sep;
+	struct node_rx_iq_report *iq_report;
+	struct lll_conn *lll;
+	uint8_t samples_cnt;
+	uint8_t phy_rx;
+	int16_t rssi;
+
+	iq_report = (struct node_rx_iq_report *)node_rx;
+
+	if (!(vs_events_mask & BT_EVT_MASK_VS_LE_CONNECTION_IQ_REPORT)) {
+		return;
+	}
+
+	lll = iq_report->hdr.rx_ftr.param;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	phy_rx = lll->phy_rx;
+
+	/* Make sure the report is generated for connection on PHY UNCODED */
+	LL_ASSERT(phy_rx != PHY_CODED);
+#else
+	phy_rx = PHY_1M;
+#endif /* CONFIG_BT_CTLR_PHY */
+
+	/* TX LL thread has higher priority than RX thread. It may happen that host succefully
+	 * disables CTE sampling in the meantime. It should be verified here, to avoid reporing
+	 * IQ samples after the functionality was disabled.
+	 */
+	if (ull_df_conn_cfg_is_not_enabled(&lll->df_rx_cfg)) {
+		/* Dropp further processing of the event. */
+		return;
+	}
+
+	/* If there are no IQ samples due to insufficient resources HCI event should inform about
+	 * it by store single octet with special I_sample and Q_sample data.
+	 */
+	samples_cnt = MAX(1, iq_report->sample_count);
+
+	sep = vs_event(buf, BT_HCI_EVT_VS_LE_CONNECTION_IQ_REPORT,
+			(sizeof(*sep) + (samples_cnt * sizeof(struct bt_hci_le_iq_sample16))));
+
+	rssi = RSSI_DBM_TO_DECI_DBM(iq_report->hdr.rx_ftr.rssi);
+
+	sep->conn_handle = sys_cpu_to_le16(iq_report->hdr.handle);
+	sep->rx_phy = phy_rx;
+	sep->rssi = sys_cpu_to_le16(rssi);
+	sep->rssi_ant_id = iq_report->rssi_ant_id;
+	sep->cte_type = iq_report->cte_info.type;
+
+	sep->data_chan_idx = iq_report->chan_idx;
+	sep->conn_evt_counter = sys_cpu_to_le16(iq_report->event_counter);
+
+	if (sep->cte_type == BT_HCI_LE_AOA_CTE) {
+		sep->slot_durations = iq_report->local_slot_durations;
+	} else if (sep->cte_type == BT_HCI_LE_AOD_CTE_1US) {
+		sep->slot_durations = BT_HCI_LE_ANTENNA_SWITCHING_SLOT_1US;
+	} else {
+		sep->slot_durations = BT_HCI_LE_ANTENNA_SWITCHING_SLOT_2US;
+	}
+
+	sep->packet_status = iq_report->packet_status;
+
+	if (iq_report->packet_status == BT_HCI_LE_CTE_INSUFFICIENT_RESOURCES) {
+		sep->sample[0].i = BT_HCI_VS_LE_CTE_REPORT_NO_VALID_SAMPLE;
+		sep->sample[0].q = BT_HCI_VS_LE_CTE_REPORT_NO_VALID_SAMPLE;
+		sep->sample_count = 0U;
+	} else {
+		for (uint8_t idx = 0U; idx < samples_cnt; ++idx) {
+			sep->sample[idx].i = sys_cpu_to_le16(iq_report->sample[idx].i);
+			sep->sample[idx].q = sys_cpu_to_le16(iq_report->sample[idx].q);
+		}
+		sep->sample_count = samples_cnt;
+	}
+}
+#endif /* CONFIG_BT_CTLR_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES */
 
 #endif /* CONFIG_BT_HCI_VS_EXT */
 
@@ -7874,7 +8052,11 @@ static void encode_control(struct node_rx_pdu *node_rx,
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	case NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT:
+#if defined(CONFIG_BT_CTLR_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES)
+		vs_le_df_connectionless_iq_report(pdu_data, node_rx, buf);
+#else
 		le_df_connectionless_iq_report(pdu_data, node_rx, buf);
+#endif /* CONFIG_BT_CTLR_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES */
 		break;
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
@@ -7972,7 +8154,11 @@ static void encode_control(struct node_rx_pdu *node_rx,
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	case NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT:
+#if defined(CONFIG_BT_CTLR_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES)
+		vs_le_df_connection_iq_report(node_rx, buf);
+#else
 		le_df_connection_iq_report(node_rx, buf);
+#endif /* CONFIG_BT_CTLR_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES */
 		return;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 #endif /* CONFIG_BT_CONN */
