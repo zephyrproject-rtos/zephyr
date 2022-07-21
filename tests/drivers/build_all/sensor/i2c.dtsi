@@ -621,3 +621,8 @@ test_i2c_max31875: max31875@53 {
 	compatible = "maxim,max31875";
 	reg = <0x53>;
 };
+
+test_i2c_bh1750: bh1750@54 {
+	compatible = "rohm,bh1750";
+	reg = <0x54>;
+};

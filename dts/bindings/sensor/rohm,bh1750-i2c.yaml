@@ -1,0 +1,21 @@
+# Copyright (c) 2022 Lucas Heitzmann Gabrielli
+# SPDX-License-Identifier: Apache-2.0
+
+description: Rohm BH1750 16 bit ambient light sensor.
+
+compatible: "rohm,bh1750"
+
+include: i2c-device.yaml
+
+properties:
+  oversampling-factor:
+    type: int
+    required: false
+    description: |
+      Adjust the oversampling factor of the sensor to compensate for window
+      absorption. For example, if the sensor is behind an optical window with
+      50% absorption, the default factor should be multiplied by 2 (138).
+      Acceptable values are from 31 to 254, corresponding to (0.45 and 3.68
+      times the default value, respectively).  The sampling time is this factor
+      multiplied by 2.61 ms (normal and high resolution) or 0.35 ms (low res).
+    default: 69
