@@ -5,7 +5,9 @@
 
 config PWM_MCUX_PWT
 	bool "MCUX PWT PWM capture driver"
-	depends on HAS_MCUX_PWT && CLOCK_CONTROL && PWM_CAPTURE
+	default y
+	depends on DT_HAS_NXP_KINETIS_PWT_ENABLED
+	depends on CLOCK_CONTROL && PWM_CAPTURE
 	select PINCTRL
 	help
 	  Enable the MCUX Pulse Width Timer (PWT) PWM capture driver.

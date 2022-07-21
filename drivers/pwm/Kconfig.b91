@@ -3,6 +3,7 @@
 
 config PWM_TELINK_B91
 	bool "Telink Semiconductor B91 PWM driver"
-	depends on SOC_RISCV_TELINK_B91
+	default y
+	depends on DT_HAS_TELINK_B91_PWM_ENABLED
 	help
 	  Enables Telink B91 PWM driver.
