@@ -2,4 +2,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+if SHIELD_X_NUCLEO_IKS02A1
+
+config I2C
+	default y if SENSOR
+
+endif # SHIELD_X_NUCLEO_IKS02A1
+
 rsource "boards/*.defconfig"

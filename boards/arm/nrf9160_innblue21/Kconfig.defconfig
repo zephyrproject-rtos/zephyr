@@ -45,4 +45,7 @@ config BT_HCI_VS
 config REGULATOR
 	default y if SENSOR
 
+config I2C
+	default y if SENSOR
+
 endif # BOARD_NRF9160_INNBLUE21 || BOARD_NRF9160_INNBLUE21_NS
