@@ -1,0 +1,8 @@
+sample:
+  name: WSEN-HIDS Sensor Sample
+tests:
+  sample.sensor.wsen-hids:
+    harness: sensor
+    tags: sensors
+    depends_on: i2c
+    filter: dt_compat_enabled("we,wsen-hids")
