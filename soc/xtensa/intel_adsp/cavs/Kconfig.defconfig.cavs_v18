@@ -1,11 +1,8 @@
 # Copyright (c) 2020 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_INTEL_CAVS_V20
+if SOC_INTEL_CAVS_V18
 
-config SOC_SERIES
-	string
-	default "cavs_v20"
 
 config SOC_TOOLCHAIN_NAME
 	string
@@ -13,10 +10,14 @@ config SOC_TOOLCHAIN_NAME
 
 config SOC
 	string
-	default "intel_cavs_20"
+	default "intel_cnl_adsp"
+
+# For backward compatibility, to be removed
+config SOC_SERIES_INTEL_CAVS_V18
+	def_bool y
 
 config SMP
-       default y
+	default y
 
 # FIXME: these DSPs can have more cores, but Zephyr only supports up to 2 cores on them
 config MP_NUM_CPUS
@@ -33,7 +34,7 @@ config INTEL_ADSP_TIMER
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 400000000 if XTENSA_TIMER
-	default 38400000 if INTEL_ADSP_TIMER
+	default 24000000 if INTEL_ADSP_TIMER
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 50000
@@ -57,4 +58,4 @@ config LOG_BACKEND_ADSP
 
 endif # LOG
 
-endif # SOC_SERIES_INTEL_CAVS_V20
+endif # SOC_INTEL_CAVS_V18

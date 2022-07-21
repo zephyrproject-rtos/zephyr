@@ -23,7 +23,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(soc);
 
-#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
+#ifndef CONFIG_SOC_INTEL_CAVS_V15
 # define SHIM_GPDMA_BASE_OFFSET   0x6500
 # define SHIM_GPDMA_BASE(x)       (SHIM_GPDMA_BASE_OFFSET + (x) * 0x100)
 # define SHIM_GPDMA_CLKCTL(x)     (SHIM_GPDMA_BASE(x) + 0x4)
@@ -42,7 +42,7 @@ extern void soc_mp_init(void);
 
 static __imr void power_init(void)
 {
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
+#ifdef CONFIG_SOC_INTEL_CAVS_V15
 	/* HP domain clocked by PLL
 	 * LP domain clocked by PLL
 	 * DSP Core 0 PLL Clock Select divide by 1

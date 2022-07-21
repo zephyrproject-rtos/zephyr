@@ -40,7 +40,7 @@ __imr void soc_mp_startup(uint32_t cpu)
 	 * disable this; otherwise our own code in soc_idc_init()
 	 * already has it unmasked.
 	 */
-	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V25)) {
 		CAVS_INTCTRL[cpu].l2.clear = CAVS_L2_IDC;
 	}
 }
@@ -49,7 +49,7 @@ void soc_start_core(int cpu_num)
 {
 	uint32_t curr_cpu = arch_proc_id();
 
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+#ifdef CONFIG_SOC_INTEL_CAVS_V25
 	/* On cAVS v2.5, MP startup works differently.  The core has
 	 * no ROM, and starts running immediately upon receipt of an
 	 * IDC interrupt at the start of LPSRAM at 0xbe800000.  Note
@@ -89,7 +89,7 @@ void soc_start_core(int cpu_num)
 	 * turn itself off when it gets to the WAITI instruction in
 	 * the idle thread.
 	 */
-	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
+	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
 		CAVS_SHIM.clkctl |= CAVS_CLKCTL_TCPLCG(cpu_num);
 	}
 	CAVS_SHIM.pwrctl |= CAVS_PWRCTL_TCPDSPPG(cpu_num);
@@ -98,7 +98,7 @@ void soc_start_core(int cpu_num)
 	 * complete initialization and be waiting for the IDC we're
 	 * about to send.
 	 */
-	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V25)) {
 		k_busy_wait(CAVS15_ROM_IDC_DELAY);
 	}
 
@@ -208,7 +208,7 @@ int soc_adsp_halt_cpu(int id)
 	 * because power is controlled by the host, so synchronization
 	 * needs to be part of the application layer.
 	 */
-	while (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25) &&
+	while (IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V25) &&
 	       (CAVS_SHIM.pwrsts & CAVS_PWRSTS_PDSPPGS(id))) {
 	}
 	return 0;

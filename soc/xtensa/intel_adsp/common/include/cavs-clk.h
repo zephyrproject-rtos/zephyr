@@ -49,7 +49,7 @@ struct cavs_clock_info *cavs_clocks_get(void);
 
 #define CAVS_CLOCK_FREQ_LPRO  CAVS_CLOCK_FREQ(lpro)
 #define CAVS_CLOCK_FREQ_HPRO  CAVS_CLOCK_FREQ(hpro)
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+#ifdef CONFIG_SOC_INTEL_CAVS_V25
 #define CAVS_CLOCK_FREQ_WOVCRO  CAVS_CLOCK_FREQ(wovcro)
 #endif
 
