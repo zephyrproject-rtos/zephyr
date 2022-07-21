@@ -5,6 +5,8 @@
 
 config COUNTER_MAXIM_DS3231
 	bool "Maxim DS3231 RTC/TCXO"
+	default y
+	depends on DT_HAS_MAXIM_DS3231_ENABLED
 	depends on I2C
 	select POLL
 	help
