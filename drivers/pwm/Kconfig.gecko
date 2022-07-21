@@ -5,7 +5,8 @@
 
 config PWM_GECKO
 	bool "GECKO MCU PWM driver"
-	depends on SOC_FAMILY_EXX32
+	default y
+	depends on DT_HAS_SILABS_GECKO_PWM_ENABLED
 	select SOC_GECKO_TIMER
 	help
 	  This option enables the PWM driver for EXX32 GECKO family of
