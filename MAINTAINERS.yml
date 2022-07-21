@@ -483,6 +483,7 @@ Documentation:
     labels:
         - "area: ADC"
 
+# See also "Intel Platforms (Xtensa)"
 "Drivers: Audio":
     status: maintained
     maintainers:
@@ -1703,6 +1704,7 @@ Intel Platforms (X86):
     labels:
         - "platform: X86"
 
+# See also "Drivers: Audio"
 Intel Platforms (Xtensa):
     status: maintained
     maintainers:
