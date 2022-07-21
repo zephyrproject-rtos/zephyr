@@ -1,15 +1,13 @@
-# USBC STM32 TCPC device configuration options
+# USB-C STM32 TCPC device configuration options
 
 # Copyright 2022 The Chromium OS Authors
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ST_STM32_UCPD := st,stm32-ucpd
-
 config USBC_TCPC_STM32
-	bool "USBC TCPC device controller driver"
-	depends on SOC_FAMILY_STM32
-	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_UCPD))
+	bool "USB-C TCPC device controller driver"
+	default y
+	depends on DT_HAS_ST_STM32_UCPD_ENABLED
 	select USE_STM32_LL_UCPD
 	help
-	  Enable USBC TCPC support on the STM32 G0, G4, L5, and U5 family of
+	  Enable USB-C TCPC support on the STM32 G0, G4, L5, and U5 family of
 	  processors.
