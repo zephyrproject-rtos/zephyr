@@ -45,6 +45,7 @@
 		led1 = &green_led;
 		sw0 = &user_button;
 		magn0 = &lis2mdl;
+		accel0 = &lis2dw12;
 	};
 };
 
@@ -125,7 +126,7 @@
 
 	cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>, <&gpioe 12 GPIO_ACTIVE_LOW>, <&gpioe 10 GPIO_ACTIVE_LOW>;
 
-	lis2dw12@0 {
+	lis2dw12: lis2dw12@0 {
 		compatible = "st,lis2dw12";
 		spi-max-frequency = <1000000>;
 		reg = <0>;
