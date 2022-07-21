@@ -121,14 +121,35 @@ static inline void test_time_ms(void)
 	} while (0)
 #endif
 
+static inline void print_nothing(const char *fmt, ...)
+{
+	ARG_UNUSED(fmt);
+}
+
 #ifndef TC_PRINT
+#if defined(CONFIG_ZTEST_VERBOSE_OUTPUT)
 #define TC_PRINT(fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
+#else
+#define TC_PRINT(fmt, ...) print_nothing(fmt, ##__VA_ARGS__)
+#endif
+#endif
+
+#ifndef TC_SUMMARY_PRINT
+#define TC_SUMMARY_PRINT(fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
+#endif
+
+#ifndef TC_START_PRINT
+#if defined(CONFIG_ZTEST_VERBOSE_OUTPUT)
+#define TC_START_PRINT(name) PRINT_DATA("START - %s\n", name);
+#else
+#define TC_START_PRINT(name)
+#endif
 #endif
 
 #ifndef TC_START
 #define TC_START(name)							\
 	do {								\
-		PRINT_DATA("START - %s\n", name);			\
+		TC_START_PRINT(name);			\
 		get_start_time_cyc();					\
 	} while (0)
 #endif
@@ -137,15 +158,22 @@ static inline void test_time_ms(void)
 #define TC_END(result, fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
 #endif
 
-#ifndef Z_TC_END_RESULT
+#ifndef TC_END_PRINT
+#if defined(CONFIG_ZTEST_VERBOSE_OUTPUT)
+#define TC_END_PRINT(result, fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__); PRINT_LINE
+#else
+#define TC_END_PRINT(result, fmt, ...)
+#endif
+#endif
+
 /* prints result and the function name */
+#ifndef Z_TC_END_RESULT
 #define Z_TC_END_RESULT(result, func)						\
 	do {									\
 		test_time_ms();							\
-		TC_END(result, " %s - %s in %u.%u seconds\n",			\
+		TC_END_PRINT(result, " %s - %s in %u.%u seconds\n",		\
 			TC_RESULT_TO_STR(result), func, tc_spend_time/1000,	\
 			tc_spend_time%1000);					\
-		PRINT_LINE;							\
 	} while (0)
 #endif
 
@@ -154,10 +182,14 @@ static inline void test_time_ms(void)
 	Z_TC_END_RESULT((result), __func__)
 #endif
 
+#ifndef TC_SUITE_PRINT
+#define TC_SUITE_PRINT(fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
+#endif
+
 #ifndef TC_SUITE_START
 #define TC_SUITE_START(name)					\
 	do {							\
-		TC_PRINT("Running TESTSUITE %s\n", name);	\
+		TC_SUITE_PRINT("Running TESTSUITE %s\n", name);	\
 		PRINT_LINE;					\
 	} while (0)
 #endif
@@ -166,9 +198,9 @@ static inline void test_time_ms(void)
 #define TC_SUITE_END(name, result)				\
 	do {								\
 		if (result != TC_FAIL) {				\
-			TC_PRINT("TESTSUITE %s succeeded\n", name);	\
+			TC_SUITE_PRINT("TESTSUITE %s succeeded\n", name);	\
 		} else {						\
-			TC_PRINT("TESTSUITE %s failed.\n", name);	\
+			TC_SUITE_PRINT("TESTSUITE %s failed.\n", name);	\
 		}							\
 	} while (0)
 #endif
