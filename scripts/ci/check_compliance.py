@@ -216,9 +216,7 @@ class CheckPatch(ComplianceTest):
     path_hint = "<git-top>"
 
     def run(self):
-        # Default to Zephyr's checkpatch if ZEPHYR_BASE is set
-        checkpatch = os.path.join(ZEPHYR_BASE or GIT_TOP, 'scripts',
-                                  'checkpatch.pl')
+        checkpatch = os.path.join(ZEPHYR_BASE, 'scripts', 'checkpatch.pl')
         if not os.path.exists(checkpatch):
             self.skip(checkpatch + " not found")
 
@@ -229,7 +227,7 @@ class CheckPatch(ComplianceTest):
             subprocess.check_output((checkpatch, '--mailback', '--no-tree', '-'),
                                     stdin=diff.stdout,
                                     stderr=subprocess.STDOUT,
-                                    shell=True, cwd=GIT_TOP)
+                                    shell=True)
 
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
@@ -668,7 +666,7 @@ class Codeowners(ComplianceTest):
         # files :-(
 
         pattern2files = collections.OrderedDict()
-        top_path = Path(GIT_TOP)
+        top_path = Path.cwd()
 
         with open(codeowners, "r") as codeo:
             for lineno, line in enumerate(codeo, start=1):
@@ -710,7 +708,7 @@ class Codeowners(ComplianceTest):
 
         if git_pattern.endswith("/"):
             ret = ret + "**/*"
-        elif os.path.isdir(os.path.join(GIT_TOP, ret)):
+        elif os.path.isdir(ret):
             self.add_failure("Expected '/' after directory '{}' "
                              "in CODEOWNERS".format(ret))
 
@@ -720,7 +718,7 @@ class Codeowners(ComplianceTest):
         # TODO: testing an old self.commit range that doesn't end
         # with HEAD is most likely a mistake. Should warn, see
         # https://github.com/zephyrproject-rtos/ci-tools/pull/24
-        codeowners = os.path.join(GIT_TOP, "CODEOWNERS")
+        codeowners = "CODEOWNERS"
         if not os.path.exists(codeowners):
             self.skip("CODEOWNERS not available in this repo")
 
@@ -807,7 +805,7 @@ class Nits(ComplianceTest):
     def check_kconfig_header(self, fname):
         # Checks for a spammy copy-pasted header format
 
-        with open(os.path.join(GIT_TOP, fname), encoding="utf-8") as f:
+        with open(fname, encoding="utf-8") as f:
             contents = f.read()
 
         # 'Kconfig - yada yada' has a copy-pasted redundant filename at the
@@ -833,7 +831,7 @@ failure.
         # Checks for 'source "$(ZEPHYR_BASE)/Kconfig[.zephyr]"', which can be
         # be simplified to 'source "Kconfig[.zephyr]"'
 
-        with open(os.path.join(GIT_TOP, fname), encoding="utf-8") as f:
+        with open(fname, encoding="utf-8") as f:
             # Look for e.g. rsource as well, for completeness
             match = re.search(
                 r'^\s*(?:o|r|or)?source\s*"\$\(?ZEPHYR_BASE\)?/(Kconfig(?:\.zephyr)?)"',
@@ -848,7 +846,7 @@ and all 'source's are relative to it.""".format(match.group(1), fname))
     def check_redundant_document_separator(self, fname):
         # Looks for redundant '...' document separators in bindings
 
-        with open(os.path.join(GIT_TOP, fname), encoding="utf-8") as f:
+        with open(fname, encoding="utf-8") as f:
             if re.search(r"^\.\.\.", f.read(), re.MULTILINE):
                 self.add_failure(f"""\
 Redundant '...' document separator in {fname}. Binding YAML files are never
@@ -857,7 +855,7 @@ concatenated together, so no document separators are needed.""")
     def check_source_file(self, fname):
         # Generic nits related to various source files
 
-        with open(os.path.join(GIT_TOP, fname), encoding="utf-8") as f:
+        with open(fname, encoding="utf-8") as f:
             contents = f.read()
 
         if not contents.endswith("\n"):
@@ -887,7 +885,7 @@ class GitLint(ComplianceTest):
         # the current directory
         proc = subprocess.Popen('gitlint --commits ' + COMMIT_RANGE,
                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                shell=True, cwd=GIT_TOP)
+                                shell=True)
 
         msg = ""
         if proc.wait() != 0:
@@ -920,9 +918,9 @@ class PyLint(ComplianceTest):
             .splitlines()
 
         # Filter out everything but Python files. Keep filenames
-        # relative (to GIT_TOP) to stay farther from any command line
+        # relative (to <git-top>) to stay farther from any command line
         # limit.
-        py_files = filter_py(GIT_TOP, files)
+        py_files = filter_py(str(Path.cwd()), files)
         if not py_files:
             return
 
@@ -933,8 +931,7 @@ class PyLint(ComplianceTest):
             process = subprocess.Popen(
                 pylintcmd,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                cwd=GIT_TOP)
+                stderr=subprocess.PIPE)
         except OSError as e:
             self.error(f"Failed to run {cmd2str(pylintcmd)}: {e}")
 
