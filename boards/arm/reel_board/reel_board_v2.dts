@@ -93,19 +93,27 @@
 			];
 		};
 
-		lut-default = [
-			00 00 00 00 00 00 00 /* LUT0: BB: VS0..6 */
-			80 00 00 00 00 00 00 /* LUT1: BW: VS0..6 */
-			40 00 00 00 00 00 00 /* LUT2: WB: VS0..6 */
-			80 00 00 00 00 00 00 /* LUT3: WW: VS0..6 */
-			00 00 00 00 00 00 00 /* LUT4: VCOM: VS0..6 */
-			0A 00 00 00 04 /* TP0A TP0B TP0C TP0D RP0 */
-			00 00 00 00 00 /* TP1A TP1B TP1C TP1D RP1 */
-			00 00 00 00 00 /* TP2A TP2B TP2C TP2D RP2 */
-			00 00 00 00 00 /* TP3A TP3B TP3C TP3D RP3 */
-			00 00 00 00 00 /* TP4A TP4B TP4C TP4D RP4 */
-			00 00 00 00 00 /* TP5A TP5B TP5C TP5D RP5 */
-			00 00 00 00 00 /* TP6A TP6B TP6C TP6D RP6 */
-		];
+		partial {
+			gdv = [15];
+			sdv = [41 a8 32];
+			vcom = <0x26>;
+			border-waveform = <0x01>;
+			dummy-line = <0x30>;
+			gate-line-width = <0x0a>;
+			lut = [
+				00 00 00 00 00 00 00 /* LUT0: BB: VS0..6 */
+				80 00 00 00 00 00 00 /* LUT1: BW: VS0..6 */
+				40 00 00 00 00 00 00 /* LUT2: WB: VS0..6 */
+				80 00 00 00 00 00 00 /* LUT3: WW: VS0..6 */
+				00 00 00 00 00 00 00 /* LUT4: VCOM: VS0..6 */
+				0A 00 00 00 04 /* TP0A TP0B TP0C TP0D RP0 */
+				00 00 00 00 00 /* TP1A TP1B TP1C TP1D RP1 */
+				00 00 00 00 00 /* TP2A TP2B TP2C TP2D RP2 */
+				00 00 00 00 00 /* TP3A TP3B TP3C TP3D RP3 */
+				00 00 00 00 00 /* TP4A TP4B TP4C TP4D RP4 */
+				00 00 00 00 00 /* TP5A TP5B TP5C TP5D RP5 */
+				00 00 00 00 00 /* TP6A TP6B TP6C TP6D RP6 */
+			];
+		};
 	};
 };

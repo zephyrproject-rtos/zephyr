@@ -26,9 +26,7 @@
 		softstart = [d7 d6 9d];
 
 		full {
-			gdv = [16];
-			sdv = [0a];
-			vcom = <0xa8>;
+			vcom = <0x9a>;
 			border-waveform = <0x33>;
 			dummy-line = <0x1a>;
 			gate-line-width = <0x08>;
@@ -40,11 +38,17 @@
 			];
 		};
 
-		lut-default = [
-			10 18 18 08 18 18 08 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 13 14 44 12
-			00 00 00 00 00 00
-		];
+		partial {
+			vcom = <0xa8>;
+			border-waveform = <0x01>;
+			dummy-line = <0x1a>;
+			gate-line-width = <0x08>;
+			lut = [
+				10 18 18 08 18 18 08 00
+				00 00 00 00 00 00 00 00
+				00 00 00 00 13 14 44 12
+				00 00 00 00 00 00
+			];
+		};
 	};
 };
