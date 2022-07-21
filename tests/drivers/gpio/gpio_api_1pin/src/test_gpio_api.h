@@ -46,8 +46,10 @@ void test_gpio_int_edge_falling(void);
 void test_gpio_int_edge_both(void);
 void test_gpio_int_edge_to_active(void);
 void test_gpio_int_edge_to_inactive(void);
-void test_gpio_int_level_high(void);
-void test_gpio_int_level_low(void);
+void test_gpio_int_level_high_interrupt_count_1(void);
+void test_gpio_int_level_high_interrupt_count_5(void);
+void test_gpio_int_level_low_interrupt_count_1(void);
+void test_gpio_int_level_low_interrupt_count_5(void);
 void test_gpio_int_level_active(void);
 void test_gpio_int_level_inactive(void);
 
