@@ -3,11 +3,9 @@
 # Copyright (c) 2021 BrainCo Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_GD_GD32_ADC := gd,gd32-adc
-
 config ADC_GD32
 	bool "GD32 ADC driver"
-	depends on (SOC_FAMILY_GD32 || SOC_SERIES_GD32VF103)
-	default $(dt_compat_enabled,$(DT_COMPAT_GD_GD32_ADC))
+	default y
+	depends on DT_HAS_GD_GD32_ADC_ENABLED
 	help
 	  Enable GigaDevice GD32 ADC driver
