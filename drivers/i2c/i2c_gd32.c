@@ -597,7 +597,7 @@ static int i2c_gd32_configure(const struct device *dev,
 		I2C_RT(cfg->reg) = freq * 300U / 1000U + 1U;
 
 		/* CLKC = pclk1 / (bitrate * 25) */
-		clkc = pclk1 / (I2C_BITRATE_FAST_PLUS * 25U);
+		clkc = pclk1 / (I2C_BITRATE_FAST * 25U);
 		if (clkc == 0U) {
 			clkc = 1U;
 		}
