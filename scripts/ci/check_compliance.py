@@ -611,7 +611,7 @@ UNDEF_KCONFIG_WHITELIST = {
 
 class KconfigBasicCheck(KconfigCheck, ComplianceTest):
     """
-    Checks is we are introducing any new warnings/errors with Kconfig,
+    Checks if we are introducing any new warnings/errors with Kconfig,
     for example using undefined Kconfig variables.
     This runs the basic Kconfig test, which is checking only for undefined
     references inside the Kconfig tree.
