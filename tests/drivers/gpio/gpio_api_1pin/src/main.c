@@ -30,8 +30,10 @@ void test_main(void)
 		ztest_unit_test(test_gpio_int_edge_both),
 		ztest_unit_test(test_gpio_int_edge_to_active),
 		ztest_unit_test(test_gpio_int_edge_to_inactive),
-		ztest_unit_test(test_gpio_int_level_high),
-		ztest_unit_test(test_gpio_int_level_low),
+		ztest_unit_test(test_gpio_int_level_high_interrupt_count_1),
+		ztest_unit_test(test_gpio_int_level_high_interrupt_count_5),
+		ztest_unit_test(test_gpio_int_level_low_interrupt_count_1),
+		ztest_unit_test(test_gpio_int_level_low_interrupt_count_5),
 		ztest_unit_test(test_gpio_int_level_active),
 		ztest_unit_test(test_gpio_int_level_inactive),
 		ztest_unit_test(test_gpio_pin_toggle_visual));
