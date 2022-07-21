@@ -12,12 +12,15 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/__assert.h>
 
+#define TMP116_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(ti_tmp116)
+#define TMP116_EEPROM_NODE DT_CHILD(TMP116_NODE, ti_tmp116_eeprom_0)
+
 static uint8_t eeprom_content[EEPROM_TMP116_SIZE];
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_INST(0, ti_tmp116));
-	const struct device *eeprom = DEVICE_DT_GET(DT_INST(0, ti_tmp116_eeprom));
+	const struct device *dev = DEVICE_DT_GET(TMP116_NODE);
+	const struct device *eeprom = DEVICE_DT_GET(TMP116_EEPROM_NODE);
 	struct sensor_value temp_value;
 
 	/* offset to be added to the temperature
