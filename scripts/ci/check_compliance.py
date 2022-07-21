@@ -6,6 +6,7 @@
 
 import argparse
 import collections
+import contextlib
 from email.utils import parseaddr
 import logging
 import os
@@ -33,6 +34,21 @@ logger = None
 ZEPHYR_BASE = (os.environ.get('ZEPHYR_BASE') or
                str((HERE / '..' / '..').resolve()))
 os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
+
+@contextlib.contextmanager
+def run_in_directory(dir):
+    # Helper to run a code block from a given directory.
+    # Use it like this:
+    #
+    #     with run_in_directory('some/directory'):
+    #         do_something()
+
+    cwd = os.getcwd()
+    try:
+        os.chdir(dir)
+        yield
+    finally:
+        os.chdir(cwd)
 
 def git(*args, cwd=None):
     # Helper for running a Git command. Returns the rstrip()ed stdout output.
@@ -1177,10 +1193,11 @@ def _main(args):
             continue
 
         test = testcase()
+        resolved_path = resolve_path_hint(test.path_hint)
         try:
-            print(f"Running {test.name:16} tests in "
-                  f"{resolve_path_hint(test.path_hint)} ...")
-            test.run()
+            print(f"Running {test.name:16} tests in {resolved_path} ...")
+            with run_in_directory(resolved_path):
+                test.run()
         except EndTest:
             pass
 
