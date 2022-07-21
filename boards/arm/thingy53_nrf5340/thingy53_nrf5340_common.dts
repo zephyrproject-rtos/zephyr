@@ -117,6 +117,7 @@
 		magn0 = &bmm150;
 		watchdog0 = &wdt0;
 		accel0 = &adxl362;
+		accel1 = &bmi270;
 	};
 };
 
