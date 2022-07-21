@@ -1037,6 +1037,8 @@ def parse_args():
     parser.add_argument("-v", "--loglevel", help="python logging level")
 
     parser.add_argument('-m', '--module', action="append", default=[],
+                        choices=[testcase.name for testcase in
+                                 ComplianceTest.__subclasses__()],
                         help="Checks to run. All checks by default.")
 
     parser.add_argument('-e', '--exclude-module', action="append", default=[],
