@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <zephyr/zephyr.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
@@ -16,7 +17,8 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/sys/byteorder.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_vs.h>
 
 /* Latency set to zero, to enforce PDU exchange every connection event */
 #define CONN_LATENCY 0U
@@ -50,6 +52,18 @@ static const char *cte_type2str(uint8_t type)
 		return "AOD 1 [us]";
 	case BT_DF_CTE_TYPE_AOD_2US:
 		return "AOD 2 [us]";
+	default:
+		return "Unknown";
+	}
+}
+
+static const char *sample_type2str(enum bt_df_iq_sample type)
+{
+	switch (type) {
+	case BT_DF_IQ_SAMPLE_8_BITS_INT:
+		return "8 bits int";
+	case BT_DF_IQ_SAMPLE_16_BITS_INT:
+		return "16 bits int";
 	default:
 		return "Unknown";
 	}
@@ -237,11 +251,27 @@ static void cte_recv_cb(struct bt_conn *conn, struct bt_df_conn_iq_samples_repor
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (report->err == BT_DF_IQ_REPORT_ERR_SUCCESS) {
-		printk("CTE[%s]: samples count %d, cte type %s, slot durations: %u [us], "
-		       "packet status %s, RSSI %i\n",
-		       addr, report->sample_count, cte_type2str(report->cte_type),
-		       report->slot_durations, packet_status2str(report->packet_status),
-		       report->rssi);
+		printk("CTE[%s]: samples type: %s, samples count %d, cte type %s, slot durations: "
+			"%u [us], packet status %s, RSSI %i\n", addr,
+			sample_type2str(report->sample_type), report->sample_count,
+			cte_type2str(report->cte_type), report->slot_durations,
+			packet_status2str(report->packet_status), report->rssi);
+
+		if (IS_ENABLED(CONFIG_DF_CENTRAL_APP_IQ_REPORT_PRINT_IQ_SAMPLES)) {
+			for (uint8_t idx = 0; idx < report->sample_count; idx++) {
+				if (report->sample_type == BT_DF_IQ_SAMPLE_8_BITS_INT) {
+					printk(" IQ[%d]: %d, %d\n", idx, report->sample[idx].i,
+					       report->sample[idx].q);
+				} else if (IS_ENABLED(
+					CONFIG_BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES)) {
+					printk(" IQ[%" PRIu8 "]: %d, %d\n", idx,
+					       report->sample16[idx].i, report->sample16[idx].q);
+				} else {
+					printk("Unhandled vendor specific IQ samples type\n");
+					break;
+				}
+			}
+		}
 	} else {
 		printk("CTE[%s]: request failed, err %u\n", addr, report->err);
 	}
