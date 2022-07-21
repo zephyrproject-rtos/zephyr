@@ -51,6 +51,16 @@
 	};
 
 	soc {
+		intc: eru@40044000 {
+			compatible = "infineon,xmc4xxx-intc";
+			reg = <0x40044000 0xff>, <0x50004800 0xff>;
+			/* naming order is intentional. eru1 maps to a lower address than eru0 */
+			reg-names = "eru1", "eru0";
+			interrupts = <1 1>, <2 1>, <3 1>, <4 1>, <5 1>, <6 1>, <7 1>, <8 1>;
+			interrupt-names = "eru0sr0", "eru0sr1", "eru0sr2", "eru0sr3",
+					"eru1sr0", "eru1sr1", "eru1sr2", "eru1sr3";
+		};
+
 		pinctrl: pinctrl@48028000 {
 			compatible = "infineon,xmc4xxx-pinctrl";
 			#address-cells = <1>;
