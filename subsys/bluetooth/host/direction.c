@@ -12,6 +12,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/direction.h>
 
 #include "hci_core.h"
@@ -407,8 +408,57 @@ int hci_df_prepare_connectionless_iq_report(struct net_buf *buf,
 	report->packet_status = evt->packet_status;
 	report->slot_durations = evt->slot_durations;
 	report->per_evt_counter = sys_le16_to_cpu(evt->per_evt_counter);
+	report->sample_type = BT_DF_IQ_SAMPLE_8_BITS_INT;
 	report->sample_count = evt->sample_count;
 	report->sample = &evt->sample[0];
+
+	*per_adv_sync_to_report = per_adv_sync;
+
+	return 0;
+}
+
+int hci_df_vs_prepare_connectionless_iq_report(struct net_buf *buf,
+					       struct bt_df_per_adv_sync_iq_samples_report *report,
+					       struct bt_le_per_adv_sync **per_adv_sync_to_report)
+{
+	struct bt_hci_evt_vs_le_connectionless_iq_report *evt;
+	struct bt_le_per_adv_sync *per_adv_sync;
+
+	if (buf->len < sizeof(*evt)) {
+		BT_ERR("Unexpected end of buffer");
+		return -EINVAL;
+	}
+
+	evt = net_buf_pull_mem(buf, sizeof(*evt));
+
+	per_adv_sync = bt_hci_get_per_adv_sync(sys_le16_to_cpu(evt->sync_handle));
+
+	if (!per_adv_sync) {
+		BT_ERR("Unknown handle 0x%04X for iq samples report",
+		       sys_le16_to_cpu(evt->sync_handle));
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_CTE_ENABLED)) {
+		BT_ERR("Received PA CTE report when CTE receive disabled");
+		return -EINVAL;
+	}
+
+	if (!(per_adv_sync->cte_types & BIT(evt->cte_type))) {
+		BT_DBG("CTE filtered out by cte_type: %u", evt->cte_type);
+		return -EINVAL;
+	}
+
+	report->chan_idx = evt->chan_idx;
+	report->rssi = sys_le16_to_cpu(evt->rssi);
+	report->rssi_ant_id = evt->rssi_ant_id;
+	report->cte_type = BIT(evt->cte_type);
+	report->packet_status = evt->packet_status;
+	report->slot_durations = evt->slot_durations;
+	report->per_evt_counter = sys_le16_to_cpu(evt->per_evt_counter);
+	report->sample_count = evt->sample_count;
+	report->sample_type = BT_DF_IQ_SAMPLE_16_BITS_INT;
+	report->sample16 = &evt->sample[0];
 
 	*per_adv_sync_to_report = per_adv_sync;
 
@@ -657,6 +707,7 @@ int hci_df_prepare_connection_iq_report(struct net_buf *buf,
 	report->packet_status = evt->packet_status;
 	report->slot_durations = evt->slot_durations;
 	report->conn_evt_counter = sys_le16_to_cpu(evt->conn_evt_counter);
+	report->sample_type = BT_DF_IQ_SAMPLE_8_BITS_INT;
 	report->sample_count = evt->sample_count;
 	report->sample = evt->sample;
 
@@ -664,6 +715,57 @@ int hci_df_prepare_connection_iq_report(struct net_buf *buf,
 
 	return 0;
 }
+
+int hci_df_vs_prepare_connection_iq_report(struct net_buf *buf,
+					   struct bt_df_conn_iq_samples_report *report,
+					   struct bt_conn **conn_to_report)
+{
+	struct bt_hci_evt_vs_le_connection_iq_report *evt;
+	struct bt_conn *conn;
+
+	if (buf->len < sizeof(*evt)) {
+		BT_ERR("Unexpected end of buffer");
+		return -EINVAL;
+	}
+
+	evt = net_buf_pull_mem(buf, sizeof(*evt));
+
+	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle));
+	if (!conn) {
+		BT_ERR("Unknown conn handle 0x%04X for iq samples report",
+		       sys_le16_to_cpu(evt->conn_handle));
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(conn->flags, BT_CONN_CTE_RX_ENABLED)) {
+		BT_ERR("Received conn CTE report when CTE receive disabled");
+		return -EINVAL;
+	}
+
+	if (!(conn->cte_types & BIT(evt->cte_type))) {
+		BT_DBG("CTE filtered out by cte_type: %u", evt->cte_type);
+		return -EINVAL;
+	}
+
+	report->err = BT_DF_IQ_REPORT_ERR_SUCCESS;
+	report->chan_idx = evt->data_chan_idx;
+	report->rx_phy = evt->rx_phy;
+	report->chan_idx = evt->data_chan_idx;
+	report->rssi = evt->rssi;
+	report->rssi_ant_id = evt->rssi_ant_id;
+	report->cte_type = BIT(evt->cte_type);
+	report->packet_status = evt->packet_status;
+	report->slot_durations = evt->slot_durations;
+	report->conn_evt_counter = sys_le16_to_cpu(evt->conn_evt_counter);
+	report->sample_type = BT_DF_IQ_SAMPLE_16_BITS_INT;
+	report->sample_count = evt->sample_count;
+	report->sample16 = evt->sample;
+
+	*conn_to_report = conn;
+
+	return 0;
+}
+
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_REQ)
