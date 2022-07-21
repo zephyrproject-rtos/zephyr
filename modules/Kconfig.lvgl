@@ -9,6 +9,15 @@ config LVGL
 
 if LVGL
 
+config LV_Z_DISPLAY_DEV_NAME
+	string
+
+config LV_Z_HOR_RES_MAX
+	int
+
+config LV_Z_VER_RES_MAX
+	int
+
 config LV_Z_POINTER_KSCAN
 	bool
 
