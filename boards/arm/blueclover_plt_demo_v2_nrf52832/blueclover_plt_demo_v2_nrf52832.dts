@@ -41,6 +41,7 @@
 		sw1 = &button1;
 		pwm-buzzer = &pwm0;
 		watchdog0 = &wdt0;
+		accel0 = &bmi270;
 	};
 };
 
@@ -74,7 +75,7 @@
 		label = "SHT3XD";
 	};
 
-	bmi270@68 {
+	bmi270: bmi270@68 {
 		compatible = "bosch,bmi270";
 		reg = <0x68>;
 		label = "BMI270";
