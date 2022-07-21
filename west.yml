@@ -144,6 +144,11 @@ manifest:
       path: modules/hal/ti
       groups:
         - hal
+    - name: hal_wurthelektronik
+      revision: 24ca9873c3d608fad1fea0431836bc8f144c132e
+      path: modules/hal/wurthelektronik
+      groups:
+        - hal
     - name: hal_xtensa
       revision: 63f655362423aa49507da7977a2d37142e8debeb
       path: modules/hal/xtensa
