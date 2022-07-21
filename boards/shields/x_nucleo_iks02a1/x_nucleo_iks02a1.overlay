@@ -13,9 +13,15 @@
  * ISM330DHCX, IIS2MDC and IIS2DLPC sensors are accessible from the main board mcu.
  */
 
+/ {
+	aliases {
+		accel0 = &iis2dlpc;
+	};
+};
+
 &arduino_i2c {
 
-	iis2dlpc@19 {
+	iis2dlpc: iis2dlpc@19 {
 		compatible = "st,iis2dlpc";
 		reg = <0x19>;
 		drdy-gpios =  <&arduino_header 4 GPIO_ACTIVE_HIGH>; /* A4 - INT2 */
