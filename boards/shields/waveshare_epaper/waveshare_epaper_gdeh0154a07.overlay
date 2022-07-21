@@ -26,6 +26,10 @@
 		tssv = <0x80>;
 
 		full {
+			border-waveform = <0x05>;
+		};
+
+		partial {
 			border-waveform = <0x3c>;
 		};
 	};
