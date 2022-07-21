@@ -28,6 +28,7 @@
 		pwm-led0 = &red_pwm_led;
 		red-pwm-led = &red_pwm_led;
 		sdhc0 = &sdhc0;
+		accel0 = &mma8652fc;
 	};
 
 	chosen {

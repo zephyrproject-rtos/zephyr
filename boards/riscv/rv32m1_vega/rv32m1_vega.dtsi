@@ -22,6 +22,7 @@
 		sw2 = &user_button_4;
 		sw3 = &user_button_5;
 		magn0 = &fxos8700;
+		accel0 = &fxos8700;
 	};
 
 	leds {
