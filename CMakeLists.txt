@@ -122,6 +122,7 @@ include(${ZEPHYR_BASE}/cmake/linker_script/${ARCH}/linker.cmake OPTIONAL)
 foreach(optional_include_dir
   ${SOC_DIR}/${ARCH}/${SOC_PATH}
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
+  ${SOC_DIR}/${ARCH}/${SOC_PATH}/include/${SOC_NAME}
   ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/include
   ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/include
   )
