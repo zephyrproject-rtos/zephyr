@@ -47,6 +47,7 @@
 		magn0 = &lis2mdl;
 		accel0 = &lis2dw12;
 		accel1 = &lsm6dso;
+		accel2 = &iis3dhhc;
 	};
 };
 
@@ -142,7 +143,7 @@
 		int-pin = <1>;
 	};
 
-	iis3dhhc@2 {
+	iis3dhhc: iis3dhhc@2 {
 		compatible = "st,iis3dhhc";
 		spi-max-frequency = <1000000>;
 		reg = <2>;
