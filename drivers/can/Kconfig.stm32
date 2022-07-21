@@ -3,11 +3,10 @@
 # Copyright (c) 2018 Alexander Wachter
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ST_STM32_CAN := st,stm32-can
-
 config CAN_STM32
 	bool "STM32 CAN Driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_CAN))
+	default y
+	depends on DT_HAS_ST_STM32_CAN_ENABLED
 	select CAN_HAS_RX_TIMESTAMP
 	help
 	  Enable STM32 CAN Driver.
