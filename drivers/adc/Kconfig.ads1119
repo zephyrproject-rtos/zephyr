@@ -3,12 +3,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_TI_ADS1119_ADC := ti,ads1119
-
 config ADC_ADS1119
 	bool "Texas instruments ADS1119 I2C"
-	default $(dt_compat_enabled,$(DT_COMPAT_TI_ADS1119_ADC))
+	default y
+	depends on DT_HAS_TI_ADS1119_ENABLED
 	depends on I2C
 	select ADC_CONFIGURABLE_INPUTS
 	help

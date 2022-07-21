@@ -6,14 +6,14 @@
 
 config ADC_XEC
 	bool "Microchip XEC series ADC driver"
-	depends on SOC_SERIES_MEC1501X
 	default y
+	depends on DT_HAS_MICROCHIP_XEC_ADC_ENABLED
 	help
 	  Enable ADC driver for Microchip XEC MCU series.
 
 config ADC_XEC_V2
 	bool "Microchip XEC series ADC V2 driver"
-	depends on SOC_SERIES_MEC172X
 	default y
+	depends on DT_HAS_MICROCHIP_XEC_ADC_V2_ENABLED
 	help
 	  Enable ADC driver for Microchip XEC MEC172x MCU series.
