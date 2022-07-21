@@ -8,12 +8,8 @@ if BOARD_LPCXPRESSO55S28
 config BOARD
 	default "lpcxpresso55S28"
 
-if SENSOR
-
 config I2C
-	default y
-
-endif # SENSOR
+	default y if SENSOR
 
 if FXOS8700
 

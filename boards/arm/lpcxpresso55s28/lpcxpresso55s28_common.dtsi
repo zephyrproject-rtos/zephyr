@@ -13,6 +13,7 @@
 		led2 = &blue_led;
 		spi-8 = &hs_lspi;
 		usart-0 = &flexcomm0;
+		accel0 = &mma8652fc;
 	};
 
 	leds {
@@ -102,7 +103,7 @@ arduino_i2c: &flexcomm4 {
 	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
 	pinctrl-names = "default";
 
-	mma8652fc@1d {
+	mma8652fc: mma8652fc@1d {
 		compatible = "nxp,fxos8700","nxp,mma8652fc";
 		reg = <0x1d>;
 		int1-gpios = <&gpio1 19 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
