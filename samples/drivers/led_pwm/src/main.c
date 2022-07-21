@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <errno.h>
 #include <zephyr/drivers/led.h>
 #include <zephyr/sys/util.h>
@@ -13,12 +14,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, pwm_leds), okay)
-#define LED_PWM_NODE_ID		DT_INST(0, pwm_leds)
-#define LED_PWM_DEV_NAME	DEVICE_DT_NAME(LED_PWM_NODE_ID)
-#else
-#error "No LED PWM device found"
-#endif
+#define LED_PWM_NODE_ID	 DT_COMPAT_GET_ANY_STATUS_OKAY(pwm_leds)
 
 #define LED_PWM_LABEL(led_node_id) DT_PROP_OR(led_node_id, label, NULL),
 
@@ -109,16 +105,14 @@ void main(void)
 	const struct device *led_pwm;
 	uint8_t led;
 
-	led_pwm = device_get_binding(LED_PWM_DEV_NAME);
-	if (led_pwm) {
-		LOG_INF("Found device %s", LED_PWM_DEV_NAME);
-	} else {
-		LOG_ERR("Device %s not found", LED_PWM_DEV_NAME);
+	led_pwm = DEVICE_DT_GET(LED_PWM_NODE_ID);
+	if (!device_is_ready(led_pwm)) {
+		LOG_ERR("Device %s is not ready", led_pwm->name);
 		return;
 	}
 
 	if (!num_leds) {
-		LOG_ERR("No LEDs found for %s", LED_PWM_DEV_NAME);
+		LOG_ERR("No LEDs found for %s", led_pwm->name);
 		return;
 	}
 
