@@ -18,6 +18,7 @@
 / {
 	aliases {
 		accel0 = &iis2dlpc;
+		accel1 = &ism330dhcx;
 	};
 };
 
@@ -30,7 +31,7 @@
 		drdy-int =  <2>;
 	};
 
-	ism330dhcx@6b {
+	ism330dhcx: ism330dhcx@6b {
 		compatible = "st,ism330dhcx";
 		reg = <0x6b>;
 		drdy-gpios =  <&arduino_header 11 GPIO_ACTIVE_HIGH>; /* D5 - INT2 */
