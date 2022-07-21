@@ -1,0 +1,8 @@
+sample:
+  description: Demonstration of the PCA_COMMON driver
+  name: PCA_COMMON sample
+tests:
+  sample.drivers.led.pca_common:
+    depends_on: arduino_i2c
+    build_only: true
+    tags: LED
