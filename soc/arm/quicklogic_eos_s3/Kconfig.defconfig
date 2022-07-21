@@ -20,12 +20,6 @@ config UART_PL011
 config UART_INTERRUPT_DRIVEN
 	default y
 
-config UART_PL011_PORT0
-	default y
-
-config UART_PL011_PORT1
-	default n
-
 endif # SERIAL
 
 if GPIO
