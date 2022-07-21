@@ -41,9 +41,6 @@ properties:
       If connected directly the MCU pin should be configured
       as active high.
 
-  lut-default:
-    type: uint8-array
-
   tssv:
     type: int
     description: Temperature Sensor Selection Value
@@ -59,9 +56,14 @@ child-binding:
     cycle. Refresh profiles are optional and are used to override
     defaults loaded from the controllers OTP memory.
 
+    Partial refresh will be disabled unless a partial refresh profile
+    has been specified. That profile may be empty to use the defaults
+    loaded from OTP if supported by the device.
+
     The driver typically looks for the following child nodes:
 
       - 'full' - Normal / full refresh.
+      - 'partial' - Partial refresh.
 
   properties:
     lut:
