@@ -38,7 +38,10 @@ struct can_timing_test {
  */
 static const struct can_timing_test can_timing_tests[] = {
 	/** Standard bitrates. */
+#ifndef CONFIG_CAN_ESP32_TWAI
+	/* ESP32 TWAI does not support bitrates below 25kbit/s */
 	{   20000, 875, false },
+#endif /* CONFIG_CAN_ESP32_TWAI */
 	{   50000, 875, false },
 	{  125000, 875, false },
 	{  250000, 875, false },
