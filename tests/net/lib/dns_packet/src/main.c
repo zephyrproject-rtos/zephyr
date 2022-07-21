@@ -414,7 +414,7 @@ lb_exit:
 }
 
 
-void test_dns_query(void)
+ZTEST(dns_packet, test_dns_query)
 {
 	int rc;
 
@@ -454,7 +454,7 @@ static uint8_t resp_ipv4[] = { 0xb0, 0x41, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01,
 
 static const uint8_t resp_ipv4_addr[] = {140, 211, 169, 8};
 
-void test_dns_response(void)
+ZTEST(dns_packet, test_dns_response)
 {
 	struct dns_response_test test = {
 		.dname = DNAME1,
@@ -505,7 +505,7 @@ char answer_ipv4[] = {
 
 static const uint8_t answer_ipv4_addr[] = { 174, 137, 42, 65 };
 
-void test_dns_response2(void)
+ZTEST(dns_packet, test_dns_response2)
 {
 	struct dns_response_test test1 = {
 		.dname = DNAME2,
@@ -529,7 +529,7 @@ void test_dns_response2(void)
 		      " at line %d", -rc);
 }
 
-void test_mdns_query(void)
+ZTEST(dns_packet, test_mdns_query)
 {
 	int rc;
 
@@ -564,7 +564,7 @@ static const uint8_t resp_ipv6_addr[] = {
 	0x02, 0x00, 0x5e, 0xff, 0xfe, 0x00, 0x53, 0x37
 };
 
-void test_mdns_response(void)
+ZTEST(dns_packet, test_mdns_response)
 {
 	struct dns_response_test test1 = {
 		.dname = ZEPHYR_LOCAL,
@@ -1200,7 +1200,13 @@ static void test_dns_malformed_responses(void)
 	RUN_MALFORMED_TEST(resp_truncated_response_ipv4_5);
 }
 
-static void test_dns_id_len(void)
+ZTEST(dns_packet, test_dns_malformed_and_valid_responses)
+{
+	test_dns_malformed_responses();
+	test_dns_valid_responses();
+}
+
+ZTEST(dns_packet, test_dns_id_len)
 {
 	struct dns_msg_t dns_msg = { 0 };
 	uint8_t buf[1];
@@ -1218,7 +1224,7 @@ static void test_dns_id_len(void)
 		      "DNS message length check failed (%d)", ret);
 }
 
-static void test_dns_flags_len(void)
+ZTEST(dns_packet, test_dns_flags_len)
 {
 	struct dns_msg_t dns_msg = { 0 };
 	uint8_t buf[3];
@@ -1236,26 +1242,10 @@ static void test_dns_flags_len(void)
 		      "DNS message length check failed (%d)", ret);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(dns_tests,
-			 ztest_unit_test(test_dns_query),
-			 ztest_unit_test(test_dns_response),
-			 ztest_unit_test(test_dns_response2),
-			 ztest_unit_test(test_mdns_query),
-			 ztest_unit_test(test_mdns_response),
-			 ztest_unit_test(test_dns_id_len),
-			 ztest_unit_test(test_dns_flags_len),
-			 ztest_unit_test(test_dns_malformed_responses),
-			 ztest_unit_test(test_dns_valid_responses)
-		);
-
-	ztest_run_test_suite(dns_tests);
-
-	/* TODO:
-	 *	1) add malformed DNS data (mostly done)
-	 *	2) add validations against buffer overflows
-	 *	3) add debug info to detect the exit point (or split the tests)
-	 *	4) add test data with CNAME and more RR
-	 */
-}
+ZTEST_SUITE(dns_packet, NULL, NULL, NULL, NULL, NULL);
+/* TODO:
+ *	1) add malformed DNS data (mostly done)
+ *	2) add validations against buffer overflows
+ *	3) add debug info to detect the exit point (or split the tests)
+ *	4) add test data with CNAME and more RR
+ */
