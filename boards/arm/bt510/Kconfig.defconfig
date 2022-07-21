@@ -15,4 +15,7 @@ config IEEE802154_NRF5
 config BT_CTLR
 	default BT
 
+config I2C
+	default SENSOR
+
 endif # BOARD_BT510
