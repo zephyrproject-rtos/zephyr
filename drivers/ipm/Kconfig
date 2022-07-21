@@ -171,7 +171,7 @@ config IPM_CAVS_HOST_OUTBOX_OFFSET
 config IPM_CAVS_HOST_REGWORD
 	bool "Store first 4 bytes in IPC register"
 	depends on CAVS_IPC
-	depends on !SOC_SERIES_INTEL_CAVS_V15
+	depends on !SOC_INTEL_CAVS_V15
 	help
 	  Protocol variant.  When true, the first four bytes of a
 	  message are passed in the cAVS IDR/TDR register pair instead

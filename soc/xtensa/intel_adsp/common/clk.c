@@ -12,11 +12,11 @@ static struct cavs_clock_info platform_clocks[CONFIG_MP_NUM_CPUS];
 static struct k_spinlock lock;
 
 int cavs_clock_freq_enc[] = CAVS_CLOCK_FREQ_ENC;
-#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
+#ifndef CONFIG_SOC_INTEL_CAVS_V15
 int cavs_clock_freq_mask[] = CAVS_CLOCK_FREQ_MASK;
 #endif
 
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
+#ifdef CONFIG_SOC_INTEL_CAVS_V15
 static void select_cpu_clock_hw(uint32_t freq)
 {
 	uint8_t cpu_id = _current_cpu->id;
@@ -78,7 +78,7 @@ void cavs_clock_init(void)
 	uint32_t platform_lowest_freq_idx = CAVS_CLOCK_FREQ_LOWEST;
 	int i;
 
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+#ifdef CONFIG_SOC_INTEL_CAVS_V25
 	CAVS_SHIM.clkctl |= CAVS_CLKCTL_WOVCRO;
 	if (CAVS_SHIM.clkctl & CAVS_CLKCTL_WOVCRO)
 		CAVS_SHIM.clkctl = CAVS_SHIM.clkctl & ~CAVS_CLKCTL_WOVCRO;
