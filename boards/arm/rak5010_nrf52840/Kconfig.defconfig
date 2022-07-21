@@ -14,4 +14,7 @@ config MODEM_QUECTEL_BG9X
 config BT_CTLR
 	default BT
 
+config I2C
+	default SENSOR
+
 endif # BOARD_RAK5010_NRF52840

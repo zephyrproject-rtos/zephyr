@@ -11,4 +11,7 @@ config BOARD
 config REGULATOR
 	default y if LORA
 
+config I2C
+	default y if SENSOR
+
 endif # BOARD_96B_WISTRIO

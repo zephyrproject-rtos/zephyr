@@ -25,6 +25,13 @@ choice LSM6DSL_TRIGGER_MODE
 	depends on LSM6DSL
 endchoice
 
+if SENSOR
+
+config I2C
+	default y
+
+endif # SENSOR
+
 if BT
 
 config SPI
