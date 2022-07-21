@@ -25,6 +25,7 @@
 		blue-pwm-led = &blue_pwm_led;
 		red-pwm-led = &red_pwm_led;
 		magn0 = &fxos8700;
+		accel0 = &fxos8700;
 	};
 
 	chosen {

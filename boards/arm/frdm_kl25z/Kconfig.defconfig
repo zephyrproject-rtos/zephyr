@@ -23,12 +23,8 @@ config MCG_FRDIV
 config MCG_FCRDIV
 	default 0
 
-if SENSOR
-
 config I2C
-	default y
-
-endif # SENSOR
+	default y if SENSOR
 
 if FXOS8700
 

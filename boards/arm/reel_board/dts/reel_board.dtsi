@@ -84,6 +84,7 @@
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
 		sw0 = &user_button;
+		accel0 = &mma8642fc;
 	};
 };
 
@@ -124,7 +125,7 @@ arduino_i2c: &i2c0 {
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
-	mma8652fc@1d {
+	mma8642fc: mma8652fc@1d {
 		compatible = "nxp,fxos8700","nxp,mma8652fc";
 		reg = <0x1d>;
 		label = "MMA8652FC";

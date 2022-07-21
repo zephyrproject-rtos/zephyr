@@ -6,6 +6,7 @@
 / {
 	aliases {
 		magn0 = &fxos8700;
+		accel0 = &fxos8700;
 	};
 };
 
