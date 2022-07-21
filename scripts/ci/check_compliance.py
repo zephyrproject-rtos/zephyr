@@ -227,7 +227,7 @@ class CheckPatch(ComplianceTest):
                            stdin=diff.stdout,
                            stdout=subprocess.PIPE,
                            stderr=subprocess.STDOUT,
-                           shell=True, cwd=GIT_TOP)
+                           shell=True)
 
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
@@ -738,7 +738,7 @@ class Nits(ComplianceTest):
     def check_kconfig_header(self, fname):
         # Checks for a spammy copy-pasted header format
 
-        with open(os.path.join(GIT_TOP, fname), encoding="utf-8") as f:
+        with open(fname, encoding="utf-8") as f:
             contents = f.read()
 
         # 'Kconfig - yada yada' has a copy-pasted redundant filename at the
@@ -764,7 +764,7 @@ failure.
         # Checks for 'source "$(ZEPHYR_BASE)/Kconfig[.zephyr]"', which can be
         # be simplified to 'source "Kconfig[.zephyr]"'
 
-        with open(os.path.join(GIT_TOP, fname), encoding="utf-8") as f:
+        with open(fname, encoding="utf-8") as f:
             # Look for e.g. rsource as well, for completeness
             match = re.search(
                 r'^\s*(?:o|r|or)?source\s*"\$\(?ZEPHYR_BASE\)?/(Kconfig(?:\.zephyr)?)"',
@@ -779,7 +779,7 @@ and all 'source's are relative to it.""".format(match.group(1), fname))
     def check_redundant_document_separator(self, fname):
         # Looks for redundant '...' document separators in bindings
 
-        with open(os.path.join(GIT_TOP, fname), encoding="utf-8") as f:
+        with open(fname, encoding="utf-8") as f:
             if re.search(r"^\.\.\.", f.read(), re.MULTILINE):
                 self.failure(f"""\
 Redundant '...' document separator in {fname}. Binding YAML files are never
@@ -788,7 +788,7 @@ concatenated together, so no document separators are needed.""")
     def check_source_file(self, fname):
         # Generic nits related to various source files
 
-        with open(os.path.join(GIT_TOP, fname), encoding="utf-8") as f:
+        with open(fname, encoding="utf-8") as f:
             contents = f.read()
 
         if not contents.endswith("\n"):
@@ -819,7 +819,7 @@ class GitLint(ComplianceTest):
                            check=True,
                            stdout=subprocess.PIPE,
                            stderr=subprocess.STDOUT,
-                           shell=True, cwd=GIT_TOP)
+                           shell=True)
 
         except subprocess.CalledProcessError as ex:
             self.failure(ex.output.decode("utf-8"))
@@ -843,9 +843,9 @@ class PyLint(ComplianceTest):
         files = get_files(filter="d")
 
         # Filter out everything but Python files. Keep filenames
-        # relative (to GIT_TOP) to stay farther from any command line
+        # relative (to <git-top>) to stay farther from any command line
         # limit.
-        py_files = filter_py(GIT_TOP, files)
+        py_files = filter_py(str(Path.cwd()), files)
         if not py_files:
             return
 
@@ -855,8 +855,7 @@ class PyLint(ComplianceTest):
             subprocess.run(pylintcmd,
                            check=True,
                            stdout=subprocess.PIPE,
-                           stderr=subprocess.STDOUT,
-                           cwd=GIT_TOP)
+                           stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
             regex = r'^\s*(\S+):(\d+):(\d+):\s*([A-Z]\d{4}):\s*(.*)$'
