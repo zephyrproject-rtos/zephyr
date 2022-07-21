@@ -26,6 +26,7 @@
 		sensor0 = &sensor0;
 		sensor1 = &sensor1;
 		sensor2 = &sensor2;
+		accel0 = &sensor1;
 	};
 
 	chosen {
