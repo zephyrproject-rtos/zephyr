@@ -3039,16 +3039,28 @@ int bt_conn_init(void)
 }
 
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
-void bt_hci_le_df_connection_iq_report(struct net_buf *buf)
+void bt_hci_le_df_connection_iq_report_common(uint8_t event, struct net_buf *buf)
 {
 	struct bt_df_conn_iq_samples_report iq_report;
 	struct bt_conn *conn;
 	struct bt_conn_cb *cb;
 	int err;
 
-	err = hci_df_prepare_connection_iq_report(buf, &iq_report, &conn);
-	if (err) {
-		BT_ERR("Prepare CTE conn IQ report failed %d", err);
+	if (event == BT_HCI_EVT_LE_CONNECTION_IQ_REPORT) {
+		err = hci_df_prepare_connection_iq_report(buf, &iq_report, &conn);
+		if (err) {
+			BT_ERR("Prepare CTE conn IQ report failed %d", err);
+			return;
+		}
+	} else if (IS_ENABLED(CONFIG_BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES) &&
+		   event == BT_HCI_EVT_VS_LE_CONNECTION_IQ_REPORT) {
+		err = hci_df_vs_prepare_connection_iq_report(buf, &iq_report, &conn);
+		if (err) {
+			BT_ERR("Prepare CTE conn IQ report failed %d", err);
+			return;
+		}
+	} else {
+		BT_ERR("Unhandled VS connection IQ report");
 		return;
 	}
 
@@ -3067,6 +3079,18 @@ void bt_hci_le_df_connection_iq_report(struct net_buf *buf)
 
 	bt_conn_unref(conn);
 }
+
+void bt_hci_le_df_connection_iq_report(struct net_buf *buf)
+{
+	bt_hci_le_df_connection_iq_report_common(BT_HCI_EVT_LE_CONNECTION_IQ_REPORT, buf);
+}
+
+#if defined(CONFIG_BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES)
+void bt_hci_le_vs_df_connection_iq_report(struct net_buf *buf)
+{
+	bt_hci_le_df_connection_iq_report_common(BT_HCI_EVT_VS_LE_CONNECTION_IQ_REPORT, buf);
+}
+#endif /* CONFIG_BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES */
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_REQ)
