@@ -9,12 +9,8 @@ config BOARD
 	default "lpcxpresso55S69_cpu0" if BOARD_LPCXPRESSO55S69_CPU0
 	default "lpcxpresso55S69_cpu1" if BOARD_LPCXPRESSO55S69_CPU1
 
-if SENSOR
-
 config I2C
-	default y
-
-endif # SENSOR
+	default y if SENSOR
 
 if FXOS8700
 
