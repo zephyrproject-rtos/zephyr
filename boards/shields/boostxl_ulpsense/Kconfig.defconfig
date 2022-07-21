@@ -1,0 +1,10 @@
+# Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_BOOSTXL_ULPSENSE
+
+config SPI
+	default y if SENSOR
+
+endif # SHIELD_BOOSTXL_ULPSENSE

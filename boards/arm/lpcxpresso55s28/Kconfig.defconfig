@@ -8,6 +8,13 @@ if BOARD_LPCXPRESSO55S28
 config BOARD
 	default "lpcxpresso55S28"
 
+if SENSOR
+
+config I2C
+	default y
+
+endif # SENSOR
+
 if FXOS8700
 
 choice FXOS8700_MODE
