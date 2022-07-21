@@ -1,0 +1,15 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_INTEL_ADSP_CAVS
+
+config SOC_SERIES
+	string
+	default "cavs"
+
+config INTEL_ADSP_CAVS
+	def_bool y
+
+source "soc/xtensa/intel_adsp/cavs/Kconfig.defconfig.cavs*"
+
+endif # SOC_SERIES_INTEL_ADSP_CAVS

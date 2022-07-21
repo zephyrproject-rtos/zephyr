@@ -16,7 +16,7 @@ static ALWAYS_INLINE void cpu_early_init(void)
 {
 	uint32_t reg;
 
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+#ifdef CONFIG_SOC_INTEL_CAVS_V25
 	/* First, on cAVS 2.5 we need to power the cache SRAM banks
 	 * on!  Write a bit for each cache way in the bottom half of
 	 * the L1CCFG register and poll the top half for them to turn

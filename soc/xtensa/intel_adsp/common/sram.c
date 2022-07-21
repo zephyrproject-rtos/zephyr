@@ -22,7 +22,7 @@
 #define SRAM_BANK_SIZE		(64 * 1024)
 #endif
 #define EBB_SEGMENT_SIZE	32
-#if !defined(CONFIG_SOC_SERIES_INTEL_CAVS_V15)
+#if !defined(CONFIG_SOC_INTEL_CAVS_V15)
 #define PLATFORM_INIT_HPSRAM
 #endif
 

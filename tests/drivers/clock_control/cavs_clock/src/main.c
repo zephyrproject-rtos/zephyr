@@ -28,7 +28,7 @@ static void test_cavs_clock_driver(void)
 	cavs_clock_set_freq(CAVS_CLOCK_FREQ_HPRO);
 	check_clocks(clocks, CAVS_CLOCK_FREQ_HPRO);
 
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+#ifdef CONFIG_SOC_INTEL_CAVS_V25
 	cavs_clock_set_freq(CAVS_CLOCK_FREQ_WOVCRO);
 	check_clocks(clocks, CAVS_CLOCK_FREQ_WOVCRO);
 #endif
@@ -49,7 +49,7 @@ static void test_cavs_clock_control(void)
 					   CAVS_CLOCK_FREQ_HPRO);
 	check_clocks(clocks, CAVS_CLOCK_FREQ_HPRO);
 
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+#ifdef CONFIG_SOC_INTEL_CAVS_V25
 	clock_control_set_rate(dev, NULL, (clock_control_subsys_rate_t)
 					   CAVS_CLOCK_FREQ_WOVCRO);
 	check_clocks(clocks, CAVS_CLOCK_FREQ_WOVCRO);
