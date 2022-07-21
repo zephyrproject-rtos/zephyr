@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import collections
+import contextlib
 import sys
 import subprocess
 import re
@@ -31,6 +32,21 @@ logger = None
 ZEPHYR_BASE = (os.environ.get('ZEPHYR_BASE') or
                str((HERE / '..' / '..').resolve()))
 os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
+
+@contextlib.contextmanager
+def run_in_directory(dir):
+    # Helper to run a code block from a given directory.
+    # Use it like this:
+    #
+    #     with run_in_directory('some/directory'):
+    #         do_something()
+
+    cwd = os.getcwd()
+    try:
+        os.chdir(dir)
+        yield
+    finally:
+        os.chdir(cwd)
 
 
 def git(*args, cwd=None):
@@ -1106,10 +1122,11 @@ def _main(args):
             continue
 
         test = testcase()
+        test_path = GIT_TOP if test.path_hint == '<git-top>' else test.path_hint
         try:
-            print(f"Running {test.name:16} tests in "
-                  f"{GIT_TOP if test.path_hint == '<git-top>' else test.path_hint} ...")
-            test.run()
+            print(f"Running {test.name:16} tests in {test_path} ...")
+            with run_in_directory(test_path):
+                test.run()
         except EndTest:
             pass
 
