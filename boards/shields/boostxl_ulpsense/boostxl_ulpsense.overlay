@@ -4,9 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		accel0 = &adxl362;
+	};
+};
+
 &boosterpack_spi {
 
-	adxl362@0 {
+	adxl362: adxl362@0 {
 		compatible = "adi,adxl362";
 		reg = <0>;
 		spi-max-frequency = <8000000>;
