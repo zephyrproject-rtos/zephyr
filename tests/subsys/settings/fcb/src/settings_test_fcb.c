@@ -11,6 +11,9 @@
 #include "settings_priv.h"
 #include <zephyr/storage/flash_map.h>
 
+#define TEST_PARTITION		storage_partition
+#define TEST_PARTITION_ID	FIXED_PARTITION_ID(TEST_PARTITION)
+
 uint8_t val8;
 uint8_t val8_un;
 uint32_t val32;
@@ -187,7 +190,7 @@ void config_wipe_fcb(struct flash_sector *fs, int cnt)
 	int rc;
 	int i;
 
-	rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
+	rc = flash_area_open(TEST_PARTITION_ID, &fap);
 
 	for (i = 0; i < cnt; i++) {
 		rc = flash_area_erase(fap, fs[i].fs_off, fs[i].fs_size);
@@ -347,7 +350,7 @@ void *settings_config_fcb_setup(void)
 	int rc;
 	uint8_t wbs;
 
-	rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
+	rc = flash_area_open(TEST_PARTITION_ID, &fap);
 	zassume_true(rc == 0, "Can't open storage flash area");
 
 	wbs = flash_area_align(fap);
