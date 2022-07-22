@@ -5,6 +5,8 @@
 
 menuconfig FLASH_SIMULATOR
 	bool "Flash simulator"
+	default y
+	depends on DT_HAS_ZEPHYR_SIM_FLASH_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	help
