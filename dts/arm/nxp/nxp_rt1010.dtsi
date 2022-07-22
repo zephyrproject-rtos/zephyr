@@ -77,7 +77,7 @@
 		/delete-node/ gpio@401bc000;
 
 		gpio2: gpio@42000000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x42000000 0x4000>;
 			interrupts = <72 0>;
 			label = "GPIO_2";

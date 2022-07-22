@@ -62,7 +62,7 @@
 		};
 
 		gpio1: gpio@30200000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x30200000 DT_SIZE_K(64)>;
 			interrupts = <64 0>, <65 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
@@ -76,7 +76,7 @@
 		};
 
 		gpio2: gpio@30210000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x30210000 DT_SIZE_K(64)>;
 			interrupts = <66 0>, <67 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
@@ -90,7 +90,7 @@
 		};
 
 		gpio3: gpio@30220000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x30220000 DT_SIZE_K(64)>;
 			interrupts = <68 0>, <69 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
@@ -104,7 +104,7 @@
 		};
 
 		gpio4: gpio@30230000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x30230000 DT_SIZE_K(64)>;
 			interrupts = <70 0>, <71 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
@@ -118,7 +118,7 @@
 		};
 
 		gpio5: gpio@30240000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x30240000 DT_SIZE_K(64)>;
 			interrupts = <72 0>, <73 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\

@@ -177,7 +177,7 @@
 		};
 
 		gpio1: gpio@4012c000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x4012c000 0x4000>;
 			interrupts = <100 0>, <101 0>;
 			label = "GPIO_1";
@@ -192,7 +192,7 @@
 		 */
 
 		gpio4: gpio@40138000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x40138000 0x4000>;
 			interrupts = <106 0>, <107 0>;
 			label = "GPIO_4";
@@ -201,7 +201,7 @@
 		};
 
 		gpio5: gpio@4013c000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x4013c000 0x4000>;
 			interrupts = <108 0>, <109 0>;
 			label = "GPIO_5";
@@ -210,7 +210,7 @@
 		};
 
 		gpio6: gpio@40140000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x40140000 0x4000>;
 			label = "GPIO_6";
 			gpio-controller;
@@ -218,7 +218,7 @@
 		};
 
 		gpio7: gpio@40c5c000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x40c5c000 0x4000>;
 			label = "GPIO_7";
 			gpio-controller;
@@ -226,7 +226,7 @@
 		};
 
 		gpio8: gpio@40c60000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x40c60000 0x4000>;
 			label = "GPIO_8";
 			gpio-controller;
@@ -234,7 +234,7 @@
 		};
 
 		gpio9: gpio@40c64000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x40c64000 0x4000>;
 			label = "GPIO_9";
 			gpio-controller;
@@ -242,7 +242,7 @@
 		};
 
 		gpio10: gpio@40c68000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x40c68000 0x4000>;
 			label = "GPIO_10";
 			gpio-controller;
@@ -250,7 +250,7 @@
 		};
 
 		gpio11: gpio@40c6c000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x40c6c000 0x4000>;
 			label = "GPIO_11";
 			gpio-controller;
@@ -258,7 +258,7 @@
 		};
 
 		gpio12: gpio@40c70000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x40c70000 0x4000>;
 			label = "GPIO_12";
 			gpio-controller;
@@ -266,7 +266,7 @@
 		};
 
 		gpio13: gpio@40ca0000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x40ca0000 0x4000>;
 			interrupts = <93 0>;
 			label = "GPIO_13";

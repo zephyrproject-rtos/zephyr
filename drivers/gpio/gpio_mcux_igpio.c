@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_imx_gpio
+#define DT_DRV_COMPAT nxp_imx_igpio
 
 #include <errno.h>
 #include <zephyr/device.h>

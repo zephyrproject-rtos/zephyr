@@ -275,7 +275,7 @@
 		};
 
 		gpio1: gpio@401b8000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x401b8000 0x4000>;
 			interrupts = <80 0>, <81 0>;
 			label = "GPIO_1";
@@ -284,7 +284,7 @@
 		};
 
 		gpio2: gpio@401bc000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x401bc000 0x4000>;
 			interrupts = <82 0>, <83 0>;
 			label = "GPIO_2";
@@ -293,7 +293,7 @@
 		};
 
 		gpio3: gpio@401c0000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x401c0000 0x4000>;
 			interrupts = <84 0>, <85 0>;
 			label = "GPIO_3";
@@ -302,7 +302,7 @@
 		};
 
 		gpio4: gpio@401c4000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x401c4000 0x4000>;
 			interrupts = <86 0>, <87 0>;
 			label = "GPIO_4";
@@ -311,7 +311,7 @@
 		};
 
 		gpio5: gpio@400c0000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x400c0000 0x4000>;
 			interrupts = <88 0>, <89 0>;
 			label = "GPIO_5";
@@ -323,7 +323,7 @@
 		 * by the gpio driver.
 		 */
 		gpio6: gpio@42000000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x42000000 0x4000>;
 			label = "GPIO_6";
 			gpio-controller;
@@ -331,7 +331,7 @@
 		};
 
 		gpio7: gpio@42004000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x42004000 0x4000>;
 			label = "GPIO_7";
 			gpio-controller;
@@ -339,7 +339,7 @@
 		};
 
 		gpio8: gpio@42008000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x42008000 0x4000>;
 			label = "GPIO_8";
 			gpio-controller;
@@ -347,7 +347,7 @@
 		};
 
 		gpio9: gpio@4200c000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x4200c000 0x4000>;
 			label = "GPIO_9";
 			gpio-controller;

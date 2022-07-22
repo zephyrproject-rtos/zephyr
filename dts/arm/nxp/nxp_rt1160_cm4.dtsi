@@ -38,7 +38,7 @@
 		 * GPIO3, see pg. 1364 of RT1160 ref manual for example
 		 */
 		gpio2: gpio@40130000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x40130000 0x4000>;
 			interrupts = <102 0>, <103 0>;
 			label = "GPIO_2";
@@ -47,7 +47,7 @@
 		};
 
 		gpio3: gpio@40134000 {
-			compatible = "nxp,imx-gpio";
+			compatible = "nxp,imx-igpio";
 			reg = <0x40134000 0x4000>;
 			interrupts = <104 0>, <105 0>;
 			label = "GPIO_3";
