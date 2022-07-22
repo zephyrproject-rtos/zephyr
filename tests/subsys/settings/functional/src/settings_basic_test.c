@@ -19,15 +19,18 @@ LOG_MODULE_REGISTER(settings_basic_test);
 #if defined(CONFIG_SETTINGS_FCB) || defined(CONFIG_SETTINGS_NVS)
 #include <zephyr/storage/flash_map.h>
 #if DT_HAS_CHOSEN(zephyr_settings_partition)
-#define TEST_FLASH_AREA chosen_partition
-#else
-#define TEST_FLASH_AREA storage
+#define TEST_FLASH_AREA_ID DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
 #endif
-#define TEST_FLASH_AREA_ID FLASH_AREA_ID(TEST_FLASH_AREA)
-#endif
-#if IS_ENABLED(CONFIG_SETTINGS_FS)
+#elif IS_ENABLED(CONFIG_SETTINGS_FS)
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/littlefs.h>
+#else
+#error "Settings backend not selected"
+#endif
+
+#ifndef TEST_FLASH_AREA_ID
+#define TEST_FLASH_AREA		storage_partition
+#define TEST_FLASH_AREA_ID	FIXED_PARTITION_ID(TEST_FLASH_AREA)
 #endif
 
 /* The standard test expects a cleared flash area.  Make sure it has
@@ -35,7 +38,7 @@ LOG_MODULE_REGISTER(settings_basic_test);
  */
 ZTEST(settings_functional, test_clear_settings)
 {
-#if defined(TEST_FLASH_AREA_ID)
+#if !IS_ENABLED(CONFIG_SETTINGS_FS)
 	const struct flash_area *fap;
 	int rc;
 
@@ -46,14 +49,14 @@ ZTEST(settings_functional, test_clear_settings)
 		flash_area_close(fap);
 	}
 	zassert_true(rc == 0, "clear settings failed");
-#elif IS_ENABLED(CONFIG_SETTINGS_FS)
+#else
 	FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(cstorage);
 
 	/* mounting info */
 	static struct fs_mount_t littlefs_mnt = {
 		.type = FS_LITTLEFS,
 		.fs_data = &cstorage,
-		.storage_dev = (void *)FLASH_AREA_ID(storage),
+		.storage_dev = (void *)TEST_FLASH_AREA_ID,
 		.mnt_point = "/ff"
 	};
 
@@ -65,8 +68,6 @@ ZTEST(settings_functional, test_clear_settings)
 	rc = fs_unlink(CONFIG_SETTINGS_FS_FILE);
 	zassert_true(rc == 0 || rc == -ENOENT,
 		     "can't delete config file%d\n", rc);
-#else
-#error "Settings backend not selected"
 #endif
 }
 
