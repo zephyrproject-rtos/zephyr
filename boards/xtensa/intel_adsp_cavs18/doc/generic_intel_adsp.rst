@@ -27,6 +27,27 @@ Set up the environment
      https://github.com/thesofproject/rimage.
 
 
+How Remote Service works
+************************
+
+The CAVS remote service runs on the target board and interacts with
+west. Two services working on the server:
+
+- Run Sevice
+  Run Service (or Request Service)  works as a flasher. It will receive and
+  download the firmware to the intel_adsp_cavs boards then starts the Zephyr
+  Application. It starts at port 10000 by default.
+
+- Log Service
+  Log Service redirect the remote target board's /dev/tty console. It will
+  output Zephyr's log message to user via network. It starts at port 9999
+  by default.
+
+The --remote-host parameter specify the network address which Run Service
+provided, and the --pty parameter specifies the network address of log
+output service.
+
+
 Build and run the tests
 ***********************
 
@@ -36,7 +57,7 @@ Build and run the tests
 
    sudo ./cavstool.py
 
-2. Build the application. Take semaphore as an example:
+2. Build the application. Take hello world as an example:
 
 .. code-block:: console
 
@@ -46,7 +67,19 @@ Build and run the tests
 
 .. code-block:: console
 
-   west flash --remote-host [remote hostname or ip addr]
+   west flash --remote-host {host}:{port} \
+              --pty {host}:{port}
+
+Ex.
+
+.. code-block:: console
+
+   west flash --remote-host 192.168.0.1 --pty
+
+   # with specifying the port
+   west flash --remote-host 192.168.0.1:12345 \
+              --pty 192.168.0.1:54321
+
 
 Now you can see the outout log in your terminal.
 
@@ -56,32 +89,62 @@ also specify the rimage tool, config and key by:
 
 .. code-block:: console
 
-   west flash --remote-host [remote hostname or ip addr] \
+   west flash --remote-host {host}:{port} \
+              --pty {host}:{port} \
               --rimage-tool [path to the rimage tool] \
               --config-dir [path to dir of .toml config file] \
               --key [path to signing key]
 
-Run by twister
-**************
 
-Assume the remote ADSP host's ip address is 192.168.1.2, you can run the
-twister by following command:
+The cavstool server will listen to the available network interfaces on
+port 9999 and 10000 by default. In some case you might need to specify
+it only listen on a dedicate IP address, or change the default ports
+using, you can do it with following parameters:
 
 .. code-block:: console
 
-   twister -p intel_adsp_cavs15 --device-testing \
-     --device-serial-pty="$ZEPHYR_BASE/soc/xtensa/intel_adsp/tools/cavstool_client.py,-s,192.168.1.2,-l" \
-     --west-flash="--remote-host=192.168.1.2,--pty"
+   # with specifying the port
+   sudo ./cavstool.py --log-port 54321 --req-port 12345
+
+   # can be simplified with
+   sudo ./cavstool.py -p 54321 -r 12345
+
+   # with specifying a IP address
+   sudo ./cavstool.py -s 192.168.0.2
+
+   # with specifying the IP address with a log port
+   sudo ./cavstool.py -s 192.168.0.2:54321
+
+   # with specifying the IP, log and request port
+   sudo ./cavstool.py -s 192.168.0.2:54321 -r 12345
+
+   # Also works in this way
+   sudo ./cavstool.py -s 192.168.0.2 -p 54321 -r 12345
 
 
-Like we run test by west, if you don't want to use the default location of
+Run by twister
+**************
+
+For running by twister, the --remote-host parameter needs to be added into
+the content of the --west-flash parameter. Assume the IP address of your CAVS
+boarad is 192.168.1.2, the port of the Request Service is 12345, the port of
+the Log Service is 54321, this is an example of the twister command:
+
+.. code-block:: console
+
+   twister -p intel_adsp_cavs25 --device-testing \
+     --device-serial-pty="$ZEPHYR_BASE/soc/xtensa/intel_adsp/tools/cavstool_client.py,-s,192.168.1.2:54321,-l" \
+     --west-flash="--remote-host=192.168.1.4:12345"
+
+
+Like we run tests by west, if you don't want to use the default location of
 SOF tools, you can also specify the rimage tool, config and key by:
 
 .. code-block:: console
 
    twister -p intel_adsp_cavs15 --device-testing \
-     --device-serial-pty="$ZEPHYR_BASE/soc/xtensa/intel_adsp/tools/cavstool_client.py,-s,192.168.1.2,-l" \
-     --west-flash="--remote-host=192.168.1.2,--pty,\
+     --device-serial-pty="$ZEPHYR_BASE/soc/xtensa/intel_adsp/tools/cavstool_client.py,-s,192.168.1.2:54321,-l" \
+     --west-flash="--remote-host=192.168.1.2:12345,\
      --rimage-tool=$HOME/sof/rimage/rimage,\
      --config-dir=$HOME/sof/rimage/config/,\
      --key=$HOME/sof/keys/otc_private_key.pem" \
@@ -92,25 +155,71 @@ Note that there should be no space between the arguments in --west-flash,
 it use comma to separate the parameters.
 
 
-Run multiple boards
-*******************
+Run one or multiple boards
+**************************
 
-In the above example, there are many parameters need to be key in when
-running it. There is a more easy way to make you to key in less, and
-it also support running multiple boards at the same time.
+In the above example, there are many parameters need to be keying in when
+running by twister. You can reduce it is by writing a hardware map file.
+Ruuning twister with the hardware map file also support you running tests
+on single/multiple ADSP boards parallelly.
 
-Ex.
-  twister --hardware-map cavs.map --device-testing -T tests/ -v
+Let see how to use a hardware map file by twister to run a single board,
+this is the content of the hardware map file cavs.map:
+
+.. code-block:: console
+
+   - connected: true
+     id: None
+     platform: intel_adsp_cavs25
+     product: None
+     runner: intel_adsp
+     serial_pty: "/home/user/zephyrproject/zephyr/soc/xtensa/intel_adsp/tools/cavstool_client.py,-s,192.168.1.4,-l"
+     runner_params:
+       - --remote-host=192.168.1.4
 
 
-Run it this way we have to make a hardware map file first. Edit a
-hardware map file like below example, you can run one/multiple tests
-on one/multiple ADSP boards parallelly.
+If you need to specify the port using, you can write the hardware map file
+like following example. Assume you have a log port of 54321 and a req port
+12345:
 
-And if you don't want to run it in certain platform, just make
-the "connected" field from "true" to "false", it will be skip.
+.. code-block:: console
 
-Here is a example of the hardware map file:
+   - connected: true
+     id: None
+     platform: intel_adsp_cavs25
+     product: None
+     runner: intel_adsp
+     serial_pty: "/home/user/zephyrproject/zephyr/soc/xtensa/intel_adsp/tools/cavstool_client.py,-s,192.168.1.4,--port-log,54321,-l"
+     runner_params:
+       - --remote-host=192.168.1.4
+       - --tool-opt=--port-req
+       - --tool-opt=12345
+
+
+And another simplified form of the port specifying is to use {host}:{port}
+for the --remote-host of the runner params and -s of the serial-pty, Ex.
+
+.. code-block:: console
+
+   - connected: true
+     id: None
+     platform: intel_adsp_cavs25
+     product: None
+     runner: intel_adsp
+     serial_pty: "/home/user/zephyrproject/zephyr/soc/xtensa/intel_adsp/tools/cavstool_client.py,-s,192.168.1.4:54321,-l"
+     runner_params:
+       - --remote-host=192.168.1.4:12345
+
+
+Then you can run twister with fewer parameters:
+
+.. code-block:: console
+
+   twister --hardware-map ./cavs.map --device-testing -T samples/hello_world -vv
+
+
+And below example of the hardware map file shows you how to run tests in
+mulitple boards:
 
 .. code-block:: console
 
@@ -141,8 +250,10 @@ Here is a example of the hardware map file:
      runner_params:
        - --remote-host=192.168.1.4
 
+If you don't want to run certain platform in this file, just make
+the "connected" field from "true" to "false", it will be skip.
 
-By the way, if you don't use the default location of the SOF tools, you
+Again, if you don't use the default location of the SOF tools, you
 can remove the --rimage-tool, --config-dir and --key in the extra_params
 field. For example:
 
@@ -159,3 +270,26 @@ field. For example:
        - --rimage-tool=/home/user/sof/rimage/rimage
        - --config-dir=/home/user/sof/rimage/config/
        - --key=/home/user/sof/keys/otc_private_key_3k.pem
+
+
+To run multiple boards does also work when specifying the ports.
+
+
+Passing extra parameter to tools
+********************************
+
+wwe can pass parameters to run/require service by the --tool-opt
+option. This is for possible extending in the future. For example:
+
+.. code-block:: console
+
+   west flash --remote-host=192.168.0.1 --pty=192.168.0.1 \
+              --tool-opt=--arg='white space' --tool-opt=-r --tool-opt=12345
+
+That means our optional parameters will be parsed as:
+
+.. code-block:: console
+
+   ['--arg=white space', '-r', '12345']
+
+Then cavs request service tool can get them.
