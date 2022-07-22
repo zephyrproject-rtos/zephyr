@@ -324,10 +324,10 @@ static const struct regulator_driver_api api = {
 		.enable_val = DT_INST_PROP(id, enable_val),					\
 		.min_uV = DT_INST_PROP(id, min_uv),						\
 		.max_uV = DT_INST_PROP(id, max_uv),						\
-		.ilim_reg = DT_INST_PROP_OR(id, ilim_reg, 0),			\
-		.ilim_mask = DT_INST_PROP_OR(id, ilim_mask, 0),			\
+		.ilim_reg = DT_INST_PROP_OR(id, ilim_reg, 0),					\
+		.ilim_mask = DT_INST_PROP_OR(id, ilim_mask, 0),					\
 		.enable_inverted = DT_INST_PROP(id, enable_inverted),				\
-		.i2c = I2C_DT_SPEC_INST_GET(id),						\
+		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(id)),					\
 		.voltage_array = pmic_reg_##id##_vol_range,					\
 		.current_array = pmic_reg_##id##_cur_limits,					\
 	};											\
