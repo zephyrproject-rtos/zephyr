@@ -118,8 +118,8 @@ static void blob_cli_caps(struct bt_mesh_blob_cli *b, const struct bt_mesh_blob_
 		ASSERT_EQUAL(caps->mtu_size, BT_MESH_RX_SDU_MAX - BT_MESH_MIC_SHORT);
 		ASSERT_EQUAL(caps->modes, BT_MESH_BLOB_XFER_MODE_ALL);
 		ASSERT_EQUAL(caps->max_size, CONFIG_BT_MESH_BLOB_SIZE_MAX);
-		ASSERT_EQUAL(caps->max_block_size_log, BLOB_BLOCK_SIZE_LOG_MIN);
-		ASSERT_EQUAL(caps->min_block_size_log, BLOB_BLOCK_SIZE_LOG_MAX);
+		ASSERT_EQUAL(caps->min_block_size_log, BLOB_BLOCK_SIZE_LOG_MIN);
+		ASSERT_EQUAL(caps->max_block_size_log, BLOB_BLOCK_SIZE_LOG_MAX);
 		ASSERT_EQUAL(caps->max_chunk_size, BLOB_CHUNK_SIZE_MAX(BT_MESH_RX_SDU_MAX));
 		ASSERT_EQUAL(caps->max_chunks, CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX);
 	}
@@ -862,6 +862,82 @@ static void test_cli_broadcast_unicast(void)
 	PASS();
 }
 
+static void test_cli_trans_complete(void)
+{
+	int err;
+
+	tm_set_phy_max_resync_offset(100000);
+
+	bt_mesh_test_cfg_set(NULL, 400);
+	bt_mesh_device_setup(&prov, &cli_comp);
+	blob_cli_prov_and_conf(BLOB_CLI_ADDR);
+
+	(void)target_srv_add(BLOB_CLI_ADDR + 1, false);
+	(void)target_srv_add(BLOB_CLI_ADDR + 2, false);
+	(void)target_srv_add(BLOB_CLI_ADDR + 3, false);
+	(void)target_srv_add(BLOB_CLI_ADDR + 4, false);
+
+	k_sem_init(&blob_caps_sem, 0, 1);
+	k_sem_init(&lost_target_sem, 0, 1);
+	k_sem_init(&blob_cli_end_sem, 0, 1);
+	k_sem_init(&blob_cli_suspend_sem, 0, 1);
+
+	LOG_INF("Running transfer in %s", is_pull_mode ? "Pull mode" : "Push mode");
+
+	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
+	blob_cli_xfer.xfer.mode =
+		is_pull_mode ? BT_MESH_BLOB_XFER_MODE_PULL : BT_MESH_BLOB_XFER_MODE_PUSH;
+	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX * 2;
+	blob_cli_xfer.xfer.id = 1;
+	blob_cli_xfer.xfer.block_size_log = 12;
+	blob_cli_xfer.xfer.chunk_size = 377;
+	blob_cli_xfer.inputs.timeout_base = 10;
+
+	err = bt_mesh_blob_cli_send(&blob_cli, &blob_cli_xfer.inputs,
+				    &blob_cli_xfer.xfer, &blob_io);
+	if (err) {
+		FAIL("BLOB send failed (err: %d)", err);
+	}
+
+	if (k_sem_take(&blob_cli_end_sem, K_SECONDS(380))) {
+		FAIL("End CB did not trigger as expected for the cli");
+	}
+
+	ASSERT_TRUE(blob_cli.state == BT_MESH_BLOB_CLI_STATE_NONE);
+
+	PASS();
+}
+
+static void test_srv_trans_complete(void)
+{
+	tm_set_phy_max_resync_offset(100000);
+
+	bt_mesh_test_cfg_set(NULL, 400);
+	bt_mesh_device_setup(&prov, &srv_comp);
+	blob_srv_prov_and_conf(bt_mesh_test_own_addr_get(BLOB_CLI_ADDR));
+
+	k_sem_init(&first_block_wr_sem, 0, 1);
+	k_sem_init(&blob_srv_end_sem, 0, 1);
+	k_sem_init(&blob_srv_suspend_sem, 0, 1);
+
+	bt_mesh_blob_srv_recv(&blob_srv, 1, &blob_io, 0, 10);
+
+	if (k_sem_take(&blob_srv_end_sem, K_SECONDS(380))) {
+		FAIL("End CB did not trigger as expected for the srv");
+	}
+
+	ASSERT_TRUE(blob_srv.phase == BT_MESH_BLOB_XFER_PHASE_COMPLETE);
+
+	/* Check that all blocks is received */
+	ASSERT_TRUE(atomic_test_bit(block_bitfield, 0));
+	ASSERT_TRUE(atomic_test_bit(block_bitfield, 1));
+
+	/* Check that a third block was not received */
+	ASSERT_FALSE(atomic_test_bit(block_bitfield, 2));
+
+	PASS();
+}
+
 static void test_cli_trans_resume(void)
 {
 	int err;
@@ -896,7 +972,7 @@ static void test_cli_trans_resume(void)
 	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
 	blob_cli_xfer.xfer.mode =
 		is_pull_mode ? BT_MESH_BLOB_XFER_MODE_PULL : BT_MESH_BLOB_XFER_MODE_PUSH;
-	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 2;
+	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX * 2;
 	blob_cli_xfer.xfer.id = 1;
 	blob_cli_xfer.xfer.block_size_log = 12;
 	blob_cli_xfer.xfer.chunk_size = 377;
@@ -926,7 +1002,7 @@ static void test_cli_trans_resume(void)
 		FAIL("BLOB resume failed (err: %d)", err);
 	}
 
-	if (k_sem_take(&blob_cli_end_sem, K_SECONDS(180))) {
+	if (k_sem_take(&blob_cli_end_sem, K_SECONDS(780))) {
 		FAIL("End CB did not trigger as expected for the cli");
 	}
 
@@ -959,7 +1035,7 @@ static void test_srv_trans_resume(void)
 	 * as soon as the server is suspended and wait to receive the second
 	 * block.
 	 */
-	bt_mesh_blob_srv_recv(&blob_srv, 1, &blob_io, 0, 1);
+	bt_mesh_blob_srv_recv(&blob_srv, 1, &blob_io, 0, 10);
 
 	/* Let server receive a couple of chunks from second block before disruption */
 	for (int i = 0; i < 3; i++) {
@@ -970,7 +1046,7 @@ static void test_srv_trans_resume(void)
 
 	bt_mesh_scan_disable();
 	partial_block = 0;
-	if (k_sem_take(&blob_srv_suspend_sem, K_SECONDS(30))) {
+	if (k_sem_take(&blob_srv_suspend_sem, K_SECONDS(140))) {
 		FAIL("Suspend CB did not trigger as expected for the srv");
 	}
 
@@ -980,7 +1056,8 @@ static void test_srv_trans_resume(void)
 	ASSERT_TRUE(bt_mesh_test_sync(sync.chan_id[0], 400));
 
 	bt_mesh_scan_enable();
-	if (k_sem_take(&blob_srv_end_sem, K_SECONDS(180))) {
+
+	if (k_sem_take(&blob_srv_end_sem, K_SECONDS(780))) {
 		FAIL("End CB did not trigger as expected for the srv");
 	}
 
@@ -989,6 +1066,97 @@ static void test_srv_trans_resume(void)
 	/* Check that all blocks is received */
 	ASSERT_TRUE(atomic_test_bit(block_bitfield, 0));
 	ASSERT_TRUE(atomic_test_bit(block_bitfield, 1));
+
+	/* Check that a third block was not received */
+	ASSERT_FALSE(atomic_test_bit(block_bitfield, 2));
+
+	PASS();
+}
+
+static void test_cli_trans_persistency_pull(void)
+{
+	int err;
+
+	tm_set_phy_max_resync_offset(100000);
+
+	bt_mesh_test_cfg_set(NULL, 240);
+	bt_mesh_device_setup(&prov, &cli_comp);
+	blob_cli_prov_and_conf(BLOB_CLI_ADDR);
+
+	(void)target_srv_add(BLOB_CLI_ADDR + 1, true);
+	(void)target_srv_add(BLOB_CLI_ADDR + 2, false);
+
+	k_sem_init(&blob_caps_sem, 0, 1);
+	k_sem_init(&lost_target_sem, 0, 1);
+	k_sem_init(&blob_cli_end_sem, 0, 1);
+	k_sem_init(&blob_cli_suspend_sem, 0, 1);
+
+	blob_cli_inputs_prepare(0);
+	blob_cli_xfer.xfer.mode = BT_MESH_BLOB_XFER_MODE_PULL;
+	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 3;
+	blob_cli_xfer.xfer.id = 1;
+	blob_cli_xfer.xfer.block_size_log = 8;
+	blob_cli_xfer.xfer.chunk_size = 36;
+	blob_cli_xfer.inputs.timeout_base = 10;
+
+	err = bt_mesh_blob_cli_send(&blob_cli, &blob_cli_xfer.inputs,
+				    &blob_cli_xfer.xfer, &blob_io);
+	if (err) {
+		FAIL("BLOB send failed (err: %d)", err);
+	}
+
+	if (k_sem_take(&blob_cli_end_sem, K_SECONDS(230))) {
+		FAIL("End CB did not trigger as expected for the cli");
+	}
+
+	ASSERT_TRUE(blob_cli.state == BT_MESH_BLOB_CLI_STATE_NONE);
+
+	PASS();
+}
+
+static void test_srv_trans_persistency_pull(void)
+{
+	tm_set_phy_max_resync_offset(100000);
+
+	bt_mesh_test_cfg_set(NULL, 240);
+	bt_mesh_device_setup(&prov, &srv_comp);
+	blob_srv_prov_and_conf(bt_mesh_test_own_addr_get(BLOB_CLI_ADDR));
+
+	k_sem_init(&first_block_wr_sem, 0, 1);
+	k_sem_init(&blob_srv_end_sem, 0, 1);
+	k_sem_init(&blob_srv_suspend_sem, 0, 1);
+
+	bt_mesh_blob_srv_recv(&blob_srv, 1, &blob_io, 0, 10);
+
+	/* Target with address 0x0002 (the first one) will disappear after receiving the first
+	 * block. Target with address 0x0003 (the second one) will stay alive.
+	 */
+	if (bt_mesh_test_own_addr_get(BLOB_CLI_ADDR) == 0x0002) {
+		/* Let the first target receive a couple of chunks from second block before
+		 * disruption.
+		 */
+		for (int i = 0; i < 3; i++) {
+			if (k_sem_take(&first_block_wr_sem, K_SECONDS(100))) {
+				FAIL("Server did not receive the first BLOB block");
+			}
+		}
+
+		bt_mesh_scan_disable();
+		bt_mesh_blob_srv_cancel(&blob_srv);
+		PASS();
+		return;
+	}
+
+	if (k_sem_take(&blob_srv_end_sem, K_SECONDS(230))) {
+		FAIL("End CB did not trigger as expected for the srv");
+	}
+
+	ASSERT_TRUE(blob_srv.phase == BT_MESH_BLOB_XFER_PHASE_COMPLETE);
+
+	/* Check that all blocks is received */
+	ASSERT_TRUE(atomic_test_bit(block_bitfield, 0));
+	ASSERT_TRUE(atomic_test_bit(block_bitfield, 1));
+	ASSERT_TRUE(atomic_test_bit(block_bitfield, 2));
 
 	/* Check that a third block was not received */
 	ASSERT_FALSE(atomic_test_bit(block_bitfield, 3));
@@ -1028,7 +1196,7 @@ static void cli_common_fail_on_init(void)
 
 	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
 	blob_cli_xfer.xfer.mode = BT_MESH_BLOB_XFER_MODE_PUSH;
-	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 1;
+	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX * 1;
 	blob_cli_xfer.xfer.id = 1;
 	blob_cli_xfer.xfer.block_size_log = 12;
 	blob_cli_xfer.xfer.chunk_size = 377;
@@ -1238,13 +1406,17 @@ static const struct bst_test_instance test_blob[] = {
 	TEST_CASE(cli, broadcast_trans, "Test all broadcast transmission types"),
 	TEST_CASE(cli, broadcast_unicast_seq, "Test broadcast with unicast addr (Sequential)"),
 	TEST_CASE(cli, broadcast_unicast, "Test broadcast with unicast addr"),
+	TEST_CASE(cli, trans_complete, "Transfer completes successfully on client (Default: Push)"),
 	TEST_CASE(cli, trans_resume, "Resume BLOB transfer after srv suspension (Default: Push)"),
 	TEST_CASE(cli, fail_on_persistency, "BLOB Client doesn't give up BLOB Transfer"),
+	TEST_CASE(cli, trans_persistency_pull, "Test transfer persistency in Pull mode"),
 	TEST_CASE(cli, fail_on_no_rsp, "BLOB Client end transfer if no targets rsp to Xfer Get"),
 
 	TEST_CASE(srv, caps_standard, "Standard responsive blob server"),
 	TEST_CASE(srv, caps_no_rsp, "Non-responsive blob server"),
+	TEST_CASE(srv, trans_complete, "Transfer completes successfully on server"),
 	TEST_CASE(srv, trans_resume, "Self suspending server after first received block"),
+	TEST_CASE(srv, trans_persistency_pull, "Test transfer persistency in Pull mode"),
 	TEST_CASE(srv, fail_on_block_start, "Server failing right before first block start msg"),
 	TEST_CASE(srv, fail_on_block_get, "Server failing right before first block get msg"),
 	TEST_CASE(srv, fail_on_xfer_get, "Server failing right before first xfer get msg"),
