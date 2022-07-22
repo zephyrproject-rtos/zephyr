@@ -3,12 +3,10 @@
 # Copyright (c) 2022 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ST_STM32_OSPI_NOR := st,stm32-ospi-nor
-
 config FLASH_STM32_OSPI
 	bool "STM32 Octo SPI Flash driver"
-	depends on SOC_FAMILY_STM32
-	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_OSPI_NOR))
+	default y
+	depends on DT_HAS_ST_STM32_OSPI_NOR_ENABLED
 	select USE_STM32_HAL_OSPI
 	select USE_STM32_LL_DLYB  if SOC_SERIES_STM32U5X
 	select USE_STM32_HAL_MDMA if SOC_SERIES_STM32H7X
