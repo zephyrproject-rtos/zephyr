@@ -20,7 +20,7 @@
 #include "bt.h"
 
 extern const struct shell *ctx_shell;
-static struct bt_csis *csis;
+struct bt_csis *csis;
 static uint8_t sirk_read_rsp = BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT;
 
 static void locked_cb(struct bt_conn *conn, struct bt_csis *csis, bool locked)
@@ -203,3 +203,37 @@ SHELL_STATIC_SUBCMD_SET_CREATE(csis_cmds,
 
 SHELL_CMD_ARG_REGISTER(csis, &csis_cmds, "Bluetooth CSIS shell commands",
 		       cmd_csis, 1, 1);
+
+ssize_t csis_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
+			 const bool discoverable)
+{
+	size_t ad_len = 0;
+
+	/* Advertise RSI in discoverable mode only */
+	if (csis != NULL && discoverable) {
+		static uint8_t ad_rsi[BT_CSIS_RSI_SIZE];
+		int err;
+
+		/* A privacy-enabled Set Member should only advertise RSI values derived
+		 * from a SIRK that is exposed in encrypted form.
+		 */
+		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+		    !IS_ENABLED(CONFIG_BT_CSIS_ENC_SIRK_SUPPORT)) {
+			shell_warn(ctx_shell, "RSI derived from unencrypted SIRK");
+		}
+
+		err = bt_csis_generate_rsi(csis, ad_rsi);
+		if (err != 0) {
+			shell_error(ctx_shell, "Failed to generate RSI (err %d)", err);
+			return err;
+		}
+
+		__ASSERT(data_array_size > ad_len, "No space for AD_RSI");
+		data_array[ad_len].type = BT_DATA_CSIS_RSI;
+		data_array[ad_len].data_len = ARRAY_SIZE(ad_rsi);
+		data_array[ad_len].data = &ad_rsi[0];
+		ad_len++;
+	}
+
+	return ad_len;
+}
