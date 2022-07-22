@@ -4,11 +4,25 @@ common:
   tags: net socket can
   filter: dt_chosen_enabled("zephyr,canbus")
   depends_on: can
-  harness: can
+  harness: console
 tests:
   sample.net.sockets.can.one_socket:
     extra_configs:
       - CONFIG_NET_SOCKETS_CAN_RECEIVERS=1
+    harness_config:
+      type: multi_line
+      ordered: True
+      regex:
+        - "(.*)\\[0\\] CAN msg: type 0x0 RTR 0x0 EID 0x1 DLC 0x8"
+        - "(.*)f0 f1 f2 f3 f4 f5 f6 f7"
   sample.net.sockets.can.two_sockets:
     extra_configs:
       - CONFIG_NET_SOCKETS_CAN_RECEIVERS=2
+    harness_config:
+      type: multi_line
+      ordered: True
+      regex:
+        - "(.*)\\[0\\] CAN msg: type 0x0 RTR 0x0 EID 0x1 DLC 0x8"
+        - "(.*)f0 f1 f2 f3 f4 f5 f6 f7"
+        - "(.*)\\[1\\] CAN msg: type 0x0 RTR 0x0 EID 0x1 DLC 0x8"
+        - "(.*)f0 f1 f2 f3 f4 f5 f6 f7"

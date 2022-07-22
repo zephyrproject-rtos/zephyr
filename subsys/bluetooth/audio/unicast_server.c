@@ -11,6 +11,7 @@
 #include <zephyr/bluetooth/audio/audio.h>
 
 #include "pacs_internal.h"
+#include "endpoint.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_UNICAST_SERVER)
 #define LOG_MODULE_NAME bt_unicast_server
@@ -52,14 +53,134 @@ int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_c
 	return 0;
 }
 
-#if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
-int bt_audio_unicast_server_location_changed(enum bt_audio_dir dir)
+int bt_unicast_server_reconfig(struct bt_audio_stream *stream,
+			       const struct bt_codec *codec)
 {
-	return bt_pacs_location_changed(dir);
-}
-#endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
+	struct bt_audio_ep *ep;
+	int err;
 
-int bt_audio_unicast_server_available_contexts_changed(void)
+	ep = stream->ep;
+
+	if (unicast_server_cb != NULL &&
+		unicast_server_cb->reconfig != NULL) {
+		err = unicast_server_cb->reconfig(stream, ep->dir, codec,
+						  &ep->qos_pref);
+	} else {
+		err = -ENOTSUP;
+	}
+
+	if (err != 0) {
+		return err;
+	}
+
+	(void)memcpy(&ep->codec, &codec, sizeof(codec));
+
+	ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
+
+	return 0;
+}
+
+int bt_unicast_server_start(struct bt_audio_stream *stream)
 {
-	return bt_pacs_available_contexts_changed();
+	int err;
+
+	if (unicast_server_cb != NULL && unicast_server_cb->start != NULL) {
+		err = unicast_server_cb->start(stream);
+	} else {
+		err = -ENOTSUP;
+	}
+
+	if (err != 0) {
+		return err;
+	}
+
+	ascs_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_STREAMING);
+
+	return 0;
+}
+
+int bt_unicast_server_metadata(struct bt_audio_stream *stream,
+			       struct bt_codec_data meta[],
+			       size_t meta_count)
+{
+	struct bt_audio_ep *ep;
+	int err;
+
+
+	if (unicast_server_cb != NULL && unicast_server_cb->metadata != NULL) {
+		err = unicast_server_cb->metadata(stream, meta, meta_count);
+	} else {
+		err = -ENOTSUP;
+	}
+
+	ep = stream->ep;
+	for (size_t i = 0U; i < meta_count; i++) {
+		(void)memcpy(&ep->codec.meta[i], &meta[i],
+			     sizeof(ep->codec.meta[i]));
+	}
+
+	if (err) {
+		return err;
+	}
+
+	/* Set the state to the same state to trigger the notifications */
+	ascs_ep_set_state(ep, ep->status.state);
+
+	return 0;
+}
+
+int bt_unicast_server_disable(struct bt_audio_stream *stream)
+{
+	struct bt_audio_ep *ep;
+	int err;
+
+	if (unicast_server_cb != NULL && unicast_server_cb->disable != NULL) {
+		err = unicast_server_cb->disable(stream);
+	} else {
+		err = -ENOTSUP;
+	}
+
+	if (err != 0) {
+		return err;
+	}
+
+	ep = stream->ep;
+
+	/* The ASE state machine goes into different states from this operation
+	 * based on whether it is a source or a sink ASE.
+	 */
+	if (ep->dir == BT_AUDIO_DIR_SOURCE) {
+		ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_DISABLING);
+	} else {
+		ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
+	}
+
+	return 0;
+}
+
+int bt_unicast_server_release(struct bt_audio_stream *stream, bool cache)
+{
+	int err;
+
+	if (unicast_server_cb != NULL && unicast_server_cb->release != NULL) {
+		err = unicast_server_cb->release(stream);
+	} else {
+		err = -ENOTSUP;
+	}
+
+	if (err != 0) {
+		return err;
+	}
+
+	if (cache) {
+		ascs_ep_set_state(stream->ep,
+				  BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
+	} else {
+		/* ase_process will set the state to IDLE after sending the
+		 * notification, finalizing the release
+		 */
+		ascs_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_RELEASING);
+	}
+
+	return 0;
 }

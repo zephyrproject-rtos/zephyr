@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.20.0)
 
 if (NOT BOARD STREQUAL unit_testing)
   message(FATAL_ERROR "This project can only be used with '-DBOARD=unit_testing'.")
@@ -31,7 +31,7 @@ if(NO_PHY)
 endif()
 
 project(bluetooth_ull_llcp_unsupported)
-find_package(ZephyrUnittest HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr COMPONENTS unittest HINTS $ENV{ZEPHYR_BASE})
 include(${ZEPHYR_BASE}/tests/bluetooth/controller/common/defaults_cmake.txt)
 
 # Remove ull_llcp_enc.c from compile

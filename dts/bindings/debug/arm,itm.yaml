@@ -1,0 +1,13 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for ARM instrumentation trace macrocell
+# Pin control property may be used for SWO pins
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+    swo-ref-frequency:
+      type: int
+      required: false
+      description: Reference clock frequency for SWO if different than CPU clock.

@@ -58,5 +58,12 @@ void test_main(void)
 			 ztest_unit_test(test_ipm_cavs_host)
 			 );
 
+	/* Wait a bit so the python script on host is ready to receive
+	 * IPC messages. An IPC message could be used instead of a timer,
+	 * but expecting IPC to be working on a test suite that is going
+	 * to test IPC may not be indicated.
+	 */
+	k_msleep(1000);
+
 	ztest_run_test_suite(intel_adsp);
 }

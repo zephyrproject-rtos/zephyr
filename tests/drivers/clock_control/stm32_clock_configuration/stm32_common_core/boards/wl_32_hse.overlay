@@ -12,7 +12,7 @@
 
 &clk_hse {
 	hse-tcxo;
-	clock-frequency = <DT_FREQ_M(32)>; /* STLink 32MHz clock */
+	clock-frequency = <DT_FREQ_M(32)>;
 	status = "okay";
 };
 

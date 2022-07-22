@@ -41,8 +41,13 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 		int ret;				     \
 							     \
 		obj = get_sock_vtable(sock, &vtable, &lock); \
-		if (obj == NULL || vtable->fn == NULL) {     \
+		if (obj == NULL) {			     \
 			errno = EBADF;			     \
+			return -1;			     \
+		}					     \
+							     \
+		if (vtable->fn == NULL) {		     \
+			errno = EOPNOTSUPP;		     \
 			return -1;			     \
 		}					     \
 							     \
@@ -652,11 +657,13 @@ static inline int z_vrfy_zsock_accept(int sock, struct sockaddr *addr,
 #include <syscalls/zsock_accept_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-#define WAIT_BUFS K_MSEC(100)
+#define WAIT_BUFS_INITIAL_MS 10
+#define WAIT_BUFS_MAX_MS 100
 #define MAX_WAIT_BUFS K_SECONDS(10)
 
 static int send_check_and_wait(struct net_context *ctx, int status,
-			       uint64_t buf_timeout, k_timeout_t timeout)
+			       uint64_t buf_timeout, k_timeout_t timeout,
+			       uint32_t *retry_timeout)
 {
 	int64_t remaining;
 
@@ -686,9 +693,13 @@ static int send_check_and_wait(struct net_context *ctx, int status,
 		goto out;
 	}
 
+	if (ctx->cond.lock) {
+		(void)k_mutex_unlock(ctx->cond.lock);
+	}
+
 	if (status == -ENOBUFS) {
 		/* We can monitor net_pkt/net_buf avaialbility, so just wait. */
-		k_sleep(WAIT_BUFS);
+		k_sleep(K_MSEC(*retry_timeout));
 	}
 
 	if (status == -EAGAIN) {
@@ -701,10 +712,18 @@ static int send_check_and_wait(struct net_context *ctx, int status,
 					  K_POLL_MODE_NOTIFY_ONLY,
 					  net_tcp_tx_sem_get(ctx));
 
-			k_poll(&event, 1, WAIT_BUFS);
+			k_poll(&event, 1, K_MSEC(*retry_timeout));
 		} else {
-			k_sleep(WAIT_BUFS);
+			k_sleep(K_MSEC(*retry_timeout));
 		}
+	}
+	/* Exponentially increase the retry timeout
+	 * Cap the value to WAIT_BUFS_MAX_MS
+	 */
+	*retry_timeout = MIN(WAIT_BUFS_MAX_MS, *retry_timeout << 1);
+
+	if (ctx->cond.lock) {
+		(void)k_mutex_lock(ctx->cond.lock, K_FOREVER);
 	}
 
 	return 0;
@@ -719,6 +738,7 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			 const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	k_timeout_t timeout = K_FOREVER;
+	uint32_t retry_timeout = WAIT_BUFS_INITIAL_MS;
 	uint64_t buf_timeout = 0;
 	int status;
 
@@ -751,7 +771,7 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 
 		if (status < 0) {
 			status = send_check_and_wait(ctx, status, buf_timeout,
-						     timeout);
+						     timeout, &retry_timeout);
 			if (status < 0) {
 				return status;
 			}
@@ -808,6 +828,7 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 			  int flags)
 {
 	k_timeout_t timeout = K_FOREVER;
+	uint32_t retry_timeout = WAIT_BUFS_INITIAL_MS;
 	uint64_t buf_timeout = 0;
 	int status;
 
@@ -824,7 +845,7 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 			if (status < 0) {
 				status = send_check_and_wait(ctx, status,
 							     buf_timeout,
-							     timeout);
+							     timeout, &retry_timeout);
 				if (status < 0) {
 					return status;
 				}

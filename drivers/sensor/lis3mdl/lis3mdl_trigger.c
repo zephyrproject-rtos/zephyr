@@ -26,6 +26,10 @@ int lis3mdl_trigger_set(const struct device *dev,
 	int16_t buf[3];
 	int ret;
 
+	if (!config->irq_gpio.port) {
+		return -ENOTSUP;
+	}
+
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
 	/* dummy read: re-trigger interrupt */

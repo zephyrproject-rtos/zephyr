@@ -1,0 +1,46 @@
+# STM32F7508-DK Discovery board configuration
+
+# Copyright (c) 2022, Rtone.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32F7508_DK
+
+config BOARD
+	default "stm32f7508_dk"
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
+if DISPLAY
+
+config KSCAN
+	default y
+
+# MEMC needs to be enabled in order to store
+# display buffer to external SDRAM connected to FMC
+config MEMC
+	default y
+
+endif # DISPLAY
+
+if KSCAN
+
+config I2C
+	default y
+
+config KSCAN_FT5336
+	default y
+
+config KSCAN_FT5336_INTERRUPT
+	default y
+
+endif # KSCAN
+
+config DISK_DRIVER_SDMMC
+	default y if DISK_DRIVERS
+
+endif # BOARD_STM32F7508_DK

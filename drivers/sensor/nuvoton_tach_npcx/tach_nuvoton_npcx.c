@@ -259,8 +259,6 @@ int tach_npcx_sample_fetch(const struct device *dev, enum sensor_channel chan)
 	if (tach_npcx_is_underflow(dev)) {
 		/* Clear pending flags */
 		tach_npcx_clear_underflow_flag(dev);
-
-		LOG_INF("%s is underflow!", dev->name);
 		data->capture = 0;
 
 		return 0;

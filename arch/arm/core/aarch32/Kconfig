@@ -21,6 +21,7 @@ config CPU_CORTEX_M
 	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	select ARCH_HAS_TIMING_FUNCTIONS if CPU_CORTEX_M_HAS_DWT
 	select ARCH_SUPPORTS_ARCH_HW_INIT
+	select ARCH_HAS_SUSPEND_TO_RAM
 	imply XIP
 	help
 	  This option signifies the use of a CPU of the Cortex-M family.

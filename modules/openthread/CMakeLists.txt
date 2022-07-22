@@ -1,3 +1,4 @@
+if(CONFIG_OPENTHREAD)
 if(CONFIG_OPENTHREAD_SOURCES)
 
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
@@ -482,5 +483,9 @@ if(CONFIG_OPENTHREAD_SETTINGS_RAM)
 endif()
 
 zephyr_link_libraries(${ot_libs})
+
+endif()
+
+add_subdirectory(platform)
 
 endif()

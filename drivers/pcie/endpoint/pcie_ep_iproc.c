@@ -163,8 +163,9 @@ static int iproc_pcie_register_reset_cb(const struct device *dev,
 {
 	struct iproc_pcie_ep_ctx *ctx = dev->data;
 
-	if (reset < PCIE_PERST || reset >= PCIE_RESET_MAX)
+	if (reset < PCIE_PERST || reset >= PCIE_RESET_MAX) {
 		return -EINVAL;
+	}
 
 	LOG_DBG("Registering the callback for reset %d", reset);
 	ctx->reset_cb[reset] = cb;

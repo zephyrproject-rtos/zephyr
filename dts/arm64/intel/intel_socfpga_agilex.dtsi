@@ -1,12 +1,13 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  *
- * Copyright (C) 2021, Intel Corporation
+ * Copyright (C) 2021-2022, Intel Corporation
  *
  */
 
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/clock/intel_socfpga_clock.h>
 
 / {
 	cpus {
@@ -33,13 +34,13 @@
 	arch_timer: timer {
 		compatible = "arm,armv8-timer";
 		interrupt-parent = <&gic>;
-		interrupts = <GIC_PPI 29 IRQ_TYPE_LEVEL
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>,
-			     <GIC_PPI 30 IRQ_TYPE_LEVEL
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>,
-			     <GIC_PPI 27 IRQ_TYPE_LEVEL
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>,
-			     <GIC_PPI 26 IRQ_TYPE_LEVEL
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
 	};
 
@@ -70,7 +71,7 @@
 		interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
-		clock-frequency = <100000000>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_UART>;
 		label = "uart_0";
 		status = "disabled";
 	};

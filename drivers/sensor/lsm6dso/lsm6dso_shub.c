@@ -682,8 +682,9 @@ int lsm6dso_shub_get_idx(const struct device *dev, enum sensor_channel type)
 	for (n = 0; n < data->num_ext_dev; n++) {
 		sp = &lsm6dso_shub_slist[data->shub_ext[n]];
 
-		if (sp->type == type)
+		if (sp->type == type) {
 			return n;
+		}
 	}
 
 	LOG_ERR("shub: dev %s type %d not supported", dev->name, type);
@@ -728,8 +729,9 @@ int lsm6dso_shub_config(const struct device *dev, enum sensor_channel chan,
 	for (n = 0; n < data->num_ext_dev; n++) {
 		sp = &lsm6dso_shub_slist[data->shub_ext[n]];
 
-		if (sp->type == chan)
+		if (sp->type == chan) {
 			break;
+		}
 	}
 
 	if (n == data->num_ext_dev) {
@@ -754,8 +756,9 @@ int lsm6dso_shub_init(const struct device *dev)
 
 	LOG_INF("shub: start sensorhub for %s", dev->name);
 	for (n = 0; n < ARRAY_SIZE(lsm6dso_shub_slist); n++) {
-		if (data->num_ext_dev >= LSM6DSO_SHUB_MAX_NUM_SLVS)
+		if (data->num_ext_dev >= LSM6DSO_SHUB_MAX_NUM_SLVS) {
 			break;
+		}
 
 		chip_id = 0;
 		sp = &lsm6dso_shub_slist[n];

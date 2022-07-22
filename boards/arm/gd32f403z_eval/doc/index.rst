@@ -72,7 +72,8 @@ The board configuration supports the following hardware features:
 +-----------+------------+-----------------------+
 | UART      | on-chip    | serial port-polling   |
 +-----------+------------+-----------------------+
-
+| ADC       | on-chip    | ADC                   |
++-----------+------------+-----------------------+
 
 Serial Port
 ===========

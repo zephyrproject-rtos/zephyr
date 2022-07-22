@@ -15,7 +15,7 @@ BUILD_ASSERT(__cplusplus == 201703);
 std::array<int, 4> array = {1, 2, 3, 4};
 std::vector<int> vector;
 
-static void test_array(void)
+ZTEST(libcxx_tests, test_array)
 {
 	zassert_equal(array.size(), 4, "unexpected size");
 	zassert_equal(array[0], 1, "array[0] wrong");
@@ -27,7 +27,7 @@ static void test_array(void)
 	zassert_equal(local[1], 2, "local[1] wrong");
 }
 
-static void test_vector(void)
+ZTEST(libcxx_tests, test_vector)
 {
 	zassert_equal(vector.size(), 0, "vector init nonzero");
 	for (auto v : array) {
@@ -53,7 +53,7 @@ struct make_unique_data {
 int make_unique_data::ctors;
 int make_unique_data::dtors;
 
-static void test_make_unique(void)
+ZTEST(libcxx_tests, test_make_unique)
 {
 	zassert_equal(make_unique_data::ctors, 0, "ctor count not initialized");
 	zassert_equal(make_unique_data::dtors, 0, "dtor count not initialized");
@@ -73,7 +73,7 @@ static void throw_exception(void)
 	throw 42;
 }
 
-static void test_exception(void)
+ZTEST(libcxx_tests, test_exception)
 {
 	try
 	{
@@ -89,20 +89,16 @@ static void test_exception(void)
 }
 #else
 
-static void test_exception(void)
+ZTEST(libcxx_tests, test_exception)
 {
 	ztest_test_skip();
 }
 #endif
 
-void test_main(void)
+static void *libcxx_tests_setup(void)
 {
 	TC_PRINT("version %u\n", (uint32_t)__cplusplus);
-	ztest_test_suite(libcxx_tests,
-			 ztest_unit_test(test_array),
-			 ztest_unit_test(test_vector),
-			 ztest_unit_test(test_make_unique),
-			 ztest_unit_test(test_exception)
-		);
-	ztest_run_test_suite(libcxx_tests);
+
+	return NULL;
 }
+ZTEST_SUITE(libcxx_tests, NULL, libcxx_tests_setup, NULL, NULL, NULL);

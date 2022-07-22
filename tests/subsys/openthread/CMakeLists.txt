@@ -7,7 +7,7 @@ project(openthread_tests)
 zephyr_library_include_directories(
 	${ZEPHYR_BASE}/../modules/lib/openthread/include/
 	${ZEPHYR_BASE}/../modules/lib/openthread/src/posix/platform/
-	${ZEPHYR_BASE}/subsys/net/lib/openthread/platform/
+	${ZEPHYR_BASE}/modules/openthread/platform/
 	${ZEPHYR_BASE}/../modules/lib/openthread/examples/platforms/
 	)
 

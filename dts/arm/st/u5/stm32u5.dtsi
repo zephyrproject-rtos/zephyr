@@ -286,7 +286,7 @@
 		};
 
 		spi1: spi@40013000 {
-			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
@@ -297,7 +297,7 @@
 		};
 
 		spi2: spi@40003800 {
-			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
@@ -308,7 +308,7 @@
 		};
 
 		spi3: spi@46002000 {
-			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x46002000 0x400>;
@@ -360,7 +360,8 @@
 			compatible = "st,stm32-ospi";
 			reg = <0x420d1400 0x400>;
 			interrupts = <76 0>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2_2 0x00000010>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2_2 0x00000010>,
+				<&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -371,7 +372,8 @@
 			compatible = "st,stm32-ospi";
 			reg = <0x420d2400 0x400>;
 			interrupts = <120 0>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2_2 0x00000100>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2_2 0x00000100>,
+				<&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";

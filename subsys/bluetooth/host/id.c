@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/settings/settings.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci_vs.h>
@@ -204,9 +205,47 @@ static void le_rpa_invalidate(void)
 }
 
 #if defined(CONFIG_BT_PRIVACY)
+
+#if defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+static void le_rpa_timeout_update(void)
+{
+	int err = 0;
+
+	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_RPA_TIMEOUT_CHANGED)) {
+		struct net_buf *buf;
+		struct bt_hci_cp_le_set_rpa_timeout *cp;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RPA_TIMEOUT,
+					sizeof(*cp));
+		if (!buf) {
+			BT_ERR("Failed to create HCI RPA timeout command");
+			err = -ENOBUFS;
+			goto submit;
+		}
+
+		cp = net_buf_add(buf, sizeof(*cp));
+		cp->rpa_timeout = sys_cpu_to_le16(bt_dev.rpa_timeout);
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RPA_TIMEOUT, buf, NULL);
+		if (err) {
+			BT_ERR("Failed to send HCI RPA timeout command");
+			goto submit;
+		}
+	}
+
+submit:
+	if (err) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_RPA_TIMEOUT_CHANGED);
+	}
+}
+#endif
+
 static void le_rpa_timeout_submit(void)
 {
-	(void)k_work_schedule(&bt_dev.rpa_update, RPA_TIMEOUT);
+#if defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+	le_rpa_timeout_update();
+#endif
+
+	(void)k_work_schedule(&bt_dev.rpa_update, K_SECONDS(bt_dev.rpa_timeout));
 }
 
 /* this function sets new RPA only if current one is no longer valid */
@@ -345,14 +384,45 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 }
 #endif /* defined(CONFIG_BT_PRIVACY) */
 
-static void adv_update_rpa(struct bt_le_ext_adv *adv, void *data)
+#if defined(CONFIG_BT_EXT_ADV) && defined(CONFIG_BT_PRIVACY)
+static void adv_disable_rpa(struct bt_le_ext_adv *adv, void *data)
 {
-	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED) &&
-	    !atomic_test_bit(adv->flags, BT_ADV_LIMITED) &&
-	    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
-		int err;
+	uint8_t adv_index = bt_le_ext_adv_get_index(adv);
+	bool *adv_disabled = data;
+	bool rpa_invalid = true;
 
+	adv_disabled[adv_index] = false;
+
+	/* Invalidate RPA only for non-limited advertising sets. */
+	if (atomic_test_bit(adv->flags, BT_ADV_LIMITED)) {
+		return;
+	}
+
+	/* Disable advertising sets to prepare them for RPA update. */
+	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED) &&
+	    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
 		bt_le_adv_set_enable_ext(adv, false, NULL);
+
+		adv_disabled[adv_index] = true;
+	}
+
+	/* Notify the user about the RPA timeout and set the RPA validity. */
+	if (adv->cb && adv->cb->rpa_expired) {
+		rpa_invalid = adv->cb->rpa_expired(adv);
+	}
+
+	if (rpa_invalid) {
+		atomic_clear_bit(adv->flags, BT_ADV_RPA_VALID);
+	}
+}
+
+static void adv_enable_rpa(struct bt_le_ext_adv *adv, void *data)
+{
+	uint8_t adv_index = bt_le_ext_adv_get_index(adv);
+	bool *adv_disabled = data;
+
+	if (adv_disabled[adv_index]) {
+		int err;
 
 		err = bt_id_set_adv_private_addr(adv);
 		if (err) {
@@ -362,6 +432,23 @@ static void adv_update_rpa(struct bt_le_ext_adv *adv, void *data)
 
 		bt_le_adv_set_enable_ext(adv, true, NULL);
 	}
+}
+#endif /* defined(CONFIG_BT_EXT_ADV) && defined(CONFIG_BT_PRIVACY) */
+
+static void adv_update_rpa_foreach(void)
+{
+#if defined(CONFIG_BT_EXT_ADV) && defined(CONFIG_BT_PRIVACY)
+	bool adv_disabled[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
+
+	bt_le_ext_adv_foreach(adv_disable_rpa, adv_disabled);
+
+	/* Submit the timeout in case all sets use the same
+	 * RPA for the next rotation period.
+	 */
+	le_rpa_timeout_submit();
+
+	bt_le_ext_adv_foreach(adv_enable_rpa, adv_disabled);
+#endif
 }
 
 static void le_update_private_addr(void)
@@ -374,7 +461,9 @@ static void le_update_private_addr(void)
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
 	    IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-		bt_le_ext_adv_foreach(adv_update_rpa, NULL);
+		adv_update_rpa_foreach();
+	} else {
+		le_rpa_invalidate();
 	}
 
 #if defined(CONFIG_BT_OBSERVER)
@@ -439,7 +528,6 @@ static void le_force_rpa_timeout(void)
 
 	k_work_cancel_delayable_sync(&bt_dev.rpa_update, &sync);
 #endif
-	le_rpa_invalidate();
 	le_update_private_addr();
 }
 
@@ -461,8 +549,6 @@ static void rpa_timeout(struct k_work *work)
 		}
 	}
 
-	le_rpa_invalidate();
-
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
 		bt_le_ext_adv_foreach(adv_is_private_enabled, &adv_enabled);
 	}
@@ -472,6 +558,7 @@ static void rpa_timeout(struct k_work *work)
 	      atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING) ||
 	      (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
 	       atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)))) {
+		le_rpa_invalidate();
 		return;
 	}
 

@@ -4,6 +4,7 @@
 config ZTEST
 	bool "Zephyr testing framework"
 	select TEST
+	select OUTPUT_SYMBOLS
 	help
 	  Enable the Zephyr testing framework. You should enable this only
 	  if you're writing automated tests.

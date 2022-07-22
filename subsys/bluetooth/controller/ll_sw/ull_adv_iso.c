@@ -805,8 +805,8 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	ticks_slot = adv_iso->ull.ticks_slot + ticks_slot_overhead;
 
 	/* Find the slot after Periodic Advertisings events */
-	err = ull_sched_after_adv_sync_slot_get(TICKER_USER_ID_THREAD,
-						ticks_slot, &ticks_anchor);
+	err = ull_sched_adv_aux_sync_free_slot_get(TICKER_USER_ID_THREAD,
+						   ticks_slot, &ticks_anchor);
 	if (err) {
 		ticks_anchor = ticker_ticks_now_get();
 	}

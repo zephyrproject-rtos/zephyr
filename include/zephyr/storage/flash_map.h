@@ -60,11 +60,8 @@ struct flash_area {
 	off_t fa_off;
 	/** Total size */
 	size_t fa_size;
-	/**
-	 * Name of the flash device, suitable for passing to
-	 * device_get_binding().
-	 */
-	const char *fa_dev_name;
+	/** Backing flash device */
+	const struct device *fa_dev;
 };
 
 /**
@@ -261,7 +258,7 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 	DT_HAS_FIXED_PARTITION_LABEL(label)
 
 #define FLASH_AREA_LABEL_STR(lbl) \
-	DT_PROP(DT_NODE_BY_FIXED_PARTITION_LABEL(lbl), label)
+	DT_LABEL(DT_NODE_BY_FIXED_PARTITION_LABEL(lbl))
 
 #define FLASH_AREA_ID(label) \
 	DT_FIXED_PARTITION_ID(DT_NODE_BY_FIXED_PARTITION_LABEL(label))

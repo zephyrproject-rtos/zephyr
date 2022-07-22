@@ -60,7 +60,7 @@ void busy_loop(uint32_t ticks)
  *    - Idle time should not increase
  *    - current, peak and average cycles should be different
  */
-void test_all_stats_usage(void)
+ZTEST(usage_api, test_all_stats_usage)
 {
 	int  priority;
 	k_tid_t  tid;
@@ -184,7 +184,7 @@ void test_all_stats_usage(void)
 /**
  * @brief Test the k_thread_runtime_stats_enable/disable APIs
  */
-void test_thread_stats_enable_disable(void)
+ZTEST(usage_api, test_thread_stats_enable_disable)
 {
 	k_tid_t  tid;
 	k_thread_runtime_stats_t  stats1;
@@ -253,7 +253,7 @@ void test_thread_stats_enable_disable(void)
 	k_thread_abort(tid);
 }
 #else
-void test_thread_stats_enable_disable(void)
+ZTEST(usage_api, test_thread_stats_enable_disable)
 {
 }
 #endif
@@ -262,7 +262,7 @@ void test_thread_stats_enable_disable(void)
 /**
  * @brief Test the k_sys_runtime_stats_enable/disable APIs
  */
-void test_sys_stats_enable_disable(void)
+ZTEST(usage_api, test_sys_stats_enable_disable)
 {
 	k_thread_runtime_stats_t  sys_stats1;
 	k_thread_runtime_stats_t  sys_stats2;
@@ -366,7 +366,7 @@ void test_sys_stats_enable_disable(void)
 #endif
 }
 #else
-void test_sys_stats_enable_disable(void)
+ZTEST(usage_api, test_sys_stats_enable_disable)
 {
 }
 #endif
@@ -386,7 +386,7 @@ void resume_main(struct k_timer *timer)
  * that the contents of the fields guarded by CONFIG_SCHED_THREAD_USAGE
  * are correct.
  */
-void test_thread_stats_usage(void)
+ZTEST(usage_api, test_thread_stats_usage)
 {
 	k_tid_t  tid;
 	int  priority;
@@ -539,16 +539,5 @@ void test_thread_stats_usage(void)
 	k_thread_abort(tid);
 }
 
-/**
- * @brief - main entry point for thread runtime statistics (usage) test
- */
-void test_main(void)
-{
-	ztest_test_suite(usage_api,
-		 ztest_1cpu_unit_test(test_all_stats_usage),
-		 ztest_1cpu_unit_test(test_thread_stats_enable_disable),
-		 ztest_1cpu_unit_test(test_sys_stats_enable_disable),
-		 ztest_1cpu_unit_test(test_thread_stats_usage)
-		 );
-	ztest_run_test_suite(usage_api);
-}
+ZTEST_SUITE(usage_api, NULL, NULL,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

@@ -26,7 +26,7 @@ static inline int hp206c_bus_config(const struct device *dev)
 	const struct hp206c_device_config *cfg = dev->config;
 	uint32_t i2c_cfg;
 
-	i2c_cfg = I2C_MODE_MASTER | I2C_SPEED_SET(I2C_SPEED_STANDARD);
+	i2c_cfg = I2C_MODE_CONTROLLER | I2C_SPEED_SET(I2C_SPEED_STANDARD);
 
 	return i2c_configure(cfg->i2c.bus, i2c_cfg);
 }
@@ -313,12 +313,15 @@ static int hp206c_init(const struct device *dev)
 	return 0;
 }
 
-static struct hp206c_device_data hp206c_data;
+#define HP206C_DEFINE(inst)								\
+	static struct hp206c_device_data hp206c_data_##inst;				\
+											\
+	static const struct hp206c_device_config hp206c_config_##inst = {		\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+	};										\
+											\
+	DEVICE_DT_INST_DEFINE(inst, hp206c_init, NULL,					\
+			      &hp206c_data_##inst, &hp206c_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &hp206c_api);		\
 
-static const struct hp206c_device_config hp206c_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
-
-DEVICE_DT_INST_DEFINE(0, hp206c_init, NULL, &hp206c_data,
-		    &hp206c_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &hp206c_api);
+DT_INST_FOREACH_STATUS_OKAY(HP206C_DEFINE)

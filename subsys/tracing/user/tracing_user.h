@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Lexmark International, Inc.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,14 +15,32 @@
 extern "C" {
 #endif
 
+void sys_trace_thread_create_user(struct k_thread *thread);
+void sys_trace_thread_abort_user(struct k_thread *thread);
+void sys_trace_thread_suspend_user(struct k_thread *thread);
+void sys_trace_thread_resume_user(struct k_thread *thread);
+void sys_trace_thread_name_set_user(struct k_thread *thread);
 void sys_trace_thread_switched_in_user(struct k_thread *thread);
 void sys_trace_thread_switched_out_user(struct k_thread *thread);
+void sys_trace_thread_info_user(struct k_thread *thread);
+void sys_trace_thread_priority_set_user(struct k_thread *thread, int prio);
+void sys_trace_thread_sched_ready_user(struct k_thread *thread);
+void sys_trace_thread_pend_user(struct k_thread *thread);
 void sys_trace_isr_enter_user(int nested_interrupts);
 void sys_trace_isr_exit_user(int nested_interrupts);
 void sys_trace_idle_user(void);
 
+void sys_trace_thread_create(struct k_thread *thread);
+void sys_trace_thread_abort(struct k_thread *thread);
+void sys_trace_thread_suspend(struct k_thread *thread);
+void sys_trace_thread_resume(struct k_thread *thread);
+void sys_trace_thread_name_set(struct k_thread *thread);
 void sys_trace_k_thread_switched_in(void);
 void sys_trace_k_thread_switched_out(void);
+void sys_trace_thread_info(struct k_thread *thread);
+void sys_trace_thread_sched_priority_set(struct k_thread *thread, int prio);
+void sys_trace_thread_sched_ready(struct k_thread *thread);
+void sys_trace_thread_pend(struct k_thread *thread);
 void sys_trace_isr_enter(void);
 void sys_trace_isr_exit(void);
 void sys_trace_idle(void);
@@ -30,7 +49,7 @@ void sys_trace_idle(void);
 #define sys_port_trace_k_thread_foreach_exit()
 #define sys_port_trace_k_thread_foreach_unlocked_enter()
 #define sys_port_trace_k_thread_foreach_unlocked_exit()
-#define sys_port_trace_k_thread_create(new_thread)
+#define sys_port_trace_k_thread_create(new_thread) sys_trace_thread_create(new_thread)
 #define sys_port_trace_k_thread_user_mode_enter()
 #define sys_port_trace_k_thread_heap_assign(thread, heap)
 #define sys_port_trace_k_thread_join_enter(thread, timeout)
@@ -47,22 +66,23 @@ void sys_trace_idle(void);
 #define sys_port_trace_k_thread_yield()
 #define sys_port_trace_k_thread_wakeup(thread)
 #define sys_port_trace_k_thread_start(thread)
-#define sys_port_trace_k_thread_abort(thread)
-#define sys_port_trace_k_thread_suspend_enter(thread)
+#define sys_port_trace_k_thread_abort(thread) sys_trace_thread_abort(thread)
+#define sys_port_trace_k_thread_suspend_enter(thread) sys_trace_thread_suspend(thread)
 #define sys_port_trace_k_thread_suspend_exit(thread)
-#define sys_port_trace_k_thread_resume_enter(thread)
+#define sys_port_trace_k_thread_resume_enter(thread) sys_trace_thread_resume(thread)
 #define sys_port_trace_k_thread_sched_lock()
 #define sys_port_trace_k_thread_sched_unlock()
-#define sys_port_trace_k_thread_name_set(thread, ret)
+#define sys_port_trace_k_thread_name_set(thread, ret) sys_trace_thread_name_set(thread)
 #define sys_port_trace_k_thread_switched_out() sys_trace_k_thread_switched_out()
 #define sys_port_trace_k_thread_switched_in() sys_trace_k_thread_switched_in()
-#define sys_port_trace_k_thread_info(thread)
+#define sys_port_trace_k_thread_info(thread) sys_trace_thread_info(thread)
 
 #define sys_port_trace_k_thread_sched_wakeup(thread)
 #define sys_port_trace_k_thread_sched_abort(thread)
-#define sys_port_trace_k_thread_sched_priority_set(thread, prio)
-#define sys_port_trace_k_thread_sched_ready(thread)
-#define sys_port_trace_k_thread_sched_pend(thread)
+#define sys_port_trace_k_thread_sched_priority_set(thread, prio) \
+	sys_trace_thread_sched_priority_set(thread, prio)
+#define sys_port_trace_k_thread_sched_ready(thread) sys_trace_thread_sched_ready(thread)
+#define sys_port_trace_k_thread_sched_pend(thread) sys_trace_thread_pend(thread)
 #define sys_port_trace_k_thread_sched_resume(thread)
 #define sys_port_trace_k_thread_sched_suspend(thread)
 

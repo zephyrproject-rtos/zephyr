@@ -57,6 +57,7 @@ config LOG_FMT_SECTION
 
 config LOG_USE_TAGGED_ARGUMENTS
 	bool "Using tagged arguments for packaging"
+	depends on !PICOLIBC
 	select CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS
 	select LOG_ALWAYS_RUNTIME
 	help

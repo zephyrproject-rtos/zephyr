@@ -30,12 +30,11 @@
 #define STM32_SRC_SYSCLK	0x006
 /** Bus clock */
 #define STM32_SRC_PCLK		0x007
-/** PLL clocks */
-#define STM32_SRC_PLLCLK	0x008
+/** PLL clock outputs */
+#define STM32_SRC_PLL_P		0x008
+#define STM32_SRC_PLL_Q		0x009
+#define STM32_SRC_PLL_R		0x00a
 /* TODO: PLLSAI clocks */
-
-#define STM32_SRC_CLOCK_MIN	STM32_SRC_HSI
-#define STM32_SRC_CLOCK_MAX	STM32_SRC_PLLCLK
 
 /**
  * @brief STM32 clock configuration bit field.
@@ -76,15 +75,15 @@
 #define USART2_SEL(val)		STM32_CLOCK(val, 3, 2, CCIPR_REG)
 #define USART3_SEL(val)		STM32_CLOCK(val, 3, 4, CCIPR_REG)
 #define USART4_SEL(val)		STM32_CLOCK(val, 3, 6, CCIPR_REG)
-#define LPUART1_SEL(val)	STM32_CLOCK(val, 3, 8, CCIPR_REG)
-#define I2C1_SEL(val)		STM32_CLOCK(val, 3, 10, CCIPR_REG)
-#define I2C2_SEL(val)		STM32_CLOCK(val, 3, 12, CCIPR_REG)
-#define I2C3_SEL(val)		STM32_CLOCK(val, 3, 14, CCIPR_REG)
-#define LPTIM1_SEL(val)		STM32_CLOCK(val, 3, 16, CCIPR_REG)
-#define LPTIM2_SEL(val)		STM32_CLOCK(val, 3, 18, CCIPR_REG)
-#define LPTIM3_SEL(val)		STM32_CLOCK(val, 3, 20, CCIPR_REG)
-#define SAI1_SEL(val)		STM32_CLOCK(val, 3, 22, CCIPR_REG)
-#define SAI2_SEL(val)		STM32_CLOCK(val, 3, 24, CCIPR_REG)
+#define USART5_SEL(val)		STM32_CLOCK(val, 3, 8, CCIPR_REG)
+#define LPUART1_SEL(val)	STM32_CLOCK(val, 3, 10, CCIPR_REG)
+#define I2C1_SEL(val)		STM32_CLOCK(val, 3, 12, CCIPR_REG)
+#define I2C2_SEL(val)		STM32_CLOCK(val, 3, 14, CCIPR_REG)
+#define I2C3_SEL(val)		STM32_CLOCK(val, 3, 16, CCIPR_REG)
+#define LPTIM1_SEL(val)		STM32_CLOCK(val, 3, 18, CCIPR_REG)
+#define SAI1_SEL(val)		STM32_CLOCK(val, 3, 20, CCIPR_REG)
+#define I2S23_SEL(val)		STM32_CLOCK(val, 3, 22, CCIPR_REG)
+#define FDCAN_SEL(val)		STM32_CLOCK(val, 3, 24, CCIPR_REG)
 #define CLK48_SEL(val)		STM32_CLOCK(val, 3, 26, CCIPR_REG)
 #define ADC12_SEL(val)		STM32_CLOCK(val, 3, 28, CCIPR_REG)
 #define ADC34_SEL(val)		STM32_CLOCK(val, 3, 30, CCIPR_REG)

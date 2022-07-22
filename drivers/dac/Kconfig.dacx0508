@@ -9,3 +9,13 @@ config DAC_DACX0508
 	depends on SPI
 	help
 	  Enable the driver for the TI DACx0508.
+
+if DAC_DACX0508
+
+config DAC_DACX0508_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  TI DACx0508 DAC device driver initialization priority.
+
+endif # DAC_DACX0508

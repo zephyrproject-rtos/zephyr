@@ -28,8 +28,13 @@
 #include "lll.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
 
 #include "ull_tx_queue.h"
+
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
 
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
@@ -59,17 +64,26 @@ void test_tx_buffer_alloc(void)
 		ctxs[ctx_idx] = llcp_create_local_procedure(PROC_VERSION_EXCHANGE);
 	}
 
+	/* Init per conn tx_buffer_alloc count */
+	for (int j = 1; j < CONFIG_BT_CTLR_LLCP_CONN; j++) {
+		conn[j].llcp.tx_buffer_alloc = 0;
+	}
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
 	/* Check alloc flow */
 	for (i = 0; i < CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM; i++) {
 		zassert_true(llcp_tx_alloc_peek(&conn[0], ctxs[0]), NULL);
 		tx[tx_alloc_idx] = llcp_tx_alloc(&conn[0], ctxs[0]);
+		zassert_equal(conn[0].llcp.tx_buffer_alloc, i + 1, NULL);
+		zassert_equal(common_tx_buffer_alloc_count(), 0, NULL);
 		zassert_not_null(tx[tx_alloc_idx], NULL);
 		tx_alloc_idx++;
 	}
 	for (i = 0; i < CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM; i++) {
 		zassert_true(llcp_tx_alloc_peek(&conn[0], ctxs[0]), NULL);
 		tx[tx_alloc_idx] = llcp_tx_alloc(&conn[0], ctxs[0]);
+		zassert_equal(conn[0].llcp.tx_buffer_alloc,
+			      CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM + i + 1, NULL);
+		zassert_equal(common_tx_buffer_alloc_count(), i+1, NULL);
 		zassert_not_null(tx[tx_alloc_idx], NULL);
 		tx_alloc_idx++;
 	}
@@ -82,6 +96,9 @@ void test_tx_buffer_alloc(void)
 			zassert_true(llcp_tx_alloc_peek(&conn[j], ctxs[j]), NULL);
 			tx[tx_alloc_idx] = llcp_tx_alloc(&conn[j], ctxs[j]);
 			zassert_not_null(tx[tx_alloc_idx], NULL);
+			zassert_equal(common_tx_buffer_alloc_count(),
+				      CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM, NULL);
+			zassert_equal(conn[j].llcp.tx_buffer_alloc, i + 1, NULL);
 			tx_alloc_idx++;
 		}
 
@@ -90,6 +107,10 @@ void test_tx_buffer_alloc(void)
 	}
 
 	ull_cp_release_tx(&conn[0], tx[1]);
+	zassert_equal(common_tx_buffer_alloc_count(),
+		      CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM - 1, NULL);
+	zassert_equal(conn[0].llcp.tx_buffer_alloc, CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM +
+		      CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM - 1, NULL);
 
 	/* global pool is now 'open' again, but ctxs[1] is NOT next in line */
 	zassert_false(llcp_tx_alloc_peek(&conn[1], ctxs[1]), NULL);
@@ -97,9 +118,18 @@ void test_tx_buffer_alloc(void)
 	/* ... ctxs[0] is */
 	zassert_true(llcp_tx_alloc_peek(&conn[0], ctxs[0]), NULL);
 	tx[tx_alloc_idx] = llcp_tx_alloc(&conn[0], ctxs[0]);
+	zassert_equal(common_tx_buffer_alloc_count(), CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM,
+		      NULL);
+	zassert_equal(conn[0].llcp.tx_buffer_alloc, CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM +
+		      CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM, NULL);
+
 	zassert_not_null(tx[tx_alloc_idx], NULL);
 	tx_alloc_idx++;
 	ull_cp_release_tx(&conn[0], tx[tx_alloc_idx - 1]);
+	zassert_equal(common_tx_buffer_alloc_count(),
+		      CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM - 1, NULL);
+	zassert_equal(conn[0].llcp.tx_buffer_alloc, CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM +
+		      CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM - 1, NULL);
 
 	/* global pool does not allow as ctxs[2] is NOT next up */
 	zassert_false(llcp_tx_alloc_peek(&conn[2], ctxs[2]), NULL);

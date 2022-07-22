@@ -362,6 +362,9 @@ There are also conveniences for commonly used zephyr-specific properties of the
 .. doxygengroup:: devicetree-zephyr
    :project: Zephyr
 
+Zephyr-specific chosen nodes
+****************************
+
 The following table documents some commonly used Zephyr-specific chosen nodes.
 
 Sometimes, a chosen node's label property will be used to set the default value
@@ -422,6 +425,8 @@ device.
      - Used by the OpenThread to specify UART device for Spinel protocol
    * - zephyr,pcie-controller
      - The node corresponding to the PCIe Controller
+   * - zephyr,ppp-uart
+     - Sets UART device used by PPP
    * - zephyr,settings-partition
      - Fixed partition node. If defined this selects the partition used
        by the NVS and FCB settings backends.
@@ -430,10 +435,12 @@ device.
    * - zephyr,sram
      - A node whose ``reg`` sets the base address and size of SRAM memory
        available to the Zephyr image, used during linking
+   * - zephyr,tracing-uart
+     - Sets UART device used by tracing subsystem
    * - zephyr,uart-mcumgr
      - UART used for :ref:`device_mgmt`
    * - zephyr,uart-pipe
-     - Sets default :kconfig:option:`CONFIG_UART_PIPE_ON_DEV_NAME`
+     - Sets UART device used by serial pipe driver
    * - zephyr,usb-device
      - USB device node. If defined and has a ``vbus-gpios`` property, these
        will be used by the USB subsystem to enable/disable VBUS

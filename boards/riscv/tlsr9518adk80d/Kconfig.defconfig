@@ -33,6 +33,9 @@ config NET_CONFIG_IEEE802154_DEV_NAME
 config I2C_TELINK_B91
 	default y if I2C
 
+config ADC_TELINK_B91
+	default y if ADC
+
 if BT
 
 # BLE Controller SDK from hal_telink requires
@@ -54,5 +57,12 @@ DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
 
 config FLASH_LOAD_OFFSET
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
+
+# Buffer for image writter shall be less(multiple of access alignment) or
+# equal to flash page. tlsr9518adk80d boards use external P25Q16 IC as
+# flesh memory. Flash page size of the IC is 256 bytes. So that, it is
+# maximum image writer buffer size for such kind of boards.
+config IMG_BLOCK_BUF_SIZE
+	default 256 if MCUBOOT_IMG_MANAGER
 
 endif

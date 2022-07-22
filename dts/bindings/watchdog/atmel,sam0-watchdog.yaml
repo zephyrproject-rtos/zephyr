@@ -8,8 +8,5 @@ properties:
     reg:
       required: true
 
-    label:
-      required: true
-
     interrupts:
       required: true

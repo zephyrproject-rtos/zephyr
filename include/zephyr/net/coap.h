@@ -264,9 +264,6 @@ typedef int (*coap_reply_t)(const struct coap_packet *response,
 			    struct coap_reply *reply,
 			    const struct sockaddr *from);
 
-#define COAP_DEFAULT_MAX_RETRANSMIT 4
-#define COAP_DEFAULT_ACK_RANDOM_FACTOR 1.5
-
 /**
  * @brief Represents a request awaiting for an acknowledgment (ACK).
  */

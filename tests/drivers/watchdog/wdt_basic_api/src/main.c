@@ -14,12 +14,5 @@
 
 #include <zephyr/zephyr.h>
 #include <ztest.h>
-#include "test_wdt.h"
 
-
-void test_main(void)
-{
-	ztest_test_suite(wdt_basic_test,
-			 ztest_unit_test(test_wdt));
-	ztest_run_test_suite(wdt_basic_test);
-}
+ZTEST_SUITE(wdt_basic_test_suite, NULL, NULL, NULL, NULL, NULL);

@@ -5,6 +5,8 @@
 
 config STM32_TEMP
 	bool "STM32 Temperature Sensor"
+	default y
+	depends on DT_HAS_ST_STM32_TEMP_ENABLED || DT_HAS_ST_STM32_TEMP_CAL_ENABLED
 	depends on (ADC && SOC_FAMILY_STM32)
 	help
 	  Enable driver for STM32 temperature sensor.

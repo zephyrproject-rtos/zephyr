@@ -54,6 +54,9 @@
 
 #define SMP_TIMER_DRIVER (CONFIG_SMP && CONFIG_MP_NUM_CPUS > 1)
 
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = IRQ_TIMER0;
+#endif
 static struct k_spinlock lock;
 
 

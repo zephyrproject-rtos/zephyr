@@ -43,10 +43,10 @@ static void process_sample(const struct device *dev)
 
 void main(void)
 {
-	const struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, st_lps22hb_press)));
+	const struct device *dev = DEVICE_DT_GET_ONE(st_lps22hb_press);
 
-	if (dev == NULL) {
-		printf("Could not get LPS22HB device\n");
+	if (!device_is_ready(dev)) {
+		printf("Device %s is not ready\n", dev->name);
 		return;
 	}
 

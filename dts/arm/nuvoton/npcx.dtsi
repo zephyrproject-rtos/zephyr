@@ -41,32 +41,7 @@
 		 * no_ks000-17 - PIN21.20.17.16.15.14.13.12.11.10.07.06.05.04.
 		 *                  82.83.03.B1
 		 */
-		pinctrl-0 = <>;
-	};
-
-	def-lvol-io-list {
-		compatible = "nuvoton,npcx-lvolctrl-def";
-		/* Put low-voltage io pads into "lvol-io-pads" property if the
-		 * detection level of them is 1.8V, For example, if the bus
-		 * voltage of i2c1_0 port is 1.8V, this property should be:
-		 * lvol-io-pads = <&lvol_io90 &lvol_io87>;
-		 */
-		lvol-io-pads = <>;
-	};
-
-	vsby-psl-in-list {
-		compatible = "nuvoton,npcx-pslctrl-def";
-		/* Put Power Switch Logic (PSL) input pads which detect the
-		 * wake-up events and turn on core power supply (VCC1) from
-		 * standby power state (ultra-low-power mode) into "psl-in-pads"
-		 * property. For example, if PSL input 1 that is plan to detect
-		 * a 'falling edge' event, this property should be:
-		 *   psl-in-pads = <&psl_in1>;
-		 * And the flag property in psl_in1 should change to
-		 *   flag = <NPCX_PSL_FALLING_EDGE>;
-		 */
-		psl-in-pads = <>;
-		status = "disabled";
+		pinmux = <>;
 	};
 
 	/** Dummy pinctrl node. It will be initialized with defaults based on the SoC series.
@@ -74,6 +49,14 @@
 	 */
 	pinctrl: pinctrl {
 		compatible = "nuvoton,npcx-pinctrl";
+		status = "okay";
+	};
+
+	/* Dummy node of IOs that have leakage current. The user can override
+	 * 'leak-gpios' prop. at board DT file to save more power consumption.
+	 */
+	power_leakage_io: power-leakage-io {
+		compatible = "nuvoton,npcx-leakage-io";
 		status = "okay";
 	};
 
@@ -106,7 +89,7 @@
 			       0x400a5000 0x2000>;
 			reg-names = "scfg", "glue";
 			#alt-cells = <3>;
-			#lvol-cells = <4>;
+			#lvol-cells = <2>;
 			label = "SCFG";
 		};
 
@@ -585,13 +568,6 @@
 			status = "disabled";
 		};
 
-		psl_out: psl-out {
-			compatible = "nuvoton,npcx-psl-out";
-			controller = <&gpio8>;
-			pin = <5>;
-			label = "PSL_OUT";
-		};
-
 		i2c0_0: io_i2c_ctrl0_port0 {
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
@@ -689,6 +665,12 @@
 			port = <0x70>;
 			controller = <&i2c_ctrl7>;
 			label = "I2C_7_PORT_0";
+			status = "disabled";
+		};
+
+		power_ctrl_psl: power-ctrl-psl {
+			compatible = "nuvoton,npcx-power-psl";
+			label = "POWER_CONTROL_PSL";
 			status = "disabled";
 		};
 	};

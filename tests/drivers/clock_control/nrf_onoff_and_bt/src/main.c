@@ -102,8 +102,7 @@ static void check_hf_status(const struct device *dev, bool exp_on,
  */
 static void test_onoff_interrupted(void)
 {
-	const struct device *clock_dev =
-		device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
+	const struct device *clock_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock);
 	struct onoff_client cli;
 	uint64_t start_time = k_uptime_get();
 	uint64_t elapsed;
@@ -111,6 +110,8 @@ static void test_onoff_interrupted(void)
 	int err;
 	uint8_t rand;
 	int backoff;
+
+	zassert_true(device_is_ready(clock_dev), "Device is not ready");
 
 	k_timer_start(&timer1, K_MSEC(1), K_NO_WAIT);
 
@@ -195,14 +196,15 @@ K_TIMER_DEFINE(timer2, onoff_timeout_handler, NULL);
  */
 static void test_bt_interrupted(void)
 {
-	const struct device *clock_dev =
-		device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
+	const struct device *clock_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock);
 	uint64_t start_time = k_uptime_get();
 	uint64_t elapsed;
 	uint64_t checkpoint = 1000;
 	int err;
 	uint8_t rand;
 	int backoff;
+
+	zassert_true(device_is_ready(clock_dev), "Device is not ready");
 
 	k_timer_start(&timer2, K_MSEC(1), K_NO_WAIT);
 

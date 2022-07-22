@@ -5,6 +5,8 @@
 
 config MS5837
 	bool "MS5837 pressure and temperature sensor"
+	default y
+	depends on DT_HAS_MEAS_MS5837_ENABLED
 	depends on I2C
 	help
 	  Enable driver for MS5837 pressure and temperature sensor.

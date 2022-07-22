@@ -40,8 +40,9 @@
 			status = "okay";
 
 			hlic: interrupt-controller {
-				#interrupt-cells = <1>;
 				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
@@ -102,8 +103,9 @@
 		};
 
 		clint: clint@2000000 {
-			#interrupt-cells = <1>;
 			compatible = "riscv,clint0";
+			#address-cells = <0>;
+			#interrupt-cells = <1>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 3 &hlic 7>;
 			reg = <0x2000000 0x10000>;
@@ -117,8 +119,9 @@
 		};
 
 		plic: interrupt-controller@c000000 {
-			#interrupt-cells = <2>;
 			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
 			reg = <0x0c000000 0x00002000

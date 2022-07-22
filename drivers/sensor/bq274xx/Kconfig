@@ -2,19 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig BQ274XX
+config BQ274XX
 	bool "BQ274xx Fuel Gauge"
+	default y
+	depends on DT_HAS_TI_BQ274XX_ENABLED
 	depends on I2C
 	help
 	  Enable I2C-based driver for BQ274xx Fuel Gauge.
-
-if BQ274XX
-
-config BQ274XX_LAZY_CONFIGURE
-	bool "Configure on first usage instead of init"
-	help
-	  Configuring the sensor can take a long time, which
-	  we can delay till the first sample request and keep
-	  the boot time as short as possible.
-
-endif # BQ274XX

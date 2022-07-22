@@ -24,6 +24,9 @@
 
 #define CYCLES_PER_SEC  sys_clock_hw_cycles_per_sec()
 #define CYCLES_PER_TICK (CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_ALIAS(system_lptmr));
+#endif
 
 /*
  * As a simplifying assumption, we only support a clock ticking at the

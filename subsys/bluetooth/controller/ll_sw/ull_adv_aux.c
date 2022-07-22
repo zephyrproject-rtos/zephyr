@@ -39,6 +39,7 @@
 #include "ull_internal.h"
 #include "ull_chan_internal.h"
 #include "ull_adv_internal.h"
+#include "ull_sched_internal.h"
 
 #include "ll.h"
 
@@ -168,7 +169,8 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			 */
 			ticks_anchor = ticker_ticks_now_get();
 
-			ticks_slot_overhead = ull_adv_aux_evt_init(aux);
+			ticks_slot_overhead =
+				ull_adv_aux_evt_init(aux, &ticks_anchor);
 
 			ret = ull_adv_aux_start(aux, ticks_anchor,
 						ticks_slot_overhead);
@@ -1039,7 +1041,8 @@ uint8_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll)
 	return ull_adv_aux_handle_get((void *)lll->hdr.parent);
 }
 
-uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux)
+uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
+			      uint32_t *ticks_anchor)
 {
 	uint32_t ticks_slot_overhead;
 	struct lll_adv_aux *lll_aux;
@@ -1071,6 +1074,30 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux)
 		ticks_slot_overhead = 0;
 	}
 
+#if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
+	uint32_t ticks_anchor_aux;
+	uint32_t ticks_slot;
+	int err;
+
+#if defined(CONFIG_BT_CTLR_ADV_RESERVE_MAX)
+	time_us = ull_adv_aux_time_get(aux, PDU_AC_PAYLOAD_SIZE_MAX,
+				       PDU_AC_PAYLOAD_SIZE_MAX);
+	ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+#else
+	ticks_slot = aux->ull.ticks_slot;
+#endif
+
+	err = ull_sched_adv_aux_sync_free_slot_get(TICKER_USER_ID_THREAD,
+						   (ticks_slot +
+						    ticks_slot_overhead),
+						   &ticks_anchor_aux);
+	if (!err) {
+		*ticks_anchor = ticks_anchor_aux;
+		*ticks_anchor += HAL_TICKER_US_TO_TICKS(
+			EVENT_TICKER_RES_MARGIN_US);
+	}
+#endif /* CONFIG_BT_CTLR_SCHED_ADVANCED */
+
 	return ticks_slot_overhead;
 }
 
@@ -1082,15 +1109,14 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 	uint8_t aux_handle;
 	uint32_t ret;
 
-	interval_us = aux->interval * PERIODIC_INT_UNIT_US;
-
 	ull_hdr_init(&aux->ull);
 	aux_handle = ull_adv_aux_handle_get(aux);
+	interval_us = aux->interval * PERIODIC_INT_UNIT_US;
 
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_AUX_BASE + aux_handle),
-			   ticks_anchor, 0,
+			   ticks_anchor, 0U,
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
 			   (aux->ull.ticks_slot + ticks_slot_overhead),
@@ -1166,6 +1192,65 @@ void ull_adv_aux_release(struct ll_adv_aux_set *aux)
 {
 	lll_adv_data_release(&aux->lll.data);
 	aux_release(aux);
+}
+
+struct ll_adv_aux_set *ull_adv_aux_get(uint8_t handle)
+{
+	if (handle >= CONFIG_BT_CTLR_ADV_AUX_SET) {
+		return NULL;
+	}
+
+	return &ll_adv_aux_pool[handle];
+}
+
+uint32_t ull_adv_aux_time_get(const struct ll_adv_aux_set *aux, uint8_t pdu_len,
+			      uint8_t pdu_scan_len)
+{
+	const struct lll_adv_aux *lll_aux;
+	const struct lll_adv *lll;
+	const struct pdu_adv *pdu;
+	uint32_t time_us;
+
+	lll_aux = &aux->lll;
+	lll = lll_aux->adv;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_RESERVE_MAX) &&
+	    (lll->phy_s == PHY_CODED)) {
+		pdu_len = PDU_AC_EXT_PAYLOAD_OVERHEAD;
+		pdu_scan_len = PDU_AC_EXT_PAYLOAD_OVERHEAD;
+	}
+
+	/* NOTE: 16-bit values are sufficient for minimum radio event time
+	 *       reservation, 32-bit are used here so that reservations for
+	 *       whole back-to-back chaining of PDUs can be accomodated where
+	 *       the required microseconds could overflow 16-bits, example,
+	 *       back-to-back chained Coded PHY PDUs.
+	 */
+	time_us = PDU_AC_US(pdu_len, lll->phy_s, lll->phy_flags) +
+		  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+
+	pdu = lll_adv_aux_data_peek(lll_aux);
+	if ((pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN) ==
+	    BT_HCI_LE_ADV_PROP_CONN) {
+		const uint16_t conn_req_us =
+			PDU_AC_MAX_US((INITA_SIZE + ADVA_SIZE + LLDATA_SIZE),
+				      lll->phy_s);
+		const uint16_t conn_rsp_us =
+			PDU_AC_US((PDU_AC_EXT_HEADER_SIZE_MIN + ADVA_SIZE +
+				   TARGETA_SIZE), lll->phy_s, lll->phy_flags);
+
+		time_us += EVENT_IFS_MAX_US * 2 + conn_req_us + conn_rsp_us;
+	} else if ((pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) ==
+		   BT_HCI_LE_ADV_PROP_SCAN) {
+		const uint16_t scan_req_us  =
+			PDU_AC_MAX_US((SCANA_SIZE + ADVA_SIZE), lll->phy_s);
+		const uint16_t scan_rsp_us =
+			PDU_AC_US(pdu_scan_len, lll->phy_s, lll->phy_flags);
+
+		time_us += EVENT_IFS_MAX_US * 2 + scan_req_us + scan_rsp_us;
+	}
+
+	return time_us;
 }
 
 void ull_adv_aux_offset_get(struct ll_adv_set *adv)

@@ -45,7 +45,8 @@ typedef void (*irq_config_func_t)(const struct device *dev);
 
 struct flash_stm32_ospi_config {
 	OCTOSPI_TypeDef *regs;
-	struct stm32_pclken pclken;
+	const struct stm32_pclken *pclken; /* clock subsystem */
+	size_t pclk_len; /* number of clock subsystems */
 	irq_config_func_t irq_config;
 	size_t flash_size;
 	uint32_t max_frequency;
@@ -723,7 +724,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 		return -EINVAL;
 	}
 
-	if ((size != SPI_NOR_SECTOR_SIZE) && (size < dev_cfg->flash_size)) {
+	if (((size % SPI_NOR_SECTOR_SIZE) != 0) && (size < dev_cfg->flash_size)) {
 		LOG_ERR("Error: wrong sector size 0x%x", size);
 		return -ENOTSUP;
 	}
@@ -1568,21 +1569,33 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Initializes the independent peripherals clock */
-	__HAL_RCC_OSPI_CONFIG(RCC_OSPICLKSOURCE_SYSCLK); /* */
-
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			     (clock_control_subsys_t) &dev_cfg->pclken) != 0) {
+			     (clock_control_subsys_t) &dev_cfg->pclken[0]) != 0) {
 		LOG_ERR("Could not enable OSPI clock");
 		return -EIO;
 	}
-
-	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			(clock_control_subsys_t) &dev_cfg->pclken,
-			&ahb_clock_freq) < 0) {
-		LOG_ERR("Failed to get AHB clock frequency");
-		return -EIO;
+	/* Alternate clock config for peripheral if any */
+	if (dev_cfg->pclk_len > 1) {
+		if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					(clock_control_subsys_t) &dev_cfg->pclken[1],
+					NULL) != 0) {
+			LOG_ERR("Could not select OSPI source clock pclk[1]");
+			return -EIO;
+		}
+		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					   (clock_control_subsys_t) &dev_cfg->pclken[1],
+					   &ahb_clock_freq) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclk[1])");
+			return -EIO;
+		}
+	} else {
+		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					   (clock_control_subsys_t) &dev_cfg->pclken[0],
+					   &ahb_clock_freq) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclk[0])");
+			return -EIO;
+		}
 	}
 
 	for (; prescaler <= STM32_OSPI_CLOCK_PRESCALER_MAX; prescaler++) {
@@ -1773,12 +1786,12 @@ static void flash_stm32_ospi_irq_config_func(const struct device *dev);
 
 PINCTRL_DT_DEFINE(STM32_OSPI_NODE);
 
+static const struct stm32_pclken pclken_id[] = STM32_DT_CLOCKS(STM32_OSPI_NODE);
+
 static const struct flash_stm32_ospi_config flash_stm32_ospi_cfg = {
 	.regs = (OCTOSPI_TypeDef *)DT_REG_ADDR(STM32_OSPI_NODE),
-	.pclken = {
-		.enr = DT_CLOCKS_CELL(STM32_OSPI_NODE, bits),
-		.bus = DT_CLOCKS_CELL(STM32_OSPI_NODE, bus)
-	},
+	.pclken = pclken_id,
+	.pclk_len = DT_NUM_CLOCKS(STM32_OSPI_NODE),
 	.irq_config = flash_stm32_ospi_irq_config_func,
 	.flash_size = DT_INST_PROP(0, size) / 8U,
 	.max_frequency = DT_INST_PROP(0, ospi_max_frequency),

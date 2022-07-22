@@ -76,6 +76,9 @@ static void init_work(struct k_work *work);
 
 struct bt_dev bt_dev = {
 	.init          = Z_WORK_INITIALIZER(init_work),
+#if defined(CONFIG_BT_PRIVACY)
+	.rpa_timeout   = CONFIG_BT_RPA_TIMEOUT,
+#endif
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
 	.appearance = CONFIG_BT_DEVICE_APPEARANCE,
 #endif
@@ -552,13 +555,12 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
-#if defined(CONFIG_BT_SMP)
-		if (!bt_dev.le.rl_size ||
-		    bt_dev.le.rl_entries > bt_dev.le.rl_size) {
+		if (bt_addr_le_cmp(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
 			/* Host resolving is used, use the RPA directly. */
 			peer_addr = &conn->le.resp_addr;
+			BT_DBG("Using resp_addr %s", bt_addr_le_str(peer_addr));
 		}
-#endif
+
 		bt_addr_le_copy(&cp->peer_addr, peer_addr);
 		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_NO_FILTER;
 	}
@@ -592,7 +594,7 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_EXT_CREATE_CONN, buf, NULL);
 }
 
-int bt_le_create_conn_legacy(const struct bt_conn *conn)
+static int bt_le_create_conn_legacy(const struct bt_conn *conn)
 {
 	struct bt_hci_cp_le_create_conn *cp;
 	struct bt_hci_cmd_state_set state;
@@ -626,13 +628,12 @@ int bt_le_create_conn_legacy(const struct bt_conn *conn)
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
-#if defined(CONFIG_BT_SMP)
-		if (!bt_dev.le.rl_size ||
-		    bt_dev.le.rl_entries > bt_dev.le.rl_size) {
+		if (bt_addr_le_cmp(&conn->le.resp_addr, BT_ADDR_LE_ANY)) {
 			/* Host resolving is used, use the RPA directly. */
 			peer_addr = &conn->le.resp_addr;
+			BT_DBG("Using resp_addr %s", bt_addr_le_str(peer_addr));
 		}
-#endif
+
 		bt_addr_le_copy(&cp->peer_addr, peer_addr);
 		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_NO_FILTER;
 	}
@@ -2390,8 +2391,6 @@ static void send_cmd(void)
 		BT_ERR("Unable to send to driver (err %d)", err);
 		k_sem_give(&bt_dev.ncmd_sem);
 		hci_cmd_done(cmd(buf)->opcode, BT_HCI_ERR_UNSPECIFIED, buf);
-		net_buf_unref(bt_dev.sent_cmd);
-		bt_dev.sent_cmd = NULL;
 		net_buf_unref(buf);
 	}
 }
@@ -2977,7 +2976,7 @@ static int le_init(void)
 		}
 
 		cp = net_buf_add(buf, sizeof(*cp));
-		cp->rpa_timeout = sys_cpu_to_le16(CONFIG_BT_RPA_TIMEOUT);
+		cp->rpa_timeout = sys_cpu_to_le16(bt_dev.rpa_timeout);
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RPA_TIMEOUT, buf,
 					   NULL);
 		if (err) {
@@ -3676,10 +3675,6 @@ int bt_enable(bt_ready_cb_t cb)
 	k_thread_name_set(&bt_workq.thread, "BT RX");
 #endif
 
-	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
-		bt_hci_ecc_init();
-	}
-
 	err = bt_dev.drv->open();
 	if (err) {
 		BT_ERR("HCI driver open failed (%d)", err);
@@ -3737,13 +3732,15 @@ int bt_disable(void)
 	k_thread_abort(&bt_workq.thread);
 #endif
 
-	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
-		bt_hci_ecc_deinit();
-	}
-
 	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
 
-	/* Clear BT_DEV_ENABLE here to prevent early bt_enable() calls */
+#if defined(CONFIG_BT_PER_ADV_SYNC)
+	bt_periodic_sync_disable();
+#endif /* CONFIG_BT_PER_ADV_SYNC */
+
+	/* Clear BT_DEV_ENABLE here to prevent early bt_enable() calls, before disable is
+	 * completed.
+	 */
 	atomic_clear_bit(bt_dev.flags, BT_DEV_ENABLE);
 
 	return 0;
@@ -3942,6 +3939,24 @@ int bt_le_set_chan_map(uint8_t chan_map[5])
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF,
 				    buf, NULL);
 }
+
+#if defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+int bt_le_set_rpa_timeout(uint16_t new_rpa_timeout)
+{
+	if ((new_rpa_timeout == 0) || (new_rpa_timeout > 3600)) {
+		return -EINVAL;
+	}
+
+	if (new_rpa_timeout == bt_dev.rpa_timeout) {
+		return 0;
+	}
+
+	bt_dev.rpa_timeout = new_rpa_timeout;
+	atomic_set_bit(bt_dev.flags, BT_DEV_RPA_TIMEOUT_CHANGED);
+
+	return 0;
+}
+#endif
 
 void bt_data_parse(struct net_buf_simple *ad,
 		   bool (*func)(struct bt_data *data, void *user_data),

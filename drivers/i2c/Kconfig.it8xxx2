@@ -20,3 +20,26 @@ config I2C_ITE_ENHANCE
 	help
 	  This option can enable the enhance I2C
 	  of IT8XXX2 and support three channels.
+
+if I2C_ITE_ENHANCE
+
+config I2C_IT8XXX2_CQ_MODE
+	bool "IT8XXX2 I2C command queue mode"
+	default y
+	select SOC_IT8XXX2_CPU_IDLE_GATING
+	help
+	  This is an option to enable command queue mode which can
+	  reduce the time between each byte to improve the I2C bus
+	  clock stretching during I2C transaction.
+	  I2C command queue mode of it8xxx2 can support I2C APIs
+	  including: i2c_write(), i2c_read(), i2c_burst_read.
+
+config I2C_CQ_MODE_MAX_PAYLOAD_SIZE
+	int "It is allowed to configure the size up to 2K bytes."
+	range 32 2048
+	default 64
+	help
+	  This is the command queue mode payload size which size
+	  up to 2k bytes.
+
+endif # I2C_ITE_ENHANCE

@@ -21,7 +21,7 @@
  *
  * @see sys_memcpy_swap()
  */
-void test_byteorder_memcpy_swap(void)
+ZTEST(byteorder, test_byteorder_memcpy_swap)
 {
 	uint8_t buf_orig[8] = { 0x00, 0x01, 0x02, 0x03,
 			     0x04, 0x05, 0x06, 0x07 };
@@ -45,7 +45,7 @@ void test_byteorder_memcpy_swap(void)
  *
  * @see sys_mem_swap()
  */
-void test_byteorder_mem_swap(void)
+ZTEST(byteorder, test_byteorder_mem_swap)
 {
 	uint8_t buf_orig_1[8] = { 0x00, 0x01, 0x02, 0x03,
 			       0x04, 0x05, 0x06, 0x07 };
@@ -74,7 +74,7 @@ void test_byteorder_mem_swap(void)
  *
  * @see sys_get_be64()
  */
-void test_sys_get_be64(void)
+ZTEST(byteorder, test_sys_get_be64)
 {
 	uint64_t val = 0xf0e1d2c3b4a59687, tmp;
 	uint8_t buf[] = {
@@ -93,7 +93,7 @@ void test_sys_get_be64(void)
  *
  * @see sys_put_be64()
  */
-void test_sys_put_be64(void)
+ZTEST(byteorder, test_sys_put_be64)
 {
 	uint64_t val = 0xf0e1d2c3b4a59687;
 	uint8_t buf[] = {
@@ -113,7 +113,7 @@ void test_sys_put_be64(void)
  *
  * @see sys_get_be48()
  */
-void test_sys_get_be48(void)
+ZTEST(byteorder, test_sys_get_be48)
 {
 	uint64_t val = 0xf0e1d2c3b4a5, tmp;
 	uint8_t buf[] = {
@@ -132,7 +132,7 @@ void test_sys_get_be48(void)
  *
  * @see sys_put_be48()
  */
-void test_sys_put_be48(void)
+ZTEST(byteorder, test_sys_put_be48)
 {
 	uint64_t val = 0xf0e1d2c3b4a5;
 	uint8_t buf[] = {
@@ -151,7 +151,7 @@ void test_sys_put_be48(void)
  *
  * @see sys_get_be32()
  */
-void test_sys_get_be32(void)
+ZTEST(byteorder, test_sys_get_be32)
 {
 	uint32_t val = 0xf0e1d2c3, tmp;
 	uint8_t buf[] = {
@@ -170,7 +170,7 @@ void test_sys_get_be32(void)
  *
  * @see sys_put_be32()
  */
-void test_sys_put_be32(void)
+ZTEST(byteorder, test_sys_put_be32)
 {
 	uint64_t val = 0xf0e1d2c3;
 	uint8_t buf[] = {
@@ -190,7 +190,7 @@ void test_sys_put_be32(void)
  *
  * @see sys_get_be24()
  */
-void test_sys_get_be24(void)
+ZTEST(byteorder, test_sys_get_be24)
 {
 	uint32_t val = 0xf0e1d2, tmp;
 	uint8_t buf[] = {
@@ -209,7 +209,7 @@ void test_sys_get_be24(void)
  *
  * @see sys_put_be24()
  */
-void test_sys_put_be24(void)
+ZTEST(byteorder, test_sys_put_be24)
 {
 	uint64_t val = 0xf0e1d2;
 	uint8_t buf[] = {
@@ -229,7 +229,7 @@ void test_sys_put_be24(void)
  *
  * @see sys_get_be16()
  */
-void test_sys_get_be16(void)
+ZTEST(byteorder, test_sys_get_be16)
 {
 	uint32_t val = 0xf0e1, tmp;
 	uint8_t buf[] = {
@@ -248,7 +248,7 @@ void test_sys_get_be16(void)
  *
  * @see sys_put_be16()
  */
-void test_sys_put_be16(void)
+ZTEST(byteorder, test_sys_put_be16)
 {
 	uint64_t val = 0xf0e1;
 	uint8_t buf[] = {
@@ -268,7 +268,7 @@ void test_sys_put_be16(void)
  *
  * @see sys_get_le16()
  */
-void test_sys_get_le16(void)
+ZTEST(byteorder, test_sys_get_le16)
 {
 	uint32_t val = 0xf0e1, tmp;
 	uint8_t buf[] = {
@@ -287,7 +287,7 @@ void test_sys_get_le16(void)
  *
  * @see sys_put_le16()
  */
-void test_sys_put_le16(void)
+ZTEST(byteorder, test_sys_put_le16)
 {
 	uint64_t val = 0xf0e1;
 	uint8_t buf[] = {
@@ -307,7 +307,7 @@ void test_sys_put_le16(void)
  *
  * @see sys_get_le24()
  */
-void test_sys_get_le24(void)
+ZTEST(byteorder, test_sys_get_le24)
 {
 	uint32_t val = 0xf0e1d2, tmp;
 	uint8_t buf[] = {
@@ -326,7 +326,7 @@ void test_sys_get_le24(void)
  *
  * @see sys_put_le24()
  */
-void test_sys_put_le24(void)
+ZTEST(byteorder, test_sys_put_le24)
 {
 	uint64_t val = 0xf0e1d2;
 	uint8_t buf[] = {
@@ -346,7 +346,7 @@ void test_sys_put_le24(void)
  *
  * @see sys_get_le32()
  */
-void test_sys_get_le32(void)
+ZTEST(byteorder, test_sys_get_le32)
 {
 	uint32_t val = 0xf0e1d2c3, tmp;
 	uint8_t buf[] = {
@@ -365,7 +365,7 @@ void test_sys_get_le32(void)
  *
  * @see sys_put_le32()
  */
-void test_sys_put_le32(void)
+ZTEST(byteorder, test_sys_put_le32)
 {
 	uint64_t val = 0xf0e1d2c3;
 	uint8_t buf[] = {
@@ -385,7 +385,7 @@ void test_sys_put_le32(void)
  *
  * @see sys_get_le48()
  */
-void test_sys_get_le48(void)
+ZTEST(byteorder, test_sys_get_le48)
 {
 	uint64_t val = 0xf0e1d2c3b4a5, tmp;
 	uint8_t buf[] = {
@@ -404,7 +404,7 @@ void test_sys_get_le48(void)
  *
  * @see sys_put_le48()
  */
-void test_sys_put_le48(void)
+ZTEST(byteorder, test_sys_put_le48)
 {
 	uint64_t val = 0xf0e1d2c3b4a5;
 	uint8_t buf[] = {
@@ -424,7 +424,7 @@ void test_sys_put_le48(void)
  *
  * @see sys_get_le64()
  */
-void test_sys_get_le64(void)
+ZTEST(byteorder, test_sys_get_le64)
 {
 	uint64_t val = 0xf0e1d2c3b4a59687, tmp;
 	uint8_t buf[] = {
@@ -443,7 +443,7 @@ void test_sys_get_le64(void)
  *
  * @see sys_put_le64()
  */
-void test_sys_put_le64(void)
+ZTEST(byteorder, test_sys_put_le64)
 {
 	uint64_t val = 0xf0e1d2c3b4a59687;
 	uint8_t buf[] = {

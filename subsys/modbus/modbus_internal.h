@@ -81,8 +81,6 @@
 #define MODBUS_ADU_PROTO_ID			0x0000
 
 struct modbus_serial_config {
-	/* UART device name */
-	const char *dev_name;
 	/* UART device */
 	const struct device *dev;
 	/* RTU timeout (maximum inter-frame delay) */

@@ -3,6 +3,7 @@
 
 config LVGL
 	bool "LittlevGL GUI library"
+	depends on !CPU_CORTEX_M0 && !CPU_CORTEX_M0PLUS
 	help
 	  This option enables the LittlevGL GUI library.
 

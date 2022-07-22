@@ -10,8 +10,6 @@ include: [base.yaml]
 properties:
     reg:
         required: true
-    label:
-        required: true
     t0-out:
         type: phandle
         required: true

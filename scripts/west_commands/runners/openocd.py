@@ -278,22 +278,30 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             pre_init_cmd.append("-c")
             pre_init_cmd.append(i)
 
+        pre_load_cmd = []
         load_image = []
         if not self.do_verify_only:
+            for i in self.pre_load:
+                pre_load_cmd.append("-c")
+                pre_load_cmd.append(i)
             load_image = ['-c', 'load_image ' + self.elf_name]
 
         verify_image = []
+        post_verify_cmd = []
         if self.do_verify or self.do_verify_only:
             verify_image = ['-c', 'verify_image ' + self.elf_name]
+            for i in self.post_verify:
+                post_verify_cmd.append("-c")
+                post_verify_cmd.append(i)
 
         prologue = ['-c', 'resume ' + ep_addr,
                     '-c', 'shutdown']
 
         cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
                pre_init_cmd + self.init_arg + self.targets_arg +
-               ['-c', self.reset_halt_cmd] +
+               pre_load_cmd + ['-c', self.reset_halt_cmd] +
                load_image +
-               verify_image +
+               verify_image + post_verify_cmd +
                prologue)
 
         self.check_call(cmd)

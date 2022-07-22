@@ -590,12 +590,15 @@ static int bmm150_init(const struct device *dev)
 	return 0;
 }
 
-static const struct bmm150_config bmm150_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
+#define BMM150_DEFINE(inst)								\
+	static struct bmm150_data bmm150_data_##inst;					\
+											\
+	static const struct bmm150_config bmm150_config_##inst = {			\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+	};										\
+											\
+	DEVICE_DT_INST_DEFINE(inst, bmm150_init, NULL,					\
+			      &bmm150_data_##inst, &bmm150_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &bmm150_api_funcs);		\
 
-static struct bmm150_data bmm150_data;
-
-DEVICE_DT_INST_DEFINE(0, bmm150_init, NULL,
-			&bmm150_data, &bmm150_config, POST_KERNEL,
-			CONFIG_SENSOR_INIT_PRIORITY, &bmm150_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(BMM150_DEFINE)

@@ -13,8 +13,8 @@
 #include <zephyr/sys/byteorder.h>
 #include <host/hci_core.h>
 
+#include <bt_common.h>
 #include <bt_conn_common.h>
-#include "test_set_conn_cte_tx_params.h"
 
 static uint16_t g_conn_handle;
 
@@ -81,7 +81,7 @@ static int send_set_conn_cte_tx_params(uint16_t conn_handle,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CONN_CTE_TX_PARAMS, buf, NULL);
 }
 
-void test_set_conn_cte_tx_params_with_invalid_conn_handle(void)
+ZTEST(test_set_conn_cte_tx_params, test_set_conn_cte_tx_params_with_invalid_conn_handle)
 {
 	int err;
 
@@ -90,7 +90,7 @@ void test_set_conn_cte_tx_params_with_invalid_conn_handle(void)
 		      "Unexpected error value for set conn CTE tx params with wrong conn handle");
 }
 
-void test_set_conn_cte_tx_params_with_cte_type_none(void)
+ZTEST(test_set_conn_cte_tx_params, test_set_conn_cte_tx_params_with_cte_type_none)
 {
 	int err;
 
@@ -102,7 +102,7 @@ void test_set_conn_cte_tx_params_with_cte_type_none(void)
 		      "durations");
 }
 
-void test_set_conn_cte_tx_params_with_cte_type_invalid(void)
+ZTEST(test_set_conn_cte_tx_params, test_set_conn_cte_tx_params_with_cte_type_invalid)
 {
 	int err;
 
@@ -114,7 +114,7 @@ void test_set_conn_cte_tx_params_with_cte_type_invalid(void)
 		      "durations");
 }
 
-void test_set_conn_cte_tx_params_with_too_long_switch_pattern_len(void)
+ZTEST(test_set_conn_cte_tx_params, test_set_conn_cte_tx_params_with_too_long_switch_pattern_len)
 {
 	int err;
 	uint8_t ant_ids[SWITCH_PATTERN_LEN_TOO_LONG] = { 0 };
@@ -128,7 +128,7 @@ void test_set_conn_cte_tx_params_with_too_long_switch_pattern_len(void)
 		      "length beyond max value");
 }
 
-void test_set_conn_cte_tx_params_with_too_short_switch_pattern_len(void)
+ZTEST(test_set_conn_cte_tx_params, test_set_conn_cte_tx_params_with_too_short_switch_pattern_len)
 {
 	int err;
 	uint8_t ant_ids[SWITCH_PATTERN_LEN_TOO_SHORT] = { 0 };
@@ -142,7 +142,7 @@ void test_set_conn_cte_tx_params_with_too_short_switch_pattern_len(void)
 		      "length below min value");
 }
 
-void test_set_conn_cte_tx_params_with_ant_ids_ptr_null(void)
+ZTEST(test_set_conn_cte_tx_params, test_set_conn_cte_tx_params_with_ant_ids_ptr_null)
 {
 	int err;
 
@@ -158,7 +158,7 @@ void test_set_conn_cte_tx_params_with_ant_ids_ptr_null(void)
 		      "pointing NULL");
 }
 
-void test_set_conn_cte_tx_params_with_correct_params(void)
+ZTEST(test_set_conn_cte_tx_params, test_set_conn_cte_tx_params_with_correct_params)
 {
 	int err;
 
@@ -168,7 +168,7 @@ void test_set_conn_cte_tx_params_with_correct_params(void)
 		      "params");
 }
 
-static void connection_setup(void)
+static void connection_setup(void *data)
 {
 	g_params.cte_types =
 		BT_HCI_LE_AOA_CTE_RSP | BT_HCI_LE_AOD_CTE_RSP_1US | BT_HCI_LE_AOD_CTE_RSP_2US;
@@ -178,29 +178,7 @@ static void connection_setup(void)
 	g_conn_handle = ut_bt_create_connection();
 }
 
-static void connection_teardown(void)
-{
-	ut_bt_destroy_connection(g_conn_handle);
-}
+static void connection_teardown(void *data) { ut_bt_destroy_connection(g_conn_handle); }
 
-void run_set_conn_cte_tx_params_tests(void)
-{
-	ztest_test_suite(
-		test_set_conn_cte_tx_params,
-		ztest_unit_test(test_set_conn_cte_tx_params_with_invalid_conn_handle),
-		ztest_unit_test_setup_teardown(test_set_conn_cte_tx_params_with_cte_type_none,
-					       connection_setup, connection_teardown),
-		ztest_unit_test_setup_teardown(test_set_conn_cte_tx_params_with_cte_type_invalid,
-					       connection_setup, connection_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_conn_cte_tx_params_with_too_long_switch_pattern_len,
-			connection_setup, connection_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_conn_cte_tx_params_with_too_short_switch_pattern_len,
-			connection_setup, connection_teardown),
-		ztest_unit_test_setup_teardown(test_set_conn_cte_tx_params_with_ant_ids_ptr_null,
-					       connection_setup, connection_teardown),
-		ztest_unit_test_setup_teardown(test_set_conn_cte_tx_params_with_correct_params,
-					       connection_setup, connection_teardown));
-	ztest_run_test_suite(test_set_conn_cte_tx_params);
-}
+ZTEST_SUITE(test_set_conn_cte_tx_params, NULL, ut_bt_setup, connection_setup, connection_teardown,
+	    ut_bt_teardown);

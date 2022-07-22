@@ -179,4 +179,18 @@
 			};
 		};
 	};
+
+	slcr: slcr@f8000000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "xlnx,zynq-slcr", "syscon";
+		reg = <0xf8000000 0x1000>;
+		ranges;
+
+		pinctrl0: pinctrl@700 {
+			compatible = "xlnx,pinctrl-zynq";
+			reg = <0x700 0x200>;
+			syscon = <&slcr>;
+		};
+	};
 };

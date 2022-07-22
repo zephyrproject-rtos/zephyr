@@ -151,7 +151,7 @@
 		};
 	};
 
-	/* LPUART1 TX/RX on Teensy-Pins 20/21 */
+	/* LPUART1 TX/RX on Teensy-Pins 24/25 */
 	pinmux_lpuart1: pinmux_lpuart1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_b0_13_lpuart1_rx>,

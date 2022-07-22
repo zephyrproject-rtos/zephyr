@@ -72,8 +72,9 @@ void z_mips_enter_irq(uint32_t ipending)
 		int index;
 		struct _isr_table_entry *ite;
 
-		if (IS_ENABLED(CONFIG_TRACING_ISR))
+		if (IS_ENABLED(CONFIG_TRACING_ISR)) {
 			sys_trace_isr_enter();
+		}
 
 		index = find_lsb_set(ipending) - 1;
 		ipending &= ~BIT(index);
@@ -82,14 +83,16 @@ void z_mips_enter_irq(uint32_t ipending)
 
 		ite->isr(ite->arg);
 
-		if (IS_ENABLED(CONFIG_TRACING_ISR))
+		if (IS_ENABLED(CONFIG_TRACING_ISR)) {
 			sys_trace_isr_exit();
+		}
 	}
 
 	_current_cpu->nested--;
 
-	if (IS_ENABLED(CONFIG_STACK_SENTINEL))
+	if (IS_ENABLED(CONFIG_STACK_SENTINEL)) {
 		z_check_stack_sentinel();
+	}
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS

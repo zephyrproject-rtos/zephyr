@@ -141,10 +141,10 @@ static const char *eth_name(ENET_Type *base)
 {
 	switch ((int)base) {
 	case DT_INST_REG_ADDR(0):
-		return DT_INST_LABEL(0);
+		return "ETH_0";
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 	case DT_INST_REG_ADDR(1):
-		return DT_INST_LABEL(1);
+		return "ETH_1";
 #endif
 	default:
 		return "unknown";
@@ -1320,7 +1320,7 @@ static const struct ethernet_api api_funcs = {
 static void eth_mcux_ptp_isr(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
-	int irq_lock_key = irq_lock();
+	unsigned int irq_lock_key = irq_lock();
 	enet_ptp_timer_channel_t channel;
 
 	/* clear channel */
@@ -1339,7 +1339,7 @@ static void eth_mcux_common_isr(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
 	uint32_t EIR = ENET_GetInterruptStatus(context->base);
-	int irq_lock_key = irq_lock();
+	unsigned int irq_lock_key = irq_lock();
 
 	if (EIR & (kENET_RxBufferInterrupt | kENET_RxFrameInterrupt)) {
 		/* disable the IRQ for RX */

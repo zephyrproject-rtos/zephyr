@@ -8,9 +8,6 @@ compatible: "st,stmpe1600"
 include: [gpio-controller.yaml, i2c-device.yaml]
 
 properties:
-    label:
-      required: true
-
     "#gpio-cells":
       const: 2
 

@@ -17,6 +17,7 @@
 
 #include <zephyr/arch/riscv/thread.h>
 #include <zephyr/arch/riscv/exp.h>
+#include <zephyr/arch/riscv/irq.h>
 #include <zephyr/arch/common/sys_bitops.h>
 #include <zephyr/arch/common/sys_io.h>
 #include <zephyr/arch/common/ffs.h>
@@ -169,6 +170,10 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE
+#define ARCH_IRQ_VECTOR_JUMP_CODE(v) "j " STRINGIFY(v)
+#endif
+
 /* Kernel macros for memory attribution
  * (access permissions and cache-ability).
  *
@@ -207,31 +212,7 @@ struct arch_mem_domain {
 	unsigned int pmp_update_nr;
 };
 
-void arch_irq_enable(unsigned int irq);
-void arch_irq_disable(unsigned int irq);
-int arch_irq_is_enabled(unsigned int irq);
-void arch_irq_priority_set(unsigned int irq, unsigned int prio);
-void z_irq_spurious(const void *unused);
-
-#if defined(CONFIG_RISCV_HAS_PLIC)
-#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-{ \
-	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
-	arch_irq_priority_set(irq_p, priority_p); \
-}
-#elif defined(CONFIG_NUCLEI_ECLIC)
-void nuclei_eclic_irq_priority_set(unsigned int irq, unsigned int prio, unsigned int flags);
-#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-{ \
-	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
-	nuclei_eclic_irq_priority_set(irq_p, priority_p, flags_p); \
-}
-#else
-#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-{ \
-	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
-}
-#endif
+extern void z_irq_spurious(const void *unused);
 
 /*
  * use atomic instruction csrrc to lock global irq

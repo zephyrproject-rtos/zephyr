@@ -9,15 +9,6 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 
-#define LSM6DSO DT_INST(0, st_lsm6dso)
-
-#if DT_NODE_HAS_STATUS(LSM6DSO, okay)
-#define LSM6DSO_LABEL DT_LABEL(LSM6DSO)
-#else
-#error Your devicetree has no enabled nodes with compatible "st,lsm6dso"
-#define LSM6DSO_LABEL "<none>"
-#endif
-
 static inline float out_ev(struct sensor_value *val)
 {
 	return (val->val1 + (float)val->val2 / 1000000);
@@ -103,8 +94,9 @@ static void test_trigger_mode(const struct device *dev)
 #else
 static void test_polling_mode(const struct device *dev)
 {
-	if (set_sampling_freq(dev) != 0)
+	if (set_sampling_freq(dev) != 0) {
 		return;
+	}
 
 	while (1) {
 		fetch_and_display(dev);
@@ -115,10 +107,10 @@ static void test_polling_mode(const struct device *dev)
 
 void main(void)
 {
-	const struct device *dev = device_get_binding(LSM6DSO_LABEL);
+	const struct device *dev = DEVICE_DT_GET_ONE(st_lsm6dso);
 
-	if (dev == NULL) {
-		printf("No device \"%s\" found.\n", LSM6DSO_LABEL);
+	if (!device_is_ready(dev)) {
+		printk("%s: device not ready.\n", dev->name);
 		return;
 	}
 

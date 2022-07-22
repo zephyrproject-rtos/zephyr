@@ -35,6 +35,10 @@ int bmc150_magn_trigger_set(const struct device *dev,
 					dev->config;
 	uint8_t state;
 
+	if (!config->int_gpio.port) {
+		return -ENOTSUP;
+	}
+
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
 		setup_drdy(dev, false);

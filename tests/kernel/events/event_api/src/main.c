@@ -24,17 +24,5 @@
 
 #include <ztest.h>
 
-extern void test_k_event_init(void);
-extern void test_event_deliver(void);
-extern void test_event_receive(void);
-
-/*test case main entry*/
-
-void test_main(void)
-{
-	ztest_test_suite(events_api,
-			 ztest_1cpu_unit_test(test_k_event_init),
-			 ztest_1cpu_unit_test(test_event_deliver),
-			 ztest_1cpu_unit_test(test_event_receive));
-	ztest_run_test_suite(events_api);
-}
+ZTEST_SUITE(events_api, NULL, NULL,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

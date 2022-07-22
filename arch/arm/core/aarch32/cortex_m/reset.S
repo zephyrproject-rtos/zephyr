@@ -31,7 +31,9 @@ GTEXT(z_arm_platform_init)
 GTEXT(z_arm_init_arch_hw_at_boot)
 GDATA(z_main_stack)
 #endif
-
+#if defined(CONFIG_PM_S2RAM)
+GTEXT(arch_pm_s2ram_resume)
+#endif
 
 /**
  *
@@ -86,6 +88,10 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 #endif /* CONFIG_CPU_CORTEX_M_HAS_SPLIM */
 
 #endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */
+
+#if defined(CONFIG_PM_S2RAM)
+    bl arch_pm_s2ram_resume
+#endif /* CONFIG_PM_S2RAM */
 
 #if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
     bl z_arm_platform_init

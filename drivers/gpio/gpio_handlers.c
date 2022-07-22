@@ -18,6 +18,19 @@ static inline int z_vrfy_gpio_pin_configure(const struct device *port,
 }
 #include <syscalls/gpio_pin_configure_mrsh.c>
 
+#ifdef CONFIG_GPIO_GET_CONFIG
+static inline int z_vrfy_gpio_pin_get_config(const struct device *port,
+					     gpio_pin_t pin,
+					     gpio_flags_t *flags)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, pin_get_config));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(flags, sizeof(gpio_flags_t)));
+
+	return z_impl_gpio_pin_get_config(port, pin, flags);
+}
+#include <syscalls/gpio_pin_get_config_mrsh.c>
+#endif
+
 static inline int z_vrfy_gpio_port_get_raw(const struct device *port,
 					   gpio_port_value_t *value)
 {

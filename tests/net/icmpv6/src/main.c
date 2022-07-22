@@ -89,7 +89,7 @@ static struct net_icmpv6_handler test_handler2 = {
 	.handler = handle_test_msg,
 };
 
-void test_icmpv6(void)
+ZTEST(icmpv6_fn, test_icmpv6)
 {
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
 		k_thread_priority_set(k_current_get(),
@@ -166,9 +166,4 @@ void test_icmpv6(void)
 }
 
 /**test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_icmpv6_fn,
-		ztest_unit_test(test_icmpv6));
-	ztest_run_test_suite(test_icmpv6_fn);
-}
+ZTEST_SUITE(icmpv6_fn, NULL, NULL, NULL, NULL, NULL);

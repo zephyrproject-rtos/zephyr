@@ -9,48 +9,39 @@
 #include <zephyr/dt-bindings/pinctrl/esp32-gpio-sigmap.h>
 
 &pinctrl {
-	uart0_tx_gpio1: uart0_tx_gpio1 {
-		pinmux = <UART0_TX_GPIO1>;
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO1>,
+				 <UART0_RX_GPIO3>;
+		};
 	};
 
-	uart0_rx_gpio3: uart0_rx_gpio3 {
-		pinmux = <UART0_RX_GPIO3>;
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1_TX_GPIO4>,
+				 <UART1_RX_GPIO36>;
+		};
 	};
 
-	uart1_tx_gpio4: uart1_tx_gpio4 {
-		pinmux = <UART1_TX_GPIO4>;
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SCL_GPIO16>,
+				 <I2C0_SDA_GPIO13>;
+			drive-open-drain;
+			output-high;
+		};
 	};
 
-	uart1_rx_gpio36: uart1_rx_gpio36 {
-		pinmux = <UART1_RX_GPIO36>;
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO15>,
+				 <SPIM2_SCLK_GPIO14>,
+				 <SPIM2_CSEL_GPIO17>;
+		};
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO2>;
+			output-low;
+		};
 	};
 
-	i2c0_scl_gpio16: i2c0_scl_gpio16 {
-		pinmux = <I2C0_SCL_GPIO16>;
-		drive-open-drain;
-		output-high;
-	};
-
-	i2c0_sda_gpio13: i2c0_sda_gpio13 {
-		pinmux = <I2C0_SDA_GPIO13>;
-		drive-open-drain;
-		output-high;
-	};
-
-	spim2_miso_gpio15: spim2_miso_gpio15 {
-		pinmux = <SPIM2_MISO_GPIO15>;
-	};
-
-	spim2_mosi_gpio2: spim2_mosi_gpio2 {
-		pinmux = <SPIM2_MOSI_GPIO2>;
-		output-low;
-	};
-
-	spim2_sclk_gpio14: spim2_sclk_gpio14 {
-		pinmux = <SPIM2_SCLK_GPIO14>;
-	};
-
-	spim2_csel_gpio17: spim2_csel_gpio17 {
-		pinmux = <SPIM2_CSEL_GPIO17>;
-	};
 };

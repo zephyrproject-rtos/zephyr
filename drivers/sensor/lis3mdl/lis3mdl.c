@@ -152,23 +152,28 @@ int lis3mdl_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_LIS3MDL_TRIGGER
-	if (lis3mdl_init_interrupt(dev) < 0) {
-		LOG_DBG("Failed to initialize interrupts.");
-		return -EIO;
+	if (config->irq_gpio.port) {
+		if (lis3mdl_init_interrupt(dev) < 0) {
+			LOG_DBG("Failed to initialize interrupts.");
+			return -EIO;
+		}
 	}
 #endif
 
 	return 0;
 }
 
-static struct lis3mdl_data lis3mdl_data_inst;
+#define LIS3MDL_DEFINE(inst)									\
+	static struct lis3mdl_data lis3mdl_data_##inst;						\
+												\
+	static struct lis3mdl_config lis3mdl_config_##inst = {					\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+		IF_ENABLED(CONFIG_LIS3MDL_TRIGGER,						\
+			   (.irq_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, irq_gpios, { 0 }),))	\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, lis3mdl_init, NULL,						\
+			      &lis3mdl_data_##inst, &lis3mdl_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &lis3mdl_driver_api);		\
 
-static struct lis3mdl_config lis3mdl_config_inst = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-	IF_ENABLED(CONFIG_LIS3MDL_TRIGGER,
-		   (.irq_gpio = GPIO_DT_SPEC_INST_GET(0, irq_gpios),))
-};
-
-DEVICE_DT_INST_DEFINE(0, lis3mdl_init, NULL, &lis3mdl_data_inst,
-		      &lis3mdl_config_inst, POST_KERNEL,
-		      CONFIG_SENSOR_INIT_PRIORITY, &lis3mdl_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(LIS3MDL_DEFINE)

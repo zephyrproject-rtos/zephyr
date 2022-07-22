@@ -9,7 +9,7 @@
 #include <zephyr/device.h>
 #include <ztest.h>
 
-static const struct device *sdhc_dev;
+static const struct device *sdhc_dev = DEVICE_DT_GET(DT_ALIAS(sdhc0));
 static struct sdhc_host_props props;
 static struct sdhc_io io;
 
@@ -18,10 +18,9 @@ static struct sdhc_io io;
 /* Resets SD host controller, verifies API */
 static void test_reset(void)
 {
-	sdhc_dev = device_get_binding(CONFIG_SDHC_LABEL);
 	int ret;
 
-	zassert_not_null(sdhc_dev, "Could not get SDHC device");
+	zassert_true(device_is_ready(sdhc_dev), "SDHC device is not ready");
 
 	ret = sdhc_hw_reset(sdhc_dev);
 	zassert_equal(ret, 0, "SDHC HW reset failed");

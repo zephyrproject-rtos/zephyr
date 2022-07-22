@@ -58,7 +58,7 @@ DEVICE_DEFINE(foo0, "foo0", foo_single_init, NULL,
  *
  * @ingroup kernel_device_tests
  */
-void test_mmio_single(void)
+ZTEST(device, test_mmio_single)
 {
 	struct z_device_mmio_rom *rom;
 	const struct device *dev = device_get_binding("foo0");
@@ -155,7 +155,7 @@ DEVICE_DEFINE(foo12, "foo12", foo_mult_init, NULL,
  *
  * @ingroup kernel_device_tests
  */
-void test_mmio_multiple(void)
+ZTEST(device, test_mmio_multiple)
 {
 	/* See comments for test_mmio_single */
 	const struct device *dev = device_get_binding("foo12");
@@ -218,7 +218,7 @@ DEVICE_MMIO_TOPLEVEL_STATIC(foo4, DT_DRV_INST(4));
  *
  * @ingroup kernel_device_tests
  */
-void test_mmio_toplevel(void)
+ZTEST(device, test_mmio_toplevel)
 {
 	mm_reg_t regs_foo3, regs_foo4;
 	const struct z_device_mmio_rom *rom_foo3, *rom_foo4;
@@ -259,7 +259,7 @@ void test_mmio_toplevel(void)
  * Show that device_map() populates a memory address. We don't do anything else;
  * tests for k_map() will prove that virtual memory mapping actually works.
  */
-void test_mmio_device_map(void)
+ZTEST(device, test_mmio_device_map)
 {
 #ifdef DEVICE_MMIO_IS_IN_RAM
 	mm_reg_t regs = 0;

@@ -8,6 +8,7 @@ tests:
   ieee802154.build.cc12xx_cc2520:
     platform_allow: cc1352r_sensortag
     extra_configs:
+      - CONFIG_IEEE802154_CC2520=y
       - CONFIG_IEEE802154_CC13XX_CC26XX=y
       - CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ=y
   ieee802154.build.kw41z:

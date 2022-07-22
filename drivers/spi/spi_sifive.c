@@ -296,24 +296,6 @@ static struct spi_driver_api spi_sifive_api = {
 			&spi_sifive_cfg_##n, \
 			POST_KERNEL, \
 			CONFIG_SPI_INIT_PRIORITY, \
-			&spi_sifive_api)
+			&spi_sifive_api);
 
-#ifndef CONFIG_SIFIVE_SPI_0_ROM
-#if DT_INST_NODE_HAS_PROP(0, label)
-
-SPI_INIT(0);
-
-#endif /* DT_INST_NODE_HAS_PROP(0, label) */
-#endif /* !CONFIG_SIFIVE_SPI_0_ROM */
-
-#if DT_INST_NODE_HAS_PROP(1, label)
-
-SPI_INIT(1);
-
-#endif /* DT_INST_NODE_HAS_PROP(1, label) */
-
-#if DT_INST_NODE_HAS_PROP(2, label)
-
-SPI_INIT(2);
-
-#endif /* DT_INST_NODE_HAS_PROP(2, label) */
+DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

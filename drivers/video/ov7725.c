@@ -175,13 +175,15 @@ LOG_MODULE_REGISTER(ov7725);
 #define OV7725_COM10_PCLK_OUT_MASK     BIT(5)
 #define OV7725_COM10_DATA_NEG_MASK     BIT(7)
 
+struct ov7725_config {
+	struct i2c_dt_spec i2c;
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	struct gpio_dt_spec reset_gpio;
+#endif
+};
+
 struct ov7725_data {
-	const struct device *i2c;
-	const struct device *reset_gpio;
-	uint8_t reset_pin;
-	gpio_dt_flags_t reset_flags;
 	struct video_format fmt;
-	uint8_t i2c_addr;
 };
 
 struct ov7725_clock {
@@ -314,10 +316,9 @@ static const struct ov7725_reg ov7725_init_reg_tb[] = {
 	{ OV7725_COM2,           0x01 }
 };
 
-static int ov7725_write_reg(const struct device *dev, uint8_t reg_addr,
+static int ov7725_write_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr,
 			    uint8_t value)
 {
-	struct ov7725_data *drv_data = dev->data;
 	struct i2c_msg msgs[2];
 
 	msgs[0].buf = (uint8_t *)&reg_addr;
@@ -328,13 +329,12 @@ static int ov7725_write_reg(const struct device *dev, uint8_t reg_addr,
 	msgs[1].len = 1;
 	msgs[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
-	return i2c_transfer(drv_data->i2c, msgs, 2, drv_data->i2c_addr);
+	return i2c_transfer_dt(spec, msgs, 2);
 }
 
-static int ov7725_read_reg(const struct device *dev, uint8_t reg_addr,
+static int ov7725_read_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr,
 			   uint8_t *value)
 {
-	struct ov7725_data *drv_data = dev->data;
 	struct i2c_msg msgs[2];
 
 	msgs[0].buf = (uint8_t *)&reg_addr;
@@ -349,10 +349,10 @@ static int ov7725_read_reg(const struct device *dev, uint8_t reg_addr,
 	msgs[1].len = 1;
 	msgs[1].flags = I2C_MSG_READ | I2C_MSG_STOP | I2C_MSG_RESTART;
 
-	return i2c_transfer(drv_data->i2c, msgs, 2, drv_data->i2c_addr);
+	return i2c_transfer_dt(spec, msgs, 2);
 }
 
-int ov7725_modify_reg(const struct device *dev,
+int ov7725_modify_reg(const struct i2c_dt_spec *spec,
 		      uint8_t reg_addr,
 		      uint8_t clear_mask,
 		      uint8_t value)
@@ -360,12 +360,12 @@ int ov7725_modify_reg(const struct device *dev,
 	int ret;
 	uint8_t set_value;
 
-	ret = ov7725_read_reg(dev, reg_addr, &set_value);
+	ret = ov7725_read_reg(spec, reg_addr, &set_value);
 
 	if (ret == 0) {
 		set_value = (set_value & (~clear_mask)) |
 				(set_value & clear_mask);
-		ret = ov7725_write_reg(dev, reg_addr, set_value);
+		ret = ov7725_write_reg(spec, reg_addr, set_value);
 	}
 
 
@@ -377,11 +377,12 @@ static int ov7725_write_all(const struct device *dev,
 			    uint16_t reg_num)
 {
 	uint16_t i = 0;
+	const struct ov7725_config *cfg = dev->config;
 
 	for (i = 0; i < reg_num; i++) {
 		int err;
 
-		err = ov7725_write_reg(dev, regs[i].addr, regs[i].value);
+		err = ov7725_write_reg(&cfg->i2c, regs[i].addr, regs[i].value);
 		if (err) {
 			return err;
 		}
@@ -394,20 +395,22 @@ static int ov7725_set_clock(const struct device *dev,
 				unsigned int framerate,
 				unsigned int input_clk)
 {
+	const struct ov7725_config *cfg = dev->config;
+
 	for (unsigned int i = 0; i < ARRAY_SIZE(ov7725_clock_configs); i++) {
 		if ((ov7725_clock_configs[i].framerate == framerate) &&
 			(ov7725_clock_configs[i].input_clk == input_clk)) {
-			ov7725_write_reg(dev, OV7725_CLKRC,
+			ov7725_write_reg(&cfg->i2c, OV7725_CLKRC,
 						ov7725_clock_configs[i].clkrc);
-			ov7725_modify_reg(dev, OV7725_COM4, 0xc0,
+			ov7725_modify_reg(&cfg->i2c, OV7725_COM4, 0xc0,
 						ov7725_clock_configs[i].com4);
-			ov7725_write_reg(dev, OV7725_EXHCL, 0x00);
-			ov7725_write_reg(dev, OV7725_DM_LNL,
+			ov7725_write_reg(&cfg->i2c, OV7725_EXHCL, 0x00);
+			ov7725_write_reg(&cfg->i2c, OV7725_DM_LNL,
 						ov7725_clock_configs[i].dm_lnl);
-			ov7725_write_reg(dev, OV7725_DM_LNH, 0x00);
-			ov7725_write_reg(dev, OV7725_ADVFL, 0x00);
-			ov7725_write_reg(dev, OV7725_ADVFH, 0x00);
-			return ov7725_write_reg(dev, OV7725_COM5, 0x65);
+			ov7725_write_reg(&cfg->i2c, OV7725_DM_LNH, 0x00);
+			ov7725_write_reg(&cfg->i2c, OV7725_ADVFL, 0x00);
+			ov7725_write_reg(&cfg->i2c, OV7725_ADVFH, 0x00);
+			return ov7725_write_reg(&cfg->i2c, OV7725_COM5, 0x65);
 		}
 	}
 
@@ -419,6 +422,7 @@ static int ov7725_set_fmt(const struct device *dev,
 			  struct video_format *fmt)
 {
 	struct ov7725_data *drv_data = dev->data;
+	const struct ov7725_config *cfg = dev->config;
 	uint8_t com10 = 0;
 	uint16_t width, height;
 	uint16_t hstart, vstart, hsize;
@@ -454,7 +458,7 @@ static int ov7725_set_fmt(const struct device *dev,
 	/* Set output format */
 	for (uint8_t i = 0; i < ARRAY_SIZE(ov7725_pf_configs); i++) {
 		if (ov7725_pf_configs[i].pixel_format == fmt->pixelformat) {
-			ret =  ov7725_modify_reg(dev,
+			ret =  ov7725_modify_reg(&cfg->i2c,
 						OV7725_COM7,
 						0x1FU,
 						ov7725_pf_configs[i].com7);
@@ -465,13 +469,13 @@ static int ov7725_set_fmt(const struct device *dev,
 		}
 	}
 
-	ov7725_modify_reg(dev, OV7725_COM7, (1 << 5), (0 << 5));
+	ov7725_modify_reg(&cfg->i2c, OV7725_COM7, (1 << 5), (0 << 5));
 
 	com10 |= OV7725_COM10_VSYNC_NEG_MASK;
-	ov7725_write_reg(dev, OV7725_COM10, com10);
+	ov7725_write_reg(&cfg->i2c, OV7725_COM10, com10);
 
 	/* Don't swap output MSB/LSB. */
-	ov7725_write_reg(dev, OV7725_COM3, 0x00);
+	ov7725_write_reg(&cfg->i2c, OV7725_COM3, 0x00);
 
 	/*
 	 * Output drive capability
@@ -480,7 +484,7 @@ static int ov7725_set_fmt(const struct device *dev,
 	 * 2: 3X
 	 * 3: 4X
 	 */
-	ov7725_modify_reg(dev, OV7725_COM2, 0x03, 0x03);
+	ov7725_modify_reg(&cfg->i2c, OV7725_COM2, 0x03, 0x03);
 
 	/* Resolution and timing. */
 	hstart = 0x22U << 2U;
@@ -488,18 +492,18 @@ static int ov7725_set_fmt(const struct device *dev,
 	hsize = width + 16U;
 
 	/* Set the window size. */
-	ov7725_write_reg(dev, OV7725_HSTART, hstart >> 2U);
-	ov7725_write_reg(dev, OV7725_HSIZE, hsize >> 2U);
-	ov7725_write_reg(dev, OV7725_VSTART, vstart >> 1U);
-	ov7725_write_reg(dev, OV7725_VSIZE, height >> 1U);
-	ov7725_write_reg(dev, OV7725_HOUTSIZE, width >> 2U);
-	ov7725_write_reg(dev, OV7725_VOUTSIZE, height >> 1U);
-	ov7725_write_reg(dev, OV7725_HREF,
+	ov7725_write_reg(&cfg->i2c, OV7725_HSTART, hstart >> 2U);
+	ov7725_write_reg(&cfg->i2c, OV7725_HSIZE, hsize >> 2U);
+	ov7725_write_reg(&cfg->i2c, OV7725_VSTART, vstart >> 1U);
+	ov7725_write_reg(&cfg->i2c, OV7725_VSIZE, height >> 1U);
+	ov7725_write_reg(&cfg->i2c, OV7725_HOUTSIZE, width >> 2U);
+	ov7725_write_reg(&cfg->i2c, OV7725_VOUTSIZE, height >> 1U);
+	ov7725_write_reg(&cfg->i2c, OV7725_HREF,
 			 ((vstart & 1U) << 6U) |
 			 ((hstart & 3U) << 4U) |
 			 ((height & 1U) << 2U) |
 			 ((hsize & 3U) << 0U));
-	return ov7725_write_reg(dev, OV7725_EXHCH,
+	return ov7725_write_reg(&cfg->i2c, OV7725_EXHCH,
 					((height & 1U) << 2U) |
 					((width & 3U) << 0U));
 }
@@ -556,39 +560,31 @@ static const struct video_driver_api ov7725_driver_api = {
 
 static int ov7725_init(const struct device *dev)
 {
-	struct ov7725_data *drv_data = dev->data;
+	const struct ov7725_config *cfg = dev->config;
 	struct video_format fmt;
 	uint8_t pid, ver;
 	int ret;
 
-
-	if (drv_data->reset_gpio) {
-		ret = gpio_pin_configure(drv_data->reset_gpio,
-					 drv_data->reset_pin,
-					 GPIO_OUTPUT_ACTIVE |
-					 drv_data->reset_flags);
-		if (ret) {
-			return ret;
-		}
-
-		gpio_pin_set(drv_data->reset_gpio,
-			     drv_data->reset_pin,
-			     0);
-		k_sleep(K_MSEC(1));
-		gpio_pin_set(drv_data->reset_gpio,
-			     drv_data->reset_pin,
-			     1);
-		k_sleep(K_MSEC(1));
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
+	if (ret) {
+		return ret;
 	}
 
+	gpio_pin_set_dt(&cfg->reset_gpio, 0);
+	k_sleep(K_MSEC(1));
+	gpio_pin_set_dt(&cfg->reset_gpio, 1);
+	k_sleep(K_MSEC(1));
+#endif
+
 	/* Identify the device. */
-	ret = ov7725_read_reg(dev, OV7725_PID, &pid);
+	ret = ov7725_read_reg(&cfg->i2c, OV7725_PID, &pid);
 	if (ret) {
 		LOG_ERR("Unable to read PID");
 		return -ENODEV;
 	}
 
-	ret = ov7725_read_reg(dev, OV7725_VER, &ver);
+	ret = ov7725_read_reg(&cfg->i2c, OV7725_VER, &ver);
 	if (ret) {
 		LOG_ERR("Unable to read VER");
 		return -ENODEV;
@@ -600,7 +596,7 @@ static int ov7725_init(const struct device *dev)
 	}
 
 	/* Device identify OK, perform software reset. */
-	ov7725_write_reg(dev, OV7725_COM7, 0x80);
+	ov7725_write_reg(&cfg->i2c, OV7725_COM7, 0x80);
 
 	k_sleep(K_MSEC(2));
 
@@ -619,37 +615,35 @@ static int ov7725_init(const struct device *dev)
 }
 
 /* Unique Instance */
+static const struct ov7725_config ov7725_cfg_0 = {
+	.i2c = I2C_DT_SPEC_INST_GET(0),
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
+#endif
+};
 static struct ov7725_data ov7725_data_0;
 
 static int ov7725_init_0(const struct device *dev)
 {
-	struct ov7725_data *drv_data = dev->data;
-	char *gpio_name = DT_INST_GPIO_LABEL(0, reset_gpios);
+	const struct ov7725_config *cfg = dev->config;
 
-	drv_data->reset_pin = DT_INST_GPIO_PIN(0, reset_gpios),
-	drv_data->reset_flags = DT_INST_GPIO_FLAGS(0, reset_gpios),
-
-	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (drv_data->i2c == NULL) {
-		LOG_ERR("Failed to get pointer to %s device!",
-			DT_INST_LABEL(0));
-		return -EINVAL;
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
-	if (gpio_name) {
-		drv_data->reset_gpio = device_get_binding(gpio_name);
-		if (drv_data->reset_gpio == NULL) {
-			LOG_ERR("Failed to get pointer to %s device!",
-				gpio_name);
-		}
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	if (!device_is_ready(cfg->reset_gpio.port)) {
+		LOG_ERR("%s: device %s is not ready", dev->name,
+				cfg->reset_gpio.port->name);
+		return -ENODEV;
 	}
-
-	drv_data->i2c_addr = DT_INST_REG_ADDR(0);
+#endif
 
 	return ov7725_init(dev);
 }
 
 DEVICE_DT_INST_DEFINE(0, &ov7725_init_0, NULL,
-		    &ov7725_data_0, NULL,
+		    &ov7725_data_0, &ov7725_cfg_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &ov7725_driver_api);

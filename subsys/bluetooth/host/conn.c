@@ -189,19 +189,21 @@ static void tx_notify(struct bt_conn *conn)
 	BT_DBG("conn %p", conn);
 
 	while (1) {
-		struct bt_conn_tx *tx;
+		struct bt_conn_tx *tx = NULL;
 		unsigned int key;
 		bt_conn_tx_cb_t cb;
 		void *user_data;
 
 		key = irq_lock();
-		if (sys_slist_is_empty(&conn->tx_complete)) {
-			irq_unlock(key);
-			break;
+		if (!sys_slist_is_empty(&conn->tx_complete)) {
+			tx = CONTAINER_OF(sys_slist_get_not_empty(&conn->tx_complete),
+					  struct bt_conn_tx, node);
 		}
-
-		tx = (void *)sys_slist_get_not_empty(&conn->tx_complete);
 		irq_unlock(key);
+
+		if (!tx) {
+			return;
+		}
 
 		BT_DBG("tx %p cb %p user_data %p", tx, tx->cb, tx->user_data);
 
@@ -721,7 +723,8 @@ int bt_conn_prepare_events(struct k_poll_event events[])
 
 	BT_DBG("");
 
-	conn_change.signaled = 0U;
+	k_poll_signal_init(&conn_change);
+
 	k_poll_event_init(&events[ev_count++], K_POLL_TYPE_SIGNAL,
 			  K_POLL_MODE_NOTIFY_ONLY, &conn_change);
 
@@ -2490,7 +2493,7 @@ static bool create_param_validate(const struct bt_conn_le_create_param *param)
 {
 #if defined(CONFIG_BT_PRIVACY)
 	/* Initiation timeout cannot be greater than the RPA timeout */
-	const uint32_t timeout_max = (MSEC_PER_SEC / 10) * CONFIG_BT_RPA_TIMEOUT;
+	const uint32_t timeout_max = (MSEC_PER_SEC / 10) * bt_dev.rpa_timeout;
 
 	if (param->timeout > timeout_max) {
 		return false;
@@ -2671,7 +2674,8 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 	create_param_setup(create_param);
 
 #if defined(CONFIG_BT_SMP)
-	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
+	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+	    (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size)) {
 		bt_conn_set_state(conn, BT_CONN_CONNECTING_SCAN);
 
 		err = bt_le_scan_update(true);

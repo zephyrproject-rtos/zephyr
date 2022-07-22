@@ -29,6 +29,7 @@
 
 	aliases {
 		led0 = &led;
+		watchdog0 = &iwdg;
 	};
 };
 

@@ -36,8 +36,9 @@ static inline int npcx_clock_control_on(const struct device *dev,
 	struct npcx_clk_cfg *clk_cfg = (struct npcx_clk_cfg *)(sub_system);
 	const uint32_t pmc_base = ((const struct npcx_pcc_config *)dev->config)->base_pmc;
 
-	if (clk_cfg->ctrl >= NPCX_PWDWN_CTL_COUNT)
+	if (clk_cfg->ctrl >= NPCX_PWDWN_CTL_COUNT) {
 		return -EINVAL;
+	}
 
 	/* Clear related PD (Power-Down) bit of module to turn on clock */
 	NPCX_PWDWN_CTL(pmc_base, clk_cfg->ctrl) &= ~(BIT(clk_cfg->bit));
@@ -51,8 +52,9 @@ static inline int npcx_clock_control_off(const struct device *dev,
 	struct npcx_clk_cfg *clk_cfg = (struct npcx_clk_cfg *)(sub_system);
 	const uint32_t pmc_base = ((const struct npcx_pcc_config *)dev->config)->base_pmc;
 
-	if (clk_cfg->ctrl >= NPCX_PWDWN_CTL_COUNT)
+	if (clk_cfg->ctrl >= NPCX_PWDWN_CTL_COUNT) {
 		return -EINVAL;
+	}
 
 	/* Set related PD (Power-Down) bit of module to turn off clock */
 	NPCX_PWDWN_CTL(pmc_base, clk_cfg->ctrl) |= BIT(clk_cfg->bit);

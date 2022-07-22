@@ -2,4 +2,4 @@
 project(winstream)
 cmake_minimum_required(VERSION 3.20.0)
 set(SOURCES main.c)
-find_package(ZephyrUnittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})

@@ -61,13 +61,13 @@ char *utf8_trunc(char *utf8_str)
 
 char *utf8_lcpy(char *dst, const char *src, size_t n)
 {
-	__ASSERT(n > 0, "n shall not be 0");
+	if (n > 0) {
+		strncpy(dst, src, n - 1);
+		dst[n - 1] = '\0';
 
-	strncpy(dst, src, n - 1);
-	dst[n - 1] = '\0';
-
-	if (n != 1) {
-		utf8_trunc(dst);
+		if (n != 1) {
+			utf8_trunc(dst);
+		}
 	}
 
 	return dst;

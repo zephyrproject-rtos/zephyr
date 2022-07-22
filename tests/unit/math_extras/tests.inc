@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <sys/math_extras.h>
+#include <zephyr/sys/math_extras.h>
 #include <inttypes.h>
 
 static void VNAME(u32_add)(void)

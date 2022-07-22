@@ -121,6 +121,12 @@ int bmg160_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
+	const struct bmg160_device_config *config = dev->config;
+
+	if (!config->int_gpio.port) {
+		return -ENOTSUP;
+	}
+
 	if (trig->type == SENSOR_TRIG_DELTA) {
 		return bmg160_anymotion_set(dev, handler);
 	} else if (trig->type == SENSOR_TRIG_DATA_READY) {

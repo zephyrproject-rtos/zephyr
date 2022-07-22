@@ -118,8 +118,7 @@ Build and flash the blinky sample.::
 
   west build -t clean && \
     west build -c -p auto -b npcx9m6f_evb samples/basic/blinky && \
-    west flash --hex-file build/zephyr/zephyr.npcx.hex \
-      --openocd /usr/local/bin/openocd --openocd-search /usr/local/share/openocd/scripts
+    west flash --openocd /usr/local/bin/openocd
 
 Debugging
 =========

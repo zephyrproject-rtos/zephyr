@@ -4,6 +4,26 @@
 # Copyright (c) 2015-2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+config BT_LONG_WQ
+	bool "Dedicated workqueue for long-running tasks."
+	default y if BT_GATT_CACHING
+	help
+	  Adds an API for a workqueue dedicated to long-running tasks.
+
+if BT_LONG_WQ
+config BT_LONG_WQ_STACK_SIZE
+	# Hidden: Long workqueue stack size. Should be derived from system
+	# requirements.
+	int
+	default BT_HCI_ECC_STACK_SIZE if BT_TINYCRYPT_ECC
+	default 1024
+
+config BT_LONG_WQ_PRIO
+	int "Long workqueue priority. Should be pre-emptible."
+	default 10
+	range 0 NUM_PREEMPT_PRIORITIES
+endif # BT_LONG_WQ
+
 config BT_HCI_HOST
 	# Hidden option to make the conditions more intuitive
 	bool
@@ -115,7 +135,7 @@ config BT_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
 	default 768 if BT_HCI_RAW
 	default 3092 if BT_MESH_GATT_CLIENT
-	default 2048 if BT_MESH
+	default 2200 if BT_MESH
 	default 2048 if BT_AUDIO
 	default 2200 if BT_SETTINGS
 	default 1024
@@ -318,8 +338,10 @@ if BT_SMP
 config BT_PRIVACY
 	bool "Privacy Feature"
 	help
-	  Enable local Privacy Feature support. This makes it possible
-	  to use Resolvable Private Addresses (RPAs).
+	  Enable Privacy Feature support. This makes it possible to generate and use
+	  Resolvable Private Addresses (RPAs).
+
+	  Disabling this will remove the capability to resolve private addresses.
 
 config BT_RPA_TIMEOUT
 	int "Resolvable Private Address timeout"
@@ -329,6 +351,13 @@ config BT_RPA_TIMEOUT
 	help
 	  This option defines how often resolvable private address is rotated.
 	  Value is provided in seconds and defaults to 900 seconds (15 minutes).
+
+config BT_RPA_TIMEOUT_DYNAMIC
+	bool "Support setting the Resolvable Private Address timeout at runtime"
+	depends on BT_PRIVACY
+	help
+	  This option allows the user to override the default value of
+	  the Resolvable Private Address timeout using dedicated APIs.
 
 config BT_SIGNING
 	bool "Data signing support"
@@ -700,6 +729,7 @@ config BT_TINYCRYPT_ECC
 	bool "Emulate ECDH in the Host using TinyCrypt library"
 	select TINYCRYPT
 	select TINYCRYPT_ECC_DH
+	select BT_LONG_WQ
 	depends on BT_ECC && (BT_HCI_RAW || BT_HCI_HOST)
 	default y if BT_CTLR && !BT_CTLR_ECDH
 	help
@@ -757,6 +787,14 @@ config BT_DEBUG_ISO
 	help
 	  Use this option to enable ISO channels debug logs for the
 	  Bluetooth Audio functionality.
+
+config BT_DEBUG_ISO_DATA
+	bool "ISO channel data debug"
+	depends on BT_DEBUG_ISO
+	help
+	  Use this option to enable ISO channels data debug logs for the
+	  Bluetooth Audio functionality. This will enable debug logs for all
+	  ISO data received and sent.
 
 config BT_DEBUG_KEYS
 	bool "Bluetooth security keys debug"

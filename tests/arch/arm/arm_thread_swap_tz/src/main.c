@@ -77,7 +77,7 @@ static void work_func(struct k_work *work)
 
 }
 
-void test_thread_swap_tz(void)
+ZTEST(thread_swap_tz, test_thread_swap_tz)
 {
 	int err;
 	char dummy_digest[HASH_LEN];
@@ -147,10 +147,4 @@ void test_thread_swap_tz(void)
 #endif /* CONFIG_CPU_HAS_FPU */
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_thread_swap_tz,
-			ztest_unit_test(test_thread_swap_tz)
-			);
-	ztest_run_test_suite(test_thread_swap_tz);
-}
+ZTEST_SUITE(thread_swap_tz, NULL, NULL, NULL, NULL, NULL);

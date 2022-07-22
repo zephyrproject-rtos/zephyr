@@ -292,17 +292,19 @@ static bool initialize_test_environment(void)
 	return true;
 }
 
-static void test_init(void)
+static void *test_init(void)
 {
 	bool ret;
 
 	ret = initialize_test_environment();
 
 	zassert_true(ret, "Test initialization");
+
+	return NULL;
 }
 
 
-static void test_parsing_ns_pkt(void)
+ZTEST(ieee802154_l2, test_parsing_ns_pkt)
 {
 	bool ret;
 
@@ -311,7 +313,7 @@ static void test_parsing_ns_pkt(void)
 	zassert_true(ret, "NS parsed");
 }
 
-static void test_sending_ns_pkt(void)
+ZTEST(ieee802154_l2, test_sending_ns_pkt)
 {
 	bool ret;
 
@@ -320,7 +322,7 @@ static void test_sending_ns_pkt(void)
 	zassert_true(ret, "NS sent");
 }
 
-static void test_parsing_ack_pkt(void)
+ZTEST(ieee802154_l2, test_parsing_ack_pkt)
 {
 	bool ret;
 
@@ -329,7 +331,7 @@ static void test_parsing_ack_pkt(void)
 	zassert_true(ret, "ACK parsed");
 }
 
-static void test_replying_ack_pkt(void)
+ZTEST(ieee802154_l2, test_replying_ack_pkt)
 {
 	bool ret;
 
@@ -338,7 +340,7 @@ static void test_replying_ack_pkt(void)
 	zassert_true(ret, "ACK replied");
 }
 
-static void test_parsing_beacon_pkt(void)
+ZTEST(ieee802154_l2, test_parsing_beacon_pkt)
 {
 	bool ret;
 
@@ -347,7 +349,7 @@ static void test_parsing_beacon_pkt(void)
 	zassert_true(ret, "Beacon parsed");
 }
 
-static void test_parsing_sec_data_pkt(void)
+ZTEST(ieee802154_l2, test_parsing_sec_data_pkt)
 {
 	bool ret;
 
@@ -356,17 +358,4 @@ static void test_parsing_sec_data_pkt(void)
 	zassert_true(ret, "Secured data frame parsed");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(ieee802154_l2,
-			 ztest_unit_test(test_init),
-			 ztest_unit_test(test_parsing_ns_pkt),
-			 ztest_unit_test(test_sending_ns_pkt),
-			 ztest_unit_test(test_parsing_ack_pkt),
-			 ztest_unit_test(test_replying_ack_pkt),
-			 ztest_unit_test(test_parsing_beacon_pkt),
-			 ztest_unit_test(test_parsing_sec_data_pkt)
-		);
-
-	ztest_run_test_suite(ieee802154_l2);
-}
+ZTEST_SUITE(ieee802154_l2, NULL, test_init, NULL, NULL, NULL);

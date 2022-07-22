@@ -8,8 +8,6 @@ include: regulator.yaml
 compatible: "regulator-pmic"
 
 properties:
-    label:
-        required: false
     voltage-range:
         type: array
         required: true

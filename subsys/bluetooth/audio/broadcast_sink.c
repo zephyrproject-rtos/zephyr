@@ -30,6 +30,11 @@
 #define BASE_BIS_DATA_MIN_SIZE    2 /* index and length */
 #define BROADCAST_SYNC_MIN_INDEX  (BIT(1))
 
+/* any value above 0xFFFFFF is invalid, so we can just use 0xFFFFFFFF to denote
+ * invalid broadcast ID
+ */
+#define INVALID_BROADCAST_ID 0xFFFFFFFF
+
 static struct bt_audio_iso broadcast_sink_iso
 	[CONFIG_BT_AUDIO_BROADCAST_SNK_COUNT][BROADCAST_SNK_STREAM_CNT];
 static struct bt_audio_ep broadcast_sink_eps
@@ -40,6 +45,25 @@ static struct bt_le_scan_cb broadcast_scan_cb;
 static sys_slist_t sink_cbs = SYS_SLIST_STATIC_INIT(&sink_cbs);
 
 static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink);
+
+static void broadcast_sink_clear_big(struct bt_audio_broadcast_sink *sink)
+{
+	sink->big = NULL;
+}
+
+static struct bt_audio_broadcast_sink *broadcast_sink_lookup_iso_chan(
+	const struct bt_iso_chan *chan)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_sinks); i++) {
+		for (uint8_t j = 0U; j < broadcast_sinks[i].stream_count; j++) {
+			if (broadcast_sinks[i].bis[j] == chan) {
+				return &broadcast_sinks[i];
+			}
+		}
+	}
+
+	return NULL;
+}
 
 static void broadcast_sink_set_ep_state(struct bt_audio_ep *ep, uint8_t state)
 {
@@ -97,20 +121,26 @@ static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
 {
 	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
 						      iso_chan);
-	struct bt_audio_ep *ep = audio_iso->sink_ep;
+	struct bt_audio_stream *stream = audio_iso->sink_stream;
 	const struct bt_audio_stream_ops *ops;
 
-	if (ep == NULL) {
-		BT_ERR("Could not lookup ep by iso %p", chan);
+	if (stream == NULL) {
+		BT_ERR("Could not lookup stream by iso %p", chan);
+		return;
+	} else if (stream->ep == NULL) {
+		BT_ERR("Stream not associated with an ep");
 		return;
 	}
 
-	ops = ep->stream->ops;
+	ops = stream->ops;
 
-	BT_DBG("stream %p ep %p len %zu", chan, ep, net_buf_frags_len(buf));
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
+		BT_DBG("stream %p ep %p len %zu",
+		       stream, stream->ep, net_buf_frags_len(buf));
+	}
 
 	if (ops != NULL && ops->recv != NULL) {
-		ops->recv(ep->stream, info, buf);
+		ops->recv(stream, info, buf);
 	} else {
 		BT_WARN("No callback for recv set");
 	}
@@ -120,22 +150,25 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
 						      iso_chan);
-	struct bt_audio_ep *ep = audio_iso->sink_ep;
+	struct bt_audio_stream *stream = audio_iso->sink_stream;
 	const struct bt_audio_stream_ops *ops;
 
-	if (ep == NULL) {
-		BT_ERR("Could not lookup ep by iso %p", chan);
+	if (stream == NULL) {
+		BT_ERR("Could not lookup stream by iso %p", chan);
+		return;
+	} else if (stream->ep == NULL) {
+		BT_ERR("Stream not associated with an ep");
 		return;
 	}
 
-	ops = ep->stream->ops;
+	ops = stream->ops;
 
-	BT_DBG("stream %p ep %p", chan, ep);
+	BT_DBG("stream %p", stream);
 
-	broadcast_sink_set_ep_state(ep, BT_AUDIO_EP_STATE_STREAMING);
+	broadcast_sink_set_ep_state(stream->ep, BT_AUDIO_EP_STATE_STREAMING);
 
 	if (ops != NULL && ops->started != NULL) {
-		ops->started(ep->stream);
+		ops->started(stream);
 	} else {
 		BT_WARN("No callback for connected set");
 	}
@@ -146,26 +179,42 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 {
 	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
 						      iso_chan);
-	struct bt_audio_ep *ep = audio_iso->sink_ep;
+	struct bt_audio_stream *stream = audio_iso->sink_stream;
 	const struct bt_audio_stream_ops *ops;
-	struct bt_audio_stream *stream;
+	struct bt_audio_broadcast_sink *sink;
 
-	if (ep == NULL) {
+	if (stream == NULL) {
 		BT_ERR("Could not lookup ep by iso %p", chan);
+		return;
+	} else if (stream->ep == NULL) {
+		BT_ERR("Stream not associated with an ep");
 		return;
 	}
 
-	ops = ep->stream->ops;
-	stream = ep->stream;
+	ops = stream->ops;
 
-	BT_DBG("stream %p ep %p reason 0x%02x", chan, ep, reason);
+	BT_DBG("stream %p ep %p reason 0x%02x", stream, stream->ep, reason);
 
-	broadcast_sink_set_ep_state(ep, BT_AUDIO_EP_STATE_IDLE);
+	broadcast_sink_set_ep_state(stream->ep, BT_AUDIO_EP_STATE_IDLE);
 
 	if (ops != NULL && ops->stopped != NULL) {
 		ops->stopped(stream);
 	} else {
 		BT_WARN("No callback for stopped set");
+	}
+
+	sink = broadcast_sink_lookup_iso_chan(chan);
+	if (sink == NULL) {
+		BT_ERR("Could not lookup sink by iso %p", chan);
+		return;
+	}
+
+	/* Clear sink->big if not already cleared */
+	if (sink->big) {
+		/* When a BIS disconnects, it means that all BIS disconnected,
+		 * and we can do the clearing on the first
+		 */
+		broadcast_sink_clear_big(sink);
 	}
 }
 
@@ -228,7 +277,7 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 
 	bt_audio_broadcast_sink_scan_stop();
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->pa_synced != NULL) {
 			listener->pa_synced(sink, sink->pa_sync, sink->broadcast_id);
 		}
@@ -254,7 +303,7 @@ static void pa_term(struct bt_le_per_adv_sync *sync,
 	BT_DBG("PA sync with broadcast source with ID 0x%06X lost",
 	       sink->broadcast_id);
 	broadcast_sink_cleanup(sink);
-	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->pa_sync_lost != NULL) {
 			listener->pa_sync_lost(sink);
 		}
@@ -264,7 +313,6 @@ static void pa_term(struct bt_le_per_adv_sync *sync,
 static bool net_buf_decode_codec_ltv(struct net_buf_simple *buf,
 				     struct bt_codec_data *codec_data)
 {
-	size_t value_len;
 	void *value;
 
 	if (buf->len < sizeof(codec_data->data.data_len)) {
@@ -277,17 +325,22 @@ static bool net_buf_decode_codec_ltv(struct net_buf_simple *buf,
 		BT_DBG("Not enough data for LTV type field: %u", buf->len);
 		return false;
 	}
+
+	/* LTV structures include the data.type in the length field,
+	 * but we do not do that for the bt_data struct in Zephyr
+	 */
+	codec_data->data.data_len -= sizeof(codec_data->data.type);
+
 	codec_data->data.type = net_buf_simple_pull_u8(buf);
 	codec_data->data.data = codec_data->value;
 
-	value_len = codec_data->data.data_len - sizeof(codec_data->data.type);
-	if (buf->len < value_len) {
+	if (buf->len < codec_data->data.data_len) {
 		BT_DBG("Not enough data for LTV value field: %u/%zu",
-		       buf->len, value_len);
+		       buf->len, codec_data->data.data_len);
 		return false;
 	}
-	value = net_buf_simple_pull_mem(buf, value_len);
-	memcpy(codec_data->value, value, value_len);
+	value = net_buf_simple_pull_mem(buf, codec_data->data.data_len);
+	(void)memcpy(codec_data->value, value, codec_data->data.data_len);
 
 	return true;
 }
@@ -492,16 +545,15 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 	}
 
 	codec_qos.pd = net_buf_simple_pull_le24(&net_buf);
-	sink->subgroup_count = net_buf_simple_pull_u8(&net_buf);
+	base.subgroup_count = net_buf_simple_pull_u8(&net_buf);
 
-	if (sink->subgroup_count > ARRAY_SIZE(base.subgroups)) {
+	if (base.subgroup_count > ARRAY_SIZE(base.subgroups)) {
 		BT_DBG("Cannot decode BASE with %u subgroups (max supported is %zu)",
-		       sink->subgroup_count, ARRAY_SIZE(base.subgroups));
+		       base.subgroup_count, ARRAY_SIZE(base.subgroups));
 
 		return false;
 	}
 
-	base.subgroup_count = sink->subgroup_count;
 	for (int i = 0; i < base.subgroup_count; i++) {
 		if (!net_buf_decode_subgroup(&net_buf, &base.subgroups[i])) {
 			BT_DBG("Failed to decode subgroup %d", i);
@@ -522,7 +574,12 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 		}
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, node) {
+	/* We only overwrite the sink->base data once the base has successfully
+	 * been decoded to avoid overwriting it with invalid data
+	 */
+	(void)memcpy(&sink->base, &base, sizeof(base));
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->base_recv != NULL) {
 			listener->base_recv(sink, &base);
 		}
@@ -557,12 +614,17 @@ static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 		return;
 	}
 
+	if (sink->big != NULL) {
+		/* Already synced - ignore */
+		return;
+	}
+
 	sink->biginfo_received = true;
 	sink->iso_interval = biginfo->iso_interval;
 	sink->biginfo_num_bis = biginfo->num_bis;
 	sink->big_encrypted = biginfo->encryption;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->syncable != NULL) {
 			listener->syncable(sink, biginfo->encryption);
 		}
@@ -627,7 +689,7 @@ static void sync_broadcast_pa(const struct bt_le_scan_recv_info *info,
 			BT_ERR("Could not stop scan: %d", err);
 		}
 
-		SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, node) {
+		SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 			if (listener->scan_term != NULL) {
 				listener->scan_term(err);
 			}
@@ -641,10 +703,8 @@ static void sync_broadcast_pa(const struct bt_le_scan_recv_info *info,
 
 static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 {
-	const struct bt_le_scan_recv_info *info = user_data;
-	struct bt_audio_broadcast_sink_cb *listener;
+	uint32_t *broadcast_id = user_data;
 	struct bt_uuid_16 adv_uuid;
-	uint32_t broadcast_id;
 
 	if (sys_slist_is_empty(&sink_cbs)) {
 		/* Terminate early if we do not have any broadcast sink listeners */
@@ -672,21 +732,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 		return true;
 	}
 
-	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
-
-	BT_DBG("Found broadcast source with address %s and id 0x%6X",
-	       bt_addr_le_str(info->addr), broadcast_id);
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, node) {
-		if (listener->scan_recv != NULL) {
-			bool sync_pa = listener->scan_recv(info, broadcast_id);
-
-			if (sync_pa) {
-				sync_broadcast_pa(info, broadcast_id);
-				break;
-			}
-		}
-	}
+	*broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 
 	/* Stop parsing */
 	return false;
@@ -695,13 +741,53 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
 				struct net_buf_simple *ad)
 {
+	struct bt_audio_broadcast_sink_cb *listener;
+	struct net_buf_simple_state state;
+	uint32_t broadcast_id;
+
 	/* We are only interested in non-connectable periodic advertisers */
 	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) ||
 	     info->interval == 0) {
 		return;
 	}
 
-	bt_data_parse(ad, scan_check_and_sync_broadcast, (void *)info);
+	/* As scan_check_and_sync_broadcast modifies the AD data,
+	 * we store the state before parsing it
+	 */
+	net_buf_simple_save(ad, &state);
+	broadcast_id = INVALID_BROADCAST_ID;
+	bt_data_parse(ad, scan_check_and_sync_broadcast, (void *)&broadcast_id);
+	net_buf_simple_restore(ad, &state);
+
+	/* We check if `broadcast_id` was modified by `scan_check_and_sync_broadcast`.
+	 * If it was then that means that we found a broadcast source
+	 */
+	if (broadcast_id != INVALID_BROADCAST_ID) {
+		BT_DBG("Found broadcast source with address %s and id 0x%6X",
+		       bt_addr_le_str(info->addr), broadcast_id);
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
+			if (listener->scan_recv != NULL) {
+				bool sync_pa;
+
+
+				/* As the callback receiver may modify the AD
+				 * data, we store the state so that we can
+				 * restore it for each callback
+				 */
+				net_buf_simple_save(ad, &state);
+
+				sync_pa = listener->scan_recv(info, ad, broadcast_id);
+
+				if (sync_pa) {
+					sync_broadcast_pa(info, broadcast_id);
+					break;
+				}
+
+				net_buf_simple_restore(ad, &state);
+			}
+		}
+	}
 }
 
 static void broadcast_scan_timeout(void)
@@ -710,7 +796,7 @@ static void broadcast_scan_timeout(void)
 
 	bt_le_scan_cb_unregister(&broadcast_scan_cb);
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->scan_term != NULL) {
 			listener->scan_term(-ETIME);
 		}
@@ -719,7 +805,7 @@ static void broadcast_scan_timeout(void)
 
 void bt_audio_broadcast_sink_register_cb(struct bt_audio_broadcast_sink_cb *cb)
 {
-	sys_slist_append(&sink_cbs, &cb->node);
+	sys_slist_append(&sink_cbs, &cb->_node);
 }
 
 int bt_audio_broadcast_sink_scan_start(const struct bt_le_scan_param *param)
@@ -782,7 +868,7 @@ int bt_audio_broadcast_sink_scan_stop(void)
 		bt_le_scan_cb_unregister(&broadcast_scan_cb);
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->scan_term != NULL) {
 			listener->scan_term(0);
 		}
@@ -812,13 +898,12 @@ static void broadcast_sink_ep_init(struct bt_audio_ep *ep,
 	(void)memset(ep, 0, sizeof(*ep));
 	ep->dir = BT_AUDIO_DIR_SINK;
 	ep->iso = iso;
-	iso->sink_ep = ep;
 
-	iso_chan = &ep->iso->iso_chan;
+	iso_chan = &iso->iso_chan;
 
 	iso_chan->ops = &broadcast_sink_iso_ops;
 	iso_chan->qos = &ep->iso->iso_qos;
-	iso_chan->qos->rx = &ep->iso_io_qos;
+	iso_chan->qos->rx = &iso->sink_io_qos;
 	iso_chan->qos->tx = NULL;
 }
 
@@ -861,6 +946,7 @@ static int bt_audio_broadcast_sink_setup_stream(uint8_t index,
 	}
 
 	bt_audio_stream_attach(NULL, stream, ep, codec);
+	ep->iso->sink_stream = stream;
 	/* TODO: The values of sink_chan_io_qos and codec_qos are not used,
 	 * but the `rx` and `qos` pointers need to be set. This should be fixed.
 	 */
@@ -874,14 +960,9 @@ static int bt_audio_broadcast_sink_setup_stream(uint8_t index,
 
 static void broadcast_sink_cleanup_streams(struct bt_audio_broadcast_sink *sink)
 {
-	for (size_t i = 0; i < sink->stream_count; i++) {
-		struct bt_audio_stream *stream;
+	struct bt_audio_stream *stream, *next;
 
-		stream = sink->streams[i];
-		if (stream == NULL) {
-			continue;
-		}
-
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sink->streams, stream, next, _node) {
 		if (stream->ep != NULL) {
 			stream->ep->stream = NULL;
 			stream->ep = NULL;
@@ -891,7 +972,11 @@ static void broadcast_sink_cleanup_streams(struct bt_audio_broadcast_sink *sink)
 		stream->codec = NULL;
 		stream->iso = NULL;
 		stream->group = NULL;
+
+		sys_slist_remove(&sink->streams, NULL, &stream->_node);
 	}
+
+	sink->stream_count = 0;
 }
 
 static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink)
@@ -900,13 +985,29 @@ static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink)
 	(void)memset(sink, 0, sizeof(*sink));
 }
 
+static struct bt_codec *codec_from_base_by_index(struct bt_audio_base *base,
+						 uint8_t index)
+{
+	for (size_t i = 0U; i < base->subgroup_count; i++) {
+		struct bt_audio_base_subgroup *subgroup = &base->subgroups[i];
+
+		for (size_t j = 0U; j < subgroup->bis_count; j++) {
+			if (subgroup->bis_data[j].index == index) {
+				return &subgroup->codec;
+			}
+		}
+	}
+
+	return NULL;
+}
+
 int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 				 uint32_t indexes_bitfield,
 				 struct bt_audio_stream *streams[],
-				 struct bt_codec *codec,
 				 const uint8_t broadcast_code[16])
 {
 	struct bt_iso_big_sync_param param;
+	struct bt_codec *codecs[BROADCAST_SNK_STREAM_CNT] = { NULL };
 	uint8_t stream_count;
 	int err;
 
@@ -953,7 +1054,17 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 	stream_count = 0;
 	for (int i = 1; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
 		if ((indexes_bitfield & BIT(i)) != 0) {
-			stream_count++;
+			struct bt_codec *codec = codec_from_base_by_index(&sink->base, i);
+
+			__ASSERT(codec != NULL, "Codec[%d] was NULL", i);
+
+			codecs[stream_count++] = codec;
+
+			if (stream_count > BROADCAST_SNK_STREAM_CNT) {
+				BT_DBG("Cannot sync to more than %d streams",
+				       BROADCAST_SNK_STREAM_CNT);
+				return -EINVAL;
+			}
 		}
 	}
 
@@ -964,16 +1075,15 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 		}
 	}
 
-	sink->stream_count = stream_count;
-	sink->streams = streams;
-	sink->codec = codec;
 	for (size_t i = 0; i < stream_count; i++) {
 		struct bt_audio_stream *stream;
+		struct bt_codec *codec;
 
 		stream = streams[i];
+		codec = codecs[i];
 
 		err = bt_audio_broadcast_sink_setup_stream(sink->index, stream,
-							   sink->codec);
+							   codec);
 		if (err != 0) {
 			BT_DBG("Failed to setup streams[%zu]: %d", i, err);
 			broadcast_sink_cleanup_streams(sink);
@@ -981,6 +1091,8 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 		}
 
 		sink->bis[i] = &stream->ep->iso->iso_chan;
+		sys_slist_append(&sink->streams, &stream->_node);
+		sink->stream_count++;
 	}
 
 	param.bis_channels = sink->bis;
@@ -1015,6 +1127,7 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 {
 	struct bt_audio_stream *stream;
+	sys_snode_t *head_node;
 	int err;
 
 	CHECKIF(sink == NULL) {
@@ -1022,13 +1135,17 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 		return -EINVAL;
 	}
 
-	stream = sink->streams[0];
-
-	if (stream == NULL) {
-		BT_DBG("stream is NULL");
+	if (sys_slist_is_empty(&sink->streams)) {
+		BT_DBG("Source does not have any streams");
 		return -EINVAL;
 	}
 
+	head_node = sys_slist_peek_head(&sink->streams);
+	stream = CONTAINER_OF(head_node, struct bt_audio_stream, _node);
+
+	/* All streams in a broadcast source is in the same state,
+	 * so we can just check the first stream
+	 */
 	if (stream->ep == NULL) {
 		BT_DBG("stream->ep is NULL");
 		return -EINVAL;
@@ -1047,17 +1164,14 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 		return err;
 	}
 
-	sink->big = NULL;
-	sink->stream_count = 0;
-	sink->streams = NULL;
-	/* Channel states will be updated in the ep_iso_disconnected function */
+	broadcast_sink_clear_big(sink);
+	/* Channel states will be updated in the broadcast_sink_iso_disconnected function */
 
 	return 0;
 }
 
 int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink)
 {
-	struct bt_audio_stream **streams;
 	int err;
 
 	CHECKIF(sink == NULL) {
@@ -1065,10 +1179,20 @@ int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink)
 		return -EINVAL;
 	}
 
-	streams = sink->streams;
-	if (streams != NULL && streams[0] != NULL && streams[0]->ep != NULL) {
-		BT_DBG("Sink is not stopped");
-		return -EBADMSG;
+	if (!sys_slist_is_empty(&sink->streams)) {
+		struct bt_audio_stream *stream;
+		sys_snode_t *head_node;
+
+		head_node = sys_slist_peek_head(&sink->streams);
+		stream = CONTAINER_OF(head_node, struct bt_audio_stream, _node);
+
+		/* All streams in a broadcast source is in the same state,
+		 * so we can just check the first stream
+		 */
+		if (stream->ep != NULL) {
+			BT_DBG("Sink is not stopped");
+			return -EBADMSG;
+		}
 	}
 
 	if (sink->pa_sync == NULL) {

@@ -45,7 +45,8 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 
 	expected_reason = -1;
 }
-void test_arm_hardfault(void)
+
+ZTEST(arm_hardfault_validation, test_arm_hardfault)
 {
 	expected_reason = K_ERR_KERNEL_PANIC;
 

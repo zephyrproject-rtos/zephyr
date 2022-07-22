@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Christian Taedcke <hacking@taedcke.com>
  * Copyright (c) 2019 Lemonbeat GmbH
+ * Copyright (c) 2021 T-Mobile USA, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +9,7 @@
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "gpio_gecko.h"
 
 / {
@@ -251,6 +253,20 @@
 			interrupts = <49 0>;
 			label = "TRNG0";
 			status = "disabled";
+		};
+
+		timer0: timer@40018000 {
+			compatible = "silabs,gecko-timers";
+			reg = <0x40018000 0x400>;
+			label = "TIMER_0";
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,gecko-pwm";
+				status = "disabled";
+				label = "PWM_0";
+				#pwm-cells = <3>;
+			};
 		};
 	};
 };

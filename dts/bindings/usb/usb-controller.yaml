@@ -22,9 +22,6 @@ properties:
          - "high-speed"
          - "super-speed"
 
-    label:
-      required: true
-
     vbus-gpios:
       type: phandle-array
       required: false

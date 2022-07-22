@@ -290,8 +290,9 @@ static void ps2_npcx_ctrl_isr(const struct device *dev)
 
 				LOG_DBG("Recv:0x%02x", data_in);
 				callback = data->callback_isr[active_ch];
-				if (callback != NULL)
+				if (callback != NULL) {
 					callback(dev, data_in);
+				}
 			}
 		}
 

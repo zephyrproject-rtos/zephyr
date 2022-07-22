@@ -39,13 +39,10 @@ static K_SEM_DEFINE(sem_big_sync_lost, 0, 1);
 #define LED0_NODE DT_ALIAS(led0)
 
 #if DT_NODE_HAS_STATUS(LED0_NODE, okay)
+static const struct gpio_dt_spec led_gpio = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 #define HAS_LED     1
-#define LED0        DT_GPIO_LABEL(LED0_NODE, gpios)
-#define PIN         DT_GPIO_PIN(LED0_NODE, gpios)
-#define FLAGS       DT_GPIO_FLAGS(LED0_NODE, gpios)
 #define BLINK_ONOFF K_MSEC(500)
 
-static struct device const     *dev;
 static struct k_work_delayable blink_work;
 static bool                    led_is_on;
 static bool                    blink;
@@ -57,7 +54,7 @@ static void blink_timeout(struct k_work *work)
 	}
 
 	led_is_on = !led_is_on;
-	gpio_pin_set(dev, PIN, (int)led_is_on);
+	gpio_pin_set_dt(&led_gpio, (int)led_is_on);
 
 	k_work_schedule(&blink_work, BLINK_ONOFF);
 }
@@ -281,15 +278,15 @@ void main(void)
 
 #if defined(HAS_LED)
 	printk("Get reference to LED device...");
-	dev = device_get_binding(LED0);
-	if (!dev) {
-		printk("Failed.\n");
+
+	if (!device_is_ready(led_gpio.port)) {
+		printk("LED gpio device not ready.\n");
 		return;
 	}
 	printk("done.\n");
 
 	printk("Configure GPIO pin...");
-	err = gpio_pin_configure(dev, PIN, GPIO_OUTPUT_ACTIVE | FLAGS);
+	err = gpio_pin_configure_dt(&led_gpio, GPIO_OUTPUT_ACTIVE);
 	if (err) {
 		return;
 	}
@@ -328,7 +325,7 @@ void main(void)
 		printk("Start blinking LED...\n");
 		led_is_on = false;
 		blink = true;
-		gpio_pin_set(dev, PIN, (int)led_is_on);
+		gpio_pin_set_dt(&led_gpio, (int)led_is_on);
 		k_work_reschedule(&blink_work, BLINK_ONOFF);
 #endif /* HAS_LED */
 
@@ -433,7 +430,7 @@ big_sync_create:
 
 		/* Keep LED on */
 		led_is_on = true;
-		gpio_pin_set(dev, PIN, (int)led_is_on);
+		gpio_pin_set_dt(&led_gpio, (int)led_is_on);
 #endif /* HAS_LED */
 
 		printk("Waiting for BIG sync lost...\n");

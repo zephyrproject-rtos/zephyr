@@ -275,6 +275,91 @@ static int cmd_register(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BT_L2CAP_ECRED)
+static int cmd_ecred_reconfigure(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct bt_l2cap_chan *l2cap_ecred_chans[1] = {&l2ch_chan.ch.chan};
+	uint16_t mtu;
+	int err = 0;
+
+	if (!default_conn) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	if (!l2ch_chan.ch.chan.conn) {
+		shell_error(sh, "Channel not connected");
+		return -ENOEXEC;
+	}
+
+	mtu = shell_strtoul(argv[1], 10, &err);
+	if (err) {
+		shell_error(sh, "Unable to parse MTU (err %d)", err);
+
+		return -ENOEXEC;
+	}
+
+	err = bt_l2cap_ecred_chan_reconfigure(l2cap_ecred_chans, mtu);
+	if (err < 0) {
+		shell_error(sh, "Unable to reconfigure channel (err %d)", err);
+	} else {
+		shell_print(sh, "L2CAP reconfiguration pending");
+	}
+
+	return err;
+}
+
+static int cmd_ecred_connect(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct bt_l2cap_chan *l2cap_ecred_chans[1] = {&l2ch_chan.ch.chan};
+	uint16_t psm;
+	int err = 0;
+
+	if (!default_conn) {
+		shell_error(sh, "Not connected");
+
+		return -ENOEXEC;
+	}
+
+	if (l2ch_chan.ch.chan.conn) {
+		shell_error(sh, "Channel already in use");
+
+		return -ENOEXEC;
+	}
+
+	psm = shell_strtoul(argv[1], 16, &err);
+	if (err) {
+		shell_error(sh, "Unable to parse PSM (err %d)", err);
+
+		return err;
+	}
+
+	if (argc > 2) {
+		int sec;
+
+		sec = shell_strtoul(argv[2], 10, &err);
+		if (err) {
+			shell_error(sh, "Unable to parse security level (err %d)", err);
+
+			return err;
+		}
+
+
+		l2ch_chan.ch.required_sec_level = sec;
+	}
+
+	err = bt_l2cap_ecred_chan_connect(default_conn, l2cap_ecred_chans, psm);
+	if (err < 0) {
+		shell_error(sh, "Unable to connect to psm %u (err %d)", psm,
+			    err);
+	} else {
+		shell_print(sh, "L2CAP connection pending");
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_L2CAP_ECRED */
+
 static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 {
 	uint16_t psm;
@@ -345,7 +430,18 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 	len = MIN(l2ch_chan.ch.tx.mtu, len);
 
 	while (count--) {
-		buf = net_buf_alloc(&data_tx_pool, K_FOREVER);
+		shell_print(sh, "Rem %d", count);
+		buf = net_buf_alloc(&data_tx_pool, K_SECONDS(2));
+		if (!buf) {
+			if (l2ch_chan.ch.state != BT_L2CAP_CONNECTED) {
+				shell_print(sh, "Channel disconnected, stopping TX");
+
+				return -EAGAIN;
+			}
+			shell_print(sh, "Allocation timeout, stopping TX");
+
+			return -EAGAIN;
+		}
 		net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
 
 		net_buf_add_mem(buf, buf_data, len);
@@ -446,6 +542,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 	SHELL_CMD_ARG(send, NULL, "[number of packets] [length of packet(s)]",
 		      cmd_send, 1, 2),
 	SHELL_CMD_ARG(allowlist, &allowlist_cmds, HELP_NONE, NULL, 1, 0),
+#if defined(CONFIG_BT_L2CAP_ECRED)
+	SHELL_CMD_ARG(ecred-connect, NULL, "<psm (hex)> [sec_level (dec)]",
+		cmd_ecred_connect, 2, 1),
+	SHELL_CMD_ARG(ecred-reconfigure, NULL, "<mtu (dec)>",
+		cmd_ecred_reconfigure, 1, 1),
+#endif /* CONFIG_BT_L2CAP_ECRED */
 	SHELL_SUBCMD_SET_END
 );
 

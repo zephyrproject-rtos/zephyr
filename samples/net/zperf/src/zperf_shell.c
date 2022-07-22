@@ -1025,9 +1025,9 @@ static void zperf_init(const struct shell *sh)
 		ret = net_addr_pton(AF_INET6, DST_IP6ADDR,
 				    &in6_addr_dst.sin6_addr);
 		if (ret < 0) {
-			shell_fprintf(sh, SHELL_WARNING,
-				      "Unable to set IP %s\n",
-				      DST_IP6ADDR);
+			shell_fprintf(sh, SHELL_WARNING, "Unable to set IP %s\n",
+				      DST_IP6ADDR ? DST_IP6ADDR
+						  : "(Default IPv6 destination address not set)");
 		} else {
 			shell_fprintf(sh, SHELL_NORMAL,
 				      "Setting destination IP address %s\n",
@@ -1051,9 +1051,9 @@ static void zperf_init(const struct shell *sh)
 		ret = net_addr_pton(AF_INET, DST_IP4ADDR,
 				    &in4_addr_dst.sin_addr);
 		if (ret < 0) {
-			shell_fprintf(sh, SHELL_WARNING,
-				      "Unable to set IP %s\n",
-				      DST_IP4ADDR);
+			shell_fprintf(sh, SHELL_WARNING, "Unable to set IP %s\n",
+				      DST_IP4ADDR ? DST_IP4ADDR
+						  : "(Default IPv4 destination address not set)");
 		} else {
 			shell_fprintf(sh, SHELL_NORMAL,
 				      "Setting destination IP address %s\n",

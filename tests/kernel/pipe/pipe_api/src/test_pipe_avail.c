@@ -40,7 +40,7 @@ static struct k_pipe bufferless1 = {
  * simultaneously return 0 for a buffered pipe, but they will both return 0
  * for an unbuffered pipe.
  */
-void test_pipe_avail_no_buffer(void)
+ZTEST(pipe_api, test_pipe_avail_no_buffer)
 {
 	size_t r_avail;
 	size_t w_avail;
@@ -80,7 +80,7 @@ void test_pipe_avail_no_buffer(void)
  *     w_avail = N - (w - r) = 5
  *     would overwrite: e f g h
  */
-void test_pipe_avail_r_lt_w(void)
+ZTEST(pipe_api, test_pipe_avail_r_lt_w)
 {
 	size_t r_avail;
 	size_t w_avail;
@@ -119,7 +119,7 @@ void test_pipe_avail_r_lt_w(void)
  *     w_avail = r - w = 3
  *     would overwrite: a b c d
  */
-void test_pipe_avail_w_lt_r(void)
+ZTEST(pipe_api, test_pipe_avail_w_lt_r)
 {
 	size_t r_avail;
 	size_t w_avail;
@@ -162,7 +162,7 @@ void test_pipe_avail_w_lt_r(void)
  *     w_avail = N - 0 = 8
  *     would overwrite: e f g h a b c d
  */
-void test_pipe_avail_r_eq_w_empty(void)
+ZTEST(pipe_api, test_pipe_avail_r_eq_w_empty)
 {
 	size_t r_avail;
 	size_t w_avail;
@@ -205,7 +205,7 @@ void test_pipe_avail_r_eq_w_empty(void)
  *     w_avail = N - 8 = 0
  *     would overwrite:
  */
-void test_pipe_avail_r_eq_w_full(void)
+ZTEST(pipe_api, test_pipe_avail_r_eq_w_full)
 {
 	size_t r_avail;
 	size_t w_avail;

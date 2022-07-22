@@ -103,7 +103,7 @@ static struct trigger_sequence trigger_elements[] = {
  *
  * @see sensor_sample_fetch(), sensor_channel_get()
  */
-void test_sensor_get_channels(void)
+ZTEST(sensor_api, test_sensor_get_channels)
 {
 	const struct device *dev;
 	struct sensor_value data;
@@ -189,7 +189,7 @@ static void trigger_handler(const struct device *dev,
  *
  * @see sensor_attr_set(), sensor_trigger_set()
  */
-void test_sensor_handle_triggers(void)
+ZTEST(sensor_api, test_sensor_handle_triggers)
 {
 	const struct device *dev;
 	const struct device *dev_no_trig;
@@ -269,7 +269,7 @@ void test_sensor_handle_triggers(void)
  * to convert radians to degrees and degrees to radians.  Verify
  * helper function for converting struct sensor_value to double.
  */
-void test_sensor_unit_conversion(void)
+ZTEST(sensor_api, test_sensor_unit_conversion)
 {
 	struct sensor_value data;
 
@@ -311,13 +311,4 @@ void test_sensor_unit_conversion(void)
 #endif
 }
 
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_sensor_api,
-			 ztest_1cpu_unit_test(test_sensor_get_channels),
-			 ztest_1cpu_unit_test(test_sensor_handle_triggers),
-			 ztest_1cpu_unit_test(test_sensor_unit_conversion));
-
-	ztest_run_test_suite(test_sensor_api);
-}
+ZTEST_SUITE(sensor_api, NULL, NULL, ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

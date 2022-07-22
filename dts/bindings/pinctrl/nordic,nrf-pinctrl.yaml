@@ -107,7 +107,9 @@ child-binding:
           Pin output drive mode. Available drive modes are pre-defined in
           nrf-pinctrl.h. Note that extra modes may not be available on certain
           devices. Defaults to standard mode for 0 and 1 (NRF_DRIVE_S0S1), the
-          SoC default.
+          SoC default, except for the "nordic,nrf-twi" and "nordic,nrf-twim"
+          nodes where NRF_DRIVE_S0S1 is always overridden with NRF_DRIVE_S0D1
+          (standard '0', disconnect '1').
 
       nordic,invert:
         type: boolean

@@ -32,6 +32,7 @@
 		blue-pwm-led = &tri_blue_pwm_led;
 		sw0 = &user_button_3;
 		sw1 = &user_button_2;
+		magn0 = &fxos8700;
 	};
 
 	chosen {

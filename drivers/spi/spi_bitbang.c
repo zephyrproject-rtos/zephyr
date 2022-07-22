@@ -27,20 +27,6 @@ struct spi_bitbang_config {
 	struct gpio_dt_spec miso_gpio;
 };
 
-static inline bool spi_bitbang_has_miso(const struct device *dev)
-{
-	const struct spi_bitbang_config *info = dev->config;
-
-	return info->miso_gpio.port != NULL;
-}
-
-static inline bool spi_bitbang_has_mosi(const struct device *dev)
-{
-	const struct spi_bitbang_config *info = dev->config;
-
-	return info->mosi_gpio.port != NULL;
-}
-
 static int spi_bitbang_configure(const struct spi_bitbang_config *info,
 			    struct spi_bitbang_data *data,
 			    const struct spi_config *config)
@@ -77,8 +63,6 @@ static int spi_bitbang_configure(const struct spi_bitbang_config *info,
 
 	data->ctx.config = config;
 
-	spi_context_cs_configure_all(&data->ctx);
-
 	return 0;
 }
 
@@ -90,8 +74,50 @@ static int spi_bitbang_transceive(const struct device *dev,
 	const struct spi_bitbang_config *info = dev->config;
 	struct spi_bitbang_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
+	int rc;
+	const struct gpio_dt_spec *miso = NULL;
+	const struct gpio_dt_spec *mosi = NULL;
+	gpio_flags_t mosi_flags = GPIO_OUTPUT_INACTIVE;
 
-	spi_bitbang_configure(info, data, spi_cfg);
+	rc = spi_bitbang_configure(info, data, spi_cfg);
+	if (rc < 0) {
+		return rc;
+	}
+
+	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+		if (!info->mosi_gpio.port) {
+			LOG_ERR("No MOSI pin specified in half duplex mode");
+			return -EINVAL;
+		}
+
+		if (tx_bufs && rx_bufs) {
+			LOG_ERR("Both RX and TX specified in half duplex mode");
+			return -EINVAL;
+		} else if (tx_bufs && !rx_bufs) {
+			/* TX mode */
+			mosi = &info->mosi_gpio;
+		} else if (!tx_bufs && rx_bufs) {
+			/* RX mode */
+			mosi_flags = GPIO_INPUT;
+			miso = &info->mosi_gpio;
+		}
+	} else {
+		if (info->mosi_gpio.port) {
+			mosi = &info->mosi_gpio;
+		}
+
+		if (info->miso_gpio.port) {
+			miso = &info->miso_gpio;
+		}
+	}
+
+	if (info->mosi_gpio.port) {
+		rc = gpio_pin_configure_dt(&info->mosi_gpio, mosi_flags);
+		if (rc < 0) {
+			LOG_ERR("Couldn't configure MOSI pin: %d", rc);
+			return rc;
+		}
+	}
 
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, data->dfs);
 
@@ -116,9 +142,6 @@ static int spi_bitbang_transceive(const struct device *dev,
 
 	const uint32_t wait_us = data->wait_us;
 
-	const bool has_miso = spi_bitbang_has_miso(dev);
-	const bool has_mosi = spi_bitbang_has_mosi(dev);
-
 	while (spi_context_tx_buf_on(ctx) || spi_context_rx_buf_on(ctx)) {
 		uint16_t w = 0;
 
@@ -138,7 +161,7 @@ static int spi_bitbang_transceive(const struct device *dev,
 		int b = 0;
 		bool do_read = false;
 
-		if (has_miso && spi_context_rx_buf_on(ctx)) {
+		if (miso && spi_context_rx_buf_on(ctx)) {
 			do_read = true;
 		}
 
@@ -148,8 +171,8 @@ static int spi_bitbang_transceive(const struct device *dev,
 			b = 0;
 
 			/* setup data out first thing */
-			if (has_mosi) {
-				gpio_pin_set_dt(&info->mosi_gpio, d);
+			if (mosi) {
+				gpio_pin_set_dt(mosi, d);
 			}
 
 			k_busy_wait(wait_us);
@@ -158,7 +181,7 @@ static int spi_bitbang_transceive(const struct device *dev,
 			gpio_pin_set_dt(&info->clk_gpio, !clock_state);
 
 			if (!loop && do_read && !cpha) {
-				b = gpio_pin_get_dt(&info->miso_gpio);
+				b = gpio_pin_get_dt(miso);
 			}
 
 			k_busy_wait(wait_us);
@@ -167,7 +190,7 @@ static int spi_bitbang_transceive(const struct device *dev,
 			gpio_pin_set_dt(&info->clk_gpio, clock_state);
 
 			if (!loop && do_read && cpha) {
-				b = gpio_pin_get_dt(&info->miso_gpio);
+				b = gpio_pin_get_dt(miso);
 			}
 
 			if (loop) {
@@ -235,6 +258,7 @@ static struct spi_driver_api spi_bitbang_api = {
 int spi_bitbang_init(const struct device *dev)
 {
 	const struct spi_bitbang_config *config = dev->config;
+	struct spi_bitbang_data *data = dev->data;
 	int rc;
 
 	if (!device_is_ready(config->clk_gpio.port)) {
@@ -274,6 +298,12 @@ int spi_bitbang_init(const struct device *dev)
 		}
 	}
 
+	rc = spi_context_cs_configure_all(&data->ctx);
+	if (rc < 0) {
+		LOG_ERR("Failed to configure CS pins: %d", rc);
+		return rc;
+	}
+
 	return 0;
 }
 
@@ -287,6 +317,7 @@ int spi_bitbang_init(const struct device *dev)
 	static struct spi_bitbang_data spi_bitbang_data_##inst = {	\
 		SPI_CONTEXT_INIT_LOCK(spi_bitbang_data_##inst, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_bitbang_data_##inst, ctx),	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)	\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\

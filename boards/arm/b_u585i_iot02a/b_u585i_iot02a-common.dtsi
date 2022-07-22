@@ -49,6 +49,10 @@
 			min-residency-us = <900>;
 		};
 	};
+
+	aliases {
+		watchdog0 = &iwdg;
+	};
 };
 
 &clk_lse {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Intel Corporation.
+ * Copyright (c) 2018,2022 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,7 +37,7 @@ volatile int bounce_owner, bounce_done;
  *
  * @see k_spin_lock(), k_spin_unlock()
  */
-void test_spinlock_basic(void)
+ZTEST(spinlock, test_spinlock_basic)
 {
 	k_spinlock_key_t key;
 	static struct k_spinlock l;
@@ -111,7 +111,7 @@ void cpu1_fn(void *p1, void *p2, void *p3)
  *
  * @see arch_start_cpu()
  */
-void test_spinlock_bounce(void)
+ZTEST(spinlock, test_spinlock_bounce)
 {
 	int i;
 
@@ -140,7 +140,7 @@ void test_spinlock_bounce(void)
  *
  * @see k_spin_lock(), k_spin_unlock()
  */
-void test_spinlock_mutual_exclusion(void)
+ZTEST(spinlock, test_spinlock_mutual_exclusion)
 {
 	k_spinlock_key_t key;
 	static struct k_spinlock lock_runtime;
@@ -173,20 +173,4 @@ void test_spinlock_mutual_exclusion(void)
 	zassert_true(!lock_runtime.locked, "Spinlock failed to unlock");
 }
 
-
-extern void test_spinlock_no_recursive(void);
-extern void test_spinlock_unlock_error(void);
-extern void test_spinlock_release_error(void);
-
-
-void test_main(void)
-{
-	ztest_test_suite(spinlock,
-			 ztest_unit_test(test_spinlock_basic),
-			 ztest_unit_test(test_spinlock_bounce),
-			 ztest_unit_test(test_spinlock_mutual_exclusion),
-			 ztest_unit_test(test_spinlock_no_recursive),
-			 ztest_unit_test(test_spinlock_unlock_error),
-			 ztest_unit_test(test_spinlock_release_error));
-	ztest_run_test_suite(spinlock);
-}
+ZTEST_SUITE(spinlock, NULL, NULL, NULL, NULL, NULL);

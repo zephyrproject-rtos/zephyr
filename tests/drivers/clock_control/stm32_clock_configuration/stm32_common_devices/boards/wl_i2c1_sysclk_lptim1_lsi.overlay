@@ -47,6 +47,7 @@
  */
 
 &clk_hse {
+	hse-tcxo;
 	status = "okay";
 	clock-frequency = <DT_FREQ_M(32)>;
 };
@@ -77,5 +78,9 @@
 &lptim1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
 			<&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+	status = "okay";
+};
+
+&adc1 {
 	status = "okay";
 };

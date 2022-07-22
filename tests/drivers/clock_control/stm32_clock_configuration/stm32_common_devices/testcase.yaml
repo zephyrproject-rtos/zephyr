@@ -10,11 +10,11 @@ tests:
   drivers.stm32_clock_configuration.common_device.g0.i2c1_sysclk_lptim1_lsi:
     extra_args: DTC_OVERLAY_FILE="boards/g0_i2c1_sysclk_lptim1_lsi.overlay"
     platform_allow: nucleo_g071rb
-  drivers.stm32_clock_configuration.common_device.g0.i2c1_hsi_lptim1_lse:
-    extra_args: DTC_OVERLAY_FILE="boards/g0_i2c1_hsi_lptim1_lse.overlay"
+  drivers.stm32_clock_configuration.common_device.g0.i2c1_hsi_lptim1_lse_adc1_pllp:
+    extra_args: DTC_OVERLAY_FILE="boards/g0_i2c1_hsi_lptim1_lse_adc1_pllp.overlay"
     platform_allow: nucleo_g071rb
-  drivers.stm32_clock_configuration.common_device.wl.i2c1_hsi_lptim1_lse:
-    extra_args: DTC_OVERLAY_FILE="boards/wl_i2c1_hsi_lptim1_lse.overlay"
+  drivers.stm32_clock_configuration.common_device.wl.i2c1_hsi_lptim1_lse_adc1_pllp:
+    extra_args: DTC_OVERLAY_FILE="boards/wl_i2c1_hsi_lptim1_lse_adc1_pllp.overlay"
     platform_allow: nucleo_wl55jc
   drivers.stm32_clock_configuration.common_device.wl.i2c1_sysclk_lptim1_lsi:
     extra_args: DTC_OVERLAY_FILE="boards/wl_i2c1_sysclk_lptim1_lsi.overlay"
@@ -25,8 +25,8 @@ tests:
   drivers.stm32_clock_configuration.common_device.l4.i2c1_hsi_lptim1_lse:
     extra_args: DTC_OVERLAY_FILE="boards/l4_i2c1_hsi_lptim1_lse.overlay"
     platform_allow: disco_l475_iot1
-  drivers.stm32_clock_configuration.common_device.g4.i2c1_hsi:
-    extra_args: DTC_OVERLAY_FILE="boards/g4_i2c1_hsi.overlay"
+  drivers.stm32_clock_configuration.common_device.g4.i2c1_hsi_adc1_pllp:
+    extra_args: DTC_OVERLAY_FILE="boards/g4_i2c1_hsi_adc1_pllp.overlay"
     platform_allow: nucleo_g474re
   drivers.stm32_clock_configuration.common_device.f0.i2c1_hsi:
     extra_args: DTC_OVERLAY_FILE="boards/f0_i2c1_hsi.overlay"

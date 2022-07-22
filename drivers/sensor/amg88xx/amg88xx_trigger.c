@@ -39,6 +39,10 @@ int amg88xx_attr_set(const struct device *dev,
 	uint8_t intl_reg;
 	uint8_t inth_reg;
 
+	if (!config->int_gpio.port) {
+		return -ENOTSUP;
+	}
+
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
 	}
@@ -133,6 +137,10 @@ int amg88xx_trigger_set(const struct device *dev,
 {
 	struct amg88xx_data *drv_data = dev->data;
 	const struct amg88xx_config *config = dev->config;
+
+	if (!config->int_gpio.port) {
+		return -ENOTSUP;
+	}
 
 	if (i2c_reg_write_byte_dt(&config->i2c,
 			       AMG88XX_INTC, AMG88XX_INTC_DISABLED)) {

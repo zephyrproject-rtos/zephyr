@@ -11,9 +11,6 @@ properties:
     interrupts:
       required: true
 
-    label:
-      required: true
-
     peripheral-id:
       type: int
       description: peripheral ID

@@ -3,37 +3,12 @@
 # Copyright (c) 2018 Foundries.io
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig UART_RV32M1_LPUART
+config UART_RV32M1_LPUART
 	bool "RV32M1 LPUART driver"
-	depends on HAS_RV32M1_LPUART && CLOCK_CONTROL
+	default y
+	depends on DT_HAS_OPENISA_RV32M1_LPUART_ENABLED
+	depends on CLOCK_CONTROL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  Enable the RV32M1 LPUART driver.
-
-if UART_RV32M1_LPUART
-
-config UART_RV32M1_LPUART_0
-	bool "UART 0"
-	help
-	  Enable UART 0.
-
-config UART_RV32M1_LPUART_1
-	bool "UART 1"
-	depends on RV32M1_INTMUX
-	help
-	  Enable UART 1.
-
-config UART_RV32M1_LPUART_2
-	bool "UART 2"
-	depends on RV32M1_INTMUX
-	help
-	  Enable UART 2.
-
-config UART_RV32M1_LPUART_3
-	bool "UART 3"
-	depends on RV32M1_INTMUX
-	help
-	  Enable UART 3.
-
-endif # UART_RV32M1_LPUART

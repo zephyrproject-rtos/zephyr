@@ -16,13 +16,13 @@
 
 LOG_MODULE_REGISTER(opt3001, CONFIG_SENSOR_LOG_LEVEL);
 
-static int opt3001_reg_read(struct opt3001_data *drv_data, uint8_t reg,
+static int opt3001_reg_read(const struct device *dev, uint8_t reg,
 			    uint16_t *val)
 {
+	const struct opt3001_config *config = dev->config;
 	uint8_t value[2];
 
-	if (i2c_burst_read(drv_data->i2c, DT_INST_REG_ADDR(0),
-		reg, value, 2) != 0) {
+	if (i2c_burst_read_dt(&config->i2c, reg, value, 2) != 0) {
 		return -EIO;
 	}
 
@@ -31,9 +31,10 @@ static int opt3001_reg_read(struct opt3001_data *drv_data, uint8_t reg,
 	return 0;
 }
 
-static int opt3001_reg_write(struct opt3001_data *drv_data, uint8_t reg,
+static int opt3001_reg_write(const struct device *dev, uint8_t reg,
 			     uint16_t val)
 {
+	const struct opt3001_config *config = dev->config;
 	uint8_t new_value[2];
 
 	new_value[0] = val >> 8;
@@ -41,24 +42,23 @@ static int opt3001_reg_write(struct opt3001_data *drv_data, uint8_t reg,
 
 	uint8_t tx_buf[3] = { reg, new_value[0], new_value[1] };
 
-	return i2c_write(drv_data->i2c, tx_buf, sizeof(tx_buf),
-			 DT_INST_REG_ADDR(0));
+	return i2c_write_dt(&config->i2c, tx_buf, sizeof(tx_buf));
 }
 
-static int opt3001_reg_update(struct opt3001_data *drv_data, uint8_t reg,
+static int opt3001_reg_update(const struct device *dev, uint8_t reg,
 			      uint16_t mask, uint16_t val)
 {
 	uint16_t old_val;
 	uint16_t new_val;
 
-	if (opt3001_reg_read(drv_data, reg, &old_val) != 0) {
+	if (opt3001_reg_read(dev, reg, &old_val) != 0) {
 		return -EIO;
 	}
 
 	new_val = old_val & ~mask;
 	new_val |= val & mask;
 
-	return opt3001_reg_write(drv_data, reg, new_val);
+	return opt3001_reg_write(dev, reg, new_val);
 }
 
 static int opt3001_sample_fetch(const struct device *dev,
@@ -71,7 +71,7 @@ static int opt3001_sample_fetch(const struct device *dev,
 
 	drv_data->sample = 0U;
 
-	if (opt3001_reg_read(drv_data, OPT3001_REG_RESULT, &value) != 0) {
+	if (opt3001_reg_read(dev, OPT3001_REG_RESULT, &value) != 0) {
 		return -EIO;
 	}
 
@@ -114,18 +114,15 @@ static const struct sensor_driver_api opt3001_driver_api = {
 
 static int opt3001_chip_init(const struct device *dev)
 {
-	struct opt3001_data *drv_data = dev->data;
+	const struct opt3001_config *config = dev->config;
 	uint16_t value;
 
-	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (drv_data->i2c == NULL) {
-		LOG_ERR("Failed to get pointer to %s device!",
-			DT_INST_BUS_LABEL(0));
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
-	if (opt3001_reg_read(drv_data, OPT3001_REG_MANUFACTURER_ID,
-		&value) != 0) {
+	if (opt3001_reg_read(dev, OPT3001_REG_MANUFACTURER_ID, &value) != 0) {
 		return -EIO;
 	}
 
@@ -134,8 +131,7 @@ static int opt3001_chip_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	if (opt3001_reg_read(drv_data, OPT3001_REG_DEVICE_ID,
-		&value) != 0) {
+	if (opt3001_reg_read(dev, OPT3001_REG_DEVICE_ID, &value) != 0) {
 		return -EIO;
 	}
 
@@ -144,7 +140,7 @@ static int opt3001_chip_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	if (opt3001_reg_update(drv_data, OPT3001_REG_CONFIG,
+	if (opt3001_reg_update(dev, OPT3001_REG_CONFIG,
 			       OPT3001_CONVERSION_MODE_MASK,
 			       OPT3001_CONVERSION_MODE_CONTINUOUS) != 0) {
 		LOG_ERR("Failed to set mode to continuous conversion");
@@ -163,8 +159,15 @@ int opt3001_init(const struct device *dev)
 	return 0;
 }
 
-static struct opt3001_data opt3001_drv_data;
+#define OPT3001_DEFINE(inst)									\
+	static struct opt3001_data opt3001_data_##inst;						\
+												\
+	static const struct opt3001_config opt3001_config_##inst = {				\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, opt3001_init, NULL,						\
+			      &opt3001_data_##inst, &opt3001_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &opt3001_driver_api);		\
 
-DEVICE_DT_INST_DEFINE(0, opt3001_init, NULL,
-		    &opt3001_drv_data, NULL, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &opt3001_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(OPT3001_DEFINE)

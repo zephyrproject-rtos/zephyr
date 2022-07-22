@@ -21,6 +21,7 @@
  */
 #define RV_ECALL_RUNTIME_EXCEPT		0
 #define RV_ECALL_IRQ_OFFLOAD		1
+#define RV_ECALL_SCHEDULE		2
 
 #ifndef _ASMLANGUAGE
 

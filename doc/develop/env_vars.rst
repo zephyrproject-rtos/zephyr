@@ -187,6 +187,9 @@ the :ref:`toolchain <gs_toolchain>` used to build Zephyr applications.
   ``ZEPHYR_TOOLCHAIN_VARIANT=llvm``, use :envvar:`LLVM_TOOLCHAIN_PATH`. (Note
   the capitalization when forming the environment variable name.)
 
+You might need to update some of these variables when you
+:ref:`update the Zephyr SDK toolchain <gs_toolchain_update>`.
+
 Emulators and boards may also depend on additional programs. The build system
 will try to locate those programs automatically, but may rely on additional
 CMake or environment variables to do so. Please consult your emulator's or

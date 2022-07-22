@@ -182,7 +182,7 @@ union lis2dh_sample {
 
 union lis2dh_bus_cfg {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	uint16_t i2c_slv_addr;
+	struct i2c_dt_spec i2c;
 #endif
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
@@ -198,7 +198,6 @@ struct temperature {
 };
 
 struct lis2dh_config {
-	const char *bus_name;
 	int (*bus_init)(const struct device *dev);
 	const union lis2dh_bus_cfg bus_cfg;
 #ifdef CONFIG_LIS2DH_TRIGGER

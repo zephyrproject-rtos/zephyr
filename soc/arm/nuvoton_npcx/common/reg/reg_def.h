@@ -280,6 +280,12 @@ struct glue_reg {
 	volatile uint8_t PSL_CTS;
 };
 
+/* GLUE register fields */
+/* PSL input detection mode is configured by bits 7:4 of PSL_CTS */
+#define NPCX_PSL_CTS_MODE_BIT(bit) BIT(bit + 4)
+/* PSL input assertion events are reported by bits 3:0 of PSL_CTS */
+#define NPCX_PSL_CTS_EVENT_BIT(bit) BIT(bit)
+
 /*
  * Universal Asynchronous Receiver-Transmitter (UART) device registers
  */

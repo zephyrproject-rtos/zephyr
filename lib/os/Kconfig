@@ -78,6 +78,25 @@ config SPSC_PBUF_USE_CACHE
 config SPSC_PBUF_NO_CACHE
 	bool
 
+if SPSC_PBUF_CACHE_FLAG || SPSC_PBUF_CACHE_ALWAYS
+
+config SPSC_PBUF_REMOTE_DCACHE_LINE
+	int "Remote cache line size"
+	default 32
+	help
+	  If a packet buffer is used for data sharing between two cores then
+	  this value should be set to the data cache line size of the remote core.
+	  If local data cache line is detected at runtime then it should be
+	  maximum of local and remote line size.
+
+endif # SPSC_PBUF_CACHE_FLAG || SPSC_PBUF_CACHE_ALWAYS
+
+config SPSC_PBUF_UTILIZATION
+	bool "Track maximum utilization"
+	help
+	  When enabled, maximum utilization is tracked which can be used to
+	  determine the size of the packet buffer.
+
 endif # SPSC_PBUF
 
 config SHARED_MULTI_HEAP

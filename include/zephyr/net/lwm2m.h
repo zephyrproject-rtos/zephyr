@@ -46,6 +46,7 @@
 #define LWM2M_OBJECT_CONNECTIVITY_STATISTICS_ID 7
 #define LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID     9
 #define LWM2M_OBJECT_PORTFOLIO_ID               16
+#define LWM2M_OBJECT_EVENT_LOG_ID               20
 #define LWM2M_OBJECT_GATEWAY_ID                 25
 /* clang-format on */
 
@@ -556,6 +557,20 @@ int lwm2m_swmgmt_set_write_package_cb(uint16_t obj_inst_id, lwm2m_engine_set_dat
  * return 0 on success, otherwise a negative integer.
  */
 int lwm2m_swmgmt_install_completed(uint16_t obj_inst_id, int error_code);
+
+#endif
+
+#if defined(CONFIG_LWM2M_EVENT_LOG_OBJ_SUPPORT)
+
+/**
+ * @brief Set callback to read log data
+ *
+ * The callback will be executed when the LWM2M read operation gets called
+ * on the corresponding object.
+ *
+ * @param[in] cb A callback function for handling the read event.
+ */
+void lwm2m_event_log_set_read_log_data_cb(lwm2m_engine_get_data_cb_t cb);
 
 #endif
 

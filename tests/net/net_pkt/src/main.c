@@ -106,8 +106,7 @@ static void pkt_print_cursor(struct net_pkt *pkt)
 /*****************************\
  * HOW TO ALLOCATE - 2 TESTS *
 \*****************************/
-
-static void test_net_pkt_allocate_wo_buffer(void)
+ZTEST(net_pkt_test_suite, test_net_pkt_allocate_wo_buffer)
 {
 	struct net_pkt *pkt;
 
@@ -131,7 +130,7 @@ static void test_net_pkt_allocate_wo_buffer(void)
 		     "Pkt not properly unreferenced");
 }
 
-static void test_net_pkt_allocate_with_buffer(void)
+ZTEST(net_pkt_test_suite, test_net_pkt_allocate_with_buffer)
 {
 	struct net_pkt *pkt;
 
@@ -208,7 +207,7 @@ static void test_net_pkt_allocate_with_buffer(void)
  * HOW TO R/W A PACKET -  TESTS *
 \********************************/
 
-static void test_net_pkt_basics_of_rw(void)
+ZTEST(net_pkt_test_suite, test_net_pkt_basics_of_rw)
 {
 	struct net_pkt_cursor backup;
 	struct net_pkt *pkt;
@@ -391,7 +390,7 @@ static void test_net_pkt_basics_of_rw(void)
 		     "Pkt not properly unreferenced");
 }
 
-void test_net_pkt_advanced_basics(void)
+ZTEST(net_pkt_test_suite, test_net_pkt_advanced_basics)
 {
 	struct net_pkt_cursor backup;
 	struct net_pkt *pkt;
@@ -484,7 +483,7 @@ void test_net_pkt_advanced_basics(void)
 	 */
 }
 
-void test_net_pkt_easier_rw_usage(void)
+ZTEST(net_pkt_test_suite, test_net_pkt_easier_rw_usage)
 {
 	struct net_pkt *pkt;
 	int ret;
@@ -583,7 +582,7 @@ struct net_buf b1 = {
 	.__buf  = b1_data,
 };
 
-void test_net_pkt_copy(void)
+ZTEST(net_pkt_test_suite, test_net_pkt_copy)
 {
 	struct net_pkt *pkt_src;
 	struct net_pkt *pkt_dst;
@@ -640,7 +639,7 @@ void test_net_pkt_copy(void)
 
 #define PULL_TEST_PKT_DATA_SIZE 600
 
-void test_net_pkt_pull(void)
+ZTEST(net_pkt_test_suite, test_net_pkt_pull)
 {
 	const int PULL_AMOUNT = 8;
 	const int LARGE_PULL_AMOUNT = 200;
@@ -754,7 +753,7 @@ void test_net_pkt_pull(void)
 	net_pkt_unref(dummy_pkt);
 }
 
-void test_net_pkt_clone(void)
+ZTEST(net_pkt_test_suite, test_net_pkt_clone)
 {
 	uint8_t buf[26] = {"abcdefghijklmnopqrstuvwxyz"};
 	struct net_pkt *pkt;
@@ -794,7 +793,8 @@ void test_net_pkt_clone(void)
 }
 
 NET_BUF_POOL_FIXED_DEFINE(test_net_pkt_headroom_pool, 4, 2, 4, NULL);
-void test_net_pkt_headroom(void)
+
+ZTEST(net_pkt_test_suite, test_net_pkt_headroom)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag1;
@@ -870,7 +870,8 @@ void test_net_pkt_headroom(void)
 }
 
 NET_BUF_POOL_FIXED_DEFINE(test_net_pkt_headroom_copy_pool, 2, 4, 4, NULL);
-void test_net_pkt_headroom_copy(void)
+
+ZTEST(net_pkt_test_suite, test_net_pkt_headroom_copy)
 {
 	struct net_pkt *pkt_src;
 	struct net_pkt *pkt_dst;
@@ -917,7 +918,7 @@ void test_net_pkt_headroom_copy(void)
 	net_pkt_unref(pkt_src);
 }
 
-static void test_net_pkt_get_contiguous_len(void)
+ZTEST(net_pkt_test_suite, test_net_pkt_get_contiguous_len)
 {
 	size_t cont_len;
 	int res;
@@ -979,7 +980,7 @@ static void test_net_pkt_get_contiguous_len(void)
 	net_pkt_unref(pkt);
 }
 
-void test_net_pkt_remove_tail(void)
+ZTEST(net_pkt_test_suite, test_net_pkt_remove_tail)
 {
 	struct net_pkt *pkt;
 	int err;
@@ -1063,7 +1064,7 @@ void test_net_pkt_remove_tail(void)
 	net_pkt_unref(pkt);
 }
 
-void test_net_pkt_shallow_clone_noleak_buf(void)
+ZTEST(net_pkt_test_suite, test_net_pkt_shallow_clone_noleak_buf)
 {
 	const int bufs_to_allocate = 3;
 	const size_t pkt_size = CONFIG_NET_BUF_DATA_SIZE * bufs_to_allocate;
@@ -1094,110 +1095,95 @@ void test_net_pkt_shallow_clone_noleak_buf(void)
 
 }
 
-#define TEST_NET_PKT_SHALLOW_CLONE_APPEND_BUF(extra_frag_refcounts)				 \
-	void test_net_pkt_shallow_clone_append_buf_##extra_frag_refcounts(void)			 \
-	{											 \
-		const int bufs_to_allocate = 3;							 \
-		const int bufs_frag = 2;							 \
-												 \
-		zassert_true(bufs_frag + bufs_to_allocate < CONFIG_NET_BUF_DATA_SIZE,		 \
-			     "Total bufs to allocate must less than available space");		 \
-												 \
-		const size_t pkt_size = CONFIG_NET_BUF_DATA_SIZE * bufs_to_allocate;		 \
-												 \
-		struct net_pkt *pkt, *shallow_pkt;						 \
-		struct net_buf *frag_head;							 \
-		struct net_buf *frag;								 \
-		struct net_buf_pool *tx_data;							 \
-												 \
-		pkt = net_pkt_alloc_with_buffer(NULL, pkt_size,					 \
-						AF_UNSPEC, 0, K_NO_WAIT);			 \
-		zassert_true(pkt != NULL, "Pkt not allocated");					 \
-												 \
-		net_pkt_get_info(NULL, NULL, NULL, &tx_data);					 \
-		zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count		 \
-			      - bufs_to_allocate, "Incorrect net buf allocation");		 \
-												 \
-		shallow_pkt = net_pkt_shallow_clone(pkt, K_NO_WAIT);				 \
-		zassert_true(shallow_pkt != NULL, "Pkt not allocated");				 \
-												 \
-		/* allocate buffers for the frag */						 \
-		for (int i = 0; i < bufs_frag; i++) {						 \
-			frag = net_buf_alloc_len(tx_data, CONFIG_NET_BUF_DATA_SIZE, K_NO_WAIT);	 \
-			zassert_true(frag != NULL, "Frag not allocated");			 \
-			net_pkt_append_buffer(pkt, frag);					 \
-			if (i == 0) {								 \
-				frag_head = frag;						 \
-			}									 \
-		}										 \
-												 \
-		zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count		 \
-			      - bufs_to_allocate - bufs_frag, "Incorrect net buf allocation");	 \
-												 \
-		/* Note: if the frag is appended to a net buf, then the nut buf */		 \
-		/* takes ownership of one ref count. Otherwise net_buf_unref() must */		 \
-		/* be called on the frag to free the buffers. */				 \
-												 \
-		for (int i = 0; i < extra_frag_refcounts; i++) {				 \
-			frag_head = net_buf_ref(frag_head);					 \
-		}										 \
-												 \
-		net_pkt_unref(pkt);								 \
-												 \
-		/* we shouldn't have freed any buffers yet */					 \
-		zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count		 \
-			      - bufs_to_allocate - bufs_frag,					 \
-			      "Incorrect net buf allocation");					 \
-												 \
-		net_pkt_unref(shallow_pkt);							 \
-												 \
-		if (extra_frag_refcounts == 0) {						 \
-			/* if no extra ref counts to frag were added then we should free */	 \
-			/* all the buffers at this point */					 \
-			zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count,	 \
-				      "Leak detected");						 \
-		} else {									 \
-			/* otherwise only bufs_frag should be available, and frag could */	 \
-			/* still used at this point */						 \
-			zassert_equal(atomic_get(&tx_data->avail_count),			 \
-				      tx_data->buf_count - bufs_frag, "Leak detected");		 \
-		}										 \
-												 \
-		for (int i = 0; i < extra_frag_refcounts; i++) {				 \
-			net_buf_unref(frag_head);						 \
-		}										 \
-												 \
-		/* all the buffers should be freed now */					 \
-		zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count,		 \
-			      "Leak detected");							 \
+void test_net_pkt_shallow_clone_append_buf(int extra_frag_refcounts)
+{
+	const int bufs_to_allocate = 3;
+	const int bufs_frag = 2;
+
+	zassert_true(bufs_frag + bufs_to_allocate < CONFIG_NET_BUF_DATA_SIZE,
+		     "Total bufs to allocate must less than available space");
+
+	const size_t pkt_size = CONFIG_NET_BUF_DATA_SIZE * bufs_to_allocate;
+
+	struct net_pkt *pkt, *shallow_pkt;
+	struct net_buf *frag_head;
+	struct net_buf *frag;
+	struct net_buf_pool *tx_data;
+
+	pkt = net_pkt_alloc_with_buffer(NULL, pkt_size, AF_UNSPEC, 0, K_NO_WAIT);
+	zassert_true(pkt != NULL, "Pkt not allocated");
+
+	net_pkt_get_info(NULL, NULL, NULL, &tx_data);
+	zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count
+		      - bufs_to_allocate, "Incorrect net buf allocation");
+
+	shallow_pkt = net_pkt_shallow_clone(pkt, K_NO_WAIT);
+	zassert_true(shallow_pkt != NULL, "Pkt not allocated");
+
+	/* allocate buffers for the frag */
+	for (int i = 0; i < bufs_frag; i++) {
+		frag = net_buf_alloc_len(tx_data, CONFIG_NET_BUF_DATA_SIZE, K_NO_WAIT);
+		zassert_true(frag != NULL, "Frag not allocated");
+		net_pkt_append_buffer(pkt, frag);
+		if (i == 0) {
+			frag_head = frag;
+		}
 	}
 
-TEST_NET_PKT_SHALLOW_CLONE_APPEND_BUF(0)
-TEST_NET_PKT_SHALLOW_CLONE_APPEND_BUF(1)
-TEST_NET_PKT_SHALLOW_CLONE_APPEND_BUF(2)
+	zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count
+		      - bufs_to_allocate - bufs_frag, "Incorrect net buf allocation");
 
-void test_main(void)
-{
-	eth_if = net_if_get_default();
+	/* Note: if the frag is appended to a net buf, then the nut buf */
+	/* takes ownership of one ref count. Otherwise net_buf_unref() must */
+	/* be called on the frag to free the buffers. */
 
-	ztest_test_suite(net_pkt_tests,
-			 ztest_unit_test(test_net_pkt_allocate_wo_buffer),
-			 ztest_unit_test(test_net_pkt_allocate_with_buffer),
-			 ztest_unit_test(test_net_pkt_basics_of_rw),
-			 ztest_unit_test(test_net_pkt_advanced_basics),
-			 ztest_unit_test(test_net_pkt_easier_rw_usage),
-			 ztest_unit_test(test_net_pkt_copy),
-			 ztest_unit_test(test_net_pkt_pull),
-			 ztest_unit_test(test_net_pkt_clone),
-			 ztest_unit_test(test_net_pkt_headroom),
-			 ztest_unit_test(test_net_pkt_headroom_copy),
-			 ztest_unit_test(test_net_pkt_get_contiguous_len),
-			 ztest_unit_test(test_net_pkt_remove_tail),
-			 ztest_unit_test(test_net_pkt_shallow_clone_noleak_buf),
-			 ztest_unit_test(test_net_pkt_shallow_clone_append_buf_0),
-			 ztest_unit_test(test_net_pkt_shallow_clone_append_buf_1),
-			 ztest_unit_test(test_net_pkt_shallow_clone_append_buf_2)
-		);
+	for (int i = 0; i < extra_frag_refcounts; i++) {
+		frag_head = net_buf_ref(frag_head);
+	}
 
-	ztest_run_test_suite(net_pkt_tests);
+	net_pkt_unref(pkt);
+
+	/* we shouldn't have freed any buffers yet */
+	zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count
+		      - bufs_to_allocate - bufs_frag,
+		      "Incorrect net buf allocation");
+
+	net_pkt_unref(shallow_pkt);
+
+	if (extra_frag_refcounts == 0) {
+		/* if no extra ref counts to frag were added then we should free */
+		/* all the buffers at this point */
+		zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count,
+			      "Leak detected");
+	} else {
+		/* otherwise only bufs_frag should be available, and frag could */
+		/* still used at this point */
+		zassert_equal(atomic_get(&tx_data->avail_count),
+			      tx_data->buf_count - bufs_frag, "Leak detected");
+	}
+
+	for (int i = 0; i < extra_frag_refcounts; i++) {
+		net_buf_unref(frag_head);
+	}
+
+	/* all the buffers should be freed now */
+	zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count,
+		      "Leak detected");
 }
+
+ZTEST(net_pkt_test_suite, test_net_pkt_shallow_clone_append_buf_0)
+{
+	test_net_pkt_shallow_clone_append_buf(0);
+}
+
+ZTEST(net_pkt_test_suite, test_net_pkt_shallow_clone_append_buf_1)
+{
+	test_net_pkt_shallow_clone_append_buf(2);
+}
+
+ZTEST(net_pkt_test_suite, test_net_pkt_shallow_clone_append_buf_2)
+{
+	test_net_pkt_shallow_clone_append_buf(2);
+}
+
+ZTEST_SUITE(net_pkt_test_suite, NULL, NULL, NULL, NULL, NULL);

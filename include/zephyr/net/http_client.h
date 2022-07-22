@@ -165,8 +165,9 @@ struct http_response {
 	 */
 	size_t content_length;
 
-	/** Content length parsed. This should be the same as
-	 * the content_length field if parsing was ok. Will be
+	/** Amount of data given to the response callback so far, including the
+	 * current data given to the callback. This should be equal to the
+	 * content_length field once the entire body has been received. Will be
 	 * zero if a null response is given.
 	 */
 	size_t processed;

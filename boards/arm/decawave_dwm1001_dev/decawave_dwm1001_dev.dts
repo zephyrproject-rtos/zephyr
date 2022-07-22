@@ -71,6 +71,7 @@
 		led2-red   = &led2_red;
 		led3-blue  = &led3_blue;
 		pwm-led0   = &pwm_led0_red;
+		watchdog0 = &wdt0;
 	};
 
 };

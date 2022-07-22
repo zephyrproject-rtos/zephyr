@@ -26,7 +26,8 @@ struct sof_man_module_type {
 	uint32_t auto_start:1;
 	uint32_t domain_ll:1;
 	uint32_t domain_dp:1;
-	uint32_t rsvd_:25;
+	uint32_t lib_code:1;
+	uint32_t rsvd_:24;
 };
 
 /* segment flags.type */

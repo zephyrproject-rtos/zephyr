@@ -136,11 +136,10 @@ void ataes132a_atmel_crc(uint8_t *input, uint8_t length,
 	*(uint16_t *)output = crc << 8 | crc >> 8;
 }
 
-static inline int burst_write_i2c(const struct device *dev, uint16_t dev_addr,
+static inline int burst_write_i2c(const struct i2c_dt_spec *spec,
 				  uint16_t start_addr, uint8_t *buf,
 				  uint8_t num_bytes)
 {
-	const struct i2c_driver_api *api = dev->api;
 	uint8_t addr_buffer[2];
 	struct i2c_msg msg[2];
 
@@ -154,15 +153,14 @@ static inline int burst_write_i2c(const struct device *dev, uint16_t dev_addr,
 	msg[1].len = num_bytes;
 	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
-	return api->transfer(dev, msg, 2, dev_addr);
+	return i2c_transfer_dt(spec, msg, 2);
 }
 
 
-static inline int burst_read_i2c(const struct device *dev, uint16_t dev_addr,
+static inline int burst_read_i2c(const struct i2c_dt_spec *spec,
 				 uint16_t start_addr, uint8_t *buf,
 				 uint8_t num_bytes)
 {
-	const struct i2c_driver_api *api = dev->api;
 	uint8_t addr_buffer[2];
 	struct i2c_msg msg[2];
 
@@ -176,25 +174,23 @@ static inline int burst_read_i2c(const struct device *dev, uint16_t dev_addr,
 	msg[1].len = num_bytes;
 	msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
 
-	return api->transfer(dev, msg, 2, dev_addr);
+	return i2c_transfer_dt(spec, msg, 2);
 }
 
-static inline int read_reg_i2c(const struct device *dev, uint16_t dev_addr,
+static inline int read_reg_i2c(const struct i2c_dt_spec *spec,
 			       uint16_t reg_addr, uint8_t *value)
 {
-	return burst_read_i2c(dev, dev_addr, reg_addr, value, 1);
+	return burst_read_i2c(spec, reg_addr, value, 1);
 }
 
-static inline int write_reg_i2c(const struct device *dev, uint16_t dev_addr,
+static inline int write_reg_i2c(const struct i2c_dt_spec *spec,
 				uint16_t reg_addr, uint8_t value)
 {
-	return burst_write_i2c(dev, dev_addr, reg_addr, &value, 1);
+	return burst_write_i2c(spec, reg_addr, &value, 1);
 }
 
 struct ataes132a_device_config {
-	const char *i2c_port;
-	uint16_t i2c_addr;
-	uint8_t i2c_speed;
+	struct i2c_dt_spec i2c;
 };
 
 struct ataes132a_device_data {

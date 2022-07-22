@@ -4,110 +4,125 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "test_gpio_get_direction.h"
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <ztest.h>
 
-static void test_disconnect(void)
+#define TEST_NODE            DT_GPIO_CTLR(DT_ALIAS(led0), gpios)
+#define TEST_PIN             DT_GPIO_PIN(DT_ALIAS(led0), gpios)
+#define TEST_PIN_DTS_FLAGS   DT_GPIO_FLAGS(DT_ALIAS(led0), gpios)
+
+struct gpio_get_direction_fixture {
+	const struct device *port;
+	gpio_pin_t pin;
+	gpio_flags_t flags;
+};
+
+static void *gpio_get_direction_setup(void)
+{
+	static struct gpio_get_direction_fixture fixture;
+
+	fixture.pin = TEST_PIN;
+	fixture.port = DEVICE_DT_GET(TEST_NODE);
+
+	return &fixture;
+}
+
+static void gpio_get_direction_before(void *arg)
+{
+	struct gpio_get_direction_fixture *fixture = (struct gpio_get_direction_fixture *)arg;
+
+	zassert_true(device_is_ready(fixture->port), "GPIO device is not ready");
+}
+
+static void common(struct gpio_get_direction_fixture *fixture)
 {
 	int rv;
-	const struct device *port;
-	gpio_pin_t pin = TEST_PIN;
-	gpio_flags_t flags = GPIO_DISCONNECTED;
 
-	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	rv = gpio_pin_configure(fixture->port, fixture->pin, fixture->flags);
+	if (rv == -ENOTSUP) {
+		/* some drivers / hw might not support e.g. input-output or disconnect */
+		ztest_test_skip();
+	}
 
-	rv = gpio_pin_configure(port, pin, flags);
-	zassert_equal(0, rv, "gpio_pin_configure() failed: %d", rv);
+	zassert_ok(rv, "gpio_pin_configure() failed: %d", rv);
+}
 
-	rv = gpio_pin_is_input(port, pin);
+ZTEST_F(gpio_get_direction, test_disconnect)
+{
+	int rv;
+
+	fixture->flags = GPIO_DISCONNECTED;
+	common(fixture);
+
+	rv = gpio_pin_is_input(fixture->port, fixture->pin);
 	if (rv == -ENOSYS) {
+		/* gpio_pin_direction() is not supported in the driver */
 		ztest_test_skip();
 	}
 
 	zassert_equal(false, rv, "gpio_pin_is_input() failed: %d", rv);
 
-	rv = gpio_pin_is_output(port, pin);
+	rv = gpio_pin_is_output(fixture->port, fixture->pin);
 	zassert_equal(false, rv, "gpio_pin_is_output() failed: %d", rv);
 }
 
-static void test_input(void)
+ZTEST_F(gpio_get_direction, test_input)
 {
 	int rv;
-	const struct device *port;
-	gpio_pin_t pin = TEST_PIN;
-	gpio_flags_t flags = GPIO_INPUT;
+	fixture->flags = GPIO_INPUT;
 
-	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	common(fixture);
 
-	rv = gpio_pin_configure(port, pin, flags);
-	zassert_equal(0, rv, "gpio_pin_configure() failed: %d", rv);
-
-	rv = gpio_pin_is_input(port, pin);
+	rv = gpio_pin_is_input(fixture->port, fixture->pin);
 	if (rv == -ENOSYS) {
+		/* gpio_pin_direction() is not supported in the driver */
 		ztest_test_skip();
 	}
 
 	zassert_equal(true, rv, "gpio_pin_is_input() failed: %d", rv);
 
-	rv = gpio_pin_is_output(port, pin);
+	rv = gpio_pin_is_output(fixture->port, fixture->pin);
 	zassert_equal(false, rv, "gpio_pin_is_output() failed: %d", rv);
 }
 
-static void test_output(void)
+ZTEST_F(gpio_get_direction, test_output)
 {
 	int rv;
-	const struct device *port;
-	gpio_pin_t pin = TEST_PIN;
-	gpio_flags_t flags = GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW;
+	fixture->flags = GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW;
 
-	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	common(fixture);
 
-	rv = gpio_pin_configure(port, pin, flags);
-	zassert_equal(0, rv, "gpio_pin_configure() failed: %d", rv);
-
-	rv = gpio_pin_is_input(port, pin);
+	rv = gpio_pin_is_input(fixture->port, fixture->pin);
 	if (rv == -ENOSYS) {
+		/* gpio_pin_direction() is not supported in the driver */
 		ztest_test_skip();
 	}
 
 	zassert_equal(false, rv, "gpio_pin_is_input() failed: %d", rv);
 
-	rv = gpio_pin_is_output(port, pin);
+	rv = gpio_pin_is_output(fixture->port, fixture->pin);
 	zassert_equal(true, rv, "gpio_pin_is_output() failed: %d", rv);
 }
 
-static void test_input_output(void)
+ZTEST_F(gpio_get_direction, test_input_output)
 {
 	int rv;
-	const struct device *port;
-	gpio_pin_t pin = TEST_PIN;
-	gpio_flags_t flags = GPIO_INPUT | GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW;
+	fixture->flags = GPIO_INPUT | GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW;
 
-	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	common(fixture);
 
-	rv = gpio_pin_configure(port, pin, flags);
-	zassert_equal(0, rv, "gpio_pin_configure() failed: %d", rv);
-
-	rv = gpio_pin_is_input(port, pin);
+	rv = gpio_pin_is_input(fixture->port, fixture->pin);
 	if (rv == -ENOSYS) {
+		/* some drivers / gpio hw do not support input-output mode */
 		ztest_test_skip();
 	}
 
 	zassert_equal(true, rv, "gpio_pin_is_input() failed: %d", rv);
 
-	rv = gpio_pin_is_output(port, pin);
+	rv = gpio_pin_is_output(fixture->port, fixture->pin);
 	zassert_equal(true, rv, "gpio_pin_is_output() failed: %d", rv);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(gpio_get_direction,
-		ztest_unit_test(test_disconnect),
-		ztest_unit_test(test_input),
-		ztest_unit_test(test_output),
-		ztest_unit_test(test_input_output));
-	ztest_run_test_suite(gpio_get_direction);
-}
+ZTEST_SUITE(gpio_get_direction, NULL, gpio_get_direction_setup, gpio_get_direction_before, NULL,
+	    NULL);

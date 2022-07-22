@@ -284,7 +284,7 @@ void check_stack_overflow(k_thread_entry_t handler, uint32_t flags)
  *
  * @ingroup kernel_common_tests
  */
-void test_fatal(void)
+ZTEST(fatal_exception, test_fatal)
 {
 	rv = TC_PASS;
 
@@ -426,8 +426,7 @@ void test_fatal(void)
 #endif /* !CONFIG_ARCH_POSIX */
 }
 
-/*test case main entry*/
-void test_main(void)
+static void *fatal_setup(void)
 {
 #if defined(CONFIG_DEMAND_PAGING) && \
 	!defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
@@ -477,7 +476,7 @@ void test_main(void)
 	* && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 	*/
 
-	ztest_test_suite(fatal,
-			ztest_unit_test(test_fatal));
-	ztest_run_test_suite(fatal);
+	return NULL;
 }
+
+ZTEST_SUITE(fatal_exception, NULL, fatal_setup, NULL, NULL, NULL);

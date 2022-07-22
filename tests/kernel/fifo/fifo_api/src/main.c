@@ -21,26 +21,8 @@
  */
 
 #include <ztest.h>
-extern void test_fifo_thread2thread(void);
-extern void test_fifo_thread2isr(void);
-extern void test_fifo_isr2thread(void);
-extern void test_fifo_get_fail(void);
-extern void test_fifo_loop(void);
-extern void test_fifo_cancel_wait(void);
-extern void test_fifo_is_empty_thread(void);
-extern void test_fifo_is_empty_isr(void);
 
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(fifo_api,
-			 ztest_1cpu_unit_test(test_fifo_thread2thread),
-			 ztest_unit_test(test_fifo_thread2isr),
-			 ztest_unit_test(test_fifo_isr2thread),
-			 ztest_unit_test(test_fifo_get_fail),
-			 ztest_1cpu_unit_test(test_fifo_loop),
-			 ztest_1cpu_unit_test(test_fifo_cancel_wait),
-			 ztest_unit_test(test_fifo_is_empty_thread),
-			 ztest_unit_test(test_fifo_is_empty_isr));
-	ztest_run_test_suite(fifo_api);
-}
+ZTEST_SUITE(fifo_api, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST_SUITE(fifo_api_1cpu, NULL, NULL,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

@@ -1,10 +1,19 @@
+common:
+  tags: clib
+  platform_exclude: native_posix native_posix_64 nrf52_bsim
 tests:
   libraries.libc:
-    tags: clib ignore_faults
-    platform_exclude: native_posix native_posix_64 nrf52_bsim
+    tags: ignore_faults
   libraries.picolibc:
     filter: CONFIG_PICOLIBC_SUPPORTED
-    tags: clib picolibc ignore_faults
+    tags: picolibc ignore_faults
     extra_configs:
       - CONFIG_PICOLIBC=y
-      - CONFIG_PICOLIBC_ALIGNED_HEAP_SIZE=8192
+  libraries.libc.minimal.strerror_table:
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+      - CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE=y
+  libraries.libc.minimal.no_strerror_table:
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+      - CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE=n

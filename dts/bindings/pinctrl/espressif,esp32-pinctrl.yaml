@@ -2,12 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    Espressif's Pin controller Node
-    Based on pincfg-node.yaml binding.
     Espressif's pin controller is in charge of controlling pin configurations, pin
     functionalities and pin properties as defined by pin states. In its turn, pin
-    states are composed of pre-defined pin muxing definitions and user-provided
-    pin properties.
+    states are composed by groups of pre-defined pin muxing definitions and user
+    provided pin properties.
 
     Each Zephyr-based application has its own set of pin muxing/pin configuration
     requirements. The next steps use ESP-WROVER-KIT's I2C_0 to illustrate how one
@@ -17,31 +15,33 @@ description: |
     Suppose an application running on top of the ESP-WROVER-KIT board, for some
     reason it needs I2C_0's SDA signal to be routed to GPIO_33. When looking at
     that board's original device tree source file (i.e., 'esp_wrover_kit.dts'),
-    you'll notice that the I2C_0 node is already assigned to a set of states.
+    you'll notice that the I2C_0 node is already assigned to a pre-defined state.
     Below is highlighted the information that most interests us on that file
 
 
         #include "esp_wrover_kit-pinctrl.dtsi"
 
         &i2c0 {
-                pinctrl-0 = <&i2c0_sda_gpio21 &i2c0_scl_gpio22>;
+                ...
+                pinctrl-0 = <&i2c0_default>;
                 pinctrl-names = "default";
         };
 
 
-    From the above excerpt, the pincrl-0 property is composed of 'i2c0_sda_gpio21'
-    and 'i2c0_scl_gpio22' pin states. The naming convention makes it clear that
-    I2C_0's SDA signal is, by default, routed to GPIO_21 on the target board. Pin
-    states are defined on another file (i.e, 'esp_wrover_kit-pinctrl.dtsi') on
-    the same folder of the DTS file. Check below the excerpt describing SDA's
-    pin state
+    From the above excerpt, the pincrl-0 property is assigned the 'i2c0_default'
+    state value. This and other pin states of the board are defined on another file
+    (in this case, 'esp_wrover_kit-pinctrl.dtsi') on the same folder of the DTS file.
+    Check below the excerpt describing I2C_0's default state on that file
 
 
-        i2c0_sda_gpio21: i2c0_sda_gpio21 {
-                pinmux = <I2C0_SDA_GPIO21>;
-                bias-pull-up;
-                drive-open-drain;
-                output-high;
+        i2c0_default: i2c0_default {
+                group1 {
+                        pinmux = <I2C0_SDA_GPIO21>,
+                                 <I2C0_SCL_GPIO22>;
+                        bias-pull-up;
+                        drive-open-drain;
+                        output-high;
+                };
         };
 
 
@@ -51,10 +51,10 @@ description: |
     pull-up resistor soldered to GPIO_21's pin pad, in which case, 'bias-pull-up'
     could be no longer required.
 
-    Back to our fictional application, the previous SDA state definition does not
-    meet our expectations, remember, we would like to route I2C_0's SDA signal to
-    GPIO_33 and not to GPIO_21. To achieve our goal, we need to update the 'pinmux'
-    property accordingly.
+    Back to our fictional application, the previous I2C_0 state definition does not
+    meet our expectations as we would like to route I2C_0's SDA signal to GPIO_33
+    instead of to GPIO_21. To achieve it, we need to update the 'pinmux' property
+    accordingly.
 
     Note that replacing 'I2C0_SDA_GPIO21' by 'I2C0_SDA_GPIO33' is very tempting and
     may even work, however, unless you have checked the hardware documentation first,
@@ -82,25 +82,18 @@ description: |
     definition above, yielding
 
 
-        i2c0_sda_gpio33: i2c0_sda_gpio33 {
-                pinmux = <I2C0_SDA_GPIO33>;
-                bias-pull-up;
-                drive-open-drain;
-                output-high;
+        i2c0_default: i2c0_default {
+                group1 {
+                        pinmux = <I2C0_SDA_GPIO33>,
+                                 <I2C0_SCL_GPIO22>;
+                        bias-pull-up;
+                        drive-open-drain;
+                        output-high;
+                };
         };
 
 
-    Finally, update the I2C0 node state information in the device tree source using the
-    new (or updated) state
-
-
-        &ic20 {
-                pinctrl-0 = <&i2c0_sda_gpio33 &i2c0_scl_gpio22>;
-                pinctrl-names = "default";
-        };
-
-
-    With proper adaptations, the same steps above apply when using different
+    With proper modifications, the same steps above apply when using different
     combinations of boards, SoCs, peripherals and peripheral pins.
 
     Note: Not all pins are available for a given peripheral, it depends if that
@@ -112,49 +105,40 @@ description: |
           property is meaningful to the peripheral signal and that it is also
           available in the target GPIO.
 
+          Another thing worth noting is that all pin properties should be grouped.
+          All pins sharing common properties go under a common group (in the above
+          example, all pins are in 'group1'). Other peripherals can have more than
+          one group.
 
 compatible: "espressif,esp32-pinctrl"
 
 include:
     - name: base.yaml
-    - name: pincfg-node.yaml
+    - name: pincfg-node-group.yaml
       child-binding:
-        property-allowlist:
-          - bias-disable
-          - bias-pull-down
-          - bias-pull-up
-          - drive-push-pull
-          - drive-open-drain
-          - input-enable
-          - output-enable
-          - output-high
-          - output-low
-
-properties:
-    reg:
-      required: false
+        child-binding:
+          property-allowlist:
+            - bias-disable
+            - bias-pull-down
+            - bias-pull-up
+            - drive-push-pull
+            - drive-open-drain
+            - input-enable
+            - output-enable
+            - output-high
+            - output-low
 
 child-binding:
-    description: |
-        This binding gives a base representation of the ESP32 pins configuration
-
+  description: |
+    Espressif pin controller pin configuration state nodes.
+  child-binding:
+    description:
+      Espressif pin controller pin configuration group.
     properties:
-        pinmux:
-          required: true
-          type: int
-          description: |
-            Integer value, represents pin mux settings.
-            With:
-            - pin: The gpio pin number (0, 1, ..., GPIO_NUM_MAX)
-            - sigi: The input signal assigned to a pin, if not available, it gets
-              assigned to ESP_NOSIG
-            - sigo: The output signal assigned to a pin, if not available, it gets
-              assigned to ESP_NOSIG
-            To simplify the usage, macro is available to generate "pinmux" field.
-            This macro is available here:
-              -include/zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h
-            Some examples of macro usage:
-               GPIO 3 set as UART0's RX pin
-            ... {
-                     pinmux = <ESP32_PINMUX(3, ESP_U0RXD_IN, ESP_NOSIG)>;
-            };
+      pinmux:
+        required: true
+        type: array
+        description: |
+          Each array element represents pin muxing information of an individual
+          pin. The array elements are pre-declared macros taken from Espressif's
+          HAL.

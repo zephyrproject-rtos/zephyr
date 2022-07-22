@@ -16,6 +16,8 @@
 	aliases {
 		sw0 = &buttonA;
 		sw1 = &buttonB;
+		magn0 = &lsm303agr_magn;
+		watchdog0 = &wdt0;
 	};
 
 	chosen {
@@ -139,7 +141,7 @@
 	};
 
 	/* v1.5 variant 1 LSM303AGR */
-	lsm303agr-magn@1e {
+	lsm303agr_magn: lsm303agr-magn@1e {
 		compatible = "st,lis2mdl", "st,lsm303agr-magn";
 		status = "disabled";
 		reg = <0x1e>;

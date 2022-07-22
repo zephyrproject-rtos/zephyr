@@ -83,7 +83,7 @@ static void trigger_callback(const struct device *dev, int enable_cb)
 
 static int test_callback_add_remove(void)
 {
-	const struct device *dev = device_get_binding(DEV_NAME);
+	const struct device *dev = DEVICE_DT_GET(DEV);
 
 	/* SetUp: initialize environment */
 	int rc = init_callback(dev, callback_1, callback_2);
@@ -132,7 +132,7 @@ err_exit:
 static int test_callback_self_remove(void)
 {
 	int res = TC_FAIL;
-	const struct device *dev = device_get_binding(DEV_NAME);
+	const struct device *dev = DEVICE_DT_GET(DEV);
 
 	/* SetUp: initialize environment */
 	int rc = init_callback(dev, callback_1, callback_remove_self);
@@ -184,7 +184,7 @@ err_exit:
 
 static int test_callback_enable_disable(void)
 {
-	const struct device *dev = device_get_binding(DEV_NAME);
+	const struct device *dev = DEVICE_DT_GET(DEV);
 
 	/* SetUp: initialize environment */
 	int rc = init_callback(dev, callback_1, callback_2);

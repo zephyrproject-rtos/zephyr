@@ -1,0 +1,15 @@
+# Digilent Zybo board
+
+# Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ZYBO
+
+config BOARD
+	default "zybo"
+
+config UART_XLNX_PS
+	default y
+	depends on SERIAL
+
+endif # BOARD_ZYBO

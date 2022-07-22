@@ -42,6 +42,12 @@ LOG_MODULE_REGISTER(log);
 #define CONFIG_LOG_BUFFER_SIZE 4
 #endif
 
+#ifdef CONFIG_LOG_PROCESS_THREAD_CUSTOM_PRIORITY
+#define LOG_PROCESS_THREAD_PRIORITY CONFIG_LOG_PROCESS_THREAD_PRIORITY
+#else
+#define LOG_PROCESS_THREAD_PRIORITY K_LOWEST_APPLICATION_THREAD_PRIO
+#endif
+
 #ifndef CONFIG_LOG_TAG_MAX_LEN
 #define CONFIG_LOG_TAG_MAX_LEN 0
 #endif
@@ -54,7 +60,8 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE),
 #endif
 
 static const log_format_func_t format_table[] = {
-	[LOG_OUTPUT_TEXT] = log_output_msg_process,
+	[LOG_OUTPUT_TEXT] = IS_ENABLED(CONFIG_LOG_OUTPUT) ?
+						log_output_msg_process : NULL,
 	[LOG_OUTPUT_SYST] = IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) ?
 						log_output_msg_syst_process : NULL,
 	[LOG_OUTPUT_DICT] = IS_ENABLED(CONFIG_LOG_DICTIONARY_SUPPORT) ?
@@ -127,24 +134,26 @@ static void z_log_msg_post_finalize(void)
 	atomic_val_t cnt = atomic_inc(&buffered_cnt);
 
 	if (panic_mode) {
-		unsigned int key = irq_lock();
+		static struct k_spinlock process_lock;
+		k_spinlock_key_t key = k_spin_lock(&process_lock);
 		(void)log_process();
-		irq_unlock(key);
-	} else if (proc_tid != NULL && cnt == 0) {
-		k_timer_start(&log_process_thread_timer,
-			K_MSEC(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS), K_NO_WAIT);
-	} else if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
-		if ((cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) &&
-		    (proc_tid != NULL)) {
+
+		k_spin_unlock(&process_lock, key);
+	} else if (proc_tid != NULL) {
+		if (cnt == 0) {
+			k_timer_start(&log_process_thread_timer,
+				      K_MSEC(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS),
+				      K_NO_WAIT);
+		} else if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD &&
+			   cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
 			k_timer_stop(&log_process_thread_timer);
 			k_sem_give(&log_process_thread_sem);
+		} else {
+			/* No action needed. Message processing will be triggered by the
+			 * timeout or when number of upcoming messages exceeds the
+			 * threshold.
+			 */
 		}
-	} else {
-		/* No action needed. Message processing will be triggered by the
-		 * timeout or when number of upcoming messages exceeds the
-		 * threshold.
-		 */
-		;
 	}
 }
 
@@ -197,6 +206,13 @@ void log_core_init(void)
 	panic_mode = false;
 	dropped_cnt = 0;
 
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
+		log_frontend_init();
+		if (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {
+			return;
+		}
+	}
+
 	/* Set default timestamp. */
 	if (sys_clock_hw_cycles_per_sec() > 1000000) {
 		_timestamp_func = default_lf_get_timestamp;
@@ -215,10 +231,6 @@ void log_core_init(void)
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
 		z_log_runtime_filters_init();
 	}
-
-	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
-		log_frontend_init();
-	}
 }
 
 static uint32_t activate_foreach_backend(uint32_t mask)
@@ -230,7 +242,7 @@ static uint32_t activate_foreach_backend(uint32_t mask)
 		const struct log_backend *backend = log_backend_get(i);
 
 		mask_cpy &= ~BIT(i);
-		if (log_backend_is_ready(backend) == 0) {
+		if (backend->autostart && (log_backend_is_ready(backend) == 0)) {
 			mask &= ~BIT(i);
 			log_backend_enable(backend,
 					   backend->cb->ctx,
@@ -244,6 +256,10 @@ static uint32_t activate_foreach_backend(uint32_t mask)
 static uint32_t z_log_init(bool blocking, bool can_sleep)
 {
 	uint32_t mask = 0;
+
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {
+		return 0;
+	}
 
 	__ASSERT_NO_MSG(log_backend_count_get() < LOG_FILTERS_NUM_OF_SLOTS);
 	int i;
@@ -321,7 +337,9 @@ int log_set_timestamp_func(log_timestamp_get_t timestamp_getter, uint32_t freq)
 	}
 
 	timestamp_func = timestamp_getter;
-	log_output_timestamp_freq_set(freq);
+	if (IS_ENABLED(CONFIG_LOG_OUTPUT)) {
+		log_output_timestamp_freq_set(freq);
+	}
 
 	return 0;
 }
@@ -341,6 +359,9 @@ void z_impl_log_panic(void)
 
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
 		log_frontend_panic();
+		if (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {
+			goto out;
+		}
 	}
 
 	for (int i = 0; i < log_backend_count_get(); i++) {
@@ -357,6 +378,7 @@ void z_impl_log_panic(void)
 		}
 	}
 
+out:
 	panic_mode = true;
 }
 
@@ -608,6 +630,16 @@ int log_mem_get_max_usage(uint32_t *max)
 	return mpsc_pbuf_get_max_utilization(&log_buffer, max);
 }
 
+static void log_backend_notify_all(enum log_backend_evt event,
+				   union log_backend_evt_arg *arg)
+{
+	for (int i = 0; i < log_backend_count_get(); i++) {
+		const struct log_backend *backend = log_backend_get(i);
+
+		log_backend_notify(backend, event, arg);
+	}
+}
+
 static void log_process_thread_timer_expiry_fn(struct k_timer *timer)
 {
 	k_sem_give(&log_process_thread_sem);
@@ -618,7 +650,12 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	__ASSERT_NO_MSG(log_backend_count_get() > 0);
 
 	uint32_t activate_mask = z_log_init(false, false);
-	k_timeout_t timeout = K_MSEC(50); /* Arbitrary value */
+	/* If some backends are not activated yet set periodical thread wake up
+	 * to poll backends for readiness. Period is set arbitrary.
+	 * If all backends are ready periodic wake up is not needed.
+	 */
+	k_timeout_t timeout = (activate_mask != 0) ? K_MSEC(50) : K_FOREVER;
+	bool processed_any = false;
 
 	thread_set(k_current_get());
 
@@ -629,12 +666,21 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 		if (activate_mask) {
 			activate_mask = activate_foreach_backend(activate_mask);
 			if (!activate_mask) {
+				/* Periodic wake up no longer needed since all
+				 * backends are ready.
+				 */
 				timeout = K_FOREVER;
 			}
 		}
 
 		if (log_process() == false) {
+			if (processed_any) {
+				processed_any = false;
+				log_backend_notify_all(LOG_BACKEND_EVT_PROCESS_THREAD_DONE, NULL);
+			}
 			(void)k_sem_take(&log_process_thread_sem, timeout);
+		} else {
+			processed_any = true;
 		}
 	}
 }
@@ -653,7 +699,7 @@ static int enable_logger(const struct device *arg)
 		k_thread_create(&logging_thread, logging_stack,
 				K_KERNEL_STACK_SIZEOF(logging_stack),
 				log_process_thread_func, NULL, NULL, NULL,
-				K_LOWEST_APPLICATION_THREAD_PRIO, 0,
+				LOG_PROCESS_THREAD_PRIORITY, 0,
 				COND_CODE_1(CONFIG_LOG_PROCESS_THREAD,
 					K_MSEC(CONFIG_LOG_PROCESS_THREAD_STARTUP_DELAY_MS),
 					K_NO_WAIT));

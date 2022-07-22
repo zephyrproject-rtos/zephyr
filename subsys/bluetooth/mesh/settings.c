@@ -209,3 +209,10 @@ void bt_mesh_settings_init(void)
 {
 	k_work_init_delayable(&pending_store, store_pending);
 }
+
+void bt_mesh_settings_store_pending(void)
+{
+	(void)k_work_cancel_delayable(&pending_store);
+
+	store_pending(&pending_store.work);
+}

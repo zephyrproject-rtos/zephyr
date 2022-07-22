@@ -114,19 +114,11 @@
 /*
  * Zynq-7000 TX clock configuration:
  *
- * SLCR unlock & lock registers, magic words:
- * comp. Zynq-7000 TRM, chapter B.28, registers SLCR_LOCK and SLCR_UNLOCK,
- * p. 1576f.
- *
  * GEMx_CLK_CTRL (SLCR) registers:
  * [25 .. 20] Reference clock divisor 1
  * [13 .. 08] Reference clock divisor 0
  * [00]       Clock active bit
  */
-#define ETH_XLNX_SLCR_LOCK_REGISTER_ADDRESS		0xF8000004
-#define ETH_XLNX_SLCR_UNLOCK_REGISTER_ADDRESS		0xF8000008
-#define ETH_XLNX_SLCR_LOCK_KEY				0x767B
-#define ETH_XLNX_SLCR_UNLOCK_KEY			0xDF0D
 #define ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR_MASK	0x0000003F
 #define ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR1_SHIFT	20
 #define ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR0_SHIFT	8

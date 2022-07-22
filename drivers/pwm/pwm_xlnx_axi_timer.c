@@ -10,6 +10,7 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(xlnx_axi_timer_pwm, CONFIG_PWM_LOG_LEVEL);
 
 /* AXI Timer v2.0 registers offsets (See Xilinx PG079 for details) */

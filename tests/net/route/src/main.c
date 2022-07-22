@@ -546,26 +546,26 @@ static void test_route_preference(void)
 
 
 /*test case main entry*/
-void test_main(void)
+ZTEST(route_test_suite, test_route)
 {
-	ztest_test_suite(test_route,
-			ztest_unit_test(test_init),
-			ztest_unit_test(test_net_ctx_create),
-			ztest_unit_test(test_populate_nbr_cache),
-			ztest_unit_test(test_route_add),
-			ztest_unit_test(test_route_update),
-			ztest_unit_test(test_route_get_nexthop),
-			ztest_unit_test(test_route_lookup_ok),
-			ztest_unit_test(test_route_lookup_fail),
-			ztest_unit_test(test_route_del),
-			ztest_unit_test(test_route_add),
-			ztest_unit_test(test_route_del_nexthop),
-			ztest_unit_test(test_route_del_again),
-			ztest_unit_test(test_route_del_nexthop_again),
-			ztest_unit_test(test_populate_nbr_cache),
-			ztest_unit_test(test_route_add_many),
-			ztest_unit_test(test_route_del_many),
-			ztest_unit_test(test_route_lifetime),
-			ztest_unit_test(test_route_preference));
-	ztest_run_test_suite(test_route);
+	test_init();
+	test_net_ctx_create();
+	test_populate_nbr_cache();
+	test_route_add();
+	test_route_update();
+	test_route_get_nexthop();
+	test_route_lookup_ok();
+	test_route_lookup_fail();
+	test_route_del();
+	test_route_add();
+	test_route_del_nexthop();
+	test_route_del_again();
+	test_route_del_nexthop_again();
+	test_populate_nbr_cache();
+	test_route_add_many();
+	test_route_del_many();
+	test_route_lifetime();
+	test_route_preference();
 }
+
+ZTEST_SUITE(route_test_suite, NULL, NULL, NULL, NULL, NULL);

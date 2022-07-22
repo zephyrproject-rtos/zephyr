@@ -37,12 +37,24 @@ tests:
     harness: ztest
     harness_config:
       fixture: mco_sb_closed
-  drivers.stm32_clock_configuration.common_core.g0_g4.sysclksrc_pll_64_hsi_16:
+  drivers.stm32_clock_configuration.common_core.g0.sysclksrc_hsi_g0_16_div_2:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_g0_16_div_2.overlay"
+    platform_allow: nucleo_g071rb
+  drivers.stm32_clock_configuration.common_core.g0.sysclksrc_hsi_g0_16_div_4:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_g0_16_div_4.overlay"
+    platform_allow: nucleo_g071rb
+  drivers.stm32_clock_configuration.common_core.g4.sysclksrc_pll_64_hsi_16:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_64_hsi_16.overlay"
-    platform_allow: nucleo_g071rb nucleo_g474re
-  drivers.stm32_clock_configuration.common_core.g0_g4.sysclksrc_hsi_16:
+    platform_allow: nucleo_g474re
+  drivers.stm32_clock_configuration.common_core.g0.sysclksrc_pll_g0_64_hsi_16:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_g0_64_hsi_16.overlay"
+    platform_allow: nucleo_g071rb
+  drivers.stm32_clock_configuration.common_core.g4.sysclksrc_hsi_16:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_16.overlay"
-    platform_allow: nucleo_g071rb nucleo_g474re
+    platform_allow: nucleo_g474re
+  drivers.stm32_clock_configuration.common_core.g0.sysclksrc_hsi_g0_16:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_g0_16.overlay"
+    platform_allow: nucleo_g071rb
   drivers.stm32_clock_configuration.common_core.g4.sysclksrc_hse_24:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hse_24.overlay"
     platform_allow: nucleo_g474re

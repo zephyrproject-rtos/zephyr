@@ -1,0 +1,282 @@
+/*
+ * Copyright (c) 2022 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <xtensa/xtensa.dtsi>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <0>;
+			cpu-power-states = <&off>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <1>;
+			cpu-power-states = <&off>;
+		};
+
+		cpu2: cpu@2 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <2>;
+			cpu-power-states = <&off>;
+		};
+	};
+
+	power-states {
+		/* PM_STATE_SOFT_OFF can be entered only by calling pm_state_force.
+		 * The procedure is triggered by IPC from the HOST (SET_DX).
+		 */
+		off: off {
+			compatible = "zephyr,power-state";
+			power-state-name = "soft-off";
+			min-residency-us = <2147483647>;
+			exit-latency-us = <0>;
+		};
+	};
+
+	sram0: memory@a0020000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xa0020000 DT_SIZE_K(2816)>;
+	};
+
+	sram1: memory@a0000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xa0000000 DT_SIZE_K(64)>;
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <38400000>;
+		#clock-cells = <0>;
+	};
+
+	audioclk: audio-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24576000>;
+		#clock-cells = <0>;
+	};
+
+	pllclk: pll-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <96000000>;
+		#clock-cells = <0>;
+	};
+
+	IMR1: memory@A1000000 {
+		compatible = "intel,adsp-imr";
+		reg = <0xA1000000 DT_SIZE_M(16)>;
+		block-size = <0x1000>;
+		zephyr,memory-region = "IMR1";
+	};
+
+	soc {
+		core_intc: core_intc@0 {
+			compatible = "cdns,xtensa-core-intc";
+			reg = <0x00 0x400>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
+		/* This is actually an array of per-core designware
+		 * controllers, but the special setup and extra
+		 * masking layer makes it easier for MTL to handle
+		 * this internally.
+		 */
+		ace_intc: ace_intc@7ac00  {
+			compatible = "intel,ace-intc";
+			reg = <0x7ac00 0xc00>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <4 0 0>;
+			num-irqs = <28>;
+			interrupt-parent = <&core_intc>;
+			label = "ACE_0";
+		};
+
+		shim: shim@71f00 {
+			compatible = "intel,cavs-shim";
+			reg = <0x71f00 0x100>;
+		};
+
+		sspbase: ssp_base@28800 {
+			compatible = "intel,ssp-sspbase";
+			reg = <0x28800 0x1000>;
+		};
+
+		win: win@70200 {
+			compatible = "intel,cavs-win";
+			reg = <0x70200 0x30>;
+		};
+
+		tlb: tlb@17e000 {
+			compatible = "intel,adsp-tlb";
+			reg = <0x17e000 0x1000>;
+		};
+
+		lpgpdma0: dma@7c000 {
+			compatible = "intel,adsp-gpdma";
+			#dma-cells = <1>;
+			reg = <0x0007c000 0x1000>;
+			shim = <0x0007c800 0x1000>;
+			interrupts = <0x10 0 0>;
+			interrupt-parent = <&core_intc>;
+			label = "DMA_0";
+			status = "okay";
+		};
+
+		lpgpdma1: dma@7d000 {
+			compatible = "intel,adsp-gpdma";
+			#dma-cells = <1>;
+			reg = <0x0007d000 0x1000>;
+			shim = <0x0007d800 0x1000>;
+			interrupts = <0x20 0 0>;
+			interrupt-parent = <&core_intc>;
+			label = "DMA_1";
+			status = "okay";
+		};
+
+		ssp0:ssp@28000 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00028000 0x1000
+				   0x00079C00 0x200>;
+			interrupts = <0x00 0 0>;
+			interrupt-parent = <&ace_intc>;
+			dmas = <&lpgpdma0 2
+					&lpgpdma0 3>;
+			dma-names = "tx", "rx";
+			label = "SSP_0";
+			status = "okay";
+		};
+
+		ssp1:ssp@29000 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00029000 0x1000
+				   0x00079C00 0x200>;
+			interrupts = <0x01 0 0>;
+			interrupt-parent = <&ace_intc>;
+			dmas = <&lpgpdma0 4
+					&lpgpdma0 5>;
+			dma-names = "tx", "rx";
+			label = "SSP_1";
+			status = "okay";
+		};
+
+		ssp2:ssp@2a000 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x0002a000 0x1000
+				   0x00079C00 0x200>;
+			interrupts = <0x02 0 0>;
+			interrupt-parent = <&ace_intc>;
+			dmas = <&lpgpdma0 6
+					&lpgpdma0 7>;
+			dma-names = "tx", "rx";
+			label = "SSP_2";
+			status = "okay";
+		};
+
+		ssp3:ssp@2b000 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x0002b000 0x1000
+				   0x00079C00 0x200>;
+			interrupts = <0x03 0 0>;
+			interrupt-parent = <&ace_intc>;
+			dmas = <&lpgpdma0 8
+					&lpgpdma0 9>;
+			dma-names = "tx", "rx";
+			label = "SSP_3";
+			status = "okay";
+		};
+
+		ssp4:ssp@2c000 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x0002c000 0x1000
+				   0x00079C00 0x200>;
+			interrupts = <0x04 0 0>;
+			interrupt-parent = <&ace_intc>;
+			dmas = <&lpgpdma0 10
+					&lpgpdma0 11>;
+			dma-names = "tx", "rx";
+			label = "SSP_4";
+			status = "okay";
+		};
+
+		ssp5:ssp@2d000 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x0002d000 0x1000
+				   0x00079C00 0x200>;
+			interrupts = <0x04 0 0>;
+			interrupt-parent = <&ace_intc>;
+			dmas = <&lpgpdma0 12
+					&lpgpdma0 13>;
+			dma-names = "tx", "rx";
+			label = "SSP_5";
+			status = "okay";
+		};
+
+		hda_host_out: dma@72800 {
+			compatible = "intel,adsp-hda-host-out";
+			#dma-cells = <1>;
+			reg = <0x00072800 0x40>;
+			dma-channels = <9>;
+			dma-buf-alignment = <128>;
+			label = "HDA_HOST_OUT";
+			status = "okay";
+		};
+
+		hda_host_in: dma@72c00 {
+			compatible = "intel,adsp-hda-host-in";
+			#dma-cells = <1>;
+			reg = <0x00072c00 0x40>;
+			dma-channels = <10>;
+			dma-buf-alignment = <128>;
+			label = "HDA_HOST_IN";
+			status = "okay";
+		};
+
+		hda_link_out: dma@72400 {
+			compatible = "intel,adsp-hda-link-out";
+			#dma-cells = <1>;
+			reg = <0x00072400 0x40>;
+			dma-channels = <9>;
+			dma-buf-alignment = <128>;
+			label = "HDA_LINK_OUT";
+			status = "okay";
+		};
+
+		hda_link_in: dma@72600 {
+			compatible = "intel,adsp-hda-link-in";
+			#dma-cells = <1>;
+			reg = <0x00072600 0x40>;
+			dma-channels = <10>;
+			dma-buf-alignment = <128>;
+			label = "HDA_LINK_IN";
+			status = "okay";
+		};
+	};
+};

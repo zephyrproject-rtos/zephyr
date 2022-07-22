@@ -4,6 +4,8 @@
 
 menuconfig SI7055
 	bool "Si7055 Temperature Sensor"
+	default y
+	depends on DT_HAS_SILABS_SI7055_ENABLED
 	depends on I2C
 	help
 	  Enable I2C-based driver for Si7055 Temperature Sensor.

@@ -208,27 +208,27 @@ static void alloc_free(sys_mem_blocks_t *mem_block,
 #endif
 }
 
-static void test_mem_block_alloc_free(void)
+ZTEST(lib_mem_block, test_mem_block_alloc_free)
 {
 	alloc_free(&mem_block_01, 1, 1);
 }
 
-static void test_mem_block_alloc_free_alt_buf(void)
+ZTEST(lib_mem_block, test_mem_block_alloc_free_alt_buf)
 {
 	alloc_free(&mem_block_02, 1, 1);
 }
 
-static void test_mem_block_multi_alloc_free(void)
+ZTEST(lib_mem_block, test_mem_block_multi_alloc_free)
 {
 	alloc_free(&mem_block_01, NUM_BLOCKS, 10);
 }
 
-static void test_mem_block_multi_alloc_free_alt_buf(void)
+ZTEST(lib_mem_block, test_mem_block_multi_alloc_free_alt_buf)
 {
 	alloc_free(&mem_block_02, NUM_BLOCKS, 10);
 }
 
-static void test_mem_block_get(void)
+ZTEST(lib_mem_block, test_mem_block_get)
 {
 	int i, ret, val;
 
@@ -409,7 +409,7 @@ static void test_mem_block_get(void)
 #endif
 }
 
-static void test_mem_block_alloc_free_contiguous(void)
+ZTEST(lib_mem_block, test_mem_block_alloc_free_contiguous)
 {
 	int i, ret, val;
 	void *block;
@@ -591,7 +591,7 @@ static void test_mem_block_alloc_free_contiguous(void)
 #endif
 }
 
-static void test_multi_mem_block_alloc_free(void)
+ZTEST(lib_mem_block, test_multi_mem_block_alloc_free)
 {
 	int ret;
 	void *blocks[2][1] = {0};
@@ -629,7 +629,7 @@ static void test_multi_mem_block_alloc_free(void)
 		      "sys_multi_mem_blocks_free failed (%d)", ret);
 }
 
-static void test_mem_block_invalid_params_panic_1(void)
+ZTEST(lib_mem_block, test_mem_block_invalid_params_panic_1)
 {
 	void *blocks[2] = {0};
 
@@ -640,7 +640,7 @@ static void test_mem_block_invalid_params_panic_1(void)
 	ztest_test_fail();
 }
 
-static void test_mem_block_invalid_params_panic_2(void)
+ZTEST(lib_mem_block, test_mem_block_invalid_params_panic_2)
 {
 	expected_reason = K_ERR_KERNEL_PANIC;
 	sys_mem_blocks_alloc(&mem_block_01, 1, NULL);
@@ -649,7 +649,7 @@ static void test_mem_block_invalid_params_panic_2(void)
 	ztest_test_fail();
 }
 
-static void test_mem_block_invalid_params_panic_3(void)
+ZTEST(lib_mem_block, test_mem_block_invalid_params_panic_3)
 {
 	void *blocks[2] = {0};
 
@@ -660,7 +660,7 @@ static void test_mem_block_invalid_params_panic_3(void)
 	ztest_test_fail();
 }
 
-static void test_mem_block_invalid_params_panic_4(void)
+ZTEST(lib_mem_block, test_mem_block_invalid_params_panic_4)
 {
 	expected_reason = K_ERR_KERNEL_PANIC;
 	sys_mem_blocks_free(&mem_block_01, 1, NULL);
@@ -669,7 +669,7 @@ static void test_mem_block_invalid_params_panic_4(void)
 	ztest_test_fail();
 }
 
-static void test_mem_block_invalid_params(void)
+ZTEST(lib_mem_block, test_mem_block_invalid_params)
 {
 	int ret;
 	void *blocks[2] = {0};
@@ -710,7 +710,7 @@ static void test_mem_block_invalid_params(void)
 		      "sys_mem_blocks_free should fail with -EFAULT but not");
 }
 
-static void test_multi_mem_block_invalid_params_panic_1(void)
+ZTEST(lib_mem_block, test_multi_mem_block_invalid_params_panic_1)
 {
 	void *blocks[2] = {0};
 
@@ -723,7 +723,7 @@ static void test_multi_mem_block_invalid_params_panic_1(void)
 }
 
 
-static void test_multi_mem_block_invalid_params_panic_2(void)
+ZTEST(lib_mem_block, test_multi_mem_block_invalid_params_panic_2)
 {
 	expected_reason = K_ERR_KERNEL_PANIC;
 
@@ -734,7 +734,7 @@ static void test_multi_mem_block_invalid_params_panic_2(void)
 	ztest_test_fail();
 }
 
-static void test_multi_mem_block_invalid_params_panic_3(void)
+ZTEST(lib_mem_block, test_multi_mem_block_invalid_params_panic_3)
 {
 	void *blocks[2] = {0};
 
@@ -746,7 +746,7 @@ static void test_multi_mem_block_invalid_params_panic_3(void)
 }
 
 
-static void test_multi_mem_block_invalid_params_panic_4(void)
+ZTEST(lib_mem_block, test_multi_mem_block_invalid_params_panic_4)
 {
 	expected_reason = K_ERR_KERNEL_PANIC;
 
@@ -756,7 +756,7 @@ static void test_multi_mem_block_invalid_params_panic_4(void)
 	ztest_test_fail();
 }
 
-static void test_multi_mem_block_invalid_params(void)
+ZTEST(lib_mem_block, test_multi_mem_block_invalid_params)
 {
 	int ret;
 	void *blocks[2] = {0};
@@ -800,35 +800,12 @@ static void test_multi_mem_block_invalid_params(void)
 		      "sys_multi_mem_blocks_free should fail with -EINVAL but not");
 }
 
-void test_main(void)
+static void *lib_mem_block_setup(void)
 {
 	sys_multi_mem_blocks_init(&alloc_group, choice_fn);
 	sys_multi_mem_blocks_add_allocator(&alloc_group, &mem_block_01);
 	sys_multi_mem_blocks_add_allocator(&alloc_group, &mem_block_02);
-
-	ztest_test_suite(lib_mem_block_test,
-			 ztest_unit_test(test_mem_block_alloc_free),
-			 ztest_unit_test(test_mem_block_alloc_free_alt_buf),
-			 ztest_unit_test(test_mem_block_multi_alloc_free),
-			 ztest_unit_test(test_mem_block_multi_alloc_free_alt_buf),
-			 ztest_unit_test(test_multi_mem_block_alloc_free),
-			 ztest_unit_test(test_mem_block_get),
-			 ztest_unit_test(test_mem_block_alloc_free_contiguous),
-			 ztest_unit_test(test_mem_block_invalid_params),
-			 ztest_unit_test(test_mem_block_invalid_params_panic_1),
-			 ztest_unit_test(test_mem_block_invalid_params_panic_2),
-			 ztest_unit_test(test_mem_block_invalid_params_panic_3),
-			 ztest_unit_test(test_mem_block_invalid_params_panic_4),
-			 ztest_unit_test(test_multi_mem_block_invalid_params),
-			 ztest_unit_test(
-				test_multi_mem_block_invalid_params_panic_1),
-			 ztest_unit_test(
-				test_multi_mem_block_invalid_params_panic_2),
-			 ztest_unit_test(
-				test_multi_mem_block_invalid_params_panic_3),
-			 ztest_unit_test(
-				test_multi_mem_block_invalid_params_panic_4)
-			 );
-
-	ztest_run_test_suite(lib_mem_block_test);
+	return NULL;
 }
+
+ZTEST_SUITE(lib_mem_block, NULL, lib_mem_block_setup, NULL, NULL, NULL);

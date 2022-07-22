@@ -96,9 +96,7 @@ static inline uint32_t ll_func_spi_dma_busy(SPI_TypeDef *spi)
 
 static inline uint32_t ll_func_tx_is_empty(SPI_TypeDef *spi)
 {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	return LL_SPI_IsActiveFlag_TXP(spi);
 #else
 	return LL_SPI_IsActiveFlag_TXE(spi);
@@ -107,9 +105,7 @@ static inline uint32_t ll_func_tx_is_empty(SPI_TypeDef *spi)
 
 static inline uint32_t ll_func_rx_is_not_empty(SPI_TypeDef *spi)
 {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	return LL_SPI_IsActiveFlag_RXP(spi);
 #else
 	return LL_SPI_IsActiveFlag_RXNE(spi);
@@ -118,9 +114,7 @@ static inline uint32_t ll_func_rx_is_not_empty(SPI_TypeDef *spi)
 
 static inline void ll_func_enable_int_tx_empty(SPI_TypeDef *spi)
 {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	LL_SPI_EnableIT_TXP(spi);
 #else
 	LL_SPI_EnableIT_TXE(spi);
@@ -129,9 +123,7 @@ static inline void ll_func_enable_int_tx_empty(SPI_TypeDef *spi)
 
 static inline void ll_func_enable_int_rx_not_empty(SPI_TypeDef *spi)
 {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	LL_SPI_EnableIT_RXP(spi);
 #else
 	LL_SPI_EnableIT_RXNE(spi);
@@ -140,9 +132,7 @@ static inline void ll_func_enable_int_rx_not_empty(SPI_TypeDef *spi)
 
 static inline void ll_func_enable_int_errors(SPI_TypeDef *spi)
 {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	LL_SPI_EnableIT_UDR(spi);
 	LL_SPI_EnableIT_OVR(spi);
 	LL_SPI_EnableIT_CRCERR(spi);
@@ -155,9 +145,7 @@ static inline void ll_func_enable_int_errors(SPI_TypeDef *spi)
 
 static inline void ll_func_disable_int_tx_empty(SPI_TypeDef *spi)
 {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	LL_SPI_DisableIT_TXP(spi);
 #else
 	LL_SPI_DisableIT_TXE(spi);
@@ -166,9 +154,7 @@ static inline void ll_func_disable_int_tx_empty(SPI_TypeDef *spi)
 
 static inline void ll_func_disable_int_rx_not_empty(SPI_TypeDef *spi)
 {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	LL_SPI_DisableIT_RXP(spi);
 #else
 	LL_SPI_DisableIT_RXNE(spi);
@@ -177,9 +163,7 @@ static inline void ll_func_disable_int_rx_not_empty(SPI_TypeDef *spi)
 
 static inline void ll_func_disable_int_errors(SPI_TypeDef *spi)
 {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	LL_SPI_DisableIT_UDR(spi);
 	LL_SPI_DisableIT_OVR(spi);
 	LL_SPI_DisableIT_CRCERR(spi);
@@ -192,9 +176,7 @@ static inline void ll_func_disable_int_errors(SPI_TypeDef *spi)
 
 static inline uint32_t ll_func_spi_is_busy(SPI_TypeDef *spi)
 {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	return LL_SPI_IsActiveFlag_EOT(spi);
 #else
 	return LL_SPI_IsActiveFlag_BSY(spi);
@@ -207,9 +189,7 @@ static inline uint32_t ll_func_spi_is_busy(SPI_TypeDef *spi)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 static inline void ll_func_set_fifo_threshold_8bit(SPI_TypeDef *spi)
 {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	LL_SPI_SetFIFOThreshold(spi, LL_SPI_FIFO_TH_01DATA);
 #else
 	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_QUARTER);
@@ -218,9 +198,7 @@ static inline void ll_func_set_fifo_threshold_8bit(SPI_TypeDef *spi)
 
 static inline void ll_func_set_fifo_threshold_16bit(SPI_TypeDef *spi)
 {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	LL_SPI_SetFIFOThreshold(spi, LL_SPI_FIFO_TH_02DATA);
 #else
 	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_HALF);
@@ -230,9 +208,7 @@ static inline void ll_func_set_fifo_threshold_16bit(SPI_TypeDef *spi)
 
 static inline void ll_func_disable_spi(SPI_TypeDef *spi)
 {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	if (LL_SPI_IsActiveMasterTransfer(spi)) {
 		LL_SPI_SuspendMasterTransfer(spi);
 		while (LL_SPI_IsActiveMasterTransfer(spi)) {

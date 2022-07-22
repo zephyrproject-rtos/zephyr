@@ -58,18 +58,18 @@ static bool page_frames_initialized;
 #define COLOR_PAGE_FRAMES	1
 
 #if COLOR_PAGE_FRAMES
-#define ANSI_DEFAULT "\x1B[0m"
-#define ANSI_RED     "\x1B[1;31m"
-#define ANSI_GREEN   "\x1B[1;32m"
-#define ANSI_YELLOW  "\x1B[1;33m"
-#define ANSI_BLUE    "\x1B[1;34m"
-#define ANSI_MAGENTA "\x1B[1;35m"
-#define ANSI_CYAN    "\x1B[1;36m"
-#define ANSI_GREY    "\x1B[1;90m"
+#define ANSI_DEFAULT "\x1B" "[0m"
+#define ANSI_RED     "\x1B" "[1;31m"
+#define ANSI_GREEN   "\x1B" "[1;32m"
+#define ANSI_YELLOW  "\x1B" "[1;33m"
+#define ANSI_BLUE    "\x1B" "[1;34m"
+#define ANSI_MAGENTA "\x1B" "[1;35m"
+#define ANSI_CYAN    "\x1B" "[1;36m"
+#define ANSI_GREY    "\x1B" "[1;90m"
 
 #define COLOR(x)	printk(_CONCAT(ANSI_, x))
 #else
-#define COLOR(x)	do { } while (0)
+#define COLOR(x)	do { } while (false)
 #endif
 
 /* LCOV_EXCL_START */
@@ -1482,7 +1482,7 @@ bool z_page_fault(void *addr)
 static void do_mem_unpin(void *addr)
 {
 	struct z_page_frame *pf;
-	int key;
+	unsigned int key;
 	uintptr_t flags, phys;
 
 	key = irq_lock();

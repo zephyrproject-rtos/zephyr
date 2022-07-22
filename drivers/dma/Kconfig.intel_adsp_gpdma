@@ -1,0 +1,22 @@
+# DMA configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_INTEL_ADSP_GPDMA
+	bool "Intel ADSP General Purpose Direct Memory Access driver"
+	help
+	  Intel ADSP DMA driver.
+
+if DMA_INTEL_ADSP_GPDMA
+
+config DMA_INTEL_ADSP_GPDMA_HAS_LLP
+	bool "Intel ADSP GPDMA Linear Link Position Feature"
+	default y if SOC_SERIES_INTEL_ACE1X
+	help
+	  Intel ADSP GPDMA may optionally have a linear link position
+	  feature.
+
+source "drivers/dma/Kconfig.dw_common"
+
+endif # DMA_INTEL_ADSP_GPDMA

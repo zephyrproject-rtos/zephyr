@@ -224,8 +224,10 @@ static void gpio_mcux_lpc_port_isr(const struct device *dev)
 				config->pint_base, data->pint_id[pin]);
 			enabled_int = int_flags << pin;
 
-			PINT_PinInterruptClrStatus(config->pint_base,
-						   data->pint_id[pin]);
+			if (int_flags) {
+				PINT_PinInterruptClrStatus(config->pint_base,
+							   data->pint_id[pin]);
+			}
 
 			gpio_fire_callbacks(&data->callbacks, dev, enabled_int);
 		}

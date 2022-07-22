@@ -1,7 +1,0 @@
-# SPDX-License-Identifier: Apache-2.0
-
-mainmenu "I2C Slave API Test"
-
-source "Kconfig.zephyr"
-
-source "tests/drivers/i2c/i2c_slave_api/common/Kconfig"

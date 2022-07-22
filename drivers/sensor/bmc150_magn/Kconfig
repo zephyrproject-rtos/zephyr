@@ -5,6 +5,8 @@
 
 menuconfig BMC150_MAGN
 	bool "BMC150_MAGN I2C Magnetometer Chip"
+	default y
+	depends on DT_HAS_BOSCH_BMC150_MAGN_ENABLED
 	depends on I2C
 	help
 	  Enable driver for BMC150 I2C-based magnetometer sensor.

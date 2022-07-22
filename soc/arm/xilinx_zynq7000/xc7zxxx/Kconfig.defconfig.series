@@ -10,7 +10,8 @@ rsource "Kconfig.defconfig.xc7z*"
 config SOC_SERIES
 	default "xc7zxxx"
 
+# Zephyr does not support SMP on aarch32 yet, so we default to 1 CPU core
 config MP_NUM_CPUS
-	default 2
+	default 1
 
 endif # SOC_SERIES_XILINX_XC7ZXXX

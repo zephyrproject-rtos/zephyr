@@ -48,6 +48,7 @@
 		led0 = &green_led;
 		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
 	};
 };
 

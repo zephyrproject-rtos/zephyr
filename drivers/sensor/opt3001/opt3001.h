@@ -8,6 +8,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_OPT3001_H_
 
 #include <zephyr/sys/util.h>
+#include <zephyr/drivers/i2c.h>
 
 #define OPT3001_REG_RESULT 0x00
 #define OPT3001_REG_CONFIG 0x01
@@ -24,8 +25,11 @@
 #define OPT3001_MANTISSA_MASK 0xfff
 
 struct opt3001_data {
-	const struct device *i2c;
 	uint16_t sample;
+};
+
+struct opt3001_config {
+	struct i2c_dt_spec i2c;
 };
 
 #endif /* _SENSOR_OPT3001_ */

@@ -15,6 +15,7 @@
 		led2 = &red_led;
 		sw0 = &user_button_3;
 		sw1 = &user_button_2;
+		magn0 = &fxos8700;
 	};
 
 	chosen {
@@ -130,7 +131,7 @@ arduino_i2c: &i2c0 {
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 
-	fxos8700@1d {
+	fxos8700: fxos8700@1d {
 		compatible = "nxp,fxos8700";
 		reg = <0x1d>;
 		label = "FXOS8700";

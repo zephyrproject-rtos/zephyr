@@ -149,6 +149,7 @@
 		bootloader-led0 = &led0;
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &led0;
+		watchdog0 = &wdt0;
 	};
 };
 
@@ -173,7 +174,7 @@
 };
 
 arduino_serial: &uart1 {
-	status = "okay";
+	/* Cannot be used together with spi1, hence disabled by default. */
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
@@ -198,6 +199,14 @@ arduino_i2c: &i2c2 {
 	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+arduino_spi: &spi1 {
+	/* Cannot be used together with uart1, hence disabled by default. */
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 

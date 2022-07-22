@@ -8,8 +8,11 @@
 #define DT_DRV_COMPAT microchip_xec_pwm
 
 #include <errno.h>
+#include <stdlib.h>
+#include <stdint.h>
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/pwm.h>
 #ifdef CONFIG_SOC_SERIES_MEC172X
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
@@ -17,14 +20,10 @@
 #ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
 #endif
-#include <zephyr/drivers/pwm.h>
-#include <errno.h>
-#include <zephyr/kernel.h>
-#include <zephyr/init.h>
-#include <soc.h>
-#include <stdlib.h>
-
 #include <zephyr/logging/log.h>
+
+#include <soc.h>
+
 LOG_MODULE_REGISTER(pwm_mchp_xec, CONFIG_PWM_LOG_LEVEL);
 
 /* Minimal on/off are 1 & 1 both are incremented, so 4.
@@ -85,7 +84,7 @@ static const uint32_t max_freq_high_on_div[NUM_DIV_ELEMS] = {
 	3692307,
 	3428571,
 	3200000,
-	3000000
+	3000000,
 };
 
 static const uint32_t max_freq_low_on_div[NUM_DIV_ELEMS] = {
@@ -104,7 +103,7 @@ static const uint32_t max_freq_low_on_div[NUM_DIV_ELEMS] = {
 	7692,
 	7142,
 	6666,
-	6250
+	6250,
 };
 
 static uint32_t xec_compute_frequency(uint32_t clk, uint32_t on, uint32_t off)

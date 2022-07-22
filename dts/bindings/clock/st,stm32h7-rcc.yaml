@@ -39,6 +39,13 @@ description: |
   the bus controlling the peripheral and the second index specifies the bit used to
   control the peripheral clock in that bus register.
 
+  Note 1: No additional specifier means gating clock is also the clock source (ie
+          'PCLK/PCLK1/PCLK2' depending on the device). There is no need to add a second
+          cell to explicitly set it.
+  Note 2: Default peripheral clock configuration (ie the one provided in *.dsti files)
+          should be the one matching SoC reset state. Confere reference manual to check
+          what is the reset value of the kernel clock source for each peripheral.
+
 compatible: "st,stm32h7-rcc"
 
 include: [clock-controller.yaml, base.yaml]

@@ -13,6 +13,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <host/hci_core.h>
 
+#include <bt_common.h>
 #include <bt_conn_common.h>
 #include "test_cte_set_rx_params.h"
 
@@ -73,7 +74,7 @@ int send_set_conn_cte_rx_params(uint16_t conn_handle,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CONN_CTE_RX_PARAMS, buf, NULL);
 }
 
-void test_set_conn_cte_rx_params_enable_with_invalid_conn_handle(void)
+ZTEST(test_hci_set_conn_cte_rx_params, test_set_conn_cte_rx_params_enable_with_invalid_conn_handle)
 {
 	int err;
 
@@ -82,7 +83,7 @@ void test_set_conn_cte_rx_params_enable_with_invalid_conn_handle(void)
 		      "Unexpected error value for set iq sampling params with wrong conn handle");
 }
 
-void test_set_conn_cte_rx_params_enable_invalid_slot_durations(void)
+ZTEST(test_hci_set_conn_cte_rx_params, test_set_conn_cte_rx_params_enable_invalid_slot_durations)
 {
 	int err;
 
@@ -94,7 +95,8 @@ void test_set_conn_cte_rx_params_enable_invalid_slot_durations(void)
 		      "durations");
 }
 
-void test_set_conn_cte_rx_params_enable_with_too_long_switch_pattern_len(void)
+ZTEST(test_hci_set_conn_cte_rx_params,
+	test_set_conn_cte_rx_params_enable_with_too_long_switch_pattern_len)
 {
 	int err;
 	uint8_t ant_ids[SWITCH_PATTERN_LEN_TOO_LONG] = { 0 };
@@ -108,7 +110,8 @@ void test_set_conn_cte_rx_params_enable_with_too_long_switch_pattern_len(void)
 		      "length beyond max value");
 }
 
-void test_set_conn_cte_rx_params_enable_with_too_short_switch_pattern_len(void)
+ZTEST(test_hci_set_conn_cte_rx_params,
+	test_set_conn_cte_rx_params_enable_with_too_short_switch_pattern_len)
 {
 	int err;
 	uint8_t ant_ids[SWITCH_PATTERN_LEN_TOO_SHORT] = { 0 };
@@ -122,7 +125,7 @@ void test_set_conn_cte_rx_params_enable_with_too_short_switch_pattern_len(void)
 		      "length below min value");
 }
 
-void test_set_conn_cte_rx_params_enable_with_ant_ids_ptr_null(void)
+ZTEST(test_hci_set_conn_cte_rx_params, test_set_conn_cte_rx_params_enable_with_ant_ids_ptr_null)
 {
 	int err;
 
@@ -138,7 +141,7 @@ void test_set_conn_cte_rx_params_enable_with_ant_ids_ptr_null(void)
 		      "pointing NULL");
 }
 
-void test_set_conn_cte_rx_params_enable_with_correct_params(void)
+ZTEST(test_hci_set_conn_cte_rx_params, test_set_conn_cte_rx_params_enable_with_correct_params)
 {
 	int err;
 
@@ -148,7 +151,7 @@ void test_set_conn_cte_rx_params_enable_with_correct_params(void)
 		      "correct params");
 }
 
-void test_set_conn_cte_rx_params_disable_with_correct_params(void)
+ZTEST(test_hci_set_conn_cte_rx_params, test_set_conn_cte_rx_params_disable_with_correct_params)
 {
 	int err;
 
@@ -158,7 +161,8 @@ void test_set_conn_cte_rx_params_disable_with_correct_params(void)
 		      "correct params");
 }
 
-void test_set_conn_cte_rx_params_disable_with_invalid_slot_duration(void)
+ZTEST(test_hci_set_conn_cte_rx_params,
+	test_set_conn_cte_rx_params_disable_with_invalid_slot_duration)
 {
 	int err;
 
@@ -170,7 +174,8 @@ void test_set_conn_cte_rx_params_disable_with_invalid_slot_duration(void)
 		      "invalid slot durations");
 }
 
-void test_set_conn_cte_rx_params_disable_with_too_long_switch_pattern_len(void)
+ZTEST(test_hci_set_conn_cte_rx_params,
+	test_set_conn_cte_rx_params_disable_with_too_long_switch_pattern_len)
 {
 	int err;
 	uint8_t ant_ids[SWITCH_PATTERN_LEN_TOO_LONG] = { 0 };
@@ -184,7 +189,8 @@ void test_set_conn_cte_rx_params_disable_with_too_long_switch_pattern_len(void)
 		      "switch pattern length above max value");
 }
 
-void test_set_conn_cte_rx_params_disable_with_too_short_switch_pattern_len(void)
+ZTEST(test_hci_set_conn_cte_rx_params,
+	test_set_conn_cte_rx_params_disable_with_too_short_switch_pattern_len)
 {
 	int err;
 	uint8_t ant_ids[SWITCH_PATTERN_LEN_TOO_SHORT] = { 0 };
@@ -198,7 +204,7 @@ void test_set_conn_cte_rx_params_disable_with_too_short_switch_pattern_len(void)
 		      "switch pattern length below min value");
 }
 
-void test_set_conn_cte_rx_params_disable_with_ant_ids_ptr_null(void)
+ZTEST(test_hci_set_conn_cte_rx_params, test_set_conn_cte_rx_params_disable_with_ant_ids_ptr_null)
 {
 	int err;
 
@@ -210,7 +216,7 @@ void test_set_conn_cte_rx_params_disable_with_ant_ids_ptr_null(void)
 		      "antenna ids pointing NULL");
 }
 
-static void connection_setup(void)
+static void connection_setup(void *data)
 {
 	g_params.slot_durations = BT_HCI_LE_ANTENNA_SWITCHING_SLOT_1US;
 	g_params.switch_pattern_len = ARRAY_SIZE(g_ant_ids);
@@ -219,47 +225,7 @@ static void connection_setup(void)
 	g_conn_handle = ut_bt_create_connection();
 }
 
-static void connection_teardown(void)
-{
-	ut_bt_destroy_connection(g_conn_handle);
-}
+static void connection_teardown(void *data) { ut_bt_destroy_connection(g_conn_handle); }
 
-void run_set_cte_rx_params_tests(void)
-{
-	ztest_test_suite(
-		test_hci_set_conn_cte_rx_params,
-		ztest_unit_test(test_set_conn_cte_rx_params_enable_with_invalid_conn_handle),
-		ztest_unit_test_setup_teardown(
-			test_set_conn_cte_rx_params_enable_invalid_slot_durations, connection_setup,
-			connection_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_conn_cte_rx_params_enable_with_too_long_switch_pattern_len,
-			connection_setup, connection_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_conn_cte_rx_params_enable_with_too_short_switch_pattern_len,
-			connection_setup, connection_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_conn_cte_rx_params_enable_with_ant_ids_ptr_null, connection_setup,
-			connection_teardown),
-
-		ztest_unit_test_setup_teardown(
-			test_set_conn_cte_rx_params_enable_with_correct_params, connection_setup,
-			connection_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_conn_cte_rx_params_disable_with_correct_params, connection_setup,
-			connection_teardown),
-
-		ztest_unit_test_setup_teardown(
-			test_set_conn_cte_rx_params_disable_with_invalid_slot_duration,
-			connection_setup, connection_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_conn_cte_rx_params_disable_with_too_long_switch_pattern_len,
-			connection_setup, connection_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_conn_cte_rx_params_disable_with_too_short_switch_pattern_len,
-			connection_setup, connection_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_conn_cte_rx_params_disable_with_ant_ids_ptr_null, connection_setup,
-			connection_teardown));
-	ztest_run_test_suite(test_hci_set_conn_cte_rx_params);
-}
+ZTEST_SUITE(test_hci_set_conn_cte_rx_params, NULL, ut_bt_setup, connection_setup,
+	    connection_teardown, ut_bt_teardown);

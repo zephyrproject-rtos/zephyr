@@ -49,13 +49,11 @@ LOG_MODULE_DECLARE(ISM330DHCX, CONFIG_SENSOR_LOG_LEVEL);
 static uint8_t num_ext_dev;
 static uint8_t shub_ext[ISM330DHCX_SHUB_MAX_NUM_SLVS];
 
-static int ism330dhcx_shub_write_slave_reg(struct ism330dhcx_data *data,
-					uint8_t slv_addr, uint8_t slv_reg,
-					uint8_t *value, uint16_t len);
-static int ism330dhcx_shub_read_slave_reg(struct ism330dhcx_data *data,
-				       uint8_t slv_addr, uint8_t slv_reg,
-				       uint8_t *value, uint16_t len);
-static void ism330dhcx_shub_enable(struct ism330dhcx_data *data, uint8_t enable);
+static int ism330dhcx_shub_write_slave_reg(const struct device *dev, uint8_t slv_addr,
+					   uint8_t slv_reg, uint8_t *value, uint16_t len);
+static int ism330dhcx_shub_read_slave_reg(const struct device *dev, uint8_t slv_addr,
+					  uint8_t slv_reg, uint8_t *value, uint16_t len);
+static void ism330dhcx_shub_enable(const struct device *dev, uint8_t enable);
 
 /*
  * LIS2MDL magn device specific part
@@ -73,32 +71,30 @@ static void ism330dhcx_shub_enable(struct ism330dhcx_data *data, uint8_t enable)
 #define LIS2MDL_OFF_CANC		0x02
 #define LIS2MDL_SENSITIVITY		1500
 
-static int ism330dhcx_lis2mdl_init(struct ism330dhcx_data *data, uint8_t i2c_addr)
+static int ism330dhcx_lis2mdl_init(const struct device *dev, uint8_t i2c_addr)
 {
+	struct ism330dhcx_data *data = dev->data;
 	uint8_t mag_cfg[2];
 
 	data->magn_gain = LIS2MDL_SENSITIVITY;
 
 	/* sw reset device */
 	mag_cfg[0] = LIS2MDL_SW_RESET;
-	ism330dhcx_shub_write_slave_reg(data, i2c_addr,
-				     LIS2MDL_CFG_REG_A, mag_cfg, 1);
+	ism330dhcx_shub_write_slave_reg(dev, i2c_addr, LIS2MDL_CFG_REG_A, mag_cfg, 1);
 
 	k_sleep(K_MSEC(10)); /* turn-on time in ms */
 
 	/* configure mag */
 	mag_cfg[0] = LIS2MDL_ODR_10HZ;
 	mag_cfg[1] = LIS2MDL_OFF_CANC;
-	ism330dhcx_shub_write_slave_reg(data, i2c_addr,
-				     LIS2MDL_CFG_REG_A, mag_cfg, 2);
+	ism330dhcx_shub_write_slave_reg(dev, i2c_addr, LIS2MDL_CFG_REG_A, mag_cfg, 2);
 
 	return 0;
 }
 
 static const uint16_t lis2mdl_map[] = {10, 20, 50, 100};
 
-static int ism330dhcx_lis2mdl_odr_set(struct ism330dhcx_data *data,
-				   uint8_t i2c_addr, uint16_t freq)
+static int ism330dhcx_lis2mdl_odr_set(const struct device *dev, uint8_t i2c_addr, uint16_t freq)
 {
 	uint8_t odr, cfg;
 
@@ -114,21 +110,19 @@ static int ism330dhcx_lis2mdl_odr_set(struct ism330dhcx_data *data,
 	}
 
 	cfg = (odr << 2);
-	ism330dhcx_shub_write_slave_reg(data, i2c_addr,
-				     LIS2MDL_CFG_REG_A, &cfg, 1);
+	ism330dhcx_shub_write_slave_reg(dev, i2c_addr, LIS2MDL_CFG_REG_A, &cfg, 1);
 
-	ism330dhcx_shub_enable(data, 1);
+	ism330dhcx_shub_enable(dev, 1);
 	return 0;
 }
 
-static int ism330dhcx_lis2mdl_conf(struct ism330dhcx_data *data, uint8_t i2c_addr,
-				enum sensor_channel chan,
-				enum sensor_attribute attr,
-				const struct sensor_value *val)
+static int ism330dhcx_lis2mdl_conf(const struct device *dev, uint8_t i2c_addr,
+				   enum sensor_channel chan, enum sensor_attribute attr,
+				   const struct sensor_value *val)
 {
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		return ism330dhcx_lis2mdl_odr_set(data, i2c_addr, val->val1);
+		return ism330dhcx_lis2mdl_odr_set(dev, i2c_addr, val->val1);
 	default:
 		LOG_DBG("shub: LIS2MDL attribute not supported.");
 		return -ENOTSUP;
@@ -152,19 +146,18 @@ static int ism330dhcx_lis2mdl_conf(struct ism330dhcx_data *data, uint8_t i2c_add
 
 #define HTS221_REG_CONV_START		0x30
 
-static int lsmdso_hts221_read_conv_data(struct ism330dhcx_data *data,
-					uint8_t i2c_addr)
+static int lsmdso_hts221_read_conv_data(const struct device *dev, uint8_t i2c_addr)
 {
+	struct ism330dhcx_data *data = dev->data;
 	uint8_t buf[16], i;
 	struct hts221_data *ht = &data->hts221;
 
 	for (i = 0; i < sizeof(buf); i += 7) {
 		unsigned char len = MIN(7, sizeof(buf) - i);
 
-		if (ism330dhcx_shub_read_slave_reg(data, i2c_addr,
-						(HTS221_REG_CONV_START + i) |
-						HTS221_AUTOINCREMENT,
-						&buf[i], len) < 0) {
+		if (ism330dhcx_shub_read_slave_reg(dev, i2c_addr, (HTS221_REG_CONV_START + i)
+							| HTS221_AUTOINCREMENT, &buf[i],
+						   len) < 0) {
 			LOG_DBG("shub: failed to read hts221 conv data");
 			return -EIO;
 		}
@@ -178,22 +171,20 @@ static int lsmdso_hts221_read_conv_data(struct ism330dhcx_data *data,
 	return 0;
 }
 
-static int ism330dhcx_hts221_init(struct ism330dhcx_data *data, uint8_t i2c_addr)
+static int ism330dhcx_hts221_init(const struct device *dev, uint8_t i2c_addr)
 {
 	uint8_t hum_cfg;
 
 	/* configure ODR and BDU */
 	hum_cfg = HTS221_ODR_1HZ | HTS221_BDU | HTS221_PD;
-	ism330dhcx_shub_write_slave_reg(data, i2c_addr,
-				     HTS221_REG_CTRL1, &hum_cfg, 1);
+	ism330dhcx_shub_write_slave_reg(dev, i2c_addr, HTS221_REG_CTRL1, &hum_cfg, 1);
 
-	return lsmdso_hts221_read_conv_data(data, i2c_addr);
+	return lsmdso_hts221_read_conv_data(dev, i2c_addr);
 }
 
 static const uint16_t hts221_map[] = {0, 1, 7, 12};
 
-static int ism330dhcx_hts221_odr_set(struct ism330dhcx_data *data,
-				   uint8_t i2c_addr, uint16_t freq)
+static int ism330dhcx_hts221_odr_set(const struct device *dev, uint8_t i2c_addr, uint16_t freq)
 {
 	uint8_t odr, cfg;
 
@@ -209,21 +200,19 @@ static int ism330dhcx_hts221_odr_set(struct ism330dhcx_data *data,
 	}
 
 	cfg = odr | HTS221_BDU | HTS221_PD;
-	ism330dhcx_shub_write_slave_reg(data, i2c_addr,
-				     HTS221_REG_CTRL1, &cfg, 1);
+	ism330dhcx_shub_write_slave_reg(dev, i2c_addr, HTS221_REG_CTRL1, &cfg, 1);
 
-	ism330dhcx_shub_enable(data, 1);
+	ism330dhcx_shub_enable(dev, 1);
 	return 0;
 }
 
-static int ism330dhcx_hts221_conf(struct ism330dhcx_data *data, uint8_t i2c_addr,
-				enum sensor_channel chan,
-				enum sensor_attribute attr,
-				const struct sensor_value *val)
+static int ism330dhcx_hts221_conf(const struct device *dev, uint8_t i2c_addr,
+				  enum sensor_channel chan, enum sensor_attribute attr,
+				  const struct sensor_value *val)
 {
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		return ism330dhcx_hts221_odr_set(data, i2c_addr, val->val1);
+		return ism330dhcx_hts221_odr_set(dev, i2c_addr, val->val1);
 	default:
 		LOG_DBG("shub: HTS221 attribute not supported.");
 		return -ENOTSUP;
@@ -246,21 +235,19 @@ static int ism330dhcx_hts221_conf(struct ism330dhcx_data *data, uint8_t i2c_addr
 #define LPS22HB_LPF_EN			0x08
 #define LPS22HB_BDU_EN			0x02
 
-static int ism330dhcx_lps22hb_init(struct ism330dhcx_data *data, uint8_t i2c_addr)
+static int ism330dhcx_lps22hb_init(const struct device *dev, uint8_t i2c_addr)
 {
 	uint8_t baro_cfg[2];
 
 	/* sw reset device */
 	baro_cfg[0] = LPS22HB_SW_RESET;
-	ism330dhcx_shub_write_slave_reg(data, i2c_addr,
-				     LPS22HB_CTRL_REG2, baro_cfg, 1);
+	ism330dhcx_shub_write_slave_reg(dev, i2c_addr, LPS22HB_CTRL_REG2, baro_cfg, 1);
 
 	k_sleep(K_MSEC(1)); /* turn-on time in ms */
 
 	/* configure device */
 	baro_cfg[0] = LPS22HB_ODR_10HZ | LPS22HB_LPF_EN | LPS22HB_BDU_EN;
-	ism330dhcx_shub_write_slave_reg(data, i2c_addr,
-				     LPS22HB_CTRL_REG1, baro_cfg, 1);
+	ism330dhcx_shub_write_slave_reg(dev, i2c_addr, LPS22HB_CTRL_REG1, baro_cfg, 1);
 
 	return 0;
 }
@@ -280,33 +267,29 @@ static int ism330dhcx_lps22hb_init(struct ism330dhcx_data *data, uint8_t i2c_add
 #define LPS22HH_LPF_EN			0x08
 #define LPS22HH_BDU_EN			0x02
 
-static int ism330dhcx_lps22hh_init(struct ism330dhcx_data *data, uint8_t i2c_addr)
+static int ism330dhcx_lps22hh_init(const struct device *dev, uint8_t i2c_addr)
 {
 	uint8_t baro_cfg[2];
 
 	/* sw reset device */
 	baro_cfg[0] = LPS22HH_SW_RESET;
-	ism330dhcx_shub_write_slave_reg(data, i2c_addr,
-				     LPS22HH_CTRL_REG2, baro_cfg, 1);
+	ism330dhcx_shub_write_slave_reg(dev, i2c_addr, LPS22HH_CTRL_REG2, baro_cfg, 1);
 
 	k_sleep(K_MSEC(100)); /* turn-on time in ms */
 
 	/* configure device */
 	baro_cfg[0] = LPS22HH_IF_ADD_INC;
-	ism330dhcx_shub_write_slave_reg(data, i2c_addr,
-				     LPS22HH_CTRL_REG2, baro_cfg, 1);
+	ism330dhcx_shub_write_slave_reg(dev, i2c_addr, LPS22HH_CTRL_REG2, baro_cfg, 1);
 
 	baro_cfg[0] = LPS22HH_ODR_10HZ | LPS22HH_LPF_EN | LPS22HH_BDU_EN;
-	ism330dhcx_shub_write_slave_reg(data, i2c_addr,
-				     LPS22HH_CTRL_REG1, baro_cfg, 1);
+	ism330dhcx_shub_write_slave_reg(dev, i2c_addr, LPS22HH_CTRL_REG1, baro_cfg, 1);
 
 	return 0;
 }
 
 static const uint16_t lps22hh_map[] = {0, 1, 10, 25, 50, 75, 100, 200};
 
-static int ism330dhcx_lps22hh_odr_set(struct ism330dhcx_data *data,
-				   uint8_t i2c_addr, uint16_t freq)
+static int ism330dhcx_lps22hh_odr_set(const struct device *dev, uint8_t i2c_addr, uint16_t freq)
 {
 	uint8_t odr, cfg;
 
@@ -322,21 +305,19 @@ static int ism330dhcx_lps22hh_odr_set(struct ism330dhcx_data *data,
 	}
 
 	cfg = (odr << 4) | LPS22HH_LPF_EN | LPS22HH_BDU_EN;
-	ism330dhcx_shub_write_slave_reg(data, i2c_addr,
-				     LPS22HH_CTRL_REG1, &cfg, 1);
+	ism330dhcx_shub_write_slave_reg(dev, i2c_addr, LPS22HH_CTRL_REG1, &cfg, 1);
 
-	ism330dhcx_shub_enable(data, 1);
+	ism330dhcx_shub_enable(dev, 1);
 	return 0;
 }
 
-static int ism330dhcx_lps22hh_conf(struct ism330dhcx_data *data, uint8_t i2c_addr,
-				enum sensor_channel chan,
-				enum sensor_attribute attr,
-				const struct sensor_value *val)
+static int ism330dhcx_lps22hh_conf(const struct device *dev, uint8_t i2c_addr,
+				   enum sensor_channel chan, enum sensor_attribute attr,
+				   const struct sensor_value *val)
 {
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		return ism330dhcx_lps22hh_odr_set(data, i2c_addr, val->val1);
+		return ism330dhcx_lps22hh_odr_set(dev, i2c_addr, val->val1);
 	default:
 		LOG_DBG("shub: LPS22HH attribute not supported.");
 		return -ENOTSUP;
@@ -356,10 +337,9 @@ static struct ism330dhcx_shub_slist {
 	uint8_t out_data_addr;
 	uint8_t out_data_len;
 	uint8_t sh_out_reg;
-	int (*dev_init)(struct ism330dhcx_data *data, uint8_t i2c_addr);
-	int (*dev_conf)(struct ism330dhcx_data *data, uint8_t i2c_addr,
-			enum sensor_channel chan, enum sensor_attribute attr,
-			const struct sensor_value *val);
+	int (*dev_init)(const struct device *dev, uint8_t i2c_addr);
+	int (*dev_conf)(const struct device *dev, uint8_t i2c_addr, enum sensor_channel chan,
+			enum sensor_attribute attr, const struct sensor_value *val);
 } ism330dhcx_shub_slist[] = {
 #if defined(CONFIG_ISM330DHCX_EXT_LIS2MDL) || defined(CONFIG_ISM330DHCX_EXT_IIS2MDC)
 	{
@@ -417,8 +397,9 @@ static struct ism330dhcx_shub_slist {
 #endif /* CONFIG_ISM330DHCX_EXT_LPS22HH */
 };
 
-static inline void ism330dhcx_shub_wait_completed(struct ism330dhcx_data *data)
+static inline void ism330dhcx_shub_wait_completed(const struct device *dev)
 {
+	struct ism330dhcx_data *data = dev->data;
 	ism330dhcx_status_master_t status;
 
 	do {
@@ -427,8 +408,10 @@ static inline void ism330dhcx_shub_wait_completed(struct ism330dhcx_data *data)
 	} while (status.sens_hub_endop == 0);
 }
 
-static inline void ism330dhcx_shub_embedded_en(struct ism330dhcx_data *data, bool on)
+static inline void ism330dhcx_shub_embedded_en(const struct device *dev, bool on)
 {
+	struct ism330dhcx_data *data = dev->data;
+
 	if (on) {
 		(void) ism330dhcx_mem_bank_set(data->ctx, ISM330DHCX_SENSOR_HUB_BANK);
 	} else {
@@ -438,42 +421,46 @@ static inline void ism330dhcx_shub_embedded_en(struct ism330dhcx_data *data, boo
 	k_busy_wait(150);
 }
 
-static int ism330dhcx_shub_read_embedded_regs(struct ism330dhcx_data *data,
-					      uint8_t reg_addr,
+static int ism330dhcx_shub_read_embedded_regs(const struct device *dev, uint8_t reg_addr,
 					      uint8_t *value, int len)
 {
-	ism330dhcx_shub_embedded_en(data, true);
+	struct ism330dhcx_data *data = dev->data;
+
+	ism330dhcx_shub_embedded_en(dev, true);
 
 	if (ism330dhcx_read_reg(data->ctx, reg_addr, value, len) < 0) {
 		LOG_DBG("shub: failed to read external reg: %02x", reg_addr);
-		ism330dhcx_shub_embedded_en(data, false);
+		ism330dhcx_shub_embedded_en(dev, false);
 		return -EIO;
 	}
 
-	ism330dhcx_shub_embedded_en(data, false);
+	ism330dhcx_shub_embedded_en(dev, false);
 
 	return 0;
 }
 
-static int ism330dhcx_shub_write_embedded_regs(struct ism330dhcx_data *data,
-					       uint8_t reg_addr,
+static int ism330dhcx_shub_write_embedded_regs(const struct device *dev, uint8_t reg_addr,
 					       uint8_t *value, uint8_t len)
 {
-	ism330dhcx_shub_embedded_en(data, true);
+	struct ism330dhcx_data *data = dev->data;
+
+	ism330dhcx_shub_embedded_en(dev, true);
 
 	if (ism330dhcx_write_reg(data->ctx, reg_addr, value, len) < 0) {
 		LOG_DBG("shub: failed to write external reg: %02x", reg_addr);
-		ism330dhcx_shub_embedded_en(data, false);
+		ism330dhcx_shub_embedded_en(dev, false);
 		return -EIO;
 	}
 
-	ism330dhcx_shub_embedded_en(data, false);
+	ism330dhcx_shub_embedded_en(dev, false);
 
 	return 0;
 }
 
-static void ism330dhcx_shub_enable(struct ism330dhcx_data *data, uint8_t enable)
+static void ism330dhcx_shub_enable(const struct device *dev, uint8_t enable)
 {
+	struct ism330dhcx_data *data = dev->data;
+
 	/* Enable Accel @26hz */
 	if (!data->accel_freq) {
 		uint8_t odr = (enable) ? 2 : 0;
@@ -484,24 +471,24 @@ static void ism330dhcx_shub_enable(struct ism330dhcx_data *data, uint8_t enable)
 		}
 	}
 
-	ism330dhcx_shub_embedded_en(data, true);
+	ism330dhcx_shub_embedded_en(dev, true);
 
 	if (ism330dhcx_sh_master_set(data->ctx, enable) < 0) {
 		LOG_DBG("shub: failed to set master on");
-		ism330dhcx_shub_embedded_en(data, false);
+		ism330dhcx_shub_embedded_en(dev, false);
 		return;
 	}
 
-	ism330dhcx_shub_embedded_en(data, false);
+	ism330dhcx_shub_embedded_en(dev, false);
 }
 
 /* must be called with master on */
-static int ism330dhcx_shub_check_slv0_nack(struct ism330dhcx_data *data)
+static int ism330dhcx_shub_check_slv0_nack(const struct device *dev)
 {
 	uint8_t status;
 
-	if (ism330dhcx_shub_read_embedded_regs(data, ISM330DHCX_SHUB_STATUS_MASTER,
-					       &status, 1) < 0) {
+	if (ism330dhcx_shub_read_embedded_regs(dev, ISM330DHCX_SHUB_STATUS_MASTER, &status, 1) <
+	    0) {
 		LOG_DBG("shub: error reading embedded reg");
 		return -EIO;
 	}
@@ -517,51 +504,49 @@ static int ism330dhcx_shub_check_slv0_nack(struct ism330dhcx_data *data)
 /*
  * use SLV0 for generic read to slave device
  */
-static int ism330dhcx_shub_read_slave_reg(struct ism330dhcx_data *data,
-					  uint8_t slv_addr, uint8_t slv_reg,
-					  uint8_t *value, uint16_t len)
+static int ism330dhcx_shub_read_slave_reg(const struct device *dev, uint8_t slv_addr,
+					  uint8_t slv_reg, uint8_t *value, uint16_t len)
 {
+	struct ism330dhcx_data *data = dev->data;
 	uint8_t slave[3];
 
 	slave[0] = (slv_addr << 1) | ISM330DHCX_SHUB_SLVX_READ;
 	slave[1] = slv_reg;
 	slave[2] = (len & 0x7);
 
-	if (ism330dhcx_shub_write_embedded_regs(data, ISM330DHCX_SHUB_SLV0_ADDR,
-						slave, 3) < 0) {
+	if (ism330dhcx_shub_write_embedded_regs(dev, ISM330DHCX_SHUB_SLV0_ADDR, slave, 3) < 0) {
 		LOG_DBG("shub: error writing embedded reg");
 		return -EIO;
 	}
 
 	/* turn SH on */
-	ism330dhcx_shub_enable(data, 1);
-	ism330dhcx_shub_wait_completed(data);
+	ism330dhcx_shub_enable(dev, 1);
+	ism330dhcx_shub_wait_completed(dev);
 
-	if (ism330dhcx_shub_check_slv0_nack(data) < 0) {
-		ism330dhcx_shub_enable(data, 0);
+	if (ism330dhcx_shub_check_slv0_nack(dev) < 0) {
+		ism330dhcx_shub_enable(dev, 0);
 		return -EIO;
 	}
 
 	/* read data from external slave */
-	ism330dhcx_shub_embedded_en(data, true);
+	ism330dhcx_shub_embedded_en(dev, true);
 	if (ism330dhcx_read_reg(data->ctx, ISM330DHCX_SHUB_DATA_OUT,
 				value, len) < 0) {
 		LOG_DBG("shub: error reading sensor data");
-		ism330dhcx_shub_embedded_en(data, false);
+		ism330dhcx_shub_embedded_en(dev, false);
 		return -EIO;
 	}
-	ism330dhcx_shub_embedded_en(data, false);
+	ism330dhcx_shub_embedded_en(dev, false);
 
-	ism330dhcx_shub_enable(data, 0);
+	ism330dhcx_shub_enable(dev, 0);
 	return 0;
 }
 
 /*
  * use SLV0 to configure slave device
  */
-static int ism330dhcx_shub_write_slave_reg(struct ism330dhcx_data *data,
-					   uint8_t slv_addr, uint8_t slv_reg,
-					   uint8_t *value, uint16_t len)
+static int ism330dhcx_shub_write_slave_reg(const struct device *dev, uint8_t slv_addr,
+					   uint8_t slv_reg, uint8_t *value, uint16_t len)
 {
 	uint8_t slv_cfg[3];
 	uint8_t cnt = 0U;
@@ -570,31 +555,29 @@ static int ism330dhcx_shub_write_slave_reg(struct ism330dhcx_data *data,
 		slv_cfg[0] = (slv_addr << 1) & ~ISM330DHCX_SHUB_SLVX_READ;
 		slv_cfg[1] = slv_reg + cnt;
 
-		if (ism330dhcx_shub_write_embedded_regs(data,
-							ISM330DHCX_SHUB_SLV0_ADDR,
-							slv_cfg, 2) < 0) {
+		if (ism330dhcx_shub_write_embedded_regs(dev, ISM330DHCX_SHUB_SLV0_ADDR, slv_cfg,
+							2) < 0) {
 			LOG_DBG("shub: error writing embedded reg");
 			return -EIO;
 		}
 
 		slv_cfg[0] = value[cnt];
-		if (ism330dhcx_shub_write_embedded_regs(data,
-					ISM330DHCX_SHUB_SLV0_DATAWRITE,
-					slv_cfg, 1) < 0) {
+		if (ism330dhcx_shub_write_embedded_regs(dev, ISM330DHCX_SHUB_SLV0_DATAWRITE,
+							slv_cfg, 1) < 0) {
 			LOG_DBG("shub: error writing embedded reg");
 			return -EIO;
 		}
 
 		/* turn SH on */
-		ism330dhcx_shub_enable(data, 1);
-		ism330dhcx_shub_wait_completed(data);
+		ism330dhcx_shub_enable(dev, 1);
+		ism330dhcx_shub_wait_completed(dev);
 
-		if (ism330dhcx_shub_check_slv0_nack(data) < 0) {
-			ism330dhcx_shub_enable(data, 0);
+		if (ism330dhcx_shub_check_slv0_nack(dev) < 0) {
+			ism330dhcx_shub_enable(dev, 0);
 			return -EIO;
 		}
 
-		ism330dhcx_shub_enable(data, 0);
+		ism330dhcx_shub_enable(dev, 0);
 
 		cnt++;
 	}
@@ -603,8 +586,7 @@ static int ism330dhcx_shub_write_slave_reg(struct ism330dhcx_data *data,
 	slv_cfg[0] = 0x7;
 	slv_cfg[1] = 0x0;
 	slv_cfg[2] = 0x0;
-	if (ism330dhcx_shub_write_embedded_regs(data, ISM330DHCX_SHUB_SLV0_ADDR,
-						slv_cfg, 3) < 0) {
+	if (ism330dhcx_shub_write_embedded_regs(dev, ISM330DHCX_SHUB_SLV0_ADDR, slv_cfg, 3) < 0) {
 		LOG_DBG("shub: error writing embedded reg");
 		return -EIO;
 	}
@@ -620,8 +602,9 @@ static int ism330dhcx_shub_write_slave_reg(struct ism330dhcx_data *data,
  *  - SLAVE 2: used as data read channel for external slave device #2
  *  - SLAVE 3: used for generic reads while data channel is enabled
  */
-static int ism330dhcx_shub_set_data_channel(struct ism330dhcx_data *data)
+static int ism330dhcx_shub_set_data_channel(const struct device *dev)
 {
+	struct ism330dhcx_data *data = dev->data;
 	uint8_t n, i, slv_cfg[6];
 	struct ism330dhcx_shub_slist *sp;
 
@@ -635,9 +618,8 @@ static int ism330dhcx_shub_set_data_channel(struct ism330dhcx_data *data)
 		slv_cfg[i + 2] = sp->out_data_len;
 	}
 
-	if (ism330dhcx_shub_write_embedded_regs(data,
-						ISM330DHCX_SHUB_SLV1_ADDR,
-						slv_cfg, n*3) < 0) {
+	if (ism330dhcx_shub_write_embedded_regs(dev, ISM330DHCX_SHUB_SLV1_ADDR, slv_cfg,
+						n * 3) < 0) {
 		LOG_DBG("shub: error writing embedded reg");
 		return -EIO;
 	}
@@ -659,8 +641,8 @@ static int ism330dhcx_shub_set_data_channel(struct ism330dhcx_data *data)
 
 
 	/* turn SH on */
-	ism330dhcx_shub_enable(data, 1);
-	ism330dhcx_shub_wait_completed(data);
+	ism330dhcx_shub_enable(dev, 1);
+	ism330dhcx_shub_wait_completed(dev);
 
 	return 0;
 }
@@ -673,8 +655,9 @@ int ism330dhcx_shub_get_idx(enum sensor_channel type)
 	for (n = 0; n < num_ext_dev; n++) {
 		sp = &ism330dhcx_shub_slist[shub_ext[n]];
 
-		if (sp->type == type)
+		if (sp->type == type) {
 			return n;
+		}
 	}
 
 	return -ENOTSUP;
@@ -687,7 +670,7 @@ int ism330dhcx_shub_fetch_external_devs(const struct device *dev)
 	struct ism330dhcx_shub_slist *sp;
 
 	/* read data from external slave */
-	ism330dhcx_shub_embedded_en(data, true);
+	ism330dhcx_shub_embedded_en(dev, true);
 
 	for (n = 0; n < num_ext_dev; n++) {
 		sp = &ism330dhcx_shub_slist[shub_ext[n]];
@@ -695,12 +678,12 @@ int ism330dhcx_shub_fetch_external_devs(const struct device *dev)
 		if (ism330dhcx_read_reg(data->ctx, sp->sh_out_reg,
 				     data->ext_data[n], sp->out_data_len) < 0) {
 			LOG_DBG("shub: failed to read sample");
-			ism330dhcx_shub_embedded_en(data, false);
+			ism330dhcx_shub_embedded_en(dev, false);
 			return -EIO;
 		}
 	}
 
-	ism330dhcx_shub_embedded_en(data, false);
+	ism330dhcx_shub_embedded_en(dev, false);
 
 	return 0;
 }
@@ -709,15 +692,15 @@ int ism330dhcx_shub_config(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
-	struct ism330dhcx_data *data = dev->data;
 	struct ism330dhcx_shub_slist *sp = NULL;
 	uint8_t n;
 
 	for (n = 0; n < num_ext_dev; n++) {
 		sp = &ism330dhcx_shub_slist[shub_ext[n]];
 
-		if (sp->type == chan)
+		if (sp->type == chan) {
 			break;
+		}
 	}
 
 	if (n == num_ext_dev) {
@@ -730,19 +713,19 @@ int ism330dhcx_shub_config(const struct device *dev, enum sensor_channel chan,
 		return -ENOTSUP;
 	}
 
-	return sp->dev_conf(data, sp->ext_i2c_addr, chan, attr, val);
+	return sp->dev_conf(dev, sp->ext_i2c_addr, chan, attr, val);
 }
 
 int ism330dhcx_shub_init(const struct device *dev)
 {
-	struct ism330dhcx_data *data = dev->data;
 	uint8_t i, n = 0, regn;
 	uint8_t chip_id;
 	struct ism330dhcx_shub_slist *sp;
 
 	for (n = 0; n < ARRAY_SIZE(ism330dhcx_shub_slist); n++) {
-		if (num_ext_dev >= ISM330DHCX_SHUB_MAX_NUM_SLVS)
+		if (num_ext_dev >= ISM330DHCX_SHUB_MAX_NUM_SLVS) {
 			break;
+		}
 
 		chip_id = 0;
 		sp = &ism330dhcx_shub_slist[n];
@@ -753,9 +736,7 @@ int ism330dhcx_shub_init(const struct device *dev)
 		 * chip ID.
 		 */
 		for (i = 0U; i < ARRAY_SIZE(sp->i2c_addr); i++) {
-			if (ism330dhcx_shub_read_slave_reg(data,
-							   sp->i2c_addr[i],
-							   sp->wai_addr,
+			if (ism330dhcx_shub_read_slave_reg(dev, sp->i2c_addr[i], sp->wai_addr,
 							   &chip_id, 1) < 0) {
 				continue;
 			}
@@ -784,10 +765,10 @@ int ism330dhcx_shub_init(const struct device *dev)
 		sp = &ism330dhcx_shub_slist[shub_ext[n]];
 		sp->sh_out_reg = ISM330DHCX_SHUB_DATA_OUT + regn;
 		regn += sp->out_data_len;
-		sp->dev_init(data, sp->ext_i2c_addr);
+		sp->dev_init(dev, sp->ext_i2c_addr);
 	}
 
-	ism330dhcx_shub_set_data_channel(data);
+	ism330dhcx_shub_set_data_channel(dev);
 
 	return 0;
 }

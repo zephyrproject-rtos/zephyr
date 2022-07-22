@@ -342,18 +342,26 @@
 	/* PSL peripheral interfaces. */
 	/omit-if-no-ref/ psl_in1_gpd2: periph-psl-in1 {
 		pinmux = <&altd_npsl_in1_sl>;
+		psl-offset = <0>;
+		psl-polarity = <&altd_psl_in1_ahi>;
 	};
 
 	/omit-if-no-ref/ psl_in2_gp00: periph-psl-in2 {
 		pinmux = <&altd_npsl_in2_sl>;
+		psl-offset = <1>;
+		psl-polarity = <&altd_psl_in2_ahi>;
 	};
 
 	/omit-if-no-ref/ psl_in3_gp01: periph-psl-in3 {
 		pinmux = <&altd_psl_in3_sl>;
+		psl-offset = <2>;
+		psl-polarity = <&altd_psl_in3_ahi>;
 	};
 
 	/omit-if-no-ref/ psl_in4_gp02: periph-psl-in4 {
 		pinmux = <&altd_psl_in4_sl>;
+		psl-offset = <3>;
+		psl-polarity = <&altd_psl_in4_ahi>;
 	};
 
 	/* UART peripheral interfaces */

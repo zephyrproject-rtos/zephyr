@@ -39,14 +39,19 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define ESWIFI_WORKQUEUE_STACK_SIZE 1024
 K_KERNEL_STACK_DEFINE(eswifi_work_q_stack, ESWIFI_WORKQUEUE_STACK_SIZE);
 
+static const struct eswifi_cfg eswifi0_cfg = {
+	.resetn = GPIO_DT_SPEC_INST_GET(0, resetn_gpios),
+	.wakeup = GPIO_DT_SPEC_INST_GET(0, wakeup_gpios),
+};
+
 static struct eswifi_dev eswifi0; /* static instance */
 
-static int eswifi_reset(struct eswifi_dev *eswifi)
+static int eswifi_reset(struct eswifi_dev *eswifi, const struct eswifi_cfg *cfg)
 {
-	gpio_pin_set(eswifi->resetn.dev, eswifi->resetn.pin, 0);
+	gpio_pin_set_dt(&cfg->resetn, 0);
 	k_sleep(K_MSEC(10));
-	gpio_pin_set(eswifi->resetn.dev, eswifi->resetn.pin, 1);
-	gpio_pin_set(eswifi->wakeup.dev, eswifi->wakeup.pin, 1);
+	gpio_pin_set_dt(&cfg->resetn, 1);
+	gpio_pin_set_dt(&cfg->wakeup, 1);
 	k_sleep(K_MSEC(500));
 
 	/* fetch the cursor */
@@ -380,13 +385,14 @@ static int eswifi_get_mac_addr(struct eswifi_dev *eswifi, uint8_t addr[6])
 static void eswifi_iface_init(struct net_if *iface)
 {
 	struct eswifi_dev *eswifi = &eswifi0;
+	const struct eswifi_cfg *cfg = &eswifi0_cfg;
 	uint8_t mac[6];
 
 	LOG_DBG("");
 
 	eswifi_lock(eswifi);
 
-	if (eswifi_reset(eswifi) < 0) {
+	if (eswifi_reset(eswifi, cfg) < 0) {
 		LOG_ERR("Unable to reset device");
 		return;
 	}
@@ -637,6 +643,7 @@ static int eswifi_mgmt_ap_disable(const struct device *dev)
 static int eswifi_init(const struct device *dev)
 {
 	struct eswifi_dev *eswifi = dev->data;
+	const struct eswifi_cfg *cfg = dev->config;
 
 	LOG_DBG("");
 
@@ -646,29 +653,19 @@ static int eswifi_init(const struct device *dev)
 	eswifi->bus = eswifi_get_bus();
 	eswifi->bus->init(eswifi);
 
-	eswifi->resetn.dev = device_get_binding(
-			DT_INST_GPIO_LABEL(0, resetn_gpios));
-	if (!eswifi->resetn.dev) {
-		LOG_ERR("Failed to initialize GPIO driver: %s",
-			    DT_INST_GPIO_LABEL(0, resetn_gpios));
+	if (!device_is_ready(cfg->resetn.port)) {
+		LOG_ERR("%s: device %s is not ready", dev->name,
+				cfg->resetn.port->name);
 		return -ENODEV;
 	}
-	eswifi->resetn.pin = DT_INST_GPIO_PIN(0, resetn_gpios);
-	gpio_pin_configure(eswifi->resetn.dev, eswifi->resetn.pin,
-			   DT_INST_GPIO_FLAGS(0, resetn_gpios) |
-			   GPIO_OUTPUT_INACTIVE);
+	gpio_pin_configure_dt(&cfg->resetn, GPIO_OUTPUT_INACTIVE);
 
-	eswifi->wakeup.dev = device_get_binding(
-			DT_INST_GPIO_LABEL(0, wakeup_gpios));
-	if (!eswifi->wakeup.dev) {
-		LOG_ERR("Failed to initialize GPIO driver: %s",
-			    DT_INST_GPIO_LABEL(0, wakeup_gpios));
+	if (!device_is_ready(cfg->wakeup.port)) {
+		LOG_ERR("%s: device %s is not ready", dev->name,
+				cfg->wakeup.port->name);
 		return -ENODEV;
 	}
-	eswifi->wakeup.pin = DT_INST_GPIO_PIN(0, wakeup_gpios);
-	gpio_pin_configure(eswifi->wakeup.dev, eswifi->wakeup.pin,
-			   DT_INST_GPIO_FLAGS(0, wakeup_gpios) |
-			   GPIO_OUTPUT_ACTIVE);
+	gpio_pin_configure_dt(&cfg->wakeup, GPIO_OUTPUT_ACTIVE);
 
 	k_work_queue_start(&eswifi->work_q, eswifi_work_q_stack,
 			   K_KERNEL_STACK_SIZEOF(eswifi_work_q_stack),
@@ -691,7 +688,7 @@ static const struct net_wifi_mgmt_offload eswifi_offload_api = {
 };
 
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, eswifi_init, NULL,
-				  &eswifi0, NULL,
+				  &eswifi0, &eswifi0_cfg,
 				  CONFIG_WIFI_INIT_PRIORITY,
 				  &eswifi_offload_api,
 				  1500);

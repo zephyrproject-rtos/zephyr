@@ -37,7 +37,7 @@ int flash_area_open(uint8_t id, const struct flash_area **fap)
 		return -ENOENT;
 	}
 
-	if (device_get_binding(area->fa_dev_name) == NULL) {
+	if (!area->fa_dev || !device_is_ready(area->fa_dev)) {
 		return -ENODEV;
 	}
 
@@ -54,62 +54,40 @@ void flash_area_close(const struct flash_area *fa)
 int flash_area_read(const struct flash_area *fa, off_t off, void *dst,
 		    size_t len)
 {
-	const struct device *dev;
-
 	if (!is_in_flash_area_bounds(fa, off, len)) {
 		return -EINVAL;
 	}
 
-	dev = device_get_binding(fa->fa_dev_name);
-
-	return flash_read(dev, fa->fa_off + off, dst, len);
+	return flash_read(fa->fa_dev, fa->fa_off + off, dst, len);
 }
 
 int flash_area_write(const struct flash_area *fa, off_t off, const void *src,
 		     size_t len)
 {
-	const struct device *flash_dev;
-	int rc;
-
 	if (!is_in_flash_area_bounds(fa, off, len)) {
 		return -EINVAL;
 	}
 
-	flash_dev = device_get_binding(fa->fa_dev_name);
-
-	rc = flash_write(flash_dev, fa->fa_off + off, (void *)src, len);
-
-	return rc;
+	return flash_write(fa->fa_dev, fa->fa_off + off, (void *)src, len);
 }
 
 int flash_area_erase(const struct flash_area *fa, off_t off, size_t len)
 {
-	const struct device *flash_dev;
-	int rc;
-
 	if (!is_in_flash_area_bounds(fa, off, len)) {
 		return -EINVAL;
 	}
 
-	flash_dev = device_get_binding(fa->fa_dev_name);
-
-	rc = flash_erase(flash_dev, fa->fa_off + off, len);
-
-	return rc;
+	return flash_erase(fa->fa_dev, fa->fa_off + off, len);
 }
 
 uint32_t flash_area_align(const struct flash_area *fa)
 {
-	const struct device *dev;
-
-	dev = device_get_binding(fa->fa_dev_name);
-
-	return flash_get_write_block_size(dev);
+	return flash_get_write_block_size(fa->fa_dev);
 }
 
 int flash_area_has_driver(const struct flash_area *fa)
 {
-	if (device_get_binding(fa->fa_dev_name) == NULL) {
+	if (!device_is_ready(fa->fa_dev)) {
 		return -ENODEV;
 	}
 
@@ -118,14 +96,14 @@ int flash_area_has_driver(const struct flash_area *fa)
 
 const struct device *flash_area_get_device(const struct flash_area *fa)
 {
-	return device_get_binding(fa->fa_dev_name);
+	return fa->fa_dev;
 }
 
 uint8_t flash_area_erased_val(const struct flash_area *fa)
 {
 	const struct flash_parameters *param;
 
-	param = flash_get_parameters(device_get_binding(fa->fa_dev_name));
+	param = flash_get_parameters(fa->fa_dev);
 
 	return param->erase_value;
 }

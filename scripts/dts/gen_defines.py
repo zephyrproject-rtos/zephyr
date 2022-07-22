@@ -352,9 +352,6 @@ def write_bus(node):
     if not bus:
         return
 
-    if not bus.label:
-        err(f"missing 'label' property on bus node {bus!r}")
-
     out_comment(f"Bus info (controller: '{bus.path}', type: '{node.on_bus}')")
     out_dt_define(f"{node.z_path_id}_BUS_{str2ident(node.on_bus)}", 1)
     out_dt_define(f"{node.z_path_id}_BUS", f"DT_{bus.z_path_id}")
@@ -537,6 +534,8 @@ def write_compatibles(node):
 def write_children(node):
     # Writes helper macros for dealing with node's children.
 
+    out_comment("Helper macros for child nodes of this node.")
+
     out_dt_define(f"{node.z_path_id}_FOREACH_CHILD(fn)",
             " ".join(f"fn(DT_{child.z_path_id})" for child in
                 node.children.values()))
@@ -651,6 +650,9 @@ def write_vanilla_props(node):
             for i, subval in enumerate(prop.val):
                 if isinstance(subval, str):
                     macro2val[macro + f"_IDX_{i}"] = quote_str(subval)
+                    subval_as_token = edtlib.str_as_token(subval)
+                    macro2val[macro + f"_IDX_{i}_TOKEN"] = subval_as_token
+                    macro2val[macro + f"_IDX_{i}_UPPER_TOKEN"] = subval_as_token.upper()
                 else:
                     macro2val[macro + f"_IDX_{i}"] = subval
                 macro2val[macro + f"_IDX_{i}_EXISTS"] = 1

@@ -25,7 +25,7 @@ STRUCT_SECTION_ITERABLE(test_ram, ram1) = {0x01};
  * @brief Test iterable in read write section.
  *
  */
-void test_ram(void)
+ZTEST(iterable_sections, test_ram)
 {
 	int out = 0;
 
@@ -63,7 +63,7 @@ STRUCT_SECTION_ITERABLE(test_rom, rom2) = {0x20};
  * @brief Test iterable in read only section.
  *
  */
-void test_rom(void)
+ZTEST(iterable_sections, test_rom)
 {
 	int out = 0;
 
@@ -74,15 +74,4 @@ void test_rom(void)
 	zassert_equal(out, ROM_EXPECT, "Check value incorrect (got: 0x%x)", out);
 }
 
-/**
- *
- * @brief Test entry point
- *
- */
-void test_main(void)
-{
-	ztest_test_suite(iterable_sections,
-			 ztest_unit_test(test_ram),
-			 ztest_unit_test(test_rom));
-	ztest_run_test_suite(iterable_sections);
-}
+ZTEST_SUITE(iterable_sections, NULL, NULL, NULL, NULL, NULL);

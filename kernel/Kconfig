@@ -324,7 +324,6 @@ config INIT_STACKS
 config BOOT_BANNER
 	bool "Boot banner"
 	default y
-	depends on CONSOLE_HAS_DRIVER
 	select PRINTK
 	select EARLY_CONSOLE
 	help

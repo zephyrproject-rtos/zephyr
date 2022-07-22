@@ -15,6 +15,7 @@ static const struct bt_data ad[] = {
 };
 
 static volatile bool is_connected;
+static volatile bool is_encrypted;
 
 static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
@@ -51,11 +52,21 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
 	is_connected = false;
+	is_encrypted = false;
+}
+
+static void security_changed(struct bt_conn *conn, bt_security_t level,
+			     enum bt_security_err security_err)
+{
+	if (security_err == BT_SECURITY_ERR_SUCCESS && level > BT_SECURITY_L1) {
+		is_encrypted = true;
+	}
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.security_changed = security_changed,
 };
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
@@ -108,6 +119,15 @@ void central_setup_and_connect(void)
 	while (!is_connected) {
 		k_sleep(K_MSEC(100));
 	}
+
+	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
+	if (err) {
+		FAIL("Failed to start encryption procedure\n");
+	}
+
+	while (!is_encrypted) {
+		k_sleep(K_MSEC(100));
+	}
 }
 
 void peripheral_setup_and_connect(void)
@@ -125,6 +145,11 @@ void peripheral_setup_and_connect(void)
 	}
 
 	while (!is_connected) {
+		k_sleep(K_MSEC(100));
+	}
+
+	/* Wait for central to start encryption */
+	while (!is_encrypted) {
 		k_sleep(K_MSEC(100));
 	}
 }

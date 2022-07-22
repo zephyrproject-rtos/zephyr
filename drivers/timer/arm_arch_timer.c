@@ -17,6 +17,9 @@
 
 static struct k_spinlock lock;
 static uint64_t last_cycle;
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = ARM_ARCH_TIMER_IRQ;
+#endif
 
 static void arm_arch_timer_compare_isr(const void *arg)
 {
@@ -100,8 +103,17 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	uint64_t curr_cycle = arm_arch_timer_count();
 	uint64_t req_cycle = ticks * CYC_PER_TICK;
 
-	/* Round up to next tick boundary */
-	req_cycle += (curr_cycle - last_cycle) + (CYC_PER_TICK - 1);
+	/*
+	 * Round up to next tick boundary, but an edge case should be handled.
+	 * Fast hardware with slow timer hardware can trigger and enter an
+	 * interrupt and reach this spot before the counter has advanced.
+	 * That defeats the "round up" logic such that we end up scheduling
+	 * timeouts a tick too soon (e.g. if the kernel requests an interrupt
+	 * at the "X" tick, we would end up computing a comparator value
+	 * representing the "X-1" tick!). Choose the bigger one between 1 and
+	 * "curr_cycle - last_cycle" to correct.
+	 */
+	req_cycle += MAX(curr_cycle - last_cycle, 1) + (CYC_PER_TICK - 1);
 
 	req_cycle = (req_cycle / CYC_PER_TICK) * CYC_PER_TICK;
 
@@ -185,7 +197,8 @@ static int sys_clock_driver_init(const struct device *dev)
 	IRQ_CONNECT(ARM_ARCH_TIMER_IRQ, ARM_ARCH_TIMER_PRIO,
 		    arm_arch_timer_compare_isr, NULL, ARM_ARCH_TIMER_FLAGS);
 	arm_arch_timer_init();
-	arm_arch_timer_set_compare(arm_arch_timer_count() + CYC_PER_TICK);
+	last_cycle = arm_arch_timer_count();
+	arm_arch_timer_set_compare(last_cycle + CYC_PER_TICK);
 	arm_arch_timer_enable(true);
 	irq_enable(ARM_ARCH_TIMER_IRQ);
 	arm_arch_timer_set_irq_mask(false);

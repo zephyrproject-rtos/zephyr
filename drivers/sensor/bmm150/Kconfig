@@ -5,6 +5,8 @@
 
 menuconfig BMM150
 	bool "BMM150 I2C Geomagnetic Chip"
+	default y
+	depends on DT_HAS_BOSCH_BMM150_ENABLED
 	depends on I2C
 	help
 	  Enable driver for BMM150 I2C-based Geomagnetic sensor.

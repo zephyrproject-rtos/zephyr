@@ -81,8 +81,6 @@ extern "C" {
 
 #if defined(CONFIG_WIFI_ESP_AT_DNS_USE)
 #define ESP_MAX_DNS	MIN(3, CONFIG_DNS_RESOLVER_MAX_SERVERS)
-#else
-#define ESP_MAX_DNS	0
 #endif
 
 #define ESP_MAX_SOCKETS 5
@@ -227,7 +225,9 @@ struct esp_data {
 	struct in_addr gw;
 	struct in_addr nm;
 	uint8_t mac_addr[6];
+#if defined(ESP_MAX_DNS)
 	struct sockaddr_in dns_addresses[ESP_MAX_DNS];
+#endif
 
 	/* modem context */
 	struct modem_context mctx;

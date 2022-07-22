@@ -125,3 +125,8 @@ void ull_conn_pause_rx_data(struct ll_conn *conn);
 void ull_conn_resume_rx_data(struct ll_conn *conn);
 
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+
+/**
+ * @brief Check if the lower link layer transmit queue is empty
+ */
+uint8_t ull_is_lll_tx_queue_empty(struct ll_conn *conn);

@@ -384,7 +384,7 @@
 		};
 
 		spi1: spi@40013000 {
-			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
@@ -396,7 +396,7 @@
 		};
 
 		spi2: spi@40003800 {
-			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
@@ -408,7 +408,7 @@
 		};
 
 		spi3: spi@40003c00 {
-			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003c00 0x400>;
@@ -420,7 +420,7 @@
 		};
 
 		spi4: spi@40013400 {
-			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013400 0x400>;
@@ -431,7 +431,7 @@
 		};
 
 		spi5: spi@40015000 {
-			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40015000 0x400>;
@@ -442,7 +442,7 @@
 		};
 
 		spi6: spi@58001400 {
-			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x58001400 0x400>;

@@ -133,10 +133,11 @@ static void multi_thread_sem_give(void *p1, void *p2, void *p3)
 	count = atomic_get(&atomic_count);
 	k_sem_give(&limit_sem);
 
-	if (count < TOTAL_MAX)
+	if (count < TOTAL_MAX) {
 		zassert_equal(k_sem_count_get(&limit_sem), count, "multi get sem error");
-	else
+	} else {
 		zassert_equal(k_sem_count_get(&limit_sem), SEM_MAX_VAL, "count > SEM_MAX_VAL");
+	}
 
 	k_sem_take(&sync_sem, K_FOREVER);
 }
@@ -149,10 +150,11 @@ static void multi_thread_sem_take(void *p1, void *p2, void *p3)
 	(void)atomic_dec(&atomic_count);
 	count = atomic_get(&atomic_count);
 
-	if (count >= 0)
+	if (count >= 0) {
 		zassert_equal(k_sem_count_get(&limit_sem), count, "multi take sem error");
-	else
+	} else {
 		zassert_equal(k_sem_count_get(&limit_sem), 0, "count < SEM_INIT_VAL");
+	}
 
 	k_sem_give(&sync_sem);
 }

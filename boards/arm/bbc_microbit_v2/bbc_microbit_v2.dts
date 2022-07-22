@@ -16,6 +16,8 @@
 	aliases {
 		sw0 = &buttonA;
 		sw1 = &buttonB;
+		magn0 = &lsm303agr_magn;
+		watchdog0 = &wdt0;
 	};
 
 	chosen {
@@ -127,7 +129,7 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
-	lsm303agr-magn@1e {
+	lsm303agr_magn: lsm303agr-magn@1e {
 		compatible = "st,lis2mdl", "st,lsm303agr-magn";
 		status = "okay";
 		reg = <0x1e>;

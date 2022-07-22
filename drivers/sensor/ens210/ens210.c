@@ -337,12 +337,15 @@ static int ens210_init(const struct device *dev)
 	return 0;
 }
 
-static struct ens210_data ens210_data_inst;
+#define ENS210_DEFINE(inst)								\
+	static struct ens210_data ens210_data_##inst;					\
+											\
+	static const struct ens210_config ens210_config_##inst = {			\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+	};										\
+											\
+	DEVICE_DT_INST_DEFINE(inst, ens210_init, NULL,					\
+			      &ens210_data_##inst, &ens210_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &en210_driver_api);		\
 
-static const struct ens210_config ens210_config_inst = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
-
-DEVICE_DT_INST_DEFINE(0, ens210_init, NULL, &ens210_data_inst,
-		      &ens210_config_inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		      &en210_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(ENS210_DEFINE)

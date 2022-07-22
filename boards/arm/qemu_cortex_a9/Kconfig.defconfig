@@ -84,11 +84,4 @@ if SHELL
 
 endif # SHELL
 
-if UART_PIPE
-
-	config UART_PIPE_ON_DEV_NAME
-	default "uart1"
-
-endif # UART_PIPE
-
 endif # BOARD_QEMU_CORTEX_A9

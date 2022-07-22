@@ -9,6 +9,7 @@ config CPU_CORTEX_A
 	select HAS_FLASH_LOAD_OFFSET
 	select SCHED_IPI_SUPPORTED if SMP
 	select CPU_HAS_FPU
+	select ARCH_HAS_SINGLE_THREAD_SUPPORT
 	imply FPU
 	imply FPU_SHARING
 	help
@@ -27,6 +28,13 @@ config CPU_CORTEX_A53
 	select ARMV8_A
 	help
 	  This option signifies the use of a Cortex-A53 CPU
+
+config CPU_CORTEX_A55
+	bool
+	select CPU_CORTEX_A
+	select ARMV8_A
+	help
+	  This option signifies the use of a Cortex-A55 CPU
 
 config CPU_CORTEX_A72
 	bool
@@ -90,6 +98,13 @@ config PRIVILEGED_STACK_SIZE
 
 config KOBJECT_TEXT_AREA
 	default 512 if TEST
+
+config WAIT_AT_RESET_VECTOR
+	bool "Wait at reset vector"
+	default n
+	help
+	  Spin at reset vector waiting for debugger to attach and resume
+	  execution
 
 if CPU_CORTEX_A
 

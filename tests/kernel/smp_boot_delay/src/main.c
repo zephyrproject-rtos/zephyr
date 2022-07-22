@@ -33,7 +33,7 @@ static void thread_fn(void *a, void *b, void *c)
 	mp_flag = true;
 }
 
-void test_smp_boot_delay(void)
+ZTEST(smp_boot_delay, test_smp_boot_delay)
 {
 	/* Create a thread of lower priority.  This could run on
 	 * another CPU if it was available, but will not preempt us
@@ -55,10 +55,7 @@ void test_smp_boot_delay(void)
 	zassert_true(mp_flag, "CPU1 did not start");
 
 	k_thread_abort(&cpu1_thr);
-}
 
-void test_post_boot_ipi(void)
-{
 	/* Spawn the same thread to do the same thing, but this time
 	 * expect that the thread is going to run synchronously on the
 	 * other CPU as soon as its created.  Intended to test whether
@@ -73,12 +70,4 @@ void test_post_boot_ipi(void)
 	zassert_true(mp_flag, "CPU1 did not start thread via IPI");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(smp_boot_delay,
-			 ztest_unit_test(test_smp_boot_delay),
-			 ztest_unit_test(test_post_boot_ipi)
-			 );
-
-	ztest_run_test_suite(smp_boot_delay);
-}
+ZTEST_SUITE(smp_boot_delay, NULL, NULL, NULL, NULL, NULL);

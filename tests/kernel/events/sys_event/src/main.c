@@ -65,7 +65,7 @@ static void entry_extra2(void *p1, void *p2, void *p3)
  * the fields of a k_event structure as expected.
  */
 
-static void test_k_event_init(void)
+ZTEST(sys_events, test_k_event_init)
 {
 	k_event_init(&init_event);
 
@@ -334,7 +334,7 @@ void test_wake_multiple_threads(void)
  * involve waking or receiving events.
  */
 
-static void test_event_deliver(void)
+ZTEST(sys_events, test_event_deliver)
 {
 	uint32_t  events;
 
@@ -368,7 +368,7 @@ static void test_event_deliver(void)
  *   k_event_post(), k_event_set(), k_event_wait() and k_event_wait_all().
  */
 
-void test_event_receive(void)
+ZTEST(sys_events, test_event_receive)
 {
 
 	/* Create helper threads */
@@ -394,17 +394,15 @@ void test_event_receive(void)
 	test_wake_multiple_threads();
 }
 
-void test_main(void)
+void *sys_events_setup(void)
 {
 	k_thread_access_grant(k_current_get(), &treceiver, &textra1, &textra2,
 			      &test_event, &sync_event,
 			      &init_event, &deliver_event,
 			      &receiver_sem, &sync_sem);
 
-	ztest_test_suite(sys_events,
-			 ztest_1cpu_unit_test(test_k_event_init),
-			 ztest_1cpu_unit_test(test_event_deliver),
-			 ztest_1cpu_unit_test(test_event_receive));
-
-	ztest_run_test_suite(sys_events);
+	return NULL;
 }
+
+ZTEST_SUITE(sys_events, NULL, sys_events_setup,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

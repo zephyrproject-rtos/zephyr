@@ -50,8 +50,9 @@ static uint16_t phy_xlnx_gem_mdio_read(
 	 * current command.
 	 */
 	do {
-		if (poll_cnt++ > 0)
+		if (poll_cnt++ > 0) {
 			k_busy_wait(100);
+		}
 		reg_val = sys_read32(base_addr + ETH_XLNX_GEM_NWSR_OFFSET);
 	} while ((reg_val & ETH_XLNX_GEM_MDIO_IDLE_BIT) == 0 && poll_cnt < 10);
 	if (poll_cnt == 10) {
@@ -82,8 +83,9 @@ static uint16_t phy_xlnx_gem_mdio_read(
 	 */
 	poll_cnt = 0;
 	do {
-		if (poll_cnt++ > 0)
+		if (poll_cnt++ > 0) {
 			k_busy_wait(100);
+		}
 		reg_val = sys_read32(base_addr + ETH_XLNX_GEM_NWSR_OFFSET);
 	} while ((reg_val & ETH_XLNX_GEM_MDIO_IDLE_BIT) == 0 && poll_cnt < 10);
 	if (poll_cnt == 10) {
@@ -127,8 +129,9 @@ static void phy_xlnx_gem_mdio_write(
 	 * current command.
 	 */
 	do {
-		if (poll_cnt++ > 0)
+		if (poll_cnt++ > 0) {
 			k_busy_wait(100);
+		}
 		reg_val = sys_read32(base_addr + ETH_XLNX_GEM_NWSR_OFFSET);
 	} while ((reg_val & ETH_XLNX_GEM_MDIO_IDLE_BIT) == 0 && poll_cnt < 10);
 	if (poll_cnt == 10) {
@@ -161,8 +164,9 @@ static void phy_xlnx_gem_mdio_write(
 	 */
 	poll_cnt = 0;
 	do {
-		if (poll_cnt++ > 0)
+		if (poll_cnt++ > 0) {
 			k_busy_wait(100);
+		}
 		reg_val = sys_read32(base_addr + ETH_XLNX_GEM_NWSR_OFFSET);
 	} while ((reg_val & ETH_XLNX_GEM_MDIO_IDLE_BIT) == 0 && poll_cnt < 10);
 	if (poll_cnt == 10) {

@@ -104,6 +104,12 @@
 	pinctrl-names = "default";
 };
 
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
 &dac {
 	status = "okay";
 	pinctrl-0 = <&dac_default>;

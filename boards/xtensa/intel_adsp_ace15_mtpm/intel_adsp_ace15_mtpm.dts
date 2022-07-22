@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2022 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <intel/intel_adsp_ace15_mtpm.dtsi>
+
+/ {
+	model = "intel_adsp_ace15_mtpm";
+	compatible = "intel";
+
+	aliases {
+		dma0 = &lpgpdma0;
+		dma1 = &lpgpdma1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+	};
+};

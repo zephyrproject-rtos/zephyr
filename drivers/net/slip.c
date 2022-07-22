@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/dummy.h>
-#include <zephyr/drivers/console/uart_pipe.h>
+#include <zephyr/drivers/uart_pipe.h>
 #include <zephyr/random/rand32.h>
 
 #define SLIP_END     0300

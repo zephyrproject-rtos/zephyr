@@ -40,8 +40,9 @@
 			status = "okay";
 			tlb-split;
 			cpu0intctrl: interrupt-controller {
-				#interrupt-cells = <1>;
 				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
@@ -68,8 +69,9 @@
 			status = "okay";
 			tlb-split;
 			cpu1intctrl: interrupt-controller {
-				#interrupt-cells = <1>;
 				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
@@ -114,9 +116,10 @@
 		};
 
 		clint: clint@2000000 {
+			compatible = "riscv,clint0";
+			#address-cells = <0>;
 			#interrupt-cells = <1>;
 			interrupt-controller;
-			compatible = "riscv,clint0";
 			interrupts-extended = <&cpu0intctrl 3 &cpu0intctrl 7
 					       &cpu1intctrl 3 &cpu1intctrl 7 >;
 			reg = <0x0 0x2000000 0x0 0x10000>;
@@ -124,8 +127,9 @@
 		};
 
 		plic: plic@c000000 {
-			#interrupt-cells = <2>;
 			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&cpu0intctrl 11 &cpu0intctrl 9
 					       &cpu1intctrl 11 &cpu1intctrl 9 >;

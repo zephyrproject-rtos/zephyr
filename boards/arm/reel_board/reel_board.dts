@@ -44,6 +44,7 @@
 	aliases {
 		led3 = &back_led;
 		pwm-led3 = &back_pwm_led;
+		watchdog0 = &wdt0;
 	};
 };
 

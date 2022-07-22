@@ -38,17 +38,17 @@ K_FIFO_DEFINE(printk_fifo);
 
 struct led {
 	struct gpio_dt_spec spec;
-	const char *gpio_pin_name;
+	uint8_t num;
 };
 
 static const struct led led0 = {
 	.spec = GPIO_DT_SPEC_GET_OR(LED0_NODE, gpios, {0}),
-	.gpio_pin_name = DT_PROP_OR(LED0_NODE, label, ""),
+	.num = 0,
 };
 
 static const struct led led1 = {
 	.spec = GPIO_DT_SPEC_GET_OR(LED1_NODE, gpios, {0}),
-	.gpio_pin_name = DT_PROP_OR(LED1_NODE, label, ""),
+	.num = 1,
 };
 
 void blink(const struct led *led, uint32_t sleep_ms, uint32_t id)
@@ -64,8 +64,8 @@ void blink(const struct led *led, uint32_t sleep_ms, uint32_t id)
 
 	ret = gpio_pin_configure_dt(spec, GPIO_OUTPUT);
 	if (ret != 0) {
-		printk("Error %d: failed to configure pin %d (LED '%s')\n",
-			ret, spec->pin, led->gpio_pin_name);
+		printk("Error %d: failed to configure pin %d (LED '%d')\n",
+			ret, spec->pin, led->num);
 		return;
 	}
 

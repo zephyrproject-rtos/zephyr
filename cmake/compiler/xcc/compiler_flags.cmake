@@ -6,6 +6,6 @@ include(${ZEPHYR_BASE}/cmake/compiler/gcc/compiler_flags.cmake)
 # fact that linkage semantics differed between C99 and GNU at the
 # time.  Suppress the warning, it's the best we can do given that
 # it's a legacy compiler.
-set_compiler_property(APPEND PROPERTY warning_base "-fgnu89-inline")
+check_set_compiler_property(APPEND PROPERTY warning_base "-fgnu89-inline")
 
 set_compiler_property(PROPERTY warning_error_misra_sane)

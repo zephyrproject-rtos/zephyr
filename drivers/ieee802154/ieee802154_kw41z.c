@@ -203,7 +203,7 @@ static inline void kw41z_wait_for_idle(void)
 
 static void kw41z_phy_abort(void)
 {
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 
@@ -619,7 +619,7 @@ static int kw41z_tx(const struct device *dev, enum ieee802154_tx_mode mode,
 	uint8_t payload_len = frag->len;
 	uint32_t tx_timeout;
 	uint8_t xcvseq;
-	int key;
+	unsigned int key;
 
 	if (mode != IEEE802154_TX_MODE_DIRECT) {
 		NET_ERR("TX mode %d not supported", mode);

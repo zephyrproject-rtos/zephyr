@@ -6,23 +6,19 @@
 
 &pinctrl {
 
-	spim2_miso_gpio2: spim2_miso_gpio2 {
-		pinmux = <SPIM2_MISO_GPIO2>;
-	};
-
-	spim2_mosi_gpio15: spim2_mosi_gpio15 {
-		pinmux = <SPIM2_MOSI_GPIO15>;
-	};
-
-	spim2_sclk_gpio14: spim2_sclk_gpio14 {
-		pinmux = <SPIM2_SCLK_GPIO14>;
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO2>,
+				 <SPIM2_MOSI_GPIO15>,
+				 <SPIM2_SCLK_GPIO14>;
+		};
 	};
 
 };
 
 &spi2 {
 	status = "okay";
-	pinctrl-0 = <&spim2_miso_gpio2 &spim2_mosi_gpio15 &spim2_sclk_gpio14>;
+	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 
@@ -30,7 +26,6 @@
 		compatible = "zephyr,mmc-spi-slot";
 		reg = <0>;
 		status = "okay";
-		label = "SDHC";
 		spi-max-frequency = <400000>;
         };
 };

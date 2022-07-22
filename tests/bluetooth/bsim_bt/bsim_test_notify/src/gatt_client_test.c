@@ -234,6 +234,20 @@ static void gatt_subscribe_short(void)
 	WAIT_FOR_FLAG(flag_subscribed);
 }
 
+static void gatt_unsubscribe_short(void)
+{
+	int err;
+
+	sub_params_short.value_handle = chrc_handle;
+	err = bt_gatt_unsubscribe(g_conn, &sub_params_short);
+	if (err < 0) {
+		FAIL("Failed to unsubscribe\n");
+	} else {
+		printk("Unsubscribe request sent\n");
+	}
+	WAIT_FOR_FLAG(flag_subscribed);
+}
+
 static void gatt_subscribe_long(void)
 {
 	int err;
@@ -245,6 +259,21 @@ static void gatt_subscribe_long(void)
 		FAIL("Failed to subscribe\n");
 	} else {
 		printk("Subscribe request sent\n");
+	}
+	WAIT_FOR_FLAG(flag_subscribed);
+}
+
+static void gatt_unsubscribe_long(void)
+{
+	int err;
+
+	UNSET_FLAG(flag_subscribed);
+	sub_params_long.value_handle = long_chrc_handle;
+	err = bt_gatt_unsubscribe(g_conn, &sub_params_long);
+	if (err < 0) {
+		FAIL("Failed to unsubscribe\n");
+	} else {
+		printk("Unsubscribe request sent\n");
 	}
 	WAIT_FOR_FLAG(flag_subscribed);
 }
@@ -289,6 +318,11 @@ static void test_main(void)
 	while (num_notifications < NOTIFICATION_COUNT) {
 		k_sleep(K_MSEC(100));
 	}
+
+	gatt_unsubscribe_short();
+	gatt_unsubscribe_long();
+
+	printk("Unsubscribed\n");
 
 	PASS("GATT client Passed\n");
 }

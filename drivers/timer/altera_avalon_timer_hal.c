@@ -24,6 +24,10 @@ static uint32_t accumulated_cycle_count;
 
 static int32_t _sys_idle_elapsed_ticks = 1;
 
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = TIMER_0_IRQ;
+#endif
+
 static void wrapped_announce(int32_t ticks)
 {
 	driver_uptime += ticks;

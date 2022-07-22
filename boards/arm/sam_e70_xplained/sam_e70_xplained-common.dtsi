@@ -15,6 +15,7 @@
 		i2c-1 = &twihs2;
 		led0 = &green_led;
 		sw0 = &sw0_user_button;
+		watchdog0 = &wdt;
 	};
 
 	chosen {

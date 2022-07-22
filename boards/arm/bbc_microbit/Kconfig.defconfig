@@ -14,4 +14,15 @@ config BT_CTLR
 config LOG_BUFFER_SIZE
 	default 128 if LOG
 
+config I2C
+	default y if SENSOR
+
+if FXOS8700
+
+choice FXOS8700_MODE
+	default FXOS8700_MODE_ACCEL
+endchoice
+
+endif # FXOS8700
+
 endif # BOARD_BBC_MICROBIT

@@ -46,7 +46,7 @@ static void nmi_test_isr(void)
  *
  * @see z_NmiHandlerSet()
  */
-void test_arm_runtime_nmi(void)
+ZTEST(arm_runtime_nmi_fn, test_arm_runtime_nmi)
 {
 	uint32_t i = 0U;
 

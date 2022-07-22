@@ -28,7 +28,7 @@ static void callback(struct sys_notify *anp,
 		      "failed callback fetch");
 }
 
-static void test_validate(void)
+ZTEST(sys_notify_api, test_validate)
 {
 	struct sys_notify notify = {
 		.flags = 0,
@@ -41,7 +41,7 @@ static void test_validate(void)
 }
 
 
-static void test_spinwait(void)
+ZTEST(sys_notify_api, test_spinwait)
 {
 	int rc;
 	int set_res = 423;
@@ -93,7 +93,7 @@ static void test_spinwait(void)
 		      "result not set");
 }
 
-static void test_signal(void)
+ZTEST(sys_notify_api, test_signal)
 {
 #ifdef CONFIG_POLL
 	int rc;
@@ -167,7 +167,7 @@ static void test_signal(void)
 #endif /* CONFIG_POLL */
 }
 
-static void test_callback(void)
+ZTEST(sys_notify_api, test_callback)
 {
 	int rc;
 	int set_res = 423;
@@ -228,12 +228,4 @@ static void test_callback(void)
 		      "result not set");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(sys_notify_api,
-			 ztest_unit_test(test_validate),
-			 ztest_unit_test(test_spinwait),
-			 ztest_unit_test(test_signal),
-			 ztest_unit_test(test_callback));
-	ztest_run_test_suite(sys_notify_api);
-}
+ZTEST_SUITE(sys_notify_api, NULL, NULL, NULL, NULL, NULL);

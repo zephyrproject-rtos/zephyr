@@ -26,6 +26,36 @@ extern "C" {
 /* Forward declaration of the log_backend type. */
 struct log_backend;
 
+
+/**
+ * @brief Backend events
+ */
+enum log_backend_evt {
+	/**
+	 * @brief Event when process thread finishes processing.
+	 *
+	 * This event is emitted when the process thread finishes
+	 * processing pending log messages.
+	 *
+	 * @note This is not emitted when there are no pending
+	 *       log messages being processed.
+	 *
+	 * @note Deferred mode only.
+	 */
+	LOG_BACKEND_EVT_PROCESS_THREAD_DONE,
+
+	/** @brief Maximum number of backend events */
+	LOG_BACKEND_EVT_MAX,
+};
+
+/**
+ * @brief Argument(s) for backend events.
+ */
+union log_backend_evt_arg {
+	/** @brief Unspecified argument(s). */
+	void *raw;
+};
+
 /**
  * @brief Logger backend API.
  */
@@ -39,6 +69,10 @@ struct log_backend_api {
 	int (*is_ready)(const struct log_backend *const backend);
 	int (*format_set)(const struct log_backend *const backend,
 				uint32_t log_type);
+
+	void (*notify)(const struct log_backend *const backend,
+		       enum log_backend_evt event,
+		       union log_backend_evt_arg *arg);
 };
 
 /**
@@ -295,6 +329,24 @@ static inline int log_backend_format_set(const struct log_backend *backend, uint
 	}
 
 	return backend->api->format_set(backend, log_type);
+}
+
+/**
+ * @brief Notify a backend of an event.
+ *
+ * @param backend Pointer to the backend instance.
+ * @param event Event to be notified.
+ * @param arg Pointer to the argument(s).
+ */
+static inline void log_backend_notify(const struct log_backend *const backend,
+				      enum log_backend_evt event,
+				      union log_backend_evt_arg *arg)
+{
+	__ASSERT_NO_MSG(backend != NULL);
+
+	if (backend->api->notify) {
+		backend->api->notify(backend, event, arg);
+	}
 }
 
 /**

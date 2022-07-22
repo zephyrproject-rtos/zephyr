@@ -114,6 +114,8 @@
 		pwm-led0 = &red_led_pwm;
 		pwm-led1 = &green_led_pwm;
 		pwm-led2 = &blue_led_pwm;
+		magn0 = &bmm150;
+		watchdog0 = &wdt0;
 	};
 };
 
@@ -157,7 +159,7 @@
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
-	bmm150@10 {
+	bmm150: bmm150@10 {
 		compatible = "bosch,bmm150";
 		label = "BMM150";
 		reg = <0x10>;
@@ -288,6 +290,11 @@
 			reg = <0x000fa000 0x00006000>;
 		};
 	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
 };
 
 / {

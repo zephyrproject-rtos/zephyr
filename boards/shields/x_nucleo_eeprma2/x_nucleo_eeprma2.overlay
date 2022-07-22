@@ -64,6 +64,7 @@
 };
 
 &arduino_spi {
+	status = "okay";
 	cs-gpios = <&arduino_header  8 GPIO_ACTIVE_LOW>, /* U5: eeprom4 */
 		   <&arduino_header 15 GPIO_ACTIVE_LOW>, /* U6: eeprom5 */
 		   <&arduino_header 16 GPIO_ACTIVE_LOW>; /* U7: eeprom6 */

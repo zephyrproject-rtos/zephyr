@@ -16,6 +16,7 @@ tests:
     filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions") and
             dt_chosen_enabled("zephyr,flash-controller") and
             CONFIG_FLASH_HAS_DRIVER_ENABLED
+    platform_exclude: nucleo_h723zg nucleo_h743zi nucleo_h745zi_q nucleo_h753zi
   sample.modules.canopennode.program_download:
     build_only: true
     platform_exclude: native_posix native_posix_64 rcar_h3ulcb_cr7

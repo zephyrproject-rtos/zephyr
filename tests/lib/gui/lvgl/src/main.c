@@ -25,12 +25,12 @@ static struct fs_mount_t mnt = {
 	.mnt_point = "/mnt"
 };
 
-void test_get_default_screen(void)
+ZTEST(lvgl_screen, test_get_default_screen)
 {
 	zassert_not_null(lv_scr_act(), "No default screen");
 }
 
-void test_add_delete_screen(void)
+ZTEST(lvgl_screen, test_add_delete_screen)
 {
 	lv_obj_t *default_screen = lv_scr_act();
 
@@ -59,7 +59,7 @@ void test_add_delete_screen(void)
 			"Default screen not active");
 
 }
-void test_add_img(void)
+ZTEST_USER(lvgl_fs, test_add_img)
 {
 	lv_obj_t *img = lv_img_create(lv_scr_act());
 
@@ -72,7 +72,7 @@ void test_add_img(void)
 }
 
 
-void setup_fs(void)
+void *setup_fs(void)
 {
 	struct fs_file_t img;
 	struct fs_dirent info;
@@ -83,12 +83,12 @@ void setup_fs(void)
 	if (ret < 0) {
 		TC_PRINT("Failed to mount file system: %d\n", ret);
 		ztest_test_fail();
-		return;
+		return NULL;
 	}
 
 	ret = fs_stat(IMG_FILE_PATH, &info);
 	if ((ret == 0) && (info.type == FS_DIR_ENTRY_FILE)) {
-		return;
+		return NULL;
 	}
 
 	fs_file_t_init(&img);
@@ -96,43 +96,36 @@ void setup_fs(void)
 	if (ret < 0) {
 		TC_PRINT("Failed to open image file: %d\n", ret);
 		ztest_test_fail();
-		return;
+		return NULL;
 	}
 
 	ret = fs_write(&img, &c_img->header, sizeof(lv_img_header_t));
 	if (ret < 0) {
 		TC_PRINT("Failed to write image file header: %d\n", ret);
 		ztest_test_fail();
-		return;
+		return NULL;
 	}
 
 	ret = fs_write(&img, c_img->data, c_img->data_size);
 	if (ret < 0) {
 		TC_PRINT("Failed to write image file data: %d\n", ret);
 		ztest_test_fail();
-		return;
+		return NULL;
 	}
 
 	ret = fs_close(&img);
 	if (ret < 0) {
 		TC_PRINT("Failed to close image file: %d\n", ret);
 		ztest_test_fail();
-		return;
+		return NULL;
 	}
+	return NULL;
 }
 
-void teardown_fs(void)
+void teardown_fs(void *data)
 {
+	return;
 }
 
-void test_main(void)
-{
-
-	ztest_test_suite(lvgl_screen, ztest_unit_test(test_get_default_screen),
-			ztest_unit_test(test_add_delete_screen));
-	ztest_test_suite(lvgl_fs, ztest_user_unit_test_setup_teardown(
-				test_add_img, setup_fs, teardown_fs));
-
-	ztest_run_test_suite(lvgl_screen);
-	ztest_run_test_suite(lvgl_fs);
-}
+ZTEST_SUITE(lvgl_screen, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(lvgl_fs, NULL, setup_fs, NULL, NULL, teardown_fs);

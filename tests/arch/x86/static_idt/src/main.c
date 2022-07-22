@@ -106,7 +106,7 @@ extern void *_EXCEPTION_STUB_NAME(exc_divide_error_handler, IV_DIVIDE_ERROR);
  * and exception stubs are installed at the correct place.
  *
  */
-void test_idt_stub(void)
+ZTEST(static_idt, test_idt_stub)
 {
 	struct segment_descriptor *p_idt_entry;
 	uint32_t offset;
@@ -153,7 +153,8 @@ void idt_spur_task(void *arg1, void *arg2, void *arg3)
  * and spurious interrupt using various method, the registered handler
  * should get called
  */
-void test_static_idt(void)
+
+ZTEST(static_idt, test_static_idt)
 {
 	volatile int error;     /* used to create a divide by zero error */
 
@@ -197,11 +198,4 @@ void test_static_idt(void)
 			  "Spurious handler did not execute as expected");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(static_idt,
-			 ztest_unit_test(test_idt_stub),
-			 ztest_unit_test(test_static_idt)
-			 );
-	ztest_run_test_suite(static_idt);
-}
+ZTEST_SUITE(static_idt, NULL, NULL, NULL, NULL, NULL);

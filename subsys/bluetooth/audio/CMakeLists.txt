@@ -17,10 +17,10 @@ if (CONFIG_BT_VCS OR CONFIG_BT_VCS_CLIENT)
 endif()
 zephyr_library_sources_ifdef(CONFIG_BT_VCS_CLIENT vcs_client.c)
 
-if (CONFIG_BT_MICS OR CONFIG_BT_MICS_CLIENT)
-	zephyr_library_sources(mics.c)
+if (CONFIG_BT_MICP_MIC_DEV)
+	zephyr_library_sources(micp_mic_dev.c)
 endif()
-zephyr_library_sources_ifdef(CONFIG_BT_MICS_CLIENT mics_client.c)
+zephyr_library_sources_ifdef(CONFIG_BT_MICP_MIC_CTLR micp_mic_ctlr.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_CCID ccid.c)
 
@@ -56,3 +56,4 @@ zephyr_library_sources_ifdef(CONFIG_BT_BASS bass.c)
 zephyr_library_sources_ifdef(CONFIG_BT_BASS_CLIENT bass_client.c)
 zephyr_library_sources_ifdef(CONFIG_BT_HAS has.c)
 zephyr_library_sources_ifdef(CONFIG_BT_HAS_CLIENT has_client.c)
+zephyr_library_sources_ifdef(CONFIG_BT_CAP cap.c)

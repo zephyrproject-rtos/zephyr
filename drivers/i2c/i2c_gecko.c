@@ -78,7 +78,7 @@ static int i2c_gecko_configure(const struct device *dev,
 	I2C_Init_TypeDef i2cInit = I2C_INIT_DEFAULT;
 	uint32_t baudrate;
 
-	if (!(I2C_MODE_MASTER & dev_config_raw)) {
+	if (!(I2C_MODE_CONTROLLER & dev_config_raw)) {
 		return -EINVAL;
 	}
 
@@ -180,7 +180,7 @@ static int i2c_gecko_init(const struct device *dev)
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 
-	error = i2c_gecko_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
+	error = i2c_gecko_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (error) {
 		return error;
 	}

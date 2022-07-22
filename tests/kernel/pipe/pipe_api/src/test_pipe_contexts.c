@@ -184,7 +184,7 @@ static void tpipe_get_large_size(struct k_pipe *ppipe, k_timeout_t timeout)
  * with various parameters
  * @see k_pipe_alloc_init(), k_pipe_cleanup()
  */
-void test_pipe_alloc(void)
+ZTEST(pipe_api_1cpu, test_pipe_alloc)
 {
 	int ret;
 
@@ -206,7 +206,7 @@ static void thread_for_get_forever(void *p1, void *p2, void *p3)
 	tpipe_get((struct k_pipe *)p1, K_FOREVER);
 }
 
-void test_pipe_cleanup(void)
+ZTEST(pipe_api, test_pipe_cleanup)
 {
 	int ret;
 
@@ -289,7 +289,7 @@ static void thread_handler(void *p1, void *p2, void *p3)
  * @see k_pipe_init(), k_pipe_put(), #K_PIPE_DEFINE(x)
  */
 
-void test_pipe_thread2thread(void)
+ZTEST(pipe_api_1cpu, test_pipe_thread2thread)
 {
 	/**TESTPOINT: test k_pipe_init pipe*/
 	k_pipe_init(&pipe, data, PIPE_LEN);
@@ -304,7 +304,7 @@ void test_pipe_thread2thread(void)
  * @brief Test data passing using pipes between user threads
  * @see k_pipe_init(), k_pipe_put(), #K_PIPE_DEFINE(x)
  */
-void test_pipe_user_thread2thread(void)
+ZTEST_USER(pipe_api_1cpu, test_pipe_user_thread2thread)
 {
 	/**TESTPOINT: test k_object_alloc pipe*/
 	struct k_pipe *p = k_object_alloc(K_OBJ_PIPE);
@@ -323,7 +323,7 @@ void test_pipe_user_thread2thread(void)
  * @see k_heap_alloc()
  */
 #ifdef CONFIG_USERSPACE
-void test_resource_pool_auto_free(void)
+ZTEST(pipe_api, test_resource_pool_auto_free)
 {
 	/* Pool has 2 blocks, both should succeed if kernel object and pipe
 	 * buffer are auto-freed when the allocating threads exit
@@ -347,7 +347,7 @@ static void tThread_half_pipe_get(void *p1, void *p2, void *p3)
  * @brief Test put/get with smaller pipe buffer
  * @see k_pipe_put(), k_pipe_get()
  */
-void test_half_pipe_put_get(void)
+ZTEST(pipe_api, test_half_pipe_put_get)
 {
 	unsigned char rx_data[PIPE_LEN];
 	size_t rd_byte = 0;
@@ -378,7 +378,7 @@ void test_half_pipe_put_get(void)
 	k_thread_abort(tid2);
 }
 
-void test_pipe_get_put(void)
+ZTEST(pipe_api, test_pipe_get_put)
 {
 	unsigned char rx_data[PIPE_LEN];
 	size_t rd_byte = 0;
@@ -409,7 +409,7 @@ void test_pipe_get_put(void)
 	k_thread_abort(tid2);
 }
 
-void test_pipe_get_large(void)
+ZTEST(pipe_api, test_pipe_get_large)
 {
 	/**TESTPOINT: thread-thread data passing via pipe*/
 	k_tid_t tid1 = k_thread_create(&tdata1, tstack1, STACK_SIZE,
@@ -435,7 +435,7 @@ void test_pipe_get_large(void)
  * @brief Test pending reader in pipe
  * @see k_pipe_put(), k_pipe_get()
  */
-void test_pipe_reader_wait(void)
+ZTEST(pipe_api, test_pipe_reader_wait)
 {
 	/**TESTPOINT: test k_pipe_block_put with semaphore*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,

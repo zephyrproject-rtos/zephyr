@@ -9,6 +9,5 @@
 		compatible = "bosch,bmg160";
 		reg = <0x68>;
 		int-gpios = <&gpioc 6 0>;
-		label = "BMG160";
 	};
 };

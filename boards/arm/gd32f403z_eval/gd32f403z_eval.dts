@@ -88,6 +88,12 @@
 	status = "okay";
 };
 
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
 &usart0 {
 	status = "okay";
 	current-speed = <115200>;

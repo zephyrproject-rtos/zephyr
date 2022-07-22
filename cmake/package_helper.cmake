@@ -42,7 +42,7 @@
 #          find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 #       the 'foo.overlay' must be specified using '-DOVERLAY_CONFIG=foo.overlay'
 
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.20.0)
 
 # add_custom_target and set_target_properties are not supported in script mode.
 # However, several Zephyr CMake modules create custom target for user convenience

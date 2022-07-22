@@ -37,9 +37,6 @@
 /** Clock muxes */
 #define STM32_SRC_CKPER		0x013
 
-#define STM32_SRC_CLOCK_MIN	STM32_SRC_PLL1_P
-#define STM32_SRC_CLOCK_MAX	STM32_SRC_CKPER
-
 /** Bus clocks */
 #define STM32_CLOCK_BUS_AHB3    0x0D4
 #define STM32_CLOCK_BUS_AHB1    0x0D8

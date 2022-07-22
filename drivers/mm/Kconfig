@@ -19,10 +19,18 @@ config MM_DRV_PAGE_SIZE
 
 DT_COMPAT_MM_INTEL_ADSP_TLB := intel,adsp-tlb
 
+config MM_DRV_INTEL_ADSP_MTL_TLB
+	bool "Intel Audio DSP TLB Driver for Meteor Lake"
+	depends on SOC_SERIES_INTEL_ACE1X
+	imply SYS_MEM_BLOCKS
+	help
+	  Driver for the translation lookup buffer on
+	  Intel Audio DSP hardware (Meteor Lake).
+
 config MM_DRV_INTEL_ADSP_TLB
 	bool "Intel Audio DSP TLB Driver"
 	default $(dt_compat_enabled,$(DT_COMPAT_MM_INTEL_ADSP_TLB))
-	depends on SOC_FAMILY_INTEL_ADSP
+	depends on INTEL_ADSP_CAVS
 	help
 	  Driver for the translation lookup buffer on
 	  Intel Audio DSP hardware.

@@ -64,6 +64,10 @@ config IMX_USDHC
 	default y if (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
 	depends on SDHC
 
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 7500000
+	depends on LOG_BACKEND_SWO
+
 if FLASH_MCUX_FLEXSPI_XIP
 
 # Avoid RWW hazards by defaulting logging to disabled
@@ -190,10 +194,6 @@ config USB_MCUX
 choice USB_MCUX_CONTROLLER_TYPE
 	default USB_DC_NXP_EHCI
 endchoice
-
-config VIDEO_MCUX_CSI
-	default y if HAS_MCUX_CSI
-	depends on VIDEO
 
 config DMA_MCUX_EDMA
 	default y if HAS_MCUX_EDMA

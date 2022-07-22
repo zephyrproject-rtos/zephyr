@@ -57,7 +57,7 @@ static struct net_eth_addr hwaddr3 = { { 0xee, 0xe1, 0x55, 0xfe, 0x44, 0x03 } };
 static struct net_eth_addr hwaddr4 = { { 0x61, 0xf2, 0xfe, 0x4e, 0x8e, 0x04 } };
 static struct net_eth_addr hwaddr5 = { { 0x8a, 0x52, 0x01, 0x21, 0x11, 0x05 } };
 
-static void test_neighbor(void)
+ZTEST(neighbor_test_suite, test_neighbor)
 {
 	struct net_eth_addr *addrs[] = {
 		&hwaddr1,
@@ -293,9 +293,7 @@ static void test_neighbor(void)
 	return;
 }
 
-
-/*test case main entry*/
-void test_main(void)
+void *setup(void)
 {
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
 		k_thread_priority_set(k_current_get(),
@@ -303,8 +301,8 @@ void test_main(void)
 	} else {
 		k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(9));
 	}
-
-	ztest_test_suite(neighbor,
-			 ztest_unit_test(test_neighbor));
-	ztest_run_test_suite(neighbor);
+	return NULL;
 }
+
+/*test case main entry*/
+ZTEST_SUITE(neighbor_test_suite, NULL, setup, NULL, NULL, NULL);

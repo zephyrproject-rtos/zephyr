@@ -23,9 +23,6 @@ config GPIO_SAM0
 config HWINFO_SAM0
 	default HWINFO
 
-config I2C_SAM0
-	default I2C
-
 config PWM_SAM0_TCC
 	default PWM
 

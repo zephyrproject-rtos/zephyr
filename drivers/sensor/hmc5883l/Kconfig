@@ -3,6 +3,8 @@
 
 menuconfig HMC5883L
 	bool "HMC5883L magnetometer"
+	default y
+	depends on DT_HAS_HONEYWELL_HMC5883L_ENABLED
 	depends on I2C
 	help
 	  Enable driver for HMC5883L I2C-based magnetometer.

@@ -11,6 +11,6 @@ FILE(GLOB SOURCES
 )
 
 project(bluetooth_ull_llcp_tx_queue)
-find_package(ZephyrUnittest HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr COMPONENTS unittest HINTS $ENV{ZEPHYR_BASE})
 include(${ZEPHYR_BASE}/tests/bluetooth/controller/common/defaults_cmake.txt)
 target_sources(testbinary PRIVATE ${ll_sw_sources} ${mock_sources} ${common_sources})

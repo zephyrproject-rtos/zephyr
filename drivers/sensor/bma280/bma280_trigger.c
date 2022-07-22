@@ -34,6 +34,10 @@ int bma280_attr_set(const struct device *dev,
 	const struct bma280_config *config = dev->config;
 	uint64_t slope_th;
 
+	if (!config->int1_gpio.port) {
+		return -ENOTSUP;
+	}
+
 	if (chan != SENSOR_CHAN_ACCEL_XYZ) {
 		return -ENOTSUP;
 	}
@@ -148,6 +152,10 @@ int bma280_trigger_set(const struct device *dev,
 {
 	struct bma280_data *drv_data = dev->data;
 	const struct bma280_config *config = dev->config;
+
+	if (!config->int1_gpio.port) {
+		return -ENOTSUP;
+	}
 
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
 		/* disable data ready interrupt while changing trigger params */

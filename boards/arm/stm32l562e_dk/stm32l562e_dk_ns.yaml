@@ -8,7 +8,6 @@ toolchain:
 supported:
   - gpio
   - i2c
-  - lsm6dso
   - lptim
   - dac
   - spi

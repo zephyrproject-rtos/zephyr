@@ -9,6 +9,11 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     log_output.c
   )
 
+  zephyr_sources_ifdef(
+    CONFIG_LOG_OUTPUT
+    log_output.c
+  )
+
   # Determine if __auto_type is supported. If not then runtime approach must always
   # be used.
   # Supported by:
@@ -79,8 +84,13 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     )
 
   zephyr_sources_ifdef(
-    CONFIG_LOG_BACKEND_CAVS_HDA
-    log_backend_cavs_hda.c
+    CONFIG_LOG_BACKEND_ADSP_HDA
+    log_backend_adsp_hda.c
+  )
+
+  zephyr_sources_ifdef(
+    CONFIG_LOG_BACKEND_EFI_CONSOLE
+    log_backend_efi_console.c
   )
 
   if(CONFIG_LOG_BACKEND_SPINEL)

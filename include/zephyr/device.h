@@ -404,6 +404,28 @@ typedef int16_t device_handle_t;
 #define DEVICE_DECLARE(name) static const struct device DEVICE_NAME_GET(name)
 
 /**
+ * @def DEVICE_INIT_DT_GET
+ *
+ * @brief Get a <tt>const struct init_entry*</tt> from a devicetree node
+ *
+ * @param node_id A devicetree node identifier
+ *
+ * @return A pointer to the init_entry object created for that node
+ */
+#define DEVICE_INIT_DT_GET(node_id) (&Z_INIT_ENTRY_NAME(DEVICE_DT_NAME_GET(node_id)))
+
+/**
+ * @def DEVICE_INIT_GET
+ *
+ * @brief Get a <tt>const struct init_entry*</tt> from a device by name
+ *
+ * @param name The same as dev_name provided to DEVICE_DEFINE()
+ *
+ * @return A pointer to the init_entry object created for that device
+ */
+#define DEVICE_INIT_GET(name) (&Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(name)))
+
+/**
  * @brief Runtime device dynamic structure (in RAM) per driver instance
  *
  * Fields in this are expected to be default-initialized to zero. The

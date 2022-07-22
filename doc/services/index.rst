@@ -27,4 +27,5 @@ OS Services
    tfm/index
    usb/index.rst
    virtualization/index.rst
+   rtio/index.rst
    misc.rst

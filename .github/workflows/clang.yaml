@@ -83,7 +83,7 @@ jobs:
           message("::set-output name=repo::${repo2}")
       - name: use cache
         id: cache-ccache
-        uses: nashif/action-s3-cache@master
+        uses: zephyrproject-rtos/action-s3-cache@v1
         with:
           key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-${{ github.ref_name }}-clang-${{ matrix.platform }}-ccache
           path: /github/home/.ccache

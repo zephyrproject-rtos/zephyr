@@ -18,9 +18,9 @@
 #include <fsl_clock.h>
 #include <zephyr/drivers/pinctrl.h>
 
-#define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(pwm_mcux_tpm);
+
+LOG_MODULE_REGISTER(pwm_mcux_tpm, CONFIG_PWM_LOG_LEVEL);
 
 #define MAX_CHANNELS ARRAY_SIZE(TPM0->CONTROLS)
 

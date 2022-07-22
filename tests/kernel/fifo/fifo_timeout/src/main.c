@@ -295,7 +295,7 @@ static void test_thread_timeout_reply_values_wfe(void *p1, void *p2, void *p3)
  * @brief Test empty fifo with timeout and K_NO_WAIT
  * @see k_fifo_get()
  */
-static void test_timeout_empty_fifo(void)
+ZTEST(fifo_timeout_1cpu, test_timeout_empty_fifo)
 {
 	void *packet;
 	uint32_t start_time, timeout;
@@ -318,7 +318,7 @@ static void test_timeout_empty_fifo(void)
  * @brief Test non empty fifo with timeout and K_NO_WAIT
  * @see k_fifo_get(), k_fifo_put()
  */
-static void test_timeout_non_empty_fifo(void)
+ZTEST(fifo_timeout, test_timeout_non_empty_fifo)
 {
 	void *packet, *scratch_packet;
 
@@ -347,7 +347,7 @@ static void test_timeout_non_empty_fifo(void)
  * the child thread based on the data availability on another fifo.
  * @see k_fifo_get(), k_fifo_put()
  */
-static void test_timeout_fifo_thread(void)
+ZTEST(fifo_timeout_1cpu, test_timeout_fifo_thread)
 {
 	void *packet, *scratch_packet;
 	struct reply_packet reply_packet;
@@ -434,7 +434,7 @@ static void test_timeout_fifo_thread(void)
  * different timeouts
  * @see k_fifo_get(), k_fifo_put()
  */
-static void test_timeout_threads_pend_on_fifo(void)
+ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_on_fifo)
 {
 	int32_t rv, test_data_size;
 
@@ -453,7 +453,7 @@ static void test_timeout_threads_pend_on_fifo(void)
  * with different timeouts
  * @see k_fifo_get(), k_fifo_put()
  */
-static void test_timeout_threads_pend_on_dual_fifos(void)
+ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_on_dual_fifos)
 {
 	int32_t rv, test_data_size;
 
@@ -474,7 +474,7 @@ static void test_timeout_threads_pend_on_dual_fifos(void)
  * different timeouts but getting the data in time
  * @see k_fifo_get(), k_fifo_put()
  */
-static void test_timeout_threads_pend_fail_on_fifo(void)
+ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_fail_on_fifo)
 {
 	int32_t rv, test_data_size;
 
@@ -492,7 +492,7 @@ static void test_timeout_threads_pend_fail_on_fifo(void)
  * @brief Test fifo init
  * @see k_fifo_init(), k_fifo_put()
  */
-static void test_timeout_setup(void)
+static void *test_timeout_setup(void)
 {
 	intptr_t ii;
 
@@ -509,22 +509,13 @@ static void test_timeout_setup(void)
 				(void *)&scratch_fifo_packets[ii]);
 	}
 
+	return NULL;
 }
 /**
  * @}
  */
 
-/*test case main entry*/
-void test_main(void)
-{
-	test_timeout_setup();
+ZTEST_SUITE(fifo_timeout, NULL, test_timeout_setup, NULL, NULL, NULL);
 
-	ztest_test_suite(test_fifo_timeout,
-		ztest_1cpu_unit_test(test_timeout_empty_fifo),
-		ztest_unit_test(test_timeout_non_empty_fifo),
-		ztest_1cpu_unit_test(test_timeout_fifo_thread),
-		ztest_1cpu_unit_test(test_timeout_threads_pend_on_fifo),
-		ztest_1cpu_unit_test(test_timeout_threads_pend_on_dual_fifos),
-		ztest_1cpu_unit_test(test_timeout_threads_pend_fail_on_fifo));
-	ztest_run_test_suite(test_fifo_timeout);
-}
+ZTEST_SUITE(fifo_timeout_1cpu, NULL, test_timeout_setup,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

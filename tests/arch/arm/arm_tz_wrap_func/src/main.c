@@ -73,7 +73,7 @@ uint32_t __attribute__((naked)) wrap_foo1(uint32_t arg1, uint32_t arg2,
 }
 
 
-void test_tz_wrap_func(void)
+ZTEST(tz_wrap_func, test_tz_wrap_func)
 {
 	reset_mocks();
 	foo1_retval = 0x01234567;
@@ -100,9 +100,4 @@ void test_tz_wrap_func(void)
 	zassert_false(expect_postface, NULL);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(tz_wrap_func,
-		ztest_unit_test(test_tz_wrap_func));
-	ztest_run_test_suite(tz_wrap_func);
-}
+ZTEST_SUITE(tz_wrap_func, NULL, NULL, NULL, NULL, NULL);

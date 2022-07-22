@@ -8,6 +8,7 @@
 
 #include <rpi_pico/rp2040.dtsi>
 #include "rpi_pico-pinctrl.dtsi"
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
@@ -28,8 +29,25 @@
 		};
 	};
 
+	xtal_clk: xtal-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <12000000>;
+		#clock-cells = <0>;
+	};
+
+	pwm_leds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			status = "disabled";
+			pwms = <&pwm 9 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM_LED";
+		};
+	};
+
 	aliases {
 		led0 = &led0;
+		watchdog0 = &wdt0;
+		pwm-led0 = &pwm_led0;
 	};
 };
 
@@ -85,6 +103,16 @@
 	pinctrl-names = "default";
 };
 
+&wdt0 {
+	status = "okay";
+};
+
 zephyr_udc0: &usbd {
 	status = "okay";
+};
+
+&pwm {
+	pinctrl-0 = <&pwm_ch4b_default>;
+	pinctrl-names = "default";
+	divider-int-0 = <255>;
 };

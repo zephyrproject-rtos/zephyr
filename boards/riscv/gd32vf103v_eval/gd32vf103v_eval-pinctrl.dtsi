@@ -30,4 +30,10 @@
 				 <SPI0_MISO_PA6_OUT_NORMP>;
 		};
 	};
+
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <ADC01_IN13_PC3>;
+		};
+	};
 };

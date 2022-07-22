@@ -1,0 +1,14 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_INTEL_ACE1X
+	bool "Intel ACE 1.x"
+	select SOC_FAMILY_INTEL_ADSP
+	select XTENSA
+	select XTENSA_HAL if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc"
+	select ATOMIC_OPERATIONS_BUILTIN if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc"
+	select ARCH_HAS_COHERENCE
+	select SCHED_IPI_SUPPORTED
+	select DW_ICTL_ACE_V1X
+	help
+	  Intel ACE 1.x

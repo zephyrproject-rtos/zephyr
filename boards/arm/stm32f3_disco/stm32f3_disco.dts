@@ -68,6 +68,8 @@
 		led0 = &green_led_6;
 		led1 = &green_led_7;
 		sw0 = &user_button;
+		magn0 = &lsm303dlhc_magn;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -119,7 +121,7 @@
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
-	lsm303dlhc-magn@1e {
+	lsm303dlhc_magn: lsm303dlhc-magn@1e {
 		compatible = "st,lsm303dlhc-magn";
 		reg = <0x1e>;
 		label = "LSM303DLHC-MAGN";

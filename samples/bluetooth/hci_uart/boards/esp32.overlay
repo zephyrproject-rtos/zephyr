@@ -12,21 +12,16 @@
 
 &pinctrl {
 
-	uart1_tx_gpio5: uart1_tx_gpio5 {
-		pinmux = <UART1_TX_GPIO5>;
-	};
-
-	uart1_rx_gpio18: uart1_rx_gpio18 {
-		pinmux = <UART1_RX_GPIO18>;
-	};
-
-	uart1_rts_gpio19: uart1_rts_gpio19 {
-		pinmux = <UART1_RTS_GPIO19>;
-	};
-
-	uart1_cts_gpio23: uart1_cts_gpio23 {
-		pinmux = <UART1_CTS_GPIO23>;
-		bias-pull-up;
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1_TX_GPIO5>,
+				 <UART1_RX_GPIO18>,
+				 <UART1_RTS_GPIO19>;
+		};
+		group2 {
+			pinmux = <UART1_CTS_GPIO23>;
+			bias-pull-up;
+		};
 	};
 
 };
@@ -34,7 +29,6 @@
 &uart1 {
 	status = "okay";
 	current-speed = <921600>;
-	pinctrl-0 = <&uart1_tx_gpio5 &uart1_rx_gpio18
-		     &uart1_rts_gpio19 &uart1_cts_gpio23>;
+	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
 };

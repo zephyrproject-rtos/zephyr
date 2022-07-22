@@ -24,12 +24,6 @@ config ADSP_WIN0_OFFSET
 config ADSP_WIN3_OFFSET
 	default 0
 
-config IMR_MANIFEST_ADDR
-	default 0xb0004000
-
-config IMR_DATA_ADDR
-	default 0xb0002000
-
 config SMP
 	default y
 
@@ -42,12 +36,12 @@ config SCHED_IPI_SUPPORTED
 config XTENSA_TIMER
 	default n
 
-config CAVS_TIMER
+config INTEL_ADSP_TIMER
 	default y
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 400000000 if XTENSA_TIMER
-	default 19200000 if CAVS_TIMER
+	default 19200000 if INTEL_ADSP_TIMER
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 50000

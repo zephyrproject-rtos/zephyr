@@ -12,13 +12,6 @@
 #define TEST_MAX_COLORS	8
 #define COLOR_FULL	0xff
 
-#if DT_NODE_HAS_STATUS(DT_ALIAS(led_controller_0), okay)
-#define LED_CTRL_NODE_ID	DT_ALIAS(led_controller_0)
-#define LED_CTRL_DEV_NAME	DT_LABEL(LED_CTRL_NODE_ID)
-#else
-#error "LED controller device not found"
-#endif
-
 #define _COLOR_MAPPING(led_node_id)				\
 const uint8_t test_color_mapping_##led_node_id[] =		\
 	DT_PROP(led_node_id, color_mapping)
@@ -59,24 +52,17 @@ const struct led_info test_led_info[] = {			\
 								\
 static ZTEST_DMEM int num_leds = ARRAY_SIZE(test_led_info)
 
-LED_CONTROLLER_INFO(LED_CTRL_NODE_ID);
+LED_CONTROLLER_INFO(DT_ALIAS(led_controller_0));
 
-static ZTEST_BMEM const struct device *led_ctrl;
-
-const struct device *get_led_controller(void)
-{
-	return device_get_binding(LED_CTRL_DEV_NAME);
-}
+static ZTEST_BMEM const struct device *led_ctrl = DEVICE_DT_GET(DT_ALIAS(led_controller_0));
 
 void test_led_setup(void)
 {
-	led_ctrl = get_led_controller();
-	zassert_not_null(led_ctrl,
-			 "LED controller " LED_CTRL_DEV_NAME " not found");
+	zassert_true(device_is_ready(led_ctrl), "LED controller is not ready");
 
-	zassert_not_equal(num_leds, 0,
-			  "No LEDs subnodes found in DT for controller "
-			  LED_CTRL_DEV_NAME);
+	zassert_not_equal(num_leds, 0, "No LEDs subnodes found in DT for controller");
+
+	k_object_access_grant(led_ctrl, k_current_get());
 }
 
 void test_led_get_info(void)
@@ -84,8 +70,9 @@ void test_led_get_info(void)
 	uint8_t led;
 	int ret;
 
-	if (!led_ctrl || !num_leds)
+	if (!led_ctrl || !num_leds) {
 		ztest_test_skip();
+	}
 
 	for (led = 0; led < num_leds; led++) {
 		const struct led_info *info;
@@ -116,8 +103,9 @@ void test_led_get_info(void)
 		TC_PRINT("LED %d - label: %s, index: %d, num_colors: %d",
 			 led, info->label, info->index, info->num_colors);
 
-		if (!info->num_colors)
+		if (!info->num_colors) {
 			continue;
+		}
 
 		TC_PRINT(" color_mapping: ");
 
@@ -138,8 +126,9 @@ void test_led_on(void)
 	uint8_t led;
 	int ret;
 
-	if (!led_ctrl || !num_leds)
+	if (!led_ctrl || !num_leds) {
 		ztest_test_skip();
+	}
 
 	for (led = 0; led < num_leds; led++) {
 		ret = led_on(led_ctrl, led);
@@ -152,8 +141,9 @@ void test_led_off(void)
 	uint8_t led;
 	int ret;
 
-	if (!led_ctrl || !num_leds)
+	if (!led_ctrl || !num_leds) {
 		ztest_test_skip();
+	}
 
 	for (led = 0; led < num_leds; led++) {
 		ret = led_off(led_ctrl, led);
@@ -167,8 +157,9 @@ void test_led_set_color(void)
 	uint8_t colors[TEST_MAX_COLORS + 1];
 	int ret;
 
-	if (!led_ctrl || !num_leds)
+	if (!led_ctrl || !num_leds) {
 		ztest_test_skip();
+	}
 
 	for (led = 0; led < num_leds; led++) {
 		uint8_t num_colors = test_led_info[led].num_colors;
@@ -226,8 +217,9 @@ void test_led_set_brightness(void)
 	uint8_t led;
 	int ret;
 
-	if (!led_ctrl || !num_leds)
+	if (!led_ctrl || !num_leds) {
 		ztest_test_skip();
+	}
 
 	for (led = 0; led < num_leds; led++) {
 		uint16_t level;

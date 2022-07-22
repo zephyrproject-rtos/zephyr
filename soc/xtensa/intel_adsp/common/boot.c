@@ -2,14 +2,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/devicetree.h>
+
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/devicetree.h>
 #include <soc.h>
 #include <zephyr/arch/xtensa/cache.h>
-#include <cavs-shim.h>
-#include <cavs-mem.h>
+#include <adsp_shim.h>
+#include <adsp_memory.h>
 #include <cpu_init.h>
 #include "manifest.h"
 
@@ -36,25 +37,13 @@
  * These probably want to migrate to devicetree.
  */
 
-#define LPSRAM_MASK(x)		 0x00000003
-#define SRAM_BANK_SIZE		(64 * 1024)
+
 #define HOST_PAGE_SIZE		4096
-#define EBB_SEGMENT_SIZE	32
 #define MANIFEST_SEGMENT_COUNT	3
 
 #if defined(CONFIG_SOC_SERIES_INTEL_CAVS_V15)
 #define PLATFORM_DISABLE_L2CACHE_AT_BOOT
-#else
-#define PLATFORM_INIT_HPSRAM
 #endif
-
-#define PLATFORM_INIT_LPSRAM
-
-#define PLATFORM_HPSRAM_EBB_COUNT (DT_REG_SIZE(DT_NODELABEL(sram0)) / SRAM_BANK_SIZE)
-BUILD_ASSERT((DT_REG_SIZE(DT_NODELABEL(sram0)) % SRAM_BANK_SIZE) == 0,
-	     "sram0 must be divisible by 64*1024 bank size.");
-
-extern void soc_trace_init(void);
 
 /* Initial/true entry point.  Does nothing but jump to
  * z_boot_asm_entry (which cannot be here, because it needs to be able
@@ -70,7 +59,7 @@ __asm__(".pushsection .boot_entry.text, \"ax\" \n\t"
  * enter C code successfully, and calls boot_core0()
  */
 #define STRINGIFY_MACRO(x) Z_STRINGIFY(x)
-#define IMRSTACK STRINGIFY_MACRO(CONFIG_IMR_MANIFEST_ADDR)
+#define IMRSTACK STRINGIFY_MACRO(IMR_BOOT_LDR_MANIFEST_BASE)
 __asm__(".section .imr.z_boot_asm_entry, \"x\" \n\t"
 	".align 4                   \n\t"
 	"z_boot_asm_entry:          \n\t"
@@ -84,38 +73,6 @@ __asm__(".section .imr.z_boot_asm_entry, \"x\" \n\t"
 	"  movi  a1, " IMRSTACK    "\n\t"
 	"  call4 boot_core0   \n\t");
 
-static ALWAYS_INLINE void idelay(int n)
-{
-	while (n--) {
-		__asm__ volatile("nop");
-	}
-}
-
-/* memcopy used by boot loader */
-static ALWAYS_INLINE void bmemcpy(void *dest, void *src, size_t bytes)
-{
-	uint32_t *d = dest;
-	uint32_t *s = src;
-	int i;
-
-	z_xtensa_cache_inv(src, bytes);
-	for (i = 0; i < (bytes >> 2); i++)
-		d[i] = s[i];
-
-	z_xtensa_cache_flush(dest, bytes);
-}
-
-/* bzero used by bootloader */
-static ALWAYS_INLINE void bbzero(void *dest, size_t bytes)
-{
-	uint32_t *d = dest;
-	int i;
-
-	for (i = 0; i < (bytes >> 2); i++)
-		d[i] = 0;
-
-	z_xtensa_cache_flush(dest, bytes);
-}
 
 static __imr void parse_module(struct sof_man_fw_header *hdr,
 			       struct sof_man_module *mod)
@@ -154,7 +111,7 @@ static __imr void parse_module(struct sof_man_fw_header *hdr,
 __imr void parse_manifest(void)
 {
 	struct sof_man_fw_desc *desc =
-		(struct sof_man_fw_desc *)CONFIG_IMR_MANIFEST_ADDR;
+		(struct sof_man_fw_desc *)IMR_BOOT_LDR_MANIFEST_BASE;
 	struct sof_man_fw_header *hdr = &desc->header;
 	struct sof_man_module *mod;
 	int i;
@@ -170,117 +127,6 @@ __imr void parse_manifest(void)
 	}
 }
 
-/* function powers up a number of memory banks provided as an argument and
- * gates remaining memory banks
- */
-static __imr void hp_sram_pm_banks(uint32_t banks)
-{
-#ifdef PLATFORM_INIT_HPSRAM
-	int delay_count = 256;
-	uint32_t status;
-	uint32_t ebb_mask0, ebb_mask1, ebb_avail_mask0, ebb_avail_mask1;
-	uint32_t total_banks_count = PLATFORM_HPSRAM_EBB_COUNT;
-
-	CAVS_SHIM.ldoctl = SHIM_LDOCTL_HPSRAM_LDO_ON;
-
-	/* add some delay before touch power register */
-	idelay(delay_count);
-
-	/* bit masks reflect total number of available EBB (banks) in each
-	 * segment; current implementation supports 2 segments 0,1
-	 */
-	if (total_banks_count > EBB_SEGMENT_SIZE) {
-		ebb_avail_mask0 = (uint32_t)GENMASK(EBB_SEGMENT_SIZE - 1, 0);
-		ebb_avail_mask1 = (uint32_t)GENMASK(total_banks_count -
-		EBB_SEGMENT_SIZE - 1, 0);
-	} else {
-		ebb_avail_mask0 = (uint32_t)GENMASK(total_banks_count - 1,
-		0);
-		ebb_avail_mask1 = 0;
-	}
-
-	/* bit masks of banks that have to be powered up in each segment */
-	if (banks > EBB_SEGMENT_SIZE) {
-		ebb_mask0 = (uint32_t)GENMASK(EBB_SEGMENT_SIZE - 1, 0);
-		ebb_mask1 = (uint32_t)GENMASK(banks - EBB_SEGMENT_SIZE - 1,
-		0);
-	} else {
-		/* assumption that ebb_in_use is > 0 */
-		ebb_mask0 = (uint32_t)GENMASK(banks - 1, 0);
-		ebb_mask1 = 0;
-	}
-
-	/* HSPGCTL, HSRMCTL use reverse logic - 0 means EBB is power gated */
-	CAVS_L2LM.hspgctl0 = (~ebb_mask0) & ebb_avail_mask0;
-	CAVS_L2LM.hsrmctl0 = (~ebb_mask0) & ebb_avail_mask0;
-	CAVS_L2LM.hspgctl1 = (~ebb_mask1) & ebb_avail_mask1;
-	CAVS_L2LM.hsrmctl1 = (~ebb_mask1) & ebb_avail_mask1;
-
-	/* query the power status of first part of HP memory */
-	/* to check whether it has been powered up. A few    */
-	/* cycles are needed for it to be powered up         */
-	status = CAVS_L2LM.hspgists0;
-	while (status != ((~ebb_mask0) & ebb_avail_mask0)) {
-		idelay(delay_count);
-		status = CAVS_L2LM.hspgists0;
-	}
-	/* query the power status of second part of HP memory */
-	/* and do as above code                               */
-
-	status = CAVS_L2LM.hspgists1;
-	while (status != ((~ebb_mask1) & ebb_avail_mask1)) {
-		idelay(delay_count);
-		status = CAVS_L2LM.hspgists1;
-	}
-	/* add some delay before touch power register */
-	idelay(delay_count);
-
-	CAVS_SHIM.ldoctl = SHIM_LDOCTL_HPSRAM_LDO_BYPASS;
-#endif
-}
-
-__imr void hp_sram_init(uint32_t memory_size)
-{
-	uint32_t ebb_in_use;
-
-	/* calculate total number of used SRAM banks (EBB)
-	 * to power up only necessary banks
-	 */
-	ebb_in_use = ceiling_fraction(memory_size, SRAM_BANK_SIZE);
-
-	hp_sram_pm_banks(ebb_in_use);
-
-	bbzero((void *)L2_SRAM_BASE, L2_SRAM_SIZE);
-}
-
-__imr void lp_sram_init(void)
-{
-#ifdef PLATFORM_INIT_LPSRAM
-	uint32_t timeout_counter, delay_count = 256;
-
-	timeout_counter = delay_count;
-
-	CAVS_SHIM.ldoctl = SHIM_LDOCTL_LPSRAM_LDO_ON;
-
-	/* add some delay before writing power registers */
-	idelay(delay_count);
-
-	CAVS_SHIM.lspgctl = CAVS_SHIM.lspgists & ~LPSRAM_MASK(0);
-
-	/* add some delay before checking the status */
-	idelay(delay_count);
-
-	/* query the power status of first part of LP memory */
-	/* to check whether it has been powered up. A few    */
-	/* cycles are needed for it to be powered up         */
-	while (CAVS_SHIM.lspgists && timeout_counter--) {
-		idelay(delay_count);
-	}
-
-	CAVS_SHIM.ldoctl = SHIM_LDOCTL_LPSRAM_LDO_BYPASS;
-	bbzero((void *)LP_SRAM_BASE, LP_SRAM_SIZE);
-#endif
-}
 
 __imr void win_setup(void)
 {
@@ -297,6 +143,10 @@ __imr void win_setup(void)
 	CAVS_WIN[3].dmwba = (HP_SRAM_WIN3_BASE | CAVS_DMWBA_READONLY
 			     | CAVS_DMWBA_ENABLE);
 }
+
+extern void hp_sram_init(uint32_t memory_size);
+extern void lp_sram_init(void);
+extern void hp_sram_pm_banks(uint32_t banks);
 
 #ifdef CONFIG_INTEL_ADSP_CAVS
 __imr void boot_core0(void)

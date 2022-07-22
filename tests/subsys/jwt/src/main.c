@@ -30,7 +30,7 @@
 extern unsigned char jwt_test_private_der[];
 extern unsigned int jwt_test_private_der_len;
 
-void test_jwt(void)
+ZTEST(jwt_tests, test_jwt)
 {
 	/*
 	 * TODO: This length should be computable, based on the length
@@ -57,10 +57,4 @@ void test_jwt(void)
 	printk("len: %zd\n", jwt_payload_len(&build));
 }
 
-void test_main(void)
-{
-	ztest_test_suite(lib_jwt_test,
-		ztest_unit_test(test_jwt));
-
-	ztest_run_test_suite(lib_jwt_test);
-}
+ZTEST_SUITE(jwt_tests, NULL, NULL, NULL, NULL, NULL);

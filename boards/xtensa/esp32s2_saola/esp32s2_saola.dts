@@ -15,6 +15,7 @@
 
 	aliases {
 		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
 	};
 
 	chosen {
@@ -32,7 +33,7 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	pinctrl-0 = <&uart0_tx_gpio43 &uart0_rx_gpio44>;
+	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 };
 
@@ -45,31 +46,31 @@
 };
 
 &timer0 {
-	status = "okay";
+	status = "disabled";
 };
 
 &timer1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &timer2 {
-	status = "okay";
+	status = "disabled";
 };
 
 &timer3 {
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
-	pinctrl-0 = <&i2c0_sda_gpio8 &i2c0_scl_gpio9>;
+	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 };
 
 &i2c1 {
 	clock-frequency = <I2C_BITRATE_STANDARD>;
-	pinctrl-0 = <&i2c1_sda_gpio3 &i2c1_scl_gpio4>;
+	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 };
 
@@ -81,8 +82,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
-	pinctrl-0 = <&spim2_miso_gpio13 &spim2_mosi_gpio11
-		     &spim2_sclk_gpio12 &spim2_csel_gpio10>;
+	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 };
 
@@ -90,8 +90,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
-	pinctrl-0 = <&spim3_miso_gpio37 &spim3_mosi_gpio35
-		     &spim3_sclk_gpio36 &spim3_csel_gpio34>;
+	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
 };
 

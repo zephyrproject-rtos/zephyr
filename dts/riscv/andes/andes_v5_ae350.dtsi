@@ -27,9 +27,10 @@
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
 			CPU0_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
-				compatible = "riscv,cpu-intc";
 			};
 		};
 		CPU1: cpu@1 {
@@ -43,9 +44,10 @@
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
 			CPU1_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
-				compatible = "riscv,cpu-intc";
 			};
 		};
 		CPU2: cpu@2 {
@@ -59,9 +61,10 @@
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
 			CPU2_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
-				compatible = "riscv,cpu-intc";
 			};
 		};
 		CPU3: cpu@3 {
@@ -75,9 +78,10 @@
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
 			CPU3_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
-				compatible = "riscv,cpu-intc";
 			};
 		};
 	};

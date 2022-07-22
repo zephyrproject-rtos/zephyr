@@ -128,7 +128,7 @@ void item_put_no_overwrite(bool pow2)
 	zassert_equal(mpsc_pbuf_claim(&buffer), NULL, NULL);
 }
 
-void test_item_put_no_overwrite(void)
+ZTEST(log_buffer, test_item_put_no_overwrite)
 {
 	item_put_no_overwrite(true);
 	item_put_no_overwrite(false);
@@ -154,7 +154,7 @@ void item_put_overwrite(bool pow2)
 			"Unexpected number of dropped messages: %d", drop_cnt);
 }
 
-void test_item_put_overwrite(void)
+ZTEST(log_buffer, test_item_put_overwrite)
 {
 	item_put_overwrite(true);
 	item_put_overwrite(false);
@@ -199,7 +199,7 @@ void item_put_saturate(bool pow2)
 	zassert_equal(mpsc_pbuf_claim(&buffer), NULL, NULL);
 }
 
-void test_item_put_saturate(void)
+ZTEST(log_buffer, test_item_put_saturate)
 {
 	item_put_saturate(true);
 	item_put_saturate(false);
@@ -240,7 +240,7 @@ void benchmark_item_put(bool pow2)
 	zassert_equal(mpsc_pbuf_claim(&buffer), NULL, NULL);
 }
 
-void test_benchmark_item_put(void)
+ZTEST(log_buffer, test_benchmark_item_put)
 {
 	benchmark_item_put(true);
 	benchmark_item_put(false);
@@ -278,7 +278,7 @@ void item_put_ext_no_overwrite(bool pow2)
 	zassert_equal(mpsc_pbuf_claim(&buffer), NULL, NULL);
 }
 
-void test_item_put_ext_no_overwrite(void)
+ZTEST(log_buffer, test_item_put_ext_no_overwrite)
 {
 	item_put_ext_no_overwrite(true);
 	item_put_ext_no_overwrite(false);
@@ -316,7 +316,7 @@ void item_put_word_ext_overwrite(bool pow2)
 			"Unexpected number of dropped messages: %d", drop_cnt);
 }
 
-void test_item_put_word_ext_overwrite(void)
+ZTEST(log_buffer, test_item_put_word_ext_overwrite)
 {
 	item_put_word_ext_overwrite(true);
 	item_put_word_ext_overwrite(false);
@@ -366,7 +366,7 @@ void item_put_ext_saturate(bool pow2)
 	zassert_equal(mpsc_pbuf_claim(&buffer), NULL, NULL);
 }
 
-void test_item_put_ext_saturate(void)
+ZTEST(log_buffer, test_item_put_ext_saturate)
 {
 	item_put_ext_saturate(true);
 	item_put_ext_saturate(false);
@@ -413,7 +413,7 @@ void benchmark_item_put_ext(bool pow2)
 	zassert_equal(mpsc_pbuf_claim(&buffer), NULL, NULL);
 }
 
-void test_benchmark_item_put_ext(void)
+ZTEST(log_buffer, test_benchmark_item_put_ext)
 {
 	benchmark_item_put_ext(true);
 	benchmark_item_put_ext(false);
@@ -464,7 +464,7 @@ void benchmark_item_put_data(bool pow2)
 	zassert_equal(mpsc_pbuf_claim(&buffer), NULL, NULL);
 }
 
-void test_benchmark_item_put_data(void)
+ZTEST(log_buffer, test_benchmark_item_put_data)
 {
 	benchmark_item_put_data(true);
 	benchmark_item_put_data(false);
@@ -507,7 +507,7 @@ void item_put_data_overwrite(bool pow2)
 			"Unexpected number of dropped messages: %d", drop_cnt);
 }
 
-void test_put_data_overwrite(void)
+ZTEST(log_buffer, test_put_data_overwrite)
 {
 	item_put_data_overwrite(true);
 	item_put_data_overwrite(false);
@@ -545,7 +545,7 @@ void item_alloc_commit(bool pow2)
 	}
 }
 
-void test_item_alloc_commit(void)
+ZTEST(log_buffer, test_item_alloc_commit)
 {
 	item_alloc_commit(true);
 	item_alloc_commit(false);
@@ -578,7 +578,7 @@ void item_max_alloc(bool overwrite)
 	zassert_true(packet == NULL, NULL);
 }
 
-void test_item_max_alloc(void)
+ZTEST(log_buffer, test_item_max_alloc)
 {
 	item_max_alloc(true);
 	item_max_alloc(false);
@@ -648,7 +648,7 @@ void item_alloc_commit_saturate(bool pow2)
 	zassert_true(packet, NULL);
 }
 
-void test_item_alloc_commit_saturate(void)
+ZTEST(log_buffer, test_item_alloc_commit_saturate)
 {
 	item_alloc_commit_saturate(true);
 	item_alloc_commit_saturate(false);
@@ -704,7 +704,7 @@ void item_alloc_preemption(bool pow2)
 	zassert_equal(p, NULL, NULL);
 }
 
-void test_item_alloc_preemption(void)
+ZTEST(log_buffer, test_item_alloc_preemption)
 {
 	item_alloc_preemption(true);
 	item_alloc_preemption(false);
@@ -768,7 +768,7 @@ void overwrite(bool pow2)
 	zassert_equal(p, NULL, NULL);
 }
 
-void test_overwrite(void)
+ZTEST(log_buffer, test_overwrite)
 {
 	overwrite(true);
 	overwrite(false);
@@ -821,7 +821,7 @@ void overwrite_while_claimed(bool pow2)
 	zassert_equal(p0, NULL, NULL);
 }
 
-void test_overwrite_while_claimed(void)
+ZTEST(log_buffer, test_overwrite_while_claimed)
 {
 	overwrite_while_claimed(true);
 	overwrite_while_claimed(false);
@@ -878,7 +878,7 @@ void overwrite_while_claimed2(bool pow2)
 	zassert_equal(p0, NULL, NULL);
 }
 
-void test_overwrite_while_claimed2(void)
+ZTEST(log_buffer, test_overwrite_while_claimed2)
 {
 		overwrite_while_claimed2(true);
 		overwrite_while_claimed2(false);
@@ -905,7 +905,7 @@ uint32_t rand_get(uint32_t min, uint32_t max)
 	return min + (sys_rand32_get() % max);
 }
 
-void test_overwrite_consistency(void)
+ZTEST(log_buffer, test_overwrite_consistency)
 {
 	struct mpsc_pbuf_buffer buffer;
 	static struct mpsc_pbuf_buffer_config cfg = {
@@ -1029,7 +1029,7 @@ void start_threads(struct mpsc_pbuf_buffer *buffer)
  * available. When enough buffers is released threads are woken up and they
  * allocate packets.
  */
-void test_pending_alloc(void)
+ZTEST(log_buffer, test_pending_alloc)
 {
 	int prio = k_thread_priority_get(k_current_get());
 	struct mpsc_pbuf_buffer buffer;
@@ -1097,7 +1097,7 @@ static void ignore_drop(const struct mpsc_pbuf_buffer *buffer,
 	ARG_UNUSED(item);
 }
 
-void test_utilization(void)
+ZTEST(log_buffer, test_utilization)
 {
 	struct mpsc_pbuf_buffer buffer;
 	struct mpsc_pbuf_buffer_config config = {
@@ -1192,29 +1192,4 @@ void test_utilization(void)
 }
 
 /*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_log_buffer,
-		ztest_unit_test(test_benchmark_item_put),
-		ztest_unit_test(test_item_put_saturate),
-		ztest_unit_test(test_item_put_no_overwrite),
-		ztest_unit_test(test_item_put_overwrite),
-		ztest_unit_test(test_item_put_ext_no_overwrite),
-		ztest_unit_test(test_item_put_word_ext_overwrite),
-		ztest_unit_test(test_item_put_ext_saturate),
-		ztest_unit_test(test_put_data_overwrite),
-		ztest_unit_test(test_benchmark_item_put_ext),
-		ztest_unit_test(test_benchmark_item_put_data),
-		ztest_unit_test(test_item_alloc_commit),
-		ztest_unit_test(test_item_max_alloc),
-		ztest_unit_test(test_item_alloc_commit_saturate),
-		ztest_unit_test(test_item_alloc_preemption),
-		ztest_unit_test(test_overwrite),
-		ztest_unit_test(test_overwrite_while_claimed),
-		ztest_unit_test(test_overwrite_while_claimed2),
-		ztest_unit_test(test_overwrite_consistency),
-		ztest_unit_test(test_pending_alloc),
-		ztest_unit_test(test_utilization)
-		);
-	ztest_run_test_suite(test_log_buffer);
-}
+ZTEST_SUITE(log_buffer, NULL, NULL, NULL, NULL, NULL);

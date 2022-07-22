@@ -717,14 +717,14 @@ BUILD_ASSERT((sizeof(struct shell_backend_config_flags) == sizeof(uint32_t)),
 /**
  * @internal @brief Default backend configuration.
  */
-#define SHELL_DEFAULT_BACKEND_CONFIG_FLAGS	\
-{						\
-	.insert_mode	= 0,			\
-	.echo		= 1,			\
-	.obscure	= 0,			\
-	.mode_delete	= 1,			\
-	.use_colors	= 1,			\
-	.use_vt100	= 1,			\
+#define SHELL_DEFAULT_BACKEND_CONFIG_FLAGS				\
+{									\
+	.insert_mode	= 0,						\
+	.echo		= 1,						\
+	.obscure	= IS_ENABLED(CONFIG_SHELL_START_OBSCURED),	\
+	.mode_delete	= 1,						\
+	.use_colors	= 1,						\
+	.use_vt100	= 1,						\
 };
 
 struct shell_backend_ctx_flags {

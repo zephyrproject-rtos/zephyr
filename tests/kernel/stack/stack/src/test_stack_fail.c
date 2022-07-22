@@ -42,7 +42,7 @@ void tStack_pop_entry(void *p1, void *p2, void *p3)
  * @brief Verifies stack pop functionality
  * @see k_stack_init(), k_stack_pop()
  */
-void test_stack_pop_fail(void)
+ZTEST(stack_fail, test_stack_pop_fail)
 {
 	k_stack_init(&stack, data, STACK_LEN);
 
@@ -54,7 +54,7 @@ void test_stack_pop_fail(void)
  * thread.
  * @see k_stack_cleanup()
  */
-void test_stack_cleanup_error(void)
+ZTEST(stack_fail, test_stack_cleanup_error)
 {
 	stack_data_t rx_data[STACK_LEN - 1];
 
@@ -76,7 +76,7 @@ void test_stack_cleanup_error(void)
  * @brief Verifies push a data in the full stack.
  * @see k_stack_push()
  */
-void test_stack_push_full(void)
+ZTEST(stack_fail, test_stack_push_full)
 {
 	stack_data_t tx_data[STACK_LEN] = {0};
 	stack_data_t data_tmp = 0;
@@ -94,7 +94,7 @@ void test_stack_push_full(void)
  * @brief Verifies stack pop from a user thread
  * @see k_stack_init(), k_stack_pop()
  */
-void test_stack_user_pop_fail(void)
+ZTEST_USER(stack_fail, test_stack_user_pop_fail)
 {
 	struct k_stack *alloc_stack = k_object_alloc(K_OBJ_STACK);
 
@@ -109,7 +109,7 @@ void test_stack_user_pop_fail(void)
  * @brief Verifies stack alloc and initialize a null pointer.
  * @see k_stack_alloc_init()
  */
-void test_stack_user_init_null(void)
+ZTEST_USER(stack_fail, test_stack_user_init_null)
 {
 	ztest_set_fault_valid(true);
 	k_stack_alloc_init(NULL, STACK_LEN);
@@ -120,7 +120,7 @@ void test_stack_user_init_null(void)
  * 0 memory.
  * @see k_stack_alloc_init()
  */
-void test_stack_user_init_invalid_value(void)
+ZTEST_USER(stack_fail, test_stack_user_init_invalid_value)
 {
 	ztest_set_fault_valid(true);
 	struct k_stack *alloc_stack = k_object_alloc(K_OBJ_STACK);
@@ -134,7 +134,7 @@ void test_stack_user_init_invalid_value(void)
  * pointer.
  * @see k_stack_push()
  */
-void test_stack_user_push_null(void)
+ZTEST_USER(stack_fail, test_stack_user_push_null)
 {
 	ztest_set_fault_valid(true);
 	k_stack_push(NULL, 0);
@@ -144,7 +144,7 @@ void test_stack_user_push_null(void)
  * @brief Verifies pop data from a NULL pointer.
  * @see k_stack_pop()
  */
-void test_stack_user_pop_null(void)
+ZTEST_USER(stack_fail, test_stack_user_pop_null)
 {
 	ztest_set_fault_valid(true);
 	k_stack_pop(NULL, 0, K_NO_WAIT);
@@ -155,7 +155,7 @@ void test_stack_user_pop_null(void)
  * another thread.
  * @see k_stack_pop()
  */
-void test_stack_user_pop_permission(void)
+ZTEST_USER(stack_fail, test_stack_user_pop_permission)
 {
 	ztest_set_fault_valid(true);
 	struct k_stack *alloc_stack = k_object_alloc(K_OBJ_STACK);

@@ -24,8 +24,8 @@ static int sbs_cmd_reg_read(const struct device *dev,
 	int status;
 
 	cfg = dev->config;
-	status = i2c_burst_read(cfg->i2c_dev, cfg->i2c_addr, reg_addr,
-				i2c_data, ARRAY_SIZE(i2c_data));
+	status = i2c_burst_read_dt(&cfg->i2c, reg_addr, i2c_data,
+				   ARRAY_SIZE(i2c_data));
 	if (status < 0) {
 		LOG_ERR("Unable to read register");
 		return status;
@@ -264,8 +264,8 @@ static int sbs_gauge_init(const struct device *dev)
 
 	cfg = dev->config;
 
-	if (!device_is_ready(cfg->i2c_dev)) {
-		LOG_ERR("%s device is not ready", cfg->i2c_dev->name);
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
 		return -ENODEV;
 	}
 
@@ -281,8 +281,7 @@ static const struct sensor_driver_api sbs_gauge_driver_api = {
 	static struct sbs_gauge_data sbs_gauge_driver_##index; \
 \
 	static const struct sbs_gauge_config sbs_gauge_config_##index = { \
-		.i2c_dev = DEVICE_DT_GET(DT_INST_BUS(index)), \
-		.i2c_addr = DT_INST_REG_ADDR(index), \
+		.i2c = I2C_DT_SPEC_INST_GET(index), \
 	}; \
 \
 	DEVICE_DT_INST_DEFINE(index, \

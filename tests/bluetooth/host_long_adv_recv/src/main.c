@@ -357,8 +357,9 @@ static void generate_sequence(uint8_t *dest, uint16_t len, uint8_t range_start, 
 	}
 }
 
-/* Test. */
-static void test_host_long_adv_recv(void)
+ZTEST_SUITE(long_adv_rx_tests, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(long_adv_rx_tests, test_host_long_adv_recv)
 {
 	/* Register the test HCI driver */
 	bt_hci_driver_register(&drv);
@@ -482,12 +483,4 @@ static void test_host_long_adv_recv(void)
 	ztest_returns_value(get_expected_length, report_b_combined.length); /* Expect b */
 	send_adv_report(&report_b_1);
 	send_adv_report(&report_b_2);
-}
-
-/* test case main entry */
-void test_main(void)
-{
-	ztest_test_suite(test_host_long_adv_recv, ztest_unit_test(test_host_long_adv_recv));
-
-	ztest_run_test_suite(test_host_long_adv_recv);
 }

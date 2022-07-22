@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_X_NUCLEO_IKS01A3
+
+config I2C
+	default y if SENSOR
+
+endif # SHIELD_X_NUCLEO_IKS01A3

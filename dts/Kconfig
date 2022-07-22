@@ -5,3 +5,9 @@ config HAS_DTS
 	help
 	  This option specifies that the target platform supports device tree
 	  configuration.
+
+menu "Devicetree Info"
+
+source "$(KCONFIG_BINARY_DIR)/Kconfig.dts"
+
+endmenu

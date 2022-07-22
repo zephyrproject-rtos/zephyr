@@ -11,9 +11,9 @@
 #include <hal/nrf_gpio.h>
 #include <stdbool.h>
 
-#define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(pwm_nrfx);
+
+LOG_MODULE_REGISTER(pwm_nrfx, CONFIG_PWM_LOG_LEVEL);
 
 #define PWM_NRFX_CH_POLARITY_MASK          BIT(15)
 #define PWM_NRFX_CH_PULSE_CYCLES_MASK      BIT_MASK(15)

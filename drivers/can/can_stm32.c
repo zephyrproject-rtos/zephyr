@@ -342,6 +342,15 @@ static int can_leave_sleep_mode(CAN_TypeDef *can)
 	return 0;
 }
 
+static int can_stm32_get_capabilities(const struct device *dev, can_mode_t *cap)
+{
+	ARG_UNUSED(dev);
+
+	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT;
+
+	return 0;
+}
+
 static int can_stm32_set_mode(const struct device *dev, can_mode_t mode)
 {
 	const struct can_stm32_config *cfg = dev->config;
@@ -351,7 +360,7 @@ static int can_stm32_set_mode(const struct device *dev, can_mode_t mode)
 
 	LOG_DBG("Set mode %d", mode);
 
-	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) != 0) {
+	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT)) != 0) {
 		LOG_ERR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
@@ -384,6 +393,13 @@ static int can_stm32_set_mode(const struct device *dev, can_mode_t mode)
 		can->BTR |= CAN_BTR_SILM;
 	} else {
 		can->BTR &= ~CAN_BTR_SILM;
+	}
+
+	if ((mode & CAN_MODE_ONE_SHOT) != 0) {
+		/* No automatic retransmission */
+		can->MCR |= CAN_MCR_NART;
+	} else {
+		can->MCR &= ~CAN_MCR_NART;
 	}
 
 done:
@@ -534,10 +550,6 @@ static int can_stm32_init(const struct device *dev)
 #ifdef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	can->MCR |= CAN_MCR_ABOM;
 #endif
-	if (cfg->one_shot) {
-		can->MCR |= CAN_MCR_NART;
-	}
-
 	timing.sjw = cfg->sjw;
 	if (cfg->sample_point && USE_SP_ALGO) {
 		ret = can_calc_timing(dev, &timing, cfg->bus_speed,
@@ -1123,6 +1135,7 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 }
 
 static const struct can_driver_api can_api_funcs = {
+	.get_capabilities = can_stm32_get_capabilities,
 	.set_mode = can_stm32_set_mode,
 	.set_timing = can_stm32_set_timing,
 	.send = can_stm32_send,
@@ -1202,7 +1215,6 @@ static const struct can_stm32_config can_stm32_cfg_##inst = {            \
 	.prop_ts1 = DT_INST_PROP_OR(inst, prop_seg, 0) +                 \
 		    DT_INST_PROP_OR(inst, phase_seg1, 0),                \
 	.ts2 = DT_INST_PROP_OR(inst, phase_seg2, 0),                     \
-	.one_shot = DT_INST_PROP(inst, one_shot),                        \
 	.pclken = {                                                      \
 		.enr = DT_INST_CLOCKS_CELL(inst, bits),                  \
 		.bus = DT_INST_CLOCKS_CELL(inst, bus),                   \

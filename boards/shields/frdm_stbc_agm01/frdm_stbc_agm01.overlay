@@ -3,8 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		magn0 = &fxos8700;
+	};
+};
+
 &arduino_i2c {
-    fxos8700@1e {
+    fxos8700: fxos8700@1e {
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
 		label = "AGM01_FXOS8700";

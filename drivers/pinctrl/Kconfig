@@ -6,6 +6,10 @@ menuconfig PINCTRL
 
 if PINCTRL
 
+module = PINCTRL
+module-str = PINCTRL
+source "subsys/logging/Kconfig.template.log_config"
+
 config PINCTRL_STORE_REG
 	bool
 	help
@@ -47,5 +51,6 @@ source "drivers/pinctrl/Kconfig.lpc_iocon"
 source "drivers/pinctrl/Kconfig.cc13xx_cc26xx"
 source "drivers/pinctrl/Kconfig.esp32"
 source "drivers/pinctrl/Kconfig.rv32m1"
+source "drivers/pinctrl/Kconfig.xlnx"
 
 endif # PINCTRL

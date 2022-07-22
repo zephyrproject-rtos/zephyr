@@ -13,8 +13,8 @@
 #include <zephyr/sys/byteorder.h>
 #include <host/hci_core.h>
 
+#include <bt_common.h>
 #include <bt_conn_common.h>
-#include "test_cte_req_enable.h"
 #include "test_cte_set_rx_params.h"
 
 struct ut_bt_df_conn_cte_request_data {
@@ -81,7 +81,8 @@ int send_conn_cte_req_enable(uint16_t conn_handle,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_CTE_REQ_ENABLE, buf, NULL);
 }
 
-void test_set_conn_cte_req_enable_invalid_conn_handle(void)
+ZTEST(test_hci_set_conn_cte_rx_params_with_conn_set,
+	test_set_conn_cte_req_enable_invalid_conn_handle)
 {
 	int err;
 
@@ -90,7 +91,8 @@ void test_set_conn_cte_req_enable_invalid_conn_handle(void)
 		      "Unexpected error value for CTE request enable with wrong conn handle");
 }
 
-void test_set_conn_cte_req_enable_before_set_rx_params(void)
+ZTEST(test_hci_set_conn_cte_rx_params_with_conn_set,
+	test_set_conn_cte_req_enable_before_set_rx_params)
 {
 	int err;
 
@@ -99,7 +101,8 @@ void test_set_conn_cte_req_enable_before_set_rx_params(void)
 		      "Unexpected error value for CTE request enable before set rx params");
 }
 
-void test_set_conn_cte_req_enable_with_too_short_interval(void)
+ZTEST(test_hci_set_conn_cte_rx_params_with_rx_param_set,
+	test_set_conn_cte_req_enable_with_too_short_interval)
 {
 	int err;
 
@@ -111,7 +114,8 @@ void test_set_conn_cte_req_enable_with_too_short_interval(void)
 		      " interval");
 }
 
-void test_set_conn_cte_req_enable_with_too_long_requested_length(void)
+ZTEST(test_hci_set_conn_cte_rx_params_with_rx_param_set,
+	test_set_conn_cte_req_enable_with_too_long_requested_length)
 {
 	int err;
 
@@ -123,7 +127,8 @@ void test_set_conn_cte_req_enable_with_too_long_requested_length(void)
 		      " length");
 }
 
-void test_set_conn_cte_req_enable_with_too_short_requested_length(void)
+ZTEST(test_hci_set_conn_cte_rx_params_with_rx_param_set,
+	test_set_conn_cte_req_enable_with_too_short_requested_length)
 {
 	int err;
 
@@ -135,7 +140,8 @@ void test_set_conn_cte_req_enable_with_too_short_requested_length(void)
 		      " length");
 }
 
-void test_set_conn_cte_req_enable_with_invalid_cte_type(void)
+ZTEST(test_hci_set_conn_cte_rx_params_with_rx_param_set,
+	test_set_conn_cte_req_enable_with_invalid_cte_type)
 {
 	int err;
 
@@ -146,7 +152,7 @@ void test_set_conn_cte_req_enable_with_invalid_cte_type(void)
 		      "Unexpected error value for CTE request enable with invalid CTE type");
 }
 
-void test_set_conn_cte_req_enable(void)
+ZTEST(test_hci_set_conn_cte_rx_params_with_rx_param_set, test_set_conn_cte_req_enable)
 {
 	int err;
 
@@ -154,7 +160,7 @@ void test_set_conn_cte_req_enable(void)
 	zassert_equal(err, 0, "Unexpected error value for CTE request enable");
 }
 
-void test_set_conn_cte_req_disable(void)
+ZTEST(test_hci_set_conn_cte_rx_params_with_cte_req_set, test_set_conn_cte_req_disable)
 {
 	int err;
 
@@ -168,19 +174,16 @@ static void cte_req_params_set(void)
 	g_data.requested_cte_type = BT_HCI_LE_AOD_CTE_2US;
 }
 
-static void connection_setup(void)
+static void connection_setup(void *data)
 {
 	cte_req_params_set();
 
 	g_conn_handle = ut_bt_create_connection();
 }
 
-static void connection_teardown(void)
-{
-	ut_bt_destroy_connection(g_conn_handle);
-}
+static void connection_teardown(void *data) { ut_bt_destroy_connection(g_conn_handle); }
 
-static void cte_rx_param_setup(void)
+static void cte_rx_param_setup(void *data)
 {
 	/* Arbitrary antenna IDs. May be random for test purposes. */
 	static uint8_t ant_ids[] = { 0x1, 0x2, 0x3, 0x4, 0x5 };
@@ -200,49 +203,30 @@ static void cte_rx_param_setup(void)
 	send_set_conn_cte_rx_params(g_conn_handle, &cte_rx_params, true);
 }
 
-static void cte_req_setup(void)
+static void cte_req_setup(void *data)
 {
-	cte_rx_param_setup();
+	cte_rx_param_setup(data);
 
 	send_conn_cte_req_enable(g_conn_handle, &g_data, true);
 }
 
-static void cte_rx_param_teardown(void)
+static void cte_rx_param_teardown(void *data)
 {
-	connection_teardown();
+	connection_teardown(data);
 
 	send_set_conn_cte_rx_params(g_conn_handle, NULL, false);
 }
 
-static void cte_req_teardown(void)
+static void cte_req_teardown(void *data)
 {
 	send_conn_cte_req_enable(g_conn_handle, NULL, false);
 
-	cte_rx_param_teardown();
+	cte_rx_param_teardown(data);
 }
 
-void run_cte_request_enable_tests(void)
-{
-	ztest_test_suite(
-		test_hci_set_conn_cte_rx_params,
-		ztest_unit_test(test_set_conn_cte_req_enable_invalid_conn_handle),
-		ztest_unit_test_setup_teardown(test_set_conn_cte_req_enable_before_set_rx_params,
-					       connection_setup, connection_teardown),
-		ztest_unit_test_setup_teardown(test_set_conn_cte_req_enable_with_too_short_interval,
-					       cte_rx_param_setup, cte_rx_param_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_conn_cte_req_enable_with_too_short_requested_length,
-			cte_rx_param_setup, cte_rx_param_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_conn_cte_req_enable_with_too_long_requested_length,
-			cte_rx_param_setup, cte_rx_param_teardown),
-		ztest_unit_test_setup_teardown(test_set_conn_cte_req_enable, cte_rx_param_setup,
-					       cte_rx_param_teardown),
-		ztest_unit_test_setup_teardown(test_set_conn_cte_req_disable, cte_req_setup,
-					       cte_req_teardown));
-	ztest_run_test_suite(test_hci_set_conn_cte_rx_params);
-
-	/* TODO: Add tests cases that verify positive behavior of the function
-	 * HCI_LE_Connection_CTE_Request_Enable.
-	 */
-}
+ZTEST_SUITE(test_hci_set_conn_cte_rx_params_with_conn_set, NULL, ut_bt_setup, connection_setup,
+	    connection_teardown, ut_bt_teardown);
+ZTEST_SUITE(test_hci_set_conn_cte_rx_params_with_rx_param_set, NULL, ut_bt_setup,
+	    cte_rx_param_setup, cte_rx_param_teardown, ut_bt_teardown);
+ZTEST_SUITE(test_hci_set_conn_cte_rx_params_with_cte_req_set, NULL, ut_bt_setup, cte_req_setup,
+	    cte_req_teardown, ut_bt_teardown);

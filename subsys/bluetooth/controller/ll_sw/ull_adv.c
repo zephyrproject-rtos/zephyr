@@ -38,6 +38,7 @@
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_filter.h"
+#include "lll_conn_iso.h"
 
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #include "ll_sw/ull_tx_queue.h"
@@ -58,7 +59,11 @@
 #include "ll_settings.h"
 
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-#include "ll_sw/ull_llcp.h"
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
+
+#include "ull_llcp.h"
 #endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -1402,16 +1407,28 @@ uint8_t ll_adv_enable(uint8_t enable)
 					EVENT_OVERHEAD_START_US +
 					(EVENT_TICKER_RES_MARGIN_US << 1));
 
-			ticks_slot_overhead_aux = ull_adv_aux_evt_init(aux);
+			ticks_slot_overhead_aux =
+				ull_adv_aux_evt_init(aux, &ticks_anchor_aux);
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 			/* Start periodic advertising if enabled and not already
 			 * started.
 			 */
 			if (sync) {
-				const uint32_t ticks_slot_aux =
-					aux->ull.ticks_slot +
+				uint32_t ticks_slot_aux;
+#if defined(CONFIG_BT_CTLR_ADV_RESERVE_MAX)
+				uint32_t us_slot;
+
+				us_slot = ull_adv_aux_time_get(aux,
+						PDU_AC_PAYLOAD_SIZE_MAX,
+						PDU_AC_PAYLOAD_SIZE_MAX);
+				ticks_slot_aux =
+					HAL_TICKER_US_TO_TICKS(us_slot) +
 					ticks_slot_overhead_aux;
+#else
+				ticks_slot_aux = aux->ull.ticks_slot +
+						 ticks_slot_overhead_aux;
+#endif
 
 				/* Schedule periodic advertising PDU after
 				 * auxiliary PDUs.

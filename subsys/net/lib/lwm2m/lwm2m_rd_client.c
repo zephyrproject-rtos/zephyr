@@ -184,7 +184,6 @@ static void set_sm_state(uint8_t sm_state)
 		    sm_state == ENGINE_DEREGISTERED) &&
 		   (client.engine_state >= ENGINE_DO_REGISTRATION &&
 		    client.engine_state <= ENGINE_DEREGISTER_SENT)) {
-		lwm2m_engine_context_close(client.ctx);
 		event = LWM2M_RD_CLIENT_EVENT_DISCONNECT;
 	} else if (sm_state == ENGINE_NETWORK_ERROR) {
 		lwm2m_engine_context_close(client.ctx);
@@ -611,6 +610,7 @@ static int sm_select_security_inst(bool bootstrap_server, int *sec_obj_inst)
 
 static int sm_do_init(void)
 {
+	lwm2m_engine_context_close(client.ctx);
 	client.ctx->sec_obj_inst = -1;
 	client.ctx->srv_obj_inst = -1;
 	client.trigger_update = false;
@@ -1146,6 +1146,7 @@ static void lwm2m_rd_client_service(struct k_work *work)
 			break;
 
 		case ENGINE_DEREGISTERED:
+			lwm2m_engine_context_close(client.ctx);
 			set_sm_state(ENGINE_IDLE);
 			break;
 

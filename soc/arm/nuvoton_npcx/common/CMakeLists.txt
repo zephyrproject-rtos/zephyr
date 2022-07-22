@@ -32,6 +32,8 @@ if (DEFINED CONFIG_NPCX_IMAGE_OUTPUT_BIN)
   )
   if (DEFINED CONFIG_NPCX_IMAGE_OUTPUT_HEX)
     set(NPCX_HEX_NAME ${CONFIG_KERNEL_BIN_NAME}.npcx.hex)
+    # Property magic which makes west flash choose right file.
+    set_property(TARGET runners_yaml_props_target PROPERTY hex_file "${CONFIG_KERNEL_BIN_NAME}.npcx.hex")
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
     COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
             $<TARGET_PROPERTY:bintools,elfconvert_flag>

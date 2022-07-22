@@ -20,6 +20,9 @@
 
 static struct k_spinlock lock;
 static uint64_t last_count;
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = RISCV_MACHINE_TIMER_IRQ;
+#endif
 
 static uint64_t get_hart_mtimecmp(void)
 {

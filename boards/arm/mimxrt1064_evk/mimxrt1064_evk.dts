@@ -19,6 +19,7 @@
 		sw0 = &user_button;
 		kscan0 = &touch_controller;
 		watchdog0 = &wdog0;
+		sdhc0 = &usdhc1;
 	};
 
 	chosen {
@@ -153,7 +154,7 @@ arduino_i2c: &lpi2c1 {};
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
 
-	mt9m114@48 {
+	mt9m114: mt9m114@48 {
 		compatible = "aptina,mt9m114";
 		reg = <0x48>;
 		label = "MT9M114";
@@ -267,7 +268,7 @@ zephyr_udc0: &usb1 {
 
 &csi {
 	status = "okay";
-	sensor-label = "MT9M114";
+	sensor = <&mt9m114>;
 	pinctrl-0 = <&pinmux_csi>;
 	pinctrl-names = "default";
 
@@ -347,4 +348,9 @@ zephyr_udc0: &usb1 {
  */
 &gpt_hw_timer {
 	status = "okay";
+};
+
+&itm {
+	pinctrl-0 = <&pinmux_swo>;
+	pinctrl-names = "default";
 };

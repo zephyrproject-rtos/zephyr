@@ -317,7 +317,7 @@ static void arp_cb(struct arp_entry *entry, void *user_data)
 	}
 }
 
-void test_arp(void)
+ZTEST(arp_fn_tests, test_arp)
 {
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
 		k_thread_priority_set(k_current_get(),
@@ -647,9 +647,4 @@ void test_arp(void)
 	}
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_arp_fn,
-		ztest_unit_test(test_arp));
-	ztest_run_test_suite(test_arp_fn);
-}
+ZTEST_SUITE(arp_fn_tests, NULL, NULL, NULL, NULL, NULL);

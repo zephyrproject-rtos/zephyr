@@ -260,25 +260,29 @@ static int phy_mii_cfg_link(const struct device *dev,
 		return -EIO;
 	}
 
-	if (adv_speeds & LINK_FULL_10BASE_T)
+	if (adv_speeds & LINK_FULL_10BASE_T) {
 		anar_reg |= MII_ADVERTISE_10_FULL;
-	else
+	} else {
 		anar_reg &= ~MII_ADVERTISE_10_FULL;
+	}
 
-	if (adv_speeds & LINK_HALF_10BASE_T)
+	if (adv_speeds & LINK_HALF_10BASE_T) {
 		anar_reg |= MII_ADVERTISE_10_HALF;
-	else
+	} else {
 		anar_reg &= ~MII_ADVERTISE_10_HALF;
+	}
 
-	if (adv_speeds & LINK_FULL_100BASE_T)
+	if (adv_speeds & LINK_FULL_100BASE_T) {
 		anar_reg |= MII_ADVERTISE_100_FULL;
-	else
+	} else {
 		anar_reg &= ~MII_ADVERTISE_100_FULL;
+	}
 
-	if (adv_speeds & LINK_HALF_100BASE_T)
+	if (adv_speeds & LINK_HALF_100BASE_T) {
 		anar_reg |= MII_ADVERTISE_100_HALF;
-	else
+	} else {
 		anar_reg &= ~MII_ADVERTISE_100_HALF;
+	}
 
 	bmcr_reg |= MII_BMCR_AUTONEG_ENABLE;
 

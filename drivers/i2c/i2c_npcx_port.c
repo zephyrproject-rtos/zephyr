@@ -62,7 +62,7 @@ static int i2c_npcx_port_configure(const struct device *dev,
 		return -EIO;
 	}
 
-	if (!(dev_config & I2C_MODE_MASTER)) {
+	if (!(dev_config & I2C_MODE_CONTROLLER)) {
 		return -ENOTSUP;
 	}
 
@@ -87,7 +87,7 @@ static int i2c_npcx_port_get_config(const struct device *dev, uint32_t *dev_conf
 
 	ret = npcx_i2c_ctrl_get_speed(config->i2c_ctrl, &speed);
 	if (!ret) {
-		*dev_config = (I2C_MODE_MASTER | speed);
+		*dev_config = (I2C_MODE_CONTROLLER | speed);
 	}
 
 	return ret;
@@ -139,7 +139,7 @@ static int i2c_npcx_port_init(const struct device *dev)
 
 
 	/* Setup initial i2c configuration */
-	i2c_config = (I2C_MODE_MASTER | i2c_map_dt_bitrate(config->bitrate));
+	i2c_config = (I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->bitrate));
 	ret = i2c_npcx_port_configure(dev, i2c_config);
 	if (ret != 0) {
 		return ret;

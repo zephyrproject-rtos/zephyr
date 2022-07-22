@@ -64,6 +64,17 @@ const char *log_source_name_get(uint32_t domain_id, uint32_t src_id)
 	return src_id < z_log_sources_count() ? log_name_get(src_id) : NULL;
 }
 
+int log_source_id_get(const char *name)
+{
+	for (int i = 0; i < log_src_cnt_get(CONFIG_LOG_DOMAIN_ID); i++) {
+		if (strcmp(log_source_name_get(CONFIG_LOG_DOMAIN_ID, i),
+			   name) == 0) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 static uint32_t max_filter_get(uint32_t filters)
 {
 	uint32_t max_filter = LOG_LEVEL_NONE;

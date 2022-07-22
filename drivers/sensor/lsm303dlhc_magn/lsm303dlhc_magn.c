@@ -24,10 +24,8 @@ static int lsm303dlhc_sample_fetch(const struct device *dev,
 	uint8_t status;
 
 	/* Check data ready flag */
-	if (i2c_reg_read_byte(drv_data->i2c,
-			      config->i2c_address,
-			      LSM303DLHC_SR_REG_M,
-			      &status) < 0) {
+	if (i2c_reg_read_byte_dt(&config->i2c, LSM303DLHC_SR_REG_M,
+				 &status) < 0) {
 		LOG_ERR("Failed to read status register.");
 		return -EIO;
 	}
@@ -37,10 +35,8 @@ static int lsm303dlhc_sample_fetch(const struct device *dev,
 		return -EIO;
 	}
 
-	if (i2c_burst_read(drv_data->i2c,
-			   config->i2c_address,
-			   LSM303DLHC_REG_MAGN_X_LSB,
-			   magn_buf, 6) < 0) {
+	if (i2c_burst_read_dt(&config->i2c, LSM303DLHC_REG_MAGN_X_LSB,
+			      magn_buf, 6) < 0) {
 		LOG_ERR("Could not read magn axis data.");
 		return -EIO;
 	}
@@ -101,52 +97,45 @@ static const struct sensor_driver_api lsm303dlhc_magn_driver_api = {
 static int lsm303dlhc_magn_init(const struct device *dev)
 {
 	const struct lsm303dlhc_magn_config *config = dev->config;
-	struct lsm303dlhc_magn_data *drv_data = dev->data;
 
-	drv_data->i2c = device_get_binding(config->i2c_name);
-	if (drv_data->i2c == NULL) {
-		LOG_ERR("Could not get pointer to %s device",
-			    config->i2c_name);
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("I2C bus device not ready");
 		return -ENODEV;
 	}
 
 	/* Set magnetometer output data rate */
-	if (i2c_reg_write_byte(drv_data->i2c,
-			       config->i2c_address,
-			       LSM303DLHC_CRA_REG_M,
-			       LSM303DLHC_MAGN_ODR_BITS) < 0) {
+	if (i2c_reg_write_byte_dt(&config->i2c, LSM303DLHC_CRA_REG_M,
+				  LSM303DLHC_MAGN_ODR_BITS) < 0) {
 		LOG_ERR("Failed to configure chip.");
 		return -EIO;
 	}
 
 	/* Set magnetometer full scale range */
-	if (i2c_reg_write_byte(drv_data->i2c,
-			       config->i2c_address,
-			       LSM303DLHC_CRB_REG_M,
-			       LSM303DLHC_MAGN_FS_BITS) < 0) {
+	if (i2c_reg_write_byte_dt(&config->i2c, LSM303DLHC_CRB_REG_M,
+				  LSM303DLHC_MAGN_FS_BITS) < 0) {
 		LOG_ERR("Failed to set magnetometer full scale range.");
 		return -EIO;
 	}
 
 	/* Continuous update */
-	if (i2c_reg_write_byte(drv_data->i2c,
-			       config->i2c_address,
-			       LSM303DLHC_MR_REG_M,
-			       LSM303DLHC_MAGN_CONT_UPDATE) < 0) {
+	if (i2c_reg_write_byte_dt(&config->i2c, LSM303DLHC_MR_REG_M,
+				  LSM303DLHC_MAGN_CONT_UPDATE) < 0) {
 		LOG_ERR("Failed to enable continuous data update.");
 		return -EIO;
 	}
 	return 0;
 }
 
-static const struct lsm303dlhc_magn_config lsm303dlhc_magn_config = {
-	.i2c_name = DT_INST_BUS_LABEL(0),
-	.i2c_address = DT_INST_REG_ADDR(0),
-};
+#define LSM303DLHC_MAGN_DEFINE(inst)								\
+	static struct lsm303dlhc_magn_data lsm303dlhc_magn_data_##inst;				\
+												\
+	static const struct lsm303dlhc_magn_config lsm303dlhc_magn_config_##inst = {		\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, lsm303dlhc_magn_init, NULL,					\
+			      &lsm303dlhc_magn_data_##inst, &lsm303dlhc_magn_config_##inst,	\
+			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
+			      &lsm303dlhc_magn_driver_api);					\
 
-static struct lsm303dlhc_magn_data lsm303dlhc_magn_driver;
-
-DEVICE_DT_INST_DEFINE(0, lsm303dlhc_magn_init, NULL,
-		    &lsm303dlhc_magn_driver,
-		    &lsm303dlhc_magn_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &lsm303dlhc_magn_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(LSM303DLHC_MAGN_DEFINE)

@@ -1,6 +1,6 @@
 # ToDo:
 # - Ensure LMA / VMA sections are correctly grouped similar to scatter file creation.
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.20.0)
 
 set(SORT_TYPE_NAME SORT_BY_NAME)
 

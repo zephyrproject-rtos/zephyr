@@ -649,17 +649,15 @@ static void test_route_mcast_scenario3(void)
 }
 
 /*test case main entry*/
-void test_main(void)
+ZTEST(route_mcast_test_suite, test_route_mcast)
 {
-	ztest_test_suite(test_route_mcast,
-			ztest_unit_test(test_route_mcast_init),
-			ztest_unit_test(test_route_mcast_route_add),
-			ztest_unit_test(test_route_mcast_foreach),
-			ztest_unit_test(test_route_mcast_scenario1),
-			ztest_unit_test(test_route_mcast_scenario2),
-			ztest_unit_test(test_route_mcast_scenario3),
-			ztest_unit_test(test_route_mcast_lookup),
-			ztest_unit_test(test_route_mcast_route_del)
-			);
-	ztest_run_test_suite(test_route_mcast);
+	test_route_mcast_init();
+	test_route_mcast_route_add();
+	test_route_mcast_foreach();
+	test_route_mcast_scenario1();
+	test_route_mcast_scenario2();
+	test_route_mcast_scenario3();
+	test_route_mcast_lookup();
+	test_route_mcast_route_del();
 }
+ZTEST_SUITE(route_mcast_test_suite, NULL, NULL, NULL, NULL, NULL);

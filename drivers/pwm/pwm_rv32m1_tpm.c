@@ -19,9 +19,9 @@
 #include <zephyr/drivers/pinctrl.h>
 #endif
 
-#define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(pwm_rv32m1_tpm);
+
+LOG_MODULE_REGISTER(pwm_rv32m1_tpm, CONFIG_PWM_LOG_LEVEL);
 
 #define MAX_CHANNELS ARRAY_SIZE(TPM0->CONTROLS)
 

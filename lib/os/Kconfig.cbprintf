@@ -144,6 +144,7 @@ config CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
 
 config CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS
 	bool
+	depends on !PICOLIBC
 	select CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
 	help
 	  Hidden option to support tagged arguments in cbvprint_package().

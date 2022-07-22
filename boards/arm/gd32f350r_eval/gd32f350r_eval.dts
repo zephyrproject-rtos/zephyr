@@ -26,3 +26,11 @@
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
 };
+
+&adc0 {
+	status = "okay";
+	/* Set ADC0 clock source to RCU_ADCCK_APB2_DIV4. */
+	rcu-clock-source = <4>;
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};

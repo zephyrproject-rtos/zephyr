@@ -164,7 +164,7 @@ static void setblocking(int fd, bool val)
 	}
 
 	res = fcntl(fd, F_SETFL, fl);
-	zassert_not_equal(fl, -1, "Fail to set fcntl");
+	zassert_not_equal(res, -1, "Fail to set fcntl");
 }
 
 #define SRC_PORT 4240

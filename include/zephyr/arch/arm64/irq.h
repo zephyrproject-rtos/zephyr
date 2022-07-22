@@ -94,9 +94,6 @@ extern void z_arm64_interrupt_init(void);
 	z_arm64_irq_priority_set(irq_p, priority_p, flags_p); \
 }
 
-/* Spurious interrupt handler. Throws an error if called */
-extern void z_irq_spurious(const void *unused);
-
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

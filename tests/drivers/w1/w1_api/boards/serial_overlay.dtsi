@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2022 Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_serial {
+	status = "okay";
+
+	w1-zephyr-serial-0 {
+		compatible = "zephyr,w1-serial";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		label = "W1_0";
+		status = "okay";
+
+		slave_1: dummy-slave-1 {
+			compatible = "test-w1-dummy-slave";
+			family-code = <0x28>;
+			label = "DUMMY_DEVICE_1";
+			overdrive-speed;
+			status = "okay";
+		};
+
+		slave_2: dummy-slave-2 {
+			compatible = "test-w1-dummy-slave";
+			family-code = <0x29>;
+			status = "okay";
+		};
+	};
+};

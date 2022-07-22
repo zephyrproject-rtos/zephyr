@@ -14,13 +14,17 @@
 	model = "Particle Boron";
 	compatible = "particle,boron", "particle,feather";
 
-	sky13351 {
+	sky13351: sky13351 {
 		compatible = "skyworks,sky13351";
 		vctl1-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		/* on Boron VCTL2 is inverted VCTL1 signal via SN74LVC1G04
 		 * single inverter gate -- requires a definition below,
 		 * but is not used in board.c */
 		vctl2-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
 	};
 };
 

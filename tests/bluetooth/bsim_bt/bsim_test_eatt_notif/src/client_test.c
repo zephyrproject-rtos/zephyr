@@ -23,6 +23,7 @@
 
 CREATE_FLAG(flag_is_connected);
 CREATE_FLAG(flag_discover_complete);
+CREATE_FLAG(flag_is_encrypted);
 
 static struct bt_conn *g_conn;
 static const struct bt_gatt_attr *local_attr;
@@ -67,9 +68,18 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	UNSET_FLAG(flag_is_connected);
 }
 
+static void security_changed(struct bt_conn *conn, bt_security_t level,
+			     enum bt_security_err security_err)
+{
+	if (security_err == BT_SECURITY_ERR_SUCCESS && level > BT_SECURITY_L1) {
+		SET_FLAG(flag_is_encrypted);
+	}
+}
+
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.security_changed = security_changed,
 };
 
 void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
@@ -153,7 +163,9 @@ static void gatt_discover(void)
 BT_GATT_SERVICE_DEFINE(g_svc,
 	BT_GATT_PRIMARY_SERVICE(TEST_SERVICE_UUID),
 	BT_GATT_CHARACTERISTIC(TEST_CHRC_UUID, BT_GATT_CHRC_NOTIFY,
-			       0x00, NULL, NULL, NULL));
+			       BT_GATT_PERM_READ, NULL, NULL, NULL),
+	BT_GATT_CCC(NULL,
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE));
 
 static void test_main(void)
 {
@@ -175,6 +187,13 @@ static void test_main(void)
 
 	WAIT_FOR_FLAG(flag_is_connected);
 
+	err = bt_conn_set_security(g_conn, BT_SECURITY_L2);
+	if (err) {
+		FAIL("Failed to start encryption procedure\n");
+	}
+
+	WAIT_FOR_FLAG(flag_is_encrypted);
+
 	err = bt_eatt_connect(g_conn, CONFIG_BT_EATT_MAX);
 	if (err) {
 		FAIL("Sending credit based connection request failed (err %d)\n", err);
@@ -185,7 +204,11 @@ static void test_main(void)
 		k_sleep(K_TICKS(1));
 	}
 
+	printk("Waiting for sync\n");
+	device_sync_wait();
+
 	local_attr = &g_svc.attrs[1];
+
 	printk("############# Notification test\n");
 	for (int idx = 0; idx < NUM_NOTIF; idx++) {
 		printk("Notification %d\n", idx);
@@ -218,7 +241,7 @@ static void test_main(void)
 		send_notification();
 	}
 
-	printk("Send sync to contine\n");
+	printk("Sending final sync\n");
 	device_sync_send();
 
 	PASS("Client Passed\n");

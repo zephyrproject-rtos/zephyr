@@ -67,11 +67,6 @@ config DISK_FLASH_START
 config FLASH_LOG_LEVEL
 	default 3
 
-DT_COMPAT_QSPI_NOR := nordic,qspi-nor
-
-config NORDIC_QSPI_NOR
-	default $(dt_compat_enabled,$(DT_COMPAT_QSPI_NOR))
-
 if NORDIC_QSPI_NOR
 
 config NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE

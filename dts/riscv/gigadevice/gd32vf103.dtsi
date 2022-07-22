@@ -45,8 +45,9 @@
 		};
 
 		eclic: interrupt-controller@d2000000 {
-			#interrupt-cells = <2>;
 			compatible = "nuclei,eclic";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
 			interrupt-controller;
 			reg =  <0xd2000000 0x0001
 				0xd2000004 0x0004
@@ -97,6 +98,30 @@
 			rcu-periph-clock = <0x712>;
 			status = "disabled";
 			label = "UART_2";
+		};
+
+		adc0: adc@40012400 {
+			compatible = "gd,gd32-adc";
+			reg = <0x40012400 0x400>;
+			interrupts = <37 0>;
+			interrupt-parent = <&eclic>;
+			rcu-periph-clock = <0x609>;
+			channels = <16>;
+			status = "disabled";
+			label = "ADC_0";
+			#io-channel-cells = <1>;
+		};
+
+		adc1: adc@40012800 {
+			compatible = "gd,gd32-adc";
+			reg = <0x40012800 0x400>;
+			interrupts = <37 0>;
+			interrupt-parent = <&eclic>;
+			rcu-periph-clock = <0x60A>;
+			channels = <16>;
+			status = "disabled";
+			label = "ADC_1";
+			#io-channel-cells = <1>;
 		};
 
 		dac: dac@40007400 {
@@ -157,6 +182,7 @@
 
 		exti: interrupt-controller@40010400 {
 			compatible = "gd,gd32-exti";
+			#address-cells = <0>;
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			reg = <0x40010400 0x400>;

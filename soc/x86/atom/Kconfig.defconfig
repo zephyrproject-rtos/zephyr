@@ -11,14 +11,6 @@ config SOC
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 25000000  if HPET_TIMER
 
-if BT_UART
-
-config UART_PIPE_ON_DEV_NAME
-	default "UART_1"
-	depends on UART_PIPE
-
-endif
-
 config UART_NS16550_ACCESS_IOPORT
 	default y if UART_NS16550
 

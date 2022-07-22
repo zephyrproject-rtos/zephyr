@@ -15,6 +15,10 @@
 		zephyr,uart-mcumgr = &uart0;
 	};
 
+	aliases {
+		watchdog0 = &wdt0;
+	};
+
 	sim_select: sim-select {
 		compatible = "sim-select";
 		sim-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;

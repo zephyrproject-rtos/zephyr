@@ -7,15 +7,16 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SPI_SPI_EMUL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SPI_SPI_EMUL_H_
 
+#include <zephyr/device.h>
+#include <zephyr/drivers/emul.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/types.h>
+
 /**
  * @file
  *
  * @brief Public APIs for the SPI emulation drivers.
  */
-
-#include <zephyr/types.h>
-#include <zephyr/device.h>
-#include <zephyr/drivers/emul.h>
 
 /**
  * @brief SPI Emulation Interface
@@ -35,8 +36,8 @@ struct spi_emul_api;
 struct spi_emul {
 	sys_snode_t node;
 
-	/** Parent emulator */
-	const struct emul *parent;
+	/** Target emulator - REQUIRED for all bus emulators */
+	const struct emul *target;
 
 	/* API provided for this device */
 	const struct spi_emul_api *api;
@@ -49,7 +50,7 @@ struct spi_emul {
  * Passes SPI messages to the emulator. The emulator updates the data with what
  * was read back.
  *
- * @param emul Emulator instance
+ * @param target The device Emulator instance
  * @param config Pointer to a valid spi_config structure instance.
  *        Pointer-comparison may be used to detect changes from
  *        previous operations.
@@ -61,21 +62,17 @@ struct spi_emul {
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-typedef int (*spi_emul_io_t)(struct spi_emul *emul,
-			     const struct spi_config *config,
-			     const struct spi_buf_set *tx_bufs,
-			     const struct spi_buf_set *rx_bufs);
+typedef int (*spi_emul_io_t)(const struct emul *target, const struct spi_config *config,
+			     const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs);
 
 /**
  * Register an emulated device on the controller
  *
  * @param dev Device that will use the emulator
- * @param name User-friendly name for this emulator
  * @param emul SPI emulator to use
  * @return 0 indicating success (always)
  */
-int spi_emul_register(const struct device *dev, const char *name,
-		      struct spi_emul *emul);
+int spi_emul_register(const struct device *dev, struct spi_emul *emul);
 
 /** Definition of the emulator API */
 struct spi_emul_api {

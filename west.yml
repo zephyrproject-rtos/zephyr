@@ -57,18 +57,18 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: 78c5567c05b6b434dd7d98f49156319df4217bac
+      revision: bb4e7104132bdc22c7cc7e20057434c2979e6706
       path: modules/hal/atmel
       groups:
         - hal
     - name: hal_espressif
-      revision: 0e6ea916fd32a9db21b04c0d913365d736b78d02
+      revision: 42ce90fa07cb696ebee65441f9f7d468032575d7
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
         - hal
     - name: hal_gigadevice
-      revision: cc8bc14c612e5ecfcb0435f6da53f3302e25014a
+      revision: 7f15468b07807ae6a913e0e9cbabfaa23a206bc6
       path: modules/hal/gigadevice
       groups:
         - hal
@@ -83,7 +83,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: d892b442b0c74a33ffbbff0ed2a2c2122b4d3925
+      revision: f5024df56c57794ad964956a2e163bd17f7b3b40
       path: modules/hal/nordic
       groups:
         - hal
@@ -93,7 +93,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 5cefb64458d0c2bac83e940ba520afa6c85832a0
+      revision: 00acb97521c171f4620c21fe5fa2a2c3ef49bdae
       path: modules/hal/nxp
       groups:
         - hal
@@ -114,7 +114,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: be39d4eebeddac6e18e9c0c3ba1b31ad1e82eaed
+      revision: 08dd39f1a20a2aaec596b909c31e9b23d7fef09d
       path: modules/hal/silabs
       groups:
         - hal
@@ -129,23 +129,23 @@ manifest:
       groups:
         - hal
     - name: hal_telink
-      revision: d7b72519dc5288487e6eedf39c08c3b12ce307ff
+      revision: 38573af589173259801ae6c2b34b7d4c9e626746
       path: modules/hal/telink
       submodules: true
       groups:
         - hal
     - name: hal_ti
-      revision: 905a5d4134899630071f9383aadaaf266e8f8cd2
+      revision: b6ca1ace9024afa072c0ff8294d04b8d9fe4aede
       path: modules/hal/ti
       groups:
         - hal
     - name: hal_xtensa
-      revision: 0e577021bb66e644afd067cd9f7c71ab11b62b3d
+      revision: c7fe0872bc3c910068527f0fe841bd4030874e0e
       path: modules/hal/xtensa
       groups:
         - hal
     - name: libmetal
-      revision: 850a3c3fd5bc655987021dc9106d8e8cd0f7e061
+      revision: 2f586b4f1276fb075ee145421bdf6cbe5403aa41
       path: modules/hal/libmetal
       groups:
         - hal
@@ -172,7 +172,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: e7415b555134e671ba04f036b02f55cbc087d0e9
+      revision: 3b791288bb037f8d64bd93ffac89ab72d62111bd
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -180,10 +180,10 @@ manifest:
         - debug
       revision: a5163c1800a5243f8b05d84c942da008df4cb666
     - name: nanopb
-      revision: d148bd26718e4c10414f07a7eb1bd24c62e56c5d
+      revision: dc4deed54fd4c7e1935e3b6387eedf21bb45dc38
       path: modules/lib/nanopb
     - name: net-tools
-      revision: f49bd1354616fae4093bf36e5eaee43c51a55127
+      revision: e0828aa9629b533644dc96ff6d1295c939bd713c
       path: tools/net-tools
       groups:
         - tools
@@ -194,7 +194,7 @@ manifest:
       revision: 8d53544871e1f300c478224faca6be8384ab0d04
       path: modules/lib/open-amp
     - name: openthread
-      revision: dc5fe8d71b613a036e962c0249e0c9100936fe5a
+      revision: b21e99b4b3d823f71c902b9174ff62b964c124f0
       path: modules/lib/openthread
     - name: picolibc
       path: modules/lib/picolibc
@@ -220,7 +220,7 @@ manifest:
       groups:
         - crypto
     - name: TraceRecorderSource
-      revision: e8ca3b6a83d19b2fc4738a0d9607190436e5e452
+      revision: 9893bf1cf649a2c4ee2e27293f887994f3d0da5b
       path: modules/debug/TraceRecorder
       groups:
         - debug
@@ -240,11 +240,11 @@ manifest:
       groups:
         - tee
     - name: zcbor
-      revision: 882c489a7d9fdfff31d27666914a78a9eb6976d7
+      revision: a0d6981f14d4001d6f0d608d1a427f9bc6bb6d02
       path: modules/lib/zcbor
     - name: zscilib
       path: modules/lib/zscilib
-      revision: fc979a8dcb74169c69b02835927bff8f070d6325
+      revision: a54986aa98db4082ac56b582843bb5b5435208a6
 
   group-filter:
     - -ci

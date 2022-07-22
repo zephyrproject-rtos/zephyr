@@ -28,7 +28,7 @@ The features include the following:
   - 2x I2S
   - 2x I2C
   - 3x UART
-  - LED PWM with up to 16 channels
+  - LED PWM with up to 6 channels
 
 - Cryptographic hardware acceleration (RNG, ECC, RSA, SHA-2, AES)
 

@@ -47,7 +47,7 @@ static int i2c_mcux_configure(const struct device *dev,
 	uint32_t clock_freq;
 	uint32_t baudrate;
 
-	if (!(I2C_MODE_MASTER & dev_config_raw)) {
+	if (!(I2C_MODE_CONTROLLER & dev_config_raw)) {
 		return -EINVAL;
 	}
 
@@ -207,7 +207,7 @@ static int i2c_mcux_init(const struct device *dev)
 		return error;
 	}
 
-	error = i2c_mcux_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
+	error = i2c_mcux_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (error) {
 		return error;
 	}

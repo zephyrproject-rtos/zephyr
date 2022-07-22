@@ -136,7 +136,7 @@
 		};
 
 		lpgpdma0: dma@c000 {
-			compatible = "intel,cavs-gpdma";
+			compatible = "intel,adsp-gpdma";
 			#dma-cells = <1>;
 			reg = <0x0000c000 0x1000>;
 			shim = <0x00000c00 0x080>;
@@ -148,7 +148,7 @@
 		};
 
 		lpgpdma1: dma@d000 {
-			compatible = "intel,cavs-gpdma";
+			compatible = "intel,adsp-gpdma";
 			#dma-cells = <1>;
 			reg = <0x0000d000 0x1000>;
 			shim = <0x00000c80 0x080>;
@@ -160,10 +160,10 @@
 		};
 
 		hda_link_out: dma@2400 {
-			compatible = "intel,cavs-hda-link-out";
+			compatible = "intel,adsp-hda-link-out";
 			#dma-cells = <1>;
 			reg = <0x00002400 0x40>;
-			dma-channels = <6>;
+			dma-channels = <2>;
 			dma-buf-alignment = <128>;
 			label = "HDA_LINK_OUT";
 
@@ -171,10 +171,10 @@
 		};
 
 		hda_link_in: dma@2600 {
-			compatible = "intel,cavs-hda-link-in";
+			compatible = "intel,adsp-hda-link-in";
 			#dma-cells = <1>;
 			reg = <0x00002600 0x40>;
-			dma-channels = <7>;
+			dma-channels = <2>;
 			dma-buf-alignment = <128>;
 			label = "HDA_LINK_IN";
 
@@ -182,7 +182,7 @@
 		};
 
 		hda_host_out: dma@2800 {
-			compatible = "intel,cavs-hda-host-out";
+			compatible = "intel,adsp-hda-host-out";
 			#dma-cells = <1>;
 			reg = <0x00002800 0x40>;
 			dma-channels = <6>;
@@ -193,7 +193,7 @@
 		};
 
 		hda_host_in: dma@2c00 {
-			compatible = "intel,cavs-hda-host-in";
+			compatible = "intel,adsp-hda-host-in";
 			#dma-cells = <1>;
 			reg = <0x00002c00 0x40>;
 			dma-channels = <7>;

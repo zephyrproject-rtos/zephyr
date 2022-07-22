@@ -239,16 +239,18 @@ void main(void)
 
 		/* Display LED information. */
 		printk("Found LED %d", led);
-		if (info->label)
+		if (info->label) {
 			printk(" - %s", info->label);
+		}
 		printk(" - index:%d", info->index);
 		printk(" - %d colors", info->num_colors);
 		if (!info->color_mapping) {
 			continue;
 		}
 		printk(" - %d", info->color_mapping[0]);
-		for (col = 1; col < info->num_colors; col++)
+		for (col = 1; col < info->num_colors; col++) {
 			printk(":%d", info->color_mapping[col]);
+		}
 		printk("\n");
 	}
 	num_leds = led;

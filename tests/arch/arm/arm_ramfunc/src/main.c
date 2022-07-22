@@ -10,11 +10,4 @@
 
 #include <ztest.h>
 
-extern void test_arm_ramfunc(void);
-
-void test_main(void)
-{
-	ztest_test_suite(arm_ramfunc,
-		ztest_unit_test(test_arm_ramfunc));
-	ztest_run_test_suite(arm_ramfunc);
-}
+ZTEST_SUITE(arm_ramfunc, NULL, NULL, NULL, NULL, NULL);

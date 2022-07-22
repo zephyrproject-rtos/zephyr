@@ -6,7 +6,7 @@ tests:
     depends_on: adc
     platform_allow: nucleo_l073rz disco_l475_iot1 cc3220sf_launchxl
         cc3235sf_launchxl stm32l496g_disco nrf51dk_nrf51422 nrf52840dk_nrf52840
-        mec172xevb_assy6906
+        mec172xevb_assy6906 gd32f350r_eval gd32f450i_eval gd32vf103v_eval gd32f403z_eval
     integration_platforms:
       - nucleo_l073rz
       - nrf52840dk_nrf52840

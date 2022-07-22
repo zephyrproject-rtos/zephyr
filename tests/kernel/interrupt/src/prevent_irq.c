@@ -33,7 +33,7 @@ static void timer_handler(struct k_timer *timer)
  * serviced while interrupts are locked; in addition, this test also verifies
  * that the system timer interrupt is serviced after interrupts are unlocked.
  */
-void test_prevent_interruption(void)
+ZTEST(interrupt_feature, test_prevent_interruption)
 {
 	unsigned int key;
 
@@ -63,3 +63,5 @@ void test_prevent_interruption(void)
 
 	k_timer_stop(&irqlock_timer);
 }
+
+ZTEST_SUITE(interrupt_feature, NULL, NULL, NULL, NULL, NULL);

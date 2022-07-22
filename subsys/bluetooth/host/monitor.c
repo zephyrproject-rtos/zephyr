@@ -14,7 +14,7 @@
 #include <zephyr/zephyr.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
-#include <zephyr/drivers/console/uart_pipe.h>
+#include <zephyr/drivers/uart_pipe.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/uart.h>
 

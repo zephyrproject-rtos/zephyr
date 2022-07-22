@@ -1142,7 +1142,7 @@ static const struct {
 #endif
 };
 
-void test_loop(void)
+ZTEST(t_6lo, test_loop)
 {
 	int count;
 
@@ -1169,8 +1169,4 @@ void test_loop(void)
 }
 
 /*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_6lo, ztest_unit_test(test_loop));
-	ztest_run_test_suite(test_6lo);
-}
+ZTEST_SUITE(t_6lo, NULL, NULL, NULL, NULL, NULL);

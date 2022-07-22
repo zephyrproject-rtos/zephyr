@@ -21,11 +21,11 @@ is referenced by its memory address.
 
 A timer has the following key properties:
 
-* A :dfn:`duration` specifying the time interval before the timer
+* A **duration** specifying the time interval before the timer
   expires for the first time.  This is a ``k_timeout_t`` value that
   may be initialized via different units.
 
-* A :dfn:`period` specifying the time interval between all timer
+* A **period** specifying the time interval between all timer
   expirations after the first one, also a ``k_timeout_t``. It must be
   non-negative.  A period of ``K_NO_WAIT`` (i.e. zero) or
   ``K_FOREVER`` means that the timer is a one shot timer that stops
@@ -33,15 +33,15 @@ A timer has the following key properties:
   with a duration of 200 and a period of 75, it will first expire
   after 200ms and then every 75ms after that.)
 
-* An :dfn:`expiry function` that is executed each time the timer expires.
+* An **expiry function** that is executed each time the timer expires.
   The function is executed by the system clock interrupt handler.
   If no expiry function is required a ``NULL`` function can be specified.
 
-* A :dfn:`stop function` that is executed if the timer is stopped prematurely
+* A **stop function** that is executed if the timer is stopped prematurely
   while running. The function is executed by the thread that stops the timer.
   If no stop function is required a ``NULL`` function can be specified.
 
-* A :dfn:`status` value that indicates how many times the timer has expired
+* A **status** value that indicates how many times the timer has expired
   since the status value was last read.
 
 A timer must be initialized before it can be used. This specifies its

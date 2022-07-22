@@ -325,6 +325,14 @@ int ull_scan_reset(void)
 
 	for (handle = 0U; handle < BT_CTLR_SCAN_SET; handle++) {
 		(void)disable(handle);
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		/* Initialize PHY value to 0 to not start scanning on the scan
+		 * instance if an explicit ll_scan_params_set() has not been
+		 * invoked from HCI to enable scanning on that PHY.
+		 */
+		ll_scan[handle].lll.phy = 0U;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT)) {

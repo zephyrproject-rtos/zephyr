@@ -95,7 +95,7 @@ static uint32_t mock_conf_read(pcie_bdf_t bdf, unsigned int reg)
 /* Include source code to test some static functions */
 #include "edac_ibecc.c"
 
-static void test_static_functions(void)
+ZTEST(ibecc_cov, test_static_functions)
 {
 	const struct device *dev = DEVICE_DT_GET(DEVICE_NODE);
 	struct ibecc_error error_data;
@@ -134,7 +134,7 @@ static void test_static_functions(void)
 	ibecc_errcmd_setup(PCI_HOST_BRIDGE, false);
 }
 
-static void test_trigger_nmi_handler(void)
+ZTEST(ibecc_cov, test_trigger_nmi_handler)
 {
 	bool ret;
 
@@ -142,11 +142,4 @@ static void test_trigger_nmi_handler(void)
 	zassert_true(ret, "Test NMI handling");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(ibecc_cov,
-			 ztest_unit_test(test_static_functions),
-			 ztest_unit_test(test_trigger_nmi_handler)
-			);
-	ztest_run_test_suite(ibecc_cov);
-}
+ZTEST_SUITE(ibecc_cov, NULL, NULL, NULL, NULL, NULL);

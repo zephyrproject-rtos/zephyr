@@ -20,8 +20,11 @@
 LOG_MODULE_REGISTER(si7055, CONFIG_SENSOR_LOG_LEVEL);
 
 struct si7055_data {
-	const struct device *i2c_dev;
 	uint16_t temperature;
+};
+
+struct si7055_config {
+	struct i2c_dt_spec i2c;
 };
 
 /**
@@ -30,9 +33,10 @@ struct si7055_data {
  * @return int 0 on success
  *         -EIO for I/O and checksum errors
  */
-static int si7055_get_temperature(const struct device *i2c_dev,
-				  struct si7055_data *si_data)
+static int si7055_get_temperature(const struct device *dev)
 {
+	struct si7055_data *si_data = dev->data;
+	const struct si7055_config *config = dev->config;
 	int retval;
 	#if CONFIG_SI7055_ENABLE_CHECKSUM
 	uint8_t temp[SI7055_TEMPERATURE_READ_WITH_CHECKSUM_SIZE];
@@ -40,9 +44,8 @@ static int si7055_get_temperature(const struct device *i2c_dev,
 	uint8_t temp[SI7055_TEMPERATURE_READ_NO_CHECKSUM_SIZE];
 	#endif
 
-	retval = i2c_burst_read(i2c_dev, DT_INST_REG_ADDR(0),
-				SI7055_MEAS_TEMP_MASTER_MODE,
-				temp, sizeof(temp));
+	retval = i2c_burst_read_dt(&config->i2c, SI7055_MEAS_TEMP_MASTER_MODE,
+				   temp, sizeof(temp));
 
 	/* Refer to
 	 * https://www.silabs.com/documents/public/data-sheets/Si7050-1-3-4-5-A20.pdf
@@ -75,9 +78,8 @@ static int si7055_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
 	int retval;
-	struct si7055_data *si_data = dev->data;
 
-	retval = si7055_get_temperature(si_data->i2c_dev, si_data);
+	retval = si7055_get_temperature(dev);
 
 	return retval;
 }
@@ -130,14 +132,11 @@ static const struct sensor_driver_api si7055_api = {
 
 static int si7055_init(const struct device *dev)
 {
-	struct si7055_data *drv_data = dev->data;
+	const struct si7055_config *config = dev->config;
 
-	drv_data->i2c_dev = device_get_binding(
-		DT_INST_BUS_LABEL(0));
-
-	if (!drv_data->i2c_dev) {
-		LOG_ERR("i2c master not found.");
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
 	LOG_DBG("si7055 init ok");
@@ -145,7 +144,15 @@ static int si7055_init(const struct device *dev)
 	return 0;
 }
 
-static struct si7055_data si_data;
+#define SI7055_DEFINE(inst)								\
+	static struct si7055_data si7055_data_##inst;					\
+											\
+	static const struct si7055_config si7055_config_##inst = {			\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+	};										\
+											\
+	DEVICE_DT_INST_DEFINE(inst, si7055_init, NULL,					\
+			      &si7055_data_##inst, &si7055_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &si7055_api);		\
 
-DEVICE_DT_INST_DEFINE(0, si7055_init, NULL,
-	&si_data, NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &si7055_api);
+DT_INST_FOREACH_STATUS_OKAY(SI7055_DEFINE)

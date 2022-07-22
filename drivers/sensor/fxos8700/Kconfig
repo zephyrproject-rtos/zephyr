@@ -5,6 +5,8 @@
 
 menuconfig FXOS8700
 	bool "FXOS8700 accelerometer/magnetometer driver"
+	default y
+	depends on DT_HAS_NXP_FXOS8700_ENABLED
 	depends on I2C
 	help
 	  Enable driver for the FXOS8700 accelerometer/magnetometer.
@@ -14,9 +16,9 @@ menuconfig FXOS8700
 
 if FXOS8700
 
-choice
+choice FXOS8700_MODE
 	prompt "Mode"
-	default FXOS8700_MODE_ACCEL
+	default FXOS8700_MODE_HYBRID
 
 config FXOS8700_MODE_ACCEL
 	bool "Accelerometer-only mode"

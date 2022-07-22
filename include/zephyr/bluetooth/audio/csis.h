@@ -35,9 +35,6 @@ extern "C" {
 #define BT_CSIS_CLIENT_MAX_CSIS_INSTANCES 0
 #endif /* CONFIG_BT_CSIS_CLIENT */
 
-/** Minimum size of a set */
-#define BT_CSIS_MINIMUM_SET_SIZE                2
-
 /** Accept the request to read the SIRK as plaintext */
 #define BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT        0x00
 /** Accept the request to read the SIRK, but return encrypted SIRK */
@@ -113,7 +110,6 @@ struct bt_csis_register_param {
 	 * @brief Size of the set.
 	 *
 	 * If set to 0, the set size characteristic won't be initialized.
-	 * Otherwise shall be set to minimum 2.
 	 */
 	uint8_t set_size;
 
@@ -143,6 +139,19 @@ struct bt_csis_register_param {
 
 	/** Pointer to the callback structure. */
 	struct bt_csis_cb *cb;
+
+#if CONFIG_BT_CSIS_MAX_INSTANCE_COUNT > 1
+	/**
+	 * @brief Parent service pointer
+	 *
+	 * Mandatory parent service pointer if this CSIS instance is included
+	 * by another service. All CSIS instances when
+	 * @kconfig{CONFIG_BT_CSIS_MAX_INSTANCE_COUNT} is above 1 shall
+	 * be included by another service, as per the
+	 * Coordinated Set Identification Profile (CSIP).
+	 */
+	const struct bt_gatt_service *parent;
+#endif /* CONFIG_BT_CSIS_MAX_INSTANCE_COUNT > 1 */
 };
 
 /**

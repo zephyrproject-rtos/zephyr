@@ -31,8 +31,9 @@ int hvm_get_parameter(int idx, uint64_t *value)
 	xhv.index = idx;
 
 	ret = HYPERVISOR_hvm_op(HVMOP_get_param, &xhv);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	*value = xhv.value;
 	return ret;

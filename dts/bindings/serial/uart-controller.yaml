@@ -13,8 +13,6 @@ properties:
       type: int
       required: false
       description: Initial baud rate setting for UART
-    label:
-      required: true
     hw-flow-control:
       type: boolean
       required: false

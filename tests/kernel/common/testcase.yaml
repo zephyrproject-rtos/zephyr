@@ -1,6 +1,7 @@
 common:
   tags: base userspace
   min_flash: 33
+  timeout: 120
 tests:
   kernel.common:
     build_on_all: true
@@ -31,4 +32,3 @@ tests:
     tags: picolibc
     extra_configs:
       - CONFIG_PICOLIBC=y
-      - CONFIG_PICOLIBC_ALIGNED_HEAP_SIZE=8192

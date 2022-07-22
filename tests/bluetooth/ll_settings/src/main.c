@@ -14,7 +14,9 @@
 
 #include "ll_settings.h"
 
-void test_company_id(void)
+ZTEST_SUITE(test_ll_settings, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(test_ll_settings, test_company_id)
 {
 	uint16_t cid;
 	int err;
@@ -32,7 +34,7 @@ void test_company_id(void)
 		      "Company ID does not match");
 }
 
-void test_subversion_number(void)
+ZTEST(test_ll_settings, test_subversion_number)
 {
 	uint16_t svn;
 	int err;
@@ -48,13 +50,4 @@ void test_subversion_number(void)
 	zassert_equal(err, 0, "Changing Subversion number failed");
 	zassert_equal(ll_settings_subversion_number(), svn,
 		      "Subversion number does not match");
-}
-
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_ll_settings,
-			 ztest_unit_test(test_company_id),
-			 ztest_unit_test(test_subversion_number));
-	ztest_run_test_suite(test_ll_settings);
 }

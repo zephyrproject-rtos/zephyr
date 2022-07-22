@@ -86,6 +86,9 @@ The board configuration supports the following hardware features:
    * - EEPROM
      - :kconfig:option:`CONFIG_EEPROM`
      - :dtcompatible:`atmel,at24`
+   * - ADC
+     - :kconfig:option:`CONFIG_ADC`
+     - :dtcompatible:`gd,gd32-adc`
 
 Serial Port
 ===========

@@ -13,6 +13,7 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
 
@@ -51,8 +52,9 @@ static const uint32_t iis2dh_gain[3][4] = {
 	},
 };
 
-static int iis2dh_set_fs_raw(struct iis2dh_data *iis2dh, uint8_t fs)
+static int iis2dh_set_fs_raw(const struct device *dev, uint8_t fs)
 {
+	struct iis2dh_data *iis2dh = dev->data;
 	int err;
 
 	err = iis2dh_full_scale_set(iis2dh->ctx, fs);
@@ -74,10 +76,9 @@ static int iis2dh_set_fs_raw(struct iis2dh_data *iis2dh, uint8_t fs)
 static int iis2dh_set_range(const struct device *dev, uint16_t range)
 {
 	int err;
-	struct iis2dh_data *iis2dh = dev->data;
 	uint8_t fs = IIS2DH_FS_TO_REG(range);
 
-	err = iis2dh_set_fs_raw(iis2dh, fs);
+	err = iis2dh_set_fs_raw(dev, fs);
 
 	return err;
 }
@@ -230,19 +231,18 @@ static const struct sensor_driver_api iis2dh_driver_api = {
 
 static int iis2dh_init_interface(const struct device *dev)
 {
-	struct iis2dh_data *iis2dh = dev->data;
-	const struct iis2dh_device_config *cfg = dev->config;
-
-	iis2dh->bus = device_get_binding(cfg->bus_name);
-	if (!iis2dh->bus) {
-		LOG_DBG("master bus not found: %s", cfg->bus_name);
-		return -EINVAL;
-	}
+	int res;
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	iis2dh_spi_init(dev);
+	res = iis2dh_spi_init(dev);
+	if (res) {
+		return res;
+	}
 #elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	iis2dh_i2c_init(dev);
+	res = iis2dh_i2c_init(dev);
+	if (res) {
+		return res;
+	}
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"
 #endif
@@ -286,31 +286,40 @@ static int iis2dh_init(const struct device *dev)
 #endif
 
 #if (CONFIG_IIS2DH_RANGE != 0)
-	iis2dh_set_fs_raw(iis2dh, CONFIG_IIS2DH_RANGE);
+	iis2dh_set_fs_raw(dev, CONFIG_IIS2DH_RANGE);
 #endif
 
 #ifdef CONFIG_IIS2DH_TRIGGER
-	if (iis2dh_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupts");
-		return -EIO;
+	if (cfg->int_gpio.port) {
+		if (iis2dh_init_interrupt(dev) < 0) {
+			LOG_ERR("Failed to initialize interrupts");
+			return -EIO;
+		}
 	}
 #endif /* CONFIG_IIS2DH_TRIGGER */
 
 	return 0;
 }
 
-const struct iis2dh_device_config iis2dh_cfg = {
-	.bus_name = DT_INST_BUS_LABEL(0),
-	.pm = CONFIG_IIS2DH_POWER_MODE,
-#ifdef CONFIG_IIS2DH_TRIGGER
-	.int_gpio_port = DT_INST_GPIO_LABEL(0, drdy_gpios),
-	.int_gpio_pin = DT_INST_GPIO_PIN(0, drdy_gpios),
-	.int_gpio_flags = DT_INST_GPIO_FLAGS(0, drdy_gpios),
-#endif /* CONFIG_IIS2DH_TRIGGER */
-};
+#define IIS2DH_SPI(inst)                                                                           \
+	(.spi = SPI_DT_SPEC_INST_GET(                                                              \
+		 0, SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),)
 
-struct iis2dh_data iis2dh_data;
+#define IIS2DH_I2C(inst) (.i2c = I2C_DT_SPEC_INST_GET(inst),)
 
-DEVICE_DT_INST_DEFINE(0, iis2dh_init, NULL,
-	     &iis2dh_data, &iis2dh_cfg, POST_KERNEL,
-	     CONFIG_SENSOR_INIT_PRIORITY, &iis2dh_driver_api);
+#define IIS2DH_DEFINE(inst)									\
+	static struct iis2dh_data iis2dh_data_##inst;						\
+												\
+	static const struct iis2dh_device_config iis2dh_device_config_##inst = {		\
+		COND_CODE_1(DT_INST_ON_BUS(inst, i2c), IIS2DH_I2C(inst), ())			\
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi), IIS2DH_SPI(inst), ())			\
+		.pm = CONFIG_IIS2DH_POWER_MODE,							\
+		IF_ENABLED(CONFIG_IIS2DH_TRIGGER,						\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),))	\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, iis2dh_init, NULL,						\
+			      &iis2dh_data_##inst, &iis2dh_device_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &iis2dh_driver_api);			\
+
+DT_INST_FOREACH_STATUS_OKAY(IIS2DH_DEFINE)

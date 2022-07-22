@@ -27,6 +27,7 @@
 		i2c1 = &i2c_smb_1;
 		i2c7 = &i2c_smb_2;
 		pwm-0 = &pwm0;
+		watchdog0 = &wdog;
 	};
 
 	leds {
@@ -210,8 +211,8 @@
 	status = "okay";
 	clock-frequency = <4000000>;
 	lines = <4>;
-	chip-select = <0>;
-	port-sel = <0>; /* Shared SPI */
+	chip_select = <0>;
+	port_sel = <0>; /* Shared SPI */
 
 	pinctrl-0 = < &shd_cs0_n_gpio055
 		      &shd_clk_gpio056
@@ -248,6 +249,38 @@
 		      &kso12_gpio125
 		      &kso13_gpio126 >;
 	pinctrl-names = "default";
+};
+
+&ksi0_gpio017 {
+	bias-pull-up;
+};
+
+&ksi1_gpio020 {
+	bias-pull-up;
+};
+
+&ksi2_gpio021 {
+	bias-pull-up;
+};
+
+&ksi3_gpio026 {
+	bias-pull-up;
+};
+
+&ksi4_gpio027 {
+	bias-pull-up;
+};
+
+&ksi5_gpio030 {
+	bias-pull-up;
+};
+
+&ksi6_gpio031 {
+	bias-pull-up;
+};
+
+&ksi7_gpio032 {
+	bias-pull-up;
 };
 
 &pwm0 {

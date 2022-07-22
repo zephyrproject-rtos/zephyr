@@ -13,16 +13,17 @@
 		zephyr,shell-uart = &usart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		watchdog0 = &wdog0;
-		watchdog1 = &wdog1;
 	};
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
 		led1 = &led1;
+		pwm-led0 = &pwm_led0;
 		sw0 = &button0;
 		sw1 = &button1;
+		watchdog0 = &wdog0;
+		watchdog1 = &wdog1;
 	};
 
 	leds {
@@ -48,6 +49,14 @@
 			/* gpio flags need validation */
 			gpios = <&gpiof 7 GPIO_ACTIVE_LOW>;
 			label = "User Push Button 1";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		status = "okay";
+		pwm_led0: pwm_led0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 };
@@ -79,6 +88,16 @@
 &rtcc0 {
 	prescaler = <1>;
 	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+
+	pwm0: pwm {
+		status = "okay";
+		pin-location = <GECKO_LOCATION(28) GECKO_PORT_F GECKO_PIN(4)>;
+		prescaler = <1024>;
+	};
 };
 
 &gpio {

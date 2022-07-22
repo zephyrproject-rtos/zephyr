@@ -18,7 +18,7 @@ jobs:
           persist-credentials: false
 
       - name: Manifest
-        uses: zephyrproject-rtos/action-manifest@2f1ad2908599d4fe747f886f9d733dd7eebae4ef
+        uses: zephyrproject-rtos/action-manifest@f54422ea250adb7cc1b9f62bfe125978bb2c58ee
         with:
           github-token: ${{ secrets.ZB_GITHUB_TOKEN }}
           manifest-path: 'west.yml'

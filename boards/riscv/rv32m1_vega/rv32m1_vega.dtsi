@@ -21,6 +21,7 @@
 		sw1 = &user_button_3;
 		sw2 = &user_button_4;
 		sw3 = &user_button_5;
+		magn0 = &fxos8700;
 	};
 
 	leds {
@@ -132,7 +133,7 @@ arduino_i2c: &lpi2c0 {
 	pinctrl-0 = <&lpi2c3_default>;
 	pinctrl-names = "default";
 
-	fxos8700@1e {
+	fxos8700: fxos8700@1e {
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
 		label = "FXOS8700";

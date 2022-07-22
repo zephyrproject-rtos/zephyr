@@ -76,6 +76,7 @@
 		bootloader-led0 = &green_pwm_led;
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &green_pwm_led;
+		watchdog0 = &wdt0;
 	};
 
 	vbatt {

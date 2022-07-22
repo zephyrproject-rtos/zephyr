@@ -1,0 +1,7 @@
+sample:
+  name: S2RAM Sample for nRF5x
+common:
+  tags: power
+tests:
+  sample.boards.nrf.s2ram:
+    platform_allow: nrf5340dk_nrf5340_cpuapp

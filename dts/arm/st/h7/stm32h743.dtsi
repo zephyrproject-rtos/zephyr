@@ -32,7 +32,7 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x80000000>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x08000000>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
 			label= "OTG_FS";

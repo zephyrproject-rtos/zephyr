@@ -139,6 +139,7 @@ static k_tid_t att_handle_rsp_thread;
 
 struct bt_att_tx_meta_data {
 	struct bt_att_chan *att_chan;
+	uint16_t attr_count;
 	bt_gatt_complete_func_t func;
 	void *user_data;
 };
@@ -232,14 +233,6 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 		    !atomic_test_bit(chan->chan.chan.status,
 				     BT_L2CAP_STATUS_OUT)) {
 			return -EAGAIN;
-		}
-
-		/* Check the encryption level for EATT */
-		if (bt_conn_get_security(chan->att->conn) < BT_SECURITY_L2) {
-			/* Vol 3, Part G, Section 5.3.2 Channel Requirements states:
-			 * The channel shall be encrypted.
-			 */
-			return -EINVAL;
 		}
 
 		data->att_chan = chan;
@@ -419,6 +412,7 @@ static void chan_tx_complete(struct bt_conn *conn, void *user_data, int err)
 	struct bt_att_tx_meta_data *data = user_data;
 	struct bt_att_chan *chan = data->att_chan;
 	bt_gatt_complete_func_t func = data->func;
+	uint16_t attr_count = data->attr_count;
 	void *ud = data->user_data;
 
 	BT_DBG("TX Complete chan %p CID 0x%04X", chan, chan->chan.tx.cid);
@@ -426,9 +420,10 @@ static void chan_tx_complete(struct bt_conn *conn, void *user_data, int err)
 	tx_meta_data_free(data);
 
 	if (!err && func) {
-		func(conn, ud);
+		for (uint16_t i = 0; i < attr_count; i++) {
+			func(conn, ud);
+		}
 	}
-
 }
 
 static void chan_unknown(struct bt_conn *conn, void *user_data, int err)
@@ -3334,6 +3329,14 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 	size_t i = 0;
 	int err;
 
+	/* Check the encryption level for EATT */
+	if (bt_conn_get_security(conn) < BT_SECURITY_L2) {
+		/* Vol 3, Part G, Section 5.3.2 Channel Requirements states:
+		 * The channel shall be encrypted.
+		 */
+		return -EPERM;
+	}
+
 	if (num_channels > CONFIG_BT_EATT_MAX || num_channels == 0) {
 		return -EINVAL;
 	}
@@ -3368,11 +3371,12 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 }
 
 #if defined(CONFIG_BT_EATT_AUTO_CONNECT)
-void eatt_auto_connect(struct bt_conn *conn, uint8_t conn_err)
+static void eatt_auto_connect(struct bt_conn *conn, bt_security_t level,
+			      enum bt_security_err err)
 {
 	int eatt_err;
 
-	if (conn_err) {
+	if (err || level < BT_SECURITY_L2 || !bt_att_fixed_chan_only(conn)) {
 		return;
 	}
 
@@ -3385,7 +3389,7 @@ void eatt_auto_connect(struct bt_conn *conn, uint8_t conn_err)
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = eatt_auto_connect,
+	.security_changed = eatt_auto_connect,
 };
 
 #endif /* CONFIG_BT_EATT_AUTO_CONNECT */
@@ -3487,9 +3491,7 @@ static void bt_eatt_init(void)
 	int err;
 	static struct bt_l2cap_server eatt_l2cap = {
 		.psm = BT_EATT_PSM,
-#if defined(CONFIG_BT_EATT_SEC_LEVEL)
-		.sec_level = CONFIG_BT_EATT_SEC_LEVEL,
-#endif
+		.sec_level = BT_SECURITY_L2,
 		.accept = bt_eatt_accept,
 	};
 
@@ -3756,6 +3758,14 @@ void bt_att_set_tx_meta_data(struct net_buf *buf, bt_gatt_complete_func_t func, 
 
 	data->func = func;
 	data->user_data = user_data;
+	data->attr_count = 1;
+}
+
+void bt_att_increment_tx_meta_data_attr_count(struct net_buf *buf, uint16_t attr_count)
+{
+	struct bt_att_tx_meta_data *data = bt_att_tx_meta_data(buf);
+
+	data->attr_count += attr_count;
 }
 
 bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_gatt_complete_func_t func,
@@ -3763,4 +3773,9 @@ bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_gatt_complete_func_
 {
 	return ((bt_att_tx_meta_data(buf)->func == func) &&
 		(bt_att_tx_meta_data(buf)->user_data == user_data));
+}
+
+void bt_att_free_tx_meta_data(const struct net_buf *buf)
+{
+	tx_meta_data_free(bt_att_tx_meta_data(buf));
 }

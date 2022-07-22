@@ -179,16 +179,16 @@ void main(void)
 	struct sensor_value accel1[3], accel2[3];
 	struct sensor_value gyro[3];
 	struct sensor_value magn[3];
-	const struct device *lis2dw12 = device_get_binding(DT_LABEL(DT_INST(0, st_lis2dw12)));
-	const struct device *lsm6dso = device_get_binding(DT_LABEL(DT_INST(0, st_lsm6dso)));
+	const struct device *lis2dw12 = DEVICE_DT_GET_ONE(st_lis2dw12);
+	const struct device *lsm6dso = DEVICE_DT_GET_ONE(st_lsm6dso);
 	int cnt = 1;
 
-	if (lis2dw12 == NULL) {
-		printf("Could not get LIS2DW12 device\n");
+	if (!device_is_ready(lis2dw12)) {
+		printk("%s: device not ready.\n", lis2dw12->name);
 		return;
 	}
-	if (lsm6dso == NULL) {
-		printf("Could not get LSM6DSO device\n");
+	if (!device_is_ready(lsm6dso)) {
+		printk("%s: device not ready.\n", lsm6dso->name);
 		return;
 	}
 

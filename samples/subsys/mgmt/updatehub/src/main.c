@@ -142,7 +142,7 @@ void main(void)
 		DEVICE_DT_GET(DT_BUS(DT_INST(0, zephyr_gsm_ppp)));
 
 	LOG_INF("APN '%s' UART '%s' device %p", CONFIG_MODEM_GSM_APN,
-		DT_BUS_LABEL(DT_INST(0, zephyr_gsm_ppp)), uart_dev);
+		uart_dev->name, uart_dev);
 #endif
 
 	net_mgmt_init_event_callback(&mgmt_cb, event_handler, EVENT_MASK);

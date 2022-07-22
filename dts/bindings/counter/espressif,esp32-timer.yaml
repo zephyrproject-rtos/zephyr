@@ -1,0 +1,57 @@
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        Espressif's general-purpose Timers.
+        Each Timer is part of a Timer Group and the number of available Timers
+        is SoC-dependent.
+
+        As as example, ESP32 has 4 Timers available, which are split in two
+        different groups (TIM0_G0, TIM1_G0, TIM0_G1 and TIM1_G1).
+
+        In order to use one of the available timers on your application add
+        a <board>.overlay file with contents as below
+
+          &timer0 {
+                  status = "okay";
+                  prescaler = <10>;
+          };
+
+        From the above, setting 'status' is required while the prescaler is
+        optional. Check below for more information on the prescaler.
+
+include: base.yaml
+
+properties:
+    group:
+      description: |
+        The Timer Group index to which a timer belongs.
+      type: int
+      required: true
+      enum:
+      - 0
+      - 1
+
+    index:
+      description: |
+        The index that identifies a timer within a Timer Group.
+      type: int
+      required: true
+      enum:
+      - 0
+      - 1
+
+    prescaler:
+      description: |
+        The prescaler value defines the factor by which the APB clock will be
+        divided. The outcome of which serves as clock reference to the Timer
+        itself.
+
+        The allowed values for this property are in the range [2..65535].
+        Values above that range will be 16-bit-masked. Values 0 and 1 will be
+        forced to 2.
+      type: int
+      default: 2
+      required: false
+
+compatible: "espressif,esp32-timer"

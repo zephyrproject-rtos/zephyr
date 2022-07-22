@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-cmake_minimum_required(VERSION 3.13.1)
+cmake_minimum_required(VERSION 3.20.0)
 
 set(NET_ZEPHYR_DIR ${CMAKE_CURRENT_BINARY_DIR}/sync_rtc_net-prefix/src/sync_rtc_net-build/zephyr)
 

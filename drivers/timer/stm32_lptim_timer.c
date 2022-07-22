@@ -279,7 +279,9 @@ static int sys_clock_driver_init(const struct device *dev)
 
 	/* enable LSE clock */
 	LL_RCC_LSE_DisableBypass();
+#ifdef RCC_BDCR_LSEDRV_Pos
 	LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
+#endif
 	LL_RCC_LSE_Enable();
 	while (!LL_RCC_LSE_IsReady()) {
 		/* Wait for LSE ready */

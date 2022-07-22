@@ -22,7 +22,7 @@ void handler(union sigval val)
 	       ++exp_count);
 }
 
-void test_posix_timer(void)
+ZTEST(posix_apis, test_posix_timer)
 {
 	int ret;
 	struct sigevent sig = { 0 };

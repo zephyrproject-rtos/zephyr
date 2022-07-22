@@ -1,7 +1,7 @@
 common:
   arch_exclude: nios2 posix
-  min_ram: 128
   tags: posix filesystem
+  min_ram: 128
   modules:
     - fatfs
 tests:

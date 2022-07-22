@@ -151,7 +151,7 @@ void set_regs_with_known_pattern(void)
 	);
 }
 
-void test_arm_esf_collection(void)
+ZTEST(arm_interrupt, test_arm_esf_collection)
 {
 	int test_validation_rv;
 
@@ -236,7 +236,7 @@ void arm_isr_handler(const void *args)
 	}
 }
 
-void test_arm_interrupt(void)
+ZTEST(arm_interrupt, test_arm_interrupt)
 {
 	/* Determine an NVIC IRQ line that is not currently in use. */
 	int i;
@@ -395,7 +395,7 @@ void z_impl_test_arm_user_interrupt_syscall(void)
 		first_call = 0;
 
 		/* Lock IRQs in supervisor mode */
-		int key = irq_lock();
+		unsigned int key = irq_lock();
 
 		/* Verify that IRQs were not already locked */
 		zassert_false(key, "IRQs locked in system call\n");
@@ -412,7 +412,7 @@ static inline void z_vrfy_test_arm_user_interrupt_syscall(void)
 }
 #include <syscalls/test_arm_user_interrupt_syscall_mrsh.c>
 
-void test_arm_user_interrupt(void)
+ZTEST_USER(arm_interrupt, test_arm_user_interrupt)
 {
 	/* Test thread executing in user mode */
 	zassert_true(arch_is_user_context(),
@@ -448,7 +448,7 @@ void test_arm_user_interrupt(void)
 #endif
 }
 #else
-void test_arm_user_interrupt(void)
+ZTEST_USER(arm_interrupt, test_arm_user_interrupt)
 {
 	TC_PRINT("Skipped\n");
 }
@@ -458,7 +458,7 @@ void test_arm_user_interrupt(void)
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 /* Avoid compiler optimizing null pointer de-referencing. */
-void test_arm_null_pointer_exception(void)
+ZTEST(arm_interrupt, test_arm_null_pointer_exception)
 {
 	int reason;
 
@@ -479,7 +479,7 @@ void test_arm_null_pointer_exception(void)
 }
 #pragma GCC pop_options
 #else
-void test_arm_null_pointer_exception(void)
+ZTEST(arm_interrupt, test_arm_null_pointer_exception)
 {
 	TC_PRINT("Skipped\n");
 }

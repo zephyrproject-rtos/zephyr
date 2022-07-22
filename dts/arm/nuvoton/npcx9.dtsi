@@ -14,15 +14,13 @@
 #include "npcx/npcx9/npcx9-espi-vws-map.dtsi"
 /* NPCX9 series low-voltage io controls mapping table */
 #include "npcx/npcx9/npcx9-lvol-ctrl-map.dtsi"
-/* NPCX9 series power-switch-logic (PSL) io controls mapping table */
-#include "npcx/npcx9/npcx9-psl-ctrl-map.dtsi"
 
 /* Device tree declarations of npcx soc family */
 #include "npcx.dtsi"
 
 / {
 	def-io-conf-list {
-		pinctrl-0 = <&alt0_gpio_no_spip
+		pinmux = <&alt0_gpio_no_spip
 			   &alt0_gpio_no_fpip
 			   &alt1_no_pwrgd
 			   &alta_no_peci_en
@@ -127,81 +125,129 @@
 		gpio0: gpio@40081000 {
 			wui-maps = <&wui_io00 &wui_io01 &wui_io02 &wui_io03
 				    &wui_io04 &wui_io05 &wui_io06 &wui_io07>;
+
+			lvol-maps = <&lvol_io00 &lvol_none &lvol_none &lvol_none
+				     &lvol_none &lvol_none &lvol_none &lvol_none>;
 		};
 
 		gpio1: gpio@40083000 {
 			wui-maps = <&wui_io10 &wui_io11 &wui_none &wui_none
 				    &wui_io14 &wui_io15 &wui_io16 &wui_io17>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_none &lvol_none
+				     &lvol_none &lvol_none &lvol_none &lvol_none>;
 		};
 
 		gpio2: gpio@40085000 {
 			wui-maps = <&wui_io20 &wui_io21 &wui_io22 &wui_io23
 				    &wui_io24 &wui_io25 &wui_io26 &wui_io27>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_none &lvol_none
+				     &lvol_none &lvol_none &lvol_none &lvol_none>;
 		};
 
 		gpio3: gpio@40087000 {
 			wui-maps = <&wui_io30 &wui_io31 &wui_none &wui_io33
 				    &wui_io34 &wui_none &wui_io36 &wui_io37>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_none &lvol_io33
+				     &lvol_io34 &lvol_none &lvol_io36 &lvol_io37>;
 		};
 
 		gpio4: gpio@40089000 {
 			wui-maps = <&wui_io40 &wui_io41 &wui_io42 &wui_io43
 				    &wui_io44 &wui_io45 &wui_io46 &wui_io47>;
+
+			lvol-maps = <&lvol_io40 &lvol_none &lvol_none &lvol_none
+				     &lvol_none &lvol_none &lvol_none &lvol_none>;
 		};
 
 		gpio5: gpio@4008b000 {
 			wui-maps = <&wui_io50 &wui_io51 &wui_io52 &wui_io53
 				    &wui_io54 &wui_io55 &wui_io56 &wui_io57>;
+
+			lvol-maps = <&lvol_io50 &lvol_none &lvol_none &lvol_none
+				     &lvol_none &lvol_none &lvol_none &lvol_none>;
 		};
 
 		gpio6: gpio@4008d000 {
 			wui-maps = <&wui_io60 &wui_io61 &wui_io62 &wui_io63
 				    &wui_io64 &wui_none &wui_io66 &wui_io67>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_none &lvol_none
+				     &lvol_io64 &lvol_none &lvol_io66 &lvol_none>;
 		};
 
 		gpio7: gpio@4008f000 {
 			wui-maps = <&wui_io70 &wui_none &wui_io72 &wui_io73
 				    &wui_io74 &wui_io75 &wui_io76 &wui_none>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_io72 &lvol_io73
+				     &lvol_io74 &lvol_io75 &lvol_none &lvol_none>;
 		};
 
 		gpio8: gpio@40091000 {
 			wui-maps = <&wui_io80 &wui_io81 &wui_io82 &wui_io83
 				    &wui_none &wui_none &wui_none &wui_io87>;
+
+			lvol-maps = <&lvol_io80 &lvol_none &lvol_io82 &lvol_none
+				     &lvol_none &lvol_none &lvol_none &lvol_io87>;
 		};
 
 		gpio9: gpio@40093000 {
 			wui-maps = <&wui_io90 &wui_io91 &wui_io92 &wui_io93
 				    &wui_io94 &wui_io95 &wui_io96 &wui_io97>;
+
+			lvol-maps = <&lvol_io90 &lvol_io91 &lvol_io92 &lvol_none
+				     &lvol_none &lvol_none &lvol_none &lvol_none>;
 		};
 
 		gpioa: gpio@40095000 {
 			wui-maps = <&wui_ioa0 &wui_ioa1 &wui_ioa2 &wui_ioa3
 				    &wui_ioa4 &wui_ioa5 &wui_ioa6 &wui_ioa7>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_none &lvol_none
+				     &lvol_none &lvol_none &lvol_none &lvol_none>;
 		};
 
 		gpiob: gpio@40097000 {
 			wui-maps = <&wui_iob0 &wui_iob1 &wui_iob2 &wui_iob3
 				    &wui_iob4 &wui_iob5 &wui_iob6 &wui_iob7>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_iob2 &lvol_iob3
+				     &lvol_iob4 &lvol_iob5 &lvol_none &lvol_none>;
 		};
 
 		gpioc: gpio@40099000 {
 			wui-maps = <&wui_ioc0 &wui_ioc1 &wui_ioc2 &wui_ioc3
 				    &wui_ioc4 &wui_ioc5 &wui_ioc6 &wui_ioc7>;
+
+			lvol-maps = <&lvol_none &lvol_ioc1 &lvol_ioc2 &lvol_none
+				     &lvol_none &lvol_ioc5 &lvol_ioc6 &lvol_ioc7>;
 		};
 
 		gpiod: gpio@4009b000 {
 			wui-maps = <&wui_iod0 &wui_iod1 &wui_iod2 &wui_iod3
 				    &wui_iod4 &wui_iod5 &wui_none &wui_none>;
+
+			lvol-maps = <&lvol_iod0 &lvol_iod1 &lvol_none &lvol_none
+				     &lvol_none &lvol_none &lvol_none &lvol_none>;
 		};
 
 		gpioe: gpio@4009d000 {
 			wui-maps = <&wui_ioe0 &wui_ioe1 &wui_ioe2 &wui_ioe3
 				    &wui_ioe4 &wui_ioe5 &wui_none &wui_none>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_none &lvol_ioe3
+				     &lvol_ioe4 &lvol_none &lvol_none &lvol_none>;
 		};
 
 		gpiof: gpio@4009f000 {
 			wui-maps = <&wui_iof0 &wui_iof1 &wui_iof2 &wui_iof3
 				    &wui_iof4 &wui_iof5 &wui_none &wui_none>;
+
+			lvol-maps = <&lvol_none &lvol_none &lvol_iof2 &lvol_iof3
+				     &lvol_iof4 &lvol_iof5 &lvol_none &lvol_none>;
 		};
 
 		/* ADC0 comparator configuration in npcx9 series */

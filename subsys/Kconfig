@@ -68,4 +68,6 @@ source "subsys/tracing/Kconfig"
 
 source "subsys/demand_paging/Kconfig"
 
+source "subsys/rtio/Kconfig"
+
 endmenu

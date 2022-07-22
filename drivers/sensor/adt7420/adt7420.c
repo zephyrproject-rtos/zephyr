@@ -188,9 +188,12 @@ static int adt7420_probe(const struct device *dev)
 	}
 
 #ifdef CONFIG_ADT7420_TRIGGER
-	if (adt7420_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupt!");
-		return -EIO;
+	if (cfg->int_gpio.port) {
+		ret = adt7420_init_interrupt(dev);
+		if (ret < 0) {
+			LOG_ERR("Failed to initialize interrupt!");
+			return ret;
+		}
 	}
 #endif
 
@@ -209,15 +212,18 @@ static int adt7420_init(const struct device *dev)
 	return adt7420_probe(dev);
 }
 
-static struct adt7420_data adt7420_driver;
+#define ADT7420_DEFINE(inst)								\
+	static struct adt7420_data adt7420_data_##inst;					\
+											\
+	static const struct adt7420_dev_config adt7420_config_##inst = {		\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+											\
+	IF_ENABLED(CONFIG_ADT7420_TRIGGER,						\
+		   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
+	};										\
+											\
+	DEVICE_DT_INST_DEFINE(inst, adt7420_init, NULL, &adt7420_data_##inst,		\
+			      &adt7420_config_##inst, POST_KERNEL,			\
+			      CONFIG_SENSOR_INIT_PRIORITY, &adt7420_driver_api);	\
 
-static const struct adt7420_dev_config adt7420_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-#ifdef CONFIG_ADT7420_TRIGGER
-	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
-#endif
-};
-
-DEVICE_DT_INST_DEFINE(0, adt7420_init, NULL, &adt7420_driver,
-		    &adt7420_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &adt7420_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(ADT7420_DEFINE)

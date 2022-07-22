@@ -1,0 +1,13 @@
+identifier: intel_adsp_ace15_mtpm
+name: ACE 1.5 MTL M Audio DSP
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+  - xcc
+supported:
+  - dma
+testing:
+  only_tags:
+     - kernel
+     - sof

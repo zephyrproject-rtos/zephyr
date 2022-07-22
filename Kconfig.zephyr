@@ -377,6 +377,11 @@ config OUTPUT_STAT
 	help
 	  Create a stat file using readelf -e <elf>
 
+config OUTPUT_SYMBOLS
+	bool "Create a symbol file"
+	help
+	  Create a symbol file using nm <elf>
+
 config OUTPUT_DISASSEMBLY
 	bool "Create a disassembly file"
 	default y
@@ -594,6 +599,20 @@ config BUILD_OUTPUT_META_STATE_PROPAGATE
 	           The off state is only present if a west workspace is found.
 
 endmenu
+
+config DEPRECATED
+	bool
+	help
+	  Symbol that must be selected by a feature or module if it is
+	  considered to be deprecated.
+
+config WARN_DEPRECATED
+	bool
+	default y
+	prompt "Warn on deprecated usage"
+	help
+	  Print a warning when the Kconfig tree is parsed if any deprecated
+	  features are enabled.
 
 config EXPERIMENTAL
 	bool

@@ -12,6 +12,12 @@
 ---
 BasedOnStyle: LLVM
 AlignConsecutiveMacros: AcrossComments
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
 AttributeMacros:
   - __aligned
   - __deprecated
@@ -20,6 +26,7 @@ AttributeMacros:
   - __syscall
   - __subsystem
 BreakBeforeBraces: Linux
+ColumnLimit: 100
 ConstructorInitializerIndentWidth: 8
 ContinuationIndentWidth: 8
 ForEachMacros:

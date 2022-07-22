@@ -24,6 +24,12 @@ zephyr_linker_sources_ifdef(CONFIG_GEN_ISR_TABLES
   ${ZEPHYR_BASE}/include/zephyr/linker/intlist.ld
 )
 
+zephyr_linker_sources_ifdef(CONFIG_GEN_IRQ_VECTOR_TABLE
+  ROM_START
+  SORT_KEY 0x0vectors
+  ${ZEPHYR_BASE}/include/zephyr/linker/irq-vector-table-section.ld
+)
+
 if(CONFIG_GEN_ISR_TABLES)
   zephyr_linker_section(NAME .intList VMA IDT_LIST LMA IDT_LIST NOINPUT PASS NOT LINKER_ZEPHYR_FINAL)
   zephyr_linker_section_configure(SECTION .intList KEEP INPUT ".irq_info" FIRST)

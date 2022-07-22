@@ -552,43 +552,69 @@ static bool is_valid_disconnect_reason(uint8_t reason)
 uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 {
 	struct ll_conn *conn;
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	struct ll_conn_iso_stream *cis;
+#endif
 
-	if (!IS_ACL_HANDLE(handle)) {
-		return BT_HCI_ERR_UNKNOWN_CONN_ID;
-	}
+	if (IS_ACL_HANDLE(handle)) {
+		conn = ll_connected_get(handle);
 
-	conn = ll_connected_get(handle);
-
-	if (!conn) {
-		return BT_HCI_ERR_UNKNOWN_CONN_ID;
-	}
+		/* Is conn still connected? */
+		if (!conn) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-	if (conn->llcp_terminate.req != conn->llcp_terminate.ack) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
+		if (conn->llcp_terminate.req != conn->llcp_terminate.ack) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
-	if (!is_valid_disconnect_reason(reason)) {
-		return BT_HCI_ERR_INVALID_PARAM;
-	}
+		if (!is_valid_disconnect_reason(reason)) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
 
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-	conn->llcp_terminate.reason_own = reason;
-	conn->llcp_terminate.req++; /* (req - ack) == 1, TERM_REQ */
+		conn->llcp_terminate.reason_own = reason;
+		conn->llcp_terminate.req++; /* (req - ack) == 1, TERM_REQ */
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-	uint8_t err;
+		uint8_t err;
 
-	err = ull_cp_terminate(conn, reason);
-	if (err) {
-		return err;
-	}
+		err = ull_cp_terminate(conn, reason);
+		if (err) {
+			return err;
+		}
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
-		ull_periph_latency_cancel(conn, handle);
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
+			ull_periph_latency_cancel(conn, handle);
+		}
+		return 0;
 	}
-	return 0;
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	if (IS_CIS_HANDLE(handle)) {
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+		cis = ll_iso_stream_connected_get(handle);
+		if (!cis) {
+			return BT_HCI_ERR_UNKNOWN_CONN_ID;
+		}
+
+		conn = ll_connected_get(cis->lll.acl_handle);
+		/* Is conn still connected? */
+		if (!conn) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		return ull_cp_cis_terminate(conn, cis, reason);
+#else
+		ARG_UNUSED(cis);
+		/* LEGACY LLCP does not support CIS Terminate procedure */
+		return BT_HCI_ERR_UNKNOWN_CMD;
+#endif /* !defined(CONFIG_BT_LL_SW_LLCP_LEGACY) */
+	}
+#endif /* defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
+
+	return BT_HCI_ERR_UNKNOWN_CONN_ID;
 }
 
 #if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
@@ -1378,11 +1404,7 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 	LL_ASSERT(conn->lll.handle != LLL_HANDLE_INVALID);
 
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	conn->llcp.prep.ticks_at_expire = ticks_at_expire;
-#else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
-	ARG_UNUSED(ticks_at_expire);
-#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 	conn->llcp.prep.lazy = lazy;
 
 	ull_cp_run(conn);
@@ -1479,32 +1501,33 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-	/* Peripheral received terminate ind or
+	/* Legacy LLCP:
+	 * Peripheral received terminate ind or
 	 * Central received ack for the transmitted terminate ind or
 	 * Central transmitted ack for the received terminate ind or
 	 * there has been MIC failure
+	 * Refactored LLCP:
+	 * reason_final is set exactly under the above conditions
 	 */
 	reason_final = conn->llcp_terminate.reason_final;
 	if (reason_final && (
-#if defined(CONFIG_BT_PERIPHERAL)
-			    lll->role ||
-#else /* CONFIG_BT_PERIPHERAL */
-			    0 ||
-#endif /* CONFIG_BT_PERIPHERAL */
-#if defined(CONFIG_BT_CENTRAL)
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-			    (((conn->llcp_terminate.req -
-			       conn->llcp_terminate.ack) & 0xFF) ==
-			     TERM_ACKED) ||
-			    conn->central.terminate_ack ||
-			    (reason_final == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL)
-#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-			    1
-#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-#else /* CONFIG_BT_CENTRAL */
-			    1
+#if defined(CONFIG_BT_CENTRAL)
+		(((conn->llcp_terminate.req -
+		       conn->llcp_terminate.ack) & 0xFF) ==
+		     TERM_ACKED) ||
+		    conn->central.terminate_ack ||
+		    (reason_final == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL) ||
 #endif /* CONFIG_BT_CENTRAL */
-			    )) {
+#if defined(CONFIG_BT_PERIPHERAL)
+		lll->role
+#else /* CONFIG_BT_PERIPHERAL */
+		false
+#endif /* CONFIG_BT_PERIPHERAL */
+#else /* defined(CONFIG_BT_LL_SW_LLCP_LEGACY) */
+	    true
+#endif /* !defined(CONFIG_BT_LL_SW_LLCP_LEGACY) */
+		)) {
 		conn_cleanup(conn, reason_final);
 
 		return;
@@ -2013,7 +2036,7 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 			mem_release(tx, &mem_conn_tx_ctrl.free);
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-			struct ll_conn *conn = ll_conn_get(handle);
+			struct ll_conn *conn = ll_connected_get(handle);
 
 			ull_cp_release_tx(conn, tx);
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
@@ -2491,6 +2514,11 @@ static void conn_cleanup_finalize(struct ll_conn *conn)
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 	ARG_UNUSED(rx);
 	ull_cp_state_set(conn, ULL_CP_DISCONNECTED);
+
+	/* Update tx buffer queue handling */
+#if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
+	ull_cp_update_tx_buffer_queue(conn);
+#endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	/* flush demux-ed Tx buffer still in ULL context */
@@ -2566,6 +2594,8 @@ static void tx_ull_flush(struct ll_conn *conn)
 	}
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 	struct node_tx *tx;
+
+	ull_tx_q_resume_data(&conn->tx_q);
 
 	tx = tx_ull_dequeue(conn, NULL);
 	while (tx) {
@@ -8194,3 +8224,8 @@ uint8_t ull_conn_lll_phy_active(struct ll_conn *conn, uint8_t phys)
 }
 
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+
+uint8_t ull_is_lll_tx_queue_empty(struct ll_conn *conn)
+{
+	return (memq_peek(conn->lll.memq_tx.head, conn->lll.memq_tx.tail, NULL) == NULL);
+}

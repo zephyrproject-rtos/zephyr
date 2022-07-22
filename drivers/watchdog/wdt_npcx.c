@@ -264,9 +264,9 @@ static int wdt_npcx_disable(const struct device *dev)
 	 * Ensure we have waited at least 3 watchdog ticks before
 	 * stopping watchdog
 	 */
-	while (k_uptime_get() - data->last_watchdog_touch <
-			NPCX_WDT_MIN_WND_TIME)
+	while (k_uptime_get() - data->last_watchdog_touch < NPCX_WDT_MIN_WND_TIME) {
 		continue;
+	}
 
 	/*
 	 * Stop and unlock watchdog by writing 87h, 61h and 63h

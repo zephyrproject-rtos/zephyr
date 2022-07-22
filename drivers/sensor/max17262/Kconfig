@@ -4,6 +4,8 @@
 
 config MAX17262
 	bool "MAX17262 Fuel Gauge"
+	default y
+	depends on DT_HAS_MAXIM_MAX17262_ENABLED
 	depends on I2C
 	help
 	  Enable I2C-based driver for MAX17262 Fuel Gauge. This driver supports

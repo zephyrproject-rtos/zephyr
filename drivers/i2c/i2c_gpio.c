@@ -145,7 +145,7 @@ static int i2c_gpio_init(const struct device *dev)
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 	err = i2c_bitbang_configure(&context->bitbang,
-				    I2C_MODE_MASTER | bitrate_cfg);
+				    I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (err) {
 		LOG_ERR("failed to configure I2C bitbang (err %d)", err);
 		return err;

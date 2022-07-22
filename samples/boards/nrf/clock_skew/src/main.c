@@ -12,12 +12,10 @@
 #include <zephyr/drivers/counter.h>
 #include <nrfx_clock.h>
 
-#define TIMER_NODE DT_NODELABEL(timer0)
-#define CLOCK_NODE DT_INST(0, nordic_nrf_clock)
 #define UPDATE_INTERVAL_S 10
 
-static const struct device *clock0;
-static const struct device *timer0;
+static const struct device *clock0 = DEVICE_DT_GET_ONE(nordic_nrf_clock);
+static const struct device *timer0 = DEVICE_DT_GET(DT_NODELABEL(timer0));
 static struct timeutil_sync_config sync_config;
 static uint64_t counter_ref;
 static struct timeutil_sync_state sync_state;
@@ -198,15 +196,13 @@ static void sync_work_handler(struct k_work *work)
 
 void main(void)
 {
-	const char *clock_label = DT_LABEL(CLOCK_NODE);
-	const char *timer0_label = DT_LABEL(TIMER_NODE);
 	uint32_t top;
 	int rc;
 
 	/* Grab the clock driver */
-	clock0 = device_get_binding(clock_label);
-	if (clock0 == NULL) {
-		printk("Failed to fetch clock %s\n", clock_label);
+	if (!device_is_ready(clock0)) {
+		printk("%s: device not ready.\n", clock0->name);
+		return;
 	}
 
 	show_clocks("Power-up clocks");
@@ -217,9 +213,8 @@ void main(void)
 	}
 
 	/* Grab the timer. */
-	timer0 = device_get_binding(timer0_label);
-	if (timer0 == NULL) {
-		printk("Failed to fetch timer0 %s\n", timer0_label);
+	if (!device_is_ready(timer0)) {
+		printk("%s: device not ready.\n", timer0->name);
 		return;
 	}
 
@@ -229,19 +224,19 @@ void main(void)
 	sync_config.ref_Hz = counter_get_frequency(timer0);
 	if (sync_config.ref_Hz == 0) {
 		printk("Timer %s has no fixed frequency\n",
-			timer0_label);
+			timer0->name);
 		return;
 	}
 
 	top = counter_get_top_value(timer0);
 	if (top != UINT32_MAX) {
 		printk("Timer %s wraps at %u (0x%08x) not at 32 bits\n",
-		       timer0_label, top, top);
+		       timer0->name, top, top);
 		return;
 	}
 
 	rc = counter_start(timer0);
-	printk("Start %s: %d\n", timer0_label, rc);
+	printk("Start %s: %d\n", timer0->name, rc);
 
 	show_clocks("Timer-running clocks");
 
@@ -250,7 +245,7 @@ void main(void)
 	sync_state.cfg = &sync_config;
 
 	printf("Checking %s at %u Hz against ticks at %u Hz\n",
-	       timer0_label, sync_config.ref_Hz, sync_config.local_Hz);
+	       timer0->name, sync_config.ref_Hz, sync_config.local_Hz);
 	printf("Timer wraps every %u s\n",
 	       (uint32_t)(BIT64(32) / sync_config.ref_Hz));
 

@@ -21,8 +21,6 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 }
 #endif
 
-#define LSM6DSL_DEVNAME		DT_LABEL(DT_INST(0, st_lsm6dsl))
-
 void main(void)
 {
 #ifdef CONFIG_LSM6DSL_TRIGGER
@@ -36,10 +34,10 @@ void main(void)
 #endif
 	struct sensor_value accel[3];
 	struct sensor_value gyro[3];
-	const struct device *lsm6dsl = device_get_binding(LSM6DSL_DEVNAME);
+	const struct device *lsm6dsl = DEVICE_DT_GET_ONE(st_lsm6dsl);
 
-	if (lsm6dsl == NULL) {
-		printf("Could not get LSM6DSL device\n");
+	if (!device_is_ready(lsm6dsl)) {
+		printk("%s: device not ready.\n", lsm6dsl->name);
 		return;
 	}
 

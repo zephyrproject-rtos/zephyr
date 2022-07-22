@@ -9,6 +9,7 @@ toolchain:
   - llvm
 supported:
   - can
+  - canfd
   - eeprom
   - netif:eth
   - usb_device

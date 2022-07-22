@@ -8,7 +8,7 @@
 
 /dts-v1/;
 
-#include <infineon/xmc4500.dtsi>
+#include <infineon/xmc4500_F100x1024.dtsi>
 
 / {
 	model = "Infineon XMC4500 Relax Kit";
@@ -25,13 +25,6 @@
 
 &cpu0 {
 	clock-frequency = <120000000>;
-};
-
-&usic1ch0 {
-	compatible = "infineon,xmc4xxx-uart";
-	current-speed = <115200>;
-	label = "UART_4";
-	status = "okay";
 };
 
 &usic1ch1 {

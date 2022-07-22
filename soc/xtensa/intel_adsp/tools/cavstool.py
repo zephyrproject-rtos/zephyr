@@ -14,6 +14,7 @@ import argparse
 import socketserver
 import threading
 import netifaces
+import hashlib
 
 # Global variable use to sync between log and request services.
 # When it is true, the adsp is able to start running.
@@ -24,13 +25,20 @@ HOST = None
 PORT_LOG = 9999
 PORT_REQ = PORT_LOG + 1
 BUF_SIZE = 4096
-CMD_LOG_START = "start_log"
-CMD_LOG_STOP = "stop_log"
-CMD_DOWNLOAD = "download"
 
-logging.basicConfig()
+# Define the command and the max size
+CMD_LOG_START = "start_log"
+CMD_DOWNLOAD = "download"
+MAX_CMD_SZ = 16
+
+# Define the header format and size for
+# transmiting the firmware
+PACKET_HEADER_FORMAT_FW = 'I 42s 32s'
+HEADER_SZ = 78
+
+
+logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("cavs-fw")
-log.setLevel(logging.INFO)
 
 PAGESZ = 4096
 HUGEPAGESZ = 2 * 1024 * 1024
@@ -159,12 +167,12 @@ class HDAStream:
         return (mem, hugef, phys_addr + bdl_off, phys_addr+dpib_off, 2)
 
     def debug(self):
-        log.info("HDA %d: PPROC %d, CTL 0x%x, LPIB 0x%x, BDPU 0x%x, BDPL 0x%x, CBL 0x%x, LVI 0x%x",
+        log.debug("HDA %d: PPROC %d, CTL 0x%x, LPIB 0x%x, BDPU 0x%x, BDPL 0x%x, CBL 0x%x, LVI 0x%x",
                  self.stream_id, (hda.PPCTL >> self.stream_id) & 1, self.regs.CTL, self.regs.LPIB, self.regs.BDPU,
                  self.regs.BDPL, self.regs.CBL, self.regs.LVI)
-        log.info("    FIFOW %d, FIFOS %d, FMT %x, FIFOL %d, DPIB %d, EFIFOS %d",
+        log.debug("    FIFOW %d, FIFOS %d, FMT %x, FIFOL %d, DPIB %d, EFIFOS %d",
                  self.regs.FIFOW & 0x7, self.regs.FIFOS, self.regs.FMT, self.regs.FIFOL, self.dbg0.DPIB, self.dbg0.EFIFOS)
-        log.info("    status: FIFORDY %d, DESE %d, FIFOE %d, BCIS %d",
+        log.debug("    status: FIFORDY %d, DESE %d, FIFOE %d, BCIS %d",
                  (self.regs.STS >> 5) & 1, (self.regs.STS >> 4) & 1, (self.regs.STS >> 3) & 1, (self.regs.STS >> 2) & 1)
 
     def reset(self):
@@ -202,7 +210,7 @@ class HDAStream:
 
 
 def map_regs():
-    p = runx(f"grep -iPl 'PCI_CLASS=40(10|38)0' /sys/bus/pci/devices/*/uevent")
+    p = runx(f"grep -iEl 'PCI_CLASS=40(10|38)0' /sys/bus/pci/devices/*/uevent")
     pcidir = os.path.dirname(p)
 
     # Platform/quirk detection.  ID lists cribbed from the SOF kernel driver
@@ -221,10 +229,10 @@ def map_regs():
         else:
             log.warning(found_msg + ", unloading module")
             runx(f"rmmod -f {mod}")
-
-    # Disengage runtime power management so the kernel doesn't put it to sleep
-    with open(f"{pcidir}/power/control", "w") as ctrl:
-        ctrl.write("on")
+            # Disengage runtime power management so the kernel doesn't put it to sleep
+            log.info(f"Forcing {pcidir}/power/control to always 'on'")
+            with open(f"{pcidir}/power/control", "w") as ctrl:
+                ctrl.write("on")
 
     # Make sure PCI memory space access and busmastering are enabled.
     # Also disable interrupts so as not to confuse the kernel.
@@ -469,20 +477,33 @@ def load_firmware(fw_file):
     # chromebook) putting the two writes next each other also hangs
     # the DSP!
     sd.CTL &= ~2 # clear START
-    time.sleep(1)
+    time.sleep(0.1)
     sd.CTL |= 1
     log.info(f"cAVS firmware load complete")
 
+def fw_is_alive():
+    return dsp.SRAM_FW_STATUS & ((1 << 28) - 1) == 5 # "FW_ENTERED"
 
-def wait_fw_entered():
-    log.info("Waiting for firmware handoff, FW_STATUS = 0x%x", dsp.SRAM_FW_STATUS)
-    for _ in range(200):
-        alive = dsp.SRAM_FW_STATUS & ((1 << 28) - 1) == 5 # "FW_ENTERED"
+def wait_fw_entered(timeout_s=2):
+    log.info("Waiting %s for firmware handoff, FW_STATUS = 0x%x",
+             "forever" if timeout_s is None else f"{timeout_s} seconds",
+             dsp.SRAM_FW_STATUS)
+    hertz = 100
+    attempts = None if timeout_s is None else timeout_s * hertz
+    while True:
+        alive = fw_is_alive()
         if alive:
             break
-        time.sleep(0.01)
+        if attempts is not None:
+            attempts -= 1
+            if attempts < 0:
+                break
+        time.sleep(1 / hertz)
+
     if not alive:
         log.warning("Load failed?  FW_STATUS = 0x%x", dsp.SRAM_FW_STATUS)
+    else:
+        log.info("FW alive, FW_STATUS = 0x%x", dsp.SRAM_FW_STATUS)
 
 
 # This SHOULD be just "mem[start:start+length]", but slicing an mmap
@@ -611,6 +632,15 @@ def ipc_command(data, ext_data):
             hda_str.mem.seek(0)
     else:
         log.warning(f"cavstool: Unrecognized IPC command 0x{data:x} ext 0x{ext_data:x}")
+        if not fw_is_alive():
+            if args.log_only:
+                log.info("DSP power seems off")
+                wait_fw_entered(timeout_s=None)
+            else:
+                log.warning("DSP power seems off?!")
+                time.sleep(2) # potential spam reduction
+
+            return
 
     dsp.HIPCTDR = 1<<31 # Ack local interrupt, also signals DONE on v1.5
     if cavs18:
@@ -625,6 +655,7 @@ def ipc_command(data, ext_data):
 async def _main(server):
     #TODO this bit me, remove the globals, write a little FirmwareLoader class or something to contain.
     global hda, sd, dsp, hda_ostream_id, hda_streams
+    global start_output
     try:
         (hda, sd, dsp, hda_ostream_id) = map_regs()
     except Exception as e:
@@ -635,7 +666,7 @@ async def _main(server):
     log.info(f"Detected cAVS {'1.5' if cavs15 else '1.8+'} hardware")
 
     if args.log_only:
-        wait_fw_entered()
+        wait_fw_entered(timeout_s=None)
     else:
         if not fw_file:
             log.error("Firmware file argument missing")
@@ -654,72 +685,86 @@ async def _main(server):
         (last_seq, output) = winstream_read(last_seq)
         if output:
             adsp_log(output, server)
-        if dsp.HIPCTDR & 0x80000000:
-            ipc_command(dsp.HIPCTDR & ~0x80000000, dsp.HIPCTDD)
         if dsp.HIPCIDA & 0x80000000:
             dsp.HIPCIDA = 1<<31 # must ACK any DONE interrupts that arrive!
+        if dsp.HIPCTDR & 0x80000000:
+            ipc_command(dsp.HIPCTDR & ~0x80000000, dsp.HIPCTDD)
+
+        if server:
+            # Check if the client connection is alive.
+            if not is_connection_alive(server):
+                lock.acquire()
+                start_output = False
+                lock.release()
 
 class adsp_request_handler(socketserver.BaseRequestHandler):
     """
     The request handler class for control the actions of server.
     """
 
-    def receive_fw(self, filename):
-        try:
-            with open(fw_file,'wb') as f:
-                cnt = 0
-                log.info("Receiving...")
+    def receive_fw(self):
+        log.info("Receiving...")
+        # Receive the header first
+        d = self.request.recv(HEADER_SZ)
 
-                while True:
-                    l = self.request.recv(BUF_SIZE)
-                    ll = len(l)
-                    cnt = cnt + ll
-                    if not l:
-                        break
-                    else:
-                        f.write(l)
+        # Unpacked the header data
+        # Include size(4), filename(42) and MD5(32)
+        header = d[:HEADER_SZ]
+        total = d[HEADER_SZ:]
+        s = struct.Struct(PACKET_HEADER_FORMAT_FW)
+        fsize, fname, md5_tx_b = s.unpack(header)
+        log.info(f'size:{fsize}, filename:{fname}, MD5:{md5_tx_b}')
+
+        # Receive the firmware. We only receive the specified amount of bytes.
+        while len(total) < fsize:
+            data = self.request.recv(min(BUF_SIZE, fsize - len(total)))
+            if not data:
+                raise EOFError("truncated firmware file")
+            total += data
+
+        log.info(f"Done Receiving {len(total)}.")
+
+        try:
+            with open(fname,'wb') as f:
+                f.write(total)
         except Exception as e:
             log.error(f"Get exception {e} during FW transfer.")
-            return 1
+            return None
 
-        log.info(f"Done Receiving {cnt}.")
+        # Check the MD5 of the firmware
+        md5_rx = hashlib.md5(total).hexdigest()
+        md5_tx = md5_tx_b.decode('utf-8')
+
+        if md5_tx != md5_rx:
+            log.error(f'MD5 mismatch: {md5_tx} vs. {md5_rx}')
+            return None
+
+        return fname
 
     def handle(self):
         global start_output, fw_file
 
-        cmd = self.request.recv(BUF_SIZE)
+        cmd = self.request.recv(MAX_CMD_SZ)
         log.info(f"{self.client_address[0]} wrote: {cmd}")
         action = cmd.decode("utf-8")
         log.debug(f'load {action}')
 
         if action == CMD_DOWNLOAD:
             self.request.sendall(cmd)
-            recv_fn = self.request.recv(BUF_SIZE)
-            log.info(f"{self.client_address[0]} wrote: {recv_fn}")
+            recv_file = self.receive_fw()
 
-            try:
-                tmp_file = recv_fn.decode("utf-8")
-            except UnicodeDecodeError:
-                tmp_file = "zephyr.ri.decode_error"
-                log.info(f'did not receive a correct filename')
+            if recv_file:
+                self.request.sendall("success".encode('utf-8'))
+                log.info("Firmware well received. Ready to download.")
+            else:
+                self.request.sendall("failed".encode('utf-8'))
+                log.error("Receive firmware failed.")
 
             lock.acquire()
-            fw_file = tmp_file
-            ret = self.receive_fw(fw_file)
-            if not ret:
-                start_output = True
+            fw_file = recv_file
+            start_output = True
             lock.release()
 
-            log.debug(f'{recv_fn}, {fw_file}, {start_output}')
-
-        elif action == CMD_LOG_STOP:
-            self.request.sendall(cmd)
-            lock.acquire()
-            start_output = False
-            if fw_file:
-                os.remove(fw_file)
-                fw_file = None
-            lock.release()
         else:
             log.error("incorrect load communitcation!")
 
@@ -732,35 +777,50 @@ class adsp_log_handler(socketserver.BaseRequestHandler):
         self.loop.run_until_complete(_main(self))
 
     def handle(self):
-        global start_output, fw_file
-
-        cmd = self.request.recv(BUF_SIZE)
+        cmd = self.request.recv(MAX_CMD_SZ)
         log.info(f"{self.client_address[0]} wrote: {cmd}")
         action = cmd.decode("utf-8")
         log.debug(f'monitor {action}')
 
         if action == CMD_LOG_START:
+            global start_output, fw_file
+
             self.request.sendall(cmd)
+
             log.info(f"Waiting for instruction...")
             while start_output is False:
                 time.sleep(1)
+                if not is_connection_alive(self):
+                    break
 
-            log.info(f"Loaded FW {fw_file} and running...")
-            if os.path.exists(fw_file):
-                self.run_adsp()
-                self.request.sendall("service complete.".encode())
-                log.info("service complete.")
-            else:
-                log.error("cannot find the FW file")
+            if fw_file:
+                log.info(f"Loaded FW {fw_file} and running...")
+                if os.path.exists(fw_file):
+                    self.run_adsp()
+                    log.info("service complete.")
+                else:
+                    log.error("Cannot find the FW file.")
 
             lock.acquire()
-            fw_file = None
             start_output = False
+            if fw_file:
+                os.remove(fw_file)
+            fw_file = None
             lock.release()
 
         else:
             log.error("incorrect monitor communitcation!")
 
+        log.info("Wait for next service...")
+
+def is_connection_alive(server):
+    try:
+        server.request.sendall(b' ')
+    except (BrokenPipeError, ConnectionResetError):
+        log.info("Client is disconnect.")
+        return False
+
+    return True
 
 def adsp_log(output, server):
     if server:
@@ -789,18 +849,22 @@ def get_host_ip():
 ap = argparse.ArgumentParser(description="DSP loader/logger tool")
 ap.add_argument("-q", "--quiet", action="store_true",
                 help="No loader output, just DSP logging")
+ap.add_argument("-v", "--verbose", action="store_true",
+                help="More loader output, DEBUG logging level")
 ap.add_argument("-l", "--log-only", action="store_true",
                 help="Don't load firmware, just show log output")
 ap.add_argument("-n", "--no-history", action="store_true",
                 help="No current log buffer at start, just new output")
 ap.add_argument("-s", "--server-addr",
-                help="No current log buffer at start, just new output")
+                help="Specify the IP address that the server to active")
 ap.add_argument("fw_file", nargs="?", help="Firmware file")
 
 args = ap.parse_args()
 
 if args.quiet:
     log.setLevel(logging.WARN)
+elif args.verbose:
+    log.setLevel(logging.DEBUG)
 
 if args.fw_file:
     fw_file = args.fw_file

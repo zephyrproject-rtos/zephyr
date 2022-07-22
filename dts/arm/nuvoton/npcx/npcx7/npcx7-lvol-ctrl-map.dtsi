@@ -14,7 +14,7 @@
 
 		/* Low-Voltage IO Control 4 */
 		lvol_io86: lvol40 {
-			lvols = <&scfg 0x08 6 4 0>;
+			lvols = <&scfg 4 0>;
 		};
 	};
 };

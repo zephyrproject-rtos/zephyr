@@ -63,26 +63,6 @@ static uint32_t timestamp_freq(void)
 }
 
 /**
- * @brief Function for finding source ID based on source name.
- *
- * @param name Source name
- *
- * @return Source ID.
- */
-static int16_t log_source_id_get(const char *name)
-{
-
-	for (int16_t i = 0; i < log_src_cnt_get(CONFIG_LOG_DOMAIN_ID); i++) {
-		if (strcmp(log_source_name_get(CONFIG_LOG_DOMAIN_ID, i), name)
-		    == 0) {
-			return i;
-		}
-	}
-
-	return -1;
-}
-
-/**
  * @brief Function demonstrates module level filtering.
  *
  * Sample module API is called then logging for this module is disabled and

@@ -19,9 +19,6 @@ properties:
     clock-names:
       required: true
 
-    label:
-      required: true
-
     reference:
       type: string
       required: false

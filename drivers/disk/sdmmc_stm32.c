@@ -44,18 +44,8 @@ struct stm32_sdmmc_priv {
 	int status;
 	struct k_work work;
 	struct gpio_callback cd_cb;
-	struct {
-		const char *name;
-		const struct device *port;
-		int pin;
-		int flags;
-	} cd;
-	struct {
-		const char *name;
-		const struct device *port;
-		int pin;
-		int flags;
-	} pe;
+	struct gpio_dt_spec cd;
+	struct gpio_dt_spec pe;
 	struct stm32_pclken pclken;
 	const struct pinctrl_dev_config *pcfg;
 };
@@ -318,11 +308,11 @@ static bool stm32_sdmmc_card_present(struct stm32_sdmmc_priv *priv)
 {
 	int err;
 
-	if (!priv->cd.name) {
+	if (!priv->cd.port) {
 		return true;
 	}
 
-	err = gpio_pin_get(priv->cd.port, priv->cd.pin);
+	err = gpio_pin_get_dt(&priv->cd);
 	if (err < 0) {
 		LOG_WRN("reading card detect failed %d", err);
 		return true;
@@ -361,12 +351,11 @@ static int stm32_sdmmc_card_detect_init(struct stm32_sdmmc_priv *priv)
 {
 	int err;
 
-	if (!priv->cd.name) {
+	if (!priv->cd.port) {
 		return 0;
 	}
 
-	priv->cd.port = device_get_binding(priv->cd.name);
-	if (!priv->cd.port) {
+	if (!device_is_ready(priv->cd.port)) {
 		return -ENODEV;
 	}
 
@@ -378,21 +367,19 @@ static int stm32_sdmmc_card_detect_init(struct stm32_sdmmc_priv *priv)
 		return err;
 	}
 
-	err = gpio_pin_configure(priv->cd.port, priv->cd.pin,
-				 priv->cd.flags | GPIO_INPUT);
+	err = gpio_pin_configure_dt(&priv->cd, GPIO_INPUT);
 	if (err) {
 		goto remove_callback;
 	}
 
-	err = gpio_pin_interrupt_configure(priv->cd.port, priv->cd.pin,
-					   GPIO_INT_EDGE_BOTH);
+	err = gpio_pin_interrupt_configure_dt(&priv->cd, GPIO_INT_EDGE_BOTH);
 	if (err) {
 		goto unconfigure_pin;
 	}
 	return 0;
 
 unconfigure_pin:
-	gpio_pin_configure(priv->cd.port, priv->cd.pin, GPIO_DISCONNECTED);
+	gpio_pin_configure_dt(&priv->cd, GPIO_DISCONNECTED);
 remove_callback:
 	gpio_remove_callback(priv->cd.port, &priv->cd_cb);
 	return err;
@@ -400,13 +387,12 @@ remove_callback:
 
 static int stm32_sdmmc_card_detect_uninit(struct stm32_sdmmc_priv *priv)
 {
-	if (!priv->cd.name) {
+	if (!priv->cd.port) {
 		return 0;
 	}
 
-	gpio_pin_interrupt_configure(priv->cd.port, priv->cd.pin,
-				     GPIO_INT_MODE_DISABLED);
-	gpio_pin_configure(priv->cd.port, priv->cd.pin, GPIO_DISCONNECTED);
+	gpio_pin_interrupt_configure_dt(&priv->cd, GPIO_INT_MODE_DISABLED);
+	gpio_pin_configure_dt(&priv->cd, GPIO_DISCONNECTED);
 	gpio_remove_callback(priv->cd.port, &priv->cd_cb);
 	return 0;
 }
@@ -415,17 +401,15 @@ static int stm32_sdmmc_pwr_init(struct stm32_sdmmc_priv *priv)
 {
 	int err;
 
-	if (!priv->pe.name) {
+	if (!priv->pe.port) {
 		return 0;
 	}
 
-	priv->pe.port = device_get_binding(priv->pe.name);
-	if (!priv->pe.port) {
+	if (!device_is_ready(priv->pe.port)) {
 		return -ENODEV;
 	}
 
-	err = gpio_pin_configure(priv->pe.port, priv->pe.pin,
-				 priv->pe.flags | GPIO_OUTPUT_ACTIVE);
+	err = gpio_pin_configure_dt(&priv->pe, GPIO_OUTPUT_ACTIVE);
 	if (err) {
 		return err;
 	}
@@ -437,11 +421,11 @@ static int stm32_sdmmc_pwr_init(struct stm32_sdmmc_priv *priv)
 
 static int stm32_sdmmc_pwr_uninit(struct stm32_sdmmc_priv *priv)
 {
-	if (!priv->pe.name) {
+	if (!priv->pe.port) {
 		return 0;
 	}
 
-	gpio_pin_configure(priv->pe.port, priv->pe.pin, GPIO_DISCONNECTED);
+	gpio_pin_configure_dt(&priv->pe, GPIO_DISCONNECTED);
 	return 0;
 }
 
@@ -522,18 +506,10 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 		.Init.BusWide = SDMMC_BUS_WIDTH,
 	},
 #if DT_INST_NODE_HAS_PROP(0, cd_gpios)
-	.cd = {
-		.name = DT_INST_GPIO_LABEL(0, cd_gpios),
-		.pin = DT_INST_GPIO_PIN(0, cd_gpios),
-		.flags = DT_INST_GPIO_FLAGS(0, cd_gpios),
-	},
+	.cd = GPIO_DT_SPEC_INST_GET(0, cd_gpios),
 #endif
 #if DT_INST_NODE_HAS_PROP(0, pwr_gpios)
-	.pe = {
-		.name = DT_INST_GPIO_LABEL(0, pwr_gpios),
-		.pin = DT_INST_GPIO_PIN(0, pwr_gpios),
-		.flags = DT_INST_GPIO_FLAGS(0, pwr_gpios),
-	},
+	.pe = GPIO_DT_SPEC_INST_GET(0, pwr_gpios),
 #endif
 	.pclken = {
 		.bus = DT_INST_CLOCKS_CELL(0, bus),

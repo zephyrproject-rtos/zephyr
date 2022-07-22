@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_MPR_H_
 #define ZEPHYR_DRIVERS_SENSOR_MPR_H_
 
+#include <zephyr/drivers/i2c.h>
 
 /* MPR output measurement command */
 #define MPR_OUTPUT_MEASUREMENT_COMMAND (0xAA)
@@ -28,14 +29,11 @@
 #endif
 
 struct mpr_data {
-	const struct device *i2c_master;
-
 	uint32_t reg_val;
 };
 
 struct mpr_config {
-	const char *i2c_bus;
-	uint16_t i2c_addr;
+	struct i2c_dt_spec i2c;
 };
 
 int mpr_reg_read(const struct device *dev, uint8_t reg, uint16_t *val);

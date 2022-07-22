@@ -17,6 +17,7 @@
 		led0 = &green_led;
 		led1 = &red_led;
 		led2 = &blue_led;
+		sdhc0 = &usdhc1;
 	};
 
 	chosen {
@@ -105,7 +106,7 @@
 	pinctrl-0 = <&pinmux_lpi2c3>;
 	pinctrl-names = "default";
 
-	ov7725@21 {
+	ov7725: ov7725@21 {
 		compatible = "ovti,ov7725";
 		reg = <0x21>;
 		label = "OV7725";
@@ -192,7 +193,7 @@
 
 &csi {
 	status = "okay";
-	sensor-label = "OV7725";
+	sensor = <&ov7725>;
 	pinctrl-0 = <&pinmux_csi>;
 	pinctrl-names = "default";
 

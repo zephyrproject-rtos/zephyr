@@ -102,7 +102,6 @@ static int lpc11u6x_uart0_configure(const struct device *dev,
 {
 	const struct  lpc11u6x_uart0_config *dev_cfg = dev->config;
 	struct lpc11u6x_uart0_data *data = dev->data;
-	const struct device *clk_dev;
 	uint32_t flags = 0;
 
 	/* Check that the baudrate is a multiple of 9600 */
@@ -167,11 +166,7 @@ static int lpc11u6x_uart0_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	clk_dev = device_get_binding(dev_cfg->clock_drv_name);
-	if (!clk_dev) {
-		return -EINVAL;
-	}
-	lpc11u6x_uart0_config_baudrate(clk_dev, dev_cfg, cfg->baudrate);
+	lpc11u6x_uart0_config_baudrate(dev_cfg->clock_dev, dev_cfg, cfg->baudrate);
 	dev_cfg->uart0->lcr = flags;
 
 	data->baudrate = cfg->baudrate;
@@ -344,7 +339,6 @@ static int lpc11u6x_uart0_init(const struct device *dev)
 {
 	const struct lpc11u6x_uart0_config *cfg = dev->config;
 	struct lpc11u6x_uart0_data *data = dev->data;
-	const struct device *clk_drv;
 	int err;
 
 	/* Apply default pin control state to select RX and TX pins */
@@ -353,16 +347,10 @@ static int lpc11u6x_uart0_init(const struct device *dev)
 		return err;
 	}
 
-	/* Call clock driver to initialize uart0 clock */
-	clk_drv = device_get_binding(cfg->clock_drv_name);
-	if (!clk_drv) {
-		return -EINVAL;
-	}
-
-	clock_control_on(clk_drv, (clock_control_subsys_t) cfg->clkid);
+	clock_control_on(cfg->clock_dev, (clock_control_subsys_t) cfg->clkid);
 
 	/* Configure baudrate, parity and stop bits */
-	lpc11u6x_uart0_config_baudrate(clk_drv, cfg, cfg->baudrate);
+	lpc11u6x_uart0_config_baudrate(cfg->clock_dev, cfg, cfg->baudrate);
 
 	cfg->uart0->lcr |= LPC11U6X_UART0_LCR_WLS_8BITS; /* 8N1 */
 
@@ -390,7 +378,7 @@ PINCTRL_DT_DEFINE(DT_NODELABEL(uart0));
 static const struct lpc11u6x_uart0_config uart0_config = {
 	.uart0 = (struct lpc11u6x_uart0_regs *)
 	DT_REG_ADDR(DT_NODELABEL(uart0)),
-	.clock_drv_name = DT_LABEL(DT_PHANDLE(DT_NODELABEL(uart0), clocks)),
+	.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(uart0))),
 	.pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(uart0)),
 	.clkid = DT_PHA_BY_IDX(DT_NODELABEL(uart0), clocks, 0, clkid),
 	.baudrate = DT_PROP(DT_NODELABEL(uart0), current_speed),
@@ -491,11 +479,11 @@ static int lpc11u6x_uartx_err_check(const struct device *dev)
 }
 
 static void lpc11u6x_uartx_config_baud(const struct lpc11u6x_uartx_config *cfg,
-				       const struct device *clk_drv,
 				       uint32_t baudrate)
 {
 	uint32_t clk_rate;
 	uint32_t div;
+	const struct device *clk_drv = cfg->clock_dev;
 
 	clock_control_get_rate(clk_drv, (clock_control_subsys_t) cfg->clkid,
 			       &clk_rate);
@@ -511,9 +499,8 @@ static void lpc11u6x_uartx_config_baud(const struct lpc11u6x_uartx_config *cfg,
 static int lpc11u6x_uartx_configure(const struct device *dev,
 				    const struct uart_config *cfg)
 {
-	const struct  lpc11u6x_uartx_config *dev_cfg = dev->config;
+	const struct lpc11u6x_uartx_config *dev_cfg = dev->config;
 	struct lpc11u6x_uartx_data *data = dev->data;
-	const struct device *clk_dev;
 	uint32_t flags = 0;
 
 	/* We only support baudrates that are multiple of 9600 */
@@ -576,16 +563,11 @@ static int lpc11u6x_uartx_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	clk_dev = device_get_binding(dev_cfg->clock_drv_name);
-	if (!clk_dev) {
-		return -EINVAL;
-	}
-
 	/* Disable UART */
 	dev_cfg->base->cfg = 0;
 
 	/* Update baudrate */
-	lpc11u6x_uartx_config_baud(dev_cfg, clk_dev, cfg->baudrate);
+	lpc11u6x_uartx_config_baud(dev_cfg, cfg->baudrate);
 
 	/* Set parity, data bits, stop bits and re-enable UART interface */
 	dev_cfg->base->cfg = flags | LPC11U6X_UARTX_CFG_ENABLE;
@@ -779,7 +761,6 @@ static int lpc11u6x_uartx_init(const struct device *dev)
 {
 	const struct lpc11u6x_uartx_config *cfg = dev->config;
 	struct lpc11u6x_uartx_data *data = dev->data;
-	const struct device *clk_drv;
 	int err;
 
 	/* Apply default pin control state to select RX and TX pins */
@@ -788,16 +769,10 @@ static int lpc11u6x_uartx_init(const struct device *dev)
 		return err;
 	}
 
-	/* Call clock driver to initialize uart0 clock */
-	clk_drv = device_get_binding(cfg->clock_drv_name);
-	if (!clk_drv) {
-		return -EINVAL;
-	}
-
-	clock_control_on(clk_drv, (clock_control_subsys_t) cfg->clkid);
+	clock_control_on(cfg->clock_dev, (clock_control_subsys_t) cfg->clkid);
 
 	/* Configure baudrate, parity and stop bits */
-	lpc11u6x_uartx_config_baud(cfg, clk_drv, cfg->baudrate);
+	lpc11u6x_uartx_config_baud(cfg, cfg->baudrate);
 	cfg->base->cfg = LPC11U6X_UARTX_CFG_DATALEN_8BIT; /* 8N1 */
 
 	data->baudrate = cfg->baudrate;
@@ -861,8 +836,7 @@ PINCTRL_DT_DEFINE(DT_NODELABEL(uart##idx));                                   \
 static const struct lpc11u6x_uartx_config uart_cfg_##idx = {	              \
 	.base = (struct lpc11u6x_uartx_regs *)                                \
 	DT_REG_ADDR(DT_NODELABEL(uart##idx)),			              \
-	.clock_drv_name =						      \
-	DT_LABEL(DT_PHANDLE(DT_NODELABEL(uart##idx), clocks)),		      \
+	.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(uart##idx))),  \
 	.clkid = DT_PHA_BY_IDX(DT_NODELABEL(uart##idx), clocks, 0, clkid),    \
 	.pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(uart##idx)),         \
 	.baudrate = DT_PROP(DT_NODELABEL(uart##idx), current_speed),	      \

@@ -121,17 +121,19 @@ static int test_task(int minor, int major)
 	TC_PRINT("%s\n", rx_data2);
 	if (minor == 0 && major == 1) {
 		/* major link only trigger lined channel minor loop once */
-		if (strncmp(tx_data, rx_data2,
-				dma_cfg.source_burst_length) != 0)
+		if (strncmp(tx_data, rx_data2, dma_cfg.source_burst_length) != 0) {
 			return TC_FAIL;
+		}
 	} else if (minor == 1 && major == 0) {
 		/* minor link trigger linked channel except the last one*/
 		if (strncmp(tx_data, rx_data2,
-				dma_block_cfg.block_size - dma_cfg.source_burst_length) != 0)
+			    dma_block_cfg.block_size - dma_cfg.source_burst_length) != 0) {
 			return TC_FAIL;
+		}
 	} else if (minor == 1 && major == 1) {
-		if (strcmp(tx_data, rx_data2) != 0)
+		if (strcmp(tx_data, rx_data2) != 0) {
 			return TC_FAIL;
+		}
 	}
 
 	return TC_PASS;

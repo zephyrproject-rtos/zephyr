@@ -740,11 +740,15 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			lll_aux = adv->lll.aux;
 			aux = HDR_LLL2ULL(lll_aux);
 			ticks_anchor_aux = ticker_ticks_now_get();
-			ticks_slot_overhead_aux = ull_adv_aux_evt_init(aux);
-			ticks_anchor_sync =
-				ticks_anchor_aux + ticks_slot_overhead_aux +
-				aux->ull.ticks_slot +
-				HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
+			ticks_slot_overhead_aux =
+				ull_adv_aux_evt_init(aux, &ticks_anchor_aux);
+			ticks_anchor_sync = ticks_anchor_aux +
+				ticks_slot_overhead_aux + aux->ull.ticks_slot +
+				HAL_TICKER_US_TO_TICKS(
+					MAX(EVENT_MAFS_US,
+					    EVENT_OVERHEAD_START_US) -
+					EVENT_OVERHEAD_START_US +
+					(EVENT_TICKER_RES_MARGIN_US << 1));
 		}
 
 		ret = ull_adv_sync_start(adv, sync, ticks_anchor_sync);

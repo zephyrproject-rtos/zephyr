@@ -1,6 +1,8 @@
 # Copyright (c) 2021, Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
+if SOC_GD32F450
+
 config SOC
 	default "gd32f450"
 
@@ -9,3 +11,5 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 config NUM_IRQS
 	default 91
+
+endif # SOC_GD32F450

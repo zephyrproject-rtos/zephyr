@@ -10,6 +10,9 @@ as custom QEMU and OpenOCD.
 Use of the Zephyr SDK is highly recommended and may even be required under
 certain conditions (for example, running tests in QEMU for some architectures).
 
+Supported architectures
+***********************
+
 The Zephyr SDK supports the following target architectures:
 
 * ARC (32-bit and 64-bit; ARCv1, ARCv2, ARCv3)
@@ -20,19 +23,25 @@ The Zephyr SDK supports the following target architectures:
 * x86 (32-bit and 64-bit)
 * Xtensa
 
+.. _toolchain_zephyr_sdk_bundle_variables:
+
+Installation bundle and variables
+*********************************
+
 The Zephyr SDK bundle supports all major operating systems (Linux, macOS and
 Windows) and is delivered as a compressed file.
 The installation consists of extracting the file and running the included setup
 script. Additional OS-specific instructions are described in the sections below.
 
-By default, the Zephyr build system assumes that the toolchain will be obtained
-from the Zephyr SDK. You can enforce this by setting the environment variable
+If no toolchain is selected, the build system looks for Zephyr SDK and uses the toolchain
+from there. You can enforce this by setting the environment variable
 :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``zephyr``.
 
 If you install the Zephyr SDK outside any of the default locations (listed in
-the operating system specific instructions below), you must register the Zephyr
-SDK in the CMake package registry by running the setup script or setting
-:envvar:`ZEPHYR_SDK_INSTALL_DIR` to point to the Zephyr SDK installation
+the operating system specific instructions below) and you want automatic discovery
+of the Zephyr SDK, then you must register the Zephyr SDK in the CMake package registry
+by running the setup script. If you decide not to register the Zephyr SDK in the CMake registry,
+then the :envvar:`ZEPHYR_SDK_INSTALL_DIR` can be used to point to the Zephyr SDK installation
 directory.
 
 You can also set :envvar:`ZEPHYR_SDK_INSTALL_DIR` to point to a directory

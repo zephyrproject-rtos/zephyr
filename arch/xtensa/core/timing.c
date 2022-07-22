@@ -1,7 +1,7 @@
 /* Copyright (c) 2022 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 void arch_timing_init(void)
 {

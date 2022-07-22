@@ -50,7 +50,7 @@ const int8_t avgpooling_2_output_ref[60] = {
 	-21, -16, -16, -43, 37, -21, -69, -53, -96, 48, -8, -72, -64, -104, 40
 };
 
-void test_avgpool(void)
+ZTEST(cmsis_nn, test_avgpool)
 {
 	q7_t output[AVGPOOLING_2_DST_SIZE] = { 0 };
 
@@ -146,7 +146,7 @@ const q7_t conv_4_output_ref[36] = {
 	4, 5, 14, 2, 5, 7, -1, -2, 2, 5, -4, 11, -1, -2, 8, 4, 2, 0
 };
 
-void test_convolve(void)
+ZTEST(cmsis_nn, test_convolve)
 {
 	q7_t output[CONV_4_DST_SIZE] = { 0 };
 
@@ -265,7 +265,7 @@ const q7_t stride2pad1_output_ref[16] = {
 	15, 23, 22, 11, 27, 35, 39, 20, 31, 42, 29, 21, 28, 27, 27, 15
 };
 
-void test_depthwise_convolve(void)
+ZTEST(cmsis_nn, test_depthwise_convolve)
 {
 	q7_t output[STRIDE2PAD1_DST_SIZE] = { 0 };
 
@@ -357,7 +357,7 @@ const q7_t fully_connected_mve_0_weights[144] = {
 	-1, -4, 2, 2, 3, 1, -1, 1, 0, -4, -2, -3
 };
 
-void test_fully_connected(void)
+ZTEST(cmsis_nn, test_fully_connected)
 {
 	q7_t output[FULLY_CONNECTED_MVE_0_DST_SIZE] = { 0 };
 
@@ -444,7 +444,7 @@ const int8_t maxpooling_2_output_ref[60] = {
 	96, 32, 96, 96, -16, 96, 0, 96, 96, 64, 64, -16, 96, 96, 64
 };
 
-void test_max_pool(void)
+ZTEST(cmsis_nn, test_max_pool)
 {
 	q7_t output[MAXPOOLING_2_DST_SIZE] = { 0 };
 
@@ -494,7 +494,7 @@ const q7_t softmax_input[5] = { -80, -48, 16, 0, -96 };
 
 const q7_t softmax_output_ref[5] = { -128, -125, 56, -60, -128 };
 
-void test_softmax(void)
+ZTEST(cmsis_nn, test_softmax)
 {
 	const int32_t num_rows = SOFTMAX_NUM_ROWS;
 	const int32_t row_size = SOFTMAX_ROW_SIZE;
@@ -570,7 +570,7 @@ static bool check_null_bias(const int32_t *bias, int32_t size)
 	return null_bias;
 }
 
-void test_svdf(void)
+ZTEST(cmsis_nn, test_svdf)
 {
 	cmsis_nn_context input_ctx;
 	cmsis_nn_context output_ctx;
@@ -653,16 +653,4 @@ void test_svdf(void)
 	free(output_ctx.buf);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_cmsis_nn,
-			 ztest_unit_test(test_avgpool),
-			 ztest_unit_test(test_convolve),
-			 ztest_unit_test(test_depthwise_convolve),
-			 ztest_unit_test(test_fully_connected),
-			 ztest_unit_test(test_max_pool),
-			 ztest_unit_test(test_softmax),
-			 ztest_unit_test(test_svdf)
-			 );
-	ztest_run_test_suite(test_cmsis_nn);
-}
+ZTEST_SUITE(cmsis_nn, NULL, NULL, NULL, NULL, NULL);

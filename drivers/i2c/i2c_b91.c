@@ -41,7 +41,7 @@ static int i2c_b91_configure(const struct device *dev, uint32_t dev_config)
 	}
 
 	/* check I2C Master/Slave configuration */
-	if (!(dev_config & I2C_MODE_MASTER)) {
+	if (!(dev_config & I2C_MODE_CONTROLLER)) {
 		LOG_ERR("I2C slave is not implemented");
 		return -ENOTSUP;
 	}
@@ -124,7 +124,7 @@ static int i2c_b91_init(const struct device *dev)
 	int status = 0;
 	const struct i2c_b91_cfg *cfg = dev->config;
 	struct i2c_b91_data *data = dev->data;
-	uint32_t dev_config = (I2C_MODE_MASTER | i2c_map_dt_bitrate(cfg->bitrate));
+	uint32_t dev_config = (I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(cfg->bitrate));
 
 	/* init mutex */
 	k_sem_init(&data->mutex, 1, 1);

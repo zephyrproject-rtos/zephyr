@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf51822_qfaa.dtsi>
+#include <nordic/nrf51822_qfac.dtsi>
 #include "nrf51_ble400-pinctrl.dtsi"
 
 / {
@@ -30,6 +30,7 @@
 		led4 = &led4;
 		sw0 = &button0;
 		sw1 = &button1;
+		watchdog0 = &wdt0;
 	};
 
 	leds {

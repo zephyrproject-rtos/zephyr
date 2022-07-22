@@ -46,12 +46,12 @@
 	current-speed = <115200>;
 };
 
+/* disabled (used by Flash ROM by default) */
 &spi0 {
-	status = "okay";
-
 	reg = <0x10040000 0x1000 0x20000000 0x2000000>;
 	flash0: flash@0 {
 		compatible = "issi,is25wp256d", "jedec,spi-nor";
+		status = "disabled";
 		size = <33554432>;
 		label = "FLASH0";
 		jedec-id = [96 60 18];

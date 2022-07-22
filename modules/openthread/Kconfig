@@ -1,0 +1,19 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config OPENTHREAD
+	bool "OpenThread Support"
+	help
+	  This option enables the OpenThread library
+
+if OPENTHREAD
+
+menu "OpenThread stack features"
+rsource "Kconfig.features"
+endmenu
+
+menu "Thread Network configuration"
+rsource "Kconfig.thread"
+endmenu
+
+endif # OPENTHREAD

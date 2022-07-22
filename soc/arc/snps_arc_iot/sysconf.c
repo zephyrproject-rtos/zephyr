@@ -60,8 +60,9 @@ void arc_iot_pll_conf_reg(uint32_t val)
 	sysconf_reg_ptr->PLLCON = val | (1 << PLLCON_BIT_OFFSET_PLLRST);
 	sysconf_reg_ptr->PLLCON = val & (~(1 << PLLCON_BIT_OFFSET_PLLRST));
 
-	while (!(sysconf_reg_ptr->PLLSTAT & (1 << PLLSTAT_BIT_OFFSET_PLLSTB)))
+	while (!(sysconf_reg_ptr->PLLSTAT & (1 << PLLSTAT_BIT_OFFSET_PLLSTB))) {
 		;
+	}
 
 	sysconf_reg_ptr->CLKSEL = CLKSEL_PLL;
 	/* from AHB_CLK_DIVIDER, not from DVFSS&PMC */

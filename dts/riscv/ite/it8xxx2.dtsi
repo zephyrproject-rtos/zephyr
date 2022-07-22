@@ -491,8 +491,9 @@
 		};
 
 		intc: interrupt-controller@f03f00 {
-			#interrupt-cells = <2>;
 			compatible = "ite,it8xxx2-intc";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
 			interrupt-controller;
 			reg = <0x00f03f00 0x0100>;
 		};
@@ -1238,6 +1239,20 @@
 				   &wuc_wu37>; /* KSI[7] */
 			kso16-gpios = <&gpioc 3 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 			kso17-gpios = <&gpioc 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		};
+
+		usbpd0: usbpd@f03700 {
+			compatible = "ite,it8xxx2-usbpd";
+			reg = <0x00f03700 0x100>;
+			label = "USB_PD_PORT0";
+			status = "disabled";
+		};
+
+		usbpd1: usbpd@f03800 {
+			compatible = "ite,it8xxx2-usbpd";
+			reg = <0x00f03800 0x100>;
+			label = "USB_PD_PORT1";
+			status = "disabled";
 		};
 	};
 };

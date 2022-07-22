@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/drivers/syscon.h>
 
 /*
@@ -139,8 +139,9 @@ int cache_data_all(int op)
 	syscon_read_reg(dev, CACHE_FUNC_CTRL_REG, &ctrl);
 
 	/* enter critical section */
-	if (!k_is_in_isr())
+	if (!k_is_in_isr()) {
 		key = irq_lock();
+	}
 
 	ctrl &= ~DCACHE_CLEAN;
 	syscon_write_reg(dev, CACHE_FUNC_CTRL_REG, ctrl);
@@ -151,8 +152,9 @@ int cache_data_all(int op)
 	__DSB();
 
 	/* exit critical section */
-	if (!k_is_in_isr())
+	if (!k_is_in_isr()) {
 		irq_unlock(key);
+	}
 
 	return 0;
 }
@@ -171,8 +173,9 @@ int cache_data_range(void *addr, size_t size, int op)
 	}
 
 	/* enter critical section */
-	if (!k_is_in_isr())
+	if (!k_is_in_isr()) {
 		key = irq_lock();
+	}
 
 	n = get_n_cacheline((uint32_t)addr, size, &aligned_addr);
 
@@ -184,8 +187,9 @@ int cache_data_range(void *addr, size_t size, int op)
 	__DSB();
 
 	/* exit critical section */
-	if (!k_is_in_isr())
+	if (!k_is_in_isr()) {
 		irq_unlock(key);
+	}
 
 	return 0;
 }
@@ -201,8 +205,9 @@ int cache_instr_all(int op)
 	syscon_read_reg(dev, CACHE_FUNC_CTRL_REG, &ctrl);
 
 	/* enter critical section */
-	if (!k_is_in_isr())
+	if (!k_is_in_isr()) {
 		key = irq_lock();
+	}
 
 	ctrl &= ~ICACHE_CLEAN;
 	syscon_write_reg(dev, CACHE_FUNC_CTRL_REG, ctrl);
@@ -212,8 +217,9 @@ int cache_instr_all(int op)
 	__ISB();
 
 	/* exit critical section */
-	if (!k_is_in_isr())
+	if (!k_is_in_isr()) {
 		irq_unlock(key);
+	}
 
 	return 0;
 }
@@ -234,8 +240,9 @@ int cache_instr_range(void *addr, size_t size, int op)
 	n = get_n_cacheline((uint32_t)addr, size, &aligned_addr);
 
 	/* enter critical section */
-	if (!k_is_in_isr())
+	if (!k_is_in_isr()) {
 		key = irq_lock();
+	}
 
 	for (i = 0; i < n; i++) {
 		syscon_write_reg(dev, CACHE_INVALID_REG, 0);
@@ -245,8 +252,9 @@ int cache_instr_range(void *addr, size_t size, int op)
 	__DSB();
 
 	/* exit critical section */
-	if (!k_is_in_isr())
+	if (!k_is_in_isr()) {
 		irq_unlock(key);
+	}
 
 	return 0;
 }

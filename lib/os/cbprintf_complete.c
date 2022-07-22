@@ -905,7 +905,7 @@ static char *encode_float(double value,
 	 */
 	if (expo == BIT_MASK(EXPONENT_BITS)) {
 		if (fract == 0) {
-			if (isupper((int)c)) {
+			if (isupper((unsigned char)c)) {
 				*buf++ = 'I';
 				*buf++ = 'N';
 				*buf++ = 'F';
@@ -915,7 +915,7 @@ static char *encode_float(double value,
 				*buf++ = 'f';
 			}
 		} else {
-			if (isupper((int)c)) {
+			if (isupper((unsigned char)c)) {
 				*buf++ = 'N';
 				*buf++ = 'A';
 				*buf++ = 'N';
@@ -997,7 +997,7 @@ static char *encode_float(double value,
 		 * for a and X for A.
 		 */
 		struct conversion aconv = {
-			.specifier = isupper((int)c) ? 'X' : 'x',
+			.specifier = isupper((unsigned char)c) ? 'X' : 'x',
 		};
 		const char *spe = *bpe;
 		char *sp = bps + (spe - bps);
@@ -1783,7 +1783,7 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
 					OUTC(*cp++);
 				}
 			} else {
-				while (isdigit((int)*cp)) {
+				while (isdigit((unsigned char)*cp)) {
 					OUTC(*cp++);
 				}
 
@@ -1803,7 +1803,7 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
 						OUTC('0');
 					}
 				}
-				while (isdigit((int)*cp)) {
+				while (isdigit((unsigned char)*cp)) {
 					OUTC(*cp++);
 				}
 			}

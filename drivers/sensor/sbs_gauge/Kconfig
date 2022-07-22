@@ -3,6 +3,8 @@
 
 config SBS_GAUGE
 	bool "Smart Battery Fuel Gauge"
+	default y
+	depends on DT_HAS_SBS_SBS_GAUGE_ENABLED
 	depends on I2C
 	help
 	  Enable I2C-based/SMBus-based driver for a Smart Battery Fuel Gauge.

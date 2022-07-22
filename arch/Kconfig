@@ -155,10 +155,6 @@ module = ARCH
 module-str = arch
 source "subsys/logging/Kconfig.template.log_config"
 
-module = MPU
-module-str = mpu
-source "subsys/logging/Kconfig.template.log_config"
-
 config BIG_ENDIAN
 	bool
 	help
@@ -408,6 +404,35 @@ config GEN_IRQ_VECTOR_TABLE
 	  indexed by IRQ line. In the latter case, the vector table must be
 	  supplied by the application or architecture code.
 
+config ARCH_IRQ_VECTOR_TABLE_ALIGN
+	int "Alignment size of the interrupt vector table"
+	default 4
+	depends on GEN_IRQ_VECTOR_TABLE
+	help
+	  This option controls alignment size of generated
+	  _irq_vector_table.  Some architecture needs an IRQ vector table
+	  to be aligned to architecture specific size.  The default
+	  size is 0 for no alignment.
+
+choice IRQ_VECTOR_TABLE_TYPE
+	prompt "IRQ vector table type"
+	depends on GEN_IRQ_VECTOR_TABLE
+	default IRQ_VECTOR_TABLE_JUMP_BY_CODE if (RISCV && !RISCV_HAS_CLIC)
+	default IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS
+
+config IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS
+	bool "Jump by address"
+	help
+	  The IRQ vector table contains the address of the interrupt handler.
+
+config IRQ_VECTOR_TABLE_JUMP_BY_CODE
+	bool "Jump by code"
+	help
+	  The IRQ vector table contains the opcode of a jump instruction to the
+	  interrupt handler address.
+
+endchoice
+
 config GEN_SW_ISR_TABLE
 	bool "Generate a software ISR table"
 	default y
@@ -420,7 +445,7 @@ config GEN_SW_ISR_TABLE
 
 config ARCH_SW_ISR_TABLE_ALIGN
 	int "Alignment size of a software ISR table"
-	default 0
+	default 4
 	depends on GEN_SW_ISR_TABLE
 	help
 	  This option controls alignment size of generated
@@ -540,6 +565,11 @@ config ARCH_HAS_COHERENCE
 config ARCH_HAS_THREAD_LOCAL_STORAGE
 	bool
 
+config ARCH_HAS_SUSPEND_TO_RAM
+	bool
+	help
+	  When selected, the architecture supports suspend-to-RAM (S2RAM).
+
 #
 # Other architecture related options
 #
@@ -630,6 +660,10 @@ menuconfig MPU
 	  is enabled.
 
 if MPU
+module = MPU
+module-str = mpu
+source "subsys/logging/Kconfig.template.log_config"
+
 config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	bool
 	help

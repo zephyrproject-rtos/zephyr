@@ -397,7 +397,8 @@
 			compatible = "st,stm32-ospi";
 			reg = <0x44021000 0x400>;
 			interrupts = <76 0>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000100>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000100>,
+					<&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -635,7 +636,6 @@
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <110>;
 		ts-cal-vrefanalog = <3000>;
-		ts-cal-offset = <30>;
 		io-channels = <&adc1 17>;
 		status = "disabled";
 		label = "DIE_TEMP";

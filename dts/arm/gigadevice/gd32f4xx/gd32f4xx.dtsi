@@ -204,6 +204,39 @@
 			#size-cells = <0>;
 		};
 
+		adc0: adc@40012000 {
+			compatible = "gd,gd32-adc";
+			reg = <0x40012000 0x100>;
+			interrupts = <18 0>;
+			rcu-periph-clock = <0x1108>;
+			channels = <16>;
+			status = "disabled";
+			label = "ADC_0";
+			#io-channel-cells = <1>;
+		};
+
+		adc1: adc@40012100 {
+			compatible = "gd,gd32-adc";
+			reg = <0x40012100 0x100>;
+			interrupts = <18 0>;
+			rcu-periph-clock = <0x1109>;
+			channels = <16>;
+			status = "disabled";
+			label = "ADC_1";
+			#io-channel-cells = <1>;
+		};
+
+		adc2: adc@40012200 {
+			compatible = "gd,gd32-adc";
+			reg = <0x40012200 0x100>;
+			interrupts = <18 0>;
+			rcu-periph-clock = <0x110A>;
+			channels = <16>;
+			status = "disabled";
+			label = "ADC_2";
+			#io-channel-cells = <1>;
+		};
+
 		syscfg: syscfg@40013800 {
 			compatible = "gd,gd32-syscfg";
 			reg = <0x40013800 0x400>;

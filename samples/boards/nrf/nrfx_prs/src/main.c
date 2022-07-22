@@ -63,13 +63,13 @@ static bool init_buttons(void)
 	} btn_spec[] = {
 		{
 			GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios),
-			DT_PROP(DT_ALIAS(sw0), label),
+			DT_LABEL(DT_ALIAS(sw0)),
 			"trigger a transfer",
 			sw0_handler
 		},
 		{
 			GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpios),
-			DT_PROP(DT_ALIAS(sw1), label),
+			DT_LABEL(DT_ALIAS(sw1)),
 			"switch the type of peripheral",
 			sw1_handler
 		},
@@ -288,9 +288,7 @@ static bool background_transfer(const struct device *spi_dev)
 	static const uint8_t tx_buffer[] = "Nordic Semiconductor";
 	static uint8_t rx_buffer[sizeof(tx_buffer)];
 	static const struct spi_cs_control spi_dev_cs_ctrl = {
-		.gpio_dev = DEVICE_DT_GET(DT_GPIO_CTLR(SPI_DEV_NODE, cs_gpios)),
-		.gpio_pin = DT_GPIO_PIN(SPI_DEV_NODE, cs_gpios),
-		.gpio_dt_flags = DT_GPIO_FLAGS(SPI_DEV_NODE, cs_gpios)
+		.gpio = GPIO_DT_SPEC_GET(SPI_DEV_NODE, cs_gpios),
 	};
 	static const struct spi_config spi_dev_cfg = {
 		.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |
@@ -351,8 +349,7 @@ void main(void)
 	 */
 	BUILD_ASSERT(
 		DT_IRQ(SPIM_NODE, priority) == DT_IRQ(UARTE_NODE, priority),
-		"Interrupt priorities for " DT_LABEL(SPIM_NODE) " and "
-		DT_LABEL(UARTE_NODE) " need to be equal.");
+		"Interrupt priorities for SPIM_NODE and UARTE_NODE need to be equal.");
 	IRQ_CONNECT(DT_IRQN(SPIM_NODE), DT_IRQ(SPIM_NODE, priority),
 		    nrfx_isr, nrfx_prs_box_2_irq_handler, 0);
 

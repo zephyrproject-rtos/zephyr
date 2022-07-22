@@ -8,6 +8,7 @@ if(CONFIG_POSIX_API)
 endif()
 
 zephyr_library()
+zephyr_library_sources(perror.c)
 zephyr_library_sources(pthread_common.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC pthread_cond.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC pthread_mutex.c)

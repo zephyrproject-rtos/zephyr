@@ -41,11 +41,10 @@ static void trigger_handler(const struct device *dev,
 
 void main(void)
 {
-	const struct device *sensor = device_get_binding(DT_LABEL(DT_INST(0, honeywell_sm351lt)));
+	const struct device *sensor = DEVICE_DT_GET_ONE(honeywell_sm351lt);
 
-	if (sensor == NULL) {
-		printf("Could not get %s device\n",
-		       DT_LABEL(DT_INST(0, honeywell_sm351lt)));
+	if (!device_is_ready(sensor)) {
+		printk("Device %s is not ready\n", sensor->name);
 		return;
 	}
 

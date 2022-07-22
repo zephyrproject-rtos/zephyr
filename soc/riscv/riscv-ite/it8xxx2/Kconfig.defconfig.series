@@ -26,7 +26,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32768
 
 config SYS_CLOCK_TICKS_PER_SEC
-	default 8192
+	default 4096
 
 config UART_NS16550
 	default y

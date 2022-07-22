@@ -3,6 +3,8 @@
 
 menuconfig LIS2MDL
 	bool "LIS2MDL Magnetometer"
+	default y
+	depends on DT_HAS_ST_LIS2MDL_ENABLED
 	depends on I2C || SPI
 	select HAS_STMEMSC
 	select USE_STDC_LIS2MDL

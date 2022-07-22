@@ -22,6 +22,7 @@
 
 	aliases {
 		sw0 = &button1;
+		watchdog0 = &wdt0;
 	};
 
 	gpio_keys {
@@ -66,14 +67,14 @@ uext_spi: &spi2 {};
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	pinctrl-0 = <&uart0_tx_gpio1 &uart0_rx_gpio3>;
+	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 };
 
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
-	pinctrl-0 = <&uart1_tx_gpio4 &uart1_rx_gpio36>;
+	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
 };
 
@@ -82,14 +83,13 @@ uext_spi: &spi2 {};
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	sda-pin = <16>;
 	scl-pin = <13>;
-	pinctrl-0 = <&i2c0_scl_gpio16 &i2c0_sda_gpio13>;
+	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 };
 
 &spi2 {
 	status = "okay";
-	pinctrl-0 = <&spim2_miso_gpio15 &spim2_mosi_gpio2
-		     &spim2_sclk_gpio14 &spim2_csel_gpio17>;
+	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;

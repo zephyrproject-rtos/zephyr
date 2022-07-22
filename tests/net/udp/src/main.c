@@ -419,7 +419,7 @@ static void set_port(sa_family_t family, struct sockaddr *raddr,
 	}
 }
 
-void test_udp(void)
+ZTEST(udp_fn_tests, test_udp)
 {
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
 		k_thread_priority_set(k_current_get(),
@@ -671,9 +671,4 @@ void test_udp(void)
 	zassert_false(test_failed, "udp tests failed");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_udp_fn,
-		ztest_unit_test(test_udp));
-	ztest_run_test_suite(test_udp_fn);
-}
+ZTEST_SUITE(udp_fn_tests, NULL, NULL, NULL, NULL, NULL);

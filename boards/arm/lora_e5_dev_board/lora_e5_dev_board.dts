@@ -47,6 +47,7 @@
 		sw0 = &boot_button;
 		sw1 = &user_button;
 		lora0 = &lora;
+		watchdog0 = &iwdg;
 	};
 
 	pwr_3v3: pwr-3v3-ctrl {

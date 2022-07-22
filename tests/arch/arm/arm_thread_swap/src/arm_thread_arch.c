@@ -403,7 +403,7 @@ static void alt_thread_entry(void)
 		"Alternative thread: switch flag not false on thread exit\n");
 }
 
-void test_arm_thread_swap(void)
+ZTEST(arm_thread_swap, test_arm_thread_swap)
 {
 	int test_flag;
 

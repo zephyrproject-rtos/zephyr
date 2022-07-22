@@ -126,7 +126,7 @@ void isr0(const void *param)
  * 4. [isr0] Validate ISR 1 result token and return
  * 5. [thread] Validate ISR 0 result token
  */
-void test_nested_isr(void)
+ZTEST(interrupt_feature, test_nested_isr)
 {
 	/* Resolve test IRQ line numbers */
 #if defined(CONFIG_CPU_CORTEX_M)
@@ -154,7 +154,7 @@ void test_nested_isr(void)
 	zassert_equal(isr0_result, ISR0_TOKEN, "isr0 did not execute");
 }
 #else
-void test_nested_isr(void)
+ZTEST(interrupt_feature, test_nested_isr)
 {
 	ztest_test_skip();
 }

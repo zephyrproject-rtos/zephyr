@@ -98,7 +98,7 @@ static NPF_IFACE_UNMATCH(unmatch_iface_b, &dummy_iface_b);
 static NPF_RULE(accept_iface_a, NET_OK, match_iface_a);
 static NPF_RULE(accept_all_but_iface_b, NET_OK, unmatch_iface_b);
 
-static void test_npf_iface(void)
+static void *test_npf_iface(void)
 {
 	struct net_pkt *pkt_iface_a, *pkt_iface_b;
 
@@ -144,6 +144,8 @@ static void test_npf_iface(void)
 
 	net_pkt_unref(pkt_iface_a);
 	net_pkt_unref(pkt_iface_b);
+
+	return NULL;
 }
 
 /*
@@ -180,7 +182,7 @@ static void test_npf_example_common(void)
 	net_pkt_unref(pkt);
 }
 
-static void test_npf_example1(void)
+ZTEST(net_pkt_filter_test_suite, test_npf_example1)
 {
 	/* install filter rules */
 	npf_insert_recv_rule(&npf_default_drop);
@@ -203,7 +205,7 @@ static NPF_ETH_TYPE_UNMATCH(not_ip_packet, NET_ETH_PTYPE_IP);
 static NPF_RULE(reject_big_pkts, NET_DROP, minsize_201);
 static NPF_RULE(reject_non_ip, NET_DROP, not_ip_packet);
 
-static void test_npf_example2(void)
+ZTEST(net_pkt_filter_test_suite, test_npf_example2)
 {
 	/* install filter rules */
 	npf_append_recv_rule(&reject_big_pkts);
@@ -306,14 +308,10 @@ static void test_npf_eth_mac_addr_mask(void)
 	zassert_true(npf_remove_all_recv_rules(), "");
 }
 
-void test_main(void)
+ZTEST(net_pkt_filter_test_suite, test_npf_address_mask)
 {
-	ztest_test_suite(net_pkt_filter_test,
-			 ztest_unit_test(test_npf_iface),
-			 ztest_unit_test(test_npf_example1),
-			 ztest_unit_test(test_npf_example2),
-			 ztest_unit_test(test_npf_eth_mac_address),
-			 ztest_unit_test(test_npf_eth_mac_addr_mask));
-
-	ztest_run_test_suite(net_pkt_filter_test);
+	test_npf_eth_mac_address();
+	test_npf_eth_mac_addr_mask();
 }
+
+ZTEST_SUITE(net_pkt_filter_test_suite, NULL, test_npf_iface, NULL, NULL, NULL);

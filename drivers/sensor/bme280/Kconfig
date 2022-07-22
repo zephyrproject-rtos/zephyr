@@ -6,6 +6,8 @@
 
 menuconfig BME280
 	bool "BME280/BMP280 sensor"
+	default y
+	depends on DT_HAS_BOSCH_BME280_ENABLED
 	depends on I2C || SPI
 	help
 	  Enable driver for BME280 I2C-based or SPI-based temperature and pressure sensor.

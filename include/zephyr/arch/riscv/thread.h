@@ -60,6 +60,7 @@ struct _callee_saved {
 
 	ulong_t s0;	/* saved register/frame pointer */
 	ulong_t s1;	/* saved register */
+#if !defined(CONFIG_RISCV_ISA_RV32E)
 	ulong_t s2;	/* saved register */
 	ulong_t s3;	/* saved register */
 	ulong_t s4;	/* saved register */
@@ -70,6 +71,7 @@ struct _callee_saved {
 	ulong_t s9;	/* saved register */
 	ulong_t s10;	/* saved register */
 	ulong_t s11;	/* saved register */
+#endif
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	uint32_t fcsr;		/* Control and status register */

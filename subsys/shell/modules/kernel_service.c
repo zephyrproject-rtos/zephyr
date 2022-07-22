@@ -15,6 +15,10 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
+#include <stdlib.h>
+#if defined(CONFIG_LOG_RUNTIME_FILTERING)
+#include <zephyr/logging/log_ctrl.h>
+#endif
 
 static int cmd_kernel_version(const struct shell *shell,
 			      size_t argc, char **argv)
@@ -218,6 +222,62 @@ static int cmd_kernel_stacks(const struct shell *shell,
 }
 #endif
 
+static int cmd_kernel_sleep(const struct shell *sh,
+			    size_t argc, char **argv)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+
+	uint32_t ms;
+	int err = 0;
+
+	ms = shell_strtoul(argv[2], 10, &err);
+
+	if (!err) {
+		k_msleep(ms);
+	} else {
+		shell_error(sh, "Unable to parse input (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_LOG_RUNTIME_FILTERING)
+static int cmd_kernel_log_level_set(const struct shell *sh,
+				    size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+	int err = 0;
+
+	uint8_t severity = shell_strtoul(argv[2], 10, &err);
+
+	if (err) {
+		shell_error(sh, "Unable to parse log severity (err %d)", err);
+
+		return err;
+	}
+
+	if (severity > LOG_LEVEL_DBG) {
+		shell_error(sh, "Invalid log level: %d", severity);
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	int source_id = log_source_id_get(argv[1]);
+
+	/* log_filter_set() takes an int16_t for the source ID */
+	if (source_id < 0) {
+		shell_error(sh, "Unable to find log source: %s", argv[1]);
+	}
+
+	log_filter_set(NULL, 0, (int16_t)source_id, severity);
+
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_REBOOT)
 static int cmd_kernel_reboot_warm(const struct shell *shell,
 				  size_t argc, char **argv)
@@ -262,6 +322,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_kernel,
 #endif
 	SHELL_CMD(uptime, NULL, "Kernel uptime.", cmd_kernel_uptime),
 	SHELL_CMD(version, NULL, "Kernel version.", cmd_kernel_version),
+	SHELL_CMD_ARG(sleep, NULL, "ms", cmd_kernel_sleep, 2, 0),
+#if defined(CONFIG_LOG_RUNTIME_FILTERING)
+	SHELL_CMD_ARG(log-level, NULL, "<module name> <severity (0-4)>",
+		cmd_kernel_log_level_set, 3, 0),
+#endif
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

@@ -21,18 +21,9 @@
 
 LOG_MODULE_DECLARE(IIS2DH, CONFIG_SENSOR_LOG_LEVEL);
 
-static struct spi_config iis2dh_spi_conf = {
-	.frequency = DT_INST_PROP(0, spi_max_frequency),
-	.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-		      SPI_MODE_CPHA | SPI_WORD_SET(8)),
-	.slave     = DT_INST_REG_ADDR(0),
-	.cs        = NULL,
-};
-
-static int iis2dh_spi_read(struct iis2dh_data *ctx, uint8_t reg,
-			   uint8_t *data, uint16_t len)
+static int iis2dh_spi_read(const struct device *dev, uint8_t reg, uint8_t *data, uint16_t len)
 {
-	struct spi_config *spi_cfg = &iis2dh_spi_conf;
+	const struct iis2dh_device_config *config = dev->config;
 	uint8_t buffer_tx[2] = { reg | IIS2DH_SPI_READM, 0 };
 	const struct spi_buf tx_buf = {
 			.buf = buffer_tx,
@@ -57,17 +48,16 @@ static int iis2dh_spi_read(struct iis2dh_data *ctx, uint8_t reg,
 		.count = 2
 	};
 
-	if (spi_transceive(ctx->bus, spi_cfg, &tx, &rx)) {
+	if (spi_transceive_dt(&config->spi, &tx, &rx)) {
 		return -EIO;
 	}
 
 	return 0;
 }
 
-static int iis2dh_spi_write(struct iis2dh_data *ctx, uint8_t reg,
-			    uint8_t *data, uint16_t len)
+static int iis2dh_spi_write(const struct device *dev, uint8_t reg, uint8_t *data, uint16_t len)
 {
-	struct spi_config *spi_cfg = &iis2dh_spi_conf;
+	const struct iis2dh_device_config *config = dev->config;
 	uint8_t buffer_tx[1] = { reg | IIS2DH_SPI_WRITEM };
 	const struct spi_buf tx_buf[2] = {
 		{
@@ -85,7 +75,7 @@ static int iis2dh_spi_write(struct iis2dh_data *ctx, uint8_t reg,
 	};
 
 
-	if (spi_write(ctx->bus, spi_cfg, &tx)) {
+	if (spi_write_dt(&config->spi, &tx)) {
 		return -EIO;
 	}
 
@@ -100,28 +90,15 @@ stmdev_ctx_t iis2dh_spi_ctx = {
 int iis2dh_spi_init(const struct device *dev)
 {
 	struct iis2dh_data *data = dev->data;
+	const struct iis2dh_device_config *config = dev->config;
 
-	data->ctx = &iis2dh_spi_ctx;
-	data->ctx->handle = data;
-
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	/* handle SPI CS thru GPIO if it is the case */
-	data->cs_ctrl.gpio_dev = device_get_binding(
-		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	if (!data->cs_ctrl.gpio_dev) {
-		LOG_ERR("Unable to get GPIO SPI CS device");
+	if (!spi_is_ready(&config->spi)) {
+		LOG_ERR("Bus device is not ready");
 		return -ENODEV;
 	}
 
-	data->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
-	data->cs_ctrl.delay = 0U;
-
-	iis2dh_spi_conf.cs = &data->cs_ctrl;
-
-	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		    DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-		    DT_INST_SPI_DEV_CS_GPIOS_PIN(0));
-#endif
+	data->ctx = &iis2dh_spi_ctx;
+	data->ctx->handle = (void *)dev;
 
 	return 0;
 }

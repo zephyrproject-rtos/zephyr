@@ -68,7 +68,7 @@ static int comp_data_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int state_status_u8(struct bt_mesh_model *model,
+static uint8_t state_status_u8(struct bt_mesh_model *model,
 			   struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf,
 			   uint32_t expect_status)
@@ -77,8 +77,8 @@ static int state_status_u8(struct bt_mesh_model *model,
 	uint8_t status;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
-	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
+			ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
+			bt_hex(buf->data, buf->len));
 
 	status = net_buf_simple_pull_u8(buf);
 
@@ -91,41 +91,69 @@ static int state_status_u8(struct bt_mesh_model *model,
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
-	return 0;
+
+	return status;
 }
 
 static int beacon_status(struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
-	return state_status_u8(model, ctx, buf, OP_BEACON_STATUS);
+	uint8_t status;
+
+	status = state_status_u8(model, ctx, buf, OP_BEACON_STATUS);
+
+	if (cli->cb && cli->cb->beacon_status) {
+		cli->cb->beacon_status(cli, ctx->addr, status);
+	}
+
+	return 0;
 }
 
 static int ttl_status(struct bt_mesh_model *model,
 		      struct bt_mesh_msg_ctx *ctx,
 		      struct net_buf_simple *buf)
 {
-	return state_status_u8(model, ctx, buf, OP_DEFAULT_TTL_STATUS);
+	uint8_t status;
+
+	status = state_status_u8(model, ctx, buf, OP_DEFAULT_TTL_STATUS);
+
+	if (cli->cb && cli->cb->ttl_status) {
+		cli->cb->ttl_status(cli, ctx->addr, status);
+	}
+
+	return 0;
 }
 
 static int friend_status(struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
-	return state_status_u8(model, ctx, buf, OP_FRIEND_STATUS);
+	uint8_t status;
+
+	status = state_status_u8(model, ctx, buf, OP_FRIEND_STATUS);
+
+	if (cli->cb && cli->cb->friend_status) {
+		cli->cb->friend_status(cli, ctx->addr, status);
+	}
+
+	return 0;
 }
 
 static int gatt_proxy_status(struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
-	return state_status_u8(model, ctx, buf, OP_GATT_PROXY_STATUS);
-}
 
-static int transmit_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
-			   struct net_buf_simple *buf)
-{
-	return state_status_u8(model, ctx, buf, OP_NET_TRANSMIT_STATUS);
+	uint8_t status;
+
+	status = state_status_u8(model, ctx, buf, OP_GATT_PROXY_STATUS);
+
+	if (cli->cb && cli->cb->gatt_proxy_status) {
+		cli->cb->gatt_proxy_status(cli, ctx->addr, status);
+	}
+
+	return 0;
 }
 
 struct krp_param {
@@ -201,6 +229,10 @@ static int relay_status(struct bt_mesh_model *model,
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
 
+	if (cli->cb && cli->cb->relay_status) {
+		cli->cb->relay_status(cli, ctx->addr, status, transmit);
+	}
+
 	return 0;
 }
 
@@ -208,7 +240,15 @@ static int net_transmit_status(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
-	return state_status_u8(model, ctx, buf, OP_NET_TRANSMIT_STATUS);
+	uint8_t status;
+
+	status = state_status_u8(model, ctx, buf, OP_NET_TRANSMIT_STATUS);
+
+	if (cli->cb && cli->cb->network_transmit_status) {
+		cli->cb->network_transmit_status(cli, ctx->addr, status);
+	}
+
+	return 0;
 }
 
 struct net_key_param {
@@ -223,6 +263,7 @@ static int net_key_status(struct bt_mesh_model *model,
 	struct net_key_param *param;
 	uint16_t net_idx;
 	uint8_t status;
+	int err;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -236,7 +277,8 @@ static int net_key_status(struct bt_mesh_model *model,
 
 		if (param->net_idx != net_idx) {
 			BT_WARN("Net Key Status key index does not match");
-			return -ENOENT;
+			err = -ENOENT;
+			goto done;
 		}
 
 		if (param->status) {
@@ -245,7 +287,15 @@ static int net_key_status(struct bt_mesh_model *model,
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
-	return 0;
+
+	err = 0;
+
+done:
+	if (cli->cb && cli->cb->net_key_status) {
+		cli->cb->net_key_status(cli, ctx->addr, status, net_idx);
+	}
+
+	return err;
 }
 
 struct net_key_list_param {
@@ -311,6 +361,11 @@ static int node_reset_status(struct bt_mesh_model *model,
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
+
+	if (cli->cb && cli->cb->node_reset_status) {
+		cli->cb->node_reset_status(cli, ctx->addr);
+	}
+
 	return 0;
 }
 
@@ -327,6 +382,7 @@ static int app_key_status(struct bt_mesh_model *model,
 	struct app_key_param *param;
 	uint16_t net_idx, app_idx;
 	uint8_t status;
+	int err;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -340,7 +396,8 @@ static int app_key_status(struct bt_mesh_model *model,
 
 		if (param->net_idx != net_idx || param->app_idx != app_idx) {
 			BT_WARN("App Key Status key indices did not match");
-			return -ENOENT;
+			err = -ENOENT;
+			goto done;
 		}
 
 		if (param->status) {
@@ -349,7 +406,16 @@ static int app_key_status(struct bt_mesh_model *model,
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
-	return 0;
+
+	err = 0;
+
+done:
+	if (cli->cb && cli->cb->app_key_status) {
+		cli->cb->app_key_status(cli, ctx->addr, status, net_idx,
+					app_idx);
+	}
+
+	return err;
 }
 
 struct app_key_list_param {
@@ -422,6 +488,7 @@ static int mod_app_status(struct bt_mesh_model *model,
 	struct mod_app_param *param;
 	uint16_t elem_addr, mod_app_idx, mod_id, cid;
 	uint8_t status;
+	int err;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -451,7 +518,8 @@ static int mod_app_status(struct bt_mesh_model *model,
 		    param->mod_app_idx != mod_app_idx ||
 		    param->mod_id != mod_id || param->cid != cid) {
 			BT_WARN("Model App Status parameters did not match");
-			return -ENOENT;
+			err = -ENOENT;
+			goto done;
 		}
 
 		if (param->status) {
@@ -460,7 +528,16 @@ static int mod_app_status(struct bt_mesh_model *model,
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
-	return 0;
+
+	err = 0;
+
+done:
+	if (cli->cb && cli->cb->mod_app_status) {
+		cli->cb->mod_app_status(cli, ctx->addr, status, elem_addr,
+					mod_app_idx, (cid << 16) | mod_id);
+	}
+
+	return err;
 }
 
 struct mod_member_list_param {
@@ -634,6 +711,7 @@ static int mod_sub_status(struct bt_mesh_model *model,
 	struct mod_sub_param *param;
 	uint16_t elem_addr, sub_addr, mod_id, cid;
 	uint8_t status;
+	int err = 0;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -662,7 +740,8 @@ static int mod_sub_status(struct bt_mesh_model *model,
 		    (param->expect_sub && *param->expect_sub != sub_addr) ||
 		    param->cid != cid) {
 			BT_WARN("Model Subscription Status parameters did not match");
-			return -ENOENT;
+			err = -ENOENT;
+			goto done;
 		}
 
 		if (param->sub_addr) {
@@ -675,7 +754,14 @@ static int mod_sub_status(struct bt_mesh_model *model,
 
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
-	return 0;
+
+done:
+	if (cli->cb && cli->cb->mod_sub_status) {
+		cli->cb->mod_sub_status(cli, ctx->addr, status, elem_addr,
+				sub_addr, (cid << 16) | mod_id);
+	}
+
+	return err;
 }
 
 static int mod_sub_list(struct bt_mesh_model *model,
@@ -814,6 +900,11 @@ static int node_identity_status(struct bt_mesh_model *model,
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
 
+	if (cli->cb && cli->cb->node_identity_status) {
+		cli->cb->node_identity_status(cli, ctx->addr, status,
+					      net_idx, identity);
+	}
+
 	return 0;
 }
 
@@ -828,6 +919,7 @@ static int lpn_timeout_status(struct bt_mesh_model *model, struct bt_mesh_msg_ct
 	struct lpn_timeout_param *param;
 	uint16_t unicast_addr;
 	int32_t polltimeout;
+	int err;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -839,7 +931,8 @@ static int lpn_timeout_status(struct bt_mesh_model *model, struct bt_mesh_msg_ct
 	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_LPN_TIMEOUT_STATUS, ctx->addr,
 				       (void **)&param)) {
 		if (param->unicast_addr != unicast_addr) {
-			return -ENOENT;
+			err = -ENOENT;
+			goto done;
 		}
 
 		if (param->polltimeout) {
@@ -849,7 +942,15 @@ static int lpn_timeout_status(struct bt_mesh_model *model, struct bt_mesh_msg_ct
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
 
-	return 0;
+	err = 0;
+
+done:
+	if (cli->cb && cli->cb->lpn_timeout_status) {
+		cli->cb->lpn_timeout_status(cli, ctx->addr, unicast_addr,
+					    polltimeout);
+	}
+
+	return err;
 }
 
 const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
@@ -876,7 +977,6 @@ const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 	{ OP_NODE_RESET_STATUS,      BT_MESH_LEN_EXACT(0),    node_reset_status },
 	{ OP_NODE_IDENTITY_STATUS,   BT_MESH_LEN_EXACT(4),    node_identity_status},
 	{ OP_LPN_TIMEOUT_STATUS,     BT_MESH_LEN_EXACT(5),    lpn_timeout_status },
-	{ OP_NET_TRANSMIT_STATUS,    BT_MESH_LEN_EXACT(1),    transmit_status},
 	{ OP_KRP_STATUS,             BT_MESH_LEN_EXACT(4),    krp_status},
 	BT_MESH_MODEL_OP_END,
 };

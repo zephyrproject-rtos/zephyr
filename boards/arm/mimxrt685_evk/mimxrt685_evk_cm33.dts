@@ -30,6 +30,7 @@
 		blue-pwm-led = &blue_pwm_led;
 		red-pwm-led = &red_pwm_led;
 		watchdog0 = &wwdt0;
+		magn0 = &fxos8700;
 	};
 
 	chosen {
@@ -165,7 +166,7 @@ arduino_i2c: &flexcomm2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	fxos8700@1e {
+	fxos8700: fxos8700@1e {
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
 		label = "FXOS8700";

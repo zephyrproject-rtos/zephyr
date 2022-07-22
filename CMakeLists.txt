@@ -255,7 +255,8 @@ zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${AUTOCONF_H}
 
 if(NOT CONFIG_PICOLIBC)
   # @Intent: Set compiler specific flag for bare metal freestanding option
-  zephyr_compile_options($<TARGET_PROPERTY:compiler,freestanding>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,freestanding>>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:compiler,freestanding>>)
 endif()
 
 # @Intent: Set compiler specific flag for tentative definitions, no-common
@@ -613,7 +614,7 @@ endif()
 execute_process(
   COMMAND
   ${PYTHON_EXECUTABLE}
-  ${ZEPHYR_BASE}/scripts/subfolder_list.py
+  ${ZEPHYR_BASE}/scripts/build/subfolder_list.py
   --directory        ${ZEPHYR_BASE}/include      # Walk this directory
   --out-file         ${syscalls_subdirs_txt}     # Write file with discovered folder
   --trigger          ${syscalls_subdirs_trigger} # Trigger file that is used for json generation
@@ -646,7 +647,7 @@ else()
     ${syscalls_subdirs_trigger}
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/subfolder_list.py
+    ${ZEPHYR_BASE}/scripts/build/subfolder_list.py
     --directory        ${ZEPHYR_BASE}/include      # Walk this directory
     --out-file         ${syscalls_subdirs_txt}     # Write file with discovered folder
     --trigger          ${syscalls_subdirs_trigger} # Trigger file that is used for json generation
@@ -687,7 +688,7 @@ add_custom_command(
   ${struct_tags_json}
   COMMAND
   ${PYTHON_EXECUTABLE}
-  ${ZEPHYR_BASE}/scripts/parse_syscalls.py
+  ${ZEPHYR_BASE}/scripts/build/parse_syscalls.py
    --include          ${ZEPHYR_BASE}/include        # Read files from this dir
    --include          ${ZEPHYR_BASE}/drivers        # For net sockets
    --include          ${ZEPHYR_BASE}/subsys/net     # More net sockets
@@ -733,7 +734,7 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   # Also, some files are written to include/generated/syscalls/
   COMMAND
   ${PYTHON_EXECUTABLE}
-  ${ZEPHYR_BASE}/scripts/gen_syscalls.py
+  ${ZEPHYR_BASE}/scripts/build/gen_syscalls.py
   --json-file        ${syscalls_json}                     # Read this file
   --base-output      include/generated/syscalls           # Write to this dir
   --syscall-dispatch include/generated/syscall_dispatch.c # Write this file
@@ -752,12 +753,12 @@ add_custom_command(
   OUTPUT ${DRV_VALIDATION}
   COMMAND
   ${PYTHON_EXECUTABLE}
-  ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
+  ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py
   --validation-output ${DRV_VALIDATION}
   ${gen_kobject_list_include_args}
   $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
   DEPENDS
-  ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
+  ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py
   ${PARSE_SYSCALLS_TARGET}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
@@ -796,7 +797,7 @@ add_dependencies(zephyr_interface
 
 add_custom_command(
   OUTPUT ${OFFSETS_H_PATH}
-  COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/gen_offset_header.py
+  COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/gen_offset_header.py
   -i $<TARGET_OBJECTS:${OFFSETS_LIB}>
   -o ${OFFSETS_H_PATH}
   DEPENDS
@@ -868,7 +869,7 @@ if(CONFIG_HAS_DTS)
     OUTPUT dev_handles.c
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/gen_handles.py
+    ${ZEPHYR_BASE}/scripts/build/gen_handles.py
     --output-source dev_handles.c
     --num-dynamic-devices ${number_of_dynamic_devices}
     --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
@@ -894,8 +895,8 @@ if(CONFIG_USERSPACE)
          NO_COVERAGE_FLAGS "${compiler_flags_priv}"
   )
 
-  set(GEN_KOBJ_LIST ${ZEPHYR_BASE}/scripts/gen_kobject_list.py)
-  set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/process_gperf.py)
+  set(GEN_KOBJ_LIST ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py)
+  set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/build/process_gperf.py)
 endif()
 
 get_property(CSTD GLOBAL PROPERTY CSTD)
@@ -950,7 +951,7 @@ if(CONFIG_USERSPACE)
   add_custom_command(
     OUTPUT ${APP_SMEM_UNALIGNED_LD} ${APP_SMEM_PINNED_UNALIGNED_LD}
     COMMAND ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
+    ${ZEPHYR_BASE}/scripts/build/gen_app_partitions.py
     -f ${CMAKE_BINARY_DIR}/compile_commands.json
     -o ${APP_SMEM_UNALIGNED_LD}
     $<$<BOOL:${APP_SMEM_PINNED_UNALIGNED_LD}>:--pinoutput=${APP_SMEM_PINNED_UNALIGNED_LD}>
@@ -988,7 +989,7 @@ if (CONFIG_USERSPACE)
   add_custom_command(
     OUTPUT ${APP_SMEM_ALIGNED_LD} ${APP_SMEM_PINNED_ALIGNED_LD}
     COMMAND ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
+    ${ZEPHYR_BASE}/scripts/build/gen_app_partitions.py
     -e $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
     -o ${APP_SMEM_ALIGNED_LD}
     $<$<BOOL:${APP_SMEM_PINNED_ALIGNED_LD}>:--pinoutput=${APP_SMEM_PINNED_ALIGNED_LD}>
@@ -1095,7 +1096,7 @@ if(CONFIG_USERSPACE)
     OUTPUT ${KOBJECT_LINKER_HEADER_DATA}
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/gen_kobject_placeholders.py
+    ${ZEPHYR_BASE}/scripts/build/gen_kobject_placeholders.py
     --object $<TARGET_OBJECTS:kobj_prebuilt_hash_output_lib>
     --outdir ${PROJECT_BINARY_DIR}/include/generated
     --datapct ${CONFIG_KOBJECT_DATA_AREA_RESERVE_EXTRA_PERCENT}
@@ -1180,7 +1181,7 @@ if(CONFIG_GEN_ISR_TABLES)
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>isrList.bin
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
     COMMAND ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/arch/common/gen_isr_tables.py
+    ${ZEPHYR_BASE}/scripts/build/gen_isr_tables.py
     --output-source isr_tables.c
     --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
     --intlist isrList.bin
@@ -1554,7 +1555,7 @@ if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
 
   list(APPEND
     post_build_commands
-    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/uf2conv.py
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/uf2conv.py
             -c
             -f ${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}
             -b ${flash_addr}
@@ -1641,6 +1642,21 @@ if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
     )
 endif()
 
+if(CONFIG_OUTPUT_SYMBOLS)
+  list(APPEND
+    post_build_commands
+    COMMAND $<TARGET_PROPERTY:bintools,symbols_command>
+            $<TARGET_PROPERTY:bintools,symbols_flag>
+            $<TARGET_PROPERTY:bintools,symbols_infile>${KERNEL_ELF_NAME}
+            $<TARGET_PROPERTY:bintools,symbols_outfile>${KERNEL_SYMBOLS_NAME}
+            $<TARGET_PROPERTY:bintools,symbols_final>
+    )
+  list(APPEND
+    post_build_byproducts
+    ${KERNEL_SYMBOLS_NAME}
+    )
+endif()
+
 if(CONFIG_OUTPUT_STAT)
 #  zephyr_post_build(TOOLS bintools COMMAND readelf FLAGS headers INFILE file OUTFILE outfile)
   list(APPEND
@@ -1689,7 +1705,7 @@ endif()
 if(CONFIG_BUILD_OUTPUT_INFO_HEADER)
   list(APPEND
     post_build_commands
-    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/gen_image_info.py
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/gen_image_info.py
     --elf-file=${KERNEL_ELF_NAME}
     --header-file=${PROJECT_BINARY_DIR}/include/public/zephyr_image_info.h
     $<$<BOOL:${adjustment}>:--adjusted-lma=${adjustment}>
@@ -1775,7 +1791,7 @@ if(HEX_FILES_TO_MERGE)
     OUTPUT ${MERGED_HEX_NAME}
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/mergehex.py
+    ${ZEPHYR_BASE}/scripts/build/mergehex.py
     -o ${MERGED_HEX_NAME}
     ${HEX_FILES_TO_MERGE}
     DEPENDS ${HEX_FILES_TO_MERGE} ${logical_target_for_zephyr_elf}
@@ -1835,8 +1851,6 @@ if(CONFIG_SOC_DEPRECATED_RELEASE)
       removed in version ${CONFIG_SOC_DEPRECATED_RELEASE}"
   )
 endif()
-
-include(modules/deprecation_warnings.cmake)
 
 # In CMake projects, 'CMAKE_BUILD_TYPE' usually determines the
 # optimization flag, but in Zephyr it is determined through

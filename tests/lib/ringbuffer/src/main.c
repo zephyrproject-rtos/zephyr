@@ -545,20 +545,17 @@ void test_ringbuffer_alloc_put(void)
 	uint8_t inputbuf[] = {1, 2, 3, 4};
 	uint32_t read_size;
 	uint32_t allocated;
-	uint32_t sum_allocated;
 	uint8_t *data;
 	int err;
 
 	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE, ringbuf_raw.buffer);
 
 	allocated = ring_buf_put_claim(&ringbuf_raw, &data, 1);
-	sum_allocated = allocated;
 	zassert_true(allocated == 1U, NULL);
 
 
 	allocated = ring_buf_put_claim(&ringbuf_raw, &data,
 					   RINGBUFFER_SIZE - 1);
-	sum_allocated += allocated;
 	zassert_true(allocated == RINGBUFFER_SIZE - 1, NULL);
 
 	/* Putting too much returns error */
@@ -867,16 +864,16 @@ void test_ringbuffer_partial_putting(void)
 		zassert_equal(req_len, len, NULL);
 
 		req_len = 2;
-		len = ring_buf_put_claim(&ringbuf_raw, &ptr, 2);
-		zassert_equal(len, 2, NULL);
-
-		len = ring_buf_put_claim(&ringbuf_raw, &ptr, RINGBUFFER_SIZE);
-		len2 = ring_buf_put_claim(&ringbuf_raw, &ptr, RINGBUFFER_SIZE);
-		zassert_equal(len + len2, RINGBUFFER_SIZE - 2, NULL);
-
-		ring_buf_put_finish(&ringbuf_raw, RINGBUFFER_SIZE);
+		len = ring_buf_put_claim(&ringbuf_raw, &ptr, req_len);
+		zassert_equal(len, req_len, NULL);
 
 		req_len = RINGBUFFER_SIZE;
+		len = ring_buf_put_claim(&ringbuf_raw, &ptr, req_len);
+		len2 = ring_buf_put_claim(&ringbuf_raw, &ptr, req_len);
+		zassert_equal(len + len2, req_len - 2, NULL);
+
+		ring_buf_put_finish(&ringbuf_raw, req_len);
+
 		len = ring_buf_get(&ringbuf_raw, indata, req_len);
 		zassert_equal(len, req_len, NULL);
 	}

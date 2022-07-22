@@ -12,9 +12,8 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
-
-#define ISL29035_I2C_ADDRESS		DT_INST_REG_ADDR(0)
 
 #define ISL29035_COMMAND_I_REG		0x00
 #define ISL29035_OPMODE_SHIFT		5
@@ -111,12 +110,10 @@
 	(ISL29035_INT_PRST_IDX << ISL29035_INT_PRST_SHIFT)
 
 struct isl29035_driver_data {
-	const struct device *i2c;
 	uint16_t data_sample;
 
 #if CONFIG_ISL29035_TRIGGER
 	const struct device *dev;
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger th_trigger;
@@ -131,6 +128,13 @@ struct isl29035_driver_data {
 #endif
 
 #endif /* CONFIG_ISL29035_TRIGGER */
+};
+
+struct isl29035_config {
+	struct i2c_dt_spec i2c;
+#if CONFIG_ISL29035_TRIGGER
+	struct gpio_dt_spec int_gpio;
+#endif
 };
 
 #ifdef CONFIG_ISL29035_TRIGGER

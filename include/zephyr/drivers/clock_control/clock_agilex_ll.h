@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021, Intel Corporation. All rights reserved.
+ * Copyright (c) 2019-2022, Intel Corporation. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -116,10 +116,6 @@
 #define CLKMGR_VCOCALIB_MSCNT_SET(x)		(((x) << 16) & 0x00ff0000)
 
 #define CLKMGR_CLR_LOSTLOCK_BYPASS		0x20000000
-
-struct clock_attr {
-	uint32_t clock_id;
-};
 
 void config_clkmgr_handoff(struct handoff *hoff_ptr);
 uint32_t get_mpu_clk(void);

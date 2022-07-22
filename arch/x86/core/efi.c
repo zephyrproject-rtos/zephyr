@@ -8,6 +8,8 @@
 #include <zephyr/arch/x86/efi.h>
 #include <zephyr/sys/mem_manage.h>
 #include "../zefi/efi.h" /* ZEFI not on include path */
+#include <zephyr/kernel.h>
+#include <kernel_arch_func.h>
 
 #define EFI_CON_BUFSZ 128
 
@@ -86,6 +88,12 @@ static uint64_t efi_call(void *fn, uint64_t arg1, uint64_t arg2)
 {
 	void *stack_top = &efi_stack[ARRAY_SIZE(efi_stack) - 4];
 
+	/* During the efi_call window the interrupt is enabled, that
+	 * means an interrupt could happen and trigger scheduler at
+	 * end of the interrupt. Try to prevent swap happening.
+	 */
+	k_sched_lock();
+
 	__asm__ volatile("movq %%cr3, %%r12;" /* save zephyr page table */
 			 "movq %%rsp, %%r13;" /* save stack pointer */
 			 "movq %%rsi, %%rsp;" /* set stack */
@@ -98,6 +106,7 @@ static uint64_t efi_call(void *fn, uint64_t arg1, uint64_t arg2)
 			 : "c"(arg1), "d"(arg2), "S"(stack_top), "D"(efi->efi_cr3)
 			 : "r8", "r9", "r10", "r11", "r12", "r13");
 
+	k_sched_unlock();
 	return (uint64_t) fn;
 }
 
@@ -109,6 +118,15 @@ int efi_console_putchar(int c)
 	static void *conout;
 	static void *output_string_fn;
 	struct efi_system_table *efist = efi->efi_systab;
+
+	/* Limit the printk call in interrupt context for
+	 * EFI cosnsole. This is a workaround that prevents
+	 * the printk call re-entries when an interrupt
+	 * happens during the EFI call window.
+	 */
+	if (arch_is_in_isr()) {
+		return 0;
+	}
 
 	if (c == '\n') {
 		efi_console_putchar('\r');

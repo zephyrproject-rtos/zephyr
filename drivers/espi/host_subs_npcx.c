@@ -631,7 +631,7 @@ void host_c2h_write_io_cfg_reg(uint8_t reg_index, uint8_t reg_data)
 	struct c2h_reg *const inst_c2h = host_sub_cfg.inst_c2h;
 
 	/* Disable interrupts */
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	/* Lock host access EC configuration registers (0x4E/0x4F) */
 	inst_c2h->LKSIOHA |= BIT(NPCX_LKSIOHA_LKCFG);
@@ -675,7 +675,7 @@ uint8_t host_c2h_read_io_cfg_reg(uint8_t reg_index)
 	uint8_t data_val;
 
 	/* Disable interrupts */
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	/* Lock host access EC configuration registers (0x4E/0x4F) */
 	inst_c2h->LKSIOHA |= BIT(NPCX_LKSIOHA_LKCFG);
@@ -809,10 +809,11 @@ int npcx_host_periph_write_request(enum lpc_peripheral_opcode op,
 			!IS_BIT_SET(inst_kbc->HICTRL, NPCX_HICTRL_OBFMIE)) {
 			return -ENOTSUP;
 		}
-		if (data)
+		if (data) {
 			LOG_INF("%s: op 0x%x data %x", __func__, op, *data);
-		else
+		} else {
 			LOG_INF("%s: op 0x%x only", __func__, op);
+		}
 
 		switch (op) {
 		case E8042_WRITE_KB_CHAR:
@@ -1010,8 +1011,9 @@ int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 
 		ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
 				&host_sub_cfg.clks_list[i]);
-		if (ret < 0)
+		if (ret < 0) {
 			return ret;
+		}
 	}
 
 	/* Configure EC legacy configuration IO base address to 0x4E. */

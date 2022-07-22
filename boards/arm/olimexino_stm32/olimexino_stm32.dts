@@ -51,6 +51,8 @@
 		led0 = &green_led_1;
 		led1 = &yellow_led_2;
 		sw0 = &user_button;
+		sdhc0 = &sdhc0;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -128,7 +130,6 @@ uext_serial: &usart1 {};
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
 		status = "okay";
-		label = "SDHC_0";
 		spi-max-frequency = <24000000>;
 		mmc {
 			compatible = "zephyr,sdmmc-disk";

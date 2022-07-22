@@ -155,7 +155,7 @@ static void process_log_msg(const struct shell *sh,
 			     union log_msg_generic *msg,
 			     bool locked, bool colors)
 {
-	unsigned int key;
+	unsigned int key = 0;
 	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL |
 		      LOG_OUTPUT_FLAG_TIMESTAMP |
 		      LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
@@ -165,7 +165,17 @@ static void process_log_msg(const struct shell *sh,
 	}
 
 	if (locked) {
-		key = irq_lock();
+		/*
+		 * If running in the thread context, lock the shell mutex to synchronize with
+		 * messages printed on the shell thread. In the ISR context, using a mutex is
+		 * forbidden so use the IRQ lock to at least synchronize log messages printed
+		 * in different contexts.
+		 */
+		if (k_is_in_isr()) {
+			key = irq_lock();
+		} else {
+			k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
+		}
 		if (!z_flag_cmd_ctx_get(sh)) {
 			z_shell_cmd_line_erase(sh);
 		}
@@ -177,7 +187,11 @@ static void process_log_msg(const struct shell *sh,
 		if (!z_flag_cmd_ctx_get(sh)) {
 			z_shell_print_prompt_and_cmd(sh);
 		}
-		irq_unlock(key);
+		if (k_is_in_isr()) {
+			irq_unlock(key);
+		} else {
+			k_mutex_unlock(&sh->ctx->wr_mtx);
+		}
 	}
 }
 

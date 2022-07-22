@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for 1-Wire masters
+
+include: base.yaml
+
+bus: w1

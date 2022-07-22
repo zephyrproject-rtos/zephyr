@@ -212,7 +212,7 @@ static int i2c_it8xxx2_configure(const struct device *dev,
 	struct i2c_it8xxx2_data *const data = dev->data;
 	uint32_t freq_set;
 
-	if (!(I2C_MODE_MASTER & dev_config_raw)) {
+	if (!(I2C_MODE_CONTROLLER & dev_config_raw)) {
 		return -EINVAL;
 	}
 
@@ -266,7 +266,7 @@ static int i2c_it8xxx2_get_config(const struct device *dev,
 		return -ERANGE;
 	}
 
-	*dev_config = (I2C_MODE_MASTER | speed);
+	*dev_config = (I2C_MODE_CONTROLLER | speed);
 
 	return 0;
 }
@@ -656,7 +656,7 @@ static int i2c_it8xxx2_init(const struct device *dev)
 		bitrate_cfg = I2C_SPEED_DT << I2C_SPEED_SHIFT;
 	}
 
-	error = i2c_it8xxx2_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
+	error = i2c_it8xxx2_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	data->i2ccs = I2C_CH_NORMAL;
 
 	if (error) {

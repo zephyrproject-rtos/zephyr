@@ -26,6 +26,7 @@ struct spi_nrfx_data {
 struct spi_nrfx_config {
 	nrfx_spi_t	  spi;
 	nrfx_spi_config_t def_config;
+	void (*irq_connect)(void);
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
 #endif
@@ -316,12 +317,36 @@ static int spi_nrfx_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
+static int spi_nrfx_init(const struct device *dev)
+{
+	const struct spi_nrfx_config *dev_config = dev->config;
+	struct spi_nrfx_data *dev_data = dev->data;
+	int err;
+
+#ifdef CONFIG_PINCTRL
+	err = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		return err;
+	}
+#endif
+
+	dev_config->irq_connect();
+
+	err = spi_context_cs_configure_all(&dev_data->ctx);
+	if (err < 0) {
+		return err;
+	}
+
+	spi_context_unlock_unconditionally(&dev_data->ctx);
+
+	return 0;
+}
+
 /*
  * Current factors requiring use of DT_NODELABEL:
  *
- * - NRFX_SPI_INSTANCE() requires an SoC instance number
- * - soc-instance-numbered kconfig enables
- * - ORC is a SoC-instance-numbered kconfig option instead of a DT property
+ * - HAL design (requirement of drv_inst_idx in nrfx_spi_t)
+ * - Name-based HAL IRQ handlers, e.g. nrfx_spi_0_irq_handler
  */
 
 #define SPI(idx)			DT_NODELABEL(spi##idx)
@@ -347,7 +372,7 @@ static int spi_nrfx_pm_action(const struct device *dev,
 					 NRFX_SPI_PIN_NOT_USED),	\
 		 .miso_pull = SPI_NRFX_MISO_PULL(idx),))
 
-#define SPI_NRFX_SPI_DEVICE(idx)					       \
+#define SPI_NRFX_SPI_DEFINE(idx)					       \
 	NRF_DT_CHECK_PIN_ASSIGNMENTS(SPI(idx), 1,			       \
 				     sck_pin, mosi_pin, miso_pin);	       \
 	BUILD_ASSERT(IS_ENABLED(CONFIG_PINCTRL) ||			       \
@@ -355,26 +380,10 @@ static int spi_nrfx_pm_action(const struct device *dev,
 		       SPI_PROP(idx, miso_pull_down)),			       \
 		"SPI"#idx						       \
 		": cannot enable both pull-up and pull-down on MISO line");    \
-	static int spi_##idx##_init(const struct device *dev)		       \
+	static void irq_connect##idx(void)				       \
 	{								       \
-		struct spi_nrfx_data *dev_data = dev->data;		       \
-		int err;						       \
 		IRQ_CONNECT(DT_IRQN(SPI(idx)), DT_IRQ(SPI(idx), priority),     \
 			    nrfx_isr, nrfx_spi_##idx##_irq_handler, 0);	       \
-		IF_ENABLED(CONFIG_PINCTRL, (				       \
-			const struct spi_nrfx_config *dev_config = dev->config;\
-			err = pinctrl_apply_state(dev_config->pcfg,	       \
-						  PINCTRL_STATE_DEFAULT);      \
-			if (err < 0) {					       \
-				return err;				       \
-			}						       \
-		))							       \
-		err = spi_context_cs_configure_all(&dev_data->ctx);	       \
-		if (err < 0) {						       \
-			return err;					       \
-		}							       \
-		spi_context_unlock_unconditionally(&dev_data->ctx);	       \
-		return 0;						       \
 	}								       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
 		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
@@ -385,18 +394,22 @@ static int spi_nrfx_pm_action(const struct device *dev,
 	};								       \
 	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(SPI(idx))));	       \
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
-		.spi = NRFX_SPI_INSTANCE(idx),				       \
+		.spi = {						       \
+			.p_reg = (NRF_SPI_Type *)DT_REG_ADDR(SPI(idx)),	       \
+			.drv_inst_idx = NRFX_SPI##idx##_INST_IDX,	       \
+		},							       \
 		.def_config = {						       \
 			SPI_NRFX_SPI_PIN_CFG(idx)			       \
 			.ss_pin = NRFX_SPI_PIN_NOT_USED,		       \
-			.orc    = CONFIG_SPI_##idx##_NRF_ORC,		       \
+			.orc    = SPI_PROP(idx, overrun_character),	       \
 		},							       \
+		.irq_connect = irq_connect##idx,			       \
 		IF_ENABLED(CONFIG_PINCTRL,				       \
 			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPI(idx)),))	       \
 	};								       \
 	PM_DEVICE_DT_DEFINE(SPI(idx), spi_nrfx_pm_action);		       \
 	DEVICE_DT_DEFINE(SPI(idx),					       \
-		      spi_##idx##_init,					       \
+		      spi_nrfx_init,					       \
 		      PM_DEVICE_DT_GET(SPI(idx)),			       \
 		      &spi_##idx##_data,				       \
 		      &spi_##idx##z_config,				       \
@@ -404,13 +417,13 @@ static int spi_nrfx_pm_action(const struct device *dev,
 		      &spi_nrfx_driver_api)
 
 #ifdef CONFIG_SPI_0_NRF_SPI
-SPI_NRFX_SPI_DEVICE(0);
+SPI_NRFX_SPI_DEFINE(0);
 #endif
 
 #ifdef CONFIG_SPI_1_NRF_SPI
-SPI_NRFX_SPI_DEVICE(1);
+SPI_NRFX_SPI_DEFINE(1);
 #endif
 
 #ifdef CONFIG_SPI_2_NRF_SPI
-SPI_NRFX_SPI_DEVICE(2);
+SPI_NRFX_SPI_DEFINE(2);
 #endif

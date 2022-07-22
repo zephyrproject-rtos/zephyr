@@ -27,8 +27,11 @@ LOG_MODULE_REGISTER(PMS7003, CONFIG_SENSOR_LOG_LEVEL);
 /* wait serial output with 1000ms timeout */
 #define CFG_PMS7003_SERIAL_TIMEOUT 1000
 
-struct pms7003_data {
+struct pms7003_config {
 	const struct device *uart_dev;
+};
+
+struct pms7003_data {
 	uint16_t pm_1_0;
 	uint16_t pm_2_5;
 	uint16_t pm_10;
@@ -47,7 +50,7 @@ static int uart_wait_for(const struct device *dev, uint8_t *data, int len,
 			 int timeout)
 {
 	int matched_size = 0;
-	int64_t timeout_time = k_uptime_get() + K_MSEC(timeout);
+	int64_t timeout_time = k_uptime_get() + timeout;
 
 	while (1) {
 		uint8_t c;
@@ -85,7 +88,7 @@ static int uart_read_bytes(const struct device *dev, uint8_t *data, int len,
 			   int timeout)
 {
 	int read_size = 0;
-	int64_t timeout_time = k_uptime_get() + K_MSEC(timeout);
+	int64_t timeout_time = k_uptime_get() + timeout;
 
 	while (1) {
 		uint8_t c;
@@ -108,6 +111,7 @@ static int pms7003_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
 	struct pms7003_data *drv_data = dev->data;
+	const struct pms7003_config *cfg = dev->config;
 
 	/* sample output */
 	/* 42 4D 00 1C 00 01 00 01 00 01 00 01 00 01 00 01 01 92
@@ -117,14 +121,14 @@ static int pms7003_sample_fetch(const struct device *dev,
 	uint8_t pms7003_start_bytes[] = {0x42, 0x4d};
 	uint8_t pms7003_receive_buffer[30];
 
-	if (uart_wait_for(drv_data->uart_dev, pms7003_start_bytes,
+	if (uart_wait_for(cfg->uart_dev, pms7003_start_bytes,
 			  sizeof(pms7003_start_bytes),
 			  CFG_PMS7003_SERIAL_TIMEOUT) < 0) {
 		LOG_WRN("waiting for start bytes is timeout");
 		return -ETIME;
 	}
 
-	if (uart_read_bytes(drv_data->uart_dev, pms7003_receive_buffer, 30,
+	if (uart_read_bytes(cfg->uart_dev, pms7003_receive_buffer, 30,
 			    CFG_PMS7003_SERIAL_TIMEOUT) < 0) {
 		return -ETIME;
 	}
@@ -170,21 +174,25 @@ static const struct sensor_driver_api pms7003_api = {
 
 static int pms7003_init(const struct device *dev)
 {
-	struct pms7003_data *drv_data = dev->data;
+	const struct pms7003_config *cfg = dev->config;
 
-	drv_data->uart_dev = device_get_binding(DT_INST_BUS_LABEL(0));
-
-	if (!drv_data->uart_dev) {
-		LOG_DBG("uart device is not found: %s",
-			    DT_INST_BUS_LABEL(0));
-		return -EINVAL;
+	if (!device_is_ready(cfg->uart_dev)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
 	return 0;
 }
 
-static struct pms7003_data pms7003_data;
+#define PMS7003_DEFINE(inst)									\
+	static struct pms7003_data pms7003_data_##inst;						\
+												\
+	static const struct pms7003_config pms7003_config_##inst = {				\
+		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),					\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, &pms7003_init, NULL,					\
+			      &pms7003_data_##inst, &pms7003_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &pms7003_api);			\
 
-DEVICE_DT_INST_DEFINE(0, &pms7003_init, NULL,
-		    &pms7003_data, NULL, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &pms7003_api);
+DT_INST_FOREACH_STATUS_OKAY(PMS7003_DEFINE)

@@ -28,8 +28,6 @@ struct at24_emul_data {
 
 /** Static configuration for the emulator */
 struct at24_emul_cfg {
-	/** Label of the I2C bus this emulator connects to */
-	const char *i2c_label;
 	/** EEPROM data contents */
 	uint8_t *buf;
 	/** Size of EEPROM in bytes */
@@ -54,7 +52,7 @@ struct at24_emul_cfg {
  * @retval 0 If successful
  * @retval -EIO General input / output error
  */
-static int at24_emul_transfer(struct i2c_emul *emul, struct i2c_msg *msgs,
+static int at24_emul_transfer(const struct emul *target, struct i2c_msg *msgs,
 			      int num_msgs, int addr)
 {
 	struct at24_emul_data *data;
@@ -63,8 +61,8 @@ static int at24_emul_transfer(struct i2c_emul *emul, struct i2c_msg *msgs,
 	bool too_fast;
 	uint32_t i2c_cfg;
 
-	data = CONTAINER_OF(emul, struct at24_emul_data, emul);
-	cfg = emul->parent->cfg;
+	data = target->data;
+	cfg = target->cfg;
 
 	if (cfg->addr != addr) {
 		LOG_ERR("Address mismatch, expected %02x, got %02x", cfg->addr,
@@ -123,7 +121,7 @@ static int at24_emul_transfer(struct i2c_emul *emul, struct i2c_msg *msgs,
 
 /* Device instantiation */
 
-static struct i2c_emul_api at24_emul_api = {
+static struct i2c_emul_api bus_api = {
 	.transfer = at24_emul_transfer,
 };
 
@@ -133,40 +131,37 @@ static struct i2c_emul_api at24_emul_api = {
  * This should be called for each AT24 device that needs to be emulated. It
  * registers it with the I2C emulation controller.
  *
- * @param emul Emulation information
+ * @param target Emulation information
  * @param parent Device to emulate (must use AT24 driver)
  * @return 0 indicating success (always)
  */
-static int emul_atmel_at24_init(const struct emul *emul,
-				const struct device *parent)
+static int emul_atmel_at24_init(const struct emul *target, const struct device *parent)
 {
-	const struct at24_emul_cfg *cfg = emul->cfg;
-	struct at24_emul_data *data = emul->data;
+	const struct at24_emul_cfg *cfg = target->cfg;
+	struct at24_emul_data *data = target->data;
 
-	data->emul.api = &at24_emul_api;
+	data->emul.api = &bus_api;
 	data->emul.addr = cfg->addr;
-	data->emul.parent = emul;
+	data->emul.target = target;
 	data->i2c = parent;
 	data->cur_reg = 0;
 
 	/* Start with an erased EEPROM, assuming all 0xff */
 	memset(cfg->buf, 0xff, cfg->size);
 
-	int rc = i2c_emul_register(parent, emul->dev_label, &data->emul);
-
-	return rc;
+	return 0;
 }
 
 #define EEPROM_AT24_EMUL(n)                                                                        \
 	static uint8_t at24_emul_buf_##n[DT_INST_PROP(n, size)];                                   \
 	static struct at24_emul_data at24_emul_data_##n;                                           \
 	static const struct at24_emul_cfg at24_emul_cfg_##n = {                                    \
-		.i2c_label = DT_INST_BUS_LABEL(n),                                                 \
 		.buf = at24_emul_buf_##n,                                                          \
 		.size = DT_INST_PROP(n, size),                                                     \
 		.addr = DT_INST_REG_ADDR(n),                                                       \
 		.addr_width = 8,                                                                   \
 	};                                                                                         \
-	EMUL_DEFINE(emul_atmel_at24_init, DT_DRV_INST(n), &at24_emul_cfg_##n, &at24_emul_data_##n)
+	EMUL_DEFINE(&emul_atmel_at24_init, DT_DRV_INST(n), &at24_emul_cfg_##n,                     \
+		    &at24_emul_data_##n, &bus_api)
 
 DT_INST_FOREACH_STATUS_OKAY(EEPROM_AT24_EMUL)
