@@ -206,6 +206,18 @@
 #define STM32_PINCFG_FLOATING           STM32_PUPDR_NO_PULL
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 
+#ifdef CONFIG_GPIO_GET_CONFIG
+/**
+ * @brief structure of a GPIO pin (stm32 LL values) use to get the configuration
+ */
+struct gpio_stm32_pin {
+	unsigned int type; /* LL_GPIO_OUTPUT_PUSHPULL or LL_GPIO_OUTPUT_OPENDRAIN */
+	unsigned int pupd; /* LL_GPIO_PULL_NO or LL_GPIO_PULL_UP or LL_GPIO_PULL_DOWN */
+	unsigned int mode; /* LL_GPIO_MODE_INPUT or LL_GPIO_MODE_OUTPUT or other */
+	unsigned int out_state; /* 1 (high level) or 0 (low level) */
+};
+#endif /* CONFIG_GPIO_GET_CONFIG */
+
 /**
  * @brief configuration of GPIO device
  */

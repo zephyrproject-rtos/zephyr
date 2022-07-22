@@ -95,33 +95,33 @@ static int gpio_stm32_flags_to_conf(gpio_flags_t flags, int *pincfg)
 /**
  * @brief Custom stm32 flags to zephyr
  */
-static int gpio_stm32_pincfg_to_flags(int otype, int pupd, int mode, int ostate,
+static int gpio_stm32_pincfg_to_flags(struct gpio_stm32_pin pin_cfg,
 				      gpio_flags_t *out_flags)
 {
 	gpio_flags_t flags = 0;
 
-	if (mode == LL_GPIO_MODE_OUTPUT) {
+	if (pin_cfg.mode == LL_GPIO_MODE_OUTPUT) {
 		flags |= GPIO_OUTPUT;
-		if (otype == LL_GPIO_OUTPUT_OPENDRAIN) {
+		if (pin_cfg.type == LL_GPIO_OUTPUT_OPENDRAIN) {
 			flags |= GPIO_OPEN_DRAIN;
 		}
-	} else if (mode == LL_GPIO_MODE_INPUT) {
+	} else if (pin_cfg.mode == LL_GPIO_MODE_INPUT) {
 		flags |= GPIO_INPUT;
 #ifdef CONFIG_SOC_SERIES_STM32F1X
-	} else if (mode == LL_GPIO_MODE_FLOATING) {
+	} else if (pin_cfg.mode == LL_GPIO_MODE_FLOATING) {
 		flags |= GPIO_INPUT;
 #endif
 	} else {
 		flags |= GPIO_DISCONNECTED;
 	}
 
-	if (pupd == LL_GPIO_PULL_UP) {
+	if (pin_cfg.pupd == LL_GPIO_PULL_UP) {
 		flags |= GPIO_PULL_UP;
-	} else if (pupd == LL_GPIO_PULL_DOWN) {
+	} else if (pin_cfg.pupd == LL_GPIO_PULL_DOWN) {
 		flags |= GPIO_PULL_DOWN;
 	}
 
-	if (ostate != 0) {
+	if (pin_cfg.out_state != 0) {
 		flags |= GPIO_OUTPUT_HIGH;
 	} else {
 		flags |= GPIO_OUTPUT_LOW;
@@ -572,7 +572,7 @@ static int gpio_stm32_get_config(const struct device *dev,
 {
 	const struct gpio_stm32_config *cfg = dev->config;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
-	unsigned int mode, otype, pupd, ostate;
+	struct gpio_stm32_pin pin_config;
 	int pin_ll;
 	int err;
 
@@ -582,12 +582,12 @@ static int gpio_stm32_get_config(const struct device *dev,
 	}
 
 	pin_ll = stm32_pinval_get(pin);
-	otype = LL_GPIO_GetPinOutputType(gpio, pin_ll);
-	pupd = LL_GPIO_GetPinPull(gpio, pin_ll);
-	mode = LL_GPIO_GetPinMode(gpio, pin_ll);
-	ostate = LL_GPIO_IsOutputPinSet(gpio, pin_ll);
+	pin_config.type = LL_GPIO_GetPinOutputType(gpio, pin_ll);
+	pin_config.pupd = LL_GPIO_GetPinPull(gpio, pin_ll);
+	pin_config.mode = LL_GPIO_GetPinMode(gpio, pin_ll);
+	pin_config.out_state = LL_GPIO_IsOutputPinSet(gpio, pin_ll);
 
-	gpio_stm32_pincfg_to_flags(otype, pupd, mode, ostate, flags);
+	gpio_stm32_pincfg_to_flags(pin_config, flags);
 
 	return pm_device_runtime_put(dev);
 }
