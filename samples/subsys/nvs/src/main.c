@@ -48,7 +48,9 @@
 
 static struct nvs_fs fs;
 
-#define STORAGE_NODE_LABEL storage
+#define NVS_PARTITION		storage_partition
+#define NVS_PARTITION_DEVICE	FIXED_PARTITION_DEVICE(NVS_PARTITION)
+#define NVS_PARTITION_OFFSET	FIXED_PARTITION_OFFSET(NVS_PARTITION)
 
 /* 1000 msec = 1 sec */
 #define SLEEP_TIME      100
@@ -74,14 +76,14 @@ void main(void)
 	/* define the nvs file system by settings with:
 	 *	sector_size equal to the pagesize,
 	 *	3 sectors
-	 *	starting at FLASH_AREA_OFFSET(STORAGE_NODE_LABEL)
+	 *	starting at NVS_PARTITION_OFFSET
 	 */
-	fs.flash_device = FLASH_AREA_DEVICE(STORAGE_NODE_LABEL);
+	fs.flash_device = NVS_PARTITION_DEVICE;
 	if (!device_is_ready(fs.flash_device)) {
 		printk("Flash device %s is not ready\n", fs.flash_device->name);
 		return;
 	}
-	fs.offset = FLASH_AREA_OFFSET(STORAGE_NODE_LABEL);
+	fs.offset = NVS_PARTITION_OFFSET;
 	rc = flash_get_page_info_by_offs(fs.flash_device, fs.offset, &info);
 	if (rc) {
 		printk("Unable to get page info\n");
