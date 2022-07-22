@@ -336,8 +336,9 @@ void tcp_server_block_thread(void *vps_sock, void *unused2, void *unused3)
 	test_close(new_sock);
 }
 
-void test_v4_send_recv_large(void)
+void test_v4_send_recv_large_common(int tcp_nodelay)
 {
+	int rv;
 	int c_sock;
 	int s_sock;
 	struct sockaddr_in c_saddr;
@@ -358,6 +359,9 @@ void test_v4_send_recv_large(void)
 		k_thread_priority_get(k_current_get()), 0, K_NO_WAIT);
 
 	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	rv = setsockopt(c_sock, IPPROTO_TCP, TCP_NODELAY, (char *) &tcp_nodelay, sizeof(int));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", rv);
 
 	/* send piece by piece */
 	ssize_t total_send = 0;
@@ -413,15 +417,22 @@ static void restore_packet_loss_ratio(void)
 		"Error setting packet drop rate");
 }
 
-ZTEST(net_socket_tcp, test_v4_send_recv_large_1)
+ZTEST(net_socket_tcp, test_v4_send_recv_large_normal)
 {
-	test_v4_send_recv_large();
+	test_v4_send_recv_large_common(0);
 }
 
-ZTEST(net_socket_tcp, test_v4_send_recv_large_2)
+ZTEST(net_socket_tcp, test_v4_send_recv_large_packet_loss)
 {
 	set_packet_loss_ratio();
-	test_v4_send_recv_large();
+	test_v4_send_recv_large_common(0);
+	restore_packet_loss_ratio();
+}
+
+ZTEST(net_socket_tcp, test_v4_send_recv_large_no_delay)
+{
+	set_packet_loss_ratio();
+	test_v4_send_recv_large_common(1);
 	restore_packet_loss_ratio();
 }
 
