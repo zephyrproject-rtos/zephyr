@@ -31,20 +31,20 @@ LOG_MODULE_REGISTER(coredump, CONFIG_KERNEL_LOG_LEVEL);
  * function so that the first read of a data stream is always
  * aligned to flash write size.
  */
+#define FLASH_PARTITION		coredump_partition
+#define FLASH_PARTITION_ID	FIXED_PARTITION_ID(FLASH_PARTITION)
 
-#if !FLASH_AREA_LABEL_EXISTS(coredump_partition)
+#if !FIXED_PARTITION_EXISTS(FLASH_PARTITION)
 #error "Need a fixed partition named 'coredump-partition'!"
 
 #else
 
 #define FLASH_CONTROLLER	\
-	DT_PARENT(DT_PARENT(DT_NODELABEL(coredump_partition)))
+	DT_PARENT(DT_PARENT(DT_NODELABEL(FLASH_PARTITION)))
 
 #define FLASH_WRITE_SIZE	DT_PROP(FLASH_CONTROLLER, write_block_size)
 #define FLASH_BUF_SIZE		FLASH_WRITE_SIZE
 #define FLASH_ERASE_SIZE	DT_PROP(FLASH_CONTROLLER, erase_block_size)
-
-#define FLASH_PARTITION		FLASH_AREA_ID(coredump_partition)
 
 #define HDR_VER			1
 
@@ -106,7 +106,7 @@ static int partition_open(void)
 
 	(void)k_sem_take(&flash_sem, K_FOREVER);
 
-	ret = flash_area_open(FLASH_PARTITION, &backend_ctx.flash_area);
+	ret = flash_area_open(FLASH_PARTITION_ID, &backend_ctx.flash_area);
 	if (ret != 0) {
 		LOG_ERR("Error opening flash partition for coredump!");
 
@@ -921,4 +921,4 @@ SHELL_CMD_REGISTER(coredump, &sub_coredump,
 
 #endif /* CONFIG_DEBUG_COREDUMP_SHELL */
 
-#endif /* FLASH_AREA_LABEL_EXISTS(coredump_partition) */
+#endif /* FIXED_PARTITION_EXISTS(coredump_partition) */
