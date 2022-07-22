@@ -497,7 +497,6 @@ Documentation:
   files:
     - drivers/audio/
     - include/zephyr/audio/
-    - samples/subsys/audio/
   labels:
     - "area: Audio"
 
@@ -2448,6 +2447,7 @@ West:
     - nashif
   files:
     - modules/Kconfig.sof
+    - samples/modules/sof/
   labels:
     - manifest-sof
 
