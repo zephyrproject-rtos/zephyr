@@ -24,11 +24,10 @@ ZTEST(ibecc, test_ibecc_initialized)
 {
 	const struct device *dev;
 
-	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
-	zassert_true(device_is_ready(dev), "Device is not ready");
-
 	TC_PRINT("Test ibecc driver is initialized\n");
 
+	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
+	zassert_true(device_is_ready(dev), "Device is not ready");
 }
 
 K_APPMEM_PARTITION_DEFINE(default_part);
@@ -53,6 +52,8 @@ static void test_ibecc_api(void)
 	const struct device *dev;
 	uint64_t value;
 	int ret;
+
+	TC_PRINT("Test IBECC API\n");
 
 	/* Error log API */
 
@@ -92,6 +93,8 @@ static void test_ibecc_error_inject_api(void)
 	uint32_t test_value;
 	uint64_t val;
 	int ret;
+
+	TC_PRINT("Test IBECC Inject API\n");
 
 	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
 	zassert_true(device_is_ready(dev), "Device is not ready");
@@ -289,12 +292,16 @@ static void ibecc_error_inject_test(uint64_t addr, uint64_t mask, uint64_t type)
 
 static void test_ibecc_error_inject_test_cor(void)
 {
+	TC_PRINT("Test IBECC injection correctable error\n");
+
 	ibecc_error_inject_test(TEST_ADDRESS1, TEST_ADDRESS_MASK,
 				EDAC_ERROR_TYPE_DRAM_COR);
 }
 
 static void test_ibecc_error_inject_test_uc(void)
 {
+	TC_PRINT("Test IBECC injection uncorrectable error\n");
+
 	ibecc_error_inject_test(TEST_ADDRESS2, TEST_ADDRESS_MASK,
 				EDAC_ERROR_TYPE_DRAM_UC);
 }
