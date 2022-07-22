@@ -990,6 +990,17 @@ static struct ssd16xx_quirks quirks_solomon_ssd1675a = {
 };
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(solomon_ssd1680)
+static const struct ssd16xx_quirks quirks_solomon_ssd1680 = {
+	.max_width = 296,
+	.max_height = 176,
+	.pp_width_bits = 8,
+	.pp_height_bits = 16,
+	.ctrl2_full = SSD16XX_GEN2_CTRL2_DISPLAY,
+	.ctrl2_partial = SSD16XX_GEN2_CTRL2_DISPLAY | SSD16XX_GEN2_CTRL2_MODE2,
+};
+#endif
+
 #if DT_HAS_COMPAT_STATUS_OKAY(solomon_ssd1681)
 static struct ssd16xx_quirks quirks_solomon_ssd1681 = {
 	.max_width = 200,
@@ -1087,5 +1098,7 @@ DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1673, SSD16XX_DEFINE,
 			     &quirks_solomon_ssd1673);
 DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1675a, SSD16XX_DEFINE,
 			     &quirks_solomon_ssd1675a);
+DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1680, SSD16XX_DEFINE,
+			     &quirks_solomon_ssd1680);
 DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1681, SSD16XX_DEFINE,
 			     &quirks_solomon_ssd1681);
