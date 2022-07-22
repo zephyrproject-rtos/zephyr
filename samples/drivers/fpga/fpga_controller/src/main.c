@@ -13,7 +13,7 @@
 #include "greenled.h"
 #include <eoss3_dev.h>
 
-const struct device *fpga;
+const struct device *fpga = DEVICE_DT_GET(DT_NODELABEL(fpga0));
 
 void main(void)
 {
@@ -30,11 +30,11 @@ void main(void)
 	printk("Size of the bitstream (red): %d\n", sizeof(axFPGABitStream_red));
 	printk("Size of the bitstream (green): %d\n", sizeof(axFPGABitStream_green));
 #else
-	fpga = device_get_binding("FPGA");
 
-	if (!fpga) {
-		printk("unable to find fpga device\n");
+	if (!device_is_ready(fpga)) {
+		printk("fpga device is not ready\n");
 	}
+
 	while (1) {
 		fpga_load(fpga, axFPGABitStream_red,
 			  sizeof(axFPGABitStream_red));
