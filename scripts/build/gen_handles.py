@@ -72,35 +72,35 @@ def parse_args():
 
     sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/dts"))
 
-def c_handle_comment(dev):
+def c_handle_comment(dev, handles):
     def dev_path_str(dev):
         return dev.edt_node and dev.edt_node.path or dev.sym.name
     lines = [
         '',
         '/* {:d} : {:s}:'.format(dev.handle, (dev_path_str(dev))),
     ]
-    if len(dev.devs_depends_on) > 0:
+    if len(handles["depends"]) > 0:
         lines.append(' * Direct Dependencies:')
-        for dep in dev.devs_depends_on:
+        for dep in handles["depends"]:
             lines.append(' *    - {:s}'.format(dev_path_str(dep)))
-    if len(dev.devs_depends_on_injected) > 0:
+    if len(handles["injected"]) > 0:
         lines.append(' * Injected Dependencies:')
-        for dep in dev.devs_depends_on_injected:
+        for dep in handles["injected"]:
             lines.append(' *    - {:s}'.format(dev_path_str(dep)))
-    if len(dev.devs_supports) > 0:
+    if len(handles["supports"]) > 0:
         lines.append(' * Supported:')
-        for sup in dev.devs_supports:
+        for sup in handles["supports"]:
             lines.append(' *    - {:s}'.format(dev_path_str(sup)))
     lines.append(' */')
     return lines
 
-def c_handle_array(dev, extra_support_handles=0):
+def c_handle_array(dev, handles, extra_support_handles=0):
     handles = [
-        *[str(d.handle) for d in dev.devs_depends_on],
+        *[str(d.handle) for d in handles["depends"]],
         'DEVICE_HANDLE_SEP',
-        *[str(d.handle) for d in dev.devs_depends_on_injected],
+        *[str(d.handle) for d in handles["injected"]],
         'DEVICE_HANDLE_SEP',
-        *[str(d.handle) for d in dev.devs_supports],
+        *[str(d.handle) for d in handles["supports"]],
         *(extra_support_handles * ['DEVICE_HANDLE_NULL']),
         'DEVICE_HANDLE_ENDS',
     ]
@@ -131,9 +131,18 @@ def main():
         fp.write('#include <zephyr/device.h>\n')
         fp.write('#include <zephyr/toolchain.h>\n')
         for dev in parsed_elf.devices:
+            # The device handle are collected up in a set, which has no
+            # specified order.  Sort each sub-category of device handle types
+            # separately, so that the generated C array is reproducible across
+            # builds.
+            sorted_handles = {
+                "depends": sorted(dev.devs_depends_on, key=lambda d: d.handle),
+                "injected": sorted(dev.devs_depends_on_injected, key=lambda d: d.handle),
+                "supports": sorted(dev.devs_supports, key=lambda d: d.handle),
+            }
             extra_sups = args.num_dynamic_devices if dev.pm and dev.pm.is_power_domain else 0
-            lines = c_handle_comment(dev)
-            lines.extend(c_handle_array(dev, extra_sups))
+            lines = c_handle_comment(dev, sorted_handles)
+            lines.extend(c_handle_array(dev, sorted_handles, extra_sups))
             lines.extend([''])
             fp.write('\n'.join(lines))
 
