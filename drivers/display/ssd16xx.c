@@ -605,8 +605,7 @@ static int ssd16xx_set_pixel_format(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int ssd16xx_clear_cntlr_mem(const struct device *dev, uint8_t ram_cmd,
-				   bool update)
+static int ssd16xx_clear_cntlr_mem(const struct device *dev, uint8_t ram_cmd)
 {
 	const struct ssd16xx_config *config = dev->config;
 	uint16_t panel_h = config->height / EPD_PANEL_NUMOF_ROWS_PER_PAGE;
@@ -653,10 +652,6 @@ static int ssd16xx_clear_cntlr_mem(const struct device *dev, uint8_t ram_cmd,
 				return err;
 			}
 		}
-	}
-
-	if (update) {
-		return ssd16xx_update_display(dev);
 	}
 
 	return 0;
@@ -873,13 +868,17 @@ static int ssd16xx_controller_init(const struct device *dev)
 		return err;
 	}
 
-	err = ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RAM, true);
+	err = ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RAM);
 	if (err < 0) {
 		return err;
 	}
 
-	err = ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RED_RAM,
-					     false);
+	err = ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RED_RAM);
+	if (err < 0) {
+		return err;
+	}
+
+	err = ssd16xx_update_display(dev);
 	if (err < 0) {
 		return err;
 	}
