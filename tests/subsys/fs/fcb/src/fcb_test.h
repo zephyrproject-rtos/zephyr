@@ -20,7 +20,8 @@
 extern "C" {
 #endif
 
-#define TEST_FCB_FLASH_AREA_ID FLASH_AREA_ID(image_1)
+#define TEST_FCB_FLASH_AREA		slot1_partition
+#define TEST_FCB_FLASH_AREA_ID		FIXED_PARTITION_ID(TEST_FCB_FLASH_AREA)
 
 extern struct fcb test_fcb;
 
