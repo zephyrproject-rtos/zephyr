@@ -46,7 +46,7 @@ static void gpio_stm32_isr(int line, void *arg)
 /**
  * @brief Common gpio flags to custom flags
  */
-static int gpio_stm32_flags_to_conf(int flags, int *pincfg)
+static int gpio_stm32_flags_to_conf(gpio_flags_t flags, int *pincfg)
 {
 
 	if ((flags & GPIO_OUTPUT) != 0) {
@@ -91,14 +91,14 @@ static int gpio_stm32_flags_to_conf(int flags, int *pincfg)
 	return 0;
 }
 
+#ifdef CONFIG_GPIO_GET_CONFIG
 /**
  * @brief Custom stm32 flags to zephyr
  */
-#ifdef CONFIG_GPIO_GET_CONFIG
-static int gpio_stm32_pincfg_to_flags(int otype, int pupd, int mode,
-				      int *out_flags)
+static int gpio_stm32_pincfg_to_flags(int otype, int pupd, int mode, int ostate,
+				      gpio_flags_t *out_flags)
 {
-	int flags = 0;
+	gpio_flags_t flags = 0;
 
 	if (mode == LL_GPIO_MODE_OUTPUT) {
 		flags |= GPIO_OUTPUT;
@@ -121,11 +121,17 @@ static int gpio_stm32_pincfg_to_flags(int otype, int pupd, int mode,
 		flags |= GPIO_PULL_DOWN;
 	}
 
+	if (ostate != 0) {
+		flags |= GPIO_OUTPUT_HIGH;
+	} else {
+		flags |= GPIO_OUTPUT_LOW;
+	}
+
 	*out_flags = flags;
 
 	return 0;
 }
-#endif
+#endif /* CONFIG_GPIO_GET_CONFIG */
 
 /**
  * @brief Translate pin to pinval that the LL library needs
@@ -557,16 +563,16 @@ static int gpio_stm32_config(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_GPIO_GET_CONFIG
 /**
  * @brief Get configuration of pin
  */
-#ifdef CONFIG_GPIO_GET_CONFIG
 static int gpio_stm32_get_config(const struct device *dev,
 				 gpio_pin_t pin, gpio_flags_t *flags)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
-	unsigned int mode, otype, pupd;
+	unsigned int mode, otype, pupd, ostate;
 	int pin_ll;
 	int err;
 
@@ -579,12 +585,13 @@ static int gpio_stm32_get_config(const struct device *dev,
 	otype = LL_GPIO_GetPinOutputType(gpio, pin_ll);
 	pupd = LL_GPIO_GetPinPull(gpio, pin_ll);
 	mode = LL_GPIO_GetPinMode(gpio, pin_ll);
+	ostate = LL_GPIO_IsOutputPinSet(gpio, pin_ll);
 
-	gpio_stm32_pincfg_to_flags(otype, pupd, mode, flags);
+	gpio_stm32_pincfg_to_flags(otype, pupd, mode, ostate, flags);
 
 	return pm_device_runtime_put(dev);
 }
-#endif
+#endif /* CONFIG_GPIO_GET_CONFIG */
 
 static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 					      gpio_pin_t pin,
@@ -652,7 +659,7 @@ static const struct gpio_driver_api gpio_stm32_driver = {
 	.pin_configure = gpio_stm32_config,
 #ifdef CONFIG_GPIO_GET_CONFIG
 	.pin_get_config = gpio_stm32_get_config,
-#endif
+#endif /* CONFIG_GPIO_GET_CONFIG */
 	.port_get_raw = gpio_stm32_port_get_raw,
 	.port_set_masked_raw = gpio_stm32_port_set_masked_raw,
 	.port_set_bits_raw = gpio_stm32_port_set_bits_raw,
