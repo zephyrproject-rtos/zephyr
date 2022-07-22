@@ -5,7 +5,9 @@
 
 config RV32M1_INTMUX
 	bool "OpenISA RV32M1 INTMUX interrupt controller support"
-	depends on SOC_OPENISA_RV32M1_RISCV32 && MULTI_LEVEL_INTERRUPTS
+	default y
+	depends on DT_HAS_OPENISA_RV32M1_INTMUX_ENABLED
+	depends on MULTI_LEVEL_INTERRUPTS
 	help
 	  Select this option to enable support for the RV32M1 INTMUX
 	  driver. This provides a level 2 interrupt controller for the SoC.
