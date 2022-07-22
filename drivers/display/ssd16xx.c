@@ -361,7 +361,7 @@ static int ssd16xx_set_window(const struct device *dev,
 			      const struct display_buffer_descriptor *desc)
 {
 	const struct ssd16xx_config *config = dev->config;
-	struct ssd16xx_data *data = dev->data;
+	const struct ssd16xx_data *data = dev->data;
 	int err;
 	uint16_t x_start;
 	uint16_t x_end;
@@ -445,7 +445,11 @@ static int ssd16xx_write(const struct device *dev, const uint16_t x,
 			 const struct display_buffer_descriptor *desc,
 			 const void *buf)
 {
+	const struct ssd16xx_config *config = dev->config;
 	const struct ssd16xx_data *data = dev->data;
+	const bool have_partial_refresh =
+		config->profiles[SSD16XX_PROFILE_PARTIAL] != NULL;
+	const bool partial_refresh = !data->blanking_on && have_partial_refresh;
 	const size_t buf_len = MIN(desc->buf_size,
 				   desc->height * desc->width / 8);
 	int err;
@@ -455,15 +459,13 @@ static int ssd16xx_write(const struct device *dev, const uint16_t x,
 		return -EINVAL;
 	}
 
-	if (!data->blanking_on) {
+	if (partial_refresh) {
 		/*
-		 * Blanking isn't on, so this is a partial
-		 * refresh. Request the partial profile. This
-		 * operation becomes a no-op if the profile is already
-		 * active.
+		 * Request the partial profile. This operation becomes
+		 * a no-op if the profile is already active.
 		 */
 		err = ssd16xx_set_profile(dev, SSD16XX_PROFILE_PARTIAL);
-		if (err < 0 && err != -ENOENT) {
+		if (err < 0) {
 			return -EIO;
 		}
 	}
@@ -481,6 +483,35 @@ static int ssd16xx_write(const struct device *dev, const uint16_t x,
 
 	if (!data->blanking_on) {
 		err = ssd16xx_update_display(dev);
+		if (err < 0) {
+			return err;
+		}
+	}
+
+	if (data->blanking_on && have_partial_refresh) {
+		/*
+		 * We will trigger a full refresh when blanking is
+		 * turned off. The controller won't keep track of the
+		 * old frame buffer, which is needed to perform a
+		 * partial update, when this happens. Maintain the old
+		 * frame buffer manually here to make sure future
+		 * partial updates will work as expected.
+		 */
+		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_WRITE_RED_RAM,
+					(uint8_t *)buf, buf_len);
+		if (err < 0) {
+			return err;
+		}
+	} else if (partial_refresh) {
+		/*
+		 * We just performed a partial refresh. After the
+		 * refresh, the controller swaps the black/red buffers
+		 * containing the current and new image. We need to
+		 * perform a second write here to ensure that future
+		 * updates work on an up-to-date framebuffer.
+		 */
+		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_WRITE_RAM,
+					(uint8_t *)buf, buf_len);
 		if (err < 0) {
 			return err;
 		}
@@ -582,8 +613,7 @@ static void ssd16xx_get_capabilities(const struct device *dev,
 	caps->current_pixel_format = PIXEL_FORMAT_MONO10;
 	caps->screen_info = SCREEN_INFO_MONO_VTILED |
 			    SCREEN_INFO_MONO_MSB_FIRST |
-			    SCREEN_INFO_EPD |
-			    SCREEN_INFO_DOUBLE_BUFFER;
+			    SCREEN_INFO_EPD;
 }
 
 static int ssd16xx_set_orientation(const struct device *dev,
