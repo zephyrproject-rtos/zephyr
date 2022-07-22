@@ -22,9 +22,15 @@ LOG_MODULE_REGISTER(mcumgr_img_mgmt, CONFIG_MCUMGR_IMG_MGMT_LOG_LEVEL);
 #include <img_mgmt/image.h>
 #include "img_mgmt_priv.h"
 
+#define SLOT0_PARTITION		slot0_partition
+#define SLOT1_PARTITION		slot1_partition
+#define SLOT2_PARTITION		slot2_partition
+#define SLOT3_PARTITION		slot3_partition
+
 BUILD_ASSERT(CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 1 ||
-	     (CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 2 && FLASH_AREA_LABEL_EXISTS(image_2) &&
-	      FLASH_AREA_LABEL_EXISTS(image_3)),
+	     (CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 2 &&
+	      FIXED_PARTITION_EXISTS(SLOT2_PARTITION) &&
+	      FIXED_PARTITION_EXISTS(SLOT3_PARTITION)),
 	     "Missing partitions?");
 
 static int
@@ -34,7 +40,7 @@ zephyr_img_mgmt_slot_to_image(int slot)
 	case 0:
 	case 1:
 		return 0;
-#if FLASH_AREA_LABEL_EXISTS(image_2) && FLASH_AREA_LABEL_EXISTS(image_3)
+#if FIXED_PARTITION_EXISTS(SLOT2_PARTITION) && FIXED_PARTITION_EXISTS(SLOT2_PARTITION)
 	case 2:
 	case 3:
 		return 1;
@@ -120,22 +126,22 @@ zephyr_img_mgmt_flash_area_id(int slot)
 
 	switch (slot) {
 	case 0:
-		fa_id = FLASH_AREA_ID(image_0);
+		fa_id = FIXED_PARTITION_ID(SLOT0_PARTITION);
 		break;
 
 	case 1:
-		fa_id = FLASH_AREA_ID(image_1);
+		fa_id = FIXED_PARTITION_ID(SLOT1_PARTITION);
 		break;
 
-#if FLASH_AREA_LABEL_EXISTS(image_2)
+#if FIXED_PARTITION_EXISTS(SLOT2_PARTITION)
 	case 2:
-		fa_id = FLASH_AREA_ID(image_2);
+		fa_id = FIXED_PARTITION_ID(SLOT2_PARTITION);
 		break;
 #endif
 
-#if FLASH_AREA_LABEL_EXISTS(image_3)
+#if FIXED_PARTITION_EXISTS(slot3_partition)
 	case 3:
-		fa_id = FLASH_AREA_ID(image_3);
+		fa_id = FIXED_PARTITION_ID(SLOT3_PARTITION);
 		break;
 #endif
 
