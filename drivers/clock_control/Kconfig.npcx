@@ -5,7 +5,8 @@
 
 config CLOCK_CONTROL_NPCX
 	bool "NPCX clock controller driver"
-	depends on SOC_FAMILY_NPCX
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_PCC_ENABLED
 	help
 	  Enable support for NPCX clock controller driver.
 

@@ -5,6 +5,7 @@
 
 config CLOCK_CONTROL_MCUX_PCC
 	bool "MCUX PCC driver"
-	depends on HAS_MCUX_PCC
+	default y
+	depends on DT_HAS_NXP_KINETIS_PCC_ENABLED
 	help
 	  Enable support for MCUX PCC driver.
