@@ -51,8 +51,6 @@ static struct sof_dai_ssp_params ssp_config;
 #define BUF_SIZE 48
 #define XFER_SIZE BUF_SIZE * 4
 #define XFERS 2
-#define DMA_DEVICE_NAME "DMA_0"
-#define SSP_DEVICE_NAME "SSP_0"
 
 K_SEM_DEFINE(xfer_sem, 0, 1);
 
@@ -396,17 +394,15 @@ void test_adsp_ssp_probe(void)
 
 void test_main(void)
 {
-	dev_dai_ssp = device_get_binding(SSP_DEVICE_NAME);
+	dev_dai_ssp = DEVICE_DT_GET(DT_NODELABEL(ssp0));
 
-	if (dev_dai_ssp != NULL) {
-		k_object_access_grant(dev_dai_ssp, k_current_get());
-	}
+	k_object_access_grant(dev_dai_ssp, k_current_get());
 
-	zassert_not_null(dev_dai_ssp, "device SSP_0 not found");
+	zassert_true(device_is_ready(dev_dai_ssp), "device SSP_0 is not ready");
 
-	dev_dma_dw = device_get_binding(DMA_DEVICE_NAME);
+	dev_dma_dw = DEVICE_DT_GET(DT_NODELABEL(lpgpdma0));
 
-	zassert_not_null(dev_dma_dw, "device DMA_0 not found");
+	zassert_true(device_is_ready(dev_dma_dw), "device DMA 0 is not ready");
 
 	ztest_test_suite(adsp_ssp,
 			 ztest_unit_test(test_adsp_ssp_probe),
