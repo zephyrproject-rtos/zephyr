@@ -1,12 +1,10 @@
 common:
   depends_on: spi
   tags: drivers spi
-  platform_exclude: seeeduino_xiao serpente arduino_nano_33_iot atsamr21_xpro
-    atsamd21_xpro arduino_zero adafruit_trinket_m0 arduino_mkrzero
+  filter: dt_compat_enabled("test-spi-loopback-slow") and dt_compat_enabled("test-spi-loopback-fast")
 tests:
   drivers.spi.loopback:
     harness: ztest
-    filter: not CONFIG_SOC_FAMILY_STM32
     harness_config:
       fixture: spi_loopback
   drivers.spi.loopback.internal:
@@ -14,16 +12,10 @@ tests:
   drivers.mcux_dspi_dma.loopback:
     tags: dma
     harness: ztest
-    extra_args: OVERLAY_CONFIG="overlay-mcux-dspi-dma.conf"
+    extra_args: OVERLAY_CONFIG="overlay-mcux-dspi-dma.conf" DTC_OVERLAY_FILE="overlay-mcux-dspi-dma.overlay"
     harness_config:
       fixture: spi_loopback
     platform_allow: frdm_k64f
-  drivers.stm32_spi.loopback:
-    harness: ztest
-    extra_args: OVERLAY_CONFIG="overlay-stm32-spi.conf"
-    harness_config:
-      fixture: spi_loopback
-    filter: CONFIG_SOC_FAMILY_STM32
   drivers.stm32_spi_dma.loopback:
     tags: dma
     harness: ztest

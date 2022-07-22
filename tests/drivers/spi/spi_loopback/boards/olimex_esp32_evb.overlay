@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2022 Kumar Gala <galak@kernel.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi2 {
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};
