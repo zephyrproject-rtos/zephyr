@@ -37,6 +37,9 @@ K_APP_BMEM(default_part) static volatile uint32_t error_type;
 K_APP_BMEM(default_part) static volatile uint64_t error_address;
 K_APP_BMEM(default_part) static volatile uint16_t error_syndrome;
 
+/* Keep track or correctable and uncorrectable errors */
+static unsigned int errors_correctable, errors_uncorrectable;
+
 static void callback(const struct device *d, void *data)
 {
 	struct ibecc_error *error_data = data;
@@ -75,10 +78,12 @@ static void test_ibecc_api(void)
 	/* Error stat API */
 
 	ret = edac_errors_cor_get(dev);
-	zassert_equal(ret, 0, "Error correctable count not zero");
+	zassert_equal(ret, errors_correctable,
+		      "Error correctable count does not match");
 
 	ret = edac_errors_uc_get(dev);
-	zassert_equal(ret, 0, "Error uncorrectable count not zero");
+	zassert_equal(ret, errors_uncorrectable,
+		      "Error uncorrectable count does mot match");
 
 	/* Notification API */
 
@@ -237,11 +242,15 @@ static void test_inject(const struct device *dev, uint64_t addr, uint64_t mask,
 		      "Incorrect correctable count");
 	TC_PRINT("Correctable error count %d\n", ret);
 
+	errors_correctable = ret;
+
 	ret = edac_errors_uc_get(dev);
 	zassert_equal(ret, type == EDAC_ERROR_TYPE_DRAM_UC ?
 		      errors_uc + 1 : errors_uc,
 		      "Incorrect uncorrectable count");
 	TC_PRINT("Uncorrectable error count %d\n", ret);
+
+	errors_uncorrectable = ret;
 }
 
 static int check_values(void *p1, void *p2, void *p3)
