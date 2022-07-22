@@ -13,16 +13,19 @@
 
 LOG_MODULE_REGISTER(mcumgr_zephyr_grp);
 
+#define ERASE_TARGET		storage_partition
+#define ERASE_TARGET_ID		FIXED_PARTITION_ID(ERASE_TARGET)
+
 static int storage_erase(void)
 {
 	const struct flash_area *fa;
-	int rc = flash_area_open(FLASH_AREA_ID(storage), &fa);
+	int rc = flash_area_open(ERASE_TARGET_ID, &fa);
 
 	if (rc < 0) {
 		LOG_ERR("failed to open flash area");
 	} else {
 		if (flash_area_get_device(fa) == NULL ||
-		    flash_area_erase(fa, 0, FLASH_AREA_SIZE(storage) < 0)) {
+		    flash_area_erase(fa, 0, fa->fa_size) < 0) {
 			LOG_ERR("failed to erase flash area");
 		}
 		flash_area_close(fa);
