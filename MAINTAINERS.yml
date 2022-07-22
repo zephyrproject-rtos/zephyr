@@ -484,11 +484,8 @@ Documentation:
     - "area: ADC"
 
 "Drivers: Audio":
-  status: maintained
-  maintainers:
-    - andyross
+  status: odd fixes
   collaborators:
-    - nashif
     - lyakh
     - lgirdwood
     - mengxianglinx
@@ -2443,8 +2440,13 @@ West:
 "West project: sof":
   status: maintained
   maintainers:
+    - kv2019i
+  collaborators:
     - andyross
     - nashif
+    - lyakh
+    - lgirdwood
+    - marc-hb
   files:
     - modules/Kconfig.sof
     - samples/modules/sof/
