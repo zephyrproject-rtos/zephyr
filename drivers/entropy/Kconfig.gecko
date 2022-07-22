@@ -6,16 +6,17 @@
 
 config ENTROPY_GECKO_TRNG
 	bool "GECKO TRNG driver"
-	depends on SOC_GECKO_TRNG
-	select ENTROPY_HAS_DRIVER
 	default y
+	depends on DT_HAS_SILABS_GECKO_TRNG_ENABLED
+	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables the true random number generator
 	  driver based on the TRNG.
 
 config ENTROPY_GECKO_SE
 	bool "GECKO SE driver"
-	depends on SOC_GECKO_SE
+	default y
+	depends on DT_HAS_SILABS_GECKO_SEMAILBOX_ENABLED
 	select ENTROPY_HAS_DRIVER
 	default y
 	help
