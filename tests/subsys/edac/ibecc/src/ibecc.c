@@ -20,7 +20,7 @@
 #define DURATION		100
 #endif
 
-ZTEST(ibecc, test_ibecc_initialized)
+ZTEST(ibecc, test_ibecc_driver_initialized)
 {
 	const struct device *dev;
 
@@ -50,7 +50,7 @@ static void callback(const struct device *d, void *data)
 	error_syndrome = error_data->syndrome;
 }
 
-static void test_ibecc_api(void)
+ZTEST(ibecc, test_ibecc_api)
 {
 	const struct device *dev;
 	uint64_t value;
@@ -92,7 +92,7 @@ static void test_ibecc_api(void)
 }
 
 #if defined(CONFIG_EDAC_ERROR_INJECT)
-static void test_ibecc_error_inject_api(void)
+ZTEST(ibecc, test_ibecc_error_inject_api)
 {
 	const struct device *dev;
 	uint32_t test_value;
@@ -161,7 +161,7 @@ static void test_ibecc_error_inject_api(void)
 	zassert_equal(val, 0, "Read back value differs");
 }
 #else
-static void test_ibecc_error_inject_api(void)
+ZTEST(ibecc, test_ibecc_error_inject_api)
 {
 	ztest_test_skip();
 }
@@ -299,7 +299,7 @@ static void ibecc_error_inject_test(uint64_t addr, uint64_t mask, uint64_t type)
 #endif
 }
 
-static void test_ibecc_error_inject_test_cor(void)
+ZTEST(ibecc, test_ibecc_error_inject_test_cor)
 {
 	TC_PRINT("Test IBECC injection correctable error\n");
 
@@ -307,7 +307,7 @@ static void test_ibecc_error_inject_test_cor(void)
 				EDAC_ERROR_TYPE_DRAM_COR);
 }
 
-static void test_ibecc_error_inject_test_uc(void)
+ZTEST(ibecc, test_ibecc_error_inject_test_uc)
 {
 	TC_PRINT("Test IBECC injection uncorrectable error\n");
 
@@ -315,12 +315,12 @@ static void test_ibecc_error_inject_test_uc(void)
 				EDAC_ERROR_TYPE_DRAM_UC);
 }
 #else /* CONFIG_EDAC_ERROR_INJECT */
-static void test_ibecc_error_inject_test_cor(void)
+ZTEST(ibecc, test_ibecc_error_inject_test_cor)
 {
 	ztest_test_skip();
 }
 
-static void test_ibecc_error_inject_test_uc(void)
+ZTEST(ibecc, test_ibecc_error_inject_test_uc)
 {
 	ztest_test_skip();
 }
@@ -338,14 +338,6 @@ static void *setup_ibecc(void)
 	}
 #endif
 	return NULL;
-}
-
-ZTEST(ibecc, test_ibecc_injection)
-{
-	test_ibecc_api();
-	test_ibecc_error_inject_api();
-	test_ibecc_error_inject_test_cor();
-	test_ibecc_error_inject_test_uc();
 }
 
 ZTEST_SUITE(ibecc, NULL, setup_ibecc, NULL, NULL, NULL);
