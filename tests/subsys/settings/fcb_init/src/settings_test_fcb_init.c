@@ -15,6 +15,15 @@
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/drivers/flash.h>
 
+#define TEST_PARTITION		storage_partition
+#define CODE_PARTITION		slot0_partition
+
+#define TEST_PARTITION_ID	FIXED_PARTITION_ID(TEST_PARTITION)
+
+#define CODE_PARTITION_NODE	DT_NODELABEL(CODE_PARTITION)
+#define CODE_PARTITION_ID	FIXED_PARTITION_ID(CODE_PARTITION)
+#define CODE_PARTITION_EXISTS	FIXED_PARTITION_EXISTS(CODE_PARTITION)
+
 static uint32_t val32;
 
 #if defined(CONFIG_SOC_SERIES_STM32L0X) || defined(CONFIG_SOC_SERIES_STM32L0X)
@@ -23,16 +32,17 @@ static uint32_t val32;
 #define ERASED_VAL 0xFF
 #endif
 
-#define TEST_FLASH_AREA image_0
-
 /* leverage that this area has to be embedded flash part */
-#if FLASH_AREA_LABEL_EXISTS(TEST_FLASH_AREA)
-#define FLASH_WRITE_BLOCK_SIZE							\
-	DT_PROP(DT_GPARENT(DT_NODE_BY_FIXED_PARTITION_LABEL(TEST_FLASH_AREA)),	\
-		write_block_size)
+#if CODE_PARTITION_EXISTS
+#if DT_NODE_HAS_PROP(DT_GPARENT(CODE_PARTITION_NODE), write_block_size)
+#define FLASH_WRITE_BLOCK_SIZE \
+	DT_PROP(DT_GPARENT(CODE_PARTITION_NODE), write_block_size)
 static const volatile __attribute__((section(".rodata")))
 __aligned(FLASH_WRITE_BLOCK_SIZE)
 uint8_t prepared_mark[FLASH_WRITE_BLOCK_SIZE] = {ERASED_VAL};
+#else
+#error "Test not prepared to run from flash with no write-block-size property in DTS"
+#endif
 #endif
 
 static int c1_set(const char *name, size_t len, settings_read_cb read_cb,
@@ -85,7 +95,7 @@ ZTEST(fcb_initialization, test_init)
 
 void test_prepare_storage(void)
 {
-#if FLASH_AREA_LABEL_EXISTS(TEST_FLASH_AREA)
+#if CODE_PARTITION_EXISTS
 /* This procedure uses mark which is stored inside SoC embedded program
  * flash. It will not work on devices on which read/write to them is not
  * possible.
@@ -97,13 +107,13 @@ void test_prepare_storage(void)
 
 	if (prepared_mark[0] == ERASED_VAL) {
 		TC_PRINT("First run: erasing the storage\r\n");
-		err = flash_area_open(FLASH_AREA_ID(storage), &fa);
+		err = flash_area_open(TEST_PARTITION_ID, &fa);
 		zassert_true(err == 0, "Can't open storage flash area");
 
 		err = flash_area_erase(fa, 0, fa->fa_size);
 		zassert_true(err == 0, "Can't erase storage flash area");
 
-		err = flash_area_open(FLASH_AREA_ID(TEST_FLASH_AREA), &fa);
+		err = flash_area_open(CODE_PARTITION_ID, &fa);
 		zassert_true(err == 0, "Can't open storage flash area");
 
 		dev = flash_area_get_device(fa);
