@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,19 +14,19 @@
 /* Nothing here */
 #elif defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 /* SoC embedded NVM */
-#define TEST_AREA	image_1_nonsecure
+#define TEST_AREA	slot1_ns_partition
 #else
-#define TEST_AREA	storage
+#define TEST_AREA	storage_partition
 #endif
 
 /* TEST_AREA is only defined for configurations that realy on
  * fixed-partition nodes.
  */
 #ifdef TEST_AREA
-#define TEST_AREA_OFFSET	FLASH_AREA_OFFSET(TEST_AREA)
-#define TEST_AREA_SIZE		FLASH_AREA_SIZE(TEST_AREA)
+#define TEST_AREA_OFFSET	FIXED_PARTITION_OFFSET(TEST_AREA)
+#define TEST_AREA_SIZE		FIXED_PARTITION_SIZE(TEST_AREA)
 #define TEST_AREA_MAX		(TEST_AREA_OFFSET + TEST_AREA_SIZE)
-#define TEST_AREA_DEVICE	FLASH_AREA_DEVICE(TEST_AREA)
+#define TEST_AREA_DEVICE	FIXED_PARTITION_DEVICE(TEST_AREA)
 
 #elif (CONFIG_NORDIC_QSPI_NOR - 0)
 #define TEST_AREA_DEVICE	DEVICE_DT_GET(DT_INST(0, nordic_qspi_nor))
