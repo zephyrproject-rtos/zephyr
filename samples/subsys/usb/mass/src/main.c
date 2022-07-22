@@ -26,6 +26,9 @@ LOG_MODULE_REGISTER(main);
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 #endif
 
+#define STORAGE_PARTITION		storage_partition
+#define STORAGE_PARTITION_ID		FIXED_PARTITION_ID(STORAGE_PARTITION)
+
 static struct fs_mount_t fs_mnt;
 
 static int setup_flash(struct fs_mount_t *mnt)
@@ -35,8 +38,8 @@ static int setup_flash(struct fs_mount_t *mnt)
 	unsigned int id;
 	const struct flash_area *pfa;
 
-	mnt->storage_dev = (void *)FLASH_AREA_ID(storage);
-	id = (uintptr_t)mnt->storage_dev;
+	mnt->storage_dev = (void *)STORAGE_PARTITION_ID;
+	id = STORAGE_PARTITION_ID;
 
 	rc = flash_area_open(id, &pfa);
 	printk("Area %u at 0x%x on %s for %u bytes\n",
