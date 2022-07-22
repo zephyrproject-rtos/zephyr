@@ -15,10 +15,13 @@
 #if !defined(CONFIG_FILE_SYSTEM_SHELL)
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 
+#define TEST_PARTITION		storage_partition
+#define TEST_PARTITION_ID	FIXED_PARTITION_ID(TEST_PARTITION)
+
 struct fs_mount_t littlefs_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &storage,
-	.storage_dev = (void *)FLASH_AREA_ID(storage),
+	.storage_dev = (void *)TEST_PARTITION_ID,
 	.mnt_point = "/littlefs"
 };
 
