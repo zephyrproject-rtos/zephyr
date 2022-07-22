@@ -7,6 +7,14 @@ zephyr_sources(
   settings_line.c
   )
 
+if (CONFIG_SETTINGS_RAM)
+  message(WARNING "
+    Warning: CONFIG_SETTINGS_RAM cannot be used in release code.
+    This capability is provided for testing purposes only.
+    Use it carefully.")
+endif()
+  
+zephyr_sources_ifdef(CONFIG_SETTINGS_RAM settings_ram.c)
 zephyr_sources_ifdef(CONFIG_SETTINGS_RUNTIME settings_runtime.c)
 zephyr_sources_ifdef(CONFIG_SETTINGS_FS settings_file.c)
 zephyr_sources_ifdef(CONFIG_SETTINGS_FCB settings_fcb.c)

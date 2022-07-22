@@ -28,6 +28,15 @@ config SETTINGS_DYNAMIC_HANDLERS
 	help
 	  Enables the use of dynamic settings handlers
 
+config SETTINGS_RAM_HEAP_SIZE
+	int "heap size dedicated to RAM backend"
+	default 1024
+	depends on SETTINGS
+	help
+	  Configure the size of heap used for RAM settings backend.
+	  This size limits the maximum amount of settings entries and
+	  trying to add more entries than available memory will cause an error.
+
 # Hidden option to enable encoding length into settings entry
 config SETTINGS_ENCODE_LEN
 	depends on SETTINGS
@@ -48,6 +57,11 @@ config SETTINGS_FCB
 	depends on FCB
 	help
 	  Use FCB as a settings storage back-end.
+
+config SETTINGS_RAM
+	bool "RAM"
+	help
+	  Use RAM as a settings storage back-end.
 
 config SETTINGS_FS
 	bool "File System"
@@ -73,6 +87,14 @@ config SETTINGS_NONE
 	help
 	  No storage back-end.
 endchoice
+
+config SETTINGS_RAM_DEBUG
+	bool "Enable printing out all saving / loading entries"
+	depends on SETTINGS_RAM
+	help
+	  Enables printing each entry names, values, and lengths during 
+	  adding to settings list or loading from settings list.
+	  This option uses PRINTK to printing out entries data
 
 config SETTINGS_FCB_NUM_AREAS
 	int "Number of flash areas used by the settings subsystem"
