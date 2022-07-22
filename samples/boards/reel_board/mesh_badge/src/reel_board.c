@@ -24,6 +24,11 @@
 #include "mesh.h"
 #include "board.h"
 
+#define STORAGE_PARTITION		storage_partition
+#define STORAGE_PARTITION_DEV		FIXED_PARTITION_DEVICE(STORAGE_PARTITION)
+#define STORAGE_PARTITION_OFFSET	FIXED_PARTITION_OFFSET(STORAGE_PARTITION)
+#define STORAGE_PARTITION_SIZE		FIXED_PARTITION_SIZE(STORAGE_PARTITION)
+
 enum font_size {
 	FONT_SMALL = 0,
 	FONT_MEDIUM = 1,
@@ -562,15 +567,14 @@ static int configure_leds(void)
 
 static int erase_storage(void)
 {
-	const struct device *dev = FLASH_AREA_DEVICE(storage);
+	const struct device *dev = STORAGE_PARTITION_DEV;
 
 	if (!device_is_ready(dev)) {
 		printk("Flash device not ready\n");
 		return -ENODEV;
 	}
 
-	return flash_erase(dev, FLASH_AREA_OFFSET(storage),
-			   FLASH_AREA_SIZE(storage));
+	return flash_erase(dev, STORAGE_PARTITION_OFFSET, STORAGE_PARTITION_SIZE);
 }
 
 void board_refresh_display(void)
