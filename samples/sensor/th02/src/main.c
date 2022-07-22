@@ -16,30 +16,24 @@
 
 struct channel_info {
 	int chan;
-	char *dev_name;
 };
 
-/* change device names if you want to use different sensors */
 static struct channel_info info[] = {
-	{ SENSOR_CHAN_AMBIENT_TEMP, "TH02" },
-	{ SENSOR_CHAN_HUMIDITY, "TH02" },
+	{ SENSOR_CHAN_AMBIENT_TEMP, },
+	{ SENSOR_CHAN_HUMIDITY, },
 };
 
 void main(void)
 {
 	const struct device *glcd = DEVICE_DT_GET(DT_NODELABEL(glcd));
-	const struct device *dev[ARRAY_SIZE(info)];
+	const struct device *th02 = DEVICE_DT_GET_ONE(hoperf_th02);
 	struct sensor_value val[ARRAY_SIZE(info)];
 	unsigned int i;
 	int rc;
 
-	for (i = 0U; i < ARRAY_SIZE(info); i++) {
-		dev[i] = device_get_binding(info[i].dev_name);
-		if (dev[i] == NULL) {
-			printk("Failed to get \"%s\" device\n",
-			       info[i].dev_name);
-			return;
-		}
+	if (!device_is_ready(th02)) {
+		printk("TH02 is not ready\n");
+		return;
 	}
 
 	if (!device_is_ready(glcd)) {
@@ -54,19 +48,15 @@ void main(void)
 
 	while (1) {
 		/* fetch sensor samples */
-		for (i = 0U; i < ARRAY_SIZE(info); i++) {
-			rc = sensor_sample_fetch(dev[i]);
-			if (rc) {
-				printk("Failed to fetch sample for device %s (%d)\n",
-				       info[i].dev_name, rc);
-			}
+		rc = sensor_sample_fetch(th02);
+		if (rc) {
+			printk("Failed to fetch sample for device TH02 (%d)\n", rc);
 		}
 
 		for (i = 0U; i < ARRAY_SIZE(info); i++) {
-			rc = sensor_channel_get(dev[i], info[i].chan, &val[i]);
+			rc = sensor_channel_get(th02, info[i].chan, &val[i]);
 			if (rc) {
-				printk("Failed to get data for device %s (%d)\n",
-				       info[i].dev_name, rc);
+				printk("Failed to get data for device TH02 (%d)\n", rc);
 				continue;
 			}
 		}
