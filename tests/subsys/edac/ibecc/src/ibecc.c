@@ -12,13 +12,11 @@
 #include <zephyr/drivers/edac.h>
 #include <ibecc.h>
 
-#if defined(CONFIG_EDAC_ERROR_INJECT)
 #define TEST_ADDRESS1		0x1000
 #define TEST_ADDRESS2		0x2000
 #define TEST_DATA		0xface
 #define TEST_ADDRESS_MASK	INJ_ADDR_BASE_MASK_MASK
 #define DURATION		100
-#endif
 
 ZTEST(ibecc, test_ibecc_driver_initialized)
 {
@@ -91,13 +89,14 @@ ZTEST(ibecc, test_ibecc_api)
 	zassert_equal(ret, 0, "Error setting notification callback");
 }
 
-#if defined(CONFIG_EDAC_ERROR_INJECT)
 ZTEST(ibecc, test_ibecc_error_inject_api)
 {
 	const struct device *dev;
 	uint32_t test_value;
 	uint64_t val;
 	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_EDAC_ERROR_INJECT);
 
 	TC_PRINT("Test IBECC Inject API\n");
 
@@ -160,14 +159,7 @@ ZTEST(ibecc, test_ibecc_error_inject_api)
 	zassert_equal(ret, 0, "Error getting param2");
 	zassert_equal(val, 0, "Read back value differs");
 }
-#else
-ZTEST(ibecc, test_ibecc_error_inject_api)
-{
-	ztest_test_skip();
-}
-#endif
 
-#if defined(CONFIG_EDAC_ERROR_INJECT)
 static void test_inject(const struct device *dev, uint64_t addr, uint64_t mask,
 			uint8_t type)
 {
@@ -315,6 +307,8 @@ static void ibecc_error_inject_test(uint64_t addr, uint64_t mask, uint64_t type)
 
 ZTEST(ibecc, test_ibecc_error_inject_test_cor)
 {
+	Z_TEST_SKIP_IFNDEF(CONFIG_EDAC_ERROR_INJECT);
+
 	TC_PRINT("Test IBECC injection correctable error\n");
 
 	ibecc_error_inject_test(TEST_ADDRESS1, TEST_ADDRESS_MASK,
@@ -323,22 +317,13 @@ ZTEST(ibecc, test_ibecc_error_inject_test_cor)
 
 ZTEST(ibecc, test_ibecc_error_inject_test_uc)
 {
+	Z_TEST_SKIP_IFNDEF(CONFIG_EDAC_ERROR_INJECT);
+
 	TC_PRINT("Test IBECC injection uncorrectable error\n");
 
 	ibecc_error_inject_test(TEST_ADDRESS2, TEST_ADDRESS_MASK,
 				EDAC_ERROR_TYPE_DRAM_UC);
 }
-#else /* CONFIG_EDAC_ERROR_INJECT */
-ZTEST(ibecc, test_ibecc_error_inject_test_cor)
-{
-	ztest_test_skip();
-}
-
-ZTEST(ibecc, test_ibecc_error_inject_test_uc)
-{
-	ztest_test_skip();
-}
-#endif
 
 static void *setup_ibecc(void)
 {
