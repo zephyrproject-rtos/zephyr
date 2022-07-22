@@ -34,6 +34,8 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <sys/types.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -270,14 +272,61 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 	DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
 
 /**
+ * Returns non-0 value if fixed-partition of given DTS node label exists.
+ *
+ * @param label DTS node label
+ *
+ * @return non-0 if fixed-partition node exists and is enabled;
+ *	   0 if node does not exist, is not enabled or is not fixed-partition.
+ */
+#define FIXED_PARTITION_EXISTS(label) DT_FIXED_PARTITION_EXISTS(DT_NODELABEL(label))
+
+/**
+ * Get flash area ID from fixed-partition DTS node label
+ *
+ * @param label DTS node label of a partition
+ *
+ * @return flash area ID
+ */
+#define FIXED_PARTITION_ID(label) DT_FIXED_PARTITION_ID(DT_NODELABEL(label))
+
+/**
+ * Get fixed-partition offset from DTS node label
+ *
+ * @param label DTS node label of a partition
+ *
+ * @return fixed-partition offset, as defined for the partition in DTS.
+ */
+#define FIXED_PARTITION_OFFSET(label) DT_REG_ADDR(DT_NODELABEL(label))
+
+/**
+ * Get fixed-partition size for DTS node label
+ *
+ * @param label DTS node label
+ *
+ * @return fixed-partition offset, as defined for the partition in DTS.
+ */
+#define FIXED_PARTITION_SIZE(label) DT_REG_SIZE(DT_NODELABEL(label))
+
+/**
  * Get device pointer for device the area/partition resides on
  *
- * @param label partition label
+ * @param label DTS node label of a partition
  *
  * @return const struct device type pointer
  */
 #define FLASH_AREA_DEVICE(label) \
 	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(DT_NODE_BY_FIXED_PARTITION_LABEL(label)))
+
+/**
+ * Get device pointer for device the area/partition resides on
+ *
+ * @param label DTS node label of a partition
+ *
+ * @return Pointer to a device.
+ */
+#define FIXED_PARTITION_DEVICE(label) \
+	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(DT_NODELABEL(label)))
 
 #ifdef __cplusplus
 }
