@@ -251,6 +251,20 @@ static void test_inject(const struct device *dev, uint64_t addr, uint64_t mask,
 	TC_PRINT("Uncorrectable error count %d\n", ret);
 
 	errors_uncorrectable = ret;
+
+	/* Clear */
+
+	ret = edac_inject_set_error_type(dev, 0);
+	zassert_equal(ret, 0, "Error setting inject error type");
+
+	ret = edac_inject_set_param1(dev, 0);
+	zassert_equal(ret, 0, "Error setting inject address");
+
+	ret = edac_inject_set_param2(dev, 0);
+	zassert_equal(ret, 0, "Error setting inject address mask");
+
+	ret = edac_inject_error_trigger(dev);
+	zassert_equal(ret, 0, "Error setting ctrl");
 }
 
 static int check_values(void *p1, void *p2, void *p3)
