@@ -3,11 +3,11 @@
 
 menuconfig NORDIC_QSPI_NOR
 	bool "QSPI NOR Flash"
+	default y
+	depends on DT_HAS_NORDIC_QSPI_NOR_ENABLED
 	select FLASH_HAS_DRIVER_ENABLED
 	select NRFX_QSPI
 	select FLASH_JESD216
-	depends on HAS_HW_NRF_QSPI
-	default y
 	help
 	  Enable support for nrfx QSPI driver with EasyDMA.
 
