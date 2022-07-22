@@ -197,7 +197,7 @@ NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 _ETH_L2_CTX_TYPE,
 			 127);
 
-static void test_init(void)
+static void *test_init(void)
 {
 	struct net_if_addr *ifaddr;
 
@@ -221,7 +221,7 @@ static void test_init(void)
 		       net_sprint_ipv6_addr(&my_addr1));
 		zassert_not_null(ifaddr, "addr1");
 
-		return;
+		return NULL;
 	}
 
 	/* For testing purposes we need to set the adddresses preferred */
@@ -234,7 +234,7 @@ static void test_init(void)
 		       net_sprint_ipv6_addr(&ll_addr));
 		zassert_not_null(ifaddr, "ll_addr");
 
-		return;
+		return NULL;
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -248,7 +248,7 @@ static void test_init(void)
 		       net_sprint_ipv4_addr(&my_addr2));
 		zassert_not_null(ifaddr, "addr2");
 
-		return;
+		return NULL;
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -263,6 +263,8 @@ static void test_init(void)
 	test_failed = false;
 
 	test_started = true;
+
+	return NULL;
 }
 
 void dns_result_cb_dummy(enum dns_resolve_status status,
@@ -272,7 +274,7 @@ void dns_result_cb_dummy(enum dns_resolve_status status,
 	return;
 }
 
-static void test_dns_query_invalid_timeout(void)
+ZTEST(dns_resolve, test_dns_query_invalid_timeout)
 {
 	int ret;
 
@@ -285,7 +287,7 @@ static void test_dns_query_invalid_timeout(void)
 	zassert_equal(ret, -EINVAL, "Wrong return code for timeout");
 }
 
-static void test_dns_query_invalid_context(void)
+ZTEST(dns_resolve, test_dns_query_invalid_context)
 {
 	int ret;
 
@@ -299,7 +301,7 @@ static void test_dns_query_invalid_context(void)
 	zassert_equal(ret, -EINVAL, "Wrong return code for context");
 }
 
-static void test_dns_query_invalid_callback(void)
+ZTEST(dns_resolve, test_dns_query_invalid_callback)
 {
 	int ret;
 
@@ -312,7 +314,7 @@ static void test_dns_query_invalid_callback(void)
 	zassert_equal(ret, -EINVAL, "Wrong return code for callback");
 }
 
-static void test_dns_query_invalid_query(void)
+ZTEST(dns_resolve, test_dns_query_invalid_query)
 {
 	int ret;
 
@@ -341,7 +343,7 @@ void dns_result_cb_timeout(enum dns_resolve_status status,
 	k_sem_give(&wait_data);
 }
 
-static void test_dns_query_server_count(void)
+ZTEST(dns_resolve, test_dns_query_server_count)
 {
 	struct dns_resolve_context *ctx = dns_resolve_get_default();
 	int i, count = 0;
@@ -362,7 +364,7 @@ static void test_dns_query_server_count(void)
 		     "Invalid number of servers");
 }
 
-static void test_dns_query_ipv4_server_count(void)
+ZTEST(dns_resolve, test_dns_query_ipv4_server_count)
 {
 	struct dns_resolve_context *ctx = dns_resolve_get_default();
 	int i, count = 0, port = 0;
@@ -392,7 +394,7 @@ static void test_dns_query_ipv4_server_count(void)
 	zassert_equal(port, 1, "Invalid number of IPv4 servers with port 53");
 }
 
-static void test_dns_query_ipv6_server_count(void)
+ZTEST(dns_resolve, test_dns_query_ipv6_server_count)
 {
 	struct dns_resolve_context *ctx = dns_resolve_get_default();
 	int i, count = 0, port = 0;
@@ -427,7 +429,7 @@ static void test_dns_query_ipv6_server_count(void)
 #endif
 }
 
-static void test_dns_query_too_many(void)
+ZTEST(dns_resolve, test_dns_query_too_many)
 {
 	int expected_status = DNS_EAI_CANCELED;
 	int ret;
@@ -457,7 +459,7 @@ static void test_dns_query_too_many(void)
 	timeout_query = false;
 }
 
-static void test_dns_query_ipv4_timeout(void)
+ZTEST(dns_resolve, test_dns_query_ipv4_timeout)
 {
 	int expected_status = DNS_EAI_CANCELED;
 	int ret;
@@ -479,7 +481,7 @@ static void test_dns_query_ipv4_timeout(void)
 	timeout_query = false;
 }
 
-static void test_dns_query_ipv6_timeout(void)
+ZTEST(dns_resolve, test_dns_query_ipv6_timeout)
 {
 	int expected_status = DNS_EAI_CANCELED;
 	int ret;
@@ -520,7 +522,7 @@ static void verify_cancelled(void)
 	zassert_equal(timer_not_stopped, 0, "Not all timers vere cancelled");
 }
 
-static void test_dns_query_ipv4_cancel(void)
+ZTEST(dns_resolve, test_dns_query_ipv4_cancel)
 {
 	int expected_status = DNS_EAI_CANCELED;
 	uint16_t dns_id;
@@ -546,7 +548,7 @@ static void test_dns_query_ipv4_cancel(void)
 	verify_cancelled();
 }
 
-static void test_dns_query_ipv6_cancel(void)
+ZTEST(dns_resolve, test_dns_query_ipv6_cancel)
 {
 	int expected_status = DNS_EAI_CANCELED;
 	uint16_t dns_id;
@@ -596,7 +598,7 @@ void dns_result_cb(enum dns_resolve_status status,
 	k_sem_give(&wait_data2);
 }
 
-static void test_dns_query_ipv4(void)
+ZTEST(dns_resolve, test_dns_query_ipv4)
 {
 	struct expected_status status = {
 		.status1 = DNS_EAI_INPROGRESS,
@@ -696,7 +698,7 @@ void dns_result_numeric_cb(enum dns_resolve_status status,
 	k_sem_give(&wait_data2);
 }
 
-static void test_dns_query_ipv4_numeric(void)
+ZTEST(dns_resolve, test_dns_query_ipv4_numeric)
 {
 	struct expected_addr_status status = {
 		.status1 = DNS_EAI_INPROGRESS,
@@ -754,24 +756,4 @@ static void test_dns_query_ipv6_numeric(void)
 }
 #endif
 
-void test_main(void)
-{
-	ztest_test_suite(dns_tests,
-			 ztest_unit_test(test_init),
-			 ztest_unit_test(test_dns_query_invalid_timeout),
-			 ztest_unit_test(test_dns_query_invalid_context),
-			 ztest_unit_test(test_dns_query_invalid_callback),
-			 ztest_unit_test(test_dns_query_invalid_query),
-			 ztest_unit_test(test_dns_query_too_many),
-			 ztest_unit_test(test_dns_query_server_count),
-			 ztest_unit_test(test_dns_query_ipv4_server_count),
-			 ztest_unit_test(test_dns_query_ipv6_server_count),
-			 ztest_unit_test(test_dns_query_ipv4_timeout),
-			 ztest_unit_test(test_dns_query_ipv6_timeout),
-			 ztest_unit_test(test_dns_query_ipv4_cancel),
-			 ztest_unit_test(test_dns_query_ipv6_cancel),
-			 ztest_unit_test(test_dns_query_ipv4),
-			 ztest_unit_test(test_dns_query_ipv4_numeric));
-
-	ztest_run_test_suite(dns_tests);
-}
+ZTEST_SUITE(dns_resolve, NULL, test_init, NULL, NULL, NULL);
