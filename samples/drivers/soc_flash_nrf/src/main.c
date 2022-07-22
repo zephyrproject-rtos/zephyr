@@ -14,13 +14,13 @@
 
 
 #ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
-#define FLASH_TEST_LABEL image_1_nonsecure
+#define TEST_PARTITION	slot1_ns_partition
 #else
-#define FLASH_TEST_LABEL image_1
+#define TEST_PARTITION	slot1_partition
 #endif
 
-#define FLASH_TEST_OFFSET	FLASH_AREA_OFFSET(FLASH_TEST_LABEL)
-#define FLASH_TEST_DEVICE	FLASH_AREA_DEVICE(FLASH_TEST_LABEL)
+#define TEST_PARTITION_OFFSET	FIXED_PARTITION_OFFSET(TEST_PARTITION)
+#define TEST_PARTITION_DEVICE	FIXED_PARTITION_DEVICE(TEST_PARTITION)
 
 #define FLASH_PAGE_SIZE   4096
 #define TEST_DATA_WORD_0  0x1122
@@ -33,7 +33,7 @@
 
 void main(void)
 {
-	const struct device *flash_dev = FLASH_TEST_DEVICE;
+	const struct device *flash_dev = TEST_PARTITION_DEVICE;
 	uint32_t buf_array_1[4] = { TEST_DATA_WORD_0, TEST_DATA_WORD_1,
 				    TEST_DATA_WORD_2, TEST_DATA_WORD_3 };
 	uint32_t buf_array_2[4] = { TEST_DATA_WORD_3, TEST_DATA_WORD_1,
@@ -53,8 +53,8 @@ void main(void)
 		return;
 	}
 
-	printf("\nTest 1: Flash erase page at 0x%x\n", FLASH_TEST_OFFSET);
-	if (flash_erase(flash_dev, FLASH_TEST_OFFSET, FLASH_PAGE_SIZE) != 0) {
+	printf("\nTest 1: Flash erase page at 0x%x\n", TEST_PARTITION_OFFSET);
+	if (flash_erase(flash_dev, TEST_PARTITION_OFFSET, FLASH_PAGE_SIZE) != 0) {
 		printf("   Flash erase failed!\n");
 	} else {
 		printf("   Flash erase succeeded!\n");
@@ -62,7 +62,7 @@ void main(void)
 
 	printf("\nTest 2: Flash write (word array 1)\n");
 	for (i = 0U; i < ARRAY_SIZE(buf_array_1); i++) {
-		offset = FLASH_TEST_OFFSET + (i << 2);
+		offset = TEST_PARTITION_OFFSET + (i << 2);
 		printf("   Attempted to write %x at 0x%x\n", buf_array_1[i],
 				offset);
 		if (flash_write(flash_dev, offset, &buf_array_1[i],
@@ -84,7 +84,7 @@ void main(void)
 		}
 	}
 
-	offset = FLASH_TEST_OFFSET - FLASH_PAGE_SIZE * 2;
+	offset = TEST_PARTITION_OFFSET - FLASH_PAGE_SIZE * 2;
 	printf("\nTest 3: Flash erase (4 pages at 0x%x)\n", offset);
 	if (flash_erase(flash_dev, offset, FLASH_PAGE_SIZE * 4) != 0) {
 		printf("   Flash erase failed!\n");
@@ -94,7 +94,7 @@ void main(void)
 
 	printf("\nTest 4: Flash write (word array 2)\n");
 	for (i = 0U; i < ARRAY_SIZE(buf_array_2); i++) {
-		offset = FLASH_TEST_OFFSET + (i << 2);
+		offset = TEST_PARTITION_OFFSET + (i << 2);
 		printf("   Attempted to write %x at 0x%x\n", buf_array_2[i],
 				offset);
 		if (flash_write(flash_dev, offset, &buf_array_2[i],
@@ -116,8 +116,8 @@ void main(void)
 		}
 	}
 
-	printf("\nTest 5: Flash erase page at 0x%x\n", FLASH_TEST_OFFSET);
-	if (flash_erase(flash_dev, FLASH_TEST_OFFSET, FLASH_PAGE_SIZE) != 0) {
+	printf("\nTest 5: Flash erase page at 0x%x\n", TEST_PARTITION_OFFSET);
+	if (flash_erase(flash_dev, TEST_PARTITION_OFFSET, FLASH_PAGE_SIZE) != 0) {
 		printf("   Flash erase failed!\n");
 	} else {
 		printf("   Flash erase succeeded!\n");
@@ -125,7 +125,7 @@ void main(void)
 
 	printf("\nTest 6: Non-word aligned write (word array 3)\n");
 	for (i = 0U; i < ARRAY_SIZE(buf_array_3); i++) {
-		offset = FLASH_TEST_OFFSET + (i << 2) + 1;
+		offset = TEST_PARTITION_OFFSET + (i << 2) + 1;
 		printf("   Attempted to write %x at 0x%x\n", buf_array_3[i],
 				offset);
 		if (flash_write(flash_dev, offset, &buf_array_3[i],
