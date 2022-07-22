@@ -4,12 +4,14 @@ tests:
       - native_posix
     # Exclude platform which does not link with cache functions
     platform_exclude: ast1030_evb
+    timeout: 120
 
   lib.spsc_pbuf_cache:
     integration_platforms:
       - native_posix
     # Exclude platform which does not link with cache functions
     platform_exclude: ast1030_evb
+    timeout: 120
     extra_configs:
       - CONFIG_SPSC_PBUF_CACHE_ALWAYS=y
 
@@ -18,6 +20,7 @@ tests:
       - native_posix
     # Exclude platform which does not link with cache functions
     platform_exclude: ast1030_evb
+    timeout: 120
     extra_configs:
       - CONFIG_SPSC_PBUF_CACHE_NEVER=y
 
@@ -26,11 +29,13 @@ tests:
       - native_posix
     # Exclude platform which does not link with cache functions
     platform_exclude: ast1030_evb
+    timeout: 120
     extra_configs:
       - CONFIG_SPSC_PBUF_UTILIZATION=y
 
   lib.spsc_pbuf_stress:
     platform_allow: qemu_x86
+    timeout: 120
     extra_configs:
       - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100000
     integration_platforms:
