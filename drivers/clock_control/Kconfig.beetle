@@ -7,8 +7,8 @@ if SOC_FAMILY_ARM
 
 menuconfig CLOCK_CONTROL_BEETLE
 	bool "BEETLE Clock Control"
-	depends on SOC_SERIES_BEETLE
-	default y if SOC_SERIES_BEETLE
+	default y
+	depends on DT_HAS_ARM_BEETLE_SYSCON_ENABLED
 	help
 	  Enable driver for Reset & Clock Control subsystem found
 	  in STM32F4 family of MCUs

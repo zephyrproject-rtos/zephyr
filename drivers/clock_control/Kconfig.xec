@@ -5,6 +5,7 @@
 
 config CLOCK_CONTROL_MCHP_XEC
 	bool "MCHP XEC PCR clock control driver"
-	depends on SOC_SERIES_MEC172X
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_PCR_ENABLED
 	help
 	  Enable support for Microchip XEC PCR clock driver.
