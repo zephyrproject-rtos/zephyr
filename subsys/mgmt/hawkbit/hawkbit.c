@@ -52,12 +52,12 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 
 #define HTTP_HEADER_CONTENT_TYPE_JSON "application/json;charset=UTF-8"
 
-#define SLOT1_LABEL image_1
-#define SLOT1_SIZE FLASH_AREA_SIZE(SLOT1_LABEL)
+#define SLOT1_LABEL slot1_partition
+#define SLOT1_SIZE FIXED_PARTITION_SIZE(SLOT1_LABEL)
 
-#define STORAGE_LABEL storage
-#define STORAGE_DEV FLASH_AREA_DEVICE(STORAGE_LABEL)
-#define STORAGE_OFFSET FLASH_AREA_OFFSET(STORAGE_LABEL)
+#define STORAGE_LABEL storage_partition
+#define STORAGE_DEV FIXED_PARTITION_DEVICE(STORAGE_LABEL)
+#define STORAGE_OFFSET FIXED_PARTITION_OFFSET(STORAGE_LABEL)
 
 #if ((CONFIG_HAWKBIT_POLL_INTERVAL > 1) && (CONFIG_HAWKBIT_POLL_INTERVAL < 43200))
 static uint32_t poll_sleep = (CONFIG_HAWKBIT_POLL_INTERVAL * 60 * MSEC_PER_SEC);
@@ -612,7 +612,7 @@ int hawkbit_init(void)
 		}
 
 		LOG_DBG("Marked image as OK");
-		ret = boot_erase_img_bank(FLASH_AREA_ID(SLOT1_LABEL));
+		ret = boot_erase_img_bank(FIXED_PARTITION_ID(SLOT1_LABEL));
 		if (ret) {
 			LOG_ERR("Failed to erase second slot: %d", ret);
 			return ret;
@@ -1163,7 +1163,7 @@ enum hawkbit_response hawkbit_probe(void)
 	/* Verify the hash of the stored firmware */
 	fic.match = hb_context.dl.file_hash;
 	fic.clen = hb_context.dl.downloaded_size;
-	if (flash_img_check(&hb_context.flash_ctx, &fic, FLASH_AREA_ID(SLOT1_LABEL))) {
+	if (flash_img_check(&hb_context.flash_ctx, &fic, FIXED_PARTITION_ID(SLOT1_LABEL))) {
 		LOG_ERR("Firmware - flash validation has failed");
 		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
 		goto cleanup;
