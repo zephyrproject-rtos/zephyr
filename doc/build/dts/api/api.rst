@@ -421,6 +421,8 @@ device.
      - Instruction Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,ocm
      - On-chip memory node on Xilinx Zynq-7000 and ZynqMP SoCs
+   * - zephyr,osdp-uart
+     - Sets UART device used by OSDP subsystem
    * - zephyr,ot-uart
      - Used by the OpenThread to specify UART device for Spinel protocol
    * - zephyr,pcie-controller
