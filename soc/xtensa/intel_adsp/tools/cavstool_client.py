@@ -9,9 +9,11 @@ import argparse
 import socket
 import struct
 import hashlib
+from urllib.parse import urlparse
 
 RET = 0
 HOST = None
+PORT = 0
 PORT_LOG = 9999
 PORT_REQ = PORT_LOG + 1
 BUF_SIZE = 4096
@@ -110,14 +112,14 @@ def main():
         log.info("Monitor process")
 
         try:
-            client = cavstool_client(HOST, PORT_LOG, args)
+            client = cavstool_client(HOST, PORT, args)
             client.send_cmd(CMD_LOG_START)
         except KeyboardInterrupt:
             pass
 
     else:
         log.info("Uploading process")
-        client = cavstool_client(HOST, PORT_REQ, args)
+        client = cavstool_client(HOST, PORT, args)
         client.send_cmd(CMD_DOWNLOAD)
 
 ap = argparse.ArgumentParser(description="DSP loader/logger client tool")
@@ -133,7 +135,21 @@ args = ap.parse_args()
 if args.quiet:
     log.setLevel(logging.WARN)
 
-HOST = args.server_addr
+if args.server_addr:
+    url = urlparse("//" + args.server_addr)
+
+    if url.hostname:
+        HOST = url.hostname
+
+    if url.port:
+        PORT = int(url.port)
+    else:
+        if args.log_only:
+            PORT = PORT_LOG
+        else:
+            PORT = PORT_REQ
+
+log.info(f"REMOTE HOST: {HOST} PORT: {PORT}")
 
 if __name__ == "__main__":
     main()

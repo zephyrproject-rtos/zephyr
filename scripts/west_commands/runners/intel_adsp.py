@@ -68,9 +68,9 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
                             help='the default basename of the key store in board.cmake')
         parser.add_argument('--key',
                             help='specify where the signing key is')
-        parser.add_argument('--pty', action="store_true",
-                            help='the log will not output immediately to STDOUT, you \
-                            can redirect it to a serial PTY')
+        parser.add_argument('--pty',
+                            help=''''Capture the output of cavstool.py running on --remote-host \
+                            and stream it remotely to west's standard output.''')
 
     @classmethod
     def do_create(cls, cfg, args):
@@ -122,15 +122,20 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
 
         # Copy the zephyr to target remote ADSP host and run
         self.run_cmd = ([f'{self.cavstool}','-s', f'{self.remote_host}', f'{send_bin_fw}'])
-        self.log_cmd = ([f'{self.cavstool}','-s', f'{self.remote_host}', '-l'])
 
-        self.logger.debug(f"cavstool({self.cavstool}), fw('{send_bin_fw})")
         self.logger.debug(f"rcmd: {self.run_cmd}")
 
         self.check_call(self.run_cmd)
 
-        # If the self.pty assigned, the output the log will
-        # not output to stdout directly. That means we can
-        # make the log output to the PTY.
-        if not self.pty:
+        # If the self.pty is assigned, the log will output to stdout
+        # directly. That means you don't have to execute the command:
+        #
+        #   cavstool_client.py -s {host}:{port} -l
+        #
+        # to get the result later separately.
+        if self.pty is not None:
+            self.log_cmd = ([f'{self.cavstool}','-s', f'{self.pty}', '-l'])
+
+            self.logger.debug(f"rcmd: {self.log_cmd}")
+
             self.check_call(self.log_cmd)
