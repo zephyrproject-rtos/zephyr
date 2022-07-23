@@ -13,12 +13,8 @@ choice STM32_LPTIM_CLOCK
 	depends on STM32_LPTIM_TIMER
 endchoice
 
-if SENSOR
-
 config I2C
-	default y
-
-endif # SENSOR
+	default y if SENSOR
 
 if BT
 
