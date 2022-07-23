@@ -9,6 +9,7 @@
 	aliases {
 		magn0 = &lsm303agr_magn;
 		accel0 = &lsm303agr_accel;
+		accel1 = &lsm6dsl;
 	};
 };
 
@@ -26,7 +27,7 @@
 		label = "LPS22HB";
 	};
 
-	lsm6dsl@6b {
+	lsm6dsl: lsm6dsl@6b {
 		compatible = "st,lsm6dsl";
 		reg = <0x6b>;
 		label = "LSM6DSL";
