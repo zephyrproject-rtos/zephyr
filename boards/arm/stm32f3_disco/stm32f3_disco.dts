@@ -70,6 +70,7 @@
 		sw0 = &user_button;
 		magn0 = &lsm303dlhc_magn;
 		watchdog0 = &iwdg;
+		accel0 = &lsm303dlhc_accel;
 	};
 };
 
@@ -126,7 +127,7 @@
 		reg = <0x1e>;
 	};
 
-	lsm303dlhc-accel@19 {
+	lsm303dlhc_accel: lsm303dlhc-accel@19 {
 		compatible = "st,lis2dh", "st,lsm303dlhc-accel";
 		reg = <0x19>;
 		irq-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>,

@@ -72,6 +72,7 @@
 		led3-blue  = &led3_blue;
 		pwm-led0   = &pwm_led0_red;
 		watchdog0 = &wdt0;
+		accel0     = &lis2dh12;
 	};
 
 };
