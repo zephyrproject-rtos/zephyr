@@ -75,10 +75,6 @@ config PWM_ITE_IT8XXX2
 	default y
 	depends on PWM
 
-config TACH_IT8XXX2
-	default y
-	depends on SENSOR
-
 config PECI_ITE_IT8XXX2
 	default y
 	depends on PECI
