@@ -9,6 +9,7 @@
 	aliases {
 		magn0 = &lsm303agr_magn;
 		accel0 = &lsm303agr_accel;
+		accel1 = &lsm6dsl;
 	};
 };
 
@@ -24,7 +25,7 @@
 		reg = <0x5d>;
 	};
 
-	lsm6dsl@6b {
+	lsm6dsl: lsm6dsl@6b {
 		compatible = "st,lsm6dsl";
 		reg = <0x6b>;
 		irq-gpios = <&arduino_header 10 GPIO_ACTIVE_HIGH>;	/* D4 */
