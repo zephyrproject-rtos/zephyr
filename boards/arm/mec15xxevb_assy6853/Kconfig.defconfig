@@ -46,8 +46,4 @@ config SPI_XEC_QMSPI
 
 endif # SPI
 
-config TACH_XEC
-	default y
-	depends on SENSOR
-
 endif # BOARD_MEC15XXEVB_ASSY6853
