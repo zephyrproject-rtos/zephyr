@@ -561,6 +561,7 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 	struct ztest_unit_test *test = NULL;
 	void *data = NULL;
 	int fail = 0;
+	int tc_result = TC_PASS;
 
 	if (test_status < 0) {
 		return test_status;
@@ -601,7 +602,16 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 				continue;
 			}
 			if (ztest_api.should_test_run(suite->name, test->name)) {
-				if (run_test(suite, test, data) == TC_FAIL) {
+				test->stats->run_count++;
+				tc_result = run_test(suite, test, data);
+				if (tc_result == TC_PASS) {
+					test->stats->pass_count++;
+				} else if (tc_result == TC_SKIP) {
+					test->stats->skip_count++;
+				} else if (tc_result == TC_FAIL) {
+					test->stats->fail_count++;
+				}
+				if (tc_result == TC_FAIL) {
 					fail++;
 				}
 			}
@@ -613,7 +623,17 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 #else
 		while (((test = z_ztest_get_next_test(suite->name, test)) != NULL)) {
 			if (ztest_api.should_test_run(suite->name, test->name)) {
-				if (run_test(suite, test, data) == TC_FAIL) {
+				test->stats->run_count++;
+				tc_result = run_test(suite, test, data);
+				if (tc_result == TC_PASS) {
+					test->stats->pass_count++;
+				} else if (tc_result == TC_SKIP) {
+					test->stats->skip_count++;
+				} else if (tc_result == TC_FAIL) {
+					test->stats->fail_count++;
+				}
+
+				if (tc_result == TC_FAIL) {
 					fail++;
 				}
 			}
@@ -654,10 +674,139 @@ void end_report(void)
 K_APPMEM_PARTITION_DEFINE(ztest_mem_partition);
 #endif
 
+static void __ztest_init_unit_test_result_for_suite(struct ztest_suite_node *suite)
+{
+	struct ztest_unit_test *test = NULL;
+
+	while (((test = z_ztest_get_next_test(suite->name, test)) != NULL)) {
+		test->stats->run_count = 0;
+		test->stats->skip_count = 0;
+		test->stats->fail_count = 0;
+		test->stats->pass_count = 0;
+	}
+}
+
+static void flush_log(void)
+{
+	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
+		while (log_data_pending()) {
+			k_sleep(K_MSEC(10));
+		}
+		k_sleep(K_MSEC(10));
+	} else {
+		while (LOG_PROCESS()) {
+		}
+	}
+}
+
+/* Show one line summary for a test suite.
+ */
+static void __ztest_show_suite_summary_oneline(struct ztest_suite_node *suite)
+{
+	int distinct_pass = 0, distinct_fail = 0, distinct_skip = 0, distinct_total = 0;
+	int effective_total = 0;
+	int expanded_pass = 0, expanded_passrate = 0;
+	int passrate_major = 0, passrate_minor = 0, passrate_tail = 0;
+	int suite_result = TC_PASS;
+
+	struct ztest_unit_test *test = NULL;
+
+	/** summary of disctinct run  */
+	while (((test = z_ztest_get_next_test(suite->name, test)) != NULL)) {
+		distinct_total++;
+		if (test->stats->skip_count == test->stats->run_count) {
+			distinct_skip++;
+		} else if (test->stats->pass_count == test->stats->run_count) {
+			distinct_pass++;
+		} else {
+			distinct_fail++;
+		}
+	}
+
+	if (distinct_skip == distinct_total) {
+		suite_result = TC_SKIP;
+		passrate_major = passrate_minor = 0;
+	} else {
+		suite_result = (distinct_fail > 0) ? TC_FAIL : TC_PASS;
+		effective_total = distinct_total - distinct_skip;
+		expanded_pass = distinct_pass * 100000;
+		expanded_passrate = expanded_pass / effective_total;
+		passrate_major = expanded_passrate / 1000;
+		passrate_minor = (expanded_passrate - passrate_major * 1000) / 10;
+		passrate_tail = expanded_passrate - passrate_major * 1000 - passrate_minor * 10;
+		if (passrate_tail >= 5) { /* rounding */
+			passrate_minor++;
+		}
+	}
+
+	TC_SUMMARY_PRINT("SUITE %s - %3d.%02d%% [%s]: pass = %d, fail = %d, "
+				"skip = %d, total = %d\n",
+				TC_RESULT_TO_STR(suite_result),
+				passrate_major, passrate_minor,
+				suite->name, distinct_pass, distinct_fail,
+				distinct_skip, distinct_total);
+	flush_log();
+}
+
+#ifdef CONFIG_ZTEST_VERBOSE_SUMMARY
+static void __ztest_show_suite_summary_verbose(struct ztest_suite_node *suite)
+{
+	struct ztest_unit_test *test = NULL;
+	int tc_result = TC_PASS;
+	int flush_frequency = 0;
+
+	__ztest_show_suite_summary_oneline(suite);
+
+	while (((test = z_ztest_get_next_test(suite->name, test)) != NULL)) {
+		if (test->stats->skip_count == test->stats->run_count) {
+			tc_result = TC_SKIP;
+		} else if (test->stats->pass_count == test->stats->run_count) {
+			tc_result = TC_PASS;
+		} else {
+			tc_result = TC_FAIL;
+		}
+
+		TC_SUMMARY_PRINT(" - %s - [%s.%s]\n", TC_RESULT_TO_STR(tc_result),
+				 test->test_suite_name, test->name);
+
+		if (flush_frequency % 3 == 0) {
+			/** Reduce the flush frequencey a bit to speed up the output */
+			flush_log();
+		}
+		flush_frequency++;
+	}
+	TC_SUMMARY_PRINT("\n");
+	flush_log();
+}
+#endif
+
+static void __ztest_show_suite_summary(void)
+{
+	/* Flush the log a lot to ensure that no summary content
+	 * is dropped if it goes through the logging subsystem.
+	 */
+	flush_log();
+	TC_SUMMARY_PRINT("\n------ TESTSUITE SUMMARY START ------\n");
+	flush_log();
+	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
+	     ptr < _ztest_suite_node_list_end; ++ptr) {
+
+#ifdef CONFIG_ZTEST_VERBOSE_SUMMARY
+		__ztest_show_suite_summary_verbose(ptr);
+#else
+		__ztest_show_suite_summary_oneline(ptr);
+#endif
+	}
+	TC_SUMMARY_PRINT("------ TESTSUITE SUMMARY END ------\n\n");
+	flush_log();
+}
+
 static int __ztest_run_test_suite(struct ztest_suite_node *ptr, const void *state)
 {
 	struct ztest_suite_stats *stats = ptr->stats;
 	int count = 0;
+
+	__ztest_init_unit_test_result_for_suite(ptr);
 
 	for (int i = 0; i < NUM_ITER_PER_SUITE; i++) {
 		if (ztest_api.should_suite_run(state, ptr)) {
@@ -694,6 +843,8 @@ int z_impl_ztest_run_test_suites(const void *state)
 	}
 #endif
 
+	__ztest_show_suite_summary();
+
 	return count;
 }
 
@@ -723,6 +874,14 @@ void ztest_verify_all_test_suites_ran(void)
 		}
 
 		if (!all_tests_run) {
+			test_status = 1;
+		}
+	}
+
+	for (test = _ztest_unit_test_list_start; test < _ztest_unit_test_list_end; ++test) {
+		if (test->stats->fail_count + test->stats->pass_count + test->stats->skip_count !=
+		    test->stats->run_count) {
+			PRINT("Bad stats for %s.%s\n", test->test_suite_name, test->name);
 			test_status = 1;
 		}
 	}
@@ -765,6 +924,7 @@ void main(void)
 	z_init_mock();
 	test_main();
 	end_report();
+	flush_log();
 	LOG_PANIC();
 	if (IS_ENABLED(CONFIG_ZTEST_RETEST_IF_PASSED)) {
 		static __noinit struct {
