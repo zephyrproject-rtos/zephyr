@@ -103,7 +103,7 @@
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
-	lsm6dso@6a {
+	lsm6dso: lsm6dso@6a {
 		compatible = "st,lsm6dso";
 		reg = <0x6a>;
 		irq-gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
