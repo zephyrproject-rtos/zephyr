@@ -31,6 +31,7 @@
 		led2 = &led2;
 		sw0 = &button0;
 		watchdog0 = &wdt0;
+		accel0 = &lis2dh12;
 	};
 
 	leds {

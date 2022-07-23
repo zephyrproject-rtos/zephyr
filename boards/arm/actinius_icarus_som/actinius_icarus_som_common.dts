@@ -17,6 +17,7 @@
 
 	aliases {
 		watchdog0 = &wdt0;
+		accel0 = &lis2dh12_accel;
 	};
 
 	sim_select: sim-select {
@@ -56,7 +57,7 @@
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-1 = <&i2c2_sleep>;
 	pinctrl-names = "default", "sleep";
-	lis2dh12-accel@19 {
+	lis2dh12_accel: lis2dh12-accel@19 {
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>,

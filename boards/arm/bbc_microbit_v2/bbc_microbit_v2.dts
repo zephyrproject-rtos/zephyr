@@ -17,6 +17,7 @@
 		sw0 = &buttonA;
 		sw1 = &buttonB;
 		magn0 = &lsm303agr_magn;
+		accel0 = &lsm303agr_accel;
 		watchdog0 = &wdt0;
 	};
 
@@ -137,7 +138,7 @@
 		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;	/* A3 */
 	};
 
-	lsm303agr-accel@19 {
+	lsm303agr_accel: lsm303agr-accel@19 {
 		compatible = "st,lis2dh", "st,lsm303agr-accel";
 		status = "okay";
 		reg = <0x19>;

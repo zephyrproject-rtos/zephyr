@@ -48,6 +48,7 @@
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &blue_led;
 		watchdog0 = &wdt0;
+		accel0 = &lis2dh;
 	};
 
 	/* Used for accessing other pins */
@@ -126,7 +127,7 @@
 		reg = <0x51>;
 	};
 
-	lis2dh@18 {
+	lis2dh: lis2dh@18 {
 		compatible = "st,lis2dh";
 		label = "LIS2DH";
 		reg = <0x18>;
