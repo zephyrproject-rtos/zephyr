@@ -15,13 +15,15 @@ import socketserver
 import threading
 import netifaces
 import hashlib
+from urllib.parse import urlparse
 
 # Global variable use to sync between log and request services.
 # When it is true, the adsp is able to start running.
 start_output = False
 lock = threading.Lock()
 
-HOST = None
+# INADDR_ANY as default
+HOST = ''
 PORT_LOG = 9999
 PORT_REQ = PORT_LOG + 1
 BUF_SIZE = 4096
@@ -829,7 +831,7 @@ def adsp_log(output, server):
         sys.stdout.write(output)
         sys.stdout.flush()
 
-def get_host_ip():
+def get_host_ip(net_iface):
     """
     Helper tool use to detect host's serving ip address.
     """
@@ -840,10 +842,16 @@ def get_host_ip():
             try:
                 netifaces.ifaddresses(i)
                 ip = netifaces.ifaddresses(i)[netifaces.AF_INET][0]['addr']
-                log.info (f"Use interface {i}, IP address: {ip}")
+                log.info (f"Found interface {i}, IP address: {ip}")
             except Exception:
                 log.info(f"Ignore the interface {i} which is not activated.")
-    return ip
+
+            if i == net_iface:
+                log.info(f"Serve on interface {i} only, IP address: {ip}")
+                return ip
+
+    log.info("Serve on all found available interface.")
+    return None
 
 
 ap = argparse.ArgumentParser(description="DSP loader/logger tool")
@@ -856,7 +864,13 @@ ap.add_argument("-l", "--log-only", action="store_true",
 ap.add_argument("-n", "--no-history", action="store_true",
                 help="No current log buffer at start, just new output")
 ap.add_argument("-s", "--server-addr",
-                help="Specify the IP address that the server to active")
+                help="Specify the only IP address the log server will LISTEN on")
+ap.add_argument("-i", "--interface",
+                help="Specify the network interface the service will LISTEN to")
+ap.add_argument("-p", "--log-port",
+                help="Specify the PORT that the log server to active")
+ap.add_argument("-r", "--req-port",
+                help="Specify the PORT that the request server to active")
 ap.add_argument("fw_file", nargs="?", help="Firmware file")
 
 args = ap.parse_args()
@@ -872,12 +886,28 @@ else:
     fw_file = None
 
 if args.server_addr:
-    HOST = args.server_addr
-else:
-    HOST = get_host_ip()
+    url = urlparse("//" + args.server_addr)
+
+    if url.hostname:
+        HOST = url.hostname
+
+    if url.port:
+        PORT_LOG = int(url.port)
+
+if args.log_port:
+    PORT_LOG = int(args.log_port)
+
+if args.req_port:
+    PORT_REQ = int(args.req_port)
+
+iface =  get_host_ip(args.interface)
+
+if args.interface:
+    HOST = iface
+
+log.info(f"Serve on LOG PORT: {PORT_LOG} REQ PORT: {PORT_REQ}")
 
 if __name__ == "__main__":
-
     # When fw_file is assigned or in log_only mode, it will
     # not serve as a daemon. That mean it just run load
     # firmware or read the log directly.
