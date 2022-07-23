@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		accel0 = &lsm303dlhc_accel;
+	};
+};
+
 &i2c1 {
     /delete-node/ lsm303agr-magn@1e;
     /delete-node/ lsm303agr-accel@19;
@@ -14,7 +20,7 @@
 		reg = <0x1e>;
 	};
 
-	lsm303dlhc-accel@19 {
+	lsm303dlhc_accel: lsm303dlhc-accel@19 {
 		compatible = "st,lis2dh", "st,lsm303dlhc-accel";
         status = "okay";
 		reg = <0x19>;

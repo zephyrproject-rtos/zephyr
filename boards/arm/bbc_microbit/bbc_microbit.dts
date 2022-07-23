@@ -150,7 +150,7 @@
 		irq-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;	/* A3 */
 	};
 
-	lsm303agr-accel@19 {
+	lsm303agr_accel: lsm303agr-accel@19 {
 		compatible = "st,lis2dh", "st,lsm303agr-accel";
 		status = "disabled";
 		reg = <0x19>;

@@ -84,6 +84,7 @@
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &led1a;
 		watchdog0 = &wdt0;
+		accel0 = &lis2dh12;
 	};
 };
 
@@ -119,7 +120,7 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
-	lis2dh12@18 {
+	lis2dh12: lis2dh12@18 {
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x18>;
 		irq-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>,

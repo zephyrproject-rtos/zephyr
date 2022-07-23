@@ -7,6 +7,7 @@
 / {
 	aliases {
 		magn0 = &lsm303agr_magn;
+		accel0 = &lsm303agr_accel;
 	};
 };
 
@@ -19,7 +20,7 @@
 		reg = <0x1e>;
 	};
 
-	lsm303agr-accel@19 {
+	lsm303agr_accel: lsm303agr-accel@19 {
 		compatible = "st,lis2dh", "st,lsm303agr-accel";
 		reg = <0x19>;
 		irq-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>,
