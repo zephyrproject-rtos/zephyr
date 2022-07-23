@@ -40,14 +40,10 @@ endchoice
 
 endif # LSM6DSL
 
-if SENSOR
-
 config I2C
-	default y
+	default y if SENSOR
 
 config SPI
-	default y
-
-endif # SENSOR
+	default y if SENSOR
 
 endif # BOARD_96B_ARGONKEY

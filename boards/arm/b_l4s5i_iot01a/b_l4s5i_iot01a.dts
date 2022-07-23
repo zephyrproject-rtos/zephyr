@@ -44,6 +44,7 @@
 		led0 = &green_led_1;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
+		accel0 = &lsm6dsl;
 	};
 };
 
@@ -112,7 +113,7 @@
 		label = "LPS22HB";
 	};
 
-	lsm6dsl@6a {
+	lsm6dsl: lsm6dsl@6a {
 		compatible = "st,lsm6dsl";
 		reg = <0x6a>;
 		irq-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;

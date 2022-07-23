@@ -43,6 +43,7 @@
 		led0 = &green_led_0;
 		led1 = &green_led_1;
 		sw0 = &user_button;
+		accel0 = &lsm6dsl;
 	};
 };
 
@@ -94,7 +95,7 @@
 	status = "okay";
 
 	/* ST Microelectronics LSM6DSL accel/gyro sensor */
-	lsm6dsl@1 {
+	lsm6dsl: lsm6dsl@1 {
 		compatible = "st,lsm6dsl";
 		reg = <1>;
 		spi-max-frequency = <1000000>;
