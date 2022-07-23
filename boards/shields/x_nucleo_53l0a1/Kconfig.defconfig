@@ -15,9 +15,6 @@ config I2C
 config SENSOR
 	default y
 
-config VL53L0X
-	default y
-
 config VL53L0X_RECONFIGURE_ADDRESS
 	default y
 

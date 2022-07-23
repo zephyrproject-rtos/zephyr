@@ -8,10 +8,6 @@ if BOARD_TWR_KE18F
 config BOARD
 	default "twr_ke18f"
 
-config TEMP_KINETIS
-	default y if "$(dt_nodelabel_enabled,adc0)"
-	depends on SENSOR && ADC
-
 config I2C
 	default y if SENSOR
 

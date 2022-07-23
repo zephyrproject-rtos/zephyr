@@ -46,10 +46,6 @@ config I2C_NPCX
 	default y
 	depends on I2C
 
-config TACH_NPCX
-	default y
-	depends on SENSOR
-
 config SPI_NPCX_FIU
 	default y
 	depends on SPI
