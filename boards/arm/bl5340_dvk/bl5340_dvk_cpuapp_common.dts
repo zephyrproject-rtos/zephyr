@@ -88,6 +88,7 @@
 		mcuboot-led0 = &led1;
 		sdhc0 = &sdhc0;
 		watchdog0 = &wdt0;
+		accel0 = &lis3dh;
 	};
 };
 
@@ -124,7 +125,7 @@
 		timeout = <10>;
 	};
 
-	lis3dh@18 {
+	lis3dh: lis3dh@18 {
 		compatible = "st,lis2dh";
 		label = "LIS3DH";
 		reg = <0x18>;
