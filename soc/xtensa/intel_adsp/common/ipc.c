@@ -1,9 +1,12 @@
 /* Copyright (c) 2022 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
+
+ #include <zephyr/spinlock.h>
+
 #include <cavs_ipc.h>
 #include <cavs-ipc-regs.h>
-#include <zephyr/spinlock.h>
+
 
 void cavs_ipc_set_message_handler(const struct device *dev,
 				  cavs_ipc_handler_t fn, void *arg)

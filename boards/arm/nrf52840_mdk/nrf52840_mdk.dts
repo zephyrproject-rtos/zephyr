@@ -79,6 +79,7 @@
 		red-pwm-led = &pwm_led1_red;
 		blue-pwm-led = &pwm_led2_blue;
 		watchdog0 = &wdt0;
+		spi-flash0 = &mx25r64;
 	};
 };
 

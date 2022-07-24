@@ -15,9 +15,6 @@ config SOC
 	string
 	default "intel_ace15_mtpm"
 
-config IMR_MANIFEST_ADDR
-	default 0xa1042000
-
 config MP_NUM_CPUS
 	default 3
 

@@ -5,6 +5,8 @@
 
 menuconfig GPIO_LMP90XXX
 	bool "LMP90xxx GPIO driver"
+	default y
+	depends on DT_HAS_TI_LMP90XXX_GPIO_ENABLED
 	depends on ADC_LMP90XXX_GPIO
 	help
 	  Enable GPIO driver for LMP90xxx.

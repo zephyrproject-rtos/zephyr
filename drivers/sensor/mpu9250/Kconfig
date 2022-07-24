@@ -5,6 +5,8 @@
 
 menuconfig MPU9250
 	bool "MPU9250 Nine-Axis Motion Tracking Device"
+	default y
+	depends on DT_HAS_INVENSENSE_MPU9250_ENABLED
 	depends on I2C
 	help
 	  Enable driver for MPU9250 I2C-based nine-axis motion tracking device.

@@ -44,21 +44,19 @@
 		pinmux = <>;
 	};
 
-	def-lvol-io-list {
-		compatible = "nuvoton,npcx-lvolctrl-def";
-		/* Put low-voltage io pads into "lvol-io-pads" property if the
-		 * detection level of them is 1.8V, For example, if the bus
-		 * voltage of i2c1_0 port is 1.8V, this property should be:
-		 * lvol-io-pads = <&lvol_io90 &lvol_io87>;
-		 */
-		lvol-io-pads = <>;
-	};
-
 	/** Dummy pinctrl node. It will be initialized with defaults based on the SoC series.
 	 *  Then, the user can override the pin control options at the board level.
 	 */
 	pinctrl: pinctrl {
 		compatible = "nuvoton,npcx-pinctrl";
+		status = "okay";
+	};
+
+	/* Dummy node of IOs that have leakage current. The user can override
+	 * 'leak-gpios' prop. at board DT file to save more power consumption.
+	 */
+	power_leakage_io: power-leakage-io {
+		compatible = "nuvoton,npcx-leakage-io";
 		status = "okay";
 	};
 
@@ -91,7 +89,7 @@
 			       0x400a5000 0x2000>;
 			reg-names = "scfg", "glue";
 			#alt-cells = <3>;
-			#lvol-cells = <4>;
+			#lvol-cells = <2>;
 			label = "SCFG";
 		};
 

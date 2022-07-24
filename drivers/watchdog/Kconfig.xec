@@ -5,7 +5,7 @@
 
 config WDT_XEC
 	bool "Microchip XEC series Watchdog Timer (WDT) driver"
-	depends on SOC_FAMILY_MEC
 	default y
+	depends on DT_HAS_MICROCHIP_XEC_WATCHDOG_ENABLED
 	help
 	  Enable WDT driver for Microchip XEC MCU series.

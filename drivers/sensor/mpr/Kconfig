@@ -5,6 +5,8 @@
 
 menuconfig MPR
 	bool "MPR pressure sensor"
+	default y
+	depends on DT_HAS_HONEYWELL_MPR_ENABLED
 	depends on I2C
 	help
 	  Enable driver for MPR pressure sensor.

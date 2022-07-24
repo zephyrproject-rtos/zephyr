@@ -10,7 +10,7 @@
 #include <zephyr/drivers/interrupt_controller/dw_ace_v1x.h>
 
 #include <cavs-idc.h>
-#include <cavs-shim.h>
+#include <adsp_shim.h>
 
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE1X
 #include <ace_v1x-regs.h>
@@ -42,21 +42,12 @@
 BUILD_ASSERT(MIN_DELAY < CYC_PER_TICK);
 BUILD_ASSERT(COMPARATOR_IDX >= 0 && COMPARATOR_IDX <= 1);
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE1X
-#define WCTCS_TTIE(c) BIT(8 + (c))
-/* Basically identical register interface, very slightly different layout */
-# define WCTCS      (&MTL_TTS.wctcs)
-# define COUNTER_HI (&MTL_TTS.wc.hi)
-# define COUNTER_LO (&MTL_TTS.wc.lo)
-# define COMPARE_HI (&MTL_TTS.wctc[COMPARATOR_IDX].hi)
-# define COMPARE_LO (&MTL_TTS.wctc[COMPARATOR_IDX].lo)
-#else
-# define WCTCS      (&CAVS_SHIM.dspwctcs)
-# define COUNTER_HI (&CAVS_SHIM.dspwc_hi)
-# define COUNTER_LO (&CAVS_SHIM.dspwc_lo)
-# define COMPARE_HI (&CAVS_SHIM.UTIL_CAT(UTIL_CAT(dspwct, COMPARATOR_IDX), c_hi))
-# define COMPARE_LO (&CAVS_SHIM.UTIL_CAT(UTIL_CAT(dspwct, COMPARATOR_IDX), c_lo))
-#endif
+#define WCTCS      (SHIM_DSPWCTS)
+#define COUNTER_HI (SHIM_DSPWCH)
+#define COUNTER_LO (SHIM_DSPWCL)
+#define COMPARE_HI (SHIM_COMPARE_HI(COMPARATOR_IDX))
+#define COMPARE_LO (SHIM_COMPARE_LO(COMPARATOR_IDX))
+
 
 static struct k_spinlock lock;
 static uint64_t last_count;
@@ -200,7 +191,7 @@ static void irq_init(void)
 	 */
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE1X
 	MTL_DINT[cpu].ie[MTL_INTL_TTS] |= BIT(COMPARATOR_IDX + 1);
-	*WCTCS |= WCTCS_TTIE(COMPARATOR_IDX);
+	*WCTCS |= SHIM_DSPWCTCS_TTIE(COMPARATOR_IDX);
 #else
 	CAVS_INTCTRL[cpu].l2.clear = CAVS_L2_DWCT0;
 #endif

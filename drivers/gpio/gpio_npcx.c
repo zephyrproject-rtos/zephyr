@@ -30,10 +30,10 @@ struct gpio_npcx_config {
 	uintptr_t base;
 	/* IO port */
 	int port;
-	/* Size of wui mapping array */
-	int wui_size;
 	/* Mapping table between gpio bits and wui */
-	struct npcx_wui wui_maps[];
+	struct npcx_wui wui_maps[NPCX_GPIO_PORT_PIN_NUM];
+	/* Mapping table between gpio bits and lvol */
+	struct npcx_lvol lvol_maps[NPCX_GPIO_PORT_PIN_NUM];
 };
 
 /* Driver data */
@@ -99,6 +99,7 @@ static int gpio_npcx_config(const struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_npcx_config *const config = dev->config;
+	const struct npcx_lvol *lvol = &config->lvol_maps[pin];
 	struct gpio_reg *const inst = HAL_INSTANCE(dev);
 	uint32_t mask = BIT(pin);
 
@@ -122,13 +123,18 @@ static int gpio_npcx_config(const struct device *dev,
 		inst->PDIR &= ~mask;
 	}
 
-	/*
-	 * If this IO pad is configured for low-voltage power supply, the GPIO
-	 * driver must set the related PORTx_OUT_TYPE bit to 1 (i.e. select io
-	 * type to open-drain) also.
-	 */
-	if (npcx_lvol_is_enabled(config->port, pin)) {
-		flags |= GPIO_OPEN_DRAIN;
+	/* Does this IO pad support low-voltage input (1.8V) detection? */
+	if (lvol->ctrl != NPCX_DT_LVOL_CTRL_NONE) {
+		/*
+		 * If this IO pad is configured for low-voltage input detection,
+		 * the related drive type must select to open-drain also.
+		 */
+		if ((flags & GPIO_VOLTAGE_1P8) != 0) {
+			flags |= GPIO_OPEN_DRAIN;
+			npcx_lvol_set_detect_level(lvol->ctrl, lvol->bit, true);
+		} else {
+			npcx_lvol_set_detect_level(lvol->ctrl, lvol->bit, false);
+		}
 	}
 
 	/* Select open drain 0:push-pull 1:open-drain */
@@ -169,6 +175,8 @@ static int gpio_npcx_config(const struct device *dev,
 static int gpio_npcx_pin_get_config(const struct device *port, gpio_pin_t pin,
 				    gpio_flags_t *out_flags)
 {
+	const struct gpio_npcx_config *const config = port->config;
+	const struct npcx_lvol *lvol = &config->lvol_maps[pin];
 	struct gpio_reg *const inst = HAL_INSTANCE(port);
 	uint32_t mask = BIT(pin);
 	gpio_flags_t flags = 0;
@@ -201,6 +209,12 @@ static int gpio_npcx_pin_get_config(const struct device *port, gpio_pin_t pin,
 			}
 		}
 	}
+
+	/* Enable low-voltage detection? */
+	if (lvol->ctrl != NPCX_DT_LVOL_CTRL_NONE &&
+		npcx_lvol_get_detect_level(lvol->ctrl, lvol->bit)) {
+		flags |= GPIO_VOLTAGE_1P8;
+	};
 
 	*out_flags = flags;
 
@@ -370,9 +384,6 @@ int gpio_npcx_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	__ASSERT(((const struct gpio_npcx_config *)dev->config)->wui_size ==
-			 NPCX_GPIO_PORT_PIN_NUM,
-		 "wui_maps array size must equal to its pin number");
 	return 0;
 }
 
@@ -384,9 +395,13 @@ int gpio_npcx_init(const struct device *dev)
 		},                                                             \
 		.base = DT_INST_REG_ADDR(inst),                                \
 		.port = inst,                                                  \
-		.wui_size = NPCX_DT_WUI_ITEMS_LEN(inst),                       \
-		.wui_maps = NPCX_DT_WUI_ITEMS_LIST(inst)                       \
+		.wui_maps = NPCX_DT_WUI_ITEMS_LIST(inst),                      \
+		.lvol_maps = NPCX_DT_LVOL_ITEMS_LIST(inst),                    \
 	};                                                                     \
+	BUILD_ASSERT(NPCX_DT_WUI_ITEMS_LEN(inst) == NPCX_GPIO_PORT_PIN_NUM,    \
+			"size of prop. wui-maps must equal to pin number!");   \
+	BUILD_ASSERT(NPCX_DT_LVOL_ITEMS_LEN(inst) == NPCX_GPIO_PORT_PIN_NUM,   \
+			"size of prop. lvol-maps must equal to pin number!");  \
 									       \
 	static struct gpio_npcx_data gpio_npcx_data_##inst;	               \
 									       \

@@ -5,6 +5,8 @@
 
 menuconfig ADXL372
 	bool "ADXL372 Three Axis High-g I2C/SPI accelerometer"
+	default y
+	depends on DT_HAS_ADI_ADXL372_ENABLED
 	depends on I2C || SPI
 	help
 	  Enable driver for ADXL372 Three-Axis Digital Accelerometers.

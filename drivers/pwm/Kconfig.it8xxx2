@@ -5,7 +5,8 @@
 
 config PWM_ITE_IT8XXX2
 	bool "ITE IT8XXX2 embedded controller (EC) PWM driver"
-	depends on SOC_IT8XXX2
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_PWM_ENABLED
 	help
 	   Enable PWM driver for it8xxx2_evb.
 	   Supports three 16-bit prescalers each with 8-bit cycle timer, and

@@ -70,6 +70,14 @@ struct mtl_tts {
 
 #define MTL_TTS				(*(volatile struct mtl_tts *)DFTTS_REG)
 
+#define SHIM_DSPWCTS (&MTL_TTS.wctcs)
+#define SHIM_DSPWCH  (&MTL_TTS.wc.hi)
+#define SHIM_DSPWCL  (&MTL_TTS.wc.lo)
+#define SHIM_COMPARE_HI(idx)  (&MTL_TTS.wctc[idx].hi)
+#define SHIM_COMPARE_LO(idx) (&MTL_TTS.wctc[idx].lo)
+
+#define SHIM_DSPWCTCS_TTIE(c) BIT(8 + (c))
+
 /* Low priority interrupt indices */
 #define MTL_INTL_HIPC		0
 #define MTL_INTL_SBIPC		1

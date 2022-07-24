@@ -3,6 +3,8 @@
 
 config EEPROM_EMULATOR
 	bool "Emulated EEPROM driver"
+	default y
+	depends on DT_HAS_ZEPHYR_EMU_EEPROM_ENABLED
 	select FLASH
 	help
 	  Enable emulated (on flash) EEPROM support. This mimics an external

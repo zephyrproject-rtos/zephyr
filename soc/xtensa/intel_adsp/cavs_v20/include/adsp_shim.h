@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_SOC_INTEL_ADSP_CAVS_SHIM_H_
-#define ZEPHYR_SOC_INTEL_ADSP_CAVS_SHIM_H_
+#ifndef ZEPHYR_SOC_INTEL_ADSP_SHIM_H_
+#define ZEPHYR_SOC_INTEL_ADSP_SHIM_H_
 
 /* The "shim" block contains most of the general system control
  * registers on cAVS platforms.  While the base address changes, it
@@ -65,6 +65,16 @@ struct cavs_shim {
 	uint32_t _unused9[2];
 };
 
+#define CAVS_SHIM (*((volatile struct cavs_shim *)DT_REG_ADDR(DT_NODELABEL(shim))))
+
+#define SHIM_DSPWCTS (&CAVS_SHIM.dspwctcs)
+#define SHIM_DSPWCH  (&CAVS_SHIM.dspwc_hi)
+#define SHIM_DSPWCL  (&CAVS_SHIM.dspwc_lo)
+#define SHIM_COMPARE_HI(idx) (&CAVS_SHIM.UTIL_CAT(UTIL_CAT(dspwct, idx), c_hi))
+#define SHIM_COMPARE_LO(idx) (&CAVS_SHIM.UTIL_CAT(UTIL_CAT(dspwct, idx), c_lo))
+
+#define SHIM_DSPWCTCS_TTIE(c) BIT(8 + (c))
+
 /* L2 Local Memory control (cAVS 1.8+) */
 struct cavs_l2lm {
 	uint32_t l2lmcap;
@@ -95,57 +105,55 @@ struct cavs_win {
 
 #endif /* _ASMLANGUAGE */
 
-#define CAVS_SHIM (*((volatile struct cavs_shim *)DT_REG_ADDR(DT_NODELABEL(shim))))
-
 /* cAVS 1.8+ CLKCTL bits */
-#define CAVS_CLKCTL_RHROSCC   BIT(31)   /* Request HP RING oscillator */
-#define CAVS_CLKCTL_RXOSCC    BIT(30)   /* Request XTAL oscillator */
-#define CAVS_CLKCTL_RLROSCC   BIT(29)   /* Request LP RING oscillator */
-#define CAVS_CLKCTL_SLIMFDCGB BIT(25)   /* Slimbus force dynamic clock gating*/
-#define CAVS_CLKCTL_TCPLCG(x) BIT(16+x) /* Set bit: prevent clock gating on core x */
-#define CAVS_CLKCTL_SLIMCSS   BIT(6)    /* Slimbus clock (0: XTAL, 1: Audio) */
-#define CAVS_CLKCTL_WOVCRO    BIT(4)    /* Request WOVCRO clock */
-#define CAVS_CLKCTL_WOVCROSC  BIT(3)    /* WOVCRO select */
-#define CAVS_CLKCTL_OCS       BIT(2)    /* Oscillator clock (0: LP, 1: HP) */
-#define CAVS_CLKCTL_LMCS      BIT(1)    /* LP mem divisor (0: div/2, 1: div/4) */
-#define CAVS_CLKCTL_HMCS      BIT(0)    /* HP mem divisor (0: div/2, 1: div/4) */
-
-/* cAVS 1.5 had a somewhat different CLKCTL (some fields were the same) */
-#define CAVS15_CLKCTL_RAPLLC          BIT(31)
-#define CAVS15_CLKCTL_RFROSCC         BIT(29)
-#define CAVS15_CLKCTL_HPGPDMAFDCGB    BIT(28)
-#define CAVS15_CLKCTL_LPGPDMAFDCGB(x) BIT(26+x)
-#define CAVS15_CLKCTL_SLIMFDCGB       BIT(25)
-#define CAVS15_CLKCTL_DMICFDCGB       BIT(24)
-#define CAVS15_CLKCTL_I2SFDCGB(x)     BIT(20+x)
-#define CAVS15_CLKCTL_I2SEFDCGB(x)    BIT(18+x)
-#define CAVS15_CLKCTL_DPCS(div) ((((div)-1) & 3) << 8) /* DSP PLL divisor (1/2/4) */
-#define CAVS15_CLKCTL_TCPAPLLS        BIT(7)
-#define CAVS15_CLKCTL_LDCS            BIT(5)
-#define CAVS15_CLKCTL_HDCS            BIT(4)
-#define CAVS15_CLKCTL_LDOCS           BIT(3)
-#define CAVS15_CLKCTL_HDOCS           BIT(2)
-#define CAVS15_CLKCTL_LMPCS           BIT(1)
-#define CAVS15_CLKCTL_HMPCS           BIT(0)
-#define CAVS15_CLKCTL_DPCS_MASK(x)    (0x3 << (8 + (x) * 2))
+#define CAVS_CLKCTL_RHROSCC   BIT(31)	  /* Request HP RING oscillator */
+#define CAVS_CLKCTL_RXOSCC    BIT(30)	  /* Request XTAL oscillator */
+#define CAVS_CLKCTL_RLROSCC   BIT(29)	  /* Request LP RING oscillator */
+#define CAVS_CLKCTL_SLIMFDCGB BIT(25)	  /* Slimbus force dynamic clock gating*/
+#define CAVS_CLKCTL_TCPLCG(x) BIT(16 + x) /* Set bit: prevent clock gating on core x */
+#define CAVS_CLKCTL_SLIMCSS   BIT(6)	  /* Slimbus clock (0: XTAL, 1: Audio) */
+#define CAVS_CLKCTL_WOVCRO    BIT(4)	  /* Request WOVCRO clock */
+#define CAVS_CLKCTL_WOVCROSC  BIT(3)	  /* WOVCRO select */
+#define CAVS_CLKCTL_OCS	      BIT(2)	  /* Oscillator clock (0: LP, 1: HP) */
+#define CAVS_CLKCTL_LMCS      BIT(1)	  /* LP mem divisor (0: div/2, 1: div/4) */
+#define CAVS_CLKCTL_HMCS      BIT(0)	  /* HP mem divisor (0: div/2, 1: div/4) */
 
 #define CAVS_PWRCTL_TCPDSPPG(x) BIT(x)
-#define CAVS_PWRSTS_PDSPPGS(x)  BIT(x)
+#define CAVS_PWRSTS_PDSPPGS(x)	BIT(x)
 
-#ifdef SOC_SERIES_INTEL_CAVS_V25
-# define SHIM_LDOCTL_HPSRAM_LDO_ON     (3 << 0 | 3 << 16)
-# define SHIM_LDOCTL_HPSRAM_LDO_BYPASS BIT(16)
-#else
-# define SHIM_LDOCTL_HPSRAM_LDO_ON     (3 << 0)
-# define SHIM_LDOCTL_HPSRAM_LDO_BYPASS BIT(0)
-#endif
+#define SHIM_LDOCTL_HPSRAM_LDO_ON     (3 << 0)
+#define SHIM_LDOCTL_HPSRAM_LDO_BYPASS BIT(0)
+
 #define SHIM_LDOCTL_LPSRAM_LDO_ON     (3 << 2)
 #define SHIM_LDOCTL_LPSRAM_LDO_BYPASS BIT(2)
 
 #define CAVS_DMWBA_ENABLE   BIT(0)
 #define CAVS_DMWBA_READONLY BIT(1)
 
-#define CAVS_CLKCTL_OSC_SOURCE_MASK   BIT_MASK(2)
-#define CAVS_CLKCTL_OSC_REQUEST_MASK  (~BIT_MASK(28))
+#define CAVS_CLKCTL_OSC_SOURCE_MASK  BIT_MASK(2)
+#define CAVS_CLKCTL_OSC_REQUEST_MASK (~BIT_MASK(28))
+
+/** LDO Control */
+
+#define ADSP_DSPRA_ADDRESS        (0x71A60)
+#define ADSP_LPGPDMACxO_ADDRESS(x) (ADSP_DSPRA_ADDRESS + 0x0000 + 0x0002*(x))
+#define ADSP_DSPIOPO_ADDRESS      (ADSP_DSPRA_ADDRESS + 0x0008)
+#define ADSP_GENO_ADDRESS         (ADSP_DSPRA_ADDRESS + 0x000C)
+#define ADSP_DSPALHO_ADDRESS      (ADSP_DSPRA_ADDRESS + 0x0010)
+
+
+#define DSP_INIT_IOPO   ADSP_DSPIOPO_ADDRESS
+#define IOPO_DMIC_FLAG          BIT(0)
+#define IOPO_DSPKOSEL_FLAG      BIT(1)
+#define IOPO_ANCOSEL_FLAG       BIT(2)
+#define IOPO_DMIXOSEL_FLAG      BIT(3)
+#define IOPO_SLIMOSEL_FLAG      BIT(4)
+#define IOPO_SNDWOSEL_FLAG      BIT(5)
+#define IOPO_SLIMDOSEL_FLAG     BIT(20)
+#define IOPO_I2SSEL_MASK	(0x3F << 0x8)
+
+#define DSP_INIT_GENO   ADSP_GENO_ADDRESS
+#define GENO_MDIVOSEL           BIT(1)
+#define GENO_DIOPTOSEL          BIT(2)
 
 #endif /* ZEPHYR_SOC_INTEL_ADSP_CAVS_SHIM_H_ */

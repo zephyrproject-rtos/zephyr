@@ -1,10 +1,10 @@
 /* Copyright (c) 2021 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <cavs-idc.h>
-#include <cavs-mem.h>
-#include <cavs-shim.h>
+#include <adsp_memory.h>
+#include <adsp_shim.h>
 
 /* IDC power up message to the ROM firmware.  This isn't documented
  * anywhere, it's basically just a magic number (except the high bit,
@@ -185,7 +185,7 @@ int soc_adsp_halt_cpu(int id)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_CAVS_TIMER
+#ifdef CONFIG_INTEL_ADSP_TIMER
 	/*
 	 * Mask timer interrupt for this CPU so it won't wake up
 	 * by itself once WFI (wait for interrupt) instruction

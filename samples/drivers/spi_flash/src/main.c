@@ -11,20 +11,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#if (CONFIG_SPI_NOR - 0) ||				\
-	DT_NODE_HAS_STATUS(DT_INST(0, jedec_spi_nor), okay)
-#define SPI_FLASH_NODE DT_INST(0, jedec_spi_nor)
-#elif (CONFIG_NORDIC_QSPI_NOR - 0) || \
-	DT_NODE_HAS_STATUS(DT_INST(0, nordic_qspi_nor), okay)
-#define SPI_FLASH_NODE DT_INST(0, nordic_qspi_nor)
-#elif DT_NODE_HAS_STATUS(DT_INST(0, st_stm32_qspi_nor), okay)
-#define SPI_FLASH_NODE DT_INST(0, st_stm32_qspi_nor)
-#elif DT_NODE_HAS_STATUS(DT_INST(0, st_stm32_ospi_nor), okay)
-#define SPI_FLASH_NODE DT_INST(0, st_stm32_ospi_nor)
-#else
-#error Unsupported flash driver
-#endif
-
 #if defined(CONFIG_BOARD_ADAFRUIT_FEATHER_STM32F405)
 #define SPI_FLASH_TEST_REGION_OFFSET 0xf000
 #elif defined(CONFIG_BOARD_ARTY_A7_ARM_DESIGNSTART_M1) || \
@@ -48,7 +34,7 @@ void main(void)
 	const struct device *flash_dev;
 	int rc;
 
-	flash_dev = DEVICE_DT_GET(SPI_FLASH_NODE);
+	flash_dev = DEVICE_DT_GET(DT_ALIAS(spi_flash0));
 
 	if (!device_is_ready(flash_dev)) {
 		printk("%s: device not ready.\n", flash_dev->name);

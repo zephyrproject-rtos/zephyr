@@ -2674,7 +2674,9 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 	create_param_setup(create_param);
 
 #if defined(CONFIG_BT_SMP)
-	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
+	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+	    (bt_dev.le.rl_entries > 0) &&
+	    (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size)) {
 		bt_conn_set_state(conn, BT_CONN_CONNECTING_SCAN);
 
 		err = bt_le_scan_update(true);

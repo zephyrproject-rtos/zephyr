@@ -5,6 +5,7 @@
 
 config GPIO_RV32M1
 	bool "RV32M1 GPIO driver"
-	depends on SOC_OPENISA_RV32M1_RISCV32
+	default y
+	depends on DT_HAS_OPENISA_RV32M1_GPIO_ENABLED
 	help
 	  Enable the RV32M1 GPIO driver.

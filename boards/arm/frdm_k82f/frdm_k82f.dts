@@ -25,6 +25,7 @@
 		sw0 = &user_button_0;
 		sw1 = &user_button_1;
 		magn0 = &fxos8700;
+		spi-flash0 = &mx25u32;
 	};
 
 	chosen {

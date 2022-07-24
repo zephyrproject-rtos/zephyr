@@ -4,6 +4,7 @@
 
 config GPIO_CC32XX
 	bool "TI CC32XX GPIO driver"
-	depends on SOC_FAMILY_TISIMPLELINK
+	default y
+	depends on DT_HAS_TI_CC32XX_GPIO_ENABLED
 	help
 	  Enable the GPIO driver on TI SimpleLink CC32xx boards

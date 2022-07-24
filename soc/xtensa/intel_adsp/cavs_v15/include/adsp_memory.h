@@ -1,8 +1,11 @@
-/* Copyright (c) 2021 Intel Corporation
+/*
+ * Copyright (c) 2022 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _ZEPHYR_SOC_INTEL_ADSP_MEM
-#define _ZEPHYR_SOC_INTEL_ADSP_MEM
+
+#ifndef ZEPHYR_SOC_INTEL_ADSP_MEMORY_H_
+#define ZEPHYR_SOC_INTEL_ADSP_MEMORY_H_
+
 
 #include <zephyr/devicetree.h>
 #include <cavs-vectors.h>
@@ -32,6 +35,11 @@
  * memory.  There's no ability to change this offset, it's a magic
  * number from rimage we simply need to honor.
  */
-#define IMR_BOOT_LDR_TEXT_ENTRY_BASE (CONFIG_IMR_MANIFEST_ADDR + 0x6000)
 
-#endif /* _ZEPHYR_SOC_INTEL_ADSP_MEM */
+#define IMR_BOOT_LDR_DATA_BASE            0xB0002000
+#define IMR_BOOT_LDR_MANIFEST_BASE        0xB0004000
+#define IMR_BOOT_LDR_TEXT_ENTRY_BASE (IMR_BOOT_LDR_MANIFEST_BASE + 0x6000)
+
+#define ADSP_L1_CACHE_PREFCTL_VALUE 0
+
+#endif /* ZEPHYR_SOC_INTEL_ADSP_MEMORY_H_ */

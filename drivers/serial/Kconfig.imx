@@ -5,9 +5,10 @@
 
 config UART_IMX
 	bool "NXP i.MX7 family processor UART driver"
+	default y
+	depends on DT_HAS_NXP_IMX_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	depends on HAS_IMX_HAL
 	help
 	  This option enables the UART driver for NXP i.MX7
 	  family processors.

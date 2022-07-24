@@ -10,10 +10,8 @@ test_uart_mhz19b {
 	compatible = "winsen,mhz19b";
 	maximum-range = <10000>;
 	abc-on;
-	label = "MHZ19B";
 };
 
 test_uart_pms7003 {
 	compatible = "plantower,pms7003";
-	label = "PMS7003";
 };

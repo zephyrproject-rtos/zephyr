@@ -83,7 +83,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: d892b442b0c74a33ffbbff0ed2a2c2122b4d3925
+      revision: f5024df56c57794ad964956a2e163bd17f7b3b40
       path: modules/hal/nordic
       groups:
         - hal
@@ -244,7 +244,7 @@ manifest:
       path: modules/lib/zcbor
     - name: zscilib
       path: modules/lib/zscilib
-      revision: fc979a8dcb74169c69b02835927bff8f070d6325
+      revision: a54986aa98db4082ac56b582843bb5b5435208a6
 
   group-filter:
     - -ci

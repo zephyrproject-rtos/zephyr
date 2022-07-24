@@ -5,6 +5,8 @@
 
 config OPT3001
 	bool "OPT3001 Light Sensor"
+	default y
+	depends on DT_HAS_TI_OPT3001_ENABLED
 	depends on I2C
 	help
 	  Enable driver for OPT3001 light sensors.

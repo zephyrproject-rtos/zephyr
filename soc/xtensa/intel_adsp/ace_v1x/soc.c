@@ -8,8 +8,8 @@
 #include <zephyr/irq_nextlevel.h>
 
 #include <ace_v1x-regs.h>
-#include <cavs-mem.h>
-#include <cavs-shim.h>
+#include <adsp_memory.h>
+#include <adsp_shim.h>
 #include <cpu_init.h>
 #include <soc.h>
 #include <xtensa/hal.h>
@@ -82,7 +82,7 @@ __imr void boot_core0(void)
 	z_cstart();
 }
 
-static __imr void power_init_mtl(void)
+static __imr void power_init(void)
 {
 	/* Disable idle power gating */
 	DFDSPBRCP.bootctl[0].bctl |= DFDSPBRCP_BCTL_WAITIPCG | DFDSPBRCP_BCTL_WAITIPPG;
@@ -95,7 +95,7 @@ static __imr void power_init_mtl(void)
 
 static __imr int soc_init(const struct device *dev)
 {
-	power_init_mtl();
+	power_init();
 
 #if CONFIG_MP_NUM_CPUS > 1
 	soc_mp_init();

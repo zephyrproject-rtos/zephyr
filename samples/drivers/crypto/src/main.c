@@ -22,11 +22,11 @@ LOG_MODULE_REGISTER(main);
 #elif CONFIG_CRYPTO_MBEDTLS_SHIM
 #define CRYPTO_DRV_NAME CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_cryp)
-#define CRYPTO_DRV_NAME DT_LABEL(DT_INST(0, st_stm32_cryp))
+#define CRYPTO_DEV_COMPAT st_stm32_cryp
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
-#define CRYPTO_DRV_NAME DT_LABEL(DT_INST(0, st_stm32_aes))
+#define CRYPTO_DEV_COMPAT st_stm32_aes
 #elif CONFIG_CRYPTO_NRF_ECB
-#define CRYPTO_DRV_NAME DT_LABEL(DT_INST(0, nordic_nrf_ecb))
+#define CRYPTO_DEV_COMPAT nordic_nrf_ecb
 #else
 #error "You need to enable one crypto device"
 #endif
@@ -605,7 +605,21 @@ struct mode_test {
 
 void main(void)
 {
+#ifdef CRYPTO_DRV_NAME
 	const struct device *dev = device_get_binding(CRYPTO_DRV_NAME);
+
+	if (!dev) {
+		LOG_ERR("%s pseudo device not found", CRYPTO_DRV_NAME);
+		return;
+	}
+#else
+	const struct device *dev = DEVICE_DT_GET_ONE(CRYPTO_DEV_COMPAT);
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Crypto device is not ready\n");
+		return;
+	}
+#endif
 	const struct mode_test modes[] = {
 		{ .mode = "ECB Mode", .mode_func = ecb_mode },
 		{ .mode = "CBC Mode", .mode_func = cbc_mode },
@@ -615,11 +629,6 @@ void main(void)
 		{ },
 	};
 	int i;
-
-	if (!dev) {
-		LOG_ERR("%s pseudo device not found", CRYPTO_DRV_NAME);
-		return;
-	}
 
 	if (validate_hw_compatibility(dev)) {
 		LOG_ERR("Incompatible h/w");

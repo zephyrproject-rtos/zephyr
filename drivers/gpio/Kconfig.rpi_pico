@@ -1,10 +1,8 @@
 # Copyright (c) 2021 Yonatan Schachter
 # SPDX-License-Identifier: Apache-2.0
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_RPI_PICO_GPIO := raspberrypi,pico-gpio
-
 config GPIO_RPI_PICO
-	default $(dt_compat_enabled,$(DT_COMPAT_RPI_PICO_GPIO))
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_GPIO_ENABLED
 	select PICOSDK_USE_GPIO
 	bool "Raspberry Pi Pico GPIO driver"

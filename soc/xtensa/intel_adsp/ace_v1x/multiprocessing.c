@@ -10,7 +10,7 @@
 #include <soc.h>
 #include <ace_v1x-regs.h>
 #include <ace-ipc-regs.h>
-#include <cavs-mem.h>
+#include <adsp_memory.h>
 
 #define CORE_POWER_CHECK_NUM 32
 #define CORE_POWER_CHECK_DELAY 256

@@ -3,12 +3,10 @@
 # Copyright (c) 2021 Synopsys
 # SPDX-License-Identifier: Apache-2.0
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_CYPRESS_CY8C95XX := cypress,cy8c95xx-gpio
-
 menuconfig GPIO_CY8C95XX
 	bool "CY8C95XX I2C GPIO chip"
-	default $(dt_compat_enabled,$(DT_COMPAT_CYPRESS_CY8C95XX))
+	default y
+	depends on DT_HAS_CYPRESS_CY8C95XX_GPIO_PORT_ENABLED
 	depends on I2C
 	help
 	  Enable driver for CY8C95XX I2C GPIO chip.

@@ -354,8 +354,8 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 		end_thread(_current);
 	}
 
-	int queued = z_is_thread_queued(_current);
-	int active = !z_is_thread_prevented_from_running(_current);
+	bool queued = z_is_thread_queued(_current);
+	bool active = !z_is_thread_prevented_from_running(_current);
 
 	if (thread == NULL) {
 		thread = _current_cpu->idle_thread;

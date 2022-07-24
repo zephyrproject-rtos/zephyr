@@ -4,6 +4,8 @@
 
 menuconfig APDS9960
 	bool "APDS9960 Sensor"
+	default y
+	depends on DT_HAS_AVAGO_APDS9960_ENABLED
 	depends on I2C
 	help
 	  Enable driver for APDS9960 sensors.

@@ -9,7 +9,7 @@ menuconfig UART_NRFX
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select SERIAL_SUPPORT_ASYNC
-	depends on SOC_FAMILY_NRF
+	depends on DT_HAS_NORDIC_NRF_UART_ENABLED || DT_HAS_NORDIC_NRF_UARTE_ENABLED
 	help
 	  Enable support for nrfx UART drivers for nRF MCU series.
 	  Peripherals with the same instance ID cannot be used together,
@@ -30,12 +30,14 @@ config UART_ASYNC_TX_CACHE_SIZE
 # ----------------- port 0 -----------------
 config UART_0_NRF_UART
 	def_bool HAS_HW_NRF_UART0
+	depends on DT_HAS_NORDIC_NRF_UART_ENABLED
 	select NRF_UART_PERIPHERAL
 	help
 	  Enable nRF UART without EasyDMA on port 0.
 
 config UART_0_NRF_UARTE
 	def_bool HAS_HW_NRF_UARTE0
+	depends on DT_HAS_NORDIC_NRF_UARTE_ENABLED
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 0.
@@ -116,6 +118,7 @@ endif # UART_0_NRF_UART || UART_0_NRF_UARTE
 # ----------------- port 1 -----------------
 config UART_1_NRF_UARTE
 	def_bool HAS_HW_NRF_UARTE1
+	depends on DT_HAS_NORDIC_NRF_UARTE_ENABLED
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 1.
@@ -193,6 +196,7 @@ endif # UART_1_NRF_UARTE
 # ----------------- port 2 -----------------
 config UART_2_NRF_UARTE
 	def_bool HAS_HW_NRF_UARTE2
+	depends on DT_HAS_NORDIC_NRF_UARTE_ENABLED
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 2.
@@ -269,6 +273,7 @@ endif # UART_2_NRF_UARTE
 # ----------------- port 3 -----------------
 config UART_3_NRF_UARTE
 	def_bool HAS_HW_NRF_UARTE3
+	depends on DT_HAS_NORDIC_NRF_UARTE_ENABLED
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 3.

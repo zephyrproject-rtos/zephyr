@@ -77,6 +77,7 @@
 		led1 = &led2;
 		sw0 = &key_cet;
 		pwm-led0 = &pwm_led;
+		spi-flash0 = &nor_flash;
 	};
 };
 

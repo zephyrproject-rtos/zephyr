@@ -31,7 +31,7 @@
 #include <zephyr/sys/util.h>
 
 #include <soc.h>
-#include <cavs-mem.h>
+#include <adsp_memory.h>
 
 #include <zephyr/drivers/mm/system_mm.h>
 #include "mm_drv_common.h"

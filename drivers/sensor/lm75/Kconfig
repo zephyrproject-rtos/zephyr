@@ -3,11 +3,10 @@
 # Copyright (c) 2021 Leica Geosystems AG
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_LM75 := lm75
-
 config LM75
 	bool "LM75 Temperature Sensor"
-	default $(dt_compat_enabled,$(DT_COMPAT_LM75))
+	default y
+	depends on DT_HAS_LM75_ENABLED
 	depends on I2C
 	help
 	  Enable the driver for the LM75 digital temperature Sensor with 2-wire

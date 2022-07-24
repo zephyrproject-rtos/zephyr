@@ -263,7 +263,7 @@
 			DT_PROP(child, group_mask),                            \
 			0);						       \
 		irq_enable(DT_PROP(child, irq));                               \
-	} while (0)
+	} while (false)
 
 /**
  * @brief Get a child node from path '/npcx-espi-vws-map/name'.
@@ -334,73 +334,46 @@
 	}
 
 /**
- * @brief Get a node from path '/def_lvol_io_list' which has a property
- *        'lvol-io-pads' contains low-voltage configurations and need to set
- *        by default.
+ * @brief Construct a npcx_lvol structure from 'lvol-maps' property at index 'i'.
  *
- * @return node identifier with that path.
+ * @param node_id Node identifier.
+ * @param prop Low voltage configurations property name. (i.e. 'lvol-maps')
+ * @param idx Property entry index.
  */
-#define NPCX_DT_NODE_DEF_LVOL_LIST  DT_PATH(def_lvol_io_list)
+#define NPCX_DT_LVOL_CTRL_NONE \
+	DT_PHA(DT_NODELABEL(lvol_none), lvols, ctrl)
 
 /**
- * @brief Length of npcx_lvol structures in 'lvol-io-pads' property
+ * @brief Length of npcx_lvol structures in 'lvol-maps' property
  *
- * @return length of 'lvol-io-pads' prop which type is 'phandles'
+ * @param inst instance number for compatible defined in DT_DRV_COMPAT.
+ * @return length of 'lvol-maps' prop which type is 'phandles'
  */
-#define NPCX_DT_LVOL_ITEMS_LEN DT_PROP_LEN(NPCX_DT_NODE_DEF_LVOL_LIST, \
-								lvol_io_pads)
+#define NPCX_DT_LVOL_ITEMS_LEN(inst) DT_INST_PROP_LEN(inst, lvol_maps)
 
 /**
- * @brief Get phandle from 'lvol-io-pads' prop which type is 'phandles' at index
- *        'i'
+ * @brief Construct a npcx_lvol structure from 'lvol-maps' property at index 'i'.
  *
- * @param i index of 'lvol-io-pads' prop which type is 'phandles'
- * @return phandle from 'lvol-io-pads' prop at index 'i'
+ * @param node_id Node identifier.
+ * @param prop Low voltage configurations property name. (i.e. 'lvol-maps')
+ * @param idx Property entry index.
  */
-#define NPCX_DT_PHANDLE_FROM_LVOL_IO_PADS(i) \
-	DT_PHANDLE_BY_IDX(NPCX_DT_NODE_DEF_LVOL_LIST, lvol_io_pads, i)
+#define NPCX_DT_LVOL_ITEMS_INIT(node_id, prop, idx)				\
+	{									\
+	  .ctrl = DT_PHA(DT_PROP_BY_IDX(node_id, prop, idx), lvols, ctrl),	\
+	  .bit = DT_PHA(DT_PROP_BY_IDX(node_id, prop, idx), lvols, bit),	\
+	},
 
 /**
- * @brief Construct a npcx_lvol structure from 'lvol-io-pads' property at index
- *        'i'.
+ * @brief Macro function to construct a list of npcx_lvol items  from 'lvol-maps'
+ * property.
  *
- * @param i index of 'lvol-io-pads' prop which type is 'phandles'
- * @return npcx_lvol item from 'lvol-io-pads' property at index 'i'
+ * @param inst instance number for compatible defined in DT_DRV_COMPAT.
+ * @return an array of npcx_lvol items.
  */
-#define NPCX_DT_LVOL_ITEMS_BY_IDX(i, _)                                        \
-	{                                                                      \
-	  .io_port = DT_PHA(NPCX_DT_PHANDLE_FROM_LVOL_IO_PADS(i),              \
-							lvols, io_port),       \
-	  .io_bit = DT_PHA(NPCX_DT_PHANDLE_FROM_LVOL_IO_PADS(i),               \
-							lvols, io_bit),        \
-	  .ctrl = DT_PHA(NPCX_DT_PHANDLE_FROM_LVOL_IO_PADS(i),                 \
-							lvols, ctrl),          \
-	  .bit = DT_PHA(NPCX_DT_PHANDLE_FROM_LVOL_IO_PADS(i),                  \
-							lvols, bit),           \
-	}
-
-/**
- * @brief Macro function to construct a list of npcx_lvol items by UTIL_LISTIFY
- *        func.
- *
- * Example devicetree fragment:
- *    / {
- *          def_lvol_io_list {
- *              compatible = "nuvoton,npcx-lvolctrl-def";
- *              lvol-io-pads = <&lvol_io90   // I2C1_SCL0 1.8V support
- *                              &lvol_io87>; // I2C1_SDA0 1,8V support
- *          };
- *	};
- *
- * Example usage:
- * static const struct npcx_lvol def_lvols[] = NPCX_DT_IO_LVOL_ITEMS_DEF_LIST;
- *
- * @return an array of npcx_lvol items which configure low-voltage support
- */
-#define NPCX_DT_IO_LVOL_ITEMS_DEF_LIST {			\
-		LISTIFY(NPCX_DT_LVOL_ITEMS_LEN,			\
-			NPCX_DT_LVOL_ITEMS_BY_IDX, (,), _)	\
-	}
+#define NPCX_DT_LVOL_ITEMS_LIST(inst) {						\
+	DT_FOREACH_PROP_ELEM(DT_DRV_INST(inst), lvol_maps,			\
+						NPCX_DT_LVOL_ITEMS_INIT)}
 
 /**
  * @brief Check if the host interface type is automatically configured by

@@ -43,8 +43,6 @@ static const struct npcx_alt def_alts[] = {
 				NPCX_NO_GPIO_ALT_ITEM)
 };
 
-static const struct npcx_lvol def_lvols[] = NPCX_DT_IO_LVOL_ITEMS_DEF_LIST;
-
 static const struct npcx_scfg_config npcx_scfg_cfg = {
 	.base_scfg = DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), scfg),
 	.base_glue = DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), glue),
@@ -76,46 +74,22 @@ static void npcx_pinctrl_alt_sel(const struct npcx_alt *alt, int alt_func)
 }
 
 /* Platform specific pin-control functions */
-void npcx_lvol_pads_configure(void)
+void npcx_lvol_set_detect_level(int lvol_ctrl, int lvol_bit, bool enable)
 {
-	const uint32_t scfg_base = npcx_scfg_cfg.base_scfg;
+	const uintptr_t scfg_base = npcx_scfg_cfg.base_scfg;
 
-	for (int i = 0; i < ARRAY_SIZE(def_lvols); i++) {
-		NPCX_LV_GPIO_CTL(scfg_base, def_lvols[i].ctrl)
-					|= BIT(def_lvols[i].bit);
-		LOG_DBG("IO%x%x turn on low-voltage", def_lvols[i].io_port,
-							def_lvols[i].io_bit);
+	if (enable) {
+		NPCX_LV_GPIO_CTL(scfg_base, lvol_ctrl) |= BIT(lvol_bit);
+	} else {
+		NPCX_LV_GPIO_CTL(scfg_base, lvol_ctrl) &= ~BIT(lvol_bit);
 	}
 }
 
-void npcx_lvol_restore_io_pads(void)
+bool npcx_lvol_get_detect_level(int lvol_ctrl, int lvol_bit)
 {
-	for (int i = 0; i < ARRAY_SIZE(def_lvols); i++) {
-		npcx_gpio_enable_io_pads(
-				npcx_get_gpio_dev(def_lvols[i].io_port),
-				def_lvols[i].io_bit);
-	}
-}
+	const uintptr_t scfg_base = npcx_scfg_cfg.base_scfg;
 
-void npcx_lvol_suspend_io_pads(void)
-{
-	for (int i = 0; i < ARRAY_SIZE(def_lvols); i++) {
-		npcx_gpio_disable_io_pads(
-				npcx_get_gpio_dev(def_lvols[i].io_port),
-				def_lvols[i].io_bit);
-	}
-}
-
-bool npcx_lvol_is_enabled(int port, int pin)
-{
-	for (int i = 0; i < ARRAY_SIZE(def_lvols); i++) {
-		if (def_lvols[i].io_port == port &&
-		    def_lvols[i].io_bit == pin) {
-			return true;
-		}
-	}
-
-	return false;
+	return NPCX_LV_GPIO_CTL(scfg_base, lvol_ctrl) & BIT(lvol_bit);
 }
 
 void npcx_pinctrl_i2c_port_sel(int controller, int port)
@@ -172,9 +146,6 @@ static int npcx_scfg_init(const struct device *dev)
 	for (int i = 0; i < ARRAY_SIZE(def_alts); i++) {
 		npcx_pinctrl_alt_sel(&def_alts[i], 0);
 	}
-
-	/* Configure default low-voltage pads */
-	npcx_lvol_pads_configure();
 
 	return 0;
 }

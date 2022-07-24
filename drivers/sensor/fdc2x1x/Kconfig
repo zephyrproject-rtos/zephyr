@@ -5,6 +5,8 @@
 
 menuconfig FDC2X1X
 	bool "FDC2X1X Capacitance-to-Digital Converter"
+	default y
+	depends on DT_HAS_TI_FDC2X1X_ENABLED
 	depends on I2C && NEWLIB_LIBC
 	help
 	  Enable driver for FDC2X1X Capacitance-to-Digital Converter.

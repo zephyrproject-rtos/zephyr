@@ -33,7 +33,7 @@
 #include <zephyr/sys/mem_blocks.h>
 
 #include <soc.h>
-#include <cavs-mem.h>
+#include <adsp_memory.h>
 
 #include "mm_drv_common.h"
 
@@ -401,12 +401,16 @@ int sys_mm_drv_unmap_page(void *virt)
 
 	pa = tlb_entry_to_pa(tlb_entries[entry_idx]);
 
-	sys_mem_blocks_free_contiguous(&L2_PHYS_SRAM_REGION,
-				       UINT_TO_POINTER(pa), 1);
+	/* Check bounds of physical address space. */
+	/* Initial TLB mappings could point to non existing physical pages. */
+	if ((pa >= L2_SRAM_BASE) && (pa < (L2_SRAM_BASE + L2_SRAM_SIZE))) {
+		sys_mem_blocks_free_contiguous(&L2_PHYS_SRAM_REGION,
+					       UINT_TO_POINTER(pa), 1);
 
-	bank_idx = get_hpsram_bank_idx(pa);
-	if (--hpsram_ref[bank_idx] == 0) {
-		sys_mm_drv_hpsram_pwr(bank_idx, false, false);
+		bank_idx = get_hpsram_bank_idx(pa);
+		if (--hpsram_ref[bank_idx] == 0) {
+			sys_mm_drv_hpsram_pwr(bank_idx, false, false);
+		}
 	}
 
 	k_spin_unlock(&tlb_lock, key);

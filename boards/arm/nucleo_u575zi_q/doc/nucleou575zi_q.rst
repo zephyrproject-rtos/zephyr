@@ -145,14 +145,24 @@ The Zephyr nucleo_u575zi_q board configuration supports the following hardware f
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
 +===========+============+=====================================+
+| CLOCK     | on-chip    | reset and clock control             |
++-----------+------------+-------------------------------------+
+| DAC       | on-chip    | DAC Controller                      |
++-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 | NVIC      | on-chip    | nested vector interrupt controller  |
++-----------+------------+-------------------------------------+
+| PINMUX    | on-chip    | pinmux                              |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
+| WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
 
 
@@ -173,12 +183,25 @@ For mode details please refer to `STM32 Nucleo-144 board User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
-- UART_1_TX : PA9
-- UART_1_RX : PA10
-- USER_PB : PC13
+- DAC1_OUT1 : PA4
+- I2C_1_SCL : PB8
+- I2C_1_SDA : PB9
+- I2C_2_SCL : PF1
+- I2C_2_SDA : PF0
 - LD1 : PC7
 - LD2 : PB7
 - LD3 : PG2
+- LPUART_1_TX : PG7
+- LPUART_1_RX : PG8
+- SPI_1_NSS : PA4
+- SPI_1_SCK : PA5
+- SPI_1_MISO : PA6
+- SPI_1_MOSI : PA7
+- UART_1_TX : PA9
+- UART_1_RX : PA10
+- UART_2_TX : PD5
+- UART_2_RX : PD6
+- USER_PB : PC13
 
 System Clock
 ------------
@@ -206,6 +229,17 @@ Flashing
 
 Board is configured to be flashed using west STM32CubeProgrammer runner.
 Installation of `STM32CubeProgrammer`_ is then required to flash the board.
+
+Alternatively pyocd and JLink can be used to flash and debug the board.
+JLink works out of the box if west is told to use it as runner,
+which can be done by passing ``-r jlink``.
+For pyocd (``-r pyocd``) additional target information needs to be installed.
+This can be done by executing the following commands.
+
+.. code-block:: console
+
+   $ pyocd pack --update
+   $ pyocd pack --install stm32u5
 
 
 Flashing an application to Nucleo U575ZI Q

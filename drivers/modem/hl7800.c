@@ -127,7 +127,6 @@ enum socket_state {
 	SOCK_IDLE,
 	SOCK_RX,
 	SOCK_TX,
-	SOCK_SERVER_CLOSED,
 	SOCK_CONNECTED,
 };
 
@@ -3147,7 +3146,6 @@ static void notify_all_tcp_sockets_closed(void)
 	for (i = 0; i < MDM_MAX_SOCKETS; i++) {
 		sock = &ictx.sockets[i];
 		if ((sock->context != NULL) && (sock->type == SOCK_STREAM)) {
-			sock->state = SOCK_SERVER_CLOSED;
 			LOG_DBG("Sock %d closed", sock->socket_id);
 			/* signal RX callback with null packet */
 			if (sock->recv_cb) {
@@ -3728,7 +3726,6 @@ static void sock_notif_cb_work(struct k_work *work)
 		if (sock->type == SOCK_STREAM) {
 			LOG_DBG("Sock %d trigger NULL packet", sock->socket_id);
 			k_work_submit_to_queue(&hl7800_workq, &sock->recv_cb_work);
-			sock->error = 0;
 		}
 	}
 	hl7800_unlock();
@@ -3772,8 +3769,7 @@ static bool on_cmd_sock_notif(struct net_buf **buf, uint16_t len)
 	case HL7800_TCP_DISCON:
 		trigger_sem = false;
 		err = true;
-		sock->state = SOCK_SERVER_CLOSED;
-		sock->error = -EIO;
+		sock->error = -ENOTCONN;
 		break;
 	default:
 		err = true;
@@ -5941,7 +5937,7 @@ static int offload_put(struct net_context *context)
 
 	wakeup_hl7800();
 
-	if ((sock->type == SOCK_DGRAM) || (sock->state != SOCK_SERVER_CLOSED)) {
+	if ((sock->type == SOCK_DGRAM) || (sock->error != -ENOTCONN)) {
 		send_at_cmd(sock, cmd, MDM_CMD_SEND_TIMEOUT, 0, false);
 	}
 

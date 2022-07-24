@@ -43,6 +43,8 @@ config EEPROM_AT2X
 
 config EEPROM_AT24
 	bool "Atmel AT24 (and compatible) I2C EEPROM support"
+	default y
+	depends on DT_HAS_ATMEL_AT24_ENABLED
 	depends on I2C
 	select EEPROM_AT2X
 	help
@@ -50,6 +52,8 @@ config EEPROM_AT24
 
 config EEPROM_AT25
 	bool "Atmel AT25 (and compatible) SPI EEPROM support"
+	default y
+	depends on DT_HAS_ATMEL_AT25_ENABLED
 	depends on SPI
 	select EEPROM_AT2X
 	help
@@ -62,6 +66,8 @@ source "drivers/eeprom/Kconfig.tmp116"
 
 config EEPROM_SIMULATOR
 	bool "Simulated EEPROM driver"
+	default y
+	depends on DT_HAS_ZEPHYR_SIM_EEPROM_ENABLED
 	select STATS
 	select STATS_NAMES
 	help

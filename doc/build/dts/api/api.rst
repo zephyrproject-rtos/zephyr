@@ -362,6 +362,9 @@ There are also conveniences for commonly used zephyr-specific properties of the
 .. doxygengroup:: devicetree-zephyr
    :project: Zephyr
 
+Zephyr-specific chosen nodes
+****************************
+
 The following table documents some commonly used Zephyr-specific chosen nodes.
 
 Sometimes, a chosen node's label property will be used to set the default value
@@ -418,6 +421,8 @@ device.
      - Instruction Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,ocm
      - On-chip memory node on Xilinx Zynq-7000 and ZynqMP SoCs
+   * - zephyr,osdp-uart
+     - Sets UART device used by OSDP subsystem
    * - zephyr,ot-uart
      - Used by the OpenThread to specify UART device for Spinel protocol
    * - zephyr,pcie-controller

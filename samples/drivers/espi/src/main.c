@@ -39,7 +39,7 @@ LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 #define PWR_SEQ_TIMEOUT    3000u
 
 /* The devicetree node identifier for the board power rails pins. */
-#define BRD_PWR_NODE DT_INST(0, microchip_mec15xx_board_power)
+#define BRD_PWR_NODE DT_NODELABEL(board_power)
 
 #if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
 static const struct gpio_dt_spec pwrgd_gpio = GPIO_DT_SPEC_GET(BRD_PWR_NODE, pwrg_gpios);
@@ -65,7 +65,7 @@ static uint8_t flash_read_buf[MAX_TEST_BUF_SIZE];
 #define ESPI_SAF_NODE     DT_NODELABEL(espi_saf0)
 #define SPI_NODE          DT_NODELABEL(spi0)
 
-#define SAF_BASE_ADDR     DT_REG_ADDR(DT_INST(0, microchip_xec_espi_saf))
+#define SAF_BASE_ADDR     DT_REG_ADDR(ESPI_SAF_NODE)
 
 #define SAF_TEST_FREQ_HZ 24000000U
 #define SAF_TEST_BUF_SIZE 4096U
