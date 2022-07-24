@@ -21,6 +21,9 @@
 
 #define I2S_PLAY_BUF_COUNT (500)
 
+#define I2S_RX_NODE DT_NODELABEL(i2s_rx)
+#define I2S_TX_NODE DT_NODELABEL(i2s_tx)
+
 static const struct device *host_i2s_rx_dev;
 static const struct device *host_i2s_tx_dev;
 static struct k_mem_slab i2s_rx_mem_slab;
@@ -34,9 +37,9 @@ static int ret;
 static void init(void)
 {
 	/*configure rx device*/
-	host_i2s_rx_dev = device_get_binding("i2s_rx");
-	if (!host_i2s_rx_dev) {
-		printk("unable to find i2s_rx device\n");
+	host_i2s_rx_dev = DEVICE_DT_GET(I2S_RX_NODE);
+	if (!device_is_ready(host_i2s_rx_dev)) {
+		printk("%s device is not ready\n", host_i2s_rx_dev->name);
 		exit(-1);
 	}
 	k_mem_slab_init(&i2s_rx_mem_slab, rx_buffers, AUDIO_FRAME_BUF_BYTES,
@@ -59,9 +62,9 @@ static void init(void)
 	}
 
 	/*configure tx device*/
-	host_i2s_tx_dev = device_get_binding("i2s_tx");
-	if (!host_i2s_tx_dev) {
-		printk("unable to find i2s_tx device\n");
+	host_i2s_tx_dev = DEVICE_DT_GET(I2S_TX_NODE);
+	if (!device_is_ready(host_i2s_tx_dev)) {
+		printk("%s device is not ready\n", host_i2s_tx_dev->name);
 		exit(-1);
 	}
 	k_mem_slab_init(&i2s_tx_mem_slab, tx_buffer, AUDIO_FRAME_BUF_BYTES,
