@@ -186,9 +186,9 @@ arduino_spi: &spi0 {
 			label = "image-scratch";
 			reg = <0x00030000 0xa000>;
 		};
-		storage_partition: partition@3a000 {
+		storage_partition: partition@3f000 {
 			label = "storage";
-			reg = <0x0003a000 0x6000>;
+			reg = <0x0003f000 0x1000>;
 		};
 	};
 };
