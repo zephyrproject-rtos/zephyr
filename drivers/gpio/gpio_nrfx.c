@@ -233,6 +233,7 @@ static int gpio_nrfx_pin_interrupt_configure(const struct device *port,
 {
 	uint32_t abs_pin = NRF_GPIO_PIN_MAP(get_port_cfg(port)->port_num, pin);
 	nrfx_err_t err;
+	uint8_t ch;
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		nrfx_gpiote_trigger_disable(abs_pin);
@@ -250,8 +251,6 @@ static int gpio_nrfx_pin_interrupt_configure(const struct device *port,
 	if (!(BIT(pin) & get_port_cfg(port)->edge_sense) &&
 	    (mode == GPIO_INT_MODE_EDGE) &&
 	    (nrf_gpio_pin_dir_get(abs_pin) == NRF_GPIO_PIN_DIR_INPUT)) {
-		uint8_t ch;
-
 		err = nrfx_gpiote_channel_get(abs_pin, &ch);
 		if (err == NRFX_ERROR_INVALID_PARAM) {
 			err = nrfx_gpiote_channel_alloc(&ch);
