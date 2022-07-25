@@ -94,4 +94,9 @@ config XTENSA_CCOUNT_HZ
 	  Rate in HZ of the Xtensa core as measured by the value of
 	  the CCOUNT register.
 
+config XTENSA_CACHE_NEED_POWER_ON_SRAM
+       bool
+       help
+         Hidden option to indicate that sram banks needed to be initialized.
+
 endmenu
