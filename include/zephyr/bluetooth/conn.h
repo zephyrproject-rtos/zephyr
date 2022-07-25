@@ -416,6 +416,81 @@ struct bt_conn_le_tx_power {
 	int8_t max_level;
 };
 
+enum bt_conn_le_tx_power_report_reason {
+	/** Local Tx power changed. */
+	BT_CONN_LE_TX_POWER_REPORT_REASON_LOCAL_CHANGED = 0,
+
+	/** Remote Tx power changed. */
+	BT_CONN_LE_TX_POWER_REPORT_REASON_REMOTE_CHANGED = 1,
+
+	/** HCI_LE_Read_Remote_Transmit_Power_Level command completed. */
+	BT_CONN_LE_TX_POWER_REPORT_REASON_READ_REMOTE_COMPLETED = 2,
+};
+
+/** LE Transmit Power Reporting Structure */
+struct bt_conn_le_tx_power_report {
+
+	/** Reason for Tx power reporting. */
+	enum bt_conn_le_tx_power_report_reason reason;
+
+	/** 1M, 2M, Coded S2 or Coded S8 */
+	uint8_t phy;
+
+	/** Transmit power level */
+	int8_t tx_power_level;
+
+	/** 0: Transmit power level is at minimum level.
+	 *  1: Transmit power level is at maximum level.
+	 */
+	int8_t tx_power_level_flag;
+
+	/** Change in transmit power level */
+	int8_t delta;
+};
+
+enum bt_conn_le_path_loss_zone {
+	BT_CONN_LE_PATH_LOSS_ZONE_LOW = 0x00,
+	BT_CONN_LE_PATH_LOSS_ZONE_MIDDLE = 0x01,
+	BT_CONN_LE_PATH_LOSS_ZONE_HIGH = 0x02,
+};
+
+/** LE Path Loss Report Structure */
+struct bt_conn_le_path_loss_report {
+
+	/** Current path loss in dBm unit.
+	 * 0xFF: unavailable
+	 */
+	int8_t current_path_loss;
+
+	/** 0x00: entered to low zone.
+	 *  0x01: entered to middle zone.
+	 *  0x02: entered to high zone.
+	 */
+	enum bt_conn_le_path_loss_zone zone_entered;
+};
+
+/** LE Set Path Loss Reporting Parameters Structure */
+struct bt_conn_le_path_loss_report_param {
+	/** High threshold for the path loss in dBm unit.
+	 * 0xFF: High threshold unused.
+	 */
+	int8_t high_threshold;
+
+	/** High hysteresis for the high threshold in dBm unit. */
+	int8_t high_hysteresis;
+
+	/** Low threshold for the path loss in dBm unit. */
+	int8_t low_threshold;
+
+	/** Low hysteresis for the low threshold in dBm unit. */
+	int8_t low_hysteresis;
+
+	/** Minimum time in number of connection events to be observed once the
+	 * path crosses the threshold before an event is generated.
+	 */
+	uint16_t min_time_spent;
+};
+
 /** @brief Get connection info
  *
  *  @param conn Connection object.
@@ -453,6 +528,63 @@ int bt_conn_get_remote_info(struct bt_conn *conn,
  */
 int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
 				  struct bt_conn_le_tx_power *tx_power_level);
+
+/** @brief Get enhanced connection transmit power level.
+ *
+ *  @param conn           Connection object.
+ *  @param tx_power       Transmit power level descriptor.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -ENOBUFS HCI command buffer is not available.
+ */
+int bt_conn_le_enhanced_get_tx_power_level(struct bt_conn *conn,
+					   struct bt_conn_le_tx_power *tx_power);
+
+/** @brief Get remote (peer) transmit power level.
+ *
+ *  @param conn           Connection object.
+ *  @param phy            PHY information.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -ENOBUFS HCI command buffer is not available.
+ */
+int bt_conn_le_get_remote_tx_power_level(struct bt_conn *conn,
+					 enum bt_conn_le_tx_power_phy phy);
+
+/** @brief Enable transmit power reporting.
+ *
+ *  @param conn           Connection object.
+ *  @param local_enable   Enable/disable reporting for local.
+ *  @param remote_enable  Enable/disable reporting for remote.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -ENOBUFS HCI command buffer is not available.
+ */
+int bt_conn_le_set_tx_power_report_enable(struct bt_conn *conn,
+					  bool local_enable,
+					  bool remote_enable);
+
+/** @brief Set Path loss reporting parameters.
+ *
+ *  @param conn           Connection object.
+ *  @param param          Parameters for path loss reporting.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -ENOBUFS HCI command buffer is not available.
+ */
+int bt_conn_le_set_path_loss_report_param(struct bt_conn *conn,
+					  const struct bt_conn_le_path_loss_report_param *param);
+
+/** @brief Enable path loss reporting.
+ *
+ *  @param conn           Connection object.
+ *  @param enable         Enable/disable path loss reporting.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -ENOBUFS HCI command buffer is not available.
+ */
+int bt_conn_le_path_loss_report_enable(struct bt_conn *conn,
+				       bool enable);
 
 /** @brief Update the connection parameters.
  *
@@ -959,6 +1091,34 @@ struct bt_conn_cb {
 	void (*cte_report_cb)(struct bt_conn *conn,
 			      const struct bt_df_conn_iq_samples_report *iq_report);
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
+
+#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
+	/** @brief LE Read Remote Transmit Power Level procedure has completed or LE
+	 *  Transmit Power Reporting event.
+	 *
+	 *  This callback notifies the application that the remote transmit power level
+	 *  has been read from the peer or transmit power level has changed for local or
+	 *  remote controller if transmit power reporting is enabled for respective side
+	 *  with @ref bt_conn_le_set_tx_power_report_enable.
+	 *
+	 *  @param conn Connection object.
+	 *  @param report Transmit power report.
+	 */
+	void (*tx_power_report)(struct bt_conn *conn,
+				      struct bt_conn_le_tx_power_report *report);
+#endif /* CONFIG_BT_TRANSMIT_POWER_CONTROL */
+
+#if defined(CONFIG_BT_PATH_LOSS_MONITORING)
+	/** @brief LE Path Loss Reporting event.
+	 *
+	 *  This callback notifies the application that the path loss zone is changed.
+	 *
+	 *  @param conn Connection object.
+	 *  @param report Path loss report.
+	 */
+	void (*path_loss_report)(struct bt_conn *conn,
+				      struct bt_conn_le_path_loss_report *report);
+#endif /* CONFIG_BT_PATH_LOSS_MONITORING */
 
 	struct bt_conn_cb *_next;
 };

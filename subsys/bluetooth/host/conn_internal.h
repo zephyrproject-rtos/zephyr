@@ -360,6 +360,12 @@ void notify_le_phy_updated(struct bt_conn *conn);
 
 bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param);
 
+void notify_tx_power_report(struct bt_conn *conn,
+			    struct bt_conn_le_tx_power_report report);
+
+void notify_path_loss_report(struct bt_conn *conn,
+			     struct bt_conn_le_path_loss_report report);
+
 #if defined(CONFIG_BT_SMP)
 /* rand and ediv should be in BT order */
 int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],

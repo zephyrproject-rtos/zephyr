@@ -557,6 +557,23 @@ config BT_CONN_PARAM_UPDATE_TIMEOUT
 	  "The Peripheral device should not perform a Connection Parameter
 	  Update procedure within 5 seconds after establishing a connection."
 
+config BT_TRANSMIT_POWER_CONTROL
+	bool "Transmit Power Control [EXPERIMENTAL]"
+	depends on !BT_CTLR || BT_CTLR_LE_POWER_CONTROL_SUPPORT
+	select EXPERIMENTAL
+	help
+	  Enable support for controlling transmit power. The controller shall
+	  support LE Power Control Request feature that defined in the Bluetooth
+	  Core specification, Version 5.3 | Vol 6, Part B, Section 4.6.31.
+
+config BT_PATH_LOSS_MONITORING
+	bool "Path Loss Monitoring [EXPERIMENTAL]"
+	depends on BT_TRANSMIT_POWER_CONTROL
+	select EXPERIMENTAL
+	help
+	  Enable support for Path Loss Monitoring feature that defined in the
+	  Bluetooth Core specification, Version 5.3 | Vol 6, Part B, Section 4.6.32.
+
 endif # BT_CONN
 
 if BT_OBSERVER

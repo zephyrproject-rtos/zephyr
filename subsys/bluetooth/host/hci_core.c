@@ -2152,6 +2152,57 @@ static void hci_vendor_event(struct net_buf *buf)
 	}
 }
 
+#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
+void bt_hci_le_transmit_power_report(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_transmit_power_report *evt;
+	struct bt_conn_le_tx_power_report report;
+	struct bt_conn *conn;
+
+	evt = net_buf_pull_mem(buf, sizeof(*evt));
+	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->handle));
+	if (!conn) {
+		BT_ERR("Unknown conn handle 0x%04X for transmit power report",
+		       sys_le16_to_cpu(evt->handle));
+		return;
+	}
+
+	report.reason = evt->reason;
+	report.phy = evt->phy;
+	report.tx_power_level = evt->tx_power_level;
+	report.tx_power_level_flag = evt->tx_power_level_flag;
+	report.delta = evt->delta;
+
+	notify_tx_power_report(conn, report);
+
+	bt_conn_unref(conn);
+}
+#endif /* CONFIG_BT_TRANSMIT_POWER_CONTROL */
+
+#if defined(CONFIG_BT_PATH_LOSS_MONITORING)
+void bt_hci_le_path_loss_report(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_path_loss_threshold *evt;
+	struct bt_conn_le_path_loss_report report;
+	struct bt_conn *conn;
+
+	evt = net_buf_pull_mem(buf, sizeof(*evt));
+	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->handle));
+	if (!conn) {
+		BT_ERR("Unknown conn handle 0x%04X for path loss report",
+		       sys_le16_to_cpu(evt->handle));
+		return;
+	}
+
+	report.current_path_loss = evt->current_path_loss;
+	report.zone_entered = evt->zone_entered;
+
+	notify_path_loss_report(conn, report);
+
+	bt_conn_unref(conn);
+}
+#endif /* CONFIG_BT_PATH_LOSS_MONITORING */
+
 static const struct event_handler meta_events[] = {
 #if defined(CONFIG_BT_OBSERVER)
 	EVENT_HANDLER(BT_HCI_EVT_LE_ADVERTISING_REPORT, bt_hci_le_adv_report,
@@ -2258,6 +2309,14 @@ static const struct event_handler meta_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_LE_CTE_REQUEST_FAILED, bt_hci_le_df_cte_req_failed,
 		      sizeof(struct bt_hci_evt_le_cte_req_failed)),
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_REQ */
+#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
+	EVENT_HANDLER(BT_HCI_EVT_LE_TRANSMIT_POWER_REPORT, bt_hci_le_transmit_power_report,
+		      sizeof(struct bt_hci_evt_le_transmit_power_report)),
+#endif /* CONFIG_BT_TRANSMIT_POWER_CONTROL */
+#if defined(CONFIG_BT_PATH_LOSS_MONITORING)
+	EVENT_HANDLER(BT_HCI_EVT_LE_PATH_LOSS_THRESHOLD, bt_hci_le_path_loss_report,
+		      sizeof(struct bt_hci_evt_le_path_loss_threshold)),
+#endif /* CONFIG_BT_PATH_LOSS_MONITORING */
 
 };
 

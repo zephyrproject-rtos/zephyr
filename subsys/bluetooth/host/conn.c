@@ -2374,16 +2374,53 @@ static int bt_conn_get_tx_power_level(struct bt_conn *conn, uint8_t type,
 	return 0;
 }
 
+int bt_conn_le_enhanced_get_tx_power_level(struct bt_conn *conn,
+					   struct bt_conn_le_tx_power *tx_power)
+{
+	int err;
+	struct bt_hci_rp_le_read_tx_power_level *rp;
+	struct net_buf *rsp;
+	struct bt_hci_cp_le_read_tx_power_level *cp;
+	struct net_buf *buf;
+
+	if (!tx_power->phy) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ENH_READ_TX_POWER_LEVEL, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->phy = tx_power->phy;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_ENH_READ_TX_POWER_LEVEL, buf, &rsp);
+	if (err) {
+		return err;
+	}
+
+	rp = (void *) rsp->data;
+	tx_power->phy = rp->phy;
+	tx_power->current_level = rp->current_tx_power_level;
+	tx_power->max_level = rp->max_tx_power_level;
+	net_buf_unref(rsp);
+
+	return 0;
+}
+
 int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
 				  struct bt_conn_le_tx_power *tx_power_level)
 {
 	int err;
 
 	if (tx_power_level->phy != 0) {
-		/* Extend the implementation when LE Enhanced Read Transmit
-		 * Power Level HCI command is available for use.
-		 */
-		return -ENOTSUP;
+		if (IS_ENABLED(CONFIG_BT_TRANSMIT_POWER_CONTROL)) {
+			return bt_conn_le_enhanced_get_tx_power_level(conn, tx_power_level);
+		} else {
+			return -ENOTSUP;
+		}
 	}
 
 	err = bt_conn_get_tx_power_level(conn, BT_TX_POWER_LEVEL_CURRENT,
@@ -2395,6 +2432,90 @@ int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
 	err = bt_conn_get_tx_power_level(conn, BT_TX_POWER_LEVEL_MAX,
 					 &tx_power_level->max_level);
 	return err;
+}
+
+int bt_conn_le_get_remote_tx_power_level(struct bt_conn *conn,
+					 enum bt_conn_le_tx_power_phy phy)
+{
+	struct bt_hci_cp_le_read_tx_power_level *cp;
+	struct net_buf *buf;
+
+	if (!phy) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_READ_REMOTE_TX_POWER_LEVEL, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->phy = phy;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_REMOTE_TX_POWER_LEVEL, buf, NULL);
+}
+
+int bt_conn_le_set_tx_power_report_enable(struct bt_conn *conn,
+					  bool local_enable,
+					  bool remote_enable)
+{
+	struct bt_hci_cp_le_set_tx_power_report_enable *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_TX_POWER_REPORT_ENABLE, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->local_enable = local_enable ? BT_HCI_LE_TX_POWER_REPORT_ENABLE :
+		BT_HCI_LE_TX_POWER_REPORT_DISABLE;
+	cp->remote_enable = remote_enable ? BT_HCI_LE_TX_POWER_REPORT_ENABLE :
+		BT_HCI_LE_TX_POWER_REPORT_DISABLE;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_TX_POWER_REPORT_ENABLE, buf, NULL);
+}
+
+int bt_conn_le_set_path_loss_report_param(struct bt_conn *conn,
+					  const struct bt_conn_le_path_loss_report_param *param)
+{
+	struct bt_hci_cp_le_set_path_loss_report_param *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PATH_LOSS_REPORT_PARAM, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->high_threshold = param->high_threshold;
+	cp->high_hysteresis = param->high_hysteresis;
+	cp->low_threshold = param->low_threshold;
+	cp->low_hysteresis = param->low_hysteresis;
+	cp->min_time_spent = param->min_time_spent;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PATH_LOSS_REPORT_PARAM, buf, NULL);
+}
+
+int bt_conn_le_path_loss_report_enable(struct bt_conn *conn, bool enable)
+{
+	struct bt_hci_cp_le_set_path_loss_report_enable *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PATH_LOSS_REPORT_ENABLE, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->enable = enable ? BT_HCI_LE_PATH_LOSS_REPORT_ENABLE :
+		BT_HCI_LE_PATH_LOSS_REPORT_DISABLE;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PATH_LOSS_REPORT_ENABLE, buf, NULL);
 }
 
 int bt_conn_le_param_update(struct bt_conn *conn,
@@ -3054,5 +3175,49 @@ void bt_hci_le_df_cte_req_failed(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_REQ */
+
+#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
+void notify_tx_power_report(struct bt_conn *conn,
+			    struct bt_conn_le_tx_power_report report)
+{
+	struct bt_conn_cb *cb;
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->tx_power_report) {
+			cb->tx_power_report(conn, &report);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb)
+	{
+		if (cb->tx_power_report) {
+			cb->tx_power_report(conn, &report);
+		}
+	}
+
+	bt_conn_unref(conn);
+}
+#endif /* CONFIG_BT_TRANSMIT_POWER_CONTROL */
+
+#if defined(CONFIG_BT_PATH_LOSS_MONITORING)
+void notify_path_loss_report(struct bt_conn *conn,
+			     struct bt_conn_le_path_loss_report report)
+{
+	struct bt_conn_cb *cb;
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->path_loss_report) {
+			cb->path_loss_report(conn, &report);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb)
+	{
+		if (cb->path_loss_report) {
+			cb->path_loss_report(conn, &report);
+		}
+	}
+}
+#endif /* CONFIG_BT_PATH_LOSS_MONITORING */
 
 #endif /* CONFIG_BT_CONN */
