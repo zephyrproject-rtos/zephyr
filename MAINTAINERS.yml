@@ -1426,7 +1426,8 @@ Networking:
     - rlubos
   files:
     - subsys/net/lib/mqtt/
-    - tests/net/lib/mqtt_packet/
+    - tests/net/lib/mqtt_*/
+    - samples/net/cloud/mqtt_azure/
     - samples/net/mqtt_publisher/
   labels:
     - "area: Networking"
