@@ -74,12 +74,16 @@ config CPU_EM4_FPUDA
 config CPU_EM6
 	bool
 	select CPU_ARCEM
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
 	help
 	  If y, the SoC uses an ARC EM6 CPU
 
 config CPU_HS3X
 	bool
 	select CPU_ARCHS
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
 	help
 	  If y, the SoC uses an ARC HS3x or HS4x CPU
 
@@ -90,6 +94,8 @@ if ISA_ARCV3
 config CPU_HS5X
 	bool
 	select CPU_ARCHS
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
 	help
 	  If y, the SoC uses an ARC HS6x CPU
 
@@ -97,6 +103,8 @@ config CPU_HS6X
 	bool
 	select CPU_ARCHS
 	select 64BIT
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
 	help
 	  If y, the SoC uses an ARC HS6x CPU
 
