@@ -1440,6 +1440,7 @@ Networking:
   files:
     - subsys/net/l2/openthread/
     - samples/net/openthread/
+    - tests/subsys/openthread/
   labels:
     - "area: Networking"
     - "area: OpenThread"
