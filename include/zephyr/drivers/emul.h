@@ -21,10 +21,11 @@ extern "C" {
 struct emul;
 
 /* #includes required after forward-declaration of struct emul later defined in this header. */
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/espi_emul.h>
 #include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/drivers/spi_emul.h>
-#include <zephyr/device.h>
 
 /**
  * The types of supported buses.
