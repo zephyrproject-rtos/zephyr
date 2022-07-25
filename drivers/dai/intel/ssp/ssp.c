@@ -1529,7 +1529,8 @@ out:
 	return ret;
 }
 
-static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const void *spec_config)
+static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_config *cfg,
+				    const void *spec_config)
 {
 	const struct dai_intel_ipc4_ssp_configuration_blob *blob = spec_config;
 	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
@@ -1577,7 +1578,7 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const void *spec_co
 	ssp->params.tdm_slots = SSCR0_FRDC_GET(ssc0);
 	ssp->params.tx_slots = SSTSA_GET(sstsa);
 	ssp->params.rx_slots = SSRSA_GET(ssrsa);
-	ssp->params.fsync_rate = 48000;
+	ssp->params.fsync_rate = cfg->rate;
 
 	ssp->state[DAI_DIR_PLAYBACK] = DAI_STATE_PRE_RUNNING;
 	ssp->state[DAI_DIR_CAPTURE] = DAI_STATE_PRE_RUNNING;
@@ -1847,7 +1848,7 @@ static int dai_ssp_config_set(const struct device *dev, const struct dai_config 
 	if (cfg->type == DAI_INTEL_SSP) {
 		return dai_ssp_set_config_tplg(dp, cfg, bespoke_cfg);
 	} else {
-		return dai_ssp_set_config_blob(dp, bespoke_cfg);
+		return dai_ssp_set_config_blob(dp, cfg, bespoke_cfg);
 	}
 }
 
