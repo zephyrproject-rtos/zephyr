@@ -1794,9 +1794,9 @@ static void get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
 	uint32_t iaddr = CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS;
 	int ret;
 
-	dev = device_get_binding(CONFIG_ETH_SAM_GMAC_MAC_I2C_DEV_NAME);
-	if (!dev) {
-		LOG_ERR("I2C: Device not found");
+	dev = DEVICE_DT_GET(DT_ALIAS(i2c_0));
+	if (!device_is_ready(dev)) {
+		LOG_ERR("I2C: Device is not ready");
 		return;
 	}
 
