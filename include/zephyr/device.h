@@ -26,6 +26,7 @@
  * @{
  */
 
+#include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/device_mmio.h>
