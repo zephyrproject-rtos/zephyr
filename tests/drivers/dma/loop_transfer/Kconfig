@@ -5,10 +5,6 @@ mainmenu "DMA Loop Transfer Test"
 
 source "Kconfig.zephyr"
 
-config DMA_LOOP_TRANSFER_DRV_NAME
-	string "DMA device name to use for test"
-	default "DMA_0"
-
 config DMA_LOOP_TRANSFER_CHANNEL_NR
 	int "DMA channel to use"
 	default 0
