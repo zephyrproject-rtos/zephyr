@@ -54,7 +54,7 @@ source "drivers/i2c/Kconfig.gd32"
 
 config I2C_INIT_PRIORITY
 	int "Init priority"
-	default KERNEL_INIT_PRIORITY_DEVICE
+	default 60
 	help
 	  I2C device driver initialization priority.
 
