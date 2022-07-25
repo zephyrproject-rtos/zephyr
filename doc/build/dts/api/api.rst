@@ -410,6 +410,8 @@ device.
    * - zephyr,flash-controller
      - The node corresponding to the flash controller device for
        the ``zephyr,flash`` node
+   * - zephyr,gdbstub-uart
+     - Sets UART device used by the :ref:`gdbstub` subsystem
    * - zephyr,ipc
      - Used by the OpenAMP subsystem to specify the inter-process communication
        (IPC) device
