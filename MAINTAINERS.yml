@@ -1733,6 +1733,7 @@ Intel Platforms (Xtensa):
     - boards/xtensa/intel_*/
     - soc/xtensa/intel_*/
     - dts/xtensa/intel/
+    - tests/boards/intel_adsp/
   labels:
     - "platform: Intel ADSP"
 
