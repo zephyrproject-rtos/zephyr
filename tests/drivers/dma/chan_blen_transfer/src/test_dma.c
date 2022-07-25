@@ -20,8 +20,6 @@
 #include <zephyr/drivers/dma.h>
 #include <ztest.h>
 
-#define DMA_DEVICE_NAME CONFIG_DMA_TRANSFER_DRV_NAME
-
 #define RX_BUFF_SIZE (48)
 
 #ifdef CONFIG_NOCACHE_MEMORY
@@ -49,9 +47,10 @@ static int test_task(uint32_t chan_id, uint32_t blen)
 {
 	struct dma_config dma_cfg = { 0 };
 	struct dma_block_config dma_block_cfg = { 0 };
-	const struct device *dma = device_get_binding(DMA_DEVICE_NAME);
-	if (!dma) {
-		TC_PRINT("Cannot get dma controller\n");
+	const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(test_dma));
+
+	if (!device_is_ready(dma)) {
+		TC_PRINT("dma controller device is not ready\n");
 		return TC_FAIL;
 	}
 
