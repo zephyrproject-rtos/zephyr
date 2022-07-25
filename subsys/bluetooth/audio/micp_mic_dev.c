@@ -19,6 +19,8 @@
 #include <zephyr/bluetooth/audio/micp.h>
 #include <zephyr/bluetooth/audio/aics.h>
 
+#include "audio_internal.h"
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MICP_MIC_DEV)
 #define LOG_MODULE_NAME bt_micp
 #include "common/log.h"
@@ -94,12 +96,11 @@ static ssize_t write_mute(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 #define BT_MICP_SERVICE_DEFINITION \
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_MICS), \
 	AICS_INCLUDES(CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT) \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MICS_MUTE, \
-		BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | BT_GATT_CHRC_NOTIFY, \
-		BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT, \
-		read_mute, write_mute, NULL), \
-	BT_GATT_CCC(mute_cfg_changed, \
-		BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT)
+	BT_AUDIO_CHRC(BT_UUID_MICS_MUTE, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT, \
+		      read_mute, write_mute, NULL), \
+	BT_AUDIO_CCC(mute_cfg_changed)
 
 #define MICS_ATTR_COUNT \
 	ARRAY_SIZE(((struct bt_gatt_attr []){ BT_MICP_SERVICE_DEFINITION }))

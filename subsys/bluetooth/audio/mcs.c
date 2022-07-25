@@ -23,6 +23,7 @@
 #include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 
+#include "audio_internal.h"
 #include "media_proxy_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
@@ -620,62 +621,49 @@ static ssize_t read_content_ctrl_id(struct bt_conn *conn,
 /* Defines for OTS-dependent characteristics - empty if no OTS */
 #ifdef CONFIG_BT_OTS
 #define ICON_OBJ_ID_CHARACTERISTIC_IF_OTS  \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_ICON_OBJ_ID,	\
-	BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
-	read_icon_id, NULL, NULL),
+	BT_AUDIO_CHRC(BT_UUID_MCS_ICON_OBJ_ID, \
+		      BT_GATT_CHRC_READ, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_icon_id, NULL, NULL),
 #define SEGMENTS_TRACK_GROUP_ID_CHARACTERISTICS_IF_OTS  \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_TRACK_SEGMENTS_OBJ_ID,	\
-			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
-			       read_track_segments_id, NULL, NULL), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_CURRENT_TRACK_OBJ_ID, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
-			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
-			       BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT | \
-			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       read_current_track_id, write_current_track_id, \
-			       NULL), \
-	BT_GATT_CCC(current_track_id_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
-			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
-			       BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT | \
-			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       read_next_track_id, write_next_track_id, NULL), \
-	BT_GATT_CCC(next_track_id_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       read_parent_group_id, NULL, NULL), \
-	BT_GATT_CCC(parent_group_id_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_CURRENT_GROUP_OBJ_ID, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
-			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
-			       BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT | \
-			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       read_current_group_id, write_current_group_id, NULL), \
-	BT_GATT_CCC(current_group_id_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+	BT_AUDIO_CHRC(BT_UUID_MCS_TRACK_SEGMENTS_OBJ_ID,	\
+		      BT_GATT_CHRC_READ, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_track_segments_id, NULL, NULL), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_CURRENT_TRACK_OBJ_ID, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
+		      BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT, \
+		      read_current_track_id, write_current_track_id, NULL), \
+	BT_AUDIO_CCC(current_track_id_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
+		      BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT, \
+		      read_next_track_id, write_next_track_id, NULL), \
+	BT_AUDIO_CCC(next_track_id_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_parent_group_id, NULL, NULL), \
+	BT_AUDIO_CCC(parent_group_id_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_CURRENT_GROUP_OBJ_ID, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
+		      BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT, \
+		      read_current_group_id, write_current_group_id, NULL), \
+	BT_AUDIO_CCC(current_group_id_cfg_changed),
 #define	SEARCH_CHARACTERISTICS_IF_OTS \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_SEARCH_CONTROL_POINT, \
-			       BT_GATT_CHRC_WRITE | \
-			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
-			       BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       NULL, write_search_control_point, NULL), \
-	BT_GATT_CCC(search_control_point_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       read_search_results_id, NULL, NULL), \
-	BT_GATT_CCC(search_results_id_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+	BT_AUDIO_CHRC(BT_UUID_MCS_SEARCH_CONTROL_POINT, \
+		      BT_GATT_CHRC_WRITE | BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_WRITE_ENCRYPT, \
+		      NULL, write_search_control_point, NULL), \
+	BT_AUDIO_CCC(search_control_point_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_search_results_id, NULL, NULL), \
+	BT_AUDIO_CCC(search_results_id_cfg_changed),
 
 #else
 #define ICON_OBJ_ID_CHARACTERISTIC_IF_OTS
@@ -687,97 +675,79 @@ static ssize_t read_content_ctrl_id(struct bt_conn *conn,
 #define BT_MCS_SERVICE_DEFINITION \
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GMCS), \
 	BT_GATT_INCLUDE_SERVICE(NULL), /* To be overwritten */ \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_PLAYER_NAME, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       read_player_name, NULL, NULL), \
-	BT_GATT_CCC(player_name_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_PLAYER_NAME, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_player_name, NULL, NULL), \
+	BT_AUDIO_CCC(player_name_cfg_changed), \
 	ICON_OBJ_ID_CHARACTERISTIC_IF_OTS \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_ICON_URL, \
-			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
-			       read_icon_url, NULL, NULL), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_TRACK_CHANGED, \
-			       BT_GATT_CHRC_NOTIFY, BT_GATT_PERM_NONE, \
-			       NULL, NULL, NULL), \
-	BT_GATT_CCC(track_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_TRACK_TITLE, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       read_track_title, NULL, NULL), \
-	BT_GATT_CCC(track_title_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_TRACK_DURATION, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       read_track_duration, NULL, NULL), \
-	BT_GATT_CCC(track_duration_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_TRACK_POSITION, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
-			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
-			       BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT | \
-			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       read_track_position, \
-			       write_track_position, NULL), \
-	BT_GATT_CCC(track_position_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_PLAYBACK_SPEED, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
-			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
-			       BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT | \
-			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       read_playback_speed, write_playback_speed, \
-			       NULL), \
-	BT_GATT_CCC(playback_speed_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_SEEKING_SPEED, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       read_seeking_speed, NULL, NULL), \
-	BT_GATT_CCC(seeking_speed_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_ICON_URL, \
+		      BT_GATT_CHRC_READ, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_icon_url, NULL, NULL), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_TRACK_CHANGED, \
+		      BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_NONE, \
+		      NULL, NULL, NULL), \
+	BT_AUDIO_CCC(track_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_TRACK_TITLE, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_track_title, NULL, NULL), \
+	BT_AUDIO_CCC(track_title_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_TRACK_DURATION, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_track_duration, NULL, NULL), \
+	BT_AUDIO_CCC(track_duration_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_TRACK_POSITION, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
+		      BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT, \
+		      read_track_position, write_track_position, NULL), \
+	BT_AUDIO_CCC(track_position_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_PLAYBACK_SPEED, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
+		      BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT, \
+		      read_playback_speed, write_playback_speed, NULL), \
+	BT_AUDIO_CCC(playback_speed_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_SEEKING_SPEED, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_seeking_speed, NULL, NULL), \
+	BT_AUDIO_CCC(seeking_speed_cfg_changed), \
 	SEGMENTS_TRACK_GROUP_ID_CHARACTERISTICS_IF_OTS \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_PLAYING_ORDER, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
-			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
-			       BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT | \
-			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       read_playing_order, write_playing_order, NULL), \
-	BT_GATT_CCC(playing_order_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_PLAYING_ORDERS, \
-			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
-			       read_playing_orders_supported, NULL, NULL), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_MEDIA_STATE, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       read_media_state, NULL, NULL), \
-	BT_GATT_CCC(media_state_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_MEDIA_CONTROL_POINT, \
-			       BT_GATT_CHRC_WRITE | \
-			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
-			       BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       NULL, write_control_point, NULL), \
-	BT_GATT_CCC(control_point_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_MEDIA_CONTROL_OPCODES, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       read_opcodes_supported, NULL, NULL), \
-	BT_GATT_CCC(opcodes_supported_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_PLAYING_ORDER, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
+		      BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT, \
+		      read_playing_order, write_playing_order, NULL), \
+	BT_AUDIO_CCC(playing_order_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_PLAYING_ORDERS, \
+		      BT_GATT_CHRC_READ, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_playing_orders_supported, NULL, NULL), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_MEDIA_STATE, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_media_state, NULL, NULL), \
+	BT_AUDIO_CCC(media_state_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_MEDIA_CONTROL_POINT, \
+		      BT_GATT_CHRC_WRITE | BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_WRITE_ENCRYPT, \
+		      NULL, write_control_point, NULL), \
+	BT_AUDIO_CCC(control_point_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_MCS_MEDIA_CONTROL_OPCODES, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_opcodes_supported, NULL, NULL), \
+	BT_AUDIO_CCC(opcodes_supported_cfg_changed), \
 	SEARCH_CHARACTERISTICS_IF_OTS \
-	BT_GATT_CHARACTERISTIC(BT_UUID_CCID, \
-			       BT_GATT_CHRC_READ, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       read_content_ctrl_id, NULL, NULL)
+	BT_AUDIO_CHRC(BT_UUID_CCID, \
+		      BT_GATT_CHRC_READ, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_content_ctrl_id, NULL, NULL)
 
 static struct bt_gatt_attr svc_attrs[] = { BT_MCS_SERVICE_DEFINITION };
 static struct bt_gatt_service mcs;
