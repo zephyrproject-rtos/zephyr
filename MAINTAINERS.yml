@@ -1926,6 +1926,19 @@ Xilinx Platforms:
   labels:
     - "platform: Xilinx"
 
+RTIO:
+  status: maintained
+  maintainers:
+    - teburd
+  files:
+    - samples/subsys/rtio/
+    - include/zephyr/rtio/
+    - tests/subsys/rtio/
+    - subsys/rtio/
+    - doc/services/rtio/
+  labels:
+    - "area: RTIO"
+
 Storage:
   status: maintained
   maintainers:
