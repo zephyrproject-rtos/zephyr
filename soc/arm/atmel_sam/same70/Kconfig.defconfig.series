@@ -45,10 +45,6 @@ config DMA_SAM_XDMAC
 	default y
 	depends on DMA
 
-config GPIO_SAM
-	default y
-	depends on GPIO
-
 config ADC_SAM_AFEC
 	default y
 	depends on ADC

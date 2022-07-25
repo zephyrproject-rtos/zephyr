@@ -10,9 +10,6 @@ if GPIO
 config GPIO_INIT_PRIORITY
 	default 70
 
-config GPIO_DW
-	default y
-
 endif # GPIO
 
 if I2C
@@ -45,13 +42,6 @@ config SPI_DW_FIFO_DEPTH
 
 config SPI_DW_ARC_AUX_REGS
 	default n
-
-if BOARD_EM_STARTERKIT_R23
-
-config GPIO_SNPS_CREG
-	default y
-
-endif # BOARD_EM_STARTERKIT_R23
 
 endif # SPI_DW
 

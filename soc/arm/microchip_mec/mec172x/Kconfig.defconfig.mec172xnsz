@@ -15,10 +15,6 @@ config UART_XEC
 config GPIO
 	default y
 
-config GPIO_XEC_V2
-	default y
-	depends on GPIO
-
 config PINMUX_XEC
 	default y
 	depends on PINMUX

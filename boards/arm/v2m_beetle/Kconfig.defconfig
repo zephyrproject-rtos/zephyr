@@ -8,13 +8,6 @@ if BOARD_V2M_BEETLE
 config BOARD
 	default "v2m_beetle"
 
-if GPIO
-
-config GPIO_CMSDK_AHB
-	default y
-
-endif # GPIO
-
 config PINMUX_BEETLE
 	default y
 	depends on PINMUX

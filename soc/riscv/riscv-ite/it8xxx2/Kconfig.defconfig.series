@@ -51,10 +51,6 @@ config KSCAN_ITE_IT8XXX2
 	default y
 	depends on KSCAN
 
-config GPIO_ITE_IT8XXX2
-	default y
-	depends on GPIO
-
 config ADC_ITE_IT8XXX2
 	default y
 	depends on ADC

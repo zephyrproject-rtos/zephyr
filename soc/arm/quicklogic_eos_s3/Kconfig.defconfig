@@ -22,11 +22,4 @@ config UART_INTERRUPT_DRIVEN
 
 endif # SERIAL
 
-if GPIO
-
-config GPIO_EOS_S3
-	default y
-
-endif # GPIO
-
 endif # SOC_EOS_S3
