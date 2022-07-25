@@ -22,10 +22,9 @@ int z_gdb_backend_init(void)
 	};
 
 	if (uart_dev == NULL) {
-		uart_dev = device_get_binding(
-			CONFIG_GDBSTUB_SERIAL_BACKEND_NAME);
+		uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_gdbstub_uart));
 
-		__ASSERT(uart_dev != NULL, "Could not get uart device");
+		__ASSERT(device_is_ready(uart_dev), "uart device is not ready");
 
 		ret = uart_configure(uart_dev, &uart_cfg);
 		__ASSERT(ret == 0, "Could not configure uart device");

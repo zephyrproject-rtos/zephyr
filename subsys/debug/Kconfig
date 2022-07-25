@@ -369,13 +369,6 @@ config GDBSTUB_SERIAL_BACKEND
 
 endchoice
 
-config GDBSTUB_SERIAL_BACKEND_NAME
-	string "Serial Name"
-	depends on GDBSTUB_SERIAL_BACKEND
-	default "UART_0"
-	help
-	  Use serial as backend for GDB
-
 config GDBSTUB_BUF_SZ
 	int "GDB backend send/receive buffer size (in bytes)"
 	default 256
