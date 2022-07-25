@@ -1144,6 +1144,7 @@ IPC:
     - include/zephyr/ipc/
     - samples/subsys/ipc/
     - subsys/ipc/
+    - tests/subsys/ipc/
   description: >-
     Inter-Processor Communication
   labels:
