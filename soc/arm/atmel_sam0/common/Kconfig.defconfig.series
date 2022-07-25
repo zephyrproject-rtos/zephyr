@@ -17,9 +17,6 @@ config DAC_SAM0
 config DMA_SAM0
 	default DMA
 
-config GPIO_SAM0
-	default GPIO
-
 config HWINFO_SAM0
 	default HWINFO
 

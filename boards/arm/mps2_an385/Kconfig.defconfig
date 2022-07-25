@@ -6,13 +6,6 @@ if BOARD_MPS2_AN385
 config BOARD
 	default "mps2_an385"
 
-if GPIO
-
-config GPIO_CMSDK_AHB
-	default y
-
-endif # GPIO
-
 if SERIAL
 
 config UART_CMSDK_APB

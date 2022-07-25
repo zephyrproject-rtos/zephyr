@@ -23,10 +23,6 @@ config ADC_XEC
 	default y
 	depends on ADC
 
-config GPIO_XEC
-	default y
-	depends on GPIO
-
 config I2C_XEC
 	default y
 	depends on I2C

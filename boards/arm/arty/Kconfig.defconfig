@@ -28,13 +28,6 @@ endif # SERIAL
 config GPIO
 	default y if "$(dt_nodelabel_enabled,daplink_qspi_mux)"
 
-if GPIO
-
-config GPIO_XLNX_AXI
-	default y
-
-endif # GPIO
-
 if SPI
 
 config SPI_XLNX_AXI_QUADSPI

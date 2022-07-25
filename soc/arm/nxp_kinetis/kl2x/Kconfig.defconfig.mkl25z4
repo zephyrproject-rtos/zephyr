@@ -19,10 +19,6 @@ config CLOCK_CONTROL_MCUX_SIM
 	default y
 	depends on CLOCK_CONTROL
 
-config GPIO_MCUX
-	default y
-	depends on GPIO
-
 config UART_MCUX_LPSCI
 	default y
 	depends on SERIAL

@@ -8,10 +8,6 @@ if BOARD_ARDUINO_DUE
 config BOARD
 	default "arduino_due"
 
-config GPIO_SAM
-	default y
-	depends on GPIO
-
 if I2C
 
 config I2C_SAM_TWI

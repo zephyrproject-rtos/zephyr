@@ -11,10 +11,6 @@ config SOC
 config FPU
 	default y
 
-config GPIO_IMX
-	default y
-	depends on GPIO
-
 config UART_IMX
 	default y
 	depends on SERIAL
