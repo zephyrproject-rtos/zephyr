@@ -123,6 +123,12 @@ Bluetooth
 
 * Host
 
+  * Added a new callback :c:func:`rpa_expired` in the struct :c:struct:`bt_le_ext_adv_cb`
+    to enable synchronization of the advertising payload updates with the Resolvable Private
+    Address (RPA) rotations when the :kconfig:option:`CONFIG_BT_PRIVACY` is enabled.
+  * Added a new :c:func:`bt_le_set_rpa_timeout()` API call to dynamically change the
+    the Resolvable Private Address (RPA) timeout when the :kconfig:option:`CONFIG_BT_RPA_TIMEOUT_DYNAMIC`
+    is enabled.
   * Added :c:func:`bt_conn_auth_cb_overlay` to overlay authentication callbacks for a Bluetooth LE connection.
   * Removed ``CONFIG_BT_HCI_ECC_STACK_SIZE``.
     The Bluetooth long workqueue (:kconfig:option:`CONFIG_BT_LONG_WQ`) is used for processing ECC commands instead of the dedicated thread.
