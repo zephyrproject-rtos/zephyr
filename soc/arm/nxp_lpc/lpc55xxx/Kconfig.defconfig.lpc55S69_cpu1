@@ -18,8 +18,4 @@ config GPIO
 config SERIAL
 	default n
 
-config UART_MCUX_FLEXCOMM
-	default n
-	depends on SERIAL
-
 endif # SOC_LPC55S69_CPU1

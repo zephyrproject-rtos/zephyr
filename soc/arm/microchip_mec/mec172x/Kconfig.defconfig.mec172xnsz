@@ -8,10 +8,6 @@ if SOC_MEC172X_NSZ
 config SOC
 	default "mec172xnsz"
 
-config UART_XEC
-	default y
-	depends on SERIAL
-
 config GPIO
 	default y
 

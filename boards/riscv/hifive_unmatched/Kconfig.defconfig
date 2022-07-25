@@ -16,8 +16,4 @@ config SPI_SIFIVE
 	default y
 	depends on SPI
 
-config UART_SIFIVE
-	default y
-	depends on SERIAL
-
 endif

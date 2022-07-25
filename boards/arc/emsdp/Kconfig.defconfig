@@ -16,8 +16,4 @@ config GPIO_INIT_PRIORITY
 
 endif # GPIO
 
-config UART_NS16550
-	default y
-	depends on SERIAL
-
 endif # BOARD_EMSDP

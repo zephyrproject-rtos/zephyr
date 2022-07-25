@@ -52,10 +52,6 @@ config ETH_MCUX
 	default y if HAS_MCUX_ENET
 	depends on NET_L2_ETHERNET
 
-config UART_MCUX_LPUART
-	default y if HAS_MCUX_LPUART
-	depends on SERIAL
-
 config IMX_USDHC
 	default y if (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
 	depends on SDHC
