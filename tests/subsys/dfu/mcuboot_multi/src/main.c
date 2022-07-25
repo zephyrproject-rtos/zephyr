@@ -61,7 +61,7 @@ static void _test_request_upgrade_n(uint8_t fa_id, int img_index, int confirmed)
 	}
 }
 
-void test_request_upgrade_multi(void)
+ZTEST(mcuboot_multi, test_request_upgrade_multi)
 {
 	_test_request_upgrade_n(FLASH_AREA_ID(image_1), 0, 0);
 	_test_request_upgrade_n(FLASH_AREA_ID(image_3), 1, 1);
@@ -115,16 +115,10 @@ static void _test_write_confirm_n(uint8_t fa_id, int img_index)
 	zassert_equal(1, readout[0] & 0xff, "confirmation error");
 }
 
-void test_write_confirm_multi(void)
+ZTEST(mcuboot_multi, test_write_confirm_multi)
 {
 	_test_write_confirm_n(FLASH_AREA_ID(image_0), 0);
 	_test_write_confirm_n(FLASH_AREA_ID(image_2), 1);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_mcuboot_interface,
-			 ztest_unit_test(test_request_upgrade_multi),
-			 ztest_unit_test(test_write_confirm_multi));
-	ztest_run_test_suite(test_mcuboot_interface);
-}
+ZTEST_SUITE(mcuboot_multi, NULL, NULL, NULL, NULL, NULL);
