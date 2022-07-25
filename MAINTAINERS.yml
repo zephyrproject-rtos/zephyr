@@ -1292,6 +1292,19 @@ MCU Manager:
   labels:
     - "area: mcumgr"
 
+Modbus:
+  status: maintained
+  maintainers:
+    - jfischer-no
+  files:
+    - samples/subsys/modbus/
+    - include/zephyr/modbus/
+    - tests/subsys/modbus/
+    - subsys/modbus/
+    - doc/services/modbus/
+  labels:
+    - "area: modbus"
+
 OSDP:
   status: odd fixes
   collaborators:
