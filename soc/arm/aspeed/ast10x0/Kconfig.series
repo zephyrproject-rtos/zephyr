@@ -12,6 +12,8 @@ config SOC_SERIES_AST10X0
 	select SOC_FAMILY_ASPEED
 	select SYSCON
 	select CACHE
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
 	select CACHE_MANAGEMENT
 	select CACHE_ASPEED
 	help
