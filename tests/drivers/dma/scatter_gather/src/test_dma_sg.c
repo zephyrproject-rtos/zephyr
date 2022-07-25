@@ -36,8 +36,6 @@ static const char tx_data[] = "The quick brown fox jumps over the lazy dog";
 static __aligned(32) char rx_data[XFERS][XFER_SIZE] = { { 0 } };
 #endif
 
-#define DMA_DEVICE_NAME CONFIG_DMA_SG_DRV_NAME
-
 K_SEM_DEFINE(xfer_sem, 0, 1);
 
 static struct dma_config dma_cfg = {0};
@@ -59,8 +57,7 @@ static int test_sg(void)
 	const struct device *dma;
 	static int chan_id;
 
-	TC_PRINT("DMA memory to memory transfer started on %s\n",
-	       DMA_DEVICE_NAME);
+	TC_PRINT("DMA memory to memory transfer started\n");
 	TC_PRINT("Preparing DMA Controller\n");
 
 #if CONFIG_NOCACHE_MEMORY
@@ -69,9 +66,9 @@ static int test_sg(void)
 #endif
 	memset(rx_data, 0, sizeof(rx_data));
 
-	dma = device_get_binding(DMA_DEVICE_NAME);
-	if (!dma) {
-		TC_PRINT("Cannot get dma controller\n");
+	dma = DEVICE_DT_GET(DT_ALIAS(dma0));
+	if (!device_is_ready(dma)) {
+		TC_PRINT("dma controller device is not ready\n");
 		return TC_FAIL;
 	}
 
