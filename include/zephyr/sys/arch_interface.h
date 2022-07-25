@@ -1010,6 +1010,9 @@ int arch_gdb_remove_breakpoint(struct gdb_ctx *ctx, uint8_t type,
  */
 
 #if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_HAS_ARCH_CACHE)
+
+#if defined(CONFIG_DCACHE)
+
 /**
  *
  * @brief Enable d-cache
@@ -1028,22 +1031,6 @@ void arch_dcache_disable(void);
 
 /**
  *
- * @brief Enable i-cache
- *
- * @see arch_icache_enable
- */
-void arch_icache_enable(void);
-
-/**
- *
- * @brief Disable i-cache
- *
- * @see arch_icache_disable
- */
-void arch_icache_disable(void);
-
-/**
- *
  * @brief Write-back / Invalidate / Write-back + Invalidate all d-cache
  *
  * @see arch_dcache_all
@@ -1057,6 +1044,37 @@ int arch_dcache_all(int op);
  * @see arch_dcache_range
  */
 int arch_dcache_range(void *addr, size_t size, int op);
+
+#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
+/**
+ *
+ * @brief Get d-cache line size
+ *
+ * @see sys_cache_data_line_size_get
+ */
+size_t arch_dcache_line_size_get(void);
+#endif /* CONFIG_DCACHE_LINE_SIZE_DETECT */
+
+#endif /* CONFIG_DCACHE */
+
+#if defined(CONFIG_ICACHE)
+
+/**
+ *
+ * @brief Enable i-cache
+ *
+ * @see arch_icache_enable
+ */
+void arch_icache_enable(void);
+
+/**
+ *
+ * @brief Enable i-cache
+ *
+ * @see arch_icache_disable
+ */
+void arch_icache_disable(void);
+
 
 /**
  *
@@ -1074,17 +1092,8 @@ int arch_icache_all(int op);
  */
 int arch_icache_range(void *addr, size_t size, int op);
 
-#ifdef CONFIG_DCACHE_LINE_SIZE_DETECT
-/**
- *
- * @brief Get d-cache line size
- *
- * @see sys_cache_data_line_size_get
- */
-size_t arch_dcache_line_size_get(void);
-#endif /* CONFIG_DCACHE_LINE_SIZE_DETECT */
 
-#ifdef CONFIG_ICACHE_LINE_SIZE_DETECT
+#if defined(CONFIG_ICACHE_LINE_SIZE_DETECT)
 /**
  *
  * @brief Get i-cache line size
@@ -1093,6 +1102,8 @@ size_t arch_dcache_line_size_get(void);
  */
 size_t arch_icache_line_size_get(void);
 #endif /* CONFIG_ICACHE_LINE_SIZE_DETECT */
+
+#endif /* CONFIG_ICACHE */
 
 #endif /* CONFIG_CACHE_MANAGEMENT && CONFIG_HAS_ARCH_CACHE */
 
