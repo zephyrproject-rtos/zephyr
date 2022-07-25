@@ -27,6 +27,7 @@
 #include "../host/hci_core.h"
 #include "../host/conn_internal.h"
 
+#include "audio_internal.h"
 #include "endpoint.h"
 #include "unicast_server.h"
 #include "pacs_internal.h"
@@ -932,7 +933,7 @@ static uint8_t ase_attr_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 {
 	struct bt_ascs_ase *ase = user_data;
 
-	if (ase->ep.status.id == POINTER_TO_UINT(attr->user_data)) {
+	if (ase->ep.status.id == POINTER_TO_UINT(BT_AUDIO_CHRC_USER_DATA(attr))) {
 		ase->ep.server.attr = attr;
 
 		return BT_GATT_ITER_STOP;
@@ -1067,7 +1068,7 @@ static ssize_t ascs_ase_read(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
-	ase = ase_get(ascs, POINTER_TO_UINT(attr->user_data));
+	ase = ase_get(ascs, POINTER_TO_UINT(BT_AUDIO_CHRC_USER_DATA(attr)));
 	if (!ase) {
 		BT_ERR("Unable to get ASE");
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
@@ -2298,47 +2299,38 @@ respond:
 BT_GATT_SERVICE_DEFINE(ascs_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_ASCS),
 #if CONFIG_BT_ASCS_ASE_SNK_COUNT > 0
-	BT_GATT_CHARACTERISTIC(BT_UUID_ASCS_ASE_SNK,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-			       BT_GATT_PERM_READ_ENCRYPT,
-			       ascs_ase_read, NULL, UINT_TO_POINTER(1)),
-	BT_GATT_CCC(ascs_ase_cfg_changed,
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+	BT_AUDIO_CHRC(BT_UUID_ASCS_ASE_SNK,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      ascs_ase_read, NULL, UINT_TO_POINTER(1)),
+	BT_AUDIO_CCC(ascs_ase_cfg_changed),
 #endif
 #if CONFIG_BT_ASCS_ASE_SNK_COUNT > 1
-	BT_GATT_CHARACTERISTIC(BT_UUID_ASCS_ASE_SNK,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-			       BT_GATT_PERM_READ_ENCRYPT,
-			       ascs_ase_read, NULL, UINT_TO_POINTER(2)),
-	BT_GATT_CCC(ascs_ase_cfg_changed,
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+	BT_AUDIO_CHRC(BT_UUID_ASCS_ASE_SNK,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      ascs_ase_read, NULL, UINT_TO_POINTER(2)),
+	BT_AUDIO_CCC(ascs_ase_cfg_changed),
 #endif
 #if CONFIG_BT_ASCS_ASE_SRC_COUNT > 0
-	BT_GATT_CHARACTERISTIC(BT_UUID_ASCS_ASE_SRC,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-			       BT_GATT_PERM_READ_ENCRYPT,
-			       ascs_ase_read, NULL,
-			       UINT_TO_POINTER(CONFIG_BT_ASCS_ASE_SNK_COUNT + 1)),
-	BT_GATT_CCC(ascs_ase_cfg_changed,
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+	BT_AUDIO_CHRC(BT_UUID_ASCS_ASE_SRC,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      ascs_ase_read, NULL, UINT_TO_POINTER(CONFIG_BT_ASCS_ASE_SNK_COUNT + 1)),
+	BT_AUDIO_CCC(ascs_ase_cfg_changed),
 #endif
 #if CONFIG_BT_ASCS_ASE_SRC_COUNT > 1
-	BT_GATT_CHARACTERISTIC(BT_UUID_ASCS_ASE_SRC,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-			       BT_GATT_PERM_READ_ENCRYPT,
-			       ascs_ase_read, NULL,
-			       UINT_TO_POINTER(CONFIG_BT_ASCS_ASE_SNK_COUNT + 2)),
-	BT_GATT_CCC(ascs_ase_cfg_changed,
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+	BT_AUDIO_CHRC(BT_UUID_ASCS_ASE_SRC,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      ascs_ase_read, NULL, UINT_TO_POINTER(CONFIG_BT_ASCS_ASE_SNK_COUNT + 2)),
+	BT_AUDIO_CCC(ascs_ase_cfg_changed),
 #endif
-	BT_GATT_CHARACTERISTIC(BT_UUID_ASCS_ASE_CP,
-			       BT_GATT_CHRC_WRITE |
-			       BT_GATT_CHRC_WRITE_WITHOUT_RESP |
-			       BT_GATT_CHRC_NOTIFY,
-			       BT_GATT_PERM_WRITE_ENCRYPT,
-			       NULL, ascs_cp_write, NULL),
-	BT_GATT_CCC(ascs_cp_cfg_changed,
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT)
+	BT_AUDIO_CHRC(BT_UUID_ASCS_ASE_CP,
+		      BT_GATT_CHRC_WRITE | BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_WRITE_ENCRYPT,
+		      NULL, ascs_cp_write, NULL),
+	BT_AUDIO_CCC(ascs_cp_cfg_changed),
 );
 
 #endif /* BT_AUDIO_UNICAST_SERVER */

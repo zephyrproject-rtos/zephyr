@@ -20,6 +20,8 @@
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
+
+#include "audio_internal.h"
 #include "csis_internal.h"
 #include "csis_crypto.h"
 #include "../host/conn_internal.h"
@@ -298,7 +300,7 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 {
 	struct bt_csis_set_sirk enc_sirk;
 	struct bt_csis_set_sirk *sirk;
-	struct bt_csis *csis = attr->user_data;
+	struct bt_csis *csis = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	if (csis->srv.cb != NULL && csis->srv.cb->sirk_read_req != NULL) {
 		uint8_t cb_rsp;
@@ -354,7 +356,7 @@ static ssize_t read_set_size(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_csis *csis = attr->user_data;
+	struct bt_csis *csis = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	BT_DBG("%u", csis->srv.set_size);
 
@@ -373,7 +375,7 @@ static ssize_t read_set_lock(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_csis *csis = attr->user_data;
+	struct bt_csis *csis = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	BT_DBG("%u", csis->srv.set_lock);
 
@@ -389,7 +391,7 @@ static ssize_t write_set_lock(struct bt_conn *conn,
 {
 	uint8_t val;
 	bool notify;
-	struct bt_csis *csis = attr->user_data;
+	struct bt_csis *csis = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	if (offset != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -460,7 +462,7 @@ static void set_lock_cfg_changed(const struct bt_gatt_attr *attr,
 static ssize_t read_rank(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_csis *csis = attr->user_data;
+	struct bt_csis *csis = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	BT_DBG("%u", csis->srv.rank);
 
@@ -792,31 +794,25 @@ static void adv_connected(struct bt_le_ext_adv *adv,
 
 #define BT_CSIS_SERVICE_DEFINITION(_csis) {\
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_CSIS), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_CSIS_SET_SIRK, \
-			BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			BT_GATT_PERM_READ_ENCRYPT, \
-			read_set_sirk, NULL, &_csis), \
-	BT_GATT_CCC(set_sirk_cfg_changed, \
-			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_CSIS_SET_SIZE, \
-			BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			BT_GATT_PERM_READ_ENCRYPT, \
-			read_set_size, NULL, &_csis), \
-	BT_GATT_CCC(set_size_cfg_changed, \
-			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_CSIS_SET_LOCK, \
-			BT_GATT_CHRC_READ | \
-				BT_GATT_CHRC_NOTIFY | \
-				BT_GATT_CHRC_WRITE, \
-			BT_GATT_PERM_READ_ENCRYPT | \
-				BT_GATT_PERM_WRITE_ENCRYPT, \
-			read_set_lock, write_set_lock, &_csis), \
-	BT_GATT_CCC(set_lock_cfg_changed, \
-			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_CSIS_RANK, \
-			BT_GATT_CHRC_READ, \
-			BT_GATT_PERM_READ_ENCRYPT, \
-			read_rank, NULL, &_csis) \
+	BT_AUDIO_CHRC(BT_UUID_CSIS_SET_SIRK, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_set_sirk, NULL, &_csis), \
+	BT_AUDIO_CCC(set_sirk_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_CSIS_SET_SIZE, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_set_size, NULL, &_csis), \
+	BT_AUDIO_CCC(set_size_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_CSIS_SET_LOCK, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_WRITE, \
+		      BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT, \
+		      read_set_lock, write_set_lock, &_csis), \
+	BT_AUDIO_CCC(set_lock_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_CSIS_RANK, \
+		      BT_GATT_CHRC_READ, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_rank, NULL, &_csis) \
 	}
 
 BT_GATT_SERVICE_INSTANCE_DEFINE(csis_service_list, csis_insts,
