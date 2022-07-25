@@ -97,13 +97,6 @@ extern const struct emul __emul_list_end[];
  */
 #define EMUL_DT_NAME_GET(node_id) (_CONCAT(__emulreg_, node_id))
 
-/**
- * @brief Use the devicetree node identifier as a unique name.
- *
- * @deprecated Use EMUL_DT_NAME_GET instead
- */
-#define EMUL_REG_NAME(node_id) (_CONCAT(__emulreg_, node_id))
-
 /* Get a unique identifier based on the given _dev_node_id's reg property and
  * the bus its on. Intended for use in other internal macros when declaring {bus}_emul
  * structs in peripheral emulators.
@@ -149,14 +142,6 @@ extern const struct emul __emul_list_end[];
 #define Z_MAYBE_EMUL_DECLARE_INTERNAL(node_id) extern const struct emul EMUL_DT_NAME_GET(node_id);
 
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_EMUL_DECLARE_INTERNAL);
-
-/**
- * @brief Define a new emulator
- *
- * Prefer EMUL_DT_DEFINE
- */
-#define EMUL_DEFINE(init_ptr, node_id, cfg_ptr, data_ptr, bus_api)                                 \
-	EMUL_DT_DEFINE(node_id, init_ptr, data_ptr, cfg_ptr, bus_api)
 
 /**
  * @brief Like EMUL_DT_DEFINE(), but uses an instance of a DT_DRV_COMPAT compatible instead of a
