@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include "npcx9.dtsi"
+#include "npcx/npcx9.dtsi"
 
 / {
 	flash0: flash@10070000 {
