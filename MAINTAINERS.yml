@@ -1373,6 +1373,7 @@ Networking:
     - samples/net/
     - subsys/net/
     - doc/connectivity/networking/
+    - tests/net/
   files-exclude:
     - samples/net/sockets/coap_*/
     - samples/net/lwm2m_client/
