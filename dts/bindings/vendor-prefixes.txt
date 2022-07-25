@@ -622,6 +622,7 @@ ucrobotics	uCRobotics
 ubnt	Ubiquiti Networks
 udoo	Udoo
 ugoos	Ugoos Industrial Co., Ltd.
+ultrachip	UltraChip Inc.
 uniwest	United Western Technologies Corp (UniWest)
 upisemi	uPI Semiconductor Corp.
 urt	United Radiant Technology Corporation
