@@ -270,6 +270,7 @@ Build system:
     - share/
     - doc/build/
     - doc/develop/modules.rst
+    - scripts/build/
   labels:
     - "area: Build System"
 
@@ -374,6 +375,8 @@ Debug:
     - include/zephyr/debug/
     - subsys/debug/
     - tests/subsys/debug/
+    - scripts/coredump/
+    - samples/subsys/debug/
   labels:
     - "area: Debugging"
 
@@ -432,6 +435,9 @@ Disk:
     - include/zephyr/drivers/disk.h
     - drivers/disk/
     - subsys/disk/
+    - subsys/sd/
+    - tests/subsys/sd/
+    - tests/drivers/disk/
   labels:
     - "area: Disk Access"
 
@@ -549,6 +555,7 @@ Documentation:
     - drivers/console/
     - include/zephyr/drivers/console/
     - tests/drivers/console/
+    - samples/subsys/console/
   labels:
     - "area: Console"
 
@@ -735,6 +742,7 @@ Documentation:
     - drivers/i2c/
     - dts/bindings/i2c/
     - include/zephyr/drivers/i2c.h
+    - tests/drivers/i2c/
   labels:
     - "area: I2C"
 
@@ -796,6 +804,7 @@ Documentation:
     - include/zephyr/drivers/kscan.h
     - samples/drivers/espi/
     - tests/drivers/kscan/
+    - tests/drivers/espi/
   labels:
     - "area: Kscan"
 
@@ -1191,6 +1200,7 @@ Kernel:
     - kernel/
     - tests/kernel/
     - include/zephyr/sys_clock.h
+    - samples/kernel/
   labels:
     - "area: Kernel"
 
@@ -1252,6 +1262,7 @@ Logging:
     - samples/subsys/logging/
     - subsys/logging/
     - tests/subsys/logging/
+    - scripts/logging/
   labels:
     - "area: Logging"
 
@@ -1467,7 +1478,9 @@ NIOS-2 arch:
     - nashif
   files:
     - arch/nios2/
+    - soc/nios2/
     - include/zephyr/arch/nios2/
+    - tests/boards/altera_max10/
   labels:
     - "area: NIOS2"
 
@@ -1558,6 +1571,7 @@ Settings:
     - include/zephyr/settings/
     - subsys/settings/
     - tests/subsys/settings/
+    - samples/subsys/settings/
   labels:
     - "area: Settings"
 
@@ -1595,6 +1609,7 @@ SPARC arch:
   files:
     - arch/sparc/
     - include/zephyr/arch/sparc/
+    - soc/sparc/
   labels:
     - "area: SPARC"
 
@@ -1756,6 +1771,7 @@ NXP Platforms:
     - drivers/*/*mcux*.c
     - dts/arm/nxp/
     - dts/bindings/*/nxp*
+    - soc/xtensa/nxp_adsp/
   labels:
     - "platform: NXP"
 
@@ -1771,6 +1787,7 @@ Microchip MEC Platforms:
     - dts/arm/microchip/
     - soc/arm/microchip_mec/
     - drivers/*/*mchp*.c
+    - tests/boards/mec15xxevb_assy6853/
   labels:
     - "platform: Microchip MEC"
 
@@ -1865,6 +1882,7 @@ Espressif Platforms:
     - dts/riscv/espressif/
     - dts/bindings/*/*esp32*
     - samples/boards/esp32*/
+    - tests/boards/espressif_esp32/
   labels:
     - "platform: ESP32"
 
@@ -2490,6 +2508,7 @@ West:
     - laurenmurphyx64
   files:
     - modules/tflite-micro/
+    - samples/modules/tflite-micro/
   labels:
     - manifest-tflite-micro
 
@@ -2632,6 +2651,7 @@ ZTest:
     - subsys/testsuite/
     - tests/ztest/
     - tests/unit/util/
+    - samples/subsys/testsuite/
   labels:
     - "area: Testsuite"
 
