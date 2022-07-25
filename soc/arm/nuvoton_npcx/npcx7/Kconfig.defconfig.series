@@ -22,10 +22,6 @@ config UART_NPCX
 	default y
 	depends on SERIAL
 
-config GPIO_NPCX
-	default y
-	depends on GPIO
-
 config PWM_NPCX
 	default y
 	depends on PWM

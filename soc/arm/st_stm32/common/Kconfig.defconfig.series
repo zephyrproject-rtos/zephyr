@@ -33,13 +33,6 @@ config UART_STM32
 	default y
 	depends on SERIAL
 
-if GPIO
-
-config GPIO_STM32
-	default y
-
-endif # GPIO
-
 config PINMUX_STM32
 	default y
 	depends on PINMUX

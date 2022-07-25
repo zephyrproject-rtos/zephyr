@@ -6,9 +6,6 @@ if SHIELD_X_NUCLEO_53L0A1
 config GPIO
 	default y
 
-config GPIO_STMPE1600
-	default y
-
 config I2C
 	default y
 

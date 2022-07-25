@@ -44,10 +44,6 @@ config SOC_FLASH_MCUX
 config GPIO
 	default y
 
-config GPIO_MCUX
-	default y
-	depends on GPIO
-
 config I2C_MCUX
 	default y
 	depends on I2C
