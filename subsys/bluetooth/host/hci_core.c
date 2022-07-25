@@ -175,6 +175,7 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 	uint16_t handle = acl(buf)->handle;
 	struct bt_hci_handle_count *hc;
 	struct bt_conn *conn;
+	uint8_t index = acl(buf)->index;
 
 	net_buf_destroy(buf);
 
@@ -183,10 +184,9 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_lookup_index(acl(buf)->index);
+	conn = bt_conn_lookup_index(index);
 	if (!conn) {
-		BT_WARN("Unable to look up conn with index 0x%02x",
-			acl(buf)->index);
+		BT_WARN("Unable to look up conn with index 0x%02x", index);
 		return;
 	}
 
