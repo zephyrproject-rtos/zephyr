@@ -59,10 +59,6 @@ config IT8XXX2_PLL_SEQUENCE_PRIORITY
 	default 1
 	depends on SOC_IT8XXX2_PLL_FLASH_48M
 
-config PWM_ITE_IT8XXX2
-	default y
-	depends on PWM
-
 config PECI_ITE_IT8XXX2
 	default y
 	depends on PECI

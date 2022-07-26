@@ -69,8 +69,4 @@ config SOC_FLASH_SAM
 	default y
 	depends on FLASH
 
-config PWM_SAM
-	default y
-	depends on PWM
-
 endif # SOC_SERIES_SAME70

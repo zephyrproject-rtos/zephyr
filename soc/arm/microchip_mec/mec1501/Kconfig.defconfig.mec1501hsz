@@ -35,10 +35,6 @@ config PS2_XEC
 	default y
 	depends on PS2
 
-config PWM_XEC
-	default y
-	depends on PWM
-
 config KSCAN_XEC
 	default y
 	depends on KSCAN

@@ -31,10 +31,6 @@ config I2C_MCUX
 	default y
 	depends on I2C
 
-config PWM_MCUX_FTM
-	default y
-	depends on PWM
-
 source "soc/arm/nxp_kinetis/kv5x/Kconfig.defconfig.mkv*"
 
 endif # SOC_SERIES_KINETIS_KV5X

@@ -33,10 +33,6 @@ config PINMUX_STM32
 	default y
 	depends on PINMUX
 
-config PWM_STM32
-	default y
-	depends on PWM
-
 config I2S_STM32
 	default y
 	depends on I2S
