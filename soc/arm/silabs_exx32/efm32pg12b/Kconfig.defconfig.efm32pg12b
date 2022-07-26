@@ -3,16 +3,6 @@
 # Copyright (c) 2018 Christian Taedcke
 # SPDX-License-Identifier: Apache-2.0
 
-if SERIAL
-
-config UART_GECKO
-	default y
-
-config LEUART_GECKO
-	default y
-
-endif # SERIAL
-
 config I2C_GECKO
 	default y
 	depends on I2C

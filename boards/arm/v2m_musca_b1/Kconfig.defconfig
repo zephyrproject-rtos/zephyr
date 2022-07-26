@@ -9,9 +9,6 @@ config BOARD
 
 if SERIAL
 
-config UART_PL011
-	default y
-
 config UART_INTERRUPT_DRIVEN
 	default y
 

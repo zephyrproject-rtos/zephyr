@@ -18,10 +18,6 @@ config CLOCK_CONTROL_MCUX_SIM
 	default y
 	depends on CLOCK_CONTROL
 
-config UART_MCUX_LPUART
-	default y
-	depends on SERIAL
-
 config I2C_MCUX
 	default y
 	depends on I2C

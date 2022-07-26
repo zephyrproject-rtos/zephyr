@@ -31,13 +31,6 @@ config CLOCK_CONTROL_LPC11U6X
 
 endif # CLOCK_CONTROL
 
-if SERIAL
-
-config UART_LPC11U6X
-	default y
-
-endif # SERIAL
-
 if I2C
 
 config I2C_LPC11U6X

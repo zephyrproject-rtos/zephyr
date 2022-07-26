@@ -8,10 +8,6 @@ if SOC_MEC1501_HSZ
 config SOC
 	default "mec1501hsz"
 
-config UART_NS16550
-	default y
-	depends on SERIAL
-
 config PINMUX_XEC
 	default y
 	depends on PINMUX
