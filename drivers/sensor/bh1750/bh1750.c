@@ -9,9 +9,10 @@
 
 #include "bh1750.h"
 
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
 
 LOG_MODULE_REGISTER(BH1750, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -84,7 +85,6 @@ static int bh1750_sample_fetch(const struct device *dev, enum sensor_channel cha
 	int ret;
 	uint8_t buffer[2];
 	struct bh1750_data *data = dev->data;
-
 
 	ret = bh1750_write(dev, BH1750_SINGLE_MEASUREMENT);
 	if (ret < 0) {
