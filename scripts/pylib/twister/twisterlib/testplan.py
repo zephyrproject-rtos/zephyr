@@ -789,7 +789,7 @@ class TestPlan:
         """
         for platform in platform_names_to_verify:
             if platform in self.platform_names:
-                break
+                continue
             else:
                 logger.error(f"{log_info} - unrecognized platform - {platform}")
                 sys.exit(2)
