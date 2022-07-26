@@ -143,6 +143,7 @@
 		ieee802154: ieee802154@80140800 {
 			compatible = "telink,b91-zb";
 			reg = <0x80140800 0x800>;
+			label = "IEEE802154_b91";
 			interrupt-parent = <&plic0>;
 			interrupts = <15 2>;
 			status = "disabled";
