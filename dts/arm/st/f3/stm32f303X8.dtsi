@@ -35,3 +35,7 @@
 		};
 	};
 };
+
+/delete-node/ &spi2;
+
+/delete-node/ &spi3;
