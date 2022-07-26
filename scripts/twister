@@ -377,7 +377,10 @@ def main():
     report.summary(runner.results, options.disable_unrecognized_section_test, duration)
 
     if options.coverage:
-        run_coverage(tplan, options)
+        if not options.build_only:
+            run_coverage(tplan, options)
+        else:
+            logger.info("Skipping coverage report generation due to --build-only.")
 
     if options.device_testing and not options.build_only:
         hwm.summary(tplan.selected_platforms)
