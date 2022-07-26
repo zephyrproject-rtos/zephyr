@@ -562,7 +562,7 @@ static int configure_leds(void)
 
 static int erase_storage(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+	const struct device *dev = FLASH_AREA_DEVICE(storage);
 
 	if (!device_is_ready(dev)) {
 		printk("Flash device not ready\n");
