@@ -116,6 +116,13 @@ test_i2c_th02: th02@14 {
 	reg = <0x14>;
 };
 
+test_i2c_icp10125: icp10125@63 {
+	compatible = "invensense,icp10125";
+	reg = <0x63>;
+	temperature-measurement-mode = "normal";
+	pressure-measurement-mode = "normal";
+};
+
 test_i2c_mpu6050: mpu6050@15 {
 	compatible = "invensense,mpu6050";
 	reg = <0x15>;
