@@ -23,9 +23,6 @@ config HWINFO_SAM0
 config PWM_SAM0_TCC
 	default PWM
 
-config SPI_SAM0
-	default SPI
-
 config USB_DC_SAM0
 	default USB_DEVICE_DRIVER
 

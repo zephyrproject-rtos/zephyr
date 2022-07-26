@@ -45,10 +45,6 @@ config I2C_SAM_TWIM
 	default y
 	depends on I2C
 
-config SPI_SAM
-	default y
-	depends on SPI
-
 config USART_SAM
 	default y
 	depends on SERIAL

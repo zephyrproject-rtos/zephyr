@@ -22,10 +22,6 @@ config PWM_SIFIVE
 	default y
 	depends on PWM
 
-config SPI_SIFIVE
-	default y
-	depends on SPI
-
 config I2C_SIFIVE
 	default y
 	depends on I2C

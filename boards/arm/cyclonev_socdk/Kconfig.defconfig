@@ -30,11 +30,9 @@ config USB_DEVICE_DRIVER
 	default y
 endif # USB_DEVICE_STACK
 
-if SPI
-config SPI_DW
-	default y
+if SPI_DW
 config SPI_DW_FIFO_DEPTH
 	default 256
-endif # SPI
+endif # SPI_DW
 
 endif # BOARD_CVSXDEVKIT

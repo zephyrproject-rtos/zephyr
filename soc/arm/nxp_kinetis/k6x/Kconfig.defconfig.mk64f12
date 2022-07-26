@@ -48,10 +48,6 @@ config PWM_MCUX_FTM
 config SPI
 	default n
 
-config SPI_MCUX_DSPI
-	default y
-	depends on SPI
-
 config ETH_MCUX
 	default y
 	depends on NET_L2_ETHERNET

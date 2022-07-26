@@ -11,10 +11,6 @@ config SOC_FLASH_GECKO
 	default y
 	depends on FLASH
 
-config SPI_GECKO
-	default y
-	depends on SPI
-
 config PWM_GECKO
 	default y
 	depends on PWM

@@ -37,10 +37,6 @@ config PWM_STM32
 	default y
 	depends on PWM
 
-config SPI_STM32
-	default y
-	depends on SPI
-
 config I2S_STM32
 	default y
 	depends on I2S
