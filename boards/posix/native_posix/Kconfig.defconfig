@@ -34,10 +34,6 @@ choice BT_HCI_BUS_TYPE
 	depends on BT_HCI
 endchoice
 
-config UART_NATIVE_POSIX
-	default y
-	depends on SERIAL
-
 if LOG
 
 # For native_posix we can log synchronously without any problem

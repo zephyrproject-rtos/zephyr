@@ -64,10 +64,6 @@ config SOC_FLASH_MCUX
 	default y
 	depends on FLASH
 
-config UART_MCUX
-	default y
-	depends on SERIAL
-
 config USB_KINETIS
 	default y
 	depends on USB_DEVICE_DRIVER
