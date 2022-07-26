@@ -1,0 +1,207 @@
+/*
+ * Copyright (c) 2022 David Jablonski
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f3/stm32f303Xc.dtsi>
+#include <st/f3/stm32f303r(b-c)tx-pinctrl.dtsi>
+
+/ {
+	model = "Olimex OLIMEXINO-STM32F303RC board";
+	compatible = "olimex,olimexino_stm32f303rc", "st,stm32f303rc";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,canbus = &can1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_1: led_1 {
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+		yellow_led_2: led_2 {
+			gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
+			label = "Yellow LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "Boot/User";
+			gpios = <&gpioc 9 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_1;
+		led1 = &yellow_led_2;
+		sw0 = &user_button;
+		sdhc0 = &sdhc0;
+		watchdog0 = &iwdg;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	prediv = <1>;
+	mul = <9>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(72)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+};
+
+uext_i2c: &i2c2 {};
+uext_spi: &spi1 {};
+uext_serial: &usart3 {};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pc4 &usart1_rx_pc5>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+			  &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
+			  &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
+
+	sdhc0: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		spi-max-frequency = <24000000>;
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+	};
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+	disconnect-gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
+	num-bidir-endpoints = <3>;
+	num-in-endpoints = <1>;
+	num-out-endpoints = <1>;
+
+	cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+		status = "okay";
+	};
+};
+
+&timers1 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pa8>;
+		pinctrl-names = "default";
+	};
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&can1 {
+	pinctrl-0 = <&can_rx_pb8 &can_tx_pb9>;
+	pinctrl-names = "default";
+	bus-speed = <1000000>;
+	// phys = <&transceiver0>;
+	status = "okay";
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			read-only;
+		};
+
+		/* Set 6Kb of storage at the end of the 256Kb of flash */
+		storage_partition: partition@3e800 {
+			label = "storage";
+			reg = <0x0003e800 DT_SIZE_K(6)>;
+		};
+		slot0_partition: partition@30000 {
+			label = "image-0";
+			reg = <0x00030000 DT_SIZE_K(58)>;
+		};
+		slot1_partition: partition@20000 {
+			label = "image-1";
+			reg = <0x00020000 DT_SIZE_K(64)>;
+		};
+		scratch_partition: partition@18000 {
+			label = "image-scratch";
+			reg = <0x00018000 DT_SIZE_K(32)>;
+		};
+	};
+};
+

@@ -1,0 +1,19 @@
+identifier: olimexino_stm32f303rc
+name: Olimexino STM32F303RC
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 40
+flash: 256
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - sdhc
+  - spi
+  - usb_device
+  - watchdog
+  - can
