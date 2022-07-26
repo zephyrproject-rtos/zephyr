@@ -1,0 +1,28 @@
+#
+# Copyright (c) 2022 tangchunhui@coros.com
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# Top-level configuration file for KEY drivers.
+
+menuconfig KEY
+	bool "KEY drivers"
+	help
+	  Include KEY drivers in the system configuration.
+
+if KEY
+
+module = KEY
+module-str = key
+source "subsys/logging/Kconfig.template.log_config"
+
+config KEY_INIT_PRIORITY
+	int "KEY initialization priority"
+	default 90
+	help
+	  System initialization priority for KEY drivers.
+
+source "drivers/key/Kconfig.gpio"
+
+endif # KEY

@@ -15,3 +15,15 @@ child-binding:
           required: true
           type: string
           description: Human readable string describing the device (used as device_get_binding() argument)
+       code:
+          required: false
+          type: int
+       ms_debounce:
+          required: false
+          type: int
+       ms_long:
+          required: false
+          type: int
+       ms_hold:
+          required: false
+          type: int

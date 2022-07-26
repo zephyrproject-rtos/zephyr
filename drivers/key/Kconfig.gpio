@@ -1,0 +1,31 @@
+#
+# Copyright (c) 2022 tangchunhui@coros.com
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config KEY_GPIO
+	bool "GPIO KEY driver"
+	depends on GPIO && $(dt_compat_enabled,gpio-keys)
+	help
+	  Enable driver for GPIO KEYs.
+
+if KEY_GPIO
+
+config KEY_GPIO_SCAN_INTERVAL
+	int "scan interval"
+	default 20
+
+config KEY_GPIO_TIME_DEBOUNCE
+    int "debounce time"
+    default 60
+
+config KEY_GPIO_TIME_LONG
+    int "long press time"
+    default 0
+
+config KEY_GPIO_TIME_HOLD
+    int "hold press time"
+    default 0
+
+endif # KEY_GPIO
