@@ -201,14 +201,14 @@ int lwm2m_device_add_err(uint8_t error_code)
 
 	error_code_list[i] = error_code;
 	error_code_ri[i].res_inst_id = i;
-	NOTIFY_OBSERVER(LWM2M_OBJECT_DEVICE_ID, 0, DEVICE_ERROR_CODE_ID);
+	lwm2m_notify_observer(LWM2M_OBJECT_DEVICE_ID, 0, DEVICE_ERROR_CODE_ID);
 
 	return 0;
 }
 
 static void device_periodic_service(struct k_work *work)
 {
-	NOTIFY_OBSERVER(LWM2M_OBJECT_DEVICE_ID, 0, DEVICE_CURRENT_TIME_ID);
+	lwm2m_notify_observer(LWM2M_OBJECT_DEVICE_ID, 0, DEVICE_CURRENT_TIME_ID);
 }
 
 int lwm2m_update_device_service_period(uint32_t period_ms)

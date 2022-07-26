@@ -24,10 +24,6 @@
 	STRINGIFY(LWM2M_PROTOCOL_VERSION_MAJOR)                                                    \
 	"." STRINGIFY(LWM2M_PROTOCOL_VERSION_MINOR)
 
-/* TODO: */
-#define NOTIFY_OBSERVER(o, i, r)   lwm2m_notify_observer(o, i, r)
-#define NOTIFY_OBSERVER_PATH(path) lwm2m_notify_observer_path(path)
-
 /* Use this value to generate new token */
 #define LWM2M_MSG_TOKEN_GENERATE_NEW 0xFFU
 
