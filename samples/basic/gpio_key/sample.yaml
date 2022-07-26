@@ -1,0 +1,8 @@
+sample:
+  name: GPIO Key Sample
+tests:
+  sample.basic.key:
+    tags: key gpio
+    filter: dt_enabled_alias_with_parent_compat("sw0", "gpio-keys")
+    depends_on: gpio
+    harness: key
