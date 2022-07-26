@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/types.h>
+
 #include "ascs_internal.h"
 #include "stream.h"
 
@@ -40,8 +42,6 @@ struct bt_audio_iso {
 
 struct bt_audio_ep {
 	uint8_t  dir;
-	uint16_t handle;
-	uint16_t cp_handle;
 	uint8_t  cig_id;
 	uint8_t  cis_id;
 	struct bt_ascs_ase_status status;
@@ -52,6 +52,17 @@ struct bt_audio_ep {
 	struct bt_audio_iso *iso;
 	struct bt_gatt_subscribe_params subscribe;
 	struct bt_gatt_discover_params discover;
+
+	/* TODO: Consider client/server container split */
+	union {
+		struct {
+			uint16_t handle;
+			uint16_t cp_handle;
+		} client;
+		struct {
+			const struct bt_gatt_attr *attr;
+		} server;
+	};
 
 	/* TODO: Create a union to reduce memory usage */
 	struct bt_audio_unicast_group *unicast_group;
