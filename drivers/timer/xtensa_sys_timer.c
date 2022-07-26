@@ -19,6 +19,7 @@
 
 static struct k_spinlock lock;
 static unsigned int last_count;
+static uint64_t sys_clock_cycles;
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = UTIL_CAT(XCHAL_TIMER,
@@ -42,11 +43,18 @@ static uint32_t ccount(void)
 static void ccompare_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
+	uint32_t diff;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint32_t curr = ccount();
 	uint32_t dticks = (curr - last_count) / CYC_PER_TICK;
 
+	if (curr < last_count)
+		diff = (MAX_CYC - last_count) + curr;
+	else
+		diff = curr - last_count;
+
+	sys_clock_cycles += diff;
 	last_count += dticks * CYC_PER_TICK;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
@@ -109,6 +117,19 @@ uint32_t sys_clock_elapsed(void)
 uint32_t sys_clock_cycle_get_32(void)
 {
 	return ccount();
+}
+
+uint64_t sys_clock_cycle_get_64(void)
+{
+	uint32_t diff;
+	uint32_t curr = ccount();
+
+	if (curr < last_count)
+		diff = (MAX_CYC - last_count) + curr;
+	else
+		diff = curr - last_count;
+
+	return sys_clock_cycles + diff;
 }
 
 #ifdef CONFIG_SMP
