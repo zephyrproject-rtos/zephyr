@@ -67,7 +67,12 @@ static SYS_MUTEX_DEFINE(no_access_mutex);
 #endif
 static ZTEST_BMEM SYS_MUTEX_DEFINE(not_my_mutex);
 static ZTEST_BMEM SYS_MUTEX_DEFINE(bad_count_mutex);
-extern void test_mutex_multithread_competition(void);
+
+#ifdef CONFIG_USERSPACE
+#define ZTEST_USER_OR_NOT ZTEST_USER
+#else
+#define ZTEST_USER_OR_NOT ZTEST
+#endif
 
 #ifdef CONFIG_USERSPACE
 #define PARTICIPANT_THREAD_OPTIONS (K_USER | K_INHERIT_PERMS)
@@ -298,7 +303,7 @@ void join_participant_threads(void)
  *
  */
 
-void test_mutex(void)
+ZTEST_USER_OR_NOT(mutex_complex, test_mutex)
 {
 	create_participant_threads();
 	start_participant_threads();
@@ -410,7 +415,13 @@ void test_mutex(void)
 	TC_PRINT("Recursive locking tests successful\n");
 }
 
-void test_supervisor_access(void)
+/* We deliberately disable userspace, even on platforms that
+ * support it, so that the alternate implementation of sys_mutex
+ * (which is just a very thin wrapper to k_mutex) is exercised.
+ * This requires us to not attempt to start the tests in user
+ * mode, as this will otherwise fail an assertion in the thread code.
+ */
+ZTEST(mutex_complex, test_supervisor_access)
 {
 	int rv;
 
@@ -432,7 +443,7 @@ void test_supervisor_access(void)
 	zassert_true(rv == -EINVAL, "mutex wasn't locked");
 }
 
-void test_user_access(void)
+ZTEST_USER_OR_NOT(mutex_complex, test_user_access)
 {
 #ifdef CONFIG_USERSPACE
 	int rv;
@@ -447,10 +458,14 @@ void test_user_access(void)
 }
 
 /*test case main entry*/
-void test_main(void)
+static void *sys_mutex_tests_setup(void)
 {
 	int rv;
 
+/* We are on the main thread (supervisor thread).
+ * Grant necessary permissions to the main thread.
+ * The ztest thread (user thread) will inherit them.
+ */
 #ifdef CONFIG_USERSPACE
 	k_thread_access_grant(k_current_get(),
 				&thread_05_thread_data, &thread_05_stack_area,
@@ -465,29 +480,7 @@ void test_main(void)
 	if (rv != 0) {
 		TC_ERROR("Failed to take mutex %p\n", &not_my_mutex);
 	}
-
-	/* We deliberately disable userspace, even on platforms that
-	 * support it, so that the alternate implementation of sys_mutex
-	 * (which is just a very thin wrapper to k_mutex) is exercised.
-	 * This requires us to not attempt to start the tests in user
-	 * mode, as this will otherwise fail an assertion in the thread code.
-	 */
-#ifdef CONFIG_USERSPACE
-	ztest_test_suite(mutex_complex,
-			 ztest_user_unit_test(test_mutex),
-			 ztest_user_unit_test(test_user_access),
-			 ztest_unit_test(test_supervisor_access));
-
-	ztest_run_test_suite(mutex_complex);
-#else
-	ztest_test_suite(mutex_complex,
-			 ztest_unit_test(test_mutex),
-			 ztest_unit_test(test_user_access),
-			 ztest_unit_test(test_supervisor_access),
-			 ztest_unit_test(test_mutex_multithread_competition));
-
-	ztest_run_test_suite(mutex_complex);
-#endif
-
-
+	return NULL;
 }
+
+ZTEST_SUITE(mutex_complex, NULL, sys_mutex_tests_setup, NULL, NULL, NULL);
