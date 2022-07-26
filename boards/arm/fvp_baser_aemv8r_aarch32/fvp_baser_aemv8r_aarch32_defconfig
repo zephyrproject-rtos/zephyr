@@ -18,7 +18,6 @@ CONFIG_ARM_ARCH_TIMER=y
 CONFIG_SERIAL=y
 
 # Enable serial port
-CONFIG_UART_PL011=y
 CONFIG_UART_INTERRUPT_DRIVEN=y
 
 # Enable console
