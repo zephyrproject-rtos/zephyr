@@ -38,23 +38,11 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <zephyr/drivers/interrupt_controller/riscv_clic.h>
+#include <zephyr/drivers/interrupt_controller/riscv_plic.h>
+
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
 void soc_interrupt_init(void);
-#endif
-
-#if defined(CONFIG_RISCV_HAS_PLIC)
-void riscv_plic_irq_enable(uint32_t irq);
-void riscv_plic_irq_disable(uint32_t irq);
-int riscv_plic_irq_is_enabled(uint32_t irq);
-void riscv_plic_set_priority(uint32_t irq, uint32_t priority);
-int riscv_plic_get_irq(void);
-#endif
-
-#if defined(CONFIG_RISCV_HAS_CLIC)
-int riscv_clic_irq_is_enabled(uint32_t irq);
-void riscv_clic_irq_disable(uint32_t irq);
-void riscv_clic_irq_enable(uint32_t irq);
-void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags);
 #endif
 
 #endif /* !_ASMLANGUAGE */
