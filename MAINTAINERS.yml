@@ -2262,6 +2262,9 @@ West:
   status: maintained
   maintainers:
     - andy-liu-telink
+  collaborators:
+    - andriy-bilynskyy
+    - mishadesh
   files:
     - modules/Kconfig.telink
   labels:
