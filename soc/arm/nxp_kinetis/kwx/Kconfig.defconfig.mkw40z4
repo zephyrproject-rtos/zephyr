@@ -22,10 +22,6 @@ config I2C_MCUX
 	default y
 	depends on I2C
 
-config SPI_MCUX_DSPI
-	default y
-	depends on SPI
-
 config ENTROPY_MCUX_TRNG
 	default y
 	depends on ENTROPY_GENERATOR

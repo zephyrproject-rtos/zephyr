@@ -75,10 +75,6 @@ config I2C_MCUX_LPI2C
 	default y
 	depends on I2C
 
-config SPI_MCUX_LPSPI
-	default y
-	depends on SPI
-
 config ADC_MCUX_ADC12
 	default y
 	depends on ADC

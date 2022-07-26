@@ -26,11 +26,6 @@ endif # I2C_DW
 
 endif # I2C
 
-if SPI
-
-config SPI_DW
-	default y
-
 if SPI_DW
 
 config SPI_DW_FIFO_DEPTH
@@ -40,7 +35,5 @@ config SPI_DW_ARC_AUX_REGS
 	default n
 
 endif # SPI_DW
-
-endif # SPI
 
 endif # BOARD_EM_STARTERKIT

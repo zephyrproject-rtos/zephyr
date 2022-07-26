@@ -32,8 +32,4 @@ config I2C_SAM_TWI
 	default y
 	depends on I2C
 
-config SPI_SAM
-	default y
-	depends on SPI
-
 endif # SOC_SERIES_SAM4S

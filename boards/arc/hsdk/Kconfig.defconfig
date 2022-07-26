@@ -17,11 +17,6 @@ config I2C
 
 endif # GPIO
 
-if SPI
-
-config SPI_DW
-	default y
-
 if SPI_DW
 
 config SPI_DW_FIFO_DEPTH
@@ -34,8 +29,6 @@ config SPI_DW_ACCESS_WORD_ONLY
 	default y
 
 endif # SPI_DW
-
-endif # SPI
 
 if I2C
 

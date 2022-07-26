@@ -31,10 +31,6 @@ config ESPI_XEC_V2
 	default y
 	depends on ESPI
 
-config SPI_XEC_QMSPI_LDMA
-	default y
-	depends on SPI
-
 config PECI_XEC
 	default y
 	depends on PECI
