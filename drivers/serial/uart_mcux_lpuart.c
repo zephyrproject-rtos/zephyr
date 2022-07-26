@@ -186,9 +186,14 @@ static int mcux_lpuart_err_check(const struct device *dev)
 		err |= UART_ERROR_FRAMING;
 	}
 
+	if (flags & kLPUART_NoiseErrorFlag) {
+		err |= UART_ERROR_PARITY;
+	}
+
 	LPUART_ClearStatusFlags(config->base, kLPUART_RxOverrunFlag |
 					      kLPUART_ParityErrorFlag |
-					      kLPUART_FramingErrorFlag);
+					      kLPUART_FramingErrorFlag |
+						  kLPUART_NoiseErrorFlag);
 
 	return err;
 }
@@ -782,7 +787,8 @@ static int mcux_lpuart_rx_enable(const struct device *dev, uint8_t *buf, const s
 	/* Clear these status flags as they can prevent the UART device from receiving data */
 	LPUART_ClearStatusFlags(config->base, kLPUART_RxOverrunFlag |
 					      kLPUART_ParityErrorFlag |
-					      kLPUART_FramingErrorFlag);
+					      kLPUART_FramingErrorFlag |
+						  kLPUART_NoiseErrorFlag);
 	LPUART_EnableRx(lpuart, true);
 	irq_unlock(key);
 	return ret;

@@ -14,6 +14,9 @@ config SOC_FAMILY
 	string
 	default "intel_adsp"
 
+# Select SoC Part No. and configuration options
+source "soc/xtensa/intel_adsp/*/Kconfig.soc"
+
 config CAVS_IPC
 	bool
 	default y if !SOF
@@ -26,11 +29,6 @@ config CAVS_CLOCK
 	help
 	  Driver for the CAVS clocks. Allow type of clock (and
 	  thus frequency) to be chosen.
-
-config INTEL_ADSP_CAVS
-	bool
-	help
-	  Indicates a CAVS SoC
 
 config HP_SRAM_RESERVE
 	int "Bytes to reserve at start of HP-SRAM"
@@ -65,7 +63,6 @@ config ADSP_TRACE_SIMCALL
 	  of an enclosing simulator process.  All window contents will
 	  remain identical.
 
-# Select SoC Part No. and configuration options
-source "soc/xtensa/intel_adsp/*/Kconfig.soc"
+
 
 endif # SOC_FAMILY_INTEL_ADSP

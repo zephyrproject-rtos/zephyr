@@ -302,6 +302,7 @@ SECTIONS {
     *(.xt_except_desc_end)
     *(.dynamic)
     *(.gnu.version_d)
+    _image_ram_start = .;
     _bss_table_start = .;
     LONG(_bss_start)
     LONG(_bss_end)
@@ -439,6 +440,7 @@ SECTIONS {
     _dma_buf_start = .;
     *(.dma_buffers)
     _dma_buf_end = .;
+    _image_ram_end = .;
   } >lpram
 
   /* Non-loadable sections below.  Back to cached memory so

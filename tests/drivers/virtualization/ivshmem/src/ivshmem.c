@@ -19,8 +19,8 @@ void test_ivshmem_plain(void)
 	uint16_t vectors;
 	int ret;
 
-	ivshmem = device_get_binding(CONFIG_IVSHMEM_DEV_NAME);
-	zassert_not_null(ivshmem, "Could not get ivshmem device");
+	ivshmem = DEVICE_DT_GET_ONE(qemu_ivshmem);
+	zassert_true(device_is_ready(ivshmem), "ivshmem device is not ready");
 
 	size = ivshmem_get_mem(ivshmem, &mem);
 	zassert_not_equal(size, 0, "Size cannot not be 0");

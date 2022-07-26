@@ -45,7 +45,7 @@ DEVICE_MMIO_TOPLEVEL_STATIC(tlb_regs, DT_DRV_INST(0));
  * Number of significant bits in the page index (defines the size of
  * the table)
  */
-#if defined(CONFIG_SOC_SERIES_INTEL_CAVS_V15)
+#if defined(CONFIG_SOC_INTEL_CAVS_V15)
 # define TLB_PADDR_SIZE 9
 #else
 # define TLB_PADDR_SIZE 11

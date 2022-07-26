@@ -270,6 +270,7 @@ Build system:
     - share/
     - doc/build/
     - doc/develop/modules.rst
+    - scripts/build/
   labels:
     - "area: Build System"
 
@@ -374,6 +375,8 @@ Debug:
     - include/zephyr/debug/
     - subsys/debug/
     - tests/subsys/debug/
+    - scripts/coredump/
+    - samples/subsys/debug/
   labels:
     - "area: Debugging"
 
@@ -432,6 +435,9 @@ Disk:
     - include/zephyr/drivers/disk.h
     - drivers/disk/
     - subsys/disk/
+    - subsys/sd/
+    - tests/subsys/sd/
+    - tests/drivers/disk/
   labels:
     - "area: Disk Access"
 
@@ -484,11 +490,8 @@ Documentation:
     - "area: ADC"
 
 "Drivers: Audio":
-  status: maintained
-  maintainers:
-    - andyross
+  status: odd fixes
   collaborators:
-    - nashif
     - lyakh
     - lgirdwood
     - mengxianglinx
@@ -497,7 +500,6 @@ Documentation:
   files:
     - drivers/audio/
     - include/zephyr/audio/
-    - samples/subsys/audio/
   labels:
     - "area: Audio"
 
@@ -553,6 +555,7 @@ Documentation:
     - drivers/console/
     - include/zephyr/drivers/console/
     - tests/drivers/console/
+    - samples/subsys/console/
   labels:
     - "area: Console"
 
@@ -739,6 +742,7 @@ Documentation:
     - drivers/i2c/
     - dts/bindings/i2c/
     - include/zephyr/drivers/i2c.h
+    - tests/drivers/i2c/
   labels:
     - "area: I2C"
 
@@ -800,6 +804,7 @@ Documentation:
     - include/zephyr/drivers/kscan.h
     - samples/drivers/espi/
     - tests/drivers/kscan/
+    - tests/drivers/espi/
   labels:
     - "area: Kscan"
 
@@ -1148,6 +1153,7 @@ IPC:
     - include/zephyr/ipc/
     - samples/subsys/ipc/
     - subsys/ipc/
+    - tests/subsys/ipc/
   description: >-
     Inter-Processor Communication
   labels:
@@ -1194,6 +1200,7 @@ Kernel:
     - kernel/
     - tests/kernel/
     - include/zephyr/sys_clock.h
+    - samples/kernel/
   labels:
     - "area: Kernel"
 
@@ -1255,6 +1262,7 @@ Logging:
     - samples/subsys/logging/
     - subsys/logging/
     - tests/subsys/logging/
+    - scripts/logging/
   labels:
     - "area: Logging"
 
@@ -1295,6 +1303,19 @@ MCU Manager:
     - samples/subsys/mgmt/mcumgr/
   labels:
     - "area: mcumgr"
+
+Modbus:
+  status: maintained
+  maintainers:
+    - jfischer-no
+  files:
+    - samples/subsys/modbus/
+    - include/zephyr/modbus/
+    - tests/subsys/modbus/
+    - subsys/modbus/
+    - doc/services/modbus/
+  labels:
+    - "area: modbus"
 
 OSDP:
   status: odd fixes
@@ -1363,6 +1384,7 @@ Networking:
     - samples/net/
     - subsys/net/
     - doc/connectivity/networking/
+    - tests/net/
   files-exclude:
     - samples/net/sockets/coap_*/
     - samples/net/lwm2m_client/
@@ -1430,7 +1452,8 @@ Networking:
     - rlubos
   files:
     - subsys/net/lib/mqtt/
-    - tests/net/lib/mqtt_packet/
+    - tests/net/lib/mqtt_*/
+    - samples/net/cloud/mqtt_azure/
     - samples/net/mqtt_publisher/
   labels:
     - "area: Networking"
@@ -1444,6 +1467,7 @@ Networking:
   files:
     - subsys/net/l2/openthread/
     - samples/net/openthread/
+    - tests/subsys/openthread/
   labels:
     - "area: Networking"
     - "area: OpenThread"
@@ -1454,7 +1478,9 @@ NIOS-2 arch:
     - nashif
   files:
     - arch/nios2/
+    - soc/nios2/
     - include/zephyr/arch/nios2/
+    - tests/boards/altera_max10/
   labels:
     - "area: NIOS2"
 
@@ -1545,6 +1571,7 @@ Settings:
     - include/zephyr/settings/
     - subsys/settings/
     - tests/subsys/settings/
+    - samples/subsys/settings/
   labels:
     - "area: Settings"
 
@@ -1582,6 +1609,7 @@ SPARC arch:
   files:
     - arch/sparc/
     - include/zephyr/arch/sparc/
+    - soc/sparc/
   labels:
     - "area: SPARC"
 
@@ -1721,6 +1749,7 @@ Intel Platforms (Xtensa):
     - boards/xtensa/intel_*/
     - soc/xtensa/intel_*/
     - dts/xtensa/intel/
+    - tests/boards/intel_adsp/
   labels:
     - "platform: Intel ADSP"
 
@@ -1742,6 +1771,7 @@ NXP Platforms:
     - drivers/*/*mcux*.c
     - dts/arm/nxp/
     - dts/bindings/*/nxp*
+    - soc/xtensa/nxp_adsp/
   labels:
     - "platform: NXP"
 
@@ -1757,6 +1787,7 @@ Microchip MEC Platforms:
     - dts/arm/microchip/
     - soc/arm/microchip_mec/
     - drivers/*/*mchp*.c
+    - tests/boards/mec15xxevb_assy6853/
   labels:
     - "platform: Microchip MEC"
 
@@ -1851,6 +1882,7 @@ Espressif Platforms:
     - dts/riscv/espressif/
     - dts/bindings/*/*esp32*
     - samples/boards/esp32*/
+    - tests/boards/espressif_esp32/
   labels:
     - "platform: ESP32"
 
@@ -1912,6 +1944,19 @@ Xilinx Platforms:
     - soc/arm/xilinx*/
   labels:
     - "platform: Xilinx"
+
+RTIO:
+  status: maintained
+  maintainers:
+    - teburd
+  files:
+    - samples/subsys/rtio/
+    - include/zephyr/rtio/
+    - tests/subsys/rtio/
+    - subsys/rtio/
+    - doc/services/rtio/
+  labels:
+    - "area: RTIO"
 
 Storage:
   status: maintained
@@ -2444,10 +2489,16 @@ West:
 "West project: sof":
   status: maintained
   maintainers:
+    - kv2019i
+  collaborators:
     - andyross
     - nashif
+    - lyakh
+    - lgirdwood
+    - marc-hb
   files:
     - modules/Kconfig.sof
+    - samples/modules/sof/
   labels:
     - manifest-sof
 
@@ -2457,6 +2508,7 @@ West:
     - laurenmurphyx64
   files:
     - modules/tflite-micro/
+    - samples/modules/tflite-micro/
   labels:
     - manifest-tflite-micro
 
@@ -2599,6 +2651,7 @@ ZTest:
     - subsys/testsuite/
     - tests/ztest/
     - tests/unit/util/
+    - samples/subsys/testsuite/
   labels:
     - "area: Testsuite"
 

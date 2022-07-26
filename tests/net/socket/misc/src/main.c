@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include "../../socket_helpers.h"
 
-void test_gethostname(void)
+ZTEST_USER(socket_misc_test_suite, test_gethostname)
 {
 	static ZTEST_BMEM char buf[80];
 	int res;
@@ -27,7 +27,7 @@ void test_gethostname(void)
 	zassert_equal(strcmp(buf, "ztest_hostname"), 0, "");
 }
 
-void test_inet_pton(void)
+ZTEST_USER(socket_misc_test_suite, test_inet_pton)
 {
 	int res;
 	uint8_t buf[32];
@@ -425,17 +425,23 @@ void test_ipv6_getpeername(void)
 	test_getpeername(AF_INET6);
 }
 
-void test_main(void)
+static void *setup(void)
 {
 	k_thread_system_pool_assign(k_current_get());
-
-	ztest_test_suite(socket_misc,
-			 ztest_user_unit_test(test_gethostname),
-			 ztest_user_unit_test(test_inet_pton),
-			 ztest_user_unit_test(test_ipv4_so_bindtodevice),
-			 ztest_user_unit_test(test_ipv6_so_bindtodevice),
-			 ztest_user_unit_test(test_ipv4_getpeername),
-			 ztest_user_unit_test(test_ipv6_getpeername));
-
-	ztest_run_test_suite(socket_misc);
+	return NULL;
 }
+
+
+ZTEST_USER(socket_misc_test_suite, test_ipv4)
+{
+	test_ipv4_so_bindtodevice();
+	test_ipv4_getpeername();
+}
+
+ZTEST_USER(socket_misc_test_suite, test_ipv6)
+{
+	test_ipv6_so_bindtodevice();
+	test_ipv6_getpeername();
+}
+
+ZTEST_SUITE(socket_misc_test_suite, NULL, setup, NULL, NULL, NULL);

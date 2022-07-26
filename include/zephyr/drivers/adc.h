@@ -211,10 +211,10 @@ struct adc_channel_cfg {
  * @return Static initializer for an adc_channel_cfg structure.
  */
 #define ADC_CHANNEL_CFG_DT(node_id) { \
-	.channel_id       = DT_REG_ADDR(node_id), \
 	.gain             = DT_STRING_TOKEN(node_id, zephyr_gain), \
 	.reference        = DT_STRING_TOKEN(node_id, zephyr_reference), \
 	.acquisition_time = DT_PROP(node_id, zephyr_acquisition_time), \
+	.channel_id       = DT_REG_ADDR(node_id), \
 IF_ENABLED(CONFIG_ADC_CONFIGURABLE_INPUTS, \
 	(COND_CODE_1(DT_NODE_HAS_PROP(node_id, zephyr_input_negative), \
 		(.differential   = true, \

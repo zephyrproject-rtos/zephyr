@@ -2,10 +2,12 @@
 # Copyright (c) 2021 Basalte bv
 # SPDX-License-Identifier: Apache-2.0
 
-if HAS_MCUX_FLEXSPI
+if DT_HAS_NXP_IMX_FLEXSPI_ENABLED
 
 config MEMC_MCUX_FLEXSPI_HYPERRAM
 	bool "MCUX FlexSPI HyperRAM driver"
+	default y
+	depends on DT_HAS_NXP_IMX_FLEXSPI_HYPERRAM_ENABLED
 	select MEMC_MCUX_FLEXSPI
 
 config MEMC_MCUX_FLEXSPI

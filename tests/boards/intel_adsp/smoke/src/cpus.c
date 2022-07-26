@@ -154,7 +154,7 @@ void halt_and_restart(int cpu)
 	/* On older hardware we need to get the host to turn the core
 	 * off.  Construct an ADSPCS with only this core disabled
 	 */
-	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V25)) {
 		cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_ADSPCS,
 				     (all_cpus & ~BIT(cpu)) << 16);
 	}
@@ -166,7 +166,7 @@ void halt_and_restart(int cpu)
 	k_msleep(100);
 	zassert_false(alive_flag, "cpu didn't halt");
 
-	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V25)) {
 		/* Likewise need to ask the host to turn it back on,
 		 * and give it some time to spin up before we hit it.
 		 * We don't have a return message wired to be notified
@@ -204,7 +204,7 @@ void test_cpu_halt(void)
 	arch_irq_unlock(key);
 	k_sleep(K_TICKS(0));
 
-	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
+	if (IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
 		ztest_test_skip();
 	}
 
