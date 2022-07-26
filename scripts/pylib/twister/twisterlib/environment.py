@@ -367,7 +367,8 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         help="Delete artifacts of passing tests.")
 
     test_xor_generator.add_argument(
-        "-N", "--ninja", action="store_true", default="--make" not in sys.argv,
+        "-N", "--ninja", action="store_true",
+        default=not any(a in sys.argv for a in ("-k", "--make")),
         help="Use the Ninja generator with CMake. (This is the default)")
 
     test_xor_generator.add_argument(
