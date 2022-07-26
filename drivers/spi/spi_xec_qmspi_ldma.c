@@ -1097,7 +1097,7 @@ static int qmspi_xec_init(const struct device *dev)
 	const struct spi_qmspi_config *cfg = dev->config;
 	struct spi_qmspi_data *qdata = dev->data;
 	struct qmspi_regs *regs = cfg->regs;
-    const struct device *pcr_dev = DEVICE_DT_GET(MCHP_XEC_CLOCK_CONTROL_NODE);
+	const struct device *pcr_dev = DEVICE_DT_GET(MCHP_XEC_CLOCK_CONTROL_NODE);
 	int ret;
 	clock_control_subsys_t clkss =
 		(clock_control_subsys_t)(MCHP_XEC_PCR_CLK_PERIPH_FAST);
@@ -1126,7 +1126,7 @@ static int qmspi_xec_init(const struct device *dev)
 	}
 
 	ret = clock_control_get_rate(pcr_dev, (clock_control_subsys_t)clkss,
-                                 &qdata->base_freq_hz);
+				&qdata->base_freq_hz);
 	if (ret) {
 		LOG_ERR("QSPI clock control failed");
 		return ret;
