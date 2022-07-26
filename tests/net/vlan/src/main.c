@@ -418,7 +418,7 @@ static void test_address_setup(void)
 	test_failed = false;
 }
 
-static void test_vlan_tci(void)
+ZTEST(net_vlan, test_vlan_tci)
 {
 	struct net_pkt *pkt;
 	uint16_t tci;
@@ -712,7 +712,7 @@ static bool add_neighbor(struct net_if *iface, struct in6_addr *addr)
 	return true;
 }
 
-static void test_vlan_send_data(void)
+ZTEST(net_vlan, test_vlan_send_data)
 {
 	struct ethernet_context *eth_ctx; /* This is L2 context */
 	struct eth_context *ctx; /* This is interface context */
@@ -774,18 +774,23 @@ static void test_vlan_send_data(void)
 	net_context_unref(udp_v6_ctx);
 }
 
-void test_main(void)
+static void *setup(void)
 {
-	ztest_test_suite(net_vlan_test,
-			 ztest_unit_test(test_vlan_setup),
-			 ztest_unit_test(test_address_setup),
-			 ztest_unit_test(test_vlan_tci),
-			 ztest_unit_test(test_vlan_enable),
-			 ztest_unit_test(test_vlan_disable),
-			 ztest_unit_test(test_vlan_enable_all),
-			 ztest_unit_test(test_vlan_disable_all),
-			 ztest_unit_test(test_vlan_send_data)
-			 );
-
-	ztest_run_test_suite(net_vlan_test);
+	test_vlan_setup();
+	test_address_setup();
+	return NULL;
 }
+
+ZTEST(net_vlan, test_vlan_enable_disable)
+{
+	test_vlan_enable();
+	test_vlan_disable();
+}
+
+ZTEST(net_vlan, test_vlan_enable_disable_all)
+{
+	test_vlan_enable_all();
+	test_vlan_disable_all();
+}
+
+ZTEST_SUITE(net_vlan, NULL, setup, NULL, NULL, NULL);
