@@ -587,7 +587,7 @@ static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
 	}
 
 	if (changed && LWM2M_HAS_PERM(obj_field, LWM2M_PERM_R)) {
-		NOTIFY_OBSERVER_PATH(&path);
+		lwm2m_notify_observer_path(&path);
 	}
 
 	return ret;
