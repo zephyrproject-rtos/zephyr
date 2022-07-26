@@ -26,3 +26,4 @@ config BOARD_QEMU_X86_TINY
 	depends on SOC_IA32
 	select QEMU_TARGET
 	select CPU_HAS_FPU
+	select HAS_COVERAGE_SUPPORT
