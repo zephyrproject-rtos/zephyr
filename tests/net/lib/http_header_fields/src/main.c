@@ -572,7 +572,7 @@ const struct url_test url_tests[] = {
 #endif
 };
 
-void test_preserve_data(void)
+ZTEST(http_header_fields_fn, test_preserve_data)
 {
 	struct http_parser parser = { 0 };
 	char my_data[] = "application-specific data";
@@ -584,7 +584,7 @@ void test_preserve_data(void)
 	zassert_equal(parser.data, my_data, "test_preserve_data error");
 }
 
-void test_parse_url(void)
+ZTEST(http_header_fields_fn, test_parse_url)
 {
 	struct http_parser_url u;
 	const struct url_test *test;
@@ -616,7 +616,7 @@ void test_parse_url(void)
 	}
 }
 
-void test_method_str(void)
+ZTEST(http_header_fields_fn, test_method_str)
 {
 	/**TESTPOINT: Check test_method_str function*/
 	zassert_false(strcmp("GET", http_method_str(HTTP_GET)),
@@ -625,7 +625,7 @@ void test_method_str(void)
 			"http_method_str error");
 }
 
-void test_header_nread_value(void)
+ZTEST(http_header_fields_fn, test_header_nread_value)
 {
 	struct http_parser parser = { 0 };
 	const char *buf;
@@ -821,7 +821,7 @@ int test_header_cr_no_lf_error(int req)
 	return TC_FAIL;
 }
 
-void test_http_header_fields(void)
+ZTEST(http_header_fields_fn, test_http_header_fields)
 {
 	int rc;
 
@@ -877,14 +877,4 @@ void test_http_header_fields(void)
 	zassert_false(rc, "test_invalid_header_field_content_error failed");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_http_header_fields_fn,
-		ztest_unit_test(test_preserve_data),
-		ztest_unit_test(test_parse_url),
-		ztest_unit_test(test_method_str),
-		ztest_unit_test(test_header_nread_value),
-		ztest_unit_test(test_http_header_fields)
-		);
-	ztest_run_test_suite(test_http_header_fields_fn);
-}
+ZTEST_SUITE(http_header_fields_fn, NULL, NULL, NULL, NULL, NULL);
