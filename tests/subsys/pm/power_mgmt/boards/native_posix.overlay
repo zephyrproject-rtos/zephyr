@@ -6,17 +6,14 @@
 
 / {
 	device_a: device_a {
-		label = "device_a";
 		compatible = "test-device-pm";
 	};
 
 	device_b: device_b {
-		label = "device_b";
 		compatible = "test-device-pm";
 	};
 
 	device_c: device_c {
-		label = "device_c";
 		compatible = "test-device-pm";
 	};
 };
