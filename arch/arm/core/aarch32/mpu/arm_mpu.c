@@ -162,11 +162,15 @@ void arm_core_mpu_disable(void)
 {
 	uint32_t val;
 
-	val = __get_SCTLR();
-	val &= ~SCTLR_MPU_ENABLE;
 	/* Force any outstanding transfers to complete before disabling MPU */
 	__DSB();
+
+	val = __get_SCTLR();
+	val &= ~SCTLR_MPU_ENABLE;
 	__set_SCTLR(val);
+
+	/* Make sure that all the registers are set before proceeding */
+	__DSB();
 	__ISB();
 }
 #else
