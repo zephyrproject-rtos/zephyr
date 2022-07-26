@@ -6,9 +6,6 @@ if BOARD_TLSR9518ADK80D
 config BOARD
 	default "tlsr9518adk80d"
 
-config PWM_TELINK_B91
-	default y if PWM
-
 config ENTROPY_TELINK_B91_TRNG
 	default y if ENTROPY_GENERATOR
 

@@ -48,10 +48,6 @@ config I2C_MCUX
 	default y
 	depends on I2C
 
-config PWM_MCUX_FTM
-	default y
-	depends on PWM
-
 config USB_KINETIS
 	default y
 	depends on USB_DEVICE_DRIVER

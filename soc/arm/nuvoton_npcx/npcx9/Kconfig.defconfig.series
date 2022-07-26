@@ -18,10 +18,6 @@ config CLOCK_CONTROL_NPCX
 	default y
 	depends on CLOCK_CONTROL
 
-config PWM_NPCX
-	default y
-	depends on PWM
-
 config ADC_NPCX
 	default y
 	depends on ADC
