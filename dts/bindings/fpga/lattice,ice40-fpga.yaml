@@ -1,0 +1,57 @@
+# Copyright (c) 2022 Friedt Professional Engineering Services, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: Lattice iCE40 FPGA
+
+compatible: "lattice,ice40-fpga"
+
+include: spi-device.yaml
+
+properties:
+
+    cdone-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        Configuration Done output from iCE40.
+        
+        Example usage: 
+        cdone-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+
+    creset-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        Configuration Reset input on iCE40.
+        
+        Example usage: 
+        creset-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+    
+    creset-delay-ns:
+      type: int
+      required: false
+      description: |
+        Delay (in nanoseconds) between asserting CRESET_B and releasing CRESET_B.
+
+        Example usage:
+        creset-delay-ns = <200>;
+
+    config-delay-us:
+      type: int
+      required: false
+      description: |
+        Delay (in microseconds) after releasing CRESET_B to clear internal configuration memory.
+
+        Example usage:
+        config-delay-us = <300>;
+
+    additional-clocks:
+      type: int
+      required: false
+      description: |
+        After CDONE is signalled, send this number of additional clocks to
+        activate user-I/O pins. Note: the actual number may be rounded-up
+        by a factor of 8.
+
+        Example usage:
+        additional-clocks = <49>;
