@@ -28,13 +28,13 @@ CMake user package registry.
 
       In Linux, the CMake user package registry is found in:
 
-      ``~/.cmake/package/Zephyr``
+      ``~/.cmake/packages/Zephyr``
 
    .. group-tab:: macOS
 
       In macOS, the CMake user package registry is found in:
 
-      ``~/.cmake/package/Zephyr``
+      ``~/.cmake/packages/Zephyr``
 
    .. group-tab:: Windows
 
