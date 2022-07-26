@@ -103,9 +103,9 @@ static uint32_t get_sysclk_frequency(void)
 					STM32_PLL_R_DIVISOR);
 #elif defined(STM32_SYSCLK_SRC_MSIS)
 	return get_msis_frequency();
-#elif defined(STM32_SYSCLK_SRC_HSE
+#elif defined(STM32_SYSCLK_SRC_HSE)
 	return STM32_HSE_FREQ;
-#elif defined(STM32_SYSCLK_SRC_HSI)) {
+#elif defined(STM32_SYSCLK_SRC_HSI)
 	return STM32_HSI_FREQ;
 #else
 	__ASSERT(0, "No SYSCLK Source configured");
