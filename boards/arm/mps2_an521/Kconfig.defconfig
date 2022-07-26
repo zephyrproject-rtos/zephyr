@@ -24,9 +24,6 @@ config BUILD_WITH_TFM
 
 if SERIAL
 
-config UART_CMSDK_APB
-	default y
-
 config UART_INTERRUPT_DRIVEN
 	default y
 

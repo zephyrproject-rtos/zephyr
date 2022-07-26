@@ -31,11 +31,4 @@ config PINCTRL_IMX
 	default y if HAS_MCUX_IOMUXC
 	depends on PINCTRL
 
-if SERIAL
-
-config UART_MCUX_IUART
-	default y
-
-endif # SERIAL
-
 endif # SOC_MIMX8MQ6

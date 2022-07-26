@@ -26,10 +26,6 @@ endif # I2C_DW
 
 endif # I2C
 
-config UART_NS16550
-	default y
-	depends on SERIAL
-
 if SPI
 
 config SPI_DW

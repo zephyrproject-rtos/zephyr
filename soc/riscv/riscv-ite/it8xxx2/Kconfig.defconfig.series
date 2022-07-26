@@ -28,15 +28,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYS_CLOCK_TICKS_PER_SEC
 	default 4096
 
-config UART_NS16550
-	default y
-	depends on SERIAL
-
 config UART_NS16550_WA_ISR_REENABLE_INTERRUPT
-	default y
-	depends on UART_NS16550
-
-config UART_ITE_IT8XXX2
 	default y
 	depends on UART_NS16550
 
