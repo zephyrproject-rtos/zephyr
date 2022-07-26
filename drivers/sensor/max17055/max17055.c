@@ -12,6 +12,7 @@
 LOG_MODULE_REGISTER(max17055, CONFIG_SENSOR_LOG_LEVEL);
 
 #include "max17055.h"
+#include <zephyr/drivers/sensor/max17055.h>
 
 #define DT_DRV_COMPAT maxim_max17055
 
@@ -150,6 +151,11 @@ static int max17055_channel_get(const struct device *dev,
 		valp->val1 = tmp / 1000000;
 		valp->val2 = tmp % 1000000;
 		break;
+	case SENSOR_CHAN_MAX17055_VFOCV:
+		tmp = priv->ocv * 1250 / 16;
+		valp->val1 = tmp / 1000000;
+		valp->val2 = tmp % 1000000;
+		break;
 	case SENSOR_CHAN_GAUGE_AVG_CURRENT: {
 		int current_ma;
 
@@ -228,6 +234,7 @@ static int max17055_sample_fetch(const struct device *dev,
 		int16_t *dest;
 	} regs[] = {
 		{ VCELL, &priv->voltage },
+		{ VFOCV, &priv->ocv },
 		{ AVG_CURRENT, &priv->avg_current },
 		{ REP_SOC, &priv->state_of_charge },
 		{ INT_TEMP, &priv->internal_temp },
