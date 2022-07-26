@@ -3,6 +3,8 @@
 
 menuconfig BH1750
 	bool "Rohm BH1750 16 bit ambient light sensor"
+	default y
+	depends on DT_HAS_ROHM_BH1750_ENABLED
 	depends on I2C
 	help
 	  Enable driver for the Rohm BH1750 pressure/altitude sensor
@@ -15,15 +17,21 @@ choice
 	help
 	  Select BH1750 resolution mode. The illuminance per LSB in normal and
 	  low resolution modes is mode is 57.5 / oversampling-factor (in lux),
-	  with typical sensitivities of 1 lx for normal and 4 lx for low res.
-	  In high res., the illuminance per LSB is 28.75 / oversampling-factor
-	  and the typical sensitivity is 0.5 lx.
+	  with typical limits of detection of 1 lx for normal and 4 lx for low
+	  resolution.  In high resolution, the illuminance per LSB is 28.75 /
+	  oversampling-factor and the typical sensitivity is 0.5 lx. The
+	  sampling interval is 2.61 ms * oversampling-factor in normal and high
+	  resolution modes and 0.35 ms * oversampling-factor in low resolution.
+
 config BH1750_NORMAL_RES
 	bool "normal resolution"
+
 config BH1750_HIGH_RES
 	bool "high resolution"
+
 config BH1750_LOW_RES
 	bool "low resolution"
+
 endchoice
 
 endif # BH1750

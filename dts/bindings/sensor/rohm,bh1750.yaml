@@ -1,0 +1,24 @@
+# Copyright (c) 2022 Lucas Heitzmann Gabrielli
+# SPDX-License-Identifier: Apache-2.0
+
+description: Rohm BH1750 16 bit ambient light sensor.
+
+compatible: "rohm,bh1750"
+
+include: i2c-device.yaml
+
+properties:
+  oversampling-factor:
+    type: int
+    required: false
+    description: |
+      Adjust the sensor sensitivity. The sensitivity can be calculated as
+      57.5 / oversampling-factor (in lux per LSB) for normal and low resolution
+      modes and 28.75 / oversampling-factor for high resolution. The default
+      value on reset is 69, which gives 0.83 lx per LSB on normal and low
+      resolution modes and 0.42 lx per LSB on high resolution. Higher values
+      improve sensitivity but increase the sampling interval, calculated as
+      2.61 ms * oversampling-factor for high and normal resolution modes, and
+      as 0.35 ms * oversampling-factor for low resolution. The minimal and
+      maximal values are 31 and 254.
+    default: 69
