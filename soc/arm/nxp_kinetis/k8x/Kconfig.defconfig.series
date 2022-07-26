@@ -52,10 +52,6 @@ config PWM_MCUX_FTM
 	default y
 	depends on PWM
 
-config SPI_MCUX_DSPI
-	default y
-	depends on SPI
-
 config USB_KINETIS
 	default y
 	depends on USB_DEVICE_DRIVER

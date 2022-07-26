@@ -15,9 +15,6 @@ config ENTROPY_TELINK_B91_TRNG
 config SOC_FLASH_TELINK_B91
 	default y if FLASH
 
-config SPI_TELINK_B91
-	default y if SPI
-
 config IEEE802154_TELINK_B91
 	default y if IEEE802154
 

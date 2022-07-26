@@ -38,10 +38,6 @@ config I2C_NPCX
 	default y
 	depends on I2C
 
-config SPI_NPCX_FIU
-	default y
-	depends on SPI
-
 source "soc/arm/nuvoton_npcx/npcx7/Kconfig.defconfig.npcx7*"
 
 endif # SOC_SERIES_NPCX7

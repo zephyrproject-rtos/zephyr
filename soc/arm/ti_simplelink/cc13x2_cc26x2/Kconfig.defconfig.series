@@ -33,10 +33,6 @@ config I2C_CC13XX_CC26XX
 	default y
 	depends on I2C
 
-config SPI_CC13XX_CC26XX
-	default y
-	depends on SPI
-
 if IEEE802154
 
 config IEEE802154_CC13XX_CC26XX

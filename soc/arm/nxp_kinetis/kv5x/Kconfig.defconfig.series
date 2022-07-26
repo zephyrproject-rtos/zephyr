@@ -35,10 +35,6 @@ config PWM_MCUX_FTM
 	default y
 	depends on PWM
 
-config SPI_MCUX_DSPI
-	default y
-	depends on SPI
-
 source "soc/arm/nxp_kinetis/kv5x/Kconfig.defconfig.mkv*"
 
 endif # SOC_SERIES_KINETIS_KV5X
