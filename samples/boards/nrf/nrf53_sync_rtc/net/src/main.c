@@ -62,10 +62,9 @@ static int mbox_init(void)
 
 static int ipm_init(void)
 {
-	const struct device *ipm_dev;
+	const struct device *ipm_dev = DEVICE_DT_GET_ONE(nordic_mbox_nrf_ipc);
 
-	ipm_dev = device_get_binding("IPM_2");
-	if (ipm_dev == NULL) {
+	if (!device_is_ready(ipm_dev)) {
 		return -ENODEV;
 	}
 
