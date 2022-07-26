@@ -51,10 +51,6 @@ config COUNTER_MCUX_LPC_RTC
 	default y
 	depends on COUNTER
 
-config PWM_MCUX_SCTIMER
-	default y
-	depends on PWM
-
 config WDT_MCUX_WWDT
 	default y
 	depends on WATCHDOG

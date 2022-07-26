@@ -37,10 +37,6 @@ config I2C_MCUX
 config SPI
 	default y
 
-config PWM_MCUX_FTM
-	default y
-	depends on PWM
-
 config ENTROPY_MCUX_RNGA
 	default y
 	depends on ENTROPY_GENERATOR

@@ -126,10 +126,6 @@ config I2C_RV32M1_LPI2C
 	default y
 	depends on I2C
 
-config PWM_RV32M1_TPM
-	default y
-	depends on PWM
-
 if FLASH
 
 config SOC_FLASH_RV32M1
