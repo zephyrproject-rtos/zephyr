@@ -79,6 +79,7 @@
 		sw0 = &key_cet;
 		pwm-led0 = &pwm_led;
 		spi-flash0 = &nor_flash;
+		watchdog0 = &fwdgt;
 	};
 };
 
@@ -143,4 +144,8 @@
 	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+};
+
+&fwdgt {
+	status = "okay";
 };
