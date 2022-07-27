@@ -16,10 +16,6 @@ config I2C_MCUX_FLEXCOMM
 	default y if HAS_MCUX_FLEXCOMM
 	depends on I2C
 
-config CLOCK_CONTROL_MCUX_SYSCON
-	default y if HAS_MCUX_SYSCON
-	depends on CLOCK_CONTROL
-
 config DMA_MCUX_LPC
 	default y
 	depends on DMA

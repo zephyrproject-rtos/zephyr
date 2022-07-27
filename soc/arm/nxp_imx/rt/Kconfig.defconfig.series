@@ -16,14 +16,6 @@ config CAN_MCUX_FLEXCAN
 	default y if HAS_MCUX_FLEXCAN
 	depends on CAN
 
-config CLOCK_CONTROL_MCUX_CCM
-	default y if HAS_MCUX_CCM
-	depends on CLOCK_CONTROL
-
-config CLOCK_CONTROL_MCUX_CCM_REV2
-	default y if HAS_MCUX_CCM_REV2
-	depends on CLOCK_CONTROL
-
 config DISPLAY_MCUX_ELCDIF
 	default y if HAS_MCUX_ELCDIF
 	depends on DISPLAY

@@ -15,10 +15,6 @@ config ADC_MCUX_ADC16
 	default y
 	depends on ADC
 
-config CLOCK_CONTROL_MCUX_SIM
-	default y
-	depends on CLOCK_CONTROL
-
 config COUNTER_MCUX_RTC
 	default y
 	depends on COUNTER

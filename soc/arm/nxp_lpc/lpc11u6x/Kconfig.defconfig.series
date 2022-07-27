@@ -24,13 +24,6 @@ config PINMUX_INIT_PRIORITY
 
 endif # PINMUX
 
-if CLOCK_CONTROL
-
-config CLOCK_CONTROL_LPC11U6X
-	default y
-
-endif # CLOCK_CONTROL
-
 if I2C
 
 config I2C_LPC11U6X
