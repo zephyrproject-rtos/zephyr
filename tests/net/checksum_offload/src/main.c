@@ -928,20 +928,35 @@ static void test_rx_chksum_offload_enabled_test_v4(void)
 	k_sleep(K_MSEC(10));
 }
 
-void test_main(void)
+static void *net_chksum_offload_tests_setup(void)
 {
-	ztest_test_suite(net_chksum_offload_test,
-			 ztest_unit_test(test_eth_setup),
-			 ztest_unit_test(test_address_setup),
-			 ztest_unit_test(test_tx_chksum_offload_disabled_test_v6),
-			 ztest_unit_test(test_tx_chksum_offload_disabled_test_v4),
-			 ztest_unit_test(test_tx_chksum_offload_enabled_test_v6),
-			 ztest_unit_test(test_tx_chksum_offload_enabled_test_v4),
-			 ztest_unit_test(test_rx_chksum_offload_disabled_test_v6),
-			 ztest_unit_test(test_rx_chksum_offload_disabled_test_v4),
-			 ztest_unit_test(test_rx_chksum_offload_enabled_test_v6),
-			 ztest_unit_test(test_rx_chksum_offload_enabled_test_v4)
-			 );
-
-	ztest_run_test_suite(net_chksum_offload_test);
+	test_eth_setup();
+	test_address_setup();
+	return NULL;
 }
+
+ZTEST(net_chksum_offload, test_chksum_offload_disabled_v4)
+{
+	test_tx_chksum_offload_disabled_test_v4();
+	test_rx_chksum_offload_disabled_test_v4();
+}
+
+ZTEST(net_chksum_offload, test_chksum_offload_enabled_v4)
+{
+	test_tx_chksum_offload_enabled_test_v4();
+	test_rx_chksum_offload_enabled_test_v4();
+}
+
+ZTEST(net_chksum_offload, test_chksum_offload_disabled_v6)
+{
+	test_tx_chksum_offload_disabled_test_v6();
+	test_rx_chksum_offload_disabled_test_v6();
+}
+
+ZTEST(net_chksum_offload, test_chksum_offload_enabled_v6)
+{
+	test_tx_chksum_offload_enabled_test_v6();
+	test_rx_chksum_offload_enabled_test_v6();
+}
+
+ZTEST_SUITE(net_chksum_offload, NULL, net_chksum_offload_tests_setup, NULL, NULL, NULL);
