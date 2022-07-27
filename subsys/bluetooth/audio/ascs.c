@@ -639,10 +639,15 @@ static void ascs_clear(struct bt_ascs *ascs)
 	for (i = 0; i < ASE_COUNT; i++) {
 		struct bt_ascs_ase *ase = &ascs->ases[i];
 
-		if (ase->ep.status.state != BT_AUDIO_EP_STATE_IDLE) {
-			ase_release(ase, false);
-			ascs_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_IDLE);
+		if (ase->ep.status.state == BT_AUDIO_EP_STATE_IDLE) {
+			continue;
 		}
+
+		if (ase->ep.status.state != BT_AUDIO_EP_STATE_RELEASING) {
+			ase_release(ase, false);
+		}
+
+		ascs_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_IDLE);
 	}
 }
 
@@ -712,7 +717,8 @@ static void ascs_detach(struct bt_ascs *ascs)
 	for (i = 0; i < ASE_COUNT; i++) {
 		struct bt_ascs_ase *ase = &ascs->ases[i];
 
-		if (ase->ep.status.state != BT_AUDIO_EP_STATE_IDLE) {
+		if (ase->ep.status.state != BT_AUDIO_EP_STATE_IDLE &&
+		    ase->ep.status.state != BT_AUDIO_EP_STATE_RELEASING) {
 			/* Cache if disconnected with codec configured */
 			ase_release(ase, true);
 		}
