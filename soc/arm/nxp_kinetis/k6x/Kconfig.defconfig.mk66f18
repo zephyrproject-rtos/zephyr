@@ -24,16 +24,6 @@ config CAN_MCUX_FLEXCAN
 	default y
 	depends on CAN
 
-if CLOCK_CONTROL
-
-config CLOCK_CONTROL_MCUX_SIM
-	default y
-
-config CLOCK_CONTROL_MCUX_MCG
-	default y
-
-endif # CLOCK_CONTROL
-
 config GPIO
 	default y
 

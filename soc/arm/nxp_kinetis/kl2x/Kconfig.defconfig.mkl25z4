@@ -15,10 +15,6 @@ config ADC_MCUX_ADC16
 	default y
 	depends on ADC
 
-config CLOCK_CONTROL_MCUX_SIM
-	default y
-	depends on CLOCK_CONTROL
-
 config I2C_MCUX
 	default y
 	depends on I2C

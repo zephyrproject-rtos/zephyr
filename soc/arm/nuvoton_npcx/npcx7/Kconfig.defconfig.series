@@ -14,10 +14,6 @@ config NUM_IRQS
 config CORTEX_M_SYSTICK
 	default !NPCX_ITIM_TIMER
 
-config CLOCK_CONTROL_NPCX
-	default y
-	depends on CLOCK_CONTROL
-
 config ADC_NPCX
 	default y
 	depends on ADC
