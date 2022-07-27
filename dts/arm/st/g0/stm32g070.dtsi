@@ -15,7 +15,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
 			interrupts = <29 0>;
 			status = "disabled";
-			label = "UART_3";
 		};
 
 		usart4: serial@40004c00 {
@@ -24,7 +23,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
 			interrupts = <29 0>;
 			status = "disabled";
-			label = "UART_4";
 		};
 
 		timers15: timers@40014000 {
@@ -35,12 +33,10 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_15";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_15";
 				#pwm-cells = <3>;
 			};
 		};

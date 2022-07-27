@@ -16,7 +16,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			interrupts = <36 5>;
 			status = "disabled";
-			label = "SPI_2";
 		};
 
 		spi3: spi@40003c00 {
@@ -27,7 +26,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
 			interrupts = <51 5>;
 			status = "disabled";
-			label = "SPI_3";
 		};
 
 		spi4: spi@40013400 {
@@ -38,7 +36,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00002000>;
 			interrupts = <84 5>;
 			status = "disabled";
-			label = "SPI_4";
 		};
 
 		i2s2: i2s@40003800 {
@@ -52,7 +49,6 @@
 				&dma1 3 0 0x400 0x3>;
 			dma-names = "tx", "rx";
 			status = "disabled";
-			label = "I2S_2";
 		};
 
 		i2s3: i2s@40003c00 {
@@ -66,7 +62,6 @@
 				&dma1 0 0 0x400 0x3>;
 			dma-names = "tx", "rx";
 			status = "disabled";
-			label = "I2S_3";
 		};
 	};
 };
