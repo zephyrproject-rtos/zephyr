@@ -23,7 +23,6 @@
 			phys = <&otgfs_phy>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>;
 			status = "disabled";
-			label= "USB";
 		};
 
 		rng: rng@40025000 {
@@ -32,14 +31,12 @@
 			interrupts = <29 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00100000>;
 			status = "disabled";
-			label = "RNG";
 		};
 	};
 
 	otgfs_phy: otgfs_phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
-		label = "OTGFS_PHY";
 	};
 
 	dac1: dac@40007400 {
@@ -47,7 +44,6 @@
 		reg = <0x40007400 0x400>;
 		clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
 		status = "disabled";
-		label = "DAC_1";
 		#io-channel-cells = <1>;
 	};
 };

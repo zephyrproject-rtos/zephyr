@@ -20,7 +20,6 @@
 				&dma2 2 3 0x400 0x3>;
 			dma-names = "tx", "rx";
 			status = "disabled";
-			label = "I2S_1";
 		};
 
 		usart3: serial@40004800 {
@@ -29,7 +28,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
 			interrupts = <39 0>;
 			status = "disabled";
-			label = "UART_3";
 		};
 
 		uart4: serial@40004c00 {
@@ -38,7 +36,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
 			interrupts = <52 0>;
 			status = "disabled";
-			label = "UART_4";
 		};
 
 		uart5: serial@40005000 {
@@ -47,7 +44,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
 			interrupts = <53 0>;
 			status = "disabled";
-			label = "UART_5";
 		};
 
 		can1: can@40006400 {
@@ -57,7 +53,6 @@
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
-			label = "CAN_1";
 			sjw = <1>;
 			sample-point = <875>;
 		};
@@ -71,7 +66,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x06000000>;
 			master-can-reg = <0x40006400>;
 			status = "disabled";
-			label = "CAN_2";
 			sjw = <1>;
 			sample-point = <875>;
 		};
@@ -91,14 +85,12 @@
 			phys = <&otghs_fs_phy>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x20000000>;
 			status = "disabled";
-			label= "OTGHS";
 		};
 
 		backup_sram: memory@40024000 {
 			compatible = "zephyr,memory-region", "st,stm32-backup-sram";
 			reg = <0x40024000 DT_SIZE_K(4)>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00040000>;
-			label = "BACKUP_SRAM";
 			zephyr,memory-region = "BACKUP_SRAM";
 			status = "disabled";
 		};
@@ -108,7 +100,6 @@
 			reg = <0x40007400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
 			status = "disabled";
-			label = "DAC_1";
 			#io-channel-cells = <1>;
 		};
 
@@ -116,14 +107,12 @@
 			compatible = "st,stm32-fmc";
 			reg = <0xa0000000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000001>;
-			label = "STM32_FMC";
 			status = "disabled";
 
 			sdram: sdram {
 				compatible = "st,stm32-fmc-sdram";
 				#address-cells = <1>;
 				#size-cells = <0>;
-				label = "STM32_FMC_SDRAM";
 				status = "disabled";
 			};
 		};
@@ -132,6 +121,5 @@
 	otghs_fs_phy: otghs_fs_phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
-		label = "OTGHS_FS_PHY";
 	};
 };

@@ -21,7 +21,6 @@
 				#gpio-cells = <2>;
 				reg = <0x40021400 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000020>;
-				label = "GPIOF";
 			};
 
 			gpiog: gpio@40021800 {
@@ -30,7 +29,6 @@
 				#gpio-cells = <2>;
 				reg = <0x40021800 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000040>;
-				label = "GPIOG";
 			};
 		};
 
@@ -40,7 +38,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
 			interrupts = <39 0>;
 			status = "disabled";
-			label = "UART_3";
 		};
 
 		timers6: timers@40001000 {
@@ -51,12 +48,10 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_6";
 
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
-				label = "COUNTER_6";
 			};
 		};
 
@@ -68,12 +63,10 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_7";
 
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
-				label = "COUNTER_7";
 			};
 		};
 
@@ -85,12 +78,10 @@
 			interrupt-names = "brk", "up", "trgcom", "cc";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_8";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_8";
 				#pwm-cells = <3>;
 			};
 		};
@@ -103,19 +94,16 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_12";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_12";
 				#pwm-cells = <3>;
 			};
 
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
-				label = "COUNTER_12";
 			};
 		};
 
@@ -127,19 +115,16 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_13";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_13";
 				#pwm-cells = <3>;
 			};
 
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
-				label = "COUNTER_13";
 			};
 		};
 
@@ -151,19 +136,16 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_14";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_14";
 				#pwm-cells = <3>;
 			};
 
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
-				label = "COUNTER_14";
 			};
 		};
 
@@ -173,7 +155,6 @@
 			interrupts = <80 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000040>;
 			status = "disabled";
-			label = "RNG";
 		};
 
 		usbotg_fs: usb@50000000 {
@@ -188,7 +169,6 @@
 			interrupts = <92 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000002>;
 			status = "disabled";
-			label = "QUADSPI";
 		};
 	};
 };

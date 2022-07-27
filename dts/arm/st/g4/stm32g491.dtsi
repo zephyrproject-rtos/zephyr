@@ -16,7 +16,6 @@
 				interrupts = <86 0>, <87 0>;
 				interrupt-names = "LINE_0", "LINE_1";
 				status = "disabled";
-				label = "CAN_2";
 				sjw = <1>;
 				sample-point = <875>;
 				sjw-data = <1>;
@@ -32,12 +31,10 @@
 			interrupt-names = "brk", "up", "trgcom", "cc";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_20";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				label = "PWM_20";
 				#pwm-cells = <3>;
 			};
 		};
@@ -63,7 +60,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00004000>;
 			interrupts = <47 0>;
 			status = "disabled";
-			label = "ADC_3";
 			#io-channel-cells = <1>;
 			has-vref-channel;
 		};
