@@ -33,9 +33,6 @@ config CORTEX_M_SYSTICK
 	default y
 	depends on !RTOS_TIMER
 
-config CLOCK_CONTROL_MCHP_XEC
-	default y
-
 config MCHP_ECIA_XEC
 	default y
 

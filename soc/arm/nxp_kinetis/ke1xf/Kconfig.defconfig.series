@@ -29,19 +29,6 @@ config KINETIS_FLASH_CONFIG_FOPT
 	default 0x7d
 	depends on KINETIS_FLASH_CONFIG
 
-if CLOCK_CONTROL
-
-config CLOCK_CONTROL_MCUX_SCG
-	default y
-
-config CLOCK_CONTROL_MCUX_SIM
-	default y
-
-config CLOCK_CONTROL_MCUX_PCC
-	default y
-
-endif # CLOCK_CONTROL
-
 config WDT_MCUX_WDOG32
 	default y
 	depends on WATCHDOG

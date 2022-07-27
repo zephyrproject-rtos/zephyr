@@ -16,10 +16,6 @@ config ADC_MCUX_ADC16
 	default y
 	depends on ADC
 
-config CLOCK_CONTROL_MCUX_SIM
-	default y
-	depends on CLOCK_CONTROL
-
 config SOC_FLASH_MCUX
 	default y
 	depends on FLASH

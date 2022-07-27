@@ -16,16 +16,6 @@ config DAC_MCUX_DAC
 	default y
 	depends on DAC
 
-if CLOCK_CONTROL
-
-config CLOCK_CONTROL_MCUX_MCG
-	default y
-
-config CLOCK_CONTROL_MCUX_SIM
-	default y
-
-endif # CLOCK_CONTROL
-
 config GPIO
 	default y
 
