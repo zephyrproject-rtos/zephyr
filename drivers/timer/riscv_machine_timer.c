@@ -3,11 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT riscv_machine_timer
+
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
-#include <soc.h>
 
 #define CYC_PER_TICK ((uint32_t)((uint64_t) (sys_clock_hw_cycles_per_sec()			 \
 					     >> CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER) \
@@ -18,10 +21,13 @@
 
 #define TICKLESS IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 
+#define RISCV_MTIME_BASE      DT_INST_REG_ADDR_BY_NAME(0, mtime)
+#define RISCV_MTIMECMP_BASE   DT_INST_REG_ADDR_BY_NAME(0, mtimecmp)
+
 static struct k_spinlock lock;
 static uint64_t last_count;
 #if defined(CONFIG_TEST)
-const int32_t z_sys_timer_irq_for_test = RISCV_MACHINE_TIMER_IRQ;
+const int32_t z_sys_timer_irq_for_test = DT_INST_IRQN(0);
 #endif
 
 static uint64_t get_hart_mtimecmp(void)
@@ -156,10 +162,11 @@ static int sys_clock_driver_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(RISCV_MACHINE_TIMER_IRQ, 0, timer_isr, NULL, 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), timer_isr,
+		    NULL, 0);
 	last_count = mtime();
 	set_mtimecmp(last_count + CYC_PER_TICK);
-	irq_enable(RISCV_MACHINE_TIMER_IRQ);
+	irq_enable(DT_INST_IRQN(0));
 	return 0;
 }
 
@@ -167,7 +174,7 @@ static int sys_clock_driver_init(const struct device *dev)
 void smp_timer_init(void)
 {
 	set_mtimecmp(last_count + CYC_PER_TICK);
-	irq_enable(RISCV_MACHINE_TIMER_IRQ);
+	irq_enable(DT_INST_IRQN(0));
 }
 #endif
 
