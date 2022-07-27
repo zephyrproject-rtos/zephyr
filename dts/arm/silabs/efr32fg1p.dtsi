@@ -28,7 +28,6 @@
 	soc {
 		msc: flash-controller@400e0000 {
 			compatible = "silabs,gecko-flash-controller";
-			label = "FLASH_CTRL";
 			reg = <0x400e0000 0x78>;
 			interrupts = <24 0>;
 
@@ -37,7 +36,6 @@
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				label = "FLASH_0";
 				write-block-size = <4>;
 				erase-block-size = <2048>;
 			};
@@ -50,7 +48,6 @@
 			interrupt-names = "rx", "tx";
 			peripheral-id = <0>;
 			status = "disabled";
-			label = "USART_0";
 		};
 
 		usart1: usart@40010400 { /* USART1 */
@@ -60,7 +57,6 @@
 			interrupt-names = "rx", "tx";
 			peripheral-id = <1>;
 			status = "disabled";
-			label = "USART_1";
 		};
 
 		leuart0: leuart@4004a000 { /* LEUART0 */
@@ -69,7 +65,6 @@
 			interrupts = <21 0>;
 			peripheral-id = <0>;
 			status = "disabled";
-			label = "LEUART_0";
 		};
 
 		i2c0: i2c@4000c000 {
@@ -79,7 +74,6 @@
 			#size-cells = <0>;
 			reg = <0x4000c000 0x400>;
 			interrupts = <16 0>;
-			label = "I2C_0";
 			status = "disabled";
 		};
 
@@ -90,7 +84,6 @@
 			clock-frequency = <32768>;
 			prescaler = <1>;
 			status = "disabled";
-			label = "RTCC_0";
 		};
 
 		gpio: gpio@4000a400 {
@@ -98,7 +91,6 @@
 			reg = <0x4000a400 0xc00>;
 			interrupts = <9 2 17 2>;
 			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
-			label = "GPIO";
 
 			ranges;
 			#address-cells = <1>;
@@ -108,7 +100,6 @@
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x4000a000 0x30>;
 				peripheral-id = <0>;
-				label = "GPIO_A";
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
@@ -118,7 +109,6 @@
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x4000a030 0x30>;
 				peripheral-id = <1>;
-				label = "GPIO_B";
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
@@ -128,7 +118,6 @@
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x4000a060 0x30>;
 				peripheral-id = <2>;
-				label = "GPIO_C";
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
@@ -138,7 +127,6 @@
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x4000a090 0x30>;
 				peripheral-id = <3>;
-				label = "GPIO_D";
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
@@ -148,7 +136,6 @@
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x4000a0c0 0x30>;
 				peripheral-id = <4>;
-				label = "GPIO_E";
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
@@ -158,7 +145,6 @@
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x4000a0f0 0x30>;
 				peripheral-id = <5>;
-				label = "GPIO_F";
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
@@ -169,7 +155,6 @@
 			compatible = "silabs,gecko-wdog";
 			reg = <0x40052000 0x2C>;
 			peripheral-id = <0>;
-			label = "WDOG0";
 			interrupts = <2 0>;
 			status = "disabled";
 		};
@@ -178,12 +163,10 @@
 			compatible = "silabs,gecko-timers";
 			reg = <0x40018000 0x400>;
 			status = "disabled";
-			label = "TIMER_0";
 
 			pwm {
 				compatible = "silabs,gecko-pwm";
 				status = "disabled";
-				label = "PWM_0";
 				#pwm-cells = <3>;
 			};
 		};
