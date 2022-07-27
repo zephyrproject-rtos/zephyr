@@ -14,7 +14,6 @@
 
 /* IRQ numbers */
 #define RISCV_MACHINE_SOFT_IRQ       3  /* Machine Software Interrupt */
-#define RISCV_MACHINE_TIMER_IRQ      7  /* Machine Timer Interrupt */
 #define RISCV_MACHINE_EXT_IRQ        11 /* Machine External Interrupt */
 
 /* ECALL Exception numbers */
