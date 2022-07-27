@@ -59,6 +59,7 @@
 		pwm-led0 = &pwm_led_green;
 		pwm-led1 = &pwm_led_blue;
 		sw0 = &button_boot0;
+		watchdog0 = &fwdgt;
 	};
 };
 
@@ -115,4 +116,8 @@
 			status = "okay";
 		};
 	};
+};
+
+&fwdgt {
+	status = "okay";
 };
