@@ -13,10 +13,6 @@
 
 #include <soc_common.h>
 
-/* Machine timer memory-mapped registers */
-#define RISCV_MTIME_BASE             0xE6000000
-#define RISCV_MTIMECMP_BASE          0xE6000008
-
 /* lib-c hooks required RAM defined variables */
 #define RISCV_RAM_BASE               CONFIG_SRAM_BASE_ADDRESS
 #define RISCV_RAM_SIZE               KB(CONFIG_SRAM_SIZE)

@@ -64,10 +64,6 @@
 
 #endif
 
-/* Timer configuration */
-#define RISCV_MTIME_BASE             0x0200BFF8
-#define RISCV_MTIMECMP_BASE          0x02004000
-
 /* lib-c hooks required RAM defined variables */
 #define RISCV_RAM_BASE               CONFIG_SRAM_BASE_ADDRESS
 #define RISCV_RAM_SIZE               KB(CONFIG_SRAM_SIZE)
