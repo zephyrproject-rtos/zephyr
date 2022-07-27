@@ -205,7 +205,14 @@ static inline int net_ipv6_finalize(struct net_pkt *pkt,
 #if defined(CONFIG_NET_IPV6_MLD)
 int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr);
 #else
-#define net_ipv6_mld_join(...)
+static inline int
+net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+
+	return -ENOTSUP;
+}
 #endif /* CONFIG_NET_IPV6_MLD */
 
 /**
@@ -219,7 +226,14 @@ int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr);
 #if defined(CONFIG_NET_IPV6_MLD)
 int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr);
 #else
-#define net_ipv6_mld_leave(...)
+static inline int
+net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+
+	return -ENOTSUP;
+}
 #endif /* CONFIG_NET_IPV6_MLD */
 
 /**
