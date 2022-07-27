@@ -20,14 +20,14 @@ static int bh1750_read(const struct device *dev, uint8_t *byte, uint32_t count)
 {
 	const struct bh1750_config *cfg = dev->config;
 
-	return i2c_read(cfg->bus, byte, count, cfg->bus_addr);
+	return i2c_read_dt(&cfg->i2c, byte, count);
 }
 
 static int bh1750_write(const struct device *dev, uint8_t byte)
 {
 	const struct bh1750_config *cfg = dev->config;
 
-	return i2c_write(cfg->bus, &byte, 1, cfg->bus_addr);
+	return i2c_write_dt(&cfg->i2c, &byte, 1);
 }
 
 static int bh1750_attr_set(const struct device *dev, enum sensor_channel chan,
@@ -161,7 +161,7 @@ static int bh1750_init(const struct device *dev)
 	const struct bh1750_config *cfg = dev->config;
 	struct sensor_value tmp = {.val1 = data->oversampling_factor, .val2 = 0};
 
-	if (!device_is_ready(cfg->bus)) {
+	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("Bus device is not ready");
 		return -ENODEV;
 	}
@@ -171,8 +171,7 @@ static int bh1750_init(const struct device *dev)
 
 #define BH1750_INST(inst)                                                                          \
 	static const struct bh1750_config bh1750_config_##inst = {                                 \
-		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),                                           \
-		.bus_addr = DT_INST_REG_ADDR(inst),                                                \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 	};                                                                                         \
 	static struct bh1750_data bh1750_data_##inst = {                                           \
 		.adc_count = 0,                                                                    \

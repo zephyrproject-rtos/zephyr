@@ -36,8 +36,7 @@
 #define BH1750_MEAS_TIME_MAX 254
 
 struct bh1750_config {
-	const struct device *bus;
-	uint16_t bus_addr;
+	struct i2c_dt_spec i2c;
 };
 
 struct bh1750_data {
