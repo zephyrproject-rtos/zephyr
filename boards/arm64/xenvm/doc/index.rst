@@ -68,6 +68,8 @@ following board configurations:
 - ``xenvm_defconfig`` selects GICv2
 - ``xenvm_gicv3_defconfig`` selects GICv3
 
+Pay attention that proper config is selected by board name used for ``west build -b``.
+
 CPU Core type
 -------------
 
@@ -123,11 +125,16 @@ create guest configuration file :code:`zephyr.conf`. There is example:
    name="zephyr"
    vcpus=1
    memory=16
-   gic_version="v2"
+   gic_version="default"
    on_crash="preserve"
 
-When using ``xenvm_gicv3`` configuration, you need to remove the ``gic_version``
-parameter or set it to ``"v3"``.
+Regarding ``gic_version``.
+For regular cases ``default`` value should result in the usage of GIC
+provided by hardware. But you always can specify the exact value:
+``"v2"`` or ``"v3"`` depending on your hardware and build configuration.
+If ``gic_version`` is not provided, then ``"v3"`` is used.
+For details check ``gic_version`` section of documentation for xl.cfg:
+https://xenbits.xen.org/docs/unstable/man/xl.cfg.5.html
 
 You need to upload both :code:`zephyr.bin` and :code:`zephyr.conf` to your Dom0
 and then you can run Zephyr by issuing
