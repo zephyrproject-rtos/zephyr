@@ -85,6 +85,11 @@ struct rf2xx_config {
 
 	uint8_t inst;
 	uint8_t has_mac;
+
+	uint8_t const *tx_pwr_table;
+	uint8_t tx_pwr_table_size;
+	int8_t tx_pwr_min[2];
+	int8_t tx_pwr_max[2];
 };
 
 struct rf2xx_context {

@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
@@ -65,48 +66,6 @@ static struct net_pkt rf2xx_ack_pkt = {
 	.ieee802154_rssi = -40,
 };
 #endif /* CONFIG_NET_L2_OPENTHREAD */
-
-/**
- * RF output power for RF2xx
- *
- * The table below is exact for RF233. For RF231/2 the TX power might
- * be a bit off, but good enough.
- *
- * RF233: http://ww1.microchip.com/downloads/en/devicedoc/atmel-8351-mcu_wireless-at86rf233_datasheet.pdf
- * 9.2.5 Register Description Register 0x05 (PHY_TX_PWR)
- * 0x0 = 4dBm .. 0xF = -17dBm
- *
- * RF232: http://ww1.microchip.com/downloads/en/DeviceDoc/doc8321.pdf
- * 9.2.5 Register Description Register 0x05 (PHY_TX_PWR)
- * 0x0 = 3dBm .. 0xF = -17dBm
- *
- * RF231: http://ww1.microchip.com/downloads/en/DeviceDoc/doc8111.pdf
- * 9.2.5 Register Description Register 0x05 (PHY_TX_PWR)
- * 0x0 = 3dBm .. 0xF = -17dBm
- */
-
-#define RF2XX_OUTPUT_POWER_MAX		4
-#define RF2XX_OUTPUT_POWER_MIN		(-17)
-
-/* Lookup table for PHY_TX_PWR register for RF233 */
-static const uint8_t phy_tx_pwr_lt[] = {
-	0xf,                     /* -17  dBm: -17 */
-	0xe, 0xe, 0xe, 0xe, 0xe, /* -12  dBm: -16, -15, -14, -13, -12 */
-	0xd, 0xd, 0xd, 0xd,      /* -8   dBm: -11, -10, -9, -8 */
-	0xc, 0xc,                /* -6   dBm: -7, -6 */
-	0xb, 0xb,                /* -4   dBm: -5, -4 */
-	0xa,                     /* -3   dBm: -3 */
-	0x9,                     /* -2   dBm: -2 */
-	0x8,                     /* -1   dBm: -1 */
-	0x7,                     /*  0.0 dBm:  0 */
-	0x6,                     /*  1   dBm:  1 */
-	0x5,                     /*  2   dBm:  2 */
-	/* 0x4, */               /*  2.5 dBm */
-	0x3,                     /*  3   dBm:  3 */
-	/* 0x2, */               /*  3.4 dBm */
-	/* 0x1, */               /*  3.7 dBm */
-	0x0                      /*  4   dBm: 4 */
-};
 
 /* Radio Transceiver ISR */
 static inline void trx_isr_handler(const struct device *port,
@@ -409,22 +368,77 @@ static int rf2xx_set_channel(const struct device *dev, uint16_t channel)
 
 static int rf2xx_set_txpower(const struct device *dev, int16_t dbm)
 {
-	if (dbm < RF2XX_OUTPUT_POWER_MIN) {
-		LOG_INF("TX-power %d dBm below min of %d dBm, using %d dBm",
-			dbm,
-			RF2XX_OUTPUT_POWER_MIN,
-			RF2XX_OUTPUT_POWER_MAX);
-		dbm = RF2XX_OUTPUT_POWER_MIN;
-	} else if (dbm > RF2XX_OUTPUT_POWER_MAX) {
-		LOG_INF("TX-power %d dBm above max of %d dBm, using %d dBm",
-			dbm,
-			RF2XX_OUTPUT_POWER_MIN,
-			RF2XX_OUTPUT_POWER_MAX);
-		dbm = RF2XX_OUTPUT_POWER_MAX;
+	const struct rf2xx_config *conf = dev->config;
+	struct rf2xx_context *ctx = dev->data;
+	float min, max, step;
+	uint8_t reg;
+	uint8_t idx;
+	uint8_t val;
+
+	LOG_DBG("Try set Power to %d", dbm);
+
+	/**
+	 * if table size is equal 1 the code assumes a table was not defined. In
+	 * this case the transceiver PHY_TX_PWR register will be set with value
+	 * zero. This is a safe value for all variants and represents an output
+	 * power above 0 dBm.
+	 *
+	 * Note: This is a special case too which avoid division by zero when
+	 * computing the step variable.
+	 */
+	if (conf->tx_pwr_table_size == 1) {
+		rf2xx_iface_reg_write(dev, RF2XX_PHY_TX_PWR_REG, 0);
+
+		return 0;
 	}
 
-	rf2xx_iface_reg_write(dev, RF2XX_PHY_TX_PWR_REG,
-		phy_tx_pwr_lt[dbm - RF2XX_OUTPUT_POWER_MIN]);
+	min = conf->tx_pwr_min[1];
+	if (conf->tx_pwr_min[0] == 0x01) {
+		min *= -1.0;
+	}
+
+	max = conf->tx_pwr_max[1];
+	if (conf->tx_pwr_max[0] == 0x01) {
+		min *= -1.0;
+	}
+
+	step = (max - min) / ((float)conf->tx_pwr_table_size - 1.0);
+
+	if (step == 0.0) {
+		step = 1.0;
+	}
+
+	LOG_DBG("Tx-power values: min %f, max %f, step %f, entries %d",
+		min, max, step, conf->tx_pwr_table_size);
+
+	if (dbm < min) {
+		LOG_INF("TX-power %d dBm below min of %f dBm, using %f dBm",
+			dbm, min, max);
+		dbm = min;
+	} else if (dbm > max) {
+		LOG_INF("TX-power %d dBm above max of %f dBm, using %f dBm",
+			dbm, min, max);
+		dbm = max;
+	}
+
+	idx = abs(((float)(dbm - max) / step));
+	LOG_DBG("Tx-power idx: %d", idx);
+
+	if (idx >= conf->tx_pwr_table_size) {
+		idx = conf->tx_pwr_table_size - 1;
+	}
+
+	val = conf->tx_pwr_table[idx];
+
+	if (ctx->trx_model != RF2XX_TRX_MODEL_212) {
+		reg = rf2xx_iface_reg_read(dev, RF2XX_PHY_TX_PWR_REG) & 0xf0;
+		val = reg + (val & 0x0f);
+	}
+
+	LOG_DBG("Tx-power normalized: %d dBm, PHY_TX_PWR 0x%02x, idx %d",
+		dbm, val, idx);
+
+	rf2xx_iface_reg_write(dev, RF2XX_PHY_TX_PWR_REG, val);
 
 	return 0;
 }
@@ -931,17 +945,30 @@ static struct ieee802154_radio_api rf2xx_radio_api = {
 		 UTIL_AND(DT_INST_PROP_LEN(n, local_mac_address) == 8,	\
 			  DT_INST_PROP(n, local_mac_address)))
 
-#define IEEE802154_RF2XX_DEVICE_CONFIG(n)				\
-	static const struct rf2xx_config rf2xx_ctx_config_##n = {	\
-		.inst = n,						\
-		.has_mac = DT_INST_NODE_HAS_PROP(n, local_mac_address), \
-		.irq_gpio = GPIO_DT_SPEC_INST_GET(n, irq_gpios),	\
-		.reset_gpio = GPIO_DT_SPEC_INST_GET(n, reset_gpios),	\
-		.slptr_gpio = GPIO_DT_SPEC_INST_GET(n, slptr_gpios),	\
+#define IEEE802154_RF2XX_DEVICE_CONFIG(n)				  \
+	BUILD_ASSERT(DT_INST_PROP_LEN(n, tx_pwr_min) == 2,		  \
+	"rf2xx: Error TX-PWR-MIN len is different of two");		  \
+	BUILD_ASSERT(DT_INST_PROP_LEN(n, tx_pwr_max) == 2,		  \
+	"rf2xx: Error TX-PWR-MAX len is different of two");		  \
+	BUILD_ASSERT(DT_INST_PROP_LEN(n, tx_pwr_table) != 0,		  \
+	"rf2xx: Error TX-PWR-TABLE len must be greater than zero");	  \
+	static const uint8_t rf2xx_pwr_table_##n[] =			  \
+		DT_INST_PROP_OR(n, tx_pwr_table, 0);			  \
+	static const struct rf2xx_config rf2xx_ctx_config_##n = {	  \
+		.inst = n,						  \
+		.has_mac = DT_INST_NODE_HAS_PROP(n, local_mac_address),   \
+		.irq_gpio = GPIO_DT_SPEC_INST_GET(n, irq_gpios),	  \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET(n, reset_gpios),	  \
+		.slptr_gpio = GPIO_DT_SPEC_INST_GET(n, slptr_gpios),	  \
 		.dig2_gpio = GPIO_DT_SPEC_INST_GET_OR(n, dig2_gpios, {}), \
 		.clkm_gpio = GPIO_DT_SPEC_INST_GET_OR(n, clkm_gpios, {}), \
-		.spi = SPI_DT_SPEC_INST_GET(n, SPI_WORD_SET(8) |	\
-				 SPI_TRANSFER_MSB, 0),			\
+		.spi = SPI_DT_SPEC_INST_GET(n, SPI_WORD_SET(8) |	  \
+				 SPI_TRANSFER_MSB, 0),			  \
+									  \
+		.tx_pwr_min = DT_INST_PROP_OR(n, tx_pwr_min, 0),	  \
+		.tx_pwr_max = DT_INST_PROP_OR(n, tx_pwr_max, 0),	  \
+		.tx_pwr_table = rf2xx_pwr_table_##n,			  \
+		.tx_pwr_table_size = DT_INST_PROP_LEN(n, tx_pwr_table),	  \
 	}
 
 #define IEEE802154_RF2XX_DEVICE_DATA(n)                                 \
