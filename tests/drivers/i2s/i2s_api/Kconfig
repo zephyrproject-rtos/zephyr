@@ -8,11 +8,6 @@ mainmenu "I2S Loopback Test"
 
 source "Kconfig.zephyr"
 
-config I2S_TEST_SEPARATE_DEVICES
-	bool "Use two separate I2S ports for loopback"
-	help
-	  Use separate I2S ports for transmit and receive.
-
 config I2S_TEST_USE_I2S_DIR_BOTH
 	bool "Use I2S_DIR_BOTH value to perform RX/TX transfers"
 	help

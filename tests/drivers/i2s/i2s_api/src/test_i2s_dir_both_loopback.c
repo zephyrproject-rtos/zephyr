@@ -22,8 +22,8 @@ void test_i2s_dir_both_transfer_configure_0(void)
 {
 	int ret;
 
-	dev_i2s = device_get_binding(I2S_DEV_NAME_RX);
-	zassert_not_null(dev_i2s, "device " I2S_DEV_NAME_RX " not found");
+	dev_i2s = DEVICE_DT_GET(I2S_RX_NODE);
+	zassert_true(device_is_ready(dev_i2s), "device %s is not ready", dev_i2s->name);
 
 	ret = configure_stream(dev_i2s, I2S_DIR_BOTH);
 	zassert_equal(ret, TC_PASS, NULL);

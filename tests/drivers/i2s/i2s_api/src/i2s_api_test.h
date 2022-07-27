@@ -52,12 +52,9 @@ extern struct k_mem_slab tx_mem_slab;
 extern int16_t data_l[SAMPLE_NO];
 extern int16_t data_r[SAMPLE_NO];
 
-#define I2S_DEV_NAME_RX "I2S_0"
-#ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
-#define I2S_DEV_NAME_TX "I2S_1"
-#else
-#define I2S_DEV_NAME_TX "I2S_0"
-#endif
+#define I2S_RX_NODE DT_NODELABEL(test_i2s_rx)
+#define I2S_TX_NODE DT_NODELABEL(test_i2s_tx)
+
 #define BLOCK_SIZE (2 * sizeof(data_l))
 
 #define NUM_RX_BLOCKS	4

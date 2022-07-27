@@ -1,0 +1,3 @@
+test_i2s_rx: &i2s5 {};
+
+test_i2s_tx: &i2s5 {};

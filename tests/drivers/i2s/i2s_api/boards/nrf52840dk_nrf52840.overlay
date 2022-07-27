@@ -18,3 +18,7 @@
 	pinctrl-0 = <&i2s0_default_alt>;
 	pinctrl-names = "default";
 };
+
+test_i2s_rx: &i2s0 {};
+
+test_i2s_tx: &i2s0 {};

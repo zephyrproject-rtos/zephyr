@@ -18,13 +18,13 @@ void test_main(void)
 	k_thread_access_grant(k_current_get(),
 			      &rx_mem_slab, &tx_mem_slab);
 
-	dev_i2s_rx = device_get_binding(I2S_DEV_NAME_RX);
-	if (dev_i2s_rx != NULL) {
+	dev_i2s_rx = DEVICE_DT_GET(I2S_RX_NODE);
+	if (device_is_ready(dev_i2s_rx)) {
 		k_object_access_grant(dev_i2s_rx, k_current_get());
 	}
 
-	dev_i2s_tx = device_get_binding(I2S_DEV_NAME_TX);
-	if (dev_i2s_tx != NULL) {
+	dev_i2s_tx = DEVICE_DT_GET(I2S_TX_NODE);
+	if (device_is_ready(dev_i2s_tx)) {
 		k_object_access_grant(dev_i2s_tx, k_current_get());
 	}
 
