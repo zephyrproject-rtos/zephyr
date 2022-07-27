@@ -6,7 +6,7 @@
 menuconfig IEEE802154_TELINK_B91
 	bool "Telink B91 RF driver"
 	default y
-	depends on NETWORKING && DT_HAS_TELINK_B91_ZB_ENABLED
+	depends on DT_HAS_TELINK_B91_ZB_ENABLED
 
 if IEEE802154_TELINK_B91
 
