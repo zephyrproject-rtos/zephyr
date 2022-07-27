@@ -28,7 +28,6 @@
 
 		fmc: flash-controller@40022000 {
 			compatible = "gd,gd32-flash-controller";
-			label = "FMC";
 			reg = <0x40022000 0x400>;
 
 			#address-cells = <1>;
@@ -36,7 +35,6 @@
 
 			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
-				label = "FLASH_0";
 			};
 		};
 
@@ -46,7 +44,6 @@
 			interrupts = <27 0>;
 			rcu-periph-clock = <0x060e>;
 			status = "disabled";
-			label = "USART_0";
 		};
 
 		usart1: usart@40004400 {
@@ -55,7 +52,6 @@
 			interrupts = <28 0>;
 			rcu-periph-clock = <0x0711>;
 			status = "disabled";
-			label = "USART_1";
 		};
 
 		adc0: adc@40012400 {
@@ -66,7 +62,6 @@
 			rcu-clock-source = <GD32_RCU_ADCCK_APB2_DIV4>;
 			channels = <16>;
 			status = "disabled";
-			label = "ADC_0";
 			#io-channel-cells = <1>;
 		};
 
@@ -76,7 +71,6 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
-			label = "PINCTRL";
 
 			gpioa: gpio@48000000 {
 				compatible = "gd,gd32-gpio";
@@ -85,7 +79,6 @@
 				reg = <0x48000000 0x400>;
 				rcu-periph-clock = <0x511>;
 				status = "disabled";
-				label = "GPIOA";
 			};
 
 			gpiob: gpio@48000400 {
@@ -95,7 +88,6 @@
 				reg = <0x48000400 0x400>;
 				rcu-periph-clock = <0x512>;
 				status = "disabled";
-				label = "GPIOB";
 			};
 
 			gpioc: gpio@48000800 {
@@ -105,7 +97,6 @@
 				reg = <0x48000800 0x400>;
 				rcu-periph-clock = <0x513>;
 				status = "disabled";
-				label = "GPIOC";
 			};
 
 			gpiod: gpio@48000c00 {
@@ -115,7 +106,6 @@
 				reg = <0x48000c00 0x400>;
 				rcu-periph-clock = <0x514>;
 				status = "disabled";
-				label = "GPIOD";
 			};
 
 			gpiof: gpio@48001400 {
@@ -125,7 +115,6 @@
 				reg = <0x48001400 0x400>;
 				rcu-periph-clock = <0x516>;
 				status = "disabled";
-				label = "GPIOF";
 			};
 		};
 	};

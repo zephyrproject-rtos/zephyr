@@ -22,7 +22,6 @@
 			compatible = "cypress,psoc6-intmux";
 			reg = <0x40210020 0x20>;
 			ranges = <0x0 0x40210020 0x20>;
-			label = "INTMUX";
 			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -33,7 +32,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <0 3>;
-				label = "INTMUX_CH0";
 				status = "okay";
 			};
 			intmux_ch1: interrupt-controller@1 {
@@ -42,7 +40,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <1 3>;
-				label = "INTMUX_CH1";
 				status = "okay";
 			};
 			intmux_ch2: interrupt-controller@2 {
@@ -51,7 +48,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <2 3>;
-				label = "INTMUX_CH2";
 				status = "okay";
 			};
 			intmux_ch3: interrupt-controller@3 {
@@ -60,7 +56,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <3 3>;
-				label = "INTMUX_CH3";
 				status = "okay";
 			};
 			intmux_ch4: interrupt-controller@4 {
@@ -69,7 +64,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <4 3>;
-				label = "INTMUX_CH4";
 				status = "okay";
 			};
 			intmux_ch5: interrupt-controller@5 {
@@ -78,7 +72,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <5 3>;
-				label = "INTMUX_CH5";
 				status = "okay";
 			};
 			intmux_ch6: interrupt-controller@6 {
@@ -87,7 +80,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <6 3>;
-				label = "INTMUX_CH6";
 				status = "okay";
 			};
 			intmux_ch7: interrupt-controller@7 {
@@ -96,7 +88,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <7 3>;
-				label = "INTMUX_CH7";
 				status = "okay";
 			};
 			intmux_ch8: interrupt-controller@8 {
@@ -105,7 +96,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <8 3>;
-				label = "INTMUX_CH8";
 				status = "okay";
 			};
 			intmux_ch9: interrupt-controller@9 {
@@ -114,7 +104,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <9 3>;
-				label = "INTMUX_CH9";
 				status = "okay";
 			};
 			intmux_ch10: interrupt-controller@a {
@@ -123,7 +112,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <10 3>;
-				label = "INTMUX_CH10";
 				status = "okay";
 			};
 			intmux_ch11: interrupt-controller@b {
@@ -132,7 +120,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <11 3>;
-				label = "INTMUX_CH11";
 				status = "okay";
 			};
 			intmux_ch12: interrupt-controller@c {
@@ -141,7 +128,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <12 3>;
-				label = "INTMUX_CH12";
 				status = "okay";
 			};
 			intmux_ch13: interrupt-controller@d {
@@ -150,7 +136,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <13 3>;
-				label = "INTMUX_CH13";
 				status = "okay";
 			};
 			intmux_ch14: interrupt-controller@e {
@@ -159,7 +144,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <14 3>;
-				label = "INTMUX_CH14";
 				status = "okay";
 			};
 			intmux_ch15: interrupt-controller@f {
@@ -168,7 +152,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <15 3>;
-				label = "INTMUX_CH15";
 				status = "okay";
 			};
 			intmux_ch16: interrupt-controller@10 {
@@ -177,7 +160,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <16 3>;
-				label = "INTMUX_CH16";
 				status = "okay";
 			};
 			intmux_ch17: interrupt-controller@11 {
@@ -186,7 +168,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <17 3>;
-				label = "INTMUX_CH17";
 				status = "okay";
 			};
 			intmux_ch18: interrupt-controller@12 {
@@ -195,7 +176,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <18 3>;
-				label = "INTMUX_CH18";
 				status = "okay";
 			};
 			intmux_ch19: interrupt-controller@13 {
@@ -204,7 +184,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <19 3>;
-				label = "INTMUX_CH19";
 				status = "okay";
 			};
 			intmux_ch20: interrupt-controller@14 {
@@ -213,7 +192,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <20 3>;
-				label = "INTMUX_CH20";
 				status = "okay";
 			};
 			intmux_ch21: interrupt-controller@15 {
@@ -222,7 +200,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <21 3>;
-				label = "INTMUX_CH21";
 				status = "okay";
 			};
 			intmux_ch22: interrupt-controller@16 {
@@ -231,7 +208,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <22 3>;
-				label = "INTMUX_CH22";
 				status = "okay";
 			};
 			intmux_ch23: interrupt-controller@17 {
@@ -240,7 +216,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <23 3>;
-				label = "INTMUX_CH23";
 				status = "okay";
 			};
 			intmux_ch24: interrupt-controller@18 {
@@ -249,7 +224,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <24 3>;
-				label = "INTMUX_CH24";
 				status = "okay";
 			};
 			intmux_ch25: interrupt-controller@19 {
@@ -258,7 +232,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <25 3>;
-				label = "INTMUX_CH25";
 				status = "okay";
 			};
 			intmux_ch26: interrupt-controller@1a {
@@ -267,7 +240,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <26 3>;
-				label = "INTMUX_CH26";
 				status = "okay";
 			};
 			intmux_ch27: interrupt-controller@1b {
@@ -276,7 +248,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <27 3>;
-				label = "INTMUX_CH27";
 				status = "okay";
 			};
 			intmux_ch28: interrupt-controller@1c {
@@ -285,7 +256,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <28 3>;
-				label = "INTMUX_CH28";
 				status = "okay";
 			};
 			intmux_ch29: interrupt-controller@1d {
@@ -294,7 +264,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <29 3>;
-				label = "INTMUX_CH29";
 				status = "okay";
 			};
 			intmux_ch30: interrupt-controller@1e {
@@ -303,7 +272,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <30 3>;
-				label = "INTMUX_CH30";
 				status = "okay";
 			};
 			intmux_ch31: interrupt-controller@1f {
@@ -312,7 +280,6 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 				interrupts = <31 3>;
-				label = "INTMUX_CH31";
 				status = "okay";
 			};
 		};

@@ -67,7 +67,6 @@
 			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL4 0
 				  &pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 5>;
 			interrupts = <28 1>; /* Event timer interrupt */
-			label = "ITIM";
 		};
 
 		uart1: serial@400e0000 {
@@ -77,7 +76,6 @@
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL1 4>;
 			uart-rx = <&wui_cr_sin1>;
 			status = "disabled";
-			label = "UART_1";
 		};
 
 		uart2: serial@400e2000 {
@@ -87,7 +85,6 @@
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 6>;
 			uart-rx = <&wui_cr_sin2>;
 			status = "disabled";
-			label = "UART_2";
 		};
 
 		uart3: serial@400e4000 {
@@ -97,7 +94,6 @@
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 4>;
 			uart-rx = <&wui_cr_sin3>;
 			status = "disabled";
-			label = "UART_3";
 		};
 
 		uart4: serial@400e6000 {
@@ -107,7 +103,6 @@
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 3>;
 			uart-rx = <&wui_cr_sin4>;
 			status = "disabled";
-			label = "UART_4";
 		};
 
 		/* Default clock and power settings in npcx9 series */
