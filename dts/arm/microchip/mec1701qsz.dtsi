@@ -34,7 +34,6 @@
 			interrupts = <40 0>;
 			clock-frequency = <1843200>;
 			current-speed = <38400>;
-			label = "UART_0";
 			reg-shift = <0>;
 			status = "disabled";
 		};
@@ -44,7 +43,6 @@
 			interrupts = <41 0>;
 			clock-frequency = <1843200>;
 			current-speed = <38400>;
-			label = "UART_1";
 			reg-shift = <0>;
 			status = "disabled";
 		};
