@@ -10,8 +10,6 @@
 #include <zephyr/devicetree.h>
 
 
-/* Timer configuration */
-#define RISCV_MTIMECMP_BY_HART(h)		(0x02004000ULL + (8ULL * (h)))
 #define RISCV_MSIP_BASE					0x02000000
 
 #endif /* __RISCV64_MPFS_SOC_H_ */
