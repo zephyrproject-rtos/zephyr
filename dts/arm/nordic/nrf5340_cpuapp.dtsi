@@ -84,13 +84,11 @@
 			reg = <0x5000d000 0x1000>;
 			interrupts = <13 5>;
 			status = "disabled";
-			label = "GPIOTE_0";
 		};
 
 		cryptocell: crypto@50844000 {
 			compatible = "nordic,nrf-cc312";
 			reg = <0x50844000 0x1000>;
-			label = "CRYPTOCELL";
 			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -98,7 +96,6 @@
 				compatible = "arm,cryptocell-312";
 				reg = <0x50845000 0x1000>;
 				interrupts = <68 NRF_DEFAULT_IRQ_PRIORITY>;
-				label = "CRYPTOCELL312";
 			};
 		};
 	};
