@@ -19,9 +19,9 @@ static int efm32gg_slwstk6121a_init(const struct device *dev)
 	const struct device *cur_dev;
 
 	/* Configure ethernet reference clock */
-	cur_dev = device_get_binding(ETH_REF_CLK_GPIO_NAME);
-	if (!cur_dev) {
-		printk("Ethernet reference clock gpio port was not found!\n");
+	cur_dev = DEVICE_DT_GET(ETH_REF_CLK_GPIO_NODE);
+	if (!device_is_ready(cur_dev)) {
+		printk("Ethernet reference clock gpio port is not ready!\n");
 		return -ENODEV;
 	}
 

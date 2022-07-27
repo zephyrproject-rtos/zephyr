@@ -18,9 +18,9 @@ static int efm32gg_stk3701a_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	/* Enable the board controller to be able to use the serial port */
-	cur_dev = device_get_binding(BC_ENABLE_GPIO_NAME);
-	if (!cur_dev) {
-		printk("Board controller gpio port was not found!\n");
+	cur_dev = DEVICE_DT_GET(BC_ENABLE_GPIO_NODE);
+	if (!device_is_ready(cur_dev)) {
+		printk("Board controller gpio port is not ready!\n");
 		return -ENODEV;
 	}
 
@@ -29,9 +29,9 @@ static int efm32gg_stk3701a_init(const struct device *dev)
 
 #ifdef CONFIG_ETH_GECKO
 	/* Enable the ethernet PHY power */
-	cur_dev = device_get_binding(ETH_PWR_ENABLE_GPIO_NAME);
-	if (!cur_dev) {
-		printk("Ethernet PHY power gpio port was not found!\n");
+	cur_dev = DEVICE_DT_GET(ETH_PWR_ENABLE_GPIO_NODE);
+	if (!device_is_ready(cur_dev)) {
+		printk("Ethernet PHY power gpio port is not ready!\n");
 		return -ENODEV;
 	}
 
@@ -39,9 +39,9 @@ static int efm32gg_stk3701a_init(const struct device *dev)
 	gpio_pin_set(cur_dev, ETH_PWR_ENABLE_GPIO_PIN, 1);
 
 	/* Configure ethernet reference clock */
-	cur_dev = device_get_binding(ETH_REF_CLK_GPIO_NAME);
-	if (!cur_dev) {
-		printk("Ethernet reference clock gpio port was not found!\n");
+	cur_dev = DEVICE_DT_GET(ETH_REF_CLK_GPIO_NODE);
+	if (!device_is_ready(cur_dev)) {
+		printk("Ethernet reference clock gpio port is not ready!\n");
 		return -ENODEV;
 	}
 
@@ -57,9 +57,9 @@ static int efm32gg_stk3701a_init(const struct device *dev)
 	CMU->ROUTEPEN  |= CMU_ROUTEPEN_CLKOUT2PEN;
 
 	/* Release the ethernet PHY reset */
-	cur_dev = device_get_binding(ETH_RESET_GPIO_NAME);
-	if (!cur_dev) {
-		printk("Ethernet PHY reset gpio port was not found!\n");
+	cur_dev = DEVICE_DT_GET(ETH_RESET_GPIO_NODE);
+	if (!device_is_ready(cur_dev)) {
+		printk("Ethernet PHY reset gpio port is not ready!\n");
 		return -ENODEV;
 	}
 
