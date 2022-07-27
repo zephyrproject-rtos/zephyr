@@ -176,9 +176,6 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 	if (state == BT_AUDIO_EP_STATE_CODEC_CONFIGURED &&
 	    old_state != BT_AUDIO_EP_STATE_IDLE) {
 		ascs_ep_unbind_audio_iso(ep);
-	} else if (state == BT_AUDIO_EP_STATE_RELEASING) {
-		ascs_ep_unbind_audio_iso(ep);
-		bt_audio_stream_detach(ep->stream);
 	}
 }
 
@@ -938,8 +935,11 @@ static void ase_process(struct k_work *work)
 
 	bt_gatt_notify(ase->ascs->conn, &attr, ase_buf.data, ase_buf.len);
 
-	if (ase->ep.status.state == BT_AUDIO_EP_STATE_RELEASING &&
-	    ase->ep.stream == NULL) {
+	if (ase->ep.status.state == BT_AUDIO_EP_STATE_RELEASING) {
+		__ASSERT(ase->ep.stream, "stream is NULL");
+
+		ascs_ep_unbind_audio_iso(&ase->ep);
+		bt_audio_stream_detach(ase->ep.stream);
 		ascs_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_IDLE);
 	}
 }
