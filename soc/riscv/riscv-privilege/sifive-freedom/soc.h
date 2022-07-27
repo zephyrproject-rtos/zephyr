@@ -50,8 +50,4 @@
 
 #endif
 
-/* Timer configuration */
-#define RISCV_MTIME_BASE             0x0200BFF8
-#define RISCV_MTIMECMP_BASE          0x02004000
-
 #endif /* __RISCV_SIFIVE_FREEDOM_SOC_H_ */
