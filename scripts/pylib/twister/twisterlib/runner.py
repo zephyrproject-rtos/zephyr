@@ -234,7 +234,7 @@ class CMake:
 
         return results
 
-    def run_cmake(self, args=[]):
+    def run_cmake(self, args=""):
 
         if not self.options.disable_warnings_as_errors:
             ldflags = "-Wl,--fatal-warnings"
@@ -257,7 +257,6 @@ class CMake:
             f'-G{self.env.generator}'
         ]
 
-        args = ["-D{}".format(a.replace('"', '')) for a in args]
         cmake_args.extend(args)
 
         cmake_opts = ['-DBOARD={}'.format(self.platform.name)]
@@ -659,7 +658,6 @@ class ProjectBuilder(FilterBuilder):
 
         instance = self.instance
         args = self.testsuite.extra_args[:]
-        args += self.options.extra_args
 
         if instance.handler:
             args += instance.handler.args
@@ -689,7 +687,9 @@ class ProjectBuilder(FilterBuilder):
         if overlays:
             args.append("OVERLAY_CONFIG=\"%s\"" % (" ".join(overlays)))
 
-        res = self.run_cmake(args)
+        args_expanded = ["-D{}".format(a.replace('"', '\"')) for a in self.options.extra_args]
+        args_expanded = args_expanded + ["-D{}".format(a.replace('"', '')) for a in args]
+        res = self.run_cmake(args_expanded)
         return res
 
     def build(self):
