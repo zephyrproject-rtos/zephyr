@@ -39,7 +39,6 @@
 		mcg: clock-controller@40064000 {
 			compatible = "nxp,kinetis-mcg";
 			reg = <0x40064000 0x13>;
-			label = "MCG";
 			#clock-cells = <1>;
 		};
 
@@ -58,7 +57,6 @@
 		sim: sim@40047000 {
 			compatible = "nxp,kinetis-sim";
 			reg = <0x40047000 0x1060>;
-			label = "SIM";
 			#clock-cells = <3>;
 
 			core_clk {
@@ -78,7 +76,6 @@
 
 		ftfa: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfa";
-			label = "FLASH_CTRL";
 			reg = <0x40020000 0x2c>;
 			interrupts = <5 0>;
 
@@ -87,7 +84,6 @@
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				label = "MCUX_FLASH";
 				reg = <0 DT_SIZE_K(512)>;
 				erase-block-size = <1024>;
 				write-block-size = <4>;
@@ -102,7 +98,6 @@
 			reg = <0x40066000 0x1000>;
 			interrupts = <8 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 6>;
-			label = "I2C_0";
 			status = "disabled";
 		};
 
@@ -114,7 +109,6 @@
 			reg = <0x40067000 0x1000>;
 			interrupts = <9 0>;
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1034 7>;
-			label = "I2C_1";
 			status = "disabled";
 		};
 
@@ -123,7 +117,6 @@
 			reg = <0x40054000 0x18>;
 			interrupts = <12 0>;
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1038 20>;
-			label = "UART_0";
 
 			status = "disabled";
 		};
@@ -151,7 +144,6 @@
 			status = "disabled";
 			reg = <0x400ff000 0x40>;
 			interrupts = <30 2>;
-			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
 			nxp,kinetis-port = <&porta>;
@@ -161,7 +153,6 @@
 			compatible = "nxp,kinetis-gpio";
 			status = "disabled";
 			reg = <0x400ff040 0x40>;
-			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
 			nxp,kinetis-port = <&portb>;
@@ -172,7 +163,6 @@
 			status = "disabled";
 			reg = <0x400ff080 0x40>;
 			interrupts = <31 2>;
-			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
 			nxp,kinetis-port = <&portc>;
@@ -182,7 +172,6 @@
 			compatible = "nxp,kinetis-dspi";
 			reg = <0x4002c000 0x9C>;
 			interrupts = <10 3>;
-			label = "SPI_0";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 12>;
 			status = "disabled";
 
@@ -194,7 +183,6 @@
 			compatible = "nxp,kinetis-dspi";
 			reg = <0x4002d000 0x9C>;
 			interrupts = <29 3>;
-			label = "SPI_1";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 13>;
 			status = "disabled";
 			#address-cells = <1>;
@@ -229,7 +217,6 @@
 			compatible = "nxp,kinetis-adc16";
 			reg = <0x4003b000 0x70>;
 			interrupts = <15 0>;
-			label = "ADC_0";
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
@@ -239,7 +226,6 @@
 			reg = <0x40029000 0x1000>;
 			status = "okay";
 			interrupts = <13 0>;
-			label = "TRNG";
 		};
 	};
 };

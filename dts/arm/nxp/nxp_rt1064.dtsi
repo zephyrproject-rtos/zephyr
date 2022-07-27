@@ -13,7 +13,6 @@
 	w25q32jvwj0: w25q32jvwj@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <33554432>;
-		label = "W25Q32JVWJ0";
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";

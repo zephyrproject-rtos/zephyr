@@ -34,7 +34,6 @@
 	is25wp032: is25wp032@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(32)>;
-		label = "IS25WP032";
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";
