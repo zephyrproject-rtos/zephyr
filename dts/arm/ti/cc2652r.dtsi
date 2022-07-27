@@ -24,7 +24,6 @@
 		/* CCFG registers occupy the last 88 bytes of flash */
 		ti_ccfg_partition: partition@57fa8 {
 			compatible = "zephyr,memory-region";
-			label = "ti_ccfg";
 			reg = <0x57fa8 88>;
 			zephyr,memory-region = "FLASH_CCFG";
 		};
