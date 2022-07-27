@@ -9,6 +9,9 @@
 #include <zephyr/sys/spsc_pbuf.h>
 #include <zephyr/random/rand32.h>
 
+#define HDR_LEN sizeof(uint32_t)
+#define TLEN(len) ROUND_UP(HDR_LEN + len, sizeof(uint32_t))
+
 /* The buffer size itself would be 199 bytes.
  * 212 - sizeof(struct spsc_pbuf) - 1 = 199.
  * -1 because internal rd/wr_idx is reserved to mean the buffer is empty.
@@ -191,7 +194,7 @@ ZTEST(test_spsc_pbuf, test_0cpy)
 	PACKET_WRITE(pb, len1, len1, 0, len1);
 
 	/* Remaining space. */
-	len2 = capacity - ROUND_UP(len1, sizeof(uint32_t)) - 2 * sizeof(uint32_t);
+	len2 = capacity - TLEN(len1) - HDR_LEN;
 	/* Request exceeding capacity*/
 	PACKET_WRITE(pb, len2 + 1, 0, 1, len2);
 
@@ -235,7 +238,7 @@ ZTEST(test_spsc_pbuf, test_0cpy_discard)
 	len1 = 14;
 	PACKET_WRITE(pb, len1, len1, 0, len1);
 
-	len2 = capacity - len1 - sizeof(uint32_t) - 10;
+	len2 = capacity - TLEN(len1) - 10;
 	PACKET_WRITE(pb, len2, len2, 1, len2);
 
 	/* Consume first packet */
@@ -276,7 +279,7 @@ ZTEST(test_spsc_pbuf, test_0cpy_corner1)
 	len2 = capacity;
 	len2 = spsc_pbuf_alloc(pb, len2, &buf);
 
-	uint16_t exp_len2 = capacity - ROUND_UP(len1, sizeof(uint32_t)) - 2 * sizeof(uint32_t);
+	uint16_t exp_len2 = capacity - TLEN(len1) - HDR_LEN;
 
 	zassert_equal(len2, exp_len2, "got %d, exp: %d", len2, exp_len2);
 
@@ -303,11 +306,11 @@ ZTEST(test_spsc_pbuf, test_0cpy_corner2)
 	capacity = spsc_pbuf_capacity(pb);
 
 	/* Commit 5 byte packet. */
-	len1 = 10;
+	len1 = 16;
 	PACKET_WRITE(pb, len1, len1, 0, len1);
 
 	/* Attempt to allocate packet that will leave 5 bytes at the end. */
-	len2 = capacity - ROUND_UP(len1, sizeof(uint32_t)) - 2 * sizeof(uint16_t) - 5;
+	len2 = capacity - TLEN(len1) - HDR_LEN - 5;
 	PACKET_WRITE(pb, len2, len2, 1, len2);
 
 	/* Free first packet. */
@@ -326,7 +329,7 @@ ZTEST(test_spsc_pbuf, test_0cpy_corner2)
 	/* Get longest available. As now there is only one packet at the beginning
 	 * that should be remaining space decremented by length fields.
 	 */
-	uint16_t exp_len = capacity - ROUND_UP(len1, sizeof(uint32_t)) - 2 * sizeof(uint32_t);
+	uint16_t exp_len = capacity - TLEN(len1) - HDR_LEN;
 
 	PACKET_WRITE(pb, capacity, 0, 2, exp_len);
 }
@@ -389,21 +392,20 @@ ZTEST(test_spsc_pbuf, test_utilization)
 
 	PACKET_CONSUME(pb, len1, 0);
 	u = spsc_pbuf_get_utilization(pb);
-	zassert_equal(u, ROUND_UP(len1, sizeof(uint32_t)) + sizeof(uint32_t), NULL);
+	zassert_equal(u, TLEN(len1), NULL);
 
 	len2 = 11;
 	PACKET_WRITE(pb, len2, len2, 1, len2);
 	PACKET_CONSUME(pb, len2, 1);
 	u = spsc_pbuf_get_utilization(pb);
-	zassert_equal(u, ROUND_UP(len2, sizeof(uint32_t)) + sizeof(uint32_t), NULL);
+	zassert_equal(u, TLEN(len2), NULL);
 
-	len3 = capacity - ROUND_UP(len1, sizeof(uint32_t)) - ROUND_UP(len2, sizeof(uint32_t))
-		- 3 * sizeof(uint32_t) + sizeof(uint32_t);
+	len3 = capacity - TLEN(len1) - TLEN(len2);
 	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN, len3, 2, len3);
 	PACKET_CONSUME(pb, len3, 2);
 
 	u = spsc_pbuf_get_utilization(pb);
-	int exp_u = ROUND_UP(len3, sizeof(uint32_t)) + sizeof(uint32_t);
+	int exp_u = TLEN(len3);
 
 	zassert_equal(u, exp_u, NULL);
 }
