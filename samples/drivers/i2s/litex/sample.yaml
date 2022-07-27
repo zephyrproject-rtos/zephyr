@@ -9,3 +9,9 @@ common:
       type: one_line
       regex:
         - "i2s example (.*)"
+
+tests:
+  sample.drivers.i2s.litex:
+    tags: I2S
+    platform_allow: litex_vexriscv
+    harness: TBD
