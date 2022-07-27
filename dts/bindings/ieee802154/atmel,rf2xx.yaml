@@ -38,3 +38,75 @@ properties:
       description: |
         Specifies the MAC address that was assigned to the network
         device
+
+    tx-pwr-table:
+      type: uint8-array
+      default: [ 0x00 ]
+      description: |
+        This is the Transmission Power Mapping Table array used to comply with
+        local regulations. By default this value set an output power above 0dBm
+        for all transceivers. This property must be used with tx-pwr-min and
+        tx-pwr-max for normal operations. The number of elements is defined by
+        the size of the tx-pwr-table array property. The max entry value for
+        2.4GHz is 0x0f and 0xff for Sub-Giga. See PHY_TX_PWR at datasheet for
+        more details.
+
+        The output power is determined by following formula:
+
+          linear_step = (tx-pwr-max - tx-pwr-min)
+                      / (sizeof(tx-pwr-table) - 1.0);
+          table_index = abs((value_in_dbm - tx-pwr-max) / linear_step);
+          output_power = tx-pwr-table[table_index];
+
+        Using AT86RF233 as example without external PA. By the datasheet the
+        tx-pwr-min = -17 dBm and tx-pwr-max = +4 dBm. Using 48 elements in the
+        tx-pwr-table array. The table array is filled from higher to lower power.
+
+          tx-pwr-min = [01 11];	/* -17.0 dBm */
+          tx-pwr-max = [00 04];	/*   4.0 dBm */
+          tx-pwr-table = [00 01 03 04 05 05 06 06
+                          07 07 07 08 08 09 09 0a
+                          0a 0a 0b 0b 0b 0b 0c 0c
+                          0c 0c 0d 0d 0d 0d 0d 0d
+                          0d 0d 0e 0e 0e 0e 0e 0e
+                          0e 0e 0e 0e 0e 0e 0f 0f];
+
+        The values in the table are filled based on table 9-9 [ TX Output Power ]
+        using the linear step in dBm as:
+
+          linear_step = (4 - (-17)) / (48 - 1) => ~0.45 dBm
+
+        Assuming that user wants set 0 dBm as output power:
+
+          table_index = abs((0 - 4) / 0.45) => 8.95 ( round to 9 )
+          output_power = tx-pwr-table[9] => 0x07 ( 0 dBm as table 9-9 )
+
+        Note when tx-pwr-min is [ 0x00, 0x00 ] and tx-pwr-max is [ 0x00, 0x00 ]
+        the linear step is zero. This means that table_index will be always the
+        first element of the tx-pwr-table array, which is 0x00 by default. This
+        is defined as general case when user not define any tx-pwr-* entries. It
+        sets the transceiver to use always a value above 0 dBm as output power.
+
+    tx-pwr-min:
+      type: uint8-array
+      default: [ 0x00, 0x00 ]
+      description: |
+        This value represent minimum normalized value in dBm for the transceiver
+        output power. This property must be used when tx-pwr-table is defined.
+        The value is represented by two entries where first element represents
+        the signal indication [ 0x00-positive, 0x01-negative] and second element
+        is the minimal value in dBm for the transceiver output power. By default,
+        the combination of tx-pwr-min as [ 0x00, 0x00 ] and tx-pwr-max as [ 0x00,
+        0x00 ] will create a fixed transmission power.
+
+    tx-pwr-max:
+      type: uint8-array
+      default: [ 0x00, 0x00 ]
+      description: |
+        This value represent maximum normalized value in dBm for the transceiver
+        output power. This property must be used when tx-pwr-table is defined.
+        The value is represented by two entries where first element represents
+        the signal indication [ 0x00-positive ] and second element is the maximum
+        value in dBm for the transceiver output power. By default, the
+        combination of tx-pwr-max as [ 0x00, 0x00 ] and tx-pwr-min as [ 0x00,
+        0x00 ] will create a fixed transmission power.
