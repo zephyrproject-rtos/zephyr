@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(pwm_nrfx, CONFIG_PWM_LOG_LEVEL);
 #define PWM_NRFX_CH_POLARITY_MASK BIT(15)
 #define PWM_NRFX_CH_COMPARE_MASK  BIT_MASK(15)
 #define PWM_NRFX_CH_VALUE(compare_value, inverted) \
-	(compare_value | (inverted ? 0 : PWM_NRFX_CH_COMPARE_MASK))
+	(compare_value | (inverted ? 0 : PWM_NRFX_CH_POLARITY_MASK))
 
 struct pwm_nrfx_config {
 	nrfx_pwm_t pwm;
