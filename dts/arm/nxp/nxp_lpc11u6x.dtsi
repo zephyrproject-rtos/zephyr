@@ -43,7 +43,6 @@
 		/* On-chip EEPROM. */
 		eeprom0: eeprom_0 {
 			compatible = "nxp,lpc11u6x-eeprom";
-			label = "EEPROM_0";
 			/*
 			 * For some reasons, the IAP commands don't allow to
 			 * reach the last 64 bytes of the EEPROM.
@@ -55,7 +54,6 @@
 		iocon: iocon@40044000 {
 			compatible = "nxp,lpc-iocon";
 			reg = <0x40044000 0x150>;
-			label = "IOCON";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x40044000 0x150>;
@@ -83,7 +81,6 @@
 			compatible = "nxp,lpc11u6x-pinmux";
 			#pinmux-cells = <2>;
 			reg = <0x40044000 0x60>;
-			label = "PINMUX_0";
 			status = "okay";
 		};
 
@@ -92,7 +89,6 @@
 			compatible = "nxp,lpc11u6x-pinmux";
 			#pinmux-cells = <2>;
 			reg = <0x40044060 0x80>;
-			label = "PINMUX_1";
 			status = "okay";
 		};
 
@@ -101,7 +97,6 @@
 			compatible = "nxp,lpc11u6x-pinmux";
 			#pinmux-cells = <2>;
 			reg = <0x400440f0 0x64>;
-			label = "PINMUX_2";
 			status = "okay";
 		};
 
@@ -112,7 +107,6 @@
 			interrupts = <0 2>, <1 2>, <2 2>, <3 2>, \
 				     <4 2>, <5 2>, <6 2>, <7 2>;
 
-			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <24>;
@@ -130,7 +124,6 @@
 			interrupts = <0 2>, <1 2>, <2 2>, <3 2>, \
 				     <4 2>, <5 2>, <6 2>, <7 2>;
 
-			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
 
@@ -147,7 +140,6 @@
 			interrupts = <0 2>, <1 2>, <2 2>, <3 2>, \
 				     <4 2>, <5 2>, <6 2>, <7 2>;
 
-			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
 			base = <2>;
@@ -163,7 +155,6 @@
 			compatible = "nxp,lpc11u6x-syscon";
 			#clock-cells = <1>;
 			reg = <0x40048000 0x400>;
-			label = "SYSCON";
 		};
 
 		uart0: serial@40008000 {
@@ -171,7 +162,6 @@
 			clocks = <&syscon LPC11U6X_CLOCK_USART0>;
 			interrupts = <21 0>;
 			reg = <0x40008000 0x60>;
-			label = "UART_0";
 			status = "disabled";
 		};
 
@@ -180,7 +170,6 @@
 			clocks = <&syscon LPC11U6X_CLOCK_USART1>;
 			interrupts = <11 0>;
 			reg = <0x4006C000 0x30>;
-			label = "UART_1";
 			status = "disabled";
 		};
 
@@ -189,7 +178,6 @@
 			clocks = <&syscon LPC11U6X_CLOCK_USART2>;
 			interrupts = <12 0>;
 			reg = <0x40070000 0x30>;
-			label = "UART_2";
 			status = "disabled";
 		};
 
@@ -198,7 +186,6 @@
 			clocks = <&syscon LPC11U6X_CLOCK_USART3>;
 			interrupts = <12 0>;
 			reg = <0x40074000 0x30>;
-			label = "UART_3";
 			status = "disabled";
 		};
 
@@ -207,7 +194,6 @@
 			clocks = <&syscon LPC11U6X_CLOCK_USART4>;
 			interrupts = <11 0>;
 			reg = <0x4004C000 0x30>;
-			label = "UART_4";
 			status = "disabled";
 		};
 
@@ -219,7 +205,6 @@
 			clocks = <&syscon LPC11U6X_CLOCK_I2C0>;
 			interrupts = <15 0>;
 			status = "disabled";
-			label = "I2C_0";
 		};
 
 		i2c1: i2c@40020000 {
@@ -230,7 +215,6 @@
 			clocks = <&syscon LPC11U6X_CLOCK_I2C1>;
 			interrupts = <10 0>;
 			status = "disabled";
-			label = "I2C_1";
 		};
 	};
 };

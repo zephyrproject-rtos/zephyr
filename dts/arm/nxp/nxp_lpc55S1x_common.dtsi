@@ -71,20 +71,17 @@
 	syscon: syscon@0 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0x0 0x4000>;
-		label = "SYSCON";
 		#clock-cells = <1>;
 	};
 
 	iap: flash-controller@34000 {
 		compatible = "nxp,lpc-iap";
-		label = "FLASH_IAP";
 		reg = <0x34000 0x18>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		flash0: flash@0 {
 			compatible = "soc-nv-flash";
-			label = "MCUX_FLASH";
 			reg = <0x0 DT_SIZE_K(246)>;
 			erase-block-size = <512>;
 			write-block-size = <512>;
@@ -130,7 +127,6 @@
 		compatible = "nxp,lpc-gpio";
 		reg = <0x8c000 0x2488>;
 		interrupts = <4 2>,<5 2>,<6 2>,<7 2>;
-		label = "GPIO_0";
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <0>;
@@ -140,7 +136,6 @@
 		compatible = "nxp,lpc-gpio";
 		reg = <0x8c000 0x2488>;
 		interrupts = <32 2>,<33 2>,<34 2>,<35 2>;
-		label = "GPIO_1";
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <1>;
@@ -151,7 +146,6 @@
 		reg = <0x86000 0x1000>;
 		interrupts = <14 0>;
 		clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
-		label = "FLEXCOMM_0";
 		status = "disabled";
 	};
 
@@ -160,7 +154,6 @@
 		reg = <0x87000 0x1000>;
 		interrupts = <15 0>;
 		clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
-		label = "FLEXCOMM_1";
 		status = "disabled";
 	};
 
@@ -169,7 +162,6 @@
 		reg = <0x88000 0x1000>;
 		interrupts = <16 0>;
 		clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
-		label = "FLEXCOMM_2";
 		status = "disabled";
 	};
 
@@ -178,7 +170,6 @@
 		reg = <0x89000 0x1000>;
 		interrupts = <17 0>;
 		clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
-		label = "FLEXCOMM_3";
 		status = "disabled";
 	};
 
@@ -187,7 +178,6 @@
 		reg = <0x8a000 0x1000>;
 		interrupts = <18 0>;
 		clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
-		label = "FLEXCOMM_4";
 		status = "disabled";
 	};
 
@@ -196,7 +186,6 @@
 		reg = <0x96000 0x1000>;
 		interrupts = <19 0>;
 		clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
-		label = "FLEXCOMM_5";
 		status = "disabled";
 	};
 
@@ -205,7 +194,6 @@
 		reg = <0x97000 0x1000>;
 		interrupts = <20 0>;
 		clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
-		label = "FLEXCOMM_6";
 		status = "disabled";
 	};
 
@@ -214,7 +202,6 @@
 		reg = <0x98000 0x1000>;
 		interrupts = <21 0>;
 		clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
-		label = "FLEXCOMM_7";
 		status = "disabled";
 	};
 
@@ -224,7 +211,6 @@
 		reg-names = "m_can";
 		interrupts = <43 0>, <44 0>;
 		clocks = <&syscon MCUX_MCAN_CLK>;
-		label = "CAN_0";
 		std-filter-elements = <128>;
 		ext-filter-elements = <64>;
 		rx-fifo0-elements = <64>;
@@ -243,7 +229,6 @@
 		reg = <0x9f000 0x1000>;
 		interrupts = <59 0>;
 		clocks = <&syscon MCUX_HS_SPI_CLK>;
-		label = "HS_LSPI";
 		status = "disabled";
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -253,7 +238,6 @@
 		compatible = "nxp,lpc-rng";
 		reg = <0x3a000 0x1000>;
 		status = "okay";
-		label = "RNG";
 	};
 };
 
