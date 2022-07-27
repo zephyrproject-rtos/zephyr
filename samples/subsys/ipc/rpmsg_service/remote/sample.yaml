@@ -1,0 +1,16 @@
+sample:
+    description: This app provides an example of how to integrate
+        RPMsg Service with Zephyr.
+    name: RPMsg Service example integration (remote)
+common:
+    harness: remote
+tests:
+    sample.ipc.rpmsg_service:
+        platform_allow: mps2_an521_remote v2m_musca_b1_ns
+        tags: ipm
+    sample.ipc.rpmsg_service.nrf:
+        platform_allow: nrf5340dk_nrf5340_cpunet bl5340_dvk_cpunet
+        integration_platforms:
+          - nrf5340dk_nrf5340_cpunet
+          - bl5340_dvk_cpunet
+        tags: ipm
