@@ -174,12 +174,12 @@ static int max17055_channel_get(const struct device *dev,
 		set_millis(valp, tmp);
 		break;
 	case SENSOR_CHAN_GAUGE_TIME_TO_EMPTY:
-		/* Get time in ms */
 		if (priv->time_to_empty == 0xffff) {
 			valp->val1 = 0;
 			valp->val2 = 0;
 		} else {
-			tmp = priv->time_to_empty * 5625;
+			/* Get time in milli-minutes */
+			tmp = priv->time_to_empty * 5625 / 60;
 			set_millis(valp, tmp);
 		}
 		break;
@@ -188,8 +188,8 @@ static int max17055_channel_get(const struct device *dev,
 			valp->val1 = 0;
 			valp->val2 = 0;
 		} else {
-			/* Get time in ms */
-			tmp = priv->time_to_full * 5625;
+			/* Get time in milli-minutes */
+			tmp = priv->time_to_full * 5625 / 60;
 			set_millis(valp, tmp);
 		}
 		break;

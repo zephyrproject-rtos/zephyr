@@ -55,9 +55,9 @@ struct max17055_data {
 	uint16_t full_cap;
 	/* Remaining capacity in 5/Rsense uA */
 	uint16_t remaining_cap;
-	/* Time to empty in seconds */
+	/* Time to empty in units of 5.625s */
 	uint16_t time_to_empty;
-	/* Time to full in seconds */
+	/* Time to full in units of 5.625s */
 	uint16_t time_to_full;
 	/* Cycle count in 1/100ths (number of charge/discharge cycles) */
 	uint16_t cycle_count;
