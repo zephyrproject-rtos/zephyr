@@ -12,5 +12,5 @@ zephyr_library_sources(
     )
 
 if(CONFIG_SMP OR CONFIG_MP_NUM_CPUS GREATER 1)
-    zephyr_library_sources(multiprocessing_cavs.c)
+    zephyr_library_sources(multiprocessing.c)
 endif()
