@@ -28,10 +28,6 @@ config DISPLAY_MCUX_ELCDIF
 	default y if HAS_MCUX_ELCDIF
 	depends on DISPLAY
 
-config PINCTRL_IMX
-	default y if HAS_MCUX_IOMUXC
-	depends on PINCTRL
-
 config ENTROPY_MCUX_TRNG
 	default y if HAS_MCUX_TRNG
 	depends on ENTROPY_GENERATOR
