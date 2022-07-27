@@ -67,6 +67,40 @@ struct cavs_shim {
 #define CAVS_SHIM (*((volatile struct cavs_shim *)DT_REG_ADDR(DT_NODELABEL(shim))))
 
 
+
+struct clk64 {
+	uint32_t lo;
+	uint32_t hi;
+};
+
+
+/* Timers & Time Stamping register block */
+struct adsp_tftts {
+	uint32_t		ttscap;
+	uint32_t		unused0;
+	struct clk64	rtcwc;
+	uint16_t		wcctl;
+	uint16_t		wcsts;
+	uint32_t		unused1;
+	struct clk64	wcav;
+	struct clk64	wc;
+	uint32_t		wctcs;
+	uint32_t		unused2;
+	struct			clk64 wctc[2];
+};
+
+/* These registers are for timers / time stamping usages under DSP FW management. */
+#define ADSP_DFTTS_REG			0x72000
+#define ADSP_DFTTS			(*(volatile struct adsp_tftts *)ADSP_DFTTS_REG)
+
+#define ADSP_SHIM_DSPWCTS (&ADSP_DFTTS.wctcs)
+#define ADSP_SHIM_DSPWCH  (&ADSP_DFTTS.wc.hi)
+#define ADSP_SHIM_DSPWCL  (&ADSP_DFTTS.wc.lo)
+#define ADSP_SHIM_COMPARE_HI(idx)  (&ADSP_DFTTS.wctc[idx].hi)
+#define ADSP_SHIM_COMPARE_LO(idx) (&ADSP_DFTTS.wctc[idx].lo)
+
+#define ADSP_SHIM_DSPWCTCS_TTIE(c) BIT(8 + (c))
+
 /* L2 Local Memory control (cAVS 1.8+) */
 struct cavs_l2lm {
 	uint32_t l2lmcap;

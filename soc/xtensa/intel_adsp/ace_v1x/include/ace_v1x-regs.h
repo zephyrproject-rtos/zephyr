@@ -45,39 +45,6 @@ struct dfdspbrcp {
 
 #define DFDSPBRCP (*(volatile struct dfdspbrcp *)DFDSPBRCP_REG)
 
-struct clk64 {
-	uint32_t lo;
-	uint32_t hi;
-};
-
-/* Timers & Time Stamping register block */
-struct mtl_tts {
-	uint32_t		ttscap;
-	uint32_t		unused0;
-	struct clk64	rtcwc;
-	uint16_t		wcctl;
-	uint16_t		wcsts;
-	uint32_t		unused1;
-	struct clk64	wcav;
-	struct clk64	wc;
-	uint32_t		wctcs;
-	uint32_t		unused2;
-	struct			clk64 wctc[2];
-};
-
-/* These registers are for timers / time stamping usages under DSP FW management. */
-#define DFTTS_REG			0x72000
-
-#define MTL_TTS				(*(volatile struct mtl_tts *)DFTTS_REG)
-
-#define ADSP_SHIM_DSPWCTS (&MTL_TTS.wctcs)
-#define ADSP_SHIM_DSPWCH  (&MTL_TTS.wc.hi)
-#define ADSP_SHIM_DSPWCL  (&MTL_TTS.wc.lo)
-#define ADSP_SHIM_COMPARE_HI(idx)  (&MTL_TTS.wctc[idx].hi)
-#define ADSP_SHIM_COMPARE_LO(idx) (&MTL_TTS.wctc[idx].lo)
-
-#define ADSP_SHIM_DSPWCTCS_TTIE(c) BIT(8 + (c))
-
 /* Low priority interrupt indices */
 #define MTL_INTL_HIPC		0
 #define MTL_INTL_SBIPC		1
