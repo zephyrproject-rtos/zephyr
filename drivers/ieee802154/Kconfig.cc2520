@@ -6,7 +6,7 @@
 menuconfig IEEE802154_CC2520
 	bool "TI CC2520 Driver support"
 	default y
-	depends on NETWORKING && DT_HAS_TI_CC2520_ENABLED
+	depends on DT_HAS_TI_CC2520_ENABLED
 
 if IEEE802154_CC2520
 
