@@ -8,10 +8,6 @@
  */
 #include <soc_common.h>
 
-/* lib-c hooks required RAM defined variables */
-#define RISCV_RAM_BASE               CONFIG_SRAM_BASE_ADDRESS
-#define RISCV_RAM_SIZE               KB(CONFIG_SRAM_SIZE)
-
 /*
  * This define gets the total number of USBPD ports available on the
  * ITE EC chip from dtsi (include status disable). Both it81202 and
