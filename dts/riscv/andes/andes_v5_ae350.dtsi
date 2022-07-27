@@ -98,6 +98,15 @@
 		compatible = "andestech,ae350";
 		ranges;
 
+		mtimer: timer@e6000000 {
+			compatible = "riscv,machine-timer";
+			reg = <0xe6000000 0x8
+			       0xe6000008 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts = <7 0>;
+			interrupt-parent = <&plic0>;
+		};
+
 		plic0: interrupt-controller@e4000000 {
 			compatible = "sifive,plic-1.0.0";
 			#address-cells = <1>;

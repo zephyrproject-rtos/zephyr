@@ -63,6 +63,14 @@
 		#size-cells = <1>;
 		ranges;
 
+		mtimer: timer@ffffff90 {
+			compatible = "riscv,machine-timer";
+			reg = <0xffffff90 0x8
+			       0xffffff98 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts = <7>;
+		};
+
 		uart0: serial@ffffffa0 {
 			compatible = "neorv32-uart";
 			status = "disabled";

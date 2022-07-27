@@ -53,6 +53,15 @@
 		compatible = "simple-bus";
 		ranges;
 
+		mtimer: timer@0200bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0x0200bff8 0x8
+			       0x02004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts = <7 0>;
+			interrupt-parent = <&plic>;
+		};
+
 		modeselect: rom@1000 {
 			compatible = "sifive,modeselect0";
 			reg = <0x1000 0x1000>;

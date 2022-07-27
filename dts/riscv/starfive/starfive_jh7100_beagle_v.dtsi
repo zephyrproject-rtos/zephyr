@@ -89,6 +89,15 @@
 		compatible = "starfive,freedom-u74-arty", "simple-bus";
 		ranges;
 
+		mtimer: timer@0200bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0x0 0x0200bff8 0x0 0x8
+			       0x0 0x02004000 0x0 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts = <7 0>;
+			interrupt-parent = <&plic>;
+		};
+
 		cachectrl: cache-controller@2010000 {
 			cache-block-size = <64>;
 			cache-level = <2>;

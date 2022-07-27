@@ -42,6 +42,15 @@
 			reg = <0x80040000 0x40000>;
 		};
 
+		mtimer: timer@4400bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0x4400bff8 0x8
+			       0x44004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts = <7 0>;
+			interrupt-parent = <&plic>;
+		};
+
 		plic: interrupt-controller@40000000 {
 			compatible = "sifive,plic-1.0.0";
 			#address-cells = <0>;

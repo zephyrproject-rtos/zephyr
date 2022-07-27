@@ -162,6 +162,15 @@
 		compatible = "simple-bus";
 		ranges;
 
+		mtimer: timer@0200bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0x0200bff8 0x8
+			       0x02004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts = <7 0>;
+			interrupt-parent = <&plic>;
+		};
+
 		plic: interrupt-controller@c000000 {
 			riscv,max-priority = <7>;
 			riscv,ndev = < 0x35 >;

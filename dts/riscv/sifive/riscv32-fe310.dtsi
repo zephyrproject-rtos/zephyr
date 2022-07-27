@@ -46,6 +46,16 @@
 		compatible = "sifive,FE310G-0002-Z0-soc", "fe310-soc",
 			"sifive-soc", "simple-bus";
 		ranges;
+
+		mtimer: timer@0200bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0x0200bff8 0x8
+			       0x02004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts = <7 0>;
+			interrupt-parent = <&plic>;
+		};
+
 		wdog0: wdog@10000000 {
 			compatible = "sifive,wdt";
 			interrupt-parent = <&plic>;
