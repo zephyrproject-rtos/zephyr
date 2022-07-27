@@ -32,35 +32,17 @@ struct pwm_nrfx_config {
 struct pwm_nrfx_data {
 	uint32_t period_cycles;
 	uint16_t seq_values[NRF_PWM_CHANNEL_COUNT];
+	/* Bit mask indicating channels that need the PWM generation. */
+	uint8_t  pwm_needed;
 	uint8_t  prescaler;
 	uint8_t  initially_inverted;
 	bool     stop_requested;
 };
+/* Ensure the pwm_needed bit mask can accommodate all available channels. */
+#if (NRF_PWM_CHANNEL_COUNT > 8)
+#error "Current implementation supports maximum 8 channels."
+#endif
 
-
-static bool channel_needs_pwm(uint32_t channel,
-			      const struct pwm_nrfx_data *data)
-{
-	uint16_t compare_value =
-		data->seq_values[channel] & PWM_NRFX_CH_COMPARE_MASK;
-
-	return (compare_value != 0 &&
-		compare_value != PWM_NRFX_CH_COMPARE_MASK);
-}
-
-static bool any_other_channel_needs_pwm(uint32_t channel,
-					const struct pwm_nrfx_data *data)
-{
-	uint8_t i;
-
-	for (i = 0; i < NRF_PWM_CHANNEL_COUNT; ++i) {
-		if (i != channel && channel_needs_pwm(i, data)) {
-			return true;
-		}
-	}
-
-	return false;
-}
 
 static bool pwm_period_check_and_set(const struct device *dev,
 				     uint32_t channel, uint32_t period_cycles)
@@ -81,7 +63,7 @@ static bool pwm_period_check_and_set(const struct device *dev,
 	 * that is currently set cannot be changed, as this would influence
 	 * the output for that channel.
 	 */
-	if (any_other_channel_needs_pwm(channel, data)) {
+	if ((data->pwm_needed & ~BIT(channel)) != 0) {
 		LOG_ERR("Incompatible period.");
 		return false;
 	}
@@ -192,6 +174,10 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 
 			nrf_gpio_pin_write(psel, out_level);
 		}
+
+		data->pwm_needed &= ~BIT(channel);
+	} else {
+		data->pwm_needed |= BIT(channel);
 	}
 
 	/* If the PWM generation is not needed for any channel (all are set
@@ -200,7 +186,7 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 	 * the PWM peripheral loads `seq_values` into its internal compare
 	 * registers and drives its outputs accordingly.
 	 */
-	if (!needs_pwm && !any_other_channel_needs_pwm(channel, data)) {
+	if (data->pwm_needed == 0) {
 		/* Don't wait here for the peripheral to actually stop. Instead,
 		 * ensure it is stopped before starting the next playback.
 		 */
