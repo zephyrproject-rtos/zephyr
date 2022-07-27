@@ -934,7 +934,7 @@
 			#pinmux-cells = <2>;
 		};
 
-		sai1: sai@40384000 {
+		i2s0: sai1: sai@40384000 {
 			compatible = "nxp,mcux-i2s";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -973,7 +973,7 @@
 			label = "I2S_0";
 		};
 
-		sai2: sai@40388000 {
+		i2s1: sai2: sai@40388000 {
 			compatible = "nxp,mcux-i2s";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -999,7 +999,7 @@
 			label = "I2S_1";
 		};
 
-		sai3: sai@4038c000 {
+		i2s2: sai3: sai@4038c000 {
 			compatible = "nxp,mcux-i2s";
 			#address-cells = <1>;
 			#size-cells = <0>;

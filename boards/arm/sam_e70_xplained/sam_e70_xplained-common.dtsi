@@ -174,7 +174,7 @@ zephyr_udc0: &usbhs {
 	};
 };
 
-&ssc {
+i2s0: &ssc {
 	status = "okay";
 	label = "I2S_0";
 
