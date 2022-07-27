@@ -14,7 +14,6 @@
 			interrupts = <84 0>;
 			rcu-periph-clock = <0x110d>;
 			status = "disabled";
-			label = "SPI_3";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -25,7 +24,6 @@
 			interrupts = <85 0>;
 			rcu-periph-clock = <0x1114>;
 			status = "disabled";
-			label = "SPI_4";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -36,7 +34,6 @@
 			interrupts = <86 0>;
 			rcu-periph-clock = <0x1115>;
 			status = "disabled";
-			label = "SPI_5";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};

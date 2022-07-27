@@ -70,11 +70,9 @@
 		pcr: pcr@40080100 {
 			reg = <0x40080100 0x100 0x4000a400 0x100>;
 			reg-names = "pcrr", "vbatr";
-			label = "PCR";
 		};
 		ecia: ecia@4000e000 {
 			reg = <0x4000e000 0x400>;
-			label = "ECIA_0";
 			#address-cells = <1>;
 			#size-cells = <1>;
 		};
@@ -82,14 +80,12 @@
 			compatible = "microchip,xec-rtos-timer";
 			reg = <0x40007400 0x10>;
 			interrupts = <111 0>;
-			label = "RTIMER";
 			girqs = <23 10>;
 		};
 		bbram: bb-ram@4000a800 {
 			compatible = "microchip,xec-bbram";
 			reg = <0x4000a800 0x80>;
 			reg-names = "memory";
-			label = "BBRAM";
 		};
 		wdog: watchdog@40000400 {
 			compatible = "microchip,xec-watchdog";
@@ -97,7 +93,6 @@
 			interrupts = <171 0>;
 			girqs = <21 2>;
 			pcrs = <1 9>;
-			label = "WDT_0";
 		};
 		uart0: uart@400f2400 {
 			compatible = "ns16550";
@@ -105,7 +100,6 @@
 			interrupts = <40 0>;
 			clock-frequency = <1843200>;
 			current-speed = <38400>;
-			label = "UART_0";
 			reg-shift = <0>;
 			status = "disabled";
 		};
@@ -115,7 +109,6 @@
 			interrupts = <41 0>;
 			clock-frequency = <1843200>;
 			current-speed = <38400>;
-			label = "UART_1";
 			reg-shift = <0>;
 			status = "disabled";
 		};
@@ -125,7 +118,6 @@
 			interrupts = <44 0>;
 			clock-frequency = <1843200>;
 			current-speed = <38400>;
-			label = "UART_2";
 			reg-shift = <0>;
 			status = "disabled";
 		};
@@ -134,7 +126,6 @@
 			reg = <0x40081000 0x80>;
 			interrupts = <3 2>;
 			gpio-controller;
-			label="GPIO000_036";
 			#gpio-cells=<2>;
 		};
 		gpio_040_076: gpio@40081080 {
@@ -142,7 +133,6 @@
 			reg = <0x40081080 0x80>;
 			interrupts = <2 2>;
 			gpio-controller;
-			label="GPIO040_076";
 			#gpio-cells=<2>;
 		};
 		gpio_100_136: gpio@40081100 {
@@ -150,7 +140,6 @@
 			reg = <0x40081100 0x80>;
 			gpio-controller;
 			interrupts = <1 2>;
-			label="GPIO100_136";
 			#gpio-cells=<2>;
 		};
 		gpio_140_176: gpio@40081180 {
@@ -158,7 +147,6 @@
 			reg = <0x40081180 0x80>;
 			gpio-controller;
 			interrupts = <0 2>;
-			label="GPIO140_176";
 			#gpio-cells=<2>;
 		};
 		gpio_200_236: gpio@40081200 {
@@ -166,7 +154,6 @@
 			reg = <0x40081200 0x80>;
 			gpio-controller;
 			interrupts = <4 2>;
-			label="GPIO200_236";
 			#gpio-cells=<2>;
 		};
 		gpio_240_276: gpio@40081280 {
@@ -174,7 +161,6 @@
 			reg = <0x40081280 0x80>;
 			gpio-controller;
 			interrupts = <17 2>;
-			label="GPIO240_276";
 			#gpio-cells=<2>;
 		};
 
@@ -183,7 +169,6 @@
 			reg = <0x40004000 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <20 1>;
-			label = "I2C_SMB_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -196,7 +181,6 @@
 			reg = <0x40004400 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <21 1>;
-			label = "I2C_SMB_1";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -209,7 +193,6 @@
 			reg = <0x40004800 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <22 1>;
-			label = "I2C_SMB_2";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -222,7 +205,6 @@
 			reg = <0x40004C00 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <23 1>;
-			label = "I2C_SMB_3";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -235,7 +217,6 @@
 			reg = <0x40005000 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <158 1>;
-			label = "I2C_SMB_4";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -247,7 +228,6 @@
 			compatible = "microchip,xec-espi";
 			reg = <0x400f3400 0x400>;
 			interrupts = <11 3>, <15 3>, <7 3>, <16 3>;
-			label = "ESPI_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -257,7 +237,6 @@
 			reg = < 0x40008000 0x400
 				0x40070000 0x400
 				0x40071000 0x400>;
-			label = "ESPI_SAF_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -268,7 +247,6 @@
 			clock-frequency = <48000000>;
 			reg = <0x40000c00 0x20>;
 			interrupts = <136 0>;
-			label = "TIMER_0";
 			max-value = <0xFFFF>;
 			prescaler = <0>;
 			status = "disabled";
@@ -280,7 +258,6 @@
 			clock-frequency = <48000000>;
 			reg = <0x40000c20 0x20>;
 			interrupts = <137 0>;
-			label = "TIMER_1";
 			max-value = <0xFFFF>;
 			prescaler = <0>;
 			status = "disabled";
@@ -298,7 +275,6 @@
 			clock-frequency = <48000000>;
 			reg = <0x40000c80 0x20>;
 			interrupts = <140 0>;
-			label = "TIMER_4";
 			max-value = <0xFFFFFFFF>;
 			prescaler = <0>;
 			girqs = <23 4>;
@@ -310,7 +286,6 @@
 			clock-frequency = <48000000>;
 			reg = <0x40000ca0 0x20>;
 			interrupts = <141 0>;
-			label = "TIMER_5";
 			max-value = <0xFFFFFFFF>;
 			prescaler = <0>;
 			girqs = <23 5>;
@@ -322,7 +297,6 @@
 			interrupts = <100 1>;
 			girqs = <18 10>;
 			pcrs = <3 5>;
-			label = "PS2_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -333,7 +307,6 @@
 			interrupts = <101 1>;
 			girqs = <18 11>;
 			pcrs = <3 6>;
-			label = "PS2_1";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -342,7 +315,6 @@
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005800 0x20>;
 			pcrs = <1 4>;
-			label = "PWM_0";
 			status = "disabled";
 			#pwm-cells = <2>;
 		};
@@ -350,7 +322,6 @@
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005810 0x20>;
 			pcrs = <1 20>;
-			label = "PWM_1";
 			status = "disabled";
 			#pwm-cells = <2>;
 		};
@@ -358,7 +329,6 @@
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005820 0x20>;
 			pcrs = <1 21>;
-			label = "PWM_2";
 			status = "disabled";
 			#pwm-cells = <2>;
 		};
@@ -366,7 +336,6 @@
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005830 0x20>;
 			pcrs = <1 22>;
-			label = "PWM_3";
 			status = "disabled";
 			#pwm-cells = <2>;
 		};
@@ -374,7 +343,6 @@
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005840 0x20>;
 			pcrs = <1 23>;
-			label = "PWM_4";
 			status = "disabled";
 			#pwm-cells = <2>;
 		};
@@ -382,7 +350,6 @@
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005850 0x20>;
 			pcrs = <1 24>;
-			label = "PWM_5";
 			status = "disabled";
 			#pwm-cells = <2>;
 		};
@@ -390,7 +357,6 @@
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005860 0x20>;
 			pcrs = <1 25>;
-			label = "PWM_6";
 			status = "disabled";
 			#pwm-cells = <2>;
 		};
@@ -398,7 +364,6 @@
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005870 0x20>;
 			pcrs = <1 26>;
-			label = "PWM_7";
 			status = "disabled";
 			#pwm-cells = <2>;
 		};
@@ -406,7 +371,6 @@
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005880 0x20>;
 			pcrs = <1 27>;
-			label = "PWM_8";
 			status = "disabled";
 			#pwm-cells = <2>;
 		};
@@ -414,7 +378,6 @@
 			compatible = "microchip,xec-adc";
 			reg = <0x40007c00 0x90>;
 			interrupts = <78 0>, <79 0>;
-			label = "ADC_0";
 			status = "disabled";
 			#io-channel-cells = <1>;
 			clktime = <32>;
@@ -425,7 +388,6 @@
 			interrupts = <135 0>;
 			girqs = <21 25>;
 			pcrs = <3 11>;
-			label = "KSCAN";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -436,7 +398,6 @@
 			interrupts = <70 4>;
 			girqs = <17 0>;
 			pcrs = <1 1>;
-			label = "PECI_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -445,7 +406,6 @@
 			reg = <0x40070000 0x400>;
 			interrupts = <91 2>;
 			clock-frequency = <12000000>;
-			label = "SPI_0";
 			rxdma = <11>;
 			txdma = <10>;
 			lines = <1>;
@@ -464,7 +424,6 @@
 			interrupts = <71 4>;
 			girqs = <17 1>;
 			pcrs = <1 2>;
-			label = "TACH_0";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -475,7 +434,6 @@
 			interrupts = <72 4>;
 			girqs = <17 2>;
 			pcrs = <1 11>;
-			label = "TACH_1";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -486,7 +444,6 @@
 			interrupts = <73 4>;
 			girqs = <17 3>;
 			pcrs = <1 12>;
-			label = "TACH_2";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -497,7 +454,6 @@
 			interrupts = <159 4>;
 			girqs = <17 4>;
 			pcrs = <1 13>;
-			label = "TACH_3";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;

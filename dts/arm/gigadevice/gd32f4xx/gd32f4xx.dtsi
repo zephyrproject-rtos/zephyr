@@ -38,7 +38,6 @@
 
 		fmc: flash-controller@40023c00 {
 			compatible = "gd,gd32-flash-controller";
-			label = "FMC";
 			reg = <0x40023c00 0x400>;
 
 			#address-cells = <1>;
@@ -46,7 +45,6 @@
 
 			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
-				label = "FLASH0";
 			};
 		};
 
@@ -56,7 +54,6 @@
 			interrupts = <37 0>;
 			rcu-periph-clock = <0x1104>;
 			status = "disabled";
-			label = "USART_0";
 		};
 
 		usart1: usart@40004400 {
@@ -65,7 +62,6 @@
 			interrupts = <38 0>;
 			rcu-periph-clock = <0x1011>;
 			status = "disabled";
-			label = "USART_1";
 		};
 
 		usart2: usart@40004800 {
@@ -74,7 +70,6 @@
 			interrupts = <39 0>;
 			rcu-periph-clock = <0x1012>;
 			status = "disabled";
-			label = "USART_2";
 		};
 
 		uart3: usart@40004c00 {
@@ -83,7 +78,6 @@
 			interrupts = <52 0>;
 			rcu-periph-clock = <0x1013>;
 			status = "disabled";
-			label = "USART_3";
 		};
 
 		uart4: usart@40005000 {
@@ -92,7 +86,6 @@
 			interrupts = <52 0>;
 			rcu-periph-clock = <0x1014>;
 			status = "disabled";
-			label = "USART_4";
 		};
 
 		usart5: usart@40011400 {
@@ -101,7 +94,6 @@
 			interrupts = <71 0>;
 			rcu-periph-clock = <0x1105>;
 			status = "disabled";
-			label = "USART_5";
 		};
 
 		uart6: usart@40007800 {
@@ -110,7 +102,6 @@
 			interrupts = <82 0>;
 			rcu-periph-clock = <0x101e>;
 			status = "disabled";
-			label = "USART_6";
 		};
 
 		uart7: usart@40007c00 {
@@ -119,7 +110,6 @@
 			interrupts = <83 0>;
 			rcu-periph-clock = <0x101f>;
 			status = "disabled";
-			label = "USART_7";
 		};
 
 		dac: dac@40007400 {
@@ -127,7 +117,6 @@
 			reg = <0x40007400 0x400>;
 			rcu-periph-clock = <0x101d>;
 			num-channels = <2>;
-			label = "DAC";
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
@@ -142,7 +131,6 @@
 			interrupt-names = "event", "error";
 			rcu-periph-clock = <0x1015>;
 			status = "disabled";
-			label = "I2C_0";
 		};
 
 		i2c1: i2c@40005800 {
@@ -155,7 +143,6 @@
 			interrupt-names = "event", "error";
 			rcu-periph-clock = <0x1016>;
 			status = "disabled";
-			label = "I2C_1";
 		};
 
 		i2c2: i2c@40005c00 {
@@ -168,7 +155,6 @@
 			interrupt-names = "event", "error";
 			rcu-periph-clock = <0x1017>;
 			status = "disabled";
-			label = "I2C_2";
 		};
 
 		spi0: spi@40013000 {
@@ -177,7 +163,6 @@
 			interrupts = <35 0>;
 			rcu-periph-clock = <0x110c>;
 			status = "disabled";
-			label = "SPI_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -188,7 +173,6 @@
 			interrupts = <36 0>;
 			rcu-periph-clock = <0x100e>;
 			status = "disabled";
-			label = "SPI_1";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -199,7 +183,6 @@
 			interrupts = <51 0>;
 			rcu-periph-clock = <0x100f>;
 			status = "disabled";
-			label = "SPI_2";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -211,7 +194,6 @@
 			rcu-periph-clock = <0x1108>;
 			channels = <16>;
 			status = "disabled";
-			label = "ADC_0";
 			#io-channel-cells = <1>;
 		};
 
@@ -222,7 +204,6 @@
 			rcu-periph-clock = <0x1109>;
 			channels = <16>;
 			status = "disabled";
-			label = "ADC_1";
 			#io-channel-cells = <1>;
 		};
 
@@ -233,7 +214,6 @@
 			rcu-periph-clock = <0x110A>;
 			channels = <16>;
 			status = "disabled";
-			label = "ADC_2";
 			#io-channel-cells = <1>;
 		};
 
@@ -241,7 +221,6 @@
 			compatible = "gd,gd32-syscfg";
 			reg = <0x40013800 0x400>;
 			rcu-periph-clock = <0x110e>;
-			label = "SYSCFG";
 		};
 
 		exti: interrupt-controller@40013c00 {
@@ -255,7 +234,6 @@
 			interrupt-names = "line0", "line1", "line2", "line3",
 					  "line4", "line5-9", "line10-15";
 			status = "okay";
-			label = "EXTI";
 		};
 
 		pinctrl: pin-controller@40020000 {
@@ -264,7 +242,6 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
-			label = "PINCTRL";
 
 			gpioa: gpio@40020000 {
 				compatible = "gd,gd32-gpio";
@@ -273,7 +250,6 @@
 				reg = <0x40020000 0x400>;
 				rcu-periph-clock = <0xc00>;
 				status = "disabled";
-				label = "GPIOA";
 			};
 
 			gpiob: gpio@40020400 {
@@ -283,7 +259,6 @@
 				reg = <0x40020400 0x400>;
 				rcu-periph-clock = <0xc01>;
 				status = "disabled";
-				label = "GPIOB";
 			};
 
 			gpioc: gpio@40020800 {
@@ -293,7 +268,6 @@
 				reg = <0x40020800 0x400>;
 				rcu-periph-clock = <0xc02>;
 				status = "disabled";
-				label = "GPIOC";
 			};
 
 			gpiod: gpio@40020c00 {
@@ -303,7 +277,6 @@
 				reg = <0x40020c00 0x400>;
 				rcu-periph-clock = <0xc03>;
 				status = "disabled";
-				label = "GPIOD";
 			};
 
 			gpioe: gpio@40021000 {
@@ -313,7 +286,6 @@
 				reg = <0x40021000 0x400>;
 				rcu-periph-clock = <0xc04>;
 				status = "disabled";
-				label = "GPIOE";
 			};
 
 			gpiof: gpio@40021400 {
@@ -323,7 +295,6 @@
 				reg = <0x40021400 0x400>;
 				rcu-periph-clock = <0xc05>;
 				status = "disabled";
-				label = "GPIOF";
 			};
 
 			gpiog: gpio@40021800 {
@@ -333,7 +304,6 @@
 				reg = <0x40021800 0x400>;
 				rcu-periph-clock = <0xc06>;
 				status = "disabled";
-				label = "GPIOG";
 			};
 
 			gpioh: gpio@40021c00 {
@@ -343,7 +313,6 @@
 				reg = <0x40021c00 0x400>;
 				rcu-periph-clock = <0xc07>;
 				status = "disabled";
-				label = "GPIOH";
 			};
 
 			gpioi: gpio@40022000 {
@@ -353,7 +322,6 @@
 				reg = <0x40022000 0x400>;
 				rcu-periph-clock = <0xc08>;
 				status = "disabled";
-				label = "GPIOI";
 			};
 		};
 
@@ -367,12 +335,10 @@
 			is-advanced;
 			channels = <4>;
 			status = "disabled";
-			label = "TIMER_0";
 
 			pwm {
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
-				label = "PWM_0";
 				#pwm-cells = <3>;
 			};
 		};
@@ -387,12 +353,10 @@
 			is-32bit;
 			channels = <4>;
 			status = "disabled";
-			label = "TIMER_1";
 
 			pwm {
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
-				label = "PWM_1";
 				#pwm-cells = <3>;
 			};
 		};
@@ -406,12 +370,10 @@
 			rcu-periph-reset = <0x801>;
 			channels = <4>;
 			status = "disabled";
-			label = "TIMER_2";
 
 			pwm {
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
-				label = "PWM_2";
 				#pwm-cells = <3>;
 			};
 		};
@@ -425,12 +387,10 @@
 			rcu-periph-reset = <0x802>;
 			channels = <4>;
 			status = "disabled";
-			label = "TIMER_3";
 
 			pwm {
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
-				label = "PWM_3";
 				#pwm-cells = <3>;
 			};
 		};
@@ -445,12 +405,10 @@
 			is-32bit;
 			channels = <4>;
 			status = "disabled";
-			label = "TIMER_4";
 
 			pwm {
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
-				label = "PWM_4";
 				#pwm-cells = <3>;
 			};
 		};
@@ -464,7 +422,6 @@
 			rcu-periph-reset = <0x804>;
 			channels = <0>;
 			status = "disabled";
-			label = "TIMER_5";
 		};
 
 		timer6: timer@40001400 {
@@ -476,7 +433,6 @@
 			rcu-periph-reset = <0x805>;
 			channels = <0>;
 			status = "disabled";
-			label = "TIMER_6";
 		};
 
 		timer7: timer@40010400 {
@@ -489,12 +445,10 @@
 			is-advanced;
 			channels = <4>;
 			status = "disabled";
-			label = "TIMER_7";
 
 			pwm {
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
-				label = "PWM_7";
 				#pwm-cells = <3>;
 			};
 		};
@@ -508,12 +462,10 @@
 			rcu-periph-reset = <0x910>;
 			channels = <2>;
 			status = "disabled";
-			label = "TIMER_8";
 
 			pwm {
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
-				label = "PWM_8";
 				#pwm-cells = <3>;
 			};
 		};
@@ -527,12 +479,10 @@
 			rcu-periph-reset = <0x911>;
 			channels = <1>;
 			status = "disabled";
-			label = "TIMER_9";
 
 			pwm {
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
-				label = "PWM_9";
 				#pwm-cells = <3>;
 			};
 		};
@@ -546,12 +496,10 @@
 			rcu-periph-reset = <0x912>;
 			channels = <1>;
 			status = "disabled";
-			label = "TIMER_10";
 
 			pwm {
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
-				label = "PWM_10";
 				#pwm-cells = <3>;
 			};
 		};
@@ -565,12 +513,10 @@
 			rcu-periph-reset = <0x806>;
 			channels = <2>;
 			status = "disabled";
-			label = "TIMER_11";
 
 			pwm {
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
-				label = "PWM_11";
 				#pwm-cells = <3>;
 			};
 		};
@@ -584,12 +530,10 @@
 			rcu-periph-reset = <0x802>;
 			channels = <1>;
 			status = "disabled";
-			label = "TIMER_12";
 
 			pwm {
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
-				label = "PWM_12";
 				#pwm-cells = <3>;
 			};
 		};
@@ -603,12 +547,10 @@
 			rcu-periph-reset = <0x808>;
 			channels = <1>;
 			status = "disabled";
-			label = "TIMER_13";
 
 			pwm {
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
-				label = "PWM_13";
 				#pwm-cells = <3>;
 			};
 		};

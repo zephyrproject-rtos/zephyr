@@ -46,7 +46,6 @@
 			clocks = <&uartclk>;
 			interrupts = <7 3>;
 			interrupt-names = "rx";
-			label = "UART_0";
 		};
 
 		gpio: gpio {
@@ -57,7 +56,6 @@
 			ngpios = <8>;
 			pin-secondary-config = <0x00>;
 			gpio-controller;
-			label = "GPIO";
 		};
 	};
 };

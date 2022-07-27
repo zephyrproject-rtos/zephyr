@@ -14,7 +14,6 @@
 			reg = <0x40007400 0x400>;
 			rcu-periph-clock = <0x71d>;
 			num-channels = <1>;
-			label = "DAC";
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
