@@ -189,6 +189,9 @@ Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/
 For compatibility information with the various versions of these binaries,
 please check `modules/hal/stm32/lib/stm32wb/hci/README <https://github.com/zephyrproject-rtos/hal_stm32/blob/main/lib/stm32wb/hci/README>`__
 in the hal_stm32 repo.
+Note that since STM32WB Cube package V1.13.2, "full stack" binaries are not compatible
+anymore for a use in Zephyr and only "HCI Only" versions should be used on the M0
+side.
 
 Connections and IOs
 ===================
