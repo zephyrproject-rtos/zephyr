@@ -184,7 +184,7 @@ int spsc_pbuf_alloc(struct spsc_pbuf *pb, uint16_t len, char **buf)
 			}
 		}
 	} else {
-		free_space = rd_idx - wr_idx - 1;
+		free_space = rd_idx - wr_idx - sizeof(uint32_t);
 	}
 
 	len = MIN(len, MAX(free_space - (int32_t)LEN_SZ, 0));
