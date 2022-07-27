@@ -1123,7 +1123,7 @@ static int eval_corrupted_pkt_len(struct mqtt_test *mqtt_test)
 	return TC_PASS;
 }
 
-void test_mqtt_packet(void)
+ZTEST(mqtt_packet_fn, test_mqtt_packet)
 {
 	TC_START("MQTT Library test");
 
@@ -1158,9 +1158,4 @@ void test_mqtt_packet(void)
 	mqtt_abort(&client);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_mqtt_packet_fn,
-		ztest_user_unit_test(test_mqtt_packet));
-	ztest_run_test_suite(test_mqtt_packet_fn);
-}
+ZTEST_SUITE(mqtt_packet_fn, NULL, NULL, NULL, NULL, NULL);
