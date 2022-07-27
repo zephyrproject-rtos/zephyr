@@ -80,7 +80,6 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x42000000 0x4000>;
 			interrupts = <72 0>;
-			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
 			pinmux = <&iomuxc_gpio_sd_00_gpio2_io00>,
@@ -113,7 +112,6 @@
 			compatible = "nxp,imx-lpspi";
 			reg = <0x40194000 0x4000>;
 			interrupts = <32 3>;
-			label = "SPI_1";
 			status = "disabled";
 			clocks = <&ccm IMX_CCM_LPSPI_CLK 0x6c 0>;
 			#address-cells = <1>;
@@ -124,7 +122,6 @@
 			compatible = "nxp,imx-lpspi";
 			reg = <0x40198000 0x4000>;
 			interrupts = <33 3>;
-			label = "SPI_2";
 			status = "disabled";
 			clocks = <&ccm IMX_CCM_LPSPI_CLK 0x6c 2>;
 			#address-cells = <1>;
