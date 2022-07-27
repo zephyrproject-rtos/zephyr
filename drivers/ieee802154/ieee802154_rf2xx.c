@@ -134,6 +134,26 @@ static void rf2xx_trx_set_rx_state(const struct device *dev)
 	rf2xx_trx_set_state(dev, RF2XX_TRX_PHY_STATE_CMD_RX_AACK_ON);
 }
 
+static void rf2xx_set_rssi_base(const struct device *dev, uint16_t channel)
+{
+	struct rf2xx_context *ctx = dev->data;
+	int8_t base;
+
+	if (ctx->cc_page == RF2XX_TRX_CC_PAGE_0) {
+		base = channel == 0
+				? RF2XX_RSSI_BPSK_20
+				: RF2XX_RSSI_BPSK_40;
+	} else if (ctx->cc_page == RF2XX_TRX_CC_PAGE_2) {
+		base = channel == 0
+				? RF2XX_RSSI_OQPSK_SIN_RC_100
+				: RF2XX_RSSI_OQPSK_SIN_250;
+	} else {
+		base = RF2XX_RSSI_OQPSK_RC_250;
+	}
+
+	ctx->trx_rssi_base = base;
+}
+
 static void rf2xx_trx_rx(const struct device *dev)
 {
 	struct rf2xx_context *ctx = dev->data;
@@ -334,30 +354,99 @@ static inline uint8_t *get_mac(const struct device *dev)
 
 static enum ieee802154_hw_caps rf2xx_get_capabilities(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	struct rf2xx_context *ctx = dev->data;
+
+	LOG_DBG("HW Caps");
 
 	return IEEE802154_HW_FCS |
 	       IEEE802154_HW_PROMISC |
 	       IEEE802154_HW_FILTER |
 	       IEEE802154_HW_CSMA |
 	       IEEE802154_HW_TX_RX_ACK |
-	       IEEE802154_HW_2_4_GHZ;
+	       (ctx->trx_model == RF2XX_TRX_MODEL_212
+				? IEEE802154_HW_SUB_GHZ
+				: IEEE802154_HW_2_4_GHZ);
+}
+
+static int rf2xx_configure_sub_channel(const struct device *dev, uint16_t channel)
+{
+	struct rf2xx_context *ctx = dev->data;
+	uint8_t reg;
+	uint8_t cc_mask;
+
+	if (ctx->cc_page == RF2XX_TRX_CC_PAGE_0) {
+		cc_mask = channel == 0
+				   ? RF2XX_CC_BPSK_20
+				   : RF2XX_CC_BPSK_40;
+	} else if (ctx->cc_page == RF2XX_TRX_CC_PAGE_2) {
+		cc_mask = channel == 0
+				   ? RF2XX_CC_OQPSK_SIN_RC_100
+				   : RF2XX_CC_OQPSK_SIN_250;
+	} else {
+		cc_mask = RF2XX_CC_OQPSK_RC_250;
+	}
+
+	reg = rf2xx_iface_reg_read(dev, RF2XX_TRX_CTRL_2_REG)
+	    & ~RF2XX_SUB_CHANNEL_MASK;
+	rf2xx_iface_reg_write(dev, RF2XX_TRX_CTRL_2_REG, reg | cc_mask);
+
+	return 0;
+}
+static int rf2xx_configure_trx_path(const struct device *dev)
+{
+	struct rf2xx_context *ctx = dev->data;
+	uint8_t reg;
+	uint8_t gc_tx_offset;
+
+	if (ctx->cc_page == RF2XX_TRX_CC_PAGE_0) {
+		gc_tx_offset = 0x03;
+	} else {
+		gc_tx_offset = 0x02;
+	}
+
+	reg = rf2xx_iface_reg_read(dev, RF2XX_RF_CTRL_0_REG)
+	    & ~RF2XX_GC_TX_OFFS_MASK;
+	rf2xx_iface_reg_write(dev, RF2XX_RF_CTRL_0_REG, reg | gc_tx_offset);
+
+	return 0;
 }
 
 static int rf2xx_cca(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+	LOG_DBG("CCA");
+
 	return 0;
 }
 
 static int rf2xx_set_channel(const struct device *dev, uint16_t channel)
 {
+	struct rf2xx_context *ctx = dev->data;
 	uint8_t reg;
 
-	if (channel < 11 || channel > 26) {
-		LOG_ERR("Unsupported channel %u", channel);
-		return -EINVAL;
+	LOG_DBG("Set Channel %d", channel);
+
+	if (ctx->trx_model == RF2XX_TRX_MODEL_212) {
+		if ((ctx->cc_page == RF2XX_TRX_CC_PAGE_0
+		     && ctx->cc_page == RF2XX_TRX_CC_PAGE_2)
+		    && channel > 10) {
+			LOG_ERR("Unsupported channel %u", channel);
+			return -EINVAL;
+		}
+		if (ctx->cc_page == RF2XX_TRX_CC_PAGE_5 && channel > 3) {
+			LOG_ERR("Unsupported channel %u", channel);
+			return -EINVAL;
+		}
+
+		rf2xx_configure_sub_channel(dev, channel);
+		rf2xx_configure_trx_path(dev);
+		rf2xx_set_rssi_base(dev, channel);
+	} else {
+		if (channel < 11 || channel > 26) {
+			LOG_ERR("Unsupported channel %u", channel);
+			return -EINVAL;
+		}
 	}
 
 	reg = rf2xx_iface_reg_read(dev, RF2XX_PHY_CC_CCA_REG) & ~0x1f;
@@ -555,6 +644,8 @@ static int rf2xx_tx(const struct device *dev,
 	struct rf2xx_context *ctx = dev->data;
 	int response = 0;
 
+	LOG_DBG("TX");
+
 	if (ctx->tx_mode != mode) {
 		switch (mode) {
 		case IEEE802154_TX_MODE_DIRECT:
@@ -629,6 +720,8 @@ static int rf2xx_start(const struct device *dev)
 {
 	const struct rf2xx_config *conf = dev->config;
 
+	LOG_DBG("Start");
+
 	rf2xx_trx_set_state(dev, RF2XX_TRX_PHY_STATE_CMD_TRX_OFF);
 	rf2xx_iface_reg_read(dev, RF2XX_IRQ_STATUS_REG);
 	gpio_pin_interrupt_configure_dt(&conf->irq_gpio,
@@ -641,6 +734,8 @@ static int rf2xx_start(const struct device *dev)
 static int rf2xx_stop(const struct device *dev)
 {
 	const struct rf2xx_config *conf = dev->config;
+
+	LOG_DBG("Stop");
 
 	gpio_pin_interrupt_configure_dt(&conf->irq_gpio, GPIO_INT_DISABLE);
 	rf2xx_trx_set_state(dev, RF2XX_TRX_PHY_STATE_CMD_TRX_OFF);
@@ -697,6 +792,8 @@ int rf2xx_configure(const struct device *dev,
 {
 	int ret = -EINVAL;
 
+	LOG_DBG("Configure %d", type);
+
 	switch (type) {
 	case IEEE802154_CONFIG_AUTO_ACK_FPB:
 	case IEEE802154_CONFIG_ACK_FPB:
@@ -716,6 +813,13 @@ int rf2xx_configure(const struct device *dev,
 	}
 
 	return ret;
+}
+
+uint16_t rf2xx_get_subgiga_channel_count(const struct device *dev)
+{
+	struct rf2xx_context *ctx = dev->data;
+
+	return ctx->cc_page == RF2XX_TRX_CC_PAGE_5 ? 4 : 11;
 }
 
 static int power_on_and_setup(const struct device *dev)
@@ -745,25 +849,29 @@ static int power_on_and_setup(const struct device *dev)
 	 *  233-Rev-A (Version 0x01) (Warning)
 	 *  233-Rev-B (Version 0x02)
 	 */
-	if (ctx->trx_model != RF2XX_TRX_MODEL_231 &&
-	    ctx->trx_model != RF2XX_TRX_MODEL_232 &&
-	    ctx->trx_model != RF2XX_TRX_MODEL_233) {
+	if (ctx->trx_model <= RF2XX_TRX_MODEL_230) {
 		LOG_DBG("Invalid or not supported transceiver");
 		return -ENODEV;
 	}
 
-	if (ctx->trx_version < 0x02) {
+	if (ctx->trx_model == RF2XX_TRX_MODEL_233 && ctx->trx_version == 0x01) {
 		LOG_DBG("Transceiver is old and unstable release");
 	}
 
 	/* Set RSSI base */
-	if (ctx->trx_model == RF2XX_TRX_MODEL_233) {
+	if (ctx->trx_model == RF2XX_TRX_MODEL_212) {
+		ctx->trx_rssi_base = -100;
+	} else if (ctx->trx_model == RF2XX_TRX_MODEL_233) {
 		ctx->trx_rssi_base = -94;
 	} else if (ctx->trx_model == RF2XX_TRX_MODEL_231) {
 		ctx->trx_rssi_base = -91;
 	} else {
 		ctx->trx_rssi_base = -90;
 	}
+
+	/* Disable All Features of TRX_CTRL_0 */
+	config = 0;
+	rf2xx_iface_reg_write(dev, RF2XX_TRX_CTRL_0_REG, config);
 
 	/* Configure PHY behaviour */
 	config = (1 << RF2XX_TX_AUTO_CRC_ON) |
@@ -777,6 +885,11 @@ static int power_on_and_setup(const struct device *dev)
 	}
 	rf2xx_iface_reg_write(dev, RF2XX_TRX_CTRL_2_REG, config);
 
+	if (ctx->trx_model == RF2XX_TRX_MODEL_212) {
+		rf2xx_configure_trx_path(dev);
+		rf2xx_iface_reg_write(dev, RF2XX_CC_CTRL_1_REG, 0);
+	}
+
 	ctx->tx_mode = IEEE802154_TX_MODE_CSMA_CA;
 
 	/* Configure INT behaviour */
@@ -784,7 +897,8 @@ static int power_on_and_setup(const struct device *dev)
 		 (1 << RF2XX_TRX_END);
 	rf2xx_iface_reg_write(dev, RF2XX_IRQ_MASK_REG, config);
 
-	gpio_init_callback(&ctx->irq_cb, trx_isr_handler, BIT(conf->irq_gpio.pin));
+	gpio_init_callback(&ctx->irq_cb, trx_isr_handler,
+			   BIT(conf->irq_gpio.pin));
 	gpio_add_callback(conf->irq_gpio.port, &ctx->irq_cb);
 
 	return 0;
@@ -887,6 +1001,8 @@ static int rf2xx_init(const struct device *dev)
 		return -EIO;
 	}
 
+	LOG_DBG("RADIO configured");
+
 	k_thread_create(&ctx->trx_thread,
 			ctx->trx_stack,
 			CONFIG_IEEE802154_RF2XX_RX_STACK_SIZE,
@@ -897,6 +1013,8 @@ static int rf2xx_init(const struct device *dev)
 	snprintk(thread_name, sizeof(thread_name),
 		 "rf2xx_trx [%d]", conf->inst);
 	k_thread_name_set(&ctx->trx_thread, thread_name);
+
+	LOG_DBG("Thread OK");
 
 	return 0;
 }
@@ -915,17 +1033,18 @@ static void rf2xx_iface_init(struct net_if *iface)
 }
 
 static struct ieee802154_radio_api rf2xx_radio_api = {
-	.iface_api.init   = rf2xx_iface_init,
+	.iface_api.init		= rf2xx_iface_init,
 
-	.get_capabilities = rf2xx_get_capabilities,
-	.cca              = rf2xx_cca,
-	.set_channel      = rf2xx_set_channel,
-	.filter           = rf2xx_filter,
-	.set_txpower      = rf2xx_set_txpower,
-	.tx               = rf2xx_tx,
-	.start            = rf2xx_start,
-	.stop             = rf2xx_stop,
-	.configure        = rf2xx_configure,
+	.get_capabilities	= rf2xx_get_capabilities,
+	.cca			= rf2xx_cca,
+	.set_channel		= rf2xx_set_channel,
+	.filter			= rf2xx_filter,
+	.set_txpower		= rf2xx_set_txpower,
+	.tx			= rf2xx_tx,
+	.start			= rf2xx_start,
+	.stop			= rf2xx_stop,
+	.configure		= rf2xx_configure,
+	.get_subg_channel_count	= rf2xx_get_subgiga_channel_count,
 };
 
 #if !defined(CONFIG_IEEE802154_RAW_MODE)
@@ -973,7 +1092,8 @@ static struct ieee802154_radio_api rf2xx_radio_api = {
 
 #define IEEE802154_RF2XX_DEVICE_DATA(n)                                 \
 	static struct rf2xx_context rf2xx_ctx_data_##n = {              \
-		.mac_addr = DRV_INST_LOCAL_MAC_ADDRESS(n)               \
+		.mac_addr = { DRV_INST_LOCAL_MAC_ADDRESS(n) },          \
+		.cc_page = DT_INST_ENUM_IDX_OR(n, channel_page, 0),	\
 	}
 
 #define IEEE802154_RF2XX_RAW_DEVICE_INIT(n)	   \
