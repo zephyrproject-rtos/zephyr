@@ -160,15 +160,15 @@ function can be written as following::
 
       /* Only suites that use a predicate checking for phase == PWR_PHASE_0 will run. */
       state.phase = PWR_PHASE_0;
-      ztest_run_test_suites(&state);
+      ztest_run_all(&state);
 
       /* Only suites that use a predicate checking for phase == PWR_PHASE_1 will run. */
       state.phase = PWR_PHASE_1;
-      ztest_run_test_suites(&state);
+      ztest_run_all(&state);
 
       /* Only suites that use a predicate checking for phase == PWR_PHASE_2 will run. */
       state.phase = PWR_PHASE_2;
-      ztest_run_test_suites(&state);
+      ztest_run_all(&state);
 
       /* Check that all the suites in this binary ran at least once. */
       ztest_verify_all_test_suites_ran();
