@@ -9,6 +9,8 @@
 
 #define DT_DRV_COMPAT segger_rtt_uart
 
+extern struct k_mutex rtt_term_mutex;
+
 struct uart_rtt_config {
 	void *up_buffer;
 	size_t up_size;
