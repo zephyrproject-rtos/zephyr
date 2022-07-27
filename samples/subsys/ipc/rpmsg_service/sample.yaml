@@ -19,4 +19,4 @@ tests:
           - nrf5340dk_nrf5340_cpuapp
           - bl5340_dvk_cpuapp
         tags: ipm
-        build_only: true
+        harness: remote
