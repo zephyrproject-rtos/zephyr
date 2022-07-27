@@ -53,7 +53,6 @@
 			reg = <0x40022000 0x400>;
 			interrupts = <0 0>;
 			status = "disabled";
-			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
@@ -63,13 +62,11 @@
 			reg = <0x40028000 0x2000>;
 			interrupts = <33 0>;
 			status = "disabled";
-			label = "TRNG";
 		};
 
 		flash_controller: flash-controller@40030000 {
 			compatible = "ti,cc13xx-cc26xx-flash-controller";
 			reg = <0x40030000 0x4000>;
-			label="FLASH_CTRL";
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -87,7 +84,6 @@
 			interrupts = <5 0>;
 			clocks = <&sysclk>;
 			status = "disabled";
-			label = "UART_0";
 		};
 
 		uart1: uart@4000b000 {
@@ -96,7 +92,6 @@
 			interrupts = <36 0>;
 			clocks = <&sysclk>;
 			status = "disabled";
-			label = "UART_1";
 		};
 
 		i2c0: i2c@40002000 {
@@ -107,7 +102,6 @@
 			interrupts = <1 0>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			status = "disabled";
-			label = "I2C_0";
 		};
 
 		spi0: spi@40000000 {
@@ -117,7 +111,6 @@
 			reg = <0x40000000 0x1000>;
 			interrupts = <7 0>;
 			status = "disabled";
-			label = "SPI_0";
 		};
 
 		spi1: spi@40008000 {
@@ -127,7 +120,6 @@
 			reg = <0x40008000 0x1000>;
 			interrupts = <8 0>;
 			status = "disabled";
-			label = "SPI_1";
 		};
 
 		rtc: rtc@40092000 {
@@ -135,7 +127,6 @@
 			reg = <0x40092000 0x1000>;
 			interrupts = <4 0>;  /* interrupt #20 = 4 + 16 */
 			status = "disabled";
-			label = "RTC";
 		};
 	};
 };
