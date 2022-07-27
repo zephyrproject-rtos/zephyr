@@ -26,11 +26,13 @@ mostly uncommitted except for the pins used for SPI communication between ESP32 
 of the ESP32C3 GPIO pins are available for additonal interfaces such as serial, ADC, I2C, etc.
 
 For details on ESP32-C3 hardware please refer to the following resources:
+
 * `ESP32-C3-MINI-1 Datasheet`_
 * `ESP32-C3 Datasheet`_
 * `ESP32-C3 Technical Reference Manual`_
 
 For details on iCE40 hardware please refer to the following resources:
+
 * `iCE40 UltraPlus Family Datasheet`_
 
 Supported Features
