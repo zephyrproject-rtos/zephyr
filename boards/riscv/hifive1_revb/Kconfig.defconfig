@@ -18,8 +18,4 @@ config FLASH_LOAD_OFFSET
 config SYS_CLOCK_TICKS_PER_SEC
 	default 128
 
-config I2C_SIFIVE
-	default y
-	depends on I2C
-
 endif

@@ -24,11 +24,4 @@ config PINMUX_INIT_PRIORITY
 
 endif # PINMUX
 
-if I2C
-
-config I2C_LPC11U6X
-	default y
-
-endif # I2C
-
 endif # SOC_SERIES_LPC11U6X

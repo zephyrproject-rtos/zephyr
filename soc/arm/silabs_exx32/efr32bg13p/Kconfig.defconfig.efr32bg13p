@@ -3,10 +3,6 @@
 # Copyright (c) 2020 Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
 
-config I2C_GECKO
-	default y
-	depends on I2C
-
 config SOC_FLASH_GECKO
 	default y
 	depends on FLASH

@@ -26,10 +26,6 @@ config ESPI_NPCX
 	default y
 	depends on ESPI
 
-config I2C_NPCX
-	default y
-	depends on I2C
-
 source "soc/arm/nuvoton_npcx/npcx9/Kconfig.defconfig.npcx9*"
 
 endif # SOC_SERIES_NPCX9

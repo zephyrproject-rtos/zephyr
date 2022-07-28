@@ -7,10 +7,6 @@ config GPIO_GECKO
 	default y
 	depends on GPIO || LOG_BACKEND_SWO
 
-config I2C_GECKO
-	default y
-	depends on I2C
-
 config SOC_FLASH_GECKO
 	default y
 	depends on FLASH

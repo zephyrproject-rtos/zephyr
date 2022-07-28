@@ -27,10 +27,6 @@ config CAN_MCUX_FLEXCAN
 config GPIO
 	default y
 
-config I2C_MCUX
-	default y
-	depends on I2C
-
 config ETH_MCUX
 	default y
 	depends on NET_L2_ETHERNET

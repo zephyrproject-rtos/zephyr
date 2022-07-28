@@ -8,11 +8,4 @@ if BOARD_ARDUINO_DUE
 config BOARD
 	default "arduino_due"
 
-if I2C
-
-config I2C_SAM_TWI
-	default y
-
-endif # I2C
-
 endif # BOARD_ARDUINO_DUE
