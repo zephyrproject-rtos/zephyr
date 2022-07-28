@@ -25,7 +25,14 @@ import magic
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from get_maintainer import Maintainers, MaintainersError
 
+HERE = Path(__file__).parent
+
 logger = None
+
+# This ends up using the current repository if ZEPHYR_BASE is unset.
+ZEPHYR_BASE = (os.environ.get('ZEPHYR_BASE') or
+               str((HERE / '..' / '..').resolve()))
+os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
 
 def git(*args, cwd=None):
     # Helper for running a Git command. Returns the rstrip()ed stdout output.
