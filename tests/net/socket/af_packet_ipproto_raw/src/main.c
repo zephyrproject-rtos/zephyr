@@ -94,7 +94,7 @@ NET_DEVICE_INIT(fake_dev, "fake_dev", fake_dev_init, NULL, &fake_dev_context_dat
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &fake_dev_if_api, _ETH_L2_LAYER,
 		_ETH_L2_CTX_TYPE, 127);
 
-void test_setup(void)
+static void *test_setup(void)
 {
 	struct net_if *iface;
 	struct in_addr in4addr_my = { { { 192, 168, 0, 2 } } };
@@ -107,9 +107,11 @@ void test_setup(void)
 
 	ifaddr = net_if_ipv4_addr_add(iface, &in4addr_my, NET_ADDR_MANUAL, 0);
 	zassert_not_null(ifaddr, "Could not add iface address");
+
+	return NULL;
 }
 
-void test_sckt_raw_packet_raw_ip(void)
+ZTEST(net_sckt_packet_raw_ip, test_sckt_raw_packet_raw_ip)
 {
 	/* A test case for testing socket combo: AF_PACKET & SOCK_RAW & IPPROTO_RAW: */
 	struct net_if *iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
@@ -141,10 +143,4 @@ void test_sckt_raw_packet_raw_ip(void)
 	close(sock);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_sckt_packet_raw_ip,
-			 ztest_unit_test(test_setup),
-			 ztest_unit_test(test_sckt_raw_packet_raw_ip));
-	ztest_run_test_suite(test_sckt_packet_raw_ip);
-}
+ZTEST_SUITE(net_sckt_packet_raw_ip, NULL, test_setup, NULL, NULL, NULL);
