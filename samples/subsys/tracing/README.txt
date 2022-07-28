@@ -18,6 +18,9 @@ or:
 
     cmake -DBOARD=mps2_an521 -DCONF_FILE=prj_uart_ctf.conf ..
 
+NOTE: You may need to set 'zephyr,tracing-uart' property under the chosen
+node in your devicetree.  See boards/mps2_an521.overlay for an example.
+
 After the application has run for a while, check the trace output file.
 
 --------------------------------------------------------------------------------
