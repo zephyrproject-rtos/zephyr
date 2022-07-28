@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #define TIMEOUT_MS 60
 
-void test_fd_set(void)
+ZTEST_USER(net_socket_select, test_fd_set)
 {
 	fd_set set;
 
@@ -63,7 +63,7 @@ void test_fd_set(void)
 	zassert_equal(set.bitset[1], 0, "");
 }
 
-void test_select(void)
+ZTEST_USER(net_socket_select, test_select)
 {
 	int res;
 	int c_sock;
@@ -167,7 +167,7 @@ void test_select(void)
 	zassert_equal(res, 0, "close failed");
 }
 
-void test_main(void)
+static void *setup(void)
 {
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
 		k_thread_priority_set(k_current_get(),
@@ -177,10 +177,7 @@ void test_main(void)
 	}
 
 	k_thread_system_pool_assign(k_current_get());
-
-	ztest_test_suite(socket_select,
-			 ztest_user_unit_test(test_fd_set),
-			 ztest_user_unit_test(test_select));
-
-	ztest_run_test_suite(socket_select);
+	return NULL;
 }
+
+ZTEST_SUITE(net_socket_select, NULL, setup, NULL, NULL, NULL);
