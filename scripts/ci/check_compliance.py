@@ -118,9 +118,9 @@ class ComplianceTest:
         test code.
         """
         if self.case.result:
-            msg += "\n\nFailures before error: " + self.case.result._elem.text
+            msg += "\n\nFailures before error: " + self.case.result[0]._elem.text
 
-        self.case.result = Error(msg, "error")
+        self.case.result = [Error(msg, "error")]
 
         raise EndTest
 
@@ -136,7 +136,7 @@ class ComplianceTest:
         test code.
         """
         if self.case.result:
-            msg += "\n\nFailures before skip: " + self.case.result._elem.text
+            msg += "\n\nFailures before skip: " + self.case.result[0]._elem.text
 
         self.case.result = Skipped(msg, "skipped")
 
@@ -149,11 +149,11 @@ class ComplianceTest:
         """
         if not self.case.result:
             # First reported failure
-            self.case.result = Failure(self.name + " issues", "failure")
-            self.case.result._elem.text = msg.rstrip()
+            self.case.result = [Failure(self.name + " issues", "failure")]
+            self.case.result[0]._elem.text = msg.rstrip()
         else:
             # If there are multiple Failures, concatenate their messages
-            self.case.result._elem.text += "\n\n" + msg.rstrip()
+            self.case.result[0]._elem.text += "\n\n" + msg.rstrip()
 
     def add_info(self, msg):
         """
@@ -1119,8 +1119,8 @@ def _main(args):
 
     for case in suite:
         if case.result:
-            if case.result.type == 'skipped':
-                logging.warning("Skipped %s, %s", case.name, case.result.message)
+            if case.result[0].type == 'skipped':
+                logging.warning("Skipped %s, %s", case.name, case.result[0].message)
             else:
                 failed_cases.append(case)
         else:
@@ -1134,14 +1134,14 @@ def _main(args):
         for case in failed_cases:
             # not clear why junitxml doesn't clearly expose the most
             # important part of its underlying etree.Element
-            errmsg = case.result._elem.text
+            errmsg = case.result[0]._elem.text
             logging.error("Test %s failed: %s", case.name,
-                          errmsg.strip() if errmsg else case.result.message)
+                          errmsg.strip() if errmsg else case.result[0].message)
 
             with open(f"{case.name}.txt", "w") as f:
                 docs = name2doc.get(case.name)
                 f.write(f"{docs}\n\n")
-                f.write(errmsg.strip() if errmsg else case.result.message)
+                f.write(errmsg.strip() if errmsg else case.result[0].message)
 
     print("\nComplete results in " + args.output)
     return n_fails
