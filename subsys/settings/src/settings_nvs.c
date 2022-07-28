@@ -31,10 +31,12 @@ static int settings_nvs_load(struct settings_store *cs,
 			     const struct settings_load_arg *arg);
 static int settings_nvs_save(struct settings_store *cs, const char *name,
 			     const char *value, size_t val_len);
+static void *settings_nvs_storage_get(struct settings_store *cs);
 
 static struct settings_store_itf settings_nvs_itf = {
 	.csi_load = settings_nvs_load,
 	.csi_save = settings_nvs_save,
+	.csi_storage_get = settings_nvs_storage_get
 };
 
 static ssize_t settings_nvs_read_fn(void *back_end, void *data, size_t len)
@@ -331,4 +333,11 @@ int settings_backend_init(void)
 	rc = settings_nvs_dst(&default_settings_nvs);
 
 	return rc;
+}
+
+static void *settings_nvs_storage_get(struct settings_store *cs)
+{
+	struct settings_nvs *cf = (struct settings_nvs *)cs;
+
+	return &cf->cf_nvs;
 }
