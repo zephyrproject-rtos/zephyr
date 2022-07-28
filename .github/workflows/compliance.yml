@@ -43,7 +43,7 @@ jobs:
       run: |
         pip3 install setuptools
         pip3 install wheel
-        pip3 install python-magic junitparser==1.6.3 gitlint pylint pykwalify
+        pip3 install python-magic junitparser gitlint pylint pykwalify
         pip3 install west
 
     - name: west setup
