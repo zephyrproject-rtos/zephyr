@@ -9,6 +9,7 @@ ram: 512
 supported:
   - gpio
   - counter
+  - i2c
 testing:
   ignore_tags:
     - bluetooth

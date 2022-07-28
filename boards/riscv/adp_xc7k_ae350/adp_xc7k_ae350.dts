@@ -15,6 +15,7 @@
 	aliases {
 		gpio-0 = &gpio0;
 		counter-0 = &pit0;
+		i2c-0 = &i2c0;
 		led0 = &seg7_led1_g;
 		led1 = &seg7_led2_g;
 		sw0 = &user_button1;
@@ -159,4 +160,8 @@
 		jedec-id = [c2 25 35];
 		status = "okay";
 	};
+};
+
+&i2c0 {
+	status = "okay";
 };
