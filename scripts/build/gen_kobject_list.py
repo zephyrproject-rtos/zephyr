@@ -927,6 +927,16 @@ def write_kobj_types_output(fp):
         fp.write("K_OBJ_DRIVER_%s,\n" % subsystem)
 
 
+def write_api_to_kobjs_output(fp):
+    fp.write("/* Driver subsystems */\n")
+
+    fp.write("#define api2kobjs(x) _Generic((x), \\\n")
+    for subsystem in subsystems:
+        subsys = subsystem.replace("_driver_api", "").upper()
+        fp.write("\tstruct %s *: K_OBJ_DRIVER_%s,\\\n" % (subsystem, subsys))
+        fp.write("\tconst struct %s *: K_OBJ_DRIVER_%s,\\\n" % (subsystem, subsys))
+    fp.write("\tdefault: K_OBJ_ANY)\n")
+
 def write_kobj_otype_output(fp):
     fp.write("/* Core kernel objects */\n")
     for kobj, obj_info in kobjects.items():
@@ -990,6 +1000,9 @@ def parse_args():
         "-V", "--validation-output", required=False,
         help="Output driver validation macros")
     parser.add_argument(
+        "-D", "--driver-api-to-kobj-types-output", required=False,
+        help="Output driver api to k_object macro")
+    parser.add_argument(
         "-K", "--kobj-types-output", required=False,
         help="Output k_object enum constants")
     parser.add_argument(
@@ -1040,6 +1053,10 @@ def main():
     if args.validation_output:
         with open(args.validation_output, "w") as fp:
             write_validation_output(fp)
+
+    if args.driver_api_to_kobj_types_output:
+        with open(args.driver_api_to_kobj_types_output, "w") as fp:
+            write_api_to_kobjs_output(fp)
 
     if args.kobj_types_output:
         with open(args.kobj_types_output, "w") as fp:

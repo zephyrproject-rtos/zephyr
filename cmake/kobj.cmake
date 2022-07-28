@@ -10,6 +10,7 @@ function(gen_kobj gen_dir_out)
   set(KOBJ_TYPES ${gen_dir}/kobj-types-enum.h)
   set(KOBJ_OTYPE ${gen_dir}/otype-to-str.h)
   set(KOBJ_SIZE ${gen_dir}/otype-to-size.h)
+  set(DRV_API_TO_KOBJ_TYPES ${gen_dir}/driver-api-to-kobj-enum.h)
 
   file(MAKE_DIRECTORY ${gen_dir})
 
@@ -19,6 +20,7 @@ function(gen_kobj gen_dir_out)
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py
     --kobj-types-output ${KOBJ_TYPES}
+    --driver-api-to-kobj-types-output ${DRV_API_TO_KOBJ_TYPES}
     --kobj-otype-output ${KOBJ_OTYPE}
     --kobj-size-output ${KOBJ_SIZE}
     ${gen_kobject_list_include_args}
