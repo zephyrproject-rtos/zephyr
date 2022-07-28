@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 /* On QEMU, poll() which waits takes +10ms from the requested time. */
 #define FUZZ 10
 
-void test_poll(void)
+ZTEST(net_socket_poll, test_poll)
 {
 	int res;
 	int c_sock;
@@ -177,7 +177,7 @@ void test_poll(void)
 
 #define TEST_SNDBUF_SIZE CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE
 
-static void test_pollout_tcp(void)
+ZTEST(net_socket_poll, test_pollout_tcp)
 {
 	int res;
 	int c_sock;
@@ -252,11 +252,4 @@ static void test_pollout_tcp(void)
 	zassert_equal(res, 0, "close failed");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(socket_poll,
-			 ztest_unit_test(test_poll),
-			 ztest_unit_test(test_pollout_tcp));
-
-	ztest_run_test_suite(socket_poll);
-}
+ZTEST_SUITE(net_socket_poll, NULL, NULL, NULL, NULL, NULL);
