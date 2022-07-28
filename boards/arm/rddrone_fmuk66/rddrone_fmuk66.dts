@@ -367,15 +367,18 @@ zephyr_udc0: &usbotg {
 		int2-gpios = <&gpioe 10 GPIO_ACTIVE_LOW>;
                 status = "okay";
 	};
-/*
-	fxas21002@20 {
+
+	fxas21002@1 {
 		compatible = "nxp,fxas21002";
-		reg = <0x20>;
+		reg = <1>;
 		label = "FXAS21002";
-		int1-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>;
-		int2-gpios = <&gpioe 10 GPIO_ACTIVE_LOW>;
+                spi-max-frequency = <DT_FREQ_M(2)>;
+		reset-gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
+		int1-gpios = <&gpioe 7 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpioe 6 GPIO_ACTIVE_LOW>;
+                status = "okay";
 	};
-	*/
+	
 };
 
 /* external spi */

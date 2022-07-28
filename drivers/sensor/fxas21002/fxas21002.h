@@ -5,7 +5,11 @@
  */
 
 #include <zephyr/drivers/sensor.h>
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 #include <zephyr/drivers/i2c.h>
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#endif
+#include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
 
 #define FXAS21002_REG_STATUS		0x00
@@ -56,8 +60,30 @@ enum fxas21002_channel {
 	FXAS21002_CHANNEL_GYRO_Z,
 };
 
+struct fxas21002_io_ops {
+	int (*read)(const struct device *dev,
+		    uint8_t reg,
+		    void *data,
+		    size_t length);
+	int (*byte_read)(const struct device *dev,
+			 uint8_t reg,
+			 uint8_t *byte);
+	int (*byte_write)(const struct device *dev,
+			  uint8_t reg,
+			  uint8_t byte);
+	int (*reg_field_update)(const struct device *dev,
+				uint8_t reg,
+				uint8_t mask,
+				uint8_t val);
+};
+
 struct fxas21002_config {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	struct i2c_dt_spec i2c;
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+	struct spi_dt_spec spi;
+#endif
+	struct fxas21002_io_ops *ops;
 #ifdef CONFIG_FXAS21002_TRIGGER
 	struct gpio_dt_spec int_gpio;
 #endif
@@ -91,6 +117,43 @@ uint32_t fxas21002_get_transition_time(enum fxas21002_power start,
 				       enum fxas21002_power end,
 				       uint8_t dr);
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+int fxas21002_byte_write_spi(const struct device *dev,
+				 uint8_t reg,
+				 uint8_t byte);
+
+int fxas21002_byte_read_spi(const struct device *dev,
+				uint8_t reg,
+				uint8_t *byte);
+
+int fxas21002_reg_field_update_spi(const struct device *dev,
+				uint8_t reg,
+				uint8_t mask,
+				uint8_t val);
+
+int fxas21002_read_spi(const struct device *dev,
+			   uint8_t reg,
+			   void *data,
+			   size_t length);
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+int fxas21002_byte_write_i2c(const struct device *dev,
+				 uint8_t reg,
+				 uint8_t byte);
+
+int fxas21002_byte_read_i2c(const struct device *dev,
+				uint8_t reg,
+				uint8_t *byte);
+
+int fxas21002_reg_field_update_i2c(const struct device *dev,
+				uint8_t reg,
+				uint8_t mask,
+				uint8_t val);
+
+static int fxas21002_read_i2c(const struct device *dev,
+			     uint8_t reg,
+			     void *data,
+			     size_t length);
+#endif
 #if CONFIG_FXAS21002_TRIGGER
 int fxas21002_trigger_init(const struct device *dev);
 int fxas21002_trigger_set(const struct device *dev,

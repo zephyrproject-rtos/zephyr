@@ -18,6 +18,128 @@ static const uint32_t sample_period[] = {
 	1250, 2500, 5000, 10000, 20000, 40000, 80000, 80000
 };
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define DIR_READ(a)                     ((a) | (1 << 7))
+#define DIR_WRITE(a)                    ((a) & 0x7f)
+
+int fxas21002_transceive(const struct device *dev,
+			     void *data, size_t length)
+{
+	const struct fxas21002_config *cfg = dev->config;
+	const struct spi_buf buf = { .buf = data, .len = length };
+	const struct spi_buf_set s = { .buffers = &buf, .count = 1 };
+
+        return spi_transceive_dt(&cfg->spi, &s, &s);
+}
+
+int fxas21002_read_spi(const struct device *dev,
+			   uint8_t reg,
+			   void *data,
+			   size_t length)
+{
+	const struct fxas21002_config *cfg = dev->config;
+
+	/* Reads must clock out a dummy byte after sending the address. */
+	uint8_t reg_buf[2] = { DIR_READ(reg), 0 };
+	const struct spi_buf buf[2] = {
+		{ .buf = reg_buf, .len = 3 },
+		{ .buf = data, .len = length }
+	};
+	const struct spi_buf_set tx = { .buffers = buf, .count = 1 };
+	const struct spi_buf_set rx = { .buffers = buf, .count = 2 };
+
+	return spi_transceive_dt(&cfg->spi, &tx, &rx);
+}
+
+int fxas21002_byte_read_spi(const struct device *dev,
+				uint8_t reg,
+				uint8_t *byte)
+{
+	/* Reads must clock out a dummy byte after sending the address. */
+	uint8_t data[] = { DIR_READ(reg), 0};
+	int ret;
+	ret = fxas21002_transceive(dev, data, sizeof(data));
+
+	*byte = data[1];
+
+	return ret;
+}
+
+int fxas21002_byte_write_spi(const struct device *dev,
+				 uint8_t reg,
+				 uint8_t byte)
+{
+	uint8_t data[] = { DIR_WRITE(reg), byte };
+
+	return fxas21002_transceive(dev, data, sizeof(data));
+}
+
+int fxas21002_reg_field_update_spi(const struct device *dev,
+				uint8_t reg,
+				uint8_t mask,
+				uint8_t val)
+{
+	uint8_t old_val;
+
+	if (fxas21002_byte_read_spi(dev, reg, &old_val) < 0) {
+		return -EIO;
+	}
+
+	return fxas21002_byte_write_spi(dev, reg, (old_val & ~mask) | (val & mask));
+}
+
+static const struct fxas21002_io_ops fxas21002_spi_ops = {
+	.read = fxas21002_read_spi,
+	.byte_read = fxas21002_byte_read_spi,
+	.byte_write = fxas21002_byte_write_spi,
+	.reg_field_update = fxas21002_reg_field_update_spi,
+};
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+int fxas21002_read_i2c(const struct device *dev,
+			     uint8_t reg,
+			     void *data,
+			     size_t length)
+{
+	const struct fxas21002_config *config = dev->config;
+
+	return i2c_burst_read_dt(&config->i2c, reg, data, length);
+}
+
+int fxas21002_byte_read_i2c(const struct device *dev,
+				uint8_t reg,
+				uint8_t *byte)
+{
+	const struct fxas21002_config *config = dev->config;
+
+	return i2c_reg_read_byte_dt(&config->i2c, reg, byte);
+}
+
+int fxas21002_byte_write_i2c(const struct device *dev,
+				 uint8_t reg,
+				 uint8_t byte)
+{
+	const struct fxas21002_config *config = dev->config;
+
+	return i2c_reg_write_byte_dt(&config->i2c, reg, byte);
+}
+
+int fxas21002_reg_field_update_i2c(const struct device *dev,
+				uint8_t reg,
+				uint8_t mask,
+				uint8_t val)
+{
+	const struct fxas21002_config *config = dev->config;
+
+	return i2c_reg_update_byte_dt(&config->i2c, reg, mask, val);
+}
+static const struct fxas21002_io_ops fxas21002_i2c_ops = {
+	.read = fxas21002_read_i2c,
+	.byte_read = fxas21002_byte_read_i2c,
+	.byte_write = fxas21002_byte_write_i2c,
+	.reg_field_update = fxas21002_reg_field_update_i2c,
+};
+#endif
+
 static int fxas21002_sample_fetch(const struct device *dev,
 				  enum sensor_channel chan)
 {
@@ -36,7 +158,7 @@ static int fxas21002_sample_fetch(const struct device *dev,
 	k_sem_take(&data->sem, K_FOREVER);
 
 	/* Read all the channels in one I2C transaction. */
-	if (i2c_burst_read_dt(&config->i2c, FXAS21002_REG_OUTXMSB, buffer,
+	if (config->ops->read(dev, FXAS21002_REG_OUTXMSB, buffer,
 			      sizeof(buffer))) {
 		LOG_ERR("Could not fetch sample");
 		ret = -EIO;
@@ -139,7 +261,7 @@ int fxas21002_get_power(const struct device *dev, enum fxas21002_power *power)
 	const struct fxas21002_config *config = dev->config;
 	uint8_t val = *power;
 
-	if (i2c_reg_read_byte_dt(&config->i2c, FXAS21002_REG_CTRLREG1, &val)) {
+	if (config->ops->byte_read(dev, FXAS21002_REG_CTRLREG1, &val)) {
 		LOG_ERR("Could not get power setting");
 		return -EIO;
 	}
@@ -153,7 +275,7 @@ int fxas21002_set_power(const struct device *dev, enum fxas21002_power power)
 {
 	const struct fxas21002_config *config = dev->config;
 
-	return i2c_reg_update_byte_dt(&config->i2c, FXAS21002_REG_CTRLREG1,
+	return config->ops->reg_field_update(dev, FXAS21002_REG_CTRLREG1,
 				      FXAS21002_CTRLREG1_POWER_MASK, power);
 }
 
@@ -190,8 +312,13 @@ static int fxas21002_init(const struct device *dev)
 	uint8_t whoami;
 	uint8_t ctrlreg1;
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR("I2C bus device not ready");
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+	if (!device_is_ready(config->spi.bus)) {
+		LOG_ERR("SPI bus device not ready");
+#endif
 		return -ENODEV;
 	}
 
@@ -199,7 +326,7 @@ static int fxas21002_init(const struct device *dev)
 	 * and not some other type of device that happens to have the same I2C
 	 * address.
 	 */
-	if (i2c_reg_read_byte_dt(&config->i2c, FXAS21002_REG_WHOAMI, &whoami)) {
+	if (config->ops->byte_read(dev, FXAS21002_REG_WHOAMI, &whoami)) {
 		LOG_ERR("Could not get WHOAMI value");
 		return -EIO;
 	}
@@ -215,12 +342,12 @@ static int fxas21002_init(const struct device *dev)
 	 * acknowledgment (ACK) of the written byte to the master. Therefore,
 	 * do not check the return code of the I2C transaction.
 	 */
-	i2c_reg_write_byte_dt(&config->i2c, FXAS21002_REG_CTRLREG1,
+	config->ops->byte_write(dev, FXAS21002_REG_CTRLREG1,
 			      FXAS21002_CTRLREG1_RST_MASK);
 
 	/* Wait for the reset sequence to complete */
 	do {
-		if (i2c_reg_read_byte_dt(&config->i2c, FXAS21002_REG_CTRLREG1,
+		if (config->ops->byte_read(dev, FXAS21002_REG_CTRLREG1,
 					 &ctrlreg1)) {
 			LOG_ERR("Could not get ctrlreg1 value");
 			return -EIO;
@@ -228,14 +355,14 @@ static int fxas21002_init(const struct device *dev)
 	} while (ctrlreg1 & FXAS21002_CTRLREG1_RST_MASK);
 
 	/* Set the full-scale range */
-	if (i2c_reg_update_byte_dt(&config->i2c, FXAS21002_REG_CTRLREG0,
+	if (config->ops->reg_field_update(dev, FXAS21002_REG_CTRLREG0,
 				   FXAS21002_CTRLREG0_FS_MASK, config->range)) {
 		LOG_ERR("Could not set range");
 		return -EIO;
 	}
 
 	/* Set the output data rate */
-	if (i2c_reg_update_byte_dt(&config->i2c, FXAS21002_REG_CTRLREG1,
+	if (config->ops->reg_field_update(dev, FXAS21002_REG_CTRLREG1,
 				   FXAS21002_CTRLREG1_DR_MASK,
 				   config->dr << FXAS21002_CTRLREG1_DR_SHIFT)) {
 		LOG_ERR("Could not set output data rate");
@@ -278,7 +405,13 @@ static const struct sensor_driver_api fxas21002_driver_api = {
 };
 
 static const struct fxas21002_config fxas21002_config = {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	.i2c = I2C_DT_SPEC_INST_GET(0),
+        .ops = &fxas21002_i2c_ops,
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+	.spi = SPI_DT_SPEC_INST_GET(0, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),
+        .ops = &fxas21002_spi_ops,
+#endif
 	.whoami = CONFIG_FXAS21002_WHOAMI,
 	.range = CONFIG_FXAS21002_RANGE,
 	.dr = CONFIG_FXAS21002_DR,

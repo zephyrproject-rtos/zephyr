@@ -5,9 +5,18 @@ description: FXAS21002 3-axis gyroscope sensor
 
 compatible: "nxp,fxas21002"
 
-include: i2c-device.yaml
+include: spi-device.yaml
 
 properties:
+    reset-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        RST pin
+        This pin defaults to active high when consumed by the sensor.
+        The property value should ensure the flags properly describe
+        the signal that is presented to the driver.
+
     int1-gpios:
       type: phandle-array
       required: false
