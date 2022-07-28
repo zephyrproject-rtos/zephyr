@@ -7,6 +7,9 @@
 #include <stdint.h>
 #include <xtensa/config/core-isa.h>
 
+/* Value used as delay when waiting for hw register state change. */
+#define HW_STATE_CHECK_DELAY 256
+
 /* Boot / recovery capability function registers */
 struct dfdspbrcp {
 	struct {
