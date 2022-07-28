@@ -116,14 +116,10 @@
 		};
 
 		clint: clint@2000000 {
-			compatible = "riscv,clint0";
-			#address-cells = <0>;
-			#interrupt-cells = <1>;
-			interrupt-controller;
+			compatible = "starfive,jh7100-clint", "sifive,clint0";
 			interrupts-extended = <&cpu0intctrl 3 &cpu0intctrl 7
-					       &cpu1intctrl 3 &cpu1intctrl 7 >;
+					       &cpu1intctrl 3 &cpu1intctrl 7>;
 			reg = <0x0 0x2000000 0x0 0x10000>;
-			reg-names = "control";
 		};
 
 		plic: plic@c000000 {
