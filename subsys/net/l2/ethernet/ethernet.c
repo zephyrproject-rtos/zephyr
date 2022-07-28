@@ -274,6 +274,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	lladdr->len = sizeof(struct net_eth_addr);
 	lladdr->type = NET_LINK_ETHERNET;
 
+	net_pkt_set_ll_proto_type(pkt, type);
+
 	if (net_eth_is_vlan_enabled(ctx, iface)) {
 		if (type == NET_ETH_PTYPE_VLAN ||
 		    (eth_is_vlan_tag_stripped(iface) &&
