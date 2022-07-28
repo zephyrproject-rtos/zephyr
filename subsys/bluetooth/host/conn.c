@@ -768,7 +768,17 @@ void bt_conn_process_tx(struct bt_conn *conn)
 	buf = net_buf_get(&conn->tx_queue, K_NO_WAIT);
 	BT_ASSERT(buf);
 	if (!send_buf(conn, buf)) {
+		struct bt_conn_tx *tx = tx_data(buf)->tx;
+
+		tx_data(buf)->tx = NULL;
+
+		/* destroy the buffer */
 		net_buf_unref(buf);
+
+		/* destroy the tx context (and any associated meta-data) */
+		if (tx) {
+			conn_tx_destroy(conn, tx);
+		}
 	}
 }
 
