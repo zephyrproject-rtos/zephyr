@@ -166,14 +166,12 @@ static void test_credential_delete(void)
 	zassert_equal(ret, -ENOENT, "Should have failed with ENOENT");
 }
 
-void test_main(void)
+ZTEST(tls_crecentials, test_tls_crecentials)
 {
-	ztest_test_suite(tls_crecentials_tests,
-		ztest_unit_test(test_credential_add),
-		ztest_unit_test(test_credential_get),
-		ztest_unit_test(test_credential_internal_iterate),
-		ztest_unit_test(test_credential_delete)
-	);
-
-	ztest_run_test_suite(tls_crecentials_tests);
+	test_credential_add();
+	test_credential_get();
+	test_credential_internal_iterate();
+	test_credential_delete();
 }
+
+ZTEST_SUITE(tls_crecentials, NULL, NULL, NULL, NULL, NULL);
