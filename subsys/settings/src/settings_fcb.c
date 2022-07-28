@@ -27,15 +27,18 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 int settings_backend_init(void);
 void settings_mount_fcb_backend(struct settings_fcb *cf);
+static void *settings_fcb_storage_get(struct settings_store *cs);
 
 static int settings_fcb_load(struct settings_store *cs,
 			     const struct settings_load_arg *arg);
 static int settings_fcb_save(struct settings_store *cs, const char *name,
 			     const char *value, size_t val_len);
+static void *settings_fcb_storage_get(struct settings_store *cs);
 
 static const struct settings_store_itf settings_fcb_itf = {
 	.csi_load = settings_fcb_load,
 	.csi_save = settings_fcb_save,
+	.csi_storage_get = settings_fcb_storage_get
 };
 
 int settings_fcb_src(struct settings_fcb *cf)
@@ -435,4 +438,11 @@ int settings_backend_init(void)
 	settings_mount_fcb_backend(&config_init_settings_fcb);
 
 	return rc;
+}
+
+static void *settings_fcb_storage_get(struct settings_store *cs)
+{
+	struct settings_fcb *cf = (struct settings_fcb *)cs;
+
+	return &cf->cf_fcb;
 }
