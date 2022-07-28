@@ -35,6 +35,10 @@ ZEPHYR_BASE = (os.environ.get('ZEPHYR_BASE') or
                str((HERE / '..' / '..').resolve()))
 os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
 
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'scripts', 'dts', 'python-devicetree', 'src'))
+
+from devicetree import edtlib
+
 @contextlib.contextmanager
 def run_in_directory(dir):
     # Helper to run a code block from a given directory.
@@ -253,34 +257,49 @@ class DevicetreeBindingsCheck(ComplianceTest):
     path_hint = "<zephyr-base>"
 
     def run(self, full=True):
-        dts_bindings = self.parse_dt_bindings()
-
-        for dts_binding in dts_bindings:
-            self.required_false_check(dts_binding)
-
-    def parse_dt_bindings(self):
-        """
-        Returns a list of dts/bindings/**/*.yaml files
-        """
-
-        dt_bindings = []
+        # Search for directories containing devicetree bindings.
+        #
+        # We must include zephyr/dts/bindings so that things like
+        # 'include: base.yaml' work properly, but we also want
+        # to find things like samples/foo/dts/bindings.
+        BINDINGS_DIR = 'dts/bindings/'
+        bindings_set = set([str(Path(ZEPHYR_BASE) / BINDINGS_DIR)])
         for file_name in get_files(filter="d"):
-            if 'dts/bindings/' in file_name and file_name.endswith('.yaml'):
-                dt_bindings.append(file_name)
+            if BINDINGS_DIR not in file_name:
+                continue
+            partitioned = file_name.partition(BINDINGS_DIR)
+            bindings_set.add(os.path.join(partitioned[0], partitioned[1]))
+        bindings_dirs = sorted(bindings_set)
 
-        return dt_bindings
+        # If no bindings are changed, skip this check.
+        try:
+            subprocess.check_call(['git', 'diff', '--quiet', COMMIT_RANGE] +
+                                  bindings_dirs)
+            no_differences = True
+        except subprocess.CalledProcessError:
+            no_differences = False
+        if no_differences:
+            self.skip('no changes to bindings were made')
 
-    def required_false_check(self, dts_binding):
-        with open(dts_binding) as file:
-            line_number = 0
-            for line in file:
-                line_number += 1
-                if 'required: false' in line:
-                    self.fmtd_failure(
-                        'warning', 'Devicetree Bindings', dts_binding,
-                        line_number, col=None,
-                        desc="'required: false' is redundant, please remove")
+        # If any changes were made, just check all the bindings.
+        # This does a bit more work than necessary, but that should
+        # be OK.
+        for binding in edtlib.bindings_from_dirs(bindings_dirs):
+            self.check_recursively(binding, self.required_false_check)
 
+    @staticmethod
+    def check_recursively(binding, check_function):
+        while binding is not None:
+            check_function(binding)
+            binding = binding.child_binding
+
+    def required_false_check(self, binding):
+        raw_props = binding.raw.get('properties', {})
+        for prop_name, raw_prop in raw_props.items():
+            if raw_prop.get('required') is False:
+                self.failure(
+                    f'{binding.path}: property "{prop_name}": '
+                    "'required: false' is redundant, please remove")
 
 class KconfigCheck(ComplianceTest):
     """
