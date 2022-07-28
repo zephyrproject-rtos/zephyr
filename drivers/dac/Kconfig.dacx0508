@@ -6,7 +6,10 @@
 
 config DAC_DACX0508
 	bool "TI DACx0508 DAC driver"
+	default y
 	depends on SPI
+	depends on DT_HAS_TI_DAC60508_ENABLED || DT_HAS_TI_DAC70508_ENABLED || \
+		   DT_HAS_TI_DAC80508_ENABLED
 	help
 	  Enable the driver for the TI DACx0508.
 

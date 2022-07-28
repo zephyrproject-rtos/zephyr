@@ -2,12 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_ATMEL_SAM_DAC := atmel,sam-dac
-
 config DAC_SAM
 	bool "Atmel SAM DAC driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_ATMEL_SAM_DAC))
-	depends on SOC_FAMILY_SAM
+	default y
+	depends on DT_HAS_ATMEL_SAM_DAC_ENABLED
 	help
 	  Enable Atmel SAM MCU Family Digital Audio Converter (DAC) driver.
