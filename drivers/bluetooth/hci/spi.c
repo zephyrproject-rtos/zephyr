@@ -499,7 +499,7 @@ static int bt_spi_open(void)
 }
 
 static const struct bt_hci_driver drv = {
-	.name		= DT_INST_LABEL(0),
+	.name		= DEVICE_DT_NAME(DT_DRV_INST(0)),
 	.bus		= BT_HCI_DRIVER_BUS_SPI,
 #if defined(CONFIG_BT_BLUENRG_ACI)
 	.quirks		= BT_QUIRK_NO_RESET,
