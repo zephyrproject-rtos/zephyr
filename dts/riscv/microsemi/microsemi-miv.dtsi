@@ -42,6 +42,12 @@
 			reg = <0x80040000 0x40000>;
 		};
 
+		clint: clint@44000000 {
+			compatible = "sifive,clint0";
+			interrupts-extended = <&hlic 3>, <&hlic 7>;
+			reg = <0x44000000 0x10000>;
+		};
+
 		plic: interrupt-controller@40000000 {
 			compatible = "sifive,plic-1.0.0";
 			#address-cells = <0>;
