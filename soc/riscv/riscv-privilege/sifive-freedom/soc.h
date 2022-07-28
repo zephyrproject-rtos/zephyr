@@ -14,11 +14,6 @@
 #include <soc_common.h>
 
 #if defined(CONFIG_SOC_RISCV_SIFIVE_FREEDOM)
-
-/* PINMUX IO Hardware Functions */
-#define SIFIVE_PINMUX_IOF0            0x00
-#define SIFIVE_PINMUX_IOF1            0x01
-
 /* PINMUX MAX PINS */
 #define SIFIVE_PINMUX_PINS            32
 
