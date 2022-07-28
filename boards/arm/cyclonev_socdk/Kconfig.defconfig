@@ -9,12 +9,10 @@ config BOARD
 	default "cyclonev_socdk"
 depends on BOARD_CVSXDEVKIT
 
-if I2C
-config I2C_DW
-	default y
+if I2C_DW
 config I2C_DW_CLOCK_SPEED
 	default 200
-endif # I2C
+endif # I2C_DW
 
 if EEPROM
 config EEPROM_AT24

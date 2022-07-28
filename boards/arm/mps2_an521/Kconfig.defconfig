@@ -33,10 +33,6 @@ config WDOG_CMSDK_APB
 	default y
 	depends on WATCHDOG
 
-config I2C_SBCON
-	default y
-	depends on I2C
-
 if IPM
 
 config IPM_MHU

@@ -28,8 +28,4 @@ config SOC_PART_NUMBER
 config NUM_IRQS
 	default 35
 
-config I2C_SAM_TWI
-	default y
-	depends on I2C
-
 endif # SOC_SERIES_SAM4S

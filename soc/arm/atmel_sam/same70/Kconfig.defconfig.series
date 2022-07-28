@@ -49,10 +49,6 @@ config ADC_SAM_AFEC
 	default y
 	depends on ADC
 
-config I2C_SAM_TWIHS
-	default y
-	depends on I2C
-
 config I2S_SAM_SSC
 	default y
 	depends on I2S

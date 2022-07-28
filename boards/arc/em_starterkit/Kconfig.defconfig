@@ -12,19 +12,12 @@ config GPIO_INIT_PRIORITY
 
 endif # GPIO
 
-if I2C
-
-config I2C_DW
-	default y
-
 if I2C_DW
 
 config I2C_DW_CLOCK_SPEED
 	default 100
 
 endif # I2C_DW
-
-endif # I2C
 
 if SPI_DW
 

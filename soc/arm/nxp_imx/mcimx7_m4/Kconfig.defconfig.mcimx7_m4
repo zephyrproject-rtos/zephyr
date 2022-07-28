@@ -14,10 +14,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config GPIO
 	default y
 
-config I2C_IMX
-	default y
-	depends on I2C
-
 config IPM_IMX
 	default y
 	depends on IPM

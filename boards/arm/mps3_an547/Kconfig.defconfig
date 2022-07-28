@@ -21,8 +21,4 @@ config UART_INTERRUPT_DRIVEN
 
 endif # SERIAL
 
-config I2C_SBCON
-	default y
-	depends on I2C
-
 endif

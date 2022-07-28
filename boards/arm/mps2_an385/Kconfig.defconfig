@@ -27,10 +27,6 @@ config TIMER_DTMR_CMSDK_APB
 
 endif # COUNTER
 
-config I2C_SBCON
-	default y
-	depends on I2C
-
 config ZTEST_STACK_SIZE
 	default 4096 if ZTEST
 
