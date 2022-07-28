@@ -59,6 +59,14 @@
 			reg = <0x80000000 0x800000>;
 		};
 
+		clint: clint@2000000 {
+			compatible = "sifive,clint0";
+			interrupts-extended = <&hlic0 3 &hlic0 7
+					       &hlic1 3 &hlic1 7>;
+			interrupt-names = "soft0", "timer0", "soft1", "timer1";
+			reg = <0x2000000 0x10000>;
+		};
+
 		plic: interrupt-controller@c000000 {
 			compatible = "sifive,plic-1.0.0";
 			#interrupt-cells = <2>;
