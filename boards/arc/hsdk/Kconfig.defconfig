@@ -11,10 +11,6 @@ if GPIO
 config GPIO_INIT_PRIORITY
 	default 60
 
-# for CY8C95XX
-config I2C
-	default y
-
 endif # GPIO
 
 if SPI_DW
@@ -30,18 +26,11 @@ config SPI_DW_ACCESS_WORD_ONLY
 
 endif # SPI_DW
 
-if I2C
-
-config I2C_DW
-	default y
-
 if I2C_DW
 
 config I2C_DW_CLOCK_SPEED
 	default 200
 
 endif #I2C_DW
-
-endif #I2C
 
 endif # BOARD_HSDK

@@ -23,10 +23,6 @@ config SOC_FLASH_MCUX
 config GPIO
 	default y
 
-config I2C_MCUX
-	default y
-	depends on I2C
-
 source "soc/arm/nxp_kinetis/kv5x/Kconfig.defconfig.mkv*"
 
 endif # SOC_SERIES_KINETIS_KV5X

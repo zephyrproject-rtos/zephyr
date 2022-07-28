@@ -34,10 +34,6 @@ config SOC_FLASH_MCUX
 config GPIO
 	default y
 
-config I2C_MCUX
-	default y
-	depends on I2C
-
 config USB_KINETIS
 	default y
 	depends on USB_DEVICE_DRIVER

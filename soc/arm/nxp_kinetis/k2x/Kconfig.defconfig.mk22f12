@@ -19,10 +19,6 @@ config DAC_MCUX_DAC
 config GPIO
 	default y
 
-config I2C_MCUX
-	default y
-	depends on I2C
-
 config ENTROPY_MCUX_RNGA
 	default y
 	depends on ENTROPY_GENERATOR

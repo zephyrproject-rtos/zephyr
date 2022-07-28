@@ -18,9 +18,6 @@ config IEEE802154_TELINK_B91
 config NET_CONFIG_IEEE802154_DEV_NAME
 	default "IEEE802154_b91"
 
-config I2C_TELINK_B91
-	default y if I2C
-
 config ADC_TELINK_B91
 	default y if ADC
 

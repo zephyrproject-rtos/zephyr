@@ -23,10 +23,6 @@ config SOC_PART_NUMBER
 config NUM_IRQS
 	default 47
 
-config I2C_SAM_TWI
-	default y
-	depends on I2C
-
 if NETWORKING
 
 config NET_L2_ETHERNET

@@ -29,10 +29,6 @@ config ENTROPY_CC13XX_CC26XX_RNG
 	default y
 	depends on ENTROPY_GENERATOR
 
-config I2C_CC13XX_CC26XX
-	default y
-	depends on I2C
-
 if IEEE802154
 
 config IEEE802154_CC13XX_CC26XX

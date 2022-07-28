@@ -28,10 +28,6 @@ config ENTROPY_MCUX_TRNG
 	default y if HAS_MCUX_TRNG
 	depends on ENTROPY_GENERATOR
 
-config I2C_MCUX_LPI2C
-	default y if HAS_MCUX_LPI2C
-	depends on I2C
-
 config ADC_MCUX_12B1MSPS_SAR
 	default y if HAS_MCUX_12B1MSPS_SAR
 	depends on ADC

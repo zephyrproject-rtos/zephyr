@@ -15,10 +15,6 @@ config ADC_MCUX_ADC16
 	default y
 	depends on ADC
 
-config I2C_MCUX
-	default y
-	depends on I2C
-
 config SOC_FLASH_MCUX
 	default y
 	depends on FLASH
