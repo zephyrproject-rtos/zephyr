@@ -69,7 +69,7 @@ jobs:
         # debug
         ls -la
         git log  --pretty=oneline | head -n 10
-        ./scripts/ci/check_compliance.py -m Gitlint -m Identity -m Nits -m pylint -m checkpatch -m Kconfig -c origin/${BASE_REF}..
+        ./scripts/ci/check_compliance.py -m Gitlint -m Identity -m Nits -m pylint -m checkpatch -m Kconfig -m DevicetreeBindings -c origin/${BASE_REF}..
 
     - name: upload-results
       uses: actions/upload-artifact@master
