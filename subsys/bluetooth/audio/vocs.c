@@ -213,26 +213,26 @@ static ssize_t read_output_desc(struct bt_conn *conn, const struct bt_gatt_attr 
 	BT_GATT_SECONDARY_SERVICE(BT_UUID_VOCS), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_VOCS_STATE, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
+			       BT_GATT_PERM_READ_LESC, \
 			       read_offset_state, NULL, &_vocs), \
 	BT_GATT_CCC(offset_state_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_LESC), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_VOCS_LOCATION, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
+			       BT_GATT_PERM_READ_LESC, \
 			       read_location, NULL, &_vocs), \
 	BT_GATT_CCC(location_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_LESC), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_VOCS_CONTROL, \
 			       BT_GATT_CHRC_WRITE, \
-			       BT_GATT_PERM_WRITE_ENCRYPT, \
+			       BT_GATT_PERM_WRITE_LESC, \
 			       NULL, write_vocs_control, &_vocs), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_VOCS_DESCRIPTION, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
+			       BT_GATT_PERM_READ_LESC, \
 			       read_output_desc, NULL, &_vocs), \
 	BT_GATT_CCC(output_desc_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT) \
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_LESC) \
 	}
 
 static struct bt_vocs vocs_insts[CONFIG_BT_VOCS_MAX_INSTANCE_COUNT];
@@ -328,14 +328,14 @@ int bt_vocs_register(struct bt_vocs *vocs,
 			/* Update attr and chrc to be writable */
 			chrc = vocs->srv.service_p->attrs[i - 1].user_data;
 			attr->write = write_location;
-			attr->perm |= BT_GATT_PERM_WRITE_ENCRYPT;
+			attr->perm |= BT_GATT_PERM_WRITE_LESC;
 			chrc->properties |= BT_GATT_CHRC_WRITE_WITHOUT_RESP;
 		} else if (param->desc_writable &&
 			   !bt_uuid_cmp(attr->uuid, BT_UUID_VOCS_DESCRIPTION)) {
 			/* Update attr and chrc to be writable */
 			chrc = vocs->srv.service_p->attrs[i - 1].user_data;
 			attr->write = write_output_desc;
-			attr->perm |= BT_GATT_PERM_WRITE_ENCRYPT;
+			attr->perm |= BT_GATT_PERM_WRITE_LESC;
 			chrc->properties |= BT_GATT_CHRC_WRITE_WITHOUT_RESP;
 		}
 	}

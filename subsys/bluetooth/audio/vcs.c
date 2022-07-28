@@ -251,20 +251,20 @@ static ssize_t read_flags(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	AICS_INCLUDES(CONFIG_BT_VCS_AICS_INSTANCE_COUNT) \
 	BT_GATT_CHARACTERISTIC(BT_UUID_VCS_STATE, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
+			       BT_GATT_PERM_READ_LESC, \
 			       read_vol_state, NULL, NULL), \
 	BT_GATT_CCC(volume_state_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_LESC), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_VCS_CONTROL, \
 			       BT_GATT_CHRC_WRITE, \
-			       BT_GATT_PERM_WRITE_ENCRYPT, \
+			       BT_GATT_PERM_WRITE_LESC, \
 			       NULL, write_vcs_control, NULL), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_VCS_FLAGS, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
+			       BT_GATT_PERM_READ_LESC, \
 			       read_flags, NULL, NULL), \
 	BT_GATT_CCC(flags_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT)
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_LESC)
 
 static struct bt_gatt_attr vcs_attrs[] = { BT_VCS_SERVICE_DEFINITION };
 static struct bt_gatt_service vcs_svc;
