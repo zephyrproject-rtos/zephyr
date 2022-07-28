@@ -1392,10 +1392,35 @@ static void isr_abort(void *param)
 	/* Clear radio status and events */
 	lll_isr_status_reset();
 
+	/* Disable any filter that was setup */
 	radio_filter_disable();
 
+	/* Current LLL radio event is done*/
 	lll_isr_cleanup(param);
 }
+
+#if defined(CONFIG_BT_PERIPHERAL)
+static void isr_abort_all(void *param)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
+	uint32_t ret;
+
+	/* Clear radio status and events */
+	lll_isr_status_reset();
+
+	/* Disable any filter that was setup */
+	radio_filter_disable();
+
+	/* Current LLL radio event is done*/
+	lll_isr_cleanup(param);
+
+	/* Abort any LLL prepare/resume enqueued in pipeline */
+	mfy.param = param;
+	ret = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_LLL, 1U, &mfy);
+	LL_ASSERT(!ret);
+}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 static struct pdu_adv *chan_prepare(struct lll_adv *lll)
 {
@@ -1563,7 +1588,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 			return -ENOBUFS;
 		}
 
-		radio_isr_set(isr_abort, lll);
+		radio_isr_set(isr_abort_all, lll);
 		radio_disable();
 
 		/* assert if radio started tx */
