@@ -158,7 +158,7 @@ manifest:
         - fs
       revision: 652f2c5646e79b881e6f3099686ad3b7af9e216c
     - name: loramac-node
-      revision: 12019623bbad9eb54fe51066847a7cbd4b4eac57
+      revision: 0257b50905695192d095667b1c3abb80346db1a1
       path: modules/lib/loramac-node
     - name: lvgl
       revision: 487bcde705b6f453d053f28dbba4dd9f353d1ccb
