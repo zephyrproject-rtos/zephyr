@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/net/socket.h>
 
-void test_getnameinfo_ipv4(void)
+ZTEST_USER(net_socket_getnameinfo, test_getnameinfo_ipv4)
 {
 	struct sockaddr_in saddr;
 	char host[80];
@@ -42,7 +42,7 @@ void test_getnameinfo_ipv4(void)
 	zassert_equal(strcmp(serv, "1234"), 0, "");
 }
 
-void test_getnameinfo_ipv6(void)
+ZTEST_USER(net_socket_getnameinfo, test_getnameinfo_ipv6)
 {
 	struct sockaddr_in6 saddr;
 	char host[80];
@@ -74,13 +74,4 @@ void test_getnameinfo_ipv6(void)
 	zassert_equal(strcmp(serv, "4321"), 0, "");
 }
 
-void test_main(void)
-{
-	k_thread_system_pool_assign(k_current_get());
-
-	ztest_test_suite(socket_getnameinfo,
-			 ztest_user_unit_test(test_getnameinfo_ipv4),
-			 ztest_user_unit_test(test_getnameinfo_ipv6));
-
-	ztest_run_test_suite(socket_getnameinfo);
-}
+ZTEST_SUITE(net_socket_getnameinfo, NULL, NULL, NULL, NULL, NULL);
