@@ -132,7 +132,6 @@ void z_ztest_run_all(const void *state)
 		z_ztest_list_tests();
 	} else {
 		ztest_run_test_suites(state);
-		ztest_verify_all_test_suites_ran();
 	}
 }
 
