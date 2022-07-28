@@ -1,0 +1,19 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NEORV32 Machine Timer
+
+  The NEORV32 machine timer provides RISC-V privileged mtime and mtimecmp
+  registers.
+
+compatible: "neorv32-machine-timer"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
