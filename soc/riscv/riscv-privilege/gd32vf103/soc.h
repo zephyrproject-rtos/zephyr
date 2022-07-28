@@ -18,13 +18,4 @@
 #define RISCV_MTIME_BASE      DT_REG_ADDR_BY_IDX(DT_NODELABEL(mtimer), 0)
 #define RISCV_MTIMECMP_BASE   DT_REG_ADDR_BY_IDX(DT_NODELABEL(mtimer), 1)
 
-#ifndef _ASMLANGUAGE
-#include <zephyr/toolchain.h>
-#include <gd32vf103.h>
-
-/* The GigaDevice HAL headers define this, but it conflicts with the Zephyr can.h */
-#undef CAN_MODE_NORMAL
-
-#endif  /* !_ASMLANGUAGE */
-
 #endif  /* RISCV_GD32VF103_SOC_H */
