@@ -124,6 +124,7 @@ struct net_pkt {
 	/* Filled by layer 2 when network packet is received. */
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
+	uint16_t ll_proto_type;
 
 #if defined(CONFIG_NET_TCP)
 	/** Allow placing the packet into sys_slist_t */
@@ -1016,6 +1017,16 @@ static inline void net_pkt_lladdr_clear(struct net_pkt *pkt)
 {
 	net_pkt_lladdr_src(pkt)->addr = NULL;
 	net_pkt_lladdr_src(pkt)->len = 0U;
+}
+
+static inline uint16_t net_pkt_ll_proto_type(struct net_pkt *pkt)
+{
+	return pkt->ll_proto_type;
+}
+
+static inline void net_pkt_set_ll_proto_type(struct net_pkt *pkt, uint16_t type)
+{
+	pkt->ll_proto_type = type;
 }
 
 #if defined(CONFIG_IEEE802154) || defined(CONFIG_IEEE802154_RAW_MODE)
