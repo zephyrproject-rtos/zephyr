@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
-#include <zephyr/dt-bindings/timer/riscv-machine-timer.h>
+#include <zephyr/dt-bindings/timer/nuclei-systimer.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -37,11 +37,12 @@
 		compatible = "gd,gd32vf103-soc", "simple-bus";
 		ranges;
 
-		mtimer: machine-timer@d1000000 {
-			compatible = "riscv,machine-timer";
-			reg = <0xd1000000 0x1
-			       0xd1000008 0x1>;
-			clk-divider = <RISCV_MACHINE_TIMER_DIVIDER_4>;
+		systimer: timer@d1000000 {
+			compatible = "nuclei,systimer";
+			reg = <0xd1000000 0x10000>;
+			interrupts = <3 0>, <7 0>;
+			interrupt-parent = <&eclic>;
+			clk-divider = <NUCLEI_SYSTIMER_DIVIDER_4>;
 		};
 
 		eclic: interrupt-controller@d2000000 {
