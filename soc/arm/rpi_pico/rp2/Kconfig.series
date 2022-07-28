@@ -13,7 +13,6 @@ config SOC_SERIES_RP2XXX
 	select CPU_HAS_ARM_MPU
 	select SOC_FAMILY_RPI_PICO
 	select HAS_RPI_PICO
-	select HAS_I2C_DW if I2C
 	select XIP
 	help
 	  Enable support for Raspberry Pi RP2 MCU series
