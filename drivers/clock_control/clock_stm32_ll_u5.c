@@ -425,7 +425,9 @@ static int set_up_plls(void)
 	 * case we're currently running from the PLL we're about to
 	 * turn off and reconfigure.)
 	 */
-	clock_switch_to_hsi();
+	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL1) {
+		clock_switch_to_hsi();
+	}
 
 	LL_RCC_PLL1_Disable();
 
