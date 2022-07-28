@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_fxos8700
+
 #include "fxos8700.h"
 #include <zephyr/logging/log.h>
 
@@ -18,7 +20,7 @@ static void fxos8700_gpio_callback(const struct device *dev,
 		CONTAINER_OF(cb, struct fxos8700_data, gpio_cb);
 	const struct fxos8700_config *config = data->dev->config;
 
-	if ((pin_mask & BIT(config->int_gpio.pin)) == 0U) {
+        if ((pin_mask & BIT(config->int_gpio.pin)) == 0U) {
 		return;
 	}
 
@@ -60,8 +62,8 @@ static int fxos8700_handle_pulse_int(const struct device *dev)
 	};
 
 	k_sem_take(&data->sem, K_FOREVER);
-
-	if (i2c_reg_read_byte_dt(&config->i2c, FXOS8700_REG_PULSE_SRC,
+        
+        if(config->ops->byte_read(dev, FXOS8700_REG_PULSE_SRC,
 				 &pulse_source)) {
 		LOG_ERR("Could not read pulse source");
 	}
@@ -98,7 +100,7 @@ static int fxos8700_handle_motion_int(const struct device *dev)
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	if (i2c_reg_read_byte_dt(&config->i2c, FXOS8700_REG_FF_MT_SRC,
+	if (config->ops->byte_read(dev, FXOS8700_REG_FF_MT_SRC,
 				 &motion_source)) {
 		LOG_ERR("Could not read pulse source");
 	}
@@ -141,13 +143,13 @@ static void fxos8700_handle_int(const struct device *dev)
 	/* Interrupt status register */
 	k_sem_take(&data->sem, K_FOREVER);
 
-	if (i2c_reg_read_byte_dt(&config->i2c, FXOS8700_REG_INT_SOURCE,
+	if (config->ops->byte_read(dev, FXOS8700_REG_INT_SOURCE,
 				 &int_source)) {
 		LOG_ERR("Could not read interrupt source");
 		int_source = 0U;
 	}
-
-	k_sem_give(&data->sem);
+	
+        k_sem_give(&data->sem);
 
 	if (int_source & FXOS8700_DRDY_MASK) {
 		fxos8700_handle_drdy_int(dev);
@@ -166,7 +168,7 @@ static void fxos8700_handle_int(const struct device *dev)
 	/* Magnetometer interrupt source register */
 	k_sem_take(&data->sem, K_FOREVER);
 
-	if (i2c_reg_read_byte_dt(&config->i2c, FXOS8700_REG_M_INT_SRC,
+	if (config->ops->byte_read(dev, FXOS8700_REG_M_INT_SRC,
 				 &int_source)) {
 		LOG_ERR("Could not read magnetometer interrupt source");
 		int_source = 0U;
@@ -265,7 +267,7 @@ int fxos8700_trigger_set(const struct device *dev,
 	}
 
 	/* Configure the sensor interrupt */
-	if (i2c_reg_update_byte_dt(&config->i2c, FXOS8700_REG_CTRLREG4, mask,
+	if (config->ops->reg_field_update(dev, FXOS8700_REG_CTRLREG4, mask,
 				   handler ? mask : 0)) {
 		LOG_ERR("Could not configure interrupt");
 		ret = -EIO;
@@ -290,37 +292,37 @@ static int fxos8700_pulse_init(const struct device *dev)
 {
 	const struct fxos8700_config *config = dev->config;
 
-	if (i2c_reg_write_byte_dt(&config->i2c, FXOS8700_REG_PULSE_CFG,
+	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_CFG,
 				  config->pulse_cfg)) {
 		return -EIO;
 	}
-
-	if (i2c_reg_write_byte_dt(&config->i2c, FXOS8700_REG_PULSE_THSX,
+	
+        if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_THSX,
 				  config->pulse_ths[0])) {
 		return -EIO;
 	}
 
-	if (i2c_reg_write_byte_dt(&config->i2c, FXOS8700_REG_PULSE_THSY,
+	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_THSY,
 				  config->pulse_ths[1])) {
 		return -EIO;
 	}
 
-	if (i2c_reg_write_byte_dt(&config->i2c, FXOS8700_REG_PULSE_THSZ,
+	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_THSZ,
 				  config->pulse_ths[2])) {
 		return -EIO;
 	}
 
-	if (i2c_reg_write_byte_dt(&config->i2c, FXOS8700_REG_PULSE_TMLT,
+	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_TMLT,
 				  config->pulse_tmlt)) {
 		return -EIO;
 	}
 
-	if (i2c_reg_write_byte_dt(&config->i2c, FXOS8700_REG_PULSE_LTCY,
+	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_LTCY,
 				  config->pulse_ltcy)) {
 		return -EIO;
 	}
 
-	if (i2c_reg_write_byte_dt(&config->i2c, FXOS8700_REG_PULSE_WIND,
+	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_WIND,
 				  config->pulse_wind)) {
 		return -EIO;
 	}
@@ -333,9 +335,9 @@ static int fxos8700_pulse_init(const struct device *dev)
 static int fxos8700_motion_init(const struct device *dev)
 {
 	const struct fxos8700_config *config = dev->config;
-
-	/* Set Mode 4, Motion detection with ELE = 1, OAE = 1 */
-	if (i2c_reg_write_byte_dt(&config->i2c,
+	
+        /* Set Mode 4, Motion detection with ELE = 1, OAE = 1 */
+	if (config->ops->byte_write(dev,
 				  FXOS8700_REG_FF_MT_CFG,
 				  FXOS8700_FF_MT_CFG_ELE |
 				  FXOS8700_FF_MT_CFG_OAE |
@@ -346,7 +348,7 @@ static int fxos8700_motion_init(const struct device *dev)
 	}
 
 	/* Set motion threshold to maximimum */
-	if (i2c_reg_write_byte_dt(&config->i2c, FXOS8700_REG_FF_MT_THS,
+	if (config->ops->byte_write(dev, FXOS8700_REG_FF_MT_THS,
 				  FXOS8700_REG_FF_MT_THS)) {
 		return -EIO;
 	}
@@ -367,7 +369,7 @@ static int fxos8700_m_vecm_init(const struct device *dev)
 #endif
 
 	/* Set magnetic vector-magnitude function */
-	if (i2c_reg_write_byte_dt(&config->i2c, FXOS8700_REG_M_VECM_CFG,
+	if (config->ops->byte_write(dev, FXOS8700_REG_M_VECM_CFG,
 				  m_vecm_cfg)) {
 		LOG_ERR("Could not set magnetic vector-magnitude function");
 		return -EIO;
@@ -376,13 +378,13 @@ static int fxos8700_m_vecm_init(const struct device *dev)
 	/* Set magnetic vector-magnitude function threshold values:
 	 * handle both MSB and LSB registers
 	 */
-	if (i2c_reg_write_byte_dt(&config->i2c, FXOS8700_REG_M_VECM_THS_MSB,
+	if (config->ops->byte_write(dev, FXOS8700_REG_M_VECM_THS_MSB,
 				  config->mag_vecm_ths[0])) {
 		LOG_ERR("Could not set magnetic vector-magnitude function threshold MSB value");
 		return -EIO;
 	}
 
-	if (i2c_reg_write_byte_dt(&config->i2c, FXOS8700_REG_M_VECM_THS_LSB,
+	if (config->ops->byte_write(dev, FXOS8700_REG_M_VECM_THS_LSB,
 				  config->mag_vecm_ths[1])) {
 		LOG_ERR("Could not set magnetic vector-magnitude function threshold LSB value");
 		return -EIO;
@@ -396,9 +398,8 @@ int fxos8700_trigger_init(const struct device *dev)
 {
 	const struct fxos8700_config *config = dev->config;
 	struct fxos8700_data *data = dev->data;
-	uint8_t ctrl_reg5;
+        uint8_t ctrl_reg5;
 	int ret;
-
 	data->dev = dev;
 
 #if defined(CONFIG_FXOS8700_TRIGGER_OWN_THREAD)
@@ -424,13 +425,11 @@ int fxos8700_trigger_init(const struct device *dev)
 #if CONFIG_FXOS8700_MOTION_INT1
 	ctrl_reg5 |= FXOS8700_MOTION_MASK;
 #endif
-
-	if (i2c_reg_write_byte_dt(&config->i2c, FXOS8700_REG_CTRLREG5,
+        if (config->ops->byte_write(dev, FXOS8700_REG_CTRLREG5,
 				  ctrl_reg5)) {
 		LOG_ERR("Could not configure interrupt pin routing");
 		return -EIO;
 	}
-
 #ifdef CONFIG_FXOS8700_PULSE
 	if (fxos8700_pulse_init(dev)) {
 		LOG_ERR("Could not configure pulse");
@@ -459,7 +458,7 @@ int fxos8700_trigger_init(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-
+        
 	gpio_init_callback(&data->gpio_cb, fxos8700_gpio_callback,
 			   BIT(config->int_gpio.pin));
 

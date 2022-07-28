@@ -5,7 +5,11 @@
  */
 
 #include <zephyr/drivers/sensor.h>
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#include <zephyr/drivers/spi.h>
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 #include <zephyr/drivers/i2c.h>
+#endif
 #include <zephyr/drivers/gpio.h>
 
 #define FXOS8700_REG_STATUS			0x00
@@ -124,8 +128,30 @@ enum fxos_trigger_type {
 	FXOS8700_TRIG_M_VECM,
 };
 
+struct fxos8700_io_ops {
+	int (*read)(const struct device *dev,
+		    uint8_t reg,
+		    void *data,
+		    size_t length);
+	int (*byte_read)(const struct device *dev,
+			 uint8_t reg,
+			 uint8_t *byte);
+	int (*byte_write)(const struct device *dev,
+			  uint8_t reg,
+			  uint8_t byte);
+	int (*reg_field_update)(const struct device *dev,
+				uint8_t reg,
+				uint8_t mask,
+				uint8_t val);
+};
+
 struct fxos8700_config {
-	struct i2c_dt_spec i2c;
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+	const struct spi_dt_spec spi;
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+	const struct i2c_dt_spec i2c;
+#endif
+	const struct fxos8700_io_ops *ops;
 #ifdef CONFIG_FXOS8700_TRIGGER
 	struct gpio_dt_spec int_gpio;
 #endif
@@ -184,6 +210,43 @@ struct fxos8700_data {
 int fxos8700_get_power(const struct device *dev, enum fxos8700_power *power);
 int fxos8700_set_power(const struct device *dev, enum fxos8700_power power);
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+int fxos8700_byte_write_spi(const struct device *dev,
+				 uint8_t reg,
+				 uint8_t byte);
+
+int fxos8700_byte_read_spi(const struct device *dev,
+				uint8_t reg,
+				uint8_t *byte);
+
+int fxos8700_reg_field_update_spi(const struct device *dev,
+				uint8_t reg,
+				uint8_t mask,
+				uint8_t val);
+
+int fxos8700_read_spi(const struct device *dev,
+			   uint8_t reg,
+			   void *data,
+			   size_t length);
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+int fxos8700_byte_write_i2c(const struct device *dev,
+				 uint8_t reg,
+				 uint8_t byte);
+
+int fxos8700_byte_read_i2c(const struct device *dev,
+				uint8_t reg,
+				uint8_t *byte);
+
+int fxos8700_reg_field_update_i2c(const struct device *dev,
+				uint8_t reg,
+				uint8_t mask,
+				uint8_t val);
+
+static int fxos8700_read_i2c(const struct device *dev,
+			     uint8_t reg,
+			     void *data,
+			     size_t length);
+#endif
 #if CONFIG_FXOS8700_TRIGGER
 int fxos8700_trigger_init(const struct device *dev);
 int fxos8700_trigger_set(const struct device *dev,

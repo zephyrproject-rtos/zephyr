@@ -24,6 +24,12 @@ config TEMP_KINETIS
 	default y if "$(dt_nodelabel_enabled,adc1)"
 	depends on SENSOR && ADC
 
+config I2C
+        default y
+
+config SPI
+        default y
+
 if NETWORKING
 
 config NET_L2_ETHERNET
