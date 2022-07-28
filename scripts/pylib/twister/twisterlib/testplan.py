@@ -13,6 +13,7 @@ import collections
 from collections import OrderedDict
 from itertools import islice
 import logging
+import copy
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -366,6 +367,23 @@ class TestPlan:
                         self.platforms.append(platform)
                         if platform.default:
                             self.default_platforms.append(platform.name)
+                        # support board@revision
+                        # if there is already an existed <board>_<revision>.yaml, then use it to
+                        # load platform directly, otherwise, iterate the directory to
+                        # get all valid board revision based on each <board>_<revision>.conf.
+                        if not "@" in platform.name:
+                            tmp_dir = os.listdir(os.path.dirname(file))
+                            for item in tmp_dir:
+                                result = re.match(f"{platform.name}_(?P<revision>.*)\\.conf", item)
+                                if result:
+                                    revision = result.group("revision")
+                                    yaml_file = f"{platform.name}_{revision}.yaml"
+                                    if yaml_file not in tmp_dir:
+                                        platform_revision = copy.deepcopy(platform)
+                                        revision = revision.replace("_", ".")
+                                        platform_revision.name = f"{platform.name}@{revision}"
+                                        platform_revision.default = False
+                                        self.platforms.append(platform_revision)
 
                 except RuntimeError as e:
                     logger.error("E: %s: can't load: %s" % (file, e))
