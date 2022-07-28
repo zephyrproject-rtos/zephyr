@@ -1036,11 +1036,11 @@ void arch_icache_enable(void);
 
 /**
  *
- * @brief Enable i-cache
+ * @brief Disable i-cache
  *
- * @see arch_dcache_disable
+ * @see arch_icache_disable
  */
-void arch_dcache_disable(void);
+void arch_icache_disable(void);
 
 /**
  *
