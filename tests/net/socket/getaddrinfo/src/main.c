@@ -165,7 +165,7 @@ K_THREAD_DEFINE(dns_server_thread_id, STACK_SIZE,
 		process_dns, NULL, NULL, NULL,
 		THREAD_PRIORITY, 0, -1);
 
-void test_getaddrinfo_setup(void)
+static void *test_getaddrinfo_setup(void)
 {
 	char str[INET6_ADDRSTRLEN], *addr_str;
 	struct sockaddr addr;
@@ -212,9 +212,11 @@ void test_getaddrinfo_setup(void)
 	k_thread_priority_set(dns_server_thread_id,
 			      k_thread_priority_get(k_current_get()));
 	k_yield();
+
+	return NULL;
 }
 
-void test_getaddrinfo_ok(void)
+ZTEST(net_socket_getaddrinfo, test_getaddrinfo_ok)
 {
 	struct addrinfo *res = NULL;
 
@@ -241,7 +243,7 @@ void test_getaddrinfo_ok(void)
 	freeaddrinfo(res);
 }
 
-void test_getaddrinfo_cancelled(void)
+ZTEST(net_socket_getaddrinfo, test_getaddrinfo_cancelled)
 {
 	struct addrinfo *res = NULL;
 	int ret;
@@ -261,7 +263,7 @@ void test_getaddrinfo_cancelled(void)
 	freeaddrinfo(res);
 }
 
-void test_getaddrinfo_no_host(void)
+ZTEST(net_socket_getaddrinfo, test_getaddrinfo_no_host)
 {
 	struct addrinfo *res = NULL;
 	int ret;
@@ -275,7 +277,7 @@ void test_getaddrinfo_no_host(void)
 	freeaddrinfo(res);
 }
 
-void test_getaddrinfo_num_ipv4(void)
+ZTEST(net_socket_getaddrinfo, test_getaddrinfo_num_ipv4)
 {
 	struct zsock_addrinfo *res = NULL;
 	struct sockaddr_in *saddr;
@@ -324,7 +326,7 @@ void test_getaddrinfo_num_ipv4(void)
 	zsock_freeaddrinfo(res);
 }
 
-void test_getaddrinfo_num_ipv6(void)
+ZTEST(net_socket_getaddrinfo, test_getaddrinfo_num_ipv6)
 {
 	struct zsock_addrinfo *res = NULL;
 	struct sockaddr_in6 *saddr;
@@ -533,7 +535,7 @@ void test_getaddrinfo_num_ipv6(void)
 	zsock_freeaddrinfo(res);
 }
 
-void test_getaddrinfo_flags_numerichost(void)
+ZTEST(net_socket_getaddrinfo, test_getaddrinfo_flags_numerichost)
 {
 	int ret;
 	struct zsock_addrinfo *res = NULL;
@@ -552,7 +554,7 @@ void test_getaddrinfo_flags_numerichost(void)
 	zsock_freeaddrinfo(res);
 }
 
-static void test_getaddrinfo_ipv4_hints_ipv6(void)
+ZTEST(net_socket_getaddrinfo, test_getaddrinfo_ipv4_hints_ipv6)
 {
 	struct zsock_addrinfo *res = NULL;
 	struct zsock_addrinfo hints = {
@@ -566,7 +568,7 @@ static void test_getaddrinfo_ipv4_hints_ipv6(void)
 	zsock_freeaddrinfo(res);
 }
 
-static void test_getaddrinfo_ipv6_hints_ipv4(void)
+ZTEST(net_socket_getaddrinfo, test_getaddrinfo_ipv6_hints_ipv4)
 {
 	struct zsock_addrinfo *res = NULL;
 	struct zsock_addrinfo hints = {
@@ -580,7 +582,7 @@ static void test_getaddrinfo_ipv6_hints_ipv4(void)
 	zsock_freeaddrinfo(res);
 }
 
-static void test_getaddrinfo_port_invalid(void)
+ZTEST(net_socket_getaddrinfo, test_getaddrinfo_port_invalid)
 {
 	int ret;
 	struct zsock_addrinfo *res = NULL;
@@ -590,7 +592,7 @@ static void test_getaddrinfo_port_invalid(void)
 	zsock_freeaddrinfo(res);
 }
 
-static void test_getaddrinfo_null_host(void)
+ZTEST(net_socket_getaddrinfo, test_getaddrinfo_null_host)
 {
 	struct sockaddr_in *saddr;
 	struct sockaddr_in6 *saddr6;
@@ -660,24 +662,4 @@ static void test_getaddrinfo_null_host(void)
 	zsock_freeaddrinfo(res);
 }
 
-
-void test_main(void)
-{
-	k_thread_system_pool_assign(k_current_get());
-	k_thread_access_grant(k_current_get(), &wait_data);
-
-	ztest_test_suite(socket_getaddrinfo,
-			 ztest_unit_test(test_getaddrinfo_setup),
-			 ztest_unit_test(test_getaddrinfo_ok),
-			 ztest_unit_test(test_getaddrinfo_cancelled),
-			 ztest_unit_test(test_getaddrinfo_no_host),
-			 ztest_unit_test(test_getaddrinfo_num_ipv4),
-			 ztest_unit_test(test_getaddrinfo_num_ipv6),
-			 ztest_unit_test(test_getaddrinfo_flags_numerichost),
-			 ztest_unit_test(test_getaddrinfo_ipv4_hints_ipv6),
-			 ztest_unit_test(test_getaddrinfo_ipv6_hints_ipv4),
-			 ztest_unit_test(test_getaddrinfo_port_invalid),
-			 ztest_unit_test(test_getaddrinfo_null_host));
-
-	ztest_run_test_suite(socket_getaddrinfo);
-}
+ZTEST_SUITE(net_socket_getaddrinfo, NULL, test_getaddrinfo_setup, NULL, NULL, NULL);
