@@ -654,30 +654,39 @@ void ztest_verify_all_test_suites_ran(void)
 	struct ztest_suite_node *suite;
 	struct ztest_unit_test *test;
 
-	for (suite = _ztest_suite_node_list_start; suite < _ztest_suite_node_list_end; ++suite) {
-		if (suite->stats->run_count < 1) {
-			PRINT("ERROR: Test suite '%s' did not run.\n", suite->name);
-			all_tests_run = false;
+	if (IS_ENABLED(CONFIG_ZTEST_VERIFY_RUN_ALL)) {
+		for (suite = _ztest_suite_node_list_start; suite < _ztest_suite_node_list_end;
+		     ++suite) {
+			if (suite->stats->run_count < 1) {
+				PRINT("ERROR: Test suite '%s' did not run.\n", suite->name);
+				all_tests_run = false;
+			}
 		}
-	}
 
-	for (test = _ztest_unit_test_list_start; test < _ztest_unit_test_list_end; ++test) {
-		suite = ztest_find_test_suite(test->test_suite_name);
-		if (suite == NULL) {
-			PRINT("ERROR: Test '%s' assigned to test suite '%s' which doesn't exist\n",
-			      test->name, test->test_suite_name);
-			all_tests_run = false;
+		for (test = _ztest_unit_test_list_start; test < _ztest_unit_test_list_end; ++test) {
+			suite = ztest_find_test_suite(test->test_suite_name);
+			if (suite == NULL) {
+				PRINT("ERROR: Test '%s' assigned to test suite '%s' which doesn't "
+				      "exist\n",
+				      test->name, test->test_suite_name);
+				all_tests_run = false;
+			}
 		}
-	}
 
-	if (!all_tests_run) {
-		test_status = 1;
+		if (!all_tests_run) {
+			test_status = 1;
+		}
 	}
 }
 
 void ztest_run_all(const void *state) { ztest_api.run_all(state); }
 
-void __weak test_main(void) { ztest_run_all(NULL); }
+void __weak test_main(void)
+{
+	ztest_run_all(NULL);
+
+	ztest_verify_all_test_suites_ran();
+}
 
 #ifndef KERNEL
 int main(void)

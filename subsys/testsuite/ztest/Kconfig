@@ -98,6 +98,12 @@ config ZTEST_RULE_1CPU
 
 endmenu
 
+config ZTEST_VERIFY_RUN_ALL
+	bool "Validates all defined tests have ran"
+	default y
+	help
+	  This rule will fail the project if not all tests have been run.
+
 config ZTEST_SHUFFLE
 	bool "Shuffle the order of tests and suites"
 	select TEST_RANDOM_GENERATOR if !ENTROPY_HAS_DRIVER
