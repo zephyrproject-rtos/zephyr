@@ -160,6 +160,7 @@
 		tlb: tlb@3000 {
 			compatible = "intel,adsp-tlb";
 			reg = <0x3000 0x1000>;
+			paddr-size = <11>;
 		};
 
 		ssp0: ssp@77000 {
