@@ -333,7 +333,6 @@ int lll_done(void *param)
 	LL_ASSERT(!param || next);
 
 	/* check if current LLL event is done */
-	ull = NULL;
 	if (!param) {
 		/* Reset current event instance */
 		LL_ASSERT(event.curr.abort_cb);
@@ -348,6 +347,8 @@ int lll_done(void *param)
 
 		if (param) {
 			ull = HDR_LLL2ULL(param);
+		} else {
+			ull = NULL;
 		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) &&
