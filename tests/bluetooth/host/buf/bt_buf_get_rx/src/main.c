@@ -5,9 +5,9 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
 #include "kconfig.h"
+#include "net_buf.h"
 #include "buf_help_utils.h"
 
 /*
@@ -38,12 +38,12 @@ void test_returns_null_type_bt_buf_evt(void)
 		memory_pool = bt_buf_get_hci_rx_pool();
 	}
 
-	ztest_expect_value(net_buf_alloc_fixed, pool, memory_pool);
-	ztest_returns_value(net_buf_alloc_fixed, NULL);
-
-	ztest_expect_value(net_buf_validate_timeout_value_mock, value, timeout.ticks);
+	net_buf_alloc_fixed_fake.return_val = NULL;
 
 	returned_buf = bt_buf_get_rx(BT_BUF_EVT, timeout);
+
+	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
+	validate_net_buf_reserve_not_called_behaviour();
 
 	zassert_is_null(returned_buf,
 			"bt_buf_get_rx() returned non-NULL value while expecting NULL");
@@ -77,12 +77,12 @@ void test_returns_null_type_bt_buf_acl_in(void)
 		memory_pool = bt_buf_get_hci_rx_pool();
 	}
 
-	ztest_expect_value(net_buf_alloc_fixed, pool, memory_pool);
-	ztest_returns_value(net_buf_alloc_fixed, NULL);
-
-	ztest_expect_value(net_buf_validate_timeout_value_mock, value, timeout.ticks);
+	net_buf_alloc_fixed_fake.return_val = NULL;
 
 	returned_buf = bt_buf_get_rx(BT_BUF_ACL_IN, timeout);
+
+	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
+	validate_net_buf_reserve_not_called_behaviour();
 
 	zassert_is_null(returned_buf,
 			"bt_buf_get_rx() returned non-NULL value while expecting NULL");
@@ -120,12 +120,12 @@ void test_returns_null_type_bt_buf_iso_in(void)
 		}
 	}
 
-	ztest_expect_value(net_buf_alloc_fixed, pool, memory_pool);
-	ztest_returns_value(net_buf_alloc_fixed, NULL);
-
-	ztest_expect_value(net_buf_validate_timeout_value_mock, value, timeout.ticks);
+	net_buf_alloc_fixed_fake.return_val = NULL;
 
 	returned_buf = bt_buf_get_rx(BT_BUF_ISO_IN, timeout);
+
+	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
+	validate_net_buf_reserve_not_called_behaviour();
 
 	zassert_is_null(returned_buf,
 			"bt_buf_get_rx() returned non-NULL value while expecting NULL");
@@ -160,15 +160,12 @@ void test_returns_not_null_type_bt_buf_evt(void)
 		memory_pool = bt_buf_get_hci_rx_pool();
 	}
 
-	ztest_expect_value(net_buf_simple_reserve, buf, &expected_buf.b);
-	ztest_expect_value(net_buf_simple_reserve, reserve, BT_BUF_RESERVE);
-
-	ztest_expect_value(net_buf_alloc_fixed, pool, memory_pool);
-	ztest_returns_value(net_buf_alloc_fixed, &expected_buf);
-
-	ztest_expect_value(net_buf_validate_timeout_value_mock, value, timeout.ticks);
+	net_buf_alloc_fixed_fake.return_val = &expected_buf;
 
 	returned_buf = bt_buf_get_rx(BT_BUF_EVT, timeout);
+
+	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
+	validate_net_buf_reserve_called_behaviour(&expected_buf);
 
 	zassert_equal(returned_buf, &expected_buf,
 		      "bt_buf_get_rx() returned incorrect buffer pointer value");
@@ -208,15 +205,12 @@ void test_returns_not_null_type_bt_buf_acl_in(void)
 		memory_pool = bt_buf_get_hci_rx_pool();
 	}
 
-	ztest_expect_value(net_buf_simple_reserve, buf, &expected_buf.b);
-	ztest_expect_value(net_buf_simple_reserve, reserve, BT_BUF_RESERVE);
-
-	ztest_expect_value(net_buf_alloc_fixed, pool, memory_pool);
-	ztest_returns_value(net_buf_alloc_fixed, &expected_buf);
-
-	ztest_expect_value(net_buf_validate_timeout_value_mock, value, timeout.ticks);
+	net_buf_alloc_fixed_fake.return_val = &expected_buf;
 
 	returned_buf = bt_buf_get_rx(BT_BUF_ACL_IN, timeout);
+
+	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
+	validate_net_buf_reserve_called_behaviour(&expected_buf);
 
 	zassert_equal(returned_buf, &expected_buf,
 		      "bt_buf_get_rx() returned incorrect buffer pointer value");
@@ -260,15 +254,12 @@ void test_returns_not_null_type_bt_buf_iso_in(void)
 		}
 	}
 
-	ztest_expect_value(net_buf_simple_reserve, buf, &expected_buf.b);
-	ztest_expect_value(net_buf_simple_reserve, reserve, BT_BUF_RESERVE);
-
-	ztest_expect_value(net_buf_alloc_fixed, pool, memory_pool);
-	ztest_returns_value(net_buf_alloc_fixed, &expected_buf);
-
-	ztest_expect_value(net_buf_validate_timeout_value_mock, value, timeout.ticks);
+	net_buf_alloc_fixed_fake.return_val = &expected_buf;
 
 	returned_buf = bt_buf_get_rx(BT_BUF_ISO_IN, timeout);
+
+	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
+	validate_net_buf_reserve_called_behaviour(&expected_buf);
 
 	zassert_equal(returned_buf, &expected_buf,
 		      "bt_buf_get_rx() returned incorrect buffer pointer value");
@@ -279,21 +270,30 @@ void test_returns_not_null_type_bt_buf_iso_in(void)
 		      returned_buffer_type, BT_BUF_ISO_IN, STRINGIFY(BT_BUF_ISO_IN));
 }
 
+/* Setup test variables */
+static void unit_test_setup(void)
+{
+	/* Register resets */
+	FFF_FAKES_LIST(RESET_FAKE);
+}
+
 void test_main(void)
 {
-	ztest_test_suite(test_bt_buf_get_rx_returns_null,
-			ztest_unit_test(test_returns_null_type_bt_buf_evt),
-			ztest_unit_test(test_returns_null_type_bt_buf_acl_in),
-			ztest_unit_test(test_returns_null_type_bt_buf_iso_in)
-			);
+	ztest_test_suite(
+		test_bt_buf_get_rx_returns_null,
+		ztest_unit_test_setup(test_returns_null_type_bt_buf_evt, unit_test_setup),
+		ztest_unit_test_setup(test_returns_null_type_bt_buf_acl_in, unit_test_setup),
+		ztest_unit_test_setup(test_returns_null_type_bt_buf_iso_in, unit_test_setup)
+		);
 
 	ztest_run_test_suite(test_bt_buf_get_rx_returns_null);
 
-	ztest_test_suite(test_bt_buf_get_rx_returns_not_null,
-			ztest_unit_test(test_returns_not_null_type_bt_buf_evt),
-			ztest_unit_test(test_returns_not_null_type_bt_buf_acl_in),
-			ztest_unit_test(test_returns_not_null_type_bt_buf_iso_in)
-			);
+	ztest_test_suite(
+		test_bt_buf_get_rx_returns_not_null,
+		ztest_unit_test_setup(test_returns_not_null_type_bt_buf_evt, unit_test_setup),
+		ztest_unit_test_setup(test_returns_not_null_type_bt_buf_acl_in, unit_test_setup),
+		ztest_unit_test_setup(test_returns_not_null_type_bt_buf_iso_in, unit_test_setup)
+		);
 
 	ztest_run_test_suite(test_bt_buf_get_rx_returns_not_null);
 

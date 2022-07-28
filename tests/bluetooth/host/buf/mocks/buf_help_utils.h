@@ -29,18 +29,41 @@ struct testing_params {
 #define REGISTER_SETUP_TEARDOWN(i, ...) \
 	ztest_unit_test_setup_teardown(__VA_ARGS__, unit_test_setup, unit_test_noop)
 
-/*  Validate the timeout integer value
+#define ztest_unit_test_setup(fn, setup) \
+	ztest_unit_test_setup_teardown(fn, setup, unit_test_noop)
+
+/*
+ *  Validate expected behaviour when net_buf_alloc() is called
  *
- *  A validation function that will be called with
- *  the timeout integer value as an input parameter.
- *
- *  It will check the passed input parameter to check its value if it
- *  matches the expected value using ztest_check_expected_value().
- *
- *  A typical use should call ztest_expect_value() to set the expected
- *  value before calling any function that will be required to validate
- *  a timeout value
- *
- *  @param value Input integer value to be checked
+ *  Expected behaviour:
+ *   - net_buf_alloc() to be called once with :
+ *       - correct memory allocation pool
+ *       - same timeout value passed to bt_buf_get_cmd_complete()
  */
-void net_buf_validate_timeout_value_mock(uint32_t value);
+void validate_net_buf_alloc_called_behaviour(struct net_buf_pool *pool, k_timeout_t *timeout);
+
+/*
+ *  Validate expected behaviour when net_buf_alloc() isn't called
+ *
+ *  Expected behaviour:
+ *   - net_buf_alloc() not to called at all
+ */
+void validate_net_buf_alloc_not_called_behaviour(void);
+
+/*
+ *  Validate expected behaviour when net_buf_reserve() is called
+ *
+ *  Expected behaviour:
+ *   - net_buf_reserve() to be called once with :
+ *       - correct reference value
+ *       - 'reserve' argument set to 'BT_BUF_RESERVE' value
+ */
+void validate_net_buf_reserve_called_behaviour(struct net_buf *buf);
+
+/*
+ *  Validate expected behaviour when net_buf_reserve() isn't called
+ *
+ *  Expected behaviour:
+ *   - net_buf_reserve() not to called at all
+ */
+void validate_net_buf_reserve_not_called_behaviour(void);

@@ -15,6 +15,7 @@ FILE(GLOB module_mocks
   ${ZEPHYR_BASE}/tests/bluetooth/host/buf/mocks/net_buf.c
   ${ZEPHYR_BASE}/tests/bluetooth/host/buf/mocks/iso.c
   ${ZEPHYR_BASE}/tests/bluetooth/host/buf/mocks/hci_core.c
+  ${ZEPHYR_BASE}/tests/bluetooth/host/buf/mocks/buf_help_utils.c
 )
 
 if(COMPILE_SWITCH_PARAM)
