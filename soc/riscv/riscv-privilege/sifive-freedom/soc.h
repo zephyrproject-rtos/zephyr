@@ -20,15 +20,6 @@
 /* Clock controller. */
 #define PRCI_BASE_ADDR               0x10008000
 
-/* Always ON Domain */
-#define SIFIVE_PMUIE		     0x10000140
-#define SIFIVE_PMUCAUSE		     0x10000144
-#define SIFIVE_PMUSLEEP		     0x10000148
-#define SIFIVE_PMUKEY		     0x1000014C
-#define SIFIVE_SLEEP_KEY_VAL	     0x0051F15E
-
-#define SIFIVE_BACKUP_REG_BASE	     0x10000080
-
 #elif defined(CONFIG_SOC_RISCV_SIFIVE_FU540) || defined(CONFIG_SOC_RISCV_SIFIVE_FU740)
 
 /* Clock controller. */
