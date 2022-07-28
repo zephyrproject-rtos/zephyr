@@ -16,3 +16,10 @@ config DAI_INTEL_SSP
 config DAI_SSP_HAS_POWER_CONTROL
 	bool "DAI ssp pm_runtime en/dis ssp power"
 	depends on DAI_INTEL_SSP
+
+if DAI_INTEL_SSP
+
+config DAI_SSP_CLK_FORCE_DYNAMIC_CLOCK_GATING
+	bool
+
+endif

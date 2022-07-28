@@ -677,7 +677,7 @@ static int dai_ssp_poll_for_register_delay(uint32_t reg, uint32_t mask,
 
 static inline void dai_ssp_pm_runtime_dis_ssp_clk_gating(struct dai_intel_ssp *dp, uint32_t index)
 {
-#if CONFIG_SOC_INTEL_CAVS_V15
+#if CONFIG_DAI_SSP_CLK_FORCE_DYNAMIC_CLOCK_GATING
 	uint32_t shim_reg;
 
 	shim_reg = sys_read32(dai_shim_base(dp) + SHIM_CLKCTL) |
@@ -693,7 +693,7 @@ static inline void dai_ssp_pm_runtime_dis_ssp_clk_gating(struct dai_intel_ssp *d
 
 static inline void dai_ssp_pm_runtime_en_ssp_clk_gating(struct dai_intel_ssp *dp, uint32_t index)
 {
-#if CONFIG_SOC_INTEL_CAVS_V15
+#if CONFIG_DAI_SSP_CLK_FORCE_DYNAMIC_CLOCK_GATING
 	uint32_t shim_reg;
 
 	shim_reg = sys_read32(dai_shim_base(dp) + SHIM_CLKCTL) &
