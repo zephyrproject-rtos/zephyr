@@ -447,17 +447,17 @@ static void test_net_mgmt_catch_events(void)
 	}
 }
 
-static void test_net_mgmt_catch_kernel(void)
+ZTEST(net_socket_net_mgmt, test_net_mgmt_catch_kernel)
 {
 	test_net_mgmt_catch_events();
 }
 
-static void test_net_mgmt_catch_user(void)
+ZTEST_USER(net_socket_net_mgmt, test_net_mgmt_catch_user)
 {
 	test_net_mgmt_catch_events();
 }
 
-static void test_net_mgmt_cleanup(void)
+ZTEST(net_socket_net_mgmt, test_net_mgmt_cleanup)
 {
 	k_thread_abort(trigger_events_thread_id);
 }
@@ -479,12 +479,12 @@ static void test_ethernet_set_qav(void)
 	zassert_equal(ret, 0, "Cannot set Qav parameters");
 }
 
-static void test_ethernet_set_qav_kernel(void)
+ZTEST(net_socket_net_mgmt, test_ethernet_set_qav_kernel)
 {
 	test_ethernet_set_qav();
 }
 
-static void test_ethernet_set_qav_user(void)
+ZTEST_USER(net_socket_net_mgmt, test_ethernet_set_qav_user)
 {
 	test_ethernet_set_qav();
 }
@@ -509,12 +509,12 @@ static void test_ethernet_get_qav(void)
 	zassert_true(params.qav_param.enabled, "Qav not enabled");
 }
 
-static void test_ethernet_get_qav_kernel(void)
+ZTEST(net_socket_net_mgmt, test_ethernet_get_qav_kernel)
 {
 	test_ethernet_get_qav();
 }
 
-static void test_ethernet_get_qav_user(void)
+ZTEST_USER(net_socket_net_mgmt, test_ethernet_get_qav_user)
 {
 	test_ethernet_get_qav();
 }
@@ -534,12 +534,12 @@ static void test_ethernet_get_unknown_option(void)
 	zassert_equal(errno, EINVAL, "prio queue get parameters");
 }
 
-static void test_ethernet_get_unknown_opt_kernel(void)
+ZTEST(net_socket_net_mgmt, test_ethernet_get_unknown_opt_kernel)
 {
 	test_ethernet_get_unknown_option();
 }
 
-static void test_ethernet_get_unknown_opt_user(void)
+ZTEST_USER(net_socket_net_mgmt, test_ethernet_get_unknown_opt_user)
 {
 	test_ethernet_get_unknown_option();
 }
@@ -559,35 +559,21 @@ static void test_ethernet_set_unknown_option(void)
 	zassert_equal(errno, EINVAL, "promisc_mode set parameters");
 }
 
-static void test_ethernet_set_unknown_opt_kernel(void)
+ZTEST(net_socket_net_mgmt, test_ethernet_set_unknown_opt_kernel)
 {
 	test_ethernet_set_unknown_option();
 }
 
-static void test_ethernet_set_unknown_opt_user(void)
+ZTEST_USER(net_socket_net_mgmt, test_ethernet_set_unknown_opt_user)
 {
 	test_ethernet_set_unknown_option();
 }
 
-void test_main(void)
+static void *setup(void)
 {
 	k_thread_system_pool_assign(k_current_get());
-
-	ztest_test_suite(socket_net_mgmt,
-			 ztest_unit_test(test_net_mgmt_setup),
-			 ztest_unit_test(test_net_mgmt_catch_kernel),
-			 ztest_user_unit_test(test_net_mgmt_catch_user),
-			 ztest_unit_test(test_net_mgmt_cleanup),
-			 ztest_unit_test(test_ethernet_set_qav_kernel),
-			 ztest_user_unit_test(test_ethernet_set_qav_user),
-			 ztest_unit_test(test_ethernet_get_qav_kernel),
-			 ztest_user_unit_test(test_ethernet_get_qav_user),
-			 ztest_unit_test(test_ethernet_get_unknown_opt_kernel),
-			 ztest_user_unit_test(
-				 test_ethernet_get_unknown_opt_user),
-			 ztest_unit_test(test_ethernet_set_unknown_opt_kernel),
-			 ztest_user_unit_test(
-				 test_ethernet_set_unknown_opt_user));
-
-	ztest_run_test_suite(socket_net_mgmt);
+	test_net_mgmt_setup();
+	return NULL;
 }
+
+ZTEST_SUITE(net_socket_net_mgmt, NULL, setup, NULL, NULL, NULL);
