@@ -165,6 +165,9 @@
 		tlb: tlb@17e000 {
 			compatible = "intel,adsp-mtl-tlb";
 			reg = <0x17e000 0x1000>;
+			paddr-size = <12>;
+			exec-bit-idx = <14>;
+			write-bit-idx= <15>;
 		};
 
 		lpgpdma0: dma@7c000 {

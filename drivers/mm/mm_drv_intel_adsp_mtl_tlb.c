@@ -46,11 +46,12 @@ DEVICE_MMIO_TOPLEVEL_STATIC(tlb_regs, DT_DRV_INST(0));
  * Number of significant bits in the page index (defines the size of
  * the table)
  */
+#define TLB_PADDR_SIZE DT_INST_PROP(0, paddr_size)
+#define TLB_EXEC_BIT   BIT(DT_INST_PROP(0, exec_bit_idx))
+#define TLB_WRITE_BIT  BIT(DT_INST_PROP(0, write_bit_idx))
+
 #if defined(CONFIG_SOC_SERIES_INTEL_ACE1X)
 # include <ace_v1x-regs.h>
-# define TLB_PADDR_SIZE 12
-# define TLB_EXEC_BIT   BIT(14)
-# define TLB_WRITE_BIT  BIT(15)
 #endif
 
 #define TLB_ENTRY_NUM (1 << TLB_PADDR_SIZE)
