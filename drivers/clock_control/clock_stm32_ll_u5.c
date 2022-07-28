@@ -42,8 +42,10 @@ static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 
 static uint32_t get_msis_frequency(void)
 {
-	return __LL_RCC_CALC_MSIS_FREQ(LL_RCC_MSIRANGESEL_RUN,
-				STM32_MSIS_RANGE << RCC_ICSCR1_MSISRANGE_Pos);
+	return __LL_RCC_CALC_MSIS_FREQ(LL_RCC_MSI_IsEnabledRangeSelect(),
+				       ((LL_RCC_MSI_IsEnabledRangeSelect() == 1U) ?
+						LL_RCC_MSIS_GetRange() :
+						LL_RCC_MSIS_GetRangeAfterStandby()));
 }
 
 __unused
@@ -710,7 +712,7 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Current hclk value */
 	old_hclk_freq = __LL_RCC_CALC_HCLK_FREQ(get_startup_frequency(), LL_RCC_GetAHBPrescaler());
 
-	/* Set up indiviual enabled clocks */
+	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
 	/* Set up PLLs */
