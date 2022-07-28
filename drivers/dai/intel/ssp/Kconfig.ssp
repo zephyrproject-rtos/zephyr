@@ -22,4 +22,12 @@ if DAI_INTEL_SSP
 config DAI_SSP_CLK_FORCE_DYNAMIC_CLOCK_GATING
 	bool
 
+config DAI_INTEL_SSP_NUM_BASE
+	int
+	default 6
+
+config DAI_INTEL_SSP_NUM_EXT
+	int
+	default 0
+
 endif

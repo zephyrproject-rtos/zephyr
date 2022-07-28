@@ -681,9 +681,10 @@ static inline void dai_ssp_pm_runtime_dis_ssp_clk_gating(struct dai_intel_ssp *d
 	uint32_t shim_reg;
 
 	shim_reg = sys_read32(dai_shim_base(dp) + SHIM_CLKCTL) |
-		(index < DAI_INTEL_SSP_NUM_BASE ?
+		(index < CONFIG_DAI_INTEL_SSP_NUM_BASE ?
 			SHIM_CLKCTL_I2SFDCGB(index) :
-			SHIM_CLKCTL_I2SEFDCGB(index - DAI_INTEL_SSP_NUM_BASE));
+			SHIM_CLKCTL_I2SEFDCGB(index -
+					      CONFIG_DAI_INTEL_SSP_NUM_BASE));
 
 	sys_write32(shim_reg, dai_shim_base(dp) + SHIM_CLKCTL);
 
@@ -697,9 +698,10 @@ static inline void dai_ssp_pm_runtime_en_ssp_clk_gating(struct dai_intel_ssp *dp
 	uint32_t shim_reg;
 
 	shim_reg = sys_read32(dai_shim_base(dp) + SHIM_CLKCTL) &
-		~(index < DAI_INTEL_SSP_NUM_BASE ?
+		~(index < CONFIG_DAI_INTEL_SSP_NUM_BASE ?
 			SHIM_CLKCTL_I2SFDCGB(index) :
-			SHIM_CLKCTL_I2SEFDCGB(index - DAI_INTEL_SSP_NUM_BASE));
+			SHIM_CLKCTL_I2SEFDCGB(index -
+					      CONFIG_DAI_INTEL_SSP_NUM_BASE));
 
 	sys_write32(shim_reg, dai_shim_base(dp) + SHIM_CLKCTL);
 
