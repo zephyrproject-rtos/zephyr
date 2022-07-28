@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_DEVICE_H_
 #define ZEPHYR_INCLUDE_DEVICE_H_
 
+#include <driver-api-to-kobj-enum.h>
+
 /**
  * @brief Device Driver APIs
  * @defgroup io_interfaces Device Driver APIs
@@ -467,6 +469,9 @@ struct device {
 	const void *config;
 	/** Address of the API structure exposed by the device instance */
 	const void *api;
+#ifdef CONFIG_HAS_API_TYPE
+	enum k_objects api_type;
+#endif
 	/** Address of the common device state */
 	struct device_state *state;
 	/** Address of the device instance private data */
@@ -940,6 +945,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		.name = drv_name,					\
 		.config = (cfg_ptr),					\
 		.api = (api_ptr),					\
+		IF_ENABLED(CONFIG_HAS_API_TYPE,(.api_type = api2kobjs(api_ptr),))	\
 		.state = (state_ptr),					\
 		.data = (data_ptr),					\
 		COND_CODE_1(CONFIG_PM_DEVICE, (.pm = pm_device,), ())	\

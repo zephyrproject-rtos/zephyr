@@ -943,6 +943,12 @@ config HAS_DYNAMIC_DEVICE_HANDLES
 	  Hidden option that makes possible to manipulate device handles at
 	  runtime.
 
+config HAS_API_TYPE
+	bool
+	help
+	  Hidden option that adds storage and setting of driver api type in
+          struct device.
+
 endmenu
 
 rsource "Kconfig.vm"
