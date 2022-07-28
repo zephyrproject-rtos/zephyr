@@ -41,6 +41,7 @@
 			compatible = "riscv,machine-timer";
 			reg = <0xd1000000 0x8
 			       0xd1000008 0x8>;
+			reg-names = "mtime", "mtimecmp";
 			clk-divider = <RISCV_MACHINE_TIMER_DIVIDER_4>;
 		};
 
