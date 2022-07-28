@@ -29,10 +29,10 @@ build correctly. Example:
 .. code-block:: c
 
     #ifdef CONFIG_HTS221
-      struct device *hum_dev = device_get_binding("HTS221");
+      struct device *hum_dev = DEVICE_DT_GET_ONE(st_hts221);
 
-      if (!hum_dev) {
-        printk("Could not get pointer to %s sensor\n", "HTS221");
+      if (!device_is_ready(hum_dev)) {
+        printk("%s: device not ready.\n", hum_dev->name);
         return;
       }
     #endif
