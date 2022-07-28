@@ -155,7 +155,8 @@ static void mcps_indication_handler(McpsIndication_t *mcps_indication)
 		if ((cb->port == LW_RECV_PORT_ANY) ||
 		    (cb->port == mcps_indication->Port)) {
 			cb->cb(mcps_indication->Port,
-			       !!mcps_indication->FramePending,
+			       /* IsUplinkTxPending also indicates pending downlinks */
+			       mcps_indication->IsUplinkTxPending == 1,
 			       mcps_indication->Rssi, mcps_indication->Snr,
 			       mcps_indication->BufferSize,
 			       mcps_indication->Buffer);
