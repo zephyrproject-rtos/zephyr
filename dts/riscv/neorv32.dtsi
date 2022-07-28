@@ -63,6 +63,12 @@
 		#size-cells = <1>;
 		ranges;
 
+		mtimer: timer@ffffff90 {
+			compatible = "neorv32-machine-timer";
+			reg = <0xffffff90 0x10>;
+			interrupts = <7>;
+		};
+
 		uart0: serial@ffffffa0 {
 			compatible = "neorv32-uart";
 			status = "disabled";
