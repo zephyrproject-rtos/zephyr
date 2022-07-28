@@ -1,13 +1,39 @@
 # Copyright (c) 2021 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: RISC-V Machine timer
+description: |
+  RISC-V Machine Timer
+
+  Privilege platforms provide a real-time counter, exposed as a 64-bit
+  memory-mapped machine-mode register named mtime. Another 64-bit register,
+  timer compare register (mtimecmp), causes a timer interrupt when the mtime
+  register contains a value greater than or equal to the value in the mtimecmp
+  register.
+
+  Example usage:
+
+    mtimer: timer@abcd1230 {
+      compatible = "riscv,machine-timer";
+      reg = <0xabcd1230 0x8,
+             0xabcd1238 0x8>;
+      reg-names = "mtime", "mtimecmp";
+      interrupts = <7 0>;
+    };
 
 compatible: "riscv,machine-timer"
 
 include: base.yaml
 
 properties:
+    reg:
+      required: true
+
+    reg-names:
+      required: true
+
+    interrupts:
+      required: true
+
     clk-divider:
       type: int
       required: false
