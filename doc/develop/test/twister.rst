@@ -51,6 +51,12 @@ you can build and run all possible tests using the following options:
 This will build for all available boards and run all applicable tests in
 a simulated (for example QEMU) environment.
 
+If you want to run tests on one or more specific platforms, you can use
+the ``--platform`` option, it is a platform filter for testing, with this
+option, test suites will only be built/run on the platforms specified.
+This option also supports different revisions of one same board,
+you can use ``--platform board@revision`` to test on a specific revision.
+
 The list of command line options supported by twister can be viewed using::
 
         $ ./scripts/twister --help
