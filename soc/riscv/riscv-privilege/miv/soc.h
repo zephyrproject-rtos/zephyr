@@ -9,9 +9,6 @@
 /* UART Configuration */
 #define MIV_UART_0_LINECFG           0x1
 
-/* Clock controller. */
-#define PRCI_BASE_ADDR               0x44000000
-
 /* Timer configuration */
 #define RISCV_MTIME_BASE             0x4400bff8
 #define RISCV_MTIMECMP_BASE          0x44004000
