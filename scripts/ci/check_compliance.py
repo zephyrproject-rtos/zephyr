@@ -23,10 +23,14 @@ EDIT_TIP = "\n\n*Tip: The bot edits this comment instead of posting a new " \
            "one, so you can check the comment's history to see earlier " \
            "messages.*"
 
+HERE = Path(__file__).parent
+
 logger = None
 
-# This ends up as None when we're not running in a Zephyr tree
-ZEPHYR_BASE = os.environ.get('ZEPHYR_BASE')
+# This ends up using the current repository if ZEPHYR_BASE is unset.
+ZEPHYR_BASE = (os.environ.get('ZEPHYR_BASE') or
+               str((HERE / '..' / '..').resolve()))
+os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
 
 
 def git(*args, cwd=None):
