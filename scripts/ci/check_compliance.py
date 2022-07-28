@@ -33,6 +33,10 @@ ZEPHYR_BASE = (os.environ.get('ZEPHYR_BASE') or
                str((HERE / '..' / '..').resolve()))
 os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
 
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'scripts', 'dts', 'python-devicetree', 'src'))
+
+from devicetree import edtlib
+
 @contextlib.contextmanager
 def run_in_directory(dir):
     # Helper to run a code block from a given directory.
@@ -641,6 +645,38 @@ class KconfigBasicCheck(KconfigCheck, ComplianceTest):
     def run(self):
         super().run(full=False)
 
+class DevicetreeBindings(ComplianceTest):
+    """
+    Checks if Zephyr devicetree bindings comply with some
+    usual conventions.
+
+    This is NOT an exhaustive check; it should only be
+    considered a 'smoke test'.
+    """
+    name = "DevicetreeBindings"
+    doc = "See https://docs.zephyrproject.org/latest/build/dts/bindings.html for more details."
+    path_hint = ZEPHYR_BASE
+
+    def run(self):
+        bindings_dir = str(Path(ZEPHYR_BASE) / 'dts' / 'bindings')
+
+        try:
+            subprocess.check_call(['git', 'diff', '--quiet', COMMIT_RANGE,
+                                   bindings_dir])
+            no_differences = True
+        except subprocess.CalledProcessError:
+            no_differences = False
+
+        if no_differences:
+            self.skip('no changes to bindings were made')
+
+        for binding in edtlib.bindings_from_dirs([bindings_dir]):
+            for prop_name in binding.prop2specs:
+                if '_' in prop_name:
+                    better_prop = prop_name.replace('_', '-')
+                    self.add_failure(
+                        f'{binding.path}: property "{prop_name}" contains '
+                        f'underscores; use "{better_prop}" instead')
 
 class Codeowners(ComplianceTest):
     """
