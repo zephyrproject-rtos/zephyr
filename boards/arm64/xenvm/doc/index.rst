@@ -193,6 +193,61 @@ Use information from de-compiled DTB file to update all related entries in
 provided "xenvm.dts" file. If memory layout is also changed, you may need to
 update :code:`CONFIG_SRAM_BASE_ADDRESS` as well.
 
+Build Zephyr as a guest domain inside the full product
+******************************************************
+
+Pre-requirements:
+
+CMake, Zephyr SDK, and other tools are installed on the host PC according to
+https://docs.zephyrproject.org/latest/develop/getting_started/index.html
+
+Install moulin
+
+.. code-block:: console
+
+   $ pip3 install --user git+https://github.com/xen-troops/moulin
+
+In case of any issues please see
+https://moulin.readthedocs.io/en/latest/about.html#requirements-and-installation
+
+Create a dedicated folder that will contain sources and build products
+
+.. code-block:: console
+
+   $ mkdir mybuild
+   $ cd mybuild
+
+Get a manifest that describes all domains (control, driver, and zephyr as a guest)
+
+.. code-block:: console
+
+   $ curl -O https://raw.githubusercontent.com/xen-troops/meta-xt-prod-devel-rcar/master/prod-devel-rcar.yaml
+
+Generate `build.ninja` file
+
+.. code-block:: console
+
+   $ moulin ./prod-devel-rcar.yaml --MACHINE h3ulcb-4x2g --ENABLE_ZEPHYR yes
+
+Pay attention that MACHINE should be specified from the list supported by Automotive Xen.
+You can see the list of supported machines running
+
+.. code-block:: console
+
+   $ moulin ./prod-devel-rcar.yaml --help-config
+
+For this example, we build for Renesas StarterKit Premier 8GB.
+
+You can start building of the full product by
+
+.. code-block:: console
+
+   $ ninja image-full
+
+Note that you will build two separate Linux images (dom0 and domd) so, depending
+on internet speed, this will take 2-4 hours on Intel i7 with 32GB of RAM and SSD.
+Regarding SSD - you need about 100GB of free space.
+
 References
 **********
 
