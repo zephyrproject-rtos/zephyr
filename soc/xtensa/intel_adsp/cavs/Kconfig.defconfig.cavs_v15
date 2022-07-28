@@ -38,6 +38,12 @@ if DAI_INTEL_SSP
 config DAI_SSP_CLK_FORCE_DYNAMIC_CLOCK_GATING
 	default y
 
+config DAI_INTEL_SSP_NUM_BASE
+	default 4
+
+config DAI_INTEL_SSP_NUM_EXT
+	default 2
+
 endif # DAI_INTEL_SSP
 
 endif
