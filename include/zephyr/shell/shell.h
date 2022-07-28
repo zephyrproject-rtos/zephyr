@@ -17,6 +17,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
+#include <zephyr/sys/kobject.h>
+
 #if defined CONFIG_SHELL_GETOPT
 #include <getopt.h>
 #endif
@@ -122,7 +124,7 @@ struct shell_static_args {
  * start with this text.  Pass null if no prefix match is required.
  */
 const struct device *shell_device_lookup(size_t idx,
-				   const char *prefix);
+				   enum k_objects type);
 
 /**
  * @brief Shell command handler prototype.

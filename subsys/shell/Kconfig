@@ -9,6 +9,7 @@ menuconfig SHELL
 	bool "Shell"
 	imply LOG_RUNTIME_FILTERING
 	select POLL
+	select HAS_API_TYPE
 
 if SHELL
 

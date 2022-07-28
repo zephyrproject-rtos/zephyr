@@ -494,8 +494,7 @@ void z_shell_cmd_trim(const struct shell *shell)
 	shell->ctx->cmd_buff_pos = shell->ctx->cmd_buff_len;
 }
 
-const struct device *shell_device_lookup(size_t idx,
-				   const char *prefix)
+const struct device *shell_device_lookup(size_t idx, enum k_objects type)
 {
 	size_t match_idx = 0;
 	const struct device *dev;
@@ -506,9 +505,7 @@ const struct device *shell_device_lookup(size_t idx,
 		if (device_is_ready(dev)
 		    && (dev->name != NULL)
 		    && (strlen(dev->name) != 0)
-		    && ((prefix == NULL)
-			|| (strncmp(prefix, dev->name,
-				    strlen(prefix)) == 0))) {
+		    && (dev->api_type == type)) {
 			if (match_idx == idx) {
 				return dev;
 			}
