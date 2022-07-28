@@ -13,7 +13,6 @@
 #include <adsp_memory.h>
 
 #define CORE_POWER_CHECK_NUM 32
-#define CORE_POWER_CHECK_DELAY 256
 
 static void ipc_isr(void *arg)
 {
@@ -54,7 +53,7 @@ void soc_start_core(int cpu_num)
 		ACE_PWRCTL->wpdsphpxpg |= BIT(cpu_num);
 
 		while ((ACE_PWRSTS->dsphpxpgs & BIT(cpu_num)) == 0) {
-			k_busy_wait(CORE_POWER_CHECK_DELAY);
+			k_busy_wait(HW_STATE_CHECK_DELAY);
 		}
 
 		/* Tell the ACE ROM that it should use secondary core flow */
@@ -65,7 +64,7 @@ void soc_start_core(int cpu_num)
 
 	/* Waiting for power up */
 	while (~(DFDSPBRCP.capctl[cpu_num].ctl & DFDSPBRCP_CTL_CPA) && --retry) {
-		k_busy_wait(CORE_POWER_CHECK_DELAY);
+		k_busy_wait(HW_STATE_CHECK_DELAY);
 	}
 
 	if (!retry) {
@@ -120,7 +119,7 @@ int soc_adsp_halt_cpu(int id)
 
 	/* Waiting for power off */
 	while (DFDSPBRCP.capctl[id].ctl & DFDSPBRCP_CTL_CPA && --retry)
-		k_busy_wait(CORE_POWER_CHECK_DELAY);
+		k_busy_wait(HW_STATE_CHECK_DELAY);
 
 	if (!retry) {
 		__ASSERT(false, "%s secondary core has not powered down", __func__);
