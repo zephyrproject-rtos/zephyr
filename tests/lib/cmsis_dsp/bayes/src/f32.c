@@ -17,7 +17,7 @@
 
 ZTEST_SUITE(bayes_f32, NULL, NULL, NULL, NULL, NULL);
 
-ZTEST(bayes_f32, test_gaussian_naive_bayes_predict_f16)
+ZTEST(bayes_f32, test_gaussian_naive_bayes_predict_f32)
 {
 	arm_gaussian_naive_bayes_instance_f32 inst;
 
