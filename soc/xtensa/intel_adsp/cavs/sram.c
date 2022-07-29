@@ -16,11 +16,7 @@
 
 #define DELAY_COUNT			256
 #define LPSRAM_MASK(x)		0x00000003
-#if defined(CONFIG_SOC_SERIES_INTEL_ACE1X)
-#define SRAM_BANK_SIZE		(128 * 1024)
-#else
 #define SRAM_BANK_SIZE		(64 * 1024)
-#endif
 #define EBB_SEGMENT_SIZE	32
 #if !defined(CONFIG_SOC_INTEL_CAVS_V15)
 #define PLATFORM_INIT_HPSRAM
