@@ -13,6 +13,10 @@
 #include <zephyr/drivers/timer/nrf_rtc_timer.h>
 #include <zephyr/sys_clock.h>
 #include <hal/nrf_rtc.h>
+#include <nrf_peripherals.h>
+#if defined(PPI_PRESENT)
+#include <hal/nrf_ppi.h>
+#endif
 
 #define EXT_CHAN_COUNT CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT
 #define CHAN_COUNT (EXT_CHAN_COUNT + 1)
@@ -121,6 +125,34 @@ uint32_t z_nrf_rtc_timer_compare_evt_address_get(int32_t chan)
 {
 	__ASSERT_NO_MSG(chan < CHAN_COUNT);
 	return nrf_rtc_event_address_get(RTC, nrf_rtc_compare_event_get(chan));
+}
+
+void z_nrf_rtc_timer_compare_evt_publish_set(int32_t chan, uint32_t ppi)
+{
+	__ASSERT_NO_MSG(chan && chan < CHAN_COUNT);
+
+	nrf_rtc_event_t cc_event = nrf_rtc_compare_event_get(chan);
+
+#if defined(DPPI_PRESENT)
+	nrf_rtc_publish_set(RTC, cc_event, ppi);
+#else
+	nrf_ppi_event_endpoint_setup(NRF_PPI,
+				     (nrf_ppi_channel_t)ppi,
+				     nrf_rtc_event_address_get(RTC, cc_event));
+#endif
+}
+
+void z_nrf_rtc_timer_compare_evt_publish_clear(int32_t chan, uint32_t ppi)
+{
+	__ASSERT_NO_MSG(chan && chan < CHAN_COUNT);
+
+#if defined(DPPI_PRESENT)
+	(void)ppi;
+	nrf_rtc_publish_clear(RTC, nrf_rtc_compare_event_get(chan));
+#else
+	(void)chan;
+	nrf_ppi_event_endpoint_setup(NRF_PPI, (nrf_ppi_channel_t)ppi, 0uL);
+#endif
 }
 
 uint32_t z_nrf_rtc_timer_capture_task_address_get(int32_t chan)

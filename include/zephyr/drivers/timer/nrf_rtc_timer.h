@@ -65,6 +65,22 @@ uint64_t z_nrf_rtc_timer_read(void);
  */
 uint32_t z_nrf_rtc_timer_compare_evt_address_get(int32_t chan);
 
+/** @brief Configure publishing of the COMPARE event to (D)PPI.
+ *
+ * @param chan Channel ID between 1 and CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT.
+ *
+ * @param ppi (D)PPI channel to publish to.
+ */
+void z_nrf_rtc_timer_compare_evt_publish_set(int32_t chan, uint32_t ppi);
+
+/** @brief Clear COMPARE event publishing configuration.
+ *
+ * @param chan Channel ID that was previously configured.
+ *
+ * @param ppi (D)PPI channel to which publishing is to be cleared.
+ */
+void z_nrf_rtc_timer_compare_evt_publish_clear(int32_t chan, uint32_t ppi);
+
 /** @brief Get CAPTURE task register address.
  *
  * Address can be used for (D)PPI.
