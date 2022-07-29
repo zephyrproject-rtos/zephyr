@@ -263,7 +263,7 @@ void ztest_test_pass(void);
 void ztest_test_skip(void);
 
 #define Z_TEST(suite, fn, t_options, use_fixture)                                                  \
-	struct ztest_unit_test_stats UTIL_CAT(z_ztest_unit_test_stats_, fn);      \
+	struct ztest_unit_test_stats z_ztest_unit_test_stats_##suite##_##fn;                       \
 	static void _##suite##_##fn##_wrapper(void *data);                                         \
 	static void suite##_##fn(                                                                  \
 		COND_CODE_1(use_fixture, (struct suite##_fixture *fixture), (void)));              \
@@ -272,7 +272,7 @@ void ztest_test_skip(void);
 		.name = STRINGIFY(fn),                                                             \
 		.test = (_##suite##_##fn##_wrapper),                                               \
 		.thread_options = t_options,                                                       \
-		.stats = &UTIL_CAT(z_ztest_unit_test_stats_, fn)                                  \
+		.stats = &z_ztest_unit_test_stats_##suite##_##fn                                   \
 	};                                                                                         \
 	static void _##suite##_##fn##_wrapper(void *data)                                          \
 	{                                                                                          \
