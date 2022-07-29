@@ -41,6 +41,8 @@ The hexiwear_kw40z board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | soc flash                           |
 +-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 

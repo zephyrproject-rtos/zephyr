@@ -125,6 +125,8 @@ features:
 +-----------+------------+-------------------------------------+
 | GPT       | on-chip    | gpt                                 |
 +-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1060_evk/mimxrt1060_evk_defconfig``
