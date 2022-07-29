@@ -101,6 +101,11 @@
 		ipm0: ipm@3ffe5a30 {
 			compatible = "espressif,esp32-ipm";
 			reg = <0x3FFE5A30 0x8>;
+			status = "disabled";
+			shared-memory = <&shm0>;
+			shared-memory-size = <2048>;
+			interrupts = <FROM_CPU_INTR0_SOURCE FROM_CPU_INTR1_SOURCE>;
+			interrupt-parent = <&intc>;
 		};
 
 		ipi0: ipi@3f4c0058 {

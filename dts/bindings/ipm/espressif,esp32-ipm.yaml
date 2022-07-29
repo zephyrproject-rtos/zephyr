@@ -11,5 +11,13 @@ properties:
   reg:
     required: true
 
+  shared-memory:
+    required: true
+    type: phandle
+
+  shared-memory-size:
+    required: true
+    type: int
+
   interrupts:
-    required: false
+    required: true
