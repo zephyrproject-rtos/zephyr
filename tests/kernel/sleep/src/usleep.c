@@ -65,7 +65,7 @@
 ZTEST_USER(sleep, test_usleep)
 {
 	int retries = 0;
-	int64_t elapsed_ms;
+	int64_t elapsed_ms = 0;
 
 	while (retries < RETRIES) {
 		int64_t start_ms;
