@@ -32,9 +32,6 @@ struct ztest_unit_test {
 	const char *name;
 	void (*test)(void *data);
 	uint32_t thread_options;
-
-	/** Stats */
-	struct ztest_unit_test_stats *const stats;
 };
 
 extern struct ztest_unit_test _ztest_unit_test_list_start[];
@@ -51,17 +48,6 @@ struct ztest_suite_stats {
 	uint32_t skip_count;
 	/** The number of times that the suite failed */
 	uint32_t fail_count;
-};
-
-struct ztest_unit_test_stats {
-	/** The number of times that the test ran */
-	uint32_t run_count;
-	/** The number of times that the test was skipped */
-	uint32_t skip_count;
-	/** The number of times that the test failed */
-	uint32_t fail_count;
-	/** The number of times that the test passed */
-	uint32_t pass_count;
 };
 
 /**
@@ -147,7 +133,7 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
  * @param teardown_fn The function to call after running all the tests in this suite
  */
 #define ZTEST_SUITE(SUITE_NAME, PREDICATE, setup_fn, before_fn, after_fn, teardown_fn)             \
-	struct ztest_suite_stats UTIL_CAT(z_ztest_suite_node_stats_, SUITE_NAME);                  \
+	struct ztest_suite_stats UTIL_CAT(z_ztest_test_node_stats_, SUITE_NAME);                   \
 	static const STRUCT_SECTION_ITERABLE(ztest_suite_node,                                     \
 					     UTIL_CAT(z_ztest_test_node_, SUITE_NAME)) = {         \
 		.name = STRINGIFY(SUITE_NAME),                                                     \
@@ -156,7 +142,7 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
 		.after = (after_fn),                                                               \
 		.teardown = (teardown_fn),                                                         \
 		.predicate = PREDICATE,                                                            \
-		.stats = &UTIL_CAT(z_ztest_suite_node_stats_, SUITE_NAME),             \
+		.stats = &UTIL_CAT(z_ztest_test_node_stats_, SUITE_NAME),                          \
 	}
 /**
  * Default entry point for running or listing registered unit tests.
@@ -263,7 +249,6 @@ void ztest_test_pass(void);
 void ztest_test_skip(void);
 
 #define Z_TEST(suite, fn, t_options, use_fixture)                                                  \
-	struct ztest_unit_test_stats UTIL_CAT(z_ztest_unit_test_stats_, fn);      \
 	static void _##suite##_##fn##_wrapper(void *data);                                         \
 	static void suite##_##fn(                                                                  \
 		COND_CODE_1(use_fixture, (struct suite##_fixture *fixture), (void)));              \
@@ -272,7 +257,6 @@ void ztest_test_skip(void);
 		.name = STRINGIFY(fn),                                                             \
 		.test = (_##suite##_##fn##_wrapper),                                               \
 		.thread_options = t_options,                                                       \
-		.stats = &UTIL_CAT(z_ztest_unit_test_stats_, fn)                                  \
 	};                                                                                         \
 	static void _##suite##_##fn##_wrapper(void *data)                                          \
 	{                                                                                          \
