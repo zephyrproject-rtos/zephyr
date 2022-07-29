@@ -9,6 +9,7 @@ zephyr_library_sources_ifdef(CONFIG_PM
 
 zephyr_library_sources(
   soc.c
+  sram.c
   multiprocessing.c
   irq.c
   power_down.S
