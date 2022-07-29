@@ -45,4 +45,13 @@
 
 #define ADSP_L1_CACHE_PREFCTL_VALUE 0
 
+#define ADSP_L2CC_ADDR          (DT_REG_ADDR(DT_NODELABEL(l2cc)))
+#define ADSP_L2PCFG_ADDR        (ADSP_L2CC_ADDR + 0x08)
+
+#if (!defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__))
+
+#define ADSP_L2PCFG_REG (*(volatile uint32_t *)(ADSP_L2PCFG_ADDR))
+
+#endif
+
 #endif /* ZEPHYR_SOC_INTEL_ADSP_MEMORY_H_ */
