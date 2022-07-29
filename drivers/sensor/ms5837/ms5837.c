@@ -63,7 +63,7 @@ static void ms5837_compensate(const struct device *dev,
 	 * PRESSURE AND TEMPERATURE CALCULATION
 	 */
 
-	dT = adc_temperature - ((uint32_t)(data->t_ref) << 8);
+	dT = adc_temperature - ((int32_t)(data->t_ref) << 8);
 	data->temperature = 2000 + (dT * data->tempsens) / (1ll << 23);
 	OFF = ((int64_t)(data->off_t1) << 16) + (dT * data->tco) / (1ll << 7);
 	SENS = ((int64_t)(data->sens_t1) << 15) + (dT * data->tcs) / (1ll << 8);
