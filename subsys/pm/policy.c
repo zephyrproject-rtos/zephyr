@@ -44,6 +44,8 @@ static struct {
 static struct k_spinlock latency_lock;
 /** List of maximum latency requests. */
 static sys_slist_t latency_reqs;
+/** Maximum CPU latency in us */
+static int32_t max_latency_us = SYS_FOREVER_US;
 /** Maximum CPU latency in ticks */
 static int32_t max_latency_ticks = K_TICKS_FOREVER;
 /** Callback to notify when maximum latency changes. */
@@ -52,30 +54,30 @@ static pm_policy_latency_changed_cb_t latency_changed_cb;
 /** @brief Update maximum allowed latency. */
 static void update_max_latency(void)
 {
-	int32_t new_max_latency_ticks = K_TICKS_FOREVER;
+	int32_t new_max_latency_us = SYS_FOREVER_US;
 	struct pm_policy_latency_request *req;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&latency_reqs, req, node) {
-		if ((new_max_latency_ticks == K_TICKS_FOREVER) ||
-		    ((int32_t)req->value < new_max_latency_ticks)) {
-			new_max_latency_ticks = (int32_t)req->value;
+		if ((new_max_latency_us == SYS_FOREVER_US) ||
+		    ((int32_t)req->value < new_max_latency_us)) {
+			new_max_latency_us = (int32_t)req->value;
 		}
 	}
 
-	if ((latency_changed_cb != NULL) &&
-	    (max_latency_ticks != new_max_latency_ticks)) {
-		int32_t latency_us;
+	if (max_latency_us != new_max_latency_us) {
+		int32_t new_max_latency_ticks = K_TICKS_FOREVER;
 
-		if (new_max_latency_ticks == K_TICKS_FOREVER) {
-			latency_us = SYS_FOREVER_US;
-		} else {
-			latency_us = (int32_t)k_ticks_to_us_ceil32(new_max_latency_ticks);
+		if (latency_changed_cb != NULL) {
+			latency_changed_cb(new_max_latency_us);
 		}
 
-		latency_changed_cb(latency_us);
-	}
+		if (new_max_latency_us != SYS_FOREVER_US) {
+			new_max_latency_ticks = (int32_t)k_us_to_ticks_ceil32(new_max_latency_us);
+		}
 
-	max_latency_ticks = new_max_latency_ticks;
+		max_latency_us = new_max_latency_us;
+		max_latency_ticks = new_max_latency_ticks;
+	}
 }
 
 #ifdef CONFIG_PM_POLICY_DEFAULT
@@ -156,7 +158,7 @@ bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id)
 void pm_policy_latency_request_add(struct pm_policy_latency_request *req,
 				   uint32_t value)
 {
-	req->value = k_us_to_ticks_ceil32(value);
+	req->value = value;
 
 	k_spinlock_key_t key = k_spin_lock(&latency_lock);
 
@@ -171,7 +173,7 @@ void pm_policy_latency_request_update(struct pm_policy_latency_request *req,
 {
 	k_spinlock_key_t key = k_spin_lock(&latency_lock);
 
-	req->value = k_us_to_ticks_ceil32(value);
+	req->value = value;
 	update_max_latency();
 
 	k_spin_unlock(&latency_lock, key);
