@@ -48,8 +48,8 @@ static sys_slist_t latency_reqs;
 static int32_t max_latency_us = SYS_FOREVER_US;
 /** Maximum CPU latency in ticks */
 static int32_t max_latency_ticks = K_TICKS_FOREVER;
-/** Callback to notify when maximum latency changes. */
-static pm_policy_latency_changed_cb_t latency_changed_cb;
+/** List of latency change subscribers. */
+static sys_slist_t latency_subs;
 
 /** @brief Update maximum allowed latency. */
 static void update_max_latency(void)
@@ -65,10 +65,11 @@ static void update_max_latency(void)
 	}
 
 	if (max_latency_us != new_max_latency_us) {
+		struct pm_policy_latency_subscription *sreq;
 		int32_t new_max_latency_ticks = K_TICKS_FOREVER;
 
-		if (latency_changed_cb != NULL) {
-			latency_changed_cb(new_max_latency_us);
+		SYS_SLIST_FOR_EACH_CONTAINER(&latency_subs, sreq, node) {
+			sreq->cb(new_max_latency_us);
 		}
 
 		if (new_max_latency_us != SYS_FOREVER_US) {
@@ -189,11 +190,22 @@ void pm_policy_latency_request_remove(struct pm_policy_latency_request *req)
 	k_spin_unlock(&latency_lock, key);
 }
 
-void pm_policy_latency_changed(pm_policy_latency_changed_cb_t cb)
+void pm_policy_latency_changed_subscribe(struct pm_policy_latency_subscription *req,
+					 pm_policy_latency_changed_cb_t cb)
 {
 	k_spinlock_key_t key = k_spin_lock(&latency_lock);
 
-	latency_changed_cb = cb;
+	req->cb = cb;
+	sys_slist_append(&latency_subs, &req->node);
+
+	k_spin_unlock(&latency_lock, key);
+}
+
+void pm_policy_latency_changed_unsubscribe(struct pm_policy_latency_subscription *req)
+{
+	k_spinlock_key_t key = k_spin_lock(&latency_lock);
+
+	(void)sys_slist_find_and_remove(&latency_subs, &req->node);
 
 	k_spin_unlock(&latency_lock, key);
 }
