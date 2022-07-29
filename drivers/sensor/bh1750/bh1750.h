@@ -8,9 +8,9 @@
 #ifndef __BH1750_H
 #define __BH1750_H
 
-#include <drivers/gpio.h>
-#include <drivers/sensor.h>
-#include <sys/util.h>
+#include <zephyr/drivers/i2c.h>
+
+#include <stdint.h>
 
 #define BH1750_RESET 0x07
 

@@ -14,6 +14,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
+#include <stdint.h>
+
 LOG_MODULE_REGISTER(BH1750, CONFIG_SENSOR_LOG_LEVEL);
 
 static int bh1750_read(const struct device *dev, uint8_t *byte, uint32_t count)
