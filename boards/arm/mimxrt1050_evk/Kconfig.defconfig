@@ -61,12 +61,6 @@ config LV_Z_POINTER_KSCAN
 config LV_Z_POINTER_KSCAN_DEV_NAME
 	default "FT5336"
 
-config LV_Z_HOR_RES_MAX
-	default 480
-
-config LV_Z_VER_RES_MAX
-	default 272
-
 config LV_Z_VDB_SIZE
 	default 16
 

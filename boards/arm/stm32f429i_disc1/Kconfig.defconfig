@@ -14,8 +14,4 @@ config SPI
 config MEMC
 	default y if DISPLAY
 
-config LV_Z_DISPLAY_DEV_NAME
-	depends on LVGL
-	default "LTDC" if STM32_LTDC
-
 endif # BOARD_STM32F429I_DISC1
