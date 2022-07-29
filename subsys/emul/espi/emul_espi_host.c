@@ -175,7 +175,7 @@ int emul_espi_host_send_vw(const struct device *espi_dev, enum espi_vwire_signal
 	__ASSERT_NO_MSG(api->find_emul);
 
 	emul_espi = api->find_emul(espi_dev, EMUL_ESPI_HOST_CHIPSEL);
-	data_host = espi_dev->data;
+	data_host = emul_espi->target->data;
 
 	idx = emul_host_find_index(data_host, vw);
 	if (idx < 0 || data_host->vw_state[idx].dir != ESPI_MASTER_TO_SLAVE) {
