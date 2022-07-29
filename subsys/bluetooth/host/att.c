@@ -598,24 +598,17 @@ static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 static void att_send_process(struct bt_att *att)
 {
 	struct bt_att_chan *chan, *tmp;
-	struct net_buf *buf;
-	int err = -ENOENT;
-
-	buf = net_buf_get(&att->tx_queue, K_NO_WAIT);
-	if (!buf) {
-		return;
-	}
+	int err;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
-		err = bt_att_chan_send(chan, buf);
-		if (err >= 0) {
-			break;
+		err = process_queue(chan, &att->tx_queue);
+		if (!err) {
+			/* Success */
+			return;
+		} else if (err == -ENOENT) {
+			/* Nothing to send */
+			return;
 		}
-	}
-
-	if (err < 0) {
-		/* Push it back if it could not be send */
-		k_queue_prepend(&att->tx_queue._queue, buf);
 	}
 }
 
