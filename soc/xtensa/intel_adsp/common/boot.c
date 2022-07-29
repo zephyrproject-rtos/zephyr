@@ -41,8 +41,14 @@
 #define HOST_PAGE_SIZE		4096
 #define MANIFEST_SEGMENT_COUNT	3
 
+/* FIXME: Use Kconfig or some other means */
 #if defined(CONFIG_SOC_INTEL_CAVS_V15)
 #define PLATFORM_DISABLE_L2CACHE_AT_BOOT
+#endif
+
+/* FIXME: Use Kconfig or some other means */
+#if !defined(CONFIG_SOC_SERIES_INTEL_ACE1X)
+#define RESET_MEMORY_HOLE
 #endif
 
 /* Initial/true entry point.  Does nothing but jump to
@@ -148,7 +154,6 @@ extern void hp_sram_init(uint32_t memory_size);
 extern void lp_sram_init(void);
 extern void hp_sram_pm_banks(uint32_t banks);
 
-#ifdef CONFIG_INTEL_ADSP_CAVS
 __imr void boot_core0(void)
 {
 	cpu_early_init();
@@ -158,8 +163,10 @@ __imr void boot_core0(void)
 		*(uint32_t *)0x1508 = 0;
 #endif
 
+#ifdef RESET_MEMORY_HOLE
 	/* reset memory hole */
 	CAVS_SHIM.l2mecs = 0;
+#endif
 
 	hp_sram_init(L2_SRAM_SIZE);
 	win_setup();
@@ -172,4 +179,3 @@ __imr void boot_core0(void)
 	extern FUNC_NORETURN void z_cstart(void);
 	z_cstart();
 }
-#endif
