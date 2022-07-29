@@ -45,7 +45,7 @@ ZTEST(sys_notify_api, test_spinwait)
 {
 	int rc;
 	int set_res = 423;
-	int res;
+	int res = 0;
 	sys_notify_generic_callback cb;
 	struct sys_notify notify;
 	uint32_t xflags = 0x1234;
