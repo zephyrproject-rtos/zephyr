@@ -301,7 +301,9 @@ static uint8_t pu_update_eff_times(struct ll_conn *conn, struct proc_ctx *ctx)
 	}
 
 	if ((eff_tx_time > lll->dle.eff.max_tx_time) ||
-	    (eff_rx_time > lll->dle.eff.max_rx_time)) {
+	    (lll->dle.eff.max_tx_time > max_tx_time) ||
+	    (eff_rx_time > lll->dle.eff.max_rx_time) ||
+	    (lll->dle.eff.max_rx_time > max_rx_time)) {
 		lll->dle.eff.max_tx_time = eff_tx_time;
 		lll->dle.eff.max_rx_time = eff_rx_time;
 		return 1U;
