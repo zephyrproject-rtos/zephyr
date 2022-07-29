@@ -30,7 +30,7 @@
 
 ZTEST_SUITE(distance_f32, NULL, NULL, NULL, NULL, NULL);
 
-static void test_arm_distance(int op, bool scratchy, const uint16_t *dims,
+static void test_arm_distance_f32(int op, bool scratchy, const uint16_t *dims,
 	const uint32_t *dinput1, const uint32_t *dinput2, const uint32_t *ref)
 {
 	size_t index;
@@ -121,38 +121,38 @@ static void test_arm_distance(int op, bool scratchy, const uint16_t *dims,
 }
 
 DEFINE_TEST_VARIANT6(distance_f32,
-	arm_distance, braycurtis, OP_BRAYCURTIS, false, in_dims,
+	arm_distance_f32, braycurtis, OP_BRAYCURTIS, false, in_dims,
 	in_com1, in_com2, ref_braycurtis);
 
 DEFINE_TEST_VARIANT6(distance_f32,
-	arm_distance, canberra, OP_CANBERRA, false, in_dims,
+	arm_distance_f32, canberra, OP_CANBERRA, false, in_dims,
 	in_com1, in_com2, ref_canberra);
 
 DEFINE_TEST_VARIANT6(distance_f32,
-	arm_distance, chebyshev, OP_CHEBYSHEV, false, in_dims,
+	arm_distance_f32, chebyshev, OP_CHEBYSHEV, false, in_dims,
 	in_com1, in_com2, ref_chebyshev);
 
 DEFINE_TEST_VARIANT6(distance_f32,
-	arm_distance, cityblock, OP_CITYBLOCK, false, in_dims,
+	arm_distance_f32, cityblock, OP_CITYBLOCK, false, in_dims,
 	in_com1, in_com2, ref_cityblock);
 
 DEFINE_TEST_VARIANT6(distance_f32,
-	arm_distance, correlation, OP_CORRELATION, true, in_dims,
+	arm_distance_f32, correlation, OP_CORRELATION, true, in_dims,
 	in_com1, in_com2, ref_correlation);
 
 DEFINE_TEST_VARIANT6(distance_f32,
-	arm_distance, cosine, OP_COSINE, false, in_dims,
+	arm_distance_f32, cosine, OP_COSINE, false, in_dims,
 	in_com1, in_com2, ref_cosine);
 
 DEFINE_TEST_VARIANT6(distance_f32,
-	arm_distance, euclidean, OP_EUCLIDEAN, false, in_dims,
+	arm_distance_f32, euclidean, OP_EUCLIDEAN, false, in_dims,
 	in_com1, in_com2, ref_euclidean);
 
 DEFINE_TEST_VARIANT6(distance_f32,
-	arm_distance, jensenshannon, OP_JENSENSHANNON, false, in_dims,
+	arm_distance_f32, jensenshannon, OP_JENSENSHANNON, false, in_dims,
 	in_jen1, in_jen2, ref_jensenshannon);
 
-ZTEST(distance_f32, test_arm_distance_minkowski)
+ZTEST(distance_f32, test_arm_distance_f32_minkowski)
 {
 	size_t index;
 	const size_t length = in_dims_minkowski[0];
