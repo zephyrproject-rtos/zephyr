@@ -289,6 +289,8 @@ static int spi_mcux_configure(const struct device *dev,
 
 		SPI_SlaveTransferCreateHandle(base, &data->handle,
 					      spi_mcux_transfer_callback, data);
+
+		data->ctx.config = spi_cfg;
 	}
 
 	return 0;
