@@ -99,6 +99,8 @@ features:
 +-----------+------------+-------------------------------------+
 | CTIMER    | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 

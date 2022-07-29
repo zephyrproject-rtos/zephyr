@@ -89,6 +89,9 @@ The hexiwear_k64 board configuration supports the following hardware features:
 |           |            | fxas21002 trigger;                  |
 |           |            | max30101 polling                    |
 +-----------+------------+-------------------------------------+
+| RNGA      | on-chip    | entropy;                            |
+|           |            | random                              |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
