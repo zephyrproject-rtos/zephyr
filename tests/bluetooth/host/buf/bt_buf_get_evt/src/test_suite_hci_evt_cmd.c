@@ -8,6 +8,7 @@
 #include <zephyr/bluetooth/buf.h>
 #include <host/hci_core.h>
 #include "kconfig.h"
+#include "net_buf.h"
 #include "buf_help_utils.h"
 
 /* Rows count equals number of events x 2 */
@@ -72,12 +73,13 @@ static void test_return_value_matches_bt_buf_get_cmd_complete_null(void)
 	zassert_true((evt == BT_HCI_EVT_CMD_COMPLETE || evt == BT_HCI_EVT_CMD_STATUS),
 		     "Invalid event type %u to this test", evt);
 
-	ztest_expect_value(net_buf_alloc_fixed, pool, get_memory_pool());
-	ztest_returns_value(net_buf_alloc_fixed, NULL);
-
-	ztest_expect_value(net_buf_validate_timeout_value_mock, value, timeout.ticks);
+	net_buf_alloc_fixed_fake.return_val = NULL;
 
 	returned_buf = bt_buf_get_evt(evt, discardable, timeout);
+
+	validate_net_buf_alloc_called_behaviour(get_memory_pool(), &timeout);
+	validate_net_buf_reserve_not_called_behaviour();
+	validate_net_buf_ref_not_called_behaviour();
 
 	zassert_is_null(returned_buf,
 			"bt_buf_get_evt() returned non-NULL value while expecting NULL");
@@ -112,15 +114,13 @@ static void test_return_value_matches_bt_buf_get_cmd_complete_not_null(void)
 
 	bt_dev.sent_cmd = NULL;
 
-	ztest_expect_value(net_buf_simple_reserve, buf, &expected_buf.b);
-	ztest_expect_value(net_buf_simple_reserve, reserve, BT_BUF_RESERVE);
-
-	ztest_expect_value(net_buf_alloc_fixed, pool, get_memory_pool());
-	ztest_returns_value(net_buf_alloc_fixed, &expected_buf);
-
-	ztest_expect_value(net_buf_validate_timeout_value_mock, value, timeout.ticks);
+	net_buf_alloc_fixed_fake.return_val = &expected_buf;
 
 	returned_buf = bt_buf_get_evt(evt, discardable, timeout);
+
+	validate_net_buf_alloc_called_behaviour(get_memory_pool(), &timeout);
+	validate_net_buf_reserve_called_behaviour(&expected_buf);
+	validate_net_buf_ref_not_called_behaviour();
 
 	zassert_equal(returned_buf, &expected_buf,
 		      "bt_buf_get_evt() returned incorrect buffer pointer value");
@@ -145,6 +145,9 @@ static void unit_test_setup(void)
 		     "Invalid testing parameters index %u", testing_params_it);
 	current_test_vector = &testing_params_lut[testing_params_it];
 	testing_params_it++;
+
+	/* Register resets */
+	FFF_FAKES_LIST(RESET_FAKE);
 }
 
 /* Each run will use a testing parameters set from LUT
