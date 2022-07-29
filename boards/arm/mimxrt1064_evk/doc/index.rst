@@ -130,7 +130,8 @@ features:
 +-----------+------------+-------------------------------------+
 | HWINFO    | on-chip    | Unique device serial number         |
 +-----------+------------+-------------------------------------+
-
+| TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1064_evk/mimxrt1064_evk_defconfig``
