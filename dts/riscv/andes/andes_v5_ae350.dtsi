@@ -125,6 +125,13 @@
 					       &CPU2_intc 3 &CPU3_intc 3>;
 		};
 
+		mtimer: timer@e6000000 {
+			compatible = "andestech,machine-timer";
+			reg = <0xe6000000 0x10>;
+			interrupts-extended = <&CPU0_intc 7 &CPU1_intc 7
+					       &CPU2_intc 7 &CPU3_intc 7>;
+		};
+
 		smu: smu@f0100000 {
 			compatible = "andestech,atcsmu100";
 			reg = <0xf0100000 0x1000>;
