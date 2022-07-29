@@ -71,10 +71,7 @@ static uint8_t rl_enable;
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
 /* Cache of known unknown peer RPAs */
 static uint8_t newest_prpa;
-static struct prpa_cache_dev {
-	uint8_t      taken:1;
-	bt_addr_t rpa;
-} prpa_cache[CONFIG_BT_CTLR_RPA_CACHE_SIZE];
+static struct lll_prpa_cache prpa_cache[CONFIG_BT_CTLR_RPA_CACHE_SIZE];
 
 struct prpa_resolve_work {
 	struct k_work prpa_work;
@@ -1625,5 +1622,10 @@ static uint8_t prpa_cache_find(bt_addr_t *rpa)
 		}
 	}
 	return FILTER_IDX_NONE;
+}
+
+const struct lll_prpa_cache *ull_filter_lll_prpa_cache_get(void)
+{
+	return prpa_cache;
 }
 #endif /* !CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY */
