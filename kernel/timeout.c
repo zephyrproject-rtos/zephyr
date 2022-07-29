@@ -250,7 +250,7 @@ void sys_clock_announce(int32_t ticks)
 	 * timeouts and confuse apps), just increment the tick count
 	 * and return.
 	 */
-	if (IS_ENABLED(CONFIG_SMP) && announce_remaining != 0) {
+	if (IS_ENABLED(CONFIG_SMP) && (announce_remaining != 0)) {
 		announce_remaining += ticks;
 		k_spin_unlock(&timeout_lock, key);
 		return;
@@ -263,13 +263,13 @@ void sys_clock_announce(int32_t ticks)
 		int dt = t->dticks;
 
 		curr_tick += dt;
-		announce_remaining -= dt;
 		t->dticks = 0;
 		remove_timeout(t);
 
 		k_spin_unlock(&timeout_lock, key);
 		t->fn(t);
 		key = k_spin_lock(&timeout_lock);
+		announce_remaining -= dt;
 	}
 
 	if (first() != NULL) {
