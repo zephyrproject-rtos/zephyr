@@ -76,11 +76,22 @@ static struct {
 	uint8_t pool[IQ_REPORT_POOL_SIZE];
 } mem_iq_report;
 
-/* FIFO to store free IQ report norde_rx objects. */
+/* FIFO to store free IQ report norde_rx objects for LLL to ULL handover. */
 static MFIFO_DEFINE(iq_report_free, sizeof(void *), IQ_REPORT_CNT);
 
 /* Number of available instance of linked list to be used for node_rx_iq_reports. */
 static uint8_t mem_link_iq_report_quota_pdu;
+
+#if defined(CONFIG_BT_CTLR_DF_DEBUG_ENABLE)
+/* Debug variable to store information about current number of allocated node_rx_iq_report.
+ * It supports verification if there is a resource leak.
+ * The variable may not be used when multiple
+ * advertising syncs are enabled. Checks may fail because CTE reception may be enabled/disabled
+ * in different moments, hence there may be allocated reports when it is expected not to.
+ */
+COND_CODE_1(CONFIG_BT_PER_ADV_SYNC_MAX, (static uint32_t iq_report_alloc_count;), (EMPTY))
+#define IF_SINGLE_ADV_SYNC_SET(code) COND_CODE_1(CONFIG_BT_PER_ADV_SYNC_MAX, (code), (EMPTY))
+#endif /* CONFIG_BT_CTLR_DF_DEBUG_ENABLE */
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTLR_DF_CONN_CTE_RX*/
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
@@ -437,6 +448,12 @@ uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 		slot_minus_us = CTE_LEN_MAX_US;
 		cfg->is_enabled = 0U;
 	} else {
+
+#if defined(CONFIG_BT_CTLR_DF_DEBUG_ENABLE)
+		/* When CTE is enabled there should be no iq report allocated */
+		IF_SINGLE_ADV_SYNC_SET(LL_ASSERT(iq_report_alloc_count == 0));
+#endif /* CONFIG_BT_CTLR_DF_DEBUG_ENABLE */
+
 		/* Enable of already enabled CTE updates AoA configuration */
 		if (!((IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US) &&
 		       slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_1US) ||
@@ -537,17 +554,26 @@ void *ull_df_iq_report_alloc_peek_iter(uint8_t *idx)
 
 void *ull_df_iq_report_alloc(void)
 {
+#if defined(CONFIG_BT_CTLR_DF_DEBUG_ENABLE)
+	IF_SINGLE_ADV_SYNC_SET(iq_report_alloc_count++);
+#endif /* CONFIG_BT_CTLR_DF_DEBUG_ENABLE */
+
 	return MFIFO_DEQUEUE(iq_report_free);
 }
 
 void ull_df_iq_report_mem_release(struct node_rx_hdr *rx)
 {
+#if defined(CONFIG_BT_CTLR_DF_DEBUG_ENABLE)
+	IF_SINGLE_ADV_SYNC_SET(iq_report_alloc_count--);
+#endif /* CONFIG_BT_CTLR_DF_DEBUG_ENABLE */
+
 	mem_release(rx, &mem_iq_report.free);
 }
 
 void ull_iq_report_link_inc_quota(int8_t delta)
 {
-	LL_ASSERT(delta <= 0 || mem_link_iq_report_quota_pdu < IQ_REPORT_CNT);
+	LL_ASSERT(delta <= 0 || mem_link_iq_report_quota_pdu < (IQ_REPORT_CNT));
+
 	mem_link_iq_report_quota_pdu += delta;
 }
 
