@@ -514,8 +514,8 @@ config BT_SMP_MIN_ENC_KEY_SIZE
 	int
 	prompt "Minimum encryption key size accepted in octets" if !BT_SMP_SC_ONLY
 	range 7 16
-	default 7
 	default 16 if BT_SMP_SC_ONLY
+	default 7
 	help
 	  This option sets the minimum encryption key size accepted during pairing.
 
