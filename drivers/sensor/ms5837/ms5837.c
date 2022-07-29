@@ -134,12 +134,14 @@ static int ms5837_channel_get(const struct device *dev,
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
+		/* Internal temperature is in 100ths of deg C */
 		val->val1 = data->temperature / 100;
 		val->val2 = data->temperature % 100 * 10000;
 		break;
 	case SENSOR_CHAN_PRESS:
-		val->val1 = data->pressure / 100;
-		val->val2 = data->pressure % 100 * 10000;
+		/* Internal value is (mbar * 100), so factor to kPa is 1000 */
+		val->val1 = data->pressure / 1000;
+		val->val2 = data->pressure % 1000 * 1000;
 		break;
 	default:
 		return -EINVAL;
