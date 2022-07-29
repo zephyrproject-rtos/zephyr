@@ -68,6 +68,11 @@
 			reg = <0x1000 0x100>;
 		};
 
+		l2cc: l2cc@1500 {
+			compatible = "intel,cavs-l2cc";
+			reg = <0x1500 0x40>;
+		};
+
 		win: win@1580 {
 			compatible = "intel,cavs-win";
 			reg = <0x1580 0x20>;
