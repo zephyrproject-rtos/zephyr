@@ -1796,7 +1796,7 @@ static int dai_ssp_trigger(const struct device *dev, enum dai_dir dir,
 	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
 	int array_index = SSP_ARRAY_INDEX(dir);
 
-	LOG_INF("%s cmd %d", __func__, cmd);
+	LOG_DBG("%s cmd %d", __func__, cmd);
 
 	switch (cmd) {
 	case DAI_TRIGGER_START:
