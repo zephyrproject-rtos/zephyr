@@ -232,6 +232,10 @@ static inline void z_dummy_thread_init(struct k_thread *dummy_thread)
 	dummy_thread->resource_pool = NULL;
 #endif
 
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	dummy_thread->base.slice_ticks = 0;
+#endif
+
 	_current_cpu->current = dummy_thread;
 }
 #endif /* ZEPHYR_KERNEL_INCLUDE_KSWAP_H_ */
