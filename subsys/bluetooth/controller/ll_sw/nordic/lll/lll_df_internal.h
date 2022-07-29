@@ -6,6 +6,7 @@
 
 /* Forward declaration to avoid unnecessary includes. */
 struct lll_adv_sync;
+struct lll_sync;
 
 /* Enables CTE transmission according to provided configuration */
 void lll_df_cte_tx_enable(struct lll_adv_sync *lll_sync, const struct pdu_adv *pdu,
@@ -56,8 +57,13 @@ static inline uint8_t lll_df_sync_cfg_is_modified(struct lll_df_sync *df_cfg)
 }
 
 /* Enables CTE reception according to provided configuration */
-void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, const uint8_t *ant_ids,
-			       uint8_t chan_idx, bool cte_info_in_s1, uint8_t phy);
+int lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, const uint8_t *ant_ids,
+			      uint8_t chan_idx, bool cte_info_in_s1, uint8_t phy);
+
+/* Function prepares memory for Host notification about insufficient resources to sample all CTE
+ * in a given periodic synchronization event.
+ */
+int lll_df_iq_report_no_resources_prepare(struct lll_sync *sync);
 
 /* Configure CTE transmission */
 void lll_df_cte_tx_configure(uint8_t cte_type, uint8_t cte_length, uint8_t num_ant_ids,

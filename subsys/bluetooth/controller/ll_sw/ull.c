@@ -448,12 +448,10 @@ static struct {
  * happen due to supervision timeout and other reasons that dont have an
  * incoming Rx-ed PDU).
  */
-#define LINK_RX_POOL_SIZE                                                      \
-	(sizeof(memq_link_t) *                                                 \
-	 (RX_CNT + 2 + BT_CTLR_MAX_CONN + BT_CTLR_ADV_SET +                    \
-	  (BT_CTLR_ADV_ISO_SET * 2) + (BT_CTLR_SCAN_SYNC_SET * 2) +            \
-	  (BT_CTLR_SCAN_SYNC_ISO_SET * 2) +                                    \
-	  (IQ_REPORT_CNT)))
+#define LINK_RX_POOL_SIZE                                                                          \
+	(sizeof(memq_link_t) *                                                                     \
+	 (RX_CNT + 2 + BT_CTLR_MAX_CONN + BT_CTLR_ADV_SET + (BT_CTLR_ADV_ISO_SET * 2) +            \
+	  (BT_CTLR_SCAN_SYNC_SET * 2) + (BT_CTLR_SCAN_SYNC_ISO_SET * 2) + (IQ_REPORT_CNT)))
 static struct {
 	uint16_t quota_pdu; /* Number of un-utilized buffers */
 
@@ -937,7 +935,18 @@ ll_rx_get_again:
 #endif /* CONFIG_BT_CONN ||
 	* (CONFIG_BT_OBSERVER && CONFIG_BT_CTLR_ADV_EXT)
 	*/
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+			} else if (rx->type == NODE_RX_TYPE_IQ_SAMPLE_REPORT_LLL_RELEASE) {
+				const uint8_t report_cnt = 1U;
 
+				(void)memq_dequeue(memq_ll_rx.tail, &memq_ll_rx.head, NULL);
+				ll_rx_link_release(link);
+				ull_iq_report_link_inc_quota(report_cnt);
+				ull_df_iq_report_mem_release(rx);
+				ull_df_rx_iq_report_alloc(report_cnt);
+
+				goto ll_rx_get_again;
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 			} else if (rx->type == NODE_RX_TYPE_SYNC_CHM_COMPLETE) {
 				rx_link_dequeue_release_quota_inc(link);
@@ -2654,6 +2663,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	case NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT:
 	case NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT:
 	case NODE_RX_TYPE_DTM_IQ_SAMPLE_REPORT:
+	case NODE_RX_TYPE_IQ_SAMPLE_REPORT_LLL_RELEASE:
 	{
 		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 		ll_rx_put(link, rx);

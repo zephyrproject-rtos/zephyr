@@ -23,8 +23,9 @@
 #include "lll_adv_types.h"
 #include "lll_adv.h"
 #include "lll_adv_pdu.h"
-#include "lll_df.h"
 #include "lll_df_types.h"
+#include "lll_sync.h"
+#include "lll_df.h"
 #include "lll_df_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_CTLR_DF_DEBUG_ENABLE)
@@ -222,8 +223,8 @@ struct lll_df_sync_cfg *lll_df_sync_cfg_latest_get(struct lll_df_sync *df_cfg,
  *
  * In case of AoA mode ant_num and ant_ids parameters are not used.
  */
-void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, const uint8_t *ant_ids,
-			       uint8_t chan_idx, bool cte_info_in_s1, uint8_t phy)
+int lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, const uint8_t *ant_ids,
+			      uint8_t chan_idx, bool cte_info_in_s1, uint8_t phy)
 {
 	struct node_rx_iq_report *node_rx;
 
@@ -243,13 +244,85 @@ void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, const uin
 	radio_df_ant_switch_pattern_set(ant_ids, ant_num);
 #endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_RX */
 
+	/* Could be moved up, if Radio setup is not needed if we are not going to report IQ data */
 	node_rx = ull_df_iq_report_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	if (!node_rx) {
+		return -ENOMEM;
+	}
 
 	radio_df_iq_data_packet_set(node_rx->pdu, IQ_SAMPLE_TOTAL_CNT);
 	node_rx->chan_idx = chan_idx;
+
+	return 0;
 }
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTLR_DF_CONN_CTE_RX */
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+/**
+ * @brief Function allocates additional IQ report node for Host notification about
+ * insufficient resources to sample all CTE in a periodic synchronization event.
+ *
+ * @param sync_lll Pointer to periodic synchronization object
+ *
+ * @return -ENOMEM in case there is no free node for IQ Data report
+ * @return -ENOBUFS in case there are no free nodes for report of insufficient resources as well as
+ * IQ data report
+ * @return zero in case of success
+ */
+int lll_df_iq_report_no_resources_prepare(struct lll_sync *sync_lll)
+{
+	struct node_rx_iq_report *cte_incomplete;
+	int err;
+
+	/* Allocate additional node for a sync context only once. This is an additional node to
+	 * report there is no more memory to store IQ data, hence some of CTEs are not going
+	 * to be sampled.
+	 */
+	if (!sync_lll->node_cte_incomplete && !sync_lll->is_cte_incomplete) {
+		/* Check if there are free nodes for:
+		 * - storage of IQ data collcted during a PDU reception
+		 * - Host notification about insufficient resources for IQ data
+		 */
+		cte_incomplete = ull_df_iq_report_alloc_peek(2);
+		if (!cte_incomplete) {
+			/* Check if there is a free node to report insufficient resources only.
+			 * There will be no IQ Data collection.
+			 */
+			cte_incomplete = ull_df_iq_report_alloc_peek(1);
+			if (!cte_incomplete) {
+				/* No free nodes at all */
+				return -ENOBUFS;
+			}
+
+			/* No memory for IQ data report */
+			err = -ENOMEM;
+		} else {
+			err = 0;
+		}
+
+		/* Do actual allocation and store the node for futher processing after a PDU
+		 * reception,
+		 */
+		ull_df_iq_report_alloc();
+
+		/* Store the node in lll_sync object. This is a place where the node may be stored
+		 * until processing afte reception of a PDU to report no IQ data or hand over
+		 * to aux objects for usage in ULL. If there is not enough memory for IQ data
+		 * there is no node to use for temporary storage as it is done for PDUs.
+		 */
+		sync_lll->node_cte_incomplete = cte_incomplete;
+
+		/* Reset the state every time the prepare is called. IQ report node may be unchanged
+		 * from former synchronization event.
+		 */
+		sync_lll->is_cte_incomplete = false;
+	} else {
+		err = 0;
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX  */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 /**
