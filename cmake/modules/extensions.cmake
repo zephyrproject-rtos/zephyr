@@ -82,6 +82,7 @@ function(zephyr_sources)
       message(FATAL_ERROR "zephyr_sources() was called on a directory")
     endif()
     target_sources(zephyr PRIVATE ${arg})
+    generate_unique_source_file_ids(${arg})
   endforeach()
 endfunction()
 
@@ -471,6 +472,7 @@ endfunction()
 #
 function(zephyr_library_sources source)
   target_sources(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${source} ${ARGN})
+  generate_unique_source_file_ids(${source} ${ARGN})
 endfunction()
 
 function(zephyr_library_include_directories)
@@ -1393,6 +1395,25 @@ function(zephyr_build_string outvar)
   set(${outvar} ${${outvar}} PARENT_SCOPE)
 endfunction()
 
+# Helper functions to iterate source files and append a unique compile time definition
+function(generate_unique_source_file_ids)
+  foreach(arg ${ARGV})
+    if(IS_ABSOLUTE ${arg})
+      set(path ${arg})
+    else()
+      set(path ${CMAKE_CURRENT_SOURCE_DIR}/${arg})
+    endif()
+
+    if(EXISTS ${path} AND NOT IS_DIRECTORY ${path})
+      generate_unique_target_name_from_filename(${path} generated_unique_name)
+
+      set_property(SOURCE ${path}
+        APPEND PROPERTY COMPILE_DEFINITIONS
+        "Z_UNIQUE_FILE_ID=${generated_unique_name}")
+    endif()
+  endforeach()
+endfunction()
+
 ########################################################
 # 2. Kconfig-aware extensions
 ########################################################
@@ -1493,6 +1514,7 @@ endfunction()
 function(target_sources_ifdef feature_toggle target scope item)
   if(${${feature_toggle}})
     target_sources(${target} ${scope} ${item} ${ARGN})
+    generate_unique_source_file_ids(${item} ${ARGN})
   endif()
 endfunction()
 
@@ -1639,6 +1661,7 @@ endfunction()
 function(target_sources_ifndef feature_toggle target scope item)
   if(NOT ${feature_toggle})
     target_sources(${target} ${scope} ${item} ${ARGN})
+    generate_unique_source_file_ids(${item} ${ARGN})
   endif()
 endfunction()
 
@@ -3200,6 +3223,7 @@ function(target_sources_if_dt_node path target scope item)
   dt_node_exists(check PATH "${path}")
   if(${check})
     target_sources(${target} ${scope} ${item} ${ARGN})
+    generate_unique_source_file_ids(${item} ${ARGN})
   endif()
 endfunction()
 
