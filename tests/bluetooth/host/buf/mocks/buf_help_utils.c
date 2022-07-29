@@ -52,3 +52,22 @@ void validate_net_buf_reserve_not_called_behaviour(void)
 	zassert_equal(net_buf_simple_reserve_fake.call_count, 0, "'%s()' was called unexpectedly",
 		      func_name);
 }
+
+void validate_net_buf_ref_called_behaviour(struct net_buf *buf)
+{
+	const char *func_name = "net_buf_ref";
+
+	zassert_equal(net_buf_ref_fake.call_count, 1, "'%s()' was called more than once",
+		      func_name);
+
+	zassert_equal_ptr(net_buf_ref_fake.arg0_val, buf,
+			  "'%s()' was called with incorrect '%s' value", func_name, "buf");
+}
+
+void validate_net_buf_ref_not_called_behaviour(void)
+{
+	const char *func_name = "net_buf_ref";
+
+	zassert_equal(net_buf_ref_fake.call_count, 0, "'%s()' was called unexpectedly",
+		      func_name);
+}

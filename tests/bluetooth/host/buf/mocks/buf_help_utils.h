@@ -67,3 +67,20 @@ void validate_net_buf_reserve_called_behaviour(struct net_buf *buf);
  *   - net_buf_reserve() not to called at all
  */
 void validate_net_buf_reserve_not_called_behaviour(void);
+
+/*
+ *  Validate expected behaviour when net_buf_ref() is called
+ *
+ *  Expected behaviour:
+ *   - net_buf_ref() to be called once with :
+ *       - correct reference value
+ */
+void validate_net_buf_ref_called_behaviour(struct net_buf *buf);
+
+/*
+ *  Validate expected behaviour when net_buf_ref() isn't called
+ *
+ *  Expected behaviour:
+ *   - net_buf_ref() not to called at all
+ */
+void validate_net_buf_ref_not_called_behaviour(void);

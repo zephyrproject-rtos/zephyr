@@ -9,6 +9,7 @@
 #include <zephyr/bluetooth/buf.h>
 #include <host/hci_core.h>
 #include "kconfig.h"
+#include "net_buf.h"
 #include "buf_help_utils.h"
 
 /*
@@ -44,12 +45,13 @@ void test_returns_null_sent_cmd_is_null(void)
 		memory_pool = bt_buf_get_hci_rx_pool();
 	}
 
-	ztest_expect_value(net_buf_alloc_fixed, pool, memory_pool);
-	ztest_returns_value(net_buf_alloc_fixed, NULL);
-
-	ztest_expect_value(net_buf_validate_timeout_value_mock, value, timeout.ticks);
+	net_buf_alloc_fixed_fake.return_val = NULL;
 
 	returned_buf = bt_buf_get_cmd_complete(timeout);
+
+	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
+	validate_net_buf_reserve_not_called_behaviour();
+	validate_net_buf_ref_not_called_behaviour();
 
 	zassert_is_null(returned_buf,
 			"bt_buf_get_cmd_complete() returned non-NULL value while expecting NULL");
@@ -92,15 +94,13 @@ void test_returns_not_null_sent_cmd_is_null(void)
 		memory_pool = bt_buf_get_hci_rx_pool();
 	}
 
-	ztest_expect_value(net_buf_simple_reserve, buf, &expected_buf.b);
-	ztest_expect_value(net_buf_simple_reserve, reserve, BT_BUF_RESERVE);
-
-	ztest_expect_value(net_buf_alloc_fixed, pool, memory_pool);
-	ztest_returns_value(net_buf_alloc_fixed, &expected_buf);
-
-	ztest_expect_value(net_buf_validate_timeout_value_mock, value, timeout.ticks);
+	net_buf_alloc_fixed_fake.return_val = &expected_buf;
 
 	returned_buf = bt_buf_get_cmd_complete(timeout);
+
+	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
+	validate_net_buf_reserve_called_behaviour(&expected_buf);
+	validate_net_buf_ref_not_called_behaviour();
 
 	zassert_equal(returned_buf, &expected_buf,
 		      "bt_buf_get_cmd_complete() returned incorrect buffer pointer value");
@@ -138,11 +138,13 @@ void test_returns_not_null_sent_cmd_is_not_null(void)
 	bt_dev.sent_cmd = &expected_buf;
 	sent_cmd_not_changing_value = bt_dev.sent_cmd;
 
-	ztest_expect_value(net_buf_simple_reserve, buf, &bt_dev.sent_cmd->b);
-	ztest_expect_value(net_buf_simple_reserve, reserve, BT_BUF_RESERVE);
-	ztest_expect_value(net_buf_ref, buf, bt_dev.sent_cmd);
+	net_buf_ref_fake.return_val = &expected_buf;
 
 	returned_buf = bt_buf_get_cmd_complete(timeout);
+
+	validate_net_buf_reserve_called_behaviour(bt_dev.sent_cmd);
+	validate_net_buf_ref_called_behaviour(bt_dev.sent_cmd);
+	validate_net_buf_alloc_not_called_behaviour();
 
 	zassert_equal(returned_buf, &expected_buf,
 		      "bt_buf_get_cmd_complete() returned incorrect buffer pointer value");
@@ -156,18 +158,28 @@ void test_returns_not_null_sent_cmd_is_not_null(void)
 		     "bt_buf_get_cmd_complete() caused bt_dev.sent_cmd value to be changed");
 }
 
+/* Setup test variables */
+static void unit_test_setup(void)
+{
+	/* Register resets */
+	FFF_FAKES_LIST(RESET_FAKE);
+}
+
 void test_main(void)
 {
-	ztest_test_suite(bt_buf_get_cmd_complete_returns_not_null,
-			ztest_unit_test(test_returns_not_null_sent_cmd_is_null),
-			ztest_unit_test(test_returns_not_null_sent_cmd_is_not_null)
-			);
+
+	ztest_test_suite(
+		bt_buf_get_cmd_complete_returns_not_null,
+		ztest_unit_test_setup(test_returns_not_null_sent_cmd_is_null, unit_test_setup),
+		ztest_unit_test_setup(test_returns_not_null_sent_cmd_is_not_null, unit_test_setup)
+		);
 
 	ztest_run_test_suite(bt_buf_get_cmd_complete_returns_not_null);
 
-	ztest_test_suite(bt_buf_get_cmd_complete_returns_null,
-			ztest_unit_test(test_returns_null_sent_cmd_is_null)
-			);
+	ztest_test_suite(
+		bt_buf_get_cmd_complete_returns_null,
+		ztest_unit_test_setup(test_returns_null_sent_cmd_is_null, unit_test_setup)
+		);
 
 	ztest_run_test_suite(bt_buf_get_cmd_complete_returns_null);
 }

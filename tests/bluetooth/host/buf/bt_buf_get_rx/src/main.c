@@ -44,6 +44,7 @@ void test_returns_null_type_bt_buf_evt(void)
 
 	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
 	validate_net_buf_reserve_not_called_behaviour();
+	validate_net_buf_ref_not_called_behaviour();
 
 	zassert_is_null(returned_buf,
 			"bt_buf_get_rx() returned non-NULL value while expecting NULL");
@@ -83,6 +84,7 @@ void test_returns_null_type_bt_buf_acl_in(void)
 
 	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
 	validate_net_buf_reserve_not_called_behaviour();
+	validate_net_buf_ref_not_called_behaviour();
 
 	zassert_is_null(returned_buf,
 			"bt_buf_get_rx() returned non-NULL value while expecting NULL");
@@ -126,6 +128,7 @@ void test_returns_null_type_bt_buf_iso_in(void)
 
 	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
 	validate_net_buf_reserve_not_called_behaviour();
+	validate_net_buf_ref_not_called_behaviour();
 
 	zassert_is_null(returned_buf,
 			"bt_buf_get_rx() returned non-NULL value while expecting NULL");
@@ -166,6 +169,7 @@ void test_returns_not_null_type_bt_buf_evt(void)
 
 	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
 	validate_net_buf_reserve_called_behaviour(&expected_buf);
+	validate_net_buf_ref_not_called_behaviour();
 
 	zassert_equal(returned_buf, &expected_buf,
 		      "bt_buf_get_rx() returned incorrect buffer pointer value");
@@ -211,6 +215,7 @@ void test_returns_not_null_type_bt_buf_acl_in(void)
 
 	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
 	validate_net_buf_reserve_called_behaviour(&expected_buf);
+	validate_net_buf_ref_not_called_behaviour();
 
 	zassert_equal(returned_buf, &expected_buf,
 		      "bt_buf_get_rx() returned incorrect buffer pointer value");
@@ -260,6 +265,7 @@ void test_returns_not_null_type_bt_buf_iso_in(void)
 
 	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
 	validate_net_buf_reserve_called_behaviour(&expected_buf);
+	validate_net_buf_ref_not_called_behaviour();
 
 	zassert_equal(returned_buf, &expected_buf,
 		      "bt_buf_get_rx() returned incorrect buffer pointer value");
