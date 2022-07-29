@@ -32,7 +32,7 @@ extern void parse_manifest(void);
 #define MANIFEST_SEGMENT_COUNT 3
 
 
-static __imr void power_init(void)
+__imr void power_init(void)
 {
 	/* Disable idle power gating */
 	DFDSPBRCP.bootctl[0].bctl |= DFDSPBRCP_BCTL_WAITIPCG | DFDSPBRCP_BCTL_WAITIPPG;
@@ -42,16 +42,3 @@ static __imr void power_init(void)
 	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(1));
 #endif
 }
-
-static __imr int soc_init(const struct device *dev)
-{
-	power_init();
-
-#if CONFIG_MP_NUM_CPUS > 1
-	soc_mp_init();
-#endif
-
-	return 0;
-}
-
-SYS_INIT(soc_init, PRE_KERNEL_1, 99);
