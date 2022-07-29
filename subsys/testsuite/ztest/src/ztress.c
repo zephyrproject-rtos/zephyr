@@ -290,10 +290,6 @@ static void ztress_init(struct ztress_context_data *thread_data)
 	k_thread_foreach(thread_cb, NULL);
 	k_msleep(10);
 
-	if (idle_tid == NULL) {
-		printk("Failed to identify idle thread. CPU load will not be tracked\n");
-	}
-
 	k_timer_start(&ctrl_timer, K_MSEC(100), K_MSEC(100));
 	k_timer_user_data_set(&progress_timer, thread_data);
 	k_timer_start(&progress_timer,
