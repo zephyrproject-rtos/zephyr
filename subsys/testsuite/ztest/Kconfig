@@ -122,20 +122,6 @@ config ZTEST_SHUFFLE_TEST_REPEAT_COUNT
 
 endif #ZTEST_SHUFFLE
 
-config ZTEST_VERBOSE_OUTPUT
-	bool "Verbose test output"
-	default y
-	help
-	  This option controls whether test output is shown verbosely or
-	  no output at all.
-
-config ZTEST_VERBOSE_SUMMARY
-	bool "Verbose test summary"
-	default y
-	help
-	  This option controls whether suite summary is shwon verbosely or
-	  just in one line.
-
 endif # ZTEST_NEW_API
 
 endif # ZTEST
