@@ -183,6 +183,8 @@ void esp_appcpu_start(void *entry_point)
 	esp_rom_Cache_Flush(1);
 	esp_rom_Cache_Read_Enable(1);
 
+	esp_rom_ets_set_appcpu_boot_addr((void *)0);
+
 	RTC_CNTL_SW_CPU_STALL &= ~RTC_CNTL_SW_STALL_APPCPU_C1;
 	RTC_CNTL_OPTIONS0     &= ~RTC_CNTL_SW_STALL_APPCPU_C0;
 	DPORT_APPCPU_CTRL_B   |= DPORT_APPCPU_CLKGATE_EN;
