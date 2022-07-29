@@ -40,7 +40,7 @@ extern void soc_mp_init(void);
 #endif
 
 
-static __imr void power_init(void)
+__imr void power_init(void)
 {
 #ifdef CONFIG_SOC_INTEL_CAVS_V15
 	/* HP domain clocked by PLL
@@ -100,19 +100,4 @@ static __imr void power_init(void)
 #endif
 }
 
-static __imr int soc_init(const struct device *dev)
-{
-	power_init();
 
-#ifdef CONFIG_CAVS_CLOCK
-	cavs_clock_init();
-#endif
-
-#if CONFIG_MP_NUM_CPUS > 1
-	soc_mp_init();
-#endif
-
-	return 0;
-}
-
-SYS_INIT(soc_init, PRE_KERNEL_1, 99);

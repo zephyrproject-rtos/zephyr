@@ -15,6 +15,7 @@ zephyr_library_sources_ifdef(CONFIG_CAVS_IPC ipc.c)
 zephyr_library_sources(
     rimage_modules.c
     boot.c
+    soc.c
     )
 
 zephyr_library_sources_ifdef(CONFIG_CAVS_CLOCK clk.c)
