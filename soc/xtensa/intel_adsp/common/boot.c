@@ -162,8 +162,7 @@ __imr void boot_core0(void)
 	cpu_early_init();
 
 #ifdef PLATFORM_DISABLE_L2CACHE_AT_BOOT
-		/* FIXME: L2 cache control PCFG register */
-		*(uint32_t *)0x1508 = 0;
+	ADSP_L2PCFG_REG = 0;
 #endif
 
 #ifdef RESET_MEMORY_HOLE
