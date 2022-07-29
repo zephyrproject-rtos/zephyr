@@ -561,6 +561,10 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 fail:
 	k_sem_give(bt_conn_get_pkts(conn));
 	if (tx) {
+		/* `buf` might not get destroyed, and its `tx` pointer will still be reachable.
+		 * Make sure that we don't try to use the destroyed context later.
+		 */
+		tx_data(buf)->tx = NULL;
 		conn_tx_destroy(conn, tx);
 	}
 
@@ -673,11 +677,17 @@ static void conn_cleanup(struct bt_conn *conn)
 
 	/* Give back any allocated buffers */
 	while ((buf = net_buf_get(&conn->tx_queue, K_NO_WAIT))) {
-		if (tx_data(buf)->tx) {
-			conn_tx_destroy(conn, tx_data(buf)->tx);
-		}
+		struct bt_conn_tx *tx = tx_data(buf)->tx;
 
+		tx_data(buf)->tx = NULL;
+
+		/* destroy the buffer */
 		net_buf_unref(buf);
+
+		/* destroy the tx context (and any associated meta-data) */
+		if (tx) {
+			conn_tx_destroy(conn, tx);
+		}
 	}
 
 	__ASSERT(sys_slist_is_empty(&conn->tx_pending), "Pending TX packets");
