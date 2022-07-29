@@ -90,4 +90,7 @@ config ADSP_INIT_HPSRAM
 	help
 	  Need to init HP SRAM.
 
+config ADSP_DISABLE_L2CACHE_AT_BOOT
+	bool
+
 endif # SOC_FAMILY_INTEL_ADSP
