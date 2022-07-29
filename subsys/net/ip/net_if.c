@@ -563,7 +563,7 @@ struct net_if *net_if_get_default(void)
 {
 	struct net_if *iface = NULL;
 
-	if (_net_if_list_start == _net_if_list_end) {
+	if (&_net_if_list_start[0] == &_net_if_list_end[0]) {
 		return NULL;
 	}
 
