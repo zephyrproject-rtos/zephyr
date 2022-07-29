@@ -32,29 +32,6 @@ extern void parse_manifest(void);
 #define MANIFEST_SEGMENT_COUNT 3
 
 
-__imr void boot_core0(void)
-{
-	int prid;
-
-	prid = arch_proc_id();
-	if (prid != 0) {
-		((void (*)(void))DFDSPBRCP.bootctl[prid].baddr)();
-	}
-
-	cpu_early_init();
-
-	hp_sram_init();
-	win_setup();
-	lp_sram_init();
-	parse_manifest();
-	soc_trace_init();
-	z_xtensa_cache_flush_all();
-
-	/* Zephyr! */
-	extern FUNC_NORETURN void z_cstart(void);
-	z_cstart();
-}
-
 static __imr void power_init(void)
 {
 	/* Disable idle power gating */

@@ -17,7 +17,7 @@
 
 #define DELAY_COUNT			256
 
-__imr void hp_sram_init(void)
+__imr void hp_sram_init(uint32_t memory_size)
 {
 	ARG_UNUSED(memory_size);
 
