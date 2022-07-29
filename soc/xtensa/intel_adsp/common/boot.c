@@ -42,11 +42,6 @@
 #define MANIFEST_SEGMENT_COUNT	3
 
 /* FIXME: Use Kconfig or some other means */
-#if defined(CONFIG_SOC_INTEL_CAVS_V15)
-#define PLATFORM_DISABLE_L2CACHE_AT_BOOT
-#endif
-
-/* FIXME: Use Kconfig or some other means */
 #if !defined(CONFIG_SOC_SERIES_INTEL_ACE1X)
 #define RESET_MEMORY_HOLE
 #endif
@@ -161,7 +156,7 @@ __imr void boot_core0(void)
 {
 	cpu_early_init();
 
-#ifdef PLATFORM_DISABLE_L2CACHE_AT_BOOT
+#ifdef CONFIG_ADSP_DISABLE_L2CACHE_AT_BOOT
 	ADSP_L2PCFG_REG = 0;
 #endif
 

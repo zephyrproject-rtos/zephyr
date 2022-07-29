@@ -49,4 +49,6 @@ endif # DAI_INTEL_SSP
 config ADSP_INIT_HPSRAM
 	default n
 
+config ADSP_DISABLE_L2CACHE_AT_BOOT
+	default y
 endif
