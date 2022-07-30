@@ -1111,7 +1111,7 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 	.heth = {
 		.Instance = (ETH_TypeDef *)DT_INST_REG_ADDR(0),
 		.Init = {
-#if !defined(CONFIG_SOC_SERIES_STM32H7X)
+#if !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_ETH_STM32_HAL_API_V2)
 #if defined(CONFIG_ETH_STM32_AUTO_NEGOTIATION_ENABLE)
 			.AutoNegotiation = ETH_AUTONEGOTIATION_ENABLE,
 #else
