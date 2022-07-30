@@ -242,6 +242,7 @@ endif #RISCV_PMP
 
 config PMP_STACK_GUARD
 	def_bool y
+	depends on MULTITHREADING
 	depends on HW_STACK_PROTECTION
 
 config PMP_STACK_GUARD_MIN_SIZE
@@ -279,6 +280,9 @@ config ARCH_IRQ_VECTOR_TABLE_ALIGN
 
 config GEN_IRQ_VECTOR_TABLE
 	select RISCV_MTVEC_VECTORED_MODE if SOC_FAMILY_RISCV_PRIVILEGE
+
+config ARCH_HAS_SINGLE_THREAD_SUPPORT
+	default y if !SMP
 
 rsource "Kconfig.isa"
 rsource "Kconfig.core"
