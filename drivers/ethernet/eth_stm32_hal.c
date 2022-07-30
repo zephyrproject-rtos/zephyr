@@ -590,15 +590,23 @@ static struct net_pkt *eth_rx(const struct device *dev, uint16_t *vlan_tag)
 {
 	struct eth_stm32_hal_dev_data *dev_data;
 	ETH_HandleTypeDef *heth;
+	struct net_pkt *pkt;
+	size_t total_len = 0;
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+	void *appbuf = NULL;
+	struct eth_stm32_rx_buffer_header *rx_header;
+#else
 #if !defined(CONFIG_SOC_SERIES_STM32H7X)
 	__IO ETH_DMADescTypeDef *dma_rx_desc;
 #endif /* !CONFIG_SOC_SERIES_STM32H7X */
-	struct net_pkt *pkt;
-	size_t total_len;
 	uint8_t *dma_buffer;
 	HAL_StatusTypeDef hal_ret = HAL_OK;
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	struct net_ptp_time timestamp;
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+	ETH_TimeStampTypeDef ts_registers;
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 	/* Default to invalid value. */
 	timestamp.second = UINT64_MAX;
 	timestamp.nanosecond = UINT32_MAX;
@@ -612,7 +620,18 @@ static struct net_pkt *eth_rx(const struct device *dev, uint16_t *vlan_tag)
 
 	heth = &dev_data->heth;
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+	if (HAL_ETH_ReadData(heth, &appbuf) != HAL_OK) {
+		/* no frame available */
+		return NULL;
+	}
+
+	/* computing total length */
+	for (rx_header = (struct eth_stm32_rx_buffer_header *)appbuf;
+			rx_header; rx_header = rx_header->next) {
+		total_len += rx_header->size;
+	}
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
 	if (HAL_ETH_IsRxDataAvailable(heth) != true) {
 		/* no frame available */
 		return NULL;
@@ -649,7 +668,14 @@ static struct net_pkt *eth_rx(const struct device *dev, uint16_t *vlan_tag)
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+
+	if (HAL_ETH_PTP_GetRxTimestamp(heth, &ts_registers) == HAL_OK) {
+		timestamp.second = ts_registers.TimeStampHigh;
+		timestamp.nanosecond = ts_registers.TimeStampLow;
+	}
+
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
 	ETH_RxDescListTypeDef * dma_rx_desc_list;
 
 	dma_rx_desc_list = &heth->RxDescList;
@@ -698,15 +724,36 @@ static struct net_pkt *eth_rx(const struct device *dev, uint16_t *vlan_tag)
 		goto release_desc;
 	}
 
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+	for (rx_header = (struct eth_stm32_rx_buffer_header *)appbuf;
+			rx_header; rx_header = rx_header->next) {
+		const size_t index = rx_header - &dma_rx_buffer_header[0];
+
+		__ASSERT_NO_MSG(index < ETH_RXBUFNB);
+		if (net_pkt_write(pkt, dma_rx_buffer[index], rx_header->size)) {
+			LOG_ERR("Failed to append RX buffer to context buffer");
+			net_pkt_unref(pkt);
+			pkt = NULL;
+			goto release_desc;
+		}
+	}
+#else
 	if (net_pkt_write(pkt, dma_buffer, total_len)) {
 		LOG_ERR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
 		pkt = NULL;
 		goto release_desc;
 	}
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 release_desc:
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+	for (rx_header = (struct eth_stm32_rx_buffer_header *)appbuf;
+			rx_header; rx_header = rx_header->next) {
+		rx_header->used = false;
+	}
+
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
 	hal_ret = HAL_ETH_BuildRxDescriptors(heth);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_BuildRxDescriptors: failed: %d", hal_ret);
@@ -734,7 +781,7 @@ release_desc:
 		/* Resume DMA reception */
 		heth->Instance->DMARPDR = 0;
 	}
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 	if (!pkt) {
 		goto out;
