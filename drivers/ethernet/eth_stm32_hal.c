@@ -193,14 +193,13 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	heth = &dev_data->heth;
 
-	k_mutex_lock(&dev_data->tx_mutex, K_FOREVER);
-
 	total_len = net_pkt_get_len(pkt);
 	if (total_len > ETH_STM32_TX_BUF_SIZE) {
 		LOG_ERR("PKT too big");
-		res = -EIO;
-		goto error;
+		return -EIO;
 	}
+
+	k_mutex_lock(&dev_data->tx_mutex, K_FOREVER);
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	uint32_t cur_tx_desc_idx;
