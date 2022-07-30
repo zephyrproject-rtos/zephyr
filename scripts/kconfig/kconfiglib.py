@@ -596,6 +596,9 @@ class Kconfig(object):
     named_choices:
       A dictionary like 'syms' for named choices (choice FOO)
 
+    unnamed_choices:
+      A dictionary like 'syms' for unnamed choices (choice)
+
     defined_syms:
       A list with all defined symbols, in the same order as they appear in the
       Kconfig files. Symbols defined in multiple locations appear multiple
@@ -838,6 +841,7 @@ class Kconfig(object):
         "top_node",
         "unique_choices",
         "unique_defined_syms",
+        "unnamed_choices",
         "variables",
         "warn",
         "warn_assign_override",
@@ -990,6 +994,7 @@ class Kconfig(object):
         self.defined_syms = []
         self.missing_syms = []
         self.named_choices = {}
+        self.unnamed_choices = {}
         self.choices = []
         self.menus = []
         self.comments = []
@@ -3049,8 +3054,11 @@ class Kconfig(object):
 
             elif t0 is _T_CHOICE:
                 if self._tokens[1] is None:
-                    choice = Choice()
-                    choice.direct_dep = self.n
+                    choice = self.unnamed_choices.get((self.filename, self.linenr))
+                    if not choice:
+                        choice = Choice()
+                        choice.direct_dep = self.n
+                        self.unnamed_choices[(self.filename, self.linenr)] = choice
                 else:
                     # Named choice
                     name = self._expect_str_and_eol()
