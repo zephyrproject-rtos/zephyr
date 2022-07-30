@@ -281,6 +281,57 @@ static int ms5837_read_prom(const struct device *dev, const uint8_t cmd,
 	return 0;
 }
 
+static uint8_t crc4(uint16_t n_prom[8])
+{
+	uint16_t n_rem = 0;
+	uint8_t n_bit;
+
+	n_prom[0] = ((n_prom[0]) & 0x0FFF);
+	n_prom[7] = 0;
+
+	for (int cnt = 0; cnt < 16; cnt++) {
+		if (cnt % 2 == 1) {
+			n_rem ^= (unsigned short) ((n_prom[cnt>>1]) & 0x00FF);
+		}  else {
+			n_rem ^= (unsigned short) (n_prom[cnt>>1]>>8);
+		}
+
+		for (n_bit = 8; n_bit > 0; n_bit--) {
+			if (n_rem & (0x8000)) {
+				n_rem = (n_rem << 1) ^ 0x3000;
+			} else {
+				n_rem = (n_rem << 1);
+			}
+		}
+	}
+	n_rem = ((n_rem >> 12) & 0x000F);
+	/* final 4-bit remainder is CRC code */
+	return (n_rem ^ 0x00);
+}
+
+static bool ms5837_check_prom_crc(struct ms5837_data *data)
+{
+	uint16_t regs[] = {
+		data->factory,
+		data->sens_t1,
+		data->off_t1,
+		data->tcs,
+		data->tco,
+		data->t_ref,
+		data->tempsens,
+		0
+	};
+	uint8_t calc_crc4 = crc4(regs);
+	uint8_t read_crc4 = data->factory >> 12;
+
+	if (calc_crc4 != read_crc4) {
+		LOG_WRN(" prom data crc mismatch; calc: %x:, read %x",
+			calc_crc4, read_crc4);
+		return false;
+	}
+	return true;
+}
+
 static int ms5837_init(const struct device *dev)
 {
 	struct ms5837_data *data = dev->data;
@@ -359,6 +410,8 @@ static int ms5837_init(const struct device *dev)
 		data->comp_func = ms5837_compensate_30;
 		break;
 	}
+
+	ms5837_check_prom_crc(data);
 
 	return 0;
 }
