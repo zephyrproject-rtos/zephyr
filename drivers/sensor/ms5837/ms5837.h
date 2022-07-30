@@ -44,8 +44,19 @@
 #define MS5837_ADC_READ_DELAY_4086 10
 #define MS5837_ADC_READ_DELAY_8129 20
 
+enum ms5837_type {
+	MS5837_02BA01 = 0x00,
+	MS5837_02BA21 = 0x15,
+	MS5837_30BA26 = 0x1A
+};
+
+typedef void (*ms5837_compensate_func)(const struct device *dev,
+				       const int32_t adc_temperature,
+				       const int32_t adc_pressure);
+
 struct ms5837_data {
 	/* Calibration values */
+	uint16_t factory;
 	uint16_t sens_t1;
 	uint16_t off_t1;
 	uint16_t tcs;
@@ -65,6 +76,7 @@ struct ms5837_data {
 	uint8_t presure_conv_delay;
 	uint8_t temperature_conv_delay;
 
+	ms5837_compensate_func comp_func;
 };
 
 struct ms5837_config {
