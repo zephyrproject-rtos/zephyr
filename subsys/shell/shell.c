@@ -574,10 +574,13 @@ static void active_cmd_prepare(const struct shell_static_entry *entry,
 	if (entry->handler) {
 		*handler_lvl = *lvl;
 		*active_cmd = *entry;
+		/* If command is final handler and it has a raw optional argument,
+		 * then set remaining arguments to mandatory - 1 so after processing mandatory
+		 * args, handler is passed remaining raw string
+		 */
 		if ((entry->subcmd == NULL)
 		    && entry->args.optional == SHELL_OPT_ARG_RAW) {
 			*args_left = entry->args.mandatory - 1;
-			*lvl = *lvl + 1;
 		}
 	}
 	if (entry->help) {
@@ -621,7 +624,7 @@ static bool wildcard_check_report(const struct shell *shell, bool found,
 static int execute(const struct shell *shell)
 {
 	struct shell_static_entry dloc; /* Memory for dynamic commands. */
-	const char *argv[CONFIG_SHELL_ARGC_MAX + 1]; /* +1 reserved for NULL */
+	const char *argv[CONFIG_SHELL_ARGC_MAX + 1] = {0}; /* +1 reserved for NULL */
 	const struct shell_static_entry *parent = selected_cmd_get(shell);
 	const struct shell_static_entry *entry = NULL;
 	struct shell_static_entry help_entry;
@@ -782,8 +785,17 @@ static int execute(const struct shell *shell)
 		}
 	}
 
-	/* terminate arguments with NULL */
-	argv[cmd_lvl] = NULL;
+	/* If a command was found */
+	if (parent != NULL) {
+		/* If the found command uses a raw optional argument and
+		 * we have a remaining unprocessed non-null string,
+		 * then increment command level so handler receives raw string
+		 */
+		if (parent->args.optional == SHELL_OPT_ARG_RAW && argv[cmd_lvl] != NULL) {
+			cmd_lvl++;
+		}
+	}
+
 	/* Executing the deepest found handler. */
 	return exec_cmd(shell, cmd_lvl - cmd_with_handler_lvl,
 			&argv[cmd_with_handler_lvl], &help_entry);
