@@ -175,52 +175,52 @@ static void test_recv(int count)
 	zassert_equal(remaining, 0, "Msg not empty");
 }
 
-static void test_recv_1_byte(void)
+ZTEST(net_websocket, test_recv_1_byte)
 {
 	test_recv(1);
 }
 
-static void test_recv_2_byte(void)
+ZTEST(net_websocket, test_recv_2_byte)
 {
 	test_recv(2);
 }
 
-static void test_recv_3_byte(void)
+ZTEST(net_websocket, test_recv_3_byte)
 {
 	test_recv(3);
 }
 
-static void test_recv_6_byte(void)
+ZTEST(net_websocket, test_recv_6_byte)
 {
 	test_recv(6);
 }
 
-static void test_recv_7_byte(void)
+ZTEST(net_websocket, test_recv_7_byte)
 {
 	test_recv(7);
 }
 
-static void test_recv_8_byte(void)
+ZTEST(net_websocket, test_recv_8_byte)
 {
 	test_recv(8);
 }
 
-static void test_recv_9_byte(void)
+ZTEST(net_websocket, test_recv_9_byte)
 {
 	test_recv(9);
 }
 
-static void test_recv_10_byte(void)
+ZTEST(net_websocket, test_recv_10_byte)
 {
 	test_recv(10);
 }
 
-static void test_recv_12_byte(void)
+ZTEST(net_websocket, test_recv_12_byte)
 {
 	test_recv(12);
 }
 
-static void test_recv_whole_msg(void)
+ZTEST(net_websocket, test_recv_whole_msg)
 {
 	test_recv(sizeof(frame1));
 }
@@ -264,7 +264,7 @@ static void test_recv_2(int count)
 	zassert_equal(remaining, 0, "Msg not empty");
 }
 
-static void test_recv_two_msg(void)
+ZTEST(net_websocket, test_recv_two_msg)
 {
 	test_recv_2(sizeof(frame1) + FRAME1_HDR_SIZE / 2);
 }
@@ -332,7 +332,7 @@ int verify_sent_and_received_msg(struct msghdr *msg, bool split_msg)
 	return msg->msg_iov[0].iov_len + total_read;
 }
 
-static void test_send_and_recv_lorem_ipsum(void)
+ZTEST(net_websocket, test_send_and_recv_lorem_ipsum)
 {
 	static struct websocket_context ctx;
 	int ret;
@@ -353,7 +353,7 @@ static void test_send_and_recv_lorem_ipsum(void)
 		      test_msg_len, ret);
 }
 
-static void test_recv_two_large_split_msg(void)
+ZTEST(net_websocket, test_recv_two_large_split_msg)
 {
 	static struct websocket_context ctx;
 	int ret;
@@ -373,25 +373,10 @@ static void test_recv_two_large_split_msg(void)
 		      test_msg_len, ret);
 }
 
-void test_main(void)
+static void *setup(void)
 {
 	k_thread_system_pool_assign(k_current_get());
-
-	ztest_test_suite(websocket,
-			 ztest_unit_test(test_recv_1_byte),
-			 ztest_unit_test(test_recv_2_byte),
-			 ztest_unit_test(test_recv_3_byte),
-			 ztest_unit_test(test_recv_6_byte),
-			 ztest_unit_test(test_recv_7_byte),
-			 ztest_unit_test(test_recv_8_byte),
-			 ztest_unit_test(test_recv_9_byte),
-			 ztest_unit_test(test_recv_10_byte),
-			 ztest_unit_test(test_recv_12_byte),
-			 ztest_unit_test(test_recv_whole_msg),
-			 ztest_unit_test(test_recv_two_msg),
-			 ztest_unit_test(test_send_and_recv_lorem_ipsum),
-			 ztest_unit_test(test_recv_two_large_split_msg)
-		);
-
-	ztest_run_test_suite(websocket);
+	return NULL;
 }
+
+ZTEST_SUITE(net_websocket, NULL, setup, NULL, NULL, NULL);
