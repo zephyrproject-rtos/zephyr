@@ -45,9 +45,9 @@ static int ms5837_get_measurement(const struct device *dev, uint32_t *val,
 	return 0;
 }
 
-static void ms5837_compensate(const struct device *dev,
-			      const int32_t adc_temperature,
-			      const int32_t adc_pressure)
+static void ms5837_compensate_30(const struct device *dev,
+				 const int32_t adc_temperature,
+				 const int32_t adc_pressure)
 {
 	struct ms5837_data *data = dev->data;
 	int64_t dT;
@@ -98,6 +98,46 @@ static void ms5837_compensate(const struct device *dev,
 	    (((SENS * adc_pressure) / (1ll << 21)) - OFF) / (1ll << 13);
 }
 
+/*
+ * First and second order pressure and temperature calculations, as per the flowchart in the
+ * MS5837-02B datasheet. (see "Pressure and Temperature Calculation", pages 6 and 7, REV a8 12/2019)
+ */
+static void ms5837_compensate_02(const struct device *dev,
+				 const int32_t adc_temperature,
+				 const int32_t adc_pressure)
+{
+	struct ms5837_data *data = dev->data;
+	int64_t dT;
+	int64_t OFF;
+	int64_t SENS;
+	int64_t temp_sq;
+	int32_t Ti;
+	int32_t OFFi;
+	int32_t SENSi;
+
+	dT = adc_temperature - ((int32_t)(data->t_ref) << 8);
+	data->temperature = 2000 + (dT * data->tempsens) / (1ll << 23);
+	OFF = ((int64_t)(data->off_t1) << 17) + (dT * data->tco) / (1ll << 6);
+	SENS = ((int64_t)(data->sens_t1) << 16) + (dT * data->tcs) / (1ll << 7);
+
+	temp_sq = (data->temperature - 2000) * (data->temperature - 2000);
+	if (data->temperature < 2000) {
+		Ti = (11ll * dT * dT) / (1ll << 35);
+		OFFi = (31ll * temp_sq) / (1ll << 3);
+		SENSi = (63ll * temp_sq) / (1ll << 5);
+	} else {
+		Ti = 0;
+		OFFi = 0;
+		SENSi = 0;
+	}
+
+	OFF -= OFFi;
+	SENS -= SENSi;
+
+	data->temperature -= Ti;
+	data->pressure = (((SENS * adc_pressure) / (1ll << 21)) - OFF) / (1ll << 15);
+}
+
 static int ms5837_sample_fetch(const struct device *dev,
 			       enum sensor_channel channel)
 {
@@ -121,7 +161,7 @@ static int ms5837_sample_fetch(const struct device *dev,
 		return err;
 	}
 
-	ms5837_compensate(dev, adc_temperature, adc_pressure);
+	data->comp_func(dev, adc_temperature, adc_pressure);
 
 	return 0;
 }
@@ -271,8 +311,13 @@ static int ms5837_init(const struct device *dev)
 		return err;
 	}
 
-	err = ms5837_read_prom(dev, MS5837_CMD_CONV_READ_SENS_T1,
-			       &data->sens_t1);
+	err = ms5837_read_prom(dev, MS5837_CMD_CONV_READ_CRC, &data->factory);
+	if (err < 0) {
+		LOG_ERR("couldn't read device info");
+		return err;
+	}
+
+	err = ms5837_read_prom(dev, MS5837_CMD_CONV_READ_SENS_T1, &data->sens_t1);
 	if (err < 0) {
 		return err;
 	}
@@ -301,6 +346,22 @@ static int ms5837_init(const struct device *dev)
 			       &data->tempsens);
 	if (err < 0) {
 		return err;
+	}
+
+	const int type_id = (data->factory >> 5) & 0x7f;
+
+	switch (type_id) {
+	case  MS5837_02BA01:
+	case MS5837_02BA21:
+		data->comp_func = ms5837_compensate_02;
+		break;
+	case MS5837_30BA26:
+		data->comp_func = ms5837_compensate_30;
+		break;
+	default:
+		LOG_WRN(" unrecognized type: '%2x', defaulting to MS5837-30", type_id);
+		data->comp_func = ms5837_compensate_30;
+		break;
 	}
 
 	return 0;
