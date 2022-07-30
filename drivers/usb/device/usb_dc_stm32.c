@@ -453,6 +453,16 @@ static int usb_dc_stm32_init(void)
 		return -EIO;
 	}
 
+	/* On a soft reset force USB to reset first and switch it off
+	 * so the USB connection can get re-initialized
+	 */
+	LOG_DBG("HAL_PCD_Stop");
+	status = HAL_PCD_Stop(&usb_dc_stm32_state.pcd);
+	if (status != HAL_OK) {
+		LOG_ERR("PCD_Stop failed, %d", (int)status);
+		return -EIO;
+	}
+
 	LOG_DBG("HAL_PCD_Start");
 	status = HAL_PCD_Start(&usb_dc_stm32_state.pcd);
 	if (status != HAL_OK) {
