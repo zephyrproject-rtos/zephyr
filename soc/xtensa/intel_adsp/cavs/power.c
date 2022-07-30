@@ -35,10 +35,6 @@ LOG_MODULE_REGISTER(soc);
 
 #endif
 
-#if CONFIG_MP_NUM_CPUS > 1
-extern void soc_mp_init(void);
-#endif
-
 
 __imr void power_init(void)
 {
@@ -91,13 +87,9 @@ __imr void power_init(void)
 	 * though the device itself is operational.
 	 */
 	sys_write32(GENO_MDIVOSEL | GENO_DIOPTOSEL, DSP_INIT_GENO);
-	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG,
-		    DSP_INIT_LPGPDMA(0));
-	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG,
-		    DSP_INIT_LPGPDMA(1));
+	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(0));
+	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(1));
 
 	sys_write32(IOPO_DMIC_FLAG | IOPO_I2SSEL_MASK, DSP_INIT_IOPO);
 #endif
 }
-
-
