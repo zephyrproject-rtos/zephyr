@@ -59,8 +59,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define ETH_MEDIA_INTERFACE_MII		HAL_ETH_MII_MODE
 #define ETH_MEDIA_INTERFACE_RMII	HAL_ETH_RMII_MODE
 
-#define ETH_DMA_TX_TIMEOUT_MS	20U  /* transmit timeout in milliseconds */
-
 /* Only one tx_buffer is sufficient to pass only 1 dma_buffer */
 #define ETH_TXBUF_DEF_NB	1U
 #else
@@ -69,6 +67,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 							ETH_DMATXDESC_OWN)
 
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
+
+#define ETH_DMA_TX_TIMEOUT_MS	20U  /* transmit timeout in milliseconds */
 
 #if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
 	    DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
