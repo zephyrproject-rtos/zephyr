@@ -46,7 +46,7 @@ void z_riscv_secondary_cpu_init(int hartid)
 #ifdef CONFIG_SMP
 	_kernel.cpus[cpu_num].arch.online = true;
 #endif
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
+#if defined(CONFIG_MULTITHREADING) && defined(CONFIG_THREAD_LOCAL_STORAGE)
 	__asm__("mv tp, %0" : : "r" (z_idle_threads[cpu_num].tls));
 #endif
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)

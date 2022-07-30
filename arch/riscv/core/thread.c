@@ -190,3 +190,39 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 }
 
 #endif /* CONFIG_USERSPACE */
+
+#ifndef CONFIG_MULTITHREADING
+
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS, CONFIG_ISR_STACK_SIZE);
+K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+
+FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t main_entry,
+							    void *p1, void *p2, void *p3)
+{
+	void *main_stack;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	_kernel.cpus[0].id = 0;
+	_kernel.cpus[0].irq_stack = (Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[0]) +
+				     K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[0]));
+
+	main_stack = (Z_THREAD_STACK_BUFFER(z_main_stack) +
+		      K_THREAD_STACK_SIZEOF(z_main_stack));
+
+	__asm__ volatile (
+	"mv sp, %0; jalr ra, %1, 0"
+	:
+	: "r" (main_stack), "r" (main_entry)
+	: "memory");
+
+	/* infinite loop */
+	irq_lock();
+	while (true) {
+	}
+
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
+}
+#endif /* !CONFIG_MULTITHREADING */
