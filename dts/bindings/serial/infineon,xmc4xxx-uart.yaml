@@ -30,3 +30,11 @@ properties:
 
     pinctrl-names:
       required: true
+
+    interrupts:
+      description: |
+        IRQ number and priority to use for interrupt driven UART.
+        USIC0..2 have their own interrupt range as follows:
+        USIC0 = [84, 89]
+        USIC1 = [90, 95]
+        USIC2 = [96, 101]
