@@ -29,4 +29,5 @@ OS Services
    usb/index.rst
    virtualization/index.rst
    rtio/index.rst
+   zbus/index.rst
    misc.rst
