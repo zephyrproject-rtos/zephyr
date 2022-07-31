@@ -43,7 +43,7 @@ int modbus_raw_tx_adu(struct modbus_context *ctx)
 		return -ENODEV;
 	}
 
-	ctx->raw_tx_cb(iface, &ctx->tx_adu);
+	ctx->rawcb.raw_tx_cb(iface, &ctx->tx_adu, ctx->rawcb.user_data);
 
 	return 0;
 }
@@ -172,7 +172,8 @@ int modbus_raw_init(struct modbus_context *ctx,
 		return -ENOTSUP;
 	}
 
-	ctx->raw_tx_cb = param.raw_tx_cb;
+	ctx->rawcb.raw_tx_cb = param.rawcb.raw_tx_cb;
+	ctx->rawcb.user_data = param.rawcb.user_data;
 
 	return 0;
 }

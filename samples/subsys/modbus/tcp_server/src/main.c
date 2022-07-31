@@ -123,7 +123,8 @@ static struct modbus_adu tmp_adu;
 K_SEM_DEFINE(received, 0, 1);
 static int server_iface;
 
-static int server_raw_cb(const int iface, const struct modbus_adu *adu)
+static int server_raw_cb(const int iface, const struct modbus_adu *adu,
+			void *user_data)
 {
 	LOG_DBG("Server raw callback from interface %d", iface);
 
@@ -147,7 +148,8 @@ const static struct modbus_iface_param server_param = {
 		.user_cb = &mbs_cbs,
 		.unit_id = 1,
 	},
-	.raw_tx_cb = server_raw_cb,
+	.rawcb.raw_tx_cb = server_raw_cb,
+	.rawcb.user_data = NULL
 };
 
 static int init_modbus_server(void)

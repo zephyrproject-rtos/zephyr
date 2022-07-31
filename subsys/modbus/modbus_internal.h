@@ -108,7 +108,7 @@ struct modbus_context {
 		/* Serial line configuration */
 		struct modbus_serial_config *cfg;
 		/* RAW TX callback */
-		modbus_raw_cb_t raw_tx_cb;
+		struct modbus_raw_cb rawcb;
 	};
 	/* MODBUS mode */
 	enum modbus_mode mode;
