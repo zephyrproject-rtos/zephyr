@@ -74,7 +74,7 @@ struct bme680_config {
 #define BME680_REG_CTRL_HUM             0x72
 #define BME680_REG_CTRL_MEAS            0x74
 #define BME680_REG_CONFIG               0x75
-#define BME680_REG_MEM_PAGE             0x73
+#define BME680_REG_STATUS               0x73
 #define BME680_REG_UNIQUE_ID            0x83
 #define BME680_REG_COEFF1               0x8a
 #define BME680_REG_COEFF2               0xe1
@@ -87,11 +87,10 @@ struct bme680_config {
 #define BME680_MSK_RANGE_SW_ERR         0xf0
 #define BME680_MSK_HEATR_STAB           0x10
 
-#define BME680_SPI_READ_BIT		0x80
-#define BME680_SPI_WRITE_MSK		0x7f
-
-#define BME680_MEM_PAGE1		0x00
-#define BME680_MEM_PAGE0		0x10
+#define BME680_SPI_MEM_PAGE_MSK         0x10
+#define BME680_SPI_MEM_PAGE_POS         4
+#define BME680_SPI_READ_BIT             0x80
+#define BME680_SPI_WRITE_MSK            0x7f
 
 #if defined CONFIG_BME680_TEMP_OVER_1X
 #define BME680_TEMP_OVER                (1 << 5)

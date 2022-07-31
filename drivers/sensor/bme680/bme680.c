@@ -372,10 +372,14 @@ static int bme680_init(const struct device *dev)
 
 #if BME680_BUS_SPI
 	if (bme680_is_on_spi(dev)) {
-		err = bme680_reg_read(dev, BME680_REG_MEM_PAGE, &data->mem_page, 1);
+		uint8_t mem_page;
+
+		err = bme680_reg_read(dev, BME680_REG_STATUS, &mem_page, 1);
 		if (err < 0) {
 			return err;
 		}
+
+		data->mem_page = (mem_page & BME680_SPI_MEM_PAGE_MSK) >> BME680_SPI_MEM_PAGE_POS;
 	}
 #endif
 
