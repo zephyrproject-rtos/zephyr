@@ -8,5 +8,6 @@ config UART_XMC4XXX
 	default y
 	depends on DT_HAS_INFINEON_XMC4XXX_UART_ENABLED
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables the XMC4XX UART driver, for UART_0.
