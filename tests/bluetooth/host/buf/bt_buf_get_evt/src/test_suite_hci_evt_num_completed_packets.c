@@ -7,8 +7,9 @@
 #include <zephyr/zephyr.h>
 #include <zephyr/bluetooth/buf.h>
 #include "kconfig.h"
-#include "net_buf.h"
-#include "buf_help_utils.h"
+#include "mocks/net_buf.h"
+#include "mocks/net_buf_expects.h"
+#include "mocks/buf_help_utils.h"
 
 /* Rows count equals number of events x 2 */
 #define TEST_PARAMETERS_LUT_ROWS_COUNT		2
@@ -82,9 +83,9 @@ static void test_returns_not_null_default_events(void)
 
 	returned_buf = bt_buf_get_evt(evt, discardable, timeout);
 
-	validate_net_buf_alloc_called_behaviour(get_memory_pool(discardable), &timeout);
-	validate_net_buf_reserve_called_behaviour(&expected_buf);
-	validate_net_buf_ref_not_called_behaviour();
+	expect_single_call_net_buf_alloc(get_memory_pool(discardable), &timeout);
+	expect_single_call_net_buf_reserve(&expected_buf);
+	expect_not_called_net_buf_ref();
 
 	zassert_equal(returned_buf, &expected_buf,
 		      "bt_buf_get_evt() returned incorrect buffer pointer value");
@@ -121,9 +122,9 @@ static void test_returns_null_default_events(void)
 
 	returned_buf = bt_buf_get_evt(evt, discardable, timeout);
 
-	validate_net_buf_alloc_called_behaviour(get_memory_pool(discardable), &timeout);
-	validate_net_buf_reserve_not_called_behaviour();
-	validate_net_buf_ref_not_called_behaviour();
+	expect_single_call_net_buf_alloc(get_memory_pool(discardable), &timeout);
+	expect_not_called_net_buf_reserve();
+	expect_not_called_net_buf_ref();
 
 	zassert_is_null(returned_buf,
 			"bt_buf_get_evt() returned non-NULL value while expecting NULL");
@@ -145,7 +146,7 @@ static void unit_test_setup(void)
 	testing_params_it++;
 
 	/* Register resets */
-	FFF_FAKES_LIST(RESET_FAKE);
+	NET_BUFF_FFF_FAKES_LIST(RESET_FAKE);
 }
 
 /* Each run will use a testing parameters set from LUT

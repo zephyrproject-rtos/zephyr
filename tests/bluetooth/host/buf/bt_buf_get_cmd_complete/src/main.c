@@ -9,8 +9,9 @@
 #include <zephyr/bluetooth/buf.h>
 #include <host/hci_core.h>
 #include "kconfig.h"
-#include "net_buf.h"
-#include "buf_help_utils.h"
+#include "mocks/net_buf.h"
+#include "mocks/net_buf_expects.h"
+#include "mocks/buf_help_utils.h"
 
 /*
  *  Return value from bt_buf_get_cmd_complete() should be NULL
@@ -49,9 +50,9 @@ void test_returns_null_sent_cmd_is_null(void)
 
 	returned_buf = bt_buf_get_cmd_complete(timeout);
 
-	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
-	validate_net_buf_reserve_not_called_behaviour();
-	validate_net_buf_ref_not_called_behaviour();
+	expect_single_call_net_buf_alloc(memory_pool, &timeout);
+	expect_not_called_net_buf_reserve();
+	expect_not_called_net_buf_ref();
 
 	zassert_is_null(returned_buf,
 			"bt_buf_get_cmd_complete() returned non-NULL value while expecting NULL");
@@ -98,9 +99,9 @@ void test_returns_not_null_sent_cmd_is_null(void)
 
 	returned_buf = bt_buf_get_cmd_complete(timeout);
 
-	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
-	validate_net_buf_reserve_called_behaviour(&expected_buf);
-	validate_net_buf_ref_not_called_behaviour();
+	expect_single_call_net_buf_alloc(memory_pool, &timeout);
+	expect_single_call_net_buf_reserve(&expected_buf);
+	expect_not_called_net_buf_ref();
 
 	zassert_equal(returned_buf, &expected_buf,
 		      "bt_buf_get_cmd_complete() returned incorrect buffer pointer value");
@@ -142,9 +143,9 @@ void test_returns_not_null_sent_cmd_is_not_null(void)
 
 	returned_buf = bt_buf_get_cmd_complete(timeout);
 
-	validate_net_buf_reserve_called_behaviour(bt_dev.sent_cmd);
-	validate_net_buf_ref_called_behaviour(bt_dev.sent_cmd);
-	validate_net_buf_alloc_not_called_behaviour();
+	expect_single_call_net_buf_reserve(bt_dev.sent_cmd);
+	expect_single_call_net_buf_ref(bt_dev.sent_cmd);
+	expect_not_called_net_buf_alloc();
 
 	zassert_equal(returned_buf, &expected_buf,
 		      "bt_buf_get_cmd_complete() returned incorrect buffer pointer value");
@@ -162,7 +163,7 @@ void test_returns_not_null_sent_cmd_is_not_null(void)
 static void unit_test_setup(void)
 {
 	/* Register resets */
-	FFF_FAKES_LIST(RESET_FAKE);
+	NET_BUFF_FFF_FAKES_LIST(RESET_FAKE);
 }
 
 void test_main(void)

@@ -8,7 +8,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
 #include "kconfig.h"
-#include "buf_help_utils.h"
+#include "mocks/buf_help_utils.h"
 
 /* Rows count equals number of types */
 #define TEST_PARAMETERS_LUT_ROWS_COUNT		7

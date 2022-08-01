@@ -7,8 +7,9 @@
 #include <zephyr/zephyr.h>
 #include <zephyr/bluetooth/buf.h>
 #include "kconfig.h"
-#include "net_buf.h"
-#include "buf_help_utils.h"
+#include "mocks/net_buf.h"
+#include "mocks/net_buf_expects.h"
+#include "mocks/buf_help_utils.h"
 
 /*
  *  Return value from bt_buf_get_rx() should be NULL
@@ -42,9 +43,9 @@ void test_returns_null_type_bt_buf_evt(void)
 
 	returned_buf = bt_buf_get_rx(BT_BUF_EVT, timeout);
 
-	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
-	validate_net_buf_reserve_not_called_behaviour();
-	validate_net_buf_ref_not_called_behaviour();
+	expect_single_call_net_buf_alloc(memory_pool, &timeout);
+	expect_not_called_net_buf_reserve();
+	expect_not_called_net_buf_ref();
 
 	zassert_is_null(returned_buf,
 			"bt_buf_get_rx() returned non-NULL value while expecting NULL");
@@ -82,9 +83,9 @@ void test_returns_null_type_bt_buf_acl_in(void)
 
 	returned_buf = bt_buf_get_rx(BT_BUF_ACL_IN, timeout);
 
-	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
-	validate_net_buf_reserve_not_called_behaviour();
-	validate_net_buf_ref_not_called_behaviour();
+	expect_single_call_net_buf_alloc(memory_pool, &timeout);
+	expect_not_called_net_buf_reserve();
+	expect_not_called_net_buf_ref();
 
 	zassert_is_null(returned_buf,
 			"bt_buf_get_rx() returned non-NULL value while expecting NULL");
@@ -126,9 +127,9 @@ void test_returns_null_type_bt_buf_iso_in(void)
 
 	returned_buf = bt_buf_get_rx(BT_BUF_ISO_IN, timeout);
 
-	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
-	validate_net_buf_reserve_not_called_behaviour();
-	validate_net_buf_ref_not_called_behaviour();
+	expect_single_call_net_buf_alloc(memory_pool, &timeout);
+	expect_not_called_net_buf_reserve();
+	expect_not_called_net_buf_ref();
 
 	zassert_is_null(returned_buf,
 			"bt_buf_get_rx() returned non-NULL value while expecting NULL");
@@ -167,9 +168,9 @@ void test_returns_not_null_type_bt_buf_evt(void)
 
 	returned_buf = bt_buf_get_rx(BT_BUF_EVT, timeout);
 
-	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
-	validate_net_buf_reserve_called_behaviour(&expected_buf);
-	validate_net_buf_ref_not_called_behaviour();
+	expect_single_call_net_buf_alloc(memory_pool, &timeout);
+	expect_single_call_net_buf_reserve(&expected_buf);
+	expect_not_called_net_buf_ref();
 
 	zassert_equal(returned_buf, &expected_buf,
 		      "bt_buf_get_rx() returned incorrect buffer pointer value");
@@ -213,9 +214,9 @@ void test_returns_not_null_type_bt_buf_acl_in(void)
 
 	returned_buf = bt_buf_get_rx(BT_BUF_ACL_IN, timeout);
 
-	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
-	validate_net_buf_reserve_called_behaviour(&expected_buf);
-	validate_net_buf_ref_not_called_behaviour();
+	expect_single_call_net_buf_alloc(memory_pool, &timeout);
+	expect_single_call_net_buf_reserve(&expected_buf);
+	expect_not_called_net_buf_ref();
 
 	zassert_equal(returned_buf, &expected_buf,
 		      "bt_buf_get_rx() returned incorrect buffer pointer value");
@@ -263,9 +264,9 @@ void test_returns_not_null_type_bt_buf_iso_in(void)
 
 	returned_buf = bt_buf_get_rx(BT_BUF_ISO_IN, timeout);
 
-	validate_net_buf_alloc_called_behaviour(memory_pool, &timeout);
-	validate_net_buf_reserve_called_behaviour(&expected_buf);
-	validate_net_buf_ref_not_called_behaviour();
+	expect_single_call_net_buf_alloc(memory_pool, &timeout);
+	expect_single_call_net_buf_reserve(&expected_buf);
+	expect_not_called_net_buf_ref();
 
 	zassert_equal(returned_buf, &expected_buf,
 		      "bt_buf_get_rx() returned incorrect buffer pointer value");
@@ -280,7 +281,7 @@ void test_returns_not_null_type_bt_buf_iso_in(void)
 static void unit_test_setup(void)
 {
 	/* Register resets */
-	FFF_FAKES_LIST(RESET_FAKE);
+	NET_BUFF_FFF_FAKES_LIST(RESET_FAKE);
 }
 
 void test_main(void)

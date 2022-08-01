@@ -7,8 +7,8 @@
 #include <zephyr/zephyr.h>
 #include <zephyr/bluetooth/buf.h>
 #include "kconfig.h"
-#include "buf_help_utils.h"
-#include "assert.h"
+#include "host_mocks/assert.h"
+#include "mocks/buf_help_utils.h"
 
 /*
  *  Test passing invalid buffer type to bt_buf_get_rx()

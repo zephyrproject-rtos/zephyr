@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/fff.h>
 #include <zephyr/zephyr.h>
 
-#define expect_assert() ztest_returns_value(mock_check_if_assert_expected, true)
+DECLARE_FAKE_VALUE_FUNC(bool, mock_check_if_assert_expected);
+
+#define expect_assert()     (mock_check_if_assert_expected_fake.return_val = 1)

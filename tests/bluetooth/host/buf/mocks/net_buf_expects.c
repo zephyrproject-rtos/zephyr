@@ -6,10 +6,10 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/bluetooth/buf.h>
-#include "net_buf.h"
-#include "buf_help_utils.h"
+#include "mocks/net_buf.h"
+#include "mocks/net_buf_expects.h"
 
-void validate_net_buf_alloc_called_behaviour(struct net_buf_pool *pool, k_timeout_t *timeout)
+void expect_single_call_net_buf_alloc(struct net_buf_pool *pool, k_timeout_t *timeout)
 {
 	const char *func_name = "net_buf_alloc_fixed";
 
@@ -23,7 +23,7 @@ void validate_net_buf_alloc_called_behaviour(struct net_buf_pool *pool, k_timeou
 			  "'%s()' was called with incorrect '%s' value", func_name, "timeout");
 }
 
-void validate_net_buf_alloc_not_called_behaviour(void)
+void expect_not_called_net_buf_alloc(void)
 {
 	const char *func_name = "net_buf_alloc_fixed";
 
@@ -31,7 +31,7 @@ void validate_net_buf_alloc_not_called_behaviour(void)
 		      func_name);
 }
 
-void validate_net_buf_reserve_called_behaviour(struct net_buf *buf)
+void expect_single_call_net_buf_reserve(struct net_buf *buf)
 {
 	const char *func_name = "net_buf_simple_reserve";
 
@@ -45,7 +45,7 @@ void validate_net_buf_reserve_called_behaviour(struct net_buf *buf)
 		      "'%s()' was called with incorrect '%s' value", func_name, "reserve");
 }
 
-void validate_net_buf_reserve_not_called_behaviour(void)
+void expect_not_called_net_buf_reserve(void)
 {
 	const char *func_name = "net_buf_simple_reserve";
 
@@ -53,7 +53,7 @@ void validate_net_buf_reserve_not_called_behaviour(void)
 		      func_name);
 }
 
-void validate_net_buf_ref_called_behaviour(struct net_buf *buf)
+void expect_single_call_net_buf_ref(struct net_buf *buf)
 {
 	const char *func_name = "net_buf_ref";
 
@@ -64,7 +64,7 @@ void validate_net_buf_ref_called_behaviour(struct net_buf *buf)
 			  "'%s()' was called with incorrect '%s' value", func_name, "buf");
 }
 
-void validate_net_buf_ref_not_called_behaviour(void)
+void expect_not_called_net_buf_ref(void)
 {
 	const char *func_name = "net_buf_ref";
 
