@@ -18,7 +18,6 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gatt.h>
 #include "gatt_internal.h"
-#include "hci_core.h"
 
 static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
@@ -164,7 +163,7 @@ BT_GATT_SERVICE_DEFINE(_2_gap_svc,
 #else
 			       BT_GATT_PERM_WRITE,
 #endif
-			       read_name, write_name, bt_dev.name),
+			       read_name, write_name, NULL),
 #else
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ,
 			       BT_GATT_PERM_READ, read_name, NULL, NULL),
