@@ -1246,7 +1246,7 @@ static void uart_sam0_irq_config_##n(const struct device *dev)		\
 	(DT_INST_PROP(n, txpo) << SERCOM_USART_CTRLA_TXPO_Pos)
 
 #define UART_SAM0_SERCOM_COLLISION_DETECT(n) \
-	(DT_INST_PROP(n, collision_detect))
+	(DT_INST_PROP_OR(n, collision_detection, false))
 
 #ifdef MCLK
 #define UART_SAM0_CONFIG_DEFN(n)					\
@@ -1257,7 +1257,7 @@ static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		\
 	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),	\
 	.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
 	.pads = UART_SAM0_SERCOM_PADS(n),				\
-	.collision_detect = UART_SAM0_SERCOM_PADS(n),			\
+	.collision_detect = UART_SAM0_SERCOM_COLLISION_DETECT(n),	\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	UART_SAM0_IRQ_HANDLER_FUNC(n)					\
 	UART_SAM0_DMA_CHANNELS(n)					\
@@ -1270,7 +1270,7 @@ static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		\
 	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),	\
 	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),\
 	.pads = UART_SAM0_SERCOM_PADS(n),				\
-	.collision_detect = UART_SAM0_SERCOM_PADS(n),			\
+	.collision_detect = UART_SAM0_SERCOM_COLLISION_DETECT(n),	\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	UART_SAM0_IRQ_HANDLER_FUNC(n)					\
 	UART_SAM0_DMA_CHANNELS(n)					\
