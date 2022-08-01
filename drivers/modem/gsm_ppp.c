@@ -1254,7 +1254,7 @@ static void gsm_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 static int gsm_init(const struct device *dev)
 {
 	struct gsm_modem *gsm = dev->data;
-	int r;
+	int ret;
 
 	LOG_DBG("Generic GSM modem (%p)", gsm);
 
@@ -1272,11 +1272,11 @@ static int gsm_init(const struct device *dev)
 	k_sem_init(&gsm->sem_response, 0, 1);
 	k_sem_init(&gsm->sem_if_down, 0, 1);
 
-	r = modem_cmd_handler_init(&gsm->context.cmd_handler,
+	ret = modem_cmd_handler_init(&gsm->context.cmd_handler,
 				   &gsm->cmd_handler_data);
-	if (r < 0) {
-		LOG_DBG("cmd handler error %d", r);
-		return r;
+	if (ret < 0) {
+		LOG_DBG("cmd handler error %d", ret);
+		return ret;
 	}
 
 #if defined(CONFIG_MODEM_SHELL)
@@ -1298,17 +1298,17 @@ static int gsm_init(const struct device *dev)
 	gsm->gsm_data.hw_flow_control = DT_PROP(GSM_UART_NODE,
 						hw_flow_control);
 
-	r = modem_iface_uart_init(&gsm->context.iface, &gsm->gsm_data,
+	ret = modem_iface_uart_init(&gsm->context.iface, &gsm->gsm_data,
 				DEVICE_DT_GET(GSM_UART_NODE));
-	if (r < 0) {
-		LOG_DBG("iface uart error %d", r);
-		return r;
+	if (ret < 0) {
+		LOG_DBG("iface uart error %d", ret);
+		return ret;
 	}
 
-	r = modem_context_register(&gsm->context);
-	if (r < 0) {
-		LOG_DBG("context error %d", r);
-		return r;
+	ret = modem_context_register(&gsm->context);
+	if (ret < 0) {
+		LOG_DBG("context error %d", ret);
+		return ret;
 	}
 
 	/* Initialize to stop state so that it can be started later */
