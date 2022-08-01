@@ -452,7 +452,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_cesq)
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 {
 	/* Expected response is "+CSQ: <signal_power>,<qual>" */
-	if (argc) {
+	if (argc > 0) {
 		int rssi = atoi(argv[0]);
 
 		if (rssi >= 0 && rssi <= 31) {
@@ -509,7 +509,7 @@ static const struct setup_cmd setup_cmds[] = {
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_attached)
 {
 	/* Expected response is "+CGATT: 0|1" so simply look for '1' */
-	if (argc && atoi(argv[0]) == 1) {
+	if ((argc > 0) && (atoi(argv[0]) == 1)) {
 		LOG_INF("Attached to packet service!");
 	}
 
@@ -539,7 +539,7 @@ static int gsm_query_modem_info(struct gsm_modem *gsm)
 		return 0;
 	}
 
-	ret =  modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
+	ret = modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
 						  &gsm->context.cmd_handler,
 						  setup_modem_info_cmds,
 						  ARRAY_SIZE(setup_modem_info_cmds),
@@ -559,7 +559,7 @@ static int gsm_setup_mccmno(struct gsm_modem *gsm)
 {
 	int ret = 0;
 
-	if (CONFIG_MODEM_GSM_MANUAL_MCCMNO[0]) {
+	if (CONFIG_MODEM_GSM_MANUAL_MCCMNO[0] != '\0') {
 		/* use manual MCC/MNO entry */
 		ret = modem_cmd_send_nolock(&gsm->context.iface,
 					    &gsm->context.cmd_handler,
@@ -625,13 +625,13 @@ static void set_ppp_carrier_on(struct gsm_modem *gsm)
 
 		/* For the first call, we want to call ppp_start()... */
 		ret = api->start(ppp_dev);
-		if (ret) {
+		if (ret < 0) {
 			LOG_ERR("ppp start returned %d", ret);
 		}
 	} else {
 		/* ...but subsequent calls should be to ppp_enable() */
 		ret = net_if_l2(iface)->enable(iface, true);
-		if (ret) {
+		if (ret < 0) {
 			LOG_ERR("ppp l2 enable returned %d", ret);
 		}
 	}
