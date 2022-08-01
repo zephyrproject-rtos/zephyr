@@ -291,12 +291,76 @@ static bool att_chan_matches_chan_opt(struct bt_att_chan *chan, enum bt_att_chan
 	}
 }
 
+static struct net_buf *get_first_buf_matching_chan(struct k_fifo *fifo, struct bt_att_chan *chan)
+{
+	if (IS_ENABLED(CONFIG_BT_EATT)) {
+		struct k_fifo skipped;
+		struct net_buf *buf;
+		struct net_buf *ret = NULL;
+
+		k_fifo_init(&skipped);
+
+		while ((buf = net_buf_get(fifo, K_NO_WAIT))) {
+			if (!ret &&
+			    att_chan_matches_chan_opt(chan, bt_att_tx_meta_data(buf)->chan_opt)) {
+				ret = buf;
+			} else {
+				net_buf_put(&skipped, buf);
+			}
+		}
+
+		__ASSERT_NO_MSG(k_fifo_is_empty(fifo));
+
+		while ((buf = net_buf_get(&skipped, K_NO_WAIT))) {
+			net_buf_put(fifo, buf);
+		}
+
+		__ASSERT_NO_MSG(k_fifo_is_empty(&skipped));
+
+		return ret;
+	} else {
+		return net_buf_get(fifo, K_NO_WAIT);
+	}
+}
+
+static struct bt_att_req *get_first_req_matching_chan(sys_slist_t *reqs, struct bt_att_chan *chan)
+{
+	if (IS_ENABLED(CONFIG_BT_EATT)) {
+		sys_snode_t *curr, *prev = NULL;
+
+		SYS_SLIST_FOR_EACH_NODE(reqs, curr) {
+			if (att_chan_matches_chan_opt(
+				    chan, bt_att_tx_meta_data(ATT_REQ(curr)->buf)->chan_opt)) {
+				break;
+			}
+
+			prev = curr;
+		}
+
+		if (curr) {
+			sys_slist_remove(reqs, prev, curr);
+
+			return ATT_REQ(curr);
+		}
+
+		return NULL;
+	}
+
+	sys_snode_t *node = sys_slist_get(reqs);
+
+	if (node) {
+		return ATT_REQ(node);
+	} else {
+		return NULL;
+	}
+}
+
 static int process_queue(struct bt_att_chan *chan, struct k_fifo *queue)
 {
 	struct net_buf *buf;
 	int err;
 
-	buf = net_buf_get(queue, K_NO_WAIT);
+	buf = get_first_buf_matching_chan(queue, chan);
 	if (buf) {
 		err = bt_att_chan_send(chan, buf);
 		if (err) {
@@ -597,18 +661,27 @@ static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 
 static void att_send_process(struct bt_att *att)
 {
-	struct bt_att_chan *chan, *tmp;
-	int err;
+	struct bt_att_chan *chan, *tmp, *prev = NULL;
+	int err = 0;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
+		if (err == -ENOENT && prev &&
+		    (atomic_test_bit(chan->flags, ATT_ENHANCED) ==
+		     atomic_test_bit(prev->flags, ATT_ENHANCED))) {
+			/* If there was nothing to send for the previous channel and the current
+			 * channel has the same "enhancedness", there will be nothing to send for
+			 * this channel either.
+			 */
+			continue;
+		}
+
 		err = process_queue(chan, &att->tx_queue);
 		if (!err) {
 			/* Success */
 			return;
-		} else if (err == -ENOENT) {
-			/* Nothing to send */
-			return;
 		}
+
+		prev = chan;
 	}
 }
 
@@ -727,28 +800,40 @@ static int bt_att_chan_req_send(struct bt_att_chan *chan,
 
 static void att_req_send_process(struct bt_att *att)
 {
-	sys_snode_t *node;
-	struct bt_att_chan *chan, *tmp;
-
-	/* Pull next request from the list */
-	node = sys_slist_get(&att->reqs);
-	if (!node) {
-		return;
-	}
-
-	BT_DBG("req %p", ATT_REQ(node));
+	struct bt_att_req *req = NULL;
+	struct bt_att_chan *chan, *tmp, *prev = NULL;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
-		/* If there is nothing pending use the channel */
-		if (!chan->req) {
-			if (bt_att_chan_req_send(chan, ATT_REQ(node)) >= 0) {
-				return;
-			}
+		/* If there is an ongoing transaction, do not use the channel */
+		if (chan->req) {
+			continue;
 		}
-	}
 
-	/* Prepend back to the list as it could not be sent */
-	sys_slist_prepend(&att->reqs, node);
+		if (!req && prev &&
+		    (atomic_test_bit(chan->flags, ATT_ENHANCED) ==
+		     atomic_test_bit(prev->flags, ATT_ENHANCED))) {
+			/* If there was nothing to send for the previous channel and the current
+			 * channel has the same "enhancedness", there will be nothing to send for
+			 * this channel either.
+			 */
+			continue;
+		}
+
+		prev = chan;
+
+		/* Pull next request from the list */
+		req = get_first_req_matching_chan(&att->reqs, chan);
+		if (!req) {
+			continue;
+		}
+
+		if (bt_att_chan_req_send(chan, req) >= 0) {
+			return;
+		}
+
+		/* Prepend back to the list as it could not be sent */
+		sys_slist_prepend(&att->reqs, &req->node);
+	}
 }
 
 static uint8_t att_handle_rsp(struct bt_att_chan *chan, void *pdu, uint16_t len,
