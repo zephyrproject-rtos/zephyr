@@ -69,7 +69,7 @@ static void malloc_thread(void *p1, void *p2, void *p3)
  * This test calls the malloc() and free() functions from multiple threads to
  * verify that no corruption occurs in the newlib memory heap.
  */
-static void test_malloc_thread_safety(void)
+ZTEST(newlib_thread_safety_stress, test_malloc_thread_safety)
 {
 	int i;
 	k_tid_t tid[THREAD_COUNT];
@@ -98,11 +98,4 @@ static void test_malloc_thread_safety(void)
 		k_thread_join(tid[i], K_FOREVER);
 	}
 }
-
-void test_newlib_thread_safety_stress(void)
-{
-	ztest_test_suite(newlib_thread_safety_stress,
-			 ztest_unit_test(test_malloc_thread_safety));
-
-	ztest_run_test_suite(newlib_thread_safety_stress);
-}
+ZTEST_SUITE(newlib_thread_safety_stress, NULL, NULL, NULL, NULL, NULL);
