@@ -10,7 +10,6 @@
 	mcr20a@0 {
 		compatible = "nxp,mcr20a";
 		reg = <0x0>;
-		label = "mcr20a";
 		spi-max-frequency = <4000000>;
 		irqb-gpios = <&arduino_header 8
 				(GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;	/* D2 */
