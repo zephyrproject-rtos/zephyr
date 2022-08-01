@@ -75,6 +75,9 @@
 	input-src = "DX0D";
 	interrupts = <90 1>;
 	interrupt-names = "tx-rx";
+	fifo-start-offset = <0>;
+	fifo-tx-size = <16>;
+	fifo-rx-size = <16>;
 	status = "okay";
 };
 
