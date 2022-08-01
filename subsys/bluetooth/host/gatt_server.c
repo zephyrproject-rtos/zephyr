@@ -136,15 +136,15 @@ static ssize_t read_ppcp(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 #endif
 
-#define BT_GATT_CENTRAL_ADDR_RES_NOT_SUPP      0
-#define BT_GATT_CENTRAL_ADDR_RES_SUPP          1
-
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PRIVACY)
 static ssize_t read_central_addr_res(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr, void *buf,
 				     uint16_t len, uint16_t offset)
 {
-	uint8_t central_addr_res = BT_GATT_CENTRAL_ADDR_RES_SUPP;
+	/* Always has value 1 = "supported". Lack of support is communicated by
+	 * not having this attribute.
+	 */
+	uint8_t central_addr_res = 1;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &central_addr_res, sizeof(central_addr_res));
