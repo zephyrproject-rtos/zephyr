@@ -351,7 +351,7 @@ int bt_le_adv_set_enable_ext(struct bt_le_ext_adv *adv,
 	net_buf_add_u8(buf, 1);
 
 	net_buf_add_u8(buf, adv->handle);
-	net_buf_add_le16(buf, param ? sys_cpu_to_le16(param->timeout) : 0);
+	net_buf_add_le16(buf, param ? param->timeout : 0);
 	net_buf_add_u8(buf, param ? param->num_events : 0);
 
 	bt_hci_cmd_state_set_init(buf, &state, adv->flags, BT_ADV_ENABLED, enable);
