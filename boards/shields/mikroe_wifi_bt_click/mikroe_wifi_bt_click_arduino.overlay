@@ -9,7 +9,6 @@
 
 	mikroe_wifi_bt_click {
 		compatible = "espressif,esp-at";
-		label = "mikroe_wifi_bt_click_arduino";
 		status = "okay";
 	};
 };

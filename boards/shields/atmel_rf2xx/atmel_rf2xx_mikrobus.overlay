@@ -13,7 +13,6 @@
 	rf2xx@0 {
 		compatible = "atmel,rf2xx";
 		reg = <0x0>;
-		label = "RF2XX_0";
 		spi-max-frequency = <6000000>;
 		/* INT */
 		irq-gpios = <&mikrobus_header 7

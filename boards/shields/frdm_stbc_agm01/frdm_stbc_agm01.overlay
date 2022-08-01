@@ -13,7 +13,6 @@
     fxos8700: fxos8700@1e {
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
-		label = "AGM01_FXOS8700";
 		int1-gpios = <&arduino_header 8 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&arduino_header 10 GPIO_ACTIVE_LOW>;
     };
@@ -21,7 +20,6 @@
     fxas21002@20 {
         compatible = "nxp,fxas21002";
 		reg = <0x20>;
-		label = "AGM01_FXAS21002";
 		int1-gpios = <&arduino_header 11 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;
     };

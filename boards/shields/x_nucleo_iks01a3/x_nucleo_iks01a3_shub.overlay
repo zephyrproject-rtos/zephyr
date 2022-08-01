@@ -10,14 +10,12 @@
 		compatible = "st,lis2dw12";
 		reg = <0x19>;
 		irq-gpios =  <&arduino_header 3 GPIO_ACTIVE_HIGH>; /* A3 */
-		label = "LIS2DW12";
 	};
 
 	lsm6dso@6b {
 		compatible = "st,lsm6dso";
 		reg = <0x6b>;
 		irq-gpios =  <&arduino_header 11 GPIO_ACTIVE_HIGH>; /* D5 */
-		label = "LSM6DSO";
 		int-pin = <2>;
 	};
 };

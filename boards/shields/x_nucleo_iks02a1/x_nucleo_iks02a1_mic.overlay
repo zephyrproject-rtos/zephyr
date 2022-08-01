@@ -10,6 +10,5 @@
 	mp34dt05@0 {
 		compatible = "st,mpxxdtyy";
 		reg = <0>;
-		label = "MP34DT05";
 	};
 };
