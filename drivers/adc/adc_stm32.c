@@ -531,11 +531,14 @@ static void adc_stm32_set_common_path(const struct device *dev, uint32_t PathInt
 static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_id)
 {
 	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+
 #ifdef CONFIG_SOC_SERIES_STM32G4X
 	if (config->has_temp_channel) {
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay)
 		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC1) == channel_id)
 		    && (config->base == ADC1)) {
+			adc_stm32_disable(adc);
 			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 			k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
 		}
@@ -543,6 +546,7 @@ static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_i
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(adc5), okay)
 		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC5) == channel_id)
 		   && (config->base == ADC5)) {
+			adc_stm32_disable(adc);
 			adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 			k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
 		}
@@ -551,6 +555,7 @@ static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_i
 #else
 	if (config->has_temp_channel &&
 		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR) == channel_id) {
+		adc_stm32_disable(adc);
 		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 #ifdef LL_ADC_DELAY_TEMPSENSOR_STAB_US
 		k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
@@ -560,6 +565,7 @@ static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_i
 
 	if (config->has_vref_channel &&
 		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VREFINT) == channel_id) {
+		adc_stm32_disable(adc);
 		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
 #ifdef LL_ADC_DELAY_VREFINT_STAB_US
 		k_usleep(LL_ADC_DELAY_VREFINT_STAB_US);
@@ -569,6 +575,7 @@ static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_i
 	/* Enable the bridge divider only when needed for ADC conversion. */
 	if (config->has_vbat_channel &&
 		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VBAT) == channel_id) {
+		adc_stm32_disable(adc);
 		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VBAT);
 	}
 
