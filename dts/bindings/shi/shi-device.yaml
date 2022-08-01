@@ -1,0 +1,20 @@
+# Copyright (c) 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  buffer-rx-size:
+    type: int
+    required: true
+    description: |
+      Size of the internal buffer used for receiving data on the bus.
+
+  buffer-tx-size:
+    type: int
+    required: true
+    description: |
+      Size of the internal buffer used for transmitting data over the bus.

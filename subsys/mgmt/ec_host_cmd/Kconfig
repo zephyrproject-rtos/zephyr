@@ -21,6 +21,7 @@ config EC_HOST_CMD_HANDLER_STACK_SIZE
 
 config EC_HOST_CMD_HANDLER_TX_BUFFER
 	int "Buffer size in bytes for TX buffer shared by all EC host commands"
+	default EC_HOST_CMD_PERIPH_SHI_MAX_RESPONSE if EC_HOST_CMD_PERIPH_SHI
 	default 256
 
 config EC_HOST_CMD_HANDLER_PRIO
