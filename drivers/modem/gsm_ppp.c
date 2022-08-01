@@ -159,7 +159,7 @@ static int modem_atoi(const char *s, const int err_value,
 	char *endptr;
 
 	ret = (int)strtol(s, &endptr, 10);
-	if (!endptr || *endptr != '\0') {
+	if ((endptr == NULL) || (*endptr != '\0')) {
 		LOG_ERR("bad %s '%s' in %s", s,
 			 desc, func);
 		return err_value;
@@ -615,12 +615,12 @@ static void set_ppp_carrier_on(struct gsm_modem *gsm)
 	struct net_if *iface = gsm->iface;
 	int ret;
 
-	if (!ppp_dev) {
+	if (ppp_dev == NULL) {
 		LOG_ERR("Cannot find PPP %s!", CONFIG_NET_PPP_DRV_NAME);
 		return;
 	}
 
-	if (!api) {
+	if (api == NULL) {
 		api = (const struct ppp_api *)ppp_dev->api;
 
 		/* For the first call, we want to call ppp_start()... */
@@ -1096,7 +1096,7 @@ static void gsm_configure(struct k_work *work)
 	if (gsm->state == GSM_PPP_START) {
 		LOG_DBG("Starting modem %p configuration", gsm);
 
-		if (gsm->modem_on_cb) {
+		if (gsm->modem_on_cb != NULL) {
 			gsm->modem_on_cb(gsm->dev, gsm->user_data);
 		}
 
@@ -1190,8 +1190,7 @@ void gsm_ppp_stop(const struct device *dev)
 		(void)k_sem_take(&gsm->sem_if_down, K_FOREVER);
 	}
 	if (IS_ENABLED(CONFIG_GSM_MUX)) {
-
-		if (gsm->ppp_dev) {
+		if (gsm->ppp_dev != NULL) {
 			uart_mux_disable(gsm->ppp_dev);
 		}
 	}
@@ -1336,7 +1335,7 @@ static int gsm_init(const struct device *dev)
 	}
 
 	gsm->iface = ppp_net_if();
-	if (!gsm->iface) {
+	if (gsm->iface == NULL) {
 		LOG_ERR("Couldn't find ppp net_if!");
 		return -ENODEV;
 	}
