@@ -8,9 +8,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define BT_GATT_CENTRAL_ADDR_RES_NOT_SUPP	0
-#define BT_GATT_CENTRAL_ADDR_RES_SUPP		1
-
 #define BT_GATT_PERM_READ_MASK			(BT_GATT_PERM_READ | \
 						BT_GATT_PERM_READ_ENCRYPT | \
 						BT_GATT_PERM_READ_AUTHEN | \

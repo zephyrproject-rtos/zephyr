@@ -17,7 +17,6 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gatt.h>
-#include "gatt_internal.h"
 
 static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
@@ -136,6 +135,9 @@ static ssize_t read_ppcp(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 sizeof(ppcp));
 }
 #endif
+
+#define BT_GATT_CENTRAL_ADDR_RES_NOT_SUPP      0
+#define BT_GATT_CENTRAL_ADDR_RES_SUPP          1
 
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PRIVACY)
 static ssize_t read_central_addr_res(struct bt_conn *conn,
