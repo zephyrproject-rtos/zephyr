@@ -184,7 +184,7 @@ static void gsm_rx(struct gsm_modem *gsm)
 
 MODEM_CMD_DEFINE(gsm_cmd_ok)
 {
-	modem_cmd_handler_set_error(data, 0);
+	(void)modem_cmd_handler_set_error(data, 0);
 	LOG_DBG("ok");
 	k_sem_give(&gsm.sem_response);
 	return 0;
@@ -192,7 +192,7 @@ MODEM_CMD_DEFINE(gsm_cmd_ok)
 
 MODEM_CMD_DEFINE(gsm_cmd_error)
 {
-	modem_cmd_handler_set_error(data, -EINVAL);
+	(void)modem_cmd_handler_set_error(data, -EINVAL);
 	LOG_DBG("error");
 	k_sem_give(&gsm.sem_response);
 	return 0;
@@ -202,7 +202,7 @@ MODEM_CMD_DEFINE(gsm_cmd_error)
 MODEM_CMD_DEFINE(gsm_cmd_exterror)
 {
 	/* TODO: map extended error codes to values */
-	modem_cmd_handler_set_error(data, -EIO);
+	(void)modem_cmd_handler_set_error(data, -EIO);
 	k_sem_give(&gsm.sem_response);
 	return 0;
 }
@@ -337,7 +337,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_iccid)
 		if (p) {
 			size_t len = strlen(p+1);
 
-			memmove(gsm.minfo.mdm_iccid, p+1, len+1);
+			(void)memmove(gsm.minfo.mdm_iccid, p+1, len+1);
 		}
 	}
 	LOG_INF("ICCID: %s", gsm.minfo.mdm_iccid);
@@ -727,7 +727,7 @@ static void gsm_finalize_connection(struct k_work *work)
 					    ARRAY_SIZE(response_cmds),
 					    "AT&F", &gsm->sem_response,
 					    GSM_CMD_AT_TIMEOUT);
-		k_sleep(K_SECONDS(1));
+		(void)k_sleep(K_SECONDS(1));
 	}
 
 	ret = gsm_setup_mccmno(gsm);
@@ -924,7 +924,7 @@ static int mux_enable(struct gsm_modem *gsm)
 		/* Arbitrary delay for Quectel modems to initialize the CMUX,
 		 * without this the AT cmd will fail.
 		 */
-		k_sleep(K_SECONDS(1));
+		(void)k_sleep(K_SECONDS(1));
 	} else {
 		/* Generic GSM modem */
 		ret = modem_cmd_send_nolock(&gsm->context.iface,
@@ -1186,7 +1186,7 @@ void gsm_ppp_stop(const struct device *dev)
 
 	/* wait for the interface to be properly down */
 	if (net_if_is_up(iface)) {
-		net_if_l2(iface)->enable(iface, false);
+		(void)(net_if_l2(iface)->enable(iface, false));
 		(void)k_sem_take(&gsm->sem_if_down, K_FOREVER);
 	}
 	if (IS_ENABLED(CONFIG_GSM_MUX)) {
@@ -1268,8 +1268,8 @@ static int gsm_init(const struct device *dev)
 	gsm->cmd_handler_data.alloc_timeout = K_NO_WAIT;
 	gsm->cmd_handler_data.eol = "\r";
 
-	k_sem_init(&gsm->sem_response, 0, 1);
-	k_sem_init(&gsm->sem_if_down, 0, 1);
+	(void)k_sem_init(&gsm->sem_response, 0, 1);
+	(void)k_sem_init(&gsm->sem_if_down, 0, 1);
 
 	ret = modem_cmd_handler_init(&gsm->context.cmd_handler,
 				   &gsm->cmd_handler_data);
@@ -1318,17 +1318,17 @@ static int gsm_init(const struct device *dev)
 	LOG_DBG("iface->read %p iface->write %p",
 		gsm->context.iface.read, gsm->context.iface.write);
 
-	k_thread_create(&gsm->rx_thread, gsm_rx_stack,
-			K_KERNEL_STACK_SIZEOF(gsm_rx_stack),
-			(k_thread_entry_t) gsm_rx,
-			gsm, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
-	k_thread_name_set(&gsm->rx_thread, "gsm_rx");
+	(void)k_thread_create(&gsm->rx_thread, gsm_rx_stack,
+			      K_KERNEL_STACK_SIZEOF(gsm_rx_stack),
+			      (k_thread_entry_t) gsm_rx,
+			      gsm, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	(void)k_thread_name_set(&gsm->rx_thread, "gsm_rx");
 
 	/* initialize the work queue */
 	k_work_queue_init(&gsm->workq);
 	k_work_queue_start(&gsm->workq, gsm_workq_stack, K_KERNEL_STACK_SIZEOF(gsm_workq_stack),
 			   K_PRIO_COOP(7), NULL);
-	k_thread_name_set(&gsm->workq.thread, "gsm_workq");
+	(void)k_thread_name_set(&gsm->workq.thread, "gsm_workq");
 
 	if (IS_ENABLED(CONFIG_GSM_MUX)) {
 		k_work_init_delayable(&gsm->rssi_work_handle, rssi_handler);
