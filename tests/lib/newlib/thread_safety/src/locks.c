@@ -57,7 +57,7 @@ extern struct k_sem __lock___arc4random_mutex;
  * created, acquired, released and closed through the retargetable locking
  * interface.
  */
-static void test_retargetable_lock_sem(void)
+ZTEST(newlib_thread_safety_locks, test_retargetable_lock_sem)
 {
 	_LOCK_T lock = NULL;
 
@@ -111,7 +111,7 @@ static void retargetable_lock_mutex_thread_rel(void *p1, void *p2, void *p3)
  * This test verifies that a recursive lock (mutex) can be dynamically created,
  * acquired, released, and closed through the retargetable locking interface.
  */
-static void test_retargetable_lock_mutex(void)
+ZTEST(newlib_thread_safety_locks, test_retargetable_lock_mutex)
 {
 	_LOCK_T lock = NULL;
 	k_tid_t tid;
@@ -191,7 +191,7 @@ static void sinit_lock_thread_rel(void *p1, void *p2, void *p3)
  * functions to verify that sinit lock is functional and its implementation
  * is provided by the retargetable locking interface.
  */
-static void test_sinit_lock(void)
+ZTEST(newlib_thread_safety_locks, test_sinit_lock)
 {
 	k_tid_t tid;
 
@@ -261,7 +261,7 @@ static void sfp_lock_thread_rel(void *p1, void *p2, void *p3)
  * to verify that sfp lock is functional and its implementation is provided by
  * the retargetable locking interface.
  */
-static void test_sfp_lock(void)
+ZTEST(newlib_thread_safety_locks, test_sfp_lock)
 {
 	k_tid_t tid;
 
@@ -331,7 +331,7 @@ static void malloc_lock_thread_unlock(void *p1, void *p2, void *p3)
  * verify that malloc lock is functional and its implementation is provided by
  * the retargetable locking interface.
  */
-static void test_malloc_lock(void)
+ZTEST(newlib_thread_safety_locks, test_malloc_lock)
 {
 	k_tid_t tid;
 
@@ -401,7 +401,7 @@ static void env_lock_thread_unlock(void *p1, void *p2, void *p3)
  * that env lock is functional and its implementation is provided by the
  * retargetable locking interface.
  */
-static void test_env_lock(void)
+ZTEST(newlib_thread_safety_locks, test_env_lock)
 {
 	k_tid_t tid;
 
@@ -433,7 +433,7 @@ static void test_env_lock(void)
  * tz lock is functional and its implementation is provided by the retargetable
  * locking interface.
  */
-static void test_tz_lock(void)
+ZTEST(newlib_thread_safety_locks, test_tz_lock)
 {
 	/* Lock the tz semaphore */
 	__tz_lock();
@@ -455,20 +455,11 @@ static void test_tz_lock(void)
 	__retarget_lock_release((_LOCK_T)&__lock___tz_mutex);
 }
 
-void test_newlib_thread_safety_locks(void)
+void *newlib_thread_safety_locks_setup(void)
 {
 #ifdef CONFIG_USERSPACE
 	k_thread_access_grant(k_current_get(), &tdata, &tstack);
 #endif /* CONFIG_USERSPACE */
-
-	ztest_test_suite(newlib_thread_safety_locks,
-			 ztest_user_unit_test(test_retargetable_lock_sem),
-			 ztest_user_unit_test(test_retargetable_lock_mutex),
-			 ztest_user_unit_test(test_sinit_lock),
-			 ztest_user_unit_test(test_sfp_lock),
-			 ztest_user_unit_test(test_malloc_lock),
-			 ztest_user_unit_test(test_env_lock),
-			 ztest_user_unit_test(test_tz_lock));
-
-	ztest_run_test_suite(newlib_thread_safety_locks);
+	return NULL;
 }
+ZTEST_SUITE(newlib_thread_safety_locks, NULL, newlib_thread_safety_locks_setup, NULL, NULL, NULL);
