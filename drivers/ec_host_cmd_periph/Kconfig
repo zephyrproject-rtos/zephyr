@@ -35,6 +35,45 @@ config EC_HOST_CMD_PERIPH_ESPI
 	  Enable support for Embedded Controller host commands using
 	  the eSPI bus.
 
+config EC_HOST_CMD_PERIPH_SHI
+	bool "Host commands support using SHI"
+	help
+	  Enable support for Embedded Controller host commands using
+	  the Serial Host Interface.
+
 endchoice
+
+if EC_HOST_CMD_PERIPH_SHI
+
+choice EC_HOST_CMD_PERIPH_SHI_DRIVER
+	prompt "SHI driver"
+	default EC_HOST_CMD_PERIPH_SHI_NPCX if SOC_FAMILY_NPCX
+
+config EC_HOST_CMD_PERIPH_SHI_NPCX
+	bool "SHI by Nuvoton"
+	depends on DT_HAS_NUVOTON_NPCX_SHI_ENABLED
+	help
+	  This option enables the driver for SHI peripheral in the
+	  Nuvoton NPCX chip.
+
+endchoice
+
+config EC_HOST_CMD_PERIPH_SHI_MAX_REQUEST
+	int "Max data size for the version 3 request packet"
+	default 544 if EC_HOST_CMD_PERIPH_SHI_NPCX
+	help
+	  This option indicates maximum data size for a version 3 request
+	  packet. This must be big enough to handle a request header of host
+	  command, flash write offset/size, and 512 bytes of flash data.
+
+config EC_HOST_CMD_PERIPH_SHI_MAX_RESPONSE
+	int "Max data size for the version 3 response packet"
+	default 544 if EC_HOST_CMD_PERIPH_SHI_NPCX
+	help
+	  This option indicates maximum data size for a version 3 response
+	  packet. This must be big enough to handle a response header of host
+	  command, flash read offset/size, and 512 bytes of flash data.
+
+endif # EC_HOST_CMD_PERIPH_SHI
 
 endif # EC_HOST_CMD_PERIPH
