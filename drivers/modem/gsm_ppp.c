@@ -431,13 +431,13 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_cesq)
 	rscp = ATOI(argv[2], 0, "rscp");
 	rxlev = ATOI(argv[0], 0, "rxlev");
 
-	if (rsrp >= 0 && rsrp <= 97) {
+	if ((rsrp >= 0) && (rsrp <= 97)) {
 		gsm.minfo.mdm_rssi = -140 + (rsrp - 1);
 		LOG_INF("RSRP: %d", gsm.minfo.mdm_rssi);
-	} else if (rscp >= 0 && rscp <= 96) {
+	} else if ((rscp >= 0) && (rscp <= 96)) {
 		gsm.minfo.mdm_rssi = -120 + (rscp - 1);
 		LOG_INF("RSCP: %d", gsm.minfo.mdm_rssi);
-	} else if (rxlev >= 0 && rxlev <= 63) {
+	} else if ((rxlev >= 0) && (rxlev <= 63)) {
 		gsm.minfo.mdm_rssi = -110 + (rxlev - 1);
 		LOG_INF("RSSI: %d", gsm.minfo.mdm_rssi);
 	} else {
@@ -455,7 +455,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 	if (argc > 0) {
 		int rssi = atoi(argv[0]);
 
-		if (rssi >= 0 && rssi <= 31) {
+		if ((rssi >= 0) && (rssi <= 31)) {
 			rssi = -113 + (rssi * 2);
 		} else {
 			rssi = GSM_RSSI_INVALID;
@@ -770,7 +770,7 @@ registering:
 			 (gsm->net_state != GSM_NET_HOME_NETWORK))) {
 		if (gsm->retries == 0) {
 			gsm->retries = CONFIG_MODEM_GSM_REGISTER_TIMEOUT *
-				MSEC_PER_SEC / GSM_REGISTER_DELAY_MSEC;
+				(MSEC_PER_SEC / GSM_REGISTER_DELAY_MSEC);
 		} else {
 			gsm->retries--;
 		}
@@ -798,7 +798,7 @@ attaching:
 		 */
 		if (gsm->retries == 0) {
 			gsm->retries = CONFIG_MODEM_GSM_ATTACH_TIMEOUT *
-				MSEC_PER_SEC / GSM_ATTACH_RETRY_DELAY_MSEC;
+				(MSEC_PER_SEC / GSM_ATTACH_RETRY_DELAY_MSEC);
 		} else {
 			gsm->retries--;
 		}
@@ -821,8 +821,8 @@ attaching:
 		/* Read connection quality (RSSI) before PPP carrier is ON */
 		query_rssi_nolock(gsm);
 
-		if (!(gsm->minfo.mdm_rssi && gsm->minfo.mdm_rssi != GSM_RSSI_INVALID &&
-			gsm->minfo.mdm_rssi < GSM_RSSI_MAXVAL)) {
+		if (!((gsm->minfo.mdm_rssi > 0) && (gsm->minfo.mdm_rssi != GSM_RSSI_INVALID) &&
+			(gsm->minfo.mdm_rssi < GSM_RSSI_MAXVAL))) {
 
 			LOG_DBG("Not valid RSSI, %s", "retrying...");
 			if (gsm->retries-- > 0) {
