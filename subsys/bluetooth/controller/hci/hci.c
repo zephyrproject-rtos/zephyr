@@ -3444,7 +3444,7 @@ static void le_set_ext_adv_enable(struct net_buf *buf, struct net_buf **evt)
 		status = ll_adv_enable(handle, cmd->enable, 0, 0, 0, 0, 0);
 #else /* !CONFIG_BT_HCI_MESH_EXT */
 		status = ll_adv_enable(handle, cmd->enable,
-				       s->duration, s->max_ext_adv_evts);
+				       sys_le16_to_cpu(s->duration), s->max_ext_adv_evts);
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
 		if (status) {
 			/* TODO: how to handle succeeded ones before this
