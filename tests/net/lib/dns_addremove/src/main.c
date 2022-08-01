@@ -153,7 +153,7 @@ static void dns_evt_handler(struct net_mgmt_event_callback *cb,
 	}
 }
 
-static void test_init(void)
+static void *test_init(void)
 {
 	struct net_if_addr *ifaddr;
 
@@ -173,7 +173,7 @@ static void test_init(void)
 		       net_sprint_ipv6_addr(&my_addr1));
 		zassert_not_null(ifaddr, "addr1");
 
-		return;
+		return NULL;
 	}
 
 	/* For testing purposes we need to set the adddresses preferred */
@@ -188,7 +188,7 @@ static void test_init(void)
 		       net_sprint_ipv4_addr(&my_addr2));
 		zassert_not_null(ifaddr, "addr2");
 
-		return;
+		return NULL;
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -203,6 +203,8 @@ static void test_init(void)
 				     NET_EVENT_DNS_SERVER_ADD |
 				     NET_EVENT_DNS_SERVER_DEL);
 	net_mgmt_add_event_callback(&mgmt_cb);
+
+	return NULL;
 }
 
 static void test_dns_do_not_add_add_callback6(void)
@@ -284,7 +286,7 @@ static void test_dns_remove_none_callback6(void)
 #endif
 }
 
-static void test_dns_add_remove_two_callback6(void)
+ZTEST(dns_addremove, test_dns_add_remove_two_callback6)
 {
 #if defined(CONFIG_NET_IPV6)
 	struct dns_resolve_context *dnsCtx = &resv_ipv6;
@@ -438,7 +440,7 @@ static void test_dns_remove_callback(void)
 #endif
 }
 
-static void test_dns_reconfigure_callback(void)
+ZTEST(dns_addremove, test_dns_reconfigure_callback)
 {
 #if defined(CONFIG_NET_IPV4)
 	struct dns_resolve_context *dnsCtx = &resv_ipv4;
@@ -507,7 +509,7 @@ static void test_dns_remove_none_callback(void)
 #endif
 }
 
-static void test_dns_add_remove_two_callback(void)
+ZTEST(dns_addremove, test_dns_add_remove_two_callback)
 {
 #if defined(CONFIG_NET_IPV4)
 	struct dns_resolve_context *dnsCtx = &resv_ipv4;
@@ -603,23 +605,20 @@ static void test_dns_add_remove_two_callback(void)
 #endif
 }
 
-void test_main(void)
+ZTEST(dns_addremove, test_dns_addremove_v6)
 {
-	ztest_test_suite(dns_tests,
-			 ztest_unit_test(test_init),
-			 ztest_unit_test(test_dns_do_not_add_add_callback6),
-			 ztest_unit_test(test_dns_add_callback6),
-			 ztest_unit_test(test_dns_remove_callback6),
-			 ztest_unit_test(test_dns_remove_none_callback6),
-			 ztest_unit_test(test_dns_add_remove_two_callback6),
-			 ztest_unit_test(test_dns_do_not_add_add_callback),
-			 ztest_unit_test(test_dns_add_callback),
-			 ztest_unit_test(test_dns_remove_callback),
-			 ztest_unit_test(test_dns_reconfigure_callback),
-			 ztest_unit_test(test_dns_remove_none_callback),
-			 ztest_unit_test(test_dns_add_remove_two_callback)
-
-);
-
-	ztest_run_test_suite(dns_tests);
+	test_dns_do_not_add_add_callback6();
+	test_dns_add_callback6();
+	test_dns_remove_callback6();
+	test_dns_remove_none_callback6();
 }
+
+ZTEST(dns_addremove, test_dns_addremove_v4)
+{
+	test_dns_do_not_add_add_callback();
+	test_dns_add_callback();
+	test_dns_remove_callback();
+	test_dns_remove_none_callback();
+}
+
+ZTEST_SUITE(dns_addremove, NULL, test_init, NULL, NULL, NULL);
