@@ -287,7 +287,7 @@ static int i2c_it8xxx2_get_config(const struct device *dev,
 	return 0;
 }
 
-static void i2c_r_last_byte(const struct device *dev)
+void __soc_ram_code i2c_r_last_byte(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
@@ -303,7 +303,7 @@ static void i2c_r_last_byte(const struct device *dev)
 	}
 }
 
-static void i2c_w2r_change_direction(const struct device *dev)
+void __soc_ram_code i2c_w2r_change_direction(const struct device *dev)
 {
 	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
@@ -326,7 +326,7 @@ static void i2c_w2r_change_direction(const struct device *dev)
 }
 
 #ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
-static void i2c_fifo_en_w2r(const struct device *dev, bool enable)
+void __soc_ram_code i2c_fifo_en_w2r(const struct device *dev, bool enable)
 {
 	const struct i2c_it8xxx2_config *config = dev->config;
 	unsigned int key = irq_lock();
@@ -352,7 +352,7 @@ static void i2c_fifo_en_w2r(const struct device *dev, bool enable)
 	irq_unlock(key);
 }
 
-static void i2c_tran_fifo_write_start(const struct device *dev)
+void __soc_ram_code i2c_tran_fifo_write_start(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
@@ -394,7 +394,7 @@ static void i2c_tran_fifo_write_start(const struct device *dev)
 				  IT8XXX2_SMB_INTREN;
 }
 
-static void i2c_tran_fifo_write_next_block(const struct device *dev)
+void __soc_ram_code i2c_tran_fifo_write_next_block(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
@@ -415,7 +415,7 @@ static void i2c_tran_fifo_write_next_block(const struct device *dev)
 	data->bytecnt -= _bytecnt;
 }
 
-static void i2c_tran_fifo_write_finish(const struct device *dev)
+void __soc_ram_code i2c_tran_fifo_write_finish(const struct device *dev)
 {
 	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
@@ -428,7 +428,7 @@ static void i2c_tran_fifo_write_finish(const struct device *dev)
 	IT8XXX2_SMB_HOCTL2(base) = 0x00;
 }
 
-static int i2c_tran_fifo_w2r_change_direction(const struct device *dev)
+int __soc_ram_code i2c_tran_fifo_w2r_change_direction(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
@@ -459,7 +459,7 @@ static int i2c_tran_fifo_w2r_change_direction(const struct device *dev)
 	return 1;
 }
 
-static void i2c_tran_fifo_read_start(const struct device *dev)
+void __soc_ram_code i2c_tran_fifo_read_start(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
@@ -494,7 +494,7 @@ static void i2c_tran_fifo_read_start(const struct device *dev)
 				  IT8XXX2_SMB_INTREN;
 }
 
-static void i2c_tran_fifo_read_next_block(const struct device *dev)
+void __soc_ram_code i2c_tran_fifo_read_next_block(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
@@ -512,7 +512,7 @@ static void i2c_tran_fifo_read_next_block(const struct device *dev)
 	data->bytecnt -= I2C_FIFO_MODE_MAX_SIZE;
 }
 
-static void i2c_tran_fifo_read_finish(const struct device *dev)
+void __soc_ram_code i2c_tran_fifo_read_finish(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
@@ -532,7 +532,7 @@ static void i2c_tran_fifo_read_finish(const struct device *dev)
 
 }
 
-static int i2c_tran_fifo_write_to_read(const struct device *dev)
+int __soc_ram_code i2c_tran_fifo_write_to_read(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
@@ -572,7 +572,7 @@ static int i2c_tran_fifo_write_to_read(const struct device *dev)
 	return ret;
 }
 
-static int i2c_tran_fifo_read(const struct device *dev)
+int __soc_ram_code i2c_tran_fifo_read(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
@@ -598,7 +598,7 @@ static int i2c_tran_fifo_read(const struct device *dev)
 	return 1;
 }
 
-static int i2c_tran_fifo_write(const struct device *dev)
+int __soc_ram_code i2c_tran_fifo_write(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
@@ -624,7 +624,7 @@ static int i2c_tran_fifo_write(const struct device *dev)
 	return 1;
 }
 
-static int i2c_fifo_transaction(const struct device *dev)
+int __soc_ram_code i2c_fifo_transaction(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
@@ -650,7 +650,8 @@ static int i2c_fifo_transaction(const struct device *dev)
 	return 0;
 }
 
-static bool fifo_mode_allowed(const struct device *dev, struct i2c_msg *msgs)
+bool __soc_ram_code fifo_mode_allowed(const struct device *dev,
+				      struct i2c_msg *msgs)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
@@ -710,7 +711,7 @@ static bool fifo_mode_allowed(const struct device *dev, struct i2c_msg *msgs)
 }
 #endif
 
-static int i2c_tran_read(const struct device *dev)
+int __soc_ram_code i2c_tran_read(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
@@ -792,7 +793,7 @@ static int i2c_tran_read(const struct device *dev)
 
 }
 
-static int i2c_tran_write(const struct device *dev)
+int __soc_ram_code i2c_tran_write(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
@@ -858,7 +859,7 @@ static int i2c_tran_write(const struct device *dev)
 
 }
 
-static int i2c_pio_transaction(const struct device *dev)
+int __soc_ram_code i2c_pio_transaction(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
