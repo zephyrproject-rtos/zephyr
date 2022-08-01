@@ -1,0 +1,8 @@
+# Google Twinkie V2 board configuration
+
+# Copyright 2022 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_GOOGLE_TWINKIE_V2
+	bool "Google Twinkie V2 Board"
+	depends on SOC_STM32G474XX
