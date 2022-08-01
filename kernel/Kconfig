@@ -643,10 +643,11 @@ config SYS_CLOCK_EXISTS
 	bool "System clock exists and is enabled"
 	default y
 	help
-	  This option specifies that the kernel lacks timer support.
+	  This option specifies that the kernel has timer support.
+
 	  Some device configurations can eliminate significant code if
 	  this is disabled.  Obviously timeout-related APIs will not
-	  work.
+	  work when disabled.
 
 config TIMEOUT_64BIT
 	bool "Store kernel timeouts in 64 bit precision"
