@@ -458,7 +458,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 		ret |= cleanup_test(test);
 	}
 
-	if (test_result == ZTEST_RESULT_SKIP) {
+	if (test_result == ZTEST_RESULT_SKIP || test_result == ZTEST_RESULT_SUITE_SKIP) {
 		Z_TC_END_RESULT(TC_SKIP, test->name);
 	} else {
 		Z_TC_END_RESULT(ret, test->name);
