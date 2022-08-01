@@ -859,6 +859,7 @@ attaching:
 						gsm->at_dev);
 		if (ret < 0) {
 			LOG_DBG("iface %suart error %d", "AT ", ret);
+			gsm->state = GSM_PPP_STATE_ERROR;
 		} else {
 			/* Do a test and try to send AT command to modem */
 			ret = modem_cmd_send_nolock(
@@ -870,14 +871,18 @@ attaching:
 				GSM_CMD_AT_TIMEOUT);
 			if (ret < 0) {
 				LOG_WRN("%s returned %d, %s", "AT", ret, "iface failed");
+				gsm->state = GSM_PPP_STATE_ERROR;
 			} else {
 				LOG_INF("AT channel %d connected to %s",
 					DLCI_AT, gsm->at_dev->name);
 			}
 		}
+
 		modem_cmd_handler_tx_unlock(&gsm->context.cmd_handler);
-		(void)gsm_work_reschedule(&gsm->rssi_work_handle,
-					  K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
+		if (gsm->state != GSM_PPP_STATE_ERROR) {
+			(void)gsm_work_reschedule(&gsm->rssi_work_handle,
+						K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
+		}
 	}
 
 unlock:
@@ -1189,6 +1194,7 @@ void gsm_ppp_stop(const struct device *dev)
 		(void)(net_if_l2(iface)->enable(iface, false));
 		(void)k_sem_take(&gsm->sem_if_down, K_FOREVER);
 	}
+
 	if (IS_ENABLED(CONFIG_GSM_MUX)) {
 		if (gsm->ppp_dev != NULL) {
 			uart_mux_disable(gsm->ppp_dev);
