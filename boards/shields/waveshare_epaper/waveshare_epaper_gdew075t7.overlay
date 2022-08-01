@@ -15,7 +15,6 @@
 &arduino_spi {
 	uc8179: uc8179@0 {
 		compatible = "gooddisplay,gdew042t2", "ultrachip,uc8179";
-		label = "UC8179";
 		spi-max-frequency = <4000000>;
 		reg = <0>;
 		width = <800>;

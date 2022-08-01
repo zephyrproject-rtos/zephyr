@@ -29,7 +29,6 @@
 		spi-max-frequency = <80000000>;
 		size = <DT_SIZE_M(128)>;
 		jedec-id = [01 20 18];
-		label = "DAPLINK_FLASH_0";
 	};
 };
 

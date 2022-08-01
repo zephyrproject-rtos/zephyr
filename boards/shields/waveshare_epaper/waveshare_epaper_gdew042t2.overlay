@@ -14,7 +14,6 @@
 &arduino_spi {
 	uc8176: uc8176@0 {
 		compatible = "gooddisplay,gdew042t2", "ultrachip,uc8176";
-		label = "UC8176";
 		spi-max-frequency = <4000000>;
 		reg = <0>;
 		width = <400>;

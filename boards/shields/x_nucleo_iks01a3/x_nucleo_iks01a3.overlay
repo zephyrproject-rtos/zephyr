@@ -15,42 +15,36 @@
 	hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
-		label = "HTS221";
 	};
 
 	lps22hh@5d {
 		compatible = "st,lps22hh";
 		reg = <0x5d>;
 		drdy-gpios =  <&arduino_header 12 GPIO_ACTIVE_HIGH>; /* D6 */
-		label = "LPS22HH";
 	};
 
 	stts751@4a {
 		compatible = "st,stts751";
 		reg = <0x4a>;
 		drdy-gpios =  <&arduino_header 4 GPIO_ACTIVE_LOW>; /* A4 */
-		label = "STTS751";
 	};
 
 	lis2mdl: lis2mdl@1e {
 		compatible = "st,lis2mdl";
 		reg = <0x1e>;
 		irq-gpios =  <&arduino_header 2 GPIO_ACTIVE_HIGH>; /* A2 */
-		label = "LIS2MDL";
 	};
 
 	lis2dw12@19 {
 		compatible = "st,lis2dw12";
 		reg = <0x19>;
 		irq-gpios =  <&arduino_header 3 GPIO_ACTIVE_HIGH>; /* A3 */
-		label = "LIS2DW12";
 	};
 
 	lsm6dso@6b {
 		compatible = "st,lsm6dso";
 		reg = <0x6b>;
 		irq-gpios =  <&arduino_header 11 GPIO_ACTIVE_HIGH>; /* D5 */
-		label = "LSM6DSO";
 		int-pin = <2>;
 	};
 };

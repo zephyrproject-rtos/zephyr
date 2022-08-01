@@ -22,14 +22,12 @@
 		reg = <0x19>;
 		drdy-gpios =  <&arduino_header 4 GPIO_ACTIVE_HIGH>; /* A4 - INT2 */
 		drdy-int =  <2>;
-		label = "IIS2DLPC";
 	};
 
 	ism330dhcx@6b {
 		compatible = "st,ism330dhcx";
 		reg = <0x6b>;
 		drdy-gpios =  <&arduino_header 11 GPIO_ACTIVE_HIGH>; /* D5 - INT2 */
-		label = "ISM330DHCX";
 		int-pin = <2>;
 	};
 };
