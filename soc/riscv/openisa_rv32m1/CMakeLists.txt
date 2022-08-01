@@ -4,12 +4,12 @@
 
 if(CONFIG_SOC_OPENISA_RV32M1_RI5CY)
   if (CONFIG_RISCV_GENERIC_TOOLCHAIN)
-    zephyr_compile_options(-march=rv32imc)
+    zephyr_compile_options(-march=rv32imc_zicsr_zifencei)
   else()
     zephyr_compile_options(-march=rv32imcxpulpv2)
   endif()
 elseif(CONFIG_SOC_OPENISA_RV32M1_ZERO_RISCY)
-  zephyr_compile_options(-march=rv32imc)
+  zephyr_compile_options(-march=rv32imc_zicsr_zifencei)
 endif()
 
 zephyr_sources(
