@@ -124,9 +124,6 @@ endif # MULTI_LEVEL_INTERRUPTS
 
 if FLASH
 
-config SOC_FLASH_RV32M1
-	default y
-
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
 

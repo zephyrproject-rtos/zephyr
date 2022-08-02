@@ -25,8 +25,4 @@ endchoice
 config TINYCRYPT
 	default y
 
-config SOC_FLASH_MCUX
-	default y
-	depends on FLASH
-
 endif # SOC_MKW40Z4
