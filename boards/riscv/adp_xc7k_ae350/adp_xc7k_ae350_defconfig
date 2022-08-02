@@ -16,6 +16,10 @@ CONFIG_GPIO=y
 # Syscon driver options
 CONFIG_SYSCON=y
 
+# hwinfo driver options
+CONFIG_HWINFO=y
+CONFIG_HWINFO_ANDES=y
+
 # RV64 options
 #CONFIG_RV64I_CPU=y
 
