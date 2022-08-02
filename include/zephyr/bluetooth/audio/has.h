@@ -98,15 +98,17 @@ struct bt_has_client_cb {
 	/**
 	 * @brief Callback function for Hearing Access Service active preset changes.
 	 *
-	 * Optional callback called when the value is changed by the remote server.
-	 * The callback must be set to receive active preset changes and enable support
-	 * for switching presets. If the callback is not set, the Active Index and
-	 * Control Point characteristics will not be discovered by @ref bt_has_client_discover.
+	 * Optional callback called when the active preset is changed by the remote server when the
+	 * preset switch procedure is complete. The callback must be set to receive active preset
+	 * changes and enable support for switching presets. If the callback is not set, the Active
+	 * Index and Control Point characteristics will not be discovered by
+	 * @ref bt_has_client_discover.
 	 *
 	 * @param has Pointer to the Hearing Access Service object.
+	 * @param err 0 on success, ATT error or negative errno otherwise.
 	 * @param index Active preset index.
 	 */
-	void (*preset_switch)(struct bt_has *has, uint8_t index);
+	void (*preset_switch)(struct bt_has *has, int err, uint8_t index);
 
 	/**
 	 * @brief Callback function for presets read operation.
@@ -212,6 +214,46 @@ int bt_has_client_conn_get(const struct bt_has *has, struct bt_conn **conn);
  * @return 0 in case of success or negative value in case of error.
  */
 int bt_has_client_presets_read(struct bt_has *has, uint8_t index, uint8_t max_count);
+
+/**
+ * @brief Set Active Preset.
+ *
+ * Client procedure to set preset identified by @p index as active.
+ * The status is returned in the @ref bt_has_client_cb.preset_switch callback.
+ *
+ * @param has Pointer to the Hearing Access Service object.
+ * @param index Preset index to activate.
+ * @param sync Request active preset synchronization in set.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_has_client_preset_set(struct bt_has *has, uint8_t index, bool sync);
+
+/**
+ * @brief Activate Next Preset.
+ *
+ * Client procedure to set next available preset as active.
+ * The status is returned in the @ref bt_has_client_cb.preset_switch callback.
+ *
+ * @param has Pointer to the Hearing Access Service object.
+ * @param sync Request active preset synchronization in set.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_has_client_preset_next(struct bt_has *has, bool sync);
+
+/**
+ * @brief Activate Previous Preset.
+ *
+ * Client procedure to set previous available preset as active.
+ * The status is returned in the @ref bt_has_client_cb.preset_switch callback.
+ *
+ * @param has Pointer to the Hearing Access Service object.
+ * @param sync Request active preset synchronization in set.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_has_client_preset_prev(struct bt_has *has, bool sync);
 
 /** @brief Preset operations structure. */
 struct bt_has_preset_ops {
