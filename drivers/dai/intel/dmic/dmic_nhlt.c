@@ -25,7 +25,7 @@ static const uint32_t coef_base_b[4] = {PDM0_COEFFICIENT_B, PDM1_COEFFICIENT_B,
 					PDM2_COEFFICIENT_B, PDM3_COEFFICIENT_B};
 
 static inline void dai_dmic_write(const struct dai_intel_dmic *dmic,
-			   uint32_t reg, uint32_t val)
+				  uint32_t reg, uint32_t val)
 {
 	sys_write32(val, dmic->reg_base + reg);
 }
@@ -54,9 +54,9 @@ static int dai_ipm_source_to_enable(struct dai_intel_dmic *dmic,
 }
 
 static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic,
-				    int32_t *outcontrol,
-				    struct nhlt_pdm_ctrl_cfg **pdm_cfg,
-				    struct nhlt_pdm_ctrl_fir_cfg **fir_cfg)
+					int32_t *outcontrol,
+					struct nhlt_pdm_ctrl_cfg **pdm_cfg,
+					struct nhlt_pdm_ctrl_fir_cfg **fir_cfg)
 {
 	uint32_t outcontrol_val = outcontrol[dmic->dai_config_params.dai_index];
 	int num_pdm;
@@ -82,7 +82,8 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic,
 
 	num_pdm = OUTCONTROL0_IPM_GET(outcontrol_val);
 	if (num_pdm > CONFIG_DAI_DMIC_HW_CONTROLLERS) {
-		LOG_ERR("nhlt_dmic_dai_params_get(): Illegal IPM PDM controllers count");
+		LOG_ERR("nhlt_dmic_dai_params_get(): Illegal IPM PDM controllers count %d",
+			num_pdm);
 		return -EINVAL;
 	}
 
@@ -588,5 +589,11 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	LOG_INF("dmic_set_config_nhlt(): rate = %d, channels = %d, format = %d",
 		 dmic->dai_config_params.rate, dmic->dai_config_params.channels,
 		 dmic->dai_config_params.format);
+
+	LOG_INF("dmic_set_config_nhlt(): io_clk %u, rate_div %d",
+		 CONFIG_DAI_DMIC_HW_IOCLK, rate_div);
+
+	LOG_INF("dmic_set_config_nhlt(): enable0 %u, enable1 %u",
+		dmic->enable[0], dmic->enable[1]);
 	return 0;
 }
