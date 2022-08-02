@@ -12,10 +12,6 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 121
 
-config ADC_MCUX_ADC16
-	default y
-	depends on ADC
-
 config SOC_FLASH_MCUX
 	default y
 	depends on FLASH

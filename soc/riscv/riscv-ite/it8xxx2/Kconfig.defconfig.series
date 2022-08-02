@@ -43,10 +43,6 @@ config KSCAN_ITE_IT8XXX2
 	default y
 	depends on KSCAN
 
-config ADC_ITE_IT8XXX2
-	default y
-	depends on ADC
-
 config SOC_FLASH_ITE_IT8XXX2
 	default y
 	depends on FLASH

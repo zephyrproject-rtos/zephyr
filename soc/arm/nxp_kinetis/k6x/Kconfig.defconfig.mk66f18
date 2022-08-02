@@ -12,10 +12,6 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 100
 
-config ADC_MCUX_ADC16
-	default y
-	depends on ADC
-
 config DAC_MCUX_DAC
 	default y
 	depends on DAC

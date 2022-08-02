@@ -45,10 +45,6 @@ config COUNTER_RTC_STM32
 	default y
 	depends on COUNTER
 
-config ADC_STM32
-	default y
-	depends on ADC
-
 if DMA
 
 config DMA_STM32
