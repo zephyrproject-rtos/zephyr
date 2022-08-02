@@ -183,7 +183,7 @@ static void set_sm_state(uint8_t sm_state)
 		    client.engine_state <= ENGINE_DEREGISTER_SENT)) {
 		event = LWM2M_RD_CLIENT_EVENT_DISCONNECT;
 	} else if (sm_state == ENGINE_NETWORK_ERROR) {
-		lwm2m_engine_context_close(client.ctx);
+		lwm2m_engine_stop(client.ctx);
 		client.retry_delay = 1 << client.retries;
 		client.retries++;
 		if (client.retries > CONFIG_LWM2M_RD_CLIENT_MAX_RETRIES) {
@@ -268,7 +268,7 @@ static void sm_handle_failure_state(enum sm_engine_state sm_state)
 		event = LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE;
 	}
 
-	lwm2m_engine_context_close(client.ctx);
+	lwm2m_engine_stop(client.ctx);
 	set_sm_state(sm_state);
 
 	if (event > LWM2M_RD_CLIENT_EVENT_NONE && client.ctx->event_cb) {
@@ -281,7 +281,7 @@ static void socket_fault_cb(int error)
 {
 	LOG_ERR("RD Client socket error: %d", error);
 
-	lwm2m_engine_context_close(client.ctx);
+	lwm2m_engine_stop(client.ctx);
 
 	client.ctx->sec_obj_inst = -1;
 
@@ -621,7 +621,7 @@ static int sm_select_security_inst(bool bootstrap_server, int *sec_obj_inst)
 
 static int sm_do_init(void)
 {
-	lwm2m_engine_context_close(client.ctx);
+	lwm2m_engine_stop(client.ctx);
 	client.ctx->sec_obj_inst = -1;
 	client.ctx->srv_obj_inst = -1;
 	client.trigger_update = false;
@@ -711,7 +711,7 @@ static int sm_do_bootstrap_reg(void)
 
 	/* clear out existing connection data */
 	if (client.ctx->sock_fd > -1) {
-		lwm2m_engine_context_close(client.ctx);
+		lwm2m_engine_stop(client.ctx);
 	}
 
 	client.ctx->bootstrap_mode = true;
@@ -754,7 +754,7 @@ void engine_bootstrap_finish(void)
 static int sm_bootstrap_trans_done(void)
 {
 	/* close down context resources */
-	lwm2m_engine_context_close(client.ctx);
+	lwm2m_engine_stop(client.ctx);
 
 	/* reset security object instance */
 	client.ctx->sec_obj_inst = -1;
@@ -930,7 +930,7 @@ static int sm_do_registration(void)
 
 	/* clear out existing connection data */
 	if (client.ctx->sock_fd > -1) {
-		lwm2m_engine_context_close(client.ctx);
+		lwm2m_engine_stop(client.ctx);
 	}
 
 	client.ctx->bootstrap_mode = false;
@@ -993,7 +993,7 @@ static int sm_registration_done(void)
 
 		ret = lwm2m_engine_connection_resume(client.ctx);
 		if (ret) {
-			lwm2m_engine_context_close(client.ctx);
+			lwm2m_engine_stop(client.ctx);
 			/* perform full registration */
 			set_sm_state(ENGINE_DO_REGISTRATION);
 			return ret;
@@ -1006,7 +1006,7 @@ static int sm_registration_done(void)
 			set_sm_state(ENGINE_UPDATE_SENT);
 		} else {
 			LOG_ERR("Registration update err: %d", ret);
-			lwm2m_engine_context_close(client.ctx);
+			lwm2m_engine_stop(client.ctx);
 			/* perform full registration */
 			set_sm_state(ENGINE_DO_REGISTRATION);
 		}
@@ -1073,7 +1073,7 @@ static int sm_do_deregister(void)
 cleanup:
 	lwm2m_reset_message(msg, true);
 close_ctx:
-	lwm2m_engine_context_close(client.ctx);
+	lwm2m_engine_stop(client.ctx);
 	set_sm_state(ENGINE_DEREGISTERED);
 	return ret;
 }
@@ -1102,7 +1102,7 @@ static void lwm2m_rd_client_service(struct k_work *work)
 		switch (get_sm_state()) {
 		case ENGINE_IDLE:
 			if (client.ctx->sock_fd > -1) {
-				lwm2m_engine_context_close(client.ctx);
+				lwm2m_engine_stop(client.ctx);
 			}
 			break;
 
@@ -1157,7 +1157,7 @@ static void lwm2m_rd_client_service(struct k_work *work)
 			break;
 
 		case ENGINE_DEREGISTERED:
-			lwm2m_engine_context_close(client.ctx);
+			lwm2m_engine_stop(client.ctx);
 			set_sm_state(ENGINE_IDLE);
 			break;
 

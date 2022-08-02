@@ -862,7 +862,7 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 	} else if ((client_ctx->remote_addr).sa_family == AF_INET6) {
 		addr_len = sizeof(struct sockaddr_in6);
 	} else {
-		lwm2m_engine_context_close(client_ctx);
+		lwm2m_engine_stop(client_ctx);
 		return -EPROTONOSUPPORT;
 	}
 
@@ -891,8 +891,28 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 	}
 	return 0;
 error:
-	lwm2m_engine_context_close(client_ctx);
+	lwm2m_engine_stop(client_ctx);
 	return ret;
+}
+
+int lwm2m_socket_close(struct lwm2m_ctx *client_ctx)
+{
+	int sock_fd = client_ctx->sock_fd;
+
+	lwm2m_socket_del(client_ctx);
+	client_ctx->sock_fd = -1;
+	if (sock_fd >= 0) {
+		return close(sock_fd);
+	}
+
+	return 0;
+}
+
+int lwm2m_engine_stop(struct lwm2m_ctx *client_ctx)
+{
+	lwm2m_engine_context_close(client_ctx);
+
+	return lwm2m_socket_close(client_ctx);
 }
 
 int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
