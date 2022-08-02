@@ -2,7 +2,7 @@
 /* Copyright (c) 2022 Nordic semiconductor ASA */
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <errno.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/fs/fs.h>
