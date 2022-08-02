@@ -1,0 +1,28 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ *
+ * @brief Stub header allowing compilation of `#include <utility>`
+ */
+
+#ifndef ZEPHYR_SUBSYS_CPP_INCLUDE_UTILITY_
+#define ZEPHYR_SUBSYS_CPP_INCLUDE_UTILITY_
+
+#include <type_traits>
+
+namespace std {
+
+template <typename T>
+static inline constexpr typename remove_reference<T>::type &&move(T &&arg)
+{
+	return static_cast<typename remove_reference<T>::type&&>(arg);
+}
+
+}
+
+#endif /* ZEPHYR_SUBSYS_CPP_INCLUDE_UTILITY_ */
