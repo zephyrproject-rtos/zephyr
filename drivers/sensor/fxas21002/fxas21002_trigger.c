@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_fxas21002
+
 #include <zephyr/logging/log.h>
 
 #include "fxas21002.h"
@@ -183,21 +185,17 @@ int fxas21002_trigger_init(const struct device *dev)
 	ctrl_reg2 |= FXAS21002_CTRLREG2_CFG_DRDY_MASK;
 #endif
 
-        LOG_ERR("\n[SUMIT-0] TRIGGER INIT\n");
-	//if (config->ops->byte_write(dev, FXAS21002_REG_CTRLREG2,
-	if (fxas21002_byte_write_spi(dev, FXAS21002_REG_CTRLREG2,
+	if (config->ops->byte_write(dev, FXAS21002_REG_CTRLREG2,
 				  ctrl_reg2)) {
 		LOG_ERR("Could not configure interrupt pin routing");
 		return -EIO;
 	}
-        LOG_ERR("\n[SUMIT-1] TRIGGER INIT\n");
 
 	if (!device_is_ready(config->int_gpio.port)) {
 		LOG_ERR("GPIO device not ready");
 		return -ENODEV;
 	}
 
-        LOG_ERR("\n[SUMIT-2] TRIGGER INIT\n");
 	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
 		return ret;
@@ -216,6 +214,5 @@ int fxas21002_trigger_init(const struct device *dev)
 		return ret;
 	}
 
-        LOG_ERR("\n[SUMIT-3] TRIGGER INIT\n");
 	return 0;
 }

@@ -22,7 +22,7 @@ static const uint32_t sample_period[] = {
 #define DIR_READ(a)                     ((a) | (1 << 7))
 #define DIR_WRITE(a)                    ((a) & 0x7f)
 
-int fxas21002_transceive(const struct device *dev,
+static int fxas21002_transceive(const struct device *dev,
 			     void *data, size_t length)
 {
 	const struct fxas21002_config *cfg = dev->config;
@@ -58,9 +58,7 @@ int fxas21002_byte_read_spi(const struct device *dev,
 	/* Reads must clock out a dummy byte after sending the address. */
 	uint8_t data[] = { DIR_READ(reg), 0};
 	int ret;
-//        printk("\n[SUMIT] fxas21002_byte_read_spi data[0] 0x%x \n", data[0]);
 	ret = fxas21002_transceive(dev, data, sizeof(data));
-    //    printk("\n[SUMIT] fxas21002_byte_read_spi data[0]=0x%x data[1]=0x%x\n",data[0], data[1]);
 
 	*byte = data[1];
 
@@ -72,7 +70,6 @@ int fxas21002_byte_write_spi(const struct device *dev,
 				 uint8_t byte)
 {
 	uint8_t data[] = { DIR_WRITE(reg), byte };
-        printk("\n[SUMIT] BYTE WRITE =0x%x\n",reg);
 	return fxas21002_transceive(dev, data, sizeof(data));
 }
 
@@ -84,14 +81,13 @@ int fxas21002_reg_field_update_spi(const struct device *dev,
 	uint8_t old_val;
 
 	if (fxas21002_byte_read_spi(dev, reg, &old_val) < 0) {
-//                printk("\n[SUMIT] BYTE READ FAILED IN UPDATE API\n");
 		return -EIO;
 	}
 
 	return fxas21002_byte_write_spi(dev, reg, (old_val & ~mask) | (val & mask));
 }
 
-static struct fxas21002_io_ops fxas21002_spi_ops = {
+static const struct fxas21002_io_ops fxas21002_spi_ops = {
 	.read = fxas21002_read_spi,
 	.byte_read = fxas21002_byte_read_spi,
 	.byte_write = fxas21002_byte_write_spi,
@@ -345,8 +341,8 @@ static int fxas21002_init(const struct device *dev)
 		 */
 		k_busy_wait(USEC_PER_MSEC);
 		gpio_pin_set_dt(&config->reset_gpio, 0);
+	        k_busy_wait(USEC_PER_MSEC);
 	}
-	k_busy_wait(USEC_PER_MSEC);
 #endif
 	/* Read the WHOAMI register to make sure we are talking to FXAS21002
 	 * and not some other type of device that happens to have the same I2C
@@ -389,8 +385,6 @@ static int fxas21002_init(const struct device *dev)
 		return -EIO;
 	}
 
-//		config->ops->byte_read(dev, FXAS21002_REG_CTRLREG1, &ctrlreg1);
-  //              printk("\n[SUMIT] CTRL_REG1(Before) = 0x%x config->dr= 0x%x\n",ctrlreg1, config->dr);
 	/* Set the output data rate */
 	if (config->ops->reg_field_update(dev, FXAS21002_REG_CTRLREG1,
 				   FXAS21002_CTRLREG1_DR_MASK,
@@ -398,8 +392,6 @@ static int fxas21002_init(const struct device *dev)
 		LOG_ERR("Could not set output data rate");
 		return -EIO;
 	}
-//		config->ops->byte_read(dev, FXAS21002_REG_CTRLREG1, &ctrlreg1);
-  //              printk("\n[SUMIT] CTRL_REG1(After) = 0x%x\n",ctrlreg1);
 
 	k_sem_init(&data->sem, 0, K_SEM_MAX_LIMIT);
 

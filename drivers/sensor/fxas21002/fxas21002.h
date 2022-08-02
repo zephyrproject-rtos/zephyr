@@ -83,7 +83,7 @@ struct fxas21002_config {
 #elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	struct spi_dt_spec spi;
 #endif
-	struct fxas21002_io_ops *ops;
+	const struct fxas21002_io_ops *ops;
 #ifdef CONFIG_FXAS21002_TRIGGER
 	struct gpio_dt_spec int_gpio;
 #endif
@@ -150,7 +150,7 @@ int fxas21002_reg_field_update_i2c(const struct device *dev,
 				uint8_t mask,
 				uint8_t val);
 
-static int fxas21002_read_i2c(const struct device *dev,
+int fxas21002_read_i2c(const struct device *dev,
 			     uint8_t reg,
 			     void *data,
 			     size_t length);
