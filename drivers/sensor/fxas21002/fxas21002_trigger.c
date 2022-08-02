@@ -177,24 +177,27 @@ int fxas21002_trigger_init(const struct device *dev)
 #elif defined(CONFIG_FXAS21002_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = fxas21002_work_handler;
 #endif
-
 	/* Route the interrupts to INT1/INT2 pins */
 	ctrl_reg2 = 0U;
 #if CONFIG_FXAS21002_DRDY_INT1
 	ctrl_reg2 |= FXAS21002_CTRLREG2_CFG_DRDY_MASK;
 #endif
 
-	if (config->ops->byte_write(dev, FXAS21002_REG_CTRLREG2,
+        LOG_ERR("\n[SUMIT-0] TRIGGER INIT\n");
+	//if (config->ops->byte_write(dev, FXAS21002_REG_CTRLREG2,
+	if (fxas21002_byte_write_spi(dev, FXAS21002_REG_CTRLREG2,
 				  ctrl_reg2)) {
 		LOG_ERR("Could not configure interrupt pin routing");
 		return -EIO;
 	}
+        LOG_ERR("\n[SUMIT-1] TRIGGER INIT\n");
 
 	if (!device_is_ready(config->int_gpio.port)) {
 		LOG_ERR("GPIO device not ready");
 		return -ENODEV;
 	}
 
+        LOG_ERR("\n[SUMIT-2] TRIGGER INIT\n");
 	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
 		return ret;
@@ -213,5 +216,6 @@ int fxas21002_trigger_init(const struct device *dev)
 		return ret;
 	}
 
+        LOG_ERR("\n[SUMIT-3] TRIGGER INIT\n");
 	return 0;
 }

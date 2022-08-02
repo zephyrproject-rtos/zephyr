@@ -346,17 +346,15 @@ zephyr_udc0: &usbotg {
 	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
+        /* cs-gpios needs to be populated as per the chip select
+        * index mentioned in the schamtics -
+        * fxos8700  - CS#0 
+        * fxas21002 - CS#1 */
 	cs-gpios = <&gpiob 10 GPIO_ACTIVE_LOW>,
                    <&gpiob 9 GPIO_ACTIVE_LOW>;
         clock-frequency = <DT_FREQ_M(1)>;
 
-	/*
-	 * These two parts do not support SPI in Zephyr.
-	 * The drivers will need to be updated to support SPI
-	 * transmission.
-	 */
 
-	
 	fxos8700@0 {
 		compatible = "nxp,fxos8700";
 		reg = <0>;
@@ -372,8 +370,8 @@ zephyr_udc0: &usbotg {
 		compatible = "nxp,fxas21002";
 		reg = <1>;
 		label = "FXAS21002";
-                spi-max-frequency = <DT_FREQ_M(2)>;
-		reset-gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
+                spi-max-frequency = <DT_FREQ_M(1)>;
+		reset-gpios = <&gpiod 12 GPIO_ACTIVE_LOW>;
 		int1-gpios = <&gpioe 7 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&gpioe 6 GPIO_ACTIVE_LOW>;
                 status = "okay";

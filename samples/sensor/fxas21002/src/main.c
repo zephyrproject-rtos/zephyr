@@ -25,7 +25,7 @@ void main(void)
 		printf("Could not get fxas21002 device\n");
 		return;
 	}
-
+#if 1
 	struct sensor_trigger trig = {
 		.type = SENSOR_TRIG_DATA_READY,
 		.chan = SENSOR_CHAN_GYRO_XYZ,
@@ -47,4 +47,5 @@ void main(void)
 		       sensor_value_to_double(&gyro[1]),
 		       sensor_value_to_double(&gyro[2]));
 	}
+#endif
 }
