@@ -28,8 +28,7 @@ config LWM2M_VERSION_1_0
 	imply LWM2M_RW_OMA_TLV_SUPPORT
 
 config LWM2M_VERSION_1_1
-	bool "LwM2M version 1.1 [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "LwM2M version 1.1"
 	imply LWM2M_RW_CBOR_SUPPORT
 	imply ZCBOR
 
@@ -56,8 +55,7 @@ config LWM2M_SECURITY_OBJECT_VERSION_1_0
 	bool "Security object version 1.0"
 
 config LWM2M_SECURITY_OBJECT_VERSION_1_1
-	bool "Security object version 1.1 [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Security object version 1.1"
 
 endchoice
 
@@ -72,8 +70,7 @@ config LWM2M_SERVER_OBJECT_VERSION_1_0
 	bool "Server object version 1.0"
 
 config LWM2M_SERVER_OBJECT_VERSION_1_1
-	bool "Server object version 1.1 [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Server object version 1.1"
 
 endchoice
 
@@ -330,8 +327,7 @@ config LWM2M_CONNMON_OBJECT_VERSION_1_0
 	bool "Connectivity monitor object version 1.0"
 
 config LWM2M_CONNMON_OBJECT_VERSION_1_2
-	bool "Connectivity monitor object version 1.2 [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Connectivity monitor object version 1.2"
 
 endchoice
 
