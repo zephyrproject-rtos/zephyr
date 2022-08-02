@@ -162,6 +162,41 @@ struct ace_intc {
 
 #define ACE_INTC_IRQ DT_IRQN(DT_NODELABEL(ace_intc))
 
+/* Power control */
+#define PWRCTL_REG 0x71b90
+
+struct ace_pwrctl {
+	uint16_t wpdsphpxpg : 3;
+	uint16_t rsvd3      : 1;
+	uint16_t wphstpg    : 1;
+	uint16_t rsvd5      : 1;
+	uint16_t wphubhppg  : 1;
+	uint16_t wpdspulppg : 1;
+	uint16_t wpioxpg    : 2;
+	uint16_t rsvd11     : 2;
+	uint16_t wpmlpg     : 1;
+	uint16_t rsvd14     : 2;
+	uint16_t phubulppg  : 1;
+};
+
+#define ACE_PWRCTL ((volatile struct ace_pwrctl *)PWRCTL_REG)
+
+#define PWRSTS_REG 0x71b92
+
+struct ace_pwrsts {
+	uint16_t dsphpxpgs : 4;
+	uint16_t hstpgs    : 1;
+	uint16_t rsvd5     : 1;
+	uint16_t hubhppgs  : 1;
+	uint16_t dspulppgs : 1;
+	uint16_t ioxpgs    : 4;
+	uint16_t mlpgs     : 2;
+	uint16_t rsvd14    : 1;
+	uint16_t hubulppgs : 1;
+};
+
+#define ACE_PWRSTS ((volatile struct ace_pwrsts *)PWRSTS_REG)
+
 /* L2 Local Memory Management */
 
 /* These registers are for the L2 memory control and status. */
