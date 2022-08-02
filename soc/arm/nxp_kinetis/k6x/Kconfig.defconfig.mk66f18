@@ -12,10 +12,6 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 100
 
-config CAN_MCUX_FLEXCAN
-	default y
-	depends on CAN
-
 config GPIO
 	default y
 
