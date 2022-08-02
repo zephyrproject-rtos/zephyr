@@ -21,8 +21,8 @@ void test_qspi_flash(void)
 	uint8_t wr_buf[4] = {0xAA, 0xBB, 0xCC, 0xDD};
 	uint8_t rd_buf[2];
 
-	flash_dev = device_get_binding(CONFIG_SOC_FLASH_NIOS2_QSPI_DEV_NAME);
-	zassert_equal(!flash_dev, TC_PASS, "Flash device not found!");
+	flash_dev = DEVICE_DT_GET(DT_NODELABEL(n25q512ax3));
+	zassert_true(!device_is_ready(flash_dev), TC_PASS, "Flash device is not ready!");
 
 	for (i = 0U; i < NUM_OF_SECTORS_TO_TEST; i++) {
 		TC_PRINT("\nTesting: Flash Sector-%d\n", i);
