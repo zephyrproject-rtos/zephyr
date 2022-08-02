@@ -34,10 +34,6 @@ config USB_KINETIS
 	default y
 	depends on USB_DEVICE_DRIVER
 
-config WDT_MCUX_WDOG
-	default y
-	depends on WATCHDOG
-
 config COUNTER_MCUX_PIT
 	default y if HAS_MCUX_PIT
 	depends on COUNTER

@@ -13,10 +13,6 @@ config UART_INTERRUPT_DRIVEN
 
 endif # SERIAL
 
-config WDOG_CMSDK_APB
-	default y
-	depends on WATCHDOG
-
 if COUNTER
 
 config TIMER_TMR_CMSDK_APB

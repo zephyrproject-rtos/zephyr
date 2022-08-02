@@ -29,10 +29,6 @@ config UART_INTERRUPT_DRIVEN
 
 endif # SERIAL
 
-config WDOG_CMSDK_APB
-	default y
-	depends on WATCHDOG
-
 if IPM
 
 config IPM_MHU

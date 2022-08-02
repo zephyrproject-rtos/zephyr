@@ -29,10 +29,6 @@ config KINETIS_FLASH_CONFIG_FOPT
 	default 0x7d
 	depends on KINETIS_FLASH_CONFIG
 
-config WDT_MCUX_WDOG32
-	default y
-	depends on WATCHDOG
-
 if COUNTER
 
 config COUNTER_MCUX_RTC
