@@ -437,7 +437,7 @@ bool ieee802154_validate_frame(uint8_t *buf, uint8_t length,
 		return false;
 	}
 
-	/* ToDo: Support later version's frame types */
+	/* TODO: Support later version's frame types */
 	if (mpdu->mhr.fs->fc.frame_type > IEEE802154_FRAME_TYPE_MAC_COMMAND) {
 		return false;
 	}
@@ -493,7 +493,7 @@ uint8_t ieee802154_compute_header_size(struct net_if *iface,
 
 		nbr = net_ipv6_nbr_lookup(iface, dst);
 		if (nbr) {
-			/* ToDo: handle short addresses */
+			/* TODO: handle short addresses */
 			/* dst pan/addr + src addr */
 			hdr_len += IEEE802154_PAN_ID_LENGTH +
 				(IEEE802154_EXT_ADDR_LENGTH * 2);
@@ -691,7 +691,7 @@ uint8_t *generate_aux_security_hdr(struct ieee802154_security_ctx *sec_ctx,
 	}
 
 	if (sec_ctx->key_mode != IEEE802154_KEY_ID_MODE_IMPLICIT) {
-		/* ToDo: it supports implicit mode only, for now */
+		/* TODO: it supports implicit mode only, for now */
 		return NULL;
 	}
 
@@ -811,7 +811,7 @@ static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi,
 		break;
 	case IEEE802154_CFI_DATA_REQUEST:
 		fs->fc.ar = 1U;
-		/* ToDo: src/dst addr mode: see 5.3.4 */
+		/* TODO: src/dst addr mode: see 5.3.4 */
 
 		break;
 	case IEEE802154_CFI_ORPHAN_NOTIFICATION:
@@ -967,7 +967,7 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 		return false;
 	}
 
-	/* ToDo: handle src short address
+	/* TODO: handle src short address
 	 * This will require to look up in nbr cache with short addr
 	 * in order to get the extended address related to it
 	 */
