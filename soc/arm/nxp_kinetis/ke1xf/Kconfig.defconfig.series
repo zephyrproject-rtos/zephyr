@@ -54,10 +54,6 @@ config SOC_FLASH_MCUX
 	default y
 	depends on FLASH
 
-config ADC_MCUX_ADC12
-	default y
-	depends on ADC
-
 config DAC_MCUX_DAC32
 	default y
 	depends on DAC
