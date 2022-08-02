@@ -129,6 +129,8 @@ struct ztest_unit_test_stats {
 	uint32_t fail_count;
 	/** The number of times that the test passed */
 	uint32_t pass_count;
+	/** The longest duration of the test across multiple times */
+	uint32_t duration_worst_ms;
 };
 
 /**
