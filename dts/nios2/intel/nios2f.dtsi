@@ -65,5 +65,15 @@
 			interrupts = <3 3>;
 			#dma-cells = <0>;
 		};
+
+
+		qspi: qspi@100240 {
+			compatible = "altr,nios2-qspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x100240 0x40>, <0x8000000 0x4000000>;
+			reg-names = "qspi", "qspi_mm";
+			status = "disabled";
+		};
 	};
 };
