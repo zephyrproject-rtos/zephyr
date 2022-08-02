@@ -62,16 +62,16 @@ struct ieee802154_fcf_seq *ieee802154_validate_fc_seq(uint8_t *buf, uint8_t **p_
 	    (fs->fc.dst_addr_mode != IEEE802154_ADDR_MODE_NONE ||
 	     fs->fc.src_addr_mode == IEEE802154_ADDR_MODE_NONE ||
 	     fs->fc.pan_id_comp)) {
-		/** See section 5.2.2.1.1 */
+		/** See section 7.2.2.1.1 */
 		return NULL;
 	} else if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_DATA &&
 		   fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_NONE &&
 		   fs->fc.src_addr_mode == IEEE802154_ADDR_MODE_NONE) {
-		/** See section 5.2.2.2.1 */
+		/** See section 7.2.2.2.1 */
 		return NULL;
 	} else if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_MAC_COMMAND &&
 		   fs->fc.frame_pending) {
-		/** See section 5.3 */
+		/** See section 7.3 */
 		return NULL;
 	}
 
@@ -148,7 +148,7 @@ ieee802154_validate_aux_security_hdr(uint8_t *buf, uint8_t **p_buf, uint8_t *len
 		return NULL;
 	}
 
-	/* Explicit key must have a key index != 0x00, see Section 7.4.3.2 */
+	/* Explicit key must have a key index != 0x00, see section 7.6.2.4.2 */
 	switch (ash->control.key_id_mode) {
 	case IEEE802154_KEY_ID_MODE_IMPLICIT:
 		break;
@@ -529,8 +529,8 @@ uint8_t ieee802154_compute_header_size(struct net_if *iface,
 		hdr_len += IEEE8021254_KEY_ID_FIELD_SRC_8_INDEX_LENGTH;
 	}
 
-	/* This is a _HACK_: as net_buf do not let the possibility to
-	 * reserve tailroom - here for authentication tag - it "reserves"
+	/* This is a _HACK_: As net_buf does not allow to reserve tailroom
+	 * - here for authentication tag (see section 7.6.3.4.3) - it "reserves"
 	 * it in headroom so the payload won't occupy all the left space
 	 * and then when it will come to finalize the data frame it will
 	 * reduce the reserved space by the tag size, move the payload
@@ -562,7 +562,7 @@ static inline struct ieee802154_fcf_seq *generate_fcf_grounds(uint8_t **p_buf,
 	fs->fc.ar = ack;
 	fs->fc.pan_id_comp = 0U;
 	fs->fc.reserved = 0U;
-	/** We support version 2006 only for now */
+	/* We support version 2006 only for now */
 	fs->fc.seq_num_suppr = 0U;
 	fs->fc.ie_list = 0U;
 	fs->fc.frame_version = IEEE802154_VERSION_802154_2006;
@@ -635,6 +635,7 @@ uint8_t *generate_addressing_fields(struct ieee802154_context *ctx,
 	struct ieee802154_address_field *af;
 	struct ieee802154_address *src_addr;
 
+	/* destination address */
 	if (fs->fc.dst_addr_mode != IEEE802154_ADDR_MODE_NONE) {
 		af = (struct ieee802154_address_field *)p_buf;
 		af->plain.pan_id = params->dst.pan_id;
@@ -653,6 +654,7 @@ uint8_t *generate_addressing_fields(struct ieee802154_context *ctx,
 		}
 	}
 
+	/* source address */
 	if (fs->fc.src_addr_mode == IEEE802154_ADDR_MODE_NONE) {
 		return p_buf;
 	}
@@ -773,7 +775,7 @@ no_security_hdr:
 
 	dbg_print_fs(fs);
 
-	/* Let's encrypt/auth only in the end, is needed */
+	/* Let's encrypt/auth only in the end, if needed */
 	return ieee802154_encrypt_auth(broadcast ? NULL : &ctx->sec_ctx,
 				       buf_start, hdr_size, buf->len,
 				       ctx->ext_addr);

@@ -19,10 +19,13 @@
 
 #define IEEE802154_MTU				127
 #define IEEE802154_MIN_LENGTH			3
-/* See Section 5.2.1.4 */
+/*
+ * See IEEE 802.15.4-2006, section 7.2.1.4 - all further references
+ * refer to IEEE 802.15.4-2006 unless otherwise specified.
+ */
 #define IEEE802154_BROADCAST_ADDRESS		0xFFFF
 #define IEEE802154_BROADCAST_PAN_ID		0xFFFF
-/* ACK packet size is the minimum size, see Section 5.2.2.3 */
+/* ACK packet size is the minimum size, see section 7.2.2.3 */
 #define IEEE802154_ACK_PKT_LENGTH		IEEE802154_MIN_LENGTH
 #define IEEE802154_MFR_LENGTH			2
 
@@ -43,7 +46,7 @@
 #define IEEE802154_BEACON_GTS_RX		1
 #define IEEE802154_BEACON_GTS_TX		0
 
-/* See Section 5.2.1.1.1 */
+/* See section 7.2.1.1.1 */
 enum ieee802154_frame_type {
 	IEEE802154_FRAME_TYPE_BEACON		= 0x0,
 	IEEE802154_FRAME_TYPE_DATA		= 0x1,
@@ -54,7 +57,7 @@ enum ieee802154_frame_type {
 	IEEE802154_FRAME_TYPE_RESERVED		= 0x6,
 };
 
-/* See Section 5.2.1.1.6 */
+/* See section 7.2.1.1.6 */
 enum ieee802154_addressing_mode {
 	IEEE802154_ADDR_MODE_NONE		= 0x0,
 	IEEE802154_ADDR_MODE_SIMPLE		= 0x1,
@@ -62,10 +65,13 @@ enum ieee802154_addressing_mode {
 	IEEE802154_ADDR_MODE_EXTENDED		= 0x3,
 };
 
-/** Versions 2003/2006 do no support simple addressing mode */
+/* Version 2006 (and before) do no support simple addressing mode */
 #define IEEE802154_ADDR_MODE_RESERVED		IEEE802154_ADDR_MODE_SIMPLE
 
-/* See Section 5.2.1.1.7 */
+/*
+ * See IEEE 802.15.4-2006 section 7.2.1.1.7 and
+ * IEEE 802.15.4-2015, section 7.2.1.9
+ */
 enum ieee802154_version {
 	IEEE802154_VERSION_802154_2003		= 0x0,
 	IEEE802154_VERSION_802154_2006		= 0x1,
@@ -74,8 +80,8 @@ enum ieee802154_version {
 };
 
 /*
- * Frame Control Field and sequence number
- * See Section 5.2.1.1
+ * Frame Control Field and sequence number,
+ * see section 7.2.1.1
  */
 struct ieee802154_fcf_seq {
 	struct {
@@ -133,7 +139,7 @@ struct ieee802154_address_field {
 	};
 } __packed;
 
-/* See Section 7.4.1.1 */
+/* See section 7.6.2.2.1 */
 enum ieee802154_security_level {
 	IEEE802154_SECURITY_LEVEL_NONE			= 0x0,
 	IEEE802154_SECURITY_LEVEL_MIC_32		= 0x1,
@@ -150,7 +156,7 @@ enum ieee802154_security_level {
 #define IEEE8021254_AUTH_TAG_LENGTH_64			8
 #define IEEE8021254_AUTH_TAG_LENGTH_128			16
 
-/* See Section 7.4.1.2 */
+/* See section 7.6.2.2.2 */
 enum ieee802154_key_id_mode {
 	IEEE802154_KEY_ID_MODE_IMPLICIT			= 0x0,
 	IEEE802154_KEY_ID_MODE_INDEX			= 0x1,
@@ -164,7 +170,7 @@ enum ieee802154_key_id_mode {
 
 #define IEEE802154_KEY_MAX_LEN				16
 
-/* See Section 7.4.1 */
+/* See section 7.6.2.2 */
 struct ieee802154_security_control_field {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint8_t security_level	:3;
@@ -179,7 +185,7 @@ struct ieee802154_security_control_field {
 
 #define IEEE802154_SECURITY_CF_LENGTH	1
 
-/* See Section 7.4.3 */
+/* See section 7.6.2.4 */
 struct ieee802154_key_identifier_field {
 	union {
 		/* mode_0 being implicit, it holds no info here */
@@ -201,7 +207,7 @@ struct ieee802154_key_identifier_field {
 
 /*
  * Auxiliary Security Header
- * See Section 7.4
+ * See section 7.6.2
  */
 struct ieee802154_aux_security_hdr {
 	struct ieee802154_security_control_field control;
@@ -211,7 +217,7 @@ struct ieee802154_aux_security_hdr {
 
 #define IEEE802154_SECURITY_FRAME_COUNTER_LENGTH 4
 
-/** MAC header */
+/* MAC header and footer, see section 7.2.1 */
 struct ieee802154_mhr {
 	struct ieee802154_fcf_seq *fs;
 	struct ieee802154_address_field *dst_addr;
@@ -319,7 +325,7 @@ struct ieee802154_beacon {
 	struct ieee802154_gts_spec gts;
 } __packed;
 
-/* See Section 5.3.1 */
+/* See section 7.3.1 */
 struct ieee802154_cmd_assoc_req {
 	struct {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -344,7 +350,7 @@ struct ieee802154_cmd_assoc_req {
 
 #define IEEE802154_CMD_ASSOC_REQ_LENGTH		1
 
-/* See Section 5.3.2 */
+/* See section 7.3.2 */
 enum ieee802154_association_status_field {
 	IEEE802154_ASF_SUCCESSFUL		= 0x00,
 	IEEE802154_ASF_PAN_AT_CAPACITY		= 0x01,
@@ -360,7 +366,7 @@ struct ieee802154_cmd_assoc_res {
 
 #define IEEE802154_CMD_ASSOC_RES_LENGTH		3
 
-/* See Section 5.3.3 */
+/* See section 7.3.3.2 */
 enum ieee802154_disassociation_reason_field {
 	IEEE802154_DRF_RESERVED_1		= 0x00,
 	IEEE802154_DRF_COORDINATOR_WISH		= 0x01,
@@ -375,7 +381,7 @@ struct ieee802154_cmd_disassoc_note {
 
 #define IEEE802154_CMD_DISASSOC_NOTE_LENGTH	1
 
-/* See Section 5.3.8 */
+/* Coordinator realignment, see section 7.3.8 */
 struct ieee802154_cmd_coord_realign {
 	uint16_t pan_id;
 	uint16_t coordinator_short_addr;
@@ -386,7 +392,7 @@ struct ieee802154_cmd_coord_realign {
 
 #define IEEE802154_CMD_COORD_REALIGN_LENGTH	3
 
-/* See Section 5.3.9 */
+/* GTS request, see section 7.3.9 */
 struct ieee802154_gts_request {
 	struct {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -405,7 +411,7 @@ struct ieee802154_gts_request {
 
 #define IEEE802154_GTS_REQUEST_LENGTH		1
 
-/* See Section 5.3 */
+/* Command Frame Identifiers (CFI), see Section 7.3 */
 enum ieee802154_cfi {
 	IEEE802154_CFI_UNKNOWN				= 0x00,
 	IEEE802154_CFI_ASSOCIATION_REQUEST		= 0x01,

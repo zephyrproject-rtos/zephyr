@@ -331,9 +331,11 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 		if (IS_ENABLED(CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA) &&
 		    ieee802154_get_hw_capabilities(iface) &
 		    IEEE802154_HW_CSMA) {
+			/* CSMA in hardware */
 			ret = ieee802154_tx(iface, IEEE802154_TX_MODE_CSMA_CA,
 					    pkt, frame_buf);
 		} else {
+			/* Media access (direct, CSMA, ALOHA, ...) in software */
 			ret = ieee802154_radio_send(iface, pkt, frame_buf);
 		}
 
