@@ -13,9 +13,6 @@ config BT_CTLR
 
 if DAC
 
-config DAC_MCP4725
-	default y
-
 config I2C
 	default y
 

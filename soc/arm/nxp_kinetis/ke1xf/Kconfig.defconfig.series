@@ -54,10 +54,6 @@ config SOC_FLASH_MCUX
 	default y
 	depends on FLASH
 
-config DAC_MCUX_DAC32
-	default y
-	depends on DAC
-
 config DMA_MCUX_EDMA
 	default y
 	depends on DMA
