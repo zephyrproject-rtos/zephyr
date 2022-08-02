@@ -15,6 +15,4 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 33
 
-source "soc/arm/silabs_exx32/efr32fg1p/Kconfig.defconfig.efr32fg1p"
-
 endif # SOC_SERIES_EFR32FG1P

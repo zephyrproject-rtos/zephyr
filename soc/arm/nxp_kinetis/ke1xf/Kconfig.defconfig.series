@@ -46,10 +46,6 @@ config PWM_MCUX_PWT
 config GPIO
 	default y
 
-config SOC_FLASH_MCUX
-	default y
-	depends on FLASH
-
 config DMA_MCUX_EDMA
 	default y
 	depends on DMA
