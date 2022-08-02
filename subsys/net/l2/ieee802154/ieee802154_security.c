@@ -98,7 +98,7 @@ bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx,
 		return true;
 	}
 
-	/* See Section 7.3.2 */
+	/* See section 7.6.3.2 */
 	memcpy(nonce, src_ext_addr, IEEE802154_EXT_ADDR_LENGTH);
 	nonce[8] = (uint8_t)(frame_counter >> 24);
 	nonce[9] = (uint8_t)(frame_counter >> 16);
@@ -143,7 +143,7 @@ bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx,
 		return true;
 	}
 
-	/* See Section 7.3.2 */
+	/* See section 7.6.3.2 */
 	memcpy(nonce, src_ext_addr, IEEE802154_EXT_ADDR_LENGTH);
 	sys_put_be32(sec_ctx->frame_counter, &nonce[8]);
 	nonce[12] = sec_ctx->level;

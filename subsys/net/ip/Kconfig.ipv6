@@ -148,7 +148,7 @@ config NET_6LO_CONTEXT
 	depends on NET_6LO
 	help
 	  Enables 6lowpan context based compression based on information
-	  received in RA(Router Advertisement) message.
+	  received in Router Advertisement (RA) message.
 
 config NET_MAX_6LO_CONTEXTS
 	int "Number of supported 6CO (6lowpan contexts options)"
