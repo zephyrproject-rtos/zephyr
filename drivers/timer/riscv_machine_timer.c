@@ -9,7 +9,7 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
 
-/* neorv32-machine-timer */
+/* andestech,machine-timer */
 #if DT_HAS_COMPAT_STATUS_OKAY(andestech_machine_timer)
 #define DT_DRV_COMPAT andestech_machine_timer
 
