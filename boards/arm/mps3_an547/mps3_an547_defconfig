@@ -23,5 +23,3 @@ CONFIG_SERIAL=y
 
 # Build a Secure firmware image
 CONFIG_TRUSTED_EXECUTION_SECURE=y
-
-CONFIG_I2C=y
