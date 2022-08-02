@@ -1503,24 +1503,24 @@ static void mfy_aux_offset_get(void *param)
 	} while (id != ticker_id);
 
 	/* Adjust ticks to expire based on remainder value */
-	HAL_TICKER_REMOVE_JITTER(ticks_to_expire, remainder);
+	hal_ticker_remove_jitter(&ticks_to_expire, &remainder);
 
 	/* Store the ticks offset for population in other advertising primary
 	 * channel PDUs.
 	 */
-	lll_aux->ticks_offset =	ticks_to_expire;
+	lll_aux->ticks_pri_pdu_offset = ticks_to_expire;
 
 	/* NOTE: as first primary channel PDU does not use remainder, the packet
 	 * timer is started one tick in advance to start the radio with
 	 * microsecond precision, hence compensate for the higher start_us value
 	 * captured at radio start of the first primary channel PDU.
 	 */
-	lll_aux->ticks_offset += 1U;
+	lll_aux->ticks_pri_pdu_offset += 1U;
 
 	/* Store the microsecond remainder offset for population in other
 	 * advertising primary channel PDUs.
 	 */
-	lll_aux->us_offset = remainder;
+	lll_aux->us_pri_pdu_offset = remainder;
 
 	/* Fill the aux offset in the first Primary channel PDU */
 	/* FIXME: we are in ULL_LOW context, fill offset in LLL context? */

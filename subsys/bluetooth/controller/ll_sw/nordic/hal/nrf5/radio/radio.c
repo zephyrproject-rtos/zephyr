@@ -1050,7 +1050,7 @@ void radio_tmr_tifs_set(uint32_t tifs)
 
 uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 {
-	HAL_TICKER_REMOVE_JITTER(ticks_start, remainder);
+	hal_ticker_remove_jitter(&ticks_start, &remainder);
 
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
 	EVENT_TIMER->MODE = 0;

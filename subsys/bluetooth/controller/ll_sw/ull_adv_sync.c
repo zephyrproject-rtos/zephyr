@@ -1831,11 +1831,17 @@ static void mfy_sync_offset_get(void *param)
 		LL_ASSERT(id != TICKER_NULL);
 	} while (id != ticker_id);
 
-	HAL_TICKER_REMOVE_JITTER(ticks_to_expire, remainder);
+	/* Reduced a tick for negative remainder and return positive remainder
+	 * value.
+	 */
+	hal_ticker_remove_jitter(&ticks_to_expire, &remainder);
 	sync_remainder_us = remainder;
 
+	/* Add a tick for negative remainder and return positive remainder
+	 * value.
+	 */
 	remainder = sync->aux_remainder;
-	HAL_TICKER_ADD_JITTER(ticks_to_expire, remainder);
+	hal_ticker_add_jitter(&ticks_to_expire, &remainder);
 	aux_remainder_us = remainder;
 
 	pdu = lll_adv_aux_data_latest_peek(adv->lll.aux);
