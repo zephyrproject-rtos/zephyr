@@ -1010,7 +1010,6 @@ static void ucpd_isr(const struct device *dev_inst[])
 	const struct tcpc_config *config;
 	struct tcpc_data *data;
 	uint32_t sr;
-	uint32_t ucpd_base;
 	struct alert_info *info;
 	uint32_t tx_done_mask = UCPD_SR_TXMSGSENT |
 				UCPD_SR_TXMSGABT |
@@ -1018,38 +1017,47 @@ static void ucpd_isr(const struct device *dev_inst[])
 				UCPD_SR_HRSTSENT |
 				UCPD_SR_HRSTDISC;
 
-	if (IS_ENABLED(CONFIG_SOC_SERIES_STM32G0X)) {
-		/*
-		 * Since the UCPD peripherals share the same interrupt line, determine
-		 * which one generated the interrupt.
-		 */
-		if (LL_SYSCFG_IsActiveFlag_UCPD1()) {
-			/* UCPD1 interrupt is pending */
-			ucpd_base = UCPD1_BASE;
-		} else if (LL_SYSCFG_IsActiveFlag_UCPD2()) {
-			/* UCPD2 interrupt is pending */
-			ucpd_base = UCPD2_BASE;
-		} else {
-			/*
-			 * The interrupt was triggered by some other device sharing this
-			 * interrupt line.
-			 */
-			return;
-		}
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1
+	/*
+	 * Multiple UCPD ports are available
+	 */
 
-		/* Find correct device instance for this port */
-		for (int i = 0; i < DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT); i++) {
-			dev = dev_inst[i];
-			config = dev->config;
-			if ((uint32_t)(config->ucpd_port) == ucpd_base) {
-				break;
-			}
-		}
+	uint32_t ucpd_base;
+
+	/*
+	 * Since the UCPD peripherals share the same interrupt line, determine
+	 * which one generated the interrupt.
+	 */
+	if (LL_SYSCFG_IsActiveFlag_UCPD1()) {
+		/* UCPD1 interrupt is pending */
+		ucpd_base = UCPD1_BASE;
+	} else if (LL_SYSCFG_IsActiveFlag_UCPD2()) {
+		/* UCPD2 interrupt is pending */
+		ucpd_base = UCPD2_BASE;
 	} else {
-		/* Only one port available */
-		dev = dev_inst[0];
-		config = dev->config;
+		/*
+		 * The interrupt was triggered by some other device sharing this
+		 * interrupt line.
+		 */
+		return;
 	}
+
+	/* Find correct device instance for this port */
+	for (int i = 0; i < DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT); i++) {
+		dev = dev_inst[i];
+		config = dev->config;
+		if ((uint32_t)(config->ucpd_port) == ucpd_base) {
+			break;
+		}
+	}
+#else
+	/*
+	 * Only one UCPD port available
+	 */
+
+	dev = dev_inst[0];
+	config = dev->config;
+#endif /* Get the UCPD port that initiated that interrupt  */
 
 	data = dev->data;
 	info = &data->alert_info;
