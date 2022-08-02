@@ -117,7 +117,8 @@ class HardwareMap:
         'NXP Semiconductors',
         'Microchip Technology Inc.',
         'FTDI',
-        'Digilent'
+        'Digilent',
+        'Microsoft'
     ]
 
     runner_mapping = {
@@ -276,6 +277,10 @@ class HardwareMap:
                 # assume endpoint 0 is the serial, skip all others
                 if d.manufacturer == 'Texas Instruments' and not d.location.endswith('0'):
                     continue
+
+                if d.product is None:
+                    d.product = 'unknown'
+
                 s_dev = DUT(platform="unknown",
                                         id=d.serial_number,
                                         serial=persistent_map.get(d.device, d.device),
