@@ -1,5 +1,5 @@
 /** @file
- @brief 802.15.4 fragment handler
+ @brief 802.15.4 6LoWPAN fragment handler
 
  This is not to be included by the application.
  */
@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_IEEE802154_FRAGMENT_H__
-#define __NET_IEEE802154_FRAGMENT_H__
+#ifndef __NET_IEEE802154_6LO_FRAGMENT_H__
+#define __NET_IEEE802154_6LO_FRAGMENT_H__
 
 #include <zephyr/sys/slist.h>
 #include <zephyr/types.h>
@@ -21,15 +21,15 @@
 #include "ieee802154_frame.h"
 #include "ieee802154_6lo.h"
 
-static inline bool ieee802154_requires_fragmentation(struct net_pkt *pkt,
-                                                     uint8_t ll_hdr_size)
+static inline bool ieee802154_6lo_requires_fragmentation(struct net_pkt *pkt,
+                                                         uint8_t ll_hdr_size)
 {
 	return (net_pkt_get_len(pkt) + ll_hdr_size >
 			IEEE802154_MTU - IEEE802154_MFR_LENGTH);
 }
 
 static inline
-void ieee802154_fragment_ctx_init(struct ieee802154_fragment_ctx *ctx,
+void ieee802154_6lo_fragment_ctx_init(struct ieee802154_6lo_fragment_ctx *ctx,
 				  struct net_pkt *pkt, uint16_t hdr_diff,
 				  bool iphc)
 {
@@ -55,7 +55,7 @@ void ieee802154_fragment_ctx_init(struct ieee802154_fragment_ctx *ctx,
  *  @return pointer to the next buffer to be processed or NULL if no more
  *          buffers need processing
  */
-struct net_buf *ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
+struct net_buf *ieee802154_6lo_fragment(struct ieee802154_6lo_fragment_ctx *ctx,
 			 struct net_buf *frame_buf, bool iphc);
 
 /**
@@ -73,6 +73,6 @@ struct net_buf *ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
  *          NET_OK waiting for other fragments,
  *          NET_DROP invalid fragment.
  */
-enum net_verdict ieee802154_reassemble(struct net_pkt *pkt);
+enum net_verdict ieee802154_6lo_reassemble(struct net_pkt *pkt);
 
-#endif /* __NET_IEEE802154_FRAGMENT_H__ */
+#endif /* __NET_IEEE802154_6LO_FRAGMENT_H__ */

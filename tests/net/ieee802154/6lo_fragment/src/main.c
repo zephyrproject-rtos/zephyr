@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #include <zephyr/tc_util.h>
 
 #include "6lo.h"
-#include "ieee802154_fragment.h"
+#include "ieee802154_6lo_fragment.h"
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
@@ -452,7 +452,7 @@ static bool test_fragment(struct net_fragment_data *data)
 	struct net_pkt *rxpkt = NULL;
 	struct net_pkt *f_pkt = NULL;
 	int result = false;
-	struct ieee802154_fragment_ctx ctx;
+	struct ieee802154_6lo_fragment_ctx ctx;
 	struct net_buf *buf, *dfrag;
 	struct net_pkt *pkt;
 	int hdr_diff;
@@ -474,7 +474,7 @@ static bool test_fragment(struct net_fragment_data *data)
 		goto end;
 	}
 
-	if (!ieee802154_requires_fragmentation(pkt, 0)) {
+	if (!ieee802154_6lo_requires_fragmentation(pkt, 0)) {
 		f_pkt = pkt;
 		pkt = NULL;
 
@@ -486,12 +486,12 @@ static bool test_fragment(struct net_fragment_data *data)
 		goto end;
 	}
 
-	ieee802154_fragment_ctx_init(&ctx, pkt, hdr_diff, data->iphc);
+	ieee802154_6lo_fragment_ctx_init(&ctx, pkt, hdr_diff, data->iphc);
 	frame_buf.len = 0U;
 
 	buf = pkt->buffer;
 	while (buf) {
-		buf = ieee802154_fragment(&ctx, &frame_buf, data->iphc);
+		buf = ieee802154_6lo_fragment(&ctx, &frame_buf, data->iphc);
 
 		dfrag = net_pkt_get_frag(f_pkt, K_FOREVER);
 		if (!dfrag) {
@@ -536,7 +536,7 @@ reassemble:
 
 		net_pkt_set_overwrite(rxpkt, true);
 
-		switch (ieee802154_reassemble(rxpkt)) {
+		switch (ieee802154_6lo_reassemble(rxpkt)) {
 		case NET_OK:
 			buf = buf->frags;
 			break;
@@ -575,56 +575,56 @@ end:
 	return result;
 }
 
-ZTEST(ieee802154_fragment, test_fragment_sam00_dam00)
+ZTEST(ieee802154_6lo_fragment, test_fragment_sam00_dam00)
 {
 	bool ret = test_fragment(&test_data_1);
 
 	zassert_true(ret, NULL);
 }
 
-ZTEST(ieee802154_fragment, test_fragment_sam01_dam01)
+ZTEST(ieee802154_6lo_fragment, test_fragment_sam01_dam01)
 {
 	bool ret = test_fragment(&test_data_2);
 
 	zassert_true(ret, NULL);
 }
 
-ZTEST(ieee802154_fragment, test_fragment_sam10_dam10)
+ZTEST(ieee802154_6lo_fragment, test_fragment_sam10_dam10)
 {
 	bool ret = test_fragment(&test_data_3);
 
 	zassert_true(ret, NULL);
 }
 
-ZTEST(ieee802154_fragment, test_fragment_sam00_m1_dam00)
+ZTEST(ieee802154_6lo_fragment, test_fragment_sam00_m1_dam00)
 {
 	bool ret = test_fragment(&test_data_4);
 
 	zassert_true(ret, NULL);
 }
 
-ZTEST(ieee802154_fragment, test_fragment_sam01_m1_dam01)
+ZTEST(ieee802154_6lo_fragment, test_fragment_sam01_m1_dam01)
 {
 	bool ret = test_fragment(&test_data_5);
 
 	zassert_true(ret, NULL);
 }
 
-ZTEST(ieee802154_fragment, test_fragment_sam10_m1_dam10)
+ZTEST(ieee802154_6lo_fragment, test_fragment_sam10_m1_dam10)
 {
 	bool ret = test_fragment(&test_data_6);
 
 	zassert_true(ret, NULL);
 }
 
-ZTEST(ieee802154_fragment, test_fragment_ipv6_dispatch_small)
+ZTEST(ieee802154_6lo_fragment, test_fragment_ipv6_dispatch_small)
 {
 	bool ret = test_fragment(&test_data_7);
 
 	zassert_true(ret, NULL);
 }
 
-ZTEST(ieee802154_fragment, test_fragment_ipv6_dispatch_big)
+ZTEST(ieee802154_6lo_fragment, test_fragment_ipv6_dispatch_big)
 {
 	bool ret = test_fragment(&test_data_8);
 
@@ -632,4 +632,4 @@ ZTEST(ieee802154_fragment, test_fragment_ipv6_dispatch_big)
 }
 
 
-ZTEST_SUITE(ieee802154_fragment, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(ieee802154_6lo_fragment, NULL, NULL, NULL, NULL, NULL);

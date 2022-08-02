@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #include "ieee802154_6lo.h"
 
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
-#include "ieee802154_fragment.h"
+#include "ieee802154_6lo_fragment.h"
 #endif /* CONFIG_NET_L2_IEEE802154_FRAGMENT */
 #endif /* CONFIG_NET_6LO */
 
@@ -253,7 +253,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 
 #ifdef CONFIG_NET_6LO
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
-	struct ieee802154_fragment_ctx f_ctx;
+	struct ieee802154_6lo_fragment_ctx f_ctx;
 	bool requires_fragmentation =
 		ieee802154_6lo_encode_pkt(iface, pkt, &f_ctx, ll_hdr_len);
 #else
@@ -275,7 +275,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 		if (requires_fragmentation) {
-			buf = ieee802154_fragment(&f_ctx, frame_buf, true);
+			buf = ieee802154_6lo_fragment(&f_ctx, frame_buf, true);
 		} else {
 			net_buf_add_mem(frame_buf, buf->data, buf->len);
 			buf = buf->frags;
