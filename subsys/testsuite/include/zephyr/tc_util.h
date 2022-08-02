@@ -97,16 +97,10 @@ static uint32_t tc_spend_time;
 
 static inline void get_start_time_cyc(void)
 {
-	/* Besides the ztest framework, some testcase will also call
-	 * TC_START() in their code. But the caller thread cannot be
-	 * in userspace.
-	 */
-	if (!k_is_user_context()) {
-		tc_start_time = k_cycle_get_32();
-	}
+	tc_start_time = k_cycle_get_32();
 }
 
-static inline void test_time_ms(void)
+static inline void get_test_duration_ms(void)
 {
 	uint32_t spend_cycle = k_cycle_get_32() - tc_start_time;
 
@@ -161,7 +155,6 @@ static inline void print_nothing(const char *fmt, ...)
 #define TC_START(name)							\
 	do {								\
 		TC_START_PRINT(name);			\
-		get_start_time_cyc();					\
 	} while (0)
 #endif
 
@@ -185,7 +178,6 @@ static inline void print_nothing(const char *fmt, ...)
 #ifndef Z_TC_END_RESULT
 #define Z_TC_END_RESULT(result, func)						\
 	do {									\
-		test_time_ms();							\
 		TC_END_PRINT(result, " %s - %s in %u.%u seconds\n",		\
 			TC_RESULT_TO_STR(result), func, tc_spend_time/1000,	\
 			tc_spend_time%1000);					\
