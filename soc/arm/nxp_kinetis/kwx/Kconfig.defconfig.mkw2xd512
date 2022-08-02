@@ -16,10 +16,6 @@ config SOC
 config NUM_IRQS
 	default 65
 
-config ADC_MCUX_ADC16
-	default y
-	depends on ADC
-
 config SPI
 	default y
 

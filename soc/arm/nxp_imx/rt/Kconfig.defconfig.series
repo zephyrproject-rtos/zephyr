@@ -70,10 +70,6 @@ config COUNTER_MCUX_GPT
 
 endif # COUNTER
 
-config ADC_MCUX_LPADC
-	default y if HAS_MCUX_LPADC
-	depends on ADC
-
 config WDT_MCUX_IMX_WDOG
 	default y
 	depends on WATCHDOG

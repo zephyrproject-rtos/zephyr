@@ -8,10 +8,6 @@ if SOC_MK22F51212
 config SOC
 	default "mk22f51212"
 
-config ADC_MCUX_ADC16
-	default y
-	depends on ADC
-
 config DAC_MCUX_DAC
 	default y
 	depends on DAC

@@ -15,10 +15,6 @@ config PINMUX_XEC
 config GPIO
 	default y
 
-config ADC_XEC
-	default y
-	depends on ADC
-
 config ESPI_XEC
 	default y
 	depends on ESPI

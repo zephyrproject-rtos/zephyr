@@ -14,10 +14,6 @@ config NUM_IRQS
 config CORTEX_M_SYSTICK
 	default !NPCX_ITIM_TIMER
 
-config ADC_NPCX
-	default y
-	depends on ADC
-
 config WDT_NPCX
 	default y
 	depends on WATCHDOG

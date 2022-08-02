@@ -8,9 +8,6 @@ if ADC
 config SPI
 	default y
 
-config ADC_LMP90XXX
-	default y
-
 config ADC_LMP90XXX_GPIO
 	default y
 
