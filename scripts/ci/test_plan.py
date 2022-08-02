@@ -102,7 +102,7 @@ class Filters:
             self.find_boards()
 
         if self.default_run:
-            self.find_excludes(skip=["tests/*", "boards/*"])
+            self.find_excludes(skip=["tests/*", "boards/*/*/*"])
         else:
             self.find_excludes()
 
