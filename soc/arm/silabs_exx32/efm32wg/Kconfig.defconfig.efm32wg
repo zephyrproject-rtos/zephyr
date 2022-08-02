@@ -1,8 +1,0 @@
-# Silicon Labs EFM32WG-STK3800 platform configuration options
-
-# Copyright (c) 2017 Christian Taedcke
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC_FLASH_GECKO
-	default y
-	depends on FLASH

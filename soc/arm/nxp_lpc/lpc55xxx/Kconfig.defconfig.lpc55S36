@@ -8,8 +8,4 @@ if SOC_LPC55S36
 config SOC
 	default "lpc55S36"
 
-config SOC_FLASH_MCUX
-	default y
-	depends on FLASH
-
 endif # SOC_LPC55S36

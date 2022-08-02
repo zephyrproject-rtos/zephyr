@@ -15,13 +15,6 @@ endchoice
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS
 
-if FLASH
-
-config FLASH_MCUX_FLEXSPI_NOR
-	default y
-
-endif #FLASH
-
 if NETWORKING
 
 config NET_L2_ETHERNET
