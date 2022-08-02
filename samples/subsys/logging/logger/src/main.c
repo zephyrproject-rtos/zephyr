@@ -30,7 +30,7 @@ static struct k_mem_partition *app_parts[] = {
 #endif /* CONFIG_USERSPACE */
 
 /* size of stack area used by each thread */
-#define STACKSIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define STACKSIZE (1024)
 
 extern void sample_module_func(void);
 

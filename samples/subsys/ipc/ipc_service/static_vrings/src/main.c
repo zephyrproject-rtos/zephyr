@@ -9,7 +9,7 @@
 
 #include <zephyr/ipc/ipc_service.h>
 
-#define STACKSIZE	(4096 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define STACKSIZE	(4096)
 #define PRIORITY	K_PRIO_PREEMPT(2)
 
 K_THREAD_STACK_DEFINE(ipc0A_stack, STACKSIZE);
