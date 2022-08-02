@@ -107,7 +107,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={"flash"}, erase=True)
+        return RunnerCaps(commands={"flash"}, erase=True, tool_opt=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -145,12 +145,10 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             required=False,
             help="Use ELF file when flashing instead of HEX file",
         )
-        parser.add_argument(
-            "--tool-opt",
-            default=[],
-            action="append",
-            help="Additional options for STM32_Programmer_CLI",
-        )
+
+    @classmethod
+    def tool_opt_help(cls) -> str:
+        return "Additional options for STM32_Programmer_CLI"
 
     @classmethod
     def do_create(

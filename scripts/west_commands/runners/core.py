@@ -225,6 +225,10 @@ class RunnerCaps:
       needed by SoCs which have flash-like areas that can't be sector
       erased by the underlying tool before flashing; UICR on nRF SoCs
       is one example.)
+
+    - tool_opt: whether the runner supports a --tool-opt (-O) option, which
+      can be given multiple times and is passed on to the underlying tool
+      that the runner wraps.
     '''
 
     def __init__(self,
@@ -232,17 +236,20 @@ class RunnerCaps:
                                        'debugserver', 'attach'},
                  dev_id: bool = False,
                  flash_addr: bool = False,
-                 erase: bool = False):
+                 erase: bool = False,
+                 tool_opt: bool = False):
         self.commands = commands
         self.dev_id = dev_id
         self.flash_addr = bool(flash_addr)
         self.erase = bool(erase)
+        self.tool_opt = bool(tool_opt)
 
     def __str__(self):
         return (f'RunnerCaps(commands={self.commands}, '
                 f'dev_id={self.dev_id}, '
                 f'flash_addr={self.flash_addr}, '
-                f'erase={self.erase}'
+                f'erase={self.erase}, '
+                f'tool_opt={self.tool_opt}'
                 ')')
 
 
@@ -463,6 +470,11 @@ class ZephyrBinaryRunner(abc.ABC):
                             help=("mass erase flash before loading, or don't"
                                   if caps.erase else argparse.SUPPRESS))
 
+        parser.add_argument('-O', '--tool-opt', dest='tool_opt',
+                            default=[], action='append',
+                            help=(cls.tool_opt_help() if caps.tool_opt
+                                  else argparse.SUPPRESS))
+
         # Runner-specific options.
         cls.do_add_parser(parser)
 
@@ -486,6 +498,8 @@ class ZephyrBinaryRunner(abc.ABC):
             _missing_cap(cls, '--dt-flash')
         if args.erase and not caps.erase:
             _missing_cap(cls, '--erase')
+        if args.tool_opt and not caps.tool_opt:
+            _missing_cap(cls, '--tool-opt')
 
         ret = cls.do_create(cfg, args)
         if args.erase:
@@ -563,6 +577,14 @@ class ZephyrBinaryRunner(abc.ABC):
                   which debugger, device, node or instance to
                   target when multiple ones are available or
                   connected.'''
+
+    @classmethod
+    def tool_opt_help(cls) -> str:
+        ''' Get the ArgParse help text for the --tool-opt option.'''
+        return '''Option to pass on to the underlying tool used
+                  by this runner. This can be given multiple times;
+                  the resulting arguments will be given to the tool
+                  in the order they appear on the command line.'''
 
     @staticmethod
     def require(program: str) -> str:
