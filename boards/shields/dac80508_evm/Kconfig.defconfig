@@ -8,9 +8,6 @@ if DAC
 config SPI
 	default y
 
-config DAC_DACX0508
-	default y
-
 endif # DAC
 
 endif # SHIELD_DAC80508_EVM
