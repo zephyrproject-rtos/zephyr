@@ -4,21 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(net_ieee802154_security,
-		    CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
+/**
+ * @file
+ * @brief 802.15.4 6LoWPAN authentication and encryption implementation
+ */
 
-#include <zephyr/crypto/crypto.h>
-#include <zephyr/net/net_core.h>
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(net_ieee802154_security, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 #include "ieee802154_frame.h"
 #include "ieee802154_security.h"
 
+#include <zephyr/crypto/crypto.h>
+#include <zephyr/net/net_core.h>
+
 extern const uint8_t level_2_tag_size[4];
 
-int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx,
-				      uint8_t level, uint8_t key_mode,
-				      uint8_t *key, uint8_t key_len)
+int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx, uint8_t level,
+				      uint8_t key_mode, uint8_t *key, uint8_t key_len)
 {
 	uint8_t tag_size;
 	int ret;
@@ -58,20 +61,16 @@ int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx,
 	sec_ctx->enc.mode_params.ccm_info.tag_len = tag_size;
 	sec_ctx->dec.mode_params.ccm_info.tag_len = tag_size;
 
-	ret = cipher_begin_session(sec_ctx->enc.device, &sec_ctx->enc,
-				   CRYPTO_CIPHER_ALGO_AES,
-				   CRYPTO_CIPHER_MODE_CCM,
-				   CRYPTO_CIPHER_OP_ENCRYPT);
+	ret = cipher_begin_session(sec_ctx->enc.device, &sec_ctx->enc, CRYPTO_CIPHER_ALGO_AES,
+				   CRYPTO_CIPHER_MODE_CCM, CRYPTO_CIPHER_OP_ENCRYPT);
 	if (ret) {
 		NET_ERR("Could not setup encryption context");
 
 		return ret;
 	}
 
-	ret = cipher_begin_session(sec_ctx->dec.device, &sec_ctx->dec,
-				   CRYPTO_CIPHER_ALGO_AES,
-				   CRYPTO_CIPHER_MODE_CCM,
-				   CRYPTO_CIPHER_OP_DECRYPT);
+	ret = cipher_begin_session(sec_ctx->dec.device, &sec_ctx->dec, CRYPTO_CIPHER_ALGO_AES,
+				   CRYPTO_CIPHER_MODE_CCM, CRYPTO_CIPHER_OP_DECRYPT);
 	if (ret) {
 		NET_ERR("Could not setup decryption context");
 		cipher_free_session(sec_ctx->enc.device, &sec_ctx->enc);
@@ -82,12 +81,9 @@ int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx,
 	return 0;
 }
 
-bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx,
-			     uint8_t *frame,
-			     uint8_t auth_payload_len,
-			     uint8_t decrypt_payload_len,
-			     uint8_t *src_ext_addr,
-			     uint32_t frame_counter)
+bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *frame,
+			     uint8_t auth_payload_len, uint8_t decrypt_payload_len,
+			     uint8_t *src_ext_addr, uint32_t frame_counter)
 {
 	struct cipher_aead_pkt apkt;
 	struct cipher_pkt pkt;
@@ -113,25 +109,23 @@ bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx,
 
 	apkt.ad = frame;
 	apkt.ad_len = auth_payload_len;
-	apkt.tag = sec_ctx->dec.mode_params.ccm_info.tag_len ?
-		frame + auth_payload_len + decrypt_payload_len : NULL;
+	apkt.tag = sec_ctx->dec.mode_params.ccm_info.tag_len
+			   ? frame + auth_payload_len + decrypt_payload_len
+			   : NULL;
 	apkt.pkt = &pkt;
 
 	ret = cipher_ccm_op(&sec_ctx->dec, &apkt, nonce);
 	if (ret) {
-		NET_ERR("Cannot decrypt/auth (%i): %p %u/%u - fc %u",
-			ret, frame, auth_payload_len, decrypt_payload_len,
-			frame_counter);
+		NET_ERR("Cannot decrypt/auth (%i): %p %u/%u - fc %u", ret, frame, auth_payload_len,
+			decrypt_payload_len, frame_counter);
 		return false;
 	}
 
 	return true;
 }
 
-bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx,
-			     uint8_t *frame,
-			     uint8_t auth_payload_len,
-			     uint8_t encrypt_payload_len,
+bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *frame,
+			     uint8_t auth_payload_len, uint8_t encrypt_payload_len,
 			     uint8_t *src_ext_addr)
 {
 	struct cipher_aead_pkt apkt;
@@ -160,9 +154,8 @@ bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx,
 
 	ret = cipher_ccm_op(&sec_ctx->enc, &apkt, nonce);
 	if (ret) {
-		NET_ERR("Cannot encrypt/auth (%i): %p %u/%u - fc %u",
-			ret, frame, auth_payload_len, encrypt_payload_len,
-			sec_ctx->frame_counter);
+		NET_ERR("Cannot encrypt/auth (%i): %p %u/%u - fc %u", ret, frame, auth_payload_len,
+			encrypt_payload_len, sec_ctx->frame_counter);
 		return false;
 	}
 
@@ -178,8 +171,7 @@ int ieee802154_security_init(struct ieee802154_security_ctx *sec_ctx)
 	(void)memset(&sec_ctx->enc, 0, sizeof(struct cipher_ctx));
 	(void)memset(&sec_ctx->dec, 0, sizeof(struct cipher_ctx));
 
-	dev = device_get_binding(
-		CONFIG_NET_L2_IEEE802154_SECURITY_CRYPTO_DEV_NAME);
+	dev = device_get_binding(CONFIG_NET_L2_IEEE802154_SECURITY_CRYPTO_DEV_NAME);
 	if (!dev) {
 		return -ENODEV;
 	}
