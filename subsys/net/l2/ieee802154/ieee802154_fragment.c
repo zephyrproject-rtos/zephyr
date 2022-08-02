@@ -35,8 +35,6 @@ LOG_MODULE_REGISTER(net_ieee802154_fragment,
 	K_SECONDS(CONFIG_NET_L2_IEEE802154_REASSEMBLY_TIMEOUT)
 #define REASS_CACHE_SIZE CONFIG_NET_L2_IEEE802154_FRAGMENT_REASS_CACHE_SIZE
 
-static uint16_t datagram_tag;
-
 /**
  *  Reassemble cache : Depends on cache size it used for reassemble
  *  IPv6 packets simultaneously.
@@ -99,9 +97,13 @@ static inline void set_datagram_tag(uint8_t *ptr, uint16_t tag)
 static inline void set_up_frag_hdr(struct net_buf *frag, uint16_t size,
 				   uint8_t offset)
 {
+	static uint16_t datagram_tag;
+
+	bool is_first_frag = !offset;
 	uint8_t pos = frag->len;
 
-	if (!offset) {
+	if (is_first_frag) {
+		datagram_tag++;
 		net_buf_add(frag, NET_6LO_FRAG1_HDR_LEN);
 		frag->data[pos] = NET_6LO_DISPATCH_FRAG1;
 	} else {
@@ -115,42 +117,43 @@ static inline void set_up_frag_hdr(struct net_buf *frag, uint16_t size,
 	set_datagram_tag(frag->data + pos, datagram_tag);
 	pos += NET_6LO_FRAG_DATAGRAM_OFFSET_LEN;
 
-	if (offset) {
+	if (!is_first_frag) {
 		frag->data[pos] = offset;
 	}
 }
 
-static inline uint8_t calc_max_payload(struct net_buf *frag, uint8_t offset)
+static inline uint8_t calc_payload_capacity(struct net_buf *frag)
 {
-	uint8_t max = frag->size - frag->len;
+	uint8_t capacity = frag->size - frag->len;
 
-	return (max & 0xF8);
+	return (capacity & 0xF8);
 }
 
 static inline uint8_t copy_data(struct ieee802154_fragment_ctx *ctx,
-			     struct net_buf *frame_buf, uint8_t max)
+			     struct net_buf *frame_buf, uint8_t capacity)
 {
-	uint8_t move = ctx->buf->len - (ctx->pos - ctx->buf->data);
-
-	move = MIN(move, max);
+	uint8_t remainder = ctx->buf->len - (ctx->pos - ctx->buf->data);
+	uint8_t move = MIN(remainder, capacity);
 
 	memcpy(frame_buf->data + frame_buf->len, ctx->pos, move);
-
 	net_buf_add(frame_buf, move);
 
 	return move;
 }
 
 static inline void update_fragment_ctx(struct ieee802154_fragment_ctx *ctx,
-				       uint8_t move)
+				       uint8_t moved)
 {
-	if (move == (ctx->buf->len - (ctx->pos - ctx->buf->data))) {
+	uint8_t remainder = (ctx->buf->len - (ctx->pos - ctx->buf->data));
+	bool next_frag = moved == remainder;
+
+	if (next_frag) {
 		ctx->buf = ctx->buf->frags;
 		if (ctx->buf) {
 			ctx->pos = ctx->buf->data;
 		}
 	} else {
-		ctx->pos += move;
+		ctx->pos += moved;
 	}
 }
 
@@ -178,41 +181,38 @@ static inline void update_fragment_ctx(struct ieee802154_fragment_ctx *ctx,
  *  If it's the first fragment being created, fh will not own any offset
  *  (so it will be 1 byte smaller)
  */
-void ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
+struct net_buf *ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
 			 struct net_buf *frame_buf, bool iphc)
 {
-	uint8_t max;
-
-	if (!ctx->offset) {
-		datagram_tag++;
-	}
+	uint8_t capacity;
 
 	set_up_frag_hdr(frame_buf, ctx->pkt_size, ctx->offset);
-	max = calc_max_payload(frame_buf, ctx->offset);
 
-	ctx->processed += max;
+	capacity = calc_payload_capacity(frame_buf);
+	ctx->processed += capacity;
 
-	if (!ctx->offset) {
+	bool is_first_frag = !ctx->offset;
+
+	if (is_first_frag) {
 		/* First fragment needs to take into account 6lo */
 		if (iphc) {
-			max -= ctx->hdr_diff;
+			capacity -= ctx->hdr_diff;
 		} else {
 			/* Adding IPv6 dispatch header */
-			max += 1U;
+			capacity += 1U;
 		}
 	}
 
-	while (max && ctx->buf) {
-		uint8_t move;
+	while (capacity && ctx->buf) {
+		uint8_t moved = copy_data(ctx, frame_buf, capacity);
 
-		move = copy_data(ctx, frame_buf, max);
-
-		update_fragment_ctx(ctx, move);
-
-		max -= move;
+		update_fragment_ctx(ctx, moved);
+		capacity -= moved;
 	}
 
 	ctx->offset = ctx->processed >> 3;
+
+	return ctx->buf;
 }
 
 static inline uint8_t get_datagram_type(uint8_t *ptr)

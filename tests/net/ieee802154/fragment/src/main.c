@@ -474,7 +474,7 @@ static bool test_fragment(struct net_fragment_data *data)
 		goto end;
 	}
 
-	if (!ieee802154_fragment_is_needed(pkt, 0)) {
+	if (!ieee802154_requires_fragmentation(pkt, 0)) {
 		f_pkt = pkt;
 		pkt = NULL;
 
@@ -491,8 +491,7 @@ static bool test_fragment(struct net_fragment_data *data)
 
 	buf = pkt->buffer;
 	while (buf) {
-		ieee802154_fragment(&ctx, &frame_buf, data->iphc);
-		buf = ctx.buf;
+		buf = ieee802154_fragment(&ctx, &frame_buf, data->iphc);
 
 		dfrag = net_pkt_get_frag(f_pkt, K_FOREVER);
 		if (!dfrag) {
