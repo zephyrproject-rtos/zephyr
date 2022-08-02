@@ -17,9 +17,6 @@ config HWINFO_SAM0
 config USB_DC_SAM0
 	default USB_DEVICE_DRIVER
 
-config WDT_SAM0
-	default WATCHDOG
-
 if USB_DEVICE_DRIVER
 
 config HEAP_MEM_POOL_SIZE
