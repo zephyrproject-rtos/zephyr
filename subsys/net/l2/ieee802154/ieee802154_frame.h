@@ -480,8 +480,8 @@ struct ieee802154_fcf_seq *ieee802154_validate_fc_seq(uint8_t *buf, uint8_t **p_
 bool ieee802154_validate_frame(uint8_t *buf, uint8_t length,
 			       struct ieee802154_mpdu *mpdu);
 
-uint8_t ieee802154_compute_header_size(struct net_if *iface,
-				    struct in6_addr *dst);
+uint8_t ieee802154_compute_header_and_authtag_size(struct net_if *iface,
+				  struct net_linkaddr *dst);
 
 bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 				  struct net_linkaddr *dst,

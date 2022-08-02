@@ -19,18 +19,10 @@
 #include <zephyr/net/net_pkt.h>
 
 #include "ieee802154_frame.h"
+#include "ieee802154_6lo.h"
 
-struct ieee802154_fragment_ctx {
-	struct net_buf *buf;
-	uint8_t *pos;
-	uint16_t pkt_size;
-	uint16_t processed;
-	uint8_t hdr_diff;
-	uint8_t offset;
-};
-
-static inline bool ieee802154_fragment_is_needed(struct net_pkt *pkt,
-						 uint8_t ll_hdr_size)
+static inline bool ieee802154_requires_fragmentation(struct net_pkt *pkt,
+                                                     uint8_t ll_hdr_size)
 {
 	return (net_pkt_get_len(pkt) + ll_hdr_size >
 			IEEE802154_MTU - IEEE802154_MFR_LENGTH);
@@ -60,14 +52,11 @@ void ieee802154_fragment_ctx_init(struct ieee802154_fragment_ctx *ctx,
  *  @param frame_buf Pointer to valid buffer where to write the fragment
  *  @param ipch bool true for IPHC compression, false for IPv6 dispatch header
  *
- *  @return True in case of success, false otherwise
+ *  @return pointer to the next buffer to be processed or NULL if no more
+ *          buffers need processing
  */
-#ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
-void ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
+struct net_buf *ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
 			 struct net_buf *frame_buf, bool iphc);
-#else
-#define ieee802154_fragment(...)
-#endif
 
 /**
  *  @brief Reassemble 802.15.4 fragments as per RFC 6282
@@ -84,10 +73,6 @@ void ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
  *          NET_OK waiting for other fragments,
  *          NET_DROP invalid fragment.
  */
-#ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 enum net_verdict ieee802154_reassemble(struct net_pkt *pkt);
-#else
-#define ieee802154_reassemble(...)
-#endif /* CONFIG_NET_L2_IEEE802154_FRAGMENT */
 
 #endif /* __NET_IEEE802154_FRAGMENT_H__ */
