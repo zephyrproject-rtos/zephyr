@@ -124,6 +124,11 @@ endif #ZTEST_SHUFFLE
 
 endif # ZTEST_NEW_API
 
+config TEST_LOGGING_FLUSH_AFTER_TEST
+	bool "When enabled logs are flushed after each test case"
+	default y
+	depends on MULTITHREADING
+
 endif # ZTEST
 
 config ZTEST_MOCKING
