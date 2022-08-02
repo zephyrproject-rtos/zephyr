@@ -2837,6 +2837,28 @@ static void le_df_set_cl_iq_sampling_enable(struct net_buf *buf, struct net_buf 
 }
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT) ||      \
+	defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+static int8_t iq_convert_12_to_8_bits(int16_t data)
+{
+	if (data == IQ_SAMPLE_SATURATED_16_BIT) {
+		return IQ_SAMPLE_SATURATED_8_BIT;
+	}
+
+#if defined(CONFIG_BT_CTLR_DF_IQ_SAMPLES_CONVERT_USE_8_LSB)
+	return (data > INT8_MAX || data < INT8_MIN) ? IQ_SAMPLE_SATURATED_8_BIT
+						    : IQ_SAMPLE_CONVERT_12_TO_8_BIT(data);
+#else  /* !CONFIG_BT_CTLR_DF_IQ_SAMPLES_CONVERT_USE_8_LSB */
+	int16_t data_conv = IQ_SAMPLE_CONVERT_12_TO_8_BIT(data);
+
+	return (data_conv > INT8_MAX || data_conv < INT8_MIN) ? IQ_SAMPLE_SATURATED_8_BIT
+							      : (int8_t)data_conv;
+#endif /* CONFIG_BT_CTLR_DF_IQ_SAMPLES_CONVERT_USE_8_LSB */
+}
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT
+	* || CONFIG_BT_CTLR_DF_CONN_CTE_RX
+	*/
+
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT)
 static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
 					   struct node_rx_pdu *node_rx,
@@ -2935,8 +2957,8 @@ static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
 		sep->sample_count = 0U;
 	} else {
 		for (uint8_t idx = 0U; idx < samples_cnt; ++idx) {
-			sep->sample[idx].i = IQ_CONVERT_12_TO_8_BIT(iq_report->sample[idx].i);
-			sep->sample[idx].q = IQ_CONVERT_12_TO_8_BIT(iq_report->sample[idx].q);
+			sep->sample[idx].i = iq_convert_12_to_8_bits(iq_report->sample[idx].i);
+			sep->sample[idx].q = iq_convert_12_to_8_bits(iq_report->sample[idx].q);
 		}
 
 		sep->sample_count = samples_cnt;
@@ -3058,8 +3080,8 @@ static void le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct net_b
 		sep->sample_count = 0U;
 	} else {
 		for (uint8_t idx = 0U; idx < samples_cnt; ++idx) {
-			sep->sample[idx].i = IQ_CONVERT_12_TO_8_BIT(iq_report->sample[idx].i);
-			sep->sample[idx].q = IQ_CONVERT_12_TO_8_BIT(iq_report->sample[idx].q);
+			sep->sample[idx].i = iq_convert_12_to_8_bits(iq_report->sample[idx].i);
+			sep->sample[idx].q = iq_convert_12_to_8_bits(iq_report->sample[idx].q);
 		}
 		sep->sample_count = samples_cnt;
 	}
