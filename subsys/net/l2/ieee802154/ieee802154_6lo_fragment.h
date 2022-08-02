@@ -1,37 +1,34 @@
-/** @file
- @brief 802.15.4 6LoWPAN fragment handler
-
- This is not to be included by the application.
- */
-
 /*
  * Copyright (c) 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief 802.15.4 6LoWPAN fragment handler
+ *
+ * This is not to be included by the application.
+ */
+
 #ifndef __NET_IEEE802154_6LO_FRAGMENT_H__
 #define __NET_IEEE802154_6LO_FRAGMENT_H__
 
+#include "ieee802154_6lo.h"
+#include "ieee802154_frame.h"
+
+#include <zephyr/net/net_pkt.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/types.h>
 
-#include <zephyr/net/net_pkt.h>
-
-#include "ieee802154_frame.h"
-#include "ieee802154_6lo.h"
-
-static inline bool ieee802154_6lo_requires_fragmentation(struct net_pkt *pkt,
-                                                         uint8_t ll_hdr_size)
+static inline bool ieee802154_6lo_requires_fragmentation(struct net_pkt *pkt, uint8_t ll_hdr_size)
 {
-	return (net_pkt_get_len(pkt) + ll_hdr_size >
-			IEEE802154_MTU - IEEE802154_MFR_LENGTH);
+	return (net_pkt_get_len(pkt) + ll_hdr_size > IEEE802154_MTU - IEEE802154_MFR_LENGTH);
 }
 
-static inline
-void ieee802154_6lo_fragment_ctx_init(struct ieee802154_6lo_fragment_ctx *ctx,
-				  struct net_pkt *pkt, uint16_t hdr_diff,
-				  bool iphc)
+static inline void ieee802154_6lo_fragment_ctx_init(struct ieee802154_6lo_fragment_ctx *ctx,
+						    struct net_pkt *pkt, uint16_t hdr_diff,
+						    bool iphc)
 {
 	ctx->buf = pkt->buffer;
 	ctx->pos = ctx->buf->data;
@@ -56,7 +53,7 @@ void ieee802154_6lo_fragment_ctx_init(struct ieee802154_6lo_fragment_ctx *ctx,
  *          buffers need processing
  */
 struct net_buf *ieee802154_6lo_fragment(struct ieee802154_6lo_fragment_ctx *ctx,
-			 struct net_buf *frame_buf, bool iphc);
+					struct net_buf *frame_buf, bool iphc);
 
 /**
  *  @brief Reassemble 802.15.4 fragments as per RFC 6282

@@ -13,6 +13,7 @@
 #define ZEPHYR_INCLUDE_NET_IEEE802154_H_
 
 #include <limits.h>
+#include <zephyr/net/net_l2.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/crypto/cipher.h>
 

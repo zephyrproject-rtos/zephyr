@@ -1,39 +1,37 @@
-/** @file
- * @brief 802.15.4 6LoWPAN fragment related functions
- */
-
 /*
  * Copyright (c) 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief 802.15.4 6LoWPAN fragment handler implementation
+ */
+
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(net_ieee802154_6lo_fragment,
-		    CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
+LOG_MODULE_REGISTER(net_ieee802154_6lo_fragment, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
+
+#include "6lo.h"
+#include "6lo_private.h"
+#include "ieee802154_6lo_fragment.h"
+#include "net_private.h"
 
 #include <errno.h>
+
 #include <zephyr/net/net_core.h>
-#include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/udp.h>
 
-#include "ieee802154_6lo_fragment.h"
-
-#include "net_private.h"
-#include "6lo.h"
-#include "6lo_private.h"
-
-#define NET_FRAG_DISPATCH_MASK	0xF8
-#define NET_FRAG_OFFSET_POS	(NET_6LO_FRAG_DATAGRAM_SIZE_LEN +	\
-				 NET_6LO_FRAG_DATAGRAM_OFFSET_LEN)
+#define NET_FRAG_DISPATCH_MASK 0xF8
+#define NET_FRAG_OFFSET_POS    (NET_6LO_FRAG_DATAGRAM_SIZE_LEN + NET_6LO_FRAG_DATAGRAM_OFFSET_LEN)
 
 #define BUF_TIMEOUT K_MSEC(50)
 
-#define FRAG_REASSEMBLY_TIMEOUT \
-	K_SECONDS(CONFIG_NET_L2_IEEE802154_REASSEMBLY_TIMEOUT)
-#define REASS_CACHE_SIZE CONFIG_NET_L2_IEEE802154_FRAGMENT_REASS_CACHE_SIZE
+#define FRAG_REASSEMBLY_TIMEOUT K_SECONDS(CONFIG_NET_L2_IEEE802154_REASSEMBLY_TIMEOUT)
+#define REASS_CACHE_SIZE	CONFIG_NET_L2_IEEE802154_FRAGMENT_REASS_CACHE_SIZE
 
 /**
  *  Reassemble cache : Depends on cache size it used for reassemble
@@ -41,9 +39,9 @@ LOG_MODULE_REGISTER(net_ieee802154_6lo_fragment,
  */
 struct frag_cache {
 	struct k_work_delayable timer; /* Reassemble timer */
-	struct net_pkt *pkt;		/* Reassemble packet */
-	uint16_t size;			/* Datagram size */
-	uint16_t tag;			/* Datagram tag */
+	struct net_pkt *pkt;	       /* Reassemble packet */
+	uint16_t size;		       /* Datagram size */
+	uint16_t tag;		       /* Datagram tag */
 	bool used;
 };
 
@@ -85,17 +83,16 @@ static struct frag_cache cache[REASS_CACHE_SIZE];
 static inline void set_datagram_size(uint8_t *ptr, uint16_t size)
 {
 	ptr[0] |= ((size & 0x7FF) >> 8);
-	ptr[1] = (uint8_t) size;
+	ptr[1] = (uint8_t)size;
 }
 
 static inline void set_datagram_tag(uint8_t *ptr, uint16_t tag)
 {
 	ptr[0] = tag >> 8;
-	ptr[1] = (uint8_t) tag;
+	ptr[1] = (uint8_t)tag;
 }
 
-static inline void set_up_frag_hdr(struct net_buf *frag, uint16_t size,
-				   uint8_t offset)
+static inline void set_up_frag_hdr(struct net_buf *frag, uint16_t size, uint8_t offset)
 {
 	static uint16_t datagram_tag;
 
@@ -129,8 +126,8 @@ static inline uint8_t calc_payload_capacity(struct net_buf *frag)
 	return (capacity & 0xF8);
 }
 
-static inline uint8_t copy_data(struct ieee802154_6lo_fragment_ctx *ctx,
-			     struct net_buf *frame_buf, uint8_t capacity)
+static inline uint8_t copy_data(struct ieee802154_6lo_fragment_ctx *ctx, struct net_buf *frame_buf,
+				uint8_t capacity)
 {
 	uint8_t remainder = ctx->buf->len - (ctx->pos - ctx->buf->data);
 	uint8_t move = MIN(remainder, capacity);
@@ -141,8 +138,7 @@ static inline uint8_t copy_data(struct ieee802154_6lo_fragment_ctx *ctx,
 	return move;
 }
 
-static inline void update_fragment_ctx(struct ieee802154_6lo_fragment_ctx *ctx,
-				       uint8_t moved)
+static inline void update_fragment_ctx(struct ieee802154_6lo_fragment_ctx *ctx, uint8_t moved)
 {
 	uint8_t remainder = (ctx->buf->len - (ctx->pos - ctx->buf->data));
 	bool next_frag = moved == remainder;
@@ -182,7 +178,7 @@ static inline void update_fragment_ctx(struct ieee802154_6lo_fragment_ctx *ctx,
  *  (so it will be 1 byte smaller)
  */
 struct net_buf *ieee802154_6lo_fragment(struct ieee802154_6lo_fragment_ctx *ctx,
-			 struct net_buf *frame_buf, bool iphc)
+					struct net_buf *frame_buf, bool iphc)
 {
 	uint8_t capacity;
 
@@ -305,8 +301,7 @@ static void reass_timeout(struct k_work *work)
  *  create a new cache. If number of unused cache are out then
  *  discard the fragments.
  */
-static inline struct frag_cache *set_reass_cache(struct net_pkt *pkt,
-						 uint16_t size, uint16_t tag)
+static inline struct frag_cache *set_reass_cache(struct net_pkt *pkt, uint16_t size, uint16_t tag)
 {
 	int i;
 
@@ -338,8 +333,7 @@ static inline struct frag_cache *get_reass_cache(uint16_t size, uint16_t tag)
 
 	for (i = 0U; i < REASS_CACHE_SIZE; i++) {
 		if (cache[i].used) {
-			if (cache[i].size == size &&
-			    cache[i].tag == tag) {
+			if (cache[i].size == size && cache[i].tag == tag) {
 				return &cache[i];
 			}
 		}
@@ -407,8 +401,7 @@ static inline uint16_t fragment_offset(struct net_buf *frag)
 	return ((uint16_t)frag->data[NET_FRAG_OFFSET_POS] << 3);
 }
 
-static void fragment_move_back(struct net_pkt *pkt,
-			       struct net_buf *frag, struct net_buf *stop)
+static void fragment_move_back(struct net_pkt *pkt, struct net_buf *frag, struct net_buf *stop)
 {
 	struct net_buf *prev, *current;
 
@@ -459,8 +452,7 @@ static inline void fragment_reconstruct_packet(struct net_pkt *pkt)
 	while (current) {
 		next = current->frags;
 
-		if (!prev || (fragment_offset(prev) >
-			      fragment_offset(current))) {
+		if (!prev || (fragment_offset(prev) > fragment_offset(current))) {
 			prev = current;
 		} else {
 			fragment_move_back(pkt, current, prev);
@@ -498,10 +490,8 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 	frag = pkt->buffer;
 	type = get_datagram_type(frag->data);
 
-	if ((type == NET_6LO_DISPATCH_FRAG1 &&
-	     frag->len < NET_6LO_FRAG1_HDR_LEN) ||
-	    (type == NET_6LO_DISPATCH_FRAGN &&
-	     frag->len < NET_6LO_FRAGN_HDR_LEN)) {
+	if ((type == NET_6LO_DISPATCH_FRAG1 && frag->len < NET_6LO_FRAG1_HDR_LEN) ||
+	    (type == NET_6LO_DISPATCH_FRAGN && frag->len < NET_6LO_FRAGN_HDR_LEN)) {
 		return NET_DROP;
 	}
 
@@ -509,8 +499,7 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 	size = get_datagram_size(frag->data);
 
 	/* Parse the datagram tag */
-	tag = get_datagram_tag(frag->data +
-			       NET_6LO_FRAG_DATAGRAM_SIZE_LEN);
+	tag = get_datagram_tag(frag->data + NET_6LO_FRAG_DATAGRAM_SIZE_LEN);
 
 	/* If there are no fragments in the cache means this frag
 	 * is the first one. So cache Rx pkt otherwise not.
@@ -575,7 +564,6 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 
 	return NET_OK;
 }
-
 
 enum net_verdict ieee802154_6lo_reassemble(struct net_pkt *pkt)
 {
