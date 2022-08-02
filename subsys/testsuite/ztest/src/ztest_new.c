@@ -456,6 +456,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 	 * running the tests.
 	 */
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		get_start_time_cyc();
 		k_thread_create(&ztest_thread, ztest_thread_stack,
 				K_THREAD_STACK_SIZEOF(ztest_thread_stack),
 				(k_thread_entry_t)test_cb, suite, test, data,
@@ -475,6 +476,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 	} else if (test_result != ZTEST_RESULT_SUITE_SKIP &&
 		   test_result != ZTEST_RESULT_SUITE_FAIL) {
 		test_result = ZTEST_RESULT_PENDING;
+		get_start_time_cyc();
 		run_test_rules(/*is_before=*/true, test, data);
 		if (suite->before) {
 			suite->before(data);
@@ -487,6 +489,12 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 		suite->after(data);
 	}
 	run_test_rules(/*is_before=*/false, test, data);
+
+	get_test_duration_ms();
+	if (tc_spend_time > test->stats->duration_worst_ms) {
+		test->stats->duration_worst_ms = tc_spend_time;
+	}
+
 	phase = TEST_PHASE_FRAMEWORK;
 
 	/* Flush all logs in case deferred mode and default logging thread are used. */
@@ -683,6 +691,7 @@ static void __ztest_init_unit_test_result_for_suite(struct ztest_suite_node *sui
 		test->stats->skip_count = 0;
 		test->stats->fail_count = 0;
 		test->stats->pass_count = 0;
+		test->stats->duration_worst_ms = 0;
 	}
 }
 
@@ -710,10 +719,12 @@ static void __ztest_show_suite_summary_oneline(struct ztest_suite_node *suite)
 	int suite_result = TC_PASS;
 
 	struct ztest_unit_test *test = NULL;
+	unsigned int suite_duration_worst_ms = 0;
 
 	/** summary of disctinct run  */
 	while (((test = z_ztest_get_next_test(suite->name, test)) != NULL)) {
 		distinct_total++;
+		suite_duration_worst_ms += test->stats->duration_worst_ms;
 		if (test->stats->skip_count == test->stats->run_count) {
 			distinct_skip++;
 		} else if (test->stats->pass_count == test->stats->run_count) {
@@ -740,11 +751,12 @@ static void __ztest_show_suite_summary_oneline(struct ztest_suite_node *suite)
 	}
 
 	TC_SUMMARY_PRINT("SUITE %s - %3d.%02d%% [%s]: pass = %d, fail = %d, "
-				"skip = %d, total = %d\n",
+				"skip = %d, total = %d duration = %u.%03u seconds\n",
 				TC_RESULT_TO_STR(suite_result),
 				passrate_major, passrate_minor,
 				suite->name, distinct_pass, distinct_fail,
-				distinct_skip, distinct_total);
+				distinct_skip, distinct_total,
+				suite_duration_worst_ms / 1000, suite_duration_worst_ms % 1000);
 	flush_log();
 }
 
@@ -766,8 +778,11 @@ static void __ztest_show_suite_summary_verbose(struct ztest_suite_node *suite)
 			tc_result = TC_FAIL;
 		}
 
-		TC_SUMMARY_PRINT(" - %s - [%s.%s]\n", TC_RESULT_TO_STR(tc_result),
-				 test->test_suite_name, test->name);
+		TC_SUMMARY_PRINT(" - %s - [%s.%s] duration = %u.%03u seconds\n",
+				TC_RESULT_TO_STR(tc_result),
+				test->test_suite_name, test->name,
+				test->stats->duration_worst_ms / 1000,
+				test->stats->duration_worst_ms % 1000);
 
 		if (flush_frequency % 3 == 0) {
 			/** Reduce the flush frequencey a bit to speed up the output */
@@ -786,7 +801,7 @@ static void __ztest_show_suite_summary(void)
 	 * is dropped if it goes through the logging subsystem.
 	 */
 	flush_log();
-	TC_SUMMARY_PRINT("\n------ TESTSUITE SUMMARY START ------\n");
+	TC_SUMMARY_PRINT("\n------ TESTSUITE SUMMARY START ------\n\n");
 	flush_log();
 	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
 	     ptr < _ztest_suite_node_list_end; ++ptr) {
