@@ -178,7 +178,7 @@ static inline void print_nothing(const char *fmt, ...)
 #ifndef Z_TC_END_RESULT
 #define Z_TC_END_RESULT(result, func)						\
 	do {									\
-		TC_END_PRINT(result, " %s - %s in %u.%u seconds\n",		\
+		TC_END_PRINT(result, " %s - %s in %u.%03u seconds\n",		\
 			TC_RESULT_TO_STR(result), func, tc_spend_time/1000,	\
 			tc_spend_time%1000);					\
 	} while (0)
