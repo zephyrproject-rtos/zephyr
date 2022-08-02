@@ -87,7 +87,7 @@ config NET_L2_CUSTOM_IEEE802154
 	help
 	  Enable custom IEEE802154 based L2. Zephyr does not provide
 	  implementation for this L2 - users can implement their own L2 using
-	  this symbols, on top of the IEEE802154 radio driver.
+	  this symbol, on top of the IEEE802154 radio driver.
 
 config NET_L2_CUSTOM_IEEE802154_MTU
 	int "MTU for the custom IEEE802154 L2"
