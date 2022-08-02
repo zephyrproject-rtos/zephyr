@@ -1186,6 +1186,19 @@ int lwm2m_update_device_service_period(uint32_t period_ms);
 bool lwm2m_engine_path_is_observed(const char *pathstr);
 
 /**
+ * @brief Stop the LwM2M engine
+ *
+ * LwM2M clients normally do not need to call this function as it is called
+ * within lwm2m_rd_client. However, if the client does not use the RD
+ * client implementation, it will need to be called manually.
+ *
+ * @param[in] client_ctx LwM2M context
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_stop(struct lwm2m_ctx *client_ctx);
+
+/**
  * @brief Start the LwM2M engine
  *
  * LwM2M clients normally do not need to call this function as it is called
