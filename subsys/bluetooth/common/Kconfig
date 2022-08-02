@@ -215,7 +215,7 @@ config BT_HCI_VS_EXT
 	  Read Static Addresses and Read Key Hierarchy Roots vendor commands.
 
 config BT_HCI_VS_FATAL_ERROR
-	bool "Enable vendor specific HCI event Zephyr Fatal Error"
+	bool "Allow vendor specific HCI event Zephyr Fatal Error"
 	depends on BT_HCI_VS_EXT
 	default n
 	help
