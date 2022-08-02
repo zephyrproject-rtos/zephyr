@@ -17,9 +17,6 @@ if BOARD_BL5340_DVK_CPUAPP
 
 if DAC
 
-config DAC_MCP4725
-	default y
-
 config I2C
 	default y
 
