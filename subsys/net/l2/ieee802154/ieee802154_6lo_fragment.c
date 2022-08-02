@@ -1,5 +1,5 @@
 /** @file
- * @brief 802.15.4 fragment related functions
+ * @brief 802.15.4 6LoWPAN fragment related functions
  */
 
 /*
@@ -9,7 +9,7 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(net_ieee802154_fragment,
+LOG_MODULE_REGISTER(net_ieee802154_6lo_fragment,
 		    CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 #include <errno.h>
@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(net_ieee802154_fragment,
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/udp.h>
 
-#include "ieee802154_fragment.h"
+#include "ieee802154_6lo_fragment.h"
 
 #include "net_private.h"
 #include "6lo.h"
@@ -129,7 +129,7 @@ static inline uint8_t calc_payload_capacity(struct net_buf *frag)
 	return (capacity & 0xF8);
 }
 
-static inline uint8_t copy_data(struct ieee802154_fragment_ctx *ctx,
+static inline uint8_t copy_data(struct ieee802154_6lo_fragment_ctx *ctx,
 			     struct net_buf *frame_buf, uint8_t capacity)
 {
 	uint8_t remainder = ctx->buf->len - (ctx->pos - ctx->buf->data);
@@ -141,7 +141,7 @@ static inline uint8_t copy_data(struct ieee802154_fragment_ctx *ctx,
 	return move;
 }
 
-static inline void update_fragment_ctx(struct ieee802154_fragment_ctx *ctx,
+static inline void update_fragment_ctx(struct ieee802154_6lo_fragment_ctx *ctx,
 				       uint8_t moved)
 {
 	uint8_t remainder = (ctx->buf->len - (ctx->pos - ctx->buf->data));
@@ -164,7 +164,7 @@ static inline void update_fragment_ctx(struct ieee802154_fragment_ctx *ctx,
  *  e   : empty space
  *  ll  : link layer
  *
- *  Input frame_buf to ieee802154_fragment() looks like below
+ *  Input frame_buf to ieee802154_6lo_fragment() looks like below
  *
  *  | ll |
  *
@@ -181,7 +181,7 @@ static inline void update_fragment_ctx(struct ieee802154_fragment_ctx *ctx,
  *  If it's the first fragment being created, fh will not own any offset
  *  (so it will be 1 byte smaller)
  */
-struct net_buf *ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
+struct net_buf *ieee802154_6lo_fragment(struct ieee802154_6lo_fragment_ctx *ctx,
 			 struct net_buf *frame_buf, bool iphc)
 {
 	uint8_t capacity;
@@ -577,7 +577,7 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 }
 
 
-enum net_verdict ieee802154_reassemble(struct net_pkt *pkt)
+enum net_verdict ieee802154_6lo_reassemble(struct net_pkt *pkt)
 {
 	if (!pkt || !pkt->buffer) {
 		NET_ERR("Nothing to reassemble");
