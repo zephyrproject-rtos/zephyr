@@ -103,7 +103,7 @@ static inline void set_pkt_ll_addr(struct net_linkaddr *addr, bool comp,
 			addr->addr = ll->plain.addr.ext_addr;
 		}
 	} else {
-		/* ToDo: Handle short address (lookup known nbr, ...) */
+		/* TODO: Handle short address (lookup known nbr, ...) */
 		addr->len = 0U;
 		addr->addr = NULL;
 	}

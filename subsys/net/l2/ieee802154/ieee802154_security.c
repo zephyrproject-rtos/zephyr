@@ -28,7 +28,7 @@ int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx,
 		return -EINVAL;
 	}
 
-	/* ToDo: supporting other key modes */
+	/* TODO: supporting other key modes */
 	if (level > IEEE802154_SECURITY_LEVEL_NONE &&
 	    (key_len > IEEE802154_KEY_MAX_LEN || !key ||
 	     key_mode != IEEE802154_KEY_ID_MODE_IMPLICIT)) {
