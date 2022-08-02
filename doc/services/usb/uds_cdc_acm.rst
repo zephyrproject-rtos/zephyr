@@ -14,6 +14,8 @@ But there are two important differences in behavior to a real UART controller:
   until then any data is discarded
 * If device is connected to the host, it still needs an application
   on the host side which requests the data
+* Asynchronous UART API is not supported, only interrupt or polling UART API
+  is possible with CDC ACM serial devices.
 
 The devicetree compatible property for CDC ACM UART is
 :dtcompatible:`zephyr,cdc-acm-uart`.
