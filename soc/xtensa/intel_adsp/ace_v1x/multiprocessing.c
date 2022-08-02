@@ -51,6 +51,11 @@ void soc_start_core(int cpu_num)
 		uint32_t *rom_jump_vector = (uint32_t *) ROM_JUMP_ADDR;
 		*rom_jump_vector = (uint32_t) z_soc_mp_asm_entry;
 		z_xtensa_cache_flush(rom_jump_vector, sizeof(*rom_jump_vector));
+		ACE_PWRCTL->wpdsphpxpg |= BIT(cpu_num);
+
+		while ((ACE_PWRSTS->dsphpxpgs & BIT(cpu_num)) == 0) {
+			k_busy_wait(CORE_POWER_CHECK_DELAY);
+		}
 
 		/* Tell the ACE ROM that it should use secondary core flow */
 		DFDSPBRCP.bootctl[cpu_num].battr |= DFDSPBRCP_BATTR_LPSCTL_BATTR_SLAVE_CORE;
