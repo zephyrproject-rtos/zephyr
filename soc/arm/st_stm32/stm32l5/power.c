@@ -35,42 +35,34 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		return;
 	}
 
+	/* ensure the proper wake-up system clock */
+	LL_RCC_SetClkAfterWakeFromStop(RCC_STOP_WAKEUPCLOCK_SELECTED);
+
 	switch (substate_id) {
 	case 1: /* this corresponds to the STOP0 mode: */
-		/* ensure the proper wake-up system clock */
-		LL_RCC_SetClkAfterWakeFromStop(RCC_STOP_WAKEUPCLOCK_SELECTED);
 		/* enter STOP0 mode */
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP0);
-		LL_LPM_EnableDeepSleep();
-		/* enter SLEEP mode : WFE or WFI */
-		k_cpu_idle();
 		break;
 	case 2: /* this corresponds to the STOP1 mode: */
-		/* ensure the proper wake-up system clock */
-		LL_RCC_SetClkAfterWakeFromStop(RCC_STOP_WAKEUPCLOCK_SELECTED);
 		/* enter STOP1 mode */
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP1);
-		LL_LPM_EnableDeepSleep();
-		/* enter SLEEP mode : WFE or WFI */
-		k_cpu_idle();
 		break;
 	case 3: /* this corresponds to the STOP2 mode: */
-		/* ensure the proper wake-up system clock */
-		LL_RCC_SetClkAfterWakeFromStop(RCC_STOP_WAKEUPCLOCK_SELECTED);
 #ifdef PWR_CR1_RRSTP
 		LL_PWR_DisableSRAM3Retention();
 #endif /* PWR_CR1_RRSTP */
 		/* enter STOP2 mode */
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP2);
-		LL_LPM_EnableDeepSleep();
-		/* enter SLEEP mode : WFE or WFI */
-		k_cpu_idle();
 		break;
 	default:
 		LOG_DBG("Unsupported power state substate-id %u",
 			substate_id);
 		break;
 	}
+
+	LL_LPM_EnableDeepSleep();
+	/* enter SLEEP mode : WFE or WFI */
+	k_cpu_idle();
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
