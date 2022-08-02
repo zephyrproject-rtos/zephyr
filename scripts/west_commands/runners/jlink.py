@@ -70,12 +70,17 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
-                          dev_id=True, flash_addr=True, erase=True)
+                          dev_id=True, flash_addr=True, erase=True,
+                          tool_opt=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
         return '''Device identifier. Use it to select the J-Link Serial Number
                   of the device connected over USB.'''
+
+    @classmethod
+    def tool_opt_help(cls) -> str:
+        return "Additional options for JLink Commander, e.g. '-autoconnect 1'"
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -101,9 +106,6 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--gdb-port', default=DEFAULT_JLINK_GDB_PORT,
                             help='pyocd gdb port, defaults to {}'.format(
                                 DEFAULT_JLINK_GDB_PORT))
-        parser.add_argument('--tool-opt', default=[], action='append',
-                            help='''Additional options for JLink Commander,
-                            e.g. \'-autoconnect 1\' ''')
         parser.add_argument('--commander', default=DEFAULT_JLINK_EXE,
                             help=f'''J-Link Commander, default is
                             {DEFAULT_JLINK_EXE}''')
