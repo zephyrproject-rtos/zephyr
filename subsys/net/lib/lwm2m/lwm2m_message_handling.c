@@ -1032,8 +1032,20 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm
 						res->res_instances[i].res_inst_id, &data_len);
 		}
 
-		if (!data_ptr || data_len == 0) {
+		if (!data_ptr && data_len) {
 			return -ENOENT;
+		}
+
+		if (!data_len) {
+			if (obj_field->data_type != LWM2M_RES_TYPE_OPAQUE &&
+			    obj_field->data_type != LWM2M_RES_TYPE_STRING) {
+				return -ENOENT;
+			}
+			/* Only opaque and string types can be empty, and when
+			 * empty, we should not give pointer to potentially uninitialized
+			 * data to a content formatter. Give pointer to empty string instead.
+			 */
+			data_ptr = "";
 		}
 
 		switch (obj_field->data_type) {
