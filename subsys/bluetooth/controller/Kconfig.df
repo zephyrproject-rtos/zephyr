@@ -270,6 +270,45 @@ config BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE
 	  enables workaround for the delay to maintain inter frame spacing (IFS) for connection
 	  events.
 
+choice
+	prompt "IQ samples 12 bit to 8 bit conversion approach"
+	default BT_CTLR_DF_IQ_SAMPLES_CONVERT_2_BITS_SHIFT if !SOC_NRF5340_CPUNET
+	default BT_CTLR_DF_IQ_SAMPLES_CONVERT_USE_8_LSB if SOC_NRF5340_CPUNET
+
+config BT_CTLR_DF_IQ_SAMPLES_CONVERT_4_BITS_SHIFT
+	bool "Conversion of IQ samples to 8 bits wide by 4 bits shift"
+	depends on BT_CTLR_DF_SCAN_CTE_RX || BT_CTLR_DF_CONN_CTE_RX
+	help
+	  IQ samples provided by the Radio Direction Finding Extension are 12 bit wide. The
+	  Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits wide: Vol 4, Part E
+	  sections 7.7.65.21 and 7.7.65.22. This config enables conversion of 12 bit IQ samples to
+	  8 bits by ordinary right shift operation by 4 bits. That means there is loss in accuracy
+	  since only the 8 MSB are used.
+
+config BT_CTLR_DF_IQ_SAMPLES_CONVERT_2_BITS_SHIFT
+	bool "Conversion of IQ samples to 8 bits wide by 2 bits shift"
+	depends on BT_CTLR_DF_SCAN_CTE_RX || BT_CTLR_DF_CONN_CTE_RX
+	help
+	  IQ samples provided by the Radio Direction Finding Extension are 12 bit wide. The
+	  Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits wide: Vol 4, Part E
+	  sections 7.7.65.21 and 7.7.65.22. This config enables conversion of 12 bit IQ samples to
+	  8 bits by ordinary right shift operation by 2 bits and a cast to int8_t. That means there
+	  is a loss in accuracy. This conversion may be used only if you are sure samples will not
+	  saturate.
+
+config BT_CTLR_DF_IQ_SAMPLES_CONVERT_USE_8_LSB
+	bool "Conversion of IQ samples to 8 bits wide by use of 8 LSB"
+	depends on SOC_NRF5340_CPUNET && (BT_CTLR_DF_SCAN_CTE_RX || BT_CTLR_DF_CONN_CTE_RX)
+	help
+	  IQ samples provided by the Radio Direction Finding Extension are 12 bit wide. The
+	  Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits wide: Vol 4, Part E
+	  sections 7.7.65.21 and 7.7.65.22. This config enables conversion of 12 bit IQ samples to
+	  8 bits by use of 8 least significant bits. This conversion may be used only if you are
+	  sure actual samples are not greater than 8 bits. This prevents additional accuracy loss
+	  due to shifting operation.
+
+endchoice
+
 endif # BT_LL_SW_SPLIT
 
 endif # BT_CTLR_DF
