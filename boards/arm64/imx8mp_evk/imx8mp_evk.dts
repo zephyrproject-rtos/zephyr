@@ -16,7 +16,6 @@
 	psci {
 		compatible = "arm,psci-0.2";
 		method = "smc";
-		label = "PSCI";
 	};
 
 	uartclk: apb-pclk {

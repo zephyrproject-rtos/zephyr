@@ -28,7 +28,6 @@
 	psci {
 		compatible = "arm,psci-0.2";
 		method = "smc";
-		label = "PSCI";
 	};
 
 	sram0: memory@c0000000 {

@@ -79,7 +79,6 @@
 			status = "disabled";
 			interrupts = <GIC_SPI 5 0 IRQ_TYPE_LEVEL>;
 			interrupt-names = "irq_5";
-			label = "UART_0";
 			clocks = <&uartclk>;
 		};
 
@@ -89,7 +88,6 @@
 			status = "disabled";
 			interrupts = <GIC_SPI 6 0 IRQ_TYPE_LEVEL>;
 			interrupt-names = "irq_6";
-			label = "UART_1";
 			clocks = <&uartclk>;
 		};
 
@@ -99,7 +97,6 @@
 			status = "disabled";
 			interrupts = <GIC_SPI 7 0 IRQ_TYPE_LEVEL>;
 			interrupt-names = "irq_7";
-			label = "UART_2";
 			clocks = <&uartclk>;
 		};
 
@@ -109,7 +106,6 @@
 			status = "disabled";
 			interrupts = <GIC_SPI 8 0 IRQ_TYPE_LEVEL>;
 			interrupt-names = "irq_8";
-			label = "UART_3";
 			clocks = <&uartclk>;
 		};
 
