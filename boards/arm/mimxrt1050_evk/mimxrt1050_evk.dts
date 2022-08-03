@@ -122,7 +122,6 @@ arduino_serial: &lpuart3 {
 	s26ks512s0: s26ks512s@0 {
 		compatible = "nxp,imx-flexspi-hyperflash";
 		size = <DT_SIZE_M(64*8)>;
-		label = "S26KS512S";
 		reg = <0>;
 		spi-max-frequency = <166000000>;
 		word-addressable;
@@ -198,7 +197,6 @@ arduino_serial: &lpuart3 {
 	fxos8700: fxos8700@1f {
 		compatible = "nxp,fxos8700";
 		reg = <0x1f>;
-		label = "FXOS8700";
 
 		/* Two zero ohm resistors (R263 and R264) isolate sensor
 		 * interrupt gpios from the soc and are unpopulated by default.
@@ -212,7 +210,6 @@ arduino_serial: &lpuart3 {
 	touch_controller: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
-		label = "FT5336";
 		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 	};
 };

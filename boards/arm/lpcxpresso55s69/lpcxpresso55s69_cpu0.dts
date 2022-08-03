@@ -178,7 +178,6 @@ zephyr_udc0: &usbhs {
 i2s0: &flexcomm6 {
 	status = "okay";
 	compatible = "nxp,lpc-i2s";
-	label = "I2S_0";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	dmas = <&dma0 16>;
@@ -189,7 +188,6 @@ i2s0: &flexcomm6 {
 i2s1: &flexcomm7 {
 	status = "okay";
 	compatible = "nxp,lpc-i2s";
-	label = "I2S_1";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	dmas = <&dma0 19>;
