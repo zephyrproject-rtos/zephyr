@@ -9,6 +9,7 @@
 #include <zephyr/types.h>
 #include <string.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #include <zephyr/toolchain.h>
 #include <zephyr/bluetooth/att.h>
@@ -220,6 +221,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	tester_set_bit(cmds, GATT_DISC_ALL_PRIM);
 	tester_set_bit(cmds, GATT_READ_MULTIPLE_VAR);
 	tester_set_bit(cmds, GATT_EATT_CONNECT);
+	tester_set_bit(cmds, GATT_NOTIFY_MULTIPLE);
 
 	tester_send(BTP_SERVICE_ID_GATT, GATT_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -1908,6 +1910,67 @@ static void config_subscription(uint8_t *data, uint16_t len, uint16_t op)
 	tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX, status);
 }
 
+
+#if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
+static void notify_cb(struct bt_conn *conn, void *user_data)
+{
+	LOG_DBG("Nofication sent");
+}
+
+static void notify_mult(uint8_t *data, uint16_t len, uint16_t op)
+{
+	const struct gatt_cfg_notify_mult_cmd *cmd = (void *) data;
+	const size_t max_cnt = CONFIG_BT_L2CAP_TX_BUF_COUNT;
+	struct bt_gatt_notify_params params[max_cnt];
+	struct bt_conn *conn;
+	const size_t min_cnt = 1U;
+	int err = 0;
+	uint8_t status = BTP_STATUS_SUCCESS;
+	uint16_t attr_data_len = 0;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
+	if (!conn) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	if (!IN_RANGE(cmd->cnt, min_cnt, max_cnt)) {
+		LOG_ERR("Invalid count value %d (range %zu to %zu)",
+			    cmd->cnt, min_cnt, max_cnt);
+
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	(void)memset(params, 0, sizeof(params));
+
+	for (uint16_t i = 0U; i < cmd->cnt; i++) {
+		struct bt_gatt_attr attr = server_db[cmd->attr_id[i] -
+			server_db[0].handle];
+
+		attr_data_len = strtoul(attr.user_data, NULL, 16);
+		params[i].uuid = 0;
+		params[i].attr = &attr;
+		params[i].data = &attr.user_data;
+		params[i].len = attr_data_len;
+		params[i].func = notify_cb;
+		params[i].user_data = NULL;
+	}
+
+	err = bt_gatt_notify_multiple(conn, cmd->cnt, params);
+	if (err != 0) {
+		LOG_ERR("bt_gatt_notify_multiple failed: %d", err);
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	} else {
+		LOG_DBG("Send %u notifications", cmd->cnt);
+	}
+
+rsp:
+	tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX, status);
+}
+#endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
+
 struct get_attrs_foreach_data {
 	struct net_buf_simple *buf;
 	struct bt_uuid *uuid;
@@ -2173,6 +2236,9 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GATT_EATT_CONNECT:
 		eatt_connect(data, len);
+		return;
+	case GATT_NOTIFY_MULTIPLE:
+		notify_mult(data, len, opcode);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_GATT, opcode, index,
