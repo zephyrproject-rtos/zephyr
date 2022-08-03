@@ -109,13 +109,11 @@
 	sensor0: sensor@44 {
 		compatible = "ti,opt3001";
 		reg = <0x44>;
-		label = "OPT3001";
 	};
 
 	sensor2: sensor@41 {
 		compatible = "ti,hdc2080";
 		reg = <0x41>;
-		label = "HDC2080";
 		int-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
 	};
 };
@@ -130,7 +128,6 @@
 	sensor1: sensor@0 {
 		compatible = "adi,adxl362";
 		reg = <0>;
-		label = "ADXL362";
 		int1-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
 		spi-max-frequency = <8000000>;
 	};
