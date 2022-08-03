@@ -4,23 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_IPC_SHM := zephyr,ipc_shm
 DT_CHOSEN_Z_IPC_TX := zephyr,ipc_tx
 DT_CHOSEN_Z_IPC_RX := zephyr,ipc_rx
-
-config OPENAMP_IPC_SHM_BASE_ADDRESS
-	hex
-	default "$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_IPC_SHM))"
-	help
-	  This option specifies base address of the memory region to
-	  be used for the OpenAMP IPC shared memory
-
-config OPENAMP_IPC_SHM_SIZE
-	hex
-	default "$(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_IPC_SHM))"
-	help
-	  This option specifies size of the memory region to be used
-	  for the OpenAMP IPC shared memory
 
 config OPENAMP_IPC_DEV_TX_NAME
 	string

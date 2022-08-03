@@ -200,9 +200,9 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	}
 
 	/* setup IPM */
-	ipm_handle = device_get_binding(CONFIG_OPENAMP_IPC_DEV_NAME);
-	if (ipm_handle == NULL) {
-		printk("device_get_binding failed to find device\n");
+	ipm_handle = DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc));
+	if (!device_is_ready(ipm_handle)) {
+		printk("IPM device is not ready\n");
 		return;
 	}
 
