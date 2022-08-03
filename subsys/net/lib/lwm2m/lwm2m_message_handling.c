@@ -196,8 +196,9 @@ int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 	coap_pendings_clear(client_ctx->pendings, ARRAY_SIZE(client_ctx->pendings));
 	coap_replies_clear(client_ctx->replies, ARRAY_SIZE(client_ctx->replies));
 
-#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
+
 	client_ctx->connection_suspended = false;
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	client_ctx->buffer_client_messages = true;
 #endif
 	lwm2m_socket_del(client_ctx);
@@ -213,9 +214,9 @@ void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx)
 {
 	sys_slist_init(&client_ctx->pending_sends);
 	sys_slist_init(&client_ctx->observer);
+	client_ctx->connection_suspended = false;
 #if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	client_ctx->buffer_client_messages = true;
-	client_ctx->connection_suspended = false;
 	sys_slist_init(&client_ctx->queued_messages);
 #endif
 }
