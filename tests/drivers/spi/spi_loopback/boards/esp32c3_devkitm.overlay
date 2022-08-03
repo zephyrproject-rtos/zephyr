@@ -1,0 +1,4 @@
+&spi2 {
+	label = "SPI_2";
+	status = "okay";
+};
