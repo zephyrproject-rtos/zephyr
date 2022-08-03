@@ -25,14 +25,14 @@
 #define XFER_SIZE 64
 
 #if CONFIG_NOCACHE_MEMORY
-static const char TX_DATA[] = "The quick brown fox jumps over the lazy dog";
+static __aligned(32) const char TX_DATA[] = "The quick brown fox jumps over the lazy dog";
 static __aligned(32) char tx_data[XFER_SIZE] __used
 	__attribute__((__section__(".nocache")));
 static __aligned(32) char rx_data[XFERS][XFER_SIZE] __used
 	__attribute__((__section__(".nocache.dma")));
 #else
 /* this src memory shall be in RAM to support usingas a DMA source pointer.*/
-static const char tx_data[] = "The quick brown fox jumps over the lazy dog";
+static __aligned(32) const char tx_data[] = "The quick brown fox jumps over the lazy dog";
 static __aligned(32) char rx_data[XFERS][XFER_SIZE] = { { 0 } };
 #endif
 
