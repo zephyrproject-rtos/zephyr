@@ -1740,7 +1740,7 @@ static int uart_stm32_pm_action(const struct device *dev,
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		uart_stm32_suspend_setup(dev);
-		/* Stop device clock */
+		/* Stop device clock. Note: fixed clocks are not handled yet. */
 		err = clock_control_off(data->clock, (clock_control_subsys_t)&config->pclken[0]);
 		if (err != 0) {
 			LOG_ERR("Could not enable (LP)UART clock");
@@ -1749,7 +1749,10 @@ static int uart_stm32_pm_action(const struct device *dev,
 
 		/* Move pins to sleep state */
 		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
-		if (err < 0) {
+		if (err == -ENOENT) {
+			/* Warn but don't block PM suspend */
+			LOG_WRN("(LP)UART pinctrl sleep state not available ");
+		} else if (err < 0) {
 			return err;
 		}
 		break;
