@@ -1385,7 +1385,7 @@ struct crypto_driver_api cc2520_crypto_api = {
 	.cipher_async_callback_set	= NULL
 };
 
-DEVICE_DEFINE(cc2520_crypto, CONFIG_IEEE802154_CC2520_CRYPTO_DRV_NAME,
+DEVICE_DEFINE(cc2520_crypto, "cc2520_crypto",
 		cc2520_crypto_init, NULL,
 		&cc2520_context_data, NULL, POST_KERNEL,
 		CONFIG_IEEE802154_CC2520_CRYPTO_INIT_PRIO, &cc2520_crypto_api);
