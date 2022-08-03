@@ -244,7 +244,7 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	 */
 	if (!IS_ENABLED(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK) &&
 	    ((op < BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA) ||
-	     (len > (PDU_AC_PAYLOAD_SIZE_MAX - PDU_AC_EXT_PAYLOAD_OVERHEAD)))) {
+	     (len > PDU_AC_EXT_AD_DATA_LEN_MAX))) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -302,16 +302,12 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 #if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
 		if (!err) {
 			/* Fragment into chain PDU if len > 191 bytes */
-			if (len > (PDU_AC_PAYLOAD_SIZE_MAX -
-				   PDU_AC_EXT_PAYLOAD_OVERHEAD)) {
-				const uint8_t ad_len = PDU_AC_PAYLOAD_SIZE_MAX -
-					PDU_AC_EXT_PAYLOAD_OVERHEAD;
-
+			if (len > PDU_AC_EXT_AD_DATA_LEN_MAX) {
 				/* Prepare the AD data as parameter to update in
 				 * PDU
 				 */
 				val_ptr = hdr_data;
-				*val_ptr++ = ad_len;
+				*val_ptr++ = PDU_AC_EXT_AD_DATA_LEN_MAX;
 				(void)memcpy(val_ptr, &data, sizeof(data));
 
 				/* Traverse to next set clear hdr data
@@ -321,14 +317,15 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 				 */
 				val_ptr += sizeof(data);
 
-				*val_ptr = ad_len;
+				*val_ptr = PDU_AC_EXT_AD_DATA_LEN_MAX;
 				(void)memcpy(&val_ptr[ULL_ADV_HDR_DATA_DATA_PTR_OFFSET],
 					     &data, sizeof(data));
 
 				/* Calculate the overflow chain PDU's AD data
 				 * length
 				 */
-				ad_len_overflow = len - ad_len;
+				ad_len_overflow =
+					len - PDU_AC_EXT_AD_DATA_LEN_MAX;
 
 				/* No AD data in chain PDU besides the
 				 * overflow
@@ -502,11 +499,13 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 		hdr_chain = (void *)&com_hdr_chain->ext_hdr_adv_data[0];
 		dptr_chain = (void *)hdr_chain;
 
-		/* Flags */
+		/* Initialize Flags */
 		*dptr_chain = 0U;
 
-		/* TODO: should CTEInfo be added to chain PDU due to AD data
-		 *       overflow?
+		/* No CTE Info.
+		 * CTE count is given by HCI LE Set Connectionless CTE Transmit
+		 * Parameters, hence it is not altered due to change on PDUs
+		 * count in Periodic Advertising chain.
 		 */
 
 		/* ADI flag, mandatory if superior PDU has it */
@@ -524,17 +523,9 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 
 		/* Start adding fields corresponding to flags here, if any */
 
-		/* No AdvA flag */
-		/* No TgtA flag */
-
-		/* CTEInfo flag */
-		if (hdr_chain->cte_info) {
-			(void)memcpy(dptr_chain, dptr,
-				     sizeof(struct pdu_cte_info));
-
-			dptr += sizeof(struct pdu_cte_info);
-			dptr_chain += sizeof(struct pdu_cte_info);
-		}
+		/* No AdvA */
+		/* No TgtA */
+		/* No CTEInfo */
 
 		/* ADI flag */
 		if (hdr_chain->adi) {
@@ -556,7 +547,7 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 		if (ad_len_overflow) {
 			uint8_t *ad_overflow;
 
-			/* Copy overflowed AD data from previous PDU into this
+			/* Copy overflowed AD data from previous PDU into
 			 * new chain PDU
 			 */
 			(void)memcpy(&ad_overflow,
@@ -566,7 +557,9 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 			(void)memcpy(dptr_chain, ad_overflow, ad_len_overflow);
 			dptr_chain += ad_len_overflow;
 
-			/* Reduce the AD data in the previous PDU */
+			/* Reduce the AD data in the current PDU that will
+			 * become the current parent PDU for the new chain PDU.
+			 */
 			err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
 							 (ULL_ADV_PDU_HDR_FIELD_AD_DATA |
 							  ULL_ADV_PDU_HDR_FIELD_AUX_PTR),
@@ -1364,12 +1357,24 @@ uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
  * @p hdr_data content depends on the flag provided by @p hdr_add_fields:
  * - ULL_ADV_PDU_HDR_FIELD_CTE_INFO:
  *   # @p hdr_data points to single byte with CTEInfo field
+ * - ULL_ADV_PDU_HDR_FIELD_ADI:
+ *   # @p hdr_data points to memory where first byte is size of ADI structure,
+ *     following bytes are the pointer reference to the new ADI structure to be
+ *     updated in the PDU.
+ *     In return, the first byte returns the size of ADI structure, following
+ *     bytes returns the pointer reference to ADI structure offset inside the
+ *     updated current PDU.
  * - ULL_ADV_PDU_HDR_FIELD_AD_DATA:
  *   # @p hdr_data points to memory where first byte
  *     is size of advertising data, following byte is a pointer to actual
  *     advertising data.
  * - ULL_ADV_PDU_HDR_FIELD_AUX_PTR:
- *   # @p hdr_data parameter is not used
+ *   # @p hdr_data points to memory where first byte is size of aux ptr
+ *     structure, following bytes are the pointer reference to the new aux ptr
+ *     structure to be updated in the PDU.
+ *     In return, the first byte returns the size of aux ptr structure,
+ *     following bytes returns the pointer reference to aux ptr structure offset
+ *     inside the updated current PDU.
  * - ULL_ADV_PDU_HDR_FIELD_ACAD:
  *   # @p hdr_data points to memory where first byte is size of ACAD, second
  *     byte is used to return offset to ACAD field.
