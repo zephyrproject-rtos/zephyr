@@ -1536,6 +1536,7 @@ RISCV arch:
     - mgielda
     - katsuster
     - edersondisouza
+    - carlocaione
   files:
     - arch/riscv/
     - boards/riscv/
