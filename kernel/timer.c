@@ -35,22 +35,16 @@ void z_timer_expiration_handler(struct _timeout *t)
 		k_timeout_t next = timer->period;
 
 #ifdef CONFIG_TIMEOUT_64BIT
-		/* Exploit the fact that uptime during a kernel
-		 * timeout handler reflects the time of the scheduled
-		 * event and not real time to get some inexpensive
-		 * protection against late interrupts.  If we're
-		 * delayed for any reason, we still end up calculating
-		 * the next expiration as a regular stride from where
-		 * we "should" have run.  Requires absolute timeouts.
-		 * (Note offset by one: we're nominally at the
-		 * beginning of a tick, so need to defeat the "round
-		 * down" behavior on timeout addition).
+		/* Periodic timers are always scheduled relative to the previous
+		 * scheduled timeout *not* the current time
 		 */
-		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + 1
-					   + timer->period.ticks);
+		next = K_TIMEOUT_ABS_TICKS(timer->last_scheduled
+					   + timer->period.ticks + 1);
 #endif
 		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
 			      next);
+
+		timer->last_scheduled = timer->last_scheduled + timer->period.ticks + 1;
 	}
 
 	/* update timer's status */
@@ -142,8 +136,11 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	timer->period = period;
 	timer->status = 0U;
 
+	timer->last_scheduled = k_uptime_get() + duration.ticks + 1;
+
 	z_add_timeout(&timer->timeout, z_timer_expiration_handler,
 		     duration);
+
 }
 
 #ifdef CONFIG_USERSPACE

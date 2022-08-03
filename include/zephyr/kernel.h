@@ -1334,6 +1334,9 @@ struct k_timer {
 	/* runs in the context of the thread that calls k_timer_stop() */
 	void (*stop_fn)(struct k_timer *timer);
 
+	/* last scheduled tick */
+	uint64_t last_scheduled;
+
 	/* timer period */
 	k_timeout_t period;
 
@@ -5824,7 +5827,7 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
  *
  * This routine enables the gathering of runtime statistics for the specified
  * thread.
- *
+*
  * @param thread ID of thread
  * @return -EINVAL if invalid thread ID, otherwise 0
  */
