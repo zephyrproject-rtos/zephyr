@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2022 Martin Schröder <martin.schroder@swedishembedded.com>
+# Consulting: https://swedishembedded.com/go
+# Training: https://swedishembedded.com/tag/training
+
+config CMOCK
+	bool "Use CMock mocking framework"
+	select TEST
+	depends on UNITY
+	help
+			This option enables CMock testing.

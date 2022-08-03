@@ -1,0 +1,7 @@
+tests:
+  tests.cmock.example.unit:
+    extra_configs:
+      - CONFIG_CMOCK=y
+    platform_allow: native_posix
+  tests.cmock.example.integration:
+    platform_allow: native_posix

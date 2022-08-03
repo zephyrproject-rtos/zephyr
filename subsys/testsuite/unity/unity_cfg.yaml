@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2022 Martin Schröder <info@swedishembedded.com>
+# Consulting: https://swedishembedded.com/go
+# Training: https://swedishembedded.com/tag/training
+
+:unity:
+    :suite_teardown: >
+       extern int test_suite_teardown(int); return test_suite_teardown(num_failures);
+    :main_name: unity_main
+    :cmdline_args: true

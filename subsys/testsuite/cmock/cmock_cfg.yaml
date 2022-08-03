@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2022 Martin Schröder <info@swedishembedded.com>
+# Consulting: https://swedishembedded.com/go
+# Training: https://swedishembedded.com/tag/training
+
+:cmock:
+    :plugins:
+        - :ignore
+        - :ignore_arg
+        - :array
+        - :callback
+        - :return_thru_ptr
+        - :expect_any_args
+    :treat_externs: :include
+    :when_ptr: :compare_data
+    :callback_after_arg_check: true
+    :exclude_setjmp_h: true
+    :treat_as:
+        'int8_t': 'INT8'
+        'uint8_t': 'HEX8'
+        'int16_t': 'INT16'
+        'uint16_t': 'HEX16'
+        'int32_t': 'INT32'
+        'uint32_t': 'HEX32'
+        'int64_t': 'INT64'
+        'uint64_t': 'HEX64'

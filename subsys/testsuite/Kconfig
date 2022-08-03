@@ -4,6 +4,8 @@
 menu "Testing"
 
 source "subsys/testsuite/ztest/Kconfig"
+source "subsys/testsuite/cmock/Kconfig"
+source "subsys/testsuite/unity/Kconfig"
 
 config TEST
 	bool "Mark project as a test"

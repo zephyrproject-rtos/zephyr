@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2022 Martin Schröder <info@swedishembedded.com>
+# Consulting: https://swedishembedded.com/go
+# Training: https://swedishembedded.com/tag/training
+
+config UNITY
+	bool "Use Unity unit test framework"
+	select TEST
+	depends on !ZTEST
+	help
+			This enables unity test framework which you should use instead of ZTEST.

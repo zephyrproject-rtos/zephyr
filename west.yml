@@ -21,7 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
-
+    - name: throwtheswitch
+      url-base: https://github.com/ThrowTheSwitch
   #
   # Please add items below based on alphabetical order
   projects:
@@ -262,7 +263,14 @@ manifest:
     - name: zscilib
       path: modules/lib/zscilib
       revision: ca070ddabdaf67175a2da901d0bd62e8899371c5
-
+    - name: cmock
+      path: modules/test/cmock
+      revision: f65066f15d8248e6dcb778efb8739904a4512087
+      remote: throwtheswitch
+    - name: unity
+      path: modules/test/cmock/vendor/unity
+      revision: 1958b977019c3ac19bb83350f7b26e60cbeb6c75
+      remote: throwtheswitch
   self:
     path: zephyr
     west-commands: scripts/west-commands.yml
