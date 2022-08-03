@@ -8,21 +8,18 @@ mhu0: mhu@3000 {
 	compatible = "arm,mhu";
 	reg = <0x3000 0x1000>;
 	interrupts = <6 3>;
-	label = "MHU_0";
 };
 
 mhu1: mhu@4000 {
 	compatible = "arm,mhu";
 	reg = <0x4000 0x1000>;
 	interrupts = <7 3>;
-	label = "MHU_1";
 };
 
 timer: timer@10c000 {
 	compatible = "arm,cmsdk-timer";
 	reg = <0x10c000 0x1000>;
 	interrupts = <3 3>;
-	label = "TIMER_0";
 };
 
 uart0: uart@105000 {
@@ -32,7 +29,6 @@ uart0: uart@105000 {
 	interrupt-names = "rx", "tx", "rxtim", "err";
 	clocks = <&sysclk>;
 	current-speed = <115200>;
-	label = "UART_0";
 };
 
 uart1: uart@106000 {
@@ -42,7 +38,6 @@ uart1: uart@106000 {
 	interrupt-names = "rx", "tx", "rxtim", "err";
 	clocks = <&sysclk>;
 	current-speed = <115200>;
-	label = "UART_1";
 };
 
 gpio: gpio@1000000 {
@@ -55,5 +50,4 @@ gpio: gpio@1000000 {
 		      63 3 64 3 65 3 66 3>; /* PINS 12:15 */
 	gpio-controller;
 	#gpio-cells = <2>;
-	label = "GPIO_0";
 };
