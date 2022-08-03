@@ -41,6 +41,10 @@ struct uart_stm32_config {
 	defined(CONFIG_PM)
 	uart_irq_config_func_t irq_config_func;
 #endif
+#if defined(CONFIG_PM)
+	/* Device defined as wake-up source */
+	bool wakeup_source;
+#endif /* CONFIG_PM */
 };
 
 #ifdef CONFIG_UART_ASYNC_API
