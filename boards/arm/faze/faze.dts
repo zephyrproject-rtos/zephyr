@@ -80,7 +80,6 @@
 	led_controller_0: lp5030@30 {
 		compatible = "ti,lp5030", "ti,lp503x";
 		reg = <0x30>;
-		label = "LP5030";
 
 		led0: led_0 {
 			label = "LED LP5030 0";

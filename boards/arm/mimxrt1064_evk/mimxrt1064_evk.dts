@@ -157,7 +157,6 @@ arduino_i2c: &lpi2c1 {};
 	mt9m114: mt9m114@48 {
 		compatible = "aptina,mt9m114";
 		reg = <0x48>;
-		label = "MT9M114";
 		status = "okay";
 
 		port {
@@ -170,7 +169,6 @@ arduino_i2c: &lpi2c1 {};
 	touch_controller: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
-		label = "FT5336";
 		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 	};
 };
@@ -186,7 +184,6 @@ arduino_i2c: &lpi2c1 {};
 	is25wp064: is25wp064@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <67108864>;
-		label = "IS25WP064";
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";

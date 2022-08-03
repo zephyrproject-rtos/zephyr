@@ -134,7 +134,6 @@
 	fxos8700: fxos8700@1e {
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
-		label = "FXOS8700";
 		int1-gpios = <&gpio1 26 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 };

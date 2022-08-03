@@ -121,7 +121,6 @@ arduino_i2c: &flexcomm4 {
 	fxos8700: fxos8700@1e {
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
-		label = "FXOS8700";
 		int1-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
 	};
@@ -233,7 +232,6 @@ arduino_serial: &flexcomm12 {
 	mx25um51345g: mx25um51345g@0 {
 		compatible = "nxp,imx-flexspi-mx25um51345g";
 		size = <DT_SIZE_M(64)>;
-		label = "MX25UM51345G";
 		reg = <0>;
 		spi-max-frequency = <200000000>;
 		status = "okay";
