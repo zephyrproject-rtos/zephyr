@@ -43,7 +43,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
 			interrupts = <51 5>;
 			status = "disabled";
-			label = "SPI_3";
 		};
 
 		pinctrl: pin-controller@48000000 {
