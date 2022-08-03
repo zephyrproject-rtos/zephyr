@@ -107,7 +107,6 @@
 		compatible = "st,lsm6dso";
 		reg = <0x6a>;
 		irq-gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
-		label = "LSM6DSO";
 	};
 };
 
@@ -127,7 +126,6 @@
 		irq-gpios = <&gpiog 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		reset-gpios = <&gpiog 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		spi-max-frequency = <2000000>;
-		label = "SPBTLE-RF";
 	};
 };
 
@@ -144,7 +142,6 @@
 
 	mx25lm51245: ospi-nor-flash@0 {
 		compatible = "st,stm32-ospi-nor";
-		label = "MX25LM51245";
 		reg = <0>;
 		ospi-max-frequency = <DT_FREQ_M(50)>;
 		size = <DT_SIZE_M(64)>;

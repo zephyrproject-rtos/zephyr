@@ -124,7 +124,6 @@ arduino_serial: &usart6 {};
 	touch_controller: ft6202@2a {
 		compatible = "focaltech,ft5336";
 		reg = <0x2a>;
-		label = "FT6202";
 		int-gpios = <&gpioi 13 0>;
 	};
 };
@@ -167,7 +166,6 @@ arduino_serial: &usart6 {};
 
 	mx25l51245g: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		label = "MX25L51245G";
 		reg = <0>;
 		qspi-max-frequency = <72000000>;
 		size = <DT_SIZE_M(64*8)>;
