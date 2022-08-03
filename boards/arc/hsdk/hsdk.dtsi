@@ -122,8 +122,6 @@ arduino_spi: &spi2 {};
 	cy8c95xx: cy8c95xx@20 {
 		compatible = "cypress,cy8c95xx-gpio";
 		reg = <0x20>;
-		label = "cy8c95xx_gpio";
-
 		ranges;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -131,7 +129,6 @@ arduino_spi: &spi2 {};
 		cy8c95xx_port0: cy8c95xx_port@0 {
 			compatible = "cypress,cy8c95xx-gpio-port";
 			reg = <0x00>;
-			label = "cy8c95xx_port0";
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <8>;
@@ -141,7 +138,6 @@ arduino_spi: &spi2 {};
 		cy8c95xx_port1: cy8c95xx_port@1 {
 			compatible = "cypress,cy8c95xx-gpio-port";
 			reg = <0x01>;
-			label = "cy8c95xx_port1";
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <8>;
