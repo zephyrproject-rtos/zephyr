@@ -2045,12 +2045,12 @@ static int cmd_connect_le(const struct shell *sh, size_t argc, char *argv[])
 
 			return SHELL_CMD_HELP_PRINTED;
 		}
-	}
-
-	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
-	if (err) {
-		shell_error(sh, "Invalid peer address (err %d)", err);
-		return err;
+	} else {
+		err = bt_addr_le_from_str(argv[1], argv[2], &addr);
+		if (err) {
+			shell_error(sh, "Invalid peer address (err %d)", err);
+			return err;
+		}
 	}
 
 #if defined(CONFIG_BT_EXT_ADV)
