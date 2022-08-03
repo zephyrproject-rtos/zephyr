@@ -174,7 +174,7 @@
 };
 
 arduino_serial: &uart1 {
-	/* Cannot be used together with spi1, hence disabled by default. */
+	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
@@ -202,17 +202,10 @@ arduino_i2c: &i2c2 {
 	pinctrl-names = "default", "sleep";
 };
 
-arduino_spi: &spi1 {
-	/* Cannot be used together with uart1, hence disabled by default. */
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
-	pinctrl-0 = <&spi1_default>;
-	pinctrl-1 = <&spi1_sleep>;
-	pinctrl-names = "default", "sleep";
-};
-
-&spi3 {
+arduino_spi: &spi3 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
