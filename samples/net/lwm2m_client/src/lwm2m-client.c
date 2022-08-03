@@ -466,6 +466,10 @@ static void rd_client_event(struct lwm2m_ctx *client,
 		LOG_DBG("Queue mode RX window closed");
 		break;
 
+	case LWM2M_RD_CLIENT_EVENT_ENGINE_SUSPENDED:
+		LOG_DBG("LwM2M engine suspended");
+		break;
+
 	case LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR:
 		LOG_ERR("LwM2M engine reported a network error.");
 		lwm2m_rd_client_stop(client, rd_client_event, true);
