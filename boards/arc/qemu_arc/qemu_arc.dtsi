@@ -52,7 +52,6 @@
 		clock-frequency = <10000000>;
 		reg = <0xf0000000 0x400>;
 		current-speed = <115200>;
-		label = "UART_0";
 		interrupt-parent = <&intc>;
 		interrupts = <24 1>;
 		reg-shift = <2>;
@@ -63,7 +62,6 @@
 		clock-frequency = <10000000>;
 		reg = <0xf0002000 0x400>;
 		current-speed = <115200>;
-		label = "UART_1";
 		interrupt-parent = <&intc>;
 		interrupts = <25 1>;
 		reg-shift = <2>;
