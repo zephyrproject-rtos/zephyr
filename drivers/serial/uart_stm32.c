@@ -1675,6 +1675,17 @@ static int uart_stm32_init(const struct device *dev)
 	config->irq_config_func(dev);
 #endif /* CONFIG_PM || CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API */
 
+#if defined(CONFIG_PM)
+	if (config->wakeup_source) {
+		/* Enable ability to wakeup device in Stop mode
+		 * Effect depends on CONFIG_PM_DEVICE status:
+		 * CONFIG_PM_DEVICE=n : Always active
+		 * CONFIG_PM_DEVICE=y : Controlled by pm_device_wakeup_enable()
+		 */
+		LL_USART_EnableInStopMode(config->usart);
+	}
+#endif /* CONFIG_PM */
+
 #ifdef CONFIG_UART_ASYNC_API
 	return uart_stm32_async_init(dev);
 #else
@@ -1750,6 +1761,13 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 #define UART_DMA_CHANNEL(index, dir, DIR, src, dest)
 #endif
 
+#ifdef CONFIG_PM
+#define STM32_UART_PM_WAKEUP(index)					\
+	.wakeup_source = DT_INST_PROP(index, wakeup_source),
+#else
+#define STM32_UART_PM_WAKEUP(index) /* Not used */
+#endif
+
 #define STM32_UART_INIT(index)						\
 STM32_UART_IRQ_HANDLER_DECL(index)					\
 									\
@@ -1767,9 +1785,10 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 	.single_wire = DT_INST_PROP_OR(index, single_wire, false),	\
 	.tx_rx_swap = DT_INST_PROP_OR(index, tx_rx_swap, false),	\
-	.rx_invert = DT_INST_PROP(index, rx_invert),	\
-	.tx_invert = DT_INST_PROP(index, tx_invert),	\
+	.rx_invert = DT_INST_PROP(index, rx_invert),			\
+	.tx_invert = DT_INST_PROP(index, tx_invert),			\
 	STM32_UART_IRQ_HANDLER_FUNC(index)				\
+	STM32_UART_PM_WAKEUP(index)					\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##index = {		\
