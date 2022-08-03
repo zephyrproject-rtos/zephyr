@@ -191,9 +191,9 @@ int platform_init(void)
 	}
 
 	/* setup IPM */
-	ipm_handle = device_get_binding(CONFIG_OPENAMP_IPC_DEV_NAME);
-	if (!ipm_handle) {
-		LOG_DBG("Failed to find ipm device\n");
+	ipm_handle = DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc));
+	if (!device_is_ready(ipm_handle)) {
+		LOG_DBG("IPM device is not ready\n");
 		return -1;
 	}
 
