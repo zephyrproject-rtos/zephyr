@@ -83,11 +83,11 @@ uint8_t lwm2m_firmware_get_update_result(void);
 int lwm2m_socket_add(struct lwm2m_ctx *ctx);
 void lwm2m_socket_del(struct lwm2m_ctx *ctx);
 int lwm2m_socket_start(struct lwm2m_ctx *client_ctx);
-#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
-int lwm2m_engine_close_socket_connection(struct lwm2m_ctx *client_ctx);
 int lwm2m_engine_connection_resume(struct lwm2m_ctx *client_ctx);
+int lwm2m_open_socket(struct lwm2m_ctx *client_ctx);
+int lwm2m_close_socket(struct lwm2m_ctx *client_ctx);
+int lwm2m_socket_suspend(struct lwm2m_ctx *client_ctx);
 int lwm2m_push_queued_buffers(struct lwm2m_ctx *client_ctx);
-#endif
 
 /* Resources */
 struct lwm2m_ctx **lwm2m_sock_ctx(void);
