@@ -45,7 +45,6 @@
 &usic1ch1 {
 	compatible = "infineon,xmc4xxx-uart";
 	current-speed = <115200>;
-	label = "UART_0";
 	status = "okay";
 };
 
