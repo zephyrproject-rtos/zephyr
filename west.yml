@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: libresolar
+      url-base: https://github.com/LibreSolar
 
   #
   # Please add items below based on alphabetical order
@@ -158,7 +160,8 @@ manifest:
         - fs
       revision: 652f2c5646e79b881e6f3099686ad3b7af9e216c
     - name: loramac-node
-      revision: 0257b50905695192d095667b1c3abb80346db1a1
+      remote: libresolar
+      revision: v4.x-zephyr-fuota
       path: modules/lib/loramac-node
     - name: lvgl
       revision: d7951c24b4a5a71241b70582e463ca0330fbb871
