@@ -54,9 +54,11 @@
 					     CONFIG_BT_CTLR_ADV_DATA_LEN_MAX), \
 					    PDU_AC_EXT_PAYLOAD_SIZE_MAX), \
 					PDU_AC_LEG_PAYLOAD_SIZE_MAX)
-#else
+#define PDU_AC_EXT_AD_DATA_LEN_MAX  (PDU_AC_PAYLOAD_SIZE_MAX - \
+				     PDU_AC_EXT_PAYLOAD_OVERHEAD)
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
 #define PDU_AC_PAYLOAD_SIZE_MAX     PDU_AC_LEG_PAYLOAD_SIZE_MAX
-#endif
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 /* Link Layer header size of Adv PDU. Assumes pdu_adv is packed */
 #define PDU_AC_LL_HEADER_SIZE  (offsetof(struct pdu_adv, payload))
