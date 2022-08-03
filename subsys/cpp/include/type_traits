@@ -1,0 +1,24 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ *
+ * @brief Stub header allowing compilation of `#include <type_traits>`
+ */
+
+#ifndef ZEPHYR_SUBSYS_CPP_INCLUDE_TYPE_TRAITS_
+#define ZEPHYR_SUBSYS_CPP_INCLUDE_TYPE_TRAITS_
+
+namespace std {
+
+template<class T> struct remove_reference      { typedef T type; };
+template<class T> struct remove_reference<T&>  { typedef T type; };
+template<class T> struct remove_reference<T&&> { typedef T type; };
+
+}
+
+#endif /* ZEPHYR_SUBSYS_CPP_INCLUDE_TYPE_TRAITS_ */
