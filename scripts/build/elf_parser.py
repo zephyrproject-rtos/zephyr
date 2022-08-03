@@ -269,6 +269,8 @@ class ZephyrElf:
             else:
                 n = self.edt.dep_ord2node[dev.ordinal]
                 label = n.labels[0] if n.labels else n.label
+                if label is None:
+                    label = ''
                 text = '{:s}\\nOrdinal: {:d} | Handle: {:d}\\n{:s}'.format(
                     label, dev.ordinal, dev.handle, n.path
                 )
