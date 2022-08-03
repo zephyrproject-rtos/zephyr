@@ -152,9 +152,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             if plat.startswith('win32'):
                 libname = Library.get_appropriate_windows_sdk_name() + '.dll'
             elif plat.startswith('linux'):
-                libname = Library.JLINK_SDK_NAME + '.so'
+                libname = Library.JLINK_SDK_STARTS_WITH + '.so'
             elif plat.startswith('darwin'):
-                libname = Library.JLINK_SDK_NAME + '.dylib'
+                libname = Library.JLINK_SDK_STARTS_WITH + '.dylib'
             else:
                 self.logger.warning(f'unknown platform {plat}; assuming UNIX')
                 libname = Library.JLINK_SDK_NAME + '.so'
