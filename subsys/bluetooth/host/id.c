@@ -788,7 +788,7 @@ void bt_id_pending_keys_update(void)
 	}
 }
 
-void bt_id_add(struct bt_keys *keys)
+void bt_id_add_option(struct bt_keys *keys, bool duplicate_rl)
 {
 	struct bt_conn *conn;
 	int err;
@@ -864,6 +864,10 @@ void bt_id_add(struct bt_keys *keys)
 		goto done;
 	}
 
+	if (duplicate_rl && !IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		goto id_added;
+	}
+
 	err = hci_id_add(keys->id, &keys->addr, keys->irk.val);
 	if (err) {
 		BT_ERR("Failed to add IRK to controller");
@@ -871,6 +875,8 @@ void bt_id_add(struct bt_keys *keys)
 	}
 
 	bt_dev.le.rl_entries++;
+
+id_added:
 	keys->state |= BT_KEYS_ID_ADDED;
 
 	/*
@@ -903,6 +909,11 @@ done:
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
 		bt_le_ext_adv_foreach(adv_unpause_enabled, NULL);
 	}
+}
+
+void bt_id_add(struct bt_keys *keys)
+{
+	bt_id_add_option(keys, false);
 }
 
 static void keys_add_id(struct bt_keys *keys, void *data)

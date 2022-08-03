@@ -204,6 +204,9 @@ struct bt_smp {
 
 	/* Delayed work for timeout handling */
 	struct k_work_delayable		work;
+
+	/* Checking if this is going to be a duplicate entry in RL */
+	bool duplicate_rl;
 };
 
 static unsigned int fixed_passkey = BT_PASSKEY_INVALID;
@@ -1825,6 +1828,7 @@ static void smp_reset(struct bt_smp *smp)
 
 	smp->method = JUST_WORKS;
 	atomic_set(smp->allowed_cmds, 0);
+	smp->duplicate_rl = false;
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    conn->role == BT_HCI_ROLE_CENTRAL) {
@@ -3889,7 +3893,11 @@ static uint8_t smp_ident_info(struct bt_smp *smp, struct net_buf *buf)
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
-		memcpy(keys->irk.val, req->irk, 16);
+		if (!memcmp(keys->irk.val, req->irk, sizeof(*keys->irk.val))) {
+			smp->duplicate_rl = true;
+		} else {
+			memcpy(keys->irk.val, req->irk, 16);
+		}
 	}
 
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_IDENT_ADDR_INFO);
@@ -3950,6 +3958,10 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 			/* always update last use RPA */
 			bt_addr_copy(&keys->irk.rpa, &dst->a);
 
+			if (bt_addr_le_cmp(&keys->addr, &req->addr)) {
+				smp->duplicate_rl = false;
+			}
+
 			/*
 			 * Update connection address and notify about identity
 			 * resolved only if connection wasn't already reported
@@ -3962,9 +3974,11 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 
 				bt_conn_identity_resolved(conn);
 			}
+		} else {
+			smp->duplicate_rl = false;
 		}
 
-		bt_id_add(keys);
+		bt_id_add_option(keys, smp->duplicate_rl);
 	}
 
 	smp->remote_dist &= ~BT_SMP_DIST_ID_KEY;
