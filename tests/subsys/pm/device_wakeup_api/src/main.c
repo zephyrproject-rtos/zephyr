@@ -84,7 +84,7 @@ void test_wakeup_device_api(void)
 	zassert_not_null(dev, "Failed to get device");
 
 	ret = pm_device_wakeup_is_capable(dev);
-	zassert_true(ret, "Device marked as capable");
+	zassert_true(ret, "Device not marked as capable");
 
 	ret = pm_device_wakeup_enable(dev, true);
 	zassert_true(ret, "Could not enable wakeup source");
