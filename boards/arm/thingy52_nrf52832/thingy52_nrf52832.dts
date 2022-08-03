@@ -73,7 +73,6 @@
 
 	vdd_pwr: vdd-pwr-ctrl {
 		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "vdd-pwr-ctrl";
 		regulator-name = "vdd-pwr-ctrl";
 		enable-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -81,28 +80,24 @@
 
 	spk_pwr: spk-pwr-ctrl {
 		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "spk-pwr-ctrl";
 		regulator-name = "spk-pwr-ctrl";
 		enable-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
 	};
 
 	mpu_pwr: mpu-pwr-ctrl {
 		compatible = "regulator-fixed";
-		label = "mpu-pwr-ctrl";
 		regulator-name = "mpu-pwr-ctrl";
 		enable-gpios = <&sx1509b 8 GPIO_ACTIVE_HIGH>;
 	};
 
 	mic_pwr: mic-pwr-ctrl {
 		compatible = "regulator-fixed";
-		label = "mic-pwr-ctrl";
 		regulator-name = "mic-pwr-ctrl";
 		enable-gpios = <&sx1509b 9 GPIO_ACTIVE_HIGH>;
 	};
 
 	ccs_pwr: ccs-pwr-ctrl {
 		compatible = "regulator-fixed";
-		label = "ccs-pwr-ctrl";
 		regulator-name = "ccs-pwr-ctrl";
 		enable-gpios = <&sx1509b 10 GPIO_ACTIVE_HIGH>;
 	};
@@ -140,7 +135,6 @@
 	sx1509b: sx1509b@3e {
 		compatible = "semtech,sx1509b";
 		reg = <0x3e>;
-		label = "GPIO_P0";
 		vin-supply = <&vdd_pwr>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -153,14 +147,12 @@
 	lps22hb_press: lps22hb_press@5c {
 		compatible = "st,lps22hb-press";
 		reg = <0x5c>;
-		label = "LPS22HB";
 		vin-supply = <&vdd_pwr>;
 	};
 
 	hts221: hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
-		label = "HTS221";
 		vin-supply = <&vdd_pwr>;
 		drdy-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
 	};
@@ -168,7 +160,6 @@
 	ccs811: ccs811@5a {
 		compatible = "ams,ccs811";
 		reg = <0x5a>;
-		label = "CCS811";
 		vin-supply = <&ccs_pwr>;
 		irq-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&sx1509b 11 GPIO_ACTIVE_LOW>;
@@ -188,7 +179,6 @@
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
-		label = "LIS2DH12-ACCEL";
 	};
 };
 

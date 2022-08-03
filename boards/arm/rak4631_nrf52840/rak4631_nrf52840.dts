@@ -106,7 +106,6 @@
 	lora: lora@0 {
 		compatible = "semtech,sx1262";
 		reg = <0>;
-		label = "sx1262";
 		reset-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
 		busy-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
 		tx-enable-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
