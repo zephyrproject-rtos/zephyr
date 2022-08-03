@@ -22,6 +22,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/policy.h>
+#include <zephyr/pm/device.h>
 
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma/dma_stm32.h>
@@ -1693,6 +1694,73 @@ static int uart_stm32_init(const struct device *dev)
 #endif
 }
 
+#ifdef CONFIG_PM_DEVICE
+static void uart_stm32_suspend_setup(const struct device *dev)
+{
+	const struct uart_stm32_config *config = dev->config;
+
+#ifdef USART_ISR_BUSY
+	/* Make sure that no USART transfer is on-going */
+	while (LL_USART_IsActiveFlag_BUSY(config->usart) == 1) {
+	}
+#endif
+	while (LL_USART_IsActiveFlag_TC(config->usart) == 0) {
+	}
+#ifdef USART_ISR_REACK
+	/* Make sure that USART is ready for reception */
+	while (LL_USART_IsActiveFlag_REACK(config->usart) == 0) {
+	}
+#endif
+	/* Clear OVERRUN flag */
+	LL_USART_ClearFlag_ORE(config->usart);
+}
+
+static int uart_stm32_pm_action(const struct device *dev,
+			       enum pm_device_action action)
+{
+	const struct uart_stm32_config *config = dev->config;
+	struct uart_stm32_data *data = dev->data;
+	int err;
+
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* Set pins to active state */
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			return err;
+		}
+
+		/* enable clock */
+		err = clock_control_on(data->clock, (clock_control_subsys_t)&config->pclken[0]);
+		if (err != 0) {
+			LOG_ERR("Could not enable (LP)UART clock");
+			return err;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		uart_stm32_suspend_setup(dev);
+		/* Stop device clock */
+		err = clock_control_off(data->clock, (clock_control_subsys_t)&config->pclken[0]);
+		if (err != 0) {
+			LOG_ERR("Could not enable (LP)UART clock");
+			return err;
+		}
+
+		/* Move pins to sleep state */
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+		if (err < 0) {
+			return err;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #ifdef CONFIG_UART_ASYNC_API
 
 /* src_dev and dest_dev should be 'MEMORY' or 'PERIPHERAL'. */
@@ -1797,9 +1865,11 @@ static struct uart_stm32_data uart_stm32_data_##index = {		\
 	UART_DMA_CHANNEL(index, tx, TX, MEMORY, PERIPHERAL)		\
 };									\
 									\
+PM_DEVICE_DT_INST_DEFINE(index, uart_stm32_pm_action);		        \
+									\
 DEVICE_DT_INST_DEFINE(index,						\
 		    &uart_stm32_init,					\
-		    NULL,						\
+		    PM_DEVICE_DT_INST_GET(index),			\
 		    &uart_stm32_data_##index, &uart_stm32_cfg_##index,	\
 		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\
 		    &uart_stm32_driver_api);				\
