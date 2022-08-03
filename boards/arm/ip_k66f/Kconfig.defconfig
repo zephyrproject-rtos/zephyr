@@ -38,8 +38,11 @@ endif # NETWORKING
 
 if NET_DSA
 
+config SPI
+	default y
+
 config DSA_KSZ8794
-	default y if SPI
+	default y
 
 endif # NET_DSA
 
