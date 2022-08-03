@@ -45,6 +45,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LWM2M_HELP_STOP "Stop the LwM2M RD (De-register) Client\nstop [OPTIONS]\n" \
 	"-f \tForce close the connection\n"
 #define LWM2M_HELP_UPDATE "Trigger Registration Update of the LwM2M RD Client\n"
+#define LWM2M_HELP_PAUSE "LwM2M engine thread pause"
+#define LWM2M_HELP_RESUME "LwM2M engine thread resume"
 
 static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 {
@@ -433,6 +435,24 @@ static int cmd_update(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_pause(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	return lwm2m_engine_pause();
+}
+
+static int cmd_resume(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	return lwm2m_engine_resume();
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lwm2m,
 	SHELL_COND_CMD_ARG(CONFIG_LWM2M_VERSION_1_1, send, NULL,
@@ -443,6 +463,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(start, NULL, LWM2M_HELP_START, cmd_start, 2, 2),
 	SHELL_CMD_ARG(stop, NULL, LWM2M_HELP_STOP, cmd_stop, 1, 1),
 	SHELL_CMD_ARG(update, NULL, LWM2M_HELP_UPDATE, cmd_update, 1, 0),
+	SHELL_CMD_ARG(pause, NULL, LWM2M_HELP_PAUSE, cmd_pause, 1, 0),
+	SHELL_CMD_ARG(resume, NULL, LWM2M_HELP_RESUME, cmd_resume, 1, 0),
 	SHELL_SUBCMD_SET_END);
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_LWM2M_SHELL, lwm2m, &sub_lwm2m,
 			    LWM2M_HELP_CMD, NULL, 1, 0);
