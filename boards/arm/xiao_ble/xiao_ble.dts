@@ -124,7 +124,6 @@
 		wp-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 		hold-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 		spi-max-frequency = <104000000>;
-		label = "P25Q16H";
 		jedec-id = [85 60 15];
 		sfdp-bfp = [
 			e5 20 f1 ff  ff ff ff 00  44 eb 08 6b  08 3b 80 bb
@@ -183,6 +182,5 @@ zephyr_udc0: &usbd {
 
 	usb_cdc_acm_uart: cdc-acm-uart {
 		compatible = "zephyr,cdc-acm-uart";
-		label = "CDC_ACM_0";
 	};
 };

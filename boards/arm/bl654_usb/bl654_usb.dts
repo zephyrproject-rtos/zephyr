@@ -108,6 +108,5 @@ zephyr_udc0: &usbd {
 
 	bl654_cdc_acm_uart: bl654_cdc_acm_uart {
 		compatible = "zephyr,cdc-acm-uart";
-		label = "CDC_ACM_0";
 	};
 };

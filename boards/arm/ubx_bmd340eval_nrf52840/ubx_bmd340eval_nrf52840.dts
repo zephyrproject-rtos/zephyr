@@ -226,7 +226,6 @@ arduino_i2c: &i2c0 {
 		/* MX25R64 supports all readoc options */
 		readoc = "read4io";
 		sck-frequency = <8000000>;
-		label = "MX25R64";
 		jedec-id = [c2 28 17];
 		sfdp-bfp = [
 			e5 20 f1 ff  ff ff ff 03

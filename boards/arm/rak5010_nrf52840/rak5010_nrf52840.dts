@@ -66,7 +66,6 @@
 	pinctrl-names = "default", "sleep";
 	quectel_bg9x: quectel_bg9x {
 		compatible = "quectel,bg9x";
-		label = "quectel,bg9x";
 		mdm-power-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 		mdm-reset-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
 		mdm-dtr-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
@@ -93,14 +92,12 @@
 	pinctrl-names = "default", "sleep";
 	opt3001@44 {
 		compatible = "ti,opt3001";
-		label = "OPT3001";
 		reg = <0x44>;
 	};
 
 	/* ST Microelectronics LIS3DH motion sensor */
 	lis3dh: lis3dh@19 {
 		compatible = "st,lis3dh", "st,lis2dh";
-		label = "LIS3DH";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 15 0>;
 	};
@@ -109,7 +106,6 @@
 	lps22hb-press@5c {
 		compatible = "st,lps22hb-press";
 		reg = <0x5c>;
-		label = "LPS22HB";
 	};
 };
 
@@ -124,7 +120,6 @@
 		writeoc = "pp4io";
 		readoc = "read4io";
 		sck-frequency = <16000000>;
-		label = "IS25WP064A";
 		jedec-id = [9d 70 17];
 		size = <67108864>;
 		has-dpd;

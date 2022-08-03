@@ -116,7 +116,6 @@
 		/* MCP4725 not populated at factory */
 		compatible = "microchip,mcp4725";
 		reg = <0x60>;
-		label = "MCP4725";
 		#io-channel-cells = <1>;
 		status = "disabled";
 	};
@@ -150,7 +149,6 @@
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <80000000>;
-		label = "MX25R64";
 		jedec-id = [c2 28 17];
 		size = <67108864>;
 		wp-gpios = <&gpio0 22 0>;

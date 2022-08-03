@@ -59,7 +59,6 @@
 
 	en-3v3-switch {
 		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "en_3v3_switch";
 		regulator-name = "en_3v3_switch";
 		enable-gpios = <&gpio0 26 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -67,7 +66,6 @@
 
 	en-vin1-moni {
 		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "en_vin1_moni";
 		regulator-name = "en_vin1_moni";
 		enable-gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -166,6 +164,5 @@ zephyr_udc0: &usbd {
 
 	degu_cdc_acm_uart: degu_cdc_acm_uart {
 		compatible = "zephyr,cdc-acm-uart";
-		label = "CDC_ACM_0";
 	};
 };

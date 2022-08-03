@@ -111,7 +111,6 @@
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
-		label = "LIS2DH12-ACCEL";
 	};
 };
 
@@ -138,7 +137,6 @@
 		int-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;	/* P0.19 */
 		reset-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;	/* P0.24 */
 		status = "okay";
-		label = "DW1000";
 		reg = <0>;
 	};
 };

@@ -85,7 +85,6 @@
 	bme280@76 {
 		compatible = "bosch,bme280";
 		status = "okay";
-		label = "BME280";
 		reg = <0x76>;
 	};
 };

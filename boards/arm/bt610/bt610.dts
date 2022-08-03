@@ -63,7 +63,6 @@
 		mag1: mag_1 {
 			compatible = "honeywell,sm351lt";
 			gpios = <&gpio1 15 0>;
-			label = "SM3531LT_0";
 		};
 	};
 
@@ -258,7 +257,6 @@
 	gpio_exp0: tca9538@70 {
 		compatible = "ti,tca9538";
 		reg = <0x70>;
-		label = "tca9538";
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <8>;
@@ -287,7 +285,6 @@
 		writeoc = "pp4io";
 		readoc = "read4io";
 		sck-frequency = <8000000>;
-		label = "MX25R64";
 		jedec-id = [c2 28 17];
 		sfdp-bfp = [
 			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
