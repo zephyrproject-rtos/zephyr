@@ -12,7 +12,7 @@ if COUNTER
 
 config COUNTER_INIT_PRIORITY
 	int "Counter init priority"
-	default KERNEL_INIT_PRIORITY_DEVICE
+	default 60
 	help
 	  Counter driver device initialization priority.
 
