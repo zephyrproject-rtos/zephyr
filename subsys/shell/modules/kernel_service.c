@@ -231,7 +231,7 @@ static int cmd_kernel_sleep(const struct shell *sh,
 	uint32_t ms;
 	int err = 0;
 
-	ms = shell_strtoul(argv[2], 10, &err);
+	ms = shell_strtoul(argv[1], 10, &err);
 
 	if (!err) {
 		k_msleep(ms);
