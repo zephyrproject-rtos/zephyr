@@ -311,7 +311,6 @@ zephyr_udc0: &usbhs {
 
 &ssc {
 	status = "okay";
-	label = "I2S_0";
 
 	pinctrl-0 = <&ssc_default>;
 	pinctrl-names = "default";
