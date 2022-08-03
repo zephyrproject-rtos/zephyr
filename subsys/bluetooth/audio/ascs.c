@@ -1587,6 +1587,8 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 			const uint16_t context = sys_get_le16(data_value);
 
 			if (!bt_pacs_context_available(ep->dir, context)) {
+				BT_WARN("Context 0x%04x is unavailable", context);
+
 				result->err = -EACCES;
 
 				return false;
