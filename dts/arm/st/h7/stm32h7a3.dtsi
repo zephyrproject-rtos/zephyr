@@ -55,7 +55,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			label= "OCTOSPI1";
 		};
 
 		octospi2: octospi@5200a000 {
@@ -67,7 +66,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			label= "OCTOSPI2";
 		};
 	};
 
