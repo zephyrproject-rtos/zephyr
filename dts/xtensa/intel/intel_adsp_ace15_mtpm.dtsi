@@ -316,6 +316,24 @@
 			status = "okay";
 		};
 
+		dmic0: dmic0@10000 {
+			compatible = "intel,dai-dmic";
+			reg = <0x10000 0x8000>;
+			shim = <0xC000>;
+			fifo = <0x0008>;
+			interrupts = <0x08 0 0>;
+			interrupt-parent = <&ace_intc>;
+		};
+
+		dmic1: dmic1@10000 {
+			compatible = "intel,dai-dmic";
+			reg = <0x10000 0x8000>;
+			shim = <0xC000>;
+			fifo = <0x0108>;
+			interrupts = <0x09 0 0>;
+			interrupt-parent = <&ace_intc>;
+		};
+
 		hub_ulp_domain: hub_ulp_domain {
 			compatible = "intel,adsp-power-domain";
 			lps = <&lps>;
