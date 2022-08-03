@@ -120,7 +120,6 @@
 
 	ili9341: ili9341@0 {
 		compatible = "ilitek,ili9341";
-		label = "DISPLAY";
 		spi-max-frequency = <25000000>;
 		reg = <0>;
 		cmd-data-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
