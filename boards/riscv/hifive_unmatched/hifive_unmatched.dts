@@ -34,7 +34,6 @@
 		compatible = "issi,is25wp256d", "jedec,spi-nor";
 		status = "disabled";
 		size = <33554432>;
-		label = "FLASH0";
 		jedec-id = [96 60 18];
 		reg = <0>;
 		spi-max-frequency = <133000000>;

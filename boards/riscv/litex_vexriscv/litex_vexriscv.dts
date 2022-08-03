@@ -50,7 +50,6 @@
 
 &i2c0 {
 	status = "okay";
-	label = "I2C_0";
 };
 
 &pwm0 {

@@ -58,7 +58,6 @@
 		compatible = "issi,is25lp128", "jedec,spi-nor";
 		status = "disabled";
 		size = <134217728>;
-		label = "FLASH0";
 		jedec-id = [96 60 18];
 		reg = <0>;
 		spi-max-frequency = <133000000>;

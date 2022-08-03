@@ -131,7 +131,6 @@
 	nor_flash: gd25q16@0 {
 		compatible ="jedec,spi-nor";
 		size = <0x1000000>;
-		label = "GD25Q16";
 		reg = <0>;
 		spi-max-frequency = <4000000>;
 		status = "okay";
