@@ -48,7 +48,6 @@
 	/* regulator controlling SX oscillator enable */
 	sx-osc-enable {
 		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "sx-osc-enable";
 		regulator-name = "sx-osc-enable";
 		enable-gpios = <&gpioh 1 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -96,7 +95,6 @@
 	lis3dh@32 {
 		compatible = "st,lis3dh";
 		reg = <0x32>;
-		label = "LIS3DH";
 	};
 };
 
@@ -109,7 +107,6 @@
 	lora: lora@0 {
 		compatible = "semtech,sx1276";
 		reg = <0>;
-		label = "sx1276";
 		reset-gpios = <&gpiob 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		dio-gpios = <&gpioa 11 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
 			<&gpiob 1 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,

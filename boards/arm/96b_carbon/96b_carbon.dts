@@ -124,7 +124,6 @@
 		reset-gpios = <&gpiob 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		irq-gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
 		spi-max-frequency = <2000000>;
-		label = "BT_HCI";
 	};
 };
 

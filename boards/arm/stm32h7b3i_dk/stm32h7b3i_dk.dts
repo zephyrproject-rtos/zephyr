@@ -126,7 +126,6 @@
 	touch_controller: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
-		label = "FT5336";
 		int-gpios = <&gpioh 2 0>;
 	};
 };
@@ -238,7 +237,6 @@
 
 	mx25lm51245: ospi-nor-flash@0 {
 		compatible = "st,stm32-ospi-nor";
-		label = "MX25LM51245";
 		reg = <0>;
 		ospi-max-frequency = <DT_FREQ_M(50)>;
 		size = <DT_SIZE_M(64)>;
