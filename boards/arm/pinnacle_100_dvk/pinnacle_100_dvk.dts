@@ -114,7 +114,6 @@
 	hl7800 {
 		compatible = "swir,hl7800";
 		status = "okay";
-		label = "hl7800";
 		mdm-reset-gpios = <&gpio1 15 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
 		mdm-wake-gpios = <&gpio1 13 (GPIO_OPEN_SOURCE | GPIO_ACTIVE_HIGH)>;
 		mdm-pwr-on-gpios = <&gpio1 2 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
@@ -136,7 +135,6 @@
 	bme680@76 {
 		compatible = "bosch,bme680";
 		status = "okay";
-		label = "BME680";
 		reg = <0x76>;
 	};
 };
@@ -169,7 +167,6 @@
 		writeoc = "pp4io";
 		readoc = "read4io";
 		sck-frequency = <8000000>;
-		label = "MX25R64";
 		jedec-id = [c2 28 17];
 		size = <67108864>;
 		has-dpd;

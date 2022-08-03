@@ -83,7 +83,6 @@
 
 	nrf-ps-en {
 		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "nrf_ps_en";
 		regulator-name = "nrf_ps_en";
 		enable-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -132,13 +131,11 @@
 	pinctrl-names = "default", "sleep";
 	pcf85063a@51 {
 		compatible = "nxp,pcf85063a";
-		label = "PCF85063A";
 		reg = <0x51>;
 	};
 
 	lis2dh: lis2dh@18 {
 		compatible = "st,lis2dh";
-		label = "LIS2DH";
 		reg = <0x18>;
 		irq-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
 		disconnect-sdo-sa0-pull-up;
@@ -162,7 +159,6 @@
 	pinctrl-names = "default", "sleep";
 	w25q32jv: w25q32jv@0 {
 		compatible = "jedec,spi-nor";
-		label = "W25Q32JV";
 		reg = < 0 >;
 		spi-max-frequency = < 40000000 >;
 		wp-gpios = < &gpio0 8 GPIO_ACTIVE_LOW >;

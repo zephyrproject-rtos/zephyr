@@ -73,7 +73,6 @@
 		mag0: mag_0 {
 			compatible = "honeywell,sm351lt";
 			gpios = <&gpio1 14 0>;
-			label = "SM351LT_0";
 		};
 	};
 
@@ -126,14 +125,12 @@
 		reg = <0x18>;
 		irq-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>,
 				<&gpio1 12 GPIO_ACTIVE_HIGH>;
-		label = "LIS2DH12";
 		disconnect-sdo-sa0-pull-up;
 	};
 
 	si7055@40 {
 		compatible = "silabs,si7055";
 		reg = <0x40>;
-		label = "SI7055";
 	};
 };
 
