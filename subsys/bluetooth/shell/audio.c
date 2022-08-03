@@ -1421,11 +1421,14 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 #endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SOURCE */
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO_CAPABILITY)) {
-		/* Mark all supported contexts as available */
-		bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SINK,
-							   BT_AUDIO_CONTEXT_TYPE_ANY);
-		bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SOURCE,
-							   BT_AUDIO_CONTEXT_TYPE_ANY);
+		/* Mark mandatory context as available */
+		err = bt_audio_capability_set_available_contexts(
+					BT_AUDIO_DIR_SINK, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+		__ASSERT(err == 0, "Failed to set sink available contexts");
+
+		err = bt_audio_capability_set_available_contexts(
+					BT_AUDIO_DIR_SOURCE, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+		__ASSERT(err == 0, "Failed to set source available contexts");
 	}
 
 #if defined(CONFIG_BT_AUDIO_UNICAST)
