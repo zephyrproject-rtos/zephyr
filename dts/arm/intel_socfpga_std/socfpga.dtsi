@@ -133,8 +133,7 @@
 		};
 
 		gmac0: ethernet@ff700000 {
-			compatible = "altr,socfpga-stmmac", "snps,dwmac-3.70a",
-			"snps,dwmac", "snps,designware-ethernet";
+			compatible = "snps,ethernet-cyclonev";
 			reg = <0xff700000 0x2000>;
 			interrupts = <0 115 4 IRQ_DEFAULT_PRIORITY>;
 			local-mac-address = [00 00 00 00 00 00];
@@ -142,11 +141,10 @@
 		};
 
 		gmac1: ethernet@ff702000 {
-			compatible = "altr,socfpga-stmmac", "snps,dwmac-3.70a",
-			"snps,dwmac", "snps,designware-ethernet";
+			compatible = "snps,ethernet-cyclonev";
 			reg = <0xff702000 0x2000>;
 			interrupts = <0 120 4 IRQ_DEFAULT_PRIORITY>;
-			local-mac-address = [00 00 00 00 00 00];
+			local-mac-address = [e6 88 2d 82 1f d4];
 			status = "okay";
 		};
 

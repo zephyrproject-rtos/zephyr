@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2022, Intel Corporation
+# Description:
+# Binding file for Ethernet driver CycloneV
+# heavily modified for Zephyr
+
+description: Synopsys DesignWare Ethernet
+
+compatible: "snps,ethernet-cyclonev"
+
+include: ethernet.yaml
+
+properties:
+    reg:
+      required: true
+    interrupts:
+      required: true
