@@ -137,7 +137,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 	 */
 	if (!IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK) &&
 	    ((op < BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA) ||
-	     (len > (PDU_AC_PAYLOAD_SIZE_MAX - PDU_AC_EXT_PAYLOAD_OVERHEAD)))) {
+	     (len > PDU_AC_EXT_AD_DATA_LEN_MAX))) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -204,18 +204,15 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		}
 
 		if (!err && adv->lll.aux) {
-			const uint8_t ad_len_max = PDU_AC_PAYLOAD_SIZE_MAX -
-						   PDU_AC_EXT_PAYLOAD_OVERHEAD;
-
 			/* Fragment into chain PDU if len > 191 bytes */
-			if (len > ad_len_max) {
+			if (len > PDU_AC_EXT_AD_DATA_LEN_MAX) {
 				uint8_t idx;
 
 				/* Prepare the AD data as parameter to update in
 				 * PDU
 				 */
 				val_ptr = hdr_data;
-				*val_ptr++ = ad_len_max;
+				*val_ptr++ = PDU_AC_EXT_AD_DATA_LEN_MAX;
 				(void)memcpy(val_ptr, &data, sizeof(data));
 
 				/* Traverse to next set clear hdr data
@@ -225,14 +222,15 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				 */
 				val_ptr += sizeof(data);
 
-				*val_ptr = ad_len_max;
+				*val_ptr = PDU_AC_EXT_AD_DATA_LEN_MAX;
 				(void)memcpy(&val_ptr[ULL_ADV_HDR_DATA_DATA_PTR_OFFSET],
 					     &data, sizeof(data));
 
 				/* Calculate the overflow chain PDU's AD data
 				 * length
 				 */
-				ad_len_overflow = len - ad_len_max;
+				ad_len_overflow =
+					len - PDU_AC_EXT_AD_DATA_LEN_MAX;
 
 				/* No AD data in chain PDU besides the
 				 * overflow
@@ -856,11 +854,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 
 		if (!err) {
 			/* Fragment into chain PDU if len > 191 bytes */
-			if (len > (PDU_AC_PAYLOAD_SIZE_MAX -
-				   PDU_AC_EXT_PAYLOAD_OVERHEAD)) {
-				const uint8_t ad_len = PDU_AC_PAYLOAD_SIZE_MAX -
-					PDU_AC_EXT_PAYLOAD_OVERHEAD;
-
+			if (len > PDU_AC_EXT_AD_DATA_LEN_MAX) {
 				/* Prepare the AD data as parameter to update in
 				 * PDU
 				 */
@@ -884,14 +878,15 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				/* Place holder and reference to data passed and
 				 * old reference to be returned
 				 */
-				*val_ptr = ad_len;
+				*val_ptr = PDU_AC_EXT_AD_DATA_LEN_MAX;
 				(void)memcpy(&val_ptr[ULL_ADV_HDR_DATA_DATA_PTR_OFFSET],
 					     &data, sizeof(data));
 
 				/* Calculate the overflow chain PDU's AD data
 				 * length
 				 */
-				ad_len_overflow = len - ad_len;
+				ad_len_overflow =
+					len - PDU_AC_EXT_AD_DATA_LEN_MAX;
 
 				/* No AD data in chain PDU besides the
 				 * overflow
@@ -2643,6 +2638,17 @@ void ull_adv_aux_done(struct node_rx_event_done *done)
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+/* @brief Duplicate previous chain of PDUs into current chain of PDUs, fill the
+ *        aux ptr field of the parent primary channel PDU with the aux offset,
+ *        and the secondary channel PDU's PHY.
+ *
+ * @param[in] pdu_prev    Pointer to previous PDU's chain PDU
+ * @param[in] pdu         Pointer to current PDU's chain PDU
+ * @param[in] aux_ptr     Pointer to aux ptr field in the primary channel PDU
+ * @param[in] phy_s       Secondary/auxiliary PDU PHY
+ * @param[in] phy_flags   Secondary/auxiliary PDU coded PHY encoding (S2/S8)
+ * @param[in] mafs_us     Minimum Aux Frame Spacing to use, in microseconds
+ */
 void ull_adv_aux_chain_pdu_duplicate(struct pdu_adv *pdu_prev,
 				     struct pdu_adv *pdu,
 				     struct pdu_adv_aux_ptr *aux_ptr,
@@ -2668,7 +2674,10 @@ void ull_adv_aux_chain_pdu_duplicate(struct pdu_adv *pdu_prev,
 			break;
 		}
 
-		/* Fill the aux offset in the parent PDU */
+		/* Fill the aux offset in the (first iteration, it is the
+		 * primary channel ADV_EXT_IND PDU, rest it is AUX_ADV_IND and
+		 * AUX_CHAIN_IND) parent PDU
+		 */
 		offs_us = PDU_AC_US(pdu->len, phy_s, phy_flags) + mafs_us;
 		ull_adv_aux_ptr_fill(aux_ptr, offs_us, phy_s);
 
