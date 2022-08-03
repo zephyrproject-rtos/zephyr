@@ -34,7 +34,7 @@
 	FOR_EACH(fn, sep, 0, 1, 2, 3, 4, 5, 6, 7)
 
 /* Index of antenna id in antenna switching pattern used for GUARD and REFERENCE period */
-#define GUARD_REF_ANTENNA_PATTERN_IDX 1U
+#define GUARD_REF_ANTENNA_PATTERN_IDX 0U
 
 /* Direction Finding antenna matrix configuration */
 struct df_ant_cfg {
