@@ -32,9 +32,6 @@
 /* Exception code Mask */
 #define SOC_MCAUSE_EXP_MASK          CONFIG_RISCV_SOC_MCAUSE_EXCEPTION_MASK
 
-/* SOC-Specific EXIT ISR command */
-#define SOC_ERET                     mret
-
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
