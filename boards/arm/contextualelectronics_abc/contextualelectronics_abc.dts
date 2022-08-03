@@ -62,7 +62,6 @@ arduino_serial: &uart1 {
 	pinctrl-names = "default", "sleep";
 	quectel_bg9x {
 		compatible = "quectel,bg9x";
-		label      = "quectel-bg9x";
 		status     = "okay";
 
 		mdm-power-gpios = <&gpio1 5  0>;

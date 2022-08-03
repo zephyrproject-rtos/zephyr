@@ -123,7 +123,6 @@
 		reg = <0x19>;
 		irq-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>,
 			  <&gpio0 29 GPIO_ACTIVE_HIGH>;
-		label = "LIS2DH12-ACCEL";
 	};
 };
 
@@ -140,7 +139,6 @@
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <80000000>;
-		label = "W25Q64";
 		jedec-id = [ef 40 17];
 		size = <0x4000000>;
 		has-dpd;

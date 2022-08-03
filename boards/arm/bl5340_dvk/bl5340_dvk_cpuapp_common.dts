@@ -118,7 +118,6 @@
 	at24c256@50 {
 		compatible = "atmel,at24";
 		reg = <0x50>;
-		label = "EEPROM";
 		size = <32768>;
 		pagesize = <64>;
 		address-width = <16>;
@@ -127,7 +126,6 @@
 
 	lis3dh: lis3dh@18 {
 		compatible = "st,lis2dh";
-		label = "LIS3DH";
 		reg = <0x18>;
 		irq-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>, <&gpio0 24 GPIO_ACTIVE_HIGH>;
 	};
@@ -135,33 +133,28 @@
 	ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
-		label = "TOUCH";
 		int-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 	};
 
 	bme680@76 {
 		compatible = "bosch,bme680";
 		reg = <0x76>;
-		label = "BME680";
 	};
 
 	dac0: mcp4725@60 {
 		compatible = "microchip,mcp4725";
 		reg = <0x60>;
-		label = "dac0";
 		#io-channel-cells = <1>;
 	};
 
 	extrtc0: mcp7940n@6f {
 		compatible = "microchip,mcp7940n";
 		reg = <0x6f>;
-		label = "mcp7940n";
 	};
 
 	gpio_exp0: tca9538@70 {
 		compatible = "ti,tca9538";
 		reg = <0x70>;
-		label = "tca9538";
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <8>;
@@ -181,7 +174,6 @@
 		compatible = "microchip,enc424j600";
 		reg = <0>;
 		spi-max-frequency = <8000000>;
-		label = "ETHERNET";
 		int-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 	};
 };
@@ -218,7 +210,6 @@
 		compatible = "ilitek,ili9340";
 		reg = <0>;
 		spi-max-frequency = <32000000>;
-		label = "DISPLAY";
 		reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 		cmd-data-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		rotation = <270>;
@@ -267,7 +258,6 @@
 		/* MX25R64 supports all readoc options */
 		readoc = "read4io";
 		sck-frequency = <8000000>;
-		label = "MX25R64";
 		jedec-id = [c2 28 17];
 		sfdp-bfp = [
 			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb

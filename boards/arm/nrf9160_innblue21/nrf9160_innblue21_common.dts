@@ -47,7 +47,6 @@
 
 	en_3v3_sensor: enable-3v3-sensor {
 		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "ENABLE_3V3_SENSOR";
 		regulator-name = "en_3v3_sensor";
 		enable-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 		startup-delay-us = <10000>;
@@ -56,7 +55,6 @@
 
 	en_5v0_boost: enable-5v0-boost {
 		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "ENABLE_5V0_BOOST";
 		regulator-name = "en_5v0_boost";
 		enable-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
 		startup-delay-us = <10000>;
@@ -121,31 +119,26 @@
 		compatible = "st,lis2dh";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 0 0>, <&gpio0 1 0>;
-		label = "LIS2DH12-ACCEL";
 	};
 
 	hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
 		drdy-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
-		label = "HTS221";
 	};
 
 	lps22hb-press@5c {
 		compatible = "st,lps22hb-press";
 		reg = <0x5c>;
-		label = "LPS22HB";
 	};
 
 	ccs811: ccs811@5a {
 		compatible = "ams,ccs811";
 		reg = <0x5a>;
-		label = "CCS811";
 	};
 
 	bme680@76 {
 		compatible = "bosch,bme680";
-		label = "BME680";
 		reg = <0x76>;
 	};
 };

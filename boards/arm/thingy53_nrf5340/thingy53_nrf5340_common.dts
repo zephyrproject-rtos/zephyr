@@ -63,7 +63,6 @@
 
 	npm1100_force_pwm_mode: npm1100_force_pwm_mode {
 		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "npm1100_force_pwm_mode";
 		regulator-name = "npm1100_force_pwm_mode";
 		enable-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		status = "disabled";
@@ -80,7 +79,6 @@
 
 	regulator_3v3: regulator-3v3-ctrl {
 		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "vsys-3v3-ctrl";
 		regulator-name = "ncp114";
 		enable-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 		regulator-boot-on;
@@ -88,7 +86,6 @@
 
 	sensor_pwr_ctrl: sensor-pwr-ctrl {
 		compatible = "regulator-fixed-sync", "regulator-fixed";
-		label = "sens-pwr-ctrl";
 		regulator-name = "tck106ag";
 		enable-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -163,13 +160,11 @@
 	pinctrl-names = "default", "sleep";
 	bmm150: bmm150@10 {
 		compatible = "bosch,bmm150";
-		label = "BMM150";
 		reg = <0x10>;
 	};
 
 	bh1749@38 {
 		compatible = "rohm,bh1749";
-		label = "BH1749";
 		reg = <0x38>;
 		int-gpios = <&gpio1 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 	};
@@ -187,7 +182,6 @@
 	pinctrl-names = "default", "sleep";
 	adxl362: spi-dev-adxl362@0 {
 		compatible = "adi,adxl362";
-		label = "ADXL362";
 		spi-max-frequency = <8000000>;
 		reg = <0>;
 		int1-gpios = <&gpio0 19 0>;
@@ -195,7 +189,6 @@
 
 	bmi270: spi-dev-bmi270@1 {
 		compatible = "bosch,bmi270";
-		label = "BMI270";
 		spi-max-frequency = <8000000>;
 		reg = <1>;
 		int1-gpios = <&gpio0 23 0>;
@@ -205,7 +198,6 @@
 		compatible = "nordic,nrf21540-fem-spi";
 		status = "disabled";
 		reg = <2>;
-		label = "FEM_SPI_IF";
 		spi-max-frequency = <8000000>;
 	};
 };
@@ -234,7 +226,6 @@
 		/* Thingy:53 supports only fastread and read2io options */
 		readoc = "read2io";
 		sck-frequency = <8000000>;
-		label = "MX25R64";
 		jedec-id = [c2 28 17];
 		sfdp-bfp = [
 			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb

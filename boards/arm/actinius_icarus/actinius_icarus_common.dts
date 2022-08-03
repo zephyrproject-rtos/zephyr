@@ -145,7 +145,6 @@
 		reg = <0x19>;
 		irq-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>,
 			  <&gpio0 29 GPIO_ACTIVE_HIGH>;
-		label = "LIS2DH12-ACCEL";
 	};
 };
 

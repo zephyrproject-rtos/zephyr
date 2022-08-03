@@ -67,7 +67,6 @@
 	key_out {
 		compatible = "pine64,pinetime-key-out";
 		gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
-		label = "Key out";
 	};
 
 	vbatt {
@@ -111,7 +110,6 @@
 	bma421: bma421@18 {
 		compatible = "bosch,bma4xx";
 		reg = <0x18>;
-		label = "BMA421";
 		int1-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 	};
 
@@ -119,14 +117,12 @@
 	hrs3300: hrs3300@44 {
 		compatible = "tian-yi-he-xin-hrs3300";
 		reg = <0x44>;
-		label = "HRS3300";
 	};
 
 	/* Hynitron CST816S Capacitive Touch Controller (400KHz) */
 	cst816s: cst816s@15 {
 		compatible = "hynitron,cst816s";
 		reg = <0x15>;
-		label = "CST816S";
 		irq-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
 		rst-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 	};
@@ -145,7 +141,6 @@
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <8000000>; /* 8MHz */
-		label = "XT25FB32";
 		jedec-id = [0b 40 16];
 		size = <DT_SIZE_M(32)>;
 
@@ -173,7 +168,6 @@
 		compatible = "sitronix,st7789v";
 		reg = <1>;
 		spi-max-frequency = <8000000>; /* 8MHz */
-		label = "ST7789V";
 		cmd-data-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;	/* DET */
 		reset-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;	/* RESX reset */
 		width = <240>;
