@@ -58,12 +58,9 @@
 		#size-cells = <1>;
 		erase-value = <0xff>;
 
-		label = "flash_ctrl";
-
 		flash0: flash@0 {
 			status = "okay";
 			compatible = "soc-nv-flash";
-			label = "flash";
 			erase-block-size = <4096>;
 			write-block-size = <1>;
 			reg = <0x00000000 DT_SIZE_K(2048)>;
@@ -100,7 +97,6 @@
 	eeprom0: eeprom {
 		status = "okay";
 		compatible = "zephyr,sim-eeprom";
-		label = "EEPROM_0";
 		size = <DT_SIZE_K(32)>;
 	};
 
@@ -111,7 +107,6 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0x100 4>;
-		label = "I2C_0";
 	};
 
 	spi0: spi@200 {
@@ -121,7 +116,6 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0x200 4>;
-		label = "SPI_0";
 	};
 
 	espi0: espi@300 {
@@ -130,13 +124,11 @@
 		reg = <0x300 4>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		label = "ESPI_0";
 	};
 
 	uart0: uart {
 		status = "okay";
 		compatible = "zephyr,native-posix-uart";
-		label = "UART_0";
 		/* Dummy current-speed entry to comply with serial
 		 * DTS binding
 		 */
@@ -146,7 +138,6 @@
 	uart1: uart_1 {
 		status = "okay";
 		compatible = "zephyr,native-posix-uart";
-		label = "UART_1";
 		/* Dummy current-speed entry to comply with serial
 		 * DTS binding
 		 */
@@ -156,25 +147,21 @@
 	rng: rng {
 		status = "okay";
 		compatible = "zephyr,native-posix-rng";
-		label = "ENTROPY_0";
 	};
 
 	counter0: counter {
 		status = "okay";
 		compatible = "zephyr,native-posix-counter";
-		label = "COUNTER_0";
 	};
 
 	hcp: ec-host-cmd-periph {
 		status = "okay";
 		compatible = "zephyr,sim-ec-host-cmd-periph";
-		label = "EC_HOST_CMD_SIM";
 	};
 
 	gpio0: gpio@800 {
 		status = "okay";
 		compatible = "zephyr,gpio-emul";
-		label = "GPIO_0";
 		reg = <0x800 0x4>;
 		rising-edge;
 		falling-edge;
@@ -186,12 +173,10 @@
 
 	zephyr_udc0: udc0 {
 		compatible = "zephyr,native-posix-udc";
-		label = "USBD";
 	};
 
 	sdl_dc: sdl_dc {
 		compatible = "zephyr,sdl-dc";
-		label = "SDL display controller";
 		height = <240>;
 		width = <320>;
 	};
@@ -199,7 +184,6 @@
 	can_loopback0: can_loopback0 {
 		status = "disabled";
 		compatible = "zephyr,can-loopback";
-		label = "CAN_LOOPBACK_0";
 		sjw = <1>;
 		sample-point = <875>;
 		bus-speed = <125000>;
