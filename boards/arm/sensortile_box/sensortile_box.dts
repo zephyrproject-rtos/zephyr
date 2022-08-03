@@ -94,14 +94,12 @@
 	hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
-		label = "HTS221";
 		drdy-gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
 	};
 
 	lps22hh@5d {
 		compatible = "st,lps22hh";
 		reg = <0x5d>;
-		label = "LPS22HH";
 		drdy-gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
 	};
 };
@@ -116,7 +114,6 @@
 		compatible = "st,stts751";
 		reg = <0x38>;
 		drdy-gpios = <&gpiog 5 GPIO_ACTIVE_LOW>;
-		label = "STTS751";
 	};
 };
 
@@ -133,7 +130,6 @@
 		spi-max-frequency = <1000000>;
 		reg = <0>;
 		irq-gpios = <&gpioc 5 GPIO_ACTIVE_HIGH>;
-		label = "LIS2DW12";
 	};
 
 	lsm6dso@1 {
@@ -141,7 +137,6 @@
 		spi-max-frequency = <1000000>;
 		reg = <1>;
 		irq-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
-		label = "LSM6DSO";
 		int-pin = <1>;
 	};
 
@@ -150,7 +145,6 @@
 		spi-max-frequency = <1000000>;
 		reg = <2>;
 		irq-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>, <&gpioe 6 GPIO_ACTIVE_HIGH>;
-		label = "IIS3DHHC";
 	};
 };
 
@@ -167,7 +161,6 @@
 		spi-max-frequency = <1000000>;
 		spi-full-duplex;
 		reg = <0>;
-		label = "LIS2MDL";
 	};
 };
 
