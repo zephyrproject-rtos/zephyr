@@ -9,8 +9,3 @@ tests:
         platform_allow: nrf5340dk_nrf5340_cpunet
         integration_platforms:
           - nrf5340dk_nrf5340_cpunet
-    sample.boards.nrf.nrf53_sync_rtc_mbox:
-        platform_allow: nrf5340dk_nrf5340_cpunet
-        integration_platforms:
-          - nrf5340dk_nrf5340_cpunet
-        extra_args: OVERLAY_CONFIG="boards/nrf5340dk_nrf5340_cpunet_mbox.conf"
