@@ -1962,6 +1962,21 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		goto next_state;
 	}
 
+	if (th && (conn->state != TCP_LISTEN) && (conn->state != TCP_SYN_SENT) &&
+	    tcp_validate_seq(conn, th) && FL(&fl, &, SYN)) {
+		/* According to RFC 793, ch 3.9 Event Processing, receiving SYN
+		 * once the connection has been established is an error
+		 * condition, reset should be sent and connection closed.
+		 */
+		NET_DBG("conn: %p, SYN received in %s state, dropping connection",
+			conn, tcp_state_to_str(conn->state, false));
+		net_stats_update_tcp_seg_drop(conn->iface);
+		tcp_out(conn, RST);
+		conn_state(conn, TCP_CLOSED);
+		close_status = -ECONNRESET;
+		goto next_state;
+	}
+
 	if (th) {
 		size_t max_win;
 
