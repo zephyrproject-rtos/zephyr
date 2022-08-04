@@ -401,8 +401,6 @@ static int fxas21002_init(const struct device *dev)
 		return -EIO;
 	}
 #endif
-		LOG_ERR("[SSUUMIT-2]WHOAMI value received 0x%x, expected 0x%x",
-			    whoami, config->whoami);
 
 	/* Set active */
 	if (fxas21002_set_power(dev, FXAS21002_POWER_ACTIVE)) {
