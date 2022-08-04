@@ -22,7 +22,7 @@ void child_fn(void *a, void *b, void *c)
 	child_has_run = true;
 }
 
-void test_threads_cpu_mask(void)
+ZTEST(threads_lifecycle_1cpu, test_threads_cpu_mask)
 {
 #ifdef CONFIG_SCHED_CPU_MASK
 	k_tid_t thread;

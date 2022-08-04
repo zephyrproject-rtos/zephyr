@@ -42,7 +42,7 @@ void thread2_set_prio_test(void)
  *
  * @see k_thread_priority_set(), k_thread_priority_get()
  */
-void test_threads_priority_set(void)
+ZTEST(threads_lifecycle, test_threads_priority_set)
 {
 	int rv;
 	int prio = k_thread_priority_get(k_current_get());

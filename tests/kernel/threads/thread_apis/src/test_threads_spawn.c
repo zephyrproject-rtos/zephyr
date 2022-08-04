@@ -45,7 +45,7 @@ static void thread_entry_delay(void *p1, void *p2, void *p3)
  *
  * @see k_thread_create()
  */
-void test_threads_spawn_params(void)
+ZTEST_USER(threads_lifecycle, test_threads_spawn_params)
 {
 	k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_params,
 			tp1, INT_TO_POINTER(tp2), tp3, 0,
@@ -62,7 +62,7 @@ void test_threads_spawn_params(void)
  *
  * @see k_thread_create()
  */
-void test_threads_spawn_priority(void)
+ZTEST(threads_lifecycle, test_threads_spawn_priority)
 {
 	/* spawn thread with higher priority */
 	spawn_prio = k_thread_priority_get(k_current_get()) - 1;
@@ -80,7 +80,7 @@ void test_threads_spawn_priority(void)
  *
  * @see k_thread_create()
  */
-void test_threads_spawn_delay(void)
+ZTEST_USER(threads_lifecycle, test_threads_spawn_delay)
 {
 	/* spawn thread with higher priority */
 	tp2 = 10;
@@ -107,7 +107,7 @@ void test_threads_spawn_delay(void)
  *
  * @see k_thread_create()
  */
-void test_threads_spawn_forever(void)
+ZTEST(threads_lifecycle, test_threads_spawn_forever)
 {
 	/* spawn thread with highest priority. It will run immediately once
 	 * started.
@@ -135,7 +135,7 @@ void test_threads_spawn_forever(void)
  *
  * @see k_thread_start()
  */
-void test_thread_start(void)
+ZTEST(threads_lifecycle, test_thread_start)
 {
 	tp2 = 5;
 
@@ -162,7 +162,7 @@ static void user_start_thread(void *p1, void *p2, void *p3)
 {
 	*(int *)p1 = 100;
 }
-void test_thread_start_user(void)
+ZTEST_USER(threads_lifecycle, test_thread_start_user)
 {
 	tp2 = 5;
 
