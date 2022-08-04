@@ -46,7 +46,7 @@ static void attrs_get(struct k_msgq *q)
  *
  * @see  k_msgq_get_attrs()
  */
-void test_msgq_attrs_get(void)
+ZTEST(msgq_api, test_msgq_attrs_get)
 {
 	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
 	attrs_get(&msgq);
@@ -59,7 +59,7 @@ void test_msgq_attrs_get(void)
  *
  * @see  k_msgq_get_attrs()
  */
-void test_msgq_user_attrs_get(void)
+ZTEST_USER(msgq_api, test_msgq_user_attrs_get)
 {
 	struct k_msgq *q;
 
