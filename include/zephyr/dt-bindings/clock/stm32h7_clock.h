@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7_CLOCK_H_
 
-/** Peripheral clock sources */
+/** Domain clocks */
 
 /* RM0468, Table 56 Kernel clock dictribution summary */
 
@@ -92,14 +92,14 @@
 #define D2CCIP2R_REG		0x54
 #define D3CCIPR_REG		0x58
 
-/** @brief Device clk sources selection helpers (RM0399.pdf) */
+/** @brief Device domain clocks selection helpers (RM0399.pdf) */
 /** D1CCIPR devices */
 #define FMC_SEL(val)		STM32_CLOCK(val, 3, 0, D1CCIPR_REG)
 #define QSPI_SEL(val)		STM32_CLOCK(val, 3, 4, D1CCIPR_REG)
 #define DSI_SEL(val)		STM32_CLOCK(val, 1, 8, D1CCIPR_REG)
 #define SDMMC_SEL(val)		STM32_CLOCK(val, 1, 16, D1CCIPR_REG)
 #define CKPER_SEL(val)		STM32_CLOCK(val, 3, 28, D1CCIPR_REG)
-/* device clk sources selection helpers (RM0468.pdf) */
+/* Device domain clocks selection helpers (RM0468.pdf) */
 #define OSPI_SEL(val)		STM32_CLOCK(val, 3, 4, D1CCIPR_REG)
 /** D2CCIP1R devices */
 #define SAI1_SEL(val)		STM32_CLOCK(val, 7, 0, D2CCIP1R_REG)

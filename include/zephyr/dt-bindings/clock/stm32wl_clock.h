@@ -18,7 +18,7 @@
 #define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_AHB1
 #define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB3
 
-/** Peripheral clock sources */
+/** Domain clocks */
 /* RM0461, §6.4.29 Clock configuration register (RCC_CFGR3) */
 
 /** Fixed clocks  */
@@ -67,7 +67,7 @@
 /** @brief RCC_CCIPR register offset */
 #define CCIPR_REG		0x88
 
-/** @brief Device clk sources selection helpers */
+/** @brief Device domain clocks selection helpers */
 /** CCIPR devices */
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CCIPR_REG)
 #define USART2_SEL(val)		STM32_CLOCK(val, 3, 2, CCIPR_REG)
