@@ -119,7 +119,7 @@ manifest:
       groups:
         - hal
     - name: hal_st
-      revision: 52a522ca4a8a9ec1e9bb5bb514e1ab6f102863fe
+      revision: cccbc24c14decfd3f93959f7b14514536af973c7
       path: modules/hal/st
       groups:
         - hal
