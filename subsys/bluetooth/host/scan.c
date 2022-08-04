@@ -460,7 +460,31 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 				bt_lookup_id_addr(BT_ID_DEFAULT, addr));
 	}
 
+/*
+ * FIXME: The following assigns the address of the local `id_addr` object to
+ *        a field in the `info` object, which is provided by the caller and
+ *        outlives the local `id_addr` object, effectively creating a dangling
+ *        pointer.
+ *
+ *        While this is currently not a real problem because `info->addr` is
+ *        never dereferenced after the function returns, it does create a
+ *        dangling pointer nevertheless and needs to be fixed.
+ *
+ *        A proper fix will be provided as part of the GitHub issue
+ *        zephyrproject-rtos/zephyr#48459; until then, keep the dangling
+ *        pointer warning disabled to appease GCC 12.
+ */
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wdangling-pointer"
+#endif
+
 	info->addr = &id_addr;
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 	if (scan_dev_found_cb) {
 		net_buf_simple_save(buf, &state);
