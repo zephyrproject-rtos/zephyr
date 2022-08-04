@@ -33,12 +33,6 @@ static void mbox_callback(const struct device *dev, uint32_t channel,
 	sync_callback();
 }
 
-static void ipm_callback(const struct device *ipmdev, void *user_data,
-			 uint32_t id, volatile void *data)
-{
-	sync_callback();
-}
-
 static int mbox_init(void)
 {
 	const struct device *dev;
@@ -60,25 +54,12 @@ static int mbox_init(void)
 	return mbox_set_enabled(&channel, true);
 }
 
-static int ipm_init(void)
-{
-	const struct device *ipm_dev;
-
-	ipm_dev = device_get_binding("IPM_2");
-	if (ipm_dev == NULL) {
-		return -ENODEV;
-	}
-
-	ipm_register_callback(ipm_dev, ipm_callback, NULL);
-	return ipm_set_enabled(ipm_dev, true);
-}
-
 void main(void)
 {
 	int err;
 
-	LOG_INF("Synchronization using %s driver", IS_ENABLED(CONFIG_MBOX) ? "mbox" : "ipm");
-	err = IS_ENABLED(CONFIG_MBOX) ? mbox_init() : ipm_init();
+	LOG_INF("Synchronization using mbox driver");
+	err = mbox_init();
 	if (err < 0) {
 		LOG_ERR("Failed to initialize sync RTC listener (err:%d)", err);
 	}
