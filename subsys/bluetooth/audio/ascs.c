@@ -1719,7 +1719,7 @@ static int ase_metadata(struct bt_ascs_ase *ase, uint8_t op,
 	default:
 		BT_WARN("Invalid operation in state: %s", bt_audio_ep_state_str(state));
 		err = -EBADMSG;
-		ascs_cp_rsp_add_errno(ASE_ID(ase), op, EBADMSG,
+		ascs_cp_rsp_add_errno(ASE_ID(ase), op, err,
 				      buf->len ? *buf->data : 0x00);
 		return err;
 	}
@@ -2043,7 +2043,7 @@ static void ase_stop(struct bt_ascs_ase *ase)
 
 	if (ep->status.state != BT_AUDIO_EP_STATE_DISABLING) {
 		BT_WARN("Invalid operation in state: %s", bt_audio_ep_state_str(ep->status.state));
-		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_STOP_OP, EBADMSG,
+		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_STOP_OP, -EBADMSG,
 				      BT_ASCS_REASON_NONE);
 		return;
 	}
