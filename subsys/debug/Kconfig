@@ -281,6 +281,15 @@ config ASSERT_NO_MSG_INFO
 	  before disabling file info since the message can be found in the
 	  source using file info.
 
+config ASSERT_TEST
+	bool "Assert test mode"
+	help
+	  This option enables the assert test mode, which allows the assert
+	  post action handler to return (i.e. not abort) when the asserted
+	  condition is false. The tests that validate the assert feature may
+	  select this option to allow the test to proceed by implementing a
+	  custom assert post action hook.
+
 config OVERRIDE_FRAME_POINTER_DEFAULT
 	bool "Override compiler defaults for -fomit-frame-pointer"
 	help
