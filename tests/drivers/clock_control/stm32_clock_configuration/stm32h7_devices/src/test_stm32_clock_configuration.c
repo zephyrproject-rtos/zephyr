@@ -13,10 +13,10 @@ LOG_MODULE_REGISTER(test);
 
 #define DT_DRV_COMPAT st_stm32_spi
 
-#if STM32_DT_INST_DEV_OPT_CLOCK_SUPPORT
-#define STM32_SPI_OPT_CLOCK_SUPPORT 1
+#if STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT
+#define STM32_SPI_DOMAIN_CLOCK_SUPPORT 1
 #else
-#define STM32_SPI_OPT_CLOCK_SUPPORT 0
+#define STM32_SPI_DOMAIN_CLOCK_SUPPORT 0
 #endif
 
 #define DT_NO_CLOCK 0xFFFFU
@@ -38,7 +38,7 @@ static void test_spi_clk_config(void)
 	static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(DT_NODELABEL(spi1));
 	struct stm32_pclken spi1_reg_clk_cfg = pclken[0];
 
-	uint32_t spi1_actual_clk_src, spi1_dt_ker_clk_src;
+	uint32_t spi1_actual_domain_clk, spi1_dt_domain_clk;
 	uint32_t spi1_dt_clk_freq, spi1_actual_clk_freq;
 	int r;
 
@@ -50,42 +50,42 @@ static void test_spi_clk_config(void)
 	zassert_true(__HAL_RCC_SPI1_IS_CLK_ENABLED(), "SPI1 reg_clk should be on");
 	TC_PRINT("SPI1 reg_clk on\n");
 
-	if (IS_ENABLED(STM32_SPI_OPT_CLOCK_SUPPORT) && DT_NUM_CLOCKS(DT_NODELABEL(spi1)) > 1) {
-		struct stm32_pclken spi1_ker_clk_cfg = pclken[1];
+	if (IS_ENABLED(STM32_SPI_DOMAIN_CLOCK_SUPPORT) && DT_NUM_CLOCKS(DT_NODELABEL(spi1)) > 1) {
+		struct stm32_pclken spi1_domain_clk_cfg = pclken[1];
 
-		/* Select ker_clk as device source clock */
+		/* Select domain_clk as device source clock */
 		r = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					    (clock_control_subsys_t) &spi1_ker_clk_cfg,
+					    (clock_control_subsys_t) &spi1_domain_clk_cfg,
 					    NULL);
-		zassert_true((r == 0), "Could not enable SPI ker_clk");
-		TC_PRINT("SPI1 ker_clk on\n");
+		zassert_true((r == 0), "Could not enable SPI domain_clk");
+		TC_PRINT("SPI1 domain_clk on\n");
 
-		/* Test ker_clk is configured as device's source clock */
-		spi1_dt_ker_clk_src = COND_CODE_1(DT_CLOCKS_HAS_NAME(DT_NODELABEL(spi1), kernel),
+		/* Test domain_clk is configured as device's source clock */
+		spi1_dt_domain_clk = COND_CODE_1(DT_CLOCKS_HAS_NAME(DT_NODELABEL(spi1), kernel),
 						  (DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(spi1),
 									  kernel, bus)),
 						  (DT_NO_CLOCK));
-		spi1_actual_clk_src = __HAL_RCC_GET_SPI1_SOURCE();
+		spi1_actual_domain_clk = __HAL_RCC_GET_SPI1_SOURCE();
 
-		if (spi1_dt_ker_clk_src == STM32_SRC_PLL1_Q) {
-			zassert_equal(spi1_actual_clk_src, RCC_SPI123CLKSOURCE_PLL,
+		if (spi1_dt_domain_clk == STM32_SRC_PLL1_Q) {
+			zassert_equal(spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL,
 					"Expected SPI src: PLLQ (%d). Actual SPI src: %d",
-					spi1_actual_clk_src, RCC_SPI123CLKSOURCE_PLL);
-		} else if (spi1_dt_ker_clk_src == STM32_SRC_PLL3_P) {
-			zassert_equal(spi1_actual_clk_src, RCC_SPI123CLKSOURCE_PLL3,
+					spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL);
+		} else if (spi1_dt_domain_clk == STM32_SRC_PLL3_P) {
+			zassert_equal(spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL3,
 					"Expected SPI src: PLLQ (%d). Actual SPI src: %d",
-					spi1_actual_clk_src, RCC_SPI123CLKSOURCE_PLL3);
-		} else if (spi1_dt_ker_clk_src == STM32_SRC_CKPER) {
-			zassert_equal(spi1_actual_clk_src, RCC_SPI123CLKSOURCE_CLKP,
+					spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL3);
+		} else if (spi1_dt_domain_clk == STM32_SRC_CKPER) {
+			zassert_equal(spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_CLKP,
 					"Expected SPI src: PLLQ (%d). Actual SPI src: %d",
-					spi1_actual_clk_src, RCC_SPI123CLKSOURCE_CLKP);
+					spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_CLKP);
 		} else {
-			zassert_true(1, "Unexpected ker_clk src(%d)", spi1_dt_ker_clk_src);
+			zassert_true(1, "Unexpected domain_clk src(%d)", spi1_dt_domain_clk);
 		}
 
-		/* Test get_rate(ker_clk) */
+		/* Test get_rate(domain_clk) */
 		r = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &spi1_ker_clk_cfg,
+					(clock_control_subsys_t) &spi1_domain_clk_cfg,
 					&spi1_dt_clk_freq);
 		zassert_true((r == 0), "Could not get SPI clk freq");
 
@@ -94,7 +94,7 @@ static void test_spi_clk_config(void)
 				"Expected SPI clk: (%d). Actual SPI clk: %d",
 				spi1_dt_clk_freq, spi1_actual_clk_freq);
 	} else {
-		/* No alt clock available, get rate from reg_clk */
+		/* No domain clock available, get rate from reg_clk */
 
 		/* Test get_rate(reg_clk) */
 		r = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
@@ -118,7 +118,7 @@ static void test_spi_clk_config(void)
 	zassert_true(!__HAL_RCC_SPI1_IS_CLK_ENABLED(), "SPI1 reg_clk should be off");
 	TC_PRINT("SPI1 reg_clk off\n");
 
-	/* Test clock_off(ker_clk) */
+	/* Test clock_off(domain_clk) */
 	/* Not supported today */
 }
 
