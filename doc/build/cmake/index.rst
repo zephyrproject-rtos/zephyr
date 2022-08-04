@@ -107,12 +107,6 @@ Devicetree
    The above is just a brief overview. For more information on devicetree, see
    :ref:`dt-guide`.
 
-Devicetree fixups
-   Files named :file:`dts_fixup.h` from the target’s architecture, SoC, board,
-   and application directories are concatenated into a single
-   :file:`devicetree_fixups.h` file. :file:`dts_fixup.h` files are a legacy
-   feature which should not be used in new code.
-
 Kconfig
    :file:`Kconfig` files define available configuration options for for the
    target architecture, SoC, board, and application, as well as dependencies

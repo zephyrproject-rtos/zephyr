@@ -2,8 +2,7 @@
 ;
 ; This does *not* cover macros pulled out of DT via Kconfig,
 ; like CONFIG_SRAM_BASE_ADDRESS, etc. It only describes the
-; ones that start with DT_ and are directly generated, not
-; defined in a dts_fixup.h file.
+; ones that start with DT_ and are directly generated.
 
 ; --------------------------------------------------------------------
 ; dt-macro: the top level nonterminal for a devicetree macro
