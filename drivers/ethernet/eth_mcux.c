@@ -1576,9 +1576,9 @@ static void eth_mcux_err_isr(const struct device *dev)
 	ETH_MCUX_PINCTRL_DEFINE(n)					\
 									\
 	static void eth##n##_config_func(void);				\
-	static NOCACHE uint8_t						\
+	static uint8_t							\
 		tx_enet_frame_##n##_buf[NET_ETH_MAX_FRAME_SIZE];	\
-	static NOCACHE uint8_t						\
+	static uint8_t							\
 		rx_enet_frame_##n##_buf[NET_ETH_MAX_FRAME_SIZE];	\
 									\
 	static mdio_handle_t eth##n##_mdio_handle = {			\
