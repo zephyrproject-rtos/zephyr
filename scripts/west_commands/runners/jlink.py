@@ -7,6 +7,7 @@
 import argparse
 import logging
 import os
+from packaging.version import Version
 from pathlib import Path
 import shlex
 import subprocess
@@ -16,6 +17,7 @@ import tempfile
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
 try:
+    import pylink
     from pylink.library import Library
     MISSING_REQUIREMENTS = False
 except ImportError:
@@ -141,16 +143,23 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         # to load the shared library distributed with the tools, which
         # provides an API call for getting the version.
         if not hasattr(self, '_jlink_version'):
+            # pylink >= 0.14.0 exposes JLink SDK DLL (libjlinkarm) in
+            # JLINK_SDK_STARTS_WITH, while previous versions use JLINK_SDK_NAME
+            if Version(pylink.__version__) >= Version('0.14.0'):
+                sdk = Library.JLINK_SDK_STARTS_WITH
+            else:
+                sdk = Library.JLINK_SDK_NAME
+
             plat = sys.platform
             if plat.startswith('win32'):
                 libname = Library.get_appropriate_windows_sdk_name() + '.dll'
             elif plat.startswith('linux'):
-                libname = Library.JLINK_SDK_NAME + '.so'
+                libname = sdk + '.so'
             elif plat.startswith('darwin'):
-                libname = Library.JLINK_SDK_NAME + '.dylib'
+                libname = sdk + '.dylib'
             else:
                 self.logger.warning(f'unknown platform {plat}; assuming UNIX')
-                libname = Library.JLINK_SDK_NAME + '.so'
+                libname = sdk + '.so'
 
             lib = Library(dllpath=os.fspath(Path(self.commander).parent /
                                             libname))
