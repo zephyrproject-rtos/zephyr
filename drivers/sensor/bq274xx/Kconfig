@@ -6,6 +6,6 @@ config BQ274XX
 	bool "BQ274xx Fuel Gauge"
 	default y
 	depends on DT_HAS_TI_BQ274XX_ENABLED
-	depends on I2C
+	select I2C
 	help
 	  Enable I2C-based driver for BQ274xx Fuel Gauge.

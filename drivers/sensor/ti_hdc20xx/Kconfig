@@ -8,7 +8,7 @@ config TI_HDC20XX
 	default y
 	depends on DT_HAS_TI_HDC2010_ENABLED || DT_HAS_TI_HDC2021_ENABLED || \
 		   DT_HAS_TI_HDC2022_ENABLED || DT_HAS_TI_HDC2080_ENABLED
-	depends on I2C
+	select I2C
 	help
 	  Enable driver for TI HDC20XX temperature and humidity sensors
 	  (e.g. HDC2010, HDC2021, HDC2022, HDC2080).
