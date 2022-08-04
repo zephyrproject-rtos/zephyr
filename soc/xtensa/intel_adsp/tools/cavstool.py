@@ -13,7 +13,6 @@ import mmap
 import argparse
 import socketserver
 import threading
-import netifaces
 import hashlib
 from urllib.parse import urlparse
 
@@ -831,28 +830,6 @@ def adsp_log(output, server):
         sys.stdout.write(output)
         sys.stdout.flush()
 
-def get_host_ip(net_iface):
-    """
-    Helper tool use to detect host's serving ip address.
-    """
-    interfaces = netifaces.interfaces()
-
-    for i in interfaces:
-        if i != "lo":
-            try:
-                netifaces.ifaddresses(i)
-                ip = netifaces.ifaddresses(i)[netifaces.AF_INET][0]['addr']
-                log.info (f"Found interface {i}, IP address: {ip}")
-            except Exception:
-                log.info(f"Ignore the interface {i} which is not activated.")
-
-            if i == net_iface:
-                log.info(f"Serve on interface {i} only, IP address: {ip}")
-                return ip
-
-    log.info("Serve on all found available interface.")
-    return None
-
 
 ap = argparse.ArgumentParser(description="DSP loader/logger tool")
 ap.add_argument("-q", "--quiet", action="store_true",
@@ -865,8 +842,6 @@ ap.add_argument("-n", "--no-history", action="store_true",
                 help="No current log buffer at start, just new output")
 ap.add_argument("-s", "--server-addr",
                 help="Specify the only IP address the log server will LISTEN on")
-ap.add_argument("-i", "--interface",
-                help="Specify the network interface the service will LISTEN to")
 ap.add_argument("-p", "--log-port",
                 help="Specify the PORT that the log server to active")
 ap.add_argument("-r", "--req-port",
@@ -899,11 +874,6 @@ if args.log_port:
 
 if args.req_port:
     PORT_REQ = int(args.req_port)
-
-iface =  get_host_ip(args.interface)
-
-if args.interface:
-    HOST = iface
 
 log.info(f"Serve on LOG PORT: {PORT_LOG} REQ PORT: {PORT_REQ}")
 
