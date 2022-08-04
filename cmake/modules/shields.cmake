@@ -81,11 +81,6 @@ foreach(root ${BOARD_ROOT})
         )
 
       list(APPEND
-        shield_dts_fixups
-        ${SHIELD_DIR_${s}}/dts_fixup.h
-        )
-
-      list(APPEND
         SHIELD_DIRS
         ${SHIELD_DIR_${s}}
         )
