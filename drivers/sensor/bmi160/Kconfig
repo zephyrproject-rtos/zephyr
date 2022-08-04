@@ -7,7 +7,8 @@ menuconfig BMI160
 	bool "Bosch BMI160 inertial measurement unit"
 	default y
 	depends on DT_HAS_BOSCH_BMI160_ENABLED
-	depends on SPI || I2C
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI160),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI160),spi)
 	help
 	  Enable Bosch BMI160 inertial measurement unit that provides acceleration
 	  and angular rate measurements.

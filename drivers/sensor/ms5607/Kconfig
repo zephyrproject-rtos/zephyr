@@ -7,7 +7,8 @@ menuconfig MS5607
 	bool "MS5607 pressure and temperature sensor"
 	default y
 	depends on DT_HAS_MEAS_MS5607_ENABLED
-	depends on I2C || SPI
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_MEAS_MS5607),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_MEAS_MS5607),spi)
 	help
 	  Enable driver for MS5607 pressure and temperature sensor.
 
