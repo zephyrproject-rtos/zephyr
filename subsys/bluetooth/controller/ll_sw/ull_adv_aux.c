@@ -408,11 +408,6 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		uint16_t sec_len;
 		uint8_t *dptr;
 
-		/* Get reference to aux ptr in superior PDU */
-		(void)memcpy(&aux_ptr,
-			     &hdr_data[ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET],
-			     sizeof(aux_ptr));
-
 		/* Get reference to flags in superior PDU */
 		com_hdr = &pdu->adv_ext_ind;
 		if (com_hdr->ext_hdr_len) {
@@ -544,6 +539,11 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 
 		/* Fill AD Data in chain PDU */
 		(void)memcpy(dptr_chain, data, len);
+
+		/* Get reference to aux ptr in superior PDU */
+		(void)memcpy(&aux_ptr,
+			     &hdr_data[ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET],
+			     sizeof(aux_ptr));
 
 		/* Fill the aux offset in the previous AUX_SYNC_IND PDU */
 		offs_us = PDU_AC_US(pdu->len, adv->lll.phy_s,
@@ -1032,15 +1032,6 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		uint16_t sec_len;
 		uint8_t *dptr;
 
-		/* Get reference to aux ptr in superior PDU */
-		aux_ptr_offset = ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET;
-		if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ADI) {
-			aux_ptr_offset +=  ULL_ADV_HDR_DATA_ADI_PTR_OFFSET +
-					   ULL_ADV_HDR_DATA_ADI_PTR_SIZE;
-		}
-		(void)memcpy(&aux_ptr, &hdr_data[aux_ptr_offset],
-			     sizeof(aux_ptr));
-
 		/* Get reference to flags in superior PDU */
 		com_hdr = &sr_pdu->adv_ext_ind;
 		if (com_hdr->ext_hdr_len) {
@@ -1172,6 +1163,15 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 
 		/* Fill AD Data in chain PDU */
 		(void)memcpy(dptr_chain, data, len);
+
+		/* Get reference to aux ptr in superior PDU */
+		aux_ptr_offset = ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET;
+		if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ADI) {
+			aux_ptr_offset +=  ULL_ADV_HDR_DATA_ADI_PTR_OFFSET +
+					   ULL_ADV_HDR_DATA_ADI_PTR_SIZE;
+		}
+		(void)memcpy(&aux_ptr, &hdr_data[aux_ptr_offset],
+			     sizeof(aux_ptr));
 
 		/* Fill the aux offset in the previous AUX_SYNC_IND PDU */
 		offs_us = PDU_AC_US(sr_pdu->len, adv->lll.phy_s,

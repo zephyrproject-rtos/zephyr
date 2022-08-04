@@ -473,11 +473,6 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 		uint16_t ter_len;
 		uint8_t *dptr;
 
-		/* Get reference to aux ptr in superior PDU */
-		(void)memcpy(&aux_ptr,
-			     &hdr_data[ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET],
-			     sizeof(aux_ptr));
-
 		/* Get reference to flags in superior PDU */
 		com_hdr = &pdu->adv_ext_ind;
 		if (com_hdr->ext_hdr_len) {
@@ -608,6 +603,11 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 
 		/* Fill AD Data in chain PDU */
 		(void)memcpy(dptr_chain, data, len);
+
+		/* Get reference to aux ptr in superior PDU */
+		(void)memcpy(&aux_ptr,
+			     &hdr_data[ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET],
+			     sizeof(aux_ptr));
 
 		/* Fill the aux offset in the previous AUX_SYNC_IND PDU */
 		offs_us = PDU_AC_US(pdu->len, adv->lll.phy_s,
