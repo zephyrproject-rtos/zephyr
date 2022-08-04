@@ -2212,6 +2212,14 @@ static ssize_t ascs_release(struct bt_ascs *ascs, struct net_buf_simple *buf)
 			continue;
 		}
 
+		if (ase->ep.status.state == BT_AUDIO_EP_STATE_IDLE) {
+			BT_WARN("Invalid operation in state: %s",
+				bt_audio_ep_state_str(ase->ep.status.state));
+			ascs_cp_rsp_add(id, BT_ASCS_RELEASE_OP,
+					BT_ASCS_RSP_INVALID_ASE_STATE, BT_ASCS_REASON_NONE);
+			continue;
+		}
+
 		ase_release(ase, false);
 	}
 
