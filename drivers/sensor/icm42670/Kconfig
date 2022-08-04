@@ -9,7 +9,7 @@ menuconfig ICM42670
 	bool "ICM42670 Six-Axis Motion Tracking Device"
 	default y
 	depends on DT_HAS_INVENSENSE_ICM42670_ENABLED
-	depends on SPI
+	select SPI
 	help
 	  Enable driver for ICM42670 SPI-based six-axis motion tracking device.
 
