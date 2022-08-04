@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F1_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F1_CLOCK_H_
 
-/** Peripheral clock sources */
+/** Domain clocks */
 
 /** Bus clocks */
 #define STM32_CLOCK_BUS_AHB1    0x014
