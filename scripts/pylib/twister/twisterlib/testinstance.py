@@ -230,6 +230,7 @@ class TestInstance:
         subdir = os.path.join(self.build_dir, "twister")
 
         content = ""
+        content = content + "\nCONFIG_DEBUG=y"
 
         if self.testsuite.extra_configs:
             content = "\n".join(self.testsuite.extra_configs)
