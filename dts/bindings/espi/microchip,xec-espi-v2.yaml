@@ -33,18 +33,3 @@ properties:
 
     pinctrl-names:
       required: true
-
-    "#girq-cells":
-      type: int
-      const: 1
-
-    "#pcr-cells":
-      type: int
-      const: 2
-
-girq-cells:
-    - girqinfo
-
-pcr-cells:
-    - regidx
-    - bitpos
