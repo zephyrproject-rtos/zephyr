@@ -30,7 +30,8 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
                  config_dir,
                  default_key,
                  key,
-                 pty
+                 pty,
+                 tool_opt
                  ):
         super().__init__(cfg)
 
@@ -48,13 +49,15 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
         else:
             self.key = os.path.join(DEFAULT_KEY_DIR, default_key)
 
+        self.tool_opt_args = tool_opt
+
     @classmethod
     def name(cls):
         return 'intel_adsp'
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'})
+        return RunnerCaps(commands={'flash'}, tool_opt=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -73,6 +76,11 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
                             and stream it remotely to west's standard output.''')
 
     @classmethod
+    def tool_opt_help(cls) -> str:
+        return """Additional options for run/request service tool,
+        e.g. '--lock' """
+
+    @classmethod
     def do_create(cls, cfg, args):
         return IntelAdspBinaryRunner(cfg,
                                     remote_host=args.remote_host,
@@ -80,7 +88,8 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
                                     config_dir=args.config_dir,
                                     default_key=args.default_key,
                                     key=args.key,
-                                    pty=args.pty
+                                    pty=args.pty,
+                                    tool_opt=args.tool_opt
                                     )
 
     def do_run(self, command, **kwargs):
@@ -122,6 +131,10 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
 
         # Copy the zephyr to target remote ADSP host and run
         self.run_cmd = ([f'{self.cavstool}','-s', f'{self.remote_host}', f'{send_bin_fw}'])
+
+        # Add the extra tool options to run/request service tool
+        if self.tool_opt_args:
+            self.run_cmd = self.run_cmd + self.tool_opt_args
 
         self.logger.debug(f"rcmd: {self.run_cmd}")
 
