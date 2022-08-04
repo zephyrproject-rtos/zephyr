@@ -8,7 +8,8 @@ Overview
 
 This application demonstrates how to use OpenAMP with Zephyr. It is designed to
 demonstrate how to integrate OpenAMP with Zephyr both from a build perspective
-and code.
+and code. Note that the remote and primary core images can be flashed
+independently, but sysbuild must be used in order to flash them in one step.
 
 Building the application for lpcxpresso54114_m4
 ***********************************************
