@@ -60,7 +60,7 @@ def dt_chosen_label(kconf, _, chosen):
         return ""
 
     if "label" not in node.props:
-        return ""
+        return node.name
 
     return node.props["label"].val
 
