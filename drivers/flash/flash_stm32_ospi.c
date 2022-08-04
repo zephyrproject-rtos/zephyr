@@ -1581,7 +1581,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					(clock_control_subsys_t) &dev_cfg->pclken[1],
 					NULL) != 0) {
-			LOG_ERR("Could not select OSPI source clock pclk[1]");
+			LOG_ERR("Could not select OSPI domain clock pclk[1]");
 			return -EIO;
 		}
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
