@@ -81,7 +81,8 @@ can be disabled if not needed.
   (`LwM2M specification 1.0.2`_) is supported via the "Bootstrap", "Client
   Registration", "Device Management & Service Enablement" and "Information
   Reporting" interfaces.  The required core LwM2M objects are implemented as
-  well as several IPSO Smart Objects.
+  well as several IPSO Smart Objects. (`LwM2M specification 1.1.1`_) is
+  supported in similar manner when enabled with a Kconfig option.
   :ref:`lwm2m-client-sample` implements the library as an example.
 
 * **DNS** Domain Name Service
@@ -166,3 +167,6 @@ The networking stack source code tree is organized as follows:
 
 .. _LwM2M specification 1.0.2:
    http://openmobilealliance.org/release/LightweightM2M/V1_0_2-20180209-A/OMA-TS-LightweightM2M-V1_0_2-20180209-A.pdf
+
+.. _LwM2M specification 1.1.1:
+   http://openmobilealliance.org/release/LightweightM2M/V1_1_1-20190617-A/
