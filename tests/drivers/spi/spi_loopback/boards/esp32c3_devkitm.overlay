@@ -16,3 +16,10 @@
 		spi-max-frequency = <16000000>;
 	};
 };
+
+&spi2 {
+	dma;
+	dma-clk = <ESP32_GDMA_MODULE>;
+	dma-host = <0>;
+	status = "okay";
+};
