@@ -1421,12 +1421,6 @@ static void eth_mcux_err_isr(const struct device *dev)
 }
 #endif
 
-#if defined(CONFIG_NOCACHE_MEMORY)
-#define NOCACHE __nocache
-#else
-#define NOCACHE
-#endif
-
 #if defined(CONFIG_SOC_SERIES_IMX_RT10XX)
 #define ETH_MCUX_UNIQUE_ID	(OCOTP->CFG1 ^ OCOTP->CFG2)
 #elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
@@ -1562,6 +1556,19 @@ static void eth_mcux_err_isr(const struct device *dev)
 #define ETH_MCUX_PINCTRL_INIT(n)
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay) && \
+	CONFIG_ETH_MCUX_USE_DTCM_FOR_DMA_BUFFER
+/* Use DTCM for hardware DMA buffers */
+#define _mcux_dma_desc __dtcm_bss_section
+#define _mcux_dma_buffer __dtcm_noinit_section
+#elif defined(CONFIG_NOCACHE_MEMORY)
+#define _mcux_dma_desc __nocache
+#define _mcux_dma_buffer __nocache
+#else
+#define _mcux_dma_desc
+#define _mcux_dma_buffer
+#endif
+
 #if defined(CONFIG_ETH_MCUX_PHY_RESET)
 #define ETH_MCUX_PHY_GPIOS(n)						\
 	.int_gpio = GPIO_DT_SPEC_INST_GET(n, int_gpios),		\
@@ -1604,19 +1611,23 @@ static void eth_mcux_err_isr(const struct device *dev)
 		ETH_MCUX_POWER(n)					\
 	};								\
 									\
-	static NOCACHE __aligned(ENET_BUFF_ALIGNMENT)			\
+	static __aligned(ENET_BUFF_ALIGNMENT)				\
+		_mcux_dma_desc						\
 		enet_rx_bd_struct_t					\
 		eth##n##_rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];	\
 									\
-	static NOCACHE __aligned(ENET_BUFF_ALIGNMENT)			\
+	static __aligned(ENET_BUFF_ALIGNMENT)				\
+		_mcux_dma_desc						\
 		enet_tx_bd_struct_t					\
 		eth##n##_tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];	\
 									\
 	static uint8_t __aligned(ENET_BUFF_ALIGNMENT)			\
+		_mcux_dma_buffer					\
 		eth##n##_rx_buffer[CONFIG_ETH_MCUX_RX_BUFFERS]		\
 				  [ETH_MCUX_BUFFER_SIZE];		\
 									\
 	static uint8_t __aligned(ENET_BUFF_ALIGNMENT)			\
+		_mcux_dma_buffer					\
 		eth##n##_tx_buffer[CONFIG_ETH_MCUX_TX_BUFFERS]		\
 				  [ETH_MCUX_BUFFER_SIZE];		\
 									\
