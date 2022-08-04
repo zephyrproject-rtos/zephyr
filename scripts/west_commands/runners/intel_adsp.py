@@ -71,7 +71,7 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
                             help='the default basename of the key store in board.cmake')
         parser.add_argument('--key',
                             help='specify where the signing key is')
-        parser.add_argument('--pty',
+        parser.add_argument('--pty', nargs='?', const="remote-host", type=str,
                             help=''''Capture the output of cavstool.py running on --remote-host \
                             and stream it remotely to west's standard output.''')
 
@@ -147,7 +147,10 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
         #
         # to get the result later separately.
         if self.pty is not None:
-            self.log_cmd = ([f'{self.cavstool}','-s', f'{self.pty}', '-l'])
+            if self.pty == 'remote-host':
+                self.log_cmd = ([f'{self.cavstool}','-s', f'{self.remote_host}', '-l'])
+            else:
+                self.log_cmd = ([f'{self.cavstool}','-s', f'{self.pty}', '-l'])
 
             self.logger.debug(f"rcmd: {self.log_cmd}")
 
