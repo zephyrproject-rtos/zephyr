@@ -37,15 +37,6 @@ test_spi_dw1000: dw1000@2 {
 	status= "okay";
 };
 
-test_spi_mcr20a: mcr20a@3 {
-	compatible = "nxp,mcr20a";
-	reg = <0x3>;
-	spi-max-frequency = <0>;
-	irqb-gpios = <&test_gpio 0 0>;
-	reset-gpios = <&test_gpio 0 0>;
-	status = "okay";
-};
-
 test_spi_rf2xx: rf2xx@4 {
 	compatible = "atmel,rf2xx";
 	reg = <0x4>;
