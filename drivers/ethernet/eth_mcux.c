@@ -1523,12 +1523,15 @@ static void eth_mcux_err_isr(const struct device *dev)
 /* Use DTCM for hardware DMA buffers */
 #define _mcux_dma_desc __dtcm_bss_section
 #define _mcux_dma_buffer __dtcm_noinit_section
+#define _mcux_driver_buffer __dtcm_noinit_section
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define _mcux_dma_desc __nocache
 #define _mcux_dma_buffer __nocache
+#define _mcux_driver_buffer
 #else
 #define _mcux_dma_desc
 #define _mcux_dma_buffer
+#define _mcux_driver_buffer
 #endif
 
 #if defined(CONFIG_ETH_MCUX_PHY_RESET)
@@ -1545,9 +1548,9 @@ static void eth_mcux_err_isr(const struct device *dev)
 	ETH_MCUX_PINCTRL_DEFINE(n)					\
 									\
 	static void eth##n##_config_func(void);				\
-	static uint8_t							\
+	static _mcux_driver_buffer uint8_t				\
 		tx_enet_frame_##n##_buf[NET_ETH_MAX_FRAME_SIZE];	\
-	static uint8_t							\
+	static _mcux_driver_buffer uint8_t				\
 		rx_enet_frame_##n##_buf[NET_ETH_MAX_FRAME_SIZE];	\
 									\
 	static mdio_handle_t eth##n##_mdio_handle = {			\
