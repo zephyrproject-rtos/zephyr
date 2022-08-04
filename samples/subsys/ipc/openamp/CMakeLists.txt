@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.20.0)
 # SPDX-License-Identifier: Apache-2.0
 #
 
-set(REMOTE_ZEPHYR_DIR ${CMAKE_CURRENT_BINARY_DIR}/openamp_remote-prefix/src/openamp_remote-build/zephyr)
+set(REMOTE_ZEPHYR_DIR ${CMAKE_CURRENT_BINARY_DIR}/../openamp_remote/zephyr)
 
 if("${BOARD}" STREQUAL "lpcxpresso54114_m4")
   set(BOARD_REMOTE "lpcxpresso54114_m0")
@@ -24,6 +24,11 @@ message(STATUS "${BOARD} compile as Master in this sample")
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(openamp)
+
+if("${BOARD}" STREQUAL "lpcxpresso54114_m4")
+  target_include_directories(zephyr_interface
+    INTERFACE ${REMOTE_ZEPHYR_DIR}/include/public)
+endif()
 
 enable_language(C ASM)
 
