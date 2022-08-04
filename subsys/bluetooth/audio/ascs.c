@@ -2279,7 +2279,6 @@ static ssize_t ascs_cp_write(struct bt_conn *conn,
 	default:
 		ascs_cp_rsp_add(0x00, req->op, BT_ASCS_RSP_NOT_SUPPORTED, 0);
 		BT_DBG("Unknown opcode");
-		len = BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
 		goto respond;
 	}
 
