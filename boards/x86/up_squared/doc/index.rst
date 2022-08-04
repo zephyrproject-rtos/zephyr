@@ -251,6 +251,40 @@ Booting UP Squared
 #. When the boot process completes, you have finished booting the
    Zephyr application image.
 
+Integration Testing With Twister
+================================
+
+The up_squared hardware also has integration for testing using the twister tool.
+The script behind ``--west-flash`` will copy the ``*.efi`` file to the pxe server,
+then restart up_squared board via smartPDU.
+
+  .. code-block:: console
+
+    $ twister -p up_squared --device-testing --device-serial <uart serial port> --west-flash=<helper script> -v -T <test suite path>  -v
+
+The content inside helper script:
+
+  .. code-block:: console
+
+    #!/bin/bash
+    user="<user name>"
+    address="<the ip address of pxe server>"
+    test_image=$1<efi file>
+    PDU_credentials=`cat <smartPDU user info file>`
+
+    # copy image
+    scp $test_image $user@$address:<pxe server file>
+
+    # power off via network switch
+    curl http://${PDU_credentials}@<smartPDU local ip>/outlet?<power port>=OFF --noproxy "*"
+
+    # network switch reflect time
+    sleep 2
+
+    # power on
+    curl http://${PDU_credentials}@<smartPDU local ip>/outlet?<power port>=ON --noproxy "*"
+
+
 .. _UP Squared: https://www.up-board.org/upsquared/specifications
 
 .. _UP Squared Pinout: https://wiki.up-community.org/Pinout
