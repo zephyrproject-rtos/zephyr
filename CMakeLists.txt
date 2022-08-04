@@ -496,22 +496,6 @@ add_custom_command(
 )
 add_custom_target(version_h DEPENDS ${PROJECT_BINARY_DIR}/include/generated/version.h)
 
-# Error-out when the deprecated naming convention is found (until
-# after 1.14.0 has been released)
-foreach(path
-    ${BOARD_DIR}/dts.fixup
-    ${PROJECT_SOURCE_DIR}/soc/${ARCH}/${SOC_PATH}/dts.fixup
-    ${APPLICATION_SOURCE_DIR}/dts.fixup
-    )
-  if(EXISTS ${path})
-    message(FATAL_ERROR
-      "A deprecated filename has been detected. Porting is required."
-      "The file '${path}' exists, but it should be named dts_fixup.h instead."
-      "See https://github.com/zephyrproject-rtos/zephyr/pull/10352 for more details"
-      )
-  endif()
-endforeach()
-
 set_ifndef(  DTS_BOARD_FIXUP_FILE                                   ${BOARD_DIR}/dts_fixup.h)
 set_ifndef(    DTS_SOC_FIXUP_FILE                 ${SOC_DIR}/${ARCH}/${SOC_PATH}/dts_fixup.h)
 set(           DTS_APP_FIXUP_FILE                      ${APPLICATION_SOURCE_DIR}/dts_fixup.h)
