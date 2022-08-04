@@ -26,6 +26,7 @@ config IEEE802154_NET_IF_NO_AUTO_START
 	  This option can be useful when using OpenThread or Zigbee. If you
 	  have any doubt about this option leave it as default value.
 
+if !NET_L2_PHY_IEEE802154
 config IEEE802154_RAW_MODE
 	bool "IEEE 802.15.4 driver without the MAC stack"
 	select NET_RAW_MODE
@@ -34,6 +35,7 @@ config IEEE802154_RAW_MODE
 	  i.e. without a MAC stack (the net L2 layer for 802.15.4 will not
 	  be built). Used only for very specific cases, such as wpan_serial
 	  and wpanusb samples.
+endif # !NET_L2_PHY_IEEE802154
 
 config IEEE802154_RDEV
 	bool
