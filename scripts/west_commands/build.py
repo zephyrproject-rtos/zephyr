@@ -26,7 +26,7 @@ BUILD_USAGE = '''\
 west build [-h] [-b BOARD[@REV]]] [-d BUILD_DIR]
            [-t TARGET] [-p {auto, always, never}] [-c] [--cmake-only]
            [-n] [-o BUILD_OPT] [-f]
-           [--sysbuild | --no-sysbuild]
+           [--sysbuild | --no-sysbuild] [--domain DOMAIN]
            [source_dir] -- [cmake_opt [cmake_opt ...]]
 '''
 
