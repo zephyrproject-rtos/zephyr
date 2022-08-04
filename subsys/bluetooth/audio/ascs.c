@@ -2068,7 +2068,7 @@ static void ase_stop(struct bt_ascs_ase *ase)
 	 * procedure defined in Volume 3, Part C, Section 9.3.15.
 	 */
 	err = bt_audio_stream_disconnect(stream);
-	if (err != 0) {
+	if (err != -ENOTCONN && err != 0) {
 		BT_ERR("Could not disconnect the CIS: %d", err);
 		return;
 	}
