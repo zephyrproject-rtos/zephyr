@@ -169,7 +169,6 @@ arduino_i2c: &flexcomm2 {
 	fxos8700: fxos8700@1e {
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
-		label = "FXOS8700";
 		int1-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
 	};
@@ -197,7 +196,6 @@ arduino_spi: &flexcomm5 {
 i2s0: &flexcomm1 {
 	status = "okay";
 	compatible = "nxp,lpc-i2s";
-	label = "I2S_0";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	dmas = <&dma0 2>;
@@ -210,7 +208,6 @@ i2s0: &flexcomm1 {
 i2s1: &flexcomm3 {
 	status = "okay";
 	compatible = "nxp,lpc-i2s";
-	label = "I2S_1";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	dmas = <&dma0 7>;
@@ -223,7 +220,6 @@ i2s1: &flexcomm3 {
 &pmic_i2c {
 	status = "okay";
 	compatible = "nxp,lpc-i2c";
-	label = "PMIC_I2C";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -231,11 +227,9 @@ i2s1: &flexcomm3 {
 	pinctrl-names = "default";
 
 	pca9420: pca9420@61 {
-		label = "PCA9420_PMIC";
 		reg = <0x61>;
 
 		pca9420_sw1: sw1_buck {
-			label = "SW1_BUCK_REG";
 			compatible = "regulator-pmic";
 			voltage-range = <PCA9420_SW1_VOLTAGE_RANGE>;
 			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
@@ -253,7 +247,6 @@ i2s1: &flexcomm3 {
 		};
 
 		pca9420_sw2: sw2_buck {
-			label = "SW2_BUCK_REG";
 			compatible = "regulator-pmic";
 			voltage-range = <PCA9420_SW2_VOLTAGE_RANGE>;
 			num-voltages = <50>;
@@ -271,7 +264,6 @@ i2s1: &flexcomm3 {
 		};
 
 		pca9420_ldo1: ldo1_reg {
-			label = "LDO1_REG";
 			compatible = "regulator-pmic";
 			voltage-range = <PCA9420_LDO1_VOLTAGE_RANGE>;
 			num-voltages = <9>;
@@ -289,7 +281,6 @@ i2s1: &flexcomm3 {
 		};
 
 		pca9420_ldo2: ldo2_reg {
-			label = "LDO2_REG";
 			compatible = "regulator-pmic";
 			voltage-range = <PCA9420_LDO2_VOLTAGE_RANGE>;
 			num-voltages = <50>;
@@ -316,7 +307,6 @@ i2s1: &flexcomm3 {
 	mx25um51345g: mx25um51345g@2 {
 		compatible = "nxp,imx-flexspi-mx25um51345g";
 		size = <DT_SIZE_M(64)>;
-		label = "MX25UM51345G";
 		reg = <2>;
 		spi-max-frequency = <200000000>;
 		status = "okay";

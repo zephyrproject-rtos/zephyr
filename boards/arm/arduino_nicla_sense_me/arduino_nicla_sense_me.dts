@@ -34,6 +34,8 @@
 
 	aliases {
 		sw0 = &user_button;
+		watchdog0 = &wdt0;
+		spi-flash0 = &mx25r1635f;
 	};
 };
 
@@ -96,7 +98,7 @@
 	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
 
-	mx25r1635f@0 {
+	mx25r1635f: mx25r1635f@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <80000000>;

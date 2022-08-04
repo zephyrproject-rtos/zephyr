@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/zephyr.h>
+#include <zephyr/shell/shell.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/drivers/fpga.h>
@@ -12,7 +13,7 @@
 #include "greenled.h"
 #include <eoss3_dev.h>
 
-const struct device *fpga;
+const struct device *fpga = DEVICE_DT_GET(DT_NODELABEL(fpga0));
 
 void main(void)
 {
@@ -23,11 +24,17 @@ void main(void)
 			       PAD_SMT_DISABLE | PAD_REN_DISABLE | PAD_SR_SLOW |
 			       PAD_CTRL_SEL_AO_REG); /* Enable green led */
 
-	fpga = device_get_binding("FPGA");
+#if CONFIG_SHELL
+	printk("Address of the bitstream (red): %p\n", &axFPGABitStream_red);
+	printk("Address of the bitstream (green): %p\n", &axFPGABitStream_green);
+	printk("Size of the bitstream (red): %d\n", sizeof(axFPGABitStream_red));
+	printk("Size of the bitstream (green): %d\n", sizeof(axFPGABitStream_green));
+#else
 
-	if (!fpga) {
-		printk("unable to find fpga device\n");
+	if (!device_is_ready(fpga)) {
+		printk("fpga device is not ready\n");
 	}
+
 	while (1) {
 		fpga_load(fpga, axFPGABitStream_red,
 			  sizeof(axFPGABitStream_red));
@@ -38,4 +45,5 @@ void main(void)
 		k_msleep(2000);
 		fpga_reset(fpga);
 	}
+#endif
 }

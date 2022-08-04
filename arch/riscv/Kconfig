@@ -199,6 +199,12 @@ config CMSIS_THREAD_MAX_STACK_SIZE
 config CMSIS_V2_THREAD_MAX_STACK_SIZE
 	default 1024 if 64BIT
 
+config ARCH_IRQ_VECTOR_TABLE_ALIGN
+	default 256
+
+config GEN_IRQ_VECTOR_TABLE
+	select RISCV_MTVEC_VECTORED_MODE if SOC_FAMILY_RISCV_PRIVILEGE
+
 rsource "Kconfig.isa"
 rsource "Kconfig.core"
 

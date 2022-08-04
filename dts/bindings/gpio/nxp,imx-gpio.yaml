@@ -14,9 +14,6 @@ properties:
     interrupts:
       required: false
 
-    label:
-      required: true
-
     rdc:
      type: int
      required: false

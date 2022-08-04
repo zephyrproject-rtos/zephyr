@@ -28,8 +28,7 @@ config LWM2M_VERSION_1_0
 	imply LWM2M_RW_OMA_TLV_SUPPORT
 
 config LWM2M_VERSION_1_1
-	bool "LwM2M version 1.1 [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "LwM2M version 1.1"
 	imply LWM2M_RW_CBOR_SUPPORT
 	imply ZCBOR
 
@@ -56,8 +55,7 @@ config LWM2M_SECURITY_OBJECT_VERSION_1_0
 	bool "Security object version 1.0"
 
 config LWM2M_SECURITY_OBJECT_VERSION_1_1
-	bool "Security object version 1.1 [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Security object version 1.1"
 
 endchoice
 
@@ -72,8 +70,7 @@ config LWM2M_SERVER_OBJECT_VERSION_1_0
 	bool "Server object version 1.0"
 
 config LWM2M_SERVER_OBJECT_VERSION_1_1
-	bool "Server object version 1.1 [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Server object version 1.1"
 
 endchoice
 
@@ -194,6 +191,12 @@ config LWM2M_TLS_SESSION_CACHING
 	help
 	  Enabling this only when feature is supported in TLS library.
 
+config LWM2M_RD_CLIENT_SUSPEND_SOCKET_AT_IDLE
+	bool "Socket close is skipped at RX_ON_IDLE state"
+	depends on LWM2M_RD_CLIENT_SUPPORT
+	help
+	  This config suspend socket handler which skip socket polling process.
+
 config LWM2M_RD_CLIENT_SUPPORT
 	bool "support for LWM2M client bootstrap/registration state machine"
 	default y
@@ -222,6 +225,24 @@ config LWM2M_RD_CLIENT_MAX_RETRIES
 	  it's up to the application to handle this situation in a way
 	  appropriate for the specific use-case (for instance by waiting for
 	  LTE link to be re-established).
+
+config LWM2M_ACCESS_CONTROL_ENABLE
+	bool "Access control support"
+	help
+	  Enabling this setting registers the access control object (obj_id 2).
+
+config LWM2M_ACCESS_CONTROL_INSTANCE_COUNT
+	int "Maximum # of LWM2M Access Control object instances"
+	default 50
+	help
+	  This setting establishes the total count of LWM2M Access Control instances
+	  available to the client.
+
+config LWM2M_SERVER_DEFAULT_SSID
+	int "Default server ssid when using the lwm2m-client. (used for access control)"
+	default 101
+	help
+	  When bootstrap is not enabled, access control needs a default owner.
 
 config LWM2M_PEER_PORT
 	int "LWM2M server port"
@@ -312,8 +333,7 @@ config LWM2M_CONNMON_OBJECT_VERSION_1_0
 	bool "Connectivity monitor object version 1.0"
 
 config LWM2M_CONNMON_OBJECT_VERSION_1_2
-	bool "Connectivity monitor object version 1.2 [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Connectivity monitor object version 1.2"
 
 endchoice
 
@@ -499,6 +519,11 @@ config LWM2M_LOCATION_OBJ_SUPPORT
 
 config LWM2M_GATEWAY_OBJ_SUPPORT
 	bool "LwM2M Gateway Object (25) [EXPERIMENTAL]"
+
+config LWM2M_EVENT_LOG_OBJ_SUPPORT
+	bool "LwM2M Event Log Object (20)"
+	help
+	  Include support for LWM2M Event Log Object (ID 20)
 
 if LWM2M_GATEWAY_OBJ_SUPPORT
 

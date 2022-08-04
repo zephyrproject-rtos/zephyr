@@ -1,0 +1,19 @@
+common:
+  arch_allow: arm
+  tags: linker
+tests:
+  tests.application_development.code_relocation:
+    filter: not CONFIG_CPU_HAS_NXP_MPU and CONFIG_MINIMAL_LIBC and dt_chosen_enabled("zephyr,itcm")
+    extra_configs:
+      - CONFIG_RELOCATE_TO_ITCM=y
+  tests.application_development.code_relocation_kinetis:
+    filter: CONFIG_CPU_HAS_NXP_MPU and CONFIG_MINIMAL_LIBC and dt_chosen_enabled("zephyr,itcm")
+    extra_configs:
+      - CONFIG_RELOCATE_TO_ITCM=y
+      - CONFIG_MPU_ALLOW_FLASH_WRITE=y
+  tests.application_development.code_relocation.no_itcm:
+    filter: not CONFIG_CPU_HAS_NXP_MPU and not dt_chosen_enabled("zephyr,itcm")
+    extra_configs:
+      - CONFIG_RELOCATE_TO_ITCM=n
+    extra_sections: _SRAM2_RODATA_SECTION_NAME _SRAM_TEXT_SECTION_NAME _SRAM_RODATA_SECTION_NAME _SRAM_DATA_SECTION_NAME _CUSTOM_SECTION_NAME2
+    platform_allow: qemu_cortex_m3 mps2_an385 sam_e70_xplained

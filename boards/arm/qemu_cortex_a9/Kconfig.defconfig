@@ -70,25 +70,11 @@ if QEMU_ICOUNT
 
 endif # QEMU_ICOUNT
 
-if SERIAL
-
-	config UART_XLNX_PS
-	default y
-
-endif # SERIAL
-
 if SHELL
 
 	config SHELL_STACK_SIZE
 	default 8192
 
 endif # SHELL
-
-if UART_PIPE
-
-	config UART_PIPE_ON_DEV_NAME
-	default "uart1"
-
-endif # UART_PIPE
 
 endif # BOARD_QEMU_CORTEX_A9

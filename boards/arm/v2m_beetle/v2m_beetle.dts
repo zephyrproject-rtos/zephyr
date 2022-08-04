@@ -3,7 +3,6 @@
 /dts-v1/;
 
 #include <arm/armv7-m.dtsi>
-
 / {
 	compatible = "arm,beetle";
 	#address-cells = <1>;
@@ -53,6 +52,7 @@
 			reg = <0x40000000 0x1000>;
 			interrupts = <8 3>;
 			label = "TIMER_0";
+			clocks = <&syscon>;
 		};
 
 		timer1: timer@40001000 {
@@ -60,6 +60,7 @@
 			reg = <0x40001000 0x1000>;
 			interrupts = <9 3>;
 			label = "TIMER_1";
+			clocks = <&syscon>;
 		};
 
 		dtimer0: dtimer@40002000 {
@@ -67,13 +68,14 @@
 			reg = <0x40002000 0x1000>;
 			interrupts = <10 3>;
 			label = "DTIMER_0";
+			clocks = <&syscon>;
 		};
 
 		uart0: uart@40004000 {
 			compatible = "arm,cmsdk-uart";
 			reg = <0x40004000 0x1000>;
 			interrupts = <0 3>;
-			clocks = <&sysclk>;
+			clocks = <&sysclk &syscon>;
 			current-speed = <115200>;
 			label = "UART_0";
 		};
@@ -82,7 +84,7 @@
 			compatible = "arm,cmsdk-uart";
 			reg = <0x40005000 0x1000>;
 			interrupts = <2 3>;
-			clocks = <&sysclk>;
+			clocks = <&sysclk &syscon>;
 			current-speed = <115200>;
 			label = "UART_1";
 		};
@@ -101,6 +103,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			label = "GPIO_0";
+			clocks = <&syscon>;
 		};
 
 		gpio1: gpio@40011000 {
@@ -110,6 +113,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			label = "GPIO_1";
+			clocks = <&syscon>;
 		};
 
 		gpio2: gpio@40012000 {
@@ -119,6 +123,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			label = "GPIO_2";
+			clocks = <&syscon>;
 		};
 
 		gpio3: gpio@40013000 {
@@ -128,6 +133,13 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			label = "GPIO_3";
+			clocks = <&syscon>;
+		};
+
+		syscon: syscon@4001f000 {
+			compatible = "arm,beetle-syscon";
+			reg = <0x4001f000 0x1000>;
+			#clock-cells = <0>;
 		};
 	};
 };

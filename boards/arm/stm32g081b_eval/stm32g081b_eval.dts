@@ -71,7 +71,6 @@
 		 */
 		discharge_vbus2 {
 			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
-			label = "DISCHARGE_VBUS2";
 		};
 	};
 
@@ -85,6 +84,7 @@
 		sw2 = &joy_down;
 		sw3 = &joy_right;
 		sw4 = &joy_up;
+		watchdog0 = &iwdg;
 	};
 
 	vbus {

@@ -10,30 +10,6 @@ config SOC
 config NUM_IRQS
 	default 32
 
-config ADC_MCUX_ADC16
-	default y
-	depends on ADC
-
-config CLOCK_CONTROL_MCUX_SIM
-	default y
-	depends on CLOCK_CONTROL
-
-config GPIO_MCUX
-	default y
-	depends on GPIO
-
-config UART_MCUX_LPUART
-	default y
-	depends on SERIAL
-
-config I2C_MCUX
-	default y
-	depends on I2C
-
-config SPI_MCUX_DSPI
-	default y
-	depends on SPI
-
 config ENTROPY_MCUX_TRNG
 	default y
 	depends on ENTROPY_GENERATOR

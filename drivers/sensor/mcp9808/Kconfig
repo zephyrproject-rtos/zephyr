@@ -5,6 +5,8 @@
 
 menuconfig MCP9808
 	bool "MCP9808 temperature sensor"
+	default y
+	depends on DT_HAS_MICROCHIP_MCP9808_ENABLED
 	depends on I2C
 	help
 	  Enable driver for MCP9808 temperature sensor.

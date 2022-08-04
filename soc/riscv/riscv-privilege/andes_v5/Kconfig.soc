@@ -52,11 +52,6 @@ config CACHE_ENABLE
 	bool "Cache"
 	default n
 
-config SOC_ANDES_V5_L2_CACHE
-	bool "Andes V5 L2 cache controller"
-	depends on CACHE_ENABLE
-	default y
-
 config SOC_ANDES_V5_HWDSP
 	bool "AndeStar V5 DSP ISA"
 	select RISCV_SOC_CONTEXT_SAVE

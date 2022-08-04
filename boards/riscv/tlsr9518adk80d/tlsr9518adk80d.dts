@@ -6,6 +6,7 @@
 
 /dts-v1/;
 
+#include <freq.h>
 #include <telink/telink_b91.dtsi>
 #include "tlsr9518adk80d-pinctrl.dtsi"
 
@@ -169,4 +170,10 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c_scl_pe1_default &i2c_sda_pe3_default>;
 	pinctrl-names = "default";
+};
+
+&adc {
+	status = "okay";
+	vref-internal-mv = <1200>;
+	sample-freq = <DT_FREQ_K(96)>;
 };

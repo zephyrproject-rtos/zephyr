@@ -8,7 +8,7 @@
 
 #include <zephyr/drivers/adc.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #if defined(CONFIG_SHIELD_MIKROE_ADC_CLICK)
 #define ADC_DEVICE_NODE		DT_INST(0, microchip_mcp3204)
@@ -101,6 +101,16 @@
 #define ADC_REFERENCE		ADC_REF_INTERNAL
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID	14
+
+#elif defined(CONFIG_BOARD_TLSR9518ADK80D)
+
+#define ADC_DEVICE_NODE		DT_INST(0, telink_b91_adc)
+#define ADC_RESOLUTION		12
+#define ADC_GAIN		ADC_GAIN_1_4
+#define ADC_REFERENCE		ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
+#define ADC_1ST_CHANNEL_ID	0
+#define ADC_1ST_CHANNEL_INPUT	0x0f
 
 #elif defined(CONFIG_BOARD_FRDM_K82F)
 
@@ -471,7 +481,7 @@ static int test_task_one_channel(void)
 	return TC_PASS;
 }
 
-void test_adc_sample_one_channel(void)
+ZTEST_USER(adc_basic, test_adc_sample_one_channel)
 {
 	zassert_true(test_task_one_channel() == TC_PASS, NULL);
 }
@@ -506,7 +516,7 @@ static int test_task_two_channels(void)
 }
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
 
-void test_adc_sample_two_channels(void)
+ZTEST_USER(adc_basic, test_adc_sample_two_channels)
 {
 #if defined(ADC_2ND_CHANNEL_ID)
 	zassert_true(test_task_two_channels() == TC_PASS, NULL);
@@ -558,7 +568,7 @@ static int test_task_asynchronous_call(void)
 }
 #endif /* defined(CONFIG_ADC_ASYNC) */
 
-void test_adc_asynchronous_call(void)
+ZTEST_USER(adc_basic, test_adc_asynchronous_call)
 {
 #if defined(CONFIG_ADC_ASYNC)
 	zassert_true(test_task_asynchronous_call() == TC_PASS, NULL);
@@ -621,7 +631,7 @@ static int test_task_with_interval(void)
 	return TC_PASS;
 }
 
-void test_adc_sample_with_interval(void)
+ZTEST(adc_basic, test_adc_sample_with_interval)
 {
 	zassert_true(test_task_with_interval() == TC_PASS, NULL);
 }
@@ -706,7 +716,7 @@ static int test_task_repeated_samplings(void)
 	return TC_PASS;
 }
 
-void test_adc_repeated_samplings(void)
+ZTEST(adc_basic, test_adc_repeated_samplings)
 {
 	zassert_true(test_task_repeated_samplings() == TC_PASS, NULL);
 }
@@ -751,7 +761,7 @@ static int test_task_invalid_request(void)
 	return TC_PASS;
 }
 
-void test_adc_invalid_request(void)
+ZTEST_USER(adc_basic, test_adc_invalid_request)
 {
 	zassert_true(test_task_invalid_request() == TC_PASS, NULL);
 }

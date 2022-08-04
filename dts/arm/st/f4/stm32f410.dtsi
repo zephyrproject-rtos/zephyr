@@ -16,7 +16,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			interrupts = <36 5>;
 			status = "disabled";
-			label = "SPI_2";
 		};
 
 		spi5: spi@40015000 {
@@ -27,7 +26,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
 			interrupts = <85 5>;
 			status = "disabled";
-			label = "SPI_5";
 		};
 
 		i2s1: i2s@40013000 {
@@ -41,7 +39,6 @@
 				&dma2 2 3 0x400 0x3>;
 			dma-names = "tx", "rx";
 			status = "disabled";
-			label = "I2S_1";
 		};
 
 		i2s2: i2s@40003800 {
@@ -55,7 +52,6 @@
 				&dma1 3 0 0x400 0x3>;
 			dma-names = "tx", "rx";
 			status = "disabled";
-			label = "I2S_2";
 		};
 
 		i2s5: i2s@40015000 {
@@ -69,7 +65,6 @@
 				&dma2 5 7 0x400 0x3>;
 			dma-names = "tx", "rx";
 			status = "disabled";
-			label = "I2S_5";
 		};
 
 		timers6: timers@40001000 {
@@ -80,12 +75,10 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
-			label = "TIMERS_6";
 
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
-				label = "COUNTER_6";
 			};
 		};
 
@@ -94,7 +87,6 @@
 			reg = <0x40007400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
 			status = "disabled";
-			label = "DAC_1";
 			#io-channel-cells = <1>;
 		};
 

@@ -72,6 +72,7 @@
 		sw0  = &button0;
 		rgb-pwm  = &pwm0;
 		mode-pwm = &pwm1;
+		watchdog0 = &wdt0;
 	};
 };
 

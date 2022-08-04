@@ -11,14 +11,12 @@
 		compatible = "zephyr,w1-serial";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		label = "W1_0";
 		status = "okay";
 
 		ds18b20 {
 			compatible = "maxim,ds18b20";
 			family-code = <0x28>;
 			resolution = <12>;
-			label = "DS18B20";
 			status = "okay";
 		};
 	};

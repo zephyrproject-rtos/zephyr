@@ -11,24 +11,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#if (CONFIG_SPI_NOR - 0) ||				\
-	DT_NODE_HAS_STATUS(DT_INST(0, jedec_spi_nor), okay)
-#define SPI_FLASH_DEVICE DT_LABEL(DT_INST(0, jedec_spi_nor))
-#define SPI_FLASH_NAME "JEDEC SPI-NOR"
-#elif (CONFIG_NORDIC_QSPI_NOR - 0) || \
-	DT_NODE_HAS_STATUS(DT_INST(0, nordic_qspi_nor), okay)
-#define SPI_FLASH_DEVICE DT_LABEL(DT_INST(0, nordic_qspi_nor))
-#define SPI_FLASH_NAME "JEDEC QSPI-NOR"
-#elif DT_NODE_HAS_STATUS(DT_INST(0, st_stm32_qspi_nor), okay)
-#define SPI_FLASH_DEVICE DT_LABEL(DT_INST(0, st_stm32_qspi_nor))
-#define SPI_FLASH_NAME "JEDEC QSPI-NOR"
-#elif DT_NODE_HAS_STATUS(DT_INST(0, st_stm32_ospi_nor), okay)
-#define SPI_FLASH_DEVICE DT_LABEL(DT_INST(0, st_stm32_ospi_nor))
-#define SPI_FLASH_NAME "JEDEC OSPI-NOR"
-#else
-#error Unsupported flash driver
-#endif
-
 #if defined(CONFIG_BOARD_ADAFRUIT_FEATHER_STM32F405)
 #define SPI_FLASH_TEST_REGION_OFFSET 0xf000
 #elif defined(CONFIG_BOARD_ARTY_A7_ARM_DESIGNSTART_M1) || \
@@ -52,16 +34,16 @@ void main(void)
 	const struct device *flash_dev;
 	int rc;
 
-	printf("\n" SPI_FLASH_NAME " SPI flash testing\n");
-	printf("==========================\n");
+	flash_dev = DEVICE_DT_GET(DT_ALIAS(spi_flash0));
 
-	flash_dev = device_get_binding(SPI_FLASH_DEVICE);
-
-	if (!flash_dev) {
-		printf("SPI flash driver %s was not found!\n",
-		       SPI_FLASH_DEVICE);
+	if (!device_is_ready(flash_dev)) {
+		printk("%s: device not ready.\n", flash_dev->name);
 		return;
 	}
+
+	printf("\n%s SPI flash testing\n", flash_dev->name);
+	printf("==========================\n");
+
 
 	/* Write protection needs to be disabled before each write or
 	 * erase, since the flash component turns on write protection

@@ -38,12 +38,12 @@
 
 #include <tinycrypt/cbc_mode.h>
 #include <tinycrypt/constants.h>
-#include "test_utils.h"
+#include <zephyr/test_utils.h>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /*
  * NIST test vectors from SP 800-38a:

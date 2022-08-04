@@ -21,7 +21,6 @@
 			reg = <0x58026400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x02000000>;
 			status = "disabled";
-			label = "MAILBOX_0";
 		};
 	};
 };

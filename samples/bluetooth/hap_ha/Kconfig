@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2022 Codecoup
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Bluetooth: Hearing Aid"
+
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
+
+menu "Hearing Aid"
+
+config HAP_HA_SET_RANK
+	int "Device rank in set"
+	depends on BT_CSIS
+	range 1 2
+	help
+	  Rank of this device in set.
+
+endmenu

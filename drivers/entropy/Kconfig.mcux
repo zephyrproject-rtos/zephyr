@@ -5,7 +5,8 @@
 
 config ENTROPY_MCUX_RNGA
 	bool "MCUX RNGA driver"
-	depends on HAS_MCUX_RNGA
+	default y
+	depends on DT_HAS_NXP_KINETIS_RNGA_ENABLED
 	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables the random number generator accelerator (RNGA)
@@ -13,7 +14,8 @@ config ENTROPY_MCUX_RNGA
 
 config ENTROPY_MCUX_TRNG
 	bool "MCUX TRNG driver"
-	depends on HAS_MCUX_TRNG
+	default y
+	depends on DT_HAS_NXP_KINETIS_TRNG_ENABLED
 	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables the true random number generator (TRNG)
@@ -21,7 +23,8 @@ config ENTROPY_MCUX_TRNG
 
 config ENTROPY_MCUX_RNG
 	bool "MCUX RNG driver"
-	depends on HAS_MCUX_RNG
+	default y
+	depends on DT_HAS_NXP_LPC_RNG_ENABLED
 	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables the true random number generator (TRNG)

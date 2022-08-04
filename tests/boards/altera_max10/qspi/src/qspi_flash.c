@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/device.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define MAX_NUM_OF_SECTORS		1024
 #define NUM_OF_SECTORS_TO_TEST		4

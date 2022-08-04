@@ -11,7 +11,7 @@
  * This module contains the code for testing sprintf() functionality.
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <stdio.h>
 #include <stdarg.h>
 

@@ -122,26 +122,6 @@ config RV32M1_INTMUX_CHANNEL_7
 
 endif # MULTI_LEVEL_INTERRUPTS
 
-config GPIO_RV32M1
-	default y
-	depends on GPIO
-
-config UART_RV32M1_LPUART
-	default y
-	depends on SERIAL
-
-config I2C_RV32M1_LPI2C
-	default y
-	depends on I2C
-
-config SPI_RV32M1_LPSPI
-	default y
-	depends on SPI
-
-config PWM_RV32M1_TPM
-	default y
-	depends on PWM
-
 if FLASH
 
 config SOC_FLASH_RV32M1

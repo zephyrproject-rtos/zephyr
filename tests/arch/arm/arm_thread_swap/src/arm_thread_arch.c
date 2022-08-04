@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/kernel_structs.h>
@@ -403,7 +403,7 @@ static void alt_thread_entry(void)
 		"Alternative thread: switch flag not false on thread exit\n");
 }
 
-void test_arm_thread_swap(void)
+ZTEST(arm_thread_swap, test_arm_thread_swap)
 {
 	int test_flag;
 

@@ -1,9 +1,12 @@
 /* Copyright (c) 2022 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
+
+ #include <zephyr/spinlock.h>
+
 #include <cavs_ipc.h>
 #include <cavs-ipc-regs.h>
-#include <zephyr/spinlock.h>
+
 
 void cavs_ipc_set_message_handler(const struct device *dev,
 				  cavs_ipc_handler_t fn, void *arg)
@@ -48,13 +51,13 @@ void z_cavs_ipc_isr(const void *devarg)
 		}
 
 		regs->tdr = CAVS_IPC_BUSY;
-		if (done && !IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
+		if (done && !IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
 			regs->tda = CAVS_IPC_DONE;
 		}
 	}
 
 	/* Same signal, but on different bits in 1.5 */
-	bool done = IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15) ?
+	bool done = IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15) ?
 		(regs->idd & CAVS_IPC_IDD15_DONE) : (regs->ida & CAVS_IPC_DONE);
 
 	if (done) {
@@ -62,7 +65,7 @@ void z_cavs_ipc_isr(const void *devarg)
 			devdata->done_notify(dev, devdata->done_arg);
 		}
 		k_sem_give(&devdata->sem);
-		if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
+		if (IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
 			regs->idd = CAVS_IPC_IDD15_DONE;
 		} else {
 			regs->ida = CAVS_IPC_DONE;
@@ -83,7 +86,7 @@ int cavs_ipc_init(const struct device *dev)
 	 * the other side!), then enable.
 	 */
 	config->regs->tdr = CAVS_IPC_BUSY;
-	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
+	if (IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
 		config->regs->idd = CAVS_IPC_IDD15_DONE;
 	} else {
 		config->regs->ida = CAVS_IPC_DONE;

@@ -51,6 +51,7 @@
 		led0 = &green_led_1;
 		sw0 = &user_button;
 		kscan0 = &touch_controller;
+		spi-flash0 = &n25q128a1;
 	};
 };
 
@@ -92,7 +93,6 @@
 	touch_controller: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
-		label = "FT5336";
 		int-gpios = <&gpioi 13 0>;
 	};
 };
@@ -171,7 +171,6 @@ zephyr_udc0: &usbotg_fs {
 
 	n25q128a1: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		label = "N25Q128A1";
 		reg = <0>;
 		qspi-max-frequency = <72000000>;
 		size = <DT_SIZE_M(16*8)>;

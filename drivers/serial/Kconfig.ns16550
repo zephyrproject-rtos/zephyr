@@ -2,6 +2,8 @@
 
 menuconfig UART_NS16550
 	bool "NS16550 serial driver"
+	default y
+	depends on DT_HAS_NS16550_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help

@@ -15,9 +15,9 @@
 #include <zephyr/drivers/pinctrl.h>
 #endif
 
-#define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(pwm_mcux_sctimer);
+
+LOG_MODULE_REGISTER(pwm_mcux_sctimer, CONFIG_PWM_LOG_LEVEL);
 
 #define CHANNEL_COUNT FSL_FEATURE_SCT_NUMBER_OF_OUTPUTS
 

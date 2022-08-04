@@ -29,23 +29,6 @@ config KINETIS_FLASH_CONFIG_FOPT
 	default 0x7d
 	depends on KINETIS_FLASH_CONFIG
 
-if CLOCK_CONTROL
-
-config CLOCK_CONTROL_MCUX_SCG
-	default y
-
-config CLOCK_CONTROL_MCUX_SIM
-	default y
-
-config CLOCK_CONTROL_MCUX_PCC
-	default y
-
-endif # CLOCK_CONTROL
-
-config WDT_MCUX_WDOG32
-	default y
-	depends on WATCHDOG
-
 if COUNTER
 
 config COUNTER_MCUX_RTC
@@ -56,10 +39,6 @@ config COUNTER_MCUX_LPTMR
 
 endif # COUNTER
 
-config PWM_MCUX_FTM
-	default y
-	depends on PWM
-
 config PWM_MCUX_PWT
 	default y
 	depends on PWM_CAPTURE
@@ -67,33 +46,9 @@ config PWM_MCUX_PWT
 config GPIO
 	default y
 
-config GPIO_MCUX
-	default y
-	depends on GPIO
-
 config SOC_FLASH_MCUX
 	default y
 	depends on FLASH
-
-config UART_MCUX_LPUART
-	default y
-	depends on SERIAL
-
-config I2C_MCUX_LPI2C
-	default y
-	depends on I2C
-
-config SPI_MCUX_LPSPI
-	default y
-	depends on SPI
-
-config ADC_MCUX_ADC12
-	default y
-	depends on ADC
-
-config DAC_MCUX_DAC32
-	default y
-	depends on DAC
 
 config DMA_MCUX_EDMA
 	default y

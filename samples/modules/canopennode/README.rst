@@ -99,6 +99,12 @@ The sample can be built and executed for the STM32F3 Discovery as follows:
 Pressing the button labelled ``USER`` will increment the button press counter
 object at index ``0x2102`` in the object dictionary.
 
+Building and Running for other STM32 boards
+===========================================
+The sample cannot run if the <erase-block-size> of the flash-controller exceeds 0x10000.
+Typically nucleo_h743zi with erase-block-size = <DT_SIZE_K(128)>;
+
+
 Building and Running for boards without storage partition
 =========================================================
 The sample can be built for boards without a flash storage partition by using a different configuration file:

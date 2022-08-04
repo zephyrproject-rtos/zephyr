@@ -1,0 +1,57 @@
+# Copyright (c) 2022 Andreas Sandberg
+# Copyright (c) 2020, Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: UltraChip UC81xx EPD display controller common properties
+
+include: [spi-device.yaml, display-controller.yaml]
+
+properties:
+    reset-gpios:
+      type: phandle-array
+      required: true
+      description: RESET pin.
+
+        The RESET pin of UC81xx is active low.
+        If connected directly the MCU pin should be configured
+        as active low.
+
+    dc-gpios:
+      type: phandle-array
+      required: true
+      description: DC pin.
+
+        The DC pin of UC81xx is active low (transmission command byte).
+        If connected directly the MCU pin should be configured
+        as active low.
+
+    busy-gpios:
+      type: phandle-array
+      required: true
+      description: BUSY pin.
+
+        The BUSY pin of UC81xx is active low.
+        If connected directly the MCU pin should be configured
+        as active low.
+
+    pwr:
+      type: uint8-array
+      required: false
+      description: Power Setting (PWR) values
+
+    softstart:
+      type: uint8-array
+      required: false
+      description: Booster Soft Start (BTST) values
+
+    cdi:
+      type: int
+      required: false
+      description: |
+        VCOM and data interval value. This value is optional but must
+        be provided to enable border refresh control.
+
+    tcon:
+      type: int
+      required: false
+      description: TCON setting value

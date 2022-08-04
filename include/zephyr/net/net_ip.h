@@ -300,6 +300,9 @@ struct cmsghdr {
 #define PACKET_LOOPBACK     5
 #define PACKET_FASTROUTE    6
 
+/* ARP protocol HARDWARE identifiers. */
+#define ARPHRD_ETHER 1
+
 /* Note: These macros are defined in a specific order.
  * The largest sockaddr size is the last one.
  */

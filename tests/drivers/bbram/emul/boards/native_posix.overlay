@@ -9,6 +9,5 @@
 		compatible = "zephyr,bbram-emul";
 		status = "okay";
 		size = <0xff>;
-		label = "BBRAM";
 	};
 };

@@ -55,7 +55,7 @@ static int unicast_server_config_cb(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, _node) {
 		/* Skip if capabilities don't match */
 		if (codec->id != cap->codec->id) {
 			continue;
@@ -109,7 +109,7 @@ static int unicast_server_reconfig_cb(struct bt_audio_stream *stream,
 		return -EINVAL;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, _node) {
 		int err;
 
 		if (codec->id != cap->codec->id) {
@@ -260,7 +260,7 @@ static int publish_capability_cb(struct bt_conn *conn, uint8_t dir,
 	}
 
 	i = 0;
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, _node) {
 		if (i != index) {
 			i++;
 			continue;
@@ -399,7 +399,7 @@ int bt_audio_capability_register(struct bt_audio_capability *cap)
 	}
 #endif /* CONFIG_BT_AUDIO_UNICAST_SERVER && CONFIG_BT_ASCS */
 
-	sys_slist_append(lst, &cap->node);
+	sys_slist_append(lst, &cap->_node);
 
 #if defined(CONFIG_BT_PACS)
 	bt_pacs_add_capability(cap->dir);
@@ -424,7 +424,7 @@ int bt_audio_capability_unregister(struct bt_audio_capability *cap)
 
 	BT_DBG("cap %p dir 0x%02x", cap, cap->dir);
 
-	if (!sys_slist_find_and_remove(lst, &cap->node)) {
+	if (!sys_slist_find_and_remove(lst, &cap->_node)) {
 		return -ENOENT;
 	}
 

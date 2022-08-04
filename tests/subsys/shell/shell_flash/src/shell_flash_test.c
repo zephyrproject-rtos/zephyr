@@ -10,7 +10,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/device.h>
 
 #include <zephyr/drivers/flash.h>
@@ -26,7 +26,7 @@
 #define FLASH_SIMULATOR_BASE_OFFSET DT_REG_ADDR(SOC_NV_FLASH_NODE)
 
 /* Test 'flash read' shell command */
-static void test_flash_read(void)
+ZTEST(shell_flash, test_flash_read)
 {
 	/* To keep the test simple, just compare against known data */
 	char *const lines[] = {
@@ -68,14 +68,11 @@ static void test_flash_read(void)
 	}
 }
 
-void test_main(void)
+static void *shell_setup(void)
 {
 	/* Let the shell backend initialize. */
 	k_usleep(10);
-
-	ztest_test_suite(shell_flash_test_suite,
-			 ztest_unit_test(test_flash_read)
-			);
-
-	ztest_run_test_suite(shell_flash_test_suite);
+	return NULL;
 }
+
+ZTEST_SUITE(shell_flash, NULL, shell_setup, NULL, NULL, NULL);

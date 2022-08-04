@@ -731,28 +731,6 @@ static int ism330dhcx_init_chip(const struct device *dev)
 	return 0;
 }
 
-static struct ism330dhcx_data ism330dhcx_data;
-
-static const struct ism330dhcx_config ism330dhcx_config = {
-	.accel_odr = DT_INST_PROP(0, accel_odr),
-	.accel_range = DT_INST_PROP(0, accel_range),
-	.gyro_odr = DT_INST_PROP(0, gyro_odr),
-	.gyro_range = DT_INST_PROP(0, gyro_range),
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	.bus_init = ism330dhcx_spi_init,
-	.spi = SPI_DT_SPEC_INST_GET(0, SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-				SPI_MODE_CPHA | SPI_WORD_SET(8), 0),
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	.bus_init = ism330dhcx_i2c_init,
-	COND_CODE_1(DT_INST_ON_BUS(0, i2c), (.i2c = I2C_DT_SPEC_INST_GET(0),), ())
-#else
-#error "BUS MACRO NOT DEFINED IN DTS"
-#endif
-	IF_ENABLED(CONFIG_ISM330DHCX_TRIGGER,
-		   (.drdy_gpio = GPIO_DT_SPEC_INST_GET(0, drdy_gpios),
-		    .int_pin = DT_INST_PROP(0, int_pin),))
-};
-
 static int ism330dhcx_init(const struct device *dev)
 {
 	const struct ism330dhcx_config * const config = dev->config;
@@ -765,9 +743,11 @@ static int ism330dhcx_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_ISM330DHCX_TRIGGER
-	if (ism330dhcx_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupt.");
-		return -EIO;
+	if (config->drdy_gpio.port) {
+		if (ism330dhcx_init_interrupt(dev) < 0) {
+			LOG_ERR("Failed to initialize interrupt.");
+			return -EIO;
+		}
 	}
 #endif
 
@@ -781,9 +761,31 @@ static int ism330dhcx_init(const struct device *dev)
 	return 0;
 }
 
+#define ISM330DHCX_DEFINE(inst)									\
+	static struct ism330dhcx_data ism330dhcx_data_##inst;					\
+												\
+	static const struct ism330dhcx_config ism330dhcx_config_##inst = {			\
+		.accel_odr = DT_INST_PROP(inst, accel_odr),					\
+		.accel_range = DT_INST_PROP(inst, accel_range),					\
+		.gyro_odr = DT_INST_PROP(inst, gyro_odr),					\
+		.gyro_range = DT_INST_PROP(inst, gyro_range),					\
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi),						\
+			    (.bus_init = ism330dhcx_spi_init,					\
+			     .spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER |		\
+							 SPI_MODE_CPOL | SPI_MODE_CPHA |	\
+							 SPI_WORD_SET(8), 0),),			\
+			    ())									\
+		COND_CODE_1(DT_INST_ON_BUS(inst, i2c),						\
+			    (.bus_init = ism330dhcx_i2c_init,					\
+			     .i2c = I2C_DT_SPEC_INST_GET(inst),),				\
+			    ())									\
+		IF_ENABLED(CONFIG_ISM330DHCX_TRIGGER,						\
+			   (.drdy_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),	\
+			    .int_pin = DT_INST_PROP_OR(inst, int_pin, 0),))			\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, ism330dhcx_init, NULL,					\
+			      &ism330dhcx_data_##inst, &ism330dhcx_config_##inst, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &ism330dhcx_api_funcs);		\
 
-static struct ism330dhcx_data ism330dhcx_data;
-
-DEVICE_DT_INST_DEFINE(0, ism330dhcx_init, NULL,
-		    &ism330dhcx_data, &ism330dhcx_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &ism330dhcx_api_funcs);
+DT_INST_FOREACH_STATUS_OKAY(ISM330DHCX_DEFINE)

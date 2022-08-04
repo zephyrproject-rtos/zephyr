@@ -95,9 +95,9 @@ static uint32_t get_len(size_t blen, uint32_t flags)
 
 static bool check_alignment(void *buf, uint32_t flags)
 {
-	if ((CONFIG_SPSC_PBUF_CACHE_LINE > 0) && (IS_ENABLED(CONFIG_SPSC_PBUF_CACHE_ALWAYS) ||
+	if ((Z_SPSC_PBUF_DCACHE_LINE > 0) && (IS_ENABLED(CONFIG_SPSC_PBUF_CACHE_ALWAYS) ||
 	    (IS_ENABLED(CONFIG_SPSC_PBUF_CACHE_FLAG) && (flags & SPSC_PBUF_CACHE)))) {
-		return ((uintptr_t)buf & (CONFIG_SPSC_PBUF_CACHE_LINE - 1)) == 0;
+		return ((uintptr_t)buf & (Z_SPSC_PBUF_DCACHE_LINE - 1)) == 0;
 	}
 
 	return (((uintptr_t)buf & (sizeof(uint32_t) - 1)) == 0) ? true : false;
@@ -184,7 +184,7 @@ int spsc_pbuf_alloc(struct spsc_pbuf *pb, uint16_t len, char **buf)
 			}
 		}
 	} else {
-		free_space = rd_idx - wr_idx - 1;
+		free_space = rd_idx - wr_idx - sizeof(uint32_t);
 	}
 
 	len = MIN(len, MAX(free_space - (int32_t)LEN_SZ, 0));

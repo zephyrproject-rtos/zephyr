@@ -7,6 +7,9 @@
 #ifndef ZEPHYR_INCLUDE_DEBUG_COREDUMP_H_
 #define ZEPHYR_INCLUDE_DEBUG_COREDUMP_H_
 
+#include <stddef.h>
+#include <sys/types.h>
+
 /* Query ID */
 enum coredump_query_id {
 	/*
@@ -23,6 +26,14 @@ enum coredump_query_id {
 	 *	   Otherwise, error code from backend.
 	 */
 	COREDUMP_QUERY_HAS_STORED_DUMP,
+
+	/*
+	 * Returns coredump raw size from backend.
+	 *         0 if none.
+	 *         -ENOTSUP if this query is not supported.
+	 *	   Otherwise, error code from backend.
+	 */
+	COREDUMP_QUERY_GET_STORED_DUMP_SIZE,
 
 	COREDUMP_QUERY_MAX
 };
@@ -55,7 +66,39 @@ enum coredump_cmd_id {
 	 */
 	COREDUMP_CMD_ERASE_STORED_DUMP,
 
+	/*
+	 * Copy the raw stored coredump.
+	 *
+	 * Returns copied size if successful
+	 *         0 if stored coredump is not found
+	 *         -ENOTSUP if this command is not supported.
+	 *	   Otherwise, error code from backend.
+	 */
+	COREDUMP_CMD_COPY_STORED_DUMP,
+
+	/*
+	 * Invalidate the stored coredump. This is faster than
+	 * erasing the whole partition.
+	 *
+	 * Returns 0 if successful.
+	 *         -ENOTSUP if this command is not supported.
+	 *	   Otherwise, error code from backend.
+	 */
+	COREDUMP_CMD_INVALIDATE_STORED_DUMP,
+
 	COREDUMP_CMD_MAX
+};
+
+/* Coredump copy command argument definition */
+struct coredump_cmd_copy_arg {
+	/* Copy offset */
+	off_t offset;
+
+	/* Copy destination buffer */
+	uint8_t *buffer;
+
+	/* Copy length */
+	size_t length;
 };
 
 #ifdef CONFIG_DEBUG_COREDUMP

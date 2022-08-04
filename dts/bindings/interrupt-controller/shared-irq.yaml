@@ -7,6 +7,3 @@ include: [interrupt-controller.yaml, base.yaml]
 properties:
   interrupts:
       required: true
-
-  label:
-      required: true

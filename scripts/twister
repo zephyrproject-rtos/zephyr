@@ -190,7 +190,7 @@ if not ZEPHYR_BASE:
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister/"))
 
 from twisterlib.testplan import TestPlan
-from twisterlib.enviornment import TwisterEnv, parse_arguments
+from twisterlib.environment import TwisterEnv, parse_arguments
 from twisterlib.reports import Reporting
 from twisterlib.hardwaremap import HardwareMap
 from twisterlib.coverage import run_coverage
@@ -332,7 +332,9 @@ def main():
         return 0
 
     report = Reporting(tplan, env)
-    report.json_report(os.path.join(options.outdir, "testplan.json"))
+    plan_file = os.path.join(options.outdir, "testplan.json")
+    if not os.path.exists(plan_file):
+        report.json_report(plan_file)
 
     if options.save_tests:
         report.json_report(options.save_tests)
@@ -375,7 +377,10 @@ def main():
     report.summary(runner.results, options.disable_unrecognized_section_test, duration)
 
     if options.coverage:
-        run_coverage(tplan, options)
+        if not options.build_only:
+            run_coverage(tplan, options)
+        else:
+            logger.info("Skipping coverage report generation due to --build-only.")
 
     if options.device_testing and not options.build_only:
         hwm.summary(tplan.selected_platforms)

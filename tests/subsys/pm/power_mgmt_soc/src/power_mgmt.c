@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/logging/log.h>
 #define LOG_LEVEL LOG_LEVEL_DBG

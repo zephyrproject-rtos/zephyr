@@ -14,8 +14,7 @@
 
 &arduino_spi {
 	ssd16xx: ssd16xxfb@0 {
-		compatible = "solomon,ssd16xxfb", "gooddisplay,gdeh0154a07";
-		label = "SSD16XX";
+		compatible = "gooddisplay,gdeh0154a07", "solomon,ssd1681", "solomon,ssd16xxfb";
 		spi-max-frequency = <4000000>;
 		reg = <0>;
 		width = <200>;

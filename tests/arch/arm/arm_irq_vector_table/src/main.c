@@ -8,6 +8,6 @@
   #error project can only run on Cortex-M
 #endif
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 ZTEST_SUITE(vector_table, NULL, NULL, NULL, NULL, NULL);

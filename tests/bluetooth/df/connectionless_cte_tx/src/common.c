@@ -6,7 +6,7 @@
 
 #include <zephyr/zephyr.h>
 #include <stddef.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
@@ -40,7 +40,6 @@ void common_create_adv_set(void)
 
 	err = bt_le_ext_adv_create(&g_param, NULL, &g_adv);
 	zassert_equal(err, 0, "Failed to create advertiser set");
-	test_state.is_adv_set_created = true;
 }
 
 void common_delete_adv_set(void)
@@ -49,7 +48,6 @@ void common_delete_adv_set(void)
 
 	err = bt_le_ext_adv_delete(g_adv);
 	zassert_equal(err, 0, "Failed to delete advertiser set");
-	test_state.is_adv_set_created = false;
 }
 
 void common_set_cl_cte_tx_params(void)

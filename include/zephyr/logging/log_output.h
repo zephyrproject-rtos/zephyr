@@ -22,6 +22,10 @@ extern "C" {
  * @{
  */
 
+/**@defgroup LOG_OUTPUT_FLAGS Log output formatting flags.
+ * @{
+ */
+
 /** @brief Flag forcing ANSI escape code colors, red (errors), yellow
  *         (warnings).
  */
@@ -45,6 +49,8 @@ extern "C" {
 /** @brief Flag forcing syslog format specified in RFC 5424
  */
 #define LOG_OUTPUT_FLAG_FORMAT_SYSLOG		BIT(6)
+
+/**@} */
 
 /** @brief Supported backend logging format types for use
  * with log_format_set() API to switch log format at runtime.
@@ -125,10 +131,32 @@ log_format_func_t log_format_func_t_get(uint32_t log_type);
  *
  * @param log_output Pointer to the log output instance.
  * @param msg Log message.
- * @param flags Optional flags.
+ * @param flags Optional flags. See @ref LOG_OUTPUT_FLAGS.
  */
 void log_output_msg_process(const struct log_output *log_output,
-			     struct log_msg *msg, uint32_t flags);
+			    struct log_msg *msg, uint32_t flags);
+
+/** @brief Process input data to a readable string.
+ *
+ * @param log_output	Pointer to the log output instance.
+ * @param timestamp	Timestamp.
+ * @param domain	Domain name string. Can be NULL.
+ * @param source	Source name string. Can be NULL.
+ * @param level		Criticality level.
+ * @param package	Cbprintf package with a logging message string.
+ * @param data		Data passed to hexdump API. Can bu NULL.
+ * @param data_len	Data length.
+ * @param flags		Formatting flags. See @ref LOG_OUTPUT_FLAGS.
+ */
+void log_output_process(const struct log_output *log_output,
+			log_timestamp_t timestamp,
+			const char *domain,
+			const char *source,
+			uint8_t level,
+			const uint8_t *package,
+			const uint8_t *data,
+			size_t data_len,
+			uint32_t flags);
 
 /** @brief Process log messages v2 to SYS-T format.
  *
@@ -137,10 +165,10 @@ void log_output_msg_process(const struct log_output *log_output,
  *
  * @param log_output Pointer to the log output instance.
  * @param msg Log message.
- * @param flag Optional flags.
+ * @param flags Optional flags. See @ref LOG_OUTPUT_FLAGS.
  */
 void log_output_msg_syst_process(const struct log_output *log_output,
-			     struct log_msg *msg, uint32_t flag);
+				  struct log_msg *msg, uint32_t flags);
 
 /** @brief Process dropped messages indication.
  *

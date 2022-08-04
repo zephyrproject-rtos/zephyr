@@ -119,6 +119,8 @@ struct cdc_acm_dev_data_t {
 	bool configured;
 	/* CDC ACM suspended flag */
 	bool suspended;
+	/* CDC ACM paused flag */
+	bool rx_paused;
 
 	struct usb_dev_data common;
 };
@@ -287,10 +289,14 @@ static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
 		k_work_submit_to_queue(&USB_WORK_Q, &dev_data->cb_work);
 	}
 
+	if (ring_buf_space_get(dev_data->rx_ringbuf) < sizeof(dev_data->rx_buf)) {
+		dev_data->rx_paused = true;
+		return;
+	}
+
 done:
 	usb_transfer(ep, dev_data->rx_buf, sizeof(dev_data->rx_buf),
 		     USB_TRANS_READ, cdc_acm_read_cb, dev_data);
-
 }
 
 /**
@@ -328,6 +334,7 @@ static void cdc_acm_reset_port(struct cdc_acm_dev_data_t *dev_data)
 				CDC_ACM_DEFAULT_BAUDRATE;
 	dev_data->serial_state = 0;
 	dev_data->line_state = 0;
+	dev_data->rx_paused = false;
 	memset(&dev_data->rx_buf, 0, CDC_ACM_BUFFER_SIZE);
 }
 
@@ -535,6 +542,17 @@ static int cdc_acm_fifo_read(const struct device *dev, uint8_t *rx_data,
 
 	if (ring_buf_is_empty(dev_data->rx_ringbuf)) {
 		dev_data->rx_ready = false;
+	}
+
+	if (dev_data->rx_paused == true) {
+		if (ring_buf_space_get(dev_data->rx_ringbuf) >= CDC_ACM_BUFFER_SIZE) {
+			struct usb_cfg_data *cfg = (void *)dev->config;
+
+			if (dev_data->configured && !dev_data->suspended) {
+				cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr, 0, dev_data);
+			}
+			dev_data->rx_paused = false;
+		}
 	}
 
 	return len;
@@ -876,6 +894,24 @@ static int cdc_acm_line_ctrl_get(const struct device *dev,
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 
+static int cdc_acm_configure(const struct device *dev,
+			     const struct uart_config *cfg)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(cfg);
+	/*
+	 * We cannot implement configure API because there is
+	 * no notification of configuration changes provided
+	 * for the Abstract Control Model and the UART controller
+	 * is only emulated.
+	 * However, it allows us to use CDC ACM UART together with
+	 * subsystems like Modbus which require configure API for
+	 * real controllers.
+	 */
+
+	return 0;
+}
+
 static int cdc_acm_config_get(const struct device *dev,
 			      struct uart_config *cfg)
 {
@@ -1003,6 +1039,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 	.line_ctrl_get = cdc_acm_line_ctrl_get,
 #endif /* CONFIG_UART_LINE_CTRL */
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	.configure = cdc_acm_configure,
 	.config_get = cdc_acm_config_get,
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 };

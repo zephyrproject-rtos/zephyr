@@ -34,7 +34,6 @@
 			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0";
-			label = "UART_0";
 		};
 
 		uart1: uart@ff010000 {
@@ -44,7 +43,6 @@
 			interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0";
-			label = "UART_1";
 		};
 
 		ttc0: timer@ff110000 {
@@ -58,7 +56,6 @@
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1", "irq_2";
 			reg = <0xff110000 0x1000>;
-			label = "ttc0";
 		};
 
 		ttc1: timer@ff120000 {
@@ -72,7 +69,6 @@
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1", "irq_2";
 			reg = <0xff120000 0x1000>;
-			label = "ttc1";
 		};
 
 		ttc2: timer@ff130000 {
@@ -86,7 +82,6 @@
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1", "irq_2";
 			reg = <0xff130000 0x1000>;
-			label = "ttc2";
 		};
 
 		ttc3: timer@ff140000 {
@@ -100,7 +95,6 @@
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1", "irq_2";
 			reg = <0xff140000 0x1000>;
-			label = "ttc3";
 		};
 
 		gem0: ethernet@ff0b0000 {
@@ -113,7 +107,6 @@
 				     <GIC_SPI 58 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1";
-			label = "gem0";
 			mdio-phy-address = <XLNX_GEM_PHY_AUTO_DETECT>;
 			phy-poll-interval = <1000>;
 			link-speed = <XLNX_GEM_LINK_SPEED_100MBIT>;
@@ -141,7 +134,6 @@
 				     <GIC_SPI 60 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1";
-			label = "gem1";
 			mdio-phy-address = <XLNX_GEM_PHY_AUTO_DETECT>;
 			phy-poll-interval = <1000>;
 			link-speed = <XLNX_GEM_LINK_SPEED_100MBIT>;
@@ -169,7 +161,6 @@
 				     <GIC_SPI 62 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1";
-			label = "gem2";
 			mdio-phy-address = <XLNX_GEM_PHY_AUTO_DETECT>;
 			phy-poll-interval = <1000>;
 			link-speed = <XLNX_GEM_LINK_SPEED_100MBIT>;
@@ -197,7 +188,6 @@
 				     <GIC_SPI 64 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1";
-			label = "gem3";
 			mdio-phy-address = <XLNX_GEM_PHY_AUTO_DETECT>;
 			phy-poll-interval = <1000>;
 			link-speed = <XLNX_GEM_LINK_SPEED_100MBIT>;
@@ -222,7 +212,6 @@
 			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0";
-			label = "psgpio";
 
 			ranges;
 			#address-cells = <1>;
@@ -231,7 +220,6 @@
 			psgpio_bank0: psgpio_bank@0 {
 				compatible = "xlnx,ps-gpio-bank";
 				reg = <0x0>;
-				label = "psgpio_bank0_mio";
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <26>;
@@ -241,7 +229,6 @@
 			psgpio_bank1: psgpio_bank@1 {
 				compatible = "xlnx,ps-gpio-bank";
 				reg = <0x1>;
-				label = "psgpio_bank1_mio";
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <26>;
@@ -251,7 +238,6 @@
 			psgpio_bank2: psgpio_bank@2 {
 				compatible = "xlnx,ps-gpio-bank";
 				reg = <0x2>;
-				label = "psgpio_bank2_mio";
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <26>;
@@ -261,7 +247,6 @@
 			psgpio_bank3: psgpio_bank@3 {
 				compatible = "xlnx,ps-gpio-bank";
 				reg = <0x3>;
-				label = "psgpio_bank3_emio";
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <32>;
@@ -271,7 +256,6 @@
 			psgpio_bank4: psgpio_bank@4 {
 				compatible = "xlnx,ps-gpio-bank";
 				reg = <0x4>;
-				label = "psgpio_bank4_emio";
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <32>;
@@ -281,7 +265,6 @@
 			psgpio_bank5: psgpio_bank@5 {
 				compatible = "xlnx,ps-gpio-bank";
 				reg = <0x5>;
-				label = "psgpio_bank5_emio";
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <32>;

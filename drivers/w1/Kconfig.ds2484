@@ -1,0 +1,8 @@
+# Copyright (c) 2022, Caspar Friedrich <c.s.w.friedrich@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config W1_DS2484
+	bool "DS2484 Single-Channel 1-Wire Master"
+	depends on I2C
+	depends on DT_HAS_MAXIM_DS2484_ENABLED
+	default y

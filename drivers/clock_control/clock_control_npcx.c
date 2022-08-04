@@ -95,6 +95,9 @@ static int npcx_clock_control_get_subsys_rate(const struct device *dev,
 	case NPCX_CLOCK_BUS_LFCLK:
 		*rate = LFCLK;
 		break;
+	case NPCX_CLOCK_BUS_FMCLK:
+		*rate = FMCLK;
+		break;
 	default:
 		*rate = 0U;
 		/* Invalid parameters */
@@ -222,7 +225,7 @@ static int npcx_clock_control_init(const struct device *dev)
 	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL5) = 0xFA;
 #if CONFIG_ESPI
 	/* Don't gate the clock of the eSPI module if eSPI interface is required */
-	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL6) = 0xEF;
+	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL6) = 0x7F;
 #else
 	NPCX_PWDWN_CTL(pmc_base, NPCX_PWDWN_CTL6) = 0xFF;
 #endif

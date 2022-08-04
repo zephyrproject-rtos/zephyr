@@ -182,7 +182,19 @@ struct bt_mesh_health_srv {
  *
  *  @return 0 on success, or (negative) error code otherwise.
  */
-int bt_mesh_fault_update(struct bt_mesh_elem *elem);
+__deprecated int bt_mesh_fault_update(struct bt_mesh_elem *elem);
+
+/** @brief Notify the stack that the fault array state of the given element has
+ *  changed.
+ *
+ *  This prompts the Health server on this element to publish the current fault
+ *  array if periodic publishing is disabled.
+ *
+ *  @param elem Element to update the fault state of.
+ *
+ *  @return 0 on success, or (negative) error code otherwise.
+ */
+int bt_mesh_health_srv_fault_update(struct bt_mesh_elem *elem);
 
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op bt_mesh_health_srv_op[];

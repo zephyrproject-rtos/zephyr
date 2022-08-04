@@ -7,7 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
-#include <ztest_assert.h>
+#include <zephyr/ztest_assert.h>
 #include <fcntl.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/loopback.h>
@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #define MAX_CONNS 5
 
-#define TCP_TEARDOWN_TIMEOUT K_SECONDS(1)
+#define TCP_TEARDOWN_TIMEOUT K_SECONDS(3)
 #define THREAD_SLEEP 50 /* ms */
 
 static void test_bind(int sock, struct sockaddr *addr, socklen_t addrlen)
@@ -160,6 +160,51 @@ static void test_eof(int sock)
 	recved = recv(sock, rx_buf, sizeof(rx_buf), 0);
 	zassert_equal(recved, 0, "");
 }
+
+static void calc_net_context(struct net_context *context, void *user_data)
+{
+	int *count = user_data;
+
+	(*count)++;
+}
+
+/* Wait until the number of TCP contexts reaches a certain level
+ *   exp_num_contexts : The number of contexts to wait for
+ *   timeout :		The time to wait for
+ */
+int wait_for_n_tcp_contexts(int exp_num_contexts, k_timeout_t timeout)
+{
+	uint32_t start_time = k_uptime_get_32();
+	uint32_t time_diff;
+	int context_count = 0;
+
+	/* After the client socket closing, the context count should be 1 less */
+	net_context_foreach(calc_net_context, &context_count);
+
+	time_diff = k_uptime_get_32() - start_time;
+
+	/* Eventually the client socket should be cleaned up */
+	while (context_count != exp_num_contexts) {
+		context_count = 0;
+		net_context_foreach(calc_net_context, &context_count);
+		k_sleep(K_MSEC(50));
+		time_diff = k_uptime_get_32() - start_time;
+
+		if (K_MSEC(time_diff).ticks > timeout.ticks) {
+			return -ETIMEDOUT;
+		}
+	}
+
+	return 0;
+}
+
+static void test_context_cleanup(void)
+{
+	zassert_equal(wait_for_n_tcp_contexts(0, TCP_TEARDOWN_TIMEOUT),
+		      0,
+		      "Not all TCP contexts properly cleaned up");
+}
+
 
 void test_v4_send_recv(void)
 {
@@ -751,14 +796,7 @@ void test_shutdown_rd_while_recv(void)
 	test_close(s_sock);
 	test_close(c_sock);
 
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
-}
-
-static void calc_net_context(struct net_context *context, void *user_data)
-{
-	int *count = user_data;
-
-	(*count)++;
+	test_context_cleanup();
 }
 
 void test_open_close_immediately(void)
@@ -771,6 +809,8 @@ void test_open_close_immediately(void)
 	struct sockaddr_in s_saddr;
 	int c_sock;
 	int s_sock;
+
+	test_context_cleanup();
 
 	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
 			    &c_sock, &c_saddr);
@@ -814,6 +854,7 @@ void test_open_close_immediately(void)
 		      count_before - 1, count_after);
 
 	/* No need to wait here, as the test success depends on the socket being closed */
+	test_context_cleanup();
 }
 
 void test_connect_timeout(void)
@@ -860,7 +901,6 @@ void test_close_obstructed(void)
 	/* Test if socket closing even when there is not communication
 	 * possible any more
 	 */
-	uint32_t start_time, time_diff;
 	int count_before = 0, count_after = 0;
 	struct sockaddr_in c_saddr;
 	struct sockaddr_in s_saddr;
@@ -895,20 +935,9 @@ void test_close_obstructed(void)
 
 	test_close(c_sock);
 
-	start_time = k_uptime_get_32();
+	wait_for_n_tcp_contexts(count_before-1, K_MSEC(TCP_CLOSE_FAILURE_TIMEOUT));
 
-	/* After the client socket closing, the context count should be 1 less */
 	net_context_foreach(calc_net_context, &count_after);
-
-	time_diff = k_uptime_get_32() - start_time;
-
-	/* Eventually the client socket should be cleaned up */
-	while ((count_before == count_after) && (time_diff < TCP_CLOSE_FAILURE_TIMEOUT)) {
-		count_after = 0;
-		net_context_foreach(calc_net_context, &count_after);
-		k_sleep(K_MSEC(50));
-		time_diff = k_uptime_get_32() - start_time;
-	}
 
 	zassert_equal(count_before - 1, count_after,
 		      "net_context still in use (before %d vs after %d)",
@@ -926,23 +955,7 @@ void test_close_obstructed(void)
 	test_close(new_sock);
 	test_close(s_sock);
 
-	start_time = k_uptime_get_32();
-
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
-
-	/* After the client socket closing, the context count should be 0 */
-	count_after = 0;
-	net_context_foreach(calc_net_context, &count_after);
-
-	/* Eventually the client socket should be cleaned up */
-	while ((count_after > 0) && (time_diff < TCP_CLOSE_FAILURE_TIMEOUT)) {
-		count_after = 0;
-		net_context_foreach(calc_net_context, &count_after);
-		k_sleep(K_MSEC(50));
-		time_diff = k_uptime_get_32() - start_time;
-	}
-
-	zassert_equal(count_after, 0, "net_context still in use");
+	test_context_cleanup();
 
 	/* After everything is closed, we expect no more dropped packets */
 	dropped_packets_before = loopback_get_num_dropped_packets();
@@ -988,6 +1001,10 @@ void test_so_type(void)
 	int optval;
 	socklen_t optlen = sizeof(optval);
 
+	zassert_equal(wait_for_n_tcp_contexts(0, TCP_TEARDOWN_TIMEOUT),
+		      0,
+		      "Not all TCP contexts properly cleaned up");
+
 	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
 			    &sock1, &bind_addr4);
 	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
@@ -1005,7 +1022,10 @@ void test_so_type(void)
 
 	test_close(sock1);
 	test_close(sock2);
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
+
+	zassert_equal(wait_for_n_tcp_contexts(0, TCP_TEARDOWN_TIMEOUT),
+		      0,
+		      "Not all TCP contexts properly cleaned up");
 }
 
 void test_so_protocol(void)
@@ -1033,7 +1053,8 @@ void test_so_protocol(void)
 
 	test_close(sock1);
 	test_close(sock2);
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
+
+	test_context_cleanup();
 }
 
 void test_so_rcvbuf(void)
@@ -1074,6 +1095,8 @@ void test_so_rcvbuf(void)
 
 	test_close(sock1);
 	test_close(sock2);
+
+	test_context_cleanup();
 }
 
 void test_so_sndbuf(void)
@@ -1114,6 +1137,8 @@ void test_so_sndbuf(void)
 
 	test_close(sock1);
 	test_close(sock2);
+
+	test_context_cleanup();
 }
 
 void test_v4_so_rcvtimeo(void)
@@ -1182,7 +1207,7 @@ void test_v4_so_rcvtimeo(void)
 	test_close(new_sock);
 	test_close(s_sock);
 
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
+	test_context_cleanup();
 }
 
 void test_v6_so_rcvtimeo(void)
@@ -1251,7 +1276,7 @@ void test_v6_so_rcvtimeo(void)
 	test_close(new_sock);
 	test_close(s_sock);
 
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
+	test_context_cleanup();
 }
 
 struct test_msg_waitall_data {
@@ -1350,7 +1375,7 @@ void test_v4_msg_waitall(void)
 	test_close(s_sock);
 	test_close(c_sock);
 
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
+	test_context_cleanup();
 }
 
 void test_v6_msg_waitall(void)
@@ -1426,7 +1451,7 @@ void test_v6_msg_waitall(void)
 	test_close(s_sock);
 	test_close(c_sock);
 
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
+	test_context_cleanup();
 }
 
 #ifdef CONFIG_USERSPACE

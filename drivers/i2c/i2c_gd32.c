@@ -26,6 +26,8 @@ LOG_MODULE_REGISTER(i2c_gd32, CONFIG_I2C_LOG_LEVEL);
 #define I2C_GD32_ERR_LARB BIT(1)
 /* No ACK received */
 #define I2C_GD32_ERR_AERR BIT(2)
+/* I2C bus busy */
+#define I2C_GD32_ERR_BUSY BIT(4)
 
 struct i2c_gd32_config {
 	uint32_t reg;
@@ -44,7 +46,6 @@ struct i2c_gd32_data {
 	uint32_t xfer_len;
 	struct i2c_msg *current;
 	uint8_t errs;
-	bool is_stopped;
 	bool is_restart;
 };
 
@@ -146,17 +147,8 @@ static void i2c_gd32_handle_tbe(const struct device *dev)
 		i2c_gd32_xfer_write(data, cfg);
 
 	} else {
-		if ((data->current->flags & I2C_MSG_STOP) &&
-		    (data->is_stopped == false)) {
-			data->is_stopped = true;
-			/* Enter stop condition */
-			I2C_CTL0(cfg->reg) |= I2C_CTL0_STOP;
-		}
-
-		if (I2C_STAT0(cfg->reg) & I2C_STAT0_BTC) {
-			/* Clear BTC bit */
-			I2C_DATA(cfg->reg);
-		}
+		/* Enter stop condition */
+		I2C_CTL0(cfg->reg) |= I2C_CTL0_STOP;
 
 		k_sem_give(&data->sync_sem);
 	}
@@ -172,16 +164,8 @@ static void i2c_gd32_handle_btc(const struct device *dev)
 
 		switch (data->xfer_len) {
 		case 2:
-			/*
-			 * Stop condition must be generated before reading the
-			 * last two bytes.
-			 */
-			if ((data->current->flags & I2C_MSG_STOP) &&
-			    (data->is_stopped == false)) {
-				data->is_stopped = true;
-				/* Enter stop condition */
-				I2C_CTL0(cfg->reg) |= I2C_CTL0_STOP;
-			}
+			/* Stop condition must be generated before reading the last two bytes. */
+			I2C_CTL0(cfg->reg) |= I2C_CTL0_STOP;
 
 			for (counter = 2U; counter > 0; counter--) {
 				data->xfer_len--;
@@ -213,10 +197,15 @@ static void i2c_gd32_handle_addsend(const struct device *dev)
 	struct i2c_gd32_data *data = dev->data;
 	const struct i2c_gd32_config *cfg = dev->config;
 
-	if (data->is_restart) {
-		/* Clear ADDSEND bit */
-		I2C_STAT1(cfg->reg);
+	if ((data->current->flags & I2C_MSG_READ) && (data->xfer_len <= 2U)) {
+		I2C_CTL0(cfg->reg) &= ~I2C_CTL0_ACKEN;
+	}
 
+	/* Clear ADDSEND bit */
+	I2C_STAT0(cfg->reg);
+	I2C_STAT1(cfg->reg);
+
+	if (data->is_restart) {
 		data->is_restart = false;
 		data->current->flags &= ~I2C_MSG_RW_MASK;
 		data->current->flags |= I2C_MSG_READ;
@@ -226,22 +215,10 @@ static void i2c_gd32_handle_addsend(const struct device *dev)
 		return;
 	}
 
-	if ((data->current->flags & I2C_MSG_READ) &&
-	    (data->xfer_len <= 2U)) {
-		I2C_CTL0(cfg->reg) &= ~I2C_CTL0_ACKEN;
-	}
-
-	/* Clear ADDSEND bit */
-	I2C_STAT1(cfg->reg);
-
-	if ((data->xfer_len == 1U) &&
-	    (data->current->flags & I2C_MSG_STOP) &&
-	    (data->current->flags & I2C_MSG_READ)) {
-		data->is_stopped = true;
+	if ((data->current->flags & I2C_MSG_READ) && (data->xfer_len == 1U)) {
 		/* Enter stop condition */
 		I2C_CTL0(cfg->reg) |= I2C_CTL0_STOP;
 	}
-
 }
 
 static void i2c_gd32_event_isr(const struct device *dev)
@@ -262,6 +239,10 @@ static void i2c_gd32_event_isr(const struct device *dev)
 		I2C_DATA(cfg->reg) = data->addr2;
 	} else if (stat & I2C_STAT0_ADDSEND) {
 		i2c_gd32_handle_addsend(dev);
+	/*
+	 * Must handle BTC first.
+	 * For I2C_STAT0, BTC is the superset of RBNE and TBE.
+	 */
 	} else if (stat & I2C_STAT0_BTC) {
 		i2c_gd32_handle_btc(dev);
 	} else if (stat & I2C_STAT0_RBNE) {
@@ -295,6 +276,9 @@ static void i2c_gd32_error_isr(const struct device *dev)
 	}
 
 	if (data->errs != 0U) {
+		/* Enter stop condition */
+		I2C_CTL0(cfg->reg) |= I2C_CTL0_STOP;
+
 		k_sem_give(&data->sync_sem);
 	}
 }
@@ -312,6 +296,10 @@ static void i2c_gd32_log_err(struct i2c_gd32_data *data)
 	if (data->errs & I2C_GD32_ERR_AERR) {
 		LOG_ERR("No ACK received");
 	}
+
+	if (data->errs & I2C_GD32_ERR_BUSY) {
+		LOG_ERR("I2C bus busy");
+	}
 }
 
 static void i2c_gd32_xfer_begin(const struct device *dev)
@@ -323,15 +311,11 @@ static void i2c_gd32_xfer_begin(const struct device *dev)
 
 	data->errs = 0U;
 	data->is_restart = false;
-	data->is_stopped = false;
 
-	/* Enable i2c device */
-	I2C_CTL0(cfg->reg) |= I2C_CTL0_I2CEN;
+	/* Default to set ACKEN bit. */
+	I2C_CTL0(cfg->reg) |= I2C_CTL0_ACKEN;
 
 	if (data->current->flags & I2C_MSG_READ) {
-		/* Default to set ACKEN bit. */
-		I2C_CTL0(cfg->reg) |= I2C_CTL0_ACKEN;
-
 		/* For 2 bytes read, use POAP bit to give NACK for the last data receiving. */
 		if (data->xfer_len == 2U) {
 			I2C_CTL0(cfg->reg) |= I2C_CTL0_POAP;
@@ -349,6 +333,8 @@ static void i2c_gd32_xfer_begin(const struct device *dev)
 		}
 	}
 
+	i2c_gd32_enable_interrupts(cfg);
+
 	/* Enter repeated start condition */
 	I2C_CTL0(cfg->reg) |= I2C_CTL0_START;
 }
@@ -360,22 +346,13 @@ static int i2c_gd32_xfer_end(const struct device *dev)
 
 	i2c_gd32_disable_interrupts(cfg);
 
-	if (data->errs != 0U) {
-		/* Disable i2c device */
-		I2C_CTL0(cfg->reg) &= ~I2C_CTL0_I2CEN;
-		i2c_gd32_log_err(data);
-		data->errs = 0U;
-
-		return -EIO;
+	/* Wait for stop condition is done. */
+	while (I2C_STAT1(cfg->reg) & I2C_STAT1_I2CBSY) {
+		/* NOP */
 	}
 
-	if (data->current->flags & I2C_MSG_STOP) {
-		/* Wait for stop condition is done. */
-		while (I2C_STAT1(cfg->reg) & I2C_STAT1_I2CBSY) {
-			/* NOP */
-		}
-		/* Disable I2C device */
-		I2C_CTL0(cfg->reg) &= ~I2C_CTL0_I2CEN;
+	if (data->errs) {
+		return -EIO;
 	}
 
 	return 0;
@@ -386,14 +363,12 @@ static int i2c_gd32_msg_read(const struct device *dev)
 	struct i2c_gd32_data *data = dev->data;
 	const struct i2c_gd32_config *cfg = dev->config;
 
-	i2c_gd32_xfer_begin(dev);
-
-	/* For repeated start condition, wait for TBE cleared. */
-	while (I2C_STAT0(cfg->reg) & I2C_STAT0_TBE) {
-		/* NOP */
+	if (I2C_STAT1(cfg->reg) & I2C_STAT1_I2CBSY) {
+		data->errs = I2C_GD32_ERR_BUSY;
+		return -EBUSY;
 	}
 
-	i2c_gd32_enable_interrupts(cfg);
+	i2c_gd32_xfer_begin(dev);
 
 	k_sem_take(&data->sync_sem, K_FOREVER);
 
@@ -405,14 +380,12 @@ static int i2c_gd32_msg_write(const struct device *dev)
 	struct i2c_gd32_data *data = dev->data;
 	const struct i2c_gd32_config *cfg = dev->config;
 
-	i2c_gd32_xfer_begin(dev);
-
-	/* For repeated start condition, wait for RBNE cleared. */
-	while (I2C_STAT0(cfg->reg) & I2C_STAT0_RBNE) {
-		/* NOP */
+	if (I2C_STAT1(cfg->reg) & I2C_STAT1_I2CBSY) {
+		data->errs = I2C_GD32_ERR_BUSY;
+		return -EBUSY;
 	}
 
-	i2c_gd32_enable_interrupts(cfg);
+	i2c_gd32_xfer_begin(dev);
 
 	k_sem_take(&data->sync_sem, K_FOREVER);
 
@@ -425,6 +398,7 @@ static int i2c_gd32_transfer(const struct device *dev,
 			     uint16_t addr)
 {
 	struct i2c_gd32_data *data = dev->data;
+	const struct i2c_gd32_config *cfg = dev->config;
 	struct i2c_msg *current, *next;
 	uint8_t itr;
 	int err = 0;
@@ -469,6 +443,9 @@ static int i2c_gd32_transfer(const struct device *dev,
 
 	k_sem_take(&data->bus_mutex, K_FOREVER);
 
+	/* Enable i2c device */
+	I2C_CTL0(cfg->reg) |= I2C_CTL0_I2CEN;
+
 	if (data->dev_config & I2C_ADDR_10_BITS) {
 		data->addr1 = 0xF0 | ((addr & BITS(8, 9)) >> 8U);
 		data->addr2 = addr & BITS(0, 7);
@@ -495,9 +472,13 @@ static int i2c_gd32_transfer(const struct device *dev,
 		}
 
 		if (err < 0) {
+			i2c_gd32_log_err(data);
 			break;
 		}
 	}
+
+	/* Disable I2C device */
+	I2C_CTL0(cfg->reg) &= ~I2C_CTL0_I2CEN;
 
 	k_sem_give(&data->bus_mutex);
 
@@ -597,7 +578,7 @@ static int i2c_gd32_configure(const struct device *dev,
 		I2C_RT(cfg->reg) = freq * 300U / 1000U + 1U;
 
 		/* CLKC = pclk1 / (bitrate * 25) */
-		clkc = pclk1 / (I2C_BITRATE_FAST_PLUS * 25U);
+		clkc = pclk1 / (I2C_BITRATE_FAST * 25U);
 		if (clkc == 0U) {
 			clkc = 1U;
 		}

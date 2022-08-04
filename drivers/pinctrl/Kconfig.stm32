@@ -3,8 +3,8 @@
 
 config PINCTRL_STM32
 	bool "Pin controller driver for STM32 MCUs"
-	depends on SOC_FAMILY_STM32
 	default y
+	depends on DT_HAS_ST_STM32_PINCTRL_ENABLED || DT_HAS_ST_STM32F1_PINCTRL_ENABLED
 	help
 	  Enable pin controller driver for STM32 MCUs
 

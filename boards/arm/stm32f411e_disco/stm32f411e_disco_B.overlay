@@ -12,7 +12,6 @@
 		compatible = "st,lsm303dlhc-magn";
         status = "okay";
 		reg = <0x1e>;
-		label = "LSM303DLHC-MAGN";
 	};
 
 	lsm303dlhc-accel@19 {
@@ -21,6 +20,5 @@
 		reg = <0x19>;
 		irq-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>,
 			  <&gpioe 5 GPIO_ACTIVE_HIGH>;
-		label = "LSM303DLHC-ACCEL";
 	};
 };

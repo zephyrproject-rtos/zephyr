@@ -15,7 +15,7 @@
 #ifndef __SOC_GPIO_H_
 #define __SOC_GPIO_H_
 
-#define APL_GPIO_DEV_N_0		DT_LABEL(DT_NODELABEL(gpio_n_000_031))
+#define APL_GPIO_DEV_N_0		DT_NODELABEL(gpio_n_000_031)
 #define APL_GPIO_0			0
 #define APL_GPIO_1			1
 #define APL_GPIO_2			2
@@ -49,7 +49,7 @@
 #define APL_GPIO_30			30
 #define APL_GPIO_31			31
 
-#define APL_GPIO_DEV_N_1		DT_LABEL(DT_NODELABEL(gpio_n_032_063))
+#define APL_GPIO_DEV_N_1		DT_NODELABEL(gpio_n_032_063)
 #define APL_GPIO_32			0
 #define APL_GPIO_33			1
 #define APL_GPIO_34			2
@@ -83,7 +83,7 @@
 #define APL_GPIO_TCK			30
 #define APL_GPIO_TRST_B			31
 
-#define APL_GPIO_DEV_N_2		DT_LABEL(DT_NODELABEL(gpio_n_064_077))
+#define APL_GPIO_DEV_N_2		DT_NODELABEL(gpio_n_064_077)
 #define APL_GPIO_TMS			0
 #define APL_GPIO_TDI			1
 #define APL_GPIO_CX_PMODE		2
@@ -99,7 +99,7 @@
 #define APL_GPIO_SVOD0_DATA		12
 #define APL_GPIO_SVOD0_CLK		13
 
-#define APL_GPIO_DEV_NW_0		DT_LABEL(DT_NODELABEL(gpio_nw_000_031))
+#define APL_GPIO_DEV_NW_0		DT_NODELABEL(gpio_nw_000_031)
 #define APL_GPIO_187			0
 #define APL_GPIO_188			1
 #define APL_GPIO_189			2
@@ -133,7 +133,7 @@
 #define APL_GPIO_PMIC_STDBY		30
 #define APL_GPIO_PROCHOT_B		31
 
-#define APL_GPIO_DEV_NW_1		DT_LABEL(DT_NODELABEL(gpio_nw_032_063))
+#define APL_GPIO_DEV_NW_1		DT_NODELABEL(gpio_nw_032_063)
 #define APL_GPIO_PMIC_I2C_SCL		0
 #define APL_GPIO_PMIC_I2C_SDA		1
 #define APL_GPIO_74			2
@@ -167,7 +167,7 @@
 #define APL_GPIO_105			30
 #define APL_GPIO_106			31
 
-#define APL_GPIO_DEV_NW_2		DT_LABEL(DT_NODELABEL(gpio_nw_064_076))
+#define APL_GPIO_DEV_NW_2		DT_NODELABEL(gpio_nw_064_076)
 #define APL_GPIO_109			0
 #define APL_GPIO_110			1
 #define APL_GPIO_111			2
@@ -182,7 +182,7 @@
 #define APL_GPIO_122			11
 #define APL_GPIO_123			12
 
-#define APL_GPIO_DEV_W_0		DT_LABEL(DT_NODELABEL(gpio_w_000_031))
+#define APL_GPIO_DEV_W_0		DT_NODELABEL(gpio_w_000_031)
 #define APL_GPIO_124			0
 #define APL_GPIO_125			1
 #define APL_GPIO_126			2
@@ -216,7 +216,7 @@
 #define APL_GPIO_OSC_CLK_OUT_0		30
 #define APL_GPIO_OSC_CLK_OUT_1		31
 
-#define APL_GPIO_DEV_W_1		DT_LABEL(DT_NODELABEL(gpio_w_032_046))
+#define APL_GPIO_DEV_W_1		DT_NODELABEL(gpio_w_032_046)
 #define APL_GPIO_OSC_CLK_OUT_2		0
 #define APL_GPIO_OSC_CLK_OUT_3		1
 #define APL_GPIO_OSC_CLK_OUT_4		2
@@ -233,7 +233,7 @@
 #define APL_GPIO_SUS_STAT_B		13
 #define APL_GPIO_SUSPWRDNACK		14
 
-#define APL_GPIO_DEV_SW_0		DT_LABEL(DT_NODELABEL(gpio_sw_000_031))
+#define APL_GPIO_DEV_SW_0		DT_NODELABEL(gpio_sw_000_031)
 #define APL_GPIO_205			0
 #define APL_GPIO_206			1
 #define APL_GPIO_207			2
@@ -267,7 +267,7 @@
 #define APL_GPIO_183			30
 #define APL_GPIO_SMB_ALERTB		31
 
-#define APL_GPIO_DEV_SW_1		DT_LABEL(DT_NODELABEL(gpio_sw_032_042))
+#define APL_GPIO_DEV_SW_1		DT_NODELABEL(gpio_sw_032_042)
 #define APL_GPIO_SMB_CLK		0
 #define APL_GPIO_SMB_DATA		1
 #define APL_GPIO_LPC_ILB_SERIRQ		2

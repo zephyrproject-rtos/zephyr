@@ -11,7 +11,7 @@
  * @}
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include "test_msgq.h"
 

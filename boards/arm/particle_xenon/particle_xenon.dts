@@ -26,6 +26,11 @@
 		output-ohms = <2100000>;
 		full-ohms = <(2100000 + 806000)>;
 	};
+
+	aliases {
+		watchdog0 = &wdt0;
+		spi-flash0 = &mx25l32;
+	};
 };
 
 &uart1 { /* feather UART2 */

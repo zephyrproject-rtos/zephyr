@@ -9,7 +9,6 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/arch/arc/v2/aux_regs.h>
-#include <soc.h>
 /*
  * note: This implementation assumes Timer0 is present. Be sure
  * to build the ARC CPU with Timer0.
@@ -23,13 +22,14 @@
 #undef _ARC_V2_TMR0_COUNT
 #undef _ARC_V2_TMR0_CONTROL
 #undef _ARC_V2_TMR0_LIMIT
-#undef IRQ_TIMER0
 
 #define _ARC_V2_TMR0_COUNT _ARC_V2_S_TMR0_COUNT
 #define _ARC_V2_TMR0_CONTROL _ARC_V2_S_TMR0_CONTROL
 #define _ARC_V2_TMR0_LIMIT _ARC_V2_S_TMR0_LIMIT
-#define IRQ_TIMER0 IRQ_SEC_TIMER0
+#define IRQ_TIMER0 DT_IRQN(DT_NODELABEL(sectimer0))
 
+#else
+#define IRQ_TIMER0 DT_IRQN(DT_NODELABEL(timer0))
 #endif
 
 #define _ARC_V2_TMR_CTRL_IE 0x1 /* interrupt enable */

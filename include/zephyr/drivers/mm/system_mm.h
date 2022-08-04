@@ -293,6 +293,52 @@ int sys_mm_drv_move_region(void *virt_old, size_t size, void *virt_new,
 int sys_mm_drv_move_array(void *virt_old, size_t size, void *virt_new,
 			  uintptr_t *phys_new, size_t phys_cnt);
 
+
+/**
+ * @brief Update memory page flags
+ *
+ * This changes the attributes of physical memory page which is already
+ * mapped to a virtual address. This is useful when use case of
+ * specific memory region  changes.
+ * E.g. when the library/module code is copied to the memory then
+ * it needs to be read-write and after it has already
+ * been copied and library/module code is ready to be executed then
+ * attributes need to be changed to read-only/executable.
+ * Calling this API must not cause losing memory contents.
+ *
+ * @param virt Page-aligned virtual address to be updated
+ * @param flags Caching, access and control flags, see SYS_MM_MEM_* macros
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid arguments are provided
+ * @retval -EFAULT if virtual addresses is not mapped
+ */
+
+int sys_mm_drv_update_page_flags(void *virt, uint32_t flags);
+
+/**
+ * @brief Update memory region flags
+ *
+ * This changes the attributes of physical memory which is already
+ * mapped to a virtual address. This is useful when use case of
+ * specific memory region  changes.
+ * E.g. when the library/module code is copied to the memory then
+ * it needs to be read-write and after it has already
+ * been copied and library/module code is ready to be executed then
+ * attributes need to be changed to read-only/executable.
+ * Calling this API must not cause losing memory contents.
+ *
+ * @param virt Page-aligned virtual address to be updated
+ * @param size Page-aligned size of the mapped memory region in bytes
+ * @param flags Caching, access and control flags, see SYS_MM_MEM_* macros
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid arguments are provided
+ * @retval -EFAULT if virtual addresses is not mapped
+ */
+
+int sys_mm_drv_update_region_flags(void *virt, size_t size, uint32_t flags);
+
 /**
  * @}
  */

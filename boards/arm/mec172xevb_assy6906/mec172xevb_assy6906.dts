@@ -27,6 +27,7 @@
 		i2c1 = &i2c_smb_1;
 		i2c7 = &i2c_smb_2;
 		pwm-0 = &pwm0;
+		watchdog0 = &wdog;
 	};
 
 	leds {

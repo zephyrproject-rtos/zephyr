@@ -8,40 +8,16 @@ if SOC_MEC172X_NSZ
 config SOC
 	default "mec172xnsz"
 
-config UART_XEC
-	default y
-	depends on SERIAL
-
 config GPIO
 	default y
-
-config GPIO_XEC_V2
-	default y
-	depends on GPIO
 
 config PINMUX_XEC
 	default y
 	depends on PINMUX
 
-config PWM_XEC
-	default y
-	depends on PWM
-
-config ADC_XEC_V2
-	default y
-	depends on ADC
-
-config I2C_XEC_V2
-	default y
-	depends on I2C
-
 config ESPI_XEC_V2
 	default y
 	depends on ESPI
-
-config SPI_XEC_QMSPI_LDMA
-	default y
-	depends on SPI
 
 config PECI_XEC
 	default y

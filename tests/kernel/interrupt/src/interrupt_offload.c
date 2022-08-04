@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/irq_offload.h>
-#include <interrupt_util.h>
+#include <zephyr/interrupt_util.h>
 
 #define STACK_SIZE	1024
 #define NUM_WORK	4
@@ -233,7 +233,7 @@ static void run_test_offload(int case_type, int real_irq)
  *
  * We test this by irq_offload().
  */
-void test_isr_offload_job_multiple(void)
+ZTEST(interrupt_feature, test_isr_offload_job_multiple)
 {
 	offload_job_prio_higher = false;
 	run_test_offload(TEST_OFFLOAD_MULTI_JOBS, false);
@@ -258,7 +258,7 @@ void test_isr_offload_job_multiple(void)
  *
  * We test this by irq_offload().
  */
-void test_isr_offload_job_identi(void)
+ZTEST(interrupt_feature, test_isr_offload_job_identi)
 {
 	offload_job_prio_higher = false;
 	run_test_offload(TEST_OFFLOAD_IDENTICAL_JOBS, false);
@@ -276,7 +276,7 @@ void test_isr_offload_job_identi(void)
  * offload jobs could execute immediately base on it's priority.
  * We test this by dynamic interrupt.
  */
-void test_isr_offload_job(void)
+ZTEST(interrupt_feature, test_isr_offload_job)
 {
 	if (!IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS)) {
 		ztest_test_skip();

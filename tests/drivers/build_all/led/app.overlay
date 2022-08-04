@@ -20,7 +20,6 @@
 			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
 			#gpio-cells = <0x2>;
-			label = "TEST_GPIO_1";
 			status = "okay";
 		};
 
@@ -28,7 +27,6 @@
 			compatible = "gpio-leds";
 			test_gpio_led0: test_gpio_led_0 {
 				gpios = <&test_gpio 0 0>;
-				label = "Test GPIO LED";
 			};
 		};
 	};

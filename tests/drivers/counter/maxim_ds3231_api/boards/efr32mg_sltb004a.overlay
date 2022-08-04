@@ -9,7 +9,6 @@
 	ds3231: ds3231@68 {
 		compatible = "maxim,ds3231";
 		reg = <0x68>;
-		label = "DS3231";
 		isw-gpios = <&gpiof 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 	};
 };

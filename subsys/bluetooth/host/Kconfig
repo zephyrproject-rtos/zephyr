@@ -338,8 +338,10 @@ if BT_SMP
 config BT_PRIVACY
 	bool "Privacy Feature"
 	help
-	  Enable local Privacy Feature support. This makes it possible
-	  to use Resolvable Private Addresses (RPAs).
+	  Enable Privacy Feature support. This makes it possible to generate and use
+	  Resolvable Private Addresses (RPAs).
+
+	  Disabling this will remove the capability to resolve private addresses.
 
 config BT_RPA_TIMEOUT
 	int "Resolvable Private Address timeout"
@@ -349,6 +351,13 @@ config BT_RPA_TIMEOUT
 	help
 	  This option defines how often resolvable private address is rotated.
 	  Value is provided in seconds and defaults to 900 seconds (15 minutes).
+
+config BT_RPA_TIMEOUT_DYNAMIC
+	bool "Support setting the Resolvable Private Address timeout at runtime"
+	depends on BT_PRIVACY
+	help
+	  This option allows the user to override the default value of
+	  the Resolvable Private Address timeout using dedicated APIs.
 
 config BT_SIGNING
 	bool "Data signing support"
@@ -505,8 +514,8 @@ config BT_SMP_MIN_ENC_KEY_SIZE
 	int
 	prompt "Minimum encryption key size accepted in octets" if !BT_SMP_SC_ONLY
 	range 7 16
-	default 7
 	default 16 if BT_SMP_SC_ONLY
+	default 7
 	help
 	  This option sets the minimum encryption key size accepted during pairing.
 
@@ -778,6 +787,14 @@ config BT_DEBUG_ISO
 	help
 	  Use this option to enable ISO channels debug logs for the
 	  Bluetooth Audio functionality.
+
+config BT_DEBUG_ISO_DATA
+	bool "ISO channel data debug"
+	depends on BT_DEBUG_ISO
+	help
+	  Use this option to enable ISO channels data debug logs for the
+	  Bluetooth Audio functionality. This will enable debug logs for all
+	  ISO data received and sent.
 
 config BT_DEBUG_KEYS
 	bool "Bluetooth security keys debug"

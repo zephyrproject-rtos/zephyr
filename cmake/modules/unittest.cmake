@@ -88,10 +88,20 @@ if(LIBS)
   message(FATAL_ERROR "This variable is not supported, see SOURCES instead")
 endif()
 
-target_sources(testbinary PRIVATE
-  ${ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest.c
-  ${ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest_mock.c
-  )
+if(CONFIG_ZTEST_NEW_API)
+  add_definitions( -DCONFIG_ZTEST_NEW_API=y )
+  target_sources(testbinary PRIVATE
+      ${ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest_new.c
+      ${ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest_mock.c
+      ${ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest_rules.c
+      ${ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest_defaults.c
+      )
+else()
+  target_sources(testbinary PRIVATE
+      ${ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest.c
+      ${ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest_mock.c
+      )
+endif()
 
 target_compile_definitions(testbinary PRIVATE ZTEST_UNITTEST)
 

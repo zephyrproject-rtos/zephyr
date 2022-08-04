@@ -17,6 +17,7 @@
 #include <stdlib.h>
 
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(pwm_ite_it8xxx2, CONFIG_PWM_LOG_LEVEL);
 
 #define PWM_CTRX_MIN	100

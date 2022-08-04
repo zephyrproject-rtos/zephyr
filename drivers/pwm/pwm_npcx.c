@@ -6,7 +6,6 @@
 
 #define DT_DRV_COMPAT nuvoton_npcx_pwm
 
-#include <assert.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/dt-bindings/clock/npcx_clock.h>
@@ -15,6 +14,7 @@
 #include <soc.h>
 
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(pwm_npcx, LOG_LEVEL_ERR);
 
 /* 16-bit period cycles/prescaler in NPCX PWM modules */
@@ -36,7 +36,7 @@ LOG_MODULE_REGISTER(pwm_npcx, LOG_LEVEL_ERR);
 /* Device config */
 struct pwm_npcx_config {
 	/* pwm controller base address */
-	uintptr_t base;
+	struct pwm_reg *base;
 	/* clock configuration */
 	struct npcx_clk_cfg clk_cfg;
 	/* pinmux configuration */
@@ -49,13 +49,11 @@ struct pwm_npcx_data {
 	uint32_t cycles_per_sec;
 };
 
-/* Driver convenience defines */
-#define HAL_INSTANCE(dev) ((struct pwm_reg *)((const struct pwm_npcx_config *)(dev)->config)->base)
-
 /* PWM local functions */
 static void pwm_npcx_configure(const struct device *dev, int clk_bus)
 {
-	struct pwm_reg *const inst = HAL_INSTANCE(dev);
+	const struct pwm_npcx_config *config = dev->config;
+	struct pwm_reg *inst = config->base;
 
 	/* Disable PWM for module configuration first */
 	inst->PWMCTL &= ~BIT(NPCX_PWMCTL_PWR);
@@ -85,8 +83,9 @@ static int pwm_npcx_set_cycles(const struct device *dev, uint32_t channel,
 {
 	/* Single channel for each pwm device */
 	ARG_UNUSED(channel);
+	const struct pwm_npcx_config *config = dev->config;
 	struct pwm_npcx_data *const data = dev->data;
-	struct pwm_reg *const inst = HAL_INSTANCE(dev);
+	struct pwm_reg *inst = config->base;
 	int prescaler;
 	uint32_t ctl;
 	uint32_t ctr;
@@ -172,7 +171,7 @@ static int pwm_npcx_init(const struct device *dev)
 {
 	const struct pwm_npcx_config *const config = dev->config;
 	struct pwm_npcx_data *const data = dev->data;
-	struct pwm_reg *const inst = HAL_INSTANCE(dev);
+	struct pwm_reg *const inst = config->base;
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int ret;
 
@@ -216,7 +215,7 @@ static int pwm_npcx_init(const struct device *dev)
 	PINCTRL_DT_INST_DEFINE(inst);					       \
 									       \
 	static const struct pwm_npcx_config pwm_npcx_cfg_##inst = {            \
-		.base = DT_INST_REG_ADDR(inst),                                \
+		.base = (struct pwm_reg *)DT_INST_REG_ADDR(inst),              \
 		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                         \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                  \
 	};                                                                     \

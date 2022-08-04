@@ -42,6 +42,12 @@
 			reg = <0x80040000 0x40000>;
 		};
 
+		clint: clint@44000000 {
+			compatible = "sifive,clint0";
+			interrupts-extended = <&hlic 3>, <&hlic 7>;
+			reg = <0x44000000 0x10000>;
+		};
+
 		plic: interrupt-controller@40000000 {
 			compatible = "sifive,plic-1.0.0";
 			#address-cells = <0>;
@@ -59,7 +65,6 @@
 		uart0: uart@70001000 {
 			compatible = "microsemi,coreuart";
 			reg = <0x70001000 0x1000>;
-			label = "uart_0";
 			status = "disabled";
 			current-speed = <0>;
 			clock-frequency = <0>;

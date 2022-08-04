@@ -7,14 +7,13 @@
 #define DT_DRV_COMPAT sifive_pwm0
 
 #include <zephyr/logging/log.h>
-
-LOG_MODULE_REGISTER(pwm_sifive, CONFIG_PWM_LOG_LEVEL);
-
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/pwm.h>
 #include <soc.h>
+
+LOG_MODULE_REGISTER(pwm_sifive, CONFIG_PWM_LOG_LEVEL);
 
 /* Macros */
 

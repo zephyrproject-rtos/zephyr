@@ -106,7 +106,6 @@
 		disabled-node@0 {
 			compatible = "vnd,disabled-compat";
 			reg = < 0x0 0x1000 >;
-			label = "DISABLED_NODE_0";
 			status = "disabled";
 		};
 
@@ -157,7 +156,6 @@
 			gpio-controller;
 			reg = < 0x1234 0x500 >;
 			#gpio-cells = < 0x1 >;
-			label = "TEST_GPIO_3";
 			status = "okay";
 		};
 
@@ -183,18 +181,15 @@
 				#gpio-cells = <2>;
 				compatible = "vnd,gpio-expander";
 				reg = <0x11>;
-				label = "TEST_EXPANDER_I2C";
 			};
 
 			test_i2c_mux: i2c-mux@12 {
 				compatible = "vnd,i2c-mux";
-				label = "I2C_MUX";
 				reg = <0x12>;
 				i2c-mux-ctlr-1 {
 					compatible = "vnd,i2c-mux-controller";
 					#address-cells = <1>;
 					#size-cells = <0>;
-					label = "I2C_MUX_CTLR_1";
 					test_muxed_i2c_dev_1: muxed-i2c-dev@10 {
 						compatible = "vnd,i2c-device";
 						status = "disabled";
@@ -205,7 +200,6 @@
 					compatible = "vnd,i2c-mux-controller";
 					#address-cells = <1>;
 					#size-cells = <0>;
-					label = "I2C_MUX_CTLR_1";
 					test_muxed_i2c_dev_2: muxed-i2c-dev@10 {
 						compatible = "vnd,i2c-device";
 						status = "disabled";
@@ -219,26 +213,22 @@
 			#address-cells = < 1 >;
 			#size-cells = < 0 >;
 			compatible = "vnd,i2c";
-			label = "TEST_I2C_NO_REG_CTLR";
 			status = "okay";
 			clock-frequency = < 100000 >;
 
 			test-i2c-dev@12 {
 				compatible = "vnd,i2c-device";
-				label = "TEST_I2C_DEV_12";
 				reg = < 0x12 >;
 			};
 		};
 
 		test_mbox: mbox {
-			label = "TEST_MBOX";
 			compatible = "vnd,mbox";
 			#mbox-cells = <1>;
 			status = "okay";
 		};
 
 		test_mbox_zero_cell: mbox_zero_cell {
-			label = "TEST_MBOX_ZERO_CELL";
 			compatible = "vnd,mbox-zero-cell";
 			#mbox-cells = <0>;
 			status = "okay";
@@ -269,7 +259,6 @@
 
 			test-spi-dev@1 {
 				compatible = "vnd,spi-device";
-				label = "TEST_SPI_DEV_1";
 				reg = <1>;
 				spi-max-frequency = < 2000000 >;
 			};
@@ -279,7 +268,6 @@
 				#gpio-cells = <2>;
 				compatible = "vnd,gpio-expander";
 				reg = <2>;
-				label = "TEST_EXPANDER_SPI";
 				spi-max-frequency = <(1 * 1000 * 1000)>;
 			};
 		};
@@ -289,7 +277,6 @@
 			#size-cells = < 0 >;
 			compatible = "vnd,spi";
 			reg = < 0x55556666 0x1000 >;
-			label = "TEST_SPI_CTLR_NO_CS";
 			status = "okay";
 			clock-frequency = < 2000000 >;
 
@@ -299,7 +286,6 @@
 			 */
 			test_spi_dev_no_cs: test-spi-dev@0 {
 				compatible = "vnd,spi-device-2";
-				label = "TEST_SPI_DEV_NO_CS";
 				reg = <0>;
 				spi-max-frequency = < 2000000 >;
 			};
@@ -310,7 +296,6 @@
 			#size-cells = < 0 >;
 			compatible = "vnd,i2c";
 			reg = < 0x77778888 0x1000 >;
-			label = "TEST_I2C_CTLR_1";
 			status = "okay";
 			clock-frequency = < 100000 >;
 			interrupts = <11 3 12 2>;
@@ -320,7 +305,6 @@
 		test_adc_1: adc@10002000 {
 			reg = <0x10002000 0x1000>;
 			compatible = "vnd,adc";
-			label = "TEST_ADC_1";
 			status = "okay";
 			#io-channel-cells = <1>;
 		};
@@ -328,7 +312,6 @@
 		test_adc_2: adc@10003000 {
 			reg = <0x10003000 0x1000>;
 			compatible = "vnd,adc";
-			label = "TEST_ADC_2";
 			status = "okay";
 			#io-channel-cells = <1>;
 		};
@@ -336,7 +319,6 @@
 		/* there should only be one of these */
 		test_temp_sensor: temperature-sensor {
 			compatible = "vnd,adc-temp-sensor";
-			label = "TEST_TEMP";
 			io-channels = <&test_adc_1 10>, <&test_adc_2 20>;
 			io-channel-names = "ch1", "ch2";
 			dmas = <&test_dma1 1 2>, <&test_dma2 3 4>;
@@ -385,7 +367,6 @@
 
 		test_clk: test-clock {
 			compatible = "vnd,clock";
-                        label = "TEST_CLOCK";
 			#clock-cells = <2>;
 		};
 
@@ -394,7 +375,6 @@
 			reg-width = <4>;
 			reg = <0xabcd1234 0x100>;
 			#reset-cells = <1>;
-			label = "TEST_RESET";
 		};
 
 		test_dma1: dma@44443333 {
@@ -402,7 +382,6 @@
 			#dma-cells = <2>;
 			reg = < 0x44443333 0x1000 >;
 			interrupts = <11 3>;
-			label = "TEST_DMA_CTRL_1";
 			status = "okay";
 		};
 
@@ -411,7 +390,6 @@
 			#dma-cells = <2>;
 			reg = < 0x44442222 0x1000 >;
 			interrupts = <12 3>;
-			label = "TEST_DMA_CTRL_2";
 			status = "okay";
 		};
 
@@ -419,7 +397,6 @@
 			compatible = "vnd,pwm";
 			#pwm-cells = <3>;
 			reg = < 0x55551111 0x1000 >;
-			label = "TEST_PWM_CTRL_1";
 			status = "okay";
 		};
 
@@ -427,13 +404,11 @@
 			compatible = "vnd,pwm";
 			#pwm-cells = <3>;
 			reg = < 0x55552222 0x1000 >;
-			label = "TEST_PWM_CTRL_2";
 			status = "okay";
 		};
 
 		test_transceiver0: can-phy0 {
 			compatible = "vnd,can-transceiver";
-			label = "TEST_TRANSCEIVER_0";
 			status = "okay";
 			#phy-cells = <0>;
 			max-bitrate = <5000000>;
@@ -445,7 +420,6 @@
 			sjw = <1>;
 			sample-point = <875>;
 			bus-speed = <125000>;
-			label = "TEST_CAN_CTRL_0";
 			status = "okay";
 			phys = <&test_transceiver0>;
 		};
@@ -456,7 +430,6 @@
 			sjw = <1>;
 			sample-point = <875>;
 			bus-speed = <125000>;
-			label = "TEST_CAN_CTRL_1";
 			status = "okay";
 
 			can-transceiver {

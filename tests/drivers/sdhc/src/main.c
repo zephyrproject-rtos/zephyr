@@ -7,28 +7,27 @@
 #include <zephyr/zephyr.h>
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/device.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
-static const struct device *sdhc_dev;
+static const struct device *sdhc_dev = DEVICE_DT_GET(DT_ALIAS(sdhc0));
 static struct sdhc_host_props props;
 static struct sdhc_io io;
 
 #define SDHC_FREQUENCY_SLIP 10000000
 
 /* Resets SD host controller, verifies API */
-static void test_reset(void)
+ZTEST(sdhc, test_reset)
 {
-	sdhc_dev = device_get_binding(CONFIG_SDHC_LABEL);
 	int ret;
 
-	zassert_not_null(sdhc_dev, "Could not get SDHC device");
+	zassert_true(device_is_ready(sdhc_dev), "SDHC device is not ready");
 
 	ret = sdhc_hw_reset(sdhc_dev);
 	zassert_equal(ret, 0, "SDHC HW reset failed");
 }
 
 /* Gets host properties, verifies all properties are set */
-static void test_host_props(void)
+ZTEST(sdhc, test_host_props)
 {
 	int ret;
 
@@ -51,7 +50,7 @@ static void test_host_props(void)
 }
 
 /* Verify that driver rejects frequencies outside of claimed range */
-static void test_set_io(void)
+ZTEST(sdhc, test_set_io)
 {
 	int ret;
 
@@ -76,7 +75,7 @@ static void test_set_io(void)
 
 
 /* Verify that the driver can detect a present SD card */
-static void test_card_presence(void)
+ZTEST(sdhc, test_card_presence)
 {
 	int ret;
 
@@ -93,7 +92,7 @@ static void test_card_presence(void)
  * condition. This follows the first part of the SD initialization defined in
  * the SD specification.
  */
-static void test_card_if_cond(void)
+ZTEST(sdhc, test_card_if_cond)
 {
 	struct sdhc_command cmd;
 	int ret, resp;
@@ -145,16 +144,4 @@ static void test_card_if_cond(void)
 	}
 }
 
-
-void test_main(void)
-{
-	ztest_test_suite(sdhc_api_test,
-		ztest_unit_test(test_reset),
-		ztest_unit_test(test_host_props),
-		ztest_unit_test(test_set_io),
-		ztest_unit_test(test_card_presence),
-		ztest_unit_test(test_card_if_cond)
-	);
-
-	ztest_run_test_suite(sdhc_api_test);
-}
+ZTEST_SUITE(sdhc, NULL, NULL, NULL, NULL, NULL);

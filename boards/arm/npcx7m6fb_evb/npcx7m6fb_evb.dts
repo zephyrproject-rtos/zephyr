@@ -25,6 +25,10 @@
 		pwm-0 = &pwm6;
 		/* For i2c test suites */
 		i2c-0 = &i2c0_0;
+		watchdog0 = &twd0;
+		peci-0 = &peci0;
+		/* For samples/drivers/spi_flash */
+		spi-flash0 = &int_flash;
 	};
 
 	pwmleds {
@@ -50,20 +54,10 @@
 			min-residency-us = <201000>;
 		};
 	};
-
-	vsby-psl-in-list {
-		psl-in-pads = <&psl_in1>; /* Use PSL_IN1 as detection pins */
-		status = "okay";
-	};
 };
 
 &cpu0 {
 	cpu-power-states = <&suspend_to_idle0 &suspend_to_idle1>;
-};
-
-&psl_in1 {
-	/* A falling edge detection type for PSL_IN1 */
-	flag = <NPCX_PSL_FALLING_EDGE>;
 };
 
 /* Overwrite default device properties with overlays in board dt file here. */
@@ -113,4 +107,10 @@
 	port = <NPCX_TACH_PORT_A>; /* port-A is selected */
 	sample-clk = <NPCX_TACH_FREQ_LFCLK>; /* Use LFCLK as sampling clock */
 	pulses-per-round = <1>; /* number of pulses per round of encoder */
+};
+
+&peci0 {
+	status = "okay";
+	pinctrl-0 = <&peci_dat_gp81>;
+	pinctrl-names = "default";
 };

@@ -37,43 +37,36 @@ static inline const struct gpio_nrfx_cfg *get_port_cfg(const struct device *port
 
 static int get_drive(gpio_flags_t flags, nrf_gpio_pin_drive_t *drive)
 {
-	int err = 0;
-
-	switch (flags & (NRF_GPIO_DS_LOW_MASK | NRF_GPIO_DS_HIGH_MASK |
-			 GPIO_OPEN_DRAIN)) {
-	case NRF_GPIO_DS_DFLT:
+	switch (flags & (NRF_GPIO_DRIVE_MSK | GPIO_OPEN_DRAIN)) {
+	case NRF_GPIO_DRIVE_S0S1:
 		*drive = NRF_GPIO_PIN_S0S1;
 		break;
-	case NRF_GPIO_DS_DFLT_LOW | NRF_GPIO_DS_ALT_HIGH:
+	case NRF_GPIO_DRIVE_S0H1:
 		*drive = NRF_GPIO_PIN_S0H1;
 		break;
-	case NRF_GPIO_DS_DFLT_LOW | GPIO_OPEN_DRAIN:
-		*drive = NRF_GPIO_PIN_S0D1;
-		break;
-
-	case NRF_GPIO_DS_ALT_LOW | NRF_GPIO_DS_DFLT_HIGH:
+	case NRF_GPIO_DRIVE_H0S1:
 		*drive = NRF_GPIO_PIN_H0S1;
 		break;
-	case NRF_GPIO_DS_ALT:
+	case NRF_GPIO_DRIVE_H0H1:
 		*drive = NRF_GPIO_PIN_H0H1;
 		break;
-	case NRF_GPIO_DS_ALT_LOW | GPIO_OPEN_DRAIN:
+	case NRF_GPIO_DRIVE_S0 | GPIO_OPEN_DRAIN:
+		*drive = NRF_GPIO_PIN_S0D1;
+		break;
+	case NRF_GPIO_DRIVE_H0 | GPIO_OPEN_DRAIN:
 		*drive = NRF_GPIO_PIN_H0D1;
 		break;
-
-	case NRF_GPIO_DS_DFLT_HIGH | GPIO_OPEN_SOURCE:
+	case NRF_GPIO_DRIVE_S1 | GPIO_OPEN_SOURCE:
 		*drive = NRF_GPIO_PIN_D0S1;
 		break;
-	case NRF_GPIO_DS_ALT_HIGH | GPIO_OPEN_SOURCE:
+	case NRF_GPIO_DRIVE_H1 | GPIO_OPEN_SOURCE:
 		*drive = NRF_GPIO_PIN_D0H1;
 		break;
-
 	default:
-		err = -EINVAL;
-		break;
+		return -EINVAL;
 	}
 
-	return err;
+	return 0;
 }
 
 static nrf_gpio_pin_pull_t get_pull(gpio_flags_t flags)
@@ -180,10 +173,12 @@ static int gpio_nrfx_port_set_masked_raw(const struct device *port,
 					 gpio_port_value_t value)
 {
 	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
-	uint32_t value_tmp;
 
-	value_tmp = nrf_gpio_port_out_read(reg) & ~mask;
-	nrf_gpio_port_out_write(reg, value_tmp | (mask & value));
+	const uint32_t set_mask = value & mask;
+	const uint32_t clear_mask = (~set_mask) & mask;
+
+	nrf_gpio_port_out_set(reg, set_mask);
+	nrf_gpio_port_out_clear(reg, clear_mask);
 
 	return 0;
 }
@@ -212,10 +207,12 @@ static int gpio_nrfx_port_toggle_bits(const struct device *port,
 				      gpio_port_pins_t mask)
 {
 	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
-	uint32_t value;
+	const uint32_t value = nrf_gpio_port_out_read(reg) ^ mask;
+	const uint32_t set_mask = value & mask;
+	const uint32_t clear_mask = (~value) & mask;
 
-	value = nrf_gpio_port_out_read(reg);
-	nrf_gpio_port_out_write(reg, value ^ mask);
+	nrf_gpio_port_out_set(reg, set_mask);
+	nrf_gpio_port_out_clear(reg, clear_mask);
 
 	return 0;
 }
@@ -240,6 +237,7 @@ static int gpio_nrfx_pin_interrupt_configure(const struct device *port,
 {
 	uint32_t abs_pin = NRF_GPIO_PIN_MAP(get_port_cfg(port)->port_num, pin);
 	nrfx_err_t err;
+	uint8_t ch;
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		nrfx_gpiote_trigger_disable(abs_pin);
@@ -257,8 +255,6 @@ static int gpio_nrfx_pin_interrupt_configure(const struct device *port,
 	if (!(BIT(pin) & get_port_cfg(port)->edge_sense) &&
 	    (mode == GPIO_INT_MODE_EDGE) &&
 	    (nrf_gpio_pin_dir_get(abs_pin) == NRF_GPIO_PIN_DIR_INPUT)) {
-		uint8_t ch;
-
 		err = nrfx_gpiote_channel_get(abs_pin, &ch);
 		if (err == NRFX_ERROR_INVALID_PARAM) {
 			err = nrfx_gpiote_channel_alloc(&ch);

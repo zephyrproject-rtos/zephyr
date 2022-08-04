@@ -12,6 +12,9 @@
 	model = "Silicon Labs BRD4104A (Blue Gecko Radio Board)";
 	compatible = "silabs,efr32_radio_brd4104a", "silabs,efr32bg13p";
 
+	aliases {
+		spi-flash0 = &mx25r80;
+	};
 };
 
 &cpu0 {

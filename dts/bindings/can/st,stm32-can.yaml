@@ -20,14 +20,6 @@ properties:
     pinctrl-names:
       required: true
 
-    one-shot:
-      type: boolean
-      required: false
-      description: |
-        Disable automatic retransmissions. A CAN frame will only be transmitted
-        once, independently of the transmission result (successful, error, or
-        arbitration lost).
-
     master-can-reg:
       type: int
       required: false

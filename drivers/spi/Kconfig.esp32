@@ -5,8 +5,8 @@
 
 menuconfig ESP32_SPIM
 	bool "ESP32 SPI Master driver"
-	depends on SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3
 	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_SPI_ENABLED
 	help
 	  Enables support for ESP32 SPI Master driver.
 

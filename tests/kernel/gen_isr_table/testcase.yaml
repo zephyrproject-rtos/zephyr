@@ -37,3 +37,15 @@ tests:
       - CONFIG_ARC_FIRQ_STACK=y
       - CONFIG_TEST_HW_STACK_PROTECTION=n
     tags: kernel interrupt isr_table
+  arch.interrupt.gen_isr_table.riscv_direct:
+    platform_exclude: m2gl025_miv
+    filter: CONFIG_RISCV and CONFIG_SOC_FAMILY_RISCV_PRIVILEGE
+    tags: kernel interrupt isr_table
+    extra_configs:
+      - CONFIG_GEN_IRQ_VECTOR_TABLE=y
+  arch.interrupt.gen_isr_table.riscv_no_direct:
+    platform_exclude: m2gl025_miv
+    filter: CONFIG_RISCV and CONFIG_SOC_FAMILY_RISCV_PRIVILEGE
+    tags: kernel interrupt isr_table
+    extra_configs:
+      - CONFIG_GEN_IRQ_VECTOR_TABLE=n

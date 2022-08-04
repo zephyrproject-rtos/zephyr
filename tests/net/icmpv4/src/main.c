@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ICMPV4_LOG_LEVEL);
 #include <zephyr/sys/printk.h>
 #include <zephyr/linker/sections.h>
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 
 #include <zephyr/net/buf.h>
 #include <zephyr/net/ethernet.h>
@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ICMPV4_LOG_LEVEL);
 #include "icmpv4.h"
 #include "ipv4.h"
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 static const unsigned char icmpv4_echo_req[] = {
 	/* IPv4 Header */

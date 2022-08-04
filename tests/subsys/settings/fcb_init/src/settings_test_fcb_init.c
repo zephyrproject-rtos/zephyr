@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdio.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/zephyr.h>
 #include <zephyr/sys/reboot.h>
@@ -23,10 +23,13 @@ static uint32_t val32;
 #define ERASED_VAL 0xFF
 #endif
 
+#define TEST_FLASH_AREA image_0
+
 /* leverage that this area has to be embedded flash part */
-#if FLASH_AREA_LABEL_EXISTS(image_0)
-#define FLASH_WRITE_BLOCK_SIZE \
-	DT_PROP(DT_CHOSEN(zephyr_flash), write_block_size)
+#if FLASH_AREA_LABEL_EXISTS(TEST_FLASH_AREA)
+#define FLASH_WRITE_BLOCK_SIZE							\
+	DT_PROP(DT_GPARENT(DT_NODE_BY_FIXED_PARTITION_LABEL(TEST_FLASH_AREA)),	\
+		write_block_size)
 static const volatile __attribute__((section(".rodata")))
 __aligned(FLASH_WRITE_BLOCK_SIZE)
 uint8_t prepared_mark[FLASH_WRITE_BLOCK_SIZE] = {ERASED_VAL};
@@ -82,7 +85,7 @@ void test_init(void)
 
 void test_prepare_storage(void)
 {
-#if FLASH_AREA_LABEL_EXISTS(image_0)
+#if FLASH_AREA_LABEL_EXISTS(TEST_FLASH_AREA)
 /* This procedure uses mark which is stored inside SoC embedded program
  * flash. It will not work on devices on which read/write to them is not
  * possible.
@@ -100,7 +103,7 @@ void test_prepare_storage(void)
 		err = flash_area_erase(fa, 0, fa->fa_size);
 		zassert_true(err == 0, "Can't erase storage flash area");
 
-		err = flash_area_open(FLASH_AREA_ID(image_0), &fa);
+		err = flash_area_open(FLASH_AREA_ID(TEST_FLASH_AREA), &fa);
 		zassert_true(err == 0, "Can't open storage flash area");
 
 		dev = flash_area_get_device(fa);

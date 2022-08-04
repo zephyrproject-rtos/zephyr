@@ -94,7 +94,7 @@ struct perm_ctx {
 };
 
 #ifdef CONFIG_GEN_PRIV_STACKS
-/* See write_gperf_table() in scripts/gen_kobject_list.py. The privilege
+/* See write_gperf_table() in scripts/build/gen_kobject_list.py. The privilege
  * mode stacks are allocated as an array. The base of the array is
  * aligned to Z_PRIVILEGE_STACK_ALIGN, and all members must be as well.
  */

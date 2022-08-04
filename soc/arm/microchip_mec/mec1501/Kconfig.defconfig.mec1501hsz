@@ -8,28 +8,12 @@ if SOC_MEC1501_HSZ
 config SOC
 	default "mec1501hsz"
 
-config UART_NS16550
-	default y
-	depends on SERIAL
-
 config PINMUX_XEC
 	default y
 	depends on PINMUX
 
 config GPIO
 	default y
-
-config ADC_XEC
-	default y
-	depends on ADC
-
-config GPIO_XEC
-	default y
-	depends on GPIO
-
-config I2C_XEC
-	default y
-	depends on I2C
 
 config ESPI_XEC
 	default y
@@ -43,10 +27,6 @@ config PS2_XEC
 	default y
 	depends on PS2
 
-config PWM_XEC
-	default y
-	depends on PWM
-
 config KSCAN_XEC
 	default y
 	depends on KSCAN
@@ -54,9 +34,5 @@ config KSCAN_XEC
 config PECI_XEC
 	default y
 	depends on PECI
-
-config SPI_XEC_QMSPI
-	default y
-	depends on SPI
 
 endif # SOC_MEC1501_HSZ

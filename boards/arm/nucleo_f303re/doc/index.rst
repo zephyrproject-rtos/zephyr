@@ -77,7 +77,7 @@ More information about the STM32F303RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f302r8 board configuration supports the following hardware
+The Zephyr nucleo_f303re board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -93,6 +93,10 @@ features:
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.

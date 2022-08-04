@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/wait_q.h>
 
 #define DELAY          K_MSEC(50)
@@ -340,6 +340,7 @@ ZTEST(events_api, test_event_deliver)
 {
 	static struct k_event  event;
 	uint32_t  events;
+	uint32_t  events_mask;
 
 	k_event_init(&event);
 
@@ -361,6 +362,33 @@ ZTEST(events_api, test_event_deliver)
 	events = 0xAAAA0000;
 	k_event_set(&event, events);
 	zassert_true(event.events == events, NULL);
+
+	/*
+	 * Verify k_event_set_masked() update the events
+	 * stored in the event object as expected
+	 */
+	events = 0x33333333;
+	k_event_set(&event, events);
+	zassert_true(event.events == events, NULL);
+
+	events_mask = 0x11111111;
+	k_event_set_masked(&event, 0, events_mask);
+	zassert_true(event.events == 0x22222222, NULL);
+
+	events_mask = 0x22222222;
+	k_event_set_masked(&event, 0, events_mask);
+	zassert_true(event.events == 0, NULL);
+
+	events = 0x22222222;
+	events_mask = 0x22222222;
+	k_event_set_masked(&event, events, events_mask);
+	zassert_true(event.events == events, NULL);
+
+	events = 0x11111111;
+	events_mask = 0x33333333;
+	k_event_set_masked(&event, events, events_mask);
+	zassert_true(event.events == events, NULL);
+
 }
 
 /**

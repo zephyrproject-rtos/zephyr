@@ -15,10 +15,6 @@ LOG_MODULE_REGISTER(main);
 
 #define VIDEO_DEV_SW "VIDEO_SW_GENERATOR"
 
-#if defined(CONFIG_VIDEO_MCUX_CSI)
-#define VIDEO_DEV DT_LABEL(DT_INST(0, nxp_imx_csi))
-#endif
-
 void main(void)
 {
 	struct video_buffer *buffers[2], *vbuf;
@@ -37,20 +33,18 @@ void main(void)
 	}
 
 	/* But would be better to use a real video device if any */
-#ifdef VIDEO_DEV
-	{
-		const struct device *dev = device_get_binding(VIDEO_DEV);
+#if defined(CONFIG_VIDEO_MCUX_CSI)
+	const struct device *dev = DEVICE_DT_GET_ONE(nxp_imx_csi);
 
-		if (dev == NULL) {
-			LOG_ERR("Video device %s not found, "
-				"fallback to software generator.", VIDEO_DEV);
-		} else {
-			video = dev;
-		}
+	if (!device_is_ready(dev)) {
+		LOG_ERR("%s: device not ready.\n", dev->name);
+		return;
 	}
+
+	video = dev;
 #endif
 
-	printk("- Device name: %s\n", VIDEO_DEV);
+	printk("- Device name: %s\n", video->name);
 
 	/* Get capabilities */
 	if (video_get_caps(video, VIDEO_EP_OUT, &caps)) {

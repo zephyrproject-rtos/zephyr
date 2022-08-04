@@ -5,7 +5,7 @@
  */
 #include <zephyr/zephyr.h>
 #include <zephyr/random/rand32.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/sys/p4wq.h>
 
 #define NUM_THREADS (CONFIG_MP_NUM_CPUS * 2)

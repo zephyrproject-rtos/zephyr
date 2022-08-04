@@ -24,10 +24,6 @@
 	STRINGIFY(LWM2M_PROTOCOL_VERSION_MAJOR)                                                    \
 	"." STRINGIFY(LWM2M_PROTOCOL_VERSION_MINOR)
 
-/* TODO: */
-#define NOTIFY_OBSERVER(o, i, r)   lwm2m_notify_observer(o, i, r)
-#define NOTIFY_OBSERVER_PATH(path) lwm2m_notify_observer_path(path)
-
 /* Use this value to generate new token */
 #define LWM2M_MSG_TOKEN_GENERATE_NEW 0xFFU
 
@@ -65,6 +61,7 @@ int lwm2m_security_index_to_inst_id(int index);
 
 int32_t lwm2m_server_get_pmin(uint16_t obj_inst_id);
 int32_t lwm2m_server_get_pmax(uint16_t obj_inst_id);
+int lwm2m_server_get_ssid(uint16_t obj_inst_id);
 int lwm2m_server_short_id_to_inst(uint16_t short_id);
 
 #if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
@@ -86,11 +83,11 @@ uint8_t lwm2m_firmware_get_update_result(void);
 int lwm2m_socket_add(struct lwm2m_ctx *ctx);
 void lwm2m_socket_del(struct lwm2m_ctx *ctx);
 int lwm2m_socket_start(struct lwm2m_ctx *client_ctx);
-#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
-int lwm2m_engine_close_socket_connection(struct lwm2m_ctx *client_ctx);
 int lwm2m_engine_connection_resume(struct lwm2m_ctx *client_ctx);
+int lwm2m_open_socket(struct lwm2m_ctx *client_ctx);
+int lwm2m_close_socket(struct lwm2m_ctx *client_ctx);
+int lwm2m_socket_suspend(struct lwm2m_ctx *client_ctx);
 int lwm2m_push_queued_buffers(struct lwm2m_ctx *client_ctx);
-#endif
 
 /* Resources */
 struct lwm2m_ctx **lwm2m_sock_ctx(void);

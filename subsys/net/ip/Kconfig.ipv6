@@ -143,12 +143,15 @@ config NET_6LO
 	  6lowpan compression and fragmentation. It is enabled by default
 	  if 802.15.4 is present, since using IPv6 on it requires it.
 
+	  You may disable this option if you wish to implement a non-IP
+	  custom protocol on top of the 802.15.4 MAC (L2) layer.
+
 config NET_6LO_CONTEXT
 	bool "6lowpan context based compression"
 	depends on NET_6LO
 	help
 	  Enables 6lowpan context based compression based on information
-	  received in RA(Router Advertisement) message.
+	  received in Router Advertisement (RA) message.
 
 config NET_MAX_6LO_CONTEXTS
 	int "Number of supported 6CO (6lowpan contexts options)"

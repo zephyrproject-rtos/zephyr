@@ -104,10 +104,6 @@ void soc_interrupt_init(void);
 #include "soc_zero_riscy.h"
 #endif
 
-/* Newlib hooks (and potentially other things) use these defines. */
-#define RISCV_RAM_SIZE KB(CONFIG_SRAM_SIZE)
-#define RISCV_RAM_BASE CONFIG_SRAM_BASE_ADDRESS
-
 /* helper macro to convert from a DT_INST to HAL clock_ip_name */
 #define INST_DT_CLOCK_IP_NAME(n) \
 	MAKE_PCC_REGADDR(DT_REG_ADDR(DT_INST_PHANDLE(n, clocks)), \

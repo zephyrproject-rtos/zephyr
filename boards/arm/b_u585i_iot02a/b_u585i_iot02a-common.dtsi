@@ -49,6 +49,11 @@
 			min-residency-us = <900>;
 		};
 	};
+
+	aliases {
+		watchdog0 = &iwdg;
+		spi-flash0 = &mx25lm51245;
+	};
 };
 
 &clk_lse {
@@ -121,7 +126,6 @@
 
 	mx25lm51245: ospi-nor-flash@0 {
 		compatible = "st,stm32-ospi-nor";
-		label = "MX25LM51245";
 		reg = <0>;
 		ospi-max-frequency = <DT_FREQ_M(50)>;
 		size = <DT_SIZE_M(64)>;
@@ -165,7 +169,6 @@
 	hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
-		label = "HTS221";
 	};
 };
 

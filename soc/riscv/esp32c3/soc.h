@@ -15,8 +15,6 @@
 #include <esp_clk.h>
 #endif
 
-#include <zephyr/arch/riscv/arch.h>
-
 /* IRQ numbers */
 #define RISCV_MACHINE_SOFT_IRQ 3 /* Machine Software Interrupt */
 #define RISCV_MACHINE_TIMER_IRQ 7 /* Machine Timer Interrupt */
@@ -30,8 +28,6 @@
 #define SOC_MCAUSE_IRQ_MASK (1 << 31)
 /* Exception code Mask */
 #define SOC_MCAUSE_EXP_MASK 0x7FFFFFFF
-/* SOC-Specific EXIT ISR command */
-#define SOC_ERET mret
 
 #ifndef _ASMLANGUAGE
 

@@ -320,6 +320,12 @@ static int adxl362_attr_set(const struct device *dev,
 	case SENSOR_ATTR_UPPER_THRESH:
 	case SENSOR_ATTR_LOWER_THRESH:
 		return adxl362_attr_set_thresh(dev, chan, attr, val);
+	case SENSOR_ATTR_HYSTERESIS:
+	{
+		uint16_t timeout = val->val1;
+
+		return adxl362_set_reg(dev, (timeout & 0x7FF), ADXL362_REG_TIME_INACT_L, 2);
+	}
 	default:
 		/* Do nothing */
 		break;

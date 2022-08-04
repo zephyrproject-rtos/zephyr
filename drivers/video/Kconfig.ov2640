@@ -6,5 +6,7 @@
 config VIDEO_OV2640
 	bool "OV2640 CMOS digital image sensor"
 	depends on I2C
+	depends on DT_HAS_OVTI_OV2640_ENABLED
+	default y
 	help
 	  Enable driver for OV2640 CMOS digital image sensor device.

@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		spi-flash0 = &mx25l51;
+	};
+};
+
 /delete-node/ &mx25r64;
 
 &pinctrl {
@@ -43,7 +49,6 @@
 		/* MX25L5145G supports all readoc options */
 		readoc = "read4io";
 		sck-frequency = <2000000>;
-		label = "MX25L51245G";
 		jedec-id = [c2 20 1A];
 		sfdp-bfp = [
 			e5 20 fb ff  1f ff ff ff  44 eb 08 6b  08 3b 04 bb

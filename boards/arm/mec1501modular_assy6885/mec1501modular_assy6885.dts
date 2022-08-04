@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <microchip/mec1501hsz.dtsi>
+#include <microchip/mec152x/mec152xhsz-pinctrl.dtsi>
 
 / {
 	model = "Microchip MEC1501MODULAR_ASSY6885 evaluation board";
@@ -26,6 +27,7 @@
 		i2c0 = &i2c_smb_0;
 		i2c1 = &i2c_smb_1;
 		kscan0 = &kscan0;
+		watchdog0 = &wdog;
 	};
 
 	power-states {

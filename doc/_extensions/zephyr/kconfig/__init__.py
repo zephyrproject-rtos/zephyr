@@ -83,6 +83,12 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
         with open(Path(td) / "Kconfig.modules", "w") as f:
             f.write(kconfig)
 
+        # generate dummy Kconfig.dts file
+        kconfig = ""
+
+        with open(Path(td) / "Kconfig.dts", "w") as f:
+            f.write(kconfig)
+
         # base environment
         os.environ["ZEPHYR_BASE"] = str(ZEPHYR_BASE)
         os.environ["srctree"] = str(ZEPHYR_BASE)

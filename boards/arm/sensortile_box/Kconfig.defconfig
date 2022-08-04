@@ -11,6 +11,9 @@ config BOARD
 config SPI
 	default y if SENSOR
 
+config I2C
+	default y if SENSOR
+
 if SPI
 
 config SPI_STM32_INTERRUPT

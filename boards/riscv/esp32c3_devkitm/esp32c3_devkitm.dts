@@ -23,6 +23,7 @@
 	aliases {
 		sw0 = &user_button1;
 		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
 	};
 
 	gpio_keys {
@@ -45,11 +46,16 @@
 	pinctrl-names = "default";
 };
 
+&usb_serial {
+	/* requires resoldering of resistors on the board */
+	status = "okay";
+};
+
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
-	sda-pin = <1>;
-	scl-pin = <3>;
+	sda-gpios = <&gpio0 1 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpio0 3 GPIO_OPEN_DRAIN>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 };
@@ -75,11 +81,11 @@
 };
 
 &timer0 {
-	status = "okay";
+	status = "disabled";
 };
 
 &timer1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &flash0 {

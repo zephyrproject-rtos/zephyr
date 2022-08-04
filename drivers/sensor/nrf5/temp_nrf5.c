@@ -112,8 +112,6 @@ static int temp_nrf5_init(const struct device *dev)
 {
 	struct temp_nrf5_data *data = dev->data;
 
-	LOG_DBG("");
-
 	/* A null clk_mgr indicates sensor has not been initialized */
 	data->clk_mgr =
 		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);

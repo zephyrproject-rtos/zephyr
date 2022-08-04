@@ -15,16 +15,12 @@ config XTENSA_UNCACHED_REGION
 
 if INTEL_ADSP_CAVS
 
-config DMA_CAVS_GPDMA
-	default y
-	depends on DMA
-
-config DMA_CAVS_HDA
+config DMA_INTEL_ADSP_GPDMA
 	default y
 	depends on DMA
 
 config XTENSA_CCOUNT_HZ
-	default 400000000 if SOC_SERIES_INTEL_CAVS_V25
+	default 400000000 if SOC_INTEL_CAVS_V25
 	default 200000000
 
 endif # INTEL_ADSP_CAVS

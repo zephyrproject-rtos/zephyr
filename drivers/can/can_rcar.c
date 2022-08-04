@@ -571,6 +571,15 @@ static int can_rcar_enter_operation_mode(const struct can_rcar_cfg *config)
 	return 0;
 }
 
+static int can_rcar_get_capabilities(const struct device *dev, can_mode_t *cap)
+{
+	ARG_UNUSED(dev);
+
+	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY;
+
+	return 0;
+}
+
 static int can_rcar_set_mode(const struct device *dev, can_mode_t mode)
 {
 	const struct can_rcar_cfg *config = dev->config;
@@ -1072,6 +1081,7 @@ static int can_rcar_get_max_bitrate(const struct device *dev, uint32_t *max_bitr
 }
 
 static const struct can_driver_api can_rcar_driver_api = {
+	.get_capabilities = can_rcar_get_capabilities,
 	.set_mode = can_rcar_set_mode,
 	.set_timing = can_rcar_set_timing,
 	.send = can_rcar_send,

@@ -118,9 +118,9 @@ class ComplianceTest:
         test code.
         """
         if self.case.result:
-            msg += "\n\nFailures before error: " + self.case.result._elem.text
+            msg += "\n\nFailures before error: " + self.case.result[0]._elem.text
 
-        self.case.result = Error(msg, "error")
+        self.case.result = [Error(msg, "error")]
 
         raise EndTest
 
@@ -136,7 +136,7 @@ class ComplianceTest:
         test code.
         """
         if self.case.result:
-            msg += "\n\nFailures before skip: " + self.case.result._elem.text
+            msg += "\n\nFailures before skip: " + self.case.result[0]._elem.text
 
         self.case.result = Skipped(msg, "skipped")
 
@@ -149,11 +149,11 @@ class ComplianceTest:
         """
         if not self.case.result:
             # First reported failure
-            self.case.result = Failure(self.name + " issues", "failure")
-            self.case.result._elem.text = msg.rstrip()
+            self.case.result = [Failure(self.name + " issues", "failure")]
+            self.case.result[0]._elem.text = msg.rstrip()
         else:
             # If there are multiple Failures, concatenate their messages
-            self.case.result._elem.text += "\n\n" + msg.rstrip()
+            self.case.result[0]._elem.text += "\n\n" + msg.rstrip()
 
     def add_info(self, msg):
         """
@@ -270,6 +270,26 @@ class KconfigCheck(ComplianceTest):
                 ))
             fp_module_file.write(content)
 
+    def get_kconfig_dts(self, kconfig_dts_file):
+        """
+        Generate the Kconfig.dts using dts/bindings as the source.
+
+        This is needed to complete Kconfig compliance tests.
+
+        """
+        # Invoke the script directly using the Python executable since this is
+        # not a module nor a pip-installed Python utility
+        zephyr_drv_kconfig_path = os.path.join(ZEPHYR_BASE, "scripts", "dts",
+			                       "gen_driver_kconfig_dts.py")
+        binding_path = os.path.join(ZEPHYR_BASE, "dts", "bindings")
+        cmd = [sys.executable, zephyr_drv_kconfig_path,
+               '--kconfig-out', kconfig_dts_file, '--bindings', binding_path]
+        try:
+            _ = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as ex:
+            self.error(ex.output)
+
+
     def parse_kconfig(self):
         """
         Returns a kconfiglib.Kconfig object for the Kconfig files. We reuse
@@ -308,6 +328,9 @@ class KconfigCheck(ComplianceTest):
 
         # For multi repo support
         self.get_modules(os.path.join(tempfile.gettempdir(), "Kconfig.modules"))
+
+        # For Kconfig.dts support
+        self.get_kconfig_dts(os.path.join(tempfile.gettempdir(), "Kconfig.dts"))
 
         # Tells Kconfiglib to generate warnings for all references to undefined
         # symbols within Kconfig files
@@ -1096,8 +1119,8 @@ def _main(args):
 
     for case in suite:
         if case.result:
-            if case.result.type == 'skipped':
-                logging.warning("Skipped %s, %s", case.name, case.result.message)
+            if case.result[0].type == 'skipped':
+                logging.warning("Skipped %s, %s", case.name, case.result[0].message)
             else:
                 failed_cases.append(case)
         else:
@@ -1111,14 +1134,14 @@ def _main(args):
         for case in failed_cases:
             # not clear why junitxml doesn't clearly expose the most
             # important part of its underlying etree.Element
-            errmsg = case.result._elem.text
+            errmsg = case.result[0]._elem.text
             logging.error("Test %s failed: %s", case.name,
-                          errmsg.strip() if errmsg else case.result.message)
+                          errmsg.strip() if errmsg else case.result[0].message)
 
             with open(f"{case.name}.txt", "w") as f:
                 docs = name2doc.get(case.name)
                 f.write(f"{docs}\n\n")
-                f.write(errmsg.strip() if errmsg else case.result.message)
+                f.write(errmsg.strip() if errmsg else case.result[0].message)
 
     print("\nComplete results in " + args.output)
     return n_fails

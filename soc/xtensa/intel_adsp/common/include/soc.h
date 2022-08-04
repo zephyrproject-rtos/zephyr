@@ -9,6 +9,7 @@
 #include <string.h>
 #include <errno.h>
 #include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/linker/sections.h>
 
 /* macros related to interrupt handling */
 #define XTENSA_IRQ_NUM_SHIFT			0
@@ -48,8 +49,6 @@
 #define SSP_MN_DIV_BASE(x)			\
 	(0x00078D00 + ((x) * SSP_MN_DIV_SIZE))
 
-#define PDM_BASE				DMIC_BASE
-
 /* DSP Wall Clock Timers (0 and 1) */
 #define DSP_WCT_IRQ(x) \
 	SOC_AGGREGATE_IRQ((22 + x), CAVS_L2_AGG_INT_LEVEL2)
@@ -57,18 +56,6 @@
 #define DSP_WCT_CS_TA(x)			BIT(x)
 #define DSP_WCT_CS_TT(x)			BIT(4 + x)
 
-/* Attribute macros to place code and data into IMR memory */
-#define __imr __in_section_unique(imr)
-#define __imrdata __in_section_unique(imrdata)
-
-extern char _text_start[];
-extern char _text_end[];
-extern char _imr_start[];
-extern char _imr_end[];
-extern char _end[];
-extern char _heap_sentry[];
-extern char _cached_start[];
-extern char _cached_end[];
 
 extern void soc_trace_init(void);
 extern void z_soc_irq_init(void);
@@ -112,19 +99,7 @@ extern bool soc_cpus_active[CONFIG_MP_NUM_CPUS];
  */
 int soc_adsp_halt_cpu(int id);
 
-static inline bool intel_adsp_ptr_executable(const void *p)
-{
-	return (p >= (void *)_text_start && p <= (void *)_text_end) ||
-		(p >= (void *)_imr_start && p <= (void *)_imr_end);
-}
 
-static inline bool intel_adsp_ptr_is_sane(uint32_t sp)
-{
-	return ((char *)sp >= _end && (char *)sp <= _heap_sentry) ||
-		((char *)sp >= _cached_start && (char *)sp <= _cached_end) ||
-		(sp >= (CONFIG_IMR_MANIFEST_ADDR - CONFIG_ISR_STACK_SIZE)
-		 && sp <= CONFIG_IMR_MANIFEST_ADDR);
-}
 
 static ALWAYS_INLINE void z_idelay(int n)
 {

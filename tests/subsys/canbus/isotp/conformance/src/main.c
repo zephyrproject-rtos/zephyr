@@ -5,7 +5,7 @@
  */
 #include <zephyr/canbus/isotp.h>
 #include <zephyr/drivers/can.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <strings.h>
 #include "random_data.h"
 

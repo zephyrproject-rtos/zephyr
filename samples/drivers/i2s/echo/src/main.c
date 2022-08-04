@@ -31,13 +31,11 @@
 
 #define SW0_NODE        DT_ALIAS(sw0)
 #if DT_NODE_HAS_STATUS(SW0_NODE, okay)
-#define SW0_LABEL       DT_PROP(SW0_NODE, label)
 static struct gpio_dt_spec sw0_spec = GPIO_DT_SPEC_GET(SW0_NODE, gpios);
 #endif
 
 #define SW1_NODE        DT_ALIAS(sw1)
 #if DT_NODE_HAS_STATUS(SW1_NODE, okay)
-#define SW1_LABEL       DT_PROP(SW1_NODE, label)
 static struct gpio_dt_spec sw1_spec = GPIO_DT_SPEC_GET(SW1_NODE, gpios);
 #endif
 
@@ -97,7 +95,7 @@ static bool init_buttons(void)
 
 	gpio_init_callback(&sw0_cb_data, sw0_handler, BIT(sw0_spec.pin));
 	gpio_add_callback(sw0_spec.port, &sw0_cb_data);
-	printk("Press \"%s\" to toggle the echo effect\n", SW0_LABEL);
+	printk("Press \"%s\" to toggle the echo effect\n", sw0_spec.port->name);
 #endif
 
 #if DT_NODE_HAS_STATUS(SW1_NODE, okay)
@@ -125,7 +123,7 @@ static bool init_buttons(void)
 
 	gpio_init_callback(&sw1_cb_data, sw1_handler, BIT(sw1_spec.pin));
 	gpio_add_callback(sw1_spec.port, &sw1_cb_data);
-	printk("Press \"%s\" to stop/restart I2S streams\n", SW1_LABEL);
+	printk("Press \"%s\" to stop/restart I2S streams\n", sw1_spec.port->name);
 #endif
 
 	(void)ret;

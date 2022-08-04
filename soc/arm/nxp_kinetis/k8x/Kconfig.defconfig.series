@@ -19,20 +19,6 @@ config KINETIS_FLASH_CONFIG_FOPT
 	default 0x3f
 	depends on KINETIS_FLASH_CONFIG
 
-config ADC_MCUX_ADC16
-	default y
-	depends on ADC
-
-if CLOCK_CONTROL
-
-config CLOCK_CONTROL_MCUX_MCG
-	default y
-
-config CLOCK_CONTROL_MCUX_SIM
-	default y
-
-endif # CLOCK_CONTROL
-
 config ENTROPY_MCUX_TRNG
 	default y
 	depends on ENTROPY_GENERATOR
@@ -44,33 +30,9 @@ config SOC_FLASH_MCUX
 config GPIO
 	default y
 
-config GPIO_MCUX
-	default y
-	depends on GPIO
-
-config I2C_MCUX
-	default y
-	depends on I2C
-
-config PWM_MCUX_FTM
-	default y
-	depends on PWM
-
-config UART_MCUX_LPUART
-	default y
-	depends on SERIAL
-
-config SPI_MCUX_DSPI
-	default y
-	depends on SPI
-
 config USB_KINETIS
 	default y
 	depends on USB_DEVICE_DRIVER
-
-config WDT_MCUX_WDOG
-	default y
-	depends on WATCHDOG
 
 config COUNTER_MCUX_PIT
 	default y if HAS_MCUX_PIT

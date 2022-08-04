@@ -170,3 +170,41 @@ void k_mem_slab_free(struct k_mem_slab *slab, void **mem)
 
 	k_spin_unlock(&slab->lock, key);
 }
+
+int k_mem_slab_runtime_stats_get(struct k_mem_slab *slab, struct sys_memory_stats *stats)
+{
+	if ((slab == NULL) || (stats == NULL)) {
+		return -EINVAL;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&slab->lock);
+
+	stats->allocated_bytes = slab->num_used * slab->block_size;
+	stats->free_bytes = (slab->num_blocks - slab->num_used) * slab->block_size;
+#ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
+	stats->max_allocated_bytes = slab->max_used * slab->block_size;
+#else
+	stats->max_allocated_bytes = 0;
+#endif
+
+	k_spin_unlock(&slab->lock, key);
+
+	return 0;
+}
+
+#ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
+int k_mem_slab_runtime_stats_reset_max(struct k_mem_slab *slab)
+{
+	if (slab == NULL) {
+		return -EINVAL;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&slab->lock);
+
+	slab->max_used = slab->num_used;
+
+	k_spin_unlock(&slab->lock, key);
+
+	return 0;
+}
+#endif

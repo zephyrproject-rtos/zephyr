@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <errno.h>
 #include <zephyr/sys/printk.h>
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
@@ -368,14 +368,13 @@ static void test_recv_after_bridging(void)
 	test_recv_before_bridging();
 }
 
-void test_main(void)
+ZTEST(net_eth_bridge, test_net_eth_bridge)
 {
-	ztest_test_suite(net_eth_bridge_test,
-			 ztest_unit_test(test_iface_setup),
-			 ztest_unit_test(test_recv_before_bridging),
-			 ztest_unit_test(test_setup_bridge),
-			 ztest_unit_test(test_recv_with_bridge),
-			 ztest_unit_test(test_recv_after_bridging));
-
-	ztest_run_test_suite(net_eth_bridge_test);
+	test_iface_setup();
+	test_recv_before_bridging();
+	test_setup_bridge();
+	test_recv_with_bridge();
+	test_recv_after_bridging();
 }
+
+ZTEST_SUITE(net_eth_bridge, NULL, NULL, NULL, NULL, NULL);

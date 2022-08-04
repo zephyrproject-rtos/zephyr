@@ -46,6 +46,7 @@
 #define LWM2M_OBJECT_CONNECTIVITY_STATISTICS_ID 7
 #define LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID     9
 #define LWM2M_OBJECT_PORTFOLIO_ID               16
+#define LWM2M_OBJECT_EVENT_LOG_ID               20
 #define LWM2M_OBJECT_GATEWAY_ID                 25
 /* clang-format on */
 
@@ -167,13 +168,13 @@ struct lwm2m_ctx {
 	 */
 	bool use_dtls;
 
-#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	/**
 	 * Flag to indicate that the socket connection is suspended.
 	 * With queue mode, this will tell if there is a need to reconnect.
 	 */
 	bool connection_suspended;
 
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	/**
 	 * Flag to indicate that the client is buffering Notifications and Send messages.
 	 * True value buffer Notifications and Send messages.
@@ -556,6 +557,20 @@ int lwm2m_swmgmt_set_write_package_cb(uint16_t obj_inst_id, lwm2m_engine_set_dat
  * return 0 on success, otherwise a negative integer.
  */
 int lwm2m_swmgmt_install_completed(uint16_t obj_inst_id, int error_code);
+
+#endif
+
+#if defined(CONFIG_LWM2M_EVENT_LOG_OBJ_SUPPORT)
+
+/**
+ * @brief Set callback to read log data
+ *
+ * The callback will be executed when the LWM2M read operation gets called
+ * on the corresponding object.
+ *
+ * @param[in] cb A callback function for handling the read event.
+ */
+void lwm2m_event_log_set_read_log_data_cb(lwm2m_engine_get_data_cb_t cb);
 
 #endif
 
@@ -1214,6 +1229,7 @@ enum lwm2m_rd_client_event {
 	LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE,
 	LWM2M_RD_CLIENT_EVENT_DISCONNECT,
 	LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF,
+	LWM2M_RD_CLIENT_EVENT_ENGINE_SUSPENDED,
 	LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR,
 };
 
@@ -1268,6 +1284,29 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
  */
 int lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 			  lwm2m_ctx_event_cb_t event_cb, bool deregister);
+
+/**
+ * @brief Suspend the LwM2M engine Thread
+ *
+ * Suspend LwM2M engine. Use case could be when network connection is down.
+ * LwM2M Engine indicate before it suspend by
+ * LWM2M_RD_CLIENT_EVENT_ENGINE_SUSPENDED event.
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_pause(void);
+
+/**
+ * @brief Resume the LwM2M engine thread
+ *
+ * Resume suspended LwM2M engine. After successful resume call engine will do
+ * full registration or registration update based on suspended time.
+ * Event's LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE or WM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE
+ * indicate that client is connected to server.
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_resume(void);
 
 /**
  * @brief Trigger a Registration Update of the LwM2M RD Client

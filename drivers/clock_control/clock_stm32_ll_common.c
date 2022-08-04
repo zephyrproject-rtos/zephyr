@@ -50,8 +50,16 @@
 #define GET_CURRENT_FLASH_PRESCALER LL_RCC_GetAHBPrescaler
 #endif
 
+#if defined(RCC_PLLCFGR_PLLPEN)
 #define RCC_PLLP_ENABLE() SET_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLPEN)
+#else
+#define RCC_PLLP_ENABLE()
+#endif /* RCC_PLLCFGR_PLLPEN */
+#if defined(RCC_PLLCFGR_PLLQEN)
 #define RCC_PLLQ_ENABLE() SET_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLQEN)
+#else
+#define RCC_PLLQ_ENABLE()
+#endif /* RCC_PLLCFGR_PLLQEN */
 
 /**
  * @brief Return frequency for pll with 2 dividers and a multiplier

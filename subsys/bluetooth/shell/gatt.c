@@ -273,6 +273,8 @@ static uint8_t read_func(struct bt_conn *conn, uint8_t err,
 	if (!data) {
 		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
+	} else {
+		shell_hexdump(ctx_shell, data, length);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -961,6 +963,12 @@ static int cmd_notify_mult(const struct shell *sh, size_t argc, char *argv[])
 	uint16_t cnt_u16;
 	int err = 0;
 
+	if (!default_conn) {
+		shell_error(sh, "Not connected.");
+
+		return -ENOEXEC;
+	}
+
 	if (!echo_enabled) {
 		shell_error(sh, "No clients have enabled notifications for the vnd1_echo CCC.");
 
@@ -995,7 +1003,7 @@ static int cmd_notify_mult(const struct shell *sh, size_t argc, char *argv[])
 	(void)memset(params, 0, sizeof(params));
 
 	for (uint16_t i = 0U; i < cnt_u16; i++) {
-		params[i].uuid = &vnd1_echo_uuid.uuid;
+		params[i].uuid = 0;
 		params[i].attr = vnd1_attrs;
 		params[i].data = &data;
 		params[i].len = sizeof(data);
@@ -1003,7 +1011,7 @@ static int cmd_notify_mult(const struct shell *sh, size_t argc, char *argv[])
 		params[i].user_data = (void *)sh;
 	}
 
-	err = bt_gatt_notify_multiple(NULL, cnt_u16, params);
+	err = bt_gatt_notify_multiple(default_conn, cnt_u16, params);
 	if (err != 0) {
 		shell_error(sh, "bt_gatt_notify_multiple failed: %d", err);
 	} else {

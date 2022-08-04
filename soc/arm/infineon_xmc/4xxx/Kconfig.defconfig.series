@@ -12,10 +12,6 @@ config SOC_SERIES
 config NUM_IRQS
 	default 112
 
-config UART_XMC4XXX
-	default y
-	depends on SERIAL
-
 source "soc/arm/infineon_xmc/4xxx/Kconfig.defconfig.xmc*"
 
 endif # SOC_SERIES_XMC_4XXX

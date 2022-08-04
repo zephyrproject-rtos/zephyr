@@ -1050,11 +1050,7 @@ void radio_tmr_tifs_set(uint32_t tifs)
 
 uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 {
-	if ((!(remainder / 1000000UL)) || (remainder & 0x80000000)) {
-		ticks_start--;
-		remainder += 30517578UL;
-	}
-	remainder /= 1000000UL;
+	hal_ticker_remove_jitter(&ticks_start, &remainder);
 
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
 	EVENT_TIMER->MODE = 0;
@@ -1721,8 +1717,10 @@ uint32_t radio_ar_has_match(void)
 	return 0U;
 }
 
-void radio_ar_resolve(const uint8_t *addr)
+uint8_t radio_ar_resolve(const uint8_t *addr)
 {
+	uint8_t retval;
+
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Enabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;
 
@@ -1748,8 +1746,13 @@ void radio_ar_resolve(const uint8_t *addr)
 
 	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
 
+	retval = (NRF_AAR->EVENTS_RESOLVED && !NRF_AAR->EVENTS_NOTRESOLVED) ?
+		 1U : 0U;
+
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Disabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;
+
+	return retval;
 
 }
 #endif /* CONFIG_BT_CTLR_PRIVACY */

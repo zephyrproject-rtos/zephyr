@@ -28,36 +28,16 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYS_CLOCK_TICKS_PER_SEC
 	default 4096
 
-config UART_NS16550
-	default y
-	depends on SERIAL
-
 config UART_NS16550_WA_ISR_REENABLE_INTERRUPT
-	default y
-	depends on UART_NS16550
-
-config UART_ITE_IT8XXX2
 	default y
 	depends on UART_NS16550
 
 config RISCV_HAS_CPU_IDLE
 	default y
 
-config WDT_ITE_IT8XXX2
-	default y
-	depends on WATCHDOG
-
 config KSCAN_ITE_IT8XXX2
 	default y
 	depends on KSCAN
-
-config GPIO_ITE_IT8XXX2
-	default y
-	depends on GPIO
-
-config ADC_ITE_IT8XXX2
-	default y
-	depends on ADC
 
 config SOC_FLASH_ITE_IT8XXX2
 	default y
@@ -70,14 +50,6 @@ config IT8XXX2_PLL_SEQUENCE_PRIORITY
 	int
 	default 1
 	depends on SOC_IT8XXX2_PLL_FLASH_48M
-
-config PWM_ITE_IT8XXX2
-	default y
-	depends on PWM
-
-config TACH_IT8XXX2
-	default y
-	depends on SENSOR
 
 config PECI_ITE_IT8XXX2
 	default y

@@ -545,6 +545,10 @@ enum gpio_int_trig {
 __subsystem struct gpio_driver_api {
 	int (*pin_configure)(const struct device *port, gpio_pin_t pin,
 			     gpio_flags_t flags);
+#ifdef CONFIG_GPIO_GET_CONFIG
+	int (*pin_get_config)(const struct device *port, gpio_pin_t pin,
+			      gpio_flags_t *flags);
+#endif
 	int (*port_get_raw)(const struct device *port,
 			    gpio_port_value_t *value);
 	int (*port_set_masked_raw)(const struct device *port,
@@ -846,6 +850,57 @@ static inline int gpio_pin_is_output(const struct device *port, gpio_pin_t pin)
 	}
 
 	return (int)!!((gpio_port_pins_t)BIT(pin) & pins);
+}
+
+/**
+ * @brief Get a configuration of a single pin.
+ *
+ * @param port Pointer to device structure for the driver instance.
+ * @param pin Pin number which configuration is get.
+ * @param flags Pointer to variable in which the current configuration will
+ *              be stored if function is successful.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS if getting current pin configuration is not implemented
+ *                  by the driver.
+ * @retval -EINVAL Invalid argument.
+ * @retval -EIO I/O error when accessing an external GPIO chip.
+ * @retval -EWOULDBLOCK if operation would block.
+ */
+__syscall int gpio_pin_get_config(const struct device *port, gpio_pin_t pin,
+				  gpio_flags_t *flags);
+
+#ifdef CONFIG_GPIO_GET_CONFIG
+static inline int z_impl_gpio_pin_get_config(const struct device *port,
+					     gpio_pin_t pin,
+					     gpio_flags_t *flags)
+{
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->api;
+
+	if (api->pin_get_config == NULL)
+		return -ENOSYS;
+
+	return api->pin_get_config(port, pin, flags);
+}
+#endif
+
+/**
+ * @brief Get a configuration of a single pin from a @p gpio_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     gpio_pin_get_config(spec->port, spec->pin, flags);
+ *
+ * @param spec GPIO specification from devicetree
+ * @param flags Pointer to variable in which the current configuration will
+ *              be stored if function is successful.
+ * @return a value from gpio_pin_configure()
+ */
+static inline int gpio_pin_get_config_dt(const struct gpio_dt_spec *spec,
+					gpio_flags_t *flags)
+{
+	return gpio_pin_get_config(spec->port, spec->pin, flags);
 }
 
 /**

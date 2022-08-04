@@ -43,6 +43,9 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_TIFS_HW_SUPPORT
 	select BT_CTLR_ULL_LLL_PRIO_SUPPORT
 
+	select BT_TICKER_REMAINDER_GET if BT_BROADCASTER && BT_CTLR_ADV_EXT
+	select BT_TICKER_LAZY_GET if BT_CTLR_ADV_PERIODIC
+
 	default y
 	help
 	  Use Nordic Lower Link Layer implementation.
@@ -190,32 +193,41 @@ config BT_CTLR_ADV_SYNC_SET
 	  Maximum supported periodic advertising sets.
 
 config BT_CTLR_ADV_PDU_LINK
-	bool "Linking of advertising PDU trains"
-	help
-	  Enables extra space in each advertising PDU to allow linking PDUs. This
-	  is required to enable advertising data trains (i.e. transmission of
-	  AUX_CHAIN_IND).
+	# Enables extra space in each advertising PDU to allow linking PDUs.
+	# This is required to enable advertising data trains (i.e. transmission
+	# of AUX_CHAIN_IND).
+	bool
 
-config BT_CTLR_ADV_PDU_BACK2BACK
-	bool "Back-to-back transmission of extended advertising trains"
-	depends on BT_CTLR_ADV_EXT && BT_BROADCASTER
+config BT_CTLR_ADV_AUX_PDU_LINK
+	# Enable chaining in Extended Advertising
+	bool
 	select BT_CTLR_ADV_PDU_LINK
+
+config BT_CTLR_ADV_AUX_PDU_BACK2BACK
+	bool "Back-to-back transmission of extended advertising trains"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	select BT_CTLR_ADV_AUX_PDU_LINK
 	help
 	  Enables transmission of AUX_CHAIN_IND in extended advertising train by
 	  sending each AUX_CHAIN_IND one after another back-to-back.
 
-config BT_CTLR_ADV_PDU_BACK2BACK_AFS
+config BT_CTLR_ADV_AUX_PDU_BACK2BACK_AFS
 	int "AUX Frame Space for back-to-back transmission of extended advertising trains"
-	depends on BT_CTLR_ADV_PDU_BACK2BACK
+	depends on BT_CTLR_ADV_AUX_PDU_BACK2BACK
 	range 300 1000
 	help
 	  Specific AUX Frame Space to be used for back-to-back transmission of
 	  extended advertising trains. Time specified in microseconds.
 
+config BT_CTLR_ADV_SYNC_PDU_LINK
+	bool
+	depends on BT_CTLR_ADV_PERIODIC
+	select BT_CTLR_ADV_PDU_LINK
+
 config BT_CTLR_ADV_SYNC_PDU_BACK2BACK
 	bool "Back-to-back transmission of periodic advertising trains"
 	depends on BT_CTLR_ADV_PERIODIC
-	select BT_CTLR_ADV_PDU_LINK
+	select BT_CTLR_ADV_SYNC_PDU_LINK
 	help
 	  Enables transmission of AUX_CHAIN_IND in periodic advertising train by
 	  sending each AUX_CHAIN_IND one after another back-to-back.
@@ -226,11 +238,22 @@ config BT_CTLR_ADV_SYNC_PDU_BACK2BACK
 config BT_CTLR_ADV_SYNC_PDU_BACK2BACK_AFS
 	int "AUX Frame Space for back-to-back transmission of periodic advertising trains"
 	depends on BT_CTLR_ADV_SYNC_PDU_BACK2BACK
-	default 300
 	range 300 1000
+	default 300
 	help
 	  Specific AUX Frame Space to be used for back-to-back transmission of
 	  periodic advertising trains. Time specified in microseconds.
+
+config BT_CTLR_ADV_RESERVE_MAX
+	bool "Use maximum Advertising PDU size time reservation"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	default y
+	help
+	  Use the maximum advertising PDU size time reservation considering the
+	  Advertising Data could be updated from zero to maximum support size.
+	  If maximum time reservation is disabled then time reservation
+	  corresponding to the Advertising Data present at the time of the
+	  start/enable of Advertising is used.
 
 config BT_CTLR_ADV_DATA_BUF_MAX
 	int "Advertising Data Maximum Buffers"
@@ -341,8 +364,11 @@ config BT_CTLR_XTAL_THRESHOLD
 
 config BT_CTLR_SCHED_ADVANCED
 	bool "Advanced scheduling"
-	depends on (BT_MAX_CONN != 0) && BT_CTLR_SCHED_ADVANCED_SUPPORT
-	default y if !(BT_PERIPHERAL && !BT_CENTRAL)
+	depends on BT_CTLR_SCHED_ADVANCED_SUPPORT && \
+		   (BT_CONN || \
+		    (BT_CTLR_ADV_EXT && (BT_CTLR_ADV_AUX_SET > 1)) || \
+		    BT_CTLR_ADV_ISO)
+	default y if BT_CENTRAL || (BT_BROADCASTER && BT_CTLR_ADV_EXT) || BT_CTLR_ADV_ISO
 	help
 	  Enable non-overlapping placement of observer, initiator and central
 	  roles in timespace. Uses window offset in connection updates and uses
@@ -693,9 +719,15 @@ config BT_TICKER_LOW_LAT
 	  radio RX/TX. Enabling this option disables the ticker priority- and
 	  'must expire' features.
 
+config BT_TICKER_REMAINDER_GET
+	bool "Ticker Next Slot Get with Remainder"
+	help
+	  This option enables ticker interface to iterate through active
+	  ticker nodes, returning tick to expire and remainder from a reference
+	  tick.
+
 config BT_TICKER_LAZY_GET
 	bool "Ticker Next Slot Get with Lazy"
-	default y if BT_CTLR_ADV_PERIODIC
 	help
 	  This option enables ticker interface to iterate through active
 	  ticker nodes, returning tick to expire and lazy count from a reference

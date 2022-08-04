@@ -181,6 +181,9 @@ struct ticker_user_op_slot_get {
 	uint8_t  *ticker_id;
 	uint32_t *ticks_current;
 	uint32_t *ticks_to_expire;
+#if defined(CONFIG_BT_TICKER_REMAINDER_GET)
+	uint32_t *remainder;
+#endif /* CONFIG_BT_TICKER_REMAINDER_GET */
 #if defined(CONFIG_BT_TICKER_LAZY_GET)
 	uint16_t *lazy;
 #endif /* CONFIG_BT_TICKER_LAZY_GET */
@@ -385,10 +388,11 @@ static uint8_t ticker_by_slot_get(struct ticker_node *node, uint8_t ticker_id_he
  * @internal
  */
 static void ticker_by_next_slot_get(struct ticker_instance *instance,
-				    uint8_t *ticker_id_head, uint32_t *ticks_current,
+				    uint8_t *ticker_id_head,
+				    uint32_t *ticks_current,
 				    uint32_t *ticks_to_expire,
 				    ticker_op_match_func fp_match_op_func,
-				    void *match_op_context,
+				    void *match_op_context, uint32_t *remainder,
 				    uint16_t *lazy)
 {
 	struct ticker_node *ticker;
@@ -453,6 +457,13 @@ static void ticker_by_next_slot_get(struct ticker_instance *instance,
 	if (_ticker_id_head != TICKER_NULL) {
 		/* Add ticks for found ticker */
 		_ticks_to_expire += ticker->ticks_to_expire;
+
+#if defined(CONFIG_BT_TICKER_REMAINDER_GET)
+		if (remainder) {
+			*remainder = ticker->remainder_current;
+		}
+#endif /* CONFIG_BT_TICKER_REMAINDER_GET */
+
 #if defined(CONFIG_BT_TICKER_LAZY_GET)
 		if (lazy) {
 			*lazy = ticker->lazy_current;
@@ -2262,6 +2273,11 @@ static inline void ticker_job_op_inquire(struct ticker_instance *instance,
 #else
 					NULL, NULL,
 #endif
+#if defined(CONFIG_BT_TICKER_REMAINDER_GET)
+					uop->params.slot_get.remainder,
+#else /* !CONFIG_BT_TICKER_REMAINDER_GET */
+					NULL,
+#endif /* !CONFIG_BT_TICKER_REMAINDER_GET */
 #if defined(CONFIG_BT_TICKER_LAZY_GET)
 					uop->params.slot_get.lazy);
 #else /* !CONFIG_BT_TICKER_LAZY_GET */
@@ -3057,21 +3073,26 @@ uint32_t ticker_next_slot_get(uint8_t instance_index, uint8_t user_id,
 			      ticker_op_func fp_op_func, void *op_context)
 {
 #if defined(CONFIG_BT_TICKER_LAZY_GET) || \
+	defined(CONFIG_BT_TICKER_REMAINDER_GET) || \
 	defined(CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH)
 	return ticker_next_slot_get_ext(instance_index, user_id, ticker_id,
 					ticks_current, ticks_to_expire, NULL,
-					NULL, NULL,
-					fp_op_func, op_context);
+					NULL, NULL, NULL, fp_op_func,
+					op_context);
 }
 
 uint32_t ticker_next_slot_get_ext(uint8_t instance_index, uint8_t user_id,
 				  uint8_t *ticker_id, uint32_t *ticks_current,
-				  uint32_t *ticks_to_expire, uint16_t *lazy,
+				  uint32_t *ticks_to_expire,
+				  uint32_t *remainder, uint16_t *lazy,
 				  ticker_op_match_func fp_match_op_func,
 				  void *match_op_context,
 				  ticker_op_func fp_op_func, void *op_context)
 {
-#endif /* CONFIG_BT_TICKER_LAZY_GET || CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
+#endif /* CONFIG_BT_TICKER_LAZY_GET ||
+	* CONFIG_BT_TICKER_REMAINDER_GET ||
+	* CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH
+	*/
 	struct ticker_instance *instance = &_instance[instance_index];
 	struct ticker_user_op *user_op;
 	struct ticker_user *user;
@@ -3094,6 +3115,9 @@ uint32_t ticker_next_slot_get_ext(uint8_t instance_index, uint8_t user_id,
 	user_op->params.slot_get.ticker_id = ticker_id;
 	user_op->params.slot_get.ticks_current = ticks_current;
 	user_op->params.slot_get.ticks_to_expire = ticks_to_expire;
+#if defined(CONFIG_BT_TICKER_REMAINDER_GET)
+	user_op->params.slot_get.remainder = remainder;
+#endif /* CONFIG_BT_TICKER_REMAINDER_GET */
 #if defined(CONFIG_BT_TICKER_LAZY_GET)
 	user_op->params.slot_get.lazy = lazy;
 #endif /* CONFIG_BT_TICKER_LAZY_GET */

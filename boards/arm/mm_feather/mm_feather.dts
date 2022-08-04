@@ -17,6 +17,7 @@
 		led0 = &green_led;
 		led1 = &red_led;
 		led2 = &blue_led;
+		sdhc0 = &usdhc1;
 	};
 
 	chosen {
@@ -58,7 +59,6 @@
 	is25wp064: is25wp064@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <67108864>;
-		label = "IS25WP064";
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";

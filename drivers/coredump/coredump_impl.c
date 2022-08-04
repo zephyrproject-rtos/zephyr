@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <debug/coredump.h>
-#include <drivers/coredump.h>
+#include <zephyr/debug/coredump.h>
+#include <zephyr/drivers/coredump.h>
 
 #define DT_DRV_COMPAT zephyr_coredump
 

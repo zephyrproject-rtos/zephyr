@@ -68,6 +68,7 @@
 		uart-0 = &uart0;
 		led0 = &blue_led;
 		sw0 = &menu_button;
+		watchdog0 = &wdt0;
 	};
 };
 
@@ -97,8 +98,8 @@
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <4>;
-	scl-pin = <15>;
+	sda-gpios = <&gpio0 4 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpio0 15 GPIO_OPEN_DRAIN>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 };
@@ -120,6 +121,19 @@
 		rotation = <270>;
 		width = <320>;
 		height = <240>;
+	};
+
+	sdhc0: sdhc@1 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <1>;
+		status = "okay";
+		label = "SDHC_0";
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+			label = "SDMMC_0";
+		};
+		spi-max-frequency = <20000000>;
 	};
 };
 

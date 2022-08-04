@@ -4,20 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(i2c_channel_0), okay)
 #define I2C_0_CTRL_NODE_ID      DT_ALIAS(i2c_channel_0)
-#define I2C_0_CTRL_DEV_NAME     DT_LABEL(I2C_0_CTRL_NODE_ID)
 #else
 #error "I2C 0 controller device not found"
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(i2c_channel_1), okay)
 #define I2C_1_CTRL_NODE_ID      DT_ALIAS(i2c_channel_1)
-#define I2C_1_CTRL_DEV_NAME     DT_LABEL(I2C_1_CTRL_NODE_ID)
 #else
 #error "I2C 1 controller device not found"
 #endif

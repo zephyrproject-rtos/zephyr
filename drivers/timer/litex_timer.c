@@ -35,7 +35,7 @@ const int32_t z_sys_timer_irq_for_test = TIMER_IRQ;
 
 static void litex_timer_irq_handler(const void *device)
 {
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	litex_write8(TIMER_EV, TIMER_EV_PENDING_ADDR);
 	sys_clock_announce(1);

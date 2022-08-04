@@ -5,6 +5,7 @@
 
 config CLOCK_CONTROL_MCUX_SCG
 	bool "MCUX SCG driver"
-	depends on HAS_MCUX_SCG
+	default y
+	depends on DT_HAS_NXP_KINETIS_SCG_ENABLED
 	help
 	  Enable support for mcux scg driver.

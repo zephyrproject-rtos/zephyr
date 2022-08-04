@@ -14,8 +14,11 @@
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
 
 #include "bq274xx.h"
+
+LOG_MODULE_REGISTER(bq274xx, CONFIG_SENSOR_LOG_LEVEL);
 
 #define BQ274XX_SUBCLASS_DELAY 5 /* subclass 64 & 82 needs 5ms delay */
 /* Time to set pin in order to exit shutdown mode */
@@ -228,16 +231,13 @@ static int bq274xx_sample_fetch(const struct device *dev,
 	struct bq274xx_data *bq274xx = dev->data;
 	int status = 0;
 
-#ifdef CONFIG_BQ274XX_LAZY_CONFIGURE
-	if (!bq274xx->lazy_loaded) {
+	if (!bq274xx->configured) {
 		status = bq274xx_gauge_configure(dev);
 
 		if (status < 0) {
 			return status;
 		}
-		bq274xx->lazy_loaded = true;
 	}
-#endif
 
 	switch (chan) {
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
@@ -379,17 +379,17 @@ static int bq274xx_gauge_init(const struct device *dev)
 	int status = 0;
 	uint16_t id;
 
-#ifdef CONFIG_PM_DEVICE
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("I2C bus device not ready");
+		return -ENODEV;
+	}
+
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_BQ274XX_TRIGGER)
 	if (!device_is_ready(config->int_gpios.port)) {
 		LOG_ERR("GPIO device pointer is not ready to be used");
 		return -ENODEV;
 	}
 #endif
-
-	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C bus device not ready");
-		return -ENODEV;
-	}
 
 	status = bq274xx_get_device_type(dev, &id);
 	if (status < 0) {
@@ -402,11 +402,17 @@ static int bq274xx_gauge_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_BQ274XX_LAZY_CONFIGURE
-	bq274xx->lazy_loaded = false;
-#else
-	status = bq274xx_gauge_configure(dev);
+#ifdef CONFIG_BQ274XX_TRIGGER
+	status = bq274xx_trigger_mode_init(dev);
+	if (status < 0) {
+		LOG_ERR("Unable set up trigger mode.");
+		return status;
+	}
 #endif
+
+	if (!config->lazy_loading) {
+		status = bq274xx_gauge_configure(dev);
+	}
 
 	return status;
 }
@@ -414,6 +420,8 @@ static int bq274xx_gauge_init(const struct device *dev)
 static int bq274xx_gauge_configure(const struct device *dev)
 {
 	const struct bq274xx_config *const config = dev->config;
+	struct bq274xx_data *data = dev->data;
+
 	int status = 0;
 	uint8_t tmp_checksum = 0, checksum_old = 0, checksum_new = 0;
 	uint16_t flags = 0, designenergy_mwh = 0, taperrate = 0;
@@ -646,6 +654,8 @@ static int bq274xx_gauge_configure(const struct device *dev)
 		return -EIO;
 	}
 
+	data->configured = true;
+
 	return 0;
 }
 
@@ -714,12 +724,14 @@ static int bq274xx_exit_shutdown_mode(const struct device *dev)
 		return status;
 	}
 
-	k_msleep(INIT_TIME);
+	if (!config->lazy_loading) {
+		k_msleep(INIT_TIME);
 
-	status = bq274xx_gauge_configure(dev);
-	if (status < 0) {
-		LOG_ERR("Unable to configure bq274xx gauge");
-		return status;
+		status = bq274xx_gauge_configure(dev);
+		if (status < 0) {
+			LOG_ERR("Unable to configure bq274xx gauge");
+			return status;
+		}
 	}
 
 	return 0;
@@ -749,34 +761,38 @@ static int bq274xx_pm_action(const struct device *dev,
 static const struct sensor_driver_api bq274xx_battery_driver_api = {
 	.sample_fetch = bq274xx_sample_fetch,
 	.channel_get = bq274xx_channel_get,
+#ifdef CONFIG_BQ274XX_TRIGGER
+	.trigger_set = bq274xx_trigger_set,
+#endif
 };
 
-#ifdef CONFIG_PM_DEVICE
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_BQ274XX_TRIGGER)
 #define BQ274XX_INT_CFG(index)						      \
 	.int_gpios = GPIO_DT_SPEC_INST_GET(index, int_gpios),
 #else
 #define BQ274XX_INT_CFG(index)
 #endif
 
-#define BQ274XX_INIT(index)                                                    \
-	static struct bq274xx_data bq274xx_driver_##index;                     \
-									       \
-	static const struct bq274xx_config bq274xx_config_##index = {          \
-		.i2c = I2C_DT_SPEC_INST_GET(index),                            \
-		BQ274XX_INT_CFG(index)                                         \
-		.design_voltage = DT_INST_PROP(index, design_voltage),         \
-		.design_capacity = DT_INST_PROP(index, design_capacity),       \
-		.taper_current = DT_INST_PROP(index, taper_current),           \
-		.terminate_voltage = DT_INST_PROP(index, terminate_voltage),   \
-	};                                                                     \
-									       \
-	PM_DEVICE_DT_INST_DEFINE(index, bq274xx_pm_action);		       \
-									       \
-	DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init,		       \
-			    PM_DEVICE_DT_INST_GET(index),		       \
-			    &bq274xx_driver_##index,                           \
-			    &bq274xx_config_##index, POST_KERNEL,              \
-			    CONFIG_SENSOR_INIT_PRIORITY,                       \
+#define BQ274XX_INIT(index)							\
+	static struct bq274xx_data bq274xx_driver_##index;			\
+										\
+	static const struct bq274xx_config bq274xx_config_##index = {		\
+		.i2c = I2C_DT_SPEC_INST_GET(index),				\
+		BQ274XX_INT_CFG(index)						\
+		.design_voltage = DT_INST_PROP(index, design_voltage),		\
+		.design_capacity = DT_INST_PROP(index, design_capacity),	\
+		.taper_current = DT_INST_PROP(index, taper_current),		\
+		.terminate_voltage = DT_INST_PROP(index, terminate_voltage),	\
+		.lazy_loading = DT_INST_PROP(index, zephyr_lazy_load),		\
+	};									\
+										\
+	PM_DEVICE_DT_INST_DEFINE(index, bq274xx_pm_action);			\
+										\
+	DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init,			\
+			    PM_DEVICE_DT_INST_GET(index),			\
+			    &bq274xx_driver_##index,				\
+			    &bq274xx_config_##index, POST_KERNEL,		\
+			    CONFIG_SENSOR_INIT_PRIORITY,			\
 			    &bq274xx_battery_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BQ274XX_INIT)

@@ -9,6 +9,5 @@
 		compatible = "ite,it8xxx2-bbram";
 		status = "okay";
 		reg = <0x80 0xff>;
-		label = "BBRAM";
 	};
 };

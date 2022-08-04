@@ -20,7 +20,6 @@
 
 	ili9340: ili9340@0 {
 		compatible = "ilitek,ili9340";
-		label = "ILI9340";
 		spi-max-frequency = <15151515>;
 		reg = <0>;
 		cmd-data-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
@@ -40,7 +39,6 @@
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
 		status = "okay";
-		label = "SDHC_0";
 		spi-max-frequency = <24000000>;
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
@@ -53,7 +51,6 @@
 	touch_controller: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
-		label = "FT5336";
 		/* Uncomment if IRQ line is available (requires to solder jumper) */
 		/* int-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>; */ /* D7 */
 	};

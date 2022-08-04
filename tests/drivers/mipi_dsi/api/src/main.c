@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/mipi_dsi.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /**
  * @addtogroup t_mipi_dsi_driver

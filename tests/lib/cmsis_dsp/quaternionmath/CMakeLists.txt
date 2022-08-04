@@ -6,5 +6,4 @@ project(cmsis_dsp_quaternionmath)
 
 target_sources(app PRIVATE
   src/f32.c
-  src/main.c
   )

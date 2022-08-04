@@ -4,12 +4,10 @@
 # Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ESP32_I2C := espressif,esp32-i2c
-
 config I2C_ESP32
 	bool "ESP32 I2C driver"
-	depends on SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3
-	default $(dt_compat_enabled,$(DT_COMPAT_ESP32_I2C))
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_I2C_ENABLED
 	select GPIO_ESP32
 	help
 	  Enables the ESP32 I2C driver

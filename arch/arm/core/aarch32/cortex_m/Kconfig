@@ -93,6 +93,12 @@ config CPU_CORTEX_M_HAS_CACHE
 	  This option signifies that the CPU implements Data and Instruction
 	  Cache
 
+config DCACHE_LINE_SIZE
+	default 32 if CPU_CORTEX_M_HAS_CACHE
+
+config ICACHE_LINE_SIZE
+	default 32 if CPU_CORTEX_M_HAS_CACHE
+
 config CPU_CORTEX_M_HAS_DWT
 	bool
 	depends on !CPU_CORTEX_M0 && !CPU_CORTEX_M0PLUS && !CPU_CORTEX_M1

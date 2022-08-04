@@ -44,7 +44,6 @@
 	psci {
 		compatible = "arm,psci-1.0", "arm,psci-0.2", "arm,psci";
 		method = "hvc";
-		label = "PSCI";
 	};
 
 	ram: memory@40000000 {
@@ -78,6 +77,5 @@
 	xen_hvc: hvc {
 		compatible = "xen,hvc-uart";
 		status = "okay";
-		label = "UART_HVC";
 	};
 };

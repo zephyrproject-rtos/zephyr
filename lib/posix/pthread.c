@@ -150,7 +150,7 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	for (pthread_num = 0;
 	    pthread_num < CONFIG_MAX_PTHREAD_COUNT; pthread_num++) {
 		thread = &posix_thread_pool[pthread_num];
-		if (thread->state == PTHREAD_TERMINATED) {
+		if (thread->state == PTHREAD_EXITED || thread->state == PTHREAD_TERMINATED) {
 			thread->state = PTHREAD_JOINABLE;
 			break;
 		}

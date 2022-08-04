@@ -69,7 +69,7 @@
 		if (U < STATS_PAGE_COUNT_THRESHOLD) {			     \
 			(*(&flash_sim_stats.erase_cycles_unit0 + (U)) += 1); \
 		}							     \
-	} while (0)
+	} while (false)
 
 #if (CONFIG_FLASH_SIMULATOR_STAT_PAGE_COUNT > STATS_PAGE_COUNT_THRESHOLD)
        /* Limitation above is caused by used LISTIFY                        */
@@ -135,7 +135,7 @@ STATS_NAME_END(flash_sim_thresholds);
 
 #else
 
-#define ERASE_CYCLES_INC(U) do {} while (0)
+#define ERASE_CYCLES_INC(U) do {} while (false)
 #define FLASH_SIM_STATS_INC(group__, var__)
 #define FLASH_SIM_STATS_INCN(group__, var__, n__)
 #define FLASH_SIM_STATS_INIT_AND_REG(group__, size__, name__)

@@ -7,6 +7,10 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_MODEM_GSM_PPP_H_
 #define ZEPHYR_INCLUDE_DRIVERS_MODEM_GSM_PPP_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define GSM_PPP_MDM_MANUFACTURER_LENGTH  10
 #define GSM_PPP_MDM_MODEL_LENGTH         16
 #define GSM_PPP_MDM_REVISION_LENGTH      64
@@ -57,5 +61,9 @@ void gsm_ppp_register_modem_power_callback(const struct device *dev,
  * @retval struct gsm_ppp_modem_info * pointer to modem information structure.
  */
 const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_MODEM_GSM_PPP_H_ */

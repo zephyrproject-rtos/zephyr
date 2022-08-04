@@ -58,10 +58,10 @@ typedef struct esf z_arch_esf_t;
 
 #include <zephyr/zephyr.h>
 
-#include <ztest_assert.h>
-#include <ztest_mock.h>
-#include <ztest_test.h>
-#include <tc_util.h>
+#include <zephyr/ztest_assert.h>
+#include <zephyr/ztest_mock.h>
+#include <zephyr/ztest_test.h>
+#include <zephyr/tc_util.h>
 
 #ifdef __cplusplus
 extern "C" {

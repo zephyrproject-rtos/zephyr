@@ -8,7 +8,7 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 
 #include <zephyr/zephyr.h>
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include <errno.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_pkt.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define THREAD_SLEEP 50 /* ms */
 #define TEST_INFO_STRING "mgmt event info"
@@ -309,7 +309,7 @@ static bool _iface_ip6_del(void)
 	return false;
 }
 
-void test_mgmt(void)
+ZTEST(mgmt_fn_test_suite, test_mgmt)
 {
 	TC_PRINT("Starting Network Management API test\n");
 
@@ -354,8 +354,4 @@ void test_mgmt(void)
 		      "test_synchronous_event_listener failed");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_mgmt_fn, ztest_unit_test(test_mgmt));
-	ztest_run_test_suite(test_mgmt_fn);
-}
+ZTEST_SUITE(mgmt_fn_test_suite, NULL, NULL, NULL, NULL, NULL);

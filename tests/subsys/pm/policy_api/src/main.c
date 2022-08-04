@@ -7,7 +7,7 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys_clock.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #ifdef CONFIG_PM_POLICY_DEFAULT
 /**
@@ -129,8 +129,8 @@ static void test_pm_policy_next_state_default_allowed(void)
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
 }
 
-/** Flag to indicate if latency callback has been called */
-static bool latency_cb_called;
+/** Flag to indicate number of times callback has been called */
+static uint8_t latency_cb_call_cnt;
 /** Flag to indicate expected latency */
 static int32_t expected_latency;
 
@@ -143,7 +143,7 @@ static void on_pm_policy_latency_changed(int32_t latency)
 
 	zassert_equal(latency, expected_latency, NULL);
 
-	latency_cb_called = true;
+	latency_cb_call_cnt++;
 }
 
 /**
@@ -153,6 +153,7 @@ static void on_pm_policy_latency_changed(int32_t latency)
 static void test_pm_policy_next_state_default_latency(void)
 {
 	struct pm_policy_latency_request req1, req2;
+	struct pm_policy_latency_subscription sreq1, sreq2;
 	const struct pm_state_info *next;
 
 	/* add a latency requirement with a maximum value below the
@@ -211,34 +212,37 @@ static void test_pm_policy_next_state_default_latency(void)
 	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM, NULL);
 
 	/* get notified when latency requirement changes */
-	pm_policy_latency_changed(on_pm_policy_latency_changed);
+	pm_policy_latency_changed_subscribe(&sreq1, on_pm_policy_latency_changed);
+	pm_policy_latency_changed_subscribe(&sreq2, on_pm_policy_latency_changed);
 
 	/* add new request (expected notification) */
-	latency_cb_called = false;
+	latency_cb_call_cnt = 0;
 	expected_latency = 10000;
 	pm_policy_latency_request_add(&req1, 10000);
-	zassert_true(latency_cb_called, NULL);
+	zassert_equal(latency_cb_call_cnt, 2, NULL);
 
-	/* update request (expected notification) */
-	latency_cb_called = false;
+	/* update request (expected notification, but only sreq1) */
+	pm_policy_latency_changed_unsubscribe(&sreq2);
+
+	latency_cb_call_cnt = 0;
 	expected_latency = 50000;
 	pm_policy_latency_request_update(&req1, 50000);
-	zassert_true(latency_cb_called, NULL);
+	zassert_equal(latency_cb_call_cnt, 1, NULL);
 
 	/* add a new request, with higher value (no notification, previous
 	 * prevails)
 	 */
-	latency_cb_called = false;
+	latency_cb_call_cnt = 0;
 	pm_policy_latency_request_add(&req2, 60000);
-	zassert_false(latency_cb_called, NULL);
+	zassert_equal(latency_cb_call_cnt, 0, NULL);
 
 	pm_policy_latency_request_remove(&req2);
-	zassert_false(latency_cb_called, NULL);
+	zassert_equal(latency_cb_call_cnt, 0, NULL);
 
 	/* remove first request, we no longer have latency requirements */
 	expected_latency = SYS_FOREVER_US;
 	pm_policy_latency_request_remove(&req1);
-	zassert_true(latency_cb_called, NULL);
+	zassert_equal(latency_cb_call_cnt, 1, NULL);
 }
 #else
 static void test_pm_policy_next_state_default(void)

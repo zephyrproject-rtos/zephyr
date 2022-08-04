@@ -21,11 +21,12 @@ static void board_setup(void)
 {
 #if DT_NODE_HAS_STATUS(DT_INST(0, test_gpio_basic_api), okay)
 	/* PIN_IN and PIN_OUT must be on same controller. */
-	if (strcmp(DT_GPIO_LABEL(DT_INST(0, test_gpio_basic_api), out_gpios),
-		   DT_GPIO_LABEL(DT_INST(0, test_gpio_basic_api), in_gpios)) != 0) {
+	const struct device *in_dev = DEVICE_DT_GET(DEV_OUT);
+	const struct device *out_dev = DEVICE_DT_GET(DEV_IN);
+
+	if (in_dev != out_dev) {
 		printk("FATAL: output controller %s != input controller %s\n",
-		       DT_GPIO_LABEL(DT_INST(0, test_gpio_basic_api), out_gpios),
-		       DT_GPIO_LABEL(DT_INST(0, test_gpio_basic_api), in_gpios));
+		       out_dev->name, in_dev->name);
 		k_panic();
 	}
 #endif
@@ -36,12 +37,6 @@ static void board_setup(void)
 	 * The following code needs to configure the same GPIOs which were
 	 * selected as test pins in device tree.
 	 */
-
-	if (strcmp(DEV_NAME, "GPIO_5") != 0) {
-		printk("FATAL: controller set in DTS %s != controller %s\n",
-		       DEV_NAME, "GPIO_5");
-		k_panic();
-	}
 
 	if (PIN_IN != 15) {
 		printk("FATAL: input pin set in DTS %d != %d\n", PIN_IN, 15);
@@ -87,16 +82,17 @@ static void board_setup(void)
 			    IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #elif defined(CONFIG_BOARD_RV32M1_VEGA)
-	const char *pmx_name = DT_LABEL(DT_NODELABEL(porta));
-	const struct device *pmx = device_get_binding(pmx_name);
+	const struct device *pmx = DEVICE_DT_GET(DT_NODELABEL(porta));
+
+	zassert_true(device_is_ready(pmx), "pinmux dev is not ready");
 
 	pinmux_pin_set(pmx, PIN_OUT, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(pmx, PIN_IN, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #elif defined(CONFIG_GPIO_EMUL)
 	extern struct gpio_callback gpio_emul_callback;
-	const struct device *dev = device_get_binding(DEV_NAME);
-	zassert_not_equal(dev, NULL,
-			  "Device not found");
+	const struct device *dev = DEVICE_DT_GET(DEV);
+
+	zassert_true(device_is_ready(dev), "GPIO dev is not ready");
 	int rc = gpio_add_callback(dev, &gpio_emul_callback);
 	__ASSERT(rc == 0, "gpio_add_callback() failed: %d", rc);
 #endif

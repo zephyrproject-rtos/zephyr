@@ -9,6 +9,5 @@
 		compatible = "microchip,mcp9808";
 		reg = <0x18>;
 		int-gpios = <&gpio1 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-		label = "MCP9808";
 	};
 };

@@ -12,7 +12,6 @@
 		status = "ok";
 		compatible = "atmel,winc1500";
 		reg = <0x0>;
-		label = "winc1500";
 		spi-max-frequency = <4000000>;
 		irq-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>;	/* D7 */
 		reset-gpios = <&arduino_header 11 GPIO_ACTIVE_LOW>;	/* D5 */

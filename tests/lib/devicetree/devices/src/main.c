@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
@@ -17,6 +17,7 @@
 #define TEST_DEVC DT_NODELABEL(test_dev_c)
 #define TEST_PARTITION DT_NODELABEL(test_p0)
 #define TEST_GPIO_INJECTED DT_NODELABEL(test_gpio_injected)
+#define TEST_NOLABEL DT_PATH(test, i2c_11112222, test_i2c_dev_14)
 
 static const struct device *devlist;
 static const struct device *devlist_end;
@@ -54,11 +55,14 @@ DEVICE_DT_DEFINE(TEST_GPIO_INJECTED, dev_init, NULL,
 /* Manually specified device */
 DEVICE_DEFINE(manual_dev, "Manual Device", dev_init, NULL,
 		 NULL, NULL, POST_KERNEL, 80, NULL);
+/* Device with no nodelabel */
+DEVICE_DT_DEFINE(TEST_NOLABEL, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, 90, NULL);
 
 #define DEV_HDL(node_id) device_handle_get(DEVICE_DT_GET(node_id))
 #define DEV_HDL_NAME(name) device_handle_get(DEVICE_GET(name))
 
-static void test_init_get(void)
+ZTEST(devicetree_devices, test_init_get)
 {
 	/* Check device pointers */
 	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIO)->dev,
@@ -79,6 +83,8 @@ static void test_init_get(void)
 		      DEVICE_DT_GET(TEST_GPIO_INJECTED), NULL);
 	zassert_equal(DEVICE_INIT_GET(manual_dev)->dev,
 		      DEVICE_GET(manual_dev), NULL);
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_NOLABEL)->dev,
+		      DEVICE_DT_GET(TEST_NOLABEL), NULL);
 
 	/* Check init functions */
 	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIO)->init, dev_init, NULL);
@@ -90,9 +96,10 @@ static void test_init_get(void)
 	zassert_equal(DEVICE_INIT_DT_GET(TEST_PARTITION)->init, dev_init, NULL);
 	zassert_equal(DEVICE_INIT_DT_GET(TEST_GPIO_INJECTED)->init, dev_init, NULL);
 	zassert_equal(DEVICE_INIT_GET(manual_dev)->init, dev_init, NULL);
+	zassert_equal(DEVICE_INIT_DT_GET(TEST_NOLABEL)->init, dev_init, NULL);
 }
 
-static void test_init_order(void)
+ZTEST(devicetree_devices, test_init_order)
 {
 	zassert_equal(init_order[0], DEV_HDL(TEST_GPIO), NULL);
 	zassert_equal(init_order[1], DEV_HDL(TEST_I2C), NULL);
@@ -103,6 +110,7 @@ static void test_init_order(void)
 	zassert_equal(init_order[6], DEV_HDL(TEST_PARTITION), NULL);
 	zassert_equal(init_order[7], DEV_HDL(TEST_GPIO_INJECTED), NULL);
 	zassert_equal(init_order[8], DEV_HDL_NAME(manual_dev), NULL);
+	zassert_equal(init_order[9], DEV_HDL(TEST_NOLABEL), NULL);
 }
 
 static bool check_handle(device_handle_t hdl,
@@ -144,7 +152,7 @@ static int device_visitor(const struct device *dev,
 	return -ENOSPC;
 }
 
-static void test_requires(void)
+ZTEST(devicetree_devices, test_requires)
 {
 	size_t nhdls = 0;
 	const device_handle_t *hdls;
@@ -232,7 +240,7 @@ static void test_requires(void)
 	zassert_equal(nhdls, 0, NULL);
 }
 
-static void test_injected(void)
+ZTEST(devicetree_devices, test_injected)
 {
 	size_t nhdls = 0;
 	const device_handle_t *hdls;
@@ -255,7 +263,7 @@ static void test_injected(void)
 	zassert_true(check_handle(DEV_HDL(TEST_DEVB), hdls, nhdls), NULL);
 }
 
-static void test_get_or_null(void)
+ZTEST(devicetree_devices, test_get_or_null)
 {
 	const struct device *dev;
 
@@ -266,7 +274,7 @@ static void test_get_or_null(void)
 	zassert_equal(dev, NULL, NULL);
 }
 
-static void test_supports(void)
+ZTEST(devicetree_devices, test_supports)
 {
 	size_t nhdls = 0;
 	const device_handle_t *hdls;
@@ -276,7 +284,8 @@ static void test_supports(void)
 	/* TEST_DEVB: None */
 	dev = DEVICE_DT_GET(TEST_DEVB);
 	hdls = device_supported_handles_get(dev, &nhdls);
-	zassert_equal(nhdls, 0, NULL);
+	zassert_equal(nhdls, 1, NULL);
+	zassert_true(check_handle(DEV_HDL(TEST_GPIO_INJECTED), hdls, nhdls), NULL);
 
 	/* TEST_GPIO_INJECTED: None */
 	dev = DEVICE_DT_GET(TEST_GPIO_INJECTED);
@@ -305,11 +314,12 @@ static void test_supports(void)
 	/* TEST_I2C: TEST_DEVA TEST_GPIOX TEST_DEVB TEST_DEVC */
 	dev = DEVICE_DT_GET(TEST_I2C);
 	hdls = device_supported_handles_get(dev, &nhdls);
-	zassert_equal(nhdls, 4, NULL);
+	zassert_equal(nhdls, 5, NULL);
 	zassert_true(check_handle(DEV_HDL(TEST_DEVA), hdls, nhdls), NULL);
 	zassert_true(check_handle(DEV_HDL(TEST_GPIOX), hdls, nhdls), NULL);
 	zassert_true(check_handle(DEV_HDL(TEST_DEVB), hdls, nhdls), NULL);
 	zassert_true(check_handle(DEV_HDL(TEST_DEVC), hdls, nhdls), NULL);
+	zassert_true(check_handle(DEV_HDL(TEST_NOLABEL), hdls, nhdls), NULL);
 
 	/* Support forwarding (intermediate missing devicetree node)
 	 * TEST_DEVC: TEST_PARTITION
@@ -320,20 +330,13 @@ static void test_supports(void)
 	zassert_true(check_handle(DEV_HDL(TEST_PARTITION), hdls, nhdls), NULL);
 }
 
-void test_main(void)
+void *devicetree_devices_setup(void)
 {
 	size_t ndevs;
 
 	ndevs = z_device_get_all_static(&devlist);
 	devlist_end = devlist + ndevs;
 
-	ztest_test_suite(devicetree_driver,
-			 ztest_unit_test(test_init_get),
-			 ztest_unit_test(test_init_order),
-			 ztest_unit_test(test_requires),
-			 ztest_unit_test(test_injected),
-			 ztest_unit_test(test_get_or_null),
-			 ztest_unit_test(test_supports)
-			 );
-	ztest_run_test_suite(devicetree_driver);
+	return NULL;
 }
+ZTEST_SUITE(devicetree_devices, NULL, devicetree_devices_setup, NULL, NULL, NULL);

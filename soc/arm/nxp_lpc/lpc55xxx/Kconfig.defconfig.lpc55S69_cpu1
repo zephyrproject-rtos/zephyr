@@ -15,15 +15,7 @@ config PINMUX_MCUX_LPC
 config GPIO
 	default y
 
-config GPIO_MCUX_LPC
-	default y
-	depends on GPIO
-
 config SERIAL
 	default n
-
-config UART_MCUX_FLEXCOMM
-	default n
-	depends on SERIAL
 
 endif # SOC_LPC55S69_CPU1

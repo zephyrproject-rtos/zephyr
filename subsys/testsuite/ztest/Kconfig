@@ -4,6 +4,7 @@
 config ZTEST
 	bool "Zephyr testing framework"
 	select TEST
+	select OUTPUT_SYMBOLS
 	help
 	  Enable the Zephyr testing framework. You should enable this only
 	  if you're writing automated tests.
@@ -122,6 +123,11 @@ config ZTEST_SHUFFLE_TEST_REPEAT_COUNT
 endif #ZTEST_SHUFFLE
 
 endif # ZTEST_NEW_API
+
+config TEST_LOGGING_FLUSH_AFTER_TEST
+	bool "When enabled logs are flushed after each test case"
+	default y
+	depends on MULTITHREADING
 
 endif # ZTEST
 

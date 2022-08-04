@@ -9,8 +9,8 @@
 #include <unistd.h>
 #include "cmdline.h" /* native_posix command line options header */
 #include "soc.h"
-#include "tc_util.h"
-#include "ztest_test_new.h"
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest_test_new.h>
 
 static const char *test_args;
 static bool list_tests;
@@ -105,17 +105,19 @@ int z_ztest_list_tests(void)
 	struct ztest_suite_node *ptr;
 	struct ztest_unit_test *test = NULL;
 	int test_count = 0;
+	static bool list_once = true;
 
-	for (ptr = _ztest_suite_node_list_start; ptr < _ztest_suite_node_list_end; ++ptr) {
-		test = NULL;
-		while ((test = z_ztest_get_next_test(ptr->name, test)) != NULL) {
-			TC_PRINT("%s::%s\n", test->test_suite_name, test->name);
-			test_count++;
+	if (list_once) {
+		for (ptr = _ztest_suite_node_list_start; ptr < _ztest_suite_node_list_end; ++ptr) {
+			test = NULL;
+			while ((test = z_ztest_get_next_test(ptr->name, test)) != NULL) {
+				TC_PRINT("%s::%s\n", test->test_suite_name, test->name);
+				test_count++;
+			}
 		}
+		list_once = false;
 	}
 
-	/* List tests only once */
-	ztest_set_list_test(false);
 	return test_count;
 }
 

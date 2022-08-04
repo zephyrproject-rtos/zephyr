@@ -254,7 +254,7 @@ static int gpio_cc13xx_cc26xx_init(const struct device *dev)
 	irq_enable(DT_INST_IRQN(0));
 
 	/* Peripheral should not be accessed until power domain is on. */
-	while (PRCMPowerDomainStatus(PRCM_DOMAIN_PERIPH) !=
+	while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) !=
 	       PRCM_DOMAIN_POWER_ON) {
 		continue;
 	}

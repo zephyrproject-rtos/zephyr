@@ -20,6 +20,7 @@
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	interface_to_nrf9160: gpio-interface {
@@ -132,6 +133,10 @@
 			control-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 			status = "disabled";
 		};
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
 	};
 };
 

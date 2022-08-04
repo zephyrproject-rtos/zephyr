@@ -1,0 +1,118 @@
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+
+  Espressif's Motor Control Pulse Width Modulator (MCPWM) controller Node
+
+  The MCPWM peripheral is intended for motor and power control.
+  It provides six PWM outputs that can be set up to operate in several topologies
+
+  ESP32 contains two MCPWM peripherals: MCPWM0 and MCPWM1
+
+  Each MCPWM peripheral has one clock divider (prescaler), three PWM timers, three PWM operators,
+  and a capture module.
+
+  Every PWM operator has two PWM outputs: PWMxA and PWMxB. They can work independently, in symmetric
+  and asymmetric configuration. MCPWMxA and MCPWMxB will share the same timer, thus having the same
+  operating frequency.
+
+  The driver currently always use the timer x for operator x. Timer 0 will use operator 0 for PWM0A/B.
+  Timer 1 will use operator 1 for PWM1A/B, and so on.
+
+  Mapping channel ID:
+  Channel 0 -> Timer 0, Operator 0, output PWM0A
+  Channel 1 -> Timer 0, Operator 0, output PWM0B
+  Channel 2 -> Timer 1, Operator 1, output PWM1A
+  Channel 3 -> Timer 1, Operator 1, output PWM1B
+  Channel 4 -> Timer 2, Operator 2, output PWM2A
+  Channel 5 -> Timer 2, Operator 2, output PWM2B
+  Channel 6 -> Capture 0
+  Channel 7 -> Capture 1
+  Channel 8 -> Capture 2
+
+  Example: Use PWM0A output and capture 0:
+
+  pwm_loopback_0 {
+    compatible = "test-pwm-loopback";
+    pwms = <&mcpwm0 0 0 PWM_POLARITY_NORMAL>, #Channel 0 -> Output PWM0A
+           <&mcpwm0 6 0 PWM_POLARITY_NORMAL>; #Channel 6 -> Capture 0;
+  };
+
+  The mapping between the output PWMxA/B or CaptureX and GPIO is done through pinctrl:
+
+    &mcpwm0 {
+      pinctrl-0 = <&mcpwm0_default>;
+      pinctrl-names = "default";
+    }
+
+  The 'mcpwm0_default' node is defined inside the pinctrl node.
+
+    &pinctrl {
+      mcpwm0_default: mcpwm0_default {
+        group1 {
+          pinmux = <MCPWM0_OUT0A_GPIO0>,
+            <MCPWM0_OUT0B_GPIO2>,
+            <MCPWM0_OUT1A_GPIO4>;
+          output-enable;
+        };
+        group2 {
+          pinmux = <MCPWM0_CAP0_GPIO5>;
+        };
+      };
+    };
+
+  Note: Check espressif,esp32-pinctrl.yaml for complete documentation regarding pinctrl.
+
+  Use the prescale-timerX property to configure the timers:
+
+    &mcpwm0 {
+      pinctrl-0 = <&mcpwm0_default>;
+      pinctrl-names = "default";
+      prescale = <255>;
+      prescale-timer0 = <103>;
+      prescale-timer1 = <0>;
+      prescale-timer2 = <255>;
+      status = "okay";
+    };
+
+compatible: "espressif,esp32-mcpwm"
+
+include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  prescale:
+    type: int
+    required: true
+    description: |
+      8 bit timer prescale for the global clock.
+      Period of PWM_clk = 6.25ns * (PWM_CLK_PRESCALE + 1).
+
+  "#pwm-cells":
+    const: 3
+
+  prescale-timer0:
+    type: int
+    required: false
+    description: |
+      8 bit timer prescale for timer 0.
+      Period of PT0_clk = Period of PWM_clk * (PWM_TIMER0_PRESCALE + 1).
+
+  prescale-timer1:
+    type: int
+    required: false
+    description: |
+      8 bit timer prescale for timer 1.
+      Period of PT1_clk = Period of PWM_clk * (PWM_TIMER1_PRESCALE + 1).
+
+  prescale-timer2:
+    type: int
+    required: false
+    description: |
+      8 bit timer prescale for timer 2.
+      Period of PT2_clk = Period of PWM_clk * (PWM_TIMER2_PRESCALE + 1).
+
+pwm-cells:
+  - channel
+  - period
+  - flags

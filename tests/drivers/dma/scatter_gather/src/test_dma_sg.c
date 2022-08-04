@@ -19,24 +19,22 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/dma.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #define XFERS 2
 #define XFER_SIZE 64
 
 #if CONFIG_NOCACHE_MEMORY
-static const char TX_DATA[] = "The quick brown fox jumps over the lazy dog";
+static __aligned(32) const char TX_DATA[] = "The quick brown fox jumps over the lazy dog";
 static __aligned(32) char tx_data[XFER_SIZE] __used
 	__attribute__((__section__(".nocache")));
 static __aligned(32) char rx_data[XFERS][XFER_SIZE] __used
 	__attribute__((__section__(".nocache.dma")));
 #else
 /* this src memory shall be in RAM to support usingas a DMA source pointer.*/
-static const char tx_data[] = "The quick brown fox jumps over the lazy dog";
+static __aligned(32) const char tx_data[] = "The quick brown fox jumps over the lazy dog";
 static __aligned(32) char rx_data[XFERS][XFER_SIZE] = { { 0 } };
 #endif
-
-#define DMA_DEVICE_NAME CONFIG_DMA_SG_DRV_NAME
 
 K_SEM_DEFINE(xfer_sem, 0, 1);
 
@@ -59,8 +57,7 @@ static int test_sg(void)
 	const struct device *dma;
 	static int chan_id;
 
-	TC_PRINT("DMA memory to memory transfer started on %s\n",
-	       DMA_DEVICE_NAME);
+	TC_PRINT("DMA memory to memory transfer started\n");
 	TC_PRINT("Preparing DMA Controller\n");
 
 #if CONFIG_NOCACHE_MEMORY
@@ -69,9 +66,9 @@ static int test_sg(void)
 #endif
 	memset(rx_data, 0, sizeof(rx_data));
 
-	dma = device_get_binding(DMA_DEVICE_NAME);
-	if (!dma) {
-		TC_PRINT("Cannot get dma controller\n");
+	dma = DEVICE_DT_GET(DT_ALIAS(dma0));
+	if (!device_is_ready(dma)) {
+		TC_PRINT("dma controller device is not ready\n");
 		return TC_FAIL;
 	}
 
@@ -149,7 +146,7 @@ static int test_sg(void)
 }
 
 /* export test cases */
-void test_dma_m2m_sg(void)
+ZTEST(dma_m2m_sg, test_dma_m2m_sg)
 {
 	zassert_true((test_sg() == TC_PASS), NULL);
 }

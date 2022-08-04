@@ -2,20 +2,29 @@
 # Copyright(c) 2022 Intel Corporation. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 import os
+import sys
 import logging
 import time
 import argparse
 import socket
-import signal
+import struct
+import hashlib
 
+RET = 0
 HOST = None
 PORT_LOG = 9999
 PORT_REQ = PORT_LOG + 1
 BUF_SIZE = 4096
 
+# Define the command and its
+# possible max size
 CMD_LOG_START = "start_log"
-CMD_LOG_STOP = "stop_log"
 CMD_DOWNLOAD = "download"
+MAX_CMD_SZ = 16
+
+# Define the header format and size for
+# transmiting the firmware
+PACKET_HEADER_FORMAT_FW = 'I 42s 32s'
 
 logging.basicConfig()
 log = logging.getLogger("cavs-client")
@@ -36,32 +45,52 @@ class cavstool_client():
             self.sock.connect((self.host, self.port))
             self.sock.sendall(cmd.encode("utf-8"))
             log.info(f"Sent:     {cmd}")
-            ack = str(self.sock.recv(BUF_SIZE), "utf-8")
+            ack = str(self.sock.recv(MAX_CMD_SZ), "utf-8")
             log.info(f"Receive: {ack}")
 
             if ack == CMD_LOG_START:
                 self.monitor_log()
-            elif ack == CMD_LOG_STOP:
-                log.info(f"Stop output.")
             elif ack == CMD_DOWNLOAD:
                 self.run()
             else:
                 log.error(f"Receive incorrect msg:{ack} expect:{cmd}")
 
-    def download(self, filename):
+    def uploading(self, filename):
         # Send the FW to server
+        fname = os.path.basename(filename)
+        fsize = os.path.getsize(filename)
+
+        md5_tx = hashlib.md5(open(filename,'rb').read()).hexdigest()
+
+        # Pack the header and the expecting packed size is 78 bytes.
+        # The header by convention includes:
+        # size(4), filename(42), MD5(32)
+        values = (fsize, fname.encode('utf-8'), md5_tx.encode('utf-8'))
+        log.info(f'filename:{fname}, size:{fsize}, md5:{md5_tx}')
+
+        s = struct.Struct(PACKET_HEADER_FORMAT_FW)
+        header_data = s.pack(*values)
+        header_size = s.size
+        log.info(f'header size: {header_size}')
+
         with open(filename,'rb') as f:
-            log.info('Sending...')
-            ret = self.sock.sendfile(f)
-            log.info(f"Done Sending ({ret}).")
+            log.info(f'Sending...')
+
+            total = self.sock.send(header_data)
+            total += self.sock.sendfile(f)
+
+            log.info(f"Done Sending ({total}).")
+
+            rck = self.sock.recv(MAX_CMD_SZ).decode("utf-8")
+            log.info(f"RCK ({rck}).")
+            if not rck == "success":
+                global RET
+                RET = -1
+                log.error(f"Firmware uploading failed")
 
     def run(self):
         filename = str(self.args.fw_file)
-        send_fn = os.path.basename(filename)
-        self.sock.sendall(send_fn.encode("utf-8"))
-        log.info(f"Sent fw:     {send_fn}, {filename}")
-
-        self.download(filename)
+        self.uploading(filename)
 
     def monitor_log(self):
         log.info(f"Start to monitor log output...")
@@ -75,28 +104,19 @@ class cavstool_client():
     def __del__(self):
         self.sock.close()
 
-def cleanup():
-    client = cavstool_client(HOST, PORT_REQ, args)
-    client.send_cmd(CMD_LOG_STOP)
 
 def main():
     if args.log_only:
         log.info("Monitor process")
-        signal.signal(signal.SIGTERM, cleanup)
 
         try:
             client = cavstool_client(HOST, PORT_LOG, args)
             client.send_cmd(CMD_LOG_START)
         except KeyboardInterrupt:
             pass
-        finally:
-            cleanup()
 
-    elif args.kill_cmd:
-        log.info("Stop monitor log")
-        cleanup()
     else:
-        log.info("Download process")
+        log.info("Uploading process")
         client = cavstool_client(HOST, PORT_REQ, args)
         client.send_cmd(CMD_DOWNLOAD)
 
@@ -107,8 +127,6 @@ ap.add_argument("-l", "--log-only", action="store_true",
                 help="Don't load firmware, just show log output")
 ap.add_argument("-s", "--server-addr", default="localhost",
                 help="Specify the adsp server address")
-ap.add_argument("-k", "--kill-cmd", action="store_true",
-                help="No current log buffer at start, just new output")
 ap.add_argument("fw_file", nargs="?", help="Firmware file")
 args = ap.parse_args()
 
@@ -119,3 +137,5 @@ HOST = args.server_addr
 
 if __name__ == "__main__":
     main()
+
+    sys.exit(RET)

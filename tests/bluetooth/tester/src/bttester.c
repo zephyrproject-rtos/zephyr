@@ -15,7 +15,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/drivers/console/uart_pipe.h>
+#include <zephyr/drivers/uart_pipe.h>
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester
@@ -273,7 +273,6 @@ static void uart_send(uint8_t *data, size_t len)
 	uart_pipe_send(data, len);
 }
 #else /* !CONFIG_UART_PIPE */
-#define UART_DEV	"UART_0"
 static uint8_t *recv_buf;
 static size_t recv_off;
 static const struct device *dev;
@@ -293,8 +292,8 @@ K_TIMER_DEFINE(timer, timer_expiry_cb, NULL);
 /* Uart Poll */
 static void uart_init(uint8_t *data)
 {
-	dev = device_get_binding(UART_DEV);
-	__ASSERT_NO_MSG((void *)dev);
+	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	__ASSERT_NO_MSG(device_is_ready(dev));
 
 	recv_buf = data;
 

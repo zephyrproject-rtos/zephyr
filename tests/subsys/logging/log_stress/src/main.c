@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <sys/util.h>
+#include <zephyr/ztest.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
-#include <ztress.h>
-#include <random/rand32.h>
-#include <logging/log.h>
-#include <logging/log_ctrl.h>
-#include <logging/log_backend.h>
+#include <zephyr/ztress.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log_backend.h>
 
 #define MODULE_NAME test
 

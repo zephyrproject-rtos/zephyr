@@ -12,9 +12,9 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
-#define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(pwm_sam);
+
+LOG_MODULE_REGISTER(pwm_sam, CONFIG_PWM_LOG_LEVEL);
 
 struct sam_pwm_config {
 	Pwm *regs;

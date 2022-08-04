@@ -11,25 +11,7 @@ if GPIO
 config GPIO_INIT_PRIORITY
 	default 60
 
-config GPIO_DW
-	default y
-
-config GPIO_DW_0
-	default y
-	depends on GPIO_DW
-
-config I2C
-	default y
-
-config GPIO_CY8C95XX
-	default y
-
 endif # GPIO
-
-if SPI
-
-config SPI_DW
-	default y
 
 if SPI_DW
 
@@ -42,17 +24,7 @@ config SPI_DW_ARC_AUX_REGS
 config SPI_DW_ACCESS_WORD_ONLY
 	default y
 
-config GPIO_SNPS_CREG
-	default y
-
 endif # SPI_DW
-
-endif # SPI
-
-if I2C
-
-config I2C_DW
-	default y
 
 if I2C_DW
 
@@ -60,7 +32,5 @@ config I2C_DW_CLOCK_SPEED
 	default 200
 
 endif #I2C_DW
-
-endif #I2C
 
 endif # BOARD_HSDK

@@ -243,9 +243,6 @@ extern void z_arm_irq_direct_dynamic_dispatch_no_reschedule(void);
 
 #endif /* CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
 
-/* Spurious interrupt handler. Throws an error if called */
-extern void z_irq_spurious(const void *unused);
-
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 /* Architecture-specific definition for the target security
  * state of an NVIC IRQ line.

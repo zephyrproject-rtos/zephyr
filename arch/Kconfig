@@ -155,10 +155,6 @@ module = ARCH
 module-str = arch
 source "subsys/logging/Kconfig.template.log_config"
 
-module = MPU
-module-str = mpu
-source "subsys/logging/Kconfig.template.log_config"
-
 config BIG_ENDIAN
 	bool
 	help
@@ -418,6 +414,25 @@ config ARCH_IRQ_VECTOR_TABLE_ALIGN
 	  to be aligned to architecture specific size.  The default
 	  size is 0 for no alignment.
 
+choice IRQ_VECTOR_TABLE_TYPE
+	prompt "IRQ vector table type"
+	depends on GEN_IRQ_VECTOR_TABLE
+	default IRQ_VECTOR_TABLE_JUMP_BY_CODE if (RISCV && !RISCV_HAS_CLIC)
+	default IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS
+
+config IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS
+	bool "Jump by address"
+	help
+	  The IRQ vector table contains the address of the interrupt handler.
+
+config IRQ_VECTOR_TABLE_JUMP_BY_CODE
+	bool "Jump by code"
+	help
+	  The IRQ vector table contains the opcode of a jump instruction to the
+	  interrupt handler address.
+
+endchoice
+
 config GEN_SW_ISR_TABLE
 	bool "Generate a software ISR table"
 	default y
@@ -550,6 +565,11 @@ config ARCH_HAS_COHERENCE
 config ARCH_HAS_THREAD_LOCAL_STORAGE
 	bool
 
+config ARCH_HAS_SUSPEND_TO_RAM
+	bool
+	help
+	  When selected, the architecture supports suspend-to-RAM (S2RAM).
+
 #
 # Other architecture related options
 #
@@ -571,7 +591,7 @@ config CPU_HAS_TEE
 config CPU_HAS_DCLS
 	bool
 	help
-	  This option is enabled when the processor hardware is configured in
+	  This option is enabled when the processor hardware has support for
 	  Dual-redundant Core Lock-step (DCLS) topology.
 
 config CPU_HAS_FPU
@@ -632,6 +652,16 @@ config ARCH_MAPS_ALL_RAM
 	  this mapping at all; non-kernel pages will be considered free (unless marked
 	  as reserved) and Z_PAGE_FRAME_MAPPED will not be set.
 
+config DCLS
+	bool "Processor is configured in DCLS mode"
+	depends on CPU_HAS_DCLS
+	default y
+	help
+	  This option is enabled when the processor hardware is configured in
+	  Dual-redundant Core Lock-step (DCLS) topology. For the processor that
+	  supports DCLS, but is configured in split-lock mode (by default or
+	  changed at flash time), this option should be disabled.
+
 menuconfig MPU
 	bool "MPU features"
 	depends on CPU_HAS_MPU
@@ -640,6 +670,10 @@ menuconfig MPU
 	  is enabled.
 
 if MPU
+module = MPU
+module-str = mpu
+source "subsys/logging/Kconfig.template.log_config"
+
 config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	bool
 	help

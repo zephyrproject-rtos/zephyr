@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 /** GATT attribute permission bit field values */
-enum {
+enum bt_gatt_perm {
 	/** No operations supported, e.g. for notify-only */
 	BT_GATT_PERM_NONE = 0,
 
@@ -72,6 +72,18 @@ enum {
 	 *  passed to write callback.
 	 */
 	BT_GATT_PERM_PREPARE_WRITE = BIT(6),
+
+	/** @brief Attribute read permission with LE Secure Connection encryption.
+	 *
+	 *  If set, requires that LE Secure Connections is used for read access.
+	 */
+	BT_GATT_PERM_READ_LESC = BIT(7),
+
+	/** @brief Attribute write permission with LE Secure Connection encryption.
+	 *
+	 *  If set, requires that LE Secure Connections is used for write access.
+	 */
+	BT_GATT_PERM_WRITE_LESC = BIT(8),
 };
 
 /** @def BT_GATT_ERR
@@ -108,50 +120,60 @@ enum {
 	BT_GATT_WRITE_FLAG_EXECUTE = BIT(2),
 };
 
+/* Forward declaration of GATT Attribute structure */
+struct bt_gatt_attr;
+
+/** @typedef bt_gatt_attr_read_func_t
+ *  @brief Attribute read callback
+ *
+ *  The callback can also be used locally to read the contents of the
+ *  attribute in which case no connection will be set.
+ *
+ *  @param conn   The connection that is requesting to read
+ *  @param attr   The attribute that's being read
+ *  @param buf    Buffer to place the read result in
+ *  @param len    Length of data to read
+ *  @param offset Offset to start reading from
+ *
+ *  @return Number of bytes read, or in case of an error
+ *          BT_GATT_ERR() with a specific BT_ATT_ERR_* error code.
+ */
+typedef ssize_t (*bt_gatt_attr_read_func_t)(struct bt_conn *conn,
+					    const struct bt_gatt_attr *attr,
+					    void *buf, uint16_t len,
+					    uint16_t offset);
+
+/** @typedef bt_gatt_attr_write_func_t
+ *  @brief Attribute write callback
+ *
+ *  @param conn   The connection that is requesting to write
+ *  @param attr   The attribute that's being written
+ *  @param buf    Buffer with the data to write
+ *  @param len    Number of bytes in the buffer
+ *  @param offset Offset to start writing from
+ *  @param flags  Flags (BT_GATT_WRITE_FLAG_*)
+ *
+ *  @return Number of bytes written, or in case of an error
+ *          BT_GATT_ERR() with a specific BT_ATT_ERR_* error code.
+ */
+typedef ssize_t (*bt_gatt_attr_write_func_t)(struct bt_conn *conn,
+					     const struct bt_gatt_attr *attr,
+					     const void *buf, uint16_t len,
+					     uint16_t offset, uint8_t flags);
+
 /** @brief GATT Attribute structure. */
 struct bt_gatt_attr {
 	/** Attribute UUID */
 	const struct bt_uuid *uuid;
-
-	/** @brief Attribute read callback
-	 *
-	 *  The callback can also be used locally to read the contents of the
-	 *  attribute in which case no connection will be set.
-	 *
-	 *  @param conn   The connection that is requesting to read
-	 *  @param attr   The attribute that's being read
-	 *  @param buf    Buffer to place the read result in
-	 *  @param len    Length of data to read
-	 *  @param offset Offset to start reading from
-	 *
-	 *  @return Number fo bytes read, or in case of an error
-	 *          BT_GATT_ERR() with a specific ATT error code.
-	 */
-	ssize_t (*read)(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			void *buf, uint16_t len, uint16_t offset);
-
-	/** @brief Attribute write callback
-	 *
-	 *  @param conn   The connection that is requesting to write
-	 *  @param attr   The attribute that's being written
-	 *  @param buf    Buffer with the data to write
-	 *  @param len    Number of bytes in the buffer
-	 *  @param offset Offset to start writing from
-	 *  @param flags  Flags (BT_GATT_WRITE_*)
-	 *
-	 *  @return Number of bytes written, or in case of an error
-	 *          BT_GATT_ERR() with a specific ATT error code.
-	 */
-	ssize_t	(*write)(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 const void *buf, uint16_t len, uint16_t offset,
-			 uint8_t flags);
-
+	bt_gatt_attr_read_func_t read;
+	/** Attribute write callback */
+	bt_gatt_attr_write_func_t write;
 	/** Attribute user data */
 	void *user_data;
 	/** Attribute handle */
 	uint16_t handle;
 	/** Attribute permissions */
-	uint8_t perm;
+	uint16_t perm;
 };
 
 /** @brief GATT Service structure */
@@ -666,10 +688,14 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
  *  attribute value.
  *
  *  @param _uuid Characteristic attribute uuid.
- *  @param _props Characteristic attribute properties.
- *  @param _perm Characteristic Attribute access permissions.
- *  @param _read Characteristic Attribute read callback.
- *  @param _write Characteristic Attribute write callback.
+ *  @param _props Characteristic attribute properties,
+ *                a bitmap of BT_GATT_CHRC_* macros.
+ *  @param _perm Characteristic Attribute access permissions,
+ *               a bitmap of @ref bt_gatt_perm values.
+ *  @param _read Characteristic Attribute read callback
+ *               (@ref bt_gatt_attr_read_func_t).
+ *  @param _write Characteristic Attribute write callback
+ *                (@ref bt_gatt_attr_write_func_t).
  *  @param _user_data Characteristic Attribute user data.
  */
 #define BT_GATT_CHARACTERISTIC(_uuid, _props, _perm, _read, _write, _user_data) \
@@ -804,7 +830,8 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *  Helper macro to declare a Managed CCC attribute.
  *
  *  @param _ccc CCC attribute user data, shall point to a _bt_gatt_ccc.
- *  @param _perm CCC access permissions.
+ *  @param _perm CCC access permissions,
+ *               a bitmap of @ref bt_gatt_perm values.
  */
 #define BT_GATT_CCC_MANAGED(_ccc, _perm)				\
 	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CCC, _perm,			\
@@ -817,7 +844,8 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *  Helper macro to declare a CCC attribute.
  *
  *  @param _changed Configuration changed callback.
- *  @param _perm CCC access permissions.
+ *  @param _perm CCC access permissions,
+ *               a bitmap of @ref bt_gatt_perm values.
  */
 #define BT_GATT_CCC(_changed, _perm)				\
 	BT_GATT_CCC_MANAGED(((struct _bt_gatt_ccc[])			\
@@ -881,7 +909,8 @@ ssize_t bt_gatt_attr_read_cud(struct bt_conn *conn,
  *  Helper macro to declare a CUD attribute.
  *
  *  @param _value User description NULL-terminated C string.
- *  @param _perm Descriptor attribute access permissions.
+ *  @param _perm Descriptor attribute access permissions,
+ *               a bitmap of @ref bt_gatt_perm values.
  */
 #define BT_GATT_CUD(_value, _perm)					\
 	BT_GATT_DESCRIPTOR(BT_UUID_GATT_CUD, _perm, bt_gatt_attr_read_cud, \
@@ -924,9 +953,12 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
  *  Helper macro to declare a descriptor attribute.
  *
  *  @param _uuid Descriptor attribute uuid.
- *  @param _perm Descriptor attribute access permissions.
- *  @param _read Descriptor attribute read callback.
- *  @param _write Descriptor attribute write callback.
+ *  @param _perm Descriptor attribute access permissions,
+ *               a bitmap of @ref bt_gatt_perm values.
+ *  @param _read Descriptor attribute read callback
+ *               (@ref bt_gatt_attr_read_func_t).
+ *  @param _write Descriptor attribute write callback
+ *                (@ref bt_gatt_attr_write_func_t).
  *  @param _user_data Descriptor attribute user data.
  */
 #define BT_GATT_DESCRIPTOR(_uuid, _perm, _read, _write, _user_data)	\
@@ -938,9 +970,10 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
  *  Helper macro to declare an attribute.
  *
  *  @param _uuid Attribute uuid.
- *  @param _perm Attribute access permissions.
- *  @param _read Attribute read callback.
- *  @param _write Attribute write callback.
+ *  @param _perm Attribute access permissions,
+ *               a bitmap of @ref bt_gatt_perm values.
+ *  @param _read Attribute read callback (@ref bt_gatt_attr_read_func_t).
+ *  @param _write Attribute write callback (@ref bt_gatt_attr_write_func_t).
  *  @param _user_data Attribute user data.
  */
 #define BT_GATT_ATTRIBUTE(_uuid, _perm, _read, _write, _user_data)	\
@@ -1007,18 +1040,60 @@ struct bt_gatt_notify_params {
 int bt_gatt_notify_cb(struct bt_conn *conn,
 		      struct bt_gatt_notify_params *params);
 
-/** @brief Notify multiple attribute value change.
+/** @brief Send multiple notifications in a single PDU.
  *
- *  This function works in the same way as @ref bt_gatt_notify_cb.
+ *  The GATT Server will send a single ATT_MULTIPLE_HANDLE_VALUE_NTF PDU
+ *  containing all the notifications passed to this API.
  *
- *  @param conn Connection object.
- *  @param num_params Number of notification parameters.
- *  @param params Array of notification parameters.
+ *  All `params` must have the same `func` and `user_data` (due to
+ *  implementation limitation). But `func(user_data)` will be invoked for each
+ *  parameter.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  As this API may block to wait for Bluetooth Host resources, it is not
+ *  recommended to call it from a cooperative thread or a Bluetooth callback.
+ *
+ *  The peer's GATT Client must write to this device's Client Supported Features
+ *  attribute and set the bit for Multiple Handle Value Notifications before
+ *  this API can be used.
+ *
+ *  Only use this API to force the use of the ATT_MULTIPLE_HANDLE_VALUE_NTF PDU.
+ *  For standard applications, `bt_gatt_notify_cb` is preferred, as it will use
+ *  this PDU if supported and automatically fallback to ATT_HANDLE_VALUE_NTF
+ *  when not supported by the peer.
+ *
+ *  This API has an additional limitation: it only accepts valid attribute
+ *  references and not UUIDs like `bt_gatt_notify` and `bt_gatt_notify_cb`.
+ *
+ *  @param conn
+ *    Target client.
+ *    Notifying all connected clients by passing `NULL` is not yet supported,
+ *    please use `bt_gatt_notify` instead.
+ *  @param num_params
+ *    Element count of `params` array. Has to be greater than 1.
+ *  @param params
+ *    Array of notification parameters. It is okay to free this after calling
+ *    this function.
+ *
+ *  @retval 0
+ *    Success. The PDU is queued for sending.
+ *  @retval -EINVAL
+ *    - One of the attribute handles is invalid.
+ *    - Only one parameter was passed. This API expects 2 or more.
+ *    - Not all `func` were equal or not all `user_data` were equal.
+ *    - One of the characteristics is not notifiable.
+ *    - An UUID was passed in one of the parameters.
+ *  @retval -ERANGE
+ *    - The notifications cannot all fit in a single ATT_MULTIPLE_HANDLE_VALUE_NTF.
+ *    - They exceed the MTU of all open ATT bearers.
+ *  @retval -EPERM
+ *    The connection has a lower security level than required by one of the
+ *    attributes.
+ *  @retval -EOPNOTSUPP
+ *    The peer hasn't yet communicated that it supports this PDU type.
  */
-int bt_gatt_notify_multiple(struct bt_conn *conn, uint16_t num_params,
-			    struct bt_gatt_notify_params *params);
+int bt_gatt_notify_multiple(struct bt_conn *conn,
+			    uint16_t num_params,
+			    struct bt_gatt_notify_params params[]);
 
 /** @brief Notify attribute value change.
  *
@@ -1726,7 +1801,7 @@ struct bt_gatt_subscribe_params {
  *  this callback. Notification callback with NULL data will not be called if
  *  subscription was removed by this method.
  *
- *  The Response comes in callback @p params->func. The callback is run from
+ *  The Response comes in callback @p params->subscribe. The callback is run from
  *  the context specified by 'config BT_RECV_CONTEXT'.
  *  @p params must remain valid until start of callback.
  *  The Notification callback @p params->notify is also called from the BT RX

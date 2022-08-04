@@ -10,12 +10,13 @@
 	defined(CONFIG_CPU_CORTEX_M3) || \
 	defined(CONFIG_CPU_CORTEX_M4) || \
 	defined(CONFIG_CPU_CORTEX_M7) || \
-	defined(CONFIG_CPU_AARCH32_CORTEX_R)
+	defined(CONFIG_ARMV7_R)
 #include <zephyr/arch/arm/aarch32/mpu/arm_mpu_v7m.h>
 #elif defined(CONFIG_CPU_CORTEX_M23) || \
 	defined(CONFIG_CPU_CORTEX_M33) || \
-	defined(CONFIG_CPU_CORTEX_M55)
-#include <zephyr/arch/arm/aarch32/mpu/arm_mpu_v8m.h>
+	defined(CONFIG_CPU_CORTEX_M55) || \
+	defined(CONFIG_AARCH32_ARMV8_R)
+#include <zephyr/arch/arm/aarch32/mpu/arm_mpu_v8.h>
 #else
 #error "Unsupported ARM CPU"
 #endif
@@ -44,7 +45,7 @@ struct arm_mpu_config {
 	const struct arm_mpu_region *mpu_regions;
 };
 
-#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
+#if defined(CONFIG_ARMV7_R)
 #define MPU_REGION_ENTRY(_name, _base, _size, _attr) \
 	{\
 		.name = _name, \

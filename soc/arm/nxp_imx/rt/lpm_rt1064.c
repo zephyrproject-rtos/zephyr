@@ -10,8 +10,6 @@
 #include <zephyr/init.h>
 #include <power_rt10xx.h>
 #include <zephyr/zephyr.h>
-#include "clock_config.h"
-
 
 /*
  * Clock configuration structures populated at boot time. These structures are
@@ -396,7 +394,7 @@ static int imxrt_lpm_init(const struct device *dev)
 	video_pll_config.loopDivider = ((CCM_ANALOG->PLL_VIDEO &
 		CCM_ANALOG_PLL_VIDEO_DIV_SELECT_MASK) >>
 		CCM_ANALOG_PLL_VIDEO_DIV_SELECT_SHIFT);
-	video_pll_config.numerator = CCM_ANALOG->PLL_VIDEO_NUM
+	video_pll_config.numerator = CCM_ANALOG->PLL_VIDEO_NUM;
 	video_pll_config.denominator = CCM_ANALOG->PLL_VIDEO_DENOM;
 	switch ((CCM_ANALOG->PLL_VIDEO &
 		CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT_MASK) >>
@@ -413,7 +411,7 @@ static int imxrt_lpm_init(const struct device *dev)
 			break;
 		case 2:
 			if (CCM_ANALOG->MISC2 & CCM_ANALOG_MISC2_VIDEO_DIV(3)) {
-				video_pll_config.postDivider = 4
+				video_pll_config.postDivider = 4;
 			} else {
 				video_pll_config.postDivider = 1;
 			}

@@ -14,6 +14,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/check.h>
 
 #include <zephyr/settings/settings.h>
 
@@ -2075,16 +2076,35 @@ struct notify_data {
 
 static struct net_buf *nfy_mult[CONFIG_BT_MAX_CONN];
 
-static int gatt_notify_mult_send(struct bt_conn *conn, struct net_buf **buf)
+static int gatt_notify_mult_send(struct bt_conn *conn, struct net_buf *buf)
 {
 	int ret;
+	uint8_t *pdu = buf->data;
+	/* PDU structure is [Opcode (1)] [Handle (2)] [Length (2)] [Value (Length)] */
+	uint16_t first_attr_len = sys_get_le16(&pdu[3]);
 
-	ret = bt_att_send(conn, *buf);
-	if (ret < 0) {
-		net_buf_unref(*buf);
+	/* Convert to ATT_HANDLE_VALUE_NTF if containing a single handle. */
+	if (buf->len ==
+	    (1 + sizeof(struct bt_att_notify_mult) + first_attr_len)) {
+		/* Store attr handle */
+		uint16_t handle = sys_get_le16(&pdu[1]);
+
+		/* Remove the ATT_MULTIPLE_HANDLE_VALUE_NTF opcode,
+		 * attribute handle and length
+		 */
+		(void)net_buf_pull(buf, 1 + sizeof(struct bt_att_notify_mult));
+
+		/* Add back an ATT_HANDLE_VALUE_NTF opcode and attr handle */
+		/* PDU structure is now [Opcode (1)] [Handle (1)] [Value] */
+		net_buf_push_le16(buf, handle);
+		net_buf_push_u8(buf, BT_ATT_OP_NOTIFY);
+		BT_DBG("Converted BT_ATT_OP_NOTIFY_MULT with single attr to BT_ATT_OP_NOTIFY");
 	}
 
-	*buf = NULL;
+	ret = bt_att_send(conn, buf);
+	if (ret < 0) {
+		net_buf_unref(buf);
+	}
 
 	return ret;
 }
@@ -2100,13 +2120,14 @@ static void notify_mult_process(struct k_work *work)
 		if (*buf) {
 			struct bt_conn *conn = bt_conn_lookup_index(i);
 
-			gatt_notify_mult_send(conn, buf);
+			gatt_notify_mult_send(conn, *buf);
+			*buf = NULL;
 			bt_conn_unref(conn);
 		}
 	}
 }
 
-K_WORK_DEFINE(nfy_mult_work, notify_mult_process);
+K_WORK_DELAYABLE_DEFINE(nfy_mult_work, notify_mult_process);
 
 static bool gatt_cf_notify_multi(struct bt_conn *conn)
 {
@@ -2120,20 +2141,48 @@ static bool gatt_cf_notify_multi(struct bt_conn *conn)
 	return CF_NOTIFY_MULTI(cfg);
 }
 
+static int gatt_notify_flush(struct bt_conn *conn)
+{
+	int err = 0;
+	struct net_buf **buf = &nfy_mult[bt_conn_index(conn)];
+
+	if (*buf) {
+		err = gatt_notify_mult_send(conn, *buf);
+		*buf = NULL;
+	}
+
+	return err;
+}
+
+static void gatt_add_nfy_to_buf(struct net_buf *buf,
+				uint16_t handle,
+				struct bt_gatt_notify_params *params)
+{
+	struct bt_att_notify_mult *nfy;
+
+	nfy = net_buf_add(buf, sizeof(*nfy));
+	nfy->handle = sys_cpu_to_le16(handle);
+	nfy->len = sys_cpu_to_le16(params->len);
+
+	net_buf_add(buf, params->len);
+	(void)memcpy(nfy->value, params->data, params->len);
+}
+
+#if (CONFIG_BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS != 0)
 static int gatt_notify_mult(struct bt_conn *conn, uint16_t handle,
 			    struct bt_gatt_notify_params *params)
 {
 	struct net_buf **buf = &nfy_mult[bt_conn_index(conn)];
-	struct bt_att_notify_mult *nfy;
 
 	/* Check if we can fit more data into it, in case it doesn't fit send
 	 * the existing buffer and proceed to create a new one
 	 */
-	if (*buf && ((net_buf_tailroom(*buf) < sizeof(*nfy) + params->len) ||
+	if (*buf && ((net_buf_tailroom(*buf) < sizeof(struct bt_att_notify_mult) + params->len) ||
 	    !bt_att_tx_meta_data_match(*buf, params->func, params->user_data))) {
 		int ret;
 
-		ret = gatt_notify_mult_send(conn, buf);
+		ret = gatt_notify_mult_send(conn, *buf);
+		*buf = NULL;
 		if (ret < 0) {
 			return ret;
 		}
@@ -2141,27 +2190,31 @@ static int gatt_notify_mult(struct bt_conn *conn, uint16_t handle,
 
 	if (!*buf) {
 		*buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY_MULT,
-					 sizeof(*nfy) + params->len);
+					 sizeof(struct bt_att_notify_mult) + params->len);
 		if (!*buf) {
 			return -ENOMEM;
 		}
 
 		bt_att_set_tx_meta_data(*buf, params->func, params->user_data);
+	} else {
+		/* Increment the number of handles, ensuring the notify callback
+		 * gets called once for every attribute.
+		 */
+		bt_att_increment_tx_meta_data_attr_count(*buf, 1);
 	}
 
 	BT_DBG("handle 0x%04x len %u", handle, params->len);
+	gatt_add_nfy_to_buf(*buf, handle, params);
 
-	nfy = net_buf_add(*buf, sizeof(*nfy));
-	nfy->handle = sys_cpu_to_le16(handle);
-	nfy->len = sys_cpu_to_le16(params->len);
-
-	net_buf_add(*buf, params->len);
-	memcpy(nfy->value, params->data, params->len);
-
-	k_work_submit(&nfy_mult_work);
+	/* Use `k_work_schedule` to keep the original deadline, instead of
+	 * re-setting the timeout whenever a new notification is appended.
+	 */
+	k_work_schedule(&nfy_mult_work,
+			K_MSEC(CONFIG_BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS));
 
 	return 0;
 }
+#endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS != 0 */
 #endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 
 static int gatt_notify(struct bt_conn *conn, uint16_t handle,
@@ -2171,10 +2224,12 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 	struct bt_att_notify *nfy;
 
 #if defined(CONFIG_BT_GATT_ENFORCE_CHANGE_UNAWARE)
-	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part G page 2350:
-	 * Except for the Handle Value indication, the  server shall not send
-	 * notifications and indications to such a client until it becomes
-	 * change-aware.
+	/* BLUETOOTH CORE SPECIFICATION Version 5.3
+	 * Vol 3, Part G 2.5.3 (page 1479):
+	 *
+	 * Except for a Handle Value indication for the Service Changed
+	 * characteristic, the server shall not send notifications and
+	 * indications to such a client until it becomes change-aware.
 	 */
 	if (!bt_gatt_change_aware(conn, false)) {
 		return -EAGAIN;
@@ -2182,13 +2237,21 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 #endif
 
 	/* Confirm that the connection has the correct level of security */
-	if (bt_gatt_check_perm(conn, params->attr,
-			       BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_READ_AUTHEN)) {
+	if (bt_gatt_check_perm(conn, params->attr, BT_GATT_PERM_READ_ENCRYPT_MASK)) {
 		BT_WARN("Link is not encrypted");
 		return -EPERM;
 	}
 
-#if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
+	/* Check if client has subscribed before sending notifications.
+	 * This is not really required in the Bluetooth specification, but
+	 * follows its spirit.
+	 */
+	if (!bt_gatt_is_subscribed(conn, params->attr, BT_GATT_CCC_NOTIFY)) {
+		BT_WARN("Device is not subscribed to characteristic");
+		return -EINVAL;
+	}
+
+#if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE) && (CONFIG_BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS != 0)
 	if (gatt_cf_notify_multi(conn)) {
 		return gatt_notify_mult(conn, handle, params);
 	}
@@ -2312,10 +2375,18 @@ static int gatt_indicate(struct bt_conn *conn, uint16_t handle,
 #endif
 
 	/* Confirm that the connection has the correct level of security */
-	if (bt_gatt_check_perm(conn, params->attr,
-			       BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_READ_AUTHEN)) {
+	if (bt_gatt_check_perm(conn, params->attr, BT_GATT_PERM_READ_ENCRYPT_MASK)) {
 		BT_WARN("Link is not encrypted");
 		return -EPERM;
+	}
+
+	/* Check if client has subscribed before sending notifications.
+	 * This is not really required in the Bluetooth specification, but
+	 * follows its spirit.
+	 */
+	if (!bt_gatt_is_subscribed(conn, params->attr, BT_GATT_CCC_INDICATE)) {
+		BT_WARN("Device is not subscribed to characteristic");
+		return -EINVAL;
 	}
 
 	len = sizeof(*ind) + params->len;
@@ -2421,9 +2492,9 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 		}
 
 		/* Confirm that the connection has the correct level of security */
-		if (bt_gatt_check_perm(conn, attr,
-				       BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_READ_AUTHEN)) {
+		if (bt_gatt_check_perm(conn, attr, BT_GATT_PERM_READ_ENCRYPT_MASK)) {
 			BT_WARN("Link is not encrypted");
+			bt_conn_unref(conn);
 			continue;
 		}
 
@@ -2431,15 +2502,19 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 		 * Client Characteristic Configuration descriptor may occur
 		 * in any position within the characteristic definition after
 		 * the Characteristic Value.
+		 * Only notify or indicate devices which are subscribed.
 		 */
-		if (data->type == BT_GATT_CCC_INDICATE) {
-			err = gatt_indicate(conn, data->handle,
-					    data->ind_params);
+		if ((data->type == BT_GATT_CCC_INDICATE) &&
+		    (cfg->value & BT_GATT_CCC_INDICATE)) {
+			err = gatt_indicate(conn, data->handle, data->ind_params);
 			if (err == 0) {
 				data->ind_params->_ref++;
 			}
-		} else {
+		} else if ((data->type == BT_GATT_CCC_NOTIFY) &&
+			   (cfg->value & BT_GATT_CCC_NOTIFY)) {
 			err = gatt_notify(conn, data->handle, data->nfy_params);
+		} else {
+			err = 0;
 		}
 
 		bt_conn_unref(conn);
@@ -2549,23 +2624,172 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
-int bt_gatt_notify_multiple(struct bt_conn *conn, uint16_t num_params,
-			    struct bt_gatt_notify_params *params)
+static int gatt_notify_multiple_verify_args(struct bt_conn *conn,
+					    struct bt_gatt_notify_params params[],
+					    uint16_t num_params)
 {
-	int i, ret;
-
 	__ASSERT(params, "invalid parameters\n");
-	__ASSERT(num_params, "invalid parameters\n");
 	__ASSERT(params->attr, "invalid parameters\n");
 
-	for (i = 0; i < num_params; i++) {
-		ret = bt_gatt_notify_cb(conn, &params[i]);
-		if (ret < 0) {
-			return ret;
-		}
+	CHECKIF(num_params < 2) {
+		/* Use the standard notification API when sending only one
+		 * notification.
+		 */
+		return -EINVAL;
+	}
+
+	CHECKIF(conn == NULL) {
+		/* Use the standard notification API to send to all connected
+		 * peers.
+		 */
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+#if defined(CONFIG_BT_GATT_ENFORCE_CHANGE_UNAWARE)
+	/* BLUETOOTH CORE SPECIFICATION Version 5.3
+	 * Vol 3, Part G 2.5.3 (page 1479):
+	 *
+	 * Except for a Handle Value indication for the Service Changed
+	 * characteristic, the server shall not send notifications and
+	 * indications to such a client until it becomes change-aware.
+	 */
+	if (!bt_gatt_change_aware(conn, false)) {
+		return -EAGAIN;
+	}
+#endif
+
+	/* This API guarantees an ATT_MULTIPLE_HANDLE_VALUE_NTF over the air. */
+	if (!gatt_cf_notify_multi(conn)) {
+		return -EOPNOTSUPP;
 	}
 
 	return 0;
+}
+
+static int gatt_notify_multiple_verify_params(struct bt_conn *conn,
+					     struct bt_gatt_notify_params params[],
+					     uint16_t num_params, size_t *total_len)
+{
+	for (uint16_t i = 0; i < num_params; i++) {
+		/* Compute the total data length. */
+		*total_len += params[i].len;
+
+		/* Confirm that the connection has the correct level of security. */
+		if (bt_gatt_check_perm(conn, params[i].attr,
+				       BT_GATT_PERM_READ_ENCRYPT |
+				       BT_GATT_PERM_READ_AUTHEN)) {
+			BT_WARN("Link is not encrypted");
+			return -EPERM;
+		}
+
+		/* The current implementation requires the same callbacks and
+		 * user_data.
+		 */
+		if ((params[0].func != params[i].func) ||
+		    (params[0].user_data != params[i].user_data)) {
+			return -EINVAL;
+		}
+
+		/* This API doesn't support passing UUIDs. */
+		if (params[i].uuid) {
+			return -EINVAL;
+		}
+
+		/* Check if the supplied handle is invalid. */
+		if (!bt_gatt_attr_get_handle(params[i].attr)) {
+			return -EINVAL;
+		}
+	}
+
+	/* PDU length is specified with a 16-bit value. */
+	if (*total_len > UINT16_MAX) {
+		return -ERANGE;
+	}
+
+	/* Check there is a bearer with a high enough MTU. */
+	if (bt_att_get_mtu(conn) <
+	    (sizeof(struct bt_att_notify_mult) + *total_len)) {
+		return -ERANGE;
+	}
+
+	return 0;
+}
+
+int bt_gatt_notify_multiple(struct bt_conn *conn,
+			    uint16_t num_params,
+			    struct bt_gatt_notify_params params[])
+{
+	int err;
+	size_t total_len = 0;
+	struct net_buf *buf;
+
+	/* Validate arguments, connection state and feature support. */
+	err = gatt_notify_multiple_verify_args(conn, params, num_params);
+	if (err) {
+		return err;
+	}
+
+	/* Validate all the attributes that we want to notify.
+	 * Also gets us the total length of the PDU as a side-effect.
+	 */
+	err = gatt_notify_multiple_verify_params(conn, params, num_params, &total_len);
+	if (err) {
+		return err;
+	}
+
+	/* Send any outstanding notifications.
+	 * Frees up buffer space for our PDU.
+	 */
+	gatt_notify_flush(conn);
+
+	/* Build the PDU */
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY_MULT,
+				sizeof(struct bt_att_notify_mult) + total_len);
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	/* Register the callback. It will be called num_params times. */
+	bt_att_set_tx_meta_data(buf, params->func, params->user_data);
+	bt_att_increment_tx_meta_data_attr_count(buf, num_params - 1);
+
+	for (uint16_t i = 0; i < num_params; i++) {
+		struct notify_data data;
+		const struct bt_gatt_chrc *chrc;
+
+		data.attr = params[i].attr;
+		data.handle = bt_gatt_attr_get_handle(data.attr);
+		chrc = data.attr->user_data;
+
+		/* Check if attribute is a characteristic then adjust the
+		 * handle
+		 */
+		if (!bt_uuid_cmp(data.attr->uuid, BT_UUID_GATT_CHRC)) {
+			data.handle = bt_gatt_attr_value_handle(data.attr);
+		}
+
+		/* Check if notifications are supported for that chrc. */
+		if (!(chrc->properties & BT_GATT_CHRC_NOTIFY)) {
+			bt_att_free_tx_meta_data(buf);
+			net_buf_unref(buf);
+
+			return -EINVAL;
+		}
+
+		/* Add handle and data to the command buffer. */
+		gatt_add_nfy_to_buf(buf, data.handle, &params[i]);
+	}
+
+	/* Send the buffer. */
+	return gatt_notify_mult_send(conn, buf);
 }
 #endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 
@@ -2634,7 +2858,7 @@ uint16_t bt_gatt_get_mtu(struct bt_conn *conn)
 }
 
 uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			uint8_t mask)
+			uint16_t mask)
 {
 	if ((mask & BT_GATT_PERM_READ) &&
 	    (!(attr->perm & BT_GATT_PERM_READ_MASK) || !attr->read)) {
@@ -2651,6 +2875,14 @@ uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr
 	}
 
 	mask &= attr->perm;
+
+	if (mask & BT_GATT_PERM_LESC_MASK) {
+		if (!IS_ENABLED(CONFIG_BT_SMP) || !conn->le.keys ||
+		    (conn->le.keys->flags & BT_KEYS_SC) == 0) {
+			return BT_ATT_ERR_AUTHENTICATION;
+		}
+	}
+
 	if (mask & BT_GATT_PERM_AUTHEN_MASK) {
 		if (bt_conn_get_security(conn) < BT_SECURITY_L3) {
 			return BT_ATT_ERR_AUTHENTICATION;
@@ -2904,11 +3136,13 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 		}
 
 		attr = bt_gatt_attr_next(attr);
+		__ASSERT(attr, "No more attributes\n");
 	}
 
 	/* Check if attribute is a characteristic value */
 	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC) != 0) {
 		attr = bt_gatt_attr_next(attr);
+		__ASSERT(attr, "No more attributes\n");
 	}
 
 	/* Check if the attribute is the CCC Descriptor */
@@ -4876,6 +5110,11 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
+	/* Attempt to cancel if write is pending */
+	if (atomic_test_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING)) {
+		bt_gatt_cancel(conn, params);
+	}
+
 	if (!has_subscription) {
 		int err;
 
@@ -4887,11 +5126,6 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 	}
 
 	sys_slist_find_and_remove(&sub->list, &params->node);
-
-	/* Attempt to cancel if write is pending */
-	if (atomic_test_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING)) {
-		bt_gatt_cancel(conn, params);
-	}
 
 	if (gatt_sub_is_empty(sub)) {
 		gatt_sub_free(sub);

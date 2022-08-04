@@ -69,7 +69,7 @@ static bool page_frames_initialized;
 
 #define COLOR(x)	printk(_CONCAT(ANSI_, x))
 #else
-#define COLOR(x)	do { } while (0)
+#define COLOR(x)	do { } while (false)
 #endif
 
 /* LCOV_EXCL_START */
@@ -1482,7 +1482,7 @@ bool z_page_fault(void *addr)
 static void do_mem_unpin(void *addr)
 {
 	struct z_page_frame *pf;
-	int key;
+	unsigned int key;
 	uintptr_t flags, phys;
 
 	key = irq_lock();

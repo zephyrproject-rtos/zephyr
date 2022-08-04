@@ -8,7 +8,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/kernel_structs.h>
 #include <string.h>
 #include <stdlib.h>
@@ -923,7 +923,7 @@ void test_oops_stackcheck(void)
 
 void z_impl_check_syscall_context(void)
 {
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	irq_unlock(key);
 

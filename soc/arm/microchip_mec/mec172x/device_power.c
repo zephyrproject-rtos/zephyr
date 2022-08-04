@@ -5,10 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/sys_io.h>
-#include <sys/__assert.h>
-#include <pm/pm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/pm/pm.h>
 #include <soc.h>
 #include "device_power.h"
 
@@ -263,7 +263,7 @@ static void deep_sleep_save_blocks(void)
 #endif
 
 #ifdef CONFIG_I2C
-	for (size_t n = 0; n > MCHP_I2C_SMB_INSTANCES; n++) {
+	for (size_t n = 0; n < MCHP_I2C_SMB_INSTANCES; n++) {
 		uint32_t addr = MCHP_I2C_SMB_BASE_ADDR(n) +
 				MCHP_I2C_SMB_CFG_OFS;
 		uint32_t regval = sys_read32(addr);
@@ -321,7 +321,7 @@ static void deep_sleep_restore_blocks(void)
 #endif
 
 #ifdef CONFIG_I2C
-	for (size_t n = 0; n > MCHP_I2C_SMB_INSTANCES; n++) {
+	for (size_t n = 0; n < MCHP_I2C_SMB_INSTANCES; n++) {
 		uint32_t addr = MCHP_I2C_SMB_BASE_ADDR(n) +
 				MCHP_I2C_SMB_CFG_OFS;
 

@@ -8,7 +8,7 @@
 #define EVENT_OVERHEAD_PREEMPT_US     0    /* if <= min, then dynamic preempt */
 #define EVENT_OVERHEAD_PREEMPT_MIN_US 0
 #define EVENT_OVERHEAD_PREEMPT_MAX_US EVENT_OVERHEAD_XTAL_US
-#define EVENT_OVERHEAD_START_US       300
+#define EVENT_OVERHEAD_START_US       750
 /* Worst-case time margin needed after event end-time in the air
  * (done/preempt race margin + power-down/chain delay)
  */

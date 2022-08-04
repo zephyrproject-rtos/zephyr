@@ -333,22 +333,22 @@ source "subsys/logging/Kconfig.template.log_format_config"
 
 endif # LOG_BACKEND_ADSP
 
-config LOG_BACKEND_CAVS_HDA
-	bool "cAVS HDA backend"
-	depends on SOC_FAMILY_INTEL_ADSP && DMA && DMA_CAVS_HDA
+config LOG_BACKEND_ADSP_HDA
+	bool "Intel ADSP HDA backend"
+	depends on SOC_FAMILY_INTEL_ADSP && DMA && DMA_INTEL_ADSP_HDA_HOST_OUT
 	select LOG_OUTPUT
 	help
 	  Provide a logging backend which writes to a buffer and
 	  periodically flushes to hardware using ringbuffer like
-	  semantics provided by DMA_CAVS_HDA.
+	  semantics provided by DMA_INTEL_ADSP_HDA.
 
-if LOG_BACKEND_CAVS_HDA
+if LOG_BACKEND_ADSP_HDA
 
-backend = CAVS_HDA
-backend-str = cavs_hda
+backend = ADSP_HDA
+backend-str = adsp_hda
 source "subsys/logging/Kconfig.template.log_format_config"
 
-config LOG_BACKEND_CAVS_HDA_SIZE
+config LOG_BACKEND_ADSP_HDA_SIZE
 	int "Size of ring buffer"
 	range 128 8192
 	default 4096
@@ -358,16 +358,16 @@ config LOG_BACKEND_CAVS_HDA_SIZE
 	  The period of time is decided by how often to inform the hardware of
 	  writes to the buffer.
 
-config LOG_BACKEND_CAVS_HDA_FLUSH_TIME
+config LOG_BACKEND_ADSP_HDA_FLUSH_TIME
 	int "Time in milliseconds to periodically flush writes to hardware"
 	range 1 10000
 	default 500
 	help
-	    The cAVS HDA backend periodically writes out its buffer contents
+	    The Intel ADSP HDA backend periodically writes out its buffer contents
 	    to hardware by informing the DMA hardware the contents of the ring
 	    buffer.
 
-endif # LOG_BACKEND_CAVS_HDA
+endif # LOG_BACKEND_ADSP_HDA
 
 config LOG_BACKEND_FS
 	bool "File system backend"

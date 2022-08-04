@@ -333,11 +333,63 @@ static int lc3_start(struct bt_audio_stream *stream)
 	return 0;
 }
 
+static bool valid_metadata_type(uint8_t type, uint8_t len)
+{
+	switch (type) {
+	case BT_AUDIO_METADATA_TYPE_PREF_CONTEXT:
+	case BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT:
+		if (len != 2) {
+			return false;
+		}
+
+		return true;
+	case BT_AUDIO_METADATA_TYPE_STREAM_LANG:
+		if (len != 3) {
+			return false;
+		}
+
+		return true;
+	case BT_AUDIO_METADATA_TYPE_PARENTAL_RATING:
+		if (len != 1) {
+			return false;
+		}
+
+		return true;
+	case BT_AUDIO_METADATA_TYPE_EXTENDED: /* 1 - 255 octets */
+	case BT_AUDIO_METADATA_TYPE_VENDOR: /* 1 - 255 octets */
+		if (len < 1) {
+			return false;
+		}
+
+		return true;
+	case BT_AUDIO_METADATA_TYPE_CCID_LIST: /* 2 - 254 octets */
+		if (len < 2) {
+			return false;
+		}
+
+		return true;
+	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO: /* 0 - 255 octets */
+	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI: /* 0 - 255 octets */
+		return true;
+	default:
+		return false;
+	}
+}
+
 static int lc3_metadata(struct bt_audio_stream *stream,
 			struct bt_codec_data *meta,
 			size_t meta_count)
 {
 	printk("Metadata: stream %p meta_count %u\n", stream, meta_count);
+
+	for (size_t i = 0; i < meta_count; i++) {
+		if (!valid_metadata_type(meta->data.type, meta->data.data_len)) {
+			printk("Invalid metadata type %u or length %u\n",
+			       meta->data.type, meta->data.data_len);
+
+			return -EINVAL;
+		}
+	}
 
 	return 0;
 }
@@ -506,6 +558,34 @@ static struct bt_audio_capability caps[] = {
 	}
 };
 
+static int set_location(void)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
+		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
+						       BT_AUDIO_LOCATION_FRONT_CENTER);
+		if (err != 0) {
+			printk("Failed to set sink location (err %d)\n", err);
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
+		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SOURCE,
+						       (BT_AUDIO_LOCATION_FRONT_LEFT |
+							BT_AUDIO_LOCATION_FRONT_RIGHT));
+		if (err != 0) {
+			printk("Failed to set source location (err %d)\n", err);
+			return err;
+		}
+	}
+
+	printk("Location successfully set\n");
+
+	return 0;
+}
+
 void main(void)
 {
 	struct bt_le_ext_adv *adv;
@@ -525,6 +605,11 @@ void main(void)
 
 	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
 		bt_audio_stream_cb_register(&streams[i], &stream_ops);
+	}
+
+	err = set_location();
+	if (err != 0) {
+		return;
 	}
 
 	/* Create a non-connectable non-scannable advertising set */

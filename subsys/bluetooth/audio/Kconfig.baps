@@ -75,7 +75,7 @@ config BT_AUDIO_UNICAST_CLIENT_GROUP_COUNT
 	int "Basic Audio Unicast Group count"
 	depends on BT_AUDIO_UNICAST
 	default BT_ISO_MAX_CIG
-	range 0 BT_ISO_MAX_CIG
+	range 1 BT_ISO_MAX_CIG
 	help
 	  This option sets the number of connected audio groups to support as
 	  the unicast client.
@@ -84,8 +84,8 @@ config BT_AUDIO_UNICAST_CLIENT_GROUP_STREAM_COUNT
 	int "Basic Audio Unicast Group Stream count"
 	depends on BT_AUDIO_UNICAST_CLIENT_GROUP_COUNT > 0
 	default 1
-	range 0 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
-	range 0 31
+	range 1 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
+	range 1 31
 	help
 	  This option sets the maximum number of streams per unicast group
 	  to support.
@@ -192,6 +192,14 @@ config BT_AUDIO_DEBUG_STREAM
 	help
 	  Use this option to enable Bluetooth Audio Stream debug logs for the
 	  Bluetooth Audio functionality.
+
+config BT_AUDIO_DEBUG_STREAM_DATA
+	bool "Bluetooth Audio Stream data debug"
+	depends on BT_AUDIO_DEBUG_STREAM
+	help
+	  Use this option to enable Bluetooth Audio Stream data debug logs for
+	  the Bluetooth Audio functionality. This will enable debug logs for all
+	  audio data received and sent.
 
 config BT_AUDIO_DEBUG_CAPABILITIES
 	bool "Bluetooth Audio Capabilities debug"

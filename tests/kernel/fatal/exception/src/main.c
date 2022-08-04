@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
-#include <tc_util.h>
+#include <zephyr/ztest.h>
+#include <zephyr/tc_util.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/irq_offload.h>
 #include <kswap.h>
@@ -181,10 +181,21 @@ __no_optimization void blow_up_stack(void)
 #else
 /* stack sentinel doesn't catch it in time before it trashes the entire kernel
  */
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Winfinite-recursion"
+#endif
+
 __no_optimization int stack_smasher(int val)
 {
 	return stack_smasher(val * 2) + stack_smasher(val * 3);
 }
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 void blow_up_stack(void)
 {
@@ -284,7 +295,7 @@ void check_stack_overflow(k_thread_entry_t handler, uint32_t flags)
  *
  * @ingroup kernel_common_tests
  */
-void test_fatal(void)
+ZTEST(fatal_exception, test_fatal)
 {
 	rv = TC_PASS;
 
@@ -426,8 +437,7 @@ void test_fatal(void)
 #endif /* !CONFIG_ARCH_POSIX */
 }
 
-/*test case main entry*/
-void test_main(void)
+static void *fatal_setup(void)
 {
 #if defined(CONFIG_DEMAND_PAGING) && \
 	!defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
@@ -477,7 +487,7 @@ void test_main(void)
 	* && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 	*/
 
-	ztest_test_suite(fatal,
-			ztest_unit_test(test_fatal));
-	ztest_run_test_suite(fatal);
+	return NULL;
 }
+
+ZTEST_SUITE(fatal_exception, NULL, fatal_setup, NULL, NULL, NULL);

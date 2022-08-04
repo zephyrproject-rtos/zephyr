@@ -3,8 +3,8 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/ipm.h>
-#include <cavs-mem.h>
-#include <cavs-shim.h>
+#include <adsp_memory.h>
+#include <adsp_shim.h>
 #include <cavs_ipc.h>
 
 /* Matches SOF_IPC_MSG_MAX_SIZE, though in practice nothing anywhere

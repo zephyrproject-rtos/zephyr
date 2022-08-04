@@ -6,7 +6,7 @@
 
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/drivers/i2s.h>
 
 #define I2S_DEV_NAME_RX "I2S_0"

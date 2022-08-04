@@ -25,6 +25,10 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &ssd16xx;
 	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
 };
 
 &spi1 {
@@ -36,7 +40,7 @@
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
 	ssd16xx: ssd16xxfb@0 {
-		compatible = "solomon,ssd16xxfb", "gooddisplay,gdeh0213b72";
+		compatible = "gooddisplay,gdeh0213b72", "solomon,ssd1675a", "solomon,ssd16xxfb";
 		label = "SSD16XX";
 		spi-max-frequency = <4000000>;
 		reg = <0>;

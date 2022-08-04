@@ -103,7 +103,7 @@ int sam0_eic_acquire(int port, int pin, enum sam0_eic_trigger trigger,
 	int line_index;
 	int config_index;
 	int config_shift;
-	int key;
+	unsigned int key;
 	uint32_t config;
 
 	line_index = sam0_eic_map_to_line(port, pin);
@@ -210,7 +210,7 @@ int sam0_eic_release(int port, int pin)
 	int line_index;
 	int config_index;
 	int config_shift;
-	int key;
+	unsigned int key;
 
 	line_index = sam0_eic_map_to_line(port, pin);
 	if (line_index < 0) {
@@ -329,7 +329,7 @@ uint32_t sam0_eic_interrupt_pending(int port)
 			    DT_INST_IRQ_BY_IDX(0, n, priority),		\
 			    sam0_eic_isr, DEVICE_DT_INST_GET(0), 0);	\
 		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));		\
-	} while (0)
+	} while (false)
 
 static int sam0_eic_init(const struct device *dev)
 {

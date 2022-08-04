@@ -2,7 +2,7 @@ common:
   arch_exclude: posix
   tags: posix
   min_ram: 64
-  timeout: 120
+  timeout: 600
 
 tests:
   portability.posix.common:

@@ -8,7 +8,7 @@
 #include <cavstool.h>
 #include <stdint.h>
 #include <zephyr/device.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 void test_hda_logger(void);
 

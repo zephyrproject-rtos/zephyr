@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <ztress.h>
-#include <ztest_test.h>
+#include <zephyr/ztress.h>
+#include <zephyr/ztest_test.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/random/rand32.h>
 #include <string.h>
@@ -289,10 +289,6 @@ static void ztress_init(struct ztress_context_data *thread_data)
 	memset(&rt, 0, sizeof(rt));
 	k_thread_foreach(thread_cb, NULL);
 	k_msleep(10);
-
-	if (idle_tid == NULL) {
-		printk("Failed to identify idle thread. CPU load will not be tracked\n");
-	}
 
 	k_timer_start(&ctrl_timer, K_MSEC(100), K_MSEC(100));
 	k_timer_user_data_set(&progress_timer, thread_data);

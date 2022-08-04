@@ -6,13 +6,13 @@
 
 #include <st/h7/stm32h7.dtsi>
 #include <zephyr/dt-bindings/display/stm32_ltdc.h>
+#include <zephyr/dt-bindings/flash_controller/ospi.h>
 
 / {
 	soc {
 		flash-controller@52002000 {
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
-				label = "FLASH_STM32";
 				write-block-size = <16>;
 				erase-block-size = <DT_SIZE_K(8)>;
 				/* maximum erase time for a 8K sector */
@@ -35,7 +35,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x02000000>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
-			label= "OTG_HS";
 		};
 
 		ltdc: display-controller@50001000 {
@@ -44,7 +43,28 @@
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>;
-			label = "LTDC";
+			status = "disabled";
+		};
+
+		octospi1: octospi@52005000 {
+			compatible = "st,stm32-ospi";
+			reg = <0x52005000 0x1000>;
+			interrupts = <92 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00004000>,
+				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		octospi2: octospi@5200a000 {
+			compatible = "st,stm32-ospi";
+			reg = <0x5200a000 0x1000>;
+			interrupts = <150 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x000080000>,
+				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};
@@ -105,6 +125,5 @@
 	otghs_fs_phy: otghs_fs_phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
-		label = "OTGHS_FS_PHY";
 	};
 };

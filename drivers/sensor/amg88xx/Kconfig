@@ -5,6 +5,8 @@
 
 menuconfig AMG88XX
 	bool "AMG88XX Infrared Thermopile Sensor"
+	default y
+	depends on DT_HAS_PANASONIC_AMG88XX_ENABLED
 	depends on I2C
 	help
 	  Enable driver for AMG88XX infrared thermopile sensor.

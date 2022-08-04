@@ -655,7 +655,7 @@ Changes are submitted as Git commits. Each commit message must contain:
   previous patches of this file.)
 
 * A change description with your logic or reasoning for the changes, followed
-  by a blank line.
+  by a blank line. (Every single line has to be less than 75 characters.)
 
 * A Signed-off-by line, ``Signed-off-by: <name> <email>`` typically added
   automatically by using ``git commit -s``

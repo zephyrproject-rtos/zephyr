@@ -270,7 +270,7 @@ Automatic Partitions for Static Library Globals
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The build-time logic for setting up automatic memory partitions is in
-``scripts/gen_app_partitions.py``. If a static library is linked into Zephyr,
+``scripts/build/gen_app_partitions.py``. If a static library is linked into Zephyr,
 it is possible to route all the globals in that library to a specific
 memory partition with the ``--library`` argument.
 

@@ -35,7 +35,7 @@
  * x87 FPU registers are being saved/restored.
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/debug/gcov.h>
 
 #if defined(CONFIG_X86)
@@ -311,7 +311,7 @@ K_THREAD_DEFINE(load_low, THREAD_STACK_SIZE, load_store_low, NULL, NULL, NULL,
 K_THREAD_DEFINE(load_high, THREAD_STACK_SIZE, load_store_high, NULL, NULL, NULL,
 		THREAD_HIGH_PRIORITY, THREAD_FP_FLAGS, K_TICKS_FOREVER);
 
-void test_load_store(void)
+ZTEST(fpu_sharing_generic, test_load_store)
 {
 	/* Initialise test states */
 	test_exited = false;

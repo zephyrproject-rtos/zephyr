@@ -139,6 +139,7 @@ static k_tid_t att_handle_rsp_thread;
 
 struct bt_att_tx_meta_data {
 	struct bt_att_chan *att_chan;
+	uint16_t attr_count;
 	bt_gatt_complete_func_t func;
 	void *user_data;
 };
@@ -411,6 +412,7 @@ static void chan_tx_complete(struct bt_conn *conn, void *user_data, int err)
 	struct bt_att_tx_meta_data *data = user_data;
 	struct bt_att_chan *chan = data->att_chan;
 	bt_gatt_complete_func_t func = data->func;
+	uint16_t attr_count = data->attr_count;
 	void *ud = data->user_data;
 
 	BT_DBG("TX Complete chan %p CID 0x%04X", chan, chan->chan.tx.cid);
@@ -418,9 +420,10 @@ static void chan_tx_complete(struct bt_conn *conn, void *user_data, int err)
 	tx_meta_data_free(data);
 
 	if (!err && func) {
-		func(conn, ud);
+		for (uint16_t i = 0; i < attr_count; i++) {
+			func(conn, ud);
+		}
 	}
-
 }
 
 static void chan_unknown(struct bt_conn *conn, void *user_data, int err)
@@ -3755,6 +3758,14 @@ void bt_att_set_tx_meta_data(struct net_buf *buf, bt_gatt_complete_func_t func, 
 
 	data->func = func;
 	data->user_data = user_data;
+	data->attr_count = 1;
+}
+
+void bt_att_increment_tx_meta_data_attr_count(struct net_buf *buf, uint16_t attr_count)
+{
+	struct bt_att_tx_meta_data *data = bt_att_tx_meta_data(buf);
+
+	data->attr_count += attr_count;
 }
 
 bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_gatt_complete_func_t func,
@@ -3762,4 +3773,9 @@ bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_gatt_complete_func_
 {
 	return ((bt_att_tx_meta_data(buf)->func == func) &&
 		(bt_att_tx_meta_data(buf)->user_data == user_data));
+}
+
+void bt_att_free_tx_meta_data(const struct net_buf *buf)
+{
+	tx_meta_data_free(bt_att_tx_meta_data(buf));
 }

@@ -434,3 +434,38 @@ out:
 
 __weak FUNC_ALIAS(sys_mm_drv_simple_move_array,
 		  sys_mm_drv_move_array, int);
+
+int sys_mm_drv_simple_update_region_flags(void *virt, size_t size, uint32_t flags)
+{
+	k_spinlock_key_t key;
+	int ret = 0;
+	size_t offset;
+
+	CHECKIF(!sys_mm_drv_is_virt_addr_aligned(virt) ||
+		!sys_mm_drv_is_size_aligned(size)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	key = k_spin_lock(&sys_mm_drv_common_lock);
+
+	for (offset = 0; offset < size; offset += CONFIG_MM_DRV_PAGE_SIZE) {
+		uint8_t *va = (uint8_t *)virt + offset;
+
+		int ret2 = sys_mm_drv_update_page_flags(va, flags);
+
+		if (ret2 != 0) {
+			__ASSERT(false, "cannot update flags %p\n", va);
+
+			ret = ret2;
+		}
+	}
+
+	k_spin_unlock(&sys_mm_drv_common_lock, key);
+
+out:
+	return ret;
+}
+
+__weak FUNC_ALIAS(sys_mm_drv_simple_update_region_flags,
+		  sys_mm_drv_update_region_flags, int);

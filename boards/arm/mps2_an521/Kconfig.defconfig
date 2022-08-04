@@ -22,30 +22,12 @@ config BUILD_WITH_TFM
 	default y if TRUSTED_EXECUTION_NONSECURE
 
 
-if GPIO
-
-config GPIO_CMSDK_AHB
-	default y
-
-endif # GPIO
-
 if SERIAL
-
-config UART_CMSDK_APB
-	default y
 
 config UART_INTERRUPT_DRIVEN
 	default y
 
 endif # SERIAL
-
-config WDOG_CMSDK_APB
-	default y
-	depends on WATCHDOG
-
-config I2C_SBCON
-	default y
-	depends on I2C
 
 if IPM
 

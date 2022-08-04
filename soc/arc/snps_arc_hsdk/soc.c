@@ -8,9 +8,8 @@
  * This module provides routines to initialize and support soc-level hardware
  * for the HS Development Kit
  */
-#include <zephyr/device.h>
 #include <zephyr/init.h>
-#include "soc.h"
+#include <zephyr/arch/arc/v2/arc_connect.h>
 
 static int arc_hsdk_init(const struct device *dev)
 {

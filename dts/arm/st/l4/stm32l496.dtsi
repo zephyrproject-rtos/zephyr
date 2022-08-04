@@ -18,7 +18,6 @@
 			interrupts = <83 0>, <84 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
-			label= "I2C_4";
 		};
 
 		pinctrl: pin-controller@48000000 {
@@ -30,7 +29,6 @@
 				#gpio-cells = <2>;
 				reg = <0x48002000 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000100>;
-				label = "GPIOI";
 			};
 		};
 
@@ -40,7 +38,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>;
 			interrupts = <47 0>;
 			status = "disabled";
-			label = "ADC_3";
 			#io-channel-cells = <1>;
 		};
 	};

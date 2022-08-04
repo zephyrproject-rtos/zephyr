@@ -1,0 +1,13 @@
+# Espressif ESP32 TWAI configuration options
+
+# Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_ESP32_TWAI
+	bool "Espressif TWAI CAN driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_TWAI_ENABLED
+	select CAN_SJA1000
+	help
+	  This enables support for the Espressif Two-Wire Automotive Interface
+	  (TWAI) CAN driver.

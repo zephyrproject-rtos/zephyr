@@ -14,7 +14,7 @@ import scl
 import logging
 from pathlib import Path
 
-from twisterlib.enviornment import ZEPHYR_BASE
+from twisterlib.environment import ZEPHYR_BASE
 
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
@@ -224,6 +224,8 @@ class HardwareMap:
             product = dut.get('product')
             fixtures = dut.get('fixtures', [])
             connected= dut.get('connected') and ((serial or serial_pty) is not None)
+            if not connected:
+                continue
             new_dut = DUT(platform=platform,
                           product=product,
                           runner=runner,

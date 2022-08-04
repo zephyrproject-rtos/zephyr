@@ -5,12 +5,12 @@
  */
 
 #include <stdio.h>
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/counter.h>
-#include <pm/pm.h>
-#include <pm/policy.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/policy.h>
 
 #define BUSY_WAIT_S 2U
 #define SLEEP_S 2U

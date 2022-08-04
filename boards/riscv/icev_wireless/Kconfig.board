@@ -1,0 +1,6 @@
+# Copyright (c) 2022 Friedt Professional Engineering Services, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ICEV_WIRELESS
+	bool "ICE-V Wireless Board"
+	depends on SOC_ESP32C3

@@ -93,7 +93,12 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 
 	stream = &config->streams[id];
 
-	if (stream->busy == false) {
+	/* The busy channel is pertinent if not overridden by the HAL */
+	if ((stream->hal_override != true) && (stream->busy == false)) {
+		/*
+		 * When DMA channel is not overridden by HAL,
+		 * ignore irq if the channel is not busy anymore
+		 */
 		dma_stm32_clear_stream_irq(dev, id);
 		return;
 	}
@@ -544,6 +549,9 @@ DMA_STM32_EXPORT_API int dma_stm32_reload(const struct device *dev, uint32_t id,
 				     size / stream->dst_size);
 	}
 
+	/* When reloading the dma, the stream is busy again before enabling */
+	stream->busy = true;
+
 	stm32_dma_enable_stream(dma, id);
 
 	return 0;
@@ -553,6 +561,7 @@ DMA_STM32_EXPORT_API int dma_stm32_start(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
+	struct dma_stm32_stream *stream;
 
 	/* Give channel from index 0 */
 	id = id - STM32_DMA_STREAM_OFFSET;
@@ -562,8 +571,11 @@ DMA_STM32_EXPORT_API int dma_stm32_start(const struct device *dev, uint32_t id)
 		return -EINVAL;
 	}
 
-	dma_stm32_clear_stream_irq(dev, id);
+	/* When starting the dma, the stream is busy before enabling */
+	stream = &config->streams[id];
+	stream->busy = true;
 
+	dma_stm32_clear_stream_irq(dev, id);
 	stm32_dma_enable_stream(dma, id);
 
 	return 0;
@@ -582,10 +594,6 @@ DMA_STM32_EXPORT_API int dma_stm32_stop(const struct device *dev, uint32_t id)
 		return -EINVAL;
 	}
 
-	dma_stm32_clear_stream_irq(dev, id);
-
-	dma_stm32_disable_stream(dma, id);
-
 #if !defined(CONFIG_DMAMUX_STM32) || defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_DMA_DisableIT_TC(dma, dma_stm32_id_to_stream(id));
 #endif /* CONFIG_DMAMUX_STM32 */
@@ -593,6 +601,9 @@ DMA_STM32_EXPORT_API int dma_stm32_stop(const struct device *dev, uint32_t id)
 #if defined(CONFIG_DMA_STM32_V1)
 	stm32_dma_disable_fifo_irq(dma, id);
 #endif
+
+	dma_stm32_clear_stream_irq(dev, id);
+	dma_stm32_disable_stream(dma, id);
 
 	/* Finally, flag stream as free */
 	stream->busy = false;
@@ -707,7 +718,7 @@ DEVICE_DT_INST_DEFINE(index,						\
 			    dma_stm32_shared_irq_handler,		\
 			    DEVICE_DT_INST_GET(dma), 0);		\
 		irq_enable(DT_INST_IRQ_BY_IDX(dma, chan, irq));		\
-	} while (0)
+	} while (false)
 
 
 #else /* CONFIG_DMA_STM32_SHARED_IRQS */
@@ -726,7 +737,7 @@ static void dma_stm32_irq_##dma##_##chan(const struct device *dev)	\
 			    dma_stm32_irq_##dma##_##chan,		\
 			    DEVICE_DT_INST_GET(dma), 0);		\
 		irq_enable(DT_INST_IRQ_BY_IDX(dma, chan, irq));		\
-	} while (0)
+	} while (false)
 
 #endif /* CONFIG_DMA_STM32_SHARED_IRQS */
 

@@ -149,6 +149,23 @@ primary_core:
 	/* Prepare for calling C code */
 	bl	__reset_prep_c
 
+	/*
+	 * Initialize the interrupt stack with 0xaa so stack utilization
+	 * can be measured. This needs to be done before using the stack
+	 * so that we don't clobber any data.
+	 */
+#ifdef CONFIG_INIT_STACKS
+	ldr	x0, =(z_interrupt_stacks)
+	sub     x9, sp, #8
+	mov     x10, 0xaaaaaaaaaaaaaaaa
+stack_init_loop:
+	cmp     x0, x9
+	beq     stack_init_done
+	str     x10, [x0], #8
+	b       stack_init_loop
+stack_init_done:
+#endif
+
 	/* Platform hook for highest EL */
 	bl	z_arm64_el_highest_init
 

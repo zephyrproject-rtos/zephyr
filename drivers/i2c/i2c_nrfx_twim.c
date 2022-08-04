@@ -8,6 +8,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <nrfx_twim.h>
@@ -21,22 +22,22 @@ LOG_MODULE_REGISTER(i2c_nrfx_twim, CONFIG_I2C_LOG_LEVEL);
 struct i2c_nrfx_twim_data {
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
-	nrfx_twim_config_t twim_config;
-	bool twim_initialized;
 	volatile nrfx_err_t res;
 	uint8_t *msg_buf;
 };
 
 struct i2c_nrfx_twim_config {
 	nrfx_twim_t twim;
+	nrfx_twim_config_t twim_config;
 	uint16_t concat_buf_size;
 	uint16_t flash_buf_max_size;
+	void (*irq_connect)(void);
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
 #endif
 };
 
-static int init_twim(const struct device *dev);
+static int i2c_nrfx_twim_recover_bus(const struct device *dev);
 
 static int i2c_nrfx_twim_transfer(const struct device *dev,
 				  struct i2c_msg *msgs,
@@ -52,19 +53,12 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		.address = addr
 	};
 
-	/* If for whatever reason the TWIM peripheral is still not initialized
-	 * at this point, try to initialize it now.
-	 */
-	if (!dev_data->twim_initialized && init_twim(dev) < 0) {
-		return -EIO;
-	}
-
 	k_sem_take(&dev_data->transfer_sync, K_FOREVER);
 
 	/* Dummy take on completion_sync sem to be sure that it is empty */
 	k_sem_take(&dev_data->completion_sync, K_NO_WAIT);
 
-	nrfx_twim_enable(&dev_config->twim);
+	(void)pm_device_runtime_get(dev);
 
 	for (size_t i = 0; i < num_msgs; i++) {
 		if (I2C_MSG_ADDR_10_BITS & msgs[i].flags) {
@@ -170,14 +164,12 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 			 * In many situation, a retry is sufficient.
 			 * However, some time the I2C device get stuck and need
 			 * help to recover.
-			 * Therefore we always call nrfx_twim_bus_recover() to
-			 * make sure everything has been done to restore the
+			 * Therefore we always call i2c_nrfx_twim_recover_bus()
+			 * to make sure everything has been done to restore the
 			 * bus from this error.
 			 */
 			LOG_ERR("Error on I2C line occurred for message %d", i);
-			nrfx_twim_disable(&dev_config->twim);
-			nrfx_twim_bus_recover(dev_data->twim_config.scl,
-					      dev_data->twim_config.sda);
+			(void)i2c_nrfx_twim_recover_bus(dev);
 			ret = -EIO;
 			break;
 		}
@@ -210,7 +202,8 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		msg_buf_used = 0;
 	}
 
-	nrfx_twim_disable(&dev_config->twim);
+	(void)pm_device_runtime_put(dev);
+
 	k_sem_give(&dev_data->transfer_sync);
 
 	return ret;
@@ -238,38 +231,10 @@ static void event_handler(nrfx_twim_evt_t const *p_event, void *p_context)
 	k_sem_give(&dev_data->completion_sync);
 }
 
-static int init_twim(const struct device *dev)
-{
-	const struct i2c_nrfx_twim_config *dev_config = dev->config;
-	struct i2c_nrfx_twim_data *dev_data = dev->data;
-	nrfx_err_t result = nrfx_twim_init(&dev_config->twim,
-					   &dev_data->twim_config,
-					   event_handler, dev_data);
-	if (result != NRFX_SUCCESS) {
-		LOG_ERR("Failed to initialize device: %s", dev->name);
-		return -EIO;
-	}
-
-	dev_data->twim_initialized = true;
-	return 0;
-}
-
-static void deinit_twim(const struct device *dev)
-{
-	const struct i2c_nrfx_twim_config *dev_config = dev->config;
-	struct i2c_nrfx_twim_data *dev_data = dev->data;
-
-	if (dev_data->twim_initialized) {
-		nrfx_twim_uninit(&dev_config->twim);
-		dev_data->twim_initialized = false;
-	}
-}
-
 static int i2c_nrfx_twim_configure(const struct device *dev,
 				   uint32_t i2c_config)
 {
-	struct i2c_nrfx_twim_data *dev_data = dev->data;
-	nrf_twim_frequency_t frequency;
+	const struct i2c_nrfx_twim_config *dev_config = dev->config;
 
 	if (I2C_ADDR_10_BITS & i2c_config) {
 		return -EINVAL;
@@ -277,14 +242,17 @@ static int i2c_nrfx_twim_configure(const struct device *dev,
 
 	switch (I2C_SPEED_GET(i2c_config)) {
 	case I2C_SPEED_STANDARD:
-		frequency = NRF_TWIM_FREQ_100K;
+		nrf_twim_frequency_set(dev_config->twim.p_twim,
+				       NRF_TWIM_FREQ_100K);
 		break;
 	case I2C_SPEED_FAST:
-		frequency = NRF_TWIM_FREQ_400K;
+		nrf_twim_frequency_set(dev_config->twim.p_twim,
+				       NRF_TWIM_FREQ_400K);
 		break;
 #if NRF_TWIM_HAS_1000_KHZ_FREQ
 	case I2C_SPEED_FAST_PLUS:
-		frequency = NRF_TWIM_FREQ_1000K;
+		nrf_twim_frequency_set(dev_config->twim.p_twim,
+				       NRF_TWIM_FREQ_1000K);
 		break;
 #endif
 	default:
@@ -292,22 +260,39 @@ static int i2c_nrfx_twim_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (frequency != dev_data->twim_config.frequency) {
-		dev_data->twim_config.frequency = frequency;
-
-		deinit_twim(dev);
-		return init_twim(dev);
-	}
-
 	return 0;
 }
 
 static int i2c_nrfx_twim_recover_bus(const struct device *dev)
 {
-	struct i2c_nrfx_twim_data *dev_data = dev->data;
+	const struct i2c_nrfx_twim_config *dev_config = dev->config;
+	enum pm_device_state state;
+	uint32_t scl_pin;
+	uint32_t sda_pin;
+	nrfx_err_t err;
 
-	nrfx_err_t err = nrfx_twim_bus_recover(dev_data->twim_config.scl,
-					       dev_data->twim_config.sda);
+#ifdef CONFIG_PINCTRL
+	scl_pin = nrf_twim_scl_pin_get(dev_config->twim.p_twim);
+	sda_pin = nrf_twim_sda_pin_get(dev_config->twim.p_twim);
+#else
+	scl_pin = dev_config->twim_config.scl;
+	sda_pin = dev_config->twim_config.sda;
+#endif
+
+	/* disable peripheral if active (required to release SCL/SDA lines) */
+	(void)pm_device_state_get(dev, &state);
+	if (state == PM_DEVICE_STATE_ACTIVE) {
+		nrfx_twim_disable(&dev_config->twim);
+	}
+
+	err = nrfx_twim_bus_recover(scl_pin, sda_pin);
+
+	/* restore peripheral if it was active before */
+	if (state == PM_DEVICE_STATE_ACTIVE) {
+		(void)pinctrl_apply_state(dev_config->pcfg,
+					  PINCTRL_STATE_DEFAULT);
+		nrfx_twim_enable(&dev_config->twim);
+	}
 
 	return (err == NRFX_SUCCESS ? 0 : -EBUSY);
 }
@@ -336,11 +321,11 @@ static int twim_nrfx_pm_action(const struct device *dev,
 			return ret;
 		}
 #endif
-		ret = init_twim(dev);
+		nrfx_twim_enable(&dev_config->twim);
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
-		deinit_twim(dev);
+		nrfx_twim_disable(&dev_config->twim);
 
 #ifdef CONFIG_PINCTRL
 		ret = pinctrl_apply_state(dev_config->pcfg,
@@ -358,6 +343,39 @@ static int twim_nrfx_pm_action(const struct device *dev,
 	return ret;
 }
 #endif /* CONFIG_PM_DEVICE */
+
+static int i2c_nrfx_twim_init(const struct device *dev)
+{
+	const struct i2c_nrfx_twim_config *dev_config = dev->config;
+	struct i2c_nrfx_twim_data *dev_data = dev->data;
+
+	dev_config->irq_connect();
+
+#ifdef CONFIG_PINCTRL
+	int err = pinctrl_apply_state(dev_config->pcfg,
+				      COND_CODE_1(CONFIG_PM_DEVICE_RUNTIME,
+						  (PINCTRL_STATE_SLEEP),
+						  (PINCTRL_STATE_DEFAULT)));
+	if (err < 0) {
+		return err;
+	}
+#endif
+
+	if (nrfx_twim_init(&dev_config->twim, &dev_config->twim_config,
+			   event_handler, dev_data) != NRFX_SUCCESS) {
+		LOG_ERR("Failed to initialize device: %s", dev->name);
+		return -EIO;
+	}
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	pm_device_init_suspended(dev);
+	pm_device_runtime_enable(dev);
+#else
+	nrfx_twim_enable(&dev_config->twim);
+#endif
+
+	return 0;
+}
 
 #define I2C_NRFX_TWIM_INVALID_FREQUENCY  ((nrf_twim_frequency_t)-1)
 #define I2C_NRFX_TWIM_FREQUENCY(bitrate)				       \
@@ -397,28 +415,14 @@ static int twim_nrfx_pm_action(const struct device *dev,
 	BUILD_ASSERT(I2C_FREQUENCY(idx) !=				       \
 		     I2C_NRFX_TWIM_INVALID_FREQUENCY,			       \
 		     "Wrong I2C " #idx " frequency setting in dts");	       \
-	static int twim_##idx##_init(const struct device *dev)		       \
+	static void irq_connect##idx(void)				       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(I2C(idx)), DT_IRQ(I2C(idx), priority),     \
 			    nrfx_isr, nrfx_twim_##idx##_irq_handler, 0);       \
-		IF_ENABLED(CONFIG_PINCTRL, (				       \
-			const struct i2c_nrfx_twim_config *dev_config =	       \
-				dev->config;				       \
-			int err = pinctrl_apply_state(dev_config->pcfg,	       \
-						      PINCTRL_STATE_DEFAULT);  \
-			if (err < 0) {					       \
-				return err;				       \
-			}						       \
-		))							       \
-		return init_twim(dev);					       \
 	}								       \
 	IF_ENABLED(USES_MSG_BUF(idx),					       \
 		(static uint8_t twim_##idx##_msg_buf[MSG_BUF_SIZE(idx)];))     \
 	static struct i2c_nrfx_twim_data twim_##idx##_data = {		       \
-		.twim_config = {					       \
-			I2C_NRFX_TWIM_PIN_CFG(idx)			       \
-			.frequency = I2C_FREQUENCY(idx),		       \
-		},							       \
 		.transfer_sync = Z_SEM_INITIALIZER(			       \
 			twim_##idx##_data.transfer_sync, 1, 1),		       \
 		.completion_sync = Z_SEM_INITIALIZER(			       \
@@ -429,14 +433,19 @@ static int twim_nrfx_pm_action(const struct device *dev,
 	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(I2C(idx))));	       \
 	static const struct i2c_nrfx_twim_config twim_##idx##z_config = {      \
 		.twim = NRFX_TWIM_INSTANCE(idx),			       \
+		.twim_config = {					       \
+			I2C_NRFX_TWIM_PIN_CFG(idx)			       \
+			.frequency = I2C_FREQUENCY(idx),		       \
+		},							       \
 		.concat_buf_size = CONCAT_BUF_SIZE(idx),		       \
 		.flash_buf_max_size = FLASH_BUF_MAX_SIZE(idx),		       \
+		.irq_connect = irq_connect##idx,			       \
 		IF_ENABLED(CONFIG_PINCTRL,				       \
 			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),))	       \
 	};								       \
 	PM_DEVICE_DT_DEFINE(I2C(idx), twim_nrfx_pm_action);		       \
 	I2C_DEVICE_DT_DEFINE(I2C(idx),					       \
-		      twim_##idx##_init,				       \
+		      i2c_nrfx_twim_init,				       \
 		      PM_DEVICE_DT_GET(I2C(idx)),			       \
 		      &twim_##idx##_data,				       \
 		      &twim_##idx##z_config,				       \

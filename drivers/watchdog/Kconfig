@@ -31,7 +31,8 @@ config WDT_MULTISTAGE
 
 config WDT_COUNTER
 	bool "Counter based watchdog"
-	def_bool $(dt_nodelabel_enabled,wdt_counter)
+	default y
+	depends on DT_HAS_ZEPHYR_COUNTER_WATCHDOG_ENABLED
 	select COUNTER
 	help
 	  Watchdog emulated with counter device. If counter device supports using

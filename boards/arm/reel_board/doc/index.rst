@@ -87,7 +87,7 @@ used for building an application.
 | Good Display | HINK-E0213         | SSD1673 /            | reel_board        |
 | GDEH0213B1   |                    | ssd16xx              |                   |
 +--------------+--------------------+----------------------+-------------------+
-| Good Display | HINK-E0213A22      | IL3897 /             | reel_board_v2     |
+| Good Display | HINK-E0213A22      | SSD1675A /           | reel_board_v2     |
 | GDEH0213B72  |                    | ssd16xx              |                   |
 +--------------+--------------------+----------------------+-------------------+
 

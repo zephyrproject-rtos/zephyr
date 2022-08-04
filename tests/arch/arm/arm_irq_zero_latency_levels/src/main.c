@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
@@ -176,7 +176,7 @@ ZTEST(arm_irq_zero_latency_levels, test_arm_zero_latency_levels)
 	NVIC_EnableIRQ(irq_b);
 
 	/* Lock interrupts */
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	execution_trace_add(STEP_MAIN_BEGIN);
 

@@ -9,9 +9,6 @@ compatible: "ti,tca9538"
 include: [i2c-device.yaml, gpio-controller.yaml]
 
 properties:
-    label:
-      required: true
-
     "#gpio-cells":
       const: 2
 

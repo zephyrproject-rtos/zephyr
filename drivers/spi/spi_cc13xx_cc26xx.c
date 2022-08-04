@@ -248,7 +248,7 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 		} else {						  \
 			Power_setDependency(PowerCC26XX_PERIPH_SSI1);	  \
 		}							  \
-	} while (0)
+	} while (false)
 #else
 #define SPI_CC13XX_CC26XX_POWER_SPI(n)					  \
 	do {								  \
@@ -277,11 +277,11 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 		}							  \
 									  \
 		/* SSI should not be accessed until power domain is on. */\
-		while (PRCMPowerDomainStatus(domain) !=			  \
+		while (PRCMPowerDomainsAllOn(domain) !=			  \
 			PRCM_DOMAIN_POWER_ON) {				  \
 			continue;					  \
 		}							  \
-	} while (0)
+	} while (false)
 #endif
 
 #define SPI_CC13XX_CC26XX_DEVICE_INIT(n)				    \

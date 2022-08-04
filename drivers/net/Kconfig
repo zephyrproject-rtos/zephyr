@@ -193,4 +193,32 @@ source "subsys/net/Kconfig.template.log_config.net"
 
 endif
 
+#
+# CAN bus network driver options
+#
+menuconfig NET_CANBUS
+	bool "Controller Area Network (CAN) bus network driver"
+	help
+	  Enable the CAN bus network driver. This driver provides a network interface on top of the
+	  CAN controller driver API.
+
+if NET_CANBUS
+
+module = NET_CANBUS
+module-dep = LOG
+module-str = Log level for CAN bus network driver
+module-help = Sets log level CAN bus network driver.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_CANBUS_INIT_PRIORITY
+	int "CAN bus network device init priority"
+	default 81
+	help
+	  CAN bus network device initialization priority.
+
+	  The priority needs to be lower than the network stack and higher than the CAN controller
+	  driver.
+
+endif # NET_CAN
+
 endif # NET_DRIVERS

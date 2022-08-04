@@ -5,9 +5,6 @@ compatible: "st,stm32-pwm"
 include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
 
 properties:
-    label:
-      required: true
-
     pinctrl-0:
       required: true
 

@@ -1,8 +1,0 @@
-# Copyright (c) 2022, Thomas Stranger
-# SPDX-License-Identifier: Apache-2.0
-
-description: 1-Wire dummy slave
-
-compatible: "test-w1-dummy-slave"
-
-include: w1-slave.yaml

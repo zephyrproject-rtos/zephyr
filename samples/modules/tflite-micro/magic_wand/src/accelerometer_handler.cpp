@@ -24,8 +24,7 @@
 
 #define BUFLEN 300
 int begin_index = 0;
-const char *label = NULL;
-const struct device *sensor = NULL;
+const struct device *sensor = DEVICE_DT_GET_ONE(adi_adxl345);
 int current_index = 0;
 
 float bufx[BUFLEN] = { 0.0f };
@@ -36,15 +35,18 @@ bool initial = true;
 
 TfLiteStatus SetupAccelerometer(tflite::ErrorReporter *error_reporter)
 {
-	label = DT_LABEL(DT_INST(0, adi_adxl345));
-	sensor = device_get_binding(label);
+	if (!device_is_ready(sensor)) {
+		printk("%s: device not ready.\n", sensor->name);
+		return kTfLiteApplicationError;
+	}
+
 	if (sensor == NULL) {
 		TF_LITE_REPORT_ERROR(error_reporter,
-				     "Failed to get accelerometer, label: %s\n",
-				     label);
+				     "Failed to get accelerometer, name: %s\n",
+				     sensor->name);
 	} else {
-		TF_LITE_REPORT_ERROR(error_reporter, "Got accelerometer, label: %s\n",
-				     label);
+		TF_LITE_REPORT_ERROR(error_reporter, "Got accelerometer, name: %s\n",
+				     sensor->name);
 	}
 	return kTfLiteOk;
 }

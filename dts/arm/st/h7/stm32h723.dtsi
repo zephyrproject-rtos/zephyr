@@ -8,6 +8,7 @@
 #include <mem.h>
 #include <st/h7/stm32h7.dtsi>
 #include <zephyr/dt-bindings/display/stm32_ltdc.h>
+#include <zephyr/dt-bindings/flash_controller/ospi.h>
 
 / {
 	soc {
@@ -18,7 +19,6 @@
 				erase-block-size = <DT_SIZE_K(128)>;
 				/* maximum erase time for a 128K sector */
 				max-erase-time = <4000>;
-				label = "FLASH_STM32";
 			};
 		};
 
@@ -28,7 +28,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000040>;
 			interrupts = <155 0>;
 			status = "disabled";
-			label = "UART_9";
 		};
 
 		usart10: serial@40011c00 {
@@ -37,7 +36,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000080>;
 			interrupts = <156 0>;
 			status = "disabled";
-			label = "UART_10";
 		};
 
 		dmamux1: dmamux@40020800 {
@@ -55,7 +53,28 @@
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>;
-			label = "LTDC";
+			status = "disabled";
+		};
+
+		octospi1: octospi@52005000 {
+			compatible = "st,stm32-ospi";
+			reg = <0x52005000 0x1000>;
+			interrupts = <92 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00004000>,
+				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		octospi2: octospi@5200a000 {
+			compatible = "st,stm32-ospi";
+			reg = <0x5200a000 0x1000>;
+			interrupts = <150 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x000080000>,
+				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};

@@ -13,7 +13,6 @@ description: |
                   ...
                   dma-channels = <8>;
                   #dma-cells = <1>;
-                  label = "PL330";
             };
 
   If PCIe EP client uses channel 0 for Tx DMA and channel 1 for Rx DMA
@@ -22,7 +21,6 @@ description: |
                   ...
                   dmas = <&pl330 0>, <&pl330 1>;
                   dma-names = "txdma", "rxdma";
-                  label = "PCIE_0";
             };
 compatible: "arm,dma-pl330"
 
@@ -35,8 +33,6 @@ properties:
       type: array
       required: true
       description: microcode's physical memory address
-    label:
-      required: true
     "#dma-cells":
       const: 1
 

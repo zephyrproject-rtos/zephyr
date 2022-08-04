@@ -37,7 +37,7 @@ TEST_ALL_KWARGS = {
     'dev_id': TEST_DEV_ID,
     'frequency': TEST_FREQUENCY,
     'daparg': TEST_DAPARG,
-    'tool_opt': TEST_TOOL_OPT,
+    'tool_opt': [TEST_TOOL_OPT],
 }
 
 TEST_DEF_KWARGS = {}
@@ -72,8 +72,8 @@ FLASH_ALL_EXPECTED_CALL = ([TEST_PYOCD,
                             '-e', 'sector',
                             '-a', hex(TEST_ADDR), '-da', TEST_DAPARG,
                             '-t', TEST_TARGET, '-u', TEST_DEV_ID,
-                            '-f', TEST_FREQUENCY,
-                            TEST_TOOL_OPT] +
+                            '-f', TEST_FREQUENCY] +
+                           [TEST_TOOL_OPT] +
                            TEST_FLASH_OPTS +
                            [RC_KERNEL_HEX])
 FLASH_DEF_EXPECTED_CALL = ['pyocd', 'flash', '-e', 'sector',
@@ -87,8 +87,7 @@ DEBUG_ALL_EXPECTED_SERVER = [TEST_PYOCD,
                              '-T', str(TEST_TELNET_PORT),
                              '-t', TEST_TARGET,
                              '-u', TEST_DEV_ID,
-                             '-f', TEST_FREQUENCY,
-                             TEST_TOOL_OPT]
+                             '-f', TEST_FREQUENCY] + [TEST_TOOL_OPT]
 DEBUG_ALL_EXPECTED_CLIENT = [RC_GDB, RC_KERNEL_ELF,
                              '-ex', 'target remote :{}'.format(TEST_GDB_PORT),
                              '-ex', 'monitor halt',
@@ -113,8 +112,7 @@ DEBUGSERVER_ALL_EXPECTED_CALL = [TEST_PYOCD,
                                  '-T', str(TEST_TELNET_PORT),
                                  '-t', TEST_TARGET,
                                  '-u', TEST_DEV_ID,
-                                 '-f', TEST_FREQUENCY,
-                                 TEST_TOOL_OPT]
+                                 '-f', TEST_FREQUENCY] + [TEST_TOOL_OPT]
 DEBUGSERVER_DEF_EXPECTED_CALL = ['pyocd',
                                  'gdbserver',
                                  '-p', '3333',

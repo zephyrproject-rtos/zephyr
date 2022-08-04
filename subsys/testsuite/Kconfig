@@ -19,6 +19,7 @@ config TEST_EXTRA_STACK_SIZE
 	default 2048 if COVERAGE_GCOV
 	default 768 if XTENSA
 	default 0
+	depends on TEST
 	help
 	  Additional stack for tests on some platform where default is not
 	  enough.
@@ -86,11 +87,6 @@ config TEST_LOGGING_DEFAULTS
 	  minimal mode for all test cases. For tests that need alternate
 	  logging configuration, or no logging at all, disable this
 	  in the project-level defconfig.
-
-config TEST_LOGGING_FLUSH_AFTER_TEST
-	bool "When enabled logs are flushed after each test case"
-	default y
-	depends on MULTITHREADING
 
 config TEST_ENABLE_USERSPACE
 	bool

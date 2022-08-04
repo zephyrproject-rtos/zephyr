@@ -5,4 +5,4 @@
 
 config  BOARD_INTEL_ADSP_CAVS15
 	bool "Intel ADSP CAVS 1.5"
-	depends on SOC_SERIES_INTEL_CAVS_V15
+	depends on SOC_SERIES_INTEL_ADSP_CAVS

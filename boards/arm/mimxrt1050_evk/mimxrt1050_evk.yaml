@@ -19,6 +19,7 @@ supported:
   - arduino_serial
   - counter
   - display
+  - dma
   - gpio
   - i2c
   - netif:eth

@@ -25,7 +25,6 @@
 
 	flash0: flash@0 {
 		compatible = "serial-flash";
-		label = "FLASH_NUMICRO";
 		erase-block-size = <4096>;
 		write-block-size = <1>;
 	};
@@ -41,56 +40,48 @@
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40070000 0x1000>;
 			status = "disabled";
-			label = "UART_0";
 		};
 
 		uart1: serial@40071000 {
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40071000 0x1000>;
 			status = "disabled";
-			label = "UART_1";
 		};
 
 		uart2: serial@40072000 {
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40072000 0x1000>;
 			status = "disabled";
-			label = "UART_2";
 		};
 
 		uart3: serial@40073000 {
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40073000 0x1000>;
 			status = "disabled";
-			label = "UART_3";
 		};
 
 		uart4: serial@40074000 {
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40074000 0x1000>;
 			status = "disabled";
-			label = "UART_4";
 		};
 
 		uart5: serial@40075000 {
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40075000 0x1000>;
 			status = "disabled";
-			label = "UART_5";
 		};
 
 		uart6: serial@40076000 {
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40076000 0x1000>;
 			status = "disabled";
-			label = "UART_6";
 		};
 
 		uart7: serial@40077000 {
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40077000 0x1000>;
 			status = "disabled";
-			label = "UART_7";
 		};
 
 	};

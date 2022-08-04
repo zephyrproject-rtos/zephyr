@@ -13,7 +13,6 @@
 			compatible = "renesas,r8a7795-cpg-mssr";
 			reg = <0xe6150000 0x1000>;
 			#clock-cells = <2>;
-			label = "cpg";
 		};
 
 		can0: can@e6c30000 {

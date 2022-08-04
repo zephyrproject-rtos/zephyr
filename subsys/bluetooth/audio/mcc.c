@@ -74,42 +74,25 @@ struct mcs_instance_t {
 	uint16_t content_control_id_handle;
 
 	struct bt_gatt_subscribe_params player_name_sub_params;
-	struct bt_gatt_discover_params player_name_sub_disc_params;
 	struct bt_gatt_subscribe_params track_changed_sub_params;
-	struct bt_gatt_discover_params track_changed_sub_disc_params;
 	struct bt_gatt_subscribe_params track_title_sub_params;
-	struct bt_gatt_discover_params track_title_sub_disc_params;
 	struct bt_gatt_subscribe_params track_duration_sub_params;
-	struct bt_gatt_discover_params track_duration_sub_disc_params;
 	struct bt_gatt_subscribe_params track_position_sub_params;
-	struct bt_gatt_discover_params track_position_sub_disc_params;
 	struct bt_gatt_subscribe_params playback_speed_sub_params;
-	struct bt_gatt_discover_params playback_speed_sub_disc_params;
 	struct bt_gatt_subscribe_params seeking_speed_sub_params;
-	struct bt_gatt_discover_params seeking_speed_sub_disc_params;
 #ifdef CONFIG_BT_MCC_OTS
 	struct bt_gatt_subscribe_params current_track_obj_sub_params;
-	struct bt_gatt_discover_params current_track_sub_disc_params;
 	struct bt_gatt_subscribe_params next_track_obj_sub_params;
-	struct bt_gatt_discover_params next_track_obj_sub_disc_params;
 	struct bt_gatt_subscribe_params parent_group_obj_sub_params;
-	struct bt_gatt_discover_params parent_group_obj_sub_disc_params;
 	struct bt_gatt_subscribe_params current_group_obj_sub_params;
-	struct bt_gatt_discover_params current_group_obj_sub_disc_params;
 #endif /* CONFIG_BT_MCC_OTS */
 	struct bt_gatt_subscribe_params playing_order_sub_params;
-	struct bt_gatt_discover_params playing_order_sub_disc_params;
 	struct bt_gatt_subscribe_params media_state_sub_params;
-	struct bt_gatt_discover_params media_state_sub_disc_params;
 	struct bt_gatt_subscribe_params cp_sub_params;
-	struct bt_gatt_discover_params cp_sub_disc_params;
 	struct bt_gatt_subscribe_params opcodes_supported_sub_params;
-	struct bt_gatt_discover_params opcodes_supported_sub_disc_params;
 #ifdef CONFIG_BT_MCC_OTS
 	struct bt_gatt_subscribe_params scp_sub_params;
-	struct bt_gatt_discover_params scp_sub_disc_params;
 	struct bt_gatt_subscribe_params search_results_obj_sub_params;
-	struct bt_gatt_discover_params search_results_obj_sub_disc_params;
 #endif /* CONFIG_BT_MCC_OTS */
 
 	/* The write buffer is used for
@@ -1049,6 +1032,23 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
+/* Called when discovery is completed - successfully or with error */
+static void discovery_complete(struct bt_conn *conn, int err)
+{
+	BT_DBG("Discovery completed, err: %d", err);
+
+	/* TODO: Handle resets of instance, and re-discovery.
+	 * For now, reset instance on error.
+	 */
+	if (err) {
+		cur_mcs_inst = NULL;
+	}
+
+	if (mcc_cb && mcc_cb->discover_mcs) {
+		mcc_cb->discover_mcs(conn, err);
+	}
+}
+
 #ifdef CONFIG_BT_MCC_OTS
 static uint8_t discover_otc_char_func(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
@@ -1121,14 +1121,11 @@ static uint8_t discover_otc_char_func(struct bt_conn *conn,
 	BT_DBG("Setup complete for included OTS");
 	(void)memset(params, 0, sizeof(*params));
 
-	if (mcc_cb && mcc_cb->discover_mcs) {
-		mcc_cb->discover_mcs(conn, err);
-	}
+	discovery_complete(conn, err);
 
 	return BT_GATT_ITER_STOP;
 }
 #endif /* CONFIG_BT_MCC_OTS */
-
 
 #ifdef CONFIG_BT_MCC_OTS
 /* This function is called when an included service is found.
@@ -1175,11 +1172,8 @@ static uint8_t discover_include_func(struct bt_conn *conn,
 		BT_DBG("Start discovery of OTS characteristics");
 		err = bt_gatt_discover(conn, &discover_params);
 		if (err) {
-			BT_DBG("Discovery of OTS chars. failed (err %d)",
-			       err);
-			if (mcc_cb && mcc_cb->discover_mcs) {
-				mcc_cb->discover_mcs(conn, err);
-			}
+			BT_DBG("Discovery of OTS chars. failed");
+			discovery_complete(conn, err);
 		}
 		return BT_GATT_ITER_STOP;
 	}
@@ -1188,26 +1182,303 @@ static uint8_t discover_include_func(struct bt_conn *conn,
 	/* This is OK, the server may not support OTS. But in that case,
 	 *  discovery stops here.
 	 */
-	if (mcc_cb && mcc_cb->discover_mcs) {
-		mcc_cb->discover_mcs(conn, err);
-	}
+	discovery_complete(conn, err);
 	return BT_GATT_ITER_STOP;
+}
+
+/* Start discovery of included services */
+static void discover_included(struct bt_conn *conn)
+{
+	int err;
+
+	discover_params.start_handle = cur_mcs_inst->start_handle;
+	discover_params.end_handle = cur_mcs_inst->end_handle;
+	discover_params.type = BT_GATT_DISCOVER_INCLUDE;
+	discover_params.func = discover_include_func;
+
+	BT_DBG("Start discovery of included services");
+	err = bt_gatt_discover(conn, &discover_params);
+	if (err) {
+		BT_DBG("Discovery of included service failed: %d", err);
+		discovery_complete(conn, err);
+	}
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
+static bool subscribe_next_mcs_char(struct bt_conn *conn);
+
+/* This function will subscribe to GMCS CCCDs.
+ * After this, the function will start discovery of included services.
+ */
+static void subscribe_mcs_char_func(struct bt_conn *conn, uint8_t err,
+				    struct bt_gatt_subscribe_params *params)
+{
+	bool subscription_done;
+
+	if (err) {
+		BT_DBG("Subscription callback error: %u", err);
+		discovery_complete(conn, err);
+		return;
+	}
+
+	BT_DBG("Subscribed: value handle: %d, ccc handle: %d",
+	       params->value_handle, params->ccc_handle);
+
+	/* Subscribe to next characteristic */
+	subscription_done = subscribe_next_mcs_char(conn);
+
+	if (subscription_done) {
+#ifdef CONFIG_BT_MCC_OTS
+		/* Start discovery of included services to find OTS */
+		discover_included(conn);
+#else
+		/* If OTS is not configured, discovery ends here */
+		discovery_complete(conn, 0);
+#endif /* CONFIG_BT_MCC_OTS */
+	}
+}
+
+/* Subscribe to a characteristic - helper function */
+static int do_subscribe(struct bt_conn *conn, uint16_t handle,
+			 struct bt_gatt_subscribe_params *sub_params)
+{
+	/* With ccc_handle == 0 it will use auto discovery */
+	sub_params->ccc_handle = 0;
+	sub_params->end_handle = cur_mcs_inst->end_handle;
+	sub_params->value = BT_GATT_CCC_NOTIFY;
+	sub_params->value_handle = handle;
+	sub_params->notify = mcs_notify_handler;
+	sub_params->subscribe = subscribe_mcs_char_func;
+	/* disc_params pointer is also used as subscription flag */
+	sub_params->disc_params = &discover_params;
+
+	BT_DBG("Subscring to handle %d", handle);
+	return bt_gatt_subscribe(conn, sub_params);
+}
+
+/* Subscribe to the next GMCS CCCD.
+ * @return true if there are no more characteristics to subscribe to
+ */
+static bool subscribe_next_mcs_char(struct bt_conn *conn)
+{
+	struct bt_gatt_subscribe_params *sub_params = NULL;
+	int err = 0;
+
+	/* The characteristics may be in any order on the server, and
+	 * not all of them may exist => need to check all.
+	 * For each of the subscribable characteristics
+	 * - check if we have a handle for it
+	 * - check sub_params.disc_params pointer to see if we have
+	 *   already subscribed to it (set in do_subscribe() ).
+	 */
+
+	if (cur_mcs_inst->player_name_handle &&
+	    cur_mcs_inst->player_name_sub_params.disc_params == NULL) {
+		sub_params = &cur_mcs_inst->player_name_sub_params;
+		err = do_subscribe(conn, cur_mcs_inst->player_name_handle, sub_params);
+		if (err) {
+			BT_DBG("Could not subscribe: %d", err);
+			discovery_complete(conn, err);
+		}
+		return false;
+	}
+
+	if (cur_mcs_inst->track_changed_handle &&
+	    cur_mcs_inst->track_changed_sub_params.disc_params == NULL) {
+		sub_params = &cur_mcs_inst->track_changed_sub_params;
+		err = do_subscribe(conn, cur_mcs_inst->track_changed_handle, sub_params);
+		if (err) {
+			BT_DBG("Could not subscribe: %d", err);
+			discovery_complete(conn, err);
+		}
+		return false;
+	}
+	if (cur_mcs_inst->track_title_handle &&
+	    cur_mcs_inst->track_title_sub_params.disc_params == NULL) {
+		sub_params = &cur_mcs_inst->track_title_sub_params;
+		err = do_subscribe(conn, cur_mcs_inst->track_title_handle, sub_params);
+		if (err) {
+			BT_DBG("Could not subscribe: %d", err);
+			discovery_complete(conn, err);
+		}
+		return false;
+	}
+
+	if (cur_mcs_inst->track_duration_handle &&
+	    cur_mcs_inst->track_duration_sub_params.disc_params == NULL) {
+		sub_params = &cur_mcs_inst->track_duration_sub_params;
+		err = do_subscribe(conn, cur_mcs_inst->track_duration_handle, sub_params);
+		if (err) {
+			BT_DBG("Could not subscribe: %d", err);
+			discovery_complete(conn, err);
+		}
+		return false;
+	}
+
+	if (cur_mcs_inst->track_position_handle &&
+	    cur_mcs_inst->track_position_sub_params.disc_params == NULL) {
+		sub_params = &cur_mcs_inst->track_position_sub_params;
+		err = do_subscribe(conn, cur_mcs_inst->track_position_handle, sub_params);
+		if (err) {
+			BT_DBG("Could not subscribe: %d", err);
+			discovery_complete(conn, err);
+		}
+		return false;
+	}
+
+	if (cur_mcs_inst->playback_speed_handle &&
+	    cur_mcs_inst->playback_speed_sub_params.disc_params == NULL) {
+		sub_params = &cur_mcs_inst->playback_speed_sub_params;
+		err = do_subscribe(conn, cur_mcs_inst->playback_speed_handle, sub_params);
+		if (err) {
+			BT_DBG("Could not subscribe: %d", err);
+			discovery_complete(conn, err);
+		}
+		return false;
+	}
+
+	if (cur_mcs_inst->seeking_speed_handle &&
+	    cur_mcs_inst->seeking_speed_sub_params.disc_params == NULL) {
+		sub_params = &cur_mcs_inst->seeking_speed_sub_params;
+		err = do_subscribe(conn, cur_mcs_inst->seeking_speed_handle, sub_params);
+		if (err) {
+			BT_DBG("Could not subscribe: %d", err);
+			discovery_complete(conn, err);
+		}
+		return false;
+	}
+
+#ifdef CONFIG_BT_MCC_OTS
+	if (cur_mcs_inst->current_track_obj_id_handle &&
+	    cur_mcs_inst->current_track_obj_sub_params.disc_params == NULL) {
+		sub_params = &cur_mcs_inst->current_track_obj_sub_params;
+		err = do_subscribe(conn, cur_mcs_inst->current_track_obj_id_handle, sub_params);
+		if (err) {
+			BT_DBG("Could not subscribe: %d", err);
+			discovery_complete(conn, err);
+		}
+		return false;
+	}
+
+	if (cur_mcs_inst->next_track_obj_id_handle &&
+	    cur_mcs_inst->next_track_obj_sub_params.disc_params == NULL) {
+		sub_params = &cur_mcs_inst->next_track_obj_sub_params;
+		err = do_subscribe(conn, cur_mcs_inst->next_track_obj_id_handle, sub_params);
+		if (err) {
+			BT_DBG("Could not subscribe: %d", err);
+			discovery_complete(conn, err);
+		}
+		return false;
+	}
+
+	if (cur_mcs_inst->parent_group_obj_id_handle &&
+	    cur_mcs_inst->parent_group_obj_sub_params.disc_params == NULL) {
+		sub_params = &cur_mcs_inst->parent_group_obj_sub_params;
+		err = do_subscribe(conn, cur_mcs_inst->parent_group_obj_id_handle, sub_params);
+		if (err) {
+			BT_DBG("Could not subscribe: %d", err);
+			discovery_complete(conn, err);
+		}
+		return false;
+	}
+
+	if (cur_mcs_inst->current_group_obj_id_handle &&
+	    cur_mcs_inst->parent_group_obj_sub_params.disc_params == NULL) {
+		sub_params = &cur_mcs_inst->current_group_obj_sub_params;
+		err = do_subscribe(conn, cur_mcs_inst->current_group_obj_id_handle, sub_params);
+		if (err) {
+			BT_DBG("Could not subscribe: %d", err);
+			discovery_complete(conn, err);
+		}
+		return false;
+	}
+
+#endif /* CONFIG_BT_MCC_OTS */
+
+	if (cur_mcs_inst->playing_order_handle &&
+	    cur_mcs_inst->playing_order_sub_params.disc_params == NULL) {
+		sub_params = &cur_mcs_inst->playing_order_sub_params;
+		err = do_subscribe(conn, cur_mcs_inst->playing_order_handle, sub_params);
+		if (err) {
+			BT_DBG("Could not subscribe: %d", err);
+			discovery_complete(conn, err);
+		}
+		return false;
+	}
+
+	if (cur_mcs_inst->media_state_handle &&
+	    cur_mcs_inst->media_state_sub_params.disc_params == NULL) {
+		sub_params = &cur_mcs_inst->media_state_sub_params;
+		err = do_subscribe(conn, cur_mcs_inst->media_state_handle, sub_params);
+		if (err) {
+			BT_DBG("Could not subscribe: %d", err);
+			discovery_complete(conn, err);
+		}
+		return false;
+	}
+
+	if (cur_mcs_inst->cp_handle &&
+	    cur_mcs_inst->cp_sub_params.disc_params == NULL) {
+		sub_params = &cur_mcs_inst->cp_sub_params;
+		err = do_subscribe(conn, cur_mcs_inst->cp_handle, sub_params);
+		if (err) {
+			BT_DBG("Could not subscribe: %d", err);
+			discovery_complete(conn, err);
+		}
+		return false;
+	}
+
+	if (cur_mcs_inst->opcodes_supported_handle &&
+	    cur_mcs_inst->opcodes_supported_sub_params.disc_params == NULL) {
+		sub_params = &cur_mcs_inst->opcodes_supported_sub_params;
+		err = do_subscribe(conn, cur_mcs_inst->opcodes_supported_handle, sub_params);
+		if (err) {
+			BT_DBG("Could not subscribe: %d", err);
+			discovery_complete(conn, err);
+		}
+		return false;
+	}
+
+#ifdef CONFIG_BT_MCC_OTS
+	if (cur_mcs_inst->scp_handle &&
+	    cur_mcs_inst->scp_sub_params.disc_params == NULL) {
+		sub_params = &cur_mcs_inst->scp_sub_params;
+		err = do_subscribe(conn, cur_mcs_inst->scp_handle, sub_params);
+		if (err) {
+			BT_DBG("Could not subscribe: %d", err);
+			discovery_complete(conn, err);
+		}
+		return false;
+	}
+
+	if (cur_mcs_inst->search_results_obj_id_handle &&
+	    cur_mcs_inst->search_results_obj_sub_params.disc_params == NULL) {
+		sub_params = &cur_mcs_inst->search_results_obj_sub_params;
+		err = do_subscribe(conn, cur_mcs_inst->search_results_obj_id_handle, sub_params);
+		if (err) {
+			BT_DBG("Could not subscribe: %d", err);
+			discovery_complete(conn, err);
+		}
+		return false;
+	}
+#endif /* CONFIG_BT_MCC_OTS */
+
+	/* If we have come here, there are no more characteristics to
+	 * subscribe to, and we are done.
+	 */
+	return true;
+}
 
 /* This function is called when characteristics are found.
- * The function will store handles, and optionally subscribe to, GMCS
- * characteristics.
- * After this, the function will start discovery of included services.
+ * The function will store handles to GMCS characteristics.
+ * After this, the function will start subscription to characteristics
  */
 static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      struct bt_gatt_discover_params *params)
 {
 	struct bt_gatt_chrc *chrc;
-	struct bt_gatt_subscribe_params *sub_params = NULL;
-	int err = 0;
+	bool subscription_done = true;
 
 	if (attr) {
 		/* Found an attribute */
@@ -1225,8 +1496,8 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 		if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYER_NAME)) {
 			BT_DBG("Player name, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->player_name_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->player_name_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->player_name_sub_disc_params;
+			/* Use discovery params pointer as subscription flag */
+			cur_mcs_inst->player_name_sub_params.disc_params = NULL;
 #ifdef CONFIG_BT_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_ICON_OBJ_ID)) {
 			BT_DBG("Icon Object, UUID: %s", bt_uuid_str(chrc->uuid));
@@ -1238,33 +1509,27 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_CHANGED)) {
 			BT_DBG("Track Changed, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->track_changed_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->track_changed_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->track_changed_sub_disc_params;
+			cur_mcs_inst->track_changed_sub_params.disc_params = NULL;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_TITLE)) {
 			BT_DBG("Track Title, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->track_title_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->track_title_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->track_title_sub_disc_params;
+			cur_mcs_inst->track_title_sub_params.disc_params = NULL;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_DURATION)) {
 			BT_DBG("Track Duration, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->track_duration_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->track_duration_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->track_duration_sub_disc_params;
+			cur_mcs_inst->track_duration_sub_params.disc_params = NULL;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_POSITION)) {
 			BT_DBG("Track Position, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->track_position_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->track_position_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->track_position_sub_disc_params;
+			cur_mcs_inst->track_position_sub_params.disc_params = NULL;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYBACK_SPEED)) {
 			BT_DBG("Playback Speed, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->playback_speed_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->playback_speed_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->playback_speed_sub_disc_params;
+			cur_mcs_inst->playback_speed_sub_params.disc_params = NULL;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_SEEKING_SPEED)) {
 			BT_DBG("Seeking Speed, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->seeking_speed_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->seeking_speed_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->seeking_speed_sub_disc_params;
+			cur_mcs_inst->seeking_speed_sub_params.disc_params = NULL;
 #ifdef CONFIG_BT_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_SEGMENTS_OBJ_ID)) {
 			BT_DBG("Track Segments Object, UUID: %s", bt_uuid_str(chrc->uuid));
@@ -1272,59 +1537,49 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_CURRENT_TRACK_OBJ_ID)) {
 			BT_DBG("Current Track Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->current_track_obj_id_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->current_track_obj_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->current_track_sub_disc_params;
+			cur_mcs_inst->current_track_obj_sub_params.disc_params = NULL;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_NEXT_TRACK_OBJ_ID)) {
 			BT_DBG("Next Track Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->next_track_obj_id_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->next_track_obj_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->next_track_obj_sub_disc_params;
+			cur_mcs_inst->next_track_obj_sub_params.disc_params = NULL;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PARENT_GROUP_OBJ_ID)) {
 			BT_DBG("Parent Group Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->parent_group_obj_id_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->parent_group_obj_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->parent_group_obj_sub_disc_params;
+			cur_mcs_inst->parent_group_obj_sub_params.disc_params = NULL;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_CURRENT_GROUP_OBJ_ID)) {
 			BT_DBG("Group Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->current_group_obj_id_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->current_group_obj_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->current_group_obj_sub_disc_params;
+			cur_mcs_inst->current_group_obj_sub_params.disc_params = NULL;
 #endif /* CONFIG_BT_MCC_OTS */
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYING_ORDER)) {
 			BT_DBG("Playing Order, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->playing_order_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->playing_order_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->playing_order_sub_disc_params;
+			cur_mcs_inst->playing_order_sub_params.disc_params = NULL;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYING_ORDERS)) {
 			BT_DBG("Playing Orders supported, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->playing_orders_supported_handle = chrc->value_handle;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_MEDIA_STATE)) {
 			BT_DBG("Media State, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->media_state_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->media_state_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->media_state_sub_disc_params;
+			cur_mcs_inst->media_state_sub_params.disc_params = NULL;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_MEDIA_CONTROL_POINT)) {
 			BT_DBG("Media Control Point, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->cp_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->cp_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->cp_sub_disc_params;
+			cur_mcs_inst->cp_sub_params.disc_params = NULL;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_MEDIA_CONTROL_OPCODES)) {
 			BT_DBG("Media control opcodes supported, UUID: %s",
 			       bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->opcodes_supported_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->opcodes_supported_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->opcodes_supported_sub_disc_params;
+			cur_mcs_inst->opcodes_supported_sub_params.disc_params = NULL;
 #ifdef CONFIG_BT_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_SEARCH_CONTROL_POINT)) {
 			BT_DBG("Search control point, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->scp_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->scp_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->scp_sub_disc_params;
+			cur_mcs_inst->scp_sub_params.disc_params = NULL;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID)) {
 			BT_DBG("Search Results object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->search_results_obj_id_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->search_results_obj_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->search_results_obj_sub_disc_params;
+			cur_mcs_inst->search_results_obj_sub_params.disc_params = NULL;
 #endif /* CONFIG_BT_MCC_OTS */
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_CCID)) {
 			BT_DBG("Content Control ID, UUID: %s", bt_uuid_str(chrc->uuid));
@@ -1332,55 +1587,36 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 		}
 
 
-		if (subscribe_all && sub_params) {
-			BT_DBG("Subscribing - handle: 0x%04x", attr->handle);
-
-			/* With ccc_handle == 0 it will use auto discovery */
-			sub_params->ccc_handle = 0;
-			sub_params->end_handle = cur_mcs_inst->end_handle;
-			sub_params->value = BT_GATT_CCC_NOTIFY;
-			sub_params->value_handle = chrc->value_handle;
-			sub_params->notify = mcs_notify_handler;
-			bt_gatt_subscribe(conn, sub_params);
-		}
-
 		/* Continue to search for more attributes */
 		return BT_GATT_ITER_CONTINUE;
 	}
 
 	/* No more attributes found */
-	BT_DBG("Setup complete for GMCS");
+	BT_DBG("GMCS characteristics found");
 	(void)memset(params, 0, sizeof(*params));
 
+	/* Either subscribe to characteristics, or continue to discovery of
+	 *included services.
+	 * Subscription is done after discovery, not in parallel with it,
+	 * to avoid queuing many ATT requests that requires buffers.
+	 */
+	if (subscribe_all) {
+		subscription_done = subscribe_next_mcs_char(conn);
+	}
+
+	if (subscription_done) {
+		/* Not subscribing, or there was nothing to subscribe to */
 #ifdef CONFIG_BT_MCC_OTS
-
-	/* Discover included services */
-	discover_params.start_handle = cur_mcs_inst->start_handle;
-	discover_params.end_handle = cur_mcs_inst->end_handle;
-	discover_params.type = BT_GATT_DISCOVER_INCLUDE;
-	discover_params.func = discover_include_func;
-
-	BT_DBG("Start discovery of included services");
-	err = bt_gatt_discover(conn, &discover_params);
-	if (err) {
-		BT_DBG("Discover of included service failed (err %d)", err);
-		if (mcc_cb && mcc_cb->discover_mcs) {
-			mcc_cb->discover_mcs(conn, err);
-		}
-	}
-
+		/* Start discovery of included services to find OTS */
+		discover_included(conn);
 #else
-
-	/* If OTS is not configured, discovery ends here */
-	if (mcc_cb && mcc_cb->discover_mcs) {
-		mcc_cb->discover_mcs(conn, err);
-	}
-
+		/* If OTS is not configured, discovery ends here */
+		discovery_complete(conn, 0);
 #endif /* CONFIG_BT_MCC_OTS */
+	}
 
 	return BT_GATT_ITER_STOP;
 }
-
 
 /* This function is called when a (primary) GMCS service has been discovered.
  * The function will store the start and end handle for the service. It will
@@ -1424,11 +1660,8 @@ static uint8_t discover_primary_func(struct bt_conn *conn,
 		BT_DBG("Start discovery of GMCS characteristics");
 		err = bt_gatt_discover(conn, &discover_params);
 		if (err) {
-			BT_DBG("Discover failed (err %d)", err);
-			cur_mcs_inst = NULL;
-			if (mcc_cb && mcc_cb->discover_mcs) {
-				mcc_cb->discover_mcs(conn, err);
-			}
+			BT_DBG("Discovery failed: %d", err);
+			discovery_complete(conn, err);
 		}
 		return BT_GATT_ITER_STOP;
 	}
@@ -1436,9 +1669,7 @@ static uint8_t discover_primary_func(struct bt_conn *conn,
 	/* No attribute of the searched for type found */
 	BT_DBG("Could not find an GMCS instance on the server");
 	cur_mcs_inst = NULL;
-	if (mcc_cb && mcc_cb->discover_mcs) {
-		mcc_cb->discover_mcs(conn, -ENODATA);
-	}
+	discovery_complete(conn, -ENODATA);
 	return BT_GATT_ITER_STOP;
 }
 
@@ -1472,8 +1703,9 @@ int bt_mcc_init(struct bt_mcc_cb *cb)
  * The order of discovery is follows:
  * 1: Discover GMCS primary service (started here)
  * 2: Discover characteristics of GMCS
- * 3: Discover OTS service included in GMCS
- * 4: Discover characteristics of OTS
+ * 3: Subscribe to characteristics of GMCS
+ * 4: Discover OTS service included in GMCS
+ * 5: Discover characteristics of OTS and subscribe to them
  */
 int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe)
 {

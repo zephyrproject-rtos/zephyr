@@ -11,14 +11,12 @@
 		status = "okay";
 		compatible = "sensirion,sht4x";
 		reg = <0x44>;
-		label = "SHT4X";
 		repeatability = <2>;
 	};
 	sgp40@59 {
 		status = "okay";
 		compatible = "sensirion,sgp40";
 		reg = <0x59>;
-		label = "SGP40";
 		enable-selftest;
 	};
 };

@@ -20,3 +20,4 @@ supported:
   - pwm
   - dma
   - watchdog
+  - nvs

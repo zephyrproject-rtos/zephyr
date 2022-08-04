@@ -49,7 +49,6 @@
 	psci: psci {
 		compatible = "arm,psci-0.2";
 		method = "smc";
-		label = "PSCI";
 	};
 
 	sram0: memory@c0000000 {
@@ -75,7 +74,6 @@
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			clock-frequency = <350000000>;
-			label = "UART_1";
 			reg-shift = <2>;
 			status = "disabled";
 		};

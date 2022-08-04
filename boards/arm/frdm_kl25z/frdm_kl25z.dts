@@ -105,7 +105,6 @@
 	mma8451q@1d {
 		compatible = "nxp,fxos8700","nxp,mma8451q";
 		reg = <0x1d>;
-		label = "MMA8451Q";
 		int1-gpios = <&gpioa 14 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
 	};

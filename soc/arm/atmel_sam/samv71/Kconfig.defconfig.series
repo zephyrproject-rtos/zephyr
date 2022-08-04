@@ -46,14 +46,6 @@ config DMA_SAM_XDMAC
 	default y
 	depends on DMA
 
-config ADC_SAM_AFEC
-	default y
-	depends on ADC
-
-config I2C_SAM_TWIHS
-	default y
-	depends on I2C
-
 config I2S_SAM_SSC
 	default y
 	depends on I2S
@@ -69,9 +61,5 @@ config ENTROPY_SAM_RNG
 config SOC_FLASH_SAM
 	default y
 	depends on FLASH
-
-config PWM_SAM
-	default y
-	depends on PWM
 
 endif # SOC_SERIES_SAMV71

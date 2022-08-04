@@ -49,6 +49,8 @@
 		led0 = &led0;
 		led1 = &led1;
 		sw0 = &button0;
+		watchdog0 = &wdt0;
+		spi-flash0 = &gd25q16;
 	};
 };
 

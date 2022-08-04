@@ -35,9 +35,6 @@ properties:
 child-binding:
     description: Properties of slave port
     properties:
-        label:
-            type: string
-            required: true
         local-mac-address:
             type: uint8-array
             required: false

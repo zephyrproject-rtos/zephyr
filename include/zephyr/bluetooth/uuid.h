@@ -554,6 +554,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_BROADCAST_AUDIO \
 	BT_UUID_DECLARE_16(BT_UUID_BROADCAST_AUDIO_VAL)
+/** @def BT_UUID_CAS_VAL
+ *  @brief Common Audio Service value
+ */
+#define BT_UUID_CAS_VAL 0x1853
+/** @def BT_UUID_CAS
+ *  @brief Common Audio Service
+ */
+#define BT_UUID_CAS \
+	BT_UUID_DECLARE_16(BT_UUID_CAS_VAL)
 /** @def BT_UUID_HAS_VAL
  *  @brief Hearing Access Service value
  */

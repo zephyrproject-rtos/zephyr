@@ -115,6 +115,7 @@
 		pwm-led1 = &green_led_pwm;
 		pwm-led2 = &blue_led_pwm;
 		magn0 = &bmm150;
+		watchdog0 = &wdt0;
 	};
 };
 
@@ -289,6 +290,11 @@
 			reg = <0x000fa000 0x00006000>;
 		};
 	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
 };
 
 / {

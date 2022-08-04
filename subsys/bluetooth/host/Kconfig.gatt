@@ -114,6 +114,24 @@ config BT_GATT_NOTIFY_MULTIPLE
 	  This option enables support for the GATT Notify Multiple
 	  Characteristic Values procedure.
 
+if BT_GATT_NOTIFY_MULTIPLE
+
+config BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS
+	int "Delay for batching multiple notifications in a single PDU."
+	default 1
+	range 0 4000
+	help
+	  Sets the time (in milliseconds) during which consecutive GATT
+	  notifications will be tentatively appended to form a single
+	  ATT_MULTIPLE_HANDLE_VALUE_NTF PDU.
+
+	  If set to 0, batching is disabled. Then, the only way to send
+	  ATT_MULTIPLE_HANDLE_VALUE_NTF PDUs is to use bt_gatt_notify_multiple.
+
+	  See the documentation of bt_gatt_notify() for more details.
+
+endif # BT_GATT_NOTIFY_MULTIPLE
+
 config BT_GATT_ENFORCE_CHANGE_UNAWARE
 	bool "GATT Enforce change-unaware state"
 	depends on BT_GATT_CACHING

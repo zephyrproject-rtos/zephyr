@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_cc13xx_cc26xx_ieee802154
+
 #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx);
@@ -28,8 +30,6 @@ LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx);
 #include <ti/drivers/rf/RF.h>
 
 #include "ieee802154_cc13xx_cc26xx.h"
-
-DEVICE_DECLARE(ieee802154_cc13xx_cc26xx);
 
 /* Overrides from SmartRF Studio 7 2.13.0 */
 static uint32_t overrides[] = {
@@ -70,7 +70,7 @@ static void cmd_ieee_csma_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 {
 	ARG_UNUSED(h);
 
-	const struct device *dev = &DEVICE_NAME_GET(ieee802154_cc13xx_cc26xx);
+	const struct device *dev = DEVICE_DT_INST_GET(0);
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
 	update_saved_cmdhandle(ch, (RF_CmdHandle *) &drv_data->saved_cmdhandle);
@@ -86,7 +86,7 @@ static void cmd_ieee_rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 {
 	ARG_UNUSED(h);
 
-	const struct device *dev = &DEVICE_NAME_GET(ieee802154_cc13xx_cc26xx);
+	const struct device *dev = DEVICE_DT_INST_GET(0);
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
 	update_saved_cmdhandle(ch, (RF_CmdHandle *) &drv_data->saved_cmdhandle);
@@ -753,18 +753,14 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 };
 
 #if defined(CONFIG_NET_L2_IEEE802154)
-NET_DEVICE_INIT(ieee802154_cc13xx_cc26xx,
-		CONFIG_IEEE802154_CC13XX_CC26XX_DRV_NAME,
-		ieee802154_cc13xx_cc26xx_init, NULL,
-		&ieee802154_cc13xx_cc26xx_data, NULL,
-		CONFIG_IEEE802154_CC13XX_CC26XX_INIT_PRIO,
-		&ieee802154_cc13xx_cc26xx_radio_api, IEEE802154_L2,
-		NET_L2_GET_CTX_TYPE(IEEE802154_L2), IEEE802154_MTU);
+NET_DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_init, NULL,
+			  &ieee802154_cc13xx_cc26xx_data, NULL,
+			  CONFIG_IEEE802154_CC13XX_CC26XX_INIT_PRIO,
+			  &ieee802154_cc13xx_cc26xx_radio_api, IEEE802154_L2,
+			  NET_L2_GET_CTX_TYPE(IEEE802154_L2), IEEE802154_MTU);
 #else
-DEVICE_DEFINE(ieee802154_cc13xx_cc26xx,
-		CONFIG_IEEE802154_CC13XX_CC26XX_DRV_NAME,
-		ieee802154_cc13xx_cc26xx_init, NULL,
-		&ieee802154_cc13xx_cc26xx_data,
-		NULL, POST_KERNEL, CONFIG_IEEE802154_CC13XX_CC26XX_INIT_PRIO,
-		&ieee802154_cc13xx_cc26xx_radio_api);
+DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_init, NULL,
+		      &ieee802154_cc13xx_cc26xx_data, NULL, POST_KERNEL,
+		      CONFIG_IEEE802154_CC13XX_CC26XX_INIT_PRIO,
+		      &ieee802154_cc13xx_cc26xx_radio_api);
 #endif

@@ -6,26 +6,12 @@ if BOARD_MPS2_AN385
 config BOARD
 	default "mps2_an385"
 
-if GPIO
-
-config GPIO_CMSDK_AHB
-	default y
-
-endif # GPIO
-
 if SERIAL
-
-config UART_CMSDK_APB
-	default y
 
 config UART_INTERRUPT_DRIVEN
 	default y
 
 endif # SERIAL
-
-config WDOG_CMSDK_APB
-	default y
-	depends on WATCHDOG
 
 if COUNTER
 
@@ -36,10 +22,6 @@ config TIMER_DTMR_CMSDK_APB
 	default y
 
 endif # COUNTER
-
-config I2C_SBCON
-	default y
-	depends on I2C
 
 config ZTEST_STACK_SIZE
 	default 4096 if ZTEST

@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/settings/settings.h>
 #include <zephyr/storage/flash_map.h>

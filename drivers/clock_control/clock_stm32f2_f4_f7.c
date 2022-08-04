@@ -34,6 +34,22 @@ static uint32_t get_pll_source(void)
 }
 
 /**
+ * @brief get the pll source frequency
+ */
+__unused
+uint32_t get_pllsrc_frequency(void)
+{
+	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+		return STM32_HSI_FREQ;
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
+		return STM32_HSE_FREQ;
+	}
+
+	__ASSERT(0, "Invalid source");
+	return 0;
+}
+
+/**
  * @brief Set up pll configuration
  */
 __unused
@@ -43,18 +59,6 @@ void config_pll_sysclock(void)
 				    pllm(STM32_PLL_M_DIVISOR),
 				    STM32_PLL_N_MULTIPLIER,
 				    pllp(STM32_PLL_P_DIVISOR));
-}
-
-/**
- * @brief Return pllout frequency
- */
-__unused
-uint32_t get_pllout_frequency(void)
-{
-	return __LL_RCC_CALC_PLLCLK_FREQ(get_pll_source(),
-					 pllm(STM32_PLL_M_DIVISOR),
-					 STM32_PLL_N_MULTIPLIER,
-					 pllp(STM32_PLL_P_DIVISOR));
 }
 
 #endif /* defined(STM32_PLL_ENABLED) */

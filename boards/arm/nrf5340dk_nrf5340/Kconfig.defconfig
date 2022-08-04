@@ -136,3 +136,6 @@ config BT_CTLR
 	default y if BT
 
 endif # BOARD_NRF5340DK_NRF5340_CPUNET
+
+config UART_NRF_DK_SERIAL_WORKAROUND
+	default y if ZTEST

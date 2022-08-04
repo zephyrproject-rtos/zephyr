@@ -16,6 +16,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/settings/settings.h>
 #include <zephyr/sys/byteorder.h>
 
 static void start_scan(void);
@@ -230,10 +231,18 @@ void main(void)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		settings_load();
+	}
+
+
 	printk("Bluetooth initialized\n");
 
 	iso_chan.ops = &iso_ops;
 	iso_chan.qos = &iso_qos;
+#if defined(CONFIG_BT_SMP)
+	iso_chan.required_sec_level = BT_SECURITY_L2,
+#endif /* CONFIG_BT_SMP */
 
 	channels[0] = &iso_chan;
 	param.cis_channels = channels;

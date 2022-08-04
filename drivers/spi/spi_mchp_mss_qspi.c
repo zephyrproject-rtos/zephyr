@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT microchip_mpfs_qspi
 
-#include <device.h>
-#include <drivers/spi.h>
-#include <sys/sys_io.h>
-#include <sys/util.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(mss_qspi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"

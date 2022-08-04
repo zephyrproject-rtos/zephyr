@@ -25,25 +25,9 @@ config NUM_IRQS
 config CC13X2_CC26X2_RTC_TIMER
 	default y
 
-config GPIO_CC13XX_CC26XX
-	default y
-	depends on GPIO
-
 config ENTROPY_CC13XX_CC26XX_RNG
 	default y
 	depends on ENTROPY_GENERATOR
-
-config UART_CC13XX_CC26XX
-	default y
-	depends on SERIAL
-
-config I2C_CC13XX_CC26XX
-	default y
-	depends on I2C
-
-config SPI_CC13XX_CC26XX
-	default y
-	depends on SPI
 
 if IEEE802154
 
@@ -60,7 +44,7 @@ config IEEE802154_CC13XX_CC26XX_SUB_GHZ
 	select PM
 
 config NET_CONFIG_IEEE802154_DEV_NAME
-	default IEEE802154_CC13XX_CC26XX_DRV_NAME
+	default "IEEE802154_0"
 
 endif # IEEE802154
 

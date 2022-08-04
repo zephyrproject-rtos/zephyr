@@ -5,6 +5,8 @@
 
 menuconfig ADXL362
 	bool "ADXL362 sensor"
+	default y
+	depends on DT_HAS_ADI_ADXL362_ENABLED
 	depends on SPI
 	help
 	  Enable driver for ADXL362 Three-Axis Digital Accelerometers.

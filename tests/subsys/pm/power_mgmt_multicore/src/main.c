@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/pm/pm.h>
 
 BUILD_ASSERT(CONFIG_MP_NUM_CPUS == 2, "Invalid number of cpus");

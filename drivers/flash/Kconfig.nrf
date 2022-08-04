@@ -9,13 +9,16 @@ config FLASH_NRF_FORCE_ALT
 
 menuconfig SOC_FLASH_NRF
 	bool "Nordic Semiconductor nRF flash driver"
-	depends on SOC_FAMILY_NRF
+	default y
+	depends on DT_HAS_NORDIC_NRF51_FLASH_CONTROLLER_ENABLED || \
+		   DT_HAS_NORDIC_NRF52_FLASH_CONTROLLER_ENABLED || \
+		   DT_HAS_NORDIC_NRF53_FLASH_CONTROLLER_ENABLED || \
+		   DT_HAS_NORDIC_NRF91_FLASH_CONTROLLER_ENABLED
 	depends on !FLASH_NRF_FORCE_ALT
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	select NRFX_NVMC
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
-	default y
 	help
 	  Enables Nordic Semiconductor nRF flash driver.
 

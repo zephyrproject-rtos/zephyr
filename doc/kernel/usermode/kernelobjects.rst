@@ -242,7 +242,7 @@ for creating core kernel objects and new driver subsystems.
 Creating New Core Kernel Objects
 ================================
 
-* In ``scripts/gen_kobject_list.py``, add the name of the struct to the
+* In ``scripts/build/gen_kobject_list.py``, add the name of the struct to the
   :py:data:`kobjects` list.
 
 Instances of the new struct should now be tracked.
@@ -253,7 +253,7 @@ Creating New Driver Subsystem Kernel Objects
 All driver instances are :c:struct:`device`. They are differentiated by
 what API struct they are set to.
 
-* In ``scripts/gen_kobject_list.py``, add the name of the API struct for the
+* In ``scripts/build/gen_kobject_list.py``, add the name of the API struct for the
   new subsystem to the :py:data:`subsystems` list.
 
 Driver instances of the new subsystem should now be tracked.

@@ -12,6 +12,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/byteorder.h>
+#include <soc.h>
 
 #include "crypto_stm32_priv.h"
 

@@ -15,21 +15,13 @@ if ETH_SAM_GMAC
 
 config ETH_SAM_GMAC_MAC_I2C_EEPROM
 	default y
-
-config ETH_SAM_GMAC_MAC_I2C_SLAVE_ADDRESS
-	default 0x5F
+	select I2C
 
 config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS
 	default 0x9A
 
 config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE
 	default 1
-
-config ETH_SAM_GMAC_MAC_I2C_DEV_NAME
-	default "I2C_0"
-
-config ETH_SAM_GMAC_MAC_I2C_EEPROM
-	select I2C
 
 endif # ETH_SAM_GMAC
 

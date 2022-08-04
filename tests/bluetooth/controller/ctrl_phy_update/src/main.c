@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/types.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "kconfig.h"
 
 #define ULL_LLCP_UNITTEST
@@ -28,8 +28,13 @@
 #include "lll.h"
 #include "lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
 
 #include "ull_tx_queue.h"
+
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
 
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
@@ -843,9 +848,8 @@ void test_phy_update_central_rem_collision(void)
 	struct pdu_data_llctrl_phy_upd_ind ind_1 = { .instant = 7,
 						     .c_to_p_phy = 0,
 						     .p_to_c_phy = PHY_2M };
-	struct pdu_data_llctrl_phy_upd_ind ind_2 = { .instant = 14,
-						     .c_to_p_phy = PHY_2M,
-						     .p_to_c_phy = 0 };
+	struct pdu_data_llctrl_phy_upd_ind ind_2 = {
+		.instant = 15, .c_to_p_phy = PHY_2M, .p_to_c_phy = 0};
 	uint16_t instant;
 
 	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
@@ -910,7 +914,22 @@ void test_phy_update_central_rem_collision(void)
 		ut_rx_q_is_empty();
 	}
 
-	/*** ***/
+	/* Execute connection event that is an instant. It is required to send notifications to
+	 * Host that complete already started PHY update procedure.
+	 */
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Start execution of a paused local PHY update procedure. It is delayed by one connection
+	 * event due to completion of remote PHY update at end of the "at instant" conneciton event.
+	 */
 
 	/* Prepare */
 	event_prepare(&conn);

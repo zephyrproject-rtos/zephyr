@@ -451,6 +451,7 @@ class TestPlan:
                 plat = self.platform_names
             else:
                 plat = quar_dict['platforms']
+                self.verify_platforms_existence(plat, "quarantine-list")
             comment = quar_dict.get('comment', "NA")
             quarantine_list.append([{".".join([p, s]): comment}
                                    for p in plat for s in quar_dict['scenarios']])
@@ -789,7 +790,7 @@ class TestPlan:
         """
         for platform in platform_names_to_verify:
             if platform in self.platform_names:
-                break
+                continue
             else:
                 logger.error(f"{log_info} - unrecognized platform - {platform}")
                 sys.exit(2)

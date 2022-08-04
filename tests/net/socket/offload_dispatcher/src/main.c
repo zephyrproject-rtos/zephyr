@@ -11,7 +11,7 @@
 #include <zephyr/net/socket.h>
 #include <sockets_internal.h>
 #include <zephyr/sys/fdtable.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);

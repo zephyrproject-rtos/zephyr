@@ -6,7 +6,7 @@ tests:
     harness: ztest
     harness_config:
       fixture: fixture_sdhc
-    filter: CONFIG_SDHC
+    filter: dt_alias_exists("sdhc0")
     tags: sdhc
     integration_platforms:
       - mimxrt1064_evk

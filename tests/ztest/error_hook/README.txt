@@ -41,7 +41,7 @@ Step4: Call ztest_set_fault_valid(true) before where your target function
 
 Step1: Add CONFIG_ZTEST_ASSERT_HOOK=y into prj.conf
 
-Step2: Include <ztest_error_hook.h> in your C code.
+Step2: Include <zephyr/ztest_error_hook.h> in your C code.
 
 Step3: (optional) Define a hook function call ztest_post_assert_fail_hook().
 

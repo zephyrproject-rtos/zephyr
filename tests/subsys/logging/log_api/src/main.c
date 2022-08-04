@@ -7,7 +7,7 @@
 #include "mock_backend.h"
 #include "mock_frontend.h"
 #include "test_module.h"
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/sys/cbprintf.h>

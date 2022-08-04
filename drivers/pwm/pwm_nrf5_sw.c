@@ -14,9 +14,9 @@
 #include <hal/nrf_gpio.h>
 #include <nrf_peripherals.h>
 
-#define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(pwm_nrf5_sw);
+
+LOG_MODULE_REGISTER(pwm_nrf5_sw, CONFIG_PWM_LOG_LEVEL);
 
 #define GENERATOR_NODE	DT_INST_PHANDLE(0, generator)
 #define GENERATOR_CC_NUM	DT_PROP(GENERATOR_NODE, cc_num)
@@ -233,31 +233,31 @@ static int pwm_nrf5_sw_set_cycles(const struct device *dev, uint32_t channel,
 	/* setup PPI */
 	if (USE_RTC) {
 		NRF_PPI->CH[ppi_chs[0]].EEP =
-			(uint32_t) &(rtc->EVENTS_COMPARE[1 + channel]);
+			(uint32_t) &rtc->EVENTS_COMPARE[1 + channel];
 		NRF_PPI->CH[ppi_chs[0]].TEP =
-			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[gpiote_ch]);
+			(uint32_t) &NRF_GPIOTE->TASKS_OUT[gpiote_ch];
 		NRF_PPI->CH[ppi_chs[1]].EEP =
-			(uint32_t) &(rtc->EVENTS_COMPARE[0]);
+			(uint32_t) &rtc->EVENTS_COMPARE[0];
 		NRF_PPI->CH[ppi_chs[1]].TEP =
-			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[gpiote_ch]);
+			(uint32_t) &NRF_GPIOTE->TASKS_OUT[gpiote_ch];
 #if defined(PPI_FEATURE_FORKS_PRESENT)
 		NRF_PPI->FORK[ppi_chs[1]].TEP =
-			(uint32_t) &(rtc->TASKS_CLEAR);
+			(uint32_t) &rtc->TASKS_CLEAR;
 #else
 		NRF_PPI->CH[ppi_chs[2]].EEP =
-			(uint32_t) &(rtc->EVENTS_COMPARE[0]);
+			(uint32_t) &rtc->EVENTS_COMPARE[0];
 		NRF_PPI->CH[ppi_chs[2]].TEP =
-			(uint32_t) &(rtc->TASKS_CLEAR);
+			(uint32_t) &rtc->TASKS_CLEAR;
 #endif
 	} else {
 		NRF_PPI->CH[ppi_chs[0]].EEP =
-			(uint32_t) &(timer->EVENTS_COMPARE[1 + channel]);
+			(uint32_t) &timer->EVENTS_COMPARE[1 + channel];
 		NRF_PPI->CH[ppi_chs[0]].TEP =
-			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[gpiote_ch]);
+			(uint32_t) &NRF_GPIOTE->TASKS_OUT[gpiote_ch];
 		NRF_PPI->CH[ppi_chs[1]].EEP =
-			(uint32_t) &(timer->EVENTS_COMPARE[0]);
+			(uint32_t) &timer->EVENTS_COMPARE[0];
 		NRF_PPI->CH[ppi_chs[1]].TEP =
-			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[gpiote_ch]);
+			(uint32_t) &NRF_GPIOTE->TASKS_OUT[gpiote_ch];
 	}
 	NRF_PPI->CHENSET = ppi_mask;
 

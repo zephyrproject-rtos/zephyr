@@ -510,7 +510,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 		Power_registerNotify(&data->postNotify,			\
 			PowerCC26XX_AWAKE_STANDBY,			\
 			postNotifyFxn, (uintptr_t)dev);			\
-	} while (0)
+	} while (false)
 #else
 #define UART_CC13XX_CC26XX_POWER_UART(n)				\
 	do {								\
@@ -537,11 +537,11 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 		}							\
 									     \
 		/* UART should not be accessed until power domain is on. */  \
-		while (PRCMPowerDomainStatus(domain) !=			     \
+		while (PRCMPowerDomainsAllOn(domain) !=			     \
 			PRCM_DOMAIN_POWER_ON) {				     \
 			continue;					     \
 		}							     \
-	} while (0)
+	} while (false)
 #endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -560,7 +560,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 		irq_enable(DT_INST_IRQN(n));				\
 		/* Causes an initial TX ready INT when TX INT enabled */\
 		UARTCharPutNonBlocking(config->reg, '\0');		\
-	} while (0)
+	} while (false)
 
 #define UART_CC13XX_CC26XX_INT_FIELDS					\
 	.callback = NULL,						\

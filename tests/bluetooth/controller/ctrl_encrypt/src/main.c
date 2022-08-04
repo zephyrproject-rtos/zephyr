@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/types.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "kconfig.h"
 
 #define ULL_LLCP_UNITTEST
@@ -29,8 +29,13 @@
 #include "lll.h"
 #include "lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
 
 #include "ull_tx_queue.h"
+
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
 
 #include "ull_internal.h"
 #include "ull_conn_types.h"
@@ -1715,8 +1720,10 @@ void test_encryption_start_periph_rem_no_ltk(void)
 	/* There should not be a host notification */
 	ut_rx_q_is_empty();
 
-	/* Note that for this test the context is not released */
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt() - 1,
+	/* All contexts should be released until now. This is a side-effect of a call to
+	 * ull_cp_tx_ntf that internall calls rr_check_done and lr_check_done.
+	 */
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 

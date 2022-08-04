@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Alexander Wachter
+ * Copyright (c) 2022 Martin Jäger <martin@libre.solar>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,13 +43,10 @@ LOG_MODULE_REGISTER(can_stm32, CONFIG_CAN_LOG_LEVEL);
 #error You must either set a sampling-point or timings (phase-seg* and prop-seg)
 #endif
 
-/*
- * Translation tables
- * filter_in_bank[enum can_filter_type] = number of filters in bank for this type
- * reg_demand[enum can_filter_type] = how many registers are used for this type
- */
-static const uint8_t filter_in_bank[] = {2, 4, 1, 2};
-static const uint8_t reg_demand[] = {2, 1, 4, 2};
+#if (CONFIG_CAN_MAX_STD_ID_FILTER + CONFIG_CAN_MAX_EXT_ID_FILTER * 2) > \
+						(CAN_STM32_NUM_FILTER_BANKS * 2)
+#error Number of configured filters exceeds available filter bank slots.
+#endif
 
 /*
  * Mutex to prevent simultaneous access to filter registers shared between CAN1
@@ -56,7 +54,7 @@ static const uint8_t reg_demand[] = {2, 1, 4, 2};
  */
 static struct k_mutex filter_mutex;
 
-static void can_stm32_signal_tx_complete(const struct device *dev, struct can_mailbox *mb)
+static void can_stm32_signal_tx_complete(const struct device *dev, struct can_stm32_mailbox *mb)
 {
 	if (mb->tx_callback) {
 		mb->tx_callback(dev, mb->error, mb->callback_arg);
@@ -65,8 +63,7 @@ static void can_stm32_signal_tx_complete(const struct device *dev, struct can_ma
 	}
 }
 
-static void can_stm32_get_msg_fifo(CAN_FIFOMailBox_TypeDef *mbox,
-				    struct zcan_frame *frame)
+static void can_stm32_rx_fifo_pop(CAN_FIFOMailBox_TypeDef *mbox, struct zcan_frame *frame)
 {
 	if (mbox->RIR & CAN_RI0R_IDE) {
 		frame->id = mbox->RIR >> CAN_RI0R_EXID_Pos;
@@ -91,26 +88,30 @@ static inline void can_stm32_rx_isr_handler(const struct device *dev)
 	const struct can_stm32_config *cfg = dev->config;
 	CAN_TypeDef *can = cfg->can;
 	CAN_FIFOMailBox_TypeDef *mbox;
-	int filter_match_index;
+	int filter_id, index;
 	struct zcan_frame frame;
-	can_rx_callback_t callback;
+	can_rx_callback_t callback = NULL;
+	void *cb_arg;
 
 	while (can->RF0R & CAN_RF0R_FMP0) {
 		mbox = &can->sFIFOMailBox[0];
-		filter_match_index = ((mbox->RDTR & CAN_RDT0R_FMI)
-					   >> CAN_RDT0R_FMI_Pos);
+		filter_id = ((mbox->RDTR & CAN_RDT0R_FMI) >> CAN_RDT0R_FMI_Pos);
 
-		if (filter_match_index >= CONFIG_CAN_MAX_FILTER) {
-			break;
+		LOG_DBG("Message on filter_id %d", filter_id);
+
+		can_stm32_rx_fifo_pop(mbox, &frame);
+
+		if (filter_id < CONFIG_CAN_MAX_EXT_ID_FILTER) {
+			callback = data->rx_cb_ext[filter_id];
+			cb_arg = data->cb_arg_ext[filter_id];
+		} else if (filter_id < CAN_STM32_MAX_FILTER_ID) {
+			index = filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER;
+			callback = data->rx_cb_std[index];
+			cb_arg = data->cb_arg_std[index];
 		}
 
-		LOG_DBG("Message on filter index %d", filter_match_index);
-		can_stm32_get_msg_fifo(mbox, &frame);
-
-		callback = data->rx_cb[filter_match_index];
-
 		if (callback) {
-			callback(dev, &frame, data->cb_arg[filter_match_index]);
+			callback(dev, &frame, cb_arg);
 		}
 
 		/* Release message */
@@ -293,7 +294,7 @@ static void can_stm32_state_change_isr(const struct device *dev)
 
 #endif
 
-static int can_enter_init_mode(CAN_TypeDef *can)
+static int can_stm32_enter_init_mode(CAN_TypeDef *can)
 {
 	uint32_t start_time;
 
@@ -310,7 +311,7 @@ static int can_enter_init_mode(CAN_TypeDef *can)
 	return 0;
 }
 
-static int can_leave_init_mode(CAN_TypeDef *can)
+static int can_stm32_leave_init_mode(CAN_TypeDef *can)
 {
 	uint32_t start_time;
 
@@ -326,7 +327,7 @@ static int can_leave_init_mode(CAN_TypeDef *can)
 	return 0;
 }
 
-static int can_leave_sleep_mode(CAN_TypeDef *can)
+static int can_stm32_leave_sleep_mode(CAN_TypeDef *can)
 {
 	uint32_t start_time;
 
@@ -342,6 +343,15 @@ static int can_leave_sleep_mode(CAN_TypeDef *can)
 	return 0;
 }
 
+static int can_stm32_get_capabilities(const struct device *dev, can_mode_t *cap)
+{
+	ARG_UNUSED(dev);
+
+	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT;
+
+	return 0;
+}
+
 static int can_stm32_set_mode(const struct device *dev, can_mode_t mode)
 {
 	const struct can_stm32_config *cfg = dev->config;
@@ -351,7 +361,7 @@ static int can_stm32_set_mode(const struct device *dev, can_mode_t mode)
 
 	LOG_DBG("Set mode %d", mode);
 
-	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) != 0) {
+	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT)) != 0) {
 		LOG_ERR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
@@ -366,7 +376,7 @@ static int can_stm32_set_mode(const struct device *dev, can_mode_t mode)
 		}
 	}
 
-	ret = can_enter_init_mode(can);
+	ret = can_stm32_enter_init_mode(can);
 	if (ret) {
 		LOG_ERR("Failed to enter init mode");
 		goto done;
@@ -386,8 +396,15 @@ static int can_stm32_set_mode(const struct device *dev, can_mode_t mode)
 		can->BTR &= ~CAN_BTR_SILM;
 	}
 
+	if ((mode & CAN_MODE_ONE_SHOT) != 0) {
+		/* No automatic retransmission */
+		can->MCR |= CAN_MCR_NART;
+	} else {
+		can->MCR &= ~CAN_MCR_NART;
+	}
+
 done:
-	ret = can_leave_init_mode(can);
+	ret = can_stm32_leave_init_mode(can);
 	if (ret) {
 		LOG_ERR("Failed to leave init mode");
 
@@ -411,7 +428,7 @@ static int can_stm32_set_timing(const struct device *dev,
 	int ret = -EIO;
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
-	ret = can_enter_init_mode(can);
+	ret = can_stm32_enter_init_mode(can);
 	if (ret) {
 		LOG_ERR("Failed to enter init mode");
 		goto done;
@@ -427,7 +444,7 @@ static int can_stm32_set_timing(const struct device *dev,
 			   (((timing->sjw - 1) << CAN_BTR_SJW_Pos) & CAN_BTR_SJW_Msk);
 	}
 
-	ret = can_leave_init_mode(can);
+	ret = can_stm32_leave_init_mode(can);
 	if (ret) {
 		LOG_ERR("Failed to leave init mode");
 	} else {
@@ -467,6 +484,17 @@ static int can_stm32_get_max_bitrate(const struct device *dev, uint32_t *max_bit
 	return 0;
 }
 
+static int can_stm32_get_max_filters(const struct device *dev, enum can_ide id_type)
+{
+	ARG_UNUSED(dev);
+
+	if (id_type == CAN_STANDARD_IDENTIFIER) {
+		return CONFIG_CAN_MAX_STD_ID_FILTER;
+	} else {
+		return CONFIG_CAN_MAX_EXT_ID_FILTER;
+	}
+}
+
 static int can_stm32_init(const struct device *dev)
 {
 	const struct can_stm32_config *cfg = dev->config;
@@ -474,6 +502,7 @@ static int can_stm32_init(const struct device *dev)
 	CAN_TypeDef *can = cfg->can;
 	struct can_timing timing;
 	const struct device *clock;
+	uint32_t bank_offset;
 	int ret;
 
 	k_mutex_init(&filter_mutex);
@@ -482,15 +511,6 @@ static int can_stm32_init(const struct device *dev)
 	k_sem_init(&data->mb0.tx_int_sem, 0, 1);
 	k_sem_init(&data->mb1.tx_int_sem, 0, 1);
 	k_sem_init(&data->mb2.tx_int_sem, 0, 1);
-	data->mb0.tx_callback = NULL;
-	data->mb1.tx_callback = NULL;
-	data->mb2.tx_callback = NULL;
-	data->state_change_cb = NULL;
-	data->state_change_cb_data = NULL;
-
-	data->filter_usage = (1ULL << CAN_MAX_NUMBER_OF_FILTERS) - 1ULL;
-	(void)memset(data->rx_cb, 0, sizeof(data->rx_cb));
-	(void)memset(data->cb_arg, 0, sizeof(data->cb_arg));
 
 	if (cfg->phy != NULL) {
 		if (!device_is_ready(cfg->phy)) {
@@ -514,17 +534,23 @@ static int can_stm32_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = can_leave_sleep_mode(can);
+	ret = can_stm32_leave_sleep_mode(can);
 	if (ret) {
 		LOG_ERR("Failed to exit sleep mode");
 		return ret;
 	}
 
-	ret = can_enter_init_mode(can);
+	ret = can_stm32_enter_init_mode(can);
 	if (ret) {
 		LOG_ERR("Failed to enter init mode");
 		return ret;
 	}
+
+	/* configure scale of filter banks < CONFIG_CAN_MAX_EXT_ID_FILTER for ext ids */
+	bank_offset = (cfg->can == cfg->master_can) ? 0 : CAN_STM32_NUM_FILTER_BANKS;
+	cfg->master_can->FMR |= CAN_FMR_FINIT;
+	cfg->master_can->FS1R |= ((1U << CONFIG_CAN_MAX_EXT_ID_FILTER) - 1) << bank_offset;
+	cfg->master_can->FMR &= ~CAN_FMR_FINIT;
 
 	can->MCR &= ~CAN_MCR_TTCM & ~CAN_MCR_ABOM & ~CAN_MCR_AWUM &
 		    ~CAN_MCR_NART & ~CAN_MCR_RFLM & ~CAN_MCR_TXFP;
@@ -534,10 +560,6 @@ static int can_stm32_init(const struct device *dev)
 #ifdef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	can->MCR |= CAN_MCR_ABOM;
 #endif
-	if (cfg->one_shot) {
-		can->MCR |= CAN_MCR_NART;
-	}
-
 	timing.sjw = cfg->sjw;
 	if (cfg->sample_point && USE_SP_ALGO) {
 		ret = can_calc_timing(dev, &timing, cfg->bus_speed,
@@ -573,7 +595,7 @@ static int can_stm32_init(const struct device *dev)
 
 	cfg->config_irq(can);
 	can->IER |= CAN_IER_TMEIE;
-	LOG_INF("Init of %s done", dev->name);
+
 	return 0;
 }
 
@@ -612,12 +634,12 @@ static int can_stm32_recover(const struct device *dev, k_timeout_t timeout)
 		return -EAGAIN;
 	}
 
-	ret = can_enter_init_mode(can);
+	ret = can_stm32_enter_init_mode(can);
 	if (ret) {
 		goto done;
 	}
 
-	can_leave_init_mode(can);
+	can_stm32_leave_init_mode(can);
 
 	start_time = k_uptime_ticks();
 
@@ -646,7 +668,7 @@ static int can_stm32_send(const struct device *dev, const struct zcan_frame *fra
 	CAN_TypeDef *can = cfg->can;
 	uint32_t transmit_status_register = can->TSR;
 	CAN_TxMailBox_TypeDef *mailbox = NULL;
-	struct can_mailbox *mb = NULL;
+	struct can_stm32_mailbox *mb = NULL;
 
 	LOG_DBG("Sending %d bytes on %s. "
 		    "Id: 0x%x, "
@@ -682,15 +704,15 @@ static int can_stm32_send(const struct device *dev, const struct zcan_frame *fra
 	}
 
 	if (transmit_status_register & CAN_TSR_TME0) {
-		LOG_DBG("Using mailbox 0");
+		LOG_DBG("Using TX mailbox 0");
 		mailbox = &can->sTxMailBox[0];
 		mb = &(data->mb0);
 	} else if (transmit_status_register & CAN_TSR_TME1) {
-		LOG_DBG("Using mailbox 1");
+		LOG_DBG("Using TX mailbox 1");
 		mailbox = &can->sTxMailBox[1];
 		mb = &data->mb1;
 	} else if (transmit_status_register & CAN_TSR_TME2) {
-		LOG_DBG("Using mailbox 2");
+		LOG_DBG("Using TX mailbox 2");
 		mailbox = &can->sTxMailBox[2];
 		mb = &data->mb2;
 	}
@@ -730,333 +752,142 @@ static int can_stm32_send(const struct device *dev, const struct zcan_frame *fra
 	return 0;
 }
 
-static int can_stm32_shift_arr(void **arr, int start, int count)
+static void can_stm32_set_filter_bank(int filter_id, CAN_FilterRegister_TypeDef *filter_reg,
+				      enum can_ide type, uint32_t id, uint32_t mask)
 {
-	void **start_ptr = arr + start;
-	size_t cnt;
-
-	if (start > CONFIG_CAN_MAX_FILTER) {
-		return -ENOSPC;
-	}
-
-	if (count > 0) {
-		void *move_dest;
-
-		/* Check if nothing used will be overwritten */
-		for (int i = CONFIG_CAN_MAX_FILTER - count; i <= CONFIG_CAN_MAX_FILTER - 1; i++) {
-			if (arr[i] != NULL) {
-				return -ENOSPC;
-			}
-		}
-
-		/* No need to shift. Destination is already outside the arr */
-		if ((start + count) >= CONFIG_CAN_MAX_FILTER) {
-			return 0;
-		}
-
-		cnt = (CONFIG_CAN_MAX_FILTER - start - count) * sizeof(void *);
-		move_dest = start_ptr + count;
-		memmove(move_dest, start_ptr, cnt);
-		(void)memset(start_ptr, 0, count * sizeof(void *));
-	} else if (count < 0) {
-		count = -count;
-
-		if (start - count < 0) {
-			return -ENOSPC;
-		}
-
-		cnt = (CONFIG_CAN_MAX_FILTER - start) * sizeof(void *);
-		memmove(start_ptr - count, start_ptr, cnt);
-		(void)memset(arr + CONFIG_CAN_MAX_FILTER - count, 0,
-			     count * sizeof(void *));
-	}
-
-	return 0;
-}
-
-static enum can_filter_type can_stm32_get_filter_type(int bank_nr, uint32_t mode_reg,
-						      uint32_t scale_reg)
-{
-	uint32_t mode_masked  = (mode_reg  >> bank_nr) & 0x01;
-	uint32_t scale_masked = (scale_reg >> bank_nr) & 0x01;
-	enum can_filter_type type = (scale_masked << 1) | mode_masked;
-
-	return type;
-}
-
-static int can_calc_filter_index(int filter_id, int bank_offset, uint32_t mode_reg,
-				 uint32_t scale_reg)
-{
-	int filter_bank = bank_offset + filter_id / 4;
-	int cnt = 0;
-	uint32_t mode_masked, scale_masked;
-	enum can_filter_type filter_type;
-
-	/* count filters in the banks before this bank */
-	for (int i = bank_offset; i < filter_bank; i++) {
-		filter_type = can_stm32_get_filter_type(i, mode_reg, scale_reg);
-		cnt += filter_in_bank[filter_type];
-	}
-
-	/* plus the filters in the same bank */
-	mode_masked  = mode_reg & (1U << filter_bank);
-	scale_masked = scale_reg & (1U << filter_bank);
-	cnt += (!scale_masked && mode_masked) ? filter_id & 0x03 :
-					       (filter_id & 0x03) >> 1;
-	return cnt;
-}
-
-static void can_stm32_set_filter_bank(int filter_id,
-				      CAN_FilterRegister_TypeDef *filter_reg,
-				      enum can_filter_type filter_type,
-				      uint32_t id, uint32_t mask)
-{
-	switch (filter_type) {
-	case CAN_FILTER_STANDARD:
-		switch (filter_id & 0x03) {
-		case 0:
-			filter_reg->FR1 = (filter_reg->FR1 & 0xFFFF0000) | id;
-			break;
-		case 1:
-			filter_reg->FR1 = (filter_reg->FR1 & 0x0000FFFF)
-					  | (id << 16);
-			break;
-		case 2:
-			filter_reg->FR2 = (filter_reg->FR2 & 0xFFFF0000) | id;
-			break;
-		case 3:
-			filter_reg->FR2 = (filter_reg->FR2 & 0x0000FFFF)
-					   | (id << 16);
-			break;
-		}
-
-		break;
-	case CAN_FILTER_STANDARD_MASKED:
-		switch (filter_id & 0x02) {
-		case 0:
+	switch (type) {
+	case CAN_STANDARD_IDENTIFIER:
+		if ((filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER) % 2 == 0) {
+			/* even std filter id: first 1/2 bank */
 			filter_reg->FR1 = id | (mask << 16);
-			break;
-		case 2:
+		} else {
+			/* uneven std filter id: first 1/2 bank */
 			filter_reg->FR2 = id | (mask << 16);
-			break;
 		}
-
 		break;
-	case CAN_FILTER_EXTENDED:
-		switch (filter_id & 0x02) {
-		case 0:
-			filter_reg->FR1 = id;
-			break;
-		case 2:
-			filter_reg->FR2 = id;
-			break;
-		}
-
-		break;
-	case CAN_FILTER_EXTENDED_MASKED:
+	case CAN_EXTENDED_IDENTIFIER:
 		filter_reg->FR1 = id;
 		filter_reg->FR2 = mask;
 		break;
 	}
 }
 
-static inline void can_stm32_set_mode_scale(enum can_filter_type filter_type,
-					    uint32_t *mode_reg, uint32_t *scale_reg,
-					    int  bank_nr)
+static inline uint32_t can_stm32_filter_to_std_mask(const struct zcan_filter *filter)
 {
-	uint32_t mode_reg_bit  = (filter_type & 0x01) << bank_nr;
-	uint32_t scale_reg_bit = (filter_type >>   1) << bank_nr;
-
-	*mode_reg &= ~(1 << bank_nr);
-	*mode_reg |= mode_reg_bit;
-
-	*scale_reg &= ~(1 << bank_nr);
-	*scale_reg |= scale_reg_bit;
+	return  (filter->id_mask  << CAN_STM32_FIRX_STD_ID_POS) |
+		(filter->rtr_mask << CAN_STM32_FIRX_STD_RTR_POS) |
+		(1U               << CAN_STM32_FIRX_STD_IDE_POS);
 }
 
-static inline uint32_t can_generate_std_mask(const struct zcan_filter *filter)
+static inline uint32_t can_stm32_filter_to_ext_mask(const struct zcan_filter *filter)
 {
-	return  (filter->id_mask  << CAN_FIRX_STD_ID_POS) |
-		(filter->rtr_mask << CAN_FIRX_STD_RTR_POS) |
-		(1U               << CAN_FIRX_STD_IDE_POS);
+	return  (filter->id_mask  << CAN_STM32_FIRX_EXT_EXT_ID_POS) |
+		(filter->rtr_mask << CAN_STM32_FIRX_EXT_RTR_POS) |
+		(1U               << CAN_STM32_FIRX_EXT_IDE_POS);
 }
 
-static inline uint32_t can_generate_ext_mask(const struct zcan_filter *filter)
+static inline uint32_t can_stm32_filter_to_std_id(const struct zcan_filter *filter)
 {
-	return  (filter->id_mask  << CAN_FIRX_EXT_EXT_ID_POS) |
-		(filter->rtr_mask << CAN_FIRX_EXT_RTR_POS) |
-		(1U               << CAN_FIRX_EXT_IDE_POS);
-}
-
-static inline uint32_t can_generate_std_id(const struct zcan_filter *filter)
-{
-
-	return  (filter->id << CAN_FIRX_STD_ID_POS) |
-		(filter->rtr    << CAN_FIRX_STD_RTR_POS);
+	return  (filter->id  << CAN_STM32_FIRX_STD_ID_POS) |
+		(filter->rtr << CAN_STM32_FIRX_STD_RTR_POS);
 
 }
 
-static inline uint32_t can_generate_ext_id(const struct zcan_filter *filter)
+static inline uint32_t can_stm32_filter_to_ext_id(const struct zcan_filter *filter)
 {
-	return  (filter->id  << CAN_FIRX_EXT_EXT_ID_POS) |
-		(filter->rtr << CAN_FIRX_EXT_RTR_POS) |
-		(1U          << CAN_FIRX_EXT_IDE_POS);
+	return  (filter->id  << CAN_STM32_FIRX_EXT_EXT_ID_POS) |
+		(filter->rtr << CAN_STM32_FIRX_EXT_RTR_POS) |
+		(1U          << CAN_STM32_FIRX_EXT_IDE_POS);
 }
 
-static inline int can_stm32_set_filter(const struct device *dev, const struct zcan_filter *filter,
-				       int *filter_index)
+static inline int can_stm32_set_filter(const struct device *dev, const struct zcan_filter *filter)
 {
 	const struct can_stm32_config *cfg = dev->config;
-	struct can_stm32_data *device_data = dev->data;
+	struct can_stm32_data *data = dev->data;
 	CAN_TypeDef *can = cfg->master_can;
 	uint32_t mask = 0U;
 	uint32_t id = 0U;
-	int filter_id = 0;
-	int filter_index_new = -ENOSPC;
-	int bank_nr;
+	int filter_id = -ENOSPC;
 	int bank_offset = 0;
-	uint32_t bank_bit;
-	int register_demand;
-	enum can_filter_type filter_type;
-	enum can_filter_type bank_mode;
+	int bank_num;
 
 	if (cfg->can != cfg->master_can) {
 		/* CAN slave instance: start with offset */
-		bank_offset = CAN_NUMBER_OF_FILTER_BANKS;
+		bank_offset = CAN_STM32_NUM_FILTER_BANKS;
 	}
 
 	if (filter->id_type == CAN_STANDARD_IDENTIFIER) {
-		id = can_generate_std_id(filter);
-		filter_type = CAN_FILTER_STANDARD;
-
-		if (filter->id_mask != CAN_STD_ID_MASK) {
-			mask = can_generate_std_mask(filter);
-			filter_type = CAN_FILTER_STANDARD_MASKED;
-		}
-	} else {
-		id = can_generate_ext_id(filter);
-		filter_type = CAN_FILTER_EXTENDED;
-
-		if (filter->id_mask != CAN_EXT_ID_MASK) {
-			mask = can_generate_ext_mask(filter);
-			filter_type = CAN_FILTER_EXTENDED_MASKED;
-		}
-	}
-
-	register_demand = reg_demand[filter_type];
-
-	LOG_DBG("Setting filter ID: 0x%x, mask: 0x%x", filter->id,
-		filter->id_mask);
-	LOG_DBG("Filter type: %s ID %s mask (%d)",
-		    (filter_type == CAN_FILTER_STANDARD ||
-		     filter_type == CAN_FILTER_STANDARD_MASKED) ?
-		    "standard" : "extended",
-		    (filter_type == CAN_FILTER_STANDARD_MASKED ||
-		     filter_type == CAN_FILTER_EXTENDED_MASKED) ?
-		    "with" : "without",
-		    filter_type);
-
-	do {
-		uint64_t usage_shifted = (device_data->filter_usage >> filter_id);
-		uint64_t usage_demand_mask = (1ULL << register_demand) - 1;
-		bool bank_is_empty;
-
-		bank_nr = bank_offset + filter_id / 4;
-		bank_bit = (1U << bank_nr);
-		bank_mode = can_stm32_get_filter_type(bank_nr, can->FM1R,
-						      can->FS1R);
-
-		bank_is_empty = CAN_BANK_IS_EMPTY(device_data->filter_usage,
-						  bank_nr, bank_offset);
-
-		if (!bank_is_empty && bank_mode != filter_type) {
-			filter_id = (filter_id / 4 + 1) * 4;
-		} else if (usage_shifted & usage_demand_mask) {
-			device_data->filter_usage &=
-				~(usage_demand_mask << filter_id);
-			break;
-		} else {
-			filter_id += register_demand;
-		}
-
-		if (!usage_shifted) {
-			LOG_INF("No free filter bank found");
-			return -ENOSPC;
-		}
-	} while (filter_id < CAN_MAX_NUMBER_OF_FILTERS);
-
-	/* set the filter init mode */
-	can->FMR |= CAN_FMR_FINIT;
-	can->FA1R &= ~bank_bit;
-
-	/* TODO fifo balancing */
-	if (filter_type != bank_mode) {
-		int shift_width, start_index;
-		int res;
-		uint32_t mode_reg  = can->FM1R;
-		uint32_t scale_reg = can->FS1R;
-
-		can_stm32_set_mode_scale(filter_type, &mode_reg, &scale_reg,
-					 bank_nr);
-
-		shift_width = filter_in_bank[filter_type] - filter_in_bank[bank_mode];
-
-		filter_index_new = can_calc_filter_index(filter_id, bank_offset,
-							 mode_reg, scale_reg);
-
-		start_index = filter_index_new + filter_in_bank[bank_mode];
-
-		if (shift_width && start_index <= CAN_MAX_NUMBER_OF_FILTERS) {
-			res = can_stm32_shift_arr((void **)device_data->rx_cb,
-						start_index,
-						shift_width);
-
-			res |= can_stm32_shift_arr(device_data->cb_arg,
-						   start_index,
-						   shift_width);
-
-			if (filter_index_new >= CONFIG_CAN_MAX_FILTER || res) {
-				LOG_INF("No space for a new filter!");
-				filter_id = -ENOSPC;
-				goto done;
+		for (int i = 0; i < CONFIG_CAN_MAX_STD_ID_FILTER; i++) {
+			if (data->rx_cb_std[i] == NULL) {
+				id = can_stm32_filter_to_std_id(filter);
+				mask = can_stm32_filter_to_std_mask(filter);
+				filter_id = CONFIG_CAN_MAX_EXT_ID_FILTER + i;
+				bank_num = bank_offset + CONFIG_CAN_MAX_EXT_ID_FILTER + i / 2;
+				break;
 			}
 		}
-
-		can->FM1R = mode_reg;
-		can->FS1R = scale_reg;
 	} else {
-		filter_index_new = can_calc_filter_index(filter_id, bank_offset,
-							 can->FM1R, can->FS1R);
-		if (filter_index_new >= CAN_MAX_NUMBER_OF_FILTERS) {
-			filter_id = -ENOSPC;
-			goto done;
+		for (int i = 0; i < CONFIG_CAN_MAX_EXT_ID_FILTER; i++) {
+			if (data->rx_cb_ext[i] == NULL) {
+				id = can_stm32_filter_to_ext_id(filter);
+				mask = can_stm32_filter_to_ext_mask(filter);
+				filter_id = i;
+				bank_num = bank_offset + i;
+				break;
+			}
 		}
 	}
 
-	can_stm32_set_filter_bank(filter_id, &can->sFilterRegister[bank_nr],
-				  filter_type, id, mask);
-done:
-	can->FA1R |= bank_bit;
-	can->FMR &= ~(CAN_FMR_FINIT);
-	LOG_DBG("Filter set: id %d, index %d, bank %d", filter_id, filter_index_new, bank_nr);
-	*filter_index = filter_index_new;
+	if (filter_id != -ENOSPC) {
+		LOG_DBG("Adding filter_id %d, CAN ID: 0x%x, mask: 0x%x",
+			filter_id, filter->id, filter->id_mask);
+
+		/* set the filter init mode */
+		can->FMR |= CAN_FMR_FINIT;
+
+		can_stm32_set_filter_bank(filter_id, &can->sFilterRegister[bank_num],
+					  filter->id_type, id, mask);
+
+		can->FA1R |= 1U << bank_num;
+		can->FMR &= ~(CAN_FMR_FINIT);
+	} else {
+		LOG_WRN("No free filter left");
+	}
+
 	return filter_id;
 }
 
+
+/*
+ * This driver uses masked mode for all filters (CAN_FM1R left at reset value
+ * 0x00) in order to simplify mapping between filter match index from the FIFOs
+ * and array index for the callbacks. All ext ID filters are stored in the
+ * banks below CONFIG_CAN_MAX_EXT_ID_FILTER, followed by the std ID filters,
+ * which consume only 1/2 bank per filter.
+ *
+ * The more complicated list mode must be implemented if someone requires more
+ * than 28 std ID or 14 ext ID filters.
+ *
+ * Currently, all filter banks are assigned to FIFO 0 and FIFO 1 is not used.
+ */
 static int can_stm32_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
 				   void *cb_arg, const struct zcan_filter *filter)
 {
 	struct can_stm32_data *data = dev->data;
-	int filter_index = 0;
 	int filter_id;
 
 	k_mutex_lock(&filter_mutex, K_FOREVER);
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 
-	filter_id = can_stm32_set_filter(dev, filter, &filter_index);
-	if (filter_id != -ENOSPC) {
-		data->rx_cb[filter_index] = cb;
-		data->cb_arg[filter_index] = cb_arg;
+	filter_id = can_stm32_set_filter(dev, filter);
+	if (filter_id >= 0) {
+		if (filter->id_type == CAN_STANDARD_IDENTIFIER) {
+			data->rx_cb_std[filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER] = cb;
+			data->cb_arg_std[filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER] = cb_arg;
+		} else {
+			data->rx_cb_ext[filter_id] = cb;
+			data->cb_arg_ext[filter_id] = cb_arg;
+		}
 	}
 
 	k_mutex_unlock(&data->inst_mutex);
@@ -1070,59 +901,67 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 	const struct can_stm32_config *cfg = dev->config;
 	struct can_stm32_data *data = dev->data;
 	CAN_TypeDef *can = cfg->master_can;
+	enum can_ide filter_type;
 	int bank_offset = 0;
-	int bank_nr;
-	int filter_index;
-	uint32_t bank_bit;
-	uint32_t mode_reg;
-	uint32_t scale_reg;
-	enum can_filter_type type;
-	uint32_t reset_mask;
+	int bank_num;
+	bool bank_unused;
 
-	__ASSERT_NO_MSG(filter_id >= 0 && filter_id < CAN_MAX_NUMBER_OF_FILTERS);
+	__ASSERT_NO_MSG(filter_id >= 0 && filter_id < CAN_STM32_MAX_FILTER_ID);
 
 	k_mutex_lock(&filter_mutex, K_FOREVER);
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 
 	if (cfg->can != cfg->master_can) {
-		bank_offset = CAN_NUMBER_OF_FILTER_BANKS;
+		bank_offset = CAN_STM32_NUM_FILTER_BANKS;
 	}
 
-	bank_nr = bank_offset + filter_id / 4;
-	bank_bit = (1U << bank_nr);
-	mode_reg  = can->FM1R;
-	scale_reg = can->FS1R;
+	if (filter_id < CONFIG_CAN_MAX_EXT_ID_FILTER) {
+		filter_type = CAN_EXTENDED_IDENTIFIER;
+		bank_num = bank_offset + filter_id;
 
-	filter_index = can_calc_filter_index(filter_id, bank_offset, mode_reg, scale_reg);
-	type = can_stm32_get_filter_type(bank_nr, mode_reg, scale_reg);
+		data->rx_cb_ext[filter_id] = NULL;
+		data->cb_arg_ext[filter_id] = NULL;
 
-	LOG_DBG("Detach filter number %d (index %d), type %d", filter_id,
-		    filter_index,
-		    type);
-
-	reset_mask = ((1 << (reg_demand[type])) - 1) << filter_id;
-	data->filter_usage |= reset_mask;
-	can->FMR |= CAN_FMR_FINIT;
-	can->FA1R &= ~bank_bit;
-
-	can_stm32_set_filter_bank(filter_id, &can->sFilterRegister[bank_nr],
-				  type, 0, 0xFFFFFFFF);
-
-	if (!CAN_BANK_IS_EMPTY(data->filter_usage, bank_nr, bank_offset)) {
-		can->FA1R |= bank_bit;
+		bank_unused = true;
 	} else {
-		LOG_DBG("Bank number %d is empty -> deactivate", bank_nr);
+		int filter_index = filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER;
+
+		filter_type = CAN_STANDARD_IDENTIFIER;
+		bank_num = bank_offset + CONFIG_CAN_MAX_EXT_ID_FILTER +
+			  (filter_id - CONFIG_CAN_MAX_EXT_ID_FILTER) / 2;
+
+		data->rx_cb_std[filter_index] = NULL;
+		data->cb_arg_std[filter_index] = NULL;
+
+		if (filter_index % 2 == 1) {
+			bank_unused = data->rx_cb_std[filter_index - 1] == NULL;
+		} else if (filter_index + 1 < CONFIG_CAN_MAX_STD_ID_FILTER) {
+			bank_unused = data->rx_cb_std[filter_index + 1] == NULL;
+		} else {
+			bank_unused = true;
+		}
+	}
+
+	LOG_DBG("Removing filter_id %d, type %d", filter_id, (uint32_t)filter_type);
+
+	can->FMR |= CAN_FMR_FINIT;
+
+	can_stm32_set_filter_bank(filter_id, &can->sFilterRegister[bank_num],
+				  filter_type, 0, 0xFFFFFFFF);
+
+	if (bank_unused) {
+		can->FA1R &= ~(1U << bank_num);
+		LOG_DBG("Filter bank %d is unused -> deactivate", bank_num);
 	}
 
 	can->FMR &= ~(CAN_FMR_FINIT);
-	data->rx_cb[filter_index] = NULL;
-	data->cb_arg[filter_index] = NULL;
 
 	k_mutex_unlock(&data->inst_mutex);
 	k_mutex_unlock(&filter_mutex);
 }
 
 static const struct can_driver_api can_api_funcs = {
+	.get_capabilities = can_stm32_get_capabilities,
 	.set_mode = can_stm32_set_mode,
 	.set_timing = can_stm32_set_timing,
 	.send = can_stm32_send,
@@ -1135,6 +974,7 @@ static const struct can_driver_api can_api_funcs = {
 	.set_state_change_callback = can_stm32_set_state_change_callback,
 	.get_core_clock = can_stm32_get_core_clock,
 	.get_max_bitrate = can_stm32_get_max_bitrate,
+	.get_max_filters = can_stm32_get_max_filters,
 	.timing_min = {
 		.sjw = 0x1,
 		.prop_seg = 0x00,
@@ -1202,7 +1042,6 @@ static const struct can_stm32_config can_stm32_cfg_##inst = {            \
 	.prop_ts1 = DT_INST_PROP_OR(inst, prop_seg, 0) +                 \
 		    DT_INST_PROP_OR(inst, phase_seg1, 0),                \
 	.ts2 = DT_INST_PROP_OR(inst, phase_seg2, 0),                     \
-	.one_shot = DT_INST_PROP(inst, one_shot),                        \
 	.pclken = {                                                      \
 		.enr = DT_INST_CLOCKS_CELL(inst, bits),                  \
 		.bus = DT_INST_CLOCKS_CELL(inst, bus),                   \

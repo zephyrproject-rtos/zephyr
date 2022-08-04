@@ -7,7 +7,7 @@
 #ifndef __TEST_FIFO_H__
 #define __TEST_FIFO_H__
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include <zephyr/irq_offload.h>
 
 typedef struct fdata {

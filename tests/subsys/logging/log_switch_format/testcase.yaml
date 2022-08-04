@@ -12,15 +12,6 @@ tests:
       - sam_e70_xplained
       - qemu_cortex_a53
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
-    harness: console
-    harness_config:
-      type: multi_line
-      regex:
-        - "SYS-T RAW DATA: "
-        - "<err>"
-        - "hello sys-t on board"
-        - "SYS-T RAW DATA: "
-        - "SYST Sample Execution Completed"
   logging.log_switch_format.immediate:
     extra_args: OVERLAY_CONFIG=overlay_immediate.conf
     integration_platforms:
@@ -28,13 +19,3 @@ tests:
       - qemu_x86
       - sam_e70_xplained
       - qemu_cortex_a53
-    harness: console
-    harness_config:
-      type: multi_line
-      regex:
-        - "SYS-T RAW DATA: "
-        - "<err>"
-        - "hello sys-t on board"
-        - "SYS-T RAW DATA: "
-        - "SYST Sample Execution Completed"
-        - "PROJECT EXECUTION SUCCESSFUL"

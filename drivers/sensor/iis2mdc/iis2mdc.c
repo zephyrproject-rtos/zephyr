@@ -252,11 +252,6 @@ static int iis2mdc_init(const struct device *dev)
 
 	iis2mdc->dev = dev;
 
-	if (!device_is_ready(cfg->bus)) {
-		LOG_ERR("Cannot get pointer to bus device");
-		return -ENODEV;
-	}
-
 	if (cfg->bus_init(dev) < 0) {
 		return -EINVAL;
 	}
@@ -357,12 +352,8 @@ static int iis2mdc_init(const struct device *dev)
 
 #define IIS2MDC_CONFIG_SPI(inst)					\
 	{								\
-		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
+		.spi = SPI_DT_SPEC_INST_GET(inst, IIS2MDC_SPI_OP, 0),	\
 		.bus_init = iis2mdc_spi_init,				\
-		.bus_cfg.spi_cfg =					\
-			SPI_CONFIG_DT_INST(inst,			\
-					   IIS2MDC_SPI_OP,		\
-					   0),				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(IIS2MDC_CFG_IRQ(inst)), ())			\
 	}
@@ -373,9 +364,8 @@ static int iis2mdc_init(const struct device *dev)
 
 #define IIS2MDC_CONFIG_I2C(inst)					\
 	{								\
-		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
+		.i2c = I2C_DT_SPEC_INST_GET(inst),			\
 		.bus_init = iis2mdc_i2c_init,				\
-		.bus_cfg.i2c_slv_addr = DT_INST_REG_ADDR(inst),		\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(IIS2MDC_CFG_IRQ(inst)), ())			\
 	}

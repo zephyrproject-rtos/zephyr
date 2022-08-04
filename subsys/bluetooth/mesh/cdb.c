@@ -729,6 +729,8 @@ void bt_mesh_cdb_clear(void)
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		update_cdb_net_settings();
 	}
+
+	bt_mesh_settings_store_pending();
 }
 
 void bt_mesh_cdb_iv_update(uint32_t iv_index, bool iv_update)

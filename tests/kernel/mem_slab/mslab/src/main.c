@@ -23,10 +23,10 @@
  * will have unpredictable side effects.
  */
 
-#include <tc_util.h>
+#include <zephyr/tc_util.h>
 #include <stdbool.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 /* size of stack area used by each thread */
 #define STACKSIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)

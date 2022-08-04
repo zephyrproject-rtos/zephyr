@@ -42,7 +42,12 @@ int iis3dhhc_trigger_set(const struct device *dev,
 			 sensor_trigger_handler_t handler)
 {
 	struct iis3dhhc_data *iis3dhhc = dev->data;
+	const struct iis3dhhc_config *config = dev->config;
 	int16_t raw[3];
+
+	if (!config->int_gpio.port) {
+		return -ENOTSUP;
+	}
 
 	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
 		iis3dhhc->handler_drdy = handler;

@@ -14,7 +14,6 @@
 	rf2xx@0 {
 		compatible = "atmel,rf2xx";
 		reg = <0x0>;
-		label = "RF2XX_0";
 		spi-max-frequency = <6000000>;
 		/*  D2 */
 		irq-gpios = <&arduino_header 8

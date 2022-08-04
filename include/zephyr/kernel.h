@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/tracing/tracing_macros.h>
+#include <zephyr/sys/mem_stats.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -2127,6 +2128,21 @@ __syscall void k_event_post(struct k_event *event, uint32_t events);
  * @param events Set of events to post to @a event
  */
 __syscall void k_event_set(struct k_event *event, uint32_t events);
+
+/**
+ * @brief Set or clear the events in an event object
+ *
+ * This routine sets the events stored in event object to the specified value.
+ * All tasks waiting on the event object @a event whose waiting conditions
+ * become met by this immediately unpend. Unlike @ref k_event_set, this routine
+ * allows specific event bits to be set and cleared as determined by the mask.
+ *
+ * @param event Address of the event object
+ * @param events Set of events to post to @a event
+ * @param events_mask Mask to be applied to @a events
+ */
+__syscall void k_event_set_masked(struct k_event *event, uint32_t events,
+				  uint32_t events_mask);
 
 /**
  * @brief Wait for any of the specified events
@@ -5016,6 +5032,33 @@ static inline uint32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
 {
 	return slab->num_blocks - slab->num_used;
 }
+
+/**
+ * @brief Get the memory stats for a memory slab
+ *
+ * This routine gets the runtime memory usage stats for the slab @a slab.
+ *
+ * @param slab Address of the memory slab
+ * @param stats Pointer to memory into which to copy memory usage statistics
+ *
+ * @retval 0 Success
+ * @retval -EINVAL Any parameter points to NULL
+ */
+
+int k_mem_slab_runtime_stats_get(struct k_mem_slab *slab, struct sys_memory_stats *stats);
+
+/**
+ * @brief Reset the maximum memory usage for a slab
+ *
+ * This routine resets the maximum memory usage for the slab @a slab to its
+ * current usage.
+ *
+ * @param slab Address of the memory slab
+ *
+ * @retval 0 Success
+ * @retval -EINVAL Memory slab is NULL
+ */
+int k_mem_slab_runtime_stats_reset_max(struct k_mem_slab *slab);
 
 /** @} */
 

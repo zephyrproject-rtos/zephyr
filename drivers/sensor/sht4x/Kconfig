@@ -5,6 +5,8 @@
 
 config SHT4X
 	bool "SHT4x Temperature and Humidity Sensor"
+	default y
+	depends on DT_HAS_SENSIRION_SHT4X_ENABLED
 	depends on I2C
 	help
 	  Enable driver for SHT4x temperature and humidity sensors.

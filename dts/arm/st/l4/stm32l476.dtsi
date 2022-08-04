@@ -14,7 +14,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>;
 			interrupts = <47 0>;
 			status = "disabled";
-			label = "ADC_3";
 		    #io-channel-cells = <1>;
 		};
 	};

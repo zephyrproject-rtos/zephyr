@@ -3,11 +3,9 @@
 # Copyright (c) 2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_PWM_XEC := microchip,xec-pwm
-
 config PWM_XEC
 	bool "Microchip XEC PWM"
-	depends on SOC_FAMILY_MEC
-	default $(dt_compat_enabled,${DT_COMPAT_PWM_XEC})
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_PWM_ENABLED
 	help
 	  Enable driver to utilize PWM on the Microchip XEC IP block.

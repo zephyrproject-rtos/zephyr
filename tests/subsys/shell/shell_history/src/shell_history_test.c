@@ -10,7 +10,7 @@
  */
 
 #include <zephyr/zephyr.h>
-#include <ztest.h>
+#include <zephyr/ztest.h>
 
 #include <zephyr/shell/shell_history.h>
 
@@ -58,7 +58,7 @@ static void test_get(bool ok, bool up, uint8_t *exp_buf, uint16_t exp_len)
  * - put line to the history.
  * - read line and verify that it is the one that was put.
  */
-static void test_history_add_get(void)
+ZTEST(shell_test, test_history_add_get)
 {
 	uint8_t exp_buf[HIST_BUF_SIZE];
 
@@ -76,7 +76,7 @@ static void test_history_add_get(void)
 }
 
 /* Test verifies that after purging there is no line in the history. */
-static void test_history_purge(void)
+ZTEST(shell_test, test_history_purge)
 {
 	uint8_t exp_buf[HIST_BUF_SIZE];
 
@@ -107,7 +107,7 @@ static void test_history_purge(void)
  * - attempt to get next line in down direction and verify that there is no
  *   line.
  */
-static void test_history_get_up_and_down(void)
+ZTEST(shell_test, test_history_get_up_and_down)
 {
 	uint8_t exp1_buf[HIST_BUF_SIZE];
 	uint8_t exp2_buf[HIST_BUF_SIZE];
@@ -166,7 +166,7 @@ static int get_max_buffer_len(void)
  * - put short line followed by line that is close to max.
  * - verify that long line evicted first line from history.
  */
-static void test_too_long_line_not_stored(void)
+ZTEST(shell_test, test_too_long_line_not_stored)
 {
 	uint8_t exp1_buf[HIST_BUF_SIZE];
 	int max_len = get_max_buffer_len();
@@ -197,7 +197,7 @@ static void test_too_long_line_not_stored(void)
  * - put same line twice.
  * - verify that only one line is in the history.
  */
-static void test_no_duplicates_in_a_row(void)
+ZTEST(shell_test, test_no_duplicates_in_a_row)
 {
 	uint8_t exp1_buf[HIST_BUF_SIZE];
 
@@ -225,7 +225,7 @@ static void test_no_duplicates_in_a_row(void)
  * - Put max length line 3 in history.
  * - Verify that line 3 is present and line 2 was evicted.
  */
-static void test_storing_long_buffers(void)
+ZTEST(shell_test, test_storing_long_buffers)
 {
 	uint8_t exp1_buf[HIST_BUF_SIZE];
 	uint8_t exp2_buf[HIST_BUF_SIZE];
@@ -253,16 +253,4 @@ static void test_storing_long_buffers(void)
 	z_shell_history_purge(&history);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(shell_test_suite,
-			ztest_unit_test(test_history_add_get),
-			ztest_unit_test(test_history_purge),
-			ztest_unit_test(test_history_get_up_and_down),
-			ztest_unit_test(test_too_long_line_not_stored),
-			ztest_unit_test(test_no_duplicates_in_a_row),
-			ztest_unit_test(test_storing_long_buffers)
-			);
-
-	ztest_run_test_suite(shell_test_suite);
-}
+ZTEST_SUITE(shell_test, NULL, NULL, NULL, NULL, NULL);

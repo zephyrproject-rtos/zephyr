@@ -12,9 +12,6 @@ compatible: "st,stm32-backup-sram"
 include: base.yaml
 
 properties:
-  label:
-    required: true
-
   reg:
     required: true
 

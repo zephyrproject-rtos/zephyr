@@ -110,6 +110,8 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		return err;
 	}
 
+	bt_mesh_net_settings_commit();
+
 	bt_mesh.seq = 0U;
 
 	bt_mesh_comp_provision(addr);
@@ -227,6 +229,10 @@ void bt_mesh_reset(void)
 	bt_mesh_beacon_disable();
 
 	bt_mesh_comp_unprovision();
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_settings_store_pending();
+	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PROV)) {
 		bt_mesh_prov_reset();

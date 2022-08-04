@@ -175,8 +175,12 @@ void main(void)
 	/* The ps2 blocks are generic, therefore, it is allowed to swap
 	 * keyboard and mouse as desired
 	 */
-#if DT_NODE_HAS_STATUS(DT_INST(0, microchip_xec_ps2), okay)
-	ps2_0_dev = device_get_binding(DT_LABEL(DT_INST(0, microchip_xec_ps2)));
+#if DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_ps2)
+	ps2_0_dev = DEVICE_DT_GET_ONE(microchip_xec_ps2);
+	if (!device_is_ready(ps2_0_dev)) {
+		printk("%s: device not ready.\n", ps2_0_dev->name);
+		return;
+	}
 	ps2_config(ps2_0_dev, mb_callback);
 	/*Make sure there is a PS/2 device connected */
 	initialize_mouse();

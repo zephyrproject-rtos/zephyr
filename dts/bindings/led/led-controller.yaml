@@ -3,10 +3,6 @@
 
 # Common fields for LED controllers and child LEDs
 
-properties:
-    label:
-      required: true
-
 child-binding:
     description: LED child node
     properties:

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "ztest_test_new.h"
+#include <zephyr/ztest.h>
 
 /**
  * @brief Try to shorten a filename by removing the current directory

@@ -6,12 +6,10 @@
 
 &xplained1_spi {
 	status = "okay";
-	label = "SPI_RF2XX";
 
 	rf2xx@0 {
 		compatible = "atmel,rf2xx";
 		reg = <0x0>;
-		label = "RF2XX_0";
 		spi-max-frequency = <6000000>;
 		irq-gpios = <&xplained1_header 2
 			     (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;

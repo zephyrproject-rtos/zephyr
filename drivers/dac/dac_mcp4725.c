@@ -33,13 +33,13 @@ LOG_MODULE_REGISTER(dac_mcp4725, CONFIG_DAC_LOG_LEVEL);
 #define MCP4725_BUSY_TIMEOUT_MS			60U
 
 struct mcp4725_config {
-	const struct device *i2c_dev;
-	uint16_t i2c_addr;
+	struct i2c_dt_spec i2c;
 };
 
 /* Read mcp4725 and check RDY status bit */
-static int mcp4725_wait_until_ready(const struct device *dev, uint16_t i2c_addr)
+static int mcp4725_wait_until_ready(const struct device *dev)
 {
+	const struct mcp4725_config *config = dev->config;
 	uint8_t rx_data[5];
 	bool mcp4725_ready = false;
 	int ret;
@@ -47,7 +47,7 @@ static int mcp4725_wait_until_ready(const struct device *dev, uint16_t i2c_addr)
 
 	/* Wait until RDY bit is set or return error if timer exceeds MCP4725_BUSY_TIMEOUT_MS */
 	while (!mcp4725_ready) {
-		ret = i2c_read(dev, rx_data, sizeof(rx_data), i2c_addr);
+		ret = i2c_read_dt(&config->i2c, rx_data, sizeof(rx_data));
 
 		if (ret == 0) {
 			mcp4725_ready = rx_data[0] & MCP4725_READ_RDY_MASK;
@@ -103,8 +103,7 @@ static int mcp4725_write_value(const struct device *dev, uint8_t channel,
 	tx_data[0] = ((value >> MCP4725_FAST_MODE_DAC_UPPER_VAL_POS) &
 		MCP4725_FAST_MODE_DAC_UPPER_VAL_MASK);
 	tx_data[1] = (value & MCP4725_FAST_MODE_DAC_LOWER_VAL_MASK);
-	ret = i2c_write(config->i2c_dev, tx_data, sizeof(tx_data),
-		config->i2c_addr);
+	ret = i2c_write_dt(&config->i2c, tx_data, sizeof(tx_data));
 
 	return ret;
 }
@@ -113,13 +112,13 @@ static int dac_mcp4725_init(const struct device *dev)
 {
 	const struct mcp4725_config *config = dev->config;
 
-	if (!device_is_ready(config->i2c_dev)) {
+	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR("I2C device not found");
 		return -EINVAL;
 	}
 
 	/* Check we can read a 'RDY' bit from this device */
-	if (mcp4725_wait_until_ready(config->i2c_dev, config->i2c_addr)) {
+	if (mcp4725_wait_until_ready(dev)) {
 		return -EBUSY;
 	}
 
@@ -134,15 +133,14 @@ static const struct dac_driver_api mcp4725_driver_api = {
 
 #define INST_DT_MCP4725(index)						\
 	static const struct mcp4725_config mcp4725_config_##index = {	\
-		.i2c_dev = DEVICE_DT_GET(DT_INST_BUS(index)),		\
-		.i2c_addr = DT_INST_REG_ADDR(index)			\
+		.i2c = I2C_DT_SPEC_INST_GET(index),			\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(index, dac_mcp4725_init,			\
 			    NULL,					\
 			    NULL,					\
 			    &mcp4725_config_##index, POST_KERNEL,	\
-			    CONFIG_DAC_INIT_PRIORITY,			\
+			    CONFIG_DAC_MCP4725_INIT_PRIORITY,		\
 			    &mcp4725_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INST_DT_MCP4725);

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <sys/math_extras.h>
+#include <zephyr/ztest.h>
+#include <zephyr/sys/math_extras.h>
 #include <inttypes.h>
 
 static void VNAME(u32_add)(void)

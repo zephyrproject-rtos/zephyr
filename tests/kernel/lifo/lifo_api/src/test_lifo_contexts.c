@@ -92,7 +92,7 @@ static void tlifo_isr_thread(struct k_lifo *plifo)
  * @brief test thread to thread data passing via lifo
  * @see k_fifo_init(), k_lifo_put(), k_lifo_get()
  */
-void test_lifo_thread2thread(void)
+ZTEST(lifo_contexts_1cpu, test_lifo_thread2thread)
 {
 	/**TESTPOINT: init via k_lifo_init*/
 	k_lifo_init(&lifo);
@@ -106,7 +106,7 @@ void test_lifo_thread2thread(void)
  * @brief test isr to thread data passing via lifo
  * @see k_fifo_init(), k_lifo_put(), k_lifo_get()
  */
-void test_lifo_thread2isr(void)
+ZTEST(lifo_contexts, test_lifo_thread2isr)
 {
 	/**TESTPOINT: init via k_lifo_init*/
 	k_lifo_init(&lifo);
@@ -120,7 +120,7 @@ void test_lifo_thread2isr(void)
  * @brief test thread to isr data passing via lifo
  * @see k_fifo_init(), k_lifo_put(), k_lifo_get()
  */
-void test_lifo_isr2thread(void)
+ZTEST(lifo_contexts, test_lifo_isr2thread)
 {
 	/**TESTPOINT: test k_lifo_init lifo*/
 	k_lifo_init(&lifo);
@@ -133,3 +133,8 @@ void test_lifo_isr2thread(void)
 /**
  * @}
  */
+
+ZTEST_SUITE(lifo_contexts_1cpu, NULL, NULL,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
+
+ZTEST_SUITE(lifo_contexts, NULL, NULL, NULL, NULL, NULL);

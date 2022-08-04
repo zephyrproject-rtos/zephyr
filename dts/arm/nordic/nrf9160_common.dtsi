@@ -12,11 +12,9 @@ flash_controller: flash-controller@39000 {
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	label="NRF_FLASH_DRV_NAME";
 
 	flash0: flash@0 {
 		compatible = "soc-nv-flash";
-		label = "NRF_FLASH";
 		erase-block-size = <4096>;
 		write-block-size = <4>;
 	};
@@ -27,7 +25,6 @@ adc: adc@e000 {
 	reg = <0xe000 0x1000>;
 	interrupts = <14 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	label = "ADC_0";
 	#io-channel-cells = <1>;
 };
 
@@ -35,7 +32,6 @@ dppic: dppic@17000 {
 	compatible = "nordic,nrf-dppic";
 	reg = <0x17000 0x1000>;
 	status = "okay";
-	label = "DPPIC";
 };
 
 egu0: egu@1b000 {
@@ -85,7 +81,6 @@ ipc: ipc@2a000 {
 	reg = <0x2a000 0x1000>;
 	interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "okay";
-	label = "IPC";
 };
 
 i2s0: i2s@28000 {
@@ -95,7 +90,6 @@ i2s0: i2s@28000 {
 	reg = <0x28000 0x1000>;
 	interrupts = <40 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	label = "I2S_0";
 };
 
 kmu: kmu@39000 {
@@ -110,7 +104,6 @@ pdm0: pdm@26000 {
 	reg = <0x26000 0x1000>;
 	interrupts = <38 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	label = "PDM_0";
 };
 
 regulators: regulator@4000 {
@@ -130,7 +123,6 @@ uart0: uart@8000 {
 	reg = <0x8000 0x1000>;
 	interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	label = "UART_0";
 };
 
 uart1: uart@9000 {
@@ -138,7 +130,6 @@ uart1: uart@9000 {
 	reg = <0x9000 0x1000>;
 	interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	label = "UART_1";
 };
 
 uart2: uart@a000 {
@@ -146,7 +137,6 @@ uart2: uart@a000 {
 	reg = <0xa000 0x1000>;
 	interrupts = <10 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	label = "UART_2";
 };
 
 uart3: uart@b000 {
@@ -154,7 +144,6 @@ uart3: uart@b000 {
 	reg = <0xb000 0x1000>;
 	interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	label = "UART_3";
 };
 
 i2c0: i2c@8000 {
@@ -170,7 +159,6 @@ i2c0: i2c@8000 {
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	label = "I2C_0";
 };
 
 i2c1: i2c@9000 {
@@ -186,7 +174,6 @@ i2c1: i2c@9000 {
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	label = "I2C_1";
 };
 
 i2c2: i2c@a000 {
@@ -202,7 +189,6 @@ i2c2: i2c@a000 {
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <10 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	label = "I2C_2";
 };
 
 i2c3: i2c@b000 {
@@ -218,7 +204,6 @@ i2c3: i2c@b000 {
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	label = "I2C_3";
 };
 
 spi0: spi@8000 {
@@ -232,8 +217,8 @@ spi0: spi@8000 {
 	#size-cells = <0>;
 	reg = <0x8000 0x1000>;
 	interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
+	max-frequency = <DT_FREQ_M(8)>;
 	status = "disabled";
-	label = "SPI_0";
 };
 
 spi1: spi@9000 {
@@ -247,8 +232,8 @@ spi1: spi@9000 {
 	#size-cells = <0>;
 	reg = <0x9000 0x1000>;
 	interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
+	max-frequency = <DT_FREQ_M(8)>;
 	status = "disabled";
-	label = "SPI_1";
 };
 
 spi2: spi@a000 {
@@ -262,8 +247,8 @@ spi2: spi@a000 {
 	#size-cells = <0>;
 	reg = <0xa000 0x1000>;
 	interrupts = <10 NRF_DEFAULT_IRQ_PRIORITY>;
+	max-frequency = <DT_FREQ_M(8)>;
 	status = "disabled";
-	label = "SPI_2";
 };
 
 spi3: spi@b000 {
@@ -277,8 +262,8 @@ spi3: spi@b000 {
 	#size-cells = <0>;
 	reg = <0xb000 0x1000>;
 	interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
+	max-frequency = <DT_FREQ_M(8)>;
 	status = "disabled";
-	label = "SPI_3";
 };
 
 pwm0: pwm@21000 {
@@ -286,7 +271,6 @@ pwm0: pwm@21000 {
 	reg = <0x21000 0x1000>;
 	interrupts = <33 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	label = "PWM_0";
 	#pwm-cells = <3>;
 };
 
@@ -295,7 +279,6 @@ pwm1: pwm@22000 {
 	reg = <0x22000 0x1000>;
 	interrupts = <34 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	label = "PWM_1";
 	#pwm-cells = <3>;
 };
 
@@ -304,7 +287,6 @@ pwm2: pwm@23000 {
 	reg = <0x23000 0x1000>;
 	interrupts = <35 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	label = "PWM_2";
 	#pwm-cells = <3>;
 };
 
@@ -313,7 +295,6 @@ pwm3: pwm@24000 {
 	reg = <0x24000 0x1000>;
 	interrupts = <36 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	label = "PWM_3";
 	#pwm-cells = <3>;
 };
 
@@ -322,7 +303,6 @@ gpio0: gpio@842500 {
 	gpio-controller;
 	reg = <0x842500 0x300>;
 	#gpio-cells = <2>;
-	label = "GPIO_0";
 	status = "disabled";
 	port = <0>;
 };
@@ -335,7 +315,6 @@ rtc0: rtc@14000 {
 	status = "okay";
 	clock-frequency = <32768>;
 	prescaler = <1>;
-	label = "RTC_0";
 };
 
 rtc1: rtc@15000 {
@@ -346,7 +325,6 @@ rtc1: rtc@15000 {
 	status = "okay";
 	clock-frequency = <32768>;
 	prescaler = <1>;
-	label = "RTC_1";
 };
 
 clock: clock@5000 {
@@ -354,7 +332,6 @@ clock: clock@5000 {
 	reg = <0x5000 0x1000>;
 	interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "okay";
-	label = "CLOCK";
 };
 
 power: power@5000 {
@@ -369,7 +346,6 @@ wdt: wdt0: watchdog@18000 {
 	reg = <0x18000 0x1000>;
 	interrupts = <24 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "okay";
-	label = "WDT";
 };
 
 timer0: timer@f000 {
@@ -379,7 +355,6 @@ timer0: timer@f000 {
 	cc-num = <6>;
 	interrupts = <15 NRF_DEFAULT_IRQ_PRIORITY>;
 	prescaler = <0>;
-	label = "TIMER_0";
 };
 
 timer1: timer@10000 {
@@ -389,7 +364,6 @@ timer1: timer@10000 {
 	cc-num = <6>;
 	interrupts = <16 NRF_DEFAULT_IRQ_PRIORITY>;
 	prescaler = <0>;
-	label = "TIMER_1";
 };
 
 timer2: timer@11000 {
@@ -399,5 +373,4 @@ timer2: timer@11000 {
 	cc-num = <6>;
 	interrupts = <17 NRF_DEFAULT_IRQ_PRIORITY>;
 	prescaler = <0>;
-	label = "TIMER_2";
 };

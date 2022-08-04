@@ -11,6 +11,19 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
 
+static const enum pm_device_state action_target_state[] = {
+	[PM_DEVICE_ACTION_SUSPEND] = PM_DEVICE_STATE_SUSPENDED,
+	[PM_DEVICE_ACTION_RESUME] = PM_DEVICE_STATE_ACTIVE,
+	[PM_DEVICE_ACTION_TURN_OFF] = PM_DEVICE_STATE_OFF,
+	[PM_DEVICE_ACTION_TURN_ON] = PM_DEVICE_STATE_SUSPENDED,
+};
+static const enum pm_device_state action_expected_state[] = {
+	[PM_DEVICE_ACTION_SUSPEND] = PM_DEVICE_STATE_ACTIVE,
+	[PM_DEVICE_ACTION_RESUME] = PM_DEVICE_STATE_SUSPENDED,
+	[PM_DEVICE_ACTION_TURN_OFF] = PM_DEVICE_STATE_SUSPENDED,
+	[PM_DEVICE_ACTION_TURN_ON] = PM_DEVICE_STATE_OFF,
+};
+
 const char *pm_device_state_str(enum pm_device_state state)
 {
 	switch (state) {
@@ -28,9 +41,8 @@ const char *pm_device_state_str(enum pm_device_state state)
 int pm_device_action_run(const struct device *dev,
 			 enum pm_device_action action)
 {
-	int ret;
-	enum pm_device_state state;
 	struct pm_device *pm = dev->pm;
+	int ret;
 
 	if (pm == NULL) {
 		return -ENOSYS;
@@ -40,38 +52,11 @@ int pm_device_action_run(const struct device *dev,
 		return -EPERM;
 	}
 
-	switch (action) {
-	case PM_DEVICE_ACTION_SUSPEND:
-		if (pm->state == PM_DEVICE_STATE_SUSPENDED) {
-			return -EALREADY;
-		} else if (pm->state == PM_DEVICE_STATE_OFF) {
-			return -ENOTSUP;
-		}
-
-		state = PM_DEVICE_STATE_SUSPENDED;
-		break;
-	case PM_DEVICE_ACTION_RESUME:
-		if (pm->state == PM_DEVICE_STATE_ACTIVE) {
-			return -EALREADY;
-		}
-
-		state = PM_DEVICE_STATE_ACTIVE;
-		break;
-	case PM_DEVICE_ACTION_TURN_OFF:
-		if (pm->state == PM_DEVICE_STATE_OFF) {
-			return -EALREADY;
-		}
-
-		state = PM_DEVICE_STATE_OFF;
-		break;
-	case PM_DEVICE_ACTION_TURN_ON:
-		if (pm->state != PM_DEVICE_STATE_OFF) {
-			return -ENOTSUP;
-		}
-
-		state = PM_DEVICE_STATE_SUSPENDED;
-		break;
-	default:
+	/* Validate action against current state */
+	if (pm->state == action_target_state[action]) {
+		return -EALREADY;
+	}
+	if (pm->state != action_expected_state[action]) {
 		return -ENOTSUP;
 	}
 
@@ -80,21 +65,35 @@ int pm_device_action_run(const struct device *dev,
 		/*
 		 * TURN_ON and TURN_OFF are actions triggered by a power domain
 		 * when it is resumed or suspended, which means that the energy
-		 * to the device will be removed or added. For this reason, even
-		 * if the device does not handle these actions its state needs to
-		 * updated to reflect its physical behavior.
+		 * to the device will be removed or added. For this reason, if
+		 * the transition fails or the device does not handle these
+		 * actions its state still needs to updated to reflect its
+		 * physical behavior.
 		 *
 		 * The function will still return the error code so the domain
 		 * can take whatever action is more appropriated.
 		 */
-		if ((ret == -ENOTSUP) && ((action == PM_DEVICE_ACTION_TURN_ON)
-				  || (action == PM_DEVICE_ACTION_TURN_OFF))) {
-			pm->state = state;
+		switch (action) {
+		case PM_DEVICE_ACTION_TURN_ON:
+			/* Store an error flag when the transition explicitly fails */
+			if (ret != -ENOTSUP) {
+				atomic_set_bit(&pm->flags, PM_DEVICE_FLAG_TURN_ON_FAILED);
+			}
+			__fallthrough;
+		case PM_DEVICE_ACTION_TURN_OFF:
+			pm->state = action_target_state[action];
+			break;
+		default:
+			break;
 		}
 		return ret;
 	}
 
-	pm->state = state;
+	pm->state = action_target_state[action];
+	/* Power up failure flag is no longer relevant */
+	if (action == PM_DEVICE_ACTION_TURN_OFF) {
+		atomic_clear_bit(&pm->flags, PM_DEVICE_FLAG_TURN_ON_FAILED);
+	}
 
 	return 0;
 }

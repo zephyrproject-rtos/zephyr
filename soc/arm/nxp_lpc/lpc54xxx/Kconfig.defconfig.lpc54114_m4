@@ -12,14 +12,6 @@ config PINMUX_MCUX_LPC
 	default y
 	depends on PINMUX
 
-config GPIO_MCUX_LPC
-	default y
-	depends on GPIO
-
-config UART_MCUX_FLEXCOMM
-	default y
-	depends on SERIAL
-
 config SOC_FLASH_LPC
 	default y
 	depends on FLASH

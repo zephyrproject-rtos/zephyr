@@ -7,8 +7,8 @@
 #define LOG_LEVEL LOG_LEVEL_INF
 #include <zephyr/logging/log.h>
 #include <zephyr/zephyr.h>
-#include <ztest.h>
-#include <tc_util.h>
+#include <zephyr/ztest.h>
+#include <zephyr/tc_util.h>
 LOG_MODULE_DECLARE(brd_pm_test);
 #include "power_mgmt.h"
 

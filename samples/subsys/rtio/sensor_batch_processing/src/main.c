@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/rtio/rtio_executor_simple.h>
 #include <zephyr/logging/log.h>
@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(main);
 #define SQ_SZ		(N)
 #define CQ_SZ		(N)
 
-#define NODE_ID		DT_INST(0, vnd_sensor)
+#define NODE_ID		DT_COMPAT_GET_ANY_STATUS_OKAY(vnd_sensor)
 #define SAMPLE_PERIOD	DT_PROP(NODE_ID, sample_period)
 #define SAMPLE_SIZE	DT_PROP(NODE_ID, sample_size)
 #define PROCESS_TIME	((M - 1) * SAMPLE_PERIOD)

@@ -12,6 +12,21 @@ properties:
     interrupts:
       required: true
 
+    max-frequency:
+      type: int
+      required: true
+      description: |
+        Maximum data rate the SPI peripheral can be driven at, in Hz. This
+        property must be set at SoC level DTS files.
+
+    overrun-character:
+      type: int
+      default: 0xff
+      description: |
+        The overrun character (ORC) is used when all bytes from the TX buffer
+        are sent, but the transfer continues due to RX. Defaults to 0xff
+        (line high), the most common value used in SPI transfers.
+
     sck-pin:
       type: int
       deprecated: true

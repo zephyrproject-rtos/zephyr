@@ -54,15 +54,6 @@ if DISPLAY
 config MIPI_DSI
 	default y
 
-# Adjust the memory pool block size for a 720x1280 display
-config MCUX_ELCDIF_POOL_BLOCK_MAX
-	default 0x1C3000
-
-# Memory from the heap pool is used to allocate display buffers.
-# Adjust HEAP_MEM_POOL_SIZE.
-config HEAP_MEM_POOL_SIZE
-	default 4194304
-
 config REGULATOR
 	default y
 

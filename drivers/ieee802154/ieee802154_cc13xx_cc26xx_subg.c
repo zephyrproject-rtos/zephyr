@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_cc13xx_cc26xx_ieee802154_subghz
+
 #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx_subg);
@@ -42,8 +44,6 @@ static int ieee802154_cc13xx_cc26xx_subg_rx(
 	const struct device *dev);
 static void ieee802154_cc13xx_cc26xx_subg_setup_rx_buffers(
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data);
-
-DEVICE_DECLARE(ieee802154_cc13xx_cc26xx_subg);
 
 /* Overrides from SmartRF Studio 7 2.18.0 */
 static uint32_t overrides_sub_ghz[] = {
@@ -135,8 +135,7 @@ static inline bool is_subghz(uint16_t channel)
 static void cmd_prop_tx_adv_callback(RF_Handle h, RF_CmdHandle ch,
 	RF_EventMask e)
 {
-	const struct device *dev =
-		&DEVICE_NAME_GET(ieee802154_cc13xx_cc26xx_subg);
+	const struct device *dev = DEVICE_DT_INST_GET(0);
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
 	RF_Op *op = RF_getCmdOp(h, ch);
 
@@ -147,8 +146,7 @@ static void cmd_prop_tx_adv_callback(RF_Handle h, RF_CmdHandle ch,
 static void cmd_prop_rx_adv_callback(RF_Handle h, RF_CmdHandle ch,
 	RF_EventMask e)
 {
-	const struct device *dev =
-		&DEVICE_NAME_GET(ieee802154_cc13xx_cc26xx_subg);
+	const struct device *dev = DEVICE_DT_INST_GET(0);
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
 	RF_Op *op = RF_getCmdOp(h, ch);
 
@@ -769,19 +767,15 @@ static struct ieee802154_cc13xx_cc26xx_subg_data
 };
 
 #if defined(CONFIG_NET_L2_IEEE802154_SUB_GHZ)
-NET_DEVICE_INIT(ieee802154_cc13xx_cc26xx_subg,
-		CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_DRV_NAME,
-		ieee802154_cc13xx_cc26xx_subg_init, NULL,
-		&ieee802154_cc13xx_cc26xx_subg_data, NULL,
-		CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO,
-		&ieee802154_cc13xx_cc26xx_subg_radio_api, IEEE802154_L2,
-		NET_L2_GET_CTX_TYPE(IEEE802154_L2), IEEE802154_MTU);
+NET_DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_subg_init, NULL,
+			  &ieee802154_cc13xx_cc26xx_subg_data, NULL,
+			  CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO,
+			  &ieee802154_cc13xx_cc26xx_subg_radio_api,
+			  IEEE802154_L2, NET_L2_GET_CTX_TYPE(IEEE802154_L2),
+			  IEEE802154_MTU);
 #else
-DEVICE_DEFINE(ieee802154_cc13xx_cc26xx_subg,
-		CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_DRV_NAME,
-		ieee802154_cc13xx_cc26xx_subg_init,
-		NULL,
-		&ieee802154_cc13xx_cc26xx_subg_data, NULL, POST_KERNEL,
-		CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO,
-		&ieee802154_cc13xx_cc26xx_subg_radio_api);
+DEVICE_DT_INST_DEFINE(0 ieee802154_cc13xx_cc26xx_subg_init, NULL,
+		      &ieee802154_cc13xx_cc26xx_subg_data, NULL, POST_KERNEL,
+		      CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO,
+		      &ieee802154_cc13xx_cc26xx_subg_radio_api);
 #endif
