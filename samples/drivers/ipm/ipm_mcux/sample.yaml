@@ -7,6 +7,7 @@ tests:
         platform_allow: lpcxpresso54114_m4 lpcxpresso55s69_cpu0
         tags: ipm
         harness: console
+        sysbuild: True
         harness_config:
           type: multi_line
           regex:
