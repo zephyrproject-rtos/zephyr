@@ -95,9 +95,42 @@ mapping:
     type: seq
     sequence:
       - type: str
+  blobs:
+    required: false
+    type: seq
+    sequence:
+      - type: map
+        mapping:
+          path:
+            required: true
+            type: str
+          sha256:
+            required: true
+            type: str
+          type:
+            required: true
+            type: str
+            enum: ['img', 'lib']
+          version:
+            required: true
+            type: str
+          license-path:
+            required: true
+            type: str
+          url:
+            required: true
+            type: str
+          description:
+            required: true
+            type: str
+          doc-url:
+            required: false
+            type: str
 '''
 
 MODULE_YML_PATH = PurePath('zephyr/module.yml')
+# Path to the blobs folder
+MODULE_BLOBS_PATH = PurePath('zephyr/blobs')
 
 schema = yaml.safe_load(METADATA_SCHEMA)
 

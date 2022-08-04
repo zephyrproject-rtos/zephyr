@@ -718,6 +718,8 @@ scripts/build/gen_image_info.py           @tejlmand
 /scripts/series-push-hook.sh              @erwango
 /scripts/utils/pinctrl_nrf_migrate.py     @gmarull
 /scripts/west_commands/                   @mbolivar-nordic
+/scripts/west_commands/blobs.py           @carlescufi
+/scripts/west_commands/fetchers           @carlescufi
 /scripts/west_commands/runners/gd32isp.py @mbolivar-nordic @nandojve
 /scripts/west_commands/tests/test_gd32isp.py @mbolivar-nordic @nandojve
 /scripts/west-commands.yml                @mbolivar-nordic
