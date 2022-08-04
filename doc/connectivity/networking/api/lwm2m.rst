@@ -239,7 +239,8 @@ The Zephyr LwM2M library implements the following items:
   Device, Firmware Update, etc.
 * Extended IPSO objects such as Light Control, Temperature Sensor, and Timer
 
-The library currently implements up to `LwM2M specification 1.0.2`_.
+By default, the library implements `LwM2M specification 1.0.2`_ and can be set to
+`LwM2M specification 1.1.1`_ with a Kconfig option.
 
 For more information about LwM2M visit `OMA Specworks LwM2M`_.
 
@@ -517,3 +518,6 @@ API Reference
 
 .. _LwM2M specification 1.0.2:
    http://openmobilealliance.org/release/LightweightM2M/V1_0_2-20180209-A/OMA-TS-LightweightM2M-V1_0_2-20180209-A.pdf
+
+.. _LwM2M specification 1.1.1:
+   http://openmobilealliance.org/release/LightweightM2M/V1_1_1-20190617-A/
