@@ -1312,7 +1312,10 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 	BT_DBG("num_ases %u", req->num_ases);
 
-	if (buf->len < req->num_ases * sizeof(*cfg)) {
+	if (req->num_ases < 1) {
+		BT_WARN("Number_of_ASEs parameter value is less than 1");
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	} else if (buf->len < req->num_ases * sizeof(*cfg)) {
 		BT_ERR("Malformed ASE Config: len %u < %zu", buf->len,
 		       req->num_ases * sizeof(*cfg));
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
@@ -1495,7 +1498,10 @@ static ssize_t ascs_qos(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 	BT_DBG("num_ases %u", req->num_ases);
 
-	if (buf->len < req->num_ases * sizeof(*qos)) {
+	if (req->num_ases < 1) {
+		BT_WARN("Number_of_ASEs parameter value is less than 1");
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	} else if (buf->len < req->num_ases * sizeof(*qos)) {
 		BT_ERR("Malformed ASE QoS: len %u < %zu", buf->len,
 		       req->num_ases * sizeof(*qos));
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
@@ -1844,7 +1850,10 @@ static ssize_t ascs_enable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 	BT_DBG("num_ases %u", req->num_ases);
 
-	if (buf->len < req->num_ases * sizeof(*meta)) {
+	if (req->num_ases < 1) {
+		BT_WARN("Number_of_ASEs parameter value is less than 1");
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	} else if (buf->len < req->num_ases * sizeof(*meta)) {
 		BT_ERR("Malformed ASE Metadata: len %u < %zu", buf->len,
 		       req->num_ases * sizeof(*meta));
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
@@ -1942,7 +1951,10 @@ static ssize_t ascs_start(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 	BT_DBG("num_ases %u", req->num_ases);
 
-	if (buf->len < req->num_ases) {
+	if (req->num_ases < 1) {
+		BT_WARN("Number_of_ASEs parameter value is less than 1");
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	} else if (buf->len < req->num_ases) {
 		BT_ERR("Malformed ASE Start: len %u < %u", buf->len,
 		       req->num_ases);
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
@@ -1983,7 +1995,10 @@ static ssize_t ascs_disable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 	BT_DBG("num_ases %u", req->num_ases);
 
-	if (buf->len < req->num_ases) {
+	if (req->num_ases < 1) {
+		BT_WARN("Number_of_ASEs parameter value is less than 1");
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	} else if (buf->len < req->num_ases) {
 		BT_ERR("Malformed ASE Disable: len %u < %u", buf->len,
 		       req->num_ases);
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
@@ -2090,7 +2105,10 @@ static ssize_t ascs_stop(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 	BT_DBG("num_ases %u", req->num_ases);
 
-	if (buf->len < req->num_ases) {
+	if (req->num_ases < 1) {
+		BT_WARN("Number_of_ASEs parameter value is less than 1");
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	} else if (buf->len < req->num_ases) {
 		BT_ERR("Malformed ASE Start: len %u < %u", buf->len,
 		       req->num_ases);
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
@@ -2132,7 +2150,10 @@ static ssize_t ascs_metadata(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 	BT_DBG("num_ases %u", req->num_ases);
 
-	if (buf->len < req->num_ases * sizeof(*meta)) {
+	if (req->num_ases < 1) {
+		BT_WARN("Number_of_ASEs parameter value is less than 1");
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	} else if (buf->len < req->num_ases * sizeof(*meta)) {
 		BT_ERR("Malformed ASE Metadata: len %u < %zu", buf->len,
 		       req->num_ases * sizeof(*meta));
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
@@ -2178,7 +2199,10 @@ static ssize_t ascs_release(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 	BT_DBG("num_ases %u", req->num_ases);
 
-	if (buf->len < req->num_ases) {
+	if (req->num_ases < 1) {
+		BT_WARN("Number_of_ASEs parameter value is less than 1");
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	} else if (buf->len < req->num_ases) {
 		BT_ERR("Malformed ASE Release: len %u < %u", buf->len,
 		       req->num_ases);
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
