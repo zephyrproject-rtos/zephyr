@@ -12,7 +12,6 @@
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
-		zephyr,bt-hci-rpmsg-ipc = &ipc0;
 	};
 
 	buttons {
@@ -114,8 +113,6 @@
 		pwm-led0 = &red_led_pwm;
 		pwm-led1 = &green_led_pwm;
 		pwm-led2 = &blue_led_pwm;
-		magn0 = &bmm150;
-		watchdog0 = &wdt0;
 	};
 };
 
@@ -159,7 +156,7 @@
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
-	bmm150: bmm150@10 {
+	bmm150@10 {
 		compatible = "bosch,bmm150";
 		label = "BMM150";
 		reg = <0x10>;
@@ -171,7 +168,14 @@
 		reg = <0x38>;
 		int-gpios = <&gpio1 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 	};
+
+	bme688@76 {
+		compatible = "bosch,bme680";
+		label = "BME688";
+		reg = <0x76>;
+	};
 };
+
 
 &spi3 {
 	compatible = "nordic,nrf-spim";
@@ -290,11 +294,6 @@
 			reg = <0x000fa000 0x00006000>;
 		};
 	};
-};
-
-zephyr_udc0: &usbd {
-	compatible = "nordic,nrf-usbd";
-	status = "okay";
 };
 
 / {
