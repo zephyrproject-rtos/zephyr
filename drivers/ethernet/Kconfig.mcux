@@ -16,6 +16,13 @@ menuconfig ETH_MCUX
 
 if ETH_MCUX
 
+config ETH_MCUX_USE_DTCM_FOR_DMA_BUFFER
+	bool "Use DTCM for hardware DMA buffers"
+	default y
+	help
+	  Place the hardware DMA buffers into DTCM for better networking
+	  performance
+
 config ETH_MCUX_PROMISCUOUS_MODE
 	bool "Promiscuous mode"
 	help
