@@ -1338,12 +1338,6 @@ static void eth_mcux_common_isr(const struct device *dev)
 		ENET_TimeStampIRQHandler(context->base, &context->enet_handle);
 	}
 #endif
-	if (EIR) {
-		ENET_ClearInterruptStatus(context->base,
-		  ~(kENET_TxBufferInterrupt | kENET_TxFrameInterrupt
-		    | kENET_RxBufferInterrupt | kENET_RxFrameInterrupt
-		    | ENET_EIR_MII_MASK | ENET_TS_INTERRUPT));
-	}
 	irq_unlock(irq_lock_key);
 }
 #endif
