@@ -29,8 +29,15 @@
 #define CONTEXT BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA
 
 #if defined(CONFIG_BT_AUDIO_UNICAST)
-#define MAX_PAC 2
-static struct bt_audio_stream streams[MAX_PAC];
+#define UNICAST_SERVER_STREAM_COUNT \
+	COND_CODE_1(CONFIG_BT_ASCS, \
+		    (CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT), (0))
+#define UNICAST_CLIENT_STREAM_COUNT \
+	COND_CODE_1(CONFIG_BT_AUDIO_UNICAST_CLIENT, \
+		    (CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT + \
+		     CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT), (0))
+
+static struct bt_audio_stream streams[UNICAST_SERVER_STREAM_COUNT + UNICAST_CLIENT_STREAM_COUNT];
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 static struct bt_audio_unicast_group *default_unicast_group;
@@ -458,7 +465,7 @@ static struct bt_audio_capability_ops lc3_ops = {
 #endif /* CONFIG_BT_AUDIO_UNICAST */
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_SERVER) || defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
-static struct bt_audio_capability caps[MAX_PAC] = {
+static struct bt_audio_capability caps[] = {
 #if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
 	{
 		.dir = BT_AUDIO_DIR_SOURCE,
