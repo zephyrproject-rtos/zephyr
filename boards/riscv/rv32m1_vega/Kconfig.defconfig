@@ -6,9 +6,6 @@ config BOARD
 	default "rv32m1_vega_ri5cy" if SOC_OPENISA_RV32M1_RI5CY
 	default "rv32m1_vega_zero_riscy" if SOC_OPENISA_RV32M1_ZERO_RISCY
 
-config I2C
-	default y if SENSOR
-
 if BT
 
 config BT_CTLR
