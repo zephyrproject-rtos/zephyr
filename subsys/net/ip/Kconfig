@@ -11,6 +11,11 @@ config NET_IP
 	bool
 	default y if NET_IPV6 || NET_IPV4
 
+# Hidden option selected by net connection based socket implementations
+# to draw in all code required for connection infrastructure.
+config NET_CONNECTION_SOCKETS
+	bool
+
 config NET_NATIVE
 	bool "Native network stack support"
 	default y
