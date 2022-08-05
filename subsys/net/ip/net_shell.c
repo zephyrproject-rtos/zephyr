@@ -347,7 +347,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 #if defined(CONFIG_NET_VLAN)
 	struct ethernet_context *eth_ctx;
 #endif
-#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_IP)
 	struct net_if_addr *unicast;
 	struct net_if_mcast_addr *mcast;
 #endif
@@ -356,7 +356,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	int ret;
 #endif
 	const char *extra;
-#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_IP)
 	int i, count;
 #endif
 
@@ -3835,7 +3835,7 @@ static int cmd_net_nbr(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_IP)
 
 K_SEM_DEFINE(ping_timeout, 0, 1);
 static const struct shell *shell_for_ping;
@@ -4108,7 +4108,7 @@ static int parse_arg(size_t *i, size_t argc, char *argv[])
 
 	return res;
 }
-#endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4 */
+#endif /* CONFIG_NET_IP */
 
 static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 {
