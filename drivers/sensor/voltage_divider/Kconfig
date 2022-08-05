@@ -1,0 +1,12 @@
+# Voltage divider sensor configuration options
+
+# Copyright (c) 2022 Aurelien Jarno
+# SPDX-License-Identifier: Apache-2.0
+
+config VOLTAGE_DIVIDER
+	bool "Voltage divider"
+	default y
+	depends on DT_HAS_VOLTAGE_DIVIDER_ENABLED
+	depends on ADC
+	help
+	  Enable driver for Voltage Divider and then also ADC
