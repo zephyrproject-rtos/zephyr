@@ -177,7 +177,7 @@ int net_conn_change_callback(struct net_conn_handle *handle,
  * the received packet. If corresponding IP protocol support is
  * disabled, the function will always return NET_DROP.
  */
-#if defined(CONFIG_NET_IP) || defined(CONFIG_NET_SOCKETS_PACKET) || defined(CONFIG_NET_SOCKETS_CAN)
+#if defined(CONFIG_NET_IP) || defined(CONFIG_NET_CONNECTION_SOCKETS)
 enum net_verdict net_conn_input(struct net_pkt *pkt,
 				union net_ip_header *ip_hdr,
 				uint8_t proto,
@@ -190,7 +190,7 @@ static inline enum net_verdict net_conn_input(struct net_pkt *pkt,
 {
 	return NET_DROP;
 }
-#endif /* CONFIG_NET_IP  || CONFIG_NET_SOCKETS_PACKET */
+#endif /* CONFIG_NET_IP || CONFIG_NET_CONNECTION_SOCKETS */
 
 /**
  * @typedef net_conn_foreach_cb_t

@@ -39,11 +39,12 @@ zephyr_library_sources_ifdef(CONFIG_NET_TCP          tcp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_TEST_PROTOCOL           tp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_TRICKLE      trickle.c)
 zephyr_library_sources_ifdef(CONFIG_NET_UDP          udp.c)
-zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_PACKET  connection.c
-                                                        packet_socket.c)
-zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_CAN  connection.c
-                                                     canbus_socket.c)
 zephyr_library_sources_ifdef(CONFIG_NET_PROMISCUOUS_MODE promiscuous.c)
+
+# Net Connection Socket Adapters
+zephyr_library_sources_ifdef(CONFIG_NET_CONNECTION_SOCKETS  connection.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_PACKET      packet_socket.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_CAN         canbus_socket.c)
 
 if(CONFIG_NET_TCP_ISN_RFC6528)
   zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
