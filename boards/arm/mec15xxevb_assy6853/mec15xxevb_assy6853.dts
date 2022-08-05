@@ -6,8 +6,7 @@
 
 /dts-v1/;
 
-#include <microchip/mec1501hsz.dtsi>
-#include <microchip/mec152x/mec152xhsz-pinctrl.dtsi>
+#include "mec15xxevb_assy6853-pinctrl.dtsi"
 
 / {
 	model = "Microchip MEC15XXEVB_ASSY6853 evaluation board";
@@ -137,10 +136,14 @@
 
 &ps2_0 {
 	status = "okay";
+	pinctrl-0 = <&ps2_clk0b_gpio007 &ps2_dat0b_gpio010>;
+	pinctrl-names = "default";
 };
 
 &ps2_1 {
 	status = "okay";
+	pinctrl-0 = <&ps2_clk1b_gpio154 &ps2_dat1b_gpio155>;
+	pinctrl-names = "default";
 };
 
 &pwm0 {

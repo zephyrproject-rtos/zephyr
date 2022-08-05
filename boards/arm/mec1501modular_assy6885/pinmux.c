@@ -280,24 +280,6 @@ static int board_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portb, MCHP_GPIO_073, MCHP_GPIO_CTRL_MUX_F1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ps2_0), okay)
-	/* Set muxing for PS20B*/
-	mchp_pcr_periph_slp_ctrl(PCR_PS2_0, MCHP_PCR_SLEEP_DIS);
-	pinmux_pin_set(porta, MCHP_GPIO_007, MCHP_GPIO_CTRL_MUX_F2 |
-		       MCHP_GPIO_CTRL_BUFT_OPENDRAIN);
-	pinmux_pin_set(porta, MCHP_GPIO_010, MCHP_GPIO_CTRL_MUX_F2 |
-		       MCHP_GPIO_CTRL_BUFT_OPENDRAIN);
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ps2_1), okay)
-	/* Set muxing for PS21B*/
-	mchp_pcr_periph_slp_ctrl(PCR_PS2_1, MCHP_PCR_SLEEP_DIS);
-	pinmux_pin_set(portd, MCHP_GPIO_154, MCHP_GPIO_CTRL_MUX_F2 |
-		       MCHP_GPIO_CTRL_BUFT_OPENDRAIN);
-	pinmux_pin_set(portd, MCHP_GPIO_155, MCHP_GPIO_CTRL_MUX_F2 |
-		       MCHP_GPIO_CTRL_BUFT_OPENDRAIN);
-#endif
-
 #ifdef CONFIG_PWM_XEC
 #if DT_NODE_HAS_STATUS(DT_INST(0, microchip_xec_pwm), okay)
 	mchp_pcr_periph_slp_ctrl(PCR_PWM0, MCHP_PCR_SLEEP_DIS);
