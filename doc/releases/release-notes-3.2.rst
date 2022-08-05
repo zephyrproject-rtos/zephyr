@@ -24,6 +24,13 @@ Changes in this release
   struct.  Updated :c:macro:`SPI_CS_CONTROL_PTR_DT` to reflect
   this change.
 
+* The :kconfig:option:`CONFIG_LEGACY_INCLUDE_PATH` option has been disabled by
+  default, all upstream code and modules have been converted to use
+  ``<zephyr/...>`` header paths. The option is still available to facilitate
+  the migration of external applications, but will be removed with the 3.4
+  release.  The :zephyr_file:`scripts/utils/migrate_includes.py` script is
+  provided to automate the migration.
+
 Removed APIs in this release
 ============================
 
