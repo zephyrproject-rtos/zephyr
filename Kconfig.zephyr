@@ -843,6 +843,7 @@ endmenu
 
 config LEGACY_INCLUDE_PATH
 	bool "Allow for the legacy include paths (without the zephyr/ prefix)"
+	default y
 	help
 	  Allow applications and libraries to use the Zephyr legacy include
 	  path which does not use the zephyr/ prefix. For example, the
