@@ -75,7 +75,7 @@ static void thread_high_prio_sem_take(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sys_sem_tests
  */
-void test_multiple_thread_sem_usage(void)
+ZTEST_USER(kernel_sys_sem, test_multiple_thread_sem_usage)
 {
 	k_sem_init(&usage_sem, SEM_INIT_VAL, SEM_MAX_VAL);
 	k_sem_init(&sync_sem, SEM_INIT_VAL, SEM_MAX_VAL);
@@ -170,7 +170,7 @@ static void multi_thread_sem_take(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sys_sem_tests
  */
-void test_multi_thread_sem_limit(void)
+ZTEST_USER(kernel_sys_sem, test_multi_thread_sem_limit)
 {
 	k_sem_init(&limit_sem, SEM_INIT_VAL, SEM_MAX_VAL);
 	k_sem_init(&sync_sem, SEM_INIT_VAL, SEM_MAX_VAL);
@@ -192,7 +192,7 @@ void test_multi_thread_sem_limit(void)
 	}
 }
 
-void test_main(void)
+void *test_init(void)
 {
 	k_thread_access_grant(k_current_get(), &usage_sem, &sync_sem, &limit_sem,
 			      &multi_tid_give[0], &multi_tid_give[1],
@@ -206,9 +206,7 @@ void test_main(void)
 			      &multi_stack_take[2], &multi_stack_give[0],
 			      &multi_stack_give[1], &multi_stack_give[2],
 			      &multi_stack_give[3], &multi_stack_give[4]);
-
-	ztest_test_suite(test_kernel_sys_sem,
-			 ztest_1cpu_user_unit_test(test_multiple_thread_sem_usage),
-			 ztest_1cpu_user_unit_test(test_multi_thread_sem_limit));
-	ztest_run_test_suite(test_kernel_sys_sem);
+	return NULL;
 }
+ZTEST_SUITE(kernel_sys_sem, NULL, test_init,
+	    ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
