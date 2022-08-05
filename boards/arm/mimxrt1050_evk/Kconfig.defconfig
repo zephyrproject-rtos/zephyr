@@ -28,7 +28,7 @@ config FLASH_MCUX_FLEXSPI_NOR
 endif #FLASH
 
 config I2C
-	default y if KSCAN || SENSOR
+	default y if KSCAN
 
 config KSCAN
 	default y if LVGL
