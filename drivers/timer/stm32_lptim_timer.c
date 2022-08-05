@@ -27,6 +27,9 @@
 
 #define LPTIM (LPTIM_TypeDef *) DT_INST_REG_ADDR(0)
 
+static const struct stm32_pclken lptim_clk[] = STM32_DT_INST_CLOCKS(0);
+static const struct device *clk_ctrl = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+
 /*
  * Assumptions and limitations:
  *
@@ -150,25 +153,12 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	}
 
 	if (ticks == K_TICKS_FOREVER) {
-		/* disable LPTIM clock to avoid counting */
-#if defined(LL_APB1_GRP1_PERIPH_LPTIM1)
-		LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_LPTIM1);
-#elif defined(LL_APB3_GRP1_PERIPH_LPTIM1)
-		LL_APB3_GRP1_DisableClock(LL_APB3_GRP1_PERIPH_LPTIM1);
-#endif
+		clock_control_off(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[0]);
 		return;
 	}
 
 	/* if LPTIM clock was previously stopped, it must now be restored */
-#if defined(LL_APB1_GRP1_PERIPH_LPTIM1)
-	if (!LL_APB1_GRP1_IsEnabledClock(LL_APB1_GRP1_PERIPH_LPTIM1)) {
-		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_LPTIM1);
-	}
-#elif defined(LL_APB3_GRP1_PERIPH_LPTIM1)
-	if (!LL_APB3_GRP1_IsEnabledClock(LL_APB3_GRP1_PERIPH_LPTIM1)) {
-		LL_APB3_GRP1_EnableClock(LL_APB3_GRP1_PERIPH_LPTIM1);
-	}
-#endif
+	clock_control_on(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[0]);
 
 	/* passing ticks==1 means "announce the next tick",
 	 * ticks value of zero (or even negative) is legal and
@@ -282,12 +272,16 @@ static int sys_clock_driver_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	/* enable LPTIM clock source */
+	if (!device_is_ready(clk_ctrl)) {
+		return -ENODEV;
+	}
+
+	/* Enable LPTIM bus clock */
+	clock_control_on(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[0]);
+
 #if defined(LL_APB1_GRP1_PERIPH_LPTIM1)
-	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_LPTIM1);
 	LL_APB1_GRP1_ReleaseReset(LL_APB1_GRP1_PERIPH_LPTIM1);
 #elif defined(LL_APB3_GRP1_PERIPH_LPTIM1)
-	LL_APB3_GRP1_EnableClock(LL_APB3_GRP1_PERIPH_LPTIM1);
 	LL_SRDAMR_GRP1_EnableAutonomousClock(LL_SRDAMR_GRP1_PERIPH_LPTIM1AMEN);
 #endif
 
