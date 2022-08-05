@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2022 Nordic Semiconductor
+
+config SOC_UNIT_TESTING
+	bool "Unit testing SoC"
+	help
+	  SoC for unit testing

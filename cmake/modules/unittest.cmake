@@ -4,6 +4,12 @@ cmake_minimum_required(VERSION 3.20.0)
 
 enable_language(C CXX ASM)
 
+include(root)
+include(boards)
+include(arch)
+include(configuration_files)
+include(kconfig)
+
 # Parameters:
 #   SOURCES: list of source files, default main.c
 #   INCLUDE: list of additional include paths relative to ZEPHYR_BASE
@@ -55,6 +61,7 @@ endif(M64_MODE)
 endif()
 
 target_compile_options(testbinary PRIVATE
+  -imacros ${AUTOCONF_H}
   -Wall
   -I ${KOBJ_GEN_DIR}
   ${EXTRA_CPPFLAGS_AS_LIST}
@@ -89,7 +96,6 @@ if(LIBS)
 endif()
 
 if(CONFIG_ZTEST_NEW_API)
-  add_definitions( -DCONFIG_ZTEST_NEW_API=y )
   target_sources(testbinary PRIVATE
       ${ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest_new.c
       ${ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest_mock.c
@@ -115,7 +121,7 @@ if(VALGRIND_PROGRAM)
   set(VALGRIND_FLAGS
     --leak-check=full
     --error-exitcode=1
- 	--log-file=valgrind.log
+    --log-file=valgrind.log
     )
 endif()
 
