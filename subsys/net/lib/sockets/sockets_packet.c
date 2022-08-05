@@ -474,15 +474,19 @@ static const struct socket_op_vtable packet_sock_fd_op_vtable = {
 
 static bool packet_is_supported(int family, int type, int proto)
 {
-	if (((type == SOCK_RAW) && (proto == ETH_P_ALL)) ||
-	    ((type == SOCK_RAW) && (proto == IPPROTO_RAW)) ||
-	    ((type == SOCK_RAW) && (proto == ETH_P_ECAT)) ||
-	    ((type == SOCK_RAW) && (proto == ETH_P_IEEE802154)) ||
-	    ((type == SOCK_DGRAM) && (proto > 0))) {
-		return true;
-	}
+	switch (type) {
+	case SOCK_RAW:
+		return proto == ETH_P_ALL
+		  || proto == ETH_P_ECAT
+		  || proto == ETH_P_IEEE802154
+		  || proto == IPPROTO_RAW;
 
-	return false;
+	case SOCK_DGRAM:
+		return proto > 0;
+
+	default:
+		return false;
+	}
 }
 
 NET_SOCKET_REGISTER(af_packet, NET_SOCKET_DEFAULT_PRIO, AF_PACKET,
