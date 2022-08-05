@@ -62,8 +62,12 @@ bool soc_cpus_active[CONFIG_MP_NUM_CPUS];
  *
  * Note that alignment is absolutely required: the IDC protocol passes
  * only the upper 30 bits of the address to the second CPU.
+ *
+ * The .section is the same as __imr, but that can't be used for an assebly
+ * function like this
  */
-__asm__(".align 4                   \n\t"
+__asm__(".section .imr." Z_STRINGIFY(__FILE__) "." Z_STRINGIFY(__COUNTER__) "\n\t"
+	".align 4                   \n\t"
 	".global z_soc_mp_asm_entry \n\t"
 	"z_soc_mp_asm_entry:        \n\t"
 	"  movi  a0, 0x4002f        \n\t" /* WOE | UM | INTLEVEL(max) */
