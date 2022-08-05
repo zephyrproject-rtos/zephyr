@@ -26,6 +26,7 @@ void main(void)
 	ipm_dev = DEVICE_DT_GET(DT_NODELABEL(ipm0));
 	if (!ipm_dev) {
 		printk("Failed to get IPM device.\n\r");
+		return;
 	}
 
 	ipm_register_callback(ipm_dev, ipm_receive_callback, NULL);
