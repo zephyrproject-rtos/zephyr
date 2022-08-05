@@ -5,7 +5,7 @@
  */
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
-#include <drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <soc.h>
 #include <kernel_structs.h>
 #include <string.h>
