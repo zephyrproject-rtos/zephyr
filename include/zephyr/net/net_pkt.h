@@ -131,7 +131,9 @@ struct net_pkt {
 	sys_snode_t next;
 #endif
 
+#if defined(CONFIG_NET_IP)
 	uint8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
+#endif
 
 	uint8_t overwrite  : 1;	/* Is packet content being overwritten? */
 
@@ -155,21 +157,22 @@ struct net_pkt {
 	uint8_t forwarding : 1;	/* Are we forwarding this pkt
 				 * Used only if defined(CONFIG_NET_ROUTE)
 				 */
-	uint8_t family     : 3;	/* IPv4 vs IPv6 */
+	uint8_t family     : 3;	/* Address family, see net_ip.h */
 
 	union {
+#if defined(CONFIG_NET_IPV4_AUTO)
 		uint8_t ipv4_auto_arp_msg : 1; /* Is this pkt IPv4 autoconf ARP
-					     * message. Used only if
-					     * defined(CONFIG_NET_IPV4_AUTO).
+					     * message.
 					     * Note: family needs to be
 					     * AF_INET.
 					     */
+#endif
+#if defined(CONFIG_NET_LLDP)
 		uint8_t lldp_pkt          : 1; /* Is this pkt an LLDP message.
-					     * Used only if
-					     * defined(CONFIG_NET_LLDP).
 					     * Note: family needs to be
 					     * AF_UNSPEC.
 					     */
+#endif
 		uint8_t ppp_msg           : 1; /* This is a PPP message */
 	};
 
@@ -194,12 +197,17 @@ struct net_pkt {
 				   * processed by the L2
 				   */
 
+#if defined(CONFIG_NET_IP)
 	union {
 		/* IPv6 hop limit or IPv4 ttl for this network packet.
 		 * The value is shared between IPv6 and IPv4.
 		 */
+#if defined(CONFIG_NET_IPV6)
 		uint8_t ipv6_hop_limit;
+#endif
+#if defined(CONFIG_NET_IPV4)
 		uint8_t ipv4_ttl;
+#endif
 	};
 
 	union {
@@ -210,6 +218,7 @@ struct net_pkt {
 		uint16_t ipv6_ext_len; /* length of extension headers */
 #endif
 	};
+#endif /* CONFIG_NET_IP */
 
 	/** Network packet priority, can be left out in which case packet
 	 * is not prioritised.
@@ -387,12 +396,18 @@ static inline void net_pkt_set_l2_processed(struct net_pkt *pkt,
 
 static inline uint8_t net_pkt_ip_hdr_len(struct net_pkt *pkt)
 {
+#if defined(CONFIG_NET_IP)
 	return pkt->ip_hdr_len;
+#else
+	return 0;
+#endif
 }
 
 static inline void net_pkt_set_ip_hdr_len(struct net_pkt *pkt, uint8_t len)
 {
+#if defined(CONFIG_NET_IP)
 	pkt->ip_hdr_len = len;
+#endif
 }
 
 static inline uint8_t net_pkt_sent(struct net_pkt *pkt)

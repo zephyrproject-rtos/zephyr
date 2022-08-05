@@ -551,6 +551,7 @@ static inline uint16_t pkt_calc_chksum(struct net_pkt *pkt, uint16_t sum)
 	return sum;
 }
 
+#if defined(CONFIG_NET_IP)
 uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
 {
 	size_t len = 0U;
@@ -598,6 +599,7 @@ uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
 
 	return ~sum;
 }
+#endif
 
 #if defined(CONFIG_NET_IPV4)
 uint16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
@@ -626,7 +628,7 @@ uint16_t net_calc_chksum_igmp(uint8_t *data, size_t len)
 }
 #endif /* CONFIG_NET_IPV4_IGMP */
 
-#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_IP)
 static bool convert_port(const char *buf, uint16_t *port)
 {
 	unsigned long tmp;
@@ -643,7 +645,7 @@ static bool convert_port(const char *buf, uint16_t *port)
 
 	return true;
 }
-#endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4 */
+#endif /* CONFIG_NET_IP */
 
 #if defined(CONFIG_NET_IPV6)
 static bool parse_ipv6(const char *str, size_t str_len,
