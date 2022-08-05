@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2022, Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <microchip/mec1501hsz.dtsi>
+#include <microchip/mec152x/mec152xhsz-pinctrl.dtsi>
+
+&ps2_clk0b_gpio007 {
+	drive-open-drain;
+};
+
+&ps2_dat0b_gpio010 {
+	drive-open-drain;
+};
+
+&ps2_clk1b_gpio154 {
+	drive-open-drain;
+};
+
+&ps2_dat1b_gpio155 {
+	drive-open-drain;
+};
