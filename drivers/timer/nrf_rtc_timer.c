@@ -119,14 +119,14 @@ static void full_int_unlock(uint32_t mcu_critical_state)
 
 uint32_t z_nrf_rtc_timer_compare_evt_address_get(int32_t chan)
 {
-	__ASSERT_NO_MSG(chan < CHAN_COUNT);
+	__ASSERT_NO_MSG(chan >= 0 && chan < CHAN_COUNT);
 	return nrf_rtc_event_address_get(RTC, nrf_rtc_compare_event_get(chan));
 }
 
 uint32_t z_nrf_rtc_timer_capture_task_address_get(int32_t chan)
 {
 #if defined(RTC_TASKS_CAPTURE_TASKS_CAPTURE_Msk)
-	__ASSERT_NO_MSG(chan < CHAN_COUNT);
+	__ASSERT_NO_MSG(chan >= 0 && chan < CHAN_COUNT);
 	if (chan == 0) {
 		return 0;
 	}
@@ -155,7 +155,7 @@ static bool compare_int_lock(int32_t chan)
 
 bool z_nrf_rtc_timer_compare_int_lock(int32_t chan)
 {
-	__ASSERT_NO_MSG(chan && chan < CHAN_COUNT);
+	__ASSERT_NO_MSG(chan > 0 && chan < CHAN_COUNT);
 
 	return compare_int_lock(chan);
 }
@@ -173,14 +173,14 @@ static void compare_int_unlock(int32_t chan, bool key)
 
 void z_nrf_rtc_timer_compare_int_unlock(int32_t chan, bool key)
 {
-	__ASSERT_NO_MSG(chan && chan < CHAN_COUNT);
+	__ASSERT_NO_MSG(chan > 0 && chan < CHAN_COUNT);
 
 	compare_int_unlock(chan, key);
 }
 
 uint32_t z_nrf_rtc_timer_compare_read(int32_t chan)
 {
-	__ASSERT_NO_MSG(chan < CHAN_COUNT);
+	__ASSERT_NO_MSG(chan >= 0 && chan < CHAN_COUNT);
 
 	return nrf_rtc_cc_get(RTC, chan);
 }
@@ -329,14 +329,14 @@ int z_nrf_rtc_timer_set(int32_t chan, uint64_t target_time,
 			 z_nrf_rtc_timer_compare_handler_t handler,
 			 void *user_data)
 {
-	__ASSERT_NO_MSG(chan && chan < CHAN_COUNT);
+	__ASSERT_NO_MSG(chan > 0 && chan < CHAN_COUNT);
 
 	return compare_set(chan, target_time, handler, user_data);
 }
 
 void z_nrf_rtc_timer_abort(int32_t chan)
 {
-	__ASSERT_NO_MSG(chan && chan < CHAN_COUNT);
+	__ASSERT_NO_MSG(chan > 0 && chan < CHAN_COUNT);
 
 	bool key = compare_int_lock(chan);
 
@@ -535,7 +535,7 @@ int32_t z_nrf_rtc_timer_chan_alloc(void)
 
 void z_nrf_rtc_timer_chan_free(int32_t chan)
 {
-	__ASSERT_NO_MSG(chan && chan < CHAN_COUNT);
+	__ASSERT_NO_MSG(chan > 0 && chan < CHAN_COUNT);
 
 	atomic_or(&alloc_mask, BIT(chan));
 }
