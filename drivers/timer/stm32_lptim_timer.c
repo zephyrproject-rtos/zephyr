@@ -27,7 +27,22 @@
 
 #define LPTIM (LPTIM_TypeDef *) DT_INST_REG_ADDR(0)
 
+#if DT_INST_NUM_CLOCKS(0) == 1
+#warning Kconfig for LPTIM source clock (LSI/LSE) is deprecated, use device tree.
+static const struct stm32_pclken lptim_clk[] = {
+	STM32_CLOCK_INFO(0, DT_DRV_INST(0)),
+	/* Use Kconfig to configure source clocks fields */
+	/* Fortunately, values are consistent across enabled series */
+#ifdef CONFIG_STM32_LPTIM_CLOCK_LSI
+	{.bus = STM32_SRC_LSI, .enr = LPTIM1_SEL(1)}
+#else
+	{.bus = STM32_SRC_LSE, .enr = LPTIM1_SEL(3)}
+#endif
+};
+#else
 static const struct stm32_pclken lptim_clk[] = STM32_DT_INST_CLOCKS(0);
+#endif
+
 static const struct device *clk_ctrl = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 /*
@@ -37,15 +52,13 @@ static const struct device *clk_ctrl = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
  * - prescaler is set to 1 (LL_LPTIM_PRESCALER_DIV1 in the related register)
  * - using LPTIM AutoReload capability to trig the IRQ (timeout irq)
  * - when timeout irq occurs the counter is already reset
- * - the maximum timeout duration is reached with the LPTIM_TIMEBASE value
- * - with prescaler of 1, the max timeout (LPTIM_TIMEBASE) is 2seconds
+ * - the maximum timeout duration is reached with the lptim_time_base value
+ * - with prescaler of 1, the max timeout (lptim_time_base) is 2seconds
  */
 
-#define LPTIM_CLOCK CONFIG_STM32_LPTIM_CLOCK
-#define LPTIM_TIMEBASE CONFIG_STM32_LPTIM_TIMEBASE
+static uint32_t lptim_clock_freq;
+static int32_t lptim_time_base;
 
-/* nb of LPTIM counter unit per kernel tick  */
-#define COUNT_PER_TICK (LPTIM_CLOCK / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 /* minimum nb of clock cycles to have to set autoreload register correctly */
 #define LPTIM_GUARD_VALUE 2
@@ -100,7 +113,7 @@ static void lptim_irq_handler(const struct device *unused)
 		/* announce the elapsed time in ms (count register is 16bit) */
 		uint32_t dticks = (autoreload
 				* CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-				/ LPTIM_CLOCK;
+				/ lptim_clock_freq;
 
 		sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 				? dticks : (dticks > 0));
@@ -165,7 +178,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * treated identically: it simply indicates the kernel would like the
 	 * next tick announcement as soon as possible.
 	 */
-	ticks = CLAMP(ticks - 1, 1, (int32_t)LPTIM_TIMEBASE);
+	ticks = CLAMP(ticks - 1, 1, lptim_time_base);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
@@ -189,15 +202,15 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * from the current counter value to first next Tick
 	 */
 	next_arr = (((lp_time * CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-			/ LPTIM_CLOCK) + 1) * LPTIM_CLOCK
+			/ lptim_clock_freq) + 1) * lptim_clock_freq
 			/ (CONFIG_SYS_CLOCK_TICKS_PER_SEC);
 	/* add count unit from the expected nb of Ticks */
-	next_arr = next_arr + ((uint32_t)(ticks) * LPTIM_CLOCK)
+	next_arr = next_arr + ((uint32_t)(ticks) * lptim_clock_freq)
 			/ CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1;
 
 	/* maximise to TIMEBASE */
-	if (next_arr > LPTIM_TIMEBASE) {
-		next_arr = LPTIM_TIMEBASE;
+	if (next_arr > lptim_time_base) {
+		next_arr = lptim_time_base;
 	}
 	/* The new autoreload value must be LPTIM_GUARD_VALUE clock cycles
 	 * after current lptim to make sure we don't miss
@@ -236,7 +249,7 @@ uint32_t sys_clock_elapsed(void)
 	/* gives the value of LPTIM counter (ms)
 	 * since the previous 'announce'
 	 */
-	uint64_t ret = ((uint64_t)lp_time * CONFIG_SYS_CLOCK_TICKS_PER_SEC) / LPTIM_CLOCK;
+	uint64_t ret = ((uint64_t)lp_time * CONFIG_SYS_CLOCK_TICKS_PER_SEC) / lptim_clock_freq;
 
 	return (uint32_t)(ret);
 }
@@ -260,7 +273,7 @@ uint32_t sys_clock_cycle_get_32(void)
 	lp_time += accumulated_lptim_cnt;
 
 	/* convert lptim count in a nb of hw cycles with precision */
-	uint64_t ret = ((uint64_t)lp_time * sys_clock_hw_cycles_per_sec()) / LPTIM_CLOCK;
+	uint64_t ret = ((uint64_t)lp_time * sys_clock_hw_cycles_per_sec()) / lptim_clock_freq;
 
 	k_spin_unlock(&lock, key);
 
@@ -285,44 +298,24 @@ static int sys_clock_driver_init(const struct device *dev)
 	LL_SRDAMR_GRP1_EnableAutonomousClock(LL_SRDAMR_GRP1_PERIPH_LPTIM1AMEN);
 #endif
 
-#if defined(CONFIG_STM32_LPTIM_CLOCK_LSI)
-	/* enable LSI clock */
-#ifdef CONFIG_SOC_SERIES_STM32WBX
-	LL_RCC_LSI1_Enable();
-	while (!LL_RCC_LSI1_IsReady()) {
-#else
-	LL_RCC_LSI_Enable();
-	while (!LL_RCC_LSI_IsReady()) {
-#endif /* CONFIG_SOC_SERIES_STM32WBX */
-		/* Wait for LSI ready */
+	/* Enable LPTIM clock source */
+	clock_control_configure(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[1],
+				NULL);
+
+	/* Get LPTIM clock freq */
+	clock_control_get_rate(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[1],
+			       &lptim_clock_freq);
+
+	/* Set LPTIM time base based on clck source freq
+	 * Time base = (2s * freq) - 1
+	 */
+	if (lptim_clock_freq == KHZ(32)) {
+		lptim_time_base = 0xF9FF;
+	} else if (lptim_clock_freq == 32768) {
+		lptim_time_base = 0xFFFF;
+	} else {
+		return -EIO;
 	}
-
-	LL_RCC_SetLPTIMClockSource(LL_RCC_LPTIM1_CLKSOURCE_LSI);
-
-#else /* CONFIG_STM32_LPTIM_CLOCK_LSI */
-#if defined(LL_APB1_GRP1_PERIPH_PWR)
-	/* Enable the power interface clock */
-	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-#endif /* LL_APB1_GRP1_PERIPH_PWR */
-
-	/* enable backup domain */
-	LL_PWR_EnableBkUpAccess();
-
-	/* enable LSE clock */
-	LL_RCC_LSE_DisableBypass();
-#ifdef RCC_BDCR_LSEDRV_Pos
-	LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
-#endif
-	LL_RCC_LSE_Enable();
-	while (!LL_RCC_LSE_IsReady()) {
-		/* Wait for LSE ready */
-	}
-#ifdef RCC_BDCR_LSESYSEN
-	LL_RCC_LSE_EnablePropagation();
-#endif /* RCC_BDCR_LSESYSEN */
-	LL_RCC_SetLPTIMClockSource(LL_RCC_LPTIM1_CLKSOURCE_LSE);
-
-#endif /* CONFIG_STM32_LPTIM_CLOCK_LSI */
 
 	/* Clear the event flag and possible pending interrupt */
 	IRQ_CONNECT(DT_INST_IRQN(0),
@@ -389,10 +382,10 @@ static int sys_clock_driver_init(const struct device *dev)
 	/* Set the Autoreload value once the timer is enabled */
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* LPTIM is triggered on a LPTIM_TIMEBASE period */
-		lptim_set_autoreload(LPTIM_TIMEBASE);
+		lptim_set_autoreload(lptim_time_base);
 	} else {
 		/* LPTIM is triggered on a Tick period */
-		lptim_set_autoreload(COUNT_PER_TICK - 1);
+		lptim_set_autoreload((lptim_clock_freq / CONFIG_SYS_CLOCK_TICKS_PER_SEC) - 1);
 	}
 
 	/* Start the LPTIM counter in continuous mode */
