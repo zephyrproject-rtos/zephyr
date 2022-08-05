@@ -9,7 +9,6 @@ set(LINKER ld)
 set(BINTOOLS gnu)
 
 set(CROSS_COMPILE_TARGET_xtensa_esp32     xtensa-esp32-elf)
-set(CROSS_COMPILE_TARGET_xtensa_esp32_net xtensa-esp32-elf)
 set(CROSS_COMPILE_TARGET_xtensa_esp32s2   xtensa-esp32s2-elf)
 set(CROSS_COMPILE_TARGET_riscv_esp32c3    riscv32-esp-elf)
 
