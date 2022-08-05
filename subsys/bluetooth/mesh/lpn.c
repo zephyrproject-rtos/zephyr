@@ -277,6 +277,11 @@ static void clear_friendship(bool force, bool disable)
 
 	if (!disable) {
 		lpn_set_state(BT_MESH_LPN_ENABLED);
+
+		if (!IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
+			bt_mesh_scan_enable();
+		}
+
 		k_work_reschedule(&lpn->timer, FRIEND_REQ_RETRY_TIMEOUT);
 	}
 }
@@ -865,7 +870,7 @@ static void lpn_timeout(struct k_work *work)
 		BT_ERR("No response from Friend after %u retries",
 		       lpn->req_attempts);
 		lpn->req_attempts = 0U;
-		clear_friendship(false, false);
+		clear_friendship(true, false);
 		break;
 	case BT_MESH_LPN_RECV_DELAY:
 		k_work_reschedule(&lpn->timer,
