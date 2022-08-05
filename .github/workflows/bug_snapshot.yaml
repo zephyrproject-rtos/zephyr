@@ -9,6 +9,9 @@ name: Bug Snapshot
 on:
   workflow_dispatch:
     branches: [ main ]
+  schedule:
+    # Run daily at 14:05
+    - cron: '5 14 * * *'
 
 jobs:
   make_bugs_pickle:
@@ -48,7 +51,11 @@ jobs:
       run: |
         PUBLISH_BUCKET="builds.zephyrproject.org"
         PUBLISH_DOMAIN="builds.zephyrproject.io"
-        PUBLISH_ROOT="${{ github.event.repository.name }}/bug-snapshot"
+        if [ "${{github.event_name}}" = "schedule" ]; then
+          PUBLISH_ROOT="${{ github.event.repository.name }}/bug-snapshot/daily"
+        else
+          PUBLISH_ROOT="${{ github.event.repository.name }}/bug-snapshot"
+        fi
 
         PUBLISH_UPLOAD_URI="s3://${PUBLISH_BUCKET}/${PUBLISH_ROOT}/${BUGS_PICKLE_FILENAME}"
         PUBLISH_DOWNLOAD_URI="https://${PUBLISH_DOMAIN}/${PUBLISH_ROOT}/${BUGS_PICKLE_FILENAME}"
