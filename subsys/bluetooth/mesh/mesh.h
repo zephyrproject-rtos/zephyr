@@ -20,8 +20,7 @@ struct bt_mesh_app_key_cb {
 			    enum bt_mesh_key_evt evt);
 };
 
-/** @def BT_MESH_APP_KEY_CB
- *
+/**
  *  @brief Register an AppKey event callback.
  *
  *  @param _handler Handler function, see @ref bt_mesh_app_key_cb::evt_handler.

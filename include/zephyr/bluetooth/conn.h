@@ -971,8 +971,7 @@ struct bt_conn_cb {
  */
 void bt_conn_cb_register(struct bt_conn_cb *cb);
 
-/** @def BT_CONN_CB_DEFINE
- *
+/**
  *  @brief Register a callback structure for connection events.
  *
  *  @param _name Name of callback structure.
@@ -1058,8 +1057,7 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data **oobd_local,
 			  const struct bt_le_oob_sc_data **oobd_remote);
 
-/** @def BT_PASSKEY_INVALID
- *
+/**
  *  Special passkey value that can be used to disable a previously
  *  set fixed passkey.
  */

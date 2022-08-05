@@ -19,7 +19,7 @@
  */
 
 /**
- * @def ilog2_compile_time_const_u32(n)
+ *
  * @brief Calculate the floor of log2 for compile time constant
  *
  * This calculates the floor of log2 (integer log2) for 32-bit
@@ -73,7 +73,7 @@
 	)
 
 /**
- * @def ilog2(n)
+ *
  * @brief Calculate integer log2
  *
  * This calculates the floor of log2 (integer of log2).

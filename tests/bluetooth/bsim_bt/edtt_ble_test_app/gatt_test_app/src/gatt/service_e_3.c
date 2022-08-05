@@ -16,7 +16,7 @@
 
 #include "gatt_macs.h"
 
-/** @def BT_UUID_SERVICE_E
+/**
  *  @brief UUID for the Service E
  */
 #define BT_UUID_SERVICE_E               BT_UUID_DECLARE_16(0xa00e)

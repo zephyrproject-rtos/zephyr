@@ -95,7 +95,7 @@ extern "C" {
 #define _LOG_ZZZZ4U _LOG_YYYY,
 
 /**
- * @def LOG_CURRENT_MODULE_ID
+ *
  * @brief Macro for getting ID of current module.
  */
 #define LOG_CURRENT_MODULE_ID() (__log_level != 0 ? \

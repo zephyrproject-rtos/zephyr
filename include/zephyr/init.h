@@ -54,8 +54,6 @@ struct init_entry {
 void z_sys_init_run_level(int32_t level);
 
 /**
- * @def Z_SYS_NAME
- *
  * @brief Construct a namespaced identifier for SYS_INIT instance
  *
  * @param _name Base unique name
@@ -63,8 +61,6 @@ void z_sys_init_run_level(int32_t level);
 #define Z_SYS_NAME(_name) _CONCAT(sys_init_, _name)
 
 /**
- * @def Z_INIT_ENTRY_NAME
- *
  * @brief Construct a namespaced identifier for @ref init_entry instance
  *
  * @param _entry_name Base unique name
@@ -72,8 +68,6 @@ void z_sys_init_run_level(int32_t level);
 #define Z_INIT_ENTRY_NAME(_entry_name) _CONCAT(__init_, _entry_name)
 
 /**
- * @def Z_INIT_ENTRY_DEFINE
- *
  * @brief Create an init entry object and set it up for boot time initialization
  *
  * @details This macro defines an init entry object that will be automatically
@@ -104,8 +98,6 @@ void z_sys_init_run_level(int32_t level);
 	}
 
 /**
- * @def SYS_INIT
- *
  * @ingroup device_model
  *
  * @brief Run an initialization function at boot at specified priority
@@ -149,8 +141,6 @@ void z_sys_init_run_level(int32_t level);
 	SYS_INIT_NAMED(_init_fn, _init_fn, _level, _prio)
 
 /**
- * @def SYS_INIT_NAMED
- *
  * @ingroup device_model
  *
  * @brief Run an initialization function at boot at specified priority
