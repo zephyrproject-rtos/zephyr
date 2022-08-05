@@ -43,7 +43,7 @@ static struct bt_audio_stream streams[UNICAST_SERVER_STREAM_COUNT + UNICAST_CLIE
 static struct bt_audio_unicast_group *default_unicast_group;
 static struct bt_codec *rcodecs[2][CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
 static struct bt_audio_ep *snks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
-static struct bt_audio_ep *srcs[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
+static struct bt_audio_ep *srcs[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT];
 
 static uint8_t stream_dir(const struct bt_audio_stream *stream);
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
@@ -991,7 +991,7 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 
 	shell_print(sh, "Sources:");
 
-	for (i = 0; i < ARRAY_SIZE(snks); i++) {
+	for (i = 0; i < ARRAY_SIZE(srcs); i++) {
 		struct bt_audio_ep *ep = srcs[i];
 
 		if (ep) {
