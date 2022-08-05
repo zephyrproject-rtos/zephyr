@@ -207,13 +207,14 @@ config NET_SOCKETS_OFFLOAD_DISPATCHER_CONTEXT_MAX
 
 config NET_SOCKETS_PACKET
 	bool "Packet socket support"
+	select NET_CONNECTION_SOCKETS
 	help
 	  This is an initial version of packet socket support (special type
 	  raw socket). Packets are passed to and from the device driver
 	  without any changes in the packet headers. It's API caller
 	  responsibility to provide all the headers (e.g L2, L3 and so on)
 	  while sending. While receiving, packets (including all the headers)
-	  will be feed to sockets as it as from the driver.
+	  will be fed to sockets unchanged as provided by the driver.
 
 config NET_SOCKETS_PACKET_DGRAM
 	bool "Packet socket SOCK_DGRAM support"
@@ -229,6 +230,7 @@ config NET_SOCKETS_PACKET_DGRAM
 config NET_SOCKETS_CAN
 	bool "Socket CAN support [EXPERIMENTAL]"
 	select NET_L2_CANBUS_RAW
+	select NET_CONNECTION_SOCKETS
 	select EXPERIMENTAL
 	help
 	  The value depends on your network needs.
