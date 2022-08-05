@@ -9,9 +9,6 @@ if BOARD_CIRCUITDOJO_FEATHER_NRF9160 || BOARD_CIRCUITDOJO_FEATHER_NRF9160_NS
 config BOARD
 	default "circuitdojo_feather_nrf9160"
 
-config I2C
-	default y if SENSOR
-
 # For the secure version of the board the firmware is linked at the beginning
 # of the flash, or into the code-partition defined in DT if it is intended to
 # be loaded by MCUboot. If the secure firmware is to be combined with a non-
