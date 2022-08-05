@@ -142,7 +142,7 @@ list(TRANSFORM BOARD_ROOT PREPEND "--board-root=" OUTPUT_VARIABLE board_root_arg
 
 set(list_boards_commands
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/list_boards.py
-            ${arch_root_args} ${board_root_args}
+            ${arch_root_args} ${board_root_args} --arch-root=${ZEPHYR_BASE}
 )
 
 if(NOT BOARD_DIR)
