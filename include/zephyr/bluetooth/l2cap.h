@@ -69,7 +69,7 @@ extern "C" {
  */
 #define BT_L2CAP_SDU_RX_MTU (BT_L2CAP_RX_MTU - BT_L2CAP_SDU_HDR_SIZE)
 
-/** @def BT_L2CAP_SDU_BUF_SIZE
+/**
  *
  *  @brief Helper to calculate needed buffer size for L2CAP SDUs.
  *         Useful for creating buffer pools.
@@ -199,7 +199,7 @@ struct bt_l2cap_le_chan {
 #endif
 };
 
-/** @def BT_L2CAP_LE_CHAN(_ch)
+/**
  *  @brief Helper macro getting container object of type bt_l2cap_le_chan
  *  address having the same container chan member address as object in question.
  *
@@ -345,12 +345,12 @@ struct bt_l2cap_chan_ops {
 	void (*reconfigured)(struct bt_l2cap_chan *chan);
 };
 
-/** @def BT_L2CAP_CHAN_SEND_RESERVE
+/**
  *  @brief Headroom needed for outgoing L2CAP PDUs.
  */
 #define BT_L2CAP_CHAN_SEND_RESERVE (BT_L2CAP_BUF_SIZE(0))
 
-/** @def BT_L2CAP_SDU_CHAN_SEND_RESERVE
+/**
  * @brief Headroom needed for outgoing L2CAP SDUs.
  */
 #define BT_L2CAP_SDU_CHAN_SEND_RESERVE (BT_L2CAP_SDU_BUF_SIZE(0))

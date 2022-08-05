@@ -51,8 +51,7 @@ struct bt_ias_cb {
  */
 int bt_ias_local_alert_stop(void);
 
-/** @def BT_IAS_CB_DEFINE
- *
+/**
  *  @brief Register a callback structure for immediate alert events.
  *
  *  @param _name Name of callback structure.

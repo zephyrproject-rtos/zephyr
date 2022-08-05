@@ -283,8 +283,6 @@ net_virtual_get_iface_capabilities(struct net_if *iface)
 /** @endcond */
 
 /**
- * @def NET_VIRTUAL_INTERFACE_INIT
- *
  * @brief Create a virtual network interface. Binding to another interface
  *        is done at runtime by calling net_virtual_interface_attach().
  *        The attaching is done automatically when setting up tunneling

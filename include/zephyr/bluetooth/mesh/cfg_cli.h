@@ -196,8 +196,7 @@ struct bt_mesh_cfg_cli {
 	struct bt_mesh_msg_ack_ctx ack_ctx;
 };
 
-/** @def BT_MESH_MODEL_CFG_CLI
- *
+/**
  *  @brief Generic Configuration Client model composition data entry.
  *
  *  @param cli_data Pointer to a @ref bt_mesh_cfg_cli instance.
@@ -731,7 +730,7 @@ int bt_mesh_cfg_mod_app_get_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_a
 				uint16_t mod_id, uint16_t cid, uint8_t *status,
 				uint16_t *apps, size_t *app_cnt);
 
-/** @def BT_MESH_PUB_PERIOD_100MS
+/**
  *
  *  @brief Helper macro to encode model publication period in units of 100ms
  *
@@ -741,8 +740,7 @@ int bt_mesh_cfg_mod_app_get_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_a
  */
 #define BT_MESH_PUB_PERIOD_100MS(steps)  ((steps) & BIT_MASK(6))
 
-/** @def BT_MESH_PUB_PERIOD_SEC
- *
+/**
  *  @brief Helper macro to encode model publication period in units of 1 second
  *
  *  @param steps Number of 1 second steps.
@@ -751,7 +749,7 @@ int bt_mesh_cfg_mod_app_get_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_a
  */
 #define BT_MESH_PUB_PERIOD_SEC(steps)   (((steps) & BIT_MASK(6)) | (1 << 6))
 
-/** @def BT_MESH_PUB_PERIOD_10SEC
+/**
  *
  *  @brief Helper macro to encode model publication period in units of 10
  *  seconds
@@ -762,7 +760,7 @@ int bt_mesh_cfg_mod_app_get_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_a
  */
 #define BT_MESH_PUB_PERIOD_10SEC(steps) (((steps) & BIT_MASK(6)) | (2 << 6))
 
-/** @def BT_MESH_PUB_PERIOD_10MIN
+/**
  *
  *  @brief Helper macro to encode model publication period in units of 10
  *  minutes
