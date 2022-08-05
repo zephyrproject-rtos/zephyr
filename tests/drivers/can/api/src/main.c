@@ -50,9 +50,9 @@
 /**
  * @brief Global variables.
  */
-ZTEST_DMEM const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
-struct k_sem rx_callback_sem;
-struct k_sem tx_callback_sem;
+static ZTEST_DMEM const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+static struct k_sem rx_callback_sem;
+static struct k_sem tx_callback_sem;
 
 CAN_MSGQ_DEFINE(can_msgq, 5);
 
@@ -683,7 +683,7 @@ void send_receive_rtr(const struct zcan_filter *data_filter,
 /**
  * @brief Test getting the CAN core clock rate.
  */
-static void test_get_core_clock(void)
+ZTEST_USER(can_api, test_get_core_clock)
 {
 	uint32_t rate;
 	int err;
@@ -696,7 +696,7 @@ static void test_get_core_clock(void)
 /**
  * @brief Test getting the CAN controller capabilities.
  */
-static void test_get_capabilities(void)
+ZTEST_USER(can_api, test_get_capabilities)
 {
 	can_mode_t cap;
 	int err;
@@ -721,7 +721,7 @@ static void state_change_callback(const struct device *dev, enum can_state state
 /**
  * @brief Test setting the CAN state change callback.
  */
-static void test_set_state_change_callback(void)
+ZTEST(can_api, test_set_state_change_callback)
 {
 	/* It is not possible to provoke a change of state, but test the API call */
 	can_set_state_change_callback(can_dev, state_change_callback, NULL);
@@ -731,7 +731,7 @@ static void test_set_state_change_callback(void)
 /**
  * @brief Test setting a too high bitrate.
  */
-static void test_set_bitrate_too_high(void)
+ZTEST_USER(can_api, test_set_bitrate_too_high)
 {
 	uint32_t max;
 	int err;
@@ -751,7 +751,7 @@ static void test_set_bitrate_too_high(void)
 /**
  * @brief Test setting bitrate.
  */
-static void test_set_bitrate(void)
+ZTEST_USER(can_api, test_set_bitrate)
 {
 	int err;
 
@@ -760,26 +760,12 @@ static void test_set_bitrate(void)
 }
 
 /**
- * @brief Test configuring the CAN controller for loopback mode.
- *
- * This test case must be run before sending/receiving test cases as it allows
- * these test cases to send/receive their own frames.
- */
-static void test_set_loopback(void)
-{
-	int err;
-
-	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
-	zassert_equal(err, 0, "failed to set loopback-mode (err %d)", err);
-}
-
-/**
  * @brief Test sending a message with no filters installed.
  *
  * This basic test work since the CAN controller is in loopback mode and
  * therefore ACKs its own frame.
  */
-static void test_send_and_forget(void)
+ZTEST_USER(can_api, test_send_and_forget)
 {
 	send_test_frame(can_dev, &test_std_frame_1);
 }
@@ -789,7 +775,7 @@ static void test_send_and_forget(void)
  *
  * Test each filter type but only one filter at a time.
  */
-static void test_add_filter(void)
+ZTEST(can_api, test_add_filter)
 {
 	int filter_id;
 
@@ -862,7 +848,7 @@ static void add_remove_max_filters(enum can_ide id_type)
 /**
  * @brief Test max standard (11-bit) CAN RX filters.
  */
-static void test_max_std_filters(void)
+ZTEST_USER(can_api, test_max_std_filters)
 {
 	add_remove_max_filters(CAN_STANDARD_IDENTIFIER);
 }
@@ -870,7 +856,7 @@ static void test_max_std_filters(void)
 /**
  * @brief Test max extended (29-bit) CAN RX filters.
  */
-static void test_max_ext_filters(void)
+ZTEST_USER(can_api, test_max_ext_filters)
 {
 	add_remove_max_filters(CAN_EXTENDED_IDENTIFIER);
 }
@@ -878,7 +864,7 @@ static void test_max_ext_filters(void)
 /**
  * @brief Test that no message is received when nothing was sent.
  */
-static void test_receive_timeout(void)
+ZTEST_USER(can_api, test_receive_timeout)
 {
 	struct zcan_frame frame;
 	int filter_id;
@@ -895,7 +881,7 @@ static void test_receive_timeout(void)
 /**
  * @brief Test that transmit callback function is called.
  */
-static void test_send_callback(void)
+ZTEST(can_api, test_send_callback)
 {
 	int err;
 
@@ -910,7 +896,7 @@ static void test_send_callback(void)
 /**
  * @brief Test send/receive with standard (11-bit) CAN IDs.
  */
-void test_send_receive_std_id(void)
+ZTEST(can_api, test_send_receive_std_id)
 {
 	send_receive(&test_std_filter_1, &test_std_filter_2,
 		     &test_std_frame_1, &test_std_frame_2);
@@ -919,7 +905,7 @@ void test_send_receive_std_id(void)
 /**
  * @brief Test send/receive with extended (29-bit) CAN IDs.
  */
-void test_send_receive_ext_id(void)
+ZTEST(can_api, test_send_receive_ext_id)
 {
 	send_receive(&test_ext_filter_1, &test_ext_filter_2,
 		     &test_ext_frame_1, &test_ext_frame_2);
@@ -928,7 +914,7 @@ void test_send_receive_ext_id(void)
 /**
  * @brief Test send/receive with standard (11-bit) masked CAN IDs.
  */
-void test_send_receive_std_id_masked(void)
+ZTEST(can_api, test_send_receive_std_id_masked)
 {
 	send_receive(&test_std_masked_filter_1, &test_std_masked_filter_2,
 		     &test_std_frame_1, &test_std_frame_2);
@@ -937,7 +923,7 @@ void test_send_receive_std_id_masked(void)
 /**
  * @brief Test send/receive with extended (29-bit) masked CAN IDs.
  */
-void test_send_receive_ext_id_masked(void)
+ZTEST(can_api, test_send_receive_ext_id_masked)
 {
 	send_receive(&test_ext_masked_filter_1, &test_ext_masked_filter_2,
 		     &test_ext_frame_1, &test_ext_frame_2);
@@ -946,7 +932,7 @@ void test_send_receive_ext_id_masked(void)
 /**
  * @brief Test send/receive with messages buffered in a CAN message queue.
  */
-void test_send_receive_msgq(void)
+ZTEST_USER(can_api, test_send_receive_msgq)
 {
 	struct k_msgq_attrs attrs;
 	struct zcan_frame frame;
@@ -986,7 +972,7 @@ void test_send_receive_msgq(void)
 /**
  * @brief Test send/receive with standard (11-bit) CAN IDs and remote transmission request (RTR).
  */
-void test_send_receive_std_id_rtr(void)
+ZTEST_USER(can_api, test_send_receive_std_id_rtr)
 {
 	send_receive_rtr(&test_std_filter_1, &test_std_rtr_filter_1,
 			 &test_std_frame_1, &test_std_rtr_frame_1);
@@ -995,7 +981,7 @@ void test_send_receive_std_id_rtr(void)
 /**
  * @brief Test send/receive with extended (29-bit) CAN IDs and remote transmission request (RTR).
  */
-void test_send_receive_ext_id_rtr(void)
+ZTEST_USER(can_api, test_send_receive_ext_id_rtr)
 {
 	send_receive_rtr(&test_ext_filter_1, &test_ext_rtr_filter_1,
 			 &test_ext_frame_1, &test_ext_rtr_frame_1);
@@ -1004,7 +990,7 @@ void test_send_receive_ext_id_rtr(void)
 /**
  * @brief Test that non-matching CAN frames do not pass a filter.
  */
-static void test_send_receive_wrong_id(void)
+ZTEST(can_api, test_send_receive_wrong_id)
 {
 	struct zcan_frame frame_buffer;
 	int filter_id;
@@ -1023,7 +1009,7 @@ static void test_send_receive_wrong_id(void)
 /**
  * @brief Test that frames with invalid Data Length Code (DLC) are rejected.
  */
-static void test_send_invalid_dlc(void)
+ZTEST_USER(can_api, test_send_invalid_dlc)
 {
 	struct zcan_frame frame;
 	int err;
@@ -1034,7 +1020,7 @@ static void test_send_invalid_dlc(void)
 	zassert_equal(err, -EINVAL, "sent a frame with an invalid DLC");
 }
 
-static void test_recover(void)
+ZTEST_USER(can_api, test_recover)
 {
 	int err;
 
@@ -1047,7 +1033,7 @@ static void test_recover(void)
 	zassert_equal(err, 0, "failed to recover (err %d)", err);
 }
 
-static void test_get_state(void)
+ZTEST_USER(can_api, test_get_state)
 {
 	struct can_bus_err_cnt err_cnt;
 	enum can_state state;
@@ -1066,7 +1052,7 @@ static void test_get_state(void)
 	zassert_equal(err, 0, "failed to get CAN state + error counters (err %d)", err);
 }
 
-static void test_filters_preserved_through_mode_change(void)
+ZTEST_USER(can_api, test_filters_preserved_through_mode_change)
 {
 	struct zcan_frame frame;
 	int filter_id;
@@ -1094,7 +1080,7 @@ static void test_filters_preserved_through_mode_change(void)
 	can_remove_rx_filter(can_dev, filter_id);
 }
 
-static void test_filters_preserved_through_bitrate_change(void)
+ZTEST_USER(can_api, test_filters_preserved_through_bitrate_change)
 {
 	struct zcan_frame frame;
 	int filter_id;
@@ -1122,42 +1108,22 @@ static void test_filters_preserved_through_bitrate_change(void)
 	can_remove_rx_filter(can_dev, filter_id);
 }
 
-void test_main(void)
+void *can_api_setup(void)
 {
+	int err;
+
 	k_sem_init(&rx_callback_sem, 0, 2);
 	k_sem_init(&tx_callback_sem, 0, 2);
-
-	zassert_true(device_is_ready(can_dev), "CAN device not ready");
 
 	k_object_access_grant(&can_msgq, k_current_get());
 	k_object_access_grant(can_dev, k_current_get());
 
-	/* Tests without callbacks can run in userspace */
-	ztest_test_suite(can_api_tests,
-			 ztest_user_unit_test(test_get_core_clock),
-			 ztest_user_unit_test(test_get_capabilities),
-			 ztest_unit_test(test_set_state_change_callback),
-			 ztest_user_unit_test(test_set_bitrate_too_high),
-			 ztest_user_unit_test(test_set_bitrate),
-			 ztest_user_unit_test(test_set_loopback),
-			 ztest_user_unit_test(test_send_and_forget),
-			 ztest_unit_test(test_add_filter),
-			 ztest_user_unit_test(test_max_std_filters),
-			 ztest_user_unit_test(test_max_ext_filters),
-			 ztest_user_unit_test(test_receive_timeout),
-			 ztest_unit_test(test_send_callback),
-			 ztest_unit_test(test_send_receive_std_id),
-			 ztest_unit_test(test_send_receive_ext_id),
-			 ztest_unit_test(test_send_receive_std_id_masked),
-			 ztest_unit_test(test_send_receive_ext_id_masked),
-			 ztest_user_unit_test(test_send_receive_msgq),
-			 ztest_user_unit_test(test_send_receive_std_id_rtr),
-			 ztest_user_unit_test(test_send_receive_ext_id_rtr),
-			 ztest_user_unit_test(test_send_invalid_dlc),
-			 ztest_unit_test(test_send_receive_wrong_id),
-			 ztest_user_unit_test(test_recover),
-			 ztest_user_unit_test(test_get_state),
-			 ztest_user_unit_test(test_filters_preserved_through_mode_change),
-			 ztest_user_unit_test(test_filters_preserved_through_bitrate_change));
-	ztest_run_test_suite(can_api_tests);
+	zassert_true(device_is_ready(can_dev), "CAN device not ready");
+
+	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
+	zassert_equal(err, 0, "failed to set loopback mode (err %d)", err);
+
+	return NULL;
 }
+
+ZTEST_SUITE(can_api, NULL, can_api_setup, NULL, NULL, NULL);
