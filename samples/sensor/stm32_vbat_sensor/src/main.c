@@ -13,10 +13,10 @@ void main(void)
 {
 	struct sensor_value val;
 	int rc;
-	const struct device *dev = DEVICE_DT_GET_ONE(st_stm32_vbat);
+	const struct device *dev = DEVICE_DT_GET_ONE(voltage_divider);
 
 	if (!device_is_ready(dev)) {
-		printk("VBAT sensor is not ready\n");
+		printk("Voltage divider sensor is not ready\n");
 		return;
 	}
 

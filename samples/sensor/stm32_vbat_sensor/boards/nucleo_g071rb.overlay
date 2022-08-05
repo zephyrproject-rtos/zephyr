@@ -3,14 +3,30 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * Application overlay for creating vbat sensor device instance
+ * Application overlay for creating voltage divider device instance
  */
+
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	stm-vbat {
-		compatible = "st,stm32-vbat";
-		ratio = <3>;
+		compatible = "voltage-divider";
 		io-channels = <&adc1 14>;
+	        full-ohms = <3>;
+	        output-ohms = <1>;
 		status = "okay";
+	};
+};
+
+&adc1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@e {
+		reg = <14>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <12>;
 	};
 };

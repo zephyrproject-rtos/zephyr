@@ -7,7 +7,7 @@ Overview
 ********
 
 This sample reads the Vbat from the STM32 Internal
-Sensor and displays the results.
+Sensor using the Voltage Divider driver and displays the results.
 
 Building and Running
 ********************
@@ -19,20 +19,30 @@ board DT file or with a board overlay in the samples/sensor/stm32_temp_sensor/bo
 .. code-block:: dts
 
     stm32_vbat: stm32vbat {
-        compatible = "st,stm32-vbat";
+        compatible = "voltage_divider";
         io-channels = <&adc1 14>;
-        ratio = <3>;
+        full-ohms = <3>;
+        output-ohms = <1>;
         status = "okay";
     };
 
 
-Enable the corresponding ADC, with the correct vref value (in mV)
+Enable the corresponding ADC, with the correct vref value (in mV) and the corresponding
+channel configuration
 
 .. code-block:: dts
 
     &adc1 {
 	vref-mv = <3000>;
 	status = "okay";
+
+        channel@14 {
+            reg = <14>;
+            zephyr,gain = "ADC_GAIN_1";
+            zephyr,reference = "ADC_REF_INTERNAL";
+            zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+            zephyr,resolution = <12>;
+        };
     };
 
 
