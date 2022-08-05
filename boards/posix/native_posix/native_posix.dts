@@ -194,4 +194,16 @@
 		sample-point = <875>;
 		bus-speed = <125000>;
 	};
+
+	can0: can {
+		status = "disabled";
+		compatible = "zephyr,native-posix-linux-can";
+		/* adjust zcan0 to desired host interface or create an alternative
+		 * name, e.g.: sudo ip link property add dev vcan0 altname zcan0
+		 */
+		host-interface = "zcan0";
+		sjw = <1>;
+		sample-point = <875>;
+		bus-speed = <125000>;
+	};
 };
