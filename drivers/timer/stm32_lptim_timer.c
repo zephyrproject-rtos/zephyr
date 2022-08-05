@@ -19,12 +19,20 @@
 
 #include <zephyr/spinlock.h>
 
+#define DT_DRV_COMPAT st_stm32_lptim
+
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1
+#error Only one LPTIM instance should be enabled
+#endif
+
+#define LPTIM (LPTIM_TypeDef *) DT_INST_REG_ADDR(0)
+
 /*
  * Assumptions and limitations:
  *
- * - system clock based on an LPTIM1 instance, clocked by LSI or LSE
+ * - system clock based on an LPTIM instance, clocked by LSI or LSE
  * - prescaler is set to 1 (LL_LPTIM_PRESCALER_DIV1 in the related register)
- * - using LPTIM1 AutoReload capability to trig the IRQ (timeout irq)
+ * - using LPTIM AutoReload capability to trig the IRQ (timeout irq)
  * - when timeout irq occurs the counter is already reset
  * - the maximum timeout duration is reached with the LPTIM_TIMEBASE value
  * - with prescaler of 1, the max timeout (LPTIM_TIMEBASE) is 2seconds
@@ -55,27 +63,27 @@ static void lptim_irq_handler(const struct device *unused)
 
 	ARG_UNUSED(unused);
 
-	uint32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM1);
+	uint32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM);
 
-	if ((LL_LPTIM_IsActiveFlag_ARROK(LPTIM1) != 0)
-		&& LL_LPTIM_IsEnabledIT_ARROK(LPTIM1) != 0) {
-		LL_LPTIM_ClearFlag_ARROK(LPTIM1);
+	if ((LL_LPTIM_IsActiveFlag_ARROK(LPTIM) != 0)
+		&& LL_LPTIM_IsEnabledIT_ARROK(LPTIM) != 0) {
+		LL_LPTIM_ClearFlag_ARROK(LPTIM);
 		if ((autoreload_next > 0) && (autoreload_next != autoreload)) {
 			/* the new autoreload value change, we set it */
 			autoreload_ready = false;
-			LL_LPTIM_SetAutoReload(LPTIM1, autoreload_next);
+			LL_LPTIM_SetAutoReload(LPTIM, autoreload_next);
 		} else {
 			autoreload_ready = true;
 		}
 	}
 
-	if ((LL_LPTIM_IsActiveFlag_ARRM(LPTIM1) != 0)
-		&& LL_LPTIM_IsEnabledIT_ARRM(LPTIM1) != 0) {
+	if ((LL_LPTIM_IsActiveFlag_ARRM(LPTIM) != 0)
+		&& LL_LPTIM_IsEnabledIT_ARRM(LPTIM) != 0) {
 
 		k_spinlock_key_t key = k_spin_lock(&lock);
 
 		/* do not change ARR yet, sys_clock_announce will do */
-		LL_LPTIM_ClearFLAG_ARRM(LPTIM1);
+		LL_LPTIM_ClearFLAG_ARRM(LPTIM);
 
 		/* increase the total nb of autoreload count
 		 * used in the sys_clock_cycle_get_32() function.
@@ -105,11 +113,11 @@ static void lptim_set_autoreload(uint32_t arr)
 		return;
 
 	/* The ARR register ready, we could set it directly */
-	if ((arr > 0) && (arr != LL_LPTIM_GetAutoReload(LPTIM1))) {
+	if ((arr > 0) && (arr != LL_LPTIM_GetAutoReload(LPTIM))) {
 		/* The new autoreload value change, we set it */
 		autoreload_ready = false;
-		LL_LPTIM_ClearFlag_ARROK(LPTIM1);
-		LL_LPTIM_SetAutoReload(LPTIM1, arr);
+		LL_LPTIM_ClearFlag_ARROK(LPTIM);
+		LL_LPTIM_SetAutoReload(LPTIM, arr);
 	}
 }
 
@@ -122,17 +130,17 @@ static inline uint32_t z_clock_lptim_getcounter(void)
 	 * of the LPTIM_CNT register, two successive read accesses
 	 * must be performed and compared
 	 */
-	lp_time = LL_LPTIM_GetCounter(LPTIM1);
+	lp_time = LL_LPTIM_GetCounter(LPTIM);
 	do {
 		lp_time_prev_read = lp_time;
-		lp_time = LL_LPTIM_GetCounter(LPTIM1);
+		lp_time = LL_LPTIM_GetCounter(LPTIM);
 	} while (lp_time != lp_time_prev_read);
 	return lp_time;
 }
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
-	/* new LPTIM1 AutoReload value to set (aligned on Kernel ticks) */
+	/* new LPTIM AutoReload value to set (aligned on Kernel ticks) */
 	uint32_t next_arr = 0;
 
 	ARG_UNUSED(idle);
@@ -175,9 +183,9 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	uint32_t lp_time = z_clock_lptim_getcounter();
 
-	uint32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM1);
+	uint32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM);
 
-	if (LL_LPTIM_IsActiveFlag_ARRM(LPTIM1)
+	if (LL_LPTIM_IsActiveFlag_ARRM(LPTIM)
 	    || ((autoreload - lp_time) < LPTIM_GUARD_VALUE)) {
 		/* interrupt happens or happens soon.
 		 * It's impossible to set autoreload value.
@@ -228,14 +236,14 @@ uint32_t sys_clock_elapsed(void)
 	/* In case of counter roll-over, add this value,
 	 * even if the irq has not yet been handled
 	 */
-	if ((LL_LPTIM_IsActiveFlag_ARRM(LPTIM1) != 0)
-	  && LL_LPTIM_IsEnabledIT_ARRM(LPTIM1) != 0) {
-		lp_time += LL_LPTIM_GetAutoReload(LPTIM1) + 1;
+	if ((LL_LPTIM_IsActiveFlag_ARRM(LPTIM) != 0)
+	  && LL_LPTIM_IsEnabledIT_ARRM(LPTIM) != 0) {
+		lp_time += LL_LPTIM_GetAutoReload(LPTIM) + 1;
 	}
 
 	k_spin_unlock(&lock, key);
 
-	/* gives the value of LPTIM1 counter (ms)
+	/* gives the value of LPTIM counter (ms)
 	 * since the previous 'announce'
 	 */
 	uint64_t ret = ((uint64_t)lp_time * CONFIG_SYS_CLOCK_TICKS_PER_SEC) / LPTIM_CLOCK;
@@ -254,9 +262,9 @@ uint32_t sys_clock_cycle_get_32(void)
 	/* In case of counter roll-over, add this value,
 	 * even if the irq has not yet been handled
 	 */
-	if ((LL_LPTIM_IsActiveFlag_ARRM(LPTIM1) != 0)
-	  && LL_LPTIM_IsEnabledIT_ARRM(LPTIM1) != 0) {
-		lp_time += LL_LPTIM_GetAutoReload(LPTIM1) + 1;
+	if ((LL_LPTIM_IsActiveFlag_ARRM(LPTIM) != 0)
+	  && LL_LPTIM_IsEnabledIT_ARRM(LPTIM) != 0) {
+		lp_time += LL_LPTIM_GetAutoReload(LPTIM) + 1;
 	}
 
 	lp_time += accumulated_lptim_cnt;
@@ -323,81 +331,81 @@ static int sys_clock_driver_init(const struct device *dev)
 #endif /* CONFIG_STM32_LPTIM_CLOCK_LSI */
 
 	/* Clear the event flag and possible pending interrupt */
-	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(lptim1)),
-		    DT_IRQ(DT_NODELABEL(lptim1), priority),
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    lptim_irq_handler, 0, 0);
-	irq_enable(DT_IRQN(DT_NODELABEL(lptim1)));
+	irq_enable(DT_INST_IRQN(0));
 
 #ifdef CONFIG_SOC_SERIES_STM32WLX
-	/* Enable the LPTIM1 wakeup EXTI line */
+	/* Enable the LPTIM wakeup EXTI line */
 	LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_29);
 #endif
 
-	/* configure the LPTIM1 counter */
-	LL_LPTIM_SetClockSource(LPTIM1, LL_LPTIM_CLK_SOURCE_INTERNAL);
-	/* configure the LPTIM1 prescaler with 1 */
-	LL_LPTIM_SetPrescaler(LPTIM1, LL_LPTIM_PRESCALER_DIV1);
+	/* configure the LPTIM counter */
+	LL_LPTIM_SetClockSource(LPTIM, LL_LPTIM_CLK_SOURCE_INTERNAL);
+	/* configure the LPTIM prescaler with 1 */
+	LL_LPTIM_SetPrescaler(LPTIM, LL_LPTIM_PRESCALER_DIV1);
 #ifdef CONFIG_SOC_SERIES_STM32U5X
-	LL_LPTIM_OC_SetPolarity(LPTIM1, LL_LPTIM_CHANNEL_CH1,
+	LL_LPTIM_OC_SetPolarity(LPTIM, LL_LPTIM_CHANNEL_CH1,
 				LL_LPTIM_OUTPUT_POLARITY_REGULAR);
 #else
-	LL_LPTIM_SetPolarity(LPTIM1, LL_LPTIM_OUTPUT_POLARITY_REGULAR);
+	LL_LPTIM_SetPolarity(LPTIM, LL_LPTIM_OUTPUT_POLARITY_REGULAR);
 #endif
-	LL_LPTIM_SetUpdateMode(LPTIM1, LL_LPTIM_UPDATE_MODE_IMMEDIATE);
-	LL_LPTIM_SetCounterMode(LPTIM1, LL_LPTIM_COUNTER_MODE_INTERNAL);
-	LL_LPTIM_DisableTimeout(LPTIM1);
+	LL_LPTIM_SetUpdateMode(LPTIM, LL_LPTIM_UPDATE_MODE_IMMEDIATE);
+	LL_LPTIM_SetCounterMode(LPTIM, LL_LPTIM_COUNTER_MODE_INTERNAL);
+	LL_LPTIM_DisableTimeout(LPTIM);
 	/* counting start is initiated by software */
-	LL_LPTIM_TrigSw(LPTIM1);
+	LL_LPTIM_TrigSw(LPTIM);
 
 #ifdef CONFIG_SOC_SERIES_STM32U5X
-	/* Enable the LPTIM1 before proceeding with configuration */
-	LL_LPTIM_Enable(LPTIM1);
+	/* Enable the LPTIM before proceeding with configuration */
+	LL_LPTIM_Enable(LPTIM);
 
-	LL_LPTIM_DisableIT_CC1(LPTIM1);
-	while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM1) == 0) {
+	LL_LPTIM_DisableIT_CC1(LPTIM);
+	while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM) == 0) {
 	}
-	LL_LPTIM_ClearFlag_DIEROK(LPTIM1);
-	LL_LPTIM_ClearFLAG_CC1(LPTIM1);
+	LL_LPTIM_ClearFlag_DIEROK(LPTIM);
+	LL_LPTIM_ClearFLAG_CC1(LPTIM);
 #else
-	/* LPTIM1 interrupt set-up before enabling */
+	/* LPTIM interrupt set-up before enabling */
 	/* no Compare match Interrupt */
-	LL_LPTIM_DisableIT_CMPM(LPTIM1);
-	LL_LPTIM_ClearFLAG_CMPM(LPTIM1);
+	LL_LPTIM_DisableIT_CMPM(LPTIM);
+	LL_LPTIM_ClearFLAG_CMPM(LPTIM);
 #endif
 
 	/* Autoreload match Interrupt */
-	LL_LPTIM_EnableIT_ARRM(LPTIM1);
+	LL_LPTIM_EnableIT_ARRM(LPTIM);
 #ifdef CONFIG_SOC_SERIES_STM32U5X
-	while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM1) == 0) {
+	while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM) == 0) {
 	}
-	LL_LPTIM_ClearFlag_DIEROK(LPTIM1);
+	LL_LPTIM_ClearFlag_DIEROK(LPTIM);
 #endif
-	LL_LPTIM_ClearFLAG_ARRM(LPTIM1);
+	LL_LPTIM_ClearFLAG_ARRM(LPTIM);
 	/* ARROK bit validates the write operation to ARR register */
-	LL_LPTIM_EnableIT_ARROK(LPTIM1);
-	LL_LPTIM_ClearFlag_ARROK(LPTIM1);
+	LL_LPTIM_EnableIT_ARROK(LPTIM);
+	LL_LPTIM_ClearFlag_ARROK(LPTIM);
 
 	accumulated_lptim_cnt = 0;
 
 #ifndef CONFIG_SOC_SERIES_STM32U5X
-	/* Enable the LPTIM1 counter */
-	LL_LPTIM_Enable(LPTIM1);
+	/* Enable the LPTIM counter */
+	LL_LPTIM_Enable(LPTIM);
 #endif
 
 	/* Set the Autoreload value once the timer is enabled */
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* LPTIM1 is triggered on a LPTIM_TIMEBASE period */
+		/* LPTIM is triggered on a LPTIM_TIMEBASE period */
 		lptim_set_autoreload(LPTIM_TIMEBASE);
 	} else {
-		/* LPTIM1 is triggered on a Tick period */
+		/* LPTIM is triggered on a Tick period */
 		lptim_set_autoreload(COUNT_PER_TICK - 1);
 	}
 
 	/* Start the LPTIM counter in continuous mode */
-	LL_LPTIM_StartCounter(LPTIM1, LL_LPTIM_OPERATING_MODE_CONTINUOUS);
+	LL_LPTIM_StartCounter(LPTIM, LL_LPTIM_OPERATING_MODE_CONTINUOUS);
 
 #ifdef CONFIG_DEBUG
-	/* stop LPTIM1 during DEBUG */
+	/* stop LPTIM during DEBUG */
 #if defined(LL_DBGMCU_APB1_GRP1_LPTIM1_STOP)
 	LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_LPTIM1_STOP);
 #elif defined(LL_DBGMCU_APB3_GRP1_LPTIM1_STOP)
