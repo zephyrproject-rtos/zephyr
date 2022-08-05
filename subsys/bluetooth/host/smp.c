@@ -357,15 +357,15 @@ static bool smp_keys_check(struct bt_conn *conn)
 		return false;
 	}
 
-	if (conn->required_sec_level > BT_SECURITY_L2 &&
+	if (conn->required_sec_level >= BT_SECURITY_L3 &&
 	    !(conn->le.keys->flags & BT_KEYS_AUTHENTICATED)) {
 		return false;
 	}
 
-	if (conn->required_sec_level > BT_SECURITY_L3 &&
-	    !(conn->le.keys->flags & BT_KEYS_AUTHENTICATED) &&
-	    !(conn->le.keys->keys & BT_KEYS_LTK_P256) &&
-	    !(conn->le.keys->enc_size == BT_SMP_MAX_ENC_KEY_SIZE)) {
+	if (conn->required_sec_level >= BT_SECURITY_L4 &&
+	    !((conn->le.keys->flags & BT_KEYS_AUTHENTICATED) &&
+	      (conn->le.keys->keys & BT_KEYS_LTK_P256) &&
+	      (conn->le.keys->enc_size == BT_SMP_MAX_ENC_KEY_SIZE))) {
 		return false;
 	}
 
