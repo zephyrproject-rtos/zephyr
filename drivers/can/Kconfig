@@ -98,7 +98,7 @@ source "drivers/can/Kconfig.mcp2515"
 source "drivers/can/Kconfig.mcan"
 source "drivers/can/Kconfig.rcar"
 source "drivers/can/Kconfig.loopback"
-
+source "drivers/can/Kconfig.native_posix_linux"
 source "drivers/can/Kconfig.sja1000"
 source "drivers/can/Kconfig.esp32"
 
