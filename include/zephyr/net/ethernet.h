@@ -851,8 +851,6 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 #endif /* CONFIG_NET_VLAN */
 
 /**
- * @def ETH_NET_DEVICE_INIT
- *
  * @brief Create an Ethernet network interface and bind it to network device.
  *
  * @param dev_name Network device name.
@@ -876,8 +874,6 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 			      api, mtu)
 
 /**
- * @def ETH_NET_DEVICE_DT_DEFINE
- *
  * @brief Like ETH_NET_DEVICE_INIT but taking metadata from a devicetree.
  * Create an Ethernet network interface and bind it to network device.
  *
@@ -901,8 +897,6 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 			      api, mtu)
 
 /**
- * @def ETH_NET_DEVICE_DT_INST_DEFINE
- *
  * @brief Like ETH_NET_DEVICE_DT_DEFINE for an instance of a DT_DRV_COMPAT
  * compatible
  *

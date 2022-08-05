@@ -173,8 +173,6 @@ struct z_device_mmio_rom {
 
 #ifdef DEVICE_MMIO_IS_IN_RAM
 /**
- * @def DEVICE_MMIO_RAM_PTR(device)
- *
  * Return a pointer to the RAM-based storage area for a device's MMIO
  * address.
  *
@@ -188,8 +186,6 @@ struct z_device_mmio_rom {
 #endif /* DEVICE_MMIO_IS_IN_RAM */
 
 /**
- * @def DEVICE_MMIO_ROM
- *
  * @brief Declare storage for MMIO data within a device's config struct
  *
  * This gets accessed by DEVICE_MMIO_MAP() and DEVICE_MMIO_GET() macros.
@@ -218,8 +214,6 @@ struct z_device_mmio_rom {
 #define DEVICE_MMIO_ROM		struct z_device_mmio_rom _mmio
 
 /**
- * @def DEVICE_MMIO_ROM_PTR(dev)
- *
  * Return a pointer to the ROM-based storage area for a device's MMIO
  * information. This macro will not work properly if the ROM storage
  * was omitted from the config struct declaration, and should not
@@ -232,8 +226,6 @@ struct z_device_mmio_rom {
 	((struct z_device_mmio_rom *)((dev)->config))
 
 /**
- * @def DEVICE_MMIO_ROM_INIT(node_id)
- *
  * @brief Initialize a DEVICE_MMIO_ROM member
  *
  * Initialize MMIO-related information within a specific instance of
@@ -354,8 +346,6 @@ struct z_device_mmio_rom {
 
 #ifdef DEVICE_MMIO_IS_IN_RAM
 /**
- * @def DEVICE_MMIO_NAMED_RAM_PTR(dev, name)
- *
  * @brief Return a pointer to the RAM storage for a device's named MMIO address
  *
  * This macro requires that the macro DEV_DATA is locally defined and returns
@@ -370,8 +360,6 @@ struct z_device_mmio_rom {
 #endif /* DEVICE_MMIO_IS_IN_RAM */
 
 /**
- * @def DEVICE_MMIO_NAMED_ROM(name)
- *
  * @brief Declare storage for MMIO data within a device's config struct.
  *
  * This gets accessed by DEVICE_MMIO_NAMED_MAP() and
@@ -405,8 +393,6 @@ struct z_device_mmio_rom {
 #define DEVICE_MMIO_NAMED_ROM(name) struct z_device_mmio_rom name
 
 /**
- * @def DEVICE_MMIO_NAMED_ROM_PTR(dev, name)
- *
  * Return a pointer to the ROM-based storage area for a device's MMIO
  * information.
  *
@@ -421,8 +407,6 @@ struct z_device_mmio_rom {
 #define DEVICE_MMIO_NAMED_ROM_PTR(dev, name) (&(DEV_CFG(dev)->name))
 
 /**
- * @def DEVICE_MMIO_NAMED_ROM_INIT(name, node_id)
- *
  * @brief Initialize a named DEVICE_MMIO_NAMED_ROM member
  *
  * Initialize MMIO-related information within a specific instance of
@@ -448,8 +432,6 @@ struct z_device_mmio_rom {
 	.name = Z_DEVICE_MMIO_ROM_INITIALIZER(node_id)
 
 /**
- * @def DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(name, node_id)
- *
  * @brief Initialize a named DEVICE_MMIO_NAMED_ROM member using a named DT
  *        reg property.
  *
@@ -491,8 +473,6 @@ struct z_device_mmio_rom {
 	.name = Z_DEVICE_MMIO_NAMED_ROM_INITIALIZER(name, node_id)
 
 /**
- * @def DEVICE_MMIO_NAMED_MAP(dev, name, flags)
- *
  * @brief Set up memory for a named MMIO region
  *
  * This performs the necessary PCI probing and/or MMU virtual memory mapping
@@ -661,8 +641,6 @@ struct z_device_mmio_rom {
 
 #ifdef DEVICE_MMIO_IS_IN_RAM
 /**
- * @def DEVICE_MMIO_TOPLEVEL_RAM_PTR(name)
- *
  * @brief Return a pointer to the RAM storage for a device's toplevel MMIO
  * address.
  *
@@ -673,8 +651,6 @@ struct z_device_mmio_rom {
 #endif /* DEVICE_MMIO_IS_IN_RAM */
 
 /**
- * @def DEVICE_MMIO_TOPLEVEL_ROM_PTR(name)
- *
  * Return a pointer to the ROM-based storage area for a toplevel MMIO region.
  *
  * @param name MMIO region name

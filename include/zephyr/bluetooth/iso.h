@@ -27,13 +27,12 @@ extern "C" {
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
 
-/** @def BT_ISO_CHAN_SEND_RESERVE
+/**
  *  @brief Headroom needed for outgoing ISO SDUs
  */
 #define BT_ISO_CHAN_SEND_RESERVE BT_BUF_ISO_SIZE(0)
 
-/** @def BT_ISO_SDU_BUF_SIZE
- *
+/**
  *  @brief Helper to calculate needed buffer size for ISO SDUs.
  *         Useful for creating buffer pools.
  *

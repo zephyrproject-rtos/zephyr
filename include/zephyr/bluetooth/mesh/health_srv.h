@@ -134,8 +134,7 @@ struct bt_mesh_health_srv_cb {
 	void (*attn_off)(struct bt_mesh_model *model);
 };
 
-/** @def BT_MESH_HEALTH_PUB_DEFINE
- *
+/**
  *  A helper to define a health publication context
  *
  *  @param _name       Name given to the publication context variable.
@@ -156,8 +155,7 @@ struct bt_mesh_health_srv {
 	struct k_work_delayable attn_timer;
 };
 
-/** @def BT_MESH_MODEL_HEALTH_SRV
- *
+/**
  *  Define a new health server model. Note that this API needs to be
  *  repeated for each element that the application wants to have a
  *  health server model on. Each instance also needs a unique

@@ -30,7 +30,6 @@ extern "C" {
 #define __net_buf_align __aligned(sizeof(void *))
 
 /**
- *  @def NET_BUF_SIMPLE_DEFINE
  *  @brief Define a net_buf_simple stack variable.
  *
  *  This is a helper macro which is used to define a net_buf_simple object
@@ -49,7 +48,7 @@ extern "C" {
 	}
 
 /**
- * @def NET_BUF_SIMPLE_DEFINE_STATIC
+ *
  * @brief Define a static net_buf_simple variable.
  *
  * This is a helper macro which is used to define a static net_buf_simple
@@ -101,7 +100,7 @@ struct net_buf_simple {
 };
 
 /**
- * @def NET_BUF_SIMPLE
+ *
  * @brief Define a net_buf_simple stack variable and get a pointer to it.
  *
  * This is a helper macro which is used to define a net_buf_simple object on
@@ -1062,7 +1061,7 @@ extern const struct net_buf_data_alloc net_buf_heap_alloc;
 /** @endcond */
 
 /**
- * @def NET_BUF_POOL_HEAP_DEFINE
+ *
  * @brief Define a new pool for buffers using the heap for the data.
  *
  * Defines a net_buf_pool struct and the necessary memory storage (array of
@@ -1105,7 +1104,7 @@ extern const struct net_buf_data_cb net_buf_fixed_cb;
 /** @endcond */
 
 /**
- * @def NET_BUF_POOL_FIXED_DEFINE
+ *
  * @brief Define a new pool for buffers based on fixed-size data
  *
  * Defines a net_buf_pool struct and the necessary memory storage (array of
@@ -1153,7 +1152,7 @@ extern const struct net_buf_data_cb net_buf_var_cb;
 /** @endcond */
 
 /**
- * @def NET_BUF_POOL_VAR_DEFINE
+ *
  * @brief Define a new pool for buffers with variable size payloads
  *
  * Defines a net_buf_pool struct and the necessary memory storage (array of
@@ -1189,7 +1188,7 @@ extern const struct net_buf_data_cb net_buf_var_cb;
 					 _destroy)
 
 /**
- * @def NET_BUF_POOL_DEFINE
+ *
  * @brief Define a new pool for buffers
  *
  * Defines a net_buf_pool struct and the necessary memory storage (array of

@@ -37,8 +37,6 @@ extern "C" {
  */
 
 /**
- * @def BT_ID_DEFAULT
- *
  * Convenience macro for specifying the default identity. This helps
  * make the code more readable, especially when only one identity is
  * supported.

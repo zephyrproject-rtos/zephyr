@@ -73,8 +73,6 @@ typedef int16_t device_handle_t;
 #define Z_DEVICE_MAX_NAME_LEN	48
 
 /**
- * @def DEVICE_NAME_GET
- *
  * @brief Expands to the name of a global device object.
  *
  * @details Return the full name of a device object symbol created by
@@ -122,8 +120,6 @@ typedef int16_t device_handle_t;
 	__attribute__((__section__(".z_devstate")));
 
 /**
- * @def DEVICE_DEFINE
- *
  * @brief Create a device object and set it up for boot time initialization.
  *
  * @details This macro defines a <tt>struct device</tt> that is
@@ -173,8 +169,6 @@ typedef int16_t device_handle_t;
 			&Z_DEVICE_STATE_NAME(dev_name))
 
 /**
- * @def DEVICE_DT_NAME
- *
  * @brief Return a string name for a devicetree node.
  *
  * @details This macro returns a string literal usable as a device's
@@ -189,8 +183,6 @@ typedef int16_t device_handle_t;
 	DT_PROP_OR(node_id, label, DT_NODE_FULL_NAME(node_id))
 
 /**
- * @def DEVICE_DT_DEFINE
- *
  * @brief Create a device object from a devicetree node identifier and
  * set it up for boot time initialization.
  *
@@ -244,8 +236,6 @@ typedef int16_t device_handle_t;
 			__VA_ARGS__)
 
 /**
- * @def DEVICE_DT_INST_DEFINE
- *
  * @brief Like DEVICE_DT_DEFINE(), but uses an instance of a
  * DT_DRV_COMPAT compatible instead of a node identifier.
  *
@@ -258,8 +248,6 @@ typedef int16_t device_handle_t;
 	DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
- * @def DEVICE_DT_NAME_GET
- *
  * @brief The name of the global device object for @p node_id
  *
  * @details Returns the name of the global device structure as a C
@@ -277,8 +265,6 @@ typedef int16_t device_handle_t;
 #define DEVICE_DT_NAME_GET(node_id) DEVICE_NAME_GET(Z_DEVICE_DT_DEV_NAME(node_id))
 
 /**
- * @def DEVICE_DT_GET
- *
  * @brief Get a <tt>const struct device*</tt> from a devicetree node
  * identifier
  *
@@ -296,8 +282,7 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_DT_GET(node_id) (&DEVICE_DT_NAME_GET(node_id))
 
-/** @def DEVICE_DT_INST_GET
- *
+/**
  * @brief Get a <tt>const struct device*</tt> for an instance of a
  *        DT_DRV_COMPAT compatible
  *
@@ -309,8 +294,6 @@ typedef int16_t device_handle_t;
 #define DEVICE_DT_INST_GET(inst) DEVICE_DT_GET(DT_DRV_INST(inst))
 
 /**
- * @def DEVICE_DT_GET_ANY
- *
  * @brief Get a <tt>const struct device*</tt> from a devicetree compatible
  *
  * If an enabled devicetree node has the given compatible and a device
@@ -332,8 +315,6 @@ typedef int16_t device_handle_t;
 		    (NULL))
 
 /**
- * @def DEVICE_DT_GET_ONE
- *
  * @brief Get a <tt>const struct device*</tt> from a devicetree compatible
  *
  * @details If an enabled devicetree node has the given compatible and
@@ -356,8 +337,6 @@ typedef int16_t device_handle_t;
 		    (ZERO_OR_COMPILE_ERROR(0)))
 
 /**
- * @def DEVICE_DT_GET_OR_NULL
- *
  * @brief Utility macro to obtain an optional reference to a device.
  *
  * @details If the node identifier refers to a node with status
@@ -374,8 +353,6 @@ typedef int16_t device_handle_t;
 		    (DEVICE_DT_GET(node_id)), (NULL))
 
 /**
- * @def DEVICE_GET
- *
  * @brief Obtain a pointer to a device object by name
  *
  * @details Return the address of a device object created by
@@ -387,8 +364,7 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_GET(name) (&DEVICE_NAME_GET(name))
 
-/** @def DEVICE_DECLARE
- *
+/**
  * @brief Declare a static device object
  *
  * This macro can be used at the top-level to declare a device, such
@@ -405,8 +381,6 @@ typedef int16_t device_handle_t;
 #define DEVICE_DECLARE(name) static const struct device DEVICE_NAME_GET(name)
 
 /**
- * @def DEVICE_INIT_DT_GET
- *
  * @brief Get a <tt>const struct init_entry*</tt> from a devicetree node
  *
  * @param node_id A devicetree node identifier
@@ -416,8 +390,6 @@ typedef int16_t device_handle_t;
 #define DEVICE_INIT_DT_GET(node_id) (&Z_INIT_ENTRY_NAME(DEVICE_DT_NAME_GET(node_id)))
 
 /**
- * @def DEVICE_INIT_GET
- *
  * @brief Get a <tt>const struct init_entry*</tt> from a device by name
  *
  * @param name The same as dev_name provided to DEVICE_DEFINE()

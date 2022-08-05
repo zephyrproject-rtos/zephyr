@@ -164,8 +164,7 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 	return BT_ADDR_IS_STATIC(&addr->a);
 }
 
-/** @def BT_ADDR_STR_LEN
- *
+/**
  *  @brief Recommended length of user string buffer for Bluetooth address
  *
  *  @details The recommended length guarantee the output of address
@@ -174,8 +173,7 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
  */
 #define BT_ADDR_STR_LEN 18
 
-/** @def BT_ADDR_LE_STR_LEN
- *
+/**
  *  @brief Recommended length of user string buffer for Bluetooth LE address
  *
  *  @details The recommended length guarantee the output of address
