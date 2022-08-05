@@ -149,7 +149,7 @@ config ARCH_IS_SET
 
 menu "General Architecture Options"
 
-source "$(ARCH_DIR)/common/Kconfig"
+source "arch/common/Kconfig"
 
 module = ARCH
 module-str = arch
