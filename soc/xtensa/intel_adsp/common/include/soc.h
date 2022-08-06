@@ -42,9 +42,6 @@
 
 #define CAVS_ICTL_INT_CPU_OFFSET(x)		(0x40 * x)
 
-#define IOAPIC_EDGE				0
-#define IOAPIC_HIGH				0
-
 #define SSP_MN_DIV_SIZE				(8)
 #define SSP_MN_DIV_BASE(x)			\
 	(0x00078D00 + ((x) * SSP_MN_DIV_SIZE))
