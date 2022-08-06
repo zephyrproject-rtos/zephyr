@@ -98,5 +98,96 @@
 			compatible = "mmio-sram";
 			reg = <0x35780000 DT_SIZE_M(1)>;
 		};
+
+		uart0: uart@40170000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x40170000 0x1000>;
+			interrupts = <GIC_SPI 212 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart1: uart@40180000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x40180000 0x1000>;
+			interrupts = <GIC_SPI 213 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart2: uart@40190000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x40190000 0x1000>;
+			interrupts = <GIC_SPI 214 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart3: uart@40970000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x40970000 0x1000>;
+			interrupts = <GIC_SPI 215 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart4: uart@40980000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x40980000 0x1000>;
+			interrupts = <GIC_SPI 216 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart5: uart@40990000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x40990000 0x1000>;
+			interrupts = <GIC_SPI 217 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart6: uart@42170000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x42170000 0x1000>;
+			interrupts = <GIC_SPI 218 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart7: uart@42180000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x42180000 0x1000>;
+			interrupts = <GIC_SPI 219 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart8: uart@42190000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x42190000 0x1000>;
+			interrupts = <GIC_SPI 220 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart9: uart@42980000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x42980000 0x1000>;
+			interrupts = <GIC_SPI 221 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart10: uart@42990000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x42990000 0x1000>;
+			interrupts = <GIC_SPI 222 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart11: uart@429a0000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x429a0000 0x1000>;
+			interrupts = <GIC_SPI 223 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart12: uart@40330000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x40330000 0x1000>;
+			interrupts = <GIC_SPI 205 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
 	};
 };
