@@ -29,7 +29,7 @@
 
 #define MTIME_REG	DT_INST_REG_ADDR(0)
 #define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 8)
-#define TIMER_IRQN	DT_INST_IRQN(0)
+#define TIMER_IRQN	DT_INST_IRQ_BY_IDX(0, 1, irq)
 /* sifive,clint0 */
 #elif DT_HAS_COMPAT_STATUS_OKAY(sifive_clint0)
 #define DT_DRV_COMPAT sifive_clint0
