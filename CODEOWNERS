@@ -43,6 +43,7 @@
 /soc/arm/gigadevice/                      @nandojve
 /soc/arm/infineon_xmc/                    @parthitce
 /soc/arm/nxp*/                            @mmahadevan108 @dleach02
+/soc/arm/nxp_s32/                         @manuargue
 /soc/arm/nordic_nrf/                      @anangl
 /soc/arm/nuvoton_npcx/                    @MulinChao @ChiHuaL
 /soc/arm/nuvoton_numicro/                 @ssekar15
@@ -148,6 +149,7 @@
 /boards/arm/scobc_module1/                @yashi
 /boards/arm/v2m_beetle/                   @fvincenzo
 /boards/arm/olimexino_stm32/              @ydamigos
+/boards/arm/s32*/                         @manuargue
 /boards/arm/sensortile_box/               @avisconti
 /boards/arm/steval_fcu001v1/              @Navin-Sankar
 /boards/arm/stm32l1_disco/                @karlp
@@ -217,6 +219,7 @@
 /drivers/*/*npcx*                         @MulinChao @ChiHuaL
 /drivers/*/*andes*                        @cwshu @kevinwang821020 @jimmyzhe
 /drivers/*/*neorv32*                      @henrikbrixandersen
+/drivers/*/*_s32*                         @manuargue
 /drivers/adc/                             @anangl
 /drivers/adc/adc_ads1x1x.c                @XenuIsWatching
 /drivers/adc/adc_stm32.c                  @cybertale
@@ -487,6 +490,7 @@
 /dts/arm/nordic/                          @anangl @carlescufi
 /dts/arm/nuvoton/                         @ssekar15 @MulinChao @ChiHuaL
 /dts/arm/nxp/                             @mmahadevan108 @dleach02
+/dts/arm/nxp/nxp_s32*                     @manuargue
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @sjvasanth1
 /dts/arm/rpi_pico/                        @yonsch
 /dts/arm/silabs/efm32_pg_1b.dtsi          @rdmeneze
@@ -526,6 +530,7 @@
 /dts/bindings/*/*psoc6*                   @nandojve
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @mmahadevan108 @dleach02
+/dts/bindings/*/nxp*s32*                  @manuargue
 /dts/bindings/*/openisa*                  @dleach02
 /dts/bindings/*/raspberrypi*pico*         @yonsch
 /dts/bindings/*/st*                       @erwango
