@@ -71,6 +71,12 @@
 		interrupt-parent = <&gic>;
 	};
 
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,s32ze-pinctrl";
+		status = "okay";
+	};
+
 	soc {
 		interrupt-parent = <&gic>;
 
