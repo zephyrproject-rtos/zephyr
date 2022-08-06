@@ -24,8 +24,6 @@ if(CONFIG_SMP OR CONFIG_MP_NUM_CPUS GREATER 1)
   zephyr_library_sources(multiprocessing.c)
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_CAVS_ICTL irq.c)
-
 zephyr_library_link_libraries(INTEL_ADSP_COMMON)
 
 target_include_directories(INTEL_ADSP_COMMON INTERFACE include)
