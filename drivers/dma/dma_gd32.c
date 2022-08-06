@@ -404,9 +404,9 @@ static int dma_gd32_config(const struct device *dev, uint32_t channel,
 	}
 
 #ifdef CONFIG_SOC_SERIES_GD32F4XX
-	if (dma_cfg->linked_channel > 0xF) {
-		LOG_ERR("linked_channel must be <7 (%" PRIu32 ")",
-			dma_cfg->linked_channel);
+	if (dma_cfg->dma_slot > 0xF) {
+		LOG_ERR("dma_slot must be <7 (%" PRIu32 ")",
+			dma_cfg->dma_slot);
 		return -EINVAL;
 	}
 #endif
@@ -465,7 +465,7 @@ static int dma_gd32_config(const struct device *dev, uint32_t channel,
 #ifdef CONFIG_SOC_SERIES_GD32F4XX
 	if (dma_cfg->channel_direction != MEMORY_TO_MEMORY) {
 		gd32_dma_channel_subperipheral_select(cfg->reg, channel,
-						      dma_cfg->linked_channel);
+						      dma_cfg->dma_slot);
 	}
 #endif
 
