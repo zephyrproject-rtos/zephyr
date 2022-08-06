@@ -6,3 +6,9 @@
 
 #include <arm/nxp/nxp_s32z27x_r52.dtsi>
 #include "s32z270dc2_r52-pinctrl.dtsi"
+
+&uart0 {
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

@@ -8,3 +8,5 @@ arch: arm
 ram: 1024
 toolchain:
   - zephyr
+supported:
+  - uart
