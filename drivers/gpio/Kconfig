@@ -152,4 +152,6 @@ source "drivers/gpio/Kconfig.xmc4xxx"
 
 source "drivers/gpio/Kconfig.smartbond"
 
+source "drivers/gpio/Kconfig.s32"
+
 endif # GPIO
