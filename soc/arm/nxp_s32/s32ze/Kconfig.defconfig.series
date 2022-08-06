@@ -1,0 +1,34 @@
+# NXP S32Z/E MCUs family default configuration
+
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_S32ZE_R52
+
+config SOC_SERIES
+	default "s32ze"
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 991
+
+config FPU
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 2000000
+
+config MAIN_STACK_SIZE
+	default 1024
+
+if !XIP
+config FLASH_SIZE
+	default 0
+
+config FLASH_BASE_ADDRESS
+	default 0
+endif # !XIP
+
+source "soc/arm/nxp_s32/s32ze/Kconfig.defconfig.s32*"
+
+endif # SOC_SERIES_S32ZE_R52

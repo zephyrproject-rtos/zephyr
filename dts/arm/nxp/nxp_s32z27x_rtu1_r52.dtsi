@@ -1,0 +1,18 @@
+/*
+ * Copyright 2022 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/nxp/nxp_s32z27x_r52.dtsi>
+
+/ {
+
+	cpus {
+		/delete-node/ cpu@0;
+		/delete-node/ cpu@1;
+		/delete-node/ cpu@2;
+		/delete-node/ cpu@3;
+	};
+
+};
