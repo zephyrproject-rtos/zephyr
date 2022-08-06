@@ -182,6 +182,8 @@ source "drivers/sensor/mpu6050/Kconfig"
 
 source "drivers/sensor/mpu9250/Kconfig"
 
+source "drivers/sensor/ms5611/Kconfig"
+
 source "drivers/sensor/ms5837/Kconfig"
 
 source "drivers/sensor/ms5607/Kconfig"

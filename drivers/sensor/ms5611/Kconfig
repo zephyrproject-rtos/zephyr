@@ -1,0 +1,12 @@
+# MS5611 barometer
+
+# Copyright (c) 2022, Karol Duda
+# SPDX-License-Identifier: Apache-2.0
+
+config MS5611
+	bool "MS5611 Barometer"
+	default y
+	depends on DT_HAS_MEAS_MS5611_ENABLED
+	select I2C
+	help
+		Enable MS5611 barometer driver.

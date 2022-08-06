@@ -623,3 +623,8 @@ test_i2c_max31875: max31875@53 {
 	compatible = "maxim,max31875";
 	reg = <0x53>;
 };
+
+test_i2c_ms5611: ms5611@54 {
+	compatible = "meas,ms5611";
+	reg = <0x54>;
+};
