@@ -14,3 +14,5 @@ zephyr_library_sources(
 if(CONFIG_SMP OR CONFIG_MP_NUM_CPUS GREATER 1)
     zephyr_library_sources(multiprocessing.c)
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_CAVS_ICTL irq.c)
