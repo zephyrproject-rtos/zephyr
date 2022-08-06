@@ -1,0 +1,43 @@
+# Copyright (c) 2022 Sen(1065402494@qq.com)
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig KSCAN_XPT2046
+	bool "XPT2046 touch screen controller driver"
+	depends on SPI
+	help
+	  Enable driver for multiple resistance touch panel controllers.
+	  This driver should support TSC2046, ADS784x and AK4182. 
+
+if KSCAN_XPT2046
+
+config KSCAN_XPT2046_PERIOD
+	int "Sample period"
+	default 10
+	help
+	  Sample period in milliseconds when in polling mode.
+
+config KSCAN_XPT2046_OFFSET_X_MIN
+	int "KSCAN horizontal offset of min"
+	default 250
+	help
+	  The minimum value of the horizontal touch point of the screen.
+
+config KSCAN_XPT2046_OFFSET_X_MAX
+	int "KSCAN horizontal offset of max"
+	default 3700
+	help
+	  The maximum value of the horizontal touch point of the screen.
+
+config KSCAN_XPT2046_OFFSET_Y_MIN
+	int "KSCAN vertical offset of min"
+	default 430
+	help
+	  The minimum value of the Vertical touch point of the screen.
+
+config KSCAN_XPT2046_OFFSET_Y_MAX
+	int "KSCAN vertical offset of max"
+	default 3850
+	help
+	  The maximum value of the Vertical touch point of the screen.
+
+endif # KSCAN_XPT2046
