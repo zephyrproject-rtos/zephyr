@@ -58,10 +58,6 @@
 
 
 extern void soc_trace_init(void);
-extern void z_soc_irq_init(void);
-extern void z_soc_irq_enable(uint32_t irq);
-extern void z_soc_irq_disable(uint32_t irq);
-extern int z_soc_irq_is_enabled(unsigned int irq);
 
 extern void z_soc_mp_asm_entry(void);
 extern void soc_mp_startup(uint32_t cpu);
