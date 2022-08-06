@@ -24,6 +24,7 @@
 		led0 = &led_green;
 		i2c-0 = &i2c0;
 		sw0 = &user_button1;
+		watchdog0 = &wdt0;
 	};
 
 	leds {
