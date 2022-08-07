@@ -604,7 +604,7 @@ static inline int net_context_get_can_filter_id(struct net_context *context)
  *
  * @return Network context IP protocol.
  */
-static inline uint16_t net_context_get_ip_proto(struct net_context *context)
+static inline uint16_t net_context_get_proto(struct net_context *context)
 {
 	return context->proto;
 }
@@ -619,8 +619,8 @@ static inline uint16_t net_context_get_ip_proto(struct net_context *context)
  * @param proto Context IP protocol (IPPROTO_UDP, IPPROTO_TCP or IEEE 802.3
  * protocol value)
  */
-static inline void net_context_set_ip_proto(struct net_context *context,
-					    uint16_t proto)
+static inline void net_context_set_proto(struct net_context *context,
+					 uint16_t proto)
 {
 	context->proto = proto;
 }

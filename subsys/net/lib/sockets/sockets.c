@@ -1176,7 +1176,7 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		} else {
 			int rv;
 
-			rv = sock_get_pkt_src_addr(pkt, net_context_get_ip_proto(ctx),
+			rv = sock_get_pkt_src_addr(pkt, net_context_get_proto(ctx),
 						   src_addr, *addrlen);
 			if (rv < 0) {
 				errno = -rv;
@@ -1833,7 +1833,7 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			break;
 
 		case SO_PROTOCOL: {
-			int proto = (int)net_context_get_ip_proto(ctx);
+			int proto = (int)net_context_get_proto(ctx);
 
 			if (*optlen != sizeof(proto)) {
 				errno = EINVAL;

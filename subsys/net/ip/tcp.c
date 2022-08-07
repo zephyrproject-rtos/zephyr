@@ -2833,7 +2833,7 @@ int net_tcp_connect(struct net_context *context,
 
 	net_context_set_state(context, NET_CONTEXT_CONNECTING);
 
-	ret = net_conn_register(net_context_get_ip_proto(context),
+	ret = net_conn_register(net_context_get_proto(context),
 				net_context_get_family(context),
 				remote_addr, local_addr,
 				ntohs(remote_port), ntohs(local_port),
@@ -2938,7 +2938,7 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 	 */
 	net_conn_unregister(context->conn_handler);
 
-	return net_conn_register(net_context_get_ip_proto(context),
+	return net_conn_register(net_context_get_proto(context),
 				 local_addr.sa_family,
 				 context->flags & NET_CONTEXT_REMOTE_ADDR_SET ?
 				 &context->remote : NULL,
