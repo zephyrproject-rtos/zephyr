@@ -181,10 +181,10 @@ static inline void net_context_send_cb(struct net_context *context,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_UDP) &&
-	    net_context_get_ip_proto(context) == IPPROTO_UDP) {
+	    net_context_get_proto(context) == IPPROTO_UDP) {
 		net_stats_update_udp_sent(net_context_get_iface(context));
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
-		   net_context_get_ip_proto(context) == IPPROTO_TCP) {
+		   net_context_get_proto(context) == IPPROTO_TCP) {
 		net_stats_update_tcp_seg_sent(net_context_get_iface(context));
 	}
 }
