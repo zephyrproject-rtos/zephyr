@@ -103,10 +103,10 @@ static void sx12xx_ev_rx_done(uint8_t *payload, uint16_t size, int16_t rssi,
 
 	/* Receiving in asynchronous mode */
 	if (dev_data.async_rx_cb) {
-		/* Start receiving again */
-		Radio.Rx(0);
 		/* Run the callback */
 		dev_data.async_rx_cb(dev_data.dev, payload, size, rssi, snr);
+		/* Start receiving again */
+		Radio.Rx(0);
 		/* Don't run the synchronous code */
 		return;
 	}
