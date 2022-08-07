@@ -1388,8 +1388,8 @@ static void context_cb(struct net_context *context, void *user_data)
 	   net_context_get_type(context) == SOCK_DGRAM ? 'D' :
 	   (net_context_get_type(context) == SOCK_STREAM ? 'S' :
 	    (net_context_get_type(context) == SOCK_RAW ? 'R' : ' ')),
-	   net_context_get_ip_proto(context) == IPPROTO_UDP ? 'U' :
-	   (net_context_get_ip_proto(context) == IPPROTO_TCP ? 'T' : ' '),
+	   net_context_get_proto(context) == IPPROTO_UDP ? 'U' :
+	   (net_context_get_proto(context) == IPPROTO_TCP ? 'T' : ' '),
 	   addr_local, addr_remote);
 
 	(*count)++;
