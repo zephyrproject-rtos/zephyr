@@ -61,6 +61,7 @@ if(CONFIG_BT_HCI_HOST)
       l2cap.c
       att.c
       gatt.c
+      gatt_server.c
       )
 
     if(CONFIG_BT_SMP)
