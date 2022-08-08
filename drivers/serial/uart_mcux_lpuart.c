@@ -883,6 +883,10 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 	struct mcux_lpuart_data *data = dev->data;
 	uint32_t clock_freq;
 
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
+
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;

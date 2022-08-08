@@ -201,6 +201,10 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 		return ret;
 	}
 
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
+
 	clock_control_on(config->clock_dev, config->clock_subsys);
 
 	uart_hal_set_sclk(&data->hal, UART_SCLK_APB);

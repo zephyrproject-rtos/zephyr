@@ -1563,6 +1563,12 @@ static int uart_stm32_init(const struct device *dev)
 	int err;
 
 	__uart_stm32_get_clock(dev);
+
+	if (!device_is_ready(data->clock)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* enable clock */
 	err = clock_control_on(data->clock, (clock_control_subsys_t)&config->pclken[0]);
 	if (err != 0) {

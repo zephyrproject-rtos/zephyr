@@ -75,6 +75,10 @@ static int serial_esp32_usb_init(const struct device *dev)
 	const struct serial_esp32_usb_config *config = dev->config;
 	struct serial_esp32_usb_data *data = dev->data;
 
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
+
 	int ret = clock_control_on(config->clock_dev, config->clock_subsys);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
