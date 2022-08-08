@@ -715,6 +715,12 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Set voltage regulator to comply with targeted system frequency */
 	set_regu_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
+	/* Set flash latency */
+	/* If freq increases, set flash latency before any clock setting */
+	if (old_hclk_freq < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
+		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	}
+
 	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
@@ -722,12 +728,6 @@ int stm32_clock_control_init(const struct device *dev)
 	r = set_up_plls();
 	if (r < 0) {
 		return r;
-	}
-
-	/* Set flash latency */
-	/* If freq increases, set flash latency before any clock setting */
-	if (old_hclk_freq < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
-		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 	}
 
 	/* Set peripheral busses prescalers */
