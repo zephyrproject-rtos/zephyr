@@ -8,9 +8,6 @@ config GPIO
 
 if DISPLAY
 
-config SPI
-	default y
-
 if KSCAN
 
 config I2C

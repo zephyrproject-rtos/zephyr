@@ -5,9 +5,6 @@ if SHIELD_BUYDISPLAY_3_5_TFT_TOUCH_ARDUINO
 
 if DISPLAY
 
-config SPI
-	default y
-
 if KSCAN
 
 config I2C
