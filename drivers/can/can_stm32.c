@@ -520,6 +520,10 @@ static int can_stm32_init(const struct device *dev)
 	}
 
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	if (!device_is_ready(clock)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
 
 	ret = clock_control_on(clock, (clock_control_subsys_t *) &cfg->pclken);
 	if (ret != 0) {

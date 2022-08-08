@@ -72,6 +72,7 @@ static int can_stm32fd_clock_enable(const struct device *dev)
 	int ret;
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_stm32fd_config *stm32fd_cfg = mcan_cfg->custom;
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	LL_RCC_SetFDCANClockSource(CAN_STM32FD_CLOCK_SOURCE);
 
@@ -82,8 +83,11 @@ static int can_stm32fd_clock_enable(const struct device *dev)
 	LL_RCC_PLL2_EnableDomain_SAI();
 #endif
 
-	ret = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			       (clock_control_subsys_t *)&stm32fd_cfg->pclken);
+	if (!device_is_ready(clk)) {
+		return -ENODEV;
+	}
+
+	ret = clock_control_on(clk, (clock_control_subsys_t *)&stm32fd_cfg->pclken);
 	if (ret < 0) {
 		return ret;
 	}
