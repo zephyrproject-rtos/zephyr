@@ -2894,10 +2894,12 @@ static int le_init_iso(void)
 	int err;
 	struct net_buf *rsp;
 
-	/* Set Isochronous Channels - Host support */
-	err = le_set_host_feature(BT_LE_FEAT_BIT_ISO_CHANNELS, 1);
-	if (err) {
-		return err;
+	if (IS_ENABLED(CONFIG_BT_ISO_UNICAST)) {
+		/* Set Connected Isochronous Streams - Host support */
+		err = le_set_host_feature(BT_LE_FEAT_BIT_ISO_CHANNELS, 1);
+		if (err) {
+			return err;
+		}
 	}
 
 	/* Octet 41, bit 5 is read buffer size V2 */
