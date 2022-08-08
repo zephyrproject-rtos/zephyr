@@ -475,6 +475,31 @@ def dt_node_int_prop(kconf, name, path, prop, unit=None):
         return hex(_node_int_prop(node, prop, unit))
 
 
+def dt_node_str_prop(kconf, _, path, prop):
+    """
+    This function takes a 'path' and property name ('prop') looks for an EDT
+    node at that path. If it finds an EDT node, it will look to see if that
+    node has a property 'prop' of type string and will return the value of
+    the property 'prop' as a string, if not it will return "".
+    """
+
+    if doc_mode or edt is None:
+        return ""
+
+    try:
+        node = edt.get_node(path)
+    except edtlib.EDTError:
+        return ""
+
+    if prop not in node.props:
+        return ""
+
+    if node.props[prop].type != "string":
+        return ""
+
+    return node.props[prop].val
+
+
 def dt_node_array_prop(kconf, name, path, prop, index, unit=None):
     """
     This function takes a 'path', property name ('prop') and index ('index')
@@ -667,6 +692,7 @@ functions = {
         "dt_node_int_prop_hex": (dt_node_int_prop, 2, 3),
         "dt_node_array_prop_int": (dt_node_array_prop, 3, 4),
         "dt_node_array_prop_hex": (dt_node_array_prop, 3, 4),
+        "dt_node_str_prop": (dt_node_str_prop, 2, 2),
         "dt_node_str_prop_equals": (dt_node_str_prop_equals, 3, 3),
         "dt_nodelabel_has_compat": (dt_nodelabel_has_compat, 2, 2),
         "dt_nodelabel_path": (dt_nodelabel_path, 1, 1),
