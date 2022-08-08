@@ -139,7 +139,10 @@ config TEST_ARM_CORTEX_M
 	help
 	  ARM Cortex-M configuration required when testing.
 
-	  Currently, this option is only utilized, to force routing
+	  This option is used to select stack sizes and enable features for
+	  testing.
+
+	  This option is also used to force routing
 	  BusFault, HardFault, and NMI exceptions to Secure State,
 	  when building a Secure ARMv8-M firmware. This will allow
 	  the testing suite to utilize these exceptions, in tests.
