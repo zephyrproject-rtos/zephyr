@@ -123,60 +123,53 @@ static void create_negative_test_thread(int choice)
 }
 
 /* TESTPOINT: Pass a null pointer into the API k_thread_start() */
-static void test_thread_start(void)
+ZTEST_USER(thread_error_case, test_thread_start)
 {
 	create_negative_test_thread(THREAD_START);
 }
 
 /* TESTPOINT: Pass a null pointer into the API k_float_disable() */
-static void test_float_disable(void)
+ZTEST_USER(thread_error_case, test_float_disable)
 {
 	create_negative_test_thread(FLOAT_DISABLE);
 }
 
 /* TESTPOINT: Pass a null pointer into the API */
-static void test_timeout_remaining_ticks(void)
+ZTEST_USER(thread_error_case, test_timeout_remaining_ticks)
 {
 	create_negative_test_thread(TIMEOUT_REMAINING_TICKS);
 }
 
 /* TESTPOINT: Pass a null pointer into the API */
-static void test_timeout_expires_ticks(void)
+ZTEST_USER(thread_error_case, test_timeout_expires_ticks)
 {
 	create_negative_test_thread(TIMEOUT_EXPIRES_TICKS);
 }
 
 /* TESTPOINT: Pass new thread with NULL into API */
-static void test_thread_create_uninit(void)
+ZTEST_USER(thread_error_case, test_thread_create_uninit)
 {
 	create_negative_test_thread(THREAD_CREATE_NEWTHREAD_NULL);
 }
 
 /* TESTPOINT: Pass a NULL stack into API */
-static void test_thread_create_stack_null(void)
+ZTEST_USER(thread_error_case, test_thread_create_stack_null)
 {
 	create_negative_test_thread(THREAD_CREATE_STACK_NULL);
 }
 
 /* TESTPOINT: Pass a overflow stack into API */
-static void test_thread_create_stack_overflow(void)
+ZTEST_USER(thread_error_case, test_thread_create_stack_overflow)
 {
 	create_negative_test_thread(THREAD_CTEATE_STACK_SIZE_OVERFLOW);
 }
 
 /*test case main entry*/
-void test_main(void)
+void *thread_grant_setup(void)
 {
 	k_thread_access_grant(k_current_get(), &tdata, &tstack, &test_tdata, &test_stack);
 
-	ztest_test_suite(thread_error_case,
-		 ztest_user_unit_test(test_float_disable),
-		 ztest_user_unit_test(test_timeout_remaining_ticks),
-		 ztest_user_unit_test(test_timeout_expires_ticks),
-		 ztest_user_unit_test(test_thread_create_uninit),
-		 ztest_user_unit_test(test_thread_create_stack_null),
-		 ztest_user_unit_test(test_thread_create_stack_overflow),
-		 ztest_user_unit_test(test_thread_start)
-		 );
-	ztest_run_test_suite(thread_error_case);
+	return NULL;
 }
+
+ZTEST_SUITE(thread_error_case, NULL, thread_grant_setup, NULL, NULL, NULL);
