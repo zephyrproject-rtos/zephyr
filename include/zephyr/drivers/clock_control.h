@@ -43,7 +43,6 @@ enum clock_control_status {
 	CLOCK_CONTROL_STATUS_STARTING,
 	CLOCK_CONTROL_STATUS_OFF,
 	CLOCK_CONTROL_STATUS_ON,
-	CLOCK_CONTROL_STATUS_UNAVAILABLE,
 	CLOCK_CONTROL_STATUS_UNKNOWN
 };
 
@@ -122,10 +121,6 @@ struct clock_control_driver_api {
 static inline int clock_control_on(const struct device *dev,
 				   clock_control_subsys_t sys)
 {
-	if (!device_is_ready(dev)) {
-		return -ENODEV;
-	}
-
 	const struct clock_control_driver_api *api =
 		(const struct clock_control_driver_api *)dev->api;
 
@@ -145,10 +140,6 @@ static inline int clock_control_on(const struct device *dev,
 static inline int clock_control_off(const struct device *dev,
 				    clock_control_subsys_t sys)
 {
-	if (!device_is_ready(dev)) {
-		return -ENODEV;
-	}
-
 	const struct clock_control_driver_api *api =
 		(const struct clock_control_driver_api *)dev->api;
 
@@ -184,10 +175,6 @@ static inline int clock_control_async_on(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	if (!device_is_ready(dev)) {
-		return -ENODEV;
-	}
-
 	return api->async_on(dev, sys, cb, user_data);
 }
 
@@ -209,10 +196,6 @@ static inline enum clock_control_status clock_control_get_status(const struct de
 		return CLOCK_CONTROL_STATUS_UNKNOWN;
 	}
 
-	if (!device_is_ready(dev)) {
-		return CLOCK_CONTROL_STATUS_UNAVAILABLE;
-	}
-
 	return api->get_status(dev, sys);
 }
 
@@ -232,10 +215,6 @@ static inline int clock_control_get_rate(const struct device *dev,
 					 clock_control_subsys_t sys,
 					 uint32_t *rate)
 {
-	if (!device_is_ready(dev)) {
-		return -ENODEV;
-	}
-
 	const struct clock_control_driver_api *api =
 		(const struct clock_control_driver_api *)dev->api;
 
@@ -266,10 +245,6 @@ static inline int clock_control_set_rate(const struct device *dev,
 		clock_control_subsys_t sys,
 		clock_control_subsys_rate_t rate)
 {
-	if (!device_is_ready(dev)) {
-		return -ENODEV;
-	}
-
 	const struct clock_control_driver_api *api =
 		(const struct clock_control_driver_api *)dev->api;
 
@@ -306,10 +281,6 @@ static inline int clock_control_configure(const struct device *dev,
 					  clock_control_subsys_t sys,
 					  void *data)
 {
-	if (!device_is_ready(dev)) {
-		return -ENODEV;
-	}
-
 	const struct clock_control_driver_api *api =
 		(const struct clock_control_driver_api *)dev->api;
 
