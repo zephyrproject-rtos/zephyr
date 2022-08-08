@@ -227,6 +227,10 @@ static int mcux_iuart_init(const struct device *dev)
 	uint32_t clock_freq;
 	int err;
 
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
+
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;

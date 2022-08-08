@@ -377,7 +377,7 @@ static int uart_ns16550_configure(const struct device *dev,
 	if (dev_cfg->sys_clk_freq != 0U) {
 		pclk = dev_cfg->sys_clk_freq;
 	} else {
-		if (dev_cfg->clock_dev == NULL) {
+		if (!device_is_ready(dev_cfg->clock_dev)) {
 			ret = -EINVAL;
 			goto out;
 		}
