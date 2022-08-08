@@ -84,4 +84,10 @@ config ADSP_NEED_POWER_ON_CACHE
 	help
 	  Need to power cache SRAM banks on.
 
+config ADSP_INIT_HPSRAM
+	bool
+	default y
+	help
+	  Need to init HP SRAM.
+
 endif # SOC_FAMILY_INTEL_ADSP
