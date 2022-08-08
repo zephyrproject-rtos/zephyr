@@ -46,6 +46,11 @@ static int mcux_mcan_init(const struct device *dev)
 	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
 	int err;
 
+	if (!device_is_ready(mcux_config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 #ifdef CONFIG_PINCTRL
 	err = pinctrl_apply_state(mcux_config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
