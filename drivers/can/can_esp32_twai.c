@@ -67,13 +67,22 @@ static int can_esp32_twai_init(const struct device *dev)
 	const struct can_esp32_twai_config *twai_config = sja1000_config->custom;
 	int err;
 
+	if (!device_is_ready(twai_config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	err = pinctrl_apply_state(twai_config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err != 0) {
 		LOG_ERR("failed to configure TWAI pins (err %d)", err);
 		return err;
 	}
 
-	clock_control_on(twai_config->clock_dev, twai_config->clock_subsys);
+	err = clock_control_on(twai_config->clock_dev, twai_config->clock_subsys);
+	if (err != 0) {
+		LOG_ERR("failed to enable CAN clock (err %d)", err);
+		return err;
+	}
 
 	err = can_sja1000_init(dev);
 	if (err != 0) {
