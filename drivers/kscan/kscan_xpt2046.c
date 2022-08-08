@@ -19,18 +19,20 @@ LOG_MODULE_REGISTER(xpt2046, CONFIG_KSCAN_LOG_LEVEL);
 #define CMD_READ_Z1 0xB0
 #define CMD_READ_Z2 0xC0
 
-/* Contact offset */
-#define X_MIN CONFIG_KSCAN_XPT2046_OFFSET_X_MIN /* default: 250 */
-#define X_MAX CONFIG_KSCAN_XPT2046_OFFSET_X_MAX /* default: 3700 */
-#define Y_MIN CONFIG_KSCAN_XPT2046_OFFSET_Y_MIN /* default: 430 */
-#define Y_MAX CONFIG_KSCAN_XPT2046_OFFSET_Y_MAX /* default: 3850 */
-
 /** XPT2046 configuration (DT). */
 struct xpt2046_config {
 	/** SPI bus. */
 	struct spi_dt_spec spi;
 	/** Interrupt GPIO information. */
 	struct gpio_dt_spec int_gpio;
+	/* Touch screen Size (in pixels). */
+	uint16_t x_size;
+	uint16_t y_size;
+	/* Touch screen measurement value. */
+	uint16_t x_min;
+	uint16_t x_max;
+	uint16_t y_min;
+	uint16_t y_max;
 };
 
 /** XPT2046 data. */
@@ -79,11 +81,11 @@ static int xpt2046_process(const struct device *dev)
 		point_y = (((uint16_t)rx_data[3] << 8U) | rx_data[4]) >> 3;
 
 		/* Organizing Coordinate Data */
-		point_x -= (point_x > X_MIN) ? X_MIN : 0;
-		point_y -= (point_y > Y_MIN) ? Y_MIN : 0;
+		point_x -= (point_x > config->x_min) ? config->x_min : 0;
+		point_y -= (point_y > config->y_min) ? config->y_min : 0;
 
-		point_x = point_x * 240 / (X_MAX - X_MIN);
-		point_y = point_y * 320 / (Y_MAX - Y_MIN);
+		point_x = point_x * config->x_size / (config->x_max - config->x_min);
+		point_y = point_y * config->y_size / (config->y_max - config->y_min);
 
 		pressed = true;
 	}
@@ -182,7 +184,13 @@ static const struct kscan_driver_api xpt2046_driver_api = {
 #define XPT2046_INIT(index)                                                                        \
 	static const struct xpt2046_config xpt2046_config_##index = {                              \
 		.spi = SPI_DT_SPEC_INST_GET(index, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),       \
-		.int_gpio = GPIO_DT_SPEC_INST_GET(index, trigger_gpios),                           \
+		.int_gpio = GPIO_DT_SPEC_INST_GET(index, pendown_gpios),                           \
+		.x_size = DT_INST_PROP(index, touchscreen_size_x),                                 \
+		.y_size = DT_INST_PROP(index, touchscreen_size_y),                                 \
+		.x_min = DT_INST_PROP(index, x_min),                                               \
+		.x_max = DT_INST_PROP(index, x_max),                                               \
+		.y_min = DT_INST_PROP(index, y_min),                                               \
+		.y_max = DT_INST_PROP(index, y_max),                                               \
 	};                                                                                         \
 	static struct xpt2046_data xpt2046_data_##index;                                           \
 	DEVICE_DT_INST_DEFINE(index, xpt2046_init, NULL, &xpt2046_data_##index,                    \

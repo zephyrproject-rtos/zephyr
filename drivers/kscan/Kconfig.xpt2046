@@ -16,28 +16,4 @@ config KSCAN_XPT2046_PERIOD
 	help
 	  Sample period in milliseconds when in polling mode.
 
-config KSCAN_XPT2046_OFFSET_X_MIN
-	int "KSCAN horizontal offset of min"
-	default 250
-	help
-	  The minimum value of the horizontal touch point of the screen.
-
-config KSCAN_XPT2046_OFFSET_X_MAX
-	int "KSCAN horizontal offset of max"
-	default 3700
-	help
-	  The maximum value of the horizontal touch point of the screen.
-
-config KSCAN_XPT2046_OFFSET_Y_MIN
-	int "KSCAN vertical offset of min"
-	default 430
-	help
-	  The minimum value of the Vertical touch point of the screen.
-
-config KSCAN_XPT2046_OFFSET_Y_MAX
-	int "KSCAN vertical offset of max"
-	default 3850
-	help
-	  The maximum value of the Vertical touch point of the screen.
-
 endif # KSCAN_XPT2046

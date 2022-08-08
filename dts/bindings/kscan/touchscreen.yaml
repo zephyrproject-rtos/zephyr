@@ -1,0 +1,73 @@
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+    touchscreen-min-x:
+      type: int
+      required: false
+      description: minimum x coordinate reported
+
+    touchscreen-min-y:
+      type: int
+      required: false
+      description: minimum y coordinate reported
+      
+    touchscreen-size-x:
+      type: int
+      required: false
+      description: horizontal resolution of touchscreen(in pixels)
+
+    touchscreen-size-y:
+      type: int
+      required: false
+      description: vertical resolution of touchscreen(in pixels)
+
+    touchscreen-max-pressure:
+      type: int
+      required: false
+      description: maximum reported pressure (arbitrary range
+                  dependent on the controller)
+
+    touchscreen-min-pressure:
+      type: int
+      required: false
+      description: minimum pressure on the touchscreen to be achieved
+                  in order for the touchscreen driver to report a touch event.
+      
+    touchscreen-fuzz-x:
+      type: int
+      required: false
+      description: horizontal noise value of the absolute input device (in pixels)
+
+    touchscreen-fuzz-y:
+      type: int
+      required: false
+      description: vertical noise value of the absolute input device (in pixels)
+
+    touchscreen-fuzz-pressure:
+      type: int
+      required: false
+      description: pressure noise value of the absolute input device (arbitrary
+        range dependent on the controller)
+
+    touchscreen-average-samples:
+      type: int
+      required: false
+      description: Number of data samples which are averaged
+                  for each read (valid values dependent on the
+                  controller)
+
+    touchscreen-inverted-x:
+      type: boolean
+      required: false
+      description: X axis is inverted
+
+    touchscreen-inverted-y:
+      type: boolean
+      required: false
+      description: Y axis is inverted
+
+    touchscreen-swapped-x-y:
+      type: boolean
+      required: false
+      description: X and Y axis are swapped Swapping is 
+                  done after inverting the axis
