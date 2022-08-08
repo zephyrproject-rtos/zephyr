@@ -515,6 +515,10 @@ static int xec_ecia_init(const struct device *dev)
 	uint32_t n = 0, nr = 0;
 	int ret;
 
+	if (!device_is_ready(clk_dev)) {
+		return -ENODEV;
+	}
+
 	ret = clock_control_on(clk_dev,
 			       (clock_control_subsys_t *)&cfg->clk_ctrl);
 	if (ret < 0) {
