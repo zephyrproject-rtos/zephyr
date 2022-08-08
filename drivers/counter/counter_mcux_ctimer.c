@@ -250,8 +250,12 @@ static int mcux_lpc_ctimer_init(const struct device *dev)
 {
 	const struct mcux_lpc_ctimer_config *config = dev->config;
 	struct mcux_lpc_ctimer_data *data = dev->data;
-
 	ctimer_config_t ctimer_config;
+
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
 
 	for (uint8_t chan = 0; chan < NUM_CHANNELS; chan++) {
 		data->channels[chan].alarm_callback = NULL;
