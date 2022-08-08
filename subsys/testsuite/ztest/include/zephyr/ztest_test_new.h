@@ -27,6 +27,73 @@
 extern "C" {
 #endif
 
+/**
+ * @brief The expected result of a test.
+ *
+ * @see ZTEST_EXPECT_FAIL
+ * @see ZTEST_EXPECT_SKIP
+ */
+enum ztest_expected_result {
+	ZTEST_EXPECTED_RESULT_FAIL = 0, /**< Expect a test to fail */
+	ZTEST_EXPECTED_RESULT_SKIP,	/**< Expect a test to pass */
+};
+
+/**
+ * @brief A single expectation entry allowing tests to fail/skip and be considered passing.
+ *
+ * @see ZTEST_EXPECT_FAIL
+ * @see ZTEST_EXPECT_SKIP
+ */
+struct ztest_expected_result_entry {
+	const char *test_suite_name; /**< The test suite's name for the expectation */
+	const char *test_name;	     /**< The test's name for the expectation */
+	enum ztest_expected_result expected_result; /**< The expectation */
+};
+
+extern struct ztest_expected_result_entry _ztest_expected_result_entry_list_start[];
+extern struct ztest_expected_result_entry _ztest_expected_result_entry_list_end[];
+
+#define __ZTEST_EXPECT(_suite_name, _test_name, expectation)                                       \
+	static const STRUCT_SECTION_ITERABLE(                                                      \
+		ztest_expected_result_entry,                                                       \
+		UTIL_CAT(UTIL_CAT(z_ztest_expected_result_, _suite_name), _test_name)) = {         \
+			.test_suite_name = STRINGIFY(_suite_name),                                 \
+			.test_name = STRINGIFY(_test_name),                                        \
+			.expected_result = expectation,                                            \
+	}
+
+/**
+ * @brief Expect a test to fail (mark it passing if it failed)
+ *
+ * Adding this macro to your logic will allow the failing test to be considered passing, example:
+ *
+ *     ZTEST_EXPECT_FAIL(my_suite, test_x);
+ *     ZTEST(my_suite, text_x) {
+ *       zassert_true(false, NULL);
+ *     }
+ *
+ * @param _suite_name The name of the suite
+ * @param _test_name The name of the test
+ */
+#define ZTEST_EXPECT_FAIL(_suite_name, _test_name)                                                 \
+	__ZTEST_EXPECT(_suite_name, _test_name, ZTEST_EXPECTED_RESULT_FAIL)
+
+/**
+ * @brief Expect a test to skip (mark it passing if it failed)
+ *
+ * Adding this macro to your logic will allow the failing test to be considered passing, example:
+ *
+ *     ZTEST_EXPECT_SKIP(my_suite, test_x);
+ *     ZTEST(my_suite, text_x) {
+ *       zassume_true(false, NULL);
+ *     }
+ *
+ * @param _suite_name The name of the suite
+ * @param _test_name The name of the test
+ */
+#define ZTEST_EXPECT_SKIP(_suite_name, _test_name)                                                 \
+	__ZTEST_EXPECT(_suite_name, _test_name, ZTEST_EXPECTED_RESULT_SKIP)
+
 struct ztest_unit_test {
 	const char *test_suite_name;
 	const char *name;
