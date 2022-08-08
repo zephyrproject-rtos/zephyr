@@ -25,10 +25,6 @@ config NUM_IRQS
 config CC13X2_CC26X2_RTC_TIMER
 	default y
 
-config ENTROPY_CC13XX_CC26XX_RNG
-	default y
-	depends on ENTROPY_GENERATOR
-
 if IEEE802154
 
 config IEEE802154_CC13XX_CC26XX

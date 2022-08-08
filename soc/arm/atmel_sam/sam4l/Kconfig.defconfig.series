@@ -37,10 +37,6 @@ config NUM_IRQS
 # device driver the default configuration will be placed in the board defconfig
 # file.
 
-config ENTROPY_SAM_RNG
-	default y
-	depends on ENTROPY_GENERATOR
-
 config USART_SAM
 	default y
 	depends on SERIAL
