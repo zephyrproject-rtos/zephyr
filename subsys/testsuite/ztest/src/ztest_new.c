@@ -211,8 +211,41 @@ enum ztest_result {
 	ZTEST_RESULT_FAIL,
 	ZTEST_RESULT_SKIP,
 	ZTEST_RESULT_SUITE_SKIP,
+	ZTEST_RESULT_SUITE_FAIL,
 };
 COND_CODE_1(KERNEL, (ZTEST_BMEM), ()) static enum ztest_result test_result;
+
+static int get_final_test_result(const struct ztest_unit_test *test, int ret)
+{
+	enum ztest_expected_result expected_result = -1;
+
+	for (struct ztest_expected_result_entry *expectation =
+		     _ztest_expected_result_entry_list_start;
+	     expectation < _ztest_expected_result_entry_list_end; ++expectation) {
+		if (strcmp(expectation->test_name, test->name) == 0 &&
+		    strcmp(expectation->test_suite_name, test->test_suite_name) == 0) {
+			expected_result = expectation->expected_result;
+			break;
+		}
+	}
+
+	if (expected_result == ZTEST_EXPECTED_RESULT_FAIL) {
+		/* Expected a failure:
+		 * - If we got a failure, return TC_PASS
+		 * - Otherwise force a failure
+		 */
+		return (ret == TC_FAIL) ? TC_PASS : TC_FAIL;
+	}
+	if (expected_result == ZTEST_EXPECTED_RESULT_SKIP) {
+		/* Expected a skip:
+		 * - If we got a skip, return TC_PASS
+		 * - Otherwise force a failure
+		 */
+		return (ret == TC_SKIP) ? TC_PASS : TC_FAIL;
+	}
+	/* No expectation was made, no change is needed. */
+	return ret;
+}
 
 #ifndef KERNEL
 
@@ -233,6 +266,7 @@ static jmp_buf test_fail;
 static jmp_buf test_pass;
 static jmp_buf test_skip;
 static jmp_buf stack_fail;
+static jmp_buf test_suite_fail;
 
 /**
  * @brief Get a friendly name string for a given test phrase.
@@ -264,6 +298,8 @@ void ztest_test_fail(void)
 {
 	switch (phase) {
 	case TEST_PHASE_SETUP:
+		PRINT(" at %s function\n", get_friendly_phase_name(phase));
+		longjmp(test_suite_fail, 1);
 	case TEST_PHASE_BEFORE:
 	case TEST_PHASE_TEST:
 	case TEST_PHASE_AFTER:
@@ -294,6 +330,11 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 
 	TC_START(test->name);
 
+	if (test_result == ZTEST_RESULT_SUITE_FAIL) {
+		ret = TC_FAIL;
+		goto out;
+	}
+
 	if (setjmp(test_fail)) {
 		ret = TC_FAIL;
 		goto out;
@@ -316,10 +357,14 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 	run_test_functions(suite, test, data);
 out:
 	ret |= cleanup_test(test);
-	if (suite->after != NULL) {
-		suite->after(data);
+	if (test_result != ZTEST_RESULT_SUITE_FAIL) {
+		if (suite->after != NULL) {
+			suite->after(data);
+		}
+		run_test_rules(/*is_before=*/false, test, data);
 	}
-	run_test_rules(/*is_before=*/false, test, data);
+
+	ret = get_final_test_result(test, ret);
 	Z_TC_END_RESULT(ret, test->name);
 
 	return ret;
@@ -348,8 +393,10 @@ static void test_finalize(void)
 
 void ztest_test_fail(void)
 {
-	test_result = ZTEST_RESULT_FAIL;
-	test_finalize();
+	test_result = (phase == TEST_PHASE_SETUP) ? ZTEST_RESULT_SUITE_FAIL : ZTEST_RESULT_FAIL;
+	if (phase != TEST_PHASE_SETUP) {
+		test_finalize();
+	}
 }
 
 void ztest_test_pass(void)
@@ -360,9 +407,8 @@ void ztest_test_pass(void)
 
 void ztest_test_skip(void)
 {
-	test_result = ZTEST_RESULT_SUITE_SKIP;
+	test_result = (phase == TEST_PHASE_SETUP) ? ZTEST_RESULT_SUITE_SKIP : ZTEST_RESULT_SKIP;
 	if (phase != TEST_PHASE_SETUP) {
-		test_result = ZTEST_RESULT_SKIP;
 		test_finalize();
 	}
 }
@@ -379,7 +425,10 @@ void ztest_simple_1cpu_after(void *data)
 	z_test_1cpu_stop();
 }
 
-static void init_testing(void) { k_object_access_all_grant(&ztest_thread); }
+static void init_testing(void)
+{
+	k_object_access_all_grant(&ztest_thread);
+}
 
 static void test_cb(void *a, void *b, void *c)
 {
@@ -418,11 +467,13 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 			k_thread_name_set(&ztest_thread, test->name);
 		}
 		/* Only start the thread if we're not skipping the suite */
-		if (test_result != ZTEST_RESULT_SUITE_SKIP) {
+		if (test_result != ZTEST_RESULT_SUITE_SKIP &&
+		    test_result != ZTEST_RESULT_SUITE_FAIL) {
 			k_thread_start(&ztest_thread);
 			k_thread_join(&ztest_thread, K_FOREVER);
 		}
-	} else if (test_result != ZTEST_RESULT_SUITE_SKIP) {
+	} else if (test_result != ZTEST_RESULT_SUITE_SKIP &&
+		   test_result != ZTEST_RESULT_SUITE_FAIL) {
 		test_result = ZTEST_RESULT_PENDING;
 		run_test_rules(/*is_before=*/true, test, data);
 		if (suite->before) {
@@ -444,19 +495,18 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 		k_msleep(100);
 	}
 
-	if (test_result == ZTEST_RESULT_FAIL) {
+	if (test_result == ZTEST_RESULT_FAIL || test_result == ZTEST_RESULT_SUITE_FAIL) {
 		ret = TC_FAIL;
+	} else if (test_result == ZTEST_RESULT_SKIP || test_result == ZTEST_RESULT_SUITE_SKIP) {
+		ret = TC_SKIP;
 	}
 
 	if (test_result == ZTEST_RESULT_PASS || !FAIL_FAST) {
 		ret |= cleanup_test(test);
 	}
 
-	if (test_result == ZTEST_RESULT_SKIP || test_result == ZTEST_RESULT_SUITE_SKIP) {
-		Z_TC_END_RESULT(TC_SKIP, test->name);
-	} else {
-		Z_TC_END_RESULT(ret, test->name);
-	}
+	ret = get_final_test_result(test, ret);
+	Z_TC_END_RESULT(ret, test->name);
 
 	return ret;
 }
@@ -526,7 +576,12 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 	TC_SUITE_START(suite->name);
 	test_result = ZTEST_RESULT_PENDING;
 	phase = TEST_PHASE_SETUP;
-	if (suite->setup != NULL) {
+#ifndef KERNEL
+	if (setjmp(test_suite_fail)) {
+		test_result = ZTEST_RESULT_SUITE_FAIL;
+	}
+#endif
+	if (test_result != ZTEST_RESULT_SUITE_FAIL && suite->setup != NULL) {
 		data = suite->setup();
 	}
 
