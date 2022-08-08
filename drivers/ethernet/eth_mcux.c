@@ -242,7 +242,7 @@ static int eth_mcux_device_pm_action(const struct device *dev,
 	struct eth_context *eth_ctx = dev->data;
 	int ret = 0;
 
-	if (!eth_ctx->clock_dev) {
+	if (!device_is_ready(eth_ctx->clock_dev)) {
 		LOG_ERR("No CLOCK dev");
 
 		ret = -EIO;
