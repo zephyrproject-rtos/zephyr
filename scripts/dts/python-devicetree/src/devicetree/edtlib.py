@@ -2964,7 +2964,7 @@ _BindingLoader.add_constructor(
 #
 # Zephyr: do not change the _DEFAULT_PROP_TYPES keys without
 # updating the documentation for the DT_PROP() macro in
-# include/devicetree.h.
+# include/zephyr/devicetree.h.
 #
 
 _DEFAULT_PROP_TYPES = {
@@ -2973,6 +2973,7 @@ _DEFAULT_PROP_TYPES = {
     "reg": "array",
     "reg-names": "string-array",
     "label": "string",
+    "model": "string",
     "interrupts": "array",
     "interrupts-extended": "compound",
     "interrupt-names": "string-array",

@@ -545,7 +545,7 @@
  * A property's type is usually defined by its binding. In some
  * special cases, it has an assumed type defined by the devicetree
  * specification even when no binding is available: "compatible" has
- * type string-array, "status" and "label" have type string, and
+ * type string-array, "status", "model", and "label" have type string, and
  * "interrupt-controller" has type boolean.
  *
  * For other properties or properties with unknown type due to a

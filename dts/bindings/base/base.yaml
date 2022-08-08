@@ -59,6 +59,11 @@ properties:
         deprecated: true
         description: Human readable string describing the device (used as device_get_binding() argument)
 
+    model:
+        type: string
+        required: false
+        description: specifies the manufacturer’s model number of the device
+
     clocks:
         type: phandle-array
         required: false
