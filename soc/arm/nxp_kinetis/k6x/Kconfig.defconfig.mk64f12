@@ -22,10 +22,6 @@ config ETH_MCUX
 	default y
 	depends on NET_L2_ETHERNET
 
-config ENTROPY_MCUX_RNGA
-	default y
-	depends on ENTROPY_GENERATOR
-
 config USB_KINETIS
 	default y
 	depends on USB_DEVICE_DRIVER
