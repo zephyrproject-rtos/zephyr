@@ -164,6 +164,11 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		return 0;
 	}
 
+	if (!device_is_ready(cfg->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* enables SPI peripheral */
 	if (clock_control_on(cfg->clock_dev, cfg->clock_subsys)) {
 		LOG_ERR("Could not enable SPI clock");
