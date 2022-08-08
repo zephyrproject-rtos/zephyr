@@ -57,4 +57,7 @@ config KERNEL_VM_SIZE
 
 endif
 
+config ADSP_NEED_POWER_ON_CACHE
+	default y
+
 endif # SOC_INTEL_CAVS_V25
