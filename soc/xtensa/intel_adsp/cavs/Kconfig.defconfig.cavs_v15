@@ -46,4 +46,7 @@ config DAI_INTEL_SSP_NUM_EXT
 
 endif # DAI_INTEL_SSP
 
+config ADSP_INIT_HPSRAM
+	default n
+
 endif
