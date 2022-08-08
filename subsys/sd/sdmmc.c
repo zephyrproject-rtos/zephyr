@@ -998,6 +998,11 @@ int sdmmc_card_init(struct sd_card *card)
 			ocr_arg |= SD_OCR_VDD29_30FLAG;
 		}
 		ocr_arg |= (SD_OCR_VDD32_33FLAG | SD_OCR_VDD33_34FLAG);
+		/* Momentary delay before initialization OCR. Some cards will
+		 * never leave busy state if init OCR is sent too soon after
+		 * probing OCR
+		 */
+		k_busy_wait(100);
 		/* Send SD OCR to card to initialize it */
 		ret = sdmmc_send_ocr(card, ocr_arg);
 	} else {
