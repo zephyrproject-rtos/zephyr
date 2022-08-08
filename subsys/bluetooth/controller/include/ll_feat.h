@@ -243,9 +243,6 @@
 /* Mask to filter away octet 0 for feature exchange */
 #define LL_FEAT_FILTER_OCTET0    (LL_FEAT_BIT_MASK & ~0xFFULL)
 
-/* Mask for host controlled features */
-#define LL_FEAT_HOST_BIT_MASK    0x4100000000ULL
-
 /* Feature bits of this controller */
 #define LL_FEAT                  (LL_FEAT_BIT_ENC | \
 				  LL_FEAT_BIT_CONN_PARAM_REQ | \
@@ -276,3 +273,17 @@
 				  LL_FEAT_BIT_ISO_BROADCASTER | \
 				  LL_FEAT_BIT_SYNC_RECEIVER | \
 				  LL_FEAT_BIT_PERIODIC_ADI_SUPPORT)
+
+/* Connected Isochronous Stream (Host Support) bit is controlled by host */
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+#define LL_FEAT_HOST_BITS_ISO_CHANNELS BIT64(BT_LE_FEAT_BIT_ISO_CHANNELS)
+#else /* !CONFIG_BT_CTLR_CONN_ISO */
+#define LL_FEAT_HOST_BITS_ISO_CHANNELS 0U
+#endif /* !CONFIG_BT_CTLR_CONN_ISO */
+
+/* Connection subrating not supported and bit thus cannot be set by host */
+#define LL_FEAT_HOST_BITS_CONN_SUBRATING 0U
+
+/* Mask for host controlled features */
+#define LL_FEAT_HOST_BIT_MASK  (LL_FEAT_HOST_BITS_ISO_CHANNELS |\
+				LL_FEAT_HOST_BITS_CONN_SUBRATING)
