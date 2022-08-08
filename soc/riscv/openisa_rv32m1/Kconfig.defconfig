@@ -132,8 +132,4 @@ config FLASH_BASE_ADDRESS
 
 endif # FLASH
 
-config ENTROPY_RV32M1_TRNG
-	default y
-	depends on ENTROPY_GENERATOR
-
 endif # SOC_OPENISA_RV32M1_RISCV32

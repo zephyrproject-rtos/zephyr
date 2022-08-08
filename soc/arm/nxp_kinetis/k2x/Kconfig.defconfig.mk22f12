@@ -11,10 +11,6 @@ config SOC
 config GPIO
 	default y
 
-config ENTROPY_MCUX_RNGA
-	default y
-	depends on ENTROPY_GENERATOR
-
 config USB_KINETIS
 	default y
 	depends on USB_DEVICE_DRIVER

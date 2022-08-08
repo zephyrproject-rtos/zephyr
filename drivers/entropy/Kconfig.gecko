@@ -18,7 +18,6 @@ config ENTROPY_GECKO_SE
 	default y
 	depends on DT_HAS_SILABS_GECKO_SEMAILBOX_ENABLED
 	select ENTROPY_HAS_DRIVER
-	default y
 	help
 	  This option enables the true random number generator
 	  driver based on the Secure Element (SE) module.
