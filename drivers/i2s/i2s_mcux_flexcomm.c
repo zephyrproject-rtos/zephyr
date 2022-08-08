@@ -221,6 +221,11 @@ static int i2s_mcux_configure(const struct device *dev, enum i2s_dir dir,
 		return -ENOTSUP;
 	}
 
+	if (!device_is_ready(cfg->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* Figure out function base clock */
 	if (clock_control_get_rate(cfg->clock_dev,
 				   cfg->clock_subsys, &base_frequency)) {
