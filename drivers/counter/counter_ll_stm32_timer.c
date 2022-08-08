@@ -354,6 +354,10 @@ static int counter_stm32_get_tim_clk(const struct stm32_pclken *pclken, uint32_t
 
 	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
+	if (!device_is_ready(clk)) {
+		return -ENODEV;
+	}
+
 	r = clock_control_get_rate(clk, (clock_control_subsys_t *)pclken,
 				   &bus_clk);
 	if (r < 0) {

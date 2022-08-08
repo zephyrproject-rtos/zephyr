@@ -267,6 +267,11 @@ static int mcux_qtmr_init(const struct device *dev)
 		data->freq = config->info.freq;
 	} else {
 		/* bus clock with divider */
+		if (!device_is_ready(config->clock_dev)) {
+			LOG_ERR("clock control device not ready");
+			return -ENODEV;
+		}
+
 		if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 					&data->freq)) {
 			return -EINVAL;
