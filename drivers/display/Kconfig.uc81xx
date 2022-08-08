@@ -5,6 +5,8 @@
 
 config UC81XX
 	bool "UltraChip UC81xx compatible display controller driver"
-	depends on SPI
+	default y
+	depends on DT_HAS_ULTRACHIP_UC8176_ENABLED || DT_HAS_ULTRACHIP_UC8179_ENABLED
+	select SPI
 	help
 	  Enable driver for UC81xx compatible controller.

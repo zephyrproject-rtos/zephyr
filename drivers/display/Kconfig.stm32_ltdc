@@ -3,11 +3,10 @@
 # Copyright (c) 2022 Byte-Lab d.o.o. <dev@byte-lab.com>
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_STM32_LTDC := st,stm32-ltdc
-
 menuconfig STM32_LTDC
 	bool "STM32 LCD-TFT display controller driver"
-	default $(dt_compat_enabled,$(DT_COMPAT_STM32_LTDC))
+	default y
+	depends on DT_HAS_ST_STM32_LTDC_ENABLED
 	select USE_STM32_HAL_LTDC
 	help
 	  Enable driver for STM32 LCT-TFT display controller periheral.
