@@ -154,6 +154,10 @@ static int rv32m1_intmux_init(const struct device *dev)
 	INTMUX_Type *regs = DEV_REGS(dev);
 	size_t i;
 
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
+
 	/* Enable INTMUX clock. */
 	clock_control_on(config->clock_dev, config->clock_subsys);
 
