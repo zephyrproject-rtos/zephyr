@@ -14,7 +14,7 @@ config DISK_DRIVER_SDMMC
 	default y if DISK_ACCESS
 
 config SPI
-	default y if DISPLAY || DISK_DRIVER_SDMMC
+	default y if DISK_DRIVER_SDMMC
 
 if BT
 

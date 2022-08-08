@@ -54,10 +54,6 @@ config UART_CONSOLE
 
 endif # CONSOLE
 
-config SDL_DISPLAY
-	default y
-	depends on DISPLAY
-
 config KSCAN_SDL
 	default y
 	depends on KSCAN
