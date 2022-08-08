@@ -33,6 +33,13 @@ endchoice
 
 endif #FLASH
 
+if KSCAN
+
+config KSCAN_GT911_INTERRUPT
+	default y
+
+endif # KSCAN
+
 if NETWORKING
 
 config NET_L2_ETHERNET
