@@ -12,7 +12,8 @@
 CREATE_FLAG(flag_is_connected);
 CREATE_FLAG(flag_is_encrypted);
 CREATE_FLAG(flag_discover_complete);
-CREATE_FLAG(flag_subscribed);
+CREATE_FLAG(flag_short_subscribed);
+CREATE_FLAG(flag_long_subscribed);
 
 static struct bt_conn *g_conn;
 static uint16_t chrc_handle;
@@ -148,7 +149,7 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void gatt_discover(void)
+static void gatt_discover(enum bt_att_chan_opt opt)
 {
 	static struct bt_gatt_discover_params discover_params;
 	int err;
@@ -160,7 +161,7 @@ static void gatt_discover(void)
 	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
-	discover_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
+	discover_params.chan_opt = opt;
 
 	err = bt_gatt_discover(g_conn, &discover_params);
 	if (err != 0) {
@@ -171,13 +172,14 @@ static void gatt_discover(void)
 	printk("Discover complete\n");
 }
 
-static void test_subscribed(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+static void test_short_subscribed(struct bt_conn *conn, uint8_t err,
+				  struct bt_gatt_write_params *params)
 {
 	if (err) {
 		FAIL("Subscribe failed (err %d)\n", err);
 	}
 
-	SET_FLAG(flag_subscribed);
+	SET_FLAG(flag_short_subscribed);
 
 	if (!params) {
 		printk("params NULL\n");
@@ -186,7 +188,26 @@ static void test_subscribed(struct bt_conn *conn, uint8_t err, struct bt_gatt_wr
 
 	if (params->handle == chrc_handle) {
 		printk("Subscribed to short characteristic\n");
-	} else if (params->handle == long_chrc_handle) {
+	} else {
+		FAIL("Unknown handle %d\n", params->handle);
+	}
+}
+
+static void test_long_subscribed(struct bt_conn *conn, uint8_t err,
+				 struct bt_gatt_write_params *params)
+{
+	if (err) {
+		FAIL("Subscribe failed (err %d)\n", err);
+	}
+
+	SET_FLAG(flag_long_subscribed);
+
+	if (!params) {
+		printk("params NULL\n");
+		return;
+	}
+
+	if (params->handle == long_chrc_handle) {
 		printk("Subscribed to long characteristic\n");
 	} else {
 		FAIL("Unknown handle %d\n", params->handle);
@@ -205,83 +226,81 @@ uint8_t test_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *param
 static struct bt_gatt_discover_params disc_params_short;
 static struct bt_gatt_subscribe_params sub_params_short = {
 	.notify = test_notify,
-	.write = test_subscribed,
+	.write = test_short_subscribed,
 	.ccc_handle = 0, /* Auto-discover CCC*/
 	.disc_params = &disc_params_short, /* Auto-discover CCC */
 	.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
 	.value = BT_GATT_CCC_NOTIFY,
-	.chan_opt = BT_ATT_CHAN_OPT_NONE,
 };
 static struct bt_gatt_discover_params disc_params_long;
 static struct bt_gatt_subscribe_params sub_params_long = {
 	.notify = test_notify,
-	.write = test_subscribed,
+	.write = test_long_subscribed,
 	.ccc_handle = 0, /* Auto-discover CCC*/
 	.disc_params = &disc_params_long, /* Auto-discover CCC */
 	.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
 	.value = BT_GATT_CCC_NOTIFY,
-	.chan_opt = BT_ATT_CHAN_OPT_NONE,
 };
 
-static void gatt_subscribe_short(void)
+static void gatt_subscribe_short(enum bt_att_chan_opt opt)
 {
 	int err;
 
 	sub_params_short.value_handle = chrc_handle;
+	sub_params_short.chan_opt = opt;
 	err = bt_gatt_subscribe(g_conn, &sub_params_short);
 	if (err < 0) {
 		FAIL("Failed to subscribe\n");
 	} else {
 		printk("Subscribe request sent\n");
 	}
-	WAIT_FOR_FLAG(flag_subscribed);
 }
 
-static void gatt_unsubscribe_short(void)
+static void gatt_unsubscribe_short(enum bt_att_chan_opt opt)
 {
 	int err;
 
 	sub_params_short.value_handle = chrc_handle;
+	sub_params_short.chan_opt = opt;
 	err = bt_gatt_unsubscribe(g_conn, &sub_params_short);
 	if (err < 0) {
 		FAIL("Failed to unsubscribe\n");
 	} else {
 		printk("Unsubscribe request sent\n");
 	}
-	WAIT_FOR_FLAG(flag_subscribed);
 }
 
-static void gatt_subscribe_long(void)
+static void gatt_subscribe_long(enum bt_att_chan_opt opt)
 {
 	int err;
 
-	UNSET_FLAG(flag_subscribed);
+	UNSET_FLAG(flag_long_subscribed);
 	sub_params_long.value_handle = long_chrc_handle;
+	sub_params_long.chan_opt = opt;
 	err = bt_gatt_subscribe(g_conn, &sub_params_long);
 	if (err < 0) {
 		FAIL("Failed to subscribe\n");
 	} else {
 		printk("Subscribe request sent\n");
 	}
-	WAIT_FOR_FLAG(flag_subscribed);
 }
 
-static void gatt_unsubscribe_long(void)
+static void gatt_unsubscribe_long(enum bt_att_chan_opt opt)
 {
 	int err;
 
-	UNSET_FLAG(flag_subscribed);
+	UNSET_FLAG(flag_long_subscribed);
 	sub_params_long.value_handle = long_chrc_handle;
+	sub_params_long.chan_opt = opt;
 	err = bt_gatt_unsubscribe(g_conn, &sub_params_long);
 	if (err < 0) {
 		FAIL("Failed to unsubscribe\n");
 	} else {
 		printk("Unsubscribe request sent\n");
 	}
-	WAIT_FOR_FLAG(flag_subscribed);
 }
 
-static void test_main(void)
+static void setup(void)
 {
 	int err;
 
@@ -311,10 +330,42 @@ static void test_main(void)
 	}
 
 	printk("EATT connected\n");
+}
 
-	gatt_discover();
-	gatt_subscribe_short();
-	gatt_subscribe_long();
+static void test_main_none(void)
+{
+	setup();
+
+	gatt_discover(BT_ATT_CHAN_OPT_NONE);
+	gatt_subscribe_short(BT_ATT_CHAN_OPT_NONE);
+	gatt_subscribe_long(BT_ATT_CHAN_OPT_NONE);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	WAIT_FOR_FLAG(flag_long_subscribed);
+	printk("Subscribed\n");
+
+	while (num_notifications < NOTIFICATION_COUNT) {
+		k_sleep(K_MSEC(100));
+	}
+
+	gatt_unsubscribe_short(BT_ATT_CHAN_OPT_NONE);
+	gatt_unsubscribe_long(BT_ATT_CHAN_OPT_NONE);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	WAIT_FOR_FLAG(flag_long_subscribed);
+
+	printk("Unsubscribed\n");
+
+	PASS("GATT client Passed\n");
+}
+
+static void test_main_unenhanced(void)
+{
+	setup();
+
+	gatt_discover(BT_ATT_CHAN_OPT_UNENHANCED_ONLY);
+	gatt_subscribe_short(BT_ATT_CHAN_OPT_UNENHANCED_ONLY);
+	gatt_subscribe_long(BT_ATT_CHAN_OPT_UNENHANCED_ONLY);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	WAIT_FOR_FLAG(flag_long_subscribed);
 
 	printk("Subscribed\n");
 
@@ -322,8 +373,62 @@ static void test_main(void)
 		k_sleep(K_MSEC(100));
 	}
 
-	gatt_unsubscribe_short();
-	gatt_unsubscribe_long();
+	gatt_unsubscribe_short(BT_ATT_CHAN_OPT_UNENHANCED_ONLY);
+	gatt_unsubscribe_long(BT_ATT_CHAN_OPT_UNENHANCED_ONLY);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	WAIT_FOR_FLAG(flag_long_subscribed);
+
+	printk("Unsubscribed\n");
+
+	PASS("GATT client Passed\n");
+}
+
+static void test_main_enhanced(void)
+{
+	setup();
+
+	gatt_discover(BT_ATT_CHAN_OPT_ENHANCED_ONLY);
+	gatt_subscribe_short(BT_ATT_CHAN_OPT_ENHANCED_ONLY);
+	gatt_subscribe_long(BT_ATT_CHAN_OPT_ENHANCED_ONLY);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	WAIT_FOR_FLAG(flag_long_subscribed);
+
+	printk("Subscribed\n");
+
+	while (num_notifications < NOTIFICATION_COUNT) {
+		k_sleep(K_MSEC(100));
+	}
+
+	gatt_unsubscribe_short(BT_ATT_CHAN_OPT_ENHANCED_ONLY);
+	gatt_unsubscribe_long(BT_ATT_CHAN_OPT_ENHANCED_ONLY);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	WAIT_FOR_FLAG(flag_long_subscribed);
+
+	printk("Unsubscribed\n");
+
+	PASS("GATT client Passed\n");
+}
+
+static void test_main_mixed(void)
+{
+	setup();
+
+	gatt_discover(BT_ATT_CHAN_OPT_ENHANCED_ONLY);
+	gatt_subscribe_short(BT_ATT_CHAN_OPT_ENHANCED_ONLY);
+	gatt_subscribe_long(BT_ATT_CHAN_OPT_UNENHANCED_ONLY);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	WAIT_FOR_FLAG(flag_long_subscribed);
+
+	printk("Subscribed\n");
+
+	while (num_notifications < NOTIFICATION_COUNT) {
+		k_sleep(K_MSEC(100));
+	}
+
+	gatt_unsubscribe_short(BT_ATT_CHAN_OPT_UNENHANCED_ONLY);
+	gatt_unsubscribe_long(BT_ATT_CHAN_OPT_ENHANCED_ONLY);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	WAIT_FOR_FLAG(flag_long_subscribed);
 
 	printk("Unsubscribed\n");
 
@@ -332,10 +437,28 @@ static void test_main(void)
 
 static const struct bst_test_instance test_vcs[] = {
 	{
-		.test_id = "gatt_client",
+		.test_id = "gatt_client_none",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = test_main,
+		.test_main_f = test_main_none,
+	},
+	{
+		.test_id = "gatt_client_unenhanced",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_unenhanced,
+	},
+	{
+		.test_id = "gatt_client_enhanced",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_enhanced,
+	},
+	{
+		.test_id = "gatt_client_mixed",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_mixed,
 	},
 	BSTEST_END_MARKER,
 };
