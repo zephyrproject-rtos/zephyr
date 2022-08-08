@@ -7,7 +7,7 @@ menuconfig GPIO_PCAL6408A
 	bool "PCAL6408A I2C GPIO chip"
 	default y
 	depends on DT_HAS_NXP_PCAL6408A_ENABLED
-	depends on I2C
+	select I2C
 	help
 	  Enable driver for PCAL6408A I2C GPIO chip.
 

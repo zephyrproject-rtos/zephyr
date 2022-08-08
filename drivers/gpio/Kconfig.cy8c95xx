@@ -7,7 +7,7 @@ menuconfig GPIO_CY8C95XX
 	bool "CY8C95XX I2C GPIO chip"
 	default y
 	depends on DT_HAS_CYPRESS_CY8C95XX_GPIO_PORT_ENABLED
-	depends on I2C
+	select I2C
 	help
 	  Enable driver for CY8C95XX I2C GPIO chip.
 

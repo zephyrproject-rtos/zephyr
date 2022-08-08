@@ -13,7 +13,7 @@ menuconfig GPIO_MCP230XX
 	bool "MCP230XX I2C-based GPIO chip"
 	default y
 	depends on DT_HAS_MICROCHIP_MCP230XX_ENABLED
-	depends on I2C
+	select I2C
 	select GPIO_MCP23XXX
 	help
 	  Enable driver for MCP230XX I2C-based GPIO chip.
@@ -32,7 +32,7 @@ menuconfig GPIO_MCP23SXX
 	bool "MCP23SXX SPI-based GPIO chip"
 	default y
 	depends on DT_HAS_MICROCHIP_MCP23SXX_ENABLED
-	depends on SPI
+	select SPI
 	select GPIO_MCP23XXX
 	help
 	  Enable driver for MCP23SXX SPI-based GPIO chip.
