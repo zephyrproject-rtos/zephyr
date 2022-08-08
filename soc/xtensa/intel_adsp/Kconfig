@@ -79,4 +79,9 @@ config ADSP_TRACE_SIMCALL
 	  of an enclosing simulator process.  All window contents will
 	  remain identical.
 
+config ADSP_NEED_POWER_ON_CACHE
+	bool
+	help
+	  Need to power cache SRAM banks on.
+
 endif # SOC_FAMILY_INTEL_ADSP
