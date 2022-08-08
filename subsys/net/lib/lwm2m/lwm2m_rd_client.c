@@ -1235,6 +1235,8 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 {
 	k_mutex_lock(&client.mutex, K_FOREVER);
 
+  LOG_INF("********* starting");
+
 	if (!IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP) &&
 	    (flags & LWM2M_RD_CLIENT_FLAG_BOOTSTRAP)) {
 		LOG_ERR("Bootstrap support is disabled. Please enable "
