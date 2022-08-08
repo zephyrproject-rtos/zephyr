@@ -12,10 +12,6 @@ config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 	default 0x2000 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
 
-config DISPLAY_MCUX_ELCDIF
-	default y if HAS_MCUX_ELCDIF
-	depends on DISPLAY
-
 config PINCTRL_IMX
 	default y if HAS_MCUX_IOMUXC
 	depends on PINCTRL
