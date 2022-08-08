@@ -314,6 +314,10 @@ static int lpc11u6x_i2c_init(const struct device *dev)
 		return err;
 	}
 
+	if (!device_is_ready(cfg->clock_dev)) {
+		return -ENODEV;
+	}
+
 	/* Configure clock and de-assert reset for I2Cx */
 	clock_control_on(cfg->clock_dev, (clock_control_subsys_t) cfg->clkid);
 

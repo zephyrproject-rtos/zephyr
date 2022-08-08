@@ -217,6 +217,11 @@ static int rv32m1_lpi2c_init(const struct device *dev)
 
 	CLOCK_SetIpSrc(config->clock_ip_name, config->clock_ip_src);
 
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	err = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (err) {
 		LOG_ERR("Could not turn on clock (err %d)", err);

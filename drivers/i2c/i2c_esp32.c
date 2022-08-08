@@ -680,6 +680,11 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	clock_control_on(config->clock_dev, config->clock_subsys);
 
 	esp_intr_alloc(config->irq_source, 0, i2c_esp32_isr, (void *)dev, NULL);
