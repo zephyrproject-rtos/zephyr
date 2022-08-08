@@ -271,7 +271,7 @@ static int test_loop_suspend_resume(void)
 		res = dma_suspend(dma, chan_id);
 		if (res == -ENOSYS) {
 			done = 1;
-			TC_PRINT("suspend not supported");
+			TC_PRINT("suspend not supported\n");
 			dma_stop(dma, chan_id);
 			return TC_PASS;
 		}
