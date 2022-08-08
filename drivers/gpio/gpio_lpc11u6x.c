@@ -525,6 +525,10 @@ static int gpio_lpc11u6x_init(const struct device *dev)
 		return 0;
 	}
 
+	if (!device_is_ready(config->shared->clock_dev)) {
+		return -ENODEV;
+	}
+
 	/* Enable GPIO and PINT clocks. */
 	ret = clock_control_on(config->shared->clock_dev, config->shared->clock_subsys);
 	if (ret < 0) {
