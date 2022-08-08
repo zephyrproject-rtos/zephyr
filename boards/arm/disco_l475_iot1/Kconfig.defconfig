@@ -8,11 +8,6 @@ if BOARD_DISCO_L475_IOT1
 config BOARD
 	default "disco_l475_iot1"
 
-choice STM32_LPTIM_CLOCK
-	default STM32_LPTIM_CLOCK_LSE
-	depends on STM32_LPTIM_TIMER
-endchoice
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI

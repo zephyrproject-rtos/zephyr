@@ -103,6 +103,12 @@
 
 &lptim1 {
 	status = "okay";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+};
+
+&clk_lsi {
+	status = "okay";
 };
 
 &clk_msi {
