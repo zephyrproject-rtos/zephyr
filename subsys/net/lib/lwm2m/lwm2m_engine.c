@@ -936,7 +936,6 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
 		return ret;
 	}
 
-	lwm2m_engine_context_init(client_ctx);
 	return lwm2m_socket_start(client_ctx);
 }
 
