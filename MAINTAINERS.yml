@@ -1296,7 +1296,8 @@ MCU Manager:
   status: maintained
   maintainers:
     - de-nordic
-  collaborators: []
+  collaborators:
+    - nordicjm
   files:
     - subsys/mgmt/mcumgr/
     - include/zephyr/mgmt/mcumgr/
