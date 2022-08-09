@@ -35,7 +35,8 @@ def test_testplan_add_testsuites(class_testplan):
                           'test_a.check_1',
                           'test_a.check_2',
                           'test_d.check_1',
-                          'sample_test.app']
+                          'sample_test.app',
+                          'test_config.main']
     testsuite_list = []
     for key in sorted(class_testplan.testsuites.keys()):
         testsuite_list.append(os.path.basename(os.path.normpath(key)))
@@ -75,11 +76,8 @@ def test_get_all_testsuites(class_env, all_testsuites_dict):
                       'test_a.check_2.unit_1a', 'test_a.check_2.unit_1b',
                       'test_b.check_1', 'test_b.check_2', 'test_c.check_1',
                       'test_c.check_2', 'test_d.check_1.unit_1a',
-                      'test_d.check_1.unit_1b']
-    tests = plan.get_all_tests()
-    result = [c for c in tests]
-    assert len(plan.get_all_tests()) == len(expected_tests)
-    assert sorted(result) == sorted(expected_tests)
+                      'test_d.check_1.unit_1b', 'test_config.main']
+    assert sorted(plan.get_all_tests()) == sorted(expected_tests)
 
 def test_get_platforms(class_env, platforms_list):
     """ Testing get_platforms function of TestPlan class in Twister """
@@ -279,7 +277,8 @@ QUARANTINE_PLATFORM = {
     'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_b/test_b.check_1' : 'all on board_3',
     'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_b/test_b.check_2' : 'all on board_3',
     'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_1' : 'all on board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_2' : 'all on board_3'
+    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_2' : 'all on board_3',
+    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_config/test_config.main' : 'all on board_3'
 }
 
 QUARANTINE_MULTIFILES = {
@@ -330,6 +329,7 @@ def test_quarantine(class_testplan, platforms_list, test_data,
                 assert instance.status == 'filtered'
                 assert instance.reason == "Not under quarantine"
         else:
+            print(testname)
             if testname in expected_val:
                 assert instance.status == 'filtered'
                 assert instance.reason == "Quarantine: " + expected_val[testname]

@@ -10,6 +10,8 @@ import os
 import sys
 import pytest
 
+from pathlib import Path
+
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
@@ -45,3 +47,33 @@ def test_incorrect_schema(filename, schema, test_data):
     with pytest.raises(Exception) as exception:
         scl.yaml_load_verify(filename, schema)
         assert str(exception.value) == "Schema validation failed"
+
+def test_testsuite_config_files():
+    """ Test to validate conf and overlay files are extracted properly """
+    filename = Path(ZEPHYR_BASE) / "scripts/tests/twister/test_data/testsuites/tests/test_config/test_data.yaml"
+    schema = scl.yaml_load(Path(ZEPHYR_BASE) / "scripts/schemas/twister/testsuite-schema.yaml")
+    data = TwisterConfigParser(filename, schema)
+    data.load()
+
+    # Load and validate the specific scenario from testcases.yaml
+    scenario = data.get_scenario("test_config.main")
+    assert scenario
+
+    # CONF_FILE, DTC_OVERLAY_FILE, OVERLAY_CONFIG fields should be stripped out
+    # of extra_args. Other fields should remain untouched.
+    assert scenario["extra_args"] == ["UNRELATED1=abc", "UNRELATED2=xyz"]
+
+    # Check that all conf files have been assembled in the correct order
+    assert ";".join(scenario["extra_conf_files"]) == \
+        "conf1;conf2;conf3;conf4;conf5;conf6;conf7;conf8"
+
+    # Check that all DTC overlay files have been assembled in the correct order
+    assert ";".join(scenario["extra_dtc_overlay_files"]) == \
+        "overlay1;overlay2;overlay3;overlay4;overlay5;overlay6;overlay7;overlay8"
+
+    # Check that all overlay conf files have been assembled in the correct order
+    assert scenario["extra_overlay_confs"] == \
+        ["oc1.conf", "oc2.conf", "oc3.conf", "oc4.conf"]
+
+    # Check extra kconfig statements, too
+    assert scenario["extra_configs"] == ["CONFIG_FOO=y"]
