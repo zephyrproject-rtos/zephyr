@@ -1010,9 +1010,7 @@ static int sm_registration_done(void)
 	     ((client.lifetime - SECONDS_TO_UPDATE_EARLY) <=
 	      (k_uptime_get() - client.last_update) / 1000))) {
 		set_sm_state(ENGINE_UPDATE_REGISTRATION);
-	}
-
-	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED) &&
+	} else if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED) &&
 	    (client.engine_state != ENGINE_REGISTRATION_DONE_RX_OFF) &&
 	    (((k_uptime_get() - client.last_tx) / 1000) >=
 	     CONFIG_LWM2M_QUEUE_MODE_UPTIME)) {
