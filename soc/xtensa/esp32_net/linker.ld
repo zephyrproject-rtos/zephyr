@@ -10,11 +10,10 @@
  * Linker script for the Xtensa platform.
  */
 
-#include <devicetree.h>
-#include <autoconf.h>
-#include <linker/sections.h>
-#include <linker/linker-defs.h>
-#include <linker/linker-tool.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/linker-tool.h>
 
 #define RAMABLE_REGION dram0_1_seg :dram0_1_phdr
 #define RAMABLE_REGION_1 dram0_1_seg :dram0_1_phdr
@@ -47,7 +46,7 @@ _rom_store_table = 0;
 SECTIONS
 {
 
-#include <linker/rel-sections.ld>
+#include <zephyr/linker/rel-sections.ld>
 
   /* Send .iram0 code to iram */
   .iram0.vectors : ALIGN(4)
@@ -137,7 +136,7 @@ SECTIONS
 #define ITERABLE_SECTION_RAM_GC_ALLOWED(x, y)
 #undef ITERABLE_SECTION_RAM
 #define ITERABLE_SECTION_RAM(x, y)
-#include <linker/common-ram.ld>
+#include <zephyr/linker/common-ram.ld>
 /* Restore original value for symbols referenced by `common-ram.ld` */
 _net_buf_pool_list = _esp_net_buf_pool_list;
 #pragma pop_macro("ITERABLE_SECTION_RAM_GC_ALLOWED")
@@ -296,7 +295,7 @@ _net_buf_pool_list = _esp_net_buf_pool_list;
  * which is already defined above. In case, `common-rom.ld` creates additional segments
  * they will be placed in DRAM instead. */
 #define ROMABLE_REGION RAMABLE_REGION
-#include <linker/common-rom.ld>
+#include <zephyr/linker/common-rom.ld>
 /* Restore original value for symbols referenced by `common-rom.ld` */
 __log_const_start = __esp_log_const_start;
 __log_const_end = __esp_log_const_end;
@@ -422,10 +421,10 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
   } GROUP_LINK_IN(RAMABLE_REGION_1)
 
 #ifdef CONFIG_GEN_ISR_TABLES
-#include <linker/intlist.ld>
+#include <zephyr/linker/intlist.ld>
 #endif
 
-#include <linker/debug-sections.ld>
+#include <zephyr/linker/debug-sections.ld>
 
   SECTION_PROLOGUE(.xtensa.info, 0,)
   {
