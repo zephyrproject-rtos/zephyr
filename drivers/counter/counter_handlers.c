@@ -94,7 +94,7 @@ static inline int z_vrfy_counter_cancel_channel_alarm(const struct device *dev,
 						      uint8_t chan_id)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_COUNTER(dev, cancel_alarm));
-	return z_vrfy_counter_cancel_channel_alarm((const struct device *)dev,
+	return z_impl_counter_cancel_channel_alarm((const struct device *)dev,
 						   (uint8_t)chan_id);
 }
 #include <syscalls/counter_cancel_channel_alarm_mrsh.c>
