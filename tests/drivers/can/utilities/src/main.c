@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(can_utilities, LOG_LEVEL_ERR);
 /**
  * @brief Test of @a can_copy_frame_to_zframe()
  */
-static void test_can_frame_to_zcan_frame(void)
+ZTEST(can_utilities, test_can_frame_to_zcan_frame)
 {
 	struct can_frame frame = { 0 };
 	struct zcan_frame expected = { 0 };
@@ -53,7 +53,7 @@ static void test_can_frame_to_zcan_frame(void)
 /**
  * @brief Test of @a can_copy_zframe_to_frame()
  */
-static void test_zcan_frame_to_can_frame(void)
+ZTEST(can_utilities, test_zcan_frame_to_can_frame)
 {
 	struct can_frame frame = { 0 };
 	struct can_frame expected = { 0 };
@@ -87,7 +87,7 @@ static void test_zcan_frame_to_can_frame(void)
 /**
  * @brief Test of @a can_copy_filter_to_zfilter()
  */
-static void test_can_filter_to_zcan_filter(void)
+ZTEST(can_utilities, test_can_filter_to_zcan_filter)
 {
 	struct can_filter filter = { 0 };
 	struct zcan_filter expected = { 0 };
@@ -123,7 +123,7 @@ static void test_can_filter_to_zcan_filter(void)
 /**
  * @brief Test of @a can_copy_zfilter_to_filter()
  */
-static void test_zcan_filter_to_can_filter(void)
+ZTEST(can_utilities, test_zcan_filter_to_can_filter)
 {
 	struct can_filter filter = { 0 };
 	struct can_filter expected = { 0 };
@@ -152,7 +152,7 @@ static void test_zcan_filter_to_can_filter(void)
 /**
  * @brief Test of @a can_dlc_to_bytes()
  */
-static void test_can_dlc_to_bytes(void)
+ZTEST(can_utilities, test_can_dlc_to_bytes)
 {
 	uint8_t dlc;
 
@@ -174,7 +174,7 @@ static void test_can_dlc_to_bytes(void)
 /**
  * @brief Test of @a can_bytes_to_dlc()
  */
-static void test_can_bytes_to_dlc(void)
+ZTEST(can_utilities, test_can_bytes_to_dlc)
 {
 	uint8_t bytes;
 
@@ -193,14 +193,4 @@ static void test_can_bytes_to_dlc(void)
 	zassert_equal(can_bytes_to_dlc(64), 15, "wrong DLC for 64 bytes");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(can_utilities_tests,
-			 ztest_unit_test(test_can_frame_to_zcan_frame),
-			 ztest_unit_test(test_zcan_frame_to_can_frame),
-			 ztest_unit_test(test_can_filter_to_zcan_filter),
-			 ztest_unit_test(test_zcan_filter_to_can_filter),
-			 ztest_unit_test(test_can_dlc_to_bytes),
-			 ztest_unit_test(test_can_bytes_to_dlc));
-	ztest_run_test_suite(can_utilities_tests);
-}
+ZTEST_SUITE(can_utilities, NULL, NULL, NULL, NULL, NULL);
