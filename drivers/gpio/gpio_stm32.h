@@ -206,7 +206,7 @@
 #define STM32_PINCFG_FLOATING           STM32_PUPDR_NO_PULL
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 
-#ifdef CONFIG_GPIO_GET_CONFIG
+#if defined(CONFIG_GPIO_GET_CONFIG) && !defined(CONFIG_SOC_SERIES_STM32F1X)
 /**
  * @brief structure of a GPIO pin (stm32 LL values) use to get the configuration
  */
