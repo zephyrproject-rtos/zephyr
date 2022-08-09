@@ -3,6 +3,8 @@
 
 config TLC59108
 	bool "TLC59108 LED driver"
-	depends on I2C
+	default y
+	depends on DT_HAS_TI_TLC59108_ENABLED
+	select I2C
 	help
 	  Enable LED driver for TLC59108.

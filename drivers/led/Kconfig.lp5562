@@ -3,7 +3,9 @@
 
 config LP5562
 	bool "LP5562 LED driver"
-	depends on I2C
+	default y
+	depends on DT_HAS_TI_LP5562_ENABLED
+	select I2C
 	help
 	  Enable LED driver for LP5562.
 
