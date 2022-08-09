@@ -62,13 +62,6 @@
 	clock-frequency = <DT_FREQ_M(32)>;
 };
 
-&rcc {
-	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(64)>;
-	ahb-prescaler = <1>;
-	apb1-prescaler = <2>;
-};
-
 &i2c1 {
 	/delete-property/ clocks;
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00200000>,
