@@ -148,6 +148,11 @@
 		KEEP(*(SORT(.z_##object##_##level[0-9]_*)));		\
 		KEEP(*(SORT(.z_##object##_##level[1-9][0-9]_*)));
 
+#define CREATE_DEVICE_API_LIST(api_type)            \
+	z_device_api_ ## api_type ## _list_start = .;   \
+	KEEP(*(.z_device_api_##api_type.static.*));     \
+	z_device_api_ ## api_type ## _list_end = .;
+
 /*
  * link in shell initialization objects for all modules that use shell and
  * their shell commands are automatically initialized by the kernel.

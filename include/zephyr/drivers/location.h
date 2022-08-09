@@ -310,6 +310,25 @@ static inline int z_impl_location_event_handler_set(const struct device *dev,
  * @}
  */
 
+/**
+ * @brief Location API macros
+ * @ingroup io_interfaces
+ * @{
+ */
+
+#define LOCATION_DEVICE_API_DEFINE(node_id, api_ptr) \
+	DEVICE_DT_API_DEFINE(node_id, location, api_ptr)
+
+#define LOCATION_DEVICE_DT_GET(node_id) \
+	DEVICE_DT_API_GET(node_id, location)
+
+#define LOCATION_DEVICE_DT_INST_GET(inst) \
+	DEVICE_DT_INST_API_GET(inst, location)
+
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif

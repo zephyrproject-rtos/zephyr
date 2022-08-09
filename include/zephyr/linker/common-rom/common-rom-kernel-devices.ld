@@ -32,6 +32,23 @@
 		__device_end = .;
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+	SECTION_PROLOGUE(devices_apis,,)
+	{
+		/* Link in iterable API devices objects grouped by API type */
+		CREATE_DEVICE_API_LIST(net_if)
+		CREATE_DEVICE_API_LIST(location)
+
+#ifdef DEVICE_API_DECLARE_EXTRA
+		/* Link in iterable API devices objects for
+		 * out-of-tree API type
+		 */
+		CREATE_DEVICE_API_LIST(DEVICE_API_DECLARE_EXTRA)
+#endif
+
+		/* Link in remaining API devices objects */
+		KEEP(*(SORT(.z_device_api_*)));
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && !defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_PROLOGUE(sw_isr_table,,)
 	{

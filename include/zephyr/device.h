@@ -950,6 +950,114 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,		\
 		(&DEVICE_NAME_GET(dev_name)), level, prio)
 
+/**
+ * @def DEVICE_DT_API_NAME_GET
+ *
+ * @brief The name of the global device object for @p node_id
+ *
+ * @details Returns the name of the global device structure as a C
+ * identifier. The device must be allocated using DEVICE_DT_API_DEFINE()
+ * or DEVICE_DT_INST_API_DEFINE() for this to work.
+ *
+ * This macro is normally only useful within device driver source
+ * code. In other situations, you are probably looking for
+ * DEVICE_DT_GET().
+ *
+ * @param node_id Devicetree node identifier
+ * @param api_type Type of the API
+ * @return The name of the device object as a C identifier
+ */
+#define DEVICE_DT_API_NAME_GET(node_id, api_type) \
+	(__device_api_ ## Z_DEVICE_DT_DEV_NAME(node_id) ## _ ## api_type)
+
+/**
+ * @def DEVICE_DT_API_GET
+ *
+ * @brief Get a <tt>const struct device*</tt> from a devicetree node
+ * identifier which implements the specified API type
+ *
+ * @details Returns a pointer to a device object created from a
+ * devicetree node, if any device which implements the specified API
+ * was allocated by a driver.
+ *
+ * If no such device was allocated, this will fail at linker time. If
+ * you get an error that looks like <tt>undefined reference to
+ * __device_dts_ord_<N></tt>, that is what happened. Check to make
+ * sure your device driver is being compiled, usually by enabling the
+ * Kconfig options it requires.
+ *
+ * @param node_id A devicetree node identifier
+ * @param api_type Type of the API
+ * @return A pointer to the device object created for that node
+ */
+#define DEVICE_DT_API_GET(node_id, api_type) \
+	(&DEVICE_DT_API_NAME_GET(node_id, api_type))
+
+/** @def DEVICE_DT_INST_API_GET
+ *
+ * @brief Get a <tt>const struct device*</tt> for an instance of a
+ * DT_DRV_COMPAT compatible
+ *
+ * @details This is equivalent to
+ * <tt>DEVICE_DT_API_GET(DT_DRV_INST(inst, api_type))</tt>.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param api_type Type of the API
+ * @return A pointer to the device object created for that instance
+ */
+#define DEVICE_DT_INST_API_GET(inst, api_type) \
+	(DEVICE_DT_API_GET(DT_DRV_INST(inst), api_type))
+
+#define DEVICE_DT_API_NAME(node_id, api_type) \
+	(DEVICE_DT_NAME(node_id) # _ # api_type)
+
+/**
+ * @def DEVICE_DT_API_DEFINE
+ *
+ * @brief Define an API for a device instance.
+ *
+ * @details This macro creates a device object from a previously defined device
+ * object for a specific API type. The new device object is placed in ROM in an
+ * iterable section, grouped by API type.
+ *
+ * To access the new device object to use with the API wrappers,
+ * @ref DEVICE_DT_API_GET is used.
+ *
+ * @note The device instance must be defined using @ref DEVICE_DT_DEFINE before
+ * using this macro
+ *
+ * @param node_id Node id of device instance which implements the API
+ * @param api_type Type of the API
+ * @param api_ptr Pointer to the API implementation
+ */
+#define DEVICE_DT_API_DEFINE(node_id, api_type, api_ptr)                        \
+	const Z_DECL_ALIGN(struct device)                                           \
+	DEVICE_DT_API_NAME_GET(node_id, api_type)                                   \
+	__attribute__((__section__(".z_device_api_" # api_type))) = {               \
+		.name = DEVICE_DT_API_NAME(node_id, api_type),                          \
+		.config = DEVICE_DT_GET(node_id)->config,                               \
+		.api = (api_ptr),                                                       \
+		.state = DEVICE_DT_GET(node_id)->state,                                 \
+		.data = DEVICE_DT_GET(node_id)->data,                                   \
+		.handles = DEVICE_DT_GET(node_id)->handles,                             \
+		COND_CODE_1(CONFIG_PM_DEVICE, (.pm = DEVICE_DT_GET(node_id)->pm), ())   \
+	};
+
+/**
+ * @brief Get pointer to list of all devices which implement the provided API
+ * type
+ * 
+ * @param api_type List contains all devices which implement this API type
+ * @param devices Destination for struct device ** list
+ * @param devices_cnt Destination for count of devices in devices list
+ */
+#define DEVICE_API_GET_ALL(api_type, devices, devices_cnt) do {                 \
+	uintptr_t z_dev_start = (uintptr_t)z_device_api_##api_type##_list_start;    \
+	uintptr_t z_dev_end = (uintptr_t)z_device_api_##api_type##_list_end;        \
+	(*devices_cnt) = (z_dev_end - z_dev_start) / sizeof(struct device);         \
+	(*devices) = ((const struct device *)z_dev_start);                          \
+} while (0)
+
 #ifdef __cplusplus
 }
 #endif
