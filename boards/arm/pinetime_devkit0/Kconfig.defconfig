@@ -24,7 +24,4 @@ config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 
 endif # FLASH
 
-config I2C
-	default y if KSCAN
-
 endif # BOARD_PINETIME_DEVKIT0

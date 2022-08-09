@@ -10,12 +10,6 @@ if DISPLAY
 
 if KSCAN
 
-config I2C
-	default y
-
-config KSCAN_FT5336
-	default y
-
 # NOTE: Enable if IRQ line is available (requires to solder jumper)
 config KSCAN_FT5336_INTERRUPT
 	default n
