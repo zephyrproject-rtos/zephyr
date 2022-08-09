@@ -814,43 +814,49 @@ class ProjectBuilder(FilterBuilder):
                 )
         sys.stdout.flush()
 
-    def cmake(self):
+    @staticmethod
+    def cmake_assemble_args(args, handler, extra_conf_files, extra_overlay_confs,
+                            extra_dtc_overlay_files, cmake_extra_args,
+                            build_dir):
+        if handler.ready:
+            args.extend(handler.args)
 
-        instance = self.instance
-        args = self.testsuite.extra_args[:]
+        if extra_conf_files:
+            args.append(f"CONF_FILE=\"{';'.join(extra_conf_files)}\"")
 
-        if instance.handler.ready:
-            args += instance.handler.args
+        if extra_dtc_overlay_files:
+            args.append(f"DTC_OVERLAY_FILE=\"{';'.join(extra_dtc_overlay_files)}\"")
 
         # merge overlay files into one variable
-        # overlays with prefixes won't be merged but pass to cmake as they are
-        def extract_overlays(args):
-            re_overlay = re.compile(r'^\s*OVERLAY_CONFIG=(.*)')
-            other_args = []
-            overlays = []
-            for arg in args:
-                match = re_overlay.search(arg)
-                if match:
-                    overlays.append(match.group(1).strip('\'"'))
-                else:
-                    other_args.append(arg)
+        overlays = extra_overlay_confs.copy()
 
-            args[:] = other_args
-            return overlays
-
-        overlays = extract_overlays(args)
-
-        if os.path.exists(os.path.join(instance.build_dir,
-                                       "twister", "testsuite_extra.conf")):
-            overlays.append(os.path.join(instance.build_dir,
-                                         "twister", "testsuite_extra.conf"))
+        additional_overlay_path = os.path.join(
+            build_dir, "twister", "testsuite_extra.conf"
+        )
+        if os.path.exists(additional_overlay_path):
+            overlays.append(additional_overlay_path)
 
         if overlays:
             args.append("OVERLAY_CONFIG=\"%s\"" % (" ".join(overlays)))
 
-        args_expanded = ["-D{}".format(a.replace('"', '\"')) for a in self.options.extra_args]
-        args_expanded = args_expanded + ["-D{}".format(a.replace('"', '')) for a in args]
-        res = self.run_cmake(args_expanded)
+        # Build the final argument list
+        args_expanded = ["-D{}".format(a.replace('"', '\"')) for a in cmake_extra_args]
+        args_expanded.extend(["-D{}".format(a.replace('"', '')) for a in args])
+
+        return args_expanded
+
+    def cmake(self):
+        args = self.cmake_assemble_args(
+            self.testsuite.extra_args.copy(), # extra_args from YAML
+            self.instance.handler,
+            self.testsuite.extra_conf_files,
+            self.testsuite.extra_overlay_confs,
+            self.testsuite.extra_dtc_overlay_files,
+            self.options.extra_args, # CMake extra args
+            self.instance.build_dir,
+        )
+
+        res = self.run_cmake(args)
         return res
 
     def build(self):

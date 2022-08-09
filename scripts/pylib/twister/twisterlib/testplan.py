@@ -448,7 +448,7 @@ class TestPlan:
                             self.testsuites[suite.name] = suite
 
                 except Exception as e:
-                    logger.error("%s: can't load (skipping): %s" % (suite_path, e))
+                    logger.error(f"{suite_path}: can't load (skipping): {e!r}")
                     self.load_errors += 1
         return len(self.testsuites)
 

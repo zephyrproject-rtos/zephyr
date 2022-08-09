@@ -32,6 +32,21 @@ mapping:
       "extra_args":
         type: str
         required: false
+      "extra_conf_files":
+        type: seq
+        required: false
+        sequence:
+          - type: str
+      "extra_overlay_confs":
+        type: seq
+        required: false
+        sequence:
+          - type: str
+      "extra_dtc_overlay_files":
+        type: seq
+        required: false
+        sequence:
+          - type: str
       "extra_sections":
         type: str
         required: false
@@ -197,6 +212,21 @@ mapping:
             type: str
             required: false
           "extra_configs":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+          "extra_conf_files":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+          "extra_overlay_confs":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+          "extra_dtc_overlay_files":
             type: seq
             required: false
             sequence:

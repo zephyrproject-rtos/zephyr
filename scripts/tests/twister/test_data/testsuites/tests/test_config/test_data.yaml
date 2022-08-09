@@ -1,0 +1,27 @@
+common:
+  extra_args: >
+    CONF_FILE=conf1;conf2 DTC_OVERLAY_FILE=overlay1;overlay2
+    OVERLAY_CONFIG=oc1.conf UNRELATED1=abc
+  extra_conf_files:
+    - "conf3"
+    - "conf4"
+  extra_overlay_confs:
+    - "oc2.conf"
+  extra_dtc_overlay_files:
+    - "overlay3"
+    - "overlay4"
+tests:
+  test_config.main:
+    extra_args: >
+      CONF_FILE=conf5;conf6 DTC_OVERLAY_FILE=overlay5;overlay6
+      OVERLAY_CONFIG=oc3.conf UNRELATED2=xyz
+    extra_conf_files:
+      - "conf7"
+      - "conf8"
+    extra_overlay_confs:
+      - "oc4.conf"
+    extra_dtc_overlay_files:
+      - "overlay7"
+      - "overlay8"
+    extra_configs:
+      - CONFIG_FOO=y
