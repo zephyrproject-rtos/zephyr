@@ -30,7 +30,7 @@ from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.testinstance import TestInstance
 
 
-from zephyr_module import west_projects, parse_modules
+from zephyr_module import parse_modules
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -226,10 +226,7 @@ class TestPlan:
 
     def handle_modules(self):
         # get all enabled west projects
-        west_proj = west_projects()
-        modules_meta = parse_modules(ZEPHYR_BASE,
-                                    [p.posixpath for p in west_proj['projects']]
-                                    if west_proj else None, None)
+        modules_meta = parse_modules(ZEPHYR_BASE)
         self.modules = [module.meta.get('name') for module in modules_meta]
 
 

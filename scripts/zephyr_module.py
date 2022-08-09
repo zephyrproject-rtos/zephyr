@@ -247,7 +247,7 @@ def process_twister(module, meta):
     return out
 
 
-def process_meta(zephyr_base, west_projects, modules, extra_modules=None,
+def process_meta(zephyr_base, west_projs, modules, extra_modules=None,
                  propagate_state=False):
     # Process zephyr_base, projects, and modules and create a dictionary
     # with meta information for each input.
@@ -299,16 +299,16 @@ def process_meta(zephyr_base, west_projects, modules, extra_modules=None,
     meta['workspace'] = {}
     workspace_dirty |= zephyr_dirty
 
-    if west_projects is not None:
+    if west_projs is not None:
         from west.manifest import MANIFEST_REV_BRANCH
-        projects = west_projects['projects']
+        projects = west_projs['projects']
         meta_projects = []
 
         # Special treatment of manifest project.
-        manifest_path = PurePath(projects[0].posixpath).as_posix()
-        manifest_revision, manifest_dirty = git_revision(manifest_path)
+        manifest_proj_path = PurePath(projects[0].posixpath).as_posix()
+        manifest_revision, manifest_dirty = git_revision(manifest_proj_path)
         workspace_dirty |= manifest_dirty
-        manifest_project = {'path': manifest_path,
+        manifest_project = {'path': manifest_proj_path,
                             'revision': manifest_revision}
         meta_projects.append(manifest_project)
 
@@ -323,7 +323,7 @@ def process_meta(zephyr_base, west_projects, modules, extra_modules=None,
                             'revision': revision}
             meta_projects.append(meta_project)
 
-        meta.update({'west': {'manifest': west_projects['manifest'],
+        meta.update({'west': {'manifest': west_projs['manifest_path'],
                               'projects': meta_projects}})
         meta['workspace'].update({'off': workspace_off})
 
@@ -350,7 +350,7 @@ def process_meta(zephyr_base, west_projects, modules, extra_modules=None,
             zephyr_revision += '-off'
         zephyr_project.update({'revision': zephyr_revision})
 
-        if west_projects is not None:
+        if west_projs is not None:
             if workspace_dirty and not manifest_dirty:
                 manifest_revision += '-dirty'
             if workspace_extra:
@@ -362,8 +362,8 @@ def process_meta(zephyr_base, west_projects, modules, extra_modules=None,
     return meta
 
 
-def west_projects():
-    manifest_file = None
+def west_projects(manifest = None):
+    manifest_path = None
     projects = []
     # West is imported here, as it is optional
     # (and thus maybe not installed)
@@ -378,14 +378,15 @@ def west_projects():
 
     from packaging import version
     try:
-        manifest = Manifest.from_file()
+        if not manifest:
+            manifest = Manifest.from_file()
         if version.parse(WestVersion) >= version.parse('0.9.0'):
             projects = [p for p in manifest.get_projects([])
                         if manifest.is_active(p)]
         else:
             projects = manifest.get_projects([])
-        manifest_file = manifest.path
-        return {'manifest': manifest_file, 'projects': projects}
+        manifest_path = manifest.path
+        return {'manifest_path': manifest_path, 'projects': projects}
     except WestNotFound:
         # Only accept WestNotFound, meaning we are not in a west
         # workspace. Such setup is allowed, as west may be installed
@@ -394,9 +395,13 @@ def west_projects():
     return None
 
 
-def parse_modules(zephyr_base, modules=None, extra_modules=None):
+def parse_modules(zephyr_base, manifest=None, west_projs=None, modules=None,
+                  extra_modules=None):
+
     if modules is None:
-        modules = []
+        west_projs = west_projs or west_projects(manifest)
+        modules = ([p.posixpath for p in west_projs['projects']]
+                   if west_projs else [])
 
     if extra_modules is None:
         extra_modules = []
@@ -498,16 +503,9 @@ def main():
     settings = ""
     twister = ""
 
-    west_proj = None
-    if args.modules is None:
-        west_proj = west_projects()
-        modules = parse_modules(args.zephyr_base,
-                                [p.posixpath for p in west_proj['projects']]
-                                if west_proj else None,
-                                args.extra_modules)
-    else:
-        modules = parse_modules(args.zephyr_base, args.modules,
-                                args.extra_modules)
+    west_projs = west_projects()
+    modules = parse_modules(args.zephyr_base, None, west_projs,
+                            args.modules, args.extra_modules)
 
     for module in modules:
         kconfig += process_kconfig(module.project, module.meta)
@@ -542,7 +540,7 @@ def main():
             fp.write(twister)
 
     if args.meta_out:
-        meta = process_meta(args.zephyr_base, west_proj, modules,
+        meta = process_meta(args.zephyr_base, west_projs, modules,
                             args.extra_modules, args.meta_state_propagate)
 
         with open(args.meta_out, 'w', encoding="utf-8") as fp:
