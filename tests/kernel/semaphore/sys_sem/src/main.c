@@ -190,6 +190,13 @@ ZTEST_USER(kernel_sys_sem, test_multi_thread_sem_limit)
 				multi_thread_sem_take, NULL, NULL, NULL,
 				PRIO, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 	}
+
+	/* cleanup all threads for the following test cases */
+	k_sleep(K_MSEC(50));
+	for (int i = 1; i <= TOTAL_MAX; i++) {
+		k_thread_abort(&multi_tid_give[i]);
+		k_thread_abort(&multi_tid_take[i]);
+	}
 }
 
 void *test_init(void)
