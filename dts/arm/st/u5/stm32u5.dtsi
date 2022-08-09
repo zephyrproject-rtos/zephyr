@@ -343,6 +343,15 @@
 			status = "disabled";
 		};
 
+		rtc: rtc@46007800 {
+			compatible = "st,stm32-rtc";
+			reg = <0x46007800 0x400>;
+			interrupts = <2 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>;
+			prescaler = <32768>;
+			status = "disabled";
+		};
+
 		octospi1: octospi@420d1400 {
 			compatible = "st,stm32-ospi";
 			reg = <0x420d1400 0x400>;
