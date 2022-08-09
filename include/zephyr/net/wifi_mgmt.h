@@ -90,6 +90,7 @@ struct wifi_scan_result {
 
 	uint8_t channel;
 	enum wifi_security_type security;
+	enum wifi_mfp_options mfp;
 	int8_t rssi;
 
 	uint8_t mac[WIFI_MAC_ADDR_LEN];
@@ -108,6 +109,7 @@ struct wifi_connect_req_params {
 
 	uint8_t channel;
 	enum wifi_security_type security;
+	enum wifi_mfp_options mfp;
 };
 
 struct wifi_status {
