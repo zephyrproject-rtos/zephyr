@@ -2715,3 +2715,16 @@ Random:
     - include/zephyr/random/
   labels:
     - "area: Random"
+
+# This area is to be converted to a subarea
+Testing with Renode:
+  status: maintained
+  collaborators:
+    - mateusz-holenko
+    - fkokosinski
+  files:
+    - cmake/emu/renode.cmake
+    - boards/*/*/support/*.repl
+    - boards/*/*/support/*.resc
+  labels:
+    - "area: Renode"
