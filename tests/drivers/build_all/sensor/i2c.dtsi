@@ -694,3 +694,9 @@ test_i2c_wsen_pads: wsen_pads@6A {
 	drdy-gpios = <&test_gpio 0 0>;
 	odr = <1>;
 };
+
+test_i2c_s11059: s11059@6b {
+	compatible = "hamamatsu,s11059";
+	reg = <0x6b>;
+	integration-time = <546000>;
+};
