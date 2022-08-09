@@ -51,13 +51,6 @@ config SYS_CLOCK_TICKS_PER_SEC
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32768 if MCUX_GPT_TIMER
 
-if COUNTER
-
-config COUNTER_MCUX_GPT
-	default y if HAS_MCUX_GPT
-
-endif # COUNTER
-
 config PM_MCUX_GPC
 	default y if HAS_MCUX_GPC
 	depends on SOC_SERIES_IMX_RT11XX && PM

@@ -13,16 +13,6 @@ config UART_INTERRUPT_DRIVEN
 
 endif # SERIAL
 
-if COUNTER
-
-config TIMER_TMR_CMSDK_APB
-	default y
-
-config TIMER_DTMR_CMSDK_APB
-	default y
-
-endif # COUNTER
-
 config ZTEST_STACK_SIZE
 	default 4096 if ZTEST
 

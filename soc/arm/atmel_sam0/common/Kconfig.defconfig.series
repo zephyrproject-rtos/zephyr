@@ -5,9 +5,6 @@
 
 if SOC_FAMILY_SAM0
 
-config COUNTER_SAM0_TC32
-	default COUNTER
-
 config DMA_SAM0
 	default DMA
 
