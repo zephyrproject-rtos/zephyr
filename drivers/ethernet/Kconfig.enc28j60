@@ -5,7 +5,9 @@
 
 menuconfig ETH_ENC28J60
 	bool "ENC28J60C Ethernet Controller"
-	depends on SPI
+	default y
+	depends on DT_HAS_MICROCHIP_ENC28J60_ENABLED
+	select SPI
 	help
 	  ENC28J60C Stand-Alone Ethernet Controller
 	  with SPI Interface
