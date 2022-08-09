@@ -2276,7 +2276,7 @@ West:
 "West project: hal_quicklogic":
   status: odd fixes
   collaborators:
-    - kowalewskijan
+    - fkokosinski
   files: []
   labels:
     - manifest-hal_quicklogic

@@ -46,7 +46,7 @@
 /soc/arm/nordic_nrf/                      @anangl
 /soc/arm/nuvoton_npcx/                    @MulinChao @ChiHuaL
 /soc/arm/nuvoton_numicro/                 @ssekar15
-/soc/arm/quicklogic_eos_s3/               @kowalewskijan @kgugala
+/soc/arm/quicklogic_eos_s3/               @fkokosinski @kgugala
 /soc/arm/rpi_pico/                        @yonsch
 /soc/arm/silabs_exx32/efm32pg1b/          @rdmeneze
 /soc/arm/silabs_exx32/efr32mg21/          @l-alfred
@@ -133,7 +133,7 @@
 /boards/arm/qemu_cortex_a9/               @ibirnbaum
 /boards/arm/qemu_cortex_r*/               @stephanosio
 /boards/arm/qemu_cortex_m*/               @ioannisg @stephanosio
-/boards/arm/quick_feather/                @kowalewskijan @kgugala
+/boards/arm/quick_feather/                @fkokosinski @kgugala
 /boards/arm/rak4631_nrf52840/             @gpaquet85
 /boards/arm/rak5010_nrf52840/             @gpaquet85
 /boards/arm/rpi_pico/                     @yonsch
@@ -284,7 +284,7 @@
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
 /drivers/gpio/*nct38xx*                   @MulinChao @ChiHuaL
 /drivers/gpio/*stm32*                     @erwango
-/drivers/gpio/*eos_s3*                    @wtatarski @kowalewskijan @kgugala
+/drivers/gpio/*eos_s3*                    @fkokosinski @kgugala
 /drivers/gpio/*rcar*                      @aaillet
 /drivers/gpio/*esp32*                     @glaubermaroto
 /drivers/gpio/*rpi_pico*                  @yonsch
@@ -474,7 +474,7 @@
 /dts/arm64/armv8-r.dtsi                   @povergoing
 /dts/arm64/intel/*intel_socfpga*          @siclim
 /dts/arm64/nxp/                           @JiafeiPan
-/dts/arm/quicklogic/                      @wtatarski @kowalewskijan @kgugala
+/dts/arm/quicklogic/                      @fkokosinski @kgugala
 /dts/arm/seeed/                           @str4t0m
 /dts/arm/st/                              @erwango
 /dts/arm/ti/cc13?2*                       @bwitherspoon
