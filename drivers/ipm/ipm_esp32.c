@@ -10,14 +10,13 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <device.h>
-#include <init.h>
-#include <drivers/ipm.h>
-#include <drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <soc.h>
-#include <sys/atomic.h>
+#include <zephyr/sys/atomic.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ipm_esp32, CONFIG_IPM_LOG_LEVEL);
 
 #define ESP32_IPM_LOCK_FREE_VAL 0xB33FFFFF

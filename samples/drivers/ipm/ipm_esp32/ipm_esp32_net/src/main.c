@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <drivers/ipm.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/device.h>
 
 static const struct device *ipm_dev;
 static const char fake_resp[] = {"APP_CPU: This is a response"};
