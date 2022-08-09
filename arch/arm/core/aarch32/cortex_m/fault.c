@@ -25,7 +25,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #else
 #define PR_EXC(...)
 #define STORE_xFAR(reg_var, reg)
-#endif /* CONFIG_PRINTK || CONFIG_LOG */
+#endif /* CONFIG_PRINTK || CONFIG_LOG || TEST */
 
 #if (CONFIG_FAULT_DUMP == 2)
 #define PR_FAULT_INFO(...) PR_EXC(__VA_ARGS__)

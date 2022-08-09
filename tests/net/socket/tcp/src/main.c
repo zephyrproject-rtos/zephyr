@@ -1396,6 +1396,7 @@ void test_v6_msg_waitall(void)
 		.tv_sec = 0,
 		.tv_usec = 100000,
 	};
+	/* change to kick off test */
 
 	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
 			    &c_sock, &c_saddr);
