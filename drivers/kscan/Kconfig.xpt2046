@@ -3,7 +3,8 @@
 
 menuconfig KSCAN_XPT2046
 	bool "XPT2046 touch screen controller driver"
-	depends on SPI
+	depends on DT_HAS_XPT_XPT2046_ENABLED
+	select SPI
 	help
 	  Enable driver for multiple resistance touch panel controllers.
 	  This driver should support TSC2046, ADS784x and AK4182. 
