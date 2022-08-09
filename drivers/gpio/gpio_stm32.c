@@ -91,7 +91,7 @@ static int gpio_stm32_flags_to_conf(gpio_flags_t flags, int *pincfg)
 	return 0;
 }
 
-#ifdef CONFIG_GPIO_GET_CONFIG
+#if defined(CONFIG_GPIO_GET_CONFIG) && !defined(CONFIG_SOC_SERIES_STM32F1X)
 /**
  * @brief Custom stm32 flags to zephyr
  */
@@ -563,7 +563,7 @@ static int gpio_stm32_config(const struct device *dev,
 	return 0;
 }
 
-#ifdef CONFIG_GPIO_GET_CONFIG
+#if defined(CONFIG_GPIO_GET_CONFIG) && !defined(CONFIG_SOC_SERIES_STM32F1X)
 /**
  * @brief Get configuration of pin
  */
@@ -657,7 +657,7 @@ static int gpio_stm32_manage_callback(const struct device *dev,
 
 static const struct gpio_driver_api gpio_stm32_driver = {
 	.pin_configure = gpio_stm32_config,
-#ifdef CONFIG_GPIO_GET_CONFIG
+#if defined(CONFIG_GPIO_GET_CONFIG) && !defined(CONFIG_SOC_SERIES_STM32F1X)
 	.pin_get_config = gpio_stm32_get_config,
 #endif /* CONFIG_GPIO_GET_CONFIG */
 	.port_get_raw = gpio_stm32_port_get_raw,
