@@ -70,6 +70,10 @@ Deprecated in this release
 * :c:macro:`DT_BUS_LABEL`, and :c:macro:`DT_INST_BUS_LABEL`, are deprecated
   in favor of utilizing :c:macro:`DT_BUS` and variants.
 
+* STM32 LPTIM domain clock should now be configured using devicetree.
+  Related Kconfig :kconfig:option:`CONFIG_STM32_LPTIM_CLOCK` option is now
+  deprecated.
+
 Stable API changes in this release
 ==================================
 
