@@ -73,6 +73,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define CLIENT_QUEUE_LEN sizeof("Q")
 
 static void sm_handle_registration_update_failure(void);
+static int sm_send_registration_msg(void);
 
 /* The states for the RD client state machine */
 /*
@@ -90,6 +91,7 @@ enum sm_engine_state {
 	ENGINE_BOOTSTRAP_TRANS_DONE,
 #endif
 	ENGINE_DO_REGISTRATION,
+	ENGINE_SEND_REGISTRATION,
 	ENGINE_REGISTRATION_SENT,
 	ENGINE_REGISTRATION_DONE,
 	ENGINE_REGISTRATION_DONE_RX_OFF,
@@ -922,55 +924,13 @@ cleanup:
 
 static void sm_handle_registration_update_failure(void)
 {
-	int ret;
-
 	LOG_WRN("Registration Update fail -> trigger full registration");
-	client.engine_state = ENGINE_DO_REGISTRATION;
-	ret = sm_send_registration(true, do_registration_reply_cb, do_registration_timeout_cb);
-	if (!ret) {
-		set_sm_state(ENGINE_REGISTRATION_SENT);
-	} else {
-		LOG_ERR("Registration err: %d", ret);
-		set_sm_state(ENGINE_NETWORK_ERROR);
-	}
+	client.engine_state = ENGINE_SEND_REGISTRATION;
 }
 
-static int sm_do_registration(void)
+static int sm_send_registration_msg(void)
 {
-	int ret = 0;
-
-	/* clear out existing connection data */
-	if (client.ctx->sock_fd > -1) {
-		lwm2m_engine_stop(client.ctx);
-	}
-
-	client.ctx->bootstrap_mode = false;
-	ret = sm_select_security_inst(client.ctx->bootstrap_mode,
-				      &client.ctx->sec_obj_inst);
-	if (ret < 0) {
-		LOG_ERR("Unable to find a valid security instance.");
-		set_sm_state(ENGINE_INIT);
-		return -EINVAL;
-	}
-
-	ret = sm_select_server_inst(client.ctx->sec_obj_inst,
-				    &client.ctx->srv_obj_inst,
-				    &client.lifetime);
-	if (ret < 0) {
-		LOG_ERR("Unable to find a valid server instance.");
-		set_sm_state(ENGINE_INIT);
-		return -EINVAL;
-	}
-
-	LOG_INF("RD Client started with endpoint '%s' with client lifetime %d",
-		client.ep_name, client.lifetime);
-
-	ret = lwm2m_engine_start(client.ctx);
-	if (ret < 0) {
-		LOG_ERR("Cannot init LWM2M engine (%d)", ret);
-		set_sm_state(ENGINE_NETWORK_ERROR);
-		return ret;
-	}
+	int ret;
 
 	ret = sm_send_registration(true,
 				   do_registration_reply_cb,
@@ -981,6 +941,58 @@ static int sm_do_registration(void)
 		LOG_ERR("Registration err: %d", ret);
 		set_sm_state(ENGINE_NETWORK_ERROR);
 	}
+
+	return ret;
+}
+
+static int sm_do_registration(void)
+{
+	int ret = 0;
+
+	if (client.ctx->connection_suspended) {
+		if (lwm2m_engine_connection_resume(client.ctx)) {
+			lwm2m_engine_context_close(client.ctx);
+			/* perform full registration */
+			set_sm_state(ENGINE_DO_REGISTRATION);
+			return 0;
+		}
+
+	} else {
+		/* clear out existing connection data */
+		if (client.ctx->sock_fd > -1) {
+			lwm2m_engine_context_close(client.ctx);
+		}
+
+		client.ctx->bootstrap_mode = false;
+		ret = sm_select_security_inst(client.ctx->bootstrap_mode,
+					      &client.ctx->sec_obj_inst);
+		if (ret < 0) {
+			LOG_ERR("Unable to find a valid security instance.");
+			set_sm_state(ENGINE_INIT);
+			return -EINVAL;
+		}
+
+		ret = sm_select_server_inst(client.ctx->sec_obj_inst,
+					    &client.ctx->srv_obj_inst,
+					    &client.lifetime);
+		if (ret < 0) {
+			LOG_ERR("Unable to find a valid server instance.");
+			set_sm_state(ENGINE_INIT);
+			return -EINVAL;
+		}
+
+		LOG_INF("RD Client started with endpoint '%s' with client lifetime %d",
+			client.ep_name, client.lifetime);
+
+		ret = lwm2m_engine_start(client.ctx);
+		if (ret < 0) {
+			LOG_ERR("Cannot init LWM2M engine (%d)", ret);
+			set_sm_state(ENGINE_NETWORK_ERROR);
+			return ret;
+		}
+	}
+
+	ret = sm_send_registration_msg();
 
 	return ret;
 }
@@ -1184,6 +1196,10 @@ static void lwm2m_rd_client_service(struct k_work *work)
 
 		case ENGINE_DO_REGISTRATION:
 			sm_do_registration();
+			break;
+
+		case ENGINE_SEND_REGISTRATION:
+			sm_send_registration_msg();
 			break;
 
 		case ENGINE_REGISTRATION_SENT:
@@ -1396,13 +1412,14 @@ int lwm2m_rd_client_connection_resume(struct lwm2m_ctx *client_ctx)
 		 */
 		if (IS_ENABLED(CONFIG_LWM2M_TLS_SESSION_CACHING)) {
 			client.engine_state = ENGINE_REGISTRATION_DONE;
+			client.trigger_update = true;
 		} else {
 			client.engine_state = ENGINE_DO_REGISTRATION;
 		}
 #else
 		client.engine_state = ENGINE_REGISTRATION_DONE;
-#endif
 		client.trigger_update = true;
+#endif
 	}
 
 	return 0;
