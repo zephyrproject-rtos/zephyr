@@ -73,8 +73,4 @@ config DMA_MCUX_EDMA
 	default y if HAS_MCUX_EDMA
 	depends on DMA
 
-config COUNTER_MCUX_PIT
-	default y if HAS_MCUX_PIT
-	depends on COUNTER
-
 endif # SOC_SERIES_KINETIS_K8X

@@ -26,10 +26,6 @@ config USB_KINETIS
 	default y
 	depends on USB_DEVICE_DRIVER
 
-config COUNTER_MCUX_PIT
-	default y if HAS_MCUX_PIT
-	depends on COUNTER
-
 source "soc/arm/nxp_kinetis/k8x/Kconfig.defconfig.mk*"
 
 endif # SOC_SERIES_KINETIS_K8X
