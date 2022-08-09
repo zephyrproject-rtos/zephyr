@@ -1252,6 +1252,9 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 		return -EINPROGRESS;
 	}
 
+	/* Init Context */
+	lwm2m_engine_context_init(client_ctx);
+
 	client.ctx = client_ctx;
 	client.ctx->sock_fd = -1;
 	client.ctx->fault_cb = socket_fault_cb;
