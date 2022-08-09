@@ -813,7 +813,9 @@ int bt_vcs_client_cb_register(struct bt_vcs_cb *cb)
 	struct bt_vocs_cb *vocs_cb = NULL;
 
 	if (cb != NULL) {
-		CHECKIF(cb->vocs_cb.discover) {
+		/* Ensure that the cb->vocs_cb.discover is the vocs_discover_cb */
+		CHECKIF(cb->vocs_cb.discover != NULL &&
+			cb->vocs_cb.discover != vocs_discover_cb) {
 			BT_ERR("VOCS discover callback shall not be set");
 			return -EINVAL;
 		}
