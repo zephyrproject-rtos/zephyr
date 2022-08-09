@@ -18,8 +18,6 @@
 #include <zephyr/types.h>
 #include <zephyr/linker/linker-defs.h>
 #include <kernel_internal.h>
-#include <zephyr/sys/printk.h>
-#include <device.h>
 
 #include "esp_private/system_internal.h"
 #include "esp32/rom/cache.h"
@@ -30,6 +28,7 @@
 #include "esp_err.h"
 #include "esp32/spiram.h"
 #include "esp_app_format.h"
+#include <zephyr/sys/printk.h>
 
 extern void z_cstart(void);
 
