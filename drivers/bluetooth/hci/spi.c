@@ -490,6 +490,7 @@ static int bt_spi_open(void)
 			0, K_NO_WAIT);
 
 	/* Take BLE out of reset */
+	k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_assert_duration_ms, 0)));
 	gpio_pin_set_dt(&rst_gpio, 0);
 
 	/* Device will let us know when it's ready */
