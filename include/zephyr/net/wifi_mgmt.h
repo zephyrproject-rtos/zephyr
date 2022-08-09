@@ -103,6 +103,9 @@ struct wifi_connect_req_params {
 	uint8_t *psk;
 	uint8_t psk_length; /* Min 8 - Max 64 */
 
+	uint8_t *sae_password; /* Optional with fallback to psk */
+	uint8_t sae_password_length; /* No length restrictions */
+
 	uint8_t channel;
 	enum wifi_security_type security;
 };
