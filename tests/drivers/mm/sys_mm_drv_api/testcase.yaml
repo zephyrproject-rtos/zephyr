@@ -1,0 +1,3 @@
+tests:
+  drivers.mm.sys_mm_drv_api:
+    tags: drivers
