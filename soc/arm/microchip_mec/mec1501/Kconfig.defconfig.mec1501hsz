@@ -27,10 +27,6 @@ config PS2_XEC
 	default y
 	depends on PS2
 
-config KSCAN_XEC
-	default y
-	depends on KSCAN
-
 config PECI_XEC
 	default y
 	depends on PECI

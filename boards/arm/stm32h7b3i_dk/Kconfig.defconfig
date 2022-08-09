@@ -11,12 +11,6 @@ config BOARD
 config KSCAN
 	default y if DISPLAY
 
-config I2C
-	default y if KSCAN
-
-config KSCAN_FT5336
-	default y if KSCAN
-
 config KSCAN_FT5336_INTERRUPT
 	default y if KSCAN_FT5336
 
