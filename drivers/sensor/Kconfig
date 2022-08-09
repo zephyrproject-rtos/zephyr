@@ -299,4 +299,6 @@ source "drivers/sensor/tmd2620/Kconfig"
 
 source "drivers/sensor/zephyr_thermistor/Kconfig"
 
+source "drivers/sensor/s11059/Kconfig"
+
 endif # SENSOR
