@@ -39,10 +39,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 endif # CORTEX_M_SYSTICK
 
-config COUNTER_MCUX_LPC_RTC
-	default y
-	depends on COUNTER
-
 config USB_MCUX
 	default y
 	depends on USB_DEVICE_DRIVER
@@ -50,9 +46,5 @@ config USB_MCUX
 choice USB_MCUX_CONTROLLER_TYPE
 	default USB_DC_NXP_LPCIP3511
 endchoice
-
-config COUNTER_MCUX_CTIMER
-	default y
-	depends on COUNTER
 
 endif # SOC_MIMXRT685S_CM33

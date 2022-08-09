@@ -22,8 +22,4 @@ config LOG_BACKEND_SWO_FREQ_HZ
 	default 875000
 	depends on LOG_BACKEND_SWO
 
-config COUNTER_GECKO_RTCC
-	default y
-	depends on COUNTER
-
 endif # BOARD_EFR32_RADIO

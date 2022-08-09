@@ -29,16 +29,6 @@ config KINETIS_FLASH_CONFIG_FOPT
 	default 0x7d
 	depends on KINETIS_FLASH_CONFIG
 
-if COUNTER
-
-config COUNTER_MCUX_RTC
-	default y
-
-config COUNTER_MCUX_LPTMR
-	default y
-
-endif # COUNTER
-
 config PWM_MCUX_PWT
 	default y
 	depends on PWM_CAPTURE
