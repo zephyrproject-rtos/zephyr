@@ -99,9 +99,9 @@ static int i2c_b91_transfer(const struct device *dev,
 
 		/* transfer data */
 		if (msgs[i].flags & I2C_MSG_READ) {
-			status = i2c_master_read(addr, msgs[i].buf, msgs[i].len);
+			status = i2c_master_read(addr << 1, msgs[i].buf, msgs[i].len);
 		} else {
-			status = i2c_master_write(addr, msgs[i].buf, msgs[i].len);
+			status = i2c_master_write(addr << 1, msgs[i].buf, msgs[i].len);
 		}
 
 		/* check status */
