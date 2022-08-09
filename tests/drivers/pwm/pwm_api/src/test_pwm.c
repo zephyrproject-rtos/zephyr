@@ -55,13 +55,24 @@
 	defined(CONFIG_SOC_MKW41Z4)
 #define DEFAULT_PERIOD_CYCLE 1024
 #define DEFAULT_PULSE_CYCLE 512
+#define MIN_PULSE_CYCLE 0
 #define DEFAULT_PERIOD_NSEC 2000000
 #define DEFAULT_PULSE_NSEC 500000
+#define MIN_PULSE_NSEC 0
+#elif defined(CONFIG_SOC_FAMILY_RCAR)
+#define DEFAULT_PERIOD_CYCLE 1023
+#define DEFAULT_PULSE_CYCLE 512
+#define MIN_PULSE_CYCLE 1
+#define DEFAULT_PERIOD_NSEC 2000000
+#define DEFAULT_PULSE_NSEC 500000
+#define MIN_PULSE_NSEC 3844
 #else
 #define DEFAULT_PERIOD_CYCLE 64000
 #define DEFAULT_PULSE_CYCLE 32000
+#define MIN_PULSE_CYCLE 0
 #define DEFAULT_PERIOD_NSEC 2000000
 #define DEFAULT_PULSE_NSEC 1000000
+#define MIN_PULSE_NSEC 0
 #endif
 
 #if defined CONFIG_BOARD_SAM_E70_XPLAINED
@@ -138,9 +149,9 @@ void test_pwm_nsec(void)
 				DEFAULT_PERIOD_NSEC, UNIT_NSECS) == TC_PASS, NULL);
 	k_sleep(K_MSEC(1000));
 
-	/* Period : Pulse (2000000 : 0), unit (nsec). Voltage : 0V */
+	/* Period : Pulse (2000000 : MIN_PULSE_NSEC), unit (nsec). Voltage : ~0V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_NSEC,
-				0, UNIT_NSECS) == TC_PASS, NULL);
+				MIN_PULSE_NSEC, UNIT_NSECS) == TC_PASS, NULL);
 	k_sleep(K_MSEC(1000));
 }
 
@@ -156,7 +167,7 @@ void test_pwm_cycle(void)
 				DEFAULT_PERIOD_CYCLE, UNIT_CYCLES) == TC_PASS, NULL);
 	k_sleep(K_MSEC(1000));
 
-	/* Period : Pulse (64000 : 0), unit (cycle). Voltage : 0V */
+	/* Period : Pulse (64000 : MIN_PULSE_CYCLE), unit (cycle). Voltage : ~0V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_CYCLE,
-				0, UNIT_CYCLES) == TC_PASS, NULL);
+				MIN_PULSE_CYCLE, UNIT_CYCLES) == TC_PASS, NULL);
 }
