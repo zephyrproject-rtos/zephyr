@@ -1,0 +1,19 @@
+# PCF8574 GPIO configuration options
+
+# Copyright (c) 2022 Ithinx
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_PCF8574
+	bool "PCF8574 I2C GPIO chip"
+	default y
+	depends on DT_HAS_NXP_PCF8574_ENABLED
+	select I2C
+	help
+	  Enable driver for PCF8574 I2C GPIO chip.
+
+config GPIO_PCF8574_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	depends on GPIO_PCF8574
+	help
+	  Device driver initialization priority.
