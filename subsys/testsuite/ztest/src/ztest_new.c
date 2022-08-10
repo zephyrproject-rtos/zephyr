@@ -311,19 +311,39 @@ void ztest_test_fail(void)
 		longjmp(test_suite_fail, 1);
 	case TEST_PHASE_BEFORE:
 	case TEST_PHASE_TEST:
-	case TEST_PHASE_AFTER:
-	case TEST_PHASE_TEARDOWN:
 		PRINT(" at %s function\n", get_friendly_phase_name(phase));
 		longjmp(test_fail, 1);
+	case TEST_PHASE_AFTER:
+	case TEST_PHASE_TEARDOWN:
 	case TEST_PHASE_FRAMEWORK:
-		PRINT("\n");
+		PRINT(" ERROR: cannot fail in test '%s()', bailing\n",
+		      get_friendly_phase_name(phase));
 		longjmp(stack_fail, 1);
 	}
 }
 
-void ztest_test_pass(void) { longjmp(test_pass, 1); }
+void ztest_test_pass(void)
+{
+	if (phase == TEST_PHASE_TEST) {
+		longjmp(test_pass, 1);
+	}
+	PRINT(" ERROR: cannot pass in test '%s()', bailing\n", get_friendly_phase_name(phase));
+	longjmp(stack_fail, 1);
+}
 
-void ztest_test_skip(void) { longjmp(test_skip, 1); }
+void ztest_test_skip(void)
+{
+	switch (phase) {
+	case TEST_PHASE_SETUP:
+	case TEST_PHASE_BEFORE:
+	case TEST_PHASE_TEST:
+		longjmp(test_skip, 1);
+	default:
+		PRINT(" ERROR: cannot skip in test '%s()', bailing\n",
+		      get_friendly_phase_name(phase));
+		longjmp(stack_fail, 1);
+	}
+}
 
 static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test, void *data)
 {
@@ -358,6 +378,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 	}
 	run_test_functions(suite, test, data);
 out:
+	phase = TEST_PHASE_FRAMEWORK;
 	ret |= cleanup_test(test);
 	phase = TEST_PHASE_AFTER;
 	if (test_result != ZTEST_RESULT_SUITE_FAIL) {
