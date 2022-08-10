@@ -15,6 +15,7 @@
 #include <zephyr/init.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys_clock.h>
 
 #include "spi_nor.h"
 #include "jesd216.h"
@@ -43,10 +44,6 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
  */
 
 #define SPI_NOR_MAX_ADDR_WIDTH 4
-
-#ifndef NSEC_PER_MSEC
-#define NSEC_PER_MSEC (NSEC_PER_USEC * USEC_PER_MSEC)
-#endif
 
 #if DT_INST_NODE_HAS_PROP(0, t_enter_dpd)
 #define T_DP_MS ceiling_fraction(DT_INST_PROP(0, t_enter_dpd), NSEC_PER_MSEC)
