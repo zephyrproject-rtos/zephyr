@@ -107,8 +107,10 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 			k_ticks_t ticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
 
 			to->dticks = MAX(1, ticks);
+			printk("HERE %lld\n", to->dticks);
 		} else {
 			to->dticks = timeout.ticks + 1 + elapsed();
+			printk("tHERE %lld\n", to->dticks);
 		}
 
 		for (t = first(); t != NULL; t = next(t)) {
