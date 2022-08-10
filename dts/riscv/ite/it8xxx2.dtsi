@@ -452,7 +452,7 @@
 			status = "disabled";
 		};
 
-		spi0:spi@f02600  {
+		spi0: spi@f02600  {
 			#address-cells = <1>;
 			#size-cells = <0>;
 			compatible = "ite,it8xxx2-sspi";
@@ -461,7 +461,7 @@
 			interrupts = <37 IRQ_TYPE_EDGE_RISING>;
 			clock-frequency = <115200>;
 		};
-		spi1:spi@f02640  {
+		spi1: spi@f02640  {
 			#address-cells = <1>;
 			#size-cells = <0>;
 			compatible = "ite,it8xxx2-sspi";
@@ -469,6 +469,15 @@
 			interrupts = <37 IRQ_TYPE_EDGE_RISING>;
 			interrupt-parent = <&intc>;
 			status = "okay";
+		};
+		shi0: shi@f03a00 {
+			compatible = "ite,it8xxx2-shi";
+			reg = <0x00f03a00 0x30>;
+			interrupts = <171 0>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			buffer-rx-size = <256>;
+			buffer-tx-size = <256>;
 		};
 		adc0: adc@f01900 {
 			compatible = "ite,it8xxx2-adc";
