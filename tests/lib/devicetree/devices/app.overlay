@@ -21,7 +21,6 @@
 			compatible = "vnd,gpio-device";
 			status = "okay";
 			reg = <0x0 0x1000>;
-			label = "TEST_GPIO_0";
 		};
 
 		test_i2c: i2c@11112222 {
@@ -31,14 +30,12 @@
 			status = "okay";
 			reg = <0x11112222 0x1000>;
 			clock-frequency = <100000>;
-			label = "TEST_I2C_CTLR";
 
 			test_dev_a: test-i2c-dev@10 {
 				compatible = "vnd,i2c-device";
 				status = "okay";
 				reg = <0x10>;
 				supply-gpios = <&test_gpio_0 1 0>;
-				label = "TEST_I2C_DEV_10";
 			};
 
 			test_gpiox: test-i2c-dev@11 {
@@ -47,7 +44,6 @@
 				compatible = "vnd,gpio-expander";
 				status = "okay";
 				reg = <0x11>;
-				label = "TEST_I2C_GPIO";
 			};
 
 			test_dev_b: test-i2c-dev@12 {
@@ -55,12 +51,10 @@
 				status = "okay";
 				reg = <0x12>;
 				supply-gpios = <&test_gpiox 2 0>;
-				label = "TEST_I2C_DEV_12";
 			};
 
 			test_dev_c: test-i2c-dev@13 {
 				compatible = "vnd,i2c-device";
-				label = "TEST_I2C_DEV_13";
 				reg = <0x13>;
 				status = "disabled";
 
@@ -85,7 +79,6 @@
 				status = "okay";
 				reg = <0x14>;
 				supply-gpios = <&test_gpiox 2 0>;
-				label = "TEST_I2C_DEV_14";
 			};
 		};
 
@@ -95,7 +88,6 @@
 			compatible = "vnd,gpio-device";
 			status = "okay";
 			reg = <0x1000 0x1000>;
-			label = "TEST_GPIO_INJECTED";
 		};
 	};
 };
