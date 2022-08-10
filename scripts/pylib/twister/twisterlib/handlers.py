@@ -172,7 +172,7 @@ class BinaryHandler(Handler):
             os.unlink(self.pid_fn)
             self.pid_fn = None  # clear so we don't try to kill the binary twice
             try:
-                os.kill(pid, signal.SIGTERM)
+                os.kill(pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
 
