@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <xtensa/intel/intel_cavs.dtsi>
+#include <xtensa/intel/intel_adsp_cavs.dtsi>
 #include <mem.h>
 
 / {
@@ -50,7 +50,7 @@
 	};
 
 	clkctl: clkctl {
-		compatible = "intel,cavs-shim-clkctl";
+		compatible = "intel,adsp-shim-clkctl";
 		cavs-clkctl-clk-lpro = <0>;
 		cavs-clkctl-clk-hpro = <1>;
 		cavs-clkctl-freq-enc = <0x20000002 0x80000006>;
@@ -61,7 +61,7 @@
 
 	soc {
 		shim: shim@71f00 {
-			compatible = "intel,cavs-shim";
+			compatible = "intel,adsp-shim";
 			reg = <0x71f00 0x100>;
 		};
 
@@ -86,10 +86,10 @@
 			compatible = "intel,adsp-host-ipc";
 			reg = <0x71e00 0x30>;
 			interrupts = <7 0 0>;
-			interrupt-parent = <&cavs0>;
+			interrupt-parent = <&cavs_intc0>;
 		};
 
-		cavs0: cavs@78800  {
+		cavs_intc0: cavs@78800  {
 			compatible = "intel,cavs-intc";
 			reg = <0x78800 0x10>;
 			interrupt-controller;
@@ -98,7 +98,7 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs1: cavs@78810  {
+		cavs_intc1: cavs@78810  {
 			compatible = "intel,cavs-intc";
 			reg = <0x78810 0x10>;
 			interrupt-controller;
@@ -107,7 +107,7 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs2: cavs@78820  {
+		cavs_intc2: cavs@78820  {
 			compatible = "intel,cavs-intc";
 			reg = <0x78820 0x10>;
 			interrupt-controller;
@@ -116,7 +116,7 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs3: cavs@78830  {
+		cavs_intc3: cavs@78830  {
 			compatible = "intel,cavs-intc";
 			reg = <0x78830 0x10>;
 			interrupt-controller;
@@ -129,7 +129,7 @@
 			compatible = "intel,adsp-idc";
 			reg = <0x1200 0x80>;
 			interrupts = <8 0 0>;
-			interrupt-parent = <&cavs0>;
+			interrupt-parent = <&cavs_intc0>;
 		};
 	};
 };

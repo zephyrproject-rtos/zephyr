@@ -28,7 +28,7 @@ config INTEL_ADSP_IPC
 	  Driver for the host IPC interrupt delivery mechanism.
 	  Currently SOF has its own driver for this hardware.
 
-config CAVS_CLOCK
+config ADSP_CLOCK
 	bool
 	help
 	  Driver for the CAVS clocks. Allow type of clock (and
