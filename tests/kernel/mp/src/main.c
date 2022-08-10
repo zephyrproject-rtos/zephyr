@@ -91,7 +91,7 @@ FUNC_NORETURN void cpu1_fn(void *arg)
  *
  * @see arch_start_cpu()
  */
-void test_mp_start(void)
+ZTEST(multiprocessing, test_mp_start)
 {
 	cpu_arg = 12345;
 
@@ -103,9 +103,4 @@ void test_mp_start(void)
 	zassert_true(cpu_running, "cpu1 didn't start");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(multiprocessing,
-			 ztest_unit_test(test_mp_start));
-	ztest_run_test_suite(multiprocessing);
-}
+ZTEST_SUITE(multiprocessing, NULL, NULL, NULL, NULL, NULL);
