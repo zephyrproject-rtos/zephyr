@@ -72,7 +72,7 @@ What the build system does with bindings
 ========================================
 
 The build system uses bindings both to validate devicetree nodes and to convert
-the devicetree's contents into the generated :ref:`devicetree_unfixed.h
+the devicetree's contents into the generated :ref:`devicetree_generated.h
 <dt-outputs>` header file.
 
 For example, the build system would use the above binding to check that the
