@@ -74,6 +74,10 @@ Deprecated in this release
   Related Kconfig :kconfig:option:`CONFIG_STM32_LPTIM_CLOCK` option is now
   deprecated.
 
+* 'label' property from devicetree as a base property.  The property is still
+   valid for specific bindings to specify like :dtcompatible:`gpio-leds` and
+   :dtcompatible:`fixed-partitions`.
+
 Stable API changes in this release
 ==================================
 
