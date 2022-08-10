@@ -214,6 +214,7 @@ if(SUPPORTS_DTS)
   --dtc-flags '${EXTRA_DTC_FLAGS_RAW}'
   --bindings-dirs ${DTS_ROOT_BINDINGS}
   --header-out ${DEVICETREE_GENERATED_H}.new
+  --device-header-out ${DEVICE_EXTERN_H}.new
   --dts-out ${ZEPHYR_DTS}.new # for debugging and dtc
   --edt-pickle-out ${EDT_PICKLE}
   ${EXTRA_GEN_DEFINES_ARGS}
@@ -230,11 +231,11 @@ if(SUPPORTS_DTS)
   else()
     zephyr_file_copy(${ZEPHYR_DTS}.new ${ZEPHYR_DTS} ONLY_IF_DIFFERENT)
     zephyr_file_copy(${DEVICETREE_GENERATED_H}.new ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
-    file(WRITE ${DEVICE_EXTERN_H}
-"#error The contents of this file are now implemented directly in zephyr/device.h.")
-    file(REMOVE ${ZEPHYR_DTS}.new ${DEVICETREE_GENERATED_H}.new)
+    zephyr_file_copy(${DEVICE_EXTERN_H}.new ${DEVICE_EXTERN_H})
+    file(REMOVE ${ZEPHYR_DTS}.new ${DEVICETREE_GENERATED_H}.new ${DEVICE_EXTERN_H}.new)
     message(STATUS "Generated zephyr.dts: ${ZEPHYR_DTS}")
     message(STATUS "Generated devicetree_generated.h: ${DEVICETREE_GENERATED_H}")
+    message(STATUS "Generated device_extern.h: ${DEVICE_EXTERN_H}")
   endif()
 
 
@@ -309,4 +310,5 @@ if(SUPPORTS_DTS)
 else()
   set(header_template ${ZEPHYR_BASE}/misc/generated/generated_header.template)
   zephyr_file_copy(${header_template} ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
+  zephyr_file_copy(${header_template} ${DEVICE_EXTERN_H} ONLY_IF_DIFFERENT)
 endif(SUPPORTS_DTS)
