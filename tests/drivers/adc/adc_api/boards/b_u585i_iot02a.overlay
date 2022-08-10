@@ -1,0 +1,10 @@
+/*
+ * Copyright 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&adc1 {
+	st,adc-prescaler-type = <ASYNC>;
+	st,adc-prescaler = <64>;
+};
