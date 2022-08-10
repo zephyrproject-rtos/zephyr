@@ -54,7 +54,7 @@
 	};
 
 	clkctl: clkctl {
-		compatible = "intel,cavs-shim-clkctl";
+		compatible = "intel,adsp-shim-clkctl";
 		cavs-clkctl-clk-lpro = <0>;
 		cavs-clkctl-clk-hpro = <2>;
 		cavs-clkctl-freq-enc = <0x3 0x1 0x0>;
@@ -64,7 +64,7 @@
 
 	soc {
 		shim: shim@1000 {
-			compatible = "intel,cavs-shim";
+			compatible = "intel,adsp-shim";
 			reg = <0x1000 0x100>;
 		};
 
@@ -89,10 +89,10 @@
 			compatible = "intel,adsp-host-ipc";
 			reg = <0x1180 0x30>;
 			interrupts = <7 0 0>;
-			interrupt-parent = <&cavs0>;
+			interrupt-parent = <&cavs_intc0>;
 		};
 
-		cavs0: cavs@1600  {
+		cavs_intc0: cavs@1600  {
 			compatible = "intel,cavs-intc";
 			reg = <0x1600 0x10>;
 			interrupt-controller;
@@ -101,7 +101,7 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs1: cavs@1610  {
+		cavs_intc1: cavs@1610  {
 			compatible = "intel,cavs-intc";
 			reg = <0x1610 0x10>;
 			interrupt-controller;
@@ -110,7 +110,7 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs2: cavs@1620  {
+		cavs_intc2: cavs@1620  {
 			compatible = "intel,cavs-intc";
 			reg = <0x1620 0x10>;
 			interrupt-controller;
@@ -119,7 +119,7 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs3: cavs@1630  {
+		cavs_intc3: cavs@1630  {
 			compatible = "intel,cavs-intc";
 			reg = <0x1630 0x10>;
 			interrupt-controller;
@@ -132,7 +132,7 @@
 			compatible = "intel,adsp-idc";
 			reg = <0x1200 0x80>;
 			interrupts = <8 0 0>;
-			interrupt-parent = <&cavs0>;
+			interrupt-parent = <&cavs_intc0>;
 		};
 
 		lpgpdma0: dma@c000 {
@@ -141,7 +141,7 @@
 			reg = <0x0000c000 0x1000>;
 			shim = <0x00000c00 0x080>;
 			interrupts = <0x10 0 0>;
-			interrupt-parent = <&cavs3>;
+			interrupt-parent = <&cavs_intc3>;
 
 			status = "okay";
 		};
@@ -152,7 +152,7 @@
 			reg = <0x0000d000 0x1000>;
 			shim = <0x00000c80 0x080>;
 			interrupts = <0x0F 0 0>;
-			interrupt-parent = <&cavs3>;
+			interrupt-parent = <&cavs_intc3>;
 
 			status = "okay";
 		};
@@ -204,7 +204,7 @@
 			reg = <0x00008000 0x200
 			       0x00008E00 0x008>;
 			interrupts = <0x01 0 0>;
-			interrupt-parent = <&cavs3>;
+			interrupt-parent = <&cavs_intc3>;
 			dmas = <&lpgpdma0 2
 				&lpgpdma0 3>;
 			dma-names = "tx", "rx";
@@ -219,7 +219,7 @@
 			reg = <0x00008200 0x200
 			       0x00008E00 0x008>;
 			interrupts = <0x01 0 0>;
-			interrupt-parent = <&cavs3>;
+			interrupt-parent = <&cavs_intc3>;
 			dmas = <&lpgpdma0 4
 				&lpgpdma0 5>;
 			dma-names = "tx", "rx";
@@ -234,7 +234,7 @@
 			reg = <0x00008400 0x200
 			       0x00008E00 0x008>;
 			interrupts = <0x02 0 0>;
-			interrupt-parent = <&cavs3>;
+			interrupt-parent = <&cavs_intc3>;
 			dmas = <&lpgpdma0 6
 				&lpgpdma0 7>;
 			dma-names = "tx", "rx";
@@ -249,7 +249,7 @@
 			reg = <0x00008600 0x200
 			       0x00008E00 0x008>;
 			interrupts = <0x03 0 0>;
-			interrupt-parent = <&cavs3>;
+			interrupt-parent = <&cavs_intc3>;
 			dmas = <&lpgpdma0 8
 				&lpgpdma0 9>;
 			dma-names = "tx", "rx";
@@ -264,7 +264,7 @@
 			reg = <0x00008800 0x200
 			       0x00008E00 0x008>;
 			interrupts = <0x03 0 0>;
-			interrupt-parent = <&cavs3>;
+			interrupt-parent = <&cavs_intc3>;
 			dmas = <&lpgpdma0 10
 				&lpgpdma0 11>;
 			dma-names = "tx", "rx";
@@ -279,7 +279,7 @@
 			reg = <0x00008A00 0x200
 			       0x00008E00 0x008>;
 			interrupts = <0x03 0 0>;
-			interrupt-parent = <&cavs3>;
+			interrupt-parent = <&cavs_intc3>;
 			dmas = <&lpgpdma0 12
 				&lpgpdma0 13>;
 			dma-names = "tx", "rx";

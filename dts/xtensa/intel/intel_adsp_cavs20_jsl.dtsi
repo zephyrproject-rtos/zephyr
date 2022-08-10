@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <xtensa/intel/intel_cavs.dtsi>
+#include <xtensa/intel/intel_adsp_cavs.dtsi>
 #include <mem.h>
 
 / {
@@ -24,23 +24,12 @@
 			reg = <1>;
 		};
 
-		cpu2: cpu@2 {
-			device_type = "cpu";
-			compatible = "cdns,tensilica-xtensa-lx6";
-			reg = <2>;
-		};
-
-		cpu3: cpu@3 {
-			device_type = "cpu";
-			compatible = "cdns,tensilica-xtensa-lx6";
-			reg = <3>;
-		};
 	};
 
 	sram0: memory@be000000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0xbe000000 DT_SIZE_K(3008)>;
+		reg = <0xbe000000 DT_SIZE_K(1024)>;
 	};
 
 	sram1: memory@be800000 {
@@ -49,19 +38,9 @@
 		reg = <0xbe800000 DT_SIZE_K(64)>;
 	};
 
-	clkctl: clkctl {
-		compatible = "intel,cavs-shim-clkctl";
-		cavs-clkctl-clk-lpro = <0>;
-		cavs-clkctl-clk-hpro = <1>;
-		cavs-clkctl-freq-enc = <0x20000002 0x80000006>;
-		cavs-clkctl-freq-mask = <0x20000000 0x80000000>;
-		cavs-clkctl-freq-default = <1>;
-		cavs-clkctl-freq-lowest = <0>;
-	};
-
 	soc {
 		shim: shim@71f00 {
-			compatible = "intel,cavs-shim";
+			compatible = "intel,adsp-shim";
 			reg = <0x71f00 0x100>;
 		};
 
@@ -86,10 +65,10 @@
 			compatible = "intel,adsp-host-ipc";
 			reg = <0x71e00 0x30>;
 			interrupts = <7 0 0>;
-			interrupt-parent = <&cavs0>;
+			interrupt-parent = <&cavs_intc0>;
 		};
 
-		cavs0: cavs@78800  {
+		cavs_intc0: cavs@78800  {
 			compatible = "intel,cavs-intc";
 			reg = <0x78800 0x10>;
 			interrupt-controller;
@@ -98,7 +77,7 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs1: cavs@78810  {
+		cavs_intc1: cavs@78810  {
 			compatible = "intel,cavs-intc";
 			reg = <0x78810 0x10>;
 			interrupt-controller;
@@ -107,7 +86,7 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs2: cavs@78820  {
+		cavs_intc2: cavs@78820  {
 			compatible = "intel,cavs-intc";
 			reg = <0x78820 0x10>;
 			interrupt-controller;
@@ -116,7 +95,7 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs3: cavs@78830  {
+		cavs_intc3: cavs@78830  {
 			compatible = "intel,cavs-intc";
 			reg = <0x78830 0x10>;
 			interrupt-controller;
@@ -129,7 +108,7 @@
 			compatible = "intel,adsp-idc";
 			reg = <0x1200 0x80>;
 			interrupts = <8 0 0>;
-			interrupt-parent = <&cavs0>;
+			interrupt-parent = <&cavs_intc0>;
 		};
 
 	};

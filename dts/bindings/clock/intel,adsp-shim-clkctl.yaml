@@ -3,7 +3,7 @@
 
 description: Intel cAVS clock controlling related constants.
 
-compatible: "intel,cavs-shim-clkctl"
+compatible: "intel,adsp-shim-clkctl"
 
 properties:
     cavs-clkctl-clk-wovcro:
