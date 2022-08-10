@@ -22,15 +22,6 @@
 #define RAM_BASE (L2_SRAM_BASE + CONFIG_HP_SRAM_RESERVE + VECTOR_TBL_SIZE)
 #define RAM_SIZE (L2_SRAM_SIZE - CONFIG_HP_SRAM_RESERVE - VECTOR_TBL_SIZE)
 
-/* Host shared memory windows */
-#define HP_SRAM_WIN0_BASE (L2_SRAM_BASE + CONFIG_ADSP_WIN0_OFFSET)
-#define HP_SRAM_WIN0_SIZE 0x2000
-#define HP_SRAM_WIN2_BASE (L2_SRAM_BASE + CONFIG_ADSP_WIN2_OFFSET)
-/* window 2 size is variable */
-#define HP_SRAM_WIN2_SIZE (CONFIG_ADSP_WIN3_OFFSET - CONFIG_ADSP_WIN2_OFFSET)
-#define HP_SRAM_WIN3_BASE (L2_SRAM_BASE + CONFIG_ADSP_WIN3_OFFSET)
-#define HP_SRAM_WIN3_SIZE 0x2000
-
 /* The rimage tool produces two blob addresses we need to find: one is
  * our bootloader code block which starts at its entry point, the
  * other is the "manifest" containing the HP-SRAM data to unpack,
