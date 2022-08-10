@@ -46,7 +46,6 @@ config EMUL_BMI160
 	  i2c/ or spi/ directories.
 
 source "subsys/emul/i2c/Kconfig"
-source "subsys/emul/spi/Kconfig"
 source "subsys/emul/espi/Kconfig"
 
 endif
