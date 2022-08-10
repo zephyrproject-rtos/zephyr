@@ -92,6 +92,13 @@
 	port_sel = <0>;
 	sda-gpios = <&gpio_000_036 3 0>;
 	scl-gpios = <&gpio_000_036 4 0>;
+};
+
+&i2c_smb_1 {
+	status = "okay";
+	port_sel = <1>;
+	sda-gpios = <&gpio_100_136 24 0>;
+	scl-gpios = <&gpio_100_136 25 0>;
 
 	pca9555@26 {
 		compatible = "nxp,pca95xx";
@@ -108,13 +115,6 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 	};
-};
-
-&i2c_smb_1 {
-	status = "okay";
-	port_sel = <1>;
-	sda-gpios = <&gpio_100_136 24 0>;
-	scl-gpios = <&gpio_100_136 25 0>;
 };
 
 &i2c_smb_2 {
