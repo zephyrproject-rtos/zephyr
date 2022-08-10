@@ -269,7 +269,7 @@ typedef int16_t device_handle_t;
  * identifier
  *
  * @details Returns a pointer to a device object created from a
- * devicetree node, if any device was allocated by a driver.
+ * devicetree node or node label, if any device was allocated by a driver.
  *
  * If no such device was allocated, this will fail at linker time. If
  * you get an error that looks like <tt>undefined reference to
@@ -277,10 +277,13 @@ typedef int16_t device_handle_t;
  * sure your device driver is being compiled, usually by enabling the
  * Kconfig options it requires.
  *
- * @param node_id A devicetree node identifier
+ * @param node A devicetree node identifier or node label
  * @return A pointer to the device object created for that node
  */
-#define DEVICE_DT_GET(node_id) (&DEVICE_DT_NAME_GET(node_id))
+#define DEVICE_DT_GET(node)						\
+	(COND_CODE_1(DT_NODE_EXISTS(node),				\
+		     (&DEVICE_DT_NAME_GET(node)),			\
+		     (&DEVICE_DT_NAME_GET(DT_NODELABEL(node)))))
 
 /**
  * @brief Get a <tt>const struct device*</tt> for an instance of a
