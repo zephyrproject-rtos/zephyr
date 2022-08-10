@@ -55,6 +55,15 @@ static ZTEST_BMEM int test_status;
 
 extern ZTEST_DMEM const struct ztest_arch_api ztest_api;
 
+void end_report(void)
+{
+	if (test_status) {
+		TC_END_REPORT(TC_FAIL);
+	} else {
+		TC_END_REPORT(TC_PASS);
+	}
+}
+
 static int cleanup_test(struct ztest_unit_test *test)
 {
 	int ret = TC_PASS;
@@ -663,15 +672,6 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 int z_ztest_run_test_suite(const char *name)
 {
 	return z_ztest_run_test_suite_ptr(ztest_find_test_suite(name));
-}
-
-void end_report(void)
-{
-	if (test_status) {
-		TC_END_REPORT(TC_FAIL);
-	} else {
-		TC_END_REPORT(TC_PASS);
-	}
 }
 
 #ifdef CONFIG_USERSPACE
