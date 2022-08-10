@@ -531,7 +531,9 @@ static int i2c_enhance_pio_transfer(const struct device *dev,
 	int res;
 
 	if (data->i2ccs == I2C_CH_NORMAL) {
-		msgs->flags |= I2C_MSG_START;
+		struct i2c_msg *start_msg = &msgs[0];
+
+		start_msg->flags |= I2C_MSG_START;
 	}
 
 	for (int i = 0; i < data->num_msgs; i++) {
@@ -540,10 +542,6 @@ static int i2c_enhance_pio_transfer(const struct device *dev,
 		data->ridx = 0;
 		data->err = 0;
 		data->msgs = &(msgs[i]);
-
-		if (msgs->flags & I2C_MSG_START) {
-			data->i2ccs = I2C_CH_NORMAL;
-		}
 
 		/*
 		 * Start transaction.
@@ -584,7 +582,7 @@ static int i2c_enhance_pio_transfer(const struct device *dev,
 	}
 
 	/* reset i2c channel status */
-	if (data->err || (msgs->flags & I2C_MSG_STOP)) {
+	if (data->err || (data->msgs->flags & I2C_MSG_STOP)) {
 		data->i2ccs = I2C_CH_NORMAL;
 	}
 

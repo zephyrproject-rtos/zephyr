@@ -912,6 +912,8 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 	 * exclude checking bus busy.
 	 */
 	if (data->i2ccs == I2C_CH_NORMAL) {
+		struct i2c_msg *start_msg = &msgs[0];
+
 		/* Make sure we're in a good state to start */
 		if (i2c_bus_not_available(dev)) {
 			/* Recovery I2C bus */
@@ -927,7 +929,7 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 			}
 		}
 
-		msgs->flags |= I2C_MSG_START;
+		start_msg->flags |= I2C_MSG_START;
 	}
 #ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
 	/* Store num_msgs to data struct. */
@@ -949,9 +951,6 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		data->msgs = &(msgs[i]);
 		data->addr_16bit = addr;
 
-		if (msgs->flags & I2C_MSG_START) {
-			data->i2ccs = I2C_CH_NORMAL;
-		}
 #ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
 		data->active_msg_index = 0;
 		/*
@@ -1025,7 +1024,7 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 	}
 #endif
 	/* reset i2c channel status */
-	if (data->err || (msgs->flags & I2C_MSG_STOP)) {
+	if (data->err || (data->msgs->flags & I2C_MSG_STOP)) {
 		data->i2ccs = I2C_CH_NORMAL;
 	}
 	/* Unlock mutex of i2c controller */
