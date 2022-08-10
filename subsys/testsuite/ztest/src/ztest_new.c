@@ -330,6 +330,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 	int ret = TC_PASS;
 
 	TC_START(test->name);
+	phase = TEST_PHASE_BEFORE;
 
 	if (test_result == ZTEST_RESULT_SUITE_FAIL) {
 		ret = TC_FAIL;
@@ -358,6 +359,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 	run_test_functions(suite, test, data);
 out:
 	ret |= cleanup_test(test);
+	phase = TEST_PHASE_AFTER;
 	if (test_result != ZTEST_RESULT_SUITE_FAIL) {
 		if (suite->after != NULL) {
 			suite->after(data);
