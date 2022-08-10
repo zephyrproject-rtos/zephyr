@@ -95,7 +95,7 @@ FOR_EACH(SYS_INIT_CREATE, (;), PRE_KERNEL_1, PRE_KERNEL_2, POST_KERNEL);
 
 ZTEST(no_multithreading, test_sys_init)
 {
-	zassert_equal(init_order, 3, "SYS_INIT failed");
+	zassert_equal(init_order, _SYS_INIT_LEVEL_PRE_KERNEL_2, "SYS_INIT failed: %d", init_order);
 }
 
 ZTEST_SUITE(no_multithreading, NULL, NULL, NULL, NULL, NULL);
