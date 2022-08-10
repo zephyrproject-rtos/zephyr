@@ -4,3 +4,4 @@
 config BOARD_FVP_BASE_REVC_2XAEMV8A
 	bool "FVP Base RevC AEMv8A simulation board"
 	depends on SOC_FVP_BASE_REVC_2XAEMV8A
+	select BUILD_WITH_TFA if ARMV8_A_NS

@@ -42,5 +42,15 @@ if(CONFIG_BUILD_WITH_TFA)
     set(FVP_SECURE_FLASH_FILE ${TFA_BINARY_DIR}/fvp/release/bl1.bin)
     set(FVP_FLASH_FILE ${TFA_BINARY_DIR}/fvp/release/fip.bin)
   endif()
+endif()
 
+if(CONFIG_BOARD_FVP_LOAD_AHCI_IMAGE)
+  set(CONFIG_BOARD_FVP_LOAD_AHCI_IMAGE ${PROJECT_SOURCE_DIR}/${CONFIG_BOARD_FVP_LOAD_AHCI_IMAGE})
+  if(EXISTS ${CONFIG_BOARD_FVP_LOAD_AHCI_IMAGE})
+    set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
+      -C pci.ahci_pci.ahci.image_path=${CONFIG_BOARD_FVP_LOAD_AHCI_IMAGE}
+    )
+  else()
+    message(WARNING "File not found ${CONFIG_BOARD_FVP_LOAD_AHCI_IMAGE}")
+  endif()
 endif()

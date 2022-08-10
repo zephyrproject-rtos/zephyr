@@ -8,6 +8,7 @@
 #include <mem.h>
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/pcie/pcie.h>
 
 / {
 	model = "FVP Base RevC 2xAEMv8A";
@@ -21,6 +22,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,pcie-controller = &pci;
 	};
 
 	psci {
@@ -158,7 +160,32 @@
 
 		dram0: memory@88000000 {
 			compatible = "mmio-dram";
-			reg = <0x88000000 DT_SIZE_K(2048)>;
+			reg = <0x88000000 DT_SIZE_M(128)>;
+		};
+
+		pci: pci@40000000 {
+			compatible = "pci-host-ecam-generic";
+			reg = <0x40000000 0x10000000>;
+			msi-parent = <&its>;
+
+			#address-cells = <2>;
+			#size-cells = <1>;
+			ranges = <0x2000000 0x50000000 0x50000000 0x10000000>;
+
+			iommu-maps = <&smmu 0x0000 0x0000 0x10000>;
+
+			ahci: ahci {
+				compatible = "ata-ahci";
+
+				vendor-id = <0x0abc>;
+				device-id = <0xaced>;
+			};
+		};
+
+		smmu: smmu@2b400000 {
+			compatible = "arm,smmu-v3";
+			reg = <0x2b400000 0x100000>;
+			#iommu-map-cells = <3>;
 		};
 	};
 };
@@ -166,4 +193,12 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&pci {
+	status = "okay";
+};
+
+&ahci {
+	status = "okay";
 };

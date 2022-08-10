@@ -16,3 +16,8 @@
 # With 11x64K HEAP, up to 116 ITT tables of 32 ITEs can be allocated.
 config HEAP_MEM_POOL_SIZE
 	default 720896 if GIC_V3_ITS
+
+config BOARD_FVP_LOAD_AHCI_IMAGE
+	string "Load an ahci image"
+	default ""
+	depends on SOC_FVP_BASE_REVC_2XAEMV8A
