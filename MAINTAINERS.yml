@@ -2653,6 +2653,7 @@ ZTest:
     - aaronemassey
     - jeremybettis
     - yperess
+    - asemjonovs
   files:
     - subsys/testsuite/
     - tests/ztest/
@@ -2669,6 +2670,7 @@ Emulation:
     - aaronemassey
     - jeremybettis
     - alevkoy
+    - asemjonovs
   files:
     - subsys/emul/
     - include/zephyr/drivers/emul.h
