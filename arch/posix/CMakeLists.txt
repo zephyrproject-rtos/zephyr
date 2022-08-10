@@ -28,15 +28,6 @@ if (CONFIG_GPROF)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,gprof>)
   zephyr_link_libraries($<TARGET_PROPERTY:linker,gprof>)
 endif()
-if (CONFIG_ASAN)
-  zephyr_compile_options($<TARGET_PROPERTY:compiler,sanitize_address>)
-  zephyr_link_libraries($<TARGET_PROPERTY:linker,sanitize_address>)
-endif ()
-
-if (CONFIG_UBSAN)
-  zephyr_compile_options($<TARGET_PROPERTY:compiler,sanitize_undefined>)
-  zephyr_link_libraries($<TARGET_PROPERTY:linker,sanitize_undefined>)
-endif ()
 
 zephyr_compile_definitions(_POSIX_C_SOURCE=200809 _XOPEN_SOURCE=600 _XOPEN_SOURCE_EXTENDED)
 
@@ -52,6 +43,30 @@ zephyr_ld_options(
 # ( include/posix/pthread.h / kernel/pthread.c ) [And any future API added to
 # Zephyr which will clash with the native POSIX API] . It would also need to
 # be included in a few zephyr kernel files.
+
+#
+# Support for the LLVM Sanitizer toolchain instrumentation frameworks
+# (supported by current gcc's as well)
+#
+
+if(CONFIG_ASAN)
+  list(APPEND LLVM_SANITIZERS "address")
+endif()
+
+if(CONFIG_UBSAN)
+  list(APPEND LLVM_SANITIZERS "undefined")
+endif()
+
+if(CONFIG_ASAN_RECOVER)
+  zephyr_compile_options(-fsanitize-recover=all)
+endif()
+
+list(JOIN LLVM_SANITIZERS "," LLVM_SANITIZERS_ARG)
+if(NOT ${LLVM_SANITIZERS_ARG} STREQUAL "")
+  set(LLVM_SANITIZERS_ARG "-fsanitize=${LLVM_SANITIZERS_ARG}")
+  zephyr_compile_options("${LLVM_SANITIZERS_ARG}")
+  zephyr_link_libraries("${LLVM_SANITIZERS_ARG}")
+endif()
 
 
 add_subdirectory(core)
