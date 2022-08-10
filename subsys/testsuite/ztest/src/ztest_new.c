@@ -47,11 +47,20 @@ enum ztest_phase {
 };
 
 /**
+ * @brief The current status of the test binary
+ */
+enum ztest_status {
+	ZTEST_STATUS_OK,
+	ZTEST_STATUS_HAS_FAILURE,
+	ZTEST_STATUS_CRITICAL_ERROR
+};
+
+/**
  * @brief Tracks the current phase that ztest is operating in.
  */
 ZTEST_DMEM enum ztest_phase phase = TEST_PHASE_FRAMEWORK;
 
-static ZTEST_BMEM int test_status;
+static ZTEST_BMEM enum ztest_status test_status = ZTEST_STATUS_OK;
 
 extern ZTEST_DMEM const struct ztest_arch_api ztest_api;
 
@@ -417,23 +426,56 @@ static void test_finalize(void)
 
 void ztest_test_fail(void)
 {
-	test_result = (phase == TEST_PHASE_SETUP) ? ZTEST_RESULT_SUITE_FAIL : ZTEST_RESULT_FAIL;
-	if (phase != TEST_PHASE_SETUP) {
+	switch (phase) {
+	case TEST_PHASE_SETUP:
+		test_result = ZTEST_RESULT_SUITE_FAIL;
+		break;
+	case TEST_PHASE_BEFORE:
+	case TEST_PHASE_TEST:
+		test_result = ZTEST_RESULT_FAIL;
 		test_finalize();
+		break;
+	default:
+		PRINT(" ERROR: cannot fail in test '%s()', bailing\n",
+		      get_friendly_phase_name(phase));
+		test_status = ZTEST_STATUS_CRITICAL_ERROR;
+		break;
 	}
 }
 
 void ztest_test_pass(void)
 {
-	test_result = ZTEST_RESULT_PASS;
-	test_finalize();
+	switch (phase) {
+	case TEST_PHASE_TEST:
+		test_result = ZTEST_RESULT_PASS;
+		test_finalize();
+		break;
+	default:
+		PRINT(" ERROR: cannot pass in test '%s()', bailing\n",
+		      get_friendly_phase_name(phase));
+		test_status = ZTEST_STATUS_CRITICAL_ERROR;
+		if (phase == TEST_PHASE_BEFORE) {
+			test_finalize();
+		}
+	}
 }
 
 void ztest_test_skip(void)
 {
-	test_result = (phase == TEST_PHASE_SETUP) ? ZTEST_RESULT_SUITE_SKIP : ZTEST_RESULT_SKIP;
-	if (phase != TEST_PHASE_SETUP) {
+	switch (phase) {
+	case TEST_PHASE_SETUP:
+		test_result = ZTEST_RESULT_SUITE_SKIP;
+		break;
+	case TEST_PHASE_BEFORE:
+	case TEST_PHASE_TEST:
+		test_result = ZTEST_RESULT_SKIP;
 		test_finalize();
+		break;
+	default:
+		PRINT(" ERROR: cannot skip in test '%s()', bailing\n",
+		      get_friendly_phase_name(phase));
+		test_status = ZTEST_STATUS_CRITICAL_ERROR;
+		break;
 	}
 }
 
@@ -595,7 +637,7 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 	}
 
 	if (suite == NULL) {
-		test_status = 1;
+		test_status = ZTEST_STATUS_CRITICAL_ERROR;
 		return -1;
 	}
 
@@ -652,7 +694,7 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 				}
 			}
 
-			if (fail && FAIL_FAST) {
+			if ((fail && FAIL_FAST) || test_status == ZTEST_STATUS_CRITICAL_ERROR) {
 				break;
 			}
 		}
@@ -674,13 +716,15 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 				}
 			}
 
-			if (fail && FAIL_FAST) {
+			if ((fail && FAIL_FAST) || test_status == ZTEST_STATUS_CRITICAL_ERROR) {
 				break;
 			}
 		}
 #endif
 
-		test_status = (test_status || fail) ? 1 : 0;
+		if (test_status == ZTEST_STATUS_OK && fail != 0) {
+			test_status = ZTEST_STATUS_HAS_FAILURE;
+		}
 	}
 
 	TC_SUITE_END(suite->name, (fail > 0 ? TC_FAIL : TC_PASS));
@@ -861,6 +905,10 @@ int z_impl_ztest_run_test_suites(const void *state)
 {
 	int count = 0;
 
+	if (test_status == ZTEST_STATUS_CRITICAL_ERROR) {
+		return count;
+	}
+
 #ifdef CONFIG_ZTEST_SHUFFLE
 	struct ztest_suite_node *suites_to_run[ZTEST_SUITE_COUNT];
 
@@ -869,11 +917,25 @@ int z_impl_ztest_run_test_suites(const void *state)
 			ZTEST_SUITE_COUNT, sizeof(struct ztest_suite_node));
 	for (size_t i = 0; i < ZTEST_SUITE_COUNT; ++i) {
 		count += __ztest_run_test_suite(suites_to_run[i], state);
+		/* Stop running tests if we have a critical error or if we have a failure and
+		 * FAIL_FAST was set
+		 */
+		if (test_status == ZTEST_STATUS_CRITICAL_ERROR ||
+		    (test_status == ZTEST_STATUS_HAS_FAILURE && FAIL_FAST)) {
+			break;
+		}
 	}
 #else
 	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
 	     ptr < _ztest_suite_node_list_end; ++ptr) {
 		count += __ztest_run_test_suite(ptr, state);
+		/* Stop running tests if we have a critical error or if we have a failure and
+		 * FAIL_FAST was set
+		 */
+		if (test_status == ZTEST_STATUS_CRITICAL_ERROR ||
+		    (test_status == ZTEST_STATUS_HAS_FAILURE && FAIL_FAST)) {
+			break;
+		}
 	}
 #endif
 
@@ -908,7 +970,7 @@ void ztest_verify_all_test_suites_ran(void)
 		}
 
 		if (!all_tests_run) {
-			test_status = 1;
+			test_status = ZTEST_STATUS_HAS_FAILURE;
 		}
 	}
 
