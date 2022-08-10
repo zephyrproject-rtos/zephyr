@@ -10,6 +10,7 @@
 #include <zephyr/syscall_handler.h>
 
 extern const struct init_entry __init_start[];
+extern const struct init_entry __init_ARCH_start[];
 extern const struct init_entry __init_PRE_KERNEL_1_start[];
 extern const struct init_entry __init_PRE_KERNEL_2_start[];
 extern const struct init_entry __init_POST_KERNEL_start[];
@@ -54,6 +55,7 @@ void z_device_state_init(void)
 void z_sys_init_run_level(int32_t level)
 {
 	static const struct init_entry *levels[] = {
+		__init_ARCH_start,
 		__init_PRE_KERNEL_1_start,
 		__init_PRE_KERNEL_2_start,
 		__init_POST_KERNEL_start,

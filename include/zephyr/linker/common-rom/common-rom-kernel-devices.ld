@@ -9,6 +9,7 @@
 		 * by level, sorted by priority within a level)
 		 */
 		__init_start = .;
+		CREATE_OBJ_LEVEL(init, ARCH)
 		CREATE_OBJ_LEVEL(init, PRE_KERNEL_1)
 		CREATE_OBJ_LEVEL(init, PRE_KERNEL_2)
 		CREATE_OBJ_LEVEL(init, POST_KERNEL)
@@ -24,6 +25,7 @@
 		 * object parent. See above and include/device.h.
 		 */
 		__device_start = .;
+		CREATE_OBJ_LEVEL(device, ARCH)
 		CREATE_OBJ_LEVEL(device, PRE_KERNEL_1)
 		CREATE_OBJ_LEVEL(device, PRE_KERNEL_2)
 		CREATE_OBJ_LEVEL(device, POST_KERNEL)
