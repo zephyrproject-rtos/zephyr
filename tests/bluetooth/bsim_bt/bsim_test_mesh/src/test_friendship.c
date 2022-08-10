@@ -388,6 +388,15 @@ static void test_lpn_est(void)
 {
 	bt_mesh_test_setup();
 
+	/* This test is used to establish friendship with single lpn as well as
+	 * with many lpn devices. If legacy advertiser is used friendship with
+	 * many lpn devices is established normally due to bad precision of advertiser.
+	 * If extended advertiser is used simultaneous lpn running causes the situation
+	 * when Friend Request from several devices collide in emulated radio channel.
+	 * This shift of start moment helps to avoid Friend Request collisions.
+	 */
+	k_sleep(K_MSEC(10 * get_device_nbr()));
+
 	bt_mesh_lpn_set(true);
 
 	ASSERT_OK(evt_wait(LPN_ESTABLISHED, K_SECONDS(5)),
