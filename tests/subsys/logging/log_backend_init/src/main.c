@@ -103,7 +103,7 @@ LOG_BACKEND_DEFINE(backend2, backend_api, true, &context2);
  * ready it will not receive this message. Second message is created when
  * both backends are initialized so both receives the message.
  */
-void test_log_backends_initialization(void)
+ZTEST(log_backend_init, test_log_backends_initialization)
 {
 	if (log_backend_count_get() != 2) {
 		/* Other backends should not be enabled. */
@@ -140,10 +140,5 @@ void test_log_backends_initialization(void)
 	zassert_equal(context2.cnt, 1, NULL);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_log_backend_init,
-			 ztest_unit_test(test_log_backends_initialization)
-			 );
-	ztest_run_test_suite(test_log_backend_init);
-}
+
+ZTEST_SUITE(log_backend_init, NULL, NULL, NULL, NULL, NULL);
