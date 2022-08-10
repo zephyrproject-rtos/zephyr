@@ -73,9 +73,29 @@
 			reg = <0x1500 0x40>;
 		};
 
-		win: win@1580 {
-			compatible = "intel,cavs-win";
-			reg = <0x1580 0x20>;
+		mem_window0: mem_window@1580 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x1580 0x8>;
+			offset = <0x6000>;
+			memory = <&sram0>;
+			initialize;
+		};
+		mem_window1: mem_window@1588 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x1588 0x8>;
+			memory = <&sram0>;
+		};
+
+		mem_window2: mem_window@1590 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x1590 0x8>;
+			memory = <&sram0>;
+		};
+
+		mem_window3: mem_window@1598 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x1598 0x8>;
+			memory = <&sram0>;
 		};
 
 		core_intc: core_intc@0 {

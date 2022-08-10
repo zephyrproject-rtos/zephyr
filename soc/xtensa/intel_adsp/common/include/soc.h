@@ -54,7 +54,7 @@
 #define DSP_WCT_CS_TT(x)			BIT(4 + x)
 
 
-extern void soc_trace_init(void);
+extern int soc_trace_init(void);
 
 extern void z_soc_mp_asm_entry(void);
 extern void soc_mp_startup(uint32_t cpu);

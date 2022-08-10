@@ -2,9 +2,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/sys/winstream.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <adsp_memory.h>
-#include <zephyr/sys/winstream.h>
+#include <mem_window.h>
 
 struct k_spinlock trace_lock;
 
@@ -40,9 +43,16 @@ int arch_printk_char_out(int c)
 	return 0;
 }
 
-void soc_trace_init(void)
+int soc_trace_init(void)
 {
-	void *buf = z_soc_uncached_ptr((void *)HP_SRAM_WIN3_BASE);
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
-	winstream = sys_winstream_init(buf, HP_SRAM_WIN3_SIZE);
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
+	}
+	const struct mem_win_config *config = dev->config;
+	void *buf = arch_xtensa_uncached_ptr((void *)config->mem_base);
+
+	winstream = sys_winstream_init(buf, config->size);
+	return 0;
 }
