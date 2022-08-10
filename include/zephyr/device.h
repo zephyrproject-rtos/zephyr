@@ -8,19 +8,6 @@
 #define ZEPHYR_INCLUDE_DEVICE_H_
 
 /**
- * @brief Device Driver APIs
- * @defgroup io_interfaces Device Driver APIs
- * @{
- * @}
- */
-/**
- * @brief Miscellaneous Drivers APIs
- * @defgroup misc_interfaces Miscellaneous Drivers APIs
- * @ingroup io_interfaces
- * @{
- * @}
- */
-/**
  * @brief Device Model APIs
  * @defgroup device_model Device Model APIs
  * @{
