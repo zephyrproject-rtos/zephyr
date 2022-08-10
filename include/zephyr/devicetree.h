@@ -16,7 +16,7 @@
 #ifndef DEVICETREE_H
 #define DEVICETREE_H
 
-#include <devicetree_unfixed.h>
+#include <devicetree_generated.h>
 
 #include <zephyr/sys/util.h>
 

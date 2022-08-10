@@ -100,7 +100,7 @@ typedef int16_t device_handle_t;
  * size.
  *
  * The ordinal used in this name can be mapped to the path by
- * examining zephyr/include/generated/devicetree_unfixed.h.
+ * examining zephyr/include/generated/devicetree_generated.h.
  */
 #define Z_DEVICE_DT_DEV_NAME(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
 

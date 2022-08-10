@@ -417,7 +417,7 @@
                 <xhtml:font
                    style="font-size: 16px ; font-family: &quot;courier new&quot; ; color: #000000 ; direction: ltr ; letter-spacing: 0px ; line-height: 120% ; opacity: 1">
                   <xhtml:br />
-                  <xhtml:i>devicetree_unfixed.h<xhtml:br />
+                  <xhtml:i>devicetree_generated.h<xhtml:br />
 </xhtml:i>
                   <xhtml:br />
                 </xhtml:font>
@@ -432,7 +432,7 @@
            font-family="Helvetica"
            font-size="12px"
            text-anchor="middle"
-           id="text76">devicetree_unfixed.h...</text>
+           id="text76">devicetree_generated.h...</text>
       </switch>
     </g>
     <path

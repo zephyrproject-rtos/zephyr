@@ -636,9 +636,9 @@ These are created in your application's build directory.
 :file:`<build>/zephyr/zephyr.dts.pre`
    The preprocessed DTS source. This is an intermediate output file, which is
    input to :file:`gen_defines.py` and used to create :file:`zephyr.dts` and
-   :file:`devicetree_unfixed.h`.
+   :file:`devicetree_generated.h`.
 
-:file:`<build>/zephyr/include/generated/devicetree_unfixed.h`
+:file:`<build>/zephyr/include/generated/devicetree_generated.h`
    The generated macros and additional comments describing the devicetree.
    Included by ``devicetree.h``.
 
