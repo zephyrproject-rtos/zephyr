@@ -101,11 +101,6 @@ set_compiler_property(PROPERTY no_common)
 # Flags for imacros. The specific header must be appended by user.
 set_compiler_property(PROPERTY imacros)
 
-# Compiler flags for sanitizing.
-set_compiler_property(PROPERTY sanitize_address)
-
-set_compiler_property(PROPERTY sanitize_undefined)
-
 # Compiler flag for turning off thread-safe initialization of local statics
 set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics)
 
