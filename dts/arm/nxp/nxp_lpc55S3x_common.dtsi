@@ -225,6 +225,25 @@
 		#size-cells = <0>;
 	};
 
+	can0: can@4009d000 {
+		compatible = "nxp,lpc-mcan";
+		reg = <0x4009d000 0x1000>;
+		reg-names = "m_can";
+		interrupts = <43 0>, <44 0>;
+		clocks = <&syscon MCUX_MCAN_CLK>;
+		std-filter-elements = <128>;
+		ext-filter-elements = <64>;
+		rx-fifo0-elements = <64>;
+		rx-fifo1-elements = <64>;
+		rx-buffer-elements = <64>;
+		tx-buffer-elements = <32>;
+		sjw = <1>;
+		sample-point = <875>;
+		sjw-data = <1>;
+		sample-point-data = <875>;
+		status = "disabled";
+	};
+
 };
 
 &nvic {
