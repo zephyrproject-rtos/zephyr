@@ -141,6 +141,10 @@ if(TOOLCHAIN_USE_CUSTOM)
   zephyr_compile_definitions(__TOOLCHAIN_CUSTOM__)
 endif()
 
+# @Intent: Set compiler specific flag for disabling strict aliasing rule
+zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,no_strict_aliasing>>)
+zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,no_strict_aliasing>>)
+
 # @Intent: Set compiler flags to enable buffer overflow checks in libc functions
 # @config in CONFIG_NO_OPTIMIZATIONS optional : Optimizations may affect security
 zephyr_compile_definitions($<TARGET_PROPERTY:compiler,security_fortify> )
