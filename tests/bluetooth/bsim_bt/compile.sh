@@ -35,6 +35,7 @@ app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split_low_lat.conf \
   compile
 app=tests/bluetooth/bsim_bt/bsim_test_multiple compile
 app=tests/bluetooth/bsim_bt/bsim_test_advx compile
+app=tests/bluetooth/bsim_bt/bsim_test_adv_chain compile
 app=tests/bluetooth/bsim_bt/bsim_test_gatt compile
 app=tests/bluetooth/bsim_bt/bsim_test_gatt_write compile
 app=tests/bluetooth/bsim_bt/bsim_test_l2cap compile
