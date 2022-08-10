@@ -65,6 +65,8 @@ The Zephyr configuration for the LPC55S36 board (lpcxpresso55s36) is as follows:
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | clock_control                       |
 +-----------+------------+-------------------------------------+
+| CAN       | on-chip    | canbus                              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently enabled.
 
