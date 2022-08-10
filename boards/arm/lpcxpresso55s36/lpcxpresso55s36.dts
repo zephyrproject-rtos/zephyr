@@ -19,6 +19,7 @@
 		zephyr,code-partition = &sramx;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
+		zephyr,canbus = &can0;
 	};
 
 	aliases{
@@ -117,4 +118,12 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
+};
+
+&can0 {
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	pinctrl-0 = <&pinmux_mcan_can0>;
+	pinctrl-names = "default";
+	status = "ok";
 };
