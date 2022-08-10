@@ -88,7 +88,7 @@ LIBC_BSS static size_t max_heap_size;
 K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
 #   define MALLOC_BSS	K_APP_BMEM(z_malloc_partition)
 #  else
-#   define MALLOC_BSS
+#   define MALLOC_BSS	__noinit
 #  endif
 
 MALLOC_BSS static unsigned char __aligned(HEAP_ALIGN)
