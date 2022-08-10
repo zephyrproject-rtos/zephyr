@@ -256,27 +256,6 @@ static int get_final_test_result(const struct ztest_unit_test *test, int ret)
 	return ret;
 }
 
-#ifndef KERNEL
-
-/* Static code analysis tool can raise a violation that the standard header
- * <setjmp.h> shall not be used.
- *
- * setjmp is using in a test code, not in a runtime code, it is acceptable.
- * It is a deliberate deviation.
- */
-#include <setjmp.h> /* parasoft-suppress MISRAC2012-RULE_21_4-a MISRAC2012-RULE_21_4-b*/
-#include <signal.h>
-#include <stdlib.h>
-#include <string.h>
-
-#define FAIL_FAST 0
-
-static jmp_buf test_fail;
-static jmp_buf test_pass;
-static jmp_buf test_skip;
-static jmp_buf stack_fail;
-static jmp_buf test_suite_fail;
-
 /**
  * @brief Get a friendly name string for a given test phrase.
  *
@@ -302,6 +281,27 @@ static inline const char *get_friendly_phase_name(enum ztest_phase phase)
 		return "(unknown)";
 	}
 }
+
+#ifndef KERNEL
+
+/* Static code analysis tool can raise a violation that the standard header
+ * <setjmp.h> shall not be used.
+ *
+ * setjmp is using in a test code, not in a runtime code, it is acceptable.
+ * It is a deliberate deviation.
+ */
+#include <setjmp.h> /* parasoft-suppress MISRAC2012-RULE_21_4-a MISRAC2012-RULE_21_4-b*/
+#include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define FAIL_FAST 0
+
+static jmp_buf test_fail;
+static jmp_buf test_pass;
+static jmp_buf test_skip;
+static jmp_buf stack_fail;
+static jmp_buf test_suite_fail;
 
 void ztest_test_fail(void)
 {
