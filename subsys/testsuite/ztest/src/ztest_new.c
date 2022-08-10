@@ -316,14 +316,6 @@ void ztest_test_pass(void) { longjmp(test_pass, 1); }
 
 void ztest_test_skip(void) { longjmp(test_skip, 1); }
 
-static void init_testing(void)
-{
-	if (setjmp(stack_fail)) {
-		PRINT("TESTSUITE crashed.");
-		exit(1);
-	}
-}
-
 static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test, void *data)
 {
 	int ret = TC_PASS;
@@ -423,11 +415,6 @@ void ztest_simple_1cpu_after(void *data)
 {
 	ARG_UNUSED(data);
 	z_test_1cpu_stop();
-}
-
-static void init_testing(void)
-{
-	k_object_access_all_grant(&ztest_thread);
 }
 
 static void test_cb(void *a, void *b, void *c)
@@ -580,7 +567,16 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 		return -1;
 	}
 
-	init_testing();
+#ifndef KERNEL
+	if (setjmp(stack_fail)) {
+		PRINT("TESTSUITE crashed.\n");
+		test_status = ZTEST_STATUS_CRITICAL_ERROR;
+		end_report();
+		exit(1);
+	}
+#else
+	k_object_access_all_grant(&ztest_thread);
+#endif
 
 	TC_SUITE_START(suite->name);
 	test_result = ZTEST_RESULT_PENDING;
