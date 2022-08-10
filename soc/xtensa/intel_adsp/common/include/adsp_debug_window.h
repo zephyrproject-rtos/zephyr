@@ -61,7 +61,12 @@ struct adsp_debug_window {
 	uint8_t slots[ADSP_DW_SLOT_COUNT][ADSP_DW_SLOT_SIZE];
 } __packed;
 
+
+
+#define WIN2_MBASE DT_REG_ADDR(DT_PHANDLE(DT_NODELABEL(mem_window2), memory))
+#define WIN2_OFFSET DT_PROP(DT_NODELABEL(mem_window2), offset)
+
 #define ADSP_DW ((volatile struct adsp_debug_window *) \
-		 (z_soc_uncached_ptr((void *)HP_SRAM_WIN2_BASE)))
+		 (z_soc_uncached_ptr((void *)(WIN2_MBASE + WIN2_OFFSET))))
 
 #endif

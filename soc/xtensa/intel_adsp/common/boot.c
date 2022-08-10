@@ -7,6 +7,8 @@
 #include <stdint.h>
 
 #include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include <zephyr/arch/xtensa/cache.h>
 #include <adsp_shim.h>
@@ -128,26 +130,6 @@ __imr void parse_manifest(void)
 	}
 }
 
-
-__imr void win_setup(void)
-{
-	uint32_t *win0 = z_soc_uncached_ptr((void *)HP_SRAM_WIN0_BASE);
-
-	/* Software protocol: "firmware entered" has the value 5 */
-	win0[0] = 5;
-
-	CAVS_WIN[0].dmwlo = HP_SRAM_WIN0_SIZE | 0x7;
-	CAVS_WIN[0].dmwba = (HP_SRAM_WIN0_BASE | CAVS_DMWBA_READONLY
-			     | CAVS_DMWBA_ENABLE);
-
-	CAVS_WIN[2].dmwlo = HP_SRAM_WIN2_SIZE | 0x7;
-	CAVS_WIN[2].dmwba = (HP_SRAM_WIN2_BASE | CAVS_DMWBA_ENABLE);
-
-	CAVS_WIN[3].dmwlo = HP_SRAM_WIN3_SIZE | 0x7;
-	CAVS_WIN[3].dmwba = (HP_SRAM_WIN3_BASE | CAVS_DMWBA_READONLY
-			     | CAVS_DMWBA_ENABLE);
-}
-
 extern void hp_sram_init(uint32_t memory_size);
 extern void lp_sram_init(void);
 extern void hp_sram_pm_banks(uint32_t banks);
@@ -166,11 +148,12 @@ __imr void boot_core0(void)
 #endif
 
 	hp_sram_init(L2_SRAM_SIZE);
-	win_setup();
 	lp_sram_init();
 	parse_manifest();
-	soc_trace_init();
 	z_xtensa_cache_flush_all();
+
+	z_sys_init_run_level(_SYS_INIT_LEVEL_ARCH);
+	soc_trace_init();
 
 	/* Zephyr! */
 	extern FUNC_NORETURN void z_cstart(void);
