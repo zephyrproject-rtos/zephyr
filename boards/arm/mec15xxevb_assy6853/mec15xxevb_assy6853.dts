@@ -152,6 +152,32 @@
 
 &kscan0 {
 	status = "okay";
+
+	pinctrl-0 = < &kso00_gpio040
+		      &kso01_gpio045
+		      &kso02_gpio046
+		      &kso12_gpio125
+		      &kso13_gpio126
+		      &kso03_gpio047
+		      &kso04_gpio107
+		      &kso05_gpio112
+		      &kso06_gpio113
+		      &kso14_gpio152
+		      &kso15_gpio151
+		      &kso07_gpio120
+		      &kso08_gpio121
+		      &kso09_gpio122
+		      &kso10_gpio123
+		      &kso11_gpio124
+		      &ksi0_gpio017
+		      &ksi1_gpio020
+		      &ksi2_gpio021
+		      &ksi3_gpio026
+		      &ksi4_gpio027
+		      &ksi5_gpio030
+		      &ksi6_gpio031
+		      &ksi7_gpio032 >;
+	pinctrl-names = "default";
 };
 
 &peci0 {
