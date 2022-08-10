@@ -1,0 +1,22 @@
+# Copyright (c) 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE, IT8XXX2 Serial Host Interface (SHI) node
+
+compatible: "ite,it8xxx2-shi"
+
+include: [pinctrl-device.yaml, shi-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  cs-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Pin used as chip-select for the SHI interface. Change in level will
+      trigger the interrupt for the handler of host commands.
