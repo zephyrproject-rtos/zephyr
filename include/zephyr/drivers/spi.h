@@ -434,7 +434,51 @@ struct spi_dt_spec {
 struct spi_buf {
 	void *buf;
 	size_t len;
+#ifdef CONFIG_SPI_EXTENDED_MODES
+	struct spi_mem_op_t {
+		struct {
+			uint8_t nbytes;
+			uint32_t buswidth;
+			uint8_t dtr : 1;
+			uint16_t opcode;
+		} cmd;
+
+		struct {
+			uint8_t nbytes;
+			uint32_t buswidth;
+			uint8_t dtr : 1;
+			uint64_t val;
+		} addr;
+
+		struct {
+			uint8_t nbytes;
+			uint32_t buswidth;
+			uint8_t dtr : 1;
+		} dummy;
+
+		struct {
+			uint32_t buswidth;
+			uint8_t dtr : 1;
+			unsigned int nbytes;
+			void *buf;
+		} data;
+	} spi_mem_op;
+#endif
 };
+
+#ifdef CONFIG_SPI_EXTENDED_MODES
+enum spi_nor_protocol {
+	PROTO_1_1_1,
+	PROTO_1_1_2,
+	PROTO_1_2_2,
+	PROTO_1_1_4,
+	PROTO_1_4_4,
+	PROTO_1_4D_4D,
+	PROTO_4_4_4,
+	PROTO_8_8_8,
+	PROTO_8D_8D_8D,
+};
+#endif
 
 /**
  * @brief SPI buffer array structure
