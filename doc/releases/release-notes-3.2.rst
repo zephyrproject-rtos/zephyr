@@ -104,6 +104,8 @@ Bluetooth
 * Host
 
   * Added :c:func:`bt_conn_auth_cb_overlay` to overlay authentication callbacks for a Bluetooth LE connection.
+  * Removed ``CONFIG_BT_HCI_ECC_STACK_SIZE``.
+    The Bluetooth long workqueue (:kconfig:option:`CONFIG_BT_LONG_WQ`) is used for processing ECC commands instead of the dedicated thread.
 
 * Mesh
 

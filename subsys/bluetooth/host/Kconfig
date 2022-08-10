@@ -15,7 +15,8 @@ config BT_LONG_WQ_STACK_SIZE
 	# Hidden: Long workqueue stack size. Should be derived from system
 	# requirements.
 	int
-	default BT_HCI_ECC_STACK_SIZE if BT_TINYCRYPT_ECC
+	default 1300 if BT_GATT_CACHING
+	default 1140 if BT_TINYCRYPT_ECC
 	default 1024
 
 config BT_LONG_WQ_PRIO
@@ -58,16 +59,6 @@ config BT_HCI_TX_STACK_SIZE
 
 config BT_HCI_TX_STACK_SIZE_WITH_PROMPT
 	bool "Override HCI Tx thread stack size"
-
-config BT_HCI_ECC_STACK_SIZE
-	# NOTE: This value is derived from other symbols and should only be
-	# changed if required by architecture
-	int "HCI ECC thread stack size"
-	depends on BT_TINYCRYPT_ECC
-	default 1140
-	help
-	  NOTE: This is an advanced setting and should not be changed unless
-	  absolutely necessary
 
 config BT_HCI_TX_PRIO
 	# Hidden option for Co-Operative Tx thread priority
