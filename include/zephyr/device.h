@@ -94,13 +94,13 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_NAME_GET(name) _CONCAT(__device_, name)
 
-/* Node paths can exceed the maximum size supported by
- * device_get_binding() in user mode; this macro synthesizes a unique
- * dev_name from a devicetree node while staying within this maximum
- * size.
+/* Node paths can exceed the maximum size supported by device_get_binding() in user mode,
+ * so synthesize a unique dev_name from the devicetree node.
  *
  * The ordinal used in this name can be mapped to the path by
- * examining zephyr/include/generated/devicetree_unfixed.h.
+ * examining zephyr/include/generated/device_extern.h header. If the
+ * format of this conversion changes, gen_defines should be updated to
+ * match it.
  */
 #define Z_DEVICE_DT_DEV_NAME(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
 
@@ -923,25 +923,12 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,		\
 		(&DEVICE_NAME_GET(dev_name)), level, prio)
 
-/*
- * Declare a device for each status "okay" devicetree node. (Disabled
- * nodes should not result in devices, so not predeclaring these keeps
- * drivers honest.)
- *
- * This is only "maybe" a device because some nodes have status "okay",
- * but don't have a corresponding struct device allocated. There's no way
- * to figure that out until after we've built the zephyr image,
- * though.
- */
-#define Z_MAYBE_DEVICE_DECLARE_INTERNAL(node_id) \
-	extern const struct device DEVICE_DT_NAME_GET(node_id);
-
-DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
-
 #ifdef __cplusplus
 }
 #endif
 
+/* device_extern is generated based on devicetree nodes */
+#include <device_extern.h>
 
 #include <syscalls/device.h>
 
