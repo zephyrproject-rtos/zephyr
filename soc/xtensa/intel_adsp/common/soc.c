@@ -16,7 +16,7 @@ static __imr int soc_init(const struct device *dev)
 {
 	power_init();
 
-#ifdef CONFIG_CAVS_CLOCK
+#ifdef CONFIG_ADSP_CLOCK
 	cavs_clock_init();
 #endif
 

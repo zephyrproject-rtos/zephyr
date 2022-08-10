@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2019,2022 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <xtensa/intel/intel_cavs.dtsi>
+#include <xtensa/intel/intel_adsp_cavs.dtsi>
 #include <mem.h>
 
 / {
@@ -23,13 +23,12 @@
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <1>;
 		};
-
 	};
 
 	sram0: memory@be000000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0xbe000000 DT_SIZE_K(1024)>;
+		reg = <0xbe000000 DT_SIZE_K(1920)>;
 	};
 
 	sram1: memory@be800000 {
@@ -40,7 +39,7 @@
 
 	soc {
 		shim: shim@71f00 {
-			compatible = "intel,cavs-shim";
+			compatible = "intel,adsp-shim";
 			reg = <0x71f00 0x100>;
 		};
 
@@ -61,14 +60,7 @@
 			#interrupt-cells = <3>;
 		};
 
-		adsp_host_ipc: cavs_host_ipc@71e00 {
-			compatible = "intel,adsp-host-ipc";
-			reg = <0x71e00 0x30>;
-			interrupts = <7 0 0>;
-			interrupt-parent = <&cavs0>;
-		};
-
-		cavs0: cavs@78800  {
+		cavs_intc0: cavs@78800  {
 			compatible = "intel,cavs-intc";
 			reg = <0x78800 0x10>;
 			interrupt-controller;
@@ -77,7 +69,7 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs1: cavs@78810  {
+		cavs_intc1: cavs@78810  {
 			compatible = "intel,cavs-intc";
 			reg = <0x78810 0x10>;
 			interrupt-controller;
@@ -86,7 +78,7 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs2: cavs@78820  {
+		cavs_intc2: cavs@78820  {
 			compatible = "intel,cavs-intc";
 			reg = <0x78820 0x10>;
 			interrupt-controller;
@@ -95,7 +87,7 @@
 			interrupt-parent = <&core_intc>;
 		};
 
-		cavs3: cavs@78830  {
+		cavs_intc3: cavs@78830  {
 			compatible = "intel,cavs-intc";
 			reg = <0x78830 0x10>;
 			interrupt-controller;
@@ -108,8 +100,13 @@
 			compatible = "intel,adsp-idc";
 			reg = <0x1200 0x80>;
 			interrupts = <8 0 0>;
-			interrupt-parent = <&cavs0>;
+			interrupt-parent = <&cavs_intc0>;
 		};
 
+		tlb: tlb@3000 {
+			compatible = "intel,adsp-tlb";
+			reg = <0x3000 0x1000>;
+			paddr-size = <11>;
+		};
 	};
 };
