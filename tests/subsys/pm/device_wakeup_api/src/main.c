@@ -76,7 +76,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 	return NULL;
 }
 
-void test_wakeup_device_api(void)
+ZTEST(wakeup_device_1cpu, test_wakeup_device_api)
 {
 	bool ret = false;
 
@@ -99,7 +99,7 @@ void test_wakeup_device_api(void)
 	zassert_false(ret, "Wakeup source is enabled");
 }
 
-void test_wakeup_device_system_pm(void)
+ZTEST(wakeup_device_1cpu, test_wakeup_device_system_pm)
 {
 	/*
 	 * Trigger system PM. The policy manager will return
@@ -116,11 +116,5 @@ void test_wakeup_device_system_pm(void)
 	k_sleep(K_SECONDS(1));
 }
 
-void test_main(void)
-{
-	ztest_test_suite(wakeup_device_test,
-			 ztest_1cpu_unit_test(test_wakeup_device_api),
-			 ztest_1cpu_unit_test(test_wakeup_device_system_pm)
-		);
-	ztest_run_test_suite(wakeup_device_test);
-}
+ZTEST_SUITE(wakeup_device_1cpu, NULL, NULL, ztest_simple_1cpu_before,
+			ztest_simple_1cpu_after, NULL);
