@@ -5,6 +5,8 @@ description: GPIO KEYS parent node
 
 compatible: "gpio-keys"
 
+include: base.yaml
+
 child-binding:
     description: GPIO KEYS child node
     properties:
@@ -12,6 +14,5 @@ child-binding:
           type: phandle-array
           required: true
        label:
-          required: true
           type: string
-          description: Human readable string describing the device (used as device_get_binding() argument)
+          description: Descriptive name of the key
