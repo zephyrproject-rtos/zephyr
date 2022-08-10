@@ -88,12 +88,12 @@ Devicetree
 
    The preprocessed devicetree sources are parsed by
    :zephyr_file:`gen_defines.py <scripts/dts/gen_defines.py>` to generate a
-   :file:`build/zephyr/include/generated/devicetree_unfixed.h` header with
+   :file:`build/zephyr/include/generated/devicetree_generated.h` header with
    preprocessor macros.
 
    Source code should access preprocessor macros generated from devicetree by
    including the :zephyr_file:`devicetree.h <include/zephyr/devicetree.h>` header,
-   which includes :file:`devicetree_unfixed.h`.
+   which includes :file:`devicetree_generated.h`.
 
    :file:`gen_defines.py` also writes the final devicetree to
    :file:`build/zephyr/zephyr.dts` in the build directory. This file's contents

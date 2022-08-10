@@ -10,7 +10,7 @@ include(generic_toolchain)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
 
 # Zephyr code can configure itself based on a KConfig'uration with the
-# header file autoconf.h. There exists an analogous file devicetree_unfixed.h
+# header file autoconf.h. There exists an analogous file devicetree_generated.h
 # that allows configuration based on information encoded in DTS.
 #
 # Here we call on dtc, the gcc preprocessor and
@@ -27,7 +27,7 @@ set(ZEPHYR_DTS                  ${PROJECT_BINARY_DIR}/zephyr.dts)
 # use of the devicetree by processes that run later on in the build,
 # and should not be made part of the documentation.
 set(EDT_PICKLE                  ${PROJECT_BINARY_DIR}/edt.pickle)
-set(DEVICETREE_UNFIXED_H        ${PROJECT_BINARY_DIR}/include/generated/devicetree_unfixed.h)
+set(DEVICETREE_GENERATED_H      ${PROJECT_BINARY_DIR}/include/generated/devicetree_generated.h)
 set(DEVICE_EXTERN_H             ${PROJECT_BINARY_DIR}/include/generated/device_extern.h)
 set(DTS_POST_CPP                ${PROJECT_BINARY_DIR}/zephyr.dts.pre)
 set(DTS_DEPS                    ${PROJECT_BINARY_DIR}/zephyr.dts.d)
@@ -160,7 +160,7 @@ if(SUPPORTS_DTS)
   endif()
 
   # TODO: Cut down on CMake configuration time by avoiding
-  # regeneration of devicetree_unfixed.h on every configure. How
+  # regeneration of devicetree_generated.h on every configure. How
   # challenging is this? What are the dts dependencies? We run the
   # preprocessor, and it seems to be including all kinds of
   # directories with who-knows how many header files.
@@ -213,7 +213,7 @@ if(SUPPORTS_DTS)
   --dts ${DTS_POST_CPP}
   --dtc-flags '${EXTRA_DTC_FLAGS_RAW}'
   --bindings-dirs ${DTS_ROOT_BINDINGS}
-  --header-out ${DEVICETREE_UNFIXED_H}.new
+  --header-out ${DEVICETREE_GENERATED_H}.new
   --dts-out ${ZEPHYR_DTS}.new # for debugging and dtc
   --edt-pickle-out ${EDT_PICKLE}
   ${EXTRA_GEN_DEFINES_ARGS}
@@ -229,12 +229,12 @@ if(SUPPORTS_DTS)
     message(FATAL_ERROR "gen_defines.py failed with return code: ${ret}")
   else()
     zephyr_file_copy(${ZEPHYR_DTS}.new ${ZEPHYR_DTS} ONLY_IF_DIFFERENT)
-    zephyr_file_copy(${DEVICETREE_UNFIXED_H}.new ${DEVICETREE_UNFIXED_H} ONLY_IF_DIFFERENT)
+    zephyr_file_copy(${DEVICETREE_GENERATED_H}.new ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
     file(WRITE ${DEVICE_EXTERN_H}
 "#error The contents of this file are now implemented directly in zephyr/device.h.")
-    file(REMOVE ${ZEPHYR_DTS}.new ${DEVICETREE_UNFIXED_H}.new)
+    file(REMOVE ${ZEPHYR_DTS}.new ${DEVICETREE_GENERATED_H}.new)
     message(STATUS "Generated zephyr.dts: ${ZEPHYR_DTS}")
-    message(STATUS "Generated devicetree_unfixed.h: ${DEVICETREE_UNFIXED_H}")
+    message(STATUS "Generated devicetree_generated.h: ${DEVICETREE_GENERATED_H}")
   endif()
 
 
@@ -308,5 +308,5 @@ if(SUPPORTS_DTS)
   endif(DTC)
 else()
   set(header_template ${ZEPHYR_BASE}/misc/generated/generated_header.template)
-  zephyr_file_copy(${header_template} ${DEVICETREE_UNFIXED_H} ONLY_IF_DIFFERENT)
+  zephyr_file_copy(${header_template} ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
 endif(SUPPORTS_DTS)

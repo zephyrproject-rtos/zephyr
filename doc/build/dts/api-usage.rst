@@ -376,7 +376,7 @@ Generated macros
 
 While the :file:`devicetree.h` API is not generated, it does rely on a
 generated C header which is put into every application build directory:
-:ref:`devicetree_unfixed.h <dt-outputs>`. This file contains macros with
+:ref:`devicetree_generated.h <dt-outputs>`. This file contains macros with
 devicetree data.
 
 These macros have tricky naming conventions which the :ref:`devicetree_api` API
