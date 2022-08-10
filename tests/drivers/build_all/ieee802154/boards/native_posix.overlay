@@ -15,7 +15,6 @@
 			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
 			#gpio-cells = <0x2>;
-			label = "TEST_GPIO_1";
 			status = "okay";
 		};
 
@@ -24,7 +23,6 @@
 			#size-cells = <0>;
 			compatible = "vnd,spi";
 			reg = <0x33334444 0x1000>;
-			label = "TEST_SPI_CTLR";
 			status = "okay";
 			clock-frequency = <2000000>;
 
@@ -36,7 +34,6 @@
 
 			test_spi_cc1200: cc1200@0 {
 				compatible = "ti,cc1200";
-				label = "CC1200";
 				reg = <0x0>;
 				spi-max-frequency = <0>;
 				int-gpios = <&test_gpio 0 0>;
@@ -45,7 +42,6 @@
 
 			test_spi_cc2520: cc2520@1 {
 				compatible = "ti,cc2520";
-				label = "CC2520";
 				reg = <0x1>;
 				spi-max-frequency = <0>;
 				vreg-en-gpios = <&test_gpio 0 0>;
@@ -64,7 +60,6 @@
 
 			test_spi_dw1000: dw1000@2 {
 				compatible = "decawave,dw1000";
-				label = "DW1000";
 				reg = <0x2>;
 				spi-max-frequency = <0>;
 				int-gpios = <&test_gpio 0 0>;
@@ -75,7 +70,6 @@
 			test_spi_rf2xx: rf2xx@3 {
 				compatible = "atmel,rf2xx";
 				reg = <0x3>;
-				label = "RF2XX";
 				spi-max-frequency = <0>;
 				irq-gpios = <&test_gpio 0 0>;
 				reset-gpios = <&test_gpio 0 0>;
