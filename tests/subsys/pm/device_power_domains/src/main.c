@@ -9,7 +9,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 
-static void test_demo(void)
+ZTEST(device_power_domain, test_demo)
 {
 	const struct device *reg_0 = DEVICE_DT_GET(DT_NODELABEL(test_reg_0));
 	const struct device *reg_1 = DEVICE_DT_GET(DT_NODELABEL(test_reg_1));
@@ -55,9 +55,4 @@ static void test_demo(void)
 	TC_PRINT("DONE\n");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(device_power_domain,
-			 ztest_unit_test(test_demo));
-	ztest_run_test_suite(device_power_domain);
-}
+ZTEST_SUITE(device_power_domain, NULL, NULL, NULL, NULL, NULL);
