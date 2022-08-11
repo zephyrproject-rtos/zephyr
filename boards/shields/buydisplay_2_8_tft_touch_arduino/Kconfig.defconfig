@@ -34,9 +34,6 @@ config KSCAN
 config LV_Z_POINTER_KSCAN
 	default y
 
-config LV_Z_POINTER_KSCAN_DEV_NAME
-	default "TOUCH"
-
 config LV_Z_POINTER_KSCAN_SWAP_XY
 	default y
 

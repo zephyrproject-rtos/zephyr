@@ -56,9 +56,6 @@ if LVGL
 config LV_Z_POINTER_KSCAN
 	default y
 
-config LV_Z_POINTER_KSCAN_DEV_NAME
-	default "FT5336"
-
 config LV_Z_VDB_SIZE
 	default 16
 
