@@ -59,7 +59,7 @@ static void tx(int *can_fd)
 		zframe.data[i] = 0xF0 | i;
 	}
 
-	can_copy_zframe_to_frame(&zframe, &sframe);
+	socketcan_from_can_frame(&zframe, &sframe);
 
 	LOG_DBG("Sending CAN data...");
 
@@ -128,7 +128,7 @@ static void rx(int *can_fd, int *do_close_period,
 			continue;
 		}
 
-		can_copy_frame_to_zframe(&sframe, &zframe);
+		socketcan_to_can_frame(&sframe, &zframe);
 
 		LOG_INF("[%d] CAN frame: type 0x%x RTR 0x%x EID 0x%x DLC 0x%x",
 			fd, zframe.id_type, zframe.rtr, zframe.id, zframe.dlc);
@@ -172,7 +172,7 @@ static int setup_socket(void)
 	int fd, rx_fd;
 	int ret;
 
-	can_copy_zfilter_to_filter(&zfilter, &sfilter);
+	socketcan_from_can_filter(&zfilter, &sfilter);
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(CANBUS_RAW));
 	if (!iface) {

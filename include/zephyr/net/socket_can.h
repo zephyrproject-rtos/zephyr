@@ -122,8 +122,8 @@ struct socketcan_filter {
  * @param sframe Pointer to sockecan_frame struct.
  * @param zframe Pointer to can_frame struct.
  */
-static inline void can_copy_frame_to_zframe(const struct socketcan_frame *sframe,
-					    struct can_frame *zframe)
+static inline void socketcan_to_can_frame(const struct socketcan_frame *sframe,
+					  struct can_frame *zframe)
 {
 	zframe->id_type = (sframe->can_id & BIT(31)) >> 31;
 	zframe->rtr = (sframe->can_id & BIT(30)) >> 30;
@@ -138,7 +138,7 @@ static inline void can_copy_frame_to_zframe(const struct socketcan_frame *sframe
  * @param zframe Pointer to can_frame struct.
  * @param sframe  Pointer to socketcan_frame struct.
  */
-static inline void can_copy_zframe_to_frame(const struct can_frame *zframe,
+static inline void socketcan_from_can_frame(const struct can_frame *zframe,
 					    struct socketcan_frame *sframe)
 {
 	sframe->can_id = (zframe->id_type << 31) | (zframe->rtr << 30) | zframe->id;
@@ -152,8 +152,8 @@ static inline void can_copy_zframe_to_frame(const struct can_frame *zframe,
  * @param sfilter Pointer to socketcan_filter struct.
  * @param zfilter Pointer to can_filter struct.
  */
-static inline void can_copy_filter_to_zfilter(const struct socketcan_filter *sfilter,
-					      struct can_filter *zfilter)
+static inline void socketcan_to_can_filter(const struct socketcan_filter *sfilter,
+					   struct can_filter *zfilter)
 {
 	zfilter->id_type = (sfilter->can_id & BIT(31)) >> 31;
 	zfilter->rtr = (sfilter->can_id & BIT(30)) >> 30;
@@ -168,8 +168,8 @@ static inline void can_copy_filter_to_zfilter(const struct socketcan_filter *sfi
  * @param zfilter Pointer to can_filter struct.
  * @param sfilter Pointer to socketcan_filter struct.
  */
-static inline void can_copy_zfilter_to_filter(const struct can_filter *zfilter,
-					      struct socketcan_filter *sfilter)
+static inline void socketcan_from_can_filter(const struct can_filter *zfilter,
+					     struct socketcan_filter *sfilter)
 {
 	sfilter->can_id = (zfilter->id_type << 31) |
 		(zfilter->rtr << 30) | zfilter->id;
