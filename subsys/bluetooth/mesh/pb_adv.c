@@ -52,13 +52,12 @@
 #define CLOSING_TIMEOUT     (3 * MSEC_PER_SEC)
 #define TRANSACTION_TIMEOUT (30 * MSEC_PER_SEC)
 
-/* Acked messages, will do retransmissions manually, taking acks into account:
- */
-#define RETRANSMITS_RELIABLE   0
+/* Acked messages retransmits: */
+#define RETRANSMITS_RELIABLE   CONFIG_BT_MESH_PB_ADV_TRANS_PDU_RETRANSMIT_COUNT
 /* PDU acks: */
-#define RETRANSMITS_ACK        2
+#define RETRANSMITS_ACK        CONFIG_BT_MESH_PB_ADV_TRANS_ACK_RETRANSMIT_COUNT
 /* Link close retransmits: */
-#define RETRANSMITS_LINK_CLOSE 2
+#define RETRANSMITS_LINK_CLOSE CONFIG_BT_MESH_PB_ADV_LINK_CLOSE_RETRANSMIT_COUNT
 
 enum {
 	ADV_LINK_ACTIVE,    	/* Link has been opened */

@@ -52,12 +52,40 @@ config BT_MESH_UNPROV_BEACON_INT
 	  This option specifies the interval (in seconds) at which the
 	  device sends unprovisioned beacon.
 
+if BT_MESH_PB_ADV
+
 config BT_MESH_PB_ADV_RETRANS_TIMEOUT
 	int "Timeout value of retransmit provisioning PDUs"
 	default 500
 	range 100 800
 	help
 	  Timeout value of retransmit provisioning PDUs.
+
+config BT_MESH_PB_ADV_TRANS_PDU_RETRANSMIT_COUNT
+	int "Provision pdu retransmit count"
+	default 0
+	range 0 7
+	help
+	  Controls the number of retransmissions of original transaction pdu,
+	  in addition to the first transmission.
+
+config BT_MESH_PB_ADV_TRANS_ACK_RETRANSMIT_COUNT
+	int "Provision transaction ack retransmit count"
+	default 2
+	range 0 7
+	help
+	  Controls the number of retransmissions of original transaction ack,
+	  in addition to the first transmission.
+
+config BT_MESH_PB_ADV_LINK_CLOSE_RETRANSMIT_COUNT
+	int "Provision link close retransmit count"
+	default 2
+	range 0 7
+	help
+	  Controls the number of retransmissions of original link close,
+	  in addition to the first transmission.
+
+endif # BT_MESH_PB_ADV
 
 config BT_MESH_PROVISIONER
 	bool "Provisioner support"
