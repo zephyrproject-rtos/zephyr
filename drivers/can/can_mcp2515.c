@@ -209,8 +209,8 @@ static int mcp2515_cmd_read_rx_buffer(const struct device *dev, uint8_t nm,
 	return spi_transceive_dt(&dev_cfg->bus, &tx, &rx);
 }
 
-static void mcp2515_convert_zcanframe_to_mcp2515frame(const struct can_frame
-						      *source, uint8_t *target)
+static void mcp2515_convert_canframe_to_mcp2515frame(const struct can_frame
+						     *source, uint8_t *target)
 {
 	uint8_t rtr;
 	uint8_t dlc;
@@ -240,8 +240,8 @@ static void mcp2515_convert_zcanframe_to_mcp2515frame(const struct can_frame
 	}
 }
 
-static void mcp2515_convert_mcp2515frame_to_zcanframe(const uint8_t *source,
-						      struct can_frame *target)
+static void mcp2515_convert_mcp2515frame_to_canframe(const uint8_t *source,
+						     struct can_frame *target)
 {
 	uint8_t data_idx = 0U;
 
@@ -540,7 +540,7 @@ static int mcp2515_send(const struct device *dev,
 	dev_data->tx_cb[tx_idx].cb = callback;
 	dev_data->tx_cb[tx_idx].cb_arg = user_data;
 
-	mcp2515_convert_zcanframe_to_mcp2515frame(frame, tx_frame);
+	mcp2515_convert_canframe_to_mcp2515frame(frame, tx_frame);
 
 	/* Address Pointer selection */
 	abc = 2 * tx_idx;
@@ -658,7 +658,7 @@ static void mcp2515_rx(const struct device *dev, uint8_t rx_idx)
 
 	/* Fetch rx buffer */
 	mcp2515_cmd_read_rx_buffer(dev, nm, rx_frame, sizeof(rx_frame));
-	mcp2515_convert_mcp2515frame_to_zcanframe(rx_frame, &frame);
+	mcp2515_convert_mcp2515frame_to_canframe(rx_frame, &frame);
 	mcp2515_rx_filter(dev, &frame);
 }
 
