@@ -387,8 +387,6 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 	}
 	run_test_functions(suite, test, data);
 out:
-	phase = TEST_PHASE_FRAMEWORK;
-	ret |= cleanup_test(test);
 	phase = TEST_PHASE_AFTER;
 	if (test_result != ZTEST_RESULT_SUITE_FAIL) {
 		if (suite->after != NULL) {
@@ -396,6 +394,8 @@ out:
 		}
 		run_test_rules(/*is_before=*/false, test, data);
 	}
+	phase = TEST_PHASE_FRAMEWORK;
+	ret |= cleanup_test(test);
 
 	ret = get_final_test_result(test, ret);
 	Z_TC_END_RESULT(ret, test->name);
