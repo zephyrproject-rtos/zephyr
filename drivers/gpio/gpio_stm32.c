@@ -18,8 +18,6 @@
 #include <stm32_ll_system.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
-#include <pinmux/pinmux_stm32.h>
-#include <zephyr/drivers/pinmux.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/interrupt_controller/exti_stm32.h>
 #include <zephyr/pm/device.h>
