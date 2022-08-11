@@ -143,7 +143,7 @@ enum can_rtr {
 /**
  * @brief CAN frame structure
  */
-struct zcan_frame {
+struct can_frame {
 	/** Standard (11-bit) or extended (29-bit) CAN identifier. */
 	uint32_t id      : 29;
 	/** Frame is in the CAN-FD frame format if set to true. */
@@ -184,7 +184,7 @@ struct zcan_frame {
 /**
  * @brief CAN filter structure
  */
-struct zcan_filter {
+struct can_filter {
 	/** CAN identifier to match. */
 	uint32_t id           : 29;
 	/** @cond INTERNAL_HIDDEN */
@@ -283,7 +283,7 @@ typedef void (*can_tx_callback_t)(const struct device *dev, int error, void *use
  * @param frame     Received frame.
  * @param user_data User data provided when the filter was added.
  */
-typedef void (*can_rx_callback_t)(const struct device *dev, struct zcan_frame *frame,
+typedef void (*can_rx_callback_t)(const struct device *dev, struct can_frame *frame,
 				  void *user_data);
 
 /**
@@ -336,7 +336,7 @@ typedef int (*can_set_mode_t)(const struct device *dev, can_mode_t mode);
  * See @a can_send() for argument description
  */
 typedef int (*can_send_t)(const struct device *dev,
-			  const struct zcan_frame *frame,
+			  const struct can_frame *frame,
 			  k_timeout_t timeout, can_tx_callback_t callback,
 			  void *user_data);
 
@@ -347,7 +347,7 @@ typedef int (*can_send_t)(const struct device *dev,
 typedef int (*can_add_rx_filter_t)(const struct device *dev,
 				   can_rx_callback_t callback,
 				   void *user_data,
-				   const struct zcan_filter *filter);
+				   const struct can_filter *filter);
 
 /**
  * @brief Callback API upon removing an RX filter
@@ -1016,11 +1016,11 @@ __syscall int can_set_bitrate(const struct device *dev, uint32_t bitrate);
  *              automatic retransmissions are disabled).
  * @retval -EAGAIN on timeout.
  */
-__syscall int can_send(const struct device *dev, const struct zcan_frame *frame,
+__syscall int can_send(const struct device *dev, const struct can_frame *frame,
 		       k_timeout_t timeout, can_tx_callback_t callback,
 		       void *user_data);
 
-static inline int z_impl_can_send(const struct device *dev, const struct zcan_frame *frame,
+static inline int z_impl_can_send(const struct device *dev, const struct can_frame *frame,
 				  k_timeout_t timeout, can_tx_callback_t callback,
 				  void *user_data)
 {
@@ -1053,13 +1053,13 @@ static inline int z_impl_can_send(const struct device *dev, const struct zcan_fr
  * @param callback  This function is called by the CAN controller driver whenever
  *                  a frame matching the filter is received.
  * @param user_data User data to pass to callback function.
- * @param filter    Pointer to a @a zcan_filter structure defining the filter.
+ * @param filter    Pointer to a @a can_filter structure defining the filter.
  *
  * @retval filter_id on success.
  * @retval -ENOSPC if there are no free filters.
  */
 static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
-				    void *user_data, const struct zcan_filter *filter)
+				    void *user_data, const struct can_filter *filter)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
@@ -1077,7 +1077,7 @@ static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t 
  * @param max_frames Maximum number of CAN frames that can be queued.
  */
 #define CAN_MSGQ_DEFINE(name, max_frames) \
-	K_MSGQ_DEFINE(name, sizeof(struct zcan_frame), max_frames, 4)
+	K_MSGQ_DEFINE(name, sizeof(struct can_frame), max_frames, 4)
 
 /**
  * @brief Wrapper function for adding a message queue for a given filter
@@ -1095,13 +1095,13 @@ static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t 
  *
  * @param dev    Pointer to the device structure for the driver instance.
  * @param msgq   Pointer to the already initialized @a k_msgq struct.
- * @param filter Pointer to a @a zcan_filter structure defining the filter.
+ * @param filter Pointer to a @a can_filter structure defining the filter.
  *
  * @retval filter_id on success.
  * @retval -ENOSPC if there are no free filters.
  */
 __syscall int can_add_rx_filter_msgq(const struct device *dev, struct k_msgq *msgq,
-				     const struct zcan_filter *filter);
+				     const struct can_filter *filter);
 
 /**
  * @brief Remove a CAN RX filter

@@ -209,7 +209,7 @@ static int mcp2515_cmd_read_rx_buffer(const struct device *dev, uint8_t nm,
 	return spi_transceive_dt(&dev_cfg->bus, &tx, &rx);
 }
 
-static void mcp2515_convert_zcanframe_to_mcp2515frame(const struct zcan_frame
+static void mcp2515_convert_zcanframe_to_mcp2515frame(const struct can_frame
 						      *source, uint8_t *target)
 {
 	uint8_t rtr;
@@ -241,7 +241,7 @@ static void mcp2515_convert_zcanframe_to_mcp2515frame(const struct zcan_frame
 }
 
 static void mcp2515_convert_mcp2515frame_to_zcanframe(const uint8_t *source,
-						      struct zcan_frame *target)
+						      struct can_frame *target)
 {
 	uint8_t data_idx = 0U;
 
@@ -499,7 +499,7 @@ done:
 }
 
 static int mcp2515_send(const struct device *dev,
-			const struct zcan_frame *frame,
+			const struct can_frame *frame,
 			k_timeout_t timeout, can_tx_callback_t callback,
 			void *user_data)
 {
@@ -564,7 +564,7 @@ static int mcp2515_send(const struct device *dev,
 static int mcp2515_add_rx_filter(const struct device *dev,
 				 can_rx_callback_t rx_cb,
 				 void *cb_arg,
-				 const struct zcan_filter *filter)
+				 const struct can_filter *filter)
 {
 	struct mcp2515_data *dev_data = dev->data;
 	int filter_id = 0;
@@ -616,12 +616,12 @@ static void mcp2515_set_state_change_callback(const struct device *dev,
 }
 
 static void mcp2515_rx_filter(const struct device *dev,
-			      struct zcan_frame *frame)
+			      struct can_frame *frame)
 {
 	struct mcp2515_data *dev_data = dev->data;
 	uint8_t filter_id = 0U;
 	can_rx_callback_t callback;
-	struct zcan_frame tmp_frame;
+	struct can_frame tmp_frame;
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
@@ -649,7 +649,7 @@ static void mcp2515_rx(const struct device *dev, uint8_t rx_idx)
 {
 	__ASSERT(rx_idx < MCP2515_RX_CNT, "rx_idx < MCP2515_RX_CNT");
 
-	struct zcan_frame frame;
+	struct can_frame frame;
 	uint8_t rx_frame[MCP2515_FRAME_LEN];
 	uint8_t nm;
 

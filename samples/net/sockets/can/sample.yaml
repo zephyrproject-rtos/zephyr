@@ -13,7 +13,7 @@ tests:
       type: multi_line
       ordered: True
       regex:
-        - "(.*)\\[0\\] CAN msg: type 0x0 RTR 0x0 EID 0x1 DLC 0x8"
+        - "(.*)\\[0\\] CAN frame: type 0x0 RTR 0x0 EID 0x1 DLC 0x8"
         - "(.*)f0 f1 f2 f3 f4 f5 f6 f7"
   sample.net.sockets.can.two_sockets:
     extra_configs:
@@ -22,7 +22,7 @@ tests:
       type: multi_line
       ordered: True
       regex:
-        - "(.*)\\[0\\] CAN msg: type 0x0 RTR 0x0 EID 0x1 DLC 0x8"
+        - "(.*)\\[0\\] CAN frame: type 0x0 RTR 0x0 EID 0x1 DLC 0x8"
         - "(.*)f0 f1 f2 f3 f4 f5 f6 f7"
-        - "(.*)\\[1\\] CAN msg: type 0x0 RTR 0x0 EID 0x1 DLC 0x8"
+        - "(.*)\\[1\\] CAN frame: type 0x0 RTR 0x0 EID 0x1 DLC 0x8"
         - "(.*)f0 f1 f2 f3 f4 f5 f6 f7"

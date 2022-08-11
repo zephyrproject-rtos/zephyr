@@ -18,8 +18,8 @@
  * @param filter CAN filter.
  * @return true if the CAN filter matches the CAN frame, false otherwise
  */
-static inline bool can_utils_filter_match(const struct zcan_frame *frame,
-					  struct zcan_filter *filter)
+static inline bool can_utils_filter_match(const struct can_frame *frame,
+					  struct can_filter *filter)
 {
 	if (frame->id_type != filter->id_type) {
 		return false;

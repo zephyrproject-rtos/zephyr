@@ -207,7 +207,7 @@ static inline int read_data(const struct shell *sh, int pos, char **argv,
 	return i;
 }
 
-static void print_frame(struct zcan_frame *frame, const struct shell *sh)
+static void print_frame(struct can_frame *frame, const struct shell *sh)
 {
 	shell_fprintf(sh, SHELL_NORMAL, "|0x%-8x|%s|%s|%d|",
 		      frame->id,
@@ -228,7 +228,7 @@ static void print_frame(struct zcan_frame *frame, const struct shell *sh)
 
 static void msgq_triggered_work_handler(struct k_work *work)
 {
-	struct zcan_frame frame;
+	struct can_frame frame;
 	int ret;
 
 	while (k_msgq_get(&msgq, &frame, K_NO_WAIT) == 0) {
@@ -311,7 +311,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 	const struct device *can_dev;
 	int pos = 1;
 	bool rtr = false, ext = false;
-	struct zcan_frame frame;
+	struct can_frame frame;
 	int ret;
 	uint32_t id;
 
@@ -361,7 +361,7 @@ static int cmd_add_rx_filter(const struct shell *sh, size_t argc, char **argv)
 	const struct device *can_dev;
 	int pos = 1;
 	bool rtr = false, ext = false, rtr_mask = false;
-	struct zcan_filter filter;
+	struct can_filter filter;
 	int ret;
 	uint32_t id, mask;
 

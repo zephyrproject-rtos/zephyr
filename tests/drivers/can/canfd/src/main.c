@@ -40,7 +40,7 @@ CAN_MSGQ_DEFINE(can_msgq, 5);
 /**
  * @brief Standard (11-bit) CAN ID frame 1.
  */
-const struct zcan_frame test_std_frame_1 = {
+const struct can_frame test_std_frame_1 = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr     = CAN_DATAFRAME,
 	.id      = TEST_CAN_STD_ID_1,
@@ -51,7 +51,7 @@ const struct zcan_frame test_std_frame_1 = {
 /**
  * @brief Standard (11-bit) CAN ID frame 2.
  */
-const struct zcan_frame test_std_frame_2 = {
+const struct can_frame test_std_frame_2 = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr     = CAN_DATAFRAME,
 	.id      = TEST_CAN_STD_ID_2,
@@ -62,7 +62,7 @@ const struct zcan_frame test_std_frame_2 = {
 /**
  * @brief Standard (11-bit) CAN ID frame 1 with CAN-FD payload.
  */
-const struct zcan_frame test_std_frame_fd_1 = {
+const struct can_frame test_std_frame_fd_1 = {
 	.id  = TEST_CAN_STD_ID_1,
 	.fd      = 1,
 	.rtr     = CAN_DATAFRAME,
@@ -79,7 +79,7 @@ const struct zcan_frame test_std_frame_fd_1 = {
 /**
  * @brief Standard (11-bit) CAN ID frame 1 with CAN-FD payload.
  */
-const struct zcan_frame test_std_frame_fd_2 = {
+const struct can_frame test_std_frame_fd_2 = {
 	.id  = TEST_CAN_STD_ID_2,
 	.fd      = 1,
 	.rtr     = CAN_DATAFRAME,
@@ -96,7 +96,7 @@ const struct zcan_frame test_std_frame_fd_2 = {
 /**
  * @brief Standard (11-bit) CAN ID filter 1.
  */
-const struct zcan_filter test_std_filter_1 = {
+const struct can_filter test_std_filter_1 = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.id = TEST_CAN_STD_ID_1,
@@ -107,7 +107,7 @@ const struct zcan_filter test_std_filter_1 = {
 /**
  * @brief Standard (11-bit) CAN ID filter 2.
  */
-const struct zcan_filter test_std_filter_2 = {
+const struct can_filter test_std_filter_2 = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.id = TEST_CAN_STD_ID_2,
@@ -121,8 +121,8 @@ const struct zcan_filter test_std_filter_2 = {
  * @param frame1  First CAN frame.
  * @param frame2  Second CAN frame.
  */
-static inline void assert_frame_equal(const struct zcan_frame *frame1,
-				      const struct zcan_frame *frame2)
+static inline void assert_frame_equal(const struct can_frame *frame1,
+				      const struct can_frame *frame2)
 {
 	zassert_equal(frame1->id_type, frame2->id_type, "ID type does not match");
 	zassert_equal(frame1->fd, frame2->fd, "FD bit does not match");
@@ -134,7 +134,7 @@ static inline void assert_frame_equal(const struct zcan_frame *frame1,
 
 static void tx_std_callback_1(const struct device *dev, int error, void *user_data)
 {
-	const struct zcan_frame *frame = user_data;
+	const struct can_frame *frame = user_data;
 
 	k_sem_give(&tx_callback_sem);
 
@@ -144,7 +144,7 @@ static void tx_std_callback_1(const struct device *dev, int error, void *user_da
 
 static void tx_std_callback_2(const struct device *dev, int error, void *user_data)
 {
-	const struct zcan_frame *frame = user_data;
+	const struct can_frame *frame = user_data;
 
 	k_sem_give(&tx_callback_sem);
 
@@ -152,9 +152,9 @@ static void tx_std_callback_2(const struct device *dev, int error, void *user_da
 	zassert_equal(frame->id, TEST_CAN_STD_ID_2, "ID does not match");
 }
 
-static void rx_std_callback_1(const struct device *dev, struct zcan_frame *frame, void *user_data)
+static void rx_std_callback_1(const struct device *dev, struct can_frame *frame, void *user_data)
 {
-	struct zcan_filter *filter = user_data;
+	struct can_filter *filter = user_data;
 
 	assert_frame_equal(frame, &test_std_frame_1);
 	zassert_equal(dev, can_dev, "CAN device does not match");
@@ -163,9 +163,9 @@ static void rx_std_callback_1(const struct device *dev, struct zcan_frame *frame
 	k_sem_give(&rx_callback_sem);
 }
 
-static void rx_std_callback_2(const struct device *dev, struct zcan_frame *frame, void *user_data)
+static void rx_std_callback_2(const struct device *dev, struct can_frame *frame, void *user_data)
 {
-	struct zcan_filter *filter = user_data;
+	struct can_filter *filter = user_data;
 
 	assert_frame_equal(frame, &test_std_frame_2);
 	zassert_equal(dev, can_dev, "CAN device does not match");
@@ -174,10 +174,10 @@ static void rx_std_callback_2(const struct device *dev, struct zcan_frame *frame
 	k_sem_give(&rx_callback_sem);
 }
 
-static void rx_std_callback_fd_1(const struct device *dev, struct zcan_frame *frame,
+static void rx_std_callback_fd_1(const struct device *dev, struct can_frame *frame,
 				 void *user_data)
 {
-	struct zcan_filter *filter = user_data;
+	struct can_filter *filter = user_data;
 
 	assert_frame_equal(frame, &test_std_frame_fd_1);
 	zassert_equal(dev, can_dev, "CAN device does not match");
@@ -186,10 +186,10 @@ static void rx_std_callback_fd_1(const struct device *dev, struct zcan_frame *fr
 	k_sem_give(&rx_callback_sem);
 }
 
-static void rx_std_callback_fd_2(const struct device *dev, struct zcan_frame *frame,
+static void rx_std_callback_fd_2(const struct device *dev, struct can_frame *frame,
 				 void *user_data)
 {
-	struct zcan_filter *filter = user_data;
+	struct can_filter *filter = user_data;
 
 	assert_frame_equal(frame, &test_std_frame_fd_2);
 	zassert_equal(dev, can_dev, "CAN device does not match");
@@ -207,7 +207,7 @@ static void rx_std_callback_fd_2(const struct device *dev, struct zcan_frame *fr
  * @param dev   Pointer to the device structure for the driver instance.
  * @param frame Pointer to the CAN frame to send.
  */
-static void send_test_frame(const struct device *dev, const struct zcan_frame *frame)
+static void send_test_frame(const struct device *dev, const struct can_frame *frame)
 {
 	int err;
 
@@ -226,7 +226,7 @@ static void send_test_frame(const struct device *dev, const struct zcan_frame *f
  * @param frame    Pointer to the CAN frame to send.
  * @param callback Transmit callback function.
  */
-static void send_test_frame_nowait(const struct device *dev, const struct zcan_frame *frame,
+static void send_test_frame_nowait(const struct device *dev, const struct can_frame *frame,
 				   can_tx_callback_t callback)
 {
 	int err;
@@ -244,7 +244,7 @@ static void send_test_frame_nowait(const struct device *dev, const struct zcan_f
  *
  * @return CAN filter ID.
  */
-static inline int add_rx_msgq(const struct device *dev, const struct zcan_filter *filter)
+static inline int add_rx_msgq(const struct device *dev, const struct can_filter *filter)
 {
 	int filter_id;
 
@@ -265,7 +265,7 @@ static inline int add_rx_msgq(const struct device *dev, const struct zcan_filter
  * @return CAN filter ID.
  */
 static inline int add_rx_filter(const struct device *dev,
-				const struct zcan_filter *filter,
+				const struct can_filter *filter,
 				can_rx_callback_t callback)
 {
 	int filter_id;
@@ -287,12 +287,12 @@ static inline int add_rx_filter(const struct device *dev,
  * @param frame1  CAN frame 1
  * @param frame2  CAN frame 2
  */
-static void send_receive(const struct zcan_filter *filter1,
-			 const struct zcan_filter *filter2,
-			 const struct zcan_frame *frame1,
-			 const struct zcan_frame *frame2)
+static void send_receive(const struct can_filter *filter1,
+			 const struct can_filter *filter2,
+			 const struct can_frame *frame1,
+			 const struct can_frame *frame2)
 {
-	struct zcan_frame frame_buffer;
+	struct can_frame frame_buffer;
 	int filter_id_1;
 	int filter_id_2;
 	int err;

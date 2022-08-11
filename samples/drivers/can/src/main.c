@@ -60,35 +60,35 @@ void rx_thread(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
-	const struct zcan_filter filter = {
+	const struct can_filter filter = {
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.id = COUNTER_MSG_ID,
 		.rtr_mask = 1,
 		.id_mask = CAN_EXT_ID_MASK
 	};
-	struct zcan_frame msg;
+	struct can_frame frame;
 	int filter_id;
 
 	filter_id = can_add_rx_filter_msgq(can_dev, &counter_msgq, &filter);
 	printk("Counter filter id: %d\n", filter_id);
 
 	while (1) {
-		k_msgq_get(&counter_msgq, &msg, K_FOREVER);
+		k_msgq_get(&counter_msgq, &frame, K_FOREVER);
 
-		if (msg.dlc != 2U) {
-			printk("Wrong data length: %u\n", msg.dlc);
+		if (frame.dlc != 2U) {
+			printk("Wrong data length: %u\n", frame.dlc);
 			continue;
 		}
 
 		printk("Counter received: %u\n",
-		       sys_be16_to_cpu(UNALIGNED_GET((uint16_t *)&msg.data)));
+		       sys_be16_to_cpu(UNALIGNED_GET((uint16_t *)&frame.data)));
 	}
 }
 
 void change_led_work_handler(struct k_work *work)
 {
-	struct zcan_frame frame;
+	struct can_frame frame;
 	int ret;
 
 	while (k_msgq_get(&change_led_msgq, &frame, K_NO_WAIT) == 0) {
@@ -189,20 +189,20 @@ void state_change_callback(const struct device *dev, enum can_state state,
 
 void main(void)
 {
-	const struct zcan_filter change_led_filter = {
+	const struct can_filter change_led_filter = {
 		.id_type = CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.id = LED_MSG_ID,
 		.rtr_mask = 1,
 		.id_mask = CAN_STD_ID_MASK
 	};
-	struct zcan_frame change_led_frame = {
+	struct can_frame change_led_frame = {
 		.id_type = CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.id = LED_MSG_ID,
 		.dlc = 1
 	};
-	struct zcan_frame counter_frame = {
+	struct can_frame counter_frame = {
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.id = COUNTER_MSG_ID,

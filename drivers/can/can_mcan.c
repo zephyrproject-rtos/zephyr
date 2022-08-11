@@ -619,7 +619,7 @@ static void can_mcan_get_message(const struct device *dev,
 {
 	struct can_mcan_data *data = dev->data;
 	uint32_t get_idx, filt_idx;
-	struct zcan_frame frame;
+	struct can_frame frame;
 	can_rx_callback_t cb;
 	int data_length;
 	void *cb_arg;
@@ -781,7 +781,7 @@ int can_mcan_recover(const struct device *dev, k_timeout_t timeout)
 
 
 int can_mcan_send(const struct device *dev,
-		  const struct zcan_frame *frame,
+		  const struct can_frame *frame,
 		  k_timeout_t timeout,
 		  can_tx_callback_t callback, void *user_data)
 {
@@ -902,7 +902,7 @@ int can_mcan_get_max_filters(const struct device *dev, enum can_ide id_type)
  */
 int can_mcan_add_rx_filter_std(const struct device *dev,
 			       can_rx_callback_t callback, void *user_data,
-			       const struct zcan_filter *filter)
+			       const struct can_filter *filter)
 {
 	struct can_mcan_data *data = dev->data;
 	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
@@ -966,7 +966,7 @@ static int can_mcan_get_free_ext(volatile struct can_mcan_ext_filter *filters)
 
 static int can_mcan_add_rx_filter_ext(const struct device *dev,
 				      can_rx_callback_t callback, void *user_data,
-				      const struct zcan_filter *filter)
+				      const struct can_filter *filter)
 {
 	struct can_mcan_data *data = dev->data;
 	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
@@ -1019,7 +1019,7 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev,
 
 int can_mcan_add_rx_filter(const struct device *dev,
 			   can_rx_callback_t callback, void *user_data,
-			   const struct zcan_filter *filter)
+			   const struct can_filter *filter)
 {
 	int filter_id;
 

@@ -247,7 +247,7 @@ static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 	return 0;
 }
 
-static void mcux_flexcan_copy_zframe_to_frame(const struct zcan_frame *src,
+static void mcux_flexcan_copy_zframe_to_frame(const struct can_frame *src,
 					      flexcan_frame_t *dest)
 {
 	if (src->id_type == CAN_STANDARD_IDENTIFIER) {
@@ -270,7 +270,7 @@ static void mcux_flexcan_copy_zframe_to_frame(const struct zcan_frame *src,
 }
 
 static void mcux_flexcan_copy_frame_to_zframe(const flexcan_frame_t *src,
-					      struct zcan_frame *dest)
+					      struct can_frame *dest)
 {
 	if (src->format == kFLEXCAN_FrameFormatStandard) {
 		dest->id_type = CAN_STANDARD_IDENTIFIER;
@@ -294,7 +294,7 @@ static void mcux_flexcan_copy_frame_to_zframe(const flexcan_frame_t *src,
 #endif /* CAN_RX_TIMESTAMP */
 }
 
-static void mcux_flexcan_copy_zfilter_to_mbconfig(const struct zcan_filter *src,
+static void mcux_flexcan_copy_zfilter_to_mbconfig(const struct can_filter *src,
 						  flexcan_rx_mb_config_t *dest,
 						  uint32_t *mask)
 {
@@ -345,7 +345,7 @@ static int mcux_flexcan_get_state(const struct device *dev, enum can_state *stat
 }
 
 static int mcux_flexcan_send(const struct device *dev,
-			     const struct zcan_frame *frame,
+			     const struct can_frame *frame,
 			     k_timeout_t timeout,
 			     can_tx_callback_t callback, void *user_data)
 {
@@ -400,7 +400,7 @@ static int mcux_flexcan_send(const struct device *dev,
 static int mcux_flexcan_add_rx_filter(const struct device *dev,
 				      can_rx_callback_t callback,
 				      void *user_data,
-				      const struct zcan_filter *filter)
+				      const struct can_filter *filter)
 {
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
@@ -627,7 +627,7 @@ static inline void mcux_flexcan_transfer_rx_idle(const struct device *dev,
 	struct mcux_flexcan_data *data = dev->data;
 	can_rx_callback_t function;
 	flexcan_mb_transfer_t xfer;
-	struct zcan_frame frame;
+	struct can_frame frame;
 	status_t status;
 	void *arg;
 	int alloc;

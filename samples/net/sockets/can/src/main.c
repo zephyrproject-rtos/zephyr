@@ -33,7 +33,7 @@ static struct k_thread rx_data;
 
 #define CLOSE_PERIOD 15
 
-static const struct zcan_filter zfilter = {
+static const struct can_filter zfilter = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.id = 0x1,
@@ -46,27 +46,27 @@ static struct socketcan_filter sfilter;
 static void tx(int *can_fd)
 {
 	int fd = POINTER_TO_INT(can_fd);
-	struct zcan_frame msg = {0};
+	struct can_frame zframe = {0};
 	struct socketcan_frame sframe = {0};
 	int ret, i;
 
-	msg.dlc = 8U;
-	msg.id_type = CAN_STANDARD_IDENTIFIER;
-	msg.id = 0x1;
-	msg.rtr = CAN_DATAFRAME;
+	zframe.dlc = 8U;
+	zframe.id_type = CAN_STANDARD_IDENTIFIER;
+	zframe.id = 0x1;
+	zframe.rtr = CAN_DATAFRAME;
 
-	for (i = 0; i < msg.dlc; i++) {
-		msg.data[i] = 0xF0 | i;
+	for (i = 0; i < zframe.dlc; i++) {
+		zframe.data[i] = 0xF0 | i;
 	}
 
-	can_copy_zframe_to_frame(&msg, &sframe);
+	can_copy_zframe_to_frame(&zframe, &sframe);
 
 	LOG_DBG("Sending CAN data...");
 
 	while (1) {
 		ret = send(fd, &sframe, sizeof(sframe), 0);
 		if (ret < 0) {
-			LOG_ERR("Cannot send CAN message (%d)", -errno);
+			LOG_ERR("Cannot send CAN frame (%d)", -errno);
 		}
 
 		k_sleep(SLEEP_PERIOD);
@@ -108,7 +108,7 @@ static void rx(int *can_fd, int *do_close_period,
 	int fd = POINTER_TO_INT(can_fd);
 	struct sockaddr_can can_addr;
 	socklen_t addr_len;
-	struct zcan_frame msg;
+	struct can_frame zframe;
 	struct socketcan_frame sframe;
 	int ret;
 
@@ -123,26 +123,26 @@ static void rx(int *can_fd, int *do_close_period,
 		ret = recvfrom(fd, &sframe, sizeof(struct socketcan_frame),
 			       0, (struct sockaddr *)&can_addr, &addr_len);
 		if (ret < 0) {
-			LOG_ERR("[%d] Cannot receive CAN message (%d)", fd,
+			LOG_ERR("[%d] Cannot receive CAN frame (%d)", fd,
 				-errno);
 			continue;
 		}
 
-		can_copy_frame_to_zframe(&sframe, &msg);
+		can_copy_frame_to_zframe(&sframe, &zframe);
 
-		LOG_INF("[%d] CAN msg: type 0x%x RTR 0x%x EID 0x%x DLC 0x%x",
-			fd, msg.id_type, msg.rtr, msg.id, msg.dlc);
+		LOG_INF("[%d] CAN frame: type 0x%x RTR 0x%x EID 0x%x DLC 0x%x",
+			fd, zframe.id_type, zframe.rtr, zframe.id, zframe.dlc);
 
-		if (!msg.rtr) {
-			if (msg.dlc > 8) {
-				data = (uint8_t *)msg.data_32;
+		if (!zframe.rtr) {
+			if (zframe.dlc > 8) {
+				data = (uint8_t *)zframe.data_32;
 			} else {
-				data = msg.data;
+				data = zframe.data;
 			}
 
-			LOG_HEXDUMP_INF(data, msg.dlc, "Data");
+			LOG_HEXDUMP_INF(data, zframe.dlc, "Data");
 		} else {
-			LOG_INF("[%d] EXT Remote message received", fd);
+			LOG_INF("[%d] EXT Remote frame received", fd);
 		}
 
 		if (POINTER_TO_INT(do_close_period) > 0) {
@@ -228,14 +228,14 @@ static int setup_socket(void)
 	rx_fd = fd;
 
 #if CONFIG_NET_SOCKETS_CAN_RECEIVERS == 2
-	fd = create_socket(&filter);
+	fd = create_socket(&sfilter);
 	if (fd >= 0) {
 		rx_tid = k_thread_create(&rx_data, rx_stack,
 					 K_THREAD_STACK_SIZEOF(rx_stack),
 					 (k_thread_entry_t)rx,
 					 INT_TO_POINTER(fd),
 					 INT_TO_POINTER(CLOSE_PERIOD),
-					 &filter, PRIORITY, 0, K_NO_WAIT);
+					 &sfilter, PRIORITY, 0, K_NO_WAIT);
 		if (!rx_tid) {
 			ret = -ENOENT;
 			errno = -ret;
