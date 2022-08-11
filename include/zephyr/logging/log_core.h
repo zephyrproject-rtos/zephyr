@@ -240,6 +240,7 @@ static inline char z_log_minimal_level_to_char(int level)
 	Z_LOG_MSG2_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), _mode, \
 			  CONFIG_LOG_DOMAIN_ID, _src, _level, NULL,\
 			  0, __VA_ARGS__); \
+	(void)_mode; \
 	if (false) { \
 		/* Arguments checker present but never evaluated.*/ \
 		/* Placed here to ensure that __VA_ARGS__ are*/ \
