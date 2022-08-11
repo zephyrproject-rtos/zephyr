@@ -49,6 +49,19 @@ extern "C" {
 #define BIT64(_n) (1ULL << (_n))
 
 /**
+ * @brief Unsigned integer with bits set in a specific range.
+ *
+ * Set the bits value from @p val starting from bit @p bits_lo to (including)
+ * @p bits_hi.
+ *
+ * @param bits_hi Upper range limit.
+ * @param bits_lo Lower range limit.
+ * @param val Bits value to be used.
+ */
+#define SET_BITS(bits_hi, bits_lo, val)				\
+	(((val) & ((1UL << ((bits_hi) - (bits_lo) + 1UL)) - 1UL)) << (bits_lo))
+
+/**
  * @brief Set or clear a bit depending on a boolean value
  *
  * The argument @p var is a variable whose value is written to as a
