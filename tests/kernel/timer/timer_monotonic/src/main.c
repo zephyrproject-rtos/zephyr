@@ -48,7 +48,7 @@ int test_frequency(void)
  *
  * @see k_cycle_get_32(), sys_clock_hw_cycles_per_sec()
  */
-void test_timer(void)
+ZTEST(timer_fn, test_timer)
 {
 	volatile uint32_t t_last, t_now;
 	uint32_t i, errors;
@@ -82,8 +82,4 @@ void test_timer(void)
 	zassert_false(test_frequency(), "test frequency failed");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(timer_fn, ztest_unit_test(test_timer));
-	ztest_run_test_suite(timer_fn);
-}
+ZTEST_SUITE(timer_fn, NULL, NULL, NULL, NULL, NULL);
