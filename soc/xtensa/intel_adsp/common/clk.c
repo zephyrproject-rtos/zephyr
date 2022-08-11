@@ -54,14 +54,16 @@ int cavs_clock_set_freq(uint32_t freq_idx)
 	k_spinlock_key_t k;
 	int i;
 
-	if (freq_idx >= CAVS_CLOCK_FREQ_LEN)
+	if (freq_idx >= CAVS_CLOCK_FREQ_LEN) {
 		return -EINVAL;
+	}
 
 	k = k_spin_lock(&lock);
 
 	select_cpu_clock_hw(freq_idx);
-	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++)
+	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
 		platform_clocks[i].current_freq = freq_idx;
+	}
 
 	k_spin_unlock(&lock, k);
 
@@ -80,10 +82,11 @@ void cavs_clock_init(void)
 
 #ifdef CAVS_CLOCK_HAS_WOVCRO
 	CAVS_SHIM.clkctl |= CAVS_CLKCTL_WOVCRO;
-	if (CAVS_SHIM.clkctl & CAVS_CLKCTL_WOVCRO)
+	if (CAVS_SHIM.clkctl & CAVS_CLKCTL_WOVCRO) {
 		CAVS_SHIM.clkctl = CAVS_SHIM.clkctl & ~CAVS_CLKCTL_WOVCRO;
-	else
+	} else {
 		platform_lowest_freq_idx = CAVS_CLOCK_FREQ_LPRO;
+	}
 #endif
 
 	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
