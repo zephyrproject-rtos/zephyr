@@ -27,7 +27,7 @@ struct net_canbus_config {
 	const struct device *can_dev;
 };
 
-static void net_canbus_recv(const struct device *dev, struct zcan_frame *frame, void *user_data)
+static void net_canbus_recv(const struct device *dev, struct can_frame *frame, void *user_data)
 {
 	struct net_canbus_context *ctx = user_data;
 	struct net_pkt *pkt;
@@ -36,14 +36,14 @@ static void net_canbus_recv(const struct device *dev, struct zcan_frame *frame, 
 	ARG_UNUSED(dev);
 
 	LOG_DBG("pkt on interface %p", ctx->iface);
-	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, sizeof(struct zcan_frame),
+	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, sizeof(struct can_frame),
 					   AF_CAN, 0, K_NO_WAIT);
 	if (pkt == NULL) {
 		LOG_ERR("Failed to obtain net_pkt");
 		return;
 	}
 
-	if (net_pkt_write(pkt, frame, sizeof(struct zcan_frame))) {
+	if (net_pkt_write(pkt, frame, sizeof(struct can_frame))) {
 		LOG_ERR("Failed to append RX data");
 		net_pkt_unref(pkt);
 		return;
@@ -69,7 +69,7 @@ static int net_canbus_setsockopt(const struct device *dev, void *obj, int level,
 		return -1;
 	}
 
-	__ASSERT_NO_MSG(optlen == sizeof(struct zcan_filter));
+	__ASSERT_NO_MSG(optlen == sizeof(struct can_filter));
 
 	ret = can_add_rx_filter(cfg->can_dev, net_canbus_recv, context, optval);
 	if (ret == -ENOSPC) {
@@ -108,7 +108,7 @@ static int net_canbus_send(const struct device *dev, struct net_pkt *pkt)
 		return -EPFNOSUPPORT;
 	}
 
-	ret = can_send(cfg->can_dev, (struct zcan_frame *)pkt->frags->data,
+	ret = can_send(cfg->can_dev, (struct can_frame *)pkt->frags->data,
 		       SEND_TIMEOUT, net_canbus_send_tx_callback, NULL);
 
 	if (ret == 0) {

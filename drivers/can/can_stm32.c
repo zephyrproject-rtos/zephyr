@@ -63,7 +63,7 @@ static void can_stm32_signal_tx_complete(const struct device *dev, struct can_st
 	}
 }
 
-static void can_stm32_rx_fifo_pop(CAN_FIFOMailBox_TypeDef *mbox, struct zcan_frame *frame)
+static void can_stm32_rx_fifo_pop(CAN_FIFOMailBox_TypeDef *mbox, struct can_frame *frame)
 {
 	if (mbox->RIR & CAN_RI0R_IDE) {
 		frame->id = mbox->RIR >> CAN_RI0R_EXID_Pos;
@@ -89,7 +89,7 @@ static inline void can_stm32_rx_isr_handler(const struct device *dev)
 	CAN_TypeDef *can = cfg->can;
 	CAN_FIFOMailBox_TypeDef *mbox;
 	int filter_id, index;
-	struct zcan_frame frame;
+	struct can_frame frame;
 	can_rx_callback_t callback = NULL;
 	void *cb_arg;
 
@@ -663,7 +663,7 @@ done:
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
 
-static int can_stm32_send(const struct device *dev, const struct zcan_frame *frame,
+static int can_stm32_send(const struct device *dev, const struct can_frame *frame,
 			  k_timeout_t timeout, can_tx_callback_t callback,
 			  void *user_data)
 {
@@ -776,35 +776,35 @@ static void can_stm32_set_filter_bank(int filter_id, CAN_FilterRegister_TypeDef 
 	}
 }
 
-static inline uint32_t can_stm32_filter_to_std_mask(const struct zcan_filter *filter)
+static inline uint32_t can_stm32_filter_to_std_mask(const struct can_filter *filter)
 {
 	return  (filter->id_mask  << CAN_STM32_FIRX_STD_ID_POS) |
 		(filter->rtr_mask << CAN_STM32_FIRX_STD_RTR_POS) |
 		(1U               << CAN_STM32_FIRX_STD_IDE_POS);
 }
 
-static inline uint32_t can_stm32_filter_to_ext_mask(const struct zcan_filter *filter)
+static inline uint32_t can_stm32_filter_to_ext_mask(const struct can_filter *filter)
 {
 	return  (filter->id_mask  << CAN_STM32_FIRX_EXT_EXT_ID_POS) |
 		(filter->rtr_mask << CAN_STM32_FIRX_EXT_RTR_POS) |
 		(1U               << CAN_STM32_FIRX_EXT_IDE_POS);
 }
 
-static inline uint32_t can_stm32_filter_to_std_id(const struct zcan_filter *filter)
+static inline uint32_t can_stm32_filter_to_std_id(const struct can_filter *filter)
 {
 	return  (filter->id  << CAN_STM32_FIRX_STD_ID_POS) |
 		(filter->rtr << CAN_STM32_FIRX_STD_RTR_POS);
 
 }
 
-static inline uint32_t can_stm32_filter_to_ext_id(const struct zcan_filter *filter)
+static inline uint32_t can_stm32_filter_to_ext_id(const struct can_filter *filter)
 {
 	return  (filter->id  << CAN_STM32_FIRX_EXT_EXT_ID_POS) |
 		(filter->rtr << CAN_STM32_FIRX_EXT_RTR_POS) |
 		(1U          << CAN_STM32_FIRX_EXT_IDE_POS);
 }
 
-static inline int can_stm32_set_filter(const struct device *dev, const struct zcan_filter *filter)
+static inline int can_stm32_set_filter(const struct device *dev, const struct can_filter *filter)
 {
 	const struct can_stm32_config *cfg = dev->config;
 	struct can_stm32_data *data = dev->data;
@@ -875,7 +875,7 @@ static inline int can_stm32_set_filter(const struct device *dev, const struct zc
  * Currently, all filter banks are assigned to FIFO 0 and FIFO 1 is not used.
  */
 static int can_stm32_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
-				   void *cb_arg, const struct zcan_filter *filter)
+				   void *cb_arg, const struct can_filter *filter)
 {
 	struct can_stm32_data *data = dev->data;
 	int filter_id;

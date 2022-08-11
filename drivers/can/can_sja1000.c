@@ -207,7 +207,7 @@ unlock:
 	return err;
 }
 
-static void can_sja1000_read_frame(const struct device *dev, struct zcan_frame *frame)
+static void can_sja1000_read_frame(const struct device *dev, struct can_frame *frame)
 {
 	uint8_t info;
 	int i;
@@ -257,7 +257,7 @@ static void can_sja1000_read_frame(const struct device *dev, struct zcan_frame *
 	}
 }
 
-void can_sja1000_write_frame(const struct device *dev, const struct zcan_frame *frame)
+void can_sja1000_write_frame(const struct device *dev, const struct can_frame *frame)
 {
 	uint8_t info;
 	int i;
@@ -299,7 +299,7 @@ void can_sja1000_write_frame(const struct device *dev, const struct zcan_frame *
 	}
 }
 
-int can_sja1000_send(const struct device *dev, const struct zcan_frame *frame, k_timeout_t timeout,
+int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_timeout_t timeout,
 		     can_tx_callback_t callback, void *user_data)
 {
 	struct can_sja1000_data *data = dev->data;
@@ -352,7 +352,7 @@ int can_sja1000_send(const struct device *dev, const struct zcan_frame *frame, k
 }
 
 int can_sja1000_add_rx_filter(const struct device *dev, can_rx_callback_t callback, void *user_data,
-			      const struct zcan_filter *filter)
+			      const struct can_filter *filter)
 {
 	struct can_sja1000_data *data = dev->data;
 	int filter_id = -ENOSPC;
@@ -386,7 +386,7 @@ void can_sja1000_remove_rx_filter(const struct device *dev, int filter_id)
 	if (atomic_test_and_clear_bit(data->rx_allocs, filter_id)) {
 		data->filters[filter_id].callback = NULL;
 		data->filters[filter_id].user_data = NULL;
-		data->filters[filter_id].filter = (struct zcan_filter){0};
+		data->filters[filter_id].filter = (struct can_filter){0};
 	}
 }
 
@@ -479,7 +479,7 @@ int can_sja1000_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 static void can_sja1000_handle_receive_irq(const struct device *dev)
 {
 	struct can_sja1000_data *data = dev->data;
-	struct zcan_frame frame;
+	struct can_frame frame;
 	can_rx_callback_t callback;
 	uint8_t sr;
 	int i;

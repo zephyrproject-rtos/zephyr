@@ -100,8 +100,8 @@ static void zcan_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(receivers); i++) {
-		struct zcan_frame *zframe =
-			(struct zcan_frame *)net_pkt_data(pkt);
+		struct can_frame *zframe =
+			(struct can_frame *)net_pkt_data(pkt);
 		struct socketcan_frame sframe;
 
 		if (!receivers[i].ctx ||
@@ -226,7 +226,7 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			socklen_t addrlen)
 {
 	struct sockaddr_can can_addr;
-	struct zcan_frame zframe;
+	struct can_frame zframe;
 	k_timeout_t timeout = K_FOREVER;
 	int ret;
 
@@ -276,7 +276,7 @@ static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 				 struct sockaddr *src_addr,
 				 socklen_t *addrlen)
 {
-	struct zcan_frame zframe;
+	struct can_frame zframe;
 	size_t recv_len = 0;
 	k_timeout_t timeout = K_FOREVER;
 	struct net_pkt *pkt;
@@ -672,7 +672,7 @@ static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 
 		for (i = 0; i < count; i++) {
 			struct socketcan_filter *sfilter;
-			struct zcan_filter zfilter;
+			struct can_filter zfilter;
 			bool duplicate;
 
 			sfilter = &((struct socketcan_filter *)optval)[i];
