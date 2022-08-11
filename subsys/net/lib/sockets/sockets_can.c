@@ -109,7 +109,7 @@ static void zcan_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 			continue;
 		}
 
-		can_copy_zframe_to_frame(zframe, &sframe);
+		socketcan_from_can_frame(zframe, &sframe);
 
 		if ((sframe.can_id & receivers[i].can_mask) !=
 		    (receivers[i].can_id & receivers[i].can_mask)) {
@@ -258,7 +258,7 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 
 	NET_ASSERT(len == sizeof(struct socketcan_frame));
 
-	can_copy_frame_to_zframe((struct socketcan_frame *)buf, &zframe);
+	socketcan_to_can_frame((struct socketcan_frame *)buf, &zframe);
 
 	ret = net_context_sendto(ctx, (void *)&zframe, sizeof(zframe),
 				 dest_addr, addrlen, NULL, timeout,
@@ -336,7 +336,7 @@ static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 
 	NET_ASSERT(recv_len == sizeof(struct socketcan_frame));
 
-	can_copy_zframe_to_frame(&zframe, (struct socketcan_frame *)buf);
+	socketcan_from_can_frame(&zframe, (struct socketcan_frame *)buf);
 
 	net_pkt_unref(pkt);
 
@@ -685,7 +685,7 @@ static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 				continue;
 			}
 
-			can_copy_filter_to_zfilter(sfilter, &zfilter);
+			socketcan_to_can_filter(sfilter, &zfilter);
 
 			ret = api->setsockopt(dev, obj, level, optname,
 					      &zfilter, sizeof(zfilter));

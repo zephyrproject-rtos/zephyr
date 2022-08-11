@@ -12,9 +12,9 @@
 LOG_MODULE_REGISTER(socket_can, LOG_LEVEL_ERR);
 
 /**
- * @brief Test of @a can_copy_frame_to_zframe()
+ * @brief Test of @a socketcan_to_can_frame()
  */
-ZTEST(socket_can, test_can_frame_to_zcan_frame)
+ZTEST(socket_can, test_socketcan_frame_to_can_frame)
 {
 	struct socketcan_frame sframe = { 0 };
 	struct can_frame expected = { 0 };
@@ -31,7 +31,7 @@ ZTEST(socket_can, test_can_frame_to_zcan_frame)
 	expected.id = 1234U;
 	expected.dlc = sizeof(data);
 
-	can_copy_frame_to_zframe(&sframe, &zframe);
+	socketcan_to_can_frame(&sframe, &zframe);
 
 	LOG_HEXDUMP_DBG((const uint8_t *)&sframe, sizeof(sframe), "sframe");
 	LOG_HEXDUMP_DBG((const uint8_t *)&zframe, sizeof(zframe), "zframe");
@@ -44,9 +44,9 @@ ZTEST(socket_can, test_can_frame_to_zcan_frame)
 }
 
 /**
- * @brief Test of @a can_copy_zframe_to_frame()
+ * @brief Test of @a socketcan_from_can_frame()
  */
-ZTEST(socket_can, test_zcan_frame_to_can_frame)
+ZTEST(socket_can, test_can_frame_to_socketcan_frame)
 {
 	struct socketcan_frame sframe = { 0 };
 	struct socketcan_frame expected = { 0 };
@@ -64,7 +64,7 @@ ZTEST(socket_can, test_zcan_frame_to_can_frame)
 	zframe.dlc = sizeof(data);
 	memcpy(zframe.data, data, sizeof(data));
 
-	can_copy_zframe_to_frame(&zframe, &sframe);
+	socketcan_from_can_frame(&zframe, &sframe);
 
 	LOG_HEXDUMP_DBG((const uint8_t *)&sframe, sizeof(sframe), "sframe");
 	LOG_HEXDUMP_DBG((const uint8_t *)&zframe, sizeof(zframe), "zframe");
@@ -78,9 +78,9 @@ ZTEST(socket_can, test_zcan_frame_to_can_frame)
 }
 
 /**
- * @brief Test of @a can_copy_filter_to_zfilter()
+ * @brief Test of @a socketcan_to_can_filter()
  */
-ZTEST(socket_can, test_can_filter_to_zcan_filter)
+ZTEST(socket_can, test_socketcan_filter_to_can_filter)
 {
 	struct socketcan_filter sfilter = { 0 };
 	struct can_filter expected = { 0 };
@@ -95,7 +95,7 @@ ZTEST(socket_can, test_can_filter_to_zcan_filter)
 	expected.rtr_mask = 1U;
 	expected.id_mask = 1234U;
 
-	can_copy_filter_to_zfilter(&sfilter, &zfilter);
+	socketcan_to_can_filter(&sfilter, &zfilter);
 
 	LOG_HEXDUMP_DBG((const uint8_t *)&zfilter, sizeof(zfilter), "zfilter");
 	LOG_HEXDUMP_DBG((const uint8_t *)&sfilter, sizeof(sfilter), "sfilter");
@@ -109,9 +109,9 @@ ZTEST(socket_can, test_can_filter_to_zcan_filter)
 }
 
 /**
- * @brief Test of @a can_copy_zfilter_to_filter()
+ * @brief Test of @a socketcan_from_can_filter()
  */
-ZTEST(socket_can, test_zcan_filter_to_can_filter)
+ZTEST(socket_can, test_can_filter_to_socketcan_filter)
 {
 	struct socketcan_filter sfilter = { 0 };
 	struct socketcan_filter expected = { 0 };
@@ -126,7 +126,7 @@ ZTEST(socket_can, test_zcan_filter_to_can_filter)
 	zfilter.rtr_mask = 1U;
 	zfilter.id_mask = 1234U;
 
-	can_copy_zfilter_to_filter(&zfilter, &sfilter);
+	socketcan_from_can_filter(&zfilter, &sfilter);
 
 	LOG_HEXDUMP_DBG((const uint8_t *)&zfilter, sizeof(zfilter), "zfilter");
 	LOG_HEXDUMP_DBG((const uint8_t *)&sfilter, sizeof(sfilter), "sfilter");
