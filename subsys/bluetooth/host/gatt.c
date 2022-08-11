@@ -3145,7 +3145,18 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 		__ASSERT(attr, "No more attributes\n");
 	}
 
-	/* Check if the attribute is the CCC Descriptor */
+	/* Find the CCC Descriptor */
+	while (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC) &&
+	       /* Also stop if we leave the current characteristic definition */
+	       bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC) &&
+	       bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY) &&
+	       bt_uuid_cmp(attr->uuid, BT_UUID_GATT_SECONDARY)) {
+		attr = bt_gatt_attr_next(attr);
+		if (!attr) {
+			return false;
+		}
+	}
+
 	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC) != 0) {
 		return false;
 	}
