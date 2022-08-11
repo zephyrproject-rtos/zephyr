@@ -137,7 +137,7 @@ uint32_t get_hz(enum units u)
 	return 0;
 }
 
-void test_conversion(struct test_rec *t, uint64_t val)
+static void test_conversion(struct test_rec *t, uint64_t val)
 {
 	uint32_t from_hz = get_hz(t->src), to_hz = get_hz(t->dst);
 	uint64_t result;
@@ -192,7 +192,7 @@ void test_conversion(struct test_rec *t, uint64_t val)
 		     result, result, diff, diff, mindiff, maxdiff);
 }
 
-void test_time_conversions(void)
+ZTEST(timer_api, test_time_conversions)
 {
 	for (int i = 0; i < ARRAY_SIZE(tests); i++) {
 		test_conversion(&tests[i], 0);
