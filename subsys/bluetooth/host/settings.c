@@ -186,7 +186,7 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
 	if (!strncmp(name, "appearance", len)) {
-		if (len != sizeof(bt_dev.appearance)) {
+		if (len_rd != sizeof(bt_dev.appearance)) {
 			BT_ERR("Ignoring settings entry 'bt/appearance'. Wrong length.");
 			return -EINVAL;
 		}
