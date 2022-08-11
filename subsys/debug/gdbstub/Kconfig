@@ -42,4 +42,11 @@ config GDBSTUB_TRACE
 	  Enable extra debug logging for the GDB backend, including
 	  breakpoint interrupts and remote commands it receives.
 
+config GDBSTUB_ENTER_IMMEDIATELY
+	bool "Stop execution and enter the GDB stub at boot"
+	default y
+	help
+	  Functions like QEMU's -S. If enabled, boot will halt before user code
+	  starts execution and GDB stub will wait for connection.
+
 endif # GDBSTUB

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/cache.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 
@@ -538,8 +539,7 @@ static int gdb_mem_write(const uint8_t *buf, uintptr_t addr,
 	int ret;
 
 	if (!gdb_mem_can_write(addr, len, &align)) {
-		ret = -1;
-		goto out;
+		return -1;
 	}
 
 	if (align > 1) {
@@ -548,7 +548,20 @@ static int gdb_mem_write(const uint8_t *buf, uintptr_t addr,
 		ret = gdb_mem_write_unaligned(buf, addr, len);
 	}
 
-out:
+#ifdef CONFIG_XTENSA
+	/* This flush sequence was taken from the Xtensa manual under the ihi
+	 * instruction. It ensures breakpoints set by overwriting the instruction
+	 * memory will be hit.
+	 */
+	sys_cache_instr_invd_range((void *)addr, len);
+	sys_cache_data_flush_range((void *)addr, len);
+#if XCHAL_ICACHE_SIZE
+	__asm__ __volatile__("isync":::"memory");
+	__asm__ __volatile__("ihi %0, 0" :: "a"(addr) : "memory");
+	__asm__ __volatile__("isync":::"memory");
+#endif
+#endif
+
 	return ret;
 }
 
@@ -881,6 +894,7 @@ int gdb_init(void)
 	return 0;
 }
 
+#ifdef CONFIG_GDBSTUB_ENTER_IMMEDIATELY
 #ifdef CONFIG_XTENSA
 /*
  * Interrupt stacks are being setup during init and are not
@@ -893,4 +907,5 @@ int gdb_init(void)
 SYS_INIT(gdb_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else
 SYS_INIT(gdb_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif
 #endif
