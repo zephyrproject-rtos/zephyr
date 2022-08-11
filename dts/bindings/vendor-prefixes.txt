@@ -18,6 +18,7 @@ acer	Acer Inc.
 acme	Acme Systems srl
 actions	Actions Semiconductor Co., Ltd.
 active-semi	Active-Semi International Inc
+actinius	Actinius B.V.
 ad	Avionic Design GmbH
 adafruit	Adafruit Industries, LLC
 adapteva	Adapteva, Inc.
