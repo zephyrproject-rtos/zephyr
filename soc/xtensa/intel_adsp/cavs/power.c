@@ -29,10 +29,6 @@ LOG_MODULE_REGISTER(soc);
 # define SHIM_GPDMA_CLKCTL(x)     (SHIM_GPDMA_BASE(x) + 0x4)
 # define SHIM_CLKCTL_LPGPDMAFDCGB BIT(0)
 
-# define DSP_INIT_LPGPDMA(x)	  (0x71A60 + (2*x))
-# define LPGPDMA_CTLOSEL_FLAG	  BIT(15)
-# define LPGPDMA_CHOSEL_FLAG	  0xFF
-
 #endif
 
 
@@ -87,9 +83,6 @@ __imr void power_init(void)
 	 * though the device itself is operational.
 	 */
 	sys_write32(GENO_MDIVOSEL | GENO_DIOPTOSEL, DSP_INIT_GENO);
-	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(0));
-	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(1));
-
 	sys_write32(IOPO_DMIC_FLAG | IOPO_I2SSEL_MASK, DSP_INIT_IOPO);
 #endif
 }
