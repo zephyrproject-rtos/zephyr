@@ -10,19 +10,11 @@
 
 #define SRAM_ALIAS_BASE         0xA0000000
 #define SRAM_ALIAS_MASK         0xF0000000
-#define DSP_INIT_LPGPDMA(x)  (0x71A60 + (2 * x))
-#define LPGPDMA_CTLOSEL_FLAG          BIT(15)
-# define LPGPDMA_CHOSEL_FLAG   0xFF
 
 __imr void power_init(void)
 {
 	/* Disable idle power gating */
 	DFDSPBRCP.bootctl[0].bctl |= DFDSPBRCP_BCTL_WAITIPCG | DFDSPBRCP_BCTL_WAITIPPG;
-
-#if CONFIG_DMA_INTEL_ADSP_GPDMA
-	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(0));
-	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(1));
-#endif
 }
 
 #ifdef CONFIG_PM
