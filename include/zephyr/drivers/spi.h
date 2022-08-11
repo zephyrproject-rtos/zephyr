@@ -163,11 +163,11 @@ struct spi_cs_control {
  * Example devicetree fragment:
  *
  * @code{.devicetree}
- *     gpio1: gpio@... { ... };
+ *     gpio1: gpio@abcd0001 { ... };
  *
- *     gpio2: gpio@... { ... };
+ *     gpio2: gpio@abcd0002 { ... };
  *
- *     spi@... {
+ *     spi@abcd0003 {
  *             compatible = "vnd,spi";
  *             cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>,
  *                        <&gpio2 20 GPIO_ACTIVE_LOW>;
