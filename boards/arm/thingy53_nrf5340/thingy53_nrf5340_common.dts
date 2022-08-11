@@ -114,7 +114,6 @@
 		magn0 = &bmm150;
 		watchdog0 = &wdt0;
 		accel0 = &adxl362;
-		accel1 = &bmi270;
 	};
 };
 
@@ -189,6 +188,7 @@
 
 	bmi270: spi-dev-bmi270@1 {
 		compatible = "bosch,bmi270";
+		status = "disabled";
 		spi-max-frequency = <8000000>;
 		reg = <1>;
 		int1-gpios = <&gpio0 23 0>;
