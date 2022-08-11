@@ -45,7 +45,23 @@
 		 * M7 uses different addresses from the M4 core for GPIO2 and
 		 * GPIO3, see pg. 1460 of RT1170 ref manual for example
 		 */
-		gpio2: gpio@42008000 {
+		gpio2: gpio@40130000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x40130000 0x4000>;
+			interrupts = <102 0>, <103 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio3: gpio@40134000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x40134000 0x4000>;
+			interrupts = <104 0>, <105 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		fgpio2: gpio@42008000 {
 			compatible = "nxp,imx-gpio";
 			reg = <0x42008000 0x4000>;
 			interrupts = <99 0>;
@@ -53,10 +69,9 @@
 			#gpio-cells = <2>;
 		};
 
-		gpio3: gpio@4200c000 {
+		fgpio3: gpio@4200c000 {
 			compatible = "nxp,imx-gpio";
 			reg = <0x4200c000 0x4000>;
-			interrupts = <104 0>, <105 0>;
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
@@ -309,6 +324,76 @@
 };
 
 &gpio2{
+	pinmux = <&iomuxc_gpio_emc_b1_32_gpio_mux2_io00>,
+		<&iomuxc_gpio_emc_b1_33_gpio_mux2_io01>,
+		<&iomuxc_gpio_emc_b1_34_gpio_mux2_io02>,
+		<&iomuxc_gpio_emc_b1_35_gpio_mux2_io03>,
+		<&iomuxc_gpio_emc_b1_36_gpio_mux2_io04>,
+		<&iomuxc_gpio_emc_b1_37_gpio_mux2_io05>,
+		<&iomuxc_gpio_emc_b1_38_gpio_mux2_io06>,
+		<&iomuxc_gpio_emc_b1_39_gpio_mux2_io07>,
+		<&iomuxc_gpio_emc_b1_40_gpio_mux2_io08>,
+		<&iomuxc_gpio_emc_b1_41_gpio_mux2_io09>,
+		<&iomuxc_gpio_emc_b2_00_gpio_mux2_io10>,
+		<&iomuxc_gpio_emc_b2_01_gpio_mux2_io11>,
+		<&iomuxc_gpio_emc_b2_02_gpio_mux2_io12>,
+		<&iomuxc_gpio_emc_b2_03_gpio_mux2_io13>,
+		<&iomuxc_gpio_emc_b2_04_gpio_mux2_io14>,
+		<&iomuxc_gpio_emc_b2_05_gpio_mux2_io15>,
+		<&iomuxc_gpio_emc_b2_06_gpio_mux2_io16>,
+		<&iomuxc_gpio_emc_b2_07_gpio_mux2_io17>,
+		<&iomuxc_gpio_emc_b2_08_gpio_mux2_io18>,
+		<&iomuxc_gpio_emc_b2_09_gpio_mux2_io19>,
+		<&iomuxc_gpio_emc_b2_10_gpio_mux2_io20>,
+		<&iomuxc_gpio_emc_b2_11_gpio_mux2_io21>,
+		<&iomuxc_gpio_emc_b2_12_gpio_mux2_io22>,
+		<&iomuxc_gpio_emc_b2_13_gpio_mux2_io23>,
+		<&iomuxc_gpio_emc_b2_14_gpio_mux2_io24>,
+		<&iomuxc_gpio_emc_b2_15_gpio_mux2_io25>,
+		<&iomuxc_gpio_emc_b2_16_gpio_mux2_io26>,
+		<&iomuxc_gpio_emc_b2_17_gpio_mux2_io27>,
+		<&iomuxc_gpio_emc_b2_18_gpio_mux2_io28>,
+		<&iomuxc_gpio_emc_b2_19_gpio_mux2_io29>,
+		<&iomuxc_gpio_emc_b2_20_gpio_mux2_io30>,
+		<&iomuxc_gpio_ad_00_gpio_mux2_io31>;
+};
+
+&gpio3{
+	pinmux = <&iomuxc_gpio_ad_01_gpio_mux3_io00>,
+		<&iomuxc_gpio_ad_02_gpio_mux3_io01>,
+		<&iomuxc_gpio_ad_03_gpio_mux3_io02>,
+		<&iomuxc_gpio_ad_04_gpio_mux3_io03>,
+		<&iomuxc_gpio_ad_05_gpio_mux3_io04>,
+		<&iomuxc_gpio_ad_06_gpio_mux3_io05>,
+		<&iomuxc_gpio_ad_07_gpio_mux3_io06>,
+		<&iomuxc_gpio_ad_08_gpio_mux3_io07>,
+		<&iomuxc_gpio_ad_09_gpio_mux3_io08>,
+		<&iomuxc_gpio_ad_10_gpio_mux3_io09>,
+		<&iomuxc_gpio_ad_11_gpio_mux3_io10>,
+		<&iomuxc_gpio_ad_12_gpio_mux3_io11>,
+		<&iomuxc_gpio_ad_13_gpio_mux3_io12>,
+		<&iomuxc_gpio_ad_14_gpio_mux3_io13>,
+		<&iomuxc_gpio_ad_15_gpio_mux3_io14>,
+		<&iomuxc_gpio_ad_16_gpio_mux3_io15>,
+		<&iomuxc_gpio_ad_17_gpio_mux3_io16>,
+		<&iomuxc_gpio_ad_18_gpio_mux3_io17>,
+		<&iomuxc_gpio_ad_19_gpio_mux3_io18>,
+		<&iomuxc_gpio_ad_20_gpio_mux3_io19>,
+		<&iomuxc_gpio_ad_21_gpio_mux3_io20>,
+		<&iomuxc_gpio_ad_22_gpio_mux3_io21>,
+		<&iomuxc_gpio_ad_23_gpio_mux3_io22>,
+		<&iomuxc_gpio_ad_24_gpio_mux3_io23>,
+		<&iomuxc_gpio_ad_25_gpio_mux3_io24>,
+		<&iomuxc_gpio_ad_26_gpio_mux3_io25>,
+		<&iomuxc_gpio_ad_27_gpio_mux3_io26>,
+		<&iomuxc_gpio_ad_28_gpio_mux3_io27>,
+		<&iomuxc_gpio_ad_29_gpio_mux3_io28>,
+		<&iomuxc_gpio_ad_30_gpio_mux3_io29>,
+		<&iomuxc_gpio_ad_31_gpio_mux3_io30>,
+		<&iomuxc_gpio_ad_32_gpio_mux3_io31>;
+};
+
+&fgpio2{
 	pinmux = <&iomuxc_gpio_emc_b1_32_gpio_mux2_io00_cm7>,
 		<&iomuxc_gpio_emc_b1_33_gpio_mux2_io01_cm7>,
 		<&iomuxc_gpio_emc_b1_34_gpio_mux2_io02_cm7>,
@@ -343,7 +428,7 @@
 		<&iomuxc_gpio_ad_00_gpio_mux2_io31_cm7>;
 };
 
-&gpio3{
+&fgpio3{
 	pinmux = <&iomuxc_gpio_ad_01_gpio_mux3_io00_cm7>,
 		<&iomuxc_gpio_ad_02_gpio_mux3_io01_cm7>,
 		<&iomuxc_gpio_ad_03_gpio_mux3_io02_cm7>,
