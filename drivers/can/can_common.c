@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(can_common, CONFIG_CAN_LOG_LEVEL);
 /* CAN sync segment is always one time quantum */
 #define CAN_SYNC_SEG 1
 
-static void can_msgq_put(const struct device *dev, struct zcan_frame *frame, void *user_data)
+static void can_msgq_put(const struct device *dev, struct can_frame *frame, void *user_data)
 {
 	struct k_msgq *msgq = (struct k_msgq *)user_data;
 	int ret;
@@ -33,7 +33,7 @@ static void can_msgq_put(const struct device *dev, struct zcan_frame *frame, voi
 }
 
 int z_impl_can_add_rx_filter_msgq(const struct device *dev, struct k_msgq *msgq,
-				  const struct zcan_filter *filter)
+				  const struct can_filter *filter)
 {
 	const struct can_driver_api *api = dev->api;
 
