@@ -656,6 +656,10 @@ static int start_read(const struct device *dev,
 	 * This register controls the analog switch integrated in the IO level.
 	 */
 	LL_ADC_SetChannelPreSelection(adc, channel);
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	if (adc == ADC1) {
+		LL_ADC_SetChannelPreselection(adc, channel);
+	}
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
