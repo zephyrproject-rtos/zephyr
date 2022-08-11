@@ -27,7 +27,7 @@ enum bt_mesh_adv_type {
 
 enum bt_mesh_adv_tag {
 	BT_MESH_LOCAL_ADV = BIT(0),
-	BT_MESH_RELAY_ADV = BIT(1),
+	BT_MESH_SIMUL_ADV = BIT(1),
 	BT_MESH_PROXY_ADV = BIT(2),
 };
 
@@ -72,7 +72,7 @@ int bt_mesh_adv_enable(void);
 
 void bt_mesh_adv_buf_local_ready(void);
 
-void bt_mesh_adv_buf_relay_ready(void);
+void bt_mesh_adv_buf_simult_ready(void);
 
 int bt_mesh_adv_gatt_send(void);
 

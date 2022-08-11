@@ -380,14 +380,14 @@ endchoice
 
 if BT_MESH_ADV_EXT
 
-config BT_MESH_RELAY_ADV_SETS
-	int "Maximum of simultaneous relay message support"
+config BT_MESH_SIMULT_ADV_SETS
+	int "Maximum of simultaneous message support"
 	default 0
 	range 0 BT_EXT_ADV_MAX_ADV_SET
-	depends on BT_MESH_RELAY
+	depends on BT_MESH_RELAY || BT_MESH_PB_ADV
 	help
-	  Maximum of simultaneous relay message support. Requires controller support
-	  multiple advertising sets.
+	  Maximum of simultaneous message support, such as relay message or pb-adv provision.
+	  Requires controller support multiple advertising sets.
 
 config BT_MESH_ADV_EXT_GATT_SEPARATE
 	bool "Use a separate extended advertising set for GATT Server Advertising"

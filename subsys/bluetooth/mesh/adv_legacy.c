@@ -167,7 +167,7 @@ void bt_mesh_adv_buf_local_ready(void)
 	/* Will be handled automatically */
 }
 
-void bt_mesh_adv_buf_relay_ready(void)
+void bt_mesh_adv_buf_simult_ready(void)
 {
 	/* Will be handled automatically */
 }

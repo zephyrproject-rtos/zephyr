@@ -26,8 +26,8 @@
 /* Convert from ms to 0.625ms units */
 #define ADV_INT_FAST_MS    20
 
-#ifndef CONFIG_BT_MESH_RELAY_ADV_SETS
-#define CONFIG_BT_MESH_RELAY_ADV_SETS 0
+#ifndef CONFIG_BT_MESH_SIMULT_ADV_SETS
+#define CONFIG_BT_MESH_SIMULT_ADV_SETS 0
 #endif
 
 enum {
@@ -68,40 +68,40 @@ static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_main) = {
 #if !defined(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)
 		BT_MESH_PROXY_ADV |
 #endif /* !CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
-		BT_MESH_RELAY_ADV),
+		BT_MESH_SIMUL_ADV),
 
 	.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
 };
 
-#if CONFIG_BT_MESH_RELAY_ADV_SETS
-static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_relay[CONFIG_BT_MESH_RELAY_ADV_SETS]) = {
-	[0 ... CONFIG_BT_MESH_RELAY_ADV_SETS - 1] = {
-		.tag = BT_MESH_RELAY_ADV,
+#if CONFIG_BT_MESH_SIMULT_ADV_SETS
+static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_simult[CONFIG_BT_MESH_SIMULT_ADV_SETS]) = {
+	[0 ... CONFIG_BT_MESH_SIMULT_ADV_SETS - 1] = {
+		.tag = BT_MESH_SIMUL_ADV,
 		.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
 	}
 };
-#endif /* CONFIG_BT_MESH_RELAY_ADV_SETS */
+#endif /* CONFIG_BT_MESH_SIMULT_ADV_SETS */
 
 #if defined(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)
-#define BT_MESH_ADV_COUNT			(1 + CONFIG_BT_MESH_RELAY_ADV_SETS + 1)
+#define BT_MESH_ADV_COUNT			(1 + CONFIG_BT_MESH_SIMULT_ADV_SETS + 1)
 static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_gatt) = {
 	.tag = BT_MESH_PROXY_ADV,
 	.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
 };
 #else /* CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
-#define BT_MESH_ADV_COUNT			(1 + CONFIG_BT_MESH_RELAY_ADV_SETS)
+#define BT_MESH_ADV_COUNT			(1 + CONFIG_BT_MESH_SIMULT_ADV_SETS)
 #endif /* CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
 
 BUILD_ASSERT(CONFIG_BT_EXT_ADV_MAX_ADV_SET >= BT_MESH_ADV_COUNT,
 	     "Insufficient adv instances");
 
-static inline struct bt_mesh_ext_adv *relay_adv_get(void)
+static inline struct bt_mesh_ext_adv *simult_adv_get(void)
 {
-#if CONFIG_BT_MESH_RELAY_ADV_SETS
-	return adv_relay;
-#else /* !CONFIG_BT_MESH_RELAY_ADV_SETS */
+#if CONFIG_BT_MESH_SIMULT_ADV_SETS
+	return adv_simult;
+#else /* !CONFIG_BT_MESH_SIMULT_ADV_SETS */
 	return &adv_main;
-#endif /* CONFIG_BT_MESH_RELAY_ADV_SETS */
+#endif /* CONFIG_BT_MESH_SIMULT_ADV_SETS */
 }
 
 static inline struct bt_mesh_ext_adv *gatt_adv_get(void)
@@ -312,11 +312,11 @@ void bt_mesh_adv_buf_local_ready(void)
 	(void)schedule_send(&adv_main);
 }
 
-void bt_mesh_adv_buf_relay_ready(void)
+void bt_mesh_adv_buf_simult_ready(void)
 {
-	struct bt_mesh_ext_adv *adv = relay_adv_get();
+	struct bt_mesh_ext_adv *adv = simult_adv_get();
 
-	for (int i = 0; i < CONFIG_BT_MESH_RELAY_ADV_SETS; i++) {
+	for (int i = 0; i < CONFIG_BT_MESH_SIMULT_ADV_SETS; i++) {
 		if (schedule_send(&adv[i])) {
 			return;
 		}
