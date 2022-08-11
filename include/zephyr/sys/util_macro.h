@@ -48,6 +48,10 @@ extern "C" {
 /** @brief 64-bit unsigned integer with bit position @p _n set. */
 #define BIT64(_n) (1ULL << (_n))
 
+/** @brief Get bit @p n from @p val. */
+#define GET_BIT(n, val)				\
+	(((val) & (1UL << (n))) >> (n))
+
 /**
  * @brief Unsigned integer with bits set in a specific range.
  *
