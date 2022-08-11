@@ -21,6 +21,7 @@
 		zephyr,flash = &flash0;
 		zephyr,display = &ltdc;
 		zephyr,canbus = &can1;
+		zephyr,keyboard-scan = &touch_controller;
 	};
 
 	leds {

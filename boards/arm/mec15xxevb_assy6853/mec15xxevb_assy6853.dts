@@ -17,6 +17,7 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &uart2;
 		zephyr,flash = &flash0;
+		zephyr,keyboard-scan = &kscan0;
 	};
 
 	aliases {

@@ -400,6 +400,8 @@ device.
      - Sets UART device used by console driver
    * - zephyr,display
      - Sets the default display controller
+   * - zephyr,keyboard-scan
+     - Sets the default keyboard scan controller
    * - zephyr,dtcm
      - Data Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,entropy
