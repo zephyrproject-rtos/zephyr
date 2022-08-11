@@ -240,6 +240,7 @@ greeled	GreeLed Electronic Ltd.
 grinn	Grinn
 grmn	Garmin Limited
 gumstix	Gumstix, Inc.
+hamamatsu	Hamamatsu Photonics K.K.
 hannstar	HannStar Display Corporation
 haoyu	Haoyu Microelectronic Co. Ltd.
 hardkernel	Hardkernel Co., Ltd
