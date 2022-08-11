@@ -8,6 +8,7 @@
 #include <zephyr/drivers/can.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/ztest.h>
+#include <zephyr/net/socket_can.h>
 
 LOG_MODULE_REGISTER(can_utilities, LOG_LEVEL_ERR);
 
