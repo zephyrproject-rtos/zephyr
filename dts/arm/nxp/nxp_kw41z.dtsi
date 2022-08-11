@@ -242,9 +242,8 @@
 		};
 
 		ieee802154: ieee802154@4005d000 {
-			compatible = "nxp,kw41z-ieee802514";
+			compatible = "nxp,kw41z-ieee802154";
 			reg = <0x4005d000 0x1000>;
-			label = "KW41Z";
 			status = "disabled";
 		};
 	};
