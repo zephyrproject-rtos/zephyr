@@ -280,8 +280,8 @@ graphviz_dot_args = [
 # -- Linkcheck options ----------------------------------------------------
 
 extlinks = {
-    "jira": ("https://jira.zephyrproject.org/browse/%s", ""),
-    "github": ("https://github.com/zephyrproject-rtos/zephyr/issues/%s", ""),
+    "jira": ("https://jira.zephyrproject.org/browse/%s", "JIRA #%s"),
+    "github": ("https://github.com/zephyrproject-rtos/zephyr/issues/%s", "GitHub #%s"),
 }
 
 linkcheck_timeout = 30
