@@ -530,6 +530,7 @@ Documentation:
     - subsys/canbus/
     - subsys/net/l2/canbus/
     - tests/drivers/can/
+    - tests/net/socket/can/
     - tests/subsys/canbus/
   labels:
     - "area: CAN"
