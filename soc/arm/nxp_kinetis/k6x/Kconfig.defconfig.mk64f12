@@ -20,7 +20,7 @@ config SPI
 
 config ETH_MCUX
 	default y
-	depends on NET_L2_ETHERNET
+	depends on NET_L2_ETHERNET && ETH_DRIVER
 
 config USB_KINETIS
 	default y

@@ -22,7 +22,7 @@ config ADC_MCUX_12B1MSPS_SAR
 
 config ETH_MCUX
 	default y if HAS_MCUX_ENET
-	depends on NET_L2_ETHERNET
+	depends on NET_L2_ETHERNET && ETH_DRIVER
 
 config IMX_USDHC
 	default y if (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)

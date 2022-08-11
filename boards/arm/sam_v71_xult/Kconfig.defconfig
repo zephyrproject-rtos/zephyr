@@ -31,7 +31,7 @@ config NET_L2_ETHERNET
 	default y
 
 config ETH_SAM_GMAC
-	default y if NET_L2_ETHERNET
+	default y if NET_L2_ETHERNET && ETH_DRIVER
 
 endif # NETWORKING
 
