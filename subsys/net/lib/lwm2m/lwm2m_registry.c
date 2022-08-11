@@ -40,6 +40,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define BINDING_OPT_MAX_LEN 3 /* "UQ" */
 #define QUEUE_OPT_MAX_LEN   2 /* "Q" */
 
+static K_MUTEX_DEFINE(registry_lock);
 /* Resources */
 static sys_slist_t engine_obj_list;
 static sys_slist_t engine_obj_inst_list;
@@ -53,6 +54,7 @@ sys_slist_t *lwm2m_engine_obj_inst_list(void) { return &engine_obj_inst_list; }
 
 void lwm2m_register_obj(struct lwm2m_engine_obj *obj)
 {
+	k_mutex_lock(&registry_lock, K_FOREVER);
 #if defined(CONFIG_LWM2M_ACCESS_CONTROL_ENABLE)
 	/* If bootstrap, then bootstrap server should create the ac obj instances */
 #if !IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
@@ -62,15 +64,18 @@ void lwm2m_register_obj(struct lwm2m_engine_obj *obj)
 #endif /* CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP */
 #endif /* CONFIG_LWM2M_ACCESS_CONTROL_ENABLE */
 	sys_slist_append(&engine_obj_list, &obj->node);
+	k_mutex_unlock(&registry_lock);
 }
 
 void lwm2m_unregister_obj(struct lwm2m_engine_obj *obj)
 {
+	k_mutex_lock(&registry_lock, K_FOREVER);
 #if defined(CONFIG_LWM2M_ACCESS_CONTROL_ENABLE)
 	access_control_remove_obj(obj->obj_id);
 #endif
 	engine_remove_observer_by_id(obj->obj_id, -1);
 	sys_slist_find_and_remove(&engine_obj_list, &obj->node);
+	k_mutex_unlock(&registry_lock);
 }
 
 struct lwm2m_engine_obj *get_engine_obj(int obj_id)
@@ -163,6 +168,7 @@ struct lwm2m_engine_obj_inst *next_engine_obj_inst(int obj_id, int obj_inst_id)
 int lwm2m_create_obj_inst(uint16_t obj_id, uint16_t obj_inst_id,
 			  struct lwm2m_engine_obj_inst **obj_inst)
 {
+	k_mutex_lock(&registry_lock, K_FOREVER);
 	struct lwm2m_engine_obj *obj;
 	int ret;
 
@@ -170,16 +176,19 @@ int lwm2m_create_obj_inst(uint16_t obj_id, uint16_t obj_inst_id,
 	obj = get_engine_obj(obj_id);
 	if (!obj) {
 		LOG_ERR("unable to find obj: %u", obj_id);
+		k_mutex_unlock(&registry_lock);
 		return -ENOENT;
 	}
 
 	if (!obj->create_cb) {
 		LOG_ERR("obj %u has no create_cb", obj_id);
+		k_mutex_unlock(&registry_lock);
 		return -EINVAL;
 	}
 
 	if (obj->instance_count + 1 > obj->max_instance_count) {
 		LOG_ERR("no more instances available for obj %u", obj_id);
+		k_mutex_unlock(&registry_lock);
 		return -ENOMEM;
 	}
 
@@ -190,6 +199,7 @@ int lwm2m_create_obj_inst(uint16_t obj_id, uint16_t obj_inst_id,
 		 * Already checked for instance count total.
 		 * This can only be an error if the object instance exists.
 		 */
+		k_mutex_unlock(&registry_lock);
 		return -EEXIST;
 	}
 
@@ -202,27 +212,31 @@ int lwm2m_create_obj_inst(uint16_t obj_id, uint16_t obj_inst_id,
 		ret = obj->user_create_cb(obj_inst_id);
 		if (ret < 0) {
 			LOG_ERR("Error in user obj create %u/%u: %d", obj_id, obj_inst_id, ret);
+			k_mutex_unlock(&registry_lock);
 			lwm2m_delete_obj_inst(obj_id, obj_inst_id);
 			return ret;
 		}
 	}
-
+	k_mutex_unlock(&registry_lock);
 	return 0;
 }
 
 int lwm2m_delete_obj_inst(uint16_t obj_id, uint16_t obj_inst_id)
 {
+	k_mutex_lock(&registry_lock, K_FOREVER);
 	int i, ret = 0;
 	struct lwm2m_engine_obj *obj;
 	struct lwm2m_engine_obj_inst *obj_inst;
 
 	obj = get_engine_obj(obj_id);
 	if (!obj) {
+		k_mutex_unlock(&registry_lock);
 		return -ENOENT;
 	}
 
 	obj_inst = get_engine_obj_inst(obj_id, obj_inst_id);
 	if (!obj_inst) {
+		k_mutex_unlock(&registry_lock);
 		return -ENOENT;
 	}
 
@@ -249,6 +263,7 @@ int lwm2m_delete_obj_inst(uint16_t obj_id, uint16_t obj_inst_id)
 
 	clear_attrs(obj_inst);
 	(void)memset(obj_inst, 0, sizeof(struct lwm2m_engine_obj_inst));
+	k_mutex_unlock(&registry_lock);
 	return ret;
 }
 
@@ -417,14 +432,17 @@ int lwm2m_engine_set_res_buf(const char *pathstr, void *buffer_ptr, uint16_t buf
 		return -EINVAL;
 	}
 
+	k_mutex_lock(&registry_lock, K_FOREVER);
 	/* look up resource obj */
 	ret = path_to_objs(&path, NULL, NULL, NULL, &res_inst);
 	if (ret < 0) {
+		k_mutex_unlock(&registry_lock);
 		return ret;
 	}
 
 	if (!res_inst) {
 		LOG_ERR("res instance %d not found", path.res_inst_id);
+		k_mutex_unlock(&registry_lock);
 		return -ENOENT;
 	}
 
@@ -434,6 +452,7 @@ int lwm2m_engine_set_res_buf(const char *pathstr, void *buffer_ptr, uint16_t buf
 	res_inst->max_data_len = buffer_len;
 	res_inst->data_flags = data_flags;
 
+	k_mutex_unlock(&registry_lock);
 	return ret;
 }
 
@@ -468,14 +487,17 @@ static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
 		return -EINVAL;
 	}
 
+	k_mutex_lock(&registry_lock, K_FOREVER);
 	/* look up resource obj */
 	ret = path_to_objs(&path, &obj_inst, &obj_field, &res, &res_inst);
 	if (ret < 0) {
+		k_mutex_unlock(&registry_lock);
 		return ret;
 	}
 
 	if (!res_inst) {
 		LOG_ERR("res instance %d not found", path.res_inst_id);
+		k_mutex_unlock(&registry_lock);
 		return -ENOENT;
 	}
 
@@ -483,6 +505,7 @@ static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
 		LOG_ERR("res instance data pointer is read-only "
 			"[%u/%u/%u/%u:%u]",
 			path.obj_id, path.obj_inst_id, path.res_id, path.res_inst_id, path.level);
+		k_mutex_unlock(&registry_lock);
 		return -EACCES;
 	}
 
@@ -499,12 +522,14 @@ static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
 	if (!data_ptr) {
 		LOG_ERR("res instance data pointer is NULL [%u/%u/%u/%u:%u]", path.obj_id,
 			path.obj_inst_id, path.res_id, path.res_inst_id, path.level);
+		k_mutex_unlock(&registry_lock);
 		return -EINVAL;
 	}
 
 	/* check length (note: we add 1 to string length for NULL pad) */
 	if (len > max_data_len - (obj_field->data_type == LWM2M_RES_TYPE_STRING ? 1 : 0)) {
 		LOG_ERR("length %u is too long for res instance %d data", len, path.res_id);
+		k_mutex_unlock(&registry_lock);
 		return -ENOMEM;
 	}
 
@@ -517,6 +542,7 @@ static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
 		ret = res->validate_cb(obj_inst->obj_inst_id, res->res_id, res_inst->res_inst_id,
 				       value, len, false, 0);
 		if (ret < 0) {
+			k_mutex_unlock(&registry_lock);
 			return -EINVAL;
 		}
 	}
@@ -576,6 +602,7 @@ static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
 
 	default:
 		LOG_ERR("unknown obj data_type %d", obj_field->data_type);
+		k_mutex_unlock(&registry_lock);
 		return -EINVAL;
 	}
 
@@ -589,7 +616,7 @@ static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
 	if (changed && LWM2M_HAS_PERM(obj_field, LWM2M_PERM_R)) {
 		lwm2m_notify_observer_path(&path);
 	}
-
+	k_mutex_unlock(&registry_lock);
 	return ret;
 }
 
@@ -694,14 +721,17 @@ int lwm2m_engine_get_res_buf(const char *pathstr, void **buffer_ptr, uint16_t *b
 		return -EINVAL;
 	}
 
+	k_mutex_lock(&registry_lock, K_FOREVER);
 	/* look up resource obj */
 	ret = path_to_objs(&path, NULL, NULL, NULL, &res_inst);
 	if (ret < 0) {
+		k_mutex_unlock(&registry_lock);
 		return ret;
 	}
 
 	if (!res_inst) {
 		LOG_ERR("res instance %d not found", path.res_inst_id);
+		k_mutex_unlock(&registry_lock);
 		return -ENOENT;
 	}
 
@@ -718,6 +748,7 @@ int lwm2m_engine_get_res_buf(const char *pathstr, void **buffer_ptr, uint16_t *b
 		*data_flags = res_inst->data_flags;
 	}
 
+	k_mutex_unlock(&registry_lock);
 	return 0;
 }
 
@@ -750,15 +781,17 @@ static int lwm2m_engine_get(const char *pathstr, void *buf, uint16_t buflen)
 		LOG_ERR("path must have at least 3 parts");
 		return -EINVAL;
 	}
-
+	k_mutex_lock(&registry_lock, K_FOREVER);
 	/* look up resource obj */
 	ret = path_to_objs(&path, &obj_inst, &obj_field, &res, &res_inst);
 	if (ret < 0) {
+		k_mutex_unlock(&registry_lock);
 		return ret;
 	}
 
 	if (!res_inst) {
 		LOG_ERR("res instance %d not found", path.res_inst_id);
+		k_mutex_unlock(&registry_lock);
 		return -ENOENT;
 	}
 
@@ -779,6 +812,7 @@ static int lwm2m_engine_get(const char *pathstr, void *buf, uint16_t buflen)
 
 		case LWM2M_RES_TYPE_OPAQUE:
 			if (data_len > buflen) {
+				k_mutex_unlock(&registry_lock);
 				return -ENOMEM;
 			}
 
@@ -832,10 +866,11 @@ static int lwm2m_engine_get(const char *pathstr, void *buf, uint16_t buflen)
 
 		default:
 			LOG_ERR("unknown obj data_type %d", obj_field->data_type);
+			k_mutex_unlock(&registry_lock);
 			return -EINVAL;
 		}
 	}
-
+	k_mutex_unlock(&registry_lock);
 	return 0;
 }
 
@@ -1056,22 +1091,25 @@ int lwm2m_engine_create_res_inst(const char *pathstr)
 		LOG_ERR("path must have 4 parts");
 		return -EINVAL;
 	}
-
+	k_mutex_lock(&registry_lock, K_FOREVER);
 	ret = path_to_objs(&path, NULL, NULL, &res, &res_inst);
 	if (ret < 0) {
+		k_mutex_unlock(&registry_lock);
 		return ret;
 	}
 
 	if (!res) {
 		LOG_ERR("resource %u not found", path.res_id);
+		k_mutex_unlock(&registry_lock);
 		return -ENOENT;
 	}
 
 	if (res_inst && res_inst->res_inst_id != RES_INSTANCE_NOT_CREATED) {
 		LOG_ERR("res instance %u already exists", path.res_inst_id);
+		k_mutex_unlock(&registry_lock);
 		return -EINVAL;
 	}
-
+	k_mutex_unlock(&registry_lock);
 	return lwm2m_engine_allocate_resource_instance(res, &res_inst, path.res_inst_id);
 }
 
@@ -1090,14 +1128,16 @@ int lwm2m_engine_delete_res_inst(const char *pathstr)
 		LOG_ERR("path must have 4 parts");
 		return -EINVAL;
 	}
-
+	k_mutex_lock(&registry_lock, K_FOREVER);
 	ret = path_to_objs(&path, NULL, NULL, NULL, &res_inst);
 	if (ret < 0) {
+		k_mutex_unlock(&registry_lock);
 		return ret;
 	}
 
 	if (!res_inst) {
 		LOG_ERR("res instance %u not found", path.res_inst_id);
+		k_mutex_unlock(&registry_lock);
 		return -ENOENT;
 	}
 
@@ -1105,7 +1145,7 @@ int lwm2m_engine_delete_res_inst(const char *pathstr)
 	res_inst->max_data_len = 0U;
 	res_inst->data_len = 0U;
 	res_inst->res_inst_id = RES_INSTANCE_NOT_CREATED;
-
+	k_mutex_unlock(&registry_lock);
 	return 0;
 }
 /* Register callbacks */
