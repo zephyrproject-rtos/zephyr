@@ -307,8 +307,9 @@ class BinaryHandler(Handler):
             harness.run_robot_test(command, self)
             return
 
-        with subprocess.Popen(command, stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE, cwd=self.build_dir, env=env) as proc:
+        stderr_log = "{}/handler_stderr.log".format(self.instance.build_dir)
+        with open(stderr_log, "w+") as stderr_log_fp, subprocess.Popen(command, stdout=subprocess.PIPE,
+                              stderr=stderr_log_fp, cwd=self.build_dir, env=env) as proc:
             logger.debug("Spawning BinaryHandler Thread for %s" % self.name)
             t = threading.Thread(target=self._output_handler, args=(proc, harness,), daemon=True)
             t.start()
@@ -318,6 +319,9 @@ class BinaryHandler(Handler):
                 t.join()
             proc.wait()
             self.returncode = proc.returncode
+            if proc.returncode != 0:
+                self.instance.status = "error"
+                self.instance.reason = "BinaryHandler returned {}".format(proc.returncode)
             self.try_kill_process_by_pid()
 
         handler_time = time.time() - start_time
