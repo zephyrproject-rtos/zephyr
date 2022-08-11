@@ -51,8 +51,6 @@
 #define TS_LOCAL_TSCTRL_HHTSE_BIT	BIT(7)
 #define TS_LOCAL_TSCTRL_ODTS_BIT	BIT(5)
 #define TS_LOCAL_TSCTRL_CDMAS(x)	SET_BITS(4, 0, x)
-#define TS_LOCAL_OFFS_FRM		GET_BITS(15, 12)
-#define TS_LOCAL_OFFS_CLK		GET_BITS(11, 0)
 
 /* Digital Mic Shim Registers */
 #define DMICLCTL_OFFSET        0x04
