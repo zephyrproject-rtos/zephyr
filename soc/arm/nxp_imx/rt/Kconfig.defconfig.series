@@ -20,10 +20,6 @@ config ADC_MCUX_12B1MSPS_SAR
 	default y if HAS_MCUX_12B1MSPS_SAR
 	depends on ADC
 
-config ETH_MCUX
-	default y if HAS_MCUX_ENET
-	depends on NET_L2_ETHERNET && ETH_DRIVER
-
 config LOG_BACKEND_SWO_FREQ_HZ
 	default 7500000
 	depends on LOG_BACKEND_SWO
