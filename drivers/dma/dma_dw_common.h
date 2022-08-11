@@ -9,6 +9,7 @@
 
 #include <zephyr/sys/atomic.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,8 +18,6 @@ extern "C" {
 #define MASK(b_hi, b_lo)					\
 	(((1ULL << ((b_hi) - (b_lo) + 1ULL)) - 1ULL) << (b_lo))
 #define SET_BIT(b, x) (((x) & 1) << (b))
-#define SET_BITS(b_hi, b_lo, x)	\
-	(((x) & ((1ULL << ((b_hi) - (b_lo) + 1ULL)) - 1ULL)) << (b_lo))
 
 #define DW_MAX_CHAN		8
 #define DW_CH_SIZE		0x58

@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <zephyr/drivers/dai.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "alh_map.h"
 
@@ -21,9 +22,7 @@
 
 #define ALH_GPDMA_BURST_LENGTH 4
 
-#define ALH_SET_BITS(b_hi, b_lo, x)	\
-	(((x) & ((1ULL << ((b_hi) - (b_lo) + 1ULL)) - 1ULL)) << (b_lo))
-#define ALHASCTL_OSEL(x)          ALH_SET_BITS(25, 24, x)
+#define ALHASCTL_OSEL(x)          SET_BITS(25, 24, x)
 
 #define dai_get_drvdata(dai) &dai->priv_data
 #define dai_base(dai) dai->plat_data.base

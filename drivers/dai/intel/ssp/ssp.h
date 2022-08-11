@@ -15,8 +15,6 @@
 #define DAI_INTEL_SSP_MASK(b_hi, b_lo)	\
 	(((1ULL << ((b_hi) - (b_lo) + 1ULL)) - 1ULL) << (b_lo))
 #define DAI_INTEL_SSP_SET_BIT(b, x)		(((x) & 1) << (b))
-#define DAI_INTEL_SSP_SET_BITS(b_hi, b_lo, x)	\
-	(((x) & ((1ULL << ((b_hi) - (b_lo) + 1ULL)) - 1ULL)) << (b_lo))
 #define DAI_INTEL_SSP_GET_BIT(b, x) \
 	(((x) & (1ULL << (b))) >> (b))
 #define DAI_INTEL_SSP_GET_BITS(b_hi, b_lo, x) \
@@ -73,22 +71,22 @@
 #define SSCR2			0x40
 
 /* SSCR0 bits */
-#define SSCR0_DSIZE(x)		DAI_INTEL_SSP_SET_BITS(3, 0, (x) - 1)
+#define SSCR0_DSIZE(x)		SET_BITS(3, 0, (x) - 1)
 #define SSCR0_DSIZE_GET(x)	(((x) & DAI_INTEL_SSP_MASK(3, 0)) + 1)
 #define SSCR0_FRF		DAI_INTEL_SSP_MASK(5, 4)
-#define SSCR0_MOT		DAI_INTEL_SSP_SET_BITS(5, 4, 0)
-#define SSCR0_TI		DAI_INTEL_SSP_SET_BITS(5, 4, 1)
-#define SSCR0_NAT		DAI_INTEL_SSP_SET_BITS(5, 4, 2)
-#define SSCR0_PSP		DAI_INTEL_SSP_SET_BITS(5, 4, 3)
+#define SSCR0_MOT		SET_BITS(5, 4, 0)
+#define SSCR0_TI		SET_BITS(5, 4, 1)
+#define SSCR0_NAT		SET_BITS(5, 4, 2)
+#define SSCR0_PSP		SET_BITS(5, 4, 3)
 #define SSCR0_ECS		BIT(6)
 #define SSCR0_SSE		BIT(7)
 #define SSCR0_SCR_MASK		DAI_INTEL_SSP_MASK(19, 8)
-#define SSCR0_SCR(x)		DAI_INTEL_SSP_SET_BITS(19, 8, x)
+#define SSCR0_SCR(x)		SET_BITS(19, 8, x)
 #define SSCR0_EDSS		BIT(20)
 #define SSCR0_NCS		BIT(21)
 #define SSCR0_RIM		BIT(22)
 #define SSCR0_TIM		BIT(23)
-#define SSCR0_FRDC(x)		DAI_INTEL_SSP_SET_BITS(26, 24, (x) - 1)
+#define SSCR0_FRDC(x)		SET_BITS(26, 24, (x) - 1)
 #define SSCR0_FRDC_GET(x)	((((x) & DAI_INTEL_SSP_MASK(26, 24)) >> 24) + 1)
 #define SSCR0_ACS		BIT(30)
 #define SSCR0_MOD		BIT(31)
@@ -101,9 +99,9 @@
 #define SSCR1_SPH		BIT(4)
 #define SSCR1_MWDS		BIT(5)
 #define SSCR1_TFT_MASK		DAI_INTEL_SSP_MASK(9, 6)
-#define SSCR1_TFT(x)		DAI_INTEL_SSP_SET_BITS(9, 6, (x) - 1)
+#define SSCR1_TFT(x)		SET_BITS(9, 6, (x) - 1)
 #define SSCR1_RFT_MASK		DAI_INTEL_SSP_MASK(13, 10)
-#define SSCR1_RFT(x)		DAI_INTEL_SSP_SET_BITS(13, 10, (x) - 1)
+#define SSCR1_RFT(x)		SET_BITS(13, 10, (x) - 1)
 #define SSCR1_EFWR		BIT(14)
 #define SSCR1_STRF		BIT(15)
 #define SSCR1_IFS		BIT(16)
@@ -143,18 +141,18 @@
 #define SSSR_TUR		BIT(21)
 
 /* SSPSP bits */
-#define SSPSP_SCMODE(x)		DAI_INTEL_SSP_SET_BITS(1, 0, x)
+#define SSPSP_SCMODE(x)		SET_BITS(1, 0, x)
 #define SSPSP_SFRMP(x)		DAI_INTEL_SSP_SET_BIT(2, x)
 #define SSPSP_ETDS		BIT(3)
-#define SSPSP_STRTDLY(x)	DAI_INTEL_SSP_SET_BITS(6, 4, x)
-#define SSPSP_DMYSTRT(x)	DAI_INTEL_SSP_SET_BITS(8, 7, x)
-#define SSPSP_SFRMDLY(x)	DAI_INTEL_SSP_SET_BITS(15, 9, x)
-#define SSPSP_SFRMWDTH(x)	DAI_INTEL_SSP_SET_BITS(21, 16, x)
-#define SSPSP_DMYSTOP(x)	DAI_INTEL_SSP_SET_BITS(24, 23, x)
+#define SSPSP_STRTDLY(x)	SET_BITS(6, 4, x)
+#define SSPSP_DMYSTRT(x)	SET_BITS(8, 7, x)
+#define SSPSP_SFRMDLY(x)	SET_BITS(15, 9, x)
+#define SSPSP_SFRMWDTH(x)	SET_BITS(21, 16, x)
+#define SSPSP_DMYSTOP(x)	SET_BITS(24, 23, x)
 #define SSPSP_DMYSTOP_BITS	2
 #define SSPSP_DMYSTOP_MASK	DAI_INTEL_SSP_MASK(SSPSP_DMYSTOP_BITS - 1, 0)
 #define SSPSP_FSRT		BIT(25)
-#define SSPSP_EDMYSTOP(x)	DAI_INTEL_SSP_SET_BITS(28, 26, x)
+#define SSPSP_EDMYSTOP(x)	SET_BITS(28, 26, x)
 
 #define SSPSP2			0x44
 #define SSPSP2_FEP_MASK		0xff
@@ -164,12 +162,12 @@
 #define SSP_REG_MAX		SSIOC
 
 /* SSTSA bits */
-#define SSTSA_SSTSA(x)		DAI_INTEL_SSP_SET_BITS(7, 0, x)
+#define SSTSA_SSTSA(x)		SET_BITS(7, 0, x)
 #define SSTSA_GET(x)		((x) & DAI_INTEL_SSP_MASK(7, 0))
 #define SSTSA_TXEN		BIT(8)
 
 /* SSRSA bits */
-#define SSRSA_SSRSA(x)		DAI_INTEL_SSP_SET_BITS(7, 0, x)
+#define SSRSA_SSRSA(x)		SET_BITS(7, 0, x)
 #define SSRSA_GET(x)		((x) & DAI_INTEL_SSP_MASK(7, 0))
 #define SSRSA_RXEN		BIT(8)
 
@@ -209,8 +207,8 @@
 #define SSCR3_RFL_MASK	DAI_INTEL_SSP_MASK(13, 8)
 #define SSCR3_TFL_VAL(scr3_val)	(((scr3_val) >> 0) & DAI_INTEL_SSP_MASK(5, 0))
 #define SSCR3_RFL_VAL(scr3_val)	(((scr3_val) >> 8) & DAI_INTEL_SSP_MASK(5, 0))
-#define SSCR3_TX(x)	DAI_INTEL_SSP_SET_BITS(21, 16, (x) - 1)
-#define SSCR3_RX(x)	DAI_INTEL_SSP_SET_BITS(29, 24, (x) - 1)
+#define SSCR3_TX(x)	SET_BITS(21, 16, (x) - 1)
+#define SSCR3_RX(x)	SET_BITS(29, 24, (x) - 1)
 
 #define SSIOC_TXDPDEB	BIT(1)
 #define SSIOC_SFCR	BIT(4)
@@ -245,7 +243,7 @@
 #define MN_MDIVR(x) (0x80 + (x) * 0x4)
 
 /** \brief Bits for setting MCLK source clock. */
-#define MCDSS(x)	DAI_INTEL_SSP_SET_BITS(17, 16, x)
+#define MCDSS(x)	SET_BITS(17, 16, x)
 
 /** \brief Offset of BCLK x M/N Divider M Value Register. */
 #define MN_MDIV_M_VAL(x) (0x100 + (x) * 0x8 + 0x0)
@@ -254,7 +252,7 @@
 #define MN_MDIV_N_VAL(x) (0x100 + (x) * 0x8 + 0x4)
 
 /** \brief Bits for setting M/N source clock. */
-#define MNDSS(x)	DAI_INTEL_SSP_SET_BITS(21, 20, x)
+#define MNDSS(x)	SET_BITS(21, 20, x)
 
 /** \brief Mask for clearing mclk and bclk source in MN_MDIVCTRL */
 #define MN_SOURCE_CLKS_MASK 0x3
