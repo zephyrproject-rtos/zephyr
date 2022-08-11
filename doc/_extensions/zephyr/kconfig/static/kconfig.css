@@ -15,8 +15,24 @@
     width: 100%;
 }
 
-#__kconfig-search .search-summary {
+#__kconfig-search select {
+    border-radius: 5px;
+    border: 1px solid rgba(149, 157, 165, 0.2);
+    box-shadow: unset;
+}
+
+#__kconfig-search .search-tools {
+    display: flex;
+    flex-direction: row;
     margin: 0.25rem 0.1rem 1.5rem;
+}
+
+#__kconfig-search .results-per-page-container {
+    margin-left: auto;
+}
+
+#__kconfig-search .results-per-page-title {
+    padding-right: 1rem;
 }
 
 #__kconfig-search .search-nav {
