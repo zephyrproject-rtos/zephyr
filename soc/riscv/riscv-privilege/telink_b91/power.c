@@ -71,6 +71,10 @@ static void set_mtime(uint64_t time)
 	*rl = (uint32_t)time;
 }
 
+#ifdef CONFIG_PM_DEVICE
+volatile bool telink_b91_pm_suspend_entered;
+#endif /* CONFIG_PM_DEVICE */
+
 /**
  * @brief PM state set API implementation.
  */
@@ -104,6 +108,9 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			}
 			cpu_sleep_wakeup_32k_rc(SUSPEND_MODE, PM_WAKEUP_TIMER,
 						tl_sleep_tick + stimer_sleep_ticks);
+#ifdef CONFIG_PM_DEVICE
+			telink_b91_pm_suspend_entered = true;
+#endif
 			current_time += systicks_to_mticks(stimer_get_tick() - tl_sleep_tick);
 			set_mtime(current_time);
 		}
@@ -124,6 +131,15 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
 
+	switch (state) {
+	case PM_STATE_SUSPEND_TO_IDLE:
+#ifdef CONFIG_PM_DEVICE
+		telink_b91_pm_suspend_entered = false;
+#endif
+		break;
+	default:
+		break;
+	}
 	/*
 	 * System is now in active mode. Enabling interrupts which were
 	 * disabled when OS started idle code.
