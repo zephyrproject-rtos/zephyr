@@ -91,8 +91,8 @@ static const uint8_t b91_tx_pwr_lt[] = {
 /* data structure */
 struct b91_data {
 	uint8_t mac_addr[B91_IEEE_ADDRESS_SIZE];
-	uint8_t rx_buffer[B91_TRX_LENGTH];
-	uint8_t tx_buffer[B91_TRX_LENGTH];
+	uint8_t rx_buffer[B91_TRX_LENGTH] __aligned(4);
+	uint8_t tx_buffer[B91_TRX_LENGTH] __aligned(4);
 	struct net_if *iface;
 	struct k_sem tx_wait;
 	struct k_sem ack_wait;
@@ -100,8 +100,10 @@ struct b91_data {
 	uint8_t filter_short_addr[B91_SHORT_ADDRESS_SIZE];
 	uint8_t filter_ieee_addr[B91_IEEE_ADDRESS_SIZE];
 	bool is_started;
-	bool ack_handler_en;
+	volatile bool ack_handler_en;
 	uint16_t current_channel;
+	int16_t current_dbm;
+	volatile bool ack_sending;
 };
 
 #endif
