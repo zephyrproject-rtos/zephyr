@@ -19,6 +19,13 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_SAE
 };
 
+/* Management frame protection (IEEE 802.11w) options */
+enum wifi_mfp_options {
+	WIFI_MFP_DISABLE = 0,
+	WIFI_MFP_OPTIONAL,
+	WIFI_MFP_REQUIRED
+};
+
 #define WIFI_SSID_MAX_LEN 32
 #define WIFI_PSK_MAX_LEN 64
 #define WIFI_MAC_ADDR_LEN 6
