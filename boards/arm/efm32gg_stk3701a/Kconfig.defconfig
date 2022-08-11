@@ -28,7 +28,7 @@ config NET_L2_ETHERNET
 	default y
 
 config ETH_GECKO
-	default y if NET_L2_ETHERNET
+	default y if NET_L2_ETHERNET && ETH_DRIVER
 
 endif # NETWORKING
 

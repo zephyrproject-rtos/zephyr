@@ -26,7 +26,7 @@ config NET_L2_ETHERNET
 	default y
 
 config ETH_MCUX
-	default y if NET_L2_ETHERNET
+	default y if NET_L2_ETHERNET && ETH_DRIVER
 
 config ETH_MCUX_RMII_EXT_CLK
 	default y if ETH_MCUX
