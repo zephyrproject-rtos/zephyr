@@ -16,3 +16,4 @@ Kernel
    util/index.rst
    iterable_sections/index.rst
    code-relocation.rst
+   multi_functional_devices/index.rst
