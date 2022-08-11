@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <soc.h>
 #include <soc_dt.h>
+#include <zephyr/dt-bindings/i2c/it8xxx2-i2c.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
 
@@ -47,6 +48,7 @@ struct i2c_it8xxx2_config {
 	/* I2C alternate configuration */
 	const struct pinctrl_dev_config *pcfg;
 	uint32_t clock_gate_offset;
+	bool fifo_enable;
 };
 
 enum i2c_pin_fun {
@@ -332,18 +334,24 @@ void __soc_ram_code i2c_fifo_en_w2r(const struct device *dev, bool enable)
 	unsigned int key = irq_lock();
 
 	if (enable) {
-		if (config->port == 0) {
+		if (config->port == SMB_CHANNEL_A) {
 			IT8XXX2_SMB_I2CW2RF |= IT8XXX2_SMB_MAIF |
 					       IT8XXX2_SMB_MAIFI;
-		} else if (config->port == 2) {
+		} else if (config->port == SMB_CHANNEL_B) {
+			IT8XXX2_SMB_I2CW2RF |= IT8XXX2_SMB_MBCIF |
+					       IT8XXX2_SMB_MBIFI;
+		} else if (config->port == SMB_CHANNEL_C) {
 			IT8XXX2_SMB_I2CW2RF |= IT8XXX2_SMB_MBCIF |
 					       IT8XXX2_SMB_MCIFI;
 		}
 	} else {
-		if (config->port == 0) {
+		if (config->port == SMB_CHANNEL_A) {
 			IT8XXX2_SMB_I2CW2RF &= ~(IT8XXX2_SMB_MAIF |
 						 IT8XXX2_SMB_MAIFI);
-		} else if (config->port == 2) {
+		} else if (config->port == SMB_CHANNEL_B) {
+			IT8XXX2_SMB_I2CW2RF &= ~(IT8XXX2_SMB_MBCIF |
+						 IT8XXX2_SMB_MBIFI);
+		} else if (config->port == SMB_CHANNEL_C) {
 			IT8XXX2_SMB_I2CW2RF &= ~(IT8XXX2_SMB_MBCIF |
 						 IT8XXX2_SMB_MCIFI);
 		}
@@ -468,7 +476,7 @@ void __soc_ram_code i2c_tran_fifo_read_start(const struct device *dev)
 
 	/* Clear start flag. */
 	data->active_msg->flags &= ~I2C_MSG_START;
-	/* Enable SMB channel A or C in FIFO mode. */
+	/* Enable SMB channel in FIFO mode. */
 	*reg_mstfctrl |= IT8XXX2_SMB_FFEN;
 	/* I2C enable. */
 	IT8XXX2_SMB_HOCTL2(base) = IT8XXX2_SMB_SMD_TO_EN |
@@ -664,10 +672,10 @@ bool __soc_ram_code fifo_mode_allowed(const struct device *dev,
 		return false;
 	}
 	/*
-	 * The I2C controller only supports two 32-bytes FIFOs, channel
-	 * B is not supported.
+	 * FIFO2 only supports one channel of B or C. If the FIFO of
+	 * channel is not enabled, it will select PIO mode.
 	 */
-	if (config->port == 1) {
+	if (!config->fifo_enable) {
 		return false;
 	}
 	/*
@@ -1042,8 +1050,7 @@ static void i2c_it8xxx2_isr(const struct device *dev)
 	volatile uint8_t *reg_mstfctrl = config->reg_mstfctrl;
 
 	/* If done doing work, wake up the task waiting for the transfer. */
-	if ((reg_mstfctrl != NULL) &&
-	    (*reg_mstfctrl & IT8XXX2_SMB_FFEN)) {
+	if (config->fifo_enable && (*reg_mstfctrl & IT8XXX2_SMB_FFEN)) {
 		if (i2c_fifo_transaction(dev)) {
 			return;
 		}
@@ -1107,8 +1114,13 @@ static int i2c_it8xxx2_init(const struct device *dev)
 #ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
 	volatile uint8_t *reg_mstfctrl = config->reg_mstfctrl;
 
-	/* Select channel C in FIFO 2. */
-	*reg_mstfctrl = IT8XXX2_SMB_FFCHSEL2_C;
+	if (config->port == SMB_CHANNEL_B && config->fifo_enable) {
+		/* Select channel B in FIFO2. */
+		*reg_mstfctrl = IT8XXX2_SMB_FFCHSEL2_B;
+	} else if (config->port == SMB_CHANNEL_C && config->fifo_enable) {
+		/* Select channel C in FIFO2. */
+		*reg_mstfctrl = IT8XXX2_SMB_FFCHSEL2_C;
+	}
 #endif
 
 	/* Set clock frequency for I2C ports */
@@ -1208,6 +1220,14 @@ static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
 	.recover_bus = i2c_it8xxx2_recover_bus,
 };
 
+#ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
+BUILD_ASSERT(((DT_INST_PROP(SMB_CHANNEL_B, fifo_enable) == true) &&
+	     (DT_INST_PROP(SMB_CHANNEL_C, fifo_enable) == false)) ||
+	     ((DT_INST_PROP(SMB_CHANNEL_B, fifo_enable) == false) &&
+	     (DT_INST_PROP(SMB_CHANNEL_C, fifo_enable) == true)),
+	     "FIFO2 only supports one channel of B or C.");
+#endif
+
 #define I2C_ITE_IT8XXX2_INIT(inst)                                              \
 	PINCTRL_DT_INST_DEFINE(inst);                                           \
 	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) ==                    \
@@ -1231,6 +1251,7 @@ static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
 		.sda_gpios = GPIO_DT_SPEC_INST_GET(inst, sda_gpios),            \
 		.clock_gate_offset = DT_INST_PROP(inst, clock_gate_offset),     \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                   \
+		.fifo_enable = DT_INST_PROP(inst, fifo_enable),                 \
 	};                                                                      \
 										\
 	static struct i2c_it8xxx2_data i2c_it8xxx2_data_##inst;                 \
