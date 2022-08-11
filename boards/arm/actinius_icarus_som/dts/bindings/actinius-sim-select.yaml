@@ -7,7 +7,7 @@ description: |
   external nano-SIM. The SIM can be selected by changing the `sim` property
   of the `sim_select` dt node to `esim` or `external`.
 
-compatible: "sim-select"
+compatible: "actinius-sim-select"
 
 include: base.yaml
 
