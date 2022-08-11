@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #define ACK_TIMEOUT K_MSEC(ACK_TIMEOUT_MS)
 #define FIN_TIMEOUT K_MSEC(tcp_fin_timeout_ms)
 #define ACK_DELAY K_MSEC(100)
+#define ZWP_MAX_DELAY_MS 120000
 
 static int tcp_rto = CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 static int tcp_retries = CONFIG_NET_TCP_RETRY_COUNT;
@@ -1346,8 +1347,20 @@ static void tcp_send_zwp(struct k_work *work)
 	tcp_derive_rto(conn);
 
 	if (conn->send_win == 0) {
+		uint64_t timeout;
+
+		/* Make sure the retry counter does not overflow. */
+		if (conn->zwp_retries < UINT8_MAX) {
+			conn->zwp_retries++;
+		}
+
+		timeout = TCP_RTO_MS << conn->zwp_retries;
+		if (timeout == 0 || timeout > ZWP_MAX_DELAY_MS) {
+			timeout = ZWP_MAX_DELAY_MS;
+		}
+
 		(void)k_work_reschedule_for_queue(
-			&tcp_work_q, &conn->persist_timer, K_MSEC(TCP_RTO_MS));
+			&tcp_work_q, &conn->persist_timer, K_MSEC(timeout));
 	}
 
 	k_mutex_unlock(&conn->lock);
@@ -2008,8 +2021,12 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		}
 
 		if (conn->send_win == 0) {
-			(void)k_work_reschedule_for_queue(
-				&tcp_work_q, &conn->persist_timer, K_MSEC(TCP_RTO_MS));
+			if (!k_work_delayable_is_pending(&conn->persist_timer)) {
+				conn->zwp_retries = 0;
+				(void)k_work_reschedule_for_queue(
+					&tcp_work_q, &conn->persist_timer,
+					K_MSEC(TCP_RTO_MS));
+			}
 		} else {
 			(void)k_work_cancel_delayable(&conn->persist_timer);
 		}

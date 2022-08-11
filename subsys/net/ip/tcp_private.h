@@ -273,6 +273,7 @@ struct tcp { /* TCP connection */
 	uint16_t rto;
 #endif
 	uint8_t send_data_retries;
+	uint8_t zwp_retries;
 	bool in_retransmission : 1;
 	bool in_connect : 1;
 	bool in_close : 1;
