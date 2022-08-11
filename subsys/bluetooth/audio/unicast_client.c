@@ -1963,7 +1963,6 @@ static uint8_t unicast_client_pacs_avail_ctx_notify_cb(struct bt_conn *conn,
 {
 	struct bt_pacs_context context;
 	struct net_buf_simple buf;
-	enum bt_audio_dir dir;
 
 	BT_DBG("conn %p len %u", conn, length);
 
@@ -1984,16 +1983,6 @@ static uint8_t unicast_client_pacs_avail_ctx_notify_cb(struct bt_conn *conn,
 	if (buf.len != sizeof(context)) {
 		BT_ERR("Avail_ctx notification incorrect size: %u", length);
 		return BT_GATT_ITER_STOP;
-	}
-
-	if (PART_OF_ARRAY(snk_loc_subscribe, params)) {
-		dir = BT_AUDIO_DIR_SINK;
-	} else if (PART_OF_ARRAY(src_loc_subscribe, params)) {
-		dir = BT_AUDIO_DIR_SOURCE;
-	} else {
-		BT_ERR("Invalid notification");
-
-		return BT_GATT_ITER_CONTINUE;
 	}
 
 	net_buf_simple_init_with_data(&buf, (void *)data, length);
