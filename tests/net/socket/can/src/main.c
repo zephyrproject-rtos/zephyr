@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(socket_can, LOG_LEVEL_ERR);
  */
 ZTEST(socket_can, test_can_frame_to_zcan_frame)
 {
-	struct can_frame frame = { 0 };
+	struct socketcan_frame frame = { 0 };
 	struct zcan_frame expected = { 0 };
 	struct zcan_frame msg;
 	const uint8_t data[CAN_MAX_DLEN] = { 0x01, 0x02, 0x03, 0x04,
@@ -48,8 +48,8 @@ ZTEST(socket_can, test_can_frame_to_zcan_frame)
  */
 ZTEST(socket_can, test_zcan_frame_to_can_frame)
 {
-	struct can_frame frame = { 0 };
-	struct can_frame expected = { 0 };
+	struct socketcan_frame frame = { 0 };
+	struct socketcan_frame expected = { 0 };
 	struct zcan_frame msg = { 0 };
 	const uint8_t data[CAN_MAX_DLEN] = { 0x01, 0x02, 0x03, 0x04,
 					  0x05, 0x06, 0x07, 0x08 };
@@ -82,7 +82,7 @@ ZTEST(socket_can, test_zcan_frame_to_can_frame)
  */
 ZTEST(socket_can, test_can_filter_to_zcan_filter)
 {
-	struct can_filter filter = { 0 };
+	struct socketcan_filter filter = { 0 };
 	struct zcan_filter expected = { 0 };
 	struct zcan_filter msg_filter = { 0 };
 
@@ -118,8 +118,8 @@ ZTEST(socket_can, test_can_filter_to_zcan_filter)
  */
 ZTEST(socket_can, test_zcan_filter_to_can_filter)
 {
-	struct can_filter filter = { 0 };
-	struct can_filter expected = { 0 };
+	struct socketcan_filter filter = { 0 };
+	struct socketcan_filter expected = { 0 };
 	struct zcan_filter msg_filter = { 0 };
 
 	expected.can_id = BIT(31) | BIT(30) | 1234;
