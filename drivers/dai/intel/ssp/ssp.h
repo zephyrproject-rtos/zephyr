@@ -17,8 +17,6 @@
 #define DAI_INTEL_SSP_SET_BIT(b, x)		(((x) & 1) << (b))
 #define DAI_INTEL_SSP_GET_BIT(b, x) \
 	(((x) & (1ULL << (b))) >> (b))
-#define DAI_INTEL_SSP_GET_BITS(b_hi, b_lo, x) \
-	(((x) & MASK(b_hi, b_lo)) >> (b_lo))
 
 /* ssp_freq array constants */
 #define DAI_INTEL_SSP_NUM_FREQ			3
