@@ -18,10 +18,6 @@ config GPIO
 config SPI
 	default n
 
-config ETH_MCUX
-	default y
-	depends on NET_L2_ETHERNET && ETH_DRIVER
-
 config USB_KINETIS
 	default y
 	depends on USB_DEVICE_DRIVER
