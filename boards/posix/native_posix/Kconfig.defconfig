@@ -50,10 +50,6 @@ config UART_CONSOLE
 
 endif # CONSOLE
 
-config KSCAN_SDL
-	default y
-	depends on KSCAN
-
 config FLASH_SIMULATOR
 	default y
 	depends on FLASH

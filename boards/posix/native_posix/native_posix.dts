@@ -30,6 +30,7 @@
 		i2c-0 = &i2c0;
 		spi-0 = &spi0;
 		led0 = &led0;
+		kscan0 = &sdl_kscan;
 	};
 
 	leds {
@@ -179,6 +180,10 @@
 		compatible = "zephyr,sdl-dc";
 		height = <240>;
 		width = <320>;
+	};
+
+	sdl_kscan: sdl_kscan {
+		compatible = "zephyr,sdl-kscan";
 	};
 
 	can_loopback0: can_loopback0 {
