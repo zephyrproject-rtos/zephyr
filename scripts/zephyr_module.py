@@ -97,6 +97,8 @@ mapping:
       - type: str
 '''
 
+MODULE_YML_PATH = PurePath('zephyr/module.yml')
+
 schema = yaml.safe_load(METADATA_SCHEMA)
 
 
@@ -114,11 +116,11 @@ def validate_setting(setting, module_path, filename=None):
 def process_module(module):
     module_path = PurePath(module)
 
-    # The input is a module if zephyr/module.yml is a valid yaml file
+    # The input is a module if zephyr/module.{yml,yaml} is a valid yaml file
     # or if both zephyr/CMakeLists.txt and zephyr/Kconfig are present.
 
-    for module_yml in [module_path.joinpath('zephyr/module.yml'),
-                       module_path.joinpath('zephyr/module.yaml')]:
+    for module_yml in [module_path / MODULE_YML_PATH,
+                       module_path / MODULE_YML_PATH.with_suffix('.yaml')]:
         if Path(module_yml).is_file():
             with Path(module_yml).open('r') as f:
                 meta = yaml.safe_load(f.read())
