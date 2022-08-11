@@ -81,13 +81,6 @@ static void board_setup(void)
 			    IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
 			    IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
-#elif defined(CONFIG_BOARD_RV32M1_VEGA)
-	const struct device *pmx = DEVICE_DT_GET(DT_NODELABEL(porta));
-
-	zassert_true(device_is_ready(pmx), "pinmux dev is not ready");
-
-	pinmux_pin_set(pmx, PIN_OUT, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(pmx, PIN_IN, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #elif defined(CONFIG_GPIO_EMUL)
 	extern struct gpio_callback gpio_emul_callback;
 	const struct device *dev = DEVICE_DT_GET(DEV);
