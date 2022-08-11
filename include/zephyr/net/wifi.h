@@ -26,11 +26,17 @@ enum wifi_mfp_options {
 	WIFI_MFP_REQUIRED
 };
 
+enum wifi_frequency_bands {
+	WIFI_FREQ_BAND_2_4_GHZ = 0,
+	WIFI_FREQ_BAND_5_GHZ,
+	WIFI_FREQ_BAND_6_GHZ
+};
+
 #define WIFI_SSID_MAX_LEN 32
 #define WIFI_PSK_MAX_LEN 64
 #define WIFI_MAC_ADDR_LEN 6
 
-#define WIFI_CHANNEL_MAX 14
+#define WIFI_CHANNEL_MAX 233
 #define WIFI_CHANNEL_ANY 255
 
 #endif /* ZEPHYR_INCLUDE_NET_WIFI_H_ */
