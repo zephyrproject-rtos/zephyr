@@ -20,6 +20,7 @@
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
 		zephyr,flash-controller = &mx25l51245g;
+		zephyr,keyboard-scan = &touch_controller;
 	};
 
 	sdram1: sdram@c0000000 {
