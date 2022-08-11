@@ -55,7 +55,14 @@ static void stm32_sdmmc_fc_enable(struct stm32_sdmmc_priv *priv)
 {
 	MMC_TypeDef *sdmmcx = priv->hsd.Instance;
 
+#if defined(CONFIG_SOC_SERIES_STM32F4X) \
+	|| defined(CONFIG_SOC_SERIES_STM32F1X)
+	sdmmcx->CLKCR |= SDIO_CLKCR_HWFC_EN;
+#elif defined(CONFIG_SOC_SERIES_STM32H7X) \
+	|| defined(CONFIG_SOC_SERIES_STM32F7X) \
+	|| defined(CONFIG_SOC_SERIES_STM32L4X)
 	sdmmcx->CLKCR |= SDMMC_CLKCR_HWFC_EN;
+#endif
 }
 #endif
 
