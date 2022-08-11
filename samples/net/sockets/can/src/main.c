@@ -41,13 +41,13 @@ static const struct zcan_filter zfilter = {
 	.id_mask = CAN_STD_ID_MASK
 };
 
-static struct can_filter filter;
+static struct socketcan_filter sfilter;
 
 static void tx(int *can_fd)
 {
 	int fd = POINTER_TO_INT(can_fd);
 	struct zcan_frame msg = {0};
-	struct can_frame frame = {0};
+	struct socketcan_frame sframe = {0};
 	int ret, i;
 
 	msg.dlc = 8U;
@@ -59,12 +59,12 @@ static void tx(int *can_fd)
 		msg.data[i] = 0xF0 | i;
 	}
 
-	can_copy_zframe_to_frame(&msg, &frame);
+	can_copy_zframe_to_frame(&msg, &sframe);
 
 	LOG_DBG("Sending CAN data...");
 
 	while (1) {
-		ret = send(fd, &frame, sizeof(frame), 0);
+		ret = send(fd, &sframe, sizeof(sframe), 0);
 		if (ret < 0) {
 			LOG_ERR("Cannot send CAN message (%d)", -errno);
 		}
@@ -73,7 +73,7 @@ static void tx(int *can_fd)
 	}
 }
 
-static int create_socket(const struct can_filter *filter)
+static int create_socket(const struct socketcan_filter *sfilter)
 {
 	struct sockaddr_can can_addr;
 	int fd, ret;
@@ -95,21 +95,21 @@ static int create_socket(const struct can_filter *filter)
 		return ret;
 	}
 
-	(void)setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, filter,
-			 sizeof(*filter));
+	(void)setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, sfilter,
+			 sizeof(*sfilter));
 
 	return fd;
 }
 
 static void rx(int *can_fd, int *do_close_period,
-	       const struct can_filter *filter)
+	       const struct socketcan_filter *sfilter)
 {
 	int close_period = POINTER_TO_INT(do_close_period);
 	int fd = POINTER_TO_INT(can_fd);
 	struct sockaddr_can can_addr;
 	socklen_t addr_len;
 	struct zcan_frame msg;
-	struct can_frame frame;
+	struct socketcan_frame sframe;
 	int ret;
 
 	LOG_DBG("[%d] Waiting CAN data...", fd);
@@ -117,10 +117,10 @@ static void rx(int *can_fd, int *do_close_period,
 	while (1) {
 		uint8_t *data;
 
-		memset(&frame, 0, sizeof(frame));
+		memset(&sframe, 0, sizeof(sframe));
 		addr_len = sizeof(can_addr);
 
-		ret = recvfrom(fd, &frame, sizeof(struct can_frame),
+		ret = recvfrom(fd, &sframe, sizeof(struct socketcan_frame),
 			       0, (struct sockaddr *)&can_addr, &addr_len);
 		if (ret < 0) {
 			LOG_ERR("[%d] Cannot receive CAN message (%d)", fd,
@@ -128,7 +128,7 @@ static void rx(int *can_fd, int *do_close_period,
 			continue;
 		}
 
-		can_copy_frame_to_zframe(&frame, &msg);
+		can_copy_frame_to_zframe(&sframe, &msg);
 
 		LOG_INF("[%d] CAN msg: type 0x%x RTR 0x%x EID 0x%x DLC 0x%x",
 			fd, msg.id_type, msg.rtr, msg.id, msg.dlc);
@@ -152,7 +152,7 @@ static void rx(int *can_fd, int *do_close_period,
 
 				k_sleep(K_SECONDS(1));
 
-				fd = create_socket(filter);
+				fd = create_socket(sfilter);
 				if (fd < 0) {
 					LOG_ERR("Cannot get socket (%d)",
 						-errno);
@@ -172,7 +172,7 @@ static int setup_socket(void)
 	int fd, rx_fd;
 	int ret;
 
-	can_copy_zfilter_to_filter(&zfilter, &filter);
+	can_copy_zfilter_to_filter(&zfilter, &sfilter);
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(CANBUS_RAW));
 	if (!iface) {
@@ -201,8 +201,8 @@ static int setup_socket(void)
 		goto cleanup;
 	}
 
-	ret = setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, &filter,
-			 sizeof(filter));
+	ret = setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, &sfilter,
+			 sizeof(sfilter));
 	if (ret < 0) {
 		ret = -errno;
 		LOG_ERR("Cannot set CAN sockopt (%d)", ret);

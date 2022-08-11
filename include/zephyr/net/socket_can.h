@@ -82,14 +82,14 @@ struct sockaddr_can {
  *
  * @endcode
  */
-typedef uint32_t canid_t;
+typedef uint32_t socketcan_id_t;
 
 /**
  * @brief CAN frame for Linux SocketCAN compatibility.
  */
-struct can_frame {
+struct socketcan_frame {
 	/** 32-bit CAN ID + EFF/RTR/ERR flags. */
-	canid_t can_id;
+	socketcan_id_t can_id;
 
 	/** The data length code (DLC). */
 	uint8_t can_dlc;
@@ -109,71 +109,71 @@ struct can_frame {
  *
  * A filter is considered a match when `received_can_id & mask == can_id & can_mask`.
  */
-struct can_filter {
+struct socketcan_filter {
 	/** The CAN identifier to match. */
-	canid_t can_id;
+	socketcan_id_t can_id;
 	/** The mask applied to @a can_id for matching. */
-	canid_t can_mask;
+	socketcan_id_t can_mask;
 };
 
 /**
- * @brief Translate a @a can_frame struct to a @a zcan_frame struct.
+ * @brief Translate a @a socketcan_frame struct to a @a zcan_frame struct.
  *
- * @param frame  Pointer to can_frame struct.
+ * @param sframe Pointer to sockecan_frame struct.
  * @param zframe Pointer to zcan_frame struct.
  */
-static inline void can_copy_frame_to_zframe(const struct can_frame *frame,
+static inline void can_copy_frame_to_zframe(const struct socketcan_frame *sframe,
 					    struct zcan_frame *zframe)
 {
-	zframe->id_type = (frame->can_id & BIT(31)) >> 31;
-	zframe->rtr = (frame->can_id & BIT(30)) >> 30;
-	zframe->id = frame->can_id & BIT_MASK(29);
-	zframe->dlc = frame->can_dlc;
-	memcpy(zframe->data, frame->data, sizeof(zframe->data));
+	zframe->id_type = (sframe->can_id & BIT(31)) >> 31;
+	zframe->rtr = (sframe->can_id & BIT(30)) >> 30;
+	zframe->id = sframe->can_id & BIT_MASK(29);
+	zframe->dlc = sframe->can_dlc;
+	memcpy(zframe->data, sframe->data, sizeof(zframe->data));
 }
 
 /**
- * @brief Translate a @a zcan_frame struct to a @a can_frame struct.
+ * @brief Translate a @a zcan_frame struct to a @a socketcan_frame struct.
  *
  * @param zframe Pointer to zcan_frame struct.
- * @param frame  Pointer to can_frame struct.
+ * @param sframe  Pointer to socketcan_frame struct.
  */
 static inline void can_copy_zframe_to_frame(const struct zcan_frame *zframe,
-					    struct can_frame *frame)
+					    struct socketcan_frame *sframe)
 {
-	frame->can_id = (zframe->id_type << 31) | (zframe->rtr << 30) |	zframe->id;
-	frame->can_dlc = zframe->dlc;
-	memcpy(frame->data, zframe->data, sizeof(frame->data));
+	sframe->can_id = (zframe->id_type << 31) | (zframe->rtr << 30) | zframe->id;
+	sframe->can_dlc = zframe->dlc;
+	memcpy(sframe->data, zframe->data, sizeof(sframe->data));
 }
 
 /**
- * @brief Translate a @a can_filter struct to a @a zcan_filter struct.
+ * @brief Translate a @a socketcan_filter struct to a @a zcan_filter struct.
  *
- * @param filter  Pointer to can_filter struct.
+ * @param sfilter Pointer to socketcan_filter struct.
  * @param zfilter Pointer to zcan_filter struct.
  */
-static inline void can_copy_filter_to_zfilter(const struct can_filter *filter,
+static inline void can_copy_filter_to_zfilter(const struct socketcan_filter *sfilter,
 					      struct zcan_filter *zfilter)
 {
-	zfilter->id_type = (filter->can_id & BIT(31)) >> 31;
-	zfilter->rtr = (filter->can_id & BIT(30)) >> 30;
-	zfilter->id = filter->can_id & BIT_MASK(29);
-	zfilter->rtr_mask = (filter->can_mask & BIT(30)) >> 30;
-	zfilter->id_mask = filter->can_mask & BIT_MASK(29);
+	zfilter->id_type = (sfilter->can_id & BIT(31)) >> 31;
+	zfilter->rtr = (sfilter->can_id & BIT(30)) >> 30;
+	zfilter->id = sfilter->can_id & BIT_MASK(29);
+	zfilter->rtr_mask = (sfilter->can_mask & BIT(30)) >> 30;
+	zfilter->id_mask = sfilter->can_mask & BIT_MASK(29);
 }
 
 /**
- * @brief Translate a @a zcan_filter struct to a @a can_filter struct.
+ * @brief Translate a @a zcan_filter struct to a @a socketcan_filter struct.
  *
  * @param zfilter Pointer to zcan_filter struct.
- * @param filter  Pointer to can_filter struct.
+ * @param sfilter Pointer to socketcan_filter struct.
  */
 static inline void can_copy_zfilter_to_filter(const struct zcan_filter *zfilter,
-					      struct can_filter *filter)
+					      struct socketcan_filter *sfilter)
 {
-	filter->can_id = (zfilter->id_type << 31) |
+	sfilter->can_id = (zfilter->id_type << 31) |
 		(zfilter->rtr << 30) | zfilter->id;
-	filter->can_mask = (zfilter->rtr_mask << 30) |
+	sfilter->can_mask = (zfilter->rtr_mask << 30) |
 		(zfilter->id_type << 31) | zfilter->id_mask;
 }
 
