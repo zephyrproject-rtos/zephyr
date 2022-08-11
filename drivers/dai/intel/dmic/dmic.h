@@ -15,9 +15,6 @@
 
 #define SET_BIT(b, x)		(((x) & 1) << (b))
 
-#define GET_BIT(b, x) \
-	(((x) & (1ULL << (b))) >> (b))
-
 #define GET_BITS(b_hi, b_lo, x) \
 	(((x) & MASK(b_hi, b_lo)) >> (b_lo))
 
