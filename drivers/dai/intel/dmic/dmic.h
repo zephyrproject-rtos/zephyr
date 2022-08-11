@@ -8,15 +8,12 @@
 #define __INTEL_DAI_DRIVER_DMIC_H__
 
 #include <zephyr/sys/util_macro.h>
-
-/* bit operations macros */
-#define MASK(b_hi, b_lo)	\
-	(((1ULL << ((b_hi) - (b_lo) + 1ULL)) - 1ULL) << (b_lo))
+#include <zephyr/sys/util.h>
 
 #define SET_BIT(b, x)		(((x) & 1) << (b))
 
 #define GET_BITS(b_hi, b_lo, x) \
-	(((x) & MASK(b_hi, b_lo)) >> (b_lo))
+	(((x) & GENMASK(b_hi, b_lo)) >> (b_lo))
 
 /* The microphones create a low frequecy thump sound when clock is enabled.
  * The unmute linear gain ramp chacteristic is defined here.
@@ -208,14 +205,14 @@
 #define OUTSTAT0_ASNE_BIT	BIT(29)
 #define OUTSTAT0_RFS_BIT	BIT(28)
 #define OUTSTAT0_ROR_BIT	BIT(27)
-#define OUTSTAT0_FL_MASK	MASK(6, 0)
+#define OUTSTAT0_FL_MASK	GENMASK(6, 0)
 
 /* OUTSTAT1 bits */
 #define OUTSTAT1_AFE_BIT	BIT(31)
 #define OUTSTAT1_ASNE_BIT	BIT(29)
 #define OUTSTAT1_RFS_BIT	BIT(28)
 #define OUTSTAT1_ROR_BIT	BIT(27)
-#define OUTSTAT1_FL_MASK	MASK(6, 0)
+#define OUTSTAT1_FL_MASK	GENMASK(6, 0)
 
 /* CIC_CONTROL bits */
 #define CIC_CONTROL_SOFT_RESET_BIT	BIT(16)
@@ -247,8 +244,8 @@
 #define CIC_CONFIG_COMB_COUNT(x)	SET_BITS(15, 8, x)
 
 /* CIC_CONFIG masks */
-#define CIC_CONFIG_CIC_SHIFT_MASK	MASK(27, 24)
-#define CIC_CONFIG_COMB_COUNT_MASK	MASK(15, 8)
+#define CIC_CONFIG_CIC_SHIFT_MASK	GENMASK(27, 24)
+#define CIC_CONFIG_COMB_COUNT_MASK	GENMASK(15, 8)
 
 #define CIC_CONFIG_CIC_SHIFT_GET(x)	GET_BITS(27, 24, x)
 #define CIC_CONFIG_COMB_COUNT_GET(x)	GET_BITS(15, 8, x)
@@ -263,7 +260,7 @@
 #define MIC_CONTROL_PDM_EN_A(x)		SET_BIT(0, x)
 
 /* MIC_CONTROL masks */
-#define MIC_CONTROL_PDM_CLKDIV_MASK	MASK(15, 8)
+#define MIC_CONTROL_PDM_CLKDIV_MASK	GENMASK(15, 8)
 
 #define MIC_CONTROL_PDM_CLKDIV_GET(x)	GET_BITS(15, 8, x)
 #define MIC_CONTROL_PDM_SKEW_GET(x)	GET_BITS(7, 4, x)
