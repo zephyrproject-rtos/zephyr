@@ -26,11 +26,30 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/openthread.h>
 #endif
 
+#include <zephyr/pm/device.h>
+
 #include "ieee802154_b91.h"
 
 
 /* B91 data structure */
 static struct  b91_data data;
+
+
+/* Disable power management by device */
+static void b91_disable_pm(const struct device *dev)
+{
+#ifdef CONFIG_PM_DEVICE
+	pm_device_busy_set(dev);
+#endif /* CONFIG_PM_DEVICE */
+}
+
+/* Enable power management by device */
+static void b91_enable_pm(const struct device *dev)
+{
+#ifdef CONFIG_PM_DEVICE
+	pm_device_busy_clear(dev);
+#endif /* CONFIG_PM_DEVICE */
+}
 
 /* Set filter PAN ID */
 static int b91_set_pan_id(uint16_t pan_id)
@@ -243,6 +262,8 @@ static void b91_send_ack(uint8_t seq_num)
 {
 	uint8_t ack_buf[] = { B91_ACK_TYPE, 0, seq_num };
 
+	data.ack_sending = true;
+	k_sem_reset(&data.tx_wait);
 	b91_set_tx_payload(ack_buf, sizeof(ack_buf));
 	rf_set_txmode();
 	delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
@@ -335,6 +356,9 @@ static void b91_rf_tx_isr(void)
 	/* clear irq status */
 	rf_clr_irq_status(FLD_RF_IRQ_TX);
 
+	/* ack sent */
+	data.ack_sending = false;
+
 	/* release tx semaphore */
 	k_sem_give(&data.tx_wait);
 
@@ -366,8 +390,9 @@ static int b91_init(const struct device *dev)
 	/* init rf module */
 	rf_mode_init();
 	rf_set_zigbee_250K_mode();
-	rf_set_tx_dma(2, B91_TRX_LENGTH);
-	rf_set_rx_dma(data.rx_buffer, 3, B91_TRX_LENGTH);
+	rf_set_tx_dma(1, B91_TRX_LENGTH);
+	rf_set_rx_dma(data.rx_buffer, 0, B91_TRX_LENGTH);
+	rf_set_txmode();
 	rf_set_rxmode();
 
 	/* init IRQs */
@@ -379,7 +404,9 @@ static int b91_init(const struct device *dev)
 	/* init data variables */
 	data.is_started = true;
 	data.ack_handler_en = false;
-	data.current_channel = 0;
+	data.ack_sending = false;
+	data.current_channel = 0xFFFF;
+	data.current_dbm = 0x7FFF;
 
 	return 0;
 }
@@ -435,6 +462,7 @@ static int b91_set_channel(const struct device *dev, uint16_t channel)
 	if (data.current_channel != channel) {
 		data.current_channel = channel;
 		rf_set_chn(B91_LOGIC_CHANNEL_TO_PHYSICAL(channel));
+		rf_set_txmode();
 		rf_set_rxmode();
 	}
 
@@ -474,8 +502,11 @@ static int b91_set_txpower(const struct device *dev, int16_t dbm)
 		dbm = B91_TX_POWER_MAX;
 	}
 
-	/* set TX power */
-	rf_set_power_level(b91_tx_pwr_lt[dbm - B91_TX_POWER_MIN]);
+	if (data.current_dbm != dbm) {
+		data.current_dbm = dbm;
+		/* set TX power */
+		rf_set_power_level(b91_tx_pwr_lt[dbm - B91_TX_POWER_MIN]);
+	}
 
 	return 0;
 }
@@ -483,10 +514,10 @@ static int b91_set_txpower(const struct device *dev, int16_t dbm)
 /* API implementation: start */
 static int b91_start(const struct device *dev)
 {
-	ARG_UNUSED(dev);
-
+	b91_disable_pm(dev);
 	/* check if RF is already started */
 	if (!data.is_started) {
+		rf_set_txmode();
 		rf_set_rxmode();
 		delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
 		riscv_plic_irq_enable(DT_INST_IRQN(0));
@@ -499,15 +530,19 @@ static int b91_start(const struct device *dev)
 /* API implementation: stop */
 static int b91_stop(const struct device *dev)
 {
-	ARG_UNUSED(dev);
-
 	/* check if RF is already stopped */
 	if (data.is_started) {
+		if (data.ack_sending) {
+			if (k_sem_take(&data.tx_wait, K_MSEC(B91_TX_WAIT_TIME_MS)) != 0) {
+				data.ack_sending = false;
+			}
+		}
 		riscv_plic_irq_disable(DT_INST_IRQN(0));
 		rf_set_tx_rx_off();
 		delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
 		data.is_started = false;
 	}
+	b91_enable_pm(dev);
 
 	return 0;
 }
@@ -527,6 +562,12 @@ static int b91_tx(const struct device *dev,
 	if (mode != IEEE802154_TX_MODE_DIRECT) {
 		LOG_DBG("TX mode %d not supported", mode);
 		return -ENOTSUP;
+	}
+
+	if (data.ack_sending) {
+		if (k_sem_take(&data.tx_wait, K_MSEC(B91_TX_WAIT_TIME_MS)) != 0) {
+			data.ack_sending = false;
+		}
 	}
 
 	/* prepare tx buffer */
@@ -611,14 +652,47 @@ static struct ieee802154_radio_api b91_radio_api = {
 #define MTU 1280
 #endif
 
+#ifdef CONFIG_PM_DEVICE
+static int ieee802154_b91_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	ARG_UNUSED(dev);
+	extern volatile bool telink_b91_pm_suspend_entered;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		if (telink_b91_pm_suspend_entered) {
+			/* restart radio */
+			rf_mode_init();
+			rf_set_zigbee_250K_mode();
+			rf_set_chn(B91_LOGIC_CHANNEL_TO_PHYSICAL(data.current_channel));
+			rf_set_power_level(b91_tx_pwr_lt[data.current_dbm - B91_TX_POWER_MIN]);
+			rf_set_txmode();
+			rf_set_rxmode();
+		}
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+PM_DEVICE_DEFINE(ieee802154_b91_pm, ieee802154_b91_pm_action);
+#define ieee802154_b91_pm_device	PM_DEVICE_GET(ieee802154_b91_pm)
+#else
+#define ieee802154_b91_pm_device	NULL
+#endif
 
 /* IEEE802154 driver registration */
 #if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_NET_L2_OPENTHREAD)
-NET_DEVICE_DT_INST_DEFINE(0, b91_init, NULL, &data, NULL,
+NET_DEVICE_DT_INST_DEFINE(0, b91_init, ieee802154_b91_pm_device, &data, NULL,
 			  CONFIG_IEEE802154_B91_INIT_PRIO,
 			  &b91_radio_api, L2, L2_CTX_TYPE, MTU);
 #else
-DEVICE_DT_INST_DEFINE(0, b91_init, NULL, &data, NULL,
+DEVICE_DT_INST_DEFINE(0, b91_init, ieee802154_b91_pm_device, &data, NULL,
 		      POST_KERNEL, CONFIG_IEEE802154_B91_INIT_PRIO,
 		      &b91_radio_api);
 #endif
