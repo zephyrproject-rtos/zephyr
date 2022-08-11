@@ -3809,16 +3809,19 @@ uint16_t bt_get_appearance(void)
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
 int bt_set_appearance(uint16_t appearance)
 {
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		int err = settings_save_one("bt/appearance", &appearance, sizeof(appearance));
+	if (bt_dev.appearance != appearance) {
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			int err = settings_save_one("bt/appearance", &appearance,
+					sizeof(appearance));
 
-		if (err) {
-			BT_ERR("Unable to save setting 'bt/appearance' (err %d).", err);
-			return err;
+			if (err) {
+				BT_ERR("Unable to save setting 'bt/appearance' (err %d).", err);
+				return err;
+			}
 		}
-	}
 
-	bt_dev.appearance = appearance;
+		bt_dev.appearance = appearance;
+	}
 
 	return 0;
 }
