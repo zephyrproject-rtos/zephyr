@@ -85,7 +85,7 @@ enum i2c_ch_status {
 
 struct i2c_enhance_data {
 	enum i2c_ch_status i2ccs;
-	struct i2c_msg *msgs;
+	struct i2c_msg *active_msg;
 	struct k_mutex mutex;
 	struct k_sem device_sync_sem;
 	/* Index into output data */
@@ -383,8 +383,8 @@ static void i2c_pio_trans_data(const struct device *dev,
 			 * Receive data.
 			 * Last byte should be NACK in the end of read cycle
 			 */
-			if (((data->ridx + 1) == data->msgs->len) &&
-				(data->msgs->flags & I2C_MSG_STOP)) {
+			if (((data->ridx + 1) == data->active_msg->len) &&
+				(data->active_msg->flags & I2C_MSG_STOP)) {
 				nack = 1;
 			}
 		}
@@ -401,9 +401,9 @@ static int enhanced_i2c_tran_read(const struct device *dev)
 	uint8_t *base = config->base;
 	uint8_t in_data = 0;
 
-	if (data->msgs->flags & I2C_MSG_START) {
+	if (data->active_msg->flags & I2C_MSG_START) {
 		/* clear start flag */
-		data->msgs->flags &= ~I2C_MSG_START;
+		data->active_msg->flags &= ~I2C_MSG_START;
 		enhanced_i2c_start(dev);
 		/* Direct read  */
 		data->i2ccs = I2C_CH_WAIT_READ;
@@ -416,7 +416,7 @@ static int enhanced_i2c_tran_read(const struct device *dev)
 				/* Receive data */
 				i2c_pio_trans_data(dev, RX_DIRECT, in_data, 0);
 
-			/* data->msgs->flags == I2C_MSG_RESTART */
+			/* data->active_msg->flags == I2C_MSG_RESTART */
 			} else {
 				/* Write to read */
 				data->i2ccs = I2C_CH_WAIT_READ;
@@ -425,14 +425,14 @@ static int enhanced_i2c_tran_read(const struct device *dev)
 					data->addr_16bit << 1, 1);
 			}
 		} else {
-			if (data->ridx < data->msgs->len) {
+			if (data->ridx < data->active_msg->len) {
 				/* read data */
-				*(data->msgs->buf++) = IT8XXX2_I2C_DRR(base);
+				*(data->active_msg->buf++) = IT8XXX2_I2C_DRR(base);
 				data->ridx++;
 				/* done */
-				if (data->ridx == data->msgs->len) {
-					data->msgs->len = 0;
-					if (data->msgs->flags & I2C_MSG_STOP) {
+				if (data->ridx == data->active_msg->len) {
+					data->active_msg->len = 0;
+					if (data->active_msg->flags & I2C_MSG_STOP) {
 						data->i2ccs = I2C_CH_NORMAL;
 						IT8XXX2_I2C_CTR(base) = E_FINISH;
 						/* wait for stop bit interrupt */
@@ -458,16 +458,16 @@ static int enhanced_i2c_tran_write(const struct device *dev)
 	uint8_t *base = config->base;
 	uint8_t out_data;
 
-	if (data->msgs->flags & I2C_MSG_START) {
+	if (data->active_msg->flags & I2C_MSG_START) {
 		/* Clear start bit */
-		data->msgs->flags &= ~I2C_MSG_START;
+		data->active_msg->flags &= ~I2C_MSG_START;
 		enhanced_i2c_start(dev);
 		/* Send ID */
 		i2c_pio_trans_data(dev, TX_DIRECT, data->addr_16bit << 1, 1);
 	} else {
 		/* Host has completed the transmission of a byte */
-		if (data->widx < data->msgs->len) {
-			out_data = *(data->msgs->buf++);
+		if (data->widx < data->active_msg->len) {
+			out_data = *(data->active_msg->buf++);
 			data->widx++;
 
 			/* Send Byte */
@@ -477,8 +477,8 @@ static int enhanced_i2c_tran_write(const struct device *dev)
 			}
 		} else {
 			/* done */
-			data->msgs->len = 0;
-			if (data->msgs->flags & I2C_MSG_STOP) {
+			data->active_msg->len = 0;
+			if (data->active_msg->flags & I2C_MSG_STOP) {
 				IT8XXX2_I2C_CTR(base) = E_FINISH;
 				/* wait for stop bit interrupt */
 				data->stop = 1;
@@ -507,7 +507,7 @@ static int i2c_transaction(const struct device *dev)
 			 * it means that the interrupt cannot be disable and
 			 * continue to transmit data.
 			 */
-			if (data->msgs->flags & I2C_MSG_READ) {
+			if (data->active_msg->flags & I2C_MSG_READ) {
 				return enhanced_i2c_tran_read(dev);
 			} else {
 				return enhanced_i2c_tran_write(dev);
@@ -541,7 +541,7 @@ static int i2c_enhance_pio_transfer(const struct device *dev,
 		data->widx = 0;
 		data->ridx = 0;
 		data->err = 0;
-		data->msgs = &(msgs[i]);
+		data->active_msg = &msgs[i];
 
 		/*
 		 * Start transaction.
@@ -582,7 +582,7 @@ static int i2c_enhance_pio_transfer(const struct device *dev,
 	}
 
 	/* reset i2c channel status */
-	if (data->err || (data->msgs->flags & I2C_MSG_STOP)) {
+	if (data->err || (data->active_msg->flags & I2C_MSG_STOP)) {
 		data->i2ccs = I2C_CH_NORMAL;
 	}
 
