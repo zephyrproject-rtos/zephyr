@@ -47,6 +47,20 @@ config ADSP_WIN0_OFFSET
 	  "firmware status register" at boot) within the reserved
 	  region at the start of HP-SRAM.
 
+config ADSP_WIN1_OFFSET
+	int "Byte offset of host window one"
+	default 24576
+	help
+	  Offset of the second host shared memory window (used for the IPC outbox)
+	  within the reserved region at the start of HP-SRAM.
+
+config ADSP_WIN2_OFFSET
+	int "Byte offset of host window two"
+	default 32768
+	help
+	  Offset of the third host shared memory window (used for the GDB stub)
+	  within the reserved region at the start of HP-SRAM.
+
 config ADSP_WIN3_OFFSET
 	int "Byte offset of host window three"
 	default 40960
@@ -62,5 +76,14 @@ config ADSP_TRACE_SIMCALL
 	  instruction to emit the passed data to the standard output
 	  of an enclosing simulator process.  All window contents will
 	  remain identical.
+
+config ADSP_XT_GDB
+	bool "Use register definitions for Cadence xt-gdb"
+	depends on GDBSTUB
+	default y
+	help
+	  When true, the gdb stub will use register definitions that are expected by
+	  the Cadence xt-gdb debugger. Otherwise, it will use register definitions
+	  for the Zephyr sdk GDB client.
 
 endif # SOC_FAMILY_INTEL_ADSP

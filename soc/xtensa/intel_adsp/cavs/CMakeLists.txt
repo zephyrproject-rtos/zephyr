@@ -11,6 +11,11 @@ zephyr_library_sources(
     power.c
     )
 
+zephyr_library_sources_ifdef(CONFIG_GDBSTUB
+    gdbstub.c
+    gdbstub_backend_sram.c
+    )
+
 if(CONFIG_SMP OR CONFIG_MP_NUM_CPUS GREATER 1)
     zephyr_library_sources(multiprocessing.c)
 endif()

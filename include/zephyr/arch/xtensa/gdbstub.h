@@ -39,7 +39,7 @@ struct xtensa_register {
 	uint32_t	val;
 
 	/* GDB register index (for p/P packets) */
-	uint8_t		idx;
+	uint32_t	idx;
 
 	/* Size of register */
 	uint8_t		byte_size;

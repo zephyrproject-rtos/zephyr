@@ -410,4 +410,11 @@ config GDBSTUB_BUF_SZ
 	  for GDB backend. This needs to be big enough to hold one
 	  full GDB packet at a time.
 
+config GDBSTUB_ENTER_IMMEDIATELY
+	bool "Stop execution and enter the GDB stub at boot"
+	default y
+	help
+	  Functions like QEMU's -S. If enabled, boot will halt before user code
+	  starts execution and GDB stub will wait for connection.
+
 endif

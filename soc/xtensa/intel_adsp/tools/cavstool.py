@@ -15,6 +15,7 @@ import socketserver
 import threading
 import hashlib
 from urllib.parse import urlparse
+import pty
 
 # Global variable use to sync between log and request services.
 # When it is true, the adsp is able to start running.
@@ -53,6 +54,7 @@ HUGEPAGE_FILE = "/dev/hugepages/cavs-fw-dma.tmp."
 # Window 3 is winstream-formatted log output
 OUTBOX_OFFSET    = (512 + (0 * 128)) * 1024 + 4096
 INBOX_OFFSET     = (512 + (1 * 128)) * 1024
+DEBUG_OFFSET     = (512 + (1 * 128)) * 1024 + 8192
 WINSTREAM_OFFSET = (512 + (3 * 128)) * 1024
 
 # ADSPCS bits
@@ -546,6 +548,45 @@ def winstream_read(last_seq):
             # Found to be useful when it really goes wrong
             return (seq, result.decode("utf-8", "replace"))
 
+def read_from_gdb():
+    rx_head = bar4_mmap[DEBUG_OFFSET + 256]
+    rx_tail = bar4_mmap[DEBUG_OFFSET + 256 + 64]
+    msg = ""
+    while rx_head != rx_tail:
+        msg += chr(bar4_mmap[DEBUG_OFFSET + 256 + 128 + rx_tail])
+        rx_tail = (rx_tail + 1) % RING_SIZE
+    bar4_mmap[DEBUG_OFFSET + 256 + 64] = rx_tail
+    if msg:
+        os.write(gdb_client_port, msg.encode("ascii"))
+
+
+RING_SIZE = 128
+def write_to_gdb():
+    msg = os.read(gdb_client_port, 128).decode()
+    if len(msg) > 0:
+        # Write message to SRAM ringbuffer
+        head = bar4_mmap[DEBUG_OFFSET]
+        tail = bar4_mmap[DEBUG_OFFSET + 64]
+        tx_data_offset = DEBUG_OFFSET + 128
+        for c in msg:
+            while (head + 1) % RING_SIZE == tail:
+                bar4_mmap[DEBUG_OFFSET] = head
+                tail = bar4_mmap[DEBUG_OFFSET + 64]
+
+            bar4_mmap[tx_data_offset + head] = ord(c)
+            head = (head + 1) % RING_SIZE
+
+        bar4_mmap[DEBUG_OFFSET] = head
+
+
+def create_gdb_pty():
+    global gdb_client_port
+    # The user connects their gdb client to user_port, and this program accesses
+    # that data through gdb_client_port
+    (gdb_client_port, user_port) = pty.openpty()
+    name = os.ttyname(user_port)
+    log.info(f"GDB PTY at: {name}")
+    asyncio.get_event_loop().add_reader(gdb_client_port, write_to_gdb)
 
 async def ipc_delay_done():
     await asyncio.sleep(0.1)
@@ -675,6 +716,8 @@ async def _main(server):
 
         load_firmware(fw_file)
         time.sleep(0.1)
+        if enable_debug:
+            create_gdb_pty()
         if not args.quiet:
             adsp_log("--\n", server)
 
@@ -683,6 +726,8 @@ async def _main(server):
     last_seq = 0
     while start_output is True:
         await asyncio.sleep(0.03)
+        if enable_debug:
+            read_from_gdb()
         (last_seq, output) = winstream_read(last_seq)
         if output:
             adsp_log(output, server)
@@ -847,7 +892,8 @@ ap.add_argument("-p", "--log-port",
 ap.add_argument("-r", "--req-port",
                 help="Specify the PORT that the request server to active")
 ap.add_argument("fw_file", nargs="?", help="Firmware file")
-
+ap.add_argument("-d", "--debug", action="store_true",
+                help="Expose GDB stub via pty")
 args = ap.parse_args()
 
 if args.quiet:
@@ -859,6 +905,8 @@ if args.fw_file:
     fw_file = args.fw_file
 else:
     fw_file = None
+
+enable_debug = args.debug
 
 if args.server_addr:
     url = urlparse("//" + args.server_addr)
