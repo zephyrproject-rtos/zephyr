@@ -72,4 +72,9 @@
 /*!<@brief Slow mode */
 #define IOPCTL_PIO_SLEW_RATE_SLOW 0x80u
 
+/* Workaround to handle macro variation in the SDK */
+#ifndef INPUTMUX_PINTSEL_COUNT
+#define INPUTMUX_PINTSEL_COUNT INPUTMUX_PINT_SEL_COUNT
+#endif
+
 #endif /* _SOC__H_ */
