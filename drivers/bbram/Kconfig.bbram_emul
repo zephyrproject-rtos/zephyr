@@ -1,10 +1,9 @@
 # Copyright (c) 2021 Google Inc
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ST_BBRAM_EMUL := zephyr,bbram-emul
-
 config BBRAM_EMUL
 	bool "Battery-backed RAM emulated drivers"
-	default $(dt_compat_enabled,${DT_COMPAT_ST_BBRAM_EMUL})
+	default y
+	depends on DT_HAS_ZEPHYR_BBRAM_EMUL_ENABLED
 	help
 	  This option enables the BBRAM emulation driver.
