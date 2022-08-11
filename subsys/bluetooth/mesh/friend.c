@@ -281,16 +281,23 @@ int bt_mesh_friend_clear(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
 static void friend_sub_add(struct bt_mesh_friend *frnd, uint16_t addr)
 {
-	int i;
+	int empty_idx = INT_MAX;
 
-	for (i = 0; i < ARRAY_SIZE(frnd->sub_list); i++) {
-		if (frnd->sub_list[i] == BT_MESH_ADDR_UNASSIGNED) {
-			frnd->sub_list[i] = addr;
+	for (int i = 0; i < ARRAY_SIZE(frnd->sub_list); i++) {
+		if (frnd->sub_list[i] == addr) {
 			return;
+		}
+
+		if (frnd->sub_list[i] == BT_MESH_ADDR_UNASSIGNED) {
+			empty_idx = i;
 		}
 	}
 
-	BT_WARN("No space in friend subscription list");
+	if (empty_idx != INT_MAX) {
+		frnd->sub_list[empty_idx] = addr;
+	} else {
+		BT_WARN("No space in friend subscription list");
+	}
 }
 
 static void friend_sub_rem(struct bt_mesh_friend *frnd, uint16_t addr)
