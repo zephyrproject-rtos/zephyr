@@ -22,9 +22,6 @@ config SYS_CLOCK_TICKS_PER_SEC
 config NUM_IRQS
 	default 38
 
-config CC13X2_CC26X2_RTC_TIMER
-	default y
-
 if IEEE802154
 
 config IEEE802154_CC13XX_CC26XX
