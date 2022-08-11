@@ -92,8 +92,7 @@ static uint32_t get_pllout_frequency(uint32_t pllsrc_freq,
 {
 	__ASSERT_NO_MSG(pllm_div && pllout_div);
 
-	return (pllsrc_freq * plln_mul) /
-		(pllm_div * pllout_div);
+	return (pllsrc_freq / pllm_div) * plln_mul / pllout_div;
 }
 
 static uint32_t get_sysclk_frequency(void)
