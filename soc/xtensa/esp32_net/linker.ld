@@ -23,7 +23,7 @@
 
 MEMORY
 {
-  iram0_0_seg(RX): org = 0x40080000 + 0x10000, len = 0x10000
+  iram0_0_seg(RX): org = 0x40080000 + 0x08000, len = 0x18000
   dram0_shm0_seg(RW): org = 0x3FFE5230, len = 2K /* shared RAM reserved for IPM */
   dram0_sem0_seg(RW): org = 0x3FFE5A30, len = 8 /*shared data reserved for IPM data header */
   dram0_1_seg(RW): org = 0x3FFE5A38 + CONFIG_ESP32_BT_RESERVE_DRAM, len = 0x1BCB0 - 0xEE0 - CONFIG_ESP32_BT_RESERVE_DRAM
@@ -186,6 +186,7 @@ _net_buf_pool_list = _esp_net_buf_pool_list;
 
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)
+    _end = ABSOLUTE(.);
     _data_end = ABSOLUTE(.);
     . = ALIGN(4);
   } GROUP_LINK_IN(RAMABLE_REGION)
@@ -423,6 +424,8 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <zephyr/linker/intlist.ld>
 #endif
+
+_heap_sentry = 0x3ffe3f20;
 
 #include <zephyr/linker/debug-sections.ld>
 

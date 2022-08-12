@@ -52,7 +52,7 @@ MEMORY
   ROM (RX): org = 0x40, len = ROM_SIZE - 0x40
 
   #ifdef CONFIG_ESP32_NETWORK_CORE
-  iram0_0_seg(RX): org = 0x40080000, len = 0x10000
+  iram0_0_seg(RX): org = 0x40080000, len = 0x08000
   #else
   iram0_0_seg(RX): org = 0x40080000, len = 0x20000
   #endif
