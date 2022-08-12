@@ -75,7 +75,7 @@ static void tx_thread(void *arg1, void *arg2, void *arg3)
 		for (int i = 0; i < CONFIG_CAN_MAX_FILTER; i++) {
 			filter = &data->filters[i];
 			if (filter->rx_cb &&
-			    can_utils_filter_match(&frame.frame, &filter->filter) != 0) {
+			    can_utils_filter_match(&frame.frame, &filter->filter)) {
 				dispatch_frame(dev, &frame.frame, filter);
 			}
 		}
