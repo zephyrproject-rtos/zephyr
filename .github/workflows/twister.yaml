@@ -263,6 +263,7 @@ jobs:
           if-no-files-found: ignore
           path: |
             twister-out/twister.xml
+            module_tests/twister.xml
             testplan.json
 
   twister-test-results:
