@@ -18,16 +18,6 @@
 
 LOG_MODULE_REGISTER(can_stm32fd, CONFIG_CAN_LOG_LEVEL);
 
-#ifdef CONFIG_CAN_STM32FD_CLOCK_DIVISOR
-#if CONFIG_CAN_STM32FD_CLOCK_DIVISOR != 1 && CONFIG_CAN_STM32FD_CLOCK_DIVISOR & 0x01
-#error CAN_STM32FD_CLOCK_DIVISOR invalid. Allowed values are 1 or 2 * n, where n <= 15.
-#else
-#define CAN_STM32FD_CLOCK_DIVISOR CONFIG_CAN_STM32FD_CLOCK_DIVISOR
-#endif /* CONFIG_CAN_STM32FD_CLOCK_DIVISOR */
-#else
-#define CAN_STM32FD_CLOCK_DIVISOR 1U
-#endif /* CONFIG_CAN_STM32FD_CLOCK_DIVISOR*/
-
 #define DT_DRV_COMPAT st_stm32_fdcan
 
 /* This symbol takes the value 1 if one of the device instances */
@@ -43,6 +33,7 @@ struct can_stm32fd_config {
 	const struct stm32_pclken *pclken;
 	void (*config_irq)(void);
 	const struct pinctrl_dev_config *pcfg;
+	uint8_t clock_divider;
 };
 
 static int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
@@ -56,7 +47,11 @@ static int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
 		return -EIO;
 	}
 
-	*rate = rate_tmp / CAN_STM32FD_CLOCK_DIVISOR;
+	if (FDCAN_CONFIG->CKDIV == 0) {
+		*rate = rate_tmp;
+	} else {
+		*rate = rate_tmp / (FDCAN_CONFIG->CKDIV << 1);
+	}
 
 	return 0;
 }
@@ -87,8 +82,10 @@ static int can_stm32fd_clock_enable(const struct device *dev)
 		return ret;
 	}
 
-	can_mcan_enable_configuration_change(dev);
-	FDCAN_CONFIG->CKDIV = CAN_STM32FD_CLOCK_DIVISOR >> 1;
+	if (stm32fd_cfg->clock_divider != 0) {
+		can_mcan_enable_configuration_change(dev);
+		FDCAN_CONFIG->CKDIV = stm32fd_cfg->clock_divider >> 1;
+	}
 
 	return 0;
 }
@@ -194,6 +191,7 @@ static void config_can_##inst##_irq(void)                                      \
 		.pclk_len = DT_INST_NUM_CLOCKS(inst),			\
 		.config_irq = config_can_##inst##_irq,			\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
+		.clock_divider = DT_INST_PROP_OR(inst, clk_divider, 0)  \
 	};								\
 									\
 	static const struct can_mcan_config can_mcan_cfg_##inst =	\
