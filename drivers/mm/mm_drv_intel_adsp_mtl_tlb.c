@@ -20,7 +20,7 @@
  * are untouched.
  */
 
-#define DT_DRV_COMPAT intel_adsp_tlb
+#define DT_DRV_COMPAT intel_adsp_mtl_tlb
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
