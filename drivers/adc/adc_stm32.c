@@ -523,7 +523,8 @@ static void adc_stm32_set_common_path(const struct device *dev, uint32_t PathInt
 	const struct adc_stm32_cfg *config =
 		(const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
-	(void) adc; /* Avoid 'unused variable' warning for some families */
+
+	ARG_UNUSED(adc); /* Avoid 'unused variable' warning for some families */
 
 	/* Do not remove existing paths */
 	PathInternal |= LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
@@ -582,6 +583,64 @@ static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_i
 	}
 
 #endif /* LL_ADC_CHANNEL_VBAT */
+}
+
+static void adc_stm32_unset_common_path(const struct device *dev, uint32_t PathInternal)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	const uint32_t currentPath = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
+
+	ARG_UNUSED(adc); /* Avoid 'unused variable' warning for some families */
+
+	PathInternal = ~PathInternal & currentPath;
+	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc), PathInternal);
+}
+
+static void adc_stm32_teardown_channels(const struct device *dev, uint8_t channel_id)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+
+#ifdef CONFIG_SOC_SERIES_STM32G4X
+	if (config->has_temp_channel) {
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay)
+		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC1) == channel_id)
+		    && (config->base == ADC1)) {
+			adc_stm32_disable(adc);
+			adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+		}
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc5), okay)
+		if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR_ADC5) == channel_id)
+		   && (config->base == ADC5)) {
+			adc_stm32_disable(adc);
+			adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+		}
+#endif
+	}
+#else
+	if (config->has_temp_channel &&
+		(__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_TEMPSENSOR) == channel_id)) {
+		adc_stm32_disable(adc);
+		adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+	}
+#endif /* CONFIG_SOC_SERIES_STM32G4X */
+
+	if (config->has_vref_channel &&
+		(__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VREFINT) == channel_id)) {
+		adc_stm32_disable(adc);
+		adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
+	}
+#if defined(LL_ADC_CHANNEL_VBAT)
+	/* Enable the bridge divider only when needed for ADC conversion. */
+	if (config->has_vbat_channel &&
+		(__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VBAT) == channel_id)) {
+		adc_stm32_disable(adc);
+		adc_stm32_unset_common_path(dev, LL_ADC_PATH_INTERNAL_VBAT);
+	}
+#endif /* LL_ADC_CHANNEL_VBAT */
+	adc_stm32_enable(adc);
 }
 
 static int start_read(const struct device *dev,
@@ -840,7 +899,11 @@ static int start_read(const struct device *dev,
 
 	adc_context_start_read(&data->ctx, sequence);
 
-	return adc_context_wait_for_completion(&data->ctx);
+	err = adc_context_wait_for_completion(&data->ctx);
+
+	adc_stm32_teardown_channels(dev, index);
+
+	return err;
 }
 
 static void adc_context_start_sampling(struct adc_context *ctx)
