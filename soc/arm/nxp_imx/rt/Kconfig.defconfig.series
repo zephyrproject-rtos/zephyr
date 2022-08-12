@@ -24,10 +24,6 @@ config ETH_MCUX
 	default y if HAS_MCUX_ENET
 	depends on NET_L2_ETHERNET && ETH_DRIVER
 
-config IMX_USDHC
-	default y if (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
-	depends on SDHC
-
 config LOG_BACKEND_SWO_FREQ_HZ
 	default 7500000
 	depends on LOG_BACKEND_SWO
