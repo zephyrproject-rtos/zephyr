@@ -128,18 +128,14 @@ void fcb_tc_pretest(int sectors)
 	}
 }
 
-void fcb_pretest_2_sectors(void)
+static void fcb_pretest_2_sectors(void *data)
 {
 	fcb_tc_pretest(2);
 }
 
-void fcb_pretest_4_sectors(void)
+static void fcb_pretest_4_sectors(void *data)
 {
 	fcb_tc_pretest(4);
-}
-
-void teardown_nothing(void)
-{
 }
 
 /*
@@ -147,7 +143,7 @@ void teardown_nothing(void)
  * parameters, of the flash device that is used by tests, and stores it in
  * global fcb_test_erase_value.
  */
-void test_get_flash_erase_value(void)
+ZTEST(fcb_test_without_set, test_get_flash_erase_value)
 {
 	const struct flash_area *fa;
 	const struct flash_parameters *fp;
@@ -168,52 +164,6 @@ void test_get_flash_erase_value(void)
 	fcb_test_erase_value = fp->erase_value;
 }
 
-void test_fcb_len(void);
-void test_fcb_init(void);
-void test_fcb_empty_walk(void);
-void test_fcb_append(void);
-void test_fcb_append_too_big(void);
-void test_fcb_append_fill(void);
-void test_fcb_reset(void);
-void test_fcb_rotate(void);
-void test_fcb_multi_scratch(void);
-void test_fcb_last_of_n(void);
-
-void test_main(void)
-{
-	ztest_test_suite(test_fcb,
-			 ztest_unit_test(test_get_flash_erase_value),
-			 ztest_unit_test_setup_teardown(test_fcb_len,
-							fcb_pretest_2_sectors,
-							teardown_nothing),
-			 ztest_unit_test(test_fcb_init),
-			 ztest_unit_test_setup_teardown(test_fcb_empty_walk,
-							fcb_pretest_2_sectors,
-							teardown_nothing),
-			 ztest_unit_test_setup_teardown(test_fcb_append,
-							fcb_pretest_2_sectors,
-							teardown_nothing),
-			 ztest_unit_test_setup_teardown(test_fcb_append_too_big,
-							fcb_pretest_2_sectors,
-							teardown_nothing),
-			 ztest_unit_test_setup_teardown(test_fcb_append_fill,
-							fcb_pretest_2_sectors,
-							teardown_nothing),
-			 ztest_unit_test_setup_teardown(test_fcb_rotate,
-							fcb_pretest_2_sectors,
-							teardown_nothing),
-			 ztest_unit_test_setup_teardown(test_fcb_multi_scratch,
-							fcb_pretest_4_sectors,
-							teardown_nothing),
-			 ztest_unit_test_setup_teardown(test_fcb_last_of_n,
-							fcb_pretest_4_sectors,
-							teardown_nothing),
-			 /* Finally, run one that leaves behind a
-			  * flash.bin file without any random content */
-			 ztest_unit_test_setup_teardown(test_fcb_reset,
-							fcb_pretest_2_sectors,
-							teardown_nothing)
-			 );
-
-	ztest_run_test_suite(test_fcb);
-}
+ZTEST_SUITE(fcb_test_without_set, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(fcb_test_with_2sectors_set, NULL, NULL, fcb_pretest_2_sectors, NULL, NULL);
+ZTEST_SUITE(fcb_test_with_4sectors_set, NULL, NULL, fcb_pretest_4_sectors, NULL, NULL);
