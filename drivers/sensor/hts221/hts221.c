@@ -116,7 +116,7 @@ static int hts221_read_conversion_data(const struct device *dev)
 }
 
 static const struct sensor_driver_api hts221_driver_api = {
-#if CONFIG_HTS221_TRIGGER
+#ifdef CONFIG_HTS221_TRIGGER
 	.trigger_set = hts221_trigger_set,
 #endif
 	.sample_fetch = hts221_sample_fetch,
@@ -185,7 +185,7 @@ int hts221_init(const struct device *dev)
 		return status;
 	}
 
-#if CONFIG_HTS221_TRIGGER
+#ifdef CONFIG_HTS221_TRIGGER
 	status = hts221_init_interrupt(dev);
 	if (status < 0) {
 		LOG_ERR("Failed to initialize interrupt.");
@@ -222,7 +222,7 @@ int hts221_init(const struct device *dev)
 
 #ifdef CONFIG_HTS221_TRIGGER
 #define HTS221_CFG_IRQ(inst)					\
-	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, irq_gpios)
+	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios)
 #else
 #define HTS221_CFG_IRQ(inst)
 #endif /* CONFIG_HTS221_TRIGGER */
@@ -248,7 +248,7 @@ int hts221_init(const struct device *dev)
 						    HTS221_SPI_OPERATION, \
 						    0),			\
 		},							\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(HTS221_CFG_IRQ(inst)), ())			\
 	}
 
@@ -269,7 +269,7 @@ int hts221_init(const struct device *dev)
 		.stmemsc_cfg = {					\
 			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(HTS221_CFG_IRQ(inst)), ())			\
 	}
 
