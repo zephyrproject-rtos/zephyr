@@ -161,15 +161,21 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 	key = k_spin_lock(&lock);
 
-	struct k_thread *waiter = z_waitq_head(&mutex->wait_q);
+	/*
+	 * Check if mutex was unlocked after this thread was unpended.
+	 * If so, skip adjusting owner's priority down.
+	 */
+	if (likely(mutex->owner != NULL)) {
+		struct k_thread *waiter = z_waitq_head(&mutex->wait_q);
 
-	new_prio = (waiter != NULL) ?
-		new_prio_for_inheritance(waiter->base.prio, mutex->owner_orig_prio) :
-		mutex->owner_orig_prio;
+		new_prio = (waiter != NULL) ?
+			new_prio_for_inheritance(waiter->base.prio, mutex->owner_orig_prio) :
+			mutex->owner_orig_prio;
 
-	LOG_DBG("adjusting prio down on mutex %p", mutex);
+		LOG_DBG("adjusting prio down on mutex %p", mutex);
 
-	resched = adjust_owner_prio(mutex, new_prio) || resched;
+		resched = adjust_owner_prio(mutex, new_prio) || resched;
+	}
 
 	if (resched) {
 		z_reschedule(&lock, key);
