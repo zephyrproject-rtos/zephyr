@@ -4,6 +4,8 @@ zephyr_sources(
   soc.c
   )
 
+zephyr_library_sources_ifdef(CONFIG_NEWLIB_LIBC newlib_fix.c)
+
 if(CONFIG_BUILD_OUTPUT_BIN)
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
     COMMAND ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/components/esptool_py/esptool/esptool.py
