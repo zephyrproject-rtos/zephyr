@@ -577,12 +577,12 @@ int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
 	/* Token lengths 9-15 are reserved. */
 	tkl = cpkt->data[0] & 0x0f;
 	if (tkl > 8) {
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	cpkt->hdr_len = BASIC_HEADER_SIZE + tkl;
 	if (cpkt->hdr_len > len) {
-		return -EINVAL;
+		return -EBADMSG;
 	}
 
 	if (cpkt->hdr_len == len) {
@@ -601,7 +601,7 @@ int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
 		ret = parse_option(cpkt->data, offset, &offset, cpkt->max_len,
 				   &delta, &opt_len, option);
 		if (ret < 0) {
-			return ret;
+			return -EILSEQ;
 		} else if (ret == 0) {
 			break;
 		}
