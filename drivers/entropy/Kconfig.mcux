@@ -32,7 +32,7 @@ config ENTROPY_MCUX_RNG
 
 config ENTROPY_MCUX_CAAM
 	bool "MCUX CAAM driver"
-	default y
+	default n
 	depends on DT_HAS_NXP_IMX_CAAM_ENABLED
 	select ENTROPY_HAS_DRIVER
 	help
