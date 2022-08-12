@@ -1829,6 +1829,9 @@ static const struct dai_config *dai_ssp_config_get(const struct device *dev, enu
 	struct dai_intel_ssp *dp = (struct dai_intel_ssp *)dev->data;
 	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
 
+	if (!ssp)
+		return params;
+
 	params->rate = ssp->params.fsync_rate;
 
 	if (dir == DAI_DIR_PLAYBACK) {
@@ -1991,7 +1994,10 @@ static struct dai_intel_ssp_mn ssp_mn_divider = {
 static const char irq_name_level5_z[] = "level5";
 
 #define DAI_INTEL_SSP_DEVICE_INIT(n)						\
-	static struct dai_config dai_intel_ssp_config_##n;			\
+	static struct dai_config dai_intel_ssp_config_##n = {			\
+		.type = DAI_INTEL_SSP,						\
+		.dai_index = n,							\
+	};									\
 	static struct dai_intel_ssp dai_intel_ssp_data_##n = {			\
 		.index = n,							\
 		.plat_data = {							\
