@@ -4,7 +4,7 @@
 config SOC_FLASH_LPC
 	bool "LPC flash shim driver"
 	default y
-	depends on DT_HAS_NXP_LPC_IAP_ENABLED
+	depends on DT_HAS_NXP_IAP_FMC11_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	help

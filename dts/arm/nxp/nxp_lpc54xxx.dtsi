@@ -85,7 +85,7 @@
 		};
 
 		iap: flash-controller@4009c000 {
-			compatible = "nxp,lpc-iap";
+			compatible = "nxp,iap-fmc54";
 			reg = <0x4009c000 0x18>;
 			#address-cells = <1>;
 			#size-cells = <1>;
