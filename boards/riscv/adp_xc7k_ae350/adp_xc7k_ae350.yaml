@@ -8,6 +8,7 @@ toolchain:
 ram: 512
 supported:
   - gpio
+  - counter
 testing:
   ignore_tags:
     - bluetooth
