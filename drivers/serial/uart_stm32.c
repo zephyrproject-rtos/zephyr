@@ -1676,7 +1676,7 @@ static int uart_stm32_init(const struct device *dev)
 	config->irq_config_func(dev);
 #endif /* CONFIG_PM || CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API */
 
-#if defined(CONFIG_PM)
+#if defined(CONFIG_PM) && defined(IS_UART_WAKEUP_FROMSTOP_INSTANCE)
 	if (config->wakeup_source) {
 		/* Enable ability to wakeup device in Stop mode
 		 * Effect depends on CONFIG_PM_DEVICE status:
