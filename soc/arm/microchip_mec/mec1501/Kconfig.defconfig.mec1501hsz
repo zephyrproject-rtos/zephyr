@@ -23,8 +23,4 @@ config PS2_XEC
 	default y
 	depends on PS2
 
-config PECI_XEC
-	default y
-	depends on PECI
-
 endif # SOC_MEC1501_HSZ
