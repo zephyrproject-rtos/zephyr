@@ -1,0 +1,9 @@
+tests:
+  lib.os.fast_console_output:
+    tags: fast_console_output
+    filter: CONFIG_BOARD_INTEL_ADSP_CAVS15 or CONFIG_BOARD_INTEL_ADSP_CAVS18 or CONFIG_BOARD_INTEL_ADSP_CAVS25
+    timeout: 180
+    integration_platforms:
+      - intel_adsp_cavs15
+      - intel_adsp_cavs18
+      - intel_adsp_cavs25
