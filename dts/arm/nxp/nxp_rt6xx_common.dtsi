@@ -220,6 +220,7 @@
 		reg = <0x144000 0x1000>;
 		interrupts = <50 1>;
 		num-bidir-endpoints = <6>;
+		usb-controller-index = "LpcIp3511Hs0";
 		status = "disabled";
 	};
 
