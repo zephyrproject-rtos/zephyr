@@ -52,27 +52,17 @@ extern "C" {
 /**
  * @brief Maximum data length code for CAN-FD.
  */
-#define CANFD_MAX_DLC   CONFIG_CANFD_MAX_DLC
+#define CANFD_MAX_DLC   15U
 
 /**
  * @cond INTERNAL_HIDDEN
  * Internally calculated maximum data length
  */
-#ifndef CONFIG_CANFD_MAX_DLC
+#ifndef CONFIG_CAN_FD_MODE
 #define CAN_MAX_DLEN    8U
 #else
-#if CONFIG_CANFD_MAX_DLC <= 8
-#define CAN_MAX_DLEN    CONFIG_CANFD_MAX_DLC
-#elif CONFIG_CANFD_MAX_DLC <= 12
-#define CAN_MAX_DLEN    (CONFIG_CANFD_MAX_DLC + (CONFIG_CANFD_MAX_DLC - 8U) * 4U)
-#elif CONFIG_CANFD_MAX_DLC == 13
-#define CAN_MAX_DLEN    32U
-#elif CONFIG_CANFD_MAX_DLC == 14
-#define CAN_MAX_DLEN    48U
-#elif CONFIG_CANFD_MAX_DLC == 15
 #define CAN_MAX_DLEN    64U
-#endif
-#endif /* CONFIG_CANFD_MAX_DLC */
+#endif /* CONFIG_CAN_FD_MODE */
 
 /** @endcond */
 
