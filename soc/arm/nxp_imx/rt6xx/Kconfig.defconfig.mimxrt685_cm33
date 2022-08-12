@@ -21,10 +21,6 @@ config DMA_MCUX_LPC
 	default y
 	depends on DMA
 
-config IMX_USDHC
-	default y if (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
-	depends on SDHC
-
 if MCUX_OS_TIMER
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
