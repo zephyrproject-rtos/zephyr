@@ -61,6 +61,7 @@ static void usb_isr_handler(void);
 #define EP_ABS_IDX(ep)		(USB_EP_GET_IDX(ep) * 2 + \
 					(USB_EP_GET_DIR(ep) >> 7))
 #define NUM_OF_EP_MAX		(DT_INST_PROP(0, num_bidir_endpoints) * 2)
+#define CONTROLLER_ID		(DT_INST_ENUM_IDX(0, usb_controller_index))
 
 /* The minimum value is 1 */
 #define EP_BUF_NUMOF_BLOCKS	((NUM_OF_EP_MAX + 3) / 4)
@@ -87,13 +88,6 @@ static const usb_device_controller_interface_struct_t mcux_usb_iface = {
 	USB_DeviceEhciRecv, USB_DeviceEhciCancel, USB_DeviceEhciControl
 };
 
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb1), okay) && CONFIG_USB_DC_NXP_EHCI
-#define CONTROLLER_ID kUSB_ControllerEhci0
-#elif DT_NODE_HAS_STATUS(DT_NODELABEL(usb2), okay) && CONFIG_USB_DC_NXP_EHCI
-#define CONTROLLER_ID kUSB_ControllerEhci1
-#endif
-
 extern void USB_DeviceEhciIsrFunction(void *deviceHandle);
 
 #elif defined(CONFIG_USB_DC_NXP_LPCIP3511)
@@ -102,8 +96,6 @@ static const usb_device_controller_interface_struct_t mcux_usb_iface = {
 	USB_DeviceLpc3511IpInit, USB_DeviceLpc3511IpDeinit, USB_DeviceLpc3511IpSend,
 	USB_DeviceLpc3511IpRecv, USB_DeviceLpc3511IpCancel, USB_DeviceLpc3511IpControl
 };
-
-#define CONTROLLER_ID kUSB_ControllerLpcIp3511Hs0
 
 extern void USB_DeviceLpcIp3511IsrFunction(void *deviceHandle);
 
