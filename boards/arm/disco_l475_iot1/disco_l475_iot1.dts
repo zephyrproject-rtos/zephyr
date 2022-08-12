@@ -139,6 +139,7 @@
 	hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
+		drdy-gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
 	};
 
 	lps22hb-press@5d {
