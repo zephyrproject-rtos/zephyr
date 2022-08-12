@@ -76,7 +76,7 @@ def test_get_all_testsuites(class_env, all_testsuites_dict):
                       'test_c.check_2', 'test_d.check_1.unit_1a',
                       'test_d.check_1.unit_1b']
     tests = plan.get_all_tests()
-    result = [c.name for c in tests]
+    result = [c for c in tests]
     assert len(plan.get_all_tests()) == len(expected_tests)
     assert sorted(result) == sorted(expected_tests)
 
