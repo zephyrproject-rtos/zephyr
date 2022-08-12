@@ -320,13 +320,13 @@ void SX127xReset(void)
 {
 	SX127xSetBoardTcxo(true);
 
-	gpio_pin_set_dt(&dev_config.reset, 1);
-
-	k_sleep(K_MSEC(1));
-
 	gpio_pin_set_dt(&dev_config.reset, 0);
 
-	k_sleep(K_MSEC(6));
+	k_sleep(K_USEC(100));
+
+	gpio_pin_set_dt(&dev_config.reset, 1);
+
+	k_sleep(K_MSEC(5));
 }
 
 static void sx127x_dio_work_handle(struct k_work *work)
@@ -598,9 +598,10 @@ static int sx127x_lora_init(const struct device *dev)
 		return ret;
 	}
 
-	k_sleep(K_MSEC(100));
 	gpio_pin_set_dt(&dev_config.reset, 0);
-	k_sleep(K_MSEC(100));
+	k_sleep(K_USEC(100));
+    gpio_pin_set_dt(&dev_config.reset, 1);
+	k_sleep(K_MSEC(5));
 
 	ret = sx127x_read(REG_VERSION, &regval, 1);
 	if (ret < 0) {
