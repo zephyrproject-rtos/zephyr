@@ -360,11 +360,10 @@ const uint8_t *coap_packet_get_payload(const struct coap_packet *cpkt,
  * @param options Parse options and cache its details.
  * @param opt_num Number of options
  *
- * @return 0 in case of success.
- * @return -EINVAL in case of NULL ptr for cpkt and data, and invalid
- * len value.
- * @return -EBADMSG in case of issues with coap packet header data.
- * @return -EILSEQ in case of issues parsing options.
+ * @retval 0 in case of success.
+ * @retval -EINVAL in case of invalid input arguments.
+ * @retval -EBADMSG in case of malformed COAP header.
+ * @retval -EILSEQ in case of malformed COAP options.
  */
 int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
 		      struct coap_option *options, uint8_t opt_num);
