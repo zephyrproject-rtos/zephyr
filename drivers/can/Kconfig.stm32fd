@@ -28,14 +28,4 @@ config CAN_MAX_EXT_ID_FILTER
 	  Defines the maximum number of filters with extended ID (29-bit)
 	  that can be attached.
 
-config CAN_STM32FD_CLOCK_DIVISOR
-	int "CAN clock divisor"
-	range 1 30
-	default 1
-	help
-	  The APB clock is divided by this value (stored in CKDIV register)
-	  before it is fed to the CAN core.
-	  Note that the the divisor affects all CAN controllers.
-	  Allowed values: 1 or 2 * n, where n <= 15.
-
 endif # CAN_STM32FD
