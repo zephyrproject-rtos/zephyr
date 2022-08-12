@@ -46,7 +46,6 @@ config IT8XXX2_PLL_SEQUENCE_PRIORITY
 config PECI_ITE_IT8XXX2
 	default y
 	depends on PECI
-	select PECI_INTERRUPT_DRIVEN
 
 config PINCTRL
 	default y
