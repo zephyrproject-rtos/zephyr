@@ -8,7 +8,8 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_ctrl.h>
-LOG_MODULE_REGISTER(modem_hl7800, CONFIG_MODEM_LOG_LEVEL);
+#define LOG_MODULE_NAME modem_hl7800
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_MODEM_LOG_LEVEL);
 
 #include <zephyr/types.h>
 #include <stddef.h>
