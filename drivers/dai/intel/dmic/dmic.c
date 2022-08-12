@@ -631,7 +631,7 @@ static const struct dai_config *dai_dmic_get_config(const struct device *dev, en
 {
 	struct dai_intel_dmic *dmic = (struct dai_intel_dmic *)dev->data;
 
-	__ASSERT_NO_MSG(dir == DAI_DIR_CAPTURE);
+	__ASSERT_NO_MSG(dir == DAI_DIR_RX);
 	return &dmic->dai_config_params;
 }
 
