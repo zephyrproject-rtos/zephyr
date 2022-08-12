@@ -163,9 +163,16 @@ static struct modem_data mdata;
 static struct modem_context mctx;
 
 #if defined(CONFIG_DNS_RESOLVER)
-static struct zsock_addrinfo result;
-static struct sockaddr result_addr;
-static char result_canonname[DNS_MAX_NAME_SIZE + 1];
+struct modem_resolution {
+	struct zsock_addrinfo ai;
+	struct sockaddr addr;
+	char canonname[DNS_MAX_NAME_SIZE + 1];
+	bool in_use;
+};
+
+static struct k_sem msem_resolution_lock;
+static struct modem_resolution *mreso;
+static struct modem_resolution mresolution[MDM_MAX_SOCKETS];
 #endif
 
 /* helper macro to keep readability */
@@ -873,10 +880,10 @@ MODEM_CMD_DEFINE(on_cmd_dns)
 	argv[0][strlen(argv[0]) - 1] = '\0';
 
 	/* FIXME: Hard-code DNS on SARA-R4 to return IPv4 */
-	result_addr.sa_family = AF_INET;
+	mreso->addr.sa_family = AF_INET;
 	/* skip beginning quote when parsing */
-	(void)net_addr_pton(result.ai_family, &argv[0][1],
-			    &((struct sockaddr_in *)&result_addr)->sin_addr);
+	(void)net_addr_pton(mreso->ai.ai_family, &argv[0][1],
+			    &((struct sockaddr_in *)&mreso->addr)->sin_addr);
 	return 0;
 }
 #endif
@@ -1974,46 +1981,60 @@ static int offload_getaddrinfo(const char *node, const char *service,
 	static const struct modem_cmd cmd =
 		MODEM_CMD("+UDNSRN: ", on_cmd_dns, 1U, ",");
 	uint32_t port = 0U;
-	int ret;
+	int ret, i;
 	/* DNS command + 128 bytes for domain name parameter */
 	char sendbuf[sizeof("AT+UDNSRN=#,'[]'\r") + 128];
 
-	/* init result */
-	(void)memset(&result, 0, sizeof(result));
-	(void)memset(&result_addr, 0, sizeof(result_addr));
+	k_sem_take(&msem_resolution_lock, K_FOREVER);
+
+	mreso = NULL;
+	for (i = 0; i < (sizeof(mresolution)/sizeof(mresolution[0])); i++) {
+		if (mresolution[i].in_use == false) {
+			mreso = &mresolution[i];\
+			break;
+		}
+	}
+	if (NULL == mreso)
+	{
+		ret = DNS_EAI_MEMORY;
+		goto failure;
+	}
+
+	/* init resolution */
+	memset(mreso, 0, sizeof(*mreso));
 	/* FIXME: Hard-code DNS to return only IPv4 */
-	result.ai_family = AF_INET;
-	result_addr.sa_family = AF_INET;
-	result.ai_addr = &result_addr;
-	result.ai_addrlen = sizeof(result_addr);
-	result.ai_canonname = result_canonname;
-	result_canonname[0] = '\0';
+	mreso->ai.ai_family = AF_INET;
+	mreso->ai.ai_addr = &mreso->addr;
+	mreso->ai.ai_addr->sa_family = AF_INET;
+	mreso->ai.ai_addrlen = sizeof(mreso->addr);
+	mreso->ai.ai_canonname = mreso->canonname;
 
 	if (service) {
 		port = ATOI(service, 0U, "port");
 		if (port < 1 || port > USHRT_MAX) {
-			return DNS_EAI_SERVICE;
+			ret = DNS_EAI_SERVICE;
+			goto failure;
 		}
 	}
 
 	if (port > 0U) {
 		/* FIXME: DNS is hard-coded to return only IPv4 */
-		if (result.ai_family == AF_INET) {
-			net_sin(&result_addr)->sin_port = htons(port);
+		if (mreso->ai.ai_family == AF_INET) {
+			net_sin(&mreso->addr)->sin_port = htons(port);
 		}
 	}
 
 	/* check to see if node is an IP address */
-	if (net_addr_pton(result.ai_family, node,
-			  &((struct sockaddr_in *)&result_addr)->sin_addr)
+	if (net_addr_pton(mreso->ai.ai_family, node,
+			  &((struct sockaddr_in *)&mreso->addr)->sin_addr)
 	    == 0) {
-		*res = &result;
-		return 0;
+		goto success;
 	}
 
 	/* user flagged node as numeric host, but we failed net_addr_pton */
 	if (hints && hints->ai_flags & AI_NUMERICHOST) {
-		return DNS_EAI_NONAME;
+		ret = DNS_EAI_NONAME;
+		goto failure;
 	}
 
 	snprintk(sendbuf, sizeof(sendbuf), "AT+UDNSRN=0,\"%s\"", node);
@@ -2021,22 +2042,34 @@ static int offload_getaddrinfo(const char *node, const char *service,
 			     &cmd, 1U, sendbuf, &mdata.sem_response,
 			     MDM_DNS_TIMEOUT);
 	if (ret < 0) {
-		return ret;
+		goto failure;
 	}
 
-	LOG_DBG("DNS RESULT: %s",
-		net_addr_ntop(result.ai_family,
-					 &net_sin(&result_addr)->sin_addr,
-					 sendbuf, NET_IPV4_ADDR_LEN));
+	LOG_DBG("DNS RESULT: %s (in mresolution[%d])",
+		net_addr_ntop(mreso->ai.ai_family,
+			      &net_sin(&mreso->addr)->sin_addr,
+			      sendbuf, NET_IPV4_ADDR_LEN),
+		i);
 
-	*res = (struct zsock_addrinfo *)&result;
-	return 0;
+success:
+	mreso->in_use = true;
+	*res = (struct zsock_addrinfo *)mreso;
+	ret = 0;
+failure:
+	k_sem_give(&msem_resolution_lock);
+	return ret;
 }
 
 static void offload_freeaddrinfo(struct zsock_addrinfo *res)
 {
-	/* using static result from offload_getaddrinfo() -- no need to free */
-	res = NULL;
+	k_sem_take(&msem_resolution_lock, K_FOREVER);
+	for (int i = 0; i < (sizeof(mresolution)/sizeof(mresolution[0])); i++) {
+		if (&mresolution[i].ai == res) {
+			mresolution[i].in_use = false;
+			break;
+		}
+	}
+	k_sem_give(&msem_resolution_lock);
 }
 
 const struct socket_dns_offload offload_dns_ops = {
@@ -2136,6 +2169,10 @@ static int modem_init(const struct device *dev)
 
 	k_sem_init(&mdata.sem_response, 0, 1);
 	k_sem_init(&mdata.sem_prompt, 0, 1);
+
+#if defined(CONFIG_DNS_RESOLVER)
+	k_sem_init(&msem_resolution_lock, 1, 1);
+#endif	
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* initialize the work queue */
