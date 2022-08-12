@@ -129,6 +129,7 @@ struct backend_cb backend2_cb;
  * when install this timestamp function, timestamping frequency is set to
  * 2000000, means 2 timestamp/us
  */
+#ifndef CONFIG_USERSPACE
 static uint32_t stamp;
 static uint32_t timestamp_get(void)
 {
@@ -158,6 +159,8 @@ static void log_setup(bool backend2_enable)
 	}
 }
 
+#endif
+
 static bool log_test_process(void)
 {
 	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
@@ -178,7 +181,8 @@ static bool log_test_process(void)
  * @addtogroup logging
  */
 
-void test_log_domain_id(void)
+#ifndef CONFIG_USERSPACE
+ZTEST(test_log_core_additional, test_log_domain_id)
 {
 	log_setup(false);
 
@@ -202,8 +206,7 @@ void test_log_domain_id(void)
  *
  * @addtogroup logging
  */
-
-void test_log_sync(void)
+ZTEST(test_log_core_additional, test_log_sync)
 {
 	TC_PRINT("Logging synchronously\n");
 
@@ -227,8 +230,7 @@ void test_log_sync(void)
  *
  * @addtogroup logging
  */
-
-void test_log_early_logging(void)
+ZTEST(test_log_core_additional, test_log_early_logging)
 {
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		ztest_test_skip();
@@ -273,8 +275,7 @@ void test_log_early_logging(void)
  *
  * @addtogroup logging
  */
-
-void test_log_severity(void)
+ZTEST(test_log_core_additional, test_log_severity)
 {
 	log_setup(false);
 
@@ -302,8 +303,7 @@ void test_log_severity(void)
  *
  * @addtogroup logging
  */
-
-void test_log_timestamping(void)
+ZTEST(test_log_core_additional, test_log_timestamping)
 {
 	stamp = 0U;
 
@@ -354,7 +354,7 @@ void test_log_timestamping(void)
  */
 
 #define UART_BACKEND "log_backend_uart"
-void test_multiple_backends(void)
+ZTEST(test_log_core_additional, test_multiple_backends)
 {
 	TC_PRINT("Test multiple backends");
 	/* enable both backend1 and backend2 */
@@ -383,7 +383,7 @@ void test_multiple_backends(void)
  */
 
 #ifdef CONFIG_LOG_PROCESS_THREAD
-void test_log_thread(void)
+ZTEST(test_log_core_additional, test_log_thread)
 {
 	uint32_t slabs_free, used, max;
 
@@ -417,7 +417,7 @@ void test_log_thread(void)
 	zassert_equal(log_msg_mem_get_used(), 0, NULL);
 }
 #else
-void test_log_thread(void)
+ZTEST(test_log_core_additional, test_log_thread)
 {
 	ztest_test_skip();
 }
@@ -432,7 +432,7 @@ static void call_log_generic(const char *fmt, ...)
 	va_end(ap);
 }
 
-void test_log_generic(void)
+ZTEST(test_log_core_additional, test_log_generic)
 {
 	char *log_msg = "log user space";
 	int i = 100;
@@ -448,7 +448,7 @@ void test_log_generic(void)
 	}
 }
 
-void test_log_msg_create(void)
+ZTEST(test_log_core_additional, test_log_msg_create)
 {
 	log_setup(false);
 	if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
@@ -474,7 +474,9 @@ void test_log_msg_create(void)
 	}
 }
 
-void test_log_msg_create_user(void)
+#else
+
+ZTEST_USER(test_log_core_additional, test_log_msg_create_user)
 {
 	int mode;
 
@@ -496,6 +498,9 @@ void test_log_msg_create_user(void)
 	while (log_test_process()) {
 	}
 }
+
+#endif /** CONFIG_USERSPACE **/
+
 /* The log process thread has the K_LOWEST_APPLICATION_THREAD_PRIO, adjust it
  * to a higher priority to increase the chances of being scheduled to handle
  * log message as soon as possible
@@ -507,40 +512,12 @@ void promote_log_thread(const struct k_thread *thread, void *user_data)
 	}
 }
 
-extern void test_log_from_user(void);
-extern void test_log_hexdump_from_user(void);
-extern void test_log_generic_user(void);
-extern void test_log_filter_set(void);
-extern void test_log_panic(void);
-
-/*test case main entry*/
-void test_main(void)
+static void *test_log_core_additional_setup(void)
 {
 #ifdef CONFIG_LOG_PROCESS_THREAD
 	k_thread_foreach(promote_log_thread, NULL);
 #endif
-
-#ifdef CONFIG_USERSPACE
-	ztest_test_suite(test_log_core_additional,
-			 ztest_user_unit_test(test_log_from_user),
-			 ztest_user_unit_test(test_log_hexdump_from_user),
-			 ztest_user_unit_test(test_log_generic_user),
-			 ztest_user_unit_test(test_log_filter_set),
-			 ztest_user_unit_test(test_log_panic),
-			 ztest_user_unit_test(test_log_msg_create_user));
-	ztest_run_test_suite(test_log_core_additional);
-#else
-	ztest_test_suite(test_log_core_additional,
-			 ztest_unit_test(test_multiple_backends),
-			 ztest_unit_test(test_log_generic),
-			 ztest_unit_test(test_log_domain_id),
-			 ztest_unit_test(test_log_severity),
-			 ztest_unit_test(test_log_timestamping),
-			 ztest_unit_test(test_log_early_logging),
-			 ztest_unit_test(test_log_sync),
-			 ztest_unit_test(test_log_thread),
-			 ztest_unit_test(test_log_msg_create)
-			 );
-	ztest_run_test_suite(test_log_core_additional);
-#endif
+	return NULL;
 }
+
+ZTEST_SUITE(test_log_core_additional, NULL, test_log_core_additional_setup, NULL, NULL, NULL);
