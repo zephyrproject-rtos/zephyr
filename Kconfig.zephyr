@@ -28,6 +28,10 @@ osource "soc/$(ARCH)/*/Kconfig.defconfig"
 # This loads the toolchain defconfigs
 osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig.defconfig"
 
+# This should be early since the autogen Kconfig.dts symbols may get
+# used by modules
+source "dts/Kconfig"
+
 menu "Modules"
 
 source "modules/Kconfig"
@@ -38,7 +42,6 @@ source "boards/Kconfig"
 source "soc/Kconfig"
 source "arch/Kconfig"
 source "kernel/Kconfig"
-source "dts/Kconfig"
 source "drivers/Kconfig"
 source "lib/Kconfig"
 source "subsys/Kconfig"
