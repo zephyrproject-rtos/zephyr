@@ -23,7 +23,6 @@ CONFIG_ARMV8_A_NS=y
 
 # PSCI is supported
 CONFIG_PM_CPU_OPS=y
-CONFIG_PM_CPU_OPS_PSCI=y
 
 # Serial Drivers
 CONFIG_SERIAL=y
