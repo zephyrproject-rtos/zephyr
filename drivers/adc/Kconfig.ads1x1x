@@ -11,7 +11,7 @@ config ADC_ADS1X1X
 		   DT_HAS_TI_ADS1114_ENABLED || DT_HAS_TI_ADS1115_ENABLED || \
 		   DT_HAS_TI_ADS1119_ENABLED
 
-	depends on I2C
+	select I2C
 	select ADC_CONFIGURABLE_INPUTS
 	help
 	  Enable ADS1X1X ADC driver.
