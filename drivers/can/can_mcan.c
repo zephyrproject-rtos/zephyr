@@ -1086,3 +1086,15 @@ int can_mcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 
 	return 0;
 }
+
+/* helper function allowing mcan drivers without access to private mcan
+ * definitions to set CCCR_CCE, which might be needed to disable write
+ * protection for some registers.
+ */
+void can_mcan_enable_configuration_change(const struct device *dev)
+{
+	const struct can_mcan_config *cfg = dev->config;
+	struct can_mcan_reg *can = cfg->can;
+
+	can->cccr |= CAN_MCAN_CCCR_CCE;
+}

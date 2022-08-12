@@ -296,4 +296,6 @@ void can_mcan_set_state_change_callback(const struct device *dev,
 
 int can_mcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate);
 
+void can_mcan_enable_configuration_change(const struct device *dev);
+
 #endif /* ZEPHYR_DRIVERS_CAN_MCAN_H_ */
