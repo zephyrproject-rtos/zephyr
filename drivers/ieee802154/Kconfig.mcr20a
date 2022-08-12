@@ -6,7 +6,8 @@
 menuconfig IEEE802154_MCR20A
 	bool "NXP MCR20A Driver support"
 	default y
-	depends on SPI && DT_HAS_NXP_MCR20A_ENABLED
+	depends on DT_HAS_NXP_MCR20A_ENABLED
+	select SPI
 
 if IEEE802154_MCR20A
 
