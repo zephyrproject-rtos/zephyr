@@ -82,6 +82,22 @@
 	status = "okay";
 };
 
+&adc0 {
+	vref-internal-mv = <3300>;
+};
+
+&adc1 {
+	vref-internal-mv = <3300>;
+};
+
+&adc2 {
+	vref-internal-mv = <3300>;
+};
+
+&adc3 {
+	vref-internal-mv = <3300>;
+};
+
 &gpio1 {
 	status = "okay";
 };

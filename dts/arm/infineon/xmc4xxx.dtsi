@@ -127,6 +127,38 @@
 			clocks = <&sysclk>;
 			status = "disabled";
 		};
+
+		adc0: adc@40004400 {
+			compatible = "infineon,xmc4xxx-adc";
+			reg = <0x40004400 0x400>;
+			interrupts = <18 62>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc1: adc@40004800 {
+			compatible = "infineon,xmc4xxx-adc";
+			reg = <0x40004800 0x400>;
+			interrupts = <22 62>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc2: adc@40004c00 {
+			compatible = "infineon,xmc4xxx-adc";
+			reg = <0x40004C00 0x400>;
+			interrupts = <26 62>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc3: adc@40005000 {
+			compatible = "infineon,xmc4xxx-adc";
+			reg = <0x40005000 0x400>;
+			interrupts = <30 62>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
 

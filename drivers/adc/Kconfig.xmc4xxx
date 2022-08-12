@@ -1,0 +1,11 @@
+# XMC4XXX ADC configuration options
+
+# Copyright (c) 2022 Andriy Gelman <andriy.gelman@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_XMC4XXX
+	bool "XMC4XXX ADC"
+	default y
+	depends on DT_HAS_INFINEON_XMC4XXX_ADC_ENABLED
+	help
+	  Enable XMC4XXX adc driver.
