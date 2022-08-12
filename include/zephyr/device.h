@@ -923,6 +923,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,		\
 		(&DEVICE_NAME_GET(dev_name)), level, prio)
 
+#if CONFIG_HAS_DTS
 /*
  * Declare a device for each status "okay" devicetree node. (Disabled
  * nodes should not result in devices, so not predeclaring these keeps
@@ -937,6 +938,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 	extern const struct device DEVICE_DT_NAME_GET(node_id);
 
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
+#endif /* CONFIG_HAS_DTS */
 
 #ifdef __cplusplus
 }
