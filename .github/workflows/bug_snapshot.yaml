@@ -50,12 +50,14 @@ jobs:
 
     - name: Upload to AWS S3
       run: |
+        REPOSITORY_NAME="${GITHUB_REPOSITORY#*/}"
+
         PUBLISH_BUCKET="builds.zephyrproject.org"
         PUBLISH_DOMAIN="builds.zephyrproject.io"
         if [ "${{github.event_name}}" = "schedule" ]; then
-          PUBLISH_ROOT="${{ github.event.repository.name }}/bug-snapshot/daily"
+          PUBLISH_ROOT="${REPOSITORY_NAME}/bug-snapshot/daily"
         else
-          PUBLISH_ROOT="${{ github.event.repository.name }}/bug-snapshot"
+          PUBLISH_ROOT="${REPOSITORY_NAME}/bug-snapshot"
         fi
 
         PUBLISH_UPLOAD_URI="s3://${PUBLISH_BUCKET}/${PUBLISH_ROOT}/${BUGS_PICKLE_FILENAME}"
