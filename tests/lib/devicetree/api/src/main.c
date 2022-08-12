@@ -2410,4 +2410,16 @@ ZTEST(devicetree_api, test_reset)
 	zassert_equal(DT_INST_RESET_ID(0), 10, "");
 }
 
+#if defined(CONFIG_BOARD_INTEL_ADSP_CAVS15) ||		\
+	defined(CONFIG_BOARD_INTEL_ADSP_CAVS18) ||	\
+	defined(CONFIG_BOARD_INTEL_ADSP_CAVS25)
+void delay(void *fixture)
+{
+	ARG_UNUSED(fixture);
+	k_sleep(K_MSEC(300));
+}
+
+ZTEST_SUITE(devicetree_api, NULL, NULL, delay, NULL, NULL);
+#else
 ZTEST_SUITE(devicetree_api, NULL, NULL, NULL, NULL, NULL);
+#endif

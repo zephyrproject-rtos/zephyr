@@ -808,4 +808,16 @@ static void *lib_mem_block_setup(void)
 	return NULL;
 }
 
+#if defined(CONFIG_BOARD_INTEL_ADSP_CAVS15) ||		\
+	defined(CONFIG_BOARD_INTEL_ADSP_CAVS18) ||	\
+	defined(CONFIG_BOARD_INTEL_ADSP_CAVS25)
+void delay(void *fixture)
+{
+	ARG_UNUSED(fixture);
+	k_sleep(K_MSEC(300));
+}
+
+ZTEST_SUITE(lib_mem_block, NULL, lib_mem_block_setup, delay, NULL, NULL);
+#else
 ZTEST_SUITE(lib_mem_block, NULL, lib_mem_block_setup, NULL, NULL, NULL);
+#endif
