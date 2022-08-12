@@ -31,8 +31,10 @@ LOG_MODULE_REGISTER(flash_mcux);
 #define DT_DRV_COMPAT nxp_kinetis_ftfe
 #elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_kinetis_ftfl), okay)
 #define DT_DRV_COMPAT nxp_kinetis_ftfl
-#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_lpc_iap), okay)
-#define DT_DRV_COMPAT nxp_lpc_iap
+#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_fmc55), okay)
+#define DT_DRV_COMPAT nxp_iap_fmc55
+#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_fmc553), okay)
+#define DT_DRV_COMPAT nxp_iap_fmc553
 #else
 #error No matching compatible for soc_flash_mcux.c
 #endif
