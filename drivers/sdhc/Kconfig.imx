@@ -3,7 +3,8 @@
 
 config IMX_USDHC
 	bool "NXP IMX USDHC Driver"
-	depends on (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
+	default y
+	depends on DT_HAS_NXP_IMX_USDHC_ENABLED
 	select SDHC_SUPPORTS_UHS
 	select SDHC_SUPPORTS_NATIVE_MODE
 	help
