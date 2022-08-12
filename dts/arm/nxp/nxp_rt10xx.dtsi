@@ -736,6 +736,7 @@
 			clocks = <&sysclk>;
 			num-bidir-endpoints = <8>;
 			maximum-speed = "full-speed";
+			usb-controller-index = "Ehci0";
 			status = "disabled";
 		};
 
@@ -747,6 +748,7 @@
 			clocks = <&sysclk>;
 			num-bidir-endpoints = <8>;
 			maximum-speed = "full-speed";
+			usb-controller-index = "Ehci1";
 			status = "disabled";
 		};
 
