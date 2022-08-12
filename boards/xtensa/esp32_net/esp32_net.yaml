@@ -7,10 +7,15 @@ toolchain:
 supported:
   - gpio
   - i2c
-  - watchdog
   - uart
   - pinmux
 testing:
   ignore_tags:
     - net
     - bluetooth
+    - flash
+    - cpp
+    - posix
+    - watchdog
+    - logging
+    - kernel
