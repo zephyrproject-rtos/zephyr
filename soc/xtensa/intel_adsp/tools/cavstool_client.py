@@ -129,11 +129,21 @@ ap.add_argument("-l", "--log-only", action="store_true",
                 help="Don't load firmware, just show log output")
 ap.add_argument("-s", "--server-addr", default="localhost",
                 help="Specify the adsp server address")
+ap.add_argument("-p", "--log-port", type=int,
+                help="Specify the PORT that connected to log server")
+ap.add_argument("-r", "--req-port", type=int,
+                help="Specify the PORT that connected to request server")
 ap.add_argument("fw_file", nargs="?", help="Firmware file")
 args = ap.parse_args()
 
 if args.quiet:
     log.setLevel(logging.WARN)
+
+if args.log_port:
+    PORT_LOG = args.log_port
+
+if args.req_port:
+    PORT_REQ = args.req_port
 
 if args.server_addr:
     url = urlparse("//" + args.server_addr)
