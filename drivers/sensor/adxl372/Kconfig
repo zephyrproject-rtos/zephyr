@@ -16,6 +16,8 @@ if ADXL372
 
 choice ADXL372_BUS_TYPE
 	prompt "Interface type"
+	default ADXL372_I2C if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL372),i2c)
+	default ADXL372_SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL372),spi)
 	help
 	  Select interface the digital interface type for the ADXL372
 
