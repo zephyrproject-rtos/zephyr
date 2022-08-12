@@ -25,12 +25,6 @@ endif # GPIO
 
 if EEPROM
 
-config I2C
-	default y
-
-config EEPROM_AT24
-	default y
-
 config EEPROM_INIT_PRIORITY
 	default 75
 
