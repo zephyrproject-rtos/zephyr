@@ -19,10 +19,6 @@ config ESPI_XEC_V2
 	default y
 	depends on ESPI
 
-config PECI_XEC
-	default y
-	depends on PECI
-
 config EEPROM_XEC
 	default y
 	depends on EEPROM
