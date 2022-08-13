@@ -91,9 +91,9 @@
 			   <18 0 &gpio1 14 0>,	/* D12 */
 			   <19 0 &gpio1 15 0>,	/* D13 */
 			   /* GND */
-			   <20 0 &gpio0 27 0>,	/* AREF/D14 */
-			   <20 0 &gpio1 2 0>,	/* D15 */
-			   <21 0 &gpio1 3 0>;	/* D16 */
+			   <20 0 &gpio0 27 0>,	/* AREF|D14 */
+			   <21 0 &gpio1 2 0>,	/* D15 */
+			   <22 0 &gpio1 3 0>;	/* D16 */
 	};
 
 	arduino_adc: analog-connector {
