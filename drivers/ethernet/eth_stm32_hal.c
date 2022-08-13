@@ -312,7 +312,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	heth = &dev_data->heth;
 
 	total_len = net_pkt_get_len(pkt);
-	if (total_len > ETH_STM32_TX_BUF_SIZE) {
+	if (total_len > (ETH_STM32_TX_BUF_SIZE * ETH_TXBUFNB)) {
 		LOG_ERR("PKT too big");
 		return -EIO;
 	}
