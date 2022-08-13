@@ -159,11 +159,9 @@ static void z_log_msg_post_finalize(void)
 
 const struct log_backend *log_format_set_all_active_backends(size_t log_type)
 {
-	const struct log_backend *backend;
 	const struct log_backend *failed_backend = NULL;
 
-	for (int i = 0; i < log_backend_count_get(); i++) {
-		backend = log_backend_get(i);
+	STRUCT_SECTION_FOREACH(log_backend, backend) {
 		if (log_backend_is_active(backend)) {
 			int retCode = log_backend_format_set(backend, log_type);
 
@@ -262,16 +260,15 @@ static uint32_t z_log_init(bool blocking, bool can_sleep)
 	}
 
 	__ASSERT_NO_MSG(log_backend_count_get() < LOG_FILTERS_NUM_OF_SLOTS);
-	int i;
 
 	if (atomic_inc(&initialized) != 0) {
 		return 0;
 	}
 
-	/* Assign ids to backends. */
-	for (i = 0; i < log_backend_count_get(); i++) {
-		const struct log_backend *backend = log_backend_get(i);
+	int i = 0;
 
+	/* Assign ids to backends. */
+	STRUCT_SECTION_FOREACH(log_backend, backend) {
 		if (backend->autostart) {
 			log_backend_init(backend);
 
@@ -285,6 +282,8 @@ static uint32_t z_log_init(bool blocking, bool can_sleep)
 			} else {
 				mask |= BIT(i);
 			}
+
+			i++;
 		}
 	}
 
@@ -346,8 +345,6 @@ int log_set_timestamp_func(log_timestamp_get_t timestamp_getter, uint32_t freq)
 
 void z_impl_log_panic(void)
 {
-	struct log_backend const *backend;
-
 	if (panic_mode) {
 		return;
 	}
@@ -364,9 +361,7 @@ void z_impl_log_panic(void)
 		}
 	}
 
-	for (int i = 0; i < log_backend_count_get(); i++) {
-		backend = log_backend_get(i);
-
+	STRUCT_SECTION_FOREACH(log_backend, backend) {
 		if (log_backend_is_active(backend)) {
 			log_backend_panic(backend);
 		}
@@ -425,10 +420,7 @@ static bool msg_filter_check(struct log_backend const *backend,
 
 static void msg_process(union log_msg_generic *msg)
 {
-	struct log_backend const *backend;
-
-	for (int i = 0; i < log_backend_count_get(); i++) {
-		backend = log_backend_get(i);
+	STRUCT_SECTION_FOREACH(log_backend, backend) {
 		if (log_backend_is_active(backend) &&
 		    msg_filter_check(backend, msg)) {
 			log_backend_msg_process(backend, msg);
@@ -440,9 +432,7 @@ void dropped_notify(void)
 {
 	uint32_t dropped = z_log_dropped_read_and_clear();
 
-	for (int i = 0; i < log_backend_count_get(); i++) {
-		struct log_backend const *backend = log_backend_get(i);
-
+	STRUCT_SECTION_FOREACH(log_backend, backend) {
 		if (log_backend_is_active(backend)) {
 			log_backend_dropped(backend, dropped);
 		}
@@ -638,9 +628,7 @@ int log_mem_get_max_usage(uint32_t *max)
 static void log_backend_notify_all(enum log_backend_evt event,
 				   union log_backend_evt_arg *arg)
 {
-	for (int i = 0; i < log_backend_count_get(); i++) {
-		const struct log_backend *backend = log_backend_get(i);
-
+	STRUCT_SECTION_FOREACH(log_backend, backend) {
 		log_backend_notify(backend, event, arg);
 	}
 }
