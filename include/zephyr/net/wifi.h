@@ -12,6 +12,9 @@
 #ifndef ZEPHYR_INCLUDE_NET_WIFI_H_
 #define ZEPHYR_INCLUDE_NET_WIFI_H_
 
+/* Not having support for legacy types is deliberate to enforce
+ * higher security.
+ */
 enum wifi_security_type {
 	WIFI_SECURITY_TYPE_NONE = 0,
 	WIFI_SECURITY_TYPE_PSK,
