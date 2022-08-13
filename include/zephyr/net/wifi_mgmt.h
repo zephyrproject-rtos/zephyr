@@ -113,6 +113,7 @@ struct wifi_connect_req_params {
 	uint8_t channel;
 	enum wifi_security_type security;
 	enum wifi_mfp_options mfp;
+	int timeout; /* SYS_FOREVER_MS for no timeout */
 };
 
 struct wifi_status {
