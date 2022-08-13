@@ -802,7 +802,33 @@ void HAL_ETH_TxCpltCallback(ETH_HandleTypeDef *heth_handle)
 }
 #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_ETH_STM32_HAL_API_V2 */
 
-#ifdef CONFIG_SOC_SERIES_STM32H7X
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+void HAL_ETH_ErrorCallback(ETH_HandleTypeDef *heth)
+{
+	__ASSERT_NO_MSG(heth != NULL);
+
+	const uint32_t error_code = HAL_ETH_GetError(heth);
+
+	switch (error_code) {
+	case HAL_ETH_ERROR_DMA:
+		LOG_ERR("%s errorcode:%x dmaerror:%x",
+			__func__,
+			error_code,
+			HAL_ETH_GetDMAError(heth));
+		break;
+	case HAL_ETH_ERROR_MAC:
+		LOG_ERR("%s errorcode:%x macerror:%x",
+			__func__,
+			error_code,
+			HAL_ETH_GetMACError(heth));
+		break;
+	default:
+		LOG_ERR("%s errorcode:%x",
+			__func__,
+			error_code);
+	}
+}
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
 /* DMA and MAC errors callback only appear in H7 series */
 void HAL_ETH_DMAErrorCallback(ETH_HandleTypeDef *heth_handle)
 {
@@ -849,7 +875,7 @@ void HAL_ETH_MACErrorCallback(ETH_HandleTypeDef *heth_handle)
 		return;
 	}
 }
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth_handle)
 {
