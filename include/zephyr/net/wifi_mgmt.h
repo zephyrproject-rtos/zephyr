@@ -35,6 +35,7 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_DISCONNECT,
 	NET_REQUEST_WIFI_CMD_AP_ENABLE,
 	NET_REQUEST_WIFI_CMD_AP_DISABLE,
+	NET_REQUEST_WIFI_CMD_IFACE_STATUS,
 };
 
 #define NET_REQUEST_WIFI_SCAN					\
@@ -62,11 +63,17 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_ENABLE);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_DISABLE);
 
+#define NET_REQUEST_WIFI_IFACE_STATUS				\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_IFACE_STATUS)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_IFACE_STATUS);
+
 enum net_event_wifi_cmd {
 	NET_EVENT_WIFI_CMD_SCAN_RESULT = 1,
 	NET_EVENT_WIFI_CMD_SCAN_DONE,
 	NET_EVENT_WIFI_CMD_CONNECT_RESULT,
 	NET_EVENT_WIFI_CMD_DISCONNECT_RESULT,
+	NET_EVENT_WIFI_CMD_IFACE_STATUS,
 };
 
 #define NET_EVENT_WIFI_SCAN_RESULT				\
@@ -80,6 +87,9 @@ enum net_event_wifi_cmd {
 
 #define NET_EVENT_WIFI_DISCONNECT_RESULT			\
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_DISCONNECT_RESULT)
+
+#define NET_EVENT_WIFI_IFACE_STATUS						\
+	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_IFACE_STATUS)
 
 
 /* Each result is provided to the net_mgmt_event_callback
@@ -120,6 +130,20 @@ struct wifi_status {
 	int status;
 };
 
+struct wifi_iface_status {
+	int state; /* enum wifi_iface_state */
+	unsigned int ssid_len;
+	char ssid[WIFI_SSID_MAX_LEN];
+	char bssid[WIFI_MAC_ADDR_LEN];
+	enum wifi_frequency_bands band;
+	unsigned int channel;
+	enum wifi_iface_mode iface_mode;
+	enum wifi_link_mode link_mode;
+	enum wifi_security_type security;
+	enum wifi_mfp_options mfp;
+	int rssi;
+};
+
 #include <zephyr/net/net_if.h>
 
 typedef void (*scan_result_cb_t)(struct net_if *iface, int status,
@@ -149,6 +173,7 @@ struct net_wifi_mgmt_offload {
 	int (*ap_enable)(const struct device *dev,
 			 struct wifi_connect_req_params *params);
 	int (*ap_disable)(const struct device *dev);
+	int (*iface_status)(const struct device *dev, struct wifi_iface_status *status);
 };
 
 /* Make sure that the network interface API is properly setup inside
@@ -158,7 +183,8 @@ BUILD_ASSERT(offsetof(struct net_wifi_mgmt_offload, wifi_iface) == 0);
 
 void wifi_mgmt_raise_connect_result_event(struct net_if *iface, int status);
 void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status);
-
+void wifi_mgmt_raise_iface_status_event(struct net_if *iface,
+		struct wifi_iface_status *iface_status);
 #ifdef __cplusplus
 }
 #endif
