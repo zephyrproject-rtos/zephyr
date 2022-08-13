@@ -266,6 +266,51 @@ static int cmd_wifi_scan(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	struct wifi_iface_status status = { 0 };
+
+	context.shell = sh;
+
+	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &status,
+				sizeof(struct wifi_iface_status))) {
+		shell_fprintf(sh, SHELL_WARNING, "Status request failed\n");
+
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "Status: successful\n");
+	shell_fprintf(sh, SHELL_NORMAL, "==================\n");
+	shell_fprintf(sh, SHELL_NORMAL, "State: %s\n", wifi_state_txt(status.state));
+
+	if (status.state >= WIFI_STATE_ASSOCIATED) {
+		uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
+
+		shell_fprintf(sh, SHELL_NORMAL, "Interface Mode: %s\n",
+				wifi_mode_txt(status.iface_mode));
+		shell_fprintf(sh, SHELL_NORMAL, "Link Mode: %s\n",
+				wifi_link_mode_txt(status.link_mode));
+		shell_fprintf(sh, SHELL_NORMAL, "SSID: %-32s\n", status.ssid);
+		shell_fprintf(sh, SHELL_NORMAL, "BSSID: %s\n",
+					  net_sprint_ll_addr_buf(status.bssid,
+					  WIFI_MAC_ADDR_LEN, mac_string_buf,
+					  sizeof(mac_string_buf))
+					 );
+		shell_fprintf(sh, SHELL_NORMAL, "Band: %s\n",
+				wifi_band_txt(status.band));
+		shell_fprintf(sh, SHELL_NORMAL, "Channel: %d\n", status.channel);
+		shell_fprintf(sh, SHELL_NORMAL, "Security: %s\n",
+				wifi_security_txt(status.security));
+		shell_fprintf(sh, SHELL_NORMAL, "MFP: %s\n",
+				wifi_mfp_txt(status.mfp));
+		shell_fprintf(sh, SHELL_NORMAL, "RSSI: %d\n", status.rssi);
+	}
+
+
+	return 0;
+}
+
 static int cmd_wifi_ap_enable(const struct shell *shell, size_t argc,
 			      char *argv[])
 {
@@ -319,11 +364,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(connect, NULL,
 		  "\"<SSID>\"\n<channel number (optional), "
 		  "0 means all>\n"
-		  "<PSK (optional: valid only for secured SSIDs)>",
+		  "<PSK (optional: valid only for secured SSIDs)>"
 		  cmd_wifi_connect),
 	SHELL_CMD(disconnect, NULL, "Disconnect from Wifi AP",
 		  cmd_wifi_disconnect),
 	SHELL_CMD(scan, NULL, "Scan Wifi AP", cmd_wifi_scan),
+	SHELL_CMD(status, NULL, "Status of Wi-Fi interface", cmd_wifi_status),
 	SHELL_CMD(ap, &wifi_cmd_ap, "Access Point mode commands", NULL),
 	SHELL_SUBCMD_SET_END
 );
