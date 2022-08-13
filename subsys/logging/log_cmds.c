@@ -41,11 +41,9 @@ static const char * const severity_lvls_sorted[] = {
  */
 static const struct log_backend *backend_find(char const *name)
 {
-	const struct log_backend *backend;
 	size_t slen = strlen(name);
 
-	for (int i = 0; i < log_backend_count_get(); i++) {
-		backend = log_backend_get(i);
+	STRUCT_SECTION_FOREACH(log_backend, backend) {
 		if (strncmp(name, backend->name, slen) == 0) {
 			return backend;
 		}
@@ -343,13 +341,7 @@ static int cmd_log_backend_go(const struct shell *shell,
 static int cmd_log_backends_list(const struct shell *shell,
 				 size_t argc, char **argv)
 {
-	int backend_count;
-
-	backend_count = log_backend_count_get();
-
-	for (int i = 0; i < backend_count; i++) {
-		const struct log_backend *backend = log_backend_get(i);
-
+	STRUCT_SECTION_FOREACH(log_backend, backend) {
 		shell_fprintf(shell, SHELL_NORMAL,
 			      "%s\r\n"
 			      "\t- Status: %s\r\n"
@@ -410,9 +402,7 @@ static void backend_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->subcmd = &sub_log_backend;
 	entry->syntax  = NULL;
 
-	if (idx < log_backend_count_get()) {
-		const struct log_backend *backend = log_backend_get(idx);
-
+	STRUCT_SECTION_FOREACH(log_backend, backend) {
 		entry->syntax = backend->name;
 	}
 }
