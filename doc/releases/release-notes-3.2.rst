@@ -229,6 +229,8 @@ Networking
 * ``CONFIG_NET_CONFIG_IEEE802154_DEV_NAME`` has been removed in favor of
   using a Devicetree choice given by ``zephyr,ieee802154``.
 
+* Added new Wi-Fi offload APIs for retrieving status and statistics.
+
 USB
 ***
 
