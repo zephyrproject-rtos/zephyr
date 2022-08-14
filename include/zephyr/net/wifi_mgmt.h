@@ -174,6 +174,9 @@ struct net_wifi_mgmt_offload {
 			 struct wifi_connect_req_params *params);
 	int (*ap_disable)(const struct device *dev);
 	int (*iface_status)(const struct device *dev, struct wifi_iface_status *status);
+#ifdef CONFIG_NET_STATISTICS_WIFI
+	int (*get_stats)(const struct device *dev, struct net_stats_wifi *stats);
+#endif /* CONFIG_NET_STATISTICS_WIFI */
 };
 
 /* Make sure that the network interface API is properly setup inside
