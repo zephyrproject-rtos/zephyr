@@ -440,16 +440,16 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "0:None, 1:PSK, 2:PSK-256, 3:SAE"
 		  "<MFP (optional): 0:Disable, 1:Optional, 2:Required",
 		  cmd_wifi_connect),
-	SHELL_CMD(disconnect, NULL, "Disconnect from Wifi AP",
+	SHELL_CMD(disconnect, NULL, "Disconnect from Wi-Fi AP",
 		  cmd_wifi_disconnect),
-	SHELL_CMD(scan, NULL, "Scan Wifi AP", cmd_wifi_scan),
+	SHELL_CMD(scan, NULL, "Scan Wi-Fi AP", cmd_wifi_scan),
 	SHELL_CMD(status, NULL, "Status of Wi-Fi interface", cmd_wifi_status),
 	SHELL_CMD(statistics, NULL, "Wi-Fi statistics", cmd_wifi_stats),
 	SHELL_CMD(ap, &wifi_cmd_ap, "Access Point mode commands", NULL),
 	SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_REGISTER(wifi, &wifi_commands, "Wifi commands", NULL);
+SHELL_CMD_REGISTER(wifi, &wifi_commands, "Wi-Fi commands", NULL);
 
 static int wifi_shell_init(const struct device *unused)
 {
