@@ -205,14 +205,15 @@ static void init_rx_queues(void)
 /* If loopback driver is enabled, then direct packets to it so the address
  * check is not needed.
  */
-#if defined(CONFIG_NET_IP_ADDR_CHECK) && !defined(CONFIG_NET_LOOPBACK)
+#if defined(CONFIG_NET_IP) && defined(CONFIG_NET_IP_ADDR_CHECK) && !defined(CONFIG_NET_LOOPBACK)
 /* Check if the IPv{4|6} addresses are proper. As this can be expensive,
  * make this optional.
  */
 static inline int check_ip_addr(struct net_pkt *pkt)
 {
-#if defined(CONFIG_NET_IPV6)
-	if (net_pkt_family(pkt) == AF_INET6) {
+	uint8_t family = net_pkt_family(pkt);
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		if (net_ipv6_addr_cmp((struct in6_addr *)NET_IPV6_HDR(pkt)->dst,
 				      net_ipv6_unspecified_address())) {
 			NET_DBG("IPv6 dst address missing");
@@ -259,11 +260,7 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 			NET_DBG("IPv6 loopback src address");
 			return -EADDRNOTAVAIL;
 		}
-	} else
-#endif /* CONFIG_NET_IPV6 */
-
-#if defined(CONFIG_NET_IPV4)
-	if (net_pkt_family(pkt) == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		if (net_ipv4_addr_cmp((struct in_addr *)NET_IPV4_HDR(pkt)->dst,
 				      net_ipv4_unspecified_address())) {
 			NET_DBG("IPv4 dst address missing");
@@ -298,11 +295,6 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 			NET_DBG("IPv4 loopback src address");
 			return -EADDRNOTAVAIL;
 		}
-	} else
-#endif /* CONFIG_NET_IPV4 */
-
-	{
-		;
 	}
 
 	return 0;
