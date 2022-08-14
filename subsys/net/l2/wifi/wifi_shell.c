@@ -333,6 +333,55 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+
+#if defined(CONFIG_NET_STATISTICS_WIFI) && \
+					defined(CONFIG_NET_STATISTICS_USER_API)
+static void print_wifi_stats(struct net_if *iface, struct net_stats_wifi *data,
+			    const struct shell *sh)
+{
+	shell_fprintf(sh, SHELL_NORMAL, "Statistics for Wi-Fi interface %p [%d]\n", iface,
+	       net_if_get_by_iface(iface));
+
+	shell_fprintf(sh, SHELL_NORMAL, "Bytes received   : %u\n", data->bytes.received);
+	shell_fprintf(sh, SHELL_NORMAL, "Bytes sent       : %u\n", data->bytes.sent);
+	shell_fprintf(sh, SHELL_NORMAL, "Packets received : %u\n", data->pkts.rx);
+	shell_fprintf(sh, SHELL_NORMAL, "Packets sent     : %u\n", data->pkts.tx);
+	shell_fprintf(sh, SHELL_NORMAL, "Bcast received   : %u\n", data->broadcast.rx);
+	shell_fprintf(sh, SHELL_NORMAL, "Bcast sent       : %u\n", data->broadcast.tx);
+	shell_fprintf(sh, SHELL_NORMAL, "Mcast received   : %u\n", data->multicast.rx);
+	shell_fprintf(sh, SHELL_NORMAL, "Mcast sent       : %u\n", data->multicast.tx);
+	shell_fprintf(sh, SHELL_NORMAL, "Beacons received : %u\n",	data->sta_mgmt.beacons_rx);
+	shell_fprintf(sh, SHELL_NORMAL, "Beacons missed   : %u\n",
+				data->sta_mgmt.beacons_miss);
+}
+#endif /* CONFIG_NET_STATISTICS_WIFI && CONFIG_NET_STATISTICS_USER_API */
+
+static int cmd_wifi_stats(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_STATISTICS_WIFI) && \
+					defined(CONFIG_NET_STATISTICS_USER_API)
+	struct net_if *iface = net_if_get_default();
+	struct net_stats_wifi stats = { 0 };
+	int ret;
+
+	ret = net_mgmt(NET_REQUEST_STATS_GET_WIFI, iface,
+				&stats, sizeof(stats));
+	if (!ret) {
+		print_wifi_stats(iface, &stats, sh);
+	}
+#else
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	shell_fprintf(sh, SHELL_INFO, "Set %s to enable %s support.\n",
+		"CONFIG_NET_STATISTICS_WIFI and CONFIG_NET_STATISTICS_USER_API",
+		"statistics");
+#endif /* CONFIG_NET_STATISTICS_WIFI && CONFIG_NET_STATISTICS_USER_API */
+
+	return 0;
+}
+
+
 static int cmd_wifi_ap_enable(const struct shell *shell, size_t argc,
 			      char *argv[])
 {
@@ -395,6 +444,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  cmd_wifi_disconnect),
 	SHELL_CMD(scan, NULL, "Scan Wifi AP", cmd_wifi_scan),
 	SHELL_CMD(status, NULL, "Status of Wi-Fi interface", cmd_wifi_status),
+	SHELL_CMD(statistics, NULL, "Wi-Fi statistics", cmd_wifi_stats),
 	SHELL_CMD(ap, &wifi_cmd_ap, "Access Point mode commands", NULL),
 	SHELL_SUBCMD_SET_END
 );

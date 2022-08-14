@@ -125,4 +125,13 @@ config NET_STATISTICS_POWER_MANAGEMENT
 	  This will provide how many time a network interface went
 	  suspended, for how long the last time and on average.
 
+config NET_STATISTICS_WIFI
+	bool "Wi-Fi statistics"
+	depends on NET_L2_WIFI_MGMT
+	default y
+	help
+	  Keep track of Wi-Fi related statistics. Note that this
+	  requires support from the Wi-Fi driver. The driver needs
+	  to collect the statistics.
+
 endif # NET_STATISTICS
