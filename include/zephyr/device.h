@@ -236,6 +236,18 @@ typedef int16_t device_handle_t;
 			__VA_ARGS__)
 
 /**
+ * @brief Manually specify other init entries that device object depends on
+ *
+ * @note Only dependencies not expressed in the devicetree need to be specified.
+ *
+ * @param node_id The devicetree node identifier.
+ *
+ * @param ... List of init entries that device depends on.
+ */
+#define DEVICE_DT_MANUAL_DEPS(node_id, ...) \
+	Z_DEVICE_MANUAL_DEPS(Z_DEVICE_DT_DEV_NAME(node_id), __VA_ARGS__)
+
+/**
  * @brief Like DEVICE_DT_DEFINE(), but uses an instance of a
  * DT_DRV_COMPAT compatible instead of a node identifier.
  *
@@ -246,6 +258,20 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_DT_INST_DEFINE(inst, ...) \
 	DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Like DEVICE_DT_MANUAL_DEPS(), but uses an instance
+ * of a DT_DRV_COMPAT compatible instead of a node identifier.
+ *
+ * @note Only dependencies not expressed in the devicetree need to be specified.
+ *
+ * @param inst instance number. The @p node_id argument to
+ * DEVICE_DT_DEFINE is set to <tt>DT_DRV_INST(inst)</tt>.
+ *
+ * @param ... List of init entries that device depends on.
+ */
+#define DEVICE_DT_INST_MANUAL_DEPS(inst, ...) \
+	DEVICE_DT_MANUAL_DEPS(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
  * @brief The name of the global device object for @p node_id
@@ -922,6 +948,16 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		     Z_STRINGIFY(DEVICE_NAME_GET(drv_name)) " too long"); \
 	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,		\
 		(&DEVICE_NAME_GET(dev_name)), level, prio)
+
+/**
+ * @brief Manually define dependencies on other init objects
+ *
+ * @param dev_name Unique token from @ref DEVICE_DEFINE
+ *
+ * @param ... List of init entries that device depends on
+ */
+#define Z_DEVICE_MANUAL_DEPS(dev_name, ...) \
+	Z_INIT_ENTRY_DEPS(DEVICE_NAME_GET(dev_name), __VA_ARGS__)
 
 #if CONFIG_HAS_DTS
 /*
