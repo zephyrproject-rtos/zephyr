@@ -12,6 +12,8 @@
 #include <soc/system_reg.h>
 #include <soc/cache_memory.h>
 #include "hal/soc_ll.h"
+#include "esp_cpu.h"
+#include "esp_timer.h"
 #include "esp_spi_flash.h"
 #include <soc/interrupt_reg.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
@@ -79,6 +81,8 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	REG_CLR_BIT(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_SDIOSLAVE_EN);
 	SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_EN);
 
+	esp_timer_early_init();
+
 #if CONFIG_SOC_FLASH_ESP32
 	spi_flash_guard_set(&g_flash_guard_default_ops);
 #endif
@@ -110,7 +114,6 @@ void IRAM_ATTR esp_restart_noos(void)
 	/* Flush any data left in UART FIFOs */
 	esp_rom_uart_tx_wait_idle(0);
 	esp_rom_uart_tx_wait_idle(1);
-	esp_rom_uart_tx_wait_idle(2);
 
 	/* 2nd stage bootloader reconfigures SPI flash signals. */
 	/* Reset them to the defaults expected by ROM */
@@ -129,6 +132,9 @@ void IRAM_ATTR esp_restart_noos(void)
 			BLE_REG_REST_BIT | BLE_PWR_REG_REST_BIT | BLE_BB_REG_REST_BIT);
 
 	REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
+
+	/* Reset uart0 core first, then reset apb side. */
+	SET_PERI_REG_MASK(UART_CLK_CONF_REG(0), UART_RST_CORE_M);
 
 	/* Reset timer/spi/uart */
 	SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,
