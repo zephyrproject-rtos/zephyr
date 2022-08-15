@@ -1,7 +1,7 @@
 /** @file
- * @brief Socket CAN definitions.
+ * @brief SocketCAN definitions.
  *
- * Definitions for socket CAN support.
+ * Definitions for SocketCAN support.
  */
 
 /*
@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_NET_SOCKET_CAN_H_
-#define ZEPHYR_INCLUDE_NET_SOCKET_CAN_H_
+#ifndef ZEPHYR_INCLUDE_NET_SOCKETCAN_H_
+#define ZEPHYR_INCLUDE_NET_SOCKETCAN_H_
 
 #include <zephyr/drivers/can.h>
 #include <zephyr/types.h>
@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 /**
- * @brief Socket CAN library
+ * @brief SocketCAN library
  * @defgroup socket_can Network Core Library
  * @ingroup networking
  * @{
@@ -32,7 +32,7 @@ extern "C" {
 /* Protocols of the protocol family PF_CAN */
 #define CAN_RAW 1
 
-/* Socket CAN options */
+/* SocketCAN options */
 #define SOL_CAN_BASE 100
 #define SOL_CAN_RAW (SOL_CAN_BASE + CAN_RAW)
 
@@ -40,7 +40,7 @@ enum {
 	CAN_RAW_FILTER = 1,
 };
 
-/* Socket CAN MTU size */
+/* SocketCAN MTU size */
 #define CAN_MTU		CAN_MAX_DLEN
 
 /**
@@ -187,4 +187,4 @@ static inline void socketcan_from_can_filter(const struct can_filter *zfilter,
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_NET_SOCKET_CAN_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_SOCKETCAN_H_ */

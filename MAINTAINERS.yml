@@ -522,7 +522,7 @@ Documentation:
     - include/zephyr/drivers/can.h
     - include/zephyr/drivers/can/
     - include/zephyr/net/canbus.h
-    - include/zephyr/net/socket_can.h
+    - include/zephyr/net/socketcan.h
     - samples/drivers/can/
     - samples/modules/canopennode/
     - samples/net/sockets/can/
