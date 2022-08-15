@@ -197,8 +197,6 @@ static int eth_esp32_dev_init(const struct device *dev)
 
 	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
 	esp_err_t ret = esp_wifi_init(&config);
-
-	ret |= esp_supplicant_init();
 	ret |= esp_wifi_start();
 
 	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_AUTO)) {
