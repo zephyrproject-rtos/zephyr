@@ -406,7 +406,6 @@ as the main image, use this example:
    ExternalZephyrProject_Add(
      APPLICATION my_sample
      SOURCE_DIR <path-to>/my_sample
-     BUILD_ALWAYS True
    )
 
 This could be useful, for example, if your board requires you to build and flash an
@@ -433,7 +432,6 @@ a CMake function call that is structured as follows:
      APPLICATION my_sample
      SOURCE_DIR <path-to>/my_sample
      BOARD mps2_an521_remote
-     BUILD_ALWAYS True
    )
 
 This could be useful, for example, if your main application requires another
@@ -467,7 +465,6 @@ In the previous example, :file:`sysbuild.cmake` would be structured as follows:
      ExternalZephyrProject_Add(
        APPLICATION second_sample
        SOURCE_DIR <path-to>/second_sample
-       BUILD_ALWAYS True
      )
    endif()
 
