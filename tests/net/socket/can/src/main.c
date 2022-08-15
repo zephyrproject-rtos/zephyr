@@ -7,6 +7,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/net/socketcan.h>
+#include <zephyr/net/socketcan_utils.h>
 #include <zephyr/ztest.h>
 
 LOG_MODULE_REGISTER(socket_can, LOG_LEVEL_ERR);
