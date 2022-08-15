@@ -52,6 +52,8 @@ void test_deadline(void)
 {
 	int i;
 
+	n_exec = 0;
+
 	/* Create a bunch of threads at a single lower priority.  Give
 	 * them each a random deadline.  Sleep, and check that they
 	 * were executed in the right order.
