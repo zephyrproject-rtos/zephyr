@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_offload.h>
 #include <zephyr/net/ethernet.h>
-#include <zephyr/net/socket_can.h>
+#include <zephyr/net/socketcan.h>
 
 #include "connection.h"
 #include "net_private.h"

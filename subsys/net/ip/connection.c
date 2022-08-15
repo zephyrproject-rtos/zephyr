@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/udp.h>
 #include <zephyr/net/ethernet.h>
-#include <zephyr/net/socket_can.h>
+#include <zephyr/net/socketcan.h>
 
 #include "net_private.h"
 #include "icmpv6.h"

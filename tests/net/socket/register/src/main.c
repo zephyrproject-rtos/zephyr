@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/net/socket_can.h>
+#include <zephyr/net/socketcan.h>
 
 struct test_case {
 	int family;

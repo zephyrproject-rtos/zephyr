@@ -9,7 +9,7 @@
 
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/canbus.h>
-#include <zephyr/net/socket_can.h>
+#include <zephyr/net/socketcan.h>
 #include <zephyr/drivers/can.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/device.h>
