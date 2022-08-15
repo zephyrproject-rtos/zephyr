@@ -40,6 +40,9 @@ enum {
 	CAN_RAW_FILTER = 1,
 };
 
+/* SocketCAN max data payload length */
+#define SOCKETCAN_MAX_DLEN 8U
+
 /* SocketCAN MTU size */
 #define CAN_MTU		CAN_MAX_DLEN
 
@@ -101,7 +104,7 @@ struct socketcan_frame {
 	/** @endcond */
 
 	/** The payload data. */
-	uint8_t data[CAN_MAX_DLEN];
+	uint8_t data[SOCKETCAN_MAX_DLEN];
 };
 
 /**
@@ -129,7 +132,7 @@ static inline void socketcan_to_can_frame(const struct socketcan_frame *sframe,
 	zframe->rtr = (sframe->can_id & BIT(30)) >> 30;
 	zframe->id = sframe->can_id & BIT_MASK(29);
 	zframe->dlc = sframe->can_dlc;
-	memcpy(zframe->data, sframe->data, sizeof(zframe->data));
+	memcpy(zframe->data, sframe->data, MIN(sizeof(sframe->data), sizeof(zframe->data)));
 }
 
 /**
@@ -143,7 +146,7 @@ static inline void socketcan_from_can_frame(const struct can_frame *zframe,
 {
 	sframe->can_id = (zframe->id_type << 31) | (zframe->rtr << 30) | zframe->id;
 	sframe->can_dlc = zframe->dlc;
-	memcpy(sframe->data, zframe->data, sizeof(sframe->data));
+	memcpy(sframe->data, zframe->data, MIN(sizeof(zframe->data), sizeof(sframe->data)));
 }
 
 /**
