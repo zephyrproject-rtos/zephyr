@@ -362,6 +362,11 @@ current :ref:`stability level <api_lifecycle>`.
      - 1.11
      - 1.11
 
+   * - :ref:`usbc_vbus_api`
+     - Experimental
+     - 3.3
+     - 3.3
+
    * - :ref:`util_api`
      - Experimental
      - 2.4
