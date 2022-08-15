@@ -18,17 +18,19 @@ static struct fs_mount_t littlefs_mnt = {
 	.mnt_point = TEST_FS_MPTR,
 };
 
-void test_config_setup_littlefs(void)
+void *config_setup_littlefs(void)
 {
 	int rc;
 	const struct flash_area *fap;
 
 	rc = flash_area_open(FLASH_AREA_ID(littlefs_dev), &fap);
-	zassert_true(rc == 0, "opening flash area for erase [%d]\n", rc);
+	zassume_true(rc == 0, "opening flash area for erase [%d]\n", rc);
 
 	rc = flash_area_erase(fap, fap->fa_off, fap->fa_size);
-	zassert_true(rc == 0, "erasing flash area [%d]\n", rc);
+	zassume_true(rc == 0, "erasing flash area [%d]\n", rc);
 
 	rc = fs_mount(&littlefs_mnt);
-	zassert_true(rc == 0, "mounting littlefs [%d]\n", rc);
+	zassume_true(rc == 0, "mounting littlefs [%d]\n", rc);
+	settings_config_setup();
+	return NULL;
 }
