@@ -140,7 +140,7 @@ static int spi_cc13xx_cc26xx_transceive(const struct device *dev,
 	uint32_t txd, rxd;
 	int err;
 
-	spi_context_lock(ctx, false, NULL, config);
+	spi_context_lock(ctx, false, NULL, NULL, config);
 	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 
 	err = spi_cc13xx_cc26xx_configure(dev, config);

@@ -413,7 +413,7 @@ static void spi_stm32_complete(const struct device *dev, int status)
 	ll_func_disable_spi(spi);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
-	spi_context_complete(&data->ctx, status);
+	spi_context_complete(&data->ctx, dev, status);
 #endif
 }
 
@@ -600,7 +600,9 @@ static int transceive(const struct device *dev,
 		      const struct spi_config *config,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
-		      bool asynchronous, struct k_poll_signal *signal)
+		      bool asynchronous,
+		      spi_callback_t cb,
+		      void *userdata)
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
@@ -617,7 +619,7 @@ static int transceive(const struct device *dev,
 	}
 #endif
 
-	spi_context_lock(&data->ctx, asynchronous, signal, config);
+	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
 	ret = spi_stm32_configure(dev, config);
 	if (ret) {
@@ -699,7 +701,9 @@ static int transceive_dma(const struct device *dev,
 		      const struct spi_config *config,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
-		      bool asynchronous, struct k_poll_signal *signal)
+		      bool asynchronous,
+		      spi_callback_t cb,
+		      void *userdata)
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
@@ -714,7 +718,7 @@ static int transceive_dma(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	spi_context_lock(&data->ctx, asynchronous, signal, config);
+	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
 	k_sem_reset(&data->status_sem);
 
@@ -819,10 +823,10 @@ static int spi_stm32_transceive(const struct device *dev,
 	if ((data->dma_tx.dma_dev != NULL)
 	 && (data->dma_rx.dma_dev != NULL)) {
 		return transceive_dma(dev, config, tx_bufs, rx_bufs,
-				      false, NULL);
+				      false, NULL, NULL);
 	}
 #endif /* CONFIG_SPI_STM32_DMA */
-	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL);
+	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -830,9 +834,10 @@ static int spi_stm32_transceive_async(const struct device *dev,
 				      const struct spi_config *config,
 				      const struct spi_buf_set *tx_bufs,
 				      const struct spi_buf_set *rx_bufs,
-				      struct k_poll_signal *async)
+				      spi_callback_t cb,
+				      void *userdata)
 {
-	return transceive(dev, config, tx_bufs, rx_bufs, true, async);
+	return transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
