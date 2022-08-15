@@ -19,8 +19,8 @@ ZTEST(socket_can, test_socketcan_frame_to_can_frame)
 	struct socketcan_frame sframe = { 0 };
 	struct can_frame expected = { 0 };
 	struct can_frame zframe;
-	const uint8_t data[CAN_MAX_DLEN] = { 0x01, 0x02, 0x03, 0x04,
-					  0x05, 0x06, 0x07, 0x08 };
+	const uint8_t data[SOCKETCAN_MAX_DLEN] = { 0x01, 0x02, 0x03, 0x04,
+						   0x05, 0x06, 0x07, 0x08 };
 
 	sframe.can_id = BIT(31) | BIT(30) | 1234;
 	sframe.can_dlc = sizeof(data);
@@ -51,8 +51,8 @@ ZTEST(socket_can, test_can_frame_to_socketcan_frame)
 	struct socketcan_frame sframe = { 0 };
 	struct socketcan_frame expected = { 0 };
 	struct can_frame zframe = { 0 };
-	const uint8_t data[CAN_MAX_DLEN] = { 0x01, 0x02, 0x03, 0x04,
-					  0x05, 0x06, 0x07, 0x08 };
+	const uint8_t data[SOCKETCAN_MAX_DLEN] = { 0x01, 0x02, 0x03, 0x04,
+						   0x05, 0x06, 0x07, 0x08 };
 
 	expected.can_id = BIT(31) | BIT(30) | 1234;
 	expected.can_dlc = sizeof(data);
