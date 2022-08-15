@@ -83,3 +83,15 @@
 #include <zephyr/linker/device-handles.ld>
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif /* !CONFIG_HAS_DYNAMIC_DEVICE_HANDLES */
+
+#ifdef LINKER_DEVICE_HANDLES_PASS1
+	SECTION_DATA_PROLOGUE(init_dependencies,,)
+	{
+		KEEP(*(SORT(.__init_dependencies*)));
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#else
+	/DISCARD/ :
+	{
+		*(.__init_dependencies*)
+	}
+#endif /* LINKER_DEVICE_HANDLES_PASS1 */

@@ -68,6 +68,32 @@ void z_sys_init_run_level(int32_t level);
 #define Z_INIT_ENTRY_NAME(_entry_name) _CONCAT(__init_, _entry_name)
 
 /**
+ * @brief Construct a reference to a @ref init_entry instance
+ *
+ * @param _entry_name Base unique name
+ */
+#define Z_INIT_ENTRY_GET(_entry_name) &Z_INIT_ENTRY_NAME(_entry_name)
+
+/**
+ * @brief Specify init dependencies for script processing
+ *
+ * The first entry of the array is the address of the init entry being described,
+ * additional entries are the dependencies.
+ *
+ * @param _entry_name Init entry name from @ref Z_INIT_ENTRY_DEFINE
+ *
+ * @param ... List of names provided to other invocations of @ref Z_INIT_ENTRY_DEFINE
+ *            that @a _entry_name depends on
+ */
+#define Z_INIT_ENTRY_DEPS(_entry_name, ...)					   \
+	static const struct init_entry*						   \
+	_CONCAT(__initdeps, _entry_name)[] __used				   \
+	__attribute__((__section__(".__init_dependencies"))) = {		   \
+			Z_INIT_ENTRY_GET(_entry_name),				   \
+			FOR_EACH_NONEMPTY_TERM(Z_INIT_ENTRY_GET, (,), __VA_ARGS__) \
+			}
+
+/**
  * @brief Create an init entry object and set it up for boot time initialization
  *
  * @details This macro defines an init entry object that will be automatically
