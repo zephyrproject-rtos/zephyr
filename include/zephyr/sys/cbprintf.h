@@ -278,8 +278,8 @@ typedef int (*cbprintf_convert_cb)(const void *buf, size_t len, void *ctx);
  * @return vprintf like return values: the number of characters printed,
  * or a negative error value returned from external formatter.
  */
-typedef int (*cbvprintf_exteral_formatter_func)(cbprintf_cb out, void *ctx,
-						const char *fmt, va_list ap);
+typedef int (*cbvprintf_external_formatter_func)(cbprintf_cb out, void *ctx,
+						 const char *fmt, va_list ap);
 
 /** @brief Determine if string must be packaged in run time.
  *
@@ -596,7 +596,7 @@ static inline int cbprintf_fsc_package(void *in_packaged,
  * or a negative error value returned from external formatter.
  */
 int cbpprintf_external(cbprintf_cb out,
-		       cbvprintf_exteral_formatter_func formatter,
+		       cbvprintf_external_formatter_func formatter,
 		       void *ctx,
 		       void *packaged);
 
