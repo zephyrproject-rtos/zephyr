@@ -39,6 +39,19 @@ enum card_type {
 	CARD_MMC = 3, /*!< MMC memory card */
 };
 
+/**
+ * @brief SDIO function definition
+ *
+ * SDIO function definition. Used to store function information
+ * per each SDIO function
+ */
+struct sdio_func {
+	enum sdio_func_num num; /*!< Function number */
+	struct sd_card *card; /*!< Card this function is present on */
+	struct sdio_cis cis; /*!< CIS tuple data for this function */
+	uint16_t block_size; /*!< Current block size for this function */
+};
+
 
 /**
  * @brief SD card structure
@@ -65,6 +78,8 @@ struct sd_card {
 	enum card_type type; /*!< Card type */
 	uint16_t flags; /*!< Card flags */
 	uint8_t bus_width; /*!< Desired bus width */
+	uint32_t cccr_flags; /*!< SDIO CCCR data */
+	struct sdio_func func0; /*!< Function 0 common card data */
 	uint8_t card_buffer[CONFIG_SD_BUFFER_SIZE]
 		__aligned(CONFIG_SDHC_BUFFER_ALIGNMENT); /* Card internal buffer */
 };
