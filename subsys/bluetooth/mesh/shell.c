@@ -3052,10 +3052,10 @@ static int cmd_cdb_clear(const struct shell *shell, size_t argc,
 
 static void cdb_print_nodes(const struct shell *shell)
 {
-	char key_hex_str[32 + 1], uuid_hex_str[32 + 1];
+	char key_hex_str[32 + 1], uuid_hex_str[32 + 1], flag_str[2+1] = { 0 };
 	struct bt_mesh_cdb_node *node;
 	int i, total = 0;
-	bool configured;
+	bool configured, removed;
 
 	shell_print(shell, "Address  Elements  Flags  %-32s  DevKey", "UUID");
 
@@ -3067,13 +3067,18 @@ static void cdb_print_nodes(const struct shell *shell)
 
 		configured = atomic_test_bit(node->flags,
 					     BT_MESH_CDB_NODE_CONFIGURED);
+		removed = atomic_test_bit(node->flags,
+					  BT_MESH_CDB_NODE_REMOVED);
+
+		flag_str[0] = configured ? 'C' : '-';
+		flag_str[1] = removed ? 'R' : '-';
 
 		total++;
 		bin2hex(node->uuid, 16, uuid_hex_str, sizeof(uuid_hex_str));
 		bin2hex(node->dev_key, 16, key_hex_str, sizeof(key_hex_str));
 		shell_print(shell, "0x%04x   %-8d  %-5s  %s  %s", node->addr,
-			    node->num_elem, configured ? "C" : "-",
-			    uuid_hex_str, key_hex_str);
+			    node->num_elem, flag_str, uuid_hex_str,
+			    key_hex_str);
 	}
 
 	shell_print(shell, "> Total nodes: %d", total);

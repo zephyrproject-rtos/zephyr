@@ -745,6 +745,16 @@ void bt_mesh_cdb_iv_update(uint32_t iv_index, bool iv_update)
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		update_cdb_net_settings();
 	}
+
+	for (int i = 0; i < ARRAY_SIZE(bt_mesh_cdb.nodes); ++i) {
+		struct bt_mesh_cdb_node *node = &bt_mesh_cdb.nodes[i];
+
+		if (atomic_test_and_clear_bit(node->flags,
+					      BT_MESH_CDB_NODE_REMOVED)) {
+			node->addr = BT_MESH_ADDR_UNASSIGNED;
+			memset(node->dev_key, 0, sizeof(node->dev_key));
+		}
+	}
 }
 
 struct bt_mesh_cdb_subnet *bt_mesh_cdb_subnet_alloc(uint16_t net_idx)
@@ -858,8 +868,7 @@ void bt_mesh_cdb_node_del(struct bt_mesh_cdb_node *node, bool store)
 		update_cdb_node_settings(node, false);
 	}
 
-	node->addr = BT_MESH_ADDR_UNASSIGNED;
-	memset(node->dev_key, 0, sizeof(node->dev_key));
+	atomic_set_bit(node->flags, BT_MESH_CDB_NODE_REMOVED);
 }
 
 struct bt_mesh_cdb_node *bt_mesh_cdb_node_get(uint16_t addr)
