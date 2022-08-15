@@ -124,7 +124,7 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sched_tests
  */
-void test_slice_reset(void)
+ZTEST(threads_scheduling, test_slice_reset)
 {
 	uint32_t t32;
 	k_tid_t tid[NUM_THREAD];
@@ -199,7 +199,7 @@ void test_slice_reset(void)
 }
 
 #else /* CONFIG_TIMESLICING */
-void test_slice_reset(void)
+ZTEST(threads_scheduling, test_slice_reset)
 {
 	ztest_test_skip();
 }
