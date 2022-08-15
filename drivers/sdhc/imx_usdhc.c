@@ -406,6 +406,10 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 		case SDHC_TIMING_LEGACY:
 		case SDHC_TIMING_HS:
 			break;
+		case SDHC_TIMING_DDR50:
+		case SDHC_TIMING_DDR52:
+			/* Enable DDR mode */
+			USDHC_EnableDDRMode(cfg->base, true, 0);
 		case SDHC_TIMING_SDR12:
 		case SDHC_TIMING_SDR25:
 			pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_SLOW);
@@ -424,8 +428,6 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 			return -ENOTSUP;
 #endif
 		case SDHC_TIMING_SDR104:
-		case SDHC_TIMING_DDR50:
-		case SDHC_TIMING_DDR52:
 		case SDHC_TIMING_HS200:
 			pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_FAST);
 			break;
