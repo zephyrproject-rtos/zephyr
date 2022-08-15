@@ -386,16 +386,10 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 
 	/* Set card power */
 	if ((host_io->power_mode != ios->power_mode) && (cfg->pwr_gpio.port)) {
-		if (host_io->power_mode == SDHC_POWER_ON) {
-			/* Send 74 clock cycles if SD card is just powering on */
-			USDHC_SetCardActive(cfg->base, 0xFFFF);
-		}
-		if (cfg->pwr_gpio.port) {
-			if (ios->power_mode == SDHC_POWER_OFF) {
-				gpio_pin_set_dt(&cfg->pwr_gpio, 0);
-			} else if (ios->power_mode == SDHC_POWER_ON) {
-				gpio_pin_set_dt(&cfg->pwr_gpio, 1);
-			}
+		if (ios->power_mode == SDHC_POWER_OFF) {
+			gpio_pin_set_dt(&cfg->pwr_gpio, 0);
+		} else if (ios->power_mode == SDHC_POWER_ON) {
+			gpio_pin_set_dt(&cfg->pwr_gpio, 1);
 		}
 		host_io->power_mode = ios->power_mode;
 	}
@@ -645,6 +639,10 @@ static int imx_usdhc_request(const struct device *dev, struct sdhc_command *cmd,
 	int busy_timeout = IMX_USDHC_DEFAULT_TIMEOUT;
 	int ret = 0;
 	int retries = (int)cmd->retries;
+
+	if (cmd->opcode == SD_GO_IDLE_STATE) {
+		USDHC_SetCardActive(cfg->base, 0xFFFF);
+	}
 
 	host_cmd.index = cmd->opcode;
 	host_cmd.argument = cmd->arg;
