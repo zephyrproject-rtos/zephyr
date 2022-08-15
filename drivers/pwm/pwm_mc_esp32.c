@@ -8,6 +8,7 @@
 
 #include <hal/mcpwm_hal.h>
 #include <hal/mcpwm_ll.h>
+#include "driver/mcpwm.h"
 
 #include <soc.h>
 #include <errno.h>

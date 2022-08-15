@@ -131,24 +131,24 @@ static int spi_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static inline spi_ll_io_mode_t spi_esp32_get_io_mode(uint16_t operation)
+static inline uint8_t spi_esp32_get_line_mode(uint16_t operation)
 {
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES)) {
 		switch (operation & SPI_LINES_MASK) {
 		case SPI_LINES_SINGLE:
-			return SPI_LL_IO_MODE_NORMAL;
+			return 1;
 		case SPI_LINES_DUAL:
-			return SPI_LL_IO_MODE_DUAL;
+			return 2;
 		case SPI_LINES_OCTAL:
-			return SPI_LL_IO_MODE_QIO;
+			return 8;
 		case SPI_LINES_QUAD:
-			return SPI_LL_IO_MODE_QUAD;
+			return 4;
 		default:
 			break;
 		}
 	}
 
-	return SPI_LL_IO_MODE_NORMAL;
+	return 1;
 }
 
 static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
@@ -206,6 +206,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		.duty_cycle = cfg->duty_cycle == 0 ? 128 : cfg->duty_cycle,
 		.input_delay_ns = cfg->input_delay_ns,
 		.use_gpio = !cfg->use_iomux,
+
 	};
 
 	spi_hal_cal_clock_conf(&timing_param, &freq, &hal_dev->timing_conf);
@@ -215,7 +216,14 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	hal_dev->tx_lsbfirst = spi_cfg->operation & SPI_TRANSFER_LSB ? 1 : 0;
 	hal_dev->rx_lsbfirst = spi_cfg->operation & SPI_TRANSFER_LSB ? 1 : 0;
 
-	data->trans_config.io_mode = spi_esp32_get_io_mode(spi_cfg->operation);
+	data->trans_config.line_mode.data_lines = spi_esp32_get_line_mode(spi_cfg->operation);
+
+	/* multiline for command and address not supported */
+	data->trans_config.line_mode.addr_lines = 1;
+	data->trans_config.line_mode.cmd_lines = 1;
+
+	/* keep cs line after transmission not supported */
+	data->trans_config.cs_keep_active = 0;
 
 	/* SPI mode */
 	hal_dev->mode = 0;
