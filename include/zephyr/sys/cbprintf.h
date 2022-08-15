@@ -65,15 +65,6 @@ union cbprintf_package_hdr {
 #if defined(CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS) && !defined(CONFIG_64BIT)
 	void *raw2[2];
 #endif
-} __packed;
-
-/** @brief cbprintf package header with format string pointer.
- *
- * cbprintf package header with format string pointer.
- */
-struct cbprintf_package_hdr_ext {
-	/** Header of package */
-	union cbprintf_package_hdr hdr;
 
 #ifdef CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
 #ifdef __xtensa__
@@ -86,6 +77,16 @@ struct cbprintf_package_hdr_ext {
 	uint32_t xtensa_padding;
 #endif
 #endif
+
+} __packed;
+
+/** @brief cbprintf package header with format string pointer.
+ *
+ * cbprintf package header with format string pointer.
+ */
+struct cbprintf_package_hdr_ext {
+	/** Header of package */
+	union cbprintf_package_hdr hdr;
 
 	/** Pointer to format string */
 	char *fmt;
