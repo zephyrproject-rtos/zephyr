@@ -89,6 +89,12 @@ extern "C" {
 #define ARCH_STACK_PTR_ALIGN	4
 #endif /* CONFIG_64BIT */
 
+BUILD_ASSERT(CONFIG_ISR_STACK_SIZE % ARCH_STACK_PTR_ALIGN == 0,
+	"CONFIG_ISR_STACK_SIZE must be a multiple of ARCH_STACK_PTR_ALIGN");
+
+BUILD_ASSERT(CONFIG_ARC_EXCEPTION_STACK_SIZE % ARCH_STACK_PTR_ALIGN == 0,
+	"CONFIG_ARC_EXCEPTION_STACK_SIZE must be a multiple of ARCH_STACK_PTR_ALIGN");
+
 /* Indicate, for a minimally sized MPU region, how large it must be and what
  * its base address must be aligned to.
  *
