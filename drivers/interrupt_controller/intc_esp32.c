@@ -873,25 +873,26 @@ void IRAM_ATTR esp_intr_noniram_disable(void)
 {
 	int oldint;
 	int cpu = esp_core_id();
-	int intmask = ~non_iram_int_mask[cpu];
+	int non_iram_ints = ~non_iram_int_mask[cpu];
 
 	if (non_iram_int_disabled_flag[cpu]) {
 		abort();
 	}
 	non_iram_int_disabled_flag[cpu] = true;
-	oldint = interrupt_controller_hal_disable_int_mask(intmask);
+	oldint = interrupt_controller_hal_read_interrupt_mask();
+	interrupt_controller_hal_disable_interrupts(non_iram_ints);
 	/* Save which ints we did disable */
-	non_iram_int_disabled[cpu] = oldint & non_iram_int_mask[cpu];
+	non_iram_int_disabled[cpu] = oldint & non_iram_ints;
 }
 
 void IRAM_ATTR esp_intr_noniram_enable(void)
 {
 	int cpu = esp_core_id();
-	int intmask = non_iram_int_disabled[cpu];
+	int non_iram_ints = non_iram_int_disabled[cpu];
 
 	if (!non_iram_int_disabled_flag[cpu]) {
 		abort();
 	}
 	non_iram_int_disabled_flag[cpu] = false;
-	interrupt_controller_hal_enable_int_mask(intmask);
+	interrupt_controller_hal_enable_interrupts(non_iram_ints);
 }
