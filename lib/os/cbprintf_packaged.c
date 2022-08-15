@@ -46,7 +46,7 @@ static inline bool ptr_in_rodata(const char *addr)
 
 #if defined(__CHECKER__)
 static int cbprintf_via_va_list(cbprintf_cb out,
-				cbvprintf_exteral_formatter_func formatter,
+				cbvprintf_external_formatter_func formatter,
 				void *ctx,
 				const char *fmt, void *buf)
 {
@@ -71,7 +71,7 @@ BUILD_ASSERT(sizeof(va_list) == sizeof(struct __va_list),
 	     "architecture specific support is wrong");
 
 static int cbprintf_via_va_list(cbprintf_cb out,
-				cbvprintf_exteral_formatter_func formatter,
+				cbvprintf_external_formatter_func formatter,
 				void *ctx,
 				const char *fmt, void *buf)
 {
@@ -109,7 +109,7 @@ BUILD_ASSERT(sizeof(va_list) == sizeof(struct __va_list),
 	     "architecture specific support is wrong");
 
 static int cbprintf_via_va_list(cbprintf_cb out,
-				cbvprintf_exteral_formatter_func formatter,
+				cbvprintf_external_formatter_func formatter,
 				void *ctx,
 				const char *fmt, void *buf)
 {
@@ -146,7 +146,7 @@ BUILD_ASSERT(sizeof(va_list) == sizeof(struct __va_list),
 	     "architecture specific support is wrong");
 
 static int cbprintf_via_va_list(cbprintf_cb out,
-				cbvprintf_exteral_formatter_func formatter,
+				cbvprintf_external_formatter_func formatter,
 				void *ctx,
 				const char *fmt, void *buf)
 {
@@ -175,7 +175,7 @@ BUILD_ASSERT(sizeof(va_list) == sizeof(void *),
 	     "architecture specific support is needed");
 
 static int cbprintf_via_va_list(cbprintf_cb out,
-				cbvprintf_exteral_formatter_func formatter,
+				cbvprintf_external_formatter_func formatter,
 				void *ctx,
 				const char *fmt, void *buf)
 {
@@ -811,7 +811,7 @@ int cbprintf_package(void *packaged, size_t len, uint32_t flags,
 }
 
 int cbpprintf_external(cbprintf_cb out,
-		       cbvprintf_exteral_formatter_func formatter,
+		       cbvprintf_external_formatter_func formatter,
 		       void *ctx, void *packaged)
 {
 	uint8_t *buf = packaged;
