@@ -20,7 +20,7 @@
 
 int file_str_cmp(const char *fname, char const *string, size_t pattern_len);
 
-void test_config_compress_file(void)
+ZTEST(settings_config_fs, test_config_compress_file)
 {
 	int rc;
 	struct settings_file cf;
@@ -36,6 +36,7 @@ void test_config_compress_file(void)
 
 	rc = settings_file_src(&cf);
 	zassert_true(rc == 0, "can't register FS as configuration source");
+	settings_mount_fs_backend(&cf);
 
 	rc = settings_file_dst(&cf);
 	zassert_true(rc == 0,
