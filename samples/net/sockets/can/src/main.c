@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(net_socket_can_sample, LOG_LEVEL_DBG);
 #include <zephyr/zephyr.h>
 
 #include <zephyr/net/socket.h>
-#include <zephyr/net/socket_can.h>
+#include <zephyr/net/socketcan.h>
 
 #ifdef CONFIG_SAMPLE_SOCKETCAN_LOOPBACK_MODE
 #include <zephyr/drivers/can.h>
