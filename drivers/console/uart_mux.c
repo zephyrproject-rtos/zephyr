@@ -787,6 +787,7 @@ const struct device *z_impl_uart_mux_find(int dlci_address)
 int uart_mux_send(const struct device *uart, const uint8_t *buf, size_t size)
 {
 	struct uart_mux_dev_data *dev_data = uart->data;
+	size_t remaining = size;
 
 	if (size == 0) {
 		return 0;
@@ -808,11 +809,11 @@ int uart_mux_send(const struct device *uart, const uint8_t *buf, size_t size)
 
 	do {
 		uart_poll_out(dev_data->real_uart->uart, *buf++);
-	} while (--size);
+	} while (--remaining);
 
 	k_mutex_unlock(&dev_data->real_uart->lock);
 
-	return 0;
+	return size;
 }
 
 int uart_mux_recv(const struct device *mux, struct gsm_dlci *dlci,
