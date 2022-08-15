@@ -65,7 +65,7 @@ static void thread_tslice(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sched_tests
  */
-void test_priority_scheduling(void)
+ZTEST(threads_scheduling, test_priority_scheduling)
 {
 	k_tid_t tid[NUM_THREAD];
 	int old_prio = k_thread_priority_get(k_current_get());
