@@ -15,8 +15,6 @@
 extern "C" {
 #endif
 
-#define MASK(b_hi, b_lo)					\
-	(((1ULL << ((b_hi) - (b_lo) + 1ULL)) - 1ULL) << (b_lo))
 #define SET_BIT(b, x) (((x) & 1) << (b))
 
 #define DW_MAX_CHAN		8
@@ -70,9 +68,9 @@ extern "C" {
 #define DW_FIFO_PART1_HI	0x40C
 
 /* channel bits */
-#define DW_CHAN_WRITE_EN_ALL	MASK(2 * DW_MAX_CHAN - 1, DW_MAX_CHAN)
+#define DW_CHAN_WRITE_EN_ALL	GENMASK(2 * DW_MAX_CHAN - 1, DW_MAX_CHAN)
 #define DW_CHAN_WRITE_EN(chan)	BIT((chan) + DW_MAX_CHAN)
-#define DW_CHAN_ALL		MASK(DW_MAX_CHAN - 1, 0)
+#define DW_CHAN_ALL		GENMASK(DW_MAX_CHAN - 1, 0)
 #define DW_CHAN(chan)		BIT(chan)
 #define DW_CHAN_MASK_ALL	DW_CHAN_WRITE_EN_ALL
 #define DW_CHAN_MASK(chan)	DW_CHAN_WRITE_EN(chan)
@@ -121,16 +119,16 @@ extern "C" {
 #define DW_CTLL_SRC_WIDTH(x)	SET_BITS(6, 4, x)
 #define DW_CTLL_DST_WIDTH(x)	SET_BITS(3, 1, x)
 #define DW_CTLL_INT_EN		BIT(0)
-#define DW_CTLL_SRC_WIDTH_MASK	MASK(6, 4)
+#define DW_CTLL_SRC_WIDTH_MASK	GENMASK(6, 4)
 #define DW_CTLL_SRC_WIDTH_SHIFT	4
-#define DW_CTLL_DST_WIDTH_MASK	MASK(3, 1)
+#define DW_CTLL_DST_WIDTH_MASK	GENMASK(3, 1)
 #define DW_CTLL_DST_WIDTH_SHIFT	1
 
 /* CTL_HI */
 #define DW_CTLH_CLASS(x)	SET_BITS(31, 29, x)
 #define DW_CTLH_WEIGHT(x)	SET_BITS(28, 18, x)
 #define DW_CTLH_DONE(x)		SET_BIT(17, x)
-#define DW_CTLH_BLOCK_TS_MASK	MASK(16, 0)
+#define DW_CTLH_BLOCK_TS_MASK	GENMASK(16, 0)
 
 /* DSR */
 #define DW_DSR_DSC(x)		SET_BITS(31, 20, x)
