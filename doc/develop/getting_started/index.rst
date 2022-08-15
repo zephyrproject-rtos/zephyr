@@ -76,8 +76,11 @@ The current minimum required version for the main dependencies are:
 
       .. _install_dependencies_ubuntu:
 
-      #. Download, inspect and execute the Kitware archive script to add the
-         Kitware APT repository to your sources list.
+      #. If using an Ubuntu version older than 22.04, it is necessary to add extra
+         repositories to meet the minimum required versions for the main
+         dependencies listed above. In that case, download, inspect and execute
+         the Kitware archive script to add the Kitware APT repository to your
+         sources list.
          A detailed explanation of ``kitware-archive.sh`` can be found here
          `kitware third-party apt repository <https://apt.kitware.com/>`_:
 
