@@ -341,66 +341,35 @@ int c3_handle_export(int (*cb)(const char *name,
 	return 0;
 }
 
-void test_settings_check_target(void)
+void *settings_config_fcb_setup(void)
 {
 	const struct flash_area *fap;
 	int rc;
 	uint8_t wbs;
 
 	rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
-	zassert_true(rc == 0, "Can't open storage flash area");
+	zassume_true(rc == 0, "Can't open storage flash area");
 
 	wbs = flash_area_align(fap);
-	zassert_true(wbs <= 16,
+	zassume_true(wbs <= 16,
 		"Flash driver is not compatible with the settings fcb-backend");
+	return NULL;
 }
 
-void test_settings_encode(void);
-void test_config_empty_lookups(void);
-void test_config_insert(void);
-void test_config_getset_unknown(void);
-void test_config_getset_int(void);
-void test_config_getset_int64(void);
-void test_config_commit(void);
-
-void test_config_empty_fcb(void);
-void test_config_save_1_fcb(void);
-void test_config_delete_fcb(void);
 void test_config_insert2(void);
-void test_config_save_2_fcb(void);
 void test_config_insert3(void);
-void test_config_save_3_fcb(void);
-void test_config_compress_reset(void);
-void test_config_save_one_fcb(void);
-void test_config_compress_deleted(void);
-void test_setting_raw_read(void);
-void test_setting_val_read(void);
-void test_config_save_fcb_unaligned(void);
 
-void test_main(void)
+ZTEST(settings_config_fcb, test_config_insert_handler2)
 {
-	ztest_test_suite(test_config_fcb,
-			 /* Config tests */
-			 ztest_unit_test(test_config_empty_lookups),
-			 ztest_unit_test(test_config_insert),
-			 ztest_unit_test(test_config_getset_unknown),
-			 ztest_unit_test(test_config_getset_int),
-			 ztest_unit_test(test_config_getset_int64),
-			 ztest_unit_test(test_config_commit),
-			 /* FCB as backing storage*/
-			 ztest_unit_test(test_settings_check_target),
-			 ztest_unit_test(test_config_save_fcb_unaligned),
-			 ztest_unit_test(test_config_empty_fcb),
-			 ztest_unit_test(test_config_save_1_fcb),
-			 ztest_unit_test(test_config_delete_fcb),
-			 ztest_unit_test(test_config_insert2),
-			 ztest_unit_test(test_config_save_2_fcb),
-			 ztest_unit_test(test_config_insert3),
-			 ztest_unit_test(test_config_save_3_fcb),
-			 ztest_unit_test(test_config_compress_reset),
-			 ztest_unit_test(test_config_save_one_fcb),
-			 ztest_unit_test(test_config_compress_deleted)
-			);
-
-	ztest_run_test_suite(test_config_fcb);
+	test_config_insert2();
 }
+
+ZTEST(settings_config_fcb, test_config_insert_handler3)
+{
+	test_config_insert3();
+}
+
+ZTEST_SUITE(settings_config, NULL, settings_config_setup, NULL, NULL,
+	    settings_config_teardown);
+ZTEST_SUITE(settings_config_fcb, NULL, settings_config_fcb_setup,
+	    NULL, NULL, NULL);

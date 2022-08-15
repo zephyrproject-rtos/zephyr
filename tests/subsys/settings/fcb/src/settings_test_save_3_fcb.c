@@ -14,12 +14,14 @@
 #define TESTS_S3_FCB_ITERATIONS 100
 #endif
 
-void test_config_save_3_fcb(void)
+ZTEST(settings_config_fcb, test_config_save_3_fcb)
 {
 	int rc;
 	struct settings_fcb cf;
 	int i;
 
+	rc = settings_register(&c_test_handlers[2]);
+	zassert_true(rc == 0 || rc == -EEXIST, "settings_register fail");
 	config_wipe_srcs();
 	config_wipe_fcb(fcb_sectors, ARRAY_SIZE(fcb_sectors));
 
@@ -46,4 +48,5 @@ void test_config_save_3_fcb(void)
 		zassert_true(rc == 0, "fcb read error");
 		zassert_true(val32 == i, "bad value read");
 	}
+	settings_unregister(&c_test_handlers[2]);
 }

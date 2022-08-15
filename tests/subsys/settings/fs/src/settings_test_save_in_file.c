@@ -11,7 +11,7 @@
 #define CF_FILE_CONTENT_1 "\x0d\x00myfoo/mybar=\x08"
 #define CF_FILE_CONTENT_2 "\x0d\x00myfoo/mybar=\x2b"
 
-void test_config_save_in_file(void)
+ZTEST(settings_config_fs, test_config_save_in_file)
 {
 	int rc;
 	struct settings_file cf;
