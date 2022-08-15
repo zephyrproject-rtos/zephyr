@@ -358,7 +358,7 @@ static int spi_sam0_transceive(const struct device *dev,
 	SercomSpi *regs = cfg->regs;
 	int err;
 
-	spi_context_lock(&data->ctx, false, NULL, config);
+	spi_context_lock(&data->ctx, false, NULL, NULL, config);
 
 	err = spi_sam0_configure(dev, config);
 	if (err != 0) {
@@ -562,7 +562,7 @@ static void spi_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
 	if (!spi_sam0_dma_advance_segment(dev)) {
 		/* Done */
 		spi_context_cs_control(&data->ctx, false);
-		spi_context_complete(&data->ctx, 0);
+		spi_context_complete(&data->ctx, dev, 0);
 		return;
 	}
 
@@ -571,7 +571,7 @@ static void spi_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
 		dma_stop(cfg->dma_dev, cfg->tx_dma_channel);
 		dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
 		spi_context_cs_control(&data->ctx, false);
-		spi_context_complete(&data->ctx, retval);
+		spi_context_complete(&data->ctx, dev, retval);
 		return;
 	}
 }
@@ -581,7 +581,8 @@ static int spi_sam0_transceive_async(const struct device *dev,
 				     const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
-				     struct k_poll_signal *async)
+				     spi_callback_t cb,
+				     void *userdata)
 {
 	const struct spi_sam0_config *cfg = dev->config;
 	struct spi_sam0_data *data = dev->data;
@@ -595,7 +596,7 @@ static int spi_sam0_transceive_async(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	spi_context_lock(&data->ctx, true, async, config);
+	spi_context_lock(&data->ctx, true, cb, userdata, config);
 
 	retval = spi_sam0_configure(dev, config);
 	if (retval != 0) {

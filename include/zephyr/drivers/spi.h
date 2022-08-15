@@ -458,6 +458,15 @@ typedef int (*spi_api_io)(const struct device *dev,
 			  const struct spi_buf_set *rx_bufs);
 
 /**
+ * @brief SPI callback for asynchronous transfer requests
+ *
+ * @param dev SPI device which is notifying of transfer completion or error
+ * @param result Result code of the transfer request. 0 is success, -errno for failure.
+ * @param data Transfer requester supplied data which is passed along to the callback.
+ */
+typedef void (*spi_callback_t)(const struct device *dev, int result, void *data);
+
+/**
  * @typedef spi_api_io
  * @brief Callback API for asynchronous I/O
  * See spi_transceive_async() for argument descriptions
@@ -466,7 +475,8 @@ typedef int (*spi_api_io_async)(const struct device *dev,
 				const struct spi_config *config,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs,
-				struct k_poll_signal *async);
+				spi_callback_t cb,
+				void *userdata);
 
 /**
  * @typedef spi_api_release
@@ -668,7 +678,52 @@ static inline int spi_write_dt(const struct spi_dt_spec *spec,
  *        or NULL if none.
  * @param rx_bufs Buffer array where data to be read will be written to,
  *        or NULL if none.
- * @param async A pointer to a valid and ready to be signaled
+ * @param callback Function pointer to completion callback.
+ *	  (Note: if NULL this function will not
+ *        notify the end of the transaction, and whether it went
+ *        successfully or not).
+ * @param userdata Userdata passed to callback
+ *
+ * @retval frames Positive number of frames received in slave mode.
+ * @retval 0 If successful in master mode.
+ * @retval -errno Negative errno code on failure.
+ */
+static inline int spi_transceive_cb(const struct device *dev,
+				    const struct spi_config *config,
+				    const struct spi_buf_set *tx_bufs,
+				    const struct spi_buf_set *rx_bufs,
+				    spi_callback_t callback,
+				    void *userdata)
+{
+	const struct spi_driver_api *api =
+		(const struct spi_driver_api *)dev->api;
+
+	return api->transceive_async(dev, config, tx_bufs, rx_bufs, callback, userdata);
+}
+
+#ifdef CONFIG_POLL
+
+/** @cond INTERNAL_HIDDEN */
+void z_spi_transfer_signal_cb(const struct device *dev, int result, void *userdata);
+/** @endcond */
+
+/**
+ * @brief Read/write the specified amount of data from the SPI driver.
+ *
+ * @note This function is asynchronous.
+ *
+ * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
+ * and @kconfig{CONFIG_POLL} are selected.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param config Pointer to a valid spi_config structure instance.
+ *        Pointer-comparison may be used to detect changes from
+ *        previous operations.
+ * @param tx_bufs Buffer array where data to be sent originates from,
+ *        or NULL if none.
+ * @param rx_bufs Buffer array where data to be read will be written to,
+ *        or NULL if none.
+ * @param sig A pointer to a valid and ready to be signaled
  *        struct k_poll_signal. (Note: if NULL this function will not
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
@@ -677,16 +732,32 @@ static inline int spi_write_dt(const struct spi_dt_spec *spec,
  * @retval 0 If successful in master mode.
  * @retval -errno Negative errno code on failure.
  */
-static inline int spi_transceive_async(const struct device *dev,
+static inline int spi_transceive_signal(const struct device *dev,
 				       const struct spi_config *config,
 				       const struct spi_buf_set *tx_bufs,
 				       const struct spi_buf_set *rx_bufs,
-				       struct k_poll_signal *async)
+				       struct k_poll_signal *sig)
 {
 	const struct spi_driver_api *api =
 		(const struct spi_driver_api *)dev->api;
+	spi_callback_t cb = (sig == NULL) ? NULL : z_spi_transfer_signal_cb;
 
-	return api->transceive_async(dev, config, tx_bufs, rx_bufs, async);
+	return api->transceive_async(dev, config, tx_bufs, rx_bufs, cb, sig);
+}
+
+/**
+ * @brief Alias for spi_transceive_signal for backwards compatibility
+ *
+ * @deprecated
+ * @see spi_transceive_signal
+ */
+__deprecated static inline int spi_transceive_async(const struct device *dev,
+				       const struct spi_config *config,
+				       const struct spi_buf_set *tx_bufs,
+				       const struct spi_buf_set *rx_bufs,
+				       struct k_poll_signal *sig)
+{
+	return spi_transceive_signal(dev, config, tx_bufs, rx_bufs, sig);
 }
 
 /**
@@ -694,17 +765,17 @@ static inline int spi_transceive_async(const struct device *dev,
  *
  * @note This function is asynchronous.
  *
- * @note This function is an helper function calling spi_transceive_async.
+ * @note This function is an helper function calling spi_transceive_signal.
  *
  * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
- * is selected.
+ * and @kconfig{CONFIG_POLL} are selected.
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
  *        Pointer-comparison may be used to detect changes from
  *        previous operations.
  * @param rx_bufs Buffer array where data to be read will be written to.
- * @param async A pointer to a valid and ready to be signaled
+ * @param sig A pointer to a valid and ready to be signaled
  *        struct k_poll_signal. (Note: if NULL this function will not
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
@@ -712,12 +783,26 @@ static inline int spi_transceive_async(const struct device *dev,
  * @retval 0 If successful
  * @retval -errno Negative errno code on failure.
  */
-static inline int spi_read_async(const struct device *dev,
+static inline int spi_read_signal(const struct device *dev,
 				 const struct spi_config *config,
 				 const struct spi_buf_set *rx_bufs,
-				 struct k_poll_signal *async)
+				 struct k_poll_signal *sig)
 {
-	return spi_transceive_async(dev, config, NULL, rx_bufs, async);
+	return spi_transceive_signal(dev, config, NULL, rx_bufs, sig);
+}
+
+/**
+ * @brief Alias for spi_read_signal for backwards compatibility
+ *
+ * @deprecated
+ * @see spi_read_signal
+ */
+__deprecated static inline int spi_read_async(const struct device *dev,
+				 const struct spi_config *config,
+				 const struct spi_buf_set *rx_bufs,
+				 struct k_poll_signal *sig)
+{
+	return spi_read_signal(dev, config, rx_bufs, sig);
 }
 
 /**
@@ -728,14 +813,14 @@ static inline int spi_read_async(const struct device *dev,
  * @note This function is an helper function calling spi_transceive_async.
  *
  * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
- * is selected.
+ * and @kconfig{CONFIG_POLL} are selected.
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
  *        Pointer-comparison may be used to detect changes from
  *        previous operations.
  * @param tx_bufs Buffer array where data to be sent originates from.
- * @param async A pointer to a valid and ready to be signaled
+ * @param sig A pointer to a valid and ready to be signaled
  *        struct k_poll_signal. (Note: if NULL this function will not
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
@@ -743,13 +828,30 @@ static inline int spi_read_async(const struct device *dev,
  * @retval 0 If successful.
  * @retval -errno Negative errno code on failure.
  */
-static inline int spi_write_async(const struct device *dev,
+static inline int spi_write_signal(const struct device *dev,
 				  const struct spi_config *config,
 				  const struct spi_buf_set *tx_bufs,
-				  struct k_poll_signal *async)
+				  struct k_poll_signal *sig)
 {
-	return spi_transceive_async(dev, config, tx_bufs, NULL, async);
+	return spi_transceive_signal(dev, config, tx_bufs, NULL, sig);
 }
+
+/**
+ * @brief Alias for spi_read_signal for backwards compatibility
+ *
+ * @deprecated
+ * @see spi_read_signal
+ */
+__deprecated static inline int spi_write_async(const struct device *dev,
+				 const struct spi_config *config,
+				 const struct spi_buf_set *tx_bufs,
+				 struct k_poll_signal *sig)
+{
+	return spi_write_signal(dev, config, tx_bufs, sig);
+}
+
+#endif /* CONFIG_POLL */
+
 #endif /* CONFIG_SPI_ASYNC */
 
 /**

@@ -75,7 +75,7 @@ static int spi_npcx_fiu_transceive(const struct device *dev,
 	size_t cur_xfer_len;
 	int error = 0;
 
-	spi_context_lock(ctx, false, NULL, spi_cfg);
+	spi_context_lock(ctx, false, NULL, NULL, spi_cfg);
 	ctx->config = spi_cfg;
 
 	/*
