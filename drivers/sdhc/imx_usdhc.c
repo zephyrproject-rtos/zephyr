@@ -698,6 +698,14 @@ static int imx_usdhc_request(const struct device *dev, struct sdhc_command *cmd,
 		case SD_APP_SEND_NUM_WRITTEN_BLK:
 			host_data.rxData = data->data;
 			break;
+		case SDIO_RW_EXTENDED:
+			/* Use R/W bit to determine data direction */
+			if (host_cmd.argument & BIT(SDIO_CMD_ARG_RW_SHIFT)) {
+				host_data.txData = data->data;
+			} else {
+				host_data.rxData = data->data;
+			}
+			break;
 		default:
 			return -ENOTSUP;
 
