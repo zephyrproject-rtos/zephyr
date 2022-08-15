@@ -182,7 +182,7 @@ static void transfer_next_chunk(const struct device *dev)
 
 	LOG_DBG("Transaction finished with status %d", error);
 
-	spi_context_complete(ctx, error);
+	spi_context_complete(ctx, dev, error);
 	dev_data->busy = false;
 }
 
@@ -203,12 +203,13 @@ static int transceive(const struct device *dev,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous,
-		      struct k_poll_signal *signal)
+		      spi_callback_t cb,
+		      void *userdata)
 {
 	struct spi_nrfx_data *dev_data = dev->data;
 	int error;
 
-	spi_context_lock(&dev_data->ctx, asynchronous, signal, spi_cfg);
+	spi_context_lock(&dev_data->ctx, asynchronous, cb, userdata, spi_cfg);
 
 	error = configure(dev, spi_cfg);
 	if (error == 0) {
@@ -232,7 +233,7 @@ static int spi_nrfx_transceive(const struct device *dev,
 			       const struct spi_buf_set *tx_bufs,
 			       const struct spi_buf_set *rx_bufs)
 {
-	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL);
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -240,9 +241,10 @@ static int spi_nrfx_transceive_async(const struct device *dev,
 				     const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
-				     struct k_poll_signal *async)
+				     spi_callback_t cb,
+				     void *userdata)
 {
-	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, async);
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 

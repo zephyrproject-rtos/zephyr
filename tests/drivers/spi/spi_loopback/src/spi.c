@@ -480,7 +480,7 @@ static int spi_async_call(struct spi_dt_spec *spec)
 
 	LOG_INF("Start async call");
 
-	ret = spi_transceive_async(spec->bus, &spec->config, &tx, &rx, &async_sig);
+	ret = spi_transceive_signal(spec->bus, &spec->config, &tx, &rx, &async_sig);
 	if (ret == -ENOTSUP) {
 		LOG_DBG("Not supported");
 		return 0;
