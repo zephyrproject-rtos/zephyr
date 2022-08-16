@@ -17,7 +17,7 @@ how a hybrid scenario works:
     :align: center
     :alt: ACRN Hybrid User Scenario
     :figclass: align-center
-    :width: 80%
+    :width: 600px
 
     ACRN Hybrid User Scenario
 
