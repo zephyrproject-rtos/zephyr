@@ -14,3 +14,10 @@ config UART_SAM0
 	select DMA if UART_ASYNC_API
 	help
 	  This option enables the SERCOMx USART driver for Atmel SAM0 MCUs.
+
+config UART_SAM0_GCLK3
+	bool "Set UART to GCLK3"
+	default 0
+	depends on UART_SAM0
+	help
+	  Set UART to use GCLK3, default is GCLK0

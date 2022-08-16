@@ -46,11 +46,27 @@
 
 #define SOC_ATMEL_SAM0_OSC32K_FREQ_HZ 32768
 
+#ifdef CONFIG_SOC_ATMEL_SAMD5X_DPLL_MAIN_CLK
+#ifndef CONFIG_SOC_ATMEL_SAMD5X_DPLL
+#error DPLL must be configured before using as main clock
+#endif
+#ifndef CONFIG_SOC_ATMEL_SAMD5X_DFLL
+#error DFLL must be configured before using DPLL as main clock
+#endif
+#if CONFIG_SOC_ATMEL_SAMD5X_XOSC32K_AS_MAIN != 1 && CONFIG_SOC_ATMEL_SAMD5X_OSCULP32K_AS_MAIN != 1
+#error  32kHz ad GCLK1 must be configured before using DPLL as main clock
+#endif
+#endif
+
 /** Processor Clock (HCLK) Frequency */
 #define SOC_ATMEL_SAM0_HCLK_FREQ_HZ CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
 /** Master Clock (MCK) Frequency */
 #define SOC_ATMEL_SAM0_MCK_FREQ_HZ SOC_ATMEL_SAM0_HCLK_FREQ_HZ
 #define SOC_ATMEL_SAM0_GCLK0_FREQ_HZ SOC_ATMEL_SAM0_MCK_FREQ_HZ
+#ifdef CONFIG_SOC_ATMEL_SAMD5X_XOSC_20MHZ
+    #define SOC_ATMEL_SAM0_GCLK3_FREQ_HZ 5000000
+#else
 #define SOC_ATMEL_SAM0_GCLK2_FREQ_HZ 48000000
+#endif
 
 #endif /* _ATMEL_SAMD51_SOC_H_ */

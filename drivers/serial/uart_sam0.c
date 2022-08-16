@@ -397,7 +397,7 @@ static int uart_sam0_configure(const struct device *dev,
 
 	usart->CTRLA.bit.ENABLE = 0;
 	wait_synchronization(usart);
-
+	
 	if (new_cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
 		/* Flow control not yet supported though in principle possible
 		 * on this soc family.
@@ -473,8 +473,13 @@ static int uart_sam0_configure(const struct device *dev,
 	usart->CTRLB = CTRLB_temp;
 	wait_synchronization(usart);
 
+#ifdef CONFIG_UART_SAM0_GCLK3
+	retval = uart_sam0_set_baudrate(usart, cfg->baudrate,
+					SOC_ATMEL_SAM0_GCLK3_FREQ_HZ);
+#else
 	retval = uart_sam0_set_baudrate(usart, new_cfg->baudrate,
 					SOC_ATMEL_SAM0_GCLK0_FREQ_HZ);
+#endif
 	if (retval != 0) {
 		return retval;
 	}
@@ -508,9 +513,13 @@ static int uart_sam0_init(const struct device *dev)
 	SercomUsart * const usart = cfg->regs;
 
 #ifdef MCLK
-	/* Enable the GCLK */
+#ifdef CONFIG_UART_SAM0_GCLK3
+	GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK3 |
+					       GCLK_PCHCTRL_CHEN;
+#else
 	GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK0 |
 					       GCLK_PCHCTRL_CHEN;
+#endif
 
 	/* Enable SERCOM clock in MCLK */
 	*cfg->mclk |= cfg->mclk_mask;
@@ -523,6 +532,13 @@ static int uart_sam0_init(const struct device *dev)
 	PM->APBCMASK.reg |= cfg->pm_apbcmask;
 #endif
 
+	wait_synchronization(usart);
+
+	usart->CTRLA.bit.SWRST = 1;
+	while (usart->SYNCBUSY.bit.SWRST) {
+	}
+	wait_synchronization(usart);
+			
 	/* Disable all USART interrupts */
 	usart->INTENCLR.reg = SERCOM_USART_INTENCLR_MASK;
 	wait_synchronization(usart);
@@ -555,9 +571,13 @@ static int uart_sam0_init(const struct device *dev)
 	usart->CTRLB.reg = SERCOM_USART_CTRLB_CHSIZE(0) |
 			   SERCOM_USART_CTRLB_RXEN | SERCOM_USART_CTRLB_TXEN;
 	wait_synchronization(usart);
-
+#ifdef CONFIG_UART_SAM0_GCLK3
+	retval = uart_sam0_set_baudrate(usart, cfg->baudrate,
+					SOC_ATMEL_SAM0_GCLK3_FREQ_HZ);
+#else
 	retval = uart_sam0_set_baudrate(usart, cfg->baudrate,
 					SOC_ATMEL_SAM0_GCLK0_FREQ_HZ);
+#endif
 	if (retval != 0) {
 		return retval;
 	}
@@ -824,7 +844,7 @@ static int uart_sam0_irq_tx_complete(const struct device *dev)
 	const struct uart_sam0_dev_cfg *config = dev->config;
 	SercomUsart * const regs = config->regs;
 
-	return (regs->INTFLAG.bit.TXC != 0) && (regs->INTENSET.bit.TXC != 0);
+	return ((regs->INTENSET.bit.TXC != 0) && (regs->INTFLAG.bit.TXC != 0));
 }
 
 static void uart_sam0_irq_rx_enable(const struct device *dev)
@@ -847,8 +867,8 @@ static int uart_sam0_irq_rx_ready(const struct device *dev)
 {
 	const struct uart_sam0_dev_cfg *config = dev->config;
 	SercomUsart * const regs = config->regs;
-
-	return regs->INTFLAG.bit.RXC != 0;
+	//return (regs->INTFLAG.bit.RXC != 0);
+	return ((regs->INTENSET.bit.RXC != 0) && (regs->INTFLAG.bit.RXC != 0));
 }
 
 static int uart_sam0_fifo_read(const struct device *dev, uint8_t *rx_data,

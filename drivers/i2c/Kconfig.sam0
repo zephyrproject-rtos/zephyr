@@ -17,3 +17,19 @@ config I2C_SAM0_DMA_DRIVEN
 	  DMA driven mode requires fewer interrupts to handle the
 	  transaction and ensures that high speed modes are not delayed
 	  by data reloading.
+
+config I2C_SAM0_BAUDRATE
+	int "Set Custom I2C Baudrate"
+	default 0
+	depends on I2C_SAM0
+	help
+	  Set custom I2C Baudrate for AMIS chip
+
+config I2C_SAM0_GCLK3
+	bool "Set I2C to GCLK3"
+	default 0
+	depends on I2C_SAM0
+	help
+	  Set I2C to use GCLK3, default is GCLK0
+
+

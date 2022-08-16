@@ -10,6 +10,24 @@ config SOC_ATMEL_SAMD5X_XOSC32K
 	  startup.  This can then be selected as the main clock source
 	  for the SOC.
 
+config SOC_ATMEL_SAMD5X_XOSC_20MHZ
+	bool "Enable the external 20MHz Oscillator"
+	help
+	  Say y to enable the external 20 MHz oscillator at
+	  startup.  This can then be selected as the main clock source
+	  for the SOC.
+
+config SOC_ATMEL_SAMD5X_DPLL
+	bool "Enable the DPLL"
+	help
+	  Say y to enable the DPLL, which assumes 32kHz on GCLK1.  This can then be selected as the main clock source
+	  for the SOC.
+
+config SOC_ATMEL_SAMD5X_DPLL
+	bool "Enable the DFLL"
+	help
+	  Say y to enable the DFLL.
+
 choice
 	prompt "Main clock source"
 	help
@@ -22,6 +40,14 @@ config SOC_ATMEL_SAMD5X_XOSC32K_AS_MAIN
 
 config SOC_ATMEL_SAMD5X_OSCULP32K_AS_MAIN
 	bool "OSCULP32K"
+
+config SOC_ATMEL_SAMD5X_DPLL_MAIN_CLK
+	depends on SOC_ATMEL_SAMD5X_DPLL
+	bool "DPLL"
+
+config SOC_ATMEL_SAMD5X_XOSC_20MHZ_AS_MAIN
+	depends on SOC_ATMEL_SAMD5X_XOSC_20MHZ
+	bool "XOSC20MHZ"
 
 endchoice
 
