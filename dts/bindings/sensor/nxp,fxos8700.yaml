@@ -5,7 +5,7 @@ description: FXOS8700 6-axis accelerometer/magnetometer sensor
 
 compatible: "nxp,fxos8700"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     reset-gpios:
