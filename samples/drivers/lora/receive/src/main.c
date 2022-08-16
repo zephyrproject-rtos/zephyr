@@ -57,6 +57,8 @@ void main(void)
 	config.datarate = SF_10;
 	config.preamble_len = 8;
 	config.coding_rate = CR_4_5;
+	config.iq_inverted = false;
+	config.public_network = false;
 	config.tx_power = 14;
 	config.tx = false;
 
