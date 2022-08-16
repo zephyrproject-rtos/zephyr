@@ -2254,8 +2254,10 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 
 		client_ctx->processed_req = msg;
 
+		lwm2m_registry_lock();
 		/* process the response to this request */
 		r = udp_request_handler(&response, msg);
+		lwm2m_registry_unlock();
 		if (r < 0) {
 			return;
 		}
