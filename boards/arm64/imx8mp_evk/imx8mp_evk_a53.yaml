@@ -1,4 +1,4 @@
-identifier: imx8mp_evk
+identifier: imx8mp_evk_a53
 name: NXP i.MX8M Plus EVK A53
 type: mcu
 arch: arm64
