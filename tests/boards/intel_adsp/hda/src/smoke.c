@@ -66,32 +66,35 @@ void test_hda_host_in_smoke(void)
 	z_xtensa_cache_flush(hda_buf, HDA_BUF_SIZE);
 #endif
 
-	intel_adsp_hda_init(HDA_HOST_IN_BASE, STREAM_ID);
-	hda_dump_regs(HOST_IN, STREAM_ID, "dsp init");
+	intel_adsp_hda_init(HDA_HOST_IN_BASE, HDA_REGBLOCK_SIZE, STREAM_ID);
+	hda_dump_regs(HOST_IN, HDA_REGBLOCK_SIZE, STREAM_ID, "dsp init");
 
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_RESET, STREAM_ID, IPC_TIMEOUT);
-	hda_dump_regs(HOST_IN, STREAM_ID, "host reset");
+	hda_dump_regs(HOST_IN, HDA_REGBLOCK_SIZE, STREAM_ID, "host reset");
 
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_CONFIG,
 		    STREAM_ID | (HDA_BUF_SIZE << 8), IPC_TIMEOUT);
-	hda_dump_regs(HOST_IN, STREAM_ID, "host config");
+	hda_dump_regs(HOST_IN, HDA_REGBLOCK_SIZE, STREAM_ID, "host config");
 
-	res = intel_adsp_hda_set_buffer(HDA_HOST_IN_BASE, STREAM_ID, hda_buf, HDA_BUF_SIZE);
-	hda_dump_regs(HOST_IN, STREAM_ID, "dsp set_buffer");
+	res = intel_adsp_hda_set_buffer(HDA_HOST_IN_BASE, HDA_REGBLOCK_SIZE, STREAM_ID,
+				hda_buf, HDA_BUF_SIZE);
+	hda_dump_regs(HOST_IN, HDA_REGBLOCK_SIZE, STREAM_ID, "dsp set_buffer");
 	zassert_ok(res, "Expected set buffer to succeed");
 
-	intel_adsp_hda_enable(HDA_HOST_IN_BASE, STREAM_ID);
-	hda_dump_regs(HOST_IN, STREAM_ID, "dsp enable");
+	intel_adsp_hda_enable(HDA_HOST_IN_BASE, HDA_REGBLOCK_SIZE, STREAM_ID);
+	hda_dump_regs(HOST_IN, HDA_REGBLOCK_SIZE, STREAM_ID, "dsp enable");
 
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_START, STREAM_ID, IPC_TIMEOUT);
-	hda_dump_regs(HOST_IN, STREAM_ID, "host start");
+	hda_dump_regs(HOST_IN, HDA_REGBLOCK_SIZE, STREAM_ID, "host start");
 
 	for (uint32_t i = 0; i < TRANSFER_COUNT; i++) {
-		intel_adsp_hda_host_commit(HDA_HOST_IN_BASE, STREAM_ID, HDA_BUF_SIZE);
-		hda_dump_regs(HOST_IN, STREAM_ID, "dsp inc_pos");
+		intel_adsp_hda_host_commit(HDA_HOST_IN_BASE, HDA_REGBLOCK_SIZE, STREAM_ID,
+			HDA_BUF_SIZE);
+		hda_dump_regs(HOST_IN, HDA_REGBLOCK_SIZE, STREAM_ID, "dsp inc_pos");
 
-		WAIT_FOR(intel_adsp_hda_wp_rp_eq(HDA_HOST_IN_BASE, STREAM_ID), 10000, k_msleep(1));
-		hda_dump_regs(HOST_IN, STREAM_ID, "dsp wp == rp");
+		WAIT_FOR(intel_adsp_hda_wp_rp_eq(HDA_HOST_IN_BASE, HDA_REGBLOCK_SIZE, STREAM_ID),
+			10000, k_msleep(1));
+		hda_dump_regs(HOST_IN, HDA_REGBLOCK_SIZE, STREAM_ID, "dsp wp == rp");
 
 		last_msg_cnt = msg_cnt;
 		hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_VALIDATE, STREAM_ID,
@@ -103,10 +106,10 @@ void test_hda_host_in_smoke(void)
 	}
 
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_RESET, STREAM_ID, IPC_TIMEOUT);
-	hda_dump_regs(HOST_IN, STREAM_ID, "host reset");
+	hda_dump_regs(HOST_IN, HDA_REGBLOCK_SIZE, STREAM_ID, "host reset");
 
-	intel_adsp_hda_disable(HDA_HOST_IN_BASE, STREAM_ID);
-	hda_dump_regs(HOST_IN, STREAM_ID, "dsp disable");
+	intel_adsp_hda_disable(HDA_HOST_IN_BASE, HDA_REGBLOCK_SIZE, STREAM_ID);
+	hda_dump_regs(HOST_IN, HDA_REGBLOCK_SIZE, STREAM_ID, "dsp disable");
 }
 
 /*
@@ -127,25 +130,26 @@ void test_hda_host_out_smoke(void)
 
 	printk("Using buffer of size %d at addr %p\n", HDA_BUF_SIZE, hda_buf);
 
-	intel_adsp_hda_init(HDA_HOST_OUT_BASE, STREAM_ID);
-	hda_dump_regs(HOST_OUT, STREAM_ID, "dsp init");
+	intel_adsp_hda_init(HDA_HOST_OUT_BASE, HDA_REGBLOCK_SIZE, STREAM_ID);
+	hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, STREAM_ID, "dsp init");
 
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_RESET, (STREAM_ID + 7), IPC_TIMEOUT);
-	hda_dump_regs(HOST_OUT, STREAM_ID, "host reset");
+	hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, STREAM_ID, "host reset");
 
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_CONFIG,
 		    (STREAM_ID + 7) | (HDA_BUF_SIZE << 8), IPC_TIMEOUT);
-	hda_dump_regs(HOST_OUT, STREAM_ID, "host config");
+	hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, STREAM_ID, "host config");
 
-	res = intel_adsp_hda_set_buffer(HDA_HOST_OUT_BASE, STREAM_ID, hda_buf, HDA_BUF_SIZE);
-	hda_dump_regs(HOST_OUT, STREAM_ID, "dsp set buffer");
+	res = intel_adsp_hda_set_buffer(HDA_HOST_OUT_BASE, HDA_REGBLOCK_SIZE, STREAM_ID,
+		hda_buf, HDA_BUF_SIZE);
+	hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, STREAM_ID, "dsp set buffer");
 	zassert_ok(res, "Expected set buffer to succeed");
 
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_START, (STREAM_ID + 7), IPC_TIMEOUT);
-	hda_dump_regs(HOST_OUT, STREAM_ID, "host start");
+	hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, STREAM_ID, "host start");
 
-	intel_adsp_hda_enable(HDA_HOST_OUT_BASE, STREAM_ID);
-	hda_dump_regs(HOST_OUT, STREAM_ID, "dsp enable");
+	intel_adsp_hda_enable(HDA_HOST_OUT_BASE, HDA_REGBLOCK_SIZE, STREAM_ID);
+	hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, STREAM_ID, "dsp enable");
 
 	for (uint32_t i = 0; i < TRANSFER_COUNT; i++) {
 		for (int j = 0; j < HDA_BUF_SIZE; j++) {
@@ -154,11 +158,12 @@ void test_hda_host_out_smoke(void)
 
 		hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_SEND,
 			    (STREAM_ID + 7) | (HDA_BUF_SIZE << 8), IPC_TIMEOUT);
-		hda_dump_regs(HOST_OUT, STREAM_ID, "host send");
+		hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, STREAM_ID, "host send");
 
 
-		WAIT_FOR(intel_adsp_hda_buf_full(HDA_HOST_OUT_BASE, STREAM_ID), 10000, k_msleep(1));
-		hda_dump_regs(HOST_OUT, STREAM_ID, "dsp wait for full");
+		WAIT_FOR(intel_adsp_hda_buf_full(HDA_HOST_OUT_BASE, HDA_REGBLOCK_SIZE, STREAM_ID),
+			10000, k_msleep(1));
+		hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, STREAM_ID, "dsp wait for full");
 
 #if (IS_ENABLED(CONFIG_KERNEL_COHERENCE))
 		zassert_true(arch_mem_coherent(hda_buf), "Buffer is unexpectedly incoherent!");
@@ -179,15 +184,16 @@ void test_hda_host_out_smoke(void)
 		}
 		zassert_true(is_ramp, "Expected data to be a ramp");
 
-		intel_adsp_hda_host_commit(HDA_HOST_OUT_BASE, STREAM_ID, HDA_BUF_SIZE);
-		hda_dump_regs(HOST_OUT, STREAM_ID, "dsp inc pos");
+		intel_adsp_hda_host_commit(HDA_HOST_OUT_BASE, HDA_REGBLOCK_SIZE, STREAM_ID,
+			HDA_BUF_SIZE);
+		hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, STREAM_ID, "dsp inc pos");
 
 	}
 
 	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_RESET, (STREAM_ID + 7),
 		    IPC_TIMEOUT);
-	hda_dump_regs(HOST_OUT, STREAM_ID, "host reset");
+	hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, STREAM_ID, "host reset");
 
-	intel_adsp_hda_disable(HDA_HOST_OUT_BASE, STREAM_ID);
-	hda_dump_regs(HOST_OUT, STREAM_ID, "dsp disable");
+	intel_adsp_hda_disable(HDA_HOST_OUT_BASE, HDA_REGBLOCK_SIZE, STREAM_ID);
+	hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, STREAM_ID, "dsp disable");
 }
