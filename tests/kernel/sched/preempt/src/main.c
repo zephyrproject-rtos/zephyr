@@ -311,7 +311,7 @@ void worker(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sched_tests
  */
-void test_preempt(void)
+ZTEST(suite_preempt, test_preempt)
 {
 	int priority;
 
@@ -363,9 +363,4 @@ void test_preempt(void)
 
 }
 
-void test_main(void)
-{
-	ztest_test_suite(suite_preempt,
-			 ztest_unit_test(test_preempt));
-	ztest_run_test_suite(suite_preempt);
-}
+ZTEST_SUITE(suite_preempt, NULL, NULL, NULL, NULL, NULL);
