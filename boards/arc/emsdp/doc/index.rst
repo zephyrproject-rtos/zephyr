@@ -13,7 +13,7 @@ a wide range of ultra-low power embedded applications such as IoT, sensor fusion
 and voice applications.
 
 .. image:: ./emsdp.jpg
-   :width: 442px
+   :width: 650px
    :align: center
    :alt: DesignWare(R) ARC(R) EM Software Development Platform (synopsys.com)
 
