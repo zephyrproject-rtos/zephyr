@@ -5,7 +5,7 @@ sample:
 common:
     harness: remote
 tests:
-    sample.boards.nrf.nrf53_sync_rtc:
+    sample.boards.nrf.nrf53_sync_rtc.net:
         platform_allow: nrf5340dk_nrf5340_cpunet
         integration_platforms:
           - nrf5340dk_nrf5340_cpunet

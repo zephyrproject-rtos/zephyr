@@ -3,7 +3,7 @@ sample:
         the lpcxpresso54114 using a mailbox.
     name: IPM MCUX Mailbox Sample
 tests:
-    sample.ipm.ipm_mcux:
+    sample.ipm.ipm_mcux.remote:
         platform_allow: lpcxpresso54114_m0 lpcxpresso55s69_cpu1
         tags: ipm
         harness: remote
