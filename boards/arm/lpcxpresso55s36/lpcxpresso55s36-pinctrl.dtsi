@@ -57,4 +57,53 @@
 		};
 	};
 
+	pinmux_flexpwm0_pwm0: pinmux_flexpwm0_pwm0 {
+		group0 {
+			pinmux = <PWM0_A0_PIO1_20>,
+				<PWM0_B0_PIO1_17>;
+			slew-rate = "standard";
+		};
+	};
+
+	pinmux_flexpwm0_pwm1: pinmux_flexpwm0_pwm1 {
+		group0 {
+			pinmux = <PWM0_A1_PIO1_6>,
+				<PWM0_B1_PIO1_22>;
+			slew-rate = "standard";
+		};
+	};
+
+	pinmux_flexpwm0_pwm2: pinmux_flexpwm0_pwm2 {
+		group0 {
+			pinmux = <PWM0_A2_PIO1_8>,
+				<PWM0_B2_PIO1_4>;
+			slew-rate = "standard";
+		};
+	};
+
+	pinmux_flexpwm1_pwm0: pinmux_flexpwm1_pwm0 {
+		group0 {
+			pinmux = <PWM1_A0_PIO1_21>,
+				<PWM1_B0_PIO0_3>;
+			slew-rate = "standard";
+		};
+	};
+
+	pinmux_flexpwm1_pwm1: pinmux_flexpwm1_pwm1 {
+		group0 {
+			pinmux = <PWM1_A1_PIO1_23>,
+				<PWM1_B1_PIO0_21>;
+			slew-rate = "standard";
+		};
+	};
+
+	pinmux_flexpwm1_pwm2: pinmux_flexpwm1_pwm2 {
+		group0 {
+			pinmux = <PWM1_A2_PIO1_25>,
+				<PWM1_B2_PIO1_31>;
+			slew-rate = "standard";
+		};
+	};
+
+
 };
