@@ -171,7 +171,7 @@ void join_participant_threads(void)
 	JOIN_PARTICIPANT_THREAD(coop_thread2_id);
 }
 
-void test_preempt_metairq(void)
+ZTEST(suite_preempt_metairq, test_preempt_metairq)
 {
 	create_participant_threads();
 	start_participant_threads();
@@ -199,9 +199,4 @@ void test_preempt_metairq(void)
 	join_participant_threads();
 }
 
-void test_main(void)
-{
-	ztest_test_suite(suite_preempt_metairq,
-			 ztest_unit_test(test_preempt_metairq));
-	ztest_run_test_suite(suite_preempt_metairq);
-}
+ZTEST_SUITE(suite_preempt_metairq, NULL, NULL, NULL, NULL, NULL);
