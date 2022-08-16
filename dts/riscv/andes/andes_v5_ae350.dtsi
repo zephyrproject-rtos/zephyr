@@ -204,8 +204,8 @@
 					       &CPU2_intc 7 &CPU3_intc 7>;
 		};
 
-		smu: smu@f0100000 {
-			compatible = "andestech,atcsmu100";
+		syscon: syscon@f0100000 {
+			compatible = "syscon";
 			reg = <0xf0100000 0x1000>;
 			status = "disabled";
 		};
