@@ -8,13 +8,6 @@ Overview
 
 The LEON3 QEMU board configuration is used to emulate the LEON3 processor.
 
-.. figure:: qemu_leon3.png
-   :width: 600px
-   :align: center
-   :alt: Qemu
-
-   Qemu (Credit: qemu.org)
-
 Programming and Debugging
 *************************
 
