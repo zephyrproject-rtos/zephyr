@@ -7,9 +7,15 @@ description: |
 
 compatible: "st,lsm6dsl"
 
-include: spi-device.yaml
+include: [sensor-device.yaml, spi-device.yaml]
 
 properties:
+    vendor:
+      default: "STMicroelectronics"
+
+    model:
+      default: "LSM6DSL"
+
     irq-gpios:
       # This signal is active high when produced by the sensor
       type: phandle-array

@@ -1,7 +1,15 @@
 # Copyright (c) 2021 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
+include: sensor-device.yaml
+
 properties:
+    vendor:
+      default: "STMicroelectronics"
+
+    model:
+      default: "LIS2DS12"
+
     irq-gpios:
       type: phandle-array
       required: false

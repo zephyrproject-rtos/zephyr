@@ -6,9 +6,15 @@ description: |
 
 compatible: "st,iis2dh"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
+    vendor:
+      default: "STMicroelectronics"
+
+    model:
+      default: "IIS2DH"
+
     drdy-gpios:
       type: phandle-array
       required: false

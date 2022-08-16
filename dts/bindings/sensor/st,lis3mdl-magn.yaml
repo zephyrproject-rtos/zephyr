@@ -5,9 +5,15 @@ description: STMicroelectronics LIS3MDL magnetometer
 
 compatible: "st,lis3mdl-magn"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
+    vendor:
+      default: "STMicroelectronics"
+
+    model:
+      default: "LIS3MDL-MAGN"
+
     irq-gpios:
       required: false
       type: phandle-array

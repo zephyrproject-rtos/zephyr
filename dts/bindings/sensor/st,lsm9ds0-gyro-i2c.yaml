@@ -5,9 +5,15 @@ description: STMicroelectronics LSM9DS0-GYRO 3-axis gyro
 
 compatible: "st,lsm9ds0-gyro"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
+    vendor:
+      default: "STMicroelectronics"
+
+    model:
+      default: "LSM9DS0-GYRO"
+
     irq-gpios:
       type: phandle-array
       required: false

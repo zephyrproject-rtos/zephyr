@@ -6,9 +6,15 @@ description: |
 
 compatible: "st,iis3dhhc"
 
-include: spi-device.yaml
+include: [sensor-device.yaml, spi-device.yaml]
 
 properties:
+    vendor:
+      default: "STMicroelectronics"
+
+    model:
+      default: "IIS3DHHC"
+
     irq-gpios:
       type: phandle-array
       required: false

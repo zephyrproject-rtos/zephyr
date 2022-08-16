@@ -5,4 +5,11 @@ description: STMicroelectronics LPS25HB pressure sensor
 
 compatible: "st,lps25hb-press"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+    vendor:
+      default: "STMicroelectronics"
+
+    model:
+      default: "LPS25HB-PRESS"
