@@ -30,6 +30,7 @@
 		sw0 = &btn_wk;
 		sw1 = &btn_usr;
 		usart-0 = &flexcomm0;
+		pwm-0 = &flexpwm1_pwm0;
 	};
 
 	leds {
@@ -144,4 +145,10 @@
 			reg = <0x0002d800 DT_SIZE_K(64)>;
 		};
 	};
+};
+
+&flexpwm1_pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm1_pwm0>;
+	pinctrl-names = "default";
 };
