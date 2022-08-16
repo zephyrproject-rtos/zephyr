@@ -155,7 +155,7 @@
 		hda_link_out: dma@2400 {
 			compatible = "intel,adsp-hda-link-out";
 			#dma-cells = <1>;
-			reg = <0x00002400 0x40>;
+			reg = <0x00002400 0x20>;
 			dma-channels = <2>;
 			dma-buf-alignment = <128>;
 
@@ -165,7 +165,7 @@
 		hda_link_in: dma@2600 {
 			compatible = "intel,adsp-hda-link-in";
 			#dma-cells = <1>;
-			reg = <0x00002600 0x40>;
+			reg = <0x00002600 0x20>;
 			dma-channels = <2>;
 			dma-buf-alignment = <128>;
 
