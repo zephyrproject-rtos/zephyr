@@ -1326,6 +1326,7 @@ static inline int i3c_write(struct i3c_device_desc *target,
 	msg.buf = (uint8_t *)buf;
 	msg.len = num_bytes;
 	msg.flags = I3C_MSG_WRITE | I3C_MSG_STOP;
+	msg.hdr_mode = 0;
 
 	return i3c_transfer(target, &msg, 1);
 }
@@ -1351,6 +1352,7 @@ static inline int i3c_read(struct i3c_device_desc *target,
 	msg.buf = buf;
 	msg.len = num_bytes;
 	msg.flags = I3C_MSG_READ | I3C_MSG_STOP;
+	msg.hdr_mode = 0;
 
 	return i3c_transfer(target, &msg, 1);
 }
@@ -1537,6 +1539,56 @@ static inline int i3c_reg_update_byte(struct i3c_device_desc *target,
 	}
 
 	return i3c_reg_write_byte(target, reg_addr, new_value);
+}
+
+/**
+ * @brief Write a set amount of data to an I3C target device.
+ *
+ * This routine writes a set amount of data synchronously.
+ *
+ * @param target I3C target device descriptor.
+ * @param buf Memory pool from which the data is transferred.
+ * @param num_bytes Number of bytes to write.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error.
+ */
+static inline int i3c_ddr_write(struct i3c_device_desc *target,
+			    const uint8_t *buf, uint32_t num_bytes)
+{
+	struct i3c_msg msg;
+
+	msg.buf = (uint8_t *)buf;
+	msg.len = num_bytes;
+	msg.flags = I3C_MSG_WRITE | I3C_MSG_STOP | I3C_MSG_HDR | I3C_MSG_HDR_DDR;
+	msg.hdr_mode = 1;
+
+	return i3c_transfer(target, &msg, 1);
+}
+
+/**
+ * @brief Read a set amount of data from an I3C target device.
+ *
+ * This routine reads a set amount of data synchronously.
+ *
+ * @param target I3C target device descriptor.
+ * @param buf Memory pool that stores the retrieved data.
+ * @param num_bytes Number of bytes to read.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error.
+ */
+static inline int i3c_ddr_read(struct i3c_device_desc *target,
+			   uint8_t *buf, uint32_t num_bytes)
+{
+	struct i3c_msg msg;
+
+	msg.buf = buf;
+	msg.len = num_bytes;
+	msg.flags = I3C_MSG_READ | I3C_MSG_STOP | I3C_MSG_HDR | I3C_MSG_HDR_DDR;
+	msg.hdr_mode = 1;
+
+	return i3c_transfer(target, &msg, 1);
 }
 
 /**
