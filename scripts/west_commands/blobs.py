@@ -67,8 +67,6 @@ class Blobs(WestCommand):
                             help='''Select the sub-command to execute.
                             Currently only list and fetch are supported.''')
 
-        # Remember to update west-completion.bash if you add or remove
-        # flags
         parser.add_argument('-f', '--format', default=default_fmt,
                             help='''Format string to use to list each blob;
                                     see FORMAT STRINGS below.''')
@@ -78,8 +76,6 @@ class Blobs(WestCommand):
                             help='''a list of modules; only blobs whose
                             names are on this list will be taken into account
                             by the sub-command. Invoke multiple times''')
-        parser.add_argument('-a', '--all', action='store_true',
-                            help='use all modules.')
 
         return parser
 
@@ -104,7 +100,7 @@ class Blobs(WestCommand):
 
             # Filter by module
             module_name = module.meta.get('name', None)
-            if not args.all and module_name not in modules:
+            if len(modules) and module_name not in modules:
                 continue
 
             blobs_path = Path(module.project) / zephyr_module.MODULE_BLOBS_PATH
