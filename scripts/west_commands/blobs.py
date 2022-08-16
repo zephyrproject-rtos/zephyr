@@ -71,11 +71,10 @@ class Blobs(WestCommand):
                             help='''Format string to use to list each blob;
                                     see FORMAT STRINGS below.''')
 
-        parser.add_argument('-m', '--modules', type=str, action='append',
-                            default=[],
-                            help='''a list of modules; only blobs whose
+        parser.add_argument('modules', metavar='MODULE', nargs='*',
+                            help='''modules to operate on; only blobs whose
                             names are on this list will be taken into account
-                            by the sub-command. Invoke multiple times''')
+                            by the sub-commands.''')
 
         return parser
 
