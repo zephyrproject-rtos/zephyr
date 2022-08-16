@@ -11,10 +11,8 @@ that match the SoC's pin names.
 For practical use, you'll need to add additional components
 and circuits using a breadboard, for example.
 
-.. image:: img/stm32f030_demo.png
-   :width: 275px
+.. image:: img/stm32f030_demo.jpg
    :align: center
-   :height: 484px
    :alt: STM32F030 DEMO BOARD
 
 More information about the board can be found at the `stm32-base.org website`_.

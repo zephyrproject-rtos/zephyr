@@ -11,8 +11,7 @@ high-performance feature set in low-cost LQFP packages, further simplifying
 board design and layout for customers. The i.MX RT1024 runs on the Arm®
 Cortex®-M7 core at 500 MHz.
 
-.. image:: ./mimxrt1024_evk.jpg
-   :width: 720px
+.. image:: mimxrt1024_evk.jpg
    :align: center
    :alt: MIMXRT1024-EVK
 

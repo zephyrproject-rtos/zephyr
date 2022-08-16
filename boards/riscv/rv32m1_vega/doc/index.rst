@@ -13,7 +13,7 @@ on-die XIP flash, and a full complement of peripherals, including a
 2.4 GHz multi-protocol radio. It also has built-in sensors and
 Arduino-style expansion connectors.
 
-.. figure:: rv32m1_vega.png
+.. figure:: rv32m1_vega.jpg
    :align: center
    :alt: RV32M1-VEGA
 
@@ -526,7 +526,6 @@ first make sure you're booting the right core.
 
   .. figure:: ri5cy_boot.jpg
      :align: center
-     :width: 4in
      :alt: Reset button is pressed
 
   Now quit the telnet session in this terminal and exit OpenOCD in the

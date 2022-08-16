@@ -80,13 +80,13 @@ Push buttons
 More details
 ------------
 
-.. figure:: img/vbluno51_nordic_pinout.png
+.. figure:: img/vbluno51_nordic_pinout.jpg
      :align: center
      :alt: nRF51_VBLUno51 Pinout
 
      nrf51_vbluno51 Pinout
 
-.. figure:: img/vbluno51_frizting.png
+.. figure:: img/vbluno51_frizting.jpg
      :align: center
      :alt: nRF51_VBLUno51 Fritzing part
 

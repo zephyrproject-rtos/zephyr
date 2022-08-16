@@ -36,9 +36,7 @@ started quickly. Here are some highlights of the STM32F3DISCOVERY board:
    Recent PCB revisions (E and newer) are shipped with I3G4250D and LSM303AGR.
 
 .. image:: img/stm32f3_disco.jpg
-     :width: 350px
      :align: center
-     :height: 531px
      :alt: STM32F3DISCOVERY
 
 More information about the board can be found at the

@@ -50,7 +50,6 @@ and the following devices:
 * :abbr:`HL7800 (Sierra Wireless HL7800 LTE-M1/NB-IoT modem)`
 
 .. figure:: img/pinnacle_100_dvk.jpg
-     :width: 1000px
      :align: center
      :alt: Pinnacle 100 DVK
 

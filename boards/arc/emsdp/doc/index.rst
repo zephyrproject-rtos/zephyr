@@ -12,8 +12,7 @@ to accelerate software development and debug of ARC EM processors and subsystems
 a wide range of ultra-low power embedded applications such as IoT, sensor fusion,
 and voice applications.
 
-.. image:: ./emsdp.jpg
-   :width: 650px
+.. image:: emsdp.jpg
    :align: center
    :alt: DesignWare(R) ARC(R) EM Software Development Platform (synopsys.com)
 

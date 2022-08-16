@@ -36,9 +36,7 @@ and high-speed connectivity features. Important board features include:
 - Ethernet connector compliant with IEEE-802.3-2002
 
 .. image:: img/stm32f746g_disco.jpg
-     :width: 500px
      :align: center
-     :height: 357px
      :alt: STM32F746G-DISCO
 
 More information about the board can be found at the `32F746G-DISCO website`_.

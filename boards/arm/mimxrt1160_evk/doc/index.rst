@@ -11,8 +11,7 @@ Cortex-M4 at 240 MHz. The i.MX RT1160 MCU offers support over a wide
 temperature range and is qualified for consumer, industrial and automotive
 markets.
 
-.. image:: ./mimxrt1160_evk.jpg
-   :width: 600px
+.. image:: mimxrt1160_evk.jpg
    :align: center
    :alt: MIMXRT1160-EVK
 

@@ -16,8 +16,7 @@ magnetometer sensors, Bluetooth and USB connectivity, a display consisting of
 USB or an external battery pack. The device inputs and outputs are through five
 ring connectors that are part of the 23-pin edge connector.
 
-.. figure:: img/bbc_microbit2.png
-     :width: 442px
+.. figure:: img/bbc_microbit2.jpg
      :align: center
      :alt: BBC Micro Bit V2
 

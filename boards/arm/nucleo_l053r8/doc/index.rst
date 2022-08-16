@@ -21,8 +21,6 @@ The STM32 Nucleo board comes with the STM32 comprehensive software HAL library t
 with various packaged software examples.
 
 .. image:: img/nucleo_l053r8.jpg
-   :width: 500px
-   :height: 367px
    :align: center
    :alt: Nucleo L053R8
 
@@ -110,10 +108,8 @@ capable except for analog inputs.
 
 Board connectors:
 -----------------
-.. image:: img/nucleo_l053r8_connectors.png
-   :width: 800px
+.. image:: img/nucleo_l053r8_connectors.jpg
    :align: center
-   :height: 619px
    :alt: Nucleo L053R8 connectors
 
 Default Zephyr Peripheral Mapping:

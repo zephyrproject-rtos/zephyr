@@ -28,8 +28,6 @@ Here are some highlights of the Nucleo F303RE board:
 - Two push-buttons: USER and RESET
 
 .. image:: img/nucleo_f303re.jpg
-   :width: 500px
-   :height: 367px
    :align: center
    :alt: Nucleo F303RE
 
@@ -112,10 +110,8 @@ responsible for pin muxing, input/output, pull-up, etc.
 
 Board connectors:
 -----------------
-.. image:: img/nucleo_connectors.png
-   :width: 800px
+.. image:: img/nucleo_connectors.jpg
    :align: center
-   :height: 619px
    :alt: Nucleo F303RE connectors
 
 Default Zephyr Peripheral Mapping:

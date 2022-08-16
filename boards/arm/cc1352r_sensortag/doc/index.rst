@@ -12,7 +12,6 @@ development kit for the SimpleLink |trade| multi-Standard CC1352R wireless MCU.
 See the `TI CC1352R SensorTag Product Page`_ for details.
 
 .. figure:: img/cc1352r_sensortag.jpg
-   :width: 400px
    :align: center
    :alt: TI CC1352R SensorTag
 
@@ -146,7 +145,6 @@ to use it in tandem with a ``CC1352R LaunchPad``, making use of the integrated
 #. Connect your XDS110 LaunchPad to your PC!
 
 .. figure:: img/launchpad-lpstk-debug.jpg
-   :width: 400px
    :align: center
    :alt: Debugging the TI CC1352R SensorTag
 
