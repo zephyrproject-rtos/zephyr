@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 NXP
+ * Copyright 2021-2022 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,10 +19,13 @@
 		zephyr,sram = &sram0;
 	};
 
-	uartclk: apb-pclk {
-		compatible = "fixed-clock";
-		clock-frequency = <24000000>;
-		#clock-cells = <0>;
+	cpus {
+		cpu@0 {
+			status = "disabled";
+		};
+		cpu@1 {
+			status = "disabled";
+		};
 	};
 
 	psci {
@@ -31,14 +34,14 @@
 	};
 
 	sram0: memory@c0000000 {
-		reg = <0xc0000000 DT_SIZE_M(128)>;
+		reg = <0xc0000000 DT_SIZE_M(1)>;
 	};
 
 };
 
 &uart4 {
-	clocks = <&uartclk>;
 	current-speed = <115200>;
 	pinctrl-0 = <&uart4_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
