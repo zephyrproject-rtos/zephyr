@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 NXP
+ * Copyright 2021-2022 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,30 +13,33 @@
 	model = "NXP i.MX8MP A53";
 	compatible = "fsl,imx8mp";
 
-	psci {
-		compatible = "arm,psci-0.2";
-		method = "smc";
+	chosen {
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+		zephyr,sram = &sram0;
 	};
 
-	uartclk: apb-pclk {
-		compatible = "fixed-clock";
-		clock-frequency = <DT_FREQ_M(24)>;
-		#clock-cells = <0>;
-		status = "okay";
+	cpus {
+		cpu@0 {
+			status = "disabled";
+		};
+		cpu@1 {
+			status = "disabled";
+		};
+		cpu@2 {
+			status = "disabled";
+		};
 	};
 
-	sram0: memory@40000000 {
-		reg = <0x40000000 DT_SIZE_M(128)>;
+	sram0: memory@c0000000 {
+		reg = <0xc0000000 DT_SIZE_M(1)>;
 	};
-};
-
-&uart2 {
-	clocks = <&uartclk>;
-	current-speed = <115200>;
-	pinctrl-0 = <&uart2_default>;
-	pinctrl-names = "default";
 };
 
 &uart4 {
-	clocks = <&uartclk>;
+	status = "okay";
+	current-speed = <115200>;
+	clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
 };
