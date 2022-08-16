@@ -18,6 +18,11 @@
 #include "fsl_power.h"
 #include "fsl_clock.h"
 
+#if CONFIG_USB_DC_NXP_LPCIP3511
+#include "usb_phy.h"
+#include "usb_dc_mcux.h"
+#endif
+
 /* Board System oscillator settling time in us */
 #define BOARD_SYSOSC_SETTLING_US                        100U
 /* Board xtal frequency in Hz */
@@ -67,6 +72,13 @@ const clock_frg_clk_config_t g_frg12Config_clock_init = {
 	.mult = 167
 };
 
+#if CONFIG_USB_DC_NXP_LPCIP3511
+/* USB PHY condfiguration */
+#define BOARD_USB_PHY_D_CAL     (0x0CU)
+#define BOARD_USB_PHY_TXCAL45DP (0x06U)
+#define BOARD_USB_PHY_TXCAL45DM (0x06U)
+#endif
+
 /* System clock frequency. */
 extern uint32_t SystemCoreClock;
 
@@ -115,6 +127,67 @@ __imx_boot_ivt_section void (* const image_vector_table[])(void)  = {
 #endif
 };
 #endif /* CONFIG_NXP_IMX_RT5XX_BOOT_HEADER */
+
+#if CONFIG_USB_DC_NXP_LPCIP3511
+
+static void usb_device_clock_init(void)
+{
+	uint8_t usbClockDiv = 1;
+	uint32_t usbClockFreq;
+	usb_phy_config_struct_t phyConfig = {
+		BOARD_USB_PHY_D_CAL,
+		BOARD_USB_PHY_TXCAL45DP,
+		BOARD_USB_PHY_TXCAL45DM,
+	};
+
+	/* Make sure USDHC ram buffer and usb1 phy has power up */
+	POWER_DisablePD(kPDRUNCFG_APD_USBHS_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PPD_USBHS_SRAM);
+	POWER_DisablePD(kPDRUNCFG_LP_HSPAD_FSPI0_VDET);
+	POWER_ApplyPD();
+
+	RESET_PeripheralReset(kUSBHS_PHY_RST_SHIFT_RSTn);
+	RESET_PeripheralReset(kUSBHS_DEVICE_RST_SHIFT_RSTn);
+	RESET_PeripheralReset(kUSBHS_HOST_RST_SHIFT_RSTn);
+	RESET_PeripheralReset(kUSBHS_SRAM_RST_SHIFT_RSTn);
+
+	/* enable usb ip clock */
+	CLOCK_EnableUsbHs0DeviceClock(kOSC_CLK_to_USB_CLK, usbClockDiv);
+	/* save usb ip clock freq*/
+	usbClockFreq = g_xtalFreq / usbClockDiv;
+	CLOCK_SetClkDiv(kCLOCK_DivPfc1Clk, 4);
+	/* enable usb ram clock */
+	CLOCK_EnableClock(kCLOCK_UsbhsSram);
+	/* enable USB PHY PLL clock, the phy bus clock (480MHz) source is same with USB IP */
+	CLOCK_EnableUsbHs0PhyPllClock(kOSC_CLK_to_USB_CLK, usbClockFreq);
+
+	/* USB PHY initialization */
+	USB_EhciPhyInit(kUSB_ControllerLpcIp3511Hs0, BOARD_XTAL_SYS_CLK_HZ, &phyConfig);
+
+#if defined(FSL_FEATURE_USBHSD_USB_RAM) && (FSL_FEATURE_USBHSD_USB_RAM)
+	for (int i = 0; i < FSL_FEATURE_USBHSD_USB_RAM; i++) {
+		((uint8_t *)FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS)[i] = 0x00U;
+	}
+#endif
+
+	/* The following code should run after phy initialization and should wait
+	 * some microseconds to make sure utmi clock valid
+	 */
+	/* enable usb1 host clock */
+	CLOCK_EnableClock(kCLOCK_UsbhsHost);
+	/*  Wait until host_needclk de-asserts */
+	while (SYSCTL0->USB0CLKSTAT & SYSCTL0_USB0CLKSTAT_HOST_NEED_CLKST_MASK) {
+		__ASM("nop");
+	}
+	/* According to reference mannual, device mode setting has to be set by access
+	 * usb host register
+	 */
+	USBHSH->PORTMODE |= USBHSH_PORTMODE_DEV_ENABLE_MASK;
+	/* disable usb1 host clock */
+	CLOCK_DisableClock(kCLOCK_UsbhsHost);
+}
+
+#endif
 
 void z_arm_platform_init(void)
 {
@@ -189,6 +262,9 @@ void clock_init(void)
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay)
 	/* Switch FLEXCOMM0 to FRG */
 	CLOCK_AttachClk(kFRG_to_FLEXCOMM0);
+#endif
+#if CONFIG_USB_DC_NXP_LPCIP3511
+	usb_device_clock_init();
 #endif
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay)
 	/* Switch FLEXCOMM4 to FRO_DIV4 */

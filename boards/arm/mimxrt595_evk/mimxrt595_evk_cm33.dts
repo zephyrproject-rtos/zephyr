@@ -205,6 +205,10 @@ arduino_serial: &flexcomm12 {
 	status = "okay";
 };
 
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
 &ctimer0 {
 	status = "okay";
 };
