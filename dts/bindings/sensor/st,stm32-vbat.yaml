@@ -3,7 +3,7 @@
 
 description: STM32 family VBAT node
 
-include: base.yaml
+include: sensor-device.yaml
 
 compatible: "st,stm32-vbat"
 

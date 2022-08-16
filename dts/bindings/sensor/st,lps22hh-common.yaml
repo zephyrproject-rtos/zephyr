@@ -1,6 +1,8 @@
 # Copyright (c) 2021 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
+include: sensor-device.yaml
+
 properties:
     drdy-gpios:
       type: phandle-array
