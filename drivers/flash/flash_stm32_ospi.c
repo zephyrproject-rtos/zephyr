@@ -819,7 +819,10 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 						(dev_cfg->data_rate == OSPI_DTR_TRANSFER)
 						? HAL_OSPI_ADDRESS_DTR_ENABLE
 						: HAL_OSPI_ADDRESS_DTR_DISABLE;
-					cmd_erase.AddressSize = stm32_ospi_hal_address_size(dev);
+					cmd_erase.AddressSize =
+						(dev_cfg->data_mode == OSPI_OPI_MODE)
+						? stm32_ospi_hal_address_size(dev)
+						: HAL_OSPI_ADDRESS_24_BITS;
 					cmd_erase.Address = addr;
 				}
 			}
