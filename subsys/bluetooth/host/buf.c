@@ -38,11 +38,9 @@
 NET_BUF_POOL_FIXED_DEFINE(num_complete_pool, 1, NUM_COMLETE_EVENT_SIZE, 8, NULL);
 #endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
 
-#if defined(CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT)
 NET_BUF_POOL_FIXED_DEFINE(discardable_pool, CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT,
 			  BT_BUF_EVT_SIZE(CONFIG_BT_BUF_EVT_DISCARDABLE_SIZE), 8,
 			  NULL);
-#endif /* CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT */
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 NET_BUF_POOL_DEFINE(acl_in_pool, CONFIG_BT_BUF_ACL_RX_COUNT,
@@ -128,7 +126,6 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
 	case BT_HCI_EVT_CMD_STATUS:
 		return bt_buf_get_cmd_complete(timeout);
 	default:
-#if defined(CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT)
 		if (discardable) {
 			struct net_buf *buf;
 
@@ -140,7 +137,6 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
 
 			return buf;
 		}
-#endif /* CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT */
 
 		return bt_buf_get_rx(BT_BUF_EVT, timeout);
 	}
