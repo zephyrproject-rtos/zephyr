@@ -25,8 +25,6 @@ some highlights of the Nucleo G071RB board:
 - Two push-buttons: USER and RESET
 
 .. image:: img/nucleo_g071rb.jpg
-   :width: 500px
-   :height: 367px
    :align: center
    :alt: Nucleo G071RB
 

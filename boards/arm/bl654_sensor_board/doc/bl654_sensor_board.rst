@@ -27,15 +27,13 @@ This sensor board has the following features:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/bl654_sensor_board.png
-     :width: 467px
+.. figure:: img/bl654_sensor_board.jpg
      :align: center
      :alt: BL654 Sensor Board front and back
 
      BL654 Sensor Board front and back
 
-.. figure:: img/bl654_sensor_board_usb_swd_programmer.png
-     :width: 302px
+.. figure:: img/bl654_sensor_board_usb_swd_programmer.jpg
      :align: center
      :alt: BL654 Sensor Board connected to USB-SWD Programmer (UART and SWD access)
 

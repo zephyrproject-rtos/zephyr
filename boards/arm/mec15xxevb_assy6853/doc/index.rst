@@ -15,8 +15,7 @@ been updated requiring a new SPI image tool. MEC1501 and MEC152x SPI image
 formats are not compatible with each other. Evaluation and cpu boards are
 compatible.
 
-.. image:: ./mec15xxevb_assy6853.png
-     :width: 600px
+.. image:: mec15xxevb_assy6853.jpg
      :align: center
      :alt: MEC15XX EVB ASSY 6853
 
@@ -196,8 +195,7 @@ PVT SPI, SHD SPI and LED0-2 respectively.
 To receive UART2 serial output, please refer to the picture below
 to make sure that JP9 configured for UART2 output.
 
-.. image:: ./mec15xxevb_assy6853_jp9_1.png
-     :width: 300px
+.. image:: mec15xxevb_assy6853_jp9_1.jpg
      :align: center
      :alt: JP9 header Assy6853
 
@@ -287,8 +285,7 @@ Wiring
 ========
 #. Connect the SPI Dongle ASSY 6791 to ``J44`` in the EVB.
 
-   .. image:: ./spidongle_assy6791_view1.png
-        :width: 400px
+   .. image:: spidongle_assy6791_view1.jpg
         :align: center
         :alt: SPI DONGLE ASSY 6791 Connected
 
@@ -300,21 +297,18 @@ Wiring
       :align: center
 
       * -
-          .. image:: spidongle_assy6791.png
-             :width: 300px
+          .. image:: spidongle_assy6791.jpg
              :align: center
              :alt: SPI DONGLE ASSY 6791
 
         -
-          .. image:: spidongle_assy6791_view2.png
-             :width: 300px
+          .. image:: spidongle_assy6791_view2.jpg
              :align: center
              :alt: SPI DONGLE ASSY 6791 view 2
 
           |
 
-          .. image:: dediprog_connector_2.png
-             :width: 300px
+          .. image:: dediprog_connector_2.jpg
              :align: center
              :alt: SPI DONGLE ASSY 6791 Connected
 
@@ -346,15 +340,13 @@ Wiring
 #. Apply power to the board via a micro-USB cable.
    Configure this option by using a jumper between ``JP88 7-8``.
 
-   .. image:: ./jp88_power_options.png
-        :width: 400px
+   .. image:: jp88_power_options.jpg
         :align: center
         :alt: SPI DONGLE ASSY 6791 Connected
 
 #. Final wiring for the board should look like this:
 
-   .. image:: ./mec_board_setup.png
-        :width: 600px
+   .. image:: mec_board_setup.jpg
         :align: center
         :alt: SPI DONGLE ASSY 6791 Connected
 
@@ -395,8 +387,7 @@ Flashing
    .. note:: When west process started press Reset button and do not release it
     till the whole west process will not be finished successfully.
 
-    .. image:: ./reset_button_1.png
-         :width: 400px
+    .. image:: reset_button_1.jpg
          :align: center
          :alt: SPI DONGLE ASSY 6791 Connected
 

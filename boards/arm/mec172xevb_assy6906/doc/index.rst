@@ -11,8 +11,7 @@ Microchip MEC172X series microcontrollers. This board needs to be mated with
 part number MEC172x 144WFBGA SOLDER DC ASSY 6914 (cpu board) in order to operate.
 MEC172x and MEC152x SPI image formats are not compatible with each other.
 
-.. image:: ./mec172xevb_assy6906.png
-     :width: 600px
+.. image:: mec172xevb_assy6906.jpg
      :align: center
      :alt: MEC172X EVB ASSY 6906
 
@@ -314,8 +313,7 @@ Wiring
 
 #. Connect the SPI Dongle ASSY 6791 to ``J34`` in the EVB.
 
-   .. image:: ./spidongle_assy6791.png
-        :width: 337px
+   .. image:: spidongle_assy6791.jpg
         :align: center
         :alt: SPI DONGLE ASSY 6791 Connected
 
@@ -323,8 +321,7 @@ Wiring
    ``U3``. Make sure that your programmer's offset is 0x0.
    For programming you can use Dediprog SF100 or a similar tool for flashing SPI chips.
 
-   .. image:: ./dediprog_connector.png
-        :width: 800px
+   .. image:: dediprog_connector.jpg
         :align: center
         :alt: SF100 Connected
 
@@ -356,8 +353,7 @@ Wiring
 #. Apply power to the board via a micro-USB cable.
    Configure this option by using a jumper between ``JP30 7-8``.
 
-   .. image:: ./jp30_power_options.png
-        :width: 600px
+   .. image:: jp30_power_options.jpg
         :align: center
         :alt: Power Connection
 
@@ -400,8 +396,7 @@ Flashing
    .. note:: When west process started press Reset button ``S2`` and do not release it
     till the whole west process will not be finished successfully.
 
-   .. image:: ./Reset_Button.png
-        :width: 600px
+   .. image:: Reset_Button.jpg
         :align: center
         :alt: Reset Button
 

@@ -44,8 +44,6 @@ as a USB Type-C™ and Power Delivery analyzer.
   mass storage, Virtual COM port and debug port
 
 .. image:: img/stm32g071b_disco.jpg
-   :width: 500px
-   :height: 450px
    :align: center
    :alt: STM32G071B-DISCO
 

@@ -14,8 +14,7 @@ ideal for real-time applications such as High-Speed GPIO, CAN-FD, and
 synchronous parallel NAND/NOR/PSRAM controller. The i.MX RT1064 runs on the
 Arm® Cortex-M7® core up to 600 MHz.
 
-.. image:: ./mimxrt1064_evk.jpg
-   :width: 600px
+.. image:: mimxrt1064_evk.jpg
    :align: center
    :alt: MIMXRT1064-EVK
 

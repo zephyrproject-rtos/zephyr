@@ -15,8 +15,6 @@ The X-NUCLEO-IKS01A3 interfaces with the STM32 microcontroller via the I2C pin,
 and it is possible to change the default I2C port.
 
 .. image:: img/x-nucleo-iks01a3.jpg
-     :width: 786px
-     :height: 543px
      :align: center
      :alt: X-NUCLEO-IKS01A3
 

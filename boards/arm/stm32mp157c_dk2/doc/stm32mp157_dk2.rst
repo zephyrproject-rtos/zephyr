@@ -47,9 +47,7 @@ Zephyr OS is ported to run on the Cortex®-M4 core.
   - Bluetooth® Low Energy 4.1
 
 .. image:: img/en.stm32mp157c-dk2.jpg
-     :width: 600px
      :align: center
-     :height: 526px
      :alt: STM32MP157C-DK2 Discovery
 
 More information about the board can be found at the

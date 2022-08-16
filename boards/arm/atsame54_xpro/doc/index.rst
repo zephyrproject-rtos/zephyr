@@ -12,8 +12,7 @@ microcontrollers. The kit includes Atmel’s Embedded Debugger (EDBG),
 which provides a full debug interface without the need for additional
 hardware.
 
-.. image:: img/atsame54_xpro.png
-     :width: 500px
+.. image:: img/atsame54_xpro.jpg
      :align: center
      :alt: ATSAME54-XPRO
 
@@ -81,8 +80,7 @@ controllers are responsible for pin muxing, input/output, pull-up, etc.
 For more details please refer to `SAM D5x/E5x Family Datasheet`_ and the `SAM E54
 Xplained Pro Schematic`_.
 
-.. image:: img/ATSAME54-XPRO-pinout.png
-     :width: 500px
+.. image:: img/ATSAME54-XPRO-pinout.jpg
      :align: center
      :alt: ATSAME54-XPRO-pinout
 

@@ -44,9 +44,7 @@ power consumption, and features.
 
 
 .. image:: img/nucleo_wl55jc.jpg
-   :width: 426px
    :align: center
-   :height: 683px
    :alt: Nucleo WL55JC
 
 More information about the board can be found at the `Nucleo WL55JC website`_.

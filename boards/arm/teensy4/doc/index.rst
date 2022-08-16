@@ -11,14 +11,12 @@ programming is done via the USB port.
 
 
 .. figure:: teensy40.jpg
-   :width: 459px
    :align: center
    :alt: TEENSY40
 
    TEENSY40 (Credit: https://www.pjrc.com)
 
 .. figure:: teensy41.jpg
-   :width: 758px
    :align: center
    :alt: TEENSY41
 

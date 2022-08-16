@@ -23,8 +23,7 @@ the processor.
 .. note::
    This configuration is not supported by Arduino.
 
-.. image:: img/arduino_due.png
-     :width: 500px
+.. image:: img/arduino_due.jpg
      :align: center
      :alt: Arduino Due
 

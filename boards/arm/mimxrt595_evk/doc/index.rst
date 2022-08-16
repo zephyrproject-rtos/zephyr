@@ -16,8 +16,7 @@ i.MX RT500 MCUs provides up to 5MB of on-chip SRAM and several high-bandwidth in
 to access off-chip flash, including an Octal/Quad SPI interface with an on-the-fly
 decryption engine.
 
-.. image:: ./mimxrt595_evk.png
-   :width: 720px
+.. image:: mimxrt595_evk.jpg
    :align: center
    :alt: MIMXRT595-EVK
 

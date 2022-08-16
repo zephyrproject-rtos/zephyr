@@ -10,8 +10,7 @@ The dual core i.MX RT1170 runs on the Cortex-M7 core at 1 GHz and on the Cortex-
 at 400 MHz. The i.MX RT1170 MCU offers support over a wide temperature range
 and is qualified for consumer, industrial and automotive markets.
 
-.. image:: ./mimxrt1170_evk.jpg
-   :width: 600px
+.. image:: mimxrt1170_evk.jpg
    :align: center
    :alt: MIMXRT1170-EVK
 

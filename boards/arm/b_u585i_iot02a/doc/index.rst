@@ -36,9 +36,7 @@ some highlights of the B_U585I_IOT02A Discovery kit:
 
 
 .. image:: img/b-u585i-iot02a.jpg
-     :width: 426px
      :align: center
-     :height: 33px
      :alt: B_U585I_IOT02A Discovery kit
 
 More information about the board can be found at the `B U585I IOT02A Discovery kit website`_.

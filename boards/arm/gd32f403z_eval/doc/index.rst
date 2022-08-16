@@ -14,8 +14,7 @@ The GD32F403ZE features a single-core ARM Cortex-M4F MCU which can run up
 to 168-MHz with flash accesses zero wait states, 512kiB of Flash, 96kiB of
 SRAM and 112 GPIOs.
 
-.. image:: img/gd32f403z_eval.png
-     :width: 800px
+.. image:: img/gd32f403z_eval.jpg
      :align: center
      :alt: gd32f403z_eval
 

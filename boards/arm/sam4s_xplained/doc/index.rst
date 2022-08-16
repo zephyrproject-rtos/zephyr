@@ -9,8 +9,7 @@ Overview
 The SAM4S Xplained evaluation kit is a development platform to evaluate the
 Atmel SAM4S series microcontrollers.
 
-.. image:: img/sam4s_xplained.png
-     :width: 500px
+.. image:: img/sam4s_xplained.jpg
      :align: center
      :alt: SAM4S Xplained
 

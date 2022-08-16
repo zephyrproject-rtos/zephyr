@@ -14,9 +14,7 @@ battery, and communicates with a standard smartphone through its Bluetooth inter
 providing data coming from the sensors.
 
 .. image:: img/sensortile_box.jpg
-     :width: 784px
      :align: center
-     :height: 643px
      :alt: SensorTile.box
 
 More information about the board can be found at the `SensorTile.box website`_.

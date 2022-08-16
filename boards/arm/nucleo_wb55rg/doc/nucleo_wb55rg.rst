@@ -30,9 +30,7 @@ Low Energy (BLE) SIG specification v5.0 and with IEEE 802.15.4-2011.
   mass storage, virtual COM port and debug port
 
 .. image:: img/nucleowb55rg.jpg
-   :width: 670px
    :align: center
-   :height: 339px
    :alt: Nucleo WB55RG
 
 More information about the board can be found at the `Nucleo WB55RG website`_.
