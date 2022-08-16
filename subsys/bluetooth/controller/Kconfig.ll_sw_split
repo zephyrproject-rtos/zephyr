@@ -914,6 +914,14 @@ config BT_CTLR_USER_CPR_INTERVAL_MIN
 	  When enabled, controller will accept Connection Parameter Request
 	  intervals down to a proprietary minimum value.
 
+config BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE
+	bool "Proprietary handling of anchor point movement"
+	depends on BT_CTLR_USER_EXT && BT_CTLR_CONN_PARAM_REQ && BT_PERIPHERAL
+	help
+	  When enabled, defer accept/reject of Connection Parameter Request with only
+	  anchor point movement to proprietary logic.
+	  Only applicable for peripheral.
+
 endmenu
 
 comment "BLE Controller debug configuration"

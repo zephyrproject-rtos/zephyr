@@ -505,12 +505,12 @@ void llcp_pdu_encode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	p->timeout = sys_cpu_to_le16(ctx->data.cu.timeout);
 	p->preferred_periodicity = ctx->data.cu.preferred_periodicity;
 	p->reference_conn_event_count = sys_cpu_to_le16(ctx->data.cu.reference_conn_event_count);
-	p->offset0 = sys_cpu_to_le16(ctx->data.cu.offset0);
-	p->offset1 = sys_cpu_to_le16(ctx->data.cu.offset1);
-	p->offset2 = sys_cpu_to_le16(ctx->data.cu.offset2);
-	p->offset3 = sys_cpu_to_le16(ctx->data.cu.offset3);
-	p->offset4 = sys_cpu_to_le16(ctx->data.cu.offset4);
-	p->offset5 = sys_cpu_to_le16(ctx->data.cu.offset5);
+	p->offset0 = sys_cpu_to_le16(ctx->data.cu.offsets[0]);
+	p->offset1 = sys_cpu_to_le16(ctx->data.cu.offsets[1]);
+	p->offset2 = sys_cpu_to_le16(ctx->data.cu.offsets[2]);
+	p->offset3 = sys_cpu_to_le16(ctx->data.cu.offsets[3]);
+	p->offset4 = sys_cpu_to_le16(ctx->data.cu.offsets[4]);
+	p->offset5 = sys_cpu_to_le16(ctx->data.cu.offsets[5]);
 }
 
 void llcp_pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
@@ -528,12 +528,12 @@ void llcp_pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 	p->timeout = sys_cpu_to_le16(ctx->data.cu.timeout);
 	p->preferred_periodicity = ctx->data.cu.preferred_periodicity;
 	p->reference_conn_event_count = sys_cpu_to_le16(ctx->data.cu.reference_conn_event_count);
-	p->offset0 = sys_cpu_to_le16(ctx->data.cu.offset0);
-	p->offset1 = sys_cpu_to_le16(ctx->data.cu.offset1);
-	p->offset2 = sys_cpu_to_le16(ctx->data.cu.offset2);
-	p->offset3 = sys_cpu_to_le16(ctx->data.cu.offset3);
-	p->offset4 = sys_cpu_to_le16(ctx->data.cu.offset4);
-	p->offset5 = sys_cpu_to_le16(ctx->data.cu.offset5);
+	p->offset0 = sys_cpu_to_le16(ctx->data.cu.offsets[0]);
+	p->offset1 = sys_cpu_to_le16(ctx->data.cu.offsets[1]);
+	p->offset2 = sys_cpu_to_le16(ctx->data.cu.offsets[2]);
+	p->offset3 = sys_cpu_to_le16(ctx->data.cu.offsets[3]);
+	p->offset4 = sys_cpu_to_le16(ctx->data.cu.offsets[4]);
+	p->offset5 = sys_cpu_to_le16(ctx->data.cu.offsets[5]);
 }
 
 void llcp_pdu_decode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu)
@@ -547,12 +547,12 @@ void llcp_pdu_decode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	ctx->data.cu.timeout = sys_le16_to_cpu(p->timeout);
 	ctx->data.cu.preferred_periodicity = p->preferred_periodicity;
 	ctx->data.cu.reference_conn_event_count = sys_le16_to_cpu(p->reference_conn_event_count);
-	ctx->data.cu.offset0 = sys_le16_to_cpu(p->offset0);
-	ctx->data.cu.offset1 = sys_le16_to_cpu(p->offset1);
-	ctx->data.cu.offset2 = sys_le16_to_cpu(p->offset2);
-	ctx->data.cu.offset3 = sys_le16_to_cpu(p->offset3);
-	ctx->data.cu.offset4 = sys_le16_to_cpu(p->offset4);
-	ctx->data.cu.offset5 = sys_le16_to_cpu(p->offset5);
+	ctx->data.cu.offsets[0] = sys_le16_to_cpu(p->offset0);
+	ctx->data.cu.offsets[1] = sys_le16_to_cpu(p->offset1);
+	ctx->data.cu.offsets[2] = sys_le16_to_cpu(p->offset2);
+	ctx->data.cu.offsets[3] = sys_le16_to_cpu(p->offset3);
+	ctx->data.cu.offsets[4] = sys_le16_to_cpu(p->offset4);
+	ctx->data.cu.offsets[5] = sys_le16_to_cpu(p->offset5);
 }
 
 void llcp_pdu_decode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
@@ -566,12 +566,12 @@ void llcp_pdu_decode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 	ctx->data.cu.timeout = sys_le16_to_cpu(p->timeout);
 	ctx->data.cu.preferred_periodicity = p->preferred_periodicity;
 	ctx->data.cu.reference_conn_event_count = sys_le16_to_cpu(p->reference_conn_event_count);
-	ctx->data.cu.offset0 = sys_le16_to_cpu(p->offset0);
-	ctx->data.cu.offset1 = sys_le16_to_cpu(p->offset1);
-	ctx->data.cu.offset2 = sys_le16_to_cpu(p->offset2);
-	ctx->data.cu.offset3 = sys_le16_to_cpu(p->offset3);
-	ctx->data.cu.offset4 = sys_le16_to_cpu(p->offset4);
-	ctx->data.cu.offset5 = sys_le16_to_cpu(p->offset5);
+	ctx->data.cu.offsets[0] = sys_le16_to_cpu(p->offset0);
+	ctx->data.cu.offsets[1] = sys_le16_to_cpu(p->offset1);
+	ctx->data.cu.offsets[2] = sys_le16_to_cpu(p->offset2);
+	ctx->data.cu.offsets[3] = sys_le16_to_cpu(p->offset3);
+	ctx->data.cu.offsets[4] = sys_le16_to_cpu(p->offset4);
+	ctx->data.cu.offsets[5] = sys_le16_to_cpu(p->offset5);
 }
 #endif /* defined(CONFIG_BT_CTLR_CONN_PARAM_REQ) */
 
