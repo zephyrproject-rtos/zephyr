@@ -3,8 +3,7 @@
 config SOC_FLASH_MCUX
 	bool "MCUX flash shim driver"
 	default y
-	depends on DT_HAS_NXP_LPC_IAP_ENABLED || \
-		   DT_HAS_NXP_KINETIS_FTFA_ENABLED || \
+	depends on DT_HAS_NXP_KINETIS_FTFA_ENABLED || \
 		   DT_HAS_NXP_KINETIS_FTFE_ENABLED || \
 		   DT_HAS_NXP_KINETIS_FTFL_ENABLED || \
 		   DT_HAS_NXP_IAP_FMC55_ENABLED || \
