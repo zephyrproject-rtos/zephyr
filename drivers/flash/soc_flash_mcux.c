@@ -36,16 +36,16 @@ LOG_MODULE_REGISTER(flash_mcux);
 #error No matching compatible for soc_flash_mcux.c
 #endif
 
-#ifdef SOC_HAS_IAP
+#if defined(SOC_HAS_IAP) && !defined(CONFIG_SOC_LPC55S36)
 #include "fsl_iap.h"
 #else
 #include "fsl_flash.h"
-#endif /* SOC_HAS_IAP */
+#endif /* SOC_HAS_IAP && !CONFIG_SOC_LPC55S36*/
 
 
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 
-#ifdef CONFIG_CHECK_BEFORE_READING
+#if defined(CONFIG_CHECK_BEFORE_READING)  && !defined(CONFIG_SOC_LPC55S36)
 #define FMC_STATUS_FAIL	FLASH_INT_CLR_ENABLE_FAIL_MASK
 #define FMC_STATUS_ERR	FLASH_INT_CLR_ENABLE_ERR_MASK
 #define FMC_STATUS_DONE	FLASH_INT_CLR_ENABLE_DONE_MASK
@@ -113,7 +113,7 @@ static status_t is_area_readable(uint32_t addr, size_t len)
 
 	return 0;
 }
-#endif /* CONFIG_CHECK_BEFORE_READING */
+#endif /* CONFIG_CHECK_BEFORE_READING && ! CONFIG_SOC_LPC55S36 */
 
 struct flash_priv {
 	flash_config_t config;
@@ -191,19 +191,26 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 	addr = offset + priv->pflash_block_base;
 
 #ifdef CONFIG_CHECK_BEFORE_READING
+  #ifdef CONFIG_SOC_LPC55S36
+	rc = FLASH_IsFlashAreaReadable(&priv->config, addr, len);
+	if (rc != kStatus_FLASH_Success) {
+		rc = -EIO;
+	}
+  #else
 	rc = is_area_readable(addr, len);
-#endif
+  #endif /* CONFIG_SOC_LPC55S36 */
+#endif /* CONFIG_CHECK_BEFORE_READING */
 
 	if (!rc) {
 		memcpy(data, (void *) addr, len);
+	}
 #ifdef CONFIG_CHECK_BEFORE_READING
-	} else if (rc == -ENODATA) {
+	else if (rc == -ENODATA) {
 		/* Erased area, return dummy data as an erased page. */
 		memset(data, 0xFF, len);
 		rc = 0;
-#endif
 	}
-
+#endif
 	return rc;
 }
 
