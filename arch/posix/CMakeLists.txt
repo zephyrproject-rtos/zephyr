@@ -53,6 +53,10 @@ if(CONFIG_ASAN)
   list(APPEND LLVM_SANITIZERS "address")
 endif()
 
+if(CONFIG_MSAN)
+  list(APPEND LLVM_SANITIZERS "memory")
+endif()
+
 if(CONFIG_UBSAN)
   list(APPEND LLVM_SANITIZERS "undefined")
 endif()
