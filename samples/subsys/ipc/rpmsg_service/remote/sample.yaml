@@ -5,6 +5,6 @@ sample:
 common:
     harness: remote
 tests:
-    sample.ipc.rpmsg_service:
+    sample.ipc.rpmsg_service.remote:
         platform_allow: mps2_an521_remote v2m_musca_b1_ns
         tags: ipm
