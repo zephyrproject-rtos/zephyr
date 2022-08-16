@@ -571,14 +571,25 @@ class DeviceHandler(Handler):
 
         except subprocess.CalledProcessError:
             os.write(write_pipe, b'x')  # halt the thread
+            self.instance.status = "error"
+            self.instance.reason = "Device issue (Flash error)"
+            flash_error = True
 
         if post_flash_script:
             self.run_custom_script(post_flash_script, 30)
 
         if not flash_error:
             t.join(self.timeout)
-            if t.is_alive():
-                logger.debug("Timed out while monitoring serial output on {}".format(self.instance.platform.name))
+        else:
+            # When the flash error is due exceptions,
+            # twister tell the monitor serial thread
+            # to close the serial. But it is necessary
+            # for this thread being run first and close
+            # have the change to close the serial.
+            t.join(0.1)
+
+        if t.is_alive():
+            logger.debug("Timed out while monitoring serial output on {}".format(self.instance.platform.name))
 
         if ser.isOpen():
             ser.close()
