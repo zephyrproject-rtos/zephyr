@@ -646,6 +646,21 @@ int lwm2m_engine_create_obj_inst(const char *pathstr);
 int lwm2m_engine_delete_obj_inst(const char *pathstr);
 
 /**
+ * @brief Locks the registry for this thread.
+ *
+ * Use this function before writing to multiple resources. This halts the
+ * lwm2m main thread until all the write-operations are finished.
+ *
+ */
+void lwm2m_registry_lock(void);
+
+/**
+ * @brief Unlocks the registry previously locked by lwm2m_registry_lock().
+ *
+ */
+void lwm2m_registry_unlock(void);
+
+/**
  * @brief Set resource (instance) value (opaque buffer)
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
