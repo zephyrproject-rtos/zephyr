@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 NXP
+ * Copyright 2020-2022 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,12 +13,6 @@
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
-
-	chosen {
-		zephyr,console = &uart2;
-		zephyr,shell-uart = &uart2;
-		zephyr,sram = &sram0;
-	};
 
 	cpus {
 		#address-cells = <1>;
@@ -34,6 +28,18 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <1>;
+		};
+
+		cpu@2 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <2>;
+		};
+
+		cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <3>;
 		};
 	};
 
@@ -74,18 +80,20 @@
 		uart2: uart@30890000 {
 			compatible = "nxp,imx-iuart";
 			reg = <0x30890000 DT_SIZE_K(64)>;
-			interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL 0>;
+			interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0";
 			interrupt-parent = <&gic>;
+			clocks = <&ccm IMX_CCM_UART2_CLK 0x6c 24>;
 			status = "disabled";
 		};
 
 		uart4: uart@30a60000 {
 			compatible = "nxp,imx-iuart";
 			reg = <0x30a60000 DT_SIZE_K(64)>;
-			interrupts = <GIC_SPI 29 IRQ_TYPE_LEVEL 0>;
+			interrupts = <GIC_SPI 29 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0";
 			interrupt-parent = <&gic>;
+			clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
 			status = "disabled";
 		};
 
