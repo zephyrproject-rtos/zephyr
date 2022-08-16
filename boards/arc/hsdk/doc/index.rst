@@ -15,7 +15,7 @@ Development System SoC. This allows developers to build and debug complex
 software on a comprehensive hardware platform
 
 .. image:: ./hsdk.jpg
-   :width: 442px
+   :width: 650px
    :align: center
    :alt: DesignWare(R) ARC(R) HS Development Kit (synopsys.com)
 
@@ -212,7 +212,7 @@ The ARC HSDK features a set of MikroBUS headers. Figure below shows the relevant
 fully compatible with the MikroBUS standard. Table below shows the pin assignment on the I/O Multiplexer.
 
 .. image:: ./mikrobus_header.jpg
-   :width: 442px
+   :width: 650px
    :align: center
    :alt: mikrobus header
 
