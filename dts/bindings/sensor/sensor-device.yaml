@@ -1,0 +1,28 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensor Device
+
+include: base.yaml
+
+properties:
+  vendor:
+    type: string
+    required: false
+
+  model:
+    type: string
+    required: false
+
+  friendly-name:
+    type: string
+    required: false
+
+child-binding:
+    description: Sensor Channel Group
+
+    properties:
+      rotation-matrix:
+        type: array
+        required: false
