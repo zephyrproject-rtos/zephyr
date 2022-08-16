@@ -569,6 +569,7 @@ static void check_notifications(struct lwm2m_ctx *ctx, const int64_t timestamp)
 	struct observe_node *obs;
 	int rc;
 
+	lwm2m_registry_lock();
 	SYS_SLIST_FOR_EACH_CONTAINER(&ctx->observer, obs, node) {
 		if (!obs->event_timestamp || timestamp < obs->event_timestamp) {
 			continue;
@@ -581,16 +582,18 @@ static void check_notifications(struct lwm2m_ctx *ctx, const int64_t timestamp)
 		rc = generate_notify_message(ctx, obs, NULL);
 		if (rc == -ENOMEM) {
 			/* no memory/messages available, retry later */
-			return;
+			goto cleanup;
 		}
 		obs->event_timestamp =
 			engine_observe_shedule_next_event(obs, ctx->srv_obj_inst, timestamp);
 		obs->last_timestamp = timestamp;
 		if (!rc) {
 			/* create at most one notification */
-			return;
+			goto cleanup;
 		}
 	}
+cleanup:
+	lwm2m_registry_unlock();
 }
 
 static int socket_recv_message(struct lwm2m_ctx *client_ctx)

@@ -40,7 +40,18 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define BINDING_OPT_MAX_LEN 3 /* "UQ" */
 #define QUEUE_OPT_MAX_LEN   2 /* "Q" */
 
+/* Thread safety */
 static K_MUTEX_DEFINE(registry_lock);
+
+void lwm2m_registry_lock(void)
+{
+	(void)k_mutex_lock(&registry_lock, K_FOREVER);
+}
+
+void lwm2m_registry_unlock(void)
+{
+	(void)k_mutex_unlock(&registry_lock);
+}
 /* Resources */
 static sys_slist_t engine_obj_list;
 static sys_slist_t engine_obj_inst_list;
