@@ -390,7 +390,7 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 }
 
 uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t interval_min,
-		    uint16_t interval_max, uint16_t latency, uint16_t timeout)
+		    uint16_t interval_max, uint16_t latency, uint16_t timeout, uint16_t *offset)
 {
 	struct ll_conn *conn;
 
@@ -400,6 +400,8 @@ uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t in
 	}
 
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+	/* Anchor point move not supported in Legacy LLCP */
+	ARG_UNUSED(offset);
 	if (!cmd) {
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		if (!conn->llcp_conn_param.disabled &&
@@ -476,7 +478,8 @@ uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t in
 	if (cmd == 0U) {
 		uint8_t err;
 
-		err = ull_cp_conn_update(conn, interval_min, interval_max, latency, timeout);
+		err = ull_cp_conn_update(conn, interval_min, interval_max, latency, timeout,
+					 offset);
 		if (err) {
 			return err;
 		}

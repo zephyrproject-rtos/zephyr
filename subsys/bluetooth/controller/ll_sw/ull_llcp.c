@@ -940,7 +940,7 @@ uint8_t ull_cp_ltk_req_neq_reply(struct ll_conn *conn)
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t interval_max,
-			   uint16_t latency, uint16_t timeout)
+			   uint16_t latency, uint16_t timeout, uint16_t *offsets)
 {
 	struct proc_ctx *ctx;
 
@@ -974,6 +974,12 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 		ctx->data.cu.interval_max = interval_max;
 		ctx->data.cu.latency = latency;
 		ctx->data.cu.timeout = timeout;
+		ctx->data.cu.offsets[0] = offsets ? offsets[0] : 0x0000;
+		ctx->data.cu.offsets[1] = offsets ? offsets[1] : 0xffff;
+		ctx->data.cu.offsets[2] = offsets ? offsets[2] : 0xffff;
+		ctx->data.cu.offsets[3] = offsets ? offsets[3] : 0xffff;
+		ctx->data.cu.offsets[4] = offsets ? offsets[4] : 0xffff;
+		ctx->data.cu.offsets[5] = offsets ? offsets[5] : 0xffff;
 
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 		    (conn->lll.role == BT_HCI_ROLE_PERIPHERAL)) {
@@ -1032,6 +1038,51 @@ uint8_t ull_cp_remote_cpr_pending(struct ll_conn *conn)
 
 	return (ctx && ctx->proc == PROC_CONN_PARAM_REQ);
 }
+
+#if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
+bool ull_cp_remote_cpr_apm_awaiting_reply(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_rr_peek(conn);
+
+	if (ctx && ctx->proc == PROC_CONN_PARAM_REQ) {
+		return llcp_rp_conn_param_req_apm_awaiting_reply(ctx);
+	}
+
+	return false;
+}
+
+void ull_cp_remote_cpr_apm_reply(struct ll_conn *conn, uint16_t *offsets)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_rr_peek(conn);
+
+	if (ctx && ctx->proc == PROC_CONN_PARAM_REQ) {
+		ctx->data.cu.offsets[0] = offsets[0];
+		ctx->data.cu.offsets[1] = offsets[1];
+		ctx->data.cu.offsets[2] = offsets[2];
+		ctx->data.cu.offsets[3] = offsets[3];
+		ctx->data.cu.offsets[4] = offsets[4];
+		ctx->data.cu.offsets[5] = offsets[5];
+		ctx->data.cu.error = 0U;
+		llcp_rp_conn_param_req_apm_reply(conn, ctx);
+	}
+}
+
+void ull_cp_remote_cpr_apm_neg_reply(struct ll_conn *conn, uint8_t error_code)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_rr_peek(conn);
+
+	if (ctx && ctx->proc == PROC_CONN_PARAM_REQ) {
+		ctx->data.cu.error = error_code;
+		llcp_rp_conn_param_req_apm_reply(conn, ctx);
+	}
+}
+#endif /* CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE */
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)

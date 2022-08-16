@@ -218,12 +218,7 @@ struct proc_ctx {
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 			uint8_t  preferred_periodicity;
 			uint16_t reference_conn_event_count;
-			uint16_t offset0;
-			uint16_t offset1;
-			uint16_t offset2;
-			uint16_t offset3;
-			uint16_t offset4;
-			uint16_t offset5;
+			uint16_t offsets[6];
 #endif /* defined(CONFIG_BT_CTLR_CONN_PARAM_REQ) */
 		} cu;
 
@@ -491,6 +486,8 @@ void llcp_rp_cu_init_proc(struct proc_ctx *ctx);
 void llcp_rp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 void llcp_rp_conn_param_req_reply(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_rp_conn_param_req_neg_reply(struct ll_conn *conn, struct proc_ctx *ctx);
+bool llcp_rp_conn_param_req_apm_awaiting_reply(struct proc_ctx *ctx);
+void llcp_rp_conn_param_req_apm_reply(struct ll_conn *conn, struct proc_ctx *ctx);
 
 /*
  * Terminate Helper
