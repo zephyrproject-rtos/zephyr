@@ -346,6 +346,21 @@ void test_preempt(void)
 	 * test is done
 	 */
 	k_sem_take(&main_sem, K_FOREVER);
+
+	/* unit test clean up */
+
+	/* k_thread_abort() also works here.
+	 * But join should be more graceful.
+	 */
+	k_thread_join(&manager_thread, K_FOREVER);
+
+	/* worker threads have to be aborted.
+	 * It is difficult to make them stop gracefully.
+	 */
+	for (int i = 0; i < NUM_THREADS; i++) {
+		k_thread_abort(&worker_threads[i]);
+	}
+
 }
 
 void test_main(void)
