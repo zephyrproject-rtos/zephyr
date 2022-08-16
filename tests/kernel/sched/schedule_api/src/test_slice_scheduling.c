@@ -93,6 +93,8 @@ ZTEST(threads_scheduling, test_slice_scheduling)
 	int old_prio = k_thread_priority_get(k_current_get());
 	int count = 0;
 
+	thread_idx = 0;
+
 	/* disable timeslice */
 	k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
 
