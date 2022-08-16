@@ -17,5 +17,6 @@ zephyr_library_sources_ifdef(CONFIG_USB_NATIVE_POSIX
 	)
 zephyr_library_sources_ifdef(CONFIG_USB_NRFX         usb_dc_nrfx.c)
 zephyr_library_sources_ifdef(CONFIG_USB_MCUX         usb_dc_mcux.c)
+zephyr_library_sources_ifdef(CONFIG_USB_TELINK_B91   usb_dc_b91.c)
 
 endif()
