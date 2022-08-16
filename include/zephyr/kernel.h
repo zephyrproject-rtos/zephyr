@@ -5443,7 +5443,9 @@ struct k_poll_event {
 
 #define K_POLL_EVENT_INITIALIZER(_event_type, _event_mode, _event_obj) \
 	{ \
+	._node = {}, \
 	.poller = NULL, \
+	.tag = 0, \
 	.type = _event_type, \
 	.state = K_POLL_STATE_NOT_READY, \
 	.mode = _event_mode, \
@@ -5456,6 +5458,8 @@ struct k_poll_event {
 #define K_POLL_EVENT_STATIC_INITIALIZER(_event_type, _event_mode, _event_obj, \
 					event_tag) \
 	{ \
+	._node = {}, \
+	.poller = NULL, \
 	.tag = event_tag, \
 	.type = _event_type, \
 	.state = K_POLL_STATE_NOT_READY, \
