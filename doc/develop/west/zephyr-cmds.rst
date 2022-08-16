@@ -122,3 +122,38 @@ source files that are compiled to generate the built library files.
 
 .. _SPDX specification 2.2 section 2.5:
    https://spdx.github.io/spdx-spec/2-document-creation-information/
+
+.. _west-blobs:
+
+Working with binary blobs: ``west blobs``
+*****************************************
+
+The ``blobs`` command allows users to interact with :ref:`binary blobs
+<bin-blobs>` declared in one or more :ref:`modules <modules>` via their
+:ref:`module.yml <module-yml>` file.
+
+The ``blobs`` command has three sub-commands, used to list, fetch or clean (i.e.
+delete) the binary blobs themselves.
+
+You can list binary blobs while specifying the format of the output::
+
+  west blobs list -f '{module}: {type} {path}'
+
+For the full set of variables available in ``-f/--format`` run
+``west blobs -h``.
+
+Fetching blobs works in a similar manner::
+
+  west blobs fetch
+
+Note that, as described in :ref:`the modules section <modules-bin-blobs>`,
+fetched blobs are stored in a :file:`zephyr/blobs/` folder relative to the root
+of the corresponding module repository.
+
+As does deleting them::
+
+  west blobs clean
+
+Additionally the tool allows you to specify the modules you want to list,
+fetch or clean blobs for by typing the module names as a command-line
+parameter.
