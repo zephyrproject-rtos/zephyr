@@ -20,6 +20,7 @@
 		led2 = &led_white;
 		led3 = &led_red;
 		sw0 = &key_1;
+		sw2 = &key_3;
 		pwm-led0 = &pwm_led_blue;
 		pwm-0 = &pwm0;
 	};
@@ -62,6 +63,10 @@
 		key_1: button_1 {
 			label = "User KEY1";
 			gpios = <&gpioc 2 GPIO_PULL_DOWN>;
+		};
+		key_3: button_3 {
+			label = "User KEY3";
+			gpios = <&gpioc 0 GPIO_PULL_DOWN>;
 		};
 	};
 
@@ -126,7 +131,7 @@
 };
 
 &gpioc {
-	interrupts = <25 1>;
+	interrupts = <37 1>;
 	status = "okay";
 };
 
@@ -177,4 +182,9 @@
 	status = "okay";
 	vref-internal-mv = <1200>;
 	sample-freq = <DT_FREQ_K(96)>;
+};
+
+zephyr_udc0: &usbd {
+	compatible = "telink,b91-usbd";
+	status = "okay";
 };
