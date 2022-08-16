@@ -13,7 +13,6 @@ boards. It can also be used as a standalone board.
 
 
 .. figure:: img/96b_aerocore2.jpg
-     :width: 487px
      :align: center
      :alt: 96Boards Aerocore2
 

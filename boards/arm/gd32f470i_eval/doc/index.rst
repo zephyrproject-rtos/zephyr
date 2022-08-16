@@ -13,7 +13,7 @@ The GD32F470IK features a single-core ARM Cortex-M4F MCU which can run up
 to 240 MHz with flash accesses zero wait states, 3072kiB of Flash, 256kiB of
 SRAM and 140 GPIOs.
 
-.. image:: img/gd32f470i_eval.png
+.. image:: img/gd32f470i_eval.jpg
      :align: center
      :alt: gd32f470i_eval
 

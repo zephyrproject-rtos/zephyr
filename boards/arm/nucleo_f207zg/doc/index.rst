@@ -29,7 +29,7 @@ some highlights of the Nucleo F207ZG board:
 - Three user LEDs
 - Two push-buttons: USER and RESET
 
-.. image:: img/nucleo_f207zg.png
+.. image:: img/nucleo_f207zg.jpg
    :align: center
    :alt: Nucleo F207ZG
 
@@ -123,25 +123,17 @@ input/output, pull-up, etc.
 
 Available pins:
 ---------------
-.. image:: img/nucleo_f207zg_zio_left.png
-   :width: 720px
+.. image:: img/nucleo_f207zg_zio_left.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo F207ZG ZIO connectors (left)
-.. image:: img/nucleo_f207zg_zio_right.png
-   :width: 720px
+.. image:: img/nucleo_f207zg_zio_right.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo F207ZG ZIO connectors (right)
-.. image:: img/nucleo_f207zg_morpho_left.png
-   :width: 720px
+.. image:: img/nucleo_f207zg_morpho_left.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo F207ZG Morpho connectors (left)
-.. image:: img/nucleo_f207zg_morpho_right.png
-   :width: 720px
+.. image:: img/nucleo_f207zg_morpho_right.jpg
    :align: center
-   :height: 540px
    :alt: Nucleo F207ZG Morpho connectors (right)
 
 For more details please refer to `STM32 Nucleo-144 board User Manual`_.

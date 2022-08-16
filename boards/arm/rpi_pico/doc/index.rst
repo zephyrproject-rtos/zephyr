@@ -30,8 +30,7 @@ Hardware
 - 1 Watchdog timer peripheral
 
 
-.. figure:: img/rpi_pico.png
-     :width: 150px
+.. figure:: img/rpi_pico.jpg
      :align: center
      :alt: Raspberry Pi Pico
 

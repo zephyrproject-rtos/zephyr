@@ -43,9 +43,7 @@ some highlights of the STM32L476G Discovery board:
     - CR2032 battery (not provided)
 
 .. image:: img/stm32l476g_disco.jpg
-     :width: 450px
      :align: center
-     :height: 394px
      :alt: STM32L476G Discovery
 
 More information about the board can be found at the `STM32L476G Discovery website`_.

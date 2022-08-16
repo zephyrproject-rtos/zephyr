@@ -16,8 +16,6 @@ The X-NUCLEO-IKS02A1 interfaces with the STM32 microcontroller via the I2C pin,
 and it is possible to change the default I2C port.
 
 .. image:: img/x-nucleo-iks02a1.jpg
-     :width: 426px
-     :height: 395px
      :align: center
      :alt: X-NUCLEO-IKS02A1
 

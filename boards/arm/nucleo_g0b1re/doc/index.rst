@@ -29,8 +29,6 @@ some highlights of the Nucleo G0B1RE board:
 - 32.768 kHz crystal oscillator
 
 .. image:: img/nucleo_g0b1re.jpg
-   :width: 500px
-   :height: 367px
    :align: center
    :alt: Nucleo G0B1RE
 

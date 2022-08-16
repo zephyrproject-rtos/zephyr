@@ -15,10 +15,8 @@ the following devices:
 - Cortex-M System Design Kit GPIO
 - Cortex-M System Design Kit UART
 
-.. image:: img/v2m_beetle.png
-     :width: 442px
+.. image:: img/v2m_beetle.jpg
      :align: center
-     :height: 335px
      :alt: ARM V2M Beetle
 
 More information about the board can be found at the `V2M Beetle Website`_.

@@ -85,8 +85,6 @@ through various use cases.
             - 19 V power jack for USB PD
 
 .. image:: img/stm32g081b_eval.jpg
-   :width: 426px
-   :height: 597px
    :align: center
    :alt: STM32G081B-EVAL
 

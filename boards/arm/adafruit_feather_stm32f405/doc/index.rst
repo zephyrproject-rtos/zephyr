@@ -13,7 +13,6 @@ with a lithium ion battery charger, native USB C connector, 2MB of
 external flash memory, and SD card socket.
 
 .. image:: img/adafruit_feather_stm32f405.jpg
-     :width: 640px
      :align: center
      :alt: Adafruit Feather STM32F405 Express
 

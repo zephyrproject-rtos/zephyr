@@ -9,8 +9,7 @@ Overview
 The MikroElektronika ADC Click carries the `MCP3204`_ 12-bit
 Analog-to-Digital converter in a `mikroBUS`_ |trade| form factor.
 
-.. figure:: ./adc-click.jpg
-   :width: 528px
+.. figure:: adc-click.jpg
    :align: center
    :alt: MikroElektronika ADC Click
 

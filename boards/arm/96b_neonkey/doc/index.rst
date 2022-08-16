@@ -10,9 +10,7 @@ Overview
 Cortex M4 CPU.
 
 .. figure:: img/96b_neonkey.jpg
-     :width: 500px
      :align: center
-     :height: 330px
      :alt: 96Boards Neonkey
 
      96Boards Neonkey
