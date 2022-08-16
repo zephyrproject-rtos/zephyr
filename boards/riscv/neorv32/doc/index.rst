@@ -10,13 +10,6 @@ The NEORV32 is an open-source RISC-V compatible processor system intended as a
 ready-to-go auxiliary processor within larger SoC designs or as a stand-alone
 customizable microcontroller.
 
-.. figure:: ./neorv32_logo_transparent.png
-   :width: 813px
-   :align: center
-   :alt: NEORV32
-
-   NEORV32 (Credit: Stephan Nolting)
-
 For more information about the NEORV32, see the following websites:
 
 - `The NEORV32 RISC-V Processor GitHub`_
