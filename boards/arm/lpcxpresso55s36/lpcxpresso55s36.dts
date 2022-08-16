@@ -20,6 +20,7 @@
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,canbus = &can0;
+		zephyr,flash-controller = &iap;
 	};
 
 	aliases{
