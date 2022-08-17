@@ -711,13 +711,6 @@ static void pwm_stm32_irq_config_func_##index(const struct device *dev)        \
 		.enr = DT_CLOCKS_CELL(DT_INST_PARENT(index), bits)             \
 	}
 
-/* Print warning if any pwm node has 'st,prescaler' property */
-#define PRESCALER_PWM(index) DT_INST_NODE_HAS_PROP(index, st_prescaler) ||
-#if (DT_INST_FOREACH_STATUS_OKAY(PRESCALER_PWM) 0)
-#warning "DT property 'st,prescaler' in pwm node is deprecated and should be \
-replaced by 'st,prescaler' property in parent node, aka timers"
-#endif
-
 #define PWM_DEVICE_INIT(index)                                                 \
 	static struct pwm_stm32_data pwm_stm32_data_##index;                   \
 	IRQ_CONFIG_FUNC(index)						       \
@@ -726,10 +719,7 @@ replaced by 'st,prescaler' property in parent node, aka timers"
 									       \
 	static const struct pwm_stm32_config pwm_stm32_config_##index = {      \
 		.timer = (TIM_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(index)),    \
-		/* For compatibility reason, use pwm st_prescaler property  */ \
-		/* if exist, otherwise use parent (timers) property         */ \
-		.prescaler = DT_INST_PROP_OR(index, st_prescaler,              \
-			(DT_PROP(DT_INST_PARENT(index), st_prescaler))),       \
+		.prescaler = DT_PROP(DT_INST_PARENT(index), st_prescaler),     \
 		.countermode = DT_PROP(DT_INST_PARENT(index), st_countermode), \
 		.pclken = DT_INST_CLK(index, timer),                           \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		       \
