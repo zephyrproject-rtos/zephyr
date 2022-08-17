@@ -596,7 +596,7 @@ static int bmc150_magn_init(const struct device *dev)
 			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),))	\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, bmc150_magn_init, NULL,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmc150_magn_init, NULL,				\
 		&bmc150_magn_data_##inst, &bmc150_magn_config_##inst, POST_KERNEL,		\
 		CONFIG_SENSOR_INIT_PRIORITY, &bmc150_magn_api_funcs);				\
 

@@ -234,7 +234,7 @@ static const struct sensor_driver_api tach_it8xxx2_driver_api = {
 									       \
 	static struct tach_it8xxx2_data tach_it8xxx2_data_##inst;	       \
 									       \
-	DEVICE_DT_INST_DEFINE(inst,					       \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				       \
 			      tach_it8xxx2_init,			       \
 			      NULL,					       \
 			      &tach_it8xxx2_data_##inst,		       \

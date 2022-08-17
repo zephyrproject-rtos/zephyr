@@ -171,7 +171,7 @@ int bma280_init(const struct device *dev)
 			   (.int1_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, { 0 }),))	\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, bma280_init, NULL, &bma280_data_##inst,			\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bma280_init, NULL, &bma280_data_##inst,		\
 			      &bma280_config##inst, POST_KERNEL,				\
 			      CONFIG_SENSOR_INIT_PRIORITY, &bma280_driver_api);			\
 

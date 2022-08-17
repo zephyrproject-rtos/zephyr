@@ -755,7 +755,7 @@ static const struct sensor_driver_api bmi270_driver_api = {
 			    (BMI270_CONFIG_SPI(inst)),			\
 			    (BMI270_CONFIG_I2C(inst)));			\
 									\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			      bmi270_init,				\
 			      NULL,					\
 			      &bmi270_drv_##inst,			\

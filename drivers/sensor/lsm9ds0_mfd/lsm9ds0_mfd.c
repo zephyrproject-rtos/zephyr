@@ -758,7 +758,7 @@ int lsm9ds0_mfd_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, lsm9ds0_mfd_init, NULL,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm9ds0_mfd_init, NULL,				\
 			      &lsm9ds0_mfd_data_##inst, &lsm9ds0_mfd_config_##inst, POST_KERNEL,\
 			      CONFIG_SENSOR_INIT_PRIORITY, &lsm9ds0_mfd_api_funcs);		\
 

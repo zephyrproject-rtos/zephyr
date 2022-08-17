@@ -450,7 +450,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 		.alert_config = DT_INST_PROP_OR(inst, alert_config, 0x01),	\
 		.gpio_alert = GPIO_DT_SPEC_INST_GET_OR(inst, irq_gpios, {0}),	\
 	};							    \
-	DEVICE_DT_INST_DEFINE(inst,				    \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,			    \
 			      &ina237_init,			    \
 			      NULL,				    \
 			      &ina237_data_##inst,		    \

@@ -110,7 +110,7 @@ static struct lm75_data lm75_data_##inst;                           \
 static const struct lm75_config lm75_config_##inst = {              \
 	.i2c = I2C_DT_SPEC_INST_GET(inst),                          \
 };                                                                  \
-DEVICE_DT_INST_DEFINE(inst, lm75_init, NULL, &lm75_data_##inst,     \
+SENSOR_DEVICE_DT_INST_DEFINE(inst, lm75_init, NULL, &lm75_data_##inst,     \
 		      &lm75_config_##inst, POST_KERNEL,             \
 		      CONFIG_SENSOR_INIT_PRIORITY, &lm75_driver_api);
 

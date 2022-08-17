@@ -464,7 +464,7 @@ static const struct sensor_driver_api bme680_api_funcs = {
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			    (BME680_CONFIG_SPI(inst)),			\
 			    (BME680_CONFIG_I2C(inst)));			\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			 bme680_init,					\
 			 NULL,						\
 			 &bme680_data_##inst,				\

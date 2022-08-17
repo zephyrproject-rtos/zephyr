@@ -134,7 +134,7 @@ int mcp9808_init(const struct device *dev)
 			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, mcp9808_init, NULL,						\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, mcp9808_init, NULL,					\
 			      &mcp9808_data_##inst, &mcp9808_config_##inst, POST_KERNEL,	\
 			      CONFIG_SENSOR_INIT_PRIORITY, &mcp9808_api_funcs);			\
 

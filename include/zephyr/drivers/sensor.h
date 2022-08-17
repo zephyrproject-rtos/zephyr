@@ -692,6 +692,50 @@ static inline int sensor_value_from_double(struct sensor_value *val, double inp)
 }
 
 /**
+ * @brief Like DEVICE_DT_DEFINE() with sensor specifics.
+ *
+ * @details Defines a device which implements the sensor API.
+ *
+ * @param node_id The devicetree node identifier.
+ *
+ * @param init_fn Name of the init function of the driver.
+ *
+ * @param pm_device PM device resources reference (NULL if device does not use
+ * PM).
+ *
+ * @param data_ptr Pointer to the device's private data.
+ *
+ * @param cfg_ptr The address to the structure containing the configuration
+ * information for this instance of the driver.
+ *
+ * @param level The initialization level. See SYS_INIT() for details.
+ *
+ * @param prio Priority within the selected initialization level. See
+ * SYS_INIT() for details.
+ *
+ * @param api_ptr Provides an initial pointer to the API function struct used
+ * by the driver. Can be NULL.
+ */
+#define SENSOR_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
+				data_ptr, cfg_ptr, level, prio,		\
+				api_ptr, ...)				\
+	DEVICE_DT_DEFINE(node_id, init_fn, pm_device,			\
+			 data_ptr, cfg_ptr, level, prio,		\
+			 api_ptr, __VA_ARGS__);
+
+/**
+ * @brief Like SENSOR_DEVICE_DT_DEFINE() for an instance of a DT_DRV_COMPAT
+ * compatible
+ *
+ * @param inst instance number. This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to SENSOR_DEVICE_DT_DEFINE().
+ *
+ * @param ... other parameters as expected by SENSOR_DEVICE_DT_DEFINE().
+ */
+#define SENSOR_DEVICE_DT_INST_DEFINE(inst, ...)				\
+	SENSOR_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
  * @}
  */
 

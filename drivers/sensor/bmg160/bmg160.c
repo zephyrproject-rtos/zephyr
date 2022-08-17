@@ -348,7 +348,7 @@ int bmg160_init(const struct device *dev)
 												\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, bmg160_init, NULL,						\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmg160_init, NULL,					\
 			      &bmg160_data_##inst, &bmg160_config_##inst,			\
 			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &bmg160_api);		\
 

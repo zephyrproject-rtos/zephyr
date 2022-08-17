@@ -143,7 +143,7 @@ static int th02_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(inst, th02_init, NULL,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, th02_init, NULL,				\
 			      &th02_data_##inst, &th02_config_##inst, POST_KERNEL,	\
 			      CONFIG_SENSOR_INIT_PRIORITY, &th02_driver_api);		\
 

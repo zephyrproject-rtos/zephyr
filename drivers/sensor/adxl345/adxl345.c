@@ -281,7 +281,7 @@ static int adxl345_init(const struct device *dev)
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (ADXL345_CONFIG_SPI(inst)),      \
 			    (ADXL345_CONFIG_I2C(inst)));                                \
                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, adxl345_init, NULL,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, adxl345_init, NULL,				\
 			      &adxl345_data_##inst, &adxl345_config_##inst, POST_KERNEL,\
 			      CONFIG_SENSOR_INIT_PRIORITY, &adxl345_api_funcs);		\
 

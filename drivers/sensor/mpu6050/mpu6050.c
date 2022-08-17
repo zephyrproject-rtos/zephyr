@@ -231,7 +231,7 @@ int mpu6050_init(const struct device *dev)
 			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, mpu6050_init, NULL,						\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, mpu6050_init, NULL,					\
 			      &mpu6050_data_##inst, &mpu6050_config_##inst,			\
 			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
 			      &mpu6050_driver_api);						\

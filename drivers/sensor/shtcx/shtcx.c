@@ -249,7 +249,7 @@ static int shtcx_init(const struct device *dev)
 	static struct shtcx_data shtcx_data_##inst;			\
 	static struct shtcx_config shtcx_config_##inst =		\
 		SHTCX_CONFIG(inst);					\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			      shtcx_init,				\
 			      NULL,					\
 			      &shtcx_data_##inst,			\

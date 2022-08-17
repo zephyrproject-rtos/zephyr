@@ -253,7 +253,7 @@ static int sm351lt_init(const struct device *dev)
 		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, gpios),	     \
 	};							     \
 								     \
-	DEVICE_DT_INST_DEFINE(inst,				     \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,			     \
 			    sm351lt_init,			     \
 			    NULL,				     \
 			    &sm351lt_data_##inst,		     \

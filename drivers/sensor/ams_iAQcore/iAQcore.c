@@ -117,7 +117,7 @@ static int iaq_core_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(inst, iaq_core_init, NULL, &iaq_core_data_##inst,		\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, iaq_core_init, NULL, &iaq_core_data_##inst,	\
 			      &iaq_core_config_##inst, POST_KERNEL,			\
 			      CONFIG_SENSOR_INIT_PRIORITY, &iaq_core_driver_api);	\
 

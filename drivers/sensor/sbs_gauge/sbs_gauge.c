@@ -284,7 +284,7 @@ static const struct sensor_driver_api sbs_gauge_driver_api = {
 		.i2c = I2C_DT_SPEC_INST_GET(index), \
 	}; \
 \
-	DEVICE_DT_INST_DEFINE(index, \
+	SENSOR_DEVICE_DT_INST_DEFINE(index, \
 			    &sbs_gauge_init, \
 			    NULL, \
 			    &sbs_gauge_driver_##index, \

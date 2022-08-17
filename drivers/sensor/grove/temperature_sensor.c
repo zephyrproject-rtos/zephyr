@@ -126,7 +126,7 @@ static int gts_init(const struct device *dev)
 		.adc_channel = DT_INST_IO_CHANNELS_INPUT(inst),			\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(inst, &gts_init, NULL,				\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &gts_init, NULL,			\
 			      &gts_data_##inst, &gts_cfg_##inst, POST_KERNEL,	\
 			      CONFIG_SENSOR_INIT_PRIORITY, &gts_api);		\
 

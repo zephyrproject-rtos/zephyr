@@ -840,7 +840,7 @@ static int lsm6dsl_init(const struct device *dev)
  */
 
 #define LSM6DSL_DEVICE_INIT(inst)					\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			    lsm6dsl_init,				\
 			    NULL,					\
 			    &lsm6dsl_data_##inst,			\

@@ -394,7 +394,7 @@ static int tmp108_init(const struct device *dev)
 						       alert_gpios, { 0 }),\
 		.reg_def = t##_CONF					   \
 	};								   \
-	DEVICE_DT_INST_DEFINE(inst,					   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				   \
 			      &tmp108_init,				   \
 			      NULL,					   \
 			      &tmp108_prv_data_##inst##t,		   \
