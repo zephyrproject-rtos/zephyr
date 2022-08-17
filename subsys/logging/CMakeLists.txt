@@ -88,6 +88,11 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
   )
 
   zephyr_sources_ifdef(
+    CONFIG_LOG_BACKEND_ADSP_MTRACE
+    log_backend_adsp_mtrace.c
+  )
+
+  zephyr_sources_ifdef(
     CONFIG_LOG_BACKEND_EFI_CONSOLE
     log_backend_efi_console.c
   )
