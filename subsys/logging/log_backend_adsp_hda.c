@@ -15,7 +15,8 @@
 #include <zephyr/kernel.h>
 
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_ADSP_HDA_OUTPUT_DEFAULT;
-static const struct device *hda_log_dev;
+static const struct device *const hda_log_dev =
+	DEVICE_DT_GET(DT_NODELABEL(hda_host_in));
 static uint32_t hda_log_chan;
 
 /*
@@ -248,7 +249,6 @@ void adsp_hda_log_init(adsp_hda_log_hook_t fn, uint32_t channel)
 
 	int res;
 
-	hda_log_dev = DEVICE_DT_GET(DT_NODELABEL(hda_host_in));
 	__ASSERT(device_is_ready(hda_log_dev), "DMA device is not ready");
 
 	hda_log_chan = dma_request_channel(hda_log_dev, &channel);
