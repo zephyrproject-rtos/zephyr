@@ -40,7 +40,7 @@ static int pm_stats_init(const struct device *dev)
 			snprintk(names[i][j], PM_STAT_NAME_LEN,
 				 "pm_cpu_%03d_state_%1d_stats", i, j);
 			stats_init(&(stats[i][j].s_hdr), STATS_SIZE_32, 3U,
-				   STATS_NAME_INIT_PARMS(stats));
+				   STATS_NAME_INIT_PARMS(pm_stats));
 			stats_register(names[i][j], &(stats[i][j].s_hdr));
 		}
 	}
