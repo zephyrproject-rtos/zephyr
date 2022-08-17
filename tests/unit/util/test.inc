@@ -80,16 +80,16 @@ void test_COND_CODE_1(void)
 	 * be seen in compilation (lack of variable or ununsed variable.
 	 */
 	COND_CODE_1(1, (uint32_t x0 = 1;), (uint32_t y0;))
-	zassert_true((x0 == 1), NULL);
+	zassert_true((x0 == 1));
 
 	COND_CODE_1(NOT_EXISTING_DEFINE, (uint32_t x1 = 1;), (uint32_t y1 = 1;))
-	zassert_true((y1 == 1), NULL);
+	zassert_true((y1 == 1));
 
 	COND_CODE_1(TEST_DEFINE_1, (uint32_t x2 = 1;), (uint32_t y2 = 1;))
-	zassert_true((x2 == 1), NULL);
+	zassert_true((x2 == 1));
 
 	COND_CODE_1(2, (uint32_t x3 = 1;), (uint32_t y3 = 1;))
-	zassert_true((y3 == 1), NULL);
+	zassert_true((y3 == 1));
 }
 
 void test_COND_CODE_0(void)
@@ -98,16 +98,16 @@ void test_COND_CODE_0(void)
 	 * be seen in compilation (lack of variable or ununsed variable.
 	 */
 	COND_CODE_0(0, (uint32_t x0 = 1;), (uint32_t y0;))
-	zassert_true((x0 == 1), NULL);
+	zassert_true((x0 == 1));
 
 	COND_CODE_0(NOT_EXISTING_DEFINE, (uint32_t x1 = 1;), (uint32_t y1 = 1;))
-	zassert_true((y1 == 1), NULL);
+	zassert_true((y1 == 1));
 
 	COND_CODE_0(TEST_DEFINE_0, (uint32_t x2 = 1;), (uint32_t y2 = 1;))
-	zassert_true((x2 == 1), NULL);
+	zassert_true((x2 == 1));
 
 	COND_CODE_0(2, (uint32_t x3 = 1;), (uint32_t y3 = 1;))
-	zassert_true((y3 == 1), NULL);
+	zassert_true((y3 == 1));
 }
 
 #undef ZERO
@@ -119,28 +119,28 @@ void test_COND_CODE_0(void)
 
 void test_UTIL_OR(void)
 {
-	zassert_equal(UTIL_OR(SEVEN, A_BUILD_ERROR), 7, NULL);
-	zassert_equal(UTIL_OR(7, 0), 7, NULL);
-	zassert_equal(UTIL_OR(SEVEN, ZERO), 7, NULL);
-	zassert_equal(UTIL_OR(0, 7), 7, NULL);
-	zassert_equal(UTIL_OR(ZERO, SEVEN), 7, NULL);
-	zassert_equal(UTIL_OR(0, 0), 0, NULL);
-	zassert_equal(UTIL_OR(ZERO, ZERO), 0, NULL);
+	zassert_equal(UTIL_OR(SEVEN, A_BUILD_ERROR), 7);
+	zassert_equal(UTIL_OR(7, 0), 7);
+	zassert_equal(UTIL_OR(SEVEN, ZERO), 7);
+	zassert_equal(UTIL_OR(0, 7), 7);
+	zassert_equal(UTIL_OR(ZERO, SEVEN), 7);
+	zassert_equal(UTIL_OR(0, 0), 0);
+	zassert_equal(UTIL_OR(ZERO, ZERO), 0);
 }
 
 void test_UTIL_AND(void)
 {
-	zassert_equal(UTIL_AND(ZERO, A_BUILD_ERROR), 0, NULL);
-	zassert_equal(UTIL_AND(7, 0), 0, NULL);
-	zassert_equal(UTIL_AND(SEVEN, ZERO), 0, NULL);
-	zassert_equal(UTIL_AND(0, 7), 0, NULL);
-	zassert_equal(UTIL_AND(ZERO, SEVEN), 0, NULL);
-	zassert_equal(UTIL_AND(0, 0), 0, NULL);
-	zassert_equal(UTIL_AND(ZERO, ZERO), 0, NULL);
-	zassert_equal(UTIL_AND(7, 7), 7, NULL);
-	zassert_equal(UTIL_AND(7, SEVEN), 7, NULL);
-	zassert_equal(UTIL_AND(SEVEN, 7), 7, NULL);
-	zassert_equal(UTIL_AND(SEVEN, SEVEN), 7, NULL);
+	zassert_equal(UTIL_AND(ZERO, A_BUILD_ERROR), 0);
+	zassert_equal(UTIL_AND(7, 0), 0);
+	zassert_equal(UTIL_AND(SEVEN, ZERO), 0);
+	zassert_equal(UTIL_AND(0, 7), 0);
+	zassert_equal(UTIL_AND(ZERO, SEVEN), 0);
+	zassert_equal(UTIL_AND(0, 0), 0);
+	zassert_equal(UTIL_AND(ZERO, ZERO), 0);
+	zassert_equal(UTIL_AND(7, 7), 7);
+	zassert_equal(UTIL_AND(7, SEVEN), 7);
+	zassert_equal(UTIL_AND(SEVEN, 7), 7);
+	zassert_equal(UTIL_AND(SEVEN, SEVEN), 7);
 }
 
 void test_IF_ENABLED(void)
@@ -170,9 +170,9 @@ void test_LISTIFY(void)
 
 	int *a[] = { LISTIFY(2, A_PTR, (,), a, b) };
 
-	zassert_equal(ARRAY_SIZE(a), 2, NULL);
-	zassert_equal(a[0], &ab0, NULL);
-	zassert_equal(a[1], &ab1, NULL);
+	zassert_equal(ARRAY_SIZE(a), 2);
+	zassert_equal(a[0], &ab0);
+	zassert_equal(a[1], &ab1);
 }
 
 void test_MACRO_MAP_CAT(void)
@@ -404,9 +404,9 @@ static void test_nested_FOR_EACH(void)
 
 	FOR_EACH(FOO_2, (;), FOR_EACH(FOO_1, (,), 0, 1, 2));
 
-	zassert_equal(a0, 0, NULL);
-	zassert_equal(a1, 1, NULL);
-	zassert_equal(a2, 2, NULL);
+	zassert_equal(a0, 0);
+	zassert_equal(a1, 1);
+	zassert_equal(a2, 2);
 }
 
 static void test_GET_ARG_N(void)
@@ -415,9 +415,9 @@ static void test_GET_ARG_N(void)
 	int b = GET_ARG_N(2, 10, 100, 1000);
 	int c = GET_ARG_N(3, 10, 100, 1000);
 
-	zassert_equal(a, 10, NULL);
-	zassert_equal(b, 100, NULL);
-	zassert_equal(c, 1000, NULL);
+	zassert_equal(a, 10);
+	zassert_equal(b, 100);
+	zassert_equal(c, 1000);
 }
 
 static void test_GET_ARGS_LESS_N(void)
@@ -426,14 +426,14 @@ static void test_GET_ARGS_LESS_N(void)
 	uint8_t b[] = { GET_ARGS_LESS_N(1, 1, 2, 3) };
 	uint8_t c[] = { GET_ARGS_LESS_N(2, 1, 2, 3) };
 
-	zassert_equal(sizeof(a), 3, NULL);
+	zassert_equal(sizeof(a), 3);
 
-	zassert_equal(sizeof(b), 2, NULL);
-	zassert_equal(b[0], 2, NULL);
-	zassert_equal(b[1], 3, NULL);
+	zassert_equal(sizeof(b), 2);
+	zassert_equal(b[0], 2);
+	zassert_equal(b[1], 3);
 
-	zassert_equal(sizeof(c), 1, NULL);
-	zassert_equal(c[0], 3, NULL);
+	zassert_equal(sizeof(c), 1);
+	zassert_equal(c[0], 3);
 }
 
 static void test_mixing_GET_ARG_and_FOR_EACH(void)
@@ -443,10 +443,10 @@ static void test_mixing_GET_ARG_and_FOR_EACH(void)
 	int i;
 
 	i = GET_ARG_N(3, FOR_EACH(TEST_MACRO, (), 1, 2, 3, 4, 5));
-	zassert_equal(i, 3, NULL);
+	zassert_equal(i, 3);
 
 	i = GET_ARG_N(2, 1, GET_ARGS_LESS_N(2, 1, 2, 3, 4, 5));
-	zassert_equal(i, 3, NULL);
+	zassert_equal(i, 3);
 
 	#undef TEST_MACRO
 	#undef TEST_MACRO2
@@ -456,12 +456,12 @@ static void test_mixing_GET_ARG_and_FOR_EACH(void)
 		LIST_DROP_EMPTY(TEST_MACRO2(1, 2, 3, 4)), 5
 	};
 
-	zassert_equal(ARRAY_SIZE(a), 5, NULL);
-	zassert_equal(a[0], 1, NULL);
-	zassert_equal(a[1], 2, NULL);
-	zassert_equal(a[2], 3, NULL);
-	zassert_equal(a[3], 4, NULL);
-	zassert_equal(a[4], 5, NULL);
+	zassert_equal(ARRAY_SIZE(a), 5);
+	zassert_equal(a[0], 1);
+	zassert_equal(a[1], 2);
+	zassert_equal(a[2], 3);
+	zassert_equal(a[3], 4);
+	zassert_equal(a[4], 5);
 }
 
 #if __cplusplus

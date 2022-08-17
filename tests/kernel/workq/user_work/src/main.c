@@ -41,8 +41,8 @@ static void common_work_handler(struct k_work_user *unused)
 static void test_k_work_user_init(void)
 {
 	K_WORK_USER_DEFINE(local, common_work_handler);
-	zassert_equal(local.handler, common_work_handler, NULL);
-	zassert_equal(local.flags, 0, NULL);
+	zassert_equal(local.handler, common_work_handler);
+	zassert_equal(local.flags, 0);
 }
 
 /**
@@ -69,13 +69,13 @@ static void test_k_work_user_submit_to_queue_fail(void)
 	 * be append to a workqueue another time.
 	 */
 	k_work_user_submit_to_queue(&user_workq, &work[0]);
-	zassert_true(k_work_user_is_pending(&work[0]), NULL);
+	zassert_true(k_work_user_is_pending(&work[0]));
 	k_work_user_submit_to_queue(&user_workq, &work[0]);
 
 	/* Test the work item's callback function can only be invoked once */
 	k_sem_take(&sync_sema, K_FOREVER);
-	zassert_true(k_queue_is_empty(&user_workq.queue), NULL);
-	zassert_false(k_work_user_is_pending(&work[0]), NULL);
+	zassert_true(k_queue_is_empty(&user_workq.queue));
+	zassert_false(k_work_user_is_pending(&work[0]));
 
 	/* use up the memory in resource pool */
 	for (int i = 0; i < 100; i++) {
@@ -87,7 +87,7 @@ static void test_k_work_user_submit_to_queue_fail(void)
 
 	k_work_user_submit_to_queue(&user_workq, &work[0]);
 	/* if memory is used up, the work cannot be append into the workqueue */
-	zassert_false(k_work_user_is_pending(&work[0]), NULL);
+	zassert_false(k_work_user_is_pending(&work[0]));
 }
 
 
@@ -105,7 +105,7 @@ static void twork_submit_1(struct k_work_user_q *work_q, struct k_work_user *w,
 	/**TESTPOINT: init via k_work_init*/
 	k_work_user_init(w, handler);
 	/**TESTPOINT: check pending after work init*/
-	zassert_false(k_work_user_is_pending(w), NULL);
+	zassert_false(k_work_user_is_pending(w));
 
 	/**TESTPOINT: work submit to queue*/
 	zassert_false(k_work_user_submit_to_queue(work_q, w),

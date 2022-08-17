@@ -194,13 +194,13 @@ static void client_entry(void *p1, void *p2, void *p3)
 	/* query services */
 	k_msgq_put(&manager_q, client_data, K_NO_WAIT);
 	ret = k_msgq_get(&client_msgq, service_data, K_FOREVER);
-	zassert_equal(ret, 0, NULL);
+	zassert_equal(ret, 0);
 
 	service1q = (struct k_msgq *)service_data[0];
 	service2q = (struct k_msgq *)service_data[1];
 	/* all services should be running */
-	zassert_equal(service1q, &service1_msgq, NULL);
-	zassert_equal(service2q, &service2_msgq, NULL);
+	zassert_equal(service1q, &service1_msgq);
+	zassert_equal(service2q, &service2_msgq);
 	/* let the test thread continue */
 	k_sem_give(&test_continue);
 

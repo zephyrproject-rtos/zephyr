@@ -282,5 +282,5 @@ static int test_file_open_flags(void)
  */
 ZTEST(posix_fs_test, test_fs_open_flags)
 {
-	zassert_true(test_file_open_flags() == TC_PASS, NULL);
+	zassert_true(test_file_open_flags() == TC_PASS);
 }

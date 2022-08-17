@@ -141,72 +141,72 @@ ZTEST(power_domain_1cpu, test_power_domain_device_runtime)
 	pm_device_runtime_enable(devc);
 
 	ret = pm_device_power_domain_remove(devc, domain);
-	zassert_equal(ret, -ENOENT, NULL);
+	zassert_equal(ret, -ENOENT);
 
 	ret = pm_device_power_domain_add(devc, domain);
-	zassert_equal(ret, 0, NULL);
+	zassert_equal(ret, 0);
 
 	/* At this point all devices should be SUSPENDED */
 	pm_device_state_get(domain, &state);
-	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED, NULL);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
 
 	pm_device_state_get(deva, &state);
-	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED, NULL);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
 
 	pm_device_state_get(devb, &state);
-	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED, NULL);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
 
 	pm_device_state_get(devc, &state);
-	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED, NULL);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
 
 	/* Now test if "get" a device will resume the domain */
 	ret = pm_device_runtime_get(deva);
-	zassert_equal(ret, 0, NULL);
+	zassert_equal(ret, 0);
 
 	pm_device_state_get(deva, &state);
-	zassert_equal(state, PM_DEVICE_STATE_ACTIVE, NULL);
+	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
 
 	pm_device_state_get(domain, &state);
-	zassert_equal(state, PM_DEVICE_STATE_ACTIVE, NULL);
+	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
 
 	ret = pm_device_runtime_get(devc);
-	zassert_equal(ret, 0, NULL);
+	zassert_equal(ret, 0);
 
 	ret = pm_device_runtime_get(devb);
-	zassert_equal(ret, 0, NULL);
+	zassert_equal(ret, 0);
 
 	ret = pm_device_runtime_put(deva);
-	zassert_equal(ret, 0, NULL);
+	zassert_equal(ret, 0);
 
 	/*
 	 * The domain has to still be active since device B
 	 * is still in use.
 	 */
 	pm_device_state_get(domain, &state);
-	zassert_equal(state, PM_DEVICE_STATE_ACTIVE, NULL);
+	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
 
 	/*
 	 * Now the domain should be suspended since there is no
 	 * one using it.
 	 */
 	ret = pm_device_runtime_put(devb);
-	zassert_equal(ret, 0, NULL);
+	zassert_equal(ret, 0);
 
 	ret = pm_device_runtime_put(devc);
-	zassert_equal(ret, 0, NULL);
+	zassert_equal(ret, 0);
 
 	pm_device_state_get(domain, &state);
-	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED, NULL);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
 
 	/*
 	 * With the domain suspended the device state should be OFF, since
 	 * the power was completely cut.
 	 */
 	pm_device_state_get(devb, &state);
-	zassert_equal(state, PM_DEVICE_STATE_OFF, NULL);
+	zassert_equal(state, PM_DEVICE_STATE_OFF);
 
 	pm_device_state_get(deva, &state);
-	zassert_equal(state, PM_DEVICE_STATE_OFF, NULL);
+	zassert_equal(state, PM_DEVICE_STATE_OFF);
 
 	/*
 	 * Now lets test that devices are notified when the domain
@@ -216,18 +216,18 @@ ZTEST(power_domain_1cpu, test_power_domain_device_runtime)
 	/* Three devices has to get the notification */
 	testing_domain_on_notitication = NUMBER_OF_DEVICES;
 	ret = pm_device_runtime_get(domain);
-	zassert_equal(ret, 0, NULL);
+	zassert_equal(ret, 0);
 
-	zassert_equal(testing_domain_on_notitication, 0, NULL);
+	zassert_equal(testing_domain_on_notitication, 0);
 
 	testing_domain_off_notitication = NUMBER_OF_DEVICES;
 	ret = pm_device_runtime_put(domain);
-	zassert_equal(ret, 0, NULL);
+	zassert_equal(ret, 0);
 
-	zassert_equal(testing_domain_off_notitication, 0, NULL);
+	zassert_equal(testing_domain_off_notitication, 0);
 
 	ret = pm_device_power_domain_remove(devc, domain);
-	zassert_equal(ret, 0, NULL);
+	zassert_equal(ret, 0);
 }
 
 ZTEST_SUITE(power_domain_1cpu, NULL, NULL, ztest_simple_1cpu_before,

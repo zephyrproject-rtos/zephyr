@@ -143,5 +143,5 @@ static int test_pending(void)
 
 void test_uart_pending(void)
 {
-	zassert_true(test_pending() == TC_PASS, NULL);
+	zassert_true(test_pending() == TC_PASS);
 }

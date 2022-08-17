@@ -111,5 +111,5 @@ static int test_task_write_value(void)
 
 void test_dac_write_value(void)
 {
-	zassert_true(test_task_write_value() == TC_PASS, NULL);
+	zassert_true(test_task_write_value() == TC_PASS);
 }

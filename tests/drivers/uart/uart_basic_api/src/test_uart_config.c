@@ -95,12 +95,12 @@ void test_uart_configure(void)
 {
 	int ret = test_configure();
 
-	zassert_true((ret == TC_PASS) || (ret == TC_SKIP), NULL);
+	zassert_true((ret == TC_PASS) || (ret == TC_SKIP));
 }
 
 void test_uart_config_get(void)
 {
 	int ret = test_config_get();
 
-	zassert_true((ret == TC_PASS) || (ret == TC_SKIP), NULL);
+	zassert_true((ret == TC_PASS) || (ret == TC_SKIP));
 }

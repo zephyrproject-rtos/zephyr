@@ -166,7 +166,7 @@ static void tmbox_put(struct k_mbox *pmbox)
 		mmsg.tx_data = data[1];
 		mmsg.tx_block.data = NULL;
 		mmsg.tx_target_thread = K_ANY;
-		zassert_true(k_mbox_put(pmbox, &mmsg, K_FOREVER) == 0, NULL);
+		zassert_true(k_mbox_put(pmbox, &mmsg, K_FOREVER) == 0);
 		break;
 
 	case ASYNC_PUT_TO_WAITING_GET:
@@ -252,9 +252,9 @@ static void tmbox_get(struct k_mbox *pmbox)
 		zassert_true(k_mbox_get(pmbox, &mmsg, rxdata, K_FOREVER) == 0,
 			     NULL);
 		/*verify .info*/
-		zassert_equal(mmsg.info, PUT_GET_NULL, NULL);
+		zassert_equal(mmsg.info, PUT_GET_NULL);
 		/*verify .size*/
-		zassert_equal(mmsg.size, 0, NULL);
+		zassert_equal(mmsg.size, 0);
 		break;
 	case PUT_GET_BUFFER:
 		__fallthrough;
@@ -268,8 +268,8 @@ static void tmbox_get(struct k_mbox *pmbox)
 		}
 		zassert_true(k_mbox_get(pmbox, &mmsg, rxdata, K_FOREVER) == 0,
 			     NULL);
-		zassert_equal(mmsg.info, PUT_GET_BUFFER, NULL);
-		zassert_equal(mmsg.size, sizeof(data[info_type]), NULL);
+		zassert_equal(mmsg.info, PUT_GET_BUFFER);
+		zassert_equal(mmsg.size, sizeof(data[info_type]));
 		/*verify rxdata*/
 		zassert_true(memcmp(rxdata, data[info_type], MAIL_LEN) == 0,
 			     NULL);
@@ -280,8 +280,8 @@ static void tmbox_get(struct k_mbox *pmbox)
 		mmsg.rx_source_thread = K_ANY;
 		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
 			     NULL);
-		zassert_equal(mmsg.info, ASYNC_PUT_GET_BUFFER, NULL);
-		zassert_equal(mmsg.size, sizeof(data[info_type]), NULL);
+		zassert_equal(mmsg.info, ASYNC_PUT_GET_BUFFER);
+		zassert_equal(mmsg.size, sizeof(data[info_type]));
 		k_mbox_data_get(&mmsg, rxdata);
 		zassert_true(memcmp(rxdata, data[info_type], MAIL_LEN) == 0,
 			     NULL);

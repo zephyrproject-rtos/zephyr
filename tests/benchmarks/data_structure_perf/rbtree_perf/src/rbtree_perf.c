@@ -136,7 +136,7 @@ static void verify_rbtree_perf(struct rbnode *root, struct rbnode *test)
 	uint32_t node_height = 0;
 
 	node_height = search_height_recurse(root, test, node_height);
-	zassert_true(node_height <= dlog_N, NULL);
+	zassert_true(node_height <= dlog_N);
 }
 
 /**

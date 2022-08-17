@@ -57,10 +57,10 @@ static int test_poll_out(void)
 
 void test_uart_poll_out(void)
 {
-	zassert_true(test_poll_out() == TC_PASS, NULL);
+	zassert_true(test_poll_out() == TC_PASS);
 }
 
 void test_uart_poll_in(void)
 {
-	zassert_true(test_poll_in() == TC_PASS, NULL);
+	zassert_true(test_poll_in() == TC_PASS);
 }

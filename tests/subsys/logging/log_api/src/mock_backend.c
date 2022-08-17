@@ -101,11 +101,11 @@ void mock_log_backend_validate(const struct log_backend *backend, bool panic)
 		      "Got: %u, Expected: %u", mock->drop_cnt, mock->exp_drop_cnt);
 	zassert_equal(mock->msg_rec_idx, mock->msg_proc_idx,
 			"%p Recored:%d, Got: %d", mock, mock->msg_rec_idx, mock->msg_proc_idx);
-	zassert_equal(mock->panic, panic, NULL);
+	zassert_equal(mock->panic, panic);
 
 #if defined(CONFIG_LOG_MODE_DEFERRED) && \
 	defined(CONFIG_LOG_PROCESS_THREAD)
-	zassert_true(mock->evt_notified, NULL);
+	zassert_true(mock->evt_notified);
 #endif
 }
 
@@ -146,8 +146,8 @@ static void process(const struct log_backend *const backend,
 		      "Got: %u, expected: %u",
 #endif
 		      msg->log.hdr.timestamp, exp->timestamp);
-	zassert_equal(msg->log.hdr.desc.level, exp->level, NULL);
-	zassert_equal(msg->log.hdr.desc.domain, exp->domain_id, NULL);
+	zassert_equal(msg->log.hdr.desc.level, exp->level);
+	zassert_equal(msg->log.hdr.desc.domain, exp->domain_id);
 
 	uint32_t source_id;
 	const void *source = msg->log.hdr.source;
@@ -169,9 +169,9 @@ static void process(const struct log_backend *const backend,
 	uint8_t *data;
 
 	data = log_msg_get_data(&msg->log, &len);
-	zassert_equal(exp->data_len, len, NULL);
+	zassert_equal(exp->data_len, len);
 	if (exp->data_len <= sizeof(exp->data)) {
-		zassert_equal(memcmp(data, exp->data, len), 0, NULL);
+		zassert_equal(memcmp(data, exp->data, len), 0);
 	}
 
 	char str[128];

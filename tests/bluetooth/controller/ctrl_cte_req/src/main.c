@@ -110,7 +110,7 @@ ZTEST(cte_req_after_fex, test_cte_req_central_local)
 	conn.llcp.cte_req.is_enabled = 1U;
 
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -185,7 +185,7 @@ ZTEST(cte_req_after_fex, test_cte_req_peripheral_local)
 	conn.llcp.cte_req.is_enabled = 1U;
 
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -404,7 +404,7 @@ ZTEST(cte_req_after_fex, test_cte_req_rejected_inv_ll_param_central_local)
 	conn.llcp.cte_req.is_enabled = 1U;
 
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -483,7 +483,7 @@ ZTEST(cte_req_after_fex, test_cte_req_rejected_inv_ll_param_peripheral_local)
 	conn.llcp.cte_req.is_enabled = 1U;
 
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -700,7 +700,7 @@ static void test_cte_req_ll_unknown_rsp_local(uint8_t role)
 
 	/* Initiate an CTE Request Procedure */
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -735,7 +735,7 @@ static void test_cte_req_ll_unknown_rsp_local(uint8_t role)
 
 	/* Verify that CTE response feature is marked as not supported by peer device */
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
-	zassert_equal(err, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE, NULL);
+	zassert_equal(err, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE);
 }
 
 ZTEST(cte_req, test_cte_req_ll_unknown_rsp_central_local)
@@ -1114,13 +1114,13 @@ static void test_local_cte_req_wait_for_phy_update_complete_and_disable(uint8_t 
 
 	/* Initiate an PHY Update Procedure */
 	err = ull_cp_phy_update(&conn, PHY_CODED, PREFER_S2_CODING, PHY_CODED, HOST_INITIATED);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Initiate an CTE Request Procedure */
 	conn.llcp.cte_req.is_enabled = 1U;
 
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(true, &phy_req, pu_event_counter(&conn),
@@ -1181,13 +1181,13 @@ static void test_local_cte_req_wait_for_phy_update_complete(uint8_t role)
 	/* Initiate an PHY Update Procedure */
 	err = ull_cp_phy_update(&conn, phy_req.rx_phys, PREFER_S2_CODING, phy_req.tx_phys,
 				HOST_INITIATED);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Initiate an CTE Request Procedure */
 	conn.llcp.cte_req.is_enabled = 1U;
 
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(true, &phy_req, pu_event_counter(&conn),
@@ -1235,11 +1235,11 @@ static void test_local_phy_update_wait_for_cte_req_complete(uint8_t role)
 	conn.llcp.cte_req.is_enabled = 1U;
 
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Initiate an PHY Update Procedure */
 	err = ull_cp_phy_update(&conn, PHY_CODED, PREFER_S2_CODING, PHY_CODED, HOST_INITIATED);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Handle CTE request */
 	run_local_cte_req(&local_cte_req);
@@ -1327,7 +1327,7 @@ static void test_phy_update_wait_for_remote_cte_req_complete(uint8_t role)
 
 	/* Initiate an PHY Update Procedure */
 	err = ull_cp_phy_update(&conn, PHY_CODED, PREFER_S2_CODING, PHY_CODED, HOST_INITIATED);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	run_remote_cte_req(&local_cte_req);
 
@@ -1387,7 +1387,7 @@ static void test_cte_req_wait_for_remote_phy_update_complete_and_disable(uint8_t
 	conn.llcp.cte_req.is_enabled = 1U;
 
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(false, &phy_req, pu_event_counter(&conn),
@@ -1443,7 +1443,7 @@ static void test_cte_req_wait_for_remote_phy_update_complete(uint8_t role)
 	conn.llcp.cte_req.is_enabled = 1U;
 
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(false, &phy_req, pu_event_counter(&conn),

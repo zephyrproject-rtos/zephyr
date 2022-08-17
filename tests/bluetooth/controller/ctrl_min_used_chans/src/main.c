@@ -81,7 +81,7 @@ void test_min_used_chans_periph_loc(void)
 
 	/* Initiate a Min number of Used Channels Procedure */
 	err = ull_cp_min_used_chans(&conn, 1, 2);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -121,7 +121,7 @@ void test_min_used_chans_central_loc(void)
 
 	/* Initiate a Min number of Used Channels Procedure */
 	err = ull_cp_min_used_chans(&conn, 1, 2);
-	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, NULL);
+	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED);
 
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());

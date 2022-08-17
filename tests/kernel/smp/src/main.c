@@ -720,7 +720,7 @@ ZTEST(smp, test_workq_on_smp)
 	k_busy_wait(DELAY_US);
 
 	/* check work have finished */
-	zassert_equal(k_work_busy_get(&work), 0, NULL);
+	zassert_equal(k_work_busy_get(&work), 0);
 
 	main_thread_id = curr_cpu();
 

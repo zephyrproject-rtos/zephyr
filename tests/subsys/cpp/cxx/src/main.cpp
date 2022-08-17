@@ -107,7 +107,7 @@ foo_class static_foo(12345678);
 
 ZTEST(cxx_tests, test_global_static_ctor)
 {
-	zassert_equal(static_foo.get_foo(), 12345678, NULL);
+	zassert_equal(static_foo.get_foo(), 12345678);
 }
 
 /*
@@ -118,13 +118,13 @@ foo_class *static_init_dynamic_foo = new foo_class(87654321);
 
 ZTEST(cxx_tests, test_global_static_ctor_dynmem)
 {
-	zassert_equal(static_init_dynamic_foo->get_foo(), 87654321, NULL);
+	zassert_equal(static_init_dynamic_foo->get_foo(), 87654321);
 }
 
 ZTEST(cxx_tests, test_new_delete)
 {
 	foo_class *test_foo = new foo_class(10);
-	zassert_equal(test_foo->get_foo(), 10, NULL);
+	zassert_equal(test_foo->get_foo(), 10);
 	delete test_foo;
 }
 ZTEST_SUITE(cxx_tests, NULL, NULL, NULL, NULL, NULL);
