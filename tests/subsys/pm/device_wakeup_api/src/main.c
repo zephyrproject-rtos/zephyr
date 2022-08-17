@@ -9,10 +9,8 @@
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/device.h>
 
-#define DEV_NAME DT_NODELABEL(gpio0)
-
-
-static const struct device *dev;
+static const struct device *const dev =
+	DEVICE_DT_GET(DT_NODELABEL(gpio0));
 static uint8_t sleep_count;
 
 
@@ -80,8 +78,7 @@ ZTEST(wakeup_device_1cpu, test_wakeup_device_api)
 {
 	bool ret = false;
 
-	dev = DEVICE_DT_GET(DEV_NAME);
-	zassert_not_null(dev, "Failed to get device");
+	zassert_true(device_is_ready(dev), "Device not ready");
 
 	ret = pm_device_wakeup_is_capable(dev);
 	zassert_true(ret, "Device not marked as capable");
