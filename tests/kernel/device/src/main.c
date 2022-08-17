@@ -54,17 +54,17 @@ ZTEST(device, test_dummy_device)
 
 	/* Validates device binding for a non-existing device object */
 	dev = device_get_binding(DUMMY_PORT_1);
-	zassert_equal(dev, NULL);
+	zassert_is_null(dev);
 
 	/* Validates device binding for an existing device object */
 	dev = device_get_binding(DUMMY_PORT_2);
-	zassert_false((dev == NULL));
+	zassert_not_null(dev);
 
 	/* device_get_binding() returns false for device object
 	 * with failed init.
 	 */
 	dev = device_get_binding(BAD_DRIVER);
-	zassert_true((dev == NULL));
+	zassert_is_null(dev);
 }
 
 /**

@@ -277,13 +277,13 @@ ZTEST(lifo_usage_1cpu, test_timeout_empty_lifo)
 
 	packet = k_lifo_get(&lifo_timeout[0], K_MSEC(timeout));
 
-	zassert_equal(packet, NULL);
+	zassert_is_null(packet);
 
 	zassert_true(is_timeout_in_range(start_time, timeout));
 
 	/* Test empty lifo with timeout of K_NO_WAIT */
 	packet = k_lifo_get(&lifo_timeout[0], K_NO_WAIT);
-	zassert_equal(packet, NULL);
+	zassert_is_null(packet);
 }
 
 /**
