@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdlib.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/pcie/pcie.h>
 
@@ -93,7 +94,53 @@ static void show_bars(const struct shell *shell, pcie_bdf_t bdf)
 	}
 }
 
-static void show(const struct shell *shell, pcie_bdf_t bdf)
+static void pcie_dump(const struct shell *shell, pcie_bdf_t bdf)
+{
+	for (int i = 0; i < 16; i++) {
+		uint32_t val = pcie_conf_read(bdf, i);
+
+		for (int j = 0; j < 4; j++) {
+			shell_fprintf(shell, SHELL_NORMAL, "%02x ",
+				      (uint8_t)val);
+			val >>= 8;
+		}
+
+		if (((i + 1) % 4) == 0) {
+			shell_fprintf(shell, SHELL_NORMAL, "\n");
+		}
+	}
+}
+
+static pcie_bdf_t get_bdf(char *str)
+{
+	int bus, dev, func;
+	char *tok, *state;
+
+	tok = strtok_r(str, ":", &state);
+	if (tok == NULL) {
+		return PCIE_BDF_NONE;
+	}
+
+	bus = strtoul(tok, NULL, 16);
+
+	tok = strtok_r(NULL, ".", &state);
+	if (tok == NULL) {
+		return PCIE_BDF_NONE;
+	}
+
+	dev = strtoul(tok, NULL, 16);
+
+	tok = strtok_r(NULL, ".", &state);
+	if (tok == NULL) {
+		return PCIE_BDF_NONE;
+	}
+
+	func = strtoul(tok, NULL, 16);
+
+	return PCIE_BDF(bus, dev, func);
+}
+
+static void show(const struct shell *shell, pcie_bdf_t bdf, bool dump)
 {
 	uint32_t data;
 	unsigned int irq;
@@ -133,18 +180,43 @@ static void show(const struct shell *shell, pcie_bdf_t bdf)
 				      "    wired interrupt on IRQ %d\n", irq);
 		}
 	}
+
+	if (dump) {
+		pcie_dump(shell, bdf);
+	}
 }
 
 static int cmd_pcie_ls(const struct shell *shell, size_t argc, char **argv)
 {
+	pcie_bdf_t bdf = PCIE_BDF_NONE;
+	bool dump = false;
 	int bus;
 	int dev;
 	int func;
 
+	for (int i = 1; i < argc; i++) {
+		/* Check dump argument */
+		if (strncmp(argv[i], "dump", 4) == 0) {
+			dump = true;
+			continue;
+		}
+
+		/* Check BDF string of PCI device */
+		if (bdf == PCIE_BDF_NONE) {
+			bdf = get_bdf(argv[i]);
+		}
+	}
+
+	/* Show only specified device */
+	if (bdf != PCIE_BDF_NONE) {
+		show(shell, bdf, dump);
+		return 0;
+	}
+
 	for (bus = 0; bus <= PCIE_MAX_BUS; ++bus) {
 		for (dev = 0; dev <= PCIE_MAX_DEV; ++dev) {
 			for (func = 0; func <= PCIE_MAX_FUNC; ++func) {
-				show(shell, PCIE_BDF(bus, dev, func));
+				show(shell, PCIE_BDF(bus, dev, func), dump);
 			}
 		}
 	}
