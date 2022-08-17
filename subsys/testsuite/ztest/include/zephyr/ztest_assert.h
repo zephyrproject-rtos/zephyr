@@ -130,7 +130,7 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
  * @param default_msg Message to print if @a cond is false
  * @param msg Optional, can be NULL. Message to print if @a cond is false.
  */
-#define zassert(cond, default_msg, msg, ...)                                                       \
+#define _zassert_base(cond, default_msg, msg, ...)                                                 \
 	do {                                                                                       \
 		bool _msg = (msg != NULL);                                                         \
 		bool _ret = z_zassert(cond, _msg ? ("(" default_msg ")") : (default_msg), __FILE__,\
@@ -142,6 +142,12 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
 				    ())                                                            \
 		}                                                                                  \
 	} while (0)
+
+#define _zassert_va(cond, default_msg, msg, ...)                                                   \
+	_zassert_base(cond, default_msg, msg, ##__VA_ARGS__)
+
+#define zassert(cond, default_msg, ...)                                                            \
+	_zassert_va(cond, default_msg, COND_CODE_1(__VA_OPT__(1), (__VA_ARGS__), (NULL)))
 
 /**
  * @brief Skip the test, if @a cond is false
@@ -161,7 +167,7 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
  * @param default_msg Message to print if @a cond is false
  * @param msg Optional, can be NULL. Message to print if @a cond is false.
  */
-#define zassume(cond, default_msg, msg, ...)                                                       \
+#define _zassume_base(cond, default_msg, msg, ...)                                                 \
 	do {                                                                                       \
 		bool _msg = (msg != NULL);                                                         \
 		bool _ret = z_zassume(cond, _msg ? ("(" default_msg ")") : (default_msg), __FILE__,\
@@ -173,6 +179,13 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
 				    ())                                                            \
 		}                                                                                  \
 	} while (0)
+
+#define _zassume_va(cond, default_msg, msg, ...)                                                   \
+	_zassume_base(cond, default_msg, msg, ##__VA_ARGS__)
+
+#define zassume(cond, default_msg, ...)                                                            \
+	_zassume_va(cond, default_msg, COND_CODE_1(__VA_OPT__(1), (__VA_ARGS__), (NULL)))
+
 /**
  * @brief Assert that this function call won't be reached
  * @param msg Optional message to print if the assertion fails
