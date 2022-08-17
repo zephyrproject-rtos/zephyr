@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 				NET_EVENT_WIFI_DISCONNECT_RESULT)
 
 static struct {
-	const struct shell *shell;
+	const struct shell *sh;
 
 	union {
 		struct {
@@ -49,10 +49,10 @@ static uint32_t scan_result;
 
 static struct net_mgmt_event_callback wifi_shell_mgmt_cb;
 
-#define print(shell, level, fmt, ...)					\
+#define print(sh, level, fmt, ...)					\
 	do {								\
-		if (shell) {						\
-			shell_fprintf(shell, level, fmt, ##__VA_ARGS__); \
+		if (sh) {						\
+			shell_fprintf(sh, level, fmt, ##__VA_ARGS__); \
 		} else {						\
 			printk(fmt, ##__VA_ARGS__);			\
 		}							\
@@ -67,12 +67,12 @@ static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 	scan_result++;
 
 	if (scan_result == 1U) {
-		print(context.shell, SHELL_NORMAL,
+		print(context.sh, SHELL_NORMAL,
 		      "\n%-4s | %-32s %-5s | %-4s | %-4s | %-5s    | %s\n",
 		      "Num", "SSID", "(len)", "Chan", "RSSI", "Sec", "MAC");
 	}
 
-	print(context.shell, SHELL_NORMAL, "%-4d | %-32s %-5u | %-4u | %-4d | %-5s | %s\n",
+	print(context.sh, SHELL_NORMAL, "%-4d | %-32s %-5u | %-4u | %-4d | %-5s | %s\n",
 	      scan_result, entry->ssid, entry->ssid_length, entry->channel, entry->rssi,
 	      wifi_security_txt(entry->security),
 	      ((entry->mac_length) ?
@@ -86,10 +86,10 @@ static void handle_wifi_scan_done(struct net_mgmt_event_callback *cb)
 		(const struct wifi_status *)cb->info;
 
 	if (status->status) {
-		print(context.shell, SHELL_WARNING,
+		print(context.sh, SHELL_WARNING,
 		      "Scan request failed (%d)\n", status->status);
 	} else {
-		print(context.shell, SHELL_NORMAL, "Scan request done\n");
+		print(context.sh, SHELL_NORMAL, "Scan request done\n");
 	}
 
 	scan_result = 0U;
@@ -101,10 +101,10 @@ static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
 		(const struct wifi_status *) cb->info;
 
 	if (status->status) {
-		print(context.shell, SHELL_WARNING,
+		print(context.sh, SHELL_WARNING,
 		      "Connection request failed (%d)\n", status->status);
 	} else {
-		print(context.shell, SHELL_NORMAL, "Connected\n");
+		print(context.sh, SHELL_NORMAL, "Connected\n");
 	}
 
 	context.connecting = false;
@@ -116,14 +116,14 @@ static void handle_wifi_disconnect_result(struct net_mgmt_event_callback *cb)
 		(const struct wifi_status *) cb->info;
 
 	if (context.disconnecting) {
-		print(context.shell,
+		print(context.sh,
 		      status->status ? SHELL_WARNING : SHELL_NORMAL,
 		      "Disconnection request %s (%d)\n",
 		      status->status ? "failed" : "done",
 		      status->status);
 		context.disconnecting = false;
 	} else {
-		print(context.shell, SHELL_NORMAL, "Disconnected\n");
+		print(context.sh, SHELL_NORMAL, "Disconnected\n");
 	}
 }
 
@@ -212,43 +212,43 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 	return 0;
 }
 
-static int cmd_wifi_connect(const struct shell *shell, size_t argc,
+static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
 	static struct wifi_connect_req_params cnx_params;
 
 	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params)) {
-		shell_help(shell);
+		shell_help(sh);
 		return -ENOEXEC;
 	}
 
 	context.connecting = true;
-	context.shell = shell;
+	context.sh = sh;
 
 	if (net_mgmt(NET_REQUEST_WIFI_CONNECT, iface,
 		     &cnx_params, sizeof(struct wifi_connect_req_params))) {
-		shell_fprintf(shell, SHELL_WARNING,
+		shell_fprintf(sh, SHELL_WARNING,
 			      "Connection request failed\n");
 		context.connecting = false;
 
 		return -ENOEXEC;
 	} else {
-		shell_fprintf(shell, SHELL_NORMAL,
+		shell_fprintf(sh, SHELL_NORMAL,
 			      "Connection requested\n");
 	}
 
 	return 0;
 }
 
-static int cmd_wifi_disconnect(const struct shell *shell, size_t argc,
+static int cmd_wifi_disconnect(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
 	int status;
 
 	context.disconnecting = true;
-	context.shell = shell;
+	context.sh = sh;
 
 	status = net_mgmt(NET_REQUEST_WIFI_DISCONNECT, iface, NULL, 0);
 
@@ -256,33 +256,33 @@ static int cmd_wifi_disconnect(const struct shell *shell, size_t argc,
 		context.disconnecting = false;
 
 		if (status == -EALREADY) {
-			shell_fprintf(shell, SHELL_INFO,
+			shell_fprintf(sh, SHELL_INFO,
 				      "Already disconnected\n");
 		} else {
-			shell_fprintf(shell, SHELL_WARNING,
+			shell_fprintf(sh, SHELL_WARNING,
 				      "Disconnect request failed\n");
 			return -ENOEXEC;
 		}
 	} else {
-		shell_fprintf(shell, SHELL_NORMAL,
+		shell_fprintf(sh, SHELL_NORMAL,
 			      "Disconnect requested\n");
 	}
 
 	return 0;
 }
 
-static int cmd_wifi_scan(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_wifi_scan(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
 
-	context.shell = shell;
+	context.sh = sh;
 
 	if (net_mgmt(NET_REQUEST_WIFI_SCAN, iface, NULL, 0)) {
-		shell_fprintf(shell, SHELL_WARNING, "Scan request failed\n");
+		shell_fprintf(sh, SHELL_WARNING, "Scan request failed\n");
 
 		return -ENOEXEC;
 	} else {
-		shell_fprintf(shell, SHELL_NORMAL, "Scan requested\n");
+		shell_fprintf(sh, SHELL_NORMAL, "Scan requested\n");
 	}
 
 	return 0;
@@ -293,7 +293,7 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 	struct net_if *iface = net_if_get_default();
 	struct wifi_iface_status status = { 0 };
 
-	context.shell = sh;
+	context.sh = sh;
 
 	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &status,
 				sizeof(struct wifi_iface_status))) {
@@ -382,41 +382,41 @@ static int cmd_wifi_stats(const struct shell *sh, size_t argc, char *argv[])
 }
 
 
-static int cmd_wifi_ap_enable(const struct shell *shell, size_t argc,
+static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
 	static struct wifi_connect_req_params cnx_params;
 
 	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params)) {
-		shell_help(shell);
+		shell_help(sh);
 		return -ENOEXEC;
 	}
 
-	context.shell = shell;
+	context.sh = sh;
 
 	if (net_mgmt(NET_REQUEST_WIFI_AP_ENABLE, iface,
 		     &cnx_params, sizeof(struct wifi_connect_req_params))) {
-		shell_fprintf(shell, SHELL_WARNING, "AP mode failed\n");
+		shell_fprintf(sh, SHELL_WARNING, "AP mode failed\n");
 		return -ENOEXEC;
 	} else {
-		shell_fprintf(shell, SHELL_NORMAL, "AP mode enabled\n");
+		shell_fprintf(sh, SHELL_NORMAL, "AP mode enabled\n");
 	}
 
 	return 0;
 }
 
-static int cmd_wifi_ap_disable(const struct shell *shell, size_t argc,
+static int cmd_wifi_ap_disable(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
 
 	if (net_mgmt(NET_REQUEST_WIFI_AP_DISABLE, iface, NULL, 0)) {
-		shell_fprintf(shell, SHELL_WARNING, "AP mode disable failed\n");
+		shell_fprintf(sh, SHELL_WARNING, "AP mode disable failed\n");
 
 		return -ENOEXEC;
 	} else {
-		shell_fprintf(shell, SHELL_NORMAL, "AP mode disabled\n");
+		shell_fprintf(sh, SHELL_NORMAL, "AP mode disabled\n");
 	}
 
 	return 0;
@@ -455,7 +455,7 @@ static int wifi_shell_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	context.shell = NULL;
+	context.sh = NULL;
 	context.all = 0U;
 	scan_result = 0U;
 
