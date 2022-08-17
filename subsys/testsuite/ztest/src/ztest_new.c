@@ -610,17 +610,22 @@ struct ztest_unit_test *z_ztest_get_next_test(const char *suite, struct ztest_un
 #ifdef CONFIG_ZTEST_SHUFFLE
 static void z_ztest_shuffle(void *dest[], intptr_t start, size_t num_items, size_t element_size)
 {
+	void *tmp;
+
+	/* Initialize dest array */
 	for (size_t i = 0; i < num_items; ++i) {
-		int pos = sys_rand32_get() % num_items;
-		const int start_pos = pos;
+		dest[i] = (void *)(start + (i * element_size));
+	}
 
-		/* Get the next valid position */
-		while (dest[pos] != NULL) {
-			pos = (pos + 1) % num_items;
-			__ASSERT_NO_MSG(pos != start_pos);
+	/* Shuffle dest array */
+	for (size_t i = num_items - 1; i > 0; i--) {
+		int j = sys_rand32_get() % (i + 1);
+
+		if (i != j) {
+			tmp = dest[j];
+			dest[j] = dest[i];
+			dest[i] = tmp;
 		}
-
-		dest[pos] = (void *)(start + (i * element_size));
 	}
 }
 #endif /* CONFIG_ZTEST_SHUFFLE */
