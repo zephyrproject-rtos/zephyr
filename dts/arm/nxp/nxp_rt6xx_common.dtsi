@@ -406,6 +406,7 @@
 	interrupts = <42 0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "disabled";
 };
 
 &nvic {
