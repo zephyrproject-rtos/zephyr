@@ -28,7 +28,7 @@ tests:
     extra_configs:
       - CONFIG_TIMESLICING=n
     tags: kernel threads sched userspacei ignore_faults
-  kernel.scheduler.dumb_no_timeslicing:
+  kernel.scheduler.dumb_timeslicing:
     extra_args: CONF_FILE=prj_dumb.conf
     extra_configs:
       - CONFIG_TIMESLICING=y
