@@ -23,5 +23,4 @@ supported:
   - pwm
   - watchdog
   - ps2
-  - peci
   - kscan
