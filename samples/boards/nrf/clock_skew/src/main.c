@@ -14,8 +14,8 @@
 
 #define UPDATE_INTERVAL_S 10
 
-static const struct device *clock0 = DEVICE_DT_GET_ONE(nordic_nrf_clock);
-static const struct device *timer0 = DEVICE_DT_GET(DT_NODELABEL(timer0));
+static const struct device *const clock0 = DEVICE_DT_GET_ONE(nordic_nrf_clock);
+static const struct device *const timer0 = DEVICE_DT_GET(DT_NODELABEL(timer0));
 static struct timeutil_sync_config sync_config;
 static uint64_t counter_ref;
 static struct timeutil_sync_state sync_state;

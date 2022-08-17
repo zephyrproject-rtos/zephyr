@@ -24,7 +24,7 @@ void *exp_user_data = (void *)199;
 struct counter_alarm_cfg alarm_cfg;
 struct counter_alarm_cfg alarm_cfg2;
 
-static const struct device *devices[] = {
+static const struct device *const devices[] = {
 	DEVICE_DT_GET(DT_NODELABEL(ds3231)),
 };
 typedef void (*counter_test_func_t)(const struct device *dev);

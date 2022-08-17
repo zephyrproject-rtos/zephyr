@@ -59,7 +59,7 @@ static struct {
 } event;
 
 /* Entropy device */
-static const struct device *dev_entropy = DEVICE_DT_GET(DT_NODELABEL(rng));
+static const struct device *const dev_entropy = DEVICE_DT_GET(DT_NODELABEL(rng));
 
 static int init_reset(void);
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)

@@ -20,7 +20,7 @@ static bool test_end;
 
 #include <hal/nrf_gpio.h>
 
-static const struct device *entropy = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
+static const struct device *const entropy = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 static struct onoff_manager *hf_mgr;
 static uint32_t iteration;
 

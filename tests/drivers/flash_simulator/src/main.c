@@ -32,7 +32,7 @@
 		(((((((0xff & pat) << 8) | (0xff & pat)) << 8) | \
 		   (0xff & pat)) << 8) | (0xff & pat))
 
-static const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+static const struct device *const flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 static uint8_t test_read_buf[TEST_SIM_FLASH_SIZE];
 
 static uint32_t p32_inc;

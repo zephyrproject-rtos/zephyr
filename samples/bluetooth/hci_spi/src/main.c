@@ -83,7 +83,7 @@ const static struct spi_buf_set tx_bufs = {
  * This is the SPI bus controller device used to exchange data with
  * the SPI-based BT controller.
  */
-static const struct device *spi_hci_dev = DEVICE_DT_GET(DT_BUS(HCI_SPI_NODE));
+static const struct device *const spi_hci_dev = DEVICE_DT_GET(DT_BUS(HCI_SPI_NODE));
 static struct spi_config spi_cfg = {
 	.operation = SPI_WORD_SET(8) | SPI_OP_MODE_SLAVE,
 };

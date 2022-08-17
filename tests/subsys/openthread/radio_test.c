@@ -83,7 +83,7 @@ static int init_mock(const struct device *dev)
 #define DT_DRV_COMPAT vnd_ieee802154
 DEVICE_DT_INST_DEFINE(0, init_mock, NULL, NULL, NULL, POST_KERNEL, 0, &rapi);
 
-static const struct device *radio = DEVICE_DT_INST_GET(0);
+static const struct device *const radio = DEVICE_DT_INST_GET(0);
 
 static int16_t rssi_scan_mock_max_ed;
 static int rssi_scan_mock(const struct device *dev, uint16_t duration,

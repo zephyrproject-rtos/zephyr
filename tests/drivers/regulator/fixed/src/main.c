@@ -23,7 +23,7 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT_STATUS(CHECK_NODE, test_regulator_fixed, okay));
 static const struct gpio_dt_spec reg_gpio = GPIO_DT_SPEC_GET(REGULATOR_NODE, enable_gpios);
 static const struct gpio_dt_spec check_gpio = GPIO_DT_SPEC_GET(CHECK_NODE, check_gpios);
 
-static const struct device *reg_dev = DEVICE_DT_GET(REGULATOR_NODE);
+static const struct device *const reg_dev = DEVICE_DT_GET(REGULATOR_NODE);
 
 static enum {
 	PC_UNCHECKED,
