@@ -213,6 +213,8 @@ static bool start_http_client(void)
 	int protocol = IPPROTO_TCP;
 #endif
 
+	(void)memset(&hints, 0, sizeof(hints));
+
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		hints.ai_family = AF_INET6;
 	} else if (IS_ENABLED(CONFIG_NET_IPV4)) {
