@@ -27,7 +27,8 @@ static const struct gpio_dt_spec discharge_vbus = GPIO_DT_SPEC_GET(DISCHARGE_VBU
 #define ADC_ACQUISITION_TIME    ADC_ACQ_TIME_DEFAULT
 #define ADC_REF_MV              3300
 
-static const struct device *dev_adc;
+static const struct device *const dev_adc =
+	DEVICE_DT_GET(DT_IO_CHANNELS_CTLR(VBUS));
 static int16_t sample_buffer;
 
 static const uint32_t output_ohm = DT_PROP(VBUS, output_ohms);
@@ -94,7 +95,6 @@ int board_config(void)
 {
 	int ret;
 
-	dev_adc = DEVICE_DT_GET(DT_IO_CHANNELS_CTLR(VBUS));
 	if (!device_is_ready(dev_adc)) {
 		printk("ADC device not found\n");
 		return -ENODEV;
