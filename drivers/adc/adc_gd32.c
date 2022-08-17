@@ -372,7 +372,7 @@ static int adc_gd32_init(const struct device *dev)
 }
 
 #define HANDLE_SHARED_IRQ(n, active_irq)							\
-	static const struct device *dev_##n = DEVICE_DT_INST_GET(n);				\
+	static const struct device *const dev_##n = DEVICE_DT_INST_GET(n);			\
 	const struct adc_gd32_config *cfg_##n = dev_##n->config;				\
 												\
 	if ((cfg_##n->irq_num == active_irq) &&							\

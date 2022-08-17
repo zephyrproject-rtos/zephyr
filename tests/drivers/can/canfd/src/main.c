@@ -31,7 +31,7 @@
 /**
  * @brief Global variables.
  */
-static const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+static const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 static struct k_sem rx_callback_sem;
 static struct k_sem tx_callback_sem;
 
