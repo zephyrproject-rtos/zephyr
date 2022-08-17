@@ -16,6 +16,9 @@
 	"when no channels are provided. Syntax:\n" \
 	"<device_name> <channel name 0> .. <channel name N>"
 
+#define SENSOR_INFO_HELP \
+	"Get sensor info, such as vendor and model name, for all sensors."
+
 const char *sensor_channel_name[SENSOR_CHAN_ALL] = {
 	[SENSOR_CHAN_ACCEL_X] =		"accel_x",
 	[SENSOR_CHAN_ACCEL_Y] =		"accel_y",
@@ -205,9 +208,27 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->subcmd = &dsub_channel_name;
 }
 
+static int cmd_get_sensor_info(const struct shell *sh, size_t argc,
+		char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	STRUCT_SECTION_FOREACH(sensor_info, sensor) {
+		shell_print(sh,
+			    "%p: device: %p, vendor: %s, model: %s, friendly_name: %s",
+			    sensor, sensor->dev, sensor->vendor, sensor->model,
+			    sensor->friendly_name);
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_sensor,
 	SHELL_CMD_ARG(get, &dsub_device_name, SENSOR_GET_HELP, cmd_get_sensor,
 			2, 255),
+	SHELL_COND_CMD(CONFIG_SENSOR_INFO, info, NULL, SENSOR_INFO_HELP,
+			cmd_get_sensor_info),
 	SHELL_SUBCMD_SET_END
 	);
 
