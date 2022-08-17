@@ -337,7 +337,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios), \
 			    (INA230_CFG_IRQ(inst)), ())		    \
 	};							    \
-	DEVICE_DT_INST_DEFINE(inst,				    \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,			    \
 			      &ina230_init,			    \
 			      NULL,				    \
 			      &drv_data_##inst,			    \

@@ -788,7 +788,7 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 										\
 	PM_DEVICE_DT_INST_DEFINE(index, bq274xx_pm_action);			\
 										\
-	DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init,			\
+	SENSOR_DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init,		\
 			    PM_DEVICE_DT_INST_GET(index),			\
 			    &bq274xx_driver_##index,				\
 			    &bq274xx_config_##index, POST_KERNEL,		\

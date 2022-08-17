@@ -180,7 +180,7 @@ static const struct sensor_driver_api tach_xec_driver_api = {
 									\
 	XEC_TACH_CONFIG(id);						\
 									\
-	DEVICE_DT_INST_DEFINE(id,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(id,				\
 			    tach_xec_init,				\
 			    NULL,					\
 			    &tach_xec_data_##id,			\

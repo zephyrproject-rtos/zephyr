@@ -209,7 +209,7 @@ int tmp112_init(const struct device *dev)
 		.extended_mode = DT_INST_PROP(inst, extended_mode),	    \
 	};								    \
 									    \
-	DEVICE_DT_INST_DEFINE(inst, tmp112_init, NULL, &tmp112_data_##inst, \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmp112_init, NULL, &tmp112_data_##inst, \
 			      &tmp112_config_##inst, POST_KERNEL,	    \
 			      CONFIG_SENSOR_INIT_PRIORITY, &tmp112_driver_api);
 

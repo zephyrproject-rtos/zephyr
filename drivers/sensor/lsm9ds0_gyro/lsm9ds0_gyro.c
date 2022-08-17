@@ -343,7 +343,7 @@ static int lsm9ds0_gyro_init(const struct device *dev)
 			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, irq_gpios, { 0 }),))	\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, lsm9ds0_gyro_init, NULL,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm9ds0_gyro_init, NULL,				\
 			      &lsm9ds0_gyro_data_##inst, &lsm9ds0_gyro_config_##inst,		\
 			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
 			      &lsm9ds0_gyro_api_funcs);						\
