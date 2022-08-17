@@ -125,7 +125,7 @@ void item_put_no_overwrite(bool pow2)
 
 	}
 
-	zassert_equal(mpsc_pbuf_claim(&buffer), NULL);
+	zassert_is_null(mpsc_pbuf_claim(&buffer));
 }
 
 ZTEST(log_buffer, test_item_put_no_overwrite)
@@ -196,7 +196,7 @@ void item_put_saturate(bool pow2)
 		mpsc_pbuf_free(&buffer, &t->item);
 	}
 
-	zassert_equal(mpsc_pbuf_claim(&buffer), NULL);
+	zassert_is_null(mpsc_pbuf_claim(&buffer));
 }
 
 ZTEST(log_buffer, test_item_put_saturate)
@@ -237,7 +237,7 @@ void benchmark_item_put(bool pow2)
 	t = get_cyc() - t;
 	PRINT("single word item claim,free: %d cycles\n", t/repeat);
 
-	zassert_equal(mpsc_pbuf_claim(&buffer), NULL);
+	zassert_is_null(mpsc_pbuf_claim(&buffer));
 }
 
 ZTEST(log_buffer, test_benchmark_item_put)
@@ -275,7 +275,7 @@ void item_put_ext_no_overwrite(bool pow2)
 		mpsc_pbuf_free(&buffer, &t->item);
 	}
 
-	zassert_equal(mpsc_pbuf_claim(&buffer), NULL);
+	zassert_is_null(mpsc_pbuf_claim(&buffer));
 }
 
 ZTEST(log_buffer, test_item_put_ext_no_overwrite)
@@ -363,7 +363,7 @@ void item_put_ext_saturate(bool pow2)
 		mpsc_pbuf_free(&buffer, &t->item);
 	}
 
-	zassert_equal(mpsc_pbuf_claim(&buffer), NULL);
+	zassert_is_null(mpsc_pbuf_claim(&buffer));
 }
 
 ZTEST(log_buffer, test_item_put_ext_saturate)
@@ -410,7 +410,7 @@ void benchmark_item_put_ext(bool pow2)
 	t = get_cyc() - t;
 	PRINT("ext item claim,free: %d cycles\n", t/repeat);
 
-	zassert_equal(mpsc_pbuf_claim(&buffer), NULL);
+	zassert_is_null(mpsc_pbuf_claim(&buffer));
 }
 
 ZTEST(log_buffer, test_benchmark_item_put_ext)
@@ -461,7 +461,7 @@ void benchmark_item_put_data(bool pow2)
 	t = get_cyc() - t;
 	PRINT("ext item claim,free: %d cycles\n", t/repeat);
 
-	zassert_equal(mpsc_pbuf_claim(&buffer), NULL);
+	zassert_is_null(mpsc_pbuf_claim(&buffer));
 }
 
 ZTEST(log_buffer, test_benchmark_item_put_data)
@@ -635,7 +635,7 @@ void item_alloc_commit_saturate(bool pow2)
 
 	packet = (struct test_data_var *)mpsc_pbuf_alloc(&buffer, len,
 							 K_NO_WAIT);
-	zassert_equal(packet, NULL);
+	zassert_is_null(packet);
 
 	/* Get one packet from the buffer. */
 	packet = (struct test_data_var *)mpsc_pbuf_claim(&buffer);
@@ -670,7 +670,7 @@ void item_alloc_preemption(bool pow2)
 
 	/* Check that no packet is yet available */
 	p = (struct test_data_var *)mpsc_pbuf_claim(&buffer);
-	zassert_equal(p, NULL);
+	zassert_is_null(p);
 
 	p1 = (struct test_data_var *)mpsc_pbuf_alloc(&buffer, 20, K_NO_WAIT);
 	zassert_true(p1);
@@ -683,7 +683,7 @@ void item_alloc_preemption(bool pow2)
 
 	/* Check that no packet is yet available */
 	p = (struct test_data_var *)mpsc_pbuf_claim(&buffer);
-	zassert_equal(p, NULL);
+	zassert_is_null(p);
 
 	mpsc_pbuf_commit(&buffer, (union mpsc_pbuf_generic *)p0);
 
@@ -701,7 +701,7 @@ void item_alloc_preemption(bool pow2)
 
 	/* No more packets. */
 	p = (struct test_data_var *)mpsc_pbuf_claim(&buffer);
-	zassert_equal(p, NULL);
+	zassert_is_null(p);
 }
 
 ZTEST(log_buffer, test_item_alloc_preemption)
@@ -765,7 +765,7 @@ void overwrite(bool pow2)
 	mpsc_pbuf_free(&buffer, (union mpsc_pbuf_generic *)p);
 
 	p = (struct test_data_var *)mpsc_pbuf_claim(&buffer);
-	zassert_equal(p, NULL);
+	zassert_is_null(p);
 }
 
 ZTEST(log_buffer, test_overwrite)
@@ -818,7 +818,7 @@ void overwrite_while_claimed(bool pow2)
 	zassert_equal(p0->hdr.len, len);
 
 	p0 = (struct test_data_var *)mpsc_pbuf_claim(&buffer);
-	zassert_equal(p0, NULL);
+	zassert_is_null(p0);
 }
 
 ZTEST(log_buffer, test_overwrite_while_claimed)
@@ -875,7 +875,7 @@ void overwrite_while_claimed2(bool pow2)
 	zassert_equal(p0->hdr.len, len);
 
 	p0 = (struct test_data_var *)mpsc_pbuf_claim(&buffer);
-	zassert_equal(p0, NULL);
+	zassert_is_null(p0);
 }
 
 ZTEST(log_buffer, test_overwrite_while_claimed2)
@@ -986,7 +986,7 @@ void t_entry(void *p0, void *p1, void *p2)
 	t = (struct test_data_ext *)mpsc_pbuf_alloc(buffer,
 						    sizeof(*t) / sizeof(uint32_t),
 						    K_MSEC(1));
-	zassert_equal(t, NULL);
+	zassert_is_null(t);
 
 	t = (struct test_data_ext *)mpsc_pbuf_alloc(buffer,
 						    sizeof(*t) / sizeof(uint32_t),
