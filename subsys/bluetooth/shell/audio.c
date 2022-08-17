@@ -1409,6 +1409,31 @@ static int cmd_term_broadcast_sink(const struct shell *sh, size_t argc,
 }
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SINK */
 
+static int cmd_set_loc(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+	enum bt_audio_dir dir;
+	enum bt_audio_location loc;
+
+	if (!strcmp(argv[1], "sink")) {
+		dir = BT_AUDIO_DIR_SINK;
+	} else if (!strcmp(argv[1], "source")) {
+		dir = BT_AUDIO_DIR_SOURCE;
+	} else {
+		shell_error(sh, "Unsupported dir: %s", argv[1]);
+		return -ENOEXEC;
+	}
+
+	loc = shell_strtoul(argv[2], 16, &err);
+	err = bt_audio_capability_set_location(dir, loc);
+	if (err) {
+		shell_error(ctx_shell, "Set available contexts err %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err, i;
@@ -1579,6 +1604,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(audio_cmds,
 #endif /* CONFIG_BT_AUDIO_UNICAST */
 	SHELL_CMD_ARG(send, NULL, "Send to Audio Stream [data]",
 		      cmd_send, 1, 1),
+	SHELL_COND_CMD_ARG(CONFIG_BT_AUDIO_CAPABILITY, set_location, NULL,
+			   "<direction: sink, source> <location bitmask>",
+			   cmd_set_loc, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
