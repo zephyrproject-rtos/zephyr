@@ -31,9 +31,10 @@ static bool testing_device_lock;
 static const struct device *device_dummy;
 static struct dummy_driver_api *api;
 
-static const struct device *device_a;
-static const struct device *device_c;
-
+static const struct device *const device_a =
+	DEVICE_DT_GET(DT_INST(0, test_device_pm));
+static const struct device *const device_c =
+	DEVICE_DT_GET(DT_INST(2, test_device_pm));
 
 /*
  * According with the initialization level, devices A, B and C are
@@ -375,11 +376,8 @@ ZTEST(power_management_1cpu, test_power_state_notification)
 
 ZTEST(power_management_1cpu, test_device_order)
 {
-	device_a = DEVICE_DT_GET(DT_INST(0, test_device_pm));
-	zassert_not_null(device_a, "Failed to get device");
-
-	device_c = DEVICE_DT_GET(DT_INST(2, test_device_pm));
-	zassert_not_null(device_c, "Failed to get device");
+	zassert_true(device_is_ready(device_a), "device a not ready");
+	zassert_true(device_is_ready(device_c), "device c not ready");
 
 	testing_device_order = true;
 	enter_low_power = true;
