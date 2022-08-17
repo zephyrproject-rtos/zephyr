@@ -858,7 +858,7 @@ static int lsm6dso_init(const struct device *dev)
  */
 
 #define LSM6DSO_DEVICE_INIT(inst)					\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			    lsm6dso_init,				\
 			    NULL,					\
 			    &lsm6dso_data_##inst,			\

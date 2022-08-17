@@ -524,7 +524,7 @@ static const struct mcux_acmp_config mcux_acmp_config_##n = {		\
 									\
 	PINCTRL_DT_INST_DEFINE(n);					\
 									\
-	DEVICE_DT_INST_DEFINE(n, &mcux_acmp_init,			\
+	SENSOR_DEVICE_DT_INST_DEFINE(n, &mcux_acmp_init,		\
 			      NULL,					\
 			      &mcux_acmp_data_##n,			\
 			      &mcux_acmp_config_##n, POST_KERNEL,	\

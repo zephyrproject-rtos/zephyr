@@ -699,7 +699,7 @@ static const struct sensor_driver_api icm42670_driver_api = {
 		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),                      \
 	};                                                                                         \
 												   \
-	DEVICE_DT_INST_DEFINE(inst, icm42670_init, NULL, &icm42670_driver_##inst,                  \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, icm42670_init, NULL, &icm42670_driver_##inst,           \
 			      &icm42670_cfg_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,      \
 			      &icm42670_driver_api);
 

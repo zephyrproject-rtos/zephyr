@@ -763,7 +763,7 @@ static int adxl362_init(const struct device *dev)
 			   (.interrupt = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, { 0 }),))	\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, adxl362_init, NULL, &adxl362_data_##inst,			\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, adxl362_init, NULL, &adxl362_data_##inst,		\
 			&adxl362_config_##inst, POST_KERNEL,					\
 			CONFIG_SENSOR_INIT_PRIORITY, &adxl362_api_funcs);			\
 

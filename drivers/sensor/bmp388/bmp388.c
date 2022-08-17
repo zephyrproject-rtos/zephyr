@@ -721,7 +721,7 @@ static int bmp388_init(const struct device *dev)
 		.iir_filter = DT_INST_ENUM_IDX(inst, iir_filter),	   \
 	};								   \
 	PM_DEVICE_DT_INST_DEFINE(inst, bmp388_pm_action);		   \
-	DEVICE_DT_INST_DEFINE(						   \
+	SENSOR_DEVICE_DT_INST_DEFINE(					   \
 		inst,							   \
 		bmp388_init,						   \
 		PM_DEVICE_DT_INST_GET(inst),				   \

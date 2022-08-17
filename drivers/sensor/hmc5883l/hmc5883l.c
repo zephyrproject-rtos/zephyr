@@ -165,7 +165,7 @@ int hmc5883l_init(const struct device *dev)
 			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, hmc5883l_init, NULL,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, hmc5883l_init, NULL,					\
 			      &hmc5883l_data_##inst, &hmc5883l_config_##inst, POST_KERNEL,	\
 			      CONFIG_SENSOR_INIT_PRIORITY, &hmc5883l_driver_api);		\
 

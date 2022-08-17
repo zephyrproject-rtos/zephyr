@@ -151,7 +151,7 @@ static int si7055_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(inst, si7055_init, NULL,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, si7055_init, NULL,				\
 			      &si7055_data_##inst, &si7055_config_##inst, POST_KERNEL,	\
 			      CONFIG_SENSOR_INIT_PRIORITY, &si7055_api);		\
 
