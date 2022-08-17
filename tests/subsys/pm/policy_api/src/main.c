@@ -20,10 +20,10 @@ ZTEST(policy_api, test_pm_policy_next_state_default)
 
 	/* cpu 0 */
 	next = pm_policy_next_state(0U, 0);
-	zassert_equal(next, NULL);
+	zassert_is_null(next);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(10999));
-	zassert_equal(next, NULL);
+	zassert_is_null(next);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
@@ -43,10 +43,10 @@ ZTEST(policy_api, test_pm_policy_next_state_default)
 
 	/* cpu 1 */
 	next = pm_policy_next_state(1U, 0);
-	zassert_equal(next, NULL);
+	zassert_is_null(next);
 
 	next = pm_policy_next_state(1U, k_us_to_ticks_floor32(549999));
-	zassert_equal(next, NULL);
+	zassert_is_null(next);
 
 	next = pm_policy_next_state(1U, k_us_to_ticks_floor32(550000));
 	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM);
@@ -84,7 +84,7 @@ ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 	zassert_true(active);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
-	zassert_equal(next, NULL);
+	zassert_is_null(next);
 
 	/* allow PM_STATE_RUNTIME_IDLE again
 	 * next state: PM_STATE_RUNTIME_IDLE
@@ -115,7 +115,7 @@ ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 	zassert_true(active);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
-	zassert_equal(next, NULL);
+	zassert_is_null(next);
 
 	/* allow PM_STATE_RUNTIME_IDLE and substate 1 again
 	 * next state: PM_STATE_RUNTIME_IDLE
@@ -162,10 +162,10 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	pm_policy_latency_request_add(&req1, 9000);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
-	zassert_equal(next, NULL);
+	zassert_is_null(next);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
-	zassert_equal(next, NULL);
+	zassert_is_null(next);
 
 	/* update latency requirement to a value between latencies for
 	 * PM_STATE_RUNTIME_IDLE and PM_STATE_SUSPEND_TO_RAM, so we should
@@ -186,10 +186,10 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	pm_policy_latency_request_add(&req2, 8000);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
-	zassert_equal(next, NULL);
+	zassert_is_null(next);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
-	zassert_equal(next, NULL);
+	zassert_is_null(next);
 
 	/* remove previous request, so we should recover behavior given by
 	 * first request.

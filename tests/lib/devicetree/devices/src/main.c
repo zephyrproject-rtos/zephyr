@@ -271,7 +271,7 @@ ZTEST(devicetree_devices, test_get_or_null)
 	zassert_not_equal(dev, NULL, NULL);
 
 	dev = DEVICE_DT_GET_OR_NULL(non_existing_node);
-	zassert_equal(dev, NULL);
+	zassert_is_null(dev);
 }
 
 ZTEST(devicetree_devices, test_supports)
