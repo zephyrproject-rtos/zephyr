@@ -445,7 +445,7 @@ static int lis2dw12_init(const struct device *dev)
  */
 
 #define LIS2DW12_DEVICE_INIT(inst)					\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			    lis2dw12_init,				\
 			    NULL,					\
 			    &lis2dw12_data_##inst,			\

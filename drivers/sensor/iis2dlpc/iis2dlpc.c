@@ -369,7 +369,7 @@ static int iis2dlpc_init(const struct device *dev)
  */
 
 #define IIS2DLPC_DEVICE_INIT(inst)					\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			    iis2dlpc_init,				\
 			    NULL,					\
 			    &iis2dlpc_data_##inst,			\

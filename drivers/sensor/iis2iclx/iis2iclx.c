@@ -629,7 +629,7 @@ static int iis2iclx_init(const struct device *dev)
  */
 
 #define IIS2ICLX_DEVICE_INIT(inst)					\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			    iis2iclx_init,				\
 			    NULL,					\
 			    &iis2iclx_data_##inst,			\

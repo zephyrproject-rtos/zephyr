@@ -361,7 +361,7 @@ static int vl53l0x_init(const struct device *dev)
 									 \
 	static struct vl53l0x_data vl53l0x_##inst##_driver;		 \
 									 \
-	DEVICE_DT_INST_DEFINE(inst, vl53l0x_init, NULL,			 \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, vl53l0x_init, NULL,		 \
 			      &vl53l0x_##inst##_driver,			 \
 			      &vl53l0x_##inst##_config,			 \
 			      POST_KERNEL,				 \
