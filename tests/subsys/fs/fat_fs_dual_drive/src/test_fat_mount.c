@@ -47,8 +47,8 @@ static int test_mount(struct fs_mount_t *mnt)
 void test_fat_mount(void)
 {
 	TC_PRINT("Mounting %s\n", FATFS_MNTP);
-	zassert_true(test_mount(&fatfs_mnt) == TC_PASS, NULL);
+	zassert_true(test_mount(&fatfs_mnt) == TC_PASS);
 
 	TC_PRINT("Mounting %s\n", FATFS_MNTP1);
-	zassert_true(test_mount(&fatfs_mnt1) == TC_PASS, NULL);
+	zassert_true(test_mount(&fatfs_mnt1) == TC_PASS);
 }

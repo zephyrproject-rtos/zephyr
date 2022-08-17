@@ -99,7 +99,7 @@ ZTEST(uart_basic_api, test_uart_configure)
 {
 	int ret = test_configure();
 
-	zassert_true((ret == TC_PASS) || (ret == TC_SKIP), NULL);
+	zassert_true((ret == TC_PASS) || (ret == TC_SKIP));
 }
 
 #if CONFIG_SHELL
@@ -110,5 +110,5 @@ ZTEST(uart_basic_api, test_uart_config_get)
 {
 	int ret = test_config_get();
 
-	zassert_true((ret == TC_PASS) || (ret == TC_SKIP), NULL);
+	zassert_true((ret == TC_PASS) || (ret == TC_SKIP));
 }

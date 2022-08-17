@@ -43,7 +43,7 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 		/* Printing alphabet corresponding to thread */
 		TC_PRINT("%c", thread_parameter);
 		/* Testing if threads are executed as per priority */
-		zassert_true((idx == thread_idx), NULL);
+		zassert_true((idx == thread_idx));
 		thread_idx = (thread_idx + 1) % (NUM_THREAD);
 
 		/* Release CPU and give chance to Ztest thread to run */

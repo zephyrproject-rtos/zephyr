@@ -271,11 +271,11 @@ static int test_file_delete(void)
 
 void test_fat_file(void)
 {
-	zassert_true(test_file_open() == TC_PASS, NULL);
-	zassert_true(test_file_write() == TC_PASS, NULL);
-	zassert_true(test_file_sync() == TC_PASS, NULL);
-	zassert_true(test_file_read() == TC_PASS, NULL);
-	zassert_true(test_file_truncate() == TC_PASS, NULL);
-	zassert_true(test_file_close() == TC_PASS, NULL);
-	zassert_true(test_file_delete() == TC_PASS, NULL);
+	zassert_true(test_file_open() == TC_PASS);
+	zassert_true(test_file_write() == TC_PASS);
+	zassert_true(test_file_sync() == TC_PASS);
+	zassert_true(test_file_read() == TC_PASS);
+	zassert_true(test_file_truncate() == TC_PASS);
+	zassert_true(test_file_close() == TC_PASS);
+	zassert_true(test_file_delete() == TC_PASS);
 }

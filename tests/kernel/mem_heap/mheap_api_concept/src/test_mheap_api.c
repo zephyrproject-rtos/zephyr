@@ -133,7 +133,7 @@ ZTEST(mheap_api, test_mheap_calloc)
 
 	/* Memory should be zeroed and not crash us if we read/write to it */
 	for (int i = 0; i < BOUNDS; i++) {
-		zassert_equal(mem[i], 0, NULL);
+		zassert_equal(mem[i], 0);
 		mem[i] = 1;
 	}
 

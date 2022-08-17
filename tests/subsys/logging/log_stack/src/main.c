@@ -50,13 +50,13 @@ ZTEST_SUITE(test_log_stack, NULL, NULL, NULL, NULL, after);
 	\
 	k_msleep(100); \
 	err = k_thread_stack_space_get(k_current_get(), &unused); \
-	zassert_equal(err, 0, NULL); \
+	zassert_equal(err, 0); \
 	__DEBRACKET log_msg; \
 	\
 	k_msleep(100); \
 	\
 	err = k_thread_stack_space_get(k_current_get(), &unused2); \
-	zassert_equal(err, 0, NULL); \
+	zassert_equal(err, 0); \
 	\
 	usage = unused - unused2; \
 	PRINT("Stack increase due to log usage: %zu\n", usage); \

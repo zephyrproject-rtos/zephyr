@@ -27,7 +27,7 @@ void thread1(void const *argument)
 
 	/* This thread starts off at a high priority (same as thread2) */
 	thread_yield_check++;
-	zassert_equal(thread_yield_check, 1, NULL);
+	zassert_equal(thread_yield_check, 1);
 
 	/* Yield to thread2 which is of same priority */
 	status = osThreadYield();
@@ -36,7 +36,7 @@ void thread1(void const *argument)
 	/* thread_yield_check should now be 2 as it was incremented
 	 * in thread2.
 	 */
-	zassert_equal(thread_yield_check, 2, NULL);
+	zassert_equal(thread_yield_check, 2);
 }
 
 void thread2(void const *argument)

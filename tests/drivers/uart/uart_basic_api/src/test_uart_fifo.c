@@ -164,7 +164,7 @@ ZTEST(uart_basic_api, test_uart_fifo_fill)
 #ifndef CONFIG_UART_INTERRUPT_DRIVEN
 	ztest_test_skip();
 #endif
-	zassert_true(test_fifo_fill() == TC_PASS, NULL);
+	zassert_true(test_fifo_fill() == TC_PASS);
 }
 
 #if CONFIG_SHELL
@@ -176,5 +176,5 @@ ZTEST(uart_basic_api, test_uart_fifo_read)
 #ifndef CONFIG_UART_INTERRUPT_DRIVEN
 	ztest_test_skip();
 #endif
-	zassert_true(test_fifo_read() == TC_PASS, NULL);
+	zassert_true(test_fifo_read() == TC_PASS);
 }

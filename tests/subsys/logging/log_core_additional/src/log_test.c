@@ -399,22 +399,22 @@ ZTEST(test_log_core_additional, test_log_thread)
 	slabs_free = log_msg_mem_get_free();
 	used = log_msg_mem_get_used();
 	max = log_msg_mem_get_max_used();
-	zassert_equal(used, 0, NULL);
+	zassert_equal(used, 0);
 
 	LOG_INF("log info to log thread");
 	LOG_WRN("log warning to log thread");
 	LOG_ERR("log error to log thread");
 
-	zassert_equal(log_msg_mem_get_used(), 3, NULL);
-	zassert_equal(log_msg_mem_get_free(), slabs_free - 3, NULL);
-	zassert_equal(log_msg_mem_get_max_used(), max, NULL);
+	zassert_equal(log_msg_mem_get_used(), 3);
+	zassert_equal(log_msg_mem_get_free(), slabs_free - 3);
+	zassert_equal(log_msg_mem_get_max_used(), max);
 
 	TC_PRINT("after log, free: %d, used: %d, max: %d\n", slabs_free, used, max);
 	/* wait 2 seconds for logging thread to handle this log message*/
 	k_sleep(K_MSEC(2000));
 	zassert_equal(3, backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
-	zassert_equal(log_msg_mem_get_used(), 0, NULL);
+	zassert_equal(log_msg_mem_get_used(), 0);
 }
 #else
 ZTEST(test_log_core_additional, test_log_thread)

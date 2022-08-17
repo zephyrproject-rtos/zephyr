@@ -59,7 +59,7 @@ static void unpack(const char *desc, struct out_buffer *buf,
 
 #define TEST_PACKAGING(flags, fmt, ...) do { \
 	int must_runtime = CBPRINTF_MUST_RUNTIME_PACKAGE(flags, fmt, __VA_ARGS__); \
-	zassert_equal(must_runtime, !Z_C_GENERIC, NULL); \
+	zassert_equal(must_runtime, !Z_C_GENERIC); \
 	snprintfcb(compare_buf, sizeof(compare_buf), fmt, __VA_ARGS__); \
 	printk("-----------------------------------------\n"); \
 	printk("%s\n", compare_buf); \
@@ -90,7 +90,7 @@ static void unpack(const char *desc, struct out_buffer *buf,
 	int outlen; \
 	pkg = &package[ALIGN_OFFSET]; \
 	CBPRINTF_STATIC_PACKAGE(pkg, len, outlen, ALIGN_OFFSET, flags, fmt, __VA_ARGS__);\
-	zassert_equal(len, outlen, NULL); \
+	zassert_equal(len, outlen); \
 	dump("static", pkg, len); \
 	unpack("static", &st_buf, pkg, len); \
 } while (0)
@@ -169,21 +169,21 @@ ZTEST(cbprintf_package, test_cbprintf_rw_str_indexes)
 		ztest_test_skip();
 	}
 
-	zassert_true(len0 > 0, NULL);
+	zassert_true(len0 > 0);
 	len1 = cbprintf_package(NULL, 0, CBPRINTF_PACKAGE_ADD_STRING_IDXS,
 				test_str, 100, test_str1);
-	zassert_true(len1 > 0, NULL);
+	zassert_true(len1 > 0);
 
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, len2, 0,
 				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
 				test_str, 100, test_str1);
-	zassert_true(len2 > 0, NULL);
+	zassert_true(len2 > 0);
 
 	/* package with string indexes will contain two more bytes holding indexes
 	 * of string parameter locations.
 	 */
-	zassert_equal(len0 + 2, len1, NULL);
-	zassert_equal(len0 + 2, len2, NULL);
+	zassert_equal(len0 + 2, len1);
+	zassert_equal(len0 + 2, len2);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package0[len0];
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package1[len1];
@@ -195,49 +195,49 @@ ZTEST(cbprintf_package, test_cbprintf_rw_str_indexes)
 	len1 = cbprintf_package(package1, sizeof(package1) - 1,
 				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
 				test_str, 100, test_str1);
-	zassert_equal(-ENOSPC, len1, NULL);
+	zassert_equal(-ENOSPC, len1);
 
 	CBPRINTF_STATIC_PACKAGE(package2, sizeof(package2) - 1, len2, 0,
 				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
 				test_str, 100, test_str1);
-	zassert_equal(-ENOSPC, len2, NULL);
+	zassert_equal(-ENOSPC, len2);
 
 	len1 = cbprintf_package(package1, sizeof(package1),
 				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
 				test_str, 100, test_str1);
-	zassert_equal(len0 + 2, len1, NULL);
+	zassert_equal(len0 + 2, len1);
 
 	CBPRINTF_STATIC_PACKAGE(package2, sizeof(package2), len2, 0,
 				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
 				test_str, 100, test_str1);
-	zassert_equal(len0 + 2, len2, NULL);
+	zassert_equal(len0 + 2, len2);
 
 	union cbprintf_package_hdr *desc0 = (union cbprintf_package_hdr *)package0;
 	union cbprintf_package_hdr *desc1 = (union cbprintf_package_hdr *)package1;
 	union cbprintf_package_hdr *desc2 = (union cbprintf_package_hdr *)package2;
 
 	/* Compare descriptor content. Second package has one ro string index. */
-	zassert_equal(desc0->desc.ro_str_cnt, 0, NULL);
-	zassert_equal(desc1->desc.ro_str_cnt, 2, NULL);
-	zassert_equal(desc2->desc.ro_str_cnt, 2, NULL);
+	zassert_equal(desc0->desc.ro_str_cnt, 0);
+	zassert_equal(desc1->desc.ro_str_cnt, 2);
+	zassert_equal(desc2->desc.ro_str_cnt, 2);
 
 	int *p = (int *)package1;
 
 	str_idx = package1[len0];
 	addr = *(char **)&p[str_idx];
-	zassert_equal(addr, test_str, NULL);
+	zassert_equal(addr, test_str);
 
 	str_idx = package2[len0];
 	addr = *(char **)&p[str_idx];
-	zassert_equal(addr, test_str, NULL);
+	zassert_equal(addr, test_str);
 
 	str_idx = package1[len0 + 1];
 	addr = *(char **)&p[str_idx];
-	zassert_equal(addr, test_str1, NULL);
+	zassert_equal(addr, test_str1);
 
 	str_idx = package2[len0 + 1];
 	addr = *(char **)&p[str_idx];
-	zassert_equal(addr, test_str1, NULL);
+	zassert_equal(addr, test_str1);
 }
 
 ZTEST(cbprintf_package, test_cbprintf_fsc_package)
@@ -263,37 +263,37 @@ ZTEST(cbprintf_package, test_cbprintf_fsc_package)
 
 	union cbprintf_package_hdr *desc = (union cbprintf_package_hdr *)package;
 
-	zassert_equal(desc->desc.ro_str_cnt, 2, NULL);
-	zassert_equal(desc->desc.str_cnt, 0, NULL);
+	zassert_equal(desc->desc.ro_str_cnt, 2);
+	zassert_equal(desc->desc.str_cnt, 0);
 
 	/* Get length of fsc package. */
 	fsc_len = cbprintf_fsc_package(package, len, NULL, 0);
 
 	int exp_len = len + (int)strlen(test_str) + 1 + (int)strlen(test_str1) + 1;
 
-	zassert_equal(exp_len, fsc_len, NULL);
+	zassert_equal(exp_len, fsc_len);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) fsc_package[fsc_len];
 
 	fsc_len = cbprintf_fsc_package(package, len, fsc_package, sizeof(fsc_package) - 1);
-	zassert_equal(fsc_len, -ENOSPC, NULL);
+	zassert_equal(fsc_len, -ENOSPC);
 
 	fsc_len = cbprintf_fsc_package(package, len, fsc_package, sizeof(fsc_package));
-	zassert_equal((int)sizeof(fsc_package), fsc_len, NULL);
+	zassert_equal((int)sizeof(fsc_package), fsc_len);
 
 	/* New package has no RO string locations, only copied one. */
 	desc = (union cbprintf_package_hdr *)fsc_package;
-	zassert_equal(desc->desc.ro_str_cnt, 0, NULL);
-	zassert_equal(desc->desc.str_cnt, 2, NULL);
+	zassert_equal(desc->desc.ro_str_cnt, 0);
+	zassert_equal(desc->desc.str_cnt, 2);
 
 	/* Get pointer to the first string in the package. */
 	addr = (char *)&fsc_package[desc->desc.len * sizeof(int) + 1];
 
-	zassert_equal(strcmp(test_str, addr), 0, NULL);
+	zassert_equal(strcmp(test_str, addr), 0);
 
 	/* Get address of the second string. */
 	addr += strlen(addr) + 2;
-	zassert_equal(strcmp(test_str1, addr), 0, NULL);
+	zassert_equal(strcmp(test_str1, addr), 0);
 }
 
 static void check_package(void *package, size_t len, const char *exp_str)
@@ -327,7 +327,7 @@ ZTEST(cbprintf_package, test_cbprintf_ro_loc)
 
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, slen, ALIGN_OFFSET, flags, TEST_FMT);
 
-	zassert_true(len > 0, NULL);
+	zassert_true(len > 0);
 	zassert_equal(len, slen, "Runtime length: %d, static length: %d", len, slen);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package[len];
@@ -345,17 +345,17 @@ ZTEST(cbprintf_package, test_cbprintf_ro_loc)
 	len = cbprintf_package(package, sizeof(package), flags, TEST_FMT);
 	CBPRINTF_STATIC_PACKAGE(spackage, sizeof(spackage), slen, ALIGN_OFFSET, flags, TEST_FMT);
 
-	zassert_true(len > 0, NULL);
+	zassert_true(len > 0);
 	zassert_equal(len, slen, "Runtime length: %d, static length: %d", len, slen);
 
-	zassert_equal(memcmp(package, spackage, len), 0, NULL);
+	zassert_equal(memcmp(package, spackage, len), 0);
 
 	uint8_t *hdr = package;
 
 	/* Check that only read-only string location array size is non zero */
-	zassert_equal(hdr[1], 0, NULL);
-	zassert_equal(hdr[2], 1, NULL);
-	zassert_equal(hdr[3], 0, NULL);
+	zassert_equal(hdr[1], 0);
+	zassert_equal(hdr[2], 1);
+	zassert_equal(hdr[3], 0);
 
 	int clen;
 
@@ -364,26 +364,26 @@ ZTEST(cbprintf_package, test_cbprintf_ro_loc)
 				     CBPRINTF_PACKAGE_CONVERT_RO_STR, NULL, 0);
 
 	/* Length will be increased by string length + null terminator. */
-	zassert_equal(clen, len + (int)strlen(test_str) + 1, NULL);
+	zassert_equal(clen, len + (int)strlen(test_str) + 1);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage[clen];
 
 	int clen2 = cbprintf_package_copy(package, sizeof(package), cpackage, sizeof(cpackage),
 				     CBPRINTF_PACKAGE_CONVERT_RO_STR, NULL, 0);
 
-	zassert_equal(clen, clen2, NULL);
+	zassert_equal(clen, clen2);
 
 	/* Length will be increased by string length + null terminator. */
-	zassert_equal(clen, len + (int)strlen(test_str) + 1, NULL);
+	zassert_equal(clen, len + (int)strlen(test_str) + 1);
 
 	uint8_t *chdr = cpackage;
 
 	/* Check that only package after copying has no locations but has
 	 * appended string.
 	 */
-	zassert_equal(chdr[1], 1, NULL);
-	zassert_equal(chdr[2], 0, NULL);
-	zassert_equal(chdr[3], 0, NULL);
+	zassert_equal(chdr[1], 1);
+	zassert_equal(chdr[2], 0);
+	zassert_equal(chdr[3], 0);
 
 	check_package(package, len, exp_str);
 	check_package(cpackage, clen, exp_str);
@@ -407,19 +407,19 @@ ZTEST(cbprintf_package, test_cbprintf_ro_loc_rw_present)
 
 	int len = cbprintf_package(NULL, 0, flags, TEST_FMT);
 
-	zassert_true(len > 0, NULL);
+	zassert_true(len > 0);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package[len];
 
 	len = cbprintf_package(package, sizeof(package), flags, TEST_FMT);
-	zassert_true(len > 0, NULL);
+	zassert_true(len > 0);
 
 	uint8_t *hdr = package;
 
 	/* Check that only read-only string location array size is non zero */
-	zassert_equal(hdr[1], 1, NULL);
-	zassert_equal(hdr[2], 1, NULL);
-	zassert_equal(hdr[3], 0, NULL);
+	zassert_equal(hdr[1], 1);
+	zassert_equal(hdr[2], 1);
+	zassert_equal(hdr[3], 0);
 
 	int clen;
 
@@ -428,26 +428,26 @@ ZTEST(cbprintf_package, test_cbprintf_ro_loc_rw_present)
 				     CBPRINTF_PACKAGE_CONVERT_RO_STR, NULL, 0);
 
 	/* Length will be increased by string length + null terminator. */
-	zassert_equal(clen, len + (int)strlen(test_str) + 1, NULL);
+	zassert_equal(clen, len + (int)strlen(test_str) + 1);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage[clen];
 
 	int clen2 = cbprintf_package_copy(package, sizeof(package), cpackage, sizeof(cpackage),
 				     CBPRINTF_PACKAGE_CONVERT_RO_STR, NULL, 0);
 
-	zassert_equal(clen, clen2, NULL);
+	zassert_equal(clen, clen2);
 
 	/* Length will be increased by string length + null terminator. */
-	zassert_equal(clen, len + (int)strlen(test_str) + 1, NULL);
+	zassert_equal(clen, len + (int)strlen(test_str) + 1);
 
 	uint8_t *chdr = cpackage;
 
 	/* Check that only package after copying has no locations but has
 	 * appended string.
 	 */
-	zassert_equal(chdr[1], 2, NULL);
-	zassert_equal(chdr[2], 0, NULL);
-	zassert_equal(chdr[3], 0, NULL);
+	zassert_equal(chdr[1], 2);
+	zassert_equal(chdr[2], 0);
+	zassert_equal(chdr[3], 0);
 
 	check_package(package, clen, exp_str);
 	check_package(cpackage, clen, exp_str);
@@ -479,8 +479,8 @@ ZTEST(cbprintf_package, test_cbprintf_ro_rw_loc)
 	int slen;
 
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, slen, ALIGN_OFFSET, flags, TEST_FMT);
-	zassert_true(len > 0, NULL);
-	zassert_equal(len, slen, NULL);
+	zassert_true(len > 0);
+	zassert_equal(len, slen);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package[len];
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) spackage[len];
@@ -491,18 +491,18 @@ ZTEST(cbprintf_package, test_cbprintf_ro_rw_loc)
 	int len2 = cbprintf_package(package, sizeof(package), flags, TEST_FMT);
 
 	CBPRINTF_STATIC_PACKAGE(spackage, sizeof(spackage), slen, ALIGN_OFFSET, flags, TEST_FMT);
-	zassert_equal(len, len2, NULL);
-	zassert_equal(slen, len2, NULL);
-	zassert_equal(memcmp(package, spackage, len), 0, NULL);
+	zassert_equal(len, len2);
+	zassert_equal(slen, len2);
+	zassert_equal(memcmp(package, spackage, len), 0);
 
 	uint8_t *hdr = package;
 
 	/* Check that expected number of ro and rw locations are present and no
 	 * strings appended.
 	 */
-	zassert_equal(hdr[1], 0, NULL);
-	zassert_equal(hdr[2], 2, NULL);
-	zassert_equal(hdr[3], 2, NULL);
+	zassert_equal(hdr[1], 0);
+	zassert_equal(hdr[2], 2);
+	zassert_equal(hdr[3], 2);
 
 	int clen;
 
@@ -513,23 +513,23 @@ ZTEST(cbprintf_package, test_cbprintf_ro_rw_loc)
 				     CBPRINTF_PACKAGE_CONVERT_RO_STR, strl, ARRAY_SIZE(strl));
 
 	/* Length will be increased by 2 string lengths + null terminators. */
-	zassert_equal(clen, len + (int)strlen(test_str) + (int)strlen(cstr) + 2, NULL);
-	zassert_equal(strl[0], strlen(test_str) + 1, NULL);
-	zassert_equal(strl[1], strlen(cstr) + 1, NULL);
+	zassert_equal(clen, len + (int)strlen(test_str) + (int)strlen(cstr) + 2);
+	zassert_equal(strl[0], strlen(test_str) + 1);
+	zassert_equal(strl[1], strlen(cstr) + 1);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage[clen];
 
 	int clen2 = cbprintf_package_copy(package, sizeof(package), cpackage, sizeof(cpackage),
 				     CBPRINTF_PACKAGE_CONVERT_RO_STR, strl, ARRAY_SIZE(strl));
 
-	zassert_equal(clen, clen2, NULL);
+	zassert_equal(clen, clen2);
 
 	uint8_t *chdr = cpackage;
 
 	/* Check that read only strings have been appended. */
-	zassert_equal(chdr[1], 2, NULL);
-	zassert_equal(chdr[2], 0, NULL);
-	zassert_equal(chdr[3], 2, NULL);
+	zassert_equal(chdr[1], 2);
+	zassert_equal(chdr[2], 0);
+	zassert_equal(chdr[3], 2);
 
 	check_package(package, len, exp_str);
 	check_package(cpackage, clen, exp_str);
@@ -542,21 +542,21 @@ ZTEST(cbprintf_package, test_cbprintf_ro_rw_loc)
 				     cpy_flags, NULL, 0);
 
 	/* Length will be increased by 2 string lengths + null terminators. */
-	zassert_equal(clen, len + (int)strlen(test_str1) + (int)strlen(test_str2) + 2, NULL);
+	zassert_equal(clen, len + (int)strlen(test_str1) + (int)strlen(test_str2) + 2);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage2[clen];
 
 	clen2 = cbprintf_package_copy(package, sizeof(package), cpackage2, sizeof(cpackage2),
 				      cpy_flags, NULL, 0);
 
-	zassert_equal(clen, clen2, NULL);
+	zassert_equal(clen, clen2);
 
 	chdr = cpackage2;
 
 	/* Check that read write strings have been appended. */
-	zassert_equal(chdr[1], 2, NULL);
-	zassert_equal(chdr[2], 2, NULL);
-	zassert_equal(chdr[3], 0, NULL);
+	zassert_equal(chdr[1], 2);
+	zassert_equal(chdr[2], 2);
+	zassert_equal(chdr[3], 0);
 
 	check_package(package, len, exp_str);
 	check_package(cpackage2, clen, exp_str);
@@ -599,8 +599,8 @@ ZTEST(cbprintf_package, test_cbprintf_ro_rw_loc_const_char_ptr)
 	int slen;
 
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, slen, ALIGN_OFFSET, flags, TEST_FMT);
-	zassert_true(len > 0, NULL);
-	zassert_equal(len, slen, NULL);
+	zassert_true(len > 0);
+	zassert_equal(len, slen);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package[len];
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) spackage[len];
@@ -611,18 +611,18 @@ ZTEST(cbprintf_package, test_cbprintf_ro_rw_loc_const_char_ptr)
 	int len2 = cbprintf_package(package, sizeof(package), flags, TEST_FMT);
 
 	CBPRINTF_STATIC_PACKAGE(spackage, sizeof(spackage), slen, ALIGN_OFFSET, flags, TEST_FMT);
-	zassert_equal(len, len2, NULL);
-	zassert_equal(slen, len2, NULL);
-	zassert_equal(memcmp(package, spackage, len), 0, NULL);
+	zassert_equal(len, len2);
+	zassert_equal(slen, len2);
+	zassert_equal(memcmp(package, spackage, len), 0);
 
 	uint8_t *hdr = package;
 
 	/* Check that expected number of ro and rw locations are present and no
 	 * strings appended.
 	 */
-	zassert_equal(hdr[1], 0, NULL);
-	zassert_equal(hdr[2], 3, NULL);
-	zassert_equal(hdr[3], 1, NULL);
+	zassert_equal(hdr[1], 0);
+	zassert_equal(hdr[2], 3);
+	zassert_equal(hdr[3], 1);
 
 	int clen;
 
@@ -634,21 +634,21 @@ ZTEST(cbprintf_package, test_cbprintf_ro_rw_loc_const_char_ptr)
 	size_t str_append_len = (int)strlen(test_str) +
 				(int)strlen(cstr) +
 				(int)strlen(test_str2) + 3;
-	zassert_equal(clen, len + (int)str_append_len, NULL);
+	zassert_equal(clen, len + (int)str_append_len);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage[clen];
 
 	int clen2 = cbprintf_package_copy(package, sizeof(package), cpackage, sizeof(cpackage),
 				     CBPRINTF_PACKAGE_CONVERT_RO_STR, NULL, 0);
 
-	zassert_equal(clen, clen2, NULL);
+	zassert_equal(clen, clen2);
 
 	uint8_t *chdr = cpackage;
 
 	/* Check that read only strings have been appended. */
-	zassert_equal(chdr[1], 3, NULL);
-	zassert_equal(chdr[2], 0, NULL);
-	zassert_equal(chdr[3], 1, NULL);
+	zassert_equal(chdr[1], 3);
+	zassert_equal(chdr[2], 0);
+	zassert_equal(chdr[3], 1);
 
 	check_package(package, len, exp_str);
 	check_package(cpackage, clen, exp_str);
@@ -658,21 +658,21 @@ ZTEST(cbprintf_package, test_cbprintf_ro_rw_loc_const_char_ptr)
 				     CBPRINTF_PACKAGE_CONVERT_RW_STR, NULL, 0);
 
 	/* Length will be increased by 1 string length + null terminator. */
-	zassert_equal(clen, len + (int)strlen(test_str1) + 1, NULL);
+	zassert_equal(clen, len + (int)strlen(test_str1) + 1);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage2[clen];
 
 	clen2 = cbprintf_package_copy(package, sizeof(package), cpackage2, sizeof(cpackage2),
 				     CBPRINTF_PACKAGE_CONVERT_RW_STR, NULL, 0);
 
-	zassert_equal(clen, clen2, NULL);
+	zassert_equal(clen, clen2);
 
 	chdr = cpackage2;
 
 	/* Check that read write strings have been appended. */
-	zassert_equal(chdr[1], 1, NULL);
-	zassert_equal(chdr[2], 3, NULL);
-	zassert_equal(chdr[3], 0, NULL);
+	zassert_equal(chdr[1], 1);
+	zassert_equal(chdr[2], 3);
+	zassert_equal(chdr[3], 0);
 
 	check_package(package, len, exp_str);
 	check_package(cpackage2, clen, exp_str);
@@ -711,23 +711,23 @@ static void cbprintf_rw_loc_const_char_ptr(bool keep_ro_str)
 	snprintfcb(exp_str, sizeof(exp_str), TEST_FMT);
 
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, slen, ALIGN_OFFSET, flags, TEST_FMT);
-	zassert_true(slen > 0, NULL);
+	zassert_true(slen > 0);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) spackage[slen];
 
 	memset(spackage, 0, slen);
 
 	CBPRINTF_STATIC_PACKAGE(spackage, sizeof(spackage), slen2, ALIGN_OFFSET, flags, TEST_FMT);
-	zassert_equal(slen, slen2, NULL);
+	zassert_equal(slen, slen2);
 
 	hdr = spackage;
 
 	/* Check that expected number of ro and rw locations are present and no
 	 * strings appended.
 	 */
-	zassert_equal(hdr[1], 0, NULL);
-	zassert_equal(hdr[2], 0, NULL);
-	zassert_equal(hdr[3], 2, NULL);
+	zassert_equal(hdr[1], 0);
+	zassert_equal(hdr[2], 0);
+	zassert_equal(hdr[3], 2);
 
 	uint32_t copy_flags = CBPRINTF_PACKAGE_CONVERT_RW_STR |
 			 (keep_ro_str ? CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR : 0);
@@ -739,21 +739,21 @@ static void cbprintf_rw_loc_const_char_ptr(bool keep_ro_str)
 	int exp_len = slen + (int)strlen(test_str1) + 1 - (keep_ro_str ? 0 : 1);
 
 	/* Length will be increased by string length + null terminator. */
-	zassert_equal(clen, exp_len, NULL);
+	zassert_equal(clen, exp_len);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage[clen];
 
 	clen2 = cbprintf_package_copy(spackage, sizeof(spackage), cpackage, sizeof(cpackage),
 				      copy_flags, NULL, 0);
 
-	zassert_equal(clen, clen2, NULL);
+	zassert_equal(clen, clen2);
 
 	hdr = cpackage;
 
 	/* Check that one string has been appended. Second is detected to be RO */
-	zassert_equal(hdr[1], 1, NULL);
-	zassert_equal(hdr[2], keep_ro_str ? 1 : 0, NULL);
-	zassert_equal(hdr[3], 0, NULL);
+	zassert_equal(hdr[1], 1);
+	zassert_equal(hdr[2], keep_ro_str ? 1 : 0);
+	zassert_equal(hdr[3], 0);
 
 	check_package(spackage, slen, exp_str);
 	test_str1[0] = '\0';
@@ -776,46 +776,46 @@ ZTEST(cbprintf_package, test_cbprintf_must_runtime_package)
 	}
 
 	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(0, "test");
-	zassert_equal(rv, 0, NULL);
+	zassert_equal(rv, 0);
 
 	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(0, "test %x", 100);
-	zassert_equal(rv, 0, NULL);
+	zassert_equal(rv, 0);
 
 	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(0, "test %x %s", 100, "");
-	zassert_equal(rv, 1, NULL);
+	zassert_equal(rv, 1);
 
 	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_CONST_CHAR_RO, "test %x", 100);
-	zassert_equal(rv, 0, NULL);
+	zassert_equal(rv, 0);
 
 	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_CONST_CHAR_RO,
 					   "test %x %s", 100, (const char *)"s");
-	zassert_equal(rv, 0, NULL);
+	zassert_equal(rv, 0);
 
 	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_CONST_CHAR_RO,
 					   "test %x %s %s", 100, (char *)"s", (const char *)"foo");
-	zassert_equal(rv, 1, NULL);
+	zassert_equal(rv, 1);
 
 	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(1),
 					   "test %s", (char *)"s");
-	zassert_equal(rv, 0, NULL);
+	zassert_equal(rv, 0);
 
 	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(2),
 					   "test %s %s %d", (const char *)"s", (char *)"s", 10);
-	zassert_equal(rv, 0, NULL);
+	zassert_equal(rv, 0);
 
 	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(2),
 					   "test %s %s %s", (const char *)"s", (char *)"s", "s");
-	zassert_equal(rv, 1, NULL);
+	zassert_equal(rv, 1);
 
 	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(1) |
 					   CBPRINTF_PACKAGE_CONST_CHAR_RO,
 					   "test %s %s %d", (char *)"s", (const char *)"s", 10);
-	zassert_equal(rv, 0, NULL);
+	zassert_equal(rv, 0);
 
 	/* When RW str positions are stored static packaging can always be used */
 	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_ADD_RW_STR_POS,
 					   "test %s %s %d", (char *)"s", (const char *)"s", 10);
-	zassert_equal(rv, 0, NULL);
+	zassert_equal(rv, 0);
 }
 
 struct test_cbprintf_covert_ctx {
@@ -828,10 +828,10 @@ static int convert_cb(const void *buf, size_t len, void *context)
 {
 	struct test_cbprintf_covert_ctx *ctx = (struct test_cbprintf_covert_ctx *)context;
 
-	zassert_false(ctx->null, NULL);
+	zassert_false(ctx->null);
 	if (buf) {
-		zassert_false(ctx->null, NULL);
-		zassert_true(ctx->offset + len <= sizeof(ctx->buf), NULL);
+		zassert_false(ctx->null);
+		zassert_true(ctx->offset + len <= sizeof(ctx->buf));
 		memcpy(&ctx->buf[ctx->offset], buf, len);
 		ctx->offset += len;
 		return len;
@@ -860,7 +860,7 @@ ZTEST(cbprintf_package, test_cbprintf_package_convert)
 	snprintfcb(exp_str, sizeof(exp_str), TEST_FMT);
 
 	slen = cbprintf_package(NULL, 0, flags, TEST_FMT);
-	zassert_true(slen > 0, NULL);
+	zassert_true(slen > 0);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) spackage[slen];
 
@@ -868,18 +868,18 @@ ZTEST(cbprintf_package, test_cbprintf_package_convert)
 	memset(spackage, 0, slen);
 
 	slen = cbprintf_package(spackage, slen, flags, TEST_FMT);
-	zassert_true(slen > 0, NULL);
+	zassert_true(slen > 0);
 
 	uint32_t copy_flags = CBPRINTF_PACKAGE_CONVERT_RW_STR |
 			      CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR;
 
 	clen = cbprintf_package_convert(spackage, slen, NULL, 0, copy_flags, NULL, 0);
-	zassert_true(clen > 0, NULL);
+	zassert_true(clen > 0);
 
 	clen = cbprintf_package_convert(spackage, slen, convert_cb, &ctx, copy_flags, NULL, 0);
-	zassert_true(clen > 0, NULL);
-	zassert_true(ctx.null, NULL);
-	zassert_equal(ctx.offset, clen, NULL);
+	zassert_true(clen > 0);
+	zassert_true(ctx.null);
+	zassert_equal(ctx.offset, clen);
 
 	check_package(ctx.buf, ctx.offset, exp_str);
 #undef TEST_FMT

@@ -160,7 +160,7 @@ void ztest_post_fatal_error_hook(unsigned int reason,
 	case ZTEST_CATCH_FATAL_K_PANIC:
 	case ZTEST_CATCH_FATAL_K_OOPS:
 	case ZTEST_CATCH_USER_FATAL_Z_OOPS:
-		zassert_true(true, NULL);
+		zassert_true(true);
 		break;
 
 	/* Unfortunately, the case of trigger a fatal error
@@ -168,10 +168,10 @@ void ztest_post_fatal_error_hook(unsigned int reason,
 	 * So please don't use it this way.
 	 */
 	case ZTEST_CATCH_FATAL_IN_ISR:
-		zassert_true(false, NULL);
+		zassert_true(false);
 		break;
 	default:
-		zassert_true(false, NULL);
+		zassert_true(false);
 		break;
 	}
 }
@@ -366,7 +366,7 @@ ZTEST_SUITE(error_hook_tests, NULL, error_hook_tests_setup, NULL, NULL, NULL);
 static void *fail_assume_in_setup_setup(void)
 {
 	/* Fail the assume, will skip all the tests */
-	zassume_true(false, NULL);
+	zassume_true(false);
 	return NULL;
 }
 
@@ -387,7 +387,7 @@ ZTEST(fail_assume_in_setup, test_to_skip1)
 static void fail_assume_in_before_before(void *unused)
 {
 	ARG_UNUSED(unused);
-	zassume_true(false, NULL);
+	zassume_true(false);
 }
 
 ZTEST_SUITE(fail_assume_in_before, NULL, NULL, fail_assume_in_before_before, NULL, NULL);
@@ -408,7 +408,7 @@ ZTEST_SUITE(fail_assume_in_test, NULL, NULL, NULL, NULL, NULL);
 
 ZTEST(fail_assume_in_test, test_to_skip)
 {
-	zassume_true(false, NULL);
+	zassume_true(false);
 	ztest_test_fail();
 }
 
