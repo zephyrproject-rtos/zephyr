@@ -2736,6 +2736,13 @@ static int gatt_notify_multiple_verify_params(struct bt_conn *conn,
 		if (!bt_gatt_attr_get_handle(params[i].attr)) {
 			return -EINVAL;
 		}
+
+		/* Check if the characteristic is subscribed. */
+		if (!bt_gatt_is_subscribed(conn, params[i].attr,
+					   BT_GATT_CCC_NOTIFY)) {
+			BT_WARN("Device is not subscribed to characteristic");
+			return -EINVAL;
+		}
 	}
 
 	/* PDU length is specified with a 16-bit value. */
@@ -2792,25 +2799,15 @@ int bt_gatt_notify_multiple(struct bt_conn *conn,
 
 	for (uint16_t i = 0; i < num_params; i++) {
 		struct notify_data data;
-		const struct bt_gatt_chrc *chrc;
 
 		data.attr = params[i].attr;
 		data.handle = bt_gatt_attr_get_handle(data.attr);
-		chrc = data.attr->user_data;
 
 		/* Check if attribute is a characteristic then adjust the
 		 * handle
 		 */
 		if (!bt_uuid_cmp(data.attr->uuid, BT_UUID_GATT_CHRC)) {
 			data.handle = bt_gatt_attr_value_handle(data.attr);
-		}
-
-		/* Check if notifications are supported for that chrc. */
-		if (!(chrc->properties & BT_GATT_CHRC_NOTIFY)) {
-			bt_att_free_tx_meta_data(buf);
-			net_buf_unref(buf);
-
-			return -EINVAL;
 		}
 
 		/* Add handle and data to the command buffer. */
