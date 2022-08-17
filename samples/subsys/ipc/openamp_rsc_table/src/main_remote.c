@@ -44,7 +44,8 @@ static struct k_thread thread_mng_data;
 static struct k_thread thread_rp__client_data;
 static struct k_thread thread_tty_data;
 
-static const struct device *ipm_handle;
+static const struct device *const ipm_handle =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc));
 
 static metal_phys_addr_t shm_physmap = SHM_START_ADDR;
 
@@ -191,7 +192,6 @@ int platform_init(void)
 	}
 
 	/* setup IPM */
-	ipm_handle = DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc));
 	if (!device_is_ready(ipm_handle)) {
 		LOG_DBG("IPM device is not ready\n");
 		return -1;
