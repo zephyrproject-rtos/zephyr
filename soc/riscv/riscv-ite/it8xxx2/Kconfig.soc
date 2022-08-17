@@ -14,7 +14,7 @@ config SOC_IT8XXX2
 	select RISCV_ISA_EXT_ZIFENCEI
 	# Workaround mul instruction bug, see:
 	# https://www.ite.com.tw/uploads/product_download/it81202-bx-chip-errata.pdf
-	#select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_M if !(SOC_IT81302_BX || SOC_IT81202_BX)
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_C
 
@@ -31,6 +31,12 @@ config SOC_IT81302_BX
 
 config SOC_IT81202_BX
 	bool "IT81202 BX version"
+
+config SOC_IT81302_CX
+	bool "IT81302 CX version"
+
+config SOC_IT81202_CX
+	bool "IT81202 CX version"
 
 endchoice
 
