@@ -20,6 +20,10 @@
 #define WHOAMI_REG      0x0F
 #define WHOAMI_ALT_REG  0x4F
 
+#ifdef CONFIG_LP3943
+static const struct device *const ledc = DEVICE_DT_GET_ONE(ti_lp3943);
+#endif
+
 static inline float out_ev(struct sensor_value *val)
 {
 	return (val->val1 + (float)val->val2 / 1000000);
@@ -112,9 +116,6 @@ void main(void)
 	int i, on = 1;
 
 #ifdef CONFIG_LP3943
-	static const struct device *ledc;
-
-	ledc = DEVICE_DT_GET_ONE(ti_lp3943);
 	if (!device_is_ready(ledc)) {
 		printk("%s: device not ready.\n", ledc->name);
 		return;
