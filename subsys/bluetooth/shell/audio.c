@@ -1434,6 +1434,36 @@ static int cmd_set_loc(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_context(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+	enum bt_audio_dir dir;
+	enum bt_audio_context ctx;
+
+	if (!strcmp(argv[1], "sink")) {
+		dir = BT_AUDIO_DIR_SINK;
+	} else if (!strcmp(argv[1], "source")) {
+		dir = BT_AUDIO_DIR_SOURCE;
+	} else {
+		shell_error(sh, "Unsupported dir: %s", argv[1]);
+		return -ENOEXEC;
+	}
+
+	ctx = shell_strtoul(argv[2], 16, &err);
+	if (err) {
+		shell_error(sh, "Invalid command parameter (err %d)", err);
+		return err;
+	}
+
+	err = bt_audio_capability_set_available_contexts(dir, ctx);
+	if (err) {
+		shell_error(ctx_shell, "Set available contexts err %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
 static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err, i;
@@ -1607,6 +1637,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(audio_cmds,
 	SHELL_COND_CMD_ARG(CONFIG_BT_AUDIO_CAPABILITY, set_location, NULL,
 			   "<direction: sink, source> <location bitmask>",
 			   cmd_set_loc, 3, 0),
+	SHELL_COND_CMD_ARG(CONFIG_BT_AUDIO_CAPABILITY, add_context, NULL,
+			   "<direction: sink, source> <context bitmask>",
+			   cmd_context, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
