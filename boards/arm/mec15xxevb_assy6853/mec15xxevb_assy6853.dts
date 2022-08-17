@@ -148,6 +148,8 @@
 
 &pwm0 {
 	status = "okay";
+	pinctrl-0 = <&pwm0_gpio053>;
+	pinctrl-names = "default";
 };
 
 &kscan0 {
