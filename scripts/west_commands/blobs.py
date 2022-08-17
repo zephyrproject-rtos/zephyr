@@ -121,6 +121,9 @@ class Blobs(WestCommand):
         for blob in blobs:
             log.inf(args.format.format(**blob))
 
+    def ensure_folder(self, path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+
     def fetch_blob(self, url, path):
         scheme = urlparse(url).scheme
         log.dbg(f'Fetching {path} with {scheme}')
@@ -129,6 +132,7 @@ class Blobs(WestCommand):
 
         log.dbg(f'Found fetcher: {fetcher}')
         inst = fetcher()
+        self.ensure_folder(path)
         inst.fetch(url, path)
 
     def fetch(self, args):
