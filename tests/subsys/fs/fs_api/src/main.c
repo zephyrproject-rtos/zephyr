@@ -16,26 +16,6 @@
  * @}
  */
 
-static void fs_setup(void)
-{
-	fs_register(TEST_FS_1, &temp_fs);
-}
-
-static void dummy_teardown(void)
-{
-	return;
-}
-
-static void dummy_setup(void)
-{
-	return;
-}
-
-static void fs_teardown(void)
-{
-	fs_unregister(TEST_FS_1, &temp_fs);
-}
-
 /**
  * @brief Common file system operations through a general interface
  *
@@ -65,35 +45,28 @@ static void fs_teardown(void)
  * @ingroup filesystem
  *
  */
-void test_main(void)
+ZTEST(fat_fs_basic, test_fat_fs)
 {
-	ztest_test_suite(fat_fs_basic_test,
-			 ztest_unit_test(test_fs_register),
-			 ztest_unit_test_setup_teardown(test_mount,
-							fs_setup,
-							dummy_teardown),
-			 ztest_unit_test(test_fs_file_t_init),
-			 ztest_unit_test(test_fs_dir_t_init),
-			 ztest_unit_test(test_file_statvfs),
-			 ztest_unit_test(test_mkdir),
-			 ztest_unit_test(test_opendir),
-			 ztest_unit_test(test_closedir),
-			 ztest_unit_test(test_opendir_closedir),
-			 ztest_unit_test(test_lsdir),
-			 ztest_unit_test(test_file_open),
-			 ztest_unit_test(test_file_write),
-			 ztest_unit_test(test_file_read),
-			 ztest_unit_test(test_file_seek),
-			 ztest_unit_test(test_file_truncate),
-			 ztest_unit_test(test_file_close),
-			 ztest_unit_test(test_file_sync),
-			 ztest_unit_test(test_file_rename),
-			 ztest_unit_test(test_file_stat),
-			 ztest_unit_test(test_file_unlink),
-			 ztest_unit_test(test_unmount),
-			 ztest_unit_test_setup_teardown(test_mount_flags,
-							dummy_setup,
-							fs_teardown)
-			 );
-	ztest_run_test_suite(fat_fs_basic_test);
+	test_fs_register();
+	test_mount();
+	test_file_statvfs();
+	test_mkdir();
+	test_opendir();
+	test_closedir();
+	test_opendir_closedir();
+	test_lsdir();
+	test_file_open();
+	test_file_write();
+	test_file_read();
+	test_file_seek();
+	test_file_truncate();
+	test_file_close();
+	test_file_sync();
+	test_file_rename();
+	test_file_stat();
+	test_file_unlink();
+	test_unmount();
+	test_mount_flags();
 }
+
+ZTEST_SUITE(fat_fs_basic, NULL, NULL, NULL, NULL, NULL);

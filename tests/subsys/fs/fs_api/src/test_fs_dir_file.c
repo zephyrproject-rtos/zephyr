@@ -78,10 +78,15 @@ static struct fs_file_t filep;
 static struct fs_file_t err_filep;
 static const char test_str[] = "hello world!";
 
+static void fs_setup(void)
+{
+	fs_register(TEST_FS_1, &temp_fs);
+}
+
 /**
  * @brief Test fs_file_t_init initializer
  */
-void test_fs_file_t_init(void)
+ZTEST(fat_fs_basic, test_fs_file_t_init)
 {
 	struct fs_file_t fst;
 
@@ -96,7 +101,7 @@ void test_fs_file_t_init(void)
 /**
  * @brief Test fs_dir_t_init initializer
  */
-void test_fs_dir_t_init(void)
+ZTEST(fat_fs_basic, test_fs_dir_t_init)
 {
 	struct fs_dir_t dirp;
 
@@ -120,6 +125,7 @@ void test_mount(void)
 {
 	int ret;
 
+	fs_setup();
 	TC_PRINT("\nmount tests:\n");
 	TC_PRINT("Pass NULL pointer to fs_mount()\n");
 	ret = fs_mount(NULL);

@@ -15,6 +15,11 @@ static struct fs_mount_t mp = {
 		.fs_data = &test_data,
 };
 
+static void fs_teardown(void)
+{
+	fs_unregister(TEST_FS_1, &temp_fs);
+}
+
 void test_mount_flags(void)
 {
 	int ret = 0;
@@ -64,4 +69,5 @@ void test_mount_flags(void)
 	zassert_equal(ret, 0, "Expected fs_close success (%d)", ret);
 	ret = fs_unmount(&mp);
 	zassert_equal(ret, 0, "Expected fs_unmount success (%d)", ret);
+	fs_teardown();
 }
