@@ -47,6 +47,24 @@ static struct bt_audio_ep *srcs[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT];
 
 static uint8_t stream_dir(const struct bt_audio_stream *stream);
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+
+#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
+static uint8_t unicast_server_addata[] = {
+	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),	/* ASCS UUID */
+	BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED, /* Target Announcement */
+	(((CONTEXT) >> 0) & 0xFF),
+	(((CONTEXT) >> 8) & 0xFF),
+	(((CONTEXT) >> 0) & 0xFF),
+	(((CONTEXT) >> 8) & 0xFF),
+	0x00, /* Metadata length */
+};
+
+static const struct bt_data ad[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL)),
+	BT_DATA(BT_DATA_SVC_DATA16, unicast_server_addata, ARRAY_SIZE(unicast_server_addata)),
+};
+#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
 #endif /* CONFIG_BT_AUDIO_UNICAST */
 
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
@@ -1452,6 +1470,22 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 					    &stream_ops);
 	}
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+
+#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
+	struct bt_le_ext_adv *adv;
+	/* Create a non-connectable non-scannable advertising set */
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, NULL, &adv);
+	__ASSERT(err == 0, "Failed to create advertising set (err %d)\n", err);
+
+	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
+	__ASSERT(err == 0, "Failed to set advertising data (err %d)\n", err);
+
+	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+	__ASSERT(err == 0, "Failed to start advertising set (err %d)\n", err);
+
+	printk("Advertising successfully started\n");
+#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
+
 	return 0;
 }
 
