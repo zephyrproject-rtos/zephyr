@@ -60,8 +60,10 @@ static struct rx_source source[4];
 static struct test_data test_data[3];
 static struct test_data int_async_data;
 
-static const struct device *counter_dev;
-static const struct device *uart_dev;
+static const struct device *const counter_dev =
+	DEVICE_DT_GET(DT_NODELABEL(timer0));
+static const struct device *const uart_dev =
+	DEVICE_DT_GET(UART_DEVICE_DEV);
 
 static bool async;
 static bool int_driven;
@@ -131,7 +133,6 @@ static void init_test(void)
 		.flags = 0
 	};
 
-	uart_dev = DEVICE_DT_GET(UART_DEVICE_DEV);
 	zassert_true(device_is_ready(uart_dev), "uart device is not ready");
 
 	if (uart_callback_set(uart_dev, async_callback, NULL) == 0) {
@@ -147,7 +148,6 @@ static void init_test(void)
 	/* Setup counter which will periodically enable/disable UART RX,
 	 * Disabling RX should lead to flow control being activated.
 	 */
-	counter_dev = DEVICE_DT_GET(DT_NODELABEL(timer0));
 	zassert_true(device_is_ready(counter_dev), NULL);
 
 	top_cfg.ticks = counter_us_to_ticks(counter_dev, 1000);
