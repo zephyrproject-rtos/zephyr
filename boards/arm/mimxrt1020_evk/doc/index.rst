@@ -96,6 +96,8 @@ features:
 +-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | entropy                             |
 +-----------+------------+-------------------------------------+
+| FLEXSPI   | on-chip    | flash programming                   |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1020_evk/mimxrt1020_evk_defconfig``
