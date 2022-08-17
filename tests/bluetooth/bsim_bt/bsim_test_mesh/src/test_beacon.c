@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 
 #define GROUP_ADDR 0xc000
 #define WAIT_TIME 60 /*seconds*/
-#define BEACON_INTERVAL       K_SECONDS(10)
+#define BEACON_INTERVAL 10 /*seconds*/
 
 #define BEACON_TYPE_SECURE 0x01
 
@@ -97,19 +97,19 @@ static void test_tx_on_iv_update(void)
 	ASSERT_TRUE(atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
 	ASSERT_TRUE(bt_mesh.iv_index == 1);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	ASSERT_TRUE(!bt_mesh_iv_update());
 	ASSERT_TRUE(!atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
 	ASSERT_TRUE(bt_mesh.iv_index == 1);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	ASSERT_TRUE(bt_mesh_iv_update());
 	ASSERT_TRUE(atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
 	ASSERT_TRUE(bt_mesh.iv_index == 2);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	PASS();
 }
@@ -134,19 +134,19 @@ static void test_rx_on_iv_update(void)
 	ASSERT_TRUE(atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_TEST));
 	ivu_log();
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	ASSERT_TRUE(atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
 	ASSERT_TRUE(bt_mesh.iv_index == 1);
 	ivu_log();
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	ASSERT_TRUE(!atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
 	ASSERT_TRUE(bt_mesh.iv_index == 1);
 	ivu_log();
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	ASSERT_TRUE(atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
 	ASSERT_TRUE(bt_mesh.iv_index == 2);
@@ -176,7 +176,7 @@ static void test_tx_on_key_refresh(void)
 	ASSERT_TRUE(status == STATUS_SUCCESS);
 	ASSERT_TRUE(phase == BT_MESH_KR_PHASE_1);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	phase = BT_MESH_KR_PHASE_2;
 	status = bt_mesh_subnet_kr_phase_set(BT_MESH_KEY_PRIMARY, &phase);
@@ -185,7 +185,7 @@ static void test_tx_on_key_refresh(void)
 	ASSERT_TRUE(status == STATUS_SUCCESS);
 	ASSERT_TRUE(phase == BT_MESH_KR_PHASE_2);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	phase = BT_MESH_KR_PHASE_3;
 	status = bt_mesh_subnet_kr_phase_set(BT_MESH_KEY_PRIMARY, &phase);
@@ -194,7 +194,7 @@ static void test_tx_on_key_refresh(void)
 	ASSERT_TRUE(status == STATUS_SUCCESS);
 	ASSERT_TRUE(phase == BT_MESH_KR_NORMAL);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	PASS();
 }
@@ -224,19 +224,19 @@ static void test_rx_on_key_refresh(void)
 	ASSERT_TRUE(status == STATUS_SUCCESS);
 	ASSERT_TRUE(phase == BT_MESH_KR_PHASE_1);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	status = bt_mesh_subnet_kr_phase_get(BT_MESH_KEY_PRIMARY, &phase);
 	ASSERT_TRUE(status == STATUS_SUCCESS);
 	ASSERT_TRUE(phase == BT_MESH_KR_PHASE_1);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	status = bt_mesh_subnet_kr_phase_get(BT_MESH_KEY_PRIMARY, &phase);
 	ASSERT_TRUE(status == STATUS_SUCCESS);
 	ASSERT_TRUE(phase == BT_MESH_KR_PHASE_2);
 
-	k_sleep(BEACON_INTERVAL);
+	k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 	status = bt_mesh_subnet_kr_phase_get(BT_MESH_KEY_PRIMARY, &phase);
 	ASSERT_TRUE(status == STATUS_SUCCESS);
@@ -295,8 +295,16 @@ static bool wait_for_beacon(bool (*process_cb)(const uint8_t *net_id, void *ctx)
 		FAIL("starting scan failed (err %d)", err);
 	}
 
-	/* Listen to beacons ONLY for one beacon interval. */
-	err = k_sem_take(&observer_sem, BEACON_INTERVAL);
+	/* Listen to beacons ONLY for one beacon interval.
+	 * Tests start quite often the waiting for the next beacon after
+	 * transmission or receiving the previous one. If start waiting timer
+	 * for BEACON_INTERVAL interval then timer expiration and receiving of
+	 * the beacon happen about the same time. That is possible unstable behavior
+	 * or failing some tests. To avoid this it is worth to add 1 second to
+	 * waiting time (BEACON_INTERVAL + 1) to guarantee that beacon comes
+	 * before timer expiration.
+	 */
+	err = k_sem_take(&observer_sem, K_SECONDS(BEACON_INTERVAL + 1));
 	if (!err) {
 		received = true;
 	} else {
@@ -312,7 +320,7 @@ static bool wait_for_beacon(bool (*process_cb)(const uint8_t *net_id, void *ctx)
 	 * again will catch the old beacon. This happens due to a known bug in legacy advertiser,
 	 * which transmits advertisements longer than should.
 	 */
-	if (received) {
+	if (received && IS_ENABLED(CONFIG_BT_MESH_ADV_LEGACY)) {
 		k_sleep(K_SECONDS(1));
 	}
 
@@ -471,8 +479,7 @@ static void test_rx_invalid(void)
 		ASSERT_FALSE(atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
 		ASSERT_EQUAL(0, bt_mesh.iv_index);
 
-		/* (BEACON_INTERVAL + 1) * 2 */
-		k_sleep(K_SECONDS(22));
+		k_sleep(K_SECONDS((BEACON_INTERVAL + 1) * 2));
 	}
 
 	/* Only the last beacon shall change IV Update state. */
@@ -627,8 +634,7 @@ static void test_rx_kr_old_key(void)
 								 BT_MESH_IVU_IN_PROGRESS));
 		ASSERT_EQUAL(test_vector[i].ivi, bt_mesh.iv_index);
 
-		/* (BEACON_INTERVAL + 1) * 2 */
-		k_sleep(K_SECONDS(22));
+		k_sleep(K_SECONDS((BEACON_INTERVAL + 1) * 2));
 	}
 
 	PASS();
