@@ -106,6 +106,13 @@ static void clear_fds(void)
 	sh_mqtt->nfds = 0;
 }
 
+/*
+ * Upon successful completion, poll() shall return a non-negative value. A positive value indicates
+ * the total number of pollfd structures that have selected events (that is, those for which the
+ * revents member is non-zero). A value of 0 indicates that the call timed out and no file
+ * descriptors have been selected. Upon failure, poll() shall return -1 and set errno to indicate
+ * the error.
+ */
 static int wait(int timeout)
 {
 	int rc = 0;
@@ -252,13 +259,16 @@ static void sh_mqtt_process_handler(struct k_work *work)
 	       (sh_mqtt->transport_state == SHELL_MQTT_TRANSPORT_CONNECTED) &&
 	       (sh_mqtt->subscribe_state == SHELL_MQTT_SUBSCRIBED)) {
 		LOG_DBG("Listening to socket");
-		if (wait(remaining)) {
+		rc = wait(remaining);
+		if (rc > 0) {
 			LOG_DBG("Process socket for MQTT packet");
 			rc = mqtt_input(&sh_mqtt->mqtt_cli);
 			if (rc != 0) {
 				LOG_ERR("%s error: %d", "processed: mqtt_input", rc);
 				goto process_error;
 			}
+		} else if (rc < 0) {
+			goto process_error;
 		}
 
 		LOG_DBG("MQTT %s", "Keepalive");
@@ -317,13 +327,16 @@ static void sh_mqtt_subscribe_handler(struct k_work *work)
 	if (rc == 0) {
 		/* Wait for mqtt's connack */
 		LOG_DBG("Listening to socket");
-		if (wait(CONNECT_TIMEOUT_MS)) {
+		rc = wait(CONNECT_TIMEOUT_MS);
+		if (rc > 0) {
 			LOG_DBG("Process socket for MQTT packet");
 			rc = mqtt_input(&sh_mqtt->mqtt_cli);
 			if (rc != 0) {
 				LOG_ERR("%s error: %d", "subscribe: mqtt_input", rc);
 				goto subscribe_error;
 			}
+		} else if (rc < 0) {
+			goto subscribe_error;
 		}
 
 		/* No suback, fail */
@@ -399,13 +412,16 @@ static void sh_mqtt_connect_handler(struct k_work *work)
 
 	/* Wait for mqtt's connack */
 	LOG_DBG("Listening to socket");
-	if (wait(CONNECT_TIMEOUT_MS)) {
+	rc = wait(CONNECT_TIMEOUT_MS);
+	if (rc > 0) {
 		LOG_DBG("Process socket for MQTT packet");
 		rc = mqtt_input(&sh_mqtt->mqtt_cli);
 		if (rc != 0) {
 			LOG_ERR("%s error: %d", "connect: mqtt_input", rc);
 			goto connect_error;
 		}
+	} else if (rc < 0) {
+		goto connect_error;
 	}
 
 	/* No connack, fail */
