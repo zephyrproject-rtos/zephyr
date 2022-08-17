@@ -70,7 +70,7 @@ static void sh_mqtt_rx_rb_flush(void)
 	uint8_t c;
 	uint32_t size = ring_buf_size_get(&sh_mqtt->rx_rb);
 
-	while (size) {
+	while (size > 0) {
 		size = ring_buf_get(&sh_mqtt->rx_rb, &c, 1U);
 	}
 }
@@ -163,7 +163,7 @@ static void sh_mqtt_close_and_cleanup(void)
 	}
 
 	/* If network/mqtt disconnected, or mqtt_disconnect failed, do mqtt_abort */
-	if (rc) {
+	if (rc < 0) {
 		/* mqtt_abort doesn't send disconnection packet to the broker, but it
 		 * makes sure that the MQTT connection is aborted locally and will
 		 * always invoke mqtt_evt_handler:MQTT_EVT_DISCONNECT
@@ -230,7 +230,7 @@ static void sh_mqtt_process_handler(struct k_work *work)
 	}
 
 	/* If context can't be locked, that means net conn cb locked it */
-	if (sh_mqtt_context_lock(K_NO_WAIT)) {
+	if (sh_mqtt_context_lock(K_NO_WAIT) != 0) {
 		/* In that case we should simply return */
 		LOG_DBG("%s_work unable to lock context", "process");
 		return;
@@ -263,7 +263,7 @@ static void sh_mqtt_process_handler(struct k_work *work)
 
 		LOG_DBG("MQTT %s", "Keepalive");
 		rc = mqtt_live(&sh_mqtt->mqtt_cli);
-		if (rc != 0 && rc != -EAGAIN) {
+		if ((rc != 0) && (rc != -EAGAIN)) {
 			LOG_ERR("%s error: %d", "mqtt_live", rc);
 			goto process_error;
 		}
@@ -302,7 +302,7 @@ static void sh_mqtt_subscribe_handler(struct k_work *work)
 	}
 
 	/* If context can't be locked, that means net conn cb locked it */
-	if (sh_mqtt_context_lock(K_NO_WAIT)) {
+	if (sh_mqtt_context_lock(K_NO_WAIT) != 0) {
 		/* In that case we should simply return */
 		LOG_DBG("%s_work unable to lock context", "subscribe");
 		return;
@@ -360,7 +360,7 @@ static void sh_mqtt_connect_handler(struct k_work *work)
 	}
 
 	/* If context can't be locked, that means net conn cb locked it */
-	if (sh_mqtt_context_lock(K_NO_WAIT)) {
+	if (sh_mqtt_context_lock(K_NO_WAIT) != 0) {
 		/* In that case we should simply return */
 		LOG_DBG("%s_work unable to lock context", "connect");
 		return;
@@ -375,7 +375,7 @@ static void sh_mqtt_connect_handler(struct k_work *work)
 	/* Resolve the broker URL */
 	LOG_DBG("Resolving DNS");
 	rc = get_mqtt_broker_addrinfo();
-	if (rc) {
+	if (rc != 0) {
 		(void)sh_mqtt_work_reschedule(&sh_mqtt->connect_dwork, K_SECONDS(1));
 		sh_mqtt_context_unlock();
 		return;
@@ -499,13 +499,13 @@ static void net_disconnect_handler(struct k_work *work)
 static void network_evt_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
 				struct net_if *iface)
 {
-	if (mgmt_event == NET_EVENT_L4_CONNECTED &&
-	    sh_mqtt->network_state == SHELL_MQTT_NETWORK_DISCONNECTED) {
+	if ((mgmt_event == NET_EVENT_L4_CONNECTED) &&
+	    (sh_mqtt->network_state == SHELL_MQTT_NETWORK_DISCONNECTED)) {
 		LOG_WRN("Network %s", "connected");
 		sh_mqtt->network_state = SHELL_MQTT_NETWORK_CONNECTED;
 		(void)sh_mqtt_work_reschedule(&sh_mqtt->connect_dwork, K_SECONDS(1));
-	} else if (mgmt_event == NET_EVENT_L4_DISCONNECTED &&
-		   sh_mqtt->network_state == SHELL_MQTT_NETWORK_CONNECTED) {
+	} else if ((mgmt_event == NET_EVENT_L4_DISCONNECTED) &&
+		   (sh_mqtt->network_state == SHELL_MQTT_NETWORK_CONNECTED)) {
 		(void)sh_mqtt_work_submit(&sh_mqtt->net_disconnected_work);
 	}
 }
@@ -728,7 +728,7 @@ static int write(const struct shell_transport *transport, const void *data, size
 	(void)k_work_cancel_delayable_sync(&sh_mqtt->publish_dwork, &ws);
 
 	do {
-		if (sh_mqtt->tx_buf.len + length - *cnt > TX_BUF_SIZE) {
+		if ((sh_mqtt->tx_buf.len + length - *cnt) > TX_BUF_SIZE) {
 			copy_len = TX_BUF_SIZE - sh_mqtt->tx_buf.len;
 		} else {
 			copy_len = length - *cnt;
@@ -752,7 +752,7 @@ static int write(const struct shell_transport *transport, const void *data, size
 		*cnt += copy_len;
 	} while (*cnt < length);
 
-	if (sh_mqtt->tx_buf.len) {
+	if (sh_mqtt->tx_buf.len > 0) {
 		(void)sh_mqtt_work_reschedule(&sh_mqtt->publish_dwork, MQTT_SEND_DELAY_MS);
 	}
 
