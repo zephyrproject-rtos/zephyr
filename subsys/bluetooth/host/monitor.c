@@ -141,7 +141,8 @@ static void poll_out(char c)
 	monitor_send(&c, sizeof(c));
 }
 #elif defined(CONFIG_BT_DEBUG_MONITOR_UART)
-static const struct device *monitor_dev;
+static const struct device *const monitor_dev =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_mon_uart));
 
 static void poll_out(char c)
 {
@@ -376,8 +377,6 @@ static int bt_monitor_init(const struct device *d)
 				  RTT_BUFFER_NAME, rtt_up_buf, RTT_BUF_SIZE,
 				  SEGGER_RTT_MODE_NO_BLOCK_SKIP);
 #elif defined(CONFIG_BT_DEBUG_MONITOR_UART)
-	monitor_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_mon_uart));
-
 	__ASSERT_NO_MSG(device_is_ready(monitor_dev));
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
