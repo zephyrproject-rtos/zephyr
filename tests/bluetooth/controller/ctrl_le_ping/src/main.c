@@ -94,7 +94,7 @@ void test_ping_central_loc(void)
 
 	/* Initiate an LE Ping Procedure */
 	err = ull_cp_le_ping(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -120,7 +120,7 @@ void test_ping_central_loc(void)
 
 	/* Initiate another LE Ping Procedure */
 	err = ull_cp_le_ping(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -185,7 +185,7 @@ void test_ping_central_loc_invalid_rsp(void)
 
 	/* Initiate an LE Ping Procedure */
 	err = ull_cp_le_ping(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -218,7 +218,7 @@ void test_ping_central_loc_invalid_rsp(void)
 
 	/* Initiate another LE Ping Procedure */
 	err = ull_cp_le_ping(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -281,7 +281,7 @@ void test_ping_periph_loc(void)
 
 	/* Initiate an LE Ping Procedure */
 	err = ull_cp_le_ping(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);

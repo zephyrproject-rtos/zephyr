@@ -83,22 +83,22 @@ static void basic_validate(struct log_msg *msg,
 	char buf[256];
 	struct test_buf tbuf = { .buf = buf, .idx = 0 };
 
-	zassert_equal(log_msg_get_source(msg), (void *)source, NULL);
-	zassert_equal(log_msg_get_domain(msg), domain, NULL);
-	zassert_equal(log_msg_get_level(msg), level, NULL);
-	zassert_equal(log_msg_get_timestamp(msg), t, NULL);
+	zassert_equal(log_msg_get_source(msg), (void *)source);
+	zassert_equal(log_msg_get_domain(msg), domain);
+	zassert_equal(log_msg_get_level(msg), level);
+	zassert_equal(log_msg_get_timestamp(msg), t);
 
 	d = log_msg_get_data(msg, &len);
-	zassert_equal(len, data_len, NULL);
+	zassert_equal(len, data_len);
 	if (len) {
 		rv = memcmp(d, data, data_len);
-		zassert_equal(rv, 0, NULL);
+		zassert_equal(rv, 0);
 	}
 
 	d = log_msg_get_package(msg, &len);
 	if (str) {
 		rv = cbpprintf(out, &tbuf, d);
-		zassert_true(rv > 0, NULL);
+		zassert_true(rv > 0);
 		buf[rv] = '\0';
 
 		rv = strncmp(buf, str, sizeof(buf));
@@ -112,7 +112,7 @@ union log_msg_generic *msg_copy_and_free(union log_msg_generic *msg,
 	size_t len = sizeof(int) *
 		     log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg);
 
-	zassert_true(len < buf_len, NULL);
+	zassert_true(len < buf_len);
 
 	memcpy(buf, msg, len);
 
@@ -184,7 +184,7 @@ void validate_base_message_set(const struct log_source_const_data *source,
 	 * Runtime created message (msg2) may have strings copied in and thus
 	 * different length.
 	 */
-	zassert_equal(len0, len1, NULL);
+	zassert_equal(len0, len1);
 
 	int rv = memcmp(msg0, msg1, sizeof(int) * len0);
 
@@ -211,11 +211,11 @@ ZTEST(log_msg, test_log_msg_0_args_msg)
 
 	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level,
 			  NULL, 0, TEST_MSG);
-	zassert_equal(mode, EXP_MODE(ZERO_COPY), NULL);
+	zassert_equal(mode, EXP_MODE(ZERO_COPY));
 
 	Z_LOG_MSG2_CREATE3(0, mode, 0, domain, source, level,
 			  NULL, 0, TEST_MSG);
-	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
+	zassert_equal(mode, EXP_MODE(FROM_STACK));
 
 	z_log_msg_runtime_create(domain, source,
 				  level, NULL, 0, 0, TEST_MSG);
@@ -244,11 +244,11 @@ ZTEST(log_msg, test_log_msg_various_args)
 
 	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level, NULL, 0,
 			TEST_MSG, s8, u, lld, (void *)str, lld, (void *)iarray);
-	zassert_equal(mode, EXP_MODE(ZERO_COPY), NULL);
+	zassert_equal(mode, EXP_MODE(ZERO_COPY));
 
 	Z_LOG_MSG2_CREATE3(0, mode, 0, domain, source, level, NULL, 0,
 			TEST_MSG, s8, u, lld, (void *)str, lld, (void *)iarray);
-	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
+	zassert_equal(mode, EXP_MODE(FROM_STACK));
 
 	z_log_msg_runtime_create(domain, (void *)source, level, NULL,
 				  0, 0, TEST_MSG, s8, u, lld, str, lld, iarray);
@@ -271,11 +271,11 @@ ZTEST(log_msg, test_log_msg_only_data)
 
 	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level, array,
 			   sizeof(array));
-	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
+	zassert_equal(mode, EXP_MODE(FROM_STACK));
 
 	Z_LOG_MSG2_CREATE3(0, mode, 0, domain, source, level, array,
 			   sizeof(array));
-	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
+	zassert_equal(mode, EXP_MODE(FROM_STACK));
 
 	z_log_msg_runtime_create(domain, (void *)source, level, array,
 				  sizeof(array), 0, NULL);
@@ -300,11 +300,11 @@ ZTEST(log_msg, test_log_msg_string_and_data)
 
 	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level, array,
 			   sizeof(array), TEST_MSG);
-	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
+	zassert_equal(mode, EXP_MODE(FROM_STACK));
 
 	Z_LOG_MSG2_CREATE3(0, mode, 0, domain, source, level, array,
 			   sizeof(array), TEST_MSG);
-	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
+	zassert_equal(mode, EXP_MODE(FROM_STACK));
 
 	z_log_msg_runtime_create(domain, (void *)source, level, array,
 				  sizeof(array), 0, TEST_MSG);
@@ -337,11 +337,11 @@ ZTEST(log_msg, test_log_msg_fp)
 
 	Z_LOG_MSG2_CREATE3(1, mode, 0, domain, source, level, NULL, 0,
 			TEST_MSG, i, lli, (double)f, &i, d, source);
-	zassert_equal(mode, EXP_MODE(ZERO_COPY), NULL);
+	zassert_equal(mode, EXP_MODE(ZERO_COPY));
 
 	Z_LOG_MSG2_CREATE3(0, mode, 0, domain, source, level, NULL, 0,
 			TEST_MSG, i, lli, (double)f, &i, d, source);
-	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
+	zassert_equal(mode, EXP_MODE(FROM_STACK));
 
 	z_log_msg_runtime_create(domain, (void *)source, level, NULL, 0, 0,
 				  TEST_MSG, i, lli, (double)f, &i, d, source);

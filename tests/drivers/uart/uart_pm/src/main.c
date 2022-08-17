@@ -34,7 +34,7 @@ static void polling_verify(const struct device *dev, bool is_async, bool active)
 	}
 
 	err = uart_poll_in(dev, &c);
-	zassert_equal(err, -1, NULL);
+	zassert_equal(err, -1);
 
 	for (int i = 0; i < ARRAY_SIZE(outs); i++) {
 		uart_poll_out(dev, outs[i]);
@@ -43,11 +43,11 @@ static void polling_verify(const struct device *dev, bool is_async, bool active)
 		if (active) {
 			err = uart_poll_in(dev, &c);
 			zassert_equal(err, 0, "Unexpected err: %d", err);
-			zassert_equal(c, outs[i], NULL);
+			zassert_equal(c, outs[i]);
 		}
 
 		err = uart_poll_in(dev, &c);
-		zassert_equal(err, -1, NULL);
+		zassert_equal(err, -1);
 	}
 }
 
@@ -102,7 +102,7 @@ static bool async_verify(const struct device *dev, bool active)
 		zassert_equal(err, 0, "Unexpected err: %d", err);
 	}
 
-	zassert_true(tx_done, NULL);
+	zassert_true(tx_done);
 
 	return true;
 }
@@ -118,7 +118,7 @@ static void communication_verify(const struct device *dev, bool active)
 	enum pm_device_state power_state; \
 	int err = pm_device_state_get(dev, &power_state); \
 	zassert_equal(err, 0, "Unexpected err: %d", err); \
-	zassert_equal(power_state, exp_state, NULL); \
+	zassert_equal(power_state, exp_state); \
 } while (0)
 
 static void action_run(const struct device *dev, enum pm_device_action action,

@@ -30,9 +30,9 @@ void child_thread_get(void *p1, void *p2, void *p3)
 	struct k_queue *q = p1;
 	struct k_sem *sem = p2;
 
-	zassert_false(k_queue_is_empty(q), NULL);
+	zassert_false(k_queue_is_empty(q));
 	qd = k_queue_peek_head(q);
-	zassert_equal(qd->data, 0, NULL);
+	zassert_equal(qd->data, 0);
 	qd = k_queue_peek_tail(q);
 	zassert_equal(qd->data, (LIST_LEN * 2) - 1,
 		      "got %d expected %d", qd->data, (LIST_LEN * 2) - 1);
@@ -40,7 +40,7 @@ void child_thread_get(void *p1, void *p2, void *p3)
 	for (int i = 0; i < (LIST_LEN * 2); i++) {
 		qd = k_queue_get(q, K_FOREVER);
 
-		zassert_equal(qd->data, i, NULL);
+		zassert_equal(qd->data, i);
 		if (qd->allocated) {
 			/* snode should never have been touched */
 			zassert_is_null(qd->snode.next, NULL);
@@ -48,7 +48,7 @@ void child_thread_get(void *p1, void *p2, void *p3)
 	}
 
 
-	zassert_true(k_queue_is_empty(q), NULL);
+	zassert_true(k_queue_is_empty(q));
 
 	/* This one gets canceled */
 	qd = k_queue_get(q, K_FOREVER);
@@ -104,7 +104,7 @@ ZTEST(queue_api_1cpu, test_queue_supv_to_user)
 		qdata[i + 1].data = i + 1;
 		qdata[i + 1].allocated = true;
 		qdata[i + 1].snode.next = NULL;
-		zassert_false(k_queue_alloc_append(q, &qdata[i + 1]), NULL);
+		zassert_false(k_queue_alloc_append(q, &qdata[i + 1]));
 	}
 
 	k_thread_create(&child_thread, child_stack, STACK_SIZE,
@@ -140,15 +140,15 @@ ZTEST_USER(queue_api, test_queue_alloc_prepend_user)
 
 	for (int i = 0; i < LIST_LEN * 2; i++) {
 		qdata[i].data = i;
-		zassert_false(k_queue_alloc_prepend(q, &qdata[i]), NULL);
+		zassert_false(k_queue_alloc_prepend(q, &qdata[i]));
 	}
 
 	for (int i = (LIST_LEN * 2) - 1; i >= 0; i--) {
 		struct qdata *qd;
 
 		qd = k_queue_get(q, K_NO_WAIT);
-		zassert_true(qd != NULL, NULL);
-		zassert_equal(qd->data, i, NULL);
+		zassert_true(qd != NULL);
+		zassert_equal(qd->data, i);
 	}
 }
 
@@ -174,15 +174,15 @@ ZTEST_USER(queue_api, test_queue_alloc_append_user)
 
 	for (int i = 0; i < LIST_LEN * 2; i++) {
 		qdata[i].data = i;
-		zassert_false(k_queue_alloc_append(q, &qdata[i]), NULL);
+		zassert_false(k_queue_alloc_append(q, &qdata[i]));
 	}
 
 	for (int i = 0; i < LIST_LEN * 2; i++) {
 		struct qdata *qd;
 
 		qd = k_queue_get(q, K_NO_WAIT);
-		zassert_true(qd != NULL, NULL);
-		zassert_equal(qd->data, i, NULL);
+		zassert_true(qd != NULL);
+		zassert_equal(qd->data, i);
 	}
 }
 

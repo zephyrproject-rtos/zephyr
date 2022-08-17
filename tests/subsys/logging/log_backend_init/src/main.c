@@ -127,13 +127,13 @@ ZTEST(log_backend_init, test_log_backends_initialization)
 	LOG_INF("test1");
 
 	/* Backends are not yet active. */
-	zassert_false(context1.active, NULL);
-	zassert_false(context2.active, NULL);
+	zassert_false(context1.active);
+	zassert_false(context2.active);
 
 	k_msleep(context2.delay + 100);
 
-	zassert_true(context1.active, NULL);
-	zassert_true(context2.active, NULL);
+	zassert_true(context1.active);
+	zassert_true(context2.active);
 
 	LOG_INF("test2");
 
@@ -143,7 +143,7 @@ ZTEST(log_backend_init, test_log_backends_initialization)
 	 * because when first was processed it was not yet active.
 	 */
 	zassert_equal(context1.cnt, 2, "Unexpected value:%d (exp: %d)", context1.cnt, 2);
-	zassert_equal(context2.cnt, 1, NULL);
+	zassert_equal(context2.cnt, 1);
 }
 
 ZTEST_SUITE(log_backend_init, NULL, NULL, NULL, NULL, NULL);

@@ -303,20 +303,20 @@ static int test_disconnect(void)
 
 void test_mqtt_connect(void)
 {
-	zassert_true(test_connect() == TC_PASS, NULL);
+	zassert_true(test_connect() == TC_PASS);
 }
 
 void test_mqtt_subscribe(void)
 {
-	zassert_true(test_subscribe() == TC_PASS, NULL);
+	zassert_true(test_subscribe() == TC_PASS);
 }
 
 void test_mqtt_unsubscribe(void)
 {
-	zassert_true(test_unsubscribe() == TC_PASS, NULL);
+	zassert_true(test_unsubscribe() == TC_PASS);
 }
 
 void test_mqtt_disconnect(void)
 {
-	zassert_true(test_disconnect() == TC_PASS, NULL);
+	zassert_true(test_disconnect() == TC_PASS);
 }

@@ -54,17 +54,17 @@ ZTEST(device, test_dummy_device)
 
 	/* Validates device binding for a non-existing device object */
 	dev = device_get_binding(DUMMY_PORT_1);
-	zassert_equal(dev, NULL, NULL);
+	zassert_equal(dev, NULL);
 
 	/* Validates device binding for an existing device object */
 	dev = device_get_binding(DUMMY_PORT_2);
-	zassert_false((dev == NULL), NULL);
+	zassert_false((dev == NULL));
 
 	/* device_get_binding() returns false for device object
 	 * with failed init.
 	 */
 	dev = device_get_binding(BAD_DRIVER);
-	zassert_true((dev == NULL), NULL);
+	zassert_true((dev == NULL));
 }
 
 /**
@@ -81,7 +81,7 @@ ZTEST_USER(device, test_dynamic_name)
 
 	snprintk(name, sizeof(name), "%s", DUMMY_PORT_2);
 	mux = device_get_binding(name);
-	zassert_true(mux != NULL, NULL);
+	zassert_true(mux != NULL);
 }
 
 /**
@@ -99,7 +99,7 @@ ZTEST_USER(device, test_bogus_dynamic_name)
 
 	snprintk(name, sizeof(name), "ANOTHER_BOGUS_NAME");
 	mux = device_get_binding(name);
-	zassert_true(mux == NULL, NULL);
+	zassert_true(mux == NULL);
 }
 
 /**
@@ -119,7 +119,7 @@ ZTEST_USER(device, test_null_dynamic_name)
 	char *drv_name = NULL;
 
 	mux = device_get_binding(drv_name);
-	zassert_equal(mux, 0,  NULL);
+	zassert_equal(mux, 0);
 #else
 	ztest_test_skip();
 #endif
@@ -233,7 +233,7 @@ ZTEST(device, test_device_list)
 	struct device const *devices;
 	size_t devcount = z_device_get_all_static(&devices);
 
-	zassert_false((devcount == 0), NULL);
+	zassert_false((devcount == 0));
 }
 
 static int sys_init_counter;
@@ -340,7 +340,7 @@ ZTEST(device, test_abstraction_driver_common)
 
 	/* verify driver A API has called */
 	dev = device_get_binding(MY_DRIVER_A);
-	zassert_false((dev == NULL), NULL);
+	zassert_false((dev == NULL));
 
 	ret = subsystem_do_this(dev, foo, bar);
 	zassert_true(ret == (foo + bar), "common API do_this fail");
@@ -350,7 +350,7 @@ ZTEST(device, test_abstraction_driver_common)
 
 	/* verify driver B API has called */
 	dev = device_get_binding(MY_DRIVER_B);
-	zassert_false((dev == NULL), NULL);
+	zassert_false((dev == NULL));
 
 	ret = subsystem_do_this(dev, foo, bar);
 	zassert_true(ret == (foo - bar), "common API do_this fail");

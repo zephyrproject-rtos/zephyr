@@ -123,7 +123,7 @@ static int test_i2c_adv7513(void)
 
 ZTEST(nios2_i2c_master, test_i2c_master)
 {
-	zassert_true(test_i2c_adv7513() == TC_PASS, NULL);
+	zassert_true(test_i2c_adv7513() == TC_PASS);
 }
 
 ZTEST_SUITE(nios2_i2c_master, NULL, NULL, NULL, NULL, NULL);

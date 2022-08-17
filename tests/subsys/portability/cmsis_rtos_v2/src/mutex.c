@@ -115,10 +115,10 @@ void tThread_entry_lock_timeout(void *arg)
 	 * by the other thread. Try with and without timeout.
 	 */
 	status = osMutexAcquire((osMutexId_t)arg, 0);
-	zassert_true(status == osErrorResource, NULL);
+	zassert_true(status == osErrorResource);
 
 	status = osMutexAcquire((osMutexId_t)arg, TIMEOUT_TICKS - 5);
-	zassert_true(status == osErrorTimeout, NULL);
+	zassert_true(status == osErrorTimeout);
 
 	status = osMutexRelease((osMutexId_t)arg);
 	zassert_true(status == osErrorResource, "Mutex unexpectedly released");
@@ -136,7 +136,7 @@ void tThread_entry_lock_timeout(void *arg)
 	 * and release it.
 	 */
 	status = osMutexAcquire((osMutexId_t)arg, TIMEOUT_TICKS);
-	zassert_true(status == osOK, NULL);
+	zassert_true(status == osOK);
 	osMutexRelease((osMutexId_t)arg);
 }
 

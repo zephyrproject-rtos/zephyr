@@ -94,7 +94,7 @@ void sem_give_task(void *p1, void *p2, void *p3)
 void sem_reset_take_task(void *p1, void *p2, void *p3)
 {
 	k_sem_reset((struct k_sem *)p1);
-	zassert_false(k_sem_take((struct k_sem *)p1, K_FOREVER), NULL);
+	zassert_false(k_sem_take((struct k_sem *)p1, K_FOREVER));
 }
 
 void isr_sem_give(const void *semaphore)
@@ -186,7 +186,7 @@ void sem_queue_mutual_exclusion1(void *p1, void *p2, void *p3)
 		 * when semaphore is taken by current thread, and no other
 		 * thread can enter the critical section
 		 */
-		zassert_true(critical_var == tmp + 1, NULL);
+		zassert_true(critical_var == tmp + 1);
 		k_sem_give(&mut_sem);
 	}
 }
@@ -205,7 +205,7 @@ void sem_queue_mutual_exclusion2(void *p1, void *p2, void *p3)
 		 * when semaphore is taken by current thread, and no other
 		 * thread can enter the critical section
 		 */
-		zassert_true(critical_var == tmp - 1, NULL);
+		zassert_true(critical_var == tmp - 1);
 		k_sem_give(&mut_sem);
 	}
 }

@@ -82,7 +82,7 @@ void message_recv(void)
 	zassert_true(evt.status == osEventMessage, "osMessageGet failure");
 
 	data = evt.value.v;
-	zassert_equal(data, MESSAGE1, NULL);
+	zassert_equal(data, MESSAGE1);
 
 	/* Wait for queue to get filled */
 	osDelay(TIMEOUT);
@@ -94,7 +94,7 @@ void message_recv(void)
 				"osMessageGet failure");
 
 		data = evt.value.v;
-		zassert_equal(data, i, NULL);
+		zassert_equal(data, i);
 	}
 
 	/* Receive the next message */
@@ -102,7 +102,7 @@ void message_recv(void)
 	zassert_true(evt.status == osEventMessage, "osMessageGet failure");
 
 	data = evt.value.v;
-	zassert_equal(data, MESSAGE2, NULL);
+	zassert_equal(data, MESSAGE2);
 }
 
 osThreadDef(send_msg_thread, osPriorityNormal, 1, 0);

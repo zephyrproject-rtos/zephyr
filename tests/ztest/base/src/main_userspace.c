@@ -9,5 +9,5 @@
 
 ZTEST_USER(framework_tests, test_userspace_is_user)
 {
-	zassert_true(k_is_user_context(), NULL);
+	zassert_true(k_is_user_context());
 }

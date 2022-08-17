@@ -35,7 +35,7 @@ static void tThread_entry_lock_forever(void *p1, void *p2, void *p3)
 
 static void tThread_entry_lock_no_wait(void *p1, void *p2, void *p3)
 {
-	zassert_true(k_mutex_lock((struct k_mutex *)p1, K_NO_WAIT) != 0, NULL);
+	zassert_true(k_mutex_lock((struct k_mutex *)p1, K_NO_WAIT) != 0);
 	TC_PRINT("bypass locked resource from spawn thread\n");
 }
 
@@ -62,7 +62,7 @@ static void tmutex_test_lock(struct k_mutex *pmutex,
 			entry_fn, pmutex, NULL, NULL,
 			K_PRIO_PREEMPT(0),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
-	zassert_true(k_mutex_lock(pmutex, K_FOREVER) == 0, NULL);
+	zassert_true(k_mutex_lock(pmutex, K_FOREVER) == 0);
 	TC_PRINT("access resource from main thread\n");
 
 	/* wait for spawn thread to take action */
@@ -78,7 +78,7 @@ static void tmutex_test_lock_timeout(struct k_mutex *pmutex,
 			entry_fn, pmutex, NULL, NULL,
 			K_PRIO_PREEMPT(0),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
-	zassert_true(k_mutex_lock(pmutex, K_FOREVER) == 0, NULL);
+	zassert_true(k_mutex_lock(pmutex, K_FOREVER) == 0);
 	TC_PRINT("access resource from main thread\n");
 
 	/* wait for spawn thread to take action */

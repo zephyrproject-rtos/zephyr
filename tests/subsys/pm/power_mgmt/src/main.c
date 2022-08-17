@@ -179,10 +179,10 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		/* If device runtime is enable, the device should still be
 		 * active
 		 */
-		zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE, NULL);
+		zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE);
 	} else {
 		/* at this point, devices have been deactivated */
-		zassert_false(device_power_state == PM_DEVICE_STATE_ACTIVE, NULL);
+		zassert_false(device_power_state == PM_DEVICE_STATE_ACTIVE);
 	}
 
 	/* this function is called when system entering low power state, so
@@ -211,9 +211,9 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 	ARG_UNUSED(cpu);
 
 	/* make sure this is idle thread */
-	zassert_true(z_is_idle_thread_object(_current), NULL);
-	zassert_true(ticks == _kernel.idle, NULL);
-	zassert_false(k_can_yield(), NULL);
+	zassert_true(z_is_idle_thread_object(_current));
+	zassert_true(ticks == _kernel.idle);
+	zassert_false(k_can_yield());
 	idle_entered = true;
 
 	if (enter_low_power) {
@@ -237,18 +237,18 @@ static void notify_pm_state_entry(enum pm_state state)
 	/* enter suspend */
 	zassert_true(notify_app_entry == true,
 		     "Notification to enter suspend was not sent to the App");
-	zassert_true(z_is_idle_thread_object(_current), NULL);
-	zassert_equal(state, PM_STATE_SUSPEND_TO_IDLE, NULL);
+	zassert_true(z_is_idle_thread_object(_current));
+	zassert_equal(state, PM_STATE_SUSPEND_TO_IDLE);
 
 	pm_device_state_get(device_dummy, &device_power_state);
 	if (testing_device_runtime) {
 		/* If device runtime is enable, the device should still be
 		 * active
 		 */
-		zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE, NULL);
+		zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE);
 	} else {
 		/* at this point, devices should not be active */
-		zassert_false(device_power_state == PM_DEVICE_STATE_ACTIVE, NULL);
+		zassert_false(device_power_state == PM_DEVICE_STATE_ACTIVE);
 	}
 	set_pm = true;
 	notify_app_exit = true;
@@ -262,12 +262,12 @@ static void notify_pm_state_exit(enum pm_state state)
 	/* leave suspend */
 	zassert_true(notify_app_exit == true,
 		     "Notification to leave suspend was not sent to the App");
-	zassert_true(z_is_idle_thread_object(_current), NULL);
-	zassert_equal(state, PM_STATE_SUSPEND_TO_IDLE, NULL);
+	zassert_true(z_is_idle_thread_object(_current));
+	zassert_equal(state, PM_STATE_SUSPEND_TO_IDLE);
 
 	/* at this point, devices are active again*/
 	pm_device_state_get(device_dummy, &device_power_state);
-	zassert_equal(device_power_state, PM_DEVICE_STATE_ACTIVE, NULL);
+	zassert_equal(device_power_state, PM_DEVICE_STATE_ACTIVE);
 	leave_idle = true;
 
 }
@@ -324,7 +324,7 @@ ZTEST(power_management_1cpu, test_power_state_trans)
 
 	/* give way to idle thread */
 	k_sleep(SLEEP_TIMEOUT);
-	zassert_true(leave_idle, NULL);
+	zassert_true(leave_idle);
 
 	ret = pm_device_runtime_enable(device_dummy);
 	zassert_true(ret == 0, "Failed to enable device runtime PM");
@@ -358,18 +358,18 @@ ZTEST(power_management_1cpu, test_power_state_notification)
 	zassert_true(ret == 0, "Fail to open device");
 
 	pm_device_state_get(device_dummy, &device_power_state);
-	zassert_equal(device_power_state, PM_DEVICE_STATE_ACTIVE, NULL);
+	zassert_equal(device_power_state, PM_DEVICE_STATE_ACTIVE);
 
 
 	/* The device should be kept active even when the system goes idle */
 	testing_device_runtime = true;
 
 	k_sleep(SLEEP_TIMEOUT);
-	zassert_true(leave_idle, NULL);
+	zassert_true(leave_idle);
 
 	api->close(device_dummy);
 	pm_device_state_get(device_dummy, &device_power_state);
-	zassert_equal(device_power_state, PM_DEVICE_STATE_SUSPENDED, NULL);
+	zassert_equal(device_power_state, PM_DEVICE_STATE_SUSPENDED);
 	pm_notifier_unregister(&notifier);
 	testing_device_runtime = false;
 }
@@ -395,29 +395,29 @@ ZTEST(power_management_1cpu, test_busy)
 	bool busy;
 
 	busy = pm_device_is_any_busy();
-	zassert_false(busy, NULL);
+	zassert_false(busy);
 
 	pm_device_busy_set(device_dummy);
 
 	busy = pm_device_is_any_busy();
-	zassert_true(busy, NULL);
+	zassert_true(busy);
 
 	busy = pm_device_is_busy(device_dummy);
-	zassert_true(busy, NULL);
+	zassert_true(busy);
 
 	pm_device_busy_clear(device_dummy);
 
 	busy = pm_device_is_any_busy();
-	zassert_false(busy, NULL);
+	zassert_false(busy);
 
 	busy = pm_device_is_busy(device_dummy);
-	zassert_false(busy, NULL);
+	zassert_false(busy);
 }
 
 ZTEST(power_management_1cpu, test_device_state_lock)
 {
 	pm_device_state_lock(device_a);
-	zassert_true(pm_device_state_is_locked(device_a), NULL);
+	zassert_true(pm_device_state_is_locked(device_a));
 
 	testing_device_lock = true;
 	enter_low_power = true;

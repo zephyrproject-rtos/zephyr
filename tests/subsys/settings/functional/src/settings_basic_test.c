@@ -406,15 +406,15 @@ int direct_loader(
 	int rc;
 	uint8_t val;
 
-	zassert_equal(0x1234, (size_t)param, NULL);
+	zassert_equal(0x1234, (size_t)param);
 
-	zassert_equal(1, len, NULL);
+	zassert_equal(1, len);
 	zassert_is_null(key, "Unexpected key: %s", key);
 
 
 	zassert_not_null(cb_arg, NULL);
 	rc = read_cb(cb_arg, &val, sizeof(val));
-	zassert_equal(sizeof(val), rc, NULL);
+	zassert_equal(sizeof(val), rc);
 
 	val_directly_loaded = val;
 	direct_load_cnt += 1;
@@ -436,25 +436,25 @@ ZTEST(settings_functional, test_direct_loading)
 	settings_save_one("val/3", &val, sizeof(uint8_t));
 
 	rc = settings_register(&val123_settings);
-	zassert_true(rc == 0, NULL);
+	zassert_true(rc == 0);
 	memset(&data, 0, sizeof(data));
 
 	rc = settings_load();
-	zassert_true(rc == 0, NULL);
+	zassert_true(rc == 0);
 
-	zassert_equal(11, data.val1, NULL);
-	zassert_equal(23, data.val2, NULL);
-	zassert_equal(35, data.val3, NULL);
+	zassert_equal(11, data.val1);
+	zassert_equal(23, data.val2);
+	zassert_equal(35, data.val3);
 
 	/* Load subtree */
 	memset(&data, 0, sizeof(data));
 
 	rc = settings_load_subtree("val/2");
-	zassert_true(rc == 0, NULL);
+	zassert_true(rc == 0);
 
-	zassert_equal(0,  data.val1, NULL);
-	zassert_equal(23, data.val2, NULL);
-	zassert_equal(0,  data.val3, NULL);
+	zassert_equal(0,  data.val1);
+	zassert_equal(23, data.val2);
+	zassert_equal(0,  data.val3);
 
 	/* Direct loading now */
 	memset(&data, 0, sizeof(data));
@@ -464,13 +464,13 @@ ZTEST(settings_functional, test_direct_loading)
 		"val/2",
 		direct_loader,
 		(void *)0x1234);
-	zassert_true(rc == 0, NULL);
-	zassert_equal(0, data.val1, NULL);
-	zassert_equal(0, data.val2, NULL);
-	zassert_equal(0, data.val3, NULL);
+	zassert_true(rc == 0);
+	zassert_equal(0, data.val1);
+	zassert_equal(0, data.val2);
+	zassert_equal(0, data.val3);
 
-	zassert_equal(1, direct_load_cnt, NULL);
-	zassert_equal(23, val_directly_loaded, NULL);
+	zassert_equal(1, direct_load_cnt);
+	zassert_equal(23, val_directly_loaded);
 	settings_deregister(&val123_settings);
 }
 
@@ -514,10 +514,10 @@ static int filtered_loader(
 	zassert_not_null(ldata->n, "Unexpected data name: %s", key);
 	zassert_is_null(next, NULL);
 	zassert_equal(strlen(ldata->v) + 1, len, "e: \"%s\", a:\"%s\"", ldata->v, buf);
-	zassert_true(len <= sizeof(buf), NULL);
+	zassert_true(len <= sizeof(buf));
 
 	rc = read_cb(cb_arg, buf, len);
-	zassert_equal(len, rc, NULL);
+	zassert_equal(len, rc);
 
 	zassert_false(strcmp(ldata->v, buf), "e: \"%s\", a:\"%s\"", ldata->v, buf);
 
@@ -540,7 +540,7 @@ static int direct_filtered_loader(
 	void *cb_arg,
 	void *param)
 {
-	zassert_equal(0x3456, (size_t)param, NULL);
+	zassert_equal(0x3456, (size_t)param);
 	return filtered_loader(key, len, read_cb, cb_arg);
 }
 
@@ -596,7 +596,7 @@ ZTEST(settings_functional, test_direct_loading_filter)
 		prefix,
 		direct_filtered_loader,
 		(void *)0x3456);
-	zassert_equal(0, rc, NULL);
+	zassert_equal(0, rc);
 
 	/* Check if all the data was called */
 	for (n = 0; data_final[n].n; ++n) {
@@ -606,10 +606,10 @@ ZTEST(settings_functional, test_direct_loading_filter)
 	}
 
 	rc = settings_register(&filtered_loader_settings);
-	zassert_true(rc == 0, NULL);
+	zassert_true(rc == 0);
 
 	rc = settings_load_subtree(prefix);
-	zassert_equal(0, rc, NULL);
+	zassert_equal(0, rc);
 
 	/* Check if all the data was called */
 	for (n = 0; data_final[n].n; ++n) {
