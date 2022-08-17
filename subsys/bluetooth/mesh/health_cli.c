@@ -487,7 +487,7 @@ int bt_mesh_health_cli_fault_clear(struct bt_mesh_health_cli *cli, struct bt_mes
 	net_buf_simple_add_le16(&msg, cid);
 
 	return model_ackd_send(cli->model, ctx, &msg,
-			       (!test_id && (!faults || !fault_count)) ? &cli->ack_ctx : NULL,
+			       (!test_id && (!faults || !fault_count)) ? NULL : &cli->ack_ctx,
 			       OP_HEALTH_FAULT_STATUS, &param);
 }
 
@@ -518,7 +518,7 @@ int bt_mesh_health_cli_fault_get(struct bt_mesh_health_cli *cli, struct bt_mesh_
 	net_buf_simple_add_le16(&msg, cid);
 
 	return model_ackd_send(cli->model, ctx, &msg,
-			       (!test_id && (!faults || !fault_count)) ? &cli->ack_ctx : NULL,
+			       (!test_id && (!faults || !fault_count)) ? NULL : &cli->ack_ctx,
 			       OP_HEALTH_FAULT_STATUS, &param);
 }
 
