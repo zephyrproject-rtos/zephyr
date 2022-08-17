@@ -16,7 +16,7 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
-static const struct device *mic_dev;
+static const struct device *const mic_dev = DEVICE_DT_GET_ONE(usb_audio_mic);
 
 static void data_received(const struct device *dev,
 			  struct net_buf *buffer,
@@ -69,7 +69,6 @@ void main(void)
 	int ret;
 
 	LOG_INF("Entered %s", __func__);
-	mic_dev = DEVICE_DT_GET_ONE(usb_audio_mic);
 
 	if (!device_is_ready(hp_dev)) {
 		LOG_ERR("Device USB Headphones is not ready");
