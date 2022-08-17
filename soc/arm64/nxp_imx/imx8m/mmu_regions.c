@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 NXP
+ * Copyright 2020-2022 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,7 +39,11 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_ADDR(DT_NODELABEL(uart4)),
 			      DT_REG_SIZE(DT_NODELABEL(uart4)),
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
-	/* TODO: Add more device entry */
+
+	MMU_REGION_FLAT_ENTRY("IOMUXC",
+			      DT_REG_ADDR(DT_NODELABEL(iomuxc)),
+			      DT_REG_SIZE(DT_NODELABEL(iomuxc)),
+			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
 };
 
 const struct arm_mmu_config mmu_config = {

@@ -13,6 +13,7 @@ config SOC_IMX8MM_A53
 	select GIC_V3
 	select HAS_MCUX if CLOCK_CONTROL
 	select HAS_MCUX_CCM if CLOCK_CONTROL
+	select HAS_MCUX_IOMUXC if PINCTRL
 
 config SOC_IMX8MP_A53
 	bool "NXP i.MX8MP A53"
@@ -22,6 +23,7 @@ config SOC_IMX8MP_A53
 	select GIC_V3
 	select HAS_MCUX if CLOCK_CONTROL
 	select HAS_MCUX_CCM if CLOCK_CONTROL
+	select HAS_MCUX_IOMUXC if PINCTRL
 
 endchoice
 

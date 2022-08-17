@@ -1,4 +1,4 @@
-# Copyright 2020 NXP
+# Copyright 2020-2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_IMX8MM_A53
@@ -22,5 +22,9 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 8000000
+
+config PINCTRL_IMX
+	default y if HAS_MCUX_IOMUXC
+	depends on PINCTRL
 
 endif
