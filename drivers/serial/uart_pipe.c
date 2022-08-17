@@ -21,7 +21,8 @@ LOG_MODULE_REGISTER(uart_pipe);
 #include <zephyr/drivers/uart_pipe.h>
 #include <zephyr/sys/printk.h>
 
-static const struct device *uart_pipe_dev;
+static const struct device *const uart_pipe_dev =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_uart_pipe));
 
 static uint8_t *recv_buf;
 static size_t recv_buf_len;
@@ -98,9 +99,7 @@ void uart_pipe_register(uint8_t *buf, size_t len, uart_pipe_recv_cb cb)
 	recv_buf_len = len;
 	app_cb = cb;
 
-	uart_pipe_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_uart_pipe));
-
-	if (uart_pipe_dev != NULL) {
+	if (device_is_ready(uart_pipe_dev)) {
 		uart_pipe_setup(uart_pipe_dev);
 	}
 }
