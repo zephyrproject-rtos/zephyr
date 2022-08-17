@@ -175,6 +175,37 @@ static uint8_t net_buf_pull_call(struct net_buf_simple *buf,
 
 	return 0;
 }
+
+static void bearer_list_current_calls(struct bt_conn *conn, const struct bt_tbs_instance *inst,
+				      struct net_buf_simple *buf)
+{
+	struct bt_tbs_client_call calls[CONFIG_BT_TBS_CLIENT_MAX_CALLS];
+	uint8_t cnt = 0;
+	int err;
+
+	while (buf->len) {
+		struct bt_tbs_client_call *call = &calls[cnt];
+
+		err = net_buf_pull_call(buf, call);
+		if (err == BT_ATT_ERR_INSUFFICIENT_RESOURCES) {
+			BT_WARN("Call with skipped due to too long URI");
+			continue;
+		} else if (err != 0) {
+			BT_DBG("Invalid current call notification: %d", err);
+			return;
+		}
+
+		cnt++;
+		if (cnt == CONFIG_BT_TBS_CLIENT_MAX_CALLS) {
+			BT_WARN("Could not parse all calls due to memory restrictions");
+			break;
+		}
+	}
+
+	if (tbs_client_cbs != NULL && tbs_client_cbs->current_calls != NULL) {
+		tbs_client_cbs->current_calls(conn, 0, inst->index, cnt, calls);
+	}
+}
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS) */
 
 #if defined(CONFIG_BT_TBS_CLIENT_CP_PROCEDURES)
@@ -311,8 +342,6 @@ static void current_calls_notify_handler(struct bt_conn *conn,
 					 const struct bt_tbs_instance *tbs_inst,
 					 const void *data, uint16_t length)
 {
-	struct bt_tbs_client_call calls[CONFIG_BT_TBS_CLIENT_MAX_CALLS];
-	uint8_t cnt = 0;
 	struct net_buf_simple buf;
 
 	BT_DBG("");
@@ -321,29 +350,7 @@ static void current_calls_notify_handler(struct bt_conn *conn,
 
 	/* TODO: If length == MTU, do long read for all calls */
 
-	while (buf.len) {
-		struct bt_tbs_client_call *call = &calls[cnt];
-		int err;
-
-		err = net_buf_pull_call(&buf, call);
-		if (err == BT_ATT_ERR_INSUFFICIENT_RESOURCES) {
-			BT_WARN("Call with skipped due to too long URI");
-			continue;
-		} else if (err != 0) {
-			BT_DBG("Invalid current call notification: %d", err);
-			return;
-		}
-
-		cnt++;
-		if (cnt == CONFIG_BT_TBS_CLIENT_MAX_CALLS) {
-			BT_WARN("Could not parse all calls due to memory restrictions");
-			break;
-		}
-	}
-
-	if (tbs_client_cbs != NULL && tbs_client_cbs->current_calls != NULL) {
-		tbs_client_cbs->current_calls(conn, 0, tbs_inst->index, cnt, calls);
-	}
+	bearer_list_current_calls(conn, tbs_inst, &buf);
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS) */
 
@@ -858,8 +865,6 @@ static uint8_t read_current_calls_cb(struct bt_conn *conn, uint8_t err,
 {
 	struct bt_tbs_instance *inst = CONTAINER_OF(params, struct bt_tbs_instance, read_params);
 	int tbs_err = err;
-	struct bt_tbs_client_call calls[CONFIG_BT_TBS_CLIENT_MAX_CALLS];
-	uint8_t cnt = 0;
 
 	if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS) && inst->gtbs) {
 		BT_DBG("GTBS");
@@ -915,32 +920,9 @@ static uint8_t read_current_calls_cb(struct bt_conn *conn, uint8_t err,
 		return BT_GATT_ITER_STOP;
 	}
 
-	/* Finished reading, start parsing */
-	while (inst->net_buf.len != 0) {
-		struct bt_tbs_client_call *call = &calls[cnt];
-
-		tbs_err = net_buf_pull_call(&inst->net_buf, call);
-		if (tbs_err == BT_ATT_ERR_INSUFFICIENT_RESOURCES) {
-			BT_WARN("Call skipped due to too long URI");
-			continue;
-		} else if (tbs_err != 0) {
-			BT_DBG("Invalid current call read: %d", err);
-			break;
-		}
-
-		cnt++;
-		if (cnt == CONFIG_BT_TBS_CLIENT_MAX_CALLS) {
-			BT_WARN("Could not parse all calls due to memory restrictions");
-			break;
-		}
-	}
-
 	(void)memset(params, 0, sizeof(*params));
 
-	if (tbs_client_cbs != NULL && tbs_client_cbs->current_calls != NULL) {
-		tbs_client_cbs->current_calls(conn, tbs_err, inst->index, cnt,
-					      calls);
-	}
+	bearer_list_current_calls(conn, inst, &inst->net_buf);
 
 	return BT_GATT_ITER_STOP;
 }
