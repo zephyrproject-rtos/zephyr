@@ -236,7 +236,7 @@ static int test_task_loopback(void)
 
 ZTEST(dac_loopback, test_dac_loopback)
 {
-	zassert_true(test_task_loopback() == TC_PASS, NULL);
+	zassert_true(test_task_loopback() == TC_PASS);
 }
 
 ZTEST_SUITE(dac_loopback, NULL, NULL, NULL, NULL, NULL);

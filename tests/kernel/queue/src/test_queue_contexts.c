@@ -70,23 +70,23 @@ static void tqueue_get(struct k_queue *pqueue)
 	for (int i = 0; i < LIST_LEN; i++) {
 		/**TESTPOINT: queue get*/
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data_p[i], NULL);
+		zassert_equal(rx_data, (void *)&data_p[i]);
 	}
 	/*get queue data from "queue_append"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		/**TESTPOINT: queue get*/
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data[i], NULL);
+		zassert_equal(rx_data, (void *)&data[i]);
 	}
 	/*get queue data from "queue_append_list"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data_l[i], NULL);
+		zassert_equal(rx_data, (void *)&data_l[i]);
 	}
 	/*get queue data from "queue_merge_slist"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data_sl[i], NULL);
+		zassert_equal(rx_data, (void *)&data_sl[i]);
 	}
 }
 
@@ -260,7 +260,7 @@ static void tqueue_alloc(struct k_queue *pqueue)
 	k_queue_alloc_append(pqueue, (void *)&data_append);
 
 	/* Insertion fails and alloc returns NOMEM */
-	zassert_false(k_queue_remove(pqueue, &data_append), NULL);
+	zassert_false(k_queue_remove(pqueue, &data_append));
 
 	/* Assign resource pool of lower size */
 	k_thread_heap_assign(k_current_get(), &mem_pool_fail);
@@ -270,12 +270,12 @@ static void tqueue_alloc(struct k_queue *pqueue)
 	 */
 	k_queue_alloc_prepend(pqueue, (void *)&data_prepend);
 
-	zassert_false(k_queue_remove(pqueue, &data_prepend), NULL);
+	zassert_false(k_queue_remove(pqueue, &data_prepend));
 
 	/* No element must be present in the queue, as all
 	 * operations failed
 	 */
-	zassert_true(k_queue_is_empty(pqueue), NULL);
+	zassert_true(k_queue_is_empty(pqueue));
 
 	/* Assign resource pool of sufficient size */
 	k_thread_heap_assign(k_current_get(), &mem_pool_pass);
@@ -284,7 +284,7 @@ static void tqueue_alloc(struct k_queue *pqueue)
 		      NULL);
 
 	/* Now queue shouldn't be empty */
-	zassert_false(k_queue_is_empty(pqueue), NULL);
+	zassert_false(k_queue_is_empty(pqueue));
 
 	zassert_true(k_queue_get(pqueue, K_FOREVER) != NULL,
 		     NULL);
@@ -322,7 +322,7 @@ static void queue_poll_race_consume(void *p1, void *p2, void *p3)
 	int *count = p2;
 
 	while (true) {
-		zassert_true(k_queue_get(q, K_FOREVER) != NULL, NULL);
+		zassert_true(k_queue_get(q, K_FOREVER) != NULL);
 		*count += 1;
 	}
 }
@@ -361,12 +361,12 @@ ZTEST(queue_api_1cpu, test_queue_poll_race)
 	k_queue_append(&queue, &data[0]);
 	k_queue_append(&queue, &data[1]);
 
-	zassert_true(low_count == 0, NULL);
-	zassert_true(mid_count == 0, NULL);
+	zassert_true(low_count == 0);
+	zassert_true(mid_count == 0);
 
 	k_sleep(K_MSEC(10));
 
-	zassert_true(low_count + mid_count == 2, NULL);
+	zassert_true(low_count + mid_count == 2);
 
 	k_thread_abort(&tdata);
 	k_thread_abort(&tdata1);

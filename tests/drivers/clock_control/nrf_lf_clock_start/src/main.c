@@ -22,7 +22,7 @@ static void xtal_check(bool on, nrf_clock_lfclk_t type)
 		zassert_true(is_running, "Clock should be on");
 	} else {
 		zassert_true(on, "Clock should be on");
-		zassert_equal(type, NRF_CLOCK_LFCLK_Xtal, NULL);
+		zassert_equal(type, NRF_CLOCK_LFCLK_Xtal);
 	}
 }
 
@@ -32,7 +32,7 @@ static void rc_check(bool on, nrf_clock_lfclk_t type)
 		zassert_false(on, "Clock should be off");
 	} else {
 		zassert_true(on, "Clock should be on");
-		zassert_equal(type, NRF_CLOCK_LFCLK_RC, NULL);
+		zassert_equal(type, NRF_CLOCK_LFCLK_RC);
 	}
 }
 
@@ -45,7 +45,7 @@ static void synth_check(bool on, nrf_clock_lfclk_t type)
 
 	if (!IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT)) {
 		zassert_true(on, "Clock should be on");
-		zassert_equal(type, NRF_CLOCK_LFCLK_Synth, NULL);
+		zassert_equal(type, NRF_CLOCK_LFCLK_Synth);
 	}
 }
 
@@ -78,13 +78,13 @@ ZTEST(nrf_lf_clock_start, test_wait_in_thread)
 
 	z_nrf_clock_control_lf_on(CLOCK_CONTROL_NRF_LF_START_AVAILABLE);
 	o = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_LFCLK, &t);
-	zassert_false((t == NRF_CLOCK_LFCLK_Xtal) && o, NULL);
+	zassert_false((t == NRF_CLOCK_LFCLK_Xtal) && o);
 	k_busy_wait(35);
-	zassert_true(k_cycle_get_32() > 0, NULL);
+	zassert_true(k_cycle_get_32() > 0);
 
 	z_nrf_clock_control_lf_on(CLOCK_CONTROL_NRF_LF_START_STABLE);
 	o = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_LFCLK, &t);
-	zassert_true((t == NRF_CLOCK_LFCLK_Xtal) && o, NULL);
+	zassert_true((t == NRF_CLOCK_LFCLK_Xtal) && o);
 }
 
 void *test_init(void)

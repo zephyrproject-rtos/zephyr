@@ -105,7 +105,7 @@ static void counter_top_handler(const struct device *dev, void *user_data)
 
 		err = uart_rx_enable(uart_dev, async_rx_buf,
 				     sizeof(async_rx_buf), 1 * USEC_PER_MSEC);
-		zassert_true(err >= 0, NULL);
+		zassert_true(err >= 0);
 		async_rx_enabled = true;
 	} else if (int_driven) {
 		if (enable) {
@@ -148,15 +148,15 @@ static void init_test(void)
 	/* Setup counter which will periodically enable/disable UART RX,
 	 * Disabling RX should lead to flow control being activated.
 	 */
-	zassert_true(device_is_ready(counter_dev), NULL);
+	zassert_true(device_is_ready(counter_dev));
 
 	top_cfg.ticks = counter_us_to_ticks(counter_dev, 1000);
 
 	err = counter_set_top_value(counter_dev, &top_cfg);
-	zassert_true(err >= 0, NULL);
+	zassert_true(err >= 0);
 
 	err = counter_start(counter_dev);
-	zassert_true(err >= 0, NULL);
+	zassert_true(err >= 0);
 }
 
 static void rx_isr(void)
@@ -256,7 +256,7 @@ static void int_async_thread_func(void *p_data, void *base, void *range)
 			int err;
 
 			err = k_sem_take(&async_tx_sem, K_MSEC(1000));
-			zassert_true(err >= 0, NULL);
+			zassert_true(err >= 0);
 
 			int idx = data->cnt & 0xF;
 			size_t len = (idx < BUF_SIZE / 2) ? 5 : 1; /* Try various lengths */
@@ -345,12 +345,12 @@ ZTEST(uart_mix_fifo_poll, test_mixed_uart_access)
 
 	for (int i = 0; i < num_of_contexts; i++) {
 		err = k_sem_take(&test_data[i].sem, K_MSEC(10000));
-		zassert_equal(err, 0, NULL);
+		zassert_equal(err, 0);
 	}
 
 	if (async || int_driven) {
 		err = k_sem_take(&int_async_data.sem, K_MSEC(10000));
-		zassert_equal(err, 0, NULL);
+		zassert_equal(err, 0);
 	}
 
 	k_msleep(10);

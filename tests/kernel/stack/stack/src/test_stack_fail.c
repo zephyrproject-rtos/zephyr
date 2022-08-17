@@ -22,9 +22,9 @@ static void stack_pop_fail(struct k_stack *stack)
 	stack_data_t rx_data;
 
 	/**TESTPOINT: stack pop returns -EBUSY*/
-	zassert_equal(k_stack_pop(stack, &rx_data, K_NO_WAIT), -EBUSY, NULL);
+	zassert_equal(k_stack_pop(stack, &rx_data, K_NO_WAIT), -EBUSY);
 	/**TESTPOINT: stack pop returns -EAGAIN*/
-	zassert_equal(k_stack_pop(stack, &rx_data, TIMEOUT), -EAGAIN, NULL);
+	zassert_equal(k_stack_pop(stack, &rx_data, TIMEOUT), -EAGAIN);
 }
 
 /**

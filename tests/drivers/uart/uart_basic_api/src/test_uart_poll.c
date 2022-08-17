@@ -61,7 +61,7 @@ void test_uart_poll_out(void)
 ZTEST(uart_basic_api, test_uart_poll_out)
 #endif
 {
-	zassert_true(test_poll_out() == TC_PASS, NULL);
+	zassert_true(test_poll_out() == TC_PASS);
 }
 
 #if CONFIG_SHELL
@@ -70,5 +70,5 @@ void test_uart_poll_in(void)
 ZTEST(uart_basic_api, test_uart_poll_in)
 #endif
 {
-	zassert_true(test_poll_in() == TC_PASS, NULL);
+	zassert_true(test_poll_in() == TC_PASS);
 }

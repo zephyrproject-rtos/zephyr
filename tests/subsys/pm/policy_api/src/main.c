@@ -20,41 +20,41 @@ ZTEST(policy_api, test_pm_policy_next_state_default)
 
 	/* cpu 0 */
 	next = pm_policy_next_state(0U, 0);
-	zassert_equal(next, NULL, NULL);
+	zassert_equal(next, NULL);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(10999));
-	zassert_equal(next, NULL, NULL);
+	zassert_equal(next, NULL);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
-	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
-	zassert_equal(next->min_residency_us, 100000, NULL);
-	zassert_equal(next->exit_latency_us, 10000, NULL);
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
+	zassert_equal(next->min_residency_us, 100000);
+	zassert_equal(next->exit_latency_us, 10000);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1099999));
-	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
-	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM, NULL);
-	zassert_equal(next->min_residency_us, 1000000, NULL);
-	zassert_equal(next->exit_latency_us, 100000, NULL);
+	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM);
+	zassert_equal(next->min_residency_us, 1000000);
+	zassert_equal(next->exit_latency_us, 100000);
 
 	next = pm_policy_next_state(0U, K_TICKS_FOREVER);
-	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM, NULL);
+	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM);
 
 	/* cpu 1 */
 	next = pm_policy_next_state(1U, 0);
-	zassert_equal(next, NULL, NULL);
+	zassert_equal(next, NULL);
 
 	next = pm_policy_next_state(1U, k_us_to_ticks_floor32(549999));
-	zassert_equal(next, NULL, NULL);
+	zassert_equal(next, NULL);
 
 	next = pm_policy_next_state(1U, k_us_to_ticks_floor32(550000));
-	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM, NULL);
-	zassert_equal(next->min_residency_us, 500000, NULL);
-	zassert_equal(next->exit_latency_us, 50000, NULL);
+	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM);
+	zassert_equal(next->min_residency_us, 500000);
+	zassert_equal(next->exit_latency_us, 50000);
 
 	next = pm_policy_next_state(1U, K_TICKS_FOREVER);
-	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM, NULL);
+	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM);
 }
 
 /**
@@ -70,10 +70,10 @@ ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 	 * next state: PM_STATE_RUNTIME_IDLE
 	 */
 	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
-	zassert_false(active, NULL);
+	zassert_false(active);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
-	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 
 	/* disallow PM_STATE_RUNTIME_IDLE
 	 * next state: NULL (active)
@@ -81,10 +81,10 @@ ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 
 	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
-	zassert_true(active, NULL);
+	zassert_true(active);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
-	zassert_equal(next, NULL, NULL);
+	zassert_equal(next, NULL);
 
 	/* allow PM_STATE_RUNTIME_IDLE again
 	 * next state: PM_STATE_RUNTIME_IDLE
@@ -92,19 +92,19 @@ ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 	pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 
 	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
-	zassert_false(active, NULL);
+	zassert_false(active);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
-	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 
 	/* initial state: PM_STATE_RUNTIME_IDLE and substate 1 allowed
 	 * next state: PM_STATE_RUNTIME_IDLE
 	 */
 	pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, 1);
-	zassert_false(active, NULL);
+	zassert_false(active);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
-	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 
 	/* disallow PM_STATE_RUNTIME_IDLE and substate 1
 	 * next state: NULL (active)
@@ -112,10 +112,10 @@ ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, 1);
 
 	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, 1);
-	zassert_true(active, NULL);
+	zassert_true(active);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
-	zassert_equal(next, NULL, NULL);
+	zassert_equal(next, NULL);
 
 	/* allow PM_STATE_RUNTIME_IDLE and substate 1 again
 	 * next state: PM_STATE_RUNTIME_IDLE
@@ -123,10 +123,10 @@ ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 	pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, 1);
 
 	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, 1);
-	zassert_false(active, NULL);
+	zassert_false(active);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
-	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 }
 
 /** Flag to indicate number of times callback has been called */
@@ -141,7 +141,7 @@ static void on_pm_policy_latency_changed(int32_t latency)
 {
 	TC_PRINT("Latency changed to %d\n", latency);
 
-	zassert_equal(latency, expected_latency, NULL);
+	zassert_equal(latency, expected_latency);
 
 	latency_cb_call_cnt++;
 }
@@ -162,10 +162,10 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	pm_policy_latency_request_add(&req1, 9000);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
-	zassert_equal(next, NULL, NULL);
+	zassert_equal(next, NULL);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
-	zassert_equal(next, NULL, NULL);
+	zassert_equal(next, NULL);
 
 	/* update latency requirement to a value between latencies for
 	 * PM_STATE_RUNTIME_IDLE and PM_STATE_SUSPEND_TO_RAM, so we should
@@ -174,10 +174,10 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	pm_policy_latency_request_update(&req1, 50000);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
-	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
-	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 
 	/* add a new latency requirement with a maximum value below the
 	 * latency given by any state, so we should stay active all the time
@@ -186,10 +186,10 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	pm_policy_latency_request_add(&req2, 8000);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
-	zassert_equal(next, NULL, NULL);
+	zassert_equal(next, NULL);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
-	zassert_equal(next, NULL, NULL);
+	zassert_equal(next, NULL);
 
 	/* remove previous request, so we should recover behavior given by
 	 * first request.
@@ -197,19 +197,19 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	pm_policy_latency_request_remove(&req2);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
-	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
-	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 
 	/* remove first request, so we should observe regular behavior again */
 	pm_policy_latency_request_remove(&req1);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
-	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
-	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM, NULL);
+	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM);
 
 	/* get notified when latency requirement changes */
 	pm_policy_latency_changed_subscribe(&sreq1, on_pm_policy_latency_changed);
@@ -219,7 +219,7 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	latency_cb_call_cnt = 0;
 	expected_latency = 10000;
 	pm_policy_latency_request_add(&req1, 10000);
-	zassert_equal(latency_cb_call_cnt, 2, NULL);
+	zassert_equal(latency_cb_call_cnt, 2);
 
 	/* update request (expected notification, but only sreq1) */
 	pm_policy_latency_changed_unsubscribe(&sreq2);
@@ -227,22 +227,22 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	latency_cb_call_cnt = 0;
 	expected_latency = 50000;
 	pm_policy_latency_request_update(&req1, 50000);
-	zassert_equal(latency_cb_call_cnt, 1, NULL);
+	zassert_equal(latency_cb_call_cnt, 1);
 
 	/* add a new request, with higher value (no notification, previous
 	 * prevails)
 	 */
 	latency_cb_call_cnt = 0;
 	pm_policy_latency_request_add(&req2, 60000);
-	zassert_equal(latency_cb_call_cnt, 0, NULL);
+	zassert_equal(latency_cb_call_cnt, 0);
 
 	pm_policy_latency_request_remove(&req2);
-	zassert_equal(latency_cb_call_cnt, 0, NULL);
+	zassert_equal(latency_cb_call_cnt, 0);
 
 	/* remove first request, we no longer have latency requirements */
 	expected_latency = SYS_FOREVER_US;
 	pm_policy_latency_request_remove(&req1);
-	zassert_equal(latency_cb_call_cnt, 1, NULL);
+	zassert_equal(latency_cb_call_cnt, 1);
 }
 #else
 ZTEST(policy_api, test_pm_policy_next_state_default)
@@ -281,7 +281,7 @@ ZTEST(policy_api, test_pm_policy_next_state_custom)
 	const struct pm_state_info *next;
 
 	next = pm_policy_next_state(0U, 0);
-	zassert_equal(next->state, PM_STATE_SOFT_OFF, NULL);
+	zassert_equal(next->state, PM_STATE_SOFT_OFF);
 }
 #else
 ZTEST(policy_api, test_pm_policy_next_state_custom)

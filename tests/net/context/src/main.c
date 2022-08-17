@@ -861,7 +861,7 @@ ZTEST(net_context, test_net_ctx_recv_v6_timeout)
 	expecting_cb_failure = false;
 	recv_cb_timeout_called = false;
 
-	zassert_true(!cb_failure, NULL);
+	zassert_true(!cb_failure);
 
 	net_ctx_put();
 }
@@ -894,7 +894,7 @@ ZTEST(net_context, test_net_ctx_recv_v4_timeout)
 	expecting_cb_failure = false;
 	recv_cb_timeout_called = false;
 
-	zassert_true(!cb_failure, NULL);
+	zassert_true(!cb_failure);
 
 	net_ctx_put();
 }

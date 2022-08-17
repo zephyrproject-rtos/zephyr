@@ -150,5 +150,5 @@ ZTEST(uart_basic_api_pending, test_uart_pending)
 #ifndef CONFIG_UART_INTERRUPT_DRIVEN
 	ztest_test_skip();
 #endif
-	zassert_true(test_pending() == TC_PASS, NULL);
+	zassert_true(test_pending() == TC_PASS);
 }

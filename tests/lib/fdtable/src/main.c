@@ -86,7 +86,7 @@ ZTEST(fdtable, test_z_finalize_fd)
 	const struct fd_op_vtable *vtable;
 
 	int fd = z_reserve_fd();
-	zassert_true(fd >= 0, NULL);
+	zassert_true(fd >= 0);
 
 	int *obj = z_get_fd_obj_and_vtable(fd, &vtable, NULL);
 
@@ -109,7 +109,7 @@ ZTEST(fdtable, test_z_alloc_fd)
 	int *obj = NULL;
 
 	int fd = z_alloc_fd(obj, vtable); /* function being tested */
-	zassert_true(fd >= 0, NULL);
+	zassert_true(fd >= 0);
 
 	obj = z_get_fd_obj_and_vtable(fd, &vtable, NULL);
 
@@ -124,7 +124,7 @@ ZTEST(fdtable, test_z_free_fd)
 	const struct fd_op_vtable *vtable = NULL;
 
 	int fd = z_reserve_fd();
-	zassert_true(fd >= 0, NULL);
+	zassert_true(fd >= 0);
 
 	z_free_fd(fd); /* function being tested */
 

@@ -521,37 +521,37 @@ ZTEST(bitarray, test_bitarray_region_set_clear)
 	ba.bundles[0] = 0xFF0F0F0F;
 	ba.bundles[1] = 0x0F0F0FFF;
 
-	zassert_true(sys_bitarray_is_region_set(&ba,  4,  0), NULL);
-	zassert_true(sys_bitarray_is_region_set(&ba, 12, 32), NULL);
-	zassert_true(sys_bitarray_is_region_set(&ba,  8, 32), NULL);
-	zassert_true(sys_bitarray_is_region_set(&ba, 14, 30), NULL);
-	zassert_true(sys_bitarray_is_region_set(&ba, 20, 24), NULL);
+	zassert_true(sys_bitarray_is_region_set(&ba,  4,  0));
+	zassert_true(sys_bitarray_is_region_set(&ba, 12, 32));
+	zassert_true(sys_bitarray_is_region_set(&ba,  8, 32));
+	zassert_true(sys_bitarray_is_region_set(&ba, 14, 30));
+	zassert_true(sys_bitarray_is_region_set(&ba, 20, 24));
 
-	zassert_false(sys_bitarray_is_region_cleared(&ba,  4,  0), NULL);
-	zassert_false(sys_bitarray_is_region_cleared(&ba, 12, 32), NULL);
-	zassert_false(sys_bitarray_is_region_cleared(&ba,  8, 32), NULL);
-	zassert_false(sys_bitarray_is_region_cleared(&ba, 14, 30), NULL);
-	zassert_false(sys_bitarray_is_region_cleared(&ba, 20, 24), NULL);
+	zassert_false(sys_bitarray_is_region_cleared(&ba,  4,  0));
+	zassert_false(sys_bitarray_is_region_cleared(&ba, 12, 32));
+	zassert_false(sys_bitarray_is_region_cleared(&ba,  8, 32));
+	zassert_false(sys_bitarray_is_region_cleared(&ba, 14, 30));
+	zassert_false(sys_bitarray_is_region_cleared(&ba, 20, 24));
 
 	ba.bundles[0] = ~ba.bundles[0];
 	ba.bundles[1] = ~ba.bundles[1];
 
-	zassert_true(sys_bitarray_is_region_cleared(&ba,  4,  0), NULL);
-	zassert_true(sys_bitarray_is_region_cleared(&ba, 12, 32), NULL);
-	zassert_true(sys_bitarray_is_region_cleared(&ba,  8, 32), NULL);
-	zassert_true(sys_bitarray_is_region_cleared(&ba, 14, 30), NULL);
-	zassert_true(sys_bitarray_is_region_cleared(&ba, 20, 24), NULL);
+	zassert_true(sys_bitarray_is_region_cleared(&ba,  4,  0));
+	zassert_true(sys_bitarray_is_region_cleared(&ba, 12, 32));
+	zassert_true(sys_bitarray_is_region_cleared(&ba,  8, 32));
+	zassert_true(sys_bitarray_is_region_cleared(&ba, 14, 30));
+	zassert_true(sys_bitarray_is_region_cleared(&ba, 20, 24));
 
-	zassert_false(sys_bitarray_is_region_set(&ba,  4,  0), NULL);
-	zassert_false(sys_bitarray_is_region_set(&ba, 12, 32), NULL);
-	zassert_false(sys_bitarray_is_region_set(&ba,  8, 32), NULL);
-	zassert_false(sys_bitarray_is_region_set(&ba, 14, 30), NULL);
-	zassert_false(sys_bitarray_is_region_set(&ba, 20, 24), NULL);
+	zassert_false(sys_bitarray_is_region_set(&ba,  4,  0));
+	zassert_false(sys_bitarray_is_region_set(&ba, 12, 32));
+	zassert_false(sys_bitarray_is_region_set(&ba,  8, 32));
+	zassert_false(sys_bitarray_is_region_set(&ba, 14, 30));
+	zassert_false(sys_bitarray_is_region_set(&ba, 20, 24));
 
-	zassert_false(sys_bitarray_is_region_set(&ba, 10, 60), NULL);
-	zassert_false(sys_bitarray_is_region_cleared(&ba, 10, 60), NULL);
-	zassert_false(sys_bitarray_is_region_set(&ba, 8, 120), NULL);
-	zassert_false(sys_bitarray_is_region_cleared(&ba, 8, 120), NULL);
+	zassert_false(sys_bitarray_is_region_set(&ba, 10, 60));
+	zassert_false(sys_bitarray_is_region_cleared(&ba, 10, 60));
+	zassert_false(sys_bitarray_is_region_set(&ba, 8, 120));
+	zassert_false(sys_bitarray_is_region_cleared(&ba, 8, 120));
 
 	printk("Testing bit array region bit manipulations\n");
 

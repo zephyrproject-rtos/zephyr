@@ -86,9 +86,9 @@ ZTEST(object_validation, test_generic_object)
 	struct k_sem stack_sem;
 
 	/* None of these should be even in the table */
-	zassert_false(test_object(&stack_sem, -EBADF), NULL);
-	zassert_false(test_object((struct k_sem *)&bad_sem, -EBADF), NULL);
-	zassert_false(test_object((struct k_sem *)0xFFFFFFFF, -EBADF), NULL);
+	zassert_false(test_object(&stack_sem, -EBADF));
+	zassert_false(test_object((struct k_sem *)&bad_sem, -EBADF));
+	zassert_false(test_object((struct k_sem *)0xFFFFFFFF, -EBADF));
 	object_permission_checks(&sem3, false);
 	object_permission_checks(&sem1, true);
 	object_permission_checks(&sem2, false);
@@ -106,11 +106,11 @@ ZTEST(object_validation, test_generic_object)
 	/* dynamic object table well-populated with semaphores at this point */
 	for (int i = 0; i < SEM_ARRAY_SIZE; i++) {
 		/* Should have permission granted but be uninitialized */
-		zassert_false(test_object(dyn_sem[i], -EINVAL), NULL);
+		zassert_false(test_object(dyn_sem[i], -EINVAL));
 		k_object_access_revoke(dyn_sem[i], k_current_get());
 		object_permission_checks(dyn_sem[i], false);
 		k_object_free(dyn_sem[i]);
-		zassert_false(test_object(dyn_sem[i], -EBADF), NULL);
+		zassert_false(test_object(dyn_sem[i], -EBADF));
 	}
 }
 

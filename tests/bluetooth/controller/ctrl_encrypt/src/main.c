@@ -223,7 +223,7 @@ void test_encryption_start_central_loc(void)
 
 	/* Initiate an Encryption Start Procedure */
 	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -400,7 +400,7 @@ void test_encryption_start_central_loc_limited_memory(void)
 
 	/* Initiate an Encryption Start Procedure */
 	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -512,10 +512,10 @@ void test_encryption_start_central_loc_limited_memory(void)
 	ull_cp_release_ntf(ntf);
 
 	/* Tx Encryption should be enabled */
-	zassert_equal(conn.lll.enc_tx, 1U, NULL);
+	zassert_equal(conn.lll.enc_tx, 1U);
 
 	/* Rx Decryption should be enabled */
-	zassert_equal(conn.lll.enc_rx, 1U, NULL);
+	zassert_equal(conn.lll.enc_rx, 1U);
 
 	/* Release dummy procedure */
 	llcp_proc_ctx_release(ctx);
@@ -589,7 +589,7 @@ void test_encryption_start_central_loc_reject_ext(void)
 
 	/* Initiate an Encryption Start Procedure */
 	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -686,7 +686,7 @@ void test_encryption_start_central_loc_reject(void)
 
 	/* Initiate an Encryption Start Procedure */
 	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -794,7 +794,7 @@ void test_encryption_start_central_loc_no_ltk(void)
 
 	/* Initiate an Encryption Start Procedure */
 	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -900,7 +900,7 @@ void test_encryption_start_central_loc_no_ltk_2(void)
 
 	/* Initiate an Encryption Start Procedure */
 	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -1008,7 +1008,7 @@ void test_encryption_start_central_loc_mic(void)
 
 	/* Initiate an Encryption Start Procedure */
 	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -1925,7 +1925,7 @@ void test_encryption_pause_central_loc(void)
 
 	/* Initiate an Encryption Pause Procedure */
 	err = ull_cp_encryption_pause(&conn, rand, ediv, ltk);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -1953,10 +1953,10 @@ void test_encryption_pause_central_loc(void)
 	ull_cp_release_tx(&conn, tx);
 
 	/* Tx Encryption should be disabled */
-	zassert_equal(conn.lll.enc_tx, 0U, NULL);
+	zassert_equal(conn.lll.enc_tx, 0U);
 
 	/* Rx Decryption should be disabled */
-	zassert_equal(conn.lll.enc_rx, 0U, NULL);
+	zassert_equal(conn.lll.enc_rx, 0U);
 
 	/**** UNENCRYPTED ****/
 
@@ -1992,10 +1992,10 @@ void test_encryption_pause_central_loc(void)
 	CHECK_TX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_M_TO_S);
 
 	/* Tx Encryption should be enabled */
-	zassert_equal(conn.lll.enc_tx, 1U, NULL);
+	zassert_equal(conn.lll.enc_tx, 1U);
 
 	/* Rx Decryption should be enabled */
-	zassert_equal(conn.lll.enc_rx, 1U, NULL);
+	zassert_equal(conn.lll.enc_rx, 1U);
 
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
@@ -2014,10 +2014,10 @@ void test_encryption_pause_central_loc(void)
 	ull_cp_release_ntf(ntf);
 
 	/* Tx Encryption should be enabled */
-	zassert_equal(conn.lll.enc_tx, 1U, NULL);
+	zassert_equal(conn.lll.enc_tx, 1U);
 
 	/* Rx Decryption should be enabled */
-	zassert_equal(conn.lll.enc_rx, 1U, NULL);
+	zassert_equal(conn.lll.enc_rx, 1U);
 
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
@@ -2085,7 +2085,7 @@ void test_encryption_pause_periph_rem(void)
 	lt_rx_q_is_empty(&conn);
 
 	/* Rx Decryption should be disabled */
-	zassert_equal(conn.lll.enc_rx, 0U, NULL);
+	zassert_equal(conn.lll.enc_rx, 0U);
 
 	/* Rx */
 	lt_tx(LL_PAUSE_ENC_RSP, &conn, NULL);
@@ -2097,7 +2097,7 @@ void test_encryption_pause_periph_rem(void)
 	ull_cp_release_tx(&conn, tx);
 
 	/* Tx Encryption should be disabled */
-	zassert_equal(conn.lll.enc_tx, 0U, NULL);
+	zassert_equal(conn.lll.enc_tx, 0U);
 
 	/**** UNENCRYPTED ****/
 
@@ -2153,7 +2153,7 @@ void test_encryption_pause_periph_rem(void)
 	CHECK_RX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_M_TO_S);
 
 	/* Rx Decryption should be enabled */
-	zassert_equal(conn.lll.enc_rx, 1U, NULL);
+	zassert_equal(conn.lll.enc_rx, 1U);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -2188,7 +2188,7 @@ void test_encryption_pause_periph_rem(void)
 	CHECK_TX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_S_TO_M);
 
 	/* Tx Encryption should be enabled */
-	zassert_equal(conn.lll.enc_tx, 1U, NULL);
+	zassert_equal(conn.lll.enc_tx, 1U);
 
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
