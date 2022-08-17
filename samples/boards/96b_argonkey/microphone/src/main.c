@@ -86,7 +86,7 @@ void main(void)
 	}
 
 #ifdef CONFIG_LP3943
-	static const struct device *ledc = DEVICE_DT_GET_ONE(ti_lp3943);
+	static const struct device *const ledc = DEVICE_DT_GET_ONE(ti_lp3943);
 
 	if (!device_is_ready(ledc)) {
 		printk("Device %s is not ready\n", ledc->name);

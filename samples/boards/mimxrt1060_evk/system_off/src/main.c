@@ -29,7 +29,7 @@
 #define SNVS_LP_RTC_ALARM_ID 1
 
 static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios, { 0 });
-static const struct device *snvs_rtc_dev = DEVICE_DT_GET(SNVS_RTC_NODE);
+static const struct device *const snvs_rtc_dev = DEVICE_DT_GET(SNVS_RTC_NODE);
 
 void main(void)
 {

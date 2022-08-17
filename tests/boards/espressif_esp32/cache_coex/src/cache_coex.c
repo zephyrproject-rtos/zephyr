@@ -25,7 +25,7 @@
 #define STACKSIZE 1024
 #define PRIORITY 7
 
-static const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+static const struct device *const flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 static struct flash_pages_info page_info;
 static int *mem;
 uint8_t flash_fill_buff[FLASH_READBACK_LEN];

@@ -1185,7 +1185,8 @@ bool adc_stm32_is_irq_active(ADC_TypeDef *adc)
 }
 
 #define HANDLE_IRQS(index)							\
-	static const struct device *dev_##index = DEVICE_DT_INST_GET(index);	\
+	static const struct device *const dev_##index =				\
+		DEVICE_DT_INST_GET(index);					\
 	const struct adc_stm32_cfg *cfg_##index = dev_##index->config;		\
 	ADC_TypeDef *adc_##index = (ADC_TypeDef *)(cfg_##index->base);		\
 										\

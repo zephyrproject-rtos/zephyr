@@ -143,7 +143,8 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 #ifdef CONFIG_DMA_STM32_SHARED_IRQS
 
 #define HANDLE_IRQS(index)						       \
-	static const struct device *dev_##index = DEVICE_DT_INST_GET(index);   \
+	static const struct device *const dev_##index =			       \
+		DEVICE_DT_INST_GET(index);				       \
 	const struct dma_stm32_config *cfg_##index = dev_##index->config;      \
 	DMA_TypeDef *dma_##index = (DMA_TypeDef *)(cfg_##index->base);	       \
 									       \
