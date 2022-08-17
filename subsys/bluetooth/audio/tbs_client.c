@@ -163,10 +163,9 @@ static uint8_t net_buf_pull_call(struct net_buf_simple *buf,
 	}
 
 	uri = net_buf_simple_pull_mem(buf, uri_len);
-	if (uri_len > sizeof(call->remote_uri) - 1) {
+	if (uri_len > CONFIG_BT_TBS_MAX_URI_LENGTH) {
 		BT_WARN("Current call (index %u) uri length larger than supported %u/%zu",
-			call->call_info.index, uri_len,
-			sizeof(call->remote_uri) - 1);
+			call->call_info.index, uri_len, CONFIG_BT_TBS_MAX_URI_LENGTH);
 		return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
 	}
 
@@ -180,11 +179,14 @@ static void bearer_list_current_calls(struct bt_conn *conn, const struct bt_tbs_
 				      struct net_buf_simple *buf)
 {
 	struct bt_tbs_client_call calls[CONFIG_BT_TBS_CLIENT_MAX_CALLS];
+	char remote_uris[CONFIG_BT_TBS_CLIENT_MAX_CALLS][CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
 	uint8_t cnt = 0;
 	int err;
 
 	while (buf->len) {
 		struct bt_tbs_client_call *call = &calls[cnt];
+
+		call->remote_uri = remote_uris[cnt];
 
 		err = net_buf_pull_call(buf, call);
 		if (err == BT_ATT_ERR_INSUFFICIENT_RESOURCES) {
