@@ -9,3 +9,11 @@ choice
 		depends on SOC_SERIES_INTEL_ACE
 
 endchoice
+
+config SOC_INTEL_COMM_WIDGET
+	bool "Intel Communication Widget driver"
+	default y
+	depends on DT_HAS_INTEL_ADSP_COMMUNICATION_WIDGET_ENABLED
+	help
+	  Select this to enable Intel Communication Widget driver.
+	  DSP Communication Widget is a device for generic sideband message transmit/receive.
