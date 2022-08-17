@@ -201,6 +201,19 @@ static void cu_prepare_update_ind(struct ll_conn *conn, struct proc_ctx *ctx)
 	ctx->data.cu.win_size = 1U;
 	ctx->data.cu.win_offset_us = 0U;
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	/* Handle preferred periodicity */
+	const uint8_t preferred_periodicity = ctx->data.cu.preferred_periodicity;
+
+	if (preferred_periodicity) {
+		const uint16_t interval_max = (ctx->data.cu.interval_max / preferred_periodicity) *
+			preferred_periodicity;
+		if (interval_max >= ctx->data.cu.interval_min) {
+			/* In case of there is no underflowing interval_min use 'preferred max' */
+			ctx->data.cu.interval_max = interval_max;
+		}
+	}
+#endif
 	ctx->data.cu.instant = ull_conn_event_counter(conn) + conn->lll.latency +
 			       CONN_UPDATE_INSTANT_DELTA;
 }
