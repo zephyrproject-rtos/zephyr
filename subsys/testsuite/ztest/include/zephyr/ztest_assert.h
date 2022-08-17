@@ -127,8 +127,8 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
  * context of the test function.
  *
  * @param cond Condition to check
- * @param msg Optional, can be NULL. Message to print if @a cond is false.
  * @param default_msg Message to print if @a cond is false
+ * @param msg Optional, can be NULL. Message to print if @a cond is false.
  */
 #define zassert(cond, default_msg, msg, ...)                                                       \
 	do {                                                                                       \
@@ -158,8 +158,8 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
  * failures only.
  *
  * @param cond Condition to check
- * @param msg Optional, can be NULL. Message to print if @a cond is false.
  * @param default_msg Message to print if @a cond is false
+ * @param msg Optional, can be NULL. Message to print if @a cond is false.
  */
 #define zassume(cond, default_msg, msg, ...)                                                       \
 	do {                                                                                       \
