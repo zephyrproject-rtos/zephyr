@@ -46,7 +46,7 @@ static const struct gpio_dt_spec pwrgd_gpio = GPIO_DT_SPEC_GET(BRD_PWR_NODE, pwr
 static const struct gpio_dt_spec rsm_gpio = GPIO_DT_SPEC_GET(BRD_PWR_NODE, rsm_gpios);
 #endif
 
-static const struct device *espi_dev = DEVICE_DT_GET(DT_NODELABEL(espi0));
+static const struct device *const espi_dev = DEVICE_DT_GET(DT_NODELABEL(espi0));
 static struct espi_callback espi_bus_cb;
 static struct espi_callback vw_rdy_cb;
 static struct espi_callback vw_cb;
@@ -62,9 +62,6 @@ static uint8_t flash_read_buf[MAX_TEST_BUF_SIZE];
 #endif
 
 #ifdef CONFIG_ESPI_SAF
-#define ESPI_SAF_NODE     DT_NODELABEL(espi_saf0)
-#define SPI_NODE          DT_NODELABEL(spi0)
-
 #define SAF_BASE_ADDR     DT_REG_ADDR(ESPI_SAF_NODE)
 
 #define SAF_TEST_FREQ_HZ 24000000U
@@ -98,8 +95,10 @@ struct saf_addr_info {
 	uintptr_t saf_struct_addr;
 	uintptr_t saf_exp_addr;
 };
-static const struct device *qspi_dev;
-static const struct device *espi_saf_dev;
+static const struct device *const qspi_dev =
+	DEVICE_DT_GET(DT_NODELABEL(spi0));
+static const struct device *const espi_saf_dev =
+	DEVICE_DT_GET(DT_NODELABEL(espi_saf0));
 static uint8_t safbuf[SAF_TEST_BUF_SIZE] __aligned(4);
 static uint8_t safbuf2[SAF_TEST_BUF_SIZE] __aligned(4);
 
@@ -1218,13 +1217,11 @@ int espi_test(void)
 	}
 
 #ifdef CONFIG_ESPI_SAF
-	qspi_dev = DEVICE_DT_GET(SPI_NODE);
 	if (!device_is_ready(qspi_dev)) {
 		LOG_ERR("%s: device not ready.", qspi_dev->name);
 		return -ENODEV;
 	}
 
-	espi_saf_dev = DEVICE_DT_GET(ESPI_SAF_NODE);
 	if (!device_is_ready(espi_saf_dev)) {
 		LOG_ERR("%s: device not ready.", espi_saf_dev->name);
 		return -ENODEV;
