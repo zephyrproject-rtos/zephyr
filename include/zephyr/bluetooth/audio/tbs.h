@@ -339,8 +339,8 @@ struct bt_tbs_client_call_state {
 
 struct bt_tbs_client_call {
 	struct bt_tbs_client_call_state call_info;
-	char remote_uri[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
-} __packed;
+	char *remote_uri;
+};
 
 /**
  * @brief Callback function for ccp_discover.
