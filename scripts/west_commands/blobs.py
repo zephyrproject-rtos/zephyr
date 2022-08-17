@@ -63,9 +63,14 @@ class Blobs(WestCommand):
 
         # Remember to update west-completion.bash if you add or remove
         # flags
-        parser.add_argument('subcmd', nargs=1, choices=['list', 'fetch'],
+        parser.add_argument('subcmd', nargs=1,
+                            choices=['list', 'fetch', 'clean'],
                             help='''Select the sub-command to execute.
-                            Currently only list and fetch are supported.''')
+							Sub-commands available:
+                            - list: list binary blobs
+                            - fetch: fetch and store binary blobs
+                            - clean: remove fetched binary blobs
+                            ''')
 
         parser.add_argument('-f', '--format', default=default_fmt,
                             help='''Format string to use to list each blob;
@@ -132,9 +137,17 @@ class Blobs(WestCommand):
             if blob['status'] == 'A':
                 log.inf('Blob {module}: {abspath} is up to date'.format(**blob))
                 continue
-            log.inf('Fetching blob {module}: {status} {abspath}'.format(**blob))
+            log.inf('Fetching blob {module}: {abspath}'.format(**blob))
             self.fetch_blob(blob['url'], blob['abspath'])
 
+    def clean(self, args):
+        blobs = self.get_blobs(args)
+        for blob in blobs:
+            if blob['status'] == 'D':
+                log.inf('Blob {module}: {abspath} not in filesystem'.format(**blob))
+                continue
+            log.inf('Deleting blob {module}: {status} {abspath}'.format(**blob))
+            blob['abspath'].unlink()
 
     def do_run(self, args, _):
         log.dbg(f'{args.subcmd[0]} {args.modules}')
