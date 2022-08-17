@@ -42,6 +42,8 @@ source "drivers/counter/Kconfig.sam"
 
 source "drivers/counter/Kconfig.sam0"
 
+source "drivers/counter/Kconfig.ace"
+
 source "drivers/counter/Kconfig.cmos"
 
 source "drivers/counter/Kconfig.mcux_gpt"
