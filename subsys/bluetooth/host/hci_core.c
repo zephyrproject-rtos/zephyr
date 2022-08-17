@@ -1657,7 +1657,6 @@ static void unpair(uint8_t id, const bt_addr_le_t *addr)
 			conn->le.keys = NULL;
 		}
 
-		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 		bt_conn_unref(conn);
 	}
 

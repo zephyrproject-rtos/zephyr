@@ -31,6 +31,10 @@ Changes in this release
   release.  The :zephyr_file:`scripts/utils/migrate_includes.py` script is
   provided to automate the migration.
 
+* :c:func:`bt_unpair` would previously disconnect any connection with a matching
+  local identity and remote address. The previous behavior may be obtained by
+  explicitly calling :c:func:`bt_conn_disconnect` before :c:func:`bt_unpair`.
+
 Removed APIs in this release
 ============================
 
