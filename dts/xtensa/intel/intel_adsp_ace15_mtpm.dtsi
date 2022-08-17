@@ -112,6 +112,21 @@
 			interrupt-parent = <&core_intc>;
 		};
 
+		ace_timestamp: ace_timestamp@72040 {
+			compatible = "intel,ace-timestamp";
+			reg = <0x72040 0x0032>;
+		};
+
+		ace_art_counter: ace_art_counter@72058 {
+			compatible = "intel,ace-art-counter";
+			reg = <0x72058 0x0064>;
+		};
+
+		ace_rtc_counter: ace_rtc_counter@72008 {
+			compatible = "intel,ace-rtc-counter";
+			reg = <0x72008 0x0064>;
+		};
+
 		shim: shim@71f00 {
 			compatible = "intel,cavs-shim";
 			reg = <0x71f00 0x100>;
