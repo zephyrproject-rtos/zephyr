@@ -691,10 +691,50 @@ static inline int sensor_value_from_double(struct sensor_value *val, double inp)
 	return 0;
 }
 
+#ifdef CONFIG_SENSOR_INFO
+
+struct sensor_info {
+	const struct device *dev;
+	const char *vendor;
+	const char *model;
+	const char *friendly_name;
+};
+
+#define SENSOR_INFO_INITIALIZER(_dev, _vendor, _model, _friendly_name)	\
+	{								\
+		.dev = _dev,						\
+		.vendor = _vendor,					\
+		.model = _model,					\
+		.friendly_name = _friendly_name,			\
+	}
+
+#define SENSOR_INFO_DEFINE(name, ...)					\
+	static const STRUCT_SECTION_ITERABLE(sensor_info, name) =	\
+		SENSOR_INFO_INITIALIZER(__VA_ARGS__)
+
+#define SENSOR_INFO_DT_NAME(node_id)					\
+	_CONCAT(__sensor_info, DEVICE_DT_NAME_GET(node_id))
+
+#define SENSOR_INFO_DT_DEFINE(node_id)					\
+	SENSOR_INFO_DEFINE(SENSOR_INFO_DT_NAME(node_id),		\
+			   DEVICE_DT_GET(node_id),			\
+			   DT_NODE_VENDOR_OR(node_id, NULL),		\
+			   DT_NODE_MODEL_OR(node_id, NULL),		\
+			   DT_PROP_OR(node_id, friendly_name, NULL))	\
+
+#else
+
+#define SENSOR_INFO_DEFINE(name, ...)
+#define SENSOR_INFO_DT_DEFINE(node_id)
+
+#endif /* CONFIG_SENSOR_INFO */
+
 /**
  * @brief Like DEVICE_DT_DEFINE() with sensor specifics.
  *
- * @details Defines a device which implements the sensor API.
+ * @details Defines a device which implements the sensor API. May define an
+ * element in the sensor info iterable section used to enumerate all sensor
+ * devices.
  *
  * @param node_id The devicetree node identifier.
  *
@@ -721,7 +761,9 @@ static inline int sensor_value_from_double(struct sensor_value *val, double inp)
 				api_ptr, ...)				\
 	DEVICE_DT_DEFINE(node_id, init_fn, pm_device,			\
 			 data_ptr, cfg_ptr, level, prio,		\
-			 api_ptr, __VA_ARGS__);
+			 api_ptr, __VA_ARGS__);				\
+									\
+	SENSOR_INFO_DT_DEFINE(node_id);
 
 /**
  * @brief Like SENSOR_DEVICE_DT_DEFINE() for an instance of a DT_DRV_COMPAT
