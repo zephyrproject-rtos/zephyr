@@ -841,7 +841,10 @@ class TwisterRunner:
                 if test_only and instance.run:
                     pipeline.put({"op": "run", "test": instance})
                 else:
-                    pipeline.put({"op": "cmake", "test": instance})
+                    if self.options.skip_cmake:
+                        pipeline.put({"op": "build", "test": instance})
+                    else:
+                        pipeline.put({"op": "cmake", "test": instance})
 
     def pipeline_mgr(self, pipeline, done_queue, lock, results):
         while True:

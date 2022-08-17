@@ -241,6 +241,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         "--cmake-only", action="store_true",
         help="Only run cmake, do not build or run.")
 
+    parser.add_argument(
+        "--skip-cmake", action="store_true",
+        help="Skip the cmake step.")
+
     parser.add_argument("--coverage-basedir", default=ZEPHYR_BASE,
                         help="Base source directory for coverage report.")
 
