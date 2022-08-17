@@ -57,3 +57,8 @@
 &mailbox0 {
 	status = "okay";
 };
+
+/* Disable flash controller access for CPU1. */
+&iap {
+	status = "disabled";
+};
