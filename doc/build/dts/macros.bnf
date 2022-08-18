@@ -2,8 +2,7 @@
 ;
 ; This does *not* cover macros pulled out of DT via Kconfig,
 ; like CONFIG_SRAM_BASE_ADDRESS, etc. It only describes the
-; ones that start with DT_ and are directly generated, not
-; defined in a dts_fixup.h file.
+; ones that start with DT_ and are directly generated.
 
 ; --------------------------------------------------------------------
 ; dt-macro: the top level nonterminal for a devicetree macro
@@ -224,6 +223,10 @@ prop-suf = 1*( "_" gen-name ["_" dt-name] )
 other-macro =  %s"DT_N_" alternate-id
 ; Total count of enabled instances of a compatible.
 other-macro =/ %s"DT_N_INST_" dt-name %s"_NUM_OKAY"
+; These are used internally by DT_FOREACH_NODE and
+; DT_FOREACH_STATUS_OKAY_NODE respectively.
+other-macro =/ %s"DT_FOREACH_HELPER"
+other-macro =/ %s"DT_FOREACH_OKAY_HELPER"
 ; These are used internally by DT_FOREACH_STATUS_OKAY,
 ; which iterates over each enabled node of a compatible.
 other-macro =/ %s"DT_FOREACH_OKAY_" dt-name

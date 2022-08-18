@@ -7,7 +7,7 @@
 
 #include "fcb_test.h"
 
-void test_fcb_rotate(void)
+ZTEST(fcb_test_with_2sectors_set, test_fcb_rotate)
 {
 	struct fcb *fcb;
 	int rc;

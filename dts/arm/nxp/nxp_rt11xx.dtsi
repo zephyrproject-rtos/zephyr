@@ -13,6 +13,10 @@
 #include <zephyr/dt-bindings/pm/imx_spc.h>
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 / {
+	chosen {
+		zephyr,entropy = &caam;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -697,6 +701,14 @@
 				interrupts = <138 0>;
 				interrupt-names = "IEEE1588_TMR";
 			};
+		};
+
+		caam: caam@40440000 {
+			compatible = "nxp,imx-caam";
+			reg = <0x40440000 0x81000>;
+			interrupts = <69 0>, <70 0>, <71 0>,
+				     <72 0>,  <73 0>,  <74 0>;
+			status = "okay";
 		};
 
 		usb1: usbd@40430000 {

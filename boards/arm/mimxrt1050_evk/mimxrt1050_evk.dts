@@ -19,6 +19,7 @@
 		kscan0 = &touch_controller;
 		watchdog0 = &wdog0;
 		magn0 = &fxos8700;
+		accel0 = &fxos8700;
 		sdhc0 = &usdhc1;
 	};
 
@@ -32,6 +33,7 @@
 		zephyr,flash = &s26ks512s0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &lcdif;
+		zephyr,keyboard-scan = &touch_controller;
 	};
 
 	sdram0: memory@80000000 {

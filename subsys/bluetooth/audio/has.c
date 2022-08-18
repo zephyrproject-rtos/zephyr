@@ -18,6 +18,7 @@
 
 #include "../bluetooth/host/conn_internal.h"
 #include "../bluetooth/host/hci_core.h"
+#include "audio_internal.h"
 #include "has_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HAS)
@@ -71,21 +72,25 @@ static ssize_t read_features(struct bt_conn *conn, const struct bt_gatt_attr *at
 /* Hearing Access Service GATT Attributes */
 BT_GATT_SERVICE_DEFINE(has_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_HAS),
-	BT_GATT_CHARACTERISTIC(BT_UUID_HAS_HEARING_AID_FEATURES, BT_GATT_CHRC_READ,
-			       BT_GATT_PERM_READ_ENCRYPT, read_features, NULL, NULL),
+	BT_AUDIO_CHRC(BT_UUID_HAS_HEARING_AID_FEATURES,
+		      BT_GATT_CHRC_READ,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      read_features, NULL, NULL),
 #if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
-	BT_GATT_CHARACTERISTIC(BT_UUID_HAS_PRESET_CONTROL_POINT,
+	BT_AUDIO_CHRC(BT_UUID_HAS_PRESET_CONTROL_POINT,
 #if defined(CONFIG_BT_EATT)
-			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_INDICATE | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_CHRC_WRITE | BT_GATT_CHRC_INDICATE | BT_GATT_CHRC_NOTIFY,
 #else
-			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_INDICATE,
+		      BT_GATT_CHRC_WRITE | BT_GATT_CHRC_INDICATE,
 #endif /* CONFIG_BT_EATT */
-			       BT_GATT_PERM_WRITE_ENCRYPT, NULL, write_control_point, NULL),
-	BT_GATT_CCC(ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
-	BT_GATT_CHARACTERISTIC(BT_UUID_HAS_ACTIVE_PRESET_INDEX,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, BT_GATT_PERM_READ_ENCRYPT,
-			       read_active_preset_index, NULL, NULL),
-	BT_GATT_CCC(ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+		      BT_GATT_PERM_WRITE_ENCRYPT,
+		      NULL, write_control_point, NULL),
+	BT_AUDIO_CCC(ccc_cfg_changed),
+	BT_AUDIO_CHRC(BT_UUID_HAS_ACTIVE_PRESET_INDEX,
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+		      BT_GATT_PERM_READ_ENCRYPT,
+		      read_active_preset_index, NULL, NULL),
+	BT_AUDIO_CCC(ccc_cfg_changed),
 #endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 );
 

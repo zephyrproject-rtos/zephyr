@@ -589,12 +589,6 @@ the contents of devicetree sources, includes, and overlays in a way that allows
 the build system to generate C macros usable by device drivers and
 applications. The :file:`dts/bindings` directory contains bindings.
 
-Zephyr currently uses :file:`dts_fixup.h` files to rename macros in
-:file:`devicetree_unfixed.h` to names that are currently in use by C code. The
-build system looks for fixup files in the :file:`zephyr/boards/` and
-:file:`zephyr/soc/` directories by default. Fixup files exist for historical
-reasons. New code should generally avoid them.
-
 .. _dt-scripts:
 
 Scripts and tools
@@ -642,14 +636,10 @@ These are created in your application's build directory.
 :file:`<build>/zephyr/zephyr.dts.pre`
    The preprocessed DTS source. This is an intermediate output file, which is
    input to :file:`gen_defines.py` and used to create :file:`zephyr.dts` and
-   :file:`devicetree_unfixed.h`.
+   :file:`devicetree_generated.h`.
 
-:file:`<build>/zephyr/include/generated/devicetree_unfixed.h`
+:file:`<build>/zephyr/include/generated/devicetree_generated.h`
    The generated macros and additional comments describing the devicetree.
-   Included by ``devicetree.h``.
-
-:file:`<build>/zephyr/include/generated/devicetree_fixups.h`
-   The concatenated contents of any :file:`dts_fixup.h` files.
    Included by ``devicetree.h``.
 
 :file:`<build>/zephyr/zephyr.dts`

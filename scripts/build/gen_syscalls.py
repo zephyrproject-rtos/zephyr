@@ -122,7 +122,7 @@ uintptr_t %s(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3,
 # enable/disable of syscall tracing. Used for returning functions
 # Note that the last argument to the exit macro is the return value.
 syscall_tracer_with_return_template = """
-#if (CONFIG_TRACING_SYSCALL == 1)
+#if defined(CONFIG_TRACING_SYSCALL)
 #ifndef DISABLE_SYSCALL_TRACING
 {trace_diagnostic}
 #define {func_name}({argnames}) ({{ \
@@ -140,7 +140,7 @@ syscall_tracer_with_return_template = """
 # and provides tracing enter/exit hooks while allowing per compilation unit
 # enable/disable of syscall tracing. Used for non-returning (void) functions
 syscall_tracer_void_template = """
-#if (CONFIG_TRACING_SYSCALL == 1)
+#if defined(CONFIG_TRACING_SYSCALL)
 #ifndef DISABLE_SYSCALL_TRACING
 {trace_diagnostic}
 #define {func_name}({argnames}) do {{ \

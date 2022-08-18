@@ -20,22 +20,22 @@ properties:
 
     gdv:
       type: uint8-array
-      required: true
+      required: false
       description: Gate driving voltage values
 
     sdv:
       type: uint8-array
-      required: true
+      required: false
       description: Source driving voltage values
 
     vcom:
       type: int
-      required: true
+      required: false
       description: VCOM voltage
 
     border-waveform:
       type: int
-      required: true
+      required: false
       description: Border waveform
 
     softstart:
@@ -78,6 +78,11 @@ properties:
     lut-initial:
       type: uint8-array
       required: false
+      description: |
+        Initial LUT used when initializing the device and performing
+        clearing the screen using a full refresh operation. The
+        default LUT will be loaded from OTP if this property isn't
+        defined.
 
     lut-default:
       type: uint8-array
@@ -91,3 +96,13 @@ properties:
         Display controller can have integrated temperature sensor or
         an external temperature sensor is connected to the controller.
         The value selects which sensor should be used.
+
+    dummy-line:
+      type: int
+      required: false
+      description: Dummy line period override.
+
+    gate-line-width:
+      type: int
+      required: false
+      description: Gate line width override.

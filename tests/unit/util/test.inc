@@ -367,6 +367,17 @@ static void test_IS_EMPTY(void)
 		      "Expected to be non-empty");
 }
 
+static void test_IS_EQ(void)
+{
+	zassert_true(IS_EQ(0, 0), "Unexpected IS_EQ result");
+	zassert_true(IS_EQ(1, 1), "Unexpected IS_EQ result");
+	zassert_true(IS_EQ(7, 7), "Unexpected IS_EQ result");
+
+	zassert_false(IS_EQ(0, 1), "Unexpected IS_EQ result");
+	zassert_false(IS_EQ(1, 7), "Unexpected IS_EQ result");
+	zassert_false(IS_EQ(7, 0), "Unexpected IS_EQ result");
+}
+
 static void test_LIST_DROP_EMPTY(void)
 {
 	/*
@@ -478,6 +489,7 @@ void test_cc(void)
 			 ztest_unit_test(test_FOR_EACH_IDX),
 			 ztest_unit_test(test_FOR_EACH_IDX_FIXED_ARG),
 			 ztest_unit_test(test_IS_EMPTY),
+			 ztest_unit_test(test_IS_EQ),
 			 ztest_unit_test(test_LIST_DROP_EMPTY),
 			 ztest_unit_test(test_nested_FOR_EACH),
 			 ztest_unit_test(test_GET_ARG_N),

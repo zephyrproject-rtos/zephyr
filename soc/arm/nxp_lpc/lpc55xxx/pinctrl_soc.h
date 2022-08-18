@@ -18,6 +18,16 @@ extern "C" {
 
 typedef uint32_t pinctrl_soc_pin_t;
 
+#ifdef CONFIG_SOC_LPC55S36
+/* LPC55S36 has two analog switches, and no IOCON_PIO_ASW definitions */
+#define IOCON_PIO_ASW(x) IOCON_PIO_ASW0(x)
+#define IOCON_PIO_ASW_MASK IOCON_PIO_ASW0_MASK
+#else
+/* Other LPC55sxx parts have one analog switch */
+#define IOCON_PIO_ASW1(x) 0
+#define IOCON_PIO_ASW1_MASK 0x0
+#endif
+
 #define Z_PINCTRL_IOCON_PINCFG(node_id)						\
 	(IF_ENABLED(DT_PROP(node_id, bias_pull_down), (IOCON_PIO_MODE(0x1) |))	\
 	IF_ENABLED(DT_PROP(node_id, bias_pull_up), (IOCON_PIO_MODE(0x2) |))	\
@@ -27,6 +37,7 @@ typedef uint32_t pinctrl_soc_pin_t;
 	IOCON_PIO_DIGIMODE(!DT_PROP(node_id, nxp_analog_mode)) |		\
 	IOCON_PIO_OD(DT_PROP(node_id, drive_open_drain)) |			\
 	IOCON_PIO_ASW(DT_PROP(node_id, nxp_analog_mode)) |			\
+	IOCON_PIO_ASW1(DT_PROP(node_id, nxp_analog_alt_mode)) |			\
 	IOCON_PIO_SSEL(DT_ENUM_IDX_OR(node_id, power_source, 0)) |		\
 	IOCON_PIO_FILTEROFF(!DT_NODE_HAS_PROP(node_id, nxp_i2c_filter)) |	\
 	IOCON_PIO_ECS(DT_PROP(node_id, nxp_i2c_pullup)) |			\
@@ -40,7 +51,7 @@ typedef uint32_t pinctrl_soc_pin_t;
 
 /* Mask for analog type pin configuration register */
 #define Z_PINCTRL_IOCON_A_PIN_MASK						\
-	(Z_PINCTRL_IOCON_D_PIN_MASK | IOCON_PIO_ASW_MASK)
+	(Z_PINCTRL_IOCON_D_PIN_MASK | IOCON_PIO_ASW_MASK | IOCON_PIO_ASW1_MASK)
 
 /* Mask for i2c type pin configuration register */
 #define Z_PINCTRL_IOCON_I_PIN_MASK (Z_PINCTRL_IOCON_D_PIN_MASK |		\

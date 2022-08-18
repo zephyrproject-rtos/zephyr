@@ -223,6 +223,11 @@ static int i2c_stm32_init(const struct device *dev)
 	 */
 	k_sem_init(&data->bus_mutex, 1, 1);
 
+	if (!device_is_ready(clock)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	if (clock_control_on(clock,
 		(clock_control_subsys_t *) &cfg->pclken) != 0) {
 		LOG_ERR("i2c: failure enabling clock");

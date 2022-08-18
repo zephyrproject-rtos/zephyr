@@ -18,10 +18,6 @@ config CMU_HFRCO_FREQ
 config CMU_LFXO_FREQ
 	default 32768
 
-config COUNTER_GECKO_RTCC
-	default y
-	depends on COUNTER
-
 config LOG_BACKEND_SWO_FREQ_HZ
 	default 875000
 	depends on LOG_BACKEND_SWO
@@ -30,9 +26,6 @@ if NETWORKING
 
 config NET_L2_ETHERNET
 	default y
-
-config ETH_GECKO
-	default y if NET_L2_ETHERNET
 
 endif # NETWORKING
 

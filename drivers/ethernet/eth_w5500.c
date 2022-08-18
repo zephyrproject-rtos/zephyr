@@ -509,7 +509,6 @@ static int w5500_init(const struct device *dev)
 		}
 		gpio_pin_set_dt(&config->reset, 0);
 		k_usleep(500);
-		gpio_pin_set_dt(&config->reset, 1);
 	}
 
 	err = w5500_hw_reset(dev);

@@ -1,8 +1,0 @@
-# Silicon Labs EFM32JG12B configuration options
-
-# Copyright (c) 2019 Lemonbeat GmbH
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC_FLASH_GECKO
-	default y
-	depends on FLASH

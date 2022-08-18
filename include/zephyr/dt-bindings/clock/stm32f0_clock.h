@@ -14,7 +14,7 @@
 #define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_AHB1
 #define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB1
 
-/** Peripheral clock sources */
+/** Domain clocks */
 
 /** Fixed clocks  */
 #define STM32_SRC_HSI		0x001
@@ -59,7 +59,7 @@
 /** @brief RCC_CFGRx register offset */
 #define CFGR3_REG		0x30
 
-/** @brief Device clk sources selection helpers */
+/** @brief Device domain clocks selection helpers */
 /** CFGR3 devices */
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CFGR3_REG)
 #define I2C1_SEL(val)		STM32_CLOCK(val, 1, 4, CFGR3_REG)

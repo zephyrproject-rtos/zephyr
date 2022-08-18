@@ -490,35 +490,31 @@ int bt_audio_capability_set_location(enum bt_audio_dir dir,
 static int set_available_contexts(enum bt_audio_dir dir,
 				  enum bt_audio_context contexts)
 {
-	enum bt_audio_context supported;
-
 	IF_ENABLED(CONFIG_BT_PAC_SNK, (
-		supported = CONFIG_BT_PACS_SNK_CONTEXT;
-
-		if (contexts & ~supported) {
-			return -ENOTSUP;
-		}
-
 		if (dir == BT_AUDIO_DIR_SINK) {
+			const enum bt_audio_context supported = CONFIG_BT_PACS_SNK_CONTEXT;
+
+			if (contexts & ~supported) {
+				return -ENOTSUP;
+			}
+
 			sink_available_contexts = contexts;
 			return 0;
 		}
 	));
 
 	IF_ENABLED(CONFIG_BT_PAC_SRC, (
-		supported = CONFIG_BT_PACS_SRC_CONTEXT;
-
-		if (contexts & ~supported) {
-			return -ENOTSUP;
-		}
-
 		if (dir == BT_AUDIO_DIR_SOURCE) {
+			const enum bt_audio_context supported = CONFIG_BT_PACS_SRC_CONTEXT;
+
+			if (contexts & ~supported) {
+				return -ENOTSUP;
+			}
+
 			source_available_contexts = contexts;
 			return 0;
 		}
 	));
-
-	ARG_UNUSED(supported);
 
 	BT_ERR("Invalid endpoint dir: %u", dir);
 

@@ -124,9 +124,6 @@ endif # MULTI_LEVEL_INTERRUPTS
 
 if FLASH
 
-config SOC_FLASH_RV32M1
-	default y
-
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
 
@@ -134,9 +131,5 @@ config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
 endif # FLASH
-
-config ENTROPY_RV32M1_TRNG
-	default y
-	depends on ENTROPY_GENERATOR
 
 endif # SOC_OPENISA_RV32M1_RISCV32

@@ -19,8 +19,8 @@ config ESPI_XEC_V2
 	default y
 	depends on ESPI
 
-config PECI_XEC
+config EEPROM_XEC
 	default y
-	depends on PECI
+	depends on EEPROM
 
 endif # SOC_MEC172X_NSZ

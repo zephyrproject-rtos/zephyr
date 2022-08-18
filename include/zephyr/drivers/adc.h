@@ -281,9 +281,15 @@ struct adc_dt_spec {
 #define ADC_DT_SPEC_STRUCT(ctlr, input) { \
 		.dev = DEVICE_DT_GET(ctlr), \
 		.channel_id = input, \
-		ADC_CHANNEL_CFG_FROM_DT_NODE( \
-			DT_CHILD(ctlr, UTIL_CAT(channel_, input))) \
+		ADC_CHANNEL_CFG_FROM_DT_NODE(\
+			ADC_CHANNEL_DT_NODE(ctlr, input)) \
 	}
+
+#define ADC_CHANNEL_DT_NODE(ctlr, input) \
+	DT_FOREACH_CHILD_VARGS(ctlr, ADC_FOREACH_INPUT, input)
+
+#define ADC_FOREACH_INPUT(node, input) \
+	IF_ENABLED(IS_EQ(DT_REG_ADDR(node), input), (node))
 
 #define ADC_CHANNEL_CFG_FROM_DT_NODE(node_id) \
 	IF_ENABLED(DT_NODE_EXISTS(node_id), \

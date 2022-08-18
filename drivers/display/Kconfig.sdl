@@ -5,7 +5,8 @@
 
 menuconfig SDL_DISPLAY
 	bool "SDL based emulated display"
-	depends on BOARD_NATIVE_POSIX
+	default y
+	depends on DT_HAS_ZEPHYR_SDL_DC_ENABLED
 	select HAS_SDL
 	help
 	  Enable SDL based emulated display compliant with display driver API.

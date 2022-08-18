@@ -975,6 +975,11 @@ static int adc_stm32_init(const struct device *dev)
 
 	LOG_DBG("Initializing....");
 
+	if (!device_is_ready(clk)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	data->dev = dev;
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \

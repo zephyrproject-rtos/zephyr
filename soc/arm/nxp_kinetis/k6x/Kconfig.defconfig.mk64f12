@@ -18,24 +18,8 @@ config GPIO
 config SPI
 	default n
 
-config ETH_MCUX
-	default y
-	depends on NET_L2_ETHERNET
-
-config ENTROPY_MCUX_RNGA
-	default y
-	depends on ENTROPY_GENERATOR
-
-config SOC_FLASH_MCUX
-	default y
-	depends on FLASH
-
 config USB_KINETIS
 	default y
 	depends on USB_DEVICE_DRIVER
-
-config COUNTER_MCUX_RTC
-	default y
-	depends on COUNTER
 
 endif # SOC_MK64F12

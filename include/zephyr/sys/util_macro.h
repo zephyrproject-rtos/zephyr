@@ -230,6 +230,15 @@ extern "C" {
 #define IS_EMPTY(...) Z_IS_EMPTY_(__VA_ARGS__)
 
 /**
+ * @brief Like <tt>a == b</tt>, but does evaluation and
+ * short-circuiting at C preprocessor time.
+ *
+ * This however only works for integer literal from 0 to 255.
+ *
+ */
+#define IS_EQ(a, b) Z_IS_EQ(a, b)
+
+/**
  * @brief Remove empty arguments from list.
  *
  * During macro expansion, <tt>__VA_ARGS__</tt> and other preprocessor

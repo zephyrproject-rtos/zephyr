@@ -36,6 +36,7 @@
 		led0 = &green_led_0;
 		eeprom-0 = &eeprom;
 		lora0 = &lora;
+		accel0 = &lis3dh;
 	};
 
 	rf_switch: rf-switch {
@@ -92,8 +93,8 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	lis3dh@32 {
-		compatible = "st,lis3dh";
+	lis3dh: lis3dh@32 {
+		compatible = "st,lis3dh", "st,lis2dh";
 		reg = <0x32>;
 	};
 };

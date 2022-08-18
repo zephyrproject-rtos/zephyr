@@ -50,6 +50,12 @@ int dwmac_bus_init(struct dwmac_priv *p)
 	int ret;
 
 	p->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+
+	if (!device_is_ready(p->clock)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	ret  = clock_control_on(p->clock, (clock_control_subsys_t *)&pclken);
 	ret |= clock_control_on(p->clock, (clock_control_subsys_t *)&pclken_tx);
 	ret |= clock_control_on(p->clock, (clock_control_subsys_t *)&pclken_rx);

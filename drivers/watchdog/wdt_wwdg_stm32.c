@@ -282,6 +282,11 @@ static int wwdg_stm32_init(const struct device *dev)
 
 	wwdg_stm32_irq_config(dev);
 
+	if (!device_is_ready(clk)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	return clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken);
 }
 

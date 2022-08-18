@@ -394,6 +394,30 @@ static int register_ept(const struct device *instance, void **token,
 	return 0;
 }
 
+static int deregister_ept(const struct device *instance, void *token)
+{
+	struct backend_data_t *data = instance->data;
+	struct ipc_rpmsg_ept *rpmsg_ept;
+
+	/* Instance is not ready */
+	if (atomic_get(&data->state) != STATE_INITED) {
+		return -EBUSY;
+	}
+
+	rpmsg_ept = (struct ipc_rpmsg_ept *) token;
+
+	/* Endpoint is not registered with instance */
+	if (!rpmsg_ept) {
+		return -ENOENT;
+	}
+
+	rpmsg_destroy_ept(&rpmsg_ept->ep);
+
+	memset(rpmsg_ept, 0, sizeof(struct ipc_rpmsg_ept));
+
+	return 0;
+}
+
 static int send(const struct device *instance, void *token,
 		const void *msg, size_t len)
 {
@@ -615,6 +639,7 @@ static int drop_tx_buffer(const struct device *instance, void *token,
 const static struct ipc_service_backend backend_ops = {
 	.open_instance = open,
 	.register_endpoint = register_ept,
+	.deregister_endpoint = deregister_ept,
 	.send = send,
 	.send_nocopy = send_nocopy,
 	.drop_tx_buffer = drop_tx_buffer,

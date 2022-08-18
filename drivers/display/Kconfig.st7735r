@@ -5,6 +5,8 @@
 
 config ST7735R
 	bool "ST7735R display driver"
-	depends on SPI
+	default y
+	depends on DT_HAS_SITRONIX_ST7735R_ENABLED
+	select SPI
 	help
 	  Enable driver for ST7735R display driver.

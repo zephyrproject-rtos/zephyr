@@ -61,7 +61,7 @@ struct gpio_mcux_lpc_data {
 	/* pin association with PINT id */
 	pint_pin_int_t pint_id[32];
 	/* ISR allocated in device tree to this port */
-	uint32_t isr_list[8];
+	uint32_t isr_list[INPUTMUX_PINTSEL_COUNT];
 	/* index to to table above */
 	uint32_t isr_list_idx;
 };

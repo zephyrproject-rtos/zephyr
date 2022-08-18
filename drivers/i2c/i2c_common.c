@@ -14,6 +14,17 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c);
 
+#if defined(CONFIG_I2C_CALLBACK) && defined(CONFIG_POLL)
+void z_i2c_transfer_signal_cb(const struct device *dev,
+	int result,
+	void *data)
+{
+	struct k_poll_signal *sig = (struct k_poll_signal *)data;
+
+	k_poll_signal_raise(sig, result);
+}
+#endif
+
 void i2c_dump_msgs(const char *name, const struct i2c_msg *msgs,
 		   uint8_t num_msgs, uint16_t addr)
 {

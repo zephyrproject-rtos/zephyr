@@ -14,27 +14,19 @@ LOG_MODULE_DECLARE(brd_pm_test);
 
 #define MAX_CYCLES 2ul
 
-void test_pm_dummyinit(void)
+ZTEST(power_mgmt, test_pm_dummyinit)
 {
 	test_dummy_init();
 }
 
-void test_pm_singlethread(void)
+ZTEST(power_mgmt, test_pm_singlethread)
 {
 	test_pwr_mgmt_singlethread(MAX_CYCLES);
 }
 
-void test_pm_multithread(void)
+ZTEST(power_mgmt, test_pm_multithread)
 {
 	test_pwr_mgmt_multithread(MAX_CYCLES);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_power_mgmt,
-			ztest_unit_test(test_pm_dummyinit),
-			ztest_unit_test(test_pm_multithread),
-			ztest_unit_test(test_pm_singlethread));
-
-	ztest_run_test_suite(test_power_mgmt);
-}
+ZTEST_SUITE(power_mgmt, NULL, NULL, NULL, NULL, NULL);

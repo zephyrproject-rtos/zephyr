@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_IPC_SHM := zephyr,ipc_shm
 DT_CHOSEN_Z_IPC := zephyr,ipc
 DT_CHOSEN_Z_IPC_TX := zephyr,ipc_tx
 DT_CHOSEN_Z_IPC_RX := zephyr,ipc_rx
@@ -31,48 +30,6 @@ menuconfig RPMSG_SERVICE
 	  users to establish RPMsg endpoints for given channel.
 
 if RPMSG_SERVICE
-
-config RPMSG_SERVICE_SHM_BASE_ADDRESS
-	hex
-	default "$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_IPC_SHM))"
-	help
-	  This option specifies base address of the memory region to
-	  be used for the OpenAMP IPC shared memory
-
-config RPMSG_SERVICE_SHM_SIZE
-	hex
-	default "$(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_IPC_SHM))"
-	help
-	  This option specifies size of the memory region to be used
-	  for the OpenAMP IPC shared memory
-
-if RPMSG_SERVICE_SINGLE_IPM_SUPPORT
-
-config RPMSG_SERVICE_IPM_NAME
-	string
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_IPC))"
-	help
-	  This option specifies the IPM device name to be used
-
-endif # RPMSG_SERVICE_SINGLE_IPM_SUPPORT
-
-if RPMSG_SERVICE_DUAL_IPM_SUPPORT
-
-config RPMSG_SERVICE_IPM_TX_NAME
-	string
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_IPC_TX))"
-	help
-	  This option specifies the IPM device name to be used for
-	  TX communication
-
-config RPMSG_SERVICE_IPM_RX_NAME
-	string
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_IPC_RX))"
-	help
-	  This option specifies the IPM device name to be used for
-	  RX communication
-
-endif # RPMSG_SERVICE_DUAL_IPM_SUPPORT
 
 choice RPMSG_SERVICE_MODE
 	prompt "RPMsg Service mode"

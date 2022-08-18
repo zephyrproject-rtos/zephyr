@@ -6,6 +6,3 @@
 config BOARD
 	default "heltec_wifi_lora32"
 	depends on BOARD_HELTEC_WIFI_LORA32
-
-config ENTROPY_ESP32_RNG
-	default y if ENTROPY_GENERATOR

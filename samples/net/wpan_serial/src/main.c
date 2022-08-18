@@ -56,7 +56,8 @@ static uint8_t slip_buf[1 + 2 * CONFIG_NET_BUF_DATA_SIZE];
 
 /* ieee802.15.4 device */
 static struct ieee802154_radio_api *radio_api;
-static const struct device *ieee802154_dev;
+static const struct device *const ieee802154_dev =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154));
 uint8_t mac_addr[8];
 
 /* UART device */
@@ -456,9 +457,8 @@ static bool init_ieee802154(void)
 {
 	LOG_INF("Initialize ieee802.15.4");
 
-	ieee802154_dev = device_get_binding(CONFIG_NET_CONFIG_IEEE802154_DEV_NAME);
-	if (!ieee802154_dev) {
-		LOG_ERR("Cannot get ieee 802.15.4 device");
+	if (!device_is_ready(ieee802154_dev)) {
+		LOG_ERR("IEEE 802.15.4 device not ready");
 		return false;
 	}
 

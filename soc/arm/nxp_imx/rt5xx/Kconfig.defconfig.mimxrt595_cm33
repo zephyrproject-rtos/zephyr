@@ -16,10 +16,6 @@ config DMA_MCUX_LPC
 	default y
 	depends on DMA
 
-config COUNTER_MCUX_CTIMER
-	default y
-	depends on COUNTER
-
 if MCUX_OS_TIMER
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC

@@ -101,8 +101,7 @@ struct bt_mesh_health_cli {
 	struct bt_mesh_msg_ack_ctx ack_ctx;
 };
 
-/** @def BT_MESH_MODEL_HEALTH_CLI
- *
+/**
  *  @brief Generic Health Client model composition data entry.
  *
  *  @param cli_data Pointer to a @ref bt_mesh_health_cli instance.

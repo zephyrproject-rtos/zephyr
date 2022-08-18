@@ -470,6 +470,15 @@
 			#dma-cells = <2>;
 			status = "disabled";
 		};
+		eeprom: eeprom@40002c00 {
+			compatible = "microchip,xec-eeprom";
+			reg = <0x40002c00 0x400>;
+			interrupts = <155 2>;
+			size = <2048>;
+			girqs = <18 13>;
+			pcrs = <4 14>;
+			status = "disabled";
+		};
 		i2c_smb_0: i2c@40004000 {
 			compatible = "microchip,xec-i2c-v2";
 			reg = <0x40004000 0x80>;

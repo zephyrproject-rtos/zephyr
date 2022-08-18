@@ -251,8 +251,6 @@ void z_phys_unmap(uint8_t *virt, size_t size);
  */
 
 /**
- * @def K_MEM_MAP_UNINIT
- *
  * @brief The mapped region is not guaranteed to be zeroed.
  *
  * This may improve performance. The associated page frames may contain
@@ -264,8 +262,6 @@ void z_phys_unmap(uint8_t *virt, size_t size);
 #define K_MEM_MAP_UNINIT	BIT(16)
 
 /**
- * @def K_MEM_MAP_LOCK
- *
  * Region will be pinned in memory and never paged
  *
  * Such memory is guaranteed to never produce a page fault due to page-outs
@@ -275,8 +271,6 @@ void z_phys_unmap(uint8_t *virt, size_t size);
 #define K_MEM_MAP_LOCK		BIT(17)
 
 /**
- * @def K_MEM_MAP_GUARD
- *
  * A un-mapped virtual guard page will be placed in memory immediately preceding
  * the mapped region. This page will still be noted as being used by the
  * virtual memory manager. The total size of the allocation will be the

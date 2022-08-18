@@ -47,7 +47,7 @@ void main(void)
 	}
 
 	eeprom_size = eeprom_get_size(eeprom);
-	printk("Using eeprom with size of: %d.\n", eeprom_size);
+	printk("Using eeprom with size of: %zu.\n", eeprom_size);
 
 	rc = eeprom_read(eeprom, EEPROM_SAMPLE_OFFSET, &values, sizeof(values));
 	if (rc < 0) {

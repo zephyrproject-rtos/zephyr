@@ -19,24 +19,12 @@ config KINETIS_FLASH_CONFIG_FOPT
 	default 0x3f
 	depends on KINETIS_FLASH_CONFIG
 
-config ENTROPY_MCUX_TRNG
-	default y
-	depends on ENTROPY_GENERATOR
-
-config SOC_FLASH_MCUX
-	default y
-	depends on FLASH
-
 config GPIO
 	default y
 
 config USB_KINETIS
 	default y
 	depends on USB_DEVICE_DRIVER
-
-config COUNTER_MCUX_PIT
-	default y if HAS_MCUX_PIT
-	depends on COUNTER
 
 source "soc/arm/nxp_kinetis/k8x/Kconfig.defconfig.mk*"
 

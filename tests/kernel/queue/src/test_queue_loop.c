@@ -107,7 +107,7 @@ static void tqueue_read_write(struct k_queue *pqueue)
  * @see k_queue_append(), k_queue_get(),
  * k_queue_init(), k_queue_remove()
  */
-void test_queue_loop(void)
+ZTEST(queue_api_1cpu, test_queue_loop)
 {
 	k_queue_init(&queue);
 	for (int i = 0; i < LOOPS; i++) {

@@ -94,6 +94,8 @@ features:
 +-----------+------------+-------------------------------------+
 | GPT       | on-chip    | gpt                                 |
 +-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1020_evk/mimxrt1020_evk_defconfig``

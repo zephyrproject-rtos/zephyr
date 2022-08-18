@@ -18,17 +18,17 @@
 
 extern struct bt_gatt_attr service_c_1_3_attrs[];
 
-/** @def BT_UUID_SERVICE_D
+/**
  *  @brief UUID for the Service D
  */
 #define BT_UUID_SERVICE_D               BT_UUID_DECLARE_16(0xa00d)
 
-/** @def BT_UUID_VALUE_V12
+/**
  *  @brief UUID for the Value V12 Characteristic
  */
 #define BT_UUID_VALUE_V12               BT_UUID_DECLARE_16(0xb00c)
 
-/** @def BT_UUID_VALUE_V11__128_BIT_UUID
+/**
  *  @brief UUID for the Value V11 (128-bit UUID) Characteristic
  */
 #define BT_UUID_VALUE_V11__128_BIT_UUID BT_UUID_DECLARE_128( \

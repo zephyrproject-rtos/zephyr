@@ -35,7 +35,7 @@ K_TIMER_DEFINE(ktimer, duration_expire, stop_expire);
 static ZTEST_BMEM struct timer_data tdata;
 
 #define DURATION 100
-#define LESS_DURATION 80
+#define LESS_DURATION 70
 
 /**
  * @addtogroup kernel_common_tests

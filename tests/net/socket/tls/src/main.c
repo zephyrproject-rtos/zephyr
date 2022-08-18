@@ -148,7 +148,7 @@ static void spawn_client_connect_thread(int sock, struct sockaddr *addr)
 	k_thread_start(&client_connect_thread);
 }
 
-void test_so_type(void)
+ZTEST(net_socket_tls, test_so_type)
 {
 	struct sockaddr_in bind_addr4;
 	struct sockaddr_in6 bind_addr6;
@@ -176,7 +176,7 @@ void test_so_type(void)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
-void test_so_protocol(void)
+ZTEST(net_socket_tls, test_so_protocol)
 {
 	struct sockaddr_in bind_addr4;
 	struct sockaddr_in6 bind_addr6;
@@ -228,7 +228,7 @@ static void test_msg_waitall_tx_work_handler(struct k_work *work)
 	}
 }
 
-void test_v4_msg_waitall(void)
+ZTEST(net_socket_tls, test_v4_msg_waitall)
 {
 	struct test_msg_waitall_data test_data = {
 		.data = TEST_STR_SMALL,
@@ -306,7 +306,7 @@ void test_v4_msg_waitall(void)
 	test_close(c_sock);
 }
 
-void test_v6_msg_waitall(void)
+ZTEST(net_socket_tls, test_v6_msg_waitall)
 {
 	struct test_msg_waitall_data test_data = {
 		.data = TEST_STR_SMALL,
@@ -452,7 +452,7 @@ void test_msg_trunc(int sock_c, int sock_s, struct sockaddr *addr_c,
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_v4_msg_trunc(void)
+ZTEST(net_socket_tls, test_v4_msg_trunc)
 {
 	int client_sock;
 	int server_sock;
@@ -469,7 +469,7 @@ void test_v4_msg_trunc(void)
 		       (struct sockaddr *)&server_addr, sizeof(server_addr));
 }
 
-void test_v6_msg_trunc(void)
+ZTEST(net_socket_tls, test_v6_msg_trunc)
 {
 	int client_sock;
 	int server_sock;
@@ -577,7 +577,7 @@ static void test_dtls_sendmsg(int sock_c, int sock_s, struct sockaddr *addr_c,
 	zassert_equal(rv, 0, "close failed");
 }
 
-void test_v4_dtls_sendmsg(void)
+ZTEST(net_socket_tls, test_v4_dtls_sendmsg)
 {
 	int client_sock;
 	int server_sock;
@@ -594,7 +594,7 @@ void test_v4_dtls_sendmsg(void)
 			  (struct sockaddr *)&server_addr, sizeof(server_addr));
 }
 
-void test_v6_dtls_sendmsg(void)
+ZTEST(net_socket_tls, test_v6_dtls_sendmsg)
 {
 	int client_sock;
 	int server_sock;
@@ -611,26 +611,4 @@ void test_v6_dtls_sendmsg(void)
 			  (struct sockaddr *)&server_addr, sizeof(server_addr));
 }
 
-void test_main(void)
-{
-	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
-		k_thread_priority_set(k_current_get(),
-				K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1));
-	} else {
-		k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(8));
-	}
-
-	ztest_test_suite(
-		socket_tls,
-		ztest_unit_test(test_so_type),
-		ztest_unit_test(test_so_protocol),
-		ztest_unit_test(test_v4_msg_waitall),
-		ztest_unit_test(test_v6_msg_waitall),
-		ztest_unit_test(test_v4_msg_trunc),
-		ztest_unit_test(test_v6_msg_trunc),
-		ztest_unit_test(test_v4_dtls_sendmsg),
-		ztest_unit_test(test_v6_dtls_sendmsg)
-		);
-
-	ztest_run_test_suite(socket_tls);
-}
+ZTEST_SUITE(net_socket_tls, NULL, NULL, NULL, NULL, NULL);

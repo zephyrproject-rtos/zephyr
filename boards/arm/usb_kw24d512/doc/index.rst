@@ -62,6 +62,9 @@ The USB-KW24D512 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
+| RNGA      | on-chip    | entropy;                            |
+|           |            | random                              |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 

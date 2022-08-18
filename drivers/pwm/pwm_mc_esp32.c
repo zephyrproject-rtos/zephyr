@@ -413,6 +413,11 @@ int mcpwm_esp32_init(const struct device *dev)
 	struct mcpwm_esp32_data *data = (struct mcpwm_esp32_data *const)(dev)->data;
 	struct mcpwm_esp32_channel_config *channel;
 
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* Enable peripheral */
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret < 0) {

@@ -20,11 +20,4 @@ config ROM_START_OFFSET
 config STM32_LPTIM_TIMER
 	default y if PM
 
-if ENTROPY_GENERATOR
-
-config ENTROPY_STM32_RNG
-	default y
-
-endif # ENTROPY_GENERATOR
-
 endif # SOC_SERIES_STM32H7X

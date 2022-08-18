@@ -87,6 +87,8 @@ features:
 +-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | OctalSPI Flash                      |
 +-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 

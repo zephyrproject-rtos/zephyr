@@ -41,7 +41,6 @@
 			compatible = "mmio-sram";
 		};
 
-		/* Only used for HWINFO device ID */
 		eefc: flash-controller@400e0a00 {
 			compatible = "atmel,sam-flash-controller";
 			reg = <0x400e0a00 0x200>;
@@ -54,6 +53,7 @@
 				compatible = "soc-nv-flash";
 
 				write-block-size = <16>;
+				erase-block-size = <8192>;
 			};
 		};
 
@@ -230,6 +230,15 @@
 				      28 0
 				      29 0>;
 			peripheral-id = <27 28 29>;
+			status = "disabled";
+		};
+
+		smc: smc@40060000 {
+			compatible = "atmel,sam-smc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40060000 0x200>;
+			peripheral-id = <8>;
 			status = "disabled";
 		};
 	};

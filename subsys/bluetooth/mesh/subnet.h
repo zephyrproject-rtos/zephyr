@@ -73,8 +73,7 @@ struct bt_mesh_subnet_cb {
 			    enum bt_mesh_key_evt evt);
 };
 
-/** @def BT_MESH_SUBNET_CB
- *
+/**
  *  @brief Register a subnet event callback.
  *
  *  @param _name Handler name.

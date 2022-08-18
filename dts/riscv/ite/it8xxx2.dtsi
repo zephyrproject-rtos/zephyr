@@ -1131,7 +1131,7 @@
 		};
 
 		peci0: peci@f02c00 {
-			compatible = "ite,peci-it8xxx2";
+			compatible = "ite,it8xxx2-peci";
 			reg = <0x00f02c00 15>;
 			#address-cells=<1>;
 			#size-cells = <0>;

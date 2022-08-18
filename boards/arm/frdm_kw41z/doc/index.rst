@@ -83,7 +83,9 @@ The frdm_kw41z board configuration supports the following hardware features:
 |           |            | fxos8700 trigger                    |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | tpm                                 |
-+--------------------------------------------------------------+
++-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 

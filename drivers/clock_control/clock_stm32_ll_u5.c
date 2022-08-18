@@ -92,8 +92,7 @@ static uint32_t get_pllout_frequency(uint32_t pllsrc_freq,
 {
 	__ASSERT_NO_MSG(pllm_div && pllout_div);
 
-	return (pllsrc_freq * plln_mul) /
-		(pllm_div * pllout_div);
+	return (pllsrc_freq / pllm_div) * plln_mul / pllout_div;
 }
 
 static uint32_t get_sysclk_frequency(void)
@@ -712,15 +711,6 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Current hclk value */
 	old_hclk_freq = __LL_RCC_CALC_HCLK_FREQ(get_startup_frequency(), LL_RCC_GetAHBPrescaler());
 
-	/* Set up individual enabled clocks */
-	set_up_fixed_clock_sources();
-
-	/* Set up PLLs */
-	r = set_up_plls();
-	if (r < 0) {
-		return r;
-	}
-
 	/* Set voltage regulator to comply with targeted system frequency */
 	set_regu_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
@@ -728,6 +718,15 @@ int stm32_clock_control_init(const struct device *dev)
 	/* If freq increases, set flash latency before any clock setting */
 	if (old_hclk_freq < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
 		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	}
+
+	/* Set up individual enabled clocks */
+	set_up_fixed_clock_sources();
+
+	/* Set up PLLs */
+	r = set_up_plls();
+	if (r < 0) {
+		return r;
 	}
 
 	/* Set peripheral busses prescalers */

@@ -55,6 +55,8 @@ features:
 +-----------+------------+-------------------------------------+
 | HWINFO    | on-chip    | Unique device serial number         |
 +-----------+------------+-------------------------------------+
+| SMC       | on-chip    | memc (PSRAM)                        |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
 

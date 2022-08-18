@@ -164,6 +164,11 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		return 0;
 	}
 
+	if (!device_is_ready(cfg->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* enables SPI peripheral */
 	if (clock_control_on(cfg->clock_dev, cfg->clock_subsys)) {
 		LOG_ERR("Could not enable SPI clock");
@@ -199,7 +204,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		.clock_speed_hz = spi_cfg->frequency,
 		.duty_cycle = cfg->duty_cycle == 0 ? 128 : cfg->duty_cycle,
 		.input_delay_ns = cfg->input_delay_ns,
-		.use_gpio = true
+		.use_gpio = !cfg->use_iomux,
 	};
 
 	spi_hal_cal_clock_conf(&timing_param, &freq, &hal_dev->timing_conf);
@@ -365,6 +370,7 @@ static const struct spi_driver_api spi_api = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),	\
 		.clock_subsys =	\
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),	\
+		.use_iomux = DT_INST_PROP(idx, use_iomux),	\
 	};	\
 		\
 	DEVICE_DT_INST_DEFINE(idx, &spi_esp32_init,	\

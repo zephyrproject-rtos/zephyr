@@ -29,14 +29,21 @@
 #define CONTEXT BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA
 
 #if defined(CONFIG_BT_AUDIO_UNICAST)
-#define MAX_PAC 2
-static struct bt_audio_stream streams[MAX_PAC];
+#define UNICAST_SERVER_STREAM_COUNT \
+	COND_CODE_1(CONFIG_BT_ASCS, \
+		    (CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT), (0))
+#define UNICAST_CLIENT_STREAM_COUNT \
+	COND_CODE_1(CONFIG_BT_AUDIO_UNICAST_CLIENT, \
+		    (CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT + \
+		     CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT), (0))
+
+static struct bt_audio_stream streams[UNICAST_SERVER_STREAM_COUNT + UNICAST_CLIENT_STREAM_COUNT];
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 static struct bt_audio_unicast_group *default_unicast_group;
 static struct bt_codec *rcodecs[2][CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
 static struct bt_audio_ep *snks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
-static struct bt_audio_ep *srcs[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
+static struct bt_audio_ep *srcs[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT];
 
 static uint8_t stream_dir(const struct bt_audio_stream *stream);
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
@@ -458,7 +465,7 @@ static struct bt_audio_capability_ops lc3_ops = {
 #endif /* CONFIG_BT_AUDIO_UNICAST */
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_SERVER) || defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
-static struct bt_audio_capability caps[MAX_PAC] = {
+static struct bt_audio_capability caps[] = {
 #if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
 	{
 		.dir = BT_AUDIO_DIR_SOURCE,
@@ -984,7 +991,7 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 
 	shell_print(sh, "Sources:");
 
-	for (i = 0; i < ARRAY_SIZE(snks); i++) {
+	for (i = 0; i < ARRAY_SIZE(srcs); i++) {
 		struct bt_audio_ep *ep = srcs[i];
 
 		if (ep) {
@@ -1421,11 +1428,14 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 #endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SOURCE */
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO_CAPABILITY)) {
-		/* Mark all supported contexts as available */
-		bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SINK,
-							   BT_AUDIO_CONTEXT_TYPE_ANY);
-		bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SOURCE,
-							   BT_AUDIO_CONTEXT_TYPE_ANY);
+		/* Mark mandatory context as available */
+		err = bt_audio_capability_set_available_contexts(
+					BT_AUDIO_DIR_SINK, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+		__ASSERT(err == 0, "Failed to set sink available contexts");
+
+		err = bt_audio_capability_set_available_contexts(
+					BT_AUDIO_DIR_SOURCE, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+		__ASSERT(err == 0, "Failed to set source available contexts");
 	}
 
 #if defined(CONFIG_BT_AUDIO_UNICAST)

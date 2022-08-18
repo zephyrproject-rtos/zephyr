@@ -11,6 +11,14 @@
 #define SRAM_ALIAS_BASE         0xA0000000
 #define SRAM_ALIAS_MASK         0xF0000000
 
+__imr void power_init(void)
+{
+	/* Disable idle power gating */
+	DFDSPBRCP.bootctl[0].bctl |= DFDSPBRCP_BCTL_WAITIPCG | DFDSPBRCP_BCTL_WAITIPPG;
+}
+
+#ifdef CONFIG_PM
+
 #define uncache_to_cache(address) \
 				((__typeof__(address))(((uint32_t)(address) &  \
 				~SRAM_ALIAS_MASK) | SRAM_ALIAS_BASE))
@@ -72,3 +80,5 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		__ASSERT(false, "invalid argument - unsupported power state");
 	}
 }
+
+#endif

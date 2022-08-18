@@ -24,6 +24,13 @@ Changes in this release
   struct.  Updated :c:macro:`SPI_CS_CONTROL_PTR_DT` to reflect
   this change.
 
+* The :kconfig:option:`CONFIG_LEGACY_INCLUDE_PATH` option has been disabled by
+  default, all upstream code and modules have been converted to use
+  ``<zephyr/...>`` header paths. The option is still available to facilitate
+  the migration of external applications, but will be removed with the 3.4
+  release.  The :zephyr_file:`scripts/utils/migrate_includes.py` script is
+  provided to automate the migration.
+
 Removed APIs in this release
 ============================
 
@@ -63,6 +70,10 @@ Deprecated in this release
 * :c:macro:`DT_BUS_LABEL`, and :c:macro:`DT_INST_BUS_LABEL`, are deprecated
   in favor of utilizing :c:macro:`DT_BUS` and variants.
 
+* STM32 LPTIM domain clock should now be configured using devicetree.
+  Related Kconfig :kconfig:option:`CONFIG_STM32_LPTIM_CLOCK` option is now
+  deprecated.
+
 Stable API changes in this release
 ==================================
 
@@ -95,6 +106,11 @@ Bluetooth
 * Direction Finding
 
 * Host
+
+  * Added :c:func:`bt_conn_auth_cb_overlay` to overlay authentication callbacks for a Bluetooth LE connection.
+  * Removed ``CONFIG_BT_HCI_ECC_STACK_SIZE``.
+    The Bluetooth long workqueue (:kconfig:option:`CONFIG_BT_LONG_WQ`) is used for processing ECC commands instead of the dedicated thread.
+  * :c:func:`bt_conn_get_security` and `bt_conn_enc_key_size` now take a ``const struct bt_conn*`` argument.
 
 * Mesh
 
@@ -157,6 +173,10 @@ Drivers and Sensors
 
 * I2S
 
+* IEEE 802.15.4
+
+  * All IEEE 802.15.4 drivers have been converted to Devicetree-based drivers.
+
 * Interrupt Controller
 
 * MBOX
@@ -183,6 +203,9 @@ Drivers and Sensors
 
 Networking
 **********
+
+* ``CONFIG_NET_CONFIG_IEEE802154_DEV_NAME`` has been removed in favor of
+  using a Devicetree choice given by ``zephyr,ieee802154``.
 
 USB
 ***

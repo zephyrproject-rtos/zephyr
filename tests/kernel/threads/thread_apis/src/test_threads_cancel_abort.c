@@ -39,7 +39,7 @@ static void thread_entry_abort(void *p1, void *p2, void *p3)
  *
  * @see k_thread_abort()
  */
-void test_threads_abort_self(void)
+ZTEST_USER(threads_lifecycle, test_threads_abort_self)
 {
 	execute_flag = 0;
 	k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_abort,
@@ -59,7 +59,7 @@ void test_threads_abort_self(void)
  *
  * @see k_thread_abort()
  */
-void test_threads_abort_others(void)
+ZTEST_USER(threads_lifecycle, test_threads_abort_others)
 {
 	execute_flag = 0;
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
@@ -88,7 +88,7 @@ void test_threads_abort_others(void)
  *
  * @see k_thread_abort()
  */
-void test_threads_abort_repeat(void)
+ZTEST(threads_lifecycle_1cpu, test_threads_abort_repeat)
 {
 	execute_flag = 0;
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
@@ -121,7 +121,7 @@ static void delayed_thread_entry(void *p1, void *p2, void *p3)
  *
  * @see k_thread_abort()
  */
-void test_delayed_thread_abort(void)
+ZTEST(threads_lifecycle_1cpu, test_delayed_thread_abort)
 {
 	int current_prio = k_thread_priority_get(k_current_get());
 
@@ -186,7 +186,7 @@ extern struct k_sem offload_sem;
  *
  * @see k_thread_abort()
  */
-void test_abort_from_isr(void)
+ZTEST(threads_lifecycle, test_abort_from_isr)
 {
 	isr_finished = false;
 	k_thread_create(&tdata, tstack, STACK_SIZE, entry_abort_isr,
@@ -227,7 +227,7 @@ static void entry_aborted_thread(void *p1, void *p2, void *p3)
  *
  * @see k_thread_abort()
  */
-void test_abort_from_isr_not_self(void)
+ZTEST(threads_lifecycle, test_abort_from_isr_not_self)
 {
 	k_tid_t tid;
 

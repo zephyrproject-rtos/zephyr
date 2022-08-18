@@ -91,7 +91,7 @@ struct can_sja1000_config {
 	CAN_SJA1000_DT_CONFIG_GET(DT_DRV_INST(inst), _custom, _read_reg, _write_reg, _ocr, _cdr)
 
 struct can_sja1000_rx_filter {
-	struct zcan_filter filter;
+	struct can_filter filter;
 	can_rx_callback_t callback;
 	void *user_data;
 };
@@ -124,11 +124,11 @@ int can_sja1000_get_capabilities(const struct device *dev, can_mode_t *cap);
 
 int can_sja1000_set_mode(const struct device *dev, can_mode_t mode);
 
-int can_sja1000_send(const struct device *dev, const struct zcan_frame *frame, k_timeout_t timeout,
+int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_timeout_t timeout,
 		     can_tx_callback_t callback, void *user_data);
 
 int can_sja1000_add_rx_filter(const struct device *dev, can_rx_callback_t callback, void *user_data,
-			      const struct zcan_filter *filter);
+			      const struct can_filter *filter);
 
 void can_sja1000_remove_rx_filter(const struct device *dev, int filter_id);
 

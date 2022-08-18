@@ -58,11 +58,11 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 #endif
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CONN) && (defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
 static void after_cen_offset_get(uint16_t conn_interval, uint32_t ticks_slot,
 				 uint32_t ticks_anchor,
 				 uint32_t *win_offset_us);
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_CONN && (CONFIG_BT_CENTRAL || CONFIG_BT_LL_SW_LLCP_LEGACY) */
 
 typedef struct ull_hdr *(*ull_hdr_get_func)(uint8_t ticker_id,
 					    uint32_t *ticks_slot);
@@ -595,6 +595,7 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 static void after_cen_offset_get(uint16_t conn_interval, uint32_t ticks_slot,
 				 uint32_t ticks_anchor,
 				 uint32_t *win_offset_us)
@@ -633,6 +634,7 @@ static void after_cen_offset_get(uint16_t conn_interval, uint32_t ticks_slot,
 		}
 	}
 }
+#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_LL_SW_LLCP_LEGACY */
 #endif /* CONFIG_BT_CONN */
 
 static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,

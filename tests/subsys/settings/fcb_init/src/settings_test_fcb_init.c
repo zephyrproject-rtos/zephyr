@@ -64,7 +64,7 @@ static struct settings_handler c1_settings = {
 	.h_export = c1_export,
 };
 
-void test_init(void)
+ZTEST(fcb_initialization, test_init)
 {
 	int err;
 	uint32_t prev_int;
@@ -120,7 +120,7 @@ void test_prepare_storage(void)
 #endif
 }
 
-void test_init_setup(void)
+void *test_init_setup(void)
 {
 	int err;
 
@@ -142,18 +142,7 @@ void test_init_setup(void)
 		k_sleep(K_MSEC(250));
 		sys_reboot(SYS_REBOOT_COLD);
 	}
+	return NULL;
 }
 
-void test_main(void)
-{
-	/* Bellow call is not used as a test setup intentionally.    */
-	/* It causes device reboot at the first device run after it */
-	/* was flashed. */
-	test_init_setup();
-
-	ztest_test_suite(test_initialization,
-			 ztest_unit_test(test_init)
-			);
-
-	ztest_run_test_suite(test_initialization);
-}
+ZTEST_SUITE(fcb_initialization, NULL, test_init_setup, NULL, NULL, NULL);

@@ -23,12 +23,16 @@ void rcar_cpg_write(uint32_t base_address, uint32_t reg, uint32_t val)
 	k_sleep(K_USEC(35));
 }
 
-int rcar_cpg_mstp_clock_endisable(uint32_t base_address, uint32_t bit,
-				  uint32_t reg, bool enable)
+int rcar_cpg_mstp_clock_endisable(uint32_t base_address, uint32_t module, bool enable)
 {
+	uint32_t reg = module / 100;
+	uint32_t bit = module % 100;
 	uint32_t bitmask = BIT(bit);
 	uint32_t reg_val;
 	unsigned int key;
+
+	__ASSERT((bit < 32) && reg < ARRAY_SIZE(mstpcr), "Invalid module number for cpg clock: %d",
+		 module);
 
 	key = irq_lock();
 

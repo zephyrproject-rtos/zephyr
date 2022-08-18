@@ -91,6 +91,9 @@ The frdm_k22f board configuration supports the following hardware features:
 | SENSOR    | off-chip   | fxos8700 polling;                   |
 |           |            | fxos8700 trigger                    |
 +-----------+------------+-------------------------------------+
+| RNGA      | on-chip    | entropy;                            |
+|           |            | random                              |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 

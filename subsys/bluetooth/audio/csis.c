@@ -20,6 +20,8 @@
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
+
+#include "audio_internal.h"
 #include "csis_internal.h"
 #include "csis_crypto.h"
 #include "../host/conn_internal.h"
@@ -298,7 +300,7 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 {
 	struct bt_csis_set_sirk enc_sirk;
 	struct bt_csis_set_sirk *sirk;
-	struct bt_csis *csis = attr->user_data;
+	struct bt_csis *csis = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	if (csis->srv.cb != NULL && csis->srv.cb->sirk_read_req != NULL) {
 		uint8_t cb_rsp;
@@ -354,7 +356,7 @@ static ssize_t read_set_size(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_csis *csis = attr->user_data;
+	struct bt_csis *csis = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	BT_DBG("%u", csis->srv.set_size);
 
@@ -373,7 +375,7 @@ static ssize_t read_set_lock(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_csis *csis = attr->user_data;
+	struct bt_csis *csis = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	BT_DBG("%u", csis->srv.set_lock);
 
@@ -382,37 +384,33 @@ static ssize_t read_set_lock(struct bt_conn *conn,
 				 sizeof(csis->srv.set_lock));
 }
 
-static ssize_t write_set_lock(struct bt_conn *conn,
-			      const struct bt_gatt_attr *attr,
-			      const void *buf, uint16_t len,
-			      uint16_t offset, uint8_t flags)
+/**
+ * @brief Set the lock value of a CSIS instance.
+ *
+ * @param conn  The connection locking the instance.
+ *              Will be NULL if the server locally sets the lock.
+ * @param csis  The CSIS instance to change the lock value of
+ * @param val   The lock value (BT_CSIS_LOCK_VALUE or BT_CSIS_RELEASE_VALUE)
+ *
+ * @return BT_CSIS_ERROR_* on failure or 0 if success
+ */
+static uint8_t set_lock(struct bt_conn *conn, struct bt_csis *csis, uint8_t val)
 {
-	uint8_t val;
 	bool notify;
-	struct bt_csis *csis = attr->user_data;
-
-	if (offset != 0) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	} else if (len != sizeof(val)) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	}
-
-	(void)memcpy(&val, buf, len);
 
 	if (val != BT_CSIS_RELEASE_VALUE && val != BT_CSIS_LOCK_VALUE) {
-		return BT_GATT_ERR(BT_CSIS_ERROR_LOCK_INVAL_VALUE);
+		return BT_CSIS_ERROR_LOCK_INVAL_VALUE;
 	}
 
 	if (csis->srv.set_lock == BT_CSIS_LOCK_VALUE) {
 		if (val == BT_CSIS_LOCK_VALUE) {
 			if (is_last_client_to_write(csis, conn)) {
-				return BT_GATT_ERR(
-					BT_CSIS_ERROR_LOCK_ALREADY_GRANTED);
+				return BT_CSIS_ERROR_LOCK_ALREADY_GRANTED;
 			} else {
-				return BT_GATT_ERR(BT_CSIS_ERROR_LOCK_DENIED);
+				return BT_CSIS_ERROR_LOCK_DENIED;
 			}
 		} else if (!is_last_client_to_write(csis, conn)) {
-			return BT_GATT_ERR(BT_CSIS_ERROR_LOCK_RELEASE_DENIED);
+			return BT_CSIS_ERROR_LOCK_RELEASE_DENIED;
 		}
 	}
 
@@ -448,6 +446,32 @@ static ssize_t write_set_lock(struct bt_conn *conn,
 			csis->srv.cb->lock_changed(conn, csis, locked);
 		}
 	}
+
+	return 0;
+}
+
+static ssize_t write_set_lock(struct bt_conn *conn,
+			      const struct bt_gatt_attr *attr,
+			      const void *buf, uint16_t len,
+			      uint16_t offset, uint8_t flags)
+{
+	ssize_t res;
+	uint8_t val;
+	struct bt_csis *csis = BT_AUDIO_CHRC_USER_DATA(attr);
+
+	if (offset != 0) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	} else if (len != sizeof(val)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
+
+	(void)memcpy(&val, buf, len);
+
+	res = set_lock(conn, csis, val);
+	if (res != BT_ATT_ERR_SUCCESS) {
+		return BT_GATT_ERR(res);
+	}
+
 	return len;
 }
 
@@ -460,7 +484,7 @@ static void set_lock_cfg_changed(const struct bt_gatt_attr *attr,
 static ssize_t read_rank(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_csis *csis = attr->user_data;
+	struct bt_csis *csis = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	BT_DBG("%u", csis->srv.rank);
 
@@ -792,31 +816,25 @@ static void adv_connected(struct bt_le_ext_adv *adv,
 
 #define BT_CSIS_SERVICE_DEFINITION(_csis) {\
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_CSIS), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_CSIS_SET_SIRK, \
-			BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			BT_GATT_PERM_READ_ENCRYPT, \
-			read_set_sirk, NULL, &_csis), \
-	BT_GATT_CCC(set_sirk_cfg_changed, \
-			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_CSIS_SET_SIZE, \
-			BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			BT_GATT_PERM_READ_ENCRYPT, \
-			read_set_size, NULL, &_csis), \
-	BT_GATT_CCC(set_size_cfg_changed, \
-			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_CSIS_SET_LOCK, \
-			BT_GATT_CHRC_READ | \
-				BT_GATT_CHRC_NOTIFY | \
-				BT_GATT_CHRC_WRITE, \
-			BT_GATT_PERM_READ_ENCRYPT | \
-				BT_GATT_PERM_WRITE_ENCRYPT, \
-			read_set_lock, write_set_lock, &_csis), \
-	BT_GATT_CCC(set_lock_cfg_changed, \
-			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_CSIS_RANK, \
-			BT_GATT_CHRC_READ, \
-			BT_GATT_PERM_READ_ENCRYPT, \
-			read_rank, NULL, &_csis) \
+	BT_AUDIO_CHRC(BT_UUID_CSIS_SET_SIRK, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_set_sirk, NULL, &_csis), \
+	BT_AUDIO_CCC(set_sirk_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_CSIS_SET_SIZE, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_set_size, NULL, &_csis), \
+	BT_AUDIO_CCC(set_size_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_CSIS_SET_LOCK, \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_WRITE, \
+		      BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT, \
+		      read_set_lock, write_set_lock, &_csis), \
+	BT_AUDIO_CCC(set_lock_cfg_changed), \
+	BT_AUDIO_CHRC(BT_UUID_CSIS_RANK, \
+		      BT_GATT_CHRC_READ, \
+		      BT_GATT_PERM_READ_ENCRYPT, \
+		      read_rank, NULL, &_csis) \
 	}
 
 BT_GATT_SERVICE_INSTANCE_DEFINE(csis_service_list, csis_insts,
@@ -974,12 +992,11 @@ int bt_csis_lock(struct bt_csis *csis, bool lock, bool force)
 			csis->srv.cb->lock_changed(NULL, &csis_insts[0], false);
 		}
 	} else {
-		err = write_set_lock(NULL, NULL, &lock_val, sizeof(lock_val), 0,
-				     0);
+		err = set_lock(NULL, csis, lock_val);
 	}
 
 	if (err < 0) {
-		return err;
+		return BT_GATT_ERR(err);
 	} else {
 		return 0;
 	}

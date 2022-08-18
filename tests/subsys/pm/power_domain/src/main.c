@@ -120,7 +120,7 @@ DEVICE_DEFINE(devc, "devc", dev_init, PM_DEVICE_GET(devc),
  * - get + put multiple devices under a domain
  * - notification when domain state changes
  */
-static void test_power_domain_device_runtime(void)
+ZTEST(power_domain_1cpu, test_power_domain_device_runtime)
 {
 	int ret;
 	enum pm_device_state state;
@@ -230,10 +230,5 @@ static void test_power_domain_device_runtime(void)
 	zassert_equal(ret, 0, NULL);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(power_domain_test,
-			 ztest_1cpu_unit_test(test_power_domain_device_runtime));
-
-	ztest_run_test_suite(power_domain_test);
-}
+ZTEST_SUITE(power_domain_1cpu, NULL, NULL, ztest_simple_1cpu_before,
+			ztest_simple_1cpu_after, NULL);

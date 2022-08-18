@@ -17,6 +17,7 @@
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
 		zephyr,bt-mon-uart = &lpuart1;
+		zephyr,bt-c2h-uart = &lpuart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -159,7 +160,9 @@
 };
 
 &lpuart1 {
-	pinctrl-0 = <&lpuart1_tx_pa2 &lpuart1_rx_pa3>;
+	pinctrl-0 = <&lpuart1_tx_pc1 &lpuart1_rx_pc0
+			&lpuart1_cts_pa6 &lpuart1_rts_pb12>;
+	hw-flow-control;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
@@ -176,6 +179,8 @@
 };
 
 &lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };
 
@@ -197,10 +202,9 @@ zephyr_udc0: &usb {
 
 		/*
 		 * Configure partitions while leaving space for M0 BLE f/w
-		 * First 794K are configured for Zephyr to run on M4 core
-		 * Last 232K are left for BLE f/w on the M0 core
-		 * This partition set up is compatible with use of
-		 * stm32wb5x_BLE_Stack_full_fw.bin v1.13.x
+		 * Since STM32WBCube release V1.13.2, only _HCIOnly_ f/w are supported.
+		 * These FW are expected to be located not before 0x080DB000
+		 * Current partition is using the first 876K of the flash for M4
 		 */
 
 		boot_partition: partition@0 {
@@ -209,19 +213,19 @@ zephyr_udc0: &usb {
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000c000 DT_SIZE_K(360)>;
+			reg = <0x0000c000 DT_SIZE_K(400)>;
 		};
-		slot1_partition: partition@66000 {
+		slot1_partition: partition@70000 {
 			label = "image-1";
-			reg = <0x00066000 DT_SIZE_K(360)>;
+			reg = <0x00070000 DT_SIZE_K(400)>;
 		};
-		scratch_partition: partition@c0000 {
+		scratch_partition: partition@d4000 {
 			label = "image-scratch";
-			reg = <0x000c0000 DT_SIZE_K(16)>;
+			reg = <0x000d4000 DT_SIZE_K(16)>;
 		};
-		storage_partition: partition@c4000 {
+		storage_partition: partition@d8000 {
 			label = "storage";
-			reg = <0x000c4000 DT_SIZE_K(8)>;
+			reg = <0x000d8000 DT_SIZE_K(8)>;
 		};
 
 	};

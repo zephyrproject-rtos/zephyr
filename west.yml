@@ -57,18 +57,18 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: bb4e7104132bdc22c7cc7e20057434c2979e6706
+      revision: 1d237f2e2f262751975b6da6e03af569b2b49b2b
       path: modules/hal/atmel
       groups:
         - hal
     - name: hal_espressif
-      revision: 3f05902c85ecc43c790f2f0239483cc26eb4a8e2
+      revision: 22b47009dc27bdd395c6ef1a66c347037a2fb585
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
         - hal
     - name: hal_gigadevice
-      revision: 7f15468b07807ae6a913e0e9cbabfaa23a206bc6
+      revision: b0cf0eb9a1d498a945839daa6869637d4ac2b060
       path: modules/hal/gigadevice
       groups:
         - hal
@@ -83,7 +83,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: f6628a30581d8d4b80954af163b83ce065e87467
+      revision: 249199ec5a5c31d170659921048764e96d05cc0e
       path: modules/hal/nordic
       groups:
         - hal
@@ -93,7 +93,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 00acb97521c171f4620c21fe5fa2a2c3ef49bdae
+      revision: 0c54992ad4fe53b1edfc35ea24b6f343e38df2ca
       path: modules/hal/nxp
       groups:
         - hal
@@ -161,7 +161,7 @@ manifest:
       revision: 0257b50905695192d095667b1c3abb80346db1a1
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: 487bcde705b6f453d053f28dbba4dd9f353d1ccb
+      revision: d7951c24b4a5a71241b70582e463ca0330fbb871
       path: modules/lib/gui/lvgl
     - name: lz4
       revision: 8e303c264fc21c2116dc612658003a22e933124d
@@ -172,13 +172,13 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 1d4404116a9a6b54d54ea9aa3dd2575286e666cd
+      revision: 21e56a1bd033af263e808940779a1adaf4d5465e
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
       groups:
         - debug
-      revision: a5163c1800a5243f8b05d84c942da008df4cb666
+      revision: 0d521d8055f3b2b4842f728b0365d3f0ece9c37f
     - name: nanopb
       revision: dc4deed54fd4c7e1935e3b6387eedf21bb45dc38
       path: modules/lib/nanopb
@@ -198,7 +198,7 @@ manifest:
       path: modules/lib/openthread
     - name: picolibc
       path: modules/lib/picolibc
-      revision: e87b2fc37345a62361478f0a6efd140e14180ba5
+      revision: 04ada5951cbaf8e7b17f8226ce31cb6837c28ba7
     - name: segger
       revision: d4e568a920b4bd087886170a5624c167b2d0665e
       path: modules/debug/segger
@@ -225,7 +225,7 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      revision: 7c53a6e76130a85303f83b15d868a92fdcd5f5be
+      revision: 4c984817d861512edaeca27b83308e9b9915a98a
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
@@ -239,6 +239,9 @@ manifest:
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - tee
+    - name: uoscore-uedhoc
+      revision: e8920192b66db4f909eb9cd3f155d5245c1ae825
+      path: modules/lib/uoscore-uedhoc
     - name: zcbor
       revision: a0d6981f14d4001d6f0d608d1a427f9bc6bb6d02
       path: modules/lib/zcbor

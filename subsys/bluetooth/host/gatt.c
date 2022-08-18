@@ -3145,7 +3145,18 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 		__ASSERT(attr, "No more attributes\n");
 	}
 
-	/* Check if the attribute is the CCC Descriptor */
+	/* Find the CCC Descriptor */
+	while (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC) &&
+	       /* Also stop if we leave the current characteristic definition */
+	       bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC) &&
+	       bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY) &&
+	       bt_uuid_cmp(attr->uuid, BT_UUID_GATT_SECONDARY)) {
+		attr = bt_gatt_attr_next(attr);
+		if (!attr) {
+			return false;
+		}
+	}
+
 	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC) != 0) {
 		return false;
 	}
@@ -5826,16 +5837,28 @@ static int db_hash_set(const char *name, size_t len_rd,
 
 static int db_hash_commit(void)
 {
+	int err;
+
 	atomic_set_bit(gatt_sc.flags, DB_HASH_LOAD);
 	/* Reschedule work to calculate and compare against the Hash value
 	 * loaded from flash.
 	 */
 	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
-		return bt_long_wq_reschedule(&db_hash.work, K_NO_WAIT);
+		err = bt_long_wq_reschedule(&db_hash.work, K_NO_WAIT);
 	} else {
-		return k_work_reschedule(&db_hash.work, K_NO_WAIT);
+		err = k_work_reschedule(&db_hash.work, K_NO_WAIT);
 	}
 
+	/* Settings commit uses non-zero value to indicate failure. */
+	if (err > 0) {
+		err = 0;
+	}
+
+	if (err) {
+		BT_ERR("Unable to reschedule database hash process (err %d)", err);
+	}
+
+	return err;
 }
 
 SETTINGS_STATIC_HANDLER_DEFINE(bt_hash, "bt/hash", NULL, db_hash_set,

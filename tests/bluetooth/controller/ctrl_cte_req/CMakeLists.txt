@@ -5,10 +5,6 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-if (NOT BOARD STREQUAL unit_testing)
-  message(FATAL_ERROR "This project can only be used with '-DBOARD=unit_testing'.")
-endif()
-
 FILE(GLOB SOURCES
   src/*.c
 )

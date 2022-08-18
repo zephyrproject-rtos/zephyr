@@ -33,10 +33,10 @@ static void test_sysclk_freq(void)
 #define DT_DRV_COMPAT st_stm32_i2c_v2
 #endif
 
-#if STM32_DT_INST_DEV_OPT_CLOCK_SUPPORT
-#define STM32_I2C_OPT_CLOCK_SUPPORT 1
+#if STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT
+#define STM32_I2C_DOMAIN_CLOCK_SUPPORT 1
 #else
-#define STM32_I2C_OPT_CLOCK_SUPPORT 0
+#define STM32_I2C_DOMAIN_CLOCK_SUPPORT 0
 #endif
 
 static void test_i2c_clk_config(void)
@@ -55,13 +55,13 @@ static void test_i2c_clk_config(void)
 	zassert_true(__HAL_RCC_I2C1_IS_CLK_ENABLED(), "I2C1 gating clock should be on");
 	TC_PRINT("I2C1 gating clock on\n");
 
-	if (IS_ENABLED(STM32_I2C_OPT_CLOCK_SUPPORT) && DT_NUM_CLOCKS(DT_NODELABEL(i2c1)) > 1) {
-		/* Test clock_on(ker_clk) */
+	if (IS_ENABLED(STM32_I2C_DOMAIN_CLOCK_SUPPORT) && DT_NUM_CLOCKS(DT_NODELABEL(i2c1)) > 1) {
+		/* Test clock_on(domain_clk) */
 		r = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					    (clock_control_subsys_t) &pclken[1],
 					    NULL);
-		zassert_true((r == 0), "Could not enable I2C soure clock");
-		TC_PRINT("I2C1 source clock configured\n");
+		zassert_true((r == 0), "Could not enable I2C domain clock");
+		TC_PRINT("I2C1 domain clock configured\n");
 
 		/* Test clock source */
 		dev_actual_clk_src = __HAL_RCC_GET_I2C1_SOURCE();
@@ -75,7 +75,7 @@ static void test_i2c_clk_config(void)
 					"Expected I2C src: SYSCLK (0x%lx). Actual I2C src: 0x%x",
 					RCC_I2C1CLKSOURCE_SYSCLK, dev_actual_clk_src);
 		} else {
-			zassert_true(0, "Unexpected src clk (%d)", dev_actual_clk_src);
+			zassert_true(0, "Unexpected domain clk (%d)", dev_actual_clk_src);
 		}
 
 		/* Test get_rate(srce clk) */
@@ -92,7 +92,7 @@ static void test_i2c_clk_config(void)
 		TC_PRINT("I2C1 clock source rate: %d Hz\n", dev_dt_clk_freq);
 	} else {
 		zassert_true((DT_NUM_CLOCKS(DT_NODELABEL(i2c1)) == 1), "test config issue");
-		/* No alt clock available, get rate from gating clock */
+		/* No domain clock available, get rate from gating clock */
 
 		/* Test get_rate */
 		r = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
@@ -128,7 +128,7 @@ static void test_i2c_clk_config(void) {}
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT st_stm32_lptim
 
-#if STM32_DT_INST_DEV_OPT_CLOCK_SUPPORT
+#if STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT
 #define STM32_LPTIM_OPT_CLOCK_SUPPORT 1
 #else
 #define STM32_LPTIM_OPT_CLOCK_SUPPORT 0
@@ -151,11 +151,11 @@ static void test_lptim_clk_config(void)
 	TC_PRINT("LPTIM1 gating clock on\n");
 
 	if (IS_ENABLED(STM32_LPTIM_OPT_CLOCK_SUPPORT) && DT_NUM_CLOCKS(DT_NODELABEL(lptim1)) > 1) {
-		/* Test clock_on(ker_clk) */
+		/* Test clock_on(domain_clk) */
 		r = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					    (clock_control_subsys_t) &pclken[1],
 					    NULL);
-		zassert_true((r == 0), "Could not enable LPTIM1 soure clock");
+		zassert_true((r == 0), "Could not enable LPTIM1 domain clock");
 		TC_PRINT("LPTIM1 source clock configured\n");
 
 		/* Test clock source */
@@ -170,7 +170,7 @@ static void test_lptim_clk_config(void)
 					"Expected LPTIM1 src: LSI (0x%lx). Actual LPTIM1 src: 0x%x",
 					RCC_LPTIM1CLKSOURCE_LSI, dev_actual_clk_src);
 		} else {
-			zassert_true(0, "Unexpected src clk (%d)", dev_actual_clk_src);
+			zassert_true(0, "Unexpected domain clk (%d)", dev_actual_clk_src);
 		}
 
 		/* Test get_rate(srce clk) */
@@ -187,7 +187,7 @@ static void test_lptim_clk_config(void)
 		TC_PRINT("LPTIM1 clock source rate: %d Hz\n", dev_dt_clk_freq);
 	} else {
 		zassert_true((DT_NUM_CLOCKS(DT_NODELABEL(lptim1)) == 1), "test config issue");
-		/* No alt clock available, get rate from gating clock */
+		/* No domain clock available, get rate from gating clock */
 
 		/* Test get_rate */
 		r = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
@@ -211,7 +211,7 @@ static void test_lptim_clk_config(void)
 	zassert_true(!__HAL_RCC_LPTIM1_IS_CLK_ENABLED(), "LPTIM1 gating clk should be off");
 	TC_PRINT("LPTIM1 gating clk off\n");
 
-	/* Test clock_off(srce) */
+	/* Test clock_off(domain clk) */
 	/* Not supported today */
 }
 #else
@@ -223,10 +223,10 @@ static void test_lptim_clk_config(void) {}
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT st_stm32_adc
 
-#if STM32_DT_INST_DEV_OPT_CLOCK_SUPPORT
-#define STM32_ADC_OPT_CLOCK_SUPPORT 1
+#if STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT
+#define STM32_ADC_DOMAIN_CLOCK_SUPPORT 1
 #else
-#define STM32_ADC_OPT_CLOCK_SUPPORT 0
+#define STM32_ADC_DOMAIN_CLOCK_SUPPORT 0
 #endif
 
 #if defined(__HAL_RCC_GET_ADC12_SOURCE)
@@ -271,12 +271,12 @@ static void test_adc_clk_config(void)
 	zassert_true(ADC_IS_CLK_ENABLED(), "ADC1 gating clock should be on");
 	TC_PRINT("ADC1 gating clock on\n");
 
-	if (IS_ENABLED(STM32_ADC_OPT_CLOCK_SUPPORT) && DT_NUM_CLOCKS(DT_NODELABEL(adc1)) > 1) {
-		/* Test clock_on(ker_clk) */
+	if (IS_ENABLED(STM32_ADC_DOMAIN_CLOCK_SUPPORT) && DT_NUM_CLOCKS(DT_NODELABEL(adc1)) > 1) {
+		/* Test clock_on(domain_clk) */
 		r = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					    (clock_control_subsys_t) &pclken[1],
 					    NULL);
-		zassert_true((r == 0), "Could not enable ADC1 soure clock");
+		zassert_true((r == 0), "Could not enable ADC1 domain clock");
 		TC_PRINT("ADC1 source clock configured\n");
 
 		/* Test clock source */
@@ -309,10 +309,10 @@ static void test_adc_clk_config(void)
 		TC_PRINT("ADC1 clock source rate: %d Hz\n", dev_dt_clk_freq);
 	} else {
 		zassert_true((DT_NUM_CLOCKS(DT_NODELABEL(adc1)) == 1), "test config issue");
-		/* No alt clock available, don't check gating clock as for adc there is no
+		/* No domain clock available, don't check gating clock as for adc there is no
 		 * uniform way to verify via hal.
 		 */
-		TC_PRINT("ADC1 no alt clock defined. Skipped check\n");
+		TC_PRINT("ADC1 no domain clock defined. Skipped check\n");
 	}
 
 	/* Test clock_off(reg_clk) */
@@ -323,7 +323,7 @@ static void test_adc_clk_config(void)
 	zassert_true(!ADC_IS_CLK_ENABLED(), "ADC1 gating clk should be off");
 	TC_PRINT("ADC1 gating clk off\n");
 
-	/* Test clock_off(srce) */
+	/* Test clock_off(domain clk) */
 	/* Not supported today */
 }
 #else

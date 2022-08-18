@@ -221,6 +221,24 @@ int ipc_service_register_endpoint(const struct device *instance,
 				  struct ipc_ept *ept,
 				  const struct ipc_ept_cfg *cfg);
 
+/** @brief Deregister an IPC endpoint from its instance.
+ *
+ *  Deregisters an IPC endpoint from its instance.
+ *
+ *  The same function deregisters endpoints for both host and remote devices.
+ *
+ *  @param[in] ept Endpoint object.
+ *
+ *  @retval -EIO when no backend is registered.
+ *  @retval -EINVAL when instance, endpoint or configuration is invalid.
+ *  @retval -ENOENT when the endpoint is not registered with the instance.
+ *  @retval -EBUSY when the instance is busy.
+ *
+ *  @retval 0 on success.
+ *  @retval other errno codes depending on the implementation of the backend.
+ */
+int ipc_service_deregister_endpoint(struct ipc_ept *ept);
+
 /** @brief Send data using given IPC endpoint.
  *
  *  @param[in] ept Registered endpoint by @ref ipc_service_register_endpoint.

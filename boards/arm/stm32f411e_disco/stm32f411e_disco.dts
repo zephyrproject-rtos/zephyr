@@ -74,6 +74,7 @@
 		pwm-led2 = &red_pwm_led;
 		pwm-led3 = &blue_pwm_led;
 		magn0 = &lsm303agr_magn;
+		accel0 = &lsm303agr_accel;
 	};
 };
 
@@ -126,7 +127,7 @@
 		irq-gpios = <&gpioe 2 GPIO_ACTIVE_HIGH>;
 	};
 
-	lsm303agr-accel@19 {
+	lsm303agr_accel: lsm303agr-accel@19 {
 		compatible = "st,lis2dh", "st,lsm303agr-accel";
 		status = "okay";
 		reg = <0x19>;

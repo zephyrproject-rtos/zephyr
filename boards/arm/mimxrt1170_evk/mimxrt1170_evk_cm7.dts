@@ -29,6 +29,7 @@
 		zephyr,flash = &is25wp128;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &lcdif;
+		zephyr,keyboard-scan = &touch_controller;
 	};
 
 	sdram0: memory@80000000 {
@@ -101,8 +102,17 @@
 	status = "okay";
 };
 
-&lpi2c1 {
+&lpi2c5 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c5>;
+	pinctrl-names = "default";
+
+	touch_controller: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&gpio2 31 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio9 0  GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &flexspi {

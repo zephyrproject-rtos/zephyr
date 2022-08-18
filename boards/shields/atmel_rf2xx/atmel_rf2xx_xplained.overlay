@@ -4,10 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	chosen {
+		zephyr,ieee802154 = &ieee802154;
+	};
+};
+
 &xplained1_spi {
 	status = "okay";
 
-	rf2xx@0 {
+	ieee802154: rf2xx@0 {
 		compatible = "atmel,rf2xx";
 		reg = <0x0>;
 		spi-max-frequency = <6000000>;

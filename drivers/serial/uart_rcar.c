@@ -273,6 +273,10 @@ static int uart_rcar_init(const struct device *dev)
 		return ret;
 	}
 
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
+
 	ret = clock_control_on(config->clock_dev,
 			       (clock_control_subsys_t *)&config->mod_clk);
 	if (ret < 0) {

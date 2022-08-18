@@ -32,7 +32,7 @@ static void get_runner(void *arg1, void *arg2, void *arg3)
 	zassert_equal(ret, 0, NULL);
 }
 
-static void test_api_setup(void)
+void test_api_setup(void *data)
 {
 	int ret;
 	enum pm_device_state state;
@@ -57,7 +57,7 @@ static void test_api_setup(void)
 	zassert_equal(ret, 0, NULL);
 }
 
-static void test_api_teardown(void)
+static void test_api_teardown(void *data)
 {
 	int ret;
 	enum pm_device_state state;
@@ -86,7 +86,7 @@ static void test_api_teardown(void)
  * - get + asynchronous put until suspended
  * - get + asynchronous put + get (while suspend still ongoing)
  */
-static void test_api(void)
+ZTEST(device_runtime_api, test_api)
 {
 	int ret;
 	enum pm_device_state state;
@@ -225,7 +225,7 @@ static int pm_unsupported_init(const struct device *dev)
 DEVICE_DEFINE(pm_unsupported_device, "PM Unsupported", pm_unsupported_init,
 	      NULL, NULL, NULL, APPLICATION, 0, NULL);
 
-static void test_unsupported(void)
+ZTEST(device_runtime_api, test_unsupported)
 {
 	const struct device *dev = DEVICE_GET(pm_unsupported_device);
 
@@ -236,15 +236,12 @@ static void test_unsupported(void)
 	zassert_equal(pm_device_runtime_put(dev), -ENOTSUP, "");
 }
 
-void test_main(void)
+void *device_runtime_api_setup(void)
 {
 	dev = device_get_binding("test_driver");
 	zassert_not_null(dev, NULL);
-
-	ztest_test_suite(device_runtime_api,
-			 ztest_unit_test_setup_teardown(test_api,
-							test_api_setup,
-							test_api_teardown),
-			 ztest_unit_test(test_unsupported));
-	ztest_run_test_suite(device_runtime_api);
+	return NULL;
 }
+
+ZTEST_SUITE(device_runtime_api, NULL, device_runtime_api_setup,
+			test_api_setup, test_api_teardown, NULL);

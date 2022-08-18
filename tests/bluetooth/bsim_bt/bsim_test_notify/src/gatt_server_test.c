@@ -100,6 +100,7 @@ BT_GATT_SERVICE_DEFINE(test_svc, BT_GATT_PRIMARY_SERVICE(TEST_SERVICE_UUID),
 		       BT_GATT_CHARACTERISTIC(TEST_CHRC_UUID,
 					      BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_READ,
 					      BT_GATT_PERM_READ, read_test_chrc, NULL, NULL),
+		       BT_GATT_CUD("Short test_svc format description", BT_GATT_PERM_READ),
 		       BT_GATT_CCC(short_subscribe, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 		       BT_GATT_CHARACTERISTIC(TEST_LONG_CHRC_UUID,
 					      BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_READ,
@@ -143,7 +144,7 @@ static inline void long_notify(void)
 {
 	static size_t length = LONG_CHRC_SIZE;
 	static struct bt_gatt_notify_params params = {
-		.attr = &attr_test_svc[4],
+		.attr = &attr_test_svc[5],
 		.data = long_chrc_data,
 		.len = LONG_CHRC_SIZE,
 		.func = notification_sent,

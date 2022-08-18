@@ -51,18 +51,23 @@
 
 	soc {
 		flashcalw: flash-controller@400a0000 {
-			compatible = "atmel,sam-flash-controller";
+			compatible = "atmel,sam4l-flashcalw-controller";
 			reg = <0x400a0000 0x400>;
 			interrupts = <0 0>;
-			peripheral-id = <32>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 
-				write-block-size = <16>;
+				write-block-size = <8>;
+				erase-block-size = <512>;
 			};
+
+			/*
+			 * No driver implemented yet, keeped it disabled
+			 */
+			status = "disabled";
 		};
 
 		twim0: twim@40018000 {

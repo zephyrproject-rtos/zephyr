@@ -701,6 +701,11 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
+	if (conn->state != BT_CONN_CONNECTED) {
+		BT_WARN("Not connected");
+		return;
+	}
+
 	if (conn->role != BT_HCI_ROLE_CENTRAL) {
 		l2cap_send_reject(conn, ident, BT_L2CAP_REJ_NOT_UNDERSTOOD,
 				  NULL, 0);

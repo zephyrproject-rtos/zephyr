@@ -100,7 +100,7 @@ struct backend_cb backend_ctrl_blk;
 /** Test how many messages fits in the logging buffer in deferred mode. Test
  * serves as the comparison between logging versions.
  */
-void test_log_capacity(void)
+ZTEST(test_log_benchmark, test_log_capacity)
 {
 	int total_cnt = 0;
 
@@ -135,7 +135,7 @@ void test_log_capacity(void)
 			_msg_cnt, cyc); \
 } while (0)
 
-void test_log_message_store_time_no_overwrite(void)
+static void run_log_message_store_time_no_overwrite(void)
 {
 	uint32_t total_cyc = 0;
 	uint32_t total_msg = 0;
@@ -157,6 +157,11 @@ void test_log_message_store_time_no_overwrite(void)
 		total_cyc / total_msg, total_us / total_msg);
 }
 
+ZTEST(test_log_benchmark, test_log_message_store_time_no_overwrite)
+{
+	run_log_message_store_time_no_overwrite();
+}
+
 #define TEST_LOG_MESSAGE_STORE_OVERFLOW(nargs, _msg_cnt, inc_time, inc_msg) do { \
 	int _dummy = 0; \
 	/* Saturate buffer. */ \
@@ -175,7 +180,7 @@ void test_log_message_store_time_no_overwrite(void)
 			_msg_cnt, cyc); \
 } while (0)
 
-void test_log_message_store_time_overwrite(void)
+ZTEST(test_log_benchmark, test_log_message_store_time_overwrite)
 {
 	uint32_t total_cyc = 0;
 	uint32_t total_msg = 0;
@@ -196,17 +201,17 @@ void test_log_message_store_time_overwrite(void)
 		total_cyc / total_msg, total_us / total_msg);
 }
 
-void test_log_message_store_time_no_overwrite_from_user(void)
+ZTEST_USER(test_log_benchmark, test_log_message_store_time_no_overwrite_from_user)
 {
 	if (!IS_ENABLED(CONFIG_USERSPACE)) {
 		printk("no userspace\n");
 		return;
 	}
 
-	test_log_message_store_time_no_overwrite();
+	run_log_message_store_time_no_overwrite();
 }
 
-void test_log_message_with_string(void)
+ZTEST(test_log_benchmark, test_log_message_with_string)
 {
 	test_helpers_log_setup();
 	char strbuf[] = "test string";
@@ -226,18 +231,14 @@ void test_log_message_with_string(void)
 }
 
 /*test case main entry*/
-void test_main(void)
+static void *log_benchmark_setup(void)
 {
 	PRINT("LOGGING MODE:%s\n", IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? "DEFERRED" : "IMMEDIATE");
 	PRINT("\tOVERWRITE: %d\n", IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW));
 	PRINT("\tBUFFER_SIZE: %d\n", CONFIG_LOG_BUFFER_SIZE);
 	PRINT("\tSPEED: %d", IS_ENABLED(CONFIG_LOG_SPEED));
-	ztest_test_suite(test_log_benchmark,
-			 ztest_unit_test(test_log_capacity),
-			 ztest_unit_test(test_log_message_store_time_no_overwrite),
-			 ztest_unit_test(test_log_message_store_time_overwrite),
-			 ztest_user_unit_test(test_log_message_store_time_no_overwrite_from_user),
-			 ztest_user_unit_test(test_log_message_with_string)
-			 );
-	ztest_run_test_suite(test_log_benchmark);
+
+	return NULL;
 }
+
+ZTEST_SUITE(test_log_benchmark, NULL, log_benchmark_setup, NULL, NULL, NULL);

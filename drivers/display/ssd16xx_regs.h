@@ -80,10 +80,6 @@
 #define SSD16XX_RAM_READ_CTRL_BLACK		0
 #define SSD16XX_RAM_READ_CTRL_RED		1
 
-/* Default values */
-#define SSD16XX_VAL_DUMMY_LINE			0x1a
-#define SSD16XX_VAL_GATE_LWIDTH			0x08
-
 /* time constants in ms */
 #define SSD16XX_RESET_DELAY			1
 #define SSD16XX_BUSY_DELAY			1

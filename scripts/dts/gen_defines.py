@@ -144,36 +144,10 @@ def main():
             write_vanilla_props(node)
 
         write_chosen(edt)
-        write_global_compat_info(edt)
-
-        write_device_extern_header(args.device_header_out, edt)
+        write_global_macros(edt)
 
     if args.edt_pickle_out:
         write_pickled_edt(edt, args.edt_pickle_out)
-
-
-def write_device_extern_header(device_header_out, edt):
-    # Generate header that will extern devicetree struct device's
-
-    with open(device_header_out, "w", encoding="utf-8") as dev_header_file:
-        print("#ifndef DEVICE_EXTERN_GEN_H", file=dev_header_file)
-        print("#define DEVICE_EXTERN_GEN_H", file=dev_header_file)
-        print("", file=dev_header_file)
-        print("#ifdef __cplusplus", file=dev_header_file)
-        print('extern "C" {', file=dev_header_file)
-        print("#endif", file=dev_header_file)
-        print("", file=dev_header_file)
-
-        for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
-            print(f"extern const struct device DEVICE_DT_NAME_GET(DT_{node.z_path_id}); /* dts_ord_{node.dep_ordinal} */",
-                  file=dev_header_file)
-
-        print("", file=dev_header_file)
-        print("#ifdef __cplusplus", file=dev_header_file)
-        print("}", file=dev_header_file)
-        print("#endif", file=dev_header_file)
-        print("", file=dev_header_file)
-        print("#endif /* DEVICE_EXTERN_GEN_H */", file=dev_header_file)
 
 
 def setup_edtlib_logging():
@@ -222,8 +196,6 @@ def parse_args():
     parser.add_argument("--dts-out", required=True,
                         help="path to write merged DTS source code to (e.g. "
                              "as a debugging aid)")
-    parser.add_argument("--device-header-out", required=True,
-                        help="path to write device struct extern header to")
     parser.add_argument("--edt-pickle-out",
                         help="path to write pickled edtlib.EDT object to")
     parser.add_argument("--vendor-prefixes", action='append', default=[],
@@ -854,9 +826,17 @@ def write_chosen(edt):
         out_define(macro, value, width=max_len)
 
 
-def write_global_compat_info(edt):
-    # Tree-wide information related to each compatible, such as number
-    # of instances with status "okay", is printed here.
+def write_global_macros(edt):
+    # Global or tree-wide information, such as number of instances
+    # with status "okay" for each compatible, is printed here.
+
+
+    out_comment("Macros for iterating over all nodes and enabled nodes")
+    out_dt_define("FOREACH_HELPER(fn)",
+                  " ".join(f"fn(DT_{node.z_path_id})" for node in edt.nodes))
+    out_dt_define("FOREACH_OKAY_HELPER(fn)",
+                  " ".join(f"fn(DT_{node.z_path_id})" for node in edt.nodes
+                           if node.status == "okay"))
 
     n_okay_macros = {}
     for_each_macros = {}

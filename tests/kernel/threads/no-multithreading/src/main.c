@@ -8,7 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/ztest.h>
 
-void test_k_busy_wait(void)
+ZTEST(no_multithreading, test_k_busy_wait)
 {
 	int64_t now = k_uptime_get();
 	uint32_t watchdog = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
@@ -39,7 +39,7 @@ static void timeout_handler(struct k_timer *timer)
 
 K_TIMER_DEFINE(timer, timeout_handler, NULL);
 
-void test_irq_locking(void)
+ZTEST(no_multithreading, test_irq_locking)
 {
 	volatile bool timeout_run = false;
 
@@ -56,7 +56,7 @@ void test_irq_locking(void)
 	zassert_true(timeout_run, "Timeout should expire because irq got unlocked");
 }
 
-void test_cpu_idle(void)
+ZTEST(no_multithreading, test_cpu_idle)
 {
 	volatile bool timeout_run = false;
 	int64_t now, diff;
@@ -93,19 +93,9 @@ static int sys_init_result;
 
 FOR_EACH(SYS_INIT_CREATE, (;), PRE_KERNEL_1, PRE_KERNEL_2, POST_KERNEL);
 
-void test_sys_init(void)
+ZTEST(no_multithreading, test_sys_init)
 {
 	zassert_equal(init_order, 3, "SYS_INIT failed");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(no_multithreading,
-			 ztest_unit_test(test_k_busy_wait),
-			 ztest_unit_test(test_irq_locking),
-			 ztest_unit_test(test_cpu_idle),
-			 ztest_unit_test(test_sys_init)
-			 );
-
-	ztest_run_test_suite(no_multithreading);
-}
+ZTEST_SUITE(no_multithreading, NULL, NULL, NULL, NULL, NULL);

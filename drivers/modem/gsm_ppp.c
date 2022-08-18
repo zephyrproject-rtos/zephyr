@@ -352,22 +352,22 @@ MODEM_CMD_DEFINE(on_cmd_net_reg_sts)
 
 	switch (gsm.net_state) {
 	case GSM_NET_NOT_REGISTERED:
-		LOG_INF("Network %s.", "not registered");
+		LOG_DBG("Network %s.", "not registered");
 		break;
 	case GSM_NET_HOME_NETWORK:
-		LOG_INF("Network %s.", "registered, home network");
+		LOG_DBG("Network %s.", "registered, home network");
 		break;
 	case GSM_NET_SEARCHING:
-		LOG_INF("Searching for network...");
+		LOG_DBG("Searching for network...");
 		break;
 	case GSM_NET_REGISTRATION_DENIED:
-		LOG_INF("Network %s.", "registration denied");
+		LOG_DBG("Network %s.", "registration denied");
 		break;
 	case GSM_NET_UNKNOWN:
-		LOG_INF("Network %s.", "unknown");
+		LOG_DBG("Network %s.", "unknown");
 		break;
 	case GSM_NET_ROAMING:
-		LOG_INF("Network %s.", "registered, roaming");
+		LOG_DBG("Network %s.", "registered, roaming");
 		break;
 	default:
 		break;
@@ -433,16 +433,16 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_cesq)
 
 	if ((rsrp >= 0) && (rsrp <= 97)) {
 		gsm.minfo.mdm_rssi = -140 + (rsrp - 1);
-		LOG_INF("RSRP: %d", gsm.minfo.mdm_rssi);
+		LOG_DBG("RSRP: %d", gsm.minfo.mdm_rssi);
 	} else if ((rscp >= 0) && (rscp <= 96)) {
 		gsm.minfo.mdm_rssi = -120 + (rscp - 1);
-		LOG_INF("RSCP: %d", gsm.minfo.mdm_rssi);
+		LOG_DBG("RSCP: %d", gsm.minfo.mdm_rssi);
 	} else if ((rxlev >= 0) && (rxlev <= 63)) {
 		gsm.minfo.mdm_rssi = -110 + (rxlev - 1);
-		LOG_INF("RSSI: %d", gsm.minfo.mdm_rssi);
+		LOG_DBG("RSSI: %d", gsm.minfo.mdm_rssi);
 	} else {
 		gsm.minfo.mdm_rssi = GSM_RSSI_INVALID;
-		LOG_INF("RSRP/RSCP/RSSI not known");
+		LOG_DBG("RSRP/RSCP/RSSI not known");
 	}
 
 	return 0;
@@ -462,7 +462,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 		}
 
 		gsm.minfo.mdm_rssi = rssi;
-		LOG_INF("RSSI: %d", rssi);
+		LOG_DBG("RSSI: %d", rssi);
 	}
 
 	return 0;

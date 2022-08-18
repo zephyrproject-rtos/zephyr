@@ -18,6 +18,7 @@
 #include <zephyr/bluetooth/audio/aics.h>
 
 #include "aics_internal.h"
+#include "audio_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_AICS)
 #define LOG_MODULE_NAME bt_aics
@@ -65,36 +66,33 @@ static ssize_t read_description(struct bt_conn *conn,
 
 #define BT_AICS_SERVICE_DEFINITION(_aics) {                                    \
 	BT_GATT_SECONDARY_SERVICE(BT_UUID_AICS),                               \
-	BT_GATT_CHARACTERISTIC(BT_UUID_AICS_STATE,                             \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,        \
-			       BT_GATT_PERM_READ_LESC,                         \
-			       read_aics_state, NULL, &_aics),                 \
-	BT_GATT_CCC(aics_state_cfg_changed,                                    \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_LESC),              \
-	BT_GATT_CHARACTERISTIC(BT_UUID_AICS_GAIN_SETTINGS,                     \
-			       BT_GATT_CHRC_READ,                              \
-			       BT_GATT_PERM_READ_LESC,                         \
-			       read_aics_gain_settings, NULL, &_aics),         \
-	BT_GATT_CHARACTERISTIC(BT_UUID_AICS_INPUT_TYPE,                        \
-			       BT_GATT_CHRC_READ,                              \
-			       BT_GATT_PERM_READ_LESC,                         \
-			       read_type, NULL, &_aics),                       \
-	BT_GATT_CHARACTERISTIC(BT_UUID_AICS_INPUT_STATUS,                      \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,        \
-			       BT_GATT_PERM_READ_LESC,                         \
-			       read_input_status, NULL, &_aics),               \
-	BT_GATT_CCC(aics_input_status_cfg_changed,                             \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_LESC),              \
-	BT_GATT_CHARACTERISTIC(BT_UUID_AICS_CONTROL,                           \
-			       BT_GATT_CHRC_WRITE,                             \
-			       BT_GATT_PERM_WRITE_LESC,                        \
-			       NULL, write_aics_control, &_aics),              \
-	BT_GATT_CHARACTERISTIC(BT_UUID_AICS_DESCRIPTION,                       \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,        \
-			       BT_GATT_PERM_READ_LESC,                         \
-			       read_description, NULL, &_aics),                \
-	BT_GATT_CCC(aics_description_cfg_changed,                              \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_LESC)               \
+	BT_AUDIO_CHRC(BT_UUID_AICS_STATE,                                      \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,                 \
+		      BT_GATT_PERM_READ_ENCRYPT,                               \
+		      read_aics_state, NULL, &_aics),                          \
+	BT_AUDIO_CCC(aics_state_cfg_changed),                                  \
+	BT_AUDIO_CHRC(BT_UUID_AICS_GAIN_SETTINGS,                              \
+		      BT_GATT_CHRC_READ,                                       \
+		      BT_GATT_PERM_READ_ENCRYPT,                               \
+		      read_aics_gain_settings, NULL, &_aics),                  \
+	BT_AUDIO_CHRC(BT_UUID_AICS_INPUT_TYPE,                                 \
+		      BT_GATT_CHRC_READ,                                       \
+		      BT_GATT_PERM_READ_ENCRYPT,                               \
+		      read_type, NULL, &_aics),                                \
+	BT_AUDIO_CHRC(BT_UUID_AICS_INPUT_STATUS,                               \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,                 \
+		      BT_GATT_PERM_READ_ENCRYPT,                               \
+		      read_input_status, NULL, &_aics),                        \
+	BT_AUDIO_CCC(aics_input_status_cfg_changed),                           \
+	BT_AUDIO_CHRC(BT_UUID_AICS_CONTROL,                                    \
+		      BT_GATT_CHRC_WRITE,                                      \
+		      BT_GATT_PERM_WRITE_ENCRYPT,                              \
+		      NULL, write_aics_control, &_aics),                       \
+	BT_AUDIO_CHRC(BT_UUID_AICS_DESCRIPTION,                                \
+		      BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,                 \
+		      BT_GATT_PERM_READ_ENCRYPT,                               \
+		      read_description, write_description, &_aics),            \
+	BT_AUDIO_CCC(aics_description_cfg_changed)                             \
 	}
 
 
@@ -114,7 +112,7 @@ static ssize_t read_aics_state(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
 {
-	struct bt_aics *inst = attr->user_data;
+	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	BT_DBG("gain %d, mute %u, gain_mode %u, counter %u",
 	       inst->srv.state.gain, inst->srv.state.mute,
@@ -128,7 +126,7 @@ static ssize_t read_aics_gain_settings(struct bt_conn *conn,
 				       const struct bt_gatt_attr *attr,
 				       void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_aics *inst = attr->user_data;
+	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	BT_DBG("units %u, min %d, max %d",
 	       inst->srv.gain_settings.units, inst->srv.gain_settings.minimum,
@@ -142,7 +140,7 @@ static ssize_t read_aics_gain_settings(struct bt_conn *conn,
 static ssize_t read_type(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_aics *inst = attr->user_data;
+	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	BT_DBG("%u", inst->srv.type);
 
@@ -160,7 +158,7 @@ static ssize_t read_input_status(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr, void *buf,
 				 uint16_t len, uint16_t offset)
 {
-	struct bt_aics *inst = attr->user_data;
+	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	BT_DBG("%u", inst->srv.status);
 
@@ -175,7 +173,7 @@ static ssize_t write_aics_control(struct bt_conn *conn,
 				  const void *buf, uint16_t len,
 				  uint16_t offset, uint8_t flags)
 {
-	struct bt_aics *inst = attr->user_data;
+	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 	const struct bt_aics_gain_control *cp = buf;
 	bool notify = false;
 
@@ -297,7 +295,7 @@ static ssize_t write_description(struct bt_conn *conn,
 				 const void *buf, uint16_t len, uint16_t offset,
 				 uint8_t flags)
 {
-	struct bt_aics *inst = attr->user_data;
+	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	if (len >= sizeof(inst->srv.description)) {
 		BT_DBG("Output desc was clipped from length %u to %zu",
@@ -327,12 +325,35 @@ static ssize_t write_description(struct bt_conn *conn,
 	return len;
 }
 
+static int aics_write(struct bt_aics *inst,
+		      ssize_t (*write)(struct bt_conn *conn,
+				       const struct bt_gatt_attr *attr,
+				       const void *buf, uint16_t len,
+				       uint16_t offset, uint8_t flags),
+		      const void *buf, uint16_t len)
+{
+	struct bt_audio_attr_user_data user_data = {
+		.user_data = inst,
+	};
+	struct bt_gatt_attr attr = {
+		.user_data = &user_data,
+	};
+	int err;
+
+	err = write(NULL, &attr, buf, len, 0, 0);
+	if (err < 0) {
+		return err;
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_AICS)
 static ssize_t read_description(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset)
 {
-	struct bt_aics *inst = attr->user_data;
+	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	BT_DBG("%s", inst->srv.description);
 
@@ -455,8 +476,7 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 				struct bt_gatt_chrc *chrc;
 
 				chrc = aics->srv.service_p->attrs[i - 1].user_data;
-				attr->write = write_description;
-				attr->perm |= BT_GATT_PERM_WRITE_LESC;
+				attr->perm |= BT_GATT_PERM_WRITE_ENCRYPT;
 				chrc->properties |= BT_GATT_CHRC_WRITE_WITHOUT_RESP;
 
 				break;
@@ -638,18 +658,12 @@ int bt_aics_unmute(struct bt_aics *inst)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_unmute(inst);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
-		struct bt_gatt_attr attr;
 		struct bt_aics_control cp;
-		int err;
 
 		cp.opcode = BT_AICS_OPCODE_UNMUTE;
 		cp.counter = inst->srv.state.change_counter;
 
-		attr.user_data = inst;
-
-		err = write_aics_control(NULL, &attr, &cp, sizeof(cp), 0, 0);
-
-		return err > 0 ? 0 : err;
+		return aics_write(inst, write_aics_control, &cp, sizeof(cp));
 	}
 
 	return -ENOTSUP;
@@ -665,18 +679,12 @@ int bt_aics_mute(struct bt_aics *inst)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_mute(inst);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
-		struct bt_gatt_attr attr;
 		struct bt_aics_control cp;
-		int err;
 
 		cp.opcode = BT_AICS_OPCODE_MUTE;
 		cp.counter = inst->srv.state.change_counter;
 
-		attr.user_data = inst;
-
-		err = write_aics_control(NULL, &attr, &cp, sizeof(cp), 0, 0);
-
-		return err > 0 ? 0 : err;
+		return aics_write(inst, write_aics_control, &cp, sizeof(cp));
 	}
 
 	return -ENOTSUP;
@@ -692,18 +700,12 @@ int bt_aics_manual_gain_set(struct bt_aics *inst)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_manual_gain_set(inst);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
-		struct bt_gatt_attr attr;
 		struct bt_aics_control cp;
-		int err;
 
 		cp.opcode = BT_AICS_OPCODE_SET_MANUAL;
 		cp.counter = inst->srv.state.change_counter;
 
-		attr.user_data = inst;
-
-		err = write_aics_control(NULL, &attr, &cp, sizeof(cp), 0, 0);
-
-		return err > 0 ? 0 : err;
+		return aics_write(inst, write_aics_control, &cp, sizeof(cp));
 	}
 
 	return -ENOTSUP;
@@ -719,18 +721,12 @@ int bt_aics_automatic_gain_set(struct bt_aics *inst)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_automatic_gain_set(inst);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
-		struct bt_gatt_attr attr;
 		struct bt_aics_control cp;
-		int err;
 
 		cp.opcode = BT_AICS_OPCODE_SET_AUTO;
 		cp.counter = inst->srv.state.change_counter;
 
-		attr.user_data = inst;
-
-		err = write_aics_control(NULL, &attr, &cp, sizeof(cp), 0, 0);
-
-		return err > 0 ? 0 : err;
+		return aics_write(inst, write_aics_control, &cp, sizeof(cp));
 	}
 
 	return -ENOTSUP;
@@ -746,19 +742,13 @@ int bt_aics_gain_set(struct bt_aics *inst, int8_t gain)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_gain_set(inst, gain);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
-		struct bt_gatt_attr attr;
 		struct bt_aics_gain_control cp;
-		int err;
 
 		cp.cp.opcode = BT_AICS_OPCODE_SET_GAIN;
 		cp.cp.counter = inst->srv.state.change_counter;
 		cp.gain_setting = gain;
 
-		attr.user_data = inst;
-
-		err = write_aics_control(NULL, &attr, &cp, sizeof(cp), 0, 0);
-
-		return err > 0 ? 0 : err;
+		return aics_write(inst, write_aics_control, &cp, sizeof(cp));
 	}
 
 	return -ENOTSUP;
@@ -801,15 +791,7 @@ int bt_aics_description_set(struct bt_aics *inst, const char *description)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_description_set(inst, description);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
-		struct bt_gatt_attr attr;
-		int err;
-
-		attr.user_data = inst;
-
-		err = write_description(NULL, &attr, description,
-					strlen(description), 0, 0);
-
-		return err > 0 ? 0 : err;
+		return aics_write(inst, write_description, description, strlen(description));
 	}
 
 	return -ENOTSUP;

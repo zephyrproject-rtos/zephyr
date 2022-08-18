@@ -41,10 +41,6 @@ config USB_DC_STM32
 	default y
 	depends on USB_DEVICE_DRIVER
 
-config COUNTER_RTC_STM32
-	default y
-	depends on COUNTER
-
 if DMA
 
 config DMA_STM32

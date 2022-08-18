@@ -27,11 +27,81 @@
 extern "C" {
 #endif
 
+/**
+ * @brief The expected result of a test.
+ *
+ * @see ZTEST_EXPECT_FAIL
+ * @see ZTEST_EXPECT_SKIP
+ */
+enum ztest_expected_result {
+	ZTEST_EXPECTED_RESULT_FAIL = 0, /**< Expect a test to fail */
+	ZTEST_EXPECTED_RESULT_SKIP,	/**< Expect a test to pass */
+};
+
+/**
+ * @brief A single expectation entry allowing tests to fail/skip and be considered passing.
+ *
+ * @see ZTEST_EXPECT_FAIL
+ * @see ZTEST_EXPECT_SKIP
+ */
+struct ztest_expected_result_entry {
+	const char *test_suite_name; /**< The test suite's name for the expectation */
+	const char *test_name;	     /**< The test's name for the expectation */
+	enum ztest_expected_result expected_result; /**< The expectation */
+};
+
+extern struct ztest_expected_result_entry _ztest_expected_result_entry_list_start[];
+extern struct ztest_expected_result_entry _ztest_expected_result_entry_list_end[];
+
+#define __ZTEST_EXPECT(_suite_name, _test_name, expectation)                                       \
+	static const STRUCT_SECTION_ITERABLE(                                                      \
+		ztest_expected_result_entry,                                                       \
+		UTIL_CAT(UTIL_CAT(z_ztest_expected_result_, _suite_name), _test_name)) = {         \
+			.test_suite_name = STRINGIFY(_suite_name),                                 \
+			.test_name = STRINGIFY(_test_name),                                        \
+			.expected_result = expectation,                                            \
+	}
+
+/**
+ * @brief Expect a test to fail (mark it passing if it failed)
+ *
+ * Adding this macro to your logic will allow the failing test to be considered passing, example:
+ *
+ *     ZTEST_EXPECT_FAIL(my_suite, test_x);
+ *     ZTEST(my_suite, text_x) {
+ *       zassert_true(false, NULL);
+ *     }
+ *
+ * @param _suite_name The name of the suite
+ * @param _test_name The name of the test
+ */
+#define ZTEST_EXPECT_FAIL(_suite_name, _test_name)                                                 \
+	__ZTEST_EXPECT(_suite_name, _test_name, ZTEST_EXPECTED_RESULT_FAIL)
+
+/**
+ * @brief Expect a test to skip (mark it passing if it failed)
+ *
+ * Adding this macro to your logic will allow the failing test to be considered passing, example:
+ *
+ *     ZTEST_EXPECT_SKIP(my_suite, test_x);
+ *     ZTEST(my_suite, text_x) {
+ *       zassume_true(false, NULL);
+ *     }
+ *
+ * @param _suite_name The name of the suite
+ * @param _test_name The name of the test
+ */
+#define ZTEST_EXPECT_SKIP(_suite_name, _test_name)                                                 \
+	__ZTEST_EXPECT(_suite_name, _test_name, ZTEST_EXPECTED_RESULT_SKIP)
+
 struct ztest_unit_test {
 	const char *test_suite_name;
 	const char *name;
 	void (*test)(void *data);
 	uint32_t thread_options;
+
+	/** Stats */
+	struct ztest_unit_test_stats *const stats;
 };
 
 extern struct ztest_unit_test _ztest_unit_test_list_start[];
@@ -48,6 +118,19 @@ struct ztest_suite_stats {
 	uint32_t skip_count;
 	/** The number of times that the suite failed */
 	uint32_t fail_count;
+};
+
+struct ztest_unit_test_stats {
+	/** The number of times that the test ran */
+	uint32_t run_count;
+	/** The number of times that the test was skipped */
+	uint32_t skip_count;
+	/** The number of times that the test failed */
+	uint32_t fail_count;
+	/** The number of times that the test passed */
+	uint32_t pass_count;
+	/** The longest duration of the test across multiple times */
+	uint32_t duration_worst_ms;
 };
 
 /**
@@ -133,7 +216,7 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
  * @param teardown_fn The function to call after running all the tests in this suite
  */
 #define ZTEST_SUITE(SUITE_NAME, PREDICATE, setup_fn, before_fn, after_fn, teardown_fn)             \
-	struct ztest_suite_stats UTIL_CAT(z_ztest_test_node_stats_, SUITE_NAME);                   \
+	struct ztest_suite_stats UTIL_CAT(z_ztest_suite_node_stats_, SUITE_NAME);                  \
 	static const STRUCT_SECTION_ITERABLE(ztest_suite_node,                                     \
 					     UTIL_CAT(z_ztest_test_node_, SUITE_NAME)) = {         \
 		.name = STRINGIFY(SUITE_NAME),                                                     \
@@ -142,7 +225,7 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
 		.after = (after_fn),                                                               \
 		.teardown = (teardown_fn),                                                         \
 		.predicate = PREDICATE,                                                            \
-		.stats = &UTIL_CAT(z_ztest_test_node_stats_, SUITE_NAME),                          \
+		.stats = &UTIL_CAT(z_ztest_suite_node_stats_, SUITE_NAME),             \
 	}
 /**
  * Default entry point for running or listing registered unit tests.
@@ -249,6 +332,7 @@ void ztest_test_pass(void);
 void ztest_test_skip(void);
 
 #define Z_TEST(suite, fn, t_options, use_fixture)                                                  \
+	struct ztest_unit_test_stats z_ztest_unit_test_stats_##suite##_##fn;                       \
 	static void _##suite##_##fn##_wrapper(void *data);                                         \
 	static void suite##_##fn(                                                                  \
 		COND_CODE_1(use_fixture, (struct suite##_fixture *fixture), (void)));              \
@@ -257,6 +341,7 @@ void ztest_test_skip(void);
 		.name = STRINGIFY(fn),                                                             \
 		.test = (_##suite##_##fn##_wrapper),                                               \
 		.thread_options = t_options,                                                       \
+		.stats = &z_ztest_unit_test_stats_##suite##_##fn                                   \
 	};                                                                                         \
 	static void _##suite##_##fn##_wrapper(void *data)                                          \
 	{                                                                                          \

@@ -7,7 +7,6 @@
 #include <hal/nrf_ipc.h>
 #include <helpers/nrfx_gppi.h>
 #include <zephyr/drivers/timer/nrf_rtc_timer.h>
-#include <zephyr/drivers/ipm.h>
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>
@@ -205,17 +204,6 @@ static void mbox_callback(const struct device *dev, uint32_t channel,
 	remote_callback(user_data);
 }
 
-static void ipm_callback(const struct device *ipmdev, void *user_data,
-			 uint32_t id, volatile void *data)
-{
-	int err = ipm_set_enabled(ipmdev, false);
-
-	(void)err;
-	__ASSERT_NO_MSG(err == 0);
-
-	remote_callback(user_data);
-}
-
 static int mbox_rx_init(void *user_data)
 {
 	const struct device *dev;
@@ -235,20 +223,6 @@ static int mbox_rx_init(void *user_data)
 	}
 
 	return mbox_set_enabled(&channel, true);
-}
-
-static int ipm_rx_init(void *user_data)
-{
-	const struct device *ipm_dev;
-
-	ipm_dev = device_get_binding("IPM_" STRINGIFY(CONFIG_NRF53_SYNC_RTC_IPM_IN));
-	if (ipm_dev == NULL) {
-		return -ENODEV;
-	}
-
-	ipm_register_callback(ipm_dev, ipm_callback, user_data);
-
-	return ipm_set_enabled(ipm_dev, true);
 }
 
 /* Setup RTC synchronization. */
@@ -278,8 +252,7 @@ static int sync_rtc_setup(const struct device *unused)
 	channels.ch.ipc_out = CONFIG_NRF53_SYNC_RTC_IPM_OUT;
 	channels.ch.ipc_in = CONFIG_NRF53_SYNC_RTC_IPM_IN;
 
-	rv = IS_ENABLED(CONFIG_MBOX) ? mbox_rx_init((void *)channels.raw) :
-				       ipm_rx_init((void *)channels.raw);
+	rv = mbox_rx_init((void *)channels.raw);
 	if (rv < 0) {
 		goto bail;
 	}

@@ -14,17 +14,14 @@ module = PM_CPU_OPS
 module-str = pm_cpu_ops
 source "subsys/logging/Kconfig.template.log_config"
 
-DT_COMPAT_ARM_PSCI := arm,psci-0.2
-
 config PM_CPU_OPS_HAS_DRIVER
 	bool
 
 config PM_CPU_OPS_PSCI
 	bool "Support for the ARM Power State Coordination Interface (PSCI)"
-	depends on ARM64
-	depends on HAS_ARM_SMCCC
+	default y
+	depends on DT_HAS_ARM_PSCI_0_2_ENABLED
 	select PM_CPU_OPS_HAS_DRIVER
-	default $(dt_compat_enabled,$(DT_COMPAT_ARM_PSCI))
 	help
 	  Say Y here if you want Zephyr to communicate with system firmware
 	  implementing the PSCI specification for CPU-centric power

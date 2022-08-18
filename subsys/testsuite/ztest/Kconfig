@@ -98,6 +98,12 @@ config ZTEST_RULE_1CPU
 
 endmenu
 
+config ZTEST_VERIFY_RUN_ALL
+	bool "Validates all defined tests have ran"
+	default y
+	help
+	  This rule will fail the project if not all tests have been run.
+
 config ZTEST_SHUFFLE
 	bool "Shuffle the order of tests and suites"
 	select TEST_RANDOM_GENERATOR if !ENTROPY_HAS_DRIVER
@@ -121,6 +127,20 @@ config ZTEST_SHUFFLE_TEST_REPEAT_COUNT
 	  likely be different per iteration.
 
 endif #ZTEST_SHUFFLE
+
+config ZTEST_VERBOSE_OUTPUT
+	bool "Verbose test output"
+	default y
+	help
+	  This option controls whether test output is shown verbosely or
+	  no output at all.
+
+config ZTEST_VERBOSE_SUMMARY
+	bool "Verbose test summary"
+	default y
+	help
+	  This option controls whether suite summary is shown verbosely or
+	  just in one line.
 
 endif # ZTEST_NEW_API
 

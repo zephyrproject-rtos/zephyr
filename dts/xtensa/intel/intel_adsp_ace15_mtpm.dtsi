@@ -111,6 +111,11 @@
 			reg = <0x71f00 0x100>;
 		};
 
+		lps: lps@71ac0 {
+			compatible = "intel,adsp-lps";
+			reg = <0x00071ac0 0x100>;
+		};
+
 		sspbase: ssp_base@28800 {
 			compatible = "intel,ssp-sspbase";
 			reg = <0x28800 0x1000>;
@@ -157,6 +162,7 @@
 			dmas = <&lpgpdma0 2
 					&lpgpdma0 3>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -171,6 +177,7 @@
 			dmas = <&lpgpdma0 4
 					&lpgpdma0 5>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -185,6 +192,7 @@
 			dmas = <&lpgpdma0 6
 					&lpgpdma0 7>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -199,6 +207,7 @@
 			dmas = <&lpgpdma0 8
 					&lpgpdma0 9>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -213,6 +222,7 @@
 			dmas = <&lpgpdma0 10
 					&lpgpdma0 11>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -227,6 +237,7 @@
 			dmas = <&lpgpdma0 12
 					&lpgpdma0 13>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -264,6 +275,52 @@
 			dma-channels = <5>;
 			dma-buf-alignment = <128>;
 			status = "okay";
+		};
+
+		hub_ulp_domain: hub_ulp_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <15>;
+		};
+		hub_hp_domain: hub_hpp_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <6>;
+		};
+		io0_domain: io0_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <8>;
+		};
+		io1_domain: io1_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <9>;
+		};
+		io2_domain: io2_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <10>;
+		};
+		io3_domain: io3_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <11>;
+		};
+		hst_domain: hst_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <4>;
+		};
+		ml0_domain: ml0_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <12>;
+		};
+		ml1_domain: ml1_domain {
+			compatible = "intel,adsp-power-domain";
+			lps = <&lps>;
+			bit-position = <13>;
 		};
 	};
 };

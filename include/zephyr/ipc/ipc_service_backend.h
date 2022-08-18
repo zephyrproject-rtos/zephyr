@@ -74,6 +74,21 @@ struct ipc_service_backend {
 				 void **token,
 				 const struct ipc_ept_cfg *cfg);
 
+	/** @brief Pointer to the function that will be used to deregister endpoints
+	 *
+	 *  @param[in] instance Instance from which to deregister the endpoint.
+	 *  @param[in] token Backend-specific token.
+	 *
+	 *  @retval -EINVAL when the endpoint configuration or instance is invalid.
+	 *  @retval -ENOENT when the endpoint is not registered with the instance.
+	 *  @retval -EBUSY when the instance is busy or not ready.
+	 *
+	 *  @retval 0 on success
+	 *  @retval other errno codes depending on the implementation of the
+	 *      backend.
+	 */
+	int (*deregister_endpoint)(const struct device *instance, void *token);
+
 	/** @brief Pointer to the function that will return the TX buffer size
 	 *
 	 *  @param[in] instance Instance pointer.

@@ -89,6 +89,8 @@
 };
 
 &lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };
 
@@ -131,6 +133,7 @@
 		size = <DT_SIZE_M(64)>;
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_DTR_TRANSFER>;
+		four-byte-opcodes;
 		status = "okay";
 		sfdp-bfp = [
 			53 46 44 50 06 01 02 ff

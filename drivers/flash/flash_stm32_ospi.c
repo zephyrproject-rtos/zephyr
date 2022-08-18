@@ -200,9 +200,8 @@ static OSPI_RegularCmdTypeDef ospi_prepare_cmd(uint8_t transfer_mode, uint8_t tr
 		.AddressDtrMode = ((transfer_rate == OSPI_DTR_TRANSFER)
 				? HAL_OSPI_ADDRESS_DTR_ENABLE
 				: HAL_OSPI_ADDRESS_DTR_DISABLE),
-		.AddressSize = ((transfer_mode == OSPI_OPI_MODE)
-				?  HAL_OSPI_ADDRESS_32_BITS
-				:  HAL_OSPI_ADDRESS_24_BITS),
+		/* AddressSize must be set to 32bits for init and mem config phase */
+		.AddressSize = HAL_OSPI_ADDRESS_32_BITS,
 		.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE,
 		.DataDtrMode = ((transfer_rate == OSPI_DTR_TRANSFER)
 				? HAL_OSPI_DATA_DTR_ENABLE
@@ -277,7 +276,9 @@ static int ospi_read_sfdp(const struct device *dev, off_t addr, uint8_t *data,
 	}
 	cmd.Address = addr;
 	cmd.NbData = size;
-
+	cmd.AddressSize = ((dev_cfg->data_mode == OSPI_OPI_MODE)
+				?  HAL_OSPI_ADDRESS_32_BITS
+				:  HAL_OSPI_ADDRESS_24_BITS);
 	HAL_StatusTypeDef hal_ret;
 
 	hal_ret = HAL_OSPI_Command(&dev_data->hospi, &cmd, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
@@ -320,20 +321,20 @@ static int stm32_ospi_mem_ready(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, uin
 	/* Configure automatic polling mode command to wait for memory ready */
 	if (nor_mode == OSPI_OPI_MODE) {
 		s_command.Instruction = SPI_NOR_OCMD_RDSR;
-	} else {
-		s_command.Instruction = SPI_NOR_CMD_RDSR;
-		s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
-		s_command.DataMode = HAL_OSPI_DATA_1_LINE;
-	}
-	s_command.NbData = ((nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U);
-	s_command.AddressMode = HAL_OSPI_ADDRESS_NONE;
-	s_command.Address = 0U;
-
-	if (nor_mode == OSPI_OPI_MODE) {
 		s_command.DummyCycles = (nor_rate == OSPI_DTR_TRANSFER)
 					? SPI_NOR_DUMMY_REG_OCTAL_DTR
 					: SPI_NOR_DUMMY_REG_OCTAL;
+	} else {
+		s_command.Instruction = SPI_NOR_CMD_RDSR;
+		/* force 1-line InstructionMode for any non-OSPI transfer */
+		s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		s_command.AddressMode = HAL_OSPI_ADDRESS_NONE;
+		/* force 1-line DataMode for any non-OSPI transfer */
+		s_command.DataMode = HAL_OSPI_DATA_1_LINE;
+		s_command.DummyCycles = 0;
 	}
+	s_command.NbData = ((nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U);
+	s_command.Address = 0U;
 
 	/* Set the mask to  0x01 to mask all Status REG bits except WIP */
 	/* Set the match to 0x00 to check if the WIP bit is Reset */
@@ -368,6 +369,7 @@ static int stm32_ospi_write_enable(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, 
 		s_command.Instruction = SPI_NOR_OCMD_WREN;
 	} else {
 		s_command.Instruction = SPI_NOR_CMD_WREN;
+		/* force 1-line InstructionMode for any non-OSPI transfer */
 		s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
 	}
 	s_command.AddressMode = HAL_OSPI_ADDRESS_NONE;
@@ -379,18 +381,26 @@ static int stm32_ospi_write_enable(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, 
 		return -EIO;
 	}
 
-	/* Configure automatic polling mode to wait for write enabling */
+	/* New command to Configure automatic polling mode to wait for write enabling */
 	if (nor_mode == OSPI_OPI_MODE) {
 		s_command.Instruction = SPI_NOR_OCMD_RDSR;
+		s_command.AddressMode = HAL_OSPI_ADDRESS_8_LINES;
+		s_command.DataMode = HAL_OSPI_DATA_8_LINES;
 		s_command.DummyCycles = (nor_rate == OSPI_DTR_TRANSFER)
 				? SPI_NOR_DUMMY_REG_OCTAL_DTR
 						: SPI_NOR_DUMMY_REG_OCTAL;
 	} else {
 		s_command.Instruction = SPI_NOR_CMD_RDSR;
-		s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE,
+		/* force 1-line DataMode for any non-OSPI transfer */
+		s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		s_command.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
 		s_command.DataMode = HAL_OSPI_DATA_1_LINE;
+		s_command.DummyCycles = 0;
+
+		/* DummyCycles remains 0 */
 	}
-	s_command.NbData         = (nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U;
+	s_command.NbData = (nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U;
+	s_command.Address = 0U;
 
 	if (HAL_OSPI_Command(hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("OSPI config auto polling cmd failed");
@@ -888,7 +898,7 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 	}
 
 	/* Instruction and DummyCycles are set below */
-	cmd.Address = addr;
+	cmd.Address = addr; /* AddressSize is 32bits in OPSI mode */
 	cmd.AddressSize = stm32_ospi_hal_address_size(dev);
 	/* DataSize is set by the read cmd */
 
@@ -907,6 +917,7 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 			/* use SFDP:BFP read instruction */
 			cmd.Instruction = dev_data->read_opcode;
 			cmd.DummyCycles = dev_data->read_dummy;
+			/* in SPI and STR : expecting SPI_NOR_CMD_READ_FAST_4B */
 		}
 	}
 
@@ -943,6 +954,7 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 	/* page program for STR or DTR mode */
 	OSPI_RegularCmdTypeDef cmd_pp = ospi_prepare_cmd(dev_cfg->data_mode, dev_cfg->data_rate);
 
+	/* using 32bits address also in SPI/STR mode */
 	cmd_pp.Instruction = dev_data->write_opcode;
 
 	if (dev_cfg->data_mode != OSPI_OPI_MODE) {
@@ -1009,6 +1021,7 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 			to_write = SPI_NOR_PAGE_SIZE -
 						(addr % SPI_NOR_PAGE_SIZE);
 		}
+		cmd_pp.Address = addr;
 
 		ret = ospi_write_access(dev, &cmd_pp, data, to_write);
 		if (ret != 0) {
@@ -1380,9 +1393,9 @@ static void spi_nor_process_bfp_addrbytes(const struct device *dev,
 
 	if (jesd216_bfp_addrbytes == JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_4B) {
 		data->address_width = 4U;
+	} else {
+		data->address_width = 3U;
 	}
-
-	data->address_width = 3U;
 }
 
 static inline uint8_t spi_nor_convert_read_to_4b(const uint8_t opcode)
@@ -1570,6 +1583,11 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		return ret;
 	}
 
+	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 			     (clock_control_subsys_t) &dev_cfg->pclken[0]) != 0) {
@@ -1581,7 +1599,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					(clock_control_subsys_t) &dev_cfg->pclken[1],
 					NULL) != 0) {
-			LOG_ERR("Could not select OSPI source clock pclk[1]");
+			LOG_ERR("Could not select OSPI domain clock pclk[1]");
 			return -EIO;
 		}
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),

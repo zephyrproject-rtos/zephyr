@@ -311,7 +311,7 @@ static void unicast_client_ep_init(struct bt_audio_ep *ep, uint16_t handle,
 	BT_DBG("ep %p dir 0x%02x handle 0x%04x", ep, dir, handle);
 
 	(void)memset(ep, 0, sizeof(*ep));
-	ep->handle = handle;
+	ep->client.handle = handle;
 	ep->status.id = 0U;
 	ep->dir = dir;
 }
@@ -327,8 +327,8 @@ static struct bt_audio_ep *unicast_client_ep_find(struct bt_conn *conn,
 	for (i = 0; i < ARRAY_SIZE(snks[index]); i++) {
 		struct bt_audio_ep *ep = &snks[index][i];
 
-		if ((handle && ep->handle == handle) ||
-		    (!handle && ep->handle)) {
+		if ((handle && ep->client.handle == handle) ||
+		    (!handle && ep->client.handle)) {
 			return ep;
 		}
 	}
@@ -336,8 +336,8 @@ static struct bt_audio_ep *unicast_client_ep_find(struct bt_conn *conn,
 	for (i = 0; i < ARRAY_SIZE(srcs[index]); i++) {
 		struct bt_audio_ep *ep = &srcs[index][i];
 
-		if ((handle && ep->handle == handle) ||
-		    (!handle && ep->handle)) {
+		if ((handle && ep->client.handle == handle) ||
+		    (!handle && ep->client.handle)) {
 			return ep;
 		}
 	}
@@ -427,7 +427,7 @@ static struct bt_audio_ep *unicast_client_ep_new(struct bt_conn *conn,
 	for (i = 0; i < size; i++) {
 		struct bt_audio_ep *ep = &cache[i];
 
-		if (!ep->handle) {
+		if (!ep->client.handle) {
 			unicast_client_ep_init(ep, handle, dir);
 			return ep;
 		}
@@ -471,25 +471,31 @@ static void unicast_client_ep_idle_state(struct bt_audio_ep *ep,
 	bt_audio_stream_reset(stream);
 }
 
-static void unicast_client_ep_qos_reset(struct bt_audio_ep *ep)
+static void unicast_client_ep_qos_update(struct bt_audio_ep *ep,
+					 const struct bt_ascs_ase_status_qos *qos)
 {
+	struct bt_iso_chan_io_qos *iso_io_qos;
+
 	BT_DBG("ep %p dir %u audio_iso %p", ep, ep->dir, ep->iso);
 
 	if (ep->dir == BT_AUDIO_DIR_SOURCE) {
 		/* If the endpoint is a source, then we need to
 		 * reset our RX parameters
 		 */
-		ep->iso->iso_qos.rx = memset(&ep->iso->sink_io_qos, 0,
-					     sizeof(ep->iso->sink_io_qos));
+		iso_io_qos = ep->iso->iso_qos.rx;
 	} else if (ep->dir == BT_AUDIO_DIR_SINK) {
 		/* If the endpoint is a sink, then we need to
 		 * reset our TX parameters
 		 */
-		ep->iso->iso_qos.tx = memset(&ep->iso->source_io_qos, 0,
-					     sizeof(ep->iso->source_io_qos));
+		iso_io_qos = ep->iso->iso_qos.tx;
 	} else {
 		__ASSERT(false, "Invalid ep->dir: %u", ep->dir);
+		return;
 	}
+
+	iso_io_qos->phy = qos->phy;
+	iso_io_qos->sdu = sys_le16_to_cpu(qos->sdu);
+	iso_io_qos->rtn = qos->rtn;
 }
 
 static void unicast_client_ep_config_state(struct bt_audio_ep *ep,
@@ -577,8 +583,8 @@ static void unicast_client_ep_qos_state(struct bt_audio_ep *ep,
 
 	qos = net_buf_simple_pull_mem(buf, sizeof(*qos));
 
-	/* Reset any existing QoS configuration */
-	unicast_client_ep_qos_reset(ep);
+	/* Update existing QoS configuration */
+	unicast_client_ep_qos_update(ep, qos);
 
 	ep->cig_id = qos->cig_id;
 	ep->cis_id = qos->cis_id;
@@ -741,7 +747,7 @@ static void unicast_client_ep_set_status(struct bt_audio_ep *ep,
 	old_state = ep->status.state;
 	ep->status = *status;
 
-	BT_DBG("ep %p handle 0x%04x id 0x%02x state %s -> %s", ep, ep->handle,
+	BT_DBG("ep %p handle 0x%04x id 0x%02x state %s -> %s", ep, ep->client.handle,
 	       status->id, bt_audio_ep_state_str(old_state),
 	       bt_audio_ep_state_str(status->state));
 
@@ -1139,13 +1145,13 @@ static uint8_t unicast_client_ep_notify(struct bt_conn *conn,
 static int unicast_client_ep_subscribe(struct bt_conn *conn,
 				       struct bt_audio_ep *ep)
 {
-	BT_DBG("ep %p handle 0x%02x", ep, ep->handle);
+	BT_DBG("ep %p handle 0x%02x", ep, ep->client.handle);
 
 	if (ep->subscribe.value_handle) {
 		return 0;
 	}
 
-	ep->subscribe.value_handle = ep->handle;
+	ep->subscribe.value_handle = ep->client.handle;
 	ep->subscribe.ccc_handle = 0x0000;
 	ep->subscribe.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	ep->subscribe.disc_params = &ep->discover;
@@ -1181,16 +1187,16 @@ static void unicast_client_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 	for (i = 0; i < ARRAY_SIZE(snks[index]); i++) {
 		struct bt_audio_ep *ep = &snks[index][i];
 
-		if (ep->handle) {
-			ep->cp_handle = handle;
+		if (ep->client.handle) {
+			ep->client.cp_handle = handle;
 		}
 	}
 
 	for (i = 0; i < ARRAY_SIZE(srcs[index]); i++) {
 		struct bt_audio_ep *ep = &srcs[index][i];
 
-		if (ep->handle) {
-			ep->cp_handle = handle;
+		if (ep->client.handle) {
+			ep->client.cp_handle = handle;
 		}
 	}
 }
@@ -1485,7 +1491,7 @@ int bt_unicast_client_ep_send(struct bt_conn *conn, struct bt_audio_ep *ep,
 {
 	BT_DBG("conn %p ep %p buf %p len %u", conn, ep, buf, buf->len);
 
-	return bt_gatt_write_without_response(conn, ep->cp_handle,
+	return bt_gatt_write_without_response(conn, ep->client.cp_handle,
 					      buf->data, buf->len, false);
 }
 

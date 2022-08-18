@@ -60,6 +60,7 @@ extern void z_sched_ipi(void);
  */
 void smp_log(const char *msg)
 {
+#ifndef CONFIG_ESP32_NETWORK_CORE
 	k_spinlock_key_t key = k_spin_lock(&loglock);
 
 	while (*msg) {
@@ -69,6 +70,7 @@ void smp_log(const char *msg)
 	esp_rom_uart_tx_one_char('\n');
 
 	k_spin_unlock(&loglock, key);
+#endif
 }
 
 static void appcpu_entry2(void)
@@ -169,7 +171,7 @@ static void appcpu_entry1(void)
  * calls or registers shown are documented, so treat this code with
  * extreme caution.
  */
-static void appcpu_start(void)
+void esp_appcpu_start(void *entry_point)
 {
 	smp_log("ESP32: starting APPCPU");
 
@@ -180,6 +182,8 @@ static void appcpu_start(void)
 	 */
 	esp_rom_Cache_Flush(1);
 	esp_rom_Cache_Read_Enable(1);
+
+	esp_rom_ets_set_appcpu_boot_addr((void *)0);
 
 	RTC_CNTL_SW_CPU_STALL &= ~RTC_CNTL_SW_STALL_APPCPU_C1;
 	RTC_CNTL_OPTIONS0     &= ~RTC_CNTL_SW_STALL_APPCPU_C0;
@@ -193,19 +197,9 @@ static void appcpu_start(void)
 	/* Seems weird that you set the boot address AFTER starting
 	 * the CPU, but this is how they do it...
 	 */
-	esp_rom_ets_set_appcpu_boot_addr((void *)appcpu_entry1);
+	esp_rom_ets_set_appcpu_boot_addr((void *)entry_point);
 
 	smp_log("ESP32: APPCPU start sequence complete");
-}
-
-IRAM_ATTR static inline uint32_t prid(void)
-{
-	uint32_t id;
-
-	__asm__ volatile (
-		"rsr.prid %0\n"
-		"extui %0,%0,13,1" : "=r" (id));
-	return id;
 }
 
 IRAM_ATTR static void esp_crosscore_isr(void *arg)
@@ -217,7 +211,7 @@ IRAM_ATTR static void esp_crosscore_isr(void *arg)
 	z_sched_ipi();
 #endif
 
-	const int core_id = prid();
+	const int core_id = esp_core_id();
 
 	if (core_id == 0) {
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
@@ -250,7 +244,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	start_rec = &sr;
 
-	appcpu_start();
+	esp_appcpu_start(appcpu_entry1);
 
 	while (!alive_flag) {
 	}
@@ -275,7 +269,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 void arch_sched_ipi(void)
 {
-	const int core_id = prid();
+	const int core_id = esp_core_id();
 
 	if (core_id == 0) {
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);

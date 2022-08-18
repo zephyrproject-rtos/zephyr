@@ -909,6 +909,11 @@ static int i2c_ctrl_init(const struct device *dev)
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	uint32_t i2c_rate;
 
+	if (!device_is_ready(clk_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* Turn on device clock first and get source clock freq. */
 	if (clock_control_on(clk_dev,
 		(clock_control_subsys_t *) &config->clk_cfg) != 0) {

@@ -323,6 +323,42 @@ enum bt_conn_state {
 	BT_CONN_STATE_DISCONNECTING,
 };
 
+/** Security level. */
+typedef enum __packed {
+	/** Level 0: Only for BR/EDR special cases, like SDP */
+	BT_SECURITY_L0,
+	/** Level 1: No encryption and no authentication. */
+	BT_SECURITY_L1,
+	/** Level 2: Encryption and no authentication (no MITM). */
+	BT_SECURITY_L2,
+	/** Level 3: Encryption and authentication (MITM). */
+	BT_SECURITY_L3,
+	/** Level 4: Authenticated Secure Connections and 128-bit key. */
+	BT_SECURITY_L4,
+	/** Bit to force new pairing procedure, bit-wise OR with requested
+	 *  security level.
+	 */
+	BT_SECURITY_FORCE_PAIR = BIT(7),
+} bt_security_t;
+
+/** Security Info Flags. */
+enum bt_security_flag {
+	/** Paired with Secure Connections. */
+	BT_SECURITY_FLAG_SC = BIT(0),
+	/** Paired with Out of Band method. */
+	BT_SECURITY_FLAG_OOB = BIT(1),
+};
+
+/** Security Info Structure. */
+struct bt_security_info {
+	/** Security Level. */
+	bt_security_t level;
+	/** Encryption Key Size. */
+	uint8_t enc_key_size;
+	/** Flags. */
+	enum bt_security_flag flags;
+};
+
 /** Connection role (central or peripheral) */
 #define BT_CONN_ROLE_MASTER __DEPRECATED_MACRO BT_CONN_ROLE_CENTRAL
 #define BT_CONN_ROLE_SLAVE __DEPRECATED_MACRO BT_CONN_ROLE_PERIPHERAL
@@ -342,8 +378,10 @@ struct bt_conn_info {
 		/** BR/EDR Connection specific Info. */
 		struct bt_conn_br_info br;
 	};
-
+	/** Connection state. */
 	enum bt_conn_state state;
+	/** Security specific info. */
+	struct bt_security_info security;
 };
 
 /** LE Connection Remote Info Structure */
@@ -681,24 +719,6 @@ int bt_conn_create_auto_stop(void);
 int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 			const struct bt_le_conn_param *param);
 
-/** Security level. */
-typedef enum __packed {
-	/** Level 0: Only for BR/EDR special cases, like SDP */
-	BT_SECURITY_L0,
-	/** Level 1: No encryption and no authentication. */
-	BT_SECURITY_L1,
-	/** Level 2: Encryption and no authentication (no MITM). */
-	BT_SECURITY_L2,
-	/** Level 3: Encryption and authentication (MITM). */
-	BT_SECURITY_L3,
-	/** Level 4: Authenticated Secure Connections and 128-bit key. */
-	BT_SECURITY_L4,
-	/** Bit to force new pairing procedure, bit-wise OR with requested
-	 *  security level.
-	 */
-	BT_SECURITY_FORCE_PAIR = BIT(7),
-} bt_security_t;
-
 /** @brief Set security level for a connection.
  *
  *  This function enable security (encryption) for a connection. If the device
@@ -735,7 +755,7 @@ int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec);
  *
  *  @return Connection security level
  */
-bt_security_t bt_conn_get_security(struct bt_conn *conn);
+bt_security_t bt_conn_get_security(const struct bt_conn *conn);
 
 /** @brief Get encryption key size.
  *
@@ -746,7 +766,7 @@ bt_security_t bt_conn_get_security(struct bt_conn *conn);
  *
  *  @return Encryption key size.
  */
-uint8_t bt_conn_enc_key_size(struct bt_conn *conn);
+uint8_t bt_conn_enc_key_size(const struct bt_conn *conn);
 
 enum bt_security_err {
 	/** Security procedure successful. */
@@ -971,8 +991,7 @@ struct bt_conn_cb {
  */
 void bt_conn_cb_register(struct bt_conn_cb *cb);
 
-/** @def BT_CONN_CB_DEFINE
- *
+/**
  *  @brief Register a callback structure for connection events.
  *
  *  @param _name Name of callback structure.
@@ -1058,8 +1077,7 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data **oobd_local,
 			  const struct bt_le_oob_sc_data **oobd_remote);
 
-/** @def BT_PASSKEY_INVALID
- *
+/**
  *  Special passkey value that can be used to disable a previously
  *  set fixed passkey.
  */
@@ -1362,6 +1380,22 @@ struct bt_conn_auth_info_cb {
  *  @return Zero on success or negative error code otherwise
  */
 int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb);
+
+/** @brief Overlay authentication callbacks used for a given connection.
+ *
+ *  This function can be used only for Bluetooth LE connections.
+ *  The @kconfig{CONFIG_BT_SMP} must be enabled for this function.
+ *
+ *  The authentication callbacks for a given connection cannot be overlaid if
+ *  security procedures in the SMP module have already started. This function
+ *  can be called only once per connection.
+ *
+ *  @param conn	Connection object.
+ *  @param cb	Callback struct.
+ *
+ *  @return Zero on success or negative error code otherwise
+ */
+int bt_conn_auth_cb_overlay(struct bt_conn *conn, const struct bt_conn_auth_cb *cb);
 
 /** @brief Register authentication information callbacks.
  *

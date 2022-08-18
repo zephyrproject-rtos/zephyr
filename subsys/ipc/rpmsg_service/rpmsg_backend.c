@@ -210,16 +210,16 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 
 	/* IPM setup */
 #if defined(CONFIG_RPMSG_SERVICE_DUAL_IPM_SUPPORT)
-	ipm_tx_handle = device_get_binding(CONFIG_RPMSG_SERVICE_IPM_TX_NAME);
-	ipm_rx_handle = device_get_binding(CONFIG_RPMSG_SERVICE_IPM_RX_NAME);
+	ipm_tx_handle = DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc_tx));
+	ipm_rx_handle = DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc_rx));
 
-	if (!ipm_tx_handle) {
-		LOG_ERR("Could not get TX IPM device handle");
+	if (!device_is_ready(ipm_tx_handle)) {
+		LOG_ERR("IPM TX device is not ready");
 		return -ENODEV;
 	}
 
-	if (!ipm_rx_handle) {
-		LOG_ERR("Could not get RX IPM device handle");
+	if (!device_is_ready(ipm_rx_handle)) {
+		LOG_ERR("IPM RX device is not ready");
 		return -ENODEV;
 	}
 
@@ -232,10 +232,9 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 	}
 
 #elif defined(CONFIG_RPMSG_SERVICE_SINGLE_IPM_SUPPORT)
-	ipm_handle = device_get_binding(CONFIG_RPMSG_SERVICE_IPM_NAME);
-
-	if (ipm_handle == NULL) {
-		LOG_ERR("Could not get IPM device handle");
+	ipm_handle = DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc));
+	if (!device_is_ready(ipm_handle)) {
+		LOG_ERR("IPM device is not ready");
 		return -ENODEV;
 	}
 

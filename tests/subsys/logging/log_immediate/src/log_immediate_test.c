@@ -54,7 +54,7 @@ static void thread_func(void *p1, void *p2, void *p3)
  * preempted during logging (in immediate mode). Test checks that system does
  * not hit any assert or other fault during frequent preemptions.
  */
-static void test_log_immediate_preemption(void)
+ZTEST(log_immediate, test_log_immediate_preemption)
 {
 	if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
 		LOG_INF("CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT not enabled."
@@ -74,10 +74,4 @@ static void test_log_immediate_preemption(void)
 	zassert_true(true, "");
 }
 
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_log_immediate,
-			 ztest_unit_test(test_log_immediate_preemption));
-	ztest_run_test_suite(test_log_immediate);
-}
+ZTEST_SUITE(log_immediate, NULL, NULL, NULL, NULL, NULL);

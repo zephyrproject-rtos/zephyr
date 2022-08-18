@@ -522,7 +522,7 @@ Documentation:
     - include/zephyr/drivers/can.h
     - include/zephyr/drivers/can/
     - include/zephyr/net/canbus.h
-    - include/zephyr/net/socket_can.h
+    - include/zephyr/net/socketcan.h
     - samples/drivers/can/
     - samples/modules/canopennode/
     - samples/net/sockets/can/
@@ -530,6 +530,7 @@ Documentation:
     - subsys/canbus/
     - subsys/net/l2/canbus/
     - tests/drivers/can/
+    - tests/net/socket/can/
     - tests/subsys/canbus/
   labels:
     - "area: CAN"
@@ -1296,7 +1297,8 @@ MCU Manager:
   status: maintained
   maintainers:
     - de-nordic
-  collaborators: []
+  collaborators:
+    - nordicjm
   files:
     - subsys/mgmt/mcumgr/
     - include/zephyr/mgmt/mcumgr/
@@ -2577,6 +2579,16 @@ West:
   labels:
     - manifest-psa-arch-tests
 
+"West project: uoscore-uedhoc":
+    status: maintained
+    maintainers:
+        - rlubos
+        - StefanHri
+    files:
+        - modules/uoscore-uedhoc/
+    labels:
+        - manifest-uoscore-uedhoc
+
 "West project: zcbor":
   status: maintained
   maintainers:
@@ -2652,6 +2664,7 @@ ZTest:
     - aaronemassey
     - jeremybettis
     - yperess
+    - asemjonovs
   files:
     - subsys/testsuite/
     - tests/ztest/
@@ -2668,6 +2681,7 @@ Emulation:
     - aaronemassey
     - jeremybettis
     - alevkoy
+    - asemjonovs
   files:
     - subsys/emul/
     - include/zephyr/drivers/emul.h

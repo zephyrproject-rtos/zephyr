@@ -52,6 +52,16 @@ config LOG_MIPI_SYST_CATALOG_ARGS_BUFFER_SIZE
 	  argument list needed for the MIPI Sys-T library for processing
 	  catalog messages.
 
+config LOG_MIPI_SYST_ARGS_BUFFER_SIZE
+	int "Buffer size in bytes"
+	default 1024
+	help
+	  This user-configurable option specifies the maximum size (in bytes) to reserve in
+	  the call stack for processing the logging format strings MIPI Sys-T library.
+	  Increasing it will allow for longer strings to be logged at the expense of used
+	  stack space. Conversely decreasing it will lessen the stack burden at the expense
+	  of shorter maximum log strings.
+
 config LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID
 	bool "Output Log Message Source ID as Module ID"
 	default y if LOG_MIPI_SYST_USE_CATALOG

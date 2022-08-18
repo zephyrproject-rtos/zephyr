@@ -644,7 +644,7 @@ static int pin_get_config(void)
 	zassert_equal(rc, 0, "pin configure failed");
 
 	rc = gpio_pin_get_config(dev, PIN_OUT, &flags_get);
-	if (rc == -ENOTSUP) {
+	if (rc == -ENOSYS) {
 		return TC_PASS;
 	}
 

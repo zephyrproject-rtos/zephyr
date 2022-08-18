@@ -185,8 +185,6 @@
 	_SYS_PORT_TRACING_TYPE_MASK(type)(trace_call)
 
 /**
- * @def SYS_PORT_TRACING_FUNC
- *
  * @brief Tracing macro for function calls which are not directly
  * associated with a specific type of object.
  *
@@ -202,8 +200,6 @@
 	} while (false)
 
 /**
- * @def SYS_PORT_TRACING_FUNC_ENTER
- *
  * @brief Tracing macro for the entry into a function that might or might not return
  * a value.
  *
@@ -219,8 +215,6 @@
 	} while (false)
 
 /**
- * @def SYS_PORT_TRACING_FUNC_BLOCKING
- *
  * @brief Tracing macro for when a function blocks during its execution.
  *
  * @param type Type of tracing event or object type
@@ -235,8 +229,6 @@
 	} while (false)
 
 /**
- * @def SYS_PORT_TRACING_FUNC_EXIT
- *
  * @brief Tracing macro for when a function ends its execution. Potential return values
  * can be given as additional arguments.
  *
@@ -252,8 +244,6 @@
 	} while (false)
 
 /**
- * @def SYS_PORT_TRACING_OBJ_INIT
- *
  * @brief Tracing macro for the initialization of an object.
  *
  * @param obj_type The type of object associated with the call (k_thread, k_sem, k_mutex etc.)

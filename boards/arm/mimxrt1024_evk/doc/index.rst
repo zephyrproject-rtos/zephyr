@@ -103,6 +103,8 @@ features:
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB                                 |
 +-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1024_evk/mimxrt1024_evk_defconfig``

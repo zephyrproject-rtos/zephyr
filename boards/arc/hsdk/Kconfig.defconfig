@@ -11,6 +11,9 @@ if GPIO
 config GPIO_INIT_PRIORITY
 	default 60
 
+config I2C
+	default y
+
 endif # GPIO
 
 if SPI_DW

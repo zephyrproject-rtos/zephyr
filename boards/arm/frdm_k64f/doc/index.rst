@@ -102,6 +102,9 @@ The frdm_k64f board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | dma                                 |
 +-----------+------------+-------------------------------------+
+| RNGA      | on-chip    | entropy;                            |
+|           |            | random                              |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 

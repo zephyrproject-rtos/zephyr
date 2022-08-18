@@ -7,14 +7,11 @@ config BOARD
 	default "odroid_go"
 	depends on BOARD_ODROID_GO
 
-config ENTROPY_ESP32_RNG
-	default y if ENTROPY_GENERATOR
-
 config DISK_DRIVER_SDMMC
 	default y if DISK_ACCESS
 
 config SPI
-	default y if DISPLAY || DISK_DRIVER_SDMMC
+	default y if DISK_DRIVER_SDMMC
 
 if BT
 

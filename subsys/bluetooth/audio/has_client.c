@@ -278,7 +278,7 @@ static void discover_complete(struct has_inst *inst)
 	/* If Active Preset Index supported, notify it's value */
 	if (client_cb->preset_switch &&
 	    HANDLE_IS_VALID(inst->active_index_subscription.value_handle)) {
-		client_cb->preset_switch(&inst->has, inst->has.active_index);
+		client_cb->preset_switch(&inst->has, 0, inst->has.active_index);
 	}
 }
 
@@ -341,6 +341,53 @@ static int read_presets_req(struct has_inst *inst, uint8_t start_index, uint8_t 
 	return cp_write(inst, &buf, read_presets_req_cb);
 }
 
+static void set_active_preset_cb(struct bt_conn *conn, uint8_t err,
+				 struct bt_gatt_write_params *params)
+{
+	struct has_inst *inst = inst_by_conn(conn);
+
+	__ASSERT(inst, "no instance for conn %p", (void *)conn);
+
+	BT_DBG("conn %p err 0x%02x param %p", (void *)conn, err, params);
+
+	atomic_clear_bit(inst->flags, HAS_CP_OPERATION_IN_PROGRESS);
+
+	if (err) {
+		client_cb->preset_switch(&inst->has, err, inst->has.active_index);
+	}
+}
+
+static int preset_set(struct has_inst *inst, uint8_t opcode, uint8_t index)
+{
+	struct bt_has_cp_hdr *hdr;
+	struct bt_has_cp_set_active_preset *req;
+
+	NET_BUF_SIMPLE_DEFINE(buf, sizeof(*hdr) + sizeof(*req));
+
+	BT_DBG("conn %p opcode 0x%02x index 0x%02x", (void *)inst->conn, opcode, index);
+
+	hdr = net_buf_simple_add(&buf, sizeof(*hdr));
+	hdr->opcode = opcode;
+	req = net_buf_simple_add(&buf, sizeof(*req));
+	req->index = index;
+
+	return cp_write(inst, &buf, set_active_preset_cb);
+}
+
+static int preset_set_next_or_prev(struct has_inst *inst, uint8_t opcode)
+{
+	struct bt_has_cp_hdr *hdr;
+
+	NET_BUF_SIMPLE_DEFINE(buf, sizeof(*hdr));
+
+	BT_DBG("conn %p opcode 0x%02x", (void *)inst->conn, opcode);
+
+	hdr = net_buf_simple_add(&buf, sizeof(*hdr));
+	hdr->opcode = opcode;
+
+	return cp_write(inst, &buf, set_active_preset_cb);
+}
+
 static uint8_t active_index_update(struct has_inst *inst, const void *data, uint16_t len)
 {
 	struct net_buf_simple buf;
@@ -397,7 +444,7 @@ static uint8_t active_preset_notify_cb(struct bt_conn *conn,
 	}
 
 	if (client_cb && client_cb->preset_switch && inst->has.active_index != prev) {
-		client_cb->preset_switch(&inst->has, inst->has.active_index);
+		client_cb->preset_switch(&inst->has, 0, inst->has.active_index);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -888,6 +935,85 @@ int bt_has_client_presets_read(struct bt_has *has, uint8_t start_index, uint8_t 
 	}
 
 	return err;
+}
+
+int bt_has_client_preset_set(struct bt_has *has, uint8_t index, bool sync)
+{
+	struct has_inst *inst = HAS_INST(has);
+	uint8_t opcode;
+
+	BT_DBG("conn %p index 0x%02x", (void *)inst->conn, index);
+
+	if (!inst->conn) {
+		return -ENOTCONN;
+	}
+
+	CHECKIF(index == BT_HAS_PRESET_INDEX_NONE) {
+		return -EINVAL;
+	}
+
+	if (sync && (inst->has.features & BT_HAS_FEAT_PRESET_SYNC_SUPP) == 0) {
+		return -EOPNOTSUPP;
+	}
+
+	if (atomic_test_bit(inst->flags, HAS_DISCOVER_IN_PROGRESS) ||
+	    atomic_test_and_set_bit(inst->flags, HAS_CP_OPERATION_IN_PROGRESS)) {
+		return -EBUSY;
+	}
+
+	opcode = sync ? BT_HAS_OP_SET_ACTIVE_PRESET_SYNC : BT_HAS_OP_SET_ACTIVE_PRESET;
+
+	return preset_set(inst, opcode, index);
+}
+
+int bt_has_client_preset_next(struct bt_has *has, bool sync)
+{
+	struct has_inst *inst = HAS_INST(has);
+	uint8_t opcode;
+
+	BT_DBG("conn %p sync %d", (void *)inst->conn, sync);
+
+	if (!inst->conn) {
+		return -ENOTCONN;
+	}
+
+	if (sync && (inst->has.features & BT_HAS_FEAT_PRESET_SYNC_SUPP) == 0) {
+		return -EOPNOTSUPP;
+	}
+
+	if (atomic_test_bit(inst->flags, HAS_DISCOVER_IN_PROGRESS) ||
+	    atomic_test_and_set_bit(inst->flags, HAS_CP_OPERATION_IN_PROGRESS)) {
+		return -EBUSY;
+	}
+
+	opcode = sync ? BT_HAS_OP_SET_NEXT_PRESET_SYNC : BT_HAS_OP_SET_NEXT_PRESET;
+
+	return preset_set_next_or_prev(inst, opcode);
+}
+
+int bt_has_client_preset_prev(struct bt_has *has, bool sync)
+{
+	struct has_inst *inst = HAS_INST(has);
+	uint8_t opcode;
+
+	BT_DBG("conn %p sync %d", (void *)inst->conn, sync);
+
+	if (!inst->conn) {
+		return -ENOTCONN;
+	}
+
+	if (sync && (inst->has.features & BT_HAS_FEAT_PRESET_SYNC_SUPP) == 0) {
+		return -EOPNOTSUPP;
+	}
+
+	if (atomic_test_bit(inst->flags, HAS_DISCOVER_IN_PROGRESS) ||
+	    atomic_test_and_set_bit(inst->flags, HAS_CP_OPERATION_IN_PROGRESS)) {
+		return -EBUSY;
+	}
+
+	opcode = sync ? BT_HAS_OP_SET_PREV_PRESET_SYNC : BT_HAS_OP_SET_PREV_PRESET;
+
+	return preset_set_next_or_prev(inst, opcode);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)

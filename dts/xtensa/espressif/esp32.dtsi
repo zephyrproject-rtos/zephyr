@@ -50,7 +50,12 @@
 	soc {
 		sram0: memory@3ffb0000 {
 			compatible = "mmio-sram";
-			reg = <0x3FFB0000 0x50000>;
+			reg = <0x3FFB0000 0x2c200>;
+		};
+
+		shm0: memory@3ffe5230 {
+			compatible = "mmio-sram";
+			reg = <0x3FFE5230 0x800>;
 		};
 
 		intc: interrupt-controller@3ff00104 {
@@ -93,6 +98,16 @@
 			};
 		};
 
+		ipm0: ipm@3ffe5a30 {
+			compatible = "espressif,esp32-ipm";
+			reg = <0x3FFE5A30 0x8>;
+			status = "disabled";
+			shared-memory = <&shm0>;
+			shared-memory-size = <2048>;
+			interrupts = <FROM_CPU_INTR0_SOURCE FROM_CPU_INTR1_SOURCE>;
+			interrupt-parent = <&intc>;
+		};
+
 		ipi0: ipi@3f4c0058 {
 			compatible = "espressif,crosscore-interrupt";
 			reg = <0x3f4c0058 0x4>;
@@ -131,6 +146,15 @@
 			interrupts = <UART2_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_UART2_MODULE>;
+			status = "disabled";
+		};
+
+		pcnt: pcnt@3ff57000 {
+			compatible = "espressif,esp32-pcnt";
+			reg = <0x3ff57000 0x1000>;
+			interrupts = <PCNT_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_PCNT_MODULE>;
 			status = "disabled";
 		};
 

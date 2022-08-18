@@ -82,7 +82,7 @@ void thread_callback_unlocked(const struct k_thread *thread, void *user_data)
  *
  * @see k_thread_foreach()
  */
-void test_k_thread_foreach(void)
+ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach)
 {
 	int count;
 
@@ -128,7 +128,7 @@ void test_k_thread_foreach(void)
  * @see k_thread_foreach_unlocked()
  * @ingroup kernel_thread_tests
  */
-void test_k_thread_foreach_unlocked(void)
+ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_unlocked)
 {
 	int count;
 
@@ -185,8 +185,7 @@ void test_k_thread_foreach_unlocked(void)
  * @see k_thread_foreach()
  * @ingroup kernel_thread_tests
  */
-
-void test_k_thread_foreach_null_cb(void)
+ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_null_cb)
 {
 	k_thread_foreach(NULL, TEST_STRING);
 }
@@ -201,7 +200,7 @@ void test_k_thread_foreach_null_cb(void)
  * @ingroup kernel_thread_tests
  */
 
-void test_k_thread_foreach_unlocked_null_cb(void)
+ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_unlocked_null_cb)
 {
 	k_thread_foreach_unlocked(NULL, TEST_STRING_UNLOCKED);
 }
@@ -217,7 +216,7 @@ void test_k_thread_foreach_unlocked_null_cb(void)
  * @see k_thread_state_str()
  * @ingroup kernel_thread_tests
  */
-void test_k_thread_state_str(void)
+ZTEST(threads_lifecycle_1cpu, test_k_thread_state_str)
 {
 	char state_str[32];
 	const char *str;

@@ -15,8 +15,7 @@ extern "C" {
 /** Maximum number of faults the health server can have. */
 #define BT_MESH_SHELL_CUR_FAULTS_MAX 4
 
-/** @def BT_MESH_SHELL_HEALTH_PUB_DEFINE
- *
+/**
  *  A helper to define a health publication context for shell with the shell's
  *  maximum number of faults the element can have.
  *

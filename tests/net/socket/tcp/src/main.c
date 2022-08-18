@@ -894,7 +894,7 @@ void test_connect_timeout(void)
 			    "net_context still in use");
 }
 
-#define TCP_CLOSE_FAILURE_TIMEOUT 60000
+#define TCP_CLOSE_FAILURE_TIMEOUT 90000
 
 void test_close_obstructed(void)
 {

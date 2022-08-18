@@ -20,7 +20,7 @@ K_SEM_DEFINE(sem, 0, 1);
  * @ingroup kernel_queue_tests
  * @see k_queue_get()
  */
-void test_queue_get_fail(void)
+ZTEST(queue_api_1cpu, test_queue_get_fail)
 {
 	static struct k_queue queue;
 
@@ -56,7 +56,7 @@ static void tThread_entry(void *p1, void *p2, void *p3)
  *
  * @see k_queue_append_list()
  */
-void test_queue_append_list_error(void)
+ZTEST(queue_api, test_queue_append_list_error)
 {
 	static qdata_t data_l[2];
 	static struct k_queue queue;
@@ -102,7 +102,7 @@ void test_queue_append_list_error(void)
  *
  * @see k_queue_merge_slist()
  */
-void test_queue_merge_list_error(void)
+ZTEST(queue_api, test_queue_merge_list_error)
 {
 	qdata_t data_sl[2];
 	static struct k_queue queue;
@@ -134,7 +134,7 @@ void test_queue_merge_list_error(void)
  *
  * @see k_queue_init()
  */
-void test_queue_init_null(void)
+ZTEST_USER(queue_api, test_queue_init_null)
 {
 	ztest_set_fault_valid(true);
 	k_queue_init(NULL);
@@ -150,7 +150,7 @@ void test_queue_init_null(void)
  *
  * @see k_queue_alloc_append()
  */
-void test_queue_alloc_append_null(void)
+ZTEST_USER(queue_api, test_queue_alloc_append_null)
 {
 	qdata_t data;
 
@@ -169,7 +169,7 @@ void test_queue_alloc_append_null(void)
  *
  * @see k_queue_alloc_prepend()
  */
-void test_queue_alloc_prepend_null(void)
+ZTEST_USER(queue_api, test_queue_alloc_prepend_null)
 {
 	qdata_t data;
 
@@ -188,7 +188,7 @@ void test_queue_alloc_prepend_null(void)
  *
  * @see k_queue_get()
  */
-void test_queue_get_null(void)
+ZTEST_USER(queue_api, test_queue_get_null)
 {
 	ztest_set_fault_valid(true);
 	k_queue_get(NULL, K_FOREVER);
@@ -204,7 +204,7 @@ void test_queue_get_null(void)
  *
  * @see k_queue_is_empty()
  */
-void test_queue_is_empty_null(void)
+ZTEST_USER(queue_api, test_queue_is_empty_null)
 {
 	ztest_set_fault_valid(true);
 	k_queue_is_empty(NULL);
@@ -220,7 +220,7 @@ void test_queue_is_empty_null(void)
  *
  * @see k_queue_peek_head()
  */
-void test_queue_peek_head_null(void)
+ZTEST_USER(queue_api, test_queue_peek_head_null)
 {
 	ztest_set_fault_valid(true);
 	k_queue_peek_head(NULL);
@@ -236,7 +236,7 @@ void test_queue_peek_head_null(void)
  *
  * @see k_queue_peek_tail()
  */
-void test_queue_peek_tail_null(void)
+ZTEST_USER(queue_api, test_queue_peek_tail_null)
 {
 	ztest_set_fault_valid(true);
 	k_queue_peek_tail(NULL);
@@ -252,7 +252,7 @@ void test_queue_peek_tail_null(void)
  *
  * @see k_queue_merge_slist()
  */
-void test_queue_cancel_wait_error(void)
+ZTEST_USER(queue_api, test_queue_cancel_wait_error)
 {
 	struct k_queue *q;
 

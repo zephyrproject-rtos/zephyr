@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdlib.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/pcie/pcie.h>
 
@@ -12,7 +13,7 @@
 #include <zephyr/drivers/pcie/cap.h>
 #endif
 
-static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
+static void show_msi(const struct shell *sh, pcie_bdf_t bdf)
 {
 #ifdef CONFIG_PCIE_MSI
 	uint32_t msi;
@@ -22,7 +23,7 @@ static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
 
 	if (msi) {
 		data = pcie_conf_read(bdf, msi + PCIE_MSI_MCR);
-		shell_fprintf(shell, SHELL_NORMAL, "    MSI support%s%s\n",
+		shell_fprintf(sh, SHELL_NORMAL, "    MSI support%s%s\n",
 			      (data & PCIE_MSI_MCR_64) ? ", 64-bit" : "",
 			      (data & PCIE_MSI_MCR_EN) ?
 			      ", enabled" : ", disabled");
@@ -39,7 +40,7 @@ static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
 		table_size = ((data & PCIE_MSIX_MCR_TSIZE) >>
 			      PCIE_MSIX_MCR_TSIZE_SHIFT) + 1;
 
-		shell_fprintf(shell, SHELL_NORMAL,
+		shell_fprintf(sh, SHELL_NORMAL,
 			      "    MSI-X support%s table size %d\n",
 			      (data & PCIE_MSIX_MCR_EN) ?
 			      ", enabled" : ", disabled",
@@ -49,7 +50,7 @@ static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
 		bir = offset & PCIE_MSIX_TR_BIR;
 		offset &= PCIE_MSIX_TR_OFFSET;
 
-		shell_fprintf(shell, SHELL_NORMAL,
+		shell_fprintf(sh, SHELL_NORMAL,
 			      "\tTable offset 0x%x BAR %d\n",
 			      offset, bir);
 
@@ -57,14 +58,14 @@ static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
 		bir = offset & PCIE_MSIX_PBA_BIR;
 		offset &= PCIE_MSIX_PBA_OFFSET;
 
-		shell_fprintf(shell, SHELL_NORMAL,
+		shell_fprintf(sh, SHELL_NORMAL,
 			      "\tPBA offset 0x%x BAR %d\n",
 			      offset, bir);
 	}
 #endif
 }
 
-static void show_bars(const struct shell *shell, pcie_bdf_t bdf)
+static void show_bars(const struct shell *sh, pcie_bdf_t bdf)
 {
 	uint32_t data;
 	int bar;
@@ -75,25 +76,71 @@ static void show_bars(const struct shell *shell, pcie_bdf_t bdf)
 			continue;
 		}
 
-		shell_fprintf(shell, SHELL_NORMAL, "    bar %d: %s%s",
+		shell_fprintf(sh, SHELL_NORMAL, "    bar %d: %s%s",
 			      bar - PCIE_CONF_BAR0,
 			      PCIE_CONF_BAR_IO(data) ? "I/O" : "MEM",
 			      PCIE_CONF_BAR_64(data) ? ", 64-bit" : "");
 
-		shell_fprintf(shell, SHELL_NORMAL, " addr 0x");
+		shell_fprintf(sh, SHELL_NORMAL, " addr 0x");
 
 		if (PCIE_CONF_BAR_64(data)) {
 			++bar;
-			shell_fprintf(shell, SHELL_NORMAL, "%08x",
+			shell_fprintf(sh, SHELL_NORMAL, "%08x",
 				      pcie_conf_read(bdf, bar));
 		}
 
-		shell_fprintf(shell, SHELL_NORMAL, "%08x\n",
+		shell_fprintf(sh, SHELL_NORMAL, "%08x\n",
 			      (uint32_t)PCIE_CONF_BAR_ADDR(data));
 	}
 }
 
-static void show(const struct shell *shell, pcie_bdf_t bdf)
+static void pcie_dump(const struct shell *sh, pcie_bdf_t bdf)
+{
+	for (int i = 0; i < 16; i++) {
+		uint32_t val = pcie_conf_read(bdf, i);
+
+		for (int j = 0; j < 4; j++) {
+			shell_fprintf(sh, SHELL_NORMAL, "%02x ",
+				      (uint8_t)val);
+			val >>= 8;
+		}
+
+		if (((i + 1) % 4) == 0) {
+			shell_fprintf(sh, SHELL_NORMAL, "\n");
+		}
+	}
+}
+
+static pcie_bdf_t get_bdf(char *str)
+{
+	int bus, dev, func;
+	char *tok, *state;
+
+	tok = strtok_r(str, ":", &state);
+	if (tok == NULL) {
+		return PCIE_BDF_NONE;
+	}
+
+	bus = strtoul(tok, NULL, 16);
+
+	tok = strtok_r(NULL, ".", &state);
+	if (tok == NULL) {
+		return PCIE_BDF_NONE;
+	}
+
+	dev = strtoul(tok, NULL, 16);
+
+	tok = strtok_r(NULL, ".", &state);
+	if (tok == NULL) {
+		return PCIE_BDF_NONE;
+	}
+
+	func = strtoul(tok, NULL, 16);
+
+	return PCIE_BDF(bus, dev, func);
+}
+
+static void show(const struct shell *sh, pcie_bdf_t bdf, bool dump)
 {
 	uint32_t data;
 	unsigned int irq;
@@ -104,7 +151,7 @@ static void show(const struct shell *shell, pcie_bdf_t bdf)
 		return;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "%d:%x.%d ID %x:%x ",
+	shell_fprintf(sh, SHELL_NORMAL, "%d:%x.%d ID %x:%x ",
 		     PCIE_BDF_TO_BUS(bdf),
 		     PCIE_BDF_TO_DEV(bdf),
 		     PCIE_BDF_TO_FUNC(bdf),
@@ -112,7 +159,7 @@ static void show(const struct shell *shell, pcie_bdf_t bdf)
 		     PCIE_ID_TO_DEV(data));
 
 	data = pcie_conf_read(bdf, PCIE_CONF_CLASSREV);
-	shell_fprintf(shell, SHELL_NORMAL,
+	shell_fprintf(sh, SHELL_NORMAL,
 		     "class %x subclass %x prog i/f %x rev %x",
 		     PCIE_CONF_CLASSREV_CLASS(data),
 		     PCIE_CONF_CLASSREV_SUBCLASS(data),
@@ -122,29 +169,54 @@ static void show(const struct shell *shell, pcie_bdf_t bdf)
 	data = pcie_conf_read(bdf, PCIE_CONF_TYPE);
 
 	if (PCIE_CONF_TYPE_BRIDGE(data)) {
-		shell_fprintf(shell, SHELL_NORMAL, " [bridge]\n");
+		shell_fprintf(sh, SHELL_NORMAL, " [bridge]\n");
 	} else {
-		shell_fprintf(shell, SHELL_NORMAL, "\n");
-		show_bars(shell, bdf);
-		show_msi(shell, bdf);
+		shell_fprintf(sh, SHELL_NORMAL, "\n");
+		show_bars(sh, bdf);
+		show_msi(sh, bdf);
 		irq = pcie_get_irq(bdf);
 		if (irq != PCIE_CONF_INTR_IRQ_NONE) {
-			shell_fprintf(shell, SHELL_NORMAL,
+			shell_fprintf(sh, SHELL_NORMAL,
 				      "    wired interrupt on IRQ %d\n", irq);
 		}
 	}
+
+	if (dump) {
+		pcie_dump(sh, bdf);
+	}
 }
 
-static int cmd_pcie_ls(const struct shell *shell, size_t argc, char **argv)
+static int cmd_pcie_ls(const struct shell *sh, size_t argc, char **argv)
 {
+	pcie_bdf_t bdf = PCIE_BDF_NONE;
+	bool dump = false;
 	int bus;
 	int dev;
 	int func;
 
+	for (int i = 1; i < argc; i++) {
+		/* Check dump argument */
+		if (strncmp(argv[i], "dump", 4) == 0) {
+			dump = true;
+			continue;
+		}
+
+		/* Check BDF string of PCI device */
+		if (bdf == PCIE_BDF_NONE) {
+			bdf = get_bdf(argv[i]);
+		}
+	}
+
+	/* Show only specified device */
+	if (bdf != PCIE_BDF_NONE) {
+		show(sh, bdf, dump);
+		return 0;
+	}
+
 	for (bus = 0; bus <= PCIE_MAX_BUS; ++bus) {
 		for (dev = 0; dev <= PCIE_MAX_DEV; ++dev) {
 			for (func = 0; func <= PCIE_MAX_FUNC; ++func) {
-				show(shell, PCIE_BDF(bus, dev, func));
+				show(sh, PCIE_BDF(bus, dev, func), dump);
 			}
 		}
 	}

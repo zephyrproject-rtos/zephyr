@@ -71,7 +71,6 @@
 
 			ieee802154: ieee802154 {
 				compatible = "nordic,nrf-ieee802154";
-				label = "IEEE802154_nrf5";
 				status = "disabled";
 			};
 		};

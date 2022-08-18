@@ -186,6 +186,11 @@ static int spi_mcux_configure(const struct device *dev,
 
 	master_config.baudRate = spi_cfg->frequency;
 
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;

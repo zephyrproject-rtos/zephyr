@@ -30,6 +30,7 @@ enum {
 	SOFT_WAKEUP     = 0x60,
 	HIB_CFG         = 0xba,
 	MODEL_CFG       = 0xdb,
+	VFOCV           = 0xfb,
 };
 
 /* Masks */
@@ -45,6 +46,8 @@ enum {
 struct max17055_data {
 	/* Current cell voltage in units of 1.25/16mV */
 	uint16_t voltage;
+	/* Current cell open circuit voltage in units of 1.25/16mV */
+	uint16_t ocv;
 	/* Average current in units of 1.5625uV / Rsense */
 	int16_t avg_current;
 	/* Remaining capacity as a %age */

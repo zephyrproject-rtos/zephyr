@@ -1105,7 +1105,6 @@ Zephyr board, and provide the following files::
     board.h
     CMakeLists.txt
     doc/
-    dts_fixup.h
     Kconfig.board
     Kconfig.defconfig
     pinmux.c

@@ -731,7 +731,6 @@ static inline bool net_ipv4_is_ll_addr(const struct in_addr *addr)
 }
 
 /**
- *  @def net_ipaddr_copy
  *  @brief Copy an IPv4 or IPv6 address
  *
  *  @param dest Destination IP address.

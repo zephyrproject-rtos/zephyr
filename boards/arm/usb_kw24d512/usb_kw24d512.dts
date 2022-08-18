@@ -21,6 +21,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-pipe = &uart0;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -87,5 +88,9 @@ zephyr_udc0: &usbd {
 };
 
 &gpioe {
+	status = "okay";
+};
+
+&ieee802154 {
 	status = "okay";
 };

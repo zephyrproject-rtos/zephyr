@@ -11,6 +11,17 @@
 K_MEM_SLAB_DEFINE(kmslab, BLK_SIZE, BLK_NUM, BLK_ALIGN);
 static char __aligned(BLK_ALIGN) tslab[BLK_SIZE * BLK_NUM];
 static struct k_mem_slab mslab;
+K_SEM_DEFINE(SEM_HELPERDONE, 0, 1);
+K_SEM_DEFINE(SEM_REGRESSDONE, 0, 1);
+static K_THREAD_STACK_DEFINE(stack, STACKSIZE);
+static struct k_thread HELPER;
+
+void *mslab_setup(void)
+{
+	k_mem_slab_init(&mslab, tslab, BLK_SIZE, BLK_NUM);
+
+	return NULL;
+}
 
 void tmslab_alloc_free(void *data)
 {
@@ -131,11 +142,6 @@ static void tmslab_used_get(void *data)
 	}
 }
 
-K_SEM_DEFINE(SEM_HELPERDONE, 0, 1);
-K_SEM_DEFINE(SEM_REGRESSDONE, 0, 1);
-static K_THREAD_STACK_DEFINE(stack, STACKSIZE);
-static struct k_thread HELPER;
-
 static void helper_thread(void *p0, void *p1, void *p2)
 {
 	void *ptr[BLK_NUM];           /* Pointer to memory block */
@@ -187,7 +193,7 @@ static void helper_thread(void *p0, void *p1, void *p2)
  *
  * @ingroup kernel_memory_slab_tests
  */
-void test_mslab_kinit(void)
+ZTEST(mslab_api, test_mslab_kinit)
 {
 	/* if a block_size is not word aligned, slab init return error */
 	zassert_equal(k_mem_slab_init(&mslab, tslab, BLK_SIZE + 1, BLK_NUM),
@@ -206,7 +212,7 @@ void test_mslab_kinit(void)
  *
  * @ingroup kernel_memory_slab_tests
  */
-void test_mslab_kdefine(void)
+ZTEST(mslab_api, test_mslab_kdefine)
 {
 	zassert_equal(k_mem_slab_num_used_get(&kmslab), 0, NULL);
 	zassert_equal(k_mem_slab_num_free_get(&kmslab), BLK_NUM, NULL);
@@ -217,7 +223,7 @@ void test_mslab_kdefine(void)
  *
  * @ingroup kernel_memory_slab_tests
  */
-void test_mslab_alloc_free_thread(void)
+ZTEST(mslab_api, test_mslab_alloc_free_thread)
 {
 
 	tmslab_alloc_free(&mslab);
@@ -232,7 +238,7 @@ void test_mslab_alloc_free_thread(void)
  *
  * @ingroup kernel_memory_slab_tests
  */
-void test_mslab_alloc_align(void)
+ZTEST(mslab_api, test_mslab_alloc_align)
 {
 	tmslab_alloc_align(&mslab);
 	tmslab_alloc_align(&kmslab);
@@ -254,8 +260,12 @@ void test_mslab_alloc_align(void)
  *
  * @ingroup kernel_memory_slab_tests
  */
-void test_mslab_alloc_timeout(void)
+ZTEST(mslab_api, test_mslab_alloc_timeout)
 {
+	if (CONFIG_MP_NUM_CPUS != 1) {
+		ztest_test_skip();
+	}
+
 	tmslab_alloc_timeout(&mslab);
 }
 
@@ -273,7 +283,7 @@ void test_mslab_alloc_timeout(void)
  *
  * @ingroup kernel_memory_slab_tests
  */
-void test_mslab_used_get(void)
+ZTEST(mslab_api, test_mslab_used_get)
 {
 	tmslab_used_get(&mslab);
 	tmslab_used_get(&kmslab);
@@ -290,7 +300,7 @@ void test_mslab_used_get(void)
  *
  * @ingroup kernel_memory_slab_tests
  */
-void test_mslab_pending(void)
+ZTEST(mslab_api, test_mslab_pending)
 {
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
 		ztest_test_skip();
