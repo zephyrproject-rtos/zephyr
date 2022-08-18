@@ -7,7 +7,7 @@
 #include <zephyr/settings/settings.h>
 #include <zephyr/fs/nvs.h>
 
-void test_setting_storage_get(void)
+ZTEST(settings_functional, test_setting_storage_get)
 {
 	int rc;
 	void *storage;
@@ -23,3 +23,4 @@ void test_setting_storage_get(void)
 
 	zassert_true(nvs_rc >= 0, "Can't read nvs record (err=%d).", rc);
 }
+ZTEST_SUITE(settings_functional, NULL, NULL, NULL, NULL, NULL);
