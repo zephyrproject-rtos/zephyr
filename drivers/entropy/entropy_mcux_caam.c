@@ -57,6 +57,10 @@ static int entropy_mcux_caam_init(const struct device *dev)
 	status = CAAM_Init(config->base, &conf);
 	__ASSERT_NO_MSG(!status);
 
+	if (status != 0) {
+		return -ENODEV;
+	}
+
 	return 0;
 }
 
