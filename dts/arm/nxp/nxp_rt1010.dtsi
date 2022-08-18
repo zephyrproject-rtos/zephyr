@@ -130,6 +130,9 @@
 
 		/* Remove ADC2, it doesn't exist on RT1010 */
 		/delete-node/ adc@400C8000;
+
+		/* RT1010 has only one flexSPI controller */
+		/delete-node/ spi@402a4000;
 	};
 };
 
