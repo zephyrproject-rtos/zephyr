@@ -173,7 +173,9 @@ struct bt_audio_broadcast_source;
 /** @brief Codec configuration structure */
 struct bt_codec_data {
 	struct bt_data data;
+#if defined(CONFIG_BT_CODEC_MAX_DATA_LEN)
 	uint8_t  value[CONFIG_BT_CODEC_MAX_DATA_LEN];
+#endif /* CONFIG_BT_CODEC_MAX_DATA_LEN */
 };
 
 /**
@@ -255,19 +257,24 @@ struct bt_codec {
 	uint16_t cid;
 	/** Codec Company Vendor ID */
 	uint16_t vid;
+#if defined(CONFIG_BT_CODEC_MAX_DATA_COUNT)
 	/** Codec Specific Data count */
 	size_t   data_count;
 	/** Codec Specific Data */
 	struct bt_codec_data data[CONFIG_BT_CODEC_MAX_DATA_COUNT];
+#endif /* CONFIG_BT_CODEC_MAX_DATA_COUNT */
+#if defined(CONFIG_BT_CODEC_MAX_METADATA_COUNT)
 	/** Codec Specific Metadata count */
 	size_t   meta_count;
 	/** Codec Specific Metadata */
 	struct bt_codec_data meta[CONFIG_BT_CODEC_MAX_METADATA_COUNT];
+#endif /* CONFIG_BT_CODEC_MAX_METADATA_COUNT */
 };
 
 struct bt_audio_base_bis_data {
 	/* Unique index of the BIS */
 	uint8_t index;
+#if defined(CONFIG_BT_CODEC_MAX_DATA_COUNT)
 	/** Codec Specific Data count.
 	 *
 	 *  Only valid if the data_count of struct bt_codec in the subgroup is 0
@@ -278,6 +285,7 @@ struct bt_audio_base_bis_data {
 	 *  Only valid if the data_count of struct bt_codec in the subgroup is 0
 	 */
 	struct bt_codec_data data[CONFIG_BT_CODEC_MAX_DATA_COUNT];
+#endif /* CONFIG_BT_CODEC_MAX_DATA_COUNT */
 };
 
 struct bt_audio_base_subgroup {
