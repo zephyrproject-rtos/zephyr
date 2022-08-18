@@ -250,8 +250,12 @@ config BT_CTLR_ISO_VENDOR_DATA_PATH
 choice BT_CTLR_TX_PWR
 	prompt "Tx Power"
 	default BT_CTLR_TX_PWR_0
+	depends on BT_CTLR_TX_PWR_ANTENNA = 0 || BT_LL_SW_SPLIT
 	help
-	  Select the supported BLE Radio transmit power level in dBm.
+	  Select a supported BLE Radio transmit power level in dBm.
+	  Only values supported natively by the SoC are available.
+	  The value set here represents the actual default power level fed
+	  to the antenna.
 
 config BT_CTLR_TX_PWR_PLUS_8
 	bool "+8 dBm"
@@ -308,6 +312,21 @@ config BT_CTLR_TX_PWR_MINUS_40
 	depends on SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF53X
 
 endchoice
+
+config BT_CTLR_TX_PWR_ANTENNA
+	int "Set TX power (dBm)"
+	range -127 127
+	default 0
+	depends on !BT_LL_SW_SPLIT
+	help
+	  Request a TX power in dBm. The power level set will be equal to or
+	  less than the one requested, based on the values supported by the
+	  hardware used. Values outside the supported range will be set to the
+	  nearest supported value.
+	  The value set here represents the actual power level fed to the
+	  antenna. When a Front-End Module is used, gain values for the SoC and
+	  FEM are calculated automatically to guarantee the closest possible
+	  match to the value requested by the user at the RF output.
 
 config BT_CTLR_TX_PWR_DYNAMIC_CONTROL
 	bool "Tx Power Dynamic Control"
