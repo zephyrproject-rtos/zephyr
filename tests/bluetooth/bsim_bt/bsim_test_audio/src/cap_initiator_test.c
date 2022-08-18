@@ -12,26 +12,40 @@
 #include "unicast_common.h"
 
 
+#if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+#define BROADCAST_STREMT_CNT CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT
+#else
+#define BROADCAST_STREMT_CNT 0
+#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
 /* When BROADCAST_ENQUEUE_COUNT > 1 we can enqueue enough buffers to ensure that
  * the controller is never idle
  */
 #define BROADCAST_ENQUEUE_COUNT 2U
-#define TOTAL_BUF_NEEDED (BROADCAST_ENQUEUE_COUNT * CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT)
+#define TOTAL_BUF_NEEDED (BROADCAST_ENQUEUE_COUNT * BROADCAST_STREMT_CNT)
 
 BUILD_ASSERT(CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
 	     "CONFIG_BT_ISO_TX_BUF_COUNT should be at least "
-	     "BROADCAST_ENQUEUE_COUNT * CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT");
+	     "BROADCAST_ENQUEUE_COUNT * BROADCAST_STREMT_CNT");
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool,
 			  TOTAL_BUF_NEEDED,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 
 extern enum bst_result_t bst_result;
-static struct bt_cap_stream broadcast_source_streams[CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT];
+static struct bt_cap_stream broadcast_source_streams[BROADCAST_STREMT_CNT];
 static struct bt_cap_stream *broadcast_streams[ARRAY_SIZE(broadcast_source_streams)];
 static struct bt_audio_lc3_preset broadcast_preset_16_2_1 =
 	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
 					     BT_AUDIO_CONTEXT_TYPE_MEDIA);
+
+static struct bt_audio_lc3_preset unicast_preset_16_2_1 =
+	BT_AUDIO_LC3_UNICAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
+					   BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+
+static struct bt_cap_stream unicast_client_streams[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
+static struct bt_codec *unicast_remote_codecs[CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
+static struct bt_audio_ep *unicast_sink_eps[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
+static struct bt_audio_unicast_group **unicast_group;
 
 static K_SEM_DEFINE(sem_broadcast_started, 0U, ARRAY_SIZE(broadcast_streams));
 static K_SEM_DEFINE(sem_broadcast_stopped, 0U, ARRAY_SIZE(broadcast_streams));
@@ -39,6 +53,12 @@ static K_SEM_DEFINE(sem_broadcast_stopped, 0U, ARRAY_SIZE(broadcast_streams));
 CREATE_FLAG(flag_connected);
 CREATE_FLAG(flag_discovered);
 CREATE_FLAG(flag_mtu_exchanged);
+CREATE_FLAG(flag_sink_discovered);
+CREATE_FLAG(flag_unicast_stream_configured);
+CREATE_FLAG(flag_unicast_stream_qos);
+CREATE_FLAG(flag_unicast_stream_enabled);
+CREATE_FLAG(flag_unicast_stream_released);
+CREATE_FLAG(flag_unicast_audio_started);
 CREATE_FLAG(flag_broadcast_stopping);
 
 static void broadcast_started_cb(struct bt_audio_stream *stream)
@@ -104,6 +124,72 @@ static struct bt_audio_stream_ops broadcast_stream_ops = {
 	.sent = broadcast_sent_cb
 };
 
+
+static void unicast_stream_configured(struct bt_audio_stream *stream,
+			      const struct bt_codec_qos_pref *pref)
+{
+	printk("Configured stream %p\n", stream);
+
+	/* TODO: The preference should be used/taken into account when
+	 * setting the QoS
+	 */
+
+	SET_FLAG(flag_unicast_stream_configured);
+	SET_FLAG(flag_unicast_audio_started);
+}
+
+static void unicast_stream_qos_set(struct bt_audio_stream *stream)
+{
+	printk("QoS set stream %p\n", stream);
+
+	SET_FLAG(flag_unicast_stream_qos);
+}
+
+static void unicast_stream_enabled(struct bt_audio_stream *stream)
+{
+	printk("Enabled stream %p\n", stream);
+
+	SET_FLAG(flag_unicast_stream_enabled);
+}
+
+static void unicast_stream_started(struct bt_audio_stream *stream)
+{
+	printk("Started stream %p\n", stream);
+}
+
+static void unicast_stream_metadata_updated(struct bt_audio_stream *stream)
+{
+	printk("Metadata updated stream %p\n", stream);
+}
+
+static void unicast_stream_disabled(struct bt_audio_stream *stream)
+{
+	printk("Disabled stream %p\n", stream);
+}
+
+static void unicast_stream_stopped(struct bt_audio_stream *stream)
+{
+	printk("Stopped stream %p\n", stream);
+}
+
+static void unicast_stream_released(struct bt_audio_stream *stream)
+{
+	printk("Released stream %p\n", stream);
+
+	SET_FLAG(flag_unicast_stream_released);
+}
+
+static struct bt_audio_stream_ops unicast_stream_ops = {
+	.configured = unicast_stream_configured,
+	.qos_set = unicast_stream_qos_set,
+	.enabled = unicast_stream_enabled,
+	.started = unicast_stream_started,
+	.metadata_updated = unicast_stream_metadata_updated,
+	.disabled = unicast_stream_disabled,
+	.stopped = unicast_stream_stopped,
+	.released = unicast_stream_released,
+};
+
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 				      const struct bt_csis_client_csis_inst *csis_inst)
 {
@@ -131,6 +217,71 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 static struct bt_cap_initiator_cb cap_cb = {
 	.discovery_complete = cap_discovery_complete_cb
 };
+
+static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
+{
+	printk("Sink #%u: ep %p\n", index, ep);
+
+	unicast_sink_eps[index] = ep;
+}
+
+static void add_remote_codec(struct bt_codec *codec, int index,
+			     enum bt_audio_dir dir)
+{
+	printk("#%u: codec %p dir 0x%02x\n", index, codec, dir);
+
+	print_codec(codec);
+
+	if (dir != BT_AUDIO_DIR_SINK && dir != BT_AUDIO_DIR_SOURCE) {
+		return;
+	}
+
+	if (index < CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT) {
+		unicast_remote_codecs[index] = codec;
+	}
+}
+
+static void discover_sink_cb(struct bt_conn *conn,
+			    struct bt_codec *codec,
+			    struct bt_audio_ep *ep,
+			    struct bt_audio_discover_params *params)
+{
+	static bool codec_found;
+	static bool endpoint_found;
+
+	if (params->err != 0) {
+		FAIL("Discovery failed: %d\n", params->err);
+		return;
+	}
+
+	if (codec != NULL) {
+		add_remote_codec(codec, params->num_caps, params->dir);
+		codec_found = true;
+
+		return;
+	}
+
+	if (ep != NULL) {
+		if (params->dir == BT_AUDIO_DIR_SINK) {
+			add_remote_sink(ep, params->num_eps);
+			endpoint_found = true;
+		} else {
+			FAIL("Invalid param dir: %u\n", params->dir);
+		}
+
+		return;
+	}
+
+	printk("Sink discover complete\n");
+
+	(void)memset(params, 0, sizeof(*params));
+
+	if (endpoint_found && codec_found) {
+		SET_FLAG(flag_sink_discovered);
+	} else {
+		FAIL("Did not discover endpoint and codec\n");
+	}
+}
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -184,6 +335,13 @@ static void init(void)
 			return;
 		}
 
+		for (size_t i = 0; i < ARRAY_SIZE(broadcast_streams); i++) {
+			bt_cap_stream_ops_register(&unicast_client_streams[i],
+						   &unicast_stream_ops);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AUDIO_BROADCAST_SINK)) {
 		(void)memset(broadcast_source_streams, 0,
 			     sizeof(broadcast_source_streams));
 
@@ -209,6 +367,23 @@ static void scan_and_connect(void)
 	WAIT_FOR_FLAG(flag_connected);
 }
 
+static void discover_sink(void)
+{
+	static struct bt_audio_discover_params params;
+	int err;
+
+	params.func = discover_sink_cb;
+	params.dir = BT_AUDIO_DIR_SINK;
+
+	err = bt_audio_discover(default_conn, &params);
+	if (err != 0) {
+		printk("Failed to discover sink: %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_sink_discovered);
+}
+
 static void discover_cas(void)
 {
 	int err;
@@ -224,6 +399,32 @@ static void discover_cas(void)
 	WAIT_FOR_FLAG(flag_discovered);
 }
 
+static void unicast_audio_start(void)
+{
+	struct bt_cap_unicast_audio_start_stream_param stream_param[1];
+	struct bt_cap_unicast_audio_start_param param;
+	int err;
+
+	param.type = BT_CAP_SET_TYPE_AD_HOC;
+	param.count = 1u;
+	param.stream_params = stream_param;
+	stream_param[0].member.member = default_conn;
+	stream_param[0].stream = &unicast_client_streams[0];
+	stream_param[0].ep = unicast_sink_eps[0];
+	stream_param[0].codec = &unicast_preset_16_2_1.codec;
+	stream_param[0].qos = &unicast_preset_16_2_1.qos;
+
+	UNSET_FLAG(flag_unicast_audio_started);
+
+	err = bt_cap_initiator_unicast_audio_start(&param, unicast_group);
+	if (err != 0) {
+		printk("Failed to start unicast audio: %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_unicast_audio_started);
+}
+
 static void test_cap_initiator_unicast(void)
 {
 	init();
@@ -233,6 +434,10 @@ static void test_cap_initiator_unicast(void)
 	WAIT_FOR_FLAG(flag_mtu_exchanged);
 
 	discover_cas();
+
+	discover_sink();
+
+	unicast_audio_start();
 
 	PASS("CAP initiator unicast passed\n");
 }
