@@ -185,7 +185,7 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate);
  * Allocate additional Tx buffers to accommodate simultaneous encryption setup
  * across active connections.
  */
-#if defined(CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #define CONN_ENC_REQ_BUFFERS CONFIG_BT_CTLR_LLCP_CONN
 #else
 #define CONN_ENC_REQ_BUFFERS 0
@@ -197,7 +197,11 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate);
  * simultaneously, for example 2 for encryption, 1 for termination,
  * and 1 one that is in flight and has not been returned to the pool
  */
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #define CONN_TX_CTRL_BUFFERS (4 * CONFIG_BT_CTLR_LLCP_CONN)
+#else /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
+#define CONN_TX_CTRL_BUFFERS 0
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 #define CONN_TX_CTRL_BUF_SIZE MROUND(offsetof(struct node_tx, pdu) + \
 				     offsetof(struct pdu_data, llctrl) + \
 				     sizeof(struct pdu_data_llctrl))
@@ -219,10 +223,12 @@ static struct {
 	uint8_t pool[CONN_TX_BUF_SIZE * CONN_DATA_BUFFERS];
 } mem_conn_tx;
 
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 static struct {
 	void *free;
 	uint8_t pool[CONN_TX_CTRL_BUF_SIZE * CONN_TX_CTRL_BUFFERS];
 } mem_conn_tx_ctrl;
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 static struct {
 	void *free;
@@ -2212,9 +2218,11 @@ static int init_reset(void)
 	mem_init(mem_conn_tx.pool, CONN_TX_BUF_SIZE, CONN_DATA_BUFFERS,
 		 &mem_conn_tx.free);
 
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	/* Initialize tx ctrl pool. */
 	mem_init(mem_conn_tx_ctrl.pool, CONN_TX_CTRL_BUF_SIZE,
 		 CONN_TX_CTRL_BUFFERS, &mem_conn_tx_ctrl.free);
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	/* Initialize tx link pool. */
 	mem_init(mem_link_tx.pool, sizeof(memq_link_t),
