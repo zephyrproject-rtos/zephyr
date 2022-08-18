@@ -120,7 +120,7 @@ if(NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT)
 
   message(FATAL_ERROR "${error_msg}
 The Zephyr SDK can be downloaded from:
-https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION}/zephyr-sdk-${TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION}-setup.run
+https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v${TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION}
 ")
 
 endif()
