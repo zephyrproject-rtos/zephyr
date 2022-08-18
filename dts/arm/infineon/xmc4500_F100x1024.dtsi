@@ -21,7 +21,7 @@
 };
 
 &flash0 {
-	reg = <0xc000000 DT_SIZE_M(1)>;
+	reg = <0xc000000 DT_SIZE_M(1) 0x8000000 DT_SIZE_M(1)>;
 };
 
 &gpio0 {
