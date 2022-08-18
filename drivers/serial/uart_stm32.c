@@ -904,6 +904,11 @@ static void uart_stm32_irq_callback_set(const struct device *dev,
 
 	data->user_cb = cb;
 	data->user_data = cb_data;
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->async_cb = NULL;
+	data->async_user_data = NULL;
+#endif
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -1124,6 +1129,11 @@ static int uart_stm32_async_callback_set(const struct device *dev,
 
 	data->async_cb = callback;
 	data->async_user_data = user_data;
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->user_cb = NULL;
+	data->user_data = NULL;
+#endif
 
 	return 0;
 }

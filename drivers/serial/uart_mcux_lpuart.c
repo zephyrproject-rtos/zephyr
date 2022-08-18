@@ -370,6 +370,11 @@ static void mcux_lpuart_irq_callback_set(const struct device *dev,
 
 	data->callback = cb;
 	data->cb_data = cb_data;
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->async.user_callback = NULL;
+	data->async.user_data = NULL;
+#endif
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -660,6 +665,11 @@ static int mcux_lpuart_callback_set(const struct device *dev, uart_callback_t ca
 
 	data->async.user_callback = callback;
 	data->async.user_data = user_data;
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->callback = NULL;
+	data->cb_data = NULL;
+#endif
 
 	return 0;
 }

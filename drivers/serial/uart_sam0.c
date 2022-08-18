@@ -935,6 +935,11 @@ static void uart_sam0_irq_callback_set(const struct device *dev,
 
 	dev_data->cb = cb;
 	dev_data->cb_data = cb_data;
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	dev_data->async_cb = NULL;
+	dev_data->async_cb_data = NULL;
+#endif
 }
 #endif
 
@@ -948,6 +953,11 @@ static int uart_sam0_callback_set(const struct device *dev,
 
 	dev_data->async_cb = callback;
 	dev_data->async_cb_data = user_data;
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	dev_data->cb = NULL;
+	dev_data->cb_data = NULL;
+#endif
 
 	return 0;
 }
