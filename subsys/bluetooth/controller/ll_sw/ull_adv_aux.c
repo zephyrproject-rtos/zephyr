@@ -818,7 +818,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			ad_len_offset = ULL_ADV_HDR_DATA_DATA_PTR_OFFSET +
 					ULL_ADV_HDR_DATA_DATA_PTR_SIZE;
 			if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ADI) {
-				ad_len_offset =
+				ad_len_offset +=
 					ULL_ADV_HDR_DATA_ADI_PTR_OFFSET +
 					ULL_ADV_HDR_DATA_ADI_PTR_SIZE;
 			}
