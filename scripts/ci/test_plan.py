@@ -84,7 +84,7 @@ class Tag:
         return "<Tag {}>".format(self.name)
 
 class Filters:
-    def __init__(self, modified_files, pull_request=False, platforms=[]):
+    def __init__(self, modified_files, pull_request=False, platforms=[], subset=None):
         self.modified_files = modified_files
         self.twister_options = []
         self.full_twister = False
@@ -93,6 +93,7 @@ class Filters:
         self.pull_request = pull_request
         self.platforms = platforms
         self.default_run = False
+        self.subset = subset
 
     def process(self):
         self.find_tags()
@@ -109,6 +110,9 @@ class Filters:
     def get_plan(self, options, integration=False):
         fname = "_test_plan_partial.json"
         cmd = ["scripts/twister", "-c"] + options + ["--save-tests", fname ]
+
+        if self.subset:
+            cmd.extend(["--subset", self.subset])
         if integration:
             cmd.append("--integration")
 
@@ -307,6 +311,12 @@ def parse_args():
             help="Number of tests per builder")
     parser.add_argument('-n', '--default-matrix', default=10, type=int,
             help="Number of tests per builder")
+    parser.add_argument(
+        "-B", "--subset",
+        help="Only run a subset of the tests, 1/4 for running the first 25%%, "
+             "3/5 means run the 3rd fifth of the total. "
+             "This option is useful when running a large number of tests on "
+             "different hosts to speed up execution time.")
 
     return parser.parse_args()
 
@@ -328,7 +338,7 @@ if __name__ == "__main__":
         print("\n".join(files))
         print("=========")
 
-    f = Filters(files, args.pull_request, args.platform)
+    f = Filters(files, args.pull_request, args.platform, args.subset)
     f.process()
 
     # remove dupes and filtered cases
