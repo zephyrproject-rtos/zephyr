@@ -41,9 +41,9 @@ static struct bt_audio_stream streams[UNICAST_SERVER_STREAM_COUNT + UNICAST_CLIE
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 static struct bt_audio_unicast_group *default_unicast_group;
-static struct bt_codec *rcodecs[2][CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
-static struct bt_audio_ep *snks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
-static struct bt_audio_ep *srcs[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT];
+struct bt_codec *rcodecs[CONFIG_BT_MAX_CONN][2][CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
+struct bt_audio_ep *snks[CONFIG_BT_MAX_CONN][CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
+struct bt_audio_ep *srcs[CONFIG_BT_MAX_CONN][CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT];
 
 static uint8_t stream_dir(const struct bt_audio_stream *stream);
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
@@ -60,11 +60,6 @@ static struct bt_audio_broadcast_sink *default_sink;
 static struct bt_audio_stream *default_stream;
 static uint32_t seq_num;
 static bool connecting;
-
-struct named_lc3_preset {
-	const char *name;
-	struct bt_audio_lc3_preset preset;
-};
 
 static struct named_lc3_preset lc3_unicast_presets[] = {
 	{"8_1_1",   BT_AUDIO_LC3_UNICAST_PRESET_8_1_1(LOCATION, CONTEXT)},
@@ -139,7 +134,7 @@ static struct named_lc3_preset lc3_broadcast_presets[] = {
 };
 
 /* Default to 16_2_1 */
-static struct named_lc3_preset *default_preset = &lc3_unicast_presets[3];
+struct named_lc3_preset *default_preset = &lc3_unicast_presets[3];
 
 static void print_codec(const struct bt_codec *codec)
 {
@@ -494,15 +489,23 @@ static struct bt_audio_capability caps[] = {
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 static uint8_t stream_dir(const struct bt_audio_stream *stream)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(snks); i++) {
-		if (snks[i] != NULL && stream->ep == snks[i]) {
-			return BT_AUDIO_DIR_SINK;
-		}
-	}
+	if (stream->conn) {
+		uint8_t conn_index = bt_conn_index(stream->conn);
 
-	for (size_t i = 0; i < ARRAY_SIZE(srcs); i++) {
-		if (srcs[i] != NULL && stream->ep == srcs[i]) {
-			return BT_AUDIO_DIR_SOURCE;
+		for (size_t i = 0; i < ARRAY_SIZE(snks[conn_index]); i++) {
+			const struct bt_audio_ep *snk_ep = snks[conn_index][i];
+
+			if (snk_ep != NULL && stream->ep == snk_ep) {
+				return BT_AUDIO_DIR_SINK;
+			}
+		}
+
+		for (size_t i = 0; i < ARRAY_SIZE(srcs[conn_index]); i++) {
+			const struct bt_audio_ep *src_ep = srcs[conn_index][i];
+
+			if (src_ep != NULL && stream->ep == src_ep) {
+				return BT_AUDIO_DIR_SOURCE;
+			}
 		}
 	}
 
@@ -510,9 +513,11 @@ static uint8_t stream_dir(const struct bt_audio_stream *stream)
 	return 0;
 }
 
-static void add_codec(struct bt_codec *codec, uint8_t index, enum bt_audio_dir dir)
+static void add_codec(const struct bt_conn *conn, struct bt_codec *codec,
+		      uint8_t index, enum bt_audio_dir dir)
 {
-	shell_print(ctx_shell, "#%u: codec %p dir 0x%02x", index, codec, dir);
+	shell_print(ctx_shell, "conn %p: #%u: codec %p dir 0x%02x",
+		    conn, index, codec, dir);
 
 	print_codec(codec);
 
@@ -521,22 +526,24 @@ static void add_codec(struct bt_codec *codec, uint8_t index, enum bt_audio_dir d
 	}
 
 	if (index < CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT) {
-		rcodecs[dir - 1][index] = codec;
+		rcodecs[bt_conn_index(conn)][dir - 1][index] = codec;
 	}
 }
 
-static void add_sink(struct bt_audio_ep *ep, uint8_t index)
+static void add_sink(const struct bt_conn *conn, struct bt_audio_ep *ep,
+		     uint8_t index)
 {
-	shell_print(ctx_shell, "Sink #%u: ep %p", index, ep);
+	shell_print(ctx_shell, "Conn: %p, Sink #%u: ep %p", conn, index, ep);
 
-	snks[index] = ep;
+	snks[bt_conn_index(conn)][index] = ep;
 }
 
-static void add_source(struct bt_audio_ep *ep, uint8_t index)
+static void add_source(const struct bt_conn *conn, struct bt_audio_ep *ep,
+		       uint8_t index)
 {
-	shell_print(ctx_shell, "Source #%u: ep %p", index, ep);
+	shell_print(ctx_shell, "Conn: %p, Source #%u: ep %p", conn, index, ep);
 
-	srcs[index] = ep;
+	srcs[bt_conn_index(conn)][index] = ep;
 }
 
 static void discover_cb(struct bt_conn *conn, struct bt_codec *codec,
@@ -544,15 +551,15 @@ static void discover_cb(struct bt_conn *conn, struct bt_codec *codec,
 			struct bt_audio_discover_params *params)
 {
 	if (codec != NULL) {
-		add_codec(codec, params->num_caps, params->dir);
+		add_codec(conn, codec, params->num_caps, params->dir);
 		return;
 	}
 
 	if (ep) {
 		if (params->dir == BT_AUDIO_DIR_SINK) {
-			add_sink(ep, params->num_eps);
+			add_sink(conn, ep, params->num_eps);
 		} else if (params->dir == BT_AUDIO_DIR_SOURCE) {
-			add_source(ep, params->num_eps);
+			add_source(conn, ep, params->num_eps);
 		}
 
 		return;
@@ -568,15 +575,15 @@ static void discover_all(struct bt_conn *conn, struct bt_codec *codec,
 			struct bt_audio_discover_params *params)
 {
 	if (codec != NULL) {
-		add_codec(codec, params->num_caps, params->dir);
+		add_codec(conn, codec, params->num_caps, params->dir);
 		return;
 	}
 
 	if (ep) {
 		if (params->dir == BT_AUDIO_DIR_SINK) {
-			add_sink(ep, params->num_eps);
+			add_sink(conn, ep, params->num_eps);
 		} else if (params->dir == BT_AUDIO_DIR_SOURCE) {
-			add_source(ep, params->num_eps);
+			add_source(conn, ep, params->num_eps);
 		}
 
 		return;
@@ -685,6 +692,7 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 {
+	uint8_t conn_index;
 	int32_t index, dir;
 	struct bt_audio_ep *ep = NULL;
 	struct named_lc3_preset *named_preset;
@@ -693,6 +701,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
+	conn_index = bt_conn_index(default_conn);
 
 	index = strtol(argv[2], NULL, 0);
 	if (index < 0) {
@@ -702,10 +711,10 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 
 	if (!strcmp(argv[1], "sink")) {
 		dir = BT_AUDIO_DIR_SINK;
-		ep = snks[index];
+		ep = snks[conn_index][index];
 	} else if (!strcmp(argv[1], "source")) {
 		dir = BT_AUDIO_DIR_SOURCE;
-		ep = srcs[index];
+		ep = srcs[conn_index][index];
 	} else {
 		shell_error(sh, "Unsupported dir: %s", argv[1]);
 		return -ENOEXEC;
@@ -963,41 +972,49 @@ static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static void conn_list_eps(struct bt_conn *conn, void *data)
+{
+	const struct shell *sh = (const struct shell *)data;
+	uint8_t conn_index = bt_conn_index(conn);
+
+	shell_print(sh, "Conn: %p", conn);
+	shell_print(sh, "  Sinks:");
+
+	for (size_t i = 0U; i < ARRAY_SIZE(snks[conn_index]); i++) {
+		const struct bt_audio_ep *ep = snks[conn_index][i];
+
+		if (ep != NULL) {
+			shell_print(sh, "    #%u: ep %p", i, ep);
+		}
+	}
+
+	shell_print(sh, "  Sources:");
+
+	for (size_t i = 0U; i < ARRAY_SIZE(srcs[conn_index]); i++) {
+		const struct bt_audio_ep *ep = srcs[conn_index][i];
+
+		if (ep != NULL) {
+			shell_print(sh, "    #%u: ep %p", i, ep);
+		}
+	}
+
+}
+
 static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 {
-	int i;
-
 	shell_print(sh, "Configured Channels:");
 
-	for (i = 0; i < ARRAY_SIZE(streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 		struct bt_audio_stream *stream = &streams[i];
 
-		if (stream->conn) {
+		if (stream->conn != NULL) {
 			shell_print(sh, "  %s#%u: stream %p dir 0x%02x group %p",
 				    stream == default_stream ? "*" : " ", i, stream,
 				    stream_dir(stream), stream->group);
 		}
 	}
 
-	shell_print(sh, "Sinks:");
-
-	for (i = 0; i < ARRAY_SIZE(snks); i++) {
-		struct bt_audio_ep *ep = snks[i];
-
-		if (ep) {
-			shell_print(sh, "  #%u: ep %p", i, ep);
-		}
-	}
-
-	shell_print(sh, "Sources:");
-
-	for (i = 0; i < ARRAY_SIZE(srcs); i++) {
-		struct bt_audio_ep *ep = srcs[i];
-
-		if (ep) {
-			shell_print(sh, "  #%u: ep %p", i, ep);
-		}
-	}
+	bt_conn_foreach(BT_CONN_TYPE_LE, conn_list_eps, (void *)sh);
 
 	return 0;
 }
