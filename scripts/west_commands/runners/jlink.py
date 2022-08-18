@@ -14,6 +14,7 @@ import shlex
 import subprocess
 import sys
 import tempfile
+import psutil
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps, depr_action
 
@@ -64,6 +65,10 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.tool_opt = []
         for opts in [shlex.split(opt) for opt in tool_opt]:
             self.tool_opt += opts
+
+        for proc in psutil.process_iter():
+            if proc.name() == DEFAULT_JLINK_EXE:
+                proc.kill()
 
     @classmethod
     def name(cls):
