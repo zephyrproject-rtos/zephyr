@@ -27,7 +27,7 @@ jobs:
     runs-on: zephyr_runner
     needs: twister-build-cleanup
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.23.3
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.2
       options: '--entrypoint /bin/bash'
       volumes:
         - /home/runners/zephyrproject:/github/cache/zephyrproject
@@ -120,7 +120,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.23.3
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.2
       options: '--entrypoint /bin/bash'
       volumes:
         - /home/runners/zephyrproject:/github/cache/zephyrproject
