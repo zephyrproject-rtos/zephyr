@@ -65,6 +65,8 @@ hardware features:
 | RNG       | on-chip    | entropy;                            |
 |           |            | random                              |
 +-----------+------------+-------------------------------------+
+| IAP       | on-chip    | flash programming                   |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently enabled.
 
