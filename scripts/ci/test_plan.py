@@ -122,6 +122,12 @@ class Filters:
             json_data = json.load(jsonfile)
             suites = json_data.get("testsuites", [])
             self.all_tests.extend(suites)
+
+        if self.pull_request:
+            cmd = ["scripts/twister", "-n", "--load-tests", fname, "--cmake-only"]
+            logging.info(" ".join(cmd))
+            _ = subprocess.call(cmd)
+
         if os.path.exists(fname):
             os.remove(fname)
 
