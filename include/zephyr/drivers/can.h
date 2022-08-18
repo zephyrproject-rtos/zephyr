@@ -723,7 +723,8 @@ static inline const struct can_timing *z_impl_can_get_timing_max(const struct de
  * @param sample_pnt Sampling point in permill of the entire bit time.
  *
  * @retval 0 or positive sample point error on success.
- * @retval -EINVAL if there is no solution for the desired values.
+ * @retval -EINVAL if the requested bitrate or sample point is out of range.
+ * @retval -ENOTSUP if the requested bitrate is not supported.
  * @retval -EIO if @a can_get_core_clock() is not available.
  */
 __syscall int can_calc_timing(const struct device *dev, struct can_timing *res,
@@ -792,7 +793,8 @@ static inline const struct can_timing *z_impl_can_get_timing_data_max(const stru
  * @param sample_pnt Sampling point for the data phase in permille of the entire bit time.
  *
  * @retval 0 or positive sample point error on success.
- * @retval -EINVAL if there is no solution for the desired values.
+ * @retval -EINVAL if the requested bitrate or sample point is out of range.
+ * @retval -ENOTSUP if the requested bitrate is not supported.
  * @retval -EIO if @a can_get_core_clock() is not available.
  */
 __syscall int can_calc_timing_data(const struct device *dev, struct can_timing *res,
@@ -848,8 +850,10 @@ static inline int z_impl_can_set_timing_data(const struct device *dev,
  * @param bitrate_data Desired data phase bitrate.
  *
  * @retval 0 If successful.
- * @retval -ENOTSUP bitrate not supported by CAN controller/transceiver combination
- * @retval -EINVAL bitrate/sample point cannot be met.
+ * @retval -EINVAL if the requested bitrate is out of range.
+ * @retval -ENOTSUP if the requested bitrate not supported by the CAN controller/transceiver
+ *                  combination.
+ * @retval -ERANGE if the resulting sample point is off by more than +/- 5%.
  * @retval -EIO General input/output error, failed to set bitrate.
  */
 __syscall int can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data);
@@ -960,8 +964,10 @@ static inline int z_impl_can_set_mode(const struct device *dev, can_mode_t mode)
  * @param bitrate      Desired arbitration phase bitrate.
  *
  * @retval 0 If successful.
- * @retval -ENOTSUP bitrate not supported by CAN controller/transceiver combination
- * @retval -EINVAL bitrate/sample point cannot be met.
+ * @retval -EINVAL if the requested bitrate is out of range.
+ * @retval -ENOTSUP if the requested bitrate not supported by the CAN controller/transceiver
+ *                  combination.
+ * @retval -ERANGE if the resulting sample point is off by more than +/- 5%.
  * @retval -EIO General input/output error, failed to set bitrate.
  */
 __syscall int can_set_bitrate(const struct device *dev, uint32_t bitrate);
