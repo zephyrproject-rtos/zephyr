@@ -1455,8 +1455,9 @@ struct bt_gatt_discover_params {
  *
  *  This procedure is used by a client to discover attributes on a server.
  *
- *  Primary Service Discovery: Procedure allows to discover specific Primary
- *                             Service based on UUID.
+ *  Primary Service Discovery: Procedure allows to discover primary services
+ *                             either by Discover All Primary Services or
+ *                             Discover Primary Services by Service UUID.
  *  Include Service Discovery: Procedure allows to discover all Include Services
  *                             within specified range.
  *  Characteristic Discovery:  Procedure allows to discover all characteristics
