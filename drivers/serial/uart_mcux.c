@@ -349,7 +349,8 @@ static int uart_mcux_init(const struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api uart_mcux_driver_api = {
+
+UART_DT_INST_API_DECLARE = {
 	.poll_in = uart_mcux_poll_in,
 	.poll_out = uart_mcux_poll_out,
 	.err_check = uart_mcux_err_check,
@@ -384,7 +385,7 @@ static const struct uart_driver_api uart_mcux_driver_api = {
 #endif
 
 #define UART_MCUX_DECLARE_CFG(n, IRQ_FUNC_INIT)				\
-static const struct uart_mcux_config uart_mcux_##n##_config = {		\
+static const struct uart_mcux_config UART_DT_INST_CONFIG_NAME(n) = {	\
 	.base = (UART_Type *)DT_INST_REG_ADDR(n),			\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
@@ -408,6 +409,7 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 									\
 		irq_enable(DT_INST_IRQ_BY_NAME(n, error, irq));		\
 	}
+
 #define UART_MCUX_IRQ_CFG_FUNC_INIT(n)					\
 	.irq_config_func = uart_mcux_config_func_##n
 #define UART_MCUX_INIT_CFG(n)						\
@@ -422,7 +424,7 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 #define UART_MCUX_INIT(n)						\
 	PINCTRL_DEFINE(n)						\
 									\
-	static struct uart_mcux_data uart_mcux_##n##_data = {		\
+	static struct uart_mcux_data UART_DT_INST_DATA_NAME(n) = {	\
 		.uart_cfg = {						\
 			.stop_bits = UART_CFG_STOP_BITS_1,		\
 			.data_bits = UART_CFG_DATA_BITS_8,		\
@@ -433,16 +435,9 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 		},							\
 	};								\
 									\
-	static const struct uart_mcux_config uart_mcux_##n##_config;	\
+	static const struct uart_mcux_config UART_DT_INST_CONFIG_NAME(n);\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
-			    &uart_mcux_init,				\
-			    NULL,					\
-			    &uart_mcux_##n##_data,			\
-			    &uart_mcux_##n##_config,			\
-			    PRE_KERNEL_1,				\
-			    CONFIG_SERIAL_INIT_PRIORITY,		\
-			    &uart_mcux_driver_api);			\
+	UART_DT_INST_DEFINE(n, &uart_mcux_init);			\
 									\
 	UART_MCUX_CONFIG_FUNC(n)					\
 									\
