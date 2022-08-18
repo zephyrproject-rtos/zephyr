@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2022 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lis2mdl_1e {
+	friendly-name = "Base Magnetometer";
+
+	base_magn: magn {
+		status = "okay";
+	};
+};
+
+&lis2dw12_19 {
+	friendly-name = "Lid Accelerometer";
+
+	lid_accel: accel {
+		status = "okay";
+	};
+};
+
+&lsm6dso_6b {
+	friendly-name = "Base Accelerometer/Gyroscope";
+
+	base_accel: accel {
+		rotation-matrix = <0 1 0
+				   1 0 0
+				   0 0 (-1)>;
+		status = "okay";
+	};
+
+	base_gyro: gyro {
+		rotation-matrix = <0 1 0
+				   1 0 0
+				   0 0 1>;
+		status = "okay";
+	};
+
+	base_die_temp: die-temp {
+		status = "okay";
+	};
+};

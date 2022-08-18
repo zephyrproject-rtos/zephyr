@@ -1,11 +1,16 @@
+common:
+  integration_platforms:
+    - frdm_k64f
+  filter: ( CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_INTERRUPT )
+  harness: keyboard
+  min_ram: 20
+  min_flash: 33
 sample:
   name: Shell Sensor Module Sample
 tests:
   sample.sensor.shell:
-    integration_platforms:
-      - frdm_k64f
-    filter: ( CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_INTERRUPT )
     tags: shell
-    harness: keyboard
-    min_ram: 20
-    min_flash: 33
+  sample.sensor.shell.x_nucleo_iks01a3:
+    tags: shell shield
+    depends_on: arduino_i2c arduino_gpio
+    extra_args: SHIELD=x_nucleo_iks01a3
