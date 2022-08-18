@@ -76,6 +76,21 @@ config UART_INTERRUPT_DRIVEN
 	  This option enables interrupt support for UART allowing console
 	  input and other UART based drivers.
 
+config UART_EXCLUSIVE_API_CALLBACKS
+	bool "Use exclusive callbacks for multiple APIs"
+	depends on UART_ASYNC_API && UART_INTERRUPT_DRIVEN
+	default y
+	help
+	  When multiple set of APIs support callbacks, enabling this
+	  option will result in only the callbacks of one set of API
+	  being active at a time. Setting a new callback to one set of
+	  API will remove callbacks to other set of APIs. For example,
+	  calling uart_callback_set() would disable the callback
+	  previously set via uart_irq_callback_set().
+
+	  Says yes unless you are absolutely sure you know what you are
+	  doing and promise not to file bug when things do not work out.
+
 config UART_LINE_CTRL
 	bool "Serial Line Control API"
 	help
