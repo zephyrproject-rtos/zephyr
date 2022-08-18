@@ -279,6 +279,11 @@ static void mcux_flexcomm_irq_callback_set(const struct device *dev,
 
 	data->irq_callback = cb;
 	data->irq_cb_data = cb_data;
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->async_callback = NULL;
+	data->async_cb_data = NULL;
+#endif
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
@@ -399,6 +404,12 @@ static int mcux_flexcomm_uart_callback_set(const struct device *dev,
 
 	data->async_callback = callback;
 	data->async_cb_data = user_data;
+
+
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->irq_callback = NULL;
+	data->irq_cb_data = NULL;
+#endif
 
 	return 0;
 }
