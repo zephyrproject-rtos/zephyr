@@ -14,11 +14,6 @@
 #include "flash_priv.h"
 
 #include "fsl_common.h"
-#ifdef CONFIG_HAS_MCUX_IAP
-#include "fsl_iap.h"
-#else
-#include "fsl_flash.h"
-#endif
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -33,11 +28,20 @@ LOG_MODULE_REGISTER(flash_mcux);
 #define DT_DRV_COMPAT nxp_kinetis_ftfl
 #elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_fmc55), okay)
 #define DT_DRV_COMPAT nxp_iap_fmc55
+#define SOC_HAS_IAP 1
 #elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_fmc553), okay)
 #define DT_DRV_COMPAT nxp_iap_fmc553
+#define SOC_HAS_IAP 1
 #else
 #error No matching compatible for soc_flash_mcux.c
 #endif
+
+#ifdef SOC_HAS_IAP
+#include "fsl_iap.h"
+#else
+#include "fsl_flash.h"
+#endif /* SOC_HAS_IAP */
+
 
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 
@@ -272,7 +276,7 @@ static int flash_mcux_init(const struct device *dev)
 
 	rc = FLASH_Init(&priv->config);
 
-#ifdef CONFIG_HAS_MCUX_IAP
+#ifdef SOC_HAS_IAP
 	FLASH_GetProperty(&priv->config, kFLASH_PropertyPflashBlockBaseAddr,
 			  &pflash_block_base);
 #else

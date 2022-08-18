@@ -200,7 +200,7 @@ struct can_rcar_data {
 	struct k_mutex rx_mutex;
 	can_rx_callback_t rx_callback[CONFIG_CAN_RCAR_MAX_FILTER];
 	void *rx_callback_arg[CONFIG_CAN_RCAR_MAX_FILTER];
-	struct zcan_filter filter[CONFIG_CAN_RCAR_MAX_FILTER];
+	struct can_filter filter[CONFIG_CAN_RCAR_MAX_FILTER];
 	can_state_change_callback_t state_change_cb;
 	void *state_change_cb_data;
 	enum can_state state;
@@ -366,9 +366,9 @@ static void can_rcar_error(const struct device *dev)
 
 static void can_rcar_rx_filter_isr(const struct device *dev,
 				   struct can_rcar_data *data,
-				   const struct zcan_frame *frame)
+				   const struct can_frame *frame)
 {
-	struct zcan_frame tmp_frame;
+	struct can_frame tmp_frame;
 	uint8_t i;
 
 	for (i = 0; i < CONFIG_CAN_RCAR_MAX_FILTER; i++) {
@@ -392,7 +392,7 @@ static void can_rcar_rx_isr(const struct device *dev)
 {
 	const struct can_rcar_cfg *config = dev->config;
 	struct can_rcar_data *data = dev->data;
-	struct zcan_frame frame;
+	struct can_frame frame;
 	uint32_t val;
 	int i;
 
@@ -782,7 +782,7 @@ done:
 }
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
-static int can_rcar_send(const struct device *dev, const struct zcan_frame *frame,
+static int can_rcar_send(const struct device *dev, const struct can_frame *frame,
 			 k_timeout_t timeout, can_tx_callback_t callback,
 			 void *user_data)
 {
@@ -865,7 +865,7 @@ static int can_rcar_send(const struct device *dev, const struct zcan_frame *fram
 static inline int can_rcar_add_rx_filter_unlocked(const struct device *dev,
 						  can_rx_callback_t cb,
 						  void *cb_arg,
-						  const struct zcan_filter *filter)
+						  const struct can_filter *filter)
 {
 	struct can_rcar_data *data = dev->data;
 	int i;
@@ -884,7 +884,7 @@ static inline int can_rcar_add_rx_filter_unlocked(const struct device *dev,
 }
 
 static int can_rcar_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
-				  void *cb_arg, const struct zcan_filter *filter)
+				  void *cb_arg, const struct can_filter *filter)
 {
 	struct can_rcar_data *data = dev->data;
 	int filter_id;

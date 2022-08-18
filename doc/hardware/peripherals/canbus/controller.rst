@@ -151,7 +151,7 @@ a mailbox. When a transmitting mailbox is assigned, sending cannot be canceled.
 
 .. code-block:: C
 
-  struct zcan_frame frame = {
+  struct can_frame frame = {
           .id_type = CAN_STANDARD_IDENTIFIER,
           .rtr = CAN_DATAFRAME,
           .id = 0x123,
@@ -186,7 +186,7 @@ occurred. It does not block until the message is sent like the example above.
 
   int send_function(const struct device *can_dev)
   {
-          struct zcan_frame frame = {
+          struct can_frame frame = {
                   .id_type = CAN_EXTENDED_IDENTIFIER,
                   .rtr = CAN_DATAFRAME,
                   .id = 0x1234567,
@@ -211,7 +211,7 @@ added.
 
 .. code-block:: C
 
-  void rx_callback_function(const struct device *dev, struct zcan_frame *frame, void *user_data)
+  void rx_callback_function(const struct device *dev, struct can_frame *frame, void *user_data)
   {
           ... do something with the frame ...
   }
@@ -226,7 +226,7 @@ The filter for this example is configured to match the identifier 0x123 exactly.
 
 .. code-block:: C
 
-  const struct zcan_filter my_filter = {
+  const struct can_filter my_filter = {
           .id_type = CAN_STANDARD_IDENTIFIER,
           .rtr = CAN_DATAFRAME,
           .id = 0x123,
@@ -251,7 +251,7 @@ The filter for this example is configured to match the extended identifier
 
 .. code-block:: C
 
-  const struct zcan_filter my_filter = {
+  const struct can_filter my_filter = {
           .id_type = CAN_EXTENDED_IDENTIFIER,
           .rtr = CAN_DATAFRAME,
           .id = 0x1234567,
@@ -259,7 +259,7 @@ The filter for this example is configured to match the extended identifier
           .id_mask = CAN_EXT_ID_MASK
   };
   CAN_MSGQ_DEFINE(my_can_msgq, 2);
-  struct zcan_frame rx_frame;
+  struct can_frame rx_frame;
   int filter_id;
   const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 

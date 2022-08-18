@@ -8,10 +8,6 @@ if BOARD_V2M_BEETLE
 config BOARD
 	default "v2m_beetle"
 
-config PINMUX_BEETLE
-	default y
-	depends on PINMUX
-
 if SERIAL
 
 config UART_INTERRUPT_DRIVEN

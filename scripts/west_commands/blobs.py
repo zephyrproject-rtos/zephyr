@@ -63,23 +63,23 @@ class Blobs(WestCommand):
 
         # Remember to update west-completion.bash if you add or remove
         # flags
-        parser.add_argument('subcmd', nargs=1, choices=['list', 'fetch'],
+        parser.add_argument('subcmd', nargs=1,
+                            choices=['list', 'fetch', 'clean'],
                             help='''Select the sub-command to execute.
-                            Currently only list and fetch are supported.''')
+							Sub-commands available:
+                            - list: list binary blobs
+                            - fetch: fetch and store binary blobs
+                            - clean: remove fetched binary blobs
+                            ''')
 
-        # Remember to update west-completion.bash if you add or remove
-        # flags
         parser.add_argument('-f', '--format', default=default_fmt,
                             help='''Format string to use to list each blob;
                                     see FORMAT STRINGS below.''')
 
-        parser.add_argument('-m', '--modules', type=str, action='append',
-                            default=[],
-                            help='''a list of modules; only blobs whose
+        parser.add_argument('modules', metavar='MODULE', nargs='*',
+                            help='''modules to operate on; only blobs whose
                             names are on this list will be taken into account
-                            by the sub-command. Invoke multiple times''')
-        parser.add_argument('-a', '--all', action='store_true',
-                            help='use all modules.')
+                            by the sub-commands.''')
 
         return parser
 
@@ -104,7 +104,7 @@ class Blobs(WestCommand):
 
             # Filter by module
             module_name = module.meta.get('name', None)
-            if not args.all and module_name not in modules:
+            if len(modules) and module_name not in modules:
                 continue
 
             blobs_path = Path(module.project) / zephyr_module.MODULE_BLOBS_PATH
@@ -121,6 +121,9 @@ class Blobs(WestCommand):
         for blob in blobs:
             log.inf(args.format.format(**blob))
 
+    def ensure_folder(self, path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+
     def fetch_blob(self, url, path):
         scheme = urlparse(url).scheme
         log.dbg(f'Fetching {path} with {scheme}')
@@ -129,6 +132,7 @@ class Blobs(WestCommand):
 
         log.dbg(f'Found fetcher: {fetcher}')
         inst = fetcher()
+        self.ensure_folder(path)
         inst.fetch(url, path)
 
     def fetch(self, args):
@@ -137,9 +141,17 @@ class Blobs(WestCommand):
             if blob['status'] == 'A':
                 log.inf('Blob {module}: {abspath} is up to date'.format(**blob))
                 continue
-            log.inf('Fetching blob {module}: {status} {abspath}'.format(**blob))
+            log.inf('Fetching blob {module}: {abspath}'.format(**blob))
             self.fetch_blob(blob['url'], blob['abspath'])
 
+    def clean(self, args):
+        blobs = self.get_blobs(args)
+        for blob in blobs:
+            if blob['status'] == 'D':
+                log.inf('Blob {module}: {abspath} not in filesystem'.format(**blob))
+                continue
+            log.inf('Deleting blob {module}: {status} {abspath}'.format(**blob))
+            blob['abspath'].unlink()
 
     def do_run(self, args, _):
         log.dbg(f'{args.subcmd[0]} {args.modules}')

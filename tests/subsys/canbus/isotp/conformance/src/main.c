@@ -232,7 +232,7 @@ static void send_frame_series(struct frame_desired *frames, size_t length,
 			      uint32_t id)
 {
 	int i, ret;
-	struct zcan_frame frame = {
+	struct can_frame frame = {
 		.id_type = (id > 0x7FF) ? CAN_EXTENDED_IDENTIFIER :
 			CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
@@ -253,7 +253,7 @@ static void check_frame_series(struct frame_desired *frames, size_t length,
 			       struct k_msgq *msgq)
 {
 	int i, ret;
-	struct zcan_frame frame;
+	struct can_frame frame;
 	struct frame_desired *desired = frames;
 
 	for (i = 0; i < length; i++) {
@@ -282,7 +282,7 @@ static void check_frame_series(struct frame_desired *frames, size_t length,
 static int add_rx_msgq(uint32_t id, uint32_t mask)
 {
 	int filter_id;
-	struct zcan_filter filter = {
+	struct can_filter filter = {
 		.id_type = (id > 0x7FF) ? CAN_EXTENDED_IDENTIFIER :
 			CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
@@ -529,7 +529,7 @@ ZTEST(isotp_conformance, test_send_data_blocks)
 	size_t remaining_length = DATA_SEND_LENGTH;
 	struct frame_desired *data_frame_ptr = des_frames;
 	int filter_id, ret;
-	struct zcan_frame dummy_frame;
+	struct can_frame dummy_frame;
 	struct frame_desired fc_frame, ff_frame;
 
 	ff_frame.data[0] = FF_PCI_BYTE_1(DATA_SEND_LENGTH);
@@ -637,7 +637,7 @@ ZTEST(isotp_conformance, test_receive_data_blocks)
 	size_t remaining_frames;
 	struct frame_desired fc_frame, ff_frame;
 
-	struct zcan_frame dummy_frame;
+	struct can_frame dummy_frame;
 
 	ff_frame.data[0] = FF_PCI_BYTE_1(DATA_SEND_LENGTH);
 	ff_frame.data[1] = FF_PCI_BYTE_2(DATA_SEND_LENGTH);
@@ -790,7 +790,7 @@ ZTEST(isotp_conformance, test_stmin)
 {
 	int filter_id, ret;
 	struct frame_desired fc_frame, ff_frame;
-	struct zcan_frame raw_frame;
+	struct can_frame raw_frame;
 	uint32_t start_time, time_diff;
 
 	ff_frame.data[0] = FF_PCI_BYTE_1(DATA_SIZE_FF + DATA_SIZE_CF * 4);

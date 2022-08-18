@@ -61,7 +61,7 @@ LIFO              No                  Queue                  Arbitrary [1]      
 Stack             No                  Array                  Word                          Word   Yes [3]            Yes             Undefined behavior
 Message queue     No                  Ring buffer            Power of two          Power of two   Yes [3]            Yes             Pend thread or return -errno
 Mailbox           Yes                 Queue                  Arbitrary [1]            Arbitrary   No                 No              N/A
-Pipe              No                  Ring buffer [4]        Arbitrary                Arbitrary   No                 No              Pend thread or return -errno
+Pipe              No                  Ring buffer [4]        Arbitrary                Arbitrary   Yes [5]            Yes [5]         Pend thread or return -errno
 ===============   ==============      ===================    ==============      ==============   =================  ==============  ===============================
 
 [1] Callers allocate space for queue overhead in the data
@@ -75,6 +75,9 @@ calling thread's resource pool.
 argument.
 
 [4] Optional.
+
+[5] ISRS can send and/or receive only when passing K_NO_WAIT as the
+timeout argument.
 
 .. toctree::
    :maxdepth: 1

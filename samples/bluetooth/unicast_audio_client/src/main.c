@@ -322,7 +322,7 @@ static void audio_timer_timeout(struct k_work *work)
 	k_work_schedule(&audio_send_work, K_MSEC(1000));
 
 	len_to_send++;
-	if (len_to_send > ARRAY_SIZE(buf_data)) {
+	if (len_to_send > codec_configuration.qos.sdu) {
 		len_to_send = 1;
 	}
 }

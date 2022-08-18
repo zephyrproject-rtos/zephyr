@@ -423,7 +423,7 @@ static const struct smf_state test_states[] = {
 	[D] = SMF_CREATE_STATE(d_entry, NULL, NULL, NULL),
 };
 
-void test_smf_hierarchical_5_ancestors(void)
+ZTEST(smf_tests, test_smf_hierarchical_5_ancestors)
 {
 	test_obj.tv_idx = 0;
 	test_obj.transition_bits = 0;

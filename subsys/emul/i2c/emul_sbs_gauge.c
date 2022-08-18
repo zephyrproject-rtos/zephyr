@@ -151,7 +151,7 @@ static int emul_sbs_sbs_gauge_init(const struct emul *target, const struct devic
 	static const struct sbs_gauge_emul_cfg sbs_gauge_emul_cfg_##n = {                          \
 		.addr = DT_INST_REG_ADDR(n),                                                       \
 	};                                                                                         \
-	EMUL_DEFINE(emul_sbs_sbs_gauge_init, DT_DRV_INST(n), &sbs_gauge_emul_cfg_##n,              \
-		    &sbs_gauge_emul_data_##n, &sbs_gauge_emul_api_i2c)
+	EMUL_DT_INST_DEFINE(n, emul_sbs_sbs_gauge_init, &sbs_gauge_emul_data_##n,                  \
+			    &sbs_gauge_emul_cfg_##n, &sbs_gauge_emul_api_i2c)
 
 DT_INST_FOREACH_STATUS_OKAY(SBS_GAUGE_EMUL)

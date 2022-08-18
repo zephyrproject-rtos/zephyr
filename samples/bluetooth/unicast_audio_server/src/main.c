@@ -42,6 +42,8 @@ static struct bt_audio_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_A
 static struct bt_audio_source {
 	struct bt_audio_stream *stream;
 	uint32_t seq_num;
+	uint16_t max_sdu;
+	size_t len_to_send;
 } source_streams[CONFIG_BT_ASCS_ASE_SRC_COUNT];
 static size_t configured_source_stream_count;
 
@@ -170,7 +172,6 @@ static void audio_timer_timeout(struct k_work *work)
 	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
 	static bool data_initialized;
 	struct net_buf *buf;
-	static size_t len_to_send = 1;
 
 	if (!data_initialized) {
 		/* TODO: Actually encode some audio data */
@@ -191,7 +192,7 @@ static void audio_timer_timeout(struct k_work *work)
 		buf = net_buf_alloc(&tx_pool, K_FOREVER);
 		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
-		net_buf_add_mem(buf, buf_data, len_to_send);
+		net_buf_add_mem(buf, buf_data, ++source_streams[i].len_to_send);
 
 		ret = bt_audio_stream_send(stream, buf,
 					   get_and_incr_seq_num(stream),
@@ -202,16 +203,15 @@ static void audio_timer_timeout(struct k_work *work)
 			net_buf_unref(buf);
 		} else {
 			printk("Sending mock data with len %zu on streams[%zu] (%p)\n",
-			       len_to_send, i, stream);
+			       source_streams[i].len_to_send, i, stream);
+		}
+
+		if (source_streams[i].len_to_send >= source_streams[i].max_sdu) {
+			source_streams[i].len_to_send = 0;
 		}
 	}
 
 	k_work_schedule(&audio_send_work, K_MSEC(1000U));
-
-	len_to_send++;
-	if (len_to_send > ARRAY_SIZE(buf_data)) {
-		len_to_send = 1;
-	}
 }
 
 static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
@@ -270,6 +270,13 @@ static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 	printk("QoS: stream %p qos %p\n", stream, qos);
 
 	print_qos(qos);
+
+	for (size_t i = 0U; i < configured_source_stream_count; i++) {
+		if (source_streams[i].stream == stream) {
+			source_streams[i].max_sdu = qos->sdu;
+			break;
+		}
+	}
 
 	return 0;
 }

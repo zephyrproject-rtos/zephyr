@@ -59,7 +59,7 @@ CAN_MSGQ_DEFINE(can_msgq, 5);
 /**
  * @brief Standard (11-bit) CAN ID frame 1.
  */
-const struct zcan_frame test_std_frame_1 = {
+const struct can_frame test_std_frame_1 = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr     = CAN_DATAFRAME,
 	.id      = TEST_CAN_STD_ID_1,
@@ -70,7 +70,7 @@ const struct zcan_frame test_std_frame_1 = {
 /**
  * @brief Standard (11-bit) CAN ID frame 2.
  */
-const struct zcan_frame test_std_frame_2 = {
+const struct can_frame test_std_frame_2 = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr     = CAN_DATAFRAME,
 	.id      = TEST_CAN_STD_ID_2,
@@ -81,7 +81,7 @@ const struct zcan_frame test_std_frame_2 = {
 /**
  * @brief Extended (29-bit) CAN ID frame 1.
  */
-const struct zcan_frame test_ext_frame_1 = {
+const struct can_frame test_ext_frame_1 = {
 	.id_type = CAN_EXTENDED_IDENTIFIER,
 	.rtr     = CAN_DATAFRAME,
 	.id      = TEST_CAN_EXT_ID_1,
@@ -92,7 +92,7 @@ const struct zcan_frame test_ext_frame_1 = {
 /**
  * @brief Extended (29-bit) CAN ID frame 1.
  */
-const struct zcan_frame test_ext_frame_2 = {
+const struct can_frame test_ext_frame_2 = {
 	.id_type = CAN_EXTENDED_IDENTIFIER,
 	.rtr     = CAN_DATAFRAME,
 	.id      = TEST_CAN_EXT_ID_2,
@@ -103,7 +103,7 @@ const struct zcan_frame test_ext_frame_2 = {
 /**
  * @brief Standard (11-bit) CAN ID RTR frame 1.
  */
-const struct zcan_frame test_std_rtr_frame_1 = {
+const struct can_frame test_std_rtr_frame_1 = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr     = CAN_REMOTEREQUEST,
 	.id      = TEST_CAN_STD_ID_1,
@@ -114,7 +114,7 @@ const struct zcan_frame test_std_rtr_frame_1 = {
 /**
  * @brief Extended (29-bit) CAN ID RTR frame 1.
  */
-const struct zcan_frame test_ext_rtr_frame_1 = {
+const struct can_frame test_ext_rtr_frame_1 = {
 	.id_type = CAN_EXTENDED_IDENTIFIER,
 	.rtr     = CAN_REMOTEREQUEST,
 	.id      = TEST_CAN_EXT_ID_1,
@@ -126,7 +126,7 @@ const struct zcan_frame test_ext_rtr_frame_1 = {
  * @brief Standard (11-bit) CAN ID filter 1. This filter matches
  * ``test_std_frame_1``.
  */
-const struct zcan_filter test_std_filter_1 = {
+const struct can_filter test_std_filter_1 = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.id = TEST_CAN_STD_ID_1,
@@ -138,7 +138,7 @@ const struct zcan_filter test_std_filter_1 = {
  * @brief Standard (11-bit) CAN ID filter 2. This filter matches
  * ``test_std_frame_2``.
  */
-const struct zcan_filter test_std_filter_2 = {
+const struct can_filter test_std_filter_2 = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.id = TEST_CAN_STD_ID_2,
@@ -150,7 +150,7 @@ const struct zcan_filter test_std_filter_2 = {
  * @brief Standard (11-bit) CAN ID masked filter 1. This filter matches
  * ``test_std_frame_1``.
  */
-const struct zcan_filter test_std_masked_filter_1 = {
+const struct can_filter test_std_masked_filter_1 = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.id = TEST_CAN_STD_MASK_ID_1,
@@ -162,7 +162,7 @@ const struct zcan_filter test_std_masked_filter_1 = {
  * @brief Standard (11-bit) CAN ID masked filter 2. This filter matches
  * ``test_std_frame_2``.
  */
-const struct zcan_filter test_std_masked_filter_2 = {
+const struct can_filter test_std_masked_filter_2 = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.id = TEST_CAN_STD_MASK_ID_2,
@@ -174,7 +174,7 @@ const struct zcan_filter test_std_masked_filter_2 = {
  * @brief Extended (29-bit) CAN ID filter 1. This filter matches
  * ``test_ext_frame_1``.
  */
-const struct zcan_filter test_ext_filter_1 = {
+const struct can_filter test_ext_filter_1 = {
 	.id_type = CAN_EXTENDED_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.id = TEST_CAN_EXT_ID_1,
@@ -186,7 +186,7 @@ const struct zcan_filter test_ext_filter_1 = {
  * @brief Extended (29-bit) CAN ID filter 2. This filter matches
  * ``test_ext_frame_2``.
  */
-const struct zcan_filter test_ext_filter_2 = {
+const struct can_filter test_ext_filter_2 = {
 	.id_type = CAN_EXTENDED_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.id = TEST_CAN_EXT_ID_2,
@@ -198,7 +198,7 @@ const struct zcan_filter test_ext_filter_2 = {
  * @brief Extended (29-bit) CAN ID masked filter 1. This filter matches
  * ``test_ext_frame_1``.
  */
-const struct zcan_filter test_ext_masked_filter_1 = {
+const struct can_filter test_ext_masked_filter_1 = {
 	.id_type = CAN_EXTENDED_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.id = TEST_CAN_EXT_MASK_ID_1,
@@ -210,7 +210,7 @@ const struct zcan_filter test_ext_masked_filter_1 = {
  * @brief Extended (29-bit) CAN ID masked filter 2. This filter matches
  * ``test_ext_frame_2``.
  */
-const struct zcan_filter test_ext_masked_filter_2 = {
+const struct can_filter test_ext_masked_filter_2 = {
 	.id_type = CAN_EXTENDED_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.id = TEST_CAN_EXT_ID_1,
@@ -222,7 +222,7 @@ const struct zcan_filter test_ext_masked_filter_2 = {
  * @brief Standard (11-bit) CAN ID RTR filter 1. This filter matches
  * ``test_std_rtr_frame_1``.
  */
-const struct zcan_filter test_std_rtr_filter_1 = {
+const struct can_filter test_std_rtr_filter_1 = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_REMOTEREQUEST,
 	.id = TEST_CAN_STD_ID_1,
@@ -234,7 +234,7 @@ const struct zcan_filter test_std_rtr_filter_1 = {
  * @brief Extended (29-bit) CAN ID RTR filter 1. This filter matches
  * ``test_ext_rtr_frame_1``.
  */
-const struct zcan_filter test_ext_rtr_filter_1 = {
+const struct can_filter test_ext_rtr_filter_1 = {
 	.id_type = CAN_EXTENDED_IDENTIFIER,
 	.rtr = CAN_REMOTEREQUEST,
 	.id = TEST_CAN_EXT_ID_1,
@@ -246,7 +246,7 @@ const struct zcan_filter test_ext_rtr_filter_1 = {
  * @brief Standard (11-bit) CAN ID filter. This filter matches
  * ``TEST_CAN_SOME_STD_ID``.
  */
-const struct zcan_filter test_std_some_filter = {
+const struct can_filter test_std_some_filter = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.id = TEST_CAN_SOME_STD_ID,
@@ -261,8 +261,8 @@ const struct zcan_filter test_std_some_filter = {
  * @param frame2  Second CAN frame.
  * @param id_mask CAN ID mask.
  */
-static inline void assert_frame_equal(const struct zcan_frame *frame1,
-				      const struct zcan_frame *frame2,
+static inline void assert_frame_equal(const struct can_frame *frame1,
+				      const struct can_frame *frame2,
 				      uint32_t id_mask)
 {
 	zassert_equal(frame1->id_type, frame2->id_type, "ID type does not match");
@@ -279,7 +279,7 @@ static inline void assert_frame_equal(const struct zcan_frame *frame1,
  */
 static void tx_std_callback_1(const struct device *dev, int error, void *user_data)
 {
-	const struct zcan_frame *frame = user_data;
+	const struct can_frame *frame = user_data;
 
 	k_sem_give(&tx_callback_sem);
 
@@ -294,7 +294,7 @@ static void tx_std_callback_1(const struct device *dev, int error, void *user_da
  */
 static void tx_std_callback_2(const struct device *dev, int error, void *user_data)
 {
-	const struct zcan_frame *frame = user_data;
+	const struct can_frame *frame = user_data;
 
 	k_sem_give(&tx_callback_sem);
 
@@ -309,7 +309,7 @@ static void tx_std_callback_2(const struct device *dev, int error, void *user_da
  */
 static void tx_ext_callback_1(const struct device *dev, int error, void *user_data)
 {
-	const struct zcan_frame *frame = user_data;
+	const struct can_frame *frame = user_data;
 
 	k_sem_give(&tx_callback_sem);
 
@@ -324,7 +324,7 @@ static void tx_ext_callback_1(const struct device *dev, int error, void *user_da
  */
 static void tx_ext_callback_2(const struct device *dev, int error, void *user_data)
 {
-	const struct zcan_frame *frame = user_data;
+	const struct can_frame *frame = user_data;
 
 	k_sem_give(&tx_callback_sem);
 
@@ -337,10 +337,10 @@ static void tx_ext_callback_2(const struct device *dev, int error, void *user_da
  *
  * See @a can_rx_callback_t() for argument description.
  */
-static void rx_std_callback_1(const struct device *dev, struct zcan_frame *frame,
+static void rx_std_callback_1(const struct device *dev, struct can_frame *frame,
 			      void *user_data)
 {
-	struct zcan_filter *filter = user_data;
+	struct can_filter *filter = user_data;
 
 	assert_frame_equal(frame, &test_std_frame_1, 0);
 	zassert_equal(dev, can_dev, "CAN device does not match");
@@ -354,10 +354,10 @@ static void rx_std_callback_1(const struct device *dev, struct zcan_frame *frame
  *
  * See @a can_rx_callback_t() for argument description.
  */
-static void rx_std_callback_2(const struct device *dev, struct zcan_frame *frame,
+static void rx_std_callback_2(const struct device *dev, struct can_frame *frame,
 			      void *user_data)
 {
-	struct zcan_filter *filter = user_data;
+	struct can_filter *filter = user_data;
 
 	assert_frame_equal(frame, &test_std_frame_2, 0);
 	zassert_equal(dev, can_dev, "CAN device does not match");
@@ -371,10 +371,10 @@ static void rx_std_callback_2(const struct device *dev, struct zcan_frame *frame
  *
  * See @a can_rx_callback_t() for argument description.
  */
-static void rx_std_mask_callback_1(const struct device *dev, struct zcan_frame *frame,
+static void rx_std_mask_callback_1(const struct device *dev, struct can_frame *frame,
 				   void *user_data)
 {
-	struct zcan_filter *filter = user_data;
+	struct can_filter *filter = user_data;
 
 	assert_frame_equal(frame, &test_std_frame_1, 0x0F);
 	zassert_equal(dev, can_dev, "CAN device does not match");
@@ -388,10 +388,10 @@ static void rx_std_mask_callback_1(const struct device *dev, struct zcan_frame *
  *
  * See @a can_rx_callback_t() for argument description.
  */
-static void rx_std_mask_callback_2(const struct device *dev, struct zcan_frame *frame,
+static void rx_std_mask_callback_2(const struct device *dev, struct can_frame *frame,
 				   void *user_data)
 {
-	struct zcan_filter *filter = user_data;
+	struct can_filter *filter = user_data;
 
 	assert_frame_equal(frame, &test_std_frame_2, 0x0F);
 	zassert_equal(dev, can_dev, "CAN device does not match");
@@ -405,10 +405,10 @@ static void rx_std_mask_callback_2(const struct device *dev, struct zcan_frame *
  *
  * See @a can_rx_callback_t() for argument description.
  */
-static void rx_ext_callback_1(const struct device *dev, struct zcan_frame *frame,
+static void rx_ext_callback_1(const struct device *dev, struct can_frame *frame,
 			      void *user_data)
 {
-	struct zcan_filter *filter = user_data;
+	struct can_filter *filter = user_data;
 
 	assert_frame_equal(frame, &test_ext_frame_1, 0);
 	zassert_equal(dev, can_dev, "CAN device does not match");
@@ -422,10 +422,10 @@ static void rx_ext_callback_1(const struct device *dev, struct zcan_frame *frame
  *
  * See @a can_rx_callback_t() for argument description.
  */
-static void rx_ext_callback_2(const struct device *dev, struct zcan_frame *frame,
+static void rx_ext_callback_2(const struct device *dev, struct can_frame *frame,
 			      void *user_data)
 {
-	struct zcan_filter *filter = user_data;
+	struct can_filter *filter = user_data;
 
 	assert_frame_equal(frame, &test_ext_frame_2, 0);
 	zassert_equal(dev, can_dev, "CAN device does not match");
@@ -439,10 +439,10 @@ static void rx_ext_callback_2(const struct device *dev, struct zcan_frame *frame
  *
  * See @a can_rx_callback_t() for argument description.
  */
-static void rx_ext_mask_callback_1(const struct device *dev, struct zcan_frame *frame,
+static void rx_ext_mask_callback_1(const struct device *dev, struct can_frame *frame,
 				   void *user_data)
 {
-	struct zcan_filter *filter = user_data;
+	struct can_filter *filter = user_data;
 
 	assert_frame_equal(frame, &test_ext_frame_1, 0x0F);
 	zassert_equal(dev, can_dev, "CAN device does not match");
@@ -456,10 +456,10 @@ static void rx_ext_mask_callback_1(const struct device *dev, struct zcan_frame *
  *
  * See @a can_rx_callback_t() for argument description.
  */
-static void rx_ext_mask_callback_2(const struct device *dev, struct zcan_frame *frame,
+static void rx_ext_mask_callback_2(const struct device *dev, struct can_frame *frame,
 				   void *user_data)
 {
-	struct zcan_filter *filter = user_data;
+	struct can_filter *filter = user_data;
 
 	assert_frame_equal(frame, &test_ext_frame_2, 0x0F);
 	zassert_equal(dev, can_dev, "CAN device does not match");
@@ -477,7 +477,7 @@ static void rx_ext_mask_callback_2(const struct device *dev, struct zcan_frame *
  * @param dev   Pointer to the device structure for the driver instance.
  * @param frame Pointer to the CAN frame to send.
  */
-static void send_test_frame(const struct device *dev, const struct zcan_frame *frame)
+static void send_test_frame(const struct device *dev, const struct can_frame *frame)
 {
 	int err;
 
@@ -496,7 +496,7 @@ static void send_test_frame(const struct device *dev, const struct zcan_frame *f
  * @param frame    Pointer to the CAN frame to send.
  * @param callback Transmit callback function.
  */
-static void send_test_frame_nowait(const struct device *dev, const struct zcan_frame *frame,
+static void send_test_frame_nowait(const struct device *dev, const struct can_frame *frame,
 				   can_tx_callback_t callback)
 {
 	int err;
@@ -514,7 +514,7 @@ static void send_test_frame_nowait(const struct device *dev, const struct zcan_f
  *
  * @return CAN filter ID.
  */
-static inline int add_rx_msgq(const struct device *dev, const struct zcan_filter *filter)
+static inline int add_rx_msgq(const struct device *dev, const struct can_filter *filter)
 {
 	int filter_id;
 
@@ -535,7 +535,7 @@ static inline int add_rx_msgq(const struct device *dev, const struct zcan_filter
  * @return CAN filter ID.
  */
 static inline int add_rx_filter(const struct device *dev,
-				const struct zcan_filter *filter,
+				const struct can_filter *filter,
 				can_rx_callback_t callback)
 {
 	int filter_id;
@@ -557,12 +557,12 @@ static inline int add_rx_filter(const struct device *dev,
  * @param frame1  CAN frame 1
  * @param frame2  CAN frame 2
  */
-static void send_receive(const struct zcan_filter *filter1,
-			 const struct zcan_filter *filter2,
-			 const struct zcan_frame *frame1,
-			 const struct zcan_frame *frame2)
+static void send_receive(const struct can_filter *filter1,
+			 const struct can_filter *filter2,
+			 const struct can_frame *frame1,
+			 const struct can_frame *frame2)
 {
-	struct zcan_frame frame_buffer;
+	struct can_frame frame_buffer;
 	uint32_t mask = 0U;
 	int filter_id_1;
 	int filter_id_2;
@@ -640,12 +640,12 @@ static void send_receive(const struct zcan_filter *filter1,
  * @param data_frame  CAN data frame
  * @param rtr_frame   CAN RTR frame
  */
-void send_receive_rtr(const struct zcan_filter *data_filter,
-		      const struct zcan_filter *rtr_filter,
-		      const struct zcan_frame *data_frame,
-		      const struct zcan_frame *rtr_frame)
+void send_receive_rtr(const struct can_filter *data_filter,
+		      const struct can_filter *rtr_filter,
+		      const struct can_frame *data_frame,
+		      const struct can_frame *rtr_frame)
 {
-	struct zcan_frame frame;
+	struct can_frame frame;
 	int filter_id;
 	int err;
 
@@ -807,7 +807,7 @@ ZTEST(can_api, test_add_filter)
 static void add_remove_max_filters(enum can_ide id_type)
 {
 	uint32_t id_mask = id_type == CAN_STANDARD_IDENTIFIER ? CAN_STD_ID_MASK : CAN_EXT_ID_MASK;
-	struct zcan_filter filter = {
+	struct can_filter filter = {
 		.id_type = id_type,
 		.rtr = CAN_DATAFRAME,
 		.id = 0,
@@ -866,7 +866,7 @@ ZTEST_USER(can_api, test_max_ext_filters)
  */
 ZTEST_USER(can_api, test_receive_timeout)
 {
-	struct zcan_frame frame;
+	struct can_frame frame;
 	int filter_id;
 	int err;
 
@@ -935,7 +935,7 @@ ZTEST(can_api, test_send_receive_ext_id_masked)
 ZTEST_USER(can_api, test_send_receive_msgq)
 {
 	struct k_msgq_attrs attrs;
-	struct zcan_frame frame;
+	struct can_frame frame;
 	int filter_id;
 	int nframes;
 	int err;
@@ -992,7 +992,7 @@ ZTEST_USER(can_api, test_send_receive_ext_id_rtr)
  */
 ZTEST(can_api, test_send_receive_wrong_id)
 {
-	struct zcan_frame frame_buffer;
+	struct can_frame frame_buffer;
 	int filter_id;
 	int err;
 
@@ -1011,7 +1011,7 @@ ZTEST(can_api, test_send_receive_wrong_id)
  */
 ZTEST_USER(can_api, test_send_invalid_dlc)
 {
-	struct zcan_frame frame;
+	struct can_frame frame;
 	int err;
 
 	frame.dlc = CAN_MAX_DLC + 1;
@@ -1054,7 +1054,7 @@ ZTEST_USER(can_api, test_get_state)
 
 ZTEST_USER(can_api, test_filters_preserved_through_mode_change)
 {
-	struct zcan_frame frame;
+	struct can_frame frame;
 	int filter_id;
 	int err;
 
@@ -1082,7 +1082,7 @@ ZTEST_USER(can_api, test_filters_preserved_through_mode_change)
 
 ZTEST_USER(can_api, test_filters_preserved_through_bitrate_change)
 {
-	struct zcan_frame frame;
+	struct can_frame frame;
 	int filter_id;
 	int err;
 
