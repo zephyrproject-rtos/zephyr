@@ -17,8 +17,8 @@
 
 include_guard(GLOBAL)
 
-# This is the minimum required Zephyr-SDK version which supports CMake package
-set(TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION 0.13.1)
+# This is the minimum required Zephyr SDK version.
+set(TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION 0.15)
 
 # Set internal variables if set in environment.
 if(NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT)
