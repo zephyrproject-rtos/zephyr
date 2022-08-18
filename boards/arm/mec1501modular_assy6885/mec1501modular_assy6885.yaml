@@ -22,6 +22,5 @@ supported:
   - pinmux
   - pwm
   - watchdog
-  - ps2
   - kscan
   - tach

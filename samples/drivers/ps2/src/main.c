@@ -33,7 +33,8 @@ K_MSGQ_DEFINE(aux_to_host_queue, sizeof(uint8_t), 8, 4);
 /* We use a timer to saturate the queue */
 K_TIMER_DEFINE(block_ps2_timer, saturate_ps2, NULL);
 
-static const struct device *ps2_0_dev;
+static const struct device *const ps2_0_dev =
+	DEVICE_DT_GET_ONE(microchip_xec_ps2);
 
 static void saturate_ps2(struct k_timer *timer)
 {
@@ -175,8 +176,6 @@ void main(void)
 	/* The ps2 blocks are generic, therefore, it is allowed to swap
 	 * keyboard and mouse as desired
 	 */
-#if DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_ps2)
-	ps2_0_dev = DEVICE_DT_GET_ONE(microchip_xec_ps2);
 	if (!device_is_ready(ps2_0_dev)) {
 		printk("%s: device not ready.\n", ps2_0_dev->name);
 		return;
@@ -184,6 +183,6 @@ void main(void)
 	ps2_config(ps2_0_dev, mb_callback);
 	/*Make sure there is a PS/2 device connected */
 	initialize_mouse();
-#endif
+
 	k_timer_start(&block_ps2_timer, K_SECONDS(2), K_SECONDS(1));
 }
