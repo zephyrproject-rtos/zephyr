@@ -4,6 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	virtual-sensors {
+		hinge-angle {
+			compatible = "vnd,sensor-hinge-angle";
+			friendly-name = "Hinge Angle";
+			reporters = <&base_accel &lid_accel>;
+			status = "okay";
+		};
+
+		orientation {
+			compatible = "vnd,sensor-kalman-filter";
+			friendly-name = "Orientation";
+			reporters = <&base_accel &base_gyro &base_magn>;
+			status = "okay";
+		};
+	};
+};
+
 &lis2mdl_1e {
 	friendly-name = "Base Magnetometer";
 

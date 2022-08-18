@@ -1,0 +1,16 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Hinge Angle Virtual Sensor
+
+include: sensor-virtual.yaml
+
+compatible: "vnd,sensor-hinge-angle"
+
+properties:
+    vendor:
+      default: "Vendor"
+
+    model:
+      default: "Hingle Angle"

@@ -1,0 +1,17 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Sensor shell sample application"
+
+menu "Application configuration"
+
+config APP_SENSOR_VIRTUAL
+	bool "Virtual sensor driver"
+	default y
+	depends on DT_HAS_VND_SENSOR_HINGE_ANGLE_ENABLED || \
+		   DT_HAS_VND_SENSOR_KALMAN_FILTER_ENABLED
+
+endmenu
+
+source "Kconfig.zephyr"

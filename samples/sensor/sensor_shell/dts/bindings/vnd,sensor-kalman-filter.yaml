@@ -1,0 +1,16 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Kalman Filter Virtual Sensor
+
+include: sensor-virtual.yaml
+
+compatible: "vnd,sensor-kalman-filter"
+
+properties:
+    vendor:
+      default: "Vendor"
+
+    model:
+      default: "Kalman Filter"
