@@ -90,7 +90,7 @@ static bool user_handler(void *user_data, uint32_t iter_cnt, bool last, int prio
  *
  * @ingroup lib_ringbuffer_tests
  */
-void test_ringbuffer_concurrent(void)
+ZTEST(ringbuffer_api, test_ringbuffer_concurrent)
 {
 	ztress_set_timeout(K_MSEC(1000));
 	ZTRESS_EXECUTE(ZTRESS_THREAD(user_handler, (void *)0, 0, 0, Z_TIMEOUT_TICKS(20)),
@@ -296,7 +296,7 @@ void test_ringbuffer_stress(ztress_handler produce_handler,
 /* Zero-copy API. Test is validating single producer, single consumer from
  * different priorities.
  */
-void test_ringbuffer_zerocpy_stress(void)
+ZTEST(ringbuffer_api, test_ringbuffer_zerocpy_stress)
 {
 	test_ringbuffer_stress(produce, consume, false);
 }
@@ -304,7 +304,7 @@ void test_ringbuffer_zerocpy_stress(void)
 /* Copy API. Test is validating single producer, single consumer from
  * different priorities.
  */
-void test_ringbuffer_cpy_stress(void)
+ZTEST(ringbuffer_api, test_ringbuffer_cpy_stress)
 {
 	test_ringbuffer_stress(produce_cpy, consume_cpy, false);
 }
@@ -312,7 +312,7 @@ void test_ringbuffer_cpy_stress(void)
 /* Item API. Test is validating single producer, single consumer from
  * different priorities.
  */
-void test_ringbuffer_item_stress(void)
+ZTEST(ringbuffer_api, test_ringbuffer_item_stress)
 {
 	test_ringbuffer_stress(produce_item, consume_item, true);
 }
