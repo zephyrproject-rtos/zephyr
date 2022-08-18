@@ -49,8 +49,8 @@ def dt_chosen_label(kconf, _, chosen):
     """
     This function takes a 'chosen' property and treats that property as a path
     to an EDT node.  If it finds an EDT node, it will look to see if that node
-    has a "label" property and return the value of that "label", if not we
-    return an empty string.
+    has a "label" property and return the value of that "label". If not, we
+    return the node's name in the devicetree.
     """
     if doc_mode or edt is None:
         return ""
