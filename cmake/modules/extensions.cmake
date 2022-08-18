@@ -2436,8 +2436,11 @@ function(zephyr_check_cache variable)
     message(FATAL_ERROR "${variable} is not being defined on the CMake command-line in the environment or by the app.")
   endif()
 
-  # Store the specified variable in parent scope and the cache
-  set(${variable} ${${variable}} PARENT_SCOPE)
+  if(DEFINED ${variable})
+    # Store the specified variable in parent scope and the cache
+    set(${variable} ${${variable}} PARENT_SCOPE)
+    set(${variable} ${${variable}} CACHE STRING "Selected ${variable_text}")
+  endif()
   set(CACHED_${variable} ${${variable}} CACHE STRING "Selected ${variable_text}")
 
   if(CACHE_VAR_WATCH)
