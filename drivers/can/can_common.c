@@ -125,9 +125,8 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 		LOG_DBG("SP error: %d 1/1000", sp_err_min);
 	}
 
-	return sp_err_min == UINT16_MAX ? -EINVAL : (int)sp_err_min;
+	return sp_err_min == UINT16_MAX ? -ENOTSUP : (int)sp_err_min;
 }
-
 
 int z_impl_can_calc_timing(const struct device *dev, struct can_timing *res,
 			   uint32_t bitrate, uint16_t sample_pnt)
@@ -235,11 +234,11 @@ int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate)
 	sample_pnt = sample_point_for_bitrate(bitrate);
 	ret = can_calc_timing(dev, &timing, bitrate, sample_pnt);
 	if (ret < 0) {
-		return -EINVAL;
+		return ret;
 	}
 
 	if (ret > SAMPLE_POINT_MARGIN) {
-		return -EINVAL;
+		return -ERANGE;
 	}
 
 	timing.sjw = CAN_SJW_NO_CHANGE;
@@ -270,11 +269,11 @@ int z_impl_can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data)
 	sample_pnt = sample_point_for_bitrate(bitrate_data);
 	ret = can_calc_timing_data(dev, &timing_data, bitrate_data, sample_pnt);
 	if (ret < 0) {
-		return -EINVAL;
+		return ret;
 	}
 
 	if (ret > SAMPLE_POINT_MARGIN) {
-		return -EINVAL;
+		return -ERANGE;
 	}
 
 	timing_data.sjw = CAN_SJW_NO_CHANGE;
