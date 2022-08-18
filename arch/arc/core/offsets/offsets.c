@@ -104,7 +104,9 @@ GEN_OFFSET_SYM(_callee_saved_stack_t, user_sp);
 GEN_OFFSET_SYM(_callee_saved_stack_t, r30);
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
 GEN_OFFSET_SYM(_callee_saved_stack_t, r58);
+#ifndef CONFIG_64BIT
 GEN_OFFSET_SYM(_callee_saved_stack_t, r59);
+#endif /* !CONFIG_64BIT */
 #endif
 #ifdef CONFIG_FPU_SHARING
 GEN_OFFSET_SYM(_callee_saved_stack_t, fpu_status);
