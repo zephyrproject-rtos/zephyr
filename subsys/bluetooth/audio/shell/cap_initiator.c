@@ -52,9 +52,20 @@ static void cap_unicast_start_complete_cb(struct bt_bap_unicast_group *unicast_g
 	}
 }
 
+static void unicast_update_complete_cb(int err, struct bt_conn *conn)
+{
+	if (err != 0) {
+		shell_error(ctx_shell, "Unicast update failed for conn %p (%d)",
+			    conn, err);
+	} else {
+		shell_print(ctx_shell, "Unicast updated completed");
+	}
+}
+
 static struct bt_cap_initiator_cb cbs = {
 	.unicast_discovery_complete = cap_discover_cb,
 	.unicast_start_complete = cap_unicast_start_complete_cb,
+	.unicast_update_complete = unicast_update_complete_cb
 };
 
 static int cmd_cap_initiator_discover(const struct shell *sh, size_t argc,
@@ -318,6 +329,124 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+static int cmd_cap_initiator_unicast_list(const struct shell *sh, size_t argc,
+					  char *argv[])
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(unicast_client_streams); i++) {
+		if (unicast_client_streams[i].stream.bap_stream.conn == NULL) {
+			break;
+		}
+
+		shell_print(sh, "Stream #%zu: %p", i, &unicast_client_streams[i].stream);
+	}
+	return 0;
+}
+
+static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
+					    char *argv[])
+{
+	struct bt_cap_unicast_audio_update_param params[CAP_UNICAST_CLIENT_STREAM_COUNT];
+	size_t count;
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	count = 0;
+
+	if (argc == 2 && strcmp(argv[1], "all") == 0) {
+		for (size_t i = 0U; i < ARRAY_SIZE(unicast_client_streams); i++) {
+			struct bt_cap_stream *stream = &unicast_client_streams[i].stream;
+			struct cap_unicast_stream *uni_stream =
+				CONTAINER_OF(stream, struct cap_unicast_stream, stream);
+			struct bt_bap_ep_info ep_info;
+
+			if (stream->bap_stream.conn == NULL) {
+				break;
+			}
+
+			err = bt_bap_ep_get_info(stream->bap_stream.ep, &ep_info);
+			if (err != 0) {
+				shell_error(sh, "Failed to get endpoint info: %d", err);
+
+				return -ENOEXEC;
+			}
+
+			params[count].stream = stream;
+
+			if (ep_info.dir == BT_AUDIO_DIR_SINK) {
+				cap_copy_preset(uni_stream, default_sink_preset);
+			} else {
+				cap_copy_preset(uni_stream, default_source_preset);
+			}
+
+			params[count].meta = uni_stream->codec.meta;
+			params[count].meta_count = uni_stream->codec.meta_count;
+
+			count++;
+		}
+
+	} else {
+		for (size_t i = 1U; i < argc; i++) {
+			struct bt_cap_stream *stream = (void *)shell_strtoul(argv[i], 16, &err);
+			struct cap_unicast_stream *uni_stream =
+				CONTAINER_OF(stream, struct cap_unicast_stream, stream);
+			struct bt_bap_ep_info ep_info;
+
+			if (err != 0) {
+				shell_error(sh, "Failed to parse stream argument %s: %d",
+					argv[i], err);
+
+				return err;
+			}
+
+			if (!PART_OF_ARRAY(unicast_client_streams, stream)) {
+				shell_error(sh, "Pointer %p is not a CAP stream pointer",
+					stream);
+
+				return -ENOEXEC;
+			}
+
+			err = bt_bap_ep_get_info(stream->bap_stream.ep, &ep_info);
+			if (err != 0) {
+				shell_error(sh, "Failed to get endpoint info: %d", err);
+
+				return -ENOEXEC;
+			}
+
+			params[count].stream = stream;
+
+			if (ep_info.dir == BT_AUDIO_DIR_SINK) {
+				cap_copy_preset(uni_stream, default_sink_preset);
+			} else {
+				cap_copy_preset(uni_stream, default_source_preset);
+			}
+
+			params[count].meta = uni_stream->codec.meta;
+			params[count].meta_count = uni_stream->codec.meta_count;
+
+			count++;
+		}
+	}
+
+	if (count == 0) {
+		shell_error(sh, "No streams to update");
+
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Updating %zu streams", count);
+
+	err = bt_cap_initiator_unicast_audio_update(params, count);
+	if (err != 0) {
+		shell_print(sh, "Failed to update unicast audio: %d", err);
+	}
+
+	return err;
+}
+
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
 static int cmd_cap_initiator(const struct shell *sh, size_t argc, char **argv)
@@ -341,6 +470,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(cap_initiator_cmds,
 		      "[sources <cnt> (default 1)] "
 		      "[conns (<cnt> | all) (default 1)]",
 		      cmd_cap_initiator_unicast_start, 1, 7),
+	SHELL_CMD_ARG(unicast-list, NULL, "Unicast list streams",
+		      cmd_cap_initiator_unicast_list, 1, 0),
+	SHELL_CMD_ARG(unicast-update, NULL, "Unicast Update <all | stream [stream [stream...]]>",
+		      cmd_cap_initiator_unicast_update, 2,
+		      CAP_UNICAST_CLIENT_STREAM_COUNT),
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 	SHELL_SUBCMD_SET_END
 );
