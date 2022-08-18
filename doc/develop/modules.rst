@@ -207,6 +207,7 @@ such updates in Zephyr and the module **owner**. In particular:
   have not been caught by Zephyr pull request CI runs.
 
 
+.. _modules_changes:
 
 Contributing changes to modules
 ===============================
