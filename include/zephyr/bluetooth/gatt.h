@@ -172,7 +172,10 @@ struct bt_gatt_attr {
 	void *user_data;
 	/** Attribute handle */
 	uint16_t handle;
-	/** Attribute permissions */
+	/** @brief Attribute permissions.
+	 *
+	 * Will be 0 if returned from bt_gatt_discover().
+	 */
 	uint16_t perm;
 };
 
