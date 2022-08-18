@@ -88,9 +88,7 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 	int sp_err;
 	struct can_timing tmp_res;
 
-	if (bitrate == 0 || sp >= 1000 ||
-	    (!IS_ENABLED(CONFIG_CAN_FD_MODE) && bitrate > 1000000) ||
-	     (IS_ENABLED(CONFIG_CAN_FD_MODE) && bitrate > 8000000)) {
+	if (bitrate == 0 || sp >= 1000) {
 		return -EINVAL;
 	}
 
@@ -139,6 +137,10 @@ int z_impl_can_calc_timing(const struct device *dev, struct can_timing *res,
 	uint32_t core_clock;
 	int ret;
 
+	if (bitrate > 1000000) {
+		return -EINVAL;
+	}
+
 	ret = can_get_core_clock(dev, &core_clock);
 	if (ret != 0) {
 		return ret;
@@ -155,6 +157,10 @@ int z_impl_can_calc_timing_data(const struct device *dev, struct can_timing *res
 	const struct can_timing *max = can_get_timing_data_max(dev);
 	uint32_t core_clock;
 	int ret;
+
+	if (bitrate > 8000000) {
+		return -EINVAL;
+	}
 
 	ret = can_get_core_clock(dev, &core_clock);
 	if (ret != 0) {
