@@ -35,6 +35,9 @@ tests:
     extra_args: CONF_FILE=log_user.conf USERSPACE_TEST=1
     integration_platforms:
       - qemu_x86
+    # FIXME: log_user test fails when compiled with the GCC 12 from Zephyr SDK.
+    #        (see the GitHub issue zephyrproject-rtos/zephyr#49213)
+    toolchain_exclude: zephyr
     testcases:
       - log_from_user
       - log_hexdump_from_user
