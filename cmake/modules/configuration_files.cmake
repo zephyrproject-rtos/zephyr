@@ -35,7 +35,7 @@ else()
   set(APPLICATION_CONFIG_DIR ${APPLICATION_SOURCE_DIR})
 endif()
 
-zephyr_get(CONF_FILE)
+zephyr_get(CONF_FILE SYSBUILD LOCAL)
 if(DEFINED CONF_FILE)
   # This ensures that CACHE{CONF_FILE} will be set correctly to current scope
   # variable CONF_FILE. An already current scope variable will stay the same.
@@ -89,7 +89,7 @@ zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards DTS APP_BOARD_DTS)
 # The CONF_FILE variable is now set to its final value.
 zephyr_boilerplate_watch(CONF_FILE)
 
-zephyr_get(DTC_OVERLAY_FILE)
+zephyr_get(DTC_OVERLAY_FILE SYSBUILD LOCAL)
 if(DTC_OVERLAY_FILE)
   # DTC_OVERLAY_FILE has either been specified on the cmake CLI or is already
   # in the CMakeCache.txt.
