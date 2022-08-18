@@ -25,7 +25,7 @@ Hardware
 - Memory
 
   - 256 Mbit SDRAM
-  - 64 Mbit QSPI Flash
+  - 32 Mbit QSPI Flash
   - TF socket for SD card
 
 - Connectivity
@@ -104,6 +104,8 @@ features:
 | USB       | on-chip    | USB                                 |
 +-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
+| FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
