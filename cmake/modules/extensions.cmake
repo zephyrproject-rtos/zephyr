@@ -2316,15 +2316,23 @@ endfunction()
 
 # Usage:
 #   zephyr_get(<variable>)
+#   zephyr_get(<variable> SYSBUILD [LOCAL|GLOBAL])
 #
 # Return the value of <variable> as local scoped variable of same name.
 #
 # zephyr_get() is a common function to provide a uniform way of supporting
-# build settings that can be set from CMakeLists.txt, CMake cache, or in
-# environment.
+# build settings that can be set from sysbuild, CMakeLists.txt, CMake cache, or
+# in environment.
 #
 # The order of precedence for variables defined in multiple scopes:
-# - CMake cache, set by `-D<var>=<value>` or `set(<var> <val> CACHE ...)`
+# - Sysbuild defined when sysbuild is used.
+#   Sysbuild variables can be defined as global or local to specific image.
+#   Examples:
+#   - BOARD is considered a global sysbuild cache variable
+#   - blinky_BOARD is considered a local sysbuild cache variable only for the
+#     blinky image.
+#   If no sysbuild scope is specified, GLOBAL is assumed.
+# - CMake cache, set by `-D<var>=<value>` or `set(<var> <val> CACHE ...)
 # - Environment
 # - Locally in CMakeLists.txt before 'find_package(Zephyr)'
 #
@@ -2333,9 +2341,32 @@ endfunction()
 # using `-DZEPHYR_TOOLCHAIN_VARIANT=<val>`, then the value from the cache is
 # returned.
 function(zephyr_get variable)
-  cmake_parse_arguments(GET_VAR "" "" "" ${ARGN})
+  cmake_parse_arguments(GET_VAR "" "SYSBUILD" "" ${ARGN})
 
-  if(DEFINED CACHE{${variable}})
+  if(DEFINED GET_VAR_SYSBUILD)
+    if(NOT (${GET_VAR_SYSBUILD} STREQUAL "GLOBAL" OR
+            ${GET_VAR_SYSBUILD} STREQUAL "LOCAL")
+    )
+      message(FATAL_ERROR "zephyr_get(... SYSBUILD) requires GLOBAL or LOCAL.")
+    endif()
+  else()
+    set(GET_VAR_SYSBUILD "GLOBAL")
+  endif()
+
+  if(SYSBUILD)
+    get_property(sysbuild_name TARGET sysbuild_cache PROPERTY SYSBUILD_NAME)
+    get_property(sysbuild_main_app TARGET sysbuild_cache PROPERTY SYSBUILD_MAIN_APP)
+    get_property(sysbuild_${variable} TARGET sysbuild_cache PROPERTY ${sysbuild_name}_${variable})
+    if(NOT DEFINED sysbuild_${variable} AND
+       (${GET_VAR_SYSBUILD} STREQUAL "GLOBAL" OR sysbuild_main_app)
+    )
+      get_property(sysbuild_${variable} TARGET sysbuild_cache PROPERTY ${variable})
+    endif()
+  endif()
+
+  if(DEFINED sysbuild_${variable})
+    set(${variable} ${sysbuild_${variable}} PARENT_SCOPE)
+  elseif(DEFINED CACHE{${variable}})
     set(${variable} $CACHE{${variable}} PARENT_SCOPE)
   elseif(DEFINED ENV{${variable}})
     set(${variable} $ENV{${variable}} PARENT_SCOPE)
