@@ -54,6 +54,9 @@ list(APPEND zephyr_cmake_modules user_cache)
 list(APPEND zephyr_cmake_modules extensions)
 list(APPEND zephyr_cmake_modules version)
 
+# Load basic settings
+list(APPEND zephyr_cmake_modules basic_settings)
+
 #
 # Find tools
 #
