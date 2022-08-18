@@ -88,15 +88,12 @@ struct bt_cap_initiator_cb {
 	/**
 	 * @brief Callback for bt_cap_initiator_unicast_audio_update().
 	 *
-	 * @param unicast_group  The unicast group pointer supplied to
-	 *                       bt_cap_initiator_unicast_audio_update().
 	 * @param err            0 if success, else BT_GATT_ERR() with a
 	 *                       specific ATT (BT_ATT_ERR_*) error code.
 	 * @param conn           Pointer to the connection where the error
 	 *                       occurred. NULL if @p err is 0.
 	 */
-	void (*unicast_update_complete)(struct bt_bap_unicast_group *unicast_group,
-					int err, struct bt_conn *conn);
+	void (*unicast_update_complete)(int err, struct bt_conn *conn);
 
 	/**
 	 * @brief Callback for bt_cap_initiator_unicast_audio_stop().
@@ -199,6 +196,21 @@ struct bt_cap_unicast_audio_start_param {
 	uint8_t packing;
 };
 
+struct bt_cap_unicast_audio_update_param {
+	/** @brief Stream for the @p member */
+	struct bt_cap_stream *stream;
+
+	/** The number of entries in @p meta. */
+	size_t meta_count;
+
+	/** @brief The new metadata.
+	 *
+	 * The metadata shall a list of CCIDs as
+	 * well as a non-0 context bitfield.
+	 */
+	struct bt_codec_data *meta;
+};
+
 /**
  * @brief Register Common Audio Profile callbacks
  *
@@ -228,22 +240,21 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
 					 struct bt_bap_unicast_group *unicast_group);
 
 /**
- * @brief Update unicast audio streams for a unicast group.
+ * @brief Update unicast audio streams.
+ *
+ * This will update the metadata of one or more streams.
  *
  * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
  * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT} must be enabled for this function
  * to be enabled.
  *
- * @param unicast_group The group of unicast devices to update.
- * @param meta_count    The number of entries in @p meta.
- * @param meta          The new metadata. The metadata shall contain a list of
- *                      CCIDs as well as a non-0 context bitfield.
+ * @param params  Array of update parameters.
+ * @param count   The number of entries in @p params.
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_unicast_audio_update(struct bt_bap_unicast_group *unicast_group,
-					  uint8_t meta_count,
-					  const struct bt_codec_data *meta);
+int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_update_param params[],
+					  size_t count);
 
 /**
  * @brief Stop unicast audio streams for a unicast group.

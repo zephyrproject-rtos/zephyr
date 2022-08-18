@@ -22,6 +22,8 @@ BUILD_ASSERT(sizeof(struct bt_bap_broadcast_source_create_param) ==
 
 LOG_MODULE_REGISTER(bt_cap_initiator, CONFIG_BT_CAP_INITIATOR_LOG_LEVEL);
 
+#include "common/bt_str.h"
+
 static const struct bt_cap_initiator_cb *cap_cb;
 
 int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb)
@@ -46,10 +48,16 @@ static bool cap_initiator_valid_metadata(const struct bt_codec_data meta[],
 {
 	bool stream_context_found;
 
+	LOG_DBG("meta %p count %zu", meta, meta_count);
+
 	/* Streaming Audio Context shall be present in CAP */
 	stream_context_found = false;
 	for (size_t i = 0U; i < meta_count; i++) {
 		const struct bt_data *metadata = &meta[i].data;
+
+		LOG_DBG("metadata %p type %u len %u data %s",
+			metadata, metadata->type, metadata->data_len,
+			bt_hex(metadata->data, metadata->data_len));
 
 		if (metadata->type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
 			if (metadata->data_len != 2) { /* Stream context size */
@@ -932,12 +940,148 @@ void bt_cap_initiator_started(struct bt_cap_stream *cap_stream)
 	}
 }
 
-
-int bt_cap_initiator_unicast_audio_update(struct bt_bap_unicast_group *unicast_group,
-					  uint8_t meta_count,
-					  const struct bt_codec_data *meta)
+static void cap_initiator_unicast_audio_update_complete(void)
 {
-	return -ENOSYS;
+	struct bt_conn *failed_conn;
+	int err;
+
+	failed_conn = active_proc.failed_conn;
+	err = active_proc.err;
+
+	(void)memset(&active_proc, 0, sizeof(active_proc));
+	if (cap_cb != NULL && cap_cb->unicast_update_complete != NULL) {
+		cap_cb->unicast_update_complete(err, failed_conn);
+	}
+}
+
+static bool can_update_metadata(const struct bt_bap_stream *bap_stream)
+{
+	struct bt_bap_ep_info ep_info;
+	int err;
+
+	if (bap_stream->conn == NULL) {
+		return false;
+	}
+
+	err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
+	if (err != 0) {
+		LOG_DBG("Failed to get endpoint info %p: %d", bap_stream, err);
+
+		return false;
+	}
+
+	return ep_info.state == BT_BAP_EP_STATE_ENABLING ||
+	       ep_info.state == BT_BAP_EP_STATE_STREAMING;
+}
+
+int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_update_param params[],
+					  size_t count)
+{
+	if (atomic_test_bit(active_proc.flags,
+			    CAP_UNICAST_PROC_STATE_ACTIVE)) {
+		LOG_DBG("A CAP procedure is already in progress");
+
+		return -EBUSY;
+	}
+
+	for (size_t i = 0U; i < count; i++) {
+		CHECKIF(params[i].stream == NULL) {
+			LOG_DBG("params[%zu].stream is NULL", i);
+
+			return -EINVAL;
+		}
+
+		CHECKIF(params[i].stream->bap_stream.conn == NULL) {
+			LOG_DBG("params[%zu].stream->bap_stream.conn is NULL", i);
+
+			return -EINVAL;
+		}
+
+		CHECKIF(!cap_initiator_valid_metadata(params[i].meta,
+						      params[i].meta_count)) {
+			LOG_DBG("params[%zu].meta is invalid", i);
+
+			return -EINVAL;
+		}
+
+		for (size_t j = 0U; j < i; j++) {
+			if (params[j].stream == params[i].stream) {
+				LOG_DBG("param.streams[%zu] is duplicated by param.streams[%zu]",
+					j, i);
+				return -EINVAL;
+			}
+		}
+
+		if (!can_update_metadata(&params[i].stream->bap_stream)) {
+			LOG_DBG("params[%zu].stream is not in right state to be updated", i);
+
+			return -EINVAL;
+		}
+	}
+
+	atomic_set_bit(active_proc.flags,
+		       CAP_UNICAST_PROC_STATE_ACTIVE);
+	active_proc.stream_cnt = count;
+
+	/** TODO: If this is a CSIP set, then the order of the procedures may
+	 * not match the order in the parameters, and the CSIP ordered access
+	 * procedure should be used.
+	 */
+	for (size_t i = 0U; i < count; i++) {
+		int err;
+
+		active_proc.streams[i] = params[i].stream;
+
+		err = bt_bap_stream_metadata(&params[i].stream->bap_stream, params[i].meta,
+					     params[i].meta_count);
+		if (err != 0) {
+			LOG_DBG("Failed to update metadata for stream %p: %d",
+				params[i].stream, err);
+
+			active_proc.err = err;
+			active_proc.failed_conn = params[i].stream->bap_stream.conn;
+
+			if (i > 0U) {
+				atomic_set_bit(active_proc.flags,
+					       CAP_UNICAST_PROC_STATE_ABORTED);
+			} else {
+				(void)memset(&active_proc, 0,
+					     sizeof(active_proc));
+			}
+
+			return err;
+		}
+
+		active_proc.stream_initiated_cnt++;
+	}
+
+	return 0;
+}
+
+void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream)
+{
+	if (!cap_stream_in_active_proc(cap_stream)) {
+		/* State change happened outside of a procedure; ignore */
+		return;
+	}
+
+	active_proc.stream_done_cnt++;
+
+	LOG_DBG("Stream %p QoS metadata updated (%zu/%zu streams done)", cap_stream,
+		active_proc.stream_done_cnt, active_proc.stream_cnt);
+
+	if (active_proc.stream_done_cnt < active_proc.stream_cnt) {
+		/* Not yet finished, wait for all */
+		return;
+	} else if (atomic_test_bit(active_proc.flags, CAP_UNICAST_PROC_STATE_ABORTED)) {
+		if (active_proc.stream_done_cnt == active_proc.stream_initiated_cnt) {
+			cap_initiator_unicast_audio_update_complete();
+		}
+
+		return;
+	}
+
+	cap_initiator_unicast_audio_update_complete();
 }
 
 int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
