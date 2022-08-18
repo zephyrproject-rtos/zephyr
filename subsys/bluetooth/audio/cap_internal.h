@@ -16,4 +16,5 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream);
 void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream);
 void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream);
 void bt_cap_initiator_started(struct bt_cap_stream *cap_stream);
+void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream);
 void bt_cap_stream_ops_register_bap(struct bt_cap_stream *cap_stream);

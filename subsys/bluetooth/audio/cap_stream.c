@@ -65,6 +65,10 @@ static void cap_stream_metadata_updated_cb(struct bt_audio_stream *bap_stream)
 							bap_stream);
 	struct bt_audio_stream_ops *ops = cap_stream->ops;
 
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
+		bt_cap_initiator_metadata_updated(cap_stream);
+	}
+
 	if (ops != NULL && ops->metadata_updated != NULL) {
 		ops->metadata_updated(bap_stream);
 	}
