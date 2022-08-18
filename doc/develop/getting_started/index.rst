@@ -492,8 +492,8 @@ that are used to emulate, flash and debug Zephyr applications.
          .. code-block:: bash
 
             cd ~
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.2/zephyr-sdk-0.14.2_linux-x86_64.tar.gz
-            wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.2/sha256.sum | shasum --check --ignore-missing
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.0/zephyr-sdk-0.15.0_linux-x86_64.tar.gz
+            wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.0/sha256.sum | shasum --check --ignore-missing
 
          If your host architecture is 64-bit ARM (for example, Raspberry Pi), replace ``x86_64``
          with ``aarch64`` in order to download the 64-bit ARM Linux SDK.
@@ -502,7 +502,7 @@ that are used to emulate, flash and debug Zephyr applications.
 
          .. code-block:: bash
 
-            tar xvf zephyr-sdk-0.14.2_linux-x86_64.tar.gz
+            tar xvf zephyr-sdk-0.15.0_linux-x86_64.tar.gz
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:
@@ -514,15 +514,15 @@ that are used to emulate, flash and debug Zephyr applications.
             * ``/opt``
             * ``/usr/local``
 
-            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.14.2`` directory and, when
+            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.15.0`` directory and, when
             extracted under ``$HOME``, the resulting installation path will be
-            ``$HOME/zephyr-sdk-0.14.2``.
+            ``$HOME/zephyr-sdk-0.15.0``.
 
       #. Run the Zephyr SDK bundle setup script:
 
          .. code-block:: bash
 
-            cd zephyr-sdk-0.14.2
+            cd zephyr-sdk-0.15.0
             ./setup.sh
 
          .. note::
@@ -536,7 +536,7 @@ that are used to emulate, flash and debug Zephyr applications.
 
          .. code-block:: bash
 
-            sudo cp ~/zephyr-sdk-0.14.2/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
+            sudo cp ~/zephyr-sdk-0.15.0/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
             sudo udevadm control --reload
 
    .. group-tab:: macOS
@@ -547,8 +547,8 @@ that are used to emulate, flash and debug Zephyr applications.
          .. code-block:: bash
 
             cd ~
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.2/zephyr-sdk-0.14.2_macos-x86_64.tar.gz
-            wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.2/sha256.sum | shasum --check --ignore-missing
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.0/zephyr-sdk-0.15.0_macos-x86_64.tar.gz
+            wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.0/sha256.sum | shasum --check --ignore-missing
 
          If your host architecture is 64-bit ARM (Apple Silicon, also known as M1), replace
          ``x86_64`` with ``aarch64`` in order to download the 64-bit ARM macOS SDK.
@@ -557,7 +557,7 @@ that are used to emulate, flash and debug Zephyr applications.
 
          .. code-block:: bash
 
-            tar xvf zephyr-sdk-0.14.2_macos-x86_64.tar.gz
+            tar xvf zephyr-sdk-0.15.0_macos-x86_64.tar.gz
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:
@@ -569,15 +569,15 @@ that are used to emulate, flash and debug Zephyr applications.
             * ``/opt``
             * ``/usr/local``
 
-            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.14.2`` directory and, when
+            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.15.0`` directory and, when
             extracted under ``$HOME``, the resulting installation path will be
-            ``$HOME/zephyr-sdk-0.14.2``.
+            ``$HOME/zephyr-sdk-0.15.0``.
 
       #. Run the Zephyr SDK bundle setup script:
 
          .. code-block:: bash
 
-            cd zephyr-sdk-0.14.2
+            cd zephyr-sdk-0.15.0
             ./setup.sh
 
          .. note::
@@ -596,13 +596,13 @@ that are used to emulate, flash and debug Zephyr applications.
          .. code-block:: console
 
             cd %HOMEPATH%
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.2/zephyr-sdk-0.14.2_windows-x86_64.zip
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.15.0/zephyr-sdk-0.15.0_windows-x86_64.zip
 
       #. Extract the Zephyr SDK bundle archive:
 
          .. code-block:: console
 
-            unzip zephyr-sdk-0.14.2_windows-x86_64.zip
+            unzip zephyr-sdk-0.15.0_windows-x86_64.zip
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:
@@ -610,15 +610,15 @@ that are used to emulate, flash and debug Zephyr applications.
             * ``%HOMEPATH%``
             * ``%PROGRAMFILES%``
 
-            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.14.2`` directory and, when
+            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.15.0`` directory and, when
             extracted under ``%HOMEPATH%``, the resulting installation path will be
-            ``%HOMEPATH%\zephyr-sdk-0.14.2``.
+            ``%HOMEPATH%\zephyr-sdk-0.15.0``.
 
       #. Run the Zephyr SDK bundle setup script:
 
          .. code-block:: console
 
-            cd zephyr-sdk-0.14.2
+            cd zephyr-sdk-0.15.0
             setup.cmd
 
          .. note::
