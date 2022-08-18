@@ -70,6 +70,8 @@ features:
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | clock_control                       |
 +-----------+------------+-------------------------------------+
+| IAP       | on-chip    | flash programming                   |
++-----------+------------+-------------------------------------+
 
 The default configuration for each core can be found in the defconfig files:
 
