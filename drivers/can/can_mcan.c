@@ -748,13 +748,13 @@ int can_mcan_get_state(const struct device *dev, enum can_state *state,
 
 	if (state != NULL) {
 		if (can->psr & CAN_MCAN_PSR_BO) {
-			*state = CAN_BUS_OFF;
+			*state = CAN_STATE_BUS_OFF;
 		} else if (can->psr & CAN_MCAN_PSR_EP) {
-			*state = CAN_ERROR_PASSIVE;
+			*state = CAN_STATE_ERROR_PASSIVE;
 		} else if (can->psr & CAN_MCAN_PSR_EW) {
-			*state = CAN_ERROR_WARNING;
+			*state = CAN_STATE_ERROR_WARNING;
 		} else {
-			*state = CAN_ERROR_ACTIVE;
+			*state = CAN_STATE_ERROR_ACTIVE;
 		}
 	}
 

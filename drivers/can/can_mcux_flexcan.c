@@ -325,14 +325,14 @@ static int mcux_flexcan_get_state(const struct device *dev, enum can_state *stat
 		status_flags = FLEXCAN_GetStatusFlags(config->base);
 
 		if ((status_flags & CAN_ESR1_FLTCONF(2)) != 0U) {
-			*state = CAN_BUS_OFF;
+			*state = CAN_STATE_BUS_OFF;
 		} else if ((status_flags & CAN_ESR1_FLTCONF(1)) != 0U) {
-			*state = CAN_ERROR_PASSIVE;
+			*state = CAN_STATE_ERROR_PASSIVE;
 		} else if ((status_flags &
 			(kFLEXCAN_TxErrorWarningFlag | kFLEXCAN_RxErrorWarningFlag)) != 0) {
-			*state = CAN_ERROR_WARNING;
+			*state = CAN_STATE_ERROR_WARNING;
 		} else {
-			*state = CAN_ERROR_ACTIVE;
+			*state = CAN_STATE_ERROR_ACTIVE;
 		}
 	}
 
@@ -362,7 +362,7 @@ static int mcux_flexcan_send(const struct device *dev,
 	}
 
 	(void)mcux_flexcan_get_state(dev, &state, NULL);
-	if (state == CAN_BUS_OFF) {
+	if (state == CAN_STATE_BUS_OFF) {
 		LOG_DBG("Transmit failed, bus-off");
 		return -ENETDOWN;
 	}
@@ -471,7 +471,7 @@ static int mcux_flexcan_recover(const struct device *dev, k_timeout_t timeout)
 	int ret = 0;
 
 	(void)mcux_flexcan_get_state(dev, &state, NULL);
-	if (state != CAN_BUS_OFF) {
+	if (state != CAN_STATE_BUS_OFF) {
 		return 0;
 	}
 
@@ -481,7 +481,7 @@ static int mcux_flexcan_recover(const struct device *dev, k_timeout_t timeout)
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		(void)mcux_flexcan_get_state(dev, &state, NULL);
 
-		while (state == CAN_BUS_OFF) {
+		while (state == CAN_STATE_BUS_OFF) {
 			if (!K_TIMEOUT_EQ(timeout, K_FOREVER) &&
 			    k_uptime_ticks() - start_time >= timeout.ticks) {
 				ret = -EAGAIN;
@@ -571,7 +571,7 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 		}
 	}
 
-	if (state == CAN_BUS_OFF) {
+	if (state == CAN_STATE_BUS_OFF) {
 		/* Abort any pending TX frames in case of bus-off */
 		for (alloc = 0; alloc < MCUX_FLEXCAN_MAX_TX; alloc++) {
 			/* Copy callback function and argument before clearing bit */

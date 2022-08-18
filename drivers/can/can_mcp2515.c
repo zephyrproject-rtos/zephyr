@@ -693,13 +693,13 @@ static int mcp2515_get_state(const struct device *dev, enum can_state *state,
 
 	if (state != NULL) {
 		if (eflg & MCP2515_EFLG_TXBO) {
-			*state = CAN_BUS_OFF;
+			*state = CAN_STATE_BUS_OFF;
 		} else if ((eflg & MCP2515_EFLG_RXEP) || (eflg & MCP2515_EFLG_TXEP)) {
-			*state = CAN_ERROR_PASSIVE;
+			*state = CAN_STATE_ERROR_PASSIVE;
 		} else if (eflg & MCP2515_EFLG_EWARN) {
-			*state = CAN_ERROR_WARNING;
+			*state = CAN_STATE_ERROR_WARNING;
 		} else {
-			*state = CAN_ERROR_ACTIVE;
+			*state = CAN_STATE_ERROR_ACTIVE;
 		}
 	}
 
@@ -934,7 +934,7 @@ static int mcp2515_init(const struct device *dev)
 
 	(void)memset(dev_data->rx_cb, 0, sizeof(dev_data->rx_cb));
 	(void)memset(dev_data->filter, 0, sizeof(dev_data->filter));
-	dev_data->old_state = CAN_ERROR_ACTIVE;
+	dev_data->old_state = CAN_STATE_ERROR_ACTIVE;
 
 	timing.sjw = dev_cfg->tq_sjw;
 	if (dev_cfg->sample_point && USE_SP_ALGO) {
