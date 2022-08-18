@@ -320,6 +320,7 @@ zephyr_udc0: &usbhs {
 };
 
 &flexspi {
+	status = "okay";
 	mx25um51345g: mx25um51345g@0 {
 		compatible = "nxp,imx-flexspi-mx25um51345g";
 		size = <DT_SIZE_M(64)>;
