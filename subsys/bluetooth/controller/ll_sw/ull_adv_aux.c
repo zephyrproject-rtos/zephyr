@@ -1204,6 +1204,7 @@ sr_data_set_did_update:
 		sr_pdu->chan_sel = 0U;
 		sr_pdu->rx_addr = 0U;
 		if (sr_pdu->len) {
+			sr_pdu->adv_ext_ind.adv_mode = 0U;
 			sr_pdu->tx_addr = sec_pdu_prev->tx_addr;
 			(void)memcpy(&sr_pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
 				     &sec_pdu_prev->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
