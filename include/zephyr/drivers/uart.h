@@ -1655,6 +1655,28 @@ static inline int z_impl_uart_drv_cmd(const struct device *dev, uint32_t cmd,
 #endif
 }
 
+#define UART_DT_INST_NAME_PREFIX UTIL_CAT(uart_, DT_DRV_COMPAT)
+
+#define UART_DT_INST_API_NAME(n) UTIL_CAT(UART_DT_INST_NAME_PREFIX, _api)
+
+#define UART_DT_CONFIG_NAME(node_id) UTIL_CAT(Z_DEVICE_DT_DEV_NAME(node_id), _config)
+#define UART_DT_DATA_NAME(node_id) UTIL_CAT(Z_DEVICE_DT_DEV_NAME(node_id), _data)
+
+#define UART_DT_INST_CONFIG_NAME(inst) UART_DT_CONFIG_NAME(DT_DRV_INST(inst))
+#define UART_DT_INST_DATA_NAME(inst) UART_DT_DATA_NAME(DT_DRV_INST(inst))
+
+#define UART_DT_INST_API_DECLARE \
+	static const struct uart_driver_api UART_DT_INST_API_NAME
+
+#define UART_DT_INST_DEFINE(n, init_fn) 			\
+	DEVICE_DT_INST_DEFINE(n, init_fn, PM_DEVICE_DT_INST_GET(n),	\
+			    &UART_DT_INST_DATA_NAME(n),			\
+			    &UART_DT_INST_CONFIG_NAME(n),		\
+			    PRE_KERNEL_1,				\
+			    CONFIG_SERIAL_INIT_PRIORITY,		\
+			    &UART_DT_INST_API_NAME)
+
+
 #ifdef __cplusplus
 }
 #endif
