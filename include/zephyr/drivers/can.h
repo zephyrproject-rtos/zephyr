@@ -106,17 +106,17 @@ extern "C" {
 typedef uint32_t can_mode_t;
 
 /**
- * @brief Defines the state of the CAN bus
+ * @brief Defines the state of the CAN controller
  */
 enum can_state {
 	/** Error-active state (RX/TX error count < 96). */
-	CAN_ERROR_ACTIVE,
+	CAN_STATE_ERROR_ACTIVE,
 	/** Error-warning state (RX/TX error count < 128). */
-	CAN_ERROR_WARNING,
+	CAN_STATE_ERROR_WARNING,
 	/** Error-passive state (RX/TX error count < 256). */
-	CAN_ERROR_PASSIVE,
+	CAN_STATE_ERROR_PASSIVE,
 	/** Bus-off state (RX/TX error count >= 256). */
-	CAN_BUS_OFF,
+	CAN_STATE_BUS_OFF,
 };
 
 /**

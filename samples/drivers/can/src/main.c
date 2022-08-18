@@ -109,13 +109,13 @@ void change_led_work_handler(struct k_work *work)
 char *state_to_str(enum can_state state)
 {
 	switch (state) {
-	case CAN_ERROR_ACTIVE:
+	case CAN_STATE_ERROR_ACTIVE:
 		return "error-active";
-	case CAN_ERROR_WARNING:
+	case CAN_STATE_ERROR_WARNING:
 		return "error-warning";
-	case CAN_ERROR_PASSIVE:
+	case CAN_STATE_ERROR_PASSIVE:
 		return "error-passive";
-	case CAN_BUS_OFF:
+	case CAN_STATE_BUS_OFF:
 		return "bus-off";
 	default:
 		return "unknown";
@@ -126,7 +126,7 @@ void poll_state_thread(void *unused1, void *unused2, void *unused3)
 {
 	struct can_bus_err_cnt err_cnt = {0, 0};
 	struct can_bus_err_cnt err_cnt_prev = {0, 0};
-	enum can_state state_prev = CAN_ERROR_ACTIVE;
+	enum can_state state_prev = CAN_STATE_ERROR_ACTIVE;
 	enum can_state state;
 	int err;
 
@@ -165,7 +165,7 @@ void state_change_work_handler(struct k_work *work)
 		current_err_cnt.rx_err_cnt, current_err_cnt.tx_err_cnt);
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	if (current_state == CAN_BUS_OFF) {
+	if (current_state == CAN_STATE_BUS_OFF) {
 		printk("Recover from bus-off\n");
 
 		if (can_recover(can_dev, K_MSEC(100)) != 0) {

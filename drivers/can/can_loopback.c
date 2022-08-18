@@ -258,7 +258,7 @@ static int can_loopback_get_state(const struct device *dev, enum can_state *stat
 	ARG_UNUSED(dev);
 
 	if (state != NULL) {
-		*state = CAN_ERROR_ACTIVE;
+		*state = CAN_STATE_ERROR_ACTIVE;
 	}
 
 	if (err_cnt) {
