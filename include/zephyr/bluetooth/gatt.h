@@ -622,6 +622,9 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
  *
  *  Helper macro to declare a secondary service attribute.
  *
+ *  @note A secondary service is only intended to be included from a primary
+ *  service or another secondary service or other higher layer specification.
+ *
  *  @param _service Service attribute value.
  */
 #define BT_GATT_SECONDARY_SERVICE(_service)				\
