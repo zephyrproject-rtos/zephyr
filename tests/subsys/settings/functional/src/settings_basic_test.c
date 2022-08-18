@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(settings_basic_test);
 /* The standard test expects a cleared flash area.  Make sure it has
  * one.
  */
-static void test_clear_settings(void)
+ZTEST(settings_functional, test_clear_settings)
 {
 #if defined(TEST_FLASH_AREA_ID)
 	const struct flash_area *fap;
@@ -78,7 +78,7 @@ static void test_clear_settings(void)
  *                                   separator
  */
 
-static void test_support_rtn(void)
+ZTEST(settings_functional, test_support_rtn)
 {
 	const char test1[] = "bt/a/b/c/d";
 	const char test2[] = "bt/a/b/c/d=";
@@ -235,7 +235,7 @@ int settings_deregister(struct settings_handler *handler)
 	return sys_slist_find_and_remove(&settings_handlers, &handler->node);
 }
 
-static void test_register_and_loading(void)
+ZTEST(settings_functional, test_register_and_loading)
 {
 	int rc, err;
 	uint8_t val = 0;
@@ -349,10 +349,10 @@ static void test_register_and_loading(void)
 	zassert_true(rc, "deregistering val1_settings failed");
 
 	rc = settings_deregister(&val2_settings);
-	zassert_true(rc, "deregistering val1_settings failed");
+	zassert_true(rc, "deregistering val2_settings failed");
 
 	rc = settings_deregister(&val3_settings);
-	zassert_true(rc, "deregistering val1_settings failed");
+	zassert_true(rc, "deregistering val3_settings failed");
 }
 
 int val123_set(const char *key, size_t len,
@@ -421,11 +421,12 @@ int direct_loader(
 }
 
 
-static void test_direct_loading(void)
+ZTEST(settings_functional, test_direct_loading)
 {
 	int rc;
 	uint8_t val;
 
+	settings_subsys_init();
 	val = 11;
 	settings_save_one("val/1", &val, sizeof(uint8_t));
 	val = 23;
@@ -469,6 +470,7 @@ static void test_direct_loading(void)
 
 	zassert_equal(1, direct_load_cnt, NULL);
 	zassert_equal(23, val_directly_loaded, NULL);
+	settings_deregister(&val123_settings);
 }
 
 struct test_loading_data {
@@ -542,7 +544,7 @@ static int direct_filtered_loader(
 }
 
 
-static void test_direct_loading_filter(void)
+ZTEST(settings_functional, test_direct_loading_filter)
 {
 	int rc;
 	const struct test_loading_data *ldata;
@@ -565,6 +567,7 @@ static void test_direct_loading_filter(void)
 		{ .n = NULL }
 	};
 
+	settings_subsys_init();
 	/* Data that is going to be deleted */
 	strcpy(buffer, prefix);
 	strcat(buffer, "/to_delete");
@@ -613,20 +616,5 @@ static void test_direct_loading_filter(void)
 			"Unexpected number of calls (%u) of (%s) element",
 			n, data_final[n].n);
 	}
-}
-
-extern void test_setting_storage_get(void);
-
-void test_main(void)
-{
-	ztest_test_suite(settings_test_suite,
-			 ztest_unit_test(test_clear_settings),
-			 ztest_unit_test(test_support_rtn),
-			 ztest_unit_test(test_register_and_loading),
-			 ztest_unit_test(test_direct_loading),
-			 ztest_unit_test(test_direct_loading_filter),
-			 ztest_unit_test(test_setting_storage_get)
-			);
-
-	ztest_run_test_suite(settings_test_suite);
+	settings_deregister(&filtered_loader_settings);
 }

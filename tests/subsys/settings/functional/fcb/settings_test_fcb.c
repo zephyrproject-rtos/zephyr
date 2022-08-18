@@ -7,12 +7,13 @@
 #include <zephyr/settings/settings.h>
 #include <zephyr/fs/fcb.h>
 
-void test_setting_storage_get(void)
+ZTEST(settings_functional, test_setting_storage_get)
 {
 	int rc;
 	void *storage;
 	struct fcb_entry loc;
 
+	memset(&loc, 0, sizeof(struct fcb_entry));
 	rc = settings_storage_get(&storage);
 	zassert_equal(0, rc, "Can't fetch storage reference (err=%d)", rc);
 
@@ -23,3 +24,4 @@ void test_setting_storage_get(void)
 
 	zassert_equal(rc, 0, "Can't read fcb (err=%d)", rc);
 }
+ZTEST_SUITE(settings_functional, NULL, NULL, NULL, NULL, NULL);
