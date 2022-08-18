@@ -2461,8 +2461,11 @@ function(zephyr_check_cache variable)
     )
   endif()
 
-  # Store the specified variable in parent scope and the cache
-  set(${variable} ${${variable}} PARENT_SCOPE)
+  if(DEFINED ${variable})
+    # Store the specified variable in parent scope and the cache
+    set(${variable} ${${variable}} PARENT_SCOPE)
+    set(${variable} ${${variable}} CACHE STRING "Selected ${variable_text}")
+  endif()
   set(CACHED_${variable} ${${variable}} CACHE STRING "Selected ${variable_text}")
 
   if(CACHE_VAR_WATCH)
