@@ -131,13 +131,13 @@ static int can_stm32_get_state(const struct device *dev, enum can_state *state,
 
 	if (state != NULL) {
 		if (can->ESR & CAN_ESR_BOFF) {
-			*state = CAN_BUS_OFF;
+			*state = CAN_STATE_BUS_OFF;
 		} else if (can->ESR & CAN_ESR_EPVF) {
-			*state = CAN_ERROR_PASSIVE;
+			*state = CAN_STATE_ERROR_PASSIVE;
 		} else if (can->ESR & CAN_ESR_EWGF) {
-			*state = CAN_ERROR_WARNING;
+			*state = CAN_STATE_ERROR_WARNING;
 		} else {
-			*state = CAN_ERROR_ACTIVE;
+			*state = CAN_STATE_ERROR_ACTIVE;
 		}
 	}
 

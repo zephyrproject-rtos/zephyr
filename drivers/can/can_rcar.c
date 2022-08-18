@@ -322,14 +322,14 @@ static void can_rcar_error(const struct device *dev)
 		/* Clear interrupt condition */
 		sys_write8((uint8_t)~RCAR_CAN_EIFR_EWIF,
 			   config->reg_addr + RCAR_CAN_EIFR);
-		can_rcar_state_change(dev, CAN_ERROR_WARNING);
+		can_rcar_state_change(dev, CAN_STATE_ERROR_WARNING);
 	}
 	if (eifr & RCAR_CAN_EIFR_EPIF) {
 		LOG_DBG("Error passive interrupt\n");
 		/* Clear interrupt condition */
 		sys_write8((uint8_t)~RCAR_CAN_EIFR_EPIF,
 			   config->reg_addr + RCAR_CAN_EIFR);
-		can_rcar_state_change(dev, CAN_ERROR_PASSIVE);
+		can_rcar_state_change(dev, CAN_STATE_ERROR_PASSIVE);
 	}
 	if (eifr & RCAR_CAN_EIFR_BORIF) {
 		LOG_DBG("Bus-off recovery interrupt\n");
@@ -337,7 +337,7 @@ static void can_rcar_error(const struct device *dev)
 		/* Clear interrupt condition */
 		sys_write8((uint8_t)~RCAR_CAN_EIFR_BORIF,
 			   config->reg_addr + RCAR_CAN_EIFR);
-		can_rcar_state_change(dev, CAN_BUS_OFF);
+		can_rcar_state_change(dev, CAN_STATE_BUS_OFF);
 	}
 	if (eifr & RCAR_CAN_EIFR_BOEIF) {
 		LOG_DBG("Bus-off entry interrupt\n");
@@ -345,7 +345,7 @@ static void can_rcar_error(const struct device *dev)
 		/* Clear interrupt condition */
 		sys_write8((uint8_t)~RCAR_CAN_EIFR_BOEIF,
 			   config->reg_addr + RCAR_CAN_EIFR);
-		can_rcar_state_change(dev, CAN_BUS_OFF);
+		can_rcar_state_change(dev, CAN_STATE_BUS_OFF);
 	}
 	if (eifr & RCAR_CAN_EIFR_ORIF) {
 		LOG_DBG("Receive overrun error interrupt\n");
@@ -754,7 +754,7 @@ static int can_rcar_recover(const struct device *dev, k_timeout_t timeout)
 	int64_t start_time;
 	int ret;
 
-	if (data->state != CAN_BUS_OFF) {
+	if (data->state != CAN_STATE_BUS_OFF) {
 		return 0;
 	}
 
@@ -763,7 +763,7 @@ static int can_rcar_recover(const struct device *dev, k_timeout_t timeout)
 	}
 
 	start_time = k_uptime_ticks();
-	while (data->state == CAN_BUS_OFF) {
+	while (data->state == CAN_STATE_BUS_OFF) {
 		ret = can_rcar_enter_operation_mode(config);
 		if (ret != 0) {
 			goto done;
@@ -930,7 +930,7 @@ static int can_rcar_init(const struct device *dev)
 	data->tx_unsent = 0;
 
 	memset(data->rx_callback, 0, sizeof(data->rx_callback));
-	data->state = CAN_ERROR_ACTIVE;
+	data->state = CAN_STATE_ERROR_ACTIVE;
 	data->state_change_cb = NULL;
 	data->state_change_cb_data = NULL;
 
