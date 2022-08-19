@@ -69,16 +69,26 @@ Serial Port
 -----------
 
 This board configuration uses a single serial communication channel with the
-CPU's UART2.
+CPU's UART4.
 
 Programming and Debugging
 *************************
 
-Use U-Boot to load and kick zephyr.bin:
+Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
+plug the SD card into the board. Power it up and stop the u-boot execution at
+prompt.
+
+Use U-Boot to load and kick non-smp zephyr.bin:
 
 .. code-block:: console
 
-    dhcp 0x93c00000 zephyr.elf; dcache flush; icache flush; dcache off; icache off; bootelf zephyr.elf
+    mw 303d0518 f 1; fatload mmc 1:1 0xc0000000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; go 0xc0000000
+
+Or kick SMP zephyr.bin:
+
+.. code-block:: console
+
+    mw 303d0518 f 1; fatload mmc 1:1 0xc0000000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; cpu release 2 0xc0000000
 
 Use this configuration to run basic Zephyr applications and kernel tests,
 for example, with the :ref:`synchronization_sample`:
@@ -86,7 +96,7 @@ for example, with the :ref:`synchronization_sample`:
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: imx8mp_evk
+   :board: imx8mp_evk_a53
    :goals: run
 
 This will build an image with the synchronization sample app, boot it and
@@ -94,19 +104,12 @@ display the following console output:
 
 .. code-block:: console
 
-      ## Starting application at 0xc0001074 ...
-    *** Booting Zephyr OS build v2.6.0-rc3-8-gf689d5e7c216  ***
-    Secondary CPU core 1 (MPID:0x1) is up
-    thread_a: Hello World from cpu 0 on imx8mp_evk!
-    thread_b: Hello World from cpu 1 on imx8mp_evk!
-    thread_a: Hello World from cpu 0 on imx8mp_evk!
-    thread_b: Hello World from cpu 1 on imx8mp_evk!
-    thread_a: Hello World from cpu 0 on imx8mp_evk!
-    thread_b: Hello World from cpu 1 on imx8mp_evk!
-    thread_a: Hello World from cpu 0 on imx8mp_evk!
-    thread_b: Hello World from cpu 1 on imx8mp_evk!
-    thread_a: Hello World from cpu 0 on imx8mp_evk!
-    thread_b: Hello World from cpu 1 on imx8mp_evk!
+    *** Booting Zephyr OS build zephyr-v3.1.0-3575-g44dd713bd883  ***
+    thread_a: Hello World from cpu 0 on imx8mp_evk_a53!
+    thread_b: Hello World from cpu 0 on imx8mp_evk_a53!
+    thread_a: Hello World from cpu 0 on imx8mp_evk_a53!
+    thread_b: Hello World from cpu 0 on imx8mp_evk_a53!
+    thread_a: Hello World from cpu 0 on imx8mp_evk_a53!
 
 Use Jailhouse hypervisor, after root cell linux is up:
 
