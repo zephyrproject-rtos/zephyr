@@ -155,12 +155,26 @@ static int test_fifo_fill(void)
 
 }
 
+#if CONFIG_SHELL
 void test_uart_fifo_fill(void)
+#else
+ZTEST(uart_basic_api, test_uart_fifo_fill)
+#endif
 {
+#ifndef CONFIG_UART_INTERRUPT_DRIVEN
+	ztest_test_skip();
+#endif
 	zassert_true(test_fifo_fill() == TC_PASS, NULL);
 }
 
+#if CONFIG_SHELL
 void test_uart_fifo_read(void)
+#else
+ZTEST(uart_basic_api, test_uart_fifo_read)
+#endif
 {
+#ifndef CONFIG_UART_INTERRUPT_DRIVEN
+	ztest_test_skip();
+#endif
 	zassert_true(test_fifo_read() == TC_PASS, NULL);
 }

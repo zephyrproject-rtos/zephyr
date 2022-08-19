@@ -91,14 +91,22 @@ static int test_config_get(void)
 	}
 }
 
+#if CONFIG_SHELL
 void test_uart_configure(void)
+#else
+ZTEST(uart_basic_api, test_uart_configure)
+#endif
 {
 	int ret = test_configure();
 
 	zassert_true((ret == TC_PASS) || (ret == TC_SKIP), NULL);
 }
 
+#if CONFIG_SHELL
 void test_uart_config_get(void)
+#else
+ZTEST(uart_basic_api, test_uart_config_get)
+#endif
 {
 	int ret = test_config_get();
 
