@@ -67,6 +67,9 @@ Deprecated in this release
   :c:macro:`DT_GPIO_LABEL_BY_IDX`, and :c:macro:`DT_INST_GPIO_LABEL_BY_IDX`,
   are deprecated in favor of utilizing :c:macro:`DT_GPIO_CTLR` and variants.
 
+* :c:macro:`DT_LABEL`, and :c:macro:`DT_INST_LABEL`, are deprecated
+  in favor of utilizing :c:macro:`DT_PROP` and variants.
+
 * :c:macro:`DT_BUS_LABEL`, and :c:macro:`DT_INST_BUS_LABEL`, are deprecated
   in favor of utilizing :c:macro:`DT_BUS` and variants.
 

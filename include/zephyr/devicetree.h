@@ -704,6 +704,7 @@
 		    (DT_PROP(node_id, prop)), (default_value))
 
 /**
+ * @deprecated Use DT_PROP(node_id, label)
  * @brief Equivalent to DT_PROP(node_id, label)
  *
  * This is a convenience for the Zephyr device API, which uses label
@@ -711,7 +712,7 @@
  * @param node_id node identifier
  * @return node's label property value
  */
-#define DT_LABEL(node_id) DT_PROP(node_id, label)
+#define DT_LABEL(node_id) DT_PROP(node_id, label) __DEPRECATED_MACRO
 
 /**
  * @brief Get a property value's index into its enumeration values
@@ -2553,11 +2554,12 @@
 	DT_PROP_OR(DT_DRV_INST(inst), prop, default_value)
 
 /**
+ * @deprecated Use DT_INST_PROP(inst, label)
  * @brief Get a DT_DRV_COMPAT instance's "label" property
  * @param inst instance number
  * @return instance's label property value
  */
-#define DT_INST_LABEL(inst) DT_INST_PROP(inst, label)
+#define DT_INST_LABEL(inst) DT_INST_PROP(inst, label) __DEPRECATED_MACRO
 
 /**
  * @brief Get a DT_DRV_COMPAT instance's string property's value as a
