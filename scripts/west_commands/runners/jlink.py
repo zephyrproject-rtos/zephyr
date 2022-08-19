@@ -8,7 +8,6 @@ import argparse
 from functools import partial
 import logging
 import os
-from packaging.version import Version
 from pathlib import Path
 import shlex
 import subprocess
@@ -152,9 +151,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         # to load the shared library distributed with the tools, which
         # provides an API call for getting the version.
         if not hasattr(self, '_jlink_version'):
-            # pylink >= 0.14.0 exposes JLink SDK DLL (libjlinkarm) in
-            # JLINK_SDK_STARTS_WITH, while previous versions use JLINK_SDK_NAME
-            if Version(pylink.__version__) >= Version('0.14.0'):
+            # pylink 0.14.0/0.14.1 exposes JLink SDK DLL (libjlinkarm) in
+            # JLINK_SDK_STARTS_WITH, while other versions use JLINK_SDK_NAME
+            if pylink.__version__ in ('0.14.0', '0.14.1'):
                 sdk = Library.JLINK_SDK_STARTS_WITH
             else:
                 sdk = Library.JLINK_SDK_NAME
