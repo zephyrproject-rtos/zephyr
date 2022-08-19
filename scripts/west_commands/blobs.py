@@ -20,6 +20,8 @@ import zephyr_module
 
 class Blobs(WestCommand):
 
+    DEFAULT_LIST_FMT = '{module} {status} {path} {type} {abspath}'
+
     def __init__(self):
         super().__init__(
             'blobs',
@@ -29,7 +31,6 @@ class Blobs(WestCommand):
             accepts_unknown_args=False)
 
     def do_add_parser(self, parser_adder):
-        default_fmt = '{module} {status} {path} {type} {abspath}'
         parser = parser_adder.add_parser(
             self.name,
             help=self.help,
@@ -44,7 +45,7 @@ class Blobs(WestCommand):
 
             The default format string is:
 
-            "{default_fmt}"
+            "{self.DEFAULT_LIST_FMT}"
 
             The following arguments are available:
 
@@ -67,13 +68,14 @@ class Blobs(WestCommand):
                             choices=['list', 'fetch', 'clean'],
                             help='sub-command to execute')
 
-        parser.add_argument('-f', '--format', default=default_fmt,
-                            help='''format string to use to list each blob;
-                                    see FORMAT STRINGS below''')
-
         parser.add_argument('modules', metavar='MODULE', nargs='*',
                             help='''zephyr modules to operate on;
                             all modules will be used if not given''')
+
+        group = parser.add_argument_group('west blob list options')
+        group.add_argument('-f', '--format',
+                            help='''format string to use to list each blob;
+                                    see FORMAT STRINGS below''')
 
         return parser
 
@@ -112,8 +114,9 @@ class Blobs(WestCommand):
 
     def list(self, args):
         blobs = self.get_blobs(args)
+        fmt = getattr(args, 'format', self.DEFAULT_LIST_FMT)
         for blob in blobs:
-            log.inf(args.format.format(**blob))
+            log.inf(fmt.format(**blob))
 
     def ensure_folder(self, path):
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -151,4 +154,8 @@ class Blobs(WestCommand):
         log.dbg(f'{args.subcmd[0]} {args.modules}')
 
         subcmd = getattr(self, args.subcmd[0])
+
+        if subcmd is not self.list and args.format is not None:
+            log.die(f'unexpected --format argument; this is a "west blobs list" option')
+
         subcmd(args)
