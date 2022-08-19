@@ -367,12 +367,12 @@ static void ascs_iso_connected(struct bt_iso_chan *chan)
 						      iso_chan);
 	struct bt_audio_stream *source_stream = audio_iso->source_stream;
 	struct bt_audio_stream *sink_stream = audio_iso->sink_stream;
-	struct bt_audio_stream *stream;
+	struct bt_audio_stream *stream = NULL;
 	struct bt_audio_ep *ep;
 
-	if (sink_stream->iso == chan) {
+	if (sink_stream != NULL && sink_stream->iso == chan) {
 		stream = sink_stream;
-	} else {
+	} else if (source_stream != NULL) {
 		stream = source_stream;
 	}
 
@@ -404,12 +404,12 @@ static void ascs_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	struct bt_audio_stream *source_stream = audio_iso->source_stream;
 	struct bt_audio_stream *sink_stream = audio_iso->sink_stream;
 	const struct bt_audio_stream_ops *ops;
-	struct bt_audio_stream *stream;
+	struct bt_audio_stream *stream = NULL;
 	struct bt_audio_ep *ep;
 
-	if (sink_stream->iso == chan) {
+	if (sink_stream != NULL && sink_stream->iso == chan) {
 		stream = sink_stream;
-	} else {
+	} else if (source_stream != NULL) {
 		stream = source_stream;
 	}
 
