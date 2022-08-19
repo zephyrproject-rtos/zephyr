@@ -14,7 +14,7 @@ set(QEMU_CPU_TYPE_${ARCH} hs5x)
 set(QEMU_FLAGS_${ARCH} -cpu hs5x)
 elseif(${CONFIG_SOC_QEMU_ARC_HS6X})
 set(QEMU_ARCH arc64)
-set(QEMU_CPU_TYPE_${ARCH} arc64)
+set(QEMU_CPU_TYPE_${ARCH} hs6x)
 set(QEMU_FLAGS_${ARCH} -cpu hs6x)
 endif()
 
