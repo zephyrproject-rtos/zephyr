@@ -67,6 +67,8 @@ The Zephyr configuration for the LPC55S36 board (lpcxpresso55s36) is as follows:
 +-----------+------------+-------------------------------------+
 | CAN       | on-chip    | canbus                              |
 +-----------+------------+-------------------------------------+
+| IAP       | on-chip    | flash                               |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently enabled.
 
