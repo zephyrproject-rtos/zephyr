@@ -8,25 +8,25 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/ztest.h>
 
-uint32_t var_file3_sram_data = 10U;
-uint32_t var_file3_sram2_bss;
+__in_section(data, sram, var) uint32_t var_file3_sram_data = 10U;
+__in_section(bss, sram2, var) uint32_t var_file3_sram2_bss;
 
 ZTEST(code_relocation, test_function_in_split_multiple)
 {
-	extern uint32_t __data_start;
-	extern uint32_t __data_end;
-	extern uint32_t __sram2_bss_start;
-	extern uint32_t __sram2_bss_end;
+	extern uintptr_t __data_start;
+	extern uintptr_t __data_end;
+	extern uintptr_t __sram2_bss_start;
+	extern uintptr_t __sram2_bss_end;
 
 	printk("Address of var_file3_sram_data %p\n", &var_file3_sram_data);
 	printk("Address of var_file3_sram2_bss %p\n\n", &var_file3_sram2_bss);
 
-	zassert_between_inclusive((uint32_t)&var_file3_sram_data,
-		(uint32_t)&__data_start,
-		(uint32_t)&__data_end,
+	zassert_between_inclusive((uintptr_t)&var_file3_sram_data,
+		(uintptr_t)&__data_start,
+		(uintptr_t)&__data_end,
 		"var_file3_sram_data not in sram_data region");
-	zassert_between_inclusive((uint32_t)&var_file3_sram2_bss,
-		(uint32_t)&__sram2_bss_start,
-		(uint32_t)&__sram2_bss_end,
+	zassert_between_inclusive((uintptr_t)&var_file3_sram2_bss,
+		(uintptr_t)&__sram2_bss_start,
+		(uintptr_t)&__sram2_bss_end,
 		"var_file3_sram2_bss not in sram2_bss region");
 }
