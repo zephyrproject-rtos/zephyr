@@ -72,6 +72,7 @@ if(CONF_FILE)
 string(REPLACE " " ";" CONF_FILE_AS_LIST "${CONF_FILE}")
 endif()
 
+zephyr_get(OVERLAY_CONFIG)
 if(OVERLAY_CONFIG)
   string(REPLACE " " ";" OVERLAY_CONFIG_AS_LIST "${OVERLAY_CONFIG}")
 endif()
