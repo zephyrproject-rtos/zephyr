@@ -18,7 +18,7 @@
 #include <fsl_iomuxc.h>
 #if CONFIG_USB_DC_NXP_EHCI
 #include "usb_phy.h"
-#include "usb_dc_mcux.h"
+#include "usb.h"
 #endif
 
 #define CCM_NODE	DT_INST(0, nxp_imx_ccm)
