@@ -773,7 +773,7 @@ metadata is contained entirely in :file:`zephyr/module.yml`. This is because
 a binary blob must always be associated with a Zephyr module, and thus the
 blob metadata belongs in the module's description itself.
 
-Binary blobs are fetched using :ref:`west <west-blobs>`.  If ``west`` is
+Binary blobs are fetched using :ref:`west blobs <west-blobs>`.  If ``west`` is
 :ref:`not used <modules_without_west>`, they must be downloaded and
 verified manually.
 
