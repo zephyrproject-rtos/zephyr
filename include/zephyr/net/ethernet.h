@@ -397,7 +397,10 @@ struct ethernet_config {
 };
 /** @endcond */
 
-__subsystem struct ethernet_api {
+/* Hack to handle out of tree drivers */
+#define ethernet_api ethernet_driver_api
+
+__subsystem struct ethernet_driver_api {
 	/**
 	 * The net_if_api must be placed in first position in this
 	 * struct so that we are compatible with network interface API.
@@ -453,7 +456,7 @@ __subsystem struct ethernet_api {
 /* Make sure that the network interface API is properly setup inside
  * Ethernet API struct (it is the first one).
  */
-BUILD_ASSERT(offsetof(struct ethernet_api, iface_api) == 0);
+BUILD_ASSERT(offsetof(struct ethernet_driver_api, iface_api) == 0);
 
 /** @cond INTERNAL_HIDDEN */
 struct net_eth_hdr {
@@ -714,8 +717,8 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 static inline
 enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 {
-	const struct ethernet_api *eth =
-		(struct ethernet_api *)net_if_get_device(iface)->api;
+	const struct ethernet_driver_api *eth =
+		(struct ethernet_driver_api *)net_if_get_device(iface)->api;
 
 	if (!eth->get_capabilities) {
 		return (enum ethernet_hw_caps)0;

@@ -606,7 +606,7 @@ static int eth_stop_device(const struct device *dev)
 	return eth_if_down(context->if_name);
 }
 
-static const struct ethernet_api eth_if_api = {
+static const struct ethernet_driver_api eth_if_api = {
 	.iface_api.init = eth_iface_init,
 
 	.get_capabilities = eth_posix_native_get_capabilities,

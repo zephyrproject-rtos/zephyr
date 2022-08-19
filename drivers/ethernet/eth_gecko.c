@@ -630,7 +630,7 @@ static enum ethernet_hw_caps eth_gecko_get_capabilities(const struct device *dev
 			ETHERNET_LINK_100BASE_T | ETHERNET_DUPLEX_SET);
 }
 
-static const struct ethernet_api eth_api = {
+static const struct ethernet_driver_api eth_api = {
 	.iface_api.init = eth_iface_init,
 	.get_capabilities = eth_gecko_get_capabilities,
 	.send = eth_tx,

@@ -1042,7 +1042,7 @@ static const struct device *eth_stm32_get_ptp_clock(const struct device *dev)
 }
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
-static const struct ethernet_api eth_api = {
+static const struct ethernet_driver_api eth_api = {
 	.iface_api.init = eth_iface_init,
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	.get_ptp_clock = eth_stm32_get_ptp_clock,

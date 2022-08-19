@@ -243,7 +243,7 @@ static enum ethernet_hw_caps eth_caps(const struct device *dev)
 	       ETHERNET_LINK_1000BASE_T;
 }
 
-static const struct ethernet_api eth_api = {
+static const struct ethernet_driver_api eth_api = {
 	.iface_api.init = eth_iface_init,
 	.get_capabilities = eth_caps,
 	.send = eth_tx

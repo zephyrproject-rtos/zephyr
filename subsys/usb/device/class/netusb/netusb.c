@@ -138,7 +138,7 @@ static void netusb_init(struct net_if *iface)
 	LOG_INF("netusb initialized");
 }
 
-static const struct ethernet_api netusb_api_funcs = {
+static const struct ethernet_driver_api netusb_api_funcs = {
 	.iface_api.init = netusb_init,
 
 	.get_capabilities = NULL,

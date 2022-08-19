@@ -160,7 +160,7 @@ static enum ethernet_hw_caps eth_capabilities(const struct device *dev)
 	return 0;
 }
 
-static struct ethernet_api api_funcs = {
+static struct ethernet_driver_api api_funcs = {
 	.iface_api.init = eth_iface_init,
 
 	.get_capabilities = eth_capabilities,

@@ -63,7 +63,7 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev);
 static void eth_xlnx_gem_tx_done_work(struct k_work *item);
 static void eth_xlnx_gem_handle_tx_done(const struct device *dev);
 
-static const struct ethernet_api eth_xlnx_gem_apis = {
+static const struct ethernet_driver_api eth_xlnx_gem_apis = {
 	.iface_api.init   = eth_xlnx_gem_iface_init,
 	.get_capabilities = eth_xlnx_gem_get_capabilities,
 	.send		  = eth_xlnx_gem_send,

@@ -1019,7 +1019,7 @@ static enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)
 		ETHERNET_LINK_100BASE_T;
 }
 
-const struct ethernet_api dsa_eth_api_funcs = {
+const struct ethernet_driver_api dsa_eth_api_funcs = {
 	.iface_api.init		= dsa_iface_init,
 	.get_capabilities	= dsa_port_get_capabilities,
 	.send                   = dsa_tx,

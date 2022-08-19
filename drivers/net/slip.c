@@ -445,7 +445,7 @@ static enum ethernet_hw_caps eth_capabilities(const struct device *dev)
 		;
 }
 
-static const struct ethernet_api slip_if_api = {
+static const struct ethernet_driver_api slip_if_api = {
 	.iface_api.init = slip_iface_init,
 
 	.get_capabilities = eth_capabilities,

@@ -223,7 +223,7 @@ static int eth_esp32_dev_init(const struct device *dev)
 
 static struct esp32_wifi_runtime eth_data;
 
-static const struct ethernet_api eth_esp32_apis = {
+static const struct ethernet_driver_api eth_esp32_apis = {
 	.iface_api.init	= eth_esp32_init,
 	.send =  eth_esp32_send,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)

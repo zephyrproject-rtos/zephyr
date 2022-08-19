@@ -78,7 +78,7 @@ static void eth_fake_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
-static struct ethernet_api eth_fake_api_funcs = {
+static struct ethernet_driver_api eth_fake_api_funcs = {
 	.iface_api.init = eth_fake_iface_init,
 	.send = eth_fake_send,
 };

@@ -391,7 +391,7 @@ static int w5500_hw_stop(const struct device *dev)
 	return 0;
 }
 
-static struct ethernet_api w5500_api_funcs = {
+static struct ethernet_driver_api w5500_api_funcs = {
 	.iface_api.init = w5500_iface_init,
 	.get_capabilities = w5500_get_capabilities,
 	.set_config = w5500_set_config,

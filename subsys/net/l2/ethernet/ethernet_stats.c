@@ -22,7 +22,7 @@ static int eth_stats_get(uint32_t mgmt_request, struct net_if *iface,
 {
 	size_t len_chk = 0;
 	void *src = NULL;
-	const struct ethernet_api *eth;
+	const struct ethernet_driver_api *eth;
 
 	switch (NET_MGMT_GET_COMMAND(mgmt_request)) {
 	case NET_REQUEST_STATS_CMD_GET_ETHERNET:

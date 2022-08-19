@@ -16,7 +16,7 @@
 static inline void eth_stats_update_bytes_rx(struct net_if *iface,
 					     uint32_t bytes)
 {
-	const struct ethernet_api *api = (const struct ethernet_api *)
+	const struct ethernet_driver_api *api = (const struct ethernet_driver_api *)
 		net_if_get_device(iface)->api;
 	struct net_stats_eth *stats;
 
@@ -35,7 +35,7 @@ static inline void eth_stats_update_bytes_rx(struct net_if *iface,
 static inline void eth_stats_update_bytes_tx(struct net_if *iface,
 					     uint32_t bytes)
 {
-	const struct ethernet_api *api = (const struct ethernet_api *)
+	const struct ethernet_driver_api *api = (const struct ethernet_driver_api *)
 		net_if_get_device(iface)->api;
 	struct net_stats_eth *stats;
 
@@ -53,7 +53,7 @@ static inline void eth_stats_update_bytes_tx(struct net_if *iface,
 
 static inline void eth_stats_update_pkts_rx(struct net_if *iface)
 {
-	const struct ethernet_api *api = (const struct ethernet_api *)
+	const struct ethernet_driver_api *api = (const struct ethernet_driver_api *)
 		net_if_get_device(iface)->api;
 	struct net_stats_eth *stats;
 
@@ -71,7 +71,7 @@ static inline void eth_stats_update_pkts_rx(struct net_if *iface)
 
 static inline void eth_stats_update_pkts_tx(struct net_if *iface)
 {
-	const struct ethernet_api *api = (const struct ethernet_api *)
+	const struct ethernet_driver_api *api = (const struct ethernet_driver_api *)
 		net_if_get_device(iface)->api;
 	struct net_stats_eth *stats;
 
@@ -89,7 +89,7 @@ static inline void eth_stats_update_pkts_tx(struct net_if *iface)
 
 static inline void eth_stats_update_broadcast_rx(struct net_if *iface)
 {
-	const struct ethernet_api *api = (const struct ethernet_api *)
+	const struct ethernet_driver_api *api = (const struct ethernet_driver_api *)
 		net_if_get_device(iface)->api;
 	struct net_stats_eth *stats;
 
@@ -107,7 +107,7 @@ static inline void eth_stats_update_broadcast_rx(struct net_if *iface)
 
 static inline void eth_stats_update_broadcast_tx(struct net_if *iface)
 {
-	const struct ethernet_api *api = (const struct ethernet_api *)
+	const struct ethernet_driver_api *api = (const struct ethernet_driver_api *)
 		net_if_get_device(iface)->api;
 	struct net_stats_eth *stats;
 
@@ -125,7 +125,7 @@ static inline void eth_stats_update_broadcast_tx(struct net_if *iface)
 
 static inline void eth_stats_update_multicast_rx(struct net_if *iface)
 {
-	const struct ethernet_api *api = (const struct ethernet_api *)
+	const struct ethernet_driver_api *api = (const struct ethernet_driver_api *)
 		net_if_get_device(iface)->api;
 	struct net_stats_eth *stats;
 
@@ -143,7 +143,7 @@ static inline void eth_stats_update_multicast_rx(struct net_if *iface)
 
 static inline void eth_stats_update_multicast_tx(struct net_if *iface)
 {
-	const struct ethernet_api *api = (const struct ethernet_api *)
+	const struct ethernet_driver_api *api = (const struct ethernet_driver_api *)
 		net_if_get_device(iface)->api;
 	struct net_stats_eth *stats;
 
@@ -163,13 +163,13 @@ static inline void eth_stats_update_multicast_tx(struct net_if *iface)
 static inline void eth_stats_update_errors_rx(struct net_if *iface)
 {
 	struct net_stats_eth *stats;
-	const struct ethernet_api *api;
+	const struct ethernet_driver_api *api;
 
 	if (!iface) {
 		return;
 	}
 
-	api = ((const struct ethernet_api *)
+	api = ((const struct ethernet_driver_api *)
 	       net_if_get_device(iface)->api);
 
 	if (!api->get_stats) {
@@ -187,7 +187,7 @@ static inline void eth_stats_update_errors_rx(struct net_if *iface)
 static inline void eth_stats_update_errors_tx(struct net_if *iface)
 {
 	struct net_stats_eth *stats;
-	const struct ethernet_api *api = ((const struct ethernet_api *)
+	const struct ethernet_driver_api *api = ((const struct ethernet_driver_api *)
 		net_if_get_device(iface)->api);
 
 	if (!api->get_stats) {

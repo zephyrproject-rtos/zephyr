@@ -256,14 +256,14 @@ static enum ethernet_hw_caps eth_offloading_disabled(const struct device *dev)
 	return 0;
 }
 
-static struct ethernet_api api_funcs_offloading_disabled = {
+static struct ethernet_driver_api api_funcs_offloading_disabled = {
 	.iface_api.init = eth_iface_init,
 
 	.get_capabilities = eth_offloading_disabled,
 	.send = eth_tx_offloading_disabled,
 };
 
-static struct ethernet_api api_funcs_offloading_enabled = {
+static struct ethernet_driver_api api_funcs_offloading_enabled = {
 	.iface_api.init = eth_iface_init,
 
 	.get_capabilities = eth_offloading_enabled,

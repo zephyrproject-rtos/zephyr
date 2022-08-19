@@ -1264,7 +1264,7 @@ static const struct device *eth_mcux_get_ptp_clock(const struct device *dev)
 }
 #endif
 
-static const struct ethernet_api api_funcs = {
+static const struct ethernet_driver_api api_funcs = {
 	.iface_api.init		= eth_iface_init,
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	.get_ptp_clock		= eth_mcux_get_ptp_clock,

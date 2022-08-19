@@ -317,7 +317,7 @@ static void e1000_iface_init(struct net_if *iface)
 
 static struct e1000_dev e1000_dev;
 
-static const struct ethernet_api e1000_api = {
+static const struct ethernet_driver_api e1000_api = {
 	.iface_api.init		= e1000_iface_init,
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
 	.get_ptp_clock		= e1000_get_ptp_clock,

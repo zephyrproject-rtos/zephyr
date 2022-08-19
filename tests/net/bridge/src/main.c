@@ -114,7 +114,7 @@ static int eth_fake_set_config(const struct device *dev,
 	return 0;
 }
 
-static const struct ethernet_api eth_fake_api_funcs = {
+static const struct ethernet_driver_api eth_fake_api_funcs = {
 	.iface_api.init = eth_fake_iface_init,
 	.get_capabilities = eth_fake_get_capabilities,
 	.set_config = eth_fake_set_config,
@@ -160,7 +160,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	DBG("Interface %p [%d]\n", iface, net_if_get_by_iface(iface));
 
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-		const struct ethernet_api *api =
+		const struct ethernet_driver_api *api =
 			net_if_get_device(iface)->api;
 
 		/*

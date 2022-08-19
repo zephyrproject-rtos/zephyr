@@ -721,7 +721,7 @@ static void eth_enc28j60_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
-static const struct ethernet_api api_funcs = {
+static const struct ethernet_driver_api api_funcs = {
 	.iface_api.init		= eth_enc28j60_iface_init,
 
 	.get_capabilities	= eth_enc28j60_get_capabilities,

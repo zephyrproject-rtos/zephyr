@@ -170,7 +170,7 @@ int dsa_tx(const struct device *dev, struct net_pkt *pkt)
 
 	/*
 	 * Here packets are send via lan{123} interfaces in user program.
-	 * Those structs' ethernet_api only have .send callback set to point
+	 * Those structs' ethernet_driver_api only have .send callback set to point
 	 * to this wrapper function.
 	 *
 	 * Hence, it is necessary to get this callback from master's ethernet

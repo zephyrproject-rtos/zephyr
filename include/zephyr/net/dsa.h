@@ -147,7 +147,7 @@ struct dsa_context {
 
 /**
  * @brief Structure to provide DSA switch api callbacks - it is an augmented
- * struct ethernet_api.
+ * struct ethernet_driver_api.
  */
 struct dsa_api {
 	/** Function to get proper LAN{123} interface */

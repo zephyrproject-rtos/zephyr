@@ -505,7 +505,7 @@ error:
 	return -1;
 }
 
-static const struct ethernet_api api_funcs = {
+static const struct ethernet_driver_api api_funcs = {
 	.iface_api.init = eth_initialize,
 
 	.get_capabilities = eth_smsc911x_get_capabilities,

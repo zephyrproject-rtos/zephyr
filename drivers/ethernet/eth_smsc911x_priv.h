@@ -22,7 +22,7 @@
  * but was considerably refactored since then.
  */
 
-/* This file is the re-implementation of mps2_ethernet_api and Selftest's
+/* This file is the re-implementation of mps2_ethernet_driver_api and Selftest's
  * ETH_MPS2.
  * MPS2 Selftest:https://silver.arm.com/browse/VEI10 ->
  *     \ISCM-1-0\AN491\software\Selftest\v2m_mps2\
