@@ -545,7 +545,7 @@
  * A property's type is usually defined by its binding. In some
  * special cases, it has an assumed type defined by the devicetree
  * specification even when no binding is available: "compatible" has
- * type string-array, "status" and "label" have type string, and
+ * type string-array, "status" has type string, and
  * "interrupt-controller" has type boolean.
  *
  * For other properties or properties with unknown type due to a
@@ -1169,11 +1169,11 @@
  * Example devicetree fragment:
  *
  *     adc1: adc@... {
- *             label = "ADC_1";
+ *             foobar = "ADC_1";
  *     };
  *
  *     adc2: adc@... {
- *             label = "ADC_2";
+ *             foobar = "ADC_2";
  *     };
  *
  *     n: node {
@@ -1190,8 +1190,8 @@
  *
  *     #define NODE DT_NODELABEL(n)
  *
- *     DT_LABEL(DT_PHANDLE_BY_NAME(NODE, io_channels, sensor))  // "ADC_1"
- *     DT_LABEL(DT_PHANDLE_BY_NAME(NODE, io_channels, bandgap)) // "ADC_2"
+ *     DT_PROP(DT_PHANDLE_BY_NAME(NODE, io_channels, sensor), foobar)  // "ADC_1"
+ *     DT_PROP(DT_PHANDLE_BY_NAME(NODE, io_channels, bandgap), foobar) // "ADC_2"
  *
  * Notice how devicetree properties and names are lowercased, and
  * non-alphanumeric characters are converted to underscores.
@@ -1927,24 +1927,24 @@
  *
  *     n: node {
  *             child-1 {
- *                     label = "foo";
+ *                     foobar = "foo";
  *             };
  *             child-2 {
- *                     label = "bar";
+ *                     foobar = "bar";
  *             };
  *     };
  *
  * Example usage:
  *
- *     #define LABEL_AND_COMMA(node_id) DT_LABEL(node_id),
+ *     #define FOOBAR_AND_COMMA(node_id) DT_PROP(node_id, foobar),
  *
- *     const char *child_labels[] = {
- *         DT_FOREACH_CHILD(DT_NODELABEL(n), LABEL_AND_COMMA)
+ *     const char *child_foobars[] = {
+ *         DT_FOREACH_CHILD(DT_NODELABEL(n), FOOBAR_AND_COMMA)
  *     };
  *
  * This expands to:
  *
- *     const char *child_labels[] = {
+ *     const char *child_foobars[] = {
  *         "foo", "bar",
  *     };
  *
@@ -2367,7 +2367,6 @@
  * Example devicetree fragment:
  *
  *     i2c@deadbeef {
- *             label = "I2C_CTLR";
  *             status = "okay";
  *             clock-frequency = < 100000 >;
  *
@@ -2893,25 +2892,25 @@
  *     a {
  *             compatible = "vnd,device";
  *             status = "okay";
- *             label = "DEV_A";
+ *             foobar = "DEV_A";
  *     };
  *
  *     b {
  *             compatible = "vnd,device";
  *             status = "okay";
- *             label = "DEV_B";
+ *             foobar = "DEV_B";
  *     };
  *
  *     c {
  *             compatible = "vnd,device";
  *             status = "disabled";
- *             label = "DEV_C";
+ *             foobar = "DEV_C";
  *     };
  *
  * Example usage:
  *
  *     #define DT_DRV_COMPAT vnd_device
- *     #define MY_FN(inst) DT_INST_LABEL(inst),
+ *     #define MY_FN(inst) DT_INST_PROP(inst, foobar),
  *
  *     DT_INST_FOREACH_STATUS_OKAY(MY_FN)
  *
