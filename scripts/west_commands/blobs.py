@@ -136,7 +136,7 @@ class Blobs(WestCommand):
         blobs = self.get_blobs(args)
         for blob in blobs:
             if blob['status'] == 'A':
-                log.inf('Blob {module}: {abspath} is up to date'.format(**blob))
+                log.dbg('Blob {module}: {abspath} is up to date'.format(**blob))
                 continue
             log.inf('Fetching blob {module}: {abspath}'.format(**blob))
             self.fetch_blob(blob['url'], blob['abspath'])
@@ -145,7 +145,7 @@ class Blobs(WestCommand):
         blobs = self.get_blobs(args)
         for blob in blobs:
             if blob['status'] == 'D':
-                log.inf('Blob {module}: {abspath} not in filesystem'.format(**blob))
+                log.dbg('Blob {module}: {abspath} not in filesystem'.format(**blob))
                 continue
             log.inf('Deleting blob {module}: {status} {abspath}'.format(**blob))
             blob['abspath'].unlink()
