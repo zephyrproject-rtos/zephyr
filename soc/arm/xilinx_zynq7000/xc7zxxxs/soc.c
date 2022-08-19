@@ -37,20 +37,6 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 	/* ARM Arch timer, GIC are covered by the MPCore mapping */
 
-/* UARTs */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
-	MMU_REGION_FLAT_ENTRY("uart0",
-			      DT_REG_ADDR(DT_NODELABEL(uart0)),
-			      DT_REG_SIZE(DT_NODELABEL(uart0)),
-			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
-	MMU_REGION_FLAT_ENTRY("uart1",
-			      DT_REG_ADDR(DT_NODELABEL(uart1)),
-			      DT_REG_SIZE(DT_NODELABEL(uart1)),
-			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
-#endif
-
 /* GEMs */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gem0), okay)
 	MMU_REGION_FLAT_ENTRY("gem0",
