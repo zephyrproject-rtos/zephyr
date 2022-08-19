@@ -141,7 +141,14 @@ static int test_pending(void)
 	}
 }
 
+#if CONFIG_SHELL
 void test_uart_pending(void)
+#else
+ZTEST(uart_basic_api_pending, test_uart_pending)
+#endif
 {
+#ifndef CONFIG_UART_INTERRUPT_DRIVEN
+	ztest_test_skip();
+#endif
 	zassert_true(test_pending() == TC_PASS, NULL);
 }
