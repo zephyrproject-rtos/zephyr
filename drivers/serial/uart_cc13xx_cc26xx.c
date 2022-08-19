@@ -580,11 +580,6 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 		PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		     \
 		&uart_cc13xx_cc26xx_driver_api)
 
-#ifdef CONFIG_PM_DEVICE
-#define UART_CC13XX_CC26XX_DEVICE_INIT(n)				\
-	UART_CC13XX_CC26XX_DEVICE_DEFINE(n)
-#endif
-
 #define UART_CC13XX_CC26XX_INIT_FUNC(n)					    \
 	static int uart_cc13xx_cc26xx_init_##n(const struct device *dev)	    \
 	{								    \
