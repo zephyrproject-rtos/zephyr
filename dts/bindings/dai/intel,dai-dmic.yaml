@@ -12,5 +12,9 @@ properties:
         required: true
 
     shim:
-      type: array
+      type: int
+      required: true
+
+    fifo:
+      type: int
       required: true
