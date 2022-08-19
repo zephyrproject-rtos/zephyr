@@ -825,7 +825,7 @@ int can_mcan_send(const struct device *dev,
 	}
 
 	if (can->psr & CAN_MCAN_PSR_BO) {
-		return -ENETDOWN;
+		return -ENETUNREACH;
 	}
 
 	ret = k_sem_take(&data->tx_sem, timeout);

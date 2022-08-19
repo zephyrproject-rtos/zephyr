@@ -313,7 +313,7 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 
 	if (data->state == CAN_STATE_BUS_OFF) {
 		LOG_DBG("transmit failed, bus-off");
-		return -ENETDOWN;
+		return -ENETUNREACH;
 	}
 
 	if (k_sem_take(&data->tx_idle, timeout) != 0) {
@@ -544,7 +544,7 @@ static void can_sja1000_handle_error_warning_irq(const struct device *dev)
 	sr = can_sja1000_read_reg(dev, CAN_SJA1000_SR);
 	if ((sr & CAN_SJA1000_SR_BS) != 0) {
 		data->state = CAN_STATE_BUS_OFF;
-		can_sja1000_tx_done(dev, -ENETDOWN);
+		can_sja1000_tx_done(dev, -ENETUNREACH);
 #ifdef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 		/* Recover bus now unless interrupted in the middle of a MOD register change. */
 		err = k_mutex_lock(&data->mod_lock, K_NO_WAIT);

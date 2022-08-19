@@ -364,7 +364,7 @@ static int mcux_flexcan_send(const struct device *dev,
 	(void)mcux_flexcan_get_state(dev, &state, NULL);
 	if (state == CAN_STATE_BUS_OFF) {
 		LOG_DBG("Transmit failed, bus-off");
-		return -ENETDOWN;
+		return -ENETUNREACH;
 	}
 
 	if (k_sem_take(&data->tx_allocs_sem, timeout) != 0) {
@@ -582,9 +582,9 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 				FLEXCAN_TransferAbortSend(config->base, &data->handle,
 							  ALLOC_IDX_TO_TXMB_IDX(alloc));
 				if (function != NULL) {
-					function(dev, -ENETDOWN, arg);
+					function(dev, -ENETUNREACH, arg);
 				} else {
-					data->tx_cbs[alloc].status = -ENETDOWN;
+					data->tx_cbs[alloc].status = -ENETUNREACH;
 					k_sem_give(&data->tx_cbs[alloc].done);
 				}
 
