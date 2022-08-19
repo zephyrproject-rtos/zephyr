@@ -19,6 +19,8 @@ API Changes
 Changes in this release
 =======================
 
+* Zephyr now requires Python 3.8 or higher
+
 * Changed :c:struct:`spi_cs_control` to remove anonymous struct.
   This causes possible breakage for static initialization of the
   struct.  Updated :c:macro:`SPI_CS_CONTROL_PTR_DT` to reflect
