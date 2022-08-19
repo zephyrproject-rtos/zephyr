@@ -19,7 +19,7 @@ osource "$(KCONFIG_BINARY_DIR)/Kconfig.shield.defconfig"
 # This loads Zephyr base shield defconfigs
 source "boards/shields/*/Kconfig.defconfig"
 
-source "$(BOARD_DIR)/Kconfig.defconfig"
+osource "$(BOARD_DIR)/Kconfig.defconfig"
 
 # This loads custom SoC root defconfigs
 osource "$(KCONFIG_BINARY_DIR)/Kconfig.soc.defconfig"
