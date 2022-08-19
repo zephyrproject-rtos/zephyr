@@ -71,8 +71,8 @@ recommended by the SoC vendor or a specific board (check your specific
 
 You can configure the Zephyr build system to use a specific toolchain by
 setting :ref:`environment variables <env_vars>` such as
-:envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to a supported value, along with
-additional variable(s) specific to the toolchain variant.
+:envvar:`ZEPHYR_TOOLCHAIN_VARIANT <{TOOLCHAIN}_TOOLCHAIN_PATH>` to a supported
+value, along with additional variable(s) specific to the toolchain variant.
 
 .. _gs_toolchain_update:
 
@@ -149,6 +149,8 @@ Export Zephyr CMake package
 
 The :ref:`cmake_pkg` can be exported to CMake's user package registry if it has
 not already been done as part of :ref:`getting_started`.
+
+.. _gs-board-aliases:
 
 Board Aliases
 *************

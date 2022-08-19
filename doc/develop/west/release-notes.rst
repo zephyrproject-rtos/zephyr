@@ -131,7 +131,7 @@ Bug fixes:
   in a detached HEAD state. This has been fixed by using ``git clone`` internally
   instead of ``git init`` and ``git fetch``. See `issue #522`_ for details.
 
-- The :envvar:`WEST_CONFIG_LOCAL` environment variable now correctly
+- The ``WEST_CONFIG_LOCAL`` environment variable now correctly
   overrides the default location, :file:`<workspace topdir>/.west/config`.
 
 - ``west update --fetch=smart`` (``smart`` is the default) now correctly skips
