@@ -1015,7 +1015,7 @@ __syscall int can_set_bitrate(const struct device *dev, uint32_t bitrate);
  *
  * @retval 0 if successful.
  * @retval -EINVAL if an invalid parameter was passed to the function.
- * @retval -ENETDOWN if the CAN controller is in bus-off state.
+ * @retval -ENETUNREACH if the CAN controller is in bus-off state.
  * @retval -EBUSY if CAN bus arbitration was lost (only applicable if automatic
  *                retransmissions are disabled).
  * @retval -EIO if a general transmit error occurred (e.g. missing ACK if

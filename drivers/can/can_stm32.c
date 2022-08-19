@@ -215,7 +215,7 @@ static inline void can_stm32_tx_isr_handler(const struct device *dev)
 				can->TSR & CAN_TSR_TXOK0 ? 0  :
 				can->TSR & CAN_TSR_TERR0 ? -EIO :
 				can->TSR & CAN_TSR_ALST0 ? -EBUSY :
-						 bus_off ? -ENETDOWN :
+						 bus_off ? -ENETUNREACH :
 							   -EIO;
 		/* clear the request. */
 		can->TSR |= CAN_TSR_RQCP0;
@@ -227,7 +227,7 @@ static inline void can_stm32_tx_isr_handler(const struct device *dev)
 				can->TSR & CAN_TSR_TXOK1 ? 0  :
 				can->TSR & CAN_TSR_TERR1 ? -EIO :
 				can->TSR & CAN_TSR_ALST1 ? -EBUSY :
-				bus_off                  ? -ENETDOWN :
+				bus_off                  ? -ENETUNREACH :
 							   -EIO;
 		/* clear the request. */
 		can->TSR |= CAN_TSR_RQCP1;
@@ -239,7 +239,7 @@ static inline void can_stm32_tx_isr_handler(const struct device *dev)
 				can->TSR & CAN_TSR_TXOK2 ? 0  :
 				can->TSR & CAN_TSR_TERR2 ? -EIO :
 				can->TSR & CAN_TSR_ALST2 ? -EBUSY :
-				bus_off                  ? -ENETDOWN :
+				bus_off                  ? -ENETUNREACH :
 							   -EIO;
 		/* clear the request. */
 		can->TSR |= CAN_TSR_RQCP2;
@@ -692,7 +692,7 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 	}
 
 	if (can->ESR & CAN_ESR_BOFF) {
-		return -ENETDOWN;
+		return -ENETUNREACH;
 	}
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
