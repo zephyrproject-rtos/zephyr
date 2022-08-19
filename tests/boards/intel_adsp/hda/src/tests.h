@@ -11,11 +11,6 @@
 #include <zephyr/device.h>
 #include <zephyr/ztest.h>
 
-void test_hda_host_in_smoke(void);
-void test_hda_host_out_smoke(void);
-void test_hda_host_in_dma(void);
-
-
 /* Turn this define on to see register dumps after each step */
 #define INTEL_ADSP_HDA_DBG 0
 
