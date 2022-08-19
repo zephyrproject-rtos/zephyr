@@ -367,7 +367,7 @@ You can :ref:`configure <west-config-cmd>` ``west build`` using these options.
      - Description
    * - ``build.board``
      - String. If given, this the board used by :ref:`west build
-       <west-building>` when ``--board`` is not given and :envvar:`BOARD`
+       <west-building>` when ``--board`` is not given and ``BOARD``
        is unset in the environment.
    * - ``build.board_warn``
      - Boolean, default ``true``. If ``false``, disables warnings when
