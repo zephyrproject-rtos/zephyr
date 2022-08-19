@@ -397,7 +397,7 @@ struct ethernet_config {
 };
 /** @endcond */
 
-struct ethernet_api {
+__subsystem struct ethernet_api {
 	/**
 	 * The net_if_api must be placed in first position in this
 	 * struct so that we are compatible with network interface API.
