@@ -420,6 +420,7 @@ Devicetree:
     - tests/lib/devicetree/
     - doc/build/dts/
     - include/zephyr/devicetree/
+    - scripts/kconfig/kconfigfunctions.py
   labels:
     - "area: Devicetree"
 
