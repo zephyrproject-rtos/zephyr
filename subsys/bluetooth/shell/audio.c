@@ -1585,3 +1585,84 @@ static int cmd_audio(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_CMD_ARG_REGISTER(audio, &audio_cmds, "Bluetooth audio shell commands",
 		       cmd_audio, 1, 1);
+
+ssize_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
+			  const bool discoverable, const bool connectable)
+{
+	static const uint8_t ad_ext_uuid16[] = {
+		IF_ENABLED(CONFIG_BT_MICP_MIC_DEV, (BT_UUID_16_ENCODE(BT_UUID_MICS_VAL),))
+		IF_ENABLED(CONFIG_BT_ASCS, (BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),))
+		IF_ENABLED(CONFIG_BT_BASS, (BT_UUID_16_ENCODE(BT_UUID_BASS_VAL),))
+		IF_ENABLED(CONFIG_BT_PACS, (BT_UUID_16_ENCODE(BT_UUID_PACS_VAL),))
+		IF_ENABLED(CONFIG_BT_GTBS, (BT_UUID_16_ENCODE(BT_UUID_GTBS_VAL),))
+		IF_ENABLED(CONFIG_BT_TBS, (BT_UUID_16_ENCODE(BT_UUID_TBS_VAL),))
+		IF_ENABLED(CONFIG_BT_VCS, (BT_UUID_16_ENCODE(BT_UUID_VCS_VAL),))
+		IF_ENABLED(CONFIG_BT_HAS, (BT_UUID_16_ENCODE(BT_UUID_HAS_VAL),))
+	};
+	size_t ad_len = 0;
+
+	if (!discoverable) {
+		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_ASCS)) {
+		static uint8_t ad_bap_announcement[8] = {
+			BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),
+			BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED,
+		};
+		enum bt_audio_context snk_context, src_context;
+
+		snk_context = bt_audio_capability_get_available_contexts(BT_AUDIO_DIR_SINK);
+		sys_put_le16(snk_context, &ad_bap_announcement[3]);
+
+		src_context = bt_audio_capability_get_available_contexts(BT_AUDIO_DIR_SOURCE);
+		sys_put_le16(snk_context, &ad_bap_announcement[5]);
+
+		/* Metadata length */
+		ad_bap_announcement[7] = 0x00;
+
+		__ASSERT(data_array_size > ad_len, "No space for AD_BAP_ANNOUNCEMENT");
+		data_array[ad_len].type = BT_DATA_SVC_DATA16;
+		data_array[ad_len].data_len = ARRAY_SIZE(ad_bap_announcement);
+		data_array[ad_len].data = &ad_bap_announcement[0];
+		ad_len++;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR)) {
+		static const uint8_t ad_cap_announcement[3] = {
+			BT_UUID_16_ENCODE(BT_UUID_CAS_VAL),
+			BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED,
+		};
+
+		__ASSERT(data_array_size > ad_len, "No space for AD_CAP_ANNOUNCEMENT");
+		data_array[ad_len].type = BT_DATA_SVC_DATA16;
+		data_array[ad_len].data_len = ARRAY_SIZE(ad_cap_announcement);
+		data_array[ad_len].data = &ad_cap_announcement[0];
+		ad_len++;
+	}
+
+	if (ARRAY_SIZE(ad_ext_uuid16) > 0) {
+		if (data_array_size <= ad_len) {
+			shell_warn(ctx_shell, "No space for AD_UUID16");
+			return ad_len;
+		}
+
+		data_array[ad_len].type = BT_DATA_UUID16_SOME;
+
+		if (IS_ENABLED(CONFIG_BT_HAS) && IS_ENABLED(CONFIG_BT_PRIVACY) && connectable) {
+			/* If the HA is in one of the GAP connectable modes and is using a
+			 * resolvable private address, the HA shall not include the Hearing Access
+			 * Service UUID in the Service UUID AD type field of the advertising data
+			 * or scan response.
+			 */
+			data_array[ad_len].data_len = ARRAY_SIZE(ad_ext_uuid16) - 1;
+		} else {
+			data_array[ad_len].data_len = ARRAY_SIZE(ad_ext_uuid16);
+		}
+
+		data_array[ad_len].data = &ad_ext_uuid16[0];
+		ad_len++;
+	}
+
+	return ad_len;
+}

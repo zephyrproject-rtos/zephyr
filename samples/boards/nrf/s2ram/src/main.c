@@ -15,24 +15,34 @@
 #include <hal/nrf_regulators.h>
 #include <hal/nrf_gpio.h>
 
-static void system_off(void)
+static int system_off(void)
 {
 	nrf_regulators_system_off(NRF_REGULATORS);
+
+	/*
+	 * We should never reach this point if the system is powered off. If we
+	 * do, return -EBUSY.
+	 */
+	return -EBUSY;
 }
 
 static void do_suspend(void)
 {
-	irq_lock();
+	int ret;
 
 	/*
 	 * Save the CPU context (including the return address),set the SRAM
 	 * marker and power off the system.
 	 */
-	arch_pm_s2ram_suspend(system_off);
+	ret = arch_pm_s2ram_suspend(system_off);
 
 	/*
-	 * XXX: On resuming we return exactly *HERE*
+	 * XXX: On resuming or error we return exactly *HERE*
 	 */
+
+	if (ret != 0) {
+		printk("Something went wrong during suspend");
+	}
 }
 
 void main(void)

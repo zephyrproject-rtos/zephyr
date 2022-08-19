@@ -43,8 +43,11 @@ struct sof_dai_ssp_params {
 	uint32_t bclk_delay;
 } __packed;
 
-static const struct device *dev_dai_ssp;
-static const struct device *dev_dma_dw;
+static const struct device *const dev_dai_ssp =
+	DEVICE_DT_GET(DT_NODELABEL(ssp0));
+static const struct device *const dev_dma_dw =
+	DEVICE_DT_GET(DT_NODELABEL(lpgpdma0));
+
 static struct dai_config config;
 static struct sof_dai_ssp_params ssp_config;
 
@@ -394,14 +397,9 @@ void test_adsp_ssp_probe(void)
 
 void test_main(void)
 {
-	dev_dai_ssp = DEVICE_DT_GET(DT_NODELABEL(ssp0));
-
 	k_object_access_grant(dev_dai_ssp, k_current_get());
 
 	zassert_true(device_is_ready(dev_dai_ssp), "device SSP_0 is not ready");
-
-	dev_dma_dw = DEVICE_DT_GET(DT_NODELABEL(lpgpdma0));
-
 	zassert_true(device_is_ready(dev_dma_dw), "device DMA 0 is not ready");
 
 	ztest_test_suite(adsp_ssp,

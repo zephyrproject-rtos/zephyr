@@ -433,7 +433,7 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule)
 	if (errors != CANmodule->errors) {
 		CANmodule->errors = errors;
 
-		if (state == CAN_BUS_OFF) {
+		if (state == CAN_STATE_BUS_OFF) {
 			/* Bus off */
 			CO_errorReport(em, CO_EM_CAN_TX_BUS_OFF,
 				       CO_EMC_BUS_OFF_RECOVERED, errors);

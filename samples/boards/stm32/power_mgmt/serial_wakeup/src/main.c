@@ -11,18 +11,15 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/__assert.h>
 
-#define DEV_NAME DT_CHOSEN(zephyr_console)
-
 void main(void)
 {
-	static const struct device *dev;
+	const struct device *const dev =
+		DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
-	dev = DEVICE_DT_GET(DEV_NAME);
-	if (dev < 0) {
-		printk("Failed to get device");
+	if (!device_is_ready(dev)) {
+		printk("Console device not ready");
+		return;
 	}
-
-	printk("Device ready\n");
 
 #if CONFIG_PM_DEVICE
 	/* In PM_DEVICE modes, enable device as a wakeup source will prevent

@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(sample_gsm_ppp, LOG_LEVEL_DBG);
 #define GSM_MODEM_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_gsm_ppp)
 #define UART_NODE DT_BUS(GSM_MODEM_NODE)
 
-static const struct device *gsm_dev;
+static const struct device *const gsm_dev = DEVICE_DT_GET(GSM_MODEM_NODE);
 static struct net_mgmt_event_callback mgmt_cb;
 static bool starting = IS_ENABLED(CONFIG_GSM_PPP_AUTOSTART);
 
@@ -113,8 +113,6 @@ static void modem_off_cb(const struct device *dev, void *user_data)
 int main(void)
 {
 	const struct device *uart_dev = DEVICE_DT_GET(UART_NODE);
-
-	gsm_dev = DEVICE_DT_GET(GSM_MODEM_NODE);
 
 	/* Optional register modem power callbacks */
 	gsm_ppp_register_modem_power_callback(gsm_dev, modem_on_cb, modem_off_cb, NULL);

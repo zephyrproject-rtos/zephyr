@@ -15,6 +15,8 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/direction.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_vs.h>
 
 #define DEVICE_NAME     CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
@@ -103,6 +105,18 @@ static const char *cte_type2str(uint8_t type)
 	}
 }
 
+static const char *sample_type2str(enum bt_df_iq_sample type)
+{
+	switch (type) {
+	case BT_DF_IQ_SAMPLE_8_BITS_INT:
+		return "8 bits int";
+	case BT_DF_IQ_SAMPLE_16_BITS_INT:
+		return "16 bits int";
+	default:
+		return "Unknown";
+	}
+}
+
 static const char *pocket_status2str(uint8_t status)
 {
 	switch (status) {
@@ -183,11 +197,26 @@ static void recv_cb(struct bt_le_per_adv_sync *sync,
 static void cte_recv_cb(struct bt_le_per_adv_sync *sync,
 			struct bt_df_per_adv_sync_iq_samples_report const *report)
 {
-	printk("CTE[%u]: samples count %d, cte type %s, slot durations: %u [us], "
+	printk("CTE[%u]: samples type: %s, samples count %d, cte type %s, slot durations: %u [us], "
 	       "packet status %s, RSSI %i\n",
-	       bt_le_per_adv_sync_get_index(sync), report->sample_count,
-	       cte_type2str(report->cte_type), report->slot_durations,
+	       bt_le_per_adv_sync_get_index(sync), sample_type2str(report->sample_type),
+	       report->sample_count, cte_type2str(report->cte_type), report->slot_durations,
 	       pocket_status2str(report->packet_status), report->rssi);
+
+	if (IS_ENABLED(CONFIG_DF_LOCATOR_APP_IQ_REPORT_PRINT_IQ_SAMPLES)) {
+		for (uint8_t idx = 0; idx < report->sample_count; idx++) {
+			if (report->sample_type == BT_DF_IQ_SAMPLE_8_BITS_INT) {
+				printk(" IQ[%d]: %d, %d\n", idx, report->sample[idx].i,
+				       report->sample[idx].q);
+			} else if (IS_ENABLED(CONFIG_BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES)) {
+				printk(" IQ[%" PRIu8 "]: %d, %d\n", idx, report->sample16[idx].i,
+				       report->sample16[idx].q);
+			} else {
+				printk("Unhandled vendor specific IQ samples type\n");
+				break;
+			}
+		}
+	}
 }
 
 static void scan_recv(const struct bt_le_scan_recv_info *info,

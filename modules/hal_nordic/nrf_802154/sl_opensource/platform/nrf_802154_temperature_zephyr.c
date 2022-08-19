@@ -30,7 +30,7 @@ static int8_t value = DEFAULT_TEMPERATURE;
 
 #if defined(CONFIG_NRF_802154_TEMPERATURE_UPDATE)
 
-static const struct device *device = DEVICE_DT_GET(DT_NODELABEL(temp));
+static const struct device *const device = DEVICE_DT_GET(DT_NODELABEL(temp));
 static struct k_work_delayable dwork;
 
 static void work_handler(struct k_work *work)

@@ -23,7 +23,7 @@
 
 #define PECI_SAFE_TEMP          72
 
-static const struct device *peci_dev;
+static const struct device *const peci_dev = DEVICE_DT_GET(DT_ALIAS(peci_0));
 static bool peci_initialized;
 static uint8_t tjmax;
 static uint8_t rx_fcs;
@@ -176,9 +176,7 @@ static void monitor_temperature_func(void *dummy1, void *dummy2, void *dummy3)
 
 void main(void)
 {
-#if DT_NODE_HAS_STATUS(DT_ALIAS(peci_0), okay)
 	int ret;
-#endif
 
 	printk("PECI sample test\n");
 
@@ -186,8 +184,6 @@ void main(void)
 		monitor_temperature_func, NULL, NULL, NULL, PRIORITY,
 		K_INHERIT_PERMS, K_FOREVER);
 
-#if DT_NODE_HAS_STATUS(DT_ALIAS(peci_0), okay)
-	peci_dev = DEVICE_DT_GET(DT_ALIAS(peci_0));
 	if (!device_is_ready(peci_dev)) {
 		printk("Err: PECI device is not ready\n");
 		return;
@@ -208,5 +204,4 @@ void main(void)
 	k_thread_start(&temp_id);
 
 	peci_initialized = true;
-#endif
 }

@@ -44,7 +44,7 @@ static void thread_entry_prio(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sched_tests
  */
-void test_priority_cooperative(void)
+ZTEST(threads_scheduling, test_priority_cooperative)
 {
 	int old_prio = k_thread_priority_get(k_current_get());
 
@@ -80,7 +80,7 @@ void test_priority_cooperative(void)
  *
  * @ingroup kernel_sched_tests
  */
-void test_priority_preemptible(void)
+ZTEST(threads_scheduling, test_priority_preemptible)
 {
 	int old_prio = k_thread_priority_get(k_current_get());
 
@@ -120,7 +120,7 @@ void test_priority_preemptible(void)
  *
  * @ingroup kernel_sched_tests
  */
-void test_priority_preemptible_wait_prio(void)
+ZTEST(threads_scheduling_1cpu, test_priority_preemptible_wait_prio)
 {
 	int old_prio = k_thread_priority_get(k_current_get());
 	k_tid_t tid[THREAD_NUM];
@@ -181,7 +181,7 @@ extern void idle(void *p1, void *p2, void *p3);
  *
  * @ingroup kernel_sched_tests
  */
-void test_bad_priorities(void)
+ZTEST(threads_scheduling, test_bad_priorities)
 {
 	struct prio_test {
 		int prio;

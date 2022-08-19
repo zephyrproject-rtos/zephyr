@@ -311,7 +311,7 @@ void worker(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_sched_tests
  */
-void test_preempt(void)
+ZTEST(suite_preempt, test_preempt)
 {
 	int priority;
 
@@ -346,11 +346,21 @@ void test_preempt(void)
 	 * test is done
 	 */
 	k_sem_take(&main_sem, K_FOREVER);
+
+	/* unit test clean up */
+
+	/* k_thread_abort() also works here.
+	 * But join should be more graceful.
+	 */
+	k_thread_join(&manager_thread, K_FOREVER);
+
+	/* worker threads have to be aborted.
+	 * It is difficult to make them stop gracefully.
+	 */
+	for (int i = 0; i < NUM_THREADS; i++) {
+		k_thread_abort(&worker_threads[i]);
+	}
+
 }
 
-void test_main(void)
-{
-	ztest_test_suite(suite_preempt,
-			 ztest_unit_test(test_preempt));
-	ztest_run_test_suite(suite_preempt);
-}
+ZTEST_SUITE(suite_preempt, NULL, NULL, NULL, NULL, NULL);

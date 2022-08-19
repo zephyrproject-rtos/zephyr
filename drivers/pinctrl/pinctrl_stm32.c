@@ -19,7 +19,7 @@
  *
  * Entries will be NULL if the GPIO port is not enabled.
  */
-static const struct device * const gpio_ports[] = {
+static const struct device *const gpio_ports[] = {
 	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioa)),
 	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiob)),
 	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioc)),

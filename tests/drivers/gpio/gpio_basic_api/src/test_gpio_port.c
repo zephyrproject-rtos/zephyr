@@ -9,7 +9,7 @@
 
 #define ALL_BITS ((gpio_port_value_t)-1)
 
-static const struct device *dev;
+static const struct device *const dev = DEVICE_DT_GET(DEV);
 
 /* Short-hand for a checked read of PIN_IN raw state */
 static bool raw_in(void)
@@ -68,8 +68,6 @@ static int setup(void)
 {
 	int rc;
 	gpio_port_value_t v1;
-
-	dev = DEVICE_DT_GET(DEV);
 
 	TC_PRINT("Validate device %s\n", dev->name);
 	zassert_true(device_is_ready(dev), "GPIO dev is not ready");

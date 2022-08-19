@@ -64,7 +64,7 @@ static const struct mpsc_pbuf_buffer_config config = {
 	.get_wlen = get_wlen,
 	.flags = 0
 };
-static const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+static const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 static struct mpsc_pbuf_buffer buf;
 static atomic_t active_cnt; /* Counts number of buffered messages. */

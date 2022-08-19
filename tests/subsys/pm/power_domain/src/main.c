@@ -14,7 +14,10 @@
 #define TEST_DEVA DT_NODELABEL(test_dev_a)
 #define TEST_DEVB DT_NODELABEL(test_dev_b)
 
-static const struct device *domain, *deva, *devb, *devc;
+static const struct device *const domain = DEVICE_DT_GET(TEST_DOMAIN);
+static const struct device *const deva = DEVICE_DT_GET(TEST_DEVA);
+static const struct device *const devb = DEVICE_DT_GET(TEST_DEVB);
+static const struct device *devc;
 static int testing_domain_on_notitication;
 static int testing_domain_off_notitication;
 
@@ -125,9 +128,6 @@ ZTEST(power_domain_1cpu, test_power_domain_device_runtime)
 	int ret;
 	enum pm_device_state state;
 
-	domain = DEVICE_DT_GET(TEST_DOMAIN);
-	deva = DEVICE_DT_GET(TEST_DEVA);
-	devb = DEVICE_DT_GET(TEST_DEVB);
 	devc = DEVICE_GET(devc);
 
 	pm_device_init_suspended(domain);

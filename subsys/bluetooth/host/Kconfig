@@ -758,6 +758,28 @@ config BT_DF_CTE_TX_AOD
 	  Enable support for antenna switching during CTE transmission.
 	  Also known as Angle of Departure mode.
 
+config BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES
+	bool "Use 16 bits signed integer IQ samples in connectionless IQ reports"
+	depends on BT_DF_CONNECTIONLESS_CTE_RX && BT_HCI_VS_EXT
+	select BT_HCI_VS_EVT
+	help
+	  Direction Finging connectionless IQ reports provide a set of IQ samples collected during
+	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
+	  integer, see Vol 4, Part E section 7.7.65.21. This option enables a vendor specific Host
+	  extenstion to handle connectionless IQ reports with samples that are in 16 bit signed
+	  integer format.
+
+config BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES
+	bool "Use 16 bits signed integer IQ samples in connection IQ reports"
+	depends on BT_DF_CONNECTION_CTE_RX && BT_HCI_VS_EXT
+	select BT_HCI_VS_EVT
+	help
+	  Direction Finging connection IQ reports provide a set of IQ samples collected during
+	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
+	  integer, see Vol 4, Part E sections 7.7.65.22. This option enables a vendor specific Host
+	  extenstion to handle connection IQ report with samples that are in 16 bit signed integer
+	  format.
+
 config BT_DEBUG_DF
 	bool "Bluetooth Direction Finding debug"
 	help

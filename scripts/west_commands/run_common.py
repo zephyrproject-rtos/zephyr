@@ -169,6 +169,11 @@ def do_run_common(command, user_args, user_runner_args, domains=None):
             # Get the user specified domains.
             domains = load_domains(build_dir).get_domains(user_args.domain)
 
+    if len(domains) > 1 and len(user_runner_args) > 1:
+        log.wrn("Specifying runner options for multiple domains is experimental.\n"
+                "If problems are experienced, please specify a single domain "
+                "using '--domain <domain>'")
+
     for d in domains:
         do_run_common_image(command, user_args, user_runner_args, d.build_dir)
 

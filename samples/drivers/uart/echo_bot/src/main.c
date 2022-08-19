@@ -18,7 +18,7 @@
 /* queue to store up to 10 messages (aligned to 4-byte boundary) */
 K_MSGQ_DEFINE(uart_msgq, MSG_SIZE, 10, 4);
 
-static const struct device *uart_dev = DEVICE_DT_GET(UART_DEVICE_NODE);
+static const struct device *const uart_dev = DEVICE_DT_GET(UART_DEVICE_NODE);
 
 /* receive buffer used in UART ISR callback */
 static char rx_buf[MSG_SIZE];

@@ -15,7 +15,6 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0x100 4>;
-		label = "FAKE_I2C_BUS";
 	};
 };
 
@@ -25,7 +24,6 @@
 	smartbattery0: smartbattery@b {
 		compatible = "sbs,sbs-gauge";
 		reg = <0x0B>;
-		label = "SMARTBATTERY";
 		status = "okay";
 	};
 };

@@ -235,7 +235,7 @@ const uint8_t color_mapping_##led_node_id[] =			\
 
 #define LED_INFO(led_node_id)					\
 {								\
-	.label		= DT_LABEL(led_node_id),		\
+	.label		= DT_PROP(led_node_id, label),		\
 	.index		= DT_PROP(led_node_id, index),		\
 	.num_colors	=					\
 		DT_PROP_LEN(led_node_id, color_mapping),	\

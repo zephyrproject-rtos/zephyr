@@ -24,7 +24,7 @@
 #define FLASH_BASE (128*1024)
 #define FLASH_AVAILABLE (FLASH_SIZE-FLASH_BASE)
 
-static const struct device *fdev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+static const struct device *const fdev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 static const struct flash_driver_api *api;
 static const struct flash_pages_layout *layout;
 static size_t layout_size;

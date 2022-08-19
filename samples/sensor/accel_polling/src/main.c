@@ -17,7 +17,7 @@
 	IF_ENABLED(DT_NODE_EXISTS(ACCEL_ALIAS(i)), (DEVICE_DT_GET(ACCEL_ALIAS(i)),))
 
 /* support up to 10 accelerometer sensors */
-static const struct device *sensors[] = {LISTIFY(10, ACCELEROMETER_DEVICE, ())};
+static const struct device *const sensors[] = {LISTIFY(10, ACCELEROMETER_DEVICE, ())};
 
 static const enum sensor_channel channels[] = {
 	SENSOR_CHAN_ACCEL_X,

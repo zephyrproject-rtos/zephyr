@@ -311,7 +311,7 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 		return -EINVAL;
 	}
 
-	if (data->state == CAN_BUS_OFF) {
+	if (data->state == CAN_STATE_BUS_OFF) {
 		LOG_DBG("transmit failed, bus-off");
 		return -ENETDOWN;
 	}
@@ -543,7 +543,7 @@ static void can_sja1000_handle_error_warning_irq(const struct device *dev)
 
 	sr = can_sja1000_read_reg(dev, CAN_SJA1000_SR);
 	if ((sr & CAN_SJA1000_SR_BS) != 0) {
-		data->state = CAN_BUS_OFF;
+		data->state = CAN_STATE_BUS_OFF;
 		can_sja1000_tx_done(dev, -ENETDOWN);
 #ifdef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 		/* Recover bus now unless interrupted in the middle of a MOD register change. */
@@ -554,9 +554,9 @@ static void can_sja1000_handle_error_warning_irq(const struct device *dev)
 		}
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 	} else if ((sr & CAN_SJA1000_SR_ES) != 0) {
-		data->state = CAN_ERROR_WARNING;
+		data->state = CAN_STATE_ERROR_WARNING;
 	} else {
-		data->state = CAN_ERROR_ACTIVE;
+		data->state = CAN_STATE_ERROR_ACTIVE;
 	}
 }
 
@@ -564,10 +564,10 @@ static void can_sja1000_handle_error_passive_irq(const struct device *dev)
 {
 	struct can_sja1000_data *data = dev->data;
 
-	if (data->state == CAN_ERROR_PASSIVE) {
-		data->state = CAN_ERROR_WARNING;
+	if (data->state == CAN_STATE_ERROR_PASSIVE) {
+		data->state = CAN_STATE_ERROR_WARNING;
 	} else {
-		data->state = CAN_ERROR_PASSIVE;
+		data->state = CAN_STATE_ERROR_PASSIVE;
 	}
 }
 
@@ -626,7 +626,7 @@ int can_sja1000_init(const struct device *dev)
 	k_sem_init(&data->tx_idle, 1, 1);
 	k_sem_init(&data->tx_done, 0, 1);
 
-	data->state = CAN_ERROR_ACTIVE;
+	data->state = CAN_STATE_ERROR_ACTIVE;
 
 	/* See NXP SJA1000 Application Note AN97076 (figure 12) for initialization sequence */
 

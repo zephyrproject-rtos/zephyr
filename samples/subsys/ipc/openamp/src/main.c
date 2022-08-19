@@ -24,7 +24,8 @@
 K_THREAD_STACK_DEFINE(thread_stack, APP_TASK_STACK_SIZE);
 static struct k_thread thread_data;
 
-static const struct device *ipm_handle;
+static const struct device *const ipm_handle =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc));
 
 static metal_phys_addr_t shm_physmap[] = { SHM_START_ADDR };
 static struct metal_device shm_device = {
@@ -200,7 +201,6 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	}
 
 	/* setup IPM */
-	ipm_handle = DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc));
 	if (!device_is_ready(ipm_handle)) {
 		printk("IPM device is not ready\n");
 		return;

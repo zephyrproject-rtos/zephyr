@@ -13,7 +13,8 @@ K_SEM_DEFINE(rx_buf_released, 0, 1);
 K_SEM_DEFINE(rx_disabled, 0, 1);
 
 ZTEST_BMEM volatile bool failed_in_isr;
-ZTEST_BMEM static const struct device *uart_dev;
+ZTEST_BMEM static const struct device *const uart_dev =
+	DEVICE_DT_GET(UART_DEVICE_DEV);
 
 static void read_abort_timeout(struct k_timer *timer);
 K_TIMER_DEFINE(read_abort_timer, read_abort_timeout, NULL);
@@ -21,11 +22,7 @@ K_TIMER_DEFINE(read_abort_timer, read_abort_timeout, NULL);
 
 void init_test(void)
 {
-	uart_dev = DEVICE_DT_GET(UART_DEVICE_DEV);
-	if (!device_is_ready(uart_dev)) {
-		printk("UART device is not ready\n");
-		return;
-	}
+	__ASSERT_NO_MSG(device_is_ready(uart_dev));
 }
 
 #ifdef CONFIG_USERSPACE

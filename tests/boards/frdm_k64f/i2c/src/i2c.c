@@ -25,7 +25,7 @@
 #define FXOS8700_CTRLREG2_RST_MASK		0x40
 
 
-static const struct device *i2c_bus = DEVICE_DT_GET(DT_NODELABEL(i2c0));
+static const struct device *const i2c_bus = DEVICE_DT_GET(DT_NODELABEL(i2c0));
 
 /**
  * Setup and enable the fxos8700 with its max sample rate and
