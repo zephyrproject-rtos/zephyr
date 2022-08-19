@@ -41,7 +41,7 @@ static bool ipc_message(const struct device *dev, void *arg,
  * Note that the order of operations in this test are important and things potentially will not
  * work in horrible and unexpected ways if not done as they are here.
  */
-void test_hda_host_in_smoke(void)
+ZTEST(intel_adsp_hda, test_hda_host_in_smoke)
 {
 	int res;
 	uint32_t last_msg_cnt;
@@ -118,7 +118,7 @@ void test_hda_host_in_smoke(void)
  * Note that the order of operations in this test are important and things potentially will not
  * work in horrible and unexpected ways if not done as they are here.
  */
-void test_hda_host_out_smoke(void)
+ZTEST(intel_adsp_hda, test_hda_host_out_smoke)
 {
 	int res;
 	bool is_ramp;
@@ -197,3 +197,5 @@ void test_hda_host_out_smoke(void)
 	intel_adsp_hda_disable(HDA_HOST_OUT_BASE, HDA_REGBLOCK_SIZE, STREAM_ID);
 	hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, STREAM_ID, "dsp disable");
 }
+
+ZTEST_SUITE(intel_adsp_hda, NULL, NULL, NULL, NULL, NULL);

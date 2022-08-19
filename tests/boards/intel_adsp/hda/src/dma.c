@@ -41,7 +41,7 @@ static bool ipc_message(const struct device *dev, void *arg,
  * Note that the order of operations in this test are important and things potentially will not
  * work in horrible and unexpected ways if not done as they are here.
  */
-void test_hda_host_in_dma(void)
+ZTEST(intel_adsp_hda_dma, test_hda_host_in_dma)
 {
 	const struct device *dma;
 	int res, channel;
@@ -235,3 +235,5 @@ void test_hda_host_out_dma(void)
 	zassert_ok(res, "Expected dma stop to succeed");
 	hda_dump_regs(HOST_OUT, HDA_REGBLOCK_SIZE, channel, "dsp dma stop");
 }
+
+ZTEST_SUITE(intel_adsp_hda_dma, NULL, NULL, NULL, NULL, NULL);
