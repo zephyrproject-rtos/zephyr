@@ -14,3 +14,4 @@ tests:
     tags: shell shield
     depends_on: arduino_i2c arduino_gpio
     extra_args: SHIELD=x_nucleo_iks01a3
+    platform_exclude: lpcxpresso55s16 pan1781_evb pan1782_evb
