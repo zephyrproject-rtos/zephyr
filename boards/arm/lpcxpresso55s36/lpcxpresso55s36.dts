@@ -128,3 +128,20 @@
 	pinctrl-names = "default";
 	status = "ok";
 };
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		slot0_partition: partition@0 {
+			label = "executable";
+				reg = <0x00000000 DT_SIZE_K(182)>;
+			};
+
+		storage_partition: partition@88000 {
+			label = "storage";
+			reg = <0x0002d800 DT_SIZE_K(64)>;
+		};
+	};
+};
