@@ -68,8 +68,8 @@ class Blobs(WestCommand):
                             help='sub-command to execute')
 
         parser.add_argument('-f', '--format', default=default_fmt,
-                            help='''Format string to use to list each blob;
-                                    see FORMAT STRINGS below.''')
+                            help='''format string to use to list each blob;
+                                    see FORMAT STRINGS below''')
 
         parser.add_argument('modules', metavar='MODULE', nargs='*',
                             help='''zephyr modules to operate on;
