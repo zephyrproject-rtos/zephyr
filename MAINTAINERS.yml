@@ -1763,6 +1763,10 @@ NXP Platforms:
   collaborators:
     - mmahadevan108
     - danieldegrasse
+    - DerekSnell
+    - yvanderv
+    - EmilioCBen
+    - decsny
   files:
     - boards/arm/mimx*/
     - boards/arm/frdm_k*/
