@@ -29,7 +29,7 @@
 #endif
 #if CONFIG_USB_DC_NXP_LPCIP3511
 #include "usb_phy.h"
-#include "usb_dc_mcux.h"
+#include "usb.h"
 #endif
 
 #define CTIMER_CLOCK_SOURCE(node_id) \
