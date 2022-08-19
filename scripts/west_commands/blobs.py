@@ -72,9 +72,8 @@ class Blobs(WestCommand):
                                     see FORMAT STRINGS below.''')
 
         parser.add_argument('modules', metavar='MODULE', nargs='*',
-                            help='''modules to operate on; only blobs whose
-                            names are on this list will be taken into account
-                            by the sub-commands.''')
+                            help='''zephyr modules to operate on;
+                            all modules will be used if not given''')
 
         return parser
 
