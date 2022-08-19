@@ -611,6 +611,7 @@ UNDEF_KCONFIG_WHITELIST = {
     "MODVERSIONS",        # Linux, in boards/xtensa/intel_adsp_cavs25/doc
     "SECURITY_LOADPIN",   # Linux, in boards/xtensa/intel_adsp_cavs25/doc
     "ZEPHYR_TRY_MASS_ERASE", # MCUBoot setting described in sysbuild documentation
+    "ZTEST_FAIL_TEST_",  # regex in tests/ztest/fail/CMakeLists.txt
 }
 
 class KconfigBasicCheck(KconfigCheck, ComplianceTest):
