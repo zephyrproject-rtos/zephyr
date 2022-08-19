@@ -55,8 +55,6 @@ static void *fpga_ice40_setup(void)
 
 static void fpga_ice40_before(void *arg)
 {
-	int ret;
-	const struct device *port = DEVICE_DT_GET(DT_NODELABEL(gpio0));
 	struct fpga_ice40_fixture *fixture = (struct fpga_ice40_fixture *)arg;
 
 	zassert_true(device_is_ready(fixture->fpga), NULL);

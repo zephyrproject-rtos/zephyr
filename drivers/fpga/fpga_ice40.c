@@ -31,16 +31,15 @@
 #define NIBBLES_PER_BYTE (BITS_PER_BYTE / BITS_PER_NIBBLE)
 #endif
 
-#define FPGA_ICE40_DELAY_CLOCKS 8
-
 #define FPGA_ICE40_SPI_FREQ_MIN 1000000
 #define FPGA_ICE40_SPI_FREQ_MAX 25000000
 
-#define FPGA_ICE40_CRESET_DELAY_NS_MIN	 200
-#define FPGA_ICE40_CONFIG_DELAY_US_MIN	 300
-#define FPGA_ICE40_ADDITIONAL_CLOCKS_MIN 49
+#define FPGA_ICE40_CRESET_DELAY_NS_MIN 200
+#define FPGA_ICE40_CONFIG_DELAY_US_MIN 300
+#define FPGA_ICE40_LEADING_CLOCKS_MIN  8
+#define FPGA_ICE40_TRAILING_CLOCKS_MIN 49
 
-LOG_MODULE_REGISTER(fpga_ice40, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(fpga_ice40);
 
 struct fpga_ice40_data {
 	uint32_t crc;
@@ -51,18 +50,20 @@ struct fpga_ice40_data {
 	struct k_spinlock lock;
 };
 
-enum fpga_ice40_pin {
-	FPGA_ICE40_CDONE,
-	FPGA_ICE40_CRESET,
-};
-
 struct fpga_ice40_config {
 	struct spi_dt_spec bus;
-	struct gpio_dt_spec gpio[2];
 	const struct pinctrl_dev_config *pincfg;
-	uint16_t config_delay_us;
+	struct gpio_dt_spec cdone;
+	struct gpio_dt_spec creset;
+	struct gpio_dt_spec clk;
+	struct gpio_dt_spec pico;
+	volatile gpio_port_pins_t *set;
+	volatile gpio_port_pins_t *clear;
+	uint16_t mhz_delay_count;
 	uint8_t creset_delay_ns;
-	uint8_t additional_clocks;
+	uint16_t config_delay_us;
+	uint8_t leading_clocks;
+	uint8_t trailing_clocks;
 };
 
 static void fpga_ice40_crc_to_str(uint32_t crc, char *s)
@@ -81,19 +82,56 @@ static void fpga_ice40_crc_to_str(uint32_t crc, char *s)
 	s[sizeof(crc) * NIBBLES_PER_BYTE] = '\0';
 }
 
-static int fpga_ice40_send_clocks(const struct spi_dt_spec *bus, uint8_t n)
+static inline void fpga_ice40_delay(size_t n)
 {
-	uint8_t buf[(UINT8_MAX + 1) / BITS_PER_BYTE];
-	const struct spi_buf tx_buf = {
-		.buf = buf,
-		.len = ceiling_fraction(n, BITS_PER_BYTE),
-	};
-	struct spi_buf_set tx_bufs = {
-		.buffers = &tx_buf,
-		.count = 1,
-	};
+	for (; n > 0; --n) {
+	}
+}
 
-	return spi_write_dt(bus, &tx_bufs);
+static void fpga_ice40_send_clocks(size_t delay, volatile gpio_port_pins_t *set,
+				   volatile gpio_port_pins_t *clear, gpio_port_pins_t clk, size_t n)
+{
+	for (; n > 0; --n) {
+		*clear |= clk;
+		fpga_ice40_delay(delay);
+		*set |= clk;
+		fpga_ice40_delay(delay);
+	}
+}
+
+static void fpga_ice40_spi_send_data(size_t delay, volatile gpio_port_pins_t *set,
+				     volatile gpio_port_pins_t *clear, gpio_port_pins_t cs,
+				     gpio_port_pins_t clk, gpio_port_pins_t pico, uint8_t *z,
+				     size_t n)
+{
+	bool hi;
+
+	/* assert chip-select (active low) */
+	*clear |= cs;
+
+	for (; n > 0; --n, ++z) {
+		/* msb down to lsb */
+		for (int b = 7; b >= 0; --b) {
+
+			/* Data is shifted out on the falling edge (CPOL=0) */
+			*clear |= clk;
+			fpga_ice40_delay(delay);
+
+			hi = !!(BIT(b) & *z);
+			if (hi) {
+				*set |= pico;
+			} else {
+				*clear |= pico;
+			}
+
+			/* Data is sampled on the rising edge (CPHA=0) */
+			*set |= clk;
+			fpga_ice40_delay(delay);
+		}
+	}
+
+	/* de-assert chip-select (active low) */
+	*set |= cs;
 }
 
 static enum FPGA_status fpga_ice40_get_status(const struct device *dev)
@@ -119,104 +157,117 @@ static enum FPGA_status fpga_ice40_get_status(const struct device *dev)
  * See iCE40 Family Handbook, Appendix A. SPI Slave Configuration Procedure, pp 15-21
  *
  * https://www.latticesemi.com/~/media/LatticeSemi/Documents/Handbooks/iCE40FamilyHandbook.pdf
+ *
+ * This is a bit tricky.
+ *
+ * We want to use the SPI hardware and driver to deliver perfectly-timed clocks and manage
+ * the chip-select, mainly to avoid calibrated delay loops and bit-banging. However, SPI_CS
+ * must be pulled high to deliver 8 leading clocks and 49 trailing clocks. Normally, SPI_CS is
+ * pulled low by the driver.
+ *
+ * However, with the current SPI API, there is no way to insert a callback between buffers
+ * to e.g. change the SPI_CS polarity. The next logical approach would be to perform 3
+ * consecutive SPI transfers, modifying the SPI_CS polarity each time. However, there is
+ * some inconsistence with how that is done using the Zephyr SPI API. Additionally, some
+ * SPI transceivers actually use a dedicated signal for CS and do not use a GPIO peripheral.
+ *
+ * In practice, it was not feasible to use the 3-transfer approach described above on an
+ * 80 MHz microcontroller, as there was substantial overhead from one SPI transfer to the
+ * next, which breaks iCE40 config timing.
+ *
+ * With that, we are left with bit-banging. This was also challenging, as the highest
+ * clock rate that could be achieved on this platform using the Zephyr GPIO API was around
+ * 275 kHz, which also breaks iCE40 timing.
+ *
+ * For that reason, it was not possible to rely on Zephyr's GPIO API for bit-banging, and
+ * that is why this driver requires raw register access to set-bit and clear-bit registers.
+ * With this approach, on an 80 MHz microcontroller, we were able to achieve switching times
+ * of 220ns (thus a clock frequency of 2.2 MHz, which is within iCE40 config specifications).
+ * DT bindings are available so that each platform may taylor a specific delay to achieve
+ * a 1 MHz clock freqency.
+ *
+ * Outside of loading, the device may operate anywhere within the 1 MHz <= f <= 25 MHz
+ * operating frequency.
  */
 int fpga_ice40_load(const struct device *dev, uint32_t *image_ptr, uint32_t img_size)
 {
 	int ret;
 	uint32_t crc;
 	uint32_t delay_us;
+	gpio_port_pins_t cs;
+	gpio_port_pins_t clk;
 	k_spinlock_key_t key;
-	const struct spi_buf tx_buf = {
-		.buf = image_ptr,
-		.len = img_size,
-	};
-	struct spi_buf_set tx_bufs = {
-		.buffers = &tx_buf,
-		.count = 1,
-	};
+	gpio_port_pins_t pico;
+	gpio_port_pins_t creset;
 	struct fpga_ice40_data *data = dev->data;
 	const struct fpga_ice40_config *config = dev->config;
 
-	crc = crc32_c(0, (uint8_t *)image_ptr, img_size, true, true);
+	/* prepare masks */
+	cs = BIT(config->bus.config.cs->gpio.pin);
+	clk = BIT(config->clk.pin);
+	pico = BIT(config->pico.pin);
+	creset = BIT(config->creset.pin);
+
+	/* crc check */
+	crc = crc32_ieee((uint8_t *)image_ptr, img_size);
 	if (data->loaded && crc == data->crc) {
 		LOG_WRN("already loaded with image CRC32c: 0x%08x", data->crc);
 	}
 
+	/* precompute delay values */
+	delay_us = ceiling_fraction(config->creset_delay_ns, NSEC_PER_USEC);
+
 	key = k_spin_lock(&data->lock);
 
+	/* clear crc */
 	data->crc = 0;
 	data->loaded = false;
 	fpga_ice40_crc_to_str(0, data->info);
 
-	/* SPI_SS_B = 1, CRESET_B = 1, SPI_CLK = 1 */
-	LOG_DBG("initializing SPI & GPIO");
-	if ((ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT)) ||
-	    (ret = gpio_pin_configure_dt(&config->gpio[FPGA_ICE40_CRESET], GPIO_OUTPUT_HIGH)) ||
-	    (ret = gpio_pin_configure_dt(&config->gpio[FPGA_ICE40_CDONE], GPIO_INPUT))) {
-		LOG_ERR("Failed to initialize SPI or GPIO: %d", ret);
-		goto unlock;
-	}
-
-	LOG_DBG("Set SPI_SS_B low");
-	ret = gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_LOW);
-	if (ret < 0) {
-		LOG_ERR("failed to set SPI_SS_B low: %d", ret);
-		goto unlock;
-	}
+	LOG_DBG("Initializing GPIO");
+	ret = gpio_pin_configure_dt(&config->cdone, GPIO_INPUT) ||
+	      gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH) ||
+	      gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH) ||
+	      gpio_pin_configure_dt(&config->clk, GPIO_OUTPUT_HIGH) ||
+	      gpio_pin_configure_dt(&config->pico, GPIO_OUTPUT_HIGH) || 0;
+	__ASSERT(ret == 0, "Failed to initialize GPIO: %d", ret);
+	ARG_UNUSED(ret);
 
 	LOG_DBG("Set CRESET low");
-	ret = gpio_pin_configure_dt(&config->gpio[FPGA_ICE40_CRESET], GPIO_OUTPUT_LOW);
-	if (ret < 0) {
-		LOG_ERR("failed to set CRESET low: %d", ret);
-		goto unlock;
-	}
-
-	/* Note SPI_SCK is pulled high by SPI peripheral */
+	LOG_DBG("Set SPI_CS low");
+	*config->clear |= (creset | cs);
 
 	/* Wait a minimum of 200ns */
-	LOG_DBG("Delay %u ns", config->creset_delay_ns);
-	k_busy_wait(ceiling_fraction(config->creset_delay_ns, NSEC_PER_USEC));
+	LOG_DBG("Delay %u ns (%u us)", config->creset_delay_ns, delay_us);
+	fpga_ice40_delay(2 * config->mhz_delay_count * delay_us);
+
+	__ASSERT(gpio_pin_get_dt(&config->cdone) == 0, "CDONE was not high");
 
 	LOG_DBG("Set CRESET high");
-	ret = gpio_pin_configure_dt(&config->gpio[FPGA_ICE40_CRESET], GPIO_OUTPUT_HIGH);
-	if (ret < 0) {
-		LOG_ERR("failed to set CRESET high: %d", ret);
-		goto unlock;
-	}
+	*config->set |= creset;
 
 	LOG_DBG("Delay %u us", config->config_delay_us);
 	k_busy_wait(config->config_delay_us);
 
-	LOG_DBG("Set SPI_SS_B high");
-	ret = gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH);
-	if (ret < 0) {
-		LOG_ERR("Failed to set SPI_SS_B high: %d", ret);
-		goto unlock;
-	}
+	LOG_DBG("Set SPI_CS high");
+	*config->set |= cs;
 
-	LOG_DBG("Send %u clocks", FPGA_ICE40_DELAY_CLOCKS);
-	ret = fpga_ice40_send_clocks(&config->bus, FPGA_ICE40_DELAY_CLOCKS);
-	if (ret < 0) {
-		LOG_ERR("failed to send %u clocks: %d", FPGA_ICE40_DELAY_CLOCKS, ret);
-		goto unlock;
-	}
+	LOG_DBG("Send %u clocks", config->leading_clocks);
+	fpga_ice40_send_clocks(config->mhz_delay_count, config->set, config->clear, clk,
+			       config->leading_clocks);
 
+	LOG_DBG("Set SPI_CS low");
 	LOG_DBG("Send bin file");
-	ret = spi_write_dt(&config->bus, &tx_bufs);
-	if (ret < 0) {
-		LOG_ERR("Failed to send bin file: %d", ret);
-		goto unlock;
-	}
+	LOG_DBG("Set SPI_CS high");
+	fpga_ice40_spi_send_data(config->mhz_delay_count, config->set, config->clear, cs, clk, pico,
+				 (uint8_t *)image_ptr, img_size);
 
-	LOG_DBG("Send %u clocks", config->additional_clocks);
-	ret = fpga_ice40_send_clocks(&config->bus, config->additional_clocks);
-	if (ret < 0) {
-		LOG_ERR("failed to send %u clocks: %d", config->additional_clocks, ret);
-		goto unlock;
-	}
+	LOG_DBG("Send %u clocks", config->trailing_clocks);
+	fpga_ice40_send_clocks(config->mhz_delay_count, config->set, config->clear, clk,
+			       config->trailing_clocks);
 
 	LOG_DBG("checking CDONE");
-	ret = gpio_pin_get_dt(&config->gpio[FPGA_ICE40_CDONE]);
+	ret = gpio_pin_get_dt(&config->cdone);
 	if (ret < 0) {
 		LOG_ERR("failed to read CDONE: %d", ret);
 		goto unlock;
@@ -229,9 +280,13 @@ int fpga_ice40_load(const struct device *dev, uint32_t *image_ptr, uint32_t img_
 	ret = 0;
 	data->loaded = true;
 	fpga_ice40_crc_to_str(crc, data->info);
-	LOG_DBG("Loaded image with CRC32c 0x%08x", crc);
+	LOG_INF("Loaded image with CRC32 0x%08x", crc);
 
 unlock:
+	(void)gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH);
+	(void)gpio_pin_configure_dt(&config->bus.config.cs->gpio, GPIO_OUTPUT_HIGH);
+	(void)gpio_pin_configure_dt(&config->clk, GPIO_DISCONNECTED);
+	(void)gpio_pin_configure_dt(&config->pico, GPIO_DISCONNECTED);
 	(void)pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 
 	k_spin_unlock(&data->lock, key);
@@ -248,8 +303,7 @@ static int fpga_ice40_on_off(const struct device *dev, bool on)
 
 	key = k_spin_lock(&data->lock);
 
-	ret = gpio_pin_configure_dt(&config->gpio[FPGA_ICE40_CRESET],
-				    on ? GPIO_OUTPUT_HIGH : GPIO_OUTPUT_LOW);
+	ret = gpio_pin_configure_dt(&config->creset, on ? GPIO_OUTPUT_HIGH : GPIO_OUTPUT_LOW);
 	if (ret < 0) {
 		goto unlock;
 	}
@@ -299,14 +353,14 @@ static int fpga_ice40_init(const struct device *dev)
 	int ret;
 	const struct fpga_ice40_config *config = dev->config;
 
-	ret = gpio_pin_configure_dt(&config->gpio[FPGA_ICE40_CRESET], GPIO_OUTPUT_HIGH);
+	ret = gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH);
 	if (ret < 0) {
 		LOG_ERR("failed to configure CRESET: %d", ret);
 		return ret;
 	}
 
-	ret = gpio_pin_configure_dt(&config->gpio[FPGA_ICE40_CDONE], GPIO_INPUT);
-	{
+	ret = gpio_pin_configure_dt(&config->cdone, 0);
+	if (ret < 0) {
 		LOG_ERR("Failed to initialize CDONE: %d", ret);
 		return ret;
 	}
@@ -324,8 +378,15 @@ static int fpga_ice40_init(const struct device *dev)
 #define FPGA_ICE40_CRESET_DELAY_NS(inst)                                                           \
 	DT_INST_PROP_OR(inst, creset_delay_ns, FPGA_ICE40_CRESET_DELAY_NS_MIN)
 
-#define FPGA_ICE40_ADDITIONAL_CLOCKS(inst)                                                         \
-	DT_INST_PROP_OR(inst, additional_clocks, FPGA_ICE40_ADDITIONAL_CLOCKS_MIN)
+#define FPGA_ICE40_LEADING_CLOCKS(inst)                                                            \
+	DT_INST_PROP_OR(inst, leading_clocks, FPGA_ICE40_LEADING_CLOCKS_MIN)
+
+#define FPGA_ICE40_TRAILING_CLOCKS(inst)                                                           \
+	DT_INST_PROP_OR(inst, trailing_clocks, FPGA_ICE40_TRAILING_CLOCKS_MIN)
+
+#define FPGA_ICE40_MHZ_DELAY_COUNT(inst) DT_INST_PROP_OR(inst, mhz_delay_count, 0)
+
+#define FPGA_ICE40_GPIO_PINS(inst, name) (volatile gpio_port_pins_t *)DT_INST_PROP(inst, name)
 
 #define FPGA_ICE40_DEFINE(inst)                                                                    \
 	BUILD_ASSERT(FPGA_ICE40_BUS_FREQ(inst) >= FPGA_ICE40_SPI_FREQ_MIN);                        \
@@ -334,24 +395,29 @@ static int fpga_ice40_init(const struct device *dev)
 	BUILD_ASSERT(FPGA_ICE40_CONFIG_DELAY_US(inst) <= UINT16_MAX);                              \
 	BUILD_ASSERT(FPGA_ICE40_CRESET_DELAY_NS(inst) >= FPGA_ICE40_CRESET_DELAY_NS_MIN);          \
 	BUILD_ASSERT(FPGA_ICE40_CRESET_DELAY_NS(inst) <= UINT8_MAX);                               \
-	BUILD_ASSERT(FPGA_ICE40_ADDITIONAL_CLOCKS(inst) >= FPGA_ICE40_ADDITIONAL_CLOCKS_MIN);      \
-	BUILD_ASSERT(FPGA_ICE40_ADDITIONAL_CLOCKS(inst) <= UINT8_MAX);                             \
+	BUILD_ASSERT(FPGA_ICE40_LEADING_CLOCKS(inst) >= FPGA_ICE40_LEADING_CLOCKS_MIN);            \
+	BUILD_ASSERT(FPGA_ICE40_LEADING_CLOCKS(inst) <= UINT8_MAX);                                \
+	BUILD_ASSERT(FPGA_ICE40_TRAILING_CLOCKS(inst) >= FPGA_ICE40_TRAILING_CLOCKS_MIN);          \
+	BUILD_ASSERT(FPGA_ICE40_TRAILING_CLOCKS(inst) <= UINT8_MAX);                               \
+	BUILD_ASSERT(FPGA_ICE40_MHZ_DELAY_COUNT(inst) >= 0);                                       \
                                                                                                    \
 	PINCTRL_DT_DEFINE(DT_INST_PARENT(inst));                                                   \
-                                                                                                   \
 	static struct fpga_ice40_data fpga_ice40_data_##inst;                                      \
                                                                                                    \
 	static const struct fpga_ice40_config fpga_ice40_config_##inst = {                         \
 		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),          \
-		.gpio =                                                                            \
-			{                                                                          \
-				[FPGA_ICE40_CDONE] = GPIO_DT_SPEC_INST_GET(inst, cdone_gpios),     \
-				[FPGA_ICE40_CRESET] = GPIO_DT_SPEC_INST_GET(inst, creset_gpios),   \
-			},                                                                         \
 		.pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_INST_PARENT(inst)),                         \
+		.creset = GPIO_DT_SPEC_INST_GET(inst, creset_gpios),                               \
+		.cdone = GPIO_DT_SPEC_INST_GET(inst, cdone_gpios),                                 \
+		.clk = GPIO_DT_SPEC_INST_GET(inst, clk_gpios),                                     \
+		.pico = GPIO_DT_SPEC_INST_GET(inst, pico_gpios),                                   \
+		.set = FPGA_ICE40_GPIO_PINS(inst, gpios_set_reg),                                  \
+		.clear = FPGA_ICE40_GPIO_PINS(inst, gpios_clear_reg),                              \
+		.mhz_delay_count = FPGA_ICE40_MHZ_DELAY_COUNT(inst),                               \
 		.config_delay_us = FPGA_ICE40_CONFIG_DELAY_US(inst),                               \
 		.creset_delay_ns = FPGA_ICE40_CRESET_DELAY_NS(inst),                               \
-		.additional_clocks = FPGA_ICE40_ADDITIONAL_CLOCKS(inst),                           \
+		.leading_clocks = FPGA_ICE40_LEADING_CLOCKS(inst),                                 \
+		.trailing_clocks = FPGA_ICE40_TRAILING_CLOCKS(inst),                               \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, fpga_ice40_init, NULL, &fpga_ice40_data_##inst,                \
