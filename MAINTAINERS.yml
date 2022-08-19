@@ -421,6 +421,7 @@ Devicetree:
     - dts/bindings/test/
     - doc/build/dts/
     - include/zephyr/devicetree/
+    - scripts/kconfig/kconfigfunctions.py
   labels:
     - "area: Devicetree"
 
