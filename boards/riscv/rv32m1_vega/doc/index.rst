@@ -432,7 +432,7 @@ For simplicity, this guide assumes:
 You can put them elsewhere, but be aware:
 
 - If you put the toolchain somewhere else, you will need to change
-  the :envvar:`CROSS_COMPILE` value described below accordingly.
+  the ``CROSS_COMPILE`` value described below accordingly.
 - If you put OpenOCD somewhere else, you will need to change the
   OpenOCD path in the flashing and debugging instructions below.
 - Don't use installation directories with spaces anywhere in the path;
@@ -774,9 +774,9 @@ instructions in the ``rv32m1_gnu_toolchain_patch`` repository's
 
 If you set ``<toolchain-installation-dir>`` to
 :file:`~/riscv32-unknown-elf-gcc`, you can use the above instructions
-for setting :envvar:`CROSS_COMPILE` when building Zephyr
+for setting ``CROSS_COMPILE`` when building Zephyr
 applications. If you set it to something else, you will need to update
-your :envvar:`CROSS_COMPILE` setting accordingly.
+your ``CROSS_COMPILE`` setting accordingly.
 
 .. note::
 

@@ -7,7 +7,7 @@ To use a custom toolchain defined in an external CMake file, :ref:`set these
 environment variables <env_vars>`:
 
 - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to your toolchain's name
-- Set :envvar:`TOOLCHAIN_ROOT` to the path to the directory containing your
+- Set ``TOOLCHAIN_ROOT`` to the path to the directory containing your
   toolchain's CMake configuration files.
 
 Zephyr will then include the toolchain cmake files located in the
@@ -58,7 +58,7 @@ When :makevar:`TOOLCHAIN_USE_CUSTOM` is set, the :file:`other.h` must be
 available out-of-tree and it must include the correct header for the custom
 toolchain.
 A good location for the :file:`other.h` header file, would be a
-directory under the directory specified in :envvar:`TOOLCHAIN_ROOT` as
+directory under the directory specified in ``TOOLCHAIN_ROOT`` as
 :file:`include/toolchain`.
 To get the toolchain header included in zephyr's build, the
 :makevar:`USERINCLUDE` can be set to point to the include directory, as shown

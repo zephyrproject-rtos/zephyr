@@ -12,7 +12,7 @@ Setting Variables
 Option 1: Just Once
 -------------------
 
-To set the environment variable :envvar:`MY_VARIABLE` to ``foo`` for the
+To set the environment variable ``MY_VARIABLE`` to ``foo`` for the
 lifetime of your current terminal window:
 
 .. tabs::
@@ -56,7 +56,7 @@ Option 2: In all Terminals
       program.
 
       To use ``setx``, type this command, then close the terminal window. Any
-      new ``cmd.exe`` windows will have :envvar:`MY_VARIABLE` set to ``foo``.
+      new ``cmd.exe`` windows will have ``MY_VARIABLE`` set to ``foo``.
 
       .. code-block:: console
 
@@ -118,8 +118,7 @@ your environment when you are using Zephyr.
 
       These scripts:
 
-      - set :envvar:`ZEPHYR_BASE` (see below) to the location of the zephyr
-        repository
+      - set :envvar:`ZEPHYR_BASE` to the location of the zephyr repository
       - adds some Zephyr-specific locations (such as zephyr's :file:`scripts`
         directory) to your :envvar:`PATH` environment variable
       - loads any settings from the ``zephyrrc`` files described above in
@@ -153,10 +152,9 @@ zephyr repository:
 
 These scripts:
 
-- set :envvar:`ZEPHYR_BASE` (see below) to the location of the zephyr
-  repository
+- set :envvar:`ZEPHYR_BASE` to the location of the zephyr repository
 - adds some Zephyr-specific locations (such as zephyr's :file:`scripts`
-  directory) to your :envvar:`PATH` environment variable
+  directory) to your ``PATH`` environment variable
 - loads any settings from the ``zephyrrc`` files described above in
   :ref:`env_vars_zephyrrc`.
 
@@ -171,21 +169,50 @@ Some :ref:`important-build-vars` can also be set in the environment. Here
 is a description of some of these important environment variables. This is not
 a comprehensive list.
 
-- :envvar:`BOARD`
-- :envvar:`CONF_FILE`
-- :envvar:`SHIELD`
-- :envvar:`ZEPHYR_BASE`
-- :envvar:`ZEPHYR_EXTRA_MODULES`
-- :envvar:`ZEPHYR_MODULES`
+.. envvar:: BOARD
+
+   See :ref:`important-build-vars`.
+
+.. envvar:: CONF_FILE
+
+   See :ref:`important-build-vars`.
+
+.. envvar:: SHIELD
+
+   See :ref:`shields`.
+
+.. envvar:: ZEPHYR_BASE
+
+   See :ref:`important-build-vars`.
+
+.. envvar:: ZEPHYR_EXTRA_MODULES
+
+   See :ref:`important-build-vars`.
+
+.. envvar:: ZEPHYR_MODULES
+
+   See :ref:`important-build-vars`.
+
+.. envvar:: ZEPHYR_BOARD_ALIASES
+
+   See :ref:`gs-board-aliases`
 
 The following additional environment variables are significant when configuring
 the :ref:`toolchain <gs_toolchain>` used to build Zephyr applications.
 
-- :envvar:`ZEPHYR_TOOLCHAIN_VARIANT`: the name of the toolchain to use
-- :envvar:`<TOOLCHAIN>_TOOLCHAIN_PATH`: path to the toolchain specified by
-  :envvar:`ZEPHYR_TOOLCHAIN_VARIANT`. For example, if
-  ``ZEPHYR_TOOLCHAIN_VARIANT=llvm``, use :envvar:`LLVM_TOOLCHAIN_PATH`. (Note
-  the capitalization when forming the environment variable name.)
+.. envvar:: ZEPHYR_SDK_INSTALL_DIR
+
+   Path where Zephyr SDK is installed.
+
+.. envvar:: ZEPHYR_TOOLCHAIN_VARIANT
+
+   The name of the toolchain to use.
+
+.. envvar:: {TOOLCHAIN}_TOOLCHAIN_PATH
+
+   Path to the toolchain specified by :envvar:`ZEPHYR_TOOLCHAIN_VARIANT`. For
+   example, if ``ZEPHYR_TOOLCHAIN_VARIANT=llvm``, use ``LLVM_TOOLCHAIN_PATH``.
+   (Note the capitalization when forming the environment variable name.)
 
 You might need to update some of these variables when you
 :ref:`update the Zephyr SDK toolchain <gs_toolchain_update>`.
@@ -193,6 +220,13 @@ You might need to update some of these variables when you
 Emulators and boards may also depend on additional programs. The build system
 will try to locate those programs automatically, but may rely on additional
 CMake or environment variables to do so. Please consult your emulator's or
-board's documentation for more information.
+board's documentation for more information. The following environment variables
+may be useful in such situations:
+
+.. envvar:: PATH
+
+   ``PATH`` is an environment variable used on Unix-like or Microsoft Windows
+   operating systems to specify a set of directories where executable programs
+   are located.
 
 .. _using Chocolatey: https://chocolatey.org/packages/RapidEE
