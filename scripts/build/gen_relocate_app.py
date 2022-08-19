@@ -43,7 +43,6 @@ import warnings
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
-# This script will create linker commands for text,rodata data, bss section relocation
 
 PRINT_TEMPLATE = """
                 KEEP(*({0}))
@@ -154,6 +153,19 @@ MEMSET_TEMPLATE = """
 """
 
 
+def region_is_default_ram(region_name: str) -> bool:
+    """
+    Test whether a memory region with the given name is the system's default
+    RAM region or not.
+
+    This is used to determine whether some items need to be omitted from
+    custom regions and instead be placed in the default. In particular, mutable
+    data placed in the default RAM section is ignored and is allowed to be
+    handled normally by the linker because it is placed in that region anyway.
+    """
+    return region_name == args.default_ram_region
+
+
 def find_sections(filename, full_list_of_sections):
     with open(filename, 'rb') as obj_file_desc:
         full_lib = ELFFile(obj_file_desc)
@@ -258,10 +270,10 @@ def string_create_helper(region, memory_type,
         # Create a complete list of funcs/ variables that goes in for this
         # memory type
         tmp = print_linker_sections(full_list_of_sections[region])
-        if memory_type == 'SRAM' and region in {'data', 'bss'}:
+        if region_is_default_ram(memory_type) and region in {'data', 'bss'}:
             linker_string += tmp
         else:
-            if memory_type != 'SRAM' and region == 'rodata':
+            if not region_is_default_ram(memory_type) and region == 'rodata':
                 align_size = 0
                 if memory_type in mpu_align:
                     align_size = mpu_align[memory_type]
@@ -269,7 +281,7 @@ def string_create_helper(region, memory_type,
                 linker_string += LINKER_SECTION_SEQ_MPU.format(memory_type.lower(), region, memory_type.upper(),
                                                                region.upper(), tmp, load_address_string, align_size)
             else:
-                if memory_type == 'SRAM' and region == 'text':
+                if region_is_default_ram(memory_type) and region == 'text':
                     align_size = 0
                     linker_string += LINKER_SECTION_SEQ_MPU.format(memory_type.lower(), region, memory_type.upper(),
                                                                    region.upper(), tmp, load_address_string, align_size)
@@ -293,16 +305,16 @@ def generate_linker_script(linker_file, sram_data_linker_file, sram_bss_linker_f
         is_copy = bool("|COPY" in memory_type)
         memory_type = memory_type.split("|", 1)[0]
 
-        if memory_type != "SRAM" and is_copy:
+        if region_is_default_ram(memory_type) and is_copy:
             gen_string += MPU_RO_REGION_START.format(memory_type.lower(), memory_type.upper())
 
         gen_string += string_create_helper("text", memory_type, full_list_of_sections, 1, is_copy)
         gen_string += string_create_helper("rodata", memory_type, full_list_of_sections, 1, is_copy)
 
-        if memory_type != "SRAM" and is_copy:
+        if region_is_default_ram(memory_type) and is_copy:
             gen_string += MPU_RO_REGION_END.format(memory_type.lower())
 
-        if memory_type == 'SRAM':
+        if region_is_default_ram(memory_type):
             gen_string_sram_data += string_create_helper("data", memory_type, full_list_of_sections, 1, 1)
             gen_string_sram_bss += string_create_helper("bss", memory_type, full_list_of_sections, 0, 1)
         else:
@@ -337,7 +349,7 @@ def generate_memcpy_code(memory_type, full_list_of_sections, code_generation):
 
     # add all the regions that needs to be copied on boot up
     for mtype in ["text", "rodata", "data"]:
-        if memory_type == "SRAM" and mtype == "data":
+        if region_is_default_ram(memory_type) and mtype == "data":
             continue
 
         if full_list_of_sections[mtype] and generate_section[mtype]:
@@ -346,7 +358,7 @@ def generate_memcpy_code(memory_type, full_list_of_sections, code_generation):
                 memory_type.lower(), mtype)
 
     # add for all the bss data that needs to be zeroed on boot up
-    if full_list_of_sections["bss"] and generate_section["bss"] and memory_type != "SRAM":
+    if full_list_of_sections["bss"] and generate_section["bss"] and not region_is_default_ram(memory_type):
         code_generation["zero_code"] += MEMSET_TEMPLATE.format(memory_type.lower())
         code_generation["extern"] += EXTERN_LINKER_VAR_DECLARATION.format(
             memory_type.lower(), "bss")
@@ -391,6 +403,8 @@ def parse_args():
                         help="Output sram bss ld file")
     parser.add_argument("-c", "--output_code", required=False,
                         help="Output relocation code header file")
+    parser.add_argument("-R", "--default_ram_region", default='SRAM',
+                        help="Name of default RAM memory region for system")
     parser.add_argument("-v", "--verbose", action="count", default=0,
                         help="Verbose Output")
     args = parser.parse_args()
