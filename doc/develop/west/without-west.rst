@@ -71,6 +71,10 @@ yourself as shown above.
 
 See :ref:`modules` for more details.
 
+Similarly, if your application requires binary blobs and you are not using
+west, you will need to download and place those blobs in the right places
+instead of using ``west blobs``. See :ref:`bin-blobs` for more details.
+
 Flashing and Debugging
 ----------------------
 
