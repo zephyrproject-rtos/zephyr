@@ -17,52 +17,71 @@ It uses **IPC Mode** for communication, where an IPC mechanism is inserted to
 handle secure TF-M API calls and responses. The OS-specific code to handle
 the IPC calls is in ``tfm_ipc.c``.
 
+TF-M supports three types of firmware upgrade mechanisms:
+``https://tf-m-user-guide.trustedfirmware.org/docs/technical_references/design_docs/tfm_secure_boot.html#firmware-upgrade-operation``
+
+This example uses the overwrite firmware upgrade mechanism, in particular, it showcases
+upgrading the non-secure image which can be built from any other sample in the
+``zephyr/samples/tfm_integration`` directory.
+
 The sample prints test info to the console either as a single-thread or
 multi-thread application.
+
 
 Building and Running
 ********************
 
 This project needs another firmware as the update payload. It must use another
 example's hex file, and should be specified on the command line
-as ZEPHYR_FIRMWARE_UPDATE_SAMPLE_BUILD. For example, to use the sample
-`tfm_integration/tfm_ipc` as the payload:
+as ``CONFIG_APP_FIRMWARE_UPDATE_IMAGE``.
 
-.. code-block:: bash
-
-   cd <ZEPHYR_ROOT>
-   west build -p -b lpcxpresso5s69_ns samples/tfm_integration/psa_firmware \
-       -d build/lpcxpresso55s69_ns/tfm_integration/psa_firmware
-       -- -DCONFIG_FIRMWARE_UPDATE_IMAGE=`realpath build/lpcxpresso55s69_ns/tfm_integration/tfm_ipc/zephyr_ns_signed.hex`
-
-
-This project outputs startup status and info to the console. It can be built and
-executed on an ARM Cortex M33 target board or QEMU.
+To use the ``tfm_integration/tfm_ipc`` sample as the NS firmware update
+payload, follow the instructions below:
 
 This sample will only build on a Linux or macOS development system
 (not Windows), and has been tested on the following setups:
 
 - macOS Big Sur using QEMU 6.0.0 with gcc-arm-none-eabi-9-2020-q2-update
-- Linux (NixOS) using QEMU 6.2.50 with gcc from Zephyr SDK 0.13.2
+- Linux (NixOS) using QEMU 6.2.0 with gcc from Zephyr SDK 0.14.1
+- Targets ``MPS3 AN547`` and ``NXP LPCXPRESSO55S69``
 
 On MPS3 AN547:
 ===============
 
-1. Build Zephyr with a non-secure configuration
-   (``-DBOARD=mps3_an547_ns``).
-   Using ``west``
+Build:
+======
 
-.. zephyr-app-commands::
-  :zephyr-app: samples/tfm_integration/psa_firmware
-  :host-os: unix
-  :board: mps3_an547_ns
-  :goals: run
-  :compact:
+1. Build the ``tfm_ipc`` sample with the non-secure board configuration, which will
+generate the firmware image we'll use in ``psa_firmware`` during the update:
 
-2. Copy application binary files (mcuboot.bin and tfm_sign.bin) to
+.. code-block:: bash
+
+   cd $ZEPHYR_BASE
+   west build -p -b mps3_an547_ns samples/tfm_integration/tfm_ipc/ \
+   -d build/mps3_an547_ns/tfm_integration/tfm_ipc
+
+2. Build psa_firmware
+
+.. code-block:: bash
+
+   cd $ZEPHYR_BASE
+   west build -p -b mps3_an547_ns samples/tfm_integration/psa_firmware \
+   -d build/mps3_an547_ns/tfm_integration/psa_firmware \
+   -- -DCONFIG_APP_FIRMWARE_UPDATE_IMAGE=\"full/path/to/zephyr/build/mps3_an547_ns/tfm_integration/tfm_ipc/zephyr/zephyr.hex\"
+
+Note:
+This sample includes a pre-built firmware image (``hello-an547.hex``) in the ``boards``
+directory. If you don't pass the ``CONFIG_APP_FIRMWARE_UPDATE_IMAGE`` command
+line argument during step 2 (``-- -DCONFIG_APP_FIRMWARE_UPDATE_IMAGE=...``),
+this sample will automatically uses the pre-built hex file.
+
+Run in real target:
+===================
+
+1. Copy application binary files (mcuboot.bin and tfm_sign.bin) to
    ``<MPS3 device name>/SOFTWARE/``.
 
-3. Edit (e.g., with vim) the ``<MPS3 device name>/MB/HBI0263C/AN547/images.txt``
+2. Edit (e.g., with vim) the ``<MPS3 device name>/MB/HBI0263C/AN547/images.txt``
    file, and update it as shown below:
 
    .. code-block:: bash
@@ -78,31 +97,37 @@ On MPS3 AN547:
       IMAGE1ADDRESS: 0x10080000
       IMAGE1FILE: \SOFTWARE\tfm_sign.bin ; TF-M with application binary blob
 
-4. Save the file, exit the editor, and reset the MPS3 board.
+3. Save the file, exit the editor, and reset the MPS3 board.
 
-On QEMU:
-========
+Run in QEMU:
+============
 
-Build Zephyr with a non-secure configuration (``-DBOARD=mps3_an547_ns``)
-and run it in qemu via the ``run`` command.
+.. code-block:: bash
 
-Using ``west``
+   qemu-system-arm -M mps3-an547 -device loader,file=path/to/zephyr/build/mps3_an547_ns/tfm_integration/psa_firmware/tfm_merged.hex -serial stdio  -d cpu_reset,unimp,guest_errors
 
-.. zephyr-app-commands::
-  :zephyr-app: samples/tfm_integration/psa_firmware
-  :host-os: unix
-  :board: mps3_an547_ns
-  :goals: run
-  :compact:
+or you can manually pass the ``-t run`` extra argument before `--` to the `west build` command to automatically build and run in QEMU.
 
 On LPCxpresso55S69:
-======================
+===================
 
-Build Zephyr with a non-secure configuration:
+1. Build the ``tfm_ipc`` sample with the non-secure board configuration, which will
+generate the firmware image we'll use in ``psa_firmware`` during the update:
 
-   .. code-block:: bash
+.. code-block:: bash
 
-      $ west build -p -b lpcxpresso55s69_ns samples/tfm_integration/psa_firmware/ --
+   cd $ZEPHYR_BASE
+   west build -p -b lpcxpresso55s69_ns samples/tfm_integration/tfm_ipc/ \
+   -d build/lpcxpresso55s69_ns/tfm_integration/tfm_ipc
+
+2. Build psa_firmware:
+
+.. code-block:: bash
+
+   cd $ZEPHYR_BASE
+   west build -p -b lpcxpresso55s69_ns samples/tfm_integration/psa_firmware \
+   -d build/lpcxpresso55s69_ns/tfm_integration/psa_firmware \
+   -- -DCONFIG_APP_FIRMWARE_UPDATE_IMAGE=\"full/path/to/zephyr/build/lpcxpresso55s69_ns/tfm_integration/tfm_ipc/zephyr/zephyr.hex\"
 
 Make sure your board is set up with :ref:`lpclink2-jlink-onboard-debug-probe`,
 since this isn't the debug interface boards ship with from the factory;
@@ -130,20 +155,32 @@ Sample Output
       [INF] Beginning TF-M provisioning
       [WRN] TFM_DUMMY_PROVISIONING is not suitable for production! This device is NOT SECURE
       [Sec Thread] Secure image initializing!
-      TF-M FP mode: Software
-      Booting TFM v1.5.0
+      Booting TF-M v1.6.0+8cffe127
       Creating an empty ITS flash layout.
       Creating an empty PS flash layout.
-      *** Booting Zephyr OS build v3.0.0-rc1-321-gbe26b6a260d6  ***
+      *** Booting Zephyr OS build zephyr-v3.1.0-3851-g2bef8051b2fc  ***
       PSA Firmware API test
-      Active NS image version: 0.0.0-0
-      Starting FWU; Writing Firmware from 21000000 size 58466 bytes
-      Wrote Firmware; Writing Header from 2100e462 size   432 bytes
+      Active S image version: 0.0.3-0
+      Active NS image version: 0.0.1-0
+      Starting FWU; Writing Firmware from 21000000 size 17802 bytes
+      Wrote Firmware; Writing Header from 2100458a size    16 bytes
       Wrote Header; Installing Image
       Installed New Firmware; Reboot Needed; Rebooting
       [WRN] This device was provisioned with dummy keys. This device is NOT SECURE
       [Sec Thread] Secure image initializing!
-      TF-M FP mode: Software
-      Booting TFM v1.5.0
-      *** Booting Zephyr OS build v3.0.0-rc1-35-g03f2993ef07b  ***
-      Hello World from UserSpace! mps3_an547
+      Booting TF-M v1.6.0+8cffe127
+      *** Booting Zephyr OS build zephyr-v3.1.0-3851-g2bef8051b2fc  ***
+      The version of the PSA Framework API is 257.
+      The minor version is 1.
+      Connect success!
+      TF-M IPC on mps3_an547
+
+Common Problems
+***************
+
+Compilation fails with ``Error: Header padding was not requested...``
+=====================================================================
+
+This error occurs when passing a signed image to ``CONFIG_APP_FIRMWARE_UPDATE_IMAGE``
+on the command line, ex: ``zephyr_ns_signed.hex``.
+Make sure you pass an unsigned, non-secure image (ex. ``zephyr.hex``) to ``CONFIG_APP_FIRMWARE_UPDATE_IMAGE``.
