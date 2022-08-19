@@ -39,7 +39,7 @@ static void thread_fn(void *a, void *b, void *c)
 /* Needless to say: since this is starting the SMP CPUs, it needs to
  * be the first test run!
  */
-void test_smp_boot_delay(void)
+ZTEST(intel_adsp_boot, test_1st_smp_boot_delay)
 {
 	if (CONFIG_MP_NUM_CPUS < 2) {
 		ztest_test_skip();
@@ -70,7 +70,7 @@ void test_smp_boot_delay(void)
 	}
 }
 
-void test_post_boot_ipi(void)
+ZTEST(intel_adsp_boot, test_3rd_post_boot_ipi)
 {
 	if (CONFIG_MP_NUM_CPUS < 2) {
 		ztest_test_skip();

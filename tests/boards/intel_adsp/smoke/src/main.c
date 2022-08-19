@@ -15,7 +15,7 @@ static bool clock_msg(const struct device *dev, void *arg,
 	return true;
 }
 
-void test_clock_calibrate(void)
+ZTEST(intel_adsp, test_clock_calibrate)
 {
 	static volatile uint32_t host_dt;
 	uint32_t cyc0, cyc1, hz, diff;
@@ -42,28 +42,26 @@ void test_clock_calibrate(void)
 	zassert_true((hz / MIN(1, diff)) > 100, "clock rate wrong");
 }
 
-void test_main(void)
+static void *intel_adsp_setup(void)
 {
 	struct cavs_ipc_data *devdata = CAVS_HOST_DEV->data;
 
 	ipm_handler = devdata->handle_message;
 
-	ztest_test_suite(intel_adsp,
-			 ztest_unit_test(test_smp_boot_delay),
-			 ztest_unit_test(test_cpu_halt),
-			 ztest_unit_test(test_post_boot_ipi),
-			 ztest_unit_test(test_cpu_behavior),
-			 ztest_unit_test(test_host_ipc),
-			 ztest_unit_test(test_clock_calibrate),
-			 ztest_unit_test(test_ipm_cavs_host)
-			 );
+	return NULL;
+}
 
+static void intel_adsp_teardown(void *data)
+{
 	/* Wait a bit so the python script on host is ready to receive
 	 * IPC messages. An IPC message could be used instead of a timer,
 	 * but expecting IPC to be working on a test suite that is going
 	 * to test IPC may not be indicated.
 	 */
 	k_msleep(1000);
-
-	ztest_run_test_suite(intel_adsp);
 }
+
+ZTEST_SUITE(intel_adsp, NULL, intel_adsp_setup, NULL, NULL,
+		intel_adsp_teardown);
+
+ZTEST_SUITE(intel_adsp_boot, NULL, intel_adsp_setup, NULL, NULL, NULL);

@@ -29,7 +29,7 @@ static void ipc_done(const struct device *dev, void *arg)
 	done_flag = true;
 }
 
-void test_host_ipc(void)
+ZTEST(intel_adsp, test_host_ipc)
 {
 	bool ret;
 
