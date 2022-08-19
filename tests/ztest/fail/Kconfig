@@ -1,0 +1,36 @@
+# Copyright (c) 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+choice ZTEST_FAIL_TEST
+	prompt "Select the type of failure to test"
+
+config ZTEST_FAIL_TEST_ASSERT_AFTER
+	bool "Add a failed assert in the after phase"
+
+config ZTEST_FAIL_TEST_ASSERT_TEARDOWN
+	bool "Add a failed assert in the teardown phase"
+
+config ZTEST_FAIL_TEST_ASSUME_AFTER
+	bool "Add a failed assume in the after phase"
+
+config ZTEST_FAIL_TEST_ASSUME_TEARDOWN
+	bool "Add a failed assume in the teardown phase"
+
+config ZTEST_FAIL_TEST_PASS_AFTER
+	bool "Add a call to ztest_test_pass() in the after phase"
+
+config ZTEST_FAIL_TEST_PASS_TEARDOWN
+	bool "Add a call to ztest_test_pass() in the teardown phase"
+
+endchoice
+
+config TEST_ERROR_STRING
+	string
+	default "ERROR: cannot fail in test 'after()', bailing" if ZTEST_FAIL_TEST_ASSERT_AFTER
+	default "ERROR: cannot fail in test 'teardown()', bailing" if ZTEST_FAIL_TEST_ASSERT_TEARDOWN
+	default "ERROR: cannot skip in test 'after()', bailing" if ZTEST_FAIL_TEST_ASSUME_AFTER
+	default "ERROR: cannot skip in test 'teardown()', bailing" if ZTEST_FAIL_TEST_ASSUME_TEARDOWN
+	default "ERROR: cannot pass in test 'after()', bailing" if ZTEST_FAIL_TEST_PASS_AFTER
+	default "ERROR: cannot pass in test 'teardown()', bailing" if ZTEST_FAIL_TEST_PASS_TEARDOWN
+
+source "Kconfig.zephyr"
