@@ -1,0 +1,13 @@
+# Nuvoton NuMaker Pin Controller configuration options
+
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_NUVOTON_NUMAKER_PINCTRL := nuvoton,numaker-pinctrl
+
+config PINCTRL_NUMAKER
+	bool "Nuvoton NuMaker pin controller driver"
+	depends on SOC_FAMILY_NUMAKER
+	default $(dt_compat_enabled,$(DT_COMPAT_NUVOTON_NUMAKER_PINCTRL))
+	help
+	  This option enables the pin controller driver for Nuvoton NuMaker MCUs.

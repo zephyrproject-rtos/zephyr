@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Nuvoton PFM M467 board configuration
+#
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+
+if BOARD_NUMAKER_PFM_M467
+
+config BOARD
+	default "numaker_pfm_m467"
+
+endif # BOARD_NUMAKER_PFM_M467

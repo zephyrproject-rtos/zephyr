@@ -1,0 +1,18 @@
+# (c) Nuvoton Technology Corp. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, Numaker-UART
+
+compatible: "nuvoton,numaker-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    pinctrl-0:
+      required: true

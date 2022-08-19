@@ -1,0 +1,84 @@
+# Copyright (c) Nuvoton Technology Corp. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Pin controller is a singleton node responsible for controlling pin function 
+    selection and pin properties. For example, for example you can
+    use this node to set UART0 RX as pin PA0 to fulfill SYS_GPA_MFP0_PA0MFP_UART0_RXD.
+
+    The node has the 'pinctrl' node label set in your SoC's devicetree,
+    so you can modify it like this:
+
+      &pinctrl {
+              /* your modifications go here */
+      };
+
+    All device pin configurations should be placed in child nodes of the
+    'pinctrl' node, as shown in this example:
+
+      &pinctrl {
+        /* configuration for the uart0 "default" state */
+        uart0_default: uart0_default {
+          /* group 0 */
+          group0 {
+            /* configure PA1 as UART0 TX and PA0 as UART0 RX */
+            pinmux = <PA1MFP_UART0_TXD>, <PA0MFP_UART0_RXD>;
+          };
+        };
+
+
+    To link pin configurations with a device, use a pinctrl-N property for some
+    number N, like this example you could place in your board's DTS file:
+
+       #include "board-pinctrl.dtsi"
+
+       &uart0 {
+             pinctrl-0 = <&uart0_default>;
+             pinctrl-names = "default";
+       };
+
+
+
+compatible: "nuvoton,numaker-pinctrl"
+
+include:
+    - name: base.yaml
+    - name: pincfg-node.yaml
+      child-binding:
+          property-allowlist:
+            - drive-push-pull
+            - drive-open-drain
+            - bias-disable
+            - bias-pull-down
+            - bias-pull-up
+            
+child-binding:
+  description: |
+    Each child node defines the configuration for a particular state.
+  properties:
+    pinmux:
+      required: true
+      type: array
+      description: |
+        An array of pins sharing the same group properties. The pins should
+        be defined using pre-defined macros or, alternatively, using NVT_PINMUX 
+        macros depending on the pinmux model used by the SoC series.      
+    drive-strength:
+      required: false
+      type: string
+      default: "low"
+      enum:
+        - "low"
+        - "fast"
+      description: |
+        Set the driving strength of a pin.        
+    slew-rate:
+      required: false
+      type: string
+      default: "fast"
+      enum:
+        - "fast"
+        - "low"
+      description: |
+        Set the speed of a pin. This setting effectively limits the
+        slew rate of the output signal.          

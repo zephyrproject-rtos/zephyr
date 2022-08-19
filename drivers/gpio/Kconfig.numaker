@@ -1,0 +1,12 @@
+# NUMAKER GPIO driver configuration options
+
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_NUMAKER
+	bool "Nuvoton NUMAKER MCU gpio driver"
+	depends on SOC_FAMILY_NUMAKER
+	help
+	  This option enables the GPIO driver for Nuvoton NUMAKER family of
+	  processors.
+	  Say y if you wish to enable NUMAKER GPIO.

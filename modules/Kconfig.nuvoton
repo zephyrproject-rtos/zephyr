@@ -18,3 +18,19 @@ config HAS_NUMICRO_UART
 	  module driver
 
 endmenu
+
+config HAS_NUMAKER_HAL
+	bool
+	select HAS_CMSIS_CORE
+	depends on SOC_FAMILY_NUMAKER
+
+menu "Nuvoton NuMaker drivers"
+	depends on HAS_NUMAKER_HAL
+
+config HAS_NUMAKER_UART
+	bool
+	help
+	  Enable Nuvoton Universal asynchronous receiver transmitter HAL
+	  module driver
+
+endmenu

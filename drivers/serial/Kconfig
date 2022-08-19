@@ -208,4 +208,6 @@ source "drivers/serial/Kconfig.s32"
 
 source "drivers/serial/Kconfig.cdns"
 
+source "drivers/serial/Kconfig.numaker"
+
 endif # SERIAL
