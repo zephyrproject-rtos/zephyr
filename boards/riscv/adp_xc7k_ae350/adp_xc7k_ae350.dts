@@ -130,6 +130,10 @@
 	};
 };
 
+&syscon {
+	status = "okay";
+};
+
 &uart1 {
 	status = "okay";
 	clock-frequency = <19660800>;
