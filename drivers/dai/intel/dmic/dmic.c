@@ -757,12 +757,12 @@ static int dai_dmic_initialize_device(const struct device *dev)
 			.dai_index = n					\
 		},							\
 		.reg_base = DT_INST_REG_ADDR_BY_IDX(n, 0),		\
-		.shim_base = DT_INST_PROP_BY_IDX(n, shim, 0),		\
+		.shim_base = DT_INST_PROP(n, shim),			\
 		.irq = DT_INST_IRQN(n),					\
 		.fifo =							\
 		{							\
 			.offset = DT_INST_REG_ADDR_BY_IDX(n, 0)		\
-				+ OUTDATA##n,				\
+				+ DT_INST_PROP(n, fifo),		\
 			.handshake = DMA_HANDSHAKE_DMIC_CH##n		\
 		},							\
 	};								\
@@ -773,7 +773,7 @@ static int dai_dmic_initialize_device(const struct device *dev)
 		&dai_intel_dmic_data_##n,				\
 		&dai_intel_dmic_properties_##n,				\
 		POST_KERNEL,						\
-		CONFIG_DAI_INIT_PRIORITY,					\
+		CONFIG_DAI_INIT_PRIORITY,				\
 		&dai_dmic_ops);
 
 DT_INST_FOREACH_STATUS_OKAY(DAI_INTEL_DMIC_DEVICE_INIT);
