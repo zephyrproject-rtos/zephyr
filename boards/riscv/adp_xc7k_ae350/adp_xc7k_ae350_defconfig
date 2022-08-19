@@ -13,6 +13,9 @@ CONFIG_SERIAL=y
 # GPIO driver options
 CONFIG_GPIO=y
 
+# Syscon driver options
+CONFIG_SYSCON=y
+
 # RV64 options
 #CONFIG_RV64I_CPU=y
 
