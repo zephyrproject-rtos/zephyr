@@ -65,12 +65,7 @@ class Blobs(WestCommand):
         # flags
         parser.add_argument('subcmd', nargs=1,
                             choices=['list', 'fetch', 'clean'],
-                            help='''Select the sub-command to execute.
-							Sub-commands available:
-                            - list: list binary blobs
-                            - fetch: fetch and store binary blobs
-                            - clean: remove fetched binary blobs
-                            ''')
+                            help='sub-command to execute')
 
         parser.add_argument('-f', '--format', default=default_fmt,
                             help='''Format string to use to list each blob;
