@@ -16,7 +16,4 @@
 /* Include CSRs available for Andes V5 SoCs */
 #include "soc_v5.h"
 
-/* Include platform peripherals */
-#include "smu.h"
-
 #endif /* __RISCV_ANDES_AE350_SOC_H_ */
