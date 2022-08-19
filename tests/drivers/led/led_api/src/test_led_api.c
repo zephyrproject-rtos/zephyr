@@ -22,7 +22,7 @@ const uint8_t test_color_mapping_##led_node_id[] =		\
 
 #define LED_INFO_COLOR(led_node_id)				\
 {								\
-	.label		= DT_LABEL(led_node_id),		\
+	.label		= DT_PROP(led_node_id, label),		\
 	.index		= DT_PROP_OR(led_node_id, index, 0),	\
 	.num_colors	=					\
 		DT_PROP_LEN(led_node_id, color_mapping),	\
@@ -31,7 +31,7 @@ const uint8_t test_color_mapping_##led_node_id[] =		\
 
 #define LED_INFO_NO_COLOR(led_node_id)				\
 {								\
-	.label		= DT_LABEL(led_node_id),		\
+	.label		= DT_PROP(led_node_id, label),		\
 	.index		= DT_PROP_OR(led_node_id, index, 0),	\
 	.num_colors	= 0,					\
 	.color_mapping	= NULL,					\
