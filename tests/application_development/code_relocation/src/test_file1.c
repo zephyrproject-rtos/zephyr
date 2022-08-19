@@ -8,28 +8,35 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/ztest.h>
 
-uint32_t var_sram2_data = 10U;
-uint32_t var_sram2_bss;
+/*
+ * These values will typically be placed in the appropriate sections, but may be moved around
+ * by the compiler; for instance var_sram2_data might end up in .rodata if the compiler can prove
+ * that it's never modified. To prevent that, we explicitly specify sections.
+ */
+__in_section(data, sram2, var) uint32_t var_sram2_data = 10U;
+__in_section(bss, sram2, var) uint32_t var_sram2_bss;
 K_SEM_DEFINE(test, 0, 1);
-const uint32_t var_sram2_rodata = 100U;
+__in_section(rodata, sram2, var) const uint32_t var_sram2_rodata = 100U;
 
 __in_section(custom_section, static, var) uint32_t var_custom_data = 1U;
 
 extern void function_in_sram(int32_t value);
 void function_in_custom_section(void);
 
+#define HAS_SRAM2_DATA_SECTION (CONFIG_ARM)
+
 ZTEST(code_relocation, test_function_in_sram2)
 {
-	extern uint32_t __sram2_text_start;
-	extern uint32_t __sram2_text_end;
-	extern uint32_t __sram2_data_start;
-	extern uint32_t __sram2_data_end;
-	extern uint32_t __sram2_bss_start;
-	extern uint32_t __sram2_bss_end;
-	extern uint32_t __sram2_rodata_start;
-	extern uint32_t __sram2_rodata_end;
-	extern uint32_t __custom_section_start;
-	extern uint32_t __custom_section_end;
+	extern uintptr_t __sram2_text_start;
+	extern uintptr_t __sram2_text_end;
+	extern uintptr_t __sram2_data_start;
+	extern uintptr_t __sram2_data_end;
+	extern uintptr_t __sram2_bss_start;
+	extern uintptr_t __sram2_bss_end;
+	extern uintptr_t __sram2_rodata_start;
+	extern uintptr_t __sram2_rodata_end;
+	extern uintptr_t __custom_section_start;
+	extern uintptr_t __custom_section_end;
 
 	/* Print values from sram2 */
 	printk("Address of var_sram2_data %p\n", &var_sram2_data);
@@ -37,21 +44,21 @@ ZTEST(code_relocation, test_function_in_sram2)
 	printk("Address of var_sram2_rodata %p\n", &var_sram2_rodata);
 	printk("Address of var_sram2_bss %p\n\n", &var_sram2_bss);
 
-	zassert_between_inclusive((uint32_t)&var_sram2_data,
-		(uint32_t)&__sram2_data_start,
-		(uint32_t)&__sram2_data_end,
+	zassert_between_inclusive((uintptr_t)&var_sram2_data,
+		(uintptr_t)&__sram2_data_start,
+		(uintptr_t)&__sram2_data_end,
 		"var_sram2_data not in sram2 region");
-	zassert_between_inclusive((uint32_t)&k_sem_give,
-		(uint32_t)&__sram2_text_start,
-		(uint32_t)&__sram2_text_end,
+	zassert_between_inclusive((uintptr_t)&k_sem_give,
+		(uintptr_t)&__sram2_text_start,
+		(uintptr_t)&__sram2_text_end,
 		"k_sem_give not in sram_text region");
-	zassert_between_inclusive((uint32_t)&var_sram2_rodata,
-		(uint32_t)&__sram2_rodata_start,
-		(uint32_t)&__sram2_rodata_end,
+	zassert_between_inclusive((uintptr_t)&var_sram2_rodata,
+		(uintptr_t)&__sram2_rodata_start,
+		(uintptr_t)&__sram2_rodata_end,
 		"var_sram2_rodata not in sram2_rodata region");
-	zassert_between_inclusive((uint32_t)&var_sram2_bss,
-		(uint32_t)&__sram2_bss_start,
-		(uint32_t)&__sram2_bss_end,
+	zassert_between_inclusive((uintptr_t)&var_sram2_bss,
+		(uintptr_t)&__sram2_bss_start,
+		(uintptr_t)&__sram2_bss_end,
 		"var_sram2_bss not in sram2_bss region");
 
 	/* Print values from sram */
@@ -62,13 +69,13 @@ ZTEST(code_relocation, test_function_in_sram2)
 	       &function_in_custom_section);
 	printk("Address of custom_section data placed using attributes %p\n\n",
 	       &var_custom_data);
-	zassert_between_inclusive((uint32_t)&function_in_custom_section,
-		(uint32_t)&__custom_section_start,
-		(uint32_t)&__custom_section_end,
+	zassert_between_inclusive((uintptr_t)&function_in_custom_section,
+		(uintptr_t)&__custom_section_start,
+		(uintptr_t)&__custom_section_end,
 		"function_in_custom_section not in custom_section region");
-	zassert_between_inclusive((uint32_t)&var_custom_data,
-		(uint32_t)&__custom_section_start,
-		(uint32_t)&__custom_section_end,
+	zassert_between_inclusive((uintptr_t)&var_custom_data,
+		(uintptr_t)&__custom_section_start,
+		(uintptr_t)&__custom_section_end,
 		"var_custom_data not in custom_section region");
 
 	k_sem_give(&test);

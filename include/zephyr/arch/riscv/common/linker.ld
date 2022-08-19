@@ -125,6 +125,10 @@ SECTIONS
 #include <snippets-rom-start.ld>
     } GROUP_LINK_IN(ROMABLE_REGION)
 
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_relocate.ld>
+#endif
+
     SECTION_PROLOGUE(_RESET_SECTION_NAME,,)
     {
 		KEEP(*(.reset.*))
@@ -246,6 +250,11 @@ SECTIONS
 		 *(.bss)
 		 *(".bss.*")
 		 COMMON_SYMBOLS
+
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_sram_bss_relocate.ld>
+#endif
+
 		 /*
 		  * As memory is cleared in words only, it is simpler to ensure the BSS
 		  * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
@@ -287,6 +296,11 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rwdata.ld>
+
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_sram_data_relocate.ld>
+#endif
+
 		 __data_end = .;
 
 	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
