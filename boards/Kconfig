@@ -2,6 +2,7 @@
 
 config BOARD
 	string
+	default	"$(dt_node_str_prop,/,model)"
 	help
 	  This option holds the name of the board and is used to locate the files
 	  related to the board in the source tree (under boards/).
