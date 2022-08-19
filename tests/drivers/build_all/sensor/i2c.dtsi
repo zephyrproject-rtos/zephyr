@@ -615,6 +615,8 @@ test_i2c_ina237: ina237@52 {
 	current-lsb = <1>;
 	adc-config = <0>;
 	rshunt = <0>;
+	alert-config = <0>;
+	irq-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_max31875: max31875@53 {

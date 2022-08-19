@@ -8,6 +8,8 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/dt-bindings/sensor/ina237.h>
+#include <zephyr/sys/byteorder.h>
 #include "ina237.h"
 #include "ina23x_common.h"
 
@@ -104,26 +106,62 @@ static int ina237_channel_get(const struct device *dev,
 }
 
 /**
- * @brief sensor sample fetch
+ * @brief sensor operation mode check
+ *
+ * @retval true if set or false if not set
+ */
+static bool ina237_is_triggered_mode_set(const struct device *dev)
+{
+	const struct ina237_config *config = dev->config;
+
+	uint8_t mode = (config->adc_config & GENMASK(15, 12)) >> 12;
+
+	switch (mode) {
+	case INA237_OPER_MODE_TRIG_BUS_VOLTAGE_SINGLE_SHOT:
+	case INA237_OPER_MODE_TRIG_SHUNT_VOLTAGE_TRIG_SINGLE_SHOT:
+	case INA237_OPER_MODE_TRIG_SHUNT_BUS_VOLTAGE_SINGLE_SHOT:
+	case INA237_OPER_MODE_TRIG_TEMP_SINGLE_SHOT:
+	case INA237_OPER_MODE_TRIG_TEMP_BUS_SINGLE_SHOT:
+	case INA237_OPER_MODE_TRIG_TEMP_SHUNT_SINGLE_SHOT:
+		return true;
+	default:
+		return false;
+	}
+}
+
+/**
+ * @brief request for one shot measurement
  *
  * @retval 0 for success
- * @retval -ENOTSUP for unsupported channels
+ * @retval negative errno code on fail
  */
-static int ina237_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int ina237_trigg_one_shot_request(const struct device *dev)
+{
+	const struct ina237_config *config = dev->config;
+	int ret;
+
+	ret = ina23x_reg_write(&config->bus, INA237_REG_ADC_CONFIG, config->adc_config);
+	if (ret < 0) {
+		LOG_ERR("Failed to write ADC configuration register!");
+		return ret;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief sensor data read
+ *
+ * @retval 0 for success
+ * @retval -EIO in case of input / output error
+ */
+static int ina237_read_data(const struct device *dev)
 {
 	struct ina237_data *data = dev->data;
 	const struct ina237_config *config = dev->config;
 	int ret;
 
-	if (chan != SENSOR_CHAN_ALL &&
-	    chan != SENSOR_CHAN_VOLTAGE &&
-	    chan != SENSOR_CHAN_CURRENT &&
-	    chan != SENSOR_CHAN_POWER) {
-		return -ENOTSUP;
-	}
-
-	if ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_VOLTAGE)) {
+	if ((data->chan == SENSOR_CHAN_ALL) || (data->chan == SENSOR_CHAN_VOLTAGE)) {
 		ret = ina23x_reg_read_16(&config->bus, INA237_REG_BUS_VOLT, &data->bus_voltage);
 		if (ret < 0) {
 			LOG_ERR("Failed to read bus voltage");
@@ -131,7 +169,7 @@ static int ina237_sample_fetch(const struct device *dev,
 		}
 	}
 
-	if ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_CURRENT)) {
+	if ((data->chan == SENSOR_CHAN_ALL) || (data->chan == SENSOR_CHAN_CURRENT)) {
 		ret = ina23x_reg_read_16(&config->bus, INA237_REG_CURRENT, &data->current);
 		if (ret < 0) {
 			LOG_ERR("Failed to read current");
@@ -139,7 +177,7 @@ static int ina237_sample_fetch(const struct device *dev,
 		}
 	}
 
-	if ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_POWER)) {
+	if ((data->chan == SENSOR_CHAN_ALL) || (data->chan == SENSOR_CHAN_POWER)) {
 		ret = ina23x_reg_read_24(&config->bus, INA237_REG_POWER, &data->power);
 		if (ret < 0) {
 			LOG_ERR("Failed to read power");
@@ -148,6 +186,33 @@ static int ina237_sample_fetch(const struct device *dev,
 	}
 
 	return 0;
+}
+
+/**
+ * @brief sensor sample fetch
+ *
+ * @retval 0 for success
+ * @retval negative errno code on fail
+ */
+static int ina237_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
+{
+	struct ina237_data *data = dev->data;
+
+	if (chan != SENSOR_CHAN_ALL &&
+	    chan != SENSOR_CHAN_VOLTAGE &&
+	    chan != SENSOR_CHAN_CURRENT &&
+	    chan != SENSOR_CHAN_POWER) {
+		return -ENOTSUP;
+	}
+
+	data->chan = chan;
+
+	if (ina237_is_triggered_mode_set(dev)) {
+		return ina237_trigg_one_shot_request(dev);
+	} else {
+		return ina237_read_data(dev);
+	}
 }
 
 /**
@@ -237,13 +302,45 @@ static int ina237_calibrate(const struct device *dev)
 }
 
 /**
+ * @brief sensor trigger work handler
+ *
+ */
+static void ina237_trigger_work_handler(struct k_work *work)
+{
+	struct ina23x_trigger *trigg = CONTAINER_OF(work, struct ina23x_trigger, conversion_work);
+	struct ina237_data *data = CONTAINER_OF(trigg, struct ina237_data, trigger);
+	const struct ina237_config *config = data->dev->config;
+	struct sensor_trigger ina237_trigger;
+	int ret;
+	uint16_t reg_alert;
+
+	/* Read reg alert to clear alerts */
+	ret = ina23x_reg_read_16(&config->bus, INA237_REG_ALERT, &reg_alert);
+	if (ret < 0) {
+		LOG_ERR("Failed to read alert register!");
+		return;
+	}
+
+	ret = ina237_read_data(data->dev);
+	if (ret < 0) {
+		LOG_WRN("Unable to read data, ret %d", ret);
+	}
+
+	if (data->trigger.handler_alert) {
+		ina237_trigger.type = SENSOR_TRIG_DATA_READY;
+		data->trigger.handler_alert(data->dev, &ina237_trigger);
+	}
+}
+
+/**
  * @brief Initialize the INA237
  *
  * @retval 0 for success
- * @retval -EINVAL on error
+ * @retval negative errno code on fail
  */
 static int ina237_init(const struct device *dev)
 {
+	struct ina237_data *data = dev->data;
 	const struct ina237_config *config = dev->config;
 	uint16_t id;
 	int ret;
@@ -252,6 +349,8 @@ static int ina237_init(const struct device *dev)
 		LOG_ERR("I2C bus %s is not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
+
+	data->dev = dev;
 
 	ret = ina23x_reg_read_16(&config->bus, INA237_REG_MANUFACTURER_ID, &id);
 	if (ret < 0) {
@@ -282,12 +381,56 @@ static int ina237_init(const struct device *dev)
 		return ret;
 	}
 
+	if (ina237_is_triggered_mode_set(dev)) {
+		if ((config->alert_config & GENMASK(15, 14)) != GENMASK(15, 14)) {
+			LOG_ERR("ALATCH and CNVR bits must be enabled in triggered mode!");
+			return -ENODEV;
+		}
+
+		k_work_init(&data->trigger.conversion_work, ina237_trigger_work_handler);
+
+		ret = ina23x_trigger_mode_init(&data->trigger, &config->gpio_alert);
+		if (ret < 0) {
+			LOG_ERR("Failed to init trigger mode");
+			return ret;
+		}
+
+		ret = ina23x_reg_write(&config->bus, INA237_REG_ALERT, config->alert_config);
+		if (ret < 0) {
+			LOG_ERR("Failed to write alert configuration register!");
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+/**
+ * @brief sensor trigger set
+ *
+ * @retval 0 for success
+ * @retval negative errno code on fail
+ */
+static int ina237_trigger_set(const struct device *dev,
+			      const struct sensor_trigger *trig,
+			      sensor_trigger_handler_t handler)
+{
+	ARG_UNUSED(trig);
+	struct ina237_data *ina237 = dev->data;
+
+	if (!ina237_is_triggered_mode_set(dev)) {
+		return -ENOTSUP;
+	}
+
+	ina237->trigger.handler_alert = handler;
+
 	return 0;
 }
 
 static const struct sensor_driver_api ina237_driver_api = {
 	.attr_set = ina237_attr_set,
 	.attr_get = ina237_attr_get,
+	.trigger_set = ina237_trigger_set,
 	.sample_fetch = ina237_sample_fetch,
 	.channel_get = ina237_channel_get,
 };
@@ -295,14 +438,16 @@ static const struct sensor_driver_api ina237_driver_api = {
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 	     "No compatible ina237 instances found");
 
-#define INA237_DRIVER_INIT(inst)				    \
-	static struct ina237_data ina237_data_##inst;		    \
-	static const struct ina237_config ina237_config_##inst = {  \
-		.bus = I2C_DT_SPEC_INST_GET(inst),		    \
-		.config = DT_INST_PROP(inst, config),		    \
-		.adc_config = DT_INST_PROP(inst, adc_config),	    \
-		.current_lsb = DT_INST_PROP(inst, current_lsb),	    \
-		.rshunt = DT_INST_PROP(inst, rshunt),		    \
+#define INA237_DRIVER_INIT(inst)						\
+	static struct ina237_data ina237_data_##inst;				\
+	static const struct ina237_config ina237_config_##inst = {		\
+		.bus = I2C_DT_SPEC_INST_GET(inst),				\
+		.config = DT_INST_PROP(inst, config),				\
+		.adc_config = DT_INST_PROP(inst, adc_config),			\
+		.current_lsb = DT_INST_PROP(inst, current_lsb),			\
+		.rshunt = DT_INST_PROP(inst, rshunt),				\
+		.alert_config = DT_INST_PROP_OR(inst, alert_config, 0x01),	\
+		.gpio_alert = GPIO_DT_SPEC_INST_GET_OR(inst, irq_gpios, {0}),	\
 	};							    \
 	DEVICE_DT_INST_DEFINE(inst,				    \
 			      &ina237_init,			    \
