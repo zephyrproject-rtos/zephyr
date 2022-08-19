@@ -42,10 +42,8 @@ anywhere else.
 Fetching blobs
 ==============
 
-Blobs are fetched from official third-party sources via a :ref:`west extension
-command <west-blobs>`, which users can run to this effect. The extension command
-implementation is hosted in the main zephyr repository. This is required to
-give the project overall control over the mechanism used to fetch the blobs.
+Blobs are fetched from official third-party sources by the :ref:`west blobs
+command <west-blobs>` command.
 
 The blobs themselves must be specified in the :ref:`module.yml
 <modules-bin-blobs>` files included in separate Zephyr :ref:`module repositories
@@ -61,7 +59,7 @@ corresponding :file:`module.yml` file. A specification for a blob must contain:
 - Version information
 - A reference to vendor-provided documentation
 - The blob’s :ref:`type <bin-blobs-types>`, which must be one of the allowed types
-- A checksum for the blob, which the west extension checks after downloading.
+- A checksum for the blob, which ``west blobs`` checks after downloading.
   This is required for reproducibility and to allow bisecting issues as blobs
   change using Git and west
 - License text applicable to the blob or a reference to such text, in SPDX
@@ -70,11 +68,11 @@ corresponding :file:`module.yml` file. A specification for a blob must contain:
 See the :ref:`corresponding section <modules-bin-blobs>` for a more formal
 definition of the fields.
 
-The :ref:`west extension command <west-blobs>` can be used to list metadata of
+The :ref:`west blobs <west-blobs>` command can be used to list metadata of
 available blobs and to fetch blobs from user-selected modules.
 
-The west extension only fetches and stores the binary blobs themselves. Any
-accompanying code, including interface header files for the blobs, must be
+The ``west blobs`` command only fetches and stores the binary blobs themselves.
+Any accompanying code, including interface header files for the blobs, must be
 present in the corresponding module repository.
 
 Tainting
