@@ -55,12 +55,20 @@ static int test_poll_out(void)
 	return TC_PASS;
 }
 
+#if CONFIG_SHELL
 void test_uart_poll_out(void)
+#else
+ZTEST(uart_basic_api, test_uart_poll_out)
+#endif
 {
 	zassert_true(test_poll_out() == TC_PASS, NULL);
 }
 
+#if CONFIG_SHELL
 void test_uart_poll_in(void)
+#else
+ZTEST(uart_basic_api, test_uart_poll_in)
+#endif
 {
 	zassert_true(test_poll_in() == TC_PASS, NULL);
 }
