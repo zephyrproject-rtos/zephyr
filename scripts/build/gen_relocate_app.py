@@ -41,6 +41,7 @@ import os
 import glob
 import warnings
 from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
 
 # This script will create linker commands for text,rodata data, bss section relocation
 
@@ -180,7 +181,7 @@ def find_sections(filename, full_list_of_sections):
             # common symbols and warns the user of the problem.
             # The solution to which is simply assigning a 0 to
             # bss variable and it will go to the required place.
-            if ".symtab" in section.name:
+            if isinstance(section, SymbolTableSection):
                 symbols = [x for x in section.iter_symbols()]
                 for symbol in symbols:
                     if symbol.entry["st_shndx"] == 'SHN_COMMON':
