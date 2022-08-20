@@ -128,7 +128,6 @@
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0";
 
-			ranges;
 			#address-cells = <1>;
 			#size-cells = <0>;
 
