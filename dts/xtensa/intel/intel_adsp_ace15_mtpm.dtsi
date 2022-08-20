@@ -147,6 +147,17 @@
 			reg = <0x71f00 0x100>;
 		};
 
+		tts: tts@72000 {
+			compatible = "intel,adsp-tts", "syscon";
+			reg = <0x72000 0x70>;
+			status = "okay";
+		};
+
+		timer: timer {
+			compatible = "intel,adsp-timer";
+			syscon = <&tts>;
+		};
+
 		lps: lps@71ac0 {
 			compatible = "intel,adsp-lps";
 			reg = <0x00071ac0 0x100>;

@@ -55,13 +55,17 @@ struct cavs_shim {
 
 #define CAVS_SHIM (*((volatile struct cavs_shim *)DT_REG_ADDR(DT_NODELABEL(shim))))
 
-#define ADSP_SHIM_DSPWCTS (&CAVS_SHIM.dspwctcs)
-#define ADSP_SHIM_DSPWCH  (&CAVS_SHIM.dspwc_hi)
-#define ADSP_SHIM_DSPWCL  (&CAVS_SHIM.dspwc_lo)
-#define ADSP_SHIM_COMPARE_HI(idx) (&CAVS_SHIM.UTIL_CAT(UTIL_CAT(dspwct, idx), c_hi))
-#define ADSP_SHIM_COMPARE_LO(idx) (&CAVS_SHIM.UTIL_CAT(UTIL_CAT(dspwct, idx), c_lo))
-
 #define ADSP_SHIM_DSPWCTCS_TTIE(c) BIT(8 + (c))
+
+#define ADSP_DSPWC_OFFSET	0x20
+#define ADSP_DSPWCTCS_OFFSET	0x28
+#define ADSP_DSPWCT0C_OFFSET	0x30
+#define ADSP_DSPWCT1C_OFFSET	0x38
+#define ADSP_CLKCTL_OFFSET	0x78
+#define ADSP_CLKSTS_OFFSET	0x7C
+#define ADSP_PWRCTL_OFFSET	0x90
+#define ADSP_PWRSTS_OFFSET	0x92
+#define ADSP_LPSCTL_OFFSET	0x94
 
 /* Host memory window control.  Not strictly part of the shim block. */
 struct cavs_win {

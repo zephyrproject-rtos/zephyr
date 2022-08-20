@@ -52,37 +52,24 @@ struct cavs_shim {
 #define CAVS_SHIM (*((volatile struct cavs_shim *)DT_REG_ADDR(DT_NODELABEL(shim))))
 
 
+#define ADSP_TTSCAP_OFFSET	0x00
+#define ADSP_RTCWC_OFFSET	0x08
+#define ADSP_DSPWCCTL_OFFSET	0x10
+#define ADSP_DSPWCSTS_OFFSET	0x12
+#define ADSP_DSPWCAV_OFFSET	0x18
+#define ADSP_DSPWC_OFFSET	0x20
+#define ADSP_DSPWCTCS_OFFSET	0x28
+#define ADSP_DSPWCT0C_OFFSET	0x30
+#define ADSP_DSPWCT1C_OFFSET	0x38
+#define ADSP_TSCTRL_OFFSET	0x40
+#define ADSP_ISCS_OFFSET	0x44
+#define ADSP_LSCS_OFFSET	0x48
+#define ADSP_DWCCS_OFFSET	0x50
+#define ADSP_ARTCS_OFFSET	0x58
+#define ADSP_LWCCS_OFFSET	0x60
+#define ADSP_CLTSYNC_OFFSET	0x70
 
-struct clk64 {
-	uint32_t lo;
-	uint32_t hi;
-};
 
-
-/* Timers & Time Stamping register block */
-struct adsp_tftts {
-	uint32_t		ttscap;
-	uint32_t		unused0;
-	struct clk64	rtcwc;
-	uint16_t		wcctl;
-	uint16_t		wcsts;
-	uint32_t		unused1;
-	struct clk64	wcav;
-	struct clk64	wc;
-	uint32_t		wctcs;
-	uint32_t		unused2;
-	struct			clk64 wctc[2];
-};
-
-/* These registers are for timers / time stamping usages under DSP FW management. */
-#define ADSP_DFTTS_REG			0x72000
-#define ADSP_DFTTS			(*(volatile struct adsp_tftts *)ADSP_DFTTS_REG)
-
-#define ADSP_SHIM_DSPWCTS (&ADSP_DFTTS.wctcs)
-#define ADSP_SHIM_DSPWCH  (&ADSP_DFTTS.wc.hi)
-#define ADSP_SHIM_DSPWCL  (&ADSP_DFTTS.wc.lo)
-#define ADSP_SHIM_COMPARE_HI(idx)  (&ADSP_DFTTS.wctc[idx].hi)
-#define ADSP_SHIM_COMPARE_LO(idx) (&ADSP_DFTTS.wctc[idx].lo)
 
 #define ADSP_SHIM_DSPWCTCS_TTIE(c) BIT(8 + (c))
 
