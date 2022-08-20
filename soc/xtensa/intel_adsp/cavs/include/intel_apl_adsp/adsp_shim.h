@@ -27,10 +27,10 @@ struct cavs_shim {
 	uint32_t _unused2[14];
 	uint32_t clkctl;
 	uint32_t clksts;
-	uint32_t hspgctl; /* cAVS 1.5, see cavs_l2lm for 1.8+ */
-	uint32_t lspgctl; /* cAVS 1.5, see cavs_l2lm for 1.8+ */
-	uint32_t hsrmctl; /* cAVS 1.5, see cavs_l2lm for 1.8+ */
-	uint32_t lsrmctl; /* cAVS 1.5, see cavs_l2lm for 1.8+ */
+	uint32_t hspgctl;
+	uint32_t lspgctl;
+	uint32_t hsrmctl;
+	uint32_t lsrmctl;
 	uint16_t pwrctl;
 	uint16_t pwrsts;
 	uint32_t lpsctl;
@@ -39,21 +39,9 @@ struct cavs_shim {
 	uint32_t spsreq;
 	uint32_t ldoctl;
 	uint32_t _unused3[2];
-	union {
-		/* cAVS 1.5 */
-		struct {
-			uint32_t hspgists;
-			uint32_t lspgists;
-			uint32_t _unused4[2];
-		};
-		/* cAVS 1.8+ */
-		struct {
-			uint32_t lpsalhss0;
-			uint32_t lpsalhss1;
-			uint32_t lpsalhss2;
-			uint32_t lpsalhss3;
-		};
-	};
+	uint32_t hspgists;
+	uint32_t lspgists;
+	uint32_t _unused4[2];
 	uint32_t _unused5[4];
 	uint32_t l2mecs;
 	uint32_t l2mpat;
@@ -74,26 +62,6 @@ struct cavs_shim {
 #define ADSP_SHIM_COMPARE_LO(idx) (&CAVS_SHIM.UTIL_CAT(UTIL_CAT(dspwct, idx), c_lo))
 
 #define ADSP_SHIM_DSPWCTCS_TTIE(c) BIT(8 + (c))
-
-/* L2 Local Memory control (cAVS 1.8+) */
-struct cavs_l2lm {
-	uint32_t l2lmcap;
-	uint32_t l2lmpat;
-	uint32_t _unused0[2];
-	uint32_t hspgctl0;
-	uint32_t hsrmctl0;
-	uint32_t hspgists0;
-	uint32_t _unused1;
-	uint32_t hspgctl1;
-	uint32_t hsrmctl1;
-	uint32_t hspgists1;
-	uint32_t _unused2[9];
-	uint32_t lspgctl;
-	uint32_t lsrmctl;
-	uint32_t lspgists;
-};
-
-#define CAVS_L2LM (*((volatile struct cavs_l2lm *)DT_REG_ADDR(DT_NODELABEL(l2lm))))
 
 /* Host memory window control.  Not strictly part of the shim block. */
 struct cavs_win {

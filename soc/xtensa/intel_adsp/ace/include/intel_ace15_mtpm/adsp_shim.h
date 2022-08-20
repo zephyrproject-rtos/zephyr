@@ -25,43 +25,28 @@ struct cavs_shim {
 	uint32_t dspwct1c_lo;
 	uint32_t dspwct1c_hi;
 	uint32_t _unused2[14];
-	uint32_t clkctl;
-	uint32_t clksts;
-	uint32_t hspgctl; /* cAVS 1.5, see cavs_l2lm for 1.8+ */
-	uint32_t lspgctl; /* cAVS 1.5, see cavs_l2lm for 1.8+ */
-	uint32_t hsrmctl; /* cAVS 1.5, see cavs_l2lm for 1.8+ */
-	uint32_t lsrmctl; /* cAVS 1.5, see cavs_l2lm for 1.8+ */
+	uint32_t clkctl;   /* Offset: 0x78 */
+	uint32_t clksts;   /* Offset: 0x7C */
+	uint32_t _unused3[4];
 	uint16_t pwrctl;
 	uint16_t pwrsts;
 	uint32_t lpsctl;
 	uint32_t lpsdmas0;
 	uint32_t lpsdmas1;
-	uint32_t spsreq;
-	uint32_t ldoctl;
-	uint32_t _unused3[2];
-	union {
-		/* cAVS 1.5 */
-		struct {
-			uint32_t hspgists;
-			uint32_t lspgists;
-			uint32_t _unused4[2];
-		};
-		/* cAVS 1.8+ */
-		struct {
-			uint32_t lpsalhss0;
-			uint32_t lpsalhss1;
-			uint32_t lpsalhss2;
-			uint32_t lpsalhss3;
-		};
-	};
+	uint32_t spsreq;  /* Offset: 0xA0 */
+	uint32_t _unused4[3]; /* Offset: 0xA4 */
+	uint32_t lpsalhss0;
+	uint32_t lpsalhss1;
+	uint32_t lpsalhss2;
+	uint32_t lpsalhss3;
 	uint32_t _unused5[4];
 	uint32_t l2mecs;
 	uint32_t l2mpat;
 	uint32_t _unused6[2];
-	uint32_t ltrc;
+	uint32_t ltrc;  /* Offset: 0xe0 */
 	uint32_t _unused8[3];
-	uint32_t dbgo;
-	uint32_t svcfg;
+	uint32_t dbgo; /* Offset: 0xf0 */
+	uint32_t svcfg; /* Offset: 0xf4 */
 	uint32_t _unused9[2];
 };
 #define CAVS_SHIM (*((volatile struct cavs_shim *)DT_REG_ADDR(DT_NODELABEL(shim))))
