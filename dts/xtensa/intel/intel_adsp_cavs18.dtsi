@@ -64,6 +64,10 @@
 			compatible = "intel,adsp-shim";
 			reg = <0x71f00 0x100>;
 		};
+		timer: timer {
+			compatible = "intel,adsp-timer";
+			syscon = <&shim>;
+		};
 
 		mem_window0: mem_window@71a00 {
 			compatible = "intel,adsp-mem-window";

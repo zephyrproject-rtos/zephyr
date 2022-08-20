@@ -92,6 +92,11 @@
 			read-only;
 		};
 
+		timer: timer {
+			compatible = "intel,adsp-timer";
+			syscon = <&shim>;
+		};
+
 		l2lm: l2lm@71d00 {
 			compatible = "intel,cavs-l2lm";
 			reg = <0x71d00 0x20>;

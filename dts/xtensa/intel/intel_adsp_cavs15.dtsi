@@ -101,6 +101,11 @@
 			read-only;
 		};
 
+		timer: timer {
+			compatible = "intel,adsp-timer";
+			syscon = <&shim>;
+		};
+
 		core_intc: core_intc@0 {
 			compatible = "cdns,xtensa-core-intc";
 			reg = <0x00 0x400>;
