@@ -27,41 +27,27 @@ struct cavs_shim {
 	uint32_t _unused2[14];
 	uint32_t clkctl;
 	uint32_t clksts;
-	uint32_t hspgctl; /* cAVS 1.5, see cavs_l2lm for 1.8+ */
-	uint32_t lspgctl; /* cAVS 1.5, see cavs_l2lm for 1.8+ */
-	uint32_t hsrmctl; /* cAVS 1.5, see cavs_l2lm for 1.8+ */
-	uint32_t lsrmctl; /* cAVS 1.5, see cavs_l2lm for 1.8+ */
+	uint32_t _unused3[4];
 	uint16_t pwrctl;
 	uint16_t pwrsts;
 	uint32_t lpsctl;
 	uint32_t lpsdmas0;
 	uint32_t lpsdmas1;
-	uint32_t spsreq;
-	uint32_t ldoctl;
-	uint32_t _unused3[2];
-	union {
-		/* cAVS 1.5 */
-		struct {
-			uint32_t hspgists;
-			uint32_t lspgists;
-			uint32_t _unused4[2];
-		};
-		/* cAVS 1.8+ */
-		struct {
-			uint32_t lpsalhss0;
-			uint32_t lpsalhss1;
-			uint32_t lpsalhss2;
-			uint32_t lpsalhss3;
-		};
-	};
+	uint32_t spsreq; /* Offset: 0x00A0 */
+	uint32_t ldoctl; /* Offset: 0x00A4 */
+	uint32_t _unused4[2];
+	uint32_t lpsalhss0; /* Offset: 0x00B0 */
+	uint32_t lpsalhss1; /* Offset: 0x00B4 */
+	uint32_t lpsalhss2; /* Offset: 0x00B8 */
+	uint32_t lpsalhss3; /* Offset: 0x00BC */
 	uint32_t _unused5[4];
-	uint32_t l2mecs;
-	uint32_t l2mpat;
-	uint32_t _unused6[2];
-	uint32_t ltrc;
+	uint32_t l2mecs;  /* Offset: 0x00D0 */
+	uint32_t _unused6;
+	uint32_t _unused7[2];
+	uint32_t ltrc;    /* Offset: 0x00E0 */
 	uint32_t _unused8[3];
-	uint32_t dbgo;
-	uint32_t svcfg;
+	uint32_t dbgo; /* Offset: 0x00F0 */
+	uint32_t svcfg; /* Offset: 0x00F4 */
 	uint32_t _unused9[2];
 };
 
