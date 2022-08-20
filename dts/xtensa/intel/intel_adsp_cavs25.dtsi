@@ -112,6 +112,11 @@
 			read-only;
 		};
 
+		timer: timer {
+			compatible = "intel,adsp-timer";
+			syscon = <&shim>;
+		};
+
 		sspbase: ssp_base@71c00 {
 			compatible = "intel,cavs-sspbase";
 			reg = <0x71C00 0x100>;
