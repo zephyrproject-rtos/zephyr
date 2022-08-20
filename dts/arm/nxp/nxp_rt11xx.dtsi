@@ -737,7 +737,6 @@
 			interrupt-names = "usb_otg";
 			clocks = <&xtal>;
 			num-bidir-endpoints = <8>;
-			maximum-speed = "full-speed";
 			usb-controller-index = "Ehci0";
 			status = "disabled";
 		};
@@ -749,7 +748,6 @@
 			interrupt-names = "usb_otg";
 			clocks = <&xtal>;
 			num-bidir-endpoints = <8>;
-			maximum-speed = "full-speed";
 			usb-controller-index = "Ehci1";
 			status = "disabled";
 		};
