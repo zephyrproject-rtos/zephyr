@@ -15,7 +15,7 @@
 const char *msg = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 char wsmem[BUFLEN + 1]; /* Extra 1 to have a null for easier debugging */
 
-void test_winstream(void)
+ZTEST(winstream, test_winstream)
 {
 	struct sys_winstream *ws = sys_winstream_init(wsmem, BUFLEN);
 
@@ -97,10 +97,4 @@ void test_winstream(void)
 	}
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_winstream,
-			 ztest_unit_test(test_winstream)
-			 );
-	ztest_run_test_suite(test_winstream);
-}
+ZTEST_SUITE(winstream, NULL, NULL, NULL, NULL, NULL);
