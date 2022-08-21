@@ -118,7 +118,7 @@ class ZephyrElf:
     def __init__(self, kernel, edt, device_start_symbol):
         self.elf = ELFFile(open(kernel, "rb"))
         self.edt = edt
-        self.devices = []
+        self.devices = {}
         self.ld_consts = self._symbols_find_value(set([device_start_symbol, *Device.required_ld_consts, *DevicePM.required_ld_consts]))
         self._device_parse_and_link()
 
@@ -223,19 +223,18 @@ class ZephyrElf:
             # Device ordinal arrays
             '__devicehdl_': lambda sym: ordinal_arrays.update({sym.entry.st_value: DeviceOrdinals(self, sym)}),
             # Device structs
-            '__device_': lambda sym: self.devices.append(Device(self, sym)),
+            '__device_': lambda sym: self.devices.update({sym.entry.st_value: Device(self, sym)}),
         }
         self._objects_find_named(symbol_callbacks)
 
-        # Sort the device array by address for handle calculation
-        self.devices = sorted(self.devices, key = lambda k: k.sym.entry.st_value)
 
-        # Assign handles to the devices
-        for idx, dev in enumerate(self.devices):
-            dev.handle = 1 + idx
+        # Assign handles to the devices based on addresses
+        sorted_device_address = sorted(self.devices.keys())
+        for idx, address in enumerate(sorted_device_address):
+            self.devices[address].handle = 1 + idx
 
         # Link devices structs with PM and ordinals
-        for dev in self.devices:
+        for dev in self.devices.values():
             if dev.obj_pm in pm_structs:
                 dev.pm = pm_structs[dev.obj_pm]
             if dev.obj_ordinals in ordinal_arrays:
@@ -244,7 +243,7 @@ class ZephyrElf:
                     dev.edt_node = self.edt.dep_ord2node[dev.ordinal]
 
         # Create mapping of ordinals to devices
-        devices_by_ord = {d.ordinal: d for d in self.devices if d.edt_node}
+        devices_by_ord = {d.ordinal: d for d in self.devices.values() if d.edt_node}
 
         # Link devices to each other based on the EDT tree
         self._link_devices(devices_by_ord)
@@ -259,7 +258,7 @@ class ZephyrElf:
         import graphviz
         dot = graphviz.Digraph(title, comment=comment)
         # Split iteration so nodes and edges are grouped in source
-        for dev in self.devices:
+        for dev in self.devices.values():
             if dev.ordinal == DeviceOrdinals.DEVICE_HANDLE_NULL:
                 text = '{:s}\\nHandle: {:d}'.format(dev.sym.name, dev.handle)
             else:
@@ -268,7 +267,7 @@ class ZephyrElf:
                     n.name, dev.ordinal, dev.handle, n.path
                 )
             dot.node(str(dev.ordinal), text)
-        for dev in self.devices:
+        for dev in self.devices.values():
             for sup in dev.devs_supports:
                 dot.edge(str(dev.ordinal), str(sup.ordinal))
         return dot
