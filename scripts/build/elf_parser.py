@@ -166,14 +166,15 @@ class ZephyrElf:
                         symbols[sym.name] = sym.entry.st_value
         return symbols
 
-    def _object_find_named(self, prefix, cb):
+    def _objects_find_named(self, prefix_dict):
         for section in self.elf.iter_sections():
             if isinstance(section, SymbolTableSection):
                 for sym in section.iter_symbols():
                     if sym.entry.st_info.type != 'STT_OBJECT':
                         continue
-                    if sym.name.startswith(prefix):
-                        cb(sym)
+                    for prefix in prefix_dict:
+                        if sym.name.startswith(prefix):
+                            prefix_dict[prefix](sym)
 
     def _link_devices(self, devices):
         # Compute the dependency graph induced from the full graph restricted to the
@@ -214,22 +215,17 @@ class ZephyrElf:
                     devices[inj].devs_supports.add(dev)
 
     def _device_parse_and_link(self):
-        # Find all PM structs
         pm_structs = {}
-        def _on_pm(sym):
-            pm_structs[sym.entry.st_value] = DevicePM(self, sym)
-        self._object_find_named('__pm_device_', _on_pm)
-
-        # Find all ordinal arrays
         ordinal_arrays = {}
-        def _on_ordinal(sym):
-            ordinal_arrays[sym.entry.st_value] = DeviceOrdinals(self, sym)
-        self._object_find_named('__devicehdl_', _on_ordinal)
-
-        # Find all device structs
-        def _on_device(sym):
-            self.devices.append(Device(self, sym))
-        self._object_find_named('__device_', _on_device)
+        symbol_callbacks = {
+            # PM device structs
+            '__pm_device_': lambda sym: pm_structs.update({sym.entry.st_value: DevicePM(self, sym)}),
+            # Device ordinal arrays
+            '__devicehdl_': lambda sym: ordinal_arrays.update({sym.entry.st_value: DeviceOrdinals(self, sym)}),
+            # Device structs
+            '__device_': lambda sym: self.devices.append(Device(self, sym)),
+        }
+        self._objects_find_named(symbol_callbacks)
 
         # Sort the device array by address for handle calculation
         self.devices = sorted(self.devices, key = lambda k: k.sym.entry.st_value)
