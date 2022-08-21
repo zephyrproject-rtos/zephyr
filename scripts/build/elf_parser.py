@@ -28,6 +28,21 @@ class _Symbol:
         (format, size) = self.elf.native_struct_format
         return struct.unpack(format, self.data[offset:offset + size])[0]
 
+class InitEntry(_Symbol):
+    def __init__(self, elf, sym):
+        super().__init__(elf, sym)
+        (_, ptr_size) = elf.native_struct_format
+        # Init entries are a function pointer and a device pointer
+        assert(len(self.data) == (2 * ptr_size))
+        # Get init function and device pointer values
+        self.init = self._data_native_read(0 * ptr_size)
+        self.dev_addr = self._data_native_read(1 * ptr_size)
+        self.dev = elf.devices[self.dev_addr] if self.is_device else None
+
+    @property
+    def is_device(self):
+        return self.dev_addr != 0x00
+
 class DevicePM(_Symbol):
     """
     Represents information about device PM capabilities.
@@ -91,6 +106,7 @@ class Device(_Symbol):
         self.handle = None
         self.ordinals = None
         self.pm = None
+        self.init = None
 
         # Devicetree dependencies, injected dependencies, supported devices
         self.devs_depends_on = set()
@@ -118,9 +134,11 @@ class ZephyrElf:
     def __init__(self, kernel, edt, device_start_symbol):
         self.elf = ELFFile(open(kernel, "rb"))
         self.edt = edt
+        self.init_entries = {}
         self.devices = {}
         self.ld_consts = self._symbols_find_value(set([device_start_symbol, *Device.required_ld_consts, *DevicePM.required_ld_consts]))
         self._device_parse_and_link()
+        self._init_entries_parse_and_link()
 
     @property
     def little_endian(self):
@@ -250,6 +268,18 @@ class ZephyrElf:
 
         # Link injected devices to each other
         self._link_injected(devices_by_ord)
+
+    def _init_entries_parse_and_link(self):
+        symbol_callbacks = {
+            # Init entries
+            '__init_': lambda sym: self.init_entries.update({sym.entry.st_value: InitEntry(self, sym)}),
+        }
+        self._objects_find_named(symbol_callbacks)
+
+        # Link devices to their init entries
+        for init in self.init_entries.values():
+            if init.is_device:
+                init.dev.init = init
 
     def device_dependency_graph(self, title, comment):
         """
