@@ -31,7 +31,7 @@ static void dump_nto(const struct net_timeout *nto)
 }
 #endif
 
-static void test_basics(void)
+ZTEST(net_timeout, test_basics)
 {
 	zassert_equal(NET_TIMEOUT_MAX_VALUE, INT32_MAX,
 		      "Max value not as expected");
@@ -43,7 +43,7 @@ static void test_basics(void)
 		      "Full-max constant is wrong");
 }
 
-static void test_set(void)
+ZTEST(net_timeout, test_set)
 {
 	struct net_timeout nto;
 	uint32_t now = 4;
@@ -108,7 +108,7 @@ static void test_set(void)
 	zassert_equal(nto.timer_timeout, NET_TIMEOUT_MAX_VALUE, NULL);
 }
 
-static void test_deadline(void)
+ZTEST(net_timeout, test_deadline)
 {
 	struct net_timeout nto;
 	uint64_t now = 1234;
@@ -147,7 +147,7 @@ static void test_deadline(void)
 		      NULL);
 }
 
-static void test_remaining(void)
+ZTEST(net_timeout, test_remaining)
 {
 	struct net_timeout nto;
 	uint32_t now = 4;
@@ -189,7 +189,7 @@ static void test_remaining(void)
 		      NULL);
 }
 
-static void test_evaluate_basic(void)
+ZTEST(net_timeout, test_evaluate_basic)
 {
 	struct net_timeout nto;
 	uint64_t now = 0;
@@ -296,7 +296,7 @@ static void test_evaluate_basic(void)
 		     NULL);
 }
 
-static void test_evaluate_whitebox(void)
+ZTEST(net_timeout, test_evaluate_whitebox)
 {
 	/* This explicitly tests the path where subtracting the excess elapsed
 	 * from the fractional timeout requires reducing the wrap count a
@@ -352,22 +352,8 @@ static void test_evaluate_whitebox(void)
 		      deadline, NULL);
 }
 
-static void test_nop(void)
+ZTEST(net_timeout, test_nop)
 {
 }
 
-/*test case main entry*/
-void test_main(void)
-{
-
-	ztest_test_suite(test_net_timeout,
-			 ztest_unit_test(test_basics),
-			 ztest_unit_test(test_set),
-			 ztest_unit_test(test_deadline),
-			 ztest_unit_test(test_remaining),
-			 ztest_unit_test(test_evaluate_basic),
-			 ztest_unit_test(test_evaluate_whitebox),
-			 ztest_unit_test(test_nop)
-			 );
-	ztest_run_test_suite(test_net_timeout);
-}
+ZTEST_SUITE(net_timeout, NULL, NULL, NULL, NULL, NULL);
