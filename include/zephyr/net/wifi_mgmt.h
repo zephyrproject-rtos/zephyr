@@ -12,6 +12,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_WIFI_MGMT_H_
 #define ZEPHYR_INCLUDE_NET_WIFI_MGMT_H_
 
+#include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/wifi.h>
 
@@ -125,12 +126,12 @@ typedef void (*scan_result_cb_t)(struct net_if *iface, int status,
 
 struct net_wifi_mgmt_offload {
 	/**
-	 * Mandatory to get in first position.
-	 * A network device should indeed provide a pointer on such
-	 * net_if_api structure. So we make current structure pointer
-	 * that can be casted to a net_if_api structure pointer.
-	 */
-	struct net_if_api iface_api;
+	* Mandatory to get in first position.
+	* A network device should indeed provide a pointer on such
+	* ethernet_api structure. So we make current structure pointer
+	* that can be casted to a ethernet_api structure pointer.
+	*/
+	struct ethernet_api eth_api;
 
 	/* cb parameter is the cb that should be called for each
 	 * result by the driver. The wifi mgmt part will take care of
@@ -148,7 +149,7 @@ struct net_wifi_mgmt_offload {
 /* Make sure that the network interface API is properly setup inside
  * Wifi mgmt offload API struct (it is the first one).
  */
-BUILD_ASSERT(offsetof(struct net_wifi_mgmt_offload, iface_api) == 0);
+BUILD_ASSERT(offsetof(struct net_wifi_mgmt_offload, eth_api) == 0);
 
 #ifdef CONFIG_WIFI_OFFLOAD
 
