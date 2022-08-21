@@ -712,6 +712,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /scripts/list_boards.py                   @mbolivar-nordic
 /scripts/build/process_gperf.py           @dcpleung @nashif
 /scripts/build/gen_relocate_app.py        @dcpleung
+/scripts/build/elf_parser.py              @JordanYates
 /scripts/requirements*.txt                @mbolivar-nordic @galak @nashif
 /scripts/tests/twister/                   @aasthagr
 /scripts/tests/build/test_subfolder_list.py @rmstoi
