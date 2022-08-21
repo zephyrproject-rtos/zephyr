@@ -135,10 +135,12 @@ def main():
             # specified order.  Sort each sub-category of device handle types
             # separately, so that the generated C array is reproducible across
             # builds.
+            injected_devices = [dep.dev for dep in dev.init.dependencies if dep.is_device]
+            supported_devices = dev.devs_supports.union({sup.dev for sup in dev.init.supports if sup.is_device})
             sorted_handles = {
                 "depends": sorted(dev.devs_depends_on, key=lambda d: d.handle),
-                "injected": sorted(dev.devs_depends_on_injected, key=lambda d: d.handle),
-                "supports": sorted(dev.devs_supports, key=lambda d: d.handle),
+                "injected": sorted(injected_devices, key=lambda d: d.handle),
+                "supports": sorted(supported_devices, key=lambda d: d.handle),
             }
             extra_sups = args.num_dynamic_devices if dev.pm and dev.pm.is_power_domain else 0
             lines = c_handle_comment(dev, sorted_handles)
