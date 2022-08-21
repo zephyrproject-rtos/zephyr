@@ -14,7 +14,7 @@
  * This test verifies conversion of various input values.
  *
  */
-static void test_u8_to_dec(void)
+void run_u8_to_dec(void)
 {
 	char text[4];
 	uint8_t len;
@@ -74,7 +74,7 @@ static void test_u8_to_dec(void)
 #define TEST_DEFINE_1 1
 #define TEST_DEFINE_0 0
 
-void test_COND_CODE_1(void)
+void run_COND_CODE_1(void)
 {
 	/* Test validates that expected code has been injected. Failure would
 	 * be seen in compilation (lack of variable or ununsed variable.
@@ -92,7 +92,7 @@ void test_COND_CODE_1(void)
 	zassert_true((y3 == 1));
 }
 
-void test_COND_CODE_0(void)
+void run_COND_CODE_0(void)
 {
 	/* Test validates that expected code has been injected. Failure would
 	 * be seen in compilation (lack of variable or ununsed variable.
@@ -117,7 +117,7 @@ void test_COND_CODE_0(void)
 #define SEVEN 7
 #define A_BUILD_ERROR (this would be a build error if you used || or &&)
 
-void test_UTIL_OR(void)
+void run_UTIL_OR(void)
 {
 	zassert_equal(UTIL_OR(SEVEN, A_BUILD_ERROR), 7);
 	zassert_equal(UTIL_OR(7, 0), 7);
@@ -128,7 +128,7 @@ void test_UTIL_OR(void)
 	zassert_equal(UTIL_OR(ZERO, ZERO), 0);
 }
 
-void test_UTIL_AND(void)
+void run_UTIL_AND(void)
 {
 	zassert_equal(UTIL_AND(ZERO, A_BUILD_ERROR), 0);
 	zassert_equal(UTIL_AND(7, 0), 0);
@@ -143,7 +143,7 @@ void test_UTIL_AND(void)
 	zassert_equal(UTIL_AND(SEVEN, SEVEN), 7);
 }
 
-void test_IF_ENABLED(void)
+void run_IF_ENABLED(void)
 {
 	#define test_IF_ENABLED_FLAG_A 1
 	#define test_IF_ENABLED_FLAG_B 0
@@ -162,7 +162,7 @@ skipped:
 	#undef test_IF_ENABLED_FLAG_B
 }
 
-void test_LISTIFY(void)
+void run_LISTIFY(void)
 {
 	int ab0 = 1;
 	int ab1 = 1;
@@ -175,7 +175,7 @@ void test_LISTIFY(void)
 	zassert_equal(a[1], &ab1);
 }
 
-void test_MACRO_MAP_CAT(void)
+void run_MACRO_MAP_CAT(void)
 {
 	int item_a_item_b_item_c_ = 1;
 
@@ -185,9 +185,13 @@ void test_MACRO_MAP_CAT(void)
 #undef FOO
 }
 
-static int inc_func(void)
+static int inc_func(bool cleanup)
 {
-	static int a = 1;
+	static int a;
+
+        if (cleanup) {
+		a = 1;
+	}
 
 	return a++;
 }
@@ -195,27 +199,27 @@ static int inc_func(void)
 /* Test checks if @ref Z_MAX, @ref Z_MIN and @ref Z_CLAMP return correct result
  * and perform single evaluation of input arguments.
  */
-static void test_z_max_z_min_z_clamp(void)
+void run_z_max_z_min_z_clamp(void)
 {
-	zassert_equal(Z_MAX(inc_func(), 0), 1, "Unexpected macro result");
+	zassert_equal(Z_MAX(inc_func(true), 0), 1, "Unexpected macro result");
 	/* Z_MAX should have call inc_func only once */
-	zassert_equal(inc_func(), 2, "Unexpected return value");
+	zassert_equal(inc_func(false), 2, "Unexpected return value");
 
-	zassert_equal(Z_MIN(inc_func(), 2), 2, "Unexpected macro result");
+	zassert_equal(Z_MIN(inc_func(false), 2), 2, "Unexpected macro result");
 	/* Z_MIN should have call inc_func only once */
-	zassert_equal(inc_func(), 4, "Unexpected return value");
+	zassert_equal(inc_func(false), 4, "Unexpected return value");
 
-	zassert_equal(Z_CLAMP(inc_func(), 1, 3), 3, "Unexpected macro result");
+	zassert_equal(Z_CLAMP(inc_func(false), 1, 3), 3, "Unexpected macro result");
 	/* Z_CLAMP should have call inc_func only once */
-	zassert_equal(inc_func(), 6, "Unexpected return value");
+	zassert_equal(inc_func(false), 6, "Unexpected return value");
 
-	zassert_equal(Z_CLAMP(inc_func(), 10, 15), 10,
+	zassert_equal(Z_CLAMP(inc_func(false), 10, 15), 10,
 		      "Unexpected macro result");
 	/* Z_CLAMP should have call inc_func only once */
-	zassert_equal(inc_func(), 8, "Unexpected return value");
+	zassert_equal(inc_func(false), 8, "Unexpected return value");
 }
 
-static void test_CLAMP(void)
+void run_CLAMP(void)
 {
 	zassert_equal(CLAMP(5, 3, 7), 5, "Unexpected clamp result");
 	zassert_equal(CLAMP(3, 3, 7), 3, "Unexpected clamp result");
@@ -231,7 +235,7 @@ static void test_CLAMP(void)
 		      0xffffffffaULL, "Unexpected clamp result");
 }
 
-static void test_IN_RANGE(void)
+void run_IN_RANGE(void)
 {
 	zassert_true(IN_RANGE(0, 0, 0), "Unexpected IN_RANGE result");
 	zassert_true(IN_RANGE(1, 0, 1), "Unexpected IN_RANGE result");
@@ -249,7 +253,7 @@ static void test_IN_RANGE(void)
 	zassert_false(IN_RANGE(-1, 0, 1), "Unexpected IN_RANGE result");
 }
 
-static void test_FOR_EACH(void)
+void run_FOR_EACH(void)
 {
 	#define FOR_EACH_MACRO_TEST(arg) *buf++ = arg
 
@@ -263,7 +267,7 @@ static void test_FOR_EACH(void)
 	zassert_equal(array[2], 3, "Unexpected value %d", array[2]);
 }
 
-static void test_FOR_EACH_NONEMPTY_TERM(void)
+void run_FOR_EACH_NONEMPTY_TERM(void)
 {
 	#define SQUARE(arg) (arg * arg)
 	#define SWALLOW_VA_ARGS_1(...) EMPTY
@@ -301,7 +305,7 @@ static void fsum(uint32_t incr, uint32_t *sum)
 	*sum = *sum + incr;
 }
 
-static void test_FOR_EACH_FIXED_ARG(void)
+void run_FOR_EACH_FIXED_ARG(void)
 {
 	uint32_t sum = 0;
 
@@ -310,7 +314,7 @@ static void test_FOR_EACH_FIXED_ARG(void)
 	zassert_equal(sum, 6, "Unexpected value %d", sum);
 }
 
-static void test_FOR_EACH_IDX(void)
+void run_FOR_EACH_IDX(void)
 {
 	#define FOR_EACH_IDX_MACRO_TEST(n, arg) uint8_t a##n = arg
 
@@ -340,7 +344,7 @@ static void test_FOR_EACH_IDX(void)
 	zassert_equal(ARRAY_SIZE(a), 3, "Unexpected value:%zu", ARRAY_SIZE(a));
 }
 
-static void test_FOR_EACH_IDX_FIXED_ARG(void)
+void run_FOR_EACH_IDX_FIXED_ARG(void)
 {
 	#undef FOO
 	#define FOO(n, arg, fixed_arg) \
@@ -353,7 +357,7 @@ static void test_FOR_EACH_IDX_FIXED_ARG(void)
 	zassert_equal(a2, 3, "Unexpected value %d", a2);
 }
 
-static void test_IS_EMPTY(void)
+void run_IS_EMPTY(void)
 {
 	#define test_IS_EMPTY_REAL_EMPTY
 	#define test_IS_EMPTY_NOT_EMPTY XXX_DO_NOT_REPLACE_XXX
@@ -367,7 +371,7 @@ static void test_IS_EMPTY(void)
 		      "Expected to be non-empty");
 }
 
-static void test_IS_EQ(void)
+void run_IS_EQ(void)
 {
 	zassert_true(IS_EQ(0, 0), "Unexpected IS_EQ result");
 	zassert_true(IS_EQ(1, 1), "Unexpected IS_EQ result");
@@ -378,7 +382,7 @@ static void test_IS_EQ(void)
 	zassert_false(IS_EQ(7, 0), "Unexpected IS_EQ result");
 }
 
-static void test_LIST_DROP_EMPTY(void)
+void run_LIST_DROP_EMPTY(void)
 {
 	/*
 	 * The real definition should be:
@@ -397,7 +401,7 @@ static void test_LIST_DROP_EMPTY(void)
 	zassert_equal(strcmp(arr[2], "Case"), 0, "Failed at 0");
 }
 
-static void test_nested_FOR_EACH(void)
+void run_nested_FOR_EACH(void)
 {
 	#define FOO_1(x) a##x = x
 	#define FOO_2(x) int x
@@ -409,7 +413,7 @@ static void test_nested_FOR_EACH(void)
 	zassert_equal(a2, 2);
 }
 
-static void test_GET_ARG_N(void)
+void run_GET_ARG_N(void)
 {
 	int a = GET_ARG_N(1, 10, 100, 1000);
 	int b = GET_ARG_N(2, 10, 100, 1000);
@@ -420,7 +424,7 @@ static void test_GET_ARG_N(void)
 	zassert_equal(c, 1000);
 }
 
-static void test_GET_ARGS_LESS_N(void)
+void run_GET_ARGS_LESS_N(void)
 {
 	uint8_t a[] = { GET_ARGS_LESS_N(0, 1, 2, 3) };
 	uint8_t b[] = { GET_ARGS_LESS_N(1, 1, 2, 3) };
@@ -436,7 +440,7 @@ static void test_GET_ARGS_LESS_N(void)
 	zassert_equal(c[0], 3);
 }
 
-static void test_mixing_GET_ARG_and_FOR_EACH(void)
+void run_mixing_GET_ARG_and_FOR_EACH(void)
 {
 	#undef TEST_MACRO
 	#define TEST_MACRO(x) x,
@@ -462,40 +466,4 @@ static void test_mixing_GET_ARG_and_FOR_EACH(void)
 	zassert_equal(a[2], 3);
 	zassert_equal(a[3], 4);
 	zassert_equal(a[4], 5);
-}
-
-#if __cplusplus
-extern "C" void test_cxx(void);
-void test_cxx(void)
-#else
-void test_cc(void)
-#endif
-{
-	ztest_test_suite(test_lib_sys_util_tests,
-			 ztest_unit_test(test_u8_to_dec),
-			 ztest_unit_test(test_COND_CODE_1),
-			 ztest_unit_test(test_COND_CODE_0),
-			 ztest_unit_test(test_UTIL_OR),
-			 ztest_unit_test(test_UTIL_AND),
-			 ztest_unit_test(test_IF_ENABLED),
-			 ztest_unit_test(test_LISTIFY),
-			 ztest_unit_test(test_MACRO_MAP_CAT),
-			 ztest_unit_test(test_z_max_z_min_z_clamp),
-			 ztest_unit_test(test_CLAMP),
-			 ztest_unit_test(test_IN_RANGE),
-			 ztest_unit_test(test_FOR_EACH),
-			 ztest_unit_test(test_FOR_EACH_NONEMPTY_TERM),
-			 ztest_unit_test(test_FOR_EACH_FIXED_ARG),
-			 ztest_unit_test(test_FOR_EACH_IDX),
-			 ztest_unit_test(test_FOR_EACH_IDX_FIXED_ARG),
-			 ztest_unit_test(test_IS_EMPTY),
-			 ztest_unit_test(test_IS_EQ),
-			 ztest_unit_test(test_LIST_DROP_EMPTY),
-			 ztest_unit_test(test_nested_FOR_EACH),
-			 ztest_unit_test(test_GET_ARG_N),
-			 ztest_unit_test(test_GET_ARGS_LESS_N),
-			 ztest_unit_test(test_mixing_GET_ARG_and_FOR_EACH)
-	);
-
-	ztest_run_test_suite(test_lib_sys_util_tests);
 }
