@@ -2,6 +2,53 @@
 
 .. _zephyr_2.7:
 
+.. _zephyr_2.7.3:
+
+Zephyr 2.7.3
+####################
+
+This is an LTS maintenance release with fixes.
+
+Issues Fixed
+************
+
+These GitHub issues were addressed since the previous 2.7.2 tagged
+release:
+
+.. comment  List derived from GitHub Issue query: ...
+   * :github:`issuenumber` - issue title
+
+* :github:`39882` - Bluetooth Host qualification on 2.7 branch
+* :github:`41074` - can_mcan_send sends corrupted CAN frames with a byte-by-byte memcpy implementation
+* :github:`43479` - Bluetooth: Controller: Fix per adv scheduling issue
+* :github:`43694` - drivers: spi: stm32 spi with dma must enable cs after periph
+* :github:`44089` - logging: shell backend: null-deref when logs are dropped
+* :github:`45341` - Add new EHL SKUs for IBECC
+* :github:`45529` - GdbStub get_mem_region bugfix
+* :github:`46621` - drivers: i2c: Infinite recursion in driver unregister function
+* :github:`46698` - sm351 driver faults when using global thread
+* :github:`46706` - add missing checks for segment number
+* :github:`46757` - Bluetooth: Controller: Missing validation of unsupported PHY when performing PHY update
+* :github:`46807` - lib: posix: semaphore: use consistent timebase in sem_timedwait
+* :github:`46822` - L2CAP disconnected packet timing in ecred reconf function
+* :github:`46994` - Incorrect Xtensa toolchain path resolution
+* :github:`47356` - cpp: global static object initialisation may fail for MMU and MPU platforms
+* :github:`47609` - posix: pthread: descriptor leak with pthread_join
+* :github:`47955` - drivers: can: various RTR fixes
+* :github:`48249` - boards: nucleo_wb55rg: documentation BLE binary compatibility issue
+* :github:`48271` - net: Possible net_pkt leak in ipv6 multicast forwarding
+
+Security Vulnerability Related
+******************************
+
+The following security vulnerabilities (CVEs) were addressed in this
+release:
+
+*
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
 .. _zephyr_2.7.2:
 
 Zephyr 2.7.2
