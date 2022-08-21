@@ -38,6 +38,8 @@ class InitEntry(_Symbol):
         self.init = self._data_native_read(0 * ptr_size)
         self.dev_addr = self._data_native_read(1 * ptr_size)
         self.dev = elf.devices[self.dev_addr] if self.is_device else None
+        self.dependencies = []
+        self.supports = []
 
     @property
     def is_device(self):
@@ -90,6 +92,15 @@ class DeviceOrdinals(_Symbol):
     @property
     def ordinals(self):
         return self._ordinals_split
+
+class InitDependencies(_Symbol):
+    def __init__(self, elf, sym):
+        super().__init__(elf, sym)
+        (_, ptr_size) = elf.native_struct_format
+        entries = [self._data_native_read(n * ptr_size) for n in range(len(self.data) // ptr_size)]
+        # First pointer is the entry the dependencies are for, the rest are the dependencies
+        self.entry = entries[0]
+        self.dependencies = entries[1:]
 
 class Device(_Symbol):
     """
@@ -270,9 +281,12 @@ class ZephyrElf:
         self._link_injected(devices_by_ord)
 
     def _init_entries_parse_and_link(self):
+        init_dependencies = []
         symbol_callbacks = {
             # Init entries
             '__init_': lambda sym: self.init_entries.update({sym.entry.st_value: InitEntry(self, sym)}),
+            # Init dependencies
+            '__initdeps': lambda sym: init_dependencies.append(InitDependencies(self, sym)),
         }
         self._objects_find_named(symbol_callbacks)
 
@@ -280,6 +294,15 @@ class ZephyrElf:
         for init in self.init_entries.values():
             if init.is_device:
                 init.dev.init = init
+
+        # Link init entries to each other based on specified dependencies
+        for init_dep in init_dependencies:
+            assert init_dep.entry in self.init_entries
+            init = self.init_entries[init_dep.entry]
+            for dep in init_dep.dependencies:
+                assert dep in self.init_entries
+                init.dependencies.append(self.init_entries[dep])
+                self.init_entries[dep].supports.append(init)
 
     def device_dependency_graph(self, title, comment):
         """
