@@ -25,7 +25,7 @@ enum lorawan_package_id {
  * Default ports used for LoRaWAN services.
  */
 enum lorawan_services_port {
-	LORAWAN_PORT_MULTICAST = 200,
+	LORAWAN_PORT_MULTICAST_SETUP = 200,
 	LORAWAN_PORT_FRAG_TRANSPORT = 201,
 	LORAWAN_PORT_CLOCK_SYNC = 202,
 };
