@@ -6,7 +6,7 @@ description: |
 
 compatible: "gd,gd32-dma"
 
-include: dma-controller.yaml
+include: [dma-controller.yaml, reset-device.yaml]
 
 properties:
   reg:
