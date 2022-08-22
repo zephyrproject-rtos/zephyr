@@ -797,6 +797,7 @@ static uint8_t alloc_value(struct bt_gatt_attr *attr, struct set_value *data)
 			indicate_params.len = value->len;
 			indicate_params.func = indicate_cb;
 			indicate_params.destroy = NULL;
+			indicate_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 			bt_gatt_indicate(NULL, &indicate_params);
 		}
@@ -1008,6 +1009,7 @@ static void disc_all_prim(uint8_t *data, uint16_t len)
 	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 	discover_params.func = disc_prim_cb;
+	discover_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 	btp_opcode = GATT_DISC_ALL_PRIM;
 
@@ -1051,6 +1053,7 @@ static void disc_prim_uuid(uint8_t *data, uint16_t len)
 	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 	discover_params.func = disc_prim_cb;
+	discover_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 	btp_opcode = GATT_DISC_PRIM_UUID;
 
@@ -1136,6 +1139,7 @@ static void find_included(uint8_t *data, uint16_t len)
 	discover_params.end_handle = sys_le16_to_cpu(cmd->end_handle);
 	discover_params.type = BT_GATT_DISCOVER_INCLUDE;
 	discover_params.func = find_included_cb;
+	discover_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 	if (bt_gatt_discover(conn, &discover_params) < 0) {
 		discover_destroy(&discover_params);
@@ -1218,6 +1222,7 @@ static void disc_all_chrc(uint8_t *data, uint16_t len)
 	discover_params.end_handle = sys_le16_to_cpu(cmd->end_handle);
 	discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 	discover_params.func = disc_chrc_cb;
+	discover_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 	/* TODO should be handled as user_data via CONTAINER_OF macro */
 	btp_opcode = GATT_DISC_ALL_CHRC;
@@ -1262,6 +1267,7 @@ static void disc_chrc_uuid(uint8_t *data, uint16_t len)
 	discover_params.end_handle = sys_le16_to_cpu(cmd->end_handle);
 	discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 	discover_params.func = disc_chrc_cb;
+	discover_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 	/* TODO should be handled as user_data via CONTAINER_OF macro */
 	btp_opcode = GATT_DISC_CHRC_UUID;
@@ -1343,6 +1349,7 @@ static void disc_all_desc(uint8_t *data, uint16_t len)
 	discover_params.end_handle = sys_le16_to_cpu(cmd->end_handle);
 	discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
 	discover_params.func = disc_all_desc_cb;
+	discover_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 	if (bt_gatt_discover(conn, &discover_params) < 0) {
 		discover_destroy(&discover_params);
@@ -1463,6 +1470,7 @@ static void read_data(uint8_t *data, uint16_t len)
 	read_params.single.handle = sys_le16_to_cpu(cmd->handle);
 	read_params.single.offset = 0x0000;
 	read_params.func = read_cb;
+	read_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 	/* TODO should be handled as user_data via CONTAINER_OF macro */
 	btp_opcode = GATT_READ;
@@ -1507,6 +1515,7 @@ static void read_uuid(uint8_t *data, uint16_t len)
 	read_params.by_uuid.start_handle = sys_le16_to_cpu(cmd->start_handle);
 	read_params.by_uuid.end_handle = sys_le16_to_cpu(cmd->end_handle);
 	read_params.func = read_uuid_cb;
+	read_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 	btp_opcode = GATT_READ_UUID;
 
@@ -1545,6 +1554,7 @@ static void read_long(uint8_t *data, uint16_t len)
 	read_params.single.handle = sys_le16_to_cpu(cmd->handle);
 	read_params.single.offset = sys_le16_to_cpu(cmd->offset);
 	read_params.func = read_cb;
+	read_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 	/* TODO should be handled as user_data via CONTAINER_OF macro */
 	btp_opcode = GATT_READ_LONG;
@@ -1590,6 +1600,7 @@ static void read_multiple(uint8_t *data, uint16_t len, uint8_t opcode)
 	read_params.handle_count = i;
 	read_params.multiple.handles = handles; /* not used in read func */
 	read_params.multiple.variable = (opcode == GATT_READ_MULTIPLE_VAR);
+	read_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 	/* TODO should be handled as user_data via CONTAINER_OF macro */
 	btp_opcode = opcode;
@@ -1659,6 +1670,7 @@ static void write_data(uint8_t *data, uint16_t len)
 	write_params.offset = 0U;
 	write_params.data = cmd->data;
 	write_params.length = sys_le16_to_cpu(cmd->data_length);
+	write_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 	if (bt_gatt_write(conn, &write_params) < 0) {
 		bt_conn_unref(conn);
@@ -1695,6 +1707,7 @@ static void write_long(uint8_t *data, uint16_t len)
 	write_params.offset = cmd->offset;
 	write_params.data = cmd->data;
 	write_params.length = sys_le16_to_cpu(cmd->data_length);
+	write_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 	if (bt_gatt_write(conn, &write_params) < 0) {
 		bt_conn_unref(conn);
@@ -1771,6 +1784,7 @@ static void discover_complete(struct bt_conn *conn,
 		goto fail;
 	}
 
+	subscription->chan_opt = BT_ATT_CHAN_OPT_NONE;
 	if (bt_gatt_subscribe(conn, subscription) < 0) {
 		status = BTP_STATUS_FAILED;
 		goto fail;
@@ -1835,6 +1849,7 @@ static int enable_subscription(struct bt_conn *conn, uint16_t ccc_handle,
 	discover_params.end_handle = ccc_handle;
 	discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 	discover_params.func = discover_func;
+	discover_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 	subscription->ccc_handle = ccc_handle;
 	subscription->value = value;

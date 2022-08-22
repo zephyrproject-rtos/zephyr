@@ -33,7 +33,7 @@
 #define TEST_DATA_ID			1
 #define TEST_SECTOR_COUNT		5U
 
-static const struct device *flash_dev = DEVICE_DT_GET(TEST_NVS_FLASH_DEV_NODE);
+static const struct device *const flash_dev = DEVICE_DT_GET(TEST_NVS_FLASH_DEV_NODE);
 
 struct nvs_fixture {
 	struct nvs_fs fs;

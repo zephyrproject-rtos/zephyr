@@ -9,7 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/ztest.h>
 
-static const struct device *sdhc_dev = DEVICE_DT_GET(DT_ALIAS(sdhc0));
+static const struct device *const sdhc_dev = DEVICE_DT_GET(DT_ALIAS(sdhc0));
 static struct sdhc_host_props props;
 static struct sdhc_io io;
 

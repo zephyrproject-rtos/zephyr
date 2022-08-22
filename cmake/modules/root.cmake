@@ -32,3 +32,10 @@ zephyr_file(APPLICATION_ROOT SOC_ROOT)
 
 # Convert paths to absolute, relative from APPLICATION_SOURCE_DIR
 zephyr_file(APPLICATION_ROOT ARCH_ROOT)
+
+if(unittest IN_LIST Zephyr_FIND_COMPONENTS)
+  # Zephyr used in unittest mode, use dedicated unittest root.
+  set(BOARD_ROOT ${ZEPHYR_BASE}/subsys/testsuite)
+  set(ARCH_ROOT  ${ZEPHYR_BASE}/subsys/testsuite)
+  set(SOC_ROOT   ${ZEPHYR_BASE}/subsys/testsuite)
+endif()

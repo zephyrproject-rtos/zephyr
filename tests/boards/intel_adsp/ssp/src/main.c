@@ -43,8 +43,11 @@ struct sof_dai_ssp_params {
 	uint32_t bclk_delay;
 } __packed;
 
-static const struct device *dev_dai_ssp;
-static const struct device *dev_dma_dw;
+static const struct device *const dev_dai_ssp =
+	DEVICE_DT_GET(DT_NODELABEL(ssp0));
+static const struct device *const dev_dma_dw =
+	DEVICE_DT_GET(DT_NODELABEL(lpgpdma0));
+
 static struct dai_config config;
 static struct sof_dai_ssp_params ssp_config;
 
@@ -252,7 +255,7 @@ static int check_transmission(void)
 	return TC_PASS;
 }
 
-void test_adsp_ssp_transfer(void)
+ZTEST(adsp_ssp, test_adsp_ssp_transfer)
 {
 	const struct dai_properties *props;
 	static int chan_id_rx;
@@ -341,7 +344,7 @@ void test_adsp_ssp_transfer(void)
 	check_transmission();
 }
 
-void test_adsp_ssp_config_set(void)
+ZTEST(adsp_ssp, test_adsp_ssp_config_set)
 {
 	int ret;
 
@@ -383,7 +386,7 @@ void test_adsp_ssp_config_set(void)
 	zassert_equal(ret, TC_PASS, NULL);
 }
 
-void test_adsp_ssp_probe(void)
+static void test_adsp_ssp_probe(void)
 {
 	int ret;
 
@@ -392,22 +395,16 @@ void test_adsp_ssp_probe(void)
 	zassert_equal(ret, TC_PASS, NULL);
 }
 
-void test_main(void)
+static void *adsp_ssp_setup(void)
 {
-	dev_dai_ssp = DEVICE_DT_GET(DT_NODELABEL(ssp0));
-
 	k_object_access_grant(dev_dai_ssp, k_current_get());
 
 	zassert_true(device_is_ready(dev_dai_ssp), "device SSP_0 is not ready");
-
-	dev_dma_dw = DEVICE_DT_GET(DT_NODELABEL(lpgpdma0));
-
 	zassert_true(device_is_ready(dev_dma_dw), "device DMA 0 is not ready");
 
-	ztest_test_suite(adsp_ssp,
-			 ztest_unit_test(test_adsp_ssp_probe),
-			 ztest_unit_test(test_adsp_ssp_config_set),
-			 ztest_unit_test(test_adsp_ssp_transfer));
+	test_adsp_ssp_probe();
 
-	ztest_run_test_suite(adsp_ssp);
+	return NULL;
 }
+
+ZTEST_SUITE(adsp_ssp, NULL, adsp_ssp_setup, NULL, NULL, NULL);

@@ -33,7 +33,7 @@ uint8_t clamp_rgb(int val)
 
 void main(void)
 {
-	const struct device *glcd = DEVICE_DT_GET(DT_NODELABEL(glcd));
+	const struct device *const glcd = DEVICE_DT_GET(DT_NODELABEL(glcd));
 	char str[20];
 	int rgb[] = { 0x0, 0x0, 0x0 };
 	uint8_t rgb_chg[3];

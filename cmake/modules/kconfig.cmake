@@ -19,6 +19,9 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/config)
 
 set_ifndef(KCONFIG_NAMESPACE "CONFIG")
 
+set_ifndef(KCONFIG_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Kconfig)
+file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
+
 # Support multiple SOC_ROOT, remove ZEPHYR_BASE as that is always sourced.
 set(kconfig_soc_root ${SOC_ROOT})
 list(REMOVE_ITEM kconfig_soc_root ${ZEPHYR_BASE})

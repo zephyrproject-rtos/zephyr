@@ -95,8 +95,8 @@ __unused static void nrf_pin_configure(pinctrl_soc_pin_t pin,
 		input = NRF_GPIO_PIN_INPUT_DISCONNECT;
 	}
 
-	nrf_gpio_cfg(NRF_GET_PIN(pin), dir, input, NRF_GET_PULL(pin),
-		     NRF_GET_DRIVE(pin), NRF_GPIO_PIN_NOSENSE);
+	nrf_gpio_cfg(NRF_GET_PIN(pin), dir, input, NRF_GET_PULL(pin), drive,
+		     NRF_GPIO_PIN_NOSENSE);
 }
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,

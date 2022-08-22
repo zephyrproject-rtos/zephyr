@@ -11,11 +11,6 @@
 #include <zephyr/device.h>
 #include <zephyr/ztest.h>
 
-void test_hda_host_in_smoke(void);
-void test_hda_host_out_smoke(void);
-void test_hda_host_in_dma(void);
-
-
 /* Turn this define on to see register dumps after each step */
 #define INTEL_ADSP_HDA_DBG 0
 
@@ -25,11 +20,12 @@ void test_hda_host_in_dma(void);
 #define STREAM_SET_NAME(stream_set) STRINGIFY(stream_set)
 
 #if INTEL_ADSP_HDA_DBG
-#define hda_dump_regs(stream_set, stream_id, ...) \
+#define hda_dump_regs(stream_set, regblock_size, stream_id, ...) \
 	printk(__VA_ARGS__); printk(": ");        \
-	intel_adsp_hda_dbg(STREAM_SET_NAME(stream_set), STREAM_SET_BASE(stream_set), stream_id)
+	intel_adsp_hda_dbg(STREAM_SET_NAME(stream_set), STREAM_SET_BASE(stream_set), \
+		regblock_size, stream_id)
 #else
-#define hda_dump_regs(stream_set, stream_id, msg, ...) do {} while (0)
+#define hda_dump_regs(stream_set, regblock_size, stream_id, msg, ...) do {} while (0)
 #endif
 
 static inline void hda_ipc_msg(const struct device *dev, uint32_t data,

@@ -656,6 +656,15 @@ static int start_read(const struct device *dev,
 	 * This register controls the analog switch integrated in the IO level.
 	 */
 	LL_ADC_SetChannelPreSelection(adc, channel);
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	/*
+	 * Each channel in the sequence must be previously enabled in PCSEL.
+	 * This register controls the analog switch integrated in the IO level.
+	 * Only for ADC1 instance (ADC4 has no Channel preselection capability).
+	 */
+	if (adc == ADC1) {
+		LL_ADC_SetChannelPreselection(adc, channel);
+	}
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
@@ -969,7 +978,7 @@ static int adc_stm32_init(const struct device *dev)
 {
 	struct adc_stm32_data *data = dev->data;
 	const struct adc_stm32_cfg *config = dev->config;
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
 	int err;
 
@@ -1185,7 +1194,8 @@ bool adc_stm32_is_irq_active(ADC_TypeDef *adc)
 }
 
 #define HANDLE_IRQS(index)							\
-	static const struct device *dev_##index = DEVICE_DT_INST_GET(index);	\
+	static const struct device *const dev_##index =				\
+		DEVICE_DT_INST_GET(index);					\
 	const struct adc_stm32_cfg *cfg_##index = dev_##index->config;		\
 	ADC_TypeDef *adc_##index = (ADC_TypeDef *)(cfg_##index->base);		\
 										\

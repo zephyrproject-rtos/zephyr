@@ -91,7 +91,7 @@ static void tear_down_instance(const struct device *dev,
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_clock)
 	/* Turn on LF clock using onoff service if it is disabled. */
-	const struct device *clk = DEVICE_DT_GET_ONE(nordic_nrf_clock);
+	const struct device *const clk = DEVICE_DT_GET_ONE(nordic_nrf_clock);
 	struct onoff_client cli;
 	struct onoff_manager *mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
 	int err;

@@ -52,8 +52,10 @@ include(extensions)
 zephyr_check_cache(BOARD REQUIRED)
 
 # 'BOARD_ROOT' is a prioritized list of directories where boards may
-# be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
-list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
+# be found. It always includes ${ZEPHYR_BASE} at the lowest priority (except for unittesting).
+if(NOT unittest IN_LIST Zephyr_FIND_COMPONENTS)
+  list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
+endif()
 
 string(FIND "${BOARD}" "@" REVISION_SEPARATOR_INDEX)
 if(NOT (REVISION_SEPARATOR_INDEX EQUAL -1))
@@ -142,7 +144,7 @@ list(TRANSFORM BOARD_ROOT PREPEND "--board-root=" OUTPUT_VARIABLE board_root_arg
 
 set(list_boards_commands
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/list_boards.py
-            ${arch_root_args} ${board_root_args}
+            ${arch_root_args} ${board_root_args} --arch-root=${ZEPHYR_BASE}
 )
 
 if(NOT BOARD_DIR)

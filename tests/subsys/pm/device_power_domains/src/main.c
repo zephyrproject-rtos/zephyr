@@ -11,9 +11,9 @@
 
 ZTEST(device_power_domain, test_demo)
 {
-	const struct device *reg_0 = DEVICE_DT_GET(DT_NODELABEL(test_reg_0));
-	const struct device *reg_1 = DEVICE_DT_GET(DT_NODELABEL(test_reg_1));
-	const struct device *reg_chained = DEVICE_DT_GET(DT_NODELABEL(test_reg_chained));
+	const struct device *const reg_0 = DEVICE_DT_GET(DT_NODELABEL(test_reg_0));
+	const struct device *const reg_1 = DEVICE_DT_GET(DT_NODELABEL(test_reg_1));
+	const struct device *const reg_chained = DEVICE_DT_GET(DT_NODELABEL(test_reg_chained));
 
 	/* Initial power state */
 	zassert_true(pm_device_is_powered(reg_0), "");

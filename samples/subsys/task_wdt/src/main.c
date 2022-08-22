@@ -37,6 +37,8 @@
 #define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_kinetis_wdog32)
 #elif DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_watchdog)
 #define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(microchip_xec_watchdog)
+#else
+#define WDT_NODE DT_INVALID_NODE
 #endif
 
 static void task_wdt_callback(int channel_id, void *user_data)
@@ -59,18 +61,12 @@ static void task_wdt_callback(int channel_id, void *user_data)
 void main(void)
 {
 	int ret;
-#ifdef WDT_NODE
-	const struct device *hw_wdt_dev = DEVICE_DT_GET(WDT_NODE);
-#else
-	const struct device *hw_wdt_dev = NULL;
-#endif
+	const struct device *const hw_wdt_dev = DEVICE_DT_GET_OR_NULL(WDT_NODE);
 
 	printk("Task watchdog sample application.\n");
 
 	if (!device_is_ready(hw_wdt_dev)) {
-		printk("Hardware watchdog %s is not ready; ignoring it.\n",
-		       hw_wdt_dev->name);
-		hw_wdt_dev = NULL;
+		printk("Hardware watchdog not ready; ignoring it.\n");
 	}
 
 	ret = task_wdt_init(hw_wdt_dev);

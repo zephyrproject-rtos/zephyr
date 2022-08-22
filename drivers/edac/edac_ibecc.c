@@ -385,7 +385,7 @@ static bool handle_nmi(void)
 
 bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf)
 {
-	const struct device *dev = DEVICE_DT_GET(DEVICE_NODE);
+	const struct device *const dev = DEVICE_DT_GET(DEVICE_NODE);
 	struct ibecc_data *data = dev->data;
 	struct ibecc_error error_data;
 	k_spinlock_key_t key;

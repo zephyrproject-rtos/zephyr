@@ -70,7 +70,7 @@ static void cmd_ieee_csma_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 {
 	ARG_UNUSED(h);
 
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
 	update_saved_cmdhandle(ch, (RF_CmdHandle *) &drv_data->saved_cmdhandle);
@@ -86,7 +86,7 @@ static void cmd_ieee_rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 {
 	ARG_UNUSED(h);
 
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
 	update_saved_cmdhandle(ch, (RF_CmdHandle *) &drv_data->saved_cmdhandle);

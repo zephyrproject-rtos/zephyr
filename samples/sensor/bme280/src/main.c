@@ -16,7 +16,7 @@
  */
 static const struct device *get_bme280_device(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ANY(bosch_bme280);
+	const struct device *const dev = DEVICE_DT_GET_ANY(bosch_bme280);
 
 	if (dev == NULL) {
 		/* No such node, or the node does not have status "okay". */

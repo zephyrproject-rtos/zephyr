@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(app);
 
 void main(void)
 {
-	const struct device *led_dev = DEVICE_DT_GET_ANY(ti_lp3943);
+	const struct device *const led_dev = DEVICE_DT_GET_ANY(ti_lp3943);
 	int i, ret;
 
 	if (!led_dev) {

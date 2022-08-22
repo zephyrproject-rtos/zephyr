@@ -98,6 +98,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 #else
 		*rate = CLOCK_GetFlexCommClkFreq(14);
 #endif
+		break;
 	case MCUX_HS_SPI1_CLK:
 		*rate = CLOCK_GetFlexCommClkFreq(16);
 		break;

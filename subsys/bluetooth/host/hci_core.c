@@ -140,9 +140,8 @@ struct event_handler {
 	.min_len = _min_len, \
 }
 
-static inline void handle_event(uint8_t event, struct net_buf *buf,
-				const struct event_handler *handlers,
-				size_t num_handlers)
+static int handle_event_common(uint8_t event, struct net_buf *buf,
+			       const struct event_handler *handlers, size_t num_handlers)
 {
 	size_t i;
 
@@ -156,15 +155,41 @@ static inline void handle_event(uint8_t event, struct net_buf *buf,
 		if (buf->len < handler->min_len) {
 			BT_ERR("Too small (%u bytes) event 0x%02x",
 			       buf->len, event);
-			return;
+			return -EINVAL;
 		}
 
 		handler->handler(buf);
-		return;
+		return 0;
 	}
 
-	BT_WARN("Unhandled event 0x%02x len %u: %s", event,
-		buf->len, bt_hex(buf->data, buf->len));
+	return -EOPNOTSUPP;
+}
+
+static void handle_event(uint8_t event, struct net_buf *buf, const struct event_handler *handlers,
+			 size_t num_handlers)
+{
+	int err;
+
+	err = handle_event_common(event, buf, handlers, num_handlers);
+	if (err == -EOPNOTSUPP) {
+		BT_WARN("Unhandled event 0x%02x len %u: %s", event, buf->len,
+			bt_hex(buf->data, buf->len));
+	}
+
+	/* Other possible errors are handled by handle_event_common function */
+}
+
+static void handle_vs_event(uint8_t event, struct net_buf *buf,
+			    const struct event_handler *handlers, size_t num_handlers)
+{
+	int err;
+
+	err = handle_event_common(event, buf, handlers, num_handlers);
+	if (err == -EOPNOTSUPP) {
+		BT_WARN("Unhandled vendor-specific event: %s", bt_hex(buf->data, buf->len));
+	}
+
+	/* Other possible errors are handled by handle_event_common function */
 }
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
@@ -2129,6 +2154,18 @@ int bt_hci_register_vnd_evt_cb(bt_hci_vnd_evt_cb_t cb)
 }
 #endif /* CONFIG_BT_HCI_VS_EVT_USER */
 
+static const struct event_handler vs_events[] = {
+#if defined(CONFIG_BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES)
+	EVENT_HANDLER(BT_HCI_EVT_VS_LE_CONNECTIONLESS_IQ_REPORT,
+		      bt_hci_le_vs_df_connectionless_iq_report,
+		      sizeof(struct bt_hci_evt_vs_le_connectionless_iq_report)),
+#endif /* CONFIG_BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES */
+#if defined(CONFIG_BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES)
+	EVENT_HANDLER(BT_HCI_EVT_VS_LE_CONNECTION_IQ_REPORT, bt_hci_le_vs_df_connection_iq_report,
+		      sizeof(struct bt_hci_evt_vs_le_connection_iq_report)),
+#endif /* CONFIG_BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES */
+};
+
 static void hci_vendor_event(struct net_buf *buf)
 {
 	bool handled = false;
@@ -2145,10 +2182,14 @@ static void hci_vendor_event(struct net_buf *buf)
 	}
 #endif /* CONFIG_BT_HCI_VS_EVT_USER */
 
-	if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT) && !handled) {
-		/* do nothing at present time */
-		BT_WARN("Unhandled vendor-specific event: %s",
-			bt_hex(buf->data, buf->len));
+	if (IS_ENABLED(CONFIG_BT_HCI_VS_EVT) && !handled) {
+		struct bt_hci_evt_vs *evt;
+
+		evt = net_buf_pull_mem(buf, sizeof(*evt));
+
+		BT_DBG("subevent 0x%02x", evt->subevent);
+
+		handle_vs_event(evt->subevent, buf, vs_events, ARRAY_SIZE(vs_events));
 	}
 }
 

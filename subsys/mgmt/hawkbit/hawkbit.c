@@ -213,13 +213,15 @@ static bool start_http_client(void)
 	int protocol = IPPROTO_TCP;
 #endif
 
+	(void)memset(&hints, 0, sizeof(hints));
+
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		hints.ai_family = AF_INET6;
+		hints.ai_socktype = SOCK_STREAM;
 	} else if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		hints.ai_family = AF_INET;
+		hints.ai_socktype = SOCK_STREAM;
 	}
-
-	hints.ai_socktype = SOCK_STREAM;
 
 	while (resolve_attempts--) {
 		ret = getaddrinfo(CONFIG_HAWKBIT_SERVER, CONFIG_HAWKBIT_PORT, &hints, &addr);

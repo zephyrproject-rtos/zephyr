@@ -63,13 +63,13 @@ static bool init_buttons(void)
 	} btn_spec[] = {
 		{
 			GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios),
-			DT_LABEL(DT_ALIAS(sw0)),
+			DT_PROP(DT_ALIAS(sw0), label),
 			"trigger a transfer",
 			sw0_handler
 		},
 		{
 			GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpios),
-			DT_LABEL(DT_ALIAS(sw1)),
+			DT_PROP(DT_ALIAS(sw1), label),
 			"switch the type of peripheral",
 			sw1_handler
 		},
@@ -336,7 +336,7 @@ void main(void)
 	static uint8_t tx_buffer[TRANSFER_LENGTH];
 	static uint8_t rx_buffer[sizeof(tx_buffer)];
 	uint8_t fill_value = 0;
-	const struct device *spi_dev = DEVICE_DT_GET(SPI_DEV_NODE);
+	const struct device *const spi_dev = DEVICE_DT_GET(SPI_DEV_NODE);
 
 	if (!device_is_ready(spi_dev)) {
 		printk("%s is not ready\n", spi_dev->name);

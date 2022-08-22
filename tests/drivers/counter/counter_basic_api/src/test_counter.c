@@ -27,7 +27,7 @@ struct counter_alarm_cfg alarm_cfg2;
 #define DEVS_FOR_DT_COMPAT(compat) \
 	DT_FOREACH_STATUS_OKAY(compat, DEVICE_DT_GET_AND_COMMA)
 
-static const struct device *devices[] = {
+static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_TIMER0
 	/* Nordic TIMER0 may be reserved for Bluetooth */
 	DEVICE_DT_GET(DT_NODELABEL(timer0)),
@@ -93,7 +93,7 @@ static const struct device *devices[] = {
 #endif
 };
 
-static const struct device *period_devs[] = {
+static const struct device *const period_devs[] = {
 #ifdef CONFIG_COUNTER_MCUX_RTC
 	DEVS_FOR_DT_COMPAT(nxp_kinetis_rtc)
 #endif

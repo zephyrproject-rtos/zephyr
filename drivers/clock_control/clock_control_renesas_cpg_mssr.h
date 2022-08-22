@@ -44,7 +44,6 @@ static const uint16_t srcr[] = {
 
 void rcar_cpg_write(uint32_t base_address, uint32_t reg, uint32_t val);
 
-int rcar_cpg_mstp_clock_endisable(uint32_t base_address, uint32_t bit,
-				  uint32_t reg, bool enable);
+int rcar_cpg_mstp_clock_endisable(uint32_t base_address, uint32_t module, bool enable);
 
 #endif /* ZEPHYR_DRIVERS_RENESAS_RENESAS_CPG_MSSR_H_ */

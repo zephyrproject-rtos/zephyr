@@ -211,7 +211,7 @@ static int run_channel_test(const struct device *lp503x_dev)
 
 void main(void)
 {
-	const struct device *lp503x_dev = DEVICE_DT_GET_ANY(ti_lp503x);
+	const struct device *const lp503x_dev = DEVICE_DT_GET_ANY(ti_lp503x);
 
 	int err;
 	uint8_t led;

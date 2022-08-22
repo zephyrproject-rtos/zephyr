@@ -63,33 +63,29 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
-static void rsi_changed_cb(const uint8_t *rsi)
-{
-	char rsi_str[13];
-
-	snprintk(rsi_str, 163, "%02x%02x%02x%02x%02x%02x",
-		 rsi[0], rsi[1], rsi[2], rsi[3], rsi[4], rsi[5]);
-
-	printk("PRSI: 0x%s\n", rsi_str);
-
-	memcpy(csis_rsi_addata, rsi, sizeof(csis_rsi_addata));
-
-	if (adv != NULL) {
-		int err;
-
-		err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
-		if (err) {
-			printk("Failed to set advertising data (err %d)\n", err);
-		}
-	}
-}
-
 #if defined(CONFIG_BT_PRIVACY) && defined(CONFIG_BT_CSIS)
 static bool adv_rpa_expired_cb(struct bt_le_ext_adv *adv)
 {
-	printk("%s", __func__);
+	char rsi_str[13];
+	int err;
 
-	/* TODO: Generate new RSI and update the advertisement data */
+	err = csip_generate_rsi(csis_rsi_addata);
+	if (err != 0) {
+		printk("Failed to generate RSI (err %d)\n", err);
+		return false;
+	}
+
+	snprintk(rsi_str, ARRAY_SIZE(rsi_str), "%02x%02x%02x%02x%02x%02x",
+		 csis_rsi_addata[0], csis_rsi_addata[1], csis_rsi_addata[2],
+		 csis_rsi_addata[3], csis_rsi_addata[4], csis_rsi_addata[5]);
+
+	printk("PRSI: 0x%s\n", rsi_str);
+
+	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err) {
+		printk("Failed to set advertising data (err %d)\n", err);
+		return false;
+	}
 
 	return true;
 }
@@ -176,9 +172,15 @@ void main(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_BINAURAL)) {
-		err = csip_set_member_init(rsi_changed_cb);
+		err = csip_set_member_init();
 		if (err != 0) {
 			printk("CSIP Set Member init failed (err %d)\n", err);
+			return;
+		}
+
+		err = csip_generate_rsi(csis_rsi_addata);
+		if (err != 0) {
+			printk("Failed to generate RSI (err %d)\n", err);
 			return;
 		}
 	}

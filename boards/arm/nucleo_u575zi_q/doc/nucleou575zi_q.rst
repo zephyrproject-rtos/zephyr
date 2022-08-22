@@ -121,6 +121,7 @@ They operate at a frequency of up to 160 MHz.
 
 - CRC calculation unit
 - Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
+- True Random Number Generator (RNG)
 
 - Graphic features
 
@@ -163,6 +164,8 @@ The Zephyr nucleo_u575zi_q board configuration supports the following hardware f
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
++-----------+------------+-------------------------------------+
+| RNG       | on-chip    | True Random number generator        |
 +-----------+------------+-------------------------------------+
 
 

@@ -9,7 +9,6 @@
 
 #define TEST_FREQ_HZ 24000000U
 #define W25Q128_JEDEC_ID 0x001840efU
-#define SPI_NODE DT_NODELABEL(spi0)
 
 #define TEST_BUF_SIZE 4096U
 #define MAX_TX_BUF 2
@@ -42,7 +41,7 @@ uint8_t buffer_tx_2[] = "abcdef\0";
 
 static uint8_t safbuf[TEST_BUF_SIZE] __aligned(4);
 static uint8_t safbuf2[TEST_BUF_SIZE] __aligned(4);
-static const struct device *spi_dev;
+static const struct device *const spi_dev = DEVICE_DT_GET(DT_NODELABEL(spi0));
 struct spi_buf_set tx_bufs, rx_bufs;
 struct spi_buf txb[MAX_TX_BUF], rxb;
 struct spi_config spi_cfg_single, spi_cfg_dual, spi_cfg_quad;
@@ -65,8 +64,6 @@ void test_spi_device(void)
 	spi_cfg_single.slave = 0;
 	spi_cfg_single.cs = NULL;
 
-	/* find spi device */
-	spi_dev = DEVICE_DT_GET(SPI_NODE);
 	zassert_true(device_is_ready(spi_dev), "SPI controller device is not ready");
 
 	/* read jedec id */

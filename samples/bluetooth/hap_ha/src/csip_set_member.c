@@ -32,7 +32,7 @@ static struct bt_csis_cb csis_cb = {
 	.sirk_read_req = sirk_read_req_cb,
 };
 
-int csip_set_member_init(void (*rsi_changed)(const uint8_t *rsi))
+int csip_set_member_init(void)
 {
 	struct bt_csis_register_param param = {
 		.set_size = 2,
@@ -42,7 +42,22 @@ int csip_set_member_init(void (*rsi_changed)(const uint8_t *rsi))
 		.cb = &csis_cb,
 	};
 
-	csis_cb.rsi_changed = rsi_changed;
-
 	return bt_cap_acceptor_register(&param, &csis);
+}
+
+int csip_generate_rsi(uint8_t *rsi)
+{
+	int err;
+
+	if (csis == NULL) {
+		return -ENODEV;
+	}
+
+	err = bt_csis_generate_rsi(csis, rsi);
+	if (err) {
+		printk("Failed to generate RSI (err %d)\n", err);
+		return err;
+	}
+
+	return 0;
 }

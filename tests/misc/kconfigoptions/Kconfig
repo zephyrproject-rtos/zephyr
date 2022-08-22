@@ -1,0 +1,19 @@
+# Copyright (c) 2022 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+DT_FLASH_CONTROLLER := $(dt_nodelabel_path,flashcontroller0)
+
+config FLASH_CONTROLLER_ADDRESS
+	int
+	default $(dt_node_array_prop_int,$(DT_FLASH_CONTROLLER),reg,0)
+
+config FLASH_CONTROLLER_SIZE
+	int
+	default $(dt_node_array_prop_int,$(DT_FLASH_CONTROLLER),reg,1)
+
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu

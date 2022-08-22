@@ -522,7 +522,7 @@ Documentation:
     - include/zephyr/drivers/can.h
     - include/zephyr/drivers/can/
     - include/zephyr/net/canbus.h
-    - include/zephyr/net/socket_can.h
+    - include/zephyr/net/socketcan.h
     - samples/drivers/can/
     - samples/modules/canopennode/
     - samples/net/sockets/can/
@@ -530,6 +530,7 @@ Documentation:
     - subsys/canbus/
     - subsys/net/l2/canbus/
     - tests/drivers/can/
+    - tests/net/socket/can/
     - tests/subsys/canbus/
   labels:
     - "area: CAN"
@@ -1762,6 +1763,10 @@ NXP Platforms:
   collaborators:
     - mmahadevan108
     - danieldegrasse
+    - DerekSnell
+    - yvanderv
+    - EmilioCBen
+    - decsny
   files:
     - boards/arm/mimx*/
     - boards/arm/frdm_k*/
@@ -2349,17 +2354,18 @@ West:
   labels:
     - manifest-libmetal
 
-"West project: liblc3codec":
+"West project: liblc3":
   status: maintained
   maintainers:
     - Casper-Bonde-Bose
+    - MariuszSkamra
   collaborators:
     - thalley
     - asbjornsabo
   files:
-    - modules/liblc3codec/
+    - modules/liblc3/
   labels:
-    - manifest-liblc3codec
+    - manifest-liblc3
 
 "West project: littlefs":
   status: odd fixes

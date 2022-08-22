@@ -3,8 +3,8 @@ zephyr_interface_library_named(mbedTLS)
 
 if(CONFIG_MBEDTLS_BUILTIN)
   target_compile_definitions(mbedTLS INTERFACE
-	  MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
-	)
+    MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
+  )
 
   target_include_directories(mbedTLS INTERFACE
     ${ZEPHYR_CURRENT_MODULE_DIR}/include
@@ -14,7 +14,8 @@ if(CONFIG_MBEDTLS_BUILTIN)
     # and if so remove this include path.
     ${ZEPHYR_CURRENT_MODULE_DIR}/library
     configs
-	)
+    include
+  )
 
   zephyr_library()
 
@@ -23,11 +24,16 @@ if(CONFIG_MBEDTLS_BUILTIN)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/*.c
     )
 
+  if(CONFIG_MBEDTLS_DEBUG_EXTRACT_BASENAME_AT_BUILDTIME)
+    zephyr_cc_option(-fmacro-prefix-map=${ZEPHYR_CURRENT_MODULE_DIR}/library/=)
+  endif()
+
   zephyr_library_sources(
     zephyr_init.c
     ${mbedtls_sources}
   )
 
+  zephyr_library_sources_ifdef(CONFIG_MBEDTLS_DEBUG debug.c)
   zephyr_library_sources_ifdef(CONFIG_MBEDTLS_SHELL shell.c)
 
   # mbedTLS v3.1.0 is having unused variables and functions in /library/ssl_msg.c
@@ -57,8 +63,8 @@ elseif (CONFIG_MBEDTLS_LIBRARY)
   # therefore susceptible to bit rot
 
   target_include_directories(mbedTLS INTERFACE
-	${CONFIG_MBEDTLS_INSTALL_PATH}
-	)
+    ${CONFIG_MBEDTLS_INSTALL_PATH}
+  )
 
   zephyr_link_libraries(
     mbedtls_external

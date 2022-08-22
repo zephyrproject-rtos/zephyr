@@ -29,20 +29,8 @@
 #endif
 
 #ifndef KERNEL
-#define CONFIG_STDOUT_CONSOLE 1
-#define CONFIG_ZTEST_ASSERT_VERBOSE 1
-#define CONFIG_ZTEST_MOCKING
-#define CONFIG_NUM_COOP_PRIORITIES 16
-#define CONFIG_COOP_ENABLED 1
-#define CONFIG_PREEMPT_ENABLED 1
-#define CONFIG_MP_NUM_CPUS 1
-#define CONFIG_SYS_CLOCK_TICKS_PER_SEC 100
-#define CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC 10000000
-#define CONFIG_SYS_CLOCK_MAX_TIMEOUT_DAYS 365
 #define ARCH_STACK_PTR_ALIGN 8
 /* FIXME: Properly integrate with Zephyr's arch specific code */
-#define CONFIG_X86 1
-#define CONFIG_PRINTK 1
 #ifdef __cplusplus
 extern "C" {
 #endif

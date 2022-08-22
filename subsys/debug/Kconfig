@@ -120,6 +120,18 @@ config ASAN
 	  This behavior can be changes by adding leak_check_at_exit=1 to the
 	  environment variable ASAN_OPTIONS.
 
+config ASAN_RECOVER
+	bool "Continue after sanitizer errors"
+	depends on ASAN
+	default y
+	help
+	  The default behavior of compiler sanitizers is to exit after
+	  the first error.  Set this to y to enable the code to
+	  continue, which can be useful if a code base has known
+	  unsuppressed errors.  You will also need to set
+	  "halt_on_error=0" in your ASAN_OPTIONS environment variable
+	  at runtime.
+
 config ASAN_NOP_DLCLOSE
 	bool "Override host OS dlclose() with a NOP"
 	default y if HAS_SDL
@@ -141,6 +153,18 @@ config UBSAN
 	  This is currently only supported by boards based on the posix
 	  architecture, and requires a recent-ish compiler with the
 	  ``-fsanitize=undefined`` command line option.
+
+config MSAN
+	bool "Build with memory sanitizer"
+	depends on ARCH_POSIX
+	help
+	  Builds Zephyr with the LLVM MemorySanitizer enabled.  Works
+	  only on the posix architecture currently, and only with host
+	  compilers recent enough to support the feature (currently
+	  clang on x86_64 only).  It cannot be used in tandem with
+	  CONFIG_ASAN due to clang limitations.  You must choose one
+	  or the other (but can combine it with CONFIG_UBSAN if you
+	  like)
 
 config STACK_USAGE
 	bool "Generate stack usage information"

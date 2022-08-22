@@ -48,7 +48,7 @@
 		gpio2: gpio@42008000 {
 			compatible = "nxp,imx-gpio";
 			reg = <0x42008000 0x4000>;
-			interrupts = <102 0>, <103 0>;
+			interrupts = <99 0>;
 			gpio-controller;
 			#gpio-cells = <2>;
 		};

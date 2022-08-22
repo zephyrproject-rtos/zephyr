@@ -439,7 +439,7 @@ static const struct ptp_clock_driver_api api = {
 
 static int ptp_e1000_init(const struct device *port)
 {
-	const struct device *eth_dev = DEVICE_DT_INST_GET(0);
+	const struct device *const eth_dev = DEVICE_DT_INST_GET(0);
 	struct e1000_dev *context = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
 

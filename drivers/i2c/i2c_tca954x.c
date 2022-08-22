@@ -93,7 +93,7 @@ static int tca954x_transfer(const struct device *dev,
 		goto end_trans;
 	}
 
-	res = i2c_transfer_dt(&config->i2c, msgs, num_msgs);
+	res = i2c_transfer(config->i2c.bus, msgs, num_msgs, addr);
 
 end_trans:
 	k_mutex_unlock(&data->lock);

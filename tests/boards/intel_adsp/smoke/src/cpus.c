@@ -18,7 +18,7 @@ static ALWAYS_INLINE void delay_relax(void)
 	}
 }
 
-void run_on_cpu_threadfn(void *a, void *b, void *c)
+static void run_on_cpu_threadfn(void *a, void *b, void *c)
 {
 	void (*fn)(void *) = a;
 	void *arg = b;
@@ -34,7 +34,7 @@ static volatile bool run_on_flags[CONFIG_MP_NUM_CPUS];
 
 static uint32_t clk_ratios[CONFIG_MP_NUM_CPUS];
 
-void run_on_cpu(int cpu, void (*fn)(void *), void *arg, bool wait)
+static void run_on_cpu(int cpu, void (*fn)(void *), void *arg, bool wait)
 {
 	__ASSERT_NO_MSG(cpu < CONFIG_MP_NUM_CPUS);
 
@@ -132,7 +132,7 @@ static void core_smoke(void *arg)
 	printk(" CPI = %d.%2.2d\n", dt / insns, ((1000 * dt) / insns) % 1000);
 }
 
-void test_cpu_behavior(void)
+ZTEST(intel_adsp_boot, test_4th_cpu_behavior)
 {
 	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
 		printk("Per-CPU smoke test %d...\n", i);
@@ -140,12 +140,12 @@ void test_cpu_behavior(void)
 	}
 }
 
-void alive_fn(void *arg)
+static void alive_fn(void *arg)
 {
 	*(bool *)arg = true;
 }
 
-void halt_and_restart(int cpu)
+static void halt_and_restart(int cpu)
 {
 	printk("halt/restart core %d...\n", cpu);
 	static bool alive_flag;
@@ -187,7 +187,7 @@ void halt_and_restart(int cpu)
 	k_thread_abort(&run_on_threads[cpu]);
 }
 
-void test_cpu_halt(void)
+ZTEST(intel_adsp_boot, test_2nd_cpu_halt)
 {
 	/* Obviously this only works on CPU0.  This sequence is a
 	 * little whiteboxey: officially the cpu_mask API isn't

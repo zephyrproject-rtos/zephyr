@@ -1,11 +1,5 @@
 .. _bin-blobs:
 
-.. warning::
-
-   This page documents Zephyr's support for binary blobs. The tooling and
-   infrastructure for this purpose are still incomplete, and so this page may
-   refer to future additions.
-
 Binary Blobs
 ************
 
@@ -42,22 +36,21 @@ Blobs must be hosted on the Internet and managed by third-party infrastructure.
 Two potential examples are Git repositories and web servers managed by
 individual hardware vendors.
 
-The Zephyr Project will not host binary blobs in its Git repositories or
+The Zephyr Project does not host binary blobs in its Git repositories or
 anywhere else.
 
 Fetching blobs
 ==============
 
-Blobs will be fetched from official third-party sources via a west extension
-command which users will be able to run to this effect. The extension command
-implementation will be hosted in the main zephyr repository. This is required to
-give the project overall control over the mechanism used to fetch the blobs.
+Blobs are fetched from official third-party sources by the :ref:`west blobs
+command <west-blobs>` command.
 
-The blobs themselves must be specified in the :file:`module.yml` files included
-in separate Zephyr :ref:`module repositories <modules>` maintained by their
-respective vendors.  This means that in order to submit a binary blob to the
-upstream Zephyr distribution, a module repository must exist first or be created
-as part of the submission process.
+The blobs themselves must be specified in the :ref:`module.yml
+<modules-bin-blobs>` files included in separate Zephyr :ref:`module repositories
+<modules>` maintained by their respective vendors.  This means that in order to
+include a reference to a binary blob to the upstream Zephyr distribution, a
+module repository must exist first or be created as part of the submission
+process.
 
 Each blob which may be fetched must be individually identified in the
 corresponding :file:`module.yml` file. A specification for a blob must contain:
@@ -66,19 +59,21 @@ corresponding :file:`module.yml` file. A specification for a blob must contain:
 - Version information
 - A reference to vendor-provided documentation
 - The blob’s :ref:`type <bin-blobs-types>`, which must be one of the allowed types
-- A checksum for the blob, which the west extension checks after downloading.
+- A checksum for the blob, which ``west blobs`` checks after downloading.
   This is required for reproducibility and to allow bisecting issues as blobs
   change using Git and west
 - License text applicable to the blob or a reference to such text, in SPDX
   format
 
-The west extension used to fetch blobs will accept command line arguments that
-will allow the user to select the module or modules to fetch blobs from, as well
-as obtaining information and metadata on available blobs. This is required for
-user control and a uniform user experience regardless of the blob vendor.
+See the :ref:`corresponding section <modules-bin-blobs>` for a more formal
+definition of the fields.
 
-The west extension will only fetch and download the binary blobs themselves. Any
-accompanying code must be present in the corresponding module repository.
+The :ref:`west blobs <west-blobs>` command can be used to list metadata of
+available blobs and to fetch blobs from user-selected modules.
+
+The ``west blobs`` command only fetches and stores the binary blobs themselves.
+Any accompanying code, including interface header files for the blobs, must be
+present in the corresponding module repository.
 
 Tainting
 ========

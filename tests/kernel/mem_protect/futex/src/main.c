@@ -49,18 +49,18 @@ struct k_thread multiple_wake_tid[TOTAL_THREADS_WAITING];
 
 /******************************************************************************/
 /* Helper functions */
-void futex_isr_wake(const void *futex)
+static void futex_isr_wake(const void *futex)
 {
 	k_futex_wake((struct k_futex *)futex, false);
 }
 
-void futex_wake_from_isr(struct k_futex *futex)
+static void futex_wake_from_isr(struct k_futex *futex)
 {
 	irq_offload(futex_isr_wake, (const void *)futex);
 }
 
 /* test futex wait, no futex wake */
-void futex_wait_task(void *p1, void *p2, void *p3)
+static void futex_wait_task(void *p1, void *p2, void *p3)
 {
 	int32_t ret_value;
 	k_ticks_t time_val = *(int *)p1;
@@ -91,7 +91,7 @@ void futex_wait_task(void *p1, void *p2, void *p3)
 	}
 }
 
-void futex_wake_task(void *p1, void *p2, void *p3)
+static void futex_wake_task(void *p1, void *p2, void *p3)
 {
 	int32_t ret_value;
 	int woken_num = *(int *)p1;
@@ -102,7 +102,7 @@ void futex_wake_task(void *p1, void *p2, void *p3)
 		"k_futex_wake failed when it shouldn't have");
 }
 
-void futex_wait_wake_task(void *p1, void *p2, void *p3)
+static void futex_wait_wake_task(void *p1, void *p2, void *p3)
 {
 	int32_t ret_value;
 	int time_val = *(int *)p1;
@@ -130,7 +130,7 @@ void futex_wait_wake_task(void *p1, void *p2, void *p3)
 	atomic_sub(&simple_futex.val, 1);
 }
 
-void futex_multiple_wake_task(void *p1, void *p2, void *p3)
+static void futex_multiple_wake_task(void *p1, void *p2, void *p3)
 {
 	int32_t ret_value;
 	int woken_num = *(int *)p1;
@@ -144,7 +144,7 @@ void futex_multiple_wake_task(void *p1, void *p2, void *p3)
 		"k_futex_wake failed when it shouldn't have");
 }
 
-void futex_multiple_wait_wake_task(void *p1, void *p2, void *p3)
+static void futex_multiple_wait_wake_task(void *p1, void *p2, void *p3)
 {
 	int32_t ret_value;
 	int time_val = *(int *)p1;
@@ -168,7 +168,7 @@ void futex_multiple_wait_wake_task(void *p1, void *p2, void *p3)
 /**
  * @brief Test k_futex_wait() forever
  */
-void test_futex_wait_forever(void)
+ZTEST(futex, test_futex_wait_forever)
 {
 	timeout = K_TICKS_FOREVER;
 
@@ -188,7 +188,7 @@ void test_futex_wait_forever(void)
 	k_thread_abort(&futex_tid);
 }
 
-void test_futex_wait_timeout(void)
+ZTEST(futex, test_futex_wait_timeout)
 {
 	timeout = k_ms_to_ticks_ceil32(50);
 
@@ -208,7 +208,7 @@ void test_futex_wait_timeout(void)
 	k_thread_abort(&futex_tid);
 }
 
-void test_futex_wait_nowait(void)
+ZTEST(futex, test_futex_wait_nowait)
 {
 	timeout = 0;
 
@@ -230,7 +230,7 @@ void test_futex_wait_nowait(void)
 /**
  * @brief Test k_futex_wait() and k_futex_wake()
  */
-void test_futex_wait_forever_wake(void)
+ZTEST(futex, test_futex_wait_forever_wake)
 {
 	woken = 1;
 	timeout = K_TICKS_FOREVER;
@@ -262,7 +262,7 @@ void test_futex_wait_forever_wake(void)
 	k_thread_abort(&futex_tid);
 }
 
-void test_futex_wait_timeout_wake(void)
+ZTEST(futex, test_futex_wait_timeout_wake)
 {
 	woken = 1;
 	timeout = k_ms_to_ticks_ceil32(100);
@@ -295,7 +295,7 @@ void test_futex_wait_timeout_wake(void)
 	k_thread_abort(&futex_tid);
 }
 
-void test_futex_wait_nowait_wake(void)
+ZTEST(futex, test_futex_wait_nowait_wake)
 {
 	woken = 0;
 	timeout = 0;
@@ -322,7 +322,7 @@ void test_futex_wait_nowait_wake(void)
 	k_thread_abort(&futex_tid);
 }
 
-void test_futex_wait_forever_wake_from_isr(void)
+ZTEST(futex, test_futex_wait_forever_wake_from_isr)
 {
 	timeout = K_TICKS_FOREVER;
 
@@ -347,7 +347,7 @@ void test_futex_wait_forever_wake_from_isr(void)
 	k_thread_abort(&futex_tid);
 }
 
-void test_futex_multiple_threads_wait_wake(void)
+ZTEST(futex, test_futex_multiple_threads_wait_wake)
 {
 	timeout = K_TICKS_FOREVER;
 	woken = TOTAL_THREADS_WAITING;
@@ -382,7 +382,7 @@ void test_futex_multiple_threads_wait_wake(void)
 	}
 }
 
-void test_multiple_futex_wait_wake(void)
+ZTEST(futex, test_multiple_futex_wait_wake)
 {
 	woken = 1;
 	timeout = K_TICKS_FOREVER;
@@ -420,7 +420,7 @@ void test_multiple_futex_wait_wake(void)
 	}
 }
 
-void test_user_futex_bad(void)
+ZTEST_USER(futex, test_user_futex_bad)
 {
 	int ret;
 
@@ -452,7 +452,7 @@ void test_user_futex_bad(void)
 	zassert_equal(ret, -ETIMEDOUT, "didn't time out");
 }
 
-void futex_wait_wake(void *p1, void *p2, void *p3)
+static void futex_wait_wake(void *p1, void *p2, void *p3)
 {
 	int32_t ret_value;
 
@@ -470,7 +470,7 @@ void futex_wait_wake(void *p1, void *p2, void *p3)
 	zassert_equal(ret_value, 1, NULL);
 }
 
-void futex_wake(void *p1, void *p2, void *p3)
+static void futex_wake(void *p1, void *p2, void *p3)
 {
 	int32_t atomic_ret_val;
 	int32_t ret_value;
@@ -504,7 +504,7 @@ void futex_wake(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_futex_tests
  */
-void test_futex_locate_access(void)
+ZTEST_USER(futex, test_futex_locate_access)
 {
 
 	atomic_set(&simple_futex.val, 13);
@@ -525,31 +525,21 @@ void test_futex_locate_access(void)
 	 * and futex_wait_wake_task to execute
 	 */
 	k_yield();
+
+	k_thread_abort(&futex_tid);
+	k_thread_abort(&futex_wake_tid);
 }
 
 /* ztest main entry*/
-void test_main(void)
+void *futex_setup(void)
 {
 	k_thread_access_grant(k_current_get(),
 					&futex_tid, &stack_1, &futex_wake_tid, &futex_wake_stack,
 					&simple_futex);
-
-	ztest_test_suite(test_futex,
-			 ztest_user_unit_test(test_user_futex_bad),
-			 ztest_unit_test(test_futex_wait_forever_wake),
-			 ztest_unit_test(test_futex_wait_timeout_wake),
-			 ztest_unit_test(test_futex_wait_nowait_wake),
-			 ztest_unit_test(test_futex_wait_forever_wake_from_isr),
-			 ztest_unit_test(test_futex_multiple_threads_wait_wake),
-			 ztest_unit_test(test_multiple_futex_wait_wake),
-			 ztest_unit_test(test_futex_wait_forever),
-			 ztest_unit_test(test_futex_wait_timeout),
-			 ztest_unit_test(test_futex_wait_nowait),
-			 ztest_user_unit_test(test_futex_locate_access)
-			 );
-	ztest_run_test_suite(test_futex);
+	return NULL;
 }
 
+ZTEST_SUITE(futex, NULL, futex_setup, NULL, NULL, NULL);
 /**
  * @}
  */

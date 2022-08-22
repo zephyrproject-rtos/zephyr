@@ -14,13 +14,13 @@ env:
 jobs:
   track-issues:
     name: "Collect Issue Stats"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
 
     steps:
     - name: Download configuration file
       run: |
-        wget -q https://raw.githubusercontent.com/$GITHUB_REPOSITORY/master/.github/workflows/issues-report-config.json
+        wget -q https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/.github/workflows/issues-report-config.json
 
     - name: install-packages
       run: |
@@ -35,7 +35,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: upload-stats
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@v3
       continue-on-error: True
       with:
         name: ${{ env.OUTPUT_FILE_NAME }}

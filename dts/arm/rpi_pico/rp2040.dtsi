@@ -95,6 +95,30 @@
 			status = "disabled";
 		};
 
+		spi0: spi@4003c000 {
+			compatible = "raspberrypi,pico-spi", "arm,pl022";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4003c000 DT_SIZE_K(4)>;
+			clocks = <&peripheral_clk>;
+			resets = <&reset RPI_PICO_RESETS_RESET_SPI0>;
+			interrupts = <18 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "spi0";
+			status = "disabled";
+		};
+
+		spi1: spi@40040000 {
+			compatible = "raspberrypi,pico-spi", "arm,pl022";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40040000 DT_SIZE_K(4)>;
+			resets = <&reset RPI_PICO_RESETS_RESET_SPI1>;
+			clocks = <&peripheral_clk>;
+			interrupts = <19 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "spi1";
+			status = "disabled";
+		};
+
 		i2c0: i2c@40044000 {
 			compatible = "snps,designware-i2c";
 			#address-cells = <1>;

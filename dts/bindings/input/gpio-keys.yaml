@@ -1,0 +1,18 @@
+# Copyright (c) 2018, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO KEYS parent node
+
+compatible: "gpio-keys"
+
+include: base.yaml
+
+child-binding:
+    description: GPIO KEYS child node
+    properties:
+       gpios:
+          type: phandle-array
+          required: true
+       label:
+          type: string
+          description: Descriptive name of the key

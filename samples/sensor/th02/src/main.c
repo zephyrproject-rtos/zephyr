@@ -25,8 +25,8 @@ static struct channel_info info[] = {
 
 void main(void)
 {
-	const struct device *glcd = DEVICE_DT_GET(DT_NODELABEL(glcd));
-	const struct device *th02 = DEVICE_DT_GET_ONE(hoperf_th02);
+	const struct device *const glcd = DEVICE_DT_GET(DT_NODELABEL(glcd));
+	const struct device *const th02 = DEVICE_DT_GET_ONE(hoperf_th02);
 	struct sensor_value val[ARRAY_SIZE(info)];
 	unsigned int i;
 	int rc;

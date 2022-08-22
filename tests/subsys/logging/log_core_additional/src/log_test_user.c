@@ -22,7 +22,8 @@ LOG_MODULE_REGISTER(user);
 /* Interfaces tested in these cases have been tested in kernel space.
  * Test cases in this file run in user space to improve test coverage
  */
-void test_log_from_user(void)
+#ifdef CONFIG_USERSPACE
+ZTEST_USER(test_log_core_additional, test_log_from_user)
 {
 	uint32_t cnt0, cnt1;
 	int d = 0;
@@ -37,7 +38,7 @@ void test_log_from_user(void)
 }
 
 /* test log_hexdump_from_user() from user space */
-void test_log_hexdump_from_user(void)
+ZTEST_USER(test_log_core_additional, test_log_hexdump_from_user)
 {
 	int32_t data = 128;
 
@@ -56,7 +57,7 @@ static void call_log_generic(uint32_t source_id, const char *fmt, ...)
 }
 
 /* test log_generic() from user space */
-void test_log_generic_user(void)
+ZTEST_USER(test_log_core_additional, test_log_generic_user)
 {
 	uint32_t source_id = 0;
 
@@ -66,13 +67,13 @@ void test_log_generic_user(void)
 }
 
 /* test log_filter_set from user space */
-void test_log_filter_set(void)
+ZTEST_USER(test_log_core_additional, test_log_filter_set)
 {
 	log_filter_set(NULL, CONFIG_LOG_DOMAIN_ID, 0, LOG_LEVEL_WRN);
 }
 
 /* test log_panic() from user space */
-void test_log_panic(void)
+ZTEST_USER(test_log_core_additional, test_log_panic)
 {
 	int d = 100;
 
@@ -81,3 +82,5 @@ void test_log_panic(void)
 
 	log_panic();
 }
+
+#endif /** CONFIG_USERSPACE **/

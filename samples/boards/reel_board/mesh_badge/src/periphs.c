@@ -12,7 +12,7 @@
 
 #include <zephyr/bluetooth/mesh.h>
 
-static const struct device *dev_info[] = {
+static const struct device *const dev_info[] = {
 	DEVICE_DT_GET_ONE(ti_hdc1010),
 	DEVICE_DT_GET_ONE(nxp_mma8652fc),
 	DEVICE_DT_GET_ONE(avago_apds9960),

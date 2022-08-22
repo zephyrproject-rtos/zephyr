@@ -25,7 +25,7 @@
  * @}
  */
 
-const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 
 const struct isotp_fc_opts fc_opts = {
 	.bs = 8,

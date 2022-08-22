@@ -57,7 +57,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: bb4e7104132bdc22c7cc7e20057434c2979e6706
+      revision: 1d237f2e2f262751975b6da6e03af569b2b49b2b
       path: modules/hal/atmel
       groups:
         - hal
@@ -93,7 +93,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 5a065f9d20557eb6f22c69f3de576600bc1b6ac1
+      revision: 0c54992ad4fe53b1edfc35ea24b6f343e38df2ca
       path: modules/hal/nxp
       groups:
         - hal
@@ -149,9 +149,9 @@ manifest:
       path: modules/hal/libmetal
       groups:
         - hal
-    - name: liblc3codec
-      revision: 3951cf1b71ff3be086c9b9b595e473e12301337c
-      path: modules/lib/liblc3codec
+    - name: liblc3
+      revision: 448f3de31f49a838988a162ef1e23a89ddf2d2ed
+      path: modules/lib/liblc3
     - name: littlefs
       path: modules/fs/littlefs
       groups:
@@ -172,13 +172,13 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 6e1a577b12026209988fcc76ae080cdc86b0d1d3
+      revision: 21e56a1bd033af263e808940779a1adaf4d5465e
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
       groups:
         - debug
-      revision: a5163c1800a5243f8b05d84c942da008df4cb666
+      revision: 0d521d8055f3b2b4842f728b0365d3f0ece9c37f
     - name: nanopb
       revision: dc4deed54fd4c7e1935e3b6387eedf21bb45dc38
       path: modules/lib/nanopb
@@ -225,7 +225,7 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      revision: f13209f1883232cbcb9f0c31fb4c63e7c242df0d
+      revision: 4c984817d861512edaeca27b83308e9b9915a98a
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

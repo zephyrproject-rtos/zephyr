@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(hda_test, LOG_LEVEL_DBG);
 
 #define IPC_TIMEOUT K_MSEC(1500)
 
-void hda_log_hook(uint32_t written)
+static void hda_log_hook(uint32_t written)
 {
 	/* We *must* send this, but we may be in a timer ISR, so we are
 	 * forced into a retry loop without timeouts and such.
@@ -42,7 +42,7 @@ void hda_log_hook(uint32_t written)
 }
 
 
-void test_hda_logger(void)
+ZTEST(intel_adsp_hda_log, test_hda_logger)
 {
 	const struct log_backend *hda_log_backend = log_backend_get(0);
 
@@ -68,3 +68,5 @@ void test_hda_logger(void)
 
 	printk("Done\n");
 }
+
+ZTEST_SUITE(intel_adsp_hda_log, NULL, NULL, NULL, NULL, NULL);

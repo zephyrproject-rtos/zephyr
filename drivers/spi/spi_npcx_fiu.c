@@ -142,7 +142,7 @@ int spi_npcx_fiu_release(const struct device *dev,
 static int spi_npcx_fiu_init(const struct device *dev)
 {
 	const struct npcx_spi_fiu_config *const config = dev->config;
-	const struct device *clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
+	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int ret;
 
 	if (!device_is_ready(clk_dev)) {

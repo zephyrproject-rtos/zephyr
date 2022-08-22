@@ -118,3 +118,7 @@ zephyr_udc0: &usbotg_hs {
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&rng {
+	status = "okay";
+};

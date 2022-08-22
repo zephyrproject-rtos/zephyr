@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2022, Nordic Semiconductor ASA
+
+config BT_CTLR_PHY
+	prompt "Bluetooth 5.0 phy"
+	help
+	  This is generally a hidden symbol but for unit testing a prompt is
+	  defined to allow controlling this setting in the build.
+
+config BT_CTLR_PHY_CODED
+	bool "Coded PHY Support"
+	depends on BT_CTLR_PHY
+	help
+	  This is symbol generally has more dependencies but to allow for easy
+	  unit testing of this source module the Kconfig setting allows to strip
+	  extra dependencies.
+
+source "Kconfig.zephyr"

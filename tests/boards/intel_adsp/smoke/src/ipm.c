@@ -74,7 +74,7 @@ static void msg_transact(bool do_wait)
  * passed as data (and, on cAVS 1.8+ only, the first word of the
  * message buffer passed as ext_data).
  */
-void test_ipm_cavs_host(void)
+ZTEST(intel_adsp, test_ipm_cavs_host)
 {
 	/* Restore IPM driver state (we've been mucking with cavs_ipc tests) */
 	cavs_ipc_set_message_handler(CAVS_HOST_DEV, ipm_handler, (void *)IPM_DEV);

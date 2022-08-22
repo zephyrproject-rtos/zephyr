@@ -130,7 +130,7 @@ static void test_trigger_mode(const struct device *dev)
 
 void main(void)
 {
-	const struct device *vcnl = DEVICE_DT_GET_ONE(vishay_vcnl4040);
+	const struct device *const vcnl = DEVICE_DT_GET_ONE(vishay_vcnl4040);
 
 	if (!device_is_ready(vcnl)) {
 		printk("sensor: device not ready.\n");

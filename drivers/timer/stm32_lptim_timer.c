@@ -42,7 +42,7 @@ static const struct stm32_pclken lptim_clk[] = {
 static const struct stm32_pclken lptim_clk[] = STM32_DT_INST_CLOCKS(0);
 #endif
 
-static const struct device *clk_ctrl = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+static const struct device *const clk_ctrl = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 /*
  * Assumptions and limitations:

@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(net_otPlat_entropy, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #error OpenThread requires an entropy source for a TRNG
 #endif
 
-static const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
+static const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 
 otError otPlatEntropyGet(uint8_t *aOutput, uint16_t aOutputLength)
 {

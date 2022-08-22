@@ -20,7 +20,7 @@ void w1_search_callback(struct w1_rom rom, void *user_data)
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(w1));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(w1));
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Device not ready");

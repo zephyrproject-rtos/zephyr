@@ -49,6 +49,8 @@
  * _IDX_<i>: logical index into property
  * _IDX_<i>_EXISTS: logical index into property is defined
  * _IDX_<i>_PH: phandle array's phandle by index (or phandle, phandles)
+ * _IDX_<i>_STRING_TOKEN: string array element value as a token
+ * _IDX_<i>_STRING_UPPER_TOKEN: string array element value as a uppercased token
  * _IDX_<i>_VAL_<val>: phandle array's specifier value by index
  * _IDX_<i>_VAL_<val>_EXISTS: cell value exists, by index
  * _LEN: property logical length
@@ -545,7 +547,7 @@
  * A property's type is usually defined by its binding. In some
  * special cases, it has an assumed type defined by the devicetree
  * specification even when no binding is available: "compatible" has
- * type string-array, "status" and "label" have type string, and
+ * type string-array, "status" has type string, and
  * "interrupt-controller" has type boolean.
  *
  * For other properties or properties with unknown type due to a
@@ -704,6 +706,7 @@
 		    (DT_PROP(node_id, prop)), (default_value))
 
 /**
+ * @deprecated Use DT_PROP(node_id, label)
  * @brief Equivalent to DT_PROP(node_id, label)
  *
  * This is a convenience for the Zephyr device API, which uses label
@@ -711,7 +714,7 @@
  * @param node_id node identifier
  * @return node's label property value
  */
-#define DT_LABEL(node_id) DT_PROP(node_id, label)
+#define DT_LABEL(node_id) DT_PROP(node_id, label) __DEPRECATED_MACRO
 
 /**
  * @brief Get a property value's index into its enumeration values
@@ -910,6 +913,94 @@
 #define DT_STRING_UPPER_TOKEN_OR(node_id, prop, default_value) \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
 		(DT_STRING_UPPER_TOKEN(node_id, prop)), (default_value))
+
+/**
+ * @brief Get an element out of a string-array property as a token.
+ *
+ * This removes "the quotes" from an element in the array, and converts
+ * non-alphanumeric characters to underscores. That can be useful, for example,
+ * when programmatically using the value to form a C variable or code.
+ *
+ * DT_STRING_TOKEN_BY_IDX() can only be used for properties with
+ * string-array type.
+ *
+ * It is an error to use DT_STRING_TOKEN_BY_IDX() in other circumstances.
+ *
+ * Example devicetree fragment:
+ *
+ *     n1: node-1 {
+ *             prop = "f1", "F2";
+ *     };
+ *     n2: node-2 {
+ *             prop = "123 foo", "456 FOO";
+ *     };
+ *
+ * Example bindings fragment:
+ *
+ *     properties:
+ *       prop:
+ *         type: string-array
+ *
+ * Example usage:
+ *
+ *     DT_STRING_TOKEN_BY_IDX(DT_NODELABEL(n1), prop, 0) // f1
+ *     DT_STRING_TOKEN_BY_IDX(DT_NODELABEL(n1), prop, 1) // F2
+ *     DT_STRING_TOKEN_BY_IDX(DT_NODELABEL(n2), prop, 0) // 123_foo
+ *     DT_STRING_TOKEN_BY_IDX(DT_NODELABEL(n2), prop, 1) // 456_FOO
+ *
+ * For more information, see @ref DT_STRING_TOKEN.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param idx the index to get
+ * @return the element in @p prop at index @p idx as a token
+ */
+#define DT_STRING_TOKEN_BY_IDX(node_id, prop, idx) \
+	DT_CAT6(node_id, _P_, prop, _IDX_, idx, _STRING_TOKEN)
+
+/**
+ * @brief Like DT_STRING_TOKEN_BY_IDX(), but uppercased.
+ *
+ * This removes "the quotes" and capitalizes an element in the array, and
+ * converts non-alphanumeric characters to underscores. That can be useful, for
+ * example, when programmatically using the value to form a C variable or code.
+ *
+ * DT_STRING_UPPER_TOKEN_BY_IDX() can only be used for properties with
+ * string-array type.
+ *
+ * It is an error to use DT_STRING_UPPER_TOKEN_BY_IDX() in other circumstances.
+ *
+ * Example devicetree fragment:
+ *
+ *     n1: node-1 {
+ *             prop = "f1", "F2";
+ *     };
+ *     n2: node-2 {
+ *             prop = "123 foo", "456 FOO";
+ *     };
+ *
+ * Example bindings fragment:
+ *
+ *     properties:
+ *       prop:
+ *         type: string-array
+ *
+ * Example usage:
+ *
+ *     DT_STRING_UPPER_TOKEN_BY_IDX(DT_NODELABEL(n1), prop, 0) // F1
+ *     DT_STRING_UPPER_TOKEN_BY_IDX(DT_NODELABEL(n1), prop, 1) // F2
+ *     DT_STRING_UPPER_TOKEN_BY_IDX(DT_NODELABEL(n2), prop, 0) // 123_FOO
+ *     DT_STRING_UPPER_TOKEN_BY_IDX(DT_NODELABEL(n2), prop, 1) // 456_FOO
+ *
+ * For more information, see @ref DT_STRING_UPPER_TOKEN.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param idx the index to get
+ * @return the element in @p prop at index @p idx as an uppercased token
+ */
+#define DT_STRING_UPPER_TOKEN_BY_IDX(node_id, prop, idx) \
+	DT_CAT6(node_id, _P_, prop, _IDX_, idx, _STRING_UPPER_TOKEN)
 
 /*
  * phandle properties
@@ -1168,11 +1259,11 @@
  * Example devicetree fragment:
  *
  *     adc1: adc@... {
- *             label = "ADC_1";
+ *             foobar = "ADC_1";
  *     };
  *
  *     adc2: adc@... {
- *             label = "ADC_2";
+ *             foobar = "ADC_2";
  *     };
  *
  *     n: node {
@@ -1189,8 +1280,8 @@
  *
  *     #define NODE DT_NODELABEL(n)
  *
- *     DT_LABEL(DT_PHANDLE_BY_NAME(NODE, io_channels, sensor))  // "ADC_1"
- *     DT_LABEL(DT_PHANDLE_BY_NAME(NODE, io_channels, bandgap)) // "ADC_2"
+ *     DT_PROP(DT_PHANDLE_BY_NAME(NODE, io_channels, sensor), foobar)  // "ADC_1"
+ *     DT_PROP(DT_PHANDLE_BY_NAME(NODE, io_channels, bandgap), foobar) // "ADC_2"
  *
  * Notice how devicetree properties and names are lowercased, and
  * non-alphanumeric characters are converted to underscores.
@@ -1926,24 +2017,24 @@
  *
  *     n: node {
  *             child-1 {
- *                     label = "foo";
+ *                     foobar = "foo";
  *             };
  *             child-2 {
- *                     label = "bar";
+ *                     foobar = "bar";
  *             };
  *     };
  *
  * Example usage:
  *
- *     #define LABEL_AND_COMMA(node_id) DT_LABEL(node_id),
+ *     #define FOOBAR_AND_COMMA(node_id) DT_PROP(node_id, foobar),
  *
- *     const char *child_labels[] = {
- *         DT_FOREACH_CHILD(DT_NODELABEL(n), LABEL_AND_COMMA)
+ *     const char *child_foobars[] = {
+ *         DT_FOREACH_CHILD(DT_NODELABEL(n), FOOBAR_AND_COMMA)
  *     };
  *
  * This expands to:
  *
- *     const char *child_labels[] = {
+ *     const char *child_foobars[] = {
  *         "foo", "bar",
  *     };
  *
@@ -2366,7 +2457,6 @@
  * Example devicetree fragment:
  *
  *     i2c@deadbeef {
- *             label = "I2C_CTLR";
  *             status = "okay";
  *             clock-frequency = < 100000 >;
  *
@@ -2553,11 +2643,12 @@
 	DT_PROP_OR(DT_DRV_INST(inst), prop, default_value)
 
 /**
+ * @deprecated Use DT_INST_PROP(inst, label)
  * @brief Get a DT_DRV_COMPAT instance's "label" property
  * @param inst instance number
  * @return instance's label property value
  */
-#define DT_INST_LABEL(inst) DT_INST_PROP(inst, label)
+#define DT_INST_LABEL(inst) DT_INST_PROP(inst, label) __DEPRECATED_MACRO
 
 /**
  * @brief Get a DT_DRV_COMPAT instance's string property's value as a
@@ -2580,6 +2671,26 @@
  */
 #define DT_INST_STRING_UPPER_TOKEN(inst, prop) \
 	DT_STRING_UPPER_TOKEN(DT_DRV_INST(inst), prop)
+
+/**
+ * @brief Get an element out of string-array property as a token.
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property string name
+ * @param idx the index to get
+ * @return the element in @p prop at index @p idx as a token
+ */
+#define DT_INST_STRING_TOKEN_BY_IDX(inst, prop, idx) \
+	DT_STRING_TOKEN_BY_IDX(DT_DRV_INST(inst), prop, idx)
+
+/**
+ * @brief Like DT_INST_STRING_TOKEN_BY_IDX(), but uppercased.
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param idx the index to get
+ * @return the element in @p prop at index @p idx as an uppercased token
+ */
+#define DT_INST_STRING_UPPER_TOKEN_BY_IDX(inst, prop, idx) \
+	DT_STRING_UPPER_TOKEN_BY_IDX(DT_DRV_INST(inst), prop, idx)
 
 /**
  * @brief Get a DT_DRV_COMPAT instance's property value from a phandle's node
@@ -2891,25 +3002,25 @@
  *     a {
  *             compatible = "vnd,device";
  *             status = "okay";
- *             label = "DEV_A";
+ *             foobar = "DEV_A";
  *     };
  *
  *     b {
  *             compatible = "vnd,device";
  *             status = "okay";
- *             label = "DEV_B";
+ *             foobar = "DEV_B";
  *     };
  *
  *     c {
  *             compatible = "vnd,device";
  *             status = "disabled";
- *             label = "DEV_C";
+ *             foobar = "DEV_C";
  *     };
  *
  * Example usage:
  *
  *     #define DT_DRV_COMPAT vnd_device
- *     #define MY_FN(inst) DT_INST_LABEL(inst),
+ *     #define MY_FN(inst) DT_INST_PROP(inst, foobar),
  *
  *     DT_INST_FOREACH_STATUS_OKAY(MY_FN)
  *
