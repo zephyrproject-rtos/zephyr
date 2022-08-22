@@ -252,7 +252,7 @@
 /drivers/dma/dma_stm32*                   @cybertale @lowlander
 /drivers/dma/*pl330*                      @raveenp
 /drivers/dma/*iproc_pax*                  @raveenp
-/drivers/dma/*cavs*                       @teburd
+/drivers/dma/*intel_adsp*                 @teburd
 /drivers/ec_host_cmd_periph/              @jettr
 /drivers/edac/                            @finikorg
 /drivers/eeprom/                          @henrikbrixandersen
@@ -720,7 +720,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /scripts/utils/pinctrl_nrf_migrate.py     @gmarull
 /scripts/west_commands/                   @mbolivar-nordic
 /scripts/west_commands/blobs.py           @carlescufi
-/scripts/west_commands/fetchers           @carlescufi
+/scripts/west_commands/fetchers/          @carlescufi
 /scripts/west_commands/runners/gd32isp.py @mbolivar-nordic @nandojve
 /scripts/west_commands/tests/test_gd32isp.py @mbolivar-nordic @nandojve
 /scripts/west-commands.yml                @mbolivar-nordic
