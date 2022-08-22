@@ -16,7 +16,7 @@ on:
 jobs:
   make_bugs_pickle:
     name: Make bugs pickle
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: github.repository_owner == 'zephyrproject-rtos'
 
     steps:
