@@ -15,7 +15,7 @@ void main(void)
 	int rc;
 
 	if (!device_is_ready(dev)) {
-		printf("Device %s is not ready\n", dev->name);
+		printf("Device %s is not ready\n", device_name_get(dev));
 		return;
 	}
 

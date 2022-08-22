@@ -55,7 +55,7 @@ void main(void)
 	const struct device *const sensor = DEVICE_DT_GET_ONE(st_i3g4250d);
 
 	if (!device_is_ready(sensor)) {
-		printf("Sensor %s is not ready\n", sensor->name);
+		printf("Sensor %s is not ready\n", device_name_get(sensor));
 		return;
 	}
 

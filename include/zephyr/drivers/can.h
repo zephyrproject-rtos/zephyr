@@ -573,7 +573,7 @@ struct can_device_state {
 			CONTAINER_OF(dev->state, struct can_device_state, devstate); \
 		stats_init(&state->stats.s_hdr, STATS_SIZE_32, 6,	\
 			   STATS_NAME_INIT_PARMS(can));			\
-		stats_register(dev->name, &(state->stats.s_hdr));	\
+		stats_register(device_name_get(dev), &(state->stats.s_hdr));	\
 		return init_fn(dev);					\
 	}
 

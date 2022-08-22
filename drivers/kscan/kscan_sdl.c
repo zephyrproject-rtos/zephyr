@@ -62,7 +62,7 @@ static int sdl_configure(const struct device *dev, kscan_callback_t callback)
 		LOG_ERR("Callback is null");
 		return -EINVAL;
 	}
-	LOG_DBG("%s: set callback", dev->name);
+	LOG_DBG("%s: set callback", device_name_get(dev));
 
 	data->callback = callback;
 
@@ -73,7 +73,7 @@ static int sdl_enable_callback(const struct device *dev)
 {
 	struct sdl_data *data = dev->data;
 
-	LOG_DBG("%s: enable cb", dev->name);
+	LOG_DBG("%s: enable cb", device_name_get(dev));
 	data->enabled = true;
 	return 0;
 }
@@ -82,7 +82,7 @@ static int sdl_disable_callback(const struct device *dev)
 {
 	struct sdl_data *data = dev->data;
 
-	LOG_DBG("%s: disable cb", dev->name);
+	LOG_DBG("%s: disable cb", device_name_get(dev));
 	data->enabled = false;
 	return 0;
 }
@@ -93,7 +93,7 @@ static int sdl_init(const struct device *dev)
 
 	data->dev = dev;
 
-	LOG_INF("Init '%s' device", dev->name);
+	LOG_INF("Init '%s' device", device_name_get(dev));
 	SDL_AddEventWatch(sdl_filter, data);
 
 	return 0;

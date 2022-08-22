@@ -1236,7 +1236,8 @@ static int usb_vbus_set(bool on)
 	struct gpio_dt_spec gpio_dev = GPIO_DT_SPEC_GET(USB_DEV_NODE, vbus_gpios);
 
 	if (!device_is_ready(gpio_dev.port)) {
-		LOG_DBG("USB requires GPIO. Device %s is not ready!", gpio_dev.port->name);
+		LOG_DBG("USB requires GPIO. Device %s is not ready!",
+			device_name_get(gpio_dev.port));
 		return -ENODEV;
 	}
 

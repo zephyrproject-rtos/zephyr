@@ -592,7 +592,7 @@ static int iis2iclx_init(const struct device *dev)
 #endif
 	struct iis2iclx_data *data = dev->data;
 
-	LOG_INF("Initialize device %s", dev->name);
+	LOG_INF("Initialize device %s", device_name_get(dev));
 	data->dev = dev;
 	if (iis2iclx_init_chip(dev) < 0) {
 		LOG_ERR("failed to initialize chip");

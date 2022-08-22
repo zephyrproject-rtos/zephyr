@@ -28,7 +28,7 @@ void main(void)
 
 	flash_device = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 	if (!device_is_ready(flash_device)) {
-		printk("%s: device not ready.\n", flash_device->name);
+		printk("%s: device not ready.\n", device_name_get(flash_device));
 		return;
 	}
 

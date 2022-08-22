@@ -19,7 +19,7 @@ void main(void)
 		return;
 	}
 
-	printf("Device %p name is %s\n", dev, dev->name);
+	printf("Device %p name is %s\n", dev, device_name_get(dev));
 
 	while (1) {
 		k_sleep(K_MSEC(3000));

@@ -422,14 +422,14 @@ Code::
 
 		if (!device_is_ready(button.port)) {
 			printk("Error: button device %s is not ready\n",
-				button.port->name);
+				device_name_get(button.port));
 			return;
 		}
 
 		ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
 		if (ret != 0) {
 			printk("Error %d: failed to configure %s pin %d\n",
-				ret, button.port->name, button.pin);
+				ret, device_name_get(button.port), button.pin);
 			return;
 		}
 
@@ -437,7 +437,7 @@ Code::
 			GPIO_INT_EDGE_TO_ACTIVE);
 		if (ret != 0) {
 			printk("Error %d: failed to configure interrupt on %s pin %d\n",
-				ret, button.port->name, button.pin);
+				ret, device_name_get(button.port), button.pin);
 			return;
 		}
 

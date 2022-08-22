@@ -675,9 +675,9 @@ static int dma_iproc_pax_init(const struct device *dev)
 		    0);
 	irq_enable(DT_INST_IRQN(0));
 #else
-	LOG_INF("%s PAX DMA rings in poll mode!\n", dev->name);
+	LOG_INF("%s PAX DMA rings in poll mode!\n", device_name_get(dev));
 #endif
-	LOG_INF("%s RM setup %d rings\n", dev->name, pd->used_rings);
+	LOG_INF("%s RM setup %d rings\n", device_name_get(dev), pd->used_rings);
 
 	return 0;
 }

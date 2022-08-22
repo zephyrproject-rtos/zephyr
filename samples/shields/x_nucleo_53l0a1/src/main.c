@@ -43,14 +43,14 @@ static void mode_show_distance(void)
 
 	ret = sensor_sample_fetch(CENTER);
 	if (ret) {
-		printk("sensor_sample_fetch(%s) failed -> %d\n", CENTER->name, ret);
+		printk("sensor_sample_fetch(%s) failed -> %d\n", device_name_get(CENTER), ret);
 		display_chars(TEXT_Err);
 		return;
 	}
 
 	ret = sensor_channel_get(CENTER, SENSOR_CHAN_DISTANCE, &value);
 	if (ret) {
-		printk("sensor_channel_get(%s) failed -> %d\n", CENTER->name, ret);
+		printk("sensor_channel_get(%s) failed -> %d\n", device_name_get(CENTER), ret);
 		display_chars(TEXT_Err);
 		return;
 	}
@@ -72,7 +72,7 @@ static void mode_show_presence(void)
 		ret = sensor_sample_fetch(sensors[i]);
 		if (ret) {
 			printk("sensor_sample_fetch(%s) failed -> %d\n",
-			       sensors[i]->name, ret);
+			       device_name_get(sensors[i]), ret);
 			display_chars(TEXT_Err);
 			return;
 		}
@@ -81,7 +81,7 @@ static void mode_show_presence(void)
 					 &value);
 		if (ret) {
 			printk("sensor_channel_get(%s) failed -> %d\n",
-			       sensors[i]->name, ret);
+			       device_name_get(sensors[i]), ret);
 			display_chars(TEXT_Err);
 			return;
 		}
@@ -125,7 +125,7 @@ void main(void)
 
 	if (!device_is_ready(button.port)) {
 		printk("Error: button device %s is not ready\n",
-		       button.port->name);
+		       device_name_get(button.port));
 		return;
 	}
 

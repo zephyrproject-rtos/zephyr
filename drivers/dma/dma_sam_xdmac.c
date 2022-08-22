@@ -351,7 +351,7 @@ static int sam_xdmac_initialize(const struct device *dev)
 	/* Enable module's IRQ */
 	irq_enable(dev_cfg->irq_id);
 
-	LOG_INF("Device %s initialized", dev->name);
+	LOG_INF("Device %s initialized", device_name_get(dev));
 
 	return 0;
 }

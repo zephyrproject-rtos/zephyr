@@ -26,11 +26,11 @@ static const struct device *get_ds18b20_device(void)
 	if (!device_is_ready(dev)) {
 		printk("\nError: Device \"%s\" is not ready; "
 		       "check the driver initialization logs for errors.\n",
-		       dev->name);
+		       device_name_get(dev));
 		return NULL;
 	}
 
-	printk("Found device \"%s\", getting sensor data\n", dev->name);
+	printk("Found device \"%s\", getting sensor data\n", device_name_get(dev));
 	return dev;
 }
 

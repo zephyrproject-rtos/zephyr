@@ -297,7 +297,7 @@ static int cmd_get_device(const struct shell *shell, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
-	shell_print(shell, "Framebuffer Device: %s", dev->name);
+	shell_print(shell, "Framebuffer Device: %s", device_name_get(dev));
 
 	return err;
 }
@@ -422,7 +422,7 @@ static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 		return err;
 	}
 
-	shell_print(shell, "Framebuffer initialized: %s", dev->name);
+	shell_print(shell, "Framebuffer initialized: %s", device_name_get(dev));
 	cmd_clear(shell, argc, argv);
 
 	return err;

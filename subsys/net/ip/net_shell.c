@@ -1805,7 +1805,7 @@ static void capture_cb(struct net_capture_info *info, void *user_data)
 	get_address_str(info->local, addr_local, sizeof(addr_local));
 	get_address_str(info->peer, addr_peer, sizeof(addr_peer));
 
-	PR("%s\t%c        %d      %s\t%s\n", info->capture_dev->name,
+	PR("%s\t%c        %d      %s\t%s\n", device_name_get(info->capture_dev),
 	   info->is_enabled ?
 	   (net_if_get_by_iface(info->capture_iface) + '0') : '-',
 	   net_if_get_by_iface(info->tunnel_iface),

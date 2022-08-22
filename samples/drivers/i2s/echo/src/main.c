@@ -74,14 +74,14 @@ static bool init_buttons(void)
 	static struct gpio_callback sw0_cb_data;
 
 	if (!device_is_ready(sw0_spec.port)) {
-		printk("%s is not ready\n", sw0_spec.port->name);
+		printk("%s is not ready\n", device_name_get(sw0_spec.port));
 		return false;
 	}
 
 	ret = gpio_pin_configure_dt(&sw0_spec, GPIO_INPUT);
 	if (ret < 0) {
 		printk("Failed to configure %s pin %d: %d\n",
-		       sw0_spec.port->name, sw0_spec.pin, ret);
+		       device_name_get(sw0_spec.port), sw0_spec.pin, ret);
 		return false;
 	}
 
@@ -89,27 +89,27 @@ static bool init_buttons(void)
 					      GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		printk("Failed to configure interrupt on %s pin %d: %d\n",
-		       sw0_spec.port->name, sw0_spec.pin, ret);
+		       device_name_get(sw0_spec.port), sw0_spec.pin, ret);
 		return false;
 	}
 
 	gpio_init_callback(&sw0_cb_data, sw0_handler, BIT(sw0_spec.pin));
 	gpio_add_callback(sw0_spec.port, &sw0_cb_data);
-	printk("Press \"%s\" to toggle the echo effect\n", sw0_spec.port->name);
+	printk("Press \"%s\" to toggle the echo effect\n", device_name_get(sw0_spec.port));
 #endif
 
 #if DT_NODE_HAS_STATUS(SW1_NODE, okay)
 	static struct gpio_callback sw1_cb_data;
 
 	if (!device_is_ready(sw1_spec.port)) {
-		printk("%s is not ready\n", sw1_spec.port->name);
+		printk("%s is not ready\n", device_name_get(sw1_spec.port));
 		return false;
 	}
 
 	ret = gpio_pin_configure_dt(&sw1_spec, GPIO_INPUT);
 	if (ret < 0) {
 		printk("Failed to configure %s pin %d: %d\n",
-		       sw1_spec.port->name, sw1_spec.pin, ret);
+		       device_name_get(sw1_spec.port), sw1_spec.pin, ret);
 		return false;
 	}
 
@@ -117,13 +117,13 @@ static bool init_buttons(void)
 					      GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		printk("Failed to configure interrupt on %s pin %d: %d\n",
-		       sw1_spec.port->name, sw1_spec.pin, ret);
+		       device_name_get(sw1_spec.port), sw1_spec.pin, ret);
 		return false;
 	}
 
 	gpio_init_callback(&sw1_cb_data, sw1_handler, BIT(sw1_spec.pin));
 	gpio_add_callback(sw1_spec.port, &sw1_cb_data);
-	printk("Press \"%s\" to stop/restart I2S streams\n", sw1_spec.port->name);
+	printk("Press \"%s\" to stop/restart I2S streams\n", device_name_get(sw1_spec.port));
 #endif
 
 	(void)ret;
@@ -263,12 +263,12 @@ void main(void)
 	}
 
 	if (!device_is_ready(i2s_dev_rx)) {
-		printk("%s is not ready\n", i2s_dev_rx->name);
+		printk("%s is not ready\n", device_name_get(i2s_dev_rx));
 		return;
 	}
 
 	if (i2s_dev_rx != i2s_dev_tx && !device_is_ready(i2s_dev_tx)) {
-		printk("%s is not ready\n", i2s_dev_tx->name);
+		printk("%s is not ready\n", device_name_get(i2s_dev_tx));
 		return;
 	}
 

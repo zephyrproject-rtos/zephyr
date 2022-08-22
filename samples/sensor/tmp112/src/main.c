@@ -59,8 +59,8 @@ void main(void)
 	const struct device *const dev = DEVICE_DT_GET_ANY(ti_tmp112);
 
 	__ASSERT(dev != NULL, "Failed to get device binding");
-	__ASSERT(device_is_ready(dev), "Device %s is not ready", dev->name);
-	printk("device is %p, name is %s\n", dev, dev->name);
+	__ASSERT(device_is_ready(dev), "Device %s is not ready", device_name_get(dev));
+	printk("device is %p, name is %s\n", dev, device_name_get(dev));
 
 	do_main(dev);
 }

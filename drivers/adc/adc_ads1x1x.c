@@ -554,7 +554,7 @@ static int ads1x1x_init(const struct device *dev)
 	k_sem_init(&data->acq_sem, 0, 1);
 
 	if (!device_is_ready(config->bus.bus)) {
-		LOG_ERR("I2C bus %s not ready", config->bus.bus->name);
+		LOG_ERR("I2C bus %s not ready", device_name_get(config->bus.bus));
 		return -ENODEV;
 	}
 

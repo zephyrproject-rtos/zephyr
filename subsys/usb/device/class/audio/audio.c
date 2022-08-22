@@ -772,7 +772,7 @@ static int audio_class_handle_req(struct usb_setup_packet *pSetup,
 
 static int usb_audio_device_init(const struct device *dev)
 {
-	LOG_DBG("Init Audio Device: dev %p (%s)", dev, dev->name);
+	LOG_DBG("Init Audio Device: dev %p (%s)", dev, device_name_get(dev));
 
 	return 0;
 }

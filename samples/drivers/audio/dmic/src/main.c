@@ -82,7 +82,7 @@ void main(void)
 	LOG_INF("DMIC sample");
 
 	if (!device_is_ready(dmic_dev)) {
-		LOG_ERR("%s is not ready", dmic_dev->name);
+		LOG_ERR("%s is not ready", device_name_get(dmic_dev));
 		return;
 	}
 

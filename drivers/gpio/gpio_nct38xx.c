@@ -65,7 +65,7 @@ static int nct38xx_gpio_init(const struct device *dev)
 
 	/* Check I2C is ready  */
 	if (!device_is_ready(config->i2c_dev.bus)) {
-		LOG_ERR("%s device not ready", config->i2c_dev.bus->name);
+		LOG_ERR("%s device not ready", device_name_get(config->i2c_dev.bus));
 		return -ENODEV;
 	}
 

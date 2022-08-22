@@ -37,23 +37,23 @@ void main(void)
 #endif
 
 	if (!device_is_ready(hts221)) {
-		printk("%s: device not ready.\n", hts221->name);
+		printk("%s: device not ready.\n", device_name_get(hts221));
 		return;
 	}
 	if (!device_is_ready(lps22hb)) {
-		printk("%s: device not ready.\n", lps22hb->name);
+		printk("%s: device not ready.\n", device_name_get(lps22hb));
 		return;
 	}
 	if (!device_is_ready(lsm6dsl)) {
-		printk("%s: device not ready.\n", lsm6dsl->name);
+		printk("%s: device not ready.\n", device_name_get(lsm6dsl));
 		return;
 	}
 	if (!device_is_ready(lsm303agr_a)) {
-		printk("%s: device not ready.\n", lsm303agr_a->name);
+		printk("%s: device not ready.\n", device_name_get(lsm303agr_a));
 		return;
 	}
 	if (!device_is_ready(lsm303agr_m)) {
-		printk("%s: device not ready.\n", lsm303agr_m->name);
+		printk("%s: device not ready.\n", device_name_get(lsm303agr_m));
 		return;
 	}
 

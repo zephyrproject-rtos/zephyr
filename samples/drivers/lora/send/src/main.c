@@ -29,7 +29,7 @@ void main(void)
 	int ret;
 
 	if (!device_is_ready(lora_dev)) {
-		LOG_ERR("%s Device not ready", lora_dev->name);
+		LOG_ERR("%s Device not ready", device_name_get(lora_dev));
 		return;
 	}
 

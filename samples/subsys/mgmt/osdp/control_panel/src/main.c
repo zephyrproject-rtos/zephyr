@@ -61,7 +61,7 @@ void main(void)
 	};
 
 	if (!device_is_ready(led0.port)) {
-		printk("Failed to get LED GPIO port %s\n", led0.port->name);
+		printk("Failed to get LED GPIO port %s\n", device_name_get(led0.port));
 		return;
 	}
 

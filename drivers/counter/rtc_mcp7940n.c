@@ -665,7 +665,7 @@ static int mcp7940n_init(const struct device *dev)
 	k_sem_init(&data->lock, 0, 1);
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("I2C device %s is not ready", cfg->i2c.bus->name);
+		LOG_ERR("I2C device %s is not ready", device_name_get(cfg->i2c.bus));
 		rc = -ENODEV;
 		goto out;
 	}
@@ -693,7 +693,7 @@ static int mcp7940n_init(const struct device *dev)
 
 		if (!device_is_ready(cfg->int_gpios.port)) {
 			LOG_ERR("Port device %s is not ready",
-				cfg->int_gpios.port->name);
+				device_name_get(cfg->int_gpios.port));
 			rc = -ENODEV;
 			goto out;
 		}

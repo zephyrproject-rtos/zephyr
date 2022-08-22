@@ -146,7 +146,7 @@ void main(void)
 	const struct device *const uart_dev = DEVICE_DT_GET(UART_NODE);
 
 	LOG_INF("APN '%s' UART '%s' device %p", CONFIG_MODEM_GSM_APN,
-		uart_dev->name, uart_dev);
+		device_name_get(uart_dev), uart_dev);
 #endif
 
 	net_mgmt_init_event_callback(&mgmt_cb, event_handler, EVENT_MASK);

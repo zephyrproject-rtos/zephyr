@@ -716,7 +716,7 @@ static const struct usb_hid_device_api {
 
 static int usb_hid_device_init(const struct device *dev)
 {
-	LOG_DBG("Init HID Device: dev %p (%s)", dev, dev->name);
+	LOG_DBG("Init HID Device: dev %p (%s)", dev, device_name_get(dev));
 
 	return 0;
 }

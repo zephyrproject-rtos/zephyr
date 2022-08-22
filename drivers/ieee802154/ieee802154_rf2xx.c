@@ -938,7 +938,7 @@ static inline int configure_gpios(const struct device *dev)
 			return -ENODEV;
 		}
 		LOG_INF("Optional instance of %s device activated",
-			conf->dig2_gpio.port->name);
+			device_name_get(conf->dig2_gpio.port));
 		gpio_pin_configure_dt(&conf->dig2_gpio, GPIO_INPUT);
 		gpio_pin_interrupt_configure_dt(&conf->dig2_gpio,
 						GPIO_INT_EDGE_TO_ACTIVE);
@@ -951,7 +951,7 @@ static inline int configure_gpios(const struct device *dev)
 			return -ENODEV;
 		}
 		LOG_INF("Optional instance of %s device activated",
-			conf->clkm_gpio.port->name);
+			device_name_get(conf->clkm_gpio.port));
 		gpio_pin_configure_dt(&conf->clkm_gpio, GPIO_INPUT);
 	}
 
@@ -964,7 +964,7 @@ static inline int configure_spi(const struct device *dev)
 
 	if (!spi_is_ready(&conf->spi)) {
 		LOG_ERR("SPI bus %s is not ready",
-			conf->spi.bus->name);
+			device_name_get(conf->spi.bus));
 		return -ENODEV;
 	}
 

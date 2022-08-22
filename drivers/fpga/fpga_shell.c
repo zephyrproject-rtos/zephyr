@@ -31,7 +31,7 @@ static int cmd_on(const struct shell *sh, size_t argc, char **argv)
 		return err;
 	}
 
-	shell_print(sh, "%s: turning on", dev->name);
+	shell_print(sh, "%s: turning on", device_name_get(dev));
 
 	err = fpga_on(dev);
 	if (err) {
@@ -51,7 +51,7 @@ static int cmd_off(const struct shell *sh, size_t argc, char **argv)
 		return err;
 	}
 
-	shell_print(sh, "%s: turning off", dev->name);
+	shell_print(sh, "%s: turning off", device_name_get(dev));
 
 	err = fpga_off(dev);
 	if (err) {
@@ -71,7 +71,7 @@ static int cmd_reset(const struct shell *sh, size_t argc, char **argv)
 		return err;
 	}
 
-	shell_print(sh, "%s: resetting FPGA", dev->name);
+	shell_print(sh, "%s: resetting FPGA", device_name_get(dev));
 
 	err = fpga_reset(dev);
 	if (err) {
@@ -91,7 +91,7 @@ static int cmd_load(const struct shell *sh, size_t argc, char **argv)
 		return err;
 	}
 
-	shell_print(sh, "%s: loading bitstream", dev->name);
+	shell_print(sh, "%s: loading bitstream", device_name_get(dev));
 
 	fpga_load(dev, (uint32_t *)strtol(argv[2], NULL, 0),
 		  (uint32_t)atoi(argv[3]));
@@ -109,7 +109,7 @@ static int cmd_get_status(const struct shell *sh, size_t argc, char **argv)
 		return err;
 	}
 
-	shell_print(sh, "%s status: %d", dev->name, fpga_get_status(dev));
+	shell_print(sh, "%s status: %d", device_name_get(dev), fpga_get_status(dev));
 
 	return err;
 }

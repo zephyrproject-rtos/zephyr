@@ -268,7 +268,7 @@ static int init_adc(const struct device *dev)
 
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s",
-			    dev->name);
+			    device_name_get(dev));
 		return -EBUSY;
 	}
 

@@ -170,13 +170,15 @@ static void configure_button_irq(const struct gpio_dt_spec btn)
 	int ret;
 
 	if (!device_is_ready(btn.port)) {
-		printk("Error: button device %s is not ready\n", btn.port->name);
+		printk("Error: button device %s is not ready\n",
+		       device_name_get(btn.port));
 		return;
 	}
 
 	ret = gpio_pin_configure_dt(&btn, GPIO_INPUT);
 	if (ret != 0) {
-		printk("Error %d: failed to configure %s pin %d\n", ret, btn.port->name, btn.pin);
+		printk("Error %d: failed to configure %s pin %d\n", ret,
+		       device_name_get(btn.port), btn.pin);
 		return;
 	}
 
@@ -184,14 +186,15 @@ static void configure_button_irq(const struct gpio_dt_spec btn)
 
 	if (ret != 0) {
 		printk("Error %d: failed to configure interrupt on %s pin %d\n", ret,
-		       btn.port->name, btn.pin);
+		       device_name_get(btn.port), btn.pin);
 		return;
 	}
 
 	button_cb_data.pin_mask |= BIT(btn.pin);
 	gpio_add_callback(btn.port, &button_cb_data);
 
-	printk("Set up button at %s pin %d\n", btn.port->name, btn.pin);
+	printk("Set up button at %s pin %d\n", device_name_get(btn.port),
+	       btn.pin);
 }
 
 static void configure_buttons(void)

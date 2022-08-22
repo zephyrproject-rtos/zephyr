@@ -81,7 +81,7 @@ void main(void)
 		return;
 	}
 
-	printk("device is %p, name is %s\n", dev, dev->name);
+	printk("device is %p, name is %s\n", dev, device_name_get(dev));
 
 	do_main(dev);
 }

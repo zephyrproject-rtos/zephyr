@@ -149,13 +149,13 @@ static inline int tmp116_device_id_check(const struct device *dev, uint16_t *id)
 {
 	if (tmp116_reg_read(dev, TMP116_REG_DEVICE_ID, id) != 0) {
 		LOG_ERR("%s: Failed to get Device ID register!",
-			dev->name);
+			device_name_get(dev));
 		return -EIO;
 	}
 
 	if ((*id != TMP116_DEVICE_ID) && (*id != TMP117_DEVICE_ID)) {
 		LOG_ERR("%s: Failed to match the device IDs!",
-			dev->name);
+			device_name_get(dev));
 		return -EINVAL;
 	}
 
@@ -180,12 +180,12 @@ static int tmp116_sample_fetch(const struct device *dev,
 	rc = tmp116_reg_read(dev, TMP116_REG_CFGR, &cfg_reg);
 	if (rc < 0) {
 		LOG_ERR("%s, Failed to read from CFGR register",
-			dev->name);
+			device_name_get(dev));
 		return rc;
 	}
 
 	if ((cfg_reg & TMP116_CFGR_DATA_READY) == 0) {
-		LOG_DBG("%s: no data ready", dev->name);
+		LOG_DBG("%s: no data ready", device_name_get(dev));
 		return -EBUSY;
 	}
 
@@ -193,7 +193,7 @@ static int tmp116_sample_fetch(const struct device *dev,
 	rc = tmp116_reg_read(dev, TMP116_REG_TEMP, &value);
 	if (rc < 0) {
 		LOG_ERR("%s: Failed to read from TEMP register!",
-			dev->name);
+			device_name_get(dev));
 		return rc;
 	}
 
@@ -241,7 +241,7 @@ static int tmp116_attr_set(const struct device *dev,
 	case SENSOR_ATTR_OFFSET:
 		if (drv_data->id != TMP117_DEVICE_ID) {
 			LOG_ERR("%s: Offset is only supported by TMP117",
-			dev->name);
+			device_name_get(dev));
 			return -EINVAL;
 		}
 		/*
@@ -271,7 +271,7 @@ static int tmp116_init(const struct device *dev)
 	uint16_t id;
 
 	if (!device_is_ready(cfg->bus.bus)) {
-		LOG_ERR("I2C dev %s not ready", cfg->bus.bus->name);
+		LOG_ERR("I2C dev %s not ready", device_name_get(cfg->bus.bus));
 		return -EINVAL;
 	}
 

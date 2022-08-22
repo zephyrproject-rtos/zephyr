@@ -269,8 +269,8 @@ int vcnl4040_trigger_init(const struct device *dev)
 
 	/* Get the GPIO device */
 	if (!device_is_ready(config->int_gpio.port)) {
-		LOG_ERR("%s: device %s is not ready", dev->name,
-				config->int_gpio.port->name);
+		LOG_ERR("%s: device %s is not ready", device_name_get(dev),
+				device_name_get(config->int_gpio.port));
 		return -ENODEV;
 	}
 

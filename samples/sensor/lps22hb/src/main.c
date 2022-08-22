@@ -46,7 +46,7 @@ void main(void)
 	const struct device *const dev = DEVICE_DT_GET_ONE(st_lps22hb_press);
 
 	if (!device_is_ready(dev)) {
-		printf("Device %s is not ready\n", dev->name);
+		printf("Device %s is not ready\n", device_name_get(dev));
 		return;
 	}
 

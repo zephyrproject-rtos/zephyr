@@ -392,7 +392,7 @@ int gpio_fxl6408_init(const struct device *dev)
 	const struct gpio_fxl6408_config *const config = dev->config;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("%s is not ready", config->i2c.bus->name);
+		LOG_ERR("%s is not ready", device_name_get(config->i2c.bus));
 		return -ENODEV;
 	}
 

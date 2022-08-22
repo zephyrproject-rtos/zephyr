@@ -36,17 +36,17 @@ bool initial = true;
 TfLiteStatus SetupAccelerometer(tflite::ErrorReporter *error_reporter)
 {
 	if (!device_is_ready(sensor)) {
-		printk("%s: device not ready.\n", sensor->name);
+		printk("%s: device not ready.\n", device_name_get(sensor));
 		return kTfLiteApplicationError;
 	}
 
 	if (sensor == NULL) {
 		TF_LITE_REPORT_ERROR(error_reporter,
 				     "Failed to get accelerometer, name: %s\n",
-				     sensor->name);
+				     device_name_get(sensor));
 	} else {
 		TF_LITE_REPORT_ERROR(error_reporter, "Got accelerometer, name: %s\n",
-				     sensor->name);
+				     device_name_get(sensor));
 	}
 	return kTfLiteOk;
 }

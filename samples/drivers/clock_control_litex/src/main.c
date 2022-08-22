@@ -315,14 +315,14 @@ void main(void)
 
 	printf("Clock Control Example! %s\n", CONFIG_ARCH);
 
-	printf("device name: %s\n", dev->name);
+	printf("device name: %s\n", device_name_get(dev));
 	if (!device_is_ready(dev)) {
-		printf("error: device %s is not ready\n", dev->name);
+		printf("error: device %s is not ready\n", device_name_get(dev));
 		return;
 	}
 
 	printf("clock control device is %p, name is %s\n",
-	       dev, dev->name);
+	       dev, device_name_get(dev));
 
 	litex_clk_test(dev);
 }

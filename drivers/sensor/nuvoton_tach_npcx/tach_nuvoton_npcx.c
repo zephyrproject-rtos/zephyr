@@ -231,7 +231,7 @@ static int tach_npcx_configure(const struct device *dev)
 		inst->TCKC |= BIT(NPCX_TCKC_LOW_PWR);
 		if (config->sample_clk != data->input_clk) {
 			LOG_ERR("%s operate freq is %d not fixed to 32kHz",
-				dev->name, data->input_clk);
+				device_name_get(dev), data->input_clk);
 			return -EINVAL;
 		}
 	} else {
@@ -240,7 +240,7 @@ static int tach_npcx_configure(const struct device *dev)
 
 		if (data->input_clk > config->sample_clk) {
 			LOG_ERR("%s operate freq exceeds APB1 clock",
-				dev->name);
+				device_name_get(dev));
 			return -EINVAL;
 		}
 		inst->TPRSC = MIN(NPCX_TACHO_PRSC_MAX, MAX(prescaler, 1));

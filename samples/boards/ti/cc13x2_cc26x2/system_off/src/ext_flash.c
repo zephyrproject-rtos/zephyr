@@ -84,7 +84,7 @@ void CC1352R1_LAUNCHXL_shutDownExtFlash(void)
 	dev = DEVICE_DT_GET(GPIO_PORT);
 
 	if (!device_is_ready(dev)) {
-		printk("%s: device not ready.\n", dev->name);
+		printk("%s: device not ready.\n", device_name_get(dev));
 		return;
 	}
 

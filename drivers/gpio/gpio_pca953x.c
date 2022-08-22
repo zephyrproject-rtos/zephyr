@@ -442,9 +442,9 @@ static int gpio_pca953x_init(const struct device *dev)
 	}
 out:
 	if (rc) {
-		LOG_ERR("%s init failed: %d", dev->name, rc);
+		LOG_ERR("%s init failed: %d", device_name_get(dev), rc);
 	} else {
-		LOG_INF("%s init ok", dev->name);
+		LOG_INF("%s init ok", device_name_get(dev));
 	}
 	return rc;
 }

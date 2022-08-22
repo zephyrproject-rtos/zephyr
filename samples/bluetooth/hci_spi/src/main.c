@@ -266,12 +266,12 @@ static int hci_spi_init(const struct device *unused)
 	LOG_DBG("");
 
 	if (!device_is_ready(spi_hci_dev)) {
-		LOG_ERR("SPI bus %s is not ready", spi_hci_dev->name);
+		LOG_ERR("SPI bus %s is not ready", device_name_get(spi_hci_dev));
 		return -EINVAL;
 	}
 
 	if (!device_is_ready(irq.port)) {
-		LOG_ERR("IRQ GPIO port %s is not ready", irq.port->name);
+		LOG_ERR("IRQ GPIO port %s is not ready", device_name_get(irq.port));
 		return -EINVAL;
 	}
 	gpio_pin_configure_dt(&irq, GPIO_OUTPUT_INACTIVE);

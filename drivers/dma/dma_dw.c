@@ -34,14 +34,14 @@ static int dw_dma_init(const struct device *dev)
 	int ret = dw_dma_setup(dev);
 
 	if (ret != 0) {
-		LOG_ERR("failed to initialize DW DMA %s", dev->name);
+		LOG_ERR("failed to initialize DW DMA %s", device_name_get(dev));
 		goto out;
 	}
 
 	/* Configure interrupts */
 	dev_cfg->irq_config();
 
-	LOG_INF("Device %s initialized", dev->name);
+	LOG_INF("Device %s initialized", device_name_get(dev));
 
 out:
 	return ret;

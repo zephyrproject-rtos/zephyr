@@ -78,7 +78,7 @@ static int pcal6408a_pins_cfg_apply(const struct device *dev,
 				   pins_cfg.pull_ups_selected);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to select pull-up/pull-down resistors: %d",
-			dev->name, rc);
+			device_name_get(dev), rc);
 		return -EIO;
 	}
 
@@ -86,14 +86,14 @@ static int pcal6408a_pins_cfg_apply(const struct device *dev,
 				   pins_cfg.pulls_enabled);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to enable pull-up/pull-down resistors: %d",
-			dev->name, rc);
+			device_name_get(dev), rc);
 		return -EIO;
 	}
 
 	rc = i2c_reg_write_byte_dt(&drv_cfg->i2c, PCAL6408A_REG_OUTPUT_PORT, pins_cfg.outputs_high);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to set outputs: %d",
-			dev->name, rc);
+			device_name_get(dev), rc);
 		return -EIO;
 	}
 
@@ -101,7 +101,7 @@ static int pcal6408a_pins_cfg_apply(const struct device *dev,
 				   pins_cfg.configured_as_inputs);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to configure pins: %d",
-			dev->name, rc);
+			device_name_get(dev), rc);
 		return -EIO;
 	}
 
@@ -187,7 +187,7 @@ static int pcal6408a_process_input(const struct device *dev,
 	rc = i2c_reg_read_byte_dt(&drv_cfg->i2c, PCAL6408A_REG_INTERRUPT_STATUS, &int_sources);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to read interrupt sources: %d",
-			dev->name, rc);
+			device_name_get(dev), rc);
 		return -EIO;
 	}
 
@@ -195,7 +195,7 @@ static int pcal6408a_process_input(const struct device *dev,
 	rc = i2c_reg_read_byte_dt(&drv_cfg->i2c, PCAL6408A_REG_INPUT_PORT, &input_port);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to read input port: %d",
-			dev->name, rc);
+			device_name_get(dev), rc);
 		return -EIO;
 	}
 
@@ -314,7 +314,7 @@ static int pcal6408a_port_set_raw(const struct device *dev,
 	k_sem_give(&drv_data->lock);
 
 	if (rc != 0) {
-		LOG_ERR("%s: failed to write output port: %d", dev->name, rc);
+		LOG_ERR("%s: failed to write output port: %d", device_name_get(dev), rc);
 		return -EIO;
 	}
 
@@ -355,14 +355,14 @@ static int pcal6408a_triggers_apply(const struct device *dev,
 	rc = i2c_reg_write_byte_dt(&drv_cfg->i2c, PCAL6408A_REG_INPUT_LATCH, ~(triggers.masked));
 	if (rc != 0) {
 		LOG_ERR("%s: failed to configure input latch: %d",
-			dev->name, rc);
+			device_name_get(dev), rc);
 		return -EIO;
 	}
 
 	rc = i2c_reg_write_byte_dt(&drv_cfg->i2c, PCAL6408A_REG_INTERRUPT_MASK, triggers.masked);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to configure interrupt mask: %d",
-			dev->name, rc);
+			device_name_get(dev), rc);
 		return -EIO;
 	}
 
@@ -449,7 +449,7 @@ static int pcal6408a_init(const struct device *dev)
 	int rc;
 
 	if (!device_is_ready(drv_cfg->i2c.bus)) {
-		LOG_ERR("%s is not ready", drv_cfg->i2c.bus->name);
+		LOG_ERR("%s is not ready", device_name_get(drv_cfg->i2c.bus));
 		return -ENODEV;
 	}
 
@@ -460,7 +460,7 @@ static int pcal6408a_init(const struct device *dev)
 	if (drv_cfg->reset_gpio_dev) {
 		if (!device_is_ready(drv_cfg->reset_gpio_dev)) {
 			LOG_ERR("%s is not ready",
-				drv_cfg->reset_gpio_dev->name);
+				device_name_get(drv_cfg->reset_gpio_dev));
 			return -ENODEV;
 		}
 
@@ -470,7 +470,7 @@ static int pcal6408a_init(const struct device *dev)
 						GPIO_OUTPUT_ACTIVE);
 		if (rc != 0) {
 			LOG_ERR("%s: failed to configure RESET line: %d",
-				dev->name, rc);
+				device_name_get(dev), rc);
 			return -EIO;
 		}
 
@@ -481,7 +481,7 @@ static int pcal6408a_init(const struct device *dev)
 				  drv_cfg->reset_gpio_pin, 0);
 		if (rc != 0) {
 			LOG_ERR("%s: failed to deactivate RESET line: %d",
-				dev->name, rc);
+				device_name_get(dev), rc);
 			return -EIO;
 		}
 
@@ -500,7 +500,7 @@ static int pcal6408a_init(const struct device *dev)
 						   reset_state[i][1]);
 			if (rc != 0) {
 				LOG_ERR("%s: failed to reset register %02x: %d",
-					dev->name, reset_state[i][0], rc);
+					device_name_get(dev), reset_state[i][0], rc);
 				return -EIO;
 			}
 		}
@@ -519,7 +519,7 @@ static int pcal6408a_init(const struct device *dev)
 				  &drv_data->input_port_last);
 	if (rc != 0) {
 		LOG_ERR("%s: failed to initially read input port: %d",
-			dev->name, rc);
+			device_name_get(dev), rc);
 		return -EIO;
 	}
 
@@ -535,7 +535,7 @@ static int pcal6408a_init(const struct device *dev)
 	if (drv_cfg->int_gpio_dev) {
 		if (!device_is_ready(drv_cfg->int_gpio_dev)) {
 			LOG_ERR("%s is not ready",
-				drv_cfg->int_gpio_dev->name);
+				device_name_get(drv_cfg->int_gpio_dev));
 			return -ENODEV;
 		}
 
@@ -544,7 +544,7 @@ static int pcal6408a_init(const struct device *dev)
 					drv_cfg->int_gpio_flags | GPIO_INPUT);
 		if (rc != 0) {
 			LOG_ERR("%s: failed to configure INT line: %d",
-				dev->name, rc);
+				device_name_get(dev), rc);
 			return -EIO;
 		}
 
@@ -553,7 +553,7 @@ static int pcal6408a_init(const struct device *dev)
 						  GPIO_INT_EDGE_TO_ACTIVE);
 		if (rc != 0) {
 			LOG_ERR("%s: failed to configure INT interrupt: %d",
-				dev->name, rc);
+				device_name_get(dev), rc);
 			return -EIO;
 		}
 
@@ -564,7 +564,7 @@ static int pcal6408a_init(const struct device *dev)
 				       &drv_data->int_gpio_cb);
 		if (rc != 0) {
 			LOG_ERR("%s: failed to add INT callback: %d",
-				dev->name, rc);
+				device_name_get(dev), rc);
 			return -EIO;
 		}
 	}

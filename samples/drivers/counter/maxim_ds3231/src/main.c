@@ -232,7 +232,7 @@ void main(void)
 	const struct device *const ds3231 = DEVICE_DT_GET_ONE(maxim_ds3231);
 
 	if (!device_is_ready(ds3231)) {
-		printk("%s: device not ready.\n", ds3231->name);
+		printk("%s: device not ready.\n", device_name_get(ds3231));
 		return;
 	}
 

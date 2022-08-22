@@ -32,19 +32,20 @@ static int print_accels(const struct device *dev)
 
 	ret = sensor_sample_fetch(dev);
 	if (ret < 0) {
-		printk("%s: sensor_sample_fetch() failed: %d\n", dev->name, ret);
+		printk("%s: sensor_sample_fetch() failed: %d\n", device_name_get(dev), ret);
 		return ret;
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(channels); i++) {
 		ret = sensor_channel_get(dev, channels[i], &accel[i]);
 		if (ret < 0) {
-			printk("%s: sensor_channel_get(%c) failed: %d\n", dev->name, 'X' + i, ret);
+			printk("%s: sensor_channel_get(%c) failed: %d\n",
+			       device_name_get(dev), 'X' + i, ret);
 			return ret;
 		}
 	}
 
-	printk("%16s [m/s^2]:    (%12.6f, %12.6f, %12.6f)\n", dev->name,
+	printk("%16s [m/s^2]:    (%12.6f, %12.6f, %12.6f)\n", device_name_get(dev),
 	       sensor_value_to_double(&accel[0]), sensor_value_to_double(&accel[1]),
 	       sensor_value_to_double(&accel[2]));
 
@@ -57,7 +58,7 @@ void main(void)
 
 	for (size_t i = 0; i < ARRAY_SIZE(sensors); i++) {
 		if (!device_is_ready(sensors[i])) {
-			printk("sensor: device %s not ready.\n", sensors[i]->name);
+			printk("sensor: device %s not ready.\n", device_name_get(sensors[i]));
 			return;
 		}
 	}

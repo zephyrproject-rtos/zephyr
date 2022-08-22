@@ -78,7 +78,7 @@ static int configure(const struct device *dev,
 	}
 
 	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_MASTER) {
-		LOG_ERR("Master mode is not supported on %s", dev->name);
+		LOG_ERR("Master mode is not supported on %s", device_name_get(dev));
 		return -EINVAL;
 	}
 
@@ -254,7 +254,7 @@ static int spi_nrfx_init(const struct device *dev)
 				event_handler, dev_data);
 
 	if (result != NRFX_SUCCESS) {
-		LOG_ERR("Failed to initialize device: %s", dev->name);
+		LOG_ERR("Failed to initialize device: %s", device_name_get(dev));
 		return -EBUSY;
 	}
 

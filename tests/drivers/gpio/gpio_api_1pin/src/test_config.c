@@ -53,7 +53,7 @@ ZTEST(gpio_api_1pin_conf, test_gpio_pin_configure_push_pull)
 	port = DEVICE_DT_GET(TEST_NODE);
 	zassert_true(device_is_ready(port), "GPIO dev is not ready");
 
-	TC_PRINT("Running test on port=%s, pin=%d\n", port->name, TEST_PIN);
+	TC_PRINT("Running test on port=%s, pin=%d\n", device_name_get(port), TEST_PIN);
 
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_OUTPUT);
 	zassert_equal(ret, 0, "Failed to configure the pin as an output");
@@ -170,7 +170,7 @@ ZTEST(gpio_api_1pin_conf, test_gpio_pin_configure_single_ended)
 	port = DEVICE_DT_GET(TEST_NODE);
 	zassert_true(device_is_ready(port), "GPIO dev is not ready");
 
-	TC_PRINT("Running test on port=%s, pin=%d\n", port->name, TEST_PIN);
+	TC_PRINT("Running test on port=%s, pin=%d\n", device_name_get(port), TEST_PIN);
 
 	/* If the LED is connected directly between the MCU pin and power or
 	 * ground we can test only one of the Open Drain / Open Source modes.

@@ -42,12 +42,12 @@ void main(void)
 	const struct device *const magnetometer = DEVICE_DT_GET_ONE(st_lsm303dlhc_magn);
 
 	if (!device_is_ready(accelerometer)) {
-		printf("Device %s is not ready\n", accelerometer->name);
+		printf("Device %s is not ready\n", device_name_get(accelerometer));
 		return;
 	}
 
 	if (!device_is_ready(magnetometer)) {
-		printf("Device %s is not ready\n", magnetometer->name);
+		printf("Device %s is not ready\n", device_name_get(magnetometer));
 		return;
 	}
 

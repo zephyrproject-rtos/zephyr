@@ -843,7 +843,7 @@ static int ppp_consume_ringbuf(struct ppp_driver_context *ppp)
 
 	/* This will print too much data, enable only if really needed */
 	if (0) {
-		LOG_HEXDUMP_DBG(data, len, ppp->dev->name);
+		LOG_HEXDUMP_DBG(data, len, device_name_get(ppp->dev));
 	}
 
 	tmp = len;
@@ -1040,10 +1040,10 @@ static int ppp_start(const struct device *dev)
 		/* dts chosen zephyr,ppp-uart case */
 		context->dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ppp_uart));
 #endif
-		LOG_INF("Initializing PPP to use %s", context->dev->name);
+		LOG_INF("Initializing PPP to use %s", device_name_get(context->dev));
 
 		if (!device_is_ready(context->dev)) {
-			LOG_ERR("Device %s is not ready", context->dev->name);
+			LOG_ERR("Device %s is not ready", device_name_get(context->dev));
 			return -ENODEV;
 		}
 #if defined(CONFIG_NET_PPP_ASYNC_UART)

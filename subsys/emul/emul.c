@@ -18,7 +18,7 @@ const struct emul *emul_get_binding(const char *name)
 	const struct emul *emul_it;
 
 	for (emul_it = __emul_list_start; emul_it < __emul_list_end; emul_it++) {
-		if (strcmp(emul_it->dev->name, name) == 0) {
+		if (strcmp(device_name_get(emul_it->dev), name) == 0) {
 			return emul_it;
 		}
 	}
@@ -37,11 +37,11 @@ int emul_init_for_bus(const struct device *dev)
 	const struct emul_link_for_bus *elp;
 	const struct emul_link_for_bus *const end = cfg->children + cfg->num_children;
 
-	LOG_INF("Registering %d emulator(s) for %s", cfg->num_children, dev->name);
+	LOG_INF("Registering %d emulator(s) for %s", cfg->num_children, device_name_get(dev));
 	for (elp = cfg->children; elp < end; elp++) {
-		const struct emul *emul = emul_get_binding(elp->dev->name);
+		const struct emul *emul = emul_get_binding(device_name_get(elp->dev));
 
-		__ASSERT(emul, "Cannot find emulator for '%s'", elp->dev->name);
+		__ASSERT(emul, "Cannot find emulator for '%s'", device_name_get(elp->dev));
 
 		switch (emul->bus_type) {
 		case EMUL_BUS_TYPE_I2C:
@@ -58,7 +58,7 @@ int emul_init_for_bus(const struct device *dev)
 
 		if (rc != 0) {
 			LOG_WRN("Init %s emulator failed: %d",
-				 elp->dev->name, rc);
+				 device_name_get(elp->dev), rc);
 		}
 
 		switch (emul->bus_type) {
@@ -80,11 +80,12 @@ int emul_init_for_bus(const struct device *dev)
 		default:
 			rc = -EINVAL;
 			LOG_WRN("Found no emulated bus enabled to register emulator %s",
-				elp->dev->name);
+				device_name_get(elp->dev));
 		}
 
 		if (rc != 0) {
-			LOG_WRN("Failed to register emulator for %s: %d", elp->dev->name, rc);
+			LOG_WRN("Failed to register emulator for %s: %d",
+				device_name_get(elp->dev), rc);
 		}
 	}
 

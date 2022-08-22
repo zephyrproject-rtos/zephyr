@@ -227,7 +227,7 @@ int mdm_receiver_register(struct mdm_receiver_context *ctx,
 
 	if (!device_is_ready(uart_dev)) {
 		LOG_ERR("Device is not ready: %s",
-			uart_dev ? uart_dev->name : "<null>");
+			uart_dev ? device_name_get(uart_dev) : "<null>");
 		return -ENODEV;
 	}
 

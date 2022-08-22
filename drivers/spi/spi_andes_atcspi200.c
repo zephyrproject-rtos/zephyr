@@ -138,7 +138,7 @@ static int configure(const struct device *dev,
 
 	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
 		LOG_ERR("Slave mode is not supported on %s",
-			    dev->name);
+			    device_name_get(dev));
 		return -EINVAL;
 	}
 

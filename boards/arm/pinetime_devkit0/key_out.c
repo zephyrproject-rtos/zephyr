@@ -22,14 +22,14 @@ static int pinetime_key_out_init(const struct device *arg)
 
 	if (!device_is_ready(key_out.port)) {
 		LOG_ERR("key out gpio device %s is not ready",
-			key_out.port->name);
+			device_name_get(key_out.port));
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&key_out, GPIO_OUTPUT_ACTIVE);
 	if (ret != 0) {
 		LOG_ERR("failed to configure %s pin %d (err %d)",
-			key_out.port->name, key_out.pin, ret);
+			device_name_get(key_out.port), key_out.pin, ret);
 		return ret;
 	}
 

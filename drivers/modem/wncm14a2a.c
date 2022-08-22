@@ -1403,7 +1403,7 @@ static int wncm14a2a_init(const struct device *dev)
 	for (i = 0; i < MAX_MDM_CONTROL_PINS; i++) {
 		if (!device_is_ready(wncm14a2a_cfg.gpio[i].port)) {
 			LOG_ERR("gpio port (%s) not ready!",
-				wncm14a2a_cfg.gpio[i].port->name);
+				device_name_get(wncm14a2a_cfg.gpio[i].port));
 			return -ENODEV;
 		}
 

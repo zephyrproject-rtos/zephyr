@@ -30,7 +30,7 @@ static int cmd_mdio_scan(const struct shell *sh, size_t argc, char **argv)
 
 	dev = DEVICE_DT_GET(MDIO_NODE_ID);
 	if (!device_is_ready(dev)) {
-		shell_error(sh, "MDIO: Device driver %s is not ready.", dev->name);
+		shell_error(sh, "MDIO: Device driver %s is not ready.", device_name_get(dev));
 
 		return -ENODEV;
 	}
@@ -59,7 +59,7 @@ static int cmd_mdio_scan(const struct shell *sh, size_t argc, char **argv)
 
 	mdio_bus_disable(dev);
 
-	shell_print(sh, "%u devices found on %s", cnt, dev->name);
+	shell_print(sh, "%u devices found on %s", cnt, device_name_get(dev));
 
 	return 0;
 }
@@ -74,7 +74,7 @@ static int cmd_mdio_write(const struct shell *sh, size_t argc, char **argv)
 
 	dev = DEVICE_DT_GET(MDIO_NODE_ID);
 	if (!device_is_ready(dev)) {
-		shell_error(sh, "MDIO: Device driver %s is not ready.", dev->name);
+		shell_error(sh, "MDIO: Device driver %s is not ready.", device_name_get(dev));
 
 		return -ENODEV;
 	}
@@ -86,7 +86,7 @@ static int cmd_mdio_write(const struct shell *sh, size_t argc, char **argv)
 	mdio_bus_enable(dev);
 
 	if (mdio_write(dev, port_addr, dev_addr, data) < 0) {
-		shell_error(sh, "Failed to write to device: %s", dev->name);
+		shell_error(sh, "Failed to write to device: %s", device_name_get(dev));
 		mdio_bus_disable(dev);
 
 		return -EIO;
@@ -107,7 +107,7 @@ static int cmd_mdio_read(const struct shell *sh, size_t argc, char **argv)
 
 	dev = DEVICE_DT_GET(MDIO_NODE_ID);
 	if (!device_is_ready(dev)) {
-		shell_error(sh, "MDIO: Device driver %s is not ready.", dev->name);
+		shell_error(sh, "MDIO: Device driver %s is not ready.", device_name_get(dev));
 
 		return -ENODEV;
 	}
@@ -118,7 +118,7 @@ static int cmd_mdio_read(const struct shell *sh, size_t argc, char **argv)
 	mdio_bus_enable(dev);
 
 	if (mdio_read(dev, port_addr, dev_addr, &data) < 0) {
-		shell_error(sh, "Failed to read from device: %s", dev->name);
+		shell_error(sh, "Failed to read from device: %s", device_name_get(dev));
 		mdio_bus_disable(dev);
 
 		return -EIO;

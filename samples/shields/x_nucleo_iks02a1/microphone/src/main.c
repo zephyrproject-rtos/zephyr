@@ -52,7 +52,7 @@ void main(void)
 	const struct device *const mic_dev = DEVICE_DT_GET_ONE(st_mpxxdtyy);
 
 	if (!device_is_ready(mic_dev)) {
-		printk("%s: device not ready.\n", mic_dev->name);
+		printk("%s: device not ready.\n", device_name_get(mic_dev));
 		return;
 	}
 

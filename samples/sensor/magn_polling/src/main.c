@@ -21,7 +21,7 @@ void main(void)
 		return;
 	}
 
-	printk("Polling magnetometer data from %s.\n", dev->name);
+	printk("Polling magnetometer data from %s.\n", device_name_get(dev));
 
 	while (1) {
 		ret = sensor_sample_fetch(dev);

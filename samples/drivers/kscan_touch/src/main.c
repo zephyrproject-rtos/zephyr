@@ -31,7 +31,7 @@ void main(void)
 	printk("Kscan touch panel sample application\n");
 
 	if (!device_is_ready(kscan_dev)) {
-		LOG_ERR("kscan device %s not ready", kscan_dev->name);
+		LOG_ERR("kscan device %s not ready", device_name_get(kscan_dev));
 		return;
 	}
 

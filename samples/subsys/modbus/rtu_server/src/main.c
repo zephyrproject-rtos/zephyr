@@ -156,7 +156,7 @@ void main(void)
 		k_sleep(K_MSEC(100));
 	}
 
-	LOG_INF("Client connected to server on %s", dev->name);
+	LOG_INF("Client connected to server on %s", device_name_get(dev));
 #endif
 
 	if (init_modbus_server()) {

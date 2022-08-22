@@ -65,7 +65,7 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t devad,
 	/* Wait until done */
 	while (!(cfg->regs->GMAC_NSR & GMAC_NSR_IDLE)) {
 		if (timeout-- == 0U) {
-			LOG_ERR("transfer timedout %s", dev->name);
+			LOG_ERR("transfer timedout %s", device_name_get(dev));
 			k_sem_give(&data->sem);
 
 			return -ETIMEDOUT;

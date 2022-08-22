@@ -189,7 +189,7 @@ static int tlc59108_led_init(const struct device *dev)
 	struct led_data *dev_data = &data->dev_data;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C bus device %s is not ready", config->i2c.bus->name);
+		LOG_ERR("I2C bus device %s is not ready", device_name_get(config->i2c.bus));
 		return -ENODEV;
 	}
 

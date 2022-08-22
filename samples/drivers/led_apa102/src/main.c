@@ -61,10 +61,10 @@ void main(void)
 		LOG_ERR("LED strip device not found");
 		return;
 	} else if (!device_is_ready(strip)) {
-		LOG_ERR("LED strip device %s is not ready", strip->name);
+		LOG_ERR("LED strip device %s is not ready", device_name_get(strip));
 		return;
 	} else {
-		LOG_INF("Found LED strip device %s", strip->name);
+		LOG_INF("Found LED strip device %s", device_name_get(strip));
 	}
 
 	/*

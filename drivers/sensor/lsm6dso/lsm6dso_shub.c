@@ -687,7 +687,7 @@ int lsm6dso_shub_get_idx(const struct device *dev, enum sensor_channel type)
 		}
 	}
 
-	LOG_ERR("shub: dev %s type %d not supported", dev->name, type);
+	LOG_ERR("shub: dev %s type %d not supported", device_name_get(dev), type);
 	return -ENOTSUP;
 }
 
@@ -735,7 +735,7 @@ int lsm6dso_shub_config(const struct device *dev, enum sensor_channel chan,
 	}
 
 	if (n == data->num_ext_dev) {
-		LOG_DBG("shub: %s chan %d not supported", dev->name, chan);
+		LOG_DBG("shub: %s chan %d not supported", device_name_get(dev), chan);
 		return -ENOTSUP;
 	}
 
@@ -754,7 +754,7 @@ int lsm6dso_shub_init(const struct device *dev)
 	uint8_t chip_id;
 	struct lsm6dso_shub_slist *sp;
 
-	LOG_INF("shub: start sensorhub for %s", dev->name);
+	LOG_INF("shub: start sensorhub for %s", device_name_get(dev));
 	for (n = 0; n < ARRAY_SIZE(lsm6dso_shub_slist); n++) {
 		if (data->num_ext_dev >= LSM6DSO_SHUB_MAX_NUM_SLVS) {
 			break;
@@ -791,7 +791,7 @@ int lsm6dso_shub_init(const struct device *dev)
 		data->shub_ext[data->num_ext_dev++] = n;
 	}
 
-	LOG_DBG("shub: dev %s - num_ext_dev %d", dev->name, data->num_ext_dev);
+	LOG_DBG("shub: dev %s - num_ext_dev %d", device_name_get(dev), data->num_ext_dev);
 	if (data->num_ext_dev == 0) {
 		LOG_ERR("shub: no slave devices found");
 		return -EINVAL;

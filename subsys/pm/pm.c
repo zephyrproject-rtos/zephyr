@@ -84,7 +84,7 @@ static int pm_suspend_devices(void)
 			continue;
 		} else if (ret < 0) {
 			LOG_ERR("Device %s did not enter %s state (%d)",
-				dev->name,
+				device_name_get(dev),
 				pm_device_state_str(PM_DEVICE_STATE_SUSPENDED),
 				ret);
 			return ret;

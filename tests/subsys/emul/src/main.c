@@ -22,8 +22,8 @@ ZTEST(emul, test_emul_dt_get)
 
 	/* Verify that EMUL_DT_GET returned the expected struct emul. */
 	zassert_not_null(emul_static, "EMUL_DT_GET returned NULL");
-	zassert_ok(strcmp(emul_static->dev->name, DT_NODE_FULL_NAME(TEST_ACCEL)),
-		   "Unexpected device name %s", emul_static->dev->name);
+	zassert_ok(strcmp(device_name_get(emul_static->dev), DT_NODE_FULL_NAME(TEST_ACCEL)),
+		   "Unexpected device name %s", device_name_get(emul_static->dev));
 }
 
 ZTEST_SUITE(emul, NULL, NULL, NULL, NULL, NULL);

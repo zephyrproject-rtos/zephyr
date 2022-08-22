@@ -474,7 +474,7 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 			CONTAINER_OF(dev->state, struct i2c_device_state, devstate); \
 		stats_init(&state->stats.s_hdr, STATS_SIZE_32, 4,	\
 			   STATS_NAME_INIT_PARMS(i2c));			\
-		stats_register(dev->name, &(state->stats.s_hdr));	\
+		stats_register(device_name_get(dev), &(state->stats.s_hdr));	\
 		return init_fn(dev);					\
 	}
 

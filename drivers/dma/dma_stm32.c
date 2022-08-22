@@ -322,7 +322,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	if ((config->channel_direction == MEMORY_TO_MEMORY) &&
 		(!dev_config->support_m2m)) {
 		LOG_ERR("Memcopy not supported for device %s",
-			dev->name);
+			device_name_get(dev));
 		return -ENOTSUP;
 	}
 #endif /* CONFIG_DMA_STM32_V1 */

@@ -33,7 +33,7 @@ static const struct dac_channel_cfg dac_ch_cfg = {
 void main(void)
 {
 	if (!device_is_ready(dac_dev)) {
-		printk("DAC device %s is not ready\n", dac_dev->name);
+		printk("DAC device %s is not ready\n", device_name_get(dac_dev));
 		return;
 	}
 

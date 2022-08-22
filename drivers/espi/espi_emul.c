@@ -202,7 +202,7 @@ static int espi_emul_init(const struct device *dev)
 int espi_emul_register(const struct device *dev, struct espi_emul *emul)
 {
 	struct espi_emul_data *data = dev->data;
-	const char *name = emul->target->dev->name;
+	const char *name = device_name_get(emul->target->dev);
 
 	sys_slist_append(&data->emuls, &emul->node);
 

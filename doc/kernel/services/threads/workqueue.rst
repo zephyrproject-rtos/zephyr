@@ -301,7 +301,7 @@ unchanged and the associated error message will not be printed.
     {
         struct device_info *the_device =
             CONTAINER_OF(item, struct device_info, work);
-        printk("Got error on device %s\n", the_device->name);
+        printk("Got error on device %s\n", device_name_get(the_device));
     }
 
     /* initialize name info for a device */

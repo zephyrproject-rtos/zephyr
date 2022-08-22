@@ -72,7 +72,7 @@ static int ipm_console_init(const struct device *dev)
 
 	ipm_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 	if (!device_is_ready(ipm_dev)) {
-		LOG_ERR("%s is not ready", ipm_dev->name);
+		LOG_ERR("%s is not ready", device_name_get(ipm_dev));
 		return -ENODEV;
 	}
 

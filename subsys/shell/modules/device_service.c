@@ -39,7 +39,7 @@ static const char *get_device_name(const struct device *dev,
 				   char *buf,
 				   size_t len)
 {
-	const char *name = dev->name;
+	const char *name = device_name_get(dev);
 
 	if ((name == NULL) || (name[0] == 0)) {
 		snprintf(buf, len, "[%p]", dev);

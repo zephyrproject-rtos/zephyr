@@ -72,7 +72,7 @@ void main(void)
 
 	gpio_dev = DEVICE_DT_GET(DT_ALIAS(gpio_0));
 	if (!device_is_ready(gpio_dev)) {
-		printk("GPIO device %s is not ready!\n", gpio_dev->name);
+		printk("GPIO device %s is not ready!\n", device_name_get(gpio_dev));
 		return;
 	}
 

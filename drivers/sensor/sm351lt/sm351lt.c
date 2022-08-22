@@ -222,7 +222,7 @@ static int sm351lt_init(const struct device *dev)
 
 #if defined(CONFIG_THREAD_NAME) && defined(CONFIG_THREAD_MAX_NAME_LEN)
 	/* Sets up thread name as the device name */
-	k_thread_name_set(&data->thread, dev->name);
+	k_thread_name_set(&data->thread, device_name_get(dev));
 #endif
 
 #elif defined(CONFIG_SM351LT_TRIGGER_GLOBAL_THREAD)

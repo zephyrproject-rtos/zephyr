@@ -120,7 +120,7 @@ static int imx_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	if (data->period_cycles != period_cycles) {
 		LOG_WRN("Changing period cycles from %d to %d in %s",
 			    data->period_cycles, period_cycles,
-			    dev->name);
+			    device_name_get(dev));
 
 		data->period_cycles = period_cycles;
 		PWM_PWMPR_REG(config->base) = period_cycles;

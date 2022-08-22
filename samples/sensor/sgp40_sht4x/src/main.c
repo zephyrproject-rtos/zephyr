@@ -32,12 +32,12 @@ void main(void)
 	struct sensor_value temp, hum, gas;
 
 	if (!device_is_ready(sht)) {
-		printf("Device %s is not ready.\n", sht->name);
+		printf("Device %s is not ready.\n", device_name_get(sht));
 		return;
 	}
 
 	if (!device_is_ready(sgp)) {
-		printf("Device %s is not ready.\n", sgp->name);
+		printf("Device %s is not ready.\n", device_name_get(sgp));
 		return;
 	}
 

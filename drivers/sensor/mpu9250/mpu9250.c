@@ -241,7 +241,7 @@ static int mpu9250_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("I2C dev %s not ready", cfg->i2c.bus->name);
+		LOG_ERR("I2C dev %s not ready", device_name_get(cfg->i2c.bus));
 		return -ENODEV;
 	}
 

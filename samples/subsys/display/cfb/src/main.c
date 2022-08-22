@@ -19,7 +19,7 @@ void main(void)
 
 	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(dev)) {
-		printf("Device %s not ready\n", dev->name);
+		printf("Device %s not ready\n", device_name_get(dev));
 		return;
 	}
 
@@ -28,7 +28,7 @@ void main(void)
 		return;
 	}
 
-	printf("Initialized %s\n", dev->name);
+	printf("Initialized %s\n", device_name_get(dev));
 
 	if (cfb_framebuffer_init(dev)) {
 		printf("Framebuffer initialization failed!\n");

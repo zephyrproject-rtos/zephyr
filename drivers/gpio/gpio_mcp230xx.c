@@ -68,7 +68,7 @@ static int mcp230xx_bus_is_ready(const struct device *dev)
 	const struct mcp23xxx_config *config = dev->config;
 
 	if (!device_is_ready(config->bus.i2c.bus)) {
-		LOG_ERR("I2C bus %s not ready", config->bus.i2c.bus->name);
+		LOG_ERR("I2C bus %s not ready", device_name_get(config->bus.i2c.bus));
 		return -ENODEV;
 	}
 

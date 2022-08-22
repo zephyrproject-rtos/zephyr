@@ -231,7 +231,7 @@ static const uint8_t ws2812_gpio_##idx##_color_mapping[] =		\
 			default:					\
 				LOG_ERR("%s: invalid channel to color mapping." \
 					" Check the color-mapping DT property",	\
-					dev->name);			\
+					device_name_get(dev));			\
 				return -EINVAL;				\
 			}						\
 		}							\

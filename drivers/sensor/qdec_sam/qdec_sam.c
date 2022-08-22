@@ -110,7 +110,7 @@ static int qdec_sam_initialize(const struct device *dev)
 
 	qdec_sam_configure(dev);
 
-	LOG_INF("Device %s initialized", dev->name);
+	LOG_INF("Device %s initialized", device_name_get(dev));
 
 	return 0;
 }

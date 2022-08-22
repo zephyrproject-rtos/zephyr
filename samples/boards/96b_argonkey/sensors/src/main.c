@@ -117,7 +117,7 @@ void main(void)
 
 #ifdef CONFIG_LP3943
 	if (!device_is_ready(ledc)) {
-		printk("%s: device not ready.\n", ledc->name);
+		printk("%s: device not ready.\n", device_name_get(ledc));
 		return;
 	}
 
@@ -135,13 +135,13 @@ void main(void)
 #endif
 
 	if (!device_is_ready(led0_gpio.port)) {
-		printk("%s: device not ready.\n", led0_gpio.port->name);
+		printk("%s: device not ready.\n", device_name_get(led0_gpio.port));
 		return;
 	}
 	gpio_pin_configure_dt(&led0_gpio, GPIO_OUTPUT_ACTIVE);
 
 	if (!device_is_ready(led1_gpio.port)) {
-		printk("%s: device not ready.\n", led1_gpio.port->name);
+		printk("%s: device not ready.\n", device_name_get(led1_gpio.port));
 		return;
 	}
 	gpio_pin_configure_dt(&led1_gpio, GPIO_OUTPUT_INACTIVE);
@@ -158,7 +158,7 @@ void main(void)
 	const struct device *const baro_dev = DEVICE_DT_GET_ONE(st_lps22hb_press);
 
 	if (!device_is_ready(baro_dev)) {
-		printk("%s: device not ready.\n", baro_dev->name);
+		printk("%s: device not ready.\n", device_name_get(baro_dev));
 		return;
 	}
 #endif
@@ -167,7 +167,7 @@ void main(void)
 	const struct device *const hum_dev = DEVICE_DT_GET_ONE(st_hts221);
 
 	if (!device_is_ready(hum_dev)) {
-		printk("%s: device not ready.\n", hum_dev->name);
+		printk("%s: device not ready.\n", device_name_get(hum_dev));
 		return;
 	}
 #endif
@@ -176,7 +176,7 @@ void main(void)
 	const struct device *const accel_dev = DEVICE_DT_GET_ONE(st_lsm6dsl);
 
 	if (!device_is_ready(accel_dev)) {
-		printk("%s: device not ready.\n", accel_dev->name);
+		printk("%s: device not ready.\n", device_name_get(accel_dev));
 		return;
 	}
 
@@ -240,7 +240,7 @@ void main(void)
 	const struct device *const tof_dev = DEVICE_DT_GET_ONE(st_vl53l0x);
 
 	if (!device_is_ready(tof_dev)) {
-		printk("%s: device not ready.\n", tof_dev->name);
+		printk("%s: device not ready.\n", device_name_get(tof_dev));
 		return;
 	}
 #endif

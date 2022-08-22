@@ -990,7 +990,7 @@ static int cc2520_init(const struct device *dev)
 	}
 
 	if (!spi_is_ready(&cfg->bus)) {
-		LOG_ERR("SPI bus %s not ready", cfg->bus.bus->name);
+		LOG_ERR("SPI bus %s not ready", device_name_get(cfg->bus.bus));
 		return -EIO;
 	}
 

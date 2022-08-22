@@ -441,7 +441,7 @@ int lis2dh_init_interrupt(const struct device *dev)
 	if (!device_is_ready(cfg->gpio_drdy.port)) {
 		/* API may return false even when ptr is NULL */
 		if (cfg->gpio_drdy.port != NULL) {
-			LOG_ERR("device %s is not ready", cfg->gpio_drdy.port->name);
+			LOG_ERR("device %s is not ready", device_name_get(cfg->gpio_drdy.port));
 			return -ENODEV;
 		}
 
@@ -454,7 +454,7 @@ int lis2dh_init_interrupt(const struct device *dev)
 	status = gpio_pin_configure_dt(&cfg->gpio_drdy, GPIO_INPUT);
 	if (status < 0) {
 		LOG_ERR("Could not configure %s.%02u",
-			cfg->gpio_drdy.port->name, cfg->gpio_drdy.pin);
+			device_name_get(cfg->gpio_drdy.port), cfg->gpio_drdy.pin);
 		return status;
 	}
 
@@ -468,8 +468,8 @@ int lis2dh_init_interrupt(const struct device *dev)
 		return status;
 	}
 
-	LOG_INF("%s: int1 on %s.%02u", dev->name,
-				       cfg->gpio_drdy.port->name,
+	LOG_INF("%s: int1 on %s.%02u", device_name_get(dev),
+				       device_name_get(cfg->gpio_drdy.port),
 				       cfg->gpio_drdy.pin);
 
 check_gpio_int:
@@ -481,7 +481,7 @@ check_gpio_int:
 	if (!device_is_ready(cfg->gpio_int.port)) {
 		/* API may return false even when ptr is NULL */
 		if (cfg->gpio_int.port != NULL) {
-			LOG_ERR("device %s is not ready", cfg->gpio_int.port->name);
+			LOG_ERR("device %s is not ready", device_name_get(cfg->gpio_int.port));
 			return -ENODEV;
 		}
 
@@ -494,7 +494,7 @@ check_gpio_int:
 	status = gpio_pin_configure_dt(&cfg->gpio_int, GPIO_INPUT);
 	if (status < 0) {
 		LOG_ERR("Could not configure %s.%02u",
-			cfg->gpio_int.port->name, cfg->gpio_int.pin);
+			device_name_get(cfg->gpio_int.port), cfg->gpio_int.pin);
 		return status;
 	}
 
@@ -509,8 +509,8 @@ check_gpio_int:
 		return status;
 	}
 
-	LOG_INF("%s: int2 on %s.%02u", dev->name,
-				       cfg->gpio_int.port->name,
+	LOG_INF("%s: int2 on %s.%02u", device_name_get(dev),
+				       device_name_get(cfg->gpio_int.port),
 				       cfg->gpio_int.pin);
 
 	/* disable interrupt in case of warm (re)boot */

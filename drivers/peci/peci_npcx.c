@@ -238,7 +238,7 @@ static int peci_npcx_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(clk_dev)) {
-		LOG_ERR("%s device not ready", clk_dev->name);
+		LOG_ERR("%s device not ready", device_name_get(clk_dev));
 		return -ENODEV;
 	}
 

@@ -27,10 +27,10 @@ void main(void)
 		LOG_ERR("No device with compatible ti,lp3943 found");
 		return;
 	} else if (!device_is_ready(led_dev)) {
-		LOG_ERR("LED device %s not ready", led_dev->name);
+		LOG_ERR("LED device %s not ready", device_name_get(led_dev));
 		return;
 	} else {
-		LOG_INF("Found LED device %s", led_dev->name);
+		LOG_INF("Found LED device %s", device_name_get(led_dev));
 	}
 
 	/*

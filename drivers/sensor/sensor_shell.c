@@ -199,7 +199,7 @@ static void cmd_device_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	const struct device *dev = shell_device_lookup(idx, NULL);
 
-	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->syntax = (dev != NULL) ? device_name_get(dev) : NULL;
 	entry->handler = NULL;
 	entry->help  = NULL;
 	entry->subcmd = &dsub_channel_name;

@@ -640,7 +640,7 @@ static int littlefs_flash_init(struct fs_mount_t *mountp)
 	dev = flash_area_get_device(*fap);
 	if (dev == NULL) {
 		LOG_ERR("can't get flash device: %s",
-			(*fap)->fa_dev->name);
+			device_name_get((*fap)->fa_dev));
 		return -ENODEV;
 	}
 
@@ -770,7 +770,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 		const struct device *dev =
 			flash_area_get_device((struct flash_area *)fs->backend);
 		LOG_INF("FS at %s:0x%x is %u 0x%x-byte blocks with %u cycle",
-			dev->name,
+			device_name_get(dev),
 			(uint32_t)((struct flash_area *)fs->backend)->fa_off,
 			block_count, block_size, block_cycles);
 		LOG_INF("sizes: rd %u ; pr %u ; ca %u ; la %u",

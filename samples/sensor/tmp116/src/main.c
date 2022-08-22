@@ -32,7 +32,7 @@ void main(void)
 	__ASSERT(device_is_ready(dev), "TMP116 device not ready");
 	__ASSERT(device_is_ready(eeprom), "TMP116 eeprom device not ready");
 
-	printk("Device %s - %p is ready\n", dev->name, dev);
+	printk("Device %s - %p is ready\n", device_name_get(dev), dev);
 
 	ret = eeprom_read(eeprom, 0, eeprom_content, sizeof(eeprom_content));
 	if (ret == 0) {

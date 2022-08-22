@@ -37,11 +37,11 @@ void main(void)
 	flash_dev = DEVICE_DT_GET(DT_ALIAS(spi_flash0));
 
 	if (!device_is_ready(flash_dev)) {
-		printk("%s: device not ready.\n", flash_dev->name);
+		printk("%s: device not ready.\n", device_name_get(flash_dev));
 		return;
 	}
 
-	printf("\n%s SPI flash testing\n", flash_dev->name);
+	printf("\n%s SPI flash testing\n", device_name_get(flash_dev));
 	printf("==========================\n");
 
 

@@ -31,7 +31,7 @@ static int lis2ds12_set_odr(const struct device *dev, uint8_t odr)
 
 	/* check if power off */
 	if (odr == 0U) {
-		LOG_DBG("%s: set power-down", dev->name);
+		LOG_DBG("%s: set power-down", device_name_get(dev));
 		return lis2ds12_xl_data_rate_set(ctx, LIS2DS12_XL_ODR_OFF);
 	}
 
@@ -42,7 +42,7 @@ static int lis2ds12_set_odr(const struct device *dev, uint8_t odr)
 	 */
 	if ((odr >= 9 && cfg->pm != 3) || (odr < 9 && cfg->pm == 3) ||
 	    (odr == 1 && cfg->pm != 1)) {
-		LOG_ERR("%s: bad odr and pm combination", dev->name);
+		LOG_ERR("%s: bad odr and pm combination", device_name_get(dev));
 		return -ENOTSUP;
 	}
 
@@ -88,7 +88,7 @@ static int lis2ds12_set_odr(const struct device *dev, uint8_t odr)
 		val = LIS2DS12_XL_ODR_6k4Hz_HF;
 		break;
 	default:
-		LOG_ERR("%s: bad odr %d", dev->name, odr);
+		LOG_ERR("%s: bad odr %d", device_name_get(dev), odr);
 		return -ENOTSUP;
 	}
 
@@ -134,7 +134,7 @@ static int lis2ds12_accel_config(const struct device *dev,
 	case SENSOR_ATTR_FULL_SCALE:
 		return lis2ds12_set_range(dev, sensor_ms2_to_g(val));
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		LOG_DBG("%s: set odr to %d Hz", dev->name, val->val1);
+		LOG_DBG("%s: set odr to %d Hz", device_name_get(dev), val->val1);
 		return lis2ds12_set_odr(dev, LIS2DS12_ODR_TO_REG(val->val1));
 	default:
 		LOG_DBG("Accel attribute not supported.");
@@ -276,12 +276,12 @@ static int lis2ds12_init(const struct device *dev)
 	/* check chip ID */
 	ret = lis2ds12_device_id_get(ctx, &chip_id);
 	if (ret < 0) {
-		LOG_ERR("%s: Not able to read dev id", dev->name);
+		LOG_ERR("%s: Not able to read dev id", device_name_get(dev));
 		return ret;
 	}
 
 	if (chip_id != LIS2DS12_ID) {
-		LOG_ERR("%s: Invalid chip ID 0x%02x", dev->name, chip_id);
+		LOG_ERR("%s: Invalid chip ID 0x%02x", device_name_get(dev), chip_id);
 		return -EINVAL;
 	}
 
@@ -293,29 +293,29 @@ static int lis2ds12_init(const struct device *dev)
 
 	k_busy_wait(100);
 
-	LOG_DBG("%s: chip id 0x%x", dev->name, chip_id);
+	LOG_DBG("%s: chip id 0x%x", device_name_get(dev), chip_id);
 
 #ifdef CONFIG_LIS2DS12_TRIGGER
 	ret = lis2ds12_trigger_init(dev);
 	if (ret < 0) {
-		LOG_ERR("%s: Failed to initialize triggers", dev->name);
+		LOG_ERR("%s: Failed to initialize triggers", device_name_get(dev));
 		return ret;
 	}
 #endif
 
 	/* set sensor default pm and odr */
-	LOG_DBG("%s: pm: %d, odr: %d", dev->name, cfg->pm, cfg->odr);
+	LOG_DBG("%s: pm: %d, odr: %d", device_name_get(dev), cfg->pm, cfg->odr);
 	ret = lis2ds12_set_odr(dev, (cfg->pm == 0) ? 0 : cfg->odr);
 	if (ret < 0) {
-		LOG_ERR("%s: odr init error (12.5 Hz)", dev->name);
+		LOG_ERR("%s: odr init error (12.5 Hz)", device_name_get(dev));
 		return ret;
 	}
 
 	/* set sensor default scale */
-	LOG_DBG("%s: range is %d", dev->name, cfg->range);
+	LOG_DBG("%s: range is %d", device_name_get(dev), cfg->range);
 	ret = lis2ds12_set_range(dev, cfg->range);
 	if (ret < 0) {
-		LOG_ERR("%s: range init error %d", dev->name, cfg->range);
+		LOG_ERR("%s: range init error %d", device_name_get(dev), cfg->range);
 		return ret;
 	}
 

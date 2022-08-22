@@ -201,7 +201,7 @@ void main(void)
 
 	/* Grab the clock driver */
 	if (!device_is_ready(clock0)) {
-		printk("%s: device not ready.\n", clock0->name);
+		printk("%s: device not ready.\n", device_name_get(clock0));
 		return;
 	}
 
@@ -214,7 +214,7 @@ void main(void)
 
 	/* Grab the timer. */
 	if (!device_is_ready(timer0)) {
-		printk("%s: device not ready.\n", timer0->name);
+		printk("%s: device not ready.\n", device_name_get(timer0));
 		return;
 	}
 
@@ -224,19 +224,19 @@ void main(void)
 	sync_config.ref_Hz = counter_get_frequency(timer0);
 	if (sync_config.ref_Hz == 0) {
 		printk("Timer %s has no fixed frequency\n",
-			timer0->name);
+			device_name_get(timer0));
 		return;
 	}
 
 	top = counter_get_top_value(timer0);
 	if (top != UINT32_MAX) {
 		printk("Timer %s wraps at %u (0x%08x) not at 32 bits\n",
-		       timer0->name, top, top);
+		       device_name_get(timer0), top, top);
 		return;
 	}
 
 	rc = counter_start(timer0);
-	printk("Start %s: %d\n", timer0->name, rc);
+	printk("Start %s: %d\n", device_name_get(timer0), rc);
 
 	show_clocks("Timer-running clocks");
 
@@ -245,7 +245,7 @@ void main(void)
 	sync_state.cfg = &sync_config;
 
 	printf("Checking %s at %u Hz against ticks at %u Hz\n",
-	       timer0->name, sync_config.ref_Hz, sync_config.local_Hz);
+	       device_name_get(timer0), sync_config.ref_Hz, sync_config.local_Hz);
 	printf("Timer wraps every %u s\n",
 	       (uint32_t)(BIT64(32) / sync_config.ref_Hz));
 

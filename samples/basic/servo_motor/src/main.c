@@ -33,7 +33,8 @@ void main(void)
 	printk("Servomotor control\n");
 
 	if (!device_is_ready(servo.dev)) {
-		printk("Error: PWM device %s is not ready\n", servo.dev->name);
+		printk("Error: PWM device %s is not ready\n",
+		       device_name_get(servo.dev));
 		return;
 	}
 

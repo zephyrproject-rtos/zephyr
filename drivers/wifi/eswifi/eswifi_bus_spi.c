@@ -236,7 +236,7 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 
 	/* SPI DATA READY PIN */
 	if (!device_is_ready(cfg->dr.port)) {
-		LOG_ERR("device %s is not ready", cfg->dr.port->name);
+		LOG_ERR("device %s is not ready", device_name_get(cfg->dr.port));
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&cfg->dr, GPIO_INPUT);

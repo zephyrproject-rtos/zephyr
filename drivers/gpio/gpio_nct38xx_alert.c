@@ -95,7 +95,8 @@ static int nct38xx_alert_init(const struct device *dev)
 	/* Check NCT38XX devices are all ready. */
 	for (int i = 0; i < config->nct38xx_num; i++) {
 		if (!device_is_ready(config->nct38xx_dev[i])) {
-			LOG_ERR("%s device not ready", config->nct38xx_dev[i]->name);
+			LOG_ERR("%s device not ready",
+				device_name_get(config->nct38xx_dev[i]));
 			return -ENODEV;
 		}
 	}
@@ -104,7 +105,7 @@ static int nct38xx_alert_init(const struct device *dev)
 	k_work_init(&data->alert_worker, nct38xx_alert_worker);
 
 	if (!device_is_ready(config->irq_gpio.port)) {
-		LOG_ERR("%s device not ready", config->irq_gpio.port->name);
+		LOG_ERR("%s device not ready", device_name_get(config->irq_gpio.port));
 		return -ENODEV;
 	}
 

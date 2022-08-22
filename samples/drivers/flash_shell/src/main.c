@@ -718,7 +718,7 @@ static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
 	}
 	if (flash_device) {
 		PR_SHELL(shell, "Leaving behind device %s\n",
-			 flash_device->name);
+			 device_name_get(flash_device));
 	}
 	flash_device = dev;
 
@@ -728,7 +728,7 @@ static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
 void main(void)
 {
 	if (device_is_ready(flash_device)) {
-		printk("Found flash controller %s.\n", flash_device->name);
+		printk("Found flash controller %s.\n", device_name_get(flash_device));
 		printk("Flash I/O commands can be run.\n");
 	} else {
 		flash_device = NULL;

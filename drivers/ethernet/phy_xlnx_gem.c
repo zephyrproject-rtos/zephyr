@@ -219,7 +219,7 @@ static void phy_xlnx_gem_marvell_alaska_reset(const struct device *dev)
 	}
 	if (retries == 10) {
 		LOG_ERR("%s reset PHY address %hhu (Marvell Alaska) timed out",
-			dev->name, dev_data->phy_addr);
+			device_name_get(dev), dev_data->phy_addr);
 	}
 }
 
@@ -293,7 +293,7 @@ static void phy_xlnx_gem_marvell_alaska_cfg(const struct device *dev)
 		}
 		if (retries == 10) {
 			LOG_ERR("%s configure PHY address %hhu (Marvell Alaska) timed out",
-				dev->name, dev_data->phy_addr);
+				device_name_get(dev), dev_data->phy_addr);
 			return;
 		}
 
@@ -631,7 +631,7 @@ static void phy_xlnx_gem_ti_dp83822_reset(const struct device *dev)
 	}
 	if (retries == 10) {
 		LOG_ERR("%s reset PHY address %hhu (TI TLK105/DP83822) timed out",
-			dev->name, dev_data->phy_addr);
+			device_name_get(dev), dev_data->phy_addr);
 	}
 }
 
@@ -942,7 +942,7 @@ int phy_xlnx_gem_detect(const struct device *dev)
 		if (phy_id != 0x00000000 && phy_id != 0xFFFFFFFF) {
 			LOG_DBG("%s detected PHY at address %hhu: "
 				"ID 0x%08X",
-				dev->name,
+				device_name_get(dev),
 				phy_curr_addr, phy_id);
 
 			/*
@@ -956,7 +956,7 @@ int phy_xlnx_gem_detect(const struct device *dev)
 					(phy_xlnx_gem_supported_devs[list_iter].phy_id_mask
 					& phy_id)) {
 					LOG_DBG("%s identified supported PHY: %s",
-						dev->name,
+						device_name_get(dev),
 						phy_xlnx_gem_supported_devs[list_iter].identifier);
 
 					/*
@@ -975,6 +975,6 @@ int phy_xlnx_gem_detect(const struct device *dev)
 		}
 	}
 
-	LOG_ERR("%s PHY detection failed", dev->name);
+	LOG_ERR("%s PHY detection failed", device_name_get(dev));
 	return -EIO;
 }

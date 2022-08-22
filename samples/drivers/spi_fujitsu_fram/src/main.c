@@ -147,7 +147,7 @@ void main(void)
 
 	spi = DEVICE_DT_GET(DT_ALIAS(spi_1));
 	if (!device_is_ready(spi)) {
-		printk("SPI device %s is not ready\n", spi->name);
+		printk("SPI device %s is not ready\n", device_name_get(spi));
 		return;
 	}
 

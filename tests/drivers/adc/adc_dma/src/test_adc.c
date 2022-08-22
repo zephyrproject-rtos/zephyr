@@ -102,7 +102,7 @@ static void init_pit(void)
 	top_cfg.ticks = counter_us_to_ticks(dev, HW_TRIGGER_INTERVAL);
 	err = counter_set_top_value(dev, &top_cfg);
 	zassert_equal(0, err, "%s: Counter failed to set top value (err: %d)",
-		      dev->name, err);
+		      device_name_get(dev), err);
 }
 
 static const struct device *init_adc(void)

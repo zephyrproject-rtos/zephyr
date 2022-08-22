@@ -38,14 +38,14 @@ int led_init(void)
 	led_ok = device_is_ready(led.port);
 	if (!led_ok) {
 		LOG_ERR("Error: LED on GPIO %s pin %d is not ready",
-			led.port->name, led.pin);
+			device_name_get(led.port), led.pin);
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&led, GPIO_OUTPUT_INACTIVE);
 	if (ret < 0) {
 		LOG_ERR("Error %d: failed to configure GPIO %s pin %d",
-			ret, led.port->name, led.pin);
+			ret, device_name_get(led.port), led.pin);
 	}
 
 	return ret;

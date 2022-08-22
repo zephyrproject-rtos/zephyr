@@ -87,7 +87,7 @@ static void left_button(const struct device *gpio, struct gpio_callback *cb,
 	ret = gpio_pin_get(gpio, sw0.pin);
 	if (ret < 0) {
 		LOG_ERR("Failed to get the state of port %s pin %u, error: %d",
-			gpio->name, sw0.pin, ret);
+			device_name_get(gpio), sw0.pin, ret);
 		return;
 	}
 
@@ -119,7 +119,7 @@ static void right_button(const struct device *gpio, struct gpio_callback *cb,
 	ret = gpio_pin_get(gpio, sw1.pin);
 	if (ret < 0) {
 		LOG_ERR("Failed to get the state of port %s pin %u, error: %d",
-			gpio->name, sw1.pin, ret);
+			device_name_get(gpio), sw1.pin, ret);
 		return;
 	}
 
@@ -144,7 +144,7 @@ static void x_move(const struct device *gpio, struct gpio_callback *cb,
 	ret = gpio_pin_get(gpio, sw2.pin);
 	if (ret < 0) {
 		LOG_ERR("Failed to get the state of port %s pin %u, error: %d",
-			gpio->name, sw2.pin, ret);
+			device_name_get(gpio), sw2.pin, ret);
 		return;
 	}
 
@@ -167,7 +167,7 @@ static void y_move(const struct device *gpio, struct gpio_callback *cb,
 	ret = gpio_pin_get(gpio, sw3.pin);
 	if (ret < 0) {
 		LOG_ERR("Failed to get the state of port %s pin %u, error: %d",
-			gpio->name, sw3.pin, ret);
+			device_name_get(gpio), sw3.pin, ret);
 		return;
 	}
 
@@ -195,21 +195,21 @@ int callbacks_configure(const struct gpio_dt_spec *spec,
 	}
 
 	if (!device_is_ready(gpio)) {
-		LOG_ERR("GPIO port %s is not ready", gpio->name);
+		LOG_ERR("GPIO port %s is not ready", device_name_get(gpio));
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(spec, GPIO_INPUT);
 	if (ret < 0) {
 		LOG_ERR("Failed to configure port %s pin %u, error: %d",
-			gpio->name, pin, ret);
+			device_name_get(gpio), pin, ret);
 		return ret;
 	}
 
 	ret = gpio_pin_get(gpio, pin);
 	if (ret < 0) {
 		LOG_ERR("Failed to get the state of port %s pin %u, error: %d",
-			gpio->name, pin, ret);
+			device_name_get(gpio), pin, ret);
 		return ret;
 	}
 
@@ -220,7 +220,7 @@ int callbacks_configure(const struct gpio_dt_spec *spec,
 	if (ret < 0) {
 		LOG_ERR("Failed to add the callback for port %s pin %u, "
 			"error: %d",
-			gpio->name, pin, ret);
+			device_name_get(gpio), pin, ret);
 		return ret;
 	}
 
@@ -228,7 +228,7 @@ int callbacks_configure(const struct gpio_dt_spec *spec,
 	if (ret < 0) {
 		LOG_ERR("Failed to configure interrupt for port %s pin %u, "
 			"error: %d",
-			gpio->name, pin, ret);
+			device_name_get(gpio), pin, ret);
 		return ret;
 	}
 
@@ -242,7 +242,7 @@ void main(void)
 	const struct device *hid_dev;
 
 	if (!device_is_ready(led0.port)) {
-		LOG_ERR("LED device %s is not ready", led0.port->name);
+		LOG_ERR("LED device %s is not ready", device_name_get(led0.port));
 		return;
 	}
 

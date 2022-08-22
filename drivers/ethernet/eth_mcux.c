@@ -1145,7 +1145,7 @@ static int eth_init(const struct device *dev)
 	eth_mcux_init(dev);
 
 	LOG_DBG("%s MAC %02x:%02x:%02x:%02x:%02x:%02x",
-		dev->name,
+		device_name_get(dev),
 		context->mac_addr[0], context->mac_addr[1],
 		context->mac_addr[2], context->mac_addr[3],
 		context->mac_addr[4], context->mac_addr[5]);
@@ -1243,7 +1243,7 @@ static int eth_mcux_set_config(const struct device *dev,
 				     sizeof(context->mac_addr),
 				     NET_LINK_ETHERNET);
 		LOG_DBG("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x",
-			dev->name,
+			device_name_get(dev),
 			context->mac_addr[0], context->mac_addr[1],
 			context->mac_addr[2], context->mac_addr[3],
 			context->mac_addr[4], context->mac_addr[5]);

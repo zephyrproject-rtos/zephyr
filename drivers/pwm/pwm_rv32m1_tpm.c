@@ -83,7 +83,7 @@ static int rv32m1_tpm_set_cycles(const struct device *dev, uint32_t channel,
 			LOG_WRN("Changing period cycles from %d to %d"
 				" affects all %d channels in %s",
 				data->period_cycles, period_cycles,
-				config->channel_count, dev->name);
+				config->channel_count, device_name_get(dev));
 		}
 
 		data->period_cycles = period_cycles;

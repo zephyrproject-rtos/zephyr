@@ -2051,7 +2051,7 @@ static int eth_sam_gmac_set_config(const struct device *dev,
 		mac_addr_set(cfg->regs, 0, dev_data->mac_addr);
 
 		LOG_INF("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x",
-			dev->name,
+			device_name_get(dev),
 			dev_data->mac_addr[0], dev_data->mac_addr[1],
 			dev_data->mac_addr[2], dev_data->mac_addr[3],
 			dev_data->mac_addr[4], dev_data->mac_addr[5]);

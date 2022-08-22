@@ -920,7 +920,7 @@ static int mcp2515_init(const struct device *dev)
 	}
 
 	if (!spi_is_ready(&dev_cfg->bus)) {
-		LOG_ERR("SPI bus %s not ready", dev_cfg->bus.bus->name);
+		LOG_ERR("SPI bus %s not ready", device_name_get(dev_cfg->bus.bus));
 		return -ENODEV;
 	}
 

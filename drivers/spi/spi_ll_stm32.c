@@ -906,13 +906,13 @@ static int spi_stm32_init(const struct device *dev)
 #ifdef CONFIG_SPI_STM32_DMA
 	if ((data->dma_rx.dma_dev != NULL) &&
 				!device_is_ready(data->dma_rx.dma_dev)) {
-		LOG_ERR("%s device not ready", data->dma_rx.dma_dev->name);
+		LOG_ERR("%s device not ready", device_name_get(data->dma_rx.dma_dev));
 		return -ENODEV;
 	}
 
 	if ((data->dma_tx.dma_dev != NULL) &&
 				!device_is_ready(data->dma_tx.dma_dev)) {
-		LOG_ERR("%s device not ready", data->dma_tx.dma_dev->name);
+		LOG_ERR("%s device not ready", device_name_get(data->dma_tx.dma_dev));
 		return -ENODEV;
 	}
 

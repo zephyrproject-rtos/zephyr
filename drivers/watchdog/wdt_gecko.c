@@ -262,7 +262,7 @@ static int wdt_gecko_init(const struct device *dev)
 	/* Enable IRQs */
 	config->irq_cfg_func();
 
-	LOG_INF("Device %s initialized", dev->name);
+	LOG_INF("Device %s initialized", device_name_get(dev));
 
 	return 0;
 }

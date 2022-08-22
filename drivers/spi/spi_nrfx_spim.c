@@ -140,7 +140,7 @@ static int configure(const struct device *dev,
 	}
 
 	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Slave mode is not supported on %s", dev->name);
+		LOG_ERR("Slave mode is not supported on %s", device_name_get(dev));
 		return -EINVAL;
 	}
 
@@ -277,7 +277,7 @@ static int anomaly_58_workaround_init(const struct device *dev)
 			return -ENODEV;
 		}
 		LOG_DBG("PAN 58 workaround enabled for %s: ppi %u, gpiote %u",
-			dev->name, dev_data->ppi_ch, dev_data->gpiote_ch);
+			device_name_get(dev), dev_data->ppi_ch, dev_data->gpiote_ch);
 	}
 
 	return 0;

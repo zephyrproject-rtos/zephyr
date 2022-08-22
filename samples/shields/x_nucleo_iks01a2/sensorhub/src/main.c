@@ -37,7 +37,7 @@ void main(void)
 	const struct device *const lsm6dsl = DEVICE_DT_GET_ONE(st_lsm6dsl);
 
 	if (!device_is_ready(lsm6dsl)) {
-		printk("%s: device not ready.\n", lsm6dsl->name);
+		printk("%s: device not ready.\n", device_name_get(lsm6dsl));
 		return;
 	}
 

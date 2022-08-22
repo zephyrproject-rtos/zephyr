@@ -890,13 +890,13 @@ static int adxl372_init(const struct device *dev)
 
 #ifdef CONFIG_ADXL372_I2C
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("I2C bus %s not ready!", cfg->i2c.bus->name);
+		LOG_ERR("I2C bus %s not ready!", device_name_get(cfg->i2c.bus));
 		return -EINVAL;
 	}
 #endif
 #ifdef CONFIG_ADXL372_SPI
 	if (!spi_is_ready(&cfg->spi)) {
-		LOG_ERR("SPI bus %s not ready!", cfg->spi.bus->name);
+		LOG_ERR("SPI bus %s not ready!", device_name_get(cfg->spi.bus));
 		return -EINVAL;
 	}
 #endif /* CONFIG_ADXL372_SPI */

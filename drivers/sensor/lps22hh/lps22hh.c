@@ -175,16 +175,16 @@ static int lps22hh_init_chip(const struct device *dev)
 #endif
 
 	if (lps22hh_device_id_get(ctx, &chip_id) < 0) {
-		LOG_ERR("%s: Not able to read dev id", dev->name);
+		LOG_ERR("%s: Not able to read dev id", device_name_get(dev));
 		return -EIO;
 	}
 
 	if (chip_id != LPS22HH_ID) {
-		LOG_ERR("%s: Invalid chip ID 0x%02x", dev->name, chip_id);
+		LOG_ERR("%s: Invalid chip ID 0x%02x", device_name_get(dev), chip_id);
 		return -EIO;
 	}
 
-	LOG_DBG("%s: chip id 0x%x", dev->name, chip_id);
+	LOG_DBG("%s: chip id 0x%x", device_name_get(dev), chip_id);
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	if (cfg->i3c.bus != NULL) {
@@ -211,15 +211,15 @@ static int lps22hh_init_chip(const struct device *dev)
 #endif
 
 	/* set sensor default odr */
-	LOG_DBG("%s: odr: %d", dev->name, cfg->odr);
+	LOG_DBG("%s: odr: %d", device_name_get(dev), cfg->odr);
 	ret = lps22hh_set_odr_raw(dev, cfg->odr);
 	if (ret < 0) {
-		LOG_ERR("%s: Failed to set odr %d", dev->name, cfg->odr);
+		LOG_ERR("%s: Failed to set odr %d", device_name_get(dev), cfg->odr);
 		return ret;
 	}
 
 	if (lps22hh_block_data_update_set(ctx, PROPERTY_ENABLE) < 0) {
-		LOG_ERR("%s: Failed to set BDU", dev->name);
+		LOG_ERR("%s: Failed to set BDU", device_name_get(dev));
 		return ret;
 	}
 

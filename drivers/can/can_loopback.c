@@ -103,7 +103,7 @@ static int can_loopback_send(const struct device *dev,
 	int ret;
 
 	LOG_DBG("Sending %d bytes on %s. Id: 0x%x, ID type: %s %s",
-		frame->dlc, dev->name, frame->id,
+		frame->dlc, device_name_get(dev), frame->id,
 		frame->id_type == CAN_STANDARD_IDENTIFIER ?
 				  "standard" : "extended",
 		frame->rtr == CAN_DATAFRAME ? "" : ", RTR frame");
@@ -429,7 +429,7 @@ static int can_loopback_init(const struct device *dev)
 		return -1;
 	}
 
-	LOG_INF("Init of %s done", dev->name);
+	LOG_INF("Init of %s done", device_name_get(dev));
 
 	return 0;
 }

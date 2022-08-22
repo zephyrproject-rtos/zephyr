@@ -1520,7 +1520,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 		LOG_DBG("Unexpected flash size: %u", flash_size);
 	}
 
-	LOG_DBG("%s: %u MiBy flash", dev->name, (uint32_t)(flash_size >> 20));
+	LOG_DBG("%s: %u MiBy flash", device_name_get(dev), (uint32_t)(flash_size >> 20));
 
 	/* Copy over the erase types, preserving their order.  (The
 	 * Sector Map Parameter table references them by index.)
@@ -1668,7 +1668,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	static DMA_HandleTypeDef hdma;
 
 	if (!device_is_ready(dev_data->dma.dev)) {
-		LOG_ERR("%s device not ready", dev_data->dma.dev->name);
+		LOG_ERR("%s device not ready", device_name_get(dev_data->dma.dev));
 		return -ENODEV;
 	}
 
@@ -1868,7 +1868,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	LOG_DBG("%s: SFDP v %u.%u AP %x with %u PH", dev->name,
+	LOG_DBG("%s: SFDP v %u.%u AP %x with %u PH", device_name_get(dev),
 		hp->rev_major, hp->rev_minor, hp->access, 1 + hp->nph);
 
 	const struct jesd216_param_header *php = hp->phdr;

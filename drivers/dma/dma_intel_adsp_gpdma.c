@@ -113,13 +113,13 @@ static int intel_adsp_gpdma_config(const struct device *dev, uint32_t channel,
 	switch (cfg->channel_direction) {
 	case MEMORY_TO_PERIPHERAL:
 		LOG_DBG("%s: dma %s configuring llp for destination %x",
-			__func__, dev->name, block_cfg->dest_address);
+			__func__, device_name_get(dev), block_cfg->dest_address);
 		intel_adsp_gpdma_llp_config(dev, channel,
 					    block_cfg->dest_address);
 		break;
 	case PERIPHERAL_TO_MEMORY:
 		LOG_DBG("%s: dma %s configuring llp for source %x",
-			__func__, dev->name, block_cfg->source_address);
+			__func__, device_name_get(dev), block_cfg->source_address);
 		intel_adsp_gpdma_llp_config(dev, channel,
 					    block_cfg->source_address);
 		break;
@@ -233,7 +233,7 @@ int intel_adsp_gpdma_init(const struct device *dev)
 	ret = intel_adsp_gpdma_enable(dev);
 	if (ret != 0) {
 		LOG_ERR("%s: dma %s failed to initialize", __func__,
-			dev->name);
+			device_name_get(dev));
 		goto out;
 	}
 #endif
@@ -255,7 +255,7 @@ int intel_adsp_gpdma_init(const struct device *dev)
 	ret = dw_dma_setup(dev);
 	if (ret != 0) {
 		LOG_ERR("%s: dma %s failed to initialize", __func__,
-			dev->name);
+			device_name_get(dev));
 		goto out;
 	}
 
@@ -263,7 +263,7 @@ int intel_adsp_gpdma_init(const struct device *dev)
 	dev_cfg->dw_cfg.irq_config();
 
 	LOG_INF("%s: dma %s initialized", __func__,
-		dev->name);
+		device_name_get(dev));
 
 out:
 	return 0;

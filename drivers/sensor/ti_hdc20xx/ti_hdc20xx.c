@@ -163,7 +163,7 @@ static int ti_hdc20xx_init(const struct device *dev)
 	int rc;
 
 	if (!device_is_ready(config->bus.bus)) {
-		LOG_ERR("I2C bus %s not ready", config->bus.bus->name);
+		LOG_ERR("I2C bus %s not ready", device_name_get(config->bus.bus));
 		return -ENODEV;
 	}
 

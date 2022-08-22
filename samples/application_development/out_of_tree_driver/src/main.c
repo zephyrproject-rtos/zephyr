@@ -23,7 +23,7 @@ void main(void)
 
 	__ASSERT(dev, "Failed to get device binding");
 
-	printk("device is %p, name is %s\n", dev, dev->name);
+	printk("device is %p, name is %s\n", dev, device_name_get(dev));
 
 	k_object_access_grant(dev, k_current_get());
 	k_thread_user_mode_enter(user_entry, NULL, NULL, NULL);

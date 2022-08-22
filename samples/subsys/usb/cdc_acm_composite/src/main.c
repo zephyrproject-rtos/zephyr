@@ -123,7 +123,7 @@ void main(void)
 	for (int idx = 0; idx < ARRAY_SIZE(peers); idx++) {
 		if (!device_is_ready(peers[idx].dev)) {
 			LOG_ERR("CDC ACM device %s is not ready",
-				peers[idx].dev->name);
+				device_name_get(peers[idx].dev));
 			return;
 		}
 	}

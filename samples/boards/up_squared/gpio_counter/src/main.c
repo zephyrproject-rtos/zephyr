@@ -91,7 +91,7 @@ void button_cb(const struct device *gpiodev, struct gpio_callback *cb,
 int get_gpio_dev(struct _pin *pin)
 {
 	if (!device_is_ready(pin->gpio_dev)) {
-		printk("ERROR: GPIO device is not ready for %s\n", pin->gpio_dev->name);
+		printk("ERROR: GPIO device is not ready for %s\n", device_name_get(pin->gpio_dev));
 		return -1;
 	}
 

@@ -27,7 +27,7 @@ static void lis2ds12_gpio_callback(const struct device *dev,
 
 	ret = gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_DISABLE);
 	if (ret < 0) {
-		LOG_ERR("%s: Not able to configure pin_int", dev->name);
+		LOG_ERR("%s: Not able to configure pin_int", device_name_get(dev));
 	}
 
 #if defined(CONFIG_LIS2DS12_TRIGGER_OWN_THREAD)
@@ -62,7 +62,7 @@ static void lis2ds12_handle_int(const struct device *dev)
 	ret = gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
 					      GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("%s: Not able to configure pin_int", dev->name);
+		LOG_ERR("%s: Not able to configure pin_int", device_name_get(dev));
 	}
 }
 
@@ -124,12 +124,12 @@ int lis2ds12_trigger_init(const struct device *dev)
 	/* setup data ready gpio interrupt (INT1 or INT2) */
 	if (!device_is_ready(cfg->gpio_int.port)) {
 		if (cfg->gpio_int.port) {
-			LOG_ERR("%s: device %s is not ready", dev->name,
-						cfg->gpio_int.port->name);
+			LOG_ERR("%s: device %s is not ready", device_name_get(dev),
+						device_name_get(cfg->gpio_int.port));
 			return -ENODEV;
 		}
 
-		LOG_DBG("%s: gpio_int not defined in DT", dev->name);
+		LOG_DBG("%s: gpio_int not defined in DT", device_name_get(dev));
 		return 0;
 	}
 
@@ -141,8 +141,8 @@ int lis2ds12_trigger_init(const struct device *dev)
 		return ret;
 	}
 
-	LOG_INF("%s: int on %s.%02u", dev->name, cfg->gpio_int.port->name,
-				      cfg->gpio_int.pin);
+	LOG_INF("%s: int on %s.%02u", device_name_get(dev),
+		device_name_get(cfg->gpio_int.port), cfg->gpio_int.pin);
 
 	gpio_init_callback(&data->gpio_cb,
 			   lis2ds12_gpio_callback,
@@ -190,7 +190,7 @@ int lis2ds12_trigger_set(const struct device *dev,
 
 	ret = gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_DISABLE);
 	if (ret < 0) {
-		LOG_ERR("%s: Not able to configure pin_int", dev->name);
+		LOG_ERR("%s: Not able to configure pin_int", device_name_get(dev));
 		return ret;
 	}
 

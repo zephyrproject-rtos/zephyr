@@ -63,7 +63,7 @@ void main(void)
 	printk("Watchdog sample application\n");
 
 	if (!device_is_ready(wdt)) {
-		printk("%s: device not ready.\n", wdt->name);
+		printk("%s: device not ready.\n", device_name_get(wdt));
 		return;
 	}
 

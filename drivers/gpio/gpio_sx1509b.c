@@ -579,7 +579,7 @@ static int sx1509b_init(const struct device *dev)
 	rc = i2c_reg_write_byte_dt(&cfg->bus, SX1509B_REG_RESET,
 				   SX1509B_REG_RESET_MAGIC0);
 	if (rc != 0) {
-		LOG_ERR("%s: reset m0 failed: %d\n", dev->name, rc);
+		LOG_ERR("%s: reset m0 failed: %d\n", device_name_get(dev), rc);
 		goto out;
 	}
 	rc = i2c_reg_write_byte_dt(&cfg->bus, SX1509B_REG_RESET,
@@ -621,9 +621,9 @@ static int sx1509b_init(const struct device *dev)
 
 out:
 	if (rc != 0) {
-		LOG_ERR("%s init failed: %d", dev->name, rc);
+		LOG_ERR("%s init failed: %d", device_name_get(dev), rc);
 	} else {
-		LOG_INF("%s init ok", dev->name);
+		LOG_INF("%s init ok", device_name_get(dev));
 	}
 	k_sem_give(&drv_data->lock);
 	return rc;

@@ -214,7 +214,7 @@ static inline int spi_context_cs_configure_all(struct spi_context *ctx)
 	for (cs_gpio = ctx->cs_gpios; cs_gpio < &ctx->cs_gpios[ctx->num_cs_gpios]; cs_gpio++) {
 		if (!device_is_ready(cs_gpio->port)) {
 			LOG_ERR("CS GPIO port %s pin %d is not ready",
-				cs_gpio->port->name, cs_gpio->pin);
+				device_name_get(cs_gpio->port), cs_gpio->pin);
 			return -ENODEV;
 		}
 

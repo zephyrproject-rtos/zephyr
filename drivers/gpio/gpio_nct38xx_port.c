@@ -445,7 +445,7 @@ static int gpio_nct38xx_port_init(const struct device *dev)
 	struct gpio_nct38xx_port_data *const data = dev->data;
 
 	if (!device_is_ready(config->nct38xx_dev)) {
-		LOG_ERR("%s is not ready", config->nct38xx_dev->name);
+		LOG_ERR("%s is not ready", device_name_get(config->nct38xx_dev));
 		return -ENODEV;
 	}
 

@@ -216,7 +216,7 @@ void main(void)
 	int ret;
 
 	if (!device_is_ready(can_dev)) {
-		printk("CAN: Device %s not ready.\n", can_dev->name);
+		printk("CAN: Device %s not ready.\n", device_name_get(can_dev));
 		return;
 	}
 
@@ -236,7 +236,7 @@ void main(void)
 	if (led.port != NULL) {
 		if (!device_is_ready(led.port)) {
 			printk("LED: Device %s not ready.\n",
-			       led.port->name);
+			       device_name_get(led.port));
 			return;
 		}
 		ret = gpio_pin_configure_dt(&led, GPIO_OUTPUT_HIGH);

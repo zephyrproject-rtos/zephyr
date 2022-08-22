@@ -142,7 +142,7 @@ static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t ba
 		}
 
 		if (presc_idx == ARRAY_SIZE(LPUART_PRESCALER_TAB)) {
-			LOG_ERR("Unable to set %s to %d", dev->name, baud_rate);
+			LOG_ERR("Unable to set %s to %d", device_name_get(dev), baud_rate);
 			return;
 		}
 
@@ -152,7 +152,7 @@ static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t ba
 #else
 		lpuartdiv = lpuartdiv_calc(clock_rate, baud_rate);
 		if (lpuartdiv < LPUART_BRR_MIN_VALUE || lpuartdiv > LPUART_BRR_MASK) {
-			LOG_ERR("Unable to set %s to %d", dev->name, baud_rate);
+			LOG_ERR("Unable to set %s to %d", device_name_get(dev), baud_rate);
 			return;
 		}
 #endif /* USART_PRESC_PRESCALER */

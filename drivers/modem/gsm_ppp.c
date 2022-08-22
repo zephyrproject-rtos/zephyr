@@ -874,7 +874,7 @@ attaching:
 				gsm->state = GSM_PPP_STATE_ERROR;
 			} else {
 				LOG_INF("AT channel %d connected to %s",
-					DLCI_AT, gsm->at_dev->name);
+					DLCI_AT, device_name_get(gsm->at_dev));
 			}
 		}
 
@@ -955,7 +955,7 @@ static void mux_setup_next(struct gsm_modem *gsm)
 static void mux_attach_cb(const struct device *mux, int dlci_address,
 			  bool connected, void *user_data)
 {
-	LOG_DBG("DLCI %d to %s %s", dlci_address, mux->name,
+	LOG_DBG("DLCI %d to %s %s", dlci_address, device_name_get(mux),
 		connected ? "connected" : "disconnected");
 
 	if (connected) {
@@ -973,7 +973,7 @@ static int mux_attach(const struct device *mux, const struct device *uart,
 				  user_data);
 	if (ret < 0) {
 		LOG_ERR("Cannot attach DLCI %d (%s) to %s (%d)", dlci_address,
-			mux->name, uart->name, ret);
+			device_name_get(mux), device_name_get(uart), ret);
 		return ret;
 	}
 
@@ -1068,7 +1068,7 @@ static void mux_setup(struct k_work *work)
 		}
 
 		LOG_INF("PPP channel %d connected to %s",
-			DLCI_PPP, gsm->ppp_dev->name);
+			DLCI_PPP, device_name_get(gsm->ppp_dev));
 
 		k_work_init_delayable(&gsm->gsm_configure_work, gsm_finalize_connection);
 		(void)gsm_work_reschedule(&gsm->gsm_configure_work, K_NO_WAIT);

@@ -18,7 +18,7 @@ void main(void)
 		return;
 	}
 	if (!device_is_ready(dev)) {
-		printf("max30101 device %s is not ready\n", dev->name);
+		printf("max30101 device %s is not ready\n", device_name_get(dev));
 		return;
 	}
 

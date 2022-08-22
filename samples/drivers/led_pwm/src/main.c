@@ -105,12 +105,12 @@ void main(void)
 
 	led_pwm = DEVICE_DT_GET(LED_PWM_NODE_ID);
 	if (!device_is_ready(led_pwm)) {
-		LOG_ERR("Device %s is not ready", led_pwm->name);
+		LOG_ERR("Device %s is not ready", device_name_get(led_pwm));
 		return;
 	}
 
 	if (!num_leds) {
-		LOG_ERR("No LEDs found for %s", led_pwm->name);
+		LOG_ERR("No LEDs found for %s", device_name_get(led_pwm));
 		return;
 	}
 

@@ -41,9 +41,9 @@ void main(void)
 	int rc;
 
 	if (device_is_ready(strip)) {
-		LOG_INF("Found LED strip device %s", strip->name);
+		LOG_INF("Found LED strip device %s", device_name_get(strip));
 	} else {
-		LOG_ERR("LED strip device %s is not ready", strip->name);
+		LOG_ERR("LED strip device %s is not ready", device_name_get(strip));
 		return;
 	}
 

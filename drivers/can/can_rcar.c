@@ -858,7 +858,7 @@ static int can_rcar_send(const struct device *dev, const struct can_frame *frame
 		"Id: 0x%x, "
 		"ID type: %s, "
 		"Remote Frame: %s"
-		, frame->dlc, dev->name
+		, frame->dlc, device_name_get(dev)
 		, frame->id
 		, frame->id_type == CAN_STANDARD_IDENTIFIER ?
 		"standard" : "extended"

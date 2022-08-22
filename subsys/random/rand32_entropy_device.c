@@ -19,7 +19,7 @@ uint32_t z_impl_sys_rand32_get(void)
 	int ret;
 
 	__ASSERT(device_is_ready(entropy_dev), "Entropy device %s not ready",
-		 entropy_dev->name);
+		 device_name_get(entropy_dev));
 
 	ret = entropy_get_entropy(entropy_dev, (uint8_t *)&random_num,
 				  sizeof(random_num));
@@ -43,7 +43,7 @@ static int rand_get(uint8_t *dst, size_t outlen, bool csrand)
 	int ret;
 
 	__ASSERT(device_is_ready(entropy_dev), "Entropy device %s not ready",
-		 entropy_dev->name);
+		 device_name_get(entropy_dev));
 
 	ret = entropy_get_entropy(entropy_dev, dst, outlen);
 

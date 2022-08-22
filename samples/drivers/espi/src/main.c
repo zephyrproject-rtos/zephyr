@@ -1203,27 +1203,27 @@ int espi_test(void)
 
 #if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
 	if (!device_is_ready(pwrgd_gpio.port)) {
-		LOG_ERR("%s: device not ready.", pwrgd_gpio.port->name);
+		LOG_ERR("%s: device not ready.", device_name_get(pwrgd_gpio.port));
 		return -ENODEV;
 	}
 	if (!device_is_ready(rsm_gpio.port)) {
-		LOG_ERR("%s: device not ready.", rsm_gpio.port->name);
+		LOG_ERR("%s: device not ready.", device_name_get(rsm_gpio.port));
 		return -ENODEV;
 	}
 #endif
 	if (!device_is_ready(espi_dev)) {
-		LOG_ERR("%s: device not ready.", espi_dev->name);
+		LOG_ERR("%s: device not ready.", device_name_get(espi_dev));
 		return -ENODEV;
 	}
 
 #ifdef CONFIG_ESPI_SAF
 	if (!device_is_ready(qspi_dev)) {
-		LOG_ERR("%s: device not ready.", qspi_dev->name);
+		LOG_ERR("%s: device not ready.", device_name_get(qspi_dev));
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(espi_saf_dev)) {
-		LOG_ERR("%s: device not ready.", espi_saf_dev->name);
+		LOG_ERR("%s: device not ready.", device_name_get(espi_saf_dev));
 		return -ENODEV;
 	}
 #endif
@@ -1260,13 +1260,13 @@ int espi_test(void)
 	 */
 	ret = spi_saf_init();
 	if (ret) {
-		LOG_ERR("Unable to configure %d:%s", ret, qspi_dev->name);
+		LOG_ERR("Unable to configure %d:%s", device_name_get(ret, qspi_dev));
 		return ret;
 	}
 
 	ret = espi_saf_init();
 	if (ret) {
-		LOG_ERR("Unable to configure %d:%s", ret, espi_saf_dev->name);
+		LOG_ERR("Unable to configure %d:%s", device_name_get(ret, espi_saf_dev));
 		return ret;
 	}
 

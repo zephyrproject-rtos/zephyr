@@ -37,7 +37,7 @@ void main(void)
 #endif
 
 	if (!device_is_ready(flash_dev)) {
-		printk("%s: device not ready.\n", flash_dev->name);
+		printk("%s: device not ready.\n", device_name_get(flash_dev));
 		return;
 	}
 
@@ -46,7 +46,7 @@ void main(void)
 	(void)flash_get_page_info_by_idx(flash_dev, 0, &pages_info);
 	chip_size = page_count * pages_info.size;
 	printk("Using %s, chip size: %u bytes (page: %u)\n",
-	       flash_dev->name, chip_size, pages_info.size);
+	       device_name_get(flash_dev), chip_size, pages_info.size);
 #endif
 
 	printk("Reading the first byte of the test region ... ");

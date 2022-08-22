@@ -327,7 +327,7 @@ static int setup_interrupts(const struct device *dev)
 
 	if (!device_is_ready(alert_gpio->port)) {
 		LOG_ERR("tmp108: gpio controller %s not ready",
-			alert_gpio->port->name);
+			device_name_get(alert_gpio->port));
 		return -ENODEV;
 	}
 
@@ -366,7 +366,7 @@ static int tmp108_init(const struct device *dev)
 	int result = 0;
 
 	if (!device_is_ready(cfg->i2c_spec.bus)) {
-		LOG_ERR("I2C dev %s not ready", cfg->i2c_spec.bus->name);
+		LOG_ERR("I2C dev %s not ready", device_name_get(cfg->i2c_spec.bus));
 		return -ENODEV;
 	}
 

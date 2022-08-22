@@ -56,7 +56,7 @@ int ft8xx_drv_init(void)
 	int ret;
 
 	if (!spi_is_ready(&spi)) {
-		LOG_ERR("SPI bus %s not ready", spi.bus->name);
+		LOG_ERR("SPI bus %s not ready", device_name_get(spi.bus));
 		return -ENODEV;
 	}
 
@@ -64,7 +64,7 @@ int ft8xx_drv_init(void)
 	 * If not, use polling mode.
 	 */
 	if (!device_is_ready(irq_gpio.port)) {
-		LOG_ERR("GPIO device %s is not ready", irq_gpio.port->name);
+		LOG_ERR("GPIO device %s is not ready", device_name_get(irq_gpio.port));
 		return -ENODEV;
 	}
 

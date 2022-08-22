@@ -267,13 +267,13 @@ void main(void)
 	}
 
 	if (!device_is_ready(led0_gpio.port)) {
-		printk("%s: device not ready.\n", led0_gpio.port->name);
+		printk("%s: device not ready.\n", device_name_get(led0_gpio.port));
 		return;
 	}
 	gpio_pin_configure_dt(&led0_gpio, GPIO_OUTPUT_ACTIVE);
 
 	if (!device_is_ready(led1_gpio.port)) {
-		printk("%s: device not ready.\n", led1_gpio.port->name);
+		printk("%s: device not ready.\n", device_name_get(led1_gpio.port));
 		return;
 	}
 	gpio_pin_configure_dt(&led1_gpio, GPIO_OUTPUT_INACTIVE);
@@ -299,31 +299,31 @@ void main(void)
 	const struct device *const lis2mdl = DEVICE_DT_GET_ONE(st_lis2mdl);
 
 	if (!device_is_ready(hts221)) {
-		printk("%s: device not ready.\n", hts221->name);
+		printk("%s: device not ready.\n", device_name_get(hts221));
 		return;
 	}
 	if (!device_is_ready(lis2dw12)) {
-		printk("%s: device not ready.\n", lis2dw12->name);
+		printk("%s: device not ready.\n", device_name_get(lis2dw12));
 		return;
 	}
 	if (!device_is_ready(lps22hh)) {
-		printk("%s: device not ready.\n", lps22hh->name);
+		printk("%s: device not ready.\n", device_name_get(lps22hh));
 		return;
 	}
 	if (!device_is_ready(lsm6dso)) {
-		printk("%s: device not ready.\n", lsm6dso->name);
+		printk("%s: device not ready.\n", device_name_get(lsm6dso));
 		return;
 	}
 	if (!device_is_ready(stts751)) {
-		printk("%s: device not ready.\n", stts751->name);
+		printk("%s: device not ready.\n", device_name_get(stts751));
 		return;
 	}
 	if (!device_is_ready(iis3dhhc)) {
-		printk("%s: device not ready.\n", iis3dhhc->name);
+		printk("%s: device not ready.\n", device_name_get(iis3dhhc));
 		return;
 	}
 	if (!device_is_ready(lis2mdl)) {
-		printk("%s: device not ready.\n", lis2mdl->name);
+		printk("%s: device not ready.\n", device_name_get(lis2mdl));
 		return;
 	}
 

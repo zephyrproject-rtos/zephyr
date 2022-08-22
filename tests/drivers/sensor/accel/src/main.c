@@ -48,7 +48,7 @@ static void run_tests_on_accel(const struct device *accel)
 {
 	zassert_true(device_is_ready(accel), "Accelerometer device is not ready");
 
-	PRINT("Running tests on '%s'\n", accel->name);
+	PRINT("Running tests on '%s'\n", device_name_get(accel));
 	k_object_access_grant(accel, k_current_get());
 }
 

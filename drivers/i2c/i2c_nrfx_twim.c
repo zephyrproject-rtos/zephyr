@@ -90,7 +90,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 					"Adjust the zephyr,concat-buf-size "
 					"property in the \"%s\" node.",
 					msg_buf_used, msgs[i].len,
-					concat_buf_size, dev->name);
+					concat_buf_size, device_name_get(dev));
 				ret = -ENOSPC;
 				break;
 			}
@@ -112,7 +112,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 				LOG_ERR("Cannot copy flash buffer of size: %u. "
 					"Adjust the zephyr,flash-buf-max-size "
 					"property in the \"%s\" node.",
-					msgs[i].len, dev->name);
+					msgs[i].len, device_name_get(dev));
 				ret = -EINVAL;
 				break;
 			}
@@ -363,7 +363,7 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 
 	if (nrfx_twim_init(&dev_config->twim, &dev_config->twim_config,
 			   event_handler, dev_data) != NRFX_SUCCESS) {
-		LOG_ERR("Failed to initialize device: %s", dev->name);
+		LOG_ERR("Failed to initialize device: %s", device_name_get(dev));
 		return -EIO;
 	}
 

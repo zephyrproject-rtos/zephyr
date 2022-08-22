@@ -144,7 +144,7 @@ int periphs_init(void)
 	/* Bind sensors */
 	for (i = 0U; i < ARRAY_SIZE(dev_info); i++) {
 		if (!device_is_ready(dev_info[i])) {
-			printk("%s: device not ready.\n", dev_info[i]->name);
+			printk("%s: device not ready.\n", device_name_get(dev_info[i]));
 			return -ENODEV;
 		}
 	}

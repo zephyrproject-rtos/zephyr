@@ -22,7 +22,7 @@ void main(void)
 		return;
 	}
 
-	printk("Dev %p name %s is ready!\n", dev, dev->name);
+	printk("Dev %p name %s is ready!\n", dev, device_name_get(dev));
 
 	struct sensor_value temp, humidity;
 

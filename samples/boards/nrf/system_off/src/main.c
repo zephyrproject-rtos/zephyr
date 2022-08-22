@@ -41,7 +41,7 @@ void main(void)
 	const struct device *const cons = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	if (!device_is_ready(cons)) {
-		printk("%s: device not ready.\n", cons->name);
+		printk("%s: device not ready.\n", device_name_get(cons));
 		return;
 	}
 

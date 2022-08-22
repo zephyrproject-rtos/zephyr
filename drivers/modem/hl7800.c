@@ -633,7 +633,7 @@ static int read_pin(int default_state, const struct gpio_dt_spec *spec)
 
 	if (state < 0) {
 		LOG_ERR("Unable to read port: %s pin: %d status: %d",
-			spec->port->name, spec->pin, state);
+			device_name_get(spec->port), spec->pin, state);
 		state = default_state;
 	}
 
@@ -6107,7 +6107,7 @@ static int hl7800_init(const struct device *dev)
 	for (i = 0; i < MAX_MDM_CONTROL_PINS; i++) {
 		if (!device_is_ready(hl7800_cfg.gpio[i].port)) {
 			LOG_ERR("gpio port (%s) not ready!",
-				hl7800_cfg.gpio[i].port->name);
+				device_name_get(hl7800_cfg.gpio[i].port));
 			return -ENODEV;
 		}
 	}

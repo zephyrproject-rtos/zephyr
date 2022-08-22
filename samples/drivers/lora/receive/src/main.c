@@ -48,7 +48,7 @@ void main(void)
 	int8_t snr;
 
 	if (!device_is_ready(lora_dev)) {
-		LOG_ERR("%s Device not ready", lora_dev->name);
+		LOG_ERR("%s Device not ready", device_name_get(lora_dev));
 		return;
 	}
 

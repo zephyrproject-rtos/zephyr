@@ -41,14 +41,14 @@ static int vnd_sensor_iodev_read(const struct device *dev, uint8_t *buf,
 	uint32_t sample_number;
 	uint32_t key;
 
-	LOG_DBG("%s: buf_len = %d, buf = %p", dev->name, buf_len, buf);
+	LOG_DBG("%s: buf_len = %d, buf = %p", device_name_get(dev), buf_len, buf);
 
 	key = irq_lock();
 	sample_number = data->sample_number++;
 	irq_unlock(key);
 
 	if (buf_len < config->sample_size) {
-		LOG_ERR("%s: Buffer is too small", dev->name);
+		LOG_ERR("%s: Buffer is too small", device_name_get(dev));
 		return -ENOMEM;
 	}
 
@@ -67,7 +67,7 @@ static void vnd_sensor_iodev_execute(const struct device *dev,
 	if (sqe->op == RTIO_OP_RX) {
 		result = vnd_sensor_iodev_read(dev, sqe->buf, sqe->buf_len);
 	} else {
-		LOG_ERR("%s: Invalid op", dev->name);
+		LOG_ERR("%s: Invalid op", device_name_get(dev));
 		result = -EINVAL;
 	}
 
@@ -89,7 +89,7 @@ static void vnd_sensor_iodev_submit(const struct rtio_sqe *sqe, struct rtio *r)
 	};
 
 	if (k_msgq_put(&data->msgq, &msg, K_NO_WAIT) != 0) {
-		LOG_ERR("%s: Could not put a msg", dev->name);
+		LOG_ERR("%s: Could not put a msg", device_name_get(dev));
 		rtio_sqe_err(r, sqe, -EWOULDBLOCK);
 	}
 }
@@ -100,7 +100,7 @@ static void vnd_sensor_handle_int(const struct device *dev)
 	struct vnd_sensor_msg msg;
 
 	if (k_msgq_get(&data->msgq, &msg, K_NO_WAIT) != 0) {
-		LOG_ERR("%s: Could not get a msg", dev->name);
+		LOG_ERR("%s: Could not get a msg", device_name_get(dev));
 	} else {
 		vnd_sensor_iodev_execute(dev, &msg.sqe, msg.r);
 	}

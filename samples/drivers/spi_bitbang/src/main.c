@@ -123,7 +123,7 @@ void main(void)
 	const struct device *const dev = DEVICE_DT_GET(SPIBB_NODE);
 
 	if (!device_is_ready(dev)) {
-		printk("%s: device not ready.\n", dev->name);
+		printk("%s: device not ready.\n", device_name_get(dev));
 		return;
 	}
 

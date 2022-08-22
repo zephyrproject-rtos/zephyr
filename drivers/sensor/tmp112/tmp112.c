@@ -190,7 +190,7 @@ int tmp112_init(const struct device *dev)
 	struct tmp112_data *data = dev->data;
 
 	if (!device_is_ready(cfg->bus.bus)) {
-		LOG_ERR("I2C dev %s not ready", cfg->bus.bus->name);
+		LOG_ERR("I2C dev %s not ready", device_name_get(cfg->bus.bus));
 		return -EINVAL;
 	}
 

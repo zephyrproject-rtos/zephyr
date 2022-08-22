@@ -139,7 +139,7 @@ static int memc_flexspi_init(const struct device *dev)
 
 	/* we should not configure the device we are running on */
 	if (memc_flexspi_is_running_xip(dev)) {
-		LOG_DBG("XIP active on %s, skipping init", dev->name);
+		LOG_DBG("XIP active on %s, skipping init", device_name_get(dev));
 		return 0;
 	}
 

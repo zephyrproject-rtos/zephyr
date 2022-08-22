@@ -80,7 +80,7 @@ void main(void)
 	 */
 	fs.flash_device = NVS_PARTITION_DEVICE;
 	if (!device_is_ready(fs.flash_device)) {
-		printk("Flash device %s is not ready\n", fs.flash_device->name);
+		printk("Flash device %s is not ready\n", device_name_get(fs.flash_device));
 		return;
 	}
 	fs.offset = NVS_PARTITION_OFFSET;

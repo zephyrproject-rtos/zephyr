@@ -548,12 +548,12 @@ static int spi_mcux_init(const struct device *dev)
 
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
 	if (!device_is_ready(data->dma_tx.dma_dev)) {
-		LOG_ERR("%s device is not ready", data->dma_tx.dma_dev->name);
+		LOG_ERR("%s device is not ready", device_name_get(data->dma_tx.dma_dev));
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(data->dma_rx.dma_dev)) {
-		LOG_ERR("%s device is not ready", data->dma_rx.dma_dev->name);
+		LOG_ERR("%s device is not ready", device_name_get(data->dma_rx.dma_dev));
 		return -ENODEV;
 	}
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */

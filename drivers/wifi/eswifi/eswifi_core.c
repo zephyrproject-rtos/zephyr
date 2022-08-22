@@ -654,15 +654,15 @@ static int eswifi_init(const struct device *dev)
 	eswifi->bus->init(eswifi);
 
 	if (!device_is_ready(cfg->resetn.port)) {
-		LOG_ERR("%s: device %s is not ready", dev->name,
-				cfg->resetn.port->name);
+		LOG_ERR("%s: device %s is not ready", device_name_get(dev),
+				device_name_get(cfg->resetn.port));
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&cfg->resetn, GPIO_OUTPUT_INACTIVE);
 
 	if (!device_is_ready(cfg->wakeup.port)) {
-		LOG_ERR("%s: device %s is not ready", dev->name,
-				cfg->wakeup.port->name);
+		LOG_ERR("%s: device %s is not ready", device_name_get(dev),
+				device_name_get(cfg->wakeup.port));
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&cfg->wakeup, GPIO_OUTPUT_ACTIVE);

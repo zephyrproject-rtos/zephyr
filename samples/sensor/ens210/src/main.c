@@ -15,11 +15,11 @@ void main(void)
 	struct sensor_value temperature, humidity;
 
 	if (!device_is_ready(dev)) {
-		printk("Device %s is not ready\n", dev->name);
+		printk("Device %s is not ready\n", device_name_get(dev));
 		return;
 	}
 
-	printk("device is %p, name is %s\n", dev, dev->name);
+	printk("device is %p, name is %s\n", dev, device_name_get(dev));
 
 	while (1) {
 		sensor_sample_fetch(dev);

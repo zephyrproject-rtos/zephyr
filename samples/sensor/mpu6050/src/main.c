@@ -89,7 +89,7 @@ void main(void)
 	const struct device *const mpu6050 = DEVICE_DT_GET_ONE(invensense_mpu6050);
 
 	if (!device_is_ready(mpu6050)) {
-		printf("Device %s is not ready\n", mpu6050->name);
+		printf("Device %s is not ready\n", device_name_get(mpu6050));
 		return;
 	}
 

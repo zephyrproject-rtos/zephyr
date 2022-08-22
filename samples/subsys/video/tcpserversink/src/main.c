@@ -68,7 +68,7 @@ void main(void)
 	}
 
 	if (!device_is_ready(video)) {
-		LOG_ERR("%s: device not ready.\n", video->name);
+		LOG_ERR("%s: device not ready.\n", device_name_get(video));
 		return;
 	}
 

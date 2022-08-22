@@ -331,7 +331,7 @@ static int dacx0508_init(const struct device *dev)
 	int ret;
 
 	if (!spi_is_ready(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		LOG_ERR("SPI bus %s not ready", device_name_get(config->bus.bus));
 		return -ENODEV;
 	}
 

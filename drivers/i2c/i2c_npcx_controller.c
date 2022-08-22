@@ -1041,7 +1041,7 @@ static int i2c_ctrl_init(const struct device *dev)
 	/* Turn on device clock first and get source clock freq. */
 	if (clock_control_on(clk_dev,
 		(clock_control_subsys_t *) &config->clk_cfg) != 0) {
-		LOG_ERR("Turn on %s clock fail.", dev->name);
+		LOG_ERR("Turn on %s clock fail.", device_name_get(dev));
 		return -EIO;
 	}
 
@@ -1052,7 +1052,7 @@ static int i2c_ctrl_init(const struct device *dev)
 	 */
 	if (clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
 			&config->clk_cfg, &i2c_rate) != 0) {
-		LOG_ERR("Get %s clock rate error.", dev->name);
+		LOG_ERR("Get %s clock rate error.", device_name_get(dev));
 		return -EIO;
 	}
 
@@ -1061,7 +1061,7 @@ static int i2c_ctrl_init(const struct device *dev)
 	} else if (i2c_rate == 20000000) {
 		data->ptr_speed_confs = npcx_20m_speed_confs;
 	} else {
-		LOG_ERR("Unsupported apb2/3 freq for %s.", dev->name);
+		LOG_ERR("Unsupported apb2/3 freq for %s.", device_name_get(dev));
 		return -EIO;
 	}
 

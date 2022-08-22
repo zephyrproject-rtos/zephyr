@@ -361,8 +361,8 @@ static int apds9960_init_interrupt(const struct device *dev)
 	struct apds9960_data *drv_data = dev->data;
 
 	if (!device_is_ready(config->int_gpio.port)) {
-		LOG_ERR("%s: device %s is not ready", dev->name,
-			config->int_gpio.port->name);
+		LOG_ERR("%s: device %s is not ready", device_name_get(dev),
+			device_name_get(config->int_gpio.port));
 		return -ENODEV;
 	}
 

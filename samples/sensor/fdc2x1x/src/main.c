@@ -73,7 +73,7 @@ void main(void)
 	const struct device *const dev = DEVICE_DT_GET(DEVICE_NODE);
 
 	if (!device_is_ready(dev)) {
-		printk("Device %s is not ready\n", dev->name);
+		printk("Device %s is not ready\n", device_name_get(dev));
 		return;
 	}
 

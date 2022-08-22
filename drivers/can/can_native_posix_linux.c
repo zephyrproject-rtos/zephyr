@@ -137,7 +137,7 @@ static int can_npl_send(const struct device *dev, const struct can_frame *frame,
 	int ret = -EIO;
 
 	LOG_DBG("Sending %d bytes on %s. Id: 0x%x, ID type: %s %s",
-		frame->dlc, dev->name, frame->id,
+		frame->dlc, device_name_get(dev), frame->id,
 		frame->id_type == CAN_STANDARD_IDENTIFIER ?
 				  "standard" : "extended",
 		frame->rtr == CAN_DATAFRAME ? "" : ", RTR frame");
@@ -469,7 +469,7 @@ static int can_npl_init(const struct device *dev)
 			CONFIG_CAN_NATIVE_POSIX_LINUX_RX_THREAD_PRIORITY,
 			0, K_NO_WAIT);
 
-	LOG_DBG("Init of %s done", dev->name);
+	LOG_DBG("Init of %s done", device_name_get(dev));
 
 	return 0;
 }

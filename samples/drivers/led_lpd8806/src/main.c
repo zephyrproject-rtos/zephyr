@@ -59,10 +59,10 @@ void main(void)
 		LOG_ERR("LED strip device not found");
 		return;
 	} else if (!device_is_ready(strip)) {
-		LOG_INF("LED strip device %s is not ready", strip->name);
+		LOG_INF("LED strip device %s is not ready", device_name_get(strip));
 		return;
 	}
-	LOG_INF("Found LED strip device %s", strip->name);
+	LOG_INF("Found LED strip device %s", device_name_get(strip));
 
 	/*
 	 * Display a pattern that "walks" the three primary colors

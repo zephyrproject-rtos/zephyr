@@ -31,10 +31,10 @@ void main(void)
 		LOG_ERR("No devices with compatible nxp,pca9633 found");
 		return;
 	} else if (!device_is_ready(led_dev)) {
-		LOG_ERR("LED device %s is not ready", led_dev->name);
+		LOG_ERR("LED device %s is not ready", device_name_get(led_dev));
 		return;
 	} else {
-		LOG_INF("Found LED device %s", led_dev->name);
+		LOG_INF("Found LED device %s", device_name_get(led_dev));
 	}
 
 	LOG_INF("Testing leds");

@@ -963,7 +963,8 @@ static int i2s_sam_initialize(const struct device *dev)
 		   CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT);
 
 	if (!device_is_ready(dev_cfg->dev_dma)) {
-		LOG_ERR("%s device not ready", dev_cfg->dev_dma->name);
+		LOG_ERR("%s device not ready",
+			device_name_get(dev_cfg->dev_dma));
 		return -ENODEV;
 	}
 
@@ -982,7 +983,7 @@ static int i2s_sam_initialize(const struct device *dev)
 	/* Enable module's IRQ */
 	irq_enable(dev_cfg->irq_id);
 
-	LOG_INF("Device %s initialized", dev->name);
+	LOG_INF("Device %s initialized", device_name_get(dev));
 
 	return 0;
 }

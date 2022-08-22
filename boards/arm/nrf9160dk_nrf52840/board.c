@@ -124,7 +124,7 @@ static int reset_pin_configure(void)
 	gpio_dt_flags_t flags = GET_FLAGS(reset_input, gpios, 0);
 
 	if (!device_is_ready(gpio)) {
-		LOG_ERR("%s is not ready", gpio->name);
+		LOG_ERR("%s is not ready", device_name_get(gpio));
 		return -ENODEV;
 	}
 
@@ -168,7 +168,7 @@ static int init(const struct device *dev)
 		gpio_flags_t flags = cfg->flags;
 
 		if (!device_is_ready(cfg->gpio)) {
-			LOG_ERR("%s is not ready", cfg->gpio->name);
+			LOG_ERR("%s is not ready", device_name_get(cfg->gpio));
 			return -ENODEV;
 		}
 

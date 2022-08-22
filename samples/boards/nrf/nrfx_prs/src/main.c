@@ -81,14 +81,14 @@ static bool init_buttons(void)
 		int ret;
 
 		if (!device_is_ready(btn->gpio.port)) {
-			printk("%s is not ready\n", btn->gpio.port->name);
+			printk("%s is not ready\n", device_name_get(btn->gpio.port));
 			return false;
 		}
 
 		ret = gpio_pin_configure_dt(&btn->gpio, GPIO_INPUT);
 		if (ret < 0) {
 			printk("Failed to configure %s pin %d: %d\n",
-				btn->gpio.port->name, btn->gpio.pin, ret);
+				device_name_get(btn->gpio.port), btn->gpio.pin, ret);
 			return false;
 		}
 
@@ -96,7 +96,7 @@ static bool init_buttons(void)
 						      GPIO_INT_EDGE_TO_ACTIVE);
 		if (ret < 0) {
 			printk("Failed to configure interrupt on %s pin %d: %d\n",
-				btn->gpio.port->name, btn->gpio.pin, ret);
+				device_name_get(btn->gpio.port), btn->gpio.pin, ret);
 			return false;
 		}
 
@@ -314,7 +314,7 @@ static bool background_transfer(const struct device *spi_dev)
 	};
 	int ret;
 
-	printk("-- Background transfer on \"%s\" --\n", spi_dev->name);
+	printk("-- Background transfer on \"%s\" --\n", device_name_get(spi_dev));
 
 	ret = spi_transceive(spi_dev, &spi_dev_cfg, &tx, &rx);
 	if (ret < 0) {
@@ -339,7 +339,7 @@ void main(void)
 	const struct device *const spi_dev = DEVICE_DT_GET(SPI_DEV_NODE);
 
 	if (!device_is_ready(spi_dev)) {
-		printk("%s is not ready\n", spi_dev->name);
+		printk("%s is not ready\n", device_name_get(spi_dev));
 		return;
 	}
 

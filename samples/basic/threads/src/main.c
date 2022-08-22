@@ -58,7 +58,7 @@ void blink(const struct led *led, uint32_t sleep_ms, uint32_t id)
 	int ret;
 
 	if (!device_is_ready(spec->port)) {
-		printk("Error: %s device is not ready\n", spec->port->name);
+		printk("Error: %s device is not ready\n", device_name_get(spec->port));
 		return;
 	}
 

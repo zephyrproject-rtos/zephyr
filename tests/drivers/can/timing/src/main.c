@@ -294,7 +294,7 @@ void *can_timing_setup(void)
 	err = can_get_core_clock(dev, &core_clock);
 	zassert_equal(err, 0, "failed to get core CAN clock");
 
-	printk("testing on device %s @ %u Hz\n", dev->name, core_clock);
+	printk("testing on device %s @ %u Hz\n", device_name_get(dev), core_clock);
 
 	k_object_access_grant(dev, k_current_get());
 

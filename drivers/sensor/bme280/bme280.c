@@ -385,7 +385,7 @@ static int bme280_chip_init(const struct device *dev)
 	/* Wait for the sensor to be ready */
 	k_sleep(K_MSEC(1));
 
-	LOG_DBG("\"%s\" OK", dev->name);
+	LOG_DBG("\"%s\" OK", device_name_get(dev));
 	return 0;
 }
 

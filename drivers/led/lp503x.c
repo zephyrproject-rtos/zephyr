@@ -179,7 +179,7 @@ static int lp503x_init(const struct device *dev)
 	}
 	if (config->num_leds > LP503X_MAX_LEDS) {
 		LOG_ERR("%s: invalid number of LEDs %d (max %d)",
-			dev->name, config->num_leds, LP503X_MAX_LEDS);
+			device_name_get(dev), config->num_leds, LP503X_MAX_LEDS);
 		return -EINVAL;
 	}
 

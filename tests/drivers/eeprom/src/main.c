@@ -176,7 +176,7 @@ static void run_tests_on_eeprom(const struct device *dev)
 {
 	eeprom = dev;
 
-	printk("Running tests on device \"%s\"\n", eeprom->name);
+	printk("Running tests on device \"%s\"\n", device_name_get(eeprom));
 	k_object_access_grant(eeprom, k_current_get());
 	ztest_run_all(NULL);
 }

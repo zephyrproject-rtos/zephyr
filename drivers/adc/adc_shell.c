@@ -112,7 +112,7 @@ static struct adc_hdl {
 static struct adc_hdl *get_adc(const char *device_label)
 {
 	for (int i = 0; i < ARRAY_SIZE(adc_list); i++) {
-		if (!strcmp(device_label, adc_list[i].dev->name)) {
+		if (!strcmp(device_label, device_name_get(adc_list[i].dev))) {
 			return &adc_list[i];
 		}
 	}
@@ -347,7 +347,7 @@ static int cmd_adc_print(const struct shell *shell, size_t argc, char **argv)
 			   "Acquisition Time: %u\n"
 			   "Channel ID: %u\n"
 			   "Resolution: %u",
-			   adc->dev->name,
+			   device_name_get(adc->dev),
 			   chosen_gain,
 			   chosen_reference,
 			   adc->channel_config.acquisition_time,
@@ -408,7 +408,7 @@ static void cmd_adc_dev_get(size_t idx, struct shell_static_entry *entry)
 {
 	/* -1 because the last element in the list is a "list terminator" */
 	if (idx < ARRAY_SIZE(adc_list) - 1) {
-		entry->syntax  = adc_list[idx].dev->name;
+		entry->syntax  = device_name_get(adc_list[idx].dev);
 		entry->handler = NULL;
 		entry->subcmd  = &sub_adc_cmds;
 		entry->help    = "Select subcommand for ADC property label.\n";

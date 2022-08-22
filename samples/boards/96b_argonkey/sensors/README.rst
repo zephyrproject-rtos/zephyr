@@ -32,7 +32,7 @@ build correctly. Example:
       struct device *hum_dev = DEVICE_DT_GET_ONE(st_hts221);
 
       if (!device_is_ready(hum_dev)) {
-        printk("%s: device not ready.\n", hum_dev->name);
+        printk("%s: device not ready.\n", device_name_get(hum_dev));
         return;
       }
     #endif

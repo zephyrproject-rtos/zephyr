@@ -33,7 +33,7 @@ void main(void)
 
 	/* Configure to generate PORT event (wakeup) on button 1 press. */
 	if (!device_is_ready(sw0_gpio.port)) {
-		printk("%s: device not ready.\n", sw0_gpio.port->name);
+		printk("%s: device not ready.\n", device_name_get(sw0_gpio.port));
 		return;
 	}
 

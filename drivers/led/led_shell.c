@@ -53,7 +53,7 @@ static int cmd_off(const struct shell *shell, size_t argc, char **argv)
 		return err;
 	}
 
-	shell_print(shell, "%s: turning off LED %d", dev->name, led);
+	shell_print(shell, "%s: turning off LED %d", device_name_get(dev), led);
 
 	err = led_off(dev, led);
 	if (err) {
@@ -74,7 +74,7 @@ static int cmd_on(const struct shell *shell, size_t argc, char **argv)
 		return err;
 	}
 
-	shell_print(shell, "%s: turning on LED %d", dev->name, led);
+	shell_print(shell, "%s: turning on LED %d", device_name_get(dev), led);
 
 	err = led_on(dev, led);
 	if (err) {
@@ -97,7 +97,7 @@ static int cmd_get_info(const struct shell *shell, size_t argc, char **argv)
 		return err;
 	}
 
-	shell_print(shell, "%s: getting LED %d information", dev->name, led);
+	shell_print(shell, "%s: getting LED %d information", device_name_get(dev), led);
 
 	err = led_get_info(dev, led, &info);
 	if (err) {
@@ -148,7 +148,7 @@ static int cmd_set_brightness(const struct shell *shell,
 	}
 
 	shell_print(shell, "%s: setting LED %d brightness to %lu",
-		    dev->name, led, value);
+		    device_name_get(dev), led, value);
 
 	err = led_set_brightness(dev, led, (uint8_t) value);
 	if (err) {
@@ -200,7 +200,7 @@ static int cmd_set_color(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "%s: setting LED %d color to %d",
-		      dev->name, led, color[0]);
+		      device_name_get(dev), led, color[0]);
 	for (i = 1; i < num_colors; i++) {
 		shell_fprintf(shell, SHELL_NORMAL, ":%d", color[i]);
 	}
@@ -240,7 +240,7 @@ static int cmd_set_channel(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	shell_print(shell, "%s: setting channel %d to %lu",
-		    dev->name, channel, value);
+		    device_name_get(dev), channel, value);
 
 	err = led_set_channel(dev, channel, (uint8_t) value);
 	if (err) {
@@ -293,7 +293,7 @@ cmd_write_channels(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "%s: writing from channel %d: %d",
-		      dev->name, start_channel, value[0]);
+		      device_name_get(dev), start_channel, value[0]);
 	for (i = 1; i < num_channels; i++) {
 		shell_fprintf(shell, SHELL_NORMAL, " %d", value[i]);
 	}

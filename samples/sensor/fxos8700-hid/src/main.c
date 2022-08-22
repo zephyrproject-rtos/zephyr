@@ -95,7 +95,7 @@ int callbacks_configure(const struct gpio_dt_spec *gpio,
 	int ret;
 
 	if (!device_is_ready(gpio->port)) {
-		LOG_ERR("%s: device not ready.", gpio->port->name);
+		LOG_ERR("%s: device not ready.", device_name_get(gpio->port));
 		return -ENODEV;
 	}
 
@@ -173,7 +173,7 @@ void main(void)
 	const struct device *accel_dev, *hid_dev;
 
 	if (!device_is_ready(led_gpio.port)) {
-		LOG_ERR("%s: device not ready.", led_gpio.port->name);
+		LOG_ERR("%s: device not ready.", device_name_get(led_gpio.port));
 		return;
 	}
 
@@ -199,7 +199,7 @@ void main(void)
 
 	accel_dev = DEVICE_DT_GET_ONE(nxp_fxos8700);
 	if (!device_is_ready(accel_dev)) {
-		LOG_ERR("%s: device not ready.", accel_dev->name);
+		LOG_ERR("%s: device not ready.", device_name_get(accel_dev));
 		return;
 	}
 

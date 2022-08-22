@@ -329,7 +329,7 @@ static int hci_uart_init(const struct device *unused)
 	LOG_DBG("");
 
 	if (!device_is_ready(hci_uart_dev)) {
-		LOG_ERR("HCI UART %s is not ready", hci_uart_dev->name);
+		LOG_ERR("HCI UART %s is not ready", device_name_get(hci_uart_dev));
 		return -EINVAL;
 	}
 

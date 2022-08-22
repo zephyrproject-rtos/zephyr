@@ -26,7 +26,7 @@ static void board_setup(void)
 
 	if (in_dev != out_dev) {
 		printk("FATAL: output controller %s != input controller %s\n",
-		       out_dev->name, in_dev->name);
+		       device_name_get(out_dev), device_name_get(in_dev));
 		k_panic();
 	}
 #endif

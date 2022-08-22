@@ -36,7 +36,8 @@ void main(void)
 	printk("\n%s system off demo\n", CONFIG_BOARD);
 
 	if (!device_is_ready(button.port)) {
-		printk("Error: button device %s is not ready\n", button.port->name);
+		printk("Error: button device %s is not ready\n",
+		       device_name_get(button.port));
 		return;
 	}
 
@@ -45,15 +46,15 @@ void main(void)
 	int ret = gpio_pin_configure_dt(&button, GPIO_INPUT | GPIO_PULL_UP);
 
 	if (ret != 0) {
-		printk("Error %d: failed to configure %s pin %d\n", ret, button.port->name,
-		       button.pin);
+		printk("Error %d: failed to configure %s pin %d\n", ret,
+		       device_name_get(button.port), button.pin);
 		return;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_LEVEL_LOW);
 	if (ret != 0) {
 		printk("Error %d: failed to configure interrupt on %s pin %d\n", ret,
-		       button.port->name, button.pin);
+		       device_name_get(button.port), button.pin);
 		return;
 	}
 
@@ -82,7 +83,8 @@ void main(void)
 	}
 	printk("RTC Alarm set for %llu seconds to wake from soft-off.\n",
 	       counter_ticks_to_us(snvs_rtc_dev, alarm_cfg.ticks) / (1000ULL * 1000ULL));
-	printk("Entering system off; press %s to restart sooner\n", button.port->name);
+	printk("Entering system off; press %s to restart sooner\n",
+	       device_name_get(button.port));
 
 	pm_state_force(0u, &(struct pm_state_info){ PM_STATE_SOFT_OFF, 0, 0 });
 

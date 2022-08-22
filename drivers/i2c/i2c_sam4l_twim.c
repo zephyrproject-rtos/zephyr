@@ -573,14 +573,14 @@ static int i2c_sam_twim_initialize(const struct device *dev)
 
 	ret = i2c_sam_twim_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize %s device", dev->name);
+		LOG_ERR("Failed to initialize %s device", device_name_get(dev));
 		return ret;
 	}
 
 	/* Enable module's IRQ */
 	irq_enable(cfg->irq_id);
 
-	LOG_INF("Device %s initialized", dev->name);
+	LOG_INF("Device %s initialized", device_name_get(dev));
 
 	return 0;
 }

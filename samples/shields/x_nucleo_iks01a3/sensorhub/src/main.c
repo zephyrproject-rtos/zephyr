@@ -184,11 +184,11 @@ void main(void)
 	int cnt = 1;
 
 	if (!device_is_ready(lis2dw12)) {
-		printk("%s: device not ready.\n", lis2dw12->name);
+		printk("%s: device not ready.\n", device_name_get(lis2dw12));
 		return;
 	}
 	if (!device_is_ready(lsm6dso)) {
-		printk("%s: device not ready.\n", lsm6dso->name);
+		printk("%s: device not ready.\n", device_name_get(lsm6dso));
 		return;
 	}
 

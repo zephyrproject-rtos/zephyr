@@ -277,7 +277,7 @@ void main(void)
 	const struct device *const dev = DEVICE_DT_GET(FLASH_NODE);
 
 	if (!device_is_ready(dev)) {
-		printf("%s: device not ready\n", dev->name);
+		printf("%s: device not ready\n", device_name_get(dev));
 		return;
 	}
 
@@ -302,7 +302,7 @@ void main(void)
 		return;
 	}
 
-	printf("%s: SFDP v %u.%u AP %x with %u PH\n", dev->name,
+	printf("%s: SFDP v %u.%u AP %x with %u PH\n", device_name_get(dev),
 		hp->rev_major, hp->rev_minor, hp->access, 1 + hp->nph);
 
 	const struct jesd216_param_header *php = hp->phdr;

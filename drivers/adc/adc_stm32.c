@@ -939,7 +939,7 @@ static void adc_stm32_isr(const struct device *dev)
 
 	adc_context_on_sampling_done(&data->ctx, dev);
 
-	LOG_DBG("%s ISR triggered.", dev->name);
+	LOG_DBG("%s ISR triggered.", device_name_get(dev));
 }
 
 static int adc_stm32_read(const struct device *dev,

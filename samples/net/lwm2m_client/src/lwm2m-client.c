@@ -191,7 +191,7 @@ static void *temperature_get_buf(uint16_t obj_inst_id, uint16_t res_id,
 	dev = DEVICE_DT_GET_ONE(nxp_fxos8700);
 
 	if (!device_is_ready(dev)) {
-		LOG_ERR("%s: device not ready.", dev->name);
+		LOG_ERR("%s: device not ready.", device_name_get(dev));
 		return;
 	}
 #endif

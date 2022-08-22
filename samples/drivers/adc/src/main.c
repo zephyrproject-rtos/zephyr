@@ -59,7 +59,7 @@ void main(void)
 			int32_t val_mv;
 
 			printk("- %s, channel %d: ",
-			       adc_channels[i].dev->name,
+			       device_name_get(adc_channels[i].dev),
 			       adc_channels[i].channel_id);
 
 			(void)adc_sequence_init_dt(&adc_channels[i], &sequence);

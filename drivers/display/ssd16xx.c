@@ -845,7 +845,7 @@ static int ssd16xx_init(const struct device *dev)
 	LOG_DBG("");
 
 	if (!spi_is_ready(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		LOG_ERR("SPI bus %s not ready", device_name_get(config->bus.bus));
 		return -ENODEV;
 	}
 

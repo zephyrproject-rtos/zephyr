@@ -334,7 +334,7 @@ static int counter_sam_initialize(const struct device *dev)
 #endif
 	dev_cfg->irq_config_func(dev);
 
-	LOG_INF("Device %s initialized", dev->name);
+	LOG_INF("Device %s initialized", device_name_get(dev));
 
 	return 0;
 }

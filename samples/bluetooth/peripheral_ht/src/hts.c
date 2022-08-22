@@ -70,7 +70,7 @@ void hts_init(void)
 		temp_dev = NULL;
 	} else {
 		printk("temp device is %p, name is %s\n", temp_dev,
-		       temp_dev->name);
+		       device_name_get(temp_dev));
 	}
 }
 

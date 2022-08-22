@@ -858,14 +858,16 @@ static int i2s_mcux_init(const struct device *dev)
 
 	if (data->tx.dev_dma != NULL) {
 		if (!device_is_ready(data->tx.dev_dma)) {
-			LOG_ERR("%s device not ready", data->tx.dev_dma->name);
+			LOG_ERR("%s device not ready",
+				device_name_get(data->tx.dev_dma));
 			return -ENODEV;
 		}
 	}
 
 	if (data->rx.dev_dma != NULL) {
 		if (!device_is_ready(data->rx.dev_dma)) {
-			LOG_ERR("%s device not ready", data->rx.dev_dma->name);
+			LOG_ERR("%s device not ready",
+				device_name_get(data->rx.dev_dma));
 			return -ENODEV;
 		}
 	}
@@ -873,7 +875,7 @@ static int i2s_mcux_init(const struct device *dev)
 	data->tx.state = I2S_STATE_NOT_READY;
 	data->rx.state = I2S_STATE_NOT_READY;
 
-	LOG_INF("Device %s inited", dev->name);
+	LOG_INF("Device %s inited", device_name_get(dev));
 
 	return 0;
 }

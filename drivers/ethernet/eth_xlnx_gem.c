@@ -101,10 +101,10 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
 			 dev_conf->phy_mdio_addr_fix <= 32),
 			 "%s invalid PHY address %u, must be in range "
 			 "1 to 32, or 0 for auto-detection",
-			 dev->name, dev_conf->phy_mdio_addr_fix);
+			 device_name_get(dev), dev_conf->phy_mdio_addr_fix);
 		__ASSERT(dev_conf->phy_poll_interval > 0,
 			 "%s has an invalid zero PHY status polling "
-			 "interval", dev->name);
+			 "interval", device_name_get(dev));
 	}
 
 	/* Valid max. / nominal link speed value */
@@ -112,18 +112,18 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
 		 dev_conf->max_link_speed == LINK_100MBIT ||
 		 dev_conf->max_link_speed == LINK_1GBIT),
 		 "%s invalid max./nominal link speed value %u",
-		 dev->name, (uint32_t)dev_conf->max_link_speed);
+		 device_name_get(dev), (uint32_t)dev_conf->max_link_speed);
 
 	/* MDC clock divider validity check, SoC dependent */
 #if defined(CONFIG_SOC_XILINX_ZYNQMP)
 	__ASSERT(dev_conf->mdc_divider <= MDC_DIVIDER_48,
 		 "%s invalid MDC clock divider value %u, must be in "
-		 "range 0 to %u", dev->name, dev_conf->mdc_divider,
+		 "range 0 to %u", device_name_get(dev), dev_conf->mdc_divider,
 		 (uint32_t)MDC_DIVIDER_48);
 #elif defined(CONFIG_SOC_FAMILY_XILINX_ZYNQ7000)
 	__ASSERT(dev_conf->mdc_divider <= MDC_DIVIDER_224,
 		 "%s invalid MDC clock divider value %u, must be in "
-		 "range 0 to %u", dev->name, dev_conf->mdc_divider,
+		 "range 0 to %u", device_name_get(dev), dev_conf->mdc_divider,
 		 (uint32_t)MDC_DIVIDER_224);
 #endif
 
@@ -132,13 +132,13 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
 		 dev_conf->amba_dbus_width == AMBA_AHB_DBUS_WIDTH_64BIT ||
 		 dev_conf->amba_dbus_width == AMBA_AHB_DBUS_WIDTH_128BIT),
 		 "%s AMBA AHB bus width configuration is invalid",
-		 dev->name);
+		 device_name_get(dev));
 	__ASSERT((dev_conf->ahb_burst_length == AHB_BURST_SINGLE ||
 		 dev_conf->ahb_burst_length == AHB_BURST_INCR4 ||
 		 dev_conf->ahb_burst_length == AHB_BURST_INCR8 ||
 		 dev_conf->ahb_burst_length == AHB_BURST_INCR16),
 		 "%s AMBA AHB burst length configuration is invalid",
-		 dev->name);
+		 device_name_get(dev));
 
 	/* HW RX buffer size */
 	__ASSERT((dev_conf->hw_rx_buffer_size == HWRX_BUFFER_SIZE_8KB ||
@@ -146,12 +146,12 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
 		 dev_conf->hw_rx_buffer_size == HWRX_BUFFER_SIZE_2KB ||
 		 dev_conf->hw_rx_buffer_size == HWRX_BUFFER_SIZE_1KB),
 		 "%s hardware RX buffer size configuration is invalid",
-		 dev->name);
+		 device_name_get(dev));
 
 	/* HW RX buffer offset */
 	__ASSERT(dev_conf->hw_rx_buffer_offset <= 3,
 		 "%s hardware RX buffer offset %u is invalid, must be in "
-		 "range 0 to 3", dev->name, dev_conf->hw_rx_buffer_offset);
+		 "range 0 to 3", device_name_get(dev), dev_conf->hw_rx_buffer_offset);
 
 	/*
 	 * RX & TX buffer sizes
@@ -161,16 +161,16 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
 	 */
 	__ASSERT(dev_conf->rx_buffer_size % 64 == 0,
 		 "%s RX buffer size %u is not a multiple of 64 bytes",
-		 dev->name, dev_conf->rx_buffer_size);
+		 device_name_get(dev), dev_conf->rx_buffer_size);
 	__ASSERT((dev_conf->rx_buffer_size != 0 &&
 		 dev_conf->rx_buffer_size <= 16320),
 		 "%s RX buffer size %u is invalid, should be >64, "
-		 "must be 16320 bytes maximum.", dev->name,
+		 "must be 16320 bytes maximum.", device_name_get(dev),
 		 dev_conf->rx_buffer_size);
 	__ASSERT((dev_conf->tx_buffer_size != 0 &&
 		 dev_conf->tx_buffer_size <= 16380),
 		 "%s TX buffer size %u is invalid, should be >64, "
-		 "must be 16380 bytes maximum.", dev->name,
+		 "must be 16380 bytes maximum.", device_name_get(dev),
 		 dev_conf->tx_buffer_size);
 
 	/* Checksum offloading limitations of the QEMU GEM implementation */
@@ -277,7 +277,7 @@ static void eth_xlnx_gem_isr(const struct device *dev)
 	 */
 	if (reg_val & ETH_XLNX_GEM_IXR_ERRORS_MASK) {
 		LOG_ERR("%s error bit(s) set in Interrupt Status Reg.: 0x%08X",
-			dev->name, reg_val);
+			device_name_get(dev), reg_val);
 	}
 
 	/*
@@ -369,7 +369,7 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 
 	tx_data_length = tx_data_remaining = net_pkt_get_len(pkt);
 	if (tx_data_length == 0) {
-		LOG_ERR("%s cannot TX, zero packet length", dev->name);
+		LOG_ERR("%s cannot TX, zero packet length", device_name_get(dev));
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 		dev_data->stats.errors.tx++;
 #endif
@@ -400,7 +400,7 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 	if (bds_reqd > dev_data->txbd_ring.free_bds) {
 		LOG_ERR("%s cannot TX, packet length %hu requires "
 			"%hhu BDs, current free count = %hhu",
-			dev->name, tx_data_length, bds_reqd,
+			device_name_get(dev), tx_data_length, bds_reqd,
 			dev_data->txbd_ring.free_bds);
 
 		if (dev_conf->defer_txd_to_queue) {
@@ -496,7 +496,7 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 	/* Block until TX has completed */
 	sem_status = k_sem_take(&dev_data->tx_done_sem, K_MSEC(100));
 	if (sem_status < 0) {
-		LOG_ERR("%s TX confirmation timed out", dev->name);
+		LOG_ERR("%s TX confirmation timed out", device_name_get(dev));
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 		dev_data->stats.tx_timeout_count++;
 #endif
@@ -552,7 +552,7 @@ static int eth_xlnx_gem_start_device(const struct device *dev)
 		k_work_reschedule(&dev_data->phy_poll_delayed_work, K_NO_WAIT);
 	}
 
-	LOG_DBG("%s started", dev->name);
+	LOG_DBG("%s started", device_name_get(dev));
 	return 0;
 }
 
@@ -597,7 +597,7 @@ static int eth_xlnx_gem_stop_device(const struct device *dev)
 	sys_write32(0xFFFFFFFF, dev_conf->base_addr + ETH_XLNX_GEM_TXSR_OFFSET);
 	sys_write32(0xFFFFFFFF, dev_conf->base_addr + ETH_XLNX_GEM_RXSR_OFFSET);
 
-	LOG_DBG("%s stopped", dev->name);
+	LOG_DBG("%s stopped", device_name_get(dev));
 	return 0;
 }
 
@@ -833,7 +833,7 @@ static void eth_xlnx_gem_configure_clocks(const struct device *dev)
 #endif /* CONFIG_SOC_XILINX_ZYNQMP / CONFIG_SOC_FAMILY_XILINX_ZYNQ7000 */
 
 	LOG_DBG("%s set clock dividers div0/1 %u/%u for target "
-		"frequency %u Hz", dev->name, div0, div1, target);
+		"frequency %u Hz", device_name_get(dev), div0, div1, target);
 }
 
 /**
@@ -1018,7 +1018,7 @@ static void eth_xlnx_gem_set_mac_address(const struct device *dev)
 	sys_write32(regval_top, dev_conf->base_addr + ETH_XLNX_GEM_LADDR1H_OFFSET);
 
 	LOG_DBG("%s MAC %02X:%02X:%02X:%02X:%02X:%02X",
-		dev->name,
+		device_name_get(dev),
 		dev_data->mac_addr[0],
 		dev_data->mac_addr[1],
 		dev_data->mac_addr[2],
@@ -1107,7 +1107,7 @@ static void eth_xlnx_gem_init_phy(const struct device *dev)
 	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	int detect_rc;
 
-	LOG_DBG("%s attempting to initialize associated PHY", dev->name);
+	LOG_DBG("%s attempting to initialize associated PHY", device_name_get(dev));
 
 	/*
 	 * The phy_xlnx_gem_detect function checks if a valid PHY
@@ -1128,7 +1128,7 @@ static void eth_xlnx_gem_init_phy(const struct device *dev)
 		dev_data->phy_access_api->phy_reset_func(dev);
 		dev_data->phy_access_api->phy_configure_func(dev);
 	} else {
-		LOG_WRN("%s no compatible PHY detected", dev->name);
+		LOG_WRN("%s no compatible PHY detected", device_name_get(dev));
 	}
 }
 
@@ -1184,7 +1184,7 @@ static void eth_xlnx_gem_poll_phy(struct k_work *work)
 				dev_data->eff_link_speed = LINK_DOWN;
 				net_eth_carrier_off(dev_data->iface);
 
-				LOG_WRN("%s link down", dev->name);
+				LOG_WRN("%s link down", device_name_get(dev));
 			} else {
 				/*
 				 * A link has been detected, which, depending
@@ -1200,7 +1200,7 @@ static void eth_xlnx_gem_poll_phy(struct k_work *work)
 				eth_xlnx_gem_set_nwcfg_link_speed(dev);
 				net_eth_carrier_on(dev_data->iface);
 
-				LOG_INF("%s link up, %s", dev->name,
+				LOG_INF("%s link up, %s", device_name_get(dev),
 					(dev_data->eff_link_speed   == LINK_1GBIT)
 					? "1 GBit/s"
 					: (dev_data->eff_link_speed == LINK_100MBIT)
@@ -1231,7 +1231,7 @@ static void eth_xlnx_gem_poll_phy(struct k_work *work)
 		net_eth_carrier_on(dev_data->iface);
 
 		LOG_WRN("%s PHY not managed by the driver or no compatible "
-			"PHY detected, assuming link up at %s", dev->name,
+			"PHY detected, assuming link up at %s", device_name_get(dev),
 			(dev_conf->max_link_speed == LINK_1GBIT)
 			? "1 GBit/s"
 			: (dev_conf->max_link_speed == LINK_100MBIT)
@@ -1412,7 +1412,7 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 			 * doesn't contain the SOF bit.
 			 */
 			LOG_ERR("%s unexpected missing SOF bit in RX BD [%u]",
-				dev->name, first_bd_idx);
+				device_name_get(dev), first_bd_idx);
 			break;
 		}
 
@@ -1489,7 +1489,7 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 		if (pkt != NULL) {
 			if (net_recv_data(dev_data->iface, pkt) < 0) {
 				LOG_ERR("%s RX packet hand-over to IP stack failed",
-					dev->name);
+					device_name_get(dev));
 				net_pkt_unref(pkt);
 			}
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
@@ -1604,7 +1604,7 @@ static void eth_xlnx_gem_handle_tx_done(const struct device *dev)
 	} while (bd_is_last == 0 && curr_bd_idx != first_bd_idx);
 
 	if (curr_bd_idx == first_bd_idx && bd_is_last == 0) {
-		LOG_WRN("%s TX done handling wrapped around", dev->name);
+		LOG_WRN("%s TX done handling wrapped around", device_name_get(dev));
 	}
 
 	dev_data->txbd_ring.next_to_process =

@@ -141,7 +141,7 @@ static int gpio_lmp90xxx_init(const struct device *dev)
 
 	if (!device_is_ready(config->parent)) {
 		LOG_ERR("parent LMP90xxx device '%s' not ready",
-			config->parent->name);
+			device_name_get(config->parent));
 		return -EINVAL;
 	}
 

@@ -145,7 +145,7 @@ int regulator_set_voltage(const struct device *dev, int min_uV, int max_uV)
 				"but voltage is in range.");
 		return -EINVAL;
 	}
-	LOG_DBG("Setting regulator %s to %duV", dev->name,
+	LOG_DBG("Setting regulator %s to %duV", device_name_get(dev),
 			data->voltages[i].uV);
 	return regulator_modify_register(config, config->vsel_reg,
 			config->vsel_mask, data->voltages[i].reg_val);

@@ -171,10 +171,10 @@ void main(void)
 		LOG_ERR("No \"ti,lp5562\" device found");
 		return;
 	} else if (!device_is_ready(dev)) {
-		LOG_ERR("LED device %s is not ready", dev->name);
+		LOG_ERR("LED device %s is not ready", device_name_get(dev));
 		return;
 	} else {
-		LOG_INF("Found LED device %s", dev->name);
+		LOG_INF("Found LED device %s", device_name_get(dev));
 	}
 
 	LOG_INF("Testing leds");

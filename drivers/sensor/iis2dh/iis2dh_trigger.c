@@ -140,7 +140,8 @@ int iis2dh_init_interrupt(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(cfg->int_gpio.port)) {
-		LOG_ERR("%s: device %s is not ready", dev->name, cfg->int_gpio.port->name);
+		LOG_ERR("%s: device %s is not ready", device_name_get(dev),
+			device_name_get(cfg->int_gpio.port));
 		return -ENODEV;
 	}
 

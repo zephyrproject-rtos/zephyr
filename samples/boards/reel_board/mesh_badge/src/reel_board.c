@@ -505,7 +505,7 @@ static int configure_button(void)
 	static struct gpio_callback button_cb;
 
 	if (!device_is_ready(sw0_gpio.port)) {
-		printk("%s: device not ready.\n", sw0_gpio.port->name);
+		printk("%s: device not ready.\n", device_name_get(sw0_gpio.port));
 		return -ENODEV;
 	}
 
@@ -554,7 +554,7 @@ static int configure_leds(void)
 
 	for (i = 0; i < ARRAY_SIZE(leds); i++) {
 		if (!device_is_ready(leds[i].port)) {
-			printk("%s: device not ready.\n", leds[i].port->name);
+			printk("%s: device not ready.\n", device_name_get(leds[i].port));
 			return -ENODEV;
 		}
 
@@ -585,7 +585,7 @@ void board_refresh_display(void)
 int board_init(void)
 {
 	if (!device_is_ready(epd_dev)) {
-		printk("%s: device not ready.\n", epd_dev->name);
+		printk("%s: device not ready.\n", device_name_get(epd_dev));
 		return -ENODEV;
 	}
 

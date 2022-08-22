@@ -44,13 +44,13 @@ int __sx12xx_configure_pin(const struct gpio_dt_spec *gpio, gpio_flags_t flags)
 	int err;
 
 	if (!device_is_ready(gpio->port)) {
-		LOG_ERR("GPIO device not ready %s", gpio->port->name);
+		LOG_ERR("GPIO device not ready %s", device_name_get(gpio->port));
 		return -ENODEV;
 	}
 
 	err = gpio_pin_configure_dt(gpio, flags);
 	if (err) {
-		LOG_ERR("Cannot configure gpio %s %d: %d", gpio->port->name,
+		LOG_ERR("Cannot configure gpio %s %d: %d", device_name_get(gpio->port),
 			gpio->pin, err);
 		return err;
 	}

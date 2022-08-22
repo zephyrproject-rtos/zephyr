@@ -221,10 +221,10 @@ void main(void)
 		LOG_ERR("No device with compatible ti,lp503x found");
 		return;
 	} else if (!device_is_ready(lp503x_dev)) {
-		LOG_ERR("LED controller %s is not ready", lp503x_dev->name);
+		LOG_ERR("LED controller %s is not ready", device_name_get(lp503x_dev));
 		return;
 	}
-	LOG_INF("Found LED controller %s", lp503x_dev->name);
+	LOG_INF("Found LED controller %s", device_name_get(lp503x_dev));
 
 	for (led = 0; led < LP503X_MAX_LEDS; led++) {
 		int col;

@@ -35,7 +35,7 @@ void main(void)
 	const struct device *const dht22 = DEVICE_DT_GET_ONE(aosong_dht);
 
 	if (!device_is_ready(dht22)) {
-		printf("Device %s is not ready\n", dht22->name);
+		printf("Device %s is not ready\n", device_name_get(dht22));
 		return;
 	}
 

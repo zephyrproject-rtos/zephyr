@@ -103,7 +103,7 @@ bool init_wm8731_i2c(void)
 	};
 
 	if (!device_is_ready(i2c_dev)) {
-		printk("%s is not ready\n", i2c_dev->name);
+		printk("%s is not ready\n", device_name_get(i2c_dev));
 		return false;
 	}
 

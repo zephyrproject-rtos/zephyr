@@ -474,12 +474,12 @@ static int w5500_init(const struct device *dev)
 	struct w5500_runtime *ctx = dev->data;
 
 	if (!spi_is_ready(&config->spi)) {
-		LOG_ERR("SPI master port %s not ready", config->spi.bus->name);
+		LOG_ERR("SPI master port %s not ready", device_name_get(config->spi.bus));
 		return -EINVAL;
 	}
 
 	if (!device_is_ready(config->interrupt.port)) {
-		LOG_ERR("GPIO port %s not ready", config->interrupt.port->name);
+		LOG_ERR("GPIO port %s not ready", device_name_get(config->interrupt.port));
 		return -EINVAL;
 	}
 
@@ -500,7 +500,7 @@ static int w5500_init(const struct device *dev)
 
 	if (config->reset.port) {
 		if (!device_is_ready(config->reset.port)) {
-			LOG_ERR("GPIO port %s not ready", config->reset.port->name);
+			LOG_ERR("GPIO port %s not ready", device_name_get(config->reset.port));
 			return -EINVAL;
 		}
 		if (gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT)) {

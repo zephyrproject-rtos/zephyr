@@ -141,14 +141,14 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 
 	if (chan_data->state != DW_DMA_IDLE && chan_data->state != DW_DMA_PREPARED) {
 		LOG_ERR("%s: dma %s channel %d must be inactive to "
-			"reconfigure, currently %d", __func__, dev->name,
+			"reconfigure, currently %d", __func__, device_name_get(dev),
 			channel, chan_data->state);
 		ret = -EBUSY;
 		goto out;
 	}
 
 	LOG_DBG("%s: dma %s channel %d config",
-	       __func__, dev->name, channel);
+	       __func__, device_name_get(dev), channel);
 
 	__ASSERT_NO_MSG(cfg->source_data_size == cfg->dest_data_size);
 	__ASSERT_NO_MSG(cfg->source_burst_length == cfg->dest_burst_length);
@@ -159,7 +159,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 	    cfg->source_data_size != 4 && cfg->source_data_size != 8 &&
 	    cfg->source_data_size != 16) {
 		LOG_ERR("%s: dma %s channel %d 'invalid source_data_size' value %d",
-			__func__, dev->name, channel, cfg->source_data_size);
+			__func__, device_name_get(dev), channel, cfg->source_data_size);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -167,14 +167,14 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 	if (cfg->block_count > CONFIG_DMA_DW_LLI_POOL_SIZE) {
 		LOG_ERR("%s: dma %s channel %d scatter gather list larger than"
 			" descriptors in pool, consider increasing CONFIG_DMA_DW_LLI_POOL_SIZE",
-			__func__, dev->name, channel);
+			__func__, device_name_get(dev), channel);
 		ret = -EINVAL;
 		goto out;
 	}
 
 	/* burst_size = (2 ^ msize) */
 	msize = find_msb_set(cfg->source_burst_length) - 1;
-	LOG_DBG("%s: dma %s channel %d m_size=%d", __func__, dev->name, channel, msize);
+	LOG_DBG("%s: dma %s channel %d m_size=%d", __func__, device_name_get(dev), channel, msize);
 	__ASSERT_NO_MSG(msize < 5);
 
 	/* default channel config */
@@ -223,7 +223,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 			break;
 		default:
 			LOG_ERR("%s: dma %s channel %d invalid src width %d",
-			       __func__, dev->name, channel, cfg->source_data_size);
+			       __func__, device_name_get(dev), channel, cfg->source_data_size);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -254,7 +254,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 			break;
 		default:
 			LOG_ERR("%s: dma %s channel %d invalid dest width %d",
-				__func__, dev->name, channel, cfg->dest_data_size);
+				__func__, device_name_get(dev), channel, cfg->dest_data_size);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -315,7 +315,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 			break;
 		default:
 			LOG_ERR("%s: dma %s channel %d invalid direction %d",
-			       __func__, dev->name, channel, cfg->channel_direction);
+			       __func__, device_name_get(dev), channel, cfg->channel_direction);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -330,7 +330,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 
 		if (block_cfg->block_size > DW_CTLH_BLOCK_TS_MASK) {
 			LOG_ERR("%s: dma %s channel %d block size too big %d",
-			       __func__, dev->name, channel, block_cfg->block_size);
+			       __func__, device_name_get(dev), channel, block_cfg->block_size);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -430,7 +430,7 @@ int dw_dma_start(const struct device *dev, uint32_t channel)
 	/* validate channel state */
 	if (chan_data->state != DW_DMA_PREPARED) {
 		LOG_ERR("%s: dma %s channel %d not ready ena 0x%x status 0x%x",
-		       __func__, dev->name, channel,
+		       __func__, device_name_get(dev), channel,
 		       dw_read(dev_cfg->base, DW_DMA_CHAN_EN),
 		       chan_data->state);
 		ret = -EBUSY;
@@ -440,7 +440,7 @@ int dw_dma_start(const struct device *dev, uint32_t channel)
 	/* is valid stream */
 	if (!chan_data->lli) {
 		LOG_ERR("%s: dma %s channel %d invalid stream",
-		       __func__, dev->name, channel);
+		       __func__, device_name_get(dev), channel);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -519,7 +519,7 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 #endif
 
 	LOG_DBG("%s: dma %s channel %d stop",
-		__func__, dev->name, channel);
+		__func__, device_name_get(dev), channel);
 
 	/* Validate the channel state */
 	if (chan_data->state != DW_DMA_ACTIVE &&
@@ -578,7 +578,7 @@ int dw_dma_resume(const struct device *dev, uint32_t channel)
 	}
 
 	LOG_DBG("%s: dma %s channel %d resume",
-		__func__, dev->name, channel);
+		__func__, device_name_get(dev), channel);
 
 	dw_write(dev_cfg->base, DW_CFG_LOW(channel), chan_data->cfg_lo);
 
@@ -611,7 +611,7 @@ int dw_dma_suspend(const struct device *dev, uint32_t channel)
 
 
 	LOG_DBG("%s: dma %s channel %d suspend",
-		__func__, dev->name, channel);
+		__func__, device_name_get(dev), channel);
 
 	dw_write(dev_cfg->base, DW_CFG_LOW(channel),
 		      chan_data->cfg_lo | DW_CFGL_SUSPEND);
@@ -645,12 +645,12 @@ int dw_dma_setup(const struct device *dev)
 
 	if (!i) {
 		LOG_ERR("%s: dma %s setup failed",
-			__func__, dev->name);
+			__func__, device_name_get(dev));
 		ret = -EIO;
 		goto out;
 	}
 
-	LOG_DBG("%s: dma %s", __func__, dev->name);
+	LOG_DBG("%s: dma %s", __func__, device_name_get(dev));
 
 	for (i = 0; i <  DW_MAX_CHAN; i++) {
 		dw_read(dev_cfg->base, DW_DMA_CHAN_EN);

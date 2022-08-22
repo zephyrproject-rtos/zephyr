@@ -514,7 +514,7 @@ int callbacks_configure(const struct gpio_dt_spec *gpio,
 			struct gpio_callback *callback)
 {
 	if (!device_is_ready(gpio->port)) {
-		LOG_ERR("%s: device not ready.", gpio->port->name);
+		LOG_ERR("%s: device not ready.", device_name_get(gpio->port));
 		return -ENODEV;
 	}
 
@@ -562,7 +562,7 @@ void main(void)
 	for (int idx = 0; idx < ARRAY_SIZE(cdc_dev); idx++) {
 		if (!device_is_ready(cdc_dev[idx])) {
 			LOG_ERR("CDC ACM device %s is not ready",
-				cdc_dev[idx]->name);
+				device_name_get(cdc_dev[idx]));
 			return;
 		}
 	}
@@ -612,7 +612,7 @@ void main(void)
 
 	/* Initialize CDC ACM */
 	for (int idx = 0; idx < ARRAY_SIZE(cdc_dev); idx++) {
-		LOG_INF("Wait for DTR on %s", cdc_dev[idx]->name);
+		LOG_INF("Wait for DTR on %s", device_name_get(cdc_dev[idx]));
 		while (1) {
 			uart_line_ctrl_get(cdc_dev[idx],
 					   UART_LINE_CTRL_DTR,
@@ -625,7 +625,7 @@ void main(void)
 			}
 		}
 
-		LOG_INF("DTR on device %s", cdc_dev[idx]->name);
+		LOG_INF("DTR on device %s", device_name_get(cdc_dev[idx]));
 	}
 
 	/* Wait 1 sec for the host to do all settings */
@@ -635,10 +635,12 @@ void main(void)
 	uart_irq_callback_set(cdc_dev[1], cdc_kbd_int_handler);
 
 	write_data(cdc_dev[0], welcome, strlen(welcome));
-	write_data(cdc_dev[0], cdc_dev[0]->name, strlen(cdc_dev[0]->name));
+	write_data(cdc_dev[0], device_name_get(cdc_dev[0]),
+		   strlen(device_name_get(cdc_dev[0])));
 	write_data(cdc_dev[0], banner0, strlen(banner0));
 	write_data(cdc_dev[1], welcome, strlen(welcome));
-	write_data(cdc_dev[1], cdc_dev[1]->name, strlen(cdc_dev[1]->name));
+	write_data(cdc_dev[1], device_name_get(cdc_dev[1]),
+		   strlen(device_name_get(cdc_dev[1])));
 	write_data(cdc_dev[1], banner1, strlen(banner1));
 
 	uart_irq_rx_enable(cdc_dev[0]);

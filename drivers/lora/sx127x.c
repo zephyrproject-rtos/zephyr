@@ -364,7 +364,7 @@ void SX127xIoIrqInit(DioIrqHandler **irqHandlers)
 
 		if (!device_is_ready(sx127x_dios[i].port)) {
 			LOG_ERR("GPIO port %s not ready",
-				sx127x_dios[i].port->name);
+				device_name_get(sx127x_dios[i].port));
 			return;
 		}
 

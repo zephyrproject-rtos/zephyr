@@ -226,7 +226,7 @@ static int init_twi(const struct device *dev)
 					  event_handler, dev_data);
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s",
-			    dev->name);
+			    device_name_get(dev));
 		return -EBUSY;
 	}
 

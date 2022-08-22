@@ -173,15 +173,15 @@ void main(void)
 	int cnt = 1;
 
 	if (!device_is_ready(iis2dlpc)) {
-		printk("%s: device not ready.\n", iis2dlpc->name);
+		printk("%s: device not ready.\n", device_name_get(iis2dlpc));
 		return;
 	}
 	if (!device_is_ready(iis2mdc)) {
-		printk("%s: device not ready.\n", iis2mdc->name);
+		printk("%s: device not ready.\n", device_name_get(iis2mdc));
 		return;
 	}
 	if (!device_is_ready(ism330dhcx)) {
-		printk("%s: device not ready.\n", ism330dhcx->name);
+		printk("%s: device not ready.\n", device_name_get(ism330dhcx));
 		return;
 	}
 

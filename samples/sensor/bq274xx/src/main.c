@@ -211,11 +211,11 @@ void main(void)
 	const struct device *const dev = DEVICE_DT_GET_ONE(ti_bq274xx);
 
 	if (!device_is_ready(dev)) {
-		printk("Device %s is not ready\n", dev->name);
+		printk("Device %s is not ready\n", device_name_get(dev));
 		return;
 	}
 
-	printk("device is %p, name is %s\n", dev, dev->name);
+	printk("device is %p, name is %s\n", dev, device_name_get(dev));
 
 	do_main(dev);
 }

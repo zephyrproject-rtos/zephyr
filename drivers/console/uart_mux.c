@@ -169,7 +169,7 @@ static int uart_mux_consume_ringbuf(struct uart_mux *uart_mux)
 		char tmp[sizeof("RECV muxed ") + 10];
 
 		snprintk(tmp, sizeof(tmp), "RECV muxed %s",
-			 uart_mux->uart->name);
+			 device_name_get(uart_mux->uart));
 		LOG_HEXDUMP_DBG(data, len, tmp);
 	}
 
@@ -216,7 +216,7 @@ static void uart_mux_tx_work(struct k_work *work)
 			 sizeof(CONFIG_UART_MUX_DEVICE_NAME)];
 
 		snprintk(tmp, sizeof(tmp), "SEND %s",
-			 dev_data->dev->name);
+			 device_name_get(dev_data->dev));
 		LOG_HEXDUMP_DBG(data, len, tmp);
 	}
 
@@ -241,7 +241,7 @@ static int uart_mux_init(const struct device *dev)
 	k_work_init(&dev_data->cb_work, uart_mux_cb_work);
 
 	LOG_DBG("Device %s dev %p dev_data %p cfg %p created",
-		dev->name, dev, dev_data, dev->config);
+		device_name_get(dev), dev, dev_data, dev->config);
 
 	return 0;
 }
@@ -324,7 +324,7 @@ static void dlci_created_cb(struct gsm_dlci *dlci, bool connected,
 		dev_data->status = UART_MUX_DISCONNECTED;
 	}
 
-	LOG_DBG("%s %s", dev_data->dev->name,
+	LOG_DBG("%s %s", device_name_get(dev_data->dev),
 		dev_data->status == UART_MUX_CONNECTED ? "connected" :
 							 "disconnected");
 
@@ -370,7 +370,7 @@ static int init_real_uart(const struct device *mux, const struct device *uart,
 		real_uart->mux = gsm_mux_create(mux);
 
 		LOG_DBG("Initializing UART %s and GSM mux %p",
-			real_uart->uart->name, (void *)real_uart->mux);
+			device_name_get(real_uart->uart), (void *)real_uart->mux);
 
 		if (!real_uart->mux) {
 			real_uart->uart = NULL;
@@ -410,7 +410,7 @@ static int attach(const struct device *mux_uart, const struct device *uart,
 	}
 
 	LOG_DBG("Attach DLCI %d (%s) to %s", dlci_address,
-		mux_uart->name, uart->name);
+		device_name_get(mux_uart), device_name_get(uart));
 
 	SYS_SLIST_FOR_EACH_NODE_SAFE(&uart_mux_data_devlist, sn, sns) {
 		struct uart_mux_dev_data *dev_data =
@@ -557,7 +557,7 @@ static int uart_mux_fifo_read(const struct device *dev, uint8_t *rx_data,
 	}
 
 	LOG_DBG("%s size %d rx_ringbuf space %u",
-		dev->name, size,
+		device_name_get(dev), size,
 		ring_buf_space_get(dev_data->rx_ringbuf));
 
 	len = ring_buf_get(dev_data->rx_ringbuf, rx_data, size);
@@ -801,7 +801,7 @@ int uart_mux_send(const struct device *uart, const uint8_t *buf, size_t size)
 		char tmp[sizeof("SEND muxed ") + 10];
 
 		snprintk(tmp, sizeof(tmp), "SEND muxed %s",
-			 dev_data->real_uart->uart->name);
+			 device_name_get(dev_data->real_uart->uart));
 		LOG_HEXDUMP_DBG(buf, size, tmp);
 	}
 
@@ -823,15 +823,15 @@ int uart_mux_recv(const struct device *mux, struct gsm_dlci *dlci,
 	struct uart_mux_dev_data *dev_data = mux->data;
 	size_t wrote = 0;
 
-	LOG_DBG("%s: dlci %p data %p len %zd", mux->name, (void *)dlci,
-		data, len);
+	LOG_DBG("%s: dlci %p data %p len %zd", device_name_get(mux),
+		(void *)dlci, data, len);
 
 	if (IS_ENABLED(CONFIG_UART_MUX_VERBOSE_DEBUG)) {
 		char tmp[sizeof("RECV _x") +
 			 sizeof(CONFIG_UART_MUX_DEVICE_NAME)];
 
 		snprintk(tmp, sizeof(tmp), "RECV %s",
-			 dev_data->dev->name);
+			 device_name_get(dev_data->dev));
 		LOG_HEXDUMP_DBG(data, len, tmp);
 	}
 

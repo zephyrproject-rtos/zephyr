@@ -72,7 +72,7 @@ void main(void)
 		return;
 	}
 	if (!device_is_ready(sensor)) {
-		printf("Device %s is not ready\n", sensor->name);
+		printf("Device %s is not ready\n", device_name_get(sensor));
 		return;
 	}
 

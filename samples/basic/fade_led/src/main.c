@@ -30,7 +30,7 @@ void main(void)
 
 	if (!device_is_ready(pwm_led0.dev)) {
 		printk("Error: PWM device %s is not ready\n",
-		       pwm_led0.dev->name);
+		       device_name_get(pwm_led0.dev));
 		return;
 	}
 

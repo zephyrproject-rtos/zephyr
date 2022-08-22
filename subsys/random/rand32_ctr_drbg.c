@@ -59,7 +59,7 @@ static int ctr_drbg_initialize(void)
 	entropy_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 
 	if (!device_is_ready(entropy_dev)) {
-		__ASSERT(0, "Entropy device %s not ready", entropy_dev->name);
+		__ASSERT(0, "Entropy device %s not ready", device_name_get(entropy_dev));
 		return -ENODEV;
 	}
 

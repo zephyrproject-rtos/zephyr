@@ -360,7 +360,7 @@ static int mcp23s17_init(const struct device *dev)
 	struct mcp23s17_drv_data *drv_data = dev->data;
 
 	if (!spi_is_ready(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		LOG_ERR("SPI bus %s not ready", device_name_get(config->bus.bus));
 		return -ENODEV;
 	}
 

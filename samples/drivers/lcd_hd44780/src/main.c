@@ -530,7 +530,7 @@ void main(void)
 	const struct device *const gpio_dev = DEVICE_DT_GET(GPIO_NODE);
 
 	if (!device_is_ready(gpio_dev)) {
-		printk("Device %s not ready!\n", gpio_dev->name);
+		printk("Device %s not ready!\n", device_name_get(gpio_dev));
 		return;
 	}
 

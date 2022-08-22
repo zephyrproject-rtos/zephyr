@@ -166,12 +166,12 @@ static int gpio_sn74hc595_init(const struct device *dev)
 	struct gpio_sn74hc595_drv_data *drv_data = dev->data;
 
 	if (!spi_is_ready(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		LOG_ERR("SPI bus %s not ready", device_name_get(config->bus.bus));
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(config->reset_gpio.port)) {
-		LOG_ERR("GPIO port %s not ready", config->reset_gpio.port->name);
+		LOG_ERR("GPIO port %s not ready", device_name_get(config->reset_gpio.port));
 		return -ENODEV;
 	}
 

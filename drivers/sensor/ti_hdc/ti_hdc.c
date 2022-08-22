@@ -143,8 +143,8 @@ static int ti_hdc_init(const struct device *dev)
 
 		/* setup data ready gpio interrupt */
 		if (!device_is_ready(cfg->drdy.port)) {
-			LOG_ERR("%s: device %s is not ready", dev->name,
-					cfg->drdy.port->name);
+			LOG_ERR("%s: device %s is not ready", device_name_get(dev),
+					device_name_get(cfg->drdy.port));
 			return -ENODEV;
 		}
 

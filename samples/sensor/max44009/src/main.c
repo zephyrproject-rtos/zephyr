@@ -24,7 +24,7 @@ void main(void)
 	printk("MAX44009 light sensor application\n");
 
 	if (!device_is_ready(dev)) {
-		printk("Device %s is not ready\n", dev->name);
+		printk("Device %s is not ready\n", device_name_get(dev));
 		return;
 	}
 

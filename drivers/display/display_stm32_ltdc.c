@@ -350,7 +350,7 @@ static int stm32_ltdc_pm_action(const struct device *dev,
 	}
 
 	if (err < 0) {
-		LOG_ERR("%s: failed to set power mode", dev->name);
+		LOG_ERR("%s: failed to set power mode", device_name_get(dev));
 	}
 
 	return err;

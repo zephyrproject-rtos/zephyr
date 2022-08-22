@@ -178,7 +178,7 @@ void main(void)
 #endif
 
 	if (!device_is_ready(bmg160)) {
-		printf("Device %s is not ready.\n", bmg160->name);
+		printf("Device %s is not ready.\n", device_name_get(bmg160));
 		return;
 	}
 

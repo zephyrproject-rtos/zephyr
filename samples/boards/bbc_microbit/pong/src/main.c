@@ -497,7 +497,7 @@ static void configure_buttons(void)
 
 	/* since sw0_gpio.port == sw1_gpio.port, we only need to check ready once */
 	if (!device_is_ready(sw0_gpio.port)) {
-		printk("%s: device not ready.\n", sw0_gpio.port->name);
+		printk("%s: device not ready.\n", device_name_get(sw0_gpio.port));
 		return;
 	}
 
@@ -522,7 +522,7 @@ void main(void)
 	k_work_init_delayable(&refresh, game_refresh);
 
 	if (!device_is_ready(pwm.dev)) {
-		printk("%s: device not ready.\n", pwm.dev->name);
+		printk("%s: device not ready.\n", device_name_get(pwm.dev));
 		return;
 	}
 

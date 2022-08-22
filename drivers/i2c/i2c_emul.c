@@ -121,7 +121,7 @@ static int i2c_emul_init(const struct device *dev)
 int i2c_emul_register(const struct device *dev, struct i2c_emul *emul)
 {
 	struct i2c_emul_data *data = dev->data;
-	const char *name = emul->target->dev->name;
+	const char *name = device_name_get(emul->target->dev);
 
 	sys_slist_append(&data->emuls, &emul->node);
 

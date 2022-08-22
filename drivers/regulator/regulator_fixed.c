@@ -56,7 +56,7 @@ static int common_init(const struct device *dev)
 	gpio_flags_t flags;
 
 	if (!device_is_ready(cfg->enable.port)) {
-		LOG_ERR("GPIO port: %s not ready", cfg->enable.port->name);
+		LOG_ERR("GPIO port: %s not ready", device_name_get(cfg->enable.port));
 		return -ENODEV;
 	}
 
@@ -271,7 +271,7 @@ static int regulator_fixed_init_onoff(const struct device *dev)
 		rc = 0;
 	}
 
-	LOG_INF("%s onoff: %d", dev->name, rc);
+	LOG_INF("%s onoff: %d", device_name_get(dev), rc);
 
 	return rc;
 }
@@ -334,7 +334,7 @@ static int regulator_fixed_init_sync(const struct device *dev)
 	__ASSERT(cfg->off_on_delay_us == 0,
 		 "sync not valid with shutdown delay");
 
-	LOG_INF("%s sync: %d", dev->name, rc);
+	LOG_INF("%s sync: %d", device_name_get(dev), rc);
 
 	return rc;
 }

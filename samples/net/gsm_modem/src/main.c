@@ -119,7 +119,7 @@ int main(void)
 
 	LOG_INF("Board '%s' APN '%s' UART '%s' device %p (%s)",
 		CONFIG_BOARD, CONFIG_MODEM_GSM_APN,
-		uart_dev->name, uart_dev, gsm_dev->name);
+		device_name_get(uart_dev), uart_dev, device_name_get(gsm_dev));
 
 	net_mgmt_init_event_callback(&mgmt_cb, event_handler,
 				     NET_EVENT_L4_CONNECTED |

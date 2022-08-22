@@ -380,18 +380,18 @@ int lis2dw12_init_interrupt(const struct device *dev)
 	/* setup data ready gpio interrupt (INT1 or INT2) */
 	if (!device_is_ready(cfg->gpio_int.port)) {
 		if (cfg->gpio_int.port) {
-			LOG_ERR("%s: device %s is not ready", dev->name,
-						cfg->gpio_int.port->name);
+			LOG_ERR("%s: device %s is not ready", device_name_get(dev),
+				device_name_get(cfg->gpio_int.port));
 			return -ENODEV;
 		}
 
-		LOG_DBG("%s: gpio_int not defined in DT", dev->name);
+		LOG_DBG("%s: gpio_int not defined in DT", device_name_get(dev));
 		return 0;
 	}
 
 	lis2dw12->dev = dev;
 
-	LOG_INF("%s: int-pin is on INT%d", dev->name, cfg->int_pin);
+	LOG_INF("%s: int-pin is on INT%d", device_name_get(dev), cfg->int_pin);
 #if defined(CONFIG_LIS2DW12_TRIGGER_OWN_THREAD)
 	k_sem_init(&lis2dw12->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
@@ -410,8 +410,8 @@ int lis2dw12_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	LOG_INF("%s: int on %s.%02u", dev->name, cfg->gpio_int.port->name,
-				      cfg->gpio_int.pin);
+	LOG_INF("%s: int on %s.%02u", device_name_get(dev),
+		device_name_get(cfg->gpio_int.port), cfg->gpio_int.pin);
 
 	gpio_init_callback(&lis2dw12->gpio_cb,
 			   lis2dw12_gpio_callback,

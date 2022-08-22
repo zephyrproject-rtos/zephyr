@@ -271,7 +271,7 @@ static int pwm_nrfx_init(const struct device *dev)
 					  NULL,
 					  NULL);
 	if (result != NRFX_SUCCESS) {
-		LOG_ERR("Failed to initialize device: %s", dev->name);
+		LOG_ERR("Failed to initialize device: %s", device_name_get(dev));
 		return -EBUSY;
 	}
 

@@ -118,11 +118,11 @@ void main(void)
 	int rc;
 
 	if (!device_is_ready(dev)) {
-		printk("Device %s is not ready\n", dev->name);
+		printk("Device %s is not ready\n", device_name_get(dev));
 		return;
 	}
 
-	printk("device is %p, name is %s\n", dev, dev->name);
+	printk("device is %p, name is %s\n", dev, device_name_get(dev));
 
 	rc = ccs811_configver_fetch(dev, &cfgver);
 	if (rc == 0) {

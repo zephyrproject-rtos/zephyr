@@ -820,7 +820,7 @@ static int lsm6dso_init(const struct device *dev)
 #endif
 	struct lsm6dso_data *data = dev->data;
 
-	LOG_INF("Initialize device %s", dev->name);
+	LOG_INF("Initialize device %s", device_name_get(dev));
 	data->dev = dev;
 
 #ifdef CONFIG_LSM6DSO_TRIGGER

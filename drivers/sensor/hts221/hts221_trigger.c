@@ -127,7 +127,7 @@ int hts221_init_interrupt(const struct device *dev)
 	}
 
 	if (!device_is_ready(cfg->gpio_drdy.port)) {
-		LOG_ERR("device %s is not ready", cfg->gpio_drdy.port->name);
+		LOG_ERR("device %s is not ready", device_name_get(cfg->gpio_drdy.port));
 		return -ENODEV;
 	}
 
@@ -137,7 +137,7 @@ int hts221_init_interrupt(const struct device *dev)
 	status = gpio_pin_configure_dt(&cfg->gpio_drdy, GPIO_INPUT);
 	if (status < 0) {
 		LOG_ERR("Could not configure %s.%02u",
-			cfg->gpio_drdy.port->name, cfg->gpio_drdy.pin);
+			device_name_get(cfg->gpio_drdy.port), cfg->gpio_drdy.pin);
 		return status;
 	}
 

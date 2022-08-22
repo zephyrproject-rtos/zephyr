@@ -403,7 +403,7 @@ static int ssd1306_init(const struct device *dev)
 	LOG_DBG("");
 
 	if (!ssd1306_bus_ready(dev)) {
-		LOG_ERR("Bus device %s not ready!", config->bus.bus->name);
+		LOG_ERR("Bus device %s not ready!", device_name_get(config->bus.bus));
 		return -EINVAL;
 	}
 

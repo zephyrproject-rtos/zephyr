@@ -82,7 +82,7 @@ static int ps2_npcx_channel_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->ps2_ctrl)) {
-		LOG_ERR("%s device not ready", config->ps2_ctrl->name);
+		LOG_ERR("%s device not ready", device_name_get(config->ps2_ctrl));
 		return -ENODEV;
 	}
 

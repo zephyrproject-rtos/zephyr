@@ -85,7 +85,7 @@ static int led_pwm_init(const struct device *dev)
 
 	if (!config->num_leds) {
 		LOG_ERR("%s: no LEDs found (DT child nodes missing)",
-			dev->name);
+			device_name_get(dev));
 		return -ENODEV;
 	}
 
@@ -93,7 +93,7 @@ static int led_pwm_init(const struct device *dev)
 		const struct pwm_dt_spec *led = &config->led[i];
 
 		if (!device_is_ready(led->dev)) {
-			LOG_ERR("%s: pwm device not ready", led->dev->name);
+			LOG_ERR("%s: pwm device not ready", device_name_get(led->dev));
 			return -ENODEV;
 		}
 	}

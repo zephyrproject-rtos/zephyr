@@ -23,7 +23,7 @@ void main(void)
 	}
 	if (!device_is_ready(dev)) {
 		LOG_ERR("MS5837 device %s is not ready, aborting test.",
-			dev->name);
+			device_name_get(dev));
 		return;
 	}
 

@@ -177,7 +177,7 @@ void main(void)
 	 * keyboard and mouse as desired
 	 */
 	if (!device_is_ready(ps2_0_dev)) {
-		printk("%s: device not ready.\n", ps2_0_dev->name);
+		printk("%s: device not ready.\n", device_name_get(ps2_0_dev));
 		return;
 	}
 	ps2_config(ps2_0_dev, mb_callback);

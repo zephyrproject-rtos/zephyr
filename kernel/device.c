@@ -106,13 +106,14 @@ const struct device *z_impl_device_get_binding(const char *name)
 	 * performed. Reserve string comparisons for a fallback.
 	 */
 	for (dev = __device_start; dev != __device_end; dev++) {
-		if (z_device_is_ready(dev) && (dev->name == name)) {
+		if (z_device_is_ready(dev) && (device_name_get(dev) == name)) {
 			return dev;
 		}
 	}
 
 	for (dev = __device_start; dev != __device_end; dev++) {
-		if (z_device_is_ready(dev) && (strcmp(name, dev->name) == 0)) {
+		if (z_device_is_ready(dev) &&
+		    (strcmp(name, device_name_get(dev)) == 0)) {
 			return dev;
 		}
 	}

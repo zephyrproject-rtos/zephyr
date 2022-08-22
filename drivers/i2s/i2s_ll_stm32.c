@@ -693,15 +693,17 @@ static int i2s_stm32_initialize(const struct device *dev)
 
 	/* Get the binding to the DMA device */
 	if (!device_is_ready(dev_data->tx.dev_dma)) {
-		LOG_ERR("%s device not ready", dev_data->tx.dev_dma->name);
+		LOG_ERR("%s device not ready",
+			device_name_get(dev_data->tx.dev_dma));
 		return -ENODEV;
 	}
 	if (!device_is_ready(dev_data->rx.dev_dma)) {
-		LOG_ERR("%s device not ready", dev_data->rx.dev_dma->name);
+		LOG_ERR("%s device not ready",
+			device_name_get(dev_data->rx.dev_dma));
 		return -ENODEV;
 	}
 
-	LOG_INF("%s inited", dev->name);
+	LOG_INF("%s inited", device_name_get(dev));
 
 	return 0;
 }

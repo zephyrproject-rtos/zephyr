@@ -735,13 +735,13 @@ static int eth_enc28j60_init(const struct device *dev)
 
 	/* SPI config */
 	if (!spi_is_ready(&config->spi)) {
-		LOG_ERR("SPI master port %s not ready", config->spi.bus->name);
+		LOG_ERR("SPI master port %s not ready", device_name_get(config->spi.bus));
 		return -EINVAL;
 	}
 
 	/* Initialize GPIO */
 	if (!device_is_ready(config->interrupt.port)) {
-		LOG_ERR("GPIO port %s not ready", config->interrupt.port->name);
+		LOG_ERR("GPIO port %s not ready", device_name_get(config->interrupt.port));
 		return -EINVAL;
 	}
 

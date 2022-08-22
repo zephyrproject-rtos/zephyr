@@ -89,7 +89,7 @@ void main(void)
 	static const struct device *const ledc = DEVICE_DT_GET_ONE(ti_lp3943);
 
 	if (!device_is_ready(ledc)) {
-		printk("Device %s is not ready\n", ledc->name);
+		printk("Device %s is not ready\n", device_name_get(ledc));
 		return;
 	}
 
@@ -114,7 +114,7 @@ void main(void)
 	const struct device *const mic_dev = DEVICE_DT_GET_ONE(st_mpxxdtyy);
 
 	if (!device_is_ready(mic_dev)) {
-		printk("Device %s is not ready\n", mic_dev->name);
+		printk("Device %s is not ready\n", device_name_get(mic_dev));
 		return;
 	}
 

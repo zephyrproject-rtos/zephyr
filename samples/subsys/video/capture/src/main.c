@@ -37,14 +37,14 @@ void main(void)
 	const struct device *const dev = DEVICE_DT_GET_ONE(nxp_imx_csi);
 
 	if (!device_is_ready(dev)) {
-		LOG_ERR("%s: device not ready.\n", dev->name);
+		LOG_ERR("%s: device not ready.\n", device_name_get(dev));
 		return;
 	}
 
 	video = dev;
 #endif
 
-	printk("- Device name: %s\n", video->name);
+	printk("- Device name: %s\n", device_name_get(video));
 
 	/* Get capabilities */
 	if (video_get_caps(video, VIDEO_EP_OUT, &caps)) {

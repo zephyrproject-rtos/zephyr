@@ -45,7 +45,7 @@ static int pd_gpio_pm_action(const struct device *dev,
 		k_sleep(data->next_boot);
 		/* Switch power on */
 		gpio_pin_set_dt(&cfg->enable, 1);
-		LOG_INF("%s is now ON", dev->name);
+		LOG_INF("%s is now ON", device_name_get(dev));
 		/* Wait for domain to come up */
 		k_sleep(K_USEC(cfg->startup_delay_us));
 		/* Notify supported devices they are now powered */
@@ -56,7 +56,7 @@ static int pd_gpio_pm_action(const struct device *dev,
 		pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_OFF, NULL);
 		/* Switch power off */
 		gpio_pin_set_dt(&cfg->enable, 0);
-		LOG_INF("%s is now OFF", dev->name);
+		LOG_INF("%s is now OFF", device_name_get(dev));
 		/* Store next time we can boot */
 		next_boot_ticks = k_uptime_ticks() + k_us_to_ticks_ceil32(cfg->off_on_delay_us);
 		data->next_boot = K_TIMEOUT_ABS_TICKS(next_boot_ticks);
@@ -64,12 +64,12 @@ static int pd_gpio_pm_action(const struct device *dev,
 	case PM_DEVICE_ACTION_TURN_ON:
 		/* Actively control the enable pin now that the device is powered */
 		gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_INACTIVE);
-		LOG_DBG("%s is OFF and powered", dev->name);
+		LOG_DBG("%s is OFF and powered", device_name_get(dev));
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
 		/* Let the enable pin float while device is not powered */
 		gpio_pin_configure_dt(&cfg->enable, GPIO_DISCONNECTED);
-		LOG_DBG("%s is OFF and not powered", dev->name);
+		LOG_DBG("%s is OFF and not powered", device_name_get(dev));
 		break;
 	default:
 		rc = -ENOTSUP;
@@ -85,7 +85,7 @@ static int pd_gpio_init(const struct device *dev)
 	int rc;
 
 	if (!device_is_ready(cfg->enable.port)) {
-		LOG_ERR("GPIO port %s is not ready", cfg->enable.port->name);
+		LOG_ERR("GPIO port %s is not ready", device_name_get(cfg->enable.port));
 		return -ENODEV;
 	}
 	/* We can't know how long the domain has been off for before boot */

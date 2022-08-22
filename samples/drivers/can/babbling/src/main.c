@@ -110,7 +110,7 @@ void main(void)
 #endif /* DT_NODE_EXISTS(BUTTON_NODE) */
 
 	printk("babbling on %s with %s (%d-bit) CAN ID 0x%0*x, RTR %d, CAN-FD %d\n",
-	       dev->name,
+	       device_name_get(dev),
 	       frame.id_type == CAN_STANDARD_IDENTIFIER ? "standard" : "extended",
 	       frame.id_type == CAN_STANDARD_IDENTIFIER ? 11 : 29,
 	       frame.id_type == CAN_STANDARD_IDENTIFIER ? 3 : 8, frame.id,

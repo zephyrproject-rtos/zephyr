@@ -183,11 +183,11 @@ void main(void)
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
 		LOG_ERR("Device %s not found. Aborting sample.",
-			display_dev->name);
+			device_name_get(display_dev));
 		RETURN_FROM_MAIN(1);
 	}
 
-	LOG_INF("Display sample for %s", display_dev->name);
+	LOG_INF("Display sample for %s", device_name_get(display_dev));
 	display_get_capabilities(display_dev, &capabilities);
 
 	if (capabilities.screen_info & SCREEN_INFO_MONO_VTILED) {

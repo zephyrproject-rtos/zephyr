@@ -48,7 +48,7 @@ static int run_full_read(const struct device *i2c, uint8_t addr,
 	int ret;
 
 	TC_PRINT("Testing full read: Master: %s, address: 0x%x\n",
-		 i2c->name, addr);
+		 device_name_get(i2c), addr);
 
 	/* Read EEPROM from I2C Master requests, then compare */
 	ret = i2c_burst_read(i2c, addr, 0, i2c_buffer, TEST_DATA_SIZE);
@@ -75,7 +75,7 @@ static int run_partial_read(const struct device *i2c, uint8_t addr,
 	int ret;
 
 	TC_PRINT("Testing partial read. Master: %s, address: 0x%x, off=%d\n",
-		 i2c->name, addr, offset);
+		 device_name_get(i2c), addr, offset);
 
 	ret = i2c_burst_read(i2c, addr,
 			     offset, i2c_buffer, TEST_DATA_SIZE-offset);
@@ -102,7 +102,7 @@ static int run_program_read(const struct device *i2c, uint8_t addr,
 	int ret, i;
 
 	TC_PRINT("Testing program. Master: %s, address: 0x%x, off=%d\n",
-		i2c->name, addr, offset);
+		device_name_get(i2c), addr, offset);
 
 	for (i = 0 ; i < TEST_DATA_SIZE-offset ; ++i) {
 		i2c_buffer[i] = i;
@@ -148,7 +148,7 @@ ZTEST(i2c_eeprom_target, test_eeprom_target)
 	zassert_true(device_is_ready(i2c_0), "EEPROM 0 - I2C bus not ready");
 
 	TC_PRINT("Found EEPROM 0 on I2C bus device %s at addr %02x\n",
-		 i2c_0->name, addr_0);
+		 device_name_get(i2c_0), addr_0);
 
 	zassert_not_null(i2c_1, "EEPROM 1 - I2C device not found");
 	zassert_not_null(eeprom_1, "EEPROM 1 device not found");
@@ -156,7 +156,7 @@ ZTEST(i2c_eeprom_target, test_eeprom_target)
 	zassert_true(device_is_ready(i2c_1), "EEPROM 1 - I2C bus not ready");
 
 	TC_PRINT("Found EEPROM 1 on I2C bus device %s at addr %02x\n",
-		 i2c_1->name, addr_1);
+		 device_name_get(i2c_1), addr_1);
 
 	if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
 		TC_PRINT("Testing dual-role\n");

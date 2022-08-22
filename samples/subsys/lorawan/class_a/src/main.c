@@ -61,7 +61,7 @@ void main(void)
 
 	lora_dev = DEVICE_DT_GET(DT_ALIAS(lora0));
 	if (!device_is_ready(lora_dev)) {
-		LOG_ERR("%s: device not ready.", lora_dev->name);
+		LOG_ERR("%s: device not ready.", device_name_get(lora_dev));
 		return;
 	}
 

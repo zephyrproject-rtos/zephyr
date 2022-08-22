@@ -15,11 +15,11 @@ void main(void)
 	const struct device *const dev = DEVICE_DT_GET_ONE(infineon_dps310);
 
 	if (!device_is_ready(dev)) {
-		printk("Device %s is not ready\n", dev->name);
+		printk("Device %s is not ready\n", device_name_get(dev));
 		return;
 	}
 
-	printk("dev %p name %s\n", dev, dev->name);
+	printk("dev %p name %s\n", dev, device_name_get(dev));
 
 	while (1) {
 		struct sensor_value temp, press;

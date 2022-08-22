@@ -126,7 +126,7 @@ int modem_iface_uart_init_dev(struct modem_iface *iface,
 	 * race conditions with modem_iface_uart_isr.
 	 */
 	if (iface->dev) {
-		LOG_WRN("Device %s already inited", iface->dev->name);
+		LOG_WRN("Device %s already inited", device_name_get(iface->dev));
 		uart_rx_disable(iface->dev);
 	}
 

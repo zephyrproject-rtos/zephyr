@@ -517,7 +517,7 @@ int modbus_serial_init(struct modbus_context *ctx,
 	}
 
 	if (!device_is_ready(cfg->dev)) {
-		LOG_ERR("Bus device %s is not ready", cfg->dev->name);
+		LOG_ERR("Bus device %s is not ready", device_name_get(cfg->dev));
 		return -ENODEV;
 	}
 

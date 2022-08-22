@@ -265,7 +265,7 @@ static int ls0xx_init(const struct device *dev)
 	const struct ls0xx_config *config = dev->config;
 
 	if (!spi_is_ready(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		LOG_ERR("SPI bus %s not ready", device_name_get(config->bus.bus));
 		return -ENODEV;
 	}
 

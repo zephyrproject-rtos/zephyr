@@ -34,14 +34,14 @@ void main(void)
 	struct osdp_cmd cmd;
 
 	if (!device_is_ready(led0.port)) {
-		printk("LED0 GPIO port %s is not ready\n", led0.port->name);
+		printk("LED0 GPIO port %s is not ready\n", device_name_get(led0.port));
 		return;
 	}
 
 	ret = gpio_pin_configure_dt(&led0, GPIO_OUTPUT_ACTIVE);
 	if (ret < 0) {
 		printk("Failed to configure gpio port %s pin %d\n",
-		       led0.port->name, led0.pin);
+		       device_name_get(led0.port), led0.pin);
 		return;
 	}
 

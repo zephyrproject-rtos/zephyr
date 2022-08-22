@@ -634,8 +634,8 @@ static int ov7725_init_0(const struct device *dev)
 
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	if (!device_is_ready(cfg->reset_gpio.port)) {
-		LOG_ERR("%s: device %s is not ready", dev->name,
-				cfg->reset_gpio.port->name);
+		LOG_ERR("%s: device %s is not ready", device_name_get(dev),
+				device_name_get(cfg->reset_gpio.port));
 		return -ENODEV;
 	}
 #endif

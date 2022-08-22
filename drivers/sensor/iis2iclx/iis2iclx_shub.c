@@ -755,7 +755,7 @@ int iis2iclx_shub_init(const struct device *dev)
 	struct iis2iclx_shub_slist *sp;
 	struct iis2iclx_data *data = dev->data;
 
-	LOG_INF("shub: start sensorhub for %s", dev->name);
+	LOG_INF("shub: start sensorhub for %s", device_name_get(dev));
 	for (n = 0; n < ARRAY_SIZE(iis2iclx_shub_slist); n++) {
 		if (data->num_ext_dev >= IIS2ICLX_SHUB_MAX_NUM_SLVS) {
 			break;
@@ -791,7 +791,7 @@ int iis2iclx_shub_init(const struct device *dev)
 		data->shub_ext[data->num_ext_dev++] = n;
 	}
 
-	LOG_DBG("shub: dev %s - num_ext_dev %d", dev->name, data->num_ext_dev);
+	LOG_DBG("shub: dev %s - num_ext_dev %d", device_name_get(dev), data->num_ext_dev);
 	if (data->num_ext_dev == 0) {
 		LOG_WRN("shub: no slave devices found");
 		return -ENOTSUP;

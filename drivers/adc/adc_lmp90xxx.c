@@ -941,7 +941,7 @@ static int lmp90xxx_init(const struct device *dev)
 	data->ura = LMP90XXX_INVALID_URA;
 
 	if (!spi_is_ready(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		LOG_ERR("SPI bus %s not ready", device_name_get(config->bus.bus));
 		return -ENODEV;
 	}
 

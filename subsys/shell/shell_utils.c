@@ -504,10 +504,10 @@ const struct device *shell_device_lookup(size_t idx,
 
 	while (dev < dev_end) {
 		if (device_is_ready(dev)
-		    && (dev->name != NULL)
-		    && (strlen(dev->name) != 0)
+		    && (device_name_get(dev) != NULL)
+		    && (strlen(device_name_get(dev)) != 0)
 		    && ((prefix == NULL)
-			|| (strncmp(prefix, dev->name,
+			|| (strncmp(prefix, device_name_get(dev),
 				    strlen(prefix)) == 0))) {
 			if (match_idx == idx) {
 				return dev;

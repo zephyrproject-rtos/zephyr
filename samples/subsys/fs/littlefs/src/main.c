@@ -247,7 +247,7 @@ static int littlefs_flash_erase(unsigned int id)
 	}
 
 	LOG_PRINTK("Area %u at 0x%x on %s for %u bytes\n",
-		   id, (unsigned int)pfa->fa_off, pfa->fa_dev->name,
+		   id, (unsigned int)pfa->fa_off, device_name_get(pfa->fa_dev),
 		   (unsigned int)pfa->fa_size);
 
 	/* Optional wipe flash contents */

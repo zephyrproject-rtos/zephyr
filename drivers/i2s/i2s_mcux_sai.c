@@ -1221,7 +1221,7 @@ static int i2s_mcux_initialize(const struct device *dev)
 	SAI_SetMasterClockConfig(base, &mclkConfig);
 #endif
 
-	LOG_INF("Device %s initialized", dev->name);
+	LOG_INF("Device %s initialized", device_name_get(dev));
 
 	return 0;
 }

@@ -16,11 +16,11 @@ void main(void)
 	struct sensor_value full_scale, sampling_freq, oversampling;
 
 	if (!device_is_ready(dev)) {
-		printf("Device %s is not ready\n", dev->name);
+		printf("Device %s is not ready\n", device_name_get(dev));
 		return;
 	}
 
-	printf("Device %p name is %s\n", dev, dev->name);
+	printf("Device %p name is %s\n", dev, device_name_get(dev));
 
 	/* Setting scale in G, due to loss of precision if the SI unit m/s^2
 	 * is used
