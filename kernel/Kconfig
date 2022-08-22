@@ -951,6 +951,15 @@ config HAS_DYNAMIC_DEVICE_HANDLES
 	  Hidden option that makes possible to manipulate device handles at
 	  runtime.
 
+config DEVICE_STORE_NAME
+	bool "Store devices name"
+	default y
+	help
+	  When enabled, devices will have a unique human readable name. Device
+	  names can be useful when debugging or to obtain a device instance at
+	  runtime. Turning this option off can save ROM. When disabled,
+	  device_get_binding will not be available.
+
 endmenu
 
 rsource "Kconfig.vm"

@@ -443,8 +443,16 @@ struct pm_device;
  * @brief Runtime device structure (in ROM) per driver instance
  */
 struct device {
-	/** Name of the device instance */
+#if defined(CONFIG_DEVICE_STORE_NAME) || defined(__DOXYGEN__)
+	/**
+	 * Name of the device instance.
+	 *
+	 * @note This field must never be accessed directly since it is only
+	 * available if @kconfig{CONFIG_DEVICE_STORE_NAME} is enabled. Use
+	 * device_name_get() instead.
+	 */
 	const char *name;
+#endif
 	/** Address of device instance config information */
 	const void *config;
 	/** Address of the API structure exposed by the device instance */
@@ -467,6 +475,23 @@ struct device {
 	struct pm_device *pm;
 #endif
 };
+
+/**
+ * @brief Obtain device name.
+ *
+ * @param dev Device instance
+ *
+ * @return Device name, "<device>" if @kconfig{CONFIG_DEVICE_STORE_NAME} is
+ * disabled.
+ */
+static inline const char *device_name_get(const struct device *dev)
+{
+#ifdef CONFIG_DEVICE_STORE_NAME
+	return dev->name;
+#else
+	return "<device>";
+#endif
+}
 
 /**
  * @brief Get the handle for a given device
@@ -741,6 +766,7 @@ int device_supported_foreach(const struct device *dev,
 			     device_visitor_callback_t visitor_cb,
 			     void *context);
 
+#if defined(CONFIG_DEVICE_STORE_NAME) || defined(__DOXYGEN__)
 /**
  * @brief Get a <tt>const struct device*</tt> from its @p name field
  *
@@ -756,6 +782,9 @@ int device_supported_foreach(const struct device *dev,
  * this case, set a breakpoint on your device driver's initialization
  * function.)
  *
+ * @note This function is not available if @kconfig{CONFIG_DEVICE_STORE_NAME} is
+ * disabled.
+ *
  * @param name device name to search for. A null pointer, or a pointer
  * to an empty string, will cause NULL to be returned.
  *
@@ -764,6 +793,7 @@ int device_supported_foreach(const struct device *dev,
  * initialization function failed.
  */
 __syscall const struct device *device_get_binding(const char *name);
+#endif
 
 /** @brief Get access to the static array of static devices.
  *
@@ -919,7 +949,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		const Z_DECL_ALIGN(struct device)			\
 		DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".z_device_" #level STRINGIFY(prio)"_"))) = { \
-		.name = drv_name,					\
+		IF_ENABLED(CONFIG_DEVICE_STORE_NAME, (.name = drv_name,))\
 		.config = (cfg_ptr),					\
 		.api = (api_ptr),					\
 		.state = (state_ptr),					\

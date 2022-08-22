@@ -88,6 +88,7 @@ void z_sys_init_run_level(int32_t level)
 	}
 }
 
+#ifdef CONFIG_DEVICE_STORE_NAME
 const struct device *z_impl_device_get_binding(const char *name)
 {
 	const struct device *dev;
@@ -118,8 +119,10 @@ const struct device *z_impl_device_get_binding(const char *name)
 
 	return NULL;
 }
+#endif /* CONFIG_DEVICE_STORE_NAME */
 
 #ifdef CONFIG_USERSPACE
+#ifdef CONFIG_DEVICE_STORE_NAME
 static inline const struct device *z_vrfy_device_get_binding(const char *name)
 {
 	char name_copy[Z_DEVICE_MAX_NAME_LEN];
@@ -132,6 +135,7 @@ static inline const struct device *z_vrfy_device_get_binding(const char *name)
 	return z_impl_device_get_binding(name_copy);
 }
 #include <syscalls/device_get_binding_mrsh.c>
+#endif /* CONFIG_DEVICE_STORE_NAME */
 
 static inline bool z_vrfy_device_is_ready(const struct device *dev)
 {
