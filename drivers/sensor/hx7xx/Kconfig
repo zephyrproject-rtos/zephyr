@@ -1,0 +1,50 @@
+# HX711 Weight Scale interface Sensor configuration options
+
+# Copyright (c) 2020, George Gkinis
+# SPDX-License-Identifier: Apache-2.0
+
+config HX7XX
+	bool "Common HX7xx driver for multiple Avia ADCs"
+
+config HX710
+	bool "HX710/HX712/HX720 Weight Scale Sensor"
+	default y
+	depends on DT_HAS_AVIA_HX710_ENABLED
+	depends on GPIO
+	select HX7XX
+	help
+	  Enable driver for the HX710/HX712/HX720 Weight Scale Sensor.
+
+config HX711
+	bool "HX711 Weight Scale Sensor"
+	default y
+	depends on DT_HAS_AVIA_HX711_ENABLED
+	depends on GPIO
+	select HX7XX
+	help
+	  Enable driver for the HX711 Weight Scale Sensor.
+
+config HX717
+	bool "HX717 Weight Scale Sensor"
+	default y
+	depends on DT_HAS_AVIA_HX717_ENABLED
+	depends on GPIO
+	select HX7XX
+	help
+	  Enable driver for the HX717 Weight Scale Sensor.
+
+config HX71708
+	bool "HX71708 Weight Scale Sensor"
+	default y
+	depends on DT_HAS_AVIA_HX71708_ENABLED
+	depends on GPIO
+	select HX7XX
+	help
+	  Enable driver for the HX71708 Weight Scale Sensor.
+
+config HX7XX_DISABLE_INTERRUPTS_WHILE_POLLING
+	bool "Disable interrupts while generating clock signal"
+	help
+	  Disables all interrupts while generating one clock cycle when polling data.
+	  Enable this option if there is a thread with higher priority executed frequently
+	  to avoid clock generating issues when switching to other thread.

@@ -1,0 +1,38 @@
+# Copyright (c) 2020 George Gkinis
+# Copyright (c) 2021 Jan Gnip
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Avia HX711 sensor
+
+compatible: "avia,hx711"
+
+include: avia,hx7xx-common.yaml
+
+properties:
+  gain:
+    type: int
+    description: |
+      Gain of the sensor.
+      Default is 128x as this is the sensor's power-on setting and gives the best
+      resolution. Use a lower gain if the bridge output is large enough to saturate
+      the ADC at 128x.
+    default: 128
+    enum: [128, 32, 64]
+
+  rate-hz:
+    type: int
+    description: |
+      Sensor sample rate in Hz.
+      The default of 10 Hz is the vendor power-on rate and the lowest, least noisy
+      setting. Select a higher rate only if the board
+      provides rate-gpios and the application needs the faster sampling.
+      If CONFIG_PM_DEVICE_RUNTIME = y the rate will not be higher than 2~3Hz due to
+      the long wake-up time needed for HX711.
+    default: 10
+    enum: [10, 80]
+
+  rate-gpios:
+    type: phandle-array
+    description: |
+      Pin on which sampling rate is chosen.
