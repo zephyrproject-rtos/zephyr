@@ -54,7 +54,7 @@ struct usdhc_host_transfer {
 struct usdhc_config {
 	USDHC_Type *base;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	uint8_t nusdhc;
 	const struct gpio_dt_spec pwr_gpio;
 	const struct gpio_dt_spec detect_gpio;
@@ -875,8 +875,7 @@ static const struct sdhc_driver_api usdhc_api = {
 	static const struct usdhc_config usdhc_##n##_config = {			\
 		.base = (USDHC_Type *) DT_INST_REG_ADDR(n),			\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
-		.clock_subsys =							\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
+		.clock_subsys = (const void *)DT_INST_CLOCKS_CELL(n, name),	\
 		.nusdhc = n,							\
 		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),	\
 		.detect_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),	\

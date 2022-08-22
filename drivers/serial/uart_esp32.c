@@ -53,7 +53,7 @@ struct uart_esp32_config {
 
 	const struct pinctrl_dev_config *pcfg;
 
-	const clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 
 	int irq_source;
 };
@@ -475,7 +475,7 @@ PINCTRL_DT_INST_DEFINE(idx);							\
 static const DRAM_ATTR struct uart_esp32_config uart_esp32_cfg_port_##idx = {	       \
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),		       \
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),				\
-	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset), \
+	.clock_subsys = (const void *)DT_INST_CLOCKS_CELL(idx, offset),	       \
 	.irq_source = DT_INST_IRQN(idx)			       \
 };									       \
 									       \

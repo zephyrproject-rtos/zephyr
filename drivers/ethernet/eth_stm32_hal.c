@@ -792,15 +792,11 @@ static int eth_initialize(const struct device *dev)
 	}
 
 	/* enable clock */
-	ret = clock_control_on(dev_data->clock,
-		(clock_control_subsys_t *)&cfg->pclken);
-	ret |= clock_control_on(dev_data->clock,
-		(clock_control_subsys_t *)&cfg->pclken_tx);
-	ret |= clock_control_on(dev_data->clock,
-		(clock_control_subsys_t *)&cfg->pclken_rx);
+	ret = clock_control_on(dev_data->clock, &cfg->pclken);
+	ret |= clock_control_on(dev_data->clock, &cfg->pclken_tx);
+	ret |= clock_control_on(dev_data->clock, &cfg->pclken_rx);
 #if !defined(CONFIG_SOC_SERIES_STM32H7X)
-	ret |= clock_control_on(dev_data->clock,
-		(clock_control_subsys_t *)&cfg->pclken_ptp);
+	ret |= clock_control_on(dev_data->clock, &cfg->pclken_ptp);
 #endif /* !defined(CONFIG_SOC_SERIES_STM32H7X) */
 
 	if (ret) {
@@ -1331,9 +1327,9 @@ static int ptp_stm32_init(const struct device *port)
 	/* Query ethernet clock rate */
 	ret = clock_control_get_rate(eth_dev_data->clock,
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
-		(clock_control_subsys_t *)&eth_cfg->pclken,
+		&eth_cfg->pclken,
 #else
-		(clock_control_subsys_t *)&eth_cfg->pclken_ptp,
+		&eth_cfg->pclken_ptp,
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 		&ptp_hclk_rate);
 	if (ret) {

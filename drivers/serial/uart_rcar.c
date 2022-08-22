@@ -277,14 +277,12 @@ static int uart_rcar_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(config->clock_dev,
-			       (clock_control_subsys_t *)&config->mod_clk);
+	ret = clock_control_on(config->clock_dev, &config->mod_clk);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = clock_control_get_rate(config->clock_dev,
-				     (clock_control_subsys_t *)&config->bus_clk,
+	ret = clock_control_get_rate(config->clock_dev, &config->bus_clk,
 				     &data->clk_rate);
 	if (ret < 0) {
 		return ret;

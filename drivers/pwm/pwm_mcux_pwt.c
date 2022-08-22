@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(pwm_mcux_pwt, CONFIG_PWM_LOG_LEVEL);
 struct mcux_pwt_config {
 	PWT_Type *base;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	pwt_clock_source_t pwt_clock_source;
 	pwt_clock_prescale_t prescale;
 	void (*irq_config_func)(const struct device *dev);
@@ -328,8 +328,8 @@ static const struct pwm_driver_api mcux_pwt_driver_api = {
 	static const struct mcux_pwt_config mcux_pwt_config_##n = {	\
 		.base = (PWT_Type *)DT_INST_REG_ADDR(n),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
-		.clock_subsys =						\
-		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
+		.clock_subsys = (const void *)				\
+			DT_INST_CLOCKS_CELL(n, name),			\
 		.pwt_clock_source = kPWT_BusClock,			\
 		.prescale =						\
 		TO_PWT_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),	\

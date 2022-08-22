@@ -80,7 +80,7 @@ struct i2c_esp32_config {
 #endif
 	const struct pinctrl_dev_config *pcfg;
 
-	const clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 
 	const struct {
 		bool tx_lsb_first;
@@ -735,7 +735,7 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 	.index = idx, \
 	.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(I2C(idx))), \
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),	\
-	.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(I2C(idx), offset), \
+	.clock_subsys = (const void *)DT_CLOCKS_CELL(I2C(idx), offset), \
 	I2C_ESP32_GET_PIN_INFO(idx)	\
 	.mode = { \
 		.tx_lsb_first = DT_PROP(I2C(idx), tx_lsb), \

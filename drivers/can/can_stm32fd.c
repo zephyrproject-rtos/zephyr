@@ -87,7 +87,7 @@ static int can_stm32fd_clock_enable(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(clk, (clock_control_subsys_t *)&stm32fd_cfg->pclken);
+	ret = clock_control_on(clk, &stm32fd_cfg->pclken);
 	if (ret < 0) {
 		return ret;
 	}

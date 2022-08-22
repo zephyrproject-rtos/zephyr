@@ -17,7 +17,7 @@
 struct mcux_iuart_config {
 	UART_Type *base;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	uint32_t baud_rate;
 	const struct pinctrl_dev_config *pincfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -309,7 +309,7 @@ static const struct uart_driver_api mcux_iuart_driver_api = {
 static const struct mcux_iuart_config mcux_iuart_##n##_config = {	\
 	.base = (UART_Type *) DT_INST_REG_ADDR(n),			\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
-	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+	.clock_subsys = (const void *)DT_INST_CLOCKS_CELL(n, name),	\
 	.baud_rate = DT_INST_PROP(n, current_speed),			\
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	IRQ_FUNC_INIT							\

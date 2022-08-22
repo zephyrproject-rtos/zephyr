@@ -16,7 +16,7 @@
 LOG_MODULE_REGISTER(clock_control);
 
 static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
-			      clock_control_subsys_t sub_system)
+			      const void *sub_system)
 {
 #if defined(CONFIG_CAN_MCUX_MCAN)
 	uint32_t clock_name = (uint32_t)sub_system;
@@ -30,14 +30,14 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 }
 
 static int mcux_lpc_syscon_clock_control_off(const struct device *dev,
-			       clock_control_subsys_t sub_system)
+			       const void *sub_system)
 {
 	return 0;
 }
 
 static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 					const struct device *dev,
-				    clock_control_subsys_t sub_system,
+				    const void *sub_system,
 				    uint32_t *rate)
 {
 	uint32_t clock_name = (uint32_t) sub_system;

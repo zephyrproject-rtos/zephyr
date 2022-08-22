@@ -23,7 +23,7 @@ struct pwm_mcux_config {
 	PWM_Type *base;
 	uint8_t index;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	pwm_clock_prescale_t prescale;
 	pwm_mode_t mode;
 	const struct pinctrl_dev_config *pincfg;
@@ -185,8 +185,9 @@ static const struct pwm_driver_api pwm_mcux_driver_api = {
 		.index = DT_INST_PROP(n, index),			  \
 		.mode = kPWM_EdgeAligned,				  \
 		.prescale = kPWM_Prescale_Divide_128,			  \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	  \
+		.clock_subsys = (const void *)				  \
+			DT_INST_CLOCKS_CELL(n, name),			  \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		  \
 	};								  \
 									  \

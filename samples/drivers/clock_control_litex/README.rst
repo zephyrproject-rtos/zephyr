@@ -43,7 +43,6 @@ The driver is interfaced with the :ref:`Clock Control API <clock_control_api>` f
 .. doxygenstruct:: litex_clk_setup
    :project: Zephyr
 
-| To change clock parameter it is needed to cast a pointer to structure ``litex_clk_setup`` onto ``clock_control_subsys_t`` and use it with ``clock_control_on()``.
 | This code will try to set on ``clk0`` frequency 50MHz, 90 degrees of phase offset and 75% duty cycle.
 
 .. code-block:: c
@@ -57,8 +56,7 @@ The driver is interfaced with the :ref:`Clock Control API <clock_control_api>` f
 		.phase = 90
 	};
 	dev = DEVICE_DT_GET(MMCM);
-	clock_control_subsys_t sub_system = (clock_control_subsys_t*)&setup;
-	if ((ret = clock_control_on(dev, sub_system)) != 0) {
+	if ((ret = clock_control_on(dev, &setup)) != 0) {
 		LOG_ERR("Set CLKOUT%d param error!", setup.clkout_nr);
 		return ret;
 	}

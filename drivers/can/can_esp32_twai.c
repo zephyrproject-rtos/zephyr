@@ -22,7 +22,7 @@ struct can_esp32_twai_config {
 	mm_reg_t base;
 	const struct pinctrl_dev_config *pcfg;
 	const struct device *clock_dev;
-	const clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	int irq_source;
 };
 
@@ -125,7 +125,7 @@ const struct can_driver_api can_esp32_twai_driver_api = {
 	static const struct can_esp32_twai_config can_esp32_twai_config_##inst = {                 \
 		.base = DT_INST_REG_ADDR(inst),                                                    \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, offset),         \
+		.clock_subsys = (const void *)DT_INST_CLOCKS_CELL(inst, offset),                   \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 		.irq_source = DT_INST_IRQN(inst),                                                  \
 	};                                                                                         \

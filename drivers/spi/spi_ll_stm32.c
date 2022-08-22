@@ -487,13 +487,13 @@ static int spi_stm32_configure(const struct device *dev,
 
 	if (IS_ENABLED(STM32_SPI_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t) &cfg->pclken[1], &clock) < 0) {
+					   &cfg->pclken[1], &clock) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclk[1])");
 			return -EIO;
 		}
 	} else {
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t) &cfg->pclken[0], &clock) < 0) {
+					   &cfg->pclken[0], &clock) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclk[0])");
 			return -EIO;
 		}
@@ -868,7 +868,7 @@ static int spi_stm32_init(const struct device *dev)
 	}
 
 	err = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			       (clock_control_subsys_t) &cfg->pclken[0]);
+			       &cfg->pclken[0]);
 	if (err < 0) {
 		LOG_ERR("Could not enable SPI clock");
 		return err;
@@ -876,7 +876,7 @@ static int spi_stm32_init(const struct device *dev)
 
 	if (IS_ENABLED(STM32_SPI_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
 		err = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					      (clock_control_subsys_t) &cfg->pclken[1],
+					       &cfg->pclken[1],
 					      NULL);
 		if (err < 0) {
 			LOG_ERR("Could not select SPI domain clock");

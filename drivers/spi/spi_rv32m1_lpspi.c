@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(spi_rv32m1_lpspi);
 struct spi_mcux_config {
 	LPSPI_Type *base;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	clock_ip_name_t clock_ip_name;
 	uint32_t clock_ip_src;
 	void (*irq_config_func)(const struct device *dev);
@@ -321,7 +321,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	static const struct spi_mcux_config spi_mcux_config_##n = {	\
 		.base = (LPSPI_Type *) DT_INST_REG_ADDR(n),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
-		.clock_subsys = (clock_control_subsys_t)		\
+		.clock_subsys = (const void *)				\
 			DT_INST_CLOCKS_CELL(n, name),			\
 		.irq_config_func = spi_mcux_config_func_##n,		\
 		.clock_ip_name = INST_DT_CLOCK_IP_NAME(n),		\

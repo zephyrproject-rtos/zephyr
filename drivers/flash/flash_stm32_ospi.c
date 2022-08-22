@@ -1590,27 +1590,26 @@ static int flash_stm32_ospi_init(const struct device *dev)
 
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			     (clock_control_subsys_t) &dev_cfg->pclken[0]) != 0) {
+			     &dev_cfg->pclken[0]) != 0) {
 		LOG_ERR("Could not enable OSPI clock");
 		return -EIO;
 	}
 	/* Alternate clock config for peripheral if any */
 	if (dev_cfg->pclk_len > 1) {
 		if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &dev_cfg->pclken[1],
-					NULL) != 0) {
+					    &dev_cfg->pclken[1], NULL) != 0) {
 			LOG_ERR("Could not select OSPI domain clock pclk[1]");
 			return -EIO;
 		}
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t) &dev_cfg->pclken[1],
+					   &dev_cfg->pclken[1],
 					   &ahb_clock_freq) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclk[1])");
 			return -EIO;
 		}
 	} else {
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t) &dev_cfg->pclken[0],
+					   &dev_cfg->pclken[0],
 					   &ahb_clock_freq) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclk[0])");
 			return -EIO;

@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(mcux_flexcomm);
 struct mcux_flexcomm_config {
 	I2C_Type *base;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t bitrate;
 #ifdef CONFIG_PINCTRL
@@ -388,8 +388,8 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 	static const struct mcux_flexcomm_config mcux_flexcomm_config_##id = {	\
 		.base = (I2C_Type *) DT_INST_REG_ADDR(id),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
-		.clock_subsys =				\
-		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),\
+		.clock_subsys = (const void *)				\
+			DT_INST_CLOCKS_CELL(id, name),			\
 		.irq_config_func = mcux_flexcomm_config_func_##id,	\
 		.bitrate = DT_INST_PROP(id, clock_frequency),		\
 		I2C_MCUX_FLEXCOMM_PINCTRL_INIT(id)			\

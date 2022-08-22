@@ -78,7 +78,7 @@ struct mcpwm_esp32_config {
 	const uint8_t index;
 	const struct pinctrl_dev_config *pincfg;
 	const struct device *clock_dev;
-	const clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	uint8_t prescale;
 	uint8_t prescale_timer0;
 	uint8_t prescale_timer1;
@@ -558,7 +558,7 @@ static const struct pwm_driver_api mcpwm_esp32_api = {
 		.index = idx,                                                                      \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                     \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
+		.clock_subsys = (const void *)DT_INST_CLOCKS_CELL(idx, offset),                    \
 		.prescale = DT_INST_PROP(idx, prescale),                                           \
 		.prescale_timer0 = DT_INST_PROP_OR(idx, prescale_timer0, 0),                       \
 		.prescale_timer1 = DT_INST_PROP_OR(idx, prescale_timer1, 0),                       \

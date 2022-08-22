@@ -852,7 +852,7 @@ static int i2s_nrfx_trigger(const struct device *dev,
 static void init_clock_manager(const struct device *dev)
 {
 	struct i2s_nrfx_drv_data *drv_data = dev->data;
-	clock_control_subsys_t subsys;
+	void *subsys;
 
 #if NRF_CLOCK_HAS_HFCLKAUDIO
 	const struct i2s_nrfx_drv_cfg *drv_cfg = dev->config;

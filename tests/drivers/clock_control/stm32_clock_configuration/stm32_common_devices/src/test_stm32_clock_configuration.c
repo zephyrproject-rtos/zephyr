@@ -49,7 +49,7 @@ static void test_i2c_clk_config(void)
 
 	/* Test clock_on(gating clock) */
 	r = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				(clock_control_subsys_t) &pclken[0]);
+			     &pclken[0]);
 	zassert_true((r == 0), "Could not enable I2C gating clock");
 
 	zassert_true(__HAL_RCC_I2C1_IS_CLK_ENABLED(), "I2C1 gating clock should be on");
@@ -58,8 +58,7 @@ static void test_i2c_clk_config(void)
 	if (IS_ENABLED(STM32_I2C_DOMAIN_CLOCK_SUPPORT) && DT_NUM_CLOCKS(DT_NODELABEL(i2c1)) > 1) {
 		/* Test clock_on(domain_clk) */
 		r = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					    (clock_control_subsys_t) &pclken[1],
-					    NULL);
+					    &pclken[1], NULL);
 		zassert_true((r == 0), "Could not enable I2C domain clock");
 		TC_PRINT("I2C1 domain clock configured\n");
 
@@ -80,8 +79,7 @@ static void test_i2c_clk_config(void)
 
 		/* Test get_rate(srce clk) */
 		r = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &pclken[1],
-					&dev_dt_clk_freq);
+					   &pclken[1], &dev_dt_clk_freq);
 		zassert_true((r == 0), "Could not get I2C clk srce freq");
 
 		dev_actual_clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_I2C1);
@@ -96,8 +94,7 @@ static void test_i2c_clk_config(void)
 
 		/* Test get_rate */
 		r = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &pclken[0],
-					&dev_dt_clk_freq);
+					   &pclken[0], &dev_dt_clk_freq);
 		zassert_true((r == 0), "Could not get I2C clk freq");
 
 		dev_actual_clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_I2C1);
@@ -110,7 +107,7 @@ static void test_i2c_clk_config(void)
 
 	/* Test clock_off(gating clk) */
 	r = clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				(clock_control_subsys_t) &pclken[0]);
+			      &pclken[0]);
 	zassert_true((r == 0), "Could not disable I2C gating clk");
 
 	zassert_true(!__HAL_RCC_I2C1_IS_CLK_ENABLED(), "I2C1 gating clk should be off");
@@ -144,7 +141,7 @@ static void test_lptim_clk_config(void)
 
 	/* Test clock_on(gating clock) */
 	r = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				(clock_control_subsys_t) &pclken[0]);
+			     &pclken[0]);
 	zassert_true((r == 0), "Could not enable LPTIM gating clock");
 
 	zassert_true(__HAL_RCC_LPTIM1_IS_CLK_ENABLED(), "LPTIM1 gating clock should be on");
@@ -153,8 +150,7 @@ static void test_lptim_clk_config(void)
 	if (IS_ENABLED(STM32_LPTIM_OPT_CLOCK_SUPPORT) && DT_NUM_CLOCKS(DT_NODELABEL(lptim1)) > 1) {
 		/* Test clock_on(domain_clk) */
 		r = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					    (clock_control_subsys_t) &pclken[1],
-					    NULL);
+					    &pclken[1], NULL);
 		zassert_true((r == 0), "Could not enable LPTIM1 domain clock");
 		TC_PRINT("LPTIM1 source clock configured\n");
 
@@ -175,8 +171,7 @@ static void test_lptim_clk_config(void)
 
 		/* Test get_rate(srce clk) */
 		r = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &pclken[1],
-					&dev_dt_clk_freq);
+					   &pclken[1], &dev_dt_clk_freq);
 		zassert_true((r == 0), "Could not get LPTIM1 clk srce freq");
 
 		dev_actual_clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_LPTIM1);
@@ -191,8 +186,7 @@ static void test_lptim_clk_config(void)
 
 		/* Test get_rate */
 		r = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &pclken[0],
-					&dev_dt_clk_freq);
+					   &pclken[0], &dev_dt_clk_freq);
 		zassert_true((r == 0), "Could not get LPTIM1 clk freq");
 
 		dev_actual_clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_LPTIM1);
@@ -205,7 +199,7 @@ static void test_lptim_clk_config(void)
 
 	/* Test clock_off(reg_clk) */
 	r = clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				(clock_control_subsys_t) &pclken[0]);
+			      &pclken[0]);
 	zassert_true((r == 0), "Could not disable LPTIM1 gating clk");
 
 	zassert_true(!__HAL_RCC_LPTIM1_IS_CLK_ENABLED(), "LPTIM1 gating clk should be off");
@@ -265,7 +259,7 @@ static void test_adc_clk_config(void)
 
 	/* Test clock_on(gating clock) */
 	r = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				(clock_control_subsys_t) &pclken[0]);
+			     &pclken[0]);
 	zassert_true((r == 0), "Could not enable ADC1 gating clock");
 
 	zassert_true(ADC_IS_CLK_ENABLED(), "ADC1 gating clock should be on");
@@ -274,8 +268,7 @@ static void test_adc_clk_config(void)
 	if (IS_ENABLED(STM32_ADC_DOMAIN_CLOCK_SUPPORT) && DT_NUM_CLOCKS(DT_NODELABEL(adc1)) > 1) {
 		/* Test clock_on(domain_clk) */
 		r = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					    (clock_control_subsys_t) &pclken[1],
-					    NULL);
+					    &pclken[1], NULL);
 		zassert_true((r == 0), "Could not enable ADC1 domain clock");
 		TC_PRINT("ADC1 source clock configured\n");
 
@@ -297,8 +290,7 @@ static void test_adc_clk_config(void)
 
 		/* Test get_rate(srce clk) */
 		r = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &pclken[1],
-					&dev_dt_clk_freq);
+					   &pclken[1], &dev_dt_clk_freq);
 		zassert_true((r == 0), "Could not get ADC1 clk srce freq");
 
 		dev_actual_clk_freq = HAL_RCCEx_GetPeriphCLKFreq(PERIPHCLK_ADC);
@@ -317,7 +309,7 @@ static void test_adc_clk_config(void)
 
 	/* Test clock_off(reg_clk) */
 	r = clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				(clock_control_subsys_t) &pclken[0]);
+			      &pclken[0]);
 	zassert_true((r == 0), "Could not disable ADC1 gating clk");
 
 	zassert_true(!ADC_IS_CLK_ENABLED(), "ADC1 gating clk should be off");

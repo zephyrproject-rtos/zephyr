@@ -30,7 +30,7 @@ struct npcx_pcc_config {
 
 /* Clock controller local functions */
 static inline int npcx_clock_control_on(const struct device *dev,
-					 clock_control_subsys_t sub_system)
+					 const void *sub_system)
 {
 	ARG_UNUSED(dev);
 	struct npcx_clk_cfg *clk_cfg = (struct npcx_clk_cfg *)(sub_system);
@@ -46,7 +46,7 @@ static inline int npcx_clock_control_on(const struct device *dev,
 }
 
 static inline int npcx_clock_control_off(const struct device *dev,
-					  clock_control_subsys_t sub_system)
+					  const void *sub_system)
 {
 	ARG_UNUSED(dev);
 	struct npcx_clk_cfg *clk_cfg = (struct npcx_clk_cfg *)(sub_system);
@@ -62,7 +62,7 @@ static inline int npcx_clock_control_off(const struct device *dev,
 }
 
 static int npcx_clock_control_get_subsys_rate(const struct device *dev,
-					      clock_control_subsys_t sub_system,
+					      const void *sub_system,
 					      uint32_t *rate)
 {
 	ARG_UNUSED(dev);

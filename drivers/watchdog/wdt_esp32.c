@@ -44,7 +44,7 @@ struct wdt_esp32_data {
 struct wdt_esp32_config {
 	wdt_inst_t wdt_inst;
 	const struct device *clock_dev;
-	const clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	void (*connect_irq)(void);
 	int irq_source;
 };
@@ -187,8 +187,8 @@ static const struct wdt_driver_api wdt_api = {
 	static struct wdt_esp32_config wdt_esp32_config##idx = {		   \
 		.wdt_inst = WDT_MWDT##idx,	\
 		.irq_source = DT_IRQN(DT_NODELABEL(wdt##idx)),			   \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)), \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset), \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),		   \
+		.clock_subsys = DT_INST_CLOCKS_CELL(idx, offset),		   \
 	};									   \
 										   \
 	DEVICE_DT_INST_DEFINE(idx,						   \

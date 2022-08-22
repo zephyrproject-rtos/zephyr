@@ -43,7 +43,7 @@ static void test_spi_clk_config(void)
 
 	/* Test clock_on(reg_clk) */
 	r = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				(clock_control_subsys_t) &pclken[0]);
+			     &pclken[0]);
 	zassert_true((r == 0), "Could not enable SPI gating clock");
 
 	zassert_true(__HAL_RCC_SPI1_IS_CLK_ENABLED(), "SPI1 gating clock should be on");
@@ -52,8 +52,7 @@ static void test_spi_clk_config(void)
 	if (IS_ENABLED(STM32_SPI_DOMAIN_CLOCK_SUPPORT) && DT_NUM_CLOCKS(DT_NODELABEL(spi1)) > 1) {
 		/* Test clock_on(domain source) */
 		r = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					    (clock_control_subsys_t) &pclken[1],
-					    NULL);
+					    &pclken[1], NULL);
 		zassert_true((r == 0), "Could not configure SPI domain clk");
 		TC_PRINT("SPI1 domain clk configured\n");
 
@@ -74,8 +73,7 @@ static void test_spi_clk_config(void)
 
 		/* Test get_rate(source clk) */
 		r = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &pclken[1],
-					&spi1_dt_clk_freq);
+					   &pclken[1], &spi1_dt_clk_freq);
 		zassert_true((r == 0), "Could not get SPI clk freq");
 
 		spi1_actual_clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SPI1);
@@ -87,8 +85,7 @@ static void test_spi_clk_config(void)
 
 		/* Test get_rate(gating clock) */
 		r = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &pclken[0],
-					&spi1_dt_clk_freq);
+					   &pclken[0], &spi1_dt_clk_freq);
 		zassert_true((r == 0), "Could not get SPI pclk freq");
 
 		spi1_actual_clk_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SPI1);
@@ -99,7 +96,7 @@ static void test_spi_clk_config(void)
 
 	/* Test clock_off(gating clock) */
 	r = clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				(clock_control_subsys_t) &pclken[0]);
+			      &pclken[0]);
 	zassert_true((r == 0), "Could not disable SPI reg_clk");
 
 	zassert_true(!__HAL_RCC_SPI1_IS_CLK_ENABLED(), "SPI1 gating clock should be off");

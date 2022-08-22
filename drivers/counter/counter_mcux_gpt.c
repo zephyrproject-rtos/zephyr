@@ -17,7 +17,7 @@ struct mcux_gpt_config {
 	/* info must be first element */
 	struct counter_config_info info;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	GPT_Type *base;
 	clock_name_t clock_source;
 };
@@ -211,8 +211,8 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 	static const struct mcux_gpt_config mcux_gpt_config_ ## n = {	\
 		.base = (void *)DT_INST_REG_ADDR(n),			\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
-		.clock_subsys =						\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+		.clock_subsys = (const void *)				\
+			DT_INST_CLOCKS_CELL(n, name),			\
 		.info = {						\
 			.max_top_value = UINT32_MAX,			\
 			.freq = DT_INST_PROP(n, gptfreq),           \

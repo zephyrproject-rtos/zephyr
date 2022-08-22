@@ -20,7 +20,7 @@
 struct rv32m1_lpuart_config {
 	LPUART_Type *base;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	clock_ip_name_t clock_ip_name;
 	uint32_t clock_ip_src;
 	uint32_t baud_rate;
@@ -322,8 +322,8 @@ static const struct uart_driver_api rv32m1_lpuart_driver_api = {
 	static const struct rv32m1_lpuart_config rv32m1_lpuart_##n##_cfg = {\
 		.base = (LPUART_Type *)DT_INST_REG_ADDR(n),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
-		.clock_subsys =						\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+		.clock_subsys = (const void *)				\
+			DT_INST_CLOCKS_CELL(n, name),			\
 		.clock_ip_name = INST_DT_CLOCK_IP_NAME(n),		\
 		.clock_ip_src = kCLOCK_IpSrcFircAsync,			\
 		.baud_rate = DT_INST_PROP(n, current_speed),		\

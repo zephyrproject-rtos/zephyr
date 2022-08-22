@@ -227,7 +227,7 @@ struct uart_ns16550_device_config {
 #endif
 	uint32_t sys_clk_freq;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 	uart_irq_config_func_t	irq_config_func;
 #endif
@@ -1137,8 +1137,8 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 			), (                                                         \
 				.sys_clk_freq = 0,                                   \
 				.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),  \
-				.clock_subsys = (clock_control_subsys_t) DT_INST_PHA(\
-								0, clocks, clkid),   \
+				.clock_subsys = (const void *)                       \
+					DT_INST_PHA(0, clocks, clkid),               \
 			)                                                            \
 		)                                                                    \
 		DEV_CONFIG_IRQ_FUNC_INIT(n)                                          \

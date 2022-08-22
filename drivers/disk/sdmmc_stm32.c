@@ -154,7 +154,7 @@ static int stm32_sdmmc_clock_enable(struct stm32_sdmmc_priv *priv)
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	/* Enable the APB clock for stm32_sdmmc */
-	return clock_control_on(clock, (clock_control_subsys_t *)&priv->pclken);
+	return clock_control_on(clock, &priv->pclken);
 }
 
 static int stm32_sdmmc_clock_disable(struct stm32_sdmmc_priv *priv)
@@ -163,8 +163,7 @@ static int stm32_sdmmc_clock_disable(struct stm32_sdmmc_priv *priv)
 
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	return clock_control_off(clock,
-				 (clock_control_subsys_t *)&priv->pclken);
+	return clock_control_off(clock, &priv->pclken);
 }
 
 #if STM32_SDMMC_USE_DMA

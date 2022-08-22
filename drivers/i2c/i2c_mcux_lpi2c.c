@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(mcux_lpi2c);
 struct mcux_lpi2c_config {
 	LPI2C_Type *base;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t bitrate;
 	uint32_t bus_idle_timeout_ns;
@@ -384,8 +384,8 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 	static const struct mcux_lpi2c_config mcux_lpi2c_config_##n = {	\
 		.base = (LPI2C_Type *)DT_INST_REG_ADDR(n),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
-		.clock_subsys =						\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+		.clock_subsys = (const void *)				\
+			DT_INST_CLOCKS_CELL(n, name),			\
 		.irq_config_func = mcux_lpi2c_config_func_##n,		\
 		.bitrate = DT_INST_PROP(n, clock_frequency),		\
 		I2C_MCUX_LPI2C_PINCTRL_INIT(n)				\

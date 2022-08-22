@@ -263,14 +263,12 @@ static int eth_mcux_device_pm_action(const struct device *dev,
 
 		ENET_Reset(eth_ctx->base);
 		ENET_Deinit(eth_ctx->base);
-		clock_control_off(eth_ctx->clock_dev,
-			(clock_control_subsys_t)eth_ctx->clock);
+		clock_control_off(eth_ctx->clock_dev, (void *)eth_ctx->clock);
 		break;
 	case PM_DEVICE_ACTION_RESUME:
 		LOG_DBG("Resuming");
 
-		clock_control_on(eth_ctx->clock_dev,
-			(clock_control_subsys_t)eth_ctx->clock);
+		clock_control_on(eth_ctx->clock_dev, (void *)eth_ctx->clock);
 		eth_mcux_init(dev);
 		net_if_resume(eth_ctx->iface);
 		break;

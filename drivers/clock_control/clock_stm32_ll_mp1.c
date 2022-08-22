@@ -15,7 +15,7 @@
  * @brief fill in AHB/APB buses configuration structure
  */
 static inline int stm32_clock_control_on(const struct device *dev,
-					 clock_control_subsys_t sub_system)
+					 const void *sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 
@@ -66,7 +66,7 @@ static inline int stm32_clock_control_on(const struct device *dev,
 }
 
 static inline int stm32_clock_control_off(const struct device *dev,
-					  clock_control_subsys_t sub_system)
+					  const void *sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 
@@ -117,7 +117,7 @@ static inline int stm32_clock_control_off(const struct device *dev,
 }
 
 static int stm32_clock_control_get_subsys_rate(const struct device *clock,
-					       clock_control_subsys_t sub_system,
+					       const void *sub_system,
 					       uint32_t *rate)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);

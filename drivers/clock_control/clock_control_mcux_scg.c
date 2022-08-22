@@ -21,19 +21,19 @@ LOG_MODULE_REGISTER(clock_control_scg);
 #define MCUX_SCG_CLOCK_NODE(name) DT_CHILD(DT_DRV_INST(0), name)
 
 static int mcux_scg_on(const struct device *dev,
-		       clock_control_subsys_t sub_system)
+		       const void *sub_system)
 {
 	return 0;
 }
 
 static int mcux_scg_off(const struct device *dev,
-			clock_control_subsys_t sub_system)
+			const void *sub_system)
 {
 	return 0;
 }
 
 static int mcux_scg_get_rate(const struct device *dev,
-			     clock_control_subsys_t sub_system,
+			     const void *sub_system,
 			     uint32_t *rate)
 {
 	clock_name_t clock_name;

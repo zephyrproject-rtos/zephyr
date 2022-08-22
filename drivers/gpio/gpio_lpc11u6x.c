@@ -80,7 +80,7 @@ struct lpc11u6x_pint_regs {
  */
 struct gpio_lpc11u6x_shared {
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	uint32_t gpio_base;
 	uint32_t syscon_base;
 	uint8_t nirqs;
@@ -500,7 +500,7 @@ static const struct gpio_driver_api gpio_lpc11u6x_driver_api = {
 
 static const struct gpio_lpc11u6x_shared gpio_lpc11u6x_shared = {
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
-	.clock_subsys = (clock_control_subsys_t) DT_INST_PHA(0, clocks, clkid),
+	.clock_subsys = (const void *)DT_INST_PHA(0, clocks, clkid),
 	.gpio_base = DT_INST_REG_ADDR_BY_IDX(0, 0),
 	.syscon_base = DT_INST_REG_ADDR_BY_IDX(0, 1),
 	.nirqs = DT_NUM_IRQS(DT_DRV_INST(0)),

@@ -91,7 +91,7 @@ struct i2s_mcux_config {
 	uint32_t mclk_pin_mask;
 	uint32_t mclk_pin_offset;
 	uint32_t tx_channel;
-	clock_control_subsys_t clk_sub_sys;
+	void *clk_sub_sys;
 	const struct device *ccm_dev;
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pinctrl;
@@ -449,7 +449,7 @@ static void get_mclk_rate(const struct device *dev, uint32_t *mclk)
 {
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 	const struct device *ccm_dev = dev_cfg->ccm_dev;
-	clock_control_subsys_t clk_sub_sys = dev_cfg->clk_sub_sys;
+	void *clk_sub_sys = dev_cfg->clk_sub_sys;
 	uint32_t rate = 0;
 
 	if (device_is_ready(ccm_dev)) {
@@ -1275,7 +1275,7 @@ static const struct i2s_driver_api i2s_mcux_driver_api = {
 		.mclk_pin_offset =					\
 			DT_PHA_BY_IDX(DT_DRV_INST(i2s_id),		\
 				pinmuxes, 0, pin),			\
-		.clk_sub_sys =	(clock_control_subsys_t)		\
+		.clk_sub_sys =						\
 			DT_INST_CLOCKS_CELL_BY_IDX(i2s_id, 0, name),	\
 		.ccm_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(i2s_id)),	\
 		.irq_connect = i2s_irq_connect_##i2s_id,		\

@@ -321,7 +321,7 @@ static int usb_dc_stm32_clock_enable(void)
 		return -ENODEV;
 	}
 
-	if (clock_control_on(clk, (clock_control_subsys_t *)&pclken) != 0) {
+	if (clock_control_on(clk, &pclken) != 0) {
 		LOG_ERR("Unable to enable USB clock");
 		return -EIO;
 	}

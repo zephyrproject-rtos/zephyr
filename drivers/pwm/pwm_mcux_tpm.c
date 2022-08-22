@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(pwm_mcux_tpm, CONFIG_PWM_LOG_LEVEL);
 struct mcux_tpm_config {
 	TPM_Type *base;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	tpm_clock_source_t tpm_clock_source;
 	tpm_clock_prescale_t prescale;
 	uint8_t channel_count;
@@ -190,8 +190,7 @@ static const struct pwm_driver_api mcux_tpm_driver_api = {
 		.base =	(TPM_Type *) \
 			DT_INST_REG_ADDR(n), \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)), \
-		.clock_subsys = (clock_control_subsys_t) \
-			DT_INST_CLOCKS_CELL(n, name), \
+		.clock_subsys = (const void *)DT_INST_CLOCKS_CELL(n, name), \
 		.tpm_clock_source = kTPM_SystemClock, \
 		.prescale = kTPM_Prescale_Divide_16, \
 		.channel_count = FSL_FEATURE_TPM_CHANNEL_COUNTn((TPM_Type *) \

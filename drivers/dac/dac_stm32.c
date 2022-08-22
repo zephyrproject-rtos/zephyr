@@ -126,8 +126,7 @@ static int dac_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_on(clk,
-			     (clock_control_subsys_t *) &cfg->pclken) != 0) {
+	if (clock_control_on(clk, &cfg->pclken) != 0) {
 		return -EIO;
 	}
 

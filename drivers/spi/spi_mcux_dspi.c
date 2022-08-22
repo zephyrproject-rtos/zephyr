@@ -37,7 +37,7 @@ struct spi_edma_config {
 struct spi_mcux_config {
 	SPI_Type *base;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t pcs_sck_delay;
 	uint32_t sck_pcs_delay;
@@ -886,8 +886,8 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	static const struct spi_mcux_config spi_mcux_config_##id = {	\
 		.base = (SPI_Type *)DT_INST_REG_ADDR(id),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
-		.clock_subsys = 					\
-		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),	\
+		.clock_subsys = (const void *)				\
+			DT_INST_CLOCKS_CELL(id, name),			\
 		.irq_config_func = spi_mcux_config_func_##id,		\
 		.pcs_sck_delay =					\
 		    DT_INST_PROP_OR(id, pcs_sck_delay, 0),		\

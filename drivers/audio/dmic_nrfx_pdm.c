@@ -513,7 +513,7 @@ static int dmic_nrfx_pdm_read(const struct device *dev,
 static void init_clock_manager(const struct device *dev)
 {
 	struct dmic_nrfx_pdm_drv_data *drv_data = dev->data;
-	clock_control_subsys_t subsys;
+	void *subsys;
 
 #if NRF_CLOCK_HAS_HFCLKAUDIO
 	const struct dmic_nrfx_pdm_drv_cfg *drv_cfg = dev->config;

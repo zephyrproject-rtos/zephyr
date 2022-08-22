@@ -41,7 +41,7 @@
 struct rv32m1_intmux_config {
 	INTMUX_Type *regs;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	struct _isr_table_entry *isr_base;
 };
 
@@ -144,7 +144,7 @@ static const struct irq_next_level_api rv32m1_intmux_apis = {
 static const struct rv32m1_intmux_config rv32m1_intmux_cfg = {
 	.regs = (INTMUX_Type *)DT_INST_REG_ADDR(0),
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
-	.clock_subsys = UINT_TO_POINTER(DT_INST_CLOCKS_CELL(0, name)),
+	.clock_subsys = (const void *)DT_INST_CLOCKS_CELL(0, name),
 	.isr_base = &_sw_isr_table[CONFIG_2ND_LVL_ISR_TBL_OFFSET],
 };
 

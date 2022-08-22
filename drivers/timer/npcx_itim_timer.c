@@ -315,8 +315,7 @@ static int sys_clock_driver_init(const struct device *dev)
 
 	/* Turn on all itim module clocks used for counting */
 	for (int i = 0; i < ARRAY_SIZE(itim_clk_cfg); i++) {
-		ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
-				&itim_clk_cfg[i]);
+		ret = clock_control_on(clk_dev, &itim_clk_cfg[i]);
 		if (ret < 0) {
 			LOG_ERR("Turn on timer %d clock failed.", i);
 			return ret;
@@ -327,8 +326,7 @@ static int sys_clock_driver_init(const struct device *dev)
 	 * In npcx series, we use ITIM64 as system kernel timer. Its source
 	 * clock frequency must equal to CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC.
 	 */
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
-			&itim_clk_cfg[1], &sys_tmr_rate);
+	ret = clock_control_get_rate(clk_dev, &itim_clk_cfg[1], &sys_tmr_rate);
 	if (ret < 0) {
 		LOG_ERR("Get ITIM64 clock rate failed %d", ret);
 		return ret;

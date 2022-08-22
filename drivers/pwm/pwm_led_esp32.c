@@ -41,7 +41,7 @@ struct pwm_ledc_esp32_channel_config {
 struct pwm_ledc_esp32_config {
 	const struct pinctrl_dev_config *pincfg;
 	const struct device *clock_dev;
-	const clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	struct pwm_ledc_esp32_channel_config *channel_config;
 	const int channel_len;
 };
@@ -339,7 +339,7 @@ static struct pwm_ledc_esp32_channel_config channel_config[] = {
 static struct pwm_ledc_esp32_config pwm_ledc_esp32_config = {
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
-	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
+	.clock_subsys = (const void *)DT_INST_CLOCKS_CELL(0, offset),
 	.channel_config = channel_config,
 	.channel_len = ARRAY_SIZE(channel_config),
 };

@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(test);
 extern void mock_temp_nrf5_value_set(struct sensor_value *val);
 
 static void turn_on_clock(const struct device *dev,
-			  clock_control_subsys_t subsys)
+			  void *subsys)
 {
 	int err;
 	int res;
@@ -37,7 +37,7 @@ static void turn_on_clock(const struct device *dev,
 }
 
 static void turn_off_clock(const struct device *dev,
-			   clock_control_subsys_t subsys)
+			   void *subsys)
 {
 	int err;
 	struct onoff_manager *mgr = z_nrf_clock_control_get_onoff(subsys);

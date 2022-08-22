@@ -368,8 +368,8 @@ static const struct spi_driver_api spi_api = {
 		.input_delay_ns = 0, \
 		.irq_source = DT_INST_IRQN(idx), \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),	\
-		.clock_subsys =	\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),	\
+		.clock_subsys = (const void *)			\
+			DT_INST_CLOCKS_CELL(idx, offset),	\
 		.use_iomux = DT_INST_PROP(idx, use_iomux),	\
 	};	\
 		\

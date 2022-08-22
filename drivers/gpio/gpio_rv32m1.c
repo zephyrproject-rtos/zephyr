@@ -25,7 +25,7 @@ struct gpio_rv32m1_config {
 	PORT_Type *port_base;
 	unsigned int flags;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	int (*irq_config_func)(const struct device *dev);
 };
 
@@ -313,8 +313,7 @@ static const struct gpio_driver_api gpio_rv32m1_driver_api = {
 		.flags = GPIO_INT_ENABLE,				\
 		.irq_config_func = gpio_rv32m1_##n##_init,		\
 		.clock_dev = INST_DT_CLK_CTRL_DEV(n),			\
-		.clock_subsys = (clock_control_subsys_t)		\
-				INST_DT_CLK_CELL_NAME(n)		\
+		.clock_subsys = (const void *)INST_DT_CLK_CELL_NAME(n)	\
 	};								\
 									\
 	static struct gpio_rv32m1_data gpio_rv32m1_##n##_data;		\

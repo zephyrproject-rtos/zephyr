@@ -47,13 +47,6 @@ enum clock_control_status {
 };
 
 /**
- * clock_control_subsys_t is a type to identify a clock controller sub-system.
- * Such data pointed is opaque and relevant only to the clock controller
- * driver instance being used.
- */
-typedef void *clock_control_subsys_t;
-
-/**
  * clock_control_subsys_rate_t is a type to identify a clock
  * controller sub-system rate.  Such data pointed is opaque and
  * relevant only to set the clock controller rate of the driver
@@ -68,31 +61,31 @@ typedef void *clock_control_subsys_rate_t;
  * @param user_data	User data.
  */
 typedef void (*clock_control_cb_t)(const struct device *dev,
-				   clock_control_subsys_t subsys,
+				   const void *subsys,
 				   void *user_data);
 
 typedef int (*clock_control)(const struct device *dev,
-			     clock_control_subsys_t sys);
+			     const void *sys);
 
 typedef int (*clock_control_get)(const struct device *dev,
-				 clock_control_subsys_t sys,
+				 const void *sys,
 				 uint32_t *rate);
 
 typedef int (*clock_control_async_on_fn)(const struct device *dev,
-					 clock_control_subsys_t sys,
+					 const void *sys,
 					 clock_control_cb_t cb,
 					 void *user_data);
 
 typedef enum clock_control_status (*clock_control_get_status_fn)(
 						    const struct device *dev,
-						    clock_control_subsys_t sys);
+						    const void *sys);
 
 typedef int (*clock_control_set)(const struct device *dev,
-				 clock_control_subsys_t sys,
+				 const void *sys,
 				 clock_control_subsys_rate_t rate);
 
 typedef int (*clock_control_configure_fn)(const struct device *dev,
-					  clock_control_subsys_t sys,
+					  const void *sys,
 					  void *data);
 
 struct clock_control_driver_api {
@@ -119,7 +112,7 @@ struct clock_control_driver_api {
  * @return 0 on success, negative errno on failure.
  */
 static inline int clock_control_on(const struct device *dev,
-				   clock_control_subsys_t sys)
+				   const void *sys)
 {
 	const struct clock_control_driver_api *api =
 		(const struct clock_control_driver_api *)dev->api;
@@ -138,7 +131,7 @@ static inline int clock_control_on(const struct device *dev,
  * @return 0 on success, negative errno on failure.
  */
 static inline int clock_control_off(const struct device *dev,
-				    clock_control_subsys_t sys)
+				    const void *sys)
 {
 	const struct clock_control_driver_api *api =
 		(const struct clock_control_driver_api *)dev->api;
@@ -164,7 +157,7 @@ static inline int clock_control_off(const struct device *dev,
  * @retval other negative errno on vendor specific error.
  */
 static inline int clock_control_async_on(const struct device *dev,
-					 clock_control_subsys_t sys,
+					 const void *sys,
 					 clock_control_cb_t cb,
 					 void *user_data)
 {
@@ -187,7 +180,7 @@ static inline int clock_control_async_on(const struct device *dev,
  * @return Status.
  */
 static inline enum clock_control_status clock_control_get_status(const struct device *dev,
-								 clock_control_subsys_t sys)
+								 const void *sys)
 {
 	const struct clock_control_driver_api *api =
 		(const struct clock_control_driver_api *)dev->api;
@@ -212,7 +205,7 @@ static inline enum clock_control_status clock_control_get_status(const struct de
  * @retval -ENOSYS if the interface is not implemented.
  */
 static inline int clock_control_get_rate(const struct device *dev,
-					 clock_control_subsys_t sys,
+					 const void *sys,
 					 uint32_t *rate)
 {
 	const struct clock_control_driver_api *api =
@@ -242,7 +235,7 @@ static inline int clock_control_get_rate(const struct device *dev,
  * @retval other negative errno on vendor specific error.
  */
 static inline int clock_control_set_rate(const struct device *dev,
-		clock_control_subsys_t sys,
+		const void *sys,
 		clock_control_subsys_rate_t rate)
 {
 	const struct clock_control_driver_api *api =
@@ -278,7 +271,7 @@ static inline int clock_control_set_rate(const struct device *dev,
  * @retval -errno Other negative errno on failure.
  */
 static inline int clock_control_configure(const struct device *dev,
-					  clock_control_subsys_t sys,
+					  const void *sys,
 					  void *data)
 {
 	const struct clock_control_driver_api *api =

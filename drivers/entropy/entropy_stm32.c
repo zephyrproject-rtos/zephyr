@@ -608,8 +608,7 @@ static int entropy_stm32_rng_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	res = clock_control_on(dev_data->clock,
-		(clock_control_subsys_t *)&dev_cfg->pclken);
+	res = clock_control_on(dev_data->clock, &dev_cfg->pclken);
 	__ASSERT_NO_MSG(res == 0);
 
 	/* Locking semaphore initialized to 1 (unlocked) */

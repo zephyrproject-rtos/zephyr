@@ -28,7 +28,7 @@
 struct mcux_flexcomm_config {
 	USART_Type *base;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	uint32_t baud_rate;
 	uint8_t parity;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -356,8 +356,7 @@ static const struct uart_driver_api mcux_flexcomm_driver_api = {
 static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {	\
 	.base = (USART_Type *)DT_INST_REG_ADDR(n),			\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
-	.clock_subsys =				\
-	(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+	.clock_subsys = (const void *)DT_INST_CLOCKS_CELL(n, name),	\
 	.baud_rate = DT_INST_PROP(n, current_speed),			\
 	.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE), \
 	UART_MCUX_FLEXCOMM_PINCTRL_INIT(n)				\

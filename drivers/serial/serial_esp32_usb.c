@@ -19,7 +19,7 @@
 
 struct serial_esp32_usb_config {
 	const struct device *clock_dev;
-	const clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	int irq_source;
 };
 
@@ -236,7 +236,7 @@ static const DRAM_ATTR struct uart_driver_api serial_esp32_usb_api = {
 
 static const DRAM_ATTR struct serial_esp32_usb_config serial_esp32_usb_cfg = {
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
-	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
+	.clock_subsys = (const void *)DT_INST_CLOCKS_CELL(0, offset),
 	.irq_source = DT_INST_IRQN(0)
 };
 

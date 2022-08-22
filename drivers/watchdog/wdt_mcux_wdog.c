@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(wdt_mcux_wdog);
 struct mcux_wdog_config {
 	WDOG_Type *base;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
 };
 
@@ -167,8 +167,7 @@ static void mcux_wdog_config_func_0(const struct device *dev);
 static const struct mcux_wdog_config mcux_wdog_config_0 = {
 	.base = (WDOG_Type *) DT_INST_REG_ADDR(0),
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
-	.clock_subsys = (clock_control_subsys_t)
-		DT_INST_CLOCKS_CELL(0, name),
+	.clock_subsys = (const void *)DT_INST_CLOCKS_CELL(0, name),
 	.irq_config_func = mcux_wdog_config_func_0,
 };
 

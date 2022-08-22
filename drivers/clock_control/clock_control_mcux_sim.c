@@ -16,7 +16,7 @@
 LOG_MODULE_REGISTER(clock_control);
 
 static int mcux_sim_on(const struct device *dev,
-		       clock_control_subsys_t sub_system)
+		       const void *sub_system)
 {
 	clock_ip_name_t clock_ip_name = (clock_ip_name_t) sub_system;
 
@@ -26,7 +26,7 @@ static int mcux_sim_on(const struct device *dev,
 }
 
 static int mcux_sim_off(const struct device *dev,
-			clock_control_subsys_t sub_system)
+			const void *sub_system)
 {
 	clock_ip_name_t clock_ip_name = (clock_ip_name_t) sub_system;
 
@@ -36,7 +36,7 @@ static int mcux_sim_off(const struct device *dev,
 }
 
 static int mcux_sim_get_subsys_rate(const struct device *dev,
-				    clock_control_subsys_t sub_system,
+				    const void *sub_system,
 				    uint32_t *rate)
 {
 	clock_name_t clock_name;

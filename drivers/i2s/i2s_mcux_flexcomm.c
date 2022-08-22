@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(i2s_mcux_flexcomm);
 struct i2s_mcux_config {
 	I2S_Type *base;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	void (*irq_config)(const struct device *dev);
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
@@ -924,8 +924,8 @@ static int i2s_mcux_init(const struct device *dev)
 		.base =							\
 		(I2S_Type *)DT_INST_REG_ADDR(id),			\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)), \
-		.clock_subsys =				\
-		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),\
+		.clock_subsys = (const void *)				\
+			DT_INST_CLOCKS_CELL(id, name),			\
 		.irq_config = i2s_mcux_config_func_##id,		\
 		I2S_MCUX_FLEXCOMM_PINCTRL_INIT(id)			\
 	};								\

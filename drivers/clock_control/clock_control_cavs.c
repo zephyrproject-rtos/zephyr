@@ -8,7 +8,7 @@
 #include <zephyr/drivers/clock_control.h>
 
 static int cavs_clock_ctrl_set_rate(const struct device *clk,
-				    clock_control_subsys_t sys,
+				    const void *sys,
 				    clock_control_subsys_rate_t rate)
 {
 	uint32_t freq_idx = (uint32_t)rate;

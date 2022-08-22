@@ -1524,9 +1524,9 @@ static int litex_clk_set_all_def_clkouts(void)
  *			all clkout parameters
  */
 static int litex_clk_get_subsys_rate(const struct device *clock,
-				     clock_control_subsys_t sys, uint32_t *rate)
+				     const void *sys, uint32_t *rate)
 {
-	struct litex_clk_setup *setup = sys;
+	const struct litex_clk_setup *setup = sys;
 	struct litex_clk_clkout *lcko;
 
 	lcko = &ldev->clkouts[setup->clkout_nr];
@@ -1536,9 +1536,9 @@ static int litex_clk_get_subsys_rate(const struct device *clock,
 }
 
 static enum clock_control_status litex_clk_get_status(const struct device *dev,
-						     clock_control_subsys_t sys)
+						     const void *sys)
 {
-	struct litex_clk_setup *setup = sys;
+	struct litex_clk_setup *setup = (struct litex_clk_setup *)sys;
 	struct clk_duty duty;
 	struct litex_clk_clkout *lcko;
 	int ret;
@@ -1556,9 +1556,9 @@ static enum clock_control_status litex_clk_get_status(const struct device *dev,
 	return CLOCK_CONTROL_STATUS_ON;
 }
 
-static inline int litex_clk_on(const struct device *dev, clock_control_subsys_t sys)
+static inline int litex_clk_on(const struct device *dev, const void *sys)
 {
-	struct litex_clk_setup *setup = sys;
+	const struct litex_clk_setup *setup = sys;
 	struct clk_duty duty;
 	struct litex_clk_clkout *lcko;
 	uint8_t duty_perc;
@@ -1591,7 +1591,7 @@ static inline int litex_clk_on(const struct device *dev, clock_control_subsys_t 
 }
 
 static inline int litex_clk_off(const struct device *dev,
-				clock_control_subsys_t sub_system)
+				const void *sub_system)
 {
 	return litex_clk_change_value(ZERO_REG, ZERO_REG, POWER_REG);
 }

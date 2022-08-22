@@ -439,7 +439,7 @@ int z_mchp_xec_pcr_periph_sleep(uint8_t slp_idx, uint8_t slp_pos,
 /* clock control driver API implementation */
 
 static int xec_cc_on(const struct device *dev,
-		     clock_control_subsys_t sub_system,
+		     const void *sub_system,
 		     bool turn_on)
 {
 	struct pcr_regs *const pcr = XEC_PCR_REGS_BASE(dev);
@@ -508,7 +508,7 @@ static int xec_cc_on(const struct device *dev,
  * to its PCR control register.
  */
 static int xec_clock_control_on(const struct device *dev,
-				clock_control_subsys_t sub_system)
+				const void *sub_system)
 {
 	return xec_cc_on(dev, sub_system, true);
 }
@@ -523,7 +523,7 @@ static int xec_clock_control_on(const struct device *dev,
  * Peripheral slow clock can be turned off by writing 0 to its control register.
  */
 static inline int xec_clock_control_off(const struct device *dev,
-					clock_control_subsys_t sub_system)
+					const void *sub_system)
 {
 	return xec_cc_on(dev, sub_system, false);
 }
@@ -549,7 +549,7 @@ static inline int xec_clock_control_off(const struct device *dev,
  *   BBLED, RPMFAN
  */
 static int xec_clock_control_get_subsys_rate(const struct device *dev,
-					     clock_control_subsys_t sub_system,
+					     const void *sub_system,
 					     uint32_t *rate)
 {
 	struct pcr_regs *const pcr = XEC_PCR_REGS_BASE(dev);

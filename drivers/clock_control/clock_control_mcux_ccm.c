@@ -34,19 +34,19 @@ static const clock_root_control_t uart_clk_root[] = {
 #endif
 
 static int mcux_ccm_on(const struct device *dev,
-			      clock_control_subsys_t sub_system)
+			      const void *sub_system)
 {
 	return 0;
 }
 
 static int mcux_ccm_off(const struct device *dev,
-			       clock_control_subsys_t sub_system)
+			       const void *sub_system)
 {
 	return 0;
 }
 
 static int mcux_ccm_get_subsys_rate(const struct device *dev,
-				    clock_control_subsys_t sub_system,
+				    const void *sub_system,
 				    uint32_t *rate)
 {
 #ifdef CONFIG_ARM64

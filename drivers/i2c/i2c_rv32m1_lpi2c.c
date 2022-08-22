@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(rv32m1_lpi2c);
 struct rv32m1_lpi2c_config {
 	LPI2C_Type *base;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	clock_ip_name_t clock_ip_name;
 	uint32_t clock_ip_src;
 	uint32_t bitrate;
@@ -278,8 +278,7 @@ static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 		.base =                                                        \
 		(LPI2C_Type *)DT_INST_REG_ADDR(id),                            \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	       \
-		.clock_subsys =                                                \
-			(clock_control_subsys_t) DT_INST_CLOCKS_CELL(id, name),\
+		.clock_subsys = (const void *)DT_INST_CLOCKS_CELL(id, name),   \
 		.clock_ip_name = INST_DT_CLOCK_IP_NAME(id),                    \
 		.clock_ip_src  = kCLOCK_IpSrcFircAsync,                        \
 		.bitrate = DT_INST_PROP(id, clock_frequency),                  \

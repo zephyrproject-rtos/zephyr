@@ -109,15 +109,13 @@ static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t ba
 
 	/* Get clock rate */
 	if (IS_ENABLED(STM32_UART_DOMAIN_CLOCK_SUPPORT) && (config->pclk_len > 1)) {
-		if (clock_control_get_rate(data->clock,
-					   (clock_control_subsys_t)&config->pclken[1],
+		if (clock_control_get_rate(data->clock, &config->pclken[1],
 					   &clock_rate) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
 			return;
 		}
 	} else {
-		if (clock_control_get_rate(data->clock,
-					   (clock_control_subsys_t)&config->pclken[0],
+		if (clock_control_get_rate(data->clock, &config->pclken[0],
 					   &clock_rate) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
 			return;
@@ -1571,7 +1569,7 @@ static int uart_stm32_init(const struct device *dev)
 	}
 
 	/* enable clock */
-	err = clock_control_on(data->clock, (clock_control_subsys_t)&config->pclken[0]);
+	err = clock_control_on(data->clock, &config->pclken[0]);
 	if (err != 0) {
 		LOG_ERR("Could not enable (LP)UART clock");
 		return err;
@@ -1579,7 +1577,7 @@ static int uart_stm32_init(const struct device *dev)
 
 	if (IS_ENABLED(STM32_UART_DOMAIN_CLOCK_SUPPORT) && (config->pclk_len > 1)) {
 		err = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					      (clock_control_subsys_t) &config->pclken[1],
+					       &config->pclken[1],
 					      NULL);
 		if (err != 0) {
 			LOG_ERR("Could not select UART domain clock");
@@ -1732,7 +1730,7 @@ static int uart_stm32_pm_action(const struct device *dev,
 		}
 
 		/* enable clock */
-		err = clock_control_on(data->clock, (clock_control_subsys_t)&config->pclken[0]);
+		err = clock_control_on(data->clock, &config->pclken[0]);
 		if (err != 0) {
 			LOG_ERR("Could not enable (LP)UART clock");
 			return err;
@@ -1741,7 +1739,7 @@ static int uart_stm32_pm_action(const struct device *dev,
 	case PM_DEVICE_ACTION_SUSPEND:
 		uart_stm32_suspend_setup(dev);
 		/* Stop device clock. Note: fixed clocks are not handled yet. */
-		err = clock_control_off(data->clock, (clock_control_subsys_t)&config->pclken[0]);
+		err = clock_control_off(data->clock, &config->pclken[0]);
 		if (err != 0) {
 			LOG_ERR("Could not enable (LP)UART clock");
 			return err;

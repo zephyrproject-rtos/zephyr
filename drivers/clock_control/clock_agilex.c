@@ -20,7 +20,7 @@ static int clk_init(const struct device *dev)
 }
 
 static int clk_get_rate(const struct device *dev,
-			clock_control_subsys_t sub_system,
+			const void *sub_system,
 			uint32_t *rate)
 {
 	ARG_UNUSED(dev);

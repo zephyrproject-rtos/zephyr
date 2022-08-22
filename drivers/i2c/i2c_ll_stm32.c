@@ -43,7 +43,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	clock = rcc_clocks.SYSCLK_Frequency;
 #else
 	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			(clock_control_subsys_t *) &cfg->pclken, &clock) < 0) {
+				   &cfg->pclken, &clock) < 0) {
 		LOG_ERR("Failed call clock_control_get_rate");
 		return -EIO;
 	}
@@ -228,8 +228,7 @@ static int i2c_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_on(clock,
-		(clock_control_subsys_t *) &cfg->pclken) != 0) {
+	if (clock_control_on(clock, &cfg->pclken) != 0) {
 		LOG_ERR("i2c: failure enabling clock");
 		return -EIO;
 	}

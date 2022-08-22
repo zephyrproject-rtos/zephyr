@@ -19,19 +19,19 @@
 LOG_MODULE_REGISTER(clock_control_mcg);
 
 static int mcux_mcg_on(const struct device *dev,
-		       clock_control_subsys_t sub_system)
+		       const void *sub_system)
 {
 	return 0;
 }
 
 static int mcux_mcg_off(const struct device *dev,
-			clock_control_subsys_t sub_system)
+			const void *sub_system)
 {
 	return 0;
 }
 
 static int mcux_mcg_get_rate(const struct device *dev,
-			     clock_control_subsys_t sub_system,
+			     const void *sub_system,
 			     uint32_t *rate)
 {
 	clock_name_t clock_name;

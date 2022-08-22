@@ -69,7 +69,7 @@ struct pcnt_esp32_unit_config {
 struct pcnt_esp32_config {
 	const struct pinctrl_dev_config *pincfg;
 	const struct device *clock_dev;
-	const clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	const int irq_src;
 	struct pcnt_esp32_unit_config *unit_config;
 	const int unit_len;
@@ -399,7 +399,7 @@ static struct pcnt_esp32_unit_config unit_config[] = {DT_INST_FOREACH_CHILD(0, U
 static struct pcnt_esp32_config pcnt_esp32_config = {
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
-	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
+	.clock_subsys = (const void *)DT_INST_CLOCKS_CELL(0, offset),
 	.irq_src = DT_INST_IRQN(0),
 	.unit_config = unit_config,
 	.unit_len = ARRAY_SIZE(unit_config),

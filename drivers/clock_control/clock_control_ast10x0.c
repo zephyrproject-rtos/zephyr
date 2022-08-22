@@ -49,7 +49,7 @@ struct clock_aspeed_config {
 
 #define DEV_CFG(dev) ((const struct clock_aspeed_config *const)(dev)->config)
 
-static int aspeed_clock_control_on(const struct device *dev, clock_control_subsys_t sub_system)
+static int aspeed_clock_control_on(const struct device *dev, const void *sub_system)
 {
 	const struct device *syscon = DEV_CFG(dev)->syscon;
 	uint32_t clk_gate = (uint32_t)sub_system;
@@ -70,7 +70,7 @@ static int aspeed_clock_control_on(const struct device *dev, clock_control_subsy
 	return 0;
 }
 
-static int aspeed_clock_control_off(const struct device *dev, clock_control_subsys_t sub_system)
+static int aspeed_clock_control_off(const struct device *dev, const void *sub_system)
 {
 	const struct device *syscon = DEV_CFG(dev)->syscon;
 	uint32_t clk_gate = (uint32_t)sub_system;
@@ -92,7 +92,7 @@ static int aspeed_clock_control_off(const struct device *dev, clock_control_subs
 }
 
 static int aspeed_clock_control_get_rate(const struct device *dev,
-					 clock_control_subsys_t sub_system, uint32_t *rate)
+					 const void *sub_system, uint32_t *rate)
 {
 	const struct device *syscon = DEV_CFG(dev)->syscon;
 	uint32_t clk_id = (uint32_t)sub_system;

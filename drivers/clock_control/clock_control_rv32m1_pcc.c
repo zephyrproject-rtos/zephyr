@@ -22,7 +22,7 @@ struct rv32m1_pcc_config {
 	(((struct rv32m1_pcc_config *)(dev->config))->base_address)
 
 static inline clock_ip_name_t clock_ip(const struct device *dev,
-				       clock_control_subsys_t sub_system)
+				       const void *sub_system)
 {
 	uint32_t offset = POINTER_TO_UINT(sub_system);
 
@@ -30,21 +30,21 @@ static inline clock_ip_name_t clock_ip(const struct device *dev,
 }
 
 static int rv32m1_pcc_on(const struct device *dev,
-			 clock_control_subsys_t sub_system)
+			 const void *sub_system)
 {
 	CLOCK_EnableClock(clock_ip(dev, sub_system));
 	return 0;
 }
 
 static int rv32m1_pcc_off(const struct device *dev,
-			  clock_control_subsys_t sub_system)
+			  const void *sub_system)
 {
 	CLOCK_DisableClock(clock_ip(dev, sub_system));
 	return 0;
 }
 
 static int rv32m1_pcc_get_rate(const struct device *dev,
-			       clock_control_subsys_t sub_system,
+			       const void *sub_system,
 			       uint32_t *rate)
 {
 	*rate = CLOCK_GetIpFreq(clock_ip(dev, sub_system));

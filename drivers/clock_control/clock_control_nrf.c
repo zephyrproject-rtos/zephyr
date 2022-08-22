@@ -107,14 +107,14 @@ static struct onoff_manager *get_onoff_manager(const struct device *dev,
 
 #define CLOCK_DEVICE DEVICE_DT_GET(DT_NODELABEL(clock))
 
-struct onoff_manager *z_nrf_clock_control_get_onoff(clock_control_subsys_t sys)
+struct onoff_manager *z_nrf_clock_control_get_onoff(const void *sys)
 {
 	return get_onoff_manager(CLOCK_DEVICE,
-				(enum clock_control_nrf_type)sys);
+				 (enum clock_control_nrf_type)sys);
 }
 
 static enum clock_control_status get_status(const struct device *dev,
-					    clock_control_subsys_t subsys)
+					    const void *subsys)
 {
 	enum clock_control_nrf_type type = (enum clock_control_nrf_type)subsys;
 
@@ -179,7 +179,7 @@ static void clkstarted_handle(const struct device *dev,
 	DBG(dev, type, "Clock started");
 
 	if (callback) {
-		callback(dev, (clock_control_subsys_t)type, user_data);
+		callback(dev, (void *)type, user_data);
 	}
 }
 
@@ -323,7 +323,7 @@ void z_nrf_clock_bt_ctlr_hf_release(void)
 	hfclk_stop();
 }
 
-static int stop(const struct device *dev, clock_control_subsys_t subsys,
+static int stop(const struct device *dev, const void *subsys,
 		uint32_t ctx)
 {
 	enum clock_control_nrf_type type = (enum clock_control_nrf_type)subsys;
@@ -342,12 +342,12 @@ static int stop(const struct device *dev, clock_control_subsys_t subsys,
 	return 0;
 }
 
-static int api_stop(const struct device *dev, clock_control_subsys_t subsys)
+static int api_stop(const struct device *dev, const void *subsys)
 {
 	return stop(dev, subsys, CTX_API);
 }
 
-static int async_start(const struct device *dev, clock_control_subsys_t subsys,
+static int async_start(const struct device *dev, const void *subsys,
 			clock_control_cb_t cb, void *user_data, uint32_t ctx)
 {
 	enum clock_control_nrf_type type = (enum clock_control_nrf_type)subsys;
@@ -367,14 +367,14 @@ static int async_start(const struct device *dev, clock_control_subsys_t subsys,
 	return 0;
 }
 
-static int api_start(const struct device *dev, clock_control_subsys_t subsys,
+static int api_start(const struct device *dev, const void *subsys,
 		     clock_control_cb_t cb, void *user_data)
 {
 	return async_start(dev, subsys, cb, user_data, CTX_API);
 }
 
 static void blocking_start_callback(const struct device *dev,
-				    clock_control_subsys_t subsys,
+				    const void *subsys,
 				    void *user_data)
 {
 	struct k_sem *sem = user_data;
@@ -383,7 +383,7 @@ static void blocking_start_callback(const struct device *dev,
 }
 
 static int api_blocking_start(const struct device *dev,
-			      clock_control_subsys_t subsys)
+			      const void *subsys)
 {
 	struct k_sem sem = Z_SEM_INITIALIZER(sem, 0, 1);
 	int err;
@@ -400,12 +400,12 @@ static int api_blocking_start(const struct device *dev,
 	return k_sem_take(&sem, K_MSEC(500));
 }
 
-static clock_control_subsys_t get_subsys(struct onoff_manager *mgr)
+static void *get_subsys(struct onoff_manager *mgr)
 {
 	struct nrf_clock_control_data *data = CLOCK_DEVICE->data;
 	size_t offset = (size_t)(mgr - data->mgr);
 
-	return (clock_control_subsys_t)offset;
+	return (void *)offset;
 }
 
 static void onoff_stop(struct onoff_manager *mgr,
@@ -418,7 +418,7 @@ static void onoff_stop(struct onoff_manager *mgr,
 }
 
 static void onoff_started_callback(const struct device *dev,
-				   clock_control_subsys_t sys,
+				   const void *sys,
 				   void *user_data)
 {
 	enum clock_control_nrf_type type = (enum clock_control_nrf_type)sys;

@@ -251,8 +251,7 @@ static int gpio_rcar_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(config->clock_dev,
-			       (clock_control_subsys_t *) &config->mod_clk);
+	ret = clock_control_on(config->clock_dev, &config->mod_clk);
 
 	if (ret < 0) {
 		return ret;

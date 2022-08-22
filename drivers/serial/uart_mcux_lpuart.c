@@ -39,7 +39,7 @@ struct mcux_lpuart_config {
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
 #endif
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	uint32_t baud_rate;
 	uint8_t flow_ctrl;
 	bool loopback_en;
@@ -1177,7 +1177,7 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {		\
 	.base = (LPUART_Type *) DT_INST_REG_ADDR(n),				\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
-	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
+	.clock_subsys = (const void *)DT_INST_CLOCKS_CELL(n, name),		\
 	.baud_rate = DT_INST_PROP(n, current_speed),				\
 	.flow_ctrl = DT_INST_PROP(n, hw_flow_control) ?				\
 		UART_CFG_FLOW_CTRL_RTS_CTS : UART_CFG_FLOW_CTRL_NONE,		\

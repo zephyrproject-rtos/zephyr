@@ -165,12 +165,12 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	}
 
 	if (ticks == K_TICKS_FOREVER) {
-		clock_control_off(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[0]);
+		clock_control_off(clk_ctrl, &lptim_clk[0]);
 		return;
 	}
 
 	/* if LPTIM clock was previously stopped, it must now be restored */
-	clock_control_on(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[0]);
+	clock_control_on(clk_ctrl, &lptim_clk[0]);
 
 	/* passing ticks==1 means "announce the next tick",
 	 * ticks value of zero (or even negative) is legal and
@@ -289,7 +289,7 @@ static int sys_clock_driver_init(const struct device *dev)
 	}
 
 	/* Enable LPTIM bus clock */
-	clock_control_on(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[0]);
+	clock_control_on(clk_ctrl, &lptim_clk[0]);
 
 #if defined(LL_APB1_GRP1_PERIPH_LPTIM1)
 	LL_APB1_GRP1_ReleaseReset(LL_APB1_GRP1_PERIPH_LPTIM1);
@@ -298,12 +298,10 @@ static int sys_clock_driver_init(const struct device *dev)
 #endif
 
 	/* Enable LPTIM clock source */
-	clock_control_configure(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[1],
-				NULL);
+	clock_control_configure(clk_ctrl, &lptim_clk[1], NULL);
 
 	/* Get LPTIM clock freq */
-	clock_control_get_rate(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[1],
-			       &lptim_clock_freq);
+	clock_control_get_rate(clk_ctrl, &lptim_clk[1], &lptim_clock_freq);
 
 	/* Set LPTIM time base based on clck source freq
 	 * Time base = (2s * freq) - 1

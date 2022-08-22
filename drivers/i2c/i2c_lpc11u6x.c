@@ -19,8 +19,7 @@ static void lpc11u6x_i2c_set_bus_speed(const struct lpc11u6x_i2c_config *cfg,
 {
 	uint32_t clk, div;
 
-	clock_control_get_rate(clk_dev, (clock_control_subsys_t) cfg->clkid,
-			       &clk);
+	clock_control_get_rate(clk_dev, cfg->clkid, &clk);
 	div = clk / speed;
 
 	cfg->base->sclh = div / 2;
@@ -319,7 +318,7 @@ static int lpc11u6x_i2c_init(const struct device *dev)
 	}
 
 	/* Configure clock and de-assert reset for I2Cx */
-	clock_control_on(cfg->clock_dev, (clock_control_subsys_t) cfg->clkid);
+	clock_control_on(cfg->clock_dev, cfg->clkid);
 
 	/* Configure bus speed. Default is 100KHz */
 	lpc11u6x_i2c_set_bus_speed(cfg, cfg->clock_dev, 100000);

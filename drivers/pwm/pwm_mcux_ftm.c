@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(pwm_mcux_ftm, CONFIG_PWM_LOG_LEVEL);
 struct mcux_ftm_config {
 	FTM_Type *base;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	ftm_clock_source_t ftm_clock_source;
 	ftm_clock_prescale_t prescale;
 	uint8_t channel_count;
@@ -475,8 +475,7 @@ static void mcux_ftm_config_func_##n(const struct device *dev) \
 static const struct mcux_ftm_config mcux_ftm_config_##n = { \
 	.base = (FTM_Type *)DT_INST_REG_ADDR(n),\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)), \
-	.clock_subsys = (clock_control_subsys_t) \
-		DT_INST_CLOCKS_CELL(n, name), \
+	.clock_subsys = (const void *)DT_INST_CLOCKS_CELL(n, name), \
 	.ftm_clock_source = kFTM_FixedClock, \
 	.prescale = TO_FTM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),\
 	.channel_count = FSL_FEATURE_FTM_CHANNEL_COUNTn((FTM_Type *) \

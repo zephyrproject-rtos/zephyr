@@ -85,8 +85,7 @@ static void lpc11u6x_uart0_config_baudrate(const struct device *clk_drv,
 	 * LPC11U6X_UART0_CLK so that we can have every baudrate that is
 	 * a multiple of 9600
 	 */
-	clock_control_get_rate(clk_drv, (clock_control_subsys_t) cfg->clkid,
-			       &pclk);
+	clock_control_get_rate(clk_drv, &cfg->clkid, &pclk);
 	mul = pclk / (pclk % LPC11U6X_UART0_CLK);
 
 	dl = pclk / (16 * baudrate + 16 * baudrate / mul);
@@ -351,7 +350,7 @@ static int lpc11u6x_uart0_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	clock_control_on(cfg->clock_dev, (clock_control_subsys_t) cfg->clkid);
+	clock_control_on(cfg->clock_dev, &cfg->clkid);
 
 	/* Configure baudrate, parity and stop bits */
 	lpc11u6x_uart0_config_baudrate(cfg->clock_dev, cfg, cfg->baudrate);
@@ -489,8 +488,7 @@ static void lpc11u6x_uartx_config_baud(const struct lpc11u6x_uartx_config *cfg,
 	uint32_t div;
 	const struct device *clk_drv = cfg->clock_dev;
 
-	clock_control_get_rate(clk_drv, (clock_control_subsys_t) cfg->clkid,
-			       &clk_rate);
+	clock_control_get_rate(clk_drv, &cfg->clkid, &clk_rate);
 
 	div = clk_rate / (16 * baudrate);
 	if (div != 0) {
@@ -773,7 +771,7 @@ static int lpc11u6x_uartx_init(const struct device *dev)
 		return err;
 	}
 
-	clock_control_on(cfg->clock_dev, (clock_control_subsys_t) cfg->clkid);
+	clock_control_on(cfg->clock_dev, &cfg->clkid);
 
 	/* Configure baudrate, parity and stop bits */
 	lpc11u6x_uartx_config_baud(cfg, cfg->baudrate);

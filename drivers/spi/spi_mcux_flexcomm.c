@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(spi_mcux_flexcomm, CONFIG_SPI_LOG_LEVEL);
 struct spi_mcux_config {
 	SPI_Type *base;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t pre_delay;
 	uint32_t post_delay;
@@ -827,8 +827,8 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 		.base =							\
 		(SPI_Type *)DT_INST_REG_ADDR(id),			\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
-		.clock_subsys =					\
-		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),\
+		.clock_subsys = (const void *)				\
+			DT_INST_CLOCKS_CELL(id, name),			\
 		SPI_MCUX_FLEXCOMM_IRQ_HANDLER_FUNC(id)			\
 		.pre_delay = DT_INST_PROP_OR(id, pre_delay, 0),		\
 		.post_delay = DT_INST_PROP_OR(id, post_delay, 0),		\

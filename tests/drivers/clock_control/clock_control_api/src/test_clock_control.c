@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(test);
 #endif
 
 struct device_subsys_data {
-	clock_control_subsys_t subsys;
+	void *subsys;
 	uint32_t startup_us;
 };
 
@@ -57,13 +57,13 @@ static const struct device_data devices[] = {
 
 
 typedef void (*test_func_t)(const struct device *dev,
-			    clock_control_subsys_t subsys,
+			    void *subsys,
 			    uint32_t startup_us);
 
 typedef bool (*test_capability_check_t)(const struct device *dev,
-					clock_control_subsys_t subsys);
+					void *subsys);
 
-static void setup_instance(const struct device *dev, clock_control_subsys_t subsys)
+static void setup_instance(const struct device *dev, void *subsys)
 {
 	int err;
 	k_busy_wait(1000);
@@ -87,7 +87,7 @@ static void setup_instance(const struct device *dev, clock_control_subsys_t subs
 }
 
 static void tear_down_instance(const struct device *dev,
-				clock_control_subsys_t subsys)
+				void *subsys)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_clock)
 	/* Turn on LF clock using onoff service if it is disabled. */
@@ -115,7 +115,7 @@ static void tear_down_instance(const struct device *dev,
 }
 
 static void test_with_single_instance(const struct device *dev,
-				      clock_control_subsys_t subsys,
+				      void *subsys,
 				      uint32_t startup_time,
 				      test_func_t func,
 				      test_capability_check_t capability_check)
@@ -151,7 +151,7 @@ static void test_all_instances(test_func_t func,
  * Basic test for checking correctness of getting clock status.
  */
 static void test_on_off_status_instance(const struct device *dev,
-					clock_control_subsys_t subsys,
+					void *subsys,
 					uint32_t startup_us)
 {
 	enum clock_control_status status;
@@ -182,14 +182,14 @@ static void test_on_off_status(void)
 }
 
 static void async_capable_callback(const struct device *dev,
-				   clock_control_subsys_t subsys,
+				   const void *subsys,
 				   void *user_data)
 {
 	/* empty */
 }
 
 /* Function checks if clock supports asynchronous starting. */
-static bool async_capable(const struct device *dev, clock_control_subsys_t subsys)
+static bool async_capable(const struct device *dev, void *subsys)
 {
 	int err;
 
@@ -217,7 +217,7 @@ static bool async_capable(const struct device *dev, clock_control_subsys_t subsy
  * Test checks that callbacks are called after clock is started.
  */
 static void clock_on_callback(const struct device *dev,
-				clock_control_subsys_t subsys,
+				const void *subsys,
 				void *user_data)
 {
 	bool *executed = (bool *)user_data;
@@ -226,7 +226,7 @@ static void clock_on_callback(const struct device *dev,
 }
 
 static void test_async_on_instance(const struct device *dev,
-				   clock_control_subsys_t subsys,
+				   void *subsys,
 				   uint32_t startup_us)
 {
 	enum clock_control_status status;
@@ -260,7 +260,7 @@ static void test_async_on(void)
  * is reported.
  */
 static void test_async_on_stopped_on_instance(const struct device *dev,
-					      clock_control_subsys_t subsys,
+					      void *subsys,
 					      uint32_t startup_us)
 {
 	enum clock_control_status status;
@@ -297,7 +297,7 @@ static void test_async_on_stopped(void)
  * Test checks that that second start returns error.
  */
 static void test_double_start_on_instance(const struct device *dev,
-						clock_control_subsys_t subsys,
+						void *subsys,
 						uint32_t startup_us)
 {
 	enum clock_control_status status;
@@ -324,7 +324,7 @@ static void test_double_start(void)
  * Test precondition: clock is stopped.
  */
 static void test_double_stop_on_instance(const struct device *dev,
-						clock_control_subsys_t subsys,
+						void *subsys,
 						uint32_t startup_us)
 {
 	enum clock_control_status status;

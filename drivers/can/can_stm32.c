@@ -464,9 +464,7 @@ static int can_stm32_get_core_clock(const struct device *dev, uint32_t *rate)
 
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	ret = clock_control_get_rate(clock,
-				     (clock_control_subsys_t *) &cfg->pclken,
-				     rate);
+	ret = clock_control_get_rate(clock, &cfg->pclken, rate);
 	if (ret != 0) {
 		LOG_ERR("Failed call clock_control_get_rate: return [%d]", ret);
 		return -EIO;
@@ -525,7 +523,7 @@ static int can_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(clock, (clock_control_subsys_t *) &cfg->pclken);
+	ret = clock_control_on(clock, &cfg->pclken);
 	if (ret != 0) {
 		LOG_ERR("HAL_CAN_Init clock control on failed: %d", ret);
 		return -EIO;

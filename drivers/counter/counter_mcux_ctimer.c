@@ -34,7 +34,7 @@ struct mcux_lpc_ctimer_config {
 	struct counter_config_info info;
 	CTIMER_Type *base;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	ctimer_timer_mode_t mode;
 	ctimer_capture_channel_t input;
 	uint32_t prescale;
@@ -297,8 +297,8 @@ static const struct counter_driver_api mcux_ctimer_driver_api = {
 		},\
 		.base = (CTIMER_Type *)DT_INST_REG_ADDR(id),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
-		.clock_subsys =				\
-		(clock_control_subsys_t)(DT_INST_CLOCKS_CELL(id, name) + MCUX_CTIMER_CLK_OFFSET),\
+		.clock_subsys =	(const void *)				\
+		(DT_INST_CLOCKS_CELL(id, name) + MCUX_CTIMER_CLK_OFFSET),\
 		.mode = DT_INST_PROP(id, mode),						\
 		.input = DT_INST_PROP(id, input),					\
 		.prescale = DT_INST_PROP(id, prescale),				\

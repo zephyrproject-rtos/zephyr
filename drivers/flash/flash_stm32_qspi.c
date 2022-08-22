@@ -1138,14 +1138,14 @@ static int flash_stm32_qspi_init(const struct device *dev)
 
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			     (clock_control_subsys_t) &dev_cfg->pclken) != 0) {
+			     &dev_cfg->pclken) != 0) {
 		LOG_DBG("Could not enable QSPI clock");
 		return -EIO;
 	}
 
 	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			(clock_control_subsys_t) &dev_cfg->pclken,
-			&ahb_clock_freq) < 0) {
+				   &dev_cfg->pclken,
+				   &ahb_clock_freq) < 0) {
 		LOG_DBG("Failed to get AHB clock frequency");
 		return -EIO;
 	}

@@ -105,7 +105,7 @@ static void syscon_frg_deinit(struct lpc11u6x_syscon_regs *syscon)
 }
 
 static int lpc11u6x_clock_control_on(const struct device *dev,
-				     clock_control_subsys_t sub_system)
+				     const void *sub_system)
 {
 	const struct lpc11u6x_syscon_config *cfg = dev->config;
 	struct lpc11u6x_syscon_data *data = dev->data;
@@ -177,7 +177,7 @@ static int lpc11u6x_clock_control_on(const struct device *dev,
 }
 
 static int lpc11u6x_clock_control_off(const struct device *dev,
-				      clock_control_subsys_t sub_system)
+				      const void *sub_system)
 {
 	const struct lpc11u6x_syscon_config *cfg = dev->config;
 	struct lpc11u6x_syscon_data *data = dev->data;
@@ -251,7 +251,7 @@ static int lpc11u6x_clock_control_off(const struct device *dev,
 }
 
 static int lpc11u6x_clock_control_get_rate(const struct device *dev,
-					   clock_control_subsys_t sub_system,
+					   const void *sub_system,
 					   uint32_t *rate)
 {
 	switch ((int) sub_system) {

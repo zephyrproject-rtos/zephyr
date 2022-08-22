@@ -36,13 +36,13 @@ enum clock_control_nrf_type {
  * increase code readability.
  */
 #define CLOCK_CONTROL_NRF_SUBSYS_HF \
-	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK)
+	((void *)CLOCK_CONTROL_NRF_TYPE_HFCLK)
 #define CLOCK_CONTROL_NRF_SUBSYS_LF \
-	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_LFCLK)
+	((void *)CLOCK_CONTROL_NRF_TYPE_LFCLK)
 #define CLOCK_CONTROL_NRF_SUBSYS_HF192M \
-	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK192M)
+	((void *)CLOCK_CONTROL_NRF_TYPE_HFCLK192M)
 #define CLOCK_CONTROL_NRF_SUBSYS_HFAUDIO \
-	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLKAUDIO)
+	((void *)CLOCK_CONTROL_NRF_TYPE_HFCLKAUDIO)
 
 /** @brief LF clock start modes. */
 enum nrf_lfclk_start_mode {
@@ -119,7 +119,7 @@ int z_nrf_clock_calibration_skips_count(void);
  *
  * @return Service handler or NULL.
  */
-struct onoff_manager *z_nrf_clock_control_get_onoff(clock_control_subsys_t sys);
+struct onoff_manager *z_nrf_clock_control_get_onoff(const void *sys);
 
 /** @brief Permanently enable low frequency clock.
  *

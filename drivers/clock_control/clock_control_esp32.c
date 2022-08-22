@@ -60,7 +60,7 @@ static uint8_t const xtal_freq[] = {
 };
 
 static int clock_control_esp32_on(const struct device *dev,
-				  clock_control_subsys_t sys)
+				  const void *sys)
 {
 	ARG_UNUSED(dev);
 	periph_module_enable((periph_module_t)sys);
@@ -68,7 +68,7 @@ static int clock_control_esp32_on(const struct device *dev,
 }
 
 static int clock_control_esp32_off(const struct device *dev,
-				   clock_control_subsys_t sys)
+				   const void *sys)
 {
 	ARG_UNUSED(dev);
 	periph_module_disable((periph_module_t)sys);
@@ -76,7 +76,7 @@ static int clock_control_esp32_off(const struct device *dev,
 }
 
 static int clock_control_esp32_async_on(const struct device *dev,
-					clock_control_subsys_t sys,
+					const void *sys,
 					clock_control_cb_t cb,
 					void *user_data)
 {
@@ -88,7 +88,7 @@ static int clock_control_esp32_async_on(const struct device *dev,
 }
 
 static enum clock_control_status clock_control_esp32_get_status(const struct device *dev,
-								clock_control_subsys_t sys)
+								const void *sys)
 {
 	ARG_UNUSED(dev);
 	uint32_t clk_en_reg = periph_ll_get_clk_en_reg((periph_module_t)sys);
@@ -101,7 +101,7 @@ static enum clock_control_status clock_control_esp32_get_status(const struct dev
 }
 
 static int clock_control_esp32_get_rate(const struct device *dev,
-					clock_control_subsys_t sub_system,
+					const void *sub_system,
 					uint32_t *rate)
 {
 	ARG_UNUSED(sub_system);

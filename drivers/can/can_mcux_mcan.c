@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(can_mcux_mcan, CONFIG_CAN_LOG_LEVEL);
 
 struct mcux_mcan_config {
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pincfg;
@@ -154,7 +154,7 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 									\
 	static const struct mcux_mcan_config mcux_mcan_config_##n = {	\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
-		.clock_subsys = (clock_control_subsys_t)		\
+		.clock_subsys = (const void *)				\
 			DT_INST_CLOCKS_CELL(n, name),			\
 		.irq_config_func = mcux_mcan_irq_config_##n,		\
 		MCUX_MCAN_PINCTRL_INIT(n)				\

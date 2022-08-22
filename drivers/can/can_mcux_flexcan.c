@@ -80,7 +80,7 @@ LOG_MODULE_REGISTER(can_mcux_flexcan, CONFIG_CAN_LOG_LEVEL);
 struct mcux_flexcan_config {
 	CAN_Type *base;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_subsys;
+	const void *clock_subsys;
 	int clk_source;
 	uint32_t bitrate;
 	uint32_t sample_point;
@@ -867,8 +867,8 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 	static const struct mcux_flexcan_config mcux_flexcan_config_##id = { \
 		.base = (CAN_Type *)DT_INST_REG_ADDR(id),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
-		.clock_subsys = (clock_control_subsys_t)		\
-			DT_INST_CLOCKS_CELL(id, name),			\
+		.clock_subsys =						\
+			(const void *)DT_INST_CLOCKS_CELL(id, name),	\
 		.clk_source = DT_INST_PROP(id, clk_source),		\
 		.bitrate = DT_INST_PROP(id, bus_speed),			\
 		.sjw = DT_INST_PROP(id, sjw),				\

@@ -67,7 +67,7 @@ unlock:
 	return ret;
 }
 
-int r8a7795_cpg_mssr_start_stop(const struct device *dev, clock_control_subsys_t sys, bool enable)
+int r8a7795_cpg_mssr_start_stop(const struct device *dev, const void *sys, bool enable)
 {
 	const struct r8a7795_cpg_mssr_config *config = dev->config;
 	struct rcar_cpg_clk *clk = (struct rcar_cpg_clk *)sys;
@@ -84,19 +84,19 @@ int r8a7795_cpg_mssr_start_stop(const struct device *dev, clock_control_subsys_t
 }
 
 static int r8a7795_cpg_mssr_start(const struct device *dev,
-				  clock_control_subsys_t sys)
+				  const void *sys)
 {
 	return r8a7795_cpg_mssr_start_stop(dev, sys, true);
 }
 
 static int r8a7795_cpg_mssr_stop(const struct device *dev,
-				 clock_control_subsys_t sys)
+				 const void *sys)
 {
 	return r8a7795_cpg_mssr_start_stop(dev, sys, false);
 }
 
 static int r8a7795_cpg_get_rate(const struct device *dev,
-				clock_control_subsys_t sys,
+				const void *sys,
 				uint32_t *rate)
 {
 	const struct r8a7795_cpg_mssr_config *config = dev->config;

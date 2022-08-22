@@ -99,7 +99,7 @@ static int sys_clock_driver_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(clk, (clock_control_subsys_t *)&mod_clk);
+	ret = clock_control_on(clk, &mod_clk);
 	if (ret < 0) {
 		return ret;
 	}
