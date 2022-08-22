@@ -20,15 +20,6 @@ if(NOT TOOLCHAIN_ROOT)
 endif()
 zephyr_file(APPLICATION_ROOT TOOLCHAIN_ROOT)
 
-# Don't inherit compiler flags from the environment
-foreach(var AFLAGS CFLAGS CXXFLAGS CPPFLAGS LDFLAGS)
-  if(DEFINED ENV{${var}})
-    message(WARNING "The environment variable '${var}' was set to $ENV{${var}},
-but Zephyr ignores flags from the environment. Use 'cmake -DEXTRA_${var}=$ENV{${var}}' instead.")
-    unset(ENV{${var}})
-  endif()
-endforeach()
-
 # Host-tools don't unconditionally set TOOLCHAIN_HOME anymore,
 # but in case Zephyr's SDK toolchain is used, set TOOLCHAIN_HOME
 if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "zephyr")
