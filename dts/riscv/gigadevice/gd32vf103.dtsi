@@ -202,6 +202,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				rcu-periph-clock = <0x602>;
+				resets = <&rctl GD32_RESET_GPIOA>;
 				status = "disabled";
 			};
 
@@ -211,6 +212,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				rcu-periph-clock = <0x603>;
+				resets = <&rctl GD32_RESET_GPIOB>;
 				status = "disabled";
 			};
 
@@ -220,6 +222,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				rcu-periph-clock = <0x604>;
+				resets = <&rctl GD32_RESET_GPIOC>;
 				status = "disabled";
 			};
 
@@ -229,6 +232,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				rcu-periph-clock = <0x605>;
+				resets = <&rctl GD32_RESET_GPIOD>;
 				status = "disabled";
 			};
 
@@ -238,6 +242,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				rcu-periph-clock = <0x606>;
+				resets = <&rctl GD32_RESET_GPIOE>;
 				status = "disabled";
 			};
 		};
