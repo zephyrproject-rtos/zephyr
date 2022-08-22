@@ -199,7 +199,7 @@ static const struct i2c_driver_api api_funcs = {
 
 static int i2c_stm32_init(const struct device *dev)
 {
-	const struct device *clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct i2c_stm32_config *cfg = dev->config;
 	uint32_t bitrate_cfg;
 	int ret;
@@ -223,12 +223,12 @@ static int i2c_stm32_init(const struct device *dev)
 	 */
 	k_sem_init(&data->bus_mutex, 1, 1);
 
-	if (!device_is_ready(clock)) {
+	if (!device_is_ready(clk)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
 
-	if (clock_control_on(clock,
+	if (clock_control_on(clk,
 		(clock_control_subsys_t *) &cfg->pclken) != 0) {
 		LOG_ERR("i2c: failure enabling clock");
 		return -EIO;
