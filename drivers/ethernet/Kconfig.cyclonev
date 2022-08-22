@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2022, Intel Corporation
+# Description:
+# Cyclone V ethernet configuration options
+
+menuconfig ETH_CYCLONEV
+	bool "Cyclone V ethernet MAC driver"
+	default y
+	depends on DT_HAS_SNPS_ETHERNET_CYCLONEV_ENABLED
+
+if ETH_CYCLONEV
+
+config ETH_CVSX_NB_TX_DESCS
+	int "Number of entries in the transmit descriptor ring"
+	default 32
+	range 4 128
+	help
+	  A higher number allows for more packets to be queued which may
+	  improve throughput, but that requires more transient memory.
+	  However there must be enough descriptors to hold all fragments
+	  of a full-size packet to be transmitted or the packet will be
+	  dropped.
+
+	  Fragment size is influenced by CONFIG_NET_BUF_DATA_SIZE.
+
+config ETH_CVSX_NB_RX_DESCS
+	int "Number of entries in the receive descriptor ring"
+	default 32
+	range 4 128
+	help
+	  Received packets are spread across the required number of fragment
+	  buffers. Each RX fragment has a size of CONFIG_NET_BUF_DATA_SIZE.
+	  There is one descriptor entry per fragment.
+
+endif # ETH_CYCLONEV
