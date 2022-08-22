@@ -147,6 +147,20 @@ static const struct npcx_vw_out_config vw_out_tbl[] = {
 	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SUS_ACK, vw_sus_ack),
 };
 
+/*  Virtual wire GPIOs for platform level usage (High at Reset state) */
+static const struct npcx_vw_out_config vw_out_gpio_tbl1[] = {
+	/* index 50h (Out) */
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_0, vw_slv_gpio_0),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_1, vw_slv_gpio_1),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_2, vw_slv_gpio_2),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_3, vw_slv_gpio_3),
+	/* index 51h (Out) */
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_4, vw_slv_gpio_4),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_5, vw_slv_gpio_5),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_6, vw_slv_gpio_6),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_GPIO_7, vw_slv_gpio_7),
+};
+
 /* Callbacks for eSPI bus reset and Virtual Wire signals. */
 static struct miwu_dev_callback espi_rst_callback;
 static struct miwu_dev_callback vw_in_callback[ARRAY_SIZE(vw_in_tbl)];
@@ -330,6 +344,32 @@ static void espi_vw_config_output(const struct device *dev,
 	SET_FIELD(inst->VWEVSM[idx], NPCX_VWEVSM_HW_WIRE, 0);
 
 	LOG_DBG("VWEVSM%d 0x%08X", idx, inst->VWEVSM[idx]);
+}
+
+static void espi_vw_gpio_config_output(const struct device *dev,
+				const struct npcx_vw_out_config *config_out,
+				uint8_t init_level)
+{
+	struct espi_reg *const inst = HAL_INSTANCE(dev);
+	int idx = config_out->reg_idx;
+	uint8_t valid = GET_FIELD(inst->VWGPSM[idx], NPCX_VWEVSM_VALID);
+	uint8_t val = GET_FIELD(inst->VWGPSM[idx], NPCX_VWEVSM_WIRE);
+
+	/* Set valid bits for vw signal which we have declared in table. */
+	valid |= config_out->bitmask;
+	SET_FIELD(inst->VWGPSM[idx], NPCX_VWEVSM_VALID, valid);
+
+	inst->VWGPSM[idx] |= BIT(NPCX_VWGPSM_INDEX_EN);
+
+	if (init_level) {
+		val |= config_out->bitmask;
+	} else {
+		val &= ~config_out->bitmask;
+	}
+
+	SET_FIELD(inst->VWGPSM[idx], NPCX_VWEVSM_WIRE, val);
+
+	LOG_DBG("VWEVSM%d 0x%08X", idx, inst->VWGPSM[idx]);
 }
 
 static void espi_vw_notify_system_state(const struct device *dev,
@@ -552,32 +592,62 @@ static bool espi_npcx_channel_ready(const struct device *dev,
 static int espi_npcx_send_vwire(const struct device *dev,
 			enum espi_vwire_signal signal, uint8_t level)
 {
+	uint8_t reg_idx, bitmask, sig_idx, val = 0, vw_tbl_size;
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
-	uint8_t reg_idx, bitmask, sig_idx, val = 0;
+	const struct npcx_vw_out_config *vw_tbl;
+	uint32_t reg_val;
+	char *reg_name;
+
+	if (signal >= ESPI_VWIRE_SIGNAL_COUNT) {
+		LOG_ERR("Invalid VW: %d", signal);
+		return -EINVAL;
+	}
+
+	if (signal >= ESPI_VWIRE_SIGNAL_SLV_GPIO_0) {
+		vw_tbl = vw_out_gpio_tbl1;
+		vw_tbl_size = ARRAY_SIZE(vw_out_gpio_tbl1);
+		reg_name = "VWGPSM";
+	} else {
+		vw_tbl = vw_out_tbl;
+		vw_tbl_size = ARRAY_SIZE(vw_out_tbl);
+		reg_name = "VWEVSM";
+	}
 
 	/* Find signal in VW output table */
-	for (sig_idx = 0; sig_idx < ARRAY_SIZE(vw_out_tbl); sig_idx++)
-		if (vw_out_tbl[sig_idx].sig == signal)
+	for (sig_idx = 0; sig_idx < vw_tbl_size; sig_idx++)
+		if (vw_tbl[sig_idx].sig == signal)
 			break;
 
-	if (sig_idx == ARRAY_SIZE(vw_out_tbl)) {
+	if (sig_idx == vw_tbl_size) {
 		LOG_ERR("%s signal %d is invalid", __func__, signal);
 		return -EIO;
 	}
 
-	reg_idx = vw_out_tbl[sig_idx].reg_idx;
-	bitmask = vw_out_tbl[sig_idx].bitmask;
+	reg_idx = vw_tbl[sig_idx].reg_idx;
+	bitmask = vw_tbl[sig_idx].bitmask;
 
 	/* Get wire field and set/clear wire bit */
-	val = GET_FIELD(inst->VWEVSM[reg_idx], NPCX_VWEVSM_WIRE);
+	if (signal >= ESPI_VWIRE_SIGNAL_SLV_GPIO_0) {
+		val = GET_FIELD(inst->VWGPSM[reg_idx], NPCX_VWEVSM_WIRE);
+	} else {
+		val = GET_FIELD(inst->VWEVSM[reg_idx], NPCX_VWEVSM_WIRE);
+	}
+
 	if (level) {
 		val |= bitmask;
 	} else {
 		val &= ~bitmask;
 	}
 
-	SET_FIELD(inst->VWEVSM[reg_idx], NPCX_VWEVSM_WIRE, val);
-	LOG_DBG("Send VW: VWEVSM%d 0x%08X", reg_idx, inst->VWEVSM[reg_idx]);
+	if (signal >= ESPI_VWIRE_SIGNAL_SLV_GPIO_0) {
+		SET_FIELD(inst->VWGPSM[reg_idx], NPCX_VWEVSM_WIRE, val);
+		reg_val = inst->VWGPSM[reg_idx];
+	} else {
+		SET_FIELD(inst->VWEVSM[reg_idx], NPCX_VWEVSM_WIRE, val);
+		reg_val = inst->VWEVSM[reg_idx];
+	}
+
+	LOG_DBG("Send VW: %s%d 0x%08X", reg_name, reg_idx, reg_val);
 
 	return 0;
 }
@@ -898,6 +968,11 @@ static int espi_npcx_init(const struct device *dev)
 	/* Configure Virtual Wire output signals */
 	for (i = 0; i < ARRAY_SIZE(vw_out_tbl); i++)
 		espi_vw_config_output(dev, &vw_out_tbl[i]);
+
+	/* Configure Virtual Wire GPIOs that are output high at reset state */
+	for (i = 0; i < ARRAY_SIZE(vw_out_gpio_tbl1); i++) {
+		espi_vw_gpio_config_output(dev, &vw_out_gpio_tbl1[i], 1);
+	}
 
 	/* Configure wake-up input and callback for eSPI VW input signal */
 	for (i = 0; i < ARRAY_SIZE(vw_in_tbl); i++)
