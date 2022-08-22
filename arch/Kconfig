@@ -577,6 +577,12 @@ config ARCH_HAS_SUSPEND_TO_RAM
 config ARCH_HAS_THREAD_ABORT
 	bool
 
+config ARCH_HAS_CODE_DATA_RELOCATION
+	bool
+	help
+	  When selected, the architecture/SoC implements support for
+	  CODE_DATA_RELOCATION in its linker scripts.
+
 #
 # Hidden CPU family configs
 #
@@ -754,6 +760,15 @@ config SRAM_REGION_PERMISSIONS
 	  to turn this off on MMU systems which are using the MMU for demand
 	  paging, do not need memory protection, and would rather not use up
 	  RAM for the alignment between regions.
+
+config CODE_DATA_RELOCATION
+	bool "Support code/data section relocation"
+	depends on ARCH_HAS_CODE_DATA_RELOCATION
+	help
+	  Enable support for relocating .text, data and .bss sections from specified
+	  files and placing them in a chosen memory region. Files to relocate and
+	  the target regions should be specified in CMakeLists.txt using
+	  zephyr_code_relocate().
 
 menu "Floating Point Options"
 
