@@ -106,3 +106,18 @@ properties:
       type: int
       required: false
       description: Gate line width override.
+
+    cntrl1-data:
+      type: uint8-array
+      required: false
+      description: setup cntrl1 register for setting source range
+
+    data-mode-2:
+      type: boolean
+      required: false
+      description: send default updates as data2 mode
+
+    otp-selection-ctl:
+      type: uint8-array
+      required: false
+      description: setup SSD16XX_CMD_OTP_SELECTION_CTRL register for setting ping pong update
