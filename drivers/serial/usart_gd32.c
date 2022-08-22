@@ -7,6 +7,7 @@
 
 #include <errno.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/uart.h>
 
 #include <gd32_usart.h>
@@ -20,6 +21,7 @@
 struct gd32_usart_config {
 	uint32_t reg;
 	uint32_t rcu_periph_clock;
+	struct reset_dt_spec reset;
 	const struct pinctrl_dev_config *pcfg;
 	uint32_t parity;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -81,7 +83,9 @@ static int usart_gd32_init(const struct device *dev)
 	}
 
 	rcu_periph_clock_enable(cfg->rcu_periph_clock);
-	usart_deinit(cfg->reg);
+
+	(void)reset_line_toggle_dt(&cfg->reset);
+
 	usart_baudrate_set(cfg->reg, data->baud_rate);
 	usart_parity_config(cfg->reg, parity);
 	usart_word_length_set(cfg->reg, word_length);
@@ -318,6 +322,7 @@ static const struct uart_driver_api usart_gd32_driver_api = {
 	static const struct gd32_usart_config usart_gd32_config_##n = {		\
 		.reg = DT_INST_REG_ADDR(n),					\
 		.rcu_periph_clock = DT_INST_PROP(n, rcu_periph_clock),		\
+		.reset = RESET_DT_SPEC_INST_GET(n),				\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),	\
 		 GD32_USART_IRQ_HANDLER_FUNC_INIT(n)				\

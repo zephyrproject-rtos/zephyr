@@ -56,6 +56,7 @@
 			reg = <0x40013800 0x400>;
 			interrupts = <27 0>;
 			rcu-periph-clock = <0x060e>;
+			resets = <&rctl GD32_RESET_USART0>;
 			status = "disabled";
 		};
 
@@ -64,6 +65,7 @@
 			reg = <0x40004400 0x400>;
 			interrupts = <28 0>;
 			rcu-periph-clock = <0x0711>;
+			resets = <&rctl GD32_RESET_USART1>;
 			status = "disabled";
 		};
 
