@@ -44,7 +44,16 @@ Security Vulnerability Related
 The following security vulnerabilities (CVEs) were addressed in this
 release:
 
-*
+* CVE-2022-2741: Under embargo until 2022-10-14
+
+* CVE-2022-1042: `Zephyr project bug tracker GHSA-j7v7-w73r-mm5x
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-j7v7-w73r-mm5x>`_
+
+* CVE-2022-1041: `Zephyr project bug tracker GHSA-p449-9hv9-pj38
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-p449-9hv9-pj38>`_
+
+* CVE-2021-3966: `Zephyr project bug tracker GHSA-hfxq-3w6x-fv2m
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hfxq-3w6x-fv2m>`_
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
