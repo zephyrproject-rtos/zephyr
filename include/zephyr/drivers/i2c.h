@@ -1311,22 +1311,6 @@ static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec *spec,
 void i2c_dump_msgs(const char *name, const struct i2c_msg *msgs,
 		   uint8_t num_msgs, uint16_t addr);
 
-struct i2c_client_config {
-	char *i2c_controller;
-	uint16_t i2c_addr;
-};
-
-#define I2C_DECLARE_CLIENT_CONFIG	struct i2c_client_config i2c_client
-
-#define I2C_CLIENT(_controller, _addr)		\
-	.i2c_client = {				\
-		.i2c_controller = (_controller),	\
-		.i2c_addr = (_addr),		\
-	}
-
-#define I2C_GET_CONTROLLER(_conf)		((_conf)->i2c_client.i2c_controller)
-#define I2C_GET_ADDR(_conf)		((_conf)->i2c_client.i2c_addr)
-
 #ifdef __cplusplus
 }
 #endif
