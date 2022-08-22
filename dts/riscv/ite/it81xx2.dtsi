@@ -13,6 +13,45 @@
 			reg = <0x00f01600 0x100>;
 		};
 
+		gpioksi: gpiokscan@f01d07 {
+			compatible = "ite,it8xxx2-gpiokscan";
+			reg = <0x00f01d07 1
+			       0x00f01d06 1
+			       0x00f01d08 1
+			       0x00f01d09 1
+			       0x00f01d26 1>;
+			reg-names = "goen", "gctrl", "gdat", "gdmr", "gpod";
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpioksoh: gpiokscan@f01d0b {
+			compatible = "ite,it8xxx2-gpiokscan";
+			reg = <0x00f01d0b 1
+			       0x00f01d0a 1
+			       0x00f01d01 1
+			       0x00f01d0c 1
+			       0x00f01d27 1>;
+			reg-names = "goen", "gctrl", "gdat", "gdmr", "gpod";
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpioksol: gpiokscan@f01d0e {
+			compatible = "ite,it8xxx2-gpiokscan";
+			reg = <0x00f01d0e 1
+			       0x00f01d0d 1
+			       0x00f01d00 1
+			       0x00f01d0f 1
+			       0x00f01d28 1>;
+			reg-names = "goen", "gctrl", "gdat", "gdmr", "gpod";
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
 		pinctrl: pin-controller {
 			compatible = "ite,it8xxx2-pinctrl";
 			#address-cells = <1>;
