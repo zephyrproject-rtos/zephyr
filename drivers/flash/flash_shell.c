@@ -255,11 +255,11 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 	return result;
 }
 
-static void device_name_get(size_t idx, struct shell_static_entry *entry);
+static void cmd_device_name_get(size_t idx, struct shell_static_entry *entry);
 
-SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, cmd_device_name_get);
 
-static void device_name_get(size_t idx, struct shell_static_entry *entry)
+static void cmd_device_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	const struct device *dev = shell_device_lookup(idx, NULL);
 
