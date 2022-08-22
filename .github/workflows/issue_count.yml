@@ -20,7 +20,7 @@ jobs:
     steps:
     - name: Download configuration file
       run: |
-        wget -q https://raw.githubusercontent.com/$GITHUB_REPOSITORY/master/.github/workflows/issues-report-config.json
+        wget -q https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/.github/workflows/issues-report-config.json
 
     - name: install-packages
       run: |
