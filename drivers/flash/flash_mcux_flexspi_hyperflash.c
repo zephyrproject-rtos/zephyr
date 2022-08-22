@@ -379,7 +379,7 @@ static int flash_flexspi_hyperflash_page_program(const struct device *dev, off_t
 		.dataSize = len,
 	};
 
-	LOG_DBG("Page programming %d bytes to 0x%08x", len, offset);
+	LOG_DBG("Page programming %d bytes to 0x%08lx", len, offset);
 
 	return memc_flexspi_transfer(data->controller, &transfer);
 }
@@ -520,7 +520,7 @@ static int flash_flexspi_hyperflash_erase(const struct device *dev, off_t offset
 			break;
 		}
 
-		LOG_DBG("Erasing sector at 0x%08x", offset);
+		LOG_DBG("Erasing sector at 0x%08lx", offset);
 
 		transfer.deviceAddress = offset;
 		transfer.port = data->port;
