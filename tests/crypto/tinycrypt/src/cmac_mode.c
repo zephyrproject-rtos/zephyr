@@ -251,7 +251,7 @@ static uint32_t verify_cmac_512_bit_msg(TCCmacState_t s)
  * Main task to test CMAC
  */
 
-void test_cmac_mode(void)
+ZTEST(tinycrypt, test_cmac_mode)
 {
 
 	uint32_t result = TC_PASS;

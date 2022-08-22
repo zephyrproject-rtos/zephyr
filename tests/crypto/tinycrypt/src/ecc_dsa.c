@@ -628,7 +628,7 @@ int default_CSPRNG(uint8_t *dest, unsigned int size)
 	return 1;
 }
 
-void test_ecc_dsa(void)
+ZTEST(tinycrypt, test_ecc_dsa)
 {
 	unsigned int result = TC_PASS;
 

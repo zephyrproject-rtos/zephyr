@@ -446,7 +446,7 @@ int montecarlo_ecdh(int num_tests, bool verbose)
 	return TC_PASS;
 }
 
-void test_ecc_dh(void)
+ZTEST(tinycrypt, test_ecc_dh)
 {
 	unsigned int result = TC_PASS;
 
