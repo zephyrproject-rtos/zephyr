@@ -7,8 +7,8 @@
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
-
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/reset/gd32f4xx.h>
 
 / {
 	cpus {
@@ -33,6 +33,18 @@
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(112)>;
+		};
+
+		rcu: reset-clock-controller@40023800 {
+			compatible = "gd,gd32-rcu";
+			reg = <0x40023800 0x400>;
+			status = "okay";
+
+			rctl: reset-controller {
+				compatible = "gd,gd32-rctl";
+				#reset-cells = <1>;
+				status = "okay";
+			};
 		};
 
 		fmc: flash-controller@40023c00 {
