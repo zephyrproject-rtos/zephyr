@@ -1641,12 +1641,7 @@ static int ascs_verify_metadata(const struct net_buf_simple *buf,
 		return -EINVAL;
 	}
 
-	if (result.count >= CONFIG_BT_CODEC_MAX_METADATA_COUNT) {
-		BT_ERR("No slot available for Codec Config Metadata");
-		return -ENOMEM;
-	}
-
-	return 0;
+	return result.err;
 }
 
 int ascs_ep_set_metadata(struct bt_audio_ep *ep,
