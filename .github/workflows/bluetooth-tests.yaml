@@ -13,14 +13,14 @@ on:
 
 jobs:
   bluetooth-test-prep:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.6.0
         with:
           access_token: ${{ github.token }}
   bluetooth-test-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: bluetooth-test-prep
     container:
       image: ghcr.io/zephyrproject-rtos/ci:v0.23.3
