@@ -1,0 +1,18 @@
+#
+# Copyright 2022 Huawei France Technologies SASU
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "Rockchip RK3399 SoC"
+depends on SOC_SERIES_RK3399
+
+config SOC_RK3399
+	bool "Rockchip RK3399"
+	select ARM64
+	select CPU_CORTEX_A53
+	select ARM_ARCH_TIMER
+	select GIC_V3
+
+endchoice
