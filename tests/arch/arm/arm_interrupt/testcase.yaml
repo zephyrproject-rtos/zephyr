@@ -11,7 +11,6 @@ tests:
       - CONFIG_NO_OPTIMIZATIONS=y
       - CONFIG_IDLE_STACK_SIZE=512
       - CONFIG_MAIN_STACK_SIZE=2048
-      - CONFIG_TEST_EXTRA_STACK_SIZE=1024
   arch.interrupt.extra_exception_info:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
     extra_configs:
