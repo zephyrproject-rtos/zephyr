@@ -43,4 +43,7 @@ config 2ND_LEVEL_INTERRUPTS
 config PINCTRL
 	default y
 
+config RESET
+	default y
+
 endif # GD32VF103
