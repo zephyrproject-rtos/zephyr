@@ -143,7 +143,7 @@ static void create_entropy_seed_file(void)
 ZTEST_BMEM unsigned char buf[16000];
 #endif
 
-void test_mbedtls(void)
+ZTEST_USER(mbedtls_fn, test_mbedtls)
 {
 	int v, suites_tested = 0, suites_failed = 0;
 
