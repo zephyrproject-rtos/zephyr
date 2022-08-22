@@ -7,7 +7,4 @@ elseif(CONFIG_SOC_EMSK_EM11D)
 zephyr_compile_options_ifdef(CONFIG_FPU -mfpu=fpuda_all)
 endif()
 
-zephyr_sources(
-  soc.c
-  soc_config.c
-  )
+zephyr_sources(soc_config.c)

@@ -15,7 +15,6 @@
 #include "gpio_utils.h"
 
 #include <zephyr/pm/device.h>
-#include <soc.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>

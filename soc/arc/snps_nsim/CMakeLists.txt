@@ -75,4 +75,4 @@ else()
   zephyr_ld_option_ifdef(CONFIG_SOC_NSIM_HS6X_SMP -Hlib=hs68_full_zephyr)
 endif()
 
-zephyr_sources(soc.c)
+zephyr_sources_ifdef(CONFIG_SMP smp.c)
