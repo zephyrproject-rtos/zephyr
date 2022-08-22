@@ -101,10 +101,6 @@ target_sources_ifdef(
   userspace.c
   )
 
-if(CONFIG_CACHE_MANAGEMENT AND CONFIG_USERSPACE)
-  target_sources(kernel PRIVATE cache_handlers.c)
-endif()
-
 target_include_directories(kernel PRIVATE
   ${ZEPHYR_BASE}/kernel/include
   ${ARCH_DIR}/${ARCH}/include
