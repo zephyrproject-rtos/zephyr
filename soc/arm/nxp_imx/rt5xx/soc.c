@@ -277,6 +277,9 @@ void clock_init(void)
 	/* Switch FLEXCOMM12 to FRG */
 	CLOCK_AttachClk(kFRG_to_FLEXCOMM12);
 #endif
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pmic_i2c), nxp_lpc_i2c, okay)
+	CLOCK_AttachClk(kFRO_DIV4_to_FLEXCOMM15);
+#endif
 	/* Switch CLKOUT to FRO_DIV2 */
 	CLOCK_AttachClk(kFRO_DIV2_to_CLKOUT);
 
