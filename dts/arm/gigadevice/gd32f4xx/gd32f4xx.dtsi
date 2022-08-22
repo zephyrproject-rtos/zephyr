@@ -264,6 +264,7 @@
 				#gpio-cells = <2>;
 				reg = <0x40020000 0x400>;
 				rcu-periph-clock = <0xc00>;
+				resets = <&rctl GD32_RESET_GPIOA>;
 				status = "disabled";
 			};
 
@@ -273,6 +274,7 @@
 				#gpio-cells = <2>;
 				reg = <0x40020400 0x400>;
 				rcu-periph-clock = <0xc01>;
+				resets = <&rctl GD32_RESET_GPIOB>;
 				status = "disabled";
 			};
 
@@ -282,6 +284,7 @@
 				#gpio-cells = <2>;
 				reg = <0x40020800 0x400>;
 				rcu-periph-clock = <0xc02>;
+				resets = <&rctl GD32_RESET_GPIOC>;
 				status = "disabled";
 			};
 
@@ -291,6 +294,7 @@
 				#gpio-cells = <2>;
 				reg = <0x40020c00 0x400>;
 				rcu-periph-clock = <0xc03>;
+				resets = <&rctl GD32_RESET_GPIOD>;
 				status = "disabled";
 			};
 
@@ -300,6 +304,7 @@
 				#gpio-cells = <2>;
 				reg = <0x40021000 0x400>;
 				rcu-periph-clock = <0xc04>;
+				resets = <&rctl GD32_RESET_GPIOE>;
 				status = "disabled";
 			};
 
@@ -309,6 +314,7 @@
 				#gpio-cells = <2>;
 				reg = <0x40021400 0x400>;
 				rcu-periph-clock = <0xc05>;
+				resets = <&rctl GD32_RESET_GPIOF>;
 				status = "disabled";
 			};
 
@@ -318,6 +324,7 @@
 				#gpio-cells = <2>;
 				reg = <0x40021800 0x400>;
 				rcu-periph-clock = <0xc06>;
+				resets = <&rctl GD32_RESET_GPIOG>;
 				status = "disabled";
 			};
 
@@ -327,6 +334,7 @@
 				#gpio-cells = <2>;
 				reg = <0x40021c00 0x400>;
 				rcu-periph-clock = <0xc07>;
+				resets = <&rctl GD32_RESET_GPIOH>;
 				status = "disabled";
 			};
 
@@ -336,6 +344,7 @@
 				#gpio-cells = <2>;
 				reg = <0x40022000 0x400>;
 				rcu-periph-clock = <0xc08>;
+				resets = <&rctl GD32_RESET_GPIOI>;
 				status = "disabled";
 			};
 		};

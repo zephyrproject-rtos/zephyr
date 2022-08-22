@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/interrupt_controller/gd32_exti.h>
+#include <zephyr/drivers/reset.h>
 
 #include <gd32_gpio.h>
 #include <gd32_rcu.h>
@@ -44,6 +45,7 @@ struct gpio_gd32_config {
 	struct gpio_driver_config common;
 	uint32_t reg;
 	uint32_t rcu_periph_clock;
+	struct reset_dt_spec reset;
 };
 
 struct gpio_gd32_data {
@@ -346,6 +348,8 @@ static int gpio_gd32_init(const struct device *port)
 
 	rcu_periph_clock_enable(config->rcu_periph_clock);
 
+	(void)reset_line_toggle_dt(&config->reset);
+
 #ifdef CONFIG_GD32_HAS_AF_PINMUX
 	/* enable access to SYSCFG_EXTISSn registers */
 	rcu_periph_clock_enable(DT_PROP(SYSCFG_NODE, rcu_periph_clock));
@@ -364,6 +368,7 @@ static int gpio_gd32_init(const struct device *port)
 		},							       \
 		.reg = DT_INST_REG_ADDR(n),				       \
 		.rcu_periph_clock = DT_INST_PROP(n, rcu_periph_clock),	       \
+		.reset = RESET_DT_SPEC_INST_GET(n),			       \
 	};								       \
 									       \
 	static struct gpio_gd32_data gpio_gd32_data##n;			       \
