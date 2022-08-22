@@ -52,6 +52,8 @@ DEVICE_DT_DEFINE(TEST_PARTITION, dev_init, NULL,
 /* Device with both an existing and missing injected dependency */
 DEVICE_DT_DEFINE(TEST_GPIO_INJECTED, dev_init, NULL,
 		 NULL, NULL, POST_KERNEL, 70, NULL, DT_DEP_ORD(TEST_DEVB), 999);
+DEVICE_DT_MANUAL_DEPS(TEST_GPIO_INJECTED, DEVICE_DT_NAME_GET(TEST_DEVB));
+
 /* Manually specified device */
 DEVICE_DEFINE(manual_dev, "Manual Device", dev_init, NULL,
 		 NULL, NULL, POST_KERNEL, 80, NULL);
