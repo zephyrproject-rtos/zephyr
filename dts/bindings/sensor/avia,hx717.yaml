@@ -1,0 +1,34 @@
+# Copyright (c) 2020 George Gkinis
+# Copyright (c) 2021 Jan Gnip
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Avia HX711 sensor
+
+compatible: "avia,hx717"
+
+include: avia,hx7xx-common.yaml
+
+properties:
+  gain:
+    type: int
+    description: |
+      Gain of the sensor.
+      Default set to 128x as this is the sensors default setting after power-up.
+    default: 128
+    enum: [128, 64, 8]
+
+  rate-hz:
+    type: int
+    description: |
+      Sensor sample rate.
+      User should provide initial value depending on HW implementation.
+      If CONFIG_PM_DEVICE_RUNTIME = y rate will not be higher
+      than 2~3Hz due to the long wake-up time needed for HX717.
+    default: 10
+    enum: [10, 20, 80, 320]
+
+  rate-gpios:
+    type: phandle-array
+    description: |
+      Pin on which sampling rate is chosen.
