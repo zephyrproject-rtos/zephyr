@@ -175,6 +175,12 @@ set_property(TARGET compiler-cpp PROPERTY required "-Hcplus" "-Hoff=Stackcheck_a
 # Compiler flag for turning off thread-safe initialization of local statics
 set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics "-fno-threadsafe-statics")
 
+#Compiler flags for disabling position independent code / executable
+set_compiler_property(PROPERTY no_position_independent
+                      -fno-pic
+                      -fno-pie
+)
+
 #################################
 # This section covers asm flags #
 #################################
