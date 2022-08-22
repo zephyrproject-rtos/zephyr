@@ -1,0 +1,36 @@
+# LoRaWAN Services configuration
+#
+# Copyright (c) 2022 Martin Jäger <martin@libre.solar>
+# Copyright (c) 2022 tado GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LORAWAN_SERVICES
+	bool "LoRaWAN Services backend"
+	depends on LORAWAN
+	select ENTROPY_GENERATOR
+	help
+	  Enables the LoRaWAN background services, e.g. used for
+	  firmware-upgrade over the air (FUOTA).
+
+	  The services use a dedicated thread and a work queue.
+
+if LORAWAN_SERVICES
+
+module = LORAWAN_SERVICES
+module-str = lorawan_services
+source "subsys/logging/Kconfig.template.log_config"
+
+config LORAWAN_SERVICES_THREAD_STACK_SIZE
+	int "Services thread stack size"
+	default 2048
+	help
+	  Stack size of thread running LoRaWAN background services.
+
+config LORAWAN_SERVICES_THREAD_PRIORITY
+	int "Services thread priority"
+	default 2
+	help
+	  Priority of the thread running LoRaWAN background services.
+
+endif # LORAWAN_SERVICES
