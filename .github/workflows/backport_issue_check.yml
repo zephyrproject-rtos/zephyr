@@ -8,7 +8,7 @@ on:
 jobs:
   backport:
     name: Backport Issue Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
       - name: Check out source code
