@@ -305,7 +305,7 @@ ZTEST(test_spsc_pbuf, test_0cpy_corner2)
 	pb = spsc_pbuf_init(buffer, sizeof(buffer), 0);
 	capacity = spsc_pbuf_capacity(pb);
 
-	/* Commit 5 byte packet. */
+	/* Commit 16 byte packet. */
 	len1 = 16;
 	PACKET_WRITE(pb, len1, len1, 0, len1);
 
@@ -349,10 +349,10 @@ ZTEST(test_spsc_pbuf, test_largest_alloc)
 	PACKET_WRITE(pb, len1, len1, 0, len1);
 	PACKET_CONSUME(pb, len1, 0);
 
-	len2 = capacity - ROUND_UP(len1, sizeof(uint32_t)) - 2 * sizeof(uint32_t) - 10;
+	len2 = capacity - TLEN(len1) - TLEN(10);
 	PACKET_WRITE(pb, len2, len2, 1, len2);
 
-	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN, 0, 1, 8);
+	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN, 0, 1, 12);
 
 	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN - 1, 0, 1, 12);
 
@@ -363,7 +363,7 @@ ZTEST(test_spsc_pbuf, test_largest_alloc)
 	PACKET_WRITE(pb, len1, len1, 0, len1);
 	PACKET_CONSUME(pb, len1, 0);
 
-	len2 = capacity - ROUND_UP(len1, sizeof(uint32_t)) - 2 * sizeof(uint16_t) - 8;
+	len2 = capacity - TLEN(len1) - TLEN(12);
 	PACKET_WRITE(pb, len2, len2, 1, len2);
 
 	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN - 1, 0, 1, 12);
