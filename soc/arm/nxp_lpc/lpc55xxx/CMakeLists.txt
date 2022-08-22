@@ -15,6 +15,8 @@ zephyr_library_include_directories(
 zephyr_linker_sources_ifdef(CONFIG_USB_DEVICE_DRIVER
   SECTIONS usb.ld)
 
+zephyr_compile_definitions_ifdef(CONFIG_USB_DEVICE_DRIVER USB_STACK_USE_DEDICATED_RAM=1)
+
 if (CONFIG_SECOND_CORE_MCUX)
   set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
   string(CONFIGURE ${CONFIG_SECOND_IMAGE_MCUX} second_core_image)
