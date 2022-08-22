@@ -1676,6 +1676,9 @@ int ascs_ep_set_metadata(struct bt_audio_ep *ep,
 		return err;
 	}
 
+	/* reset cached metadata */
+	ep->codec.meta_count = 0;
+
 	/* store data contents */
 	bt_data_parse(&meta_ltv, ascs_codec_store_metadata, codec);
 
