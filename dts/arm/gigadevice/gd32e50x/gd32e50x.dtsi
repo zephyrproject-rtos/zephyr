@@ -128,6 +128,7 @@
 			interrupts = <31 0>, <32 0>;
 			interrupt-names = "event", "error";
 			rcu-periph-clock = <0x715>;
+			resets = <&rctl GD32_RESET_I2C0>;
 			status = "disabled";
 		};
 
@@ -140,6 +141,7 @@
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "event", "error";
 			rcu-periph-clock = <0x716>;
+			resets = <&rctl GD32_RESET_I2C1>;
 			status = "disabled";
 		};
 
@@ -152,6 +154,7 @@
 			interrupts = <82 0>, <83 0>;
 			interrupt-names = "event", "error";
 			rcu-periph-clock = <0x718>;
+			resets = <&rctl GD32_RESET_I2C2>;
 			status = "disabled";
 		};
 

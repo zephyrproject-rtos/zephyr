@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/i2c.h>
 
 #include <gd32_i2c.h>
@@ -33,6 +34,7 @@ struct i2c_gd32_config {
 	uint32_t reg;
 	uint32_t bitrate;
 	uint32_t rcu_periph_clock;
+	struct reset_dt_spec reset;
 	const struct pinctrl_dev_config *pcfg;
 	void (*irq_cfg_func)(void);
 };
@@ -663,6 +665,8 @@ static int i2c_gd32_init(const struct device *dev)
 
 	rcu_periph_clock_enable(cfg->rcu_periph_clock);
 
+	(void)reset_line_toggle_dt(&cfg->reset);
+
 	cfg->irq_cfg_func();
 
 	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
@@ -695,6 +699,7 @@ static int i2c_gd32_init(const struct device *dev)
 		.reg = DT_INST_REG_ADDR(inst),					\
 		.bitrate = DT_INST_PROP(inst, clock_frequency),			\
 		.rcu_periph_clock = DT_INST_PROP(inst, rcu_periph_clock),	\
+		.reset = RESET_DT_SPEC_INST_GET(inst),				\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
 		.irq_cfg_func = i2c_gd32_irq_cfg_func_##inst,			\
 	};									\
