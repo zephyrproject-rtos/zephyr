@@ -4,7 +4,7 @@ on: pull_request
 
 jobs:
   maintainer_check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     name: Check MAINTAINERS file
     steps:
     - name: Checkout the code
@@ -20,7 +20,7 @@ jobs:
         python3 ./scripts/get_maintainer.py path CMakeLists.txt
 
   check_compliance:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     name: Run compliance checks on patch series (PR)
     steps:
     - name: Update PATH for west
