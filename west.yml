@@ -150,8 +150,8 @@ manifest:
       groups:
         - hal
     - name: liblc3
-      revision: 54c047249bc6b8089e85c1433b5aa6001bbc1ba9
-      path: modules/lib/liblc3codec
+      revision: 448f3de31f49a838988a162ef1e23a89ddf2d2ed
+      path: modules/lib/liblc3
     - name: littlefs
       path: modules/fs/littlefs
       groups:
