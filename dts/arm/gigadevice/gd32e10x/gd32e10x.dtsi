@@ -58,6 +58,7 @@
 			reg = <0x40013800 0x400>;
 			interrupts = <37 0>;
 			rcu-periph-clock = <0x60e>;
+			resets = <&rctl GD32_RESET_USART0>;
 			status = "disabled";
 		};
 
@@ -66,6 +67,7 @@
 			reg = <0x40004400 0x400>;
 			interrupts = <38 0>;
 			rcu-periph-clock = <0x711>;
+			resets = <&rctl GD32_RESET_USART1>;
 			status = "disabled";
 		};
 
@@ -74,6 +76,7 @@
 			reg = <0x40004800 0x400>;
 			interrupts = <39 0>;
 			rcu-periph-clock = <0x712>;
+			resets = <&rctl GD32_RESET_USART2>;
 			status = "disabled";
 		};
 
@@ -82,6 +85,7 @@
 			reg = <0x40004c00 0x400>;
 			interrupts = <52 0>;
 			rcu-periph-clock = <0x713>;
+			resets = <&rctl GD32_RESET_UART3>;
 			status = "disabled";
 		};
 
@@ -90,6 +94,7 @@
 			reg = <0x40005000 0x400>;
 			interrupts = <53 0>;
 			rcu-periph-clock = <0x714>;
+			resets = <&rctl GD32_RESET_UART4>;
 			status = "disabled";
 		};
 
