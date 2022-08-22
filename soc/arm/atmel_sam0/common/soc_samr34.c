@@ -15,7 +15,7 @@
  */
 static int soc_pinconf_init(const struct device *dev)
 {
-	const struct device *portb = DEVICE_DT_GET(DT_NODELABEL(portb));
+	const struct device *const portb = DEVICE_DT_GET(DT_NODELABEL(portb));
 
 	ARG_UNUSED(dev);
 

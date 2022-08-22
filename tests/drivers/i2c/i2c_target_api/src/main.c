@@ -134,11 +134,11 @@ static int run_program_read(const struct device *i2c, uint8_t addr,
 
 void test_eeprom_target(void)
 {
-	const struct device *eeprom_0 = DEVICE_DT_GET(NODE_EP0);
-	const struct device *i2c_0 = DEVICE_DT_GET(DT_BUS(NODE_EP0));
+	const struct device *const eeprom_0 = DEVICE_DT_GET(NODE_EP0);
+	const struct device *const i2c_0 = DEVICE_DT_GET(DT_BUS(NODE_EP0));
 	int addr_0 = DT_REG_ADDR(NODE_EP0);
-	const struct device *eeprom_1 = DEVICE_DT_GET(NODE_EP1);
-	const struct device *i2c_1 = DEVICE_DT_GET(DT_BUS(NODE_EP1));
+	const struct device *const eeprom_1 = DEVICE_DT_GET(NODE_EP1);
+	const struct device *const i2c_1 = DEVICE_DT_GET(DT_BUS(NODE_EP1));
 	int addr_1 = DT_REG_ADDR(NODE_EP1);
 	int ret, offset;
 

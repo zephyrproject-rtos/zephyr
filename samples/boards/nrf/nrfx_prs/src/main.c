@@ -336,7 +336,7 @@ void main(void)
 	static uint8_t tx_buffer[TRANSFER_LENGTH];
 	static uint8_t rx_buffer[sizeof(tx_buffer)];
 	uint8_t fill_value = 0;
-	const struct device *spi_dev = DEVICE_DT_GET(SPI_DEV_NODE);
+	const struct device *const spi_dev = DEVICE_DT_GET(SPI_DEV_NODE);
 
 	if (!device_is_ready(spi_dev)) {
 		printk("%s is not ready\n", spi_dev->name);

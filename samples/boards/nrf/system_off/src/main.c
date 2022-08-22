@@ -38,7 +38,7 @@ SYS_INIT(disable_ds_1, PRE_KERNEL_2, 0);
 void main(void)
 {
 	int rc;
-	const struct device *cons = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	const struct device *const cons = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	if (!device_is_ready(cons)) {
 		printk("%s: device not ready.\n", cons->name);

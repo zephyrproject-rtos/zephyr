@@ -47,7 +47,7 @@ static int test_task(uint32_t chan_id, uint32_t blen)
 {
 	struct dma_config dma_cfg = { 0 };
 	struct dma_block_config dma_block_cfg = { 0 };
-	const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(test_dma));
+	const struct device *const dma = DEVICE_DT_GET(DT_NODELABEL(test_dma));
 
 	if (!device_is_ready(dma)) {
 		TC_PRINT("dma controller device is not ready\n");

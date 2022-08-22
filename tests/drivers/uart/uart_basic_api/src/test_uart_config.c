@@ -36,7 +36,7 @@ const struct uart_config uart_cfg = {
 
 static int test_configure(void)
 {
-	const struct device *uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	const struct device *const uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	if (!device_is_ready(uart_dev)) {
 		TC_PRINT("UART device not ready\n");
@@ -58,7 +58,7 @@ static int test_configure(void)
 /* test UART configure get (retrieve configuration) */
 static int test_config_get(void)
 {
-	const struct device *uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	const struct device *const uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	if (!device_is_ready(uart_dev)) {
 		TC_PRINT("UART device not ready\n");

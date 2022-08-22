@@ -106,7 +106,7 @@ static void trigger_handler(const struct device *dev,
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ANY(microchip_mcp9808);
+	const struct device *const dev = DEVICE_DT_GET_ANY(microchip_mcp9808);
 	int rc;
 
 	if (dev == NULL) {

@@ -251,7 +251,7 @@ void main(void)
 {
 	static const struct gpio_dt_spec led0_gpio = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 	static const struct gpio_dt_spec led1_gpio = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios);
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 	int i, on = 1;
 	int cnt = 1;
 	uint32_t dtr = 0;
@@ -290,13 +290,13 @@ void main(void)
 
 	printk("SensorTile.box test!!\n");
 
-	const struct device *hts221 = DEVICE_DT_GET_ONE(st_hts221);
-	const struct device *lis2dw12 = DEVICE_DT_GET_ONE(st_lis2dw12);
-	const struct device *lps22hh = DEVICE_DT_GET_ONE(st_lps22hh);
-	const struct device *lsm6dso = DEVICE_DT_GET_ONE(st_lsm6dso);
-	const struct device *stts751 = DEVICE_DT_GET_ONE(st_stts751);
-	const struct device *iis3dhhc = DEVICE_DT_GET_ONE(st_iis3dhhc);
-	const struct device *lis2mdl = DEVICE_DT_GET_ONE(st_lis2mdl);
+	const struct device *const hts221 = DEVICE_DT_GET_ONE(st_hts221);
+	const struct device *const lis2dw12 = DEVICE_DT_GET_ONE(st_lis2dw12);
+	const struct device *const lps22hh = DEVICE_DT_GET_ONE(st_lps22hh);
+	const struct device *const lsm6dso = DEVICE_DT_GET_ONE(st_lsm6dso);
+	const struct device *const stts751 = DEVICE_DT_GET_ONE(st_stts751);
+	const struct device *const iis3dhhc = DEVICE_DT_GET_ONE(st_iis3dhhc);
+	const struct device *const lis2mdl = DEVICE_DT_GET_ONE(st_lis2mdl);
 
 	if (!device_is_ready(hts221)) {
 		printk("%s: device not ready.\n", hts221->name);

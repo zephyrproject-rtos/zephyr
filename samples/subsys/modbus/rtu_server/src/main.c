@@ -144,7 +144,7 @@ void main(void)
 	}
 
 #if DT_NODE_HAS_COMPAT(DT_PARENT(MODBUS_NODE), zephyr_cdc_acm_uart)
-	const struct device *dev = DEVICE_DT_GET(DT_PARENT(MODBUS_NODE));
+	const struct device *const dev = DEVICE_DT_GET(DT_PARENT(MODBUS_NODE));
 	uint32_t dtr = 0;
 
 	if (!device_is_ready(dev) || usb_enable(NULL)) {

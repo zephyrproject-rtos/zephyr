@@ -35,7 +35,7 @@ ZTEST(shell_flash, test_flash_read)
 		"00000020: 61 62 63                                         |abc              |",
 	};
 	const struct shell *shell = shell_backend_dummy_get_ptr();
-	const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+	const struct device *const flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 	const char *buf;
 	const int test_base = FLASH_SIMULATOR_BASE_OFFSET;
 	const int test_size = 0x24;  /* 32-alignment required */

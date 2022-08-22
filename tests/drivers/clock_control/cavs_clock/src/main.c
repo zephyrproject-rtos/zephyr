@@ -37,7 +37,7 @@ static void test_cavs_clock_driver(void)
 static void test_cavs_clock_control(void)
 {
 	struct cavs_clock_info *clocks = cavs_clocks_get();
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(clkctl));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(clkctl));
 
 	zassert_not_null(clocks, "");
 

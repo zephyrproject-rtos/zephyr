@@ -54,7 +54,7 @@ static ZTEST_DMEM int num_leds = ARRAY_SIZE(test_led_info)
 
 LED_CONTROLLER_INFO(DT_ALIAS(led_controller_0));
 
-static ZTEST_BMEM const struct device *led_ctrl = DEVICE_DT_GET(DT_ALIAS(led_controller_0));
+static ZTEST_BMEM const struct device *const led_ctrl = DEVICE_DT_GET(DT_ALIAS(led_controller_0));
 
 void test_led_setup(void)
 {

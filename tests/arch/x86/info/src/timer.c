@@ -48,7 +48,7 @@ void timer(void)
 		sys_clock_hw_cycles_per_sec());
 
 #if defined(CONFIG_COUNTER_CMOS)
-	const struct device *cmos = DEVICE_DT_GET_ONE(motorola_mc146818);
+	const struct device *const cmos = DEVICE_DT_GET_ONE(motorola_mc146818);
 
 	if (!device_is_ready(cmos)) {
 		printk("\tCMOS clock device is not ready.\n");

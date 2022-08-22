@@ -74,7 +74,7 @@ static void test_counter_interrupt_fn(const struct device *counter_dev,
 
 void main(void)
 {
-	const struct device *counter_dev = DEVICE_DT_GET(TIMER);
+	const struct device *const counter_dev = DEVICE_DT_GET(TIMER);
 	int err;
 
 	printk("Counter alarm sample\n\n");

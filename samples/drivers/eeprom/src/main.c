@@ -22,7 +22,7 @@ struct perisistant_values {
  */
 static const struct device *get_eeprom_device(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_ALIAS(eeprom_0));
+	const struct device *const dev = DEVICE_DT_GET(DT_ALIAS(eeprom_0));
 
 	if (!device_is_ready(dev)) {
 		printk("\nError: Device \"%s\" is not ready; "

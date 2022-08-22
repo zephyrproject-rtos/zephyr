@@ -41,7 +41,7 @@ static void trigger_handler(const struct device *dev,
 
 void main(void)
 {
-	const struct device *sensor = DEVICE_DT_GET_ONE(honeywell_sm351lt);
+	const struct device *const sensor = DEVICE_DT_GET_ONE(honeywell_sm351lt);
 
 	if (!device_is_ready(sensor)) {
 		printk("Device %s is not ready\n", sensor->name);

@@ -227,7 +227,7 @@ DEVICE_DEFINE(pm_unsupported_device, "PM Unsupported", pm_unsupported_init,
 
 ZTEST(device_runtime_api, test_unsupported)
 {
-	const struct device *dev = DEVICE_GET(pm_unsupported_device);
+	const struct device *const dev = DEVICE_GET(pm_unsupported_device);
 
 	zassert_false(pm_device_runtime_is_enabled(dev), "");
 	zassert_equal(pm_device_runtime_enable(dev), -ENOTSUP, "");

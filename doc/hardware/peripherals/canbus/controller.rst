@@ -158,7 +158,7 @@ a mailbox. When a transmitting mailbox is assigned, sending cannot be canceled.
           .dlc = 8,
           .data = {1,2,3,4,5,6,7,8}
   };
-  const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+  const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
   int ret;
 
   ret = can_send(can_dev, &frame, K_MSEC(100), NULL, NULL);
@@ -234,7 +234,7 @@ The filter for this example is configured to match the identifier 0x123 exactly.
           .id_mask = CAN_STD_ID_MASK
   };
   int filter_id;
-  const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+  const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 
   filter_id = can_add_rx_filter(can_dev, rx_callback_function, callback_arg, &my_filter);
   if (filter_id < 0) {
@@ -261,7 +261,7 @@ The filter for this example is configured to match the extended identifier
   CAN_MSGQ_DEFINE(my_can_msgq, 2);
   struct can_frame rx_frame;
   int filter_id;
-  const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+  const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 
   filter_id = can_add_rx_filter_msgq(can_dev, &my_can_msgq, &my_filter);
   if (filter_id < 0) {
@@ -292,7 +292,7 @@ The following example sets the bitrate to 250k baud with the sampling point at
 .. code-block:: C
 
   struct can_timing timing;
-  const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+  const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
   int ret;
 
   ret = can_calc_timing(can_dev, &timing, 250000, 875);

@@ -613,7 +613,7 @@ void main(void)
 		return;
 	}
 #else
-	const struct device *dev = DEVICE_DT_GET_ONE(CRYPTO_DEV_COMPAT);
+	const struct device *const dev = DEVICE_DT_GET_ONE(CRYPTO_DEV_COMPAT);
 
 	if (!device_is_ready(dev)) {
 		LOG_ERR("Crypto device is not ready\n");

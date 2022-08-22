@@ -58,7 +58,7 @@ void main(void)
 {
 	int err;
 	int wdt_channel_id;
-	const struct device *wdt = DEVICE_DT_GET(DT_ALIAS(watchdog0));
+	const struct device *const wdt = DEVICE_DT_GET(DT_ALIAS(watchdog0));
 
 	printk("Watchdog sample application\n");
 

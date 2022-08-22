@@ -112,7 +112,7 @@ static void modem_off_cb(const struct device *dev, void *user_data)
 
 int main(void)
 {
-	const struct device *uart_dev = DEVICE_DT_GET(UART_NODE);
+	const struct device *const uart_dev = DEVICE_DT_GET(UART_NODE);
 
 	/* Optional register modem power callbacks */
 	gsm_ppp_register_modem_power_callback(gsm_dev, modem_on_cb, modem_off_cb, NULL);

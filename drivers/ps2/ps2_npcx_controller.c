@@ -327,7 +327,7 @@ static int ps2_npcx_ctrl_init(const struct device *dev)
 	const struct ps2_npcx_ctrl_config *const config = dev->config;
 	struct ps2_npcx_ctrl_data *const data = dev->data;
 	struct ps2_reg *const inst = HAL_PS2_INSTANCE(dev);
-	const struct device *clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
+	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int ret;
 
 	if (!device_is_ready(clk_dev)) {

@@ -102,7 +102,7 @@ static void check_hf_status(const struct device *dev, bool exp_on,
  */
 static void test_onoff_interrupted(void)
 {
-	const struct device *clock_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock);
+	const struct device *const clock_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock);
 	struct onoff_client cli;
 	uint64_t start_time = k_uptime_get();
 	uint64_t elapsed;
@@ -196,7 +196,7 @@ K_TIMER_DEFINE(timer2, onoff_timeout_handler, NULL);
  */
 static void test_bt_interrupted(void)
 {
-	const struct device *clock_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock);
+	const struct device *const clock_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock);
 	uint64_t start_time = k_uptime_get();
 	uint64_t elapsed;
 	uint64_t checkpoint = 1000;

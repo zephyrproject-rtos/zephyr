@@ -98,7 +98,7 @@ static void handle_icm42605_double_tap(const struct device *dev,
 
 void main(void)
 {
-	const struct device *icm42605 = DEVICE_DT_GET_ONE(invensense_icm42605);
+	const struct device *const icm42605 = DEVICE_DT_GET_ONE(invensense_icm42605);
 
 	if (!device_is_ready(icm42605)) {
 		printk("sensor: device not ready.\n");

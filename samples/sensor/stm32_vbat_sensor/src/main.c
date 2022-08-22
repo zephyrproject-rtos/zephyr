@@ -13,7 +13,7 @@ void main(void)
 {
 	struct sensor_value val;
 	int rc;
-	const struct device *dev = DEVICE_DT_GET_ONE(st_stm32_vbat);
+	const struct device *const dev = DEVICE_DT_GET_ONE(st_stm32_vbat);
 
 	if (!device_is_ready(dev)) {
 		printk("VBAT sensor is not ready\n");

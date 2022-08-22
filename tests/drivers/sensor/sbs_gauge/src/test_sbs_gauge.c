@@ -10,7 +10,7 @@
 
 const struct device *get_fuel_gauge_device(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ANY(sbs_sbs_gauge);
+	const struct device *const dev = DEVICE_DT_GET_ANY(sbs_sbs_gauge);
 
 	zassert_true(device_is_ready(dev), "Fuel Gauge not found");
 

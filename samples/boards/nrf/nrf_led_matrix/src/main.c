@@ -185,7 +185,7 @@ void main(void)
 	printk("nRF LED matrix sample on %s\n", CONFIG_BOARD);
 
 	int ret;
-	const struct device *dev = DEVICE_DT_GET_ONE(nordic_nrf_led_matrix);
+	const struct device *const dev = DEVICE_DT_GET_ONE(nordic_nrf_led_matrix);
 
 	if (!dev) {
 		printk("Display device not ready\n");

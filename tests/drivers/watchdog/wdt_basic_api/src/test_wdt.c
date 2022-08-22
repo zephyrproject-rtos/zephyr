@@ -175,7 +175,7 @@ static void wdt_int_cb1(const struct device *wdt_dev, int channel_id)
 static int test_wdt_no_callback(void)
 {
 	int err;
-	const struct device *wdt = DEVICE_DT_GET(WDT_NODE);
+	const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
 
 	if (!device_is_ready(wdt)) {
 		TC_PRINT("WDT device is not ready\n");
@@ -216,7 +216,7 @@ static int test_wdt_no_callback(void)
 static int test_wdt_callback_1(void)
 {
 	int err;
-	const struct device *wdt = DEVICE_DT_GET(WDT_NODE);
+	const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
 
 	if (!device_is_ready(wdt)) {
 		TC_PRINT("WDT device is not ready\n");
@@ -271,7 +271,7 @@ static int test_wdt_callback_1(void)
 static int test_wdt_callback_2(void)
 {
 	int err;
-	const struct device *wdt = DEVICE_DT_GET(WDT_NODE);
+	const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
 
 	if (!device_is_ready(wdt)) {
 		TC_PRINT("WDT device is not ready\n");
@@ -332,7 +332,7 @@ static int test_wdt_callback_2(void)
 static int test_wdt_bad_window_max(void)
 {
 	int err;
-	const struct device *wdt = DEVICE_DT_GET(WDT_NODE);
+	const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
 
 	if (!device_is_ready(wdt)) {
 		TC_PRINT("WDT device is not ready\n");
