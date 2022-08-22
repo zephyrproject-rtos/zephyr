@@ -238,7 +238,7 @@ static int gpio_cmsdk_ahb_init(const struct device *dev)
 
 #ifdef CONFIG_CLOCK_CONTROL
 	/* Enable clock for subsystem */
-	const struct device *clk = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0));
+	const struct device *const clk = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0));
 
 	if (!device_is_ready(clk)) {
 		return -ENODEV;

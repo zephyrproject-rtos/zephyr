@@ -221,7 +221,7 @@ static void test_timing_values(const struct device *dev, const struct can_timing
  */
 ZTEST_USER(can_timing, test_timing)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(can_timing_tests); i++) {
@@ -235,7 +235,7 @@ ZTEST_USER(can_timing, test_timing)
 #ifdef CONFIG_CAN_FD_MODE
 ZTEST_USER(can_timing, test_timing_data)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(can_timing_data_tests); i++) {
@@ -254,7 +254,7 @@ ZTEST_USER(can_timing, test_timing_data)
  */
 ZTEST_USER(can_timing, test_set_timing_min)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int err;
 
 	err = can_set_timing(dev, can_get_timing_min(dev));
@@ -271,7 +271,7 @@ ZTEST_USER(can_timing, test_set_timing_min)
  */
 ZTEST_USER(can_timing, test_set_timing_max)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int err;
 
 	err = can_set_timing(dev, can_get_timing_max(dev));
@@ -285,7 +285,7 @@ ZTEST_USER(can_timing, test_set_timing_max)
 
 void *can_timing_setup(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	uint32_t core_clock;
 	int err;
 

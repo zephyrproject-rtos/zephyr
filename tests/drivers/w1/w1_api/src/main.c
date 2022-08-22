@@ -16,7 +16,7 @@
 
 const struct device *get_w1_master_dev(void)
 {
-	const struct device *master_dev = DEVICE_DT_GET(W1_MASTER);
+	const struct device *const master_dev = DEVICE_DT_GET(W1_MASTER);
 
 	zassert_true(device_is_ready(master_dev), "W1 master not found");
 

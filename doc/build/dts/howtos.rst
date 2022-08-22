@@ -104,7 +104,7 @@ device is to use :c:func:`DEVICE_DT_GET`:
 
 .. code-block:: c
 
-   const struct device *uart_dev = DEVICE_DT_GET(MY_SERIAL);
+   const struct device *const uart_dev = DEVICE_DT_GET(MY_SERIAL);
 
    if (!device_is_ready(uart_dev)) {
            /* Not ready, do not use */
@@ -142,7 +142,7 @@ that the node has ``status = "okay"``, like this:
    #define MY_SERIAL DT_NODELABEL(my_serial)
 
    #if DT_NODE_HAS_STATUS(MY_SERIAL, okay)
-   const struct device *uart_dev = DEVICE_DT_GET(MY_SERIAL);
+   const struct device *const uart_dev = DEVICE_DT_GET(MY_SERIAL);
    #else
    #error "Node is disabled"
    #endif

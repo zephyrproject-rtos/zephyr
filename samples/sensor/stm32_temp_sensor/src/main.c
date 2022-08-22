@@ -12,9 +12,9 @@
 void main(void)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp)
-	const struct device *dev = DEVICE_DT_GET_ONE(st_stm32_temp);
+	const struct device *const dev = DEVICE_DT_GET_ONE(st_stm32_temp);
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp_cal)
-	const struct device *dev = DEVICE_DT_GET_ONE(st_stm32_temp_cal);
+	const struct device *const dev = DEVICE_DT_GET_ONE(st_stm32_temp_cal);
 #endif
 	struct sensor_value val;
 	int rc;

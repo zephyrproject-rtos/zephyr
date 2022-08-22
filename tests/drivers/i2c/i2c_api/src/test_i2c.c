@@ -31,7 +31,7 @@ uint32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_CONTROLLER;
 static int test_gy271(void)
 {
 	unsigned char datas[6];
-	const struct device *i2c_dev = DEVICE_DT_GET(I2C_DEV_NODE);
+	const struct device *const i2c_dev = DEVICE_DT_GET(I2C_DEV_NODE);
 	uint32_t i2c_cfg_tmp;
 
 	if (!device_is_ready(i2c_dev)) {
@@ -97,7 +97,7 @@ static int test_gy271(void)
 static int test_burst_gy271(void)
 {
 	unsigned char datas[6];
-	const struct device *i2c_dev = DEVICE_DT_GET(I2C_DEV_NODE);
+	const struct device *const i2c_dev = DEVICE_DT_GET(I2C_DEV_NODE);
 	uint32_t i2c_cfg_tmp;
 
 	if (!device_is_ready(i2c_dev)) {

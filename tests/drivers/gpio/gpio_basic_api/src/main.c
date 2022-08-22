@@ -21,8 +21,8 @@ static void board_setup(void)
 {
 #if DT_NODE_HAS_STATUS(DT_INST(0, test_gpio_basic_api), okay)
 	/* PIN_IN and PIN_OUT must be on same controller. */
-	const struct device *in_dev = DEVICE_DT_GET(DEV_OUT);
-	const struct device *out_dev = DEVICE_DT_GET(DEV_IN);
+	const struct device *const in_dev = DEVICE_DT_GET(DEV_OUT);
+	const struct device *const out_dev = DEVICE_DT_GET(DEV_IN);
 
 	if (in_dev != out_dev) {
 		printk("FATAL: output controller %s != input controller %s\n",
@@ -83,7 +83,7 @@ static void board_setup(void)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #elif defined(CONFIG_GPIO_EMUL)
 	extern struct gpio_callback gpio_emul_callback;
-	const struct device *dev = DEVICE_DT_GET(DEV);
+	const struct device *const dev = DEVICE_DT_GET(DEV);
 
 	zassert_true(device_is_ready(dev), "GPIO dev is not ready");
 	int rc = gpio_add_callback(dev, &gpio_emul_callback);

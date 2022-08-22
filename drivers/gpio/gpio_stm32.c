@@ -275,7 +275,7 @@ static int gpio_stm32_clock_request(const struct device *dev, bool on)
 	__ASSERT_NO_MSG(dev != NULL);
 
 	/* enable clock for subsystem */
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	if (on) {
 		ret = clock_control_on(clk,
@@ -383,7 +383,7 @@ static int gpio_stm32_enable_int(int port, int pin)
 	defined(CONFIG_SOC_SERIES_STM32L1X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	struct stm32_pclken pclken = {
 #ifdef CONFIG_SOC_SERIES_STM32H7X
 		.bus = STM32_CLOCK_BUS_APB4,

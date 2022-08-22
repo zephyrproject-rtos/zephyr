@@ -143,7 +143,7 @@ void main(void)
 	}
 
 #elif defined(CONFIG_MODEM_GSM_PPP)
-	const struct device *uart_dev = DEVICE_DT_GET(UART_NODE);
+	const struct device *const uart_dev = DEVICE_DT_GET(UART_NODE);
 
 	LOG_INF("APN '%s' UART '%s' device %p", CONFIG_MODEM_GSM_APN,
 		uart_dev->name, uart_dev);

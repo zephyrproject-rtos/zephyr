@@ -40,7 +40,7 @@ void lora_receive_cb(const struct device *dev, uint8_t *data, uint16_t size,
 
 void main(void)
 {
-	const struct device *lora_dev = DEVICE_DT_GET(DEFAULT_RADIO_NODE);
+	const struct device *const lora_dev = DEVICE_DT_GET(DEFAULT_RADIO_NODE);
 	struct lora_modem_config config;
 	int ret, len;
 	uint8_t data[MAX_DATA_LEN] = {0};

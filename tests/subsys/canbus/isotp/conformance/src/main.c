@@ -118,7 +118,7 @@ const struct isotp_msg_id tx_addr_fixed = {
 	.use_fixed_addr = 1
 };
 
-const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 struct isotp_recv_ctx recv_ctx;
 struct isotp_send_ctx send_ctx;
 uint8_t data_buf[128];

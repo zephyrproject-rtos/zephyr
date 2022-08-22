@@ -152,7 +152,7 @@ static int stm32_hsem_mailbox_init(const struct device *dev)
 {
 	struct stm32_hsem_mailbox_data *data = dev->data;
 	const struct stm32_hsem_mailbox_config *cfg = dev->config;
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	/* Config transfer semaphore */
 	switch (CONFIG_IPM_STM32_HSEM_CPU) {

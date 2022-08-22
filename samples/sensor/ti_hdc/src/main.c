@@ -15,7 +15,7 @@
 void main(void)
 {
 	printk("Running on %s!\n", CONFIG_ARCH);
-	const struct device *dev = DEVICE_DT_GET_ONE(ti_hdc);
+	const struct device *const dev = DEVICE_DT_GET_ONE(ti_hdc);
 
 	if (!device_is_ready(dev)) {
 		printk("sensor: device not ready.\n");

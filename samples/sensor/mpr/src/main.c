@@ -11,7 +11,7 @@
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ONE(honeywell_mpr);
+	const struct device *const dev = DEVICE_DT_GET_ONE(honeywell_mpr);
 	int rc;
 
 	if (!device_is_ready(dev)) {

@@ -16,7 +16,7 @@
 
 bool init_wm8731_i2c(void)
 {
-	const struct device *i2c_dev = DEVICE_DT_GET(WM8731_I2C_NODE);
+	const struct device *const i2c_dev = DEVICE_DT_GET(WM8731_I2C_NODE);
 
 	/* Initialization data for WM8731 registers. */
 	static const uint8_t init[][2] = {

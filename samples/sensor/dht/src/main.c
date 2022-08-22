@@ -32,7 +32,7 @@ static const char *now_str(void)
 
 void main(void)
 {
-	const struct device *dht22 = DEVICE_DT_GET_ONE(aosong_dht);
+	const struct device *const dht22 = DEVICE_DT_GET_ONE(aosong_dht);
 
 	if (!device_is_ready(dht22)) {
 		printf("Device %s is not ready\n", dht22->name);

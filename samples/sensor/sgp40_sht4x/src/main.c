@@ -27,8 +27,8 @@ void main(void)
 	struct sensor_value comp_t;
 	struct sensor_value comp_rh;
 #endif
-	const struct device *sht = DEVICE_DT_GET_ANY(sensirion_sht4x);
-	const struct device *sgp = DEVICE_DT_GET_ANY(sensirion_sgp40);
+	const struct device *const sht = DEVICE_DT_GET_ANY(sensirion_sht4x);
+	const struct device *const sgp = DEVICE_DT_GET_ANY(sensirion_sgp40);
 	struct sensor_value temp, hum, gas;
 
 	if (!device_is_ready(sht)) {

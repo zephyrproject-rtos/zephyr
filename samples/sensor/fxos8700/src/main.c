@@ -32,7 +32,7 @@ static void trigger_handler(const struct device *dev,
 void main(void)
 {
 	struct sensor_value accel[3];
-	const struct device *dev = DEVICE_DT_GET_ONE(nxp_fxos8700);
+	const struct device *const dev = DEVICE_DT_GET_ONE(nxp_fxos8700);
 
 	if (!device_is_ready(dev)) {
 		printf("Device %s is not ready\n", dev->name);

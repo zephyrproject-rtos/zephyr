@@ -28,7 +28,7 @@ static uint8_t bufs[N][SAMPLE_SIZE];
 
 void main(void)
 {
-	const struct device *vnd_sensor = DEVICE_DT_GET(NODE_ID);
+	const struct device *const vnd_sensor = DEVICE_DT_GET(NODE_ID);
 	struct rtio_iodev *iodev = vnd_sensor->data;
 
 	/* Fill the entire submission queue. */

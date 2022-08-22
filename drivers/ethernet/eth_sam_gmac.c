@@ -2460,7 +2460,7 @@ static const struct ptp_clock_driver_api ptp_api = {
 
 static int ptp_gmac_init(const struct device *port)
 {
-	const struct device *eth_dev = DEVICE_DT_INST_GET(0);
+	const struct device *const eth_dev = DEVICE_DT_INST_GET(0);
 	struct eth_sam_dev_data *dev_data = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
 

@@ -24,7 +24,7 @@
 
 #define BUFLEN 300
 int begin_index = 0;
-const struct device *sensor = DEVICE_DT_GET_ONE(adi_adxl345);
+const struct device *const sensor = DEVICE_DT_GET_ONE(adi_adxl345);
 int current_index = 0;
 
 float bufx[BUFLEN] = { 0.0f };

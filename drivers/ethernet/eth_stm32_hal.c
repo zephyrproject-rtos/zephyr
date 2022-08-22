@@ -1301,7 +1301,7 @@ static const struct ptp_clock_driver_api api = {
 
 static int ptp_stm32_init(const struct device *port)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(mac));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(mac));
 	struct eth_stm32_hal_dev_data *eth_dev_data = dev->data;
 	const struct eth_stm32_hal_dev_cfg *eth_cfg = dev->config;
 	struct ptp_context *ptp_context = port->data;

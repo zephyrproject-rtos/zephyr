@@ -10,7 +10,7 @@
 
 static void test_acpi_shared_memory(void)
 {
-	const struct device *espi_dev = DEVICE_DT_GET(DT_NODELABEL(espi0));
+	const struct device *const espi_dev = DEVICE_DT_GET(DT_NODELABEL(espi0));
 	struct espi_cfg cfg = {
 		.channel_caps = ESPI_CHANNEL_VWIRE | ESPI_CHANNEL_PERIPHERAL,
 	};

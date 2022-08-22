@@ -34,7 +34,7 @@ void main(void)
 #endif
 	struct sensor_value accel[3];
 	struct sensor_value gyro[3];
-	const struct device *lsm6dsl = DEVICE_DT_GET_ONE(st_lsm6dsl);
+	const struct device *const lsm6dsl = DEVICE_DT_GET_ONE(st_lsm6dsl);
 
 	if (!device_is_ready(lsm6dsl)) {
 		printk("%s: device not ready.\n", lsm6dsl->name);

@@ -72,7 +72,7 @@ static int can_stm32fd_clock_enable(const struct device *dev)
 	int ret;
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_stm32fd_config *stm32fd_cfg = mcan_cfg->custom;
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	LL_RCC_SetFDCANClockSource(CAN_STM32FD_CLOCK_SOURCE);
 

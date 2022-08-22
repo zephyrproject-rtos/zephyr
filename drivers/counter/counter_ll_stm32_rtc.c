@@ -278,7 +278,7 @@ void rtc_stm32_isr(const struct device *dev)
 
 static int rtc_stm32_init(const struct device *dev)
 {
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct rtc_stm32_config *cfg = dev->config;
 	struct rtc_stm32_data *data = dev->data;
 

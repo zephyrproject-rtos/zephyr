@@ -21,7 +21,7 @@ static void kb_callback(const struct device *dev, uint32_t row, uint32_t col,
 
 static int test_kb_callback(void)
 {
-	const struct device *kscan_dev = DEVICE_DT_GET(DT_ALIAS(kscan0));
+	const struct device *const kscan_dev = DEVICE_DT_GET(DT_ALIAS(kscan0));
 
 	if (!device_is_ready(kscan_dev)) {
 		TC_PRINT("KBSCAN device is not ready\n");
@@ -38,7 +38,7 @@ static int test_kb_callback(void)
 
 static int test_null_callback(void)
 {
-	const struct device *kscan_dev = DEVICE_DT_GET(DT_ALIAS(kscan0));
+	const struct device *const kscan_dev = DEVICE_DT_GET(DT_ALIAS(kscan0));
 
 	if (!device_is_ready(kscan_dev)) {
 		TC_PRINT("KBSCAN device is not ready\n");
@@ -55,7 +55,7 @@ static int test_null_callback(void)
 
 static int test_disable_enable_callback(void)
 {
-	const struct device *kscan_dev = DEVICE_DT_GET(DT_ALIAS(kscan0));
+	const struct device *const kscan_dev = DEVICE_DT_GET(DT_ALIAS(kscan0));
 
 	if (!device_is_ready(kscan_dev)) {
 		TC_PRINT("KBSCAN device is not ready\n");

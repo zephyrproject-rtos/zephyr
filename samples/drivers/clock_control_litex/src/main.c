@@ -311,7 +311,7 @@ int litex_clk_test(const struct device *dev)
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET(MMCM);
+	const struct device *const dev = DEVICE_DT_GET(MMCM);
 
 	printf("Clock Control Example! %s\n", CONFIG_ARCH);
 

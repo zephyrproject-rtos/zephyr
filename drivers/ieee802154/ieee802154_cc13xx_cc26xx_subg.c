@@ -135,7 +135,7 @@ static inline bool is_subghz(uint16_t channel)
 static void cmd_prop_tx_adv_callback(RF_Handle h, RF_CmdHandle ch,
 	RF_EventMask e)
 {
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
 	RF_Op *op = RF_getCmdOp(h, ch);
 
@@ -146,7 +146,7 @@ static void cmd_prop_tx_adv_callback(RF_Handle h, RF_CmdHandle ch,
 static void cmd_prop_rx_adv_callback(RF_Handle h, RF_CmdHandle ch,
 	RF_EventMask e)
 {
-	const struct device *dev = DEVICE_DT_INST_GET(0);
+	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data = dev->data;
 	RF_Op *op = RF_getCmdOp(h, ch);
 
