@@ -73,6 +73,7 @@
 			interrupts = <12 0>;
 			rcu-periph-clock = <0x609>;
 			rcu-clock-source = <GD32_RCU_ADCCK_APB2_DIV4>;
+			resets = <&rctl GD32_RESET_ADC>;
 			channels = <16>;
 			status = "disabled";
 			#io-channel-cells = <1>;
