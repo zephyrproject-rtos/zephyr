@@ -1,0 +1,12 @@
+# HX711 Weight Scale interface Sensor configuration options
+
+# Copyright (c) 2020, George Gkinis
+# SPDX-License-Identifier: Apache-2.0
+
+config HX711
+	bool "HX711 Weight Scale Sensor"
+	default y
+	depends on DT_HAS_AVIA_HX711_ENABLED
+	depends on GPIO
+	help
+	  Enable driver for the HX711 Weight Scale Sensor.

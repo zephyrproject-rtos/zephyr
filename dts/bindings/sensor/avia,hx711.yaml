@@ -1,0 +1,63 @@
+# Copyright (c) 2020 George Gkinis
+# Copyright (c) 2021 Jan Gnip
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Avia HX711 sensor
+
+compatible: "avia,hx711"
+
+include: base.yaml
+
+properties:
+  sample-fetch-timeout-ms:
+    type: int
+    required: false
+    default: 700
+    description: |
+      Time until sample-fetch will wait before returning an error.
+      Most module implementations have a wake-up time after power up of about 600ms.
+      Default set to 700ms to ensure most implementations will work.
+      Increase if necessary.
+
+  gain:
+    type: int
+    required: false
+    default: 1
+    description: |
+      Gain of the sensor. 1 = 128x, 2 = 32x, 3 = 64x.
+      Default set to 1(128x) as this is the sensors default setting after power-up.
+    enum:
+      - 1
+      - 2
+      - 3
+
+  rate-hz:
+    type: int
+    required: true
+    description: |
+      Sensor sample rate. 0 = 10Hz, 1 = 80Hz
+      User should provide initial value depending on HW implementation.
+      If CONFIG_PM_DEVICE_RUNTIME = y rate will not be higher
+      than 2~3Hz due to the long wake-up time needed for HX711.
+    enum:
+      - 0
+      - 1
+
+  dout-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Pin on which sensor data will be read from.
+
+  sck-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Pin on which data fetch triggering occurs.
+
+  rate-gpios:
+    type: phandle-array
+    required: false
+    description: |
+      Pin on which sampling rate is chosen.

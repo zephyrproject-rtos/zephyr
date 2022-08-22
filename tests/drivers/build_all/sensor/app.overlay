@@ -132,6 +132,15 @@
 			#include "w1.dtsi"
 		};
 
+		hx711 {
+			compatible = "avia,hx711";
+			status = "okay";
+			rate-hz = <1>;
+			dout-gpios = <&test_gpio 30 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP) >;
+			sck-gpios = <&test_gpio 29 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			rate-gpios = <&test_gpio 31 GPIO_ACTIVE_HIGH>;
+		};
+
 		dht22 {
 			compatible = "aosong,dht";
 			status = "okay";

@@ -176,7 +176,8 @@ enum sensor_channel {
 	SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE,
 	/** Desired charging current in mA */
 	SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT,
-
+	/** Weight in grams */
+	SENSOR_CHAN_WEIGHT,
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 
@@ -299,6 +300,15 @@ enum sensor_attribute {
 	 * offset: final_value = sensor_value + offset.
 	 */
 	SENSOR_ATTR_OFFSET,
+	/**
+	 * The sensor value returned will be altered by the amount indicated by
+	 * slope: final_value = sensor_value * slope.
+	 */
+	SENSOR_ATTR_SLOPE,
+	/**
+	 * The sensor gain.
+	 */
+	SENSOR_ATTR_GAIN,
 	/**
 	 * Calibration target. This will be used by the internal chip's
 	 * algorithms to calibrate itself on a certain axis, or all of them.
