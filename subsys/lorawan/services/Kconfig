@@ -54,4 +54,18 @@ config LORAWAN_APP_CLOCK_SYNC_PERIODICITY
 
 	  Default setting: 24h.
 
+config LORAWAN_REMOTE_MULTICAST
+	bool "Remote Multicast Setup"
+	depends on LORAWAN_APP_CLOCK_SYNC
+	depends on !LORAWAN_NVM_NONE
+	help
+	  Enables the LoRaWAN Remote Multicast Setup service according to
+	  TS005-1.0.0 as published by the LoRa Alliance.
+
+	  The service is run automatically in the background. It is responsible
+	  for multicast session key exchange and setting up a class C session.
+	  The exchanged keys are stored in the non-volatile memory.
+
+	  The used default port for this service is 200.
+
 endif # LORAWAN_SERVICES
