@@ -79,7 +79,7 @@ static uint32_t get_and_incr_seq_num(const struct bt_audio_stream *stream)
 	return 0;
 }
 
-#if defined(CONFIG_LIBLC3CODEC)
+#if defined(CONFIG_LIBLC3)
 
 #include "lc3.h"
 
@@ -240,7 +240,7 @@ static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 
 	printk("No streams available\n");
 
-#if defined(CONFIG_LIBLC3CODEC)
+#if defined(CONFIG_LIBLC3)
 	/* Nothing to free as static memory is used */
 	lc3_decoder = NULL;
 #endif
@@ -256,7 +256,7 @@ static int lc3_reconfig(struct bt_audio_stream *stream,
 
 	print_codec(codec);
 
-#if defined(CONFIG_LIBLC3CODEC)
+#if defined(CONFIG_LIBLC3)
 	/* Nothing to free as static memory is used */
 	lc3_decoder = NULL;
 #endif
@@ -287,7 +287,7 @@ static int lc3_enable(struct bt_audio_stream *stream,
 {
 	printk("Enable: stream %p meta_count %u\n", stream, meta_count);
 
-#if defined(CONFIG_LIBLC3CODEC)
+#if defined(CONFIG_LIBLC3)
 	{
 		const int freq = bt_codec_cfg_get_freq(stream->codec);
 		const int frame_duration_us = bt_codec_cfg_get_frame_duration_us(stream->codec);
@@ -434,7 +434,7 @@ static struct bt_audio_capability_ops lc3_ops = {
 };
 
 
-#if defined(CONFIG_LIBLC3CODEC)
+#if defined(CONFIG_LIBLC3)
 
 static void stream_recv_lc3_codec(struct bt_audio_stream *stream,
 				  const struct bt_iso_recv_info *info,
@@ -497,7 +497,7 @@ static void stream_recv(struct bt_audio_stream *stream,
 #endif
 
 static struct bt_audio_stream_ops stream_ops = {
-#if defined(CONFIG_LIBLC3CODEC)
+#if defined(CONFIG_LIBLC3)
 	.recv = stream_recv_lc3_codec
 #else
 	.recv = stream_recv
