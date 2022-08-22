@@ -91,7 +91,7 @@ jobs:
         tar cfJ html-output.tar.xz --directory=doc/_build html
 
     - name: upload-build
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@v3
       with:
         name: html-output
         path: html-output.tar.xz
@@ -159,7 +159,7 @@ jobs:
         DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -j auto" LATEXMKOPTS="-quiet -halt-on-error" make -C doc pdf
 
     - name: upload-build
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@v3
       with:
         name: pdf-output
         path: doc/_build/latex/zephyr.pdf
