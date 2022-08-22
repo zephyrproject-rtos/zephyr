@@ -106,3 +106,8 @@ properties:
       type: int
       required: false
       description: Gate line width override.
+
+    cntrl1-data:
+      type: uint8-array
+      required: false
+      description: setup cntrl1 register for setting source range

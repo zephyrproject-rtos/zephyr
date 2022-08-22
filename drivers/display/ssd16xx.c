@@ -79,6 +79,7 @@ struct ssd16xx_config {
 
 	uint8_t gate_line_width;
 	bool override_gate_line_width;
+	struct ssd16xx_dt_array cntrl1_data;
 };
 
 static inline void ssd16xx_busy_wait(const struct device *dev)
@@ -812,6 +813,15 @@ static int ssd16xx_controller_init(const struct device *dev)
 			      SSD16XX_CTRL2_DISABLE_ANALOG |
 			      SSD16XX_CTRL2_DISABLE_CLK);
 
+	if (config->cntrl1_data.len) {
+		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_UPDATE_CTRL1,
+					 config->cntrl1_data.data,
+					 config->cntrl1_data.len);
+		if (err < 0) {
+			return err;
+		}
+	}
+
 	err = ssd16xx_load_profile(dev, &config->profile_initial);
 	if (err < 0) {
 		return err;
@@ -941,6 +951,7 @@ static struct display_driver_api ssd16xx_driver_api = {
 #define SSD16XX_DEFINE(n)						\
 	SSD16XX_MAKE_INST_ARRAY_OPT(n, lut_default);			\
 	SSD16XX_MAKE_INST_ARRAY_OPT(n, softstart);			\
+	SSD16XX_MAKE_INST_ARRAY_OPT(n, cntrl1_data);			\
 	SSD16XX_INITIAL_PROFILE_DEFINE(n);				\
 									\
 	static const struct ssd16xx_config ssd16xx_cfg_##n = {		\
@@ -967,6 +978,7 @@ static struct display_driver_api ssd16xx_driver_api = {
 			DT_INST_PROP_OR(n, gate_line_width, 0),		\
 		.override_gate_line_width =				\
 			DT_INST_NODE_HAS_PROP(n, gate_line_width),	\
+		.cntrl1_data = SSD16XX_ASSIGN_ARRAY(n, cntrl1_data),	\
 	};								\
 									\
 	static struct ssd16xx_data ssd16xx_data_##n;			\
