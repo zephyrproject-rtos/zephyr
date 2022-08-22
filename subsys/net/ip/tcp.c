@@ -1810,18 +1810,30 @@ static bool tcp_validate_seq(struct tcp *conn, struct tcphdr *hdr)
 		(net_tcp_seq_cmp(th_seq(hdr), conn->ack + conn->recv_win) < 0);
 }
 
-static void print_seq_list(struct net_buf *buf)
+static bool check_seq_list(struct net_buf *buf)
 {
+	struct net_buf *last = NULL;
 	struct net_buf *tmp = buf;
 	uint32_t seq;
+	uint32_t next_seq = 0;
+	bool result = true;
 
 	while (tmp) {
 		seq = tcp_get_seq(tmp);
 
 		NET_DBG("buf %p seq %u len %d", tmp, seq, tmp->len);
 
+		if (last != NULL) {
+			if (next_seq != seq) {
+				result = false;
+			}
+		}
+
+		next_seq = seq + tmp->len;
+		last = tmp;
 		tmp = tmp->frags;
 	}
+	return result;
 }
 
 static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
@@ -1847,7 +1859,6 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 
 	if (IS_ENABLED(CONFIG_NET_TCP_LOG_LEVEL_DBG)) {
 		NET_DBG("Queuing data: conn %p", conn);
-		print_seq_list(pkt->buffer);
 	}
 
 	if (!net_pkt_is_empty(conn->queue_recv_data)) {
@@ -1932,13 +1943,17 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 			}
 		}
 
-		if (IS_ENABLED(CONFIG_NET_TCP_LOG_LEVEL_DBG)) {
-			if (inserted) {
-				NET_DBG("All pending data: conn %p", conn);
-				print_seq_list(conn->queue_recv_data->buffer);
-			} else {
-				NET_DBG("Cannot add new data to queue");
+		if (inserted) {
+			NET_DBG("All pending data: conn %p", conn);
+			if (check_seq_list(conn->queue_recv_data->buffer) == false) {
+				NET_ERR("Incorrect order in out of order sequence for conn %p",
+					conn);
+				/* error in sequence list, drop it */
+				net_buf_unref(conn->queue_recv_data->buffer);
+				conn->queue_recv_data->buffer = NULL;
 			}
+		} else {
+			NET_DBG("Cannot add new data to queue");
 		}
 	} else {
 		net_pkt_append_buffer(conn->queue_recv_data, pkt->buffer);
