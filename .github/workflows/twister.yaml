@@ -15,7 +15,7 @@ on:
 
 jobs:
   twister-build-cleanup:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.6.0
@@ -269,7 +269,7 @@ jobs:
   twister-test-results:
     name: "Publish Unit Tests Results"
     needs: twister-build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
       # the build-and-test job might be skipped, we don't need to run this job then
     if: success() || failure()
 
