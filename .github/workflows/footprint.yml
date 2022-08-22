@@ -4,7 +4,7 @@ on: pull_request
 
 jobs:
   footprint-cancel:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
     steps:
       - name: Cancel Previous Runs
@@ -12,7 +12,7 @@ jobs:
         with:
           access_token: ${{ github.token }}
   footprint-delta:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
     needs: footprint-cancel
     container:
