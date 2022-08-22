@@ -225,15 +225,14 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_DT_DEFINE(node_id, init_fn, pm_device,			\
 			 data_ptr, cfg_ptr, level, prio,		\
-			 api_ptr, ...)					\
+			 api_ptr)					\
 	Z_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id)) \
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
 			DEVICE_DT_NAME(node_id), init_fn,		\
 			pm_device,					\
 			data_ptr, cfg_ptr, level, prio,			\
 			api_ptr,					\
-			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)),	\
-			__VA_ARGS__)
+			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)))
 
 /**
  * @brief Manually specify other init entries that device object depends on
@@ -844,9 +843,6 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 			    (node_id),					\
 			    (dev_name)))
 
-#define Z_DEVICE_EXTRA_HANDLES(...)				\
-	FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
-
 /*
  * Utility macro to define and initialize the device state.
  *
@@ -860,8 +856,8 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 /* Construct objects that are referenced from struct device. These
  * include power management and dependency handles.
  */
-#define Z_DEVICE_DEFINE_PRE(node_id, dev_name, ...)			\
-	Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, __VA_ARGS__)
+#define Z_DEVICE_DEFINE_PRE(node_id, dev_name)			\
+	Z_DEVICE_DEFINE_HANDLES(node_id, dev_name)
 
 /* Initial build provides a record that associates the device object
  * with its devicetree ordinal, and provides the dependency ordinals.
@@ -902,7 +898,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * `gen_handles.py` must be updated.
  */
 BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
-#define Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, ...)			\
+#define Z_DEVICE_DEFINE_HANDLES(node_id, dev_name)			\
 	extern Z_DEVICE_HANDLES_CONST device_handle_t			\
 		Z_DEVICE_HANDLE_NAME(node_id, dev_name)[];		\
 	Z_DEVICE_HANDLES_CONST device_handle_t				\
@@ -917,7 +913,6 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 			DEVICE_HANDLE_NULL,				\
 		))							\
 			DEVICE_HANDLE_SEP,				\
-			Z_DEVICE_EXTRA_HANDLES(__VA_ARGS__)		\
 			DEVICE_HANDLE_SEP,				\
 	COND_CODE_1(DT_NODE_EXISTS(node_id),				\
 			(DT_SUPPORTS_DEP_ORDS(node_id)), ())		\
@@ -930,8 +925,8 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
  * dependency handles that come from outside devicetree.
  */
 #define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_device,\
-			data_ptr, cfg_ptr, level, prio, api_ptr, state_ptr, ...)	\
-	Z_DEVICE_DEFINE_PRE(node_id, dev_name, __VA_ARGS__)		\
+			data_ptr, cfg_ptr, level, prio, api_ptr, state_ptr)	\
+	Z_DEVICE_DEFINE_PRE(node_id, dev_name)		\
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
 		const Z_DECL_ALIGN(struct device)			\
 		DEVICE_NAME_GET(dev_name) __used			\

@@ -480,7 +480,7 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  */
 #define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
 			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, ...)				\
+			     api_ptr)				\
 	Z_I2C_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id)); \
 	Z_I2C_INIT_FN(Z_DEVICE_DT_DEV_NAME(node_id), init_fn)		\
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
@@ -489,8 +489,7 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 			pm_device,					\
 			data_ptr, cfg_ptr, level, prio,			\
 			api_ptr,					\
-			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)).devstate), \
-			__VA_ARGS__)
+			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)).devstate))
 
 #else /* CONFIG_I2C_STATS */
 
@@ -504,10 +503,10 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 
 #define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
 			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, ...)				\
+			     api_ptr)					\
 	DEVICE_DT_DEFINE(node_id, &init_fn, pm_device,			\
 			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, __VA_ARGS__)
+			     api_ptr)
 
 #endif /* CONFIG_I2C_STATS */
 
