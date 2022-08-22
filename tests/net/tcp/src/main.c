@@ -1378,6 +1378,7 @@ static struct out_of_order_check_struct out_of_order_check_list[] = {
 	{ 0,  10, 10, 0},
 	{ 10, 10, 40, 0}, /* First sequence complete */
 	{ 50,  6, 40, 0},
+	{ 50,  3, 40, 0}, /* Discardable packet */
 	{ 55,  5, 40, 0},
 	{ 40, 10, 60, 0}, /* Some bigger data */
 	{ 61,  2, 60, 0},

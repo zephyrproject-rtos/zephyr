@@ -1868,6 +1868,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 		 *  3 | 8 | 6 | 4 | 3+8-6 = 5 | 6-3=3    | 6+4-3=7     | Drop queued data
 		 *  6 | 5 | 6 | 4 | 6+5-6 = 5 | 6-6=0    | 6+4-6=4     | Drop queued data
 		 *  6 | 4 | 6 | 4 | 6+4-6 = 4 | 6-6=0    | 6+4-6=4     | Drop queued data / packet
+		 *  7 | 2 | 6 | 4 | 7+2-6 = 3 | 6-7=MI   | 6+4-7=3     | Drop packet
 		 * 10 | 2 | 6 | 4 | 10+2-6= 6 | 6-10=MI-3| 6+4-10=0    | Append
 		 *  7 | 4 | 6 | 4 | 7+4-6 = 5 | 6-7 =MI  | 6+4-7 =3    | Append, pull from packet
 		 * 11 | 2 | 6 | 4 | 11+2-6= 7 | 6-11=MI-6| 6+4-11=MI-1 | Drop incoming packet
@@ -1883,15 +1884,19 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 		end_offset = seq - pending_seq;
 		pending_len = net_pkt_get_len(conn->queue_recv_data);
 		if (end_offset < pending_len) {
-			if (end_offset) {
-				net_pkt_remove_tail(pkt, end_offset);
-			}
+			if (end_offset < len) {
+				if (end_offset) {
+					net_pkt_remove_tail(pkt, end_offset);
+				}
 
-			/* Put new data before the pending data */
-			net_buf_frag_add(pkt->buffer,
-					 conn->queue_recv_data->buffer);
-			conn->queue_recv_data->buffer = pkt->buffer;
-			inserted = true;
+				/* Put new data before the pending data */
+				net_buf_frag_add(pkt->buffer,
+						 conn->queue_recv_data->buffer);
+				NET_DBG("Adding at before queue, end_offset %i, pending_len %i",
+					end_offset, pending_len);
+				conn->queue_recv_data->buffer = pkt->buffer;
+				inserted = true;
+			}
 		} else {
 			struct net_buf *last;
 
@@ -1918,7 +1923,10 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 					}
 
 					/* Put new data after pending data */
-					last->frags = pkt->buffer;
+					NET_DBG("Adding at end of queue, start %i, end %i, len %i",
+						start_offset, end_offset, len);
+					net_buf_frag_add(conn->queue_recv_data->buffer,
+							 pkt->buffer);
 					inserted = true;
 				}
 			}
