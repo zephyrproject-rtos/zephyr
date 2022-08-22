@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/spi.h>
 
 #include <gd32_rcu.h>
@@ -41,6 +42,7 @@ LOG_MODULE_REGISTER(spi_gd32);
 struct spi_gd32_config {
 	uint32_t reg;
 	uint32_t rcu_periph_clock;
+	struct reset_dt_spec reset;
 	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_SPI_GD32_INTERRUPT
 	void (*irq_configure)();
@@ -339,6 +341,8 @@ int spi_gd32_init(const struct device *dev)
 
 	rcu_periph_clock_enable(cfg->rcu_periph_clock);
 
+	(void)reset_line_toggle_dt(&cfg->reset);
+
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
 		LOG_ERR("Failed to apply pinctrl state");
@@ -378,6 +382,7 @@ int spi_gd32_init(const struct device *dev)
 	static struct spi_gd32_config spi_gd32_config_##idx = {		       \
 		.reg = DT_INST_REG_ADDR(idx),				       \
 		.rcu_periph_clock = DT_INST_PROP(idx, rcu_periph_clock),       \
+		.reset = RESET_DT_SPEC_INST_GET(idx),			       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),		       \
 		IF_ENABLED(CONFIG_SPI_GD32_INTERRUPT,			       \
 			   (.irq_configure = spi_gd32_irq_configure_##idx)) }; \
