@@ -18,6 +18,7 @@ logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
 from twisterlib.error import TwisterRuntimeError
+from twisterlib.log_helper import log_command
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -705,19 +706,20 @@ class TwisterEnv:
 
     @staticmethod
     def run_cmake_script(args=[]):
+        script = os.fspath(args[0])
 
-        logger.debug("Running cmake script %s" % (args[0]))
+        logger.debug("Running cmake script %s", script)
 
         cmake_args = ["-D{}".format(a.replace('"', '')) for a in args[1:]]
-        cmake_args.extend(['-P', args[0]])
+        cmake_args.extend(['-P', script])
 
-        logger.debug("Calling cmake with arguments: {}".format(cmake_args))
         cmake = shutil.which('cmake')
         if not cmake:
             msg = "Unable to find `cmake` in path"
             logger.error(msg)
             raise Exception(msg)
         cmd = [cmake] + cmake_args
+        log_command(logger, "Calling cmake", cmd)
 
         kwargs = dict()
         kwargs['stdout'] = subprocess.PIPE
