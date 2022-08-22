@@ -8,6 +8,7 @@
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/adc/gd32f3x0.h>
+#include <zephyr/dt-bindings/reset/gd32f3x0.h>
 
 / {
 	cpus {
@@ -24,6 +25,18 @@
 	soc {
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
+		};
+
+		rcu: reset-clock-controller@40021000 {
+			compatible = "gd,gd32-rcu";
+			reg = <0x40021000 0x400>;
+			status = "okay";
+
+			rctl: reset-controller {
+				compatible = "gd,gd32-rctl";
+				#reset-cells = <1>;
+				status = "okay";
+			};
 		};
 
 		fmc: flash-controller@40022000 {
