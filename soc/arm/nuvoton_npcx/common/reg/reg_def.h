@@ -669,23 +669,26 @@ struct espi_reg {
 	volatile uint32_t reserved4[6];
 	/* 0x140 - 16F: Virtual Wire Event Master-to-Slave 0 - 11 */
 	volatile uint32_t VWEVMS[12];
-	volatile uint32_t reserved5[99];
+	volatile uint32_t reserved5[4];
+	/* 0x180 - 1BF: Virtual Wire GPIO Event Master-to-Slave 0 - 15 */
+	volatile uint32_t VWGPSM[16];
+	volatile uint32_t reserved6[79];
 	/* 0x2FC: Virtual Wire Channel Control */
 	volatile uint32_t VWCTL;
 	/* 0x300 - 34F: OOB Receive Buffer 0 - 19 */
 	volatile uint32_t OOBRXBUF[20];
-	volatile uint32_t reserved6[12];
+	volatile uint32_t reserved7[12];
 	/* 0x380 - 3CF: OOB Transmit Buffer 0-19 */
 	volatile uint32_t OOBTXBUF[20];
-	volatile uint32_t reserved7[11];
+	volatile uint32_t reserved8[11];
 	/* 0x3FC: OOB Channel Control used in 'direct' mode */
 	volatile uint32_t OOBCTL_DIRECT;
 	/* 0x400 - 443: Flash Receive Buffer 0-16 */
 	volatile uint32_t FLASHRXBUF[17];
-	volatile uint32_t reserved8[15];
+	volatile uint32_t reserved9[15];
 	/* 0x480 - 497: Flash Transmit Buffer 0-5 */
 	volatile uint32_t FLASHTXBUF[6];
-	volatile uint32_t reserved9[25];
+	volatile uint32_t reserved10[25];
 	/* 0x4FC: Flash Channel Control used in 'direct' mode */
 	volatile uint32_t FLASHCTL_DIRECT;
 };
@@ -763,6 +766,7 @@ struct espi_reg {
 #define NPCX_VWEVSM_VALID                FIELD(4, 4)
 #define NPCX_VWEVSM_BIT_VALID(n)         (4+n)
 #define NPCX_VWEVSM_HW_WIRE              FIELD(24, 4)
+#define NPCX_VWGPSM_INDEX_EN             15
 #define NPCX_OOBCTL_OOB_FREE             0
 #define NPCX_OOBCTL_OOB_AVAIL            1
 #define NPCX_OOBCTL_RSTBUFHEADS          2
