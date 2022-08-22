@@ -12,10 +12,4 @@ config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
 
-# FIXME: LSE not working as LPTIM clock source. Use LSI instead.
-choice STM32_LPTIM_CLOCK
-	default STM32_LPTIM_CLOCK_LSI
-	depends on STM32_LPTIM_TIMER
-endchoice
-
 endif # BOARD_NUCLEO_L073RZ
