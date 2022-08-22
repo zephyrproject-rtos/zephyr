@@ -373,6 +373,24 @@ int lorawan_clock_sync_get(uint32_t *gps_time);
 
 #endif /* CONFIG_LORAWAN_APP_CLOCK_SYNC */
 
+#ifdef CONFIG_LORAWAN_FRAG_TRANSPORT
+
+/**
+ * @brief Run Fragmented Data Block Transport service
+ *
+ * This service receives fragmented data (usually firmware images) and
+ * stores them in the image-1 flash partition.
+ *
+ * After all fragments have been received, the provided callback is invoked.
+ *
+ * @param transport_finished_cb Callback for notification of finished data transfer.
+ *
+ * @return 0 if successful, negative errno otherwise.
+ */
+int lorawan_frag_transport_run(void (*transport_finished_cb)(void));
+
+#endif /* CONFIG_LORAWAN_FRAG_TRANSPORT */
+
 #ifdef __cplusplus
 }
 #endif
