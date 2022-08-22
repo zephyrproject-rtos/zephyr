@@ -35,7 +35,7 @@ env:
 jobs:
   doc-build-html:
     name: "Documentation Build (HTML)"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     timeout-minutes: 45
     concurrency:
       group: doc-build-html-${{ github.ref }}
@@ -115,7 +115,7 @@ jobs:
 
   doc-build-pdf:
     name: "Documentation Build (PDF)"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container: texlive/texlive:latest
     timeout-minutes: 45
     concurrency:
