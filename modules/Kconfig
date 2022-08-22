@@ -1,6 +1,13 @@
 # Copyright (c) 2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+config TAINT_BLOBS
+	bool
+	select TAINT
+	help
+	  This option is selected when binary blobs are present locally at
+	  build time to reflect that the build might have been tainted by them.
+
 comment "Available modules."
 
 osource "$(KCONFIG_BINARY_DIR)/Kconfig.modules"

@@ -630,6 +630,12 @@ config WARN_EXPERIMENTAL
 	  Print a warning when the Kconfig tree is parsed if any experimental
 	  features are enabled.
 
+config TAINT
+	bool
+	help
+	  Symbol that must be selected by a feature or module if the Zephyr
+	  build is considered tainted.
+
 config ENFORCE_ZEPHYR_STDINT
 	bool
 	prompt "Enforce Zephyr convention for stdint"
