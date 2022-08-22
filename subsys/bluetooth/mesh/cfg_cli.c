@@ -456,6 +456,10 @@ static int app_key_list(struct bt_mesh_model *model,
 						&param->keys[i + 1]);
 			}
 
+			if (i < *param->key_cnt && buf->len == 2) {
+				param->keys[i++] = net_buf_simple_pull_le16(buf) & 0xfff;
+			}
+
 			if (buf->len > 0U) {
 				BT_ERR("The message size for the application opcode is incorrect.");
 				return -EMSGSIZE;
