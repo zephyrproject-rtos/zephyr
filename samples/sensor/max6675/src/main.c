@@ -19,7 +19,7 @@
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ONE(maxim_max6675);
+	const struct device *const dev = DEVICE_DT_GET_ONE(maxim_max6675);
 	struct sensor_value val;
 
 	if (!device_is_ready(dev)) {

@@ -102,7 +102,7 @@ static void process_sample(const struct device *dev)
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ONE(isil_isl29035);
+	const struct device *const dev = DEVICE_DT_GET_ONE(isil_isl29035);
 
 	if (!device_is_ready(dev)) {
 		printk("sensor: device not ready.\n");

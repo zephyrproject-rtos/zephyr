@@ -33,7 +33,7 @@ static void callback(const struct device *dev,
 
 static int test_callback(int mode)
 {
-	const struct device *dev = DEVICE_DT_GET(DEV);
+	const struct device *const dev = DEVICE_DT_GET(DEV);
 	struct drv_data *drv_data = &data;
 
 	gpio_pin_interrupt_configure(dev, PIN_IN, GPIO_INT_DISABLE);

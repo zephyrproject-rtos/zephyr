@@ -14,7 +14,7 @@ uint8_t var_in_res0[DT_REG_SIZE(DT_NODELABEL(syscon))] __attribute((__section__(
 
 static void test_size(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	const size_t expected_size = DT_REG_SIZE(DT_NODELABEL(syscon));
 	size_t size;
 
@@ -26,7 +26,7 @@ static void test_size(void)
 
 static void test_out_of_bounds(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	uint32_t val;
 
 	zassert_equal(syscon_read_reg(dev, DT_REG_SIZE(DT_NODELABEL(syscon)), &val), -EINVAL, NULL);
@@ -35,7 +35,7 @@ static void test_out_of_bounds(void)
 
 static void test_read(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	uintptr_t base_addr;
 	uint32_t val;
 
@@ -49,7 +49,7 @@ static void test_read(void)
 
 static void test_write(void)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	uintptr_t base_addr;
 
 	zassert_ok(syscon_get_base(dev, &base_addr), NULL);

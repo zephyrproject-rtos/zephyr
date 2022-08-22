@@ -13,7 +13,7 @@
 #include "greenled.h"
 #include <eoss3_dev.h>
 
-const struct device *fpga = DEVICE_DT_GET(DT_NODELABEL(fpga0));
+const struct device *const fpga = DEVICE_DT_GET(DT_NODELABEL(fpga0));
 
 void main(void)
 {

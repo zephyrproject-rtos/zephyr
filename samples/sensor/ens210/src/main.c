@@ -11,7 +11,7 @@
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ONE(ams_ens210);
+	const struct device *const dev = DEVICE_DT_GET_ONE(ams_ens210);
 	struct sensor_value temperature, humidity;
 
 	if (!device_is_ready(dev)) {

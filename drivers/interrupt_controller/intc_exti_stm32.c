@@ -431,7 +431,7 @@ DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
  */
 int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
 {
-	const struct device *dev = DEVICE_DT_GET(EXTI_NODE);
+	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
 	struct stm32_exti_data *data = dev->data;
 
 	if (data->cb[line].cb) {
@@ -446,7 +446,7 @@ int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
 
 void stm32_exti_unset_callback(int line)
 {
-	const struct device *dev = DEVICE_DT_GET(EXTI_NODE);
+	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
 	struct stm32_exti_data *data = dev->data;
 
 	data->cb[line].cb = NULL;

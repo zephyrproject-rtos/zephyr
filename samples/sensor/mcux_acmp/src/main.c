@@ -91,7 +91,7 @@ static void acmp_trigger_handler(const struct device *dev,
 void main(void)
 {
 	struct sensor_trigger trigger;
-	const struct device *acmp = DEVICE_DT_GET(ACMP_NODE);
+	const struct device *const acmp = DEVICE_DT_GET(ACMP_NODE);
 	struct sensor_value val;
 	int err;
 	int i;

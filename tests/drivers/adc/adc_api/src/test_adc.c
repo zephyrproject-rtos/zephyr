@@ -400,7 +400,7 @@ static const struct adc_channel_cfg m_2nd_channel_cfg = {
 
 const struct device *get_adc_device(void)
 {
-	const struct device *dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
+	const struct device *const dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
 	if (!device_is_ready(dev)) {
 		printk("ADC device is not ready\n");
@@ -413,7 +413,7 @@ const struct device *get_adc_device(void)
 static const struct device *init_adc(void)
 {
 	int i, ret;
-	const struct device *adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
+	const struct device *const adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
 	zassert_true(device_is_ready(adc_dev), "ADC device is not ready");
 

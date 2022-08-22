@@ -229,7 +229,7 @@ static void set_aligned_clock(const struct device *ds3231)
 
 void main(void)
 {
-	const struct device *ds3231 = DEVICE_DT_GET_ONE(maxim_ds3231);
+	const struct device *const ds3231 = DEVICE_DT_GET_ONE(maxim_ds3231);
 
 	if (!device_is_ready(ds3231)) {
 		printk("%s: device not ready.\n", ds3231->name);

@@ -556,7 +556,7 @@ static int stm32_sdmmc_pwr_uninit(struct stm32_sdmmc_priv *priv)
 static int disk_stm32_sdmmc_init(const struct device *dev)
 {
 	struct stm32_sdmmc_priv *priv = dev->data;
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	int err;
 
 	if (!device_is_ready(clk)) {

@@ -65,7 +65,7 @@ static void trigger_handler(const struct device *dev,
 
 void main(void)
 {
-	const struct device *sensor = DEVICE_DT_GET_ANY(st_lis2dh);
+	const struct device *const sensor = DEVICE_DT_GET_ANY(st_lis2dh);
 
 	if (sensor == NULL) {
 		printf("No device found\n");

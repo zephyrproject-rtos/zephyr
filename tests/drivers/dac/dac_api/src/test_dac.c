@@ -77,7 +77,7 @@ const struct device *get_dac_device(void)
 static const struct device *init_dac(void)
 {
 	int ret;
-	const struct device *dac_dev = DEVICE_DT_GET(DAC_DEVICE_NODE);
+	const struct device *const dac_dev = DEVICE_DT_GET(DAC_DEVICE_NODE);
 
 	zassert_true(device_is_ready(dac_dev), "DAC device is not ready");
 

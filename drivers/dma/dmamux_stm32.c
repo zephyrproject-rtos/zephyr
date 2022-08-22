@@ -214,7 +214,7 @@ static int dmamux_stm32_init(const struct device *dev)
 {
 #if DT_INST_NODE_HAS_PROP(0, clocks)
 	const struct dmamux_stm32_config *config = dev->config;
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	if (!device_is_ready(clk)) {
 		LOG_ERR("clock control device not ready");

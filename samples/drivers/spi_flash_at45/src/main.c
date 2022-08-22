@@ -27,7 +27,7 @@ void main(void)
 {
 	printk("DataFlash sample on %s\n", CONFIG_BOARD);
 
-	const struct device *flash_dev = DEVICE_DT_GET_ONE(atmel_at45);
+	const struct device *const flash_dev = DEVICE_DT_GET_ONE(atmel_at45);
 	int i;
 	int err;
 	uint8_t data;

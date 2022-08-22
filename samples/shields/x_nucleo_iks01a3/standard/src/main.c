@@ -247,12 +247,12 @@ void main(void)
 	struct sensor_value accel1[3], accel2[3];
 	struct sensor_value gyro[3];
 	struct sensor_value magn[3];
-	const struct device *hts221 = DEVICE_DT_GET_ONE(st_hts221);
-	const struct device *lps22hh = DEVICE_DT_GET_ONE(st_lps22hh);
-	const struct device *stts751 = DEVICE_DT_GET_ONE(st_stts751);
-	const struct device *lis2mdl = DEVICE_DT_GET_ONE(st_lis2mdl);
-	const struct device *lis2dw12 = DEVICE_DT_GET_ONE(st_lis2dw12);
-	const struct device *lsm6dso = DEVICE_DT_GET_ONE(st_lsm6dso);
+	const struct device *const hts221 = DEVICE_DT_GET_ONE(st_hts221);
+	const struct device *const lps22hh = DEVICE_DT_GET_ONE(st_lps22hh);
+	const struct device *const stts751 = DEVICE_DT_GET_ONE(st_stts751);
+	const struct device *const lis2mdl = DEVICE_DT_GET_ONE(st_lis2mdl);
+	const struct device *const lis2dw12 = DEVICE_DT_GET_ONE(st_lis2dw12);
+	const struct device *const lsm6dso = DEVICE_DT_GET_ONE(st_lsm6dso);
 	int cnt = 1;
 
 	if (!device_is_ready(hts221)) {

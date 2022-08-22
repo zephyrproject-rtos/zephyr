@@ -32,7 +32,7 @@ static ZTEST_BMEM int16_t m_sample_buffer[BUFFER_SIZE];
  */
 const struct device *get_adc_device(void)
 {
-	const struct device *adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
+	const struct device *const adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
 	zassert_true(device_is_ready(adc_dev), "ADC device is not ready");
 

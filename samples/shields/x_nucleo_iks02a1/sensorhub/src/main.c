@@ -156,8 +156,8 @@ void main(void)
 	struct sensor_value accel1[3], accel2[3];
 	struct sensor_value gyro[3];
 	struct sensor_value magn[3];
-	const struct device *iis2dlpc = DEVICE_DT_GET_ONE(st_iis2dlpc);
-	const struct device *ism330dhcx = DEVICE_DT_GET_ONE(st_ism330dhcx);
+	const struct device *const iis2dlpc = DEVICE_DT_GET_ONE(st_iis2dlpc);
+	const struct device *const ism330dhcx = DEVICE_DT_GET_ONE(st_ism330dhcx);
 	int cnt = 1;
 
 	if (!device_is_ready(iis2dlpc)) {

@@ -11,7 +11,7 @@
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ONE(bosch_bme680);
+	const struct device *const dev = DEVICE_DT_GET_ONE(bosch_bme680);
 	struct sensor_value temp, press, humidity, gas_res;
 
 	if (!device_is_ready(dev)) {

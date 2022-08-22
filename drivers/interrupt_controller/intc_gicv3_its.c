@@ -570,7 +570,7 @@ static uint32_t gicv3_its_get_msi_addr(const struct device *dev)
 
 #define ITS_RDIST_MAP(n)									  \
 	{											  \
-		const struct device *dev = DEVICE_DT_INST_GET(n);				  \
+		const struct device *const dev = DEVICE_DT_INST_GET(n);				  \
 		struct gicv3_its_data *data;							  \
 		int ret;									  \
 												  \
@@ -593,7 +593,7 @@ void its_rdist_map(void)
 
 #define ITS_RDIST_INVALL(n)									\
 	{											\
-		const struct device *dev = DEVICE_DT_INST_GET(n);				\
+		const struct device *const dev = DEVICE_DT_INST_GET(n);				\
 		struct gicv3_its_data *data;							\
 		int ret;									\
 												\

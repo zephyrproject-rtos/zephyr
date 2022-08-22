@@ -97,7 +97,7 @@ static uint32_t mock_conf_read(pcie_bdf_t bdf, unsigned int reg)
 
 ZTEST(ibecc_cov, test_static_functions)
 {
-	const struct device *dev = DEVICE_DT_GET(DEVICE_NODE);
+	const struct device *const dev = DEVICE_DT_GET(DEVICE_NODE);
 	struct ibecc_error error_data;
 	uint64_t log_data;
 	int ret;

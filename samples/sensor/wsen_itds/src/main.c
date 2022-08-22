@@ -127,7 +127,7 @@ static void test_trigger_mode(const struct device *itds)
 
 void main(void)
 {
-	const struct device *itds = DEVICE_DT_GET_ONE(we_wsen_itds);
+	const struct device *const itds = DEVICE_DT_GET_ONE(we_wsen_itds);
 	struct sensor_value attr;
 
 	printf("get device wsen-itds\n");
