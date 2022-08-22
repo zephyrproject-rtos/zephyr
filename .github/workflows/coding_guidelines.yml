@@ -4,7 +4,7 @@ on: pull_request
 
 jobs:
   compliance_job:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     name: Run coding guidelines checks on patch series (PR)
     steps:
     - name: Checkout the code
