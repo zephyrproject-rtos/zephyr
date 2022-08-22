@@ -322,6 +322,20 @@ int lorawan_clock_sync_get(uint32_t *gps_time);
 
 #endif /* CONFIG_LORAWAN_APP_CLOCK_SYNC */
 
+#ifdef CONFIG_LORAWAN_REMOTE_MULTICAST
+
+/**
+ * @brief Run Remote Multicast Setup service
+ *
+ * This service is responsible for multicast session key exchange and setting
+ * up a class C session. The keys are stored in the non-volatile memory.
+ *
+ * @return 0 if successful, negative errno otherwise.
+ */
+int lorawan_remote_multicast_run(void);
+
+#endif /* CONFIG_LORAWAN_REMOTE_MULTICAST */
+
 #ifdef __cplusplus
 }
 #endif
