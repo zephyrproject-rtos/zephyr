@@ -12,9 +12,6 @@ source "soc/arm/st_stm32/stm32l0/Kconfig.defconfig.stm32l0*"
 config SOC_SERIES
 	default "stm32l0"
 
-config STM32_LPTIM_TIMER
-	default y if PM
-
 # adjust the fallback because of the LSI oscaillator characteristics
 config TASK_WDT_HW_FALLBACK_DELAY
 	depends on TASK_WDT_HW_FALLBACK
