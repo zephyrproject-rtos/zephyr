@@ -8,7 +8,7 @@ on:
 
 jobs:
   check-errno:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: ghcr.io/zephyrproject-rtos/ci:v0.23.3
     env:
