@@ -185,6 +185,7 @@
 			reg = <0x40013000 0x400>;
 			interrupts = <35 0>;
 			rcu-periph-clock = <0x110c>;
+			resets = <&rctl GD32_RESET_SPI0>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -195,6 +196,7 @@
 			reg = <0x40003800 0x400>;
 			interrupts = <36 0>;
 			rcu-periph-clock = <0x100e>;
+			resets = <&rctl GD32_RESET_SPI1>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -205,6 +207,7 @@
 			reg = <0x40003c00 0x400>;
 			interrupts = <51 0>;
 			rcu-periph-clock = <0x100f>;
+			resets = <&rctl GD32_RESET_SPI2>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
