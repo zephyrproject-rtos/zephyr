@@ -215,6 +215,14 @@
 		status = "disabled";
 	};
 
+	pmic_i2c: i2c@127000 {
+		compatible = "nxp,lpc-i2c";
+		reg = <0x127000 0x1000>;
+		interrupts = <21 0>;
+		clocks = <&clkctl1 MCUX_PMIC_I2C_CLK>;
+		status = "disabled";
+	};
+
 	flexcomm8: flexcomm@209000 {
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x209000 0x1000>;
