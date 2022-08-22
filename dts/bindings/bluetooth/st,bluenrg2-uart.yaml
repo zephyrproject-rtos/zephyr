@@ -1,0 +1,20 @@
+# Copyright (C) 2022 Marek Matej
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST BlueNRG2 chip with DTM firmware connected by uart
+
+compatible: "st,bluenrg2-uart"
+
+include: uart-device.yaml
+
+properties:
+  label:
+    required: true
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+
+  wake-gpios:
+    type: phandle-array
+    required: false

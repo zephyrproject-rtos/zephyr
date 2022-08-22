@@ -76,6 +76,17 @@ config BT_B91
 	help
 	  Telink B91 HCI bluetooth interface
 
+config BT_BLUENRG_UART
+	bool "BlueNRG UART"
+	select UART_INTERRUPT_DRIVEN
+	select BT_UART
+	select BT_RECV_IS_RX_THREAD
+	select RING_BUFFER
+	depends on SERIAL
+	help
+	  Enable support for devices compatible with the BlueNRG Bluetooth
+	  Stack. Current driver supports: ST BLUENRG-2 chip with "DTM" firmware.
+
 config BT_NO_DRIVER
 	bool "No default HCI driver"
 	help
@@ -84,17 +95,17 @@ config BT_NO_DRIVER
 
 endchoice
 
+config BT_BLUENRG_ACI
+	bool "ACI message with with BlueNRG-based devices"
+	help
+	  Enable support for devices compatible with the BlueNRG Bluetooth
+	  Stack. Current driver supports: ST BLUENRG-MS, BLUENRG2+DTM.
+
 if BT_SPI
 
 config BT_SPI_INIT_PRIORITY
 	int "BT SPI init priority"
 	default 75
-
-config BT_BLUENRG_ACI
-	bool "ACI message with with BlueNRG-based devices"
-	help
-	  Enable support for devices compatible with the BlueNRG Bluetooth
-	  Stack. Current driver supports: ST BLUENRG-MS.
 
 config BT_SPI_BLUENRG
 	bool "Compatibility with BlueNRG-based devices"
