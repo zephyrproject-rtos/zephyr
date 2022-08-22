@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2022, Intel Corporation
+
+description: Ethernet driver for Cyclone V SoC
+
+compatible: "snps,ethernet-cyclonev"
+
+include: ethernet.yaml
+
+properties:
+    reg:
+      required: true
+    interrupts:
+      required: true
