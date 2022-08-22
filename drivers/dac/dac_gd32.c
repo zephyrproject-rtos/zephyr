@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/dac.h>
 
 #include <gd32_dac.h>
@@ -29,6 +30,7 @@ LOG_MODULE_REGISTER(dac_gd32, CONFIG_DAC_LOG_LEVEL);
 struct dac_gd32_config {
 	uint32_t reg;
 	uint32_t rcu_periph_clock;
+	struct reset_dt_spec reset;
 	const struct pinctrl_dev_config *pcfg;
 	uint32_t num_channels;
 	uint32_t reset_val;
@@ -149,6 +151,8 @@ static int dac_gd32_init(const struct device *dev)
 
 	rcu_periph_clock_enable(cfg->rcu_periph_clock);
 
+	(void)reset_line_toggle_dt(&cfg->reset);
+
 	return 0;
 }
 
@@ -159,6 +163,7 @@ static struct dac_gd32_data dac_gd32_data_0;
 static const struct dac_gd32_config dac_gd32_cfg_0 = {
 	.reg = DT_INST_REG_ADDR(0),
 	.rcu_periph_clock = DT_INST_PROP(0, rcu_periph_clock),
+	.reset = RESET_DT_SPEC_INST_GET(0),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.num_channels = DT_INST_PROP(0, num_channels),
 	.reset_val = DT_INST_PROP(0, reset_val),
