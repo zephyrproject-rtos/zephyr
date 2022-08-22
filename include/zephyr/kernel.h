@@ -4645,6 +4645,8 @@ struct k_pipe {
 		_wait_q_t      writers; /**< Writer wait queue */
 	} wait_q;			/** Wait queue */
 
+	_POLL_EVENT;
+
 	uint8_t	       flags;		/**< Flags */
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_pipe)
@@ -4667,7 +4669,8 @@ struct k_pipe {
 		.readers = Z_WAIT_Q_INIT(&obj.wait_q.readers),       \
 		.writers = Z_WAIT_Q_INIT(&obj.wait_q.writers)        \
 	},                                                          \
-	.flags = 0                                                  \
+	_POLL_EVENT_OBJ_INIT(obj)                                   \
+	.flags = 0,                                                 \
 	}
 
 /**
@@ -5309,6 +5312,9 @@ enum _poll_types_bits {
 	/* msgq data availability */
 	_POLL_TYPE_MSGQ_DATA_AVAILABLE,
 
+	/* pipe data availability */
+	_POLL_TYPE_PIPE_DATA_AVAILABLE,
+
 	_POLL_NUM_TYPES
 };
 
@@ -5333,6 +5339,9 @@ enum _poll_states_bits {
 
 	/* data is available to read on a message queue */
 	_POLL_STATE_MSGQ_DATA_AVAILABLE,
+
+	/* data is available to read from a pipe */
+	_POLL_STATE_PIPE_DATA_AVAILABLE,
 
 	_POLL_NUM_STATES
 };
@@ -5365,6 +5374,7 @@ enum _poll_states_bits {
 #define K_POLL_TYPE_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_DATA_AVAILABLE)
 #define K_POLL_TYPE_FIFO_DATA_AVAILABLE K_POLL_TYPE_DATA_AVAILABLE
 #define K_POLL_TYPE_MSGQ_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_MSGQ_DATA_AVAILABLE)
+#define K_POLL_TYPE_PIPE_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_PIPE_DATA_AVAILABLE)
 
 /* public - polling modes */
 enum k_poll_modes {
@@ -5381,6 +5391,7 @@ enum k_poll_modes {
 #define K_POLL_STATE_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_DATA_AVAILABLE)
 #define K_POLL_STATE_FIFO_DATA_AVAILABLE K_POLL_STATE_DATA_AVAILABLE
 #define K_POLL_STATE_MSGQ_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_MSGQ_DATA_AVAILABLE)
+#define K_POLL_STATE_PIPE_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_PIPE_DATA_AVAILABLE)
 #define K_POLL_STATE_CANCELLED Z_POLL_STATE_BIT(_POLL_STATE_CANCELLED)
 
 /* public - poll signal object */
@@ -5438,6 +5449,9 @@ struct k_poll_event {
 		struct k_fifo *fifo;
 		struct k_queue *queue;
 		struct k_msgq *msgq;
+#ifdef CONFIG_PIPES
+		struct k_pipe *pipe;
+#endif
 	};
 };
 

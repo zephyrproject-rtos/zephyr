@@ -39,6 +39,10 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 	SYS_PORT_TRACING_OBJ_INIT(k_pipe, pipe);
 
 	pipe->flags = 0;
+
+#if defined(CONFIG_POLL)
+	sys_dlist_init(&pipe->poll_events);
+#endif
 	z_object_init(pipe);
 }
 
@@ -77,6 +81,15 @@ static inline int z_vrfy_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 }
 #include <syscalls/k_pipe_alloc_init_mrsh.c>
 #endif
+
+static inline void handle_poll_events(struct k_pipe *pipe)
+{
+#ifdef CONFIG_POLL
+	z_handle_obj_poll_events(&pipe->poll_events, K_POLL_STATE_PIPE_DATA_AVAILABLE);
+#else
+	ARG_UNUSED(pipe);
+#endif
+}
 
 void z_impl_k_pipe_flush(struct k_pipe *pipe)
 {
@@ -404,6 +417,15 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 
 	*bytes_written = pipe_write(pipe, &src_list,
 				    &dest_list, &reschedule_needed);
+
+	/*
+	 * Only handle poll events if the pipe has had some bytes written and
+	 * there are bytes remaining after any pending readers have read from it
+	 */
+
+	if ((pipe->bytes_used != 0U) && (*bytes_written != 0U)) {
+		handle_poll_events(pipe);
+	}
 
 	/*
 	 * The immediate success conditions below are backwards
