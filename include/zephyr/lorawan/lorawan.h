@@ -318,6 +318,38 @@ void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
  */
 int lorawan_set_region(enum lorawan_region region);
 
+#ifdef CONFIG_LORAWAN_APP_CLOCK_SYNC
+
+/**
+ * @brief Run Application Layer Clock Synchronization service
+ *
+ * This service sends out its current time in a regular interval (configurable
+ * via Kconfig) and receives a correction offset from the application server if
+ * the clock deviation is considered too large.
+ *
+ * Clock synchronization is required for firmware upgrades over multicast
+ * sessions, but can also be used independent of a FUOTA process.
+ *
+ * @return 0 if successful, negative errno otherwise.
+ */
+int lorawan_clock_sync_run(void);
+
+/**
+ * @brief Retrieve the current synchronized time
+ *
+ * This function uses the GPS epoch format, as used in all LoRaWAN services.
+ *
+ * The GPS epoch started on 1980-01-06T00:00:00Z, but has since diverged
+ * from UTC, as it does not consider corrections like leap seconds.
+ *
+ * @param gps_time Synchronized time in GPS epoch format truncated to 32-bit.
+ *
+ * @return 0 if successful, -EAGAIN if the clock is not yet synchronized.
+ */
+int lorawan_clock_sync_get(uint32_t *gps_time);
+
+#endif /* CONFIG_LORAWAN_APP_CLOCK_SYNC */
+
 #ifdef __cplusplus
 }
 #endif
