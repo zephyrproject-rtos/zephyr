@@ -169,7 +169,7 @@ int spsc_pbuf_alloc(struct spsc_pbuf *pb, uint16_t len, char **buf)
 			/* Packet will fit at the end */
 			free_space = remaining - ((rd_idx > 0) ? 0 : sizeof(uint32_t));
 		} else {
-			if (rd_idx > remaining) {
+			if (rd_idx > space) {
 				/* Padding must be added. */
 				data_loc[wr_idx] = PADDING_MARK;
 				__sync_synchronize();
