@@ -6,7 +6,7 @@ on:
 
 jobs:
   check-errno:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: zephyrprojectrtos/ci:v0.18.4
 
