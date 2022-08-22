@@ -109,6 +109,7 @@
 			reg = <0x40012400 0x400>;
 			interrupts = <37 0>;
 			rcu-periph-clock = <0x609>;
+			resets = <&rctl GD32_RESET_ADC0>;
 			channels = <16>;
 			status = "disabled";
 			#io-channel-cells = <1>;
@@ -119,6 +120,7 @@
 			reg = <0x40012800 0x400>;
 			interrupts = <37 0>;
 			rcu-periph-clock = <0x60A>;
+			resets = <&rctl GD32_RESET_ADC1>;
 			channels = <16>;
 			status = "disabled";
 			#io-channel-cells = <1>;

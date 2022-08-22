@@ -16,10 +16,13 @@ description: GigaDevice GD32 ADC
 
 compatible: "gd,gd32-adc"
 
-include: [adc-controller.yaml, pinctrl-device.yaml]
+include: [adc-controller.yaml, reset-device.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
+      required: true
+
+    resets:
       required: true
 
     rcu-periph-clock:
