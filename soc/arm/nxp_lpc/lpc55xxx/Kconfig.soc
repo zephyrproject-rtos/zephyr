@@ -68,7 +68,6 @@ config SOC_LPC55S69_CPU0
 	select HAS_MCUX_LPADC
 	select HAS_MCUX_LPC_DMA
 	select HAS_MCUX_USB_LPCIP3511
-	select USB_DEDICATED_MEMORY if USB_DEVICE_DRIVER
 	select HAS_MCUX_CTIMER
 	select HAS_MCUX_SCTIMER
 	select HAS_MCUX_RNG
@@ -128,9 +127,6 @@ config SECOND_IMAGE_MCUX
 	help
 	  This points to the image file for the the binary code that will be
 	  used by the second core.
-
-config USB_DEDICATED_MEMORY
-	bool "Dedicated memory for USB transfer buffer and controller operation buffers"
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_CODE_CPU1_PARTITION := zephyr,code-cpu1-partition
