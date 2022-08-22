@@ -455,7 +455,7 @@ int bt_mesh_health_cli_fault_test(struct bt_mesh_health_cli *cli, struct bt_mesh
 	net_buf_simple_add_le16(&msg, cid);
 
 	return model_ackd_send(cli->model, ctx, &msg,
-			       (!faults || !fault_count) ? &cli->ack_ctx : NULL,
+			       (!faults || !fault_count) ? NULL : &cli->ack_ctx,
 			       OP_HEALTH_FAULT_STATUS, &param);
 }
 
