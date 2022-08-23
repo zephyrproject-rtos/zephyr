@@ -23,7 +23,6 @@
 			clock-frequency = <DT_FREQ_M(108)>;
 			mcause-exception-mask = <0x7ff>;
 			compatible = "nuclei,bumblebee";
-			device_type = "cpu";
 			reg = <0>;
 		};
 	};
