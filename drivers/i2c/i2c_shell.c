@@ -283,25 +283,31 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
-			       SHELL_CMD_ARG(scan, &dsub_device_name,
-					     "Scan I2C devices",
-					     cmd_i2c_scan, 2, 0),
-			       SHELL_CMD_ARG(recover, &dsub_device_name,
-					     "Recover I2C bus",
-					     cmd_i2c_recover, 2, 0),
-			       SHELL_CMD_ARG(read, &dsub_device_name,
-					     "Read bytes from an I2C device",
-					     cmd_i2c_read, 4, 1),
-			       SHELL_CMD_ARG(read_byte, &dsub_device_name,
-					     "Read a byte from an I2C device",
-					     cmd_i2c_read_byte, 4, 1),
-			       SHELL_CMD_ARG(write, &dsub_device_name,
-					     "Write bytes to an I2C device",
-					     cmd_i2c_write, 4, MAX_I2C_BYTES),
-			       SHELL_CMD_ARG(write_byte, &dsub_device_name,
-					     "Write a byte to an I2C device",
-					     cmd_i2c_write_byte, 5, 0),
-			       SHELL_SUBCMD_SET_END     /* Array terminated. */
-			       );
+	SHELL_CMD_ARG(scan, &dsub_device_name,
+		      "Scan I2C devices\n"
+		      "Usage: scan <device>",
+		      cmd_i2c_scan, 2, 0),
+	SHELL_CMD_ARG(recover, &dsub_device_name,
+		      "Recover I2C bus\n"
+		      "Usage: recover <device>",
+		      cmd_i2c_recover, 2, 0),
+	SHELL_CMD_ARG(read, &dsub_device_name,
+		      "Read bytes from an I2C device\n"
+		      "Usage: read <device> <addr> <reg> [<bytes>]",
+		      cmd_i2c_read, 4, 1),
+	SHELL_CMD_ARG(read_byte, &dsub_device_name,
+		      "Read a byte from an I2C device\n"
+		      "Usage: read_byte <device> <addr> <reg>",
+		      cmd_i2c_read_byte, 4, 0),
+	SHELL_CMD_ARG(write, &dsub_device_name,
+		      "Write bytes to an I2C device\n"
+		      "Usage: write <device> <addr> <reg> [<byte1>, ...]",
+		      cmd_i2c_write, 4, MAX_I2C_BYTES),
+	SHELL_CMD_ARG(write_byte, &dsub_device_name,
+		      "Write a byte to an I2C device\n"
+		      "Usage: write_byte <device> <addr> <reg> <value>",
+		      cmd_i2c_write_byte, 5, 0),
+	SHELL_SUBCMD_SET_END     /* Array terminated. */
+);
 
 SHELL_CMD_REGISTER(i2c, &sub_i2c_cmds, "I2C commands", NULL);
