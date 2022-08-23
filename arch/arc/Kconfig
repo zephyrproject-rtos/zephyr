@@ -277,13 +277,19 @@ config CODE_DENSITY
 	  Enable code density option to get better code density
 
 config ARC_HAS_ACCL_REGS
-	bool "Reg Pair ACCL:ACCH (FPU and/or MPY > 6)"
+	bool "Reg Pair ACCL:ACCH (FPU and/or MPY > 6 and/or DSP)"
 	default y if CPU_HS3X || CPU_HS5X || CPU_HS6X
 	help
 	  Depending on the configuration, CPU can contain accumulator reg-pair
 	  (also referred to as r58:r59). These can also be used by gcc as GPR so
 	  kernel needs to save/restore per process
 
+config ARC_HAS_DSP
+	bool "Dsp support"
+	default y if CPU_HS3X
+	help
+		Some CPUs contain HW DSP extension
+		
 config ARC_HAS_SECURE
 	bool "ARC has SecureShield"
 	depends on ISA_ARCV2

@@ -86,6 +86,24 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_and__start,__start)
 	kflag r0
 #endif
 
+	/* TODO: replace with CONFIG_CPU_HS4xD */
+#ifdef CONFIG_CPU_HS3X
+	lr	 r0, [_ARC_V2_LPB_BUILD]
+	breq r0, 0, skip_lpb_setup
+	mov  r0, 1	/* disable LPB for HS4xD */
+	sr   r0, [_ARC_V2_LPB_CTRL]
+skip_lpb_setup:
+#endif /* CONFIG_CPU_HS3X */
+
+#ifdef CONFIG_ARC_HAS_DSP
+	lr	 r0, [_ARC_V2_DSP_BUILD]
+	bmsk r0, r0, 7
+	breq r0, 0, skip_dsp_setup
+	mov	 r0, 0 /* DSP_CTRL_DISABLED_ALL */
+	sr	 r0, [_ARC_V2_DSP_CTRL]
+skip_dsp_setup:
+#endif /* CONFIG_ARC_HAS_DSP */
+
 /* Invalidate icache */
 	lr r0, [_ARC_V2_I_CACHE_BUILD]
 	and.f r0, r0, 0xff
