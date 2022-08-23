@@ -8,6 +8,7 @@
 #define H_MGMT_MGMT_
 
 #include <inttypes.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/mgmt/mcumgr/buf.h>
 
 #ifdef __cplusplus
@@ -213,8 +214,8 @@ struct mgmt_handler {
  * @brief A collection of handlers for an entire command group.
  */
 struct mgmt_group {
-	/** Points to the next group in the list. */
-	struct mgmt_group *mg_next;
+	/** Entry list node. */
+	sys_snode_t node;
 
 	/** Array of handlers; one entry per command ID. */
 	const struct mgmt_handler *mg_handlers;
