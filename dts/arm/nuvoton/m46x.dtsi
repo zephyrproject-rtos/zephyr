@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -43,7 +44,7 @@
 		uart0: serial@40070000 {
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40070000 0x1000>;
-            interrupts = <36 0>;
+			interrupts = <36 0>;
 			status = "disabled";
 			label = "UART_0";
 		};
@@ -51,7 +52,7 @@
 		uart1: serial@40071000 {
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40071000 0x1000>;
-            interrupts = <37 0>;
+			interrupts = <37 0>;
 			status = "disabled";
 			label = "UART_1";
 		};
@@ -59,7 +60,7 @@
 		uart2: serial@40072000 {
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40072000 0x1000>;
-            interrupts = <48 0>;
+			interrupts = <48 0>;
 			status = "disabled";
 			label = "UART_2";
 		};
@@ -67,7 +68,7 @@
 		uart3: serial@40073000 {
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40073000 0x1000>;
-            interrupts = <49 0>;
+			interrupts = <49 0>;
 			status = "disabled";
 			label = "UART_3";
 		};
@@ -75,7 +76,7 @@
 		uart4: serial@40074000 {
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40074000 0x1000>;
-            interrupts = <74 0>;
+			interrupts = <74 0>;
 			status = "disabled";
 			label = "UART_4";
 		};
@@ -83,7 +84,7 @@
 		uart5: serial@40075000 {
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40075000 0x1000>;
-            interrupts = <75 0>;
+			interrupts = <75 0>;
 			status = "disabled";
 			label = "UART_5";
 		};
@@ -91,7 +92,7 @@
 		uart6: serial@40076000 {
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40076000 0x1000>;
-            interrupts = <102 0>;
+			interrupts = <102 0>;
 			status = "disabled";
 			label = "UART_6";
 		};
@@ -99,7 +100,7 @@
 		uart7: serial@40077000 {
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40077000 0x1000>;
-            interrupts = <103 0>;
+			interrupts = <103 0>;
 			status = "disabled";
 			label = "UART_7";
 		};
@@ -107,7 +108,7 @@
 		uart8: serial@40078000 {
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40078000 0x1000>;
-            interrupts = <99 0>;
+			interrupts = <99 0>;
 			status = "disabled";
 			label = "UART_8";
 		};
@@ -115,7 +116,7 @@
 		uart9: serial@40079000 {
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40079000 0x1000>;
-            interrupts = <100 0>;
+			interrupts = <100 0>;
 			status = "disabled";
 			label = "UART_9";
 		};        
@@ -127,108 +128,106 @@
 			#size-cells = <1>;
 			status = "okay";
 			label = "PINCTRL";
+		};
+		gpioa: gpio@40004000 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40004000 0x40>;
+			status = "disabled";
+			interrupts = <16 2>;
+			label = "GPIOA";
+		};
 
-			gpioa: gpio@40004000 {
-				compatible = "nuvoton,numaker-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x40004000 0x40>;
-				status = "disabled";
-                interrupts = <16 2>;
-				label = "GPIOA";
-			};
+		gpiob: gpio@40004040 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40004040 0x40>;
+			status = "disabled";
+			interrupts = <17 2>;
+			label = "GPIOB";
+		};
 
-			gpiob: gpio@40004040 {
-				compatible = "nuvoton,numaker-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x40004040 0x40>;
-				status = "disabled";
-                interrupts = <17 2>;
-				label = "GPIOB";
-			};
+		gpioc: gpio@40004080 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40004080 0x40>;
+			status = "disabled";
+			interrupts = <18 2>;
+			label = "GPIOC";
+		};
 
-			gpioc: gpio@40004080 {
-				compatible = "nuvoton,numaker-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x40004080 0x40>;
-				status = "disabled";
-                interrupts = <18 2>;
-				label = "GPIOC";
-			};
+		gpiod: gpio@400040C0 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x400040C0 0x40>;
+			status = "disabled";
+			interrupts = <19 2>;
+			label = "GPIOD";
+		};
 
-			gpiod: gpio@400040C0 {
-				compatible = "nuvoton,numaker-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x400040C0 0x40>;
-				status = "disabled";
-                interrupts = <19 2>;
-				label = "GPIOD";
-			};
+		gpioe: gpio@40004100 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40004100 0x40>;
+			status = "disabled";
+			interrupts = <20 2>;
+			label = "GPIOE";
+		};
 
-			gpioe: gpio@40004100 {
-				compatible = "nuvoton,numaker-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x40004100 0x40>;
-				status = "disabled";
-                interrupts = <20 2>;
-				label = "GPIOE";
-			};
+		gpiof: gpio@40004140 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40004140 0x40>;
+			status = "disabled";
+			interrupts = <21 2>;
+			label = "GPIOF";
+		};
 
-			gpiof: gpio@40004140 {
-				compatible = "nuvoton,numaker-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x40004140 0x40>;
-				status = "disabled";
-                interrupts = <21 2>;
-				label = "GPIOF";
-			};
+		gpiog: gpio@40004180 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40004180 0x40>;
+			status = "disabled";
+			interrupts = <72 2>;
+			label = "GPIOG";
+		};
 
-			gpiog: gpio@40004180 {
-				compatible = "nuvoton,numaker-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x40004180 0x40>;
-				status = "disabled";
-                interrupts = <72 2>;
-				label = "GPIOG";
-			};
+		gpioh: gpio@400041C0 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x400041C0 0x40>;
+			status = "disabled";
+			interrupts = <88 2>;
+			label = "GPIOH";
+		};
 
-			gpioh: gpio@400041C0 {
-				compatible = "nuvoton,numaker-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x400041C0 0x40>;
-				status = "disabled";
-                interrupts = <88 2>;
-				label = "GPIOH";
-			};
+		gpioi: gpio@40004200 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40004200 0x40>;
+			status = "disabled";
+			interrupts = <110 2>;
+			label = "GPIOI";
+		};
 
-			gpioi: gpio@40004200 {
-				compatible = "nuvoton,numaker-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x40004200 0x40>;
-				status = "disabled";
-                interrupts = <110 2>;
-				label = "GPIOI";
-			};
-
-			gpioj: gpio@40004240 {
-				compatible = "nuvoton,numaker-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x40004240 0x40>;
-				status = "disabled";
-                interrupts = <61 2>;
-				label = "GPIOJ";
-			};      
-            
-		}; 
+		gpioj: gpio@40004240 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40004240 0x40>;
+			status = "disabled";
+			interrupts = <61 2>;
+			label = "GPIOJ";
+		};
         
 	};
 };

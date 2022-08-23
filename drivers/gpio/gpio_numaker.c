@@ -41,8 +41,9 @@ static int gpio_numaker_configure(const struct device *dev,
 	const struct gpio_numaker_config *config = dev->config;
 	struct gpio_numaker_data *data = dev->data;
     GPIO_T *gpio_base = (GPIO_T*)config->reg;
-    uint32_t pinMask = (0x1f << NU_MFP_POS(pin));
-
+    uint32_t pinMfpMask = (0x1f << NU_MFP_POS(pin));
+    uint32_t pinMask = BIT(pin);  // mask for pin index --> (0x01 << pin)
+  
     ARG_UNUSED(data);
     
 	/* Check for an invalid pin number */
@@ -81,7 +82,7 @@ static int gpio_numaker_configure(const struct device *dev,
     uint32_t port_index = (config->reg - DT_REG_ADDR(DT_NODELABEL(gpioa)) ) / DT_REG_SIZE(DT_NODELABEL(gpioa));
     uint32_t *GPx_MFPx = ((uint32_t *) &SYS->GPA_MFP0) + port_index * 4 + (pin / 4);
     // E.g.: SYS->GPA_MFP0  = (SYS->GPA_MFP0 & (~SYS_GPA_MFP0_PA0MFP_Msk) ) | SYS_GPA_MFP0_PA0MFP_SC0_CD  ;
-    *GPx_MFPx  = (*GPx_MFPx & (~pinMask)) | 0x00;
+    *GPx_MFPx  = (*GPx_MFPx & (~pinMfpMask)) | 0x00;
     
 	/* Set pull control as pull-up, pull-down or pull-disable */
      
