@@ -920,7 +920,7 @@ static int fdc2x1x_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (cfg->sd_gpio.port->name) {
+	if (cfg->sd_gpio.port != NULL) {
 		if (fdc2x1x_init_sd_pin(dev) < 0) {
 			return -ENODEV;
 		}
