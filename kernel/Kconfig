@@ -180,6 +180,13 @@ config IDLE_STACK_SIZE
 	  logging (e.g. logging when the system goes to sleep), the idle thread
 	  may need more stack space than the default value.
 
+config ISR_SHARE_IRQ
+	bool "Allow IRQs to share multiple ISRs"
+	depends on ARCH_HAS_SW_ISR_TABLE_SHARED_IRQ
+	help
+	  Some peripherals share an IRQ and this option enables the system
+	  to call all ISRs attached to a pending IRQ.
+
 config ISR_STACK_SIZE
 	int "ISR and initialization stack size (in bytes)"
 	default 2048

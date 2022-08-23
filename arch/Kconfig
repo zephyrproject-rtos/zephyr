@@ -34,6 +34,7 @@ config ARM
 	# is really only necessary for Cortex-M with ARM MPU!
 	select GEN_PRIV_STACKS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_AARCH32_CORTEX_R || CPU_CORTEX_M || CPU_AARCH32_CORTEX_A
+	select ARCH_HAS_SW_ISR_TABLE_SHARED_IRQ
 	help
 	  ARM architecture
 
@@ -574,6 +575,12 @@ config ARCH_HAS_SUSPEND_TO_RAM
 #
 # Other architecture related options
 #
+
+config ARCH_HAS_SW_ISR_TABLE_SHARED_IRQ
+	bool
+	help
+	  This option controls if mulitple ISRs can share
+	  the same IRQ.
 
 config ARCH_HAS_THREAD_ABORT
 	bool

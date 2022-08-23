@@ -75,3 +75,8 @@ if(CONFIG_COVERAGE)
 endif()
 
 zephyr_sources_ifdef(CONFIG_SEMIHOST semihost.c)
+
+zephyr_linker_sources_ifdef(CONFIG_ISR_SHARE_IRQ
+  RODATA
+  shared_irq.ld
+)

@@ -131,11 +131,50 @@ source_assembly_header = """
 #endif
 """
 
+sh_isr_function = "__attribute__((section(\".shared_irq\"))) void shared_irq_"
+sh_isr_args = "const uintptr_t shared_irq_"
+sh_isr_args_section = " __attribute__((section(\".shared_irq_arg\")))"
+
 def get_symbol_from_addr(syms, addr):
     for key, value in syms.items():
         if addr == value:
             return key
     return None
+
+def write_shared_irq_prototypes(fp, nv, shi):
+    for i in range(nv):
+        if len(shi[i]) > 0:
+            fp.write(sh_isr_function + str(i) + "(const void *args);\n")
+
+def write_shared_irq_arg_forward_declare(fp, nv, shi):
+    for i in range(nv):
+        if len(shi[i]) > 0:
+            fp.write(sh_isr_args + str(i) + "_args[" +
+                str(len(shi[i]))  +"]" + sh_isr_args_section + ";\n")
+
+def write_shared_irq(fp, nv, shi):
+    for i in range(nv):
+        if len(shi[i]) > 0:
+            fp.write(sh_isr_function + str(i) +"(const void *args){\n")
+            idx = 0
+            for isr in shi[i]:
+                func = str(hex(isr[1]))
+                fp.write("\t((ISR)" + func + ")((const void *)((uintptr_t *)args)[" +
+                    str(idx) + "]);\n")
+                idx += 1
+            fp.write("}\n")
+
+def write_shared_irq_arg(fp, nv, shi):
+    for i in range(nv):
+        if len(shi[i]) > 0:
+            fp.write("const uintptr_t shared_irq_" + str(i) + "_args[" +
+                str(len(shi[i])) + "] " + sh_isr_args_section + " = {\n")
+            for isr in shi[i]:
+                if isr != (0,0):
+                    arg = str(hex(isr[0]))
+                    fp.write("\t" + arg + ",\n")
+            fp.write("};\n")
+
 
 def write_code_irq_vector_table(fp, vt, nv, syms):
     fp.write(source_assembly_header)
@@ -175,10 +214,14 @@ source_header = """
 typedef void (* ISR)(const void *);
 """
 
-def write_source_file(fp, vt, swt, intlist, syms):
+def write_source_file(fp, vt, swt, intlist, syms, shi):
     fp.write(source_header)
 
     nv = intlist["num_vectors"]
+
+    if "CONFIG_ISR_SHARE_IRQ" in syms:
+        write_shared_irq_prototypes(fp, nv, shi)
+        write_shared_irq_arg_forward_declare(fp, nv, shi)
 
     if vt:
         if "CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS" in syms:
@@ -211,8 +254,17 @@ def write_source_file(fp, vt, swt, intlist, syms):
             fp.write("\t/* Level 3 interrupts start here (offset: {}) */\n".
                      format(level3_offset))
 
-        fp.write("\t{{(const void *){0:#x}, (ISR){1}}},\n".format(param, func_as_string))
+        if "CONFIG_ISR_SHARE_IRQ" in syms:
+            if isinstance(param, int):
+                fp.write("\t{{(const void *){0:#x}, (ISR){1}}},\n".format(param, func_as_string))
+            else:
+                fp.write("\t{(const void *)" + param + ",(ISR)" + func_as_string +"},\n")
+        else:
+            fp.write("\t{{(const void *){0:#x}, (ISR){1}}},\n".format(param, func_as_string))
     fp.write("};\n")
+    if "CONFIG_ISR_SHARE_IRQ" in syms:
+        write_shared_irq_arg(fp, nv, shi)
+        write_shared_irq(fp, nv, shi)
 
 def get_symbols(obj):
     for section in obj.iter_sections():
@@ -265,6 +317,7 @@ def main():
     if nvec > pow(2, 15):
         raise ValueError('nvec is too large, check endianness.')
 
+    shared_handler = "((uintptr_t)&shared_irq_"
     swt_spurious_handler = "((uintptr_t)&z_irq_spurious)"
     vt_spurious_handler = "z_irq_spurious"
     vt_irq_handler = "_isr_wrapper"
@@ -283,6 +336,7 @@ def main():
         # Default to spurious interrupt handler. Configured interrupts
         # will replace these entries.
         swt = [(0, swt_spurious_handler) for i in range(nvec)]
+        shared_irq = [([]) for i in range(nvec)]
     else:
         if args.vector_table:
             vt = [vt_spurious_handler for i in range(nvec)]
@@ -298,7 +352,13 @@ def main():
             if not 0 <= irq - offset < len(vt):
                 error("IRQ %d (offset=%d) exceeds the maximum of %d" %
                       (irq - offset, offset, len(vt) - 1))
-            vt[irq - offset] = func
+            idx = irq - offset
+            if vt[idx] != vt_irq_handler:
+                error(f"multiple registrations at table_index {idx} for irq {irq} (0x{irq:x})"
+                    + f"\nExisting handler 0x{vt[idx]:x}, new handler 0x{func:x}"
+                    + "\nHas IRQ_DIRECT_CONNECT accidentally been invoked on the same irq multiple times?"
+                )
+            vt[idx] = func
         else:
             # Regular interrupt
             if not swt:
@@ -344,16 +404,33 @@ def main():
             if not 0 <= table_index < len(swt):
                 error("IRQ %d (offset=%d) exceeds the maximum of %d" %
                       (table_index, offset, len(swt) - 1))
-            if swt[table_index] != (0, swt_spurious_handler):
-                error(f"multiple registrations at table_index {table_index} for irq {irq} (0x{irq:x})"
-                      + f"\nExisting handler 0x{swt[table_index][1]:x}, new handler 0x{func:x}"
-                      + "\nHas IRQ_CONNECT or IRQ_DIRECT_CONNECT accidentally been invoked on the same irq multiple times?"
-                )
+            if "CONFIG_ISR_SHARE_IRQ" in syms:
+                if swt[table_index] != (0, swt_spurious_handler):
+                    # Check if this is the first shared isr being added
+                    if len(shared_irq[table_index]) == 0:
+                        shared_irq[table_index].append(swt[table_index])
+                        shared_irq[table_index].append((param, func))
+                        # Create shared isr handler
+                        swt[table_index] = ("shared_irq_" + str(table_index) + "_args",
+                            shared_handler + str(table_index) + ")")
+                    else:
+                        # Add an other ISR to the shared_irq list
+                        shared_irq[table_index].append((param, func))
+                else:
+                    # Add first ISR. This ISR will be moved to the shared_irq
+                    # list if additional ISRs are added at this table_index
+                    swt[table_index] = (param, func)
+            else:
+                if swt[table_index] != (0, swt_spurious_handler):
+                    error(f"multiple registrations at table_index {table_index} for irq {irq} (0x{irq:x})"
+                        + f"\nExisting handler 0x{swt[table_index][1]:x}, new handler 0x{func:x}"
+                        + "\nHas IRQ_CONNECT or IRQ_DIRECT_CONNECT accidentally been invoked on the same irq multiple times?"
+                    )
 
-            swt[table_index] = (param, func)
+                swt[table_index] = (param, func)
 
     with open(args.output_source, "w") as fp:
-        write_source_file(fp, vt, swt, intlist, syms)
+        write_source_file(fp, vt, swt, intlist, syms, shared_irq)
 
 if __name__ == "__main__":
     main()
