@@ -298,6 +298,15 @@ static int sys_clock_driver_init(const struct device *dev)
 	LL_SRDAMR_GRP1_EnableAutonomousClock(LL_SRDAMR_GRP1_PERIPH_LPTIM1AMEN);
 #endif
 
+	/* For tick accuracy, a specific tick to freq ratio is expected */
+	/* This check assumes LSI@32KHz or LSE@32768Hz */
+	if (((lptim_clk[1].bus == STM32_SRC_LSI) &&
+	      (CONFIG_SYS_CLOCK_TICKS_PER_SEC == 4000)) ||
+	    ((lptim_clk[1].bus == STM32_SRC_LSE) &&
+	      (CONFIG_SYS_CLOCK_TICKS_PER_SEC == 4096))) {
+		return -ENOTSUP;
+	}
+
 	/* Enable LPTIM clock source */
 	clock_control_configure(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[1],
 				NULL);
