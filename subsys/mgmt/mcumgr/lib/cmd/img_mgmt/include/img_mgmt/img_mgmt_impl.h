@@ -22,11 +22,13 @@ extern "C" {
 #endif
 
 /**
- * @brief Ensures the spare slot (slot 1) is fully erased.
+ * @brief Ensures the spare slot is fully erased.
+ *
+ * @param slot		The slot to erase.  In the typical use case, this is 1.
  *
  * @return 0 on success, MGMT_ERR_[...] code on failure.
  */
-int img_mgmt_impl_erase_slot(void);
+int img_mgmt_impl_erase_slot(int slot);
 
 /**
  * @brief Marks the image in the specified slot as pending. On the next reboot,
