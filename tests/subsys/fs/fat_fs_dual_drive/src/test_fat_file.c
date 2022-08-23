@@ -303,7 +303,7 @@ static int test_file_delete(const char *path)
 	return res;
 }
 
-void test_fat_file(void)
+ZTEST(fat_fs_dual_drive, test_fat_file)
 {
 	TC_PRINT("Testing file operations on %s\n", FATFS_MNTP);
 	zassert_true(test_file_open(TEST_FILE) == TC_PASS, NULL);
