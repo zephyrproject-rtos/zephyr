@@ -34,6 +34,8 @@ SECTIONS
 		*(.text.traptable)
 		*(.text)
 		*(.text.*)
+		*(.shared_irq)
+		*(.shared_irq_arg)
 		*(.stub)
 		*(.gnu.linkonce.t.*)
 	} GROUP_LINK_IN(REGION_TEXT)
