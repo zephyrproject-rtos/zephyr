@@ -49,10 +49,11 @@ void posix_exit(int exit_code)
 }
 
 /**
- * This is the actual main for the Linux process,
- * the Zephyr application main is renamed something else thru a define.
+ * Run all early native_posix initialization steps, including command
+ * line parsing and CPU start, until we are ready to let the HW models
+ * run via hwm_one_event()
  */
-int main(int argc, char *argv[])
+void posix_init(int argc, char *argv[])
 {
 	run_native_tasks(_NATIVE_PRE_BOOT_1_LEVEL);
 
@@ -67,8 +68,33 @@ int main(int argc, char *argv[])
 	posix_boot_cpu();
 
 	run_native_tasks(_NATIVE_FIRST_SLEEP_LEVEL);
+}
 
-	hwm_main_loop();
+/**
+ * Execute the simulator for at least the specified timeout, then
+ * return.  Note that this does not affect event timing, so the "next
+ * event" may be significantly after the request if the hardware has
+ * not been configured to e.g. send an interrupt when expected.
+ */
+void posix_exec_for(uint64_t us)
+{
+	uint64_t start = hwm_get_time();
+
+	do {
+		hwm_one_event();
+	} while (hwm_get_time() < (start + us));
+}
+
+/**
+ * This is the actual main for the Linux process,
+ * the Zephyr application main is renamed something else thru a define.
+ */
+int main(int argc, char *argv[])
+{
+	posix_init(argc, argv);
+	while (true) {
+		hwm_one_event();
+	}
 
 	/* This line should be unreachable */
 	return 1; /* LCOV_EXCL_LINE */
