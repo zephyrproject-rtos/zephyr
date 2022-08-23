@@ -48,10 +48,6 @@ if(CONFIG_ENTROPY_MCUX_CAAM)
   )
 endif()
 
-
-zephyr_linker_sources(
-  RWDATA nocache.ld)
-
 zephyr_linker_section_configure(
   SECTION .rom_start
   INPUT ".boot_hdr.ivt"
