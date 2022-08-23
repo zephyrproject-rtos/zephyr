@@ -7,14 +7,14 @@
 #include <zephyr/sys/byteorder.h>
 #include <string.h>
 
-#include <zcbor_common.h>
-#include <zcbor_encode.h>
-#include <zephyr/mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
+#include <zephyr/mgmt/mcumgr/buf.h>
+#include <zcbor_encode.h>
+#include <zcbor_common.h>
 
 static mgmt_on_evt_cb evt_cb;
-static struct mgmt_group *mgmt_group_list;
-static struct mgmt_group *mgmt_group_list_end;
+static sys_slist_t mgmt_group_list =
+	SYS_SLIST_STATIC_INIT(&mgmt_group_list);
 
 void *
 mgmt_streamer_alloc_rsp(struct mgmt_streamer *streamer, const void *req)
@@ -37,36 +37,14 @@ mgmt_streamer_free_buf(struct mgmt_streamer *streamer, void *buf)
 void
 mgmt_unregister_group(struct mgmt_group *group)
 {
-	struct mgmt_group *curr = mgmt_group_list, *prev = NULL;
-
-	if (!group) {
-		return;
-	}
-
-	if (curr == group) {
-		mgmt_group_list = curr->mg_next;
-		return;
-	}
-
-	while (curr && curr != group) {
-		prev = curr;
-		curr = curr->mg_next;
-	}
-
-	if (!prev || !curr) {
-		return;
-	}
-
-	prev->mg_next = curr->mg_next;
-	if (curr->mg_next == NULL) {
-		mgmt_group_list_end = curr;
-	}
+	(void)sys_slist_find_and_remove(&mgmt_group_list, &group->node);
 }
 
-static struct mgmt_group *
-mgmt_find_group(uint16_t group_id, uint16_t command_id)
+const struct mgmt_handler *
+mgmt_find_handler(uint16_t group_id, uint16_t command_id)
 {
-	struct mgmt_group *group;
+	struct mgmt_group *group = NULL;
+	sys_snode_t *snp, *sns;
 
 	/*
 	 * Find the group with the specified group id, if one exists
@@ -74,46 +52,35 @@ mgmt_find_group(uint16_t group_id, uint16_t command_id)
 	 * that is not NULL. If that is not set, look for the group
 	 * with a command id that is set
 	 */
-	for (group = mgmt_group_list; group != NULL; group = group->mg_next) {
-		if (group->mg_group_id == group_id) {
-			if (command_id >= group->mg_handlers_count) {
-				return NULL;
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&mgmt_group_list, snp, sns) {
+		struct mgmt_group *loop_group =
+			CONTAINER_OF(snp, struct mgmt_group, node);
+		if (loop_group->mg_group_id == group_id) {
+			if (command_id >= loop_group->mg_handlers_count) {
+				break;
 			}
 
-			if (!group->mg_handlers[command_id].mh_read &&
-				!group->mg_handlers[command_id].mh_write) {
+			if (!loop_group->mg_handlers[command_id].mh_read &&
+				!loop_group->mg_handlers[command_id].mh_write) {
 				continue;
 			}
 
+			group = loop_group;
 			break;
 		}
 	}
 
-	return group;
+	if (group == NULL) {
+		return NULL;
+	}
+
+	return &group->mg_handlers[command_id];
 }
 
 void
 mgmt_register_group(struct mgmt_group *group)
 {
-	if (mgmt_group_list_end == NULL) {
-		mgmt_group_list = group;
-	} else {
-		mgmt_group_list_end->mg_next = group;
-	}
-	mgmt_group_list_end = group;
-}
-
-const struct mgmt_handler *
-mgmt_find_handler(uint16_t group_id, uint16_t command_id)
-{
-	const struct mgmt_group *group;
-
-	group = mgmt_find_group(group_id, command_id);
-	if (!group) {
-		return NULL;
-	}
-
-	return &group->mg_handlers[command_id];
+	sys_slist_append(&mgmt_group_list, &group->node);
 }
 
 int
