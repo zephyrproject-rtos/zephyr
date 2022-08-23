@@ -44,13 +44,12 @@ zephyr_img_mgmt_slot_to_image(int slot)
 	}
 	return 0;
 }
+
 /**
  * Determines if the specified area of flash is completely unwritten.
  */
-static int
-zephyr_img_mgmt_flash_check_empty(uint8_t fa_id, bool *out_empty)
+static int img_mgmt_flash_check_empty_inner(const struct flash_area *fa, bool *out_empty)
 {
-	const struct flash_area *fa;
 	uint32_t data[16];
 	off_t addr;
 	off_t end;
@@ -59,11 +58,6 @@ zephyr_img_mgmt_flash_check_empty(uint8_t fa_id, bool *out_empty)
 	int i;
 	uint8_t erased_val;
 	uint32_t erased_val_32;
-
-	rc = flash_area_open(fa_id, &fa);
-	if (rc != 0) {
-		return MGMT_ERR_EUNKNOWN;
-	}
 
 	assert(fa->fa_size % 4 == 0);
 
@@ -80,22 +74,37 @@ zephyr_img_mgmt_flash_check_empty(uint8_t fa_id, bool *out_empty)
 
 		rc = flash_area_read(fa, addr, data, bytes_to_read);
 		if (rc != 0) {
-			flash_area_close(fa);
 			return MGMT_ERR_EUNKNOWN;
 		}
 
 		for (i = 0; i < bytes_to_read / 4; i++) {
 			if (data[i] != erased_val_32) {
 				*out_empty = false;
-				flash_area_close(fa);
 				return 0;
 			}
 		}
 	}
 
 	*out_empty = true;
-	flash_area_close(fa);
+
 	return 0;
+}
+
+static int img_mgmt_flash_check_empty(uint8_t fa_id, bool *out_empty)
+{
+	const struct flash_area *fa;
+	int rc;
+
+	rc = flash_area_open(fa_id, &fa);
+	if (rc != 0) {
+		return MGMT_ERR_EUNKNOWN;
+	}
+
+	rc = img_mgmt_flash_check_empty_inner(fa, out_empty);
+
+	flash_area_close(fa);
+
+	return rc;
 }
 
 /**
@@ -236,29 +245,32 @@ img_mgmt_vercmp(const struct image_version *a, const struct image_version *b)
 }
 
 int
-img_mgmt_impl_erase_slot(void)
+img_mgmt_impl_erase_slot(int slot)
 {
+	const struct flash_area *fa;
+	int rc;
+	int area_id = zephyr_img_mgmt_flash_area_id(slot);
 	bool empty;
-	int rc, best_id;
 
-	/* Select any non-active, unused slot */
-	best_id = img_mgmt_get_unused_slot_area_id(-1);
-	if (best_id < 0) {
-		return MGMT_ERR_ENOENT;
+	if (area_id < 0) {
+		return MGMT_ERR_EUNKNOWN;
 	}
-	rc = zephyr_img_mgmt_flash_check_empty(best_id, &empty);
+
+	rc = flash_area_open(area_id, &fa);
+
 	if (rc != 0) {
 		return MGMT_ERR_EUNKNOWN;
 	}
 
-	if (!empty) {
-		rc = boot_erase_img_bank(best_id);
-		if (rc != 0) {
-			return MGMT_ERR_EUNKNOWN;
-		}
+	rc = img_mgmt_flash_check_empty_inner(fa, &empty);
+
+	if (!empty && rc == 0) {
+		rc = flash_area_erase(fa, 0, fa->fa_size);
 	}
 
-	return 0;
+	flash_area_close(fa);
+
+	return (rc == 0 ? MGMT_ERR_EOK : MGMT_ERR_EUNKNOWN);
 }
 
 int
@@ -598,7 +610,7 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 #if CONFIG_IMG_ERASE_PROGRESSIVELY
 		(void) empty;
 #else
-		rc = zephyr_img_mgmt_flash_check_empty(action->area_id, &empty);
+		rc = img_mgmt_flash_check_empty(action->area_id, &empty);
 		if (rc) {
 			return MGMT_ERR_EUNKNOWN;
 		}
