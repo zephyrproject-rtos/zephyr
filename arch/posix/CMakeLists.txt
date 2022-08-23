@@ -65,6 +65,10 @@ if(CONFIG_ASAN_RECOVER)
   zephyr_compile_options(-fsanitize-recover=all)
 endif()
 
+if(CONFIG_ARCH_POSIX_LIBFUZZER)
+  list(APPEND LLVM_SANITIZERS "fuzzer")
+endif()
+
 list(JOIN LLVM_SANITIZERS "," LLVM_SANITIZERS_ARG)
 if(NOT ${LLVM_SANITIZERS_ARG} STREQUAL "")
   set(LLVM_SANITIZERS_ARG "-fsanitize=${LLVM_SANITIZERS_ARG}")
