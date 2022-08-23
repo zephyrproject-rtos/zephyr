@@ -1025,27 +1025,18 @@ def parse_args():
     parser.add_argument('-c', '--commits', default=default_range,
                         help=f'''Commit range in the form: a..[b], default is
                         {default_range}''')
-    parser.add_argument('-r', '--repo', default=None,
-                        help="GitHub repository")
-    parser.add_argument('-p', '--pull-request', default=0, type=int,
-                        help="Pull request number")
     parser.add_argument('-o', '--output', default="compliance.xml",
                         help='''Name of outfile in JUnit format,
                         default is ./compliance.xml''')
-
     parser.add_argument('-l', '--list', action="store_true",
                         help="List all checks and exit")
-
     parser.add_argument("-v", "--loglevel", choices=['DEBUG', 'INFO', 'WARNING',
                                                      'ERROR', 'CRITICAL'],
                         help="python logging level")
-
     parser.add_argument('-m', '--module', action="append", default=[],
                         help="Checks to run. All checks by default.")
-
     parser.add_argument('-e', '--exclude-module', action="append", default=[],
                         help="Do not run the specified checks")
-
     parser.add_argument('-j', '--previous-run', default=None,
                         help='''Pre-load JUnit results in XML format
                         from a previous run and combine with new results.''')
