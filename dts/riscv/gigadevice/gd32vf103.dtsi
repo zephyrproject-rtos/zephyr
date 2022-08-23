@@ -21,7 +21,7 @@
 		cpu: cpu@0 {
 			clock-frequency = <108000000>;
 			mcause-exception-mask = <0x7ff>;
-			compatible = "nuclei,bumblebee", "riscv";
+			compatible = "nuclei,bumblebee";
 			device_type = "cpu";
 			reg = <0>;
 		};
