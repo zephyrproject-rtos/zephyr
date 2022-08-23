@@ -315,6 +315,19 @@ static int sys_clock_driver_init(const struct device *dev)
 	clock_control_get_rate(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[1],
 			       &lptim_clock_freq);
 
+#if defined(CONFIG_SOC_SERIES_STM32L0X)
+	/* Driver only supports freqs up to 32768Hz. On L0, LSI freq is 37KHz,
+	 * which will overflow the LPTIM counter.
+	 * Previous LPTIM configuration using device tree was doing forcing this
+	 * with a Kconfig default. Impact is that time is 1.13 faster than reality.
+	 * Following lines reproduce this behavior in order not to change behavior.
+	 * This issue will be fixed by implementation LPTIM prescaler support.
+	 */
+	if (lptim_clk[1].bus == STM32_SRC_LSI) {
+		lptim_clock_freq = KHZ(32);
+	}
+#endif
+
 	/* Set LPTIM time base based on clck source freq
 	 * Time base = (2s * freq) - 1
 	 */
