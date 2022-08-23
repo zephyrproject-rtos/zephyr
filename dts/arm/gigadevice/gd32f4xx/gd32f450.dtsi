@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <freq.h>
 #include <gigadevice/gd32f4xx/gd32f4xx.dtsi>
 
 / {
@@ -38,4 +39,8 @@
 			#size-cells = <0>;
 		};
 	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(200)>;
 };
