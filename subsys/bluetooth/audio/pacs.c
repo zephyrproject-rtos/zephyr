@@ -307,25 +307,25 @@ static ssize_t snk_loc_write(struct bt_conn *conn,
 	}
 
 	if (len != sizeof(location)) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	if (pacs_cb == NULL ||
 	    pacs_cb->write_location == NULL) {
 		BT_WARN("No callback for write_location");
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	location = (enum bt_audio_location)sys_get_le32(data);
 	if (location > BT_AUDIO_LOCATION_MASK || location == 0) {
 		BT_DBG("Invalid location value: 0x%08X", location);
-		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	err = pacs_cb->write_location(conn, BT_AUDIO_DIR_SINK, location);
 	if (err != 0) {
 		BT_DBG("write_location returned %d", err);
-		return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	return len;
@@ -403,25 +403,25 @@ static ssize_t src_loc_write(struct bt_conn *conn,
 	}
 
 	if (len != sizeof(location)) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	if (pacs_cb == NULL ||
 	    pacs_cb->write_location == NULL) {
 		BT_WARN("No callback for write_location");
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	location = (enum bt_audio_location)sys_get_le32(data);
 	if (location > BT_AUDIO_LOCATION_MASK || location == 0) {
 		BT_DBG("Invalid location value: 0x%08X", location);
-		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	err = pacs_cb->write_location(conn, BT_AUDIO_DIR_SOURCE, location);
 	if (err != 0) {
 		BT_DBG("write_location returned %d", err);
-		return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	return len;
