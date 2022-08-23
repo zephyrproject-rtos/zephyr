@@ -283,6 +283,8 @@ uint32_t sys_clock_cycle_get_32(void)
 
 static int sys_clock_driver_init(const struct device *dev)
 {
+	int err;
+
 	ARG_UNUSED(dev);
 
 	if (!device_is_ready(clk_ctrl)) {
@@ -290,7 +292,10 @@ static int sys_clock_driver_init(const struct device *dev)
 	}
 
 	/* Enable LPTIM bus clock */
-	clock_control_on(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[0]);
+	err = clock_control_on(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[0]);
+	if (err < 0) {
+		return -EIO;
+	}
 
 #if defined(LL_APB1_GRP1_PERIPH_LPTIM1)
 	LL_APB1_GRP1_ReleaseReset(LL_APB1_GRP1_PERIPH_LPTIM1);
@@ -308,13 +313,20 @@ static int sys_clock_driver_init(const struct device *dev)
 	}
 
 	/* Enable LPTIM clock source */
-	clock_control_configure(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[1],
-				NULL);
+	err = clock_control_configure(clk_ctrl,
+				      (clock_control_subsys_t *) &lptim_clk[1],
+				      NULL);
+	if (err < 0) {
+		return -EIO;
+	}
 
 	/* Get LPTIM clock freq */
-	clock_control_get_rate(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[1],
+	err = clock_control_get_rate(clk_ctrl, (clock_control_subsys_t *) &lptim_clk[1],
 			       &lptim_clock_freq);
 
+	if (err < 0) {
+		return -EIO;
+	}
 #if defined(CONFIG_SOC_SERIES_STM32L0X)
 	/* Driver only supports freqs up to 32768Hz. On L0, LSI freq is 37KHz,
 	 * which will overflow the LPTIM counter.
