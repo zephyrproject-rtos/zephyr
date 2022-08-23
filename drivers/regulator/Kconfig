@@ -9,6 +9,14 @@ menuconfig REGULATOR
 
 if REGULATOR
 
+config REGULATOR_SHELL
+	bool "Regulator shell"
+	default y
+	depends on SHELL
+	help
+	  Enable regulator shell framework, for interacting with regulators via
+	  the shell interface
+
 module = REGULATOR
 module-str = regulator
 source "subsys/logging/Kconfig.template.log_config"
