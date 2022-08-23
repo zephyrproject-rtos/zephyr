@@ -204,6 +204,7 @@ config BT_CTLR_ADV_AUX_PDU_BACK2BACK
 	bool "Back-to-back transmission of extended advertising trains"
 	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
 	select BT_CTLR_ADV_AUX_PDU_LINK
+	default y if BT_CTLR_ADV_DATA_LEN_MAX > 191
 	help
 	  Enables transmission of AUX_CHAIN_IND in extended advertising train by
 	  sending each AUX_CHAIN_IND one after another back-to-back.
@@ -212,6 +213,7 @@ config BT_CTLR_ADV_AUX_PDU_BACK2BACK_AFS
 	int "AUX Frame Space for back-to-back transmission of extended advertising trains"
 	depends on BT_CTLR_ADV_AUX_PDU_BACK2BACK
 	range 300 1000
+	default 300
 	help
 	  Specific AUX Frame Space to be used for back-to-back transmission of
 	  extended advertising trains. Time specified in microseconds.
