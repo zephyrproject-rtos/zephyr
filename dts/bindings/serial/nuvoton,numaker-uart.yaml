@@ -14,5 +14,13 @@ properties:
     interrupts:
       required: true
 
+    reset:
+      required: true
+      type: int
+
+    clk_module:
+      required: true
+      type: int
+      
     pinctrl-0:
       required: true

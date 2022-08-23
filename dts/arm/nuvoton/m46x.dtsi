@@ -7,6 +7,10 @@
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include "m46x/sys.h"
+#include "m46x/sys_reg.h"
+#include "m46x/clk.h"
+#include "m46x/clk_reg.h"
 
 / {
 	cpus {
@@ -45,6 +49,8 @@
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40070000 0x1000>;
 			interrupts = <36 0>;
+            reset = <UART0_RST>;
+            clk_module = <UART0_MODULE>;
 			status = "disabled";
 			label = "UART_0";
 		};
@@ -53,6 +59,8 @@
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40071000 0x1000>;
 			interrupts = <37 0>;
+            reset = <UART1_RST>;
+            clk_module = <UART1_MODULE>;
 			status = "disabled";
 			label = "UART_1";
 		};
@@ -61,6 +69,8 @@
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40072000 0x1000>;
 			interrupts = <48 0>;
+            reset = <UART2_RST>;
+            clk_module = <UART2_MODULE>;
 			status = "disabled";
 			label = "UART_2";
 		};
@@ -69,6 +79,8 @@
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40073000 0x1000>;
 			interrupts = <49 0>;
+            reset = <UART3_RST>;
+            clk_module = <UART3_MODULE>;
 			status = "disabled";
 			label = "UART_3";
 		};
@@ -77,6 +89,8 @@
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40074000 0x1000>;
 			interrupts = <74 0>;
+            reset = <UART4_RST>;
+            clk_module = <UART4_MODULE>;
 			status = "disabled";
 			label = "UART_4";
 		};
@@ -85,6 +99,8 @@
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40075000 0x1000>;
 			interrupts = <75 0>;
+            reset = <UART5_RST>;
+            clk_module = <UART5_MODULE>;
 			status = "disabled";
 			label = "UART_5";
 		};
@@ -93,6 +109,8 @@
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40076000 0x1000>;
 			interrupts = <102 0>;
+            reset = <UART6_RST>;
+            clk_module = <UART6_MODULE>;
 			status = "disabled";
 			label = "UART_6";
 		};
@@ -101,6 +119,8 @@
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40077000 0x1000>;
 			interrupts = <103 0>;
+            reset = <UART7_RST>;
+            clk_module = <UART7_MODULE>;
 			status = "disabled";
 			label = "UART_7";
 		};
@@ -109,6 +129,8 @@
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40078000 0x1000>;
 			interrupts = <99 0>;
+            reset = <UART8_RST>;
+            clk_module = <UART8_MODULE>;
 			status = "disabled";
 			label = "UART_8";
 		};
@@ -117,6 +139,8 @@
 			compatible = "nuvoton,numaker-uart";
 			reg = <0x40079000 0x1000>;
 			interrupts = <100 0>;
+            reset = <UART9_RST>;
+            clk_module = <UART9_MODULE>;
 			status = "disabled";
 			label = "UART_9";
 		};        

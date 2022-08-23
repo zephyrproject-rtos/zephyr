@@ -339,8 +339,8 @@ static const struct uart_driver_api uart_numaker_driver_api = {
 									\
 static const struct uart_numaker_config uart_numaker_cfg_##inst = {	\
 	.uart = (UART_T *)DT_INST_REG_ADDR(inst),			\
-	.id_rst = UART##inst##_RST,					\
-	.id_clk = UART##inst##_MODULE,					\
+	.id_rst = DT_INST_PROP(inst, reset),					\
+	.id_clk = DT_INST_PROP(inst, clk_module),					\
     PINCTRL_INIT(inst)							\
 };									\
 									\
