@@ -160,7 +160,7 @@ static int test_rmdir(const char *dir)
 	return res;
 }
 
-void test_fat_dir(void)
+ZTEST(fat_fs_dual_drive, test_fat_dir)
 {
 	TC_PRINT("\nTesting directory operations on %s\n", FATFS_MNTP);
 	zassert_true(test_mkdir(TEST_DIR, TEST_DIR_FILE) == TC_PASS, NULL);
