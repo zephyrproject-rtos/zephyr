@@ -1018,16 +1018,17 @@ def init_logs(cli_arg):
 
 
 def parse_args():
+
+    default_range = 'HEAD~1..HEAD'
     parser = argparse.ArgumentParser(
         description="Check for coding style and documentation warnings.")
-    parser.add_argument('-c', '--commits', default="HEAD~1..",
-                        help='''Commit range in the form: a..[b], default is
-                        HEAD~1..HEAD''')
+    parser.add_argument('-c', '--commits', default=default_range,
+                        help=f'''Commit range in the form: a..[b], default is
+                        {default_range}''')
     parser.add_argument('-r', '--repo', default=None,
                         help="GitHub repository")
     parser.add_argument('-p', '--pull-request', default=0, type=int,
                         help="Pull request number")
-    parser.add_argument('-S', '--sha', default=None, help="Commit SHA")
     parser.add_argument('-o', '--output', default="compliance.xml",
                         help='''Name of outfile in JUnit format,
                         default is ./compliance.xml''')
