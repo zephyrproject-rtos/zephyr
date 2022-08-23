@@ -58,6 +58,7 @@ Nucleo F412ZG provides the following hardware components:
 - USB 2.0 OTG FS
 - DMA Controller
 - CRC calculation unit
+- CAN internal controller
 
 More information about STM32F412ZG can be found here:
 
@@ -89,6 +90,10 @@ The Zephyr nucleo_412zg board configuration supports the following hardware feat
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| CAN       | on-chip    | can                                 |
++-----------+------------+-------------------------------------+
+
+.. note:: CAN feature requires CAN transceiver
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -141,6 +146,8 @@ Default Zephyr Peripheral Mapping:
 - LD3 : PB14
 - USB DM : PA11
 - USB DP : PA12
+- CAN TX : PD0
+- CAN RX : PD1
 
 System Clock
 ------------
