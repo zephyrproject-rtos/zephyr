@@ -1058,6 +1058,8 @@ def _main(args):
 
     init_logs(args.loglevel)
 
+    logger.info(f'Running tests on commit range {COMMIT_RANGE}')
+
     if args.list:
         for testcase in ComplianceTest.__subclasses__():
             print(testcase.name)
