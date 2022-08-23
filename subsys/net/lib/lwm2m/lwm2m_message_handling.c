@@ -618,7 +618,7 @@ static int select_writer(struct lwm2m_output_context *out, uint16_t accept)
 
 	default:
 		LOG_WRN("Unknown content type %u", accept);
-		return -ENOMSG;
+		return -ECANCELED;
 	}
 
 	return 0;
@@ -2100,6 +2100,8 @@ error:
 		msg->code = COAP_RESPONSE_CODE_UNSUPPORTED_CONTENT_FORMAT;
 	} else if (r == -EACCES) {
 		msg->code = COAP_RESPONSE_CODE_UNAUTHORIZED;
+	} else if (r == -ECANCELED) {
+		msg->code = COAP_RESPONSE_CODE_NOT_ACCEPTABLE;
 	} else {
 		/* Failed to handle the request */
 		msg->code = COAP_RESPONSE_CODE_INTERNAL_ERROR;
