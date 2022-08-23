@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: GD32 flash controller
+
+compatible: "gd,gd32-flash-controller"
+
+include: flash-controller.yaml
