@@ -34,6 +34,25 @@
 #define B91_ACK_REQUEST                     (1 << 5)
 #define B91_DSN_OFFSET                      (2)
 #define B91_FCS_LENGTH                      (2)
+#define B91_FRAME_TYPE_CMD                  (3)
+#define B91_DEST_ADDR_TYPE_NA               (0x00)
+#define B91_SRC_ADDR_TYPE_MASK              (0xc0)
+#define B91_SRC_ADDR_TYPE_SHORT             (0x80)
+#define B91_SRC_ADDR_TYPE_IEEE              (0xc0)
+#define B91_SRC_ADDR_TYPE_NA                (0x00)
+#define B91_PANID_COMPRESSION_MASK          (0x40)
+#define B91_PANID_COMPRESSION_ON            (0x40)
+#define B91_PANID_COMPRESSION_OFF           (0x00)
+#define B91_SECURITY_EABLE_MASK             (0x08)
+#define B91_SECURITY_EABLE_ON               (0x08)
+#define B91_SECURITY_EABLE_OFF              (0x00)
+#define B91_KEY_ID_MODE_MASK                (0x18)
+#define B91_KEY_ID_MODE_0                   (0x00)
+#define B91_KEY_ID_MODE_1                   (0x08)
+#define B91_KEY_ID_MODE_2                   (0x10)
+#define B91_KEY_ID_MODE_3                   (0x18)
+#define B91_CMD_ID_DATA_REQ                 (4)
+#define B91_FP_BIT                          (1 << 4)
 
 /* Generic */
 #define B91_TRX_LENGTH                      (256)
@@ -88,6 +107,18 @@ static const uint8_t b91_tx_pwr_lt[] = {
 	RF_POWER_P9p11dBm,      /*   9.1 dBm:   9 */
 };
 
+#ifdef CONFIG_OPENTHREAD_FTD
+/* radio source match table type */
+struct b91_src_match_table {
+	bool enabled;
+	struct {
+		bool valid;
+		bool ext;
+		uint8_t addr[MAX(B91_IEEE_ADDRESS_SIZE, B91_SHORT_ADDRESS_SIZE)];
+	} item[CONFIG_OPENTHREAD_MAX_CHILDREN];
+};
+#endif /* CONFIG_OPENTHREAD_FTD */
+
 /* data structure */
 struct b91_data {
 	uint8_t mac_addr[B91_IEEE_ADDRESS_SIZE];
@@ -104,6 +135,7 @@ struct b91_data {
 	uint16_t current_channel;
 	int16_t current_dbm;
 	volatile bool ack_sending;
+	struct b91_src_match_table *src_match_table;
 };
 
 #endif

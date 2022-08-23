@@ -31,9 +31,174 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "ieee802154_b91.h"
 
 
-/* B91 data structure */
-static struct  b91_data data;
+#ifdef CONFIG_OPENTHREAD_FTD
+/* B91 radio source match table structure */
+static struct b91_src_match_table src_match_table;
+#endif /* CONFIG_OPENTHREAD_FTD */
 
+/* B91 data structure */
+static struct  b91_data data = {
+#ifdef CONFIG_OPENTHREAD_FTD
+	.src_match_table = &src_match_table
+#endif /* CONFIG_OPENTHREAD_FTD */
+};
+
+#ifdef CONFIG_OPENTHREAD_FTD
+
+/* clean radio search match table */
+static void b91_src_match_table_clean(struct b91_src_match_table *table)
+{
+	memset(table, 0, sizeof(struct b91_src_match_table));
+}
+
+/* Search in radio search match table */
+static bool b91_src_match_table_search(
+	const struct b91_src_match_table *table, const uint8_t *addr, bool ext)
+{
+	bool result = false;
+
+	for (size_t i = 0; i < CONFIG_OPENTHREAD_MAX_CHILDREN; i++) {
+		if (table->item[i].valid && table->item[i].ext == ext &&
+			!memcmp(table->item[i].addr, addr,
+				ext ? B91_IEEE_ADDRESS_SIZE : B91_SHORT_ADDRESS_SIZE)) {
+			result = true;
+			break;
+		}
+	}
+
+	return result;
+}
+
+/* Add to radio search match table */
+static void b91_src_match_table_add(
+	struct b91_src_match_table *table, const uint8_t *addr, bool ext)
+{
+	if (!b91_src_match_table_search(table, addr, ext)) {
+		for (size_t i = 0; i < CONFIG_OPENTHREAD_MAX_CHILDREN; i++) {
+			if (!table->item[i].valid) {
+				table->item[i].valid = true;
+				table->item[i].ext = ext;
+				memcpy(table->item[i].addr, addr,
+					ext ? B91_IEEE_ADDRESS_SIZE : B91_SHORT_ADDRESS_SIZE);
+				break;
+			}
+		}
+	}
+}
+
+/* Remove from radio search match table */
+static void b91_src_match_table_remove(
+	struct b91_src_match_table *table, const uint8_t *addr, bool ext)
+{
+	for (size_t i = 0; i < CONFIG_OPENTHREAD_MAX_CHILDREN; i++) {
+		if (table->item[i].valid && table->item[i].ext == ext &&
+			!memcmp(table->item[i].addr, addr,
+				ext ? B91_IEEE_ADDRESS_SIZE : B91_SHORT_ADDRESS_SIZE)) {
+			table->item[i].valid = false;
+			table->item[i].ext = false;
+			memset(table->item[i].addr, 0,
+				ext ? B91_IEEE_ADDRESS_SIZE : B91_SHORT_ADDRESS_SIZE);
+			break;
+		}
+	}
+}
+
+/* Remove all entries from radio search match table */
+static void b91_src_match_table_remove_group(struct b91_src_match_table *table, bool ext)
+{
+	for (size_t i = 0; i < CONFIG_OPENTHREAD_MAX_CHILDREN; i++) {
+		if (table->item[i].valid && table->item[i].ext == ext) {
+			table->item[i].valid = false;
+			table->item[i].ext = false;
+			memset(table->item[i].addr, 0,
+				ext ? B91_IEEE_ADDRESS_SIZE : B91_SHORT_ADDRESS_SIZE);
+		}
+	}
+}
+
+/* Check if received buffer contains data request */
+static bool b91_is_data_request(const uint8_t *buf, uint8_t size,
+	uint8_t *sn, const uint8_t **addr, bool *ext)
+{
+	bool result = false;
+
+	do {
+		uint8_t pos = 0;
+
+		if (!buf || size < 3) { /* FCB[2], SN[1] */
+			break;
+		}
+
+		*sn = buf[B91_DSN_OFFSET];
+		pos += 3; /* FCB[2], SN[1] */
+
+		if ((buf[0] & B91_FRAME_TYPE_MASK) != B91_FRAME_TYPE_CMD) {
+			break;
+		}
+
+		if ((buf[1] & B91_DEST_ADDR_TYPE_MASK) == B91_DEST_ADDR_TYPE_NA) {
+			/* no destination data */
+		} else if ((buf[1] & B91_DEST_ADDR_TYPE_MASK) == B91_DEST_ADDR_TYPE_SHORT) {
+			pos += 4; /* PANID[2], ADDR[2] */
+		} else if ((buf[1] & B91_DEST_ADDR_TYPE_MASK) == B91_DEST_ADDR_TYPE_IEEE) {
+			pos += 10; /* PANID[2], ADDR[8] */
+		} else {
+			break;
+		}
+
+		if ((buf[1] & B91_SRC_ADDR_TYPE_MASK) == B91_SRC_ADDR_TYPE_NA) {
+			/* no source data */
+			*addr = NULL;
+		} else if ((buf[1] & B91_SRC_ADDR_TYPE_MASK) == B91_SRC_ADDR_TYPE_SHORT) {
+			if ((buf[0] & B91_PANID_COMPRESSION_MASK) == B91_PANID_COMPRESSION_OFF) {
+				pos += 2; /* PANID[2] */
+			}
+			*addr = &buf[pos];
+			*ext = false;
+			pos += 2; /* ADDR[2] */
+		} else if ((buf[1] & B91_SRC_ADDR_TYPE_MASK) == B91_SRC_ADDR_TYPE_IEEE) {
+			if ((buf[0] & B91_PANID_COMPRESSION_MASK) == B91_PANID_COMPRESSION_OFF) {
+				pos += 2; /* PANID[2] */
+			}
+			*addr = &buf[pos];
+			*ext = true;
+			pos += 8; /* ADDR[8] */
+		} else {
+			break;
+		}
+
+		if (pos >= size) {
+			break;
+		}
+
+		if ((buf[0] & B91_SECURITY_EABLE_MASK) == B91_SECURITY_EABLE_ON) {
+			if ((buf[pos] & B91_KEY_ID_MODE_MASK) == B91_KEY_ID_MODE_0) {
+				pos += 5; /* SC[1], FC[4] */
+			} else if ((buf[pos] & B91_KEY_ID_MODE_MASK) == B91_KEY_ID_MODE_1) {
+				pos += 6; /* SC[1], FC[4], KEYID[1] */
+			} else if ((buf[pos] & B91_KEY_ID_MODE_MASK) == B91_KEY_ID_MODE_2) {
+				pos += 10; /* SC[1], FC[4], KEY[4], KEYID[1] */
+			} else if ((buf[pos] & B91_KEY_ID_MODE_MASK) == B91_KEY_ID_MODE_3) {
+				pos += 14; /* SC[1], FC[4], KEY[8], KEYID[1] */
+			}
+
+			if (pos >= size) {
+				break;
+			}
+		}
+
+		if (buf[pos] != B91_CMD_ID_DATA_REQ) {
+			break;
+		}
+
+		result = true;
+
+	} while (0);
+
+	return result;
+}
+
+#endif /* CONFIG_OPENTHREAD_FTD */
 
 /* Disable power management by device */
 static void b91_disable_pm(const struct device *dev)
@@ -258,12 +423,15 @@ out:
 }
 
 /* Send acknowledge packet */
-static void b91_send_ack(uint8_t seq_num)
+static void b91_send_ack(uint8_t seq_num, bool fp_bit)
 {
 	uint8_t ack_buf[] = { B91_ACK_TYPE, 0, seq_num };
 
 	data.ack_sending = true;
 	k_sem_reset(&data.tx_wait);
+	if (fp_bit) {
+		ack_buf[0] |= B91_FP_BIT;
+	}
 	b91_set_tx_payload(ack_buf, sizeof(ack_buf));
 	rf_set_txmode();
 	delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
@@ -316,9 +484,33 @@ static void b91_rf_rx_isr(void)
 			goto exit;
 		}
 
+#ifdef CONFIG_OPENTHREAD_FTD
+		bool frame_pending_bit = false;
+#endif /* CONFIG_OPENTHREAD_FTD */
+
 		/* send ack if requested */
 		if (payload[B91_FRAME_TYPE_OFFSET] & B91_ACK_REQUEST) {
-			b91_send_ack(payload[B91_DSN_OFFSET]);
+#ifdef CONFIG_OPENTHREAD_FTD
+
+			uint8_t m_sn;
+			const uint8_t *m_addr;
+			bool m_ext;
+
+			if (b91_is_data_request(payload, length, &m_sn, &m_addr, &m_ext)) {
+				if (m_addr) {
+					if (!data.src_match_table->enabled ||
+						b91_src_match_table_search(data.src_match_table,
+							m_addr, m_ext)) {
+						frame_pending_bit = true;
+					}
+				}
+				b91_send_ack(m_sn, frame_pending_bit);
+			} else {
+				b91_send_ack(payload[B91_DSN_OFFSET], false);
+			}
+#else
+			b91_send_ack(payload[B91_DSN_OFFSET], false);
+#endif /* CONFIG_OPENTHREAD_FTD */
 		}
 
 		/* get packet pointer from NET stack */
@@ -334,7 +526,10 @@ static void b91_rf_rx_isr(void)
 			net_pkt_unref(pkt);
 			goto exit;
 		}
-
+#ifdef CONFIG_OPENTHREAD_FTD
+		/* frame pending bit */
+		net_pkt_set_ieee802154_ack_fpb(pkt, frame_pending_bit);
+#endif /* CONFIG_OPENTHREAD_FTD */
 		/* update RSSI and LQI parameters */
 		b91_update_rssi_and_lqi(pkt);
 
@@ -407,6 +602,9 @@ static int b91_init(const struct device *dev)
 	data.ack_sending = false;
 	data.current_channel = 0xFFFF;
 	data.current_dbm = 0x7FFF;
+#ifdef CONFIG_OPENTHREAD_FTD
+	b91_src_match_table_clean(b91->src_match_table);
+#endif /* CONFIG_OPENTHREAD_FTD */
 
 	return 0;
 }
@@ -617,13 +815,48 @@ static int b91_configure(const struct device *dev,
 			 enum ieee802154_config_type type,
 			 const struct ieee802154_config *config)
 {
+#ifdef CONFIG_OPENTHREAD_FTD
+	struct b91_data *b91 = dev->data;
+#else
 	ARG_UNUSED(dev);
-	ARG_UNUSED(type);
 	ARG_UNUSED(config);
+#endif /* CONFIG_OPENTHREAD_FTD */
+	int result = 0;
 
-	/* configure not supported */
+	switch (type) {
+#ifdef CONFIG_OPENTHREAD_FTD
+	case IEEE802154_CONFIG_AUTO_ACK_FPB:
+		if (config->auto_ack_fpb.mode == IEEE802154_FPB_ADDR_MATCH_THREAD) {
+			b91->src_match_table->enabled = config->auto_ack_fpb.enabled;
+		} else {
+			result = -ENOTSUP;
+		}
+		break;
+	case IEEE802154_CONFIG_ACK_FPB:
+		riscv_plic_irq_disable(DT_INST_IRQN(0));
+		if (config->ack_fpb.addr) {
+			if (config->ack_fpb.enabled) {
+				b91_src_match_table_add(b91->src_match_table,
+					config->ack_fpb.addr, config->ack_fpb.extended);
+			} else {
+				b91_src_match_table_remove(b91->src_match_table,
+					config->ack_fpb.addr, config->ack_fpb.extended);
+			}
+		} else if (!config->ack_fpb.enabled) {
+			b91_src_match_table_remove_group(b91->src_match_table,
+				config->ack_fpb.extended);
+		} else {
+			result = -ENOTSUP;
+		}
+		riscv_plic_irq_enable(DT_INST_IRQN(0));
+		break;
+#endif /* CONFIG_OPENTHREAD_FTD */
+	default:
+		result = -ENOTSUP;
+		break;
+	}
 
-	return -ENOTSUP;
+	return result;
 }
 
 /* IEEE802154 driver APIs structure */
