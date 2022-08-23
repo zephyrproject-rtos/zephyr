@@ -106,6 +106,8 @@ extern "C" {
 #define PROCESSOR_NAME "em4_fpuda"
 #elif defined(CONFIG_CPU_HS3X)
 #define PROCESSOR_NAME "archs"
+#elif defined(CONFIG_CPU_HS4X)
+#define PROCESSOR_NAME "hs4x"
 #elif defined(CONFIG_CPU_HS5X)
 #define PROCESSOR_NAME "hs5x"
 #elif defined(CONFIG_CPU_HS6X)
