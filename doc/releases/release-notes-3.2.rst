@@ -252,6 +252,12 @@ Libraries / Subsystems
   * MCUMGR race condition when using the task status function whereby if a
     thread state changed it could give a falsely short process list has been
     fixed.
+  * MCUMGR shell (group 9) CBOR structure has changed, the ``rc``
+    response is now only used for mcumgr errors, shell command
+    execution result codes are instead returned in the ``ret``
+    variable instead, see :ref:`mcumgr_smp_group_9` for updated
+    information. Legacy bahaviour can be restored by enabling
+    :kconfig:option:`CONFIG_MCUMGR_CMD_SHELL_MGMT_LEGACY_RC_RETURN_CODE`
 
 HALs
 ****
