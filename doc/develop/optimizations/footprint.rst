@@ -49,6 +49,15 @@ the running application and to provide means for debugging and error handling:
 :kconfig:option:`CONFIG_DEBUG`
   This option can be disabled for production builds
 
+Others
+******
+
+:kconfig:option:`CONFIG_DEVICE_STORE_NAME`
+  When this option is disabled, devices will not have a unique human readable
+  name (:c:member:`device.name`). If you set this option to ``n``, you will no
+  longer be able to use :c:func:`device_get_binding`, because it looks up
+  devices by name. Use :c:macro:`DEVICE_DT_GET` or another related macro
+  instead.
 
 MPU/MMU Support
 ***************
