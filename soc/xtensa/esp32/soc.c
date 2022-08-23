@@ -29,6 +29,9 @@
 #include "esp_timer.h"
 #include "esp32/spiram.h"
 #include "esp_app_format.h"
+#ifndef CONFIG_SOC_ESP32_NET
+#include "esp_clk_internal.h"
+#endif
 #include <zephyr/sys/printk.h>
 
 extern void z_cstart(void);
@@ -74,6 +77,7 @@ void __attribute__((section(".iram1"))) start_esp32_net_cpu(void)
 	esp_appcpu_start((void *)entry_addr);
 }
 #endif
+
 /*
  * This is written in C rather than assembly since, during the port bring up,
  * Zephyr is being booted by the Espressif bootloader.  With it, the C stack
@@ -118,6 +122,13 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	*wdt_rtc_protect = RTC_CNTL_WDT_WKEY_VALUE;
 	*wdt_rtc_reg &= ~RTC_CNTL_WDT_EN;
 	*wdt_rtc_protect = 0;
+
+#ifndef CONFIG_SOC_ESP32_NET
+	/* Configures the CPU clock, RTC slow and fast clocks, and performs
+	 * RTC slow clock calibration.
+	 */
+	esp_clk_init();
+#endif
 
 	esp_timer_early_init();
 
