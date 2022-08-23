@@ -17,7 +17,6 @@
 
 		cpu0: cpu@0 {
 			clock-frequency = <DT_FREQ_M(120)>;
-			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
 			#address-cells = <1>;
