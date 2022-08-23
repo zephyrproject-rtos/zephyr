@@ -27,6 +27,15 @@ logger = None
 
 # This ends up as None when we're not running in a Zephyr tree
 ZEPHYR_BASE = os.environ.get('ZEPHYR_BASE')
+if not ZEPHYR_BASE:
+    # Let the user run this script as ./scripts/ci/check_compliance.py without
+    #  making them set ZEPHYR_BASE.
+    ZEPHYR_BASE = str(Path(__file__).resolve().parents[2])
+
+    # Propagate this decision to child processes.
+    os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
+
+    print(f'ZEPHYR_BASE unset, using "{ZEPHYR_BASE}"')
 
 
 def git(*args, cwd=None):
