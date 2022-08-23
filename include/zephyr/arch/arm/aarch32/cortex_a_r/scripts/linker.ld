@@ -141,6 +141,8 @@ SECTIONS
 
         *(.text)
         *(".text.*")
+        *(.shared_irq)
+        *(.shared_irq_arg)
         *(.gnu.linkonce.t.*)
 
         /*

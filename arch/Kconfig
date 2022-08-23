@@ -34,6 +34,7 @@ config ARM
 	# is really only necessary for Cortex-M with ARM MPU!
 	select GEN_PRIV_STACKS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_AARCH32_CORTEX_R || CPU_CORTEX_M || CPU_AARCH32_CORTEX_A
+	select ARCH_HAS_SW_ISR_TABLE_SHARED_IRQ
 	help
 	  ARM architecture
 
@@ -47,6 +48,7 @@ config ARM64
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
+	select ARCH_HAS_SW_ISR_TABLE_SHARED_IRQ
 	help
 	  ARM64 (AArch64) architecture
 
@@ -69,6 +71,7 @@ config SPARC
 	select ATOMIC_OPERATIONS_C if !SPARC_CASA
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select ARCH_HAS_EXTRA_EXCEPTION_INFO
+	select ARCH_HAS_SW_ISR_TABLE_SHARED_IRQ
 	help
 	  SPARC architecture
 
@@ -416,6 +419,13 @@ config GEN_IRQ_VECTOR_TABLE
 	  indexed by IRQ line. In the latter case, the vector table must be
 	  supplied by the application or architecture code.
 
+config ISR_SHARE_IRQ
+	bool "Allow IRQs to share multiple ISRs"
+	depends on GEN_ISR_TABLES
+	help
+	  Some peripherals share an IRQ and this option enables the system
+	  to call all ISRs attached to a pending IRQ.
+
 config ARCH_IRQ_VECTOR_TABLE_ALIGN
 	int "Alignment size of the interrupt vector table"
 	default 4
@@ -597,6 +607,12 @@ config ARCH_HAS_SUSPEND_TO_RAM
 #
 # Other architecture related options
 #
+
+config ARCH_HAS_SW_ISR_TABLE_SHARED_IRQ
+	bool
+	help
+	  This option controls if mulitple ISRs can share
+	  the same IRQ.
 
 config ARCH_HAS_THREAD_ABORT
 	bool

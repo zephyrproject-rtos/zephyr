@@ -83,6 +83,8 @@ zephyr_linker_section_configure(SECTION .text INPUT ".glue_7t")
 zephyr_linker_section_configure(SECTION .text INPUT ".glue_7")
 zephyr_linker_section_configure(SECTION .text INPUT ".vfp11_veneer")
 zephyr_linker_section_configure(SECTION .text INPUT ".v4_bx")
+zephyr_linker_section_configure(SECTION .text INPUT ".shared_irq")
+zephyr_linker_section_configure(SECTION .text INPUT ".shared_irq_arg")
 
 if(CONFIG_CPP)
   zephyr_linker_section(NAME .ARM.extab GROUP ROM_REGION)
