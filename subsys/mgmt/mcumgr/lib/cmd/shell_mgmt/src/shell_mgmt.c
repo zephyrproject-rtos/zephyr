@@ -107,10 +107,14 @@ shell_mgmt_exec(struct mgmt_ctxt *ctxt)
 	cmd_out.value = shell_get_output(&cmd_out.len);
 
 	/* Key="o"; value=<command-output> */
-	/* Key="rc"; value=<status> */
+	/* Key="ret"; value=<status>, or rc if legacy option enabled */
 	ok = zcbor_tstr_put_lit(zse, "o")		&&
 	     zcbor_tstr_encode(zse, &cmd_out)		&&
+#ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT_LEGACY_RC_RETURN_CODE
 	     zcbor_tstr_put_lit(zse, "rc")		&&
+#else
+	     zcbor_tstr_put_lit(zse, "ret")		&&
+#endif
 	     zcbor_int32_put(zse, rc);
 
 	zcbor_map_end_decode(zsd);

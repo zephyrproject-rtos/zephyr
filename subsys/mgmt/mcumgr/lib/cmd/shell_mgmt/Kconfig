@@ -2,7 +2,7 @@
 # Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-config MCUMGR_CMD_SHELL_MGMT
+menuconfig MCUMGR_CMD_SHELL_MGMT
 	bool "Mcumgr handlers for shell management"
 	depends on SHELL
 	select SHELL_BACKEND_DUMMY
@@ -22,3 +22,17 @@ config MCUMGR_CMD_SHELL_MGMT
 	  on a stack, by the mcumgr, so enabling MCUMGR_CMD_SHELL_MGMT and
 	  changes to the CONFIG_SHELL_CMD_BUFF_SIZE may increase stack size
 	  requirements.
+
+if MCUMGR_CMD_SHELL_MGMT
+
+config MCUMGR_CMD_SHELL_MGMT_LEGACY_RC_RETURN_CODE
+	bool "Legacy behaviour: Use rc field for shell function return code"
+	help
+	  Enabling this options brings back legacy behaviour where the shell
+	  return code is returned, incorrectly, in the rc field that was
+	  originally designated for returning SMP processing errors. When
+	  disabled, there will be an additional ret field which contains the
+	  shell command exit code, and rc will be used for SMP processing
+	  error codes.
+
+endif # MCUMGR_CMD_SHELL_MGMT
