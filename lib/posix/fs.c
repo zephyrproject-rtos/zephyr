@@ -347,22 +347,20 @@ int unlink(const char *path)
 int stat(const char *path, struct stat *buf)
 {
 	int rc;
-	struct fs_statvfs stat;
+	struct fs_dirent entry;
 
 	if (buf == NULL) {
 		errno = EBADF;
 		return -1;
 	}
 
-	rc = fs_statvfs(path, &stat);
+	rc = fs_stat(path, &entry);
 	if (rc < 0) {
 		errno = -rc;
 		return -1;
 	}
 
-	buf->st_size = stat.f_bsize * stat.f_blocks;
-	buf->st_blksize = stat.f_bsize;
-	buf->st_blocks = stat.f_blocks;
+	buf->st_size = entry.size;
 	return 0;
 }
 
