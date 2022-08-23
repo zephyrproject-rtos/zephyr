@@ -17,7 +17,6 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			clock-frequency = <DT_FREQ_M(168)>;
 			reg = <0>;
