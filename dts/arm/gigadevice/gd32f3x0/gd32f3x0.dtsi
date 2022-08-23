@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/adc/gd32f3x0.h>
@@ -14,7 +15,7 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			clock-frequency = <108000000>;
+			clock-frequency = <DT_FREQ_M(108)>;
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
