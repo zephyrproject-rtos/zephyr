@@ -32,7 +32,7 @@ static int test_statvfs(const char *path)
 	return TC_PASS;
 }
 
-void test_fat_fs(void)
+ZTEST(fat_fs_dual_drive, test_fat_fs)
 {
 	TC_PRINT("\nTesting statvfs operation on %s\n", FATFS_MNTP);
 	zassert_true(test_statvfs(FATFS_MNTP) == TC_PASS, NULL);
