@@ -284,6 +284,27 @@ config BT_CTRL_ADV_ADI_IN_SCAN_RSP
 	help
 	  Enable ADI field in AUX_SCAN_RSP PDU
 
+config BT_CTLR_SYNC_PERIODIC_SKIP_ON_SCAN_AUX
+	bool "Skip Periodic Sync event on overlap with Extended Scan Event"
+	depends on BT_CTLR_SYNC_PERIODIC
+	help
+	  When AUX_ADV_IND or AUX_CHAIN_IND auxiliary channel PDU scan radio
+	  event overlaps Periodic Sync radio event in unreserved time space,
+	  let the Periodic Sync radio event be aborted so that the auxiliary
+	  channel PDU can be received to generate Extended Advertising Reports.
+
+	  By default we want Periodic Advertising Sync Events to take priority
+	  over any overlapping Extended Advertising Primary and Auxiliary
+	  channel PDU reception in order to not skip Periodic Advertising Report
+	  generation.
+
+	  But under simultaneous multiple Periodic Advertising Sync support with
+	  small Periodic Advertising Intervals where there will be a lot of
+	  overlapping Periodic Advertising Sync events, it is desirable to
+	  permit Extended Advertising auxiliary PDU reception be allowed in a
+	  round robin scheduling to skip the overlapping Periodic Advertising
+	  Sync event. This permits new Periodic Advertising peers be discovered.
+
 config BT_CTLR_SCAN_AUX_SET
 	int "LE Extended Scanning Auxiliary Sets"
 	depends on BT_OBSERVER && BT_CTLR_ADV_EXT
