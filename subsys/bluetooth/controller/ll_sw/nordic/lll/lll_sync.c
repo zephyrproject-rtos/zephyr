@@ -474,7 +474,8 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 			struct lll_scan_aux *lll_aux;
 
 			lll_aux = ull_scan_aux_lll_is_valid_get(next);
-			if (!lll_aux) {
+			if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC_SKIP_ON_SCAN_AUX) ||
+			    !lll_aux) {
 				/* Abort current event as next event is not a
 				 * scan and not a scan aux event.
 				 */
