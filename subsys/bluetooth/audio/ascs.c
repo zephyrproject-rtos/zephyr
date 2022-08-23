@@ -134,6 +134,7 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 
 	if (stream->ops != NULL) {
 		const struct bt_audio_stream_ops *ops = stream->ops;
+		const bool state_changed = old_state != state;
 
 		switch (state) {
 		case BT_AUDIO_EP_STATE_IDLE:
@@ -207,8 +208,10 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 				return;
 			}
 
-			if (ops->enabled != NULL) {
+			if (state_changed && ops->enabled != NULL) {
 				ops->enabled(stream);
+			} else if (!state_changed && ops->metadata_updated) {
+				ops->metadata_updated(stream);
 			}
 
 			break;
@@ -224,8 +227,10 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 				return;
 			}
 
-			if (ops->started != NULL) {
+			if (state_changed && ops->started != NULL) {
 				ops->started(stream);
+			} else if (!state_changed && ops->metadata_updated) {
+				ops->metadata_updated(stream);
 			}
 
 			break;

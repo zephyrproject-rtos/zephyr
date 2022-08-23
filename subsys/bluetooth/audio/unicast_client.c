@@ -645,7 +645,8 @@ static void unicast_client_ep_qos_state(struct bt_audio_ep *ep,
 }
 
 static void unicast_client_ep_enabling_state(struct bt_audio_ep *ep,
-					     struct net_buf_simple *buf)
+					     struct net_buf_simple *buf,
+					     bool state_changed)
 {
 	struct bt_ascs_ase_status_enable *enable;
 	struct bt_audio_stream *stream;
@@ -668,16 +669,29 @@ static void unicast_client_ep_enabling_state(struct bt_audio_ep *ep,
 
 	unicast_client_ep_set_metadata(ep, buf, enable->metadata_len, NULL);
 
-	/* Notify upper layer */
-	if (stream->ops != NULL && stream->ops->enabled != NULL) {
-		stream->ops->enabled(stream);
+	/* Notify upper layer
+	 *
+	 * If the state did not change then only the metadata was changed
+	 */
+	if (state_changed) {
+		if (stream->ops != NULL && stream->ops->enabled != NULL) {
+			stream->ops->enabled(stream);
+		} else {
+			BT_WARN("No callback for enabled set");
+		}
 	} else {
-		BT_WARN("No callback for enabled set");
+		if (stream->ops != NULL &&
+		    stream->ops->metadata_updated != NULL) {
+			stream->ops->metadata_updated(stream);
+		} else {
+			BT_WARN("No callback for metadata_updated set");
+		}
 	}
 }
 
 static void unicast_client_ep_streaming_state(struct bt_audio_ep *ep,
-					      struct net_buf_simple *buf)
+					      struct net_buf_simple *buf,
+					      bool state_changed)
 {
 	struct bt_ascs_ase_status_stream *stream_status;
 	struct bt_audio_stream *stream;
@@ -698,11 +712,23 @@ static void unicast_client_ep_streaming_state(struct bt_audio_ep *ep,
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x",
 	       ep->dir, ep->cig_id, ep->cis_id);
 
-	/* Notify upper layer */
-	if (stream->ops != NULL && stream->ops->started != NULL) {
-		stream->ops->started(stream);
+	/* Notify upper layer
+	 *
+	 * If the state did not change then only the metadata was changed
+	 */
+	if (state_changed) {
+		if (stream->ops != NULL && stream->ops->started != NULL) {
+			stream->ops->started(stream);
+		} else {
+			BT_WARN("No callback for started set");
+		}
 	} else {
-		BT_WARN("No callback for started set");
+		if (stream->ops != NULL &&
+		    stream->ops->metadata_updated != NULL) {
+			stream->ops->metadata_updated(stream);
+		} else {
+			BT_WARN("No callback for metadata_updated set");
+		}
 	}
 }
 
@@ -761,6 +787,7 @@ static void unicast_client_ep_set_status(struct bt_audio_ep *ep,
 					 struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status *status;
+	bool state_changed;
 	uint8_t old_state;
 
 	if (!ep) {
@@ -769,9 +796,9 @@ static void unicast_client_ep_set_status(struct bt_audio_ep *ep,
 
 	status = net_buf_simple_pull_mem(buf, sizeof(*status));
 
-
 	old_state = ep->status.state;
 	ep->status = *status;
+	state_changed = old_state != ep->status.state;
 
 	BT_DBG("ep %p handle 0x%04x id 0x%02x dir %u state %s -> %s", ep,
 	       ep->client.handle, status->id, ep->dir,
@@ -854,7 +881,7 @@ static void unicast_client_ep_set_status(struct bt_audio_ep *ep,
 			return;
 		}
 
-		unicast_client_ep_enabling_state(ep, buf);
+		unicast_client_ep_enabling_state(ep, buf, state_changed);
 		break;
 	case BT_AUDIO_EP_STATE_STREAMING:
 		switch (old_state) {
@@ -870,7 +897,7 @@ static void unicast_client_ep_set_status(struct bt_audio_ep *ep,
 			return;
 		}
 
-		unicast_client_ep_streaming_state(ep, buf);
+		unicast_client_ep_streaming_state(ep, buf, state_changed);
 		break;
 	case BT_AUDIO_EP_STATE_DISABLING:
 		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
