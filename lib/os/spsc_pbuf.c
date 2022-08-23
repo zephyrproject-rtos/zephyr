@@ -12,6 +12,9 @@
 #include <zephyr/sys/byteorder.h>
 
 #define LEN_SZ sizeof(uint32_t)
+/* Amount of data that is left unused to distinguish between empty and full. */
+#define FREE_SPACE_DISTANCE sizeof(uint32_t)
+
 #define PADDING_MARK 0xFF
 
 #define GET_UTILIZATION(flags) \
@@ -165,26 +168,28 @@ int spsc_pbuf_alloc(struct spsc_pbuf *pb, uint16_t len, char **buf)
 			space = LEN_SZ + 1;
 		}
 
-		if (remaining >= space) {
-			/* Packet will fit at the end */
-			free_space = remaining - ((rd_idx > 0) ? 0 : sizeof(uint32_t));
+		if ((remaining >= space) || (rd_idx <= space)) {
+			/* Packet will fit at the end. Free space depends on
+			 * presence of data at the beginning of the buffer since
+			 * there must be one word not used to distinguish between
+			 * empty and full state.
+			 */
+			free_space = remaining - ((rd_idx > 0) ? 0 : FREE_SPACE_DISTANCE);
 		} else {
-			if (rd_idx > space) {
-				/* Padding must be added. */
-				data_loc[wr_idx] = PADDING_MARK;
-				__sync_synchronize();
-				cache_wb(&data_loc[wr_idx], sizeof(uint8_t), flags);
+			/* Padding must be added. */
+			data_loc[wr_idx] = PADDING_MARK;
+			__sync_synchronize();
+			cache_wb(&data_loc[wr_idx], sizeof(uint8_t), flags);
 
-				wr_idx = 0;
-				*wr_idx_loc = wr_idx;
+			wr_idx = 0;
+			*wr_idx_loc = wr_idx;
 
-				free_space = rd_idx - sizeof(uint32_t);
-			} else {
-				free_space = remaining - (rd_idx > 0 ? 0 : sizeof(uint32_t));
-			}
+			/* Obligatory one word empty space. */
+			free_space = rd_idx - FREE_SPACE_DISTANCE;
 		}
 	} else {
-		free_space = rd_idx - wr_idx - sizeof(uint32_t);
+		/* Obligatory one word empty space. */
+		free_space = rd_idx - wr_idx - FREE_SPACE_DISTANCE;
 	}
 
 	len = MIN(len, MAX(free_space - (int32_t)LEN_SZ, 0));
