@@ -142,7 +142,7 @@ class ComplianceTest:
         if self.case.result:
             msg += "\n\nFailures before skip: " + self.case.result[0]._elem.text
 
-        self.case.result = Skipped(msg, "skipped")
+        self.case.result = [Skipped(msg, "skipped")]
 
         raise EndTest
 
