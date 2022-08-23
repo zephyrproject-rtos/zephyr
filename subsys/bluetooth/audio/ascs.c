@@ -140,33 +140,139 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 			if (ops->released != NULL) {
 				ops->released(stream);
 			}
+
 			break;
 		case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
+			switch (old_state) {
+			case BT_AUDIO_EP_STATE_IDLE:
+			case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
+			case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
+			case BT_AUDIO_EP_STATE_RELEASING:
+				break;
+			default:
+				BT_WARN("Invalid state transition: %s -> %s",
+					bt_audio_ep_state_str(old_state),
+					bt_audio_ep_state_str(ep->status.state));
+				return;
+			}
+
 			if (ops->configured != NULL) {
 				ops->configured(stream, &ep->qos_pref);
 			}
+
 			break;
 		case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
+			/* QoS configured have different allowed states depending on the endpoint type */
+			if (ep->dir == BT_AUDIO_DIR_SOURCE) {
+				switch (old_state) {
+				case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
+				case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
+				case BT_AUDIO_EP_STATE_DISABLING:
+					break;
+				default:
+					BT_WARN("Invalid state transition: %s -> %s",
+						bt_audio_ep_state_str(old_state),
+						bt_audio_ep_state_str(ep->status.state));
+					return;
+				}
+			} else {
+				switch (old_state) {
+				case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
+				case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
+				case BT_AUDIO_EP_STATE_ENABLING:
+				case BT_AUDIO_EP_STATE_STREAMING:
+					break;
+				default:
+					BT_WARN("Invalid state transition: %s -> %s",
+						bt_audio_ep_state_str(old_state),
+						bt_audio_ep_state_str(ep->status.state));
+					return;
+				}
+			}
+
 			if (ops->qos_set != NULL) {
 				ops->qos_set(stream);
 			}
+
 			break;
 		case BT_AUDIO_EP_STATE_ENABLING:
+			switch (old_state) {
+			case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
+			case BT_AUDIO_EP_STATE_ENABLING:
+				break;
+			default:
+				BT_WARN("Invalid state transition: %s -> %s",
+					bt_audio_ep_state_str(old_state),
+					bt_audio_ep_state_str(ep->status.state));
+				return;
+			}
+
 			if (ops->enabled != NULL) {
 				ops->enabled(stream);
 			}
+
 			break;
 		case BT_AUDIO_EP_STATE_STREAMING:
+			switch (old_state) {
+			case BT_AUDIO_EP_STATE_ENABLING:
+			case BT_AUDIO_EP_STATE_STREAMING:
+				break;
+			default:
+				BT_WARN("Invalid state transition: %s -> %s",
+					bt_audio_ep_state_str(old_state),
+					bt_audio_ep_state_str(ep->status.state));
+				return;
+			}
+
 			if (ops->started != NULL) {
 				ops->started(stream);
 			}
+
 			break;
 		case BT_AUDIO_EP_STATE_DISABLING:
+			if (ep->dir == BT_AUDIO_DIR_SOURCE) {
+				switch (old_state) {
+				case BT_AUDIO_EP_STATE_ENABLING:
+				case BT_AUDIO_EP_STATE_STREAMING:
+					break;
+				default:
+					BT_WARN("Invalid state transition: %s -> %s",
+						bt_audio_ep_state_str(old_state),
+						bt_audio_ep_state_str(ep->status.state));
+				return;
+				}
+			} else {
+				/* Sinks cannot go into the disabling state */
+				BT_WARN("Invalid state transition: %s -> %s",
+					bt_audio_ep_state_str(old_state),
+					bt_audio_ep_state_str(ep->status.state));
+				return;
+			}
+
 			if (ops->disabled != NULL) {
 				ops->disabled(stream);
 			}
+
 			break;
 		case BT_AUDIO_EP_STATE_RELEASING:
+			switch (old_state) {
+			case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
+			case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
+			case BT_AUDIO_EP_STATE_ENABLING:
+			case BT_AUDIO_EP_STATE_STREAMING:
+				break;
+			case BT_AUDIO_EP_STATE_DISABLING:
+				if (ep->dir == BT_AUDIO_DIR_SOURCE) {
+					break;
+				} /* else fall through for sink */
+				/* fall through */
+			default:
+				BT_WARN("Invalid state transition: %s -> %s",
+					bt_audio_ep_state_str(old_state),
+					bt_audio_ep_state_str(ep->status.state));
+				return;
+			}
+
 			break; /* no-op*/
 		default:
 			BT_ERR("Invalid state: %u", state);
