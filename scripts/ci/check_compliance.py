@@ -18,11 +18,6 @@ import magic
 import shlex
 from pathlib import Path
 
-# '*' makes it italic
-EDIT_TIP = "\n\n*Tip: The bot edits this comment instead of posting a new " \
-           "one, so you can check the comment's history to see earlier " \
-           "messages.*"
-
 logger = None
 
 # This ends up as None when we're not running in a Zephyr tree
