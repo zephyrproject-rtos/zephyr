@@ -34,7 +34,7 @@
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "gd,gd32vf103-soc", "simple-bus";
+		compatible = "simple-bus";
 		interrupt-parent = <&eclic>;
 		ranges;
 
