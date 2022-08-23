@@ -19,9 +19,9 @@ LOG_MODULE_DECLARE(sd, CONFIG_SD_LOG_LEVEL);
 
 
 static inline void sdmmc_decode_csd(struct sd_csd *csd,
-	uint32_t *raw_csd, uint32_t *blk_cout, uint32_t *blk_size)
+	uint32_t *raw_csd, uint32_t *blk_count, uint32_t *blk_size)
 {
-	uint32_t tmp_blk_cout, tmp_blk_size;
+	uint32_t tmp_blk_count, tmp_blk_size;
 
 	csd->csd_structure = (uint8_t)((raw_csd[3U] &
 		0xC0000000U) >> 30U);
@@ -66,16 +66,16 @@ static inline void sdmmc_decode_csd(struct sd_csd *csd,
 			0x38000U) >> 15U);
 
 		/* Get card total block count and block size. */
-		tmp_blk_cout = ((csd->device_size + 1U) <<
+		tmp_blk_count = ((csd->device_size + 1U) <<
 			(csd->dev_size_mul + 2U));
 		tmp_blk_size = (1U << (csd->read_blk_len));
 		if (tmp_blk_size != SDMMC_DEFAULT_BLOCK_SIZE) {
-			tmp_blk_cout = (tmp_blk_cout * tmp_blk_size);
+			tmp_blk_count = (tmp_blk_count * tmp_blk_size);
 			tmp_blk_size = SDMMC_DEFAULT_BLOCK_SIZE;
-			tmp_blk_cout = (tmp_blk_cout / tmp_blk_size);
+			tmp_blk_count = (tmp_blk_count / tmp_blk_size);
 		}
-		if (blk_cout) {
-			*blk_cout = tmp_blk_cout;
+		if (blk_count) {
+			*blk_count = tmp_blk_count;
 		}
 		if (blk_size) {
 			*blk_size = tmp_blk_size;
@@ -89,9 +89,9 @@ static inline void sdmmc_decode_csd(struct sd_csd *csd,
 		csd->device_size |= (uint32_t)((raw_csd[1U] &
 			0xFFFF0000U) >> 16U);
 
-		tmp_blk_cout = ((csd->device_size + 1U) * 1024U);
-		if (blk_cout) {
-			*blk_cout = tmp_blk_cout;
+		tmp_blk_count = ((csd->device_size + 1U) * 1024U);
+		if (blk_count) {
+			*blk_count = tmp_blk_count;
 		}
 		if (blk_size) {
 			*blk_size = tmp_blk_size;
