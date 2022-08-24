@@ -10,6 +10,13 @@ config DMA_INTEL_ADSP_GPDMA
 
 if DMA_INTEL_ADSP_GPDMA
 
+config DMA_INTEL_ADSP_GPDMA_NEED_CONTROLLER_OWNERSHIP
+	bool
+	default y if !SOC_INTEL_CAVS_V15
+	help
+	  Hidden option to indicate that the driver needs to request
+	  dma controller ownership from the host.
+
 config DMA_INTEL_ADSP_GPDMA_HAS_LLP
 	bool "Intel ADSP GPDMA Linear Link Position Feature"
 	default y if SOC_SERIES_INTEL_ACE1X

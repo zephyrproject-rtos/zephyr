@@ -238,8 +238,10 @@ int intel_adsp_gpdma_init(const struct device *dev)
 	}
 #endif
 
+#ifdef CONFIG_DMA_INTEL_ADSP_GPDMA_NEED_CONTROLLER_OWNERSHIP
 	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(0));
 	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(1));
+#endif
 
 	/* Disable dynamic clock gating appropriately before initializing */
 	intel_adsp_gpdma_clock_enable(dev);
