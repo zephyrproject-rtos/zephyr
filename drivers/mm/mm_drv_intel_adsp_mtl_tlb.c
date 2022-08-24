@@ -28,6 +28,13 @@ static struct k_spinlock tlb_lock;
 extern struct k_spinlock sys_mm_drv_common_lock;
 
 static int hpsram_ref[L2_SRAM_BANK_NUM];
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+#include <adsp_comm_widget.h>
+
+static uint32_t used_pages;
+/* PMC uses 32 KB banks */
+static uint32_t used_pmc_banks_reported;
+#endif
 
 
 /* Define a marker which is placed by the linker script just after
@@ -139,6 +146,21 @@ static int sys_mm_drv_hpsram_pwr(uint32_t bank_idx, bool enable, bool non_blocki
 	return 0;
 }
 
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+static void sys_mm_drv_report_page_usage(void)
+{
+	/* PMC uses 32 KB banks */
+	uint32_t pmc_banks = ceiling_fraction(used_pages, KB(32) / CONFIG_MM_DRV_PAGE_SIZE);
+
+	if (used_pmc_banks_reported != pmc_banks) {
+		if (!adsp_comm_widget_pmc_send_ipc(pmc_banks)) {
+			/* Store reported value if message was sent successfully. */
+			used_pmc_banks_reported = pmc_banks;
+		}
+	}
+}
+#endif
+
 int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 {
 	k_spinlock_key_t key;
@@ -207,8 +229,12 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 
 	entry_idx = get_tlb_entry_idx(va);
 
-	bank_idx = get_hpsram_bank_idx(pa);
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+	used_pages++;
+	sys_mm_drv_report_page_usage();
+#endif
 
+	bank_idx = get_hpsram_bank_idx(pa);
 	if (!hpsram_ref[bank_idx]++) {
 		sys_mm_drv_hpsram_pwr(bank_idx, true, false);
 	}
@@ -343,6 +369,11 @@ int sys_mm_drv_unmap_page(void *virt)
 					       UINT_TO_POINTER(pa), 1);
 
 		bank_idx = get_hpsram_bank_idx(pa);
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+		used_pages--;
+		sys_mm_drv_report_page_usage();
+#endif
+
 		if (--hpsram_ref[bank_idx] == 0) {
 			sys_mm_drv_hpsram_pwr(bank_idx, false, false);
 		}
@@ -615,6 +646,9 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 	for (int i = 0; i < L2_SRAM_BANK_NUM; i++) {
 		hpsram_ref[i] = SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE;
 	}
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+	used_pages = L2_SRAM_BANK_NUM * SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE;
+#endif
 
 #ifdef CONFIG_MM_DRV_INTEL_ADSP_TLB_REMAP_UNUSED_RAM
 	/*
@@ -639,6 +673,13 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 
 	ret = sys_mm_drv_unmap_region(UINT_TO_POINTER(UNUSED_L2_START_ALIGNED),
 				      unused_size);
+#endif
+
+	/*
+	 * Notify PMC about used HP-SRAM pages.
+	 */
+#ifdef CONFIG_SOC_INTEL_COMM_WIDGET
+	sys_mm_drv_report_page_usage();
 #endif
 
 	return 0;
