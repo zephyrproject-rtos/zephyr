@@ -16,17 +16,13 @@ import subprocess
 import threading
 import select
 import re
+import psutil
 from twisterlib.environment import ZEPHYR_BASE
 
 try:
     import serial
 except ImportError:
     print("Install pyserial python module with pip to use --device-testing option.")
-
-try:
-    import psutil
-except ImportError:
-    print("Install psutil python module with pip to run in Qemu.")
 
 try:
     import pty
