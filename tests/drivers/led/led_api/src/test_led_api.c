@@ -56,7 +56,7 @@ LED_CONTROLLER_INFO(DT_ALIAS(led_controller_0));
 
 static ZTEST_BMEM const struct device *const led_ctrl = DEVICE_DT_GET(DT_ALIAS(led_controller_0));
 
-void test_led_setup(void)
+static void test_led_setup(void)
 {
 	zassert_true(device_is_ready(led_ctrl), "LED controller is not ready");
 
@@ -65,7 +65,7 @@ void test_led_setup(void)
 	k_object_access_grant(led_ctrl, k_current_get());
 }
 
-void test_led_get_info(void)
+ZTEST_USER(led_user, test_led_get_info)
 {
 	uint8_t led;
 	int ret;
@@ -121,7 +121,7 @@ void test_led_get_info(void)
 	}
 }
 
-void test_led_on(void)
+ZTEST_USER(led_user, test_led_on)
 {
 	uint8_t led;
 	int ret;
@@ -136,7 +136,7 @@ void test_led_on(void)
 	}
 }
 
-void test_led_off(void)
+ZTEST_USER(led_user, test_led_off)
 {
 	uint8_t led;
 	int ret;
@@ -151,7 +151,7 @@ void test_led_off(void)
 	}
 }
 
-void test_led_set_color(void)
+ZTEST_USER(led_user, test_led_set_color)
 {
 	uint8_t led;
 	uint8_t colors[TEST_MAX_COLORS + 1];
@@ -212,7 +212,7 @@ void test_led_set_color(void)
 	}
 }
 
-void test_led_set_brightness(void)
+ZTEST_USER(led_user, test_led_set_brightness)
 {
 	uint8_t led;
 	int ret;
@@ -239,3 +239,12 @@ void test_led_set_brightness(void)
 		}
 	}
 }
+
+void *led_setup(void)
+{
+	test_led_setup();
+
+	return NULL;
+}
+
+ZTEST_SUITE(led_user, NULL, led_setup, NULL, NULL, NULL);
