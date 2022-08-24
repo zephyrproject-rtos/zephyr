@@ -55,6 +55,8 @@ node-macro =/ %s"DT_N" path-id %s"_PARTITION_ID" DIGIT
 ; Macros are generated for each of a node's compatibles;
 ; dt-name in this case is something like "vnd_device".
 node-macro =/ %s"DT_N" path-id %s"_COMPAT_MATCHES_" dt-name
+node-macro =/ %s"DT_N" path-id %s"_COMPAT_VENDOR_IDX_" DIGIT "_EXISTS"
+node-macro =/ %s"DT_N" path-id %s"_COMPAT_VENDOR_IDX_" DIGIT
 ; Every non-root node gets one of these macros, which expands to the node
 ; identifier for that node's parent in the devicetree.
 node-macro =/ %s"DT_N" path-id %s"_PARENT"
