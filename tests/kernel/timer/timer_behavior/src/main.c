@@ -10,8 +10,8 @@
 
 #include <zephyr/zephyr.h>
 
-#include <tc_util.h>
-#include <ztest.h>
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest.h>
 
 static uint32_t periodic_idx;
 static uint32_t periodic_rollovers;
