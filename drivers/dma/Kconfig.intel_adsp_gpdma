@@ -5,6 +5,8 @@
 
 config DMA_INTEL_ADSP_GPDMA
 	bool "Intel ADSP General Purpose Direct Memory Access driver"
+	default y
+	depends on DT_HAS_INTEL_ADSP_GPDMA_ENABLED
 	help
 	  Intel ADSP DMA driver.
 
