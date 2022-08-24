@@ -114,7 +114,7 @@ class Blobs(WestCommand):
 
     def list(self, args):
         blobs = self.get_blobs(args)
-        fmt = getattr(args, 'format', self.DEFAULT_LIST_FMT)
+        fmt = getattr(args, 'Namespace.format', self.DEFAULT_LIST_FMT)
         for blob in blobs:
             log.inf(fmt.format(**blob))
 
@@ -151,11 +151,11 @@ class Blobs(WestCommand):
             blob['abspath'].unlink()
 
     def do_run(self, args, _):
-        log.dbg(f'{args.subcmd[0]} {args.modules}')
+        log.dbg(f'subcmd: \'{args.subcmd[0]}\' modules: {args.modules}')
 
         subcmd = getattr(self, args.subcmd[0])
 
-        if subcmd is not self.list and args.format is not None:
+        if args.subcmd[0] != 'list' and args.format is not None:
             log.die(f'unexpected --format argument; this is a "west blobs list" option')
 
         subcmd(args)
