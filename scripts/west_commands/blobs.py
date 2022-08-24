@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
-import hashlib
 import os
 from pathlib import Path
 import sys
@@ -79,36 +78,16 @@ class Blobs(WestCommand):
 
         return parser
 
-    def get_status(self, path, sha256):
-        if not path.is_file():
-            return 'D'
-        with path.open('rb') as f:
-            m = hashlib.sha256()
-            m.update(f.read())
-            if sha256.lower() == m.hexdigest():
-                return 'A'
-            else:
-                return 'M'
-
     def get_blobs(self, args):
         blobs = []
         modules = args.modules
         for module in zephyr_module.parse_modules(ZEPHYR_BASE, self.manifest):
-            mblobs = module.meta.get('blobs', None)
-            if not mblobs:
-                continue
-
             # Filter by module
             module_name = module.meta.get('name', None)
             if len(modules) and module_name not in modules:
                 continue
 
-            blobs_path = Path(module.project) / zephyr_module.MODULE_BLOBS_PATH
-            for blob in mblobs:
-                blob['module'] = module_name
-                blob['abspath'] = blobs_path / Path(blob['path'])
-                blob['status'] = self.get_status(blob['abspath'], blob['sha256'])
-                blobs.append(blob)
+            blobs += zephyr_module.process_blobs(module.project, module.meta)
 
         return blobs
 
