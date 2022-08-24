@@ -543,17 +543,6 @@
 			has-vref-channel;
 		};
 
-		die_temp: dietemp {
-			compatible = "st,stm32-temp-cal";
-			ts-cal1-addr = <0x0BFA05A8>;
-			ts-cal2-addr = <0x0BFA05CA>;
-			ts-cal1-temp = <30>;
-			ts-cal2-temp = <130>;
-			ts-cal-vrefanalog = <3000>;
-			io-channels = <&adc1 17>;
-			status = "disabled";
-		};
-
 		adc2: adc@42028100 {
 			compatible = "st,stm32-adc";
 			reg = <0x42028100 0x100>;
@@ -582,6 +571,17 @@
 			interrupts = <106 0>;
 			status = "disabled";
 		};
+	};
+
+	die_temp: dietemp {
+		compatible = "st,stm32-temp-cal";
+		ts-cal1-addr = <0x0BFA05A8>;
+		ts-cal2-addr = <0x0BFA05CA>;
+		ts-cal1-temp = <30>;
+		ts-cal2-temp = <130>;
+		ts-cal-vrefanalog = <3000>;
+		io-channels = <&adc1 17>;
+		status = "disabled";
 	};
 
 	usb_fs_phy: usbphy {

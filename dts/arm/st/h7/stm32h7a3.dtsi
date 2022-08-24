@@ -57,13 +57,6 @@
 			status = "disabled";
 		};
 
-		die_temp: dietemp {
-			ts-cal1-addr = <0x08FFF814>;
-			ts-cal2-addr = <0x08FFF818>;
-			io-channels = <&adc2 18>;
-			ts-cal2-temp = <130>;
-		};
-
 		octospi2: octospi@5200a000 {
 			compatible = "st,stm32-ospi";
 			reg = <0x5200a000 0x1000>;
@@ -138,5 +131,12 @@
 	otghs_fs_phy: otghs_fs_phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
+	};
+
+	die_temp: dietemp {
+		ts-cal1-addr = <0x08FFF814>;
+		ts-cal2-addr = <0x08FFF818>;
+		io-channels = <&adc2 18>;
+		ts-cal2-temp = <130>;
 	};
 };

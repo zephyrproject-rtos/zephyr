@@ -44,10 +44,6 @@
 			status = "disabled";
 		};
 
-		die_temp: dietemp {
-			io-channels = <&adc1 18>;
-		};
-
 		i2s5: i2s@40015000 {
 			compatible = "st,stm32-i2s";
 			#address-cells = <1>;
@@ -60,5 +56,9 @@
 			dma-names = "tx", "rx";
 			status = "disabled";
 		};
+	};
+
+	die_temp: dietemp {
+		io-channels = <&adc1 18>;
 	};
 };
