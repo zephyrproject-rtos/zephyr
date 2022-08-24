@@ -28,6 +28,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smp_udp);
 
+BUILD_ASSERT(CONFIG_MCUMGR_SMP_UDP_MTU != 0, "CONFIG_MCUMGR_SMP_UDP_MTU must be > 0");
+
 struct config {
 	int sock;
 	const char *proto;
@@ -64,24 +66,40 @@ static struct configs configs = {
 #ifdef CONFIG_MCUMGR_SMP_UDP_IPV4
 static int smp_udp4_tx(struct net_buf *nb)
 {
+	int ret;
 	struct sockaddr *addr = net_buf_user_data(nb);
-	int ret = sendto(configs.ipv4.sock, nb->data, nb->len,
-			 0, addr, sizeof(*addr));
+
+	ret = sendto(configs.ipv4.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
+
+	if (ret < 0) {
+		ret = MGMT_ERR_EINVAL;
+	} else {
+		ret = MGMT_ERR_EOK;
+	}
+
 	mcumgr_buf_free(nb);
 
-	return ret < 0 ? MGMT_ERR_EINVAL : MGMT_ERR_EOK;
+	return ret;
 }
 #endif
 
 #ifdef CONFIG_MCUMGR_SMP_UDP_IPV6
 static int smp_udp6_tx(struct net_buf *nb)
 {
+	int ret;
 	struct sockaddr *addr = net_buf_user_data(nb);
-	int ret = sendto(configs.ipv6.sock, nb->data, nb->len,
-			 0, addr, sizeof(*addr));
+
+	ret = sendto(configs.ipv6.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
+
+	if (ret < 0) {
+		ret = MGMT_ERR_EINVAL;
+	} else {
+		ret = MGMT_ERR_EOK;
+	}
+
 	mcumgr_buf_free(nb);
 
-	return ret < 0 ? MGMT_ERR_EINVAL : MGMT_ERR_EOK;
+	return ret;
 }
 #endif
 
