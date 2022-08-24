@@ -54,6 +54,11 @@ static void backend_process(const struct log_backend *const backend,
 	context->cnt++;
 }
 
+static void panic(const struct log_backend *const backend)
+{
+	ARG_UNUSED(backend);
+}
+
 static void expire_cb(struct k_timer *timer)
 {
 	void *ctx = k_timer_user_data_get(timer);
@@ -81,7 +86,8 @@ static int backend_is_ready(const struct log_backend *const backend)
 static const struct log_backend_api backend_api = {
 	.process = backend_process,
 	.init = backend_init,
-	.is_ready = backend_is_ready
+	.is_ready = backend_is_ready,
+	.panic = panic
 };
 
 static struct backend_context context1 = {
@@ -139,6 +145,5 @@ ZTEST(log_backend_init, test_log_backends_initialization)
 	zassert_equal(context1.cnt, 2, "Unexpected value:%d (exp: %d)", context1.cnt, 2);
 	zassert_equal(context2.cnt, 1, NULL);
 }
-
 
 ZTEST_SUITE(log_backend_init, NULL, NULL, NULL, NULL, NULL);
