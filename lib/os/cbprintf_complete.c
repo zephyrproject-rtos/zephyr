@@ -1815,7 +1815,7 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
 
 			OUTS(cp, bpe);
 		} else {
-			if (conv->altform_0c | conv->altform_0) {
+			if (conv->altform_0c || conv->altform_0) {
 				OUTC('0');
 			}
 
