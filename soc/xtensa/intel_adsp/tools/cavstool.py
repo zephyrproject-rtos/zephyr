@@ -117,6 +117,7 @@ class HDAStream:
         self.regs.BDPL = self.buf_list_addr & 0xffffffff
         self.regs.CBL = buf_len
         self.regs.LVI = self.n_bufs - 1
+        self.mem.seek(0)
         self.debug()
         log.info(f"Configured stream {self.stream_id}")
 
@@ -620,17 +621,29 @@ def ipc_command(data, ext_data):
             buf[i] = i
         hda_streams[stream_id].write(buf)
     elif data == 12: # HDA PRINT
-        log.info("Doing HDA Print")
         stream_id = ext_data & 0xFF
         buf_len = ext_data >> 8 & 0xFFFF
         hda_str = hda_streams[stream_id]
+        # check for wrap here
         pos = hda_str.mem.tell()
-        buf_data = hda_str.mem.read(buf_len).decode("utf-8", "replace")
-        log.info(f"DSP LOG MSG (idx: {pos}, len: {buf_len}): {buf_data}")
-        pos = hda_str.mem.tell()
-        if pos >= hda_str.buf_len*2:
-            log.info(f"Wrapping log reader, pos {pos} len {hda_str.buf_len}")
+        read_lens = [buf_len, 0]
+        if pos + buf_len >= hda_str.buf_len*2:
+            read_lens[0] = hda_str.buf_len*2 - pos
+            read_lens[1] = buf_len - read_lens[0]
+        # validate the read lens
+        assert (read_lens[0] + pos) <= (hda_str.buf_len*2)
+        assert read_lens[0] % 128 == 0
+        assert read_lens[1] % 128 == 0
+        buf_data0 = hda_str.mem.read(read_lens[0])
+        hda_msg0 = buf_data0.decode("utf-8", "replace")
+        sys.stdout.write(hda_msg0)
+        if read_lens[1] != 0:
             hda_str.mem.seek(0)
+            buf_data1 = hda_str.mem.read(read_lens[1])
+            hda_msg1 = buf_data1.decode("utf-8", "replace")
+            sys.stdout.write(hda_msg1)
+        pos = hda_str.mem.tell()
+        sys.stdout.flush()
     else:
         log.warning(f"cavstool: Unrecognized IPC command 0x{data:x} ext 0x{ext_data:x}")
         if not fw_is_alive():
@@ -887,6 +900,8 @@ if __name__ == "__main__":
             asyncio.get_event_loop().run_until_complete(_main(None))
         except KeyboardInterrupt:
             start_output = False
+        except Exception as e:
+            log.error(e)
         finally:
             sys.exit(0)
 
