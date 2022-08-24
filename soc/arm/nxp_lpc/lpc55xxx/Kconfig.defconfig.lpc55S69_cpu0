@@ -21,10 +21,6 @@ config DMA_MCUX_LPC
 	default y
 	depends on DMA
 
-config USB_MCUX
-	default y
-	depends on USB_DEVICE_DRIVER
-
 choice USB_MCUX_CONTROLLER_TYPE
 	default USB_DC_NXP_LPCIP3511
 endchoice
