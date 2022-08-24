@@ -114,7 +114,7 @@ class Blobs(WestCommand):
 
     def list(self, args):
         blobs = self.get_blobs(args)
-        fmt = getattr(args, 'Namespace.format', self.DEFAULT_LIST_FMT)
+        fmt = args.format or self.DEFAULT_LIST_FMT
         for blob in blobs:
             log.inf(fmt.format(**blob))
 
