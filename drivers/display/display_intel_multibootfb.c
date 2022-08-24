@@ -18,8 +18,6 @@ struct framebuf_dev_data {
 	uint16_t height;
 };
 
-#define FRAMEBUF_DATA(dev) ((struct framebuf_dev_data *) ((dev)->data))
-
 static int framebuf_blanking_on(const struct device *dev)
 {
 	return -ENOTSUP;
@@ -72,7 +70,7 @@ static int framebuf_set_orientation(const struct device *dev,
 static void framebuf_get_capabilities(const struct device *dev,
 				      struct display_capabilities *caps)
 {
-	struct framebuf_dev_data *data = FRAMEBUF_DATA(dev);
+	struct framebuf_dev_data *data = dev->data;
 
 	caps->x_resolution = data->width;
 	caps->y_resolution = data->height;
@@ -87,7 +85,7 @@ static int framebuf_write(const struct device *dev, const uint16_t x,
 			  const struct display_buffer_descriptor *desc,
 			  const void *buf)
 {
-	struct framebuf_dev_data *data = FRAMEBUF_DATA(dev);
+	struct framebuf_dev_data *data = dev->data;
 	uint32_t *dst = data->buffer;
 	const uint32_t *src = buf;
 	uint32_t row;
@@ -109,7 +107,7 @@ static int framebuf_read(const struct device *dev, const uint16_t x,
 			 const struct display_buffer_descriptor *desc,
 			 void *buf)
 {
-	struct framebuf_dev_data *data = FRAMEBUF_DATA(dev);
+	struct framebuf_dev_data *data = dev->data;
 	uint32_t *src = data->buffer;
 	uint32_t *dst = buf;
 	uint32_t row;
@@ -146,7 +144,7 @@ static struct framebuf_dev_data multiboot_framebuf_data = {
 
 static int multiboot_framebuf_init(const struct device *dev)
 {
-	struct framebuf_dev_data *data = FRAMEBUF_DATA(dev);
+	struct framebuf_dev_data *data = dev->data;
 	struct multiboot_info *info = &multiboot_info;
 
 	if ((info->flags & MULTIBOOT_INFO_FLAGS_FB) &&
