@@ -61,7 +61,8 @@ for  data copy operations from ROM to required memory type.
 
   .. note::
 
-     The file argument supports limited regular expressions.
+     The file argument supports limited regular expressions. Files are searched
+     using the Python's glob function (with ``recursive=True``).
      function zephyr_code_relocate() can be called  as many times as required.
      This step has to be performed before the inclusion of boilerplate.cmake.
 
