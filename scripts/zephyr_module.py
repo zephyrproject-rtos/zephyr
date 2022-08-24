@@ -257,27 +257,32 @@ def process_blobs(module, meta):
     return blobs
 
 
-def kconfig_snippet(meta, path, kconfig_file=None):
+def kconfig_snippet(meta, path, kconfig_file=None, blobs=False):
     name = meta['name']
     name_sanitized = meta['name-sanitized']
 
-    snippet = (f'menu "{name} ({path.as_posix()})"',
+    snippet = [f'menu "{name} ({path.as_posix()})"',
                f'osource "{kconfig_file.resolve().as_posix()}"' if kconfig_file
                else f'osource "$(ZEPHYR_{name_sanitized.upper()}_KCONFIG)"',
                f'config ZEPHYR_{name_sanitized.upper()}_MODULE',
                '	bool',
                '	default y',
-               'endmenu\n')
+               'endmenu\n']
+
+    if blobs:
+        snippet.insert(-1, '	select TAINT_BLOBS')
     return '\n'.join(snippet)
 
 
 def process_kconfig(module, meta):
+    blobs = process_blobs(module, meta)
+    taint_blobs = len(tuple(filter(lambda b: b['status'] != 'D', blobs))) != 0
     section = meta.get('build', dict())
     module_path = PurePath(module)
     module_yml = module_path.joinpath('zephyr/module.yml')
     kconfig_extern = section.get('kconfig-ext', False)
     if kconfig_extern:
-        return kconfig_snippet(meta, module_path)
+        return kconfig_snippet(meta, module_path, blobs=taint_blobs)
 
     kconfig_setting = section.get('kconfig', None)
     if not validate_setting(kconfig_setting, module):
@@ -287,7 +292,8 @@ def process_kconfig(module, meta):
 
     kconfig_file = os.path.join(module, kconfig_setting or 'zephyr/Kconfig')
     if os.path.isfile(kconfig_file):
-        return kconfig_snippet(meta, module_path, Path(kconfig_file))
+        return kconfig_snippet(meta, module_path, Path(kconfig_file),
+                               blobs=taint_blobs)
     else:
         return ""
 
