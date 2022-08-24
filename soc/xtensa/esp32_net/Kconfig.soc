@@ -5,7 +5,6 @@ config SOC_ESP32_NET
 	bool "ESP32_NET"
 	select XTENSA
 	select CLOCK_CONTROL
-	select CLOCK_CONTROL_ESP32
 	select DYNAMIC_INTERRUPTS
 	select HAS_ESPRESSIF_HAL
 
