@@ -308,7 +308,7 @@ static struct db_hash {
 } db_hash;
 #endif
 
-static struct gatt_sc_cfg *find_sc_cfg(uint8_t id, bt_addr_le_t *addr)
+static struct gatt_sc_cfg *find_sc_cfg(uint8_t id, const bt_addr_le_t *addr)
 {
 	BT_DBG("id: %u, addr: %s", id, bt_addr_le_str(addr));
 
