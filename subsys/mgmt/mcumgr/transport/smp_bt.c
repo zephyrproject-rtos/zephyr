@@ -391,57 +391,65 @@ static int smp_bt_tx_pkt(struct net_buf *nb)
 	conn = smp_bt_conn_from_pkt(nb);
 	if (conn == NULL) {
 		rc = MGMT_ERR_ENOENT;
-	} else {
-		/* Send data in chunks of the MTU size */
-		mtu_size = smp_bt_get_mtu(nb);
+		goto cleanup;
+	}
 
-		k_sem_reset(&smp_notify_sem);
+	/* Send data in chunks of the MTU size */
+	mtu_size = smp_bt_get_mtu(nb);
 
-		while (off < nb->len) {
-			if ((off + mtu_size) > nb->len) {
-				/* Final packet, limit size */
-				mtu_size = nb->len - off;
-			}
+	if (mtu_size == 0U) {
+		/* The transport cannot support a transmission right now. */
+		rc = MGMT_ERR_EUNKNOWN;
+		goto cleanup;
+	}
 
-			notify_param.len = mtu_size;
+	k_sem_reset(&smp_notify_sem);
 
-			rc = bt_gatt_notify_cb(conn, &notify_param);
-			k_sem_take(&smp_notify_sem, K_FOREVER);
+	while (off < nb->len) {
+		if ((off + mtu_size) > nb->len) {
+			/* Final packet, limit size */
+			mtu_size = nb->len - off;
+		}
 
-			if (rc == -ENOMEM) {
-				if (sent == false) {
-					/* Failed to send a packet thus far, try reducing the MTU
-					 * size as perhaps the buffer size is limited to a value
-					 * which is less than the MTU or there is a configuration
-					 * error in the project
+		notify_param.len = mtu_size;
+
+		rc = bt_gatt_notify_cb(conn, &notify_param);
+		k_sem_take(&smp_notify_sem, K_FOREVER);
+
+		if (rc == -ENOMEM) {
+			if (sent == false) {
+				/* Failed to send a packet thus far, try reducing the MTU size
+				 * as perhaps the buffer size is limited to a value which is
+				 * less than the MTU or there is a configuration error in the
+				 * project
+				 */
+				if (mtu_size < SMP_BT_MINIMUM_MTU_SEND_FAILURE) {
+					/* If unable to send a 20 byte message, something is
+					 * amiss, no point in continuing
 					 */
-					if (mtu_size < SMP_BT_MINIMUM_MTU_SEND_FAILURE) {
-						/* If unable to send a 20 byte message, something
-						 * is amiss and so no point in continuing
-						 */
-						rc = MGMT_ERR_ENOMEM;
-						break;
-					}
-
-					mtu_size /= 2;
+					rc = MGMT_ERR_ENOMEM;
+					break;
 				}
 
-				/* No buffers available, wait until the next loop for them to
-				 * become available
-				 */
-				rc = MGMT_ERR_EOK;
-				k_yield();
-			} else if (rc == 0) {
-				off += mtu_size;
-				notify_param.data = &nb->data[off];
-				sent = true;
-			} else {
-				rc = MGMT_ERR_EUNKNOWN;
-				break;
+				mtu_size /= 2;
 			}
+
+			/* No buffers available, wait until the next loop for them to become
+			 * available
+			 */
+			rc = MGMT_ERR_EOK;
+			k_yield();
+		} else if (rc == 0) {
+			off += mtu_size;
+			notify_param.data = &nb->data[off];
+			sent = true;
+		} else {
+			rc = MGMT_ERR_EUNKNOWN;
+			break;
 		}
 	}
 
+cleanup:
 	if (rc != MGMT_ERR_ENOENT) {
 		bt_conn_unref(conn);
 	}

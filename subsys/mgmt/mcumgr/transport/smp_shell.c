@@ -26,6 +26,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smp_shell);
 
+BUILD_ASSERT(CONFIG_MCUMGR_SMP_SHELL_MTU != 0, "CONFIG_MCUMGR_SMP_SHELL_MTU must be > 0");
+
 static struct zephyr_smp_transport smp_shell_transport;
 
 static struct mcumgr_serial_rx_ctxt smp_shell_rx_ctxt;
@@ -160,7 +162,7 @@ static uint16_t smp_shell_get_mtu(const struct net_buf *nb)
 	return CONFIG_MCUMGR_SMP_SHELL_MTU;
 }
 
-static int smp_shell_tx_raw(const void *data, int len, void *arg)
+static int smp_shell_tx_raw(const void *data, int len)
 {
 	const struct shell *const sh = shell_backend_uart_get_ptr();
 	const struct shell_uart *const su = sh->iface->ctx;
@@ -180,7 +182,7 @@ static int smp_shell_tx_pkt(struct net_buf *nb)
 {
 	int rc;
 
-	rc = mcumgr_serial_tx_pkt(nb->data, nb->len, smp_shell_tx_raw, NULL);
+	rc = mcumgr_serial_tx_pkt(nb->data, nb->len, smp_shell_tx_raw);
 	mcumgr_buf_free(nb);
 
 	return rc;
