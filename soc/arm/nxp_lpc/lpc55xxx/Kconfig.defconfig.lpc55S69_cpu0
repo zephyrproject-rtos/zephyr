@@ -26,8 +26,6 @@ choice USB_MCUX_CONTROLLER_TYPE
 endchoice
 
 config I2S_MCUX_FLEXCOMM
-	default y if HAS_MCUX_FLEXCOMM
-	depends on I2S
 	select INIT_PLL0
 
 endif # SOC_LPC55S69_CPU0

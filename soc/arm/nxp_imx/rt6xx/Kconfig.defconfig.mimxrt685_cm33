@@ -13,8 +13,6 @@ config PINMUX_MCUX_LPC
 	depends on PINMUX
 
 config I2S_MCUX_FLEXCOMM
-	default y if HAS_MCUX_FLEXCOMM
-	depends on I2S
 	select INIT_AUDIO_PLL
 
 config DMA_MCUX_LPC
