@@ -20,11 +20,10 @@
 /* physical address of RAM */
 #ifdef CONFIG_XIP
   #define ROMABLE_REGION FLASH
-  #define RAMABLE_REGION SRAM
 #else
-  #define ROMABLE_REGION SRAM
-  #define RAMABLE_REGION SRAM
+  #define ROMABLE_REGION RAM
 #endif
+#define RAMABLE_REGION RAM
 
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
   #define ROM_ADDR RAM_ADDR
@@ -60,7 +59,7 @@
 MEMORY
 {
     FLASH     (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
-    SRAM      (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
+    RAM       (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
@@ -203,7 +202,7 @@ SECTIONS
     GROUP_START(RAMABLE_REGION)
 
     . = RAM_ADDR;
-    /* Align the start of image SRAM with the
+    /* Align the start of image RAM with the
      * minimum granularity required by MMU.
      */
     . = ALIGN(_region_min_align);
