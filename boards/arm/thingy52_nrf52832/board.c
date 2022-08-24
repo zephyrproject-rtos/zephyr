@@ -8,7 +8,6 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/printk.h>
 
-#define VDD_PWR_CTRL_GPIO_PIN 30
 #define CCS_VDD_PWR_CTRL_GPIO_PIN 10
 
 struct pwr_ctrl_cfg {
@@ -31,34 +30,6 @@ static int pwr_ctrl_init(const struct device *dev)
 	return 0;
 }
 
-/*
- * The CCS811 sensor is connected to the CCS_VDD power rail, which is downstream
- * from the VDD power rail. Both of these power rails need to be enabled before
- * the sensor driver init can be performed. The VDD rail also has to be powered up
- * before the CCS_VDD rail. These checks are to enforce the power up sequence
- * constraints.
- */
-
-#if CONFIG_BOARD_VDD_PWR_CTRL_INIT_PRIORITY <= CONFIG_GPIO_INIT_PRIORITY
-#error GPIO_INIT_PRIORITY must be lower than \
-	BOARD_VDD_PWR_CTRL_INIT_PRIORITY
-#endif
-
-static const struct pwr_ctrl_cfg vdd_pwr_ctrl_cfg = {
-	.gpio_dev = DEVICE_DT_GET(DT_NODELABEL(gpio0)),
-	.pin = VDD_PWR_CTRL_GPIO_PIN,
-};
-
-DEVICE_DEFINE(vdd_pwr_ctrl_init, "", pwr_ctrl_init, NULL, NULL,
-	      &vdd_pwr_ctrl_cfg,
-	      POST_KERNEL, CONFIG_BOARD_VDD_PWR_CTRL_INIT_PRIORITY,
-	      NULL);
-
-#ifdef CONFIG_SENSOR
-
-#if CONFIG_BOARD_CCS_VDD_PWR_CTRL_INIT_PRIORITY <= CONFIG_BOARD_VDD_PWR_CTRL_INIT_PRIORITY
-#error BOARD_VDD_PWR_CTRL_INIT_PRIORITY must be lower than BOARD_CCS_VDD_PWR_CTRL_INIT_PRIORITY
-#endif
 
 #if CONFIG_SENSOR_INIT_PRIORITY <= CONFIG_BOARD_CCS_VDD_PWR_CTRL_INIT_PRIORITY
 #error BOARD_CCS_VDD_PWR_CTRL_INIT_PRIORITY must be lower than SENSOR_INIT_PRIORITY
@@ -72,5 +43,3 @@ static const struct pwr_ctrl_cfg ccs_vdd_pwr_ctrl_cfg = {
 DEVICE_DEFINE(ccs_vdd_pwr_ctrl_init, "", pwr_ctrl_init, NULL, NULL,
 	      &ccs_vdd_pwr_ctrl_cfg, POST_KERNEL,
 	      CONFIG_BOARD_CCS_VDD_PWR_CTRL_INIT_PRIORITY, NULL);
-
-#endif
