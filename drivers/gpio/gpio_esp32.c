@@ -118,13 +118,10 @@ static int gpio_esp32_config(const struct device *dev,
 
 	if (flags & GPIO_PULL_UP) {
 		if (!rtc_gpio_is_valid_gpio(io_pin) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
-			gpio_ll_pulldown_dis(&GPIO, io_pin);
 			gpio_ll_pullup_en(&GPIO, io_pin);
 		} else {
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 			int rtcio_num = rtc_io_num_map[io_pin];
-
-			rtcio_hal_pulldown_disable(rtc_io_num_map[io_pin]);
 
 			if (rtc_io_desc[rtcio_num].pullup) {
 				rtcio_hal_pullup_enable(rtc_io_num_map[io_pin]);
@@ -134,22 +131,55 @@ static int gpio_esp32_config(const struct device *dev,
 			}
 #endif
 		}
-	} else if (flags & GPIO_PULL_DOWN) {
+	} else {
 		if (!rtc_gpio_is_valid_gpio(io_pin) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
 			gpio_ll_pullup_dis(&GPIO, io_pin);
+		} else {
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+			rtcio_hal_pullup_disable(io_pin);
+#else
+			ret = -ENOTSUP;
+			goto end;
+#endif
+		}
+	}
+
+	if (flags & GPIO_SINGLE_ENDED) {
+		if (flags & GPIO_LINE_OPEN_DRAIN) {
+			gpio_ll_od_enable(cfg->gpio_base, io_pin);
+		} else {
+			LOG_ERR("GPIO configuration not supported");
+			ret = -ENOTSUP;
+			goto end;
+		}
+	} else {
+		gpio_ll_od_disable(cfg->gpio_base, io_pin);
+	}
+
+	if (flags & GPIO_PULL_DOWN) {
+		if (!rtc_gpio_is_valid_gpio(io_pin) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
 			gpio_ll_pulldown_en(&GPIO, io_pin);
 		} else {
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 			int rtcio_num = rtc_io_num_map[io_pin];
 
-			rtcio_hal_pulldown_enable(rtc_io_num_map[io_pin]);
-
-			if (rtc_io_desc[rtcio_num].pullup) {
-				rtcio_hal_pullup_disable(rtc_io_num_map[io_pin]);
+			if (rtc_io_desc[rtcio_num].pulldown) {
+				rtcio_hal_pulldown_enable(rtc_io_num_map[io_pin]);
 			} else {
 				ret = -ENOTSUP;
 				goto end;
 			}
+#endif
+		}
+	} else {
+		if (!rtc_gpio_is_valid_gpio(io_pin) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
+			gpio_ll_pulldown_dis(&GPIO, io_pin);
+		} else {
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+			rtcio_hal_pulldown_disable(io_pin);
+#else
+			ret = -ENOTSUP;
+			goto end;
 #endif
 		}
 	}
@@ -160,18 +190,6 @@ static int gpio_esp32_config(const struct device *dev,
 			LOG_ERR("GPIO can only be used as input");
 			ret = -EINVAL;
 			goto end;
-		}
-
-		if (flags & GPIO_SINGLE_ENDED) {
-			if (flags & GPIO_LINE_OPEN_DRAIN) {
-				gpio_ll_od_enable(cfg->gpio_base, io_pin);
-			} else {
-				LOG_ERR("GPIO configuration not supported");
-				ret = -ENOTSUP;
-				goto end;
-			}
-		} else {
-			gpio_ll_od_disable(cfg->gpio_base, io_pin);
 		}
 
 		/*
@@ -209,19 +227,23 @@ static int gpio_esp32_config(const struct device *dev,
 			goto end;
 		}
 
+		gpio_ll_output_enable(&GPIO, io_pin);
+		esp_rom_gpio_matrix_out(io_pin, SIG_GPIO_OUT_IDX, false, false);
+
 		/* Set output pin initial value */
 		if (flags & GPIO_OUTPUT_INIT_HIGH) {
 			gpio_ll_set_level(cfg->gpio_base, io_pin, 1);
 		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
 			gpio_ll_set_level(cfg->gpio_base, io_pin, 0);
 		}
-
-		gpio_ll_output_enable(&GPIO, io_pin);
-		esp_rom_gpio_matrix_out(io_pin, SIG_GPIO_OUT_IDX, false, false);
+	} else {
+		gpio_ll_output_disable(&GPIO, io_pin);
 	}
 
 	if (flags & GPIO_INPUT) {
 		gpio_ll_input_enable(&GPIO, io_pin);
+	} else {
+		gpio_ll_input_disable(&GPIO, io_pin);
 	}
 
 end:
