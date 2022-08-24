@@ -15,7 +15,7 @@ Development System SoC. This allows developers to build and debug complex
 software on a comprehensive hardware platform
 
 .. image:: ./hsdk.jpg
-   :width: 442px
+   :width: 750px
    :align: center
    :alt: DesignWare(R) ARC(R) HS Development Kit (synopsys.com)
 
@@ -111,7 +111,7 @@ The location of the pins on the Pmod connectors is shown in Figure below. Detail
 depending on the pin multiplexer settings are provided in the subsequent sections.
 
 .. image:: ./pinout_diagram_of_the_pmod.jpg
-   :width: 442px
+   :width: 650px
    :align: center
    :alt: Pinout Diagram of the Pmod
 
@@ -212,7 +212,7 @@ The ARC HSDK features a set of MikroBUS headers. Figure below shows the relevant
 fully compatible with the MikroBUS standard. Table below shows the pin assignment on the I/O Multiplexer.
 
 .. image:: ./mikrobus_header.jpg
-   :width: 442px
+   :width: 750px
    :align: center
    :alt: mikrobus header
 
@@ -247,7 +247,7 @@ shields do not require this ICSP header as the SPI master interface on this ICSP
 is also available on the IO10 to IO13 pins.
 
 .. image:: ./arduino_shield_interface.jpg
-   :width: 442px
+   :width: 650px
    :align: center
    :alt: arduino shield interface
 
