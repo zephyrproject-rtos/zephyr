@@ -33,6 +33,5 @@ static int pwr_ctrl_init(const struct device *dev)
 #error BOARD_CCS_VDD_PWR_CTRL_INIT_PRIORITY must be lower than SENSOR_INIT_PRIORITY
 #endif
 
-DEVICE_DEFINE(ccs_vdd_pwr_ctrl_init, "", pwr_ctrl_init, NULL, NULL,
-	      NULL, POST_KERNEL,
-	      CONFIG_BOARD_CCS_VDD_PWR_CTRL_INIT_PRIORITY, NULL);
+SYS_INIT(pwr_ctrl_init, POST_KERNEL,
+	 CONFIG_BOARD_CCS_VDD_PWR_CTRL_INIT_PRIORITY);
