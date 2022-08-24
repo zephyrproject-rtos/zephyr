@@ -5,6 +5,8 @@
 
 menuconfig WIFI_ESWIFI
 	bool "Inventek eS-WiFi support"
+	default y
+	depends on DT_HAS_INVENTEK_ESWIFI_ENABLED || DT_HAS_INVENTEK_ESWIFI_UART_ENABLED
 	select NET_L2_WIFI_MGMT
 	select WIFI_OFFLOAD
 	select NET_OFFLOAD

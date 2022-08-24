@@ -2,6 +2,8 @@
 
 menuconfig WIFI_ESP32
 	bool "ESP32 SoC WiFi support"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_WIFI_ENABLED
 	depends on !SMP
 	select THREAD_CUSTOM_DATA
 	select WIFI_USE_NATIVE_NETWORKING
