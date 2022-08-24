@@ -45,7 +45,28 @@
 
 #define BUF_LEN 10
 
+#if defined(CONFIG_MINIMAL_LIBC) && CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE == 0
+ZTEST_USER(lib_dynamic_memalloc, test_no_mem_malloc)
+{
+	int *iptr = NULL;
 
+	iptr = malloc(BUF_LEN);
+	zassert_is_null((iptr), "malloc failed, errno: %d", errno);
+	free(iptr);
+	iptr = NULL;
+}
+
+ZTEST_USER(lib_dynamic_memalloc, test_no_mem_realloc)
+{
+	char *ptr = NULL;
+	char *reloc_ptr = NULL;
+
+	reloc_ptr = realloc(ptr, BUF_LEN);
+	zassert_is_null(reloc_ptr, "realloc failed, errno: %d", errno);
+	free(reloc_ptr);
+	reloc_ptr = NULL;
+}
+#else
 /* The access test allocates objects of this type and dereferences members. */
 union aligntest {
 	long long       thelonglong;
@@ -79,7 +100,7 @@ static void do_the_access(volatile union aligntest *aptr)
 #define PRINT_TYPE_INFO(_t) \
 	TC_PRINT("    %-14s  %4zu  %5zu\n", #_t, sizeof(_t), __alignof__(_t))
 
-void test_malloc_align(void)
+ZTEST_USER(lib_dynamic_memalloc, test_malloc_align)
 {
 	char *ptr[64] = { NULL };
 
@@ -146,7 +167,7 @@ void test_malloc_align(void)
  *
  * @see malloc(), free()
  */
-void test_malloc(void)
+ZTEST_USER(lib_dynamic_memalloc, test_malloc)
 {
 	/* Initialize error number to avoid garbage value, in case of SUCCESS */
 	int *iptr = NULL;
@@ -157,34 +178,13 @@ void test_malloc(void)
 	free(iptr);
 	iptr = NULL;
 }
-#if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE == 0)
-__no_optimization void test_no_mem_malloc(void)
-{
-	int *iptr = NULL;
-
-	iptr = malloc(BUF_LEN);
-	zassert_is_null((iptr), "malloc failed, errno: %d", errno);
-	free(iptr);
-	iptr = NULL;
-}
-__no_optimization void test_no_mem_realloc(void)
-{
-	char *ptr = NULL;
-	char *reloc_ptr = NULL;
-
-	reloc_ptr = realloc(ptr, BUF_LEN);
-	zassert_is_null(reloc_ptr, "realloc failed, errno: %d", errno);
-	free(reloc_ptr);
-	reloc_ptr = NULL;
-}
-#endif
 
 /**
  * @brief Test dynamic memory allocation free function
  *
  * @see free()
  */
-void test_free(void)
+ZTEST_USER(lib_dynamic_memalloc, test_free)
 {
 /*
  * In free, if ptr is passed as NULL, no operation is performed
@@ -200,7 +200,7 @@ void test_free(void)
  */
 ZTEST_BMEM unsigned char filled_buf[BUF_LEN];
 
-void test_realloc(void)
+ZTEST_USER(lib_dynamic_memalloc, test_realloc)
 {
 	char orig_size = BUF_LEN;
 	char new_size = BUF_LEN + BUF_LEN;
@@ -231,12 +231,12 @@ void test_realloc(void)
  * @see malloc(), reallocarray(), free()
  */
 #ifdef CONFIG_NEWLIB_LIBC
-void test_reallocarray(void)
+ZTEST_USER(lib_dynamic_memalloc, test_reallocarray)
 {
 	/* reallocarray not implemented for newlib */
 	ztest_test_skip();
 }
-void test_calloc(void)
+ZTEST_USER(lib_dynamic_memalloc, test_calloc)
 {
 	ztest_test_skip();
 }
@@ -249,7 +249,7 @@ void test_calloc(void)
 #define CALLOC_BUFLEN (200)
 static ZTEST_BMEM unsigned char zerobuf[CALLOC_BUFLEN];
 
-__no_optimization void test_calloc(void)
+ZTEST_USER(lib_dynamic_memalloc, test_calloc)
 {
 	char *cptr = NULL;
 
@@ -270,7 +270,7 @@ __no_optimization void test_calloc(void)
 	cptr = NULL;
 }
 
-void test_reallocarray(void)
+ZTEST_USER(lib_dynamic_memalloc, test_reallocarray)
 {
 	char orig_size = BUF_LEN;
 	char *ptr = NULL;
@@ -309,7 +309,7 @@ void test_reallocarray(void)
  *
  * @see malloc(), calloc(), realloc(), free()
  */
-void test_memalloc_all(void)
+ZTEST_USER(lib_dynamic_memalloc, test_memalloc_all)
 {
 	char *mlc_ptr = NULL;
 	char *clc_ptr = NULL;
@@ -345,7 +345,7 @@ void test_memalloc_all(void)
  *
  */
 
-__no_optimization void test_memalloc_max(void)
+ZTEST_USER(lib_dynamic_memalloc, test_memalloc_max)
 {
 	char *ptr = NULL;
 
@@ -354,26 +354,6 @@ __no_optimization void test_memalloc_max(void)
 	free(ptr);
 	ptr = NULL;
 }
-
-void test_main(void)
-{
-#if defined(CONFIG_MINIMAL_LIBC) && CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE == 0
-	ztest_test_suite(test_c_lib_dynamic_memalloc,
-			 ztest_user_unit_test(test_no_mem_malloc),
-			 ztest_user_unit_test(test_no_mem_realloc)
-			 );
-	ztest_run_test_suite(test_c_lib_dynamic_memalloc);
-#else
-	ztest_test_suite(test_c_lib_dynamic_memalloc,
-			 ztest_user_unit_test(test_malloc_align),
-			 ztest_user_unit_test(test_malloc),
-			 ztest_user_unit_test(test_free),
-			 ztest_user_unit_test(test_calloc),
-			 ztest_user_unit_test(test_realloc),
-			 ztest_user_unit_test(test_reallocarray),
-			 ztest_user_unit_test(test_memalloc_all),
-			 ztest_user_unit_test(test_memalloc_max)
-			 );
-	ztest_run_test_suite(test_c_lib_dynamic_memalloc);
 #endif
-}
+
+ZTEST_SUITE(lib_dynamic_memalloc, NULL, NULL, NULL, NULL, NULL);
