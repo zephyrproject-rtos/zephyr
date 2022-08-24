@@ -1,18 +1,24 @@
 /*
  * Copyright (c) 2019 Intel Corp.
  *
- * This is most of the display driver for a "standard" 32-bpp framebuffer.
- * Device-specific drivers must still create the device instance and initialize
- * it accordingly, but this driver implements most/all of the API functions.
  * This code attempts to be endian-agnostic. It manipulates the framebuffer
  * address space only in 32-bit words (and assumes those words are 0xAARRGGBB).
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/arch/x86/multiboot.h>
 #include <zephyr/drivers/display.h>
-#include <zephyr/display/framebuf.h>
 #include <string.h>
+
+struct framebuf_dev_data {
+	void *buffer;
+	uint32_t pitch;
+	uint16_t width;
+	uint16_t height;
+};
+
+#define FRAMEBUF_DATA(dev) ((struct framebuf_dev_data *) ((dev)->data))
 
 static int framebuf_blanking_on(const struct device *dev)
 {
@@ -132,3 +138,46 @@ const struct display_driver_api framebuf_display_api = {
 	.set_pixel_format = framebuf_set_pixel_format,
 	.set_orientation = framebuf_set_orientation
 };
+
+static struct framebuf_dev_data multiboot_framebuf_data = {
+	.width = CONFIG_INTEL_MULTIBOOTFB_X,
+	.height = CONFIG_INTEL_MULTIBOOTFB_Y
+};
+
+static int multiboot_framebuf_init(const struct device *dev)
+{
+	struct framebuf_dev_data *data = FRAMEBUF_DATA(dev);
+	struct multiboot_info *info = &multiboot_info;
+
+	if ((info->flags & MULTIBOOT_INFO_FLAGS_FB) &&
+	    (info->fb_width >= CONFIG_INTEL_MULTIBOOTFB_X) &&
+	    (info->fb_height >= CONFIG_INTEL_MULTIBOOTFB_Y) &&
+	    (info->fb_bpp == 32) && (info->fb_addr_hi == 0)) {
+		/*
+		 * We have a usable multiboot framebuffer - it is 32 bpp
+		 * and at least as large as the requested dimensions. Compute
+		 * the pitch and adjust the start address center our canvas.
+		 */
+
+		uint16_t adj_x;
+		uint16_t adj_y;
+		uint32_t *buffer;
+
+		adj_x = info->fb_width -CONFIG_INTEL_MULTIBOOTFB_X;
+		adj_y = info->fb_height - CONFIG_INTEL_MULTIBOOTFB_Y;
+		data->pitch = (info->fb_pitch / 4) + adj_x;
+		adj_x /= 2U;
+		adj_y /= 2U;
+		buffer = (uint32_t *) (uintptr_t) info->fb_addr_lo;
+		buffer += adj_x;
+		buffer += adj_y * data->pitch;
+		data->buffer = buffer;
+		return 0;
+	} else {
+		return -ENOTSUP;
+	}
+}
+
+DEVICE_DEFINE(multiboot_framebuf, "FRAMEBUF", multiboot_framebuf_init, NULL,
+	      &multiboot_framebuf_data, NULL, PRE_KERNEL_1,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &framebuf_display_api);

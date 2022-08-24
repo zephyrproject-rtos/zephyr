@@ -45,12 +45,12 @@
 	.long MULTIBOOT_HEADER_MAGIC
 	.long MULTIBOOT_HEADER_FLAGS
 	.long -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
-#ifdef CONFIG_MULTIBOOT_FRAMEBUF
+#ifdef CONFIG_INTEL_MULTIBOOTFB_DISPLAY
 	.fill 5,4,0				/* (unused exec layout) */
 	.long 0					/* linear graphics mode */
-	.long CONFIG_MULTIBOOT_FRAMEBUF_X	/* width */
-	.long CONFIG_MULTIBOOT_FRAMEBUF_Y	/* height */
+	.long CONFIG_INTEL_MULTIBOOTFB_X	/* width */
+	.long CONFIG_INTEL_MULTIBOOTFB_Y	/* height */
 	.long 32				/* depth */
-#endif /* CONFIG_MULTIBOOT_FRAMEBUF */
+#endif /* CONFIG_INTEL_MULTIBOOTFB_DISPLAY */
 1:
 #endif

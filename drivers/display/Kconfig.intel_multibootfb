@@ -1,0 +1,21 @@
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config INTEL_MULTIBOOTFB_DISPLAY
+	bool "Intel Multiboot Framebuffer"
+	default y
+	depends on MULTIBOOT && MULTIBOOT_INFO
+	help
+	  Enable Intel Multiboot framebuffer-based display driver.
+
+if INTEL_MULTIBOOTFB_DISPLAY
+
+config INTEL_MULTIBOOTFB_X
+	int "Multiboot framebuffer X pixels"
+	default 640
+
+config INTEL_MULTIBOOTFB_Y
+	int "Multiboot framebuffer Y pixels"
+	default 480
+
+endif # INTEL_MULTIBOOTFB_DISPLAY
