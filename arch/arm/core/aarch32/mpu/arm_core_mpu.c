@@ -55,8 +55,8 @@ uint32_t z_arm_mpu_stack_guard_and_fpu_adjust(struct k_thread *thread);
 #endif
 
 #if defined(CONFIG_CODE_DATA_RELOCATION_SRAM)
-extern char __sram_text_start[];
-extern char __sram_text_size[];
+extern char __ram_text_start[];
+extern char __ram_text_size[];
 #endif
 
 static const struct z_arm_mpu_partition static_regions[] = {
@@ -89,8 +89,8 @@ static const struct z_arm_mpu_partition static_regions[] = {
 #if defined(CONFIG_CODE_DATA_RELOCATION_SRAM)
 		{
 		/* RAM area for relocated text */
-		.start = (uint32_t)&__sram_text_start,
-		.size = (uint32_t)&__sram_text_size,
+		.start = (uint32_t)&__ram_text_start,
+		.size = (uint32_t)&__ram_text_size,
 		.attr = K_MEM_PARTITION_P_RX_U_RX,
 		},
 #endif /* CONFIG_CODE_DATA_RELOCATION_SRAM */
