@@ -367,6 +367,20 @@ config LOG_BACKEND_ADSP_HDA_FLUSH_TIME
 	    to hardware by informing the DMA hardware the contents of the ring
 	    buffer.
 
+config LOG_BACKEND_ADSP_HDA_CAVSTOOL
+	bool "Log backend is to be used with cavstool"
+	help
+		Use cavstool understood IPC messages to inform setup and logging of
+		HDA messages.
+
+config LOG_BACKEND_ADSP_HDA_PADDING
+	bool "Log backend should pad the buffer with \0 characters when flushing"
+	help
+		HDA requires transfers be 128 byte aligned such that a partial message may
+		never make it across unless padded with \0 characters to the next 128 byte
+		aligned address. This may or may not work depending on the log format
+		being used but should certainly work with text based logging.
+
 endif # LOG_BACKEND_ADSP_HDA
 
 config LOG_BACKEND_FS

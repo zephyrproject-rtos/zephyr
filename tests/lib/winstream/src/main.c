@@ -18,6 +18,7 @@
 ZTEST(winstream, test_log_frequent)
 {
 	uint32_t i = 0;
+
 	/* Below log output has no delay, thus very frequent.
 	 * And we output for 2 full winstream buffer size to
 	 * ensure a wrap around happens. This way, the test suite
