@@ -36,6 +36,7 @@
 #define TEST_IRQ	DT_NODELABEL(test_irq)
 #define TEST_TEMP	DT_NODELABEL(test_temp_sensor)
 #define TEST_REG	DT_NODELABEL(test_reg)
+#define TEST_VENDOR	DT_NODELABEL(test_vendor)
 #define TEST_ENUM_0	DT_NODELABEL(test_enum_0)
 
 #define TEST_I2C DT_NODELABEL(test_i2c)
@@ -396,6 +397,34 @@ ZTEST(devicetree_api, test_bus)
 		      NULL);
 	zassert_equal(DT_COMPAT_ON_BUS_INTERNAL(vnd_gpio_expander, spi), 1,
 		      NULL);
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_vendor
+
+#define VND_VENDOR "A stand-in for a real vendor which can be used in examples and tests"
+#define ZEP_VENDOR "Zephyr-specific binding"
+
+ZTEST(devicetree_api, test_vendor)
+{
+	/* DT_NODE_VENDOR_HAS_IDX */
+	zassert_true(DT_NODE_VENDOR_HAS_IDX(TEST_VENDOR, 0), "");
+	zassert_false(DT_NODE_VENDOR_HAS_IDX(TEST_VENDOR, 1), "");
+	zassert_true(DT_NODE_VENDOR_HAS_IDX(TEST_VENDOR, 2), "");
+	zassert_false(DT_NODE_VENDOR_HAS_IDX(TEST_VENDOR, 3), "");
+
+	/* DT_NODE_VENDOR_BY_IDX */
+	zassert_true(!strcmp(DT_NODE_VENDOR_BY_IDX(TEST_VENDOR, 0), VND_VENDOR), "");
+	zassert_true(!strcmp(DT_NODE_VENDOR_BY_IDX(TEST_VENDOR, 2), ZEP_VENDOR), "");
+
+	/* DT_NODE_VENDOR_BY_IDX_OR */
+	zassert_true(!strcmp(DT_NODE_VENDOR_BY_IDX_OR(TEST_VENDOR, 0, NULL), VND_VENDOR), "");
+	zassert_is_null(DT_NODE_VENDOR_BY_IDX_OR(TEST_VENDOR, 1, NULL), "");
+	zassert_true(!strcmp(DT_NODE_VENDOR_BY_IDX_OR(TEST_VENDOR, 2, NULL), ZEP_VENDOR), "");
+	zassert_is_null(DT_NODE_VENDOR_BY_IDX_OR(TEST_VENDOR, 3, NULL), "");
+
+	/* DT_NODE_VENDOR_OR */
+	zassert_true(!strcmp(DT_NODE_VENDOR_OR(TEST_VENDOR, NULL), VND_VENDOR), "");
 }
 
 #undef DT_DRV_COMPAT

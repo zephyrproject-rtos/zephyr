@@ -344,6 +344,11 @@
 			misc-prop = <1234>;
 		};
 
+		test_vendor: vendor {
+			compatible = "vnd,model1", "gpio", "zephyr,model2";
+			status = "okay";
+		};
+
 		test_intc: interrupt-controller@bbbbcccc  {
 			compatible = "vnd,intc";
 			reg = <0xbbbbcccc 0x1000>;
