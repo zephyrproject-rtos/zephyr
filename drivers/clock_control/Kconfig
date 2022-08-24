@@ -66,4 +66,6 @@ source "drivers/clock_control/Kconfig.aspeed"
 
 source "drivers/clock_control/Kconfig.gd32"
 
+source "drivers/clock_control/Kconfig.numaker"
+
 endif # CLOCK_CONTROL
