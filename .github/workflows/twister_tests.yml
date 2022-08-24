@@ -42,7 +42,7 @@ jobs:
           ${{ runner.os }}-pip-${{ matrix.python-version }}
     - name: install-packages
       run: |
-        pip3 install pytest colorama pyyaml ply mock pykwalify
+        pip3 install -r scripts/requirements-base.txt -r scripts/requirements-build-test.txt
     - name: Run pytest
       env:
         ZEPHYR_BASE: ./
