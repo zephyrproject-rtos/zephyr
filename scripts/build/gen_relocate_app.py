@@ -435,7 +435,7 @@ def create_dict_wrt_mem():
 
         mem_region, copy_flag, file_name = line.split(':', 2)
 
-        file_name_list = glob.glob(file_name)
+        file_name_list = glob.glob(file_name, recursive=True)
         if not file_name_list:
             warnings.warn("File: "+file_name+" Not found")
             continue
