@@ -8,22 +8,21 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/printk.h>
 
-#define CCS_VDD_PWR_CTRL_GPIO_PIN 10
-
-struct pwr_ctrl_cfg {
-	const struct device *gpio_dev;
-	uint32_t pin;
-};
+static const struct gpio_dt_spec ccs_gpio =
+	GPIO_DT_SPEC_GET(DT_NODELABEL(ccs_pwr), enable_gpios);
 
 static int pwr_ctrl_init(const struct device *dev)
 {
-	const struct pwr_ctrl_cfg *cfg = dev->config;
+	int ret;
 
-	if (!device_is_ready(cfg->gpio_dev)) {
+	if (!device_is_ready(ccs_gpio.port)) {
 		return -ENODEV;
 	}
 
-	gpio_pin_configure(cfg->gpio_dev, cfg->pin, GPIO_OUTPUT_HIGH);
+	ret = gpio_pin_configure_dt(&ccs_gpio, GPIO_OUTPUT_HIGH);
+	if (ret < 0) {
+		return ret;
+	}
 
 	k_sleep(K_MSEC(1)); /* Wait for the rail to come up and stabilize */
 
@@ -35,11 +34,6 @@ static int pwr_ctrl_init(const struct device *dev)
 #error BOARD_CCS_VDD_PWR_CTRL_INIT_PRIORITY must be lower than SENSOR_INIT_PRIORITY
 #endif
 
-static const struct pwr_ctrl_cfg ccs_vdd_pwr_ctrl_cfg = {
-	.gpio_dev = DEVICE_DT_GET(DT_INST(0, semtech_sx1509b)),
-	.pin = CCS_VDD_PWR_CTRL_GPIO_PIN,
-};
-
 DEVICE_DEFINE(ccs_vdd_pwr_ctrl_init, "", pwr_ctrl_init, NULL, NULL,
-	      &ccs_vdd_pwr_ctrl_cfg, POST_KERNEL,
+	      NULL, POST_KERNEL,
 	      CONFIG_BOARD_CCS_VDD_PWR_CTRL_INIT_PRIORITY, NULL);
