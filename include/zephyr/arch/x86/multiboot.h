@@ -9,6 +9,8 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <stdint.h>
+
 /*
  * Multiboot (version 1) boot information structure.
  *
