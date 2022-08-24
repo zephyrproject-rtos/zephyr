@@ -27,6 +27,9 @@
 #include <mgmt/mcumgr/smp_dummy.h>
 #include "../smp_internal.h"
 
+BUILD_ASSERT(CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE != 0,
+	     "CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE must be > 0");
+
 struct device;
 static struct mcumgr_serial_rx_ctxt smp_dummy_rx_ctxt;
 static struct mcumgr_serial_rx_ctxt smp_dummy_tx_ctxt;
@@ -63,7 +66,7 @@ static struct net_buf *mcumgr_dummy_process_frag_outgoing(
 	const uint8_t *frag, int frag_len);
 
 static int mcumgr_dummy_tx_pkt(const uint8_t *data, int len,
-			       mcumgr_serial_tx_cb cb, void *arg);
+			       mcumgr_serial_tx_cb cb);
 
 K_FIFO_DEFINE(smp_dummy_rx_fifo);
 K_WORK_DEFINE(smp_dummy_work, smp_dummy_process_rx_queue);
@@ -150,7 +153,7 @@ static uint16_t smp_dummy_get_mtu(const struct net_buf *nb)
 	return CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE;
 }
 
-int dummy_mcumgr_send_raw(const void *data, int len, void *arg)
+int dummy_mcumgr_send_raw(const void *data, int len)
 {
 	uint16_t data_size =
 	MIN(len, (sizeof(smp_send_buffer) - smp_send_pos - 1));
@@ -174,7 +177,7 @@ static int smp_dummy_tx_pkt_int(struct net_buf *nb)
 {
 	int rc;
 
-	rc = mcumgr_dummy_tx_pkt(nb->data, nb->len, dummy_mcumgr_send_raw, NULL);
+	rc = mcumgr_dummy_tx_pkt(nb->data, nb->len, dummy_mcumgr_send_raw);
 	mcumgr_buf_free(nb);
 
 	return rc;
@@ -507,7 +510,7 @@ static struct net_buf *mcumgr_dummy_process_frag_outgoing(
  * larger than three bytes.
  */
 static int mcumgr_dummy_tx_small(const void *data, int len,
-				  mcumgr_serial_tx_cb cb, void *arg)
+				  mcumgr_serial_tx_cb cb)
 {
 	uint8_t b64[4 + 1]; /* +1 required for null terminator. */
 	size_t dst_len;
@@ -517,7 +520,7 @@ static int mcumgr_dummy_tx_small(const void *data, int len,
 	__ASSERT_NO_MSG(rc == 0);
 	__ASSERT_NO_MSG(dst_len == 4);
 
-	return cb(b64, 4, arg);
+	return cb(b64, 4);
 }
 
 /**
@@ -530,15 +533,13 @@ static int mcumgr_dummy_tx_small(const void *data, int len,
  *                                  packet.
  * @param crc                   The 16-bit CRC of the entire packet.
  * @param cb                    A callback used for transmitting raw data.
- * @param arg                   An optional argument that gets passed to the
- *                                  callback.
  * @param out_data_bytes_txed   On success, the number of data bytes
  *                                  transmitted gets written here.
  *
  * @return                      0 on success; negative error code on failure.
  */
 int mcumgr_dummy_tx_frame(const uint8_t *data, bool first, int len,
-			   uint16_t crc, mcumgr_serial_tx_cb cb, void *arg,
+			   uint16_t crc, mcumgr_serial_tx_cb cb,
 			   int *out_data_bytes_txed)
 {
 	uint8_t raw[3];
@@ -557,7 +558,7 @@ int mcumgr_dummy_tx_frame(const uint8_t *data, bool first, int len,
 		u16 = sys_cpu_to_be16(MCUMGR_SERIAL_HDR_FRAG);
 	}
 
-	rc = cb(&u16, sizeof(u16), arg);
+	rc = cb(&u16, sizeof(u16));
 	if (rc != 0) {
 		return rc;
 	}
@@ -569,7 +570,7 @@ int mcumgr_dummy_tx_frame(const uint8_t *data, bool first, int len,
 		memcpy(raw, &u16, sizeof(u16));
 		raw[2] = data[0];
 
-		rc = mcumgr_dummy_tx_small(raw, 3, cb, arg);
+		rc = mcumgr_dummy_tx_small(raw, 3, cb);
 		if (rc != 0) {
 			return rc;
 		}
@@ -591,7 +592,7 @@ int mcumgr_dummy_tx_frame(const uint8_t *data, bool first, int len,
 		if (rem == 0) {
 			raw[0] = (crc & 0xff00) >> 8;
 			raw[1] = crc & 0x00ff;
-			rc = mcumgr_dummy_tx_small(raw, 2, cb, arg);
+			rc = mcumgr_dummy_tx_small(raw, 2, cb);
 			if (rc != 0) {
 				return rc;
 			}
@@ -604,7 +605,7 @@ int mcumgr_dummy_tx_frame(const uint8_t *data, bool first, int len,
 
 			raw[1] = (crc & 0xff00) >> 8;
 			raw[2] = crc & 0x00ff;
-			rc = mcumgr_dummy_tx_small(raw, 3, cb, arg);
+			rc = mcumgr_dummy_tx_small(raw, 3, cb);
 			if (rc != 0) {
 				return rc;
 			}
@@ -617,13 +618,13 @@ int mcumgr_dummy_tx_frame(const uint8_t *data, bool first, int len,
 			src_off += 2;
 
 			raw[2] = (crc & 0xff00) >> 8;
-			rc = mcumgr_dummy_tx_small(raw, 3, cb, arg);
+			rc = mcumgr_dummy_tx_small(raw, 3, cb);
 			if (rc != 0) {
 				return rc;
 			}
 
 			raw[0] = crc & 0x00ff;
-			rc = mcumgr_dummy_tx_small(raw, 1, cb, arg);
+			rc = mcumgr_dummy_tx_small(raw, 1, cb);
 			if (rc != 0) {
 				return rc;
 			}
@@ -632,7 +633,7 @@ int mcumgr_dummy_tx_frame(const uint8_t *data, bool first, int len,
 
 		/* Otherwise, just encode payload data. */
 		memcpy(raw, data + src_off, 3);
-		rc = mcumgr_dummy_tx_small(raw, 3, cb, arg);
+		rc = mcumgr_dummy_tx_small(raw, 3, cb);
 		if (rc != 0) {
 			return rc;
 		}
@@ -640,7 +641,7 @@ int mcumgr_dummy_tx_frame(const uint8_t *data, bool first, int len,
 		dst_off += 4;
 	}
 
-	rc = cb("\n", 1, arg);
+	rc = cb("\n", 1);
 	if (rc != 0) {
 		return rc;
 	}
@@ -649,8 +650,7 @@ int mcumgr_dummy_tx_frame(const uint8_t *data, bool first, int len,
 	return 0;
 }
 
-static int mcumgr_dummy_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb,
-			       void *arg)
+static int mcumgr_dummy_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb)
 {
 	uint16_t crc;
 	int data_bytes_txed;
@@ -666,7 +666,7 @@ static int mcumgr_dummy_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb
 		rc = mcumgr_dummy_tx_frame(data + src_off,
 					   src_off == 0,
 					   len - src_off,
-					   crc, cb, arg,
+					   crc, cb,
 					   &data_bytes_txed);
 		if (rc != 0) {
 			return rc;
@@ -678,7 +678,7 @@ static int mcumgr_dummy_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb
 	return 0;
 }
 
-static int smp_receive(const void *data, int len, void *arg)
+static int smp_receive(const void *data, int len)
 {
 	uint16_t data_size =
 		MIN(len, (sizeof(smp_receive_buffer) - smp_receive_pos - 1));
@@ -713,7 +713,7 @@ uint16_t smp_dummy_get_receive_pos(void)
 
 int smp_dummy_tx_pkt(const uint8_t *data, int len)
 {
-	return mcumgr_dummy_tx_pkt(data, len, smp_receive, NULL);
+	return mcumgr_dummy_tx_pkt(data, len, smp_receive);
 }
 
 void smp_dummy_enable(void)

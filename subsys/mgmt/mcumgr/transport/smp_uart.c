@@ -19,6 +19,8 @@
 #include <zephyr/mgmt/mcumgr/smp.h>
 #include "../smp_internal.h"
 
+BUILD_ASSERT(CONFIG_MCUMGR_SMP_UART_MTU != 0, "CONFIG_MCUMGR_SMP_UART_MTU must be > 0");
+
 struct device;
 
 static void smp_uart_process_rx_queue(struct k_work *work);
