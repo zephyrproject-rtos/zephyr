@@ -341,15 +341,6 @@
 			has-vref-channel;
 		};
 
-		die_temp: dietemp {
-			compatible = "st,stm32-temp";
-			io-channels = <&adc1 16>;
-			status = "disabled";
-			v25 = <760>;
-			ntc;
-			avgslope = <25>;
-		};
-
 		dma1: dma@40026000 {
 			compatible = "st,stm32-dma-v1";
 			#dma-cells = <4>;
@@ -604,6 +595,15 @@
 			zephyr,memory-region = "BACKUP_SRAM";
 			status = "disabled";
 		};
+	};
+
+	die_temp: dietemp {
+		compatible = "st,stm32-temp";
+		io-channels = <&adc1 16>;
+		status = "disabled";
+		v25 = <760>;
+		ntc;
+		avgslope = <25>;
 	};
 
 	otgfs_phy: otgfs_phy {

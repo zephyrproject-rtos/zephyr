@@ -296,15 +296,6 @@
 			has-vref-channel;
 		};
 
-		die_temp: dietemp {
-			compatible = "st,stm32-temp";
-			io-channels = <&adc1 16>;
-			status = "disabled";
-			avgslope = <43>;
-			v25 = <1430>;
-			ntc;
-		};
-
 		dma1: dma@40020000 {
 			compatible = "st,stm32-dma-v2bis";
 			#dma-cells = <2>;
@@ -313,6 +304,15 @@
 			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
 			status = "disabled";
 		};
+	};
+
+	die_temp: dietemp {
+		compatible = "st,stm32-temp";
+		io-channels = <&adc1 16>;
+		status = "disabled";
+		avgslope = <43>;
+		v25 = <1430>;
+		ntc;
 	};
 };
 

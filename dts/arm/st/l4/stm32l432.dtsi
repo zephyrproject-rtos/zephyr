@@ -44,10 +44,6 @@
 			sample-point = <875>;
 		};
 
-		die_temp: dietemp {
-			ts-cal2-temp = <130>;
-		};
-
 		usb: usb@40006800 {
 			compatible = "st,stm32-usb";
 			reg = <0x40006800 0x40000>;
@@ -73,6 +69,10 @@
 			has-temp-channel;
 			has-vref-channel;
 		};
+	};
+
+	die_temp: dietemp {
+		ts-cal2-temp = <130>;
 	};
 
 	usb_fs_phy: usbphy {
