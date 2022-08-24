@@ -18,8 +18,4 @@ config GPIO
 config SPI
 	default n
 
-config USB_KINETIS
-	default y
-	depends on USB_DEVICE_DRIVER
-
 endif # SOC_MK64F12
