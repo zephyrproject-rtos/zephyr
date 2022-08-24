@@ -4,18 +4,7 @@
 config INTEL_MULTIBOOTFB_DISPLAY
 	bool "Intel Multiboot Framebuffer"
 	default y
-	depends on MULTIBOOT && MULTIBOOT_INFO
+	depends on MULTIBOOT && MULTIBOOT_INFO && \
+		   DT_HAS_INTEL_MULTIBOOT_FRAMEBUFFER_ENABLED
 	help
 	  Enable Intel Multiboot framebuffer-based display driver.
-
-if INTEL_MULTIBOOTFB_DISPLAY
-
-config INTEL_MULTIBOOTFB_X
-	int "Multiboot framebuffer X pixels"
-	default 640
-
-config INTEL_MULTIBOOTFB_Y
-	int "Multiboot framebuffer Y pixels"
-	default 480
-
-endif # INTEL_MULTIBOOTFB_DISPLAY
