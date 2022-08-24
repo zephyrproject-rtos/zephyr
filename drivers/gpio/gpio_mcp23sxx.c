@@ -43,8 +43,7 @@ static int mcp23sxx_read_port_regs(const struct device *dev, uint8_t reg, uint16
 		.buffers = &tx_buf,
 		.count = 1,
 	};
-	const struct spi_buf rx_buf[2] = { { .buf = NULL, .len = 2 },
-					   { .buf = (uint8_t *)&port_data, .len = nread } };
+	const struct spi_buf rx_buf[1] = { { .buf = NULL, .len = nread + 2 } };
 	const struct spi_buf_set rx = {
 		.buffers = rx_buf,
 		.count = ARRAY_SIZE(rx_buf),
@@ -68,20 +67,18 @@ static int mcp23sxx_write_port_regs(const struct device *dev, uint8_t reg, uint1
 
 	uint8_t nwrite = (config->ngpios == 8) ? 1 : 2;
 	uint16_t port_data = sys_cpu_to_le16(value);
+	uint8_t port_b_data = port_data & 0xFF;
+	uint8_t port_a_data = (port_data >> 8) & 0xFF;
 
 	port_data = sys_cpu_to_le16(value);
 
 	uint8_t addr = MCP23SXX_ADDR;
-	uint8_t buffer_tx[2] = { addr, reg };
+	uint8_t buffer_tx[4] = { addr, reg, port_b_data, port_a_data };
 
-	const struct spi_buf tx_buf[2] = {
+	const struct spi_buf tx_buf[1] = {
 		{
 			.buf = buffer_tx,
-			.len = 2,
-		},
-		{
-			.buf = (uint8_t *)&port_data,
-			.len = nwrite,
+			.len = nwrite + 2,
 		}
 	};
 	const struct spi_buf_set tx = {
