@@ -44,6 +44,11 @@ if (CONFIG_BUILD_WITH_TFM)
   if (CONFIG_TFM_REGRESSION_NS)
     list(APPEND TFM_CMAKE_ARGS -DTEST_NS=ON)
   endif()
+  if (CONFIG_TFM_BL1)
+    list(APPEND TFM_CMAKE_ARGS -DBL1=TRUE)
+  else()
+    list(APPEND TFM_CMAKE_ARGS -DBL1=FALSE)
+  endif()
   if (CONFIG_TFM_BL2)
     list(APPEND TFM_CMAKE_ARGS -DBL2=TRUE)
   else()
@@ -167,7 +172,11 @@ if (CONFIG_BUILD_WITH_TFM)
     set(COMBINE_DIR_INITIAL_ATTESTATION initial_attestation)
     set(PSA_TEST_COMBINE_FILE ${TFM_BINARY_DIR}/tf-m-tests/app/psa_api_tests/dev_apis/${COMBINE_DIR_${TFM_PSA_TEST_SUITE}}/test_combine.a)
   endif()
-
+  if(CONFIG_TFM_BL1)
+    set(BL1_ELF_FILE ${TFM_BINARY_DIR}/bin/bl1.elf)
+    set(BL1_BIN_FILE ${TFM_BINARY_DIR}/bin/bl1.bin)
+    set(BL1_HEX_FILE ${TFM_BINARY_DIR}/bin/bl1.hex)
+  endif()
   if(CONFIG_TFM_BL2)
     set(BL2_ELF_FILE ${TFM_BINARY_DIR}/bin/bl2.elf)
     set(BL2_BIN_FILE ${TFM_BINARY_DIR}/bin/bl2.bin)
@@ -190,6 +199,9 @@ if (CONFIG_BUILD_WITH_TFM)
     ${PSA_TEST_PAL_FILE}
     ${PSA_TEST_COMBINE_FILE}
     ${PLATFORM_NS_FILE}
+    ${BL1_ELF_FILE}
+    ${BL1_BIN_FILE}
+    ${BL1_HEX_FILE}
     ${BL2_ELF_FILE}
     ${BL2_BIN_FILE}
     ${BL2_HEX_FILE}
@@ -335,6 +347,13 @@ if (CONFIG_BUILD_WITH_TFM)
       )
   endif()
 
+  if(CONFIG_TFM_BL1)
+    set_target_properties(tfm PROPERTIES
+      BL1_ELF_FILE ${BL1_ELF_FILE}
+      BL1_BIN_FILE ${BL1_BIN_FILE}
+      BL1_HEX_FILE ${BL1_HEX_FILE}
+      )
+  endif()
   # Set TFM S/NS executable file paths as target properties on 'tfm'
   # These files are produced by the TFM build system.
   # Note that the Nonsecure FW is replaced by the Zephyr app in regular Zephyr
@@ -475,7 +494,7 @@ if (CONFIG_BUILD_WITH_TFM)
     set(NS_APP_FILE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME})
   endif()
 
-  if (NOT CONFIG_TFM_BL2)
+  if (NOT (CONFIG_TFM_BL1 OR CONFIG_TFM_BL2))
     # Merge tfm_s and zephyr (NS) image to a single binary.
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
@@ -501,6 +520,7 @@ if (CONFIG_BUILD_WITH_TFM)
 
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
         -o ${MERGED_FILE}
+        $<TARGET_PROPERTY:tfm,BL1_HEX_FILE>
         $<TARGET_PROPERTY:tfm,BL2_HEX_FILE>
         ${S_NS_SIGNED_FILE}
     )
@@ -527,6 +547,7 @@ if (CONFIG_BUILD_WITH_TFM)
 
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
         -o ${MERGED_FILE}
+        $<TARGET_PROPERTY:tfm,BL1_HEX_FILE>
         $<TARGET_PROPERTY:tfm,BL2_HEX_FILE>
         ${S_SIGNED_FILE}
         ${NS_SIGNED_FILE}

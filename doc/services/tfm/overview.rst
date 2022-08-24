@@ -147,6 +147,11 @@ The default secure bootloader in TF-M is based on
 (for the second-stage bootloader, potentially after a HW-based bootloader on
 the secure MCU, etc.).
 
+TF-M also provides an optional immutable first stage bootloader - BL1. This can
+either be the default TF-M BL1 bootloader which uses most of the same codebase
+as BL2/MCUBoot mentioned above or a platform specific bootloader provided by a
+vendor.
+
 All images in TF-M are hashed and signed, with the hash and signature verified
 by MCUBoot during the firmware update process.
 
@@ -174,7 +179,8 @@ When dealing with (optionally) encrypted images:
 
 Key config properties to control secure boot in Zephyr are:
 
-* :kconfig:option:`CONFIG_TFM_BL2` toggles the bootloader (default = ``y``).
+* :kconfig:option:`CONFIG_TFM_BL1` toggles the BL1 bootloader (default = ``n``).
+* :kconfig:option:`CONFIG_TFM_BL2` toggles the BL2 bootloader (default = ``y``).
 * :kconfig:option:`CONFIG_TFM_KEY_FILE_S` overrides the secure signing key.
 * :kconfig:option:`CONFIG_TFM_KEY_FILE_NS` overrides the non-secure signing key.
 

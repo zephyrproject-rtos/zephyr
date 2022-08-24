@@ -198,13 +198,20 @@ config TFM_IMAGE_VERSION_NS
 	  versions of both the secure firmware and non-secure firmware. This sets
 	  the non-secure firmware's version for rollback prevention.
 
+config TFM_BL1
+	bool "Use BL1 immutable bootloader from TFM"
+	default n
+	help
+          TFM provides a reference immutable bootloader, BL1.
+          This config adds BL1 to the build - built via TFM's build system.
+
 config TFM_BL2
-	bool "Add MCUboot to TFM"
+	bool "Use BL2 bootloader from TFM"
 	depends on !TFM_BL2_NOT_SUPPORTED
 	default y
 	help
-	  TFM is designed to run with MCUboot in a certain configuration.
-	  This config adds MCUboot to the build - built via TFM's build system.
+          TFM provides a reference second-stage flash bootloader, BL2.
+          This config adds BL2 to the build - built via TFM's build system.
 
 config TFM_BUILD_NS
 	bool "Build the TF-M Non-Secure application and libraries"
@@ -349,14 +356,15 @@ config ROM_START_OFFSET
 
 endif # !TFM_BL2
 
-# Option to instruct flashing a merged binary consisting of BL2 (optionally),
-# TF-M (Secure), and application (Non-Secure).
+# Option to instruct flashing a merged binary consisting of BL1 (optionally),
+# BL2 (optionally), # TF-M (Secure), and application (Non-Secure).
 config TFM_FLASH_MERGED_BINARY
 	bool
 	help
 	  This option instructs west flash to program the combined (merged)
 	  binary consisting of the TF-M Secure firmware image, optionally, the
-	  BL2 image (if building with TFM_BL2 is enabled), and the Non-Secure
+	  BL1 image (if building with TFM_BL1 is enabled), optinally
+	  the BL2 image (if building with TFM_BL2 is enabled), and the Non-Secure
 	  application firmware.
 
 config TFM_LOG_LEVEL_SILENCE
