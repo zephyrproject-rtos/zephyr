@@ -17,10 +17,6 @@ config SOC_FLASH_MCUX
 	depends on FLASH
 	depends on !TRUSTED_EXECUTION_NONSECURE
 
-config DMA_MCUX_LPC
-	default y
-	depends on DMA
-
 choice USB_MCUX_CONTROLLER_TYPE
 	default USB_DC_NXP_LPCIP3511
 endchoice

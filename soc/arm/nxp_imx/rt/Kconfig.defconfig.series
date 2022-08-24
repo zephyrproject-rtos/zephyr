@@ -128,10 +128,6 @@ choice USB_MCUX_CONTROLLER_TYPE
 	default USB_DC_NXP_EHCI
 endchoice
 
-config DMA_MCUX_EDMA
-	default y if HAS_MCUX_EDMA
-	depends on DMA
-
 DT_CHOSEN_Z_DTCM := zephyr,dtcm
 
 choice SEGGER_RTT_SECTION

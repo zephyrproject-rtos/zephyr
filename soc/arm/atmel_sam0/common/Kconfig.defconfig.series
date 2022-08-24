@@ -5,9 +5,6 @@
 
 if SOC_FAMILY_SAM0
 
-config DMA_SAM0
-	default DMA
-
 config HWINFO_SAM0
 	default HWINFO
 
