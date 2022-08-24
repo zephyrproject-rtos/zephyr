@@ -11,9 +11,6 @@ config DMA_SAM0
 config HWINFO_SAM0
 	default HWINFO
 
-config USB_DC_SAM0
-	default USB_DEVICE_DRIVER
-
 if USB_DEVICE_DRIVER
 
 config HEAP_MEM_POOL_SIZE
