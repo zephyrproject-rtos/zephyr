@@ -37,12 +37,4 @@ config NUM_IRQS
 	default 74 if SOC_ATMEL_SAME70_REVB
 	default 71
 
-# Configure default device drivers. If a feature is supported by more than one
-# device driver the default configuration will be placed in the board defconfig
-# file.
-
-config DMA_SAM_XDMAC
-	default y
-	depends on DMA
-
 endif # SOC_SERIES_SAME70
