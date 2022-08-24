@@ -109,19 +109,19 @@ static void context_reset(void)
 	test_formatter_data.request_level = LWM2M_PATH_LEVEL_OBJECT;
 }
 
-static void test_prepare(void)
+static void test_prepare(void *dummy)
 {
 	context_reset();
 }
 
-static void test_prepare_nomem(void)
+static void test_prepare_nomem(void *dummy)
 {
 	context_reset();
 
 	test_packet.offset = sizeof(test_payload);
 }
 
-static void test_put_begin_discovery(void)
+ZTEST(net_content_link_format, test_put_begin_discovery)
 {
 	int ret;
 	const char *expected_payload = "";
@@ -137,7 +137,7 @@ static void test_put_begin_discovery(void)
 			"Invalid packet offset");
 }
 
-static void test_put_begin_bs_discovery(void)
+ZTEST(net_content_link_format, test_put_begin_bs_discovery)
 {
 	int ret;
 	const char *expected_payload = "lwm2m=\"1.0\"";
@@ -153,7 +153,7 @@ static void test_put_begin_bs_discovery(void)
 			"Invalid packet offset");
 }
 
-static void test_put_begin_register(void)
+ZTEST(net_content_link_format, test_put_begin_register)
 {
 	int ret;
 	const char *expected_payload = "</>;rt=\"oma.lwm2m\";ct=11543";
@@ -169,7 +169,7 @@ static void test_put_begin_register(void)
 			"Invalid packet offset");
 }
 
-static void test_put_begin_nomem(void)
+ZTEST(net_content_link_format_nomem, test_put_begin_nomem)
 {
 	int ret;
 
@@ -185,7 +185,7 @@ struct test_case_corelink {
 	const char *expected_payload;
 };
 
-static void test_put_corelink_discovery(void)
+ZTEST(net_content_link_format, test_put_corelink_discovery)
 {
 	int ret;
 	int i;
@@ -243,7 +243,7 @@ static void test_put_corelink_discovery(void)
 	}
 }
 
-static void test_put_corelink_bs_discovery(void)
+ZTEST(net_content_link_format, test_put_corelink_bs_discovery)
 {
 	int ret;
 	int i;
@@ -270,7 +270,6 @@ static void test_put_corelink_bs_discovery(void)
 		},
 	};
 
-
 	for (i = 0; i < ARRAY_SIZE(test_case); i++) {
 		context_reset();
 
@@ -291,7 +290,7 @@ static void test_put_corelink_bs_discovery(void)
 	}
 }
 
-static void test_put_corelink_bs_discovery_ssid(void)
+ZTEST(net_content_link_format, test_put_corelink_bs_discovery_ssid)
 {
 	int ret;
 	int i;
@@ -326,7 +325,7 @@ static void test_put_corelink_bs_discovery_ssid(void)
 	}
 }
 
-static void test_put_corelink_register(void)
+ZTEST(net_content_link_format, test_put_corelink_register)
 {
 	int ret;
 	int i;
@@ -363,8 +362,7 @@ static void test_put_corelink_register(void)
 	}
 }
 
-
-static void test_put_corelink_nomem(void)
+ZTEST(net_content_link_format_nomem, test_put_corelink_nomem)
 {
 	int ret;
 
@@ -375,36 +373,14 @@ static void test_put_corelink_nomem(void)
 	zassert_equal(ret, -ENOMEM, "Invalid error code returned");
 }
 
-void test_main(void)
+static void *obj_attr_init(void)
 {
 	test_obj_init();
 	test_attr_init();
-
-	/* Initialize Security/Server objects with SSID. */
 	lwm2m_engine_set_u16("0/0/10", TEST_SSID);
 	lwm2m_engine_set_u16("1/0/0", TEST_SSID);
-
-	ztest_test_suite(
-		lwm2m_content_link_format,
-		ztest_unit_test_setup_teardown(
-			test_put_begin_discovery, test_prepare, unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_put_begin_bs_discovery, test_prepare, unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_put_begin_register, test_prepare, unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_put_begin_nomem, test_prepare_nomem, unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_put_corelink_discovery, test_prepare, unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_put_corelink_bs_discovery, test_prepare, unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_put_corelink_bs_discovery_ssid, test_prepare, unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_put_corelink_register, test_prepare, unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_put_corelink_nomem, test_prepare_nomem, unit_test_noop)
-	);
-
-	ztest_run_test_suite(lwm2m_content_link_format);
+	return NULL;
 }
+
+ZTEST_SUITE(net_content_link_format, NULL, obj_attr_init, test_prepare, NULL, NULL);
+ZTEST_SUITE(net_content_link_format_nomem, NULL, obj_attr_init, test_prepare_nomem, NULL, NULL);
