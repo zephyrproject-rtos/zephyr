@@ -7,15 +7,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT intel_multiboot_framebuffer
+
 #include <zephyr/arch/x86/multiboot.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/display.h>
 #include <string.h>
+
+struct framebuf_dev_config {
+	uint16_t width;
+	uint16_t height;
+};
 
 struct framebuf_dev_data {
 	void *buffer;
 	uint32_t pitch;
-	uint16_t width;
-	uint16_t height;
 };
 
 static int framebuf_blanking_on(const struct device *dev)
@@ -70,10 +76,10 @@ static int framebuf_set_orientation(const struct device *dev,
 static void framebuf_get_capabilities(const struct device *dev,
 				      struct display_capabilities *caps)
 {
-	struct framebuf_dev_data *data = dev->data;
+	const struct framebuf_dev_config *config = dev->config;
 
-	caps->x_resolution = data->width;
-	caps->y_resolution = data->height;
+	caps->x_resolution = config->width;
+	caps->y_resolution = config->height;
 	caps->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888;
 	caps->screen_info = 0;
 	caps->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
@@ -137,19 +143,15 @@ const struct display_driver_api framebuf_display_api = {
 	.set_orientation = framebuf_set_orientation
 };
 
-static struct framebuf_dev_data multiboot_framebuf_data = {
-	.width = CONFIG_INTEL_MULTIBOOTFB_X,
-	.height = CONFIG_INTEL_MULTIBOOTFB_Y
-};
-
 static int multiboot_framebuf_init(const struct device *dev)
 {
+	const struct framebuf_dev_config *config = dev->config;
 	struct framebuf_dev_data *data = dev->data;
 	struct multiboot_info *info = &multiboot_info;
 
 	if ((info->flags & MULTIBOOT_INFO_FLAGS_FB) &&
-	    (info->fb_width >= CONFIG_INTEL_MULTIBOOTFB_X) &&
-	    (info->fb_height >= CONFIG_INTEL_MULTIBOOTFB_Y) &&
+	    (info->fb_width >= config->width) &&
+	    (info->fb_height >= config->height) &&
 	    (info->fb_bpp == 32) && (info->fb_addr_hi == 0)) {
 		/*
 		 * We have a usable multiboot framebuffer - it is 32 bpp
@@ -161,8 +163,8 @@ static int multiboot_framebuf_init(const struct device *dev)
 		uint16_t adj_y;
 		uint32_t *buffer;
 
-		adj_x = info->fb_width -CONFIG_INTEL_MULTIBOOTFB_X;
-		adj_y = info->fb_height - CONFIG_INTEL_MULTIBOOTFB_Y;
+		adj_x = info->fb_width - config->width;
+		adj_y = info->fb_height - config->height;
 		data->pitch = (info->fb_pitch / 4) + adj_x;
 		adj_x /= 2U;
 		adj_y /= 2U;
@@ -176,6 +178,13 @@ static int multiboot_framebuf_init(const struct device *dev)
 	}
 }
 
-DEVICE_DEFINE(multiboot_framebuf, "FRAMEBUF", multiboot_framebuf_init, NULL,
-	      &multiboot_framebuf_data, NULL, PRE_KERNEL_1,
-	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &framebuf_display_api);
+static const struct framebuf_dev_config config = {
+	.width = DT_INST_PROP(0, width),
+	.height = DT_INST_PROP(0, height),
+};
+
+static struct framebuf_dev_data data;
+
+DEVICE_DT_INST_DEFINE(0, multiboot_framebuf_init, NULL, &data, &config,
+		      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		      &framebuf_display_api);
