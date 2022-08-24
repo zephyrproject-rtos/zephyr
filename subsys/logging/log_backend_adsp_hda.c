@@ -25,30 +25,57 @@ static uint32_t hda_log_chan;
 #define ALIGNMENT DMA_BUF_ALIGNMENT(DT_NODELABEL(hda_host_in))
 static __aligned(ALIGNMENT) uint8_t hda_log_buf[CONFIG_LOG_BACKEND_ADSP_HDA_SIZE];
 static volatile uint32_t hda_log_buffered;
-static struct k_spinlock hda_log_lock;
 static struct k_timer hda_log_timer;
 static adsp_hda_log_hook_t hook;
+static uint32_t write_idx;
+static struct k_spinlock hda_log_lock;
 
 /* atomic bit flags for state */
 #define HDA_LOG_DMA_READY 0
 #define HDA_LOG_PANIC_MODE 1
 static atomic_t hda_log_flags;
 
+
+/**
+ * Flush the buffered log to the HDA stream
+ *
+ * If @kconfig{CONFIG_LOG_BACKEND_ADSP_HDA_PADDING} is enabled
+ * the buffer is extended with '\0' characters to align the buffer
+ * to 128 bytes.
+ */
 static uint32_t hda_log_flush(void)
 {
+	if (hda_log_buffered == 0) {
+		return 0;
+	}
+
 	uint32_t nearest128 = hda_log_buffered & ~((128) - 1);
 
-	if (nearest128 > 0) {
-		hda_log_buffered = hda_log_buffered - nearest128;
-#if !(IS_ENABLED(CONFIG_KERNEL_COHERENCE))
-		z_xtensa_cache_flush(hda_log_buf, CONFIG_LOG_BACKEND_ADSP_HDA_SIZE);
-#endif
-		dma_reload(hda_log_dev, hda_log_chan, 0, 0, nearest128);
+#ifdef CONFIG_LOG_BACKEND_ADSP_HDA_PADDING
+	if (nearest128 != hda_log_buffered) {
+		uint32_t next128 = nearest128 + 128;
+		uint32_t padding = next128 - hda_log_buffered;
+
+		for (int i = 0; i < padding; i++) {
+			hda_log_buf[write_idx] = '\0';
+			hda_log_buffered++;
+			write_idx++;
+		}
+		nearest128 = hda_log_buffered & ~((128) - 1);
 	}
+	__ASSERT(hda_log_buffered == nearest128,
+		"Expected flush length to be 128 byte aligned");
+#endif
+
+#if !(IS_ENABLED(CONFIG_KERNEL_COHERENCE))
+	z_xtensa_cache_flush(hda_log_buf, CONFIG_LOG_BACKEND_ADSP_HDA_SIZE);
+#endif
+	dma_reload(hda_log_dev, hda_log_chan, 0, 0, nearest128);
+
+	hda_log_buffered = hda_log_buffered - nearest128;
 
 	return nearest128;
 }
-
 
 static int hda_log_out(uint8_t *data, size_t length, void *ctx)
 {
@@ -97,26 +124,29 @@ static int hda_log_out(uint8_t *data, size_t length, void *ctx)
 
 	/* If there isn't enough space for the message there's an overflow */
 	if (available < length) {
-		ret = length;
+		ret = 0;
 		goto out;
 	}
 
 	/* Copy over the message to the buffer */
-	uint32_t idx = write_pos + hda_log_buffered;
+	write_idx = write_pos + hda_log_buffered;
 
-	if (idx > sizeof(hda_log_buf)) {
-		idx -= sizeof(hda_log_buf);
+	if (write_idx > sizeof(hda_log_buf)) {
+		write_idx -= sizeof(hda_log_buf);
 	}
 
-	size_t copy_len = (idx + length) < sizeof(hda_log_buf) ? length : sizeof(hda_log_buf) - idx;
+	size_t copy_len = (write_idx + length) < sizeof(hda_log_buf) ? length
+		: sizeof(hda_log_buf) - write_idx;
 
-	memcpy(&hda_log_buf[idx], data, copy_len);
+	memcpy(&hda_log_buf[write_idx], data, copy_len);
+	write_idx += copy_len;
 
 	/* There may be a wrapped copy */
 	size_t wrap_copy_len = length - copy_len;
 
 	if (wrap_copy_len != 0) {
 		memcpy(&hda_log_buf[0], &data[copy_len], wrap_copy_len);
+		write_idx = wrap_copy_len;
 	}
 
 	ret = length;
@@ -133,7 +163,8 @@ out:
 			  atomic_test_bit(&hda_log_flags, HDA_LOG_PANIC_MODE))
 			  && atomic_test_bit(&hda_log_flags, HDA_LOG_DMA_READY);
 
-	if (do_log_flush) {
+	/* Flush if there's a hook set AND dma is ready */
+	if (do_log_flush && hook != NULL) {
 		written = hda_log_flush();
 	}
 
@@ -162,11 +193,14 @@ static void hda_log_periodic(struct k_timer *tm)
 {
 	ARG_UNUSED(tm);
 
+	uint32_t written = 0;
 	k_spinlock_key_t key = k_spin_lock(&hda_log_lock);
 
-	uint32_t written = hda_log_flush();
 
-	k_spin_unlock(&hda_log_lock, key);
+	if (hook != NULL) {
+		written = hda_log_flush();
+	}
+
 
 	/* The hook may have log calls and needs to be done outside of the spin
 	 * lock to avoid recursion on the spin lock (deadlocks) in cases of
@@ -175,6 +209,8 @@ static void hda_log_periodic(struct k_timer *tm)
 	if (hook != NULL && written  > 0) {
 		hook(written);
 	}
+
+	k_spin_unlock(&hda_log_lock, key);
 }
 
 static inline void dropped(const struct log_backend *const backend,
@@ -283,5 +319,61 @@ void adsp_hda_log_init(adsp_hda_log_hook_t fn, uint32_t channel)
 		      K_MSEC(CONFIG_LOG_BACKEND_ADSP_HDA_FLUSH_TIME),
 		      K_MSEC(CONFIG_LOG_BACKEND_ADSP_HDA_FLUSH_TIME));
 
-	printk("hda log initialized\n");
 }
+
+#ifdef CONFIG_LOG_BACKEND_ADSP_HDA_CAVSTOOL
+
+#include <cavs_ipc.h>
+#include <cavstool.h>
+
+#define CHANNEL 6
+#define HOST_BUF_SIZE 8192
+#define IPC_TIMEOUT K_MSEC(1500)
+
+static inline void hda_ipc_msg(const struct device *dev, uint32_t data,
+			       uint32_t ext, k_timeout_t timeout)
+{
+	__ASSERT(cavs_ipc_send_message_sync(dev, data, ext, timeout),
+		"Unexpected ipc send message failure, try increasing IPC_TIMEOUT");
+}
+
+
+void adsp_hda_log_cavstool_hook(uint32_t written)
+{
+	/* We *must* send this, but we may be in a timer ISR, so we are
+	 * forced into a retry loop without timeouts and such.
+	 */
+	bool done = false;
+
+	/*  Send IPC message notifying log data has been written */
+	do {
+		done = cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_HDA_PRINT,
+					     (written << 8) | CHANNEL);
+	} while (!done);
+
+
+	/* Wait for confirmation log data has been received */
+	do {
+		done = cavs_ipc_is_complete(CAVS_HOST_DEV);
+	} while (!done);
+
+}
+
+int adsp_hda_log_cavstool_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_RESET, CHANNEL, IPC_TIMEOUT);
+	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_CONFIG,
+		    CHANNEL | (HOST_BUF_SIZE << 8), IPC_TIMEOUT);
+	adsp_hda_log_init(adsp_hda_log_cavstool_hook, CHANNEL);
+	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_START, CHANNEL, IPC_TIMEOUT);
+	hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_PRINT,
+		    ((HOST_BUF_SIZE*2) << 8) | CHANNEL, IPC_TIMEOUT);
+
+	return 0;
+}
+
+SYS_INIT(adsp_hda_log_cavstool_init, POST_KERNEL, 99);
+
+#endif /* CONFIG_LOG_BACKEND_ADSP_HDA_CAVSTOOL */
