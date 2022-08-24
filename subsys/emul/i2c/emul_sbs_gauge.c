@@ -31,7 +31,7 @@ struct sbs_gauge_emul_cfg {
 	uint16_t addr;
 };
 
-static int reg_write(const struct emul *target, int reg, int val)
+static int emul_sbs_gauge_reg_write(const struct emul *target, int reg, int val)
 {
 	ARG_UNUSED(target);
 
@@ -45,7 +45,7 @@ static int reg_write(const struct emul *target, int reg, int val)
 	return 0;
 }
 
-static int reg_read(const struct emul *target, int reg, int *val)
+static int emul_sbs_gauge_reg_read(const struct emul *target, int reg, int *val)
 {
 	ARG_UNUSED(target);
 
@@ -104,7 +104,7 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 		if (msgs->flags & I2C_MSG_READ) {
 			switch (msgs->len - 1) {
 			case 1:
-				rc = reg_read(target, reg, &val);
+				rc = emul_sbs_gauge_reg_read(target, reg, &val);
 				if (rc) {
 					/* Return before writing bad value to message buffer */
 					return rc;
@@ -119,7 +119,7 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 			if (msgs->len != 1) {
 				LOG_ERR("Unexpected msg1 length %d", msgs->len);
 			}
-			rc = reg_write(target, reg, msgs->buf[0]);
+			rc = emul_sbs_gauge_reg_write(target, reg, msgs->buf[0]);
 		}
 		break;
 	default:
