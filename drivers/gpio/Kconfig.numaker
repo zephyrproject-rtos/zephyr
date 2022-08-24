@@ -5,6 +5,7 @@
 
 config GPIO_NUMAKER
 	bool "Nuvoton NUMAKER MCU gpio driver"
+	select HAS_NUMAKER_GPIO
 	depends on SOC_FAMILY_NUMAKER
 	help
 	  This option enables the GPIO driver for Nuvoton NUMAKER family of

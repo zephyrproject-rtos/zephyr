@@ -12,7 +12,7 @@ menu "Nuvoton drivers"
 	depends on HAS_NUMICRO_HAL
 
 config HAS_NUMICRO_UART
-	bool
+	bool "NuMicro UART"
 	help
 	  Enable Nuvoton Universal asynchronous receiver transmitter HAL
 	  module driver
@@ -26,11 +26,13 @@ config HAS_NUMAKER_HAL
 
 menu "Nuvoton NuMaker drivers"
 	depends on HAS_NUMAKER_HAL
-
-config HAS_NUMAKER_UART
-	bool
-	help
-	  Enable Nuvoton Universal asynchronous receiver transmitter HAL
-	  module driver
-
+    config HAS_NUMAKER_UART
+        bool "NuMaker UART"
+        help
+            Enable Nuvoton Universal asynchronous receiver transmitter HAL
+            module driver
+    config HAS_NUMAKER_GPIO
+        bool "NuMaker GPIO"
+        help
+            Enable Nuvoton gpio HAL module driver
 endmenu
