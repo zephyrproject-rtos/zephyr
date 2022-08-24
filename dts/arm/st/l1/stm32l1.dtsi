@@ -207,17 +207,6 @@
 			has-vref-channel;
 		};
 
-		die_temp: dietemp {
-			compatible = "st,stm32-temp-cal";
-			ts-cal1-addr = <0x1FF800FA>;
-			ts-cal2-addr = <0x1FF800FE>;
-			ts-cal1-temp = <30>;
-			ts-cal2-temp = <110>;
-			ts-cal-vrefanalog = <3000>;
-			io-channels = <&adc1 16>;
-			status = "disabled";
-		};
-
 		dac1: dac@40007400 {
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
@@ -411,6 +400,17 @@
 			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
 			status = "disabled";
 		};
+	};
+
+	die_temp: dietemp {
+		compatible = "st,stm32-temp-cal";
+		ts-cal1-addr = <0x1FF800FA>;
+		ts-cal2-addr = <0x1FF800FE>;
+		ts-cal1-temp = <30>;
+		ts-cal2-temp = <110>;
+		ts-cal-vrefanalog = <3000>;
+		io-channels = <&adc1 16>;
+		status = "disabled";
 	};
 };
 

@@ -81,10 +81,6 @@
 			status = "disabled";
 		};
 
-		die_temp: dietemp {
-			io-channels = <&adc1 18>;
-		};
-
 		fmc: memory-controller@a0000000 {
 			compatible = "st,stm32-fmc";
 			reg = <0xa0000000 0x400>;
@@ -98,5 +94,9 @@
 				status = "disabled";
 			};
 		};
+	};
+
+	die_temp: dietemp {
+		io-channels = <&adc1 18>;
 	};
 };

@@ -86,17 +86,6 @@
 			has-temp-channel;
 		};
 
-		die_temp: dietemp {
-			compatible = "st,stm32-temp-cal";
-			ts-cal1-addr = <0x1FFF75A8>;
-			ts-cal2-addr = <0x1FFF75CA>;
-			ts-cal1-temp = <30>;
-			ts-cal2-temp = <130>;
-			ts-cal-vrefanalog = <3000>;
-			io-channels = <&adc1 16>;
-			status = "disabled";
-		};
-
 		adc2: adc@50000100 {
 			compatible = "st,stm32-adc";
 			reg = <0x50000100 0x100>;
@@ -576,6 +565,17 @@
 			interrupts = <63 0>;
 			status = "disabled";
 		};
+	};
+
+	die_temp: dietemp {
+		compatible = "st,stm32-temp-cal";
+		ts-cal1-addr = <0x1FFF75A8>;
+		ts-cal2-addr = <0x1FFF75CA>;
+		ts-cal1-temp = <30>;
+		ts-cal2-temp = <130>;
+		ts-cal-vrefanalog = <3000>;
+		io-channels = <&adc1 16>;
+		status = "disabled";
 	};
 
 	usb_fs_phy: usbphy {
