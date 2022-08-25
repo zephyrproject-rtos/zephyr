@@ -62,6 +62,9 @@ single static declaration exist for convenience.
 buffer with a specified byte count, where
 :c:macro:`RING_BUF_ITEM_DECLARE` will declare and statically
 initialize a buffer with a given count of 32 bit words.
+:c:macro:`RING_BUF_ITEM_SIZEOF` will compute the size in 32-bit words
+corresponding to a type or an expression.  Note: rounds up if the size is
+not a multiple of 32 bits.
 
 "Bytes" data may be copied into the ring buffer using
 :c:func:`ring_buf_put`, passing a data pointer and byte count.  These
