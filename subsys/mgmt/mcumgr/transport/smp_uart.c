@@ -29,7 +29,7 @@ K_FIFO_DEFINE(smp_uart_rx_fifo);
 K_WORK_DEFINE(smp_uart_work, smp_uart_process_rx_queue);
 
 static struct mcumgr_serial_rx_ctxt smp_uart_rx_ctxt;
-static struct zephyr_smp_transport smp_uart_transport;
+static struct smp_transport smp_uart_transport;
 
 /**
  * Processes a single line (fragment) coming from the mcumgr UART driver.
@@ -51,7 +51,7 @@ static void smp_uart_process_frag(struct uart_mcumgr_rx_buf *rx_buf)
 	 * processing.
 	 */
 	if (nb != NULL) {
-		zephyr_smp_rx_req(&smp_uart_transport, nb);
+		smp_rx_req(&smp_uart_transport, nb);
 	}
 }
 
@@ -93,8 +93,8 @@ static int smp_uart_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	zephyr_smp_transport_init(&smp_uart_transport, smp_uart_tx_pkt,
-				  smp_uart_get_mtu, NULL, NULL);
+	smp_transport_init(&smp_uart_transport, smp_uart_tx_pkt,
+			   smp_uart_get_mtu, NULL, NULL);
 	uart_mcumgr_register(smp_uart_rx_frag);
 
 	return 0;

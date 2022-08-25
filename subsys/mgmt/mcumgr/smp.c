@@ -45,11 +45,11 @@ static const struct k_work_queue_config smp_work_queue_config = {
  * @return	Newly-allocated buffer on success
  *		NULL on failure.
  */
-void *zephyr_smp_alloc_rsp(const void *req, void *arg)
+void *smp_alloc_rsp(const void *req, void *arg)
 {
 	const struct net_buf *req_nb;
 	struct net_buf *rsp_nb;
-	struct zephyr_smp_transport *zst = arg;
+	struct smp_transport *zst = arg;
 
 	req_nb = req;
 
@@ -69,9 +69,9 @@ void *zephyr_smp_alloc_rsp(const void *req, void *arg)
 	return rsp_nb;
 }
 
-void zephyr_smp_free_buf(void *buf, void *arg)
+void smp_free_buf(void *buf, void *arg)
 {
-	struct zephyr_smp_transport *zst = arg;
+	struct smp_transport *zst = arg;
 
 	if (!buf) {
 		return;
@@ -88,7 +88,7 @@ void zephyr_smp_free_buf(void *buf, void *arg)
  * Processes a single SMP packet and sends the corresponding response(s).
  */
 static int
-zephyr_smp_process_packet(struct zephyr_smp_transport *zst,
+smp_process_packet(struct smp_transport *zst,
 			  struct net_buf *nb)
 {
 	struct cbor_nb_reader reader;
@@ -110,26 +110,26 @@ zephyr_smp_process_packet(struct zephyr_smp_transport *zst,
  * Processes all received SNP request packets.
  */
 static void
-zephyr_smp_handle_reqs(struct k_work *work)
+smp_handle_reqs(struct k_work *work)
 {
-	struct zephyr_smp_transport *zst;
+	struct smp_transport *zst;
 	struct net_buf *nb;
 
 	zst = (void *)work;
 
 	while ((nb = net_buf_get(&zst->zst_fifo, K_NO_WAIT)) != NULL) {
-		zephyr_smp_process_packet(zst, nb);
+		smp_process_packet(zst, nb);
 	}
 }
 
 void
-zephyr_smp_transport_init(struct zephyr_smp_transport *zst,
-			  zephyr_smp_transport_out_fn *output_func,
-			  zephyr_smp_transport_get_mtu_fn *get_mtu_func,
-			  zephyr_smp_transport_ud_copy_fn *ud_copy_func,
-			  zephyr_smp_transport_ud_free_fn *ud_free_func)
+smp_transport_init(struct smp_transport *zst,
+		   smp_transport_out_fn output_func,
+		   smp_transport_get_mtu_fn get_mtu_func,
+		   smp_transport_ud_copy_fn ud_copy_func,
+		   smp_transport_ud_free_fn ud_free_func)
 {
-	*zst = (struct zephyr_smp_transport) {
+	*zst = (struct smp_transport) {
 		.zst_output = output_func,
 		.zst_get_mtu = get_mtu_func,
 		.zst_ud_copy = ud_copy_func,
@@ -137,10 +137,10 @@ zephyr_smp_transport_init(struct zephyr_smp_transport *zst,
 	};
 
 #ifdef CONFIG_MCUMGR_SMP_REASSEMBLY
-	zephyr_smp_reassembly_init(zst);
+	smp_reassembly_init(zst);
 #endif
 
-	k_work_init(&zst->zst_work, zephyr_smp_handle_reqs);
+	k_work_init(&zst->zst_work, smp_handle_reqs);
 	k_fifo_init(&zst->zst_fifo);
 }
 
@@ -154,13 +154,13 @@ zephyr_smp_transport_init(struct zephyr_smp_transport *zst,
  * @param nb                    The request packet to process.
  */
 WEAK void
-zephyr_smp_rx_req(struct zephyr_smp_transport *zst, struct net_buf *nb)
+smp_rx_req(struct smp_transport *zst, struct net_buf *nb)
 {
 	net_buf_put(&zst->zst_fifo, nb);
 	k_work_submit_to_queue(&smp_work_queue, &zst->zst_work);
 }
 
-static int zephyr_smp_init(const struct device *dev)
+static int smp_init(const struct device *dev)
 {
 	k_work_queue_init(&smp_work_queue);
 
@@ -171,4 +171,4 @@ static int zephyr_smp_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(zephyr_smp_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+SYS_INIT(smp_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

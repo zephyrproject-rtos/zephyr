@@ -12,6 +12,7 @@
 extern "C" {
 #endif
 
+struct smp_transport;
 struct zephyr_smp_transport;
 struct net_buf;
 
@@ -24,7 +25,13 @@ struct net_buf;
  *                                  response(s).
  * @param nb                    The request packet to process.
  */
-void zephyr_smp_rx_req(struct zephyr_smp_transport *zst, struct net_buf *nb);
+void smp_rx_req(struct smp_transport *zst, struct net_buf *nb);
+
+static inline
+void zephyr_smp_rx_req(struct zephyr_smp_transport *smpt, struct net_buf *nb)
+{
+	smp_rx_req((struct smp_transport *)smpt, nb);
+}
 
 /**
  * @brief Allocates a response buffer.
@@ -37,7 +44,14 @@ void zephyr_smp_rx_req(struct zephyr_smp_transport *zst, struct net_buf *nb);
  * @return	Newly-allocated buffer on success
  *		NULL on failure.
  */
-void *zephyr_smp_alloc_rsp(const void *req, void *arg);
+void *smp_alloc_rsp(const void *req, void *arg);
+
+static inline
+void *zephyr_smp_alloc_rsp(const void *req, void *arg)
+{
+	return smp_alloc_rsp(req, arg);
+}
+
 
 /**
  * @brief Frees an allocated buffer.
@@ -45,7 +59,13 @@ void *zephyr_smp_alloc_rsp(const void *req, void *arg);
  * @param buf		The buffer to free.
  * @param arg		The streamer providing the callback.
  */
-void zephyr_smp_free_buf(void *buf, void *arg);
+void smp_free_buf(void *buf, void *arg);
+
+static inline
+void zephyr_smp_free_buf(void *buf, void *arg)
+{
+	smp_free_buf(buf, arg);
+}
 
 #ifdef __cplusplus
 }

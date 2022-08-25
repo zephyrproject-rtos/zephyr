@@ -76,7 +76,7 @@ struct conn_param_data {
 	uint8_t state;
 };
 
-static struct zephyr_smp_transport smp_bt_transport;
+static struct smp_transport smp_bt_transport;
 static struct conn_param_data conn_data[CONFIG_BT_MAX_CONN];
 
 K_SEM_DEFINE(smp_notify_sem, 0, 1);
@@ -188,12 +188,12 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 	int ret;
 	bool started;
 
-	started = (zephyr_smp_reassembly_expected(&smp_bt_transport) >= 0);
+	started = (smp_reassembly_expected(&smp_bt_transport) >= 0);
 
 	LOG_DBG("started = %s, buf len = %d", started ? "true" : "false", len);
 	LOG_HEXDUMP_DBG(buf, len, "buf = ");
 
-	ret = zephyr_smp_reassembly_collect(&smp_bt_transport, buf, len);
+	ret = smp_reassembly_collect(&smp_bt_transport, buf, len);
 	LOG_DBG("collect = %d", ret);
 
 	/*
@@ -208,14 +208,14 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 		 * error.
 		 */
 		struct smp_bt_user_data *ud =
-			(struct smp_bt_user_data *)zephyr_smp_reassembly_get_ud(&smp_bt_transport);
+			(struct smp_bt_user_data *)smp_reassembly_get_ud(&smp_bt_transport);
 
 		if (ud != NULL) {
 			bt_conn_unref(ud->conn);
 			ud->conn = NULL;
 		}
 
-		zephyr_smp_reassembly_drop(&smp_bt_transport);
+		smp_reassembly_drop(&smp_bt_transport);
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
 
@@ -224,7 +224,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 		 * Transport context is attached to the buffer after first fragment
 		 * has been collected.
 		 */
-		struct smp_bt_user_data *ud = zephyr_smp_reassembly_get_ud(&smp_bt_transport);
+		struct smp_bt_user_data *ud = smp_reassembly_get_ud(&smp_bt_transport);
 
 		if (IS_ENABLED(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL)) {
 			conn_param_smp_enable(conn);
@@ -235,7 +235,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 
 	/* No more bytes are expected for this packet */
 	if (ret == 0) {
-		zephyr_smp_reassembly_complete(&smp_bt_transport, false);
+		smp_reassembly_complete(&smp_bt_transport, false);
 	}
 
 	/* BT expects entire len to be consumed */
@@ -266,7 +266,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 		conn_param_smp_enable(conn);
 	}
 
-	zephyr_smp_rx_req(&smp_bt_transport, nb);
+	smp_rx_req(&smp_bt_transport, nb);
 
 	return len;
 #endif
@@ -275,13 +275,13 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 static void smp_bt_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 #ifdef CONFIG_MCUMGR_SMP_REASSEMBLY_BT
-	if (zephyr_smp_reassembly_expected(&smp_bt_transport) >= 0 && value == 0) {
-		struct smp_bt_user_data *ud = zephyr_smp_reassembly_get_ud(&smp_bt_transport);
+	if (smp_reassembly_expected(&smp_bt_transport) >= 0 && value == 0) {
+		struct smp_bt_user_data *ud = smp_reassembly_get_ud(&smp_bt_transport);
 
 		bt_conn_unref(ud->conn);
 		ud->conn = NULL;
 
-		zephyr_smp_reassembly_drop(&smp_bt_transport);
+		smp_reassembly_drop(&smp_bt_transport);
 	}
 #endif
 }
@@ -515,9 +515,9 @@ static int smp_bt_init(const struct device *dev)
 		conn_param_control_init();
 	}
 
-	zephyr_smp_transport_init(&smp_bt_transport, smp_bt_tx_pkt,
-				  smp_bt_get_mtu, smp_bt_ud_copy,
-				  smp_bt_ud_free);
+	smp_transport_init(&smp_bt_transport, smp_bt_tx_pkt,
+			   smp_bt_get_mtu, smp_bt_ud_copy,
+			   smp_bt_ud_free);
 	return 0;
 }
 
