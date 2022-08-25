@@ -339,6 +339,7 @@
 			#io-channel-cells = <1>;
 			has-temp-channel;
 			has-vref-channel;
+			has-vbat-channel;
 		};
 
 		dma1: dma@40026000 {

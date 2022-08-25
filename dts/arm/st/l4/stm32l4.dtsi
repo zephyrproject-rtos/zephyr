@@ -344,6 +344,7 @@
 			status = "disabled";
 			vref-mv = <3000>;
 			#io-channel-cells = <1>;
+			has-vbat-channel;
 		};
 
 		adc2: adc@50040100 {

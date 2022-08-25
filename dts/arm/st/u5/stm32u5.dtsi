@@ -538,6 +538,7 @@
 			#io-channel-cells = <1>;
 			has-temp-channel;
 			has-vref-channel;
+			has-vbat-channel;
 		};
 
 		adc4: adc@46021000 {
