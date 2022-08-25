@@ -5,7 +5,6 @@
 
 include: [base.yaml, power.yaml]
 
-on-bus: spi
 
 properties:
     reg:

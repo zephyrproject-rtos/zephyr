@@ -5,7 +5,6 @@ DT_COMPAT_JEDEC_SPI_NOR := jedec,spi-nor
 
 menuconfig SPI_NOR
 	bool "SPI NOR Flash"
-	default y
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_JESD216

@@ -144,8 +144,6 @@
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(50)>;
 		size = <DT_SIZE_M(64)>;
-		spi-bus-width = <OSPI_OPI_MODE>;
-		data-rate = <OSPI_DTR_TRANSFER>;
                 jedec-id = [c2 86 3a];
                 duplex = <0>;
                 frame-format = <0>;
