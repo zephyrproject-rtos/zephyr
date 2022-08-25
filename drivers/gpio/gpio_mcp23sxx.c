@@ -109,7 +109,7 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 
 #define DT_DRV_COMPAT microchip_mcp23sxx
 
-#define GPIO_MCP23SXX_DEVICE(n)                                                               \
+#define GPIO_MCP23SXX_DEVICE(inst)                                                               \
 	static struct mcp23xxx_drv_data mcp23sxx_##inst##_drvdata = {                         \
 		/* Default for registers according to datasheet */                            \
 		.reg_cache.iodir = 0xFFFF, .reg_cache.ipol = 0x0,   .reg_cache.gpinten = 0x0, \
@@ -119,19 +119,19 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 	};                                                                                    \
 	static struct mcp23xxx_config mcp23sxx_##inst##_config = {                            \
 		.config = {					                              \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),                  \
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),                  \
 		},						                              \
 		.bus = {                                                                      \
-			.spi = SPI_DT_SPEC_INST_GET(n,                                        \
+			.spi = SPI_DT_SPEC_INST_GET(inst,                                        \
 				SPI_OP_MODE_MASTER | SPI_MODE_CPOL |                          \
 				SPI_MODE_CPHA | SPI_WORD_SET(8), 0)                           \
 		},                                                                            \
-		.ngpios =  DT_INST_PROP(n, ngpios),		                              \
+		.ngpios =  DT_INST_PROP(inst, ngpios),		                              \
 		.read_fn = mcp23sxx_read_port_regs,                                           \
 		.write_fn = mcp23sxx_write_port_regs,                                         \
 		.bus_fn = mcp23sxx_bus_is_ready                                               \
 	};                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, gpio_mcp23xxx_init, NULL, &mcp23sxx_##inst##_drvdata,        \
+	DEVICE_DT_INST_DEFINE(inst, gpio_mcp23xxx_init, NULL, &mcp23sxx_##inst##_drvdata,        \
 			      &mcp23sxx_##inst##_config, POST_KERNEL,                         \
 			      CONFIG_GPIO_MCP23SXX_INIT_PRIORITY, &gpio_mcp23xxx_api_table);
 
