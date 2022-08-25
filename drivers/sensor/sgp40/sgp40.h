@@ -18,7 +18,7 @@
 
 #define SGP40_RESET_WAIT_MS	10
 #define SGP40_MEASURE_WAIT_MS	30
-#define SGP40_TEST_WAIT_MS	250
+#define SGP40_TEST_WAIT_MS	320
 
 /*
  * CRC parameters were taken from the
