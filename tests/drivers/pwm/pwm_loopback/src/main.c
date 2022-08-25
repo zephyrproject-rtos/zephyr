@@ -9,7 +9,7 @@
 
 #include "test_pwm_loopback.h"
 
-void test_main(void)
+static void *pwm_loopback_setup(void)
 {
 	struct test_pwm in;
 	struct test_pwm out;
@@ -19,14 +19,7 @@ void test_main(void)
 	k_object_access_grant(out.dev, k_current_get());
 	k_object_access_grant(in.dev, k_current_get());
 
-	ztest_test_suite(pwm_loopback_test,
-			 ztest_user_unit_test(test_pulse_capture),
-			 ztest_user_unit_test(test_pulse_capture_inverted),
-			 ztest_user_unit_test(test_period_capture),
-			 ztest_user_unit_test(test_period_capture_inverted),
-			 ztest_user_unit_test(test_pulse_and_period_capture),
-			 ztest_user_unit_test(test_capture_timeout),
-			 ztest_unit_test(test_continuous_capture),
-			 ztest_unit_test(test_capture_busy));
-	ztest_run_test_suite(pwm_loopback_test);
+	return NULL;
 }
+
+ZTEST_SUITE(pwm_loopback, NULL, pwm_loopback_setup, NULL, NULL, NULL);
