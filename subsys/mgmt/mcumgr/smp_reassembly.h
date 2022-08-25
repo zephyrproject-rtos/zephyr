@@ -11,17 +11,17 @@
 extern "C" {
 #endif
 
-struct zephyr_smp_transport;
+struct smp_transport;
 
 /**
- * Initialize re-assembly context within zephyr_smp_transport
+ * Initialize re-assembly context within smp_transport
  *
  * @param zst	the SMP transport.
  *
  * Note: for efficiency there is no NULL check on @p zst pointer and it is caller's responsibility
  * to validate the pointer before passing it to this function.
  */
-void zephyr_smp_reassembly_init(struct zephyr_smp_transport *zst);
+void smp_reassembly_init(struct smp_transport *zst);
 
 /**
  * Collect data to re-assembly buffer
@@ -50,7 +50,7 @@ void zephyr_smp_reassembly_init(struct zephyr_smp_transport *zst);
  *		-ENODATA if the first received fragment was not big enough to figure out a size
  *		of the packet; MTU is set too low;
  */
-int zephyr_smp_reassembly_collect(struct zephyr_smp_transport *zst, const void *buf, uint16_t len);
+int smp_reassembly_collect(struct smp_transport *zst, const void *buf, uint16_t len);
 
 /**
  * Return number of expected bytes to complete the packet
@@ -63,7 +63,7 @@ int zephyr_smp_reassembly_collect(struct zephyr_smp_transport *zst, const void *
  * @return	number of bytes needed to complete the packet;
  *		-EINVAL if there is no packet in re-assembly;
  */
-int zephyr_smp_reassembly_expected(const struct zephyr_smp_transport *zst);
+int smp_reassembly_expected(const struct smp_transport *zst);
 
 /**
  * Pass packet for further processing
@@ -87,7 +87,7 @@ int zephyr_smp_reassembly_expected(const struct zephyr_smp_transport *zst);
  *		-ENODATA if there is not enough data to consider packet re-assembled, it has not
  *		been passed further.
  */
-int zephyr_smp_reassembly_complete(struct zephyr_smp_transport *zst, bool force);
+int smp_reassembly_complete(struct smp_transport *zst, bool force);
 
 /**
  * Drop packet and release buffer
@@ -100,7 +100,7 @@ int zephyr_smp_reassembly_complete(struct zephyr_smp_transport *zst, bool force)
  * @return	0 on success;
  *		-EINVAL if there is no re-assembly in progress.
  */
-int zephyr_smp_reassembly_drop(struct zephyr_smp_transport *zst);
+int smp_reassembly_drop(struct smp_transport *zst);
 
 /**
  * Get "user data" pointer for current packet re-assembly
@@ -113,7 +113,7 @@ int zephyr_smp_reassembly_drop(struct zephyr_smp_transport *zst);
  * @return	pointer to "user data" of CONFIG_MCUMGR_BUF_USER_DATA_SIZE size;
  *		NULL if no re-assembly in progress.
  */
-void *zephyr_smp_reassembly_get_ud(const struct zephyr_smp_transport *zst);
+void *smp_reassembly_get_ud(const struct smp_transport *zst);
 
 #ifdef __cplusplus
 }

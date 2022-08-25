@@ -38,7 +38,7 @@ struct mgmt_hdr;
  * @brief Decodes, encodes, and transmits SMP packets.
  */
 struct smp_streamer {
-	struct zephyr_smp_transport *smpt;
+	struct smp_transport *smpt;
 	struct cbor_nb_reader *reader;
 	struct cbor_nb_writer *writer;
 };

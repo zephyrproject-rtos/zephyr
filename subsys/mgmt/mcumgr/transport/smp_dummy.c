@@ -33,7 +33,7 @@ BUILD_ASSERT(CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE != 0,
 struct device;
 static struct mcumgr_serial_rx_ctxt smp_dummy_rx_ctxt;
 static struct mcumgr_serial_rx_ctxt smp_dummy_tx_ctxt;
-static struct zephyr_smp_transport smp_dummy_transport;
+static struct smp_transport smp_dummy_transport;
 static bool enable_dummy_smp;
 static struct k_sem smp_data_ready_sem;
 static uint8_t smp_send_buffer[CONFIG_MCUMGR_SMP_DUMMY_RX_BUF_SIZE];
@@ -102,7 +102,7 @@ static void smp_dummy_process_frag(struct uart_mcumgr_rx_buf *rx_buf)
 	 * processing.
 	 */
 	if (nb != NULL) {
-		zephyr_smp_rx_req(&smp_dummy_transport, nb);
+		smp_rx_req(&smp_dummy_transport, nb);
 	}
 }
 
@@ -189,8 +189,8 @@ static int smp_dummy_init(const struct device *dev)
 
 	k_sem_init(&smp_data_ready_sem, 0, 1);
 
-	zephyr_smp_transport_init(&smp_dummy_transport, smp_dummy_tx_pkt_int,
-				  smp_dummy_get_mtu, NULL, NULL);
+	smp_transport_init(&smp_dummy_transport, smp_dummy_tx_pkt_int,
+			   smp_dummy_get_mtu, NULL, NULL);
 	dummy_mgumgr_recv_cb = smp_dummy_rx_frag;
 
 	return 0;
