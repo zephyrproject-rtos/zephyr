@@ -40,6 +40,11 @@ Changes in this release
   require no changes. External build systems will need to inject the definition
   by themselves, if they did not already.
 
+* :zephyr_file:`include/zephyr/zephyr.h` has been deprecated in favor of
+  :zephyr_file:`include/zephyr/kernel.h`, since it only included that header. No
+  changes are required by applications other than replacing ``#include
+  <zephyr/zephyr.h>`` with ``#include <zephyr/kernel.h>``.
+
 Removed APIs in this release
 ============================
 
