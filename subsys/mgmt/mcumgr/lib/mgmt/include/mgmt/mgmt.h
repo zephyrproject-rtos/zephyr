@@ -131,41 +131,10 @@ typedef void *(*mgmt_alloc_rsp_fn)(const void *src_buf, void *arg);
  */
 typedef void (*mgmt_reset_buf_fn)(void *buf, void *arg);
 
-/** @typedef mgmt_write_at_fn
- * @brief Writes header at the beginning of buffer
- *
- * Overwrites beginning of buffer with header; moves buffer data pointer so that next
- * non-header writes would happen after header.
- *
- * @param writer	The encoder to write to.
- * @param hdr		Header to write (struct mgmt_hdr);
- *
- * @return 0 on success, MGMT_ERR_[...] code on failure.
- */
-typedef int (*mgmt_write_hdr_fn)(struct cbor_nb_writer *writer, const struct mgmt_hdr *hdr);
-
-/** @typedef mgmt_init_writer_fn
- * @brief Frees the specified buffer.
- *
- * @param buf	The buffer to free.
- * @param arg	Optional streamer argument.
- */
-typedef void (*mgmt_free_buf_fn)(void *buf, void *arg);
-
-/**
- * @brief Configuration for constructing a mgmt_streamer object.
- */
-struct mgmt_streamer_cfg {
-	mgmt_alloc_rsp_fn alloc_rsp;
-	mgmt_write_hdr_fn write_hdr;
-	mgmt_free_buf_fn free_buf;
-};
-
 /**
  * @brief Decodes requests and encodes responses for any mcumgr protocol.
  */
 struct mgmt_streamer {
-	const struct mgmt_streamer_cfg *cfg;
 	void *cb_arg;
 	struct cbor_nb_reader *reader;
 	struct cbor_nb_writer *writer;
@@ -226,19 +195,6 @@ struct mgmt_group {
 };
 
 /**
- * @brief Uses the specified streamer to allocates a response buffer.
- *
- * If a source buf is provided, its user data is copied into the new buffer.
- *
- * @param streamer	The streamer providing the callback.
- * @param src_buf	An optional source buffer to copy user data from.
- *
- * @return	Newly-allocated buffer on success
- *		NULL on failure.
- */
-void *mgmt_streamer_alloc_rsp(struct mgmt_streamer *streamer, const void *src_buf);
-
-/**
  * @brief Uses the specified streamer to trim data from the front of a buffer.
  *
  * If the amount to trim exceeds the size of the buffer, the buffer is
@@ -251,20 +207,6 @@ void *mgmt_streamer_alloc_rsp(struct mgmt_streamer *streamer, const void *src_bu
 void mgmt_streamer_trim_front(struct mgmt_streamer *streamer, void *buf, size_t len);
 
 /**
- * @brief Uses the specified streamer to write header to buffer.
- *
- * Any existing data at the beginning buffer will be overwritten with header.
- * Any new data that extends past the buffer's current length is appended.
- *
- * @param streamer	The streamer providing the callback.
- * @param writer	The encoder to write to.
- * @param hdr		The mgmt_hdr struct to write.
- *
- * @return 0 on success, MGMT_ERR_[...] code on failure.
- */
-int mgmt_streamer_write_hdr(struct mgmt_streamer *streamer, const struct mgmt_hdr *hdr);
-
-/**
  * @brief Uses the specified streamer to initialize a CBOR reader.
  *
  * @param streamer	The streamer providing the callback.
@@ -275,13 +217,6 @@ int mgmt_streamer_write_hdr(struct mgmt_streamer *streamer, const struct mgmt_hd
  */
 int mgmt_streamer_init_reader(struct mgmt_streamer *streamer, void *buf);
 
-/**
- * @brief Uses the specified streamer to free a buffer.
- *
- * @param streamer	The streamer providing the callback.
- * @param buf		The buffer to free.
- */
-void mgmt_streamer_free_buf(struct mgmt_streamer *streamer, void *buf);
 
 /**
  * @brief Registers a full command group.
