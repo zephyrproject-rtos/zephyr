@@ -24,7 +24,7 @@ ZTEST(socket_can, test_socketcan_frame_to_can_frame)
 						   0x05, 0x06, 0x07, 0x08 };
 
 	sframe.can_id = BIT(31) | BIT(30) | 1234;
-	sframe.can_dlc = sizeof(data);
+	sframe.len = sizeof(data);
 	memcpy(sframe.data, data, sizeof(sframe.data));
 
 	expected.rtr = CAN_REMOTEREQUEST;
@@ -56,7 +56,7 @@ ZTEST(socket_can, test_can_frame_to_socketcan_frame)
 						   0x05, 0x06, 0x07, 0x08 };
 
 	expected.can_id = BIT(31) | BIT(30) | 1234;
-	expected.can_dlc = sizeof(data);
+	expected.len = sizeof(data);
 	memcpy(expected.data, data, sizeof(expected.data));
 
 	zframe.rtr = CAN_REMOTEREQUEST;
@@ -74,7 +74,7 @@ ZTEST(socket_can, test_can_frame_to_socketcan_frame)
 	zassert_equal(sframe.can_id, expected.can_id, "CAN ID not same");
 	zassert_mem_equal(&sframe.data, &expected.data, sizeof(sframe.data),
 			  "CAN data not same");
-	zassert_equal(sframe.can_dlc, expected.can_dlc,
+	zassert_equal(sframe.len, expected.len,
 		      "CAN msg length not same");
 }
 
