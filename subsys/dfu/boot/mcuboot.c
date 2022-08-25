@@ -10,7 +10,7 @@
 #include <string.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/init.h>
 
 #include <zephyr/sys/__assert.h>

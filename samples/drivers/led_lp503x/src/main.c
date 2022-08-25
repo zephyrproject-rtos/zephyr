@@ -9,7 +9,7 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/drivers/led/lp503x.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <zephyr/logging/log.h>

@@ -46,7 +46,7 @@
  */
 
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/espi.h>
 #include <zephyr/pm/pm.h>

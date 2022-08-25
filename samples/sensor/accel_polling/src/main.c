@@ -10,7 +10,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/util_macro.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #define ACCEL_ALIAS(i) DT_ALIAS(_CONCAT(accel, i))
 #define ACCELEROMETER_DEVICE(i, _)                                                                 \

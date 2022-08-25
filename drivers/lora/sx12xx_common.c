@@ -9,7 +9,7 @@
 #include <zephyr/drivers/lora.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 /* LoRaMac-node specific includes */
 #include <radio.h>

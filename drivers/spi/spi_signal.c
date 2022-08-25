@@ -9,7 +9,7 @@
  * @brief Async callback used with signal notifier
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 
 #ifdef CONFIG_POLL

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/drivers/misc/ft8xx/ft8xx.h>
 #include <zephyr/drivers/misc/ft8xx/ft8xx_copro.h>

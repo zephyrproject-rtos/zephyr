@@ -5,7 +5,7 @@
  */
 
 #include <stdlib.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 void _exit(int status)
 {

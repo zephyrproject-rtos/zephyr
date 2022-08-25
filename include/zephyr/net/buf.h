@@ -13,7 +13,7 @@
 #include <stddef.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

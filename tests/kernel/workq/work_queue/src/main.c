@@ -15,7 +15,7 @@
 #undef __DEPRECATED_MACRO
 #define __DEPRECATED_MACRO
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/tc_util.h>
 #include <zephyr/sys/util.h>

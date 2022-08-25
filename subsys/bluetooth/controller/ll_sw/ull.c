@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>

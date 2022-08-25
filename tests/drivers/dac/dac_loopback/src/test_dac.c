@@ -14,7 +14,7 @@
 
 #include <zephyr/drivers/dac.h>
 #include <zephyr/drivers/adc.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 /*

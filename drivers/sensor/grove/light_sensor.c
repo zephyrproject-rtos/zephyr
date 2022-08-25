@@ -11,7 +11,7 @@
 #include <zephyr/devicetree.h>
 #include <math.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(grove_light, CONFIG_SENSOR_LOG_LEVEL);

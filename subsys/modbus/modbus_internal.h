@@ -23,7 +23,7 @@
 #ifndef ZEPHYR_INCLUDE_MODBUS_INTERNAL_H_
 #define ZEPHYR_INCLUDE_MODBUS_INTERNAL_H_
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/modbus/modbus.h>
 

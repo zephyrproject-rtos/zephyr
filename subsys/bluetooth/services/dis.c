@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/init.h>
 
 #include <zephyr/settings/settings.h>

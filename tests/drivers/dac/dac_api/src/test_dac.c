@@ -6,7 +6,7 @@
 
 
 #include <zephyr/drivers/dac.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #if defined(CONFIG_BOARD_NUCLEO_F091RC) || \

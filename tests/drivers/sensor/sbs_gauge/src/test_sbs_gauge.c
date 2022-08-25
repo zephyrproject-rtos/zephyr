@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 const struct device *get_fuel_gauge_device(void)

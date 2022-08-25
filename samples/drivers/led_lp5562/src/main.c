@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <zephyr/drivers/led.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #define LOG_LEVEL 4
 #include <zephyr/logging/log.h>

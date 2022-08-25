@@ -7,7 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_socket_can_sample, LOG_LEVEL_DBG);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/drivers/can.h>
 #include <zephyr/net/socket.h>

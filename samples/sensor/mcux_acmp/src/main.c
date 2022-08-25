@@ -7,7 +7,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/mcux_acmp.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <stdio.h>
 

@@ -7,7 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_gptp_sample);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
 #include <stdlib.h>
 

@@ -9,7 +9,7 @@
  * devices for the "vnd,spi" devicetree compatible used in test code.
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/spi.h>
 
 #define DT_DRV_COMPAT vnd_spi

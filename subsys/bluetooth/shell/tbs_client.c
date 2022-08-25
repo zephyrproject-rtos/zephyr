@@ -11,7 +11,7 @@
 
 #include <stdlib.h>
 #include <ctype.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/printk.h>

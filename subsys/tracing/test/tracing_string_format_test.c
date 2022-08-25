@@ -6,7 +6,7 @@
 
 #define DISABLE_SYSCALL_TRACING
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <tracing_test.h>
 #include <tracing_test_syscall.h>
 #include <zephyr/tracing/tracing_format.h>

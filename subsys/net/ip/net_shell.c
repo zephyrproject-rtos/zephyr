@@ -13,7 +13,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/random/rand32.h>
