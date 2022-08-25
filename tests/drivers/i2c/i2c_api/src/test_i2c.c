@@ -149,12 +149,14 @@ static int test_burst_gy271(void)
 	return TC_PASS;
 }
 
-void test_i2c_gy271(void)
+ZTEST(i2c_gy271, test_i2c_gy271)
 {
 	zassert_true(test_gy271() == TC_PASS, NULL);
 }
 
-void test_i2c_burst_gy271(void)
+ZTEST(i2c_gy271, test_i2c_burst_gy271)
 {
 	zassert_true(test_burst_gy271() == TC_PASS, NULL);
 }
+
+ZTEST_SUITE(i2c_gy271, NULL, NULL, NULL, NULL, NULL);
