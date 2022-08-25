@@ -6,6 +6,7 @@ description: |
   Properties supporting Zephyr spi-nor flash driver (over the Zephyr SPI
   API) control of serial flash memories using the standard M25P80-based
   command set.
+
 compatible: "jedec,spi-nor"
 
 include: [spi-device.yaml, "jedec,spi-nor-common.yaml"]
