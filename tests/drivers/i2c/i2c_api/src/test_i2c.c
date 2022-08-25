@@ -13,7 +13,7 @@
  */
 
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(i2c_0), okay)

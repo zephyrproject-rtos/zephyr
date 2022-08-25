@@ -528,7 +528,7 @@ int _gettimeofday(struct timeval *__tp, void *__tzp)
 }
 
 #include <stdlib.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 /* Replace picolibc abort with native Zephyr one */
 void abort(void)

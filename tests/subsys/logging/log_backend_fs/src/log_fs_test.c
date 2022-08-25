@@ -12,7 +12,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/fs/fs.h>
 

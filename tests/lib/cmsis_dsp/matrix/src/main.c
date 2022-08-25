@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 extern void test_matrix_unary_q7(void);
 extern void test_matrix_unary_q15(void);

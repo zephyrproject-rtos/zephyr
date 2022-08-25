@@ -10,7 +10,7 @@
 #include <zephyr/fff.h>
 #include <zephyr/net/ieee802154_radio.h>
 #include <zephyr/net/net_pkt.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 #include <openthread/message.h>

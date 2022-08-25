@@ -9,7 +9,7 @@
 #include <zephyr/sys/util.h>
 #include <assert.h>
 #include <string.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <zephyr/debug/object_tracing.h>
 #include <zephyr/kernel_structs.h>

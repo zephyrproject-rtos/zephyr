@@ -8,7 +8,7 @@
  * @brief HCI interface application
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/settings/settings.h>
 

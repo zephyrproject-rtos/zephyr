@@ -20,7 +20,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #define OBJ_MAX_SIZE			      1024
 /* Hardcoded here since definition is in internal header */

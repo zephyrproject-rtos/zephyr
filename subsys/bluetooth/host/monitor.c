@@ -11,7 +11,7 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/uart_pipe.h>

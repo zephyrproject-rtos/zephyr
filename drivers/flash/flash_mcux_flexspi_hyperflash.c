@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT nxp_imx_flexspi_hyperflash
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
 #include <zephyr/drivers/flash.h>
 

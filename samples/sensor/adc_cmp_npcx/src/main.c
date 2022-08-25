@@ -8,7 +8,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/adc_cmp_npcx.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <stdio.h>
 

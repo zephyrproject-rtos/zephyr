@@ -21,7 +21,7 @@
  *   -# Data is transferred correctly from src to dest, for each loop
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/dma.h>

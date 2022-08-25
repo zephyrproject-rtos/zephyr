@@ -12,7 +12,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/sensor.h>
 #include <string.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
 #include "dht.h"

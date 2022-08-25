@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <zephyr/net/buf.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #define BT_MESH_NET_FLAG_KR       BIT(0)
 #define BT_MESH_NET_FLAG_IVU      BIT(1)

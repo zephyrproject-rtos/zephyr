@@ -6,7 +6,7 @@
  * Note: this file is linked to RAM. Any functions called while preparing for
  * sleep mode must be defined within this file, or linked to RAM.
  */
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/pm/pm.h>
 #include <fsl_dcdc.h>

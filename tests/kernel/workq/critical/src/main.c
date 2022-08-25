@@ -24,7 +24,7 @@
  * @{
  * @}
  */
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/ztest.h>
 

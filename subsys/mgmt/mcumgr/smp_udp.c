@@ -9,7 +9,7 @@
  * @brief UDP transport for the mcumgr SMP protocol.
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #if defined(CONFIG_POSIX_API)
 #include <zephyr/posix/unistd.h>

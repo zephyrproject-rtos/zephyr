@@ -9,7 +9,7 @@
  */
 
 #include <string.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/mgmt/mcumgr/buf.h>

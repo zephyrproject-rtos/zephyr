@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT intel_ibecc
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/pcie/pcie.h>
 

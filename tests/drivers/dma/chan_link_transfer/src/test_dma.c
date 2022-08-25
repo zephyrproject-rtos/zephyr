@@ -17,7 +17,7 @@
  *   -# Data is transferred correctly from src to dest
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/ztest.h>
 

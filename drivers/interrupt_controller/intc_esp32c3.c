@@ -14,7 +14,7 @@
 #include <assert.h>
 #include "soc/soc.h"
 #include <soc.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #include <zephyr/sw_isr_table.h>
 #include <riscv/interrupt.h>

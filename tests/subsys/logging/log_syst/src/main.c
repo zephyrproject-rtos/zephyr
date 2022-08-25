@@ -9,7 +9,7 @@
  * @brief Test log message
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include "mock_backend.h"
 #include <zephyr/sys/printk.h>
