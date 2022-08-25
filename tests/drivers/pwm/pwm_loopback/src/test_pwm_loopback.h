@@ -47,20 +47,4 @@ struct test_pwm_callback_data {
 
 void get_test_pwms(struct test_pwm *out, struct test_pwm *in);
 
-void test_pulse_capture(void);
-
-void test_pulse_capture_inverted(void);
-
-void test_period_capture(void);
-
-void test_period_capture_inverted(void);
-
-void test_pulse_and_period_capture(void);
-
-void test_capture_timeout(void);
-
-void test_continuous_capture(void);
-
-void test_capture_busy(void);
-
 #endif /* __TEST_PWM_LOOPBACK_H__ */
