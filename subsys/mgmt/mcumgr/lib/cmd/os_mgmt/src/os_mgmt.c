@@ -158,14 +158,32 @@ os_mgmt_taskstat_encode_stack_info(zcbor_state_t *zse,
 }
 
 static inline bool
+os_mgmt_taskstat_encode_runtime_info(zcbor_state_t *zse, const struct k_thread *thread)
+{
+	bool ok = true;
+
+#if defined(CONFIG_SCHED_THREAD_USAGE)
+	k_thread_runtime_stats_t thread_stats;
+
+	k_thread_runtime_stats_get((struct k_thread *)thread, &thread_stats);
+
+	ok = zcbor_tstr_put_lit(zse, "runtime") &&
+	zcbor_uint64_put(zse, thread_stats.execution_cycles);
+#elif !defined(CONFIG_OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS)
+	ok = zcbor_tstr_put_lit(zse, "runtime") &&
+	zcbor_uint32_put(zse, 0);
+#endif
+
+	return ok;
+}
+
+static inline bool
 os_mgmt_taskstat_encode_unsupported(zcbor_state_t *zse)
 {
 	bool ok = true;
 
 	if (!IS_ENABLED(CONFIG_OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS)) {
-		ok = zcbor_tstr_put_lit(zse, "runtime")		&&
-		     zcbor_uint32_put(zse, 0)			&&
-		     zcbor_tstr_put_lit(zse, "cswcnt")		&&
+		ok = zcbor_tstr_put_lit(zse, "cswcnt")		&&
 		     zcbor_uint32_put(zse, 0)			&&
 		     zcbor_tstr_put_lit(zse, "last_checkin")	&&
 		     zcbor_uint32_put(zse, 0)			&&
@@ -209,6 +227,7 @@ static void os_mgmt_taskstat_encode_one(const struct k_thread *thread, void *use
 			zcbor_tstr_put_lit(iterator_ctx->zse, "state")				&&
 			zcbor_uint32_put(iterator_ctx->zse, thread->base.thread_state)		&&
 			os_mgmt_taskstat_encode_stack_info(iterator_ctx->zse, thread)		&&
+			os_mgmt_taskstat_encode_runtime_info(iterator_ctx->zse, thread)		&&
 			os_mgmt_taskstat_encode_unsupported(iterator_ctx->zse)			&&
 			zcbor_map_end_encode(iterator_ctx->zse, TASKSTAT_COLUMNS_MAX);
 
