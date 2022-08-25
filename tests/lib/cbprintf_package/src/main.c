@@ -361,7 +361,7 @@ ZTEST(cbprintf_package, test_cbprintf_ro_loc)
 
 	/* Calculate size needed for package with appended read-only strings. */
 	clen = cbprintf_package_copy(package, sizeof(package), NULL, 0,
-				     CBPRINTF_PACKAGE_COPY_RO_STR, NULL, 0);
+				     CBPRINTF_PACKAGE_CONVERT_RO_STR, NULL, 0);
 
 	/* Length will be increased by string length + null terminator. */
 	zassert_equal(clen, len + (int)strlen(test_str) + 1, NULL);
@@ -369,7 +369,7 @@ ZTEST(cbprintf_package, test_cbprintf_ro_loc)
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage[clen];
 
 	int clen2 = cbprintf_package_copy(package, sizeof(package), cpackage, sizeof(cpackage),
-				     CBPRINTF_PACKAGE_COPY_RO_STR, NULL, 0);
+				     CBPRINTF_PACKAGE_CONVERT_RO_STR, NULL, 0);
 
 	zassert_equal(clen, clen2, NULL);
 
@@ -425,7 +425,7 @@ ZTEST(cbprintf_package, test_cbprintf_ro_loc_rw_present)
 
 	/* Calculate size needed for package with appended read-only strings. */
 	clen = cbprintf_package_copy(package, sizeof(package), NULL, 0,
-				     CBPRINTF_PACKAGE_COPY_RO_STR, NULL, 0);
+				     CBPRINTF_PACKAGE_CONVERT_RO_STR, NULL, 0);
 
 	/* Length will be increased by string length + null terminator. */
 	zassert_equal(clen, len + (int)strlen(test_str) + 1, NULL);
@@ -433,7 +433,7 @@ ZTEST(cbprintf_package, test_cbprintf_ro_loc_rw_present)
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage[clen];
 
 	int clen2 = cbprintf_package_copy(package, sizeof(package), cpackage, sizeof(cpackage),
-				     CBPRINTF_PACKAGE_COPY_RO_STR, NULL, 0);
+				     CBPRINTF_PACKAGE_CONVERT_RO_STR, NULL, 0);
 
 	zassert_equal(clen, clen2, NULL);
 
@@ -510,7 +510,7 @@ ZTEST(cbprintf_package, test_cbprintf_ro_rw_loc)
 
 	/* Calculate size needed for package with appended read-only strings. */
 	clen = cbprintf_package_copy(package, sizeof(package), NULL, 0,
-				     CBPRINTF_PACKAGE_COPY_RO_STR, strl, ARRAY_SIZE(strl));
+				     CBPRINTF_PACKAGE_CONVERT_RO_STR, strl, ARRAY_SIZE(strl));
 
 	/* Length will be increased by 2 string lengths + null terminators. */
 	zassert_equal(clen, len + (int)strlen(test_str) + (int)strlen(cstr) + 2, NULL);
@@ -520,7 +520,7 @@ ZTEST(cbprintf_package, test_cbprintf_ro_rw_loc)
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage[clen];
 
 	int clen2 = cbprintf_package_copy(package, sizeof(package), cpackage, sizeof(cpackage),
-				     CBPRINTF_PACKAGE_COPY_RO_STR, strl, ARRAY_SIZE(strl));
+				     CBPRINTF_PACKAGE_CONVERT_RO_STR, strl, ARRAY_SIZE(strl));
 
 	zassert_equal(clen, clen2, NULL);
 
@@ -534,8 +534,8 @@ ZTEST(cbprintf_package, test_cbprintf_ro_rw_loc)
 	check_package(package, len, exp_str);
 	check_package(cpackage, clen, exp_str);
 
-	uint32_t cpy_flags = CBPRINTF_PACKAGE_COPY_RW_STR |
-			     CBPRINTF_PACKAGE_COPY_KEEP_RO_STR;
+	uint32_t cpy_flags = CBPRINTF_PACKAGE_CONVERT_RW_STR |
+			     CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR;
 
 	/* Calculate size needed for package with appended read-write strings. */
 	clen = cbprintf_package_copy(package, sizeof(package), NULL, 0,
@@ -628,7 +628,7 @@ ZTEST(cbprintf_package, test_cbprintf_ro_rw_loc_const_char_ptr)
 
 	/* Calculate size needed for package with appended read-only strings. */
 	clen = cbprintf_package_copy(package, sizeof(package), NULL, 0,
-				     CBPRINTF_PACKAGE_COPY_RO_STR, NULL, 0);
+				     CBPRINTF_PACKAGE_CONVERT_RO_STR, NULL, 0);
 
 	/* Length will be increased by 2 string lengths + null terminators. */
 	size_t str_append_len = (int)strlen(test_str) +
@@ -639,7 +639,7 @@ ZTEST(cbprintf_package, test_cbprintf_ro_rw_loc_const_char_ptr)
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage[clen];
 
 	int clen2 = cbprintf_package_copy(package, sizeof(package), cpackage, sizeof(cpackage),
-				     CBPRINTF_PACKAGE_COPY_RO_STR, NULL, 0);
+				     CBPRINTF_PACKAGE_CONVERT_RO_STR, NULL, 0);
 
 	zassert_equal(clen, clen2, NULL);
 
@@ -655,7 +655,7 @@ ZTEST(cbprintf_package, test_cbprintf_ro_rw_loc_const_char_ptr)
 
 	/* Calculate size needed for package with appended read-write strings. */
 	clen = cbprintf_package_copy(package, sizeof(package), NULL, 0,
-				     CBPRINTF_PACKAGE_COPY_RW_STR, NULL, 0);
+				     CBPRINTF_PACKAGE_CONVERT_RW_STR, NULL, 0);
 
 	/* Length will be increased by 1 string length + null terminator. */
 	zassert_equal(clen, len + (int)strlen(test_str1) + 1, NULL);
@@ -663,7 +663,7 @@ ZTEST(cbprintf_package, test_cbprintf_ro_rw_loc_const_char_ptr)
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage2[clen];
 
 	clen2 = cbprintf_package_copy(package, sizeof(package), cpackage2, sizeof(cpackage2),
-				     CBPRINTF_PACKAGE_COPY_RW_STR, NULL, 0);
+				     CBPRINTF_PACKAGE_CONVERT_RW_STR, NULL, 0);
 
 	zassert_equal(clen, clen2, NULL);
 
@@ -729,8 +729,8 @@ static void cbprintf_rw_loc_const_char_ptr(bool keep_ro_str)
 	zassert_equal(hdr[2], 0, NULL);
 	zassert_equal(hdr[3], 2, NULL);
 
-	uint32_t copy_flags = CBPRINTF_PACKAGE_COPY_RW_STR |
-			 (keep_ro_str ? CBPRINTF_PACKAGE_COPY_KEEP_RO_STR : 0);
+	uint32_t copy_flags = CBPRINTF_PACKAGE_CONVERT_RW_STR |
+			 (keep_ro_str ? CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR : 0);
 
 	/* Calculate size needed for package with appended read-only strings. */
 	clen = cbprintf_package_copy(spackage, sizeof(spackage), NULL, 0,
@@ -870,8 +870,8 @@ ZTEST(cbprintf_package, test_cbprintf_package_convert)
 	slen = cbprintf_package(spackage, slen, flags, TEST_FMT);
 	zassert_true(slen > 0, NULL);
 
-	uint32_t copy_flags = CBPRINTF_PACKAGE_COPY_RW_STR |
-			      CBPRINTF_PACKAGE_COPY_KEEP_RO_STR;
+	uint32_t copy_flags = CBPRINTF_PACKAGE_CONVERT_RW_STR |
+			      CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR;
 
 	clen = cbprintf_package_convert(spackage, slen, NULL, 0, copy_flags, NULL, 0);
 	zassert_true(clen > 0, NULL);

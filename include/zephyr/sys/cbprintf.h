@@ -177,7 +177,7 @@ BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
 
 /**@} */
 
-/**@defgroup CBPRINTF_PACKAGE_COPY_FLAGS Package flags.
+/**@defgroup CBPRINTF_PACKAGE_CONVERT_FLAGS Package flags.
  * @{
  */
 
@@ -189,7 +189,8 @@ BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
  * are copied into destination package. Address of strings indicated as read-write
  * are also checked and if determined to be read-only they are also copied.
  */
-#define CBPRINTF_PACKAGE_COPY_RO_STR BIT(0)
+#define CBPRINTF_PACKAGE_CONVERT_RO_STR BIT(0)
+#define CBPRINTF_PACKAGE_COPY_RO_STR CBPRINTF_PACKAGE_CONVERT_RO_STR __DEPRECATED_MACRO
 
 /** @brief Append read-write strings from source package to destination package.
  *
@@ -197,18 +198,20 @@ BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
  * arrays of indexes where string address can be found in the package. When flag
  * is set, list of read-write strings is examined and if they are not determined
  * to be read-only, they are copied into the destination package.
- * If @ref CBPRINTF_PACKAGE_COPY_RO_STR is not set, remaining string locations
+ * If @ref CBPRINTF_PACKAGE_CONVERT_RO_STR is not set, remaining string locations
  * are considered as pointing to read-only location and they are copy to the
- * package if @ref CBPRINTF_PACKAGE_COPY_KEEP_RO_STR is set.
+ * package if @ref CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR is set.
  */
-#define CBPRINTF_PACKAGE_COPY_RW_STR BIT(1)
+#define CBPRINTF_PACKAGE_CONVERT_RW_STR BIT(1)
+#define CBPRINTF_PACKAGE_COPY_RW_STR CBPRINTF_PACKAGE_CONVERT_RW_STR __DEPRECATED_MACRO
 
 /** @brief Keep read-only location indexes in the package.
  *
  * If it is set read-only string pointers are kept in the package after copy. If
  * not set they are discarded.
  */
-#define CBPRINTF_PACKAGE_COPY_KEEP_RO_STR BIT(2)
+#define CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR BIT(2)
+#define CBPRINTF_PACKAGE_COPY_KEEP_RO_STR CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR __DEPRECATED_MACRO
 
 /**@} */
 
@@ -443,7 +446,7 @@ int cbvprintf_package(void *packaged,
  *
  * @param ctx Context provided to the @p cb.
  *
- * @param flags Flags. See @ref CBPRINTF_PACKAGE_COPY_FLAGS.
+ * @param flags Flags. See @ref CBPRINTF_PACKAGE_CONVERT_FLAGS.
  *
  * @param[in, out] strl if @p packaged is null, it is a pointer to the array where
  * @p strl_len first string lengths will is stored. If @p packaged is not null,
@@ -503,7 +506,7 @@ static inline int z_cbprintf_cpy(const void *buf, size_t len, void *ctx)
  * @param len Available space in the location pointed by @p packaged. Not used when
  * @p packaged is null.
  *
- * @param flags Flags. See @ref CBPRINTF_PACKAGE_COPY_FLAGS.
+ * @param flags Flags. See @ref CBPRINTF_PACKAGE_CONVERT_FLAGS.
  *
  * @param[in, out] strl if @p packaged is null, it is a pointer to the array where
  * @p strl_len first string lengths will is stored. If @p packaged is not null,
@@ -571,8 +574,8 @@ static inline int cbprintf_fsc_package(void *in_packaged,
 				       size_t len)
 {
 	return cbprintf_package_copy(in_packaged, in_len, packaged, len,
-				     CBPRINTF_PACKAGE_COPY_RO_STR |
-				     CBPRINTF_PACKAGE_COPY_RW_STR, NULL, 0);
+				     CBPRINTF_PACKAGE_CONVERT_RO_STR |
+				     CBPRINTF_PACKAGE_CONVERT_RW_STR, NULL, 0);
 }
 
 /** @brief Generate the output for a previously captured format
