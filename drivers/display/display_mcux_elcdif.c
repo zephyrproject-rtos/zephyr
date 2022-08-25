@@ -10,6 +10,7 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device.h>
 #include <fsl_elcdif.h>
 
 #ifdef CONFIG_HAS_MCUX_CACHE
@@ -184,6 +185,27 @@ static void mcux_elcdif_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int mcux_elcdif_pm_action(const struct device *dev,
+				 enum pm_device_action action)
+{
+	const struct mcux_elcdif_config *config = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ELCDIF_RgbModeStart(config->base);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ELCDIF_RgbModeStop(config->base);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
+
 static void mcux_elcdif_isr(const struct device *dev)
 {
 	const struct mcux_elcdif_config *config = dev->config;
@@ -294,14 +316,15 @@ static const struct display_driver_api mcux_elcdif_api = {
 	static struct mcux_elcdif_data mcux_elcdif_data_##id = {		\
 		.fb_ptr = frame_buffer_##id,					\
 	};									\
+	PM_DEVICE_DT_INST_DEFINE(id, mcux_elcdif_pm_action);			\
 	DEVICE_DT_INST_DEFINE(id,						\
-			    &mcux_elcdif_init,					\
-			    NULL,						\
-			    &mcux_elcdif_data_##id,				\
-			    &mcux_elcdif_config_##id,				\
-			    POST_KERNEL,					\
-			    CONFIG_DISPLAY_INIT_PRIORITY,			\
-			    &mcux_elcdif_api);					\
+			      &mcux_elcdif_init,				\
+			      PM_DEVICE_DT_INST_GET(id),			\
+			      &mcux_elcdif_data_##id,				\
+			      &mcux_elcdif_config_##id,				\
+			      POST_KERNEL,					\
+			      CONFIG_DISPLAY_INIT_PRIORITY,			\
+			      &mcux_elcdif_api);				\
 	static void mcux_elcdif_config_func_##id(const struct device *dev)	\
 	{									\
 		IRQ_CONNECT(DT_INST_IRQN(id),					\
