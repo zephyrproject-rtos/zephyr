@@ -89,12 +89,13 @@ config OS_MGMT_TASKSTAT_THREAD_NAME_LEN
 
 config OS_MGMT_TASKSTAT_SIGNED_PRIORITY
 	bool "Signed priorities"
+	default y
 	help
 	  Zephyr uses int8_t as thread priorities, but in taskstat response it encodes
 	  them as unsigned.  Enabling this option will use signed int for priorities in
 	  responses, which is more natural for Zephyr.
-	  Enable this option only if your client software is able to properly decode
-	  and accept signed integers as priorities.
+	  Disable this option if your client software is unable to properly decode and
+	  accept signed integers as priorities.
 
 config OS_MGMT_TASKSTAT_STACK_INFO
 	bool "Include stack info in taskstat responses"
