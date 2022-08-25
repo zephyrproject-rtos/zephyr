@@ -154,6 +154,9 @@ static void llcp_rp_cc_tx_rsp(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	pdu = (struct pdu_data *)tx->pdu;
 
+	ctx->data.cis_create.conn_event_count = MAX(ctx->data.cis_create.conn_event_count,
+						    cc_event_counter(conn) + 2);
+
 	llcp_pdu_encode_cis_rsp(ctx, pdu);
 	ctx->tx_opcode = pdu->llctrl.opcode;
 
@@ -368,6 +371,7 @@ static void rp_cc_state_wait_rx_cis_ind(struct ll_conn *conn, struct proc_ctx *c
 
 	switch (evt) {
 	case RP_CC_EVT_CIS_IND:
+		llcp_pdu_decode_cis_ind(ctx, pdu);
 		if (!ull_peripheral_iso_setup(&pdu->llctrl.cis_ind, ctx->data.cis_create.cig_id,
 					 ctx->data.cis_create.cis_handle)) {
 
