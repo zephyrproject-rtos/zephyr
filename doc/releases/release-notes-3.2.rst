@@ -19,6 +19,8 @@ API Changes
 Changes in this release
 =======================
 
+* Zephyr now requires Python 3.8 or higher
+
 * Changed :c:struct:`spi_cs_control` to remove anonymous struct.
   This causes possible breakage for static initialization of the
   struct.  Updated :c:macro:`SPI_CS_CONTROL_PTR_DT` to reflect
@@ -30,6 +32,13 @@ Changes in this release
   the migration of external applications, but will be removed with the 3.4
   release.  The :zephyr_file:`scripts/utils/migrate_includes.py` script is
   provided to automate the migration.
+
+* :zephyr_file:`include/zephyr/zephyr.h` no longer defines ``__ZEPHYR__``.
+  This definition can be used by third-party code to compile code conditional
+  to Zephyr. The definition is already injected by the Zephyr build system.
+  Therefore, any third-party code integrated using the Zephyr build system will
+  require no changes. External build systems will need to inject the definition
+  by themselves, if they did not already.
 
 Removed APIs in this release
 ============================

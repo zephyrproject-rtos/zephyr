@@ -65,7 +65,7 @@ The current minimum required version for the main dependencies are:
      - 3.20.0
 
    * - `Python <https://www.python.org/>`_
-     - 3.6
+     - 3.8
 
    * - `Devicetree compiler <https://www.devicetree.org/>`_
      - 1.4.6

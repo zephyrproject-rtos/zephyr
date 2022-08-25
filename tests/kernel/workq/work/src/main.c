@@ -37,6 +37,8 @@ BUILD_ASSERT(COOPLO_PRIORITY < 0,
 /* Given by work thread to signal completion. */
 static struct k_sem sync_sem;
 
+static bool run_flag = true;
+
 /* Given by test thread to release a work item. */
 static struct k_sem rel_sem;
 
@@ -85,6 +87,7 @@ static uint32_t volatile last_handle_ms;
 
 static K_THREAD_STACK_DEFINE(coophi_stack, STACK_SIZE);
 static struct k_work_q coophi_queue;
+static struct k_work_q not_start_queue;
 static atomic_t coophi_ctr;
 static inline int coophi_counter(void)
 {
@@ -207,14 +210,14 @@ static void test_delayable_init(void)
 }
 
 /* Check that submission to an unstarted queue is diagnosed. */
-static void test_unstarted(void)
+ZTEST(work, test_unstarted)
 {
 	int rc;
 
 	k_work_init(&work, counter_handler);
 	zassert_equal(k_work_busy_get(&work), 0, NULL);
 
-	rc = k_work_submit_to_queue(&coophi_queue, &work);
+	rc = k_work_submit_to_queue(&not_start_queue, &work);
 	zassert_equal(rc, -ENODEV, NULL);
 }
 
@@ -267,7 +270,7 @@ static void test_queue_start(void)
 }
 
 /* Check validation of submission without a destination queue. */
-static void test_null_queue(void)
+ZTEST(work, test_null_queue)
 {
 	int rc;
 
@@ -279,7 +282,7 @@ static void test_null_queue(void)
 }
 
 /* Basic single-CPU check submitting with a non-blocking handler. */
-static void test_1cpu_simple_queue(void)
+ZTEST(work_1cpu, test_1cpu_simple_queue)
 {
 	int rc;
 
@@ -311,7 +314,7 @@ static void test_1cpu_simple_queue(void)
 }
 
 /* Basic SMP check submitting with a non-blocking handler. */
-static void test_smp_simple_queue(void)
+ZTEST(work, test_smp_simple_queue)
 {
 	if (!IS_ENABLED(CONFIG_SMP)) {
 		ztest_test_skip();
@@ -347,7 +350,7 @@ static void test_smp_simple_queue(void)
 }
 
 /* Basic single-CPU check submitting with a blocking handler */
-static void test_1cpu_sync_queue(void)
+ZTEST(work_1cpu, test_1cpu_sync_queue)
 {
 	int rc;
 
@@ -385,7 +388,7 @@ static void test_1cpu_sync_queue(void)
  * queue thread it gets submitted to the queue it's running on, to
  * prevent reentrant invocation, at least on a single CPU.
  */
-static void test_1cpu_reentrant_queue(void)
+ZTEST(work_1cpu, test_1cpu_reentrant_queue)
 {
 	int rc;
 
@@ -424,7 +427,7 @@ static void test_1cpu_reentrant_queue(void)
 /* Single CPU submit two work items and wait for flush in order
  * before they get started.
  */
-static void test_1cpu_queued_flush(void)
+ZTEST(work_1cpu, test_1cpu_queued_flush)
 {
 	int rc;
 
@@ -462,7 +465,7 @@ static void test_1cpu_queued_flush(void)
 
 /* Single CPU submit a work item and wait for flush after it's started.
  */
-static void test_1cpu_running_flush(void)
+ZTEST(work_1cpu, test_1cpu_running_flush)
 {
 	int rc;
 
@@ -493,7 +496,7 @@ static void test_1cpu_running_flush(void)
 }
 
 /* Single CPU schedule a work item and wait for flush. */
-static void test_1cpu_delayed_flush(void)
+ZTEST(work_1cpu, test_1cpu_delayed_flush)
 {
 	int rc;
 	uint32_t flush_ms;
@@ -527,7 +530,7 @@ static void test_1cpu_delayed_flush(void)
 /* Single CPU cancel before work item is unqueued should complete
  * immediately.
  */
-static void test_1cpu_queued_cancel(void)
+ZTEST(work_1cpu, test_1cpu_queued_cancel)
 {
 	int rc;
 
@@ -548,7 +551,7 @@ static void test_1cpu_queued_cancel(void)
 }
 
 /* Single CPU cancel before work item is unqueued should not wait. */
-static void test_1cpu_queued_cancel_sync(void)
+ZTEST(work_1cpu, test_1cpu_queued_cancel_sync)
 {
 	int rc;
 
@@ -578,7 +581,7 @@ static void test_1cpu_queued_cancel_sync(void)
 /* Single CPU cancel before scheduled work item is queued should
  * complete immediately.
  */
-static void test_1cpu_delayed_cancel(void)
+ZTEST(work_1cpu, test_1cpu_delayed_cancel)
 {
 	int rc;
 
@@ -600,7 +603,7 @@ static void test_1cpu_delayed_cancel(void)
 
 
 /* Single CPU cancel before scheduled work item is queued should not wait. */
-static void test_1cpu_delayed_cancel_sync(void)
+ZTEST(work_1cpu, test_1cpu_delayed_cancel_sync)
 {
 	int rc;
 
@@ -628,7 +631,7 @@ static void test_1cpu_delayed_cancel_sync(void)
 }
 
 /* Single CPU cancel after delayable item starts should wait. */
-static void test_1cpu_delayed_cancel_sync_wait(void)
+ZTEST(work_1cpu, test_1cpu_delayed_cancel_sync_wait)
 {
 	int rc;
 
@@ -679,7 +682,7 @@ static void test_running_cancel_cb(struct k_timer *timer)
 }
 
 /* Single CPU test cancellation after work starts. */
-static void test_1cpu_running_cancel(void)
+ZTEST(work_1cpu, test_1cpu_running_cancel)
 {
 	struct test_running_cancel_timer *ctx = &test_running_cancel_ctx;
 	struct k_work *wp = &ctx->work;
@@ -742,7 +745,7 @@ static void test_1cpu_running_cancel(void)
 /* Single CPU test wait-for-cancellation after the work item has
  * started running.
  */
-static void test_1cpu_running_cancel_sync(void)
+ZTEST(work_1cpu, test_1cpu_running_cancel_sync)
 {
 	struct test_running_cancel_timer *ctx = &test_running_cancel_ctx;
 	struct k_work *wp = &ctx->work;
@@ -802,7 +805,7 @@ static void test_1cpu_running_cancel_sync(void)
 /* SMP cancel after work item is started should succeed but require
  * wait.
  */
-static void test_smp_running_cancel(void)
+ZTEST(work, test_smp_running_cancel)
 {
 	int rc;
 
@@ -844,7 +847,7 @@ static void test_smp_running_cancel(void)
 }
 
 /* Drain with no active workers completes immediately. */
-static void test_drain_empty(void)
+ZTEST(work, test_drain_empty)
 {
 	int rc;
 
@@ -869,7 +872,7 @@ static void test_drain_wait_cb(struct k_timer *timer)
 }
 
 /* Single CPU submit an item and wait for it to drain. */
-static void test_1cpu_drain_wait(void)
+ZTEST(work_1cpu, test_1cpu_drain_wait)
 {
 	struct test_drain_wait_timer *ctx = &test_drain_wait_ctx;
 	int rc;
@@ -909,7 +912,7 @@ static void test_1cpu_drain_wait(void)
 }
 
 /* Single CPU submit item, drain with plug, test, then unplug. */
-static void test_1cpu_plugged_drain(void)
+ZTEST(work_1cpu, test_1cpu_plugged_drain)
 {
 	int rc;
 
@@ -966,7 +969,7 @@ static void test_1cpu_plugged_drain(void)
 }
 
 /* Single CPU test delayed submission */
-static void test_1cpu_basic_schedule(void)
+ZTEST(work_1cpu, test_1cpu_basic_schedule)
 {
 	int rc;
 	uint32_t sched_ms;
@@ -1042,7 +1045,7 @@ static void handle_1cpu_basic_schedule_running(struct k_work *work)
 }
 
 /* Single CPU test that schedules when running */
-static void test_1cpu_basic_schedule_running(void)
+ZTEST(work_1cpu, test_1cpu_basic_schedule_running)
 {
 	int rc;
 	static struct state_1cpu_basic_schedule_running state = {
@@ -1078,7 +1081,7 @@ static void test_1cpu_basic_schedule_running(void)
 }
 
 /* Single CPU test schedule without delay is queued immediately. */
-static void test_1cpu_immed_schedule(void)
+ZTEST(work_1cpu, test_1cpu_immed_schedule)
 {
 	int rc;
 	struct k_work *wp = &dwork.work; /* whitebox testing */
@@ -1116,7 +1119,7 @@ static void test_1cpu_immed_schedule(void)
 }
 
 /* Single CPU test that delayed work can be rescheduled. */
-static void test_1cpu_basic_reschedule(void)
+ZTEST(work_1cpu, test_1cpu_basic_reschedule)
 {
 	int rc;
 	uint32_t sched_ms;
@@ -1171,7 +1174,7 @@ static void test_1cpu_basic_reschedule(void)
 /* Single CPU test that delayed work can be immediately queued by
  * reschedule API.
  */
-static void test_1cpu_immed_reschedule(void)
+ZTEST(work_1cpu, test_1cpu_immed_reschedule)
 {
 	int rc;
 	struct k_work *wp = &dwork.work; /* whitebox testing */
@@ -1303,14 +1306,14 @@ static bool try_queue_no_yield(struct k_work_q *wq)
 }
 
 /* Verify that no-yield policy works */
-static void test_1cpu_queue_no_yield(void)
+ZTEST(work_1cpu, test_1cpu_queue_no_yield)
 {
 	zassert_equal(try_queue_no_yield(&coophi_queue), true, NULL);
 	zassert_equal(try_queue_no_yield(&cooplo_queue), false, NULL);
 }
 
 /* Basic functionality with the system work queue. */
-static void test_1cpu_system_queue(void)
+ZTEST(work_1cpu, test_1cpu_system_queue)
 {
 	int rc;
 
@@ -1339,7 +1342,7 @@ static void test_1cpu_system_queue(void)
 	zassert_equal(rc, 0, NULL);
 }
 
-static void test_1cpu_system_schedule(void)
+ZTEST(work_1cpu, test_1cpu_system_schedule)
 {
 	int rc;
 	uint32_t sched_ms;
@@ -1383,7 +1386,7 @@ static void test_1cpu_system_schedule(void)
 		     "long %u > %u\n", elapsed_ms, max_ms);
 }
 
-static void test_1cpu_system_reschedule(void)
+ZTEST(work_1cpu, test_1cpu_system_reschedule)
 {
 	int rc;
 	uint32_t sched_ms;
@@ -1432,50 +1435,27 @@ static void test_1cpu_system_reschedule(void)
 		     "long %u > %u\n", elapsed_ms, max_ms);
 }
 
-static void test_nop(void)
+ZTEST(work, test_nop)
 {
 	ztest_test_skip();
 }
 
-void test_main(void)
+void *workq_setup(void)
 {
 	main_thread = k_current_get();
 	k_sem_init(&sync_sem, 0, 1);
 	k_sem_init(&rel_sem, 0, 1);
 
-	ztest_test_suite(work,
-			 ztest_unit_test(test_work_init),
-			 ztest_unit_test(test_delayable_init),
-			 ztest_unit_test(test_unstarted),
-			 ztest_unit_test(test_queue_start),
-			 ztest_unit_test(test_null_queue),
-			 ztest_1cpu_unit_test(test_1cpu_simple_queue),
-			 ztest_unit_test(test_smp_simple_queue),
-			 ztest_1cpu_unit_test(test_1cpu_sync_queue),
-			 ztest_1cpu_unit_test(test_1cpu_reentrant_queue),
-			 ztest_1cpu_unit_test(test_1cpu_queued_flush),
-			 ztest_1cpu_unit_test(test_1cpu_running_flush),
-			 ztest_1cpu_unit_test(test_1cpu_queued_cancel),
-			 ztest_1cpu_unit_test(test_1cpu_queued_cancel_sync),
-			 ztest_1cpu_unit_test(test_1cpu_running_cancel),
-			 ztest_1cpu_unit_test(test_1cpu_running_cancel_sync),
-			 ztest_unit_test(test_smp_running_cancel),
-			 ztest_unit_test(test_drain_empty),
-			 ztest_1cpu_unit_test(test_1cpu_drain_wait),
-			 ztest_1cpu_unit_test(test_1cpu_plugged_drain),
-			 ztest_1cpu_unit_test(test_1cpu_basic_schedule),
-			 ztest_1cpu_unit_test(test_1cpu_basic_schedule_running),
-			 ztest_1cpu_unit_test(test_1cpu_immed_schedule),
-			 ztest_1cpu_unit_test(test_1cpu_basic_reschedule),
-			 ztest_1cpu_unit_test(test_1cpu_immed_reschedule),
-			 ztest_1cpu_unit_test(test_1cpu_delayed_flush),
-			 ztest_1cpu_unit_test(test_1cpu_delayed_cancel_sync),
-			 ztest_1cpu_unit_test(test_1cpu_delayed_cancel_sync_wait),
-			 ztest_1cpu_unit_test(test_1cpu_delayed_cancel),
-			 ztest_1cpu_unit_test(test_1cpu_queue_no_yield),
-			 ztest_1cpu_unit_test(test_1cpu_system_queue),
-			 ztest_1cpu_unit_test(test_1cpu_system_schedule),
-			 ztest_1cpu_unit_test(test_1cpu_system_reschedule),
-			 ztest_unit_test(test_nop));
-	ztest_run_test_suite(work);
+	test_work_init();
+	test_delayable_init();
+
+	if (run_flag) {
+		test_queue_start();
+		run_flag = false;
+	}
+
+	return NULL;
 }
+
+ZTEST_SUITE(work_1cpu, NULL, workq_setup, ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
+ZTEST_SUITE(work, NULL, workq_setup, NULL, NULL, NULL);

@@ -12,6 +12,9 @@
 #include <zephyr/sys/byteorder.h>
 
 #define LEN_SZ sizeof(uint32_t)
+/* Amount of data that is left unused to distinguish between empty and full. */
+#define FREE_SPACE_DISTANCE sizeof(uint32_t)
+
 #define PADDING_MARK 0xFF
 
 #define GET_UTILIZATION(flags) \
@@ -165,26 +168,28 @@ int spsc_pbuf_alloc(struct spsc_pbuf *pb, uint16_t len, char **buf)
 			space = LEN_SZ + 1;
 		}
 
-		if (remaining >= space) {
-			/* Packet will fit at the end */
-			free_space = remaining - ((rd_idx > 0) ? 0 : sizeof(uint32_t));
+		if ((remaining >= space) || (rd_idx <= space)) {
+			/* Packet will fit at the end. Free space depends on
+			 * presence of data at the beginning of the buffer since
+			 * there must be one word not used to distinguish between
+			 * empty and full state.
+			 */
+			free_space = remaining - ((rd_idx > 0) ? 0 : FREE_SPACE_DISTANCE);
 		} else {
-			if (rd_idx > remaining) {
-				/* Padding must be added. */
-				data_loc[wr_idx] = PADDING_MARK;
-				__sync_synchronize();
-				cache_wb(&data_loc[wr_idx], sizeof(uint8_t), flags);
+			/* Padding must be added. */
+			data_loc[wr_idx] = PADDING_MARK;
+			__sync_synchronize();
+			cache_wb(&data_loc[wr_idx], sizeof(uint8_t), flags);
 
-				wr_idx = 0;
-				*wr_idx_loc = wr_idx;
+			wr_idx = 0;
+			*wr_idx_loc = wr_idx;
 
-				free_space = rd_idx - sizeof(uint32_t);
-			} else {
-				free_space = remaining - (rd_idx > 0 ? 0 : sizeof(uint32_t));
-			}
+			/* Obligatory one word empty space. */
+			free_space = rd_idx - FREE_SPACE_DISTANCE;
 		}
 	} else {
-		free_space = rd_idx - wr_idx - sizeof(uint32_t);
+		/* Obligatory one word empty space. */
+		free_space = rd_idx - wr_idx - FREE_SPACE_DISTANCE;
 	}
 
 	len = MIN(len, MAX(free_space - (int32_t)LEN_SZ, 0));
@@ -278,8 +283,18 @@ uint16_t spsc_pbuf_claim(struct spsc_pbuf *pb, char **buf)
 
 	cache_inv(&data_loc[rd_idx], LEN_SZ, flags);
 	if (data_loc[rd_idx] == PADDING_MARK) {
-		rd_idx = 0;
-		*rd_idx_loc = rd_idx;
+		/* If padding is found we must check if we are interrupted
+		 * padding injection procedure which has 2 steps (adding padding,
+		 * changing write index). If padding is added but index is not
+		 * yet changed, it indicates that there is no data after the
+		 * padding (at the beginning of the buffer).
+		 */
+		cache_inv(wr_idx_loc, sizeof(*wr_idx_loc), flags);
+		if (rd_idx == *wr_idx_loc) {
+			return 0;
+		}
+
+		*rd_idx_loc = rd_idx = 0;
 		__sync_synchronize();
 		cache_wb(rd_idx_loc, sizeof(*rd_idx_loc), flags);
 		/* After reading padding we may find out that buffer is empty. */
@@ -307,14 +322,26 @@ void spsc_pbuf_free(struct spsc_pbuf *pb, uint16_t len)
 	const uint32_t pblen = pb->common.len;
 	const uint32_t flags = pb->common.flags;
 	uint32_t *rd_idx_loc = get_rd_idx_loc(pb, flags);
+	uint32_t *wr_idx_loc = get_wr_idx_loc(pb, flags);
 	uint16_t rd_idx = *rd_idx_loc + len + LEN_SZ;
 	uint8_t *data_loc = get_data_loc(pb, flags);
 
 	rd_idx = ROUND_UP(rd_idx, sizeof(uint32_t));
 	cache_inv(&data_loc[rd_idx], sizeof(uint8_t), flags);
 	/* Handle wrapping or the fact that next packet is a padding. */
-	if (rd_idx == pblen || data_loc[rd_idx] == PADDING_MARK) {
+	if (rd_idx == pblen) {
 		rd_idx = 0;
+	} else if (data_loc[rd_idx] == PADDING_MARK) {
+		cache_inv(wr_idx_loc, sizeof(*wr_idx_loc), flags);
+		/* We may hit the case when producer is in the middle of adding
+		 * a padding (which happens in 2 steps: writing padding, resetting
+		 * write index) and in that case we cannot consume this padding.
+		 */
+		if (rd_idx != *wr_idx_loc) {
+			rd_idx = 0;
+		}
+	} else {
+		/* empty */
 	}
 
 	*rd_idx_loc = rd_idx;
