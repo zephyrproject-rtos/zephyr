@@ -528,7 +528,7 @@ static int spi_resource_lock_test(struct spi_dt_spec *lock_spec,
 	return 0;
 }
 
-void test_spi_loopback(void)
+ZTEST(spi_api, test_spi_loopback)
 {
 #if (CONFIG_SPI_ASYNC)
 	struct k_thread async_thread;
@@ -590,8 +590,7 @@ end:
 #endif
 }
 
-/*test case main entry*/
-void test_main(void)
+void *mem_config(void)
 {
 #if CONFIG_NOCACHE_MEMORY
 	memset(buffer_tx, 0, sizeof(buffer_tx));
@@ -600,6 +599,7 @@ void test_main(void)
 	memcpy(buffer2_tx, tx2_data, sizeof(tx2_data));
 #endif
 
-	ztest_test_suite(test_spi, ztest_unit_test(test_spi_loopback));
-	ztest_run_test_suite(test_spi);
+	return NULL;
 }
+
+ZTEST_SUITE(spi_api, NULL, mem_config, NULL, NULL, NULL);
