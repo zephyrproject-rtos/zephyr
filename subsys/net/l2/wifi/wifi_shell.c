@@ -74,7 +74,7 @@ static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 
 	print(context.shell, SHELL_NORMAL, "%-4d | %-32s %-5u | %-4u | %-4d | %-5s | %s\n",
 	      scan_result, entry->ssid, entry->ssid_length, entry->channel, entry->rssi,
-	      (entry->security == WIFI_SECURITY_TYPE_PSK ? "WPA/WPA2" : "Open    "),
+	      wifi_security_txt(entry->security),
 	      ((entry->mac_length) ?
 		      net_sprint_ll_addr_buf(entry->mac, WIFI_MAC_ADDR_LEN, mac_string_buf,
 					     sizeof(mac_string_buf)) : ""));
@@ -183,8 +183,30 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 		params->psk = argv[idx];
 		params->psk_length = strlen(argv[idx]);
 		params->security = WIFI_SECURITY_TYPE_PSK;
+		idx++;
+
+		/* Security type (optional) */
+		if (idx < argc) {
+			unsigned int security = strtol(argv[idx], &endptr, 10);
+
+			if (security <= WIFI_SECURITY_TYPE_MAX) {
+				params->security = security;
+			}
+			idx++;
+		}
 	} else {
 		params->security = WIFI_SECURITY_TYPE_NONE;
+	}
+
+	/* MFP (optional) */
+	params->mfp = WIFI_MFP_OPTIONAL;
+	if (idx < argc) {
+		unsigned int mfp = strtol(argv[idx], &endptr, 10);
+
+		if (mfp <= WIFI_MFP_REQUIRED) {
+			params->mfp = mfp;
+		}
+		idx++;
 	}
 
 	return 0;
@@ -365,6 +387,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "\"<SSID>\"\n<channel number (optional), "
 		  "0 means all>\n"
 		  "<PSK (optional: valid only for secured SSIDs)>"
+		  "<Security type (optional: valid only for secured SSIDs)>"
+		  "0:None, 1:PSK, 2:PSK-256, 3:SAE"
+		  "<MFP (optional): 0:Disable, 1:Optional, 2:Required",
 		  cmd_wifi_connect),
 	SHELL_CMD(disconnect, NULL, "Disconnect from Wifi AP",
 		  cmd_wifi_disconnect),
