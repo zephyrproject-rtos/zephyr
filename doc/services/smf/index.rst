@@ -316,3 +316,152 @@ When designing hierarchical state machines, the following should be considered:
    is called.
  - The parent_run function only executes if the child_run function returns
    without transitioning to another state, ie. calling smf_set_state.
+
+Event Driven State Machine Example
+==================================
+
+Events are not explicitly part of the State Machine Framework but an event driven
+state machine can be implemented using Zephyr :ref:`events`.
+
+.. graphviz::
+   :caption: Event driven state machine diagram
+
+   digraph smf_flat {
+      node [style=rounded];
+      init [shape = point];
+      STATE_S0 [shape = box];
+      STATE_S1 [shape = box];
+
+      init -> STATE_S0;
+      STATE_S0 -> STATE_S1 [label = "BTN EVENT"];
+      STATE_S1 -> STATE_S0 [label = "BTN EVENT"];
+   }
+
+Code::
+
+	#include <zephyr/kernel.h>
+	#include <zephyr/zephyr.h>
+	#include <zephyr/drivers/gpio.h>
+	#include <zephyr/smf.h>
+
+	#define SW0_NODE        DT_ALIAS(sw0)
+
+	/* List of events */
+	#define EVENT_BTN_PRESS BIT(0)
+
+	static const struct gpio_dt_spec button =
+		GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios, {0});
+
+	static struct gpio_callback button_cb_data;
+
+	/* Forward declaration of state table */
+	static const struct smf_state demo_states[];
+
+	/* List of demo states */
+	enum demo_state { S0, S1 };
+
+	/* User defined object */
+	struct s_object {
+		/* This must be first */
+		struct smf_ctx ctx;
+
+		/* Events */
+		struct k_event smf_event;
+		int32_t events;
+
+		/* Other state specific data add here */
+	} s_obj;
+
+	/* State S0 */
+	static void s0_entry(void *o)
+	{
+		printk("STATE0\n");
+	}
+
+	static void s0_run(void *o)
+	{
+		struct s_object *s = (struct s_object *)o;
+
+		/* Change states on Button Press Event */
+		if (s->events & EVENT_BTN_PRESS) {
+			smf_set_state(SMF_CTX(&s_obj), &demo_states[S1]);
+		}
+	}
+
+	/* State S1 */
+	static void s1_entry(void *o)
+	{
+		printk("STATE1\n");
+	}
+
+	static void s1_run(void *o)
+	{
+		struct s_object *s = (struct s_object *)o;
+
+		/* Change states on Button Press Event */
+		if (s->events & EVENT_BTN_PRESS) {
+			smf_set_state(SMF_CTX(&s_obj), &demo_states[S0]);
+		}
+	}
+
+	/* Populate state table */
+	static const struct smf_state demo_states[] = {
+		[S0] = SMF_CREATE_STATE(s0_entry, s0_run, NULL),
+		[S1] = SMF_CREATE_STATE(s1_entry, s1_run, NULL),
+	};
+
+	void button_pressed(const struct device *dev,
+			struct gpio_callback *cb, uint32_t pins)
+	{
+		/* Generate Button Press Event */
+		k_event_post(&s_obj.smf_event, EVENT_BTN_PRESS);
+	}
+
+	void main(void)
+	{
+		int ret;
+
+		if (!device_is_ready(button.port)) {
+			printk("Error: button device %s is not ready\n",
+				button.port->name);
+			return;
+		}
+
+		ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
+		if (ret != 0) {
+			printk("Error %d: failed to configure %s pin %d\n",
+				ret, button.port->name, button.pin);
+			return;
+		}
+
+		ret = gpio_pin_interrupt_configure_dt(&button,
+			GPIO_INT_EDGE_TO_ACTIVE);
+		if (ret != 0) {
+			printk("Error %d: failed to configure interrupt on %s pin %d\n",
+				ret, button.port->name, button.pin);
+			return;
+		}
+
+		gpio_init_callback(&button_cb_data, button_pressed, BIT(button.pin));
+		gpio_add_callback(button.port, &button_cb_data);
+
+		/* Initialize the event */
+		k_event_init(&s_obj.smf_event);
+
+		/* Set initial state */
+		smf_set_initial(SMF_CTX(&s_obj), &demo_states[S0]);
+
+		/* Run the state machine */
+		while(1) {
+			/* Block until an event is detected */
+			s_obj.events = k_event_wait(&s_obj.smf_event,
+					EVENT_BTN_PRESS, true, K_FOREVER);
+
+			/* State machine terminates if a non-zero value is returned */
+			ret = smf_run_state(SMF_CTX(&s_obj));
+			if (ret) {
+				/* handle return code and terminate state machine */
+				break;
+			}
+		}
+	}
