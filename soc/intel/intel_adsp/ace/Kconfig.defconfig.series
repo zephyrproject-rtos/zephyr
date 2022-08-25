@@ -50,6 +50,9 @@ config SYS_CLOCK_TICKS_PER_SEC
 config XTENSA_CCOUNT_HZ
 	default 393216000
 
+config INTEL_ADSP_TIMER
+	default y
+
 config DYNAMIC_INTERRUPTS
 	default y
 
