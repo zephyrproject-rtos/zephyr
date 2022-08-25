@@ -275,6 +275,9 @@ Libraries / Subsystems
     enabled by default, this makes thread priorities in the taskstat command
     signed, which matches the signed priority of tasks in Zephyr, to revert
     to previous behaviour of using unsigned values, disable this Kconfig.
+  * MCUMGR taskstat runtime field support has been added, if
+    :kconfig:option:`CONFIG_OS_MGMT_TASKSTAT` is enabled, which will report the
+    number of CPU cycles have been spent executing the thread.
 
 HALs
 ****
