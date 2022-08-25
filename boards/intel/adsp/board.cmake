@@ -39,4 +39,12 @@ elseif(CONFIG_BOARD_INTEL_ADSP_ACE20_LNL)
 
   set(RIMAGE_SIGN_KEY "otc_private_key_3k.pem" CACHE STRING "default in ace20_lnl/board.cmake")
 
+elseif(CONFIG_BOARD_INTEL_ADSP_ACE30_PTL)
+
+  board_set_rimage_target(ptl)
+
+  set(RIMAGE_SIGN_KEY "otc_private_key.pem" CACHE STRING "default rimage key")
+
+  board_finalize_runner_args(intel_adsp)
+
 endif()
