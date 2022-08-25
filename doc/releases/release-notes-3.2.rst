@@ -271,6 +271,10 @@ Libraries / Subsystems
   * MCUMGR img_mgmt erase command now accepts an optional slot number
     to select which image will be erased, using the ``slot`` input
     (will default to slot 1 if not provided).
+  * MCUMGR :kconfig:option:`CONFIG_OS_MGMT_TASKSTAT_SIGNED_PRIORITY` is now
+    enabled by default, this makes thread priorities in the taskstat command
+    signed, which matches the signed priority of tasks in Zephyr, to revert
+    to previous behaviour of using unsigned values, disable this Kconfig.
 
 HALs
 ****
