@@ -43,23 +43,24 @@ int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx, u
 	} else {
 		tag_size = level_2_tag_size[level];
 	}
+	sec_ctx->enc.mode_params.ccm_info.tag_len = tag_size;
+	sec_ctx->dec.mode_params.ccm_info.tag_len = tag_size;
 
 	sec_ctx->level = level;
 
-	if (level > IEEE802154_SECURITY_LEVEL_NONE) {
-		memcpy(sec_ctx->key, key, key_len);
-		sec_ctx->key_len = key_len;
-		sec_ctx->key_mode = key_mode;
-
-		sec_ctx->enc.key.bit_stream = sec_ctx->key;
-		sec_ctx->enc.keylen = sec_ctx->key_len;
-
-		sec_ctx->dec.key.bit_stream = sec_ctx->key;
-		sec_ctx->dec.keylen = sec_ctx->key_len;
+	if (level == IEEE802154_SECURITY_LEVEL_NONE) {
+		return 0;
 	}
 
-	sec_ctx->enc.mode_params.ccm_info.tag_len = tag_size;
-	sec_ctx->dec.mode_params.ccm_info.tag_len = tag_size;
+	memcpy(sec_ctx->key, key, key_len);
+	sec_ctx->key_len = key_len;
+	sec_ctx->key_mode = key_mode;
+
+	sec_ctx->enc.key.bit_stream = sec_ctx->key;
+	sec_ctx->enc.keylen = sec_ctx->key_len;
+
+	sec_ctx->dec.key.bit_stream = sec_ctx->key;
+	sec_ctx->dec.keylen = sec_ctx->key_len;
 
 	ret = cipher_begin_session(sec_ctx->enc.device, &sec_ctx->enc, CRYPTO_CIPHER_ALGO_AES,
 				   CRYPTO_CIPHER_MODE_CCM, CRYPTO_CIPHER_OP_ENCRYPT);
@@ -81,43 +82,63 @@ int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx, u
 	return 0;
 }
 
+static void prepare_cipher_aead_pkt(uint8_t *frame, uint8_t level, uint8_t hdr_len,
+				    uint8_t payload_len, uint8_t tag_size,
+				    struct cipher_aead_pkt *apkt, struct cipher_pkt *pkt)
+{
+	bool is_encrypted = level >= IEEE802154_SECURITY_LEVEL_ENC;
+	bool is_authenticated = level != IEEE802154_SECURITY_LEVEL_NONE &&
+				level != IEEE802154_SECURITY_LEVEL_ENC;
+
+	/* See section 7.6.3.4.2 */
+	pkt->in_buf = is_encrypted && payload_len ? frame + hdr_len : NULL;
+	pkt->in_len = is_encrypted ? payload_len : 0;
+
+	/* See section 7.6.3.4.2 */
+	uint8_t out_buf_offset = is_encrypted ? hdr_len : hdr_len + payload_len;
+	uint8_t auth_len = is_authenticated ? out_buf_offset : 0;
+
+	/* See section 7.5.8.2.1 i) 1) */
+	pkt->out_buf = frame + out_buf_offset;
+	pkt->out_buf_max = (is_encrypted ? payload_len : 0) + tag_size;
+
+	apkt->ad = is_authenticated ? frame : NULL;
+	apkt->ad_len = auth_len;
+	apkt->tag = is_authenticated ? frame + hdr_len + payload_len : NULL;
+	apkt->pkt = pkt;
+}
+
 bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *frame,
-			     uint8_t auth_payload_len, uint8_t decrypt_payload_len,
+			     uint8_t hdr_len, uint8_t payload_len, uint8_t tag_size,
 			     uint8_t *src_ext_addr, uint32_t frame_counter)
 {
 	struct cipher_aead_pkt apkt;
 	struct cipher_pkt pkt;
 	uint8_t nonce[13];
+	uint8_t level = sec_ctx->level;
 	int ret;
 
-	if (!sec_ctx || sec_ctx->level == IEEE802154_SECURITY_LEVEL_NONE) {
+	if (!sec_ctx || level == IEEE802154_SECURITY_LEVEL_NONE) {
 		return true;
+	}
+
+	if (level == IEEE802154_SECURITY_LEVEL_ENC) {
+		/* See comment in ieee802154_encrypt_auth(). */
+		NET_ERR("Encrypt-only operation is not supported.");
+		return false;
 	}
 
 	/* See section 7.6.3.2 */
 	memcpy(nonce, src_ext_addr, IEEE802154_EXT_ADDR_LENGTH);
-	nonce[8] = (uint8_t)(frame_counter >> 24);
-	nonce[9] = (uint8_t)(frame_counter >> 16);
-	nonce[10] = (uint8_t)(frame_counter >> 8);
-	nonce[11] = (uint8_t)frame_counter;
-	nonce[12] = sec_ctx->level;
+	sys_put_be32(frame_counter, &nonce[8]);
+	nonce[12] = level;
 
-	pkt.in_buf = decrypt_payload_len ? frame + auth_payload_len : NULL;
-	pkt.in_len = decrypt_payload_len;
-	pkt.out_buf = frame;
-	pkt.out_buf_max = IEEE802154_MTU;
-
-	apkt.ad = frame;
-	apkt.ad_len = auth_payload_len;
-	apkt.tag = sec_ctx->dec.mode_params.ccm_info.tag_len
-			   ? frame + auth_payload_len + decrypt_payload_len
-			   : NULL;
-	apkt.pkt = &pkt;
+	prepare_cipher_aead_pkt(frame, level, hdr_len, payload_len, tag_size, &apkt, &pkt);
 
 	ret = cipher_ccm_op(&sec_ctx->dec, &apkt, nonce);
 	if (ret) {
-		NET_ERR("Cannot decrypt/auth (%i): %p %u/%u - fc %u", ret, frame, auth_payload_len,
-			decrypt_payload_len, frame_counter);
+		NET_ERR("Cannot decrypt/auth (%i): %p %u/%u - fc %u", ret, frame, hdr_len,
+			payload_len, frame_counter);
 		return false;
 	}
 
@@ -125,37 +146,46 @@ bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *f
 }
 
 bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx, uint8_t *frame,
-			     uint8_t auth_payload_len, uint8_t encrypt_payload_len,
+			     uint8_t hdr_len, uint8_t payload_len, uint8_t tag_size,
 			     uint8_t *src_ext_addr)
 {
 	struct cipher_aead_pkt apkt;
 	struct cipher_pkt pkt;
 	uint8_t nonce[13];
+	uint8_t level = sec_ctx->level;
 	int ret;
 
-	if (!sec_ctx || sec_ctx->level == IEEE802154_SECURITY_LEVEL_NONE) {
+	if (!sec_ctx || level == IEEE802154_SECURITY_LEVEL_NONE) {
 		return true;
+	}
+
+	if (level == IEEE802154_SECURITY_LEVEL_ENC) {
+		/* TODO: We currently use CCM rather than CCM* as crypto.h does
+		 *       not provide access to CCM* as of now.
+		 *       The spec requires CCM* to support encryption-only CCM
+		 *       operation, see annex B.1
+		 */
+		NET_ERR("Encrypt-only operation is not supported.");
+		return false;
+	}
+
+	/* See section 7.5.8.2.1 f) */
+	if (sec_ctx->frame_counter == 0xffffffff) {
+		NET_ERR("Max frame counter reached. Update key material to reset the counter.");
+		return false;
 	}
 
 	/* See section 7.6.3.2 */
 	memcpy(nonce, src_ext_addr, IEEE802154_EXT_ADDR_LENGTH);
 	sys_put_be32(sec_ctx->frame_counter, &nonce[8]);
-	nonce[12] = sec_ctx->level;
+	nonce[12] = level;
 
-	pkt.in_buf = encrypt_payload_len ? frame + auth_payload_len : NULL;
-	pkt.in_len = encrypt_payload_len;
-	pkt.out_buf = frame;
-	pkt.out_buf_max = IEEE802154_MTU;
-
-	apkt.ad = frame;
-	apkt.ad_len = auth_payload_len;
-	apkt.tag = NULL;
-	apkt.pkt = &pkt;
+	prepare_cipher_aead_pkt(frame, level, hdr_len, payload_len, tag_size, &apkt, &pkt);
 
 	ret = cipher_ccm_op(&sec_ctx->enc, &apkt, nonce);
 	if (ret) {
-		NET_ERR("Cannot encrypt/auth (%i): %p %u/%u - fc %u", ret, frame, auth_payload_len,
-			encrypt_payload_len, sec_ctx->frame_counter);
+		NET_ERR("Cannot encrypt/auth (%i): %p %u/%u - fc %u", ret, frame, hdr_len,
+			payload_len, sec_ctx->frame_counter);
 		return false;
 	}
 
