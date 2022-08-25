@@ -647,7 +647,7 @@ static int pin_get_config(void)
 	}
 
 	zassert_equal(rc, 0, "pin get config failed");
-	zassert_equal(flags_set, flags_get, "flags are different");
+	zassert_equal(flags_get & ~GPIO_VOLTAGE_MASK, flags_set, "flags are different");
 
 	return TC_PASS;
 }
@@ -670,6 +670,8 @@ ZTEST(gpio_port, test_gpio_port)
 		      "bits_logical failed");
 	zassert_equal(check_pulls(), TC_PASS,
 		      "check_pulls failed");
-	zassert_equal(pin_get_config(), TC_PASS,
-		      "pin_get_config failed");
+	if (IS_ENABLED(CONFIG_GPIO_GET_CONFIG)) {
+		zassert_equal(pin_get_config(), TC_PASS,
+			      "pin_get_config failed");
+	}
 }
