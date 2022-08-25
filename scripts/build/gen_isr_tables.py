@@ -153,7 +153,7 @@ def write_code_irq_vector_table(fp, vt, nv, syms):
     fp.write("}\n")
 
 def write_address_irq_vector_table(fp, vt, nv):
-    fp.write("uintptr_t __irq_vector_table _irq_vector_table[%d] = {\n" % nv)
+    fp.write("uintptr_t __irq_vector_table __attribute__((__used__)) _irq_vector_table[%d] = {\n" % nv)
     for i in range(nv):
         func = vt[i]
 
