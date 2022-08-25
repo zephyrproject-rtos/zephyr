@@ -44,7 +44,7 @@ LOG_MODULE_REGISTER(mpu);
 # define PR_ADDR "0x%08lx"
 #endif
 
-#define PMPCFG_STRIDE sizeof(ulong_t)
+#define PMPCFG_STRIDE sizeof(unsigned long)
 
 #define PMP_ADDR(addr)			((addr) >> 2)
 #define NAPOT_RANGE(size)		(((size) - 1) >> 1)
@@ -53,7 +53,7 @@ LOG_MODULE_REGISTER(mpu);
 #define PMP_NONE 0
 
 static void print_pmp_entries(unsigned int start, unsigned int end,
-			      ulong_t *pmp_addr, ulong_t *pmp_cfg,
+			      unsigned long *pmp_addr, unsigned long *pmp_cfg,
 			      const char *banner)
 {
 	uint8_t *pmp_n_cfg = (uint8_t *)pmp_cfg;
@@ -61,7 +61,7 @@ static void print_pmp_entries(unsigned int start, unsigned int end,
 
 	LOG_DBG("PMP %s:", banner);
 	for (index = start; index < end; index++) {
-		ulong_t start, end, tmp;
+		unsigned long start, end, tmp;
 
 		switch (pmp_n_cfg[index] & PMP_A) {
 		case PMP_TOR:
@@ -102,8 +102,8 @@ static void print_pmp_entries(unsigned int start, unsigned int end,
 
 static void dump_pmp_regs(const char *banner)
 {
-	ulong_t pmp_addr[CONFIG_PMP_SLOTS];
-	ulong_t pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
+	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
+	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
 
 #define PMPADDR_READ(x) pmp_addr[x] = csr_read(pmpaddr##x)
 
@@ -150,7 +150,7 @@ static void dump_pmp_regs(const char *banner)
  */
 static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 			  uintptr_t start, size_t size,
-			  ulong_t *pmp_addr, ulong_t *pmp_cfg,
+			  unsigned long *pmp_addr, unsigned long *pmp_cfg,
 			  unsigned int index_limit)
 {
 	uint8_t *pmp_n_cfg = (uint8_t *)pmp_cfg;
@@ -207,8 +207,8 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
  */
 extern void z_riscv_write_pmp_entries(unsigned int start, unsigned int end,
 				      bool clear_trailing_entries,
-				      const ulong_t *pmp_addr,
-				      const ulong_t *pmp_cfg);
+				      const unsigned long *pmp_addr,
+				      const unsigned long *pmp_cfg);
 
 /**
  * @brief Write a range of PMP entries to corresponding PMP registers
@@ -224,7 +224,7 @@ extern void z_riscv_write_pmp_entries(unsigned int start, unsigned int end,
  */
 static void write_pmp_entries(unsigned int start, unsigned int end,
 			      bool clear_trailing_entries,
-			      ulong_t *pmp_addr, ulong_t *pmp_cfg,
+			      unsigned long *pmp_addr, unsigned long *pmp_cfg,
 			      unsigned int index_limit)
 {
 	__ASSERT(start < end && end <= index_limit &&
@@ -262,7 +262,7 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
 	 * The QEMU fix is here with more details about this bug:
 	 * https://lists.gnu.org/archive/html/qemu-devel/2022-06/msg02800.html
 	 */
-	static const ulong_t pmp_zero[CONFIG_PMP_SLOTS] = { 0, };
+	static const unsigned long pmp_zero[CONFIG_PMP_SLOTS] = { 0, };
 
 	z_riscv_write_pmp_entries(start, CONFIG_PMP_SLOTS, false,
 				  pmp_zero, pmp_zero);
@@ -295,8 +295,8 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
  * sharing the same cfg register. Locked entries aren't modifiable but
  * we could have non-locked entries here too.
  */
-static ulong_t global_pmp_cfg[1];
-static ulong_t global_pmp_last_addr;
+static unsigned long global_pmp_cfg[1];
+static unsigned long global_pmp_last_addr;
 
 /* End of global PMP entry range */
 static unsigned int global_pmp_end_index;
@@ -306,8 +306,8 @@ static unsigned int global_pmp_end_index;
  */
 void z_riscv_pmp_init(void)
 {
-	ulong_t pmp_addr[4];
-	ulong_t pmp_cfg[1];
+	unsigned long pmp_addr[4];
+	unsigned long pmp_cfg[1];
 	unsigned int index = 0;
 
 	/* The read-only area is always there for every mode */
@@ -350,8 +350,8 @@ void z_riscv_pmp_init(void)
 /**
  * @Brief Initialize the per-thread PMP register copy with global values.
  */
-static inline unsigned int z_riscv_pmp_thread_init(ulong_t *pmp_addr,
-						   ulong_t *pmp_cfg,
+static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
+						   unsigned long *pmp_cfg,
 						   unsigned int index_limit)
 {
 	ARG_UNUSED(index_limit);

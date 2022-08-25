@@ -65,11 +65,11 @@ static inline void arch_isr_direct_header(void)
 	++(arch_curr_cpu()->nested);
 }
 
-extern void __soc_handle_irq(ulong_t mcause);
+extern void __soc_handle_irq(unsigned long mcause);
 
 static inline void arch_isr_direct_footer(int swap)
 {
-	ulong_t mcause;
+	unsigned long mcause;
 
 	/* Get the IRQ number */
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
