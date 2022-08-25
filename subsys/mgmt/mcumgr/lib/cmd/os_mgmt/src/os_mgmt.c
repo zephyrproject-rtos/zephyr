@@ -35,6 +35,15 @@
 static os_mgmt_on_reset_evt_cb os_reset_evt_cb;
 #endif
 
+#ifdef CONFIG_OS_MGMT_TASKSTAT
+/* Thread iterator information passing structure */
+struct thread_iterator_info {
+	zcbor_state_t *zse;
+	int thread_idx;
+	bool ok;
+};
+#endif
+
 /**
  * Command handler: os echo
  */
@@ -181,23 +190,30 @@ os_mgmt_taskstat_encode_priority(zcbor_state_t *zse, const struct k_thread *thre
 /**
  * Encodes a single taskstat entry.
  */
-static bool
-os_mgmt_taskstat_encode_one(zcbor_state_t *zse, int idx, const struct k_thread *thread)
+static void os_mgmt_taskstat_encode_one(const struct k_thread *thread, void *user_data)
 {
 	/*
 	 * Threads are sent as map where thread name is key and value is map
 	 * of thread parameters
 	 */
-	return os_mgmt_taskstat_encode_thread_name(zse, idx, thread)	&&
-	       zcbor_map_start_encode(zse, TASKSTAT_COLUMNS_MAX)	&&
-	       os_mgmt_taskstat_encode_priority(zse, thread)		&&
-	       zcbor_tstr_put_lit(zse, "tid")				&&
-	       zcbor_uint32_put(zse, idx)				&&
-	       zcbor_tstr_put_lit(zse, "state")				&&
-	       zcbor_uint32_put(zse, thread->base.thread_state)		&&
-	       os_mgmt_taskstat_encode_stack_info(zse, thread)		&&
-	       os_mgmt_taskstat_encode_unsupported(zse)			&&
-	       zcbor_map_end_encode(zse, TASKSTAT_COLUMNS_MAX);
+	struct thread_iterator_info *iterator_ctx = (struct thread_iterator_info *)user_data;
+
+	if (iterator_ctx->ok == true) {
+		iterator_ctx->ok =
+			os_mgmt_taskstat_encode_thread_name(iterator_ctx->zse,
+							    iterator_ctx->thread_idx, thread)	&&
+			zcbor_map_start_encode(iterator_ctx->zse, TASKSTAT_COLUMNS_MAX)		&&
+			os_mgmt_taskstat_encode_priority(iterator_ctx->zse, thread)		&&
+			zcbor_tstr_put_lit(iterator_ctx->zse, "tid")				&&
+			zcbor_uint32_put(iterator_ctx->zse, iterator_ctx->thread_idx)		&&
+			zcbor_tstr_put_lit(iterator_ctx->zse, "state")				&&
+			zcbor_uint32_put(iterator_ctx->zse, thread->base.thread_state)		&&
+			os_mgmt_taskstat_encode_stack_info(iterator_ctx->zse, thread)		&&
+			os_mgmt_taskstat_encode_unsupported(iterator_ctx->zse)			&&
+			zcbor_map_end_encode(iterator_ctx->zse, TASKSTAT_COLUMNS_MAX);
+
+		++iterator_ctx->thread_idx;
+	}
 }
 
 /**
@@ -206,24 +222,20 @@ os_mgmt_taskstat_encode_one(zcbor_state_t *zse, int idx, const struct k_thread *
 static int os_mgmt_taskstat_read(struct mgmt_ctxt *ctxt)
 {
 	zcbor_state_t *zse = ctxt->cnbe->zs;
-	const struct k_thread *thread = SYS_THREAD_MONITOR_HEAD;
-	bool ok = true;
-	int thread_idx = 0;
+	struct thread_iterator_info iterator_ctx = {
+		.zse = zse,
+		.thread_idx = 0,
+		.ok = true,
+	};
 
 	zcbor_tstr_put_lit(zse, "tasks");
 	zcbor_map_start_encode(zse, CONFIG_OS_MGMT_TASKSTAT_MAX_NUM_THREADS);
 
 	/* Iterate the list of tasks, encoding each. */
-	while (thread != NULL) {
-		ok = os_mgmt_taskstat_encode_one(zse, thread_idx, thread);
-		if (!ok) {
-			break;
-		}
-		thread = SYS_THREAD_MONITOR_NEXT(thread);
-		++thread_idx;
-	}
+	k_thread_foreach(os_mgmt_taskstat_encode_one, (void *)&iterator_ctx);
 
-	if (!ok || !zcbor_map_end_encode(zse, CONFIG_OS_MGMT_TASKSTAT_MAX_NUM_THREADS)) {
+	if (!iterator_ctx.ok ||
+	    !zcbor_map_end_encode(zse, CONFIG_OS_MGMT_TASKSTAT_MAX_NUM_THREADS)) {
 		return MGMT_ERR_EMSGSIZE;
 	}
 
