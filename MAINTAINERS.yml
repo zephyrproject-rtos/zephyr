@@ -418,7 +418,6 @@ Devicetree:
     - dts/bindings/
     - dts/common/
     - tests/lib/devicetree/
-    - dts/bindings/test/
     - doc/build/dts/
     - include/zephyr/devicetree/
   labels:
