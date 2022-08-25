@@ -12,7 +12,7 @@
 
 #include <zephyr/tc_util.h>
 #include <stdbool.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_backend_std.h>

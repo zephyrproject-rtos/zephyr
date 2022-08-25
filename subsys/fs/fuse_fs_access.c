@@ -18,7 +18,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/fs/fs.h>
 
 #include "cmdline.h"

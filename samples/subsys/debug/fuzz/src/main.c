@@ -1,7 +1,7 @@
 /* Copyright (c) 2022 Google, LLC.
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 
 /* Fuzz testing is coverage-based, so we want to hide a failure case

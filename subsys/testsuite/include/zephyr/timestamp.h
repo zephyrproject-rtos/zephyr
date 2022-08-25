@@ -13,7 +13,7 @@
 
 #ifndef _TIMESTAMP_H_
 #define _TIMESTAMP_H_
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <limits.h>
 #if defined(__GNUC__)

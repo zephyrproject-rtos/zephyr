@@ -8,7 +8,7 @@
 #ifndef H_HASH_CHECKSUM_MGMT_
 #define H_HASH_CHECKSUM_MGMT_
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/fs/fs.h>
 
 #ifdef __cplusplus

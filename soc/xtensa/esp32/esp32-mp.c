@@ -12,7 +12,7 @@
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <soc.h>
 #include <zephyr/device.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/kernel_structs.h>
 

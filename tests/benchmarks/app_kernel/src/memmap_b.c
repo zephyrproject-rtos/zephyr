@@ -7,7 +7,7 @@
  */
 
 #include "master.h"
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #ifdef MEMMAP_BENCH
 

@@ -9,7 +9,7 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/toolchain.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 
 #include <zephyr/net/net_ip.h>

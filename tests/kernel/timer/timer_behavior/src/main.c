@@ -8,7 +8,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>

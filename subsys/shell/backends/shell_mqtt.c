@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/shell/shell_mqtt.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>

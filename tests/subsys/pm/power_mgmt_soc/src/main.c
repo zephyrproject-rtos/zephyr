@@ -6,7 +6,7 @@
 
 #define LOG_LEVEL LOG_LEVEL_INF
 #include <zephyr/logging/log.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/tc_util.h>
 LOG_MODULE_DECLARE(brd_pm_test);

@@ -8,7 +8,7 @@
 #define ZEPHYR_DRIVERS_W1_W1_DS248X_H_
 
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #define CMD_1WT	 0x78
 #define CMD_1WSB 0x87

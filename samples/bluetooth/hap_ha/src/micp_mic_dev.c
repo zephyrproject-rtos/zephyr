@@ -8,7 +8,7 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <stdlib.h>
 #include <stdio.h>

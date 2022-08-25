@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mdns_echo_service, LOG_LEVEL_DBG);

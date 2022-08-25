@@ -5,7 +5,7 @@
  */
 
 #include <stdlib.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <errno.h>
 #include <zephyr/sys/math_extras.h>

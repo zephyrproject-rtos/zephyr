@@ -9,7 +9,7 @@
 
 #include <zephyr/logging/log.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 LOG_MODULE_REGISTER(flash_cadence_ll, CONFIG_FLASH_LOG_LEVEL);
 

@@ -340,7 +340,6 @@ state machine can be implemented using Zephyr :ref:`events`.
 Code::
 
 	#include <zephyr/kernel.h>
-	#include <zephyr/zephyr.h>
 	#include <zephyr/drivers/gpio.h>
 	#include <zephyr/smf.h>
 

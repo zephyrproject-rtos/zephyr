@@ -10,7 +10,7 @@
 #include <string.h>
 
 #include <zephyr/logging/log.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #include "../spinel_base/spinel.h"
 #include "nrf_802154_spinel_log.h"

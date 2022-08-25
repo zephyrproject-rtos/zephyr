@@ -8,7 +8,7 @@
 #define MPXXDTYY_H
 
 #include <zephyr/audio/dmic.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include "OpenPDMFilter.h"
 

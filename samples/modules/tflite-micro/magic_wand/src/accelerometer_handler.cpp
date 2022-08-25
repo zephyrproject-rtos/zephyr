@@ -20,7 +20,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <stdio.h>
 #include <string.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #define BUFLEN 300
 int begin_index = 0;

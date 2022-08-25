@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <zephyr/init.h>
 #include <stdint.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/bluetooth/gatt.h>

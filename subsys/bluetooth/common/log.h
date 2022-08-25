@@ -13,7 +13,7 @@
 
 #include <zephyr/linker/sections.h>
 #include <offsets.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 

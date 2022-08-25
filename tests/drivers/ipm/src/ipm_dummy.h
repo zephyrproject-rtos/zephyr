@@ -8,7 +8,7 @@
 
 #ifndef _IPM_DUMMY_H_
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/ipm.h>
 

@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
 /* command to configure port direction of NXP PCA95xx */

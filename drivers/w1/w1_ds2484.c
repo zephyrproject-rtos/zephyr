@@ -12,7 +12,7 @@
 #include <zephyr/drivers/w1.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 
 #define DT_DRV_COMPAT maxim_ds2484
 

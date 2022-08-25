@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/ipm.h>
 #include <zephyr/drivers/console/ipm_console.h>
 #include <zephyr/device.h>

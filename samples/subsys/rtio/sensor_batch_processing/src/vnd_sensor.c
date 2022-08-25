@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT vnd_sensor
 
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>

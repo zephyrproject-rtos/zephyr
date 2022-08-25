@@ -5,7 +5,7 @@
  */
 
 #define DT_DRV_COMPAT ovti_ov7725
-#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 
 #include <zephyr/sys/byteorder.h>
