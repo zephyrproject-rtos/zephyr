@@ -77,8 +77,7 @@ static uint16_t smp_uart_get_mtu(const struct net_buf *nb)
 	return CONFIG_MCUMGR_SMP_UART_MTU;
 }
 
-static int smp_uart_tx_pkt(struct zephyr_smp_transport *zst,
-			   struct net_buf *nb)
+static int smp_uart_tx_pkt(struct net_buf *nb)
 {
 	int rc;
 

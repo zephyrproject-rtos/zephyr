@@ -62,10 +62,8 @@ static struct configs configs = {
 };
 
 #ifdef CONFIG_MCUMGR_SMP_UDP_IPV4
-static int smp_udp4_tx(struct zephyr_smp_transport *zst, struct net_buf *nb)
+static int smp_udp4_tx(struct net_buf *nb)
 {
-	ARG_UNUSED(zst);
-
 	struct sockaddr *addr = net_buf_user_data(nb);
 	int ret = sendto(configs.ipv4.sock, nb->data, nb->len,
 			 0, addr, sizeof(*addr));
@@ -76,10 +74,8 @@ static int smp_udp4_tx(struct zephyr_smp_transport *zst, struct net_buf *nb)
 #endif
 
 #ifdef CONFIG_MCUMGR_SMP_UDP_IPV6
-static int smp_udp6_tx(struct zephyr_smp_transport *zst, struct net_buf *nb)
+static int smp_udp6_tx(struct net_buf *nb)
 {
-	ARG_UNUSED(zst);
-
 	struct sockaddr *addr = net_buf_user_data(nb);
 	int ret = sendto(configs.ipv6.sock, nb->data, nb->len,
 			 0, addr, sizeof(*addr));
