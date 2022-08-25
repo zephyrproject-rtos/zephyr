@@ -897,7 +897,7 @@ void bt_id_add(struct bt_keys *keys)
 	BT_DBG("addr %s", bt_addr_le_str(&keys->addr));
 
 	__ASSERT_NO_MSG(keys != NULL);
-	__ASSERT_NO_MSG(!bt_id_find_conflict(keys));
+	/* We assume (and could assert) !bt_id_find_conflict(keys) here. */
 
 	/* Nothing to be done if host-side resolving is used */
 	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
