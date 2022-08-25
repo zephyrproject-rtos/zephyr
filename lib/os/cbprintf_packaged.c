@@ -876,14 +876,14 @@ int cbprintf_package_convert(void *in_packaged,
 	 */
 	ros_nbr = in_desc->ro_str_cnt;
 	ro_cpy = ros_nbr &&
-		(flags & CBPRINTF_PACKAGE_COPY_RO_STR) == CBPRINTF_PACKAGE_COPY_RO_STR;
+		(flags & CBPRINTF_PACKAGE_CONVERT_RO_STR) == CBPRINTF_PACKAGE_CONVERT_RO_STR;
 
 	/* Get number of RW string indexes in the package and check if copying
 	 * includes appending those strings.
 	 */
 	rws_nbr = in_desc->rw_str_cnt;
 	rw_cpy = rws_nbr > 0 &&
-		 (flags & CBPRINTF_PACKAGE_COPY_RW_STR) == CBPRINTF_PACKAGE_COPY_RW_STR;
+		 (flags & CBPRINTF_PACKAGE_CONVERT_RW_STR) == CBPRINTF_PACKAGE_CONVERT_RW_STR;
 
 	/* If flags are not set or appending request without rw string indexes
 	 * present is chosen, just do a simple copy (or length calculation).
@@ -927,22 +927,22 @@ int cbprintf_package_convert(void *in_packaged,
 				str_pos++;
 			}
 		} else {
-			if (ros_nbr && flags & CBPRINTF_PACKAGE_COPY_KEEP_RO_STR) {
+			if (ros_nbr && flags & CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR) {
 				str_pos += ros_nbr;
 			}
 		}
 
 		bool drop_ro_str_pos = !(flags &
-					(CBPRINTF_PACKAGE_COPY_KEEP_RO_STR |
-					 CBPRINTF_PACKAGE_COPY_RO_STR));
+					(CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR |
+					 CBPRINTF_PACKAGE_CONVERT_RO_STR));
 
 		/* Handle RW strings. */
 		for (int i = 0; i < rws_nbr; i++) {
 			const char *str = *(const char **)&buf32[*str_pos];
 			bool is_ro = ptr_in_rodata(str);
 
-			if ((is_ro && flags & CBPRINTF_PACKAGE_COPY_RO_STR) ||
-			    (!is_ro && flags & CBPRINTF_PACKAGE_COPY_RW_STR)) {
+			if ((is_ro && flags & CBPRINTF_PACKAGE_CONVERT_RO_STR) ||
+			    (!is_ro && flags & CBPRINTF_PACKAGE_CONVERT_RW_STR)) {
 				int len = append_string(cb, NULL, str, 0);
 
 				/* If possible store calculated string length. */
@@ -983,7 +983,7 @@ int cbprintf_package_convert(void *in_packaged,
 		scpy_cnt = ros_nbr;
 		keep_cnt = 0;
 		dst = cpy_str_pos;
-	} else if (ros_nbr && flags & CBPRINTF_PACKAGE_COPY_KEEP_RO_STR) {
+	} else if (ros_nbr && flags & CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR) {
 		scpy_cnt = 0;
 		keep_cnt = ros_nbr;
 		dst = keep_str_pos;
@@ -1006,17 +1006,17 @@ int cbprintf_package_convert(void *in_packaged,
 		bool is_ro = ptr_in_rodata(str);
 
 		if (is_ro) {
-			if (flags & CBPRINTF_PACKAGE_COPY_RO_STR) {
+			if (flags & CBPRINTF_PACKAGE_CONVERT_RO_STR) {
 				__ASSERT_NO_MSG(scpy_cnt < sizeof(cpy_str_pos));
 				cpy_str_pos[scpy_cnt++] = *str_pos;
-			} else if (flags & CBPRINTF_PACKAGE_COPY_KEEP_RO_STR) {
+			} else if (flags & CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR) {
 				__ASSERT_NO_MSG(keep_cnt < sizeof(keep_str_pos));
 				keep_str_pos[keep_cnt++] = *str_pos;
 			} else {
 				/* Drop information about ro_str location. */
 			}
 		} else {
-			if (flags & CBPRINTF_PACKAGE_COPY_RW_STR) {
+			if (flags & CBPRINTF_PACKAGE_CONVERT_RW_STR) {
 				__ASSERT_NO_MSG(scpy_cnt < sizeof(cpy_str_pos));
 				cpy_str_pos[scpy_cnt++] = *str_pos;
 			} else {
@@ -1030,9 +1030,9 @@ int cbprintf_package_convert(void *in_packaged,
 	/* Set amount of strings appended to the package. */
 	out_desc.len = in_desc->len;
 	out_desc.str_cnt = in_desc->str_cnt + scpy_cnt;
-	out_desc.rw_str_cnt = (flags & CBPRINTF_PACKAGE_COPY_RW_STR) ? 0 : keep_cnt;
-	out_desc.ro_str_cnt = (flags & CBPRINTF_PACKAGE_COPY_RO_STR) ? 0 :
-			((flags & CBPRINTF_PACKAGE_COPY_KEEP_RO_STR) ? keep_cnt : 0);
+	out_desc.rw_str_cnt = (flags & CBPRINTF_PACKAGE_CONVERT_RW_STR) ? 0 : keep_cnt;
+	out_desc.ro_str_cnt = (flags & CBPRINTF_PACKAGE_CONVERT_RO_STR) ? 0 :
+			((flags & CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR) ? keep_cnt : 0);
 
 	/* Temporary overwrite input descriptor to allow bulk transfer */
 	struct cbprintf_package_desc in_desc_backup = *in_desc;
