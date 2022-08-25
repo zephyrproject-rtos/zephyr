@@ -12,10 +12,6 @@
 
 	aliases {
 		uart-0 = &uart0;
-		led0 = &led0;
-		led1 = &led1;
-		led2 = &led2;
-		led3 = &led3;
 	};
 
 	leds {
@@ -36,6 +32,7 @@
 			gpios = <&cy8c95xx_port1 7 GPIO_ACTIVE_HIGH>;
 			label = "LED 3";
 		};
+		status = "disabled";
 	};
 
 	chosen {
@@ -71,6 +68,7 @@
 			   <19 0 &gpio0 15 0>,	/* D13 */
 			   <20 0 &gpio0 18 0>,	/* D14 */
 			   <21 0 &gpio0 19 0>;	/* D15 */
+		status = "disabled";
 	};
 };
 
@@ -132,7 +130,7 @@ arduino_spi: &spi2 {};
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <8>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		cy8c95xx_port1: cy8c95xx_port@1 {
@@ -141,7 +139,7 @@ arduino_spi: &spi2 {};
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <8>;
-			status = "okay";
+			status = "disabled";
 		};
 	};
 };
