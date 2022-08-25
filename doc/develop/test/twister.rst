@@ -330,6 +330,14 @@ extra_sections: <list of extra binary sections>
     extra, unexpected sections in the Zephyr binary unless they are named
     here. They will not be included in the size calculation.
 
+sysbuild: <True|False> (default False)
+    Build the project using sysbuild infrastructure. Only the main project's
+    generated devicetree and Kconfig will be used for filtering tests.
+    on device testing must use the hardware map, or west flash to load
+    the images onto the target. The --erase option of west flash is
+    not supported with this option. Usage of unsupported options will result
+    in tests requiring sysbuild support being skipped.
+
 harness: <string>
     A harness string needed to run the tests successfully. This can be as
     simple as a loopback wiring or a complete hardware test setup for
