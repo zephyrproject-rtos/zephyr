@@ -31,7 +31,7 @@ static void *block[BLK_NUM_MAX];
  *
  * @see k_malloc(), k_free()
  */
-void test_mheap_malloc_align4(void)
+ZTEST(mheap_api, test_mheap_malloc_align4)
 {
 	void *block[BLK_NUM_MAX];
 
@@ -72,7 +72,7 @@ static void tmheap_handler(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memory_slab_tests
  */
-void test_mheap_threadsafe(void)
+ZTEST(mheap_api, test_mheap_threadsafe)
 {
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
 		return;
