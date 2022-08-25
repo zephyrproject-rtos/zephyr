@@ -62,7 +62,7 @@
 
 static void andes_v5_l2c_enable(void)
 {
-	ulong_t mcache_ctl;
+	unsigned long mcache_ctl;
 	volatile uint64_t *l2c_ctrl =
 		INT_TO_POINTER(ANDES_V5_L2C_BASE + L2C_CTRL);
 

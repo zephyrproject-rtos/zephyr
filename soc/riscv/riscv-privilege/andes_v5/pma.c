@@ -70,15 +70,15 @@ struct pma_region_attr {
 };
 
 struct pma_region {
-	ulong_t start;
-	ulong_t size;
+	unsigned long start;
+	unsigned long size;
 	struct pma_region_attr attr;
 };
 
 /*
  * Write value to CSRs pmaaddr{i}
  */
-static void write_pmaaddr_csr(const uint32_t index, ulong_t value)
+static void write_pmaaddr_csr(const uint32_t index, unsigned long value)
 {
 	switch (index) {
 	case 0:
@@ -125,7 +125,7 @@ static void write_pmacfg_entry(const uint32_t entry_index,
 	/* 1-byte pma{i}cfg entries are packed into XLEN-byte CSRs pmacfg{j} */
 	uint32_t index = PMACFG_NUM(entry_index);
 	uint8_t shift = PMACFG_SHIFT(entry_index);
-	ulong_t pmacfg = 0;
+	unsigned long pmacfg = 0;
 
 	switch (index) {
 	case 0:
@@ -164,7 +164,7 @@ static void write_pmacfg_entry(const uint32_t entry_index,
 static void region_init(const uint32_t index,
 	const struct pma_region *region_conf)
 {
-	ulong_t pmaaddr;
+	unsigned long pmaaddr;
 	uint8_t pmacfg;
 
 	if (region_conf->size == 4) {
@@ -208,8 +208,8 @@ static int pma_region_is_valid(const struct pma_region *region)
 static void configure_nocache_region(void)
 {
 	const struct pma_region nocache_region = {
-		.start = (ulong_t)&_nocache_ram_start,
-		.size = (ulong_t)&_nocache_ram_size,
+		.start = (unsigned long)&_nocache_ram_start,
+		.size = (unsigned long)&_nocache_ram_size,
 		.attr = {PMACFG_MTYPE_MEMORY_NOCACHE_BUFFERABLE},
 	};
 
@@ -240,7 +240,7 @@ void pma_init_per_core(void)
 
 static int pma_init(const struct device *arg)
 {
-	ulong_t mmsc_cfg;
+	unsigned long mmsc_cfg;
 
 	__asm__ volatile ("csrr %0, %1" : "=r" (mmsc_cfg) : "i" (NDS_MMSC_CFG));
 

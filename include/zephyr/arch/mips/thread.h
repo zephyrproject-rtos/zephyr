@@ -29,17 +29,17 @@
  * saved/restored when a cooperative context switch occurs.
  */
 struct _callee_saved {
-	ulong_t sp;	/* Stack pointer */
+	unsigned long sp;	/* Stack pointer */
 
-	ulong_t s0;	/* saved register */
-	ulong_t s1;	/* saved register */
-	ulong_t s2;	/* saved register */
-	ulong_t s3;	/* saved register */
-	ulong_t s4;	/* saved register */
-	ulong_t s5;	/* saved register */
-	ulong_t s6;	/* saved register */
-	ulong_t s7;	/* saved register */
-	ulong_t s8;	/* saved register AKA fp */
+	unsigned long s0;	/* saved register */
+	unsigned long s1;	/* saved register */
+	unsigned long s2;	/* saved register */
+	unsigned long s3;	/* saved register */
+	unsigned long s4;	/* saved register */
+	unsigned long s5;	/* saved register */
+	unsigned long s6;	/* saved register */
+	unsigned long s7;	/* saved register */
+	unsigned long s8;	/* saved register AKA fp */
 };
 typedef struct _callee_saved _callee_saved_t;
 
