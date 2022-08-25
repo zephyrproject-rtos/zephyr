@@ -25,10 +25,7 @@ LOG_MODULE_REGISTER(mcumgr_smp, CONFIG_MCUMGR_SMP_LOG_LEVEL);
 #define WEAK
 #endif
 
-static const struct mgmt_streamer_cfg zephyr_smp_cbor_cfg;
-
-static void *
-zephyr_smp_alloc_rsp(const void *req, void *arg)
+void *zephyr_smp_alloc_rsp(const void *req, void *arg)
 {
 	const struct net_buf_pool *pool;
 	const struct net_buf *req_nb;
@@ -115,16 +112,7 @@ zephyr_smp_split_frag(struct net_buf **nb, void *arg, uint16_t mtu)
 	return frag;
 }
 
-static int
-zephyr_smp_write_hdr(struct cbor_nb_writer *cnw, const struct mgmt_hdr *hdr)
-{
-	memcpy(cnw->nb->data, hdr, sizeof(*hdr));
-
-	return 0;
-}
-
-static void
-zephyr_smp_free_buf(void *buf, void *arg)
+void zephyr_smp_free_buf(void *buf, void *arg)
 {
 	struct zephyr_smp_transport *zst = arg;
 
@@ -189,7 +177,6 @@ zephyr_smp_process_packet(struct zephyr_smp_transport *zst,
 
 	streamer = (struct smp_streamer) {
 		.mgmt_stmr = {
-			.cfg = &zephyr_smp_cbor_cfg,
 			.reader = &reader,
 			.writer = &writer,
 			.cb_arg = zst,
@@ -216,12 +203,6 @@ zephyr_smp_handle_reqs(struct k_work *work)
 		zephyr_smp_process_packet(zst, nb);
 	}
 }
-
-static const struct mgmt_streamer_cfg zephyr_smp_cbor_cfg = {
-	.alloc_rsp = zephyr_smp_alloc_rsp,
-	.write_hdr = zephyr_smp_write_hdr,
-	.free_buf = zephyr_smp_free_buf,
-};
 
 void
 zephyr_smp_transport_init(struct zephyr_smp_transport *zst,

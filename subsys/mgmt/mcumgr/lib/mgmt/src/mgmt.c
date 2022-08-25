@@ -16,24 +16,6 @@ static mgmt_on_evt_cb evt_cb;
 static sys_slist_t mgmt_group_list =
 	SYS_SLIST_STATIC_INIT(&mgmt_group_list);
 
-void *
-mgmt_streamer_alloc_rsp(struct mgmt_streamer *streamer, const void *req)
-{
-	return streamer->cfg->alloc_rsp(req, streamer->cb_arg);
-}
-
-int
-mgmt_streamer_write_hdr(struct mgmt_streamer *streamer, const struct mgmt_hdr *hdr)
-{
-	return streamer->cfg->write_hdr(streamer->writer, hdr);
-}
-
-void
-mgmt_streamer_free_buf(struct mgmt_streamer *streamer, void *buf)
-{
-	streamer->cfg->free_buf(buf, streamer->cb_arg);
-}
-
 void
 mgmt_unregister_group(struct mgmt_group *group)
 {
