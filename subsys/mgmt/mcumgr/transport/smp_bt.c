@@ -375,7 +375,7 @@ static int smp_bt_ud_copy(struct net_buf *dst, const struct net_buf *src)
 /**
  * Transmits the specified SMP response.
  */
-static int smp_bt_tx_pkt(struct zephyr_smp_transport *zst, struct net_buf *nb)
+static int smp_bt_tx_pkt(struct net_buf *nb)
 {
 	struct bt_conn *conn;
 	int rc = MGMT_ERR_EOK;

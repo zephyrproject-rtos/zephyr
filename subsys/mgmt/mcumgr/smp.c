@@ -180,7 +180,7 @@ zephyr_smp_tx_rsp(struct smp_streamer *ns, void *rsp, void *arg)
 			return MGMT_ERR_ENOMEM;
 		}
 
-		rc = zst->zst_output(zst, frag);
+		rc = zst->zst_output(frag);
 		if (rc != 0) {
 			return MGMT_ERR_EUNKNOWN;
 		}

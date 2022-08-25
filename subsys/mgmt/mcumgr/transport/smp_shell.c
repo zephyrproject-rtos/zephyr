@@ -176,8 +176,7 @@ static int smp_shell_tx_raw(const void *data, int len, void *arg)
 	return 0;
 }
 
-static int smp_shell_tx_pkt(struct zephyr_smp_transport *zst,
-			    struct net_buf *nb)
+static int smp_shell_tx_pkt(struct net_buf *nb)
 {
 	int rc;
 
