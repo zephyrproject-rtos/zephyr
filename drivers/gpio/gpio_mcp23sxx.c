@@ -67,13 +67,13 @@ static int mcp23sxx_write_port_regs(const struct device *dev, uint8_t reg, uint1
 
 	uint8_t nwrite = (config->ngpios == 8) ? 1 : 2;
 	uint16_t port_data = sys_cpu_to_le16(value);
-	uint8_t port_b_data = port_data & 0xFF;
-	uint8_t port_a_data = (port_data >> 8) & 0xFF;
+	uint8_t port_a_data = port_data & 0xFF;
+	uint8_t port_b_data = (port_data >> 8) & 0xFF;
 
 	port_data = sys_cpu_to_le16(value);
 
 	uint8_t addr = MCP23SXX_ADDR;
-	uint8_t buffer_tx[4] = { addr, reg, port_b_data, port_a_data };
+	uint8_t buffer_tx[4] = { addr, reg, port_a_data, port_b_data };
 
 	const struct spi_buf tx_buf[1] = {
 		{
