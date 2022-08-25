@@ -13,13 +13,13 @@
 #include <smp/smp.h>
 #include "smp_internal.h"
 
-void zephyr_smp_reassembly_init(struct zephyr_smp_transport *zst)
+void smp_reassembly_init(struct smp_transport *zst)
 {
 	zst->__reassembly.current = NULL;
 	zst->__reassembly.expected = 0;
 }
 
-int zephyr_smp_reassembly_expected(const struct zephyr_smp_transport *zst)
+int smp_reassembly_expected(const struct smp_transport *zst)
 {
 	if (zst->__reassembly.current == NULL) {
 		return -EINVAL;
@@ -28,7 +28,7 @@ int zephyr_smp_reassembly_expected(const struct zephyr_smp_transport *zst)
 	return zst->__reassembly.expected;
 }
 
-int zephyr_smp_reassembly_collect(struct zephyr_smp_transport *zst, const void *buf, uint16_t len)
+int smp_reassembly_collect(struct smp_transport *zst, const void *buf, uint16_t len)
 {
 	if (zst->__reassembly.current == NULL) {
 		/*
@@ -80,7 +80,7 @@ int zephyr_smp_reassembly_collect(struct zephyr_smp_transport *zst, const void *
 	return zst->__reassembly.expected;
 }
 
-int zephyr_smp_reassembly_complete(struct zephyr_smp_transport *zst, bool force)
+int smp_reassembly_complete(struct smp_transport *zst, bool force)
 {
 	if (zst->__reassembly.current == NULL) {
 		return -EINVAL;
@@ -89,7 +89,7 @@ int zephyr_smp_reassembly_complete(struct zephyr_smp_transport *zst, bool force)
 	if (zst->__reassembly.expected == 0 || force) {
 		int expected = zst->__reassembly.expected;
 
-		zephyr_smp_rx_req(zst, zst->__reassembly.current);
+		smp_rx_req(zst, zst->__reassembly.current);
 		zst->__reassembly.expected = 0;
 		zst->__reassembly.current = NULL;
 		return expected;
@@ -97,7 +97,7 @@ int zephyr_smp_reassembly_complete(struct zephyr_smp_transport *zst, bool force)
 	return -ENODATA;
 }
 
-int zephyr_smp_reassembly_drop(struct zephyr_smp_transport *zst)
+int smp_reassembly_drop(struct smp_transport *zst)
 {
 	if (zst->__reassembly.current == NULL) {
 		return -EINVAL;
@@ -110,7 +110,7 @@ int zephyr_smp_reassembly_drop(struct zephyr_smp_transport *zst)
 	return 0;
 }
 
-void *zephyr_smp_reassembly_get_ud(const struct zephyr_smp_transport *zst)
+void *smp_reassembly_get_ud(const struct smp_transport *zst)
 {
 	if (zst->__reassembly.current != NULL) {
 		return net_buf_user_data(zst->__reassembly.current);

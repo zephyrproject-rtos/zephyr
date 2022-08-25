@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(smp_shell);
 
 BUILD_ASSERT(CONFIG_MCUMGR_SMP_SHELL_MTU != 0, "CONFIG_MCUMGR_SMP_SHELL_MTU must be > 0");
 
-static struct zephyr_smp_transport smp_shell_transport;
+static struct smp_transport smp_shell_transport;
 
 static struct mcumgr_serial_rx_ctxt smp_shell_rx_ctxt;
 
@@ -150,7 +150,7 @@ void smp_shell_process(struct smp_shell_data *data)
 						buf->data,
 						buf->len);
 		if (nb != NULL) {
-			zephyr_smp_rx_req(&smp_shell_transport, nb);
+			smp_rx_req(&smp_shell_transport, nb);
 		}
 
 		net_buf_unref(buf);
@@ -190,8 +190,8 @@ static int smp_shell_tx_pkt(struct net_buf *nb)
 
 int smp_shell_init(void)
 {
-	zephyr_smp_transport_init(&smp_shell_transport, smp_shell_tx_pkt,
-				  smp_shell_get_mtu, NULL, NULL);
+	smp_transport_init(&smp_shell_transport, smp_shell_tx_pkt,
+			   smp_shell_get_mtu, NULL, NULL);
 
 	return 0;
 }
