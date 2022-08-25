@@ -256,7 +256,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x40012000 0x400>;
-				rcu-periph-clock = <0x607>;
+				rcu-periph-clock = <0x608>;
 				resets = <&rctl GD32_RESET_GPIOG>;
 				status = "disabled";
 			};
