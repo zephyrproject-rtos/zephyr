@@ -757,6 +757,10 @@ target_include_directories(${OFFSETS_LIB} PRIVATE
   ${ARCH_DIR}/${ARCH}/include
   )
 target_link_libraries(${OFFSETS_LIB} zephyr_interface)
+
+# Make sure that LTO will never be enabled when compiling offsets.c
+set_source_files_properties(${OFFSETS_C_PATH} PROPERTIES COMPILE_OPTIONS -fno-lto)
+
 add_dependencies(zephyr_interface
   ${SYSCALL_LIST_H_TARGET}
   ${DRIVER_VALIDATION_H_TARGET}

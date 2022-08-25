@@ -67,6 +67,10 @@ if (CONFIG_GEN_ISR_TABLES)
   add_dependencies(isr_tables zephyr_generated_headers)
   target_link_libraries(isr_tables zephyr_interface)
   zephyr_library_link_libraries(isr_tables)
+
+  # Do not allow LTO when compiling the isr_tables.c file
+  set_source_files_properties(isr_tables.c PROPERTIES COMPILE_OPTIONS -fno-lto)
+
 endif()
 
 if(CONFIG_COVERAGE)
