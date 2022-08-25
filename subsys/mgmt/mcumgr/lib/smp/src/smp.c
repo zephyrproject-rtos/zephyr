@@ -11,6 +11,7 @@
 
 #include <zephyr/net/buf.h>
 #include <zephyr/mgmt/mcumgr/buf.h>
+#include <zephyr/mgmt/mcumgr/smp.h>
 #include "mgmt/mgmt.h"
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
@@ -57,7 +58,8 @@ smp_read_hdr(const struct net_buf *nb, struct mgmt_hdr *dst_hdr)
 static inline int
 smp_write_hdr(struct smp_streamer *streamer, const struct mgmt_hdr *src_hdr)
 {
-	return mgmt_streamer_write_hdr(&streamer->mgmt_stmr, src_hdr);
+	memcpy(streamer->mgmt_stmr.writer->nb->data, src_hdr, sizeof(*src_hdr));
+	return 0;
 }
 
 static int
@@ -221,8 +223,8 @@ smp_on_err(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
 	}
 
 	/* Free any extra buffers. */
-	mgmt_streamer_free_buf(&streamer->mgmt_stmr, req);
-	mgmt_streamer_free_buf(&streamer->mgmt_stmr, rsp);
+	zephyr_smp_free_buf(req, &streamer->mgmt_stmr.cb_arg);
+	zephyr_smp_free_buf(rsp, &streamer->mgmt_stmr.cb_arg);
 }
 
 /**
@@ -278,7 +280,7 @@ smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 			break;
 		}
 
-		rsp = mgmt_streamer_alloc_rsp(&streamer->mgmt_stmr, req);
+		rsp = zephyr_smp_alloc_rsp(req, streamer->mgmt_stmr.cb_arg);
 		if (rsp == NULL) {
 			rc = MGMT_ERR_ENOMEM;
 			break;
@@ -320,7 +322,8 @@ smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 		return rc;
 	}
 
-	mgmt_streamer_free_buf(&streamer->mgmt_stmr, req);
-	mgmt_streamer_free_buf(&streamer->mgmt_stmr, rsp);
+	zephyr_smp_free_buf(req, &streamer->mgmt_stmr.cb_arg);
+	zephyr_smp_free_buf(rsp, &streamer->mgmt_stmr.cb_arg);
+
 	return rc;
 }
