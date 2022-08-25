@@ -111,7 +111,7 @@ ZTEST(ringbuffer_api, test_ring_buffer_main)
 		}
 		LOG_DBG("inserted %d chunks, %d remaining", dsize,
 			    ring_buf_space_get(&ring_buf1));
-		dsize = (dsize + 1) % SIZE32_OF(rb_data);
+		dsize = (dsize + 1) % RING_BUF_ITEM_SIZEOF(rb_data);
 		put_count++;
 	}
 
@@ -126,7 +126,7 @@ ZTEST(ringbuffer_api, test_ring_buffer_main)
 	}
 
 	for (i = 0; i < put_count; i++) {
-		getsize = SIZE32_OF(getdata);
+		getsize = RING_BUF_ITEM_SIZEOF(getdata);
 		ret = ring_buf_item_get(&ring_buf1, &gettype, &getval, getdata,
 				       &getsize);
 		zassert_true((ret == 0), "Couldn't retrieve a stored value");
@@ -140,7 +140,7 @@ ZTEST(ringbuffer_api, test_ring_buffer_main)
 		zassert_true((getval == VALUE), "value information corrupted");
 	}
 
-	getsize = SIZE32_OF(getdata);
+	getsize = RING_BUF_ITEM_SIZEOF(getdata);
 	ret = ring_buf_item_get(&ring_buf1, &gettype, &getval, getdata,
 			       &getsize);
 	zassert_true((ret == -EAGAIN), "Got data out of an empty buffer");
