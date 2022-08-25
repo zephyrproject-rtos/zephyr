@@ -350,6 +350,15 @@ Wiring
         :align: center
         :alt: SPI DONGLE ASSY 6791 Connected
 
+Daily Testing
+=============
+#. If you want to run the west command on the mec15xxevb_assy6853 board,
+we should execute the following command:
+
+   .. code-block:: console
+
+      $ west build -p always -b mec15xxevb_assy6853 samples/hello_world
+
 Building
 ========
 #. Build :ref:`hello_world` application as you would normally do.
@@ -361,28 +370,23 @@ Building
 Flashing
 ========
 #. Run your favorite terminal program to listen for output.
-   Under Linux the terminal should be :code:`/dev/ttyUSB0`. Do not close it.
+   Under Linux the terminal should be :code:`/dev/ttyUSB1`. Do not close it.
 
    For example:
 
    .. code-block:: console
 
-      $ minicom -D /dev/ttyUSB0 -o
+      $ sudo picocom -b 115200 /dev/ttyUSB1
 
-   The -o option tells minicom not to send the modem initialization
-   string. Connection should be configured as follows:
-
-   - Speed: 115200
-   - Data: 8 bits
-   - Parity: None
-   - Stop bits: 1
-
-#. Flash your board using ``west`` from the second terminal window.
-   Split first and second terminal windows to view both of them.
-
+#. Flash your board using west from the second picocom.Split first and second
+   picocom to view both of them,Before that, we need to go to Google and download
+   the usbgpio script to the local,because the command in the mec15xxevb_assy6853
+   board needs usbgpio script to call the FT9FPJZR low instruction first to execute
+   it, and then call the FT9FPJZR high instruction to run out of:ref:`hello_world`,
+   therefore we need to use the following command:
    .. code-block:: console
 
-      $ west flash
+      $ ~/flash.sh
 
    .. note:: When west process started press Reset button and do not release it
     till the whole west process will not be finished successfully.
@@ -398,7 +402,7 @@ Flashing
     Result will be the same.
 
 
-#. You should see ``"Hello World! mec15xxevb_assy6853"`` in the first terminal window.
+#. You should see ``"Hello World! mec15xxevb_assy6853"`` in the first picocom.
    If you don't see this message, press the Reset button and the message should appear.
 
 Debugging
