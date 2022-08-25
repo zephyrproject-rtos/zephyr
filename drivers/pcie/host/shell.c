@@ -205,6 +205,11 @@ static int cmd_pcie_ls(const struct shell *sh, size_t argc, char **argv)
 		if (bdf == PCIE_BDF_NONE) {
 			bdf = get_bdf(argv[i]);
 		}
+
+		if (bdf == PCIE_BDF_NONE) {
+			shell_error(sh, "Unknown parameter: %s", argv[i]);
+			return -EINVAL;
+		}
 	}
 
 	/* Show only specified device */
