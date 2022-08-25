@@ -132,7 +132,7 @@ static int run_program_read(const struct device *i2c, uint8_t addr,
 	return 0;
 }
 
-void test_eeprom_target(void)
+ZTEST(i2c_eeprom_target, test_eeprom_target)
 {
 	const struct device *const eeprom_0 = DEVICE_DT_GET(NODE_EP0);
 	const struct device *const i2c_0 = DEVICE_DT_GET(DT_BUS(NODE_EP0));
@@ -235,8 +235,4 @@ void test_eeprom_target(void)
 	}
 }
 
-void test_main(void)
-{
-	ztest_test_suite(test_eeprom_target, ztest_unit_test(test_eeprom_target));
-	ztest_run_test_suite(test_eeprom_target);
-}
+ZTEST_SUITE(i2c_eeprom_target, NULL, NULL, NULL, NULL, NULL);
