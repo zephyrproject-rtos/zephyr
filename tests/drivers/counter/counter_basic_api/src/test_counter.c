@@ -206,7 +206,7 @@ static void top_handler(const struct device *dev, void *user_data)
 	k_sem_give(&top_cnt_sem);
 }
 
-void test_set_top_value_with_alarm_instance(const struct device *dev)
+static void test_set_top_value_with_alarm_instance(const struct device *dev)
 {
 	int err;
 	uint32_t cnt;
@@ -253,13 +253,13 @@ void test_set_top_value_with_alarm_instance(const struct device *dev)
 			dev->name, top_handler_cnt);
 }
 
-void test_set_top_value_with_alarm(void)
+ZTEST(counter_basic, test_set_top_value_with_alarm)
 {
 	test_all_instances(test_set_top_value_with_alarm_instance,
 			   set_top_value_capable);
 }
 
-void test_set_top_value_without_alarm_instance(const struct device *dev)
+static void test_set_top_value_without_alarm_instance(const struct device *dev)
 {
 	int err;
 	uint32_t cnt;
@@ -298,7 +298,7 @@ void test_set_top_value_without_alarm_instance(const struct device *dev)
 			dev->name);
 }
 
-void test_set_top_value_without_alarm(void)
+ZTEST_USER(counter_no_callback, test_set_top_value_without_alarm)
 {
 	test_all_instances(test_set_top_value_without_alarm_instance,
 			   set_top_value_capable);
@@ -350,7 +350,7 @@ static void alarm_handler(const struct device *dev, uint8_t chan_id,
 	k_sem_give(&alarm_cnt_sem);
 }
 
-void test_single_shot_alarm_instance(const struct device *dev, bool set_top)
+static void test_single_shot_alarm_instance(const struct device *dev, bool set_top)
 {
 	int err;
 	uint32_t ticks;
@@ -452,13 +452,13 @@ static bool single_channel_alarm_and_custom_top_capable(const struct device *dev
 		set_top_value_capable(dev);
 }
 
-void test_single_shot_alarm_notop(void)
+ZTEST(counter_basic, test_single_shot_alarm_notop)
 {
 	test_all_instances(test_single_shot_alarm_notop_instance,
 			   single_channel_alarm_capable);
 }
 
-void test_single_shot_alarm_top(void)
+ZTEST(counter_basic, test_single_shot_alarm_top)
 {
 	test_all_instances(test_single_shot_alarm_top_instance,
 			   single_channel_alarm_and_custom_top_capable);
@@ -487,7 +487,7 @@ static void alarm_handler2(const struct device *dev, uint8_t chan_id,
  * will expire first (relative to the time called) while first alarm
  * will expire after next wrap around.
  */
-void test_multiple_alarms_instance(const struct device *dev)
+static void test_multiple_alarms_instance(const struct device *dev)
 {
 	int err;
 	uint32_t ticks;
@@ -574,13 +574,13 @@ static bool multiple_channel_alarm_capable(const struct device *dev)
 	return (counter_get_num_of_channels(dev) > 1);
 }
 
-void test_multiple_alarms(void)
+ZTEST(counter_basic, test_multiple_alarms)
 {
 	test_all_instances(test_multiple_alarms_instance,
 			   multiple_channel_alarm_capable);
 }
 
-void test_all_channels_instance(const struct device *dev)
+static void test_all_channels_instance(const struct device *dev)
 {
 	int err;
 	const int n = 10;
@@ -633,7 +633,7 @@ void test_all_channels_instance(const struct device *dev)
 	}
 }
 
-void test_all_channels(void)
+ZTEST(counter_basic, test_all_channels)
 {
 	test_all_instances(test_all_channels_instance,
 			   single_channel_alarm_capable);
@@ -643,7 +643,7 @@ void test_all_channels(void)
  * Test validates if alarm set too late (current tick or current tick + 1)
  * results in callback being called.
  */
-void test_late_alarm_instance(const struct device *dev)
+static void test_late_alarm_instance(const struct device *dev)
 {
 	int err;
 	uint32_t cnt;
@@ -696,7 +696,7 @@ void test_late_alarm_instance(const struct device *dev)
 			dev->name, 2, cnt);
 }
 
-void test_late_alarm_error_instance(const struct device *dev)
+static void test_late_alarm_error_instance(const struct device *dev)
 {
 	int err;
 	uint32_t tick_us = (uint32_t)counter_ticks_to_us(dev, 1);
@@ -750,12 +750,12 @@ static bool late_detection_capable(const struct device *dev)
 	return true;
 }
 
-void test_late_alarm(void)
+ZTEST(counter_basic, test_late_alarm)
 {
 	test_all_instances(test_late_alarm_instance, late_detection_capable);
 }
 
-void test_late_alarm_error(void)
+ZTEST(counter_basic, test_late_alarm_error)
 {
 	test_all_instances(test_late_alarm_error_instance,
 			   late_detection_capable);
@@ -850,7 +850,7 @@ end:
 	return ret;
 }
 
-static void test_short_relative_alarm(void)
+ZTEST(counter_basic, test_short_relative_alarm)
 {
 	test_all_instances(test_short_relative_alarm_instance,
 			short_relative_capable);
@@ -976,13 +976,13 @@ static bool reliable_cancel_capable(const struct device *dev)
 	return false;
 }
 
-void test_cancelled_alarm_does_not_expire(void)
+ZTEST(counter_basic, test_cancelled_alarm_does_not_expire)
 {
 	test_all_instances(test_cancelled_alarm_does_not_expire_instance,
 			reliable_cancel_capable);
 }
 
-void test_main(void)
+static void *counter_setup(void)
 {
 	int i;
 
@@ -1004,20 +1004,11 @@ void test_main(void)
 		k_object_access_grant(devices[i], k_current_get());
 	}
 
-	ztest_test_suite(test_counter,
-		/* Uses callbacks, run in supervisor mode */
-		ztest_unit_test(test_set_top_value_with_alarm),
-		ztest_unit_test(test_single_shot_alarm_notop),
-		ztest_unit_test(test_single_shot_alarm_top),
-		ztest_unit_test(test_multiple_alarms),
-		ztest_unit_test(test_all_channels),
-		ztest_unit_test(test_late_alarm),
-		ztest_unit_test(test_late_alarm_error),
-		ztest_unit_test(test_short_relative_alarm),
-		ztest_unit_test(test_cancelled_alarm_does_not_expire),
-
-		/* No callbacks, run in usermode */
-		ztest_user_unit_test(test_set_top_value_without_alarm)
-			 );
-	ztest_run_test_suite(test_counter);
+	return NULL;
 }
+
+/* Uses callbacks, run in supervisor mode */
+ZTEST_SUITE(counter_basic, NULL, counter_setup, NULL, NULL, NULL);
+
+/* No callbacks, run in usermode */
+ZTEST_SUITE(counter_no_callback, NULL, counter_setup, NULL, NULL, NULL);
