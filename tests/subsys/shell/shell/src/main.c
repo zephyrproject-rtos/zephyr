@@ -421,13 +421,14 @@ SHELL_CMD_REGISTER(dummy, NULL, NULL, cmd_dummy);
 
 ZTEST(shell, test_max_argc)
 {
-	BUILD_ASSERT(CONFIG_SHELL_ARGC_MAX == 12,
+	BUILD_ASSERT(CONFIG_SHELL_ARGC_MAX == 20,
 		     "Unexpected test configuration.");
 
-	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11", 0);
-	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11 12", -ENOEXEC);
+	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19", 0);
+	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
+			       " 16 17 18 19 20",
+			       -ENOEXEC);
 }
-
 
 static int cmd_handler_dict_1(const struct shell *sh, size_t argc, char **argv, void *data)
 {
