@@ -253,6 +253,11 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	ull_hdr_init(&sync->ull);
 	lll_hdr_init(lll_sync, sync);
 
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN)
+	/* Initialise LLL abort count */
+	lll_sync->abort_count = 0U;
+#endif /* CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
+
 	/* Enable scanner to create sync */
 	scan->periodic.sync = sync;
 
@@ -527,6 +532,19 @@ struct ll_sync_set *ull_sync_is_valid_get(struct ll_sync_set *sync)
 	}
 
 	return sync;
+}
+
+struct lll_sync *ull_sync_lll_is_valid_get(struct lll_sync *lll)
+{
+	struct ll_sync_set *sync;
+
+	sync = HDR_LLL2ULL(lll);
+	sync = ull_sync_is_valid_get(sync);
+	if (sync) {
+		return &sync->lll;
+	}
+
+	return NULL;
 }
 
 uint16_t ull_sync_handle_get(struct ll_sync_set *sync)

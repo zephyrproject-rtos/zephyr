@@ -32,6 +32,14 @@ struct lll_sync {
 	uint8_t sca:3;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN)
+	/* Counter used by LLL abort of event when in unreserved time space to
+	 * provide near fair scheduling of overlapping multiple Periodic
+	 * Sync sets.
+	 */
+	uint8_t abort_count;
+#endif /* CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
+
 	uint16_t skip_prepare;
 	uint16_t skip_event;
 	uint16_t event_counter;
@@ -66,3 +74,4 @@ void lll_sync_prepare(void *param);
 enum sync_status lll_sync_cte_is_allowed(uint8_t cte_type_mask, uint8_t filter_policy,
 					 uint8_t rx_cte_time, uint8_t rx_cte_type);
 extern uint16_t ull_sync_lll_handle_get(struct lll_sync *lll);
+extern struct lll_sync *ull_sync_lll_is_valid_get(struct lll_sync *lll);
