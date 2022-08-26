@@ -652,7 +652,7 @@ static int pin_get_config(void)
 	return TC_PASS;
 }
 
-void test_gpio_port(void)
+ZTEST(gpio_port, test_gpio_port)
 {
 	zassert_equal(setup(), TC_PASS,
 		      "device setup failed");
