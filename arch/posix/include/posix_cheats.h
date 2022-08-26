@@ -41,7 +41,7 @@
  * we free the function name "main" for its normal purpose
  */
 #ifndef main
-#define main(...) zephyr_app_main(__VA_ARGS__)
+#define main(...) _posix_zephyr_main(__VA_ARGS__)
 #endif
 
 #ifdef __cplusplus
@@ -52,7 +52,7 @@ extern "C" {
  * from finding it. Zephyr assumes a void main(void) prototype and therefore
  * this will be the prototype after renaming:
  */
-void zephyr_app_main(void);
+void _posix_zephyr_main(void);
 
 #ifdef __cplusplus
 }
