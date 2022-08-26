@@ -224,6 +224,75 @@ static void can_shell_print_capabilities(const struct shell *sh, can_mode_t cap)
 	}
 }
 
+static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev = device_get_binding(argv[1]);
+	struct can_bus_err_cnt err_cnt;
+	enum can_state state;
+	uint32_t max_bitrate = 0;
+	int max_std_filters = 0;
+	int max_ext_filters = 0;
+	uint32_t core_clock;
+	can_mode_t cap;
+	int err;
+
+	if (!device_is_ready(dev)) {
+		shell_error(sh, "device %s not ready", argv[1]);
+		return -ENODEV;
+	}
+
+	err = can_get_core_clock(dev, &core_clock);
+	if (err != 0) {
+		shell_error(sh, "failed to get CAN core clock (err %d)", err);
+		return err;
+	}
+
+	err = can_get_max_bitrate(dev, &max_bitrate);
+	if (err != 0 && err != -ENOSYS) {
+		shell_error(sh, "failed to get maximum bitrate (err %d)", err);
+		return err;
+	}
+
+	max_std_filters = can_get_max_filters(dev, CAN_STANDARD_IDENTIFIER);
+	if (max_std_filters < 0 && max_std_filters != -ENOSYS) {
+		shell_error(sh, "failed to get maximum standard (11-bit) filters (err %d)", err);
+		return err;
+	}
+
+	max_ext_filters = can_get_max_filters(dev, CAN_EXTENDED_IDENTIFIER);
+	if (max_ext_filters < 0 && max_ext_filters != -ENOSYS) {
+		shell_error(sh, "failed to get maximum extended (29-bit) filters (err %d)", err);
+		return err;
+	}
+
+	err = can_get_capabilities(dev, &cap);
+	if (err != 0) {
+		shell_error(sh, "failed to get CAN controller capabilities (err %d)", err);
+		return err;
+	}
+
+	err = can_get_state(dev, &state, &err_cnt);
+	if (err != 0) {
+		shell_error(sh, "failed to get CAN controller state (%d)", err);
+		return err;
+	}
+
+	shell_print(sh, "core clock:      %d Hz", core_clock);
+	shell_print(sh, "max bitrate:     %d bps", max_bitrate);
+	shell_print(sh, "max std filters: %d", max_std_filters);
+	shell_print(sh, "max ext filters: %d", max_ext_filters);
+
+	shell_fprintf(sh, SHELL_NORMAL, "capabilities:    normal ");
+	can_shell_print_capabilities(sh, cap);
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
+
+	shell_print(sh, "state:           %s", can_shell_state_to_string(state));
+	shell_print(sh, "rx errors:       %d", err_cnt.rx_err_cnt);
+	shell_print(sh, "tx errors:       %d", err_cnt.tx_err_cnt);
+
+	return 0;
+}
+
 static int cmd_can_bitrate_set(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = device_get_binding(argv[1]);
@@ -739,6 +808,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_filter_cmds,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_cmds,
+	SHELL_CMD_ARG(show, &dsub_can_device_name,
+		"Show CAN controller information\n"
+		"Usage: can show <device>",
+		cmd_can_show, 2, 0),
 	SHELL_CMD_ARG(bitrate, &dsub_can_device_name,
 		"Set CAN controller bitrate and optional sample point\n"
 		"Usage: can bitrate <device> <bitrate> [sample point]",
