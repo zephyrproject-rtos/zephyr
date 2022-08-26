@@ -12,7 +12,7 @@
 PINCTRL_DT_DEV_CONFIG_DECLARE(TEST_DEVICE);
 static const struct pinctrl_dev_config *pcfg = PINCTRL_DT_DEV_CONFIG_GET(TEST_DEVICE);
 
-static void test_dt_extract(void)
+ZTEST(pinctrl_nrf, test_dt_extract)
 {
 	const struct pinctrl_state *scfg;
 
@@ -64,9 +64,4 @@ static void test_dt_extract(void)
 	zassert_equal(NRF_GET_PIN(scfg->pins[6]), 38U, NULL);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(pinctrl_nrf,
-			 ztest_unit_test(test_dt_extract));
-	ztest_run_test_suite(pinctrl_nrf);
-}
+ZTEST_SUITE(pinctrl_nrf, NULL, NULL, NULL, NULL, NULL);
