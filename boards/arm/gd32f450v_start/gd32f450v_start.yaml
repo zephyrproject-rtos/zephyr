@@ -1,0 +1,16 @@
+# Copyright (c) 2022, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: gd32f450v_start
+name: GigaDevice GD32F450V-START
+type: mcu
+arch: arm
+ram: 112
+flash: 3072
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - pwm
+  - gpio
