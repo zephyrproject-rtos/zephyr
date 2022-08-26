@@ -1688,11 +1688,9 @@ Nuvoton NPCX Platforms:
   maintainers:
     - MulinChao
     - ChiHuaL
-    - WealianLiao
   collaborators:
     - MulinChao
     - ChiHuaL
-    - WealianLiao
     - sjg20
     - keith-zephyr
     - jackrosenthal
@@ -2248,7 +2246,6 @@ West:
   maintainers:
     - MulinChao
     - ChiHuaL
-    - WealianLiao
   files:
     - modules/Kconfig.nuvoton
   labels:
