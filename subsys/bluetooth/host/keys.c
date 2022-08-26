@@ -107,7 +107,7 @@ struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 
 		for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
 			struct bt_keys *current = &key_pool[i];
-			bool key_in_use = (CONFIG_BT_MAX_CONN > 1) && key_is_in_use(i);
+			bool key_in_use = key_is_in_use(i);
 
 			if (key_in_use) {
 				continue;
