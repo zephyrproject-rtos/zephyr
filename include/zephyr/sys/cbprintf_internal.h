@@ -91,10 +91,17 @@ extern "C" {
 #else
 #define Z_CBPRINTF_IS_PCHAR(x, flags) \
 	_Generic((x) + 0, \
+		/* char * */ \
 		char * : 1, \
 		const char * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
 		volatile char * : 1, \
 		const volatile char * : 1, \
+		/* unsigned char * */ \
+		unsigned char * : 1, \
+		const unsigned char * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
+		volatile unsigned char * : 1, \
+		const volatile unsigned char * : 1,\
+		/* wchar_t * */ \
 		wchar_t * : 1, \
 		const wchar_t * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
 		volatile wchar_t * : 1, \
