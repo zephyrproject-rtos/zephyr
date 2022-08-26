@@ -81,12 +81,18 @@ follows:
 
 - JP3/4: Select 2-3 for both (boot from user memory)
 
-Using J-Link
-=============
+Using GD-Link or J-Link
+=======================
 
-While the board comes with an embedded GD-Link programmer, it is not yet
-supported by OpenOCD. However, J-Link can be used to program the board using
-the SWD interface exposed in the JP1 header.
+The board comes with an embedded GD-Link programmer. It can be used with pyOCD
+provided you install the necessary CMSIS-Pack:
+
+.. code-block:: console
+
+   pyocd pack install gd32e507ve
+
+J-Link can also be used to program the board using the SWD interface exposed in
+the JP1 header.
 
 #. Build the Zephyr kernel and the :ref:`hello_world` sample application:
 
