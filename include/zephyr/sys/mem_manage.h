@@ -271,23 +271,6 @@ void z_phys_unmap(uint8_t *virt, size_t size);
 #define K_MEM_MAP_LOCK		BIT(17)
 
 /**
- * A un-mapped virtual guard page will be placed in memory immediately preceding
- * the mapped region. This page will still be noted as being used by the
- * virtual memory manager. The total size of the allocation will be the
- * requested size plus the size of this guard page. The returned address
- * pointer will not include the guard page immediately below it. The typical
- * use-case is downward-growing thread stacks.
- *
- * Zephyr treats page faults on this guard page as a fatal K_ERR_STACK_CHK_FAIL
- * if it determines it immediately precedes a stack buffer, this is
- * implemented in the architecture layer.
- *
- * DEPRECATED: k_mem_map() will always allocate guard pages, so this bit
- * no longer has any effect.
- */
-#define K_MEM_MAP_GUARD		__DEPRECATED_MACRO BIT(18)
-
-/**
  * Return the amount of free memory available
  *
  * The returned value will reflect how many free RAM page frames are available.
