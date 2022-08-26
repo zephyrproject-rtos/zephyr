@@ -1796,6 +1796,7 @@ static int uart_stm32_pm_action(const struct device *dev,
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) || \
 	defined(CONFIG_PM)
+/*
 #define STM32_UART_IRQ_HANDLER_DECL(index)				\
 	static void uart_stm32_irq_config_func_##index(const struct device *dev);
 #define STM32_UART_IRQ_HANDLER(index)					\
@@ -1807,6 +1808,98 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 		0);							\
 	irq_enable(DT_INST_IRQN(index));				\
 }
+*/
+ #if DT_NODE_HAS_STATUS(DT_NODELABEL(usart3), okay) || \
+ 	DT_NODE_HAS_STATUS(DT_NODELABEL(usart4), okay) || \
+ 	DT_NODE_HAS_STATUS(DT_NODELABEL(usart5), okay)
+static bool uart_stm32_is_irq_active(USART_TypeDef *uart)
+ {
+ 	return (LL_USART_IsActiveFlag_PE(uart) && LL_USART_IsEnabledIT_PE(uart)) ||
+ 	       (LL_USART_IsActiveFlag_FE(uart) && LL_USART_IsEnabledIT_ERROR(uart)) ||
+ 	       (LL_USART_IsActiveFlag_NE(uart) && LL_USART_IsEnabledIT_ERROR(uart)) ||
+ 	       (LL_USART_IsActiveFlag_ORE(uart) &&
+ 		(LL_USART_IsEnabledIT_ERROR(uart) || LL_USART_IsEnabledIT_RXNE_RXFNE(uart))) ||
+ 	       (LL_USART_IsActiveFlag_IDLE(uart) && LL_USART_IsEnabledIT_IDLE(uart)) ||
+ 	       (LL_USART_IsActiveFlag_RXNE(uart) && LL_USART_IsEnabledIT_RXNE(uart)) ||
+ 	       (LL_USART_IsActiveFlag_TC(uart) && LL_USART_IsEnabledIT_TC(uart)) ||
+ 	       (LL_USART_IsActiveFlag_TXE(uart) && LL_USART_IsEnabledIT_TXE(uart)) ||
+ #if 0
+ 	       (IS_UART_LIN_INSTANCE(uart) ?
+ 		LL_USART_IsActiveFlag_LBD(uart) && LL_USART_IsEnabledIT_LBD(uart) : false) ||
+ #endif
+ 	       (IS_UART_HWFLOW_INSTANCE(uart) ?
+ 	        LL_USART_IsActiveFlag_nCTS(uart) ||
+ 	        (LL_USART_IsActiveFlag_CTS(uart) && LL_USART_IsEnabledIT_CTS(uart)) : false) ||
+ 	       (LL_USART_IsActiveFlag_RTO(uart) && LL_USART_IsEnabledIT_RTO(uart)) ||
+ #if 0
+ 	       (IS_SMARTCARD_INSTANCE(uart) ?
+ 		(LL_USART_IsActiveFlag_EOB(uart) && LL_USART_IsEnabledIT_EOB(uart)) : false) ||
+ 	       LL_USART_IsActiveFlag_UDR(uart) ||
+ 	       LL_USART_IsActiveFlag_ABRE(uart) ||
+ 	       LL_USART_IsActiveFlag_ABR(uart) ||
+ #endif
+ 	       LL_USART_IsActiveFlag_BUSY(uart) ||
+ 	       (LL_USART_IsActiveFlag_CM(uart) && LL_USART_IsEnabledIT_CM(uart)) ||
+ 	       LL_USART_IsActiveFlag_SBK(uart) ||
+ 	       (IS_UART_WAKEUP_FROMSTOP_INSTANCE(uart) ?
+ 		LL_USART_IsActiveFlag_RWU(uart) : false) ||
+ 	       (IS_UART_WAKEUP_FROMSTOP_INSTANCE(uart) ?
+ 		LL_USART_IsActiveFlag_WKUP(uart) && LL_USART_IsEnabledIT_WKUP(uart) : false) ||
+ 	       LL_USART_IsActiveFlag_TEACK(uart) ||
+ 	       LL_USART_IsActiveFlag_REACK(uart);
+ }
+
+ #define HANDLE_IRQS_UART(uart)													\
+ 	static const struct device *dev_##uart = DEVICE_DT_GET(DT_NODELABEL(uart));	\
+ 	const struct uart_stm32_config *cfg_##uart = dev_##uart->config;			\
+ 	USART_TypeDef *uart = (USART_TypeDef *)(cfg_##uart->usart);					\
+ 																				\
+ 	if (uart_stm32_is_irq_active(uart)) {										\
+ 		uart_stm32_isr(dev_##uart);												\
+ 	}	
+
+static void uart_stm32_shared_irq_handler_29(void)
+ {
+ #if DT_NODE_HAS_STATUS(DT_NODELABEL(usart3), okay)
+ 	HANDLE_IRQS_UART(usart3);
+ #endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart4), okay)
+ 	HANDLE_IRQS_UART(usart4);
+ #endif
+ #if DT_NODE_HAS_STATUS(DT_NODELABEL(usart5), okay)
+ 	HANDLE_IRQS_UART(usart5);
+ #endif
+ }
+#endif
+
+ static void uart_stm32_irq_init(const struct device *dev)
+ {
+ 	static bool irq_init = false;
+
+ 	if (!irq_init) {
+ #if DT_NODE_HAS_STATUS(DT_NODELABEL(usart1), okay)
+ 		IRQ_CONNECT(27, 0, uart_stm32_isr, DEVICE_DT_GET(DT_NODELABEL(usart1)), 0);
+ 		irq_enable(27);
+ #endif
+
+ #if DT_NODE_HAS_STATUS(DT_NODELABEL(usart2), okay)
+ 		IRQ_CONNECT(28, 0, uart_stm32_isr, DEVICE_DT_GET(DT_NODELABEL(usart2)), 0);
+ 		irq_enable(28);
+ #endif
+
+ #if DT_NODE_HAS_STATUS(DT_NODELABEL(usart3), okay) || \
+ 	DT_NODE_HAS_STATUS(DT_NODELABEL(usart4), okay) || \
+ 	DT_NODE_HAS_STATUS(DT_NODELABEL(usart5), okay)
+ 		IRQ_CONNECT(29, 0, uart_stm32_shared_irq_handler_29, NULL, 0);
+ 		irq_enable(29);
+ #endif
+ 		irq_init = true;
+ 	}
+ }
+
+
+#define STM32_UART_IRQ_HANDLER_DECL(index)
+#define STM32_UART_IRQ_HANDLER(index)
 #else
 #define STM32_UART_IRQ_HANDLER_DECL(index) /* Not used */
 #define STM32_UART_IRQ_HANDLER(index) /* Not used */
@@ -1815,7 +1908,8 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) || \
 	defined(CONFIG_PM)
 #define STM32_UART_IRQ_HANDLER_FUNC(index)				\
-	.irq_config_func = uart_stm32_irq_config_func_##index,
+	.irq_config_func = uart_stm32_irq_init,
+	//.irq_config_func = uart_stm32_irq_config_func_##index,
 #else
 #define STM32_UART_IRQ_HANDLER_FUNC(index) /* Not used */
 #endif
