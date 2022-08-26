@@ -111,7 +111,7 @@ static uint64_t read_helper(uint32_t num_blocks)
 	return (total_ns / SEQ_ITERATIONS);
 }
 
-static void test_sequential_read(void)
+ZTEST(disk_performance, test_sequential_read)
 {
 	uint64_t time_ns;
 
@@ -174,7 +174,7 @@ static uint64_t write_helper(uint32_t num_blocks)
 	return (total_ns / SEQ_ITERATIONS);
 }
 
-static void test_sequential_write(void)
+ZTEST(disk_performance, test_sequential_write)
 {
 	uint64_t time_ns;
 
@@ -196,7 +196,7 @@ static void test_sequential_write(void)
 		((BUF_SIZE) * (NSEC_PER_SEC / time_ns)) / 1024);
 }
 
-static void test_random_read(void)
+ZTEST(disk_performance, test_random_read)
 {
 	timing_t start_time, end_time;
 	uint64_t cycles, total_ns;
@@ -240,8 +240,7 @@ static void test_random_read(void)
 		/ total_ns);
 }
 
-
-static void test_random_write(void)
+ZTEST(disk_performance, test_random_write)
 {
 	timing_t start_time, end_time;
 	uint64_t cycles, total_ns;
@@ -299,17 +298,11 @@ static void test_random_write(void)
 	}
 }
 
-
-
-void test_main(void)
+static void *disk_setup(void)
 {
-	ztest_test_suite(disk_performance_test,
-		ztest_unit_test(test_setup),
-		ztest_unit_test(test_sequential_read),
-		ztest_unit_test(test_sequential_write),
-		ztest_unit_test(test_random_read),
-		ztest_unit_test(test_random_write)
-	);
+	test_setup();
 
-	ztest_run_test_suite(disk_performance_test);
+	return NULL;
 }
+
+ZTEST_SUITE(disk_performance, NULL, disk_setup, NULL, NULL, NULL);
