@@ -9,8 +9,8 @@
 #include <hal/nrf_ficr.h>
 
 #if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-#if defined(GPIO_PIN_CNF_MCUSEL_Msk)
-void soc_secure_gpio_pin_mcu_select(uint32_t pin_number, nrf_gpio_pin_mcusel_t mcu);
+#if NRF_GPIO_HAS_SEL
+void soc_secure_gpio_pin_mcu_select(uint32_t pin_number, nrf_gpio_pin_sel_t mcu);
 #endif
 
 int soc_secure_mem_read(void *dst, void *src, size_t len);
@@ -48,13 +48,13 @@ static inline int soc_secure_mem_read(void *dst, void *src, size_t len)
 	return 0;
 }
 
-#if defined(GPIO_PIN_CNF_MCUSEL_Msk)
+#if NRF_GPIO_HAS_SEL
 static inline void soc_secure_gpio_pin_mcu_select(uint32_t pin_number,
-						  nrf_gpio_pin_mcusel_t mcu)
+						  nrf_gpio_pin_sel_t mcu)
 {
-	nrf_gpio_pin_mcu_select(pin_number, mcu);
+	nrf_gpio_pin_control_select(pin_number, mcu);
 }
-#endif /* defined(GPIO_PIN_CNF_MCUSEL_Msk) */
+#endif /* NRF_GPIO_HAS_SEL */
 
 #if defined(CONFIG_SOC_HFXO_CAP_INTERNAL)
 static inline uint32_t soc_secure_read_xosc32mtrim(void)
