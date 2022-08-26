@@ -562,7 +562,7 @@ def dt_compat_on_bus(kconf, _, compat, bus):
 
     if compat in edt.compat2okay:
         for node in edt.compat2okay[compat]:
-            if node.on_bus is not None and node.on_bus == bus:
+            if node.on_buses is not None and bus in node.on_buses:
                 return "y"
 
     return "n"
