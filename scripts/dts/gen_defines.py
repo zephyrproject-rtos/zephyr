@@ -333,8 +333,11 @@ def write_bus(node):
     if not bus:
         return
 
-    out_comment(f"Bus info (controller: '{bus.path}', type: '{node.on_bus}')")
-    out_dt_define(f"{node.z_path_id}_BUS_{str2ident(node.on_bus)}", 1)
+    out_comment(f"Bus info (controller: '{bus.path}', type: '{node.on_buses}')")
+
+    for one_bus in node.on_buses:
+        out_dt_define(f"{node.z_path_id}_BUS_{str2ident(one_bus)}", 1)
+
     out_dt_define(f"{node.z_path_id}_BUS", f"DT_{bus.z_path_id}")
 
 
@@ -370,7 +373,7 @@ def write_ranges(node):
     for i,range in enumerate(node.ranges):
         idx_vals.append((f"{path_id}_RANGES_IDX_{i}_EXISTS", 1))
 
-        if node.bus == "pcie":
+        if "pcie" in node.buses:
             idx_vals.append((f"{path_id}_RANGES_IDX_{i}_VAL_CHILD_BUS_FLAGS_EXISTS", 1))
             idx_macro = f"{path_id}_RANGES_IDX_{i}_VAL_CHILD_BUS_FLAGS"
             idx_value = range.child_bus_addr >> ((range.child_bus_cells - 1) * 32)
@@ -378,7 +381,7 @@ def write_ranges(node):
                              f"{idx_value} /* {hex(idx_value)} */"))
         if range.child_bus_addr is not None:
             idx_macro = f"{path_id}_RANGES_IDX_{i}_VAL_CHILD_BUS_ADDRESS"
-            if node.bus == "pcie":
+            if "pcie" in node.buses:
                 idx_value = range.child_bus_addr & ((1 << (range.child_bus_cells - 1) * 32) - 1)
             else:
                 idx_value = range.child_bus_addr
@@ -868,9 +871,10 @@ def write_global_macros(edt):
     compat2buses = defaultdict(list)  # just for "okay" nodes
     for compat, okay_nodes in edt.compat2okay.items():
         for node in okay_nodes:
-            bus = node.on_bus
-            if bus is not None and bus not in compat2buses[compat]:
-                compat2buses[compat].append(bus)
+            buses = node.on_buses
+            for bus in buses:
+                if bus is not None and bus not in compat2buses[compat]:
+                    compat2buses[compat].append(bus)
 
         ident = str2ident(compat)
         n_okay_macros[f"DT_N_INST_{ident}_NUM_OKAY"] = len(okay_nodes)
