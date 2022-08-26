@@ -160,7 +160,7 @@ static void test_sector_write(uint8_t *wbuf, uint8_t *rbuf, uint32_t num_sectors
 }
 
 /* Test multiple reads in series, and reading from a variety of blocks */
-static void test_read(void)
+ZTEST(disk_driver, test_read)
 {
 	int rc, i;
 
@@ -188,7 +188,7 @@ static void test_read(void)
 /* test writing data, and then verifying it was written correctly.
  * WARNING: this test is destructive- it will overwrite data on the disk!
  */
-static void test_write(void)
+ZTEST(disk_driver, test_write)
 {
 	int rc, i;
 
@@ -207,13 +207,11 @@ static void test_write(void)
 }
 
 
-void test_main(void)
+static void *disk_driver_setup(void)
 {
-	ztest_test_suite(disk_driver_test,
-		ztest_unit_test(test_setup),
-		ztest_unit_test(test_read),
-		ztest_unit_test(test_write)
-	);
+	test_setup();
 
-	ztest_run_test_suite(disk_driver_test);
+	return NULL;
 }
+
+ZTEST_SUITE(disk_driver, NULL, disk_driver_setup, NULL, NULL, NULL);
