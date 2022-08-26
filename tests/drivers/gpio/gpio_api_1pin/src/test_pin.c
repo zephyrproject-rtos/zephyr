@@ -57,7 +57,7 @@ static void pin_set_and_verify(const struct device *port, unsigned int pin,
  * - Verify that gpio_pin_toggle function changes pin state from active to
  *   inactive and vice versa.
  */
-void test_gpio_pin_toggle(void)
+ZTEST(gpio_api_1pin_pin, test_gpio_pin_toggle)
 {
 	const struct device *port;
 	int val_expected;
@@ -99,7 +99,7 @@ void test_gpio_pin_toggle(void)
  * - Verify visually that gpio_pin_toggle function changes pin state from active
  *   to inactive and vice versa.
  */
-void test_gpio_pin_toggle_visual(void)
+ZTEST(gpio_api_1pin_pin, test_gpio_pin_toggle_visual)
 {
 	const struct device *port;
 	int val_expected;
@@ -134,7 +134,7 @@ void test_gpio_pin_toggle_visual(void)
  * - Verify that gpio_pin_get_raw reads the same value as set by
  *   gpio_pin_set_raw function.
  */
-void test_gpio_pin_set_get_raw(void)
+ZTEST(gpio_api_1pin_pin, test_gpio_pin_set_get_raw)
 {
 	const struct device *port;
 	int val_expected;
@@ -171,7 +171,7 @@ void test_gpio_pin_set_get_raw(void)
  * - Verify that gpio_pin_get reads the same value as set by gpio_pin_set
  *   function.
  */
-void test_gpio_pin_set_get(void)
+ZTEST(gpio_api_1pin_pin, test_gpio_pin_set_get)
 {
 	const struct device *port;
 	int val_expected;
@@ -210,7 +210,7 @@ void test_gpio_pin_set_get(void)
  * - Verify that there is no functional difference between gpio_pin_get_raw and
  *   gpio_pin_get functions if the pin is configured as Active High.
  */
-void test_gpio_pin_set_get_active_high(void)
+ZTEST(gpio_api_1pin_pin, test_gpio_pin_set_get_active_high)
 {
 	const struct device *port;
 	int val_expected;
@@ -260,7 +260,7 @@ void test_gpio_pin_set_get_active_high(void)
  * - Verify that value read by gpio_pin_get function is inverted compared to
  *   gpio_pin_get_raw if the pin is configured as Active Low.
  */
-void test_gpio_pin_set_get_active_low(void)
+ZTEST(gpio_api_1pin_pin, test_gpio_pin_set_get_active_low)
 {
 	const struct device *port;
 	int val_expected, val_raw_expected;
@@ -304,3 +304,5 @@ void test_gpio_pin_set_get_active_low(void)
 		pin_get_raw_and_verify(port, TEST_PIN, val_raw_expected, i);
 	}
 }
+
+ZTEST_SUITE(gpio_api_1pin_pin, NULL, NULL, NULL, NULL, NULL);
