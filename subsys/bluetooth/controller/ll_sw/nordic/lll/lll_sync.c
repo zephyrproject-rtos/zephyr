@@ -467,21 +467,60 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 
 	/* Different radio event overlap */
 	if (next != curr) {
+		struct lll_scan_aux *lll_aux;
 		struct lll_scan *lll;
 
 		lll = ull_scan_lll_is_valid_get(next);
-		if (!lll) {
-			struct lll_scan_aux *lll_aux;
-
-			lll_aux = ull_scan_aux_lll_is_valid_get(next);
-			if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC_SKIP_ON_SCAN_AUX) ||
-			    !lll_aux) {
-				/* Abort current event as next event is not a
-				 * scan and not a scan aux event.
-				 */
-				return -ECANCELED;
-			}
+		if (lll) {
+			/* Do not abort current periodic sync event as next
+			 * event is a scan event.
+			 */
+			return 0;
 		}
+
+		lll_aux = ull_scan_aux_lll_is_valid_get(next);
+		if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC_SKIP_ON_SCAN_AUX) &&
+		    lll_aux) {
+			/* Do not abort current periodic sync event as next
+			 * event is a scan aux event.
+			 */
+			return 0;
+		}
+
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN)
+		struct lll_sync *lll_sync_next;
+		struct lll_sync *lll_sync_curr;
+
+		lll_sync_next = ull_sync_lll_is_valid_get(next);
+		if (!lll_sync_next) {
+			/* Abort current event as next event is not a
+			 * scan and not a scan aux event.
+			 */
+			return -ECANCELED;
+		}
+
+		lll_sync_curr = curr;
+		if (lll_sync_curr->abort_count < lll_sync_next->abort_count) {
+			if (lll_sync_curr->abort_count < UINT8_MAX) {
+				lll_sync_curr->abort_count++;
+			}
+
+			/* Abort current event as next event has higher abort
+			 * count.
+			 */
+			return -ECANCELED;
+		}
+
+		if (lll_sync_next->abort_count < UINT8_MAX) {
+			lll_sync_next->abort_count++;
+		}
+
+#else /* !CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
+		/* Abort current event as next event is not a
+		 * scan and not a scan aux event.
+		 */
+		return -ECANCELED;
+#endif /* !CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
 	}
 
 	/* Do not abort if current periodic sync event overlaps next interval
@@ -1012,6 +1051,14 @@ static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok, bool sync_
 		/* Reset window widening, as anchor point sync-ed */
 		lll->window_widening_event_us = 0U;
 		lll->window_size_event_us = 0U;
+
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN)
+		/* Reset LLL abort count as LLL event is gracefully done and
+		 * was not aborted by any other event when current event could
+		 * have been using unreserved time space.
+		 */
+		lll->abort_count = 0U;
+#endif /* CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
 	}
 
 	lll_isr_cleanup(lll);
