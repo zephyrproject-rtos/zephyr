@@ -229,19 +229,19 @@ err_exit:
 	return TC_FAIL;
 }
 
-void test_gpio_callback_add_remove(void)
+ZTEST(gpio_mgmt, test_gpio_callback_add_remove)
 {
 	zassert_equal(test_callback_add_remove(), TC_PASS,
 		     NULL);
 }
 
-void test_gpio_callback_self_remove(void)
+ZTEST(gpio_mgmt, test_gpio_callback_self_remove)
 {
 	zassert_equal(test_callback_self_remove(), TC_PASS,
 		     NULL);
 }
 
-void test_gpio_callback_enable_disable(void)
+ZTEST(gpio_mgmt, test_gpio_callback_enable_disable)
 {
 	zassert_equal(test_callback_enable_disable(), TC_PASS,
 		     NULL);
